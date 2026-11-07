@@ -28,31 +28,72 @@ pub fn find_pattern(q: &str) -> String {
 
 /// The rows a page counts.
 pub fn count(schema: &str, t: &str, find_col: Option<&str>) -> String {
-    let w = find_col.map(|c| format!(" WHERE {}", find(c))).unwrap_or_default();
+    let w = find_col
+        .map(|c| format!(" WHERE {}", find(c)))
+        .unwrap_or_default();
     format!("SELECT COUNT(*) FROM {}{w}", table(schema, t))
 }
 
 /// One page of rows, sorted by `sort` and then the key columns.
-pub fn page(schema: &str, t: &str, cols: &[String], find_col: Option<&str>, order: &[String], offset: usize, limit: usize) -> String {
+pub fn page(
+    schema: &str,
+    t: &str,
+    cols: &[String],
+    find_col: Option<&str>,
+    order: &[String],
+    offset: usize,
+    limit: usize,
+) -> String {
     let list = cols.iter().map(|c| ident(c)).collect::<Vec<_>>().join(", ");
-    let w = find_col.map(|c| format!(" WHERE {}", find(c))).unwrap_or_default();
+    let w = find_col
+        .map(|c| format!(" WHERE {}", find(c)))
+        .unwrap_or_default();
     let o = if order.is_empty() {
         String::new()
     } else {
-        format!(" ORDER BY {}", order.iter().map(|c| ident(c)).collect::<Vec<_>>().join(", "))
+        format!(
+            " ORDER BY {}",
+            order
+                .iter()
+                .map(|c| ident(c))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     };
-    let off = if offset > 0 { format!(" OFFSET {offset} ROWS") } else { String::new() };
-    format!("SELECT {list} FROM {}{w}{o}{off} FETCH FIRST {limit} ROWS ONLY", table(schema, t))
+    let off = if offset > 0 {
+        format!(" OFFSET {offset} ROWS")
+    } else {
+        String::new()
+    };
+    format!(
+        "SELECT {list} FROM {}{w}{o}{off} FETCH FIRST {limit} ROWS ONLY",
+        table(schema, t)
+    )
 }
 
 /// Every row of a table (a download), in key order.
-pub fn all(schema: &str, t: &str, cols: &[String], order: &[String], find_col: Option<&str>) -> String {
+pub fn all(
+    schema: &str,
+    t: &str,
+    cols: &[String],
+    order: &[String],
+    find_col: Option<&str>,
+) -> String {
     let list = cols.iter().map(|c| ident(c)).collect::<Vec<_>>().join(", ");
-    let w = find_col.map(|c| format!(" WHERE {}", find(c))).unwrap_or_default();
+    let w = find_col
+        .map(|c| format!(" WHERE {}", find(c)))
+        .unwrap_or_default();
     let o = if order.is_empty() {
         String::new()
     } else {
-        format!(" ORDER BY {}", order.iter().map(|c| ident(c)).collect::<Vec<_>>().join(", "))
+        format!(
+            " ORDER BY {}",
+            order
+                .iter()
+                .map(|c| ident(c))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     };
     format!("SELECT {list} FROM {}{w}{o}", table(schema, t))
 }
@@ -64,13 +105,20 @@ pub fn max(schema: &str, t: &str, col: &str) -> String {
 
 /// The row with these key values.
 fn by_key(keys: &[String]) -> String {
-    keys.iter().map(|k| format!("{} = ?", ident(k))).collect::<Vec<_>>().join(" AND ")
+    keys.iter()
+        .map(|k| format!("{} = ?", ident(k)))
+        .collect::<Vec<_>>()
+        .join(" AND ")
 }
 
 /// One row by its key.
 pub fn one(schema: &str, t: &str, cols: &[String], keys: &[String]) -> String {
     let list = cols.iter().map(|c| ident(c)).collect::<Vec<_>>().join(", ");
-    format!("SELECT {list} FROM {} WHERE {}", table(schema, t), by_key(keys))
+    format!(
+        "SELECT {list} FROM {} WHERE {}",
+        table(schema, t),
+        by_key(keys)
+    )
 }
 
 /// An insert of these columns.
@@ -83,8 +131,16 @@ pub fn insert(schema: &str, t: &str, cols: &[String]) -> String {
 /// An update of these columns of the row with the key's values (the
 /// markers: the columns' values, then the key's).
 pub fn update(schema: &str, t: &str, cols: &[String], keys: &[String]) -> String {
-    let set = cols.iter().map(|c| format!("{} = ?", ident(c))).collect::<Vec<_>>().join(", ");
-    format!("UPDATE {} SET {set} WHERE {}", table(schema, t), by_key(keys))
+    let set = cols
+        .iter()
+        .map(|c| format!("{} = ?", ident(c)))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!(
+        "UPDATE {} SET {set} WHERE {}",
+        table(schema, t),
+        by_key(keys)
+    )
 }
 
 /// A delete of the row with the key's values.
@@ -99,7 +155,10 @@ pub fn delete_all(schema: &str, t: &str) -> String {
 
 /// Whether a statement only reads: `SELECT`, `VALUES`, `WITH`.
 pub fn reads_only(statement: &str) -> bool {
-    matches!(super::script::verb(statement).as_str(), "SELECT" | "VALUES" | "WITH")
+    matches!(
+        super::script::verb(statement).as_str(),
+        "SELECT" | "VALUES" | "WITH"
+    )
 }
 
 /// SQL `LIKE` with `%` and `_`.
@@ -129,10 +188,19 @@ mod tests {
             page("HLINV", "ASSETS", &cols, Some("MODEL"), &key, 25, 25),
             "SELECT \"ASSET_TAG\", \"COST\" FROM \"HLINV\".\"ASSETS\" WHERE UPPER(CAST(\"MODEL\" AS VARCHAR(1000))) LIKE ? ORDER BY \"ASSET_TAG\" OFFSET 25 ROWS FETCH FIRST 25 ROWS ONLY"
         );
-        assert_eq!(update("S", "T", &cols, &key), "UPDATE \"S\".\"T\" SET \"ASSET_TAG\" = ?, \"COST\" = ? WHERE \"ASSET_TAG\" = ?");
-        assert_eq!(insert("S", "T", &cols), "INSERT INTO \"S\".\"T\" (\"ASSET_TAG\", \"COST\") VALUES (?, ?)");
+        assert_eq!(
+            update("S", "T", &cols, &key),
+            "UPDATE \"S\".\"T\" SET \"ASSET_TAG\" = ?, \"COST\" = ? WHERE \"ASSET_TAG\" = ?"
+        );
+        assert_eq!(
+            insert("S", "T", &cols),
+            "INSERT INTO \"S\".\"T\" (\"ASSET_TAG\", \"COST\") VALUES (?, ?)"
+        );
         assert_eq!(ident("A\"B"), "\"A\"\"B\"");
-        assert!(reads_only(" with x as (values 1) select * from x") && !reads_only("UPDATE t SET a = 1"));
+        assert!(
+            reads_only(" with x as (values 1) select * from x")
+                && !reads_only("UPDATE t SET a = 1")
+        );
         assert_eq!(find_pattern(" dell "), "%DELL%");
     }
 }

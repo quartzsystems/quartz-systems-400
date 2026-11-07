@@ -70,7 +70,12 @@ pub fn sendto(fd: &Fd, _buf: &[u8], _flags: i32, _to: &SockAddr) -> Result<usize
 }
 
 /// Unreachable.
-pub fn sendv(fd: &Fd, _bufs: &[&[u8]], _flags: i32, _to: Option<&SockAddr>) -> Result<usize, Errno> {
+pub fn sendv(
+    fd: &Fd,
+    _bufs: &[&[u8]],
+    _flags: i32,
+    _to: Option<&SockAddr>,
+) -> Result<usize, Errno> {
     match *fd {}
 }
 

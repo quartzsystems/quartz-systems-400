@@ -27,15 +27,28 @@ impl Parser {
     }
 
     /// A routine's parameters, options and body, after its name.
-    fn routine_definition(&mut self, kind: RoutineKind, replace: bool, name: crate::ast::ObjectName, start: usize) -> Result<Statement> {
-        let parms = if self.is_sym("(") { self.routine_parms(kind)? } else { Vec::new() };
+    fn routine_definition(
+        &mut self,
+        kind: RoutineKind,
+        replace: bool,
+        name: crate::ast::ObjectName,
+        start: usize,
+    ) -> Result<Statement> {
+        let parms = if self.is_sym("(") {
+            self.routine_parms(kind)?
+        } else {
+            Vec::new()
+        };
         let returns = if kind == RoutineKind::Function {
             self.expect_word("RETURNS")?;
             Some(self.returns()?)
         } else {
             None
         };
-        let mut options = RoutineOptions { null_input: false, ..RoutineOptions::default() };
+        let mut options = RoutineOptions {
+            null_input: false,
+            ..RoutineOptions::default()
+        };
         let mut sourced = None;
         loop {
             if self.at_end() || self.is_sym(";") {
@@ -115,14 +128,22 @@ impl Parser {
                 return Err(self.expected("IN: a function's parameters are input only"));
             }
             // A name, unless the type follows at once.
-            let name = if self.starts_type() { None } else { Some(self.ident()?) };
+            let name = if self.starts_type() {
+                None
+            } else {
+                Some(self.ident()?)
+            };
             let ty = self.type_spec()?;
             if self.eat_words(&["AS", "LOCATOR"]) {
                 return Err(Self::unsupported("parameters AS LOCATOR"));
             }
             let default = if self.eat_word("DEFAULT") {
                 if mode == ParmMode::Out {
-                    return Err(SqlError::Coded { code: -469, state: "42886", what: "an OUT parameter has no default".into() });
+                    return Err(SqlError::Coded {
+                        code: -469,
+                        state: "42886",
+                        what: "an OUT parameter has no default".into(),
+                    });
                 }
                 let m = self.mark();
                 self.expr()?;
@@ -130,7 +151,12 @@ impl Parser {
             } else {
                 None
             };
-            out.push(Parm { mode, name, ty, default });
+            out.push(Parm {
+                mode,
+                name,
+                ty,
+                default,
+            });
             if self.eat_sym(")") {
                 return Ok(out);
             }
@@ -142,11 +168,36 @@ impl Parser {
     /// a type word followed by something a name could not be followed by.
     fn starts_type(&self) -> bool {
         const TYPES: &[&str] = &[
-            "CHAR", "CHARACTER", "VARCHAR", "GRAPHIC", "VARGRAPHIC", "DECIMAL", "DEC", "NUMERIC", "NUM",
-            "SMALLINT", "INTEGER", "INT", "BIGINT", "REAL", "DOUBLE", "FLOAT", "DATE", "TIME", "TIMESTAMP",
-            "DECFLOAT", "BINARY", "VARBINARY", "BOOLEAN", "BLOB", "CLOB", "DBCLOB",
+            "CHAR",
+            "CHARACTER",
+            "VARCHAR",
+            "GRAPHIC",
+            "VARGRAPHIC",
+            "DECIMAL",
+            "DEC",
+            "NUMERIC",
+            "NUM",
+            "SMALLINT",
+            "INTEGER",
+            "INT",
+            "BIGINT",
+            "REAL",
+            "DOUBLE",
+            "FLOAT",
+            "DATE",
+            "TIME",
+            "TIMESTAMP",
+            "DECFLOAT",
+            "BINARY",
+            "VARBINARY",
+            "BOOLEAN",
+            "BLOB",
+            "CLOB",
+            "DBCLOB",
         ];
-        let Tok::Word(w) = self.tok() else { return false };
+        let Tok::Word(w) = self.tok() else {
+            return false;
+        };
         if !TYPES.contains(&w.as_str()) {
             return false;
         }
@@ -171,7 +222,11 @@ impl Parser {
             return Ok(Returns::Table(cols));
         }
         let t = self.type_spec()?;
-        let cast = if self.eat_words(&["CAST", "FROM"]) { Some(self.type_spec()?) } else { None };
+        let cast = if self.eat_words(&["CAST", "FROM"]) {
+            Some(self.type_spec()?)
+        } else {
+            None
+        };
         if self.eat_words(&["AS", "LOCATOR"]) {
             return Err(Self::unsupported("RETURNS ... AS LOCATOR"));
         }
@@ -182,7 +237,9 @@ impl Parser {
     #[allow(clippy::too_many_lines)] // one arm per clause
     fn routine_option(&mut self, o: &mut RoutineOptions) -> Result<bool> {
         if self.eat_word("LANGUAGE") {
-            let Tok::Word(w) = self.advance() else { return Err(self.expected("a language")) };
+            let Tok::Word(w) = self.advance() else {
+                return Err(self.expected("a language"));
+            };
             o.language = Some(match w.as_str() {
                 "SQL" => Language::Sql,
                 "RPGLE" => Language::Rpgle,
@@ -193,7 +250,11 @@ impl Parser {
                 "COBOLLE" => Language::Cobolle,
                 "JAVA" => Language::Java,
                 "PLI" => Language::Pli,
-                _ => return Err(self.expected("SQL, RPGLE, RPG, CL, C, COBOL, COBOLLE, JAVA or PLI")),
+                _ => {
+                    return Err(
+                        self.expected("SQL, RPGLE, RPG, CL, C, COBOL, COBOLLE, JAVA or PLI")
+                    );
+                }
             });
         } else if self.eat_word("SPECIFIC") {
             o.specific = Some(self.object_name()?);
@@ -209,8 +270,11 @@ impl Parser {
             o.access = Some(SqlAccess::Reads);
         } else if self.eat_words(&["MODIFIES", "SQL", "DATA"]) {
             o.access = Some(SqlAccess::Modifies);
-        } else if self.eat_words(&["DYNAMIC", "RESULT", "SETS"]) || self.eat_words(&["RESULT", "SETS"]) {
-            o.result_sets = u16::try_from(self.integer()?).map_err(|_| self.expected("a count of result sets"))?;
+        } else if self.eat_words(&["DYNAMIC", "RESULT", "SETS"])
+            || self.eat_words(&["RESULT", "SETS"])
+        {
+            o.result_sets = u16::try_from(self.integer()?)
+                .map_err(|_| self.expected("a count of result sets"))?;
         } else if self.eat_words(&["COMMIT", "ON", "RETURN"]) {
             if self.eat_word("YES") {
                 o.commit_on_return = true;
@@ -231,7 +295,9 @@ impl Parser {
             } else if self.eat_word("JAVA") {
                 ParmStyle::Java
             } else {
-                return Err(self.expected("SQL, GENERAL, GENERAL WITH NULLS, DB2SQL, DB2GENERAL or JAVA"));
+                return Err(
+                    self.expected("SQL, GENERAL, GENERAL WITH NULLS, DB2SQL, DB2GENERAL or JAVA")
+                );
             });
         } else if self.eat_words(&["PARAMETER", "CCSID"]) {
             let w = self.advance();
@@ -271,7 +337,8 @@ impl Parser {
             o.final_call = false;
         } else if self.eat_word("SCRATCHPAD") {
             o.scratchpad = Some(match self.tok() {
-                Tok::Num(_) => u32::try_from(self.integer()?).map_err(|_| self.expected("a scratchpad length"))?,
+                Tok::Num(_) => u32::try_from(self.integer()?)
+                    .map_err(|_| self.expected("a scratchpad length"))?,
                 _ => 100,
             });
         } else if self.eat_words(&["NO", "SCRATCHPAD"]) {
@@ -282,7 +349,9 @@ impl Parser {
             o.dbinfo = false;
         } else if self.eat_words(&["SET", "OPTION"]) {
             loop {
-                let Tok::Word(k) = self.advance() else { return Err(self.expected("an option")) };
+                let Tok::Word(k) = self.advance() else {
+                    return Err(self.expected("an option"));
+                };
                 self.expect_sym("=")?;
                 let m = self.mark();
                 // A value: a word, a special value (`*CHG`), a number or a string.
@@ -312,8 +381,13 @@ impl Parser {
             || self.eat_words(&["DISALLOW", "DEBUG", "MODE"])
             || self.eat_words(&["DISABLE", "DEBUG", "MODE"])
         {
-        } else if self.is_word("AUTONOMOUS") || self.is_word("WRAPPED") || self.is_words(&["CONCURRENT", "ACCESS"]) {
-            let Tok::Word(w) = self.tok().clone() else { unreachable!() };
+        } else if self.is_word("AUTONOMOUS")
+            || self.is_word("WRAPPED")
+            || self.is_words(&["CONCURRENT", "ACCESS"])
+        {
+            let Tok::Word(w) = self.tok().clone() else {
+                unreachable!()
+            };
             return Err(Self::unsupported(&format!("routines {w}")));
         } else {
             return Ok(false);
@@ -330,7 +404,11 @@ impl Parser {
         }
         let mut out = self.ident()?.value;
         if self.naming == crate::ast::Naming::Sql && self.is_sym("/") {
-            return Err(crate::error::SqlError::Coded { code: -5016, state: "42833", what: format!("{out}/...: a qualified name in SQL naming takes a period") });
+            return Err(crate::error::SqlError::Coded {
+                code: -5016,
+                state: "42833",
+                what: format!("{out}/...: a qualified name in SQL naming takes a period"),
+            });
         }
         if self.eat_sym("/") || self.eat_sym(".") {
             out.push('/');
@@ -397,14 +475,21 @@ impl Parser {
         } else {
             None
         };
-        Ok(Statement::DropRoutine(DropRoutine { kind, specific, name, signature }))
+        Ok(Statement::DropRoutine(DropRoutine {
+            kind,
+            specific,
+            name,
+            signature,
+        }))
     }
 
     /// After `ALTER`: `[SPECIFIC] PROCEDURE|FUNCTION name [(types)]`, then
     /// `ALTER options` or `REPLACE definition`, kept as text for the
     /// routine's stored definition (`exec::routine::alter`).
     pub(crate) fn alter_routine(&mut self) -> Result<Statement> {
-        let Statement::DropRoutine(target) = self.drop_routine_target()? else { unreachable!("a routine") };
+        let Statement::DropRoutine(target) = self.drop_routine_target()? else {
+            unreachable!("a routine")
+        };
         let replace = if self.eat_word("REPLACE") {
             true
         } else {
@@ -427,7 +512,13 @@ impl Parser {
         if tail.is_empty() {
             return Err(self.expected("the routine's options"));
         }
-        Ok(Statement::AlterRoutine(Box::new(crate::ast::AlterRoutine { target, replace, tail })))
+        Ok(Statement::AlterRoutine(Box::new(
+            crate::ast::AlterRoutine {
+                target,
+                replace,
+                tail,
+            },
+        )))
     }
 
     /// `SIGNAL` or `RESIGNAL`: the condition and its message.
@@ -443,14 +534,25 @@ impl Parser {
             match self.tok().clone() {
                 Tok::Str(s) => {
                     self.advance();
-                    if s.len() != 5 || !s.bytes().all(|b| b.is_ascii_digit() || b.is_ascii_uppercase()) || s.starts_with("00") {
-                        return Err(crate::error::SqlError::Coded { code: -435, state: "428B3", what: format!("SQLSTATE {s} is not one a SIGNAL may raise") });
+                    if s.len() != 5
+                        || !s
+                            .bytes()
+                            .all(|b| b.is_ascii_digit() || b.is_ascii_uppercase())
+                        || s.starts_with("00")
+                    {
+                        return Err(crate::error::SqlError::Coded {
+                            code: -435,
+                            state: "428B3",
+                            what: format!("SQLSTATE {s} is not one a SIGNAL may raise"),
+                        });
                     }
                     Some(SignalValue::State(s))
                 }
                 _ => Some(SignalValue::Variable(self.pl_expr()?)),
             }
-        } else if matches!(self.tok(), Tok::Word(w) if w != "SET") || matches!(self.tok(), Tok::Delimited(_)) {
+        } else if matches!(self.tok(), Tok::Word(w) if w != "SET")
+            || matches!(self.tok(), Tok::Delimited(_))
+        {
             Some(SignalValue::Condition(self.ident()?))
         } else {
             None
@@ -471,7 +573,11 @@ impl Parser {
         } else {
             None
         };
-        Ok(Signal { state, message, resignal })
+        Ok(Signal {
+            state,
+            message,
+            resignal,
+        })
     }
 
     /// `SET RESULT SETS`, after `SET`: `NONE`, or `[WITH RETURN [TO
@@ -490,7 +596,9 @@ impl Parser {
         let mut out: Vec<Ident> = Vec::new();
         loop {
             if self.eat_word("ARRAY") {
-                return Err(Self::unsupported("SET RESULT SETS ARRAY: result sets from host arrays"));
+                return Err(Self::unsupported(
+                    "SET RESULT SETS ARRAY: result sets from host arrays",
+                ));
             }
             self.expect_word("CURSOR")?;
             out.push(self.ident()?);

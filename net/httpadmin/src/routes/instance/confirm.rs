@@ -51,10 +51,18 @@ impl Op {
 
     fn sentence(self) -> &'static str {
         match self {
-            Op::Start => "Starting an instance submits its job to subsystem QHTTPSVR, which reads the configuration file and listens on its ports. Press OK to start the instances listed below.",
-            Op::Stop => "Stopping an instance ends its job in subsystem QHTTPSVR and closes all client connections. Press OK to stop the instances listed below.",
-            Op::Restart => "Restarting an instance ends its job in subsystem QHTTPSVR, closing all client connections, then starts it again with the current configuration file. Press OK to restart the instances listed below.",
-            Op::Delete => "Deleting an instance removes its configuration directory, all log files and its certificate application ID. Press OK to delete the instances listed below, or Cancel to return without deleting.",
+            Op::Start => {
+                "Starting an instance submits its job to subsystem QHTTPSVR, which reads the configuration file and listens on its ports. Press OK to start the instances listed below."
+            }
+            Op::Stop => {
+                "Stopping an instance ends its job in subsystem QHTTPSVR and closes all client connections. Press OK to stop the instances listed below."
+            }
+            Op::Restart => {
+                "Restarting an instance ends its job in subsystem QHTTPSVR, closing all client connections, then starts it again with the current configuration file. Press OK to restart the instances listed below."
+            }
+            Op::Delete => {
+                "Deleting an instance removes its configuration directory, all log files and its certificate application ID. Press OK to delete the instances listed below, or Cancel to return without deleting."
+            }
         }
     }
 }
@@ -62,7 +70,11 @@ impl Op {
 /// The job cell: a link to Navigator's job page, or `(not active)`.
 fn job_cell(v: &View) -> String {
     match &v.job {
-        Some(j) => format!("<a href=\"{}\">{}</a>", esc(&job_url(&j.qualified())), esc(&j.qualified())),
+        Some(j) => format!(
+            "<a href=\"{}\">{}</a>",
+            esc(&job_url(&j.qualified())),
+            esc(&j.qualified())
+        ),
         None => "<span class=\"mono\">(not active)</span>".into(),
     }
 }
@@ -70,16 +82,30 @@ fn job_cell(v: &View) -> String {
 /// The log files under the server root: how many, and their size.
 fn log_files(rq: &Rq<'_>, v: &View) -> String {
     let dir = format!("{}/logs", v.entry.root.trim_end_matches('/'));
-    let files: Vec<_> = rq.env().files.list(&dir).unwrap_or_default().into_iter().filter(|e| !e.dir).collect();
+    let files: Vec<_> = rq
+        .env()
+        .files
+        .list(&dir)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|e| !e.dir)
+        .collect();
     let bytes: u64 = files.iter().map(|e| e.size).sum();
     let n = files.len();
-    format!("{n} {}, {}", if n == 1 { "file" } else { "files" }, util::size(bytes))
+    format!(
+        "{n} {}, {}",
+        if n == 1 { "file" } else { "files" },
+        util::size(bytes)
+    )
 }
 
 /// `GET` shows the confirmation; `POST` with OK acts.
 pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let Some(op) = Op::parse(rq.query().str("op")) else {
-        return rq.not_found(&format!("operation {} on an instance", rq.query().str("op")));
+        return rq.not_found(&format!(
+            "operation {} on an instance",
+            rq.query().str("op")
+        ));
     };
     if rq.post() {
         return act(rq, v, op);
@@ -91,7 +117,10 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
             vec![
                 Cell::text(n),
                 Cell::html(status_cell(v)),
-                Cell::html(format!("<span class=\"mono\">{}</span>", esc(&v.entry.root))),
+                Cell::html(format!(
+                    "<span class=\"mono\">{}</span>",
+                    esc(&v.entry.root)
+                )),
                 Cell::html(job_cell(v)),
                 Cell::text(&log_files(rq, v)),
             ],
@@ -106,7 +135,13 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
             "<p class=\"small grey\">How to end: <input type=\"radio\" name=\"how\" value=\"*CNTRLD\" checked> Controlled, wait up to <input type=\"text\" name=\"delay\" value=\"30\" size=\"3\"> seconds for requests to finish &nbsp; <input type=\"radio\" name=\"how\" value=\"*IMMED\"> Immediate</p>"
         };
         (
-            vec!["Instance name", "Status", "Job", "Ports", "Active connections"],
+            vec![
+                "Instance name",
+                "Status",
+                "Job",
+                "Ports",
+                "Active connections",
+            ],
             vec![
                 Cell::text(n),
                 Cell::html(status_cell(v)),
@@ -129,7 +164,10 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
         form(
             &rq.ctx,
             "",
-            &format!("{options}{}", buttons(&[Button::new("ok", "OK"), Button::new("cancel", "Cancel")]))
+            &format!(
+                "{options}{}",
+                buttons(&[Button::new("ok", "OK"), Button::new("cancel", "Cancel")])
+            )
         )
     );
     let title = format!("Confirm {} Instance", op.verb());
@@ -138,7 +176,11 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
         crumb: vec!["Manage".into(), "Server instances".into(), title.clone()],
         h1: title,
         body,
-        help: if op == Op::Delete { "confirm-delete".into() } else { "confirm-instance".into() },
+        help: if op == Op::Delete {
+            "confirm-delete".into()
+        } else {
+            "confirm-instance".into()
+        },
         ..Page::default()
     })
 }
@@ -174,8 +216,15 @@ fn act(rq: &Rq<'_>, v: &View, op: Op) -> Response {
                     Ok(d) if d <= 3600 => EndHow::Controlled(d),
                     _ => {
                         return rq.done(
-                            &format!("/instance/{name}/confirm?op={}", op.verb().to_ascii_lowercase()),
-                            super::bad_value(form.str("delay"), "Seconds to wait", "a number of seconds from 0 to 3600"),
+                            &format!(
+                                "/instance/{name}/confirm?op={}",
+                                op.verb().to_ascii_lowercase()
+                            ),
+                            super::bad_value(
+                                form.str("delay"),
+                                "Seconds to wait",
+                                "a number of seconds from 0 to 3600",
+                            ),
                         );
                     }
                 }
@@ -198,7 +247,10 @@ fn act(rq: &Rq<'_>, v: &View, op: Op) -> Response {
         }
     };
     if msg.kind != Kind::Error {
-        rq.audit_change(name, &format!("{} instance", op.verb().to_ascii_lowercase()));
+        rq.audit_change(
+            name,
+            &format!("{} instance", op.verb().to_ascii_lowercase()),
+        );
     }
     rq.done("/instances", msg)
 }
@@ -234,9 +286,11 @@ fn delete(rq: &Rq<'_>, v: &View) -> Message {
     let app = rq.env().certs.deregister_instance(name).err();
     match (left, app) {
         (Some(why), _) => msgs::message(Kind::Info, "HTP8023", &[name, root, &why]),
-        (None, Some(e)) => {
-            msgs::message(Kind::Info, "HTP8024", &[name, &certs::apps::http_server(name), &e.to_string()])
-        }
+        (None, Some(e)) => msgs::message(
+            Kind::Info,
+            "HTP8024",
+            &[name, &certs::apps::http_server(name), &e.to_string()],
+        ),
         (None, None) => msgs::message(Kind::Done, "HTP8021", &[name, root]),
     }
 }

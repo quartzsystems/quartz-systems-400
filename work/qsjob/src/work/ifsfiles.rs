@@ -26,7 +26,9 @@ pub struct IfsFiles {
 impl IfsFiles {
     /// Over `link`.
     pub fn new(link: &Shared) -> Self {
-        Self { c: RemoteIfs::new(link.clone()) }
+        Self {
+            c: RemoteIfs::new(link.clone()),
+        }
     }
 }
 
@@ -69,7 +71,10 @@ impl IfsFiles {
 
 impl Local for IfsFiles {
     fn read(&self, path: &str) -> io::Result<Vec<u8>> {
-        let fd = self.c.open(path, OpenArgs::new(O_RDONLY)).map_err(|e| err(path, e))?;
+        let fd = self
+            .c
+            .open(path, OpenArgs::new(O_RDONLY))
+            .map_err(|e| err(path, e))?;
         let r = read_all(&self.c, fd).map_err(|e| err(path, e));
         let _ = self.c.close(fd);
         r
@@ -85,7 +90,9 @@ impl Local for IfsFiles {
     }
 
     fn rename(&self, from: &str, to: &str) -> io::Result<()> {
-        self.c.rename(from, to, RenameMode::Unlink).map_err(|e| err(from, e))
+        self.c
+            .rename(from, to, RenameMode::Unlink)
+            .map_err(|e| err(from, e))
     }
 
     fn mkdir_all(&self, path: &str) -> io::Result<()> {

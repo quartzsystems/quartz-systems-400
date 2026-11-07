@@ -31,7 +31,9 @@ fn contents(i: u64, bytes: u64) -> Vec<u8> {
 
 fn args(n: &str, kib: &str) -> Result<(u64, u64), String> {
     let n: u64 = n.parse().map_err(|_| format!("{n}: not a count"))?;
-    let kib: u64 = kib.parse().map_err(|_| format!("{kib}: not a size in KiB"))?;
+    let kib: u64 = kib
+        .parse()
+        .map_err(|_| format!("{kib}: not a size in KiB"))?;
     if n == 0 || kib == 0 {
         return Err("N and KIB must be more than 0".into());
     }
@@ -48,8 +50,11 @@ pub fn fill(system: &mut System, lib: &str, n: &str, kib: &str) -> Result<String
         let mut txn = store.begin().map_err(|e| e.to_string())?;
         let id = match ops::find_library(&mut txn, root, name) {
             Ok(f) => f.id,
-            Err(_) => ops::create(&mut txn, &params(root, name, types::LIB, "Filled by the console"))
-                .map_err(|e| e.to_string())?,
+            Err(_) => ops::create(
+                &mut txn,
+                &params(root, name, types::LIB, "Filled by the console"),
+            )
+            .map_err(|e| e.to_string())?,
         };
         txn.commit().map_err(|e| e.to_string())?;
         id
@@ -72,7 +77,10 @@ pub fn fill(system: &mut System, lib: &str, n: &str, kib: &str) -> Result<String
         made = end;
     }
     store.checkpoint().map_err(|e| e.to_string())?;
-    Ok(format!("filled {lib}: {n} user spaces of {} KiB\n", bytes / 1024))
+    Ok(format!(
+        "filled {lib}: {n} user spaces of {} KiB\n",
+        bytes / 1024
+    ))
 }
 
 /// `obj verify LIB N KIB`: every space `fill` made reads back as made.

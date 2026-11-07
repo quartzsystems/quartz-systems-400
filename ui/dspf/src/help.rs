@@ -57,7 +57,10 @@ fn area_of(w: &[String]) -> Option<HelpArea> {
     match w.first().map(String::as_str) {
         Some("*RCD") => Some(HelpArea::Record),
         Some("*FLD") => w.get(1).map(|n| HelpArea::Field(n.clone())),
-        Some("*CNST") => w.get(1).and_then(|n| n.parse().ok()).map(HelpArea::Constant),
+        Some("*CNST") => w
+            .get(1)
+            .and_then(|n| n.parse().ok())
+            .map(HelpArea::Constant),
         _ => {
             let n: Vec<u8> = w.iter().filter_map(|x| x.parse().ok()).collect();
             (n.len() == 4).then(|| HelpArea::Box(n[0], n[1], n[2], n[3]))
@@ -104,7 +107,9 @@ pub fn help_at(rec: &Record, row: u8, col: u8) -> Option<HelpSpec> {
     all.iter()
         .find(|s| match &s.area {
             HelpArea::Record => false,
-            HelpArea::Box(r1, c1, r2, c2) => (*r1..=*r2).contains(&row) && (*c1..=*c2).contains(&col),
+            HelpArea::Box(r1, c1, r2, c2) => {
+                (*r1..=*r2).contains(&row) && (*c1..=*c2).contains(&col)
+            }
             HelpArea::Field(n) => rec
                 .fields
                 .iter()
@@ -142,6 +147,9 @@ mod tests {
         assert_eq!(specs(rec).len(), 2);
         assert_eq!(help_at(rec, 5, 21).unwrap().module, "ONE/NAME");
         let any = help_at(rec, 1, 31).unwrap();
-        assert_eq!((any.module.as_str(), any.group.as_str()), ("ONEHLP", "QSYS/MYGRP"));
+        assert_eq!(
+            (any.module.as_str(), any.group.as_str()),
+            ("ONEHLP", "QSYS/MYGRP")
+        );
     }
 }

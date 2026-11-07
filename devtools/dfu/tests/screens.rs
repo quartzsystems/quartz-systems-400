@@ -140,7 +140,14 @@ fn recnbr(typed: &str) -> Vec<Row> {
 
 /// `QDFUZZIN`'s fields: name, width, value.
 fn infields(vals: [&str; 6]) -> Vec<Row> {
-    let shape = [("IID", 10), ("OP", 2), ("SA", 3), ("A", 70), ("SB", 3), ("B", 70)];
+    let shape = [
+        ("IID", 10),
+        ("OP", 2),
+        ("SA", 3),
+        ("A", 70),
+        ("SB", 3),
+        ("B", 70),
+    ];
     shape
         .iter()
         .zip(vals)

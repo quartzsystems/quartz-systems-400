@@ -34,18 +34,36 @@ pub const TREE_FILE: &str = "lic/osobjects/shipped/NOTICES.txt";
 const TEXTS: &[(&str, &str)] = &[
     ("MIT", include_str!("../../licenses/MIT.txt")),
     ("Apache-2.0", include_str!("../../licenses/Apache-2.0.txt")),
-    ("LLVM-exception", include_str!("../../licenses/LLVM-exception.txt")),
-    ("BSD-2-Clause", include_str!("../../licenses/BSD-2-Clause.txt")),
-    ("BSD-3-Clause", include_str!("../../licenses/BSD-3-Clause.txt")),
+    (
+        "LLVM-exception",
+        include_str!("../../licenses/LLVM-exception.txt"),
+    ),
+    (
+        "BSD-2-Clause",
+        include_str!("../../licenses/BSD-2-Clause.txt"),
+    ),
+    (
+        "BSD-3-Clause",
+        include_str!("../../licenses/BSD-3-Clause.txt"),
+    ),
     ("ISC", include_str!("../../licenses/ISC.txt")),
     ("Zlib", include_str!("../../licenses/Zlib.txt")),
     ("0BSD", include_str!("../../licenses/0BSD.txt")),
     ("CC0-1.0", include_str!("../../licenses/CC0-1.0.txt")),
     ("Unlicense", include_str!("../../licenses/Unlicense.txt")),
-    ("Unicode-3.0", include_str!("../../licenses/Unicode-3.0.txt")),
-    ("CDLA-Permissive-2.0", include_str!("../../licenses/CDLA-Permissive-2.0.txt")),
+    (
+        "Unicode-3.0",
+        include_str!("../../licenses/Unicode-3.0.txt"),
+    ),
+    (
+        "CDLA-Permissive-2.0",
+        include_str!("../../licenses/CDLA-Permissive-2.0.txt"),
+    ),
     ("GPL-2.0", include_str!("../../licenses/GPL-2.0.txt")),
-    ("Linux-syscall-note", include_str!("../../licenses/Linux-syscall-note.txt")),
+    (
+        "Linux-syscall-note",
+        include_str!("../../licenses/Linux-syscall-note.txt"),
+    ),
 ];
 
 /// The text of one license or exception.
@@ -77,7 +95,10 @@ pub fn allowed(repo: &Path) -> Result<Vec<String>> {
         .and_then(|l| l.get("allow"))
         .and_then(toml::Value::as_array)
         .context("deny.toml has no [licenses] allow")?;
-    Ok(list.iter().filter_map(|s| s.as_str().map(str::to_string)).collect())
+    Ok(list
+        .iter()
+        .filter_map(|s| s.as_str().map(str::to_string))
+        .collect())
 }
 
 fn normalise(t: &str) -> String {
@@ -90,14 +111,25 @@ fn normalise(t: &str) -> String {
 
 /// The license and notice files at the top of a package.
 fn license_files(dir: &Path, chosen: &[String]) -> Vec<(String, String)> {
-    let Ok(rd) = fs::read_dir(dir) else { return Vec::new() };
+    let Ok(rd) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut names: Vec<String> = rd
         .flatten()
         .filter(|e| e.path().is_file())
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .filter(|n| {
             let u = n.to_ascii_uppercase();
-            ["LICENSE", "LICENCE", "COPYING", "COPYRIGHT", "NOTICE", "UNLICENSE"].iter().any(|p| u.starts_with(p))
+            [
+                "LICENSE",
+                "LICENCE",
+                "COPYING",
+                "COPYRIGHT",
+                "NOTICE",
+                "UNLICENSE",
+            ]
+            .iter()
+            .any(|p| u.starts_with(p))
         })
         .collect();
     names.sort();
@@ -105,7 +137,14 @@ fn license_files(dir: &Path, chosen: &[String]) -> Vec<(String, String)> {
     // ones of the licenses taken, and every NOTICE.
     let keyed = |n: &str| {
         let u = n.to_ascii_uppercase();
-        let kinds = [("MIT", "MIT"), ("APACHE", "Apache-2.0"), ("BSD", "BSD"), ("ZLIB", "Zlib"), ("UNICODE", "Unicode-3.0"), ("ISC", "ISC")];
+        let kinds = [
+            ("MIT", "MIT"),
+            ("APACHE", "Apache-2.0"),
+            ("BSD", "BSD"),
+            ("ZLIB", "Zlib"),
+            ("UNICODE", "Unicode-3.0"),
+            ("ISC", "ISC"),
+        ];
         kinds.iter().find(|(k, _)| u.contains(k)).map(|(_, id)| *id)
     };
     let specific: Vec<&String> = names.iter().filter(|n| keyed(n).is_some()).collect();
@@ -124,7 +163,11 @@ fn license_files(dir: &Path, chosen: &[String]) -> Vec<(String, String)> {
         names
     };
     keep.into_iter()
-        .filter_map(|n| fs::read(dir.join(&n)).ok().map(|b| (n, normalise(&String::from_utf8_lossy(&b)))))
+        .filter_map(|n| {
+            fs::read(dir.join(&n))
+                .ok()
+                .map(|b| (n, normalise(&String::from_utf8_lossy(&b))))
+        })
         .collect()
 }
 
@@ -136,11 +179,17 @@ pub fn crates(repo: &Path) -> Result<Vec<Crate>> {
         .args(["metadata", "--format-version", "1", "--locked"])
         .capture()?;
     let m: serde_json::Value = serde_json::from_str(&out).context("cargo metadata")?;
-    let members: Vec<&str> = m["workspace_members"].as_array().map(|a| a.iter().filter_map(|v| v.as_str()).collect()).unwrap_or_default();
+    let members: Vec<&str> = m["workspace_members"]
+        .as_array()
+        .map(|a| a.iter().filter_map(|v| v.as_str()).collect())
+        .unwrap_or_default();
     let allow = allowed(repo)?;
     let mut list = Vec::new();
     let mut errors = Vec::new();
-    for p in m["packages"].as_array().context("cargo metadata: no packages")? {
+    for p in m["packages"]
+        .as_array()
+        .context("cargo metadata: no packages")?
+    {
         let id = p["id"].as_str().unwrap_or("");
         if members.contains(&id) {
             continue;
@@ -158,12 +207,24 @@ pub fn crates(repo: &Path) -> Result<Vec<Crate>> {
                 continue;
             }
         };
-        let dir = PathBuf::from(p["manifest_path"].as_str().unwrap_or("")).parent().map(Path::to_path_buf).unwrap_or_default();
+        let dir = PathBuf::from(p["manifest_path"].as_str().unwrap_or(""))
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_default();
         let files = license_files(&dir, &chosen);
-        list.push(Crate { name, version, expr, chosen, files });
+        list.push(Crate {
+            name,
+            version,
+            expr,
+            chosen,
+            files,
+        });
     }
     if !errors.is_empty() {
-        bail!("licenses outside deny.toml's allow list:\n  {}", errors.join("\n  "));
+        bail!(
+            "licenses outside deny.toml's allow list:\n  {}",
+            errors.join("\n  ")
+        );
     }
     list.sort_by(|a, b| (&a.name, &a.version).cmp(&(&b.name, &b.version)));
     Ok(list)
@@ -194,20 +255,42 @@ pub fn render(crates: &[Crate], kernel_version: &str) -> Result<String> {
          4. The {} Rust crates below, each under the license named.\n",
         crates.len()
     );
-    rule(&mut o, "Crates: name, version, license as stated, license taken");
+    rule(
+        &mut o,
+        "Crates: name, version, license as stated, license taken",
+    );
     for c in crates {
-        let _ = writeln!(o, "{} {}\n    {}\n    taken under: {}", c.name, c.version, c.expr, c.chosen.join(" AND "));
+        let _ = writeln!(
+            o,
+            "{} {}\n    {}\n    taken under: {}",
+            c.name,
+            c.version,
+            c.expr,
+            c.chosen.join(" AND ")
+        );
     }
     // Every license taken, the kernel's and the toolchain's included.
-    let mut ids: Vec<String> = crates.iter().flat_map(|c| c.chosen.iter().cloned()).collect();
-    ids.extend(["GPL-2.0 WITH Linux-syscall-note", "MIT", "Apache-2.0 WITH LLVM-exception"].map(str::to_string));
+    let mut ids: Vec<String> = crates
+        .iter()
+        .flat_map(|c| c.chosen.iter().cloned())
+        .collect();
+    ids.extend(
+        [
+            "GPL-2.0 WITH Linux-syscall-note",
+            "MIT",
+            "Apache-2.0 WITH LLVM-exception",
+        ]
+        .map(str::to_string),
+    );
     ids.sort();
     ids.dedup();
     rule(&mut o, "License texts");
     for id in &ids {
         let _ = writeln!(o, "---- {id} ----\n");
         for part in id.split(" WITH ") {
-            let t = text(part).with_context(|| format!("no text for license {part} under tools/build/licenses/"))?;
+            let t = text(part).with_context(|| {
+                format!("no text for license {part} under tools/build/licenses/")
+            })?;
             o.push_str(&normalise(t));
             o.push('\n');
         }
@@ -216,10 +299,14 @@ pub fn render(crates: &[Crate], kernel_version: &str) -> Result<String> {
     let mut by_text: BTreeMap<&str, Vec<String>> = BTreeMap::new();
     for c in crates {
         for (name, t) in &c.files {
-            by_text.entry(t.as_str()).or_default().push(format!("{} {} ({name})", c.name, c.version));
+            by_text
+                .entry(t.as_str())
+                .or_default()
+                .push(format!("{} {} ({name})", c.name, c.version));
         }
     }
-    let mut blocks: Vec<(Vec<String>, &str)> = by_text.into_iter().map(|(t, who)| (who, t)).collect();
+    let mut blocks: Vec<(Vec<String>, &str)> =
+        by_text.into_iter().map(|(t, who)| (who, t)).collect();
     blocks.sort();
     rule(&mut o, "Notices and license files shipped by the crates");
     for (who, t) in blocks {
@@ -227,9 +314,17 @@ pub fn render(crates: &[Crate], kernel_version: &str) -> Result<String> {
         o.push_str(t);
         o.push('\n');
     }
-    let bare: Vec<String> = crates.iter().filter(|c| c.files.is_empty()).map(|c| format!("{} {}", c.name, c.version)).collect();
+    let bare: Vec<String> = crates
+        .iter()
+        .filter(|c| c.files.is_empty())
+        .map(|c| format!("{} {}", c.name, c.version))
+        .collect();
     if !bare.is_empty() {
-        let _ = writeln!(o, "---- No license file in the package (the license text above applies) ----\n\n{}\n", bare.join(", "));
+        let _ = writeln!(
+            o,
+            "---- No license file in the package (the license text above applies) ----\n\n{}\n",
+            bare.join(", ")
+        );
     }
     Ok(o)
 }
@@ -250,7 +345,9 @@ pub fn notices(ctx: &Ctx, check: bool) -> Result<PathBuf> {
         info!("notices: {n:>4} crates under {license}");
     }
     let path = ctx.paths.repo.join(TREE_FILE);
-    let old = fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
+    let old = fs::read_to_string(&path)
+        .unwrap_or_default()
+        .replace("\r\n", "\n");
     if old == text {
         info!("notices: {} is current", path.display());
     } else {

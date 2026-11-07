@@ -32,7 +32,10 @@ impl Link {
     /// Whether the object is a directory the displays can open.
     #[must_use]
     pub fn is_dir(&self) -> bool {
-        matches!(self.objtype.as_str(), "DIR" | "LIB" | "FILE" | "FLR" | "DDIR")
+        matches!(
+            self.objtype.as_str(),
+            "DIR" | "LIB" | "FILE" | "FLR" | "DDIR"
+        )
     }
 }
 
@@ -190,8 +193,16 @@ pub fn links(c: &dyn IfsClient, obj: &str, objtype: &str) -> Result<Listing> {
         links: Vec::new(),
     };
     if !is_pattern(&last) {
-        let shown = if dir.is_empty() { "/".to_string() } else { last.clone() };
-        let full = if dir.is_empty() { "/".to_string() } else { join(&dir, &last) };
+        let shown = if dir.is_empty() {
+            "/".to_string()
+        } else {
+            last.clone()
+        };
+        let full = if dir.is_empty() {
+            "/".to_string()
+        } else {
+            join(&dir, &last)
+        };
         c.stat(&full, false)?;
         let l = link_of(c, &full, &shown);
         if type_passes(objtype, &format!("*{}", l.objtype)) {
@@ -305,7 +316,11 @@ fn audit(a: ObjAudit) -> String {
 /// and `CHKOUTT`. `AUDIT` shows `*NOTAVL` unless the caller has
 /// `*AUDIT` or `*ALLOBJ` (`have_audit`).
 #[allow(clippy::too_many_lines)] // the panel's variables in its order
-pub fn attributes(c: &dyn IfsClient, path: &str, have_audit: bool) -> Result<Vec<(&'static str, String)>> {
+pub fn attributes(
+    c: &dyn IfsClient,
+    path: &str,
+    have_audit: bool,
+) -> Result<Vec<(&'static str, String)>> {
     let st: Stat = c.stat(path, false)?;
     let attrs = c.get_attrs(path, &[], false)?;
     let mut v: Vec<(&'static str, String)> = Vec::new();
@@ -336,7 +351,11 @@ pub fn attributes(c: &dyn IfsClient, path: &str, have_audit: bool) -> Result<Vec
         Attr::MainStgOpt(o) => Some(("MAINOPT", stg(*o))),
         Attr::Audit(a) => Some((
             "AUDIT",
-            if have_audit { audit(*a) } else { "*NOTAVL".into() },
+            if have_audit {
+                audit(*a)
+            } else {
+                "*NOTAVL".into()
+            },
         )),
         Attr::Crtobjaud(a) => Some((
             "CRTAUD",
@@ -402,7 +421,15 @@ pub fn attributes(c: &dyn IfsClient, path: &str, have_audit: bool) -> Result<Vec
         v.push(("CRTSCAN", s));
         v.push(("CRTRUNEXIT", "No".into()));
     }
-    for k in ["SUID", "SGID", "RSTDRNMUNL", "SCAN", "ALWSAV", "ALWCKPWRT", "TEXT"] {
+    for k in [
+        "SUID",
+        "SGID",
+        "RSTDRNMUNL",
+        "SCAN",
+        "ALWSAV",
+        "ALWCKPWRT",
+        "TEXT",
+    ] {
         let val = take(k);
         v.push((k, val));
     }
@@ -519,11 +546,17 @@ pub fn udfs(c: &dyn IfsClient, path: &str) -> Result<UdfsView> {
         vars: vec![
             ("UDFS", i.path),
             ("OWNER", i.owner),
-            ("CASE", if i.case_sensitive { "*MIXED" } else { "*MONO" }.into()),
+            (
+                "CASE",
+                if i.case_sensitive { "*MIXED" } else { "*MONO" }.into(),
+            ),
             ("DFTFMT", "*TYPE2".into()),
             ("CRTAUD", aud.into()),
             ("CRTDTS", date_time(i.created)),
-            ("MOUNTED", if i.mounted_at.is_empty() { "No" } else { "Yes" }.into()),
+            (
+                "MOUNTED",
+                if i.mounted_at.is_empty() { "No" } else { "Yes" }.into(),
+            ),
             ("TEXT", i.text),
         ],
         mounts: i.mounted_at,
@@ -553,9 +586,15 @@ mod tests {
         assert_eq!(split("/home/a/b*"), ("/home/a".into(), "b*".into()));
         assert_eq!(absolute("/home", "*"), "/home/*");
         assert_eq!(absolute("/", "x"), "/x");
-        assert_eq!(shown_name("core.20261001.140157.txt"), "core.20261001.1401 >");
+        assert_eq!(
+            shown_name("core.20261001.140157.txt"),
+            "core.20261001.1401 >"
+        );
         assert_eq!(date_time(0), "01/01/70  00:00:00");
-        assert_eq!(date_time(1_793_000_000 * 1_000_000_000), "10/26/26  07:33:20");
+        assert_eq!(
+            date_time(1_793_000_000 * 1_000_000_000),
+            "10/26/26  07:33:20"
+        );
         assert!(type_passes("*ALLDIR", "*LIB"));
         assert!(type_passes("*STMF", "*STMF"));
         assert!(!type_passes("*DIR", "*STMF"));

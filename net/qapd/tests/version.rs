@@ -16,7 +16,23 @@ use common::{cfg, start};
 
 #[test]
 fn the_highest_common_version() {
-    for (min, max, want) in [(1, 1, 1), (1, 2, 2), (2, 2, 2), (1, 3, 3), (3, 3, 3), (1, 4, 4), (4, 4, 4), (1, 5, 5), (5, 5, 5), (1, 6, 6), (6, 6, 6), (1, 7, 7), (7, 7, 7), (1, 9, 7), (3, 9, 7)] {
+    for (min, max, want) in [
+        (1, 1, 1),
+        (1, 2, 2),
+        (2, 2, 2),
+        (1, 3, 3),
+        (3, 3, 3),
+        (1, 4, 4),
+        (4, 4, 4),
+        (1, 5, 5),
+        (5, 5, 5),
+        (1, 6, 6),
+        (6, 6, 6),
+        (1, 7, 7),
+        (7, 7, 7),
+        (1, 9, 7),
+        (3, 9, 7),
+    ] {
         let mut r = start(cfg());
         let h: HelloReply = r.client.hello_range(min, max).body_as().unwrap();
         assert_eq!(h.version, want, "{min}..{max}");
@@ -72,7 +88,13 @@ fn version_1_sees_only_version_1() {
     assert!(!h.services.contains(&Service::Command));
     // Version 2's operations do not exist on this connection, signed on
     // or not.
-    for op in [Op::RunCommand, Op::CheckCommand, Op::DescribeCommand, Op::TelnetTicket, Op::PasswordStatus] {
+    for op in [
+        Op::RunCommand,
+        Op::CheckCommand,
+        Op::DescribeCommand,
+        Op::TelnetTicket,
+        Op::PasswordStatus,
+    ] {
         let id = r.client.request(op, &CommandText::default());
         let rep = r.client.reply(id);
         assert_eq!(rep.status, Status::InvalidRequest, "{op:?}");

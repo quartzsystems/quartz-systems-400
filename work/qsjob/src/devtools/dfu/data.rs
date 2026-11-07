@@ -120,7 +120,11 @@ pub fn file(host: &Host, lib: &str, name: &str) -> Option<DataFile> {
 }
 
 /// A DFU program's library and definition.
-pub fn program(host: &Host, lib: &str, name: &str) -> Result<Option<(String, dfu::Program)>, String> {
+pub fn program(
+    host: &Host,
+    lib: &str,
+    name: &str,
+) -> Result<Option<(String, dfu::Program)>, String> {
     let lib = real_lib(host, lib);
     let got = host
         .link
@@ -135,7 +139,12 @@ pub fn program(host: &Host, lib: &str, name: &str) -> Result<Option<(String, dfu
 }
 
 /// Store a DFU program; its library.
-pub fn save_program(host: &Host, lib: &str, name: &str, p: &dfu::Program) -> Result<String, String> {
+pub fn save_program(
+    host: &Host,
+    lib: &str,
+    name: &str,
+    p: &dfu::Program,
+) -> Result<String, String> {
     let lib = real_lib(host, lib);
     let text = format!("DFU program over {}", p.file);
     host.link
@@ -162,7 +171,12 @@ pub struct Open {
 impl Open {
     /// Open a member for update (or input when `read_only`), keyed when
     /// the file is.
-    pub fn new(host: &Host, f: &DataFile, member: Option<String>, read_only: bool) -> Result<Self, IoFail> {
+    pub fn new(
+        host: &Host,
+        f: &DataFile,
+        member: Option<String>,
+        read_only: bool,
+    ) -> Result<Self, IoFail> {
         let mut io = RemoteIo::new(host.link.clone());
         let spec = OpenSpec {
             // Trigger programs are called in the job (`op`).
@@ -184,7 +198,15 @@ impl Open {
         Ok(Self { io, handle, info })
     }
 
-    fn op(&mut self, job: &mut Job, op: IoOp, key: KeyRef<'_>, record: Option<&[u8]>, format: Option<&str>, nolock: bool) -> IoResult {
+    fn op(
+        &mut self,
+        job: &mut Job,
+        op: IoOp,
+        key: KeyRef<'_>,
+        record: Option<&[u8]>,
+        format: Option<&str>,
+        nolock: bool,
+    ) -> IoResult {
         let handle = self.handle;
         let io = &mut self.io;
         mi::io::trigger::run(
@@ -234,12 +256,26 @@ impl Open {
 
     /// Write a new record of a format.
     pub fn write(&mut self, job: &mut Job, rec: &[u8], format: &str) -> IoResult {
-        self.op(job, IoOp::Write, KeyRef::None, Some(rec), Some(format), false)
+        self.op(
+            job,
+            IoOp::Write,
+            KeyRef::None,
+            Some(rec),
+            Some(format),
+            false,
+        )
     }
 
     /// Update the record last read.
     pub fn update(&mut self, job: &mut Job, rec: &[u8], format: &str) -> IoResult {
-        self.op(job, IoOp::Update, KeyRef::None, Some(rec), Some(format), false)
+        self.op(
+            job,
+            IoOp::Update,
+            KeyRef::None,
+            Some(rec),
+            Some(format),
+            false,
+        )
     }
 
     /// Delete the record last read.
@@ -249,7 +285,18 @@ impl Open {
 
     /// Release the record lock.
     pub fn unlock(&mut self) {
-        let _ = self.io.io(self.handle, &IoRequest { op: IoOp::Unlock, record: None, key: KeyRef::None, format: None, nolock: false, nulls: None, resume: None });
+        let _ = self.io.io(
+            self.handle,
+            &IoRequest {
+                op: IoOp::Unlock,
+                record: None,
+                key: KeyRef::None,
+                format: None,
+                nolock: false,
+                nulls: None,
+                resume: None,
+            },
+        );
     }
 }
 

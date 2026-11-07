@@ -13,7 +13,10 @@ mod wmcommon;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use uim::{CompileOpts, ListState, MapDialog, NoImbeds, NoImports, Options, PanelGroup, Screen, compile, render};
+use uim::{
+    CompileOpts, ListState, MapDialog, NoImbeds, NoImports, Options, PanelGroup, Screen, compile,
+    render,
+};
 
 /// The masks the captures put over values that differ by system.
 const MASKS: &[&str] = &["SYSNAME", "USERNAME", "MM/DD/YY", "HH:MM:SS"];
@@ -44,7 +47,10 @@ fn shipped(name: &str) -> PanelGroup {
 /// vendor copyright counts only where it starts.
 fn masked(golden: &str, ours: &str) -> String {
     let mark = "(C) COPYRIGHT";
-    if golden.find(mark).is_some_and(|i| ours.find(mark) == Some(i)) {
+    if golden
+        .find(mark)
+        .is_some_and(|i| ours.find(mark) == Some(i))
+    {
         return golden.to_string();
     }
     let mut out: Vec<char> = ours.chars().collect();
@@ -74,7 +80,13 @@ fn compare(golden: &str, screen: &Screen) {
     for (i, w) in want.iter().enumerate() {
         let ours = masked(w, got.get(i).map_or("", String::as_str));
         if w.trim_end() != ours.trim_end() {
-            let _ = writeln!(diff, "row {}:\n  want |{}|\n  got  |{}|", i + 1, w.trim_end(), ours.trim_end());
+            let _ = writeln!(
+                diff,
+                "row {}:\n  want |{}|\n  got  |{}|",
+                i + 1,
+                w.trim_end(),
+                ours.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{golden} differs:\n{diff}");
@@ -155,23 +167,38 @@ fn wrklnk_root() {
 fn wrklnk_root_f23() {
     let g = shipped("QUIWRKLNK");
     let d = wrklnk("", &[("/", "DIR")], true);
-    compare("wrklnk-root-f23", &render(&g, "WRKLNK2", &d, &opts()).unwrap());
+    compare(
+        "wrklnk-root-f23",
+        &render(&g, "WRKLNK2", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
 fn wrklnk_root_contents() {
     let g = shipped("QUIWRKLNK");
     let d = wrklnk("/", ROOT_1, false);
-    compare("wrklnk-root-contents", &render(&g, "WRKLNK1", &d, &opts()).unwrap());
-    compare("wrklnk-5-root", &render(&g, "WRKLNK1", &d, &opts()).unwrap());
+    compare(
+        "wrklnk-root-contents",
+        &render(&g, "WRKLNK1", &d, &opts()).unwrap(),
+    );
+    compare(
+        "wrklnk-5-root",
+        &render(&g, "WRKLNK1", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
 fn wrklnk_root_contents_2() {
     let g = shipped("QUIWRKLNK");
     let d = wrklnk("/", ROOT_2, false);
-    compare("wrklnk-root-contents-2", &render(&g, "WRKLNK1", &d, &opts()).unwrap());
-    compare("wrklnk-5-root-2", &render(&g, "WRKLNK1", &d, &opts()).unwrap());
+    compare(
+        "wrklnk-root-contents-2",
+        &render(&g, "WRKLNK1", &d, &opts()).unwrap(),
+    );
+    compare(
+        "wrklnk-5-root-2",
+        &render(&g, "WRKLNK1", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -202,7 +229,13 @@ fn wrklnk_home() {
 /// The option refused on an entry: the option stays typed, the message
 /// on the message line. The message's text is the system's, so it is
 /// read off the golden's row 24.
-fn refused(golden: &str, dir: &str, rows: &[(&str, &str)], complete: bool, at: usize) -> (MapDialog, Options) {
+fn refused(
+    golden: &str,
+    dir: &str,
+    rows: &[(&str, &str)],
+    complete: bool,
+    at: usize,
+) -> (MapDialog, Options) {
     let mut d = wrklnk(dir, rows, complete);
     let mut l = links(rows, complete);
     l.rows[at].push(("OPT".into(), "12".into()));
@@ -218,14 +251,20 @@ fn refused(golden: &str, dir: &str, rows: &[(&str, &str)], complete: bool, at: u
 fn wrklnk_12_root_refused() {
     let g = shipped("QUIWRKLNK");
     let (d, o) = refused("wrklnk-12-root-refused", "", &[("/", "DIR")], true, 0);
-    compare("wrklnk-12-root-refused", &render(&g, "WRKLNK1", &d, &o).unwrap());
+    compare(
+        "wrklnk-12-root-refused",
+        &render(&g, "WRKLNK1", &d, &o).unwrap(),
+    );
 }
 
 #[test]
 fn wrklnk_12_dir_refused() {
     let g = shipped("QUIWRKLNK");
     let (d, o) = refused("wrklnk-12-dir-refused", "/", ROOT_1, false, 5);
-    compare("wrklnk-12-dir-refused", &render(&g, "WRKLNK1", &d, &o).unwrap());
+    compare(
+        "wrklnk-12-dir-refused",
+        &render(&g, "WRKLNK1", &d, &o).unwrap(),
+    );
 }
 
 #[test]
@@ -328,25 +367,46 @@ fn page(n: usize) -> Options {
 fn wrklnk_8_stmf() {
     let g = shipped("QUIWRKLNK");
     let d = stmf_attrs();
-    compare("wrklnk-8-stmf", &render(&g, "DSPATRF", &d, &page(0)).unwrap());
-    compare("wrklnk-8-stmf-2", &render(&g, "DSPATRF", &d, &page(1)).unwrap());
-    compare("wrklnk-8-stmf-3", &render(&g, "DSPATRF", &d, &page(2)).unwrap());
+    compare(
+        "wrklnk-8-stmf",
+        &render(&g, "DSPATRF", &d, &page(0)).unwrap(),
+    );
+    compare(
+        "wrklnk-8-stmf-2",
+        &render(&g, "DSPATRF", &d, &page(1)).unwrap(),
+    );
+    compare(
+        "wrklnk-8-stmf-3",
+        &render(&g, "DSPATRF", &d, &page(2)).unwrap(),
+    );
 }
 
 #[test]
 fn wrklnk_8_root() {
     let g = shipped("QUIWRKLNK");
     let d = dir_attrs("/", "Yes");
-    compare("wrklnk-8-root", &render(&g, "DSPATRD", &d, &page(0)).unwrap());
-    compare("wrklnk-8-root-2", &render(&g, "DSPATRD", &d, &page(1)).unwrap());
-    compare("wrklnk-8-root-3", &render(&g, "DSPATRD", &d, &page(2)).unwrap());
+    compare(
+        "wrklnk-8-root",
+        &render(&g, "DSPATRD", &d, &page(0)).unwrap(),
+    );
+    compare(
+        "wrklnk-8-root-2",
+        &render(&g, "DSPATRD", &d, &page(1)).unwrap(),
+    );
+    compare(
+        "wrklnk-8-root-3",
+        &render(&g, "DSPATRD", &d, &page(2)).unwrap(),
+    );
 }
 
 #[test]
 fn wrklnk_8_dir() {
     let g = shipped("QUIWRKLNK");
     let d = dir_attrs("/etc", "No");
-    compare("wrklnk-8-dir", &render(&g, "DSPATRD", &d, &page(0)).unwrap());
+    compare(
+        "wrklnk-8-dir",
+        &render(&g, "DSPATRD", &d, &page(0)).unwrap(),
+    );
 }
 
 /// Authority rows: user, data authority, the four object authorities.
@@ -358,8 +418,20 @@ fn auts(rows: &[(&str, &str, &str)]) -> ListState {
             ("DTAAUT".to_string(), (*d).to_string()),
         ];
         // The X sits in the middle of its column, as the driver puts it.
-        for (i, (k, x)) in [("EXIST", "  X"), ("MGT", " X"), ("ALTER", "  X"), ("REF", " X")].iter().enumerate() {
-            let x = if o.as_bytes().get(i) == Some(&b'X') { *x } else { "" };
+        for (i, (k, x)) in [
+            ("EXIST", "  X"),
+            ("MGT", " X"),
+            ("ALTER", "  X"),
+            ("REF", " X"),
+        ]
+        .iter()
+        .enumerate()
+        {
+            let x = if o.as_bytes().get(i) == Some(&b'X') {
+                *x
+            } else {
+                ""
+            };
             r.push(((*k).to_string(), x.to_string()));
         }
         v.push(r);
@@ -387,7 +459,11 @@ fn wrklnk_9_root() {
         "/",
         "DIR",
         "QSYS",
-        &[("*PUBLIC", "*RWX", "XXXX"), ("QSYS", "*RWX", "XXXX"), ("QDIRSRV", "*X", "")],
+        &[
+            ("*PUBLIC", "*RWX", "XXXX"),
+            ("QSYS", "*RWX", "XXXX"),
+            ("QDIRSRV", "*X", ""),
+        ],
     );
     let s = render(&g, "WRKAUT", &d, &with_copyright(&g)).unwrap();
     compare("wrklnk-9-root", &s);
@@ -419,23 +495,53 @@ fn title_and_keys(group: &str, panel: &str, d: &MapDialog, title: &str, keys: &[
     let s = render(&g, panel, d, &opts()).unwrap();
     let rows = s.text_rows();
     let col = (80 - title.len()) / 2;
-    assert_eq!(rows[0].get(col..col + title.len()), Some(title), "{panel} title:\n{}", rows.join("\n"));
+    assert_eq!(
+        rows[0].get(col..col + title.len()),
+        Some(title),
+        "{panel} title:\n{}",
+        rows.join("\n")
+    );
     let key_rows = format!("{}\n{}", rows[21], rows[22]);
     for k in keys {
-        assert!(key_rows.contains(k), "{panel}: {k} not on the key rows:\n{}", rows.join("\n"));
+        assert!(
+            key_rows.contains(k),
+            "{panel}: {k} not on the key rows:\n{}",
+            rows.join("\n")
+        );
     }
 }
 
 #[test]
 fn dspaut_title_and_keys() {
-    let d = wrkaut("/home/USERNAME/qsnet.txt", "STMF", "USERNAME", &[("*PUBLIC", "*EXCLUDE", "")]);
-    title_and_keys("QUIWRKAUT", "DSPAUT", &d, "Display Authority", &["F3=Exit", "F11=Display detail data authorities", "F12=Cancel"]);
+    let d = wrkaut(
+        "/home/USERNAME/qsnet.txt",
+        "STMF",
+        "USERNAME",
+        &[("*PUBLIC", "*EXCLUDE", "")],
+    );
+    title_and_keys(
+        "QUIWRKAUT",
+        "DSPAUT",
+        &d,
+        "Display Authority",
+        &[
+            "F3=Exit",
+            "F11=Display detail data authorities",
+            "F12=Cancel",
+        ],
+    );
 }
 
 #[test]
 fn wrklnk_other_option_sets() {
     let d = wrklnk("/", ROOT_1, false);
-    title_and_keys("QUIWRKLNK", "WRKLNK3", &d, "Work with Object Links", &["F23=More options"]);
+    title_and_keys(
+        "QUIWRKLNK",
+        "WRKLNK3",
+        &d,
+        "Work with Object Links",
+        &["F23=More options"],
+    );
     let g = shipped("QUIWRKLNK");
     let s = render(&g, "WRKLNK3", &d, &opts()).unwrap();
     assert!(s.text_rows()[5].contains("12=Work with links"));

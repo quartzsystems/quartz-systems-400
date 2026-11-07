@@ -24,9 +24,19 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// Keep `pre`'s statements and options with the object `lib/name` just
 /// made (`ty` its type).
-pub fn keep(system: &mut System, lib: &str, name: &str, ty: u16, pre: &rpgc::sqlpre::Precompiled, p: &Precompile) -> Result<(), String> {
+pub fn keep(
+    system: &mut System,
+    lib: &str,
+    name: &str,
+    ty: u16,
+    pre: &rpgc::sqlpre::Precompiled,
+    p: &Precompile,
+) -> Result<(), String> {
     let mut info = SqlInfo::new(Kind::Program);
-    info.set(tag::OPTIONS, db::sqlinf::routine::encode_options(&sql::prtsqlinf::options(p)));
+    info.set(
+        tag::OPTIONS,
+        db::sqlinf::routine::encode_options(&sql::prtsqlinf::options(p)),
+    );
     for s in sql::prtsqlinf::entries(&pre.texts) {
         info.push(tag::STATEMENT, s.encode());
     }
@@ -43,7 +53,11 @@ pub fn keep(system: &mut System, lib: &str, name: &str, ty: u16, pre: &rpgc::sql
 }
 
 fn msg(id: &str, kind: u8, fields: &[(&str, usize)]) -> CmdMsg {
-    CmdMsg { msgid: id.into(), kind, data: cmd::error::data(fields) }
+    CmdMsg {
+        msgid: id.into(),
+        kind,
+        data: cmd::error::data(fields),
+    }
 }
 
 /// The diagnostic `id` with its data, then `SQL9011`.
@@ -59,7 +73,11 @@ fn failed(id: &str, text: &str, fields: &[(&str, usize)]) -> CmdReply {
 fn prtsqlinf(system: &mut System, parms: &Parms) -> CmdReply {
     let (obj, lib) = parms.qual("OBJ");
     let obj = obj.to_ascii_uppercase();
-    let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib.to_ascii_uppercase() };
+    let lib = if lib.is_empty() {
+        "*LIBL".to_string()
+    } else {
+        lib.to_ascii_uppercase()
+    };
     let objtype = {
         let t = parms.name("OBJTYPE");
         if t.is_empty() { "*PGM".to_string() } else { t }
@@ -67,14 +85,24 @@ fn prtsqlinf(system: &mut System, parms: &Parms) -> CmdReply {
     if obj == "*JOB" {
         // BLOCKED(rel): the plan cache (`sql::exec::plan::cache`) keeps
         // statements by text for every job, none as one job's to print.
-        return super::escape("SQL9011", "PRTSQLINF", &sql::prtsqlinf::refusal("OBJ(*JOB)"));
+        return super::escape(
+            "SQL9011",
+            "PRTSQLINF",
+            &sql::prtsqlinf::refusal("OBJ(*JOB)"),
+        );
     }
     let ty = match objtype.as_str() {
         "*PGM" => types::PGM,
         "*SRVPGM" => types::SRVPGM,
         // BLOCKED(rel): a package's statements are kept (`db::sqlpkg`)
         // but not yet printed.
-        _ => return super::escape("SQL9011", "PRTSQLINF", &sql::prtsqlinf::refusal("OBJTYPE(*SQLPKG)")),
+        _ => {
+            return super::escape(
+                "SQL9011",
+                "PRTSQLINF",
+                &sql::prtsqlinf::refusal("OBJTYPE(*SQLPKG)"),
+            );
+        }
     };
     let found = in_store(system, |txn, qsys, names| {
         let lid = match lib.as_str() {
@@ -84,28 +112,60 @@ fn prtsqlinf(system: &mut System, parms: &Parms) -> CmdReply {
         let n = Name::parse(&obj).map_err(|_| "OBJ".to_string())?;
         let libs: Vec<_> = match lid {
             Some(l) => vec![l],
-            None => names.curlib.into_iter().chain(names.libl.iter().copied()).collect(),
+            None => names
+                .curlib
+                .into_iter()
+                .chain(names.libl.iter().copied())
+                .collect(),
         };
         for l in libs {
             let lt = Library::load(txn, l).map_err(|e| e.to_string())?;
             if let Some(id) = lt.lookup(txn, ty, n).map_err(|e| e.to_string())? {
-                let lname = store::obj::ops::describe(txn, l).map_err(|e| e.to_string())?.name.to_string();
-                return Ok(Some((lname, db::sqlinf::load(txn, id).map_err(|e| e.to_string())?)));
+                let lname = store::obj::ops::describe(txn, l)
+                    .map_err(|e| e.to_string())?
+                    .name
+                    .to_string();
+                return Ok(Some((
+                    lname,
+                    db::sqlinf::load(txn, id).map_err(|e| e.to_string())?,
+                )));
             }
         }
         Ok(None)
     });
     let (lname, info) = match found {
-        Err(e) if e == "LIB" => return failed("SQL0204", &sql::prtsqlinf::not_found(&lib, "QSYS"), &[(&lib, 30), ("QSYS", 10)]),
+        Err(e) if e == "LIB" => {
+            return failed(
+                "SQL0204",
+                &sql::prtsqlinf::not_found(&lib, "QSYS"),
+                &[(&lib, 30), ("QSYS", 10)],
+            );
+        }
         Err(e) => return super::direct::failed("PRTSQLINF", &e),
-        Ok(None) => return failed("SQL0204", &sql::prtsqlinf::not_found(&obj, &lib), &[(&obj, 30), (&lib, 10)]),
+        Ok(None) => {
+            return failed(
+                "SQL0204",
+                &sql::prtsqlinf::not_found(&obj, &lib),
+                &[(&obj, 30), (&lib, 10)],
+            );
+        }
         Ok(Some(f)) => f,
     };
     let Some(info) = info.filter(|i| i.kind == Kind::Program) else {
-        return failed("SQL5062", &sql::prtsqlinf::no_statements(&obj, &lname, &objtype), &[(&obj, 10), (&lname, 10), (&objtype, 7)]);
+        return failed(
+            "SQL5062",
+            &sql::prtsqlinf::no_statements(&obj, &lname, &objtype),
+            &[(&obj, 10), (&lname, 10), (&objtype, 7)],
+        );
     };
-    let options = info.first(tag::OPTIONS).and_then(|b| db::sqlinf::routine::decode_options(b).ok()).unwrap_or_default();
-    let stmts: Vec<_> = info.all(tag::STATEMENT).filter_map(|b| db::sqlinf::program::StmtDef::decode(b).ok()).collect();
+    let options = info
+        .first(tag::OPTIONS)
+        .and_then(|b| db::sqlinf::routine::decode_options(b).ok())
+        .unwrap_or_default();
+    let stmts: Vec<_> = info
+        .all(tag::STATEMENT)
+        .filter_map(|b| db::sqlinf::program::StmtDef::decode(b).ok())
+        .collect();
     let (date, time) = super::rpg::stamp_dashed(crate::stgsvc::perfcol::local_now(system));
     let h = Heading {
         product: release::PRODUCT_ID.into(),

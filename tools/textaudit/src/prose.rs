@@ -43,7 +43,9 @@ fn identifier_like(s: &str) -> bool {
         && t.chars().skip(1).any(char::is_uppercase)
         && t.chars().any(char::is_lowercase)
         && t.chars().all(char::is_alphanumeric);
-    let dotted = t.contains('.') && !t.ends_with('.') && t.chars().all(|c| c.is_alphanumeric() || "._-".contains(c));
+    let dotted = t.contains('.')
+        && !t.ends_with('.')
+        && t.chars().all(|c| c.is_alphanumeric() || "._-".contains(c));
     lowerish || path || camel || dotted || t.contains('_')
 }
 
@@ -55,9 +57,9 @@ pub fn is_prose(s: &str) -> bool {
     if identifier_like(&t) {
         return false;
     }
-    words(&t)
-        .iter()
-        .any(|w| w.chars().filter(|c| c.is_alphabetic()).count() >= 2 && w.chars().any(char::is_lowercase))
+    words(&t).iter().any(|w| {
+        w.chars().filter(|c| c.is_alphabetic()).count() >= 2 && w.chars().any(char::is_lowercase)
+    })
 }
 
 #[cfg(test)]
@@ -67,8 +69,24 @@ mod tests {
     #[test]
     fn tokens_are_not_prose() {
         for s in [
-            "QSYS", "*OUTFILE", "RSCNAME", "CPF9898", "slic", "/run/qs400", "{}/{}", "{name:<10}", "%Y-%m-%d",
-            "x86_64", "ObjectId", "qs400.svc", "true", "  ", "*N", "Y", "{e}", "QUIHDWRSC",
+            "QSYS",
+            "*OUTFILE",
+            "RSCNAME",
+            "CPF9898",
+            "slic",
+            "/run/qs400",
+            "{}/{}",
+            "{name:<10}",
+            "%Y-%m-%d",
+            "x86_64",
+            "ObjectId",
+            "qs400.svc",
+            "true",
+            "  ",
+            "*N",
+            "Y",
+            "{e}",
+            "QUIHDWRSC",
         ] {
             assert!(!is_prose(s), "{s}");
         }
@@ -76,7 +94,13 @@ mod tests {
 
     #[test]
     fn words_are_prose() {
-        for s in ["Operational", "{ty} is not a type of resource.", "Opt  Resource", "not found", "Ethernet Port"] {
+        for s in [
+            "Operational",
+            "{ty} is not a type of resource.",
+            "Opt  Resource",
+            "not found",
+            "Ethernet Port",
+        ] {
             assert!(is_prose(s), "{s}");
         }
     }

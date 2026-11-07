@@ -74,7 +74,12 @@ impl Field {
             'P' => Packed::new(d, s).and_then(|p| p.decode(b)),
             'S' => Zoned::new(d, s).and_then(|z| z.decode(b)),
             'B' => Binary::new(d.min(18), s).and_then(|x| x.decode(b)),
-            _ => if b.len() == 8 { Float::DOUBLE } else { Float::SINGLE }.decode(b),
+            _ => if b.len() == 8 {
+                Float::DOUBLE
+            } else {
+                Float::SINGLE
+            }
+            .decode(b),
         };
         v.map_or_else(|_| "*".repeat(self.width().min(9)), |v| text(&v, s))
     }
@@ -119,7 +124,12 @@ impl Field {
             'P' => Packed::new(d, sc).and_then(|p| p.encode(&v, Rounding::HalfAdjust)),
             'S' => Zoned::new(d, sc).and_then(|z| z.encode(&v, Rounding::HalfAdjust)),
             'B' => Binary::new(d.min(18), sc).and_then(|x| x.encode(&v, Rounding::HalfAdjust)),
-            _ => if out.len() == 8 { Float::DOUBLE } else { Float::SINGLE }.encode(&v),
+            _ => if out.len() == 8 {
+                Float::DOUBLE
+            } else {
+                Float::SINGLE
+            }
+            .encode(&v),
         }
         .map_err(big)?;
         if bytes.len() != out.len() {
@@ -163,7 +173,9 @@ pub fn signed(v: &str, width: usize) -> String {
 
 /// A value with exactly `scale` decimals and a leading minus.
 fn text(v: &Decimal, scale: u8) -> String {
-    let v = v.rescale(scale, Rounding::Truncate).unwrap_or_else(|_| v.clone());
+    let v = v
+        .rescale(scale, Rounding::Truncate)
+        .unwrap_or_else(|_| v.clone());
     v.to_string()
 }
 

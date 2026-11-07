@@ -46,15 +46,18 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Vec<Vec
         "LICINF" => Ok(licinf_rows(system, args.first().map(String::as_str))),
         "AGREEMENTS" => Ok(agreement_rows(system)),
         "AGRTEXT" => {
-            let text = catalog::agreement_text(arg(args, 0))
-                .map_or_else(|| "This product has no software agreement.".into(), str::to_string);
+            let text = catalog::agreement_text(arg(args, 0)).map_or_else(
+                || "This product has no software agreement.".into(),
+                str::to_string,
+            );
             Ok(text.lines().map(|l| vec![l.to_string()]).collect())
         }
         "ACCEPT" | "DECLINE" => {
             let p = arg(args, 0)
                 .parse()
                 .map_err(|_| format!("CPF0C1F product {} is not valid", arg(args, 0)))?;
-            let r = id::parse_release(arg(args, 1)).map_err(|_| "CPF0C1D release not valid".to_string())?;
+            let r = id::parse_release(arg(args, 1))
+                .map_err(|_| "CPF0C1D release not valid".to_string())?;
             let user = actor().map_or_else(|| "QSYS".to_string(), |a| a.user.clone());
             let today = licpgm::Date::from_days(i64::try_from(now_unix() / 86_400).unwrap_or(0));
             lp::with(system, |s, _, _| {
@@ -70,9 +73,13 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Vec<Vec
         }
         "MEDIA" => {
             let streams = if arg(args, 0).contains('/') {
-                let (lib, name) = arg(args, 0).split_once('/').unwrap_or(("*LIBL", arg(args, 0)));
+                let (lib, name) = arg(args, 0)
+                    .split_once('/')
+                    .unwrap_or(("*LIBL", arg(args, 0)));
                 let (lib, name) = (lib.to_string(), name.to_string());
-                vec![in_store(system, |txn, qsys, names| media_savf(txn, qsys, names, &lib, &name))?]
+                vec![in_store(system, |txn, qsys, names| {
+                    media_savf(txn, qsys, names, &lib, &name)
+                })?]
             } else {
                 // An install device: every product on its media.
                 super::lpcmd::media_streams(arg(args, 0), None)?
@@ -110,7 +117,11 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Vec<Vec
 
 /// `licpgm_api`: one API over its parameters' bytes, as the job read
 /// them (`runtime/sysapi/src/lp.rs` says which and how long).
-pub fn call(system: &mut System, name: &str, parms: &[Vec<u8>]) -> Result<Vec<u8>, (String, Vec<u8>)> {
+pub fn call(
+    system: &mut System,
+    name: &str,
+    parms: &[Vec<u8>],
+) -> Result<Vec<u8>, (String, Vec<u8>)> {
     let sys = system_info(system);
     let job = system
         .jobs

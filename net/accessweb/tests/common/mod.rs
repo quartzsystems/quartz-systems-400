@@ -65,7 +65,12 @@ impl Browser {
         }
         let r = self.app.handle(&req, &peer());
         if let Some(sc) = r.header("Set-Cookie") {
-            let v = sc.split(';').next().unwrap_or("").trim_start_matches("QS400SID=").to_string();
+            let v = sc
+                .split(';')
+                .next()
+                .unwrap_or("")
+                .trim_start_matches("QS400SID=")
+                .to_string();
             self.cookie = (!v.is_empty()).then_some(v);
         }
         if let Some(c) = &self.cookie
@@ -78,7 +83,11 @@ impl Browser {
 
     /// `GET` a route under the prefix (or an absolute path).
     pub fn get(&mut self, route: &str) -> Response {
-        let path = if route.starts_with("/qs400/") { route.to_string() } else { PRODUCT.url(route) };
+        let path = if route.starts_with("/qs400/") {
+            route.to_string()
+        } else {
+            PRODUCT.url(route)
+        };
         self.send(Request::new("GET", &path))
     }
 
@@ -92,15 +101,28 @@ impl Browser {
 
     /// `POST` exactly these fields.
     pub fn post_raw(&mut self, route: &str, fields: &[(&str, &str)]) -> Response {
-        let path = if route.starts_with("/qs400/") { route.to_string() } else { PRODUCT.url(route) };
+        let path = if route.starts_with("/qs400/") {
+            route.to_string()
+        } else {
+            PRODUCT.url(route)
+        };
         let mut req = Request::new("POST", &path);
         req.body = fields
             .iter()
-            .map(|(k, v)| format!("{}={}", qsweb::http::form::encode(k), qsweb::http::form::encode(v)))
+            .map(|(k, v)| {
+                format!(
+                    "{}={}",
+                    qsweb::http::form::encode(k),
+                    qsweb::http::form::encode(v)
+                )
+            })
             .collect::<Vec<_>>()
             .join("&")
             .into_bytes();
-        req.headers.push(("content-type".into(), "application/x-www-form-urlencoded".into()));
+        req.headers.push((
+            "content-type".into(),
+            "application/x-www-form-urlencoded".into(),
+        ));
         self.send(req)
     }
 
@@ -114,7 +136,9 @@ impl Browser {
 pub fn golden(file: &str) -> String {
     let p = format!("{}/tests/golden/{file}", env!("CARGO_MANIFEST_DIR"));
     // A checkout with CRLF line ends reads as the LF the fixes name.
-    std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("{p}: {e}")).replace("\r\n", "\n")
+    std::fs::read_to_string(&p)
+        .unwrap_or_else(|e| panic!("{p}: {e}"))
+        .replace("\r\n", "\n")
 }
 
 /// The prototype file a served URL stands for, as `dir/name.html`.
@@ -126,7 +150,13 @@ pub fn proto(url: &str) -> Option<String> {
     }
     // Pages of the other products this one links to.
     if let Some(r) = url.split_once("/qs400/navigator/").map(|x| x.1) {
-        let segs: Vec<&str> = r.split('?').next().unwrap_or("").trim_matches('/').split('/').collect();
+        let segs: Vec<&str> = r
+            .split('?')
+            .next()
+            .unwrap_or("")
+            .trim_matches('/')
+            .split('/')
+            .collect();
         let f = match segs.as_slice() {
             ["jobs"] => "active-jobs",
             ["job", _, _, _, "end"] => "end-job-confirm",
@@ -167,7 +197,9 @@ pub fn proto(url: &str) -> Option<String> {
         ["5250"] => "5250-config".into(),
         ["5250", "verify"] => "5250-verify".into(),
         ["5250", "script.js"] => return Some("web/5250-session.js".into()),
-        ["5250", "session", _, "screen.png"] if q.get("scale") == Some("2") => return Some("shared/img/5250-24x80-x2.png".into()),
+        ["5250", "session", _, "screen.png"] if q.get("scale") == Some("2") => {
+            return Some("shared/img/5250-24x80-x2.png".into());
+        }
         ["5250", "session", _, "screen.png"] => return Some("shared/img/5250-24x80.png".into()),
         ["5250", "ws", _] => "5250-session".into(),
         ["5250", _, "download"] => "5250-config".into(),
@@ -190,7 +222,10 @@ pub fn proto(url: &str) -> Option<String> {
         ["files", "props"] => "file-props".into(),
         ["files", "shares"] => "my-files".into(),
         ["files", "edit"] => "file-edit".into(),
-        ["files", "download" | "open" | "rename" | "mkdir" | "cut" | "copy" | "queue"] => "files".into(),
+        [
+            "files",
+            "download" | "open" | "rename" | "mkdir" | "cut" | "copy" | "queue",
+        ] => "files".into(),
         // Print.
         ["print"] => "printer-output".into(),
         ["print", "props", _] => "splf-props".into(),
@@ -234,7 +269,10 @@ pub const HEADER_USER: (&str, &str) = ("User: <b>QSECOFR</b>", "User: <b>CWELLMA
 pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
     let mut g = golden(file);
     for (from, to) in fix {
-        assert!(g.contains(from), "golden fix not applicable to {file}: {from}");
+        assert!(
+            g.contains(from),
+            "golden fix not applicable to {file}: {from}"
+        );
         g = g.replace(from, to);
     }
     let dir = file.split('/').next().unwrap_or("");

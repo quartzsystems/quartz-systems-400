@@ -65,13 +65,21 @@ fn sign_on(port: u16, user: &str) -> Result<(Display, Context), String> {
 
 /// `GO USER` through the main menu's option 1, then its option 2.
 fn user_option_2(d: &mut Display, ctx: &mut Context) -> Result<(), String> {
-    run(d, ctx, "type 1\nkey enter\nwait \"User Tasks\"\ntype 2\nkey enter\nsettle 2000\n")
+    run(
+        d,
+        ctx,
+        "type 1\nkey enter\nwait \"User Tasks\"\ntype 2\nkey enter\nsettle 2000\n",
+    )
 }
 
 /// Expect the messages of `queue` in `lib`: Display Messages' header,
 /// or Work with Messages' (QSYSOPR's is named System Operator there).
 fn expect_queue(d: &Display, what: &str, queue: &str, lib: &str) -> Result<(), String> {
-    let basic = if queue == "QSYSOPR" { "System Operator" } else { queue };
+    let basic = if queue == "QSYSOPR" {
+        "System Operator"
+    } else {
+        queue
+    };
     match header(d) {
         Some((q, l)) if q == queue && l == lib => Ok(()),
         None if d.term.contains("Work with Messages")
@@ -79,7 +87,10 @@ fn expect_queue(d: &Display, what: &str, queue: &str, lib: &str) -> Result<(), S
         {
             Ok(())
         }
-        _ => Err(format!("{what}: the messages of {lib}/{queue} expected:\n{}", screen(d))),
+        _ => Err(format!(
+            "{what}: the messages of {lib}/{queue} expected:\n{}",
+            screen(d)
+        )),
     }
 }
 
@@ -122,12 +133,19 @@ impl Suite {
         user_option_2(&mut d, &mut ctx)?;
         expect_queue(&d, "GO USER option 2", OWN, "QUSRSYS")?;
         if !d.term.contains("Step 85 asks: go on?") {
-            return Err(format!("the inquiry is not on the display:\n{}", screen(&d)));
+            return Err(format!(
+                "the inquiry is not on the display:\n{}",
+                screen(&d)
+            ));
         }
         // QASTLVL ships *BASIC: the reply field is the intermediate
         // level's, which the job then keeps (*PRV).
         back_to(&mut d, &mut ctx, "User Tasks")?;
-        run(&mut d, &mut ctx, "type dspmsg astlvl(*intermed)\nkey enter\nsettle 2000\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type dspmsg astlvl(*intermed)\nkey enter\nsettle 2000\n",
+        )?;
         expect_queue(&d, "DSPMSG ASTLVL(*INTERMED)", OWN, "QUSRSYS")?;
         // Its reply field is on the row that says so, at column 20.
         let row = d
@@ -142,7 +160,11 @@ impl Suite {
             &format!("field {} 20 Y\nkey enter\nsettle 2000\n", row + 1),
         )?;
         let after = screen(&d);
-        run(&mut d, &mut ctx, "wait \"User Tasks\"\ntype 2\nkey enter\nsettle 2000\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "wait \"User Tasks\"\ntype 2\nkey enter\nsettle 2000\n",
+        )?;
         expect_queue(&d, "GO USER option 2 again", OWN, "QUSRSYS")?;
         let answered = d
             .term
@@ -156,24 +178,49 @@ impl Suite {
             ));
         }
         back_to(&mut d, &mut ctx, "User Tasks")?;
-        run(&mut d, &mut ctx, "type dspmsg qsysopr\nkey enter\nsettle 2000\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type dspmsg qsysopr\nkey enter\nsettle 2000\n",
+        )?;
         expect_queue(&d, "DSPMSG QSYSOPR", "QSYSOPR", "QSYS")?;
         back_to(&mut d, &mut ctx, "User Tasks")?;
-        run(&mut d, &mut ctx, "type dspmsg msgq(*wrkusr)\nkey enter\nsettle 2000\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type dspmsg msgq(*wrkusr)\nkey enter\nsettle 2000\n",
+        )?;
         expect_queue(&d, "DSPMSG MSGQ(*WRKUSR)", OWN, "QUSRSYS")?;
         back_to(&mut d, &mut ctx, "User Tasks")?;
-        run(&mut d, &mut ctx, "type dspmsg astlvl(*basic)\nkey enter\nsettle 2000\n")?;
-        if !d.term.contains("Work with Messages") || !d.term.contains(&format!("Messages for:   {OWN}")) {
+        run(
+            &mut d,
+            &mut ctx,
+            "type dspmsg astlvl(*basic)\nkey enter\nsettle 2000\n",
+        )?;
+        if !d.term.contains("Work with Messages")
+            || !d.term.contains(&format!("Messages for:   {OWN}"))
+        {
             return Err(format!("DSPMSG ASTLVL(*BASIC):\n{}", screen(&d)));
         }
         back_to(&mut d, &mut ctx, "User Tasks")?;
         // Option 3 prompts SNDMSG, its required message left to the prompt.
         run(&mut d, &mut ctx, "type 3\nkey enter\nsettle 2000\n")?;
         if !d.term.contains("Send Message (SNDMSG)") {
-            return Err(format!("GO USER option 3 did not prompt SNDMSG:\n{}", screen(&d)));
+            return Err(format!(
+                "GO USER option 3 did not prompt SNDMSG:\n{}",
+                screen(&d)
+            ));
         }
-        run(&mut d, &mut ctx, "key f12\nsettle 1000\nwait \"User Tasks\"\n")?;
-        run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "key f12\nsettle 1000\nwait \"User Tasks\"\n",
+        )?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type signoff\nkey enter\nwait \"Sign On\"\n",
+        )?;
         d.disconnect();
 
         // The user whose profile names QSYSOPR.
@@ -181,7 +228,11 @@ impl Suite {
         user_option_2(&mut d, &mut ctx)?;
         expect_queue(&d, "GO USER option 2 (MSGQ QSYSOPR)", "QSYSOPR", "QSYS")?;
         back_to(&mut d, &mut ctx, "User Tasks")?;
-        run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type signoff\nkey enter\nwait \"Sign On\"\n",
+        )?;
         d.disconnect();
         Ok(format!(
             "{OWN}: GO USER 2 shows QUSRSYS/{OWN} (basic, QASTLVL), the inquiry answered Y in its field (intermediate), kept by *PRV; DSPMSG QSYSOPR, *WRKUSR, *BASIC; option 3 prompts SNDMSG; {OPR}: GO USER 2 shows QSYS/QSYSOPR"

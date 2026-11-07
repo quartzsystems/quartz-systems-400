@@ -63,7 +63,9 @@ pub fn run(
         "DSPSAVF" => objs::dspsavf(host, surface, r),
         "WRKPRB" | "DSPPRB" => service::wrkprb(job, host, surface, r),
         "WRKIMGCLG" => media::wrkimgclg(job, host, surface, r),
-        "WRKIMGCLGE" => media::wrkimgclge(job, host, surface, &parm(r, "IMGCLG").unwrap_or_default()),
+        "WRKIMGCLGE" => {
+            media::wrkimgclge(job, host, surface, &parm(r, "IMGCLG").unwrap_or_default())
+        }
         "WRKTAPCTG" => media::wrktapctg(job, host, surface, r),
         "WRKMLBSTS" => media::wrkmlbsts(job, host, surface, r),
         "ANZPRB" => service::anzprb(host, surface),

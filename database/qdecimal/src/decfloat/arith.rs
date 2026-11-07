@@ -75,7 +75,9 @@ pub fn add_in(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat> 
     // An operand far below the other only decides the rounding: a
     // sticky digit stands for it.
     let p = i32::try_from(format.digits()).expect("small");
-    let far = |m: &Digits, e: i32, o: &Digits, oe: i32| !m.is_empty() && !o.is_empty() && top(m, e) < top(o, oe) - p - 3;
+    let far = |m: &Digits, e: i32, o: &Digits, oe: i32| {
+        !m.is_empty() && !o.is_empty() && top(m, e) < top(o, oe) - p - 3
+    };
     if far(&mb, eb, &ma, ea) {
         eb = eb.max(ea.min(top(&ma, ea) - p - 4) - 1);
         mb = vec![1];
@@ -97,7 +99,11 @@ pub fn add_in(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat> 
             std::cmp::Ordering::Equal => (mode == DfRounding::Floor, Vec::new()),
         }
     };
-    let neg = if sum.is_empty() { (a.neg && b.neg) || neg } else { neg };
+    let neg = if sum.is_empty() {
+        (a.neg && b.neg) || neg
+    } else {
+        neg
+    };
     DecFloat::round_arith(neg, &sum, e, format, mode)
 }
 
@@ -122,7 +128,13 @@ pub fn mul_in(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat> 
         }
         return Ok(DecFloat::special(DfKind::Infinity, neg, format));
     }
-    DecFloat::round_arith(neg, &digits::mul(&mag(a), &mag(b)), a.exp + b.exp, format, mode)
+    DecFloat::round_arith(
+        neg,
+        &digits::mul(&mag(a), &mag(b)),
+        a.exp + b.exp,
+        format,
+        mode,
+    )
 }
 
 /// `a / b` in `mode`.

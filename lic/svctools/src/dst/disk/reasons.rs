@@ -35,7 +35,8 @@ pub const PARITY_SETS_FULL: &str = "ASP 1 has the most device parity sets it can
 /// The set does not exist.
 pub const NO_PARITY_SET: &str = "The device parity set does not exist";
 /// The set has a failed or rebuilding unit, or is synchronizing.
-pub const PARITY_NOT_ACTIVE: &str = "The parity set is not active: a unit failed, rebuilds or syncs";
+pub const PARITY_NOT_ACTIVE: &str =
+    "The parity set is not active: a unit failed, rebuilds or syncs";
 /// The unit to replace has not failed.
 pub const NOT_FAILED: &str = "The unit has not failed";
 /// Part of the IFS lives on the unit, and the IFS never moves.
@@ -108,6 +109,9 @@ mod tests {
         ] {
             assert!(for_unit(r, Some(999)).len() <= 78, "{r}");
         }
-        assert_eq!(for_unit(MIRRORED, Some(2)), "The unit already has mirrored protection: unit 3");
+        assert_eq!(
+            for_unit(MIRRORED, Some(2)),
+            "The unit already has mirrored protection: unit 3"
+        );
     }
 }

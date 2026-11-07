@@ -108,7 +108,11 @@ pub struct RouteKey {
 
 impl fmt::Display for RouteKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} /{} {} via {}", self.dest, self.prefix, self.tos, self.next_hop)
+        write!(
+            f,
+            "{} /{} {} via {}",
+            self.dest, self.prefix, self.tos, self.next_hop
+        )
     }
 }
 
@@ -210,7 +214,10 @@ impl Routes {
         if self.get(&r.key()).is_some() {
             return Err(Error::new(
                 msg::EXISTS,
-                format!("A route to {} through {} already exists.", r.dest, r.next_hop),
+                format!(
+                    "A route to {} through {} already exists.",
+                    r.dest, r.next_hop
+                ),
             ));
         }
         if self.list.len() >= MAX {
@@ -247,7 +254,14 @@ impl Routes {
     /// destination.
     pub fn sorted(&self) -> Vec<&Route> {
         let mut v: Vec<&Route> = self.list.iter().collect();
-        v.sort_by_key(|r| (r.dest.is_v6(), r.dest != Dest::DftRoute, r.dest.ip(), r.prefix));
+        v.sort_by_key(|r| {
+            (
+                r.dest.is_v6(),
+                r.dest != Dest::DftRoute,
+                r.dest.ip(),
+                r.prefix,
+            )
+        });
         v
     }
 }
@@ -255,7 +269,10 @@ impl Routes {
 fn not_found(key: &RouteKey) -> Error {
     Error::new(
         msg::NOT_FOUND,
-        format!("No route to {} through {} is configured.", key.dest, key.next_hop),
+        format!(
+            "No route to {} through {} is configured.",
+            key.dest, key.next_hop
+        ),
     )
 }
 
@@ -268,10 +285,19 @@ mod tests {
         let mut t = Routes::default();
         let gw: IpAddr = "10.0.2.2".parse().unwrap();
         t.add(Route::new(Dest::DftRoute, 0, gw)).unwrap();
-        assert_eq!(t.add(Route::new(Dest::DftRoute, 0, gw)).unwrap_err().msgid, msg::EXISTS);
+        assert_eq!(
+            t.add(Route::new(Dest::DftRoute, 0, gw)).unwrap_err().msgid,
+            msg::EXISTS
+        );
         let net = Dest::parse("192.168.5.0").unwrap();
-        assert!(t.add(Route::new(net, 0, gw)).is_err(), "a network needs a mask");
-        assert!(t.add(Route::new(Dest::parse("192.168.5.1").unwrap(), 24, gw)).is_err());
+        assert!(
+            t.add(Route::new(net, 0, gw)).is_err(),
+            "a network needs a mask"
+        );
+        assert!(
+            t.add(Route::new(Dest::parse("192.168.5.1").unwrap(), 24, gw))
+                .is_err()
+        );
         t.add(Route::new(net, 24, gw)).unwrap();
         assert_eq!(t.sorted()[0].dest, Dest::DftRoute);
         assert_eq!(t.list[0].mask_text(), "*NONE");
@@ -282,6 +308,10 @@ mod tests {
         assert_eq!(t.list[1].mtu, Some(1400));
         t.remove(&Route::new(net, 24, gw).key()).unwrap();
         assert!(t.remove(&Route::new(net, 24, gw).key()).is_err());
-        assert!(Route::new(Dest::DftRoute, 0, "::1".parse().unwrap()).validate().is_err());
+        assert!(
+            Route::new(Dest::DftRoute, 0, "::1".parse().unwrap())
+                .validate()
+                .is_err()
+        );
     }
 }

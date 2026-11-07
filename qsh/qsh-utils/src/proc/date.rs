@@ -29,7 +29,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         }
         _ => return usage(cx, name, "Too many operands."),
     }
-    let zone = if p.has('u') { Zone::utc() } else { Zone::of(cx) };
+    let zone = if p.has('u') {
+        Zone::utc()
+    } else {
+        Zone::of(cx)
+    };
     let now = i64::try_from(cx.sys.now().as_secs()).unwrap_or(0);
     let tm = zone.local(now);
     let mut out = Out::stdout(cx);

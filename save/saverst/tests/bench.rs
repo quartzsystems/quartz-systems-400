@@ -14,8 +14,8 @@ use std::time::Instant;
 
 use blockdev::{BlockDev, MemBlockDev};
 use qsname::Name;
-use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use saverst::{AllowAll, RestoreOptions, SaveOptions, restore, save_library};
+use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use store::obj::{CreateParams, JobHandle, ObjectId, ops, types, usrspc};
 use store::{FormatParams, Store, StoreConfig};
 
@@ -32,8 +32,12 @@ fn system(mib: u64) -> (Store, ObjectId) {
         wal_pages: 4096,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default())
-        .unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     t.commit().unwrap();
@@ -80,8 +84,14 @@ fn save_and_restore_throughput() {
             };
         }
         let mut t = s.begin().unwrap();
-        let id = usrspc::create(&mut t, &params(lib, &format!("US{i:05}"), types::USRSPC), 1 << 20, false, 0)
-            .unwrap();
+        let id = usrspc::create(
+            &mut t,
+            &params(lib, &format!("US{i:05}"), types::USRSPC),
+            1 << 20,
+            false,
+            0,
+        )
+        .unwrap();
         usrspc::write(&mut t, id, 0, &b).unwrap();
         t.commit().unwrap();
     }
@@ -99,7 +109,8 @@ fn save_and_restore_throughput() {
             user: "QSYS".into(),
         };
         let start = Instant::now();
-        let mut w = Writer::new(Vec::with_capacity(usize::try_from(mib << 20).unwrap()), &h).unwrap();
+        let mut w =
+            Writer::new(Vec::with_capacity(usize::try_from(mib << 20).unwrap()), &h).unwrap();
         let opts = SaveOptions {
             update_history: false,
             ..SaveOptions::default()

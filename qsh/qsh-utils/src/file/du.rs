@@ -39,13 +39,7 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     };
     let mut out = Out::stdout(cx);
     let mut status = 0;
-    let show = |blocks: u64| -> u64 {
-        if kilo {
-            blocks.div_ceil(2)
-        } else {
-            blocks
-        }
-    };
+    let show = |blocks: u64| -> u64 { if kilo { blocks.div_ceil(2) } else { blocks } };
     for op in &operands {
         let abs = cx.path(op);
         // The shown path: the operand with the walked suffix.

@@ -97,11 +97,16 @@ pub fn defaults(system_name: &str) -> BTreeMap<String, String> {
 /// The data area in `QSYS`, if made.
 pub fn find(txn: &mut Txn<'_>, qsys: ObjectId) -> Option<ObjectId> {
     let lib = store::obj::library::Library::load(txn, qsys).ok()?;
-    lib.lookup(txn, types::DTAARA, Name::parse(AREA).ok()?).ok()?
+    lib.lookup(txn, types::DTAARA, Name::parse(AREA).ok()?)
+        .ok()?
 }
 
 /// Read the area: the shipped values under whatever it holds.
-pub fn read_area(txn: &mut Txn<'_>, id: ObjectId, system_name: &str) -> Result<BTreeMap<String, String>, String> {
+pub fn read_area(
+    txn: &mut Txn<'_>,
+    id: ObjectId,
+    system_name: &str,
+) -> Result<BTreeMap<String, String>, String> {
     let mut map = defaults(system_name);
     if let DataAreaValue::Char(s) = dtaara::read(txn, id).map_err(|e| e.to_string())? {
         for (k, v) in parse(&s) {
@@ -112,7 +117,11 @@ pub fn read_area(txn: &mut Txn<'_>, id: ObjectId, system_name: &str) -> Result<B
 }
 
 /// Read the attributes; the shipped values when the area is absent.
-pub fn read(txn: &mut Txn<'_>, qsys: ObjectId, system_name: &str) -> Result<BTreeMap<String, String>, String> {
+pub fn read(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    system_name: &str,
+) -> Result<BTreeMap<String, String>, String> {
     match find(txn, qsys) {
         Some(id) => read_area(txn, id, system_name),
         None => Ok(defaults(system_name)),
@@ -120,7 +129,11 @@ pub fn read(txn: &mut Txn<'_>, qsys: ObjectId, system_name: &str) -> Result<BTre
 }
 
 /// Write the attributes back.
-pub fn write(txn: &mut Txn<'_>, qsys: ObjectId, map: &BTreeMap<String, String>) -> Result<(), String> {
+pub fn write(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    map: &BTreeMap<String, String>,
+) -> Result<(), String> {
     let id = find(txn, qsys).ok_or("CPF9801 data area QSYS/QNETATR not found")?;
     dtaara::write(txn, id, &DataAreaValue::Char(unparse(map))).map_err(|e| e.to_string())
 }

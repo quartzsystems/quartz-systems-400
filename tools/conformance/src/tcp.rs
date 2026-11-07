@@ -125,7 +125,10 @@ impl Suite {
         until(s, "ifc", "ifc 127.0.0.1 /8 *LOOPBACK Active")?;
         let jobs = s.command("wrkactjob", CMD)?;
         for name in ["QTCPCTL ", "QTCPWRK "] {
-            if !jobs.lines().any(|l| l.trim_start().starts_with(name) && l.contains("SYS")) {
+            if !jobs
+                .lines()
+                .any(|l| l.trim_start().starts_with(name) && l.contains("SYS"))
+            {
                 return Err(format!("no system job {name}:\n{jobs}"));
             }
         }
@@ -137,7 +140,9 @@ impl Suite {
         )?;
         expect(
             s,
-            &format!("ADDTCPIFC INTNETADR('{LINE_ADDR}') LIND({line}) SUBNETMASK('255.255.255.0') AUTOSTART(*NO)"),
+            &format!(
+                "ADDTCPIFC INTNETADR('{LINE_ADDR}') LIND({line}) SUBNETMASK('255.255.255.0') AUTOSTART(*NO)"
+            ),
             "TCP1D03",
         )?;
         expect(s, &format!("STRTCPIFC INTNETADR('{VIP}')"), "TCP1A0B")?;
@@ -149,16 +154,32 @@ impl Suite {
             "ADDTCPRTE RTEDEST('192.168.77.0') SUBNETMASK('255.255.255.0') NEXTHOP('10.0.2.2')",
             "TCP1D03",
         )?;
-        until(s, "rte", "kernel route 192.168.77.0/24 via 10.0.2.2 dev eth0 qs400")?;
+        until(
+            s,
+            "rte",
+            "kernel route 192.168.77.0/24 via 10.0.2.2 dev eth0 qs400",
+        )?;
         expect(s, "CHGTCPA TCPKEEPALV(10) IPTTL(60)", "TCP1D09")?;
         until(s, "attr", "ipv4/tcp_keepalive_time want 600 kernel 600")?;
         until(s, "attr", "ipv4/ip_default_ttl want 60 kernel 60")?;
-        expect(s, &format!("ADDTCPHTE INTNETADR('{VIP}') HOSTNAME((QS400VIP))"), "TCP1D03")?;
+        expect(
+            s,
+            &format!("ADDTCPHTE INTNETADR('{VIP}') HOSTNAME((QS400VIP))"),
+            "TCP1D03",
+        )?;
         until(s, "host", &format!("host {VIP} QS400VIP"))?;
-        expect(s, "ADDTCPPORT PORT(8000 8100) PROTOCOL(*TCP) USRPRF(QTCP)", "TCP1D03")?;
+        expect(
+            s,
+            "ADDTCPPORT PORT(8000 8100) PROTOCOL(*TCP) USRPRF(QTCP)",
+            "TCP1D03",
+        )?;
         until(s, "port", "kernel port rules 1")?;
         // The interface and route of the NIC's line go again.
-        expect(s, "RMVTCPRTE RTEDEST('192.168.77.0') SUBNETMASK('255.255.255.0') NEXTHOP('10.0.2.2')", "TCP1D05")?;
+        expect(
+            s,
+            "RMVTCPRTE RTEDEST('192.168.77.0') SUBNETMASK('255.255.255.0') NEXTHOP('10.0.2.2')",
+            "TCP1D05",
+        )?;
         expect(s, &format!("ENDTCPIFC INTNETADR('{LINE_ADDR}')"), "TCP1A0C")?;
         let ifc = s.command("svc.tcp ifc", CMD)?;
         if ifc.contains(&format!("{LINE_ADDR}/24")) {
@@ -170,10 +191,14 @@ impl Suite {
         if let Err(e) = telnet_answers(port) {
             // Tell slirp trouble from the server's: the guest's own address.
             let own = forward(self, GUEST)?;
-            let theirs = telnet_answers(own).err().unwrap_or_else(|| "answers".into());
+            let theirs = telnet_answers(own)
+                .err()
+                .unwrap_or_else(|| "answers".into());
             let ifc = s.command("svc.tcp ifc", CMD)?;
-            return Err(format!("{e}; over {GUEST}: {theirs}
-{ifc}"));
+            return Err(format!(
+                "{e}; over {GUEST}: {theirs}
+{ifc}"
+            ));
         }
         self.tn_port.set(Some(port));
         Ok(format!(
@@ -195,7 +220,9 @@ impl Suite {
         if let Some(port) = self.tn_port.get() {
             telnet_answers(port)?;
         }
-        Ok(format!("ENDTCP ended {VIP} and telnet; STRTCP restarted both"))
+        Ok(format!(
+            "ENDTCP ended {VIP} and telnet; STRTCP restarted both"
+        ))
     }
 }
 
@@ -212,7 +239,9 @@ pub(crate) fn forward_port(suite: &Suite, addr: &str, guest: u16) -> Result<u16,
         .map(|a| a.port())
         .map_err(|e| e.to_string())?;
     let mut q = crate::qemu::qmp::Qmp::connect(&suite.launch().qmp)?;
-    let out = q.hmp(&format!("hostfwd_add n0 tcp:127.0.0.1:{port}-{addr}:{guest}"))?;
+    let out = q.hmp(&format!(
+        "hostfwd_add n0 tcp:127.0.0.1:{port}-{addr}:{guest}"
+    ))?;
     if !out.trim().is_empty() {
         return Err(format!("hostfwd_add: {out}"));
     }

@@ -191,7 +191,9 @@ impl<B: Read + Write + Seek> CatalogLibrary<B> {
                 (0..SLOTS)
                     .map(slot_address)
                     .find(|a| changer.is_empty_at(*a))
-                    .ok_or(TapeError::Changer(tape::ChangerError::DestinationFull(want)))?
+                    .ok_or(TapeError::Changer(tape::ChangerError::DestinationFull(
+                        want,
+                    )))?
             };
             changer.put(a, tape, a).map_err(TapeError::from)?;
         }
@@ -216,7 +218,10 @@ impl<B: Read + Write + Seek> CatalogLibrary<B> {
 
     /// The model in line with the elements.
     pub fn sync(&mut self) -> Result<()> {
-        let e = self.changer.read_element_status().map_err(TapeError::from)?;
+        let e = self
+            .changer
+            .read_element_status()
+            .map_err(TapeError::from)?;
         self.model.sync(&e);
         Ok(())
     }
@@ -331,7 +336,14 @@ impl<B: Read + Write + Seek> CatalogLibrary<B> {
     pub fn after(&mut self, i: usize) -> Result<bool> {
         self.sync()?;
         let loaded = self.changer.drive(i).is_some_and(|t| t.is_loaded());
-        if loaded || self.model.drives.get(i).and_then(|d| d.cartridge.as_ref()).is_none() {
+        if loaded
+            || self
+                .model
+                .drives
+                .get(i)
+                .and_then(|d| d.cartridge.as_ref())
+                .is_none()
+        {
             return Ok(false);
         }
         self.demount(i)
@@ -419,7 +431,11 @@ impl std::fmt::Debug for LibraryVolumes<'_> {
 }
 
 impl<L: Changer + TapeTransport + ?Sized> VolumeProvider<L> for LibraryVolumes<'_> {
-    fn next_volume(&mut self, lib: &mut L, req: &VolumeRequest) -> std::result::Result<(), TapeError> {
+    fn next_volume(
+        &mut self,
+        lib: &mut L,
+        req: &VolumeRequest,
+    ) -> std::result::Result<(), TapeError> {
         if req.expected.is_some() {
             self.inner.next_volume(lib, req)?;
             self.pick.used(&req.expected.clone().unwrap_or_default());

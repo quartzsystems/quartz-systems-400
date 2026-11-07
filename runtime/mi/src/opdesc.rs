@@ -34,7 +34,9 @@ pub fn entry(list: u64, pos: i32) -> Option<OpDesc> {
     if pos < 1 || pos > count {
         return None;
     }
-    let at = list + u64::from(OPDESC_HEADER) + u64::from(OPDESC_ENTRY) * u64::from(pos.cast_unsigned() - 1);
+    let at = list
+        + u64::from(OPDESC_HEADER)
+        + u64::from(OPDESC_ENTRY) * u64::from(pos.cast_unsigned() - 1);
     let b = crate::rtlib::mem::bytes(at.cast_signed(), 20);
     let word = |i: usize| i32::from_ne_bytes([b[4 * i], b[4 * i + 1], b[4 * i + 2], b[4 * i + 3]]);
     Some(OpDesc {

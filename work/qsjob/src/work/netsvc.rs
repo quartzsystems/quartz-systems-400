@@ -39,10 +39,16 @@ pub fn resolve(link: &Shared, host: &str, port: u16) -> Vec<SocketAddr> {
     if let TcpReply::HostConfig { cfg } = link.borrow_mut().with(|l| l.tcp(TcpOp::HostConfig)) {
         let found = cfg.lookup(h);
         if !found.is_empty() {
-            return found.into_iter().map(|ip| SocketAddr::new(ip, port)).collect();
+            return found
+                .into_iter()
+                .map(|ip| SocketAddr::new(ip, port))
+                .collect();
         }
     }
-    (h, port).to_socket_addrs().map(Iterator::collect).unwrap_or_default()
+    (h, port)
+        .to_socket_addrs()
+        .map(Iterator::collect)
+        .unwrap_or_default()
 }
 
 /// Now, microseconds since the epoch.

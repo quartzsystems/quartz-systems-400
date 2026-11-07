@@ -26,25 +26,42 @@ fn type_name(kind: &str) -> String {
 pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     let job = args.word("JOB_NAME").unwrap_or_else(|| "*".into());
     let ignore = args.word("IGNORE_ERRORS").is_some_and(|v| v == "YES");
-    let descending = args.word("MESSAGE_ORDER").is_some_and(|v| v == "DESCENDING");
-    let limit = args.int("MESSAGE_LIMIT").and_then(|n| usize::try_from(n).ok());
+    let descending = args
+        .word("MESSAGE_ORDER")
+        .is_some_and(|v| v == "DESCENDING");
+    let limit = args
+        .int("MESSAGE_LIMIT")
+        .and_then(|n| usize::try_from(n).ok());
     let since = match args.get("MESSAGE_TIMESTAMP") {
         Value::Timestamp(t) => Some(*t),
         _ => None,
     };
-    let super::host::JobLog::Found(qualified, entries) = ask(txn, ctx, "the job log", |h| h.job_log(&job))? else {
+    let super::host::JobLog::Found(qualified, entries) =
+        ask(txn, ctx, "the job log", |h| h.job_log(&job))?
+    else {
         if ignore {
             return Ok(());
         }
-        return Err(SqlError::Coded { code: -443, state: "38501", what: format!("job {job} is not active") });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: format!("job {job} is not active"),
+        });
     };
-    let mut numbered: Vec<(usize, &wm::joblog::Entry)> = entries.iter().enumerate().map(|(i, e)| (i + 1, e)).collect();
+    let mut numbered: Vec<(usize, &wm::joblog::Entry)> = entries
+        .iter()
+        .enumerate()
+        .map(|(i, e)| (i + 1, e))
+        .collect();
     if descending {
         numbered.reverse();
     }
     let mut n = 0;
     for (key, e) in numbered {
-        let (secs, micros) = (e.time / 1_000_000, u32::try_from(e.time % 1_000_000).unwrap_or(0));
+        let (secs, micros) = (
+            e.time / 1_000_000,
+            u32::try_from(e.time % 1_000_000).unwrap_or(0),
+        );
         if let Some(t) = &since {
             let at = crate::value::Timestamp::new(
                 db::record::datetime::Date::from_unix(secs),
@@ -84,7 +101,15 @@ pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> 
         }
         out.text("MESSAGE_TEXT", e.text.as_str());
         out.text_or_null("MESSAGE_SECOND_LEVEL_TEXT", &e.help);
-        out.set("MESSAGE_KEY", Value::Bin(u32::try_from(key).unwrap_or(u32::MAX).to_be_bytes().to_vec()));
+        out.set(
+            "MESSAGE_KEY",
+            Value::Bin(
+                u32::try_from(key)
+                    .unwrap_or(u32::MAX)
+                    .to_be_bytes()
+                    .to_vec(),
+            ),
+        );
         out.text("QUALIFIED_JOB_NAME", qualified.as_str());
     }
     Ok(())

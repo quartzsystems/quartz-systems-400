@@ -40,25 +40,70 @@ pub const ACCESSWEB: &str = "ACCESSWEB";
 /// The licensed program Access for Web is.
 pub const ACCESSWEB_PRODUCT: &str = "QS00AFW";
 /// The products' instances and their licensed programs.
-pub const PRODUCTS: &[(&str, &str)] = &[(NAVIGATOR, NAVIGATOR_PRODUCT), (ACCESSWEB, ACCESSWEB_PRODUCT)];
+pub const PRODUCTS: &[(&str, &str)] = &[
+    (NAVIGATOR, NAVIGATOR_PRODUCT),
+    (ACCESSWEB, ACCESSWEB_PRODUCT),
+];
 
 /// Make `ADMIN`'s registry entry and server root when the registry has
 /// none; whether it was made. `tls_port` 0 leaves TLS out. `stamp` is
 /// the time as the configuration's comment shows it.
-pub fn ensure_admin(files: &dyn Files, port: u16, tls_port: u16, stamp: &str, now: u64) -> httpd::Result<bool> {
-    ensure(files, SELF_INSTANCE, "HTTP Server Administration", true, (port, tls_port), stamp, now)
+pub fn ensure_admin(
+    files: &dyn Files,
+    port: u16,
+    tls_port: u16,
+    stamp: &str,
+    now: u64,
+) -> httpd::Result<bool> {
+    ensure(
+        files,
+        SELF_INSTANCE,
+        "HTTP Server Administration",
+        true,
+        (port, tls_port),
+        stamp,
+        now,
+    )
 }
 
 /// Make `NAVIGATOR`'s registry entry and server root when the registry
 /// has none, autostart off; whether it was made.
-pub fn ensure_navigator(files: &dyn Files, port: u16, tls_port: u16, stamp: &str, now: u64) -> httpd::Result<bool> {
-    ensure(files, NAVIGATOR, "Navigator for QS/400", false, (port, tls_port), stamp, now)
+pub fn ensure_navigator(
+    files: &dyn Files,
+    port: u16,
+    tls_port: u16,
+    stamp: &str,
+    now: u64,
+) -> httpd::Result<bool> {
+    ensure(
+        files,
+        NAVIGATOR,
+        "Navigator for QS/400",
+        false,
+        (port, tls_port),
+        stamp,
+        now,
+    )
 }
 
 /// Make `ACCESSWEB`'s registry entry and server root when the registry
 /// has none, autostart off; whether it was made.
-pub fn ensure_accessweb(files: &dyn Files, port: u16, tls_port: u16, stamp: &str, now: u64) -> httpd::Result<bool> {
-    ensure(files, ACCESSWEB, "QS/400 Access for Web", false, (port, tls_port), stamp, now)
+pub fn ensure_accessweb(
+    files: &dyn Files,
+    port: u16,
+    tls_port: u16,
+    stamp: &str,
+    now: u64,
+) -> httpd::Result<bool> {
+    ensure(
+        files,
+        ACCESSWEB,
+        "QS/400 Access for Web",
+        false,
+        (port, tls_port),
+        stamp,
+        now,
+    )
 }
 
 fn ensure(
@@ -91,8 +136,12 @@ fn ensure(
     instance::create(files, &spec, stamp, now)?;
     if tls_port != 0 {
         let path = instance::conf_path(&root);
-        let mut text = String::from_utf8_lossy(&files.read(&path).map_err(|e| httpd::Error::Io(path.clone(), e.to_string()))?)
-            .into_owned();
+        let mut text = String::from_utf8_lossy(
+            &files
+                .read(&path)
+                .map_err(|e| httpd::Error::Io(path.clone(), e.to_string()))?,
+        )
+        .into_owned();
         text = text.replacen(
             &format!("Listen *:{port}\n"),
             &format!("Listen *:{port}\nListen *:{tls_port}\n"),
@@ -122,7 +171,10 @@ mod tests {
         let r = Registry::load(&f).unwrap();
         assert_eq!(r.get("ADMIN").unwrap().root, "/www/admin");
         let c = instance::load_conf(&f, "/www/admin").unwrap();
-        let ports: Vec<(u16, bool)> = instance::ports(&c).iter().map(|p| (p.port, p.tls)).collect();
+        let ports: Vec<(u16, bool)> = instance::ports(&c)
+            .iter()
+            .map(|p| (p.port, p.tls))
+            .collect();
         assert_eq!(ports, [(2001, false), (2010, true)]);
     }
 
@@ -135,7 +187,10 @@ mod tests {
         let e = r.get("NAVIGATOR").unwrap();
         assert_eq!((e.root.as_str(), e.autostart), ("/www/navigator", false));
         let c = instance::load_conf(&f, "/www/navigator").unwrap();
-        let ports: Vec<(u16, bool)> = instance::ports(&c).iter().map(|p| (p.port, p.tls)).collect();
+        let ports: Vec<(u16, bool)> = instance::ports(&c)
+            .iter()
+            .map(|p| (p.port, p.tls))
+            .collect();
         assert_eq!(ports, [(2002, false), (2005, true)]);
     }
 }

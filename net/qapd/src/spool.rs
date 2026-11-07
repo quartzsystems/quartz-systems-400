@@ -52,7 +52,12 @@ pub fn device_name(d: DeviceType) -> &'static str {
 ///
 /// # Errors
 /// [`Unreadable`]: why not.
-pub fn read(status: SpoolStatus, device: DeviceType, data: &[u8], req: &ReadSpooledFile) -> Result<SpooledData, Unreadable> {
+pub fn read(
+    status: SpoolStatus,
+    device: DeviceType,
+    data: &[u8],
+    req: &ReadSpooledFile,
+) -> Result<SpooledData, Unreadable> {
     if matches!(status, SpoolStatus::Open | SpoolStatus::Writing) {
         return Err(Unreadable::InUse);
     }
@@ -99,7 +104,9 @@ pub fn read(status: SpoolStatus, device: DeviceType, data: &[u8], req: &ReadSpoo
         }
         // The whole file's pages and format, so a range reads as the
         // same pages do in the whole.
-        (ReadFormat::Text, Some((pages, _))) => spool::view::text(&pages[first - 1..last]).into_bytes(),
+        (ReadFormat::Text, Some((pages, _))) => {
+            spool::view::text(&pages[first - 1..last]).into_bytes()
+        }
         (ReadFormat::Pdf, Some((pages, fmt))) => spool::pdf::render(&pages[first - 1..last], fmt),
         (_, None) => return Err(Unreadable::Range),
     };

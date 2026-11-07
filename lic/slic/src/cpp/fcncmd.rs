@@ -56,7 +56,12 @@ fn fcnid(parms: &Parms) -> String {
     if p.is_empty() { "*ALL".into() } else { p }
 }
 
-fn text_or_print(system: &mut System, parms: &Parms, file: &str, text: Result<String, String>) -> CmdReply {
+fn text_or_print(
+    system: &mut System,
+    parms: &Parms,
+    file: &str,
+    text: Result<String, String>,
+) -> CmdReply {
     let text = match text {
         Ok(t) => t,
         Err(e) => return failed(file, &e),
@@ -64,11 +69,17 @@ fn text_or_print(system: &mut System, parms: &Parms, file: &str, text: Result<St
     if parms.name("OUTPUT") == "*PRINT" {
         let lines: Vec<String> = text.lines().map(str::to_string).collect();
         return match crate::svc::security::print(system, file, &lines) {
-            Ok(t) => CmdReply { text: t, ..CmdReply::default() },
+            Ok(t) => CmdReply {
+                text: t,
+                ..CmdReply::default()
+            },
             Err(e) => failed(file, &e),
         };
     }
-    CmdReply { text, ..CmdReply::default() }
+    CmdReply {
+        text,
+        ..CmdReply::default()
+    }
 }
 
 fn yn(b: bool) -> &'static str {
@@ -104,9 +115,15 @@ pub fn seca_rows(system: &mut System) -> Result<Vec<(String, String)>, String> {
         ("GID".into(), gid.to_string()),
         ("QSECURITY".into(), get("QSECURITY")),
         ("QPWDLVL".into(), get("QPWDLVL")),
-        ("SYSVAL".into(), yn(flags.allow_sysval_security_changes).into()),
+        (
+            "SYSVAL".into(),
+            yn(flags.allow_sysval_security_changes).into(),
+        ),
         ("CERT".into(), yn(flags.allow_add_certificates).into()),
-        ("STPWD".into(), yn(flags.allow_default_password_change).into()),
+        (
+            "STPWD".into(),
+            yn(flags.allow_default_password_change).into(),
+        ),
     ])
 }
 
@@ -118,7 +135,12 @@ fn line(system: &mut System, id: &str, value: &str, width: usize) -> String {
 
 fn seca_text(system: &mut System) -> Result<String, String> {
     let rows = seca_rows(system)?;
-    let v = |k: &str| rows.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
+    let v = |k: &str| {
+        rows.iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    };
     let mut s = String::new();
     for (id, k) in [
         ("TXT0B01", "UID"),
@@ -140,7 +162,12 @@ pub fn override_values(system: &mut System) -> String {
     seca_rows(system).map_or_else(
         |_| String::new(),
         |rows| {
-            let v = |k: &str| rows.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
+            let v = |k: &str| {
+                rows.iter()
+                    .find(|(n, _)| n == k)
+                    .map(|(_, v)| v.clone())
+                    .unwrap_or_default()
+            };
             format!("UID({}) GID({})", v("UID"), v("GID"))
         },
     )
@@ -157,7 +184,10 @@ fn chgseca(system: &mut System, parms: &Parms) -> CmdReply {
         if parms.name(k) == "*SAME" {
             return None;
         }
-        parms.int(k).and_then(|n| u32::try_from(n).ok()).filter(|n| *n != 0)
+        parms
+            .int(k)
+            .and_then(|n| u32::try_from(n).ok())
+            .filter(|n| *n != 0)
     };
     let (uid, gid) = (value("UID"), value("GID"));
     let r = in_store(system, |txn, env| {
@@ -236,7 +266,12 @@ fn fcn_text(system: &mut System, list: &[(Current, Vec<bool>)]) -> String {
             let _ = writeln!(s, "  {none}");
         }
         for ((u, a), g) in c.users.iter().zip(groups) {
-            let _ = writeln!(s, "  {u:<10}  {:<13}  {}", if *g { &group } else { &user }, usage(*a));
+            let _ = writeln!(
+                s,
+                "  {u:<10}  {:<13}  {}",
+                if *g { &group } else { &user },
+                usage(*a)
+            );
         }
         s.push('\n');
     }
@@ -287,7 +322,11 @@ fn chgfcnusg(system: &mut System, parms: &Parms) -> CmdReply {
 
 /// The job's panels' data (request 270): `SECA` (`DSPSECA`) and
 /// `FCNUSG` (`WRKFCNUSG`, `DSPFCNUSG`; the pattern as the argument).
-pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<stg::proto::Sys2Data, String>> {
+pub fn panel(
+    system: &mut System,
+    what: &str,
+    args: &[String],
+) -> Option<Result<stg::proto::Sys2Data, String>> {
     Some(match what {
         "SECA" => seca_rows(system).map(|v| (v, Vec::new())),
         "FCNUSG" => {
@@ -321,13 +360,19 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<
                             vec![
                                 ("FCNID".to_string(), c.function.id.to_string()),
                                 ("USER".to_string(), u.clone()),
-                                ("TYPE".to_string(), if *g { group.clone() } else { user.clone() }),
+                                (
+                                    "TYPE".to_string(),
+                                    if *g { group.clone() } else { user.clone() },
+                                ),
                                 ("USAGE".to_string(), usage(*a).to_string()),
                             ]
                         })
                     })
                     .collect();
-                (Vec::new(), vec![("FUNCTIONS".to_string(), fns), ("USERS".to_string(), users)])
+                (
+                    Vec::new(),
+                    vec![("FUNCTIONS".to_string(), fns), ("USERS".to_string(), users)],
+                )
             })
         }
         _ => return None,

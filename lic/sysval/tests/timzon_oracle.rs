@@ -11,10 +11,28 @@
 use sysval::tz::{self, Edge};
 
 const MONTHS: [&str; 12] = [
-    "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
     "December",
 ];
-const DAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 const WEEKS: [&str; 5] = ["First", "Second", "Third", "Fourth", "Last"];
 
 fn edge(e: Edge) -> String {
@@ -33,14 +51,23 @@ fn offset(min: i32) -> String {
         1 => "+",
         _ => " ",
     };
-    format!("{sign}{:02}:{:02}", min.abs() / 60, min.abs() % 60).trim().to_string()
+    format!("{sign}{:02}:{:02}", min.abs() / 60, min.abs() % 60)
+        .trim()
+        .to_string()
 }
 
 #[test]
 fn shipped_zones_match_the_primary() {
-    let text = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tools/conformance/oracle/timzon/zones.tsv"))
-        .expect("zones.tsv");
-    let rows: Vec<Vec<&str>> = text.lines().skip(1).map(|l| l.split('\t').collect()).collect();
+    let text = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/conformance/oracle/timzon/zones.tsv"
+    ))
+    .expect("zones.tsv");
+    let rows: Vec<Vec<&str>> = text
+        .lines()
+        .skip(1)
+        .map(|l| l.split('\t').collect())
+        .collect();
     let ours = tz::shipped();
     assert_eq!(rows.len(), ours.len());
     let mut diffs = Vec::new();
@@ -52,9 +79,18 @@ fn shipped_zones_match_the_primary() {
         let want_dst = if r[10] == "-" {
             "- -".to_string()
         } else {
-            format!("{} {} {} {} {} {} {} {} {}", r[10], r[11], r[12], r[13], r[14], r[15], r[16], r[17], r[18])
+            format!(
+                "{} {} {} {} {} {} {} {} {}",
+                r[10], r[11], r[12], r[13], r[14], r[15], r[16], r[17], r[18]
+            )
         };
-        let none = |s: &str| if s.is_empty() { "-".to_string() } else { s.to_string() };
+        let none = |s: &str| {
+            if s.is_empty() {
+                "-".to_string()
+            } else {
+                s.to_string()
+            }
+        };
         let got = [
             z.name.clone(),
             offset(z.offset),
@@ -86,9 +122,12 @@ fn every_message_has_a_text() {
 
 #[test]
 fn qcpfmsg_holds_the_same_texts() {
-    let src = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../runtime/msgf/msgs/qcpfmsg.toml"))
-        .expect("qcpfmsg.toml")
-        .replace("\r\n", "\n");
+    let src = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../runtime/msgf/msgs/qcpfmsg.toml"
+    ))
+    .expect("qcpfmsg.toml")
+    .replace("\r\n", "\n");
     for (id, text) in tz::MESSAGES {
         let entry = format!("id = \"{id}\"\nsev = 0\ntext = \"{text}\"\n");
         assert!(src.contains(&entry), "{id} differs in qcpfmsg.toml");

@@ -39,10 +39,16 @@ impl HostEntry {
             }
         }
         if out.is_empty() {
-            return Err(Error::new(msg::BAD_VALUE, "At least one host name is needed."));
+            return Err(Error::new(
+                msg::BAD_VALUE,
+                "At least one host name is needed.",
+            ));
         }
         if out.len() > MAX_NAMES {
-            return Err(Error::new(msg::FULL, format!("An address holds at most {MAX_NAMES} host names.")));
+            return Err(Error::new(
+                msg::FULL,
+                format!("An address holds at most {MAX_NAMES} host names."),
+            ));
         }
         if text.chars().count() > 64 {
             return Err(bad("TEXT", text));
@@ -62,9 +68,14 @@ pub fn check_name(s: &str) -> Result<String> {
     let ok = !n.is_empty()
         && n.len() <= 255
         && n.chars().next().is_some_and(|c| c.is_ascii_alphanumeric())
-        && n.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+        && n.chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
         && !n.contains("..");
-    if ok { Ok(n) } else { Err(bad("HOSTNAME", s.trim())) }
+    if ok {
+        Ok(n)
+    } else {
+        Err(bad("HOSTNAME", s.trim()))
+    }
 }
 
 /// What `CHGTCPHTE` does with one position of the name list.
@@ -119,14 +130,20 @@ impl HostTable {
     pub fn lookup(&self, name: &str) -> Vec<IpAddr> {
         self.list
             .iter()
-            .filter(|e| e.names.iter().any(|n| n.eq_ignore_ascii_case(name.trim_end_matches('.'))))
+            .filter(|e| {
+                e.names
+                    .iter()
+                    .any(|n| n.eq_ignore_ascii_case(name.trim_end_matches('.')))
+            })
             .map(|e| e.addr)
             .collect()
     }
 
     /// The first name of an address.
     pub fn name_of(&self, addr: IpAddr) -> Option<&str> {
-        self.get(addr).and_then(|e| e.names.first()).map(String::as_str)
+        self.get(addr)
+            .and_then(|e| e.names.first())
+            .map(String::as_str)
     }
 
     /// `ADDTCPHTE`.
@@ -146,7 +163,12 @@ impl HostTable {
 
     /// `CHGTCPHTE`: `names` (when given) rebuild the list position by
     /// position; `text` replaces the text.
-    pub fn change(&mut self, addr: IpAddr, names: Option<&[NameChange]>, text: Option<&str>) -> Result<()> {
+    pub fn change(
+        &mut self,
+        addr: IpAddr,
+        names: Option<&[NameChange]>,
+        text: Option<&str>,
+    ) -> Result<()> {
         let e = self
             .list
             .iter_mut()
@@ -167,7 +189,10 @@ impl HostTable {
                 }
             }
             if out.is_empty() {
-                return Err(Error::new(msg::BAD_VALUE, "At least one host name is needed."));
+                return Err(Error::new(
+                    msg::BAD_VALUE,
+                    "At least one host name is needed.",
+                ));
             }
             e.names = out;
         }
@@ -250,7 +275,10 @@ impl HostTable {
 }
 
 fn not_found(addr: IpAddr) -> Error {
-    Error::new(msg::NOT_FOUND, format!("The host table has no entry for {addr}."))
+    Error::new(
+        msg::NOT_FOUND,
+        format!("The host table has no entry for {addr}."),
+    )
 }
 
 /// Entries from a host file in the `*AIX` format: `address name...`,
@@ -312,20 +340,36 @@ mod tests {
     #[test]
     fn add_change_remove_rename() {
         let mut t = HostTable::shipped();
-        t.add(HostEntry::new(ip("10.0.2.15"), &names(&["qs400", "qs400.example.com"]), "me").unwrap())
-            .unwrap();
+        t.add(
+            HostEntry::new(
+                ip("10.0.2.15"),
+                &names(&["qs400", "qs400.example.com"]),
+                "me",
+            )
+            .unwrap(),
+        )
+        .unwrap();
         assert_eq!(t.lookup("QS400.example.COM"), vec![ip("10.0.2.15")]);
         assert_eq!(
-            t.add(HostEntry::new(ip("10.0.2.15"), &names(&["x"]), "").unwrap()).unwrap_err().msgid,
+            t.add(HostEntry::new(ip("10.0.2.15"), &names(&["x"]), "").unwrap())
+                .unwrap_err()
+                .msgid,
             msg::EXISTS
         );
         t.change(
             ip("10.0.2.15"),
-            Some(&[NameChange::Same, NameChange::Blank, NameChange::Name("alias".into())]),
+            Some(&[
+                NameChange::Same,
+                NameChange::Blank,
+                NameChange::Name("alias".into()),
+            ]),
             Some("changed"),
         )
         .unwrap();
-        assert_eq!(t.get(ip("10.0.2.15")).unwrap().names, names(&["QS400", "ALIAS"]));
+        assert_eq!(
+            t.get(ip("10.0.2.15")).unwrap().names,
+            names(&["QS400", "ALIAS"])
+        );
         t.rename(ip("10.0.2.15"), ip("10.0.2.16")).unwrap();
         assert!(t.rename(ip("10.0.2.16"), ip("127.0.0.1")).is_err());
         t.remove(ip("10.0.2.16")).unwrap();
@@ -344,8 +388,17 @@ mod tests {
              garbage line\n",
         );
         let m = t.merge(from.clone(), false).unwrap();
-        assert_eq!(m, Merged { added: 1, changed: 1 });
-        assert_eq!(t.get(ip("127.0.0.1")).unwrap().names, names(&["LOOPBACK", "LOCALHOST", "LO"]));
+        assert_eq!(
+            m,
+            Merged {
+                added: 1,
+                changed: 1
+            }
+        );
+        assert_eq!(
+            t.get(ip("127.0.0.1")).unwrap().names,
+            names(&["LOOPBACK", "LOCALHOST", "LO"])
+        );
         assert_eq!(t.get(ip("127.0.0.1")).unwrap().text, "the loopback");
         let m = t.merge(from, true).unwrap();
         assert_eq!(m.added, 2);

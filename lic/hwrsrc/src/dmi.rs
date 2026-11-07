@@ -69,7 +69,9 @@ impl Dmi {
         let vendor = Some(self.vendor.as_str()).filter(|s| genuine(s));
         let product = Some(self.product.as_str()).filter(|s| genuine(s));
         match (vendor, product) {
-            (Some(v), Some(p)) if p.to_ascii_lowercase().starts_with(&v.to_ascii_lowercase()) => p.into(),
+            (Some(v), Some(p)) if p.to_ascii_lowercase().starts_with(&v.to_ascii_lowercase()) => {
+                p.into()
+            }
             (Some(v), Some(p)) => format!("{v} {p}"),
             (Some(x), None) | (None, Some(x)) => x.into(),
             (None, None) => String::new(),
@@ -131,7 +133,9 @@ pub fn genuine(value: &str) -> bool {
     if PLACEHOLDERS.contains(&lower.as_str()) || lower.contains("filled by") {
         return false;
     }
-    let mut marks = lower.chars().filter(|c| !matches!(c, '-' | ' ' | '.' | ':'));
+    let mut marks = lower
+        .chars()
+        .filter(|c| !matches!(c, '-' | ' ' | '.' | ':'));
     match marks.next() {
         None => false,
         Some(first) => !marks.all(|c| c == first),
@@ -175,14 +179,28 @@ mod tests {
         ] {
             assert!(!genuine(p), "{p:?}");
         }
-        for g in ["BWMX6R0", "CZ2345678X", "J300ABCD", "Dell Inc.", "PowerEdge R240", "QEMU", "10-7A2B9C"] {
+        for g in [
+            "BWMX6R0",
+            "CZ2345678X",
+            "J300ABCD",
+            "Dell Inc.",
+            "PowerEdge R240",
+            "QEMU",
+            "10-7A2B9C",
+        ] {
             assert!(genuine(g), "{g:?}");
         }
     }
 
     #[test]
     fn dell() {
-        let d = dmi("Dell Inc.", "PowerEdge R240", "BWMX6R0", "BWMX6R0", "4c4c4544-0057-4d10-8058-c2c04f365230");
+        let d = dmi(
+            "Dell Inc.",
+            "PowerEdge R240",
+            "BWMX6R0",
+            "BWMX6R0",
+            "4c4c4544-0057-4d10-8058-c2c04f365230",
+        );
         assert_eq!(d.serial(), Some("BWMX6R0"));
         assert_eq!(d.model(), "Dell Inc. PowerEdge R240");
         assert_eq!(d.identity(), Some("4c4c4544-0057-4d10-8058-c2c04f365230"));
@@ -199,7 +217,13 @@ mod tests {
         );
         assert_eq!(d.serial(), None);
         assert_eq!(d.model(), "");
-        let d = dmi("To Be Filled By O.E.M.", "X570 Taichi", "To Be Filled By O.E.M.", "ABC1234", "");
+        let d = dmi(
+            "To Be Filled By O.E.M.",
+            "X570 Taichi",
+            "To Be Filled By O.E.M.",
+            "ABC1234",
+            "",
+        );
         assert_eq!(d.serial(), Some("ABC1234"));
         assert_eq!(d.model(), "X570 Taichi");
     }
@@ -217,14 +241,21 @@ mod tests {
 
     #[test]
     fn vendor_in_product() {
-        assert_eq!(dmi("LENOVO", "Lenovo ThinkSystem SR250", "", "", "").model(), "Lenovo ThinkSystem SR250");
+        assert_eq!(
+            dmi("LENOVO", "Lenovo ThinkSystem SR250", "", "", "").model(),
+            "Lenovo ThinkSystem SR250"
+        );
     }
 
     #[test]
     fn read_dir() {
         let dir = std::env::temp_dir().join(format!("hwrsrc-dmi-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        for (n, v) in [("sys_vendor", "Dell Inc.\n"), ("product_name", "PowerEdge R240\n"), ("product_serial", "BWMX6R0\n")] {
+        for (n, v) in [
+            ("sys_vendor", "Dell Inc.\n"),
+            ("product_name", "PowerEdge R240\n"),
+            ("product_serial", "BWMX6R0\n"),
+        ] {
             std::fs::write(dir.join(n), v).unwrap();
         }
         let d = Dmi::read_from(&dir);

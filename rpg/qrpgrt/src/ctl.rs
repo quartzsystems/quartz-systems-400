@@ -40,7 +40,14 @@ pub extern "sysv64" fn cmt_open(env: *mut Env, _argc: i64, _od: i64, on: i32) {
 /// Send the RPG runtime's escape for a status.
 fn signal(j: &mut mi::Job, status: u16) {
     let id = format!("RNX{status:04}");
-    let _ = j.send_message(&id, "QRNXMSG", "*LIBL", vec![0x40; 40], qir::MsgType::Escape, mi::QueueRef::Same);
+    let _ = j.send_message(
+        &id,
+        "QRNXMSG",
+        "*LIBL",
+        vec![0x40; 40],
+        qir::MsgType::Escape,
+        mi::QueueRef::Same,
+    );
 }
 
 fn write_ptr(addr: i64, p: mi::FatPtr) {
@@ -48,7 +55,9 @@ fn write_ptr(addr: i64, p: mi::FatPtr) {
 }
 
 fn read_ptr(addr: i64) -> mi::FatPtr {
-    let b: [u8; 16] = crate::value::bytes(addr.cast_unsigned(), 16).try_into().unwrap_or([0; 16]);
+    let b: [u8; 16] = crate::value::bytes(addr.cast_unsigned(), 16)
+        .try_into()
+        .unwrap_or([0; 16]);
     mi::FatPtr::from_bytes(&b)
 }
 
@@ -107,7 +116,16 @@ pub extern "sysv64" fn signal_status(env: *mut Env, _argc: i64, _od: i64, status
 /// error code and the record. The RPG status: 0, 11 at the end of
 /// file, 1217 when the program cannot be called to open or close the
 /// file, 1299 for any other failure.
-pub extern "sysv64" fn special(env: *mut Env, _argc: i64, _od: i64, pgm: i64, lib: i64, opt: i32, area: i64, _len: i32) -> i32 {
+pub extern "sysv64" fn special(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    pgm: i64,
+    lib: i64,
+    opt: i32,
+    area: i64,
+    _len: i32,
+) -> i32 {
     let j = job(env);
     let p = ccsid::decode_trimmed(crate::value::bytes(pgm.cast_unsigned(), 10));
     let l = ccsid::decode_trimmed(crate::value::bytes(lib.cast_unsigned(), 10));
@@ -115,7 +133,12 @@ pub extern "sysv64" fn special(env: *mut Env, _argc: i64, _od: i64, pgm: i64, li
     let mut option = [crate::value::ebcdic(&o.to_string())[0]];
     let mut status = [0xF0u8];
     let mut error = [0xF0u8; 5];
-    let args = [option.as_mut_ptr() as u64, status.as_mut_ptr() as u64, error.as_mut_ptr() as u64, area.cast_unsigned()];
+    let args = [
+        option.as_mut_ptr() as u64,
+        status.as_mut_ptr() as u64,
+        error.as_mut_ptr() as u64,
+        area.cast_unsigned(),
+    ];
     let failed = |j: &mut mi::Job| {
         j.clear();
         if matches!(o, 'O' | 'C') { 1217 } else { 1299 }
@@ -140,14 +163,26 @@ pub extern "sysv64" fn fix_zoned(_env: *mut Env, _argc: i64, _od: i64, dst: i64,
     let d = crate::value::bytes(dst.cast_unsigned(), n);
     for (k, b) in s.iter().enumerate() {
         let digit = if b & 0x0F <= 9 { b & 0x0F } else { 0 };
-        let zone = if k + 1 == n && matches!(b >> 4, 0xB | 0xD) { b >> 4 } else { 0xF };
+        let zone = if k + 1 == n && matches!(b >> 4, 0xB | 0xD) {
+            b >> 4
+        } else {
+            0xF
+        };
         d[k] = zone << 4 | digit;
     }
 }
 
 /// `_QRNX_ALTSEQ(dst, src, sd, table)`: character data translated
 /// through the alternate collating sequence, for a compare.
-pub extern "sysv64" fn altseq(_env: *mut Env, _argc: i64, _od: i64, dst: i64, src: i64, sd: i64, tab: i64) {
+pub extern "sysv64" fn altseq(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    dst: i64,
+    src: i64,
+    sd: i64,
+    tab: i64,
+) {
     let d = crate::value::Desc::of(sd);
     let raw = crate::value::bytes(src.cast_unsigned(), d.size()).to_vec();
     let data = if d.kind == crate::value::Kind::VarChar {

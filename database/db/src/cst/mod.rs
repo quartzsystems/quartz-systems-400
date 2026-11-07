@@ -46,7 +46,8 @@ pub fn list(txn: &mut Txn<'_>, file: ObjectId) -> Result<Vec<Constraint>> {
 
 /// Replace the constraints of `file`.
 pub fn store(txn: &mut Txn<'_>, file: ObjectId, csts: &[Constraint], now: u64) -> Result<()> {
-    let mut info = sqlinf::load(txn, file)?.unwrap_or_else(|| sqlinf::SqlInfo::new(sqlinf::Kind::Table));
+    let mut info =
+        sqlinf::load(txn, file)?.unwrap_or_else(|| sqlinf::SqlInfo::new(sqlinf::Kind::Table));
     info.remove(tag::CONSTRAINT);
     for c in csts {
         info.push(tag::CONSTRAINT, c.encode());
@@ -88,7 +89,11 @@ pub fn keyed_format(format: &FormatDef, columns: &[Name]) -> Result<FormatDef> {
             name: f.name,
             field: i,
             descend: false,
-            transform: if f.data_type.is_numeric() { dds::KeyTransform::Signed } else { dds::KeyTransform::Unsigned },
+            transform: if f.data_type.is_numeric() {
+                dds::KeyTransform::Signed
+            } else {
+                dds::KeyTransform::Unsigned
+            },
             noaltseq: false,
             line: 0,
         });
@@ -121,15 +126,28 @@ impl Active {
             }
             let format = keyed_format(format, &c.columns)?;
             key_len = key_len.max(usize::from(format.key_len));
-            keys.push(KeyDef { index, number: c.number, format });
+            keys.push(KeyDef {
+                index,
+                number: c.number,
+                format,
+            });
         }
-        Ok(Self { csts, keys, key_len: key_len + 2 })
+        Ok(Self {
+            csts,
+            keys,
+            key_len: key_len + 2,
+        })
     }
 
     /// The tree over a member's root.
     #[must_use]
     pub fn tree(&self, owner: ObjectId, root: Option<store::PageNo>) -> Path {
-        Path { owner, key_len: self.key_len, multi: false, root }
+        Path {
+            owner,
+            key_len: self.key_len,
+            multi: false,
+            root,
+        }
     }
 
     /// The tree key of constraint `k` for key bytes `key`.
@@ -151,7 +169,12 @@ impl Active {
     /// The tree entries a record makes, each with whether it must be
     /// unique: a foreign key with a null part makes none, a unique key
     /// with a null part is not checked (nulls are never equal).
-    pub fn entries(&self, rrn: u64, record: &[u8], nulls: &[u8]) -> Result<Vec<(usize, PathKey, bool)>> {
+    pub fn entries(
+        &self,
+        rrn: u64,
+        record: &[u8],
+        nulls: &[u8],
+    ) -> Result<Vec<(usize, PathKey, bool)>> {
         let mut out = Vec::new();
         for (ki, k) in self.keys.iter().enumerate() {
             let c = &self.csts[k.index];
@@ -160,13 +183,28 @@ impl Active {
                 continue;
             }
             let key = k.key(record, nulls)?;
-            out.push((ki, PathKey { key: self.tree_key(k, &key), format: 0, rrn }, c.kind.unique() && !has_null));
+            out.push((
+                ki,
+                PathKey {
+                    key: self.tree_key(k, &key),
+                    format: 0,
+                    rrn,
+                },
+                c.kind.unique() && !has_null,
+            ));
         }
         Ok(out)
     }
 
     /// The RRNs under constraint `k` with key bytes `key`.
-    pub fn find(&self, txn: &mut Txn<'_>, tree: &Path, k: &KeyDef, key: &[u8], max: usize) -> Result<Vec<u64>> {
+    pub fn find(
+        &self,
+        txn: &mut Txn<'_>,
+        tree: &Path,
+        k: &KeyDef,
+        key: &[u8],
+        max: usize,
+    ) -> Result<Vec<u64>> {
         let tk = self.tree_key(k, key);
         Ok(tree
             .scan(txn, Bound::Included(&tk), Bound::Included(&tk), max)?
@@ -184,12 +222,20 @@ fn first_column(c: &Constraint) -> Option<String> {
 /// IBM's name for an unnamed constraint: `Q_<lib>_<file>_<col>_nnnnn`
 /// (no column for a check), the number the next free one.
 #[must_use]
-pub fn generated_name(lib: &str, file: &str, c: &Constraint, taken: &dyn Fn(&str) -> bool) -> String {
+pub fn generated_name(
+    lib: &str,
+    file: &str,
+    c: &Constraint,
+    taken: &dyn Fn(&str) -> bool,
+) -> String {
     let stem = match (c.kind, first_column(c)) {
         (Kind::Check, _) | (_, None) => format!("Q_{lib}_{file}_"),
         (_, Some(col)) => format!("Q_{lib}_{file}_{col}_"),
     };
-    (1..=99_999u32).map(|n| format!("{stem}{n:05}")).find(|n| !taken(n)).unwrap_or_else(|| format!("{stem}99999"))
+    (1..=99_999u32)
+        .map(|n| format!("{stem}{n:05}"))
+        .find(|n| !taken(n))
+        .unwrap_or_else(|| format!("{stem}99999"))
 }
 
 impl KeyDef {

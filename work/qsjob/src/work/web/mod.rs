@@ -35,7 +35,11 @@ pub fn run_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<Message, M
 }
 
 /// [`run_as`], with the command's output text beside its message.
-pub fn run_text_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<(Result<Message, Message>, String), Message> {
+pub fn run_text_as(
+    m: &mut Main,
+    user: Option<&str>,
+    line: &str,
+) -> Result<(Result<Message, Message>, String), Message> {
     let o = match user {
         Some(u) => m.as_user(u, |m| m.console.run(line, crate::command::RunMode::Run))?,
         None => m.console.run(line, crate::command::RunMode::Run),
@@ -57,7 +61,10 @@ pub fn run_text_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<(Resu
         };
         (f.msgid, text)
     });
-    let r = reply::outcome(&o.text, escape.as_ref().map(|(i, t)| (i.as_str(), t.as_str())));
+    let r = reply::outcome(
+        &o.text,
+        escape.as_ref().map(|(i, t)| (i.as_str(), t.as_str())),
+    );
     Ok((r, o.text))
 }
 
@@ -102,7 +109,12 @@ pub fn finish(m: &Main, reason: &str, code: i32) -> ! {
 
 /// Answer the connections' tasks on the job's thread until the job is
 /// ended; `setup` starts the listeners off the thread. Never returns.
-pub fn serve(mut main: Main, rx: &Receiver<Task>, setup: JoinHandle<Result<Vec<Running>, String>>, me: u32) -> ! {
+pub fn serve(
+    mut main: Main,
+    rx: &Receiver<Task>,
+    setup: JoinHandle<Result<Vec<Running>, String>>,
+    me: u32,
+) -> ! {
     let mut setup = Some(setup);
     let mut running: Vec<Running> = Vec::new();
     stg::remote::status(&main.link, wm::job::Status::Selw, "");

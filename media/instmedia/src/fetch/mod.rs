@@ -33,7 +33,9 @@ pub struct Url {
 impl Url {
     /// Parse `scheme://host[:port]/path`.
     pub fn parse(u: &str) -> Result<Self, String> {
-        let (scheme, rest) = u.split_once("://").ok_or_else(|| format!("{u}: not a URL"))?;
+        let (scheme, rest) = u
+            .split_once("://")
+            .ok_or_else(|| format!("{u}: not a URL"))?;
         let scheme = scheme.to_ascii_lowercase();
         let default = match scheme.as_str() {
             "http" => 80,
@@ -46,9 +48,11 @@ impl Url {
             None => (rest, "/"),
         };
         let (host, port) = match authority.rsplit_once(':') {
-            Some((h, p)) if !h.ends_with(']') || h.starts_with('[') => {
-                (h, p.parse().map_err(|_| format!("{u}: port '{p}' is not a number"))?)
-            }
+            Some((h, p)) if !h.ends_with(']') || h.starts_with('[') => (
+                h,
+                p.parse()
+                    .map_err(|_| format!("{u}: port '{p}' is not a number"))?,
+            ),
             _ => (authority, default),
         };
         let host = host.trim_matches(['[', ']']).to_string();
@@ -104,10 +108,16 @@ mod tests {
     #[test]
     fn urls() {
         let u = Url::parse("HTTP://10.0.2.2:8080/qs400/install.rsp?x=1").unwrap();
-        assert_eq!((u.scheme.as_str(), u.host.as_str(), u.port, u.path.as_str()), ("http", "10.0.2.2", 8080, "/qs400/install.rsp?x=1"));
+        assert_eq!(
+            (u.scheme.as_str(), u.host.as_str(), u.port, u.path.as_str()),
+            ("http", "10.0.2.2", 8080, "/qs400/install.rsp?x=1")
+        );
         let u = Url::parse("https://install.example.com").unwrap();
         assert_eq!((u.port, u.path.as_str()), (443, "/"));
-        assert_eq!(Url::parse("tftp://[fd00::1]:6969/a").unwrap().host, "fd00::1");
+        assert_eq!(
+            Url::parse("tftp://[fd00::1]:6969/a").unwrap().host,
+            "fd00::1"
+        );
         assert!(Url::parse("ftp://x/y").is_err());
         assert!(Url::parse("http:///y").is_err());
         assert_eq!(u.join("/other.rsp").unwrap().path, "/other.rsp");
@@ -119,8 +129,14 @@ mod tests {
     #[test]
     fn beside_the_boot_file() {
         let s = Ipv4Addr::new(10, 0, 2, 2);
-        assert_eq!(beside(s, "qs400/BOOTX64.EFI"), "tftp://10.0.2.2/qs400/INSTALL.RSP");
+        assert_eq!(
+            beside(s, "qs400/BOOTX64.EFI"),
+            "tftp://10.0.2.2/qs400/INSTALL.RSP"
+        );
         assert_eq!(beside(s, "/BOOTX64.EFI"), "tftp://10.0.2.2/INSTALL.RSP");
-        assert_eq!(beside(s, "http://boot.example.com/qs400/BOOTX64.EFI"), "http://boot.example.com/qs400/INSTALL.RSP");
+        assert_eq!(
+            beside(s, "http://boot.example.com/qs400/BOOTX64.EFI"),
+            "http://boot.example.com/qs400/INSTALL.RSP"
+        );
     }
 }

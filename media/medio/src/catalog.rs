@@ -49,7 +49,11 @@ impl NextVolume {
     #[must_use]
     pub fn pick(&self, expected: Option<&str>, wide: bool) -> Option<String> {
         if let Some(v) = expected {
-            return self.volumes.iter().find(|x| x.eq_ignore_ascii_case(v)).cloned();
+            return self
+                .volumes
+                .iter()
+                .find(|x| x.eq_ignore_ascii_case(v))
+                .cloned();
         }
         let fresh = |v: &&String| !self.used.iter().any(|u| u.eq_ignore_ascii_case(v));
         if wide {

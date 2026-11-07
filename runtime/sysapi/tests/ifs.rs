@@ -124,12 +124,19 @@ L0:
     assert_eq!(bin4(&p, "wn"), 5);
     assert_eq!(bin4(&p, "pos"), 1);
     assert_eq!(bin4(&p, "rn"), 4);
-    assert_eq!(&p.static_bytes("back").unwrap()[..4], &[0xC5, 0xD3, 0xD3, 0xD6]);
+    assert_eq!(
+        &p.static_bytes("back").unwrap()[..4],
+        &[0xC5, 0xD3, 0xD3, 0xD6]
+    );
     assert_eq!(bin4(&p, "src"), 0);
     let st = p.static_bytes("st").unwrap();
     assert_eq!(lay::get_n(&st, &STAT, "st_size"), 5);
     assert_eq!(lay::get_n(&st, &STAT, "st_mode") & 0o170_000, 0o100_000);
-    assert_eq!(lay::get_n(&st, &STAT, "st_mode") & 0o707, 0o604, "no group: its bits are 0");
+    assert_eq!(
+        lay::get_n(&st, &STAT, "st_mode") & 0o707,
+        0o604,
+        "no group: its bits are 0"
+    );
     assert_eq!(ccsid::from_ebcdic(&st[48..58]), "*STMF     ");
     assert_eq!(st[58], 0);
     assert_eq!(lay::get_n(&st, &STAT, "st_uid"), 110, "QSTEST's UID");
@@ -145,7 +152,12 @@ fn a_directory_listing() {
     let sys = MemIfs::new();
     let c = sys.client("QSTEST", 1, 37);
     for n in ["b.txt", "a.txt"] {
-        let fd = c.open(&format!("/home/QSTEST/{n}"), OpenArgs::new(0o112).mode(0o644)).unwrap();
+        let fd = c
+            .open(
+                &format!("/home/QSTEST/{n}"),
+                OpenArgs::new(0o112).mode(0o644),
+            )
+            .unwrap();
         c.close(fd).unwrap();
     }
     let text = format!(
@@ -186,7 +198,11 @@ DONE:
     let p = run(&sys, &text);
     assert_eq!(bin4(&p, "count"), 4, ". .. a.txt b.txt");
     let names = p.static_bytes("names").unwrap();
-    assert_eq!(&names[..4], &[0x4B, 0x4B, 0x81, 0x82], "the first byte of each name, in order");
+    assert_eq!(
+        &names[..4],
+        &[0x4B, 0x4B, 0x81, 0x82],
+        "the first byte of each name, in order"
+    );
 }
 
 #[test]
@@ -227,7 +243,11 @@ L0:
     assert_eq!(lay::get_n(&st, &STAT, "st_ccsid"), 819);
     assert_eq!(lay::get_n(&st, &STAT, "st_size"), 4);
     assert_eq!(bin4(&p, "rn"), 4);
-    assert_eq!(&p.static_bytes("back").unwrap()[..4], &[0xC1, 0xC2, 0xC3, 0x25], "EBCDIC, LF as 0x25");
+    assert_eq!(
+        &p.static_bytes("back").unwrap()[..4],
+        &[0xC1, 0xC2, 0xC3, 0x25],
+        "EBCDIC, LF as 0x25"
+    );
 }
 
 #[test]
@@ -271,8 +291,18 @@ L0:
     assert_eq!(bin4(&p, "set"), 0, "F_SETLK");
     assert_eq!(bin4(&p, "get"), 0, "F_GETLK");
     let q = p.static_bytes("q").unwrap();
-    assert_eq!(u16::from_be_bytes([q[0], q[1]]), 3, "our own lock never blocks: F_UNLCK");
-    assert_eq!(bin4(&p, "fl") & 0o7, 0o4, "F_GETFL: O_RDWR, {:o} errno {}", bin4(&p, "fl"), bin4(&p, "err"));
+    assert_eq!(
+        u16::from_be_bytes([q[0], q[1]]),
+        3,
+        "our own lock never blocks: F_UNLCK"
+    );
+    assert_eq!(
+        bin4(&p, "fl") & 0o7,
+        0o4,
+        "F_GETFL: O_RDWR, {:o} errno {}",
+        bin4(&p, "fl"),
+        bin4(&p, "err")
+    );
 }
 
 #[test]
@@ -280,7 +310,12 @@ fn qp0lgetattr_answers_the_ccsid_and_type() {
     let sys = MemIfs::new();
     {
         let c = sys.client("QSTEST", 3, 37);
-        let fd = c.open("/home/QSTEST/g.txt", OpenArgs::new(0o52).mode(0o644).conv(1208)).unwrap();
+        let fd = c
+            .open(
+                "/home/QSTEST/g.txt",
+                OpenArgs::new(0o52).mode(0o644).conv(1208),
+            )
+            .unwrap();
         c.close(fd).unwrap();
     }
     let q = {
@@ -323,7 +358,11 @@ L0:
     assert_eq!(u32::from_be_bytes(buf[0..4].try_into().unwrap()), 28);
     assert_eq!(u32::from_be_bytes(buf[4..8].try_into().unwrap()), 0);
     assert_eq!(ccsid::from_ebcdic(&buf[16..21]), "*STMF");
-    assert_eq!(u32::from_be_bytes(buf[32..36].try_into().unwrap()), 27, "QP0L_ATTR_CCSID");
+    assert_eq!(
+        u32::from_be_bytes(buf[32..36].try_into().unwrap()),
+        27,
+        "QP0L_ATTR_CCSID"
+    );
     assert_eq!(u16::from_be_bytes([buf[44], buf[45]]), 1208);
     assert_eq!(bin4(&p, "got"), 48);
 }

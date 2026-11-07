@@ -76,7 +76,11 @@ pub struct ListSubsystems {
     pub max: u32,
 }
 
-wire_struct!(ListSubsystems { library, start, max });
+wire_struct!(ListSubsystems {
+    library,
+    start,
+    max
+});
 
 /// `ListSubsystems`'s reply.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -149,7 +153,12 @@ wire_enum!(ValueKind {
 
 impl ValueKind {
     /// Every type, in value order.
-    pub const ALL: [ValueKind; 4] = [ValueKind::Character, ValueKind::Decimal, ValueKind::Integer, ValueKind::List];
+    pub const ALL: [ValueKind; 4] = [
+        ValueKind::Character,
+        ValueKind::Decimal,
+        ValueKind::Integer,
+        ValueKind::List,
+    ];
 }
 
 /// A system value.
@@ -310,7 +319,11 @@ pub struct ListPtfs {
     pub max: u32,
 }
 
-wire_struct!(ListPtfs { product, start, max });
+wire_struct!(ListPtfs {
+    product,
+    start,
+    max
+});
 
 /// `ListPtfs`'s reply.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

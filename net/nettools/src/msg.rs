@@ -34,7 +34,11 @@ pub struct Msg {
 impl Msg {
     /// A message.
     pub fn new(id: &'static str, kind: Kind, text: impl Into<String>) -> Self {
-        Self { id, text: text.into(), kind }
+        Self {
+            id,
+            text: text.into(),
+            kind,
+        }
     }
 
     /// `ID text`, as the console shows it.

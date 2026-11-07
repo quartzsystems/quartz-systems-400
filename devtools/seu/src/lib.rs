@@ -53,11 +53,23 @@ pub fn parse_seq(text: &str) -> Option<u32> {
     if whole.len() > 4 || frac.len() > 2 {
         return None;
     }
-    if !whole.chars().chain(frac.chars()).all(|c| c.is_ascii_digit()) {
+    if !whole
+        .chars()
+        .chain(frac.chars())
+        .all(|c| c.is_ascii_digit())
+    {
         return None;
     }
-    let w: u32 = if whole.is_empty() { 0 } else { whole.parse().ok()? };
-    let mut f: u32 = if frac.is_empty() { 0 } else { frac.parse().ok()? };
+    let w: u32 = if whole.is_empty() {
+        0
+    } else {
+        whole.parse().ok()?
+    };
+    let mut f: u32 = if frac.is_empty() {
+        0
+    } else {
+        frac.parse().ok()?
+    };
     if frac.len() == 1 {
         f *= 10;
     }

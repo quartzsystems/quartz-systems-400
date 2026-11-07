@@ -25,7 +25,9 @@ pub mod values;
 
 use std::collections::HashMap;
 
-use qap_proto::ops::sql::{CommitLevel, Execute, Executed, Fetch, Fetched, Naming, Prepared, SetOptions, SqlFailure};
+use qap_proto::ops::sql::{
+    CommitLevel, Execute, Executed, Fetch, Fetched, Naming, Prepared, SetOptions, SqlFailure,
+};
 use qap_proto::{ServerMessage, Status};
 use qapd::Refusal;
 use qapd::sql::{CANCELLED, SqlResult, SqlStop};
@@ -139,7 +141,9 @@ impl Lane {
                 CommitLevel::None => None,
                 CommitLevel::ReadUncommitted => sql::embed::commit_level("*CHG"),
                 CommitLevel::ReadCommitted => sql::embed::commit_level("*CS"),
-                CommitLevel::RepeatableRead | CommitLevel::Serializable => sql::embed::commit_level("*ALL"),
+                CommitLevel::RepeatableRead | CommitLevel::Serializable => {
+                    sql::embed::commit_level("*ALL")
+                }
             },
             ..Desc::default()
         }
@@ -170,10 +174,24 @@ impl Lane {
                 message: e.message("SQL0752", &[]),
             });
         }
-        let schema = o.default_schema.as_deref().map(str::trim).filter(|s| !s.is_empty());
-        let text = schema.map_or_else(|| "SET SCHEMA DEFAULT".to_string(), |s| format!("SET SCHEMA \"{}\"", s.replace('"', "\"\"")));
+        let schema = o
+            .default_schema
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let text = schema.map_or_else(
+            || "SET SCHEMA DEFAULT".to_string(),
+            |s| format!("SET SCHEMA \"{}\"", s.replace('"', "\"\"")),
+        );
         let previous = std::mem::replace(&mut self.options, o.clone());
-        let r = self.run(e, Desc { text, ..self.desc(Op::Exec) }, Vec::new());
+        let r = self.run(
+            e,
+            Desc {
+                text,
+                ..self.desc(Op::Exec)
+            },
+            Vec::new(),
+        );
         if r.sqlca.is_error() {
             self.options = previous;
             return Err(Refusal {
@@ -214,7 +232,10 @@ impl Lane {
         if m.sqlca.is_error() {
             return Err(stop(e, &m.sqlca, None));
         }
-        let outputs = m.rows.iter().any(|row| matches!(row.get(9).and_then(|v| v.as_i64().ok()), Some(2 | 3)));
+        let outputs = m
+            .rows
+            .iter()
+            .any(|row| matches!(row.get(9).and_then(|v| v.as_i64().ok()), Some(2 | 3)));
         let parameters: Vec<Described> = m
             .rows
             .iter()
@@ -230,13 +251,26 @@ impl Lane {
             columns: columns.iter().map(|c| c.column.clone()).collect(),
             parameters: parameters.iter().map(|c| c.column.clone()).collect(),
         };
-        self.statements.insert(statement, Stmt { name, columns, parameters, outputs });
+        self.statements.insert(
+            statement,
+            Stmt {
+                name,
+                columns,
+                parameters,
+                outputs,
+            },
+        );
         Ok(reply)
     }
 
     /// A parameter row as the engine's values; the failure for the
     /// first that is not one.
-    fn inputs(e: &mut dyn Engine, s: &Stmt, row: &[qap_proto::ops::sql::SqlValue], at: Option<u32>) -> Result<Vec<Value>, SqlStop<Executed>> {
+    fn inputs(
+        e: &mut dyn Engine,
+        s: &Stmt,
+        row: &[qap_proto::ops::sql::SqlValue],
+        at: Option<u32>,
+    ) -> Result<Vec<Value>, SqlStop<Executed>> {
         if row.len() != s.parameters.len() {
             let ca = Sqlca {
                 sqlcode: -313,
@@ -263,9 +297,18 @@ impl Lane {
     /// `Execute`: a query opens a cursor; anything else runs once per
     /// parameter row, stopping at the first that fails, and looks at the
     /// cancel before each.
-    pub fn execute(&mut self, e: &mut dyn Engine, req: &Execute, cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
+    pub fn execute(
+        &mut self,
+        e: &mut dyn Engine,
+        req: &Execute,
+        cancelled: &dyn Fn() -> bool,
+    ) -> SqlResult<Executed> {
         let Some(s) = self.statements.get(&req.statement).cloned() else {
-            return Err(SqlStop::Refused(Self::not_found(e, "SQL0518", &format!("QAPS{}", req.statement))));
+            return Err(SqlStop::Refused(Self::not_found(
+                e,
+                "SQL0518",
+                &format!("QAPS{}", req.statement),
+            )));
         };
         if !s.columns.is_empty() {
             let row = req.rows.first().cloned().unwrap_or_default();
@@ -283,7 +326,13 @@ impl Lane {
                 inputs,
             );
             if r.sqlca.sqlcode == CANCEL_CODE {
-                return Err(SqlStop::cancelled(Executed { updated: 0, cursor: None }, sql_message(e, &r.sqlca)));
+                return Err(SqlStop::cancelled(
+                    Executed {
+                        updated: 0,
+                        cursor: None,
+                    },
+                    sql_message(e, &r.sqlca),
+                ));
             }
             if r.sqlca.is_error() {
                 return Err(stop(e, &r.sqlca, None));
@@ -313,12 +362,22 @@ impl Lane {
             return Err(stop(e, &ca, None));
         }
         let several = !req.rows.is_empty();
-        let rows = if several { req.rows.clone() } else { vec![Vec::new()] };
+        let rows = if several {
+            req.rows.clone()
+        } else {
+            vec![Vec::new()]
+        };
         let mut updated = 0i64;
         for (n, row) in rows.iter().enumerate() {
             let at = several.then(|| u32::try_from(n).unwrap_or(u32::MAX));
             if cancelled() {
-                return Err(SqlStop::cancelled(Executed { updated, cursor: None }, e.message(CANCELLED, &[])));
+                return Err(SqlStop::cancelled(
+                    Executed {
+                        updated,
+                        cursor: None,
+                    },
+                    e.message(CANCELLED, &[]),
+                ));
             }
             let inputs = Self::inputs(e, &s, row, at)?;
             if self.options.commit != CommitLevel::None {
@@ -339,19 +398,34 @@ impl Lane {
             match r.sqlca.sqlcode {
                 0 => updated += i64::from(r.sqlca.sqlerrd[2]),
                 100 => {}
-                CANCEL_CODE => return Err(SqlStop::cancelled(Executed { updated, cursor: None }, sql_message(e, &r.sqlca))),
+                CANCEL_CODE => {
+                    return Err(SqlStop::cancelled(
+                        Executed {
+                            updated,
+                            cursor: None,
+                        },
+                        sql_message(e, &r.sqlca),
+                    ));
+                }
                 c if c < 0 => return Err(stop(e, &r.sqlca, at)),
                 _ => updated += i64::from(r.sqlca.sqlerrd[2]),
             }
         }
-        Ok(Executed { updated, cursor: None })
+        Ok(Executed {
+            updated,
+            cursor: None,
+        })
     }
 
     /// The first result set a `CALL` left (`RS#1`) as a cursor.
     /// BLOCKED(rel): `Executed` names one cursor, so a second set is not
     /// reachable through QAP.
     fn result_set(&mut self, e: &mut dyn Engine, called: &Reply) -> SqlResult<Executed> {
-        let name = called.rows.first().and_then(|r| r.first()).map_or_else(|| "RS#1".to_string(), Value::as_text);
+        let name = called
+            .rows
+            .first()
+            .and_then(|r| r.first())
+            .map_or_else(|| "RS#1".to_string(), Value::as_text);
         let d = self.run(
             e,
             Desc {
@@ -373,21 +447,40 @@ impl Lane {
                 end: false,
             },
         );
-        Ok(Executed { updated: 0, cursor: Some(cursor) })
+        Ok(Executed {
+            updated: 0,
+            cursor: Some(cursor),
+        })
     }
 
     /// `Fetch`: up to `max_rows` (0 for all), in batches.
-    pub fn fetch(&mut self, e: &mut dyn Engine, req: &Fetch, cancelled: &dyn Fn() -> bool) -> SqlResult<Fetched> {
+    pub fn fetch(
+        &mut self,
+        e: &mut dyn Engine,
+        req: &Fetch,
+        cancelled: &dyn Fn() -> bool,
+    ) -> SqlResult<Fetched> {
         let Some(c) = self.cursors.get(&req.cursor).cloned() else {
-            return Err(SqlStop::Refused(Self::not_found(e, "SQL0501", &format!("QAPC{}", req.cursor))));
+            return Err(SqlStop::Refused(Self::not_found(
+                e,
+                "SQL0501",
+                &format!("QAPC{}", req.cursor),
+            )));
         };
-        let want = if req.max_rows == 0 { usize::MAX } else { usize::try_from(req.max_rows).unwrap_or(usize::MAX) };
+        let want = if req.max_rows == 0 {
+            usize::MAX
+        } else {
+            usize::try_from(req.max_rows).unwrap_or(usize::MAX)
+        };
         let mut rows = Vec::new();
         let mut end = c.end;
         while !end && rows.len() < want {
             if cancelled() {
                 let _ = self.close_cursor(e, req.cursor);
-                return Err(SqlStop::cancelled(Fetched { rows, end: false }, e.message(CANCELLED, &[])));
+                return Err(SqlStop::cancelled(
+                    Fetched { rows, end: false },
+                    e.message(CANCELLED, &[]),
+                ));
             }
             let n = (want - rows.len()).min(BATCH);
             let r = self.run(
@@ -401,13 +494,21 @@ impl Lane {
             );
             if r.sqlca.sqlcode == CANCEL_CODE {
                 let _ = self.close_cursor(e, req.cursor);
-                return Err(SqlStop::cancelled(Fetched { rows, end: false }, sql_message(e, &r.sqlca)));
+                return Err(SqlStop::cancelled(
+                    Fetched { rows, end: false },
+                    sql_message(e, &r.sqlca),
+                ));
             }
             if r.sqlca.is_error() {
                 return Err(stop(e, &r.sqlca, None));
             }
             end = r.sqlca.sqlcode == 100 || r.rows.len() < n || r.sqlca.sqlerrd[4] == 100;
-            rows.extend(r.rows.iter().map(|row| row.iter().zip(&c.columns).map(|(v, d)| to_sql(d.kind, v)).collect()));
+            rows.extend(r.rows.iter().map(|row| {
+                row.iter()
+                    .zip(&c.columns)
+                    .map(|(v, d)| to_sql(d.kind, v))
+                    .collect()
+            }));
         }
         if let Some(c) = self.cursors.get_mut(&req.cursor) {
             c.end = end;
@@ -451,7 +552,14 @@ impl Lane {
     /// `Commit` or `Rollback`; nothing to do without commitment control.
     pub fn end_unit(&mut self, e: &mut dyn Engine, commit: bool) -> SqlResult<()> {
         let text = if commit { "COMMIT" } else { "ROLLBACK" };
-        let r = self.run(e, Desc { text: text.into(), ..self.desc(Op::Exec) }, Vec::new());
+        let r = self.run(
+            e,
+            Desc {
+                text: text.into(),
+                ..self.desc(Op::Exec)
+            },
+            Vec::new(),
+        );
         // -7007: the connection never ran under commitment control.
         if r.sqlca.is_error() && r.sqlca.sqlcode != -7007 {
             return Err(stop(e, &r.sqlca, None));

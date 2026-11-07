@@ -111,7 +111,9 @@ pub struct KeyPair {
 
 impl std::fmt::Debug for KeyPair {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("KeyPair").field("public", &self.public).finish_non_exhaustive()
+        f.debug_struct("KeyPair")
+            .field("public", &self.public)
+            .finish_non_exhaustive()
     }
 }
 
@@ -395,8 +397,8 @@ impl Server {
                 if self.mech == Mechanism::UsrEncPwd {
                     let u = usrid.ok_or(c::USERID_MISSING)?;
                     let enc = sectkn.first().ok_or(c::PASSWORD_MISSING)?;
-                    let p = des::cbc_decrypt(&key, &usrencpwd_iv(u), enc)
-                        .ok_or(c::PASSWORD_INVALID)?;
+                    let p =
+                        des::cbc_decrypt(&key, &usrencpwd_iv(u), enc).ok_or(c::PASSWORD_INVALID)?;
                     Ok((text(u), Proof::Password(password_text(&p))))
                 } else {
                     let iv = eusridpwd_iv(&keys.public);

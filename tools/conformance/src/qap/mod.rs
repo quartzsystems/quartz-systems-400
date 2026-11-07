@@ -47,11 +47,15 @@ mod sql;
 
 use std::time::{Duration, Instant};
 
-use qap_proto::ops::command::{CheckReply, CommandDefinition, CommandReply, CommandText, DescribeCommand};
-use qap_proto::ops::spool::{ListSpooledFiles, ReadFormat, ReadSpooledFile, SpooledData, SpooledFile, SpooledFiles};
+use qap_proto::ops::command::{
+    CheckReply, CommandDefinition, CommandReply, CommandText, DescribeCommand,
+};
+use qap_proto::ops::spool::{
+    ListSpooledFiles, ReadFormat, ReadSpooledFile, SpooledData, SpooledFile, SpooledFiles,
+};
 use qap_proto::ops::sql::{
-    Columns, CommitLevel, CursorRef, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Schemas,
-    SqlFailure, SqlValue, StatementRef, TableKind, Tables,
+    Columns, CommitLevel, CursorRef, Executed, Fetch, Fetched, ListColumns, ListSchemas,
+    ListTables, Schemas, SqlFailure, SqlValue, StatementRef, TableKind, Tables,
 };
 use qap_proto::ops::system::SystemInfo;
 use qap_proto::types::ObjectName;
@@ -112,23 +116,41 @@ fn setup(suite: &Suite, s: &mut Session) -> Result<Server, String> {
         &format!("CRTUSRPRF USRPRF({USER}) PASSWORD('{PASSWORD}') PWDEXP(*NO) TEXT('QAP step')"),
         &["QAPTEST created", "CPF2214", "exists"],
     )?;
-    expect(s, "QSCRTCRTS KEYSTORE(*SYSTEM) PASSWORD('step89pw')", &["TCP1C11", "TCP1C10"])?;
+    expect(
+        s,
+        "QSCRTCRTS KEYSTORE(*SYSTEM) PASSWORD('step89pw')",
+        &["TCP1C11", "TCP1C10"],
+    )?;
     expect(
         s,
         &format!("QSCRTCRT LABEL({LABEL}) CN('{CN}') VALIDITY(365) TEXT('Step 89')"),
         &["TCP1C02", "TCP1C14", "TCP1C03"],
     )?;
-    expect(s, &format!("QSASNCRT APPID(QS400_ACCESS_SERVER) LABEL({LABEL})"), &["TCP1C08"])?;
+    expect(
+        s,
+        &format!("QSASNCRT APPID(QS400_ACCESS_SERVER) LABEL({LABEL})"),
+        &["TCP1C08"],
+    )?;
     expect(s, "STRTCPSVR SERVER(*QAP)", &["TCP1A07", "TCP1A08"])?;
     let port = forward_port(suite, GUEST, qap_proto::DEFAULT_PORT)?;
-    Ok(Server { port, pin: Vec::new() })
+    Ok(Server {
+        port,
+        pin: Vec::new(),
+    })
 }
 
 /// A failure with the history log's last lines, which say how a
 /// connection job ended.
 fn with_history(s: &mut Session, e: &str) -> String {
     let log = s.command("DSPLOG", CMD).unwrap_or_default();
-    let tail: Vec<&str> = log.lines().rev().take(25).collect::<Vec<_>>().into_iter().rev().collect();
+    let tail: Vec<&str> = log
+        .lines()
+        .rev()
+        .take(25)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
     format!("{e}\nDSPLOG (last lines):\n{}", tail.join("\n"))
 }
 
@@ -163,7 +185,12 @@ fn refused_then_restarted(s: &mut Session, srv: &mut Server) -> Result<String, S
 
 /// Run a command; its reply's messages' IDs, which must be `Ok`.
 fn command(c: &mut Conn, line: &str) -> Result<Vec<String>, String> {
-    let r = c.call(Op::RunCommand, &CommandText { command: line.into() })?;
+    let r = c.call(
+        Op::RunCommand,
+        &CommandText {
+            command: line.into(),
+        },
+    )?;
     if r.status != Status::Ok {
         return Err(format!("RunCommand {line}: {}", brief(&r)));
     }
@@ -176,9 +203,17 @@ fn command(c: &mut Conn, line: &str) -> Result<Vec<String>, String> {
 fn excluded(s: &mut Session) -> Result<(), String> {
     let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
     crate::qir::qemu::push(s, "QAPXSRC", "PGM\nENDPGM\n")?;
-    expect(s, "svc.srcput QGPL/QCLSRC QAPXPGM SRCTYPE(CLP) FROMSTMF(QAPXSRC)", &["written"])?;
+    expect(
+        s,
+        "svc.srcput QGPL/QCLSRC QAPXPGM SRCTYPE(CLP) FROMSTMF(QAPXSRC)",
+        &["written"],
+    )?;
     let _ = s.command("DLTPGM PGM(QGPL/QAPXPGM)", CMD);
-    expect(s, "CRTCLPGM PGM(QGPL/QAPXPGM) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXPGM)", &["QAPXPGM"])?;
+    expect(
+        s,
+        "CRTCLPGM PGM(QGPL/QAPXPGM) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXPGM)",
+        &["QAPXPGM"],
+    )?;
     // A CL program whose CALL of QAPXPGM must end in CPF0001, which it
     // monitors; had the call run, it ends in an escape.
     crate::qir::qemu::push(
@@ -186,12 +221,24 @@ fn excluded(s: &mut Session) -> Result<(), String> {
         "QAPXCLS",
         "PGM\nCALL PGM(QGPL/QAPXPGM)\nMONMSG MSGID(CPF0001) EXEC(RETURN)\nSNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('QAPXPGM ran') MSGTYPE(*ESCAPE)\nENDPGM\n",
     )?;
-    expect(s, "svc.srcput QGPL/QCLSRC QAPXCL SRCTYPE(CLP) FROMSTMF(QAPXCLS)", &["written"])?;
+    expect(
+        s,
+        "svc.srcput QGPL/QCLSRC QAPXCL SRCTYPE(CLP) FROMSTMF(QAPXCLS)",
+        &["written"],
+    )?;
     let _ = s.command("DLTPGM PGM(QGPL/QAPXCL)", CMD);
-    expect(s, "CRTCLPGM PGM(QGPL/QAPXCL) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXCL)", &["QAPXCL"])?;
+    expect(
+        s,
+        "CRTCLPGM PGM(QGPL/QAPXCL) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXCL)",
+        &["QAPXCL"],
+    )?;
     // *USE without *EXECUTE: *OBJOPR *READ.
     let _ = s.command("DLTPGM PGM(QGPL/QAPXNOX)", CMD);
-    expect(s, "CRTCLPGM PGM(QGPL/QAPXNOX) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXPGM)", &["QAPXNOX"])?;
+    expect(
+        s,
+        "CRTCLPGM PGM(QGPL/QAPXNOX) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXPGM)",
+        &["QAPXNOX"],
+    )?;
     let _ = s.command("CRTLIB LIB(QAPXLIB)", CMD);
     let _ = s.command("CRTDTAARA DTAARA(QAPXLIB/QAPXDTA) TYPE(*CHAR) LEN(10)", CMD);
     for line in [
@@ -211,7 +258,12 @@ fn excluded(s: &mut Session) -> Result<(), String> {
 
 /// Run a command that must fail; the status and message ID.
 fn command_fails(c: &mut Conn, line: &str) -> Result<(Status, String), String> {
-    let r = c.call(Op::RunCommand, &CommandText { command: line.into() })?;
+    let r = c.call(
+        Op::RunCommand,
+        &CommandText {
+            command: line.into(),
+        },
+    )?;
     if r.status == Status::Ok {
         return Err(format!("RunCommand {line} succeeded"));
     }
@@ -238,7 +290,11 @@ impl Suite {
             return Err(format!("JobInfo after sign-on: {job_a:?}"));
         }
         let info: SystemInfo = a.ok(Op::SystemInfo, &())?;
-        let os = info.products.iter().filter(|p| p.id == "QS00SS1" && p.option == "*BASE").count();
+        let os = info
+            .products
+            .iter()
+            .filter(|p| p.id == "QS00SS1" && p.option == "*BASE")
+            .count();
         if info.system_name.is_empty() || os != 1 {
             return Err(format!("SystemInfo: {info:?}"));
         }
@@ -249,7 +305,9 @@ impl Suite {
         let attached = b.attach(&session.token)?;
         let job_b = b.job_info()?;
         if attached.profile != USER || job_b.user != USER || job_b.job.number == job_a.job.number {
-            return Err(format!("Attach: {attached:?}; JobInfo {job_b:?} beside {job_a:?}"));
+            return Err(format!(
+                "Attach: {attached:?}; JobInfo {job_b:?} beside {job_a:?}"
+            ));
         }
         let libl = library_lists(&mut a, &mut b).map_err(|e| format!("library_lists: {e}"))?;
         let sql = sql_service(&mut a).map_err(|e| format!("sql_service: {e}"))?;
@@ -261,10 +319,19 @@ impl Suite {
             return Err(format!("SignOff: {}", brief(&off)));
         }
         let ended = b.event(Duration::from_secs(10))?;
-        if (ended.service, ended.op, ended.status) != (Service::SignOn, qap_proto::ops::event::SESSION_ENDED, Status::Ok)
+        if (ended.service, ended.op, ended.status)
+            != (
+                Service::SignOn,
+                qap_proto::ops::event::SESSION_ENDED,
+                Status::Ok,
+            )
             || msgid(&ended) != "TCP1A58"
         {
-            return Err(format!("B's event after A's SignOff: {:?} {}", ended.service, brief(&ended)));
+            return Err(format!(
+                "B's event after A's SignOff: {:?} {}",
+                ended.service,
+                brief(&ended)
+            ));
         }
         if !b.closes(Duration::from_secs(10)) {
             return Err("B stayed open after SessionEnded".into());
@@ -277,7 +344,11 @@ impl Suite {
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         let ending = a.event(Duration::from_secs(20))?;
         if (ending.service, ending.status) != (Service::Connection, Status::ServerEnding) {
-            return Err(format!("A's event at ENDTCPSVR: {:?} {}", ending.service, brief(&ending)));
+            return Err(format!(
+                "A's event at ENDTCPSVR: {:?} {}",
+                ending.service,
+                brief(&ending)
+            ));
         }
         let restarted = refused_then_restarted(s, &mut srv)?;
         Ok(format!(
@@ -304,7 +375,10 @@ impl Suite {
         // A directory USER may not use, made by the security officer.
         s.command(&format!("MKDIR DIR('{}')", ifs::EXCLUDED), CMD)?;
         s.command(
-            &format!("CHGAUT OBJ('{}') USER(*PUBLIC) DTAAUT(*EXCLUDE) OBJAUT(*NONE)", ifs::EXCLUDED),
+            &format!(
+                "CHGAUT OBJ('{}') USER(*PUBLIC) DTAAUT(*EXCLUDE) OBJAUT(*NONE)",
+                ifs::EXCLUDED
+            ),
             CMD,
         )?;
         let mut srv = setup(self, s)?;
@@ -374,7 +448,12 @@ impl Suite {
         third.attach(&session.token)?;
         let r = lanes(&mut a, &mut b, &mut third)
             .and_then(|l| Ok(format!("{l}; {}", repeatable(&mut a, &mut b, &mut third)?)))
-            .and_then(|l| Ok(format!("{l}; {}", long_changes(&mut a, &mut b, &mut third)?)));
+            .and_then(|l| {
+                Ok(format!(
+                    "{l}; {}",
+                    long_changes(&mut a, &mut b, &mut third)?
+                ))
+            });
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r
@@ -392,7 +471,10 @@ fn within<B: ipc::Wire>(c: &mut Conn, what: &str, op: Op, body: &B) -> Result<Du
     match c.poll_reply(id, LANE_BOUND)? {
         Some(r) if r.status == Status::Ok => Ok(at.elapsed()),
         Some(r) => Err(format!("{what}: {}", brief(&r))),
-        None => Err(format!("LANES: {what} got no reply in {} s while the long statements ran", LANE_BOUND.as_secs())),
+        None => Err(format!(
+            "LANES: {what} got no reply in {} s while the long statements ran",
+            LANE_BOUND.as_secs()
+        )),
     }
 }
 
@@ -404,27 +486,48 @@ fn lanes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
     let (slow, slow_op) = sql::start_query(b, &sql::slow_select("QAPLANE"))?;
     sql::still_running(b, slow, Duration::from_secs(1))?;
     let mut took = Vec::new();
-    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
+    let check = CommandText {
+        command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into(),
+    };
     took.push(within(c, "CHKOBJ", Op::RunCommand, &check)?);
-    let schemas = ListSchemas { pattern: "QAP%".into(), start: 0, max: 0 };
+    let schemas = ListSchemas {
+        pattern: "QAP%".into(),
+        start: 0,
+        max: 0,
+    };
     took.push(within(c, "ListSchemas", Op::ListSchemas, &schemas)?);
-    let tables = ListTables { schema: "QAPLANE".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
+    let tables = ListTables {
+        schema: "QAPLANE".into(),
+        pattern: "%".into(),
+        kinds: Vec::new(),
+        start: 0,
+        max: 0,
+    };
     took.push(within(c, "ListTables", Op::ListTables, &tables)?);
-    let columns = ListColumns { schema: "QAPLANE".into(), table: "BIG".into() };
+    let columns = ListColumns {
+        schema: "QAPLANE".into(),
+        table: "BIG".into(),
+    };
     took.push(within(c, "ListColumns", Op::ListColumns, &columns)?);
     let at = Instant::now();
     let n = sql::count(c, "SELECT COUNT(*) FROM QAPLANE.BIG")?;
     took.push(at.elapsed());
     if n != 1000 || took.iter().any(|t| *t > LANE_BOUND) {
-        return Err(format!("the third connection's query: {n} rows in {:?}", at.elapsed()));
+        return Err(format!(
+            "the third connection's query: {n} rows in {:?}",
+            at.elapsed()
+        ));
     }
-    if a.poll_reply(agg, Duration::ZERO)?.is_some() || b.poll_reply(slow, Duration::ZERO)?.is_some() {
+    if a.poll_reply(agg, Duration::ZERO)?.is_some() || b.poll_reply(slow, Duration::ZERO)?.is_some()
+    {
         return Err("a long statement ended before its cancel".into());
     }
     // The earlier statement ends under the later one, which goes on.
     let (_, stop_agg) = sql::cancel(a, agg)?;
     if stop_agg > LANE_BOUND {
-        return Err(format!("the aggregate's cancel took {stop_agg:?} under the later select"));
+        return Err(format!(
+            "the aggregate's cancel took {stop_agg:?} under the later select"
+        ));
     }
     sql::still_running(b, slow, Duration::ZERO)?;
     let (_, stop_slow) = sql::cancel(b, slow)?;
@@ -446,23 +549,40 @@ fn repeatable(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String
     let (agg, _) = sql::start_long(a, "QAPLANE")?;
     sql::still_running(a, agg, Duration::from_secs(1))?;
     let mut took = Vec::new();
-    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
+    let check = CommandText {
+        command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into(),
+    };
     took.push(within(c, "CHKOBJ", Op::RunCommand, &check)?);
-    let tables = ListTables { schema: "QAPLANE".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
+    let tables = ListTables {
+        schema: "QAPLANE".into(),
+        pattern: "%".into(),
+        kinds: Vec::new(),
+        start: 0,
+        max: 0,
+    };
     took.push(within(c, "ListTables", Op::ListTables, &tables)?);
-    let columns = ListColumns { schema: "QAPLANE".into(), table: "BIG".into() };
+    let columns = ListColumns {
+        schema: "QAPLANE".into(),
+        table: "BIG".into(),
+    };
     took.push(within(c, "ListColumns", Op::ListColumns, &columns)?);
     let at = Instant::now();
     let rows = sql::count(c, "SELECT COUNT(*) FROM QAPLANE.BIG")?;
     took.push(at.elapsed());
     if rows != 1000 || took.iter().any(|t| *t > LANE_BOUND) {
-        return Err(format!("under RepeatableRead, the third connection's query: {rows} rows in {:?}", at.elapsed()));
+        return Err(format!(
+            "under RepeatableRead, the third connection's query: {rows} rows in {:?}",
+            at.elapsed()
+        ));
     }
     // Row N = 0 is the first the aggregate read: a change of it waits
     // (the table's WAITRCD is 60 s) while others go on.
     let upd = sql::start_exec(b, "UPDATE QAPLANE.BIG SET N = 0 WHERE N = 0")?;
     if let Some(r) = b.poll_reply(upd, Duration::from_secs(2))? {
-        return Err(format!("another job's change of a row read under RepeatableRead did not wait: {}", sql::failure(&r)));
+        return Err(format!(
+            "another job's change of a row read under RepeatableRead did not wait: {}",
+            sql::failure(&r)
+        ));
     }
     let waiting = within(c, "CHKOBJ while a change waits", Op::RunCommand, &check)?;
     if a.poll_reply(agg, Duration::ZERO)?.is_some() {
@@ -492,9 +612,20 @@ const WIDE_ROWS: i64 = 256_000;
 /// INDEX` over a large table (on `a`), each while the third's command
 /// and catalog lists answer.
 fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
-    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
-    let tables = ListTables { schema: "QAPLANE".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
-    let columns = ListColumns { schema: "QAPLANE".into(), table: "BIG".into() };
+    let check = CommandText {
+        command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into(),
+    };
+    let tables = ListTables {
+        schema: "QAPLANE".into(),
+        pattern: "%".into(),
+        kinds: Vec::new(),
+        start: 0,
+        max: 0,
+    };
+    let columns = ListColumns {
+        schema: "QAPLANE".into(),
+        table: "BIG".into(),
+    };
     // The subquery UPDATE: its rows are found first, a read as long as
     // the aggregate's.
     let upd = sql::start_exec(
@@ -512,23 +643,53 @@ fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, Stri
     let (_, stop_upd) = sql::cancel(b, upd)?;
     // A table large enough that its index takes a while, in a library
     // of its own (not journaled); kept between runs.
-    let _ = c.call(Op::RunCommand, &CommandText { command: "CRTLIB LIB(QAPLANEX)".into() })?;
-    sql::run_or(a, "CREATE TABLE QAPLANEX.WIDE (N INTEGER NOT NULL, PAD CHAR(40) NOT NULL DEFAULT 'x')", &["42710", "58004"])?;
+    let _ = c.call(
+        Op::RunCommand,
+        &CommandText {
+            command: "CRTLIB LIB(QAPLANEX)".into(),
+        },
+    )?;
+    sql::run_or(
+        a,
+        "CREATE TABLE QAPLANEX.WIDE (N INTEGER NOT NULL, PAD CHAR(40) NOT NULL DEFAULT 'x')",
+        &["42710", "58004"],
+    )?;
     let mut have = sql::count(a, "SELECT COUNT(*) FROM QAPLANEX.WIDE")?;
     if have == 0 {
         sql::run(a, "INSERT INTO QAPLANEX.WIDE (N) SELECT N FROM QAPLANE.BIG")?;
         have = sql::count(a, "SELECT COUNT(*) FROM QAPLANEX.WIDE")?;
     }
     while have < WIDE_ROWS {
-        sql::run(a, &format!("INSERT INTO QAPLANEX.WIDE (N) SELECT N + {have} FROM QAPLANEX.WIDE"))?;
+        sql::run(
+            a,
+            &format!("INSERT INTO QAPLANEX.WIDE (N) SELECT N + {have} FROM QAPLANEX.WIDE"),
+        )?;
         have = sql::count(a, "SELECT COUNT(*) FROM QAPLANEX.WIDE")?;
     }
     sql::run_or(a, "DROP INDEX QAPLANEX.WIDEIX", &["42704"])?;
     let at = Instant::now();
-    let idx = sql::start_exec(a, "CREATE INDEX QAPLANEX.WIDEIX ON QAPLANEX.WIDE (PAD, N DESC)")?;
-    took.push(within(c, "CHKOBJ beside CREATE INDEX", Op::RunCommand, &check)?);
-    took.push(within(c, "ListTables beside CREATE INDEX", Op::ListTables, &tables)?);
-    took.push(within(c, "ListColumns beside CREATE INDEX", Op::ListColumns, &columns)?);
+    let idx = sql::start_exec(
+        a,
+        "CREATE INDEX QAPLANEX.WIDEIX ON QAPLANEX.WIDE (PAD, N DESC)",
+    )?;
+    took.push(within(
+        c,
+        "CHKOBJ beside CREATE INDEX",
+        Op::RunCommand,
+        &check,
+    )?);
+    took.push(within(
+        c,
+        "ListTables beside CREATE INDEX",
+        Op::ListTables,
+        &tables,
+    )?);
+    took.push(within(
+        c,
+        "ListColumns beside CREATE INDEX",
+        Op::ListColumns,
+        &columns,
+    )?);
     // The table being indexed is read meanwhile. (Its change is refused
     // to other jobs; the connections of one session are one job.)
     let at_read = Instant::now();
@@ -565,19 +726,50 @@ fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, Stri
 /// A long command on `a`: `CPYF` of the wide table, while the third's
 /// command, catalog lists and a read of the table copied answer. How
 /// long the copy took.
-fn long_command(a: &mut Conn, c: &mut Conn, have: i64, took: &mut Vec<Duration>) -> Result<Duration, String> {
-    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
-    let tables = ListTables { schema: "QAPLANEX".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
-    let columns = ListColumns { schema: "QAPLANEX".into(), table: "WIDE".into() };
-    let _ = c.call(Op::RunCommand, &CommandText { command: "DLTF FILE(QAPLANEX/WIDECPY)".into() })?;
+fn long_command(
+    a: &mut Conn,
+    c: &mut Conn,
+    have: i64,
+    took: &mut Vec<Duration>,
+) -> Result<Duration, String> {
+    let check = CommandText {
+        command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into(),
+    };
+    let tables = ListTables {
+        schema: "QAPLANEX".into(),
+        pattern: "%".into(),
+        kinds: Vec::new(),
+        start: 0,
+        max: 0,
+    };
+    let columns = ListColumns {
+        schema: "QAPLANEX".into(),
+        table: "WIDE".into(),
+    };
+    let _ = c.call(
+        Op::RunCommand,
+        &CommandText {
+            command: "DLTF FILE(QAPLANEX/WIDECPY)".into(),
+        },
+    )?;
     let at = Instant::now();
     let copy = CommandText {
         command: "CPYF FROMFILE(QAPLANEX/WIDE) TOFILE(QAPLANEX/WIDECPY) CRTFILE(*YES)".into(),
     };
     let id = a.request(Op::RunCommand, &copy)?;
     took.push(within(c, "CHKOBJ beside CPYF", Op::RunCommand, &check)?);
-    took.push(within(c, "ListTables beside CPYF", Op::ListTables, &tables)?);
-    took.push(within(c, "ListColumns beside CPYF", Op::ListColumns, &columns)?);
+    took.push(within(
+        c,
+        "ListTables beside CPYF",
+        Op::ListTables,
+        &tables,
+    )?);
+    took.push(within(
+        c,
+        "ListColumns beside CPYF",
+        Op::ListColumns,
+        &columns,
+    )?);
     let at_read = Instant::now();
     let read = sql::count(c, "SELECT COUNT(*) FROM QAPLANEX.WIDE WHERE N < 10")?;
     took.push(at_read.elapsed());
@@ -591,7 +783,9 @@ fn long_command(a: &mut Conn, c: &mut Conn, have: i64, took: &mut Vec<Duration>)
     if read != 10 {
         return Err(format!("the table being copied read {read} rows of 10"));
     }
-    let r = a.poll_reply(id, SLOW)?.ok_or_else(|| format!("CPYF of {have} rows got no reply in {} s", SLOW.as_secs()))?;
+    let r = a
+        .poll_reply(id, SLOW)?
+        .ok_or_else(|| format!("CPYF of {have} rows got no reply in {} s", SLOW.as_secs()))?;
     if r.status != Status::Ok {
         return Err(format!("CPYF of {have} rows: {}", brief(&r)));
     }
@@ -606,7 +800,12 @@ fn long_command(a: &mut Conn, c: &mut Conn, have: i64, took: &mut Vec<Duration>)
 /// `RunCommand`, `CheckCommand` and `DescribeCommand`.
 fn commands(c: &mut Conn) -> Result<String, String> {
     // A previous run's library goes first.
-    let _ = c.call(Op::RunCommand, &CommandText { command: "DLTLIB LIB(QAPLIB)".into() })?;
+    let _ = c.call(
+        Op::RunCommand,
+        &CommandText {
+            command: "DLTLIB LIB(QAPLIB)".into(),
+        },
+    )?;
     let made = command(c, "CRTLIB LIB(QAPLIB) TEXT('QAP step')")?;
     if !made.iter().any(|m| m == "CPC2102") {
         return Err(format!("CRTLIB's messages: {made:?}"));
@@ -615,14 +814,31 @@ fn commands(c: &mut Conn) -> Result<String, String> {
     if status != Status::Error || id != "CPF2111" {
         return Err(format!("CRTLIB of an existing library: {status:?} {id}"));
     }
-    let good: CheckReply = c.ok(Op::CheckCommand, &CommandText { command: "CRTLIB LIB(QAPX)".into() })?;
+    let good: CheckReply = c.ok(
+        Op::CheckCommand,
+        &CommandText {
+            command: "CRTLIB LIB(QAPX)".into(),
+        },
+    )?;
     if !good.messages.is_empty() {
-        return Err(format!("CheckCommand of a good command: {:?}", good.messages));
+        return Err(format!(
+            "CheckCommand of a good command: {:?}",
+            good.messages
+        ));
     }
-    let bad = c.call(Op::CheckCommand, &CommandText { command: "CRTLIB LIB(QAPX) NOSUCH(1)".into() })?;
+    let bad = c.call(
+        Op::CheckCommand,
+        &CommandText {
+            command: "CRTLIB LIB(QAPX) NOSUCH(1)".into(),
+        },
+    )?;
     let msgs: CheckReply = bad.body_as().map_err(|e| e.to_string())?;
     if bad.status != Status::Error || msgs.messages.is_empty() {
-        return Err(format!("CheckCommand of a bad keyword: {} {:?}", brief(&bad), msgs.messages));
+        return Err(format!(
+            "CheckCommand of a bad keyword: {} {:?}",
+            brief(&bad),
+            msgs.messages
+        ));
     }
     let def: CommandDefinition = c.ok(
         Op::DescribeCommand,
@@ -634,7 +850,11 @@ fn commands(c: &mut Conn) -> Result<String, String> {
         },
     )?;
     if def.name.name != "CRTLIB" || !def.nodes.iter().any(|n| n.keyword == "LIB" && n.required) {
-        return Err(format!("DescribeCommand CRTLIB: {} nodes, name {:?}", def.nodes.len(), def.name));
+        return Err(format!(
+            "DescribeCommand CRTLIB: {} nodes, name {:?}",
+            def.nodes.len(),
+            def.name
+        ));
     }
     Ok(format!(
         "CRTLIB ran ({}), again CPF2111, CheckCommand found {}, CRTLIB described in {} nodes",
@@ -647,7 +867,11 @@ fn commands(c: &mut Conn) -> Result<String, String> {
 /// A job log of `USER`'s, several pages long (the printer file's page
 /// made short for it), listed and read.
 fn job_log(s: &mut Session, c: &mut Conn) -> Result<String, String> {
-    expect(s, "CHGPRTF FILE(QSYS/QPJOBLOG) PAGESIZE(10 132) OVRFLW(8)", &[""])?;
+    expect(
+        s,
+        "CHGPRTF FILE(QSYS/QPJOBLOG) PAGESIZE(10 132) OVRFLW(8)",
+        &[""],
+    )?;
     // The batch subsystem, unless an earlier step started it.
     s.command("STRSBS QSYS/QBATCH", CMD)?;
     let sent = s.command(
@@ -655,7 +879,10 @@ fn job_log(s: &mut Session, c: &mut Conn) -> Result<String, String> {
         CMD,
     )?;
     let file = wait_job_log(c);
-    s.command("CHGPRTF FILE(QSYS/QPJOBLOG) PAGESIZE(66 132) OVRFLW(60)", CMD)?;
+    s.command(
+        "CHGPRTF FILE(QSYS/QPJOBLOG) PAGESIZE(66 132) OVRFLW(60)",
+        CMD,
+    )?;
     let file = file.map_err(|e| format!("{e}\nSBMJOB: {sent}"))?;
     let read = |c: &mut Conn, format, first_page, last_page| -> Result<SpooledData, String> {
         c.ok(
@@ -670,7 +897,8 @@ fn job_log(s: &mut Session, c: &mut Conn) -> Result<String, String> {
     };
     let whole = read(c, ReadFormat::Scs, 1, 0)?;
     if whole.pages < 2 || whole.pages != file.pages {
-        let text = read(c, ReadFormat::Text, 1, 0).map(|t| String::from_utf8_lossy(&t.data).into_owned());
+        let text =
+            read(c, ReadFormat::Text, 1, 0).map(|t| String::from_utf8_lossy(&t.data).into_owned());
         return Err(format!(
             "the job log reads as {} pages, listed as {}; as text:\n{}",
             whole.pages,
@@ -744,8 +972,14 @@ fn wait_job_log(c: &mut Conn) -> Result<SpooledFile, String> {
             return Ok(f.clone());
         }
         if Instant::now() > end {
-            let names: Vec<String> = list.files.iter().map(|f| format!("{}/{}", f.id.job.name, f.id.file)).collect();
-            return Err(format!("no QPJOBLOG of QAPLOG listed in 60 s; listed {names:?}"));
+            let names: Vec<String> = list
+                .files
+                .iter()
+                .map(|f| format!("{}/{}", f.id.job.name, f.id.file))
+                .collect();
+            return Err(format!(
+                "no QPJOBLOG of QAPLOG listed in 60 s; listed {names:?}"
+            ));
         }
         std::thread::sleep(Duration::from_secs(1));
     }
@@ -769,13 +1003,24 @@ fn sql_service(c: &mut Conn) -> Result<String, String> {
     sql::options(c, CommitLevel::None, None)?;
     sql::run_or(c, "CREATE SCHEMA QAPSQL", &["42710", "58004"])?;
     sql::run_or(c, "DROP TABLE QAPSQL.ITEMS", &["42704"])?;
-    sql::run(c, "CREATE TABLE QAPSQL.ITEMS (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR(20) NOT NULL, PRICE DECIMAL(7, 2))")?;
+    sql::run(
+        c,
+        "CREATE TABLE QAPSQL.ITEMS (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR(20) NOT NULL, PRICE DECIMAL(7, 2))",
+    )?;
     let ins = sql::prepare(c, "INSERT INTO QAPSQL.ITEMS VALUES(?, ?, ?)")?;
     if ins.parameters.len() != 3 {
         return Err(format!("the INSERT's parameters: {:?}", ins.parameters));
     }
     let row = |id, name, price| vec![sql::int(id), sql::text(name), sql::dec(price)];
-    let r = sql::execute(c, ins.statement, vec![row(1, "One", "1.50"), row(2, "Two", "2.25"), row(3, "Three", "3.00")])?;
+    let r = sql::execute(
+        c,
+        ins.statement,
+        vec![
+            row(1, "One", "1.50"),
+            row(2, "Two", "2.25"),
+            row(3, "Three", "3.00"),
+        ],
+    )?;
     if r.status != Status::Ok {
         return Err(format!("three rows: {}", sql::failure(&r)));
     }
@@ -784,23 +1029,62 @@ fn sql_service(c: &mut Conn) -> Result<String, String> {
         return Err(format!("three rows inserted, {} updated", ran.updated));
     }
     // Row 1 of these is a duplicate key: row 0 stays, row 2 never runs.
-    let r = sql::execute(c, ins.statement, vec![row(4, "Four", "4.00"), row(2, "Again", "0"), row(5, "Five", "5")])?;
-    let dup: SqlFailure = r.body_as().map_err(|e| format!("{}: {e}", sql::failure(&r)))?;
+    let r = sql::execute(
+        c,
+        ins.statement,
+        vec![
+            row(4, "Four", "4.00"),
+            row(2, "Again", "0"),
+            row(5, "Five", "5"),
+        ],
+    )?;
+    let dup: SqlFailure = r
+        .body_as()
+        .map_err(|e| format!("{}: {e}", sql::failure(&r)))?;
     if r.status != Status::SqlError || dup.row != Some(1) || dup.sqlcode != -803 {
         return Err(format!("the duplicate key: {}", sql::failure(&r)));
     }
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: ins.statement })?;
+    c.ok::<_, ()>(
+        Op::Release,
+        &StatementRef {
+            statement: ins.statement,
+        },
+    )?;
     // Prepare, Execute, Fetch in two batches.
     let q = sql::prepare(c, "SELECT ID, NAME, PRICE FROM QAPSQL.ITEMS ORDER BY ID")?;
     let names: Vec<&str> = q.columns.iter().map(|c| c.name.as_str()).collect();
-    if names != ["ID", "NAME", "PRICE"] || q.columns[2].sql_type != "DECIMAL" || q.columns[2].scale != 2 {
+    if names != ["ID", "NAME", "PRICE"]
+        || q.columns[2].sql_type != "DECIMAL"
+        || q.columns[2].scale != 2
+    {
         return Err(format!("the query's columns: {:?}", q.columns));
     }
     let r = sql::execute(c, q.statement, Vec::new())?;
-    let cursor = r.body_as::<Executed>().ok().and_then(|e| e.cursor).ok_or_else(|| sql::failure(&r))?;
-    let one: Fetched = c.ok(Op::Fetch, &Fetch { cursor, max_rows: 3 })?;
-    let two: Fetched = c.ok(Op::Fetch, &Fetch { cursor, max_rows: 3 })?;
-    let ids: Vec<SqlValue> = one.rows.iter().chain(&two.rows).map(|r| r[0].clone()).collect();
+    let cursor = r
+        .body_as::<Executed>()
+        .ok()
+        .and_then(|e| e.cursor)
+        .ok_or_else(|| sql::failure(&r))?;
+    let one: Fetched = c.ok(
+        Op::Fetch,
+        &Fetch {
+            cursor,
+            max_rows: 3,
+        },
+    )?;
+    let two: Fetched = c.ok(
+        Op::Fetch,
+        &Fetch {
+            cursor,
+            max_rows: 3,
+        },
+    )?;
+    let ids: Vec<SqlValue> = one
+        .rows
+        .iter()
+        .chain(&two.rows)
+        .map(|r| r[0].clone())
+        .collect();
     if one.end || !two.end || ids != [sql::int(1), sql::int(2), sql::int(3), sql::int(4)] {
         return Err(format!("the rows: {one:?} then {two:?}"));
     }
@@ -808,7 +1092,12 @@ fn sql_service(c: &mut Conn) -> Result<String, String> {
         return Err(format!("row 2: {:?}", one.rows[1]));
     }
     let _ = c.call(Op::CloseCursor, &CursorRef { cursor })?;
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: q.statement })?;
+    c.ok::<_, ()>(
+        Op::Release,
+        &StatementRef {
+            statement: q.statement,
+        },
+    )?;
     let catalog = catalog(c)?;
     let commit = commitment(c)?;
     Ok(format!(
@@ -839,7 +1128,11 @@ fn catalog(c: &mut Conn) -> Result<String, String> {
             max: 0,
         },
     )?;
-    if !tables.tables.iter().any(|t| t.name == "ITEMS" && t.kind == TableKind::Table) {
+    if !tables
+        .tables
+        .iter()
+        .any(|t| t.name == "ITEMS" && t.kind == TableKind::Table)
+    {
         return Err(format!("ListTables QAPSQL: {:?}", tables.tables));
     }
     let cols: Columns = c.ok(
@@ -863,7 +1156,10 @@ fn catalog(c: &mut Conn) -> Result<String, String> {
 /// journals; `SQL7008` on one in `QAPLIB`, a library `CRTLIB` made.
 fn commitment(c: &mut Conn) -> Result<String, String> {
     sql::run_or(c, "DROP TABLE QAPSQL.LEDGER", &["42704"])?;
-    sql::run(c, "CREATE TABLE QAPSQL.LEDGER (ID INTEGER NOT NULL, AMT DECIMAL(9, 2))")?;
+    sql::run(
+        c,
+        "CREATE TABLE QAPSQL.LEDGER (ID INTEGER NOT NULL, AMT DECIMAL(9, 2))",
+    )?;
     sql::run_or(c, "DROP TABLE QAPLIB.PLAIN", &["42704"])?;
     sql::run(c, "CREATE TABLE QAPLIB.PLAIN (ID INTEGER NOT NULL)")?;
     sql::options(c, CommitLevel::ReadCommitted, Some("QAPSQL"))?;
@@ -874,15 +1170,27 @@ fn commitment(c: &mut Conn) -> Result<String, String> {
     c.ok::<_, ()>(Op::Commit, &())?;
     let kept = sql::count(c, "SELECT COUNT(*) FROM LEDGER")?;
     if (rolled, kept) != (0, 1) {
-        return Err(format!("LEDGER after a rollback has {rolled} rows, after a commit {kept}"));
+        return Err(format!(
+            "LEDGER after a rollback has {rolled} rows, after a commit {kept}"
+        ));
     }
     let p = sql::prepare(c, "INSERT INTO QAPLIB.PLAIN VALUES(9)")?;
     let r = sql::execute(c, p.statement, Vec::new())?;
-    let f: SqlFailure = r.body_as().map_err(|e| format!("{}: {e}", sql::failure(&r)))?;
+    let f: SqlFailure = r
+        .body_as()
+        .map_err(|e| format!("{}: {e}", sql::failure(&r)))?;
     if r.status != Status::SqlError || f.sqlcode != -7008 {
-        return Err(format!("an unjournaled table under commitment control: {}", sql::failure(&r)));
+        return Err(format!(
+            "an unjournaled table under commitment control: {}",
+            sql::failure(&r)
+        ));
     }
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: p.statement })?;
+    c.ok::<_, ()>(
+        Op::Release,
+        &StatementRef {
+            statement: p.statement,
+        },
+    )?;
     c.ok::<_, ()>(Op::Rollback, &())?;
     sql::options(c, CommitLevel::None, None)?;
     Ok("LEDGER: a rollback left 0 rows, a commit 1; QAPLIB.PLAIN under *CS: SQL7008".into())
@@ -895,10 +1203,22 @@ fn not_authorized(srv: &mut Server, c: &mut Conn) -> Result<String, String> {
     let mut sec = srv.open()?;
     sec.sign_on("QSECOFR", crate::phase5::SECOFR_PASSWORD)?;
     sql::run_or(&mut sec, "CREATE SCHEMA QAPPAY", &["42710", "58004"])?;
-    sql::run_or(&mut sec, "CREATE TABLE QAPPAY.SALARIES (EMPNO CHAR(6) NOT NULL, SALARY DECIMAL(9, 2))", &["42710", "58004"])?;
-    command(&mut sec, "GRTOBJAUT OBJ(QAPPAY/SALARIES) OBJTYPE(*FILE) USER(*PUBLIC) AUT(*EXCLUDE)")?;
+    sql::run_or(
+        &mut sec,
+        "CREATE TABLE QAPPAY.SALARIES (EMPNO CHAR(6) NOT NULL, SALARY DECIMAL(9, 2))",
+        &["42710", "58004"],
+    )?;
+    command(
+        &mut sec,
+        "GRTOBJAUT OBJ(QAPPAY/SALARIES) OBJTYPE(*FILE) USER(*PUBLIC) AUT(*EXCLUDE)",
+    )?;
     let _ = sec.call(Op::SignOff, &());
-    let r = c.call(Op::Prepare, &qap_proto::ops::sql::Prepare { sql: "SELECT * FROM QAPPAY.SALARIES".into() })?;
+    let r = c.call(
+        Op::Prepare,
+        &qap_proto::ops::sql::Prepare {
+            sql: "SELECT * FROM QAPPAY.SALARIES".into(),
+        },
+    )?;
     let r = if r.status == Status::Ok {
         // Refused at Execute, if not at Prepare.
         let p: qap_proto::ops::sql::Prepared = r.body_as().map_err(|e| e.to_string())?;
@@ -907,7 +1227,10 @@ fn not_authorized(srv: &mut Server, c: &mut Conn) -> Result<String, String> {
         r
     };
     if r.status != Status::NotAuthorized || msgid(&r) != "SQL0551" {
-        return Err(format!("SELECT of a table excluded from {USER}: {}", sql::failure(&r)));
+        return Err(format!(
+            "SELECT of a table excluded from {USER}: {}",
+            sql::failure(&r)
+        ));
     }
     let cols = c.call(
         Op::ListColumns,
@@ -917,9 +1240,15 @@ fn not_authorized(srv: &mut Server, c: &mut Conn) -> Result<String, String> {
         },
     )?;
     if cols.status != Status::NotAuthorized {
-        return Err(format!("ListColumns of a table excluded from {USER}: {}", brief(&cols)));
+        return Err(format!(
+            "ListColumns of a table excluded from {USER}: {}",
+            brief(&cols)
+        ));
     }
-    Ok("SELECT and ListColumns of QAPPAY.SALARIES (*PUBLIC *EXCLUDE): NotAuthorized SQL0551".into())
+    Ok(
+        "SELECT and ListColumns of QAPPAY.SALARIES (*PUBLIC *EXCLUDE): NotAuthorized SQL0551"
+            .into(),
+    )
 }
 
 /// A table of the newer types fetched: each column's `SqlValue` kind,
@@ -940,26 +1269,44 @@ fn value_kinds(c: &mut Conn) -> Result<String, String> {
          (3, NULL, NULL, NULL, NULL, NULL, NULL, NULL)",
     )?;
     let q = sql::prepare(c, "SELECT * FROM QAPSQL.TYPES ORDER BY ID")?;
-    let bits = q.columns.iter().find(|k| k.name == "BITS").ok_or("no BITS column")?;
+    let bits = q
+        .columns
+        .iter()
+        .find(|k| k.name == "BITS")
+        .ok_or("no BITS column")?;
     if bits.ccsid != 65535 {
         return Err(format!("BITS' column: {bits:?}"));
     }
     let rows = sql::query(c, "SELECT * FROM QAPSQL.TYPES ORDER BY ID")?;
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: q.statement })?;
+    c.ok::<_, ()>(
+        Op::Release,
+        &StatementRef {
+            statement: q.statement,
+        },
+    )?;
     let [one, two, three] = rows.as_slice() else {
         return Err(format!("{} rows", rows.len()));
     };
     let ok1 = matches!(&one[1], SqlValue::Decimal { text } if text.contains('E') || text.starts_with("0.000"))
-        && one[2] == SqlValue::Binary { data: vec![0xC1, 0xC2, 0xC3, 0xC4] }
+        && one[2]
+            == SqlValue::Binary {
+                data: vec![0xC1, 0xC2, 0xC3, 0xC4],
+            }
         && matches!(one[3], SqlValue::Timestamp { picos, .. } if picos == 456_789_012)
         && one[4] == SqlValue::Boolean { value: true }
-        && one[5] == SqlValue::Binary { data: vec![0x25, 0x50, 0x44] }
+        && one[5]
+            == SqlValue::Binary {
+                data: vec![0x25, 0x50, 0x44],
+            }
         && one[6] == sql::text("clob text")
         && one[7] == SqlValue::Binary { data: vec![1, 2] };
-    let ok2 = two[1] == SqlValue::Decimal { text: "NaN".into() } && two[4] == SqlValue::Boolean { value: false };
+    let ok2 = two[1] == SqlValue::Decimal { text: "NaN".into() }
+        && two[4] == SqlValue::Boolean { value: false };
     let ok3 = three[1..].iter().all(|v| *v == SqlValue::Null);
     if !(ok1 && ok2 && ok3) {
-        return Err(format!("the newer types' values:\n{one:?}\n{two:?}\n{three:?}"));
+        return Err(format!(
+            "the newer types' values:\n{one:?}\n{two:?}\n{three:?}"
+        ));
     }
     Ok("DECFLOAT (1.5E-30, NaN) as Decimal, FOR BIT DATA as Binary with CCSID 65535, TIMESTAMP(12) picos, BOOLEAN, BLOB, CLOB, BINARY and nulls".into())
 }

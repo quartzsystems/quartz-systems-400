@@ -28,7 +28,12 @@ impl<'a> Cursor<'a> {
     /// A cursor at the first token.
     #[must_use]
     pub fn new(toks: &'a [Tok], end: Pos) -> Self {
-        Self { toks, i: 0, end, operands: false }
+        Self {
+            toks,
+            i: 0,
+            end,
+            operands: false,
+        }
     }
 
     /// The token under the cursor.
@@ -112,7 +117,11 @@ pub fn trailing(c: &Cursor<'_>, diags: &mut Vec<Diag>) {
     if c.done() {
         return;
     }
-    let id = if c.peek().is_some_and(|t| t.is(")")) { ids::UNEXPECTED_RPAREN } else { ids::END_OF_EXPRESSION };
+    let id = if c.peek().is_some_and(|t| t.is(")")) {
+        ids::UNEXPECTED_RPAREN
+    } else {
+        ids::END_OF_EXPRESSION
+    };
     diags.push(Diag::new(id, 20, c.pos()));
 }
 
@@ -315,7 +324,9 @@ fn args(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Vec<Expr>> {
         let at = c.pos();
         if c.peek().is_some_and(|t| t.is(":") || t.is(")")) {
             out.push(Expr::Empty(at));
-        } else if c.peek().is_some_and(|t| t.is("*")) && c.peek_at(1).is_some_and(|t| t.is(")") || t.is(":")) {
+        } else if c.peek().is_some_and(|t| t.is("*"))
+            && c.peek_at(1).is_some_and(|t| t.is(")") || t.is(":"))
+        {
             c.next();
             out.push(Expr::Special {
                 word: "*".into(),
@@ -391,9 +402,10 @@ fn primary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
             }
         }
         // A built-in function that takes no arguments ends at its name.
-        Kind::Bif(name) if matches!(name.as_str(), "%PARMS" | "%SHTDN" | "%THIS")
-            && c.peek().is_some_and(|t| t.is("("))
-            && c.peek_at(1).is_some_and(|t| !t.is(")")) =>
+        Kind::Bif(name)
+            if matches!(name.as_str(), "%PARMS" | "%SHTDN" | "%THIS")
+                && c.peek().is_some_and(|t| t.is("("))
+                && c.peek_at(1).is_some_and(|t| !t.is(")")) =>
         {
             let at = c.peek().map_or(at, |t| t.at);
             diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, at));
@@ -425,7 +437,11 @@ fn primary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
             }
         }
         Kind::Bif(name) => {
-            let a = if c.eat("(") { args(c, diags)? } else { Vec::new() };
+            let a = if c.eat("(") {
+                args(c, diags)?
+            } else {
+                Vec::new()
+            };
             Expr::Bif {
                 name: name.clone(),
                 args: a,
@@ -515,7 +531,10 @@ mod tests {
                 None => word.clone(),
             },
             Expr::Bif { name, args, .. } => {
-                format!("{name}({})", args.iter().map(show).collect::<Vec<_>>().join(":"))
+                format!(
+                    "{name}({})",
+                    args.iter().map(show).collect::<Vec<_>>().join(":")
+                )
             }
             Expr::Lit(l, _) => format!("{l:?}"),
             Expr::Fig(f, _) => format!("{f:?}"),
@@ -533,14 +552,23 @@ mod tests {
         assert_eq!(show(&parse("a - b - c")), "((A Sub B) Sub C)");
         assert_eq!(show(&parse("a ** b ** c")), "(A Pow (B Pow C))");
         assert_eq!(show(&parse("-2 ** 2")), "(Num(\"-2\") Pow Num(\"2\"))");
-        assert_eq!(show(&parse("a = 1 or b <> 2 and not c")), "((A Eq Num(\"1\")) Or ((B Ne Num(\"2\")) And (Not C)))");
+        assert_eq!(
+            show(&parse("a = 1 or b <> 2 and not c")),
+            "((A Eq Num(\"1\")) Or ((B Ne Num(\"2\")) And (Not C)))"
+        );
     }
 
     #[test]
     fn references_and_calls() {
         assert_eq!(show(&parse("ds(i).sub(2)")), "DS(I).SUB(Num(\"2\"))");
-        assert_eq!(show(&parse("%subst(x:2:%len(y))")), "%SUBST(X:Num(\"2\"):%LEN(Y))");
-        assert_eq!(show(&parse("*in(5) and *inlr")), "(*IN(Num(\"5\")) And *INLR)");
+        assert_eq!(
+            show(&parse("%subst(x:2:%len(y))")),
+            "%SUBST(X:Num(\"2\"):%LEN(Y))"
+        );
+        assert_eq!(
+            show(&parse("*in(5) and *inlr")),
+            "(*IN(Num(\"5\")) And *INLR)"
+        );
         assert_eq!(show(&parse("(k1:k2)")), "[K1:K2]");
         assert_eq!(show(&parse("f(a::*omit)")), "F(A:_:*OMIT)");
         assert_eq!(show(&parse("sorta(arr(*).x)")), "SORTA(ARR(*).X)");

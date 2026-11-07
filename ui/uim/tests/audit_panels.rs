@@ -51,7 +51,11 @@ fn list(rows: Vec<Vec<(&str, &str)>>) -> ListState {
         total: Some(rows.len()),
         rows: rows
             .into_iter()
-            .map(|r| r.into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect())
+            .map(|r| {
+                r.into_iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         complete: true,
@@ -62,7 +66,9 @@ fn list(rows: Vec<Vec<(&str, &str)>>) -> ListState {
 fn golden_fields(attr: &[String]) -> BTreeSet<(usize, usize, usize)> {
     let cells: Vec<char> = attr.iter().flat_map(|r| r.chars()).collect();
     let input = |c: char| {
-        let a = u32::from(c).checked_sub(u32::from('0')).map_or(0, |d| d + 0x20);
+        let a = u32::from(c)
+            .checked_sub(u32::from('0'))
+            .map_or(0, |d| d + 0x20);
         (0x20..=0x3f).contains(&a) && a & 0x04 != 0 && a & 0x07 != 0x07
     };
     let mut out = BTreeSet::new();
@@ -87,7 +93,8 @@ fn golden_fields(attr: &[String]) -> BTreeSet<(usize, usize, usize)> {
 fn same_empty_text(golden: &str, ours: &str) -> bool {
     let paren = |r: &str| {
         let t = r.trim();
-        (t.len() > 2 && t.starts_with('(') && t.ends_with(')')).then(|| r.len() - r.trim_start().len())
+        (t.len() > 2 && t.starts_with('(') && t.ends_with(')'))
+            .then(|| r.len() - r.trim_start().len())
     };
     paren(golden).is_some() && paren(golden) == paren(ours)
 }
@@ -104,13 +111,23 @@ fn against(rel: &str, s: &Screen, skip: &[usize]) {
             continue;
         }
         if o.trim_end() != w.trim_end() && !same_empty_text(w, o) {
-            let _ = write!(diff, "row {:>2}\n  want |{}|\n  got  |{}|\n", i + 1, w.trim_end(), o.trim_end());
+            let _ = write!(
+                diff,
+                "row {:>2}\n  want |{}|\n  got  |{}|\n",
+                i + 1,
+                w.trim_end(),
+                o.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{rel}:\n{diff}");
     let attr = read(&goldens().join(format!("{rel}.attr")));
-    let fields: BTreeSet<(usize, usize, usize)> =
-        s.fields.iter().filter(|f| f.usage.is_input()).map(|f| (f.row, f.col, f.len)).collect();
+    let fields: BTreeSet<(usize, usize, usize)> = s
+        .fields
+        .iter()
+        .filter(|f| f.usage.is_input())
+        .map(|f| (f.row, f.col, f.len))
+        .collect();
     assert_eq!(fields, golden_fields(&attr), "{rel}: input fields");
 }
 
@@ -118,7 +135,12 @@ fn against(rel: &str, s: &Screen, skip: &[usize]) {
 fn ours(name: &str, s: &Screen) {
     let rows = s.text_rows();
     assert_eq!(rows.len(), 24, "{name}: 24 rows");
-    let text = rows.iter().map(|r| r.trim_end()).collect::<Vec<_>>().join("\n") + "\n";
+    let text = rows
+        .iter()
+        .map(|r| r.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("tests/golden/audit/{name}.txt"));
     if std::env::var_os("QS400_UPDATE_GOLDEN").is_some() {
         std::fs::create_dir_all(path.parent().expect("a parent")).unwrap();
@@ -169,19 +191,36 @@ fn dspptfcvr_list_and_letter() {
     d.set_list(
         "CVRS",
         list(vec![
-            vec![("PTFID", "QS00001"), ("PRODID", "QS00SS1"), ("PTFRLS", "V1R0M0"), ("PTFSTS", "Loaded"), ("CVRATR", "*SPCINST")],
-            vec![("PTFID", "QS00002"), ("PRODID", "QS00SS1"), ("PTFRLS", "V1R0M0"), ("PTFSTS", "Temporarily applied"), ("CVRATR", "*DFT")],
+            vec![
+                ("PTFID", "QS00001"),
+                ("PRODID", "QS00SS1"),
+                ("PTFRLS", "V1R0M0"),
+                ("PTFSTS", "Loaded"),
+                ("CVRATR", "*SPCINST"),
+            ],
+            vec![
+                ("PTFID", "QS00002"),
+                ("PRODID", "QS00SS1"),
+                ("PTFRLS", "V1R0M0"),
+                ("PTFSTS", "Temporarily applied"),
+                ("CVRATR", "*DFT"),
+            ],
         ]),
     );
     ours("selcvr", &render(&g, "SELCVR", &d, &opts(0)).unwrap());
     let mut d = MapDialog::new();
-    d.set("PTFID", "QS00001").set("PRODID", "QS00SS1").set("PTFRLS", "V1R0M0");
+    d.set("PTFID", "QS00001")
+        .set("PRODID", "QS00SS1")
+        .set("PTFRLS", "V1R0M0");
     d.set_list(
         "LINES",
         list(vec![
             vec![("CVRLINE", "Corrects the level of the object store check.")],
             vec![("CVRLINE", "")],
-            vec![("CVRLINE", "SPECIAL INSTRUCTIONS: apply it with the system in restricted state.")],
+            vec![(
+                "CVRLINE",
+                "SPECIAL INSTRUCTIONS: apply it with the system in restricted state.",
+            )],
         ]),
     );
     ours("dspcvr", &render(&g, "DSPCVR", &d, &opts(0)).unwrap());
@@ -201,8 +240,16 @@ fn dspbcksts_matches_the_captures() {
         page,
         ..Options::default()
     };
-    against("audit/displays/dspbcksts", &render(&g, "DSPBCKSTS", &d, &o(0)).unwrap(), &[]);
-    against("audit/displays/dspbcksts-2", &render(&g, "DSPBCKSTS", &d, &o(1)).unwrap(), &[]);
+    against(
+        "audit/displays/dspbcksts",
+        &render(&g, "DSPBCKSTS", &d, &o(0)).unwrap(),
+        &[],
+    );
+    against(
+        "audit/displays/dspbcksts-2",
+        &render(&g, "DSPBCKSTS", &d, &o(1)).unwrap(),
+        &[],
+    );
     // F22 with no history; ours says so in its own words and keeps
     // `Bottom` under the empty list, where pub400 shows none.
     d.set_list("HIST", list(Vec::new()));
@@ -231,8 +278,18 @@ fn dspbcksts_with_backups() {
     d.set_list(
         "HIST",
         list(vec![
-            vec![("HDATE", "12/30/26"), ("HOPT", "*DAILY"), ("HSET", "DAYA"), ("HCHG", "Yes")],
-            vec![("HDATE", "12/24/26"), ("HOPT", "*WEEKLY"), ("HSET", "WEEK1"), ("HCHG", "No")],
+            vec![
+                ("HDATE", "12/30/26"),
+                ("HOPT", "*DAILY"),
+                ("HSET", "DAYA"),
+                ("HCHG", "Yes"),
+            ],
+            vec![
+                ("HDATE", "12/24/26"),
+                ("HOPT", "*WEEKLY"),
+                ("HSET", "WEEK1"),
+                ("HCHG", "No"),
+            ],
         ]),
     );
     ours("dspbckhst", &render(&g, "DSPBCKHST", &d, &opts(0)).unwrap());
@@ -248,7 +305,11 @@ fn dspbcksts_with_backups() {
     }
     d.set_list(
         "STEPS",
-        list(vec![vec![("HSTEP", "SAVLIB completed")], vec![("HSTEP", "SAVCFG failed")], vec![("HSTEP", "SAV completed")]]),
+        list(vec![
+            vec![("HSTEP", "SAVLIB completed")],
+            vec![("HSTEP", "SAVCFG failed")],
+            vec![("HSTEP", "SAV completed")],
+        ]),
     );
     ours("dspbckdtl", &render(&g, "DSPBCKDTL", &d, &opts(0)).unwrap());
 }
@@ -282,9 +343,17 @@ fn wrkoptvol_add_entry_typed() {
     d.set("WDEV", "*ALL").set("CSI", "*ALL");
     d.set_list("VOLS", list(Vec::new()));
     d.set_ext("VOLS", &[("OPT", "1"), ("VOL", "QSTESTVOL")]);
-    against("audit/displays/wrkoptvol-ext71", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(), &[]);
+    against(
+        "audit/displays/wrkoptvol-ext71",
+        &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(),
+        &[],
+    );
     d.set_ext("VOLS", &[("VOL", "QSTESTVOL")]);
-    against("audit/displays/wrkoptvol-add-back71", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(), &[]);
+    against(
+        "audit/displays/wrkoptvol-add-back71",
+        &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(),
+        &[],
+    );
 }
 
 /// `WRKOPTVOL` with two volumes: IBM's columns, ours filled.
@@ -296,8 +365,20 @@ fn wrkoptvol_with_volumes() {
     d.set_list(
         "VOLS",
         list(vec![
-            vec![("VOL", "QS400V1R0M0"), ("DEV", "OPTVRT01"), ("VOLTYPE", "*PRIMARY"), ("MEDTYPE", "*CD-ROM"), ("AUTL", "*NONE")],
-            vec![("VOL", "BACKUP1"), ("DEV", "OPTVRT01"), ("VOLTYPE", "*PRIMARY"), ("MEDTYPE", "*DVD-RAM"), ("AUTL", "*NONE")],
+            vec![
+                ("VOL", "QS400V1R0M0"),
+                ("DEV", "OPTVRT01"),
+                ("VOLTYPE", "*PRIMARY"),
+                ("MEDTYPE", "*CD-ROM"),
+                ("AUTL", "*NONE"),
+            ],
+            vec![
+                ("VOL", "BACKUP1"),
+                ("DEV", "OPTVRT01"),
+                ("VOLTYPE", "*PRIMARY"),
+                ("MEDTYPE", "*DVD-RAM"),
+                ("AUTL", "*NONE"),
+            ],
         ]),
     );
     ours("wrkoptvol", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap());
@@ -318,7 +399,14 @@ fn cap(name: &str, row: usize, col: usize, len: usize, trim: bool) -> String {
 
 /// The volume rows every labels display shows.
 fn tape_volume(d: &mut MapDialog) {
-    for (k, row, col) in [("DEV", 3, 25), ("OWNER", 4, 25), ("VOLTYPE", 5, 25), ("VOLID", 3, 66), ("DENS", 4, 66), ("CODE", 5, 66)] {
+    for (k, row, col) in [
+        ("DEV", 3, 25),
+        ("OWNER", 4, 25),
+        ("VOLTYPE", 5, 25),
+        ("VOLID", 3, 66),
+        ("DENS", 4, 66),
+        ("CODE", 5, 66),
+    ] {
         d.set(k, &cap("lbl-1", row, col, 14, true));
     }
 }
@@ -326,10 +414,28 @@ fn tape_volume(d: &mut MapDialog) {
 /// One file's labels: the first page's rows from `first`, the second
 /// page's from `lbl-2`.
 fn tape_file(d: &mut MapDialog, first: &str) {
-    for (k, row) in [("FLABEL", 8), ("FSEQ", 9), ("RECFMT", 11), ("BLKATR", 12), ("RECLEN", 13), ("BLKLEN", 14), ("FLEN", 15), ("BUFOFF", 16), ("CTLCHR", 17)] {
+    for (k, row) in [
+        ("FLABEL", 8),
+        ("FSEQ", 9),
+        ("RECFMT", 11),
+        ("BLKATR", 12),
+        ("RECLEN", 13),
+        ("BLKLEN", 14),
+        ("FLEN", 15),
+        ("BUFOFF", 16),
+        ("CTLCHR", 17),
+    ] {
         d.set(k, &cap(first, row, 41, 20, true));
     }
-    for (k, row) in [("MVIND", 8), ("FVSEQ", 9), ("FCRT", 11), ("FEXP", 12), ("FILTYP", 14), ("CMPACT", 15), ("SYSCOD", 16)] {
+    for (k, row) in [
+        ("MVIND", 8),
+        ("FVSEQ", 9),
+        ("FCRT", 11),
+        ("FEXP", 12),
+        ("FILTYP", 14),
+        ("CMPACT", 15),
+        ("SYSCOD", 16),
+    ] {
         d.set(k, &cap("lbl-2", row, 41, 20, true));
     }
 }
@@ -343,13 +449,30 @@ fn dsptap_labels_match_the_71_captures() {
     tape_volume(&mut d);
     tape_file(&mut d, "lbl-1");
     d.set("PRVENT", "N");
-    against(&format!("{TAP71}-lbl-1"), &render(&g, "DSPTAP", &d, &opts(0)).unwrap(), &[23]);
-    against(&format!("{TAP71}-lbl-2"), &render(&g, "DSPTAP", &d, &opts(1)).unwrap(), &[23]);
+    against(
+        &format!("{TAP71}-lbl-1"),
+        &render(&g, "DSPTAP", &d, &opts(0)).unwrap(),
+        &[23],
+    );
+    against(
+        &format!("{TAP71}-lbl-2"),
+        &render(&g, "DSPTAP", &d, &opts(1)).unwrap(),
+        &[23],
+    );
     tape_file(&mut d, "lbl-next1");
     d.set("PRVENT", "Y");
-    against(&format!("{TAP71}-lbl-next1"), &render(&g, "DSPTAP", &d, &opts(0)).unwrap(), &[23]);
+    against(
+        &format!("{TAP71}-lbl-next1"),
+        &render(&g, "DSPTAP", &d, &opts(0)).unwrap(),
+        &[23],
+    );
     // `DATA(*VOLLBL)`, ours: the volume rows alone.
-    for (k, v) in [("DEV", "TAPVRT01"), ("VOLID", "VOL001"), ("OWNER", "QS400"), ("DENS", "*VRT256K")] {
+    for (k, v) in [
+        ("DEV", "TAPVRT01"),
+        ("VOLID", "VOL001"),
+        ("OWNER", "QS400"),
+        ("DENS", "*VRT256K"),
+    ] {
         d.set(k, v);
     }
     ours("dsptapvol", &render(&g, "DSPTAPVOL", &d, &opts(0)).unwrap());
@@ -362,10 +485,20 @@ fn dsptap_labels_match_the_71_captures() {
 fn dsptap_file_information_matches_the_71_capture() {
     let g = group("QSMEDIA");
     let mut d = MapDialog::new();
-    for (k, row) in [("DEV", 4), ("VOLID", 5), ("SSEQ", 6), ("FLABEL", 7), ("FEXP", 8)] {
+    for (k, row) in [
+        ("DEV", 4),
+        ("VOLID", 5),
+        ("SSEQ", 6),
+        ("FLABEL", 7),
+        ("FEXP", 8),
+    ] {
         d.set(k, &cap("sav-1", row, 44, 20, true));
     }
-    against(&format!("{TAP71}-sav-1"), &render(&g, "DSPTAPFIL", &d, &opts(0)).unwrap(), &[11, 23]);
+    against(
+        &format!("{TAP71}-sav-1"),
+        &render(&g, "DSPTAPFIL", &d, &opts(0)).unwrap(),
+        &[11, 23],
+    );
 }
 
 /// The objects of capture `name`'s rows 9 to 21.
@@ -382,7 +515,12 @@ fn saved_objects(name: &str) -> ListState {
             ]
         })
         .collect();
-    ListState { total: None, rows, top: 0, complete: false }
+    ListState {
+        total: None,
+        rows,
+        top: 0,
+        complete: false,
+    }
 }
 
 /// `DATA(*SAVRST)` on a save: Display Saved Objects, its text view (F11)
@@ -393,17 +531,51 @@ fn dsptap_saves_match_the_71_captures() {
     let mut d = MapDialog::new();
     d.set("SLIB", &cap("obj-1", 3, 34, 10, true));
     d.set_list("OBJS", saved_objects("obj-1"));
-    against(&format!("{TAP71}-obj-1"), &render(&g, "DSPTAPSAV", &d, &opts(0)).unwrap(), &[]);
+    against(
+        &format!("{TAP71}-obj-1"),
+        &render(&g, "DSPTAPSAV", &d, &opts(0)).unwrap(),
+        &[],
+    );
     d.set_list("OBJS", saved_objects("obj-3"));
-    against(&format!("{TAP71}-obj-f11"), &render(&g, "DSPTAPSAV2", &d, &opts(0)).unwrap(), &[]);
-    for (k, row) in [("DEV", 4), ("VOLID", 5), ("SSEQ", 6), ("FLABEL", 7), ("FEXP", 8), ("SAVCMD", 10), ("SAVDTS", 11), ("SAVCMP", 12), ("SAVCPT", 13), ("SAVRLS", 14), ("SAVFMT", 15)] {
+    against(
+        &format!("{TAP71}-obj-f11"),
+        &render(&g, "DSPTAPSAV2", &d, &opts(0)).unwrap(),
+        &[],
+    );
+    for (k, row) in [
+        ("DEV", 4),
+        ("VOLID", 5),
+        ("SSEQ", 6),
+        ("FLABEL", 7),
+        ("FEXP", 8),
+        ("SAVCMD", 10),
+        ("SAVDTS", 11),
+        ("SAVCMP", 12),
+        ("SAVCPT", 13),
+        ("SAVRLS", 14),
+        ("SAVFMT", 15),
+    ] {
         d.set(k, &cap("obj-f16", row, 44, 20, true));
     }
-    for (k, row) in [("SLIB", 4), ("SASP", 5), ("SSYS", 6), ("SSER", 7), ("SPVT", 8)] {
+    for (k, row) in [
+        ("SLIB", 4),
+        ("SASP", 5),
+        ("SSYS", 6),
+        ("SSER", 7),
+        ("SPVT", 8),
+    ] {
         d.set(k, &cap("obj-f16-2", row, 44, 20, true));
     }
-    against(&format!("{TAP71}-obj-f16"), &render(&g, "DSPTAPHDR", &d, &opts(0)).unwrap(), &[]);
-    against(&format!("{TAP71}-obj-f16-2"), &render(&g, "DSPTAPHDR", &d, &opts(1)).unwrap(), &[]);
+    against(
+        &format!("{TAP71}-obj-f16"),
+        &render(&g, "DSPTAPHDR", &d, &opts(0)).unwrap(),
+        &[],
+    );
+    against(
+        &format!("{TAP71}-obj-f16-2"),
+        &render(&g, "DSPTAPHDR", &d, &opts(1)).unwrap(),
+        &[],
+    );
 }
 
 /// `DSPTAPCTG`: one cartridge (no oracle has a library: `CPF9814`).
@@ -422,7 +594,10 @@ fn dsptapctg_one_cartridge() {
     ] {
         d.set(k, v);
     }
-    ours("dsptapctg", &render(&group("QSMEDIA"), "DSPTAPCTG", &d, &opts(0)).unwrap());
+    ours(
+        "dsptapctg",
+        &render(&group("QSMEDIA"), "DSPTAPCTG", &d, &opts(0)).unwrap(),
+    );
 }
 
 /// `DSPOPT`'s four views (no oracle has a volume: `OPT1860`).
@@ -451,16 +626,39 @@ fn dspopt_views() {
     d.set_list(
         "DIRS",
         list(vec![
-            vec![("DPATH", "/"), ("DFILES", "3"), ("DDIRS", "2"), ("DBYTES", "4096")],
-            vec![("DPATH", "/QSAVSYS"), ("DFILES", "1"), ("DDIRS", "0"), ("DBYTES", "512000000")],
+            vec![
+                ("DPATH", "/"),
+                ("DFILES", "3"),
+                ("DDIRS", "2"),
+                ("DBYTES", "4096"),
+            ],
+            vec![
+                ("DPATH", "/QSAVSYS"),
+                ("DFILES", "1"),
+                ("DDIRS", "0"),
+                ("DBYTES", "512000000"),
+            ],
         ]),
     );
     ours("dspoptdir", &render(&g, "DSPOPTDIR", &d, &opts(0)).unwrap());
-    d.set_list("OFILES", list(vec![vec![("FPATH", "/QSAVSYS/SAVSYS.SAV"), ("FSIZE", "512000000")]]));
+    d.set_list(
+        "OFILES",
+        list(vec![vec![
+            ("FPATH", "/QSAVSYS/SAVSYS.SAV"),
+            ("FSIZE", "512000000"),
+        ]]),
+    );
     ours("dspoptfil", &render(&g, "DSPOPTFIL", &d, &opts(0)).unwrap());
     d.set_list(
         "OSAVS",
-        list(vec![vec![("OFILE", "/QSAVSYS/SAVSYS.SAV"), ("OBJ", "QSYS"), ("OTYPE", "*LIB"), ("OLIB", "QSYS"), ("OSIZE", "512000000"), ("OTEXT", "System library")]]),
+        list(vec![vec![
+            ("OFILE", "/QSAVSYS/SAVSYS.SAV"),
+            ("OBJ", "QSYS"),
+            ("OTYPE", "*LIB"),
+            ("OLIB", "QSYS"),
+            ("OSIZE", "512000000"),
+            ("OTEXT", "System library"),
+        ]]),
     );
     ours("dspoptsav", &render(&g, "DSPOPTSAV", &d, &opts(0)).unwrap());
 }
@@ -489,7 +687,10 @@ fn dspudfs_mounted_and_not() {
     ours("dspudfs", &render(&g, "DSPUDFS", &d, &opts(0)).unwrap());
     d.set("MOUNTED", "No");
     d.set_list("MOUNTS", list(Vec::new()));
-    ours("dspudfs-unmounted", &render(&g, "DSPUDFS", &d, &opts(0)).unwrap());
+    ours(
+        "dspudfs-unmounted",
+        &render(&g, "DSPUDFS", &d, &opts(0)).unwrap(),
+    );
 }
 
 // ------------------------------------------------------- WRKPFCST, EDTCPCST
@@ -502,7 +703,12 @@ fn wrkpfcst_matches_71() {
     d.set_list(
         "CSTS",
         list(vec![
-            vec![("CST", "CSTPF_UQ"), ("FILE", "CSTPF"), ("FILELIB", "QSTEST"), ("CSTTYPE", "*UNQCST")],
+            vec![
+                ("CST", "CSTPF_UQ"),
+                ("FILE", "CSTPF"),
+                ("FILELIB", "QSTEST"),
+                ("CSTTYPE", "*UNQCST"),
+            ],
             vec![
                 ("CST", "CSTPF_CK"),
                 ("FILE", "CSTPF"),
@@ -521,7 +727,8 @@ fn wrkpfcst_matches_71() {
 #[test]
 fn edtcpcst_matches_71() {
     let mut d = MapDialog::new();
-    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS").set_list("CPCSTS", list(vec![]));
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS")
+        .set_list("CPCSTS", list(vec![]));
     let mut o = opts(0);
     o.system = "S062B175".into();
     let s = render(&group("QSDBCST"), "EDTCPCST", &d, &o).unwrap();

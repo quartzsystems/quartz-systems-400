@@ -48,7 +48,16 @@ pub struct Profile {
 pub const PROFILES: &[Profile] = &[
     Profile {
         name: "QSECOFR",
-        special: &["*ALLOBJ", "*AUDIT", "*IOSYSCFG", "*JOBCTL", "*SAVSYS", "*SECADM", "*SERVICE", "*SPLCTL"],
+        special: &[
+            "*ALLOBJ",
+            "*AUDIT",
+            "*IOSYSCFG",
+            "*JOBCTL",
+            "*SAVSYS",
+            "*SECADM",
+            "*SERVICE",
+            "*SPLCTL",
+        ],
         class: "*SECOFR",
     },
     Profile {
@@ -107,8 +116,14 @@ impl System for FixtureSystem {
             user: u.clone(),
             code: if known { 'P' } else { 'U' },
         });
-        let (id, data) = if known { ("CPF22E2", u.clone()) } else { ("CPF2204", u.clone()) };
-        let text = text::second_level(id, &[&data]).map(|s| s.text).unwrap_or_default();
+        let (id, data) = if known {
+            ("CPF22E2", u.clone())
+        } else {
+            ("CPF2204", u.clone())
+        };
+        let text = text::second_level(id, &[&data])
+            .map(|s| s.text)
+            .unwrap_or_default();
         Err(Message::new(Kind::Error, id, &text))
     }
 
@@ -121,7 +136,11 @@ impl System for FixtureSystem {
     }
 
     fn user_class(&self, user: &str) -> String {
-        PROFILES.iter().find(|p| p.name == user).map_or("*USER", |p| p.class).to_string()
+        PROFILES
+            .iter()
+            .find(|p| p.name == user)
+            .map_or("*USER", |p| p.class)
+            .to_string()
     }
 
     fn audit(&self, entry: Audit) {

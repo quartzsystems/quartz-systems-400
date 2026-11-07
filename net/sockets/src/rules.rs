@@ -57,7 +57,11 @@ impl PortRules for Restrictions {
         if covered.peek().is_none() {
             return true;
         }
-        covered.any(|r| r.user.as_deref().is_some_and(|u| u.eq_ignore_ascii_case(user)))
+        covered.any(|r| {
+            r.user
+                .as_deref()
+                .is_some_and(|u| u.eq_ignore_ascii_case(user))
+        })
     }
 }
 
@@ -93,11 +97,20 @@ mod tests {
             r(IPPROTO_UDP, 5000, 5000, None),
         ]);
         assert!(rules.may_bind(IPPROTO_TCP, 7999, "ANYONE"));
-        assert!(rules.may_bind(IPPROTO_TCP, 8000, "websrv"), "profiles match in any case");
+        assert!(
+            rules.may_bind(IPPROTO_TCP, 8000, "websrv"),
+            "profiles match in any case"
+        );
         assert!(!rules.may_bind(IPPROTO_TCP, 8100, "QTCP"));
-        assert!(rules.may_bind(IPPROTO_TCP, 8050, "QTCP"), "a second entry adds a profile");
+        assert!(
+            rules.may_bind(IPPROTO_TCP, 8050, "QTCP"),
+            "a second entry adds a profile"
+        );
         assert!(rules.may_bind(IPPROTO_TCP, 8050, "WEBSRV"));
-        assert!(!rules.may_bind(IPPROTO_UDP, 5000, "QSECOFR"), "*NONE is nobody");
+        assert!(
+            !rules.may_bind(IPPROTO_UDP, 5000, "QSECOFR"),
+            "*NONE is nobody"
+        );
         assert!(rules.may_bind(IPPROTO_TCP, 5000, "X"), "per protocol");
         assert!(AllowAll.may_bind(IPPROTO_UDP, 5000, "X"));
     }

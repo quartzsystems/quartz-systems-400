@@ -42,7 +42,10 @@ fn job(name: &str, user: &str, number: u32) -> JobId {
 }
 
 fn text(e: &mut Encoder, s: &str) {
-    let b: Vec<u8> = s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0x40)).collect();
+    let b: Vec<u8> = s
+        .chars()
+        .map(|c| ccsid::byte_of(c).unwrap_or(0x40))
+        .collect();
     e.text(&b);
     e.nl();
 }
@@ -67,20 +70,36 @@ pub fn scs(width: u16, len: u16, lpi: u8, cpi: u8, pages: &[Vec<String>]) -> Vec
 fn joblog() -> Vec<u8> {
     let head = |n: u32| {
         vec![
-            format!("QS00SS1 V1R0M0                       Job Log                    QSHQ400   11/02/26  09:14:03   Page {n:>4}"),
-            " Job name . . . . : QPADEV0001  User . . : BOB         Number . . . : 001234".to_string(),
+            format!(
+                "QS00SS1 V1R0M0                       Job Log                    QSHQ400   11/02/26  09:14:03   Page {n:>4}"
+            ),
+            " Job name . . . . : QPADEV0001  User . . : BOB         Number . . . : 001234"
+                .to_string(),
             " Job description  : QDFTJOBD    Library  : QGPL".to_string(),
-            "MSGID      TYPE                    SEV  DATE      TIME             FROM PGM    TO PGM".to_string(),
+            "MSGID      TYPE                    SEV  DATE      TIME             FROM PGM    TO PGM"
+                .to_string(),
         ]
     };
     let mut p1 = head(1);
     for i in 0..40 {
-        p1.push(format!("CPC2102    Completion              00   11/02/26  09:14:{:02}.{:06}  QLICRLIB    QCMD", i % 60, i * 7));
-        p1.push(format!("                                     Message . . . . :   Library TEST{i:02} created."));
+        p1.push(format!(
+            "CPC2102    Completion              00   11/02/26  09:14:{:02}.{:06}  QLICRLIB    QCMD",
+            i % 60,
+            i * 7
+        ));
+        p1.push(format!(
+            "                                     Message . . . . :   Library TEST{i:02} created."
+        ));
     }
     let mut p2 = head(2);
-    p2.push("CPF2111    Escape                  40   11/02/26  09:15:00.000123  QLICRLIB    QCMD".into());
-    p2.push("                                     Message . . . . :   Library TEST00 already exists.".into());
+    p2.push(
+        "CPF2111    Escape                  40   11/02/26  09:15:00.000123  QLICRLIB    QCMD"
+            .into(),
+    );
+    p2.push(
+        "                                     Message . . . . :   Library TEST00 already exists."
+            .into(),
+    );
     scs(132, 66, 6, 10, &[p1, p2])
 }
 
@@ -88,9 +107,21 @@ fn joblog() -> Vec<u8> {
 fn listing() -> Vec<u8> {
     let pages: Vec<Vec<String>> = (1..=30)
         .map(|p| {
-            let mut v = vec![format!("{:<118}Page {p:>8}", "QS/400 Test Listing  QSYSPRT  132 columns"), String::new()];
+            let mut v = vec![
+                format!(
+                    "{:<118}Page {p:>8}",
+                    "QS/400 Test Listing  QSYSPRT  132 columns"
+                ),
+                String::new(),
+            ];
             for l in 1..=60 {
-                let row = format!("{:06} {:<40} {:>12.2} {:>12} ", (p - 1) * 60 + l, format!("Item {p}-{l}"), f64::from(p * l) * 1.25, p + l);
+                let row = format!(
+                    "{:06} {:<40} {:>12.2} {:>12} ",
+                    (p - 1) * 60 + l,
+                    format!("Item {p}-{l}"),
+                    f64::from(p * l) * 1.25,
+                    p + l
+                );
                 v.push(format!("{row:-<132}"));
             }
             v
@@ -122,7 +153,11 @@ fn overflow() -> Vec<u8> {
 /// A landscape file: wider than it is long, 15 pitch, 8 lines per inch.
 fn landscape() -> Vec<u8> {
     let pages: Vec<Vec<String>> = (1..=3)
-        .map(|p| (1..=40).map(|l| format!("LANDSCAPE PAGE {p} LINE {l:02} {}", "=".repeat(170))).collect())
+        .map(|p| {
+            (1..=40)
+                .map(|l| format!("LANDSCAPE PAGE {p} LINE {l:02} {}", "=".repeat(170)))
+                .collect()
+        })
         .collect();
     scs(198, 51, 8, 15, &pages)
 }
@@ -156,7 +191,12 @@ fn short(title: &str, lines: usize) -> Vec<u8> {
 
 /// The output queues and files.
 pub fn install(s: &mut Spool) {
-    s.libraries = vec!["QSYS".into(), "QGPL".into(), "QUSRSYS".into(), "SECLIB".into()];
+    s.libraries = vec![
+        "QSYS".into(),
+        "QGPL".into(),
+        "QUSRSYS".into(),
+        "SECLIB".into(),
+    ];
     s.private_libs = vec!["SECLIB".into()];
     s.profiles = vec!["BOB".into(), "WARN".into(), "ANN".into()];
     s.queue(Queue {
@@ -177,11 +217,25 @@ pub fn install(s: &mut Spool) {
         ..Queue::default()
     });
     let mut at = i64::try_from(EPOCH).unwrap_or(0) * 1000;
-    let mut add = |s: &mut Spool, name: &str, user: &str, status: SpoolStatus, outq: ObjectName, device: DeviceType, data: Vec<u8>| {
+    let mut add = |s: &mut Spool,
+                   name: &str,
+                   user: &str,
+                   status: SpoolStatus,
+                   outq: ObjectName,
+                   device: DeviceType,
+                   data: Vec<u8>| {
         at += 60_000;
         s.file(File {
             id: SpooledFileId {
-                job: job(if user == "BOB" { "QPADEV0001" } else { "QPADEV0002" }, user, if user == "BOB" { 1234 } else { 1235 }),
+                job: job(
+                    if user == "BOB" {
+                        "QPADEV0001"
+                    } else {
+                        "QPADEV0002"
+                    },
+                    user,
+                    if user == "BOB" { 1234 } else { 1235 },
+                ),
                 file: name.into(),
                 number: u32::try_from(s.files.len() + 1).unwrap_or(0),
             },
@@ -208,23 +262,59 @@ pub fn install(s: &mut Spool) {
     // AFP: structured fields, not SCS.
     let afp = [0x5A, 0x00, 0x10, 0xD3, 0xA8, 0xA8, 0x00, 0x00, 0x00].repeat(8);
     add(s, "AFPINV", "BOB", rdy, qprint(), DeviceType::Afp, afp);
-    add(s, "OPENFILE", "BOB", SpoolStatus::Open, qprint(), scs_dev, short("OPENFILE", 5));
+    add(
+        s,
+        "OPENFILE",
+        "BOB",
+        SpoolStatus::Open,
+        qprint(),
+        scs_dev,
+        short("OPENFILE", 5),
+    );
     // Every status.
     for (n, st) in SpoolStatus::ALL.into_iter().enumerate() {
         let name = format!("STS{n}");
-        let outq = if matches!(st, SpoolStatus::Printing | SpoolStatus::Message) { prt01() } else { qprint() };
+        let outq = if matches!(st, SpoolStatus::Printing | SpoolStatus::Message) {
+            prt01()
+        } else {
+            qprint()
+        };
         add(s, &name, "BOB", st, outq, scs_dev, short(&name, 3));
     }
     // ANN's, on the same queue.
     for i in 1..=10 {
-        add(s, &format!("ANNRPT{i:02}"), "ANN", rdy, qprint(), scs_dev, short("ANN REPORT", 4));
+        add(
+            s,
+            &format!("ANNRPT{i:02}"),
+            "ANN",
+            rdy,
+            qprint(),
+            scs_dev,
+            short("ANN REPORT", 4),
+        );
     }
-    add(s, "ANNPRIV", "ANN", rdy, q("QUSRSYS", "PRIVATE"), scs_dev, short("ANN PRIVATE", 2));
+    add(
+        s,
+        "ANNPRIV",
+        "ANN",
+        rdy,
+        q("QUSRSYS", "PRIVATE"),
+        scs_dev,
+        short("ANN PRIVATE", 2),
+    );
     // BOB's small reports, to 60 on QPRINT.
     let mut i = 0;
     while s.queues[0].files.len() < 60 {
         i += 1;
-        add(s, &format!("RPT{i:03}"), "BOB", rdy, qprint(), scs_dev, short("REPORT", 2 + i % 5));
+        add(
+            s,
+            &format!("RPT{i:03}"),
+            "BOB",
+            rdy,
+            qprint(),
+            scs_dev,
+            short("REPORT", 2 + i % 5),
+        );
     }
 }
 
@@ -236,7 +326,13 @@ mod tests {
     fn what_the_brief_asks_for() {
         let mut s = Spool::default();
         install(&mut s);
-        let files = |name: &str| s.files.values().find(|f| f.id.file == name).expect(name).clone();
+        let files = |name: &str| {
+            s.files
+                .values()
+                .find(|f| f.id.file == name)
+                .expect(name)
+                .clone()
+        };
         assert_eq!(s.queues[0].files.len(), 60, "QPRINT pages");
         assert_eq!(s.queues[1].writer, "PRT01");
         assert_eq!(files("QSYSPRT").info().pages, 30);
@@ -256,6 +352,10 @@ mod tests {
         for st in SpoolStatus::ALL {
             assert!(s.files.values().any(|f| f.status == st), "{st:?}");
         }
-        assert!(s.files.values().any(|f| f.owner() == "ANN" && f.outq.name == "QPRINT"));
+        assert!(
+            s.files
+                .values()
+                .any(|f| f.owner() == "ANN" && f.outq.name == "QPRINT")
+        );
     }
 }

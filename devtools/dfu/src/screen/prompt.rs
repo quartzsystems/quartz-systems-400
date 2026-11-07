@@ -64,7 +64,14 @@ pub const RUN_CHANGE: Panel = Panel {
     entries: &[
         e(5, "Program", false, "PGM", 10, NAME),
         e(6, "Library", true, "PGMLIB", 10, LIBS),
-        e(8, "Data file", false, "FILE", 10, "Name, *SAME, F4 for list"),
+        e(
+            8,
+            "Data file",
+            false,
+            "FILE",
+            10,
+            "Name, *SAME, F4 for list",
+        ),
         e(10, "Library", true, "FILELIB", 10, LIBS),
         e(11, "Member", false, "MBR", 10, "Name, *FIRST, F4 for list"),
     ],
@@ -93,7 +100,14 @@ pub const CHANGE: Panel = Panel {
     entries: &[
         e(5, "Program", false, "PGM", 10, NAME),
         e(6, "Library", true, "PGMLIB", 10, LIBS),
-        e(8, "Data file", false, "FILE", 10, "Name, *SAME, F4 for list"),
+        e(
+            8,
+            "Data file",
+            false,
+            "FILE",
+            10,
+            "Name, *SAME, F4 for list",
+        ),
         e(10, "Library", true, "FILELIB", 10, LIBS),
     ],
 };
@@ -125,13 +139,23 @@ pub fn panel(p: &Panel, value: &dyn Fn(&str) -> String, message: Option<&str>) -
     put(&mut s, 3, 2, Attr::Blue, "Type choices, press Enter.");
     for en in p.entries {
         let col = if en.sub { 6 } else { 4 };
-        put(&mut s, en.row, col, Attr::Normal, &leader(en.label, col, 30));
+        put(
+            &mut s,
+            en.row,
+            col,
+            Attr::Normal,
+            &leader(en.label, col, 30),
+        );
         var(&mut s, en.row, col + 30, en.len, en.key, &value(en.key));
         put(&mut s, en.row, 48, Attr::Normal, en.legend);
     }
     keys(
         &mut s,
-        &[(23, 2, "F3=Exit"), (23, 14, "F4=Prompt"), (23, 28, "F12=Cancel")],
+        &[
+            (23, 2, "F3=Exit"),
+            (23, 14, "F4=Prompt"),
+            (23, 28, "F12=Cancel"),
+        ],
     );
     bottom_line(&mut s, message, false);
     s.cursor = p.entries.first().map(|en| (en.row, 34));

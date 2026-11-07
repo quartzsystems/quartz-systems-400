@@ -22,7 +22,9 @@ fn group() -> PanelGroup {
 }
 
 fn golden(name: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../tools/conformance/golden/verified/oracle71/timzon/{name}.txt"))
+    Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
+        "../../tools/conformance/golden/verified/oracle71/timzon/{name}.txt"
+    ))
 }
 
 fn against(name: &str, s: &Screen) {
@@ -36,26 +38,105 @@ fn against(name: &str, s: &Screen) {
     let mut diff = String::new();
     for (i, (w, o)) in want.iter().zip(&ours).enumerate().take(23) {
         if o.trim_end() != w {
-            let _ = write!(diff, "row {:>2}\n  want |{w}|\n  got  |{}|\n", i + 1, o.trim_end());
+            let _ = write!(
+                diff,
+                "row {:>2}\n  want |{w}|\n  got  |{}|\n",
+                i + 1,
+                o.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{name}:\n{diff}");
 }
 
 fn opts(system: &str, page: usize) -> Options {
-    Options { system: system.into(), page, ..Options::default() }
+    Options {
+        system: system.into(),
+        page,
+        ..Options::default()
+    }
 }
 
 /// The capture's first page of zones.
 fn zones() -> ListState {
     let rows: [[&str; 9]; 11] = [
-        [" 00:00", "Q0000GMT", "GMT", "Greenwich Mean Time", "", "", "GMT", "", ""],
-        [" 00:00", "Q0000GMT2", "GMT", "Greenwich Mean Time", "BST", "British Summer Time", "Europe/London", "", ""],
-        [" 00:00", "Q0000GMT3", "GMT", "Greenwich Mean Time", "BST", "British Summer Time", "Europe/London", "", ""],
-        [" 00:00", "Q0000UTC", "UTC", "Coordinated Universal Time", "", "", "UTC", "", ""],
-        ["-01:00", "QN0100UTCS", "UTC-01:00S", "UTC-01:00 Standard Time", "", "", "GMT-1", "", ""],
-        ["-02:00", "QN0200UTCS", "UTC-02:00S", "UTC-02:00 Standard Time", "", "", "GMT-2", "", ""],
-        ["-03:00", "QN0300UTCS", "UTC-03:00S", "UTC-03:00 Standard Time", "", "", "GMT-3", "", ""],
+        [
+            " 00:00",
+            "Q0000GMT",
+            "GMT",
+            "Greenwich Mean Time",
+            "",
+            "",
+            "GMT",
+            "",
+            "",
+        ],
+        [
+            " 00:00",
+            "Q0000GMT2",
+            "GMT",
+            "Greenwich Mean Time",
+            "BST",
+            "British Summer Time",
+            "Europe/London",
+            "",
+            "",
+        ],
+        [
+            " 00:00",
+            "Q0000GMT3",
+            "GMT",
+            "Greenwich Mean Time",
+            "BST",
+            "British Summer Time",
+            "Europe/London",
+            "",
+            "",
+        ],
+        [
+            " 00:00",
+            "Q0000UTC",
+            "UTC",
+            "Coordinated Universal Time",
+            "",
+            "",
+            "UTC",
+            "",
+            "",
+        ],
+        [
+            "-01:00",
+            "QN0100UTCS",
+            "UTC-01:00S",
+            "UTC-01:00 Standard Time",
+            "",
+            "",
+            "GMT-1",
+            "",
+            "",
+        ],
+        [
+            "-02:00",
+            "QN0200UTCS",
+            "UTC-02:00S",
+            "UTC-02:00 Standard Time",
+            "",
+            "",
+            "GMT-2",
+            "",
+            "",
+        ],
+        [
+            "-03:00",
+            "QN0300UTCS",
+            "UTC-03:00S",
+            "UTC-03:00 Standard Time",
+            "",
+            "",
+            "GMT-3",
+            "",
+            "",
+        ],
         [
             "-03:00",
             "QN0300UTC2",
@@ -67,16 +148,54 @@ fn zones() -> ListState {
             "",
             "",
         ],
-        ["-03:30", "QN0330NST", "NST", "Newfoundland Standard Time", "NDT", "Newfoundland Daylight Time", "America/St_Johns", "", ""],
-        ["-03:30", "QN0330NST2", "NST", "Newfoundland Standard Time", "NDT", "Newfoundland Daylight Time", "America/St_Johns", "", ""],
-        ["-03:30", "QN0330NST3", "NST", "Newfoundland Standard Time", "NDT", "Newfoundland Daylight Time", "America/St_Johns", "", ""],
+        [
+            "-03:30",
+            "QN0330NST",
+            "NST",
+            "Newfoundland Standard Time",
+            "NDT",
+            "Newfoundland Daylight Time",
+            "America/St_Johns",
+            "",
+            "",
+        ],
+        [
+            "-03:30",
+            "QN0330NST2",
+            "NST",
+            "Newfoundland Standard Time",
+            "NDT",
+            "Newfoundland Daylight Time",
+            "America/St_Johns",
+            "",
+            "",
+        ],
+        [
+            "-03:30",
+            "QN0330NST3",
+            "NST",
+            "Newfoundland Standard Time",
+            "NDT",
+            "Newfoundland Daylight Time",
+            "America/St_Johns",
+            "",
+            "",
+        ],
     ];
-    let names = ["OFFSET", "TIMZON", "ABBR", "FULL", "DABBR", "DFULL", "ALT", "TEXT", "MARK"];
+    let names = [
+        "OFFSET", "TIMZON", "ABBR", "FULL", "DABBR", "DFULL", "ALT", "TEXT", "MARK",
+    ];
     ListState {
         total: Some(93),
         rows: rows
             .iter()
-            .map(|r| names.iter().zip(r).map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect())
+            .map(|r| {
+                names
+                    .iter()
+                    .zip(r)
+                    .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         complete: true,
@@ -89,9 +208,12 @@ fn the_four_views_match_the_captures() {
     let mut d = MapDialog::new();
     d.set("*DATETIME", "MM/DD/YY  HH:MM:SS EST");
     d.set_list("ZONES", zones());
-    for (panel, name) in
-        [("WRKTIMZON", "wrktimzon"), ("WRKTIMZON2", "wrktimzon-dst"), ("WRKTIMZON3", "wrktimzon-alt"), ("WRKTIMZON4", "wrktimzon-text")]
-    {
+    for (panel, name) in [
+        ("WRKTIMZON", "wrktimzon"),
+        ("WRKTIMZON2", "wrktimzon-dst"),
+        ("WRKTIMZON3", "wrktimzon-alt"),
+        ("WRKTIMZON4", "wrktimzon-text"),
+    ] {
         against(name, &render(&g, panel, &d, &opts("S062B175", 0)).unwrap());
     }
 }
@@ -101,7 +223,14 @@ fn details(dst: bool) -> MapDialog {
     let common = [
         ("ZONE", if dst { "QN0500EST3" } else { "Q0000UTC" }),
         ("ZOFFSET", if dst { "-05:00" } else { " 00:00" }),
-        ("STDFULL", if dst { "Eastern Standard Time" } else { "Coordinated Universal Time" }),
+        (
+            "STDFULL",
+            if dst {
+                "Eastern Standard Time"
+            } else {
+                "Coordinated Universal Time"
+            },
+        ),
         ("STDABBR", if dst { "EST" } else { "UTC" }),
         ("STDMSG", if dst { "CPX091E" } else { "CPX0910" }),
         ("MSGF", "QCPFMSG"),
@@ -139,10 +268,16 @@ fn the_details_match_the_captures() {
     let g = group();
     let d = details(true);
     for (page, name) in [(0, "dsptimzon-1"), (1, "dsptimzon-2"), (2, "dsptimzon-3")] {
-        against(name, &render(&g, "DSPTZ", &d, &opts("SYSNAME", page)).unwrap());
+        against(
+            name,
+            &render(&g, "DSPTZ", &d, &opts("SYSNAME", page)).unwrap(),
+        );
     }
     let d = details(false);
     for (page, name) in [(0, "dsptimzon-nodst-1"), (1, "dsptimzon-nodst-2")] {
-        against(name, &render(&g, "DSPTZN", &d, &opts("SYSNAME", page)).unwrap());
+        against(
+            name,
+            &render(&g, "DSPTZN", &d, &opts("SYSNAME", page)).unwrap(),
+        );
     }
 }

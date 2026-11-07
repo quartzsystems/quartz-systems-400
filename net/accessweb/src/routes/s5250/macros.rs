@@ -41,7 +41,12 @@ pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
     if f.has("record") {
         let name = f.str("n").trim().to_ascii_uppercase();
         if name.is_empty() {
-            return show(rq, &s, editing, vec![rq.message(Kind::Error, crate::msgs::BAD_VALUE, &["", "Name"])]);
+            return show(
+                rq,
+                &s,
+                editing,
+                vec![rq.message(Kind::Error, crate::msgs::BAD_VALUE, &["", "Name"])],
+            );
         }
         start_recording(rq, s.id, &name);
         return rq.redirect(&display);
@@ -75,7 +80,10 @@ pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
         done = Some(rq.message(Kind::Info, "QAD2021", &[&name, &n]));
     } else if f.has("save") {
         let parts = rq.req.multipart().unwrap_or_default();
-        if let Some(p) = parts.iter().find(|p| p.name == "qsm" && p.filename.as_deref().is_some_and(|n| !n.is_empty())) {
+        if let Some(p) = parts
+            .iter()
+            .find(|p| p.name == "qsm" && p.filename.as_deref().is_some_and(|n| !n.is_empty()))
+        {
             let fname = p.filename.clone().unwrap_or_default();
             match MacroFile::parse(&String::from_utf8_lossy(&p.data)) {
                 Ok(m) => {
@@ -98,12 +106,26 @@ pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
             match MacroFile::from_lines(f.str("steps"), size) {
                 Ok(steps) => {
                     s.macros[i].file.steps = steps;
-                    done = Some(rq.message(Kind::Info, crate::msgs::MACRO_SAVED, &[&s.macros[i].file.display_name()]));
+                    done = Some(rq.message(
+                        Kind::Info,
+                        crate::msgs::MACRO_SAVED,
+                        &[&s.macros[i].file.display_name()],
+                    ));
                 }
                 Err(e) => {
                     let name = s.macros[i].file.display_name();
-                    let n = e.split(':').next().unwrap_or("").trim_start_matches("line ").to_string();
-                    return show(rq, &s, editing, vec![rq.message(Kind::Error, "QAD2020", &[&name, &n, &e])]);
+                    let n = e
+                        .split(':')
+                        .next()
+                        .unwrap_or("")
+                        .trim_start_matches("line ")
+                        .to_string();
+                    return show(
+                        rq,
+                        &s,
+                        editing,
+                        vec![rq.message(Kind::Error, "QAD2020", &[&name, &n, &e])],
+                    );
                 }
             }
         }
@@ -117,8 +139,14 @@ pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
 
 /// The macro the editor shows: `?edit=N`, else the first.
 fn edited(rq: &Rq<'_>, s: &Saved) -> Option<usize> {
-    let n = rq.query().get("edit").and_then(|n| n.parse::<usize>().ok()).unwrap_or(1);
-    (n >= 1 && n <= s.macros.len()).then(|| n - 1).or_else(|| (!s.macros.is_empty()).then_some(0))
+    let n = rq
+        .query()
+        .get("edit")
+        .and_then(|n| n.parse::<usize>().ok())
+        .unwrap_or(1);
+    (n >= 1 && n <= s.macros.len())
+        .then(|| n - 1)
+        .or_else(|| (!s.macros.is_empty()).then_some(0))
 }
 
 fn show(rq: &Rq<'_>, s: &Saved, editing: Option<usize>, messages: Vec<Message>) -> Response {
@@ -135,12 +163,26 @@ fn show(rq: &Rq<'_>, s: &Saved, editing: Option<usize>, messages: Vec<Message>) 
             let n = i + 1;
             let name = m.file.display_name();
             let mut acts = vec![
-                format!("<a href=\"{}{}\">Play</a>", esc(&rq.ctx.url(&format!("/5250/session/{id}"))), esc(&query(&[("play", &name)]))),
-                format!("<a href=\"{}{}\">Edit</a>", esc(&rq.ctx.url(&format!("/5250/{id}/macros"))), esc(&query(&[("edit", &n.to_string())]))),
-                format!("<a href=\"{}\">Download .qsm</a>", esc(&rq.ctx.url(&format!("/5250/{id}/macros/{n}/download")))),
+                format!(
+                    "<a href=\"{}{}\">Play</a>",
+                    esc(&rq.ctx.url(&format!("/5250/session/{id}"))),
+                    esc(&query(&[("play", &name)]))
+                ),
+                format!(
+                    "<a href=\"{}{}\">Edit</a>",
+                    esc(&rq.ctx.url(&format!("/5250/{id}/macros"))),
+                    esc(&query(&[("edit", &n.to_string())]))
+                ),
+                format!(
+                    "<a href=\"{}\">Download .qsm</a>",
+                    esc(&rq.ctx.url(&format!("/5250/{id}/macros/{n}/download")))
+                ),
             ];
             if save {
-                acts.push(format!("<a href=\"{}\">Delete</a>", esc(&rq.ctx.url(&format!("/5250/{id}/macros/{n}/delete/confirm")))));
+                acts.push(format!(
+                    "<a href=\"{}\">Delete</a>",
+                    esc(&rq.ctx.url(&format!("/5250/{id}/macros/{n}/delete/confirm")))
+                ));
             }
             vec![
                 Cell::act(acts.join(" | ")),
@@ -207,7 +249,12 @@ fn show(rq: &Rq<'_>, s: &Saved, editing: Option<usize>, messages: Vec<Message>) 
 /// `/5250/<id>/macros/<n>/download` and `/.../<n>/delete/confirm`.
 pub fn one(rq: &Rq<'_>, mut s: Saved, n: &str, rest: &[&str]) -> Response {
     let title = s.file.display_title();
-    let Some(i) = n.parse::<usize>().ok().filter(|i| *i >= 1 && *i <= s.macros.len()).map(|i| i - 1) else {
+    let Some(i) = n
+        .parse::<usize>()
+        .ok()
+        .filter(|i| *i >= 1 && *i <= s.macros.len())
+        .map(|i| i - 1)
+    else {
         return rq.not_found("macro");
     };
     let name = s.macros[i].file.display_name();
@@ -216,7 +263,11 @@ pub fn one(rq: &Rq<'_>, mut s: Saved, n: &str, rest: &[&str]) -> Response {
         return r;
     }
     match rest {
-        ["download"] => Response::download(&format!("{name}.qsm"), "application/toml; charset=utf-8", s.macros[i].file.to_text().into_bytes()),
+        ["download"] => Response::download(
+            &format!("{name}.qsm"),
+            "application/toml; charset=utf-8",
+            s.macros[i].file.to_text().into_bytes(),
+        ),
         ["delete", "confirm"] => {
             if let Err(r) = rq.policy(policy::S5250_SAVE, &crumb) {
                 return r;
@@ -228,7 +279,10 @@ pub fn one(rq: &Rq<'_>, mut s: Saved, n: &str, rest: &[&str]) -> Response {
                 }
                 s.macros.remove(i);
                 return match rq.env().session5250.put(rq.user(), s) {
-                    Ok(_) => rq.done(&back, rq.message(Kind::Info, crate::msgs::MACRO_DELETED, &[&name])),
+                    Ok(_) => rq.done(
+                        &back,
+                        rq.message(Kind::Info, crate::msgs::MACRO_DELETED, &[&name]),
+                    ),
                     Err(m) => rq.done(&back, m),
                 };
             }
@@ -241,9 +295,19 @@ pub fn one(rq: &Rq<'_>, mut s: Saved, n: &str, rest: &[&str]) -> Response {
             );
             rq.page(Page {
                 title: "Confirm delete".into(),
-                crumb: vec!["5250 session".into(), title.clone(), "Macros".into(), "Delete".into()],
+                crumb: vec![
+                    "5250 session".into(),
+                    title.clone(),
+                    "Macros".into(),
+                    "Delete".into(),
+                ],
                 h1: "Confirm delete".into(),
-                body: qsweb::pages::confirm_body(&rq.ctx, "Delete this macro from the session?", &table, ""),
+                body: qsweb::pages::confirm_body(
+                    &rq.ctx,
+                    "Delete this macro from the session?",
+                    &table,
+                    "",
+                ),
                 help: "confirm".into(),
                 nav: Some((GROUP, Some(ITEM))),
                 ..Page::default()

@@ -100,14 +100,20 @@ pub fn outq_checked(system: &mut System, f: &Prtf, job: u32) -> (String, Vec<Str
         .map(|v| v.text())
         .unwrap_or_default();
     let dev = wm::obj::prtf::device_of(&f.dev, &job_dev, &qprtdev);
-    let dev_q = if dev.is_empty() { String::new() } else { format!("QUSRSYS/{dev}") };
+    let dev_q = if dev.is_empty() {
+        String::new()
+    } else {
+        format!("QUSRSYS/{dev}")
+    };
     let mut known = std::collections::BTreeMap::new();
     for q in [f.outq.as_str(), job_q.as_str(), dev_q.as_str()] {
         if !q.is_empty() && !q.starts_with('*') && !known.contains_key(q) {
             known.insert(q.to_string(), exists(system, q));
         }
     }
-    wm::obj::prtf::pick_outq(&f.outq, &job_q, &dev_q, |q| known.get(q).copied().unwrap_or(false))
+    wm::obj::prtf::pick_outq(&f.outq, &job_q, &dev_q, |q| {
+        known.get(q).copied().unwrap_or(false)
+    })
 }
 
 /// `CPF3357` for each queue a printer file or job named that was not
@@ -166,8 +172,7 @@ pub fn open(
         .iter()
         .map(|o| {
             let mut p = Params::parse(&o.line);
-            p.kw
-                .retain(|(k, _)| !matches!(k.as_str(), "CALLLVL" | "SECURE" | "OVRSCOPE"));
+            p.kw.retain(|(k, _)| !matches!(k.as_str(), "CALLLVL" | "SECURE" | "OVRSCOPE"));
             p
         })
         .collect();

@@ -384,7 +384,8 @@ impl Driver {
                 } else {
                     None
                 };
-                let (rec, nulls) = build_record(txn, table, &values, base).map_err(|e| e.to_string())?;
+                let (rec, nulls) =
+                    build_record(txn, table, &values, base).map_err(|e| e.to_string())?;
                 if up == "WRITE" {
                     o.write(txn, &rec, &nulls).map(|_| None)
                 } else {

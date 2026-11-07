@@ -103,14 +103,24 @@ fn show_rows(listing: &mut String, outcome: Option<&Outcome>, n: usize) {
 }
 
 /// A statement's entry.
-fn entry(index: usize, name: &str, ca: &Sqlca, outcome: Option<&Outcome>, target: Option<(Option<String>, String)>) -> RunEntry {
+fn entry(
+    index: usize,
+    name: &str,
+    ca: &Sqlca,
+    outcome: Option<&Outcome>,
+    target: Option<(Option<String>, String)>,
+) -> RunEntry {
     let failed = ca.is_error();
     RunEntry {
         index,
         name: name.to_string(),
         sqlcode: ca.sqlcode,
         msgid: if failed { ca.msgid() } else { String::new() },
-        text: if failed { ca.sqlerrmc.clone() } else { String::new() },
+        text: if failed {
+            ca.sqlerrmc.clone()
+        } else {
+            String::new()
+        },
         count: match outcome {
             Some(Outcome::Count(c)) => *c,
             _ => 0,
@@ -129,14 +139,19 @@ fn target_of(s: &crate::ast::Statement) -> Option<(Option<String>, String)> {
         S::DropTable { name, .. } | S::DropView { name, .. } | S::DropIndex(name) => name,
         _ => return None,
     };
-    Some((o.schema.as_ref().map(ToString::to_string), o.name.to_string()))
+    Some((
+        o.schema.as_ref().map(ToString::to_string),
+        o.name.to_string(),
+    ))
 }
 
 /// Whether the run takes `s`: what a dynamic statement may be, and no
 /// query for the commands.
 fn check(s: &crate::ast::Statement, opts: &RunOpts) -> Result<()> {
     if opts.command && matches!(s, crate::ast::Statement::Select(_)) {
-        return Err(SqlError::Unsupported { what: "a SELECT statement in RUNSQLSTM or RUNSQL".into() });
+        return Err(SqlError::Unsupported {
+            what: "a SELECT statement in RUNSQLSTM or RUNSQL".into(),
+        });
     }
     crate::exec::dynamic::check_statement(s)
 }
@@ -243,11 +258,18 @@ fn call_made(ctx: &SqlContext, plan: &crate::exec::routine::CallPlan) -> Sqlca {
         return Sqlca::from_error(&crate::error::SqlError::Cancelled);
     };
     let Some(c) = crate::exec::routine::Called::from_inputs(&answer) else {
-        return Sqlca::from_error(&crate::error::SqlError::Unsupported { what: format!("CALL {}: the answer was not understood", plan.routine) });
+        return Sqlca::from_error(&crate::error::SqlError::Unsupported {
+            what: format!("CALL {}: the answer was not understood", plan.routine),
+        });
     };
     let mut ca = Sqlca::default();
     if c.sqlcode != 0 && c.sqlcode != 100 {
-        ca = Sqlca { sqlcode: c.sqlcode, sqlstate: c.sqlstate, sqlerrmc: c.message, ..Sqlca::default() };
+        ca = Sqlca {
+            sqlcode: c.sqlcode,
+            sqlstate: c.sqlstate,
+            sqlerrmc: c.message,
+            ..Sqlca::default()
+        };
         if c.sqlcode > 0 {
             ca.sqlwarn[0] = 'W';
         }
@@ -301,7 +323,9 @@ fn run_statements<'l>(
             _ => ca,
         };
         let _ = writeln!(report.listing, "{name}: {}", ca.line());
-        report.entries.push(entry(n, name, &ca, outcome.as_ref(), target));
+        report
+            .entries
+            .push(entry(n, name, &ca, outcome.as_ref(), target));
         show_rows(&mut report.listing, outcome.as_ref(), opts.show_rows);
         let sev = severity(&ca);
         report.severity = report.severity.max(sev);

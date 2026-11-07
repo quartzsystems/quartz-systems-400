@@ -28,10 +28,15 @@ fn main() {
                 .and_then(|s| s.to_str())
                 .expect("a name")
                 .to_string();
-            names.push((name, format!("{dir}/{}", p.file_name().unwrap().to_string_lossy())));
+            names.push((
+                name,
+                format!("{dir}/{}", p.file_name().unwrap().to_string_lossy()),
+            ));
         }
     }
-    let mut out = String::from("/// Every shipped panel group: name and UIM source.\npub const FILES: &[(&str, &str)] = &[\n");
+    let mut out = String::from(
+        "/// Every shipped panel group: name and UIM source.\npub const FILES: &[(&str, &str)] = &[\n",
+    );
     for (name, rel) in &names {
         let _ = writeln!(
             out,

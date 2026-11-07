@@ -89,7 +89,12 @@ impl Answers<'_> {
 
     /// The special authorities chosen.
     fn special(&self) -> Vec<&'static str> {
-        SPECIAL.iter().enumerate().filter(|(i, _)| self.on(&format!("a{}", i + 1))).map(|(_, s)| *s).collect()
+        SPECIAL
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| self.on(&format!("a{}", i + 1)))
+            .map(|(_, s)| *s)
+            .collect()
     }
 
     /// `CRTUSRPRF`; `shown` leaves the password out.
@@ -117,11 +122,24 @@ impl Answers<'_> {
                 c.push(format!("{kw}({v})"));
             }
         }
-        for (k, kw) in [("im", "INLMNU"), ("cl", "CURLIB"), ("lc", "LMTCPB"), ("jd", "JOBD"), ("oq", "OUTQ")] {
+        for (k, kw) in [
+            ("im", "INLMNU"),
+            ("cl", "CURLIB"),
+            ("lc", "LMTCPB"),
+            ("jd", "JOBD"),
+            ("oq", "OUTQ"),
+        ] {
             c.push(format!("{kw}({})", self.get(k)));
         }
         let sp = self.special();
-        c.push(format!("SPCAUT({})", if sp.is_empty() { "*NONE".into() } else { sp.join(" ") }));
+        c.push(format!(
+            "SPCAUT({})",
+            if sp.is_empty() {
+                "*NONE".into()
+            } else {
+                sp.join(" ")
+            }
+        ));
         let hd = self.get("hd");
         if !hd.is_empty() {
             c.push(format!("HOMEDIR({})", quote(&hd)));
@@ -161,7 +179,11 @@ fn at(n: usize) -> String {
 
 /// `/users/create/step/<n>`.
 pub fn step(rq: &Rq<'_>, n: &str) -> Response {
-    let Some(n) = n.parse::<usize>().ok().filter(|n| (1..=STEPS.len()).contains(n)) else {
+    let Some(n) = n
+        .parse::<usize>()
+        .ok()
+        .filter(|n| (1..=STEPS.len()).contains(n))
+    else {
         return rq.not_found(&format!("wizard step {n}"));
     };
     if rq.post() {
@@ -180,11 +202,27 @@ pub fn step(rq: &Rq<'_>, n: &str) -> Response {
         _ => step5(&a),
     };
     let bs = match n {
-        1 => vec![Button::new("back", "< Back").disabled(), Button::new("next", "Next >"), Button::new("cancel", "Cancel")],
-        5 => vec![Button::new("back", "< Back"), Button::new("cancel", "Cancel"), Button::new("finish", "Create")],
-        _ => vec![Button::new("back", "< Back"), Button::new("next", "Next >"), Button::new("cancel", "Cancel")],
+        1 => vec![
+            Button::new("back", "< Back").disabled(),
+            Button::new("next", "Next >"),
+            Button::new("cancel", "Cancel"),
+        ],
+        5 => vec![
+            Button::new("back", "< Back"),
+            Button::new("cancel", "Cancel"),
+            Button::new("finish", "Create"),
+        ],
+        _ => vec![
+            Button::new("back", "< Back"),
+            Button::new("next", "Next >"),
+            Button::new("cancel", "Cancel"),
+        ],
     };
-    let desc = if n == 1 { "Step 1 of 5 (CRTUSRPRF).".to_string() } else { format!("Step {n} of {}.", STEPS.len()) };
+    let desc = if n == 1 {
+        "Step 1 of 5 (CRTUSRPRF).".to_string()
+    } else {
+        format!("Step {n} of {}.", STEPS.len())
+    };
     rq.page(Page {
         title: "Create user".into(),
         crumb: vec![GROUP.into(), "Users".into(), "Create user".into()],
@@ -198,7 +236,11 @@ pub fn step(rq: &Rq<'_>, n: &str) -> Response {
 
 /// A step's heading and properties.
 fn section(rq: &Rq<'_>, title: &str, rows: Vec<Prop>) -> String {
-    format!("<h2>{}</h2>{}", esc(title), props_table(rq.ctx.product, &[PropGroup { title: None, rows }], false))
+    format!(
+        "<h2>{}</h2>{}",
+        esc(title),
+        props_table(rq.ctx.product, &[PropGroup { title: None, rows }], false)
+    )
 }
 
 fn step1(rq: &Rq<'_>, a: &Answers<'_>) -> String {
@@ -206,20 +248,42 @@ fn step1(rq: &Rq<'_>, a: &Answers<'_>) -> String {
         rq,
         STEPS[0],
         vec![
-            Prop::new("User profile", format!("{} <span class=\"small grey\">1-10 characters</span>", input("u", &a.get("u"), 10)))
-                .required(),
+            Prop::new(
+                "User profile",
+                format!(
+                    "{} <span class=\"small grey\">1-10 characters</span>",
+                    input("u", &a.get("u"), 10)
+                ),
+            )
+            .required(),
             Prop::new("Text description", input("t", &a.get("t"), 40)),
-            Prop::new("Password", "<input type=\"password\" name=\"p1\" size=\"12\">".into()),
-            Prop::new("Confirm password", "<input type=\"password\" name=\"p2\" size=\"12\">".into()),
+            Prop::new(
+                "Password",
+                "<input type=\"password\" name=\"p1\" size=\"12\">".into(),
+            ),
+            Prop::new(
+                "Confirm password",
+                "<input type=\"password\" name=\"p2\" size=\"12\">".into(),
+            ),
             Prop::new("Set password to expired", checkbox("e", a.on("e"))),
-            Prop::new("Status", pick("s", &strings(&["*ENABLED", "*DISABLED"]), &a.get("s"))),
+            Prop::new(
+                "Status",
+                pick("s", &strings(&["*ENABLED", "*DISABLED"]), &a.get("s")),
+            ),
         ],
     )
 }
 
 fn step2(rq: &Rq<'_>, a: &Answers<'_>) -> String {
     let mut groups = vec!["*NONE".to_string()];
-    groups.extend(rq.env().users.profiles(rq.user()).into_iter().filter(|p| p.is_group).map(|p| p.name));
+    groups.extend(
+        rq.env()
+            .users
+            .profiles(rq.user())
+            .into_iter()
+            .filter(|p| p.is_group)
+            .map(|p| p.name),
+    );
     section(
         rq,
         STEPS[1],
@@ -239,7 +303,10 @@ fn step3(rq: &Rq<'_>, a: &Answers<'_>) -> String {
             Prop::new("Initial program", input_cmd("ip", &a.get("ip"), 20)),
             Prop::new("Initial menu", input_cmd("im", &a.get("im"), 20)),
             Prop::new("Current library", input_cmd("cl", &a.get("cl"), 10)),
-            Prop::new("Limit capabilities", pick("lc", &strings(&["*NO", "*PARTIAL", "*YES"]), &a.get("lc"))),
+            Prop::new(
+                "Limit capabilities",
+                pick("lc", &strings(&["*NO", "*PARTIAL", "*YES"]), &a.get("lc")),
+            ),
             Prop::new("Job description", input_cmd("jd", &a.get("jd"), 20)),
             Prop::new("Output queue", input_cmd("oq", &a.get("oq"), 20)),
             Prop::new("Home directory", input_cmd("hd", &a.get("hd"), 30)),
@@ -250,9 +317,15 @@ fn step3(rq: &Rq<'_>, a: &Answers<'_>) -> String {
 fn step4(a: &Answers<'_>) -> String {
     let mut s = String::from("<h2>Special authorities</h2><table class=\"props\">");
     for (i, sp) in SPECIAL.iter().enumerate() {
-        let _ = write!(s, "<tr><th>{sp}</th><td>{}</td></tr>", checkbox(&format!("a{}", i + 1), a.on(&format!("a{}", i + 1))));
+        let _ = write!(
+            s,
+            "<tr><th>{sp}</th><td>{}</td></tr>",
+            checkbox(&format!("a{}", i + 1), a.on(&format!("a{}", i + 1)))
+        );
     }
-    s.push_str("</table><p class=\"small grey\">You can give only the special authorities you have.</p>");
+    s.push_str(
+        "</table><p class=\"small grey\">You can give only the special authorities you have.</p>",
+    );
     s
 }
 
@@ -275,13 +348,20 @@ fn save(rq: &Rq<'_>, n: usize) {
     for k in FIELDS[n - 1] {
         if f.has(k) {
             let v = f.str(k).trim();
-            let v = if *k == "t" || *k == "hd" { v.to_string() } else { v.to_ascii_uppercase() };
+            let v = if *k == "t" || *k == "hd" {
+                v.to_string()
+            } else {
+                v.to_ascii_uppercase()
+            };
             pairs.push((format!("cu.{k}"), v));
             pairs.push((format!("cu.has.{k}"), "1".into()));
         }
     }
     for k in BOXES[n - 1] {
-        pairs.push((format!("cu.{k}"), if f.has(k) { "on" } else { "off" }.into()));
+        pairs.push((
+            format!("cu.{k}"),
+            if f.has(k) { "on" } else { "off" }.into(),
+        ));
         pairs.push((format!("cu.has.{k}"), "1".into()));
     }
     // An empty password field keeps the one typed before.
@@ -289,7 +369,10 @@ fn save(rq: &Rq<'_>, n: usize) {
         pairs.push(("cu.p1".into(), f.str("p1").into()));
         pairs.push(("cu.p2".into(), f.str("p2").into()));
     }
-    let refs: Vec<(&str, &str)> = pairs.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+    let refs: Vec<(&str, &str)> = pairs
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
     rq.set(&refs);
 }
 
@@ -298,11 +381,18 @@ fn check1(rq: &Rq<'_>, a: &Answers<'_>) -> Option<Message> {
     let u = a.get("u");
     let valid = (1..=10).contains(&u.len())
         && u.starts_with(|c: char| c.is_ascii_uppercase() || "$#@".contains(c))
-        && u.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || "$#@_".contains(c));
+        && u.chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || "$#@_".contains(c));
     if !valid {
         return Some(rq.message(Kind::Error, "CPF2203", &[&u]));
     }
-    if rq.env().users.profiles(rq.user()).iter().any(|p| p.name == u) {
+    if rq
+        .env()
+        .users
+        .profiles(rq.user())
+        .iter()
+        .any(|p| p.name == u)
+    {
         return Some(rq.message(Kind::Error, "CPF2214", &[&u]));
     }
     if rq.get("cu.p1") != rq.get("cu.p2") {
@@ -347,7 +437,12 @@ fn post(rq: &Rq<'_>, n: usize) -> Response {
 /// asked for. The wizard is forgotten whatever the outcome.
 fn finish(rq: &Rq<'_>, a: &Answers<'_>) -> Response {
     let u = a.get("u");
-    if let Err(r) = secadm(rq, "Create user profile", &u, &[GROUP, "Users", "Create user"]) {
+    if let Err(r) = secadm(
+        rq,
+        "Create user profile",
+        &u,
+        &[GROUP, "Users", "Create user"],
+    ) {
         return r;
     }
     let users = &rq.env().users;
@@ -381,10 +476,19 @@ mod tests {
 
     #[test]
     fn summary_lines() {
-        let w: Vec<String> = ["CRTUSRPRF", "USRPRF(A)", "TEXT('x')"].iter().map(ToString::to_string).collect();
+        let w: Vec<String> = ["CRTUSRPRF", "USRPRF(A)", "TEXT('x')"]
+            .iter()
+            .map(ToString::to_string)
+            .collect();
         assert_eq!(wrap(&w), "CRTUSRPRF USRPRF(A) TEXT('x')");
         let long: Vec<String> = (0..12).map(|i| format!("KEYWORD{i}(VALUE)")).collect();
         assert!(wrap(&long).lines().all(|l| l.len() <= 90));
-        assert!(wrap(&long).lines().nth(1).unwrap().starts_with("          KEYWORD"));
+        assert!(
+            wrap(&long)
+                .lines()
+                .nth(1)
+                .unwrap()
+                .starts_with("          KEYWORD")
+        );
     }
 }

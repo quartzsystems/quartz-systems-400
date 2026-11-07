@@ -26,17 +26,33 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// A message with data: each field padded to its length.
 fn msg(id: &str, kind: u8, fields: &[(&str, usize)]) -> CmdMsg {
-    CmdMsg { msgid: id.into(), kind, data: cmd::error::data(fields) }
+    CmdMsg {
+        msgid: id.into(),
+        kind,
+        data: cmd::error::data(fields),
+    }
 }
 
 fn escape_with(id: &str, text: &str, fields: &[(&str, usize)]) -> CmdReply {
-    CmdReply { text: format!("{id} {text}\n"), escape: Some(msg(id, 7, fields)), ..CmdReply::default() }
+    CmdReply {
+        text: format!("{id} {text}\n"),
+        escape: Some(msg(id, 7, fields)),
+        ..CmdReply::default()
+    }
 }
 
 fn ident(system: &System, number: u32) -> JobIdent {
     system.jobs.get(number).map_or_else(
-        || JobIdent { name: "QSYSJOB".into(), user: "QSYS".into(), number },
-        |j| JobIdent { name: j.name.clone(), user: j.user.clone(), number },
+        || JobIdent {
+            name: "QSYSJOB".into(),
+            user: "QSYS".into(),
+            number,
+        },
+        |j| JobIdent {
+            name: j.name.clone(),
+            user: j.user.clone(),
+            number,
+        },
     )
 }
 
@@ -53,7 +69,10 @@ fn job_of(parms: &Parms) -> Option<&Value> {
 fn scope(system: &System, parms: &Parms) -> Result<(Scope, String), String> {
     let job = job_of(parms);
     let quals: Vec<String> = match job {
-        Some(Value::Qual(p)) => p.iter().map(|v| v.source().trim().to_ascii_uppercase()).collect(),
+        Some(Value::Qual(p)) => p
+            .iter()
+            .map(|v| v.source().trim().to_ascii_uppercase())
+            .collect(),
         Some(v) => vec![v.source().trim().to_ascii_uppercase()],
         None => vec!["*".into()],
     };
@@ -61,12 +80,17 @@ fn scope(system: &System, parms: &Parms) -> Result<(Scope, String), String> {
     if part(0) == "*ALL" && matches!(part(1), "" | "*ALL") && matches!(part(2), "" | "*ALL") {
         return Ok((Scope::All, "*ALL".into()));
     }
-    if quals.iter().any(|q| q.ends_with('*') && q != "*") || part(1) == "*ALL" || part(2) == "*ALL" {
+    if quals.iter().any(|q| q.ends_with('*') && q != "*") || part(1) == "*ALL" || part(2) == "*ALL"
+    {
         // BLOCKED(rel): a monitor watches one job or every job.
         return Err(generic_job());
     }
     let n = super::svccmd::job_number_of(system, job)?.unwrap_or(system.current_job);
-    let text = if part(0) == "*" || part(0).is_empty() { "*".to_string() } else { ident(system, n).qualified() };
+    let text = if part(0) == "*" || part(0).is_empty() {
+        "*".to_string()
+    } else {
+        ident(system, n).qualified()
+    };
     Ok((Scope::Job(n), text))
 }
 
@@ -112,7 +136,17 @@ fn monitor_error(name: &str, e: &str) -> CmdReply {
 }
 
 fn start(system: &mut System, parms: &Parms) -> Result<(String, String), String> {
-    for kwd in ["FTRUSER", "FTRINTNETA", "FTRCLTACG", "FTRCLTAPP", "FTRCLTPGM", "FTRCLTUSR", "FTRCLTWS", "FTRQRYGOVR", "FTRFILE"] {
+    for kwd in [
+        "FTRUSER",
+        "FTRINTNETA",
+        "FTRCLTACG",
+        "FTRCLTAPP",
+        "FTRCLTPGM",
+        "FTRCLTUSR",
+        "FTRCLTWS",
+        "FTRQRYGOVR",
+        "FTRFILE",
+    ] {
         only_default(parms, kwd, &["*NONE", ""], Why::Filter)?;
     }
     for kwd in ["RUNTHLD", "STGTHLD", "FTRLCLPORT"] {
@@ -135,11 +169,22 @@ fn start(system: &mut System, parms: &Parms) -> Result<(String, String), String>
         return not_kept("TYPE", &typ, Why::Detail);
     }
     let (file, lib) = parms.qual("OUTFILE");
-    let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib.to_ascii_uppercase() };
+    let lib = if lib.is_empty() {
+        "*LIBL".to_string()
+    } else {
+        lib.to_ascii_uppercase()
+    };
     let file = file.to_ascii_uppercase();
     let e = parms.elems("OUTMBR");
-    let word = |i: usize| e.get(i).copied().flatten().map(|v| v.source().trim().to_ascii_uppercase());
-    let member = word(0).filter(|m| !m.is_empty()).unwrap_or_else(|| "*FIRST".into());
+    let word = |i: usize| {
+        e.get(i)
+            .copied()
+            .flatten()
+            .map(|v| v.source().trim().to_ascii_uppercase())
+    };
+    let member = word(0)
+        .filter(|m| !m.is_empty())
+        .unwrap_or_else(|| "*FIRST".into());
     let add = word(1).is_some_and(|w| w == "*ADD");
     let frcrcd = match parms.name("FRCRCD").as_str() {
         "" | "*CALC" => 0,
@@ -154,8 +199,16 @@ fn start(system: &mut System, parms: &Parms) -> Result<(String, String), String>
         "*SUMMARY" => "*SUMMARY",
         _ => "*BASIC",
     };
-    let shown_member = if member == "*FIRST" { file.clone() } else { member.clone() };
-    let job_shown = if scope == Scope::All { "*ALL/*ALL/*ALL".to_string() } else { job_text.clone() };
+    let shown_member = if member == "*FIRST" {
+        file.clone()
+    } else {
+        member.clone()
+    };
+    let job_shown = if scope == Scope::All {
+        "*ALL/*ALL/*ALL".to_string()
+    } else {
+        job_text.clone()
+    };
     let command = format!(
         "STRDBMON  OUTFILE({lib}/{file})  OUTMBR({shown_member} {})  JOB({job_shown})  TYPE({typ})  FRCRCD({frcrcd})  INCSYSSQL(*NO)  COMMENT('{comment}')",
         if add { "*ADD" } else { "*REPLACE" }
@@ -194,7 +247,10 @@ fn start(system: &mut System, parms: &Parms) -> Result<(String, String), String>
 fn enddbmon(system: &mut System, parms: &Parms) -> CmdReply {
     let r = (|| -> Result<(), String> {
         let (scope, job_text) = scope(system, parms)?;
-        let monid = parms.specified("MONID").then(|| parms.text("MONID").trim().to_ascii_uppercase()).filter(|m| !m.is_empty());
+        let monid = parms
+            .specified("MONID")
+            .then(|| parms.text("MONID").trim().to_ascii_uppercase())
+            .filter(|m| !m.is_empty());
         let comment = {
             let c = parms.text("COMMENT");
             if c == "*BLANK" { String::new() } else { c }
@@ -232,17 +288,36 @@ fn chgqrya(system: &mut System, parms: &Parms) -> CmdReply {
     let r = (|| -> Result<(), String> {
         // The job must exist (CPF1321 when it does not).
         if let Some(Value::Qual(p)) = parms.get("JOB") {
-            let name = p.first().map(|v| v.source().trim().to_ascii_uppercase()).unwrap_or_default();
+            let name = p
+                .first()
+                .map(|v| v.source().trim().to_ascii_uppercase())
+                .unwrap_or_default();
             if name != "*" && super::svccmd::job_number(system, parms, "JOB").is_err() {
-                let user = p.get(1).map(|v| v.source().trim().to_ascii_uppercase()).unwrap_or_default();
-                let number = p.get(2).map(|v| v.source().trim().to_string()).unwrap_or_default();
+                let user = p
+                    .get(1)
+                    .map(|v| v.source().trim().to_ascii_uppercase())
+                    .unwrap_or_default();
+                let number = p
+                    .get(2)
+                    .map(|v| v.source().trim().to_string())
+                    .unwrap_or_default();
                 return Err(job_not_found(&name, &user, &number));
             }
         }
         // BLOCKED(rel): the planner makes no time or storage estimate a
         // governor could hold a query to.
-        only_default(parms, "QRYTIMLMT", &["*SAME", "*NOMAX", "*SYSVAL", "-1", "-2", "-3", ""], Why::TimeLimit)?;
-        only_default(parms, "QRYSTGLMT", &["*SAME", "*NOMAX", "-1", "-2", ""], Why::StorageLimit)?;
+        only_default(
+            parms,
+            "QRYTIMLMT",
+            &["*SAME", "*NOMAX", "*SYSVAL", "-1", "-2", "-3", ""],
+            Why::TimeLimit,
+        )?;
+        only_default(
+            parms,
+            "QRYSTGLMT",
+            &["*SAME", "*NOMAX", "-1", "-2", ""],
+            Why::StorageLimit,
+        )?;
         // BLOCKED(rel): query options come from OVERRIDE_QAQQINI, not a
         // QAQQINI file in a library.
         only_default(parms, "QRYOPTLIB", &["*SAME", ""], Why::OptionsLibrary)?;

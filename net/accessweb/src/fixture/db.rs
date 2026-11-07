@@ -17,7 +17,9 @@ use std::sync::Mutex;
 
 use qsweb::msg::{Kind as MsgKind, Message};
 
-use crate::env::db::{Column, Commit, Db, Entry, Kind, Options, Outcome, ReqType, Request, ResultColumn, Val};
+use crate::env::db::{
+    Column, Commit, Db, Entry, Kind, Options, Outcome, ReqType, Request, ResultColumn, Val,
+};
 use crate::util::secs;
 
 /// The schemas the user may list (Preferences' default schema offers
@@ -29,25 +31,143 @@ pub const CATALOG: &[&str] = &["HLINV", "HLINVTEST", "QGPL", "QSYS2", "WEBSTORE"
 
 /// `HLINV.ASSETS`' columns.
 pub const ASSETS_COLUMNS: &[&str] = &[
-    "ASSET_TAG", "LOCATION", "MANUFACTURER", "MODEL", "SERIAL", "ASSET_TYPE", "STATUS", "ACQUIRED", "COST", "RACK_U", "NOTES",
+    "ASSET_TAG",
+    "LOCATION",
+    "MANUFACTURER",
+    "MODEL",
+    "SERIAL",
+    "ASSET_TYPE",
+    "STATUS",
+    "ACQUIRED",
+    "COST",
+    "RACK_U",
+    "NOTES",
     "CHANGED_TS",
 ];
 
 /// `HLINV.ASSETS`' rows (the first eight columns; the rest are NULL
 /// and the change stamp).
 pub const ASSETS: &[[&str; 8]] = &[
-    ["QS000101", "QS-HQ-R1", "QUANTA", "T4048-IX8", "QTFCEV2340021", "SWITCH", "ACTIVE", "2025-03-11"],
-    ["QS000102", "QS-HQ-R1", "QUANTA", "T4048-IX8", "QTFCEV2340022", "SWITCH", "ACTIVE", "2025-03-11"],
-    ["QS000110", "QS-HQ-R1", "EDGECORE", "AS5712-54X", "571254X2041B0019", "SWITCH", "ACTIVE", "2024-11-02"],
-    ["QS000111", "QS-HQ-R1", "EDGECORE", "AS5712-54X", "571254X2041B0020", "SWITCH", "ACTIVE", "2024-11-02"],
-    ["QS000201", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q33", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000202", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q34", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000203", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q35", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000210", "QS-HQ-R2", "DELL", "QLE2562", "BFE1234567", "ADAPTER", "ACTIVE", "2026-09-20"],
-    ["QS000302", "QS-HQ-R3", "WEIDMULLER", "UR20-FBC-EIP", "2024-11-00341", "IO-COUPLER", "ACTIVE", "2026-10-01"],
-    ["QS000401", "QS-BR1-R1", "DELL", "S4048-ON", "8H3K2P2", "SWITCH", "ACTIVE", "2024-09-08"],
-    ["QS000402", "QS-BR1-R1", "WATCHGUARD", "M370", "80BA0F2B1C33", "FIREWALL", "ACTIVE", "2024-09-08"],
-    ["QS000403", "QS-BR1-R1", "ARISTA", "7050SX-64", "JPE14210033", "SWITCH", "SPARE", "2023-05-02"],
+    [
+        "QS000101",
+        "QS-HQ-R1",
+        "QUANTA",
+        "T4048-IX8",
+        "QTFCEV2340021",
+        "SWITCH",
+        "ACTIVE",
+        "2025-03-11",
+    ],
+    [
+        "QS000102",
+        "QS-HQ-R1",
+        "QUANTA",
+        "T4048-IX8",
+        "QTFCEV2340022",
+        "SWITCH",
+        "ACTIVE",
+        "2025-03-11",
+    ],
+    [
+        "QS000110",
+        "QS-HQ-R1",
+        "EDGECORE",
+        "AS5712-54X",
+        "571254X2041B0019",
+        "SWITCH",
+        "ACTIVE",
+        "2024-11-02",
+    ],
+    [
+        "QS000111",
+        "QS-HQ-R1",
+        "EDGECORE",
+        "AS5712-54X",
+        "571254X2041B0020",
+        "SWITCH",
+        "ACTIVE",
+        "2024-11-02",
+    ],
+    [
+        "QS000201",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q33",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000202",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q34",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000203",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q35",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000210",
+        "QS-HQ-R2",
+        "DELL",
+        "QLE2562",
+        "BFE1234567",
+        "ADAPTER",
+        "ACTIVE",
+        "2026-09-20",
+    ],
+    [
+        "QS000302",
+        "QS-HQ-R3",
+        "WEIDMULLER",
+        "UR20-FBC-EIP",
+        "2024-11-00341",
+        "IO-COUPLER",
+        "ACTIVE",
+        "2026-10-01",
+    ],
+    [
+        "QS000401",
+        "QS-BR1-R1",
+        "DELL",
+        "S4048-ON",
+        "8H3K2P2",
+        "SWITCH",
+        "ACTIVE",
+        "2024-09-08",
+    ],
+    [
+        "QS000402",
+        "QS-BR1-R1",
+        "WATCHGUARD",
+        "M370",
+        "80BA0F2B1C33",
+        "FIREWALL",
+        "ACTIVE",
+        "2024-09-08",
+    ],
+    [
+        "QS000403",
+        "QS-BR1-R1",
+        "ARISTA",
+        "7050SX-64",
+        "JPE14210033",
+        "SWITCH",
+        "SPARE",
+        "2023-05-02",
+    ],
 ];
 
 /// When every sample row last changed.
@@ -62,19 +182,80 @@ type Sample = (&'static str, Kind, &'static str, u64, (u32, u32, u32, u32));
 
 /// `HLINV`'s catalog entries.
 const HLINV: &[Sample] = &[
-    ("ASSETS", Kind::Table, "Hardware assets", 12, (10, 29, 13, 58)),
-    ("LOCATIONS", Kind::Table, "Racks and sites", 14, (9, 20, 10, 0)),
+    (
+        "ASSETS",
+        Kind::Table,
+        "Hardware assets",
+        12,
+        (10, 29, 13, 58),
+    ),
+    (
+        "LOCATIONS",
+        Kind::Table,
+        "Racks and sites",
+        14,
+        (9, 20, 10, 0),
+    ),
     ("MANUFACTURERS", Kind::Table, "Vendors", 38, (9, 14, 12, 11)),
-    ("MOVEMENTS", Kind::Table, "Asset movement log", 2207, (10, 29, 6, 14)),
-    ("CONTRACTS", Kind::Table, "Support contracts", 27, (10, 2, 15, 30)),
-    ("NOTES", Kind::Table, "Free text notes", 1118, (10, 28, 17, 2)),
-    ("ASSETS_BY_LOC", Kind::View, "Assets joined to location", 12, (0, 0, 0, 0)),
-    ("EXPIRING", Kind::View, "Contracts expiring in 90 days", 4, (0, 0, 0, 0)),
-    ("ASSETLF1", Kind::Logical, "Assets by serial", 12, (0, 0, 0, 0)),
-    ("ASSETP", Kind::Physical, "Assets (system name)", 412, (0, 0, 0, 0)),
+    (
+        "MOVEMENTS",
+        Kind::Table,
+        "Asset movement log",
+        2207,
+        (10, 29, 6, 14),
+    ),
+    (
+        "CONTRACTS",
+        Kind::Table,
+        "Support contracts",
+        27,
+        (10, 2, 15, 30),
+    ),
+    (
+        "NOTES",
+        Kind::Table,
+        "Free text notes",
+        1118,
+        (10, 28, 17, 2),
+    ),
+    (
+        "ASSETS_BY_LOC",
+        Kind::View,
+        "Assets joined to location",
+        12,
+        (0, 0, 0, 0),
+    ),
+    (
+        "EXPIRING",
+        Kind::View,
+        "Contracts expiring in 90 days",
+        4,
+        (0, 0, 0, 0),
+    ),
+    (
+        "ASSETLF1",
+        Kind::Logical,
+        "Assets by serial",
+        12,
+        (0, 0, 0, 0),
+    ),
+    (
+        "ASSETP",
+        Kind::Physical,
+        "Assets (system name)",
+        412,
+        (0, 0, 0, 0),
+    ),
 ];
 
-fn col(name: &str, typ: &str, length: u32, scale: Option<u32>, nullable: bool, default: &str) -> Column {
+fn col(
+    name: &str,
+    typ: &str,
+    length: u32,
+    scale: Option<u32>,
+    nullable: bool,
+    default: &str,
+) -> Column {
     Column {
         name: name.into(),
         typ: typ.into(),
@@ -104,11 +285,26 @@ pub fn assets_columns() -> Vec<Column> {
         col("COST", "DECIMAL", 11, Some(2), true, "NULL"),
         col("RACK_U", "SMALLINT", 2, None, true, "NULL"),
         col("NOTES", "VARCHAR", 256, None, true, "NULL"),
-        col("CHANGED_TS", "TIMESTAMP", 10, None, false, "CURRENT TIMESTAMP"),
+        col(
+            "CHANGED_TS",
+            "TIMESTAMP",
+            10,
+            None,
+            false,
+            "CURRENT TIMESTAMP",
+        ),
     ];
     c[0].key = true;
     c[1].choices = strs(LOCATIONS);
-    c[5].choices = strs(&["SWITCH", "SERVER", "FIREWALL", "ADAPTER", "IO-COUPLER", "OPTICAL", "OTHER"]);
+    c[5].choices = strs(&[
+        "SWITCH",
+        "SERVER",
+        "FIREWALL",
+        "ADAPTER",
+        "IO-COUPLER",
+        "OPTICAL",
+        "OTHER",
+    ]);
     c[6].choices = strs(&["ACTIVE", "SPARE", "RETIRED"]);
     c
 }
@@ -218,10 +414,42 @@ pub fn sample_requests() -> Vec<Request> {
             stamp(10, 29, 9, 12),
             "*PUBLIC",
         ),
-        r(2, "Expiring contracts", ReqType::Sql, "SELECT * FROM hlinv.expiring ORDER BY end_date", "PDF", stamp(10, 27, 8, 0), "ADMINS"),
-        r(3, "Jobs in MSGW", ReqType::Sql, "SELECT * FROM qsys2.active_job_info WHERE job_status='MSGW'", "HTML", stamp(10, 29, 13, 59), ""),
-        r(4, "Load vendor list", ReqType::CopyTo, &up, "CSV", stamp(9, 14, 12, 11), ""),
-        r(5, "Asset export", ReqType::CopyFrom, &down, "XLSX", stamp(10, 28, 18, 0), "WAREHOUSE"),
+        r(
+            2,
+            "Expiring contracts",
+            ReqType::Sql,
+            "SELECT * FROM hlinv.expiring ORDER BY end_date",
+            "PDF",
+            stamp(10, 27, 8, 0),
+            "ADMINS",
+        ),
+        r(
+            3,
+            "Jobs in MSGW",
+            ReqType::Sql,
+            "SELECT * FROM qsys2.active_job_info WHERE job_status='MSGW'",
+            "HTML",
+            stamp(10, 29, 13, 59),
+            "",
+        ),
+        r(
+            4,
+            "Load vendor list",
+            ReqType::CopyTo,
+            &up,
+            "CSV",
+            stamp(9, 14, 12, 11),
+            "",
+        ),
+        r(
+            5,
+            "Asset export",
+            ReqType::CopyFrom,
+            &down,
+            "XLSX",
+            stamp(10, 28, 18, 0),
+            "WAREHOUSE",
+        ),
     ]
 }
 
@@ -235,25 +463,43 @@ impl Default for FixtureDb {
                 rows: assets_rows(),
             },
         );
-        let mut loc = vec![col("LOCATION", "CHAR", 10, None, false, ""), col("SITE", "VARCHAR", 40, None, true, "NULL")];
+        let mut loc = vec![
+            col("LOCATION", "CHAR", 10, None, false, ""),
+            col("SITE", "VARCHAR", 40, None, true, "NULL"),
+        ];
         loc[0].key = true;
         tables.insert(
             ("HLINV".to_string(), "LOCATIONS".to_string()),
             Table {
                 columns: loc,
-                rows: LOCATIONS.iter().map(|l| vec![Val::Text((*l).into()), Val::Null]).collect(),
+                rows: LOCATIONS
+                    .iter()
+                    .map(|l| vec![Val::Text((*l).into()), Val::Null])
+                    .collect(),
             },
         );
         for (name, kind, ..) in HLINV {
             if !matches!(*name, "ASSETS" | "LOCATIONS") {
                 let mut c = vec![col("NAME", "VARCHAR", 40, None, false, "")];
                 c[0].key = *kind == Kind::Table;
-                tables.insert(("HLINV".into(), (*name).into()), Table { columns: c, rows: Vec::new() });
+                tables.insert(
+                    ("HLINV".into(), (*name).into()),
+                    Table {
+                        columns: c,
+                        rows: Vec::new(),
+                    },
+                );
             }
         }
         let mut c = vec![col("ID", "INTEGER", 4, None, false, "")];
         c[0].key = true;
-        tables.insert(("QGPL".into(), "SCRATCH".into()), Table { columns: c, rows: Vec::new() });
+        tables.insert(
+            ("QGPL".into(), "SCRATCH".into()),
+            Table {
+                columns: c,
+                rows: Vec::new(),
+            },
+        );
         let history = BTreeMap::from([(
             "CWELLMAN".to_string(),
             strs(&[
@@ -318,7 +564,9 @@ fn lex(sql: &str) -> Vec<Tok> {
             while i < cs.len() && (cs[i].is_ascii_alphanumeric() || cs[i] == '_') {
                 i += 1;
             }
-            out.push(Tok::Word(cs[st..i].iter().collect::<String>().to_ascii_uppercase()));
+            out.push(Tok::Word(
+                cs[st..i].iter().collect::<String>().to_ascii_uppercase(),
+            ));
         } else if c.is_ascii_digit() {
             let st = i;
             while i < cs.len() && (cs[i].is_ascii_digit() || cs[i] == '.') {
@@ -348,7 +596,12 @@ fn fail(id: &str, state: &str, code: i32, text: &str) -> Outcome {
 }
 
 fn syntax(at: &str) -> Outcome {
-    fail("SQL0104", "42601", -104, &format!("Token {at} was not valid."))
+    fail(
+        "SQL0104",
+        "42601",
+        -104,
+        &format!("Token {at} was not valid."),
+    )
 }
 
 struct P<'a> {
@@ -475,7 +728,9 @@ fn matches(t: &Table, row: &[Val], c: &Cond) -> bool {
     let at = |n: &str| t.columns.iter().position(|c| c.name == n);
     match c {
         Cond::Like(col, pat) => at(col).is_some_and(|i| like(pat, &row[i].text().to_uppercase())),
-        Cond::Eq(eqs) => eqs.iter().all(|(col, v)| at(col).is_some_and(|i| row[i].text().trim_end() == v.text().trim_end())),
+        Cond::Eq(eqs) => eqs.iter().all(|(col, v)| {
+            at(col).is_some_and(|i| row[i].text().trim_end() == v.text().trim_end())
+        }),
     }
 }
 
@@ -484,83 +739,156 @@ fn matches(t: &Table, row: &[Val], c: &Cond) -> bool {
 fn check(c: &Column, v: &Val) -> Result<Val, Box<Outcome>> {
     if v.is_null() {
         if !c.nullable {
-            return Err(Box::new(fail("SQL0407", "23502", -407, &format!("Null values not allowed in column {}.", c.name))));
+            return Err(Box::new(fail(
+                "SQL0407",
+                "23502",
+                -407,
+                &format!("Null values not allowed in column {}.", c.name),
+            )));
         }
         return Ok(Val::Null);
     }
     let t = v.text();
     if c.numeric() {
-        let ok = !t.is_empty() && t.trim_start_matches('-').chars().all(|ch| ch.is_ascii_digit() || ch == '.') && t.matches('.').count() <= 1;
+        let ok = !t.is_empty()
+            && t.trim_start_matches('-')
+                .chars()
+                .all(|ch| ch.is_ascii_digit() || ch == '.')
+            && t.matches('.').count() <= 1;
         if !ok {
-            return Err(Box::new(fail("SQL0302", "22018", -302, &format!("Conversion error on value {t} for column {}.", c.name))));
+            return Err(Box::new(fail(
+                "SQL0302",
+                "22018",
+                -302,
+                &format!("Conversion error on value {t} for column {}.", c.name),
+            )));
         }
         return Ok(Val::Num(t));
     }
     if matches!(c.typ.as_str(), "CHAR" | "VARCHAR") && t.chars().count() > c.length as usize {
-        return Err(Box::new(fail("SQL0404", "22001", -404, &format!("Value for column {} too long.", c.name))));
+        return Err(Box::new(fail(
+            "SQL0404",
+            "22001",
+            -404,
+            &format!("Value for column {} too long.", c.name),
+        )));
     }
     if c.typ == "DATE" && (t.len() != 10 || t.as_bytes()[4] != b'-') {
-        return Err(Box::new(fail("SQL0181", "22007", -181, &format!("Value {t} in column {} not a valid date.", c.name))));
+        return Err(Box::new(fail(
+            "SQL0181",
+            "22007",
+            -181,
+            &format!("Value {t} in column {} not a valid date.", c.name),
+        )));
     }
     Ok(Val::Text(t))
 }
 
 fn not_found(schema: &str, table: &str) -> Outcome {
-    fail("SQL0204", "42704", -204, &format!("{table} in {schema} not found."))
+    fail(
+        "SQL0204",
+        "42704",
+        -204,
+        &format!("{table} in {schema} not found."),
+    )
 }
 
 impl FixtureDb {
     /// The prototype's history for `user` (the one the golden page
     /// shows), whatever ran since.
     pub fn sample_history(&self, user: &str) {
-        let h = Self::default().state.into_inner().expect("db").history.remove(USER_SAMPLE).unwrap_or_default();
-        self.state.lock().expect("db").history.insert(user.to_string(), h);
+        let h = Self::default()
+            .state
+            .into_inner()
+            .expect("db")
+            .history
+            .remove(USER_SAMPLE)
+            .unwrap_or_default();
+        self.state
+            .lock()
+            .expect("db")
+            .history
+            .insert(user.to_string(), h);
     }
 
     /// Rows of a table (for tests).
     pub fn rows(&self, schema: &str, table: &str) -> Vec<Vec<Val>> {
-        self.state.lock().expect("db").tables.get(&(schema.to_string(), table.to_string())).map(|t| t.rows.clone()).unwrap_or_default()
+        self.state
+            .lock()
+            .expect("db")
+            .tables
+            .get(&(schema.to_string(), table.to_string()))
+            .map(|t| t.rows.clone())
+            .unwrap_or_default()
     }
 
     /// The prototype's Run SQL script's statements and what they did.
     fn canned(sql: &str) -> Option<Outcome> {
         let norm = sql.split_whitespace().collect::<Vec<_>>().join(" ");
-        let text = |c: &str| ResultColumn { name: c.into(), typ: "CHAR".into() };
+        let text = |c: &str| ResultColumn {
+            name: c.into(),
+            typ: "CHAR".into(),
+        };
         match norm.as_str() {
             "SELECT asset_tag, location, manufacturer, model, serial, asset_type, status, acquired FROM hlinv.assets WHERE status IN ('ACTIVE', 'SPARE') ORDER BY location, asset_tag" => {
                 Some(Outcome {
                     columns: ASSETS_COLUMNS[..8].iter().map(|c| text(c)).collect(),
-                    rows: ASSETS.iter().map(|r| r.iter().map(|s| Val::Text((*s).into())).collect()).collect(),
+                    rows: ASSETS
+                        .iter()
+                        .map(|r| r.iter().map(|s| Val::Text((*s).into())).collect())
+                        .collect(),
                     sqlstate: "00000".into(),
                     ms: 41,
                     ..Outcome::default()
                 })
             }
             "SELECT location, COUNT(*) AS n FROM hlinv.assets GROUP BY location" => Some(Outcome {
-                columns: vec![text("LOCATION"), ResultColumn { name: "N".into(), typ: "INTEGER".into() }],
-                rows: [("QS-HQ-R1", "4"), ("QS-HQ-R2", "4"), ("QS-HQ-R3", "1"), ("QS-BR1-R1", "3")]
-                    .iter()
-                    .map(|(l, n)| vec![Val::Text((*l).into()), Val::Num((*n).into())])
-                    .collect(),
+                columns: vec![
+                    text("LOCATION"),
+                    ResultColumn {
+                        name: "N".into(),
+                        typ: "INTEGER".into(),
+                    },
+                ],
+                rows: [
+                    ("QS-HQ-R1", "4"),
+                    ("QS-HQ-R2", "4"),
+                    ("QS-HQ-R3", "1"),
+                    ("QS-BR1-R1", "3"),
+                ]
+                .iter()
+                .map(|(l, n)| vec![Val::Text((*l).into()), Val::Num((*n).into())])
+                .collect(),
                 sqlstate: "00000".into(),
                 ms: 12,
                 ..Outcome::default()
             }),
-            "UPDATE hlinv.assets SET status = 'RETIRED' WHERE asset_tag = 'QS000301'" => Some(Outcome {
-                changed: 1,
-                sqlstate: "00000".into(),
-                ms: 9,
-                ..Outcome::default()
-            }),
+            "UPDATE hlinv.assets SET status = 'RETIRED' WHERE asset_tag = 'QS000301'" => {
+                Some(Outcome {
+                    changed: 1,
+                    sqlstate: "00000".into(),
+                    ms: 9,
+                    ..Outcome::default()
+                })
+            }
             _ => None,
         }
     }
 
     #[allow(clippy::too_many_lines)] // one arm per statement
     fn exec(st: &mut State, conn: u32, sql: &str, params: &[Val]) -> Outcome {
-        let schema = st.conns.get(&conn).map(|c| c.opts.schema.clone()).unwrap_or_default();
+        let schema = st
+            .conns
+            .get(&conn)
+            .map(|c| c.opts.schema.clone())
+            .unwrap_or_default();
         let toks = lex(sql);
-        let mut p = P { t: &toks, i: 0, params, next: 0 };
+        let mut p = P {
+            t: &toks,
+            i: 0,
+            params,
+            next: 0,
+        };
         let changes = |st: &mut State| {
             if let Some(c) = st.conns.get(&conn)
                 && c.opts.commit != Commit::None
@@ -572,7 +900,10 @@ impl FixtureDb {
                 }
             }
         };
-        let ok = |o: Outcome| Outcome { sqlstate: "00000".into(), ..o };
+        let ok = |o: Outcome| Outcome {
+            sqlstate: "00000".into(),
+            ..o
+        };
         if p.word("SELECT") {
             enum What {
                 Count,
@@ -597,8 +928,12 @@ impl FixtureDb {
             if !p.word("FROM") {
                 return syntax(&p.tok());
             }
-            let Some(key) = p.table(&schema) else { return syntax(&p.tok()) };
-            let Some(t) = st.tables.get(&key) else { return not_found(&key.0, &key.1) };
+            let Some(key) = p.table(&schema) else {
+                return syntax(&p.tok());
+            };
+            let Some(t) = st.tables.get(&key) else {
+                return not_found(&key.0, &key.1);
+            };
             let c = if p.word("WHERE") {
                 match cond(&mut p) {
                     Some(c) => Some(c),
@@ -607,13 +942,22 @@ impl FixtureDb {
             } else {
                 None
             };
-            let mut rows: Vec<&Vec<Val>> = t.rows.iter().filter(|r| c.as_ref().is_none_or(|c| matches(t, r, c))).collect();
+            let mut rows: Vec<&Vec<Val>> = t
+                .rows
+                .iter()
+                .filter(|r| c.as_ref().is_none_or(|c| matches(t, r, c)))
+                .collect();
             if p.word("ORDER") {
                 p.word("BY");
                 let order = p.names();
                 let idx: Vec<(usize, bool)> = order
                     .iter()
-                    .filter_map(|o| t.columns.iter().position(|c| &c.name == o).map(|i| (i, t.columns[i].numeric())))
+                    .filter_map(|o| {
+                        t.columns
+                            .iter()
+                            .position(|c| &c.name == o)
+                            .map(|i| (i, t.columns[i].numeric()))
+                    })
                     .collect();
                 rows.sort_by(|a, b| {
                     for (i, num) in &idx {
@@ -654,31 +998,64 @@ impl FixtureDb {
             let rows: Vec<&Vec<Val>> = rows.into_iter().skip(offset).take(limit).collect();
             return match what {
                 What::Count => ok(Outcome {
-                    columns: vec![ResultColumn { name: "00001".into(), typ: "INTEGER".into() }],
+                    columns: vec![ResultColumn {
+                        name: "00001".into(),
+                        typ: "INTEGER".into(),
+                    }],
                     rows: vec![vec![Val::Num(rows.len().to_string())]],
                     ..Outcome::default()
                 }),
                 What::Max(c) => {
-                    let Some(i) = t.columns.iter().position(|x| x.name == c) else { return syntax(&c) };
-                    let m = rows.iter().map(|r| r[i].clone()).filter(|v| !v.is_null()).max_by_key(Val::text).unwrap_or(Val::Null);
+                    let Some(i) = t.columns.iter().position(|x| x.name == c) else {
+                        return syntax(&c);
+                    };
+                    let m = rows
+                        .iter()
+                        .map(|r| r[i].clone())
+                        .filter(|v| !v.is_null())
+                        .max_by_key(Val::text)
+                        .unwrap_or(Val::Null);
                     ok(Outcome {
-                        columns: vec![ResultColumn { name: "00001".into(), typ: t.columns[i].typ.clone() }],
+                        columns: vec![ResultColumn {
+                            name: "00001".into(),
+                            typ: t.columns[i].typ.clone(),
+                        }],
                         rows: vec![vec![m]],
                         ..Outcome::default()
                     })
                 }
                 What::Cols(names) => {
-                    let names = if names.is_empty() { t.columns.iter().map(|c| c.name.clone()).collect() } else { names };
+                    let names = if names.is_empty() {
+                        t.columns.iter().map(|c| c.name.clone()).collect()
+                    } else {
+                        names
+                    };
                     let mut idx = Vec::new();
                     for n in &names {
                         match t.columns.iter().position(|c| &c.name == n) {
                             Some(i) => idx.push(i),
-                            None => return fail("SQL0206", "42703", -206, &format!("Column {n} not in specified tables.")),
+                            None => {
+                                return fail(
+                                    "SQL0206",
+                                    "42703",
+                                    -206,
+                                    &format!("Column {n} not in specified tables."),
+                                );
+                            }
                         }
                     }
                     ok(Outcome {
-                        columns: idx.iter().map(|i| ResultColumn { name: t.columns[*i].name.clone(), typ: t.columns[*i].typ.clone() }).collect(),
-                        rows: rows.iter().map(|r| idx.iter().map(|i| r[*i].clone()).collect()).collect(),
+                        columns: idx
+                            .iter()
+                            .map(|i| ResultColumn {
+                                name: t.columns[*i].name.clone(),
+                                typ: t.columns[*i].typ.clone(),
+                            })
+                            .collect(),
+                        rows: rows
+                            .iter()
+                            .map(|r| idx.iter().map(|i| r[*i].clone()).collect())
+                            .collect(),
                         ..Outcome::default()
                     })
                 }
@@ -686,8 +1063,12 @@ impl FixtureDb {
         }
         if p.word("INSERT") {
             p.word("INTO");
-            let Some(key) = p.table(&schema) else { return syntax(&p.tok()) };
-            let Some(t) = st.tables.get(&key).cloned() else { return not_found(&key.0, &key.1) };
+            let Some(key) = p.table(&schema) else {
+                return syntax(&p.tok());
+            };
+            let Some(t) = st.tables.get(&key).cloned() else {
+                return not_found(&key.0, &key.1);
+            };
             let names = if p.p('(') {
                 let n = p.names();
                 p.p(')');
@@ -700,7 +1081,9 @@ impl FixtureDb {
             }
             let mut vals = Vec::new();
             loop {
-                let Some(v) = p.value() else { return syntax(&p.tok()) };
+                let Some(v) = p.value() else {
+                    return syntax(&p.tok());
+                };
                 vals.push(v);
                 if !p.p(',') {
                     break;
@@ -713,7 +1096,14 @@ impl FixtureDb {
                     Some(i) => vals.get(i).cloned().unwrap_or(Val::Null),
                     None if c.default.starts_with("CURRENT") => Val::Text(CHANGED.into()),
                     None if c.nullable => Val::Null,
-                    None => return fail("SQL0407", "23502", -407, &format!("Null values not allowed in column {}.", c.name)),
+                    None => {
+                        return fail(
+                            "SQL0407",
+                            "23502",
+                            -407,
+                            &format!("Null values not allowed in column {}.", c.name),
+                        );
+                    }
                 };
                 match check(c, &v) {
                     Ok(v) => row.push(v),
@@ -723,27 +1113,48 @@ impl FixtureDb {
             if let Some(k) = t.columns.iter().position(|c| c.key)
                 && t.rows.iter().any(|r| r[k].text() == row[k].text())
             {
-                return fail("SQL0803", "23505", -803, &format!("Duplicate key value specified for {}.", key.1));
+                return fail(
+                    "SQL0803",
+                    "23505",
+                    -803,
+                    &format!("Duplicate key value specified for {}.", key.1),
+                );
             }
             changes(st);
             if let Some(t) = st.tables.get_mut(&key) {
                 t.rows.push(row);
             }
-            return ok(Outcome { changed: 1, ..Outcome::default() });
+            return ok(Outcome {
+                changed: 1,
+                ..Outcome::default()
+            });
         }
         if p.word("UPDATE") {
-            let Some(key) = p.table(&schema) else { return syntax(&p.tok()) };
-            let Some(t) = st.tables.get(&key).cloned() else { return not_found(&key.0, &key.1) };
+            let Some(key) = p.table(&schema) else {
+                return syntax(&p.tok());
+            };
+            let Some(t) = st.tables.get(&key).cloned() else {
+                return not_found(&key.0, &key.1);
+            };
             if !p.word("SET") {
                 return syntax(&p.tok());
             }
             let mut sets = Vec::new();
             loop {
-                let Some(n) = p.name() else { return syntax(&p.tok()) };
+                let Some(n) = p.name() else {
+                    return syntax(&p.tok());
+                };
                 p.p('=');
-                let Some(v) = p.value() else { return syntax(&p.tok()) };
+                let Some(v) = p.value() else {
+                    return syntax(&p.tok());
+                };
                 let Some(i) = t.columns.iter().position(|c| c.name == n) else {
-                    return fail("SQL0206", "42703", -206, &format!("Column {n} not in specified tables."));
+                    return fail(
+                        "SQL0206",
+                        "42703",
+                        -206,
+                        &format!("Column {n} not in specified tables."),
+                    );
                 };
                 match check(&t.columns[i], &v) {
                     Ok(v) => sets.push((i, v)),
@@ -766,18 +1177,29 @@ impl FixtureDb {
                     }
                 }
             }
-            return ok(Outcome { changed: n, ..Outcome::default() });
+            return ok(Outcome {
+                changed: n,
+                ..Outcome::default()
+            });
         }
         if p.word("DELETE") {
             p.word("FROM");
-            let Some(key) = p.table(&schema) else { return syntax(&p.tok()) };
-            let Some(t) = st.tables.get(&key).cloned() else { return not_found(&key.0, &key.1) };
+            let Some(key) = p.table(&schema) else {
+                return syntax(&p.tok());
+            };
+            let Some(t) = st.tables.get(&key).cloned() else {
+                return not_found(&key.0, &key.1);
+            };
             let c = if p.word("WHERE") { cond(&mut p) } else { None };
             changes(st);
             let before = t.rows.len();
             if let Some(tm) = st.tables.get_mut(&key) {
-                tm.rows.retain(|r| !c.as_ref().is_none_or(|c| matches(&t, r, c)));
-                return ok(Outcome { changed: i64::try_from(before - tm.rows.len()).unwrap_or(0), ..Outcome::default() });
+                tm.rows
+                    .retain(|r| !c.as_ref().is_none_or(|c| matches(&t, r, c)));
+                return ok(Outcome {
+                    changed: i64::try_from(before - tm.rows.len()).unwrap_or(0),
+                    ..Outcome::default()
+                });
             }
         }
         syntax(&p.tok())
@@ -786,7 +1208,11 @@ impl FixtureDb {
 
 impl Db for FixtureDb {
     fn schemas(&self, _user: &str, pattern: &str) -> Vec<String> {
-        CATALOG.iter().filter(|s| like(pattern, s)).map(ToString::to_string).collect()
+        CATALOG
+            .iter()
+            .filter(|s| like(pattern, s))
+            .map(ToString::to_string)
+            .collect()
     }
 
     fn tables(&self, _user: &str, schema: &str) -> Result<Vec<Entry>, Message> {
@@ -799,7 +1225,9 @@ impl Db for FixtureDb {
                     kind: *kind,
                     text: (*text).into(),
                     rows: if *name == "ASSETS" {
-                        st.tables.get(&("HLINV".into(), "ASSETS".into())).map_or(0, |t| t.rows.len() as u64)
+                        st.tables
+                            .get(&("HLINV".into(), "ASSETS".into()))
+                            .map_or(0, |t| t.rows.len() as u64)
                     } else {
                         *rows
                     },
@@ -808,7 +1236,11 @@ impl Db for FixtureDb {
                 .collect());
         }
         if !CATALOG.contains(&schema) {
-            return Err(Message::new(MsgKind::Error, "SQL0204", &format!("{schema} in QSYS not found.")));
+            return Err(Message::new(
+                MsgKind::Error,
+                "SQL0204",
+                &format!("{schema} in QSYS not found."),
+            ));
         }
         Ok(st
             .tables
@@ -828,14 +1260,25 @@ impl Db for FixtureDb {
         st.tables
             .get(&(schema.to_string(), table.to_string()))
             .map(|t| t.columns.clone())
-            .ok_or_else(|| Message::new(MsgKind::Error, "SQL0204", &format!("{table} in {schema} not found.")))
+            .ok_or_else(|| {
+                Message::new(
+                    MsgKind::Error,
+                    "SQL0204",
+                    &format!("{table} in {schema} not found."),
+                )
+            })
     }
 
     fn open(&self, user: &str) -> Result<u32, Message> {
         let mut st = self.state.lock().expect("db");
         if st.conns.values().filter(|c| c.user == user).count() >= MAX_CONNECTIONS {
-            let text = crate::msgs::second_level(crate::msgs::NO_CONNECTIONS, &["QSHQ400"]).map(|s| s.text).unwrap_or_default();
-            return Err(Message::new(MsgKind::Error, crate::msgs::NO_CONNECTIONS, &text).with_data(&["QSHQ400"]));
+            let text = crate::msgs::second_level(crate::msgs::NO_CONNECTIONS, &["QSHQ400"])
+                .map(|s| s.text)
+                .unwrap_or_default();
+            return Err(
+                Message::new(MsgKind::Error, crate::msgs::NO_CONNECTIONS, &text)
+                    .with_data(&["QSHQ400"]),
+            );
         }
         st.next += 1;
         let n = st.next;
@@ -861,17 +1304,39 @@ impl Db for FixtureDb {
     fn options(&self, _user: &str, conn: u32, opts: &Options) -> Result<(), Message> {
         let mut st = self.state.lock().expect("db");
         let Some(c) = st.conns.get_mut(&conn) else {
-            return Err(Message::new(MsgKind::Error, "SQL0901", "The connection is not open."));
+            return Err(Message::new(
+                MsgKind::Error,
+                "SQL0901",
+                "The connection is not open.",
+            ));
         };
-        if c.before.is_some() && (c.opts.commit != opts.commit || c.opts.system_naming != opts.system_naming || c.opts.schema != opts.schema) {
-            return Err(Message::new(MsgKind::Error, "SQL0752", "The connection's SQL options cannot change while a transaction is open."));
+        if c.before.is_some()
+            && (c.opts.commit != opts.commit
+                || c.opts.system_naming != opts.system_naming
+                || c.opts.schema != opts.schema)
+        {
+            return Err(Message::new(
+                MsgKind::Error,
+                "SQL0752",
+                "The connection's SQL options cannot change while a transaction is open.",
+            ));
         }
         c.opts = opts.clone();
         Ok(())
     }
 
-    fn run(&self, user: &str, conn: u32, sql: &str, params: &[Vec<Val>], max_rows: usize) -> Outcome {
-        self.ran.lock().expect("ran").push((user.to_string(), sql.to_string()));
+    fn run(
+        &self,
+        user: &str,
+        conn: u32,
+        sql: &str,
+        params: &[Vec<Val>],
+        max_rows: usize,
+    ) -> Outcome {
+        self.ran
+            .lock()
+            .expect("ran")
+            .push((user.to_string(), sql.to_string()));
         let mut st = self.state.lock().expect("db");
         if !st.conns.contains_key(&conn) {
             return fail("SQL0901", "58004", -901, "The connection is not open.");
@@ -898,7 +1363,11 @@ impl Db for FixtureDb {
             }
             return o;
         }
-        let rows: Vec<Vec<Val>> = if params.is_empty() { vec![Vec::new()] } else { params.to_vec() };
+        let rows: Vec<Vec<Val>> = if params.is_empty() {
+            vec![Vec::new()]
+        } else {
+            params.to_vec()
+        };
         let mut total = Outcome::default();
         for (i, row) in rows.iter().enumerate() {
             let mut o = Self::exec(&mut st, conn, sql, row);
@@ -933,7 +1402,11 @@ impl Db for FixtureDb {
         let Some((cols, mut rest)) = c.cursors.remove(&cursor) else {
             return fail("SQL0501", "24501", -501, "Cursor is not open.");
         };
-        let left = if rest.len() > max_rows { rest.split_off(max_rows) } else { Vec::new() };
+        let left = if rest.len() > max_rows {
+            rest.split_off(max_rows)
+        } else {
+            Vec::new()
+        };
         let more = !left.is_empty();
         if more {
             c.cursors.insert(cursor, (cols.clone(), left));
@@ -965,7 +1438,9 @@ impl Db for FixtureDb {
         let st = self.state.lock().expect("db");
         st.requests
             .iter()
-            .filter(|r| r.owner == user || r.shared == crate::policy::PUBLIC || groups.contains(&r.shared))
+            .filter(|r| {
+                r.owner == user || r.shared == crate::policy::PUBLIC || groups.contains(&r.shared)
+            })
             .cloned()
             .collect()
     }
@@ -975,12 +1450,27 @@ impl Db for FixtureDb {
         let mut r = r.clone();
         r.owner = user.to_string();
         if r.id == 0 {
-            r.id = st.requests.iter().filter(|x| x.owner == user).map(|x| x.id).max().unwrap_or(0) + 1;
+            r.id = st
+                .requests
+                .iter()
+                .filter(|x| x.owner == user)
+                .map(|x| x.id)
+                .max()
+                .unwrap_or(0)
+                + 1;
             st.requests.push(r.clone());
-        } else if let Some(x) = st.requests.iter_mut().find(|x| x.owner == user && x.id == r.id) {
+        } else if let Some(x) = st
+            .requests
+            .iter_mut()
+            .find(|x| x.owner == user && x.id == r.id)
+        {
             *x = r.clone();
         } else {
-            return Err(Message::new(MsgKind::Error, "CPF9801", &format!("Request {} not found.", r.id)));
+            return Err(Message::new(
+                MsgKind::Error,
+                "CPF9801",
+                &format!("Request {} not found.", r.id),
+            ));
         }
         Ok(r.id)
     }
@@ -990,13 +1480,23 @@ impl Db for FixtureDb {
         let before = st.requests.len();
         st.requests.retain(|r| !(r.owner == user && r.id == id));
         if st.requests.len() == before {
-            return Err(Message::new(MsgKind::Error, "CPF9801", &format!("Request {id} not found.")));
+            return Err(Message::new(
+                MsgKind::Error,
+                "CPF9801",
+                &format!("Request {id} not found."),
+            ));
         }
         Ok(())
     }
 
     fn history(&self, user: &str) -> Vec<String> {
-        self.state.lock().expect("db").history.get(user).cloned().unwrap_or_default()
+        self.state
+            .lock()
+            .expect("db")
+            .history
+            .get(user)
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn remember(&self, user: &str, statements: &[String]) {
@@ -1020,15 +1520,40 @@ mod tests {
         let c = db.open("CWELLMAN").unwrap();
         let cols: Vec<String> = ASSETS_COLUMNS.iter().map(ToString::to_string).collect();
         let key = vec!["ASSET_TAG".to_string()];
-        let o = db.run("CWELLMAN", c, &crate::data::sqltext::page("HLINV", "ASSETS", &cols, Some("MANUFACTURER"), &key, 1, 2), &[vec![Val::Text("%DELL%".into())]], 500);
+        let o = db.run(
+            "CWELLMAN",
+            c,
+            &crate::data::sqltext::page("HLINV", "ASSETS", &cols, Some("MANUFACTURER"), &key, 1, 2),
+            &[vec![Val::Text("%DELL%".into())]],
+            500,
+        );
         assert_eq!(o.rows.len(), 2, "{o:?}");
         assert_eq!(o.rows[0][0], Val::Text("QS000202".into()));
         let ins = crate::data::sqltext::insert("HLINV", "ASSETS", &cols[..7]);
-        let row = |t: &str| ["QS000404", "QS-BR1-R1", "ARISTA", "7050SX-64", t, "SWITCH", "SPARE"].iter().map(|s| Val::Text((*s).into())).collect::<Vec<_>>();
+        let row = |t: &str| {
+            [
+                "QS000404",
+                "QS-BR1-R1",
+                "ARISTA",
+                "7050SX-64",
+                t,
+                "SWITCH",
+                "SPARE",
+            ]
+            .iter()
+            .map(|s| Val::Text((*s).into()))
+            .collect::<Vec<_>>()
+        };
         assert_eq!(db.run("CWELLMAN", c, &ins, &[row("JPE1")], 500).changed, 1);
         let dup = db.run("CWELLMAN", c, &ins, &[row("JPE2")], 500);
         assert_eq!((dup.sqlcode, dup.row), (-803, Some(0)));
-        let n = db.run("CWELLMAN", c, &crate::data::sqltext::count("HLINV", "ASSETS", None), &[], 500);
+        let n = db.run(
+            "CWELLMAN",
+            c,
+            &crate::data::sqltext::count("HLINV", "ASSETS", None),
+            &[],
+            500,
+        );
         assert_eq!(n.rows[0][0], Val::Num("13".into()));
         assert_eq!(db.run("CWELLMAN", c, "SELEKT 1", &[], 1).sqlcode, -104);
         assert!(like("HL%", "HLINVTEST") && !like("HL_", "HLINV"));

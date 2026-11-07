@@ -32,12 +32,12 @@ use sql::embed::{Desc, Embedded, Op};
 use stg::Request;
 
 use super::fiber::{self, Fiber};
-use crate::cpp::longcmd;
-use crate::svc::ile::MainStore;
 use super::served::{self, Conn};
 use super::{cmn, ifsvol};
+use crate::cpp::longcmd;
 use crate::ipl::storage;
 use crate::ipl::system::System;
+use crate::svc::ile::MainStore;
 
 /// Statements in progress at once; past it a statement waits for one
 /// to end before it starts.
@@ -79,7 +79,11 @@ fn park(svc: Box<Svc>) {
 /// Run `f` over the parked service's system: while a statement takes
 /// its turn on a fiber. `None` when nothing is parked.
 pub fn with_parked<T>(f: impl FnOnce(&mut System) -> T) -> Option<T> {
-    PARKED.with(|p| p.try_borrow_mut().ok().and_then(|mut b| b.as_mut().map(|svc| f(&mut svc.system))))
+    PARKED.with(|p| {
+        p.try_borrow_mut()
+            .ok()
+            .and_then(|mut b| b.as_mut().map(|svc| f(&mut svc.system)))
+    })
 }
 
 /// The log of active job `job` (`number/user/name`, `*` for `me`) and
@@ -89,10 +93,22 @@ pub fn job_log_of(job: &str, me: u32) -> Option<sql::exec::catalog::services::ho
     PARKED.with(|p| {
         let b = p.try_borrow().ok()?;
         let svc = b.as_ref()?;
-        let number = if job == "*" { Some(me) } else { wm::job::JobId::parse(job).map(|j| j.number) };
-        let found = number.and_then(|n| svc.conns.iter().filter_map(|c| c.ctx.as_ref()).find(|c| c.job.number == n && !c.thread));
+        let number = if job == "*" {
+            Some(me)
+        } else {
+            wm::job::JobId::parse(job).map(|j| j.number)
+        };
+        let found = number.and_then(|n| {
+            svc.conns
+                .iter()
+                .filter_map(|c| c.ctx.as_ref())
+                .find(|c| c.job.number == n && !c.thread)
+        });
         Some(match found {
-            Some(c) => sql::exec::catalog::services::host::JobLog::Found(c.job.qualified(), super::joblog::entries(c)),
+            Some(c) => sql::exec::catalog::services::host::JobLog::Found(
+                c.job.qualified(),
+                super::joblog::entries(c),
+            ),
             None => sql::exec::catalog::services::host::JobLog::NoSuchJob,
         })
     })
@@ -104,7 +120,11 @@ pub fn principal_of(number: u32) -> Option<sec::auth::principal::Principal> {
     PARKED.with(|p| {
         let b = p.try_borrow().ok()?;
         let svc = b.as_ref()?;
-        let c = svc.conns.iter().filter_map(|c| c.ctx.as_ref()).find(|c| c.job.number == number && !c.thread)?;
+        let c = svc
+            .conns
+            .iter()
+            .filter_map(|c| c.ctx.as_ref())
+            .find(|c| c.job.number == number && !c.thread)?;
         Some(c.session.borrow().principal.clone())
     })
 }
@@ -253,7 +273,9 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
 /// The statement of connection `id` that `req` answers: the latest of
 /// those waiting for their job.
 fn waiting_for(svc: &Svc, id: u64, req: &Request) -> Option<Rc<Turn>> {
-    let Request::SqlRun { desc, .. } = req else { return None };
+    let Request::SqlRun { desc, .. } = req else {
+        return None;
+    };
     let d = Desc::decode(desc)?;
     if d.op != Op::Called || d.name != sql::exec::routine::midcall::ANSWER {
         return None;
@@ -300,9 +322,14 @@ fn long(svc: &Svc, i: usize, req: &Request) -> bool {
     }
     match req {
         Request::SqlRun { desc, .. } => Desc::decode(desc).is_some_and(|d| {
-            matches!(d.op, Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute)
+            matches!(
+                d.op,
+                Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute
+            )
         }),
-        Request::RunCmd { name, .. } | Request::RunCmdCalling { name, .. } => longcmd::NAMES.contains(&name.as_str()),
+        Request::RunCmd { name, .. } | Request::RunCmdCalling { name, .. } => {
+            longcmd::NAMES.contains(&name.as_str())
+        }
         _ => false,
     }
 }
@@ -346,7 +373,13 @@ struct Turn {
 impl Turn {
     fn new(svc: &mut Svc, id: u64, entered: served::Entered) -> Rc<Self> {
         svc.next_turn += 1;
-        Rc::new(Self { id, entered: Cell::new(entered), seq: svc.next_turn, waiting: Cell::new(false), answer: RefCell::new(None) })
+        Rc::new(Self {
+            id,
+            entered: Cell::new(entered),
+            seq: svc.next_turn,
+            waiting: Cell::new(false),
+            answer: RefCell::new(None),
+        })
     }
 }
 
@@ -384,7 +417,12 @@ fn start_sql(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
     let user = super::security::as_user(&req);
     let number = svc.conns[i].ctx.as_ref().map_or(0, |c| c.job.number);
     super::trace::request(number, &req);
-    let Request::SqlRun { scope, desc, inputs } = req else {
+    let Request::SqlRun {
+        scope,
+        desc,
+        inputs,
+    } = req
+    else {
         unreachable!("long() said a statement");
     };
     let desc = Desc::decode(&desc).expect("long() decoded it");
@@ -448,7 +486,19 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
     let number = svc.conns[i].ctx.as_ref().map_or(0, |c| c.job.number);
     super::trace::request(number, &req);
     let calls = matches!(req, Request::RunCmdCalling { .. });
-    let (Request::RunCmd { name, segments, specified, typed } | Request::RunCmdCalling { name, segments, specified, typed }) = req else {
+    let (Request::RunCmd {
+        name,
+        segments,
+        specified,
+        typed,
+    }
+    | Request::RunCmdCalling {
+        name,
+        segments,
+        specified,
+        typed,
+    }) = req
+    else {
         unreachable!("start() said a command");
     };
     let Svc { system, conns, .. } = &mut *svc;
@@ -464,7 +514,13 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
         }
     };
     let mut prepared = None;
-    as_user(&mut || prepared = Some(served::long_command(system, ctx, (&name, segments.clone(), &specified, &typed))));
+    as_user(&mut || {
+        prepared = Some(served::long_command(
+            system,
+            ctx,
+            (&name, segments.clone(), &specified, &typed),
+        ))
+    });
     let (work, segments) = match prepared.expect("ran") {
         Ok(v) => v,
         Err(reply) => {
@@ -490,7 +546,14 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
             drop(lender);
             served::leave(system, entered);
             let mut reply = None;
-            as_user(&mut || reply = Some(served::long_finish(system, ctx, finish.take().expect("ran"), segments.clone())));
+            as_user(&mut || {
+                reply = Some(served::long_finish(
+                    system,
+                    ctx,
+                    finish.take().expect("ran"),
+                    segments.clone(),
+                ))
+            });
             super::security::flush(system, Some(served::charged(ctx)));
             let _ = conns[i].chan.send_raw(&ipc::encode(&reply.expect("ran")));
             svc.busy.retain(|b| *b != id);
@@ -517,7 +580,12 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
         };
         drop(w);
         drop(lender);
-        park(finish_cmd(unpark(), &turn, (finish, segments), user.then_some(&session)));
+        park(finish_cmd(
+            unpark(),
+            &turn,
+            (finish, segments),
+            user.then_some(&session),
+        ));
     };
     first_turn(svc, t2, Fiber::on(stack, body))
 }
@@ -621,9 +689,18 @@ fn mid_caller(turn: Rc<Turn>, cmd: bool) -> sql::exec::routine::midcall::MidCall
                 }
                 // A command's job reads a command reply (`run_cmd_calling`).
                 let bytes = if cmd {
-                    ipc::encode(&stg::proto::CmdReply { call: Some(plan.encode().into_bytes()), ..stg::proto::CmdReply::default() })
+                    ipc::encode(&stg::proto::CmdReply {
+                        call: Some(plan.encode().into_bytes()),
+                        ..stg::proto::CmdReply::default()
+                    })
                 } else {
-                    ipc::encode(&sql::embed::Reply { call: Some(Box::new(plan)), ..sql::embed::Reply::default() }.to_wire())
+                    ipc::encode(
+                        &sql::embed::Reply {
+                            call: Some(Box::new(plan)),
+                            ..sql::embed::Reply::default()
+                        }
+                        .to_wire(),
+                    )
                 };
                 svc.conns[i].chan.send_raw(&bytes).is_ok()
             }

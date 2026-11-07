@@ -79,16 +79,28 @@ fn numbers(golden: &str, row: &str) -> String {
 pub fn compare(golden: &str, screen: &Screen) {
     let path = golden_dir().join(format!("{golden}.txt"));
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    let want: Vec<String> = text.lines().map(|l| l.trim_end_matches('\r').to_string()).collect();
+    let want: Vec<String> = text
+        .lines()
+        .map(|l| l.trim_end_matches('\r').to_string())
+        .collect();
     let got = screen.text_rows();
     let mut diff = String::new();
     for (i, w) in want.iter().enumerate() {
         if w.trim_start().starts_with("(C) COPYRIGHT") {
             continue;
         }
-        let g = got.get(i).map(|r| numbers(w, &masked(r))).unwrap_or_default();
+        let g = got
+            .get(i)
+            .map(|r| numbers(w, &masked(r)))
+            .unwrap_or_default();
         if g.trim_end() != w.trim_end() {
-            let _ = writeln!(diff, "row {:>2}:\n  want |{}|\n  got  |{}|", i + 1, w.trim_end(), g.trim_end());
+            let _ = writeln!(
+                diff,
+                "row {:>2}:\n  want |{}|\n  got  |{}|",
+                i + 1,
+                w.trim_end(),
+                g.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{golden} differs from the golden:\n{diff}");

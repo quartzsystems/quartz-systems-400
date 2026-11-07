@@ -8,7 +8,14 @@
 //! field as a name and a value in text (`QrnNamesValues_T`) when the
 //! handler asked for that at the open.
 
-#![allow(clippy::match_same_arms, clippy::similar_names, clippy::too_many_lines, clippy::struct_excessive_bools, clippy::unnecessary_wraps, clippy::unused_self)]
+#![allow(
+    clippy::match_same_arms,
+    clippy::similar_names,
+    clippy::too_many_lines,
+    clippy::struct_excessive_bools,
+    clippy::unnecessary_wraps,
+    clippy::unused_self
+)]
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -182,14 +189,25 @@ fn parse_desc(s: &str) -> Desc {
                 d.compile_file = f.get(9).unwrap_or(&"").to_string();
                 d.compile_lib = f.get(10).unwrap_or(&"").to_string();
                 d.reclen = num(11);
-                d.form = (u32::try_from(num(12)).unwrap_or(0), u32::try_from(num(13)).unwrap_or(0));
+                d.form = (
+                    u32::try_from(num(12)).unwrap_or(0),
+                    u32::try_from(num(13)).unwrap_or(0),
+                );
                 d.update = f.get(14) == Some(&"1");
             }
             Some("R") => d.formats.push(Format {
                 name: f.get(1).unwrap_or(&"").to_string(),
                 level: f.get(2).unwrap_or(&"").to_string(),
                 len: num(3),
-                keys: f.get(4).map(|k| k.split(',').filter(|x| !x.is_empty()).map(str::to_string).collect()).unwrap_or_default(),
+                keys: f
+                    .get(4)
+                    .map(|k| {
+                        k.split(',')
+                            .filter(|x| !x.is_empty())
+                            .map(str::to_string)
+                            .collect()
+                    })
+                    .unwrap_or_default(),
                 fields: Vec::new(),
             }),
             Some("V") => {
@@ -253,7 +271,9 @@ fn value_text(f: &Field, rec: &[u8]) -> String {
     if d.numeric() || matches!(d.kind, crate::value::Kind::Float) {
         let a = b.as_ptr() as u64;
         if d.kind == crate::value::Kind::Float {
-            return crate::value::read_f64(a, &d).map(|v| v.to_string()).unwrap_or_default();
+            return crate::value::read_f64(a, &d)
+                .map(|v| v.to_string())
+                .unwrap_or_default();
         }
         return match crate::value::read_num(a, &d) {
             Ok(v) => {
@@ -271,7 +291,11 @@ fn value_text(f: &Field, rec: &[u8]) -> String {
         };
     }
     if d.kind == crate::value::Kind::Ind {
-        return if b.first() == Some(&0xF1) { "1".into() } else { "0".into() };
+        return if b.first() == Some(&0xF1) {
+            "1".into()
+        } else {
+            "0".into()
+        };
     }
     ccsid::from_ebcdic(b)
 }
@@ -290,14 +314,29 @@ fn max_len(f: &Field) -> usize {
 impl Handler {
     fn format(&self, name: Option<&str>) -> Option<&Format> {
         match name.filter(|n| !n.is_empty()) {
-            Some(n) => self.desc.formats.iter().find(|f| f.name.eq_ignore_ascii_case(n)),
+            Some(n) => self
+                .desc
+                .formats
+                .iter()
+                .find(|f| f.name.eq_ignore_ascii_case(n)),
             None => self.desc.formats.first(),
         }
     }
 
     /// Call the handler for one operation: the parameter after it.
     #[allow(clippy::too_many_arguments)]
-    fn call(&mut self, j: &mut mi::Job, operation: u32, format: &str, input_len: usize, output: Option<&[u8]>, key: Option<&[u8]>, num_keys: usize, rrn: u64, with_lock: bool) -> (Vec<u8>, Vec<u8>, bool) {
+    fn call(
+        &mut self,
+        j: &mut mi::Job,
+        operation: u32,
+        format: &str,
+        input_len: usize,
+        output: Option<&[u8]>,
+        key: Option<&[u8]>,
+        num_keys: usize,
+        rrn: u64,
+        with_lock: bool,
+    ) -> (Vec<u8>, Vec<u8>, bool) {
         let mut regions = Vec::new();
         let mut region = |j: &mut mi::Job, data: Vec<u8>| {
             let (r, p) = Region::new(j, data);
@@ -305,20 +344,28 @@ impl Handler {
             p
         };
         let fmt = self.format(Some(format)).cloned();
-        let nv = self.names_values && operation != op::OPEN && operation != op::CLOSE && fmt.is_some();
+        let nv =
+            self.names_values && operation != op::OPEN && operation != op::CLOSE && fmt.is_some();
         // The record buffers, or the names and values.
         let mut input_p = mi::FatPtr::null();
         let mut output_p = mi::FatPtr::null();
         let mut nv_p = mi::FatPtr::null();
         let mut nv_values: Vec<(usize, usize)> = Vec::new();
-        let input_op = matches!(operation, op::READ | op::READC | op::READE | op::READP | op::READPE | op::CHAIN | op::EXFMT);
+        let input_op = matches!(
+            operation,
+            op::READ | op::READC | op::READE | op::READP | op::READPE | op::CHAIN | op::EXFMT
+        );
         let output_op = matches!(operation, op::WRITE | op::UPDATE | op::EXFMT);
         if nv {
             let fm = fmt.clone().unwrap_or_default();
             let n = fm.fields.len();
             let mut values = Vec::new();
             for fd in &fm.fields {
-                let text = if output_op { output.map(|r| value_text(fd, r)).unwrap_or_default() } else { String::new() };
+                let text = if output_op {
+                    output.map(|r| value_text(fd, r)).unwrap_or_default()
+                } else {
+                    String::new()
+                };
                 let mut e = crate::value::ebcdic(&text);
                 let max = max_len(fd).max(e.len());
                 let start = values.len();
@@ -340,15 +387,30 @@ impl Handler {
                 area[b + 11] = fd.len;
                 area[b + 12] = fd.dec;
                 area[b + 13] = fd.dtz;
-                area[b + 14] = if fd.dtz == 0 { 0x40 } else { crate::value::ebcdic(&fd.sep.to_string())[0] };
+                area[b + 14] = if fd.dtz == 0 {
+                    0x40
+                } else {
+                    crate::value::ebcdic(&fd.sep.to_string())[0]
+                };
                 area[b + 15] = ind(input_op);
                 area[b + 16] = ind(output_op && !input_op);
                 area[b + 17] = 0xF0;
                 area[b + 18] = 0xF0;
                 let (start, len) = nv_values[i];
-                put(&mut area, b + 32, &u32::try_from(len).unwrap_or(0).to_be_bytes());
-                put(&mut area, b + 36, &u32::try_from(max_len(fd)).unwrap_or(0).to_be_bytes());
-                let p = j.spaces.add(vp, i64::try_from(start).unwrap_or(0)).unwrap_or(vp);
+                put(
+                    &mut area,
+                    b + 32,
+                    &u32::try_from(len).unwrap_or(0).to_be_bytes(),
+                );
+                put(
+                    &mut area,
+                    b + 36,
+                    &u32::try_from(max_len(fd)).unwrap_or(0).to_be_bytes(),
+                );
+                let p = j
+                    .spaces
+                    .add(vp, i64::try_from(start).unwrap_or(0))
+                    .unwrap_or(vp);
                 put(&mut area, b + 48, &p.to_bytes());
             }
             nv_p = region(j, area);
@@ -360,13 +422,21 @@ impl Handler {
                 output_p = region(j, o.to_vec());
             }
         }
-        let key_p = key.filter(|k| !k.is_empty()).map_or(mi::FatPtr::null(), |k| region(j, k.to_vec()));
+        let key_p = key
+            .filter(|k| !k.is_empty())
+            .map_or(mi::FatPtr::null(), |k| region(j, k.to_vec()));
         let ua = self.user_area;
         let d = self.desc.clone();
         let names_values = self.names_values;
-        let Some(parm) = self.parm.as_mut() else { return (Vec::new(), Vec::new(), false) };
+        let Some(parm) = self.parm.as_mut() else {
+            return (Vec::new(), Vec::new(), false);
+        };
         let b = parm.buf.as_mut_slice();
-        put(b, at::LENGTH, &u32::try_from(PARM_LEN).unwrap_or(0).to_be_bytes());
+        put(
+            b,
+            at::LENGTH,
+            &u32::try_from(PARM_LEN).unwrap_or(0).to_be_bytes(),
+        );
         put_name(b, at::FORMAT, 8, "ROAC0100");
         put(b, at::USER_AREA, &ua.to_bytes());
         put(b, at::INPUT, &input_p.to_bytes());
@@ -375,13 +445,21 @@ impl Handler {
         put(b, at::KEY, &key_p.to_bytes());
         // The record format; blank at the open and the close, and for a
         // program-described file.
-        let rname = if d.external && operation != op::OPEN && operation != op::CLOSE { fmt.as_ref().map_or("", |f| f.name.as_str()) } else { "" };
+        let rname = if d.external && operation != op::OPEN && operation != op::CLOSE {
+            fmt.as_ref().map_or("", |f| f.name.as_str())
+        } else {
+            ""
+        };
         put_name(b, at::RECORD_NAME, 10, rname);
         put(b, at::OPERATION, &operation.to_be_bytes());
         put(b, at::STATUS, &0i32.to_be_bytes());
         let lens = |n: usize| u32::try_from(n).unwrap_or(0).to_be_bytes();
         let ilen = if input_op && !nv { input_len } else { 0 };
-        let olen = if output_op && !nv { output.map_or(0, <[u8]>::len) } else { 0 };
+        let olen = if output_op && !nv {
+            output.map_or(0, <[u8]>::len)
+        } else {
+            0
+        };
         put(b, at::INPUT_LEN, &lens(ilen));
         put(b, at::OUTPUT_LEN, &lens(olen));
         put(b, at::KEY_LEN, &lens(key.map_or(0, <[u8]>::len)));
@@ -396,7 +474,11 @@ impl Handler {
         b[at::FUNCTION_KEY] = 0;
         let addr = b.as_ptr() as u64;
         let called = call_callee(j, &self.callee, addr);
-        let out = self.parm.as_ref().map(|p| p.buf.clone()).unwrap_or_default();
+        let out = self
+            .parm
+            .as_ref()
+            .map(|p| p.buf.clone())
+            .unwrap_or_default();
         // The record the handler gave.
         let mut record = Vec::new();
         if input_op {
@@ -407,14 +489,20 @@ impl Handler {
                 for (i, fd) in fm.fields.iter().enumerate() {
                     let base = area_addr + 16 + 80 * i as u64;
                     let n = u32_at(crate::value::bytes(base, 80), 32) as usize;
-                    let p: [u8; 16] = crate::value::bytes(base + 48, 16).try_into().unwrap_or([0; 16]);
+                    let p: [u8; 16] = crate::value::bytes(base + 48, 16)
+                        .try_into()
+                        .unwrap_or([0; 16]);
                     let text = match j.spaces.deref(mi::FatPtr::from_bytes(&p)) {
                         Ok(a) if a != 0 => ccsid::from_ebcdic(crate::value::bytes(a, n)),
                         _ => String::new(),
                     };
                     let dst = record.as_mut_ptr() as u64 + fd.off as u64;
                     let d = crate::value::Desc::of(fd.desc);
-                    let text = if d.numeric() { text.trim().to_string() } else { text };
+                    let text = if d.numeric() {
+                        text.trim().to_string()
+                    } else {
+                        text
+                    };
                     let _ = crate::xml::store_scalar(dst, &d, &text);
                 }
             } else if let Ok(a) = j.spaces.deref(input_p)
@@ -431,7 +519,12 @@ impl Handler {
 
     /// Status and flags from the parameter after a call.
     fn result(out: &[u8], operation: u32) -> IoResult {
-        let status = i32::from_be_bytes([out[at::STATUS], out[at::STATUS + 1], out[at::STATUS + 2], out[at::STATUS + 3]]);
+        let status = i32::from_be_bytes([
+            out[at::STATUS],
+            out[at::STATUS + 1],
+            out[at::STATUS + 2],
+            out[at::STATUS + 3],
+        ]);
         let eof = out[at::EOF] == 0xF1;
         let found = out[at::FOUND] == 0xF1;
         let equal = out[at::EQUAL] == 0xF1;
@@ -444,7 +537,12 @@ impl Handler {
             ..IoResult::default()
         };
         if r.status == 0 {
-            if eof && matches!(operation, op::READ | op::READE | op::READP | op::READPE | op::READC) {
+            if eof
+                && matches!(
+                    operation,
+                    op::READ | op::READE | op::READP | op::READPE | op::READC
+                )
+            {
                 r.status = 11;
             } else if operation == op::CHAIN && !found {
                 r.status = 12;
@@ -484,7 +582,13 @@ impl OpenAccess for Handler {
         // The formats' level identifiers.
         let (levels, lp) = if self.desc.external {
             let mut l = vec![0u8; (4 + 23 * self.desc.formats.len()).max(RECORD_LEVELS_SIZE)];
-            put(&mut l, 0, &i32::try_from(self.desc.formats.len()).unwrap_or(0).to_be_bytes());
+            put(
+                &mut l,
+                0,
+                &i32::try_from(self.desc.formats.len())
+                    .unwrap_or(0)
+                    .to_be_bytes(),
+            );
             for (i, f) in self.desc.formats.iter().enumerate() {
                 put_name(&mut l, 4 + 23 * i, 10, &f.name);
                 put_name(&mut l, 14 + 23 * i, 13, &f.level);
@@ -518,7 +622,12 @@ impl OpenAccess for Handler {
             file: file.file.clone(),
             lib: file.lib.clone(),
             member: self.desc.member.clone(),
-            format: self.desc.formats.first().map(|f| f.name.clone()).unwrap_or_default(),
+            format: self
+                .desc
+                .formats
+                .first()
+                .map(|f| f.name.clone())
+                .unwrap_or_default(),
             rec_len: u32::try_from(self.desc.reclen).unwrap_or(0),
             wait_ms: 0,
         })
@@ -551,9 +660,14 @@ impl OpenAccess for Handler {
                 }
             }
         };
-        let format = req.format.map_or_else(|| self.last_format.clone(), str::to_string);
+        let format = req
+            .format
+            .map_or_else(|| self.last_format.clone(), str::to_string);
         let fm = self.format(Some(&format)).cloned();
-        let reclen = fm.as_ref().map_or(self.desc.reclen, |f| f.len).max(self.desc.reclen);
+        let reclen = fm
+            .as_ref()
+            .map_or(self.desc.reclen, |f| f.len)
+            .max(self.desc.reclen);
         // How many key fields the key's bytes hold.
         let num_keys = match (key, &fm) {
             (Some(k), Some(f)) => {
@@ -563,7 +677,11 @@ impl OpenAccess for Handler {
                     if total >= k.len() {
                         break;
                     }
-                    total += f.fields.iter().find(|x| &x.name == name).map_or(k.len(), |x| x.bytes);
+                    total += f
+                        .fields
+                        .iter()
+                        .find(|x| &x.name == name)
+                        .map_or(k.len(), |x| x.bytes);
                     n += 1;
                 }
                 n
@@ -571,10 +689,21 @@ impl OpenAccess for Handler {
             _ => 0,
         };
         // An input operation of an update file locks the record.
-        let with_lock = self.desc.update && !req.nolock && matches!(operation, op::READ | op::READE | op::READP | op::READPE | op::CHAIN);
-        let (out, record, _) = self.call(j, operation, &format, reclen, req.record, key, num_keys, rrn, with_lock);
+        let with_lock = self.desc.update
+            && !req.nolock
+            && matches!(
+                operation,
+                op::READ | op::READE | op::READP | op::READPE | op::CHAIN
+            );
+        let (out, record, _) = self.call(
+            j, operation, &format, reclen, req.record, key, num_keys, rrn, with_lock,
+        );
         let mut r = Self::result(&out, operation);
-        if matches!(operation, op::READ | op::READE | op::READP | op::READPE | op::CHAIN) && r.status == 0 {
+        if matches!(
+            operation,
+            op::READ | op::READE | op::READP | op::READPE | op::CHAIN
+        ) && r.status == 0
+        {
             r.record = Some(record);
             r.format = fm.map(|f| f.name).unwrap_or_default();
             r.found = true;
@@ -592,13 +721,31 @@ impl OpenAccess for Handler {
             _ => op::EXFMT,
         };
         let fm = self.format(Some(&req.format)).cloned();
-        let reclen = fm.as_ref().map_or(self.desc.reclen, |f| f.len).max(req.record.len());
-        let (out, record, _) = self.call(j, operation, &req.format, reclen, Some(&req.record), None, 0, 0, false);
+        let reclen = fm
+            .as_ref()
+            .map_or(self.desc.reclen, |f| f.len)
+            .max(req.record.len());
+        let (out, record, _) = self.call(
+            j,
+            operation,
+            &req.format,
+            reclen,
+            Some(&req.record),
+            None,
+            0,
+            0,
+            false,
+        );
         let r = Self::result(&out, operation);
         DevResult {
-            status: if r.status == 11 || r.status == 12 { 0 } else { r.status },
+            status: if r.status == 11 || r.status == 12 {
+                0
+            } else {
+                r.status
+            },
             overflow: out[at::OVERFLOW] == 0xF1,
-            input: matches!(operation, op::READ | op::EXFMT | op::CHAIN | op::READC).then_some(record),
+            input: matches!(operation, op::READ | op::EXFMT | op::CHAIN | op::READC)
+                .then_some(record),
         }
     }
 
@@ -614,7 +761,17 @@ impl OpenAccess for Handler {
 
 /// `_QRNX_OAOPEN(name, nd, ptr, userArea, has, desc)`: the handler the
 /// next open goes to.
-pub extern "sysv64" fn oa_open(env: *mut Env, _argc: i64, _od: i64, name: i64, nd: i64, ptr: i64, ua: i64, has: i32, desc: i64) {
+pub extern "sysv64" fn oa_open(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    name: i64,
+    nd: i64,
+    ptr: i64,
+    ua: i64,
+    has: i32,
+    desc: i64,
+) {
     let j = mi::storage::job_of(env);
     let c = match crate::xml::proc_at(ptr) {
         Some(a) => Callee::Ptr(a),
@@ -623,7 +780,12 @@ pub extern "sysv64" fn oa_open(env: *mut Env, _argc: i64, _od: i64, name: i64, n
     // `has`: the user area's size, 0 for none.
     let user_area = if has > 0 {
         let depth = j.depth;
-        j.spaces.addr(ua.cast_unsigned(), u64::from(has.unsigned_abs()), depth, false)
+        j.spaces.addr(
+            ua.cast_unsigned(),
+            u64::from(has.unsigned_abs()),
+            depth,
+            false,
+        )
     } else {
         mi::FatPtr::null()
     };

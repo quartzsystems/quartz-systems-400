@@ -23,7 +23,13 @@ fn ran(b: &Browser) -> Vec<String> {
 /// The key of the message `id` on `QSYS/QSYSOPR`.
 fn key_of(b: &Browser, id: &str) -> String {
     let qs = b.fx.msgs.queues.lock().unwrap();
-    qs["QSYS/QSYSOPR"].iter().rev().find(|m| m.id == id).unwrap().key.clone()
+    qs["QSYS/QSYSOPR"]
+        .iter()
+        .rev()
+        .find(|m| m.id == id)
+        .unwrap()
+        .key
+        .clone()
 }
 
 /// `html` with the list table cut after its first `n` rows.
@@ -76,7 +82,10 @@ fn qsysopr() {
     assert!(t.find("CPA5305").unwrap() < t.find("CPF0907").unwrap());
     // Another queue through the select.
     let r = b.get("/msgq/QSYS/QSYSOPR?q=QSYSMSG&t=All");
-    assert_eq!(r.header("Location"), Some("/qs400/navigator/msgq/QSYS/QSYSMSG?t=All"));
+    assert_eq!(
+        r.header("Location"),
+        Some("/qs400/navigator/msgq/QSYS/QSYSMSG?t=All")
+    );
     assert!(ok(&mut b, "/msgq/QSYS/QSYSMSG").contains("<option selected>QSYSMSG</option>"));
 }
 
@@ -87,7 +96,16 @@ fn my_messages() {
     let t = ok(&mut b, "/mymsgs");
     assert_golden(&t, "nav/my-messages.html", &[]);
     // Send: SNDMSG to the user, an inquiry's reply to my queue.
-    let r = b.post("/mymsgs", &[("to", "TESTUSER"), ("toq", ""), ("m", "Lunch at 12?"), ("t", "*INQ"), ("send", "Send")]);
+    let r = b.post(
+        "/mymsgs",
+        &[
+            ("to", "TESTUSER"),
+            ("toq", ""),
+            ("m", "Lunch at 12?"),
+            ("t", "*INQ"),
+            ("send", "Send"),
+        ],
+    );
     assert_eq!(r.header("Location"), Some("/qs400/navigator/mymsgs"));
     assert_eq!(
         ran(&b).last().unwrap(),
@@ -95,7 +113,11 @@ fn my_messages() {
     );
     assert!(ok(&mut b, "/mymsgs").contains("CPC2402"));
     let qs = b.fx.msgs.queues.lock().unwrap();
-    assert!(qs["QUSRSYS/TESTUSER"].iter().any(|m| m.inquiry && m.text == "Lunch at 12?"));
+    assert!(
+        qs["QUSRSYS/TESTUSER"]
+            .iter()
+            .any(|m| m.inquiry && m.text == "Lunch at 12?")
+    );
 }
 
 #[test]
@@ -111,12 +133,21 @@ fn message_detail_and_reply() {
         "nav/message-detail.html",
         &[
             ("name=\"reply\" value=\"R\"", "name=\"reply\" value=\"\""),
-            ("name=\"reply\" value=\"Reply\"", "name=\"send\" value=\"Reply\""),
+            (
+                "name=\"reply\" value=\"Reply\"",
+                "name=\"send\" value=\"Reply\"",
+            ),
         ],
     );
     let r = b.post(&route, &[("reply", "r"), ("send", "Reply")]);
-    assert_eq!(r.header("Location"), Some("/qs400/navigator/msgq/QSYS/QSYSOPR"));
-    assert_eq!(ran(&b).last().unwrap(), &format!("SNDRPYMSG MSGKEY({key}) MSGQ(QSYS/QSYSOPR) RPY('r') RMV(*NO)"));
+    assert_eq!(
+        r.header("Location"),
+        Some("/qs400/navigator/msgq/QSYS/QSYSOPR")
+    );
+    assert_eq!(
+        ran(&b).last().unwrap(),
+        &format!("SNDRPYMSG MSGKEY({key}) MSGQ(QSYS/QSYSOPR) RPY('r') RMV(*NO)")
+    );
     let t = ok(&mut b, "/msgq/QSYS/QSYSOPR");
     assert!(t.contains("CPC2403</a> - Reply R sent"), "{t}");
     // The row is no longer bold and has no Reply.
@@ -131,10 +162,21 @@ fn message_detail_and_reply() {
     assert!(!t.contains("name=\"reply\""));
     // An empty reply sends the default.
     let k2 = key_of(&b, "CPA0702");
-    b.post(&format!("/msgq/QSYS/QSYSOPR/{k2}"), &[("reply", ""), ("send", "Reply")]);
+    b.post(
+        &format!("/msgq/QSYS/QSYSOPR/{k2}"),
+        &[("reply", ""), ("send", "Reply")],
+    );
     assert!(ran(&b).last().unwrap().contains("RPY(*DFT)"));
     let qs = b.fx.msgs.queues.lock().unwrap();
-    assert_eq!(qs["QSYS/QSYSOPR"].iter().find(|m| m.key == k2).unwrap().reply.as_deref(), Some("C"));
+    assert_eq!(
+        qs["QSYS/QSYSOPR"]
+            .iter()
+            .find(|m| m.key == k2)
+            .unwrap()
+            .reply
+            .as_deref(),
+        Some("C")
+    );
 }
 
 #[test]
@@ -150,10 +192,19 @@ fn remove_and_clear_are_confirmed() {
     assert!(ok(&mut b, "/msgq/QSYS/QSYSOPR").contains("40 entries"));
     // Clear keeps the inquiries waiting.
     let r = b.get("/msgq/QSYS/QSYSOPR?clear=Clear+queue...");
-    assert_eq!(r.header("Location"), Some("/qs400/navigator/msgq/QSYS/QSYSOPR/clear"));
+    assert_eq!(
+        r.header("Location"),
+        Some("/qs400/navigator/msgq/QSYS/QSYSOPR/clear")
+    );
     assert!(ok(&mut b, "/msgq/QSYS/QSYSOPR/clear").contains("Confirm Clear Message Queue"));
-    b.post("/msgq/QSYS/QSYSOPR/clear", &[("clr", "*KEEPUNANS"), ("ok", "OK")]);
-    assert_eq!(ran(&b).last().unwrap(), "CLRMSGQ MSGQ(QSYS/QSYSOPR) CLEAR(*KEEPUNANS)");
+    b.post(
+        "/msgq/QSYS/QSYSOPR/clear",
+        &[("clr", "*KEEPUNANS"), ("ok", "OK")],
+    );
+    assert_eq!(
+        ran(&b).last().unwrap(),
+        "CLRMSGQ MSGQ(QSYS/QSYSOPR) CLEAR(*KEEPUNANS)"
+    );
     assert!(ok(&mut b, "/msgq/QSYS/QSYSOPR").contains("3 entries"));
     // Another user's queue needs the authority.
     let mut w = Browser::as_user("WEBUSER");
@@ -167,15 +218,18 @@ fn history_log() {
     let t = ok(&mut b, "/qhst");
     let mut fix: Vec<(String, String)> = Vec::new();
     for id in [
-        "CPF1164", "CPF1124", "CPA5305", "CPF0907", "CPA4002", "CPF1241", "CPC1129", "CPF2204", "HTP8110", "CPI2209",
-        "CPF1107", "CPA0702", "TCP1A03", "CPC3703", "HTP8001", "CPF0927",
+        "CPF1164", "CPF1124", "CPA5305", "CPF0907", "CPA4002", "CPF1241", "CPC1129", "CPF2204",
+        "HTP8110", "CPI2209", "CPF1107", "CPA0702", "TCP1A03", "CPC3703", "HTP8001", "CPF0927",
     ] {
         fix.push((
             format!("  {id}   "),
             format!("  <a href=\"../shared/help.html\" target=\"_blank\">{id}</a>   "),
         ));
     }
-    fix.push(("Subsystem QHTTPSVR active.".into(), format!("Subsystem QHTTPSVR active.\n{NIGHT}")));
+    fix.push((
+        "Subsystem QHTTPSVR active.".into(),
+        format!("Subsystem QHTTPSVR active.\n{NIGHT}"),
+    ));
     let fix: Vec<(&str, &str)> = fix.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
     assert_golden(&t, "nav/history-log.html", &fix);
     // Filters.

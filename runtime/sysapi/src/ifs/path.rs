@@ -66,7 +66,8 @@ fn qlg_decode(j: &Job, job_ccsid: u16, read: &dyn Fn(usize) -> R<Vec<u8>>) -> R<
         Err(_) => return Err(Errno::EINVAL),
     };
     let kind = u32::try_from(lay::get_n(&head, &QLG_PATH_NAME, "Path_Type")).unwrap_or(u32::MAX);
-    let len = usize::try_from(lay::get_i(&head, &QLG_PATH_NAME, "Path_Length")).map_err(|_| Errno::EINVAL)?;
+    let len = usize::try_from(lay::get_i(&head, &QLG_PATH_NAME, "Path_Length"))
+        .map_err(|_| Errno::EINVAL)?;
     let (delim_at, _) = lay::at(&QLG_PATH_NAME, "Path_Name_Delimiter");
     let delim_len = match kind {
         QLG_CHAR_SINGLE | QLG_PTR_SINGLE => 1,
@@ -81,7 +82,9 @@ fn qlg_decode(j: &Job, job_ccsid: u16, read: &dyn Fn(usize) -> R<Vec<u8>>) -> R<
         return Err(Errno::ENAMETOOLONG);
     }
     let bytes: Vec<u8> = match kind {
-        QLG_CHAR_SINGLE | QLG_CHAR_DOUBLE => read(QLG_PATH_NAME.size + len)?[QLG_PATH_NAME.size..].to_vec(),
+        QLG_CHAR_SINGLE | QLG_CHAR_DOUBLE => {
+            read(QLG_PATH_NAME.size + len)?[QLG_PATH_NAME.size..].to_vec()
+        }
         _ => {
             let with_ptr = read(QLG_PATH_NAME.size + 16)?;
             let name = ptr_at(&with_ptr, QLG_PATH_NAME.size);
@@ -102,7 +105,12 @@ pub(crate) fn qlg_bytes(ccsid: u16, path: &str) -> Vec<u8> {
     let name = encode(ccsid, path);
     let mut b = vec![0u8; QLG_PATH_NAME.size];
     lay::put_n(&mut b, &QLG_PATH_NAME, "CCSID", u64::from(ccsid));
-    lay::put_n(&mut b, &QLG_PATH_NAME, "Path_Type", u64::from(QLG_CHAR_SINGLE));
+    lay::put_n(
+        &mut b,
+        &QLG_PATH_NAME,
+        "Path_Type",
+        u64::from(QLG_CHAR_SINGLE),
+    );
     lay::put_n(&mut b, &QLG_PATH_NAME, "Path_Length", name.len() as u64);
     let slash = encode(ccsid, "/");
     lay::put(&mut b, &QLG_PATH_NAME, "Path_Name_Delimiter", &slash);

@@ -74,7 +74,11 @@ fn bytes(at: u64, n: usize) -> Vec<u8> {
 }
 
 fn int_at(at: u64) -> i32 {
-    if at == 0 { 0 } else { bin4_at(mi::storage::view(at, 4), 0) }
+    if at == 0 {
+        0
+    } else {
+        bin4_at(mi::storage::view(at, 4), 0)
+    }
 }
 
 /// The recipients from the first `ADDT0100` structure: each one's
@@ -94,7 +98,10 @@ pub fn recipients(first: u64, total: usize) -> Vec<(String, i32)> {
         let dist = bin4_at(&head, 16);
         let address = ccsid::decode_trimmed(&bytes(at + ADDT0100_LEN as u64, len));
         out.push((address, dist));
-        let step = u64::try_from(next).ok().filter(|n| *n > 0).unwrap_or((ADDT0100_LEN + len) as u64);
+        let step = u64::try_from(next)
+            .ok()
+            .filter(|n| *n > 0)
+            .unwrap_or((ADDT0100_LEN + len) as u64);
         at += step;
     }
     out
@@ -114,9 +121,25 @@ pub fn request(file: u64, flen: u64, orig: u64, olen: u64, first: u64, total: u6
 }
 
 #[allow(clippy::too_many_arguments)]
-fn qtmm(j: &mut Job, file: u128, flen: u128, orig: u128, olen: u128, first: u128, total: u128, err: u128) -> i64 {
+fn qtmm(
+    j: &mut Job,
+    file: u128,
+    flen: u128,
+    orig: u128,
+    olen: u128,
+    first: u128,
+    total: u128,
+    err: u128,
+) -> i64 {
     let e = ErrCode::from_addr(addr(j, err));
-    let req = request(addr(j, file), addr(j, flen), addr(j, orig), addr(j, olen), addr(j, first), addr(j, total));
+    let req = request(
+        addr(j, file),
+        addr(j, flen),
+        addr(j, orig),
+        addr(j, olen),
+        addr(j, first),
+        addr(j, total),
+    );
     let r = if req.file.is_empty() {
         Err("no file name".to_string())
     } else if req.recipients.is_empty() {
@@ -166,7 +189,10 @@ mod tests {
         let (_k, at) = place(&both);
         assert_eq!(
             recipients(at, 2),
-            [("anne@example.com".to_string(), 0), ("bob@example.com".to_string(), 2)]
+            [
+                ("anne@example.com".to_string(), 0),
+                ("bob@example.com".to_string(), 2)
+            ]
         );
         // A zero offset: the next follows the address.
         let mut seq = one.clone();

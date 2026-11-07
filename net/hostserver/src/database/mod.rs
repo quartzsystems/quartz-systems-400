@@ -283,11 +283,20 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                 ca.sqlerrmc.clone()
             };
             if r.wants(ors::FIRST_LEVEL_TEXT) {
-                v.push(Param::new(db_reply::FIRST_LEVEL_TEXT, short(37, &text::ebcdic(&msg))));
+                v.push(Param::new(
+                    db_reply::FIRST_LEVEL_TEXT,
+                    short(37, &text::ebcdic(&msg)),
+                ));
             }
             if r.wants(ors::SECOND_LEVEL_TEXT) {
-                let help = format!("SQLSTATE {}: correct the statement or the objects it names and run it again.", ca.sqlstate);
-                v.push(Param::new(db_reply::SECOND_LEVEL_TEXT, short(37, &text::ebcdic(&help))));
+                let help = format!(
+                    "SQLSTATE {}: correct the statement or the objects it names and run it again.",
+                    ca.sqlstate
+                );
+                v.push(Param::new(
+                    db_reply::SECOND_LEVEL_TEXT,
+                    short(37, &text::ebcdic(&help)),
+                ));
             }
         }
         if with_sqlca && r.wants(ors::SQLCA) {
@@ -297,7 +306,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     }
 
     fn class_of(ca: &Sqlca) -> (u16, i32) {
-        if ca.sqlcode == 0 { (0, 0) } else { (1, ca.sqlcode) }
+        if ca.sqlcode == 0 {
+            (0, 0)
+        } else {
+            (1, ca.sqlcode)
+        }
     }
 
     fn sql_allowed(&mut self, function: i32, rpb: &Rpb, text: &str) -> bool {
@@ -310,8 +323,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             ..Sql::default()
         };
         let w = who(&self.user(), function);
-        self.exits.allow(EXIT_SQL1, &ExitRequest::host("ZDAQ0100", zdaq0100(&w, &s)))
-            && self.exits.allow(EXIT_SQL2, &ExitRequest::host("ZDAQ0200", zdaq0200(&w, &s)))
+        self.exits
+            .allow(EXIT_SQL1, &ExitRequest::host("ZDAQ0100", zdaq0100(&w, &s)))
+            && self
+                .exits
+                .allow(EXIT_SQL2, &ExitRequest::host("ZDAQ0200", zdaq0200(&w, &s)))
     }
 
     fn set_attributes(&mut self, f: &Frame, params: &[Param]) -> Answer {
@@ -332,7 +348,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         let _ = f;
         let req = ExitRequest::host(
             "ZDAI0100",
-            zdai0100(&who(&self.user(), func::DB_INIT), (&iface.0, &iface.1, &iface.2)),
+            zdai0100(
+                &who(&self.user(), func::DB_INIT),
+                (&iface.0, &iface.1, &iface.2),
+            ),
         );
         if !self.exits.allow(EXIT_INIT, &req) {
             return Answer {
@@ -346,7 +365,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             of: id::SET_ATTRIBUTES,
             class: 0,
             code: 0,
-            params: vec![Param::new(db_reply::SERVER_ATTRIBUTES, self.server_attributes())],
+            params: vec![Param::new(
+                db_reply::SERVER_ATTRIBUTES,
+                self.server_attributes(),
+            )],
         }
     }
 
@@ -404,7 +426,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     }
 
     fn markers_of(&self, r: &Req, rpb: &Rpb, params: &[Param]) -> Vec<Vec<Value>> {
-        let fmt = self.descriptors.get(&r.descriptor).cloned().unwrap_or_else(|| rpb.markers.clone());
+        let fmt = self
+            .descriptors
+            .get(&r.descriptor)
+            .cloned()
+            .unwrap_or_else(|| rpb.markers.clone());
         let data = params
             .iter()
             .find(|p| p.cp == db_request::EXTENDED_MARKER_DATA || p.cp == db_request::MARKER_DATA)
@@ -428,45 +454,46 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         rpb.call = catalog::parse(&rpb.text);
         rpb.sets.clear();
         let fail = |ca: Sqlca| (ca, Vec::new(), Vec::new());
-        let (ca, cols, markers) = if !self.sql_allowed(i32::from(r.function), &rpb, &rpb.text.clone()) {
-            fail(denied())
-        } else if let Some(c) = &rpb.call {
-            let m = (0..c.markers())
-                .map(|i| ColType::varchar("", if i < 3 { 128 } else { 4000 }, false))
-                .collect();
-            (Sqlca::default(), Vec::new(), m)
-        } else {
-            let d = Desc {
-                name: rpb.stmt.clone(),
-                into: true,
-                ..self.desc(Op::Prepare)
-            };
-            let rep = self.run(d, vec![Value::Str(rpb.text.clone())]);
-            if rep.sqlca.is_error() {
-                fail(rep.sqlca)
+        let (ca, cols, markers) =
+            if !self.sql_allowed(i32::from(r.function), &rpb, &rpb.text.clone()) {
+                fail(denied())
+            } else if let Some(c) = &rpb.call {
+                let m = (0..c.markers())
+                    .map(|i| ColType::varchar("", if i < 3 { 128 } else { 4000 }, false))
+                    .collect();
+                (Sqlca::default(), Vec::new(), m)
             } else {
-                let cols = cols_of(&rep.rows);
                 let d = Desc {
                     name: rpb.stmt.clone(),
-                    orient: "INPUT".into(),
-                    ..self.desc(Op::Describe)
+                    into: true,
+                    ..self.desc(Op::Prepare)
                 };
-                let m = self.run(d, Vec::new());
-                let markers: Vec<ColType> = cols_of(&m.rows)
-                    .into_iter()
-                    .map(|mut c| {
-                        // A CALL's markers keep their parameters' names and
-                        // join no column.
-                        if c.mode == 0 {
-                            c.name.clear();
-                        }
-                        c.column = c.mode == 0;
-                        c
-                    })
-                    .collect();
-                (Sqlca::default(), cols, markers)
-            }
-        };
+                let rep = self.run(d, vec![Value::Str(rpb.text.clone())]);
+                if rep.sqlca.is_error() {
+                    fail(rep.sqlca)
+                } else {
+                    let cols = cols_of(&rep.rows);
+                    let d = Desc {
+                        name: rpb.stmt.clone(),
+                        orient: "INPUT".into(),
+                        ..self.desc(Op::Describe)
+                    };
+                    let m = self.run(d, Vec::new());
+                    let markers: Vec<ColType> = cols_of(&m.rows)
+                        .into_iter()
+                        .map(|mut c| {
+                            // A CALL's markers keep their parameters' names and
+                            // join no column.
+                            if c.mode == 0 {
+                                c.name.clear();
+                            }
+                            c.column = c.mode == 0;
+                            c
+                        })
+                        .collect();
+                    (Sqlca::default(), cols, markers)
+                }
+            };
         rpb.select = !cols.is_empty();
         rpb.cols = cols;
         rpb.markers = markers;
@@ -482,15 +509,31 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         let (class, code) = Self::class_of(&ca);
         let mut params = Self::results(r, &ca, true);
         if describe && r.wants(ors::DATA_FORMAT) {
-            let d = if rpb.cols.is_empty() { Vec::new() } else { format::encode(&rpb.cols, true) };
+            let d = if rpb.cols.is_empty() {
+                Vec::new()
+            } else {
+                format::encode(&rpb.cols, true)
+            };
             params.push(Param::new(db_reply::SUPER_DATA_FORMAT, d));
         }
         if describe && r.wants(ors::MARKER_FORMAT) {
-            let d = if rpb.markers.is_empty() { Vec::new() } else { format::encode(&rpb.markers, false) };
+            let d = if rpb.markers.is_empty() {
+                Vec::new()
+            } else {
+                format::encode(&rpb.markers, false)
+            };
             params.push(Param::new(db_reply::SUPER_MARKER_FORMAT, d));
         }
-        self.last = Last { function: r.function, sqlca: ca };
-        Answer { of: r.function, class, code, params }
+        self.last = Last {
+            function: r.function,
+            sqlca: ca,
+        };
+        Answer {
+            of: r.function,
+            class,
+            code,
+            params,
+        }
     }
 
     fn execute(&mut self, r: &Req, params: &[Param]) -> Answer {
@@ -522,7 +565,15 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             let rep = self.run(d, row.clone());
             let outs = self.sql.take_outs();
             rpb.results = None;
-            rpb.sets = if rep.sqlca.sqlcode == 466 { rep.rows.iter().filter_map(|r| r.first()).map(Value::as_text).collect() } else { Vec::new() };
+            rpb.sets = if rep.sqlca.sqlcode == 466 {
+                rep.rows
+                    .iter()
+                    .filter_map(|r| r.first())
+                    .map(Value::as_text)
+                    .collect()
+            } else {
+                Vec::new()
+            };
             if !rpb.sets.is_empty() && r.wants(ors::CURSOR_ATTRIBUTES) {
                 extra.push(cursor_attributes());
             }
@@ -536,7 +587,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                         *x = v;
                     }
                 }
-                extra.push(Param::new(db_reply::EXTENDED_RESULT_DATA, data::encode_rows(&rpb.markers, &[row], 1)));
+                extra.push(Param::new(
+                    db_reply::EXTENDED_RESULT_DATA,
+                    data::encode_rows(&rpb.markers, &[row], 1),
+                ));
             }
             rep.sqlca
         } else {
@@ -567,7 +621,13 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     /// in each row. The last catalog result's locators end here, and
     /// the handles start again, as the primary's do.
     fn locate(&mut self, rows: &mut Rows) {
-        let at: Vec<usize> = rows.cols.iter().enumerate().filter(|(_, c)| c.base == types::sqltype::DBCLOB_LOCATOR).map(|(i, _)| i).collect();
+        let at: Vec<usize> = rows
+            .cols
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.base == types::sqltype::DBCLOB_LOCATOR)
+            .map(|(i, _)| i)
+            .collect();
         if !at.is_empty() {
             self.lobs = lob::Locators::default();
         }
@@ -588,7 +648,12 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             return self.finish(r, Sqlca::default(), Vec::new());
         }
         match self.lobs.retrieve(params) {
-            Some(params) => Answer { of: r.function, class: 0, code: 0, params },
+            Some(params) => Answer {
+                of: r.function,
+                class: 0,
+                code: 0,
+                params,
+            },
             None => self.finish(r, code(-423, "0F001"), Vec::new()),
         }
     }
@@ -597,8 +662,16 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         let (class, code) = Self::class_of(&ca);
         let mut params = Self::results(r, &ca, true);
         params.extend(extra);
-        self.last = Last { function: r.function, sqlca: ca };
-        Answer { of: r.function, class, code, params }
+        self.last = Last {
+            function: r.function,
+            sqlca: ca,
+        };
+        Answer {
+            of: r.function,
+            class,
+            code,
+            params,
+        }
     }
 
     /// A `CALL`'s result set, whole: its columns as `DESCRIBE CURSOR`
@@ -665,7 +738,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         } else {
             self.finish(r, code(-84, "42612"), Vec::new())
         };
-        if r.wants(ors::RETURN_DATA) { Outcome::one(Self::frame(&f.header, r, a)) } else { Outcome::none() }
+        if r.wants(ors::RETURN_DATA) {
+            Outcome::one(Self::frame(&f.header, r, a))
+        } else {
+            Outcome::none()
+        }
     }
 
     /// Add library list (`0x3813`: CCSID, count, then an indicator, a
@@ -684,7 +761,9 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             }
             let ind = d[at];
             let len = usize::from(reply::be16(d, at + 1));
-            let Some(name) = d.get(at + 3..at + 3 + len) else { break };
+            let Some(name) = d.get(at + 3..at + 3 + len) else {
+                break;
+            };
             at += 3 + len;
             let lib = text::from_ebcdic(name).trim().to_string();
             let cmd = match ind {
@@ -693,7 +772,9 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                 _ => format!("ADDLIBLE LIB({lib}) POSITION(*LAST)"),
             };
             let call = format!("CALL QSYS2.QCMDEXC('{cmd}')");
-            let ca = self.run(self.desc(Op::ExecImm), vec![Value::Str(call)]).sqlca;
+            let ca = self
+                .run(self.desc(Op::ExecImm), vec![Value::Str(call)])
+                .sqlca;
             // A library already on the list is no failure.
             if ca.is_error() && !ca.sqlerrmc.contains("CPF2103") {
                 return self.finish(r, ca, Vec::new());
@@ -709,7 +790,8 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         };
         let rpb = self.rpb(r);
         let ca = if self.sql_allowed(i32::from(r.function), &rpb, &text) {
-            self.run(self.desc(Op::ExecImm), vec![Value::Str(text)]).sqlca
+            self.run(self.desc(Op::ExecImm), vec![Value::Str(text)])
+                .sqlca
         } else {
             denied()
         };
@@ -733,7 +815,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             }
             rpb.pos = 0;
         } else {
-            let row = self.markers_of(r, &rpb, params).into_iter().next().unwrap_or_default();
+            let row = self
+                .markers_of(r, &rpb, params)
+                .into_iter()
+                .next()
+                .unwrap_or_default();
             let d = Desc {
                 name: rpb.cursor.clone(),
                 stmt: rpb.stmt.clone(),
@@ -743,7 +829,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             ca = self.run(d, row).sqlca;
         }
         rpb.open = !ca.is_error();
-        let cols = rpb.results.as_ref().map_or_else(|| rpb.cols.clone(), |x| x.cols.clone());
+        let cols = rpb
+            .results
+            .as_ref()
+            .map_or_else(|| rpb.cols.clone(), |x| x.cols.clone());
         self.rpbs.insert(r.rpb, rpb);
         let mut params_out = Vec::new();
         let mut class_code = Self::class_of(&ca);
@@ -761,23 +850,39 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                 params_out.push(cursor_attributes());
             }
             if r.wants(ors::DATA_FORMAT) {
-                params_out.push(Param::new(db_reply::SUPER_DATA_FORMAT, format::encode(&cols, true)));
+                params_out.push(Param::new(
+                    db_reply::SUPER_DATA_FORMAT,
+                    format::encode(&cols, true),
+                ));
             }
-            params_out.push(Param::new(db_reply::EXTENDED_RESULT_DATA, data::encode_rows(&cols, &rows, 1)));
+            params_out.push(Param::new(
+                db_reply::EXTENDED_RESULT_DATA,
+                data::encode_rows(&cols, &rows, 1),
+            ));
         } else {
             if r.wants(ors::SQLCA) {
                 // A cursor that opened answers an empty SQLCA.
-                let d = if ca.sqlcode == 0 { Vec::new() } else { sqlca::encode(&ca) };
+                let d = if ca.sqlcode == 0 {
+                    Vec::new()
+                } else {
+                    sqlca::encode(&ca)
+                };
                 params_out.push(Param::new(db_reply::SQLCA, d));
             }
             if r.wants(ors::DATA_FORMAT) && !ca.is_error() {
-                params_out.push(Param::new(db_reply::SUPER_DATA_FORMAT, format::encode(&cols, true)));
+                params_out.push(Param::new(
+                    db_reply::SUPER_DATA_FORMAT,
+                    format::encode(&cols, true),
+                ));
             }
             if r.wants(ors::CURSOR_ATTRIBUTES) {
                 params_out.push(cursor_attributes());
             }
         }
-        self.last = Last { function: r.function, sqlca: ca };
+        self.last = Last {
+            function: r.function,
+            sqlca: ca,
+        };
         Answer {
             of: r.function,
             class: class_code.0,
@@ -812,20 +917,37 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
 
     fn fetch(&mut self, r: &Req, params: &[Param]) -> Answer {
         let rpb = self.rpb(r);
-        let cols = rpb.results.as_ref().map_or_else(|| rpb.cols.clone(), |x| x.cols.clone());
+        let cols = rpb
+            .results
+            .as_ref()
+            .map_or_else(|| rpb.cols.clone(), |x| x.cols.clone());
         let n = block_rows(params, &cols);
         let (rows, end) = self.fetch_rows(r.rpb, n);
         if rows.is_empty() {
             let ca = Sqlca::no_data();
             let mut p = Self::results(r, &ca, true);
             p.push(Param::new(db_reply::EXTENDED_RESULT_DATA, Vec::new()));
-            self.last = Last { function: r.function, sqlca: ca };
-            return Answer { of: r.function, class: 1, code: 100, params: p };
+            self.last = Last {
+                function: r.function,
+                sqlca: ca,
+            };
+            return Answer {
+                of: r.function,
+                class: 1,
+                code: 100,
+                params: p,
+            };
         }
         let ca = Sqlca::rows(rows.len() as u64);
         let mut p = Self::results(r, &ca, true);
-        p.push(Param::new(db_reply::EXTENDED_RESULT_DATA, data::encode_rows(&cols, &rows, 1)));
-        self.last = Last { function: r.function, sqlca: ca };
+        p.push(Param::new(
+            db_reply::EXTENDED_RESULT_DATA,
+            data::encode_rows(&cols, &rows, 1),
+        ));
+        self.last = Last {
+            function: r.function,
+            sqlca: ca,
+        };
         // The block holds the last row: class 2, 700 for a cursor of the
         // engine's, 701 for a result set the server holds, as the
         // primary answers.
@@ -835,7 +957,12 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             (true, false) => (2, 700),
             (true, true) => (2, 701),
         };
-        Answer { of: r.function, class, code, params: p }
+        Answer {
+            of: r.function,
+            class,
+            code,
+            params: p,
+        }
     }
 
     fn close(&mut self, r: &Req) -> Answer {
@@ -913,11 +1040,17 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                     };
                     let _ = self.run(d, Vec::new());
                 }
-                Some(Answer { of: r.function, class: 0, code: 0, params: Vec::new() })
+                Some(Answer {
+                    of: r.function,
+                    class: 0,
+                    code: 0,
+                    params: Vec::new(),
+                })
             }
             id::CHANGE_DESCRIPTOR => {
                 if let Some(p) = params.iter().find(|p| p.cp == 0x381E || p.cp == 0x3801) {
-                    self.descriptors.insert(r.descriptor, format::decode_client(&p.data));
+                    self.descriptors
+                        .insert(r.descriptor, format::decode_client(&p.data));
                 }
                 None
             }
@@ -933,12 +1066,23 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                     let rpb = self.rpb(&r);
                     let mut p = Vec::new();
                     if r.wants(ors::DATA_FORMAT) || r.function == id::DESCRIBE {
-                        p.push(Param::new(db_reply::SUPER_DATA_FORMAT, format::encode(&rpb.cols, true)));
+                        p.push(Param::new(
+                            db_reply::SUPER_DATA_FORMAT,
+                            format::encode(&rpb.cols, true),
+                        ));
                     }
                     if r.wants(ors::MARKER_FORMAT) || r.function == id::DESCRIBE_MARKERS {
-                        p.push(Param::new(db_reply::SUPER_MARKER_FORMAT, format::encode(&rpb.markers, false)));
+                        p.push(Param::new(
+                            db_reply::SUPER_MARKER_FORMAT,
+                            format::encode(&rpb.markers, false),
+                        ));
                     }
-                    Some(Answer { of: r.function, class: 0, code: 0, params: p })
+                    Some(Answer {
+                        of: r.function,
+                        class: 0,
+                        code: 0,
+                        params: p,
+                    })
                 }
             }
             id::EXECUTE => {
@@ -947,7 +1091,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             }
             id::PREPARE_EXECUTE => {
                 let a = self.prepare(&r, &params, false);
-                if a.class == 0 { Some(self.execute(&r, &params)) } else { Some(a) }
+                if a.class == 0 {
+                    Some(self.execute(&r, &params))
+                } else {
+                    Some(a)
+                }
             }
             id::EXECUTE_IMMEDIATE => Some(self.exec_immediate(&r, &params)),
             id::OPEN_DESCRIBE => {
@@ -992,7 +1140,9 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
 
 /// Whether a statement is a `CALL`.
 fn is_call(text: &str) -> bool {
-    text.trim_start().get(..5).is_some_and(|w| w.eq_ignore_ascii_case("CALL ") || w.eq_ignore_ascii_case("CALL	"))
+    text.trim_start()
+        .get(..5)
+        .is_some_and(|w| w.eq_ignore_ascii_case("CALL ") || w.eq_ignore_ascii_case("CALL	"))
 }
 
 /// The native database server.
@@ -1035,11 +1185,19 @@ fn cols_of(rows: &[Vec<Value>]) -> Vec<ColType> {
         .map(|(i, r)| {
             let t = r.first().and_then(|v| v.as_i64().ok()).unwrap_or(449);
             let l = r.get(1).and_then(|v| v.as_i64().ok()).unwrap_or(0);
-            let name = r.get(2).map(Value::as_text).filter(|n| !n.trim().is_empty()).unwrap_or_else(|| format!("{:05}", i + 1));
+            let name = r
+                .get(2)
+                .map(Value::as_text)
+                .filter(|n| !n.trim().is_empty())
+                .unwrap_or_else(|| format!("{:05}", i + 1));
             let mut c = ColType::from_describe(t, l, &name);
             // A named column (not an expression's number) came from a table.
             c.column = !name.chars().all(|ch| ch.is_ascii_digit());
-            c.mode = r.get(9).and_then(|v| v.as_i64().ok()).and_then(|m| u8::try_from(m).ok()).unwrap_or(0);
+            c.mode = r
+                .get(9)
+                .and_then(|v| v.as_i64().ok())
+                .and_then(|m| u8::try_from(m).ok())
+                .unwrap_or(0);
             c
         })
         .collect()
@@ -1048,7 +1206,11 @@ fn cols_of(rows: &[Vec<Value>]) -> Vec<ColType> {
 /// The rows a fetch asks for: the blocking factor, or the buffer size
 /// over the row size.
 fn block_rows(params: &[Param], cols: &[ColType]) -> usize {
-    if let Some(n) = params.iter().find(|p| p.cp == db_request::BLOCKING_FACTOR).and_then(Param::as_u32) {
+    if let Some(n) = params
+        .iter()
+        .find(|p| p.cp == db_request::BLOCKING_FACTOR)
+        .and_then(Param::as_u32)
+    {
         return (n as usize).max(1);
     }
     let size: usize = cols.iter().map(|c| c.len as usize).sum::<usize>().max(1);

@@ -95,13 +95,25 @@ mod tests {
         raw: Vec<u8>,
         next: Option<Box<Point>>,
     }
-    crate::wire_struct!(Point { x, name, tags, raw, next });
+    crate::wire_struct!(Point {
+        x,
+        name,
+        tags,
+        raw,
+        next
+    });
 
     #[derive(Debug, Clone, PartialEq)]
     enum Shape {
         Empty,
-        Dot { at: Point },
-        Line { from: (u32, u32), to: (u32, u32), bold: bool },
+        Dot {
+            at: Point,
+        },
+        Line {
+            from: (u32, u32),
+            to: (u32, u32),
+            bold: bool,
+        },
     }
     crate::wire_enum!(Shape {
         0 => Empty,
@@ -123,7 +135,10 @@ mod tests {
     fn wide_tags() {
         assert_eq!(encode(&Code::Low), [0, 0]);
         assert_eq!(encode(&Code::High { n: 9 }), [0x2C, 0x01, 9]);
-        assert_eq!(decode::<Code>(&[0x2C, 0x01, 9]).unwrap(), Code::High { n: 9 });
+        assert_eq!(
+            decode::<Code>(&[0x2C, 0x01, 9]).unwrap(),
+            Code::High { n: 9 }
+        );
         assert!(matches!(
             decode::<Code>(&[1, 1]),
             Err(WireError::WideTag { tag: 257, .. })

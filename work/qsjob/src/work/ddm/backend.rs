@@ -14,8 +14,8 @@ use std::collections::HashMap;
 
 use ddm::sec::Proof;
 use ddm::server::{
-    Authenticator, FileBackend, FileError, FileInfo, FileOpen, FileRecord, ReadAt, Section, SqlBackend,
-    SqlResult,
+    Authenticator, FileBackend, FileError, FileInfo, FileOpen, FileRecord, ReadAt, Section,
+    SqlBackend, SqlResult,
 };
 use ddm::sql::{ColType, Column, Kind, Sqlca, Value};
 use hostsvr::common::rc;
@@ -46,7 +46,10 @@ fn secchkcd(code: u32) -> u8 {
 impl Authenticator for JobAuth {
     fn check(&mut self, user: &str, proof: &Proof) -> Result<(), u8> {
         let r = match proof {
-            Proof::Password(p) => self.0.borrow_mut().with(|l| l.ddm_signon(user.into(), p.clone(), true)),
+            Proof::Password(p) => self
+                .0
+                .borrow_mut()
+                .with(|l| l.ddm_signon(user.into(), p.clone(), true)),
             Proof::Substitute {
                 substitute,
                 client_seed,
@@ -57,7 +60,9 @@ impl Authenticator for JobAuth {
                     client_seed: *client_seed,
                     substitute: substitute.clone(),
                 };
-                self.0.borrow_mut().with(|l| l.host_signon(user.into(), sub, Vec::new(), true))
+                self.0
+                    .borrow_mut()
+                    .with(|l| l.host_signon(user.into(), sub, Vec::new(), true))
             }
         };
         r.map(|_| ()).map_err(|e| secchkcd(e.rc))
@@ -102,7 +107,11 @@ impl JobSql {
 
     fn checked(&mut self, desc: Desc, inputs: Vec<sql::Value>) -> SqlResult<Reply> {
         let r = self.run(desc, inputs);
-        if r.sqlca.sqlcode < 0 { Err(ca_of(&r.sqlca)) } else { Ok(r) }
+        if r.sqlca.sqlcode < 0 {
+            Err(ca_of(&r.sqlca))
+        } else {
+            Ok(r)
+        }
     }
 }
 
@@ -148,8 +157,20 @@ fn column(i: usize, row: &[sql::Value]) -> Column {
         500 => ColType::new(Kind::SmallInt, 0, 5, 0, nullable),
         496 => ColType::new(Kind::Integer, 0, 10, 0, nullable),
         492 => ColType::new(Kind::BigInt, 0, 19, 0, nullable),
-        484 => ColType::new(Kind::Decimal, 0, small(len >> 8), small(len & 0xFF), nullable),
-        488 => ColType::new(Kind::Numeric, 0, small(len >> 8), small(len & 0xFF), nullable),
+        484 => ColType::new(
+            Kind::Decimal,
+            0,
+            small(len >> 8),
+            small(len & 0xFF),
+            nullable,
+        ),
+        488 => ColType::new(
+            Kind::Numeric,
+            0,
+            small(len >> 8),
+            small(len & 0xFF),
+            nullable,
+        ),
         480 => ColType::new(Kind::Double, 0, 53, 0, nullable),
         452 => ColType::new(Kind::Char, chars, 0, 0, nullable),
         384 => ColType::new(Kind::Date, 0, 0, 0, nullable),
@@ -173,9 +194,10 @@ fn to_wire(v: &sql::Value, t: Option<&ColType>) -> Value {
     match v {
         sql::Value::Null => Value::Null,
         sql::Value::Num(d) => match t.map(|t| t.kind) {
-            Some(Kind::SmallInt | Kind::Integer | Kind::BigInt) => {
-                d.to_string().parse().map_or_else(|_| Value::Dec(d.clone()), Value::Int)
-            }
+            Some(Kind::SmallInt | Kind::Integer | Kind::BigInt) => d
+                .to_string()
+                .parse()
+                .map_or_else(|_| Value::Dec(d.clone()), Value::Int),
             _ => Value::Dec(d.clone()),
         },
         sql::Value::Double(f) => Value::Double(*f),
@@ -210,13 +232,24 @@ impl SqlBackend for JobSql {
     }
 
     fn execute(&mut self, s: &Section, params: &[Value]) -> SqlResult<Sqlca> {
-        let r = self.checked(desc(Op::Execute, stmt(s)), params.iter().map(from_wire).collect())?;
+        let r = self.checked(
+            desc(Op::Execute, stmt(s)),
+            params.iter().map(from_wire).collect(),
+        )?;
         self.outs = self.sql.take_outs();
         self.called = (String::new(), Vec::new());
         if r.sqlca.sqlcode == 466 {
-            let text = |row: &[sql::Value], i: usize| row.get(i).map(sql::Value::as_text).unwrap_or_default();
+            let text = |row: &[sql::Value], i: usize| {
+                row.get(i).map(sql::Value::as_text).unwrap_or_default()
+            };
             let routine = r.rows.first().map(|row| text(row, 3)).unwrap_or_default();
-            self.called = (routine, r.rows.iter().map(|row| (text(row, 0), text(row, 1))).collect());
+            self.called = (
+                routine,
+                r.rows
+                    .iter()
+                    .map(|row| (text(row, 0), text(row, 1)))
+                    .collect(),
+            );
         }
         Ok(ca_of(&r.sqlca))
     }
@@ -235,13 +268,25 @@ impl SqlBackend for JobSql {
                 let ty = column(i, row).ty;
                 // Mode 1 is IN: the reply has no value for it.
                 let input = row.get(9).and_then(|v| v.as_i64().ok()).unwrap_or(1) == 1;
-                let v = if input { None } else { outs.iter().find(|(m, _)| *m == i).map(|(_, v)| to_wire(v, Some(&ty))) };
+                let v = if input {
+                    None
+                } else {
+                    outs.iter()
+                        .find(|(m, _)| *m == i)
+                        .map(|(_, v)| to_wire(v, Some(&ty)))
+                };
                 (ty, v.unwrap_or(Value::Null))
             })
             .collect())
     }
 
-    fn bind(&mut self, collection: &str, package: &str, token: [u8; 8], stmts: &[(u16, String)]) -> SqlResult<()> {
+    fn bind(
+        &mut self,
+        collection: &str,
+        package: &str,
+        token: [u8; 8],
+        stmts: &[(u16, String)],
+    ) -> SqlResult<()> {
         let mut inputs = vec![
             sql::Value::Str(collection.trim().to_string()),
             sql::Value::Str(package.trim().to_string()),
@@ -251,11 +296,15 @@ impl SqlBackend for JobSql {
             inputs.push(sql::Value::int(i64::from(*n)));
             inputs.push(sql::Value::Str(text.clone()));
         }
-        self.checked(desc(Op::Package, "BIND".into()), inputs).map(|_| ())
+        self.checked(desc(Op::Package, "BIND".into()), inputs)
+            .map(|_| ())
     }
 
     fn result_sets(&mut self) -> (String, Vec<String>) {
-        (self.called.0.clone(), self.called.1.iter().map(|(_, c)| c.clone()).collect())
+        (
+            self.called.0.clone(),
+            self.called.1.iter().map(|(_, c)| c.clone()).collect(),
+        )
     }
 
     fn open_result_set(&mut self, s: &Section, index: usize) -> SqlResult<Vec<Column>> {
@@ -273,7 +322,10 @@ impl SqlBackend for JobSql {
     }
 
     fn execute_immediate(&mut self, text: &str) -> SqlResult<Sqlca> {
-        let r = self.checked(desc(Op::ExecImm, String::new()), vec![sql::Value::Str(text.to_string())])?;
+        let r = self.checked(
+            desc(Op::ExecImm, String::new()),
+            vec![sql::Value::Str(text.to_string())],
+        )?;
         Ok(ca_of(&r.sqlca))
     }
 
@@ -289,17 +341,28 @@ impl SqlBackend for JobSql {
     }
 
     fn fetch(&mut self, s: &Section, max: usize) -> SqlResult<Vec<Vec<Value>>> {
-        let name = self.sets.get(&cursor(s)).cloned().unwrap_or_else(|| cursor(s));
+        let name = self
+            .sets
+            .get(&cursor(s))
+            .cloned()
+            .unwrap_or_else(|| cursor(s));
         let d = Desc {
             rows: true,
             ..desc(Op::Fetch, name)
         };
-        let r = self.checked(d, vec![sql::Value::int(i64::try_from(max.max(1)).unwrap_or(1))])?;
+        let r = self.checked(
+            d,
+            vec![sql::Value::int(i64::try_from(max.max(1)).unwrap_or(1))],
+        )?;
         let cols = self.cursors.get(&cursor(s)).cloned().unwrap_or_default();
-        Ok(r
-            .rows
+        Ok(r.rows
             .iter()
-            .map(|row| row.iter().enumerate().map(|(i, v)| to_wire(v, cols.get(i).map(|c| &c.ty))).collect())
+            .map(|row| {
+                row.iter()
+                    .enumerate()
+                    .map(|(i, v)| to_wire(v, cols.get(i).map(|c| &c.ty)))
+                    .collect()
+            })
             .collect())
     }
 
@@ -360,10 +423,13 @@ impl JobFiles {
     }
 
     fn handle(&self, h: u32) -> Result<u32, FileError> {
-        self.open.get(&h).map(|o| o.handle).ok_or_else(|| FileError {
-            id: "CPF4520".into(),
-            text: "No file is open under that handle.".into(),
-        })
+        self.open
+            .get(&h)
+            .map(|o| o.handle)
+            .ok_or_else(|| FileError {
+                id: "CPF4520".into(),
+                text: "No file is open under that handle.".into(),
+            })
     }
 
     /// One operation, its trigger programs called in the job's runtime.
@@ -373,7 +439,9 @@ impl JobFiles {
         let mut console = self.job.borrow_mut();
         console.job();
         console.swapped();
-        Ok(mi::io::trigger::run(console.job(), req, &mut |_, r| io.io(handle, r)))
+        Ok(mi::io::trigger::run(console.job(), req, &mut |_, r| {
+            io.io(handle, r)
+        }))
     }
 }
 
@@ -407,7 +475,12 @@ fn failed(r: &IoResult) -> Option<FileError> {
 
 fn record_of(r: IoResult) -> Option<FileRecord> {
     let data = r.record?;
-    let nulls = r.nulls.unwrap_or_default().iter().map(|b| *b == 0xF1).collect();
+    let nulls = r
+        .nulls
+        .unwrap_or_default()
+        .iter()
+        .map(|b| *b == 0xF1)
+        .collect();
     Some(FileRecord {
         rrn: u32::try_from(r.rrn).unwrap_or(0),
         data,
@@ -429,7 +502,11 @@ impl FileBackend for JobFiles {
             (false, false, _) => qir::FileUsage::Input,
             (true, _, _) => qir::FileUsage::All,
         };
-        let lib = if req.library.trim().is_empty() { "*LIBL".to_string() } else { req.library.trim().to_string() };
+        let lib = if req.library.trim().is_empty() {
+            "*LIBL".to_string()
+        } else {
+            req.library.trim().to_string()
+        };
         let member = req.member.trim();
         let spec = OpenSpec {
             // Trigger programs are called in the job (`op`).
@@ -439,7 +516,8 @@ impl FileBackend for JobFiles {
             usage,
             keyed: req.keyed,
             lvlchk: None,
-            member: (!member.is_empty() && !member.eq_ignore_ascii_case("*FIRST")).then(|| member.to_string()),
+            member: (!member.is_empty() && !member.eq_ignore_ascii_case("*FIRST"))
+                .then(|| member.to_string()),
             actgrp: String::new(),
             commit: false,
         };
@@ -447,11 +525,24 @@ impl FileBackend for JobFiles {
             text: format!("{} in library {} could not be opened.", spec.file, spec.lib),
             id: f.msgid,
         })?;
-        let formats = self.link.borrow_mut().with(|l| l.formats(info.lib.clone(), info.file.clone()));
+        let formats = self
+            .link
+            .borrow_mut()
+            .with(|l| l.formats(info.lib.clone(), info.file.clone()));
         let fields = formats.first().map_or(0, |f| f.fields.len());
-        let file = self.link.borrow_mut().with(|l| l.file(info.lib.clone(), info.file.clone()));
-        let members = self.link.borrow_mut().with(|l| l.members(info.lib.clone(), info.file.clone()));
-        let records = members.iter().find(|m| m.name == info.member).or(members.first()).map_or(0, |m| m.records);
+        let file = self
+            .link
+            .borrow_mut()
+            .with(|l| l.file(info.lib.clone(), info.file.clone()));
+        let members = self
+            .link
+            .borrow_mut()
+            .with(|l| l.members(info.lib.clone(), info.file.clone()));
+        let records = members
+            .iter()
+            .find(|m| m.name == info.member)
+            .or(members.first())
+            .map_or(0, |m| m.records);
         self.open.insert(h, Open { handle: h, fields });
         Ok((
             h,
@@ -481,9 +572,21 @@ impl FileBackend for JobFiles {
                 if let Some(e) = failed(&s) {
                     return Err(e);
                 }
-                self.op(h, &IoRequest { nolock, ..request(IoOp::Read) })?
+                self.op(
+                    h,
+                    &IoRequest {
+                        nolock,
+                        ..request(IoOp::Read)
+                    },
+                )?
             }
-            ReadAt::Next => self.op(h, &IoRequest { nolock, ..request(IoOp::Read) })?,
+            ReadAt::Next => self.op(
+                h,
+                &IoRequest {
+                    nolock,
+                    ..request(IoOp::Read)
+                },
+            )?,
             ReadAt::Key { key, .. } => self.op(
                 h,
                 &IoRequest {
@@ -581,12 +684,28 @@ mod tests {
 
     #[test]
     fn describe_rows_become_columns() {
-        let row = |t: i64, l: i64, n: &str| vec![sql::Value::int(t), sql::Value::int(l), sql::Value::Str(n.into())];
-        let c = columns(&[row(497, 4, "ID"), row(484, 7 * 256 + 2, "AMT"), row(452, 10, "NAME")]);
+        let row = |t: i64, l: i64, n: &str| {
+            vec![
+                sql::Value::int(t),
+                sql::Value::int(l),
+                sql::Value::Str(n.into()),
+            ]
+        };
+        let c = columns(&[
+            row(497, 4, "ID"),
+            row(484, 7 * 256 + 2, "AMT"),
+            row(452, 10, "NAME"),
+        ]);
         assert_eq!(c[0].ty.kind, Kind::Integer);
         assert!(c[0].ty.nullable);
-        assert_eq!((c[1].ty.kind, c[1].ty.precision, c[1].ty.scale), (Kind::Decimal, 7, 2));
-        assert_eq!((c[2].ty.kind, c[2].ty.length, c[2].name.as_str()), (Kind::Char, 10, "NAME"));
+        assert_eq!(
+            (c[1].ty.kind, c[1].ty.precision, c[1].ty.scale),
+            (Kind::Decimal, 7, 2)
+        );
+        assert_eq!(
+            (c[2].ty.kind, c[2].ty.length, c[2].name.as_str()),
+            (Kind::Char, 10, "NAME")
+        );
     }
 
     #[test]

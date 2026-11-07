@@ -38,7 +38,17 @@ fn read_and_write_whole_members() {
         (150, 261_023, "             DSPLIB".to_string()),
         (300, 0, "             ENDPGM".to_string()),
     ];
-    let n = write_member(&mut t, JOB, src, name("HELLO"), &lines, Some(name("CLLE")), "Hello", NOW).unwrap();
+    let n = write_member(
+        &mut t,
+        JOB,
+        src,
+        name("HELLO"),
+        &lines,
+        Some(name("CLLE")),
+        "Hello",
+        NOW,
+    )
+    .unwrap();
     assert_eq!(n, 3);
     let m = read_member(&mut t, src, MemberSpec::Name(name("HELLO"))).unwrap();
     assert_eq!(m.srctype, "CLLE");
@@ -47,7 +57,17 @@ fn read_and_write_whole_members() {
     assert_eq!(m.records, lines);
     // Written again: replaced, the numbers kept as given.
     let fewer = vec![(500, 261_024, "PGM".to_string())];
-    write_member(&mut t, JOB, src, name("HELLO"), &fewer, Some(name("CLLE")), "Again", NOW).unwrap();
+    write_member(
+        &mut t,
+        JOB,
+        src,
+        name("HELLO"),
+        &fewer,
+        Some(name("CLLE")),
+        "Again",
+        NOW,
+    )
+    .unwrap();
     let m = read_member(&mut t, src, MemberSpec::Name(name("HELLO"))).unwrap();
     assert_eq!(m.records, fewer);
     assert_eq!(m.text, "Again");

@@ -13,9 +13,9 @@ use std::rc::Rc;
 use qsname::Name;
 use store::txn::Txn;
 
+use super::Active;
 use super::buffer::{self, Header, Image};
 use super::model::{Event, Time, Trigger, UpdateCondition};
-use super::Active;
 use crate::error::{DbError, Result};
 use crate::member::Member;
 
@@ -148,7 +148,13 @@ fn applies(t: &Trigger, row: &Row<'_>) -> bool {
 
 /// The calls `time`'s triggers of `active` make for `row` of `member`.
 #[must_use]
-pub fn calls(active: &Active, member: &Member, time: Time, row: &Row<'_>, commit_level: u8) -> Vec<Call> {
+pub fn calls(
+    active: &Active,
+    member: &Member,
+    time: Time,
+    row: &Row<'_>,
+    commit_level: u8,
+) -> Vec<Call> {
     let fmt = member.format();
     let h = Header {
         file: member.file.name(),
@@ -180,7 +186,12 @@ pub fn calls(active: &Active, member: &Member, time: Time, row: &Row<'_>, commit
 /// The error a failed call makes the operation end with.
 #[must_use]
 pub fn failed(call_file: Name, trigger: &str, before: bool, f: Failure) -> DbError {
-    DbError::TriggerFailed { file: call_file.to_string(), trigger: trigger.to_string(), before, failure: f }
+    DbError::TriggerFailed {
+        file: call_file.to_string(),
+        trigger: trigger.to_string(),
+        before,
+        failure: f,
+    }
 }
 
 /// Make `time`'s calls for `row` through `caller`, one at a time: a

@@ -18,9 +18,16 @@ use crate::error::{Result, SqlError};
 
 /// The libraries `schema` names: one, or a list's (`*LIBL`, `*USRLIBL`,
 /// `*CURLIB`, `*ALLUSR`, `*ALL`).
-pub(super) fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext, schema: &str) -> Result<Vec<ObjectId>> {
+pub(super) fn libraries(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    schema: &str,
+) -> Result<Vec<ObjectId>> {
     let all = |txn: &mut Txn<'_>| -> Result<Vec<ObjectId>> {
-        let mut v: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+        let mut v: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+            .into_iter()
+            .map(|(_, id)| id)
+            .collect();
         v.insert(0, ctx.qsys);
         Ok(v)
     };
@@ -28,9 +35,16 @@ pub(super) fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext, schema: &str) -> Re
         "*LIBL" => ctx.names.libl.clone(),
         "*CURLIB" => ctx.names.curlib.into_iter().collect(),
         "*USRLIBL" => {
-            let host = ctx.host.as_deref().and_then(super::host::SystemHost::library_list);
+            let host = ctx
+                .host
+                .as_deref()
+                .and_then(super::host::SystemHost::library_list);
             match host {
-                Some(l) => l.usr.iter().filter_map(|n| super::libl::library(txn, ctx, n)).collect(),
+                Some(l) => l
+                    .usr
+                    .iter()
+                    .filter_map(|n| super::libl::library(txn, ctx, n))
+                    .collect(),
                 None => ctx.names.libl.clone(),
             }
         }
@@ -40,7 +54,9 @@ pub(super) fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext, schema: &str) -> Re
             for id in all(txn)? {
                 let (_, h) = ops::read_header(txn, id)?;
                 let n = h.name.to_string();
-                if !n.starts_with('Q') || matches!(n.as_str(), "QGPL" | "QTEMP" | "QUSRSYS" | "QS36F") {
+                if !n.starts_with('Q')
+                    || matches!(n.as_str(), "QGPL" | "QTEMP" | "QUSRSYS" | "QS36F")
+                {
                     v.push(id);
                 }
             }
@@ -69,23 +85,37 @@ fn blank_or(b: &[u8]) -> String {
 pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     let schema = args.word("OBJECT_SCHEMA").unwrap_or_default();
     let list = args.word("OBJTYPELIST").unwrap_or_else(|| "*ALL".into());
-    let wanted: Vec<String> = list.split([' ', ',']).filter(|s| !s.is_empty()).map(str::to_string).collect();
+    let wanted: Vec<String> = list
+        .split([' ', ','])
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .collect();
     let all_types = wanted.iter().any(|t| t == "*ALL" || t == "*ALLSIMPLE");
     let mut codes = Vec::new();
     for t in &wanted {
         if t == "*ALL" || t == "*ALLSIMPLE" {
             continue;
         }
-        let ti = types::type_by_name(t).ok_or_else(|| SqlError::Coded { code: -443, state: "42616", what: format!("{t} is not an object type") })?;
+        let ti = types::type_by_name(t).ok_or_else(|| SqlError::Coded {
+            code: -443,
+            state: "42616",
+            what: format!("{t} is not an object type"),
+        })?;
         codes.push(ti.code);
     }
     if schema.starts_with('*') && codes.contains(&types::LIB) {
         // As pub400: libraries are listed from QSYS only.
-        return Err(SqlError::Coded { code: -443, state: "42616", what: "*LIB objects are listed with OBJECT_SCHEMA QSYS".into() });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "42616",
+            what: "*LIB objects are listed with OBJECT_SCHEMA QSYS".into(),
+        });
     }
     let name = args.word("OBJECT_NAME");
     for lib in libraries(txn, ctx, &schema)? {
-        let Ok((_, lh)) = ops::read_header(txn, lib) else { continue };
+        let Ok((_, lh)) = ops::read_header(txn, lib) else {
+            continue;
+        };
         let objs = match ops::list(txn, lib, None) {
             Ok(v) => v,
             Err(store::StoreError::NotAuthorized { .. }) => continue,
@@ -97,7 +127,9 @@ pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> 
             if !all_types && !codes.contains(&key.type_code) {
                 continue;
             }
-            let Some(ti) = types::type_by_code(key.type_code) else { continue };
+            let Some(ti) = types::type_by_code(key.type_code) else {
+                continue;
+            };
             // Members and spooled files are not objects a list shows.
             if matches!(ti.name, "*MBR" | "*SPLF" | "*SQLINF") {
                 continue;
@@ -105,14 +137,24 @@ pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> 
             if !matches(name.as_deref(), &key.name.to_string()) {
                 continue;
             }
-            let Ok((_, h)) = ops::read_header(txn, id) else { continue };
+            let Ok((_, h)) = ops::read_header(txn, id) else {
+                continue;
+            };
             row(txn, out, id, &h, ti.name, &lib_name, &lib_sql);
         }
     }
     Ok(())
 }
 
-fn row(txn: &mut Txn<'_>, out: &mut Out, id: ObjectId, h: &store::obj::header::ObjectHeader, ty: &str, lib: &str, lib_sql: &str) {
+fn row(
+    txn: &mut Txn<'_>,
+    out: &mut Out,
+    id: ObjectId,
+    h: &store::obj::header::ObjectHeader,
+    ty: &str,
+    lib: &str,
+    lib_sql: &str,
+) {
     out.row();
     let n: Name = h.name;
     out.text("OBJNAME", n.to_string());
@@ -124,7 +166,11 @@ fn row(txn: &mut Txn<'_>, out: &mut Out, id: ObjectId, h: &store::obj::header::O
     let text = blank_or(&h.text);
     out.text_or_null("OBJTEXT", &text);
     out.text_or_null("TEXT", &text);
-    let sql = if ty == "*FILE" { crate::exec::names::sql_name(txn, id) } else { n.to_string() };
+    let sql = if ty == "*FILE" {
+        crate::exec::names::sql_name(txn, id)
+    } else {
+        n.to_string()
+    };
     out.text("OBJLONGNAME", sql);
     out.stamp("LAST_USED_TIMESTAMP", h.last_used);
     out.yes("LAST_USED_OBJECT", h.last_used != 0);
@@ -154,7 +200,14 @@ fn row(txn: &mut Txn<'_>, out: &mut Out, id: ObjectId, h: &store::obj::header::O
     out.text("CREATED_SYSTEM_VERSION", h.release.to_string());
     out.text_or_null("PRIMARY_GROUP", &blank_or(&h.primary_group));
     out.yes("STORAGE_FREED", false);
-    out.text("OBJECT_DOMAIN", if h.domain == Domain::System { "*SYSTEM" } else { "*USER" });
+    out.text(
+        "OBJECT_DOMAIN",
+        if h.domain == Domain::System {
+            "*SYSTEM"
+        } else {
+            "*USER"
+        },
+    );
     let audit = blank_or(&h.audit);
     out.text_or_null("OBJECT_AUDIT", &audit);
     out.yes("OBJECT_SIGNED", h.signature.is_some());
@@ -181,7 +234,11 @@ pub fn library_info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut 
         if ignore {
             return Ok(());
         }
-        return Err(SqlError::Coded { code: -443, state: "38501", what: format!("library {name} not found") });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: format!("library {name} not found"),
+        });
     };
     let (_, lh) = ops::read_header(txn, lib)?;
     let objs = match ops::list(txn, lib, None) {
@@ -193,7 +250,9 @@ pub fn library_info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut 
     let mut size = (lh.size_pages + 1) * 4096;
     let mut complete = true;
     for (key, id) in objs {
-        if types::type_by_code(key.type_code).is_some_and(|t| matches!(t.name, "*MBR" | "*SPLF" | "*SQLINF")) {
+        if types::type_by_code(key.type_code)
+            .is_some_and(|t| matches!(t.name, "*MBR" | "*SPLF" | "*SQLINF"))
+        {
             continue;
         }
         count += 1;

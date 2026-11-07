@@ -38,10 +38,15 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             kex: algo::KEX.iter().map(|s| (*s).to_string()).collect(),
-            host_key: ["ssh-ed25519", "ecdsa-sha2-nistp256", "rsa-sha2-512", "rsa-sha2-256"]
-                .iter()
-                .map(|s| (*s).to_string())
-                .collect(),
+            host_key: [
+                "ssh-ed25519",
+                "ecdsa-sha2-nistp256",
+                "rsa-sha2-512",
+                "rsa-sha2-256",
+            ]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect(),
             ident: "SSH-2.0-QS400client_1".into(),
         }
     }
@@ -204,8 +209,8 @@ impl<R: Read, W: Write> Client<R, W> {
         let i_s = self.read_raw()?;
         let theirs = KexInit::decode(&i_s)?;
         let neg = algo::negotiate(&ours, &theirs)?;
-        let (state, q_c) =
-            ClientKex::start(&neg.kex).ok_or_else(|| SshError::Kex("method not supported".into()))?;
+        let (state, q_c) = ClientKex::start(&neg.kex)
+            .ok_or_else(|| SshError::Kex("method not supported".into()))?;
         let mut w = Writer::msg(msg::KEX_ECDH_INIT);
         w.bytes(&q_c);
         self.send(&w.finish())?;
@@ -220,8 +225,8 @@ impl<R: Read, W: Write> Client<R, W> {
         let k = state
             .finish(&q_s)
             .ok_or_else(|| SshError::Kex("the server's value is not valid".into()))?;
-        let host_key =
-            PublicKey::from_blob(&k_s).ok_or_else(|| SshError::Kex("host key not readable".into()))?;
+        let host_key = PublicKey::from_blob(&k_s)
+            .ok_or_else(|| SshError::Kex("host key not readable".into()))?;
         let server_ident = self.server_ident.clone();
         let h = kex::exchange_hash(&kex::HashInput {
             v_c: opts.ident.as_bytes(),
@@ -234,7 +239,9 @@ impl<R: Read, W: Write> Client<R, W> {
             k: &k,
         });
         if !host_key.signs_with(&neg.host_key) || !host_key.verify(&sig, &h) {
-            return Err(SshError::Kex("the host key signature does not verify".into()));
+            return Err(SshError::Kex(
+                "the host key signature does not verify".into(),
+            ));
         }
         self.host_key = host_key;
         self.session_id.clone_from(&h);
@@ -456,7 +463,10 @@ impl<R: Read, W: Write> Client<R, W> {
     pub fn send_data(&mut self, chan: u32, mut data: &[u8]) -> SshResult<()> {
         while !data.is_empty() {
             let (remote, window) = {
-                let c = self.chans.get(&chan).ok_or_else(|| proto("no such channel"))?;
+                let c = self
+                    .chans
+                    .get(&chan)
+                    .ok_or_else(|| proto("no such channel"))?;
                 (c.remote, c.window)
             };
             if window == 0 {

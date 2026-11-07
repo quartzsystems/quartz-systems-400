@@ -16,7 +16,8 @@ use qsweb::msg::{Kind, Message};
 
 use super::text;
 use crate::env::db::{
-    Column, Constraint, Db, DbObject, Index, ObjKind, Schema, SqlOptions, SqlOutcome, TableDesc, Trigger,
+    Column, Constraint, Db, DbObject, Index, ObjKind, Schema, SqlOptions, SqlOutcome, TableDesc,
+    Trigger,
 };
 use crate::util::secs;
 
@@ -66,7 +67,16 @@ fn obj(name: &str, text: &str, rows: u64, size10: u64, changed: u64) -> DbObject
 }
 
 #[allow(clippy::too_many_arguments)]
-fn col(name: &str, sys: &str, typ: &str, length: u32, scale: Option<u32>, nullable: bool, default: &str, text: &str) -> Column {
+fn col(
+    name: &str,
+    sys: &str,
+    typ: &str,
+    length: u32,
+    scale: Option<u32>,
+    nullable: bool,
+    default: &str,
+    text: &str,
+) -> Column {
     Column {
         name: name.into(),
         system_name: sys.into(),
@@ -82,35 +92,242 @@ fn col(name: &str, sys: &str, typ: &str, length: u32, scale: Option<u32>, nullab
 /// ASSETS' columns.
 fn asset_columns() -> Vec<Column> {
     vec![
-        col("ASSET_TAG", "ASSETTAG", "CHAR", 10, None, false, "", "Asset tag (primary key)"),
-        col("LOCATION", "LOCATION", "CHAR", 10, None, false, "", "Rack / site code"),
-        col("MANUFACTURER", "MFR", "VARCHAR", 40, None, false, "", "Manufacturer"),
+        col(
+            "ASSET_TAG",
+            "ASSETTAG",
+            "CHAR",
+            10,
+            None,
+            false,
+            "",
+            "Asset tag (primary key)",
+        ),
+        col(
+            "LOCATION",
+            "LOCATION",
+            "CHAR",
+            10,
+            None,
+            false,
+            "",
+            "Rack / site code",
+        ),
+        col(
+            "MANUFACTURER",
+            "MFR",
+            "VARCHAR",
+            40,
+            None,
+            false,
+            "",
+            "Manufacturer",
+        ),
         col("MODEL", "MODEL", "VARCHAR", 40, None, false, "", "Model"),
-        col("SERIAL", "SERIAL", "VARCHAR", 40, None, true, "NULL", "Serial number"),
-        col("ASSET_TYPE", "ASSETTYPE", "CHAR", 12, None, false, "'OTHER'", "Type code"),
-        col("STATUS", "STATUS", "CHAR", 8, None, false, "'ACTIVE'", "ACTIVE / SPARE / RETIRED"),
-        col("ACQUIRED", "ACQUIRED", "DATE", 4, None, true, "NULL", "Acquisition date"),
-        col("COST", "COST", "DECIMAL", 11, Some(2), true, "NULL", "Purchase cost"),
-        col("RACK_U", "RACKU", "SMALLINT", 2, None, true, "NULL", "Rack unit position"),
-        col("NOTES", "NOTES", "VARCHAR", 256, None, true, "NULL", "Short notes"),
-        col("CHANGED_TS", "CHANGEDTS", "TIMESTAMP", 10, None, false, "CURRENT TIMESTAMP", "Last change"),
+        col(
+            "SERIAL",
+            "SERIAL",
+            "VARCHAR",
+            40,
+            None,
+            true,
+            "NULL",
+            "Serial number",
+        ),
+        col(
+            "ASSET_TYPE",
+            "ASSETTYPE",
+            "CHAR",
+            12,
+            None,
+            false,
+            "'OTHER'",
+            "Type code",
+        ),
+        col(
+            "STATUS",
+            "STATUS",
+            "CHAR",
+            8,
+            None,
+            false,
+            "'ACTIVE'",
+            "ACTIVE / SPARE / RETIRED",
+        ),
+        col(
+            "ACQUIRED",
+            "ACQUIRED",
+            "DATE",
+            4,
+            None,
+            true,
+            "NULL",
+            "Acquisition date",
+        ),
+        col(
+            "COST",
+            "COST",
+            "DECIMAL",
+            11,
+            Some(2),
+            true,
+            "NULL",
+            "Purchase cost",
+        ),
+        col(
+            "RACK_U",
+            "RACKU",
+            "SMALLINT",
+            2,
+            None,
+            true,
+            "NULL",
+            "Rack unit position",
+        ),
+        col(
+            "NOTES",
+            "NOTES",
+            "VARCHAR",
+            256,
+            None,
+            true,
+            "NULL",
+            "Short notes",
+        ),
+        col(
+            "CHANGED_TS",
+            "CHANGEDTS",
+            "TIMESTAMP",
+            10,
+            None,
+            false,
+            "CURRENT TIMESTAMP",
+            "Last change",
+        ),
     ]
 }
 
 /// The twelve assets in service, as the prototype shows them.
 const IN_SERVICE: &[[&str; 8]] = &[
-    ["QS000101", "QS-HQ-R1", "QUANTA", "T4048-IX8", "QTFCEV2340021", "SWITCH", "ACTIVE", "2025-03-11"],
-    ["QS000102", "QS-HQ-R1", "QUANTA", "T4048-IX8", "QTFCEV2340022", "SWITCH", "ACTIVE", "2025-03-11"],
-    ["QS000110", "QS-HQ-R1", "EDGECORE", "AS5712-54X", "571254X2041B0019", "SWITCH", "ACTIVE", "2024-11-02"],
-    ["QS000111", "QS-HQ-R1", "EDGECORE", "AS5712-54X", "571254X2041B0020", "SWITCH", "ACTIVE", "2024-11-02"],
-    ["QS000201", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q33", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000202", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q34", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000203", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q35", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000210", "QS-HQ-R2", "DELL", "QLE2562", "BFE1234567", "ADAPTER", "ACTIVE", "2026-09-20"],
-    ["QS000302", "QS-HQ-R3", "WEIDMULLER", "UR20-FBC-EIP", "2024-11-00341", "IO-COUPLER", "ACTIVE", "2026-10-01"],
-    ["QS000401", "QS-BR1-R1", "DELL", "S4048-ON", "8H3K2P2", "SWITCH", "ACTIVE", "2024-09-08"],
-    ["QS000402", "QS-BR1-R1", "WATCHGUARD", "M370", "80BA0F2B1C33", "FIREWALL", "ACTIVE", "2024-09-08"],
-    ["QS000403", "QS-BR1-R1", "ARISTA", "7050SX-64", "JPE14210033", "SWITCH", "SPARE", "2023-05-02"],
+    [
+        "QS000101",
+        "QS-HQ-R1",
+        "QUANTA",
+        "T4048-IX8",
+        "QTFCEV2340021",
+        "SWITCH",
+        "ACTIVE",
+        "2025-03-11",
+    ],
+    [
+        "QS000102",
+        "QS-HQ-R1",
+        "QUANTA",
+        "T4048-IX8",
+        "QTFCEV2340022",
+        "SWITCH",
+        "ACTIVE",
+        "2025-03-11",
+    ],
+    [
+        "QS000110",
+        "QS-HQ-R1",
+        "EDGECORE",
+        "AS5712-54X",
+        "571254X2041B0019",
+        "SWITCH",
+        "ACTIVE",
+        "2024-11-02",
+    ],
+    [
+        "QS000111",
+        "QS-HQ-R1",
+        "EDGECORE",
+        "AS5712-54X",
+        "571254X2041B0020",
+        "SWITCH",
+        "ACTIVE",
+        "2024-11-02",
+    ],
+    [
+        "QS000201",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q33",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000202",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q34",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000203",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q35",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000210",
+        "QS-HQ-R2",
+        "DELL",
+        "QLE2562",
+        "BFE1234567",
+        "ADAPTER",
+        "ACTIVE",
+        "2026-09-20",
+    ],
+    [
+        "QS000302",
+        "QS-HQ-R3",
+        "WEIDMULLER",
+        "UR20-FBC-EIP",
+        "2024-11-00341",
+        "IO-COUPLER",
+        "ACTIVE",
+        "2026-10-01",
+    ],
+    [
+        "QS000401",
+        "QS-BR1-R1",
+        "DELL",
+        "S4048-ON",
+        "8H3K2P2",
+        "SWITCH",
+        "ACTIVE",
+        "2024-09-08",
+    ],
+    [
+        "QS000402",
+        "QS-BR1-R1",
+        "WATCHGUARD",
+        "M370",
+        "80BA0F2B1C33",
+        "FIREWALL",
+        "ACTIVE",
+        "2024-09-08",
+    ],
+    [
+        "QS000403",
+        "QS-BR1-R1",
+        "ARISTA",
+        "7050SX-64",
+        "JPE14210033",
+        "SWITCH",
+        "SPARE",
+        "2023-05-02",
+    ],
 ];
 
 /// ASSETS' 412 rows: the twelve in service, then 400 retired ones.
@@ -142,7 +359,12 @@ pub fn asset_rows() -> Vec<Vec<Option<String>>> {
             some(&format!("RT{:08}", 5_000_000 + i * 7)),
             some(kind),
             some("RETIRED"),
-            some(&format!("20{:02}-{:02}-{:02}", 15 + i % 6, 1 + i % 12, 1 + i % 28)),
+            some(&format!(
+                "20{:02}-{:02}-{:02}",
+                15 + i % 6,
+                1 + i % 12,
+                1 + i % 28
+            )),
             some(&format!("{}.00", 300 + (i % 40) * 25)),
             None,
             some("Retired"),
@@ -163,33 +385,61 @@ fn tables() -> Vec<Table> {
     let rows = asset_rows();
     vec![
         Table {
-            obj: obj("ASSETS", "Hardware assets", rows.len() as u64, 31, at(10, 29, 13, 58)),
+            obj: obj(
+                "ASSETS",
+                "Hardware assets",
+                rows.len() as u64,
+                31,
+                at(10, 29, 13, 58),
+            ),
             columns: asset_columns(),
             rows,
         },
         Table {
             obj: obj("LOCATIONS", "Racks and sites", 14, 1, at(9, 20, 10, 0)),
-            columns: simple(&[("LOCATION", "CHAR", 10, "Rack / site code"), ("SITE", "VARCHAR", 40, "Site")]),
+            columns: simple(&[
+                ("LOCATION", "CHAR", 10, "Rack / site code"),
+                ("SITE", "VARCHAR", 40, "Site"),
+            ]),
             rows: Vec::new(),
         },
         Table {
             obj: obj("MANUFACTURERS", "Vendors", 38, 1, at(9, 14, 12, 11)),
-            columns: simple(&[("MANUFACTURER", "VARCHAR", 40, "Manufacturer"), ("SUPPORT", "VARCHAR", 80, "Support contact")]),
+            columns: simple(&[
+                ("MANUFACTURER", "VARCHAR", 40, "Manufacturer"),
+                ("SUPPORT", "VARCHAR", 80, "Support contact"),
+            ]),
             rows: Vec::new(),
         },
         Table {
-            obj: obj("MOVEMENTS", "Asset movement log", 2_207, 94, at(10, 29, 6, 14)),
-            columns: simple(&[("ASSET_TAG", "CHAR", 10, "Asset tag"), ("FROM_LOC", "CHAR", 10, "From"), ("TO_LOC", "CHAR", 10, "To")]),
+            obj: obj(
+                "MOVEMENTS",
+                "Asset movement log",
+                2_207,
+                94,
+                at(10, 29, 6, 14),
+            ),
+            columns: simple(&[
+                ("ASSET_TAG", "CHAR", 10, "Asset tag"),
+                ("FROM_LOC", "CHAR", 10, "From"),
+                ("TO_LOC", "CHAR", 10, "To"),
+            ]),
             rows: Vec::new(),
         },
         Table {
             obj: obj("CONTRACTS", "Support contracts", 27, 2, at(10, 2, 15, 30)),
-            columns: simple(&[("CONTRACT", "CHAR", 12, "Contract number"), ("MANUFACTURER", "VARCHAR", 40, "Vendor")]),
+            columns: simple(&[
+                ("CONTRACT", "CHAR", 12, "Contract number"),
+                ("MANUFACTURER", "VARCHAR", 40, "Vendor"),
+            ]),
             rows: Vec::new(),
         },
         Table {
             obj: obj("NOTES", "Free text notes", 1_118, 740, at(10, 28, 17, 2)),
-            columns: simple(&[("ASSET_TAG", "CHAR", 10, "Asset tag"), ("NOTE", "VARCHAR", 4000, "Note")]),
+            columns: simple(&[
+                ("ASSET_TAG", "CHAR", 10, "Asset tag"),
+                ("NOTE", "VARCHAR", 4000, "Note"),
+            ]),
             rows: Vec::new(),
         },
     ]
@@ -197,21 +447,38 @@ fn tables() -> Vec<Table> {
 
 /// The schemas.
 fn schemas() -> Vec<Schema> {
-    let s = |name: &str, text: &str, owner: &str, journal: &str, size10: u64, m: u32, d: u32| Schema {
-        name: name.into(),
-        text: text.into(),
-        owner: owner.into(),
-        journal: journal.into(),
-        size: mb10(size10),
-        created: secs(2026, m, d, 9, 0, 0),
-    };
+    let s =
+        |name: &str, text: &str, owner: &str, journal: &str, size10: u64, m: u32, d: u32| Schema {
+            name: name.into(),
+            text: text.into(),
+            owner: owner.into(),
+            journal: journal.into(),
+            size: mb10(size10),
+            created: secs(2026, m, d, 9, 0, 0),
+        };
     vec![
-        s("HLINV", "Homelab inventory", "TESTUSER", "HLINV/QSQJRN", 881, 9, 14),
+        s(
+            "HLINV",
+            "Homelab inventory",
+            "TESTUSER",
+            "HLINV/QSQJRN",
+            881,
+            9,
+            14,
+        ),
         s("PAYROLL", "Payroll", "QSECOFR", "PAYROLL/QSQJRN", 412, 3, 2),
         s("QGPL", "General purpose library", "QSYS", "", 1_204, 1, 1),
         s("QSYS2", "System catalog", "QSYS", "", 3_310, 1, 1),
         s("QUSRSYS", "System user objects", "QSYS", "", 960, 1, 1),
-        s("WEBSTORE", "Web store", "WEBADM", "WEBSTORE/QSQJRN", 2_150, 6, 30),
+        s(
+            "WEBSTORE",
+            "Web store",
+            "WEBADM",
+            "WEBSTORE/QSQJRN",
+            2_150,
+            6,
+            30,
+        ),
     ]
 }
 
@@ -253,7 +520,9 @@ fn others(kind: ObjKind) -> Vec<DbObject> {
 
 /// Message `id` from the fixture's texts.
 pub fn msg(kind: Kind, id: &str, data: &[&str]) -> Message {
-    let t = text::second_level(id, data).map(|s| s.text).unwrap_or_default();
+    let t = text::second_level(id, data)
+        .map(|s| s.text)
+        .unwrap_or_default();
     Message::new(kind, id, &t).with_data(data)
 }
 
@@ -262,7 +531,12 @@ impl FixtureDb {
         if schema != "HLINV" {
             return None;
         }
-        self.tables.lock().expect("tables").iter().find(|t| t.obj.name == table).cloned()
+        self.tables
+            .lock()
+            .expect("tables")
+            .iter()
+            .find(|t| t.obj.name == table)
+            .cloned()
     }
 }
 
@@ -272,7 +546,10 @@ impl Db for FixtureDb {
     }
 
     fn sql_schemas(&self, _user: &str) -> Vec<String> {
-        ["HLINV", "QGPL", "QSYS2", "WEBSTORE", "PAYROLL"].iter().map(ToString::to_string).collect()
+        ["HLINV", "QGPL", "QSYS2", "WEBSTORE", "PAYROLL"]
+            .iter()
+            .map(ToString::to_string)
+            .collect()
     }
 
     fn objects(&self, _user: &str, schema: &str, kind: ObjKind) -> Vec<DbObject> {
@@ -280,7 +557,13 @@ impl Db for FixtureDb {
             return Vec::new();
         }
         match kind {
-            ObjKind::Tables => self.tables.lock().expect("tables").iter().map(|t| t.obj.clone()).collect(),
+            ObjKind::Tables => self
+                .tables
+                .lock()
+                .expect("tables")
+                .iter()
+                .map(|t| t.obj.clone())
+                .collect(),
             k => others(k),
         }
     }
@@ -288,7 +571,11 @@ impl Db for FixtureDb {
     fn table(&self, _user: &str, schema: &str, table: &str) -> Option<TableDesc> {
         let t = self.find(schema, table)?;
         let assets = table == "ASSETS";
-        let key = t.columns.first().map(|c| c.name.clone()).unwrap_or_default();
+        let key = t
+            .columns
+            .first()
+            .map(|c| c.name.clone())
+            .unwrap_or_default();
         let mut constraints = vec![Constraint {
             name: format!("{table}_PK"),
             kind: "PRIMARY KEY".into(),
@@ -318,8 +605,18 @@ impl Db for FixtureDb {
                 text: text.into(),
             };
             indexes = vec![
-                ix("ASSETS_IX1", "LOCATION, ASSET_TAG", false, "Assets by location"),
-                ix("ASSETS_IX2", "MANUFACTURER, MODEL", false, "Assets by model"),
+                ix(
+                    "ASSETS_IX1",
+                    "LOCATION, ASSET_TAG",
+                    false,
+                    "Assets by location",
+                ),
+                ix(
+                    "ASSETS_IX2",
+                    "MANUFACTURER, MODEL",
+                    false,
+                    "Assets by model",
+                ),
                 ix("ASSETS_SERIAL", "SERIAL", true, "Assets by serial"),
             ];
             triggers = vec![Trigger {
@@ -378,11 +675,21 @@ impl Db for FixtureDb {
             };
             let _ = write!(out, ",\n  CONSTRAINT {schema}.{} {body}", c.name);
         }
-        let _ = write!(out, ");\n\nLABEL ON TABLE {schema}.{table} IS '{}';\n", t.table.text.replace('\'', "''"));
+        let _ = write!(
+            out,
+            ");\n\nLABEL ON TABLE {schema}.{table} IS '{}';\n",
+            t.table.text.replace('\'', "''")
+        );
         Ok(out)
     }
 
-    fn run_sql(&self, user: &str, statement: &str, opts: &SqlOptions, max_rows: Option<usize>) -> SqlOutcome {
+    fn run_sql(
+        &self,
+        user: &str,
+        statement: &str,
+        opts: &SqlOptions,
+        max_rows: Option<usize>,
+    ) -> SqlOutcome {
         self.ran.lock().expect("ran").push(statement.to_string());
         let mut tables = self.tables.lock().expect("tables");
         let mut out = sql::run(&mut tables, user, statement, opts, max_rows);
@@ -390,7 +697,12 @@ impl Db for FixtureDb {
         out
     }
 
-    fn explain(&self, _user: &str, statement: &str, opts: &SqlOptions) -> Result<Vec<String>, Message> {
+    fn explain(
+        &self,
+        _user: &str,
+        statement: &str,
+        opts: &SqlOptions,
+    ) -> Result<Vec<String>, Message> {
         let tables = self.tables.lock().expect("tables");
         sql::explain(&tables, statement, opts)
     }

@@ -48,12 +48,19 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
     let mut message: Option<String> = None;
     loop {
         let rows: Vec<Row> = (0..r.elements.len())
-            .map(|i| Row::of(u32::try_from(i + 1).unwrap_or(0) * 10, &r.elements[i], overlaps(r, i)))
+            .map(|i| {
+                Row::of(
+                    u32::try_from(i + 1).unwrap_or(0) * 10,
+                    &r.elements[i],
+                    overlaps(r, i),
+                )
+            })
             .collect();
         if top >= rows.len() {
             top = 0;
         }
-        let screen = fscreen::work_with_fields(&r.name, &rows, top, &roll.to_string(), message.as_deref());
+        let screen =
+            fscreen::work_with_fields(&r.name, &rows, top, &roll.to_string(), message.as_deref());
         message = None;
         let Some(a) = ui::show(surface, &screen) else {
             return Flow::Gone;
@@ -101,7 +108,11 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
                 if valid_name(&v) {
                     *name = v;
                 } else {
-                    message = Some(crate::display::msgline::say(surface.host(), "CPD9BDB", &[&v]));
+                    message = Some(crate::display::msgline::say(
+                        surface.host(),
+                        "CPD9BDB",
+                        &[&v],
+                    ));
                 }
             }
         }
@@ -117,7 +128,10 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
             .collect();
         if order.windows(2).any(|w| w[0].0 > w[1].0) {
             order.sort_by_key(|(n, i)| (*n, *i));
-            let mut slots: Vec<Option<Element>> = std::mem::take(&mut r.elements).into_iter().map(Some).collect();
+            let mut slots: Vec<Option<Element>> = std::mem::take(&mut r.elements)
+                .into_iter()
+                .map(Some)
+                .collect();
             for (_, i) in &order {
                 if let Some(e) = slots[*i].take() {
                     r.elements.push(e);
@@ -126,24 +140,47 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
             r.changed = true;
         }
         // The add lines.
-        for (name, usage) in [("ADDH", Usage::Hidden), ("ADDM", Usage::Message), ("ADDP", Usage::Program)] {
+        for (name, usage) in [
+            ("ADDH", Usage::Hidden),
+            ("ADDM", Usage::Message),
+            ("ADDP", Usage::Program),
+        ] {
             let n = a.up(name);
             if n.is_empty() {
                 continue;
             }
             let Some((len, dec)) = length(&a.up(&format!("{name}LEN"))) else {
-                message = Some(crate::display::msgline::say(surface.host(), "CPD9C88", &[&n]));
+                message = Some(crate::display::msgline::say(
+                    surface.host(),
+                    "CPD9C88",
+                    &[&n],
+                ));
                 continue;
             };
-            if !valid_name(&n) || taken.contains(&n) || r.elements.iter().any(|e| e.name() == Some(&n)) {
-                message = Some(crate::display::msgline::say(surface.host(), "CPD9C89", &[&n]));
+            if !valid_name(&n)
+                || taken.contains(&n)
+                || r.elements.iter().any(|e| e.name() == Some(&n))
+            {
+                message = Some(crate::display::msgline::say(
+                    surface.host(),
+                    "CPD9C89",
+                    &[&n],
+                ));
                 continue;
             }
-            r.elements.push(Element::field(&n, usage, dec.is_some(), len, dec.unwrap_or(0), None));
+            r.elements.push(Element::field(
+                &n,
+                usage,
+                dec.is_some(),
+                len,
+                dec.unwrap_or(0),
+                None,
+            ));
             r.changed = true;
         }
         // Options, last entry first so deletes keep the indexes.
-        let mut opts: Vec<(usize, String)> = a.options.iter().map(|(i, o)| (*i, o.clone())).collect();
+        let mut opts: Vec<(usize, String)> =
+            a.options.iter().map(|(i, o)| (*i, o.clone())).collect();
         opts.sort_by_key(|x| std::cmp::Reverse(x.0));
         for (i, opt) in opts {
             if i >= r.elements.len() {
@@ -158,7 +195,11 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
                 "2" => {
                     let e = &mut r.elements[i];
                     let what = e.name().unwrap_or("constant").to_string();
-                    let f = e.lines.iter().position(|l| !l.is_comment()).unwrap_or(e.lines.len());
+                    let f = e
+                        .lines
+                        .iter()
+                        .position(|l| !l.is_comment())
+                        .unwrap_or(e.lines.len());
                     let current: Vec<String> = e.lines[..f].iter().map(Line::text).collect();
                     match comments_display(surface, "Field comments", &what, &current) {
                         Err(_) => return Flow::Gone,
@@ -175,7 +216,13 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
                     r.elements.remove(i);
                     r.changed = true;
                 }
-                other => message = Some(crate::display::msgline::say(surface.host(), "CPD6A7C", &[&other])),
+                other => {
+                    message = Some(crate::display::msgline::say(
+                        surface.host(),
+                        "CPD6A7C",
+                        &[&other],
+                    ))
+                }
             }
         }
     }

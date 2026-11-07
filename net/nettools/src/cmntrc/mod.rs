@@ -311,12 +311,20 @@ impl Trace {
         b.push(h.status.number());
         b.extend_from_slice(&self.numbered.to_be_bytes());
         b.extend_from_slice(&self.collected.to_be_bytes());
-        b.extend_from_slice(&u32::try_from(self.records.len()).unwrap_or(u32::MAX).to_be_bytes());
+        b.extend_from_slice(
+            &u32::try_from(self.records.len())
+                .unwrap_or(u32::MAX)
+                .to_be_bytes(),
+        );
         for r in &self.records {
             b.extend_from_slice(&r.time.to_be_bytes());
             b.push(u8::from(r.sent));
             b.extend_from_slice(&r.len.to_be_bytes());
-            b.extend_from_slice(&u32::try_from(r.data.len()).unwrap_or(u32::MAX).to_be_bytes());
+            b.extend_from_slice(
+                &u32::try_from(r.data.len())
+                    .unwrap_or(u32::MAX)
+                    .to_be_bytes(),
+            );
             b.extend_from_slice(&r.data);
         }
         b
@@ -354,7 +362,12 @@ impl Trace {
             let len = c.u32()?;
             let dl = c.u32()? as usize;
             let data = c.take(dl)?.to_vec();
-            let r = Record { time, sent, len, data };
+            let r = Record {
+                time,
+                sent,
+                len,
+                data,
+            };
             used += r.size();
             records.push_back(r);
         }
@@ -399,7 +412,10 @@ struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     fn take(&mut self, n: usize) -> Result<&'a [u8], BadTrace> {
-        let s = self.b.get(self.at..self.at + n).ok_or(BadTrace("truncated"))?;
+        let s = self
+            .b
+            .get(self.at..self.at + n)
+            .ok_or(BadTrace("truncated"))?;
         self.at += n;
         Ok(s)
     }
@@ -407,13 +423,25 @@ impl<'a> Cursor<'a> {
         Ok(self.take(1)?[0])
     }
     fn u16(&mut self) -> Result<u16, BadTrace> {
-        Ok(u16::from_be_bytes(self.take(2)?.try_into().map_err(|_| BadTrace("truncated"))?))
+        Ok(u16::from_be_bytes(
+            self.take(2)?
+                .try_into()
+                .map_err(|_| BadTrace("truncated"))?,
+        ))
     }
     fn u32(&mut self) -> Result<u32, BadTrace> {
-        Ok(u32::from_be_bytes(self.take(4)?.try_into().map_err(|_| BadTrace("truncated"))?))
+        Ok(u32::from_be_bytes(
+            self.take(4)?
+                .try_into()
+                .map_err(|_| BadTrace("truncated"))?,
+        ))
     }
     fn u64(&mut self) -> Result<u64, BadTrace> {
-        Ok(u64::from_be_bytes(self.take(8)?.try_into().map_err(|_| BadTrace("truncated"))?))
+        Ok(u64::from_be_bytes(
+            self.take(8)?
+                .try_into()
+                .map_err(|_| BadTrace("truncated"))?,
+        ))
     }
     fn str(&mut self) -> Result<String, BadTrace> {
         let n = usize::from(self.u16()?);
@@ -459,7 +487,10 @@ mod tests {
 
     #[test]
     fn stops_when_full_and_asked_to() {
-        let mut t = Trace::new(Header { wrap: false, ..header() });
+        let mut t = Trace::new(Header {
+            wrap: false,
+            ..header()
+        });
         let mut n = 0;
         while t.push(n, true, &[0u8; 84]) {
             n += 1;
@@ -472,7 +503,11 @@ mod tests {
 
     #[test]
     fn direction_and_user_data() {
-        let mut t = Trace::new(Header { dir: Direction::Received, usrdta: Some(4), ..header() });
+        let mut t = Trace::new(Header {
+            dir: Direction::Received,
+            usrdta: Some(4),
+            ..header()
+        });
         t.push(1, true, &[1, 2, 3, 4, 5, 6]);
         t.push(2, false, &[1, 2, 3, 4, 5, 6]);
         assert_eq!(t.records.len(), 1);
@@ -482,7 +517,10 @@ mod tests {
 
     #[test]
     fn byte_form_round_trips() {
-        let mut t = Trace::new(Header { usrdta: Some(64), ..header() });
+        let mut t = Trace::new(Header {
+            usrdta: Some(64),
+            ..header()
+        });
         t.push(5, true, &[0xaa; 70]);
         t.push(6, false, &[0xbb; 20]);
         t.header.status = Status::Inactive;
@@ -494,6 +532,9 @@ mod tests {
         let mut more = b.clone();
         more.push(0);
         assert!(Trace::decode(&more).is_err());
-        assert_eq!(Trace::decode(b"QSCMNTRX\0\x01"), Err(BadTrace("not a trace")));
+        assert_eq!(
+            Trace::decode(b"QSCMNTRX\0\x01"),
+            Err(BadTrace("not a trace"))
+        );
     }
 }

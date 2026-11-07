@@ -11,16 +11,16 @@ use std::io::Cursor;
 use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
-use db::file::{self, CreateFileOpts};
 use db::Member;
+use db::file::{self, CreateFileOpts};
 use dds::{CompileOpts, MapRefs, NoRefs, Source, compile_lf, compile_pf};
 use jrn::journal::{CrtJrnOpts, Journal, crtjrn};
 use jrn::rcv::{CrtJrnRcvOpts, crtjrnrcv};
 use qsname::{MemberSpec, Name};
-use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use saverst::{
     AllowAll, Hooks, MbrOpt, RestoreOptions, RstOption, SaveOptions, msg, restore, save_library,
 };
+use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use store::obj::dtaara::{self, DataAreaType, DataAreaValue};
 use store::obj::{CreateParams, JobHandle, LockState, ObjectId, ops, types, usridx, usrspc};
 use store::{FormatParams, Store, StoreConfig, Txn};
@@ -117,13 +117,22 @@ fn build(sys: &mut Sys) -> ObjectId {
     )
     .unwrap();
     let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
-    for (n, who) in [("0000003", "Carol"), ("0000001", "Alice"), ("0000002", "Bob")] {
+    for (n, who) in [
+        ("0000003", "Carol"),
+        ("0000001", "Alice"),
+        ("0000002", "Bob"),
+    ] {
         m.write_new(&mut t, &record(n, who), &[]).unwrap();
     }
     let mut refs = MapRefs::default();
     refs.insert_pf("QSTEST", "CUST", &pf);
     let lf_src = [
-        at(&[(6, "A"), (17, "R"), (19, "CUSREC"), (45, "PFILE(QSTEST/CUST)")]),
+        at(&[
+            (6, "A"),
+            (17, "R"),
+            (19, "CUSREC"),
+            (45, "PFILE(QSTEST/CUST)"),
+        ]),
         at(&[(6, "A"), (17, "K"), (19, "NAME")]),
     ];
     let (source, _) = Source::from_text(&lf_src.join("\n"));
@@ -215,7 +224,12 @@ fn save(sys: &mut Sys, job: u64, opts: &SaveOptions) -> (Vec<u8>, saverst::SaveR
     (bytes, r)
 }
 
-fn rst(sys: &mut Sys, bytes: &[u8], hooks: &dyn Hooks, opts: &RestoreOptions) -> saverst::RestoreReport {
+fn rst(
+    sys: &mut Sys,
+    bytes: &[u8],
+    hooks: &dyn Hooks,
+    opts: &RestoreOptions,
+) -> saverst::RestoreReport {
     let mut r = Reader::new(Cursor::new(bytes)).unwrap();
     restore(&mut sys.store, JobHandle(1), hooks, sys.qsys, &mut r, opts).unwrap()
 }
@@ -233,7 +247,10 @@ fn names_by_lf(t: &mut Txn<'_>, lf: ObjectId) -> Vec<String> {
     let mut m = Member::open_by(t, lf, MemberSpec::First).unwrap();
     m.ensure_path(t, &mut |_, _| {}).unwrap();
     let mut out = Vec::new();
-    for k in m.keys(t, Bound::Unbounded, Bound::Unbounded, usize::MAX).unwrap() {
+    for k in m
+        .keys(t, Bound::Unbounded, Bound::Unbounded, usize::MAX)
+        .unwrap()
+    {
         let slot = m.read_entry(t, &k).unwrap().unwrap();
         out.push(ccsid::decode_trimmed(&slot.record[7..]));
     }
@@ -267,7 +284,18 @@ fn restore_to_a_renamed_library() {
     // IBM's save order: journals, user indexes, data areas, user spaces,
     // physical then logical files, receivers last.
     let order: Vec<&str> = rep.objects.iter().map(|o| o.name.as_str()).collect();
-    assert_eq!(order, ["QSTJRN", "IX1", "DA1", "US1", "CUST", "CUSBYNAME", "QSTRCV001"]);
+    assert_eq!(
+        order,
+        [
+            "QSTJRN",
+            "IX1",
+            "DA1",
+            "US1",
+            "CUST",
+            "CUSBYNAME",
+            "QSTRCV001"
+        ]
+    );
 
     let r = rst(&mut sys, &bytes, &AllowAll, &opts_to("QSTEST2"));
     assert_eq!(r.not_restored(), 0, "{:?}", r.objects);
@@ -358,7 +386,12 @@ fn option_and_mbropt_over_existing_objects() {
     // journal and its attached receiver are never restored over.
     let r = rst(&mut sys, &bytes, &AllowAll, &RestoreOptions::default());
     let refused: Vec<_> = r.objects.iter().filter_map(|o| o.msgid).collect();
-    assert_eq!(refused, [msg::JOURNAL_EXISTS, msg::RECEIVER_ATTACHED], "{:?}", r.objects);
+    assert_eq!(
+        refused,
+        [msg::JOURNAL_EXISTS, msg::RECEIVER_ATTACHED],
+        "{:?}",
+        r.objects
+    );
     let mut t = sys.store.begin().unwrap();
     assert_eq!(find(&mut t, q, "QSTEST", "CUST", types::FILE), Some(cust));
     let lf = find(&mut t, q, "QSTEST", "CUSBYNAME", types::FILE).unwrap();
@@ -397,7 +430,10 @@ fn objects_in_use_are_not_saved_or_restored() {
     let q = sys.qsys;
     let mut t = sys.store.begin().unwrap();
     let da = find(&mut t, q, "QSTEST", "DA1", types::DTAARA).unwrap();
-    t.store().locks_mut().lock(JobHandle(9), da, LockState::Exclusive).unwrap();
+    t.store()
+        .locks_mut()
+        .lock(JobHandle(9), da, LockState::Exclusive)
+        .unwrap();
     t.abort();
     let (bytes, rep) = save(&mut sys, 1, &SaveOptions::default());
     let d = rep.objects.iter().find(|o| o.name == "DA1").unwrap();
@@ -408,7 +444,10 @@ fn objects_in_use_are_not_saved_or_restored() {
     let us = find(&mut t, q, "QSTEST", "US1", types::USRSPC).unwrap();
     assert!(t.store().locks().holders(us).is_empty());
     let cust = find(&mut t, q, "QSTEST", "CUST", types::FILE).unwrap();
-    t.store().locks_mut().lock(JobHandle(9), cust, LockState::SharedRead).unwrap();
+    t.store()
+        .locks_mut()
+        .lock(JobHandle(9), cust, LockState::SharedRead)
+        .unwrap();
     t.abort();
     let r = rst(&mut sys, &bytes, &AllowAll, &RestoreOptions::default());
     let c = r.objects.iter().find(|o| o.name == "CUST").unwrap();
@@ -428,17 +467,40 @@ fn output_queues_carry_their_spooled_files() {
     let mut sys = system();
     let lib = build(&mut sys);
     let mut t = sys.store.begin().unwrap();
-    ops::create(&mut t, &CreateParams { by_system: true, ..params(lib, "OQ", types::OUTQ) }).unwrap();
+    ops::create(
+        &mut t,
+        &CreateParams {
+            by_system: true,
+            ..params(lib, "OQ", types::OUTQ)
+        },
+    )
+    .unwrap();
     t.commit().unwrap();
     let mut w = Writer::new(Vec::new(), &header()).unwrap();
     let opts = SaveOptions {
         spool: true,
         ..SaveOptions::default()
     };
-    save_library(&mut sys.store, JobHandle(1), &Spool, sys.qsys, "QSTEST", &opts, &mut w).unwrap();
+    save_library(
+        &mut sys.store,
+        JobHandle(1),
+        &Spool,
+        sys.qsys,
+        "QSTEST",
+        &opts,
+        &mut w,
+    )
+    .unwrap();
     let (_, bytes) = w.finish(0).unwrap();
     let r = rst(&mut sys, &bytes, &AllowAll, &opts_to("QSTEST5"));
-    assert_eq!(r.spool, [("QSTEST5".to_string(), "OQ".to_string(), b"spooled bytes".to_vec())]);
+    assert_eq!(
+        r.spool,
+        [(
+            "QSTEST5".to_string(),
+            "OQ".to_string(),
+            b"spooled bytes".to_vec()
+        )]
+    );
 }
 
 struct NoProfiles;

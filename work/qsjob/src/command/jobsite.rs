@@ -85,15 +85,16 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RCLRSC" => return Ok(rclrsc(job, host)),
         // Lists with no text form: a display is needed.
         "WRKF" | "WRKMSGQ" => return Err(Fail::no_display(&r.name)),
-        "STRTCP" | "ENDTCP" | "ENDTCPABN" | "WRKSRVTBLE" | "WRKPCLTBLE" | "WRKNETTBLE" | "CFGTCP"
-        | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN" | "CFGTCPSMTP"
-        | "CFGTCPPTP" => {
+        "STRTCP" | "ENDTCP" | "ENDTCPABN" | "WRKSRVTBLE" | "WRKPCLTBLE" | "WRKNETTBLE"
+        | "CFGTCP" | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN"
+        | "CFGTCPSMTP" | "CFGTCPPTP" => {
             if let Some(res) = super::tcp::run(job, host, r) {
                 return res;
             }
         }
         // --- SNTP, LPD, LPR and mail out (command/netcmd.rs)
-        "CHGNTPA" | "CHGLPDA" | "CHGQAPA" | "CHGHTTPA" | "CHGSMTPA" | "SNDTCPSPLF" | "LPR" | "SNDSMTPEMM" => {
+        "CHGNTPA" | "CHGLPDA" | "CHGQAPA" | "CHGHTTPA" | "CHGSMTPA" | "SNDTCPSPLF" | "LPR"
+        | "SNDSMTPEMM" => {
             if let Some(res) = super::netcmd::run(job, host, r) {
                 return res;
             }
@@ -165,7 +166,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     }
     // A display in a job that shows panels never falls back to text.
     if sys_cpps::inventory::is_display(&r.name) && crate::panels::shows_panels(host, r) {
-        return Err(Fail::check(&r.name, format!("no panel answered {}", r.text())));
+        return Err(Fail::check(
+            &r.name,
+            format!("no panel answered {}", r.text()),
+        ));
     }
     // A panel's command in a job that shows none: the service's text.
     if sys_cpps::inventory::in_service_too(&r.name) {
@@ -392,7 +396,12 @@ fn pad32(b: &mut Vec<u8>) {
 /// `CALL PGM(LIB/NAME) PARM(values)`: character values as typed (at
 /// least 32 bytes, blank-padded), numbers as `packed(15,5)`, hex as
 /// bytes.
-fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms, outcome: &mut Outcome) -> Result<String, Fail> {
+fn call(
+    job: &mut Job,
+    _host: &Host,
+    parms: &cmd::Parms,
+    outcome: &mut Outcome,
+) -> Result<String, Fail> {
     let (name, lib) = parms.qual("PGM");
     let lib = if lib.is_empty() {
         "*LIBL".to_string()
@@ -453,7 +462,11 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms, outcome: &mut Outcome) 
         let diag = Fail::msg("CPD0171", &[(&name, 10), (&lib, 10)]);
         super::log(job, &diag.msgid, &diag.data, qir::MsgType::Diag, None);
         let esc = Fail::msg("CPF0001", &[("CALL", 10)]);
-        let text = format!("{out}{}{}", super::shown(job, &diag), super::shown(job, &esc));
+        let text = format!(
+            "{out}{}{}",
+            super::shown(job, &diag),
+            super::shown(job, &esc)
+        );
         outcome.diag = Some(diag);
         return Err(Fail { text, ..esc });
     }
@@ -480,7 +493,13 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms, outcome: &mut Outcome) 
     // CALL as it would on IBM i.
     let native = (lib == "QSYS" || lib == "*LIBL") && job.natives.contains_key(name.as_str());
     if native
-        && let Some(m) = job.ext_msgq.msgs.iter().skip(ext_before).rev().find(|m| m.msg_type == qir::MsgType::Escape)
+        && let Some(m) = job
+            .ext_msgq
+            .msgs
+            .iter()
+            .skip(ext_before)
+            .rev()
+            .find(|m| m.msg_type == qir::MsgType::Escape)
     {
         let (msgid, data) = (m.msgid.clone(), m.data.clone());
         // The first diagnostic before it is what a message line shows
@@ -491,9 +510,20 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms, outcome: &mut Outcome) 
             .iter()
             .skip(ext_before)
             .find(|m| m.msg_type == qir::MsgType::Diag)
-            .map(|d| Fail { msgid: d.msgid.clone(), data: d.data.clone(), text: String::new() });
-        let f = Fail { msgid, data, text: String::new() };
-        return Err(Fail { text: format!("{out}{}", super::shown(job, &f)), ..f });
+            .map(|d| Fail {
+                msgid: d.msgid.clone(),
+                data: d.data.clone(),
+                text: String::new(),
+            });
+        let f = Fail {
+            msgid,
+            data,
+            text: String::new(),
+        };
+        return Err(Fail {
+            text: format!("{out}{}", super::shown(job, &f)),
+            ..f
+        });
     }
     for (i, b) in buffers.iter().enumerate() {
         if b.iter().all(u8::is_ascii_graphic) {
@@ -899,7 +929,10 @@ fn rtvcfgsts(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
         return Err(Fail {
             msgid: msgid.into(),
             data: cmd::error::data(&[(&name, 10)]),
-            text: format!("{msgid} {} {name} not found.", ty.trim_start_matches('*').to_ascii_lowercase()),
+            text: format!(
+                "{msgid} {} {name} not found.",
+                ty.trim_start_matches('*').to_ascii_lowercase()
+            ),
         });
     };
     let values = [("STSCDE", num(i64::from(code))), ("STS", chars(&text))];

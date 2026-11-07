@@ -16,8 +16,8 @@ use std::time::Duration;
 
 use qap_proto::ops::event;
 use qap_proto::ops::spool::{
-    DeviceType, MoveSpooledFile, SpoolChange, SpoolStatus, SpoolTarget, SpooledFileChanged, SpooledFileId,
-    SpooledFileRef, WatchSpool,
+    DeviceType, MoveSpooledFile, SpoolChange, SpoolStatus, SpoolTarget, SpooledFileChanged,
+    SpooledFileId, SpooledFileRef, WatchSpool,
 };
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Envelope, Kind, Op, Service, Status};
@@ -48,11 +48,15 @@ fn q(library: &str, name: &str) -> ObjectName {
 }
 
 fn queue(library: &str, name: &str) -> SpoolTarget {
-    SpoolTarget::Queue { outq: q(library, name) }
+    SpoolTarget::Queue {
+        outq: q(library, name),
+    }
 }
 
 fn user(profile: &str) -> SpoolTarget {
-    SpoolTarget::User { profile: profile.into() }
+    SpoolTarget::User {
+        profile: profile.into(),
+    }
 }
 
 fn watch(r: &mut Run, target: SpoolTarget) -> Envelope {
@@ -85,7 +89,17 @@ fn new_file(owner: &str, name: &str, number: u32, outq: ObjectName) -> File {
 /// The next frame, which must be a `SpooledFileChanged` event.
 fn changed(r: &mut Run) -> SpooledFileChanged {
     let e = r.client.recv().expect("an event");
-    assert_eq!((e.kind, e.service, e.op, e.status, e.request_id), (Kind::Event, Service::Spool, event::SPOOLED_FILE_CHANGED, Status::Ok, 0), "{e:?}");
+    assert_eq!(
+        (e.kind, e.service, e.op, e.status, e.request_id),
+        (
+            Kind::Event,
+            Service::Spool,
+            event::SPOOLED_FILE_CHANGED,
+            Status::Ok,
+            0
+        ),
+        "{e:?}"
+    );
     e.body_as().unwrap()
 }
 
@@ -104,9 +118,15 @@ fn a_queue_target_sees_every_file_on_it() {
     // Anyone's file on the queue.
     let id = c.spool_add(new_file("ANN", "REPORT", 1, q("QGPL", "QPRINT")));
     let e = changed(&mut r);
-    assert_eq!((e.target.clone(), e.change, e.id.clone()), (queue("QGPL", "QPRINT"), SpoolChange::Added, id.clone()));
+    assert_eq!(
+        (e.target.clone(), e.change, e.id.clone()),
+        (queue("QGPL", "QPRINT"), SpoolChange::Added, id.clone())
+    );
     let f = e.file.expect("the file");
-    assert_eq!((f.status, f.user.as_str(), f.outq.name.as_str()), (SpoolStatus::Ready, "ANN", "QPRINT"));
+    assert_eq!(
+        (f.status, f.user.as_str(), f.outq.name.as_str()),
+        (SpoolStatus::Ready, "ANN", "QPRINT")
+    );
     // Status and attributes.
     assert!(c.spool_change(&id, |f| f.status = SpoolStatus::Held));
     let e = changed(&mut r);
@@ -131,10 +151,16 @@ fn a_user_target_sees_the_users_files_anywhere() {
     assert_eq!(watch(&mut r, user("ANN")).status, Status::Ok);
     let mine = c.spool_add(new_file("BOB", "MINE", 1, q("QGPL", "PRT01")));
     let e = changed(&mut r);
-    assert_eq!((e.target, e.change, e.id.clone()), (user("*CURRENT"), SpoolChange::Added, mine.clone()));
+    assert_eq!(
+        (e.target, e.change, e.id.clone()),
+        (user("*CURRENT"), SpoolChange::Added, mine.clone())
+    );
     let hers = c.spool_add(new_file("ANN", "HERS", 2, q("QGPL", "QPRINT")));
     let e = changed(&mut r);
-    assert_eq!((e.target, e.change, e.id), (user("ANN"), SpoolChange::Added, hers));
+    assert_eq!(
+        (e.target, e.change, e.id),
+        (user("ANN"), SpoolChange::Added, hers)
+    );
     // Through QAP too: a hold of BOB's file.
     let h = r.client.call(
         Op::HoldSpooledFile,
@@ -145,8 +171,13 @@ fn a_user_target_sees_the_users_files_anywhere() {
     );
     assert_eq!(h.status, Status::Ok);
     let e = changed(&mut r);
-    assert_eq!((e.change, e.file.unwrap().status), (SpoolChange::Changed, SpoolStatus::Held));
-    let d = r.client.call(Op::DeleteSpooledFile, &SpooledFileRef { id: mine.clone() });
+    assert_eq!(
+        (e.change, e.file.unwrap().status),
+        (SpoolChange::Changed, SpoolStatus::Held)
+    );
+    let d = r
+        .client
+        .call(Op::DeleteSpooledFile, &SpooledFileRef { id: mine.clone() });
     assert_eq!(d.status, Status::Ok);
     let e = changed(&mut r);
     assert_eq!((e.change, e.id), (SpoolChange::Removed, mine));
@@ -158,7 +189,11 @@ fn a_move_between_watched_queues() {
     let c = Controls::new();
     let mut r = signed_on(&c, "BOB", "SECRET1", 6);
     let id = c.spool_add(new_file("BOB", "MOVEME", 1, q("QGPL", "QPRINT")));
-    for t in [queue("QGPL", "QPRINT"), queue("QGPL", "PRT01"), user("*CURRENT")] {
+    for t in [
+        queue("QGPL", "QPRINT"),
+        queue("QGPL", "PRT01"),
+        user("*CURRENT"),
+    ] {
         assert_eq!(watch(&mut r, t).status, Status::Ok);
     }
     quiet(&mut r);
@@ -199,21 +234,48 @@ fn statuses() {
     let c = Controls::new();
     let mut r = signed_on(&c, "BOB", "SECRET1", 6);
     let e = watch(&mut r, queue("QGPL", "NOSUCHQ"));
-    assert_eq!((e.status, e.message.map(|m| m.id)), (Status::NotFound, Some("CPF3357".into())));
+    assert_eq!(
+        (e.status, e.message.map(|m| m.id)),
+        (Status::NotFound, Some("CPF3357".into()))
+    );
     let e = watch(&mut r, queue("QUSRSYS", "PRIVATE"));
     assert_eq!(e.status, Status::NotAuthorized);
     let e = watch(&mut r, user("NOBODY"));
-    assert_eq!((e.status, e.message.map(|m| m.id)), (Status::NotFound, Some("CPF2204".into())));
+    assert_eq!(
+        (e.status, e.message.map(|m| m.id)),
+        (Status::NotFound, Some("CPF2204".into()))
+    );
     assert_eq!(watch(&mut r, user("*ALL")).status, Status::InvalidRequest);
-    let e = r.client.call(Op::UnwatchSpool, &WatchSpool { target: user("*CURRENT") });
-    assert_eq!((e.status, e.message.map(|m| m.id)), (Status::NotFound, Some("TCP1A5B".into())));
+    let e = r.client.call(
+        Op::UnwatchSpool,
+        &WatchSpool {
+            target: user("*CURRENT"),
+        },
+    );
+    assert_eq!(
+        (e.status, e.message.map(|m| m.id)),
+        (Status::NotFound, Some("TCP1A5B".into()))
+    );
     assert_eq!(watch(&mut r, user("*CURRENT")).status, Status::Ok);
-    assert_eq!(r.client.call(Op::UnwatchSpool, &WatchSpool { target: user("*CURRENT") }).status, Status::Ok);
+    assert_eq!(
+        r.client
+            .call(
+                Op::UnwatchSpool,
+                &WatchSpool {
+                    target: user("*CURRENT")
+                }
+            )
+            .status,
+        Status::Ok
+    );
     c.spool_add(new_file("BOB", "AFTER", 1, q("QGPL", "QPRINT")));
     quiet(&mut r);
     // Version 5: no watches.
     let mut old = signed_on(&c, "BOB", "SECRET1", 5);
-    assert_eq!(watch(&mut old, user("*CURRENT")).status, Status::InvalidRequest);
+    assert_eq!(
+        watch(&mut old, user("*CURRENT")).status,
+        Status::InvalidRequest
+    );
 }
 
 #[test]

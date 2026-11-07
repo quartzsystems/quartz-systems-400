@@ -56,20 +56,41 @@ impl LiveCmd {
     fn read(&self, who: &str) -> Vec<(String, String)> {
         let w = who.to_string();
         self.link
-            .job(move |m| m.ask(|l| l.web_store(STORE.into(), w, None)).unwrap_or_default())
+            .job(move |m| {
+                m.ask(|l| l.web_store(STORE.into(), w, None))
+                    .unwrap_or_default()
+            })
             .unwrap_or_default()
     }
 
     fn write(&self, who: &str, values: Vec<(String, String)>) -> Result<(), Message> {
         let w = who.to_string();
-        let r = self.link.job(move |m| m.ask(|l| l.web_store(STORE.into(), w, Some(values))).map(|_| ()));
+        let r = self.link.job(move |m| {
+            m.ask(|l| l.web_store(STORE.into(), w, Some(values)))
+                .map(|_| ())
+        });
         r.unwrap_or_else(|| Err("CPF9897".into()))
-            .map_err(|id: String| Message::new(Kind::Error, &id, &format!("The Access for Web store QUSRSYS/{STORE} could not be changed.")))
+            .map_err(|id: String| {
+                Message::new(
+                    Kind::Error,
+                    &id,
+                    &format!("The Access for Web store QUSRSYS/{STORE} could not be changed."),
+                )
+            })
     }
 
     /// Replace `who`'s entries under `prefix` with `values`.
-    fn replace(&self, who: &str, prefix: &str, values: Vec<(String, String)>) -> Result<(), Message> {
-        let mut all: Vec<(String, String)> = self.read(who).into_iter().filter(|(k, _)| !k.starts_with(prefix)).collect();
+    fn replace(
+        &self,
+        who: &str,
+        prefix: &str,
+        values: Vec<(String, String)>,
+    ) -> Result<(), Message> {
+        let mut all: Vec<(String, String)> = self
+            .read(who)
+            .into_iter()
+            .filter(|(k, _)| !k.starts_with(prefix))
+            .collect();
         all.extend(values);
         self.write(who, all)
     }
@@ -95,20 +116,36 @@ fn chunks(text: &str) -> Vec<String> {
 fn joined(entries: &[(String, String)], base: &str) -> String {
     let mut parts: Vec<(&str, &str)> = entries
         .iter()
-        .filter_map(|(k, v)| k.strip_prefix(base).and_then(|r| r.strip_prefix('.')).map(|n| (n, v.as_str())))
+        .filter_map(|(k, v)| {
+            k.strip_prefix(base)
+                .and_then(|r| r.strip_prefix('.'))
+                .map(|n| (n, v.as_str()))
+        })
         .collect();
     parts.sort_unstable();
     parts.into_iter().map(|(_, v)| v).collect()
 }
 
 fn pieces(base: &str, text: &str) -> Vec<(String, String)> {
-    chunks(text).into_iter().enumerate().map(|(i, c)| (format!("{base}.{i:02}"), c)).collect()
+    chunks(text)
+        .into_iter()
+        .enumerate()
+        .map(|(i, c)| (format!("{base}.{i:02}"), c))
+        .collect()
 }
 
 /// A saved command's entries under `base` (`_cs.03`).
 fn saved_entries(base: &str, s: &Saved) -> Vec<(String, String)> {
     let name: String = s.name.chars().take(50).collect();
-    let mut v = vec![(base.to_string(), format!("{}\u{1f}{}\u{1f}{}\u{1f}{name}", s.how.code(), s.last, s.share))];
+    let mut v = vec![(
+        base.to_string(),
+        format!(
+            "{}\u{1f}{}\u{1f}{}\u{1f}{name}",
+            s.how.code(),
+            s.last,
+            s.share
+        ),
+    )];
     v.extend(pieces(base, &s.command));
     v
 }
@@ -159,8 +196,16 @@ fn text_lines(text: &str) -> Vec<LogMessage> {
                 && first.chars().skip(3).all(|c| c.is_ascii_hexdigit());
             LogMessage {
                 severity: 0,
-                id: if is_id { first.to_string() } else { String::new() },
-                text: if is_id { rest.to_string() } else { l.to_string() },
+                id: if is_id {
+                    first.to_string()
+                } else {
+                    String::new()
+                },
+                text: if is_id {
+                    rest.to_string()
+                } else {
+                    l.to_string()
+                },
                 program: String::new(),
                 sent_ms: now,
             }
@@ -187,7 +232,9 @@ fn run_here(m: &mut Main, command: &str, check: bool) -> Ran {
     if !check {
         m.console.job().log_request(command, PGM);
     }
-    let o = m.console.run(command, if check { RunMode::Check } else { RunMode::Run });
+    let o = m
+        .console
+        .run(command, if check { RunMode::Check } else { RunMode::Run });
     let job = {
         let j = m.console.job();
         format!("{}/{}/{}", j.ident.number, j.ident.user, j.ident.name)
@@ -213,7 +260,11 @@ fn run_here(m: &mut Main, command: &str, check: bool) -> Ran {
         ids.push(d.msgid.clone());
     }
     let outcome = if o.escape.is_none() {
-        if check { Outcome::Checked } else { Outcome::Completed }
+        if check {
+            Outcome::Checked
+        } else {
+            Outcome::Completed
+        }
     } else if ids.iter().any(|i| i == keys::ENDED) {
         Outcome::Cancelled
     } else if ids.iter().any(|i| NOT_FOUND.contains(&i.as_str())) {
@@ -240,7 +291,13 @@ fn def_of(d: &cmd::def::CmdDef, lib: String) -> CmdDef {
         .map(|p| {
             let mut values = Vec::new();
             if p.rstd {
-                for v in p.sngval.iter().map(|s| &s.from).chain(&p.values).chain(p.spcval.iter().map(|s| &s.from)) {
+                for v in p
+                    .sngval
+                    .iter()
+                    .map(|s| &s.from)
+                    .chain(&p.values)
+                    .chain(p.spcval.iter().map(|s| &s.from))
+                {
                     if !values.contains(v) {
                         values.push(v.clone());
                     }
@@ -248,7 +305,11 @@ fn def_of(d: &cmd::def::CmdDef, lib: String) -> CmdDef {
             }
             Param {
                 keyword: p.kwd.clone(),
-                prompt: p.prompt.as_ref().map(|(t, _)| t.clone()).unwrap_or_default(),
+                prompt: p
+                    .prompt
+                    .as_ref()
+                    .map(|(t, _)| t.clone())
+                    .unwrap_or_default(),
                 choices: cmd::prompt::layout::choices(p),
                 values,
                 default: p.dft.clone(),
@@ -305,7 +366,11 @@ impl Cmd for LiveCmd {
     }
 
     fn results(&self, user: &str) -> Vec<Ran> {
-        self.results.lock().ok().and_then(|r| r.get(user).cloned()).unwrap_or_default()
+        self.results
+            .lock()
+            .ok()
+            .and_then(|r| r.get(user).cloned())
+            .unwrap_or_default()
     }
 
     fn clear(&self, user: &str) {
@@ -315,7 +380,10 @@ impl Cmd for LiveCmd {
     }
 
     fn cancel(&self, user: &str) -> bool {
-        let mine = self.running.lock().is_ok_and(|r| r.as_deref() == Some(user));
+        let mine = self
+            .running
+            .lock()
+            .is_ok_and(|r| r.as_deref() == Some(user));
         if mine {
             keys::end_from_outside();
         }
@@ -341,13 +409,17 @@ impl Cmd for LiveCmd {
 
     fn describe(&self, user: &str, name: &str) -> Result<CmdDef, Message> {
         let (lib, n) = match name.split_once('/') {
-            Some((l, n)) => (Some(l.trim().to_ascii_uppercase()), n.trim().to_ascii_uppercase()),
+            Some((l, n)) => (
+                Some(l.trim().to_ascii_uppercase()),
+                n.trim().to_ascii_uppercase(),
+            ),
             None => (None, name.trim().to_ascii_uppercase()),
         };
         let shown = lib.clone().unwrap_or_else(|| "*LIBL".into());
         let r = self.link.read(user, move |m| {
             // The command cache, not the link: its borrow ends here.
-            let found = std::cell::RefCell::borrow_mut(&m.console.host.cmds).lookup(&n, lib.as_deref().filter(|l| *l != "*LIBL"));
+            let found = std::cell::RefCell::borrow_mut(&m.console.host.cmds)
+                .lookup(&n, lib.as_deref().filter(|l| *l != "*LIBL"));
             Some(match found {
                 Ok(Some((obj, lib))) => Ok(def_of(&obj.effective(), lib)),
                 Ok(None) => Err(("CPD0030".to_string(), n)),
@@ -356,7 +428,12 @@ impl Cmd for LiveCmd {
         });
         match r {
             Some(Ok(d)) => Ok(d),
-            Some(Err((id, n))) => Err(Message::new(Kind::Error, &id, &format!("Command {n} in library {shown} not found.")).with_data(&[&n, &shown])),
+            Some(Err((id, n))) => Err(Message::new(
+                Kind::Error,
+                &id,
+                &format!("Command {n} in library {shown} not found."),
+            )
+            .with_data(&[&n, &shown])),
             None => Err(super::gone()),
         }
     }
@@ -365,28 +442,53 @@ impl Cmd for LiveCmd {
         let all = self.read(user);
         let mut bases: Vec<&str> = all
             .iter()
-            .filter_map(|(k, _)| k.strip_prefix("_cr.").map(|r| r.split('.').next().unwrap_or("")))
+            .filter_map(|(k, _)| {
+                k.strip_prefix("_cr.")
+                    .map(|r| r.split('.').next().unwrap_or(""))
+            })
             .collect();
         bases.sort_unstable();
         bases.dedup();
-        bases.into_iter().map(|b| joined(&all, &format!("_cr.{b}"))).filter(|c| !c.is_empty()).collect()
+        bases
+            .into_iter()
+            .map(|b| joined(&all, &format!("_cr.{b}")))
+            .filter(|c| !c.is_empty())
+            .collect()
     }
 
     fn put_recent(&self, user: &str, commands: &[String]) -> Result<(), Message> {
-        let v = commands.iter().take(50).enumerate().flat_map(|(i, c)| pieces(&format!("_cr.{i:02}"), c)).collect();
+        let v = commands
+            .iter()
+            .take(50)
+            .enumerate()
+            .flat_map(|(i, c)| pieces(&format!("_cr.{i:02}"), c))
+            .collect();
         self.replace(user, "_cr.", v)
     }
 
     fn saved(&self, user: &str) -> Vec<Saved> {
-        saved_from(&self.read(user), "_cs").into_iter().map(|(_, s)| s).collect()
+        saved_from(&self.read(user), "_cs")
+            .into_iter()
+            .map(|(_, s)| s)
+            .collect()
     }
 
     fn put_saved(&self, user: &str, saved: &[Saved]) -> Result<(), Message> {
         let before = self.saved(user);
-        let v = saved.iter().take(100).enumerate().flat_map(|(i, s)| saved_entries(&format!("_cs.{i:02}"), s)).collect();
+        let v = saved
+            .iter()
+            .take(100)
+            .enumerate()
+            .flat_map(|(i, s)| saved_entries(&format!("_cs.{i:02}"), s))
+            .collect();
         self.replace(user, "_cs.", v)?;
         // The copies under the groups and *PUBLIC it is shared with.
-        let mut to: Vec<&str> = before.iter().chain(saved).map(|s| s.share.as_str()).filter(|s| !s.is_empty()).collect();
+        let mut to: Vec<&str> = before
+            .iter()
+            .chain(saved)
+            .map(|s| s.share.as_str())
+            .filter(|s| !s.is_empty())
+            .collect();
         to.sort_unstable();
         to.dedup();
         let prefix = format!("_sh.{user}.");
@@ -413,7 +515,11 @@ impl Cmd for LiveCmd {
             owners.sort_unstable();
             owners.dedup();
             for o in owners.into_iter().filter(|o| *o != user) {
-                out.extend(saved_from(&all, &format!("_sh.{o}")).into_iter().map(|(_, s)| (o.to_string(), s)));
+                out.extend(
+                    saved_from(&all, &format!("_sh.{o}"))
+                        .into_iter()
+                        .map(|(_, s)| (o.to_string(), s)),
+                );
             }
         }
         out
@@ -435,12 +541,19 @@ mod tests {
             share: "ADMINS".into(),
         };
         let e = saved_entries("_cs.00", &s);
-        assert!(e.len() > 2 && e.iter().all(|(k, v)| k.len() <= 20 && v.len() <= CHUNK + 10));
+        assert!(
+            e.len() > 2
+                && e.iter()
+                    .all(|(k, v)| k.len() <= 20 && v.len() <= CHUNK + 10)
+        );
         assert_eq!(saved_from(&e, "_cs"), [("00".to_string(), s)]);
         assert_eq!(joined(&pieces("_cr.03", long), "_cr.03"), long);
         assert_eq!(chunks(""), [""]);
         let t = text_lines("CPC1221 Job 000057/QSECOFR/QDFTJOBD submitted.\nplain line\n");
-        assert_eq!((t[0].id.as_str(), t[0].text.as_str()), ("CPC1221", "Job 000057/QSECOFR/QDFTJOBD submitted."));
+        assert_eq!(
+            (t[0].id.as_str(), t[0].text.as_str()),
+            ("CPC1221", "Job 000057/QSECOFR/QDFTJOBD submitted.")
+        );
         assert_eq!((t[1].id.as_str(), t[1].text.as_str()), ("", "plain line"));
     }
 }

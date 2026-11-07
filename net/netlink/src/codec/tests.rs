@@ -15,7 +15,10 @@ fn builds_header_attrs_and_padding() {
     assert_eq!(ne_u16(&m, 6), Some(0x301));
     assert_eq!(ne_u32(&m, 8), Some(7));
     // "eth0\0" is a 9-byte attribute padded to 12.
-    assert_eq!(&m[32..44], &[9, 0, 3, 0, b'e', b't', b'h', b'0', 0, 0, 0, 0]);
+    assert_eq!(
+        &m[32..44],
+        &[9, 0, 3, 0, b'e', b't', b'h', b'0', 0, 0, 0, 0]
+    );
     assert_eq!(&m[44..52], &[5, 0, 16, 0, 6, 0, 0, 0]);
 }
 
@@ -35,7 +38,10 @@ fn nests_set_the_flag_and_length() {
     assert_eq!(attrs[0].kind, 18);
     let inner = attrs[0].attrs();
     assert_eq!(inner.get(1).unwrap().str(), "vlan");
-    assert_eq!(inner.get(2).unwrap().attrs().get(1).unwrap().u16(), Some(100));
+    assert_eq!(
+        inner.get(2).unwrap().attrs().get(1).unwrap().u16(),
+        Some(100)
+    );
 }
 
 #[test]

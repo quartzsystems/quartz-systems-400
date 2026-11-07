@@ -54,7 +54,11 @@ pub fn dspusrprf(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
 }
 
 /// `DSPAUTLOBJ`: the objects an authorization list secures.
-pub fn dspautlobj(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
+pub fn dspautlobj(
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Option<Result<String, Fail>> {
     let name = parm(r, "AUTL");
     let data = read!("DSPAUTLOBJ", fetch(host, "AUTLOBJ", &[&name]));
     let mut d = match dialog(host, "QUIAUTLOBJ") {

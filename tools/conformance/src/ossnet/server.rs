@@ -30,7 +30,10 @@ impl Request {
     /// A header's value.
     #[must_use]
     pub fn header(&self, name: &str) -> Option<&str> {
-        self.headers.iter().find(|(n, _)| n == name).map(|(_, v)| v.as_str())
+        self.headers
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, v)| v.as_str())
     }
 }
 
@@ -103,16 +106,28 @@ impl Server {
     }
 }
 
-fn serve(s: TcpStream, routes: &Routes, seen: &Mutex<Vec<Request>>, port: u16) -> std::io::Result<()> {
+fn serve(
+    s: TcpStream,
+    routes: &Routes,
+    seen: &Mutex<Vec<Request>>,
+    port: u16,
+) -> std::io::Result<()> {
     s.set_read_timeout(Some(Duration::from_secs(20)))?;
     let mut w = s.try_clone()?;
     let mut r = BufReader::new(s);
-    let Some(req) = read_request(&mut r)? else { return Ok(()) };
+    let Some(req) = read_request(&mut r)? else {
+        return Ok(());
+    };
     let a = routes(&req, port);
     if let Ok(mut v) = seen.lock() {
         v.push(req);
     }
-    let mut head = format!("HTTP/1.1 {} {}\r\nContent-Length: {}\r\nConnection: close\r\n", a.status, a.reason, a.body.len());
+    let mut head = format!(
+        "HTTP/1.1 {} {}\r\nContent-Length: {}\r\nConnection: close\r\n",
+        a.status,
+        a.reason,
+        a.body.len()
+    );
     for (n, v) in &a.headers {
         let _ = write!(head, "{n}: {v}\r\n");
     }
@@ -138,7 +153,9 @@ fn line(r: &mut impl BufRead) -> std::io::Result<Option<String>> {
 /// One request: the line, headers, and a body by `Content-Length` or
 /// chunked.
 fn read_request(r: &mut impl BufRead) -> std::io::Result<Option<Request>> {
-    let Some(first) = line(r)? else { return Ok(None) };
+    let Some(first) = line(r)? else {
+        return Ok(None);
+    };
     let mut parts = first.split_whitespace();
     let mut req = Request {
         method: parts.next().unwrap_or("").to_string(),
@@ -150,12 +167,17 @@ fn read_request(r: &mut impl BufRead) -> std::io::Result<Option<Request>> {
             break;
         }
         if let Some((n, v)) = h.split_once(':') {
-            req.headers.push((n.trim().to_ascii_lowercase(), v.trim().to_string()));
+            req.headers
+                .push((n.trim().to_ascii_lowercase(), v.trim().to_string()));
         }
     }
-    if req.header("transfer-encoding").is_some_and(|v| v.eq_ignore_ascii_case("chunked")) {
+    if req
+        .header("transfer-encoding")
+        .is_some_and(|v| v.eq_ignore_ascii_case("chunked"))
+    {
         while let Some(size) = line(r)? {
-            let n = usize::from_str_radix(size.split(';').next().unwrap_or("0").trim(), 16).unwrap_or(0);
+            let n = usize::from_str_radix(size.split(';').next().unwrap_or("0").trim(), 16)
+                .unwrap_or(0);
             if n == 0 {
                 let _ = line(r)?;
                 break;
@@ -165,7 +187,10 @@ fn read_request(r: &mut impl BufRead) -> std::io::Result<Option<Request>> {
             req.body.extend_from_slice(&b);
             let _ = line(r)?;
         }
-    } else if let Some(n) = req.header("content-length").and_then(|v| v.parse::<usize>().ok()) {
+    } else if let Some(n) = req
+        .header("content-length")
+        .and_then(|v| v.parse::<usize>().ok())
+    {
         let mut b = vec![0u8; n];
         r.read_exact(&mut b)?;
         req.body = b;

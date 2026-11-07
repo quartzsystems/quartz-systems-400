@@ -15,7 +15,17 @@ use crate::util::secs;
 
 /// A sample message: key, sent (UTC month, day, hour, minute, second of 2026), severity, ID, text, job, user,
 /// inquiry, default reply.
-pub type Sample = (&'static str, [u32; 5], u8, &'static str, &'static str, &'static str, &'static str, bool, &'static str);
+pub type Sample = (
+    &'static str,
+    [u32; 5],
+    u8,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    bool,
+    &'static str,
+);
 
 /// `CWELLMAN`'s messages, oldest first.
 pub const MESSAGES: &[Sample] = &[
@@ -84,7 +94,10 @@ impl Default for FixtureMsgs {
             })
             .collect();
         Self {
-            queues: Mutex::new(vec![("QUSRSYS/CWELLMAN".into(), mine), ("QSYS/QSYSOPR".into(), Vec::new())]),
+            queues: Mutex::new(vec![
+                ("QUSRSYS/CWELLMAN".into(), mine),
+                ("QSYS/QSYSOPR".into(), Vec::new()),
+            ]),
             ran: Mutex::new(Vec::new()),
         }
     }
@@ -118,12 +131,25 @@ fn parm(command: &str, kw: &str) -> Option<String> {
 impl FixtureMsgs {
     fn queue_of(&self, q: &str) -> Option<usize> {
         let q = q.trim().to_ascii_uppercase();
-        let q = if q.contains('/') { q } else { format!("QUSRSYS/{q}") };
-        self.queues.lock().expect("queues").iter().position(|(n, _)| *n == q)
+        let q = if q.contains('/') {
+            q
+        } else {
+            format!("QUSRSYS/{q}")
+        };
+        self.queues
+            .lock()
+            .expect("queues")
+            .iter()
+            .position(|(n, _)| *n == q)
     }
 
     fn next_key(all: &Queues) -> String {
-        let n = all.iter().flat_map(|(_, v)| v.iter().map(QueuedMessage::order)).max().unwrap_or(0) + 1;
+        let n = all
+            .iter()
+            .flat_map(|(_, v)| v.iter().map(QueuedMessage::order))
+            .max()
+            .unwrap_or(0)
+            + 1;
         format!("{n:08X}")
     }
 
@@ -148,20 +174,37 @@ impl Msgs for FixtureMsgs {
         let all = self.queues.lock().expect("queues");
         match all.iter().find(|(n, _)| *n == q) {
             Some((_, v)) => Ok(v.clone()),
-            None => Err(Message::new(Kind::Error, "CPF2403", &format!("Message queue {name} in {lib} not found."))),
+            None => Err(Message::new(
+                Kind::Error,
+                "CPF2403",
+                &format!("Message queue {name} in {lib} not found."),
+            )),
         }
     }
 
     fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
-        self.ran.lock().expect("ran").push(format!("{user}: {command}"));
-        let verb = command.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+        self.ran
+            .lock()
+            .expect("ran")
+            .push(format!("{user}: {command}"));
+        let verb = command
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_ascii_uppercase();
         let queue = parm(command, "MSGQ").unwrap_or_default();
         let key = parm(command, "MSGKEY").unwrap_or_default();
         match verb.as_str() {
             "SNDMSG" => {
-                let to = parm(command, "TOMSGQ").or_else(|| parm(command, "TOUSR")).unwrap_or_default();
+                let to = parm(command, "TOMSGQ")
+                    .or_else(|| parm(command, "TOUSR"))
+                    .unwrap_or_default();
                 if self.queue_of(&to).is_none() {
-                    return Err(Message::new(Kind::Error, "CPF2403", &format!("Message queue {to} not found.")));
+                    return Err(Message::new(
+                        Kind::Error,
+                        "CPF2403",
+                        &format!("Message queue {to} not found."),
+                    ));
                 }
                 let inquiry = parm(command, "MSGTYPE").as_deref() == Some("*INQ");
                 self.arrive(
@@ -179,18 +222,30 @@ impl Msgs for FixtureMsgs {
             }
             "SNDRPYMSG" | "RMVMSG" => {
                 let Some(at) = self.queue_of(&queue) else {
-                    return Err(Message::new(Kind::Error, "CPF2403", &format!("Message queue {queue} not found.")));
+                    return Err(Message::new(
+                        Kind::Error,
+                        "CPF2403",
+                        &format!("Message queue {queue} not found."),
+                    ));
                 };
                 let mut all = self.queues.lock().expect("queues");
                 let msgs = &mut all[at].1;
                 let Some(i) = msgs.iter().position(|m| m.key == key) else {
-                    return Err(Message::new(Kind::Error, "CPF2410", &format!("Message key {key} not found in message queue.")));
+                    return Err(Message::new(
+                        Kind::Error,
+                        "CPF2410",
+                        &format!("Message key {key} not found in message queue."),
+                    ));
                 };
                 if verb == "RMVMSG" {
                     msgs.remove(i);
                 } else {
                     let r = parm(command, "RPY").unwrap_or_default();
-                    let r = if r == "*DFT" { msgs[i].default.clone() } else { r };
+                    let r = if r == "*DFT" {
+                        msgs[i].default.clone()
+                    } else {
+                        r
+                    };
                     msgs[i].reply = Some(r);
                 }
                 Ok(Message::new(Kind::Done, "", ""))

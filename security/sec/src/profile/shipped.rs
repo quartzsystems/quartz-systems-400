@@ -174,7 +174,12 @@ const PM: S = S(S::IOSYSCFG.0 | S::JOBCTL.0);
 /// Every shipped profile, as IBM i 7.1 ships them (`QSOC` and `QUMB`
 /// are older releases'). Only `QSECOFR` has a password.
 pub static PROFILES: &[Shipped] = &[
-    p("QSYS", C::SecOfr, S::ALL, "Owner of the operating system's objects"),
+    p(
+        "QSYS",
+        C::SecOfr,
+        S::ALL,
+        "Owner of the operating system's objects",
+    ),
     p("QSECOFR", C::SecOfr, S::ALL, "Security officer").atnpgm("*SYSVAL", ""),
     p("QSYSOPR", C::SysOpr, JS, "System operator")
         .msgq("QSYSOPR", "QSYS")
@@ -191,10 +196,21 @@ pub static PROFILES: &[Shipped] = &[
     p("QSRV", C::Pgmr, SERVICE, "Service representative")
         .atnpgm("QSCATTN", "QSYS")
         .astlvl("*INTERMED"),
-    p("QSRVBAS", C::Pgmr, S::JOBCTL, "Basic service representative")
-        .atnpgm("QSCATTN", "QSYS")
-        .astlvl("*INTERMED"),
-    p("QDFTOWN", C::User, S::NONE, "Owner of objects whose owner was deleted").ptylmt(3),
+    p(
+        "QSRVBAS",
+        C::Pgmr,
+        S::JOBCTL,
+        "Basic service representative",
+    )
+    .atnpgm("QSCATTN", "QSYS")
+    .astlvl("*INTERMED"),
+    p(
+        "QDFTOWN",
+        C::User,
+        S::NONE,
+        "Owner of objects whose owner was deleted",
+    )
+    .ptylmt(3),
     p("QSPL", C::User, S::NONE, "Spooling"),
     p("QSPLJOB", C::User, S::NONE, "Spooling jobs"),
     p("QTCP", C::SysOpr, S::JOBCTL, "TCP/IP")
@@ -204,17 +220,28 @@ pub static PROFILES: &[Shipped] = &[
     p("QDBSHR", C::User, S::NONE, "Database sharing"),
     p("QDBSHRDO", C::User, S::NONE, "Database sharing, data owner"),
     p("QDOC", C::User, S::NONE, "Documents"),
-    p("QLPAUTO", C::SysOpr, INSTALL, "Licensed program automatic install")
-        .inlpgm("QLPINATO", "QSYS")
-        .msgq("QSYSOPR", "QSYS")
-        .inlmnu("*SIGNOFF", "")
-        .spcenv("*NONE")
-        .dlvry("*HOLD")
-        .sev(99),
+    p(
+        "QLPAUTO",
+        C::SysOpr,
+        INSTALL,
+        "Licensed program automatic install",
+    )
+    .inlpgm("QLPINATO", "QSYS")
+    .msgq("QSYSOPR", "QSYS")
+    .inlmnu("*SIGNOFF", "")
+    .spcenv("*NONE")
+    .dlvry("*HOLD")
+    .sev(99),
     p("QLPINSTALL", C::SysOpr, INSTALL, "Licensed program install")
         .spcenv("*NONE")
         .dlvry("*HOLD"),
-    p("QANZAGENT", C::SysOpr, S::NONE, "Trace analyzer agent server").no_signon_info(),
+    p(
+        "QANZAGENT",
+        C::SysOpr,
+        S::NONE,
+        "Trace analyzer agent server",
+    )
+    .no_signon_info(),
     p("QAUTPROF", C::User, S::NONE, "Authority profile"),
     p("QBRMS", C::User, S::NONE, "Backup and recovery"),
     p("QCLUMGT", C::User, S::NONE, "Cluster management")
@@ -229,7 +256,13 @@ pub static PROFILES: &[Shipped] = &[
         .dlvry("*HOLD")
         .no_signon_info(),
     p("QDLFM", C::User, S::NONE, "Data link file manager"),
-    p("QDSNX", C::User, S::NONE, "Distributed systems node executive").ptylmt(3),
+    p(
+        "QDSNX",
+        C::User,
+        S::NONE,
+        "Distributed systems node executive",
+    )
+    .ptylmt(3),
     p("QEJB", C::User, S::NONE, "Enterprise beans"),
     p("QEJBSVR", C::User, S::NONE, "Application server")
         .spcenv("*NONE")
@@ -238,7 +271,13 @@ pub static PROFILES: &[Shipped] = &[
     p("QGATE", C::User, S::NONE, "Gateway"),
     p("QIBMHELP", C::SysOpr, S::NONE, "Online help server").no_signon_info(),
     p("QIPP", C::User, S::NONE, "Internet printing"),
-    p("QLWISVR", C::User, S::NONE, "Integrated application servers").no_signon_info(),
+    p(
+        "QLWISVR",
+        C::User,
+        S::NONE,
+        "Integrated application servers",
+    )
+    .no_signon_info(),
     p("QMGTC", C::User, S::NONE, "Management central")
         .jobd("QYPSJOBD", "QSYS")
         .spcenv("*NONE")
@@ -247,7 +286,12 @@ pub static PROFILES: &[Shipped] = &[
     p("QNETSPLF", C::User, S::NONE, "Network spooled files")
         .spcenv("*NONE")
         .dlvry("*HOLD"),
-    p("QNFSANON", C::User, S::NONE, "Network file system anonymous user"),
+    p(
+        "QNFSANON",
+        C::User,
+        S::NONE,
+        "Network file system anonymous user",
+    ),
     p("QNTP", C::User, S::NONE, "Network time")
         .ptylmt(1)
         .jobd("QTOTNTP", "QSYS"),
@@ -277,7 +321,12 @@ pub static PROFILES: &[Shipped] = &[
     p("QWEBADMIN", C::User, S::NONE, "Web administration").no_signon_info(),
     p("QWSERVICE", C::User, S::NONE, "Integrated web services").no_signon_info(),
     p("QYCMCIMOM", C::User, S::NONE, "CIM object manager"),
-    p("QYPSJSVR", C::User, S::NONE, "Management central Java server"),
+    p(
+        "QYPSJSVR",
+        C::User,
+        S::NONE,
+        "Management central Java server",
+    ),
 ];
 
 /// The shipped profile `name`, if it is one.
@@ -321,7 +370,9 @@ pub fn profile_of(s: &Shipped, qsecurity: u8, pwdlvl: u8, now: u64) -> UsrPrf {
     u.changed = now;
     u.ptylmt = s.ptylmt;
     u.jobd = pair(s.jobd);
-    u.msgq = s.msgq.map_or_else(|| (s.name.to_string(), "QUSRSYS".to_string()), pair);
+    u.msgq = s
+        .msgq
+        .map_or_else(|| (s.name.to_string(), "QUSRSYS".to_string()), pair);
     u.inlpgm = pair(s.inlpgm);
     u.inlmnu = pair(s.inlmnu);
     u.curlib = s.curlib.into();

@@ -41,19 +41,26 @@ const DT_ARGS: &str = "($dst: bytes(1) *VARSIZE, byval $dd: i64, byval $df: i64,
 /// A duration unit's number from its special word.
 #[must_use]
 pub fn unit_of(word: &str) -> Option<u8> {
-    UNITS.iter().find(|(w, _)| w.contains(&word)).map(|(_, u)| *u)
+    UNITS
+        .iter()
+        .find(|(w, _)| w.contains(&word))
+        .map(|(_, u)| *u)
 }
 
 fn unit_word(e: &Expr) -> Option<u8> {
     match e {
-        Expr::Special { word, index: None, .. } => unit_of(word),
+        Expr::Special {
+            word, index: None, ..
+        } => unit_of(word),
         _ => None,
     }
 }
 
 fn special(e: Option<&Expr>) -> Option<&str> {
     match e {
-        Some(Expr::Special { word, index: None, .. }) => Some(word),
+        Some(Expr::Special {
+            word, index: None, ..
+        }) => Some(word),
         _ => None,
     }
 }
@@ -148,8 +155,16 @@ fn fig_text(t: &Ty, f: &Fig) -> Option<String> {
             }
         }
         Ty::Timestamp(p) => {
-            let base = if hi { "9999-12-31-24.00.00" } else { "0001-01-01-00.00.00" };
-            if *p == 0 { base.to_string() } else { format!("{base}.{}", "0".repeat(usize::from(*p))) }
+            let base = if hi {
+                "9999-12-31-24.00.00"
+            } else {
+                "0001-01-01-00.00.00"
+            };
+            if *p == 0 {
+                base.to_string()
+            } else {
+                format!("{base}.{}", "0".repeat(usize::from(*p)))
+            }
         }
         _ => return None,
     })
@@ -159,14 +174,26 @@ impl Gen<'_> {
     fn dt_procs(&mut self) {
         self.rt_proc("_QRNX_DTCVT", &format!("{DT_ARGS})"));
         self.rt_proc("_QRNX_DTCMP", &format!("{DT_ARGS}) -> i32"));
-        self.rt_proc("_QRNX_DTADD", &format!("{DT_ARGS}, byval $n: i64, byval $unit: i32)"));
-        self.rt_proc("_QRNX_DTDIFF", &format!("{DT_ARGS}, byval $unit: i32) -> i64"));
+        self.rt_proc(
+            "_QRNX_DTADD",
+            &format!("{DT_ARGS}, byval $n: i64, byval $unit: i32)"),
+        );
+        self.rt_proc(
+            "_QRNX_DTDIFF",
+            &format!("{DT_ARGS}, byval $unit: i32) -> i64"),
+        );
         self.rt_proc(
             "_QRNX_DTSUB",
             "($src: bytes(1) *VARSIZE, byval $sd: i64, byval $sf: i64, byval $unit: i32) -> i64",
         );
-        self.rt_proc("_QRNX_DTTEST", "($src: bytes(1) *VARSIZE, byval $sd: i64, byval $sf: i64) -> i32");
-        self.rt_proc("_QRNX_DTNOW", "($dst: bytes(1) *VARSIZE, byval $dd: i64, byval $df: i64)");
+        self.rt_proc(
+            "_QRNX_DTTEST",
+            "($src: bytes(1) *VARSIZE, byval $sd: i64, byval $sf: i64) -> i32",
+        );
+        self.rt_proc(
+            "_QRNX_DTNOW",
+            "($dst: bytes(1) *VARSIZE, byval $dd: i64, byval $df: i64)",
+        );
     }
 
     /// An operand in storage with its descriptor and format word; `fmt`
@@ -182,7 +209,11 @@ impl Gen<'_> {
             self.b.ins(format!("mov {t}, {}", v.op));
             V::place(Ty::Char(n), t)
         };
-        let f = if v.ty.is_datetime() { dtfmt::of_type(&v.ty) } else { fmt };
+        let f = if v.ty.is_datetime() {
+            dtfmt::of_type(&v.ty)
+        } else {
+            fmt
+        };
         let d = self.desc_of(&v);
         (v.op, d, f)
     }
@@ -191,7 +222,10 @@ impl Gen<'_> {
     pub fn dt_literal(&mut self, l: &Lit) -> Option<V> {
         let (ty, text) = match l {
             Lit::Date(s) => {
-                let (f, sep) = (self.ctl.datfmt, self.ctl.datsep.unwrap_or(self.ctl.datfmt.sep()));
+                let (f, sep) = (
+                    self.ctl.datfmt,
+                    self.ctl.datsep.unwrap_or(self.ctl.datfmt.sep()),
+                );
                 if dtfmt::parse_date(f, sep, s).is_none() {
                     self.err(ids::BAD_DATE_LIT, 20, s.clone());
                     return None;
@@ -199,7 +233,10 @@ impl Gen<'_> {
                 (Ty::Date(f, sep), s.clone())
             }
             Lit::Time(s) => {
-                let (f, sep) = (self.ctl.timfmt, self.ctl.timsep.unwrap_or(self.ctl.timfmt.sep()));
+                let (f, sep) = (
+                    self.ctl.timfmt,
+                    self.ctl.timsep.unwrap_or(self.ctl.timfmt.sep()),
+                );
                 let Some((h, m, x)) = dtfmt::parse_time(f, sep, s) else {
                     self.err(ids::BAD_TIME_LIT, 20, s.clone());
                     return None;
@@ -262,8 +299,15 @@ impl Gen<'_> {
         self.dt_procs();
         let (s, sd, sf) = self.dt_operand(src, fmt);
         let dd = self.desc_of(dst);
-        let df = if dst.ty.is_datetime() { dtfmt::of_type(&dst.ty) } else { fmt };
-        self.b.ins(format!("callb _QRNX_DTCVT({}, {dd}, {df}, {s}, {sd}, {sf})", dst.op));
+        let df = if dst.ty.is_datetime() {
+            dtfmt::of_type(&dst.ty)
+        } else {
+            fmt
+        };
+        self.b.ins(format!(
+            "callb _QRNX_DTCVT({}, {dd}, {df}, {s}, {sd}, {sf})",
+            dst.op
+        ));
     }
 
     /// A comparison with a date, time or timestamp operand.
@@ -280,7 +324,10 @@ impl Gen<'_> {
         let a = fix(self, va, vb)?;
         let b = fix(self, vb, va)?;
         let (ca, cb) = (class_of(&a.ty), class_of(&b.ty));
-        let mixed = matches!((ca, cb), (Some(Class::Date), Some(Class::Stamp)) | (Some(Class::Stamp), Some(Class::Date)));
+        let mixed = matches!(
+            (ca, cb),
+            (Some(Class::Date), Some(Class::Stamp)) | (Some(Class::Stamp), Some(Class::Date))
+        );
         if ca.is_none() || cb.is_none() || ca != cb && !mixed {
             self.err(ids::TYPE_MISMATCH, 30, "");
             return None;
@@ -289,7 +336,9 @@ impl Gen<'_> {
         let (x, xd, xf) = self.dt_operand(&a, 0);
         let (y, yd, yf) = self.dt_operand(&b, 0);
         let r = self.b.reg();
-        self.b.ins(format!("{r} = callb _QRNX_DTCMP({x}, {xd}, {xf}, {y}, {yd}, {yf})"));
+        self.b.ins(format!(
+            "{r} = callb _QRNX_DTCMP({x}, {xd}, {xf}, {y}, {yd}, {yf})"
+        ));
         let i = self.b.reg();
         self.b.ins(format!("{i} = cmp.{c} {r}, 0"));
         Some(V::reg(Ty::Ind, i))
@@ -330,7 +379,10 @@ impl Gen<'_> {
         let (s, sd, sf) = self.dt_operand(src, 0);
         let dd = self.desc_of(dst);
         let df = dtfmt::of_type(&dst.ty);
-        self.b.ins(format!("callb _QRNX_DTADD({}, {dd}, {df}, {s}, {sd}, {sf}, {n}, {unit})", dst.op));
+        self.b.ins(format!(
+            "callb _QRNX_DTADD({}, {dd}, {df}, {s}, {sd}, {sf}, {n}, {unit})",
+            dst.op
+        ));
     }
 
     /// The format word a format argument names for a class; the
@@ -338,12 +390,19 @@ impl Gen<'_> {
     fn fmt_arg(&mut self, e: Option<&Expr>, class: Class, dft: Conv) -> Option<i64> {
         let c = match e {
             None | Some(Expr::Empty(_)) => dft,
-            Some(Expr::Special { word, index: None, .. }) => {
+            Some(Expr::Special {
+                word, index: None, ..
+            }) => {
                 let Some(c) = dtfmt::parse(word, class) else {
                     // A format name that does not fit, or a word that
                     // names no format at all.
-                    let root = word.trim_start_matches('*').trim_end_matches(['/', '-', '.', ',', '&', '0', ':']);
-                    let formats = ["MDY", "DMY", "YMD", "JUL", "ISO", "USA", "EUR", "JIS", "CYMD", "CMDY", "CDMY", "LONGJUL", "HMS", "JOBRUN"];
+                    let root = word
+                        .trim_start_matches('*')
+                        .trim_end_matches(['/', '-', '.', ',', '&', '0', ':']);
+                    let formats = [
+                        "MDY", "DMY", "YMD", "JUL", "ISO", "USA", "EUR", "JIS", "CYMD", "CMDY",
+                        "CDMY", "LONGJUL", "HMS", "JOBRUN",
+                    ];
                     if formats.contains(&root.to_ascii_uppercase().as_str()) {
                         self.err(BAD_FORMAT, 20, word.clone());
                     } else {
@@ -456,9 +515,18 @@ impl Gen<'_> {
         }
         // Without a format, character and numeric data are *ISO.
         let dft = match class {
-            Class::Date => Conv { code: 1, sep: Some('-') },
-            Class::Time => Conv { code: 33, sep: Some('.') },
-            Class::Stamp => Conv { code: dtfmt::STAMP, sep: Some('-') },
+            Class::Date => Conv {
+                code: 1,
+                sep: Some('-'),
+            },
+            Class::Time => Conv {
+                code: 33,
+                sep: Some('.'),
+            },
+            Class::Stamp => Conv {
+                code: dtfmt::STAMP,
+                sep: Some('-'),
+            },
         };
         let mut f = self.fmt_arg(args.get(1), class, dft)?;
         let sep = u8::try_from((f >> 8) & 0xFF).unwrap_or(0);
@@ -469,9 +537,15 @@ impl Gen<'_> {
         // An operand shorter than the format is refused.
         let (have, want) = match (&args[0], &v.ty) {
             (Expr::Lit(Lit::Char(s), _), _) => (s.chars().count(), dtfmt::conv_len(c, class)),
-            (Expr::Lit(Lit::Num(n), _), _) => (n.chars().filter(char::is_ascii_digit).count(), dtfmt::conv_len(Conv { sep: None, ..c }, class)),
+            (Expr::Lit(Lit::Num(n), _), _) => (
+                n.chars().filter(char::is_ascii_digit).count(),
+                dtfmt::conv_len(Conv { sep: None, ..c }, class),
+            ),
             (_, Ty::Char(n)) => (usize::try_from(*n).unwrap_or(0), dtfmt::conv_len(c, class)),
-            (_, t) if t.is_numeric() => (usize::from(t.shape().map_or(63, |s| s.0)), dtfmt::conv_len(Conv { sep: None, ..c }, class)),
+            (_, t) if t.is_numeric() => (
+                usize::from(t.shape().map_or(63, |s| s.0)),
+                dtfmt::conv_len(Conv { sep: None, ..c }, class),
+            ),
             _ => (0, 0),
         };
         if have < want {
@@ -488,7 +562,13 @@ impl Gen<'_> {
         }
         if class == Class::Stamp && v.ty.is_numeric() {
             // A number holds the digits and six fractional ones.
-            f = dtfmt::word(Conv { code: dtfmt::STAMP, sep: None }, 6);
+            f = dtfmt::word(
+                Conv {
+                    code: dtfmt::STAMP,
+                    sep: None,
+                },
+                6,
+            );
         }
         self.dt_convert(&out, &v, f);
         Some(out)
@@ -501,9 +581,16 @@ impl Gen<'_> {
         let df = if dst.ty.is_datetime() {
             dtfmt::of_type(&dst.ty)
         } else {
-            dtfmt::word(Conv { code: 32, sep: None }, 0)
+            dtfmt::word(
+                Conv {
+                    code: 32,
+                    sep: None,
+                },
+                0,
+            )
         };
-        self.b.ins(format!("callb _QRNX_DTNOW({}, {dd}, {df})", dst.op));
+        self.b
+            .ins(format!("callb _QRNX_DTNOW({}, {dd}, {df})", dst.op));
     }
 
     /// The current date into a numeric field in format `code`, without
@@ -512,7 +599,8 @@ impl Gen<'_> {
         self.dt_procs();
         let dd = self.desc_of(dst);
         let w = dtfmt::word(Conv { code, sep: None }, 0);
-        self.b.ins(format!("callb _QRNX_DTNOW({}, {dd}, {w})", dst.op));
+        self.b
+            .ins(format!("callb _QRNX_DTNOW({}, {dd}, {w})", dst.op));
     }
 
     fn dt_value(&mut self, e: &Expr) -> Option<V> {
@@ -550,7 +638,9 @@ impl Gen<'_> {
         let (x, xd, xf) = self.dt_operand(&a, 0);
         let (y, yd, yf) = self.dt_operand(&b, 0);
         let r = self.b.reg();
-        self.b.ins(format!("{r} = callb _QRNX_DTDIFF({x}, {xd}, {xf}, {y}, {yd}, {yf}, {u})"));
+        self.b.ins(format!(
+            "{r} = callb _QRNX_DTDIFF({x}, {xd}, {xf}, {y}, {yd}, {yf}, {u})"
+        ));
         Some(V::reg(Ty::Int(20), r))
     }
 
@@ -567,7 +657,8 @@ impl Gen<'_> {
         self.dt_procs();
         let (x, xd, xf) = self.dt_operand(v, 0);
         let r = self.b.reg();
-        self.b.ins(format!("{r} = callb _QRNX_DTSUB({x}, {xd}, {xf}, {u})"));
+        self.b
+            .ins(format!("{r} = callb _QRNX_DTSUB({x}, {xd}, {xf}, {u})"));
         V::reg(Ty::Int(20), r)
     }
 
@@ -575,7 +666,10 @@ impl Gen<'_> {
     pub fn dt_char(&mut self, v: &V, fmt: Option<&Expr>) -> Option<V> {
         let class = class_of(&v.ty)?;
         let own = match class {
-            Class::Stamp => Conv { code: dtfmt::STAMP, sep: Some('-') },
+            Class::Stamp => Conv {
+                code: dtfmt::STAMP,
+                sep: Some('-'),
+            },
             _ => {
                 let w = dtfmt::of_type(&v.ty);
                 let sep = u8::try_from((w >> 8) & 0xFF).unwrap_or(0);
@@ -640,20 +734,29 @@ impl Gen<'_> {
             "TEST" => self.dt_test(op),
             "ADDDUR" | "SUBDUR" => self.dt_dur_op(base == "SUBDUR", op),
             "EXTRCT" => {
-                let (Some(v), Some(Some(u)), Some(r)) = (op.f2.first(), op.f2.get(1).map(unit_word), op.result.first())
-                else {
+                let (Some(v), Some(Some(u)), Some(r)) = (
+                    op.f2.first(),
+                    op.f2.get(1).map(unit_word),
+                    op.result.first(),
+                ) else {
                     self.err(ids::BIF_ARGS, 30, "EXTRCT");
                     return true;
                 };
-                let (Some(v), Some(t)) = (self.dt_value(v), self.target(r)) else { return true };
+                let (Some(v), Some(t)) = (self.dt_value(v), self.target(r)) else {
+                    return true;
+                };
                 let p = self.dt_part(&v, u);
                 self.assign(&t, &p, false);
             }
             "TIME" => {
-                let Some(r) = op.result.first() else { return true };
+                let Some(r) = op.result.first() else {
+                    return true;
+                };
                 let Some(t) = self.target(r) else {
                     // An undefined result is not a field TIME can set.
-                    if r.name().is_some_and(|n| self.t.find(self.scope, n).is_none()) {
+                    if r.name()
+                        .is_some_and(|n| self.t.find(self.scope, n).is_none())
+                    {
                         self.err(ids::TIME_RESULT, 30, String::new());
                     }
                     return true;
@@ -667,9 +770,15 @@ impl Gen<'_> {
 
     fn dt_test(&mut self, op: &Op) {
         let Some(r) = op.result.first() else { return };
-        let Some(v) = self.expr(r, Want::default()) else { return };
+        let Some(v) = self.expr(r, Want::default()) else {
+            return;
+        };
         // A data structure is tested as its characters.
-        let v = if matches!(v.ty, Ty::Ds(_)) { self.as_chars(&v) } else { v };
+        let v = if matches!(v.ty, Ty::Ds(_)) {
+            self.as_chars(&v)
+        } else {
+            v
+        };
         let class = if op.ext.contains('D') {
             Some(Class::Date)
         } else if op.ext.contains('T') {
@@ -695,11 +804,22 @@ impl Gen<'_> {
                 let dft = match c {
                     Class::Date => self.ctl_date(),
                     Class::Time => self.ctl_time(),
-                    Class::Stamp => Conv { code: dtfmt::STAMP, sep: Some('-') },
+                    Class::Stamp => Conv {
+                        code: dtfmt::STAMP,
+                        sep: Some('-'),
+                    },
                 };
-                let Some(mut f) = self.fmt_arg(op.f1.first(), c, dft) else { return };
+                let Some(mut f) = self.fmt_arg(op.f1.first(), c, dft) else {
+                    return;
+                };
                 if c == Class::Stamp && v.ty.is_numeric() {
-                    f = dtfmt::word(Conv { code: dtfmt::STAMP, sep: None }, 6);
+                    f = dtfmt::word(
+                        Conv {
+                            code: dtfmt::STAMP,
+                            sep: None,
+                        },
+                        6,
+                    );
                 }
                 f
             }
@@ -707,7 +827,8 @@ impl Gen<'_> {
         self.dt_procs();
         let (x, xd, xf) = self.dt_operand(&v, f);
         let r = self.b.reg();
-        self.b.ins(format!("{r} = callb _QRNX_DTTEST({x}, {xd}, {xf})"));
+        self.b
+            .ins(format!("{r} = callb _QRNX_DTTEST({x}, {xd}, {xf})"));
         let bad = self.b.reg();
         self.b.ins(format!("{bad} = cmp.eq {r}, 0"));
         if !op.resind[1].is_empty() {
@@ -717,16 +838,24 @@ impl Gen<'_> {
     }
 
     fn dt_dur_op(&mut self, sub: bool, op: &Op) {
-        let (Some(r0), Some(f2)) = (op.result.first(), op.f2.first()) else { return };
+        let (Some(r0), Some(f2)) = (op.result.first(), op.f2.first()) else {
+            return;
+        };
         // SUBDUR's difference form: `date SUBDUR date result:unit`.
         if sub && let Some(u) = op.result.get(1).and_then(unit_word) {
             let a = op.f1.first().cloned().unwrap_or_else(|| r0.clone());
-            let (Some(x), Some(y), Some(t)) = (self.dt_value(&a), self.dt_value(f2), self.target(r0)) else { return };
+            let (Some(x), Some(y), Some(t)) =
+                (self.dt_value(&a), self.dt_value(f2), self.target(r0))
+            else {
+                return;
+            };
             self.dt_procs();
             let (xa, xd, xf) = self.dt_operand(&x, 0);
             let (ya, yd, yf) = self.dt_operand(&y, 0);
             let r = self.b.reg();
-            self.b.ins(format!("{r} = callb _QRNX_DTDIFF({xa}, {xd}, {xf}, {ya}, {yd}, {yf}, {u})"));
+            self.b.ins(format!(
+                "{r} = callb _QRNX_DTDIFF({xa}, {xd}, {xf}, {ya}, {yd}, {yf}, {u})"
+            ));
             self.assign(&t, &V::reg(Ty::Int(20), r), false);
             return;
         }
@@ -735,8 +864,12 @@ impl Gen<'_> {
             return;
         };
         let base = op.f1.first().cloned().unwrap_or_else(|| r0.clone());
-        let (Some(src), Some(t)) = (self.dt_value(&base), self.target(r0)) else { return };
-        let Some(nv) = self.expr(f2, Want::default()) else { return };
+        let (Some(src), Some(t)) = (self.dt_value(&base), self.target(r0)) else {
+            return;
+        };
+        let Some(nv) = self.expr(f2, Want::default()) else {
+            return;
+        };
         let Some(n) = self.int_reg(&nv) else { return };
         let n = if sub {
             let m = self.b.reg();
@@ -774,9 +907,15 @@ impl Gen<'_> {
         self.dt_procs();
         let desc = self.desc_of(&date);
         let w = dtfmt::word(Conv { code: f, sep: None }, 0);
-        self.b.ins(format!("callb _QRNX_DTNOW({}, {desc}, {w})", date.op));
-        let scale = V::lit(Ty::Packed(9, 0), if dd == 8 { "100000000" } else { "1000000" });
-        let Some(hi) = self.arith(BinOp::Mul, &hms, &scale, Want::default()) else { return };
+        self.b
+            .ins(format!("callb _QRNX_DTNOW({}, {desc}, {w})", date.op));
+        let scale = V::lit(
+            Ty::Packed(9, 0),
+            if dd == 8 { "100000000" } else { "1000000" },
+        );
+        let Some(hi) = self.arith(BinOp::Mul, &hms, &scale, Want::default()) else {
+            return;
+        };
         if let Some(sum) = self.arith(BinOp::Add, &hi, &date, Want::default()) {
             self.assign(t, &sum, false);
         }

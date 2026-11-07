@@ -89,7 +89,11 @@ pub fn run(rq: &Rq<'_>, command: &str, how: How, jobq: &str, check: bool) -> Opt
     let typed = command.trim().to_string();
     let line = match how {
         How::Batch if !check => {
-            let q = if jobq.trim().is_empty() { String::new() } else { format!(" JOBQ({})", jobq.trim()) };
+            let q = if jobq.trim().is_empty() {
+                String::new()
+            } else {
+                format!(" JOBQ({})", jobq.trim())
+            };
             format!("SBMJOB CMD({typed}){q}")
         }
         _ => typed.clone(),
@@ -124,7 +128,11 @@ pub fn run(rq: &Rq<'_>, command: &str, how: How, jobq: &str, check: bool) -> Opt
         })
         .unwrap_or("")
         .to_string();
-    let q = if jobq.trim().is_empty() { "*JOBD".to_string() } else { jobq.trim().to_string() };
+    let q = if jobq.trim().is_empty() {
+        "*JOBD".to_string()
+    } else {
+        jobq.trim().to_string()
+    };
     Some(rq.message(Kind::Done, msgs::SUBMITTED, &[&q, &job]))
 }
 
@@ -135,7 +143,10 @@ pub fn save(rq: &Rq<'_>, command: &str, how: How, edit: Option<usize>) -> Respon
     }
     let command = command.trim();
     if command.is_empty() {
-        return rq.done("/cmd", rq.message(Kind::Error, msgs::BAD_VALUE, &["", "Command"]));
+        return rq.done(
+            "/cmd",
+            rq.message(Kind::Error, msgs::BAD_VALUE, &["", "Command"]),
+        );
     }
     let cmd = &rq.env().cmd;
     let mut all = cmd.saved(rq.user());
@@ -155,7 +166,10 @@ pub fn save(rq: &Rq<'_>, command: &str, how: How, edit: Option<usize>) -> Respon
         name
     };
     match cmd.put_saved(rq.user(), &all) {
-        Ok(()) => rq.done("/cmd/saved", rq.message(Kind::Done, msgs::CMD_SAVED, &[&name])),
+        Ok(()) => rq.done(
+            "/cmd/saved",
+            rq.message(Kind::Done, msgs::CMD_SAVED, &[&name]),
+        ),
         Err(m) => rq.done("/cmd", m),
     }
 }
@@ -176,7 +190,10 @@ fn run_page(rq: &Rq<'_>) -> Response {
         let typed = f.str("cmd");
         if f.has("run") || f.has("check") {
             if typed.trim().is_empty() {
-                return rq.done("/cmd", rq.message(Kind::Error, msgs::BAD_VALUE, &["", "Command"]));
+                return rq.done(
+                    "/cmd",
+                    rq.message(Kind::Error, msgs::BAD_VALUE, &["", "Command"]),
+                );
             }
             let next = run(rq, typed, how, f.str("jobq"), f.has("check"));
             let back = format!("/cmd{}", query(&[("c", typed.trim()), ("how", how.code())]));
@@ -204,9 +221,14 @@ fn run_page(rq: &Rq<'_>) -> Response {
     let typed = match (&saved_cmd, q.get("c").or_else(|| q.get("new").map(|_| ""))) {
         (Some(s), _) => s.command.clone(),
         (None, Some(c)) => c.to_string(),
-        (None, None) => results.last().map(|r| r.command.clone()).unwrap_or_default(),
+        (None, None) => results
+            .last()
+            .map(|r| r.command.clone())
+            .unwrap_or_default(),
     };
-    let how = saved_cmd.as_ref().map_or_else(|| How::from_code(q.str("how")), |s| s.how);
+    let how = saved_cmd
+        .as_ref()
+        .map_or_else(|| How::from_code(q.str("how")), |s| s.how);
     let queues = cmd.job_queues(rq.user());
     let mut jobq = String::from("<select name=\"jobq\">");
     for o in &queues {
@@ -256,7 +278,14 @@ fn run_page(rq: &Rq<'_>) -> Response {
                 let ms = m.sent_ms % 1000;
                 let (_, t) = rq.stamp(m.sent_ms / 1000);
                 vec![
-                    if severe { Cell { class: Some("num"), html: format!("<span class=\"err\">{sev}</span>") } } else { Cell::num(&sev) },
+                    if severe {
+                        Cell {
+                            class: Some("num"),
+                            html: format!("<span class=\"err\">{sev}</span>"),
+                        }
+                    } else {
+                        Cell::num(&sev)
+                    },
                     Cell::mono_html(id_link(&m.id, severe)),
                     Cell::mono(&m.text),
                     Cell::mono(&m.program),
@@ -282,9 +311,19 @@ fn run_page(rq: &Rq<'_>) -> Response {
         let links: Vec<String> = recent
             .iter()
             .take(SHOWN)
-            .map(|c| format!("<a href=\"{}\">{}</a>", esc(&PRODUCT.url(&format!("/cmd{}", query(&[("c", c)])))), esc(c)))
+            .map(|c| {
+                format!(
+                    "<a href=\"{}\">{}</a>",
+                    esc(&PRODUCT.url(&format!("/cmd{}", query(&[("c", c)])))),
+                    esc(c)
+                )
+            })
             .collect();
-        let _ = write!(body, "<h2>Recent commands</h2><div class=\"small mono\">{}</div>", links.join("<br>"));
+        let _ = write!(
+            body,
+            "<h2>Recent commands</h2><div class=\"small mono\">{}</div>",
+            links.join("<br>")
+        );
     }
     rq.page(Page {
         title: "Run command".into(),
@@ -301,6 +340,11 @@ fn run_page(rq: &Rq<'_>) -> Response {
 /// `KEYWORD(value)` with a CL quote when the value needs one.
 pub fn keyword(kw: &str, v: &str) -> String {
     let plain = v.starts_with('\'')
-        || v.chars().all(|c| c.is_ascii_alphanumeric() || "*/._$#@ ()-,+".contains(c));
-    if plain { format!("{kw}({v})") } else { format!("{kw}({})", quote(v)) }
+        || v.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "*/._$#@ ()-,+".contains(c));
+    if plain {
+        format!("{kw}({v})")
+    } else {
+        format!("{kw}({})", quote(v))
+    }
 }

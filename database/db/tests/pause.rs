@@ -34,11 +34,21 @@ const ROWS: i64 = 700;
 /// CUST with `ROWS` customers, named in reverse of their numbers.
 fn customers(store: &mut Store, lib: ObjectId) -> ObjectId {
     let mut t = store.begin().unwrap();
-    let cust = file::create_pf(&mut t, lib, name("CUST"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
-        .unwrap();
+    let cust = file::create_pf(
+        &mut t,
+        lib,
+        name("CUST"),
+        &customer_def(),
+        &CreateFileOpts {
+            now: NOW,
+            ..CreateFileOpts::default()
+        },
+    )
+    .unwrap();
     let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
     for n in 1..=ROWS {
-        m.write_new(&mut t, &record(n, &format!("N{:05}", ROWS - n)), &[0]).unwrap();
+        m.write_new(&mut t, &record(n, &format!("N{:05}", ROWS - n)), &[0])
+            .unwrap();
     }
     t.commit().unwrap();
     cust
@@ -59,7 +69,11 @@ fn pausing(count: &mut u32, stop: u32) -> impl FnMut(&mut store::Txn<'_>) -> db:
 
 fn by_name(t: &mut store::Txn<'_>, lfid: ObjectId) -> Vec<u64> {
     let lm = Member::open_by(t, lfid, MemberSpec::First).unwrap();
-    lm.keys(t, Bound::Unbounded, Bound::Unbounded, 100_000).unwrap().iter().map(|k| k.rrn).collect()
+    lm.keys(t, Bound::Unbounded, Bound::Unbounded, 100_000)
+        .unwrap()
+        .iter()
+        .map(|k| k.rrn)
+        .collect()
 }
 
 #[test]
@@ -68,14 +82,34 @@ fn a_path_built_with_pauses_and_one_ended_part_way() {
     let cust = customers(&mut store, lib);
     let mut refs = MapRefs::default();
     refs.insert_pf("QSTEST", "CUST", &customer_def());
-    let def = lf(&[rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")], &refs);
-    let want: Vec<u64> = (1..=ROWS).rev().map(|n| u64::try_from(n).unwrap()).collect();
-    let opts = CreateFileOpts { now: NOW, member: MemberOpt::None, ..CreateFileOpts::default() };
+    let def = lf(
+        &[rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")],
+        &refs,
+    );
+    let want: Vec<u64> = (1..=ROWS)
+        .rev()
+        .map(|n| u64::try_from(n).unwrap())
+        .collect();
+    let opts = CreateFileOpts {
+        now: NOW,
+        member: MemberOpt::None,
+        ..CreateFileOpts::default()
+    };
     // Built with a pause every batch, each committing the part before.
     let mut t = store.begin().unwrap();
-    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let lfid =
+        file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
     let mut pauses = 0;
-    file::add_lf_member_paused(&mut t, lfid, name("BYNAME"), "", None, NOW, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    file::add_lf_member_paused(
+        &mut t,
+        lfid,
+        name("BYNAME"),
+        "",
+        None,
+        NOW,
+        &mut pausing(&mut pauses, u32::MAX),
+    )
+    .unwrap();
     t.commit().unwrap();
     assert_eq!(pauses, 2, "{ROWS} records, a pause every 256");
     let mut t = store.begin().unwrap();
@@ -85,9 +119,19 @@ fn a_path_built_with_pauses_and_one_ended_part_way() {
     // committed is a member whose path is marked invalid, built again
     // when it is next opened.
     let mut t = store.begin().unwrap();
-    let lf2 = file::create_lf(&mut t, lib, name("BYNAME2"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let lf2 =
+        file::create_lf(&mut t, lib, name("BYNAME2"), &def, &mut |_| Ok(cust), &opts).unwrap();
     let mut pauses = 0;
-    let e = file::add_lf_member_paused(&mut t, lf2, name("BYNAME2"), "", None, NOW, &mut pausing(&mut pauses, 1)).unwrap_err();
+    let e = file::add_lf_member_paused(
+        &mut t,
+        lf2,
+        name("BYNAME2"),
+        "",
+        None,
+        NOW,
+        &mut pausing(&mut pauses, 1),
+    )
+    .unwrap_err();
     assert!(matches!(e, DbError::Ended), "{e:?}");
     drop(t);
     drop(store);
@@ -107,36 +151,76 @@ fn a_path_built_with_pauses_and_one_ended_part_way() {
 fn a_large_path_is_loaded_in_steps() {
     let (d, mut store, lib) = open_new();
     let mut t = store.begin().unwrap();
-    let cust = file::create_pf(&mut t, lib, name("CUST"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
-        .unwrap();
+    let cust = file::create_pf(
+        &mut t,
+        lib,
+        name("CUST"),
+        &customer_def(),
+        &CreateFileOpts {
+            now: NOW,
+            ..CreateFileOpts::default()
+        },
+    )
+    .unwrap();
     let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
     let big: i64 = 12_000;
     for n in 1..=big {
-        m.write_new(&mut t, &record(n, &format!("N{:06}", big - n)), &[0]).unwrap();
+        m.write_new(&mut t, &record(n, &format!("N{:06}", big - n)), &[0])
+            .unwrap();
     }
     t.commit().unwrap();
     let mut refs = MapRefs::default();
     refs.insert_pf("QSTEST", "CUST", &customer_def());
-    let def = lf(&[rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")], &refs);
+    let def = lf(
+        &[rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")],
+        &refs,
+    );
     let want: Vec<u64> = (1..=big).rev().map(|n| u64::try_from(n).unwrap()).collect();
-    let opts = CreateFileOpts { now: NOW, member: MemberOpt::None, ..CreateFileOpts::default() };
+    let opts = CreateFileOpts {
+        now: NOW,
+        member: MemberOpt::None,
+        ..CreateFileOpts::default()
+    };
     let read_pauses = u32::try_from(big).unwrap() / 256;
     // Whole, with pauses in the reading and in the load.
     let mut t = store.begin().unwrap();
-    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let lfid =
+        file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
     let mut pauses = 0;
-    file::add_lf_member_paused(&mut t, lfid, name("BYNAME"), "", None, NOW, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    file::add_lf_member_paused(
+        &mut t,
+        lfid,
+        name("BYNAME"),
+        "",
+        None,
+        NOW,
+        &mut pausing(&mut pauses, u32::MAX),
+    )
+    .unwrap();
     t.commit().unwrap();
-    assert!(pauses >= read_pauses + 2, "{pauses} pauses: the load takes some");
+    assert!(
+        pauses >= read_pauses + 2,
+        "{pauses} pauses: the load takes some"
+    );
     let mut t = store.begin().unwrap();
     assert_eq!(by_name(&mut t, lfid), want);
     drop(t);
     // Ended at a pause in the load, the tree part loaded and committed:
     // rebuilt whole when next opened.
     let mut t = store.begin().unwrap();
-    let lf2 = file::create_lf(&mut t, lib, name("BYNAME2"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let lf2 =
+        file::create_lf(&mut t, lib, name("BYNAME2"), &def, &mut |_| Ok(cust), &opts).unwrap();
     let mut n = 0;
-    let e = file::add_lf_member_paused(&mut t, lf2, name("BYNAME2"), "", None, NOW, &mut pausing(&mut n, read_pauses + 1)).unwrap_err();
+    let e = file::add_lf_member_paused(
+        &mut t,
+        lf2,
+        name("BYNAME2"),
+        "",
+        None,
+        NOW,
+        &mut pausing(&mut n, read_pauses + 1),
+    )
+    .unwrap_err();
     assert!(matches!(e, DbError::Ended), "{e:?}");
     drop(t);
     drop(store);
@@ -163,7 +247,14 @@ fn records_converted_with_pauses() {
     ]);
     let mut t = store.begin().unwrap();
     let mut pauses = 0;
-    db::chg::chgpf_srcfile_paused(&mut t, JobHandle(1), cust, &new, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    db::chg::chgpf_srcfile_paused(
+        &mut t,
+        JobHandle(1),
+        cust,
+        &new,
+        &mut pausing(&mut pauses, u32::MAX),
+    )
+    .unwrap();
     t.commit().unwrap();
     assert_eq!(pauses, 2);
     let mut t = store.begin().unwrap();
@@ -172,7 +263,10 @@ fn records_converted_with_pauses() {
     assert_eq!(m.attr().record_count, u64::try_from(ROWS).unwrap());
     let (_, nf) = fmt.format.field(&name("NAME")).unwrap();
     let rows = m.scan(&mut t, 1, 10_000).unwrap();
-    let names: Vec<String> = rows.iter().map(|s| ccsid::decode_trimmed(db::record::field_bytes(nf, &s.record))).collect();
+    let names: Vec<String> = rows
+        .iter()
+        .map(|s| ccsid::decode_trimmed(db::record::field_bytes(nf, &s.record)))
+        .collect();
     let want: Vec<String> = (1..=ROWS).map(|n| format!("N{:05}", ROWS - n)).collect();
     assert_eq!(names, want);
 }
@@ -183,7 +277,11 @@ fn names_of(store: &mut store::Store, file: ObjectId) -> Vec<String> {
     let m = Member::open_by(&mut t, file, MemberSpec::First).unwrap();
     let fmt = m.format().clone();
     let (_, nf) = fmt.format.field(&name("NAME")).unwrap();
-    m.scan(&mut t, 1, 100_000).unwrap().iter().map(|s| ccsid::decode_trimmed(db::record::field_bytes(nf, &s.record))).collect()
+    m.scan(&mut t, 1, 100_000)
+        .unwrap()
+        .iter()
+        .map(|s| ccsid::decode_trimmed(db::record::field_bytes(nf, &s.record)))
+        .collect()
 }
 
 #[test]
@@ -199,7 +297,9 @@ fn a_rebuild_cut_short_loses_nothing() {
     ]);
     let level = |store: &mut store::Store| {
         let mut t = store.begin().unwrap();
-        file::describe(&mut t, cust).unwrap().formats[0].level_id.clone()
+        file::describe(&mut t, cust).unwrap().formats[0]
+            .level_id
+            .clone()
     };
     let before = level(&mut store);
     let member = |store: &mut store::Store| {
@@ -229,45 +329,105 @@ fn a_rebuild_cut_short_loses_nothing() {
     assert_eq!(names_of(&mut store, cust), want);
     let shadow = {
         let mut t = store.begin().unwrap();
-        db::member::Core::load(&mut t, old_member).unwrap().attr.rebuild
+        db::member::Core::load(&mut t, old_member)
+            .unwrap()
+            .attr
+            .rebuild
     };
     assert_ne!(shadow, ObjectId::NONE);
     // Ended without a crash: what it made is gone at once.
     let mut t = store.begin().unwrap();
     let mut pauses = 0;
-    let e = db::chg::chgpf_srcfile_paused(&mut t, JobHandle(1), cust, &new, &mut pausing(&mut pauses, 1)).unwrap_err();
+    let e = db::chg::chgpf_srcfile_paused(
+        &mut t,
+        JobHandle(1),
+        cust,
+        &new,
+        &mut pausing(&mut pauses, 1),
+    )
+    .unwrap_err();
     assert!(matches!(e, DbError::Ended), "{e:?}");
     t.commit().unwrap();
     let mut t = store.begin().unwrap();
-    assert!(store::obj::ops::read_header(&mut t, shadow).is_err(), "the crash's rebuild is deleted");
-    assert_eq!(db::member::Core::load(&mut t, old_member).unwrap().attr.rebuild, ObjectId::NONE);
+    assert!(
+        store::obj::ops::read_header(&mut t, shadow).is_err(),
+        "the crash's rebuild is deleted"
+    );
+    assert_eq!(
+        db::member::Core::load(&mut t, old_member)
+            .unwrap()
+            .attr
+            .rebuild,
+        ObjectId::NONE
+    );
     drop(t);
     assert_eq!(names_of(&mut store, cust), want);
     // Whole: the new member in the old one's place, in the new format.
     let mut t = store.begin().unwrap();
     let mut pauses = 0;
-    db::chg::chgpf_srcfile_paused(&mut t, JobHandle(1), cust, &new, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    db::chg::chgpf_srcfile_paused(
+        &mut t,
+        JobHandle(1),
+        cust,
+        &new,
+        &mut pausing(&mut pauses, u32::MAX),
+    )
+    .unwrap();
     t.commit().unwrap();
     assert_ne!(level(&mut store), before);
     assert_ne!(member(&mut store), old_member);
     assert_eq!(names_of(&mut store, cust), want);
     let mut t = store.begin().unwrap();
-    assert!(store::obj::ops::read_header(&mut t, old_member).is_err(), "the old member is deleted");
+    assert!(
+        store::obj::ops::read_header(&mut t, old_member).is_err(),
+        "the old member is deleted"
+    );
 }
 
 #[test]
 fn a_rollback_ended_part_way_is_finished_by_recovery() {
     let (d, mut store, lib) = open_new();
     let mut t = store.begin().unwrap();
-    let cust = file::create_pf(&mut t, lib, name("CUST"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
-        .unwrap();
-    let rcv = crtjrnrcv(&mut t, lib, name("QSTRCV001"), &CrtJrnRcvOpts { now: NOW, ..CrtJrnRcvOpts::default() }).unwrap();
-    let jid = crtjrn(&mut t, lib, name("QSTJRN"), rcv, &CrtJrnOpts { now: NOW, ..CrtJrnOpts::default() }).unwrap();
+    let cust = file::create_pf(
+        &mut t,
+        lib,
+        name("CUST"),
+        &customer_def(),
+        &CreateFileOpts {
+            now: NOW,
+            ..CreateFileOpts::default()
+        },
+    )
+    .unwrap();
+    let rcv = crtjrnrcv(
+        &mut t,
+        lib,
+        name("QSTRCV001"),
+        &CrtJrnRcvOpts {
+            now: NOW,
+            ..CrtJrnRcvOpts::default()
+        },
+    )
+    .unwrap();
+    let jid = crtjrn(
+        &mut t,
+        lib,
+        name("QSTJRN"),
+        rcv,
+        &CrtJrnOpts {
+            now: NOW,
+            ..CrtJrnOpts::default()
+        },
+    )
+    .unwrap();
     strjrnpf(&mut t, JobHandle(1), cust, jid, true, true, NOW).unwrap();
     t.commit().unwrap();
     let count = |store: &mut Store| {
         let mut t = store.begin().unwrap();
-        Member::open_by(&mut t, cust, MemberSpec::First).unwrap().attr().record_count
+        Member::open_by(&mut t, cust, MemberSpec::First)
+            .unwrap()
+            .attr()
+            .record_count
     };
     for stop in [u32::MAX, 1] {
         // A cycle of ROWS inserts, then its rollback with pauses.
@@ -275,10 +435,18 @@ fn a_rollback_ended_part_way_is_finished_by_recovery() {
         let mut s = Session::new(JobHandle(1), odp::new_shared());
         s.strcmtctl(&mut t, LckLvl::Chg, None, NOW).unwrap();
         let mut resolve = resolve_in(name("QSTEST"), vec![(name("CUST"), cust)]);
-        let opts = OpenOpts { usage: Usage::ALL, commit: true, ..OpenOpts::input(JobHandle(0)) };
-        let o = s.open(&mut t, &FileRef::parse("CUST").unwrap(), &mut resolve, opts).unwrap();
+        let opts = OpenOpts {
+            usage: Usage::ALL,
+            commit: true,
+            ..OpenOpts::input(JobHandle(0))
+        };
+        let o = s
+            .open(&mut t, &FileRef::parse("CUST").unwrap(), &mut resolve, opts)
+            .unwrap();
         for n in 1..=ROWS {
-            o.borrow_mut().write(&mut t, &record(n, "New"), &[0]).unwrap();
+            o.borrow_mut()
+                .write(&mut t, &record(n, "New"), &[0])
+                .unwrap();
         }
         t.commit().unwrap();
         let mut t = store.begin().unwrap();
@@ -302,10 +470,16 @@ fn a_rollback_ended_part_way_is_finished_by_recovery() {
         drop(store);
         store = reopen(&d);
         let left = count(&mut store);
-        assert!(left > 0 && left < u64::try_from(ROWS).unwrap(), "{left} part undone");
+        assert!(
+            left > 0 && left < u64::try_from(ROWS).unwrap(),
+            "{left} part undone"
+        );
         let mut t = store.begin().unwrap();
         let qsys = file::describe(&mut t, cust).unwrap().header.library;
-        let qsys = store::obj::ops::read_header(&mut t, qsys).unwrap().1.library;
+        let qsys = store::obj::ops::read_header(&mut t, qsys)
+            .unwrap()
+            .1
+            .library;
         let r = recover_all(&mut t, qsys, NOW + 100).unwrap();
         assert_eq!(r.cycles_rolled_back, 1);
         t.commit().unwrap();
@@ -320,25 +494,51 @@ fn a_unique_path_over_repeated_keys_is_not_built() {
     // Two customers with one name.
     let mut t = store.begin().unwrap();
     let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
-    m.write_new(&mut t, &record(ROWS + 1, "N00007"), &[0]).unwrap();
+    m.write_new(&mut t, &record(ROWS + 1, "N00007"), &[0])
+        .unwrap();
     t.commit().unwrap();
     let mut refs = MapRefs::default();
     refs.insert_pf("QSTEST", "CUST", &customer_def());
-    let def = lf(&[common::file_kw("UNIQUE"), rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")], &refs);
-    let opts = CreateFileOpts { now: NOW, ..CreateFileOpts::default() };
+    let def = lf(
+        &[
+            common::file_kw("UNIQUE"),
+            rec("CUSBYNAME", "PFILE(QSTEST/CUST)"),
+            key("NAME", ""),
+        ],
+        &refs,
+    );
+    let opts = CreateFileOpts {
+        now: NOW,
+        ..CreateFileOpts::default()
+    };
     // CRTLF: refused with the duplicate, nothing made.
     let mut t = store.begin().unwrap();
-    let e = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap_err();
+    let e =
+        file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap_err();
     assert!(matches!(e, DbError::DuplicateKeys { .. }), "{e:?}");
     assert_eq!(e.msgid(), Some("CPF5090"));
     t.abort();
     // Built with pauses committing parts: the error comes at the end, the
     // path still marked invalid, for the caller to delete.
     let mut t = store.begin().unwrap();
-    let parts = CreateFileOpts { now: NOW, member: MemberOpt::None, ..CreateFileOpts::default() };
-    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &parts).unwrap();
+    let parts = CreateFileOpts {
+        now: NOW,
+        member: MemberOpt::None,
+        ..CreateFileOpts::default()
+    };
+    let lfid =
+        file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &parts).unwrap();
     let mut pauses = 0;
-    let e = file::add_lf_member_paused(&mut t, lfid, name("BYNAME"), "", None, NOW, &mut pausing(&mut pauses, u32::MAX)).unwrap_err();
+    let e = file::add_lf_member_paused(
+        &mut t,
+        lfid,
+        name("BYNAME"),
+        "",
+        None,
+        NOW,
+        &mut pausing(&mut pauses, u32::MAX),
+    )
+    .unwrap_err();
     assert!(matches!(e, DbError::DuplicateKeys { .. }), "{e:?}");
     assert!(pauses >= 2);
     file::delete_file(&mut t, JobHandle(1), lfid).unwrap();
@@ -347,7 +547,8 @@ fn a_unique_path_over_repeated_keys_is_not_built() {
     let mut t = store.begin().unwrap();
     let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
     m.delete(&mut t, u64::try_from(ROWS + 1).unwrap()).unwrap();
-    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let lfid =
+        file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
     t.commit().unwrap();
     let mut t = store.begin().unwrap();
     assert_eq!(by_name(&mut t, lfid).len(), usize::try_from(ROWS).unwrap());
@@ -356,7 +557,10 @@ fn a_unique_path_over_repeated_keys_is_not_built() {
 /// Every record of a member, by RRN.
 fn slots_of(store: &mut Store, file: ObjectId) -> Vec<db::Slot> {
     let mut t = store.begin().unwrap();
-    Member::open_by(&mut t, file, MemberSpec::First).unwrap().scan(&mut t, 1, 100_000).unwrap()
+    Member::open_by(&mut t, file, MemberSpec::First)
+        .unwrap()
+        .scan(&mut t, 1, 100_000)
+        .unwrap()
 }
 
 #[test]
@@ -373,22 +577,59 @@ fn copies_and_a_reorganize_with_pauses() {
         let pause: db::Pause<'_> = if paused { &mut counting } else { &mut none };
         // CPYF into a new file, then again over it with *REPLACE.
         let mut t = store.begin().unwrap();
-        let opts = CpyfOpts { crtfile: true, now: NOW, ..CpyfOpts::default() };
-        let to = Target::Create { library: lib, name: name("COPY") };
+        let opts = CpyfOpts {
+            crtfile: true,
+            now: NOW,
+            ..CpyfOpts::default()
+        };
+        let to = Target::Create {
+            library: lib,
+            name: name("COPY"),
+        };
         let r = util::cpyf_paused(&mut t, job, cust, &to, &opts, pause).unwrap();
         assert_eq!(r.copied, u64::try_from(ROWS).unwrap());
         let copy = r.created.unwrap();
-        let opts = CpyfOpts { mbropt: MbrOpt::Replace, now: NOW, ..CpyfOpts::default() };
+        let opts = CpyfOpts {
+            mbropt: MbrOpt::Replace,
+            now: NOW,
+            ..CpyfOpts::default()
+        };
         let r = util::cpyf_paused(&mut t, job, cust, &Target::File(copy), &opts, pause).unwrap();
         assert_eq!(r.copied, u64::try_from(ROWS).unwrap());
         t.commit().unwrap();
         assert_eq!(slots_of(&mut store, copy), slots_of(&mut store, cust));
         // Out as text and back in.
         let mut t = store.begin().unwrap();
-        let text = util::cpytoimpf_paused(&mut t, job, cust, MemberSpec::First, &ImpfOpts::default(), pause).unwrap();
-        let back = file::create_pf(&mut t, lib, name("BACK"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
-            .unwrap();
-        let r = util::cpyfrmimpf_paused(&mut t, job, back, MemberSpec::First, &text, &ImpfOpts::default(), pause).unwrap();
+        let text = util::cpytoimpf_paused(
+            &mut t,
+            job,
+            cust,
+            MemberSpec::First,
+            &ImpfOpts::default(),
+            pause,
+        )
+        .unwrap();
+        let back = file::create_pf(
+            &mut t,
+            lib,
+            name("BACK"),
+            &customer_def(),
+            &CreateFileOpts {
+                now: NOW,
+                ..CreateFileOpts::default()
+            },
+        )
+        .unwrap();
+        let r = util::cpyfrmimpf_paused(
+            &mut t,
+            job,
+            back,
+            MemberSpec::First,
+            &text,
+            &ImpfOpts::default(),
+            pause,
+        )
+        .unwrap();
         assert_eq!((r.records, r.errors), (u64::try_from(ROWS).unwrap(), 0));
         t.commit().unwrap();
         assert_eq!(slots_of(&mut store, back), slots_of(&mut store, cust));
@@ -399,10 +640,14 @@ fn copies_and_a_reorganize_with_pauses() {
         for rrn in (3..=u64::try_from(ROWS).unwrap()).step_by(3) {
             m.delete(&mut t, rrn).unwrap();
         }
-        let r = util::rgzpfm_paused(&mut t, job, copy, MemberSpec::First, &KeyFile::File, pause).unwrap();
+        let r = util::rgzpfm_paused(&mut t, job, copy, MemberSpec::First, &KeyFile::File, pause)
+            .unwrap();
         assert_eq!(r.records, u64::try_from(ROWS - ROWS / 3).unwrap());
         t.commit().unwrap();
-        let left: Vec<String> = slots_of(&mut store, copy).iter().map(|s| format!("{:?}", s.record)).collect();
+        let left: Vec<String> = slots_of(&mut store, copy)
+            .iter()
+            .map(|s| format!("{:?}", s.record))
+            .collect();
         assert_eq!(left.len(), usize::try_from(ROWS - ROWS / 3).unwrap());
         drop(counting);
         if paused {

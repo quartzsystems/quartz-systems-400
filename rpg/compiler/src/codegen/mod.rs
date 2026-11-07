@@ -16,18 +16,17 @@ pub mod bif;
 pub mod bifmisc;
 pub mod calls;
 pub mod cycle;
-pub mod debug;
-pub mod heap;
-pub mod ucs2;
-pub mod dbio;
-pub mod dates;
 pub mod datagen;
+pub mod dates;
+pub mod dbio;
+pub mod debug;
 pub mod dspio;
 pub mod dtaara;
 pub mod dump;
 pub mod emit;
 pub mod exc;
 pub mod expr;
+pub mod heap;
 pub mod oa;
 pub mod output;
 pub mod special;
@@ -35,6 +34,7 @@ pub mod sql;
 pub mod stmt;
 pub mod strbif;
 pub mod strops;
+pub mod ucs2;
 pub mod xml;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -265,7 +265,8 @@ impl Gen<'_> {
     pub fn undefined_name(&mut self, name: &str, at: Pos) {
         let at = if at.line == 0 { self.at } else { at };
         if self.undefined.insert(name.to_string()) {
-            self.diags.push(Diag::new(ids::NOT_DEFINED, 30, at).arg(name.to_string()));
+            self.diags
+                .push(Diag::new(ids::NOT_DEFINED, 30, at).arg(name.to_string()));
         }
         if self.undefined_at.insert(self.at.line) {
             self.diags.push(Diag::new(ids::UNDEFINED_OPERAND, 30, at));
@@ -281,7 +282,11 @@ impl Gen<'_> {
         self.labels = calcs
             .iter()
             .filter(|s| matches!(s.op.code.as_str(), "TAG" | "ENDSR"))
-            .filter_map(|s| s.op.f1.first().and_then(|e| e.name().map(str::to_ascii_uppercase)))
+            .filter_map(|s| {
+                s.op.f1
+                    .first()
+                    .and_then(|e| e.name().map(str::to_ascii_uppercase))
+            })
             .collect();
     }
 
@@ -314,13 +319,24 @@ fn struct_types(t: &Table) -> Vec<String> {
         if !done.insert(ds.ir_type.clone()) {
             continue;
         }
-        let mut s = format!("type {} = struct({}) {{ all_: char({}) @0", ds.ir_type, ds.len.max(1), ds.len.max(1));
+        let mut s = format!(
+            "type {} = struct({}) {{ all_: char({}) @0",
+            ds.ir_type,
+            ds.len.max(1),
+            ds.len.max(1)
+        );
         for &f in &ds.subfields {
             let sym = &t.syms[f];
             if sym.name.is_empty() || sym.name == "*N" || matches!(sym.ty, Ty::Unknown) {
                 continue;
             }
-            let _ = write!(s, ", {}: {} @{}", mangle(&sym.name), t.ir_storage(sym), sym.offset);
+            let _ = write!(
+                s,
+                ", {}: {} @{}",
+                mangle(&sym.name),
+                t.ir_storage(sym),
+                sym.offset
+            );
         }
         s.push_str(" }");
         out.push(s);
@@ -401,9 +417,22 @@ pub fn module(
         debug: opts.dbgview != "*NONE",
         monitors: 0,
         callbs: 0,
-        local_procs: m.procs.iter().map(|p| p.name.to_ascii_uppercase()).collect(),
-        proc_order: m.procs.iter().map(|p| p.name.to_ascii_uppercase()).collect(),
-        exported_procs: m.procs.iter().filter(|p| p.kws.iter().any(|k| k.name == "EXPORT")).map(|p| p.name.to_ascii_uppercase()).collect(),
+        local_procs: m
+            .procs
+            .iter()
+            .map(|p| p.name.to_ascii_uppercase())
+            .collect(),
+        proc_order: m
+            .procs
+            .iter()
+            .map(|p| p.name.to_ascii_uppercase())
+            .collect(),
+        exported_procs: m
+            .procs
+            .iter()
+            .filter(|p| p.kws.iter().any(|k| k.name == "EXPORT"))
+            .map(|p| p.name.to_ascii_uppercase())
+            .collect(),
         pages: BTreeSet::new(),
         outputs: m.outputs.clone(),
         ctdata: m.ctdata.clone(),
@@ -431,11 +460,16 @@ pub fn module(
     for o in &m.outputs {
         for f in &o.fields {
             let n = f.field.as_str();
-            let special = n.is_empty() || n.starts_with('*') || n.contains(['.', '(']) || n == "UDATE" || n.starts_with("PAGE") && n.len() <= 5;
+            let special = n.is_empty()
+                || n.starts_with('*')
+                || n.contains(['.', '('])
+                || n == "UDATE"
+                || n.starts_with("PAGE") && n.len() <= 5;
             if !special && g.t.find(0, n).is_none() {
                 g.undefined_at.insert(f.at.line);
                 if g.undefined.insert(n.to_string()) {
-                    g.diags.push(Diag::new(ids::NOT_DEFINED, 30, f.at).arg(n.to_string()));
+                    g.diags
+                        .push(Diag::new(ids::NOT_DEFINED, 30, f.at).arg(n.to_string()));
                 }
             }
         }
@@ -457,7 +491,11 @@ pub fn module(
         mangle(&opts.name),
         if ctl.dftactgrp { " dftactgrp" } else { "" },
         if ctl.nomain { " nomain" } else { "" },
-        if opts.dbgview == "*NONE" { "*NONE" } else { "*STMT" },
+        if opts.dbgview == "*NONE" {
+            "*NONE"
+        } else {
+            "*STMT"
+        },
     );
     for ty in struct_types(g.t) {
         out.push_str(&ty);
@@ -478,7 +516,11 @@ pub fn module(
             "file {} file({}) lib({}){dev} usage({})",
             mangle(&f.name),
             mangle(&f.obj.1),
-            if f.obj.0 == "*LIBL" { "*LIBL".into() } else { mangle(&f.obj.0) },
+            if f.obj.0 == "*LIBL" {
+                "*LIBL".into()
+            } else {
+                mangle(&f.obj.0)
+            },
             f.ir_usage()
         );
         if f.keyed {
@@ -494,7 +536,12 @@ pub fn module(
             // Formats without a level identifier (printer files) are
             // not checked at open.
             for fm in ext.formats.iter().filter(|f| f.level_id.len() == 13) {
-                let _ = write!(line, " fmt({}:{})", mangle(&fm.name), emit::quote(&fm.level_id));
+                let _ = write!(
+                    line,
+                    " fmt({}:{})",
+                    mangle(&fm.name),
+                    emit::quote(&fm.level_id)
+                );
             }
         }
         out.push_str(&line);
@@ -550,11 +597,25 @@ pub fn module(
     }
     if ctl.main.is_some() || ctl.nomain {
         for f in files.iter().filter(|f| f.scope == 0 && !f.template) {
-            g.diags.push(rpgfront::Diag::new(ids::CLOSE_EXPLICITLY, 10, Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
+            g.diags.push(
+                rpgfront::Diag::new(
+                    ids::CLOSE_EXPLICITLY,
+                    10,
+                    Pos {
+                        line: f.def_line,
+                        col: 7,
+                    },
+                )
+                .arg(f.name.clone()),
+            );
         }
     }
     for (i, p) in m.procs.iter().enumerate() {
-        procs.push_str(&stmt::subprocedure(&mut g, p, locals.get(i).copied().unwrap_or(0)));
+        procs.push_str(&stmt::subprocedure(
+            &mut g,
+            p,
+            locals.get(i).copied().unwrap_or(0),
+        ));
     }
     procs.push_str(&init_proc(&mut g));
     if g.sql_endmod && !ctl.nomain {
@@ -591,10 +652,14 @@ pub fn static_inz(s: &crate::syms::Sym) -> String {
         {
             format!(" inz({n})")
         }
-        (Some(Some(Expr::Lit(Lit::Char(c), _))), Ty::Char(len)) if c.chars().count() <= *len as usize => {
+        (Some(Some(Expr::Lit(Lit::Char(c), _))), Ty::Char(len))
+            if c.chars().count() <= *len as usize =>
+        {
             format!(" inz({})", emit::quote(c))
         }
-        (Some(Some(Expr::Special { word, .. })), Ty::Ind) if word == "*ON" => " inz(*ON)".to_string(),
+        (Some(Some(Expr::Special { word, .. })), Ty::Ind) if word == "*ON" => {
+            " inz(*ON)".to_string()
+        }
         _ => String::new(),
     }
 }
@@ -679,7 +744,8 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     // Where RETURN goes: the end, closing when LR is on.
     let finish = g.b.label();
     g.main_exit = Some(finish.clone());
-    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !is_total(&s.level));
+    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) =
+        m.calcs.iter().partition(|s| !is_total(&s.level));
     let (detail, subrs) = subroutine_procs(g, &detail);
     g.debug_vars(0);
     let start = g.b.label();
@@ -689,7 +755,10 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.place(&init);
     g.b.ins("callb _qrni_init()");
     let files = g.files;
-    for f in files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
+    for f in files
+        .iter()
+        .filter(|f| f.scope == 0 && !f.usropn && !f.template)
+    {
         g.init_open(f);
     }
     g.dtaara_auto(false);
@@ -774,7 +843,10 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     g.b.place(&init);
     g.b.ins("callb _qrni_init()");
     let files = g.files;
-    for f in files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
+    for f in files
+        .iter()
+        .filter(|f| f.scope == 0 && !f.usropn && !f.template)
+    {
         g.init_open(f);
     }
     g.dtaara_auto(false);
@@ -788,18 +860,21 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     g.b.ins("store $entry_n, %n");
     // The main procedure's parameters are the program's: each one the
     // caller passed goes on, the rest as *OMIT.
-    let parms = g
-        .t
-        .find(0, &up)
-        .and_then(|id| match g.t.syms[id].kind {
-            Some(Kind::Proto(pi)) => Some(g.t.protos[pi].parms.clone()),
-            _ => None,
-        })
-        .unwrap_or_default();
+    let parms =
+        g.t.find(0, &up)
+            .and_then(|id| match g.t.syms[id].kind {
+                Some(Kind::Proto(pi)) => Some(g.t.protos[pi].parms.clone()),
+                _ => None,
+            })
+            .unwrap_or_default();
     let mut sig = Vec::new();
     for (i, prm) in parms.iter().enumerate() {
         let ty = g.t.ir_type(&prm.ty);
-        let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
+        let ty = if prm.dim > 0 {
+            format!("array[{}] of {ty}", prm.dim)
+        } else {
+            ty
+        };
         sig.push(format!("$p{}: {ty} *NOPASS", i + 1));
     }
     let done = g.b.label();
@@ -809,8 +884,15 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
         g.b.ins(format!("{f} = cmp.ge %n, {k}"));
         g.b.term(format!("brif {f}, {call}, {next}"));
         g.b.place(&call);
-        let args: Vec<String> =
-            (0..parms.len()).map(|i| if i < k { format!("$p{}", i + 1) } else { "*OMIT".to_string() }).collect();
+        let args: Vec<String> = (0..parms.len())
+            .map(|i| {
+                if i < k {
+                    format!("$p{}", i + 1)
+                } else {
+                    "*OMIT".to_string()
+                }
+            })
+            .collect();
         g.b.ins(format!("callb {}({})", mangle(&up), args.join(", ")));
         g.b.term(format!("br {done}"));
         g.b.place(&next);
@@ -822,14 +904,24 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     }
     g.b.term("ret");
     let body = std::mem::take(&mut g.b);
-    body.finish(&format!("proc _QRNP_PEP_{}({}) entry", mangle(&g.opts.name), sig.join(", ")), "ret")
+    body.finish(
+        &format!(
+            "proc _QRNP_PEP_{}({}) entry",
+            mangle(&g.opts.name),
+            sig.join(", ")
+        ),
+        "ret",
+    )
 }
 
 impl Gen<'_> {
     /// Whether a procedure is the module's linear main procedure.
     #[must_use]
     pub fn is_linear_main(&self, name: &str) -> bool {
-        self.ctl.main.as_deref().is_some_and(|m| m.eq_ignore_ascii_case(name))
+        self.ctl
+            .main
+            .as_deref()
+            .is_some_and(|m| m.eq_ignore_ascii_case(name))
     }
 }
 
@@ -837,7 +929,10 @@ impl Gen<'_> {
 /// after it.
 fn klists(m: &Module) -> HashMap<String, Vec<Expr>> {
     let mut out = HashMap::new();
-    let all = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter()));
+    let all = m
+        .calcs
+        .iter()
+        .chain(m.procs.iter().flat_map(|p| p.calcs.iter()));
     let mut cur: Option<String> = None;
     for s in all {
         match s.op.code.as_str() {
@@ -849,7 +944,9 @@ fn klists(m: &Module) -> HashMap<String, Vec<Expr>> {
             }
             "KFLD" => {
                 if let (Some(n), Some(r)) = (&cur, s.op.result.first()) {
-                    out.entry(n.clone()).or_insert_with(Vec::new).push(r.clone());
+                    out.entry(n.clone())
+                        .or_insert_with(Vec::new)
+                        .push(r.clone());
                 }
             }
             _ => cur = None,
@@ -860,5 +957,7 @@ fn klists(m: &Module) -> HashMap<String, Vec<Expr>> {
 
 /// Whether a control level puts a calculation at total time.
 fn is_total(level: &str) -> bool {
-    level == "LR" || level == "L0" || level.len() == 2 && level.starts_with('L') && level[1..].parse::<u8>().is_ok()
+    level == "LR"
+        || level == "L0"
+        || level.len() == 2 && level.starts_with('L') && level[1..].parse::<u8>().is_ok()
 }

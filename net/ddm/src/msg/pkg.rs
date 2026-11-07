@@ -130,7 +130,11 @@ impl Pkgnamcsn {
 
     /// From a command's `PKGNAMCSN`.
     pub fn from_command(o: &Object) -> Result<Self, Error> {
-        Self::decode(o.get(param::PKGNAMCSN).ok_or(Error::Missing("PKGNAMCSN"))?.bytes())
+        Self::decode(
+            o.get(param::PKGNAMCSN)
+                .ok_or(Error::Missing("PKGNAMCSN"))?
+                .bytes(),
+        )
     }
 }
 

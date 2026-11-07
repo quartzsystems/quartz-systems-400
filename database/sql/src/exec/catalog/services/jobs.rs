@@ -51,8 +51,16 @@ fn split(q: &str) -> (&str, &str) {
 /// A list filter's names: comma or blank separated, upper case.
 fn list(text: Option<String>) -> Option<Vec<String>> {
     let t = text?;
-    let v: Vec<String> = t.split([',', ' ']).map(|s| s.trim().to_ascii_uppercase()).filter(|s| !s.is_empty()).collect();
-    if v.is_empty() || v.iter().any(|s| s == "*ALL") { None } else { Some(v) }
+    let v: Vec<String> = t
+        .split([',', ' '])
+        .map(|s| s.trim().to_ascii_uppercase())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if v.is_empty() || v.iter().any(|s| s == "*ALL") {
+        None
+    } else {
+        Some(v)
+    }
 }
 
 /// Whether `name` matches a name or generic (`ABC*`) filter.
@@ -65,7 +73,8 @@ fn matches(filter: &str, name: &str) -> bool {
 
 /// The job's `WRKACTJOB` type.
 fn job_type(j: &wm::table::JobInfo) -> &'static str {
-    j.job_type().map_or("SYS", |t| wm::job::wrkactjob_type(t, j.sub_type()))
+    j.job_type()
+        .map_or("SYS", |t| wm::job::wrkactjob_type(t, j.sub_type()))
 }
 
 /// `JOB_TYPE_ENHANCED` from the type.
@@ -87,7 +96,8 @@ fn enhanced(t: &str) -> &'static str {
 }
 
 fn internal_id(j: &wm::table::JobInfo) -> Vec<u8> {
-    wm::job::JobId::new(&j.name, &j.user, j.number).map_or_else(Vec::new, |id| id.internal(j.started).0.to_vec())
+    wm::job::JobId::new(&j.name, &j.user, j.number)
+        .map_or_else(Vec::new, |id| id.internal(j.started).0.to_vec())
 }
 
 /// A `*NOMAX` limit is null, as IBM shows it.
@@ -104,7 +114,10 @@ fn common(out: &mut Out, aj: &ActiveJob) {
     out.text("JOB_NAME_SHORT", job.name.as_str());
     out.text("JOB_USER", job.user.as_str());
     out.text("JOB_NUMBER", format!("{:06}", job.number));
-    out.set("INTERNAL_JOB_ID", crate::value::Value::Bin(internal_id(job)));
+    out.set(
+        "INTERNAL_JOB_ID",
+        crate::value::Value::Bin(internal_id(job)),
+    );
     let ty = job_type(job);
     out.text("JOB_TYPE", ty);
     out.text("JOB_TYPE_ENHANCED", enhanced(ty));
@@ -145,10 +158,16 @@ pub fn active(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -
     let mut n = 0;
     for a in &jobs {
         let j = &a.job;
-        if sbs.as_ref().is_some_and(|l| !l.iter().any(|s| s == j.subsystem.trim())) {
+        if sbs
+            .as_ref()
+            .is_some_and(|l| !l.iter().any(|s| s == j.subsystem.trim()))
+        {
             continue;
         }
-        if users.as_ref().is_some_and(|l| !l.iter().any(|u| u == j.user.trim())) {
+        if users
+            .as_ref()
+            .is_some_and(|l| !l.iter().any(|u| u == j.user.trim()))
+        {
             continue;
         }
         let t = job_type(j);
@@ -188,8 +207,14 @@ pub fn active(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -
             out.int("ELAPSED_TOTAL_RESPONSE_TIME", a.response_ms / 1000);
         }
         out.int("ELAPSED_TOTAL_DISK_IO_COUNT", a.elapsed_aux_io);
-        out.dec("ELAPSED_CPU_PERCENTAGE", &format!("{}.{:02}", a.cpu_tenths / 10, (a.cpu_tenths % 10) * 10));
-        out.dec("ELAPSED_TIME", &format!("{}.{:03}", a.elapsed_ms / 1000, a.elapsed_ms % 1000));
+        out.dec(
+            "ELAPSED_CPU_PERCENTAGE",
+            &format!("{}.{:02}", a.cpu_tenths / 10, (a.cpu_tenths % 10) * 10),
+        );
+        out.dec(
+            "ELAPSED_TIME",
+            &format!("{}.{:03}", a.elapsed_ms / 1000, a.elapsed_ms % 1000),
+        );
         if let Some(at) = &a.attrs {
             let (l, q) = split(&at.jobq);
             out.text_or_null("JOB_QUEUE_LIBRARY", l);
@@ -221,15 +246,25 @@ pub fn active(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -
 /// job table the service keeps (BLOCKED(rel): no table of ended jobs).
 #[allow(clippy::many_single_char_names)]
 pub fn job_info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
-    let status = args.word("JOB_STATUS_FILTER").unwrap_or_else(|| "*ALL".into());
+    let status = args
+        .word("JOB_STATUS_FILTER")
+        .unwrap_or_else(|| "*ALL".into());
     if !matches!(status.as_str(), "*ALL" | "*ACTIVE") {
         return Ok(());
     }
     let jobs = ask(txn, ctx, "the active jobs", |h| h.active_jobs())?;
-    let ty = args.word("JOB_TYPE_FILTER").unwrap_or_else(|| "*ALL".into());
-    let sbs = args.word("JOB_SUBSYSTEM_FILTER").unwrap_or_else(|| "*ALL".into());
-    let user = args.word("JOB_USER_FILTER").unwrap_or_else(|| ctx.user.clone());
-    let name = args.word("JOB_NAME_FILTER").unwrap_or_else(|| "*ALL".into());
+    let ty = args
+        .word("JOB_TYPE_FILTER")
+        .unwrap_or_else(|| "*ALL".into());
+    let sbs = args
+        .word("JOB_SUBSYSTEM_FILTER")
+        .unwrap_or_else(|| "*ALL".into());
+    let user = args
+        .word("JOB_USER_FILTER")
+        .unwrap_or_else(|| ctx.user.clone());
+    let name = args
+        .word("JOB_NAME_FILTER")
+        .unwrap_or_else(|| "*ALL".into());
     for a in &jobs {
         let j = &a.job;
         let t = job_type(j);
@@ -244,7 +279,9 @@ pub fn job_info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out)
             "*WRITER" => matches!(t, "WTR" | "PDJ"),
             _ => false,
         };
-        let user_ok = user == "*ALL" || (user == "*USER" && j.user.trim() == ctx.user.trim()) || matches(&user, j.user.trim());
+        let user_ok = user == "*ALL"
+            || (user == "*USER" && j.user.trim() == ctx.user.trim())
+            || matches(&user, j.user.trim());
         let name_ok = name == "*ALL" || matches(&name, j.name.trim());
         let sbs_ok = sbs == "*ALL" || sbs == j.subsystem.trim();
         if !(type_ok && user_ok && name_ok && sbs_ok) {
@@ -331,7 +368,10 @@ pub fn status(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> 
     out.int("MAXIMUM_TEMPORARY_STORAGE_USED", s.temp_max_mb);
     let in_use = s.active_jobs + s.table[0] + s.table[1] + s.table[2];
     out.int("TOTAL_JOB_TABLE_ENTRIES", in_use);
-    out.int("AVAILABLE_JOB_TABLE_ENTRIES", s.max_jobs.saturating_sub(in_use));
+    out.int(
+        "AVAILABLE_JOB_TABLE_ENTRIES",
+        s.max_jobs.saturating_sub(in_use),
+    );
     out.int("IN_USE_JOB_TABLE_ENTRIES", in_use);
     out.int("ACTIVE_JOB_TABLE_ENTRIES", s.active_jobs);
     out.int("JOBQ_JOB_TABLE_ENTRIES", s.table[0]);
@@ -348,12 +388,24 @@ pub fn status(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> 
     }
     out.text("IPL_MODE", s.ipl_mode.as_str());
     out.text("IPL_TYPE", s.ipl_type.as_str());
-    out.text("JOB_SCHEDULE_STATUS", if s.scheduler_active { "ACTIVE" } else { "INACTIVE" });
+    out.text(
+        "JOB_SCHEDULE_STATUS",
+        if s.scheduler_active {
+            "ACTIVE"
+        } else {
+            "INACTIVE"
+        },
+    );
     Ok(())
 }
 
 /// `SYSTEM_STATUS(RESET_STATISTICS, DETAILED_INFO)`: the view's row.
 /// Statistics are reset by `WRKSYSSTS`'s own interval, not here.
-pub fn status_function(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &mut Out) -> Result<()> {
+pub fn status_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    _args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     status(txn, ctx, out)
 }

@@ -11,10 +11,10 @@
 use console::Screen;
 
 use crate::dst::console_mode::ConsoleMode;
+use crate::dst::signon::message;
 use crate::install::lic::{LicEvent, LicKind};
 use crate::install::options::{IplOptions, MajorOptions};
 use crate::install::os::{DeviceKind, InstallDevice, OsOptions};
-use crate::dst::signon::message;
 use crate::users::{Privilege, SignOnError, UserDb};
 
 /// A configured disk unit, as the disk configuration displays show it.
@@ -654,7 +654,13 @@ pub trait DstEnv {
         Vec::new()
     }
     /// Alter `hex` bytes at `offset` of page `page` of object `id`.
-    fn alter_storage(&mut self, id: &str, page: u64, offset: &str, hex: &str) -> Result<String, String> {
+    fn alter_storage(
+        &mut self,
+        id: &str,
+        page: u64,
+        offset: &str,
+        hex: &str,
+    ) -> Result<String, String> {
         let _ = (id, page, offset, hex);
         Err(NOT_HERE.into())
     }
@@ -698,7 +704,11 @@ pub trait DstEnv {
     }
     /// The service tools device IDs: name, status, description.
     fn device_ids(&mut self) -> Vec<(String, String, String)> {
-        vec![("QCONSOLE".into(), "Enabled".into(), "The system console".into())]
+        vec![(
+            "QCONSOLE".into(),
+            "Enabled".into(),
+            "The system console".into(),
+        )]
     }
     /// The security flags.
     fn security_flags(&mut self) -> SecurityFlags {
@@ -916,11 +926,17 @@ impl DstEnv for MemEnv {
         self.reserved.clone()
     }
     fn hardware_report(&mut self) -> Result<Vec<String>, String> {
-        if self.qual.is_empty() { Err(NOT_AVAILABLE_HERE.into()) } else { Ok(self.qual.clone()) }
+        if self.qual.is_empty() {
+            Err(NOT_AVAILABLE_HERE.into())
+        } else {
+            Ok(self.qual.clone())
+        }
     }
     fn write_report_usb(&mut self) -> Result<String, String> {
         self.actions.push("write report to USB".into());
-        self.usb.clone().ok_or_else(|| "No USB device with a FAT file system was found. Insert one and try again.".into())
+        self.usb.clone().ok_or_else(|| {
+            "No USB device with a FAT file system was found. Insert one and try again.".into()
+        })
     }
     fn delete_unit_data(
         &mut self,
@@ -1071,7 +1087,10 @@ impl DstEnv for MemEnv {
         Ok(self.traces.iter().map(|t| t.0.clone()).collect())
     }
     fn start_trace(&mut self, spec: &TraceSpec) -> Result<(), String> {
-        self.actions.push(format!("trace {} {} {}", spec.name, spec.categories, spec.job));
+        self.actions.push(format!(
+            "trace {} {} {}",
+            spec.name, spec.categories, spec.job
+        ));
         self.traces.push((
             TraceRow {
                 name: spec.name.clone(),
@@ -1108,8 +1127,15 @@ impl DstEnv for MemEnv {
         let _ = major;
         self.events.clone()
     }
-    fn alter_storage(&mut self, id: &str, page: u64, offset: &str, hex: &str) -> Result<String, String> {
-        self.actions.push(format!("alter {id} {page} {offset} {hex}"));
+    fn alter_storage(
+        &mut self,
+        id: &str,
+        page: u64,
+        offset: &str,
+        hex: &str,
+    ) -> Result<String, String> {
+        self.actions
+            .push(format!("alter {id} {page} {offset} {hex}"));
         Ok(format!("{} bytes altered.", hex.len() / 2))
     }
     fn print_storage(&mut self, unit: &str, page: &str, id: &str) -> Result<String, String> {

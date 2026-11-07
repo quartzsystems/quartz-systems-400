@@ -42,7 +42,10 @@ pub fn dspseca(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
 }
 
 fn get(row: &[(String, String)], k: &str) -> String {
-    row.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default()
+    row.iter()
+        .find(|(n, _)| n == k)
+        .map(|(_, v)| v.clone())
+        .unwrap_or_default()
 }
 
 fn lists(data: stg::proto::Sys2Data) -> (Rows, Rows) {
@@ -60,10 +63,22 @@ fn lists(data: stg::proto::Sys2Data) -> (Rows, Rows) {
 
 /// Show one function and the profiles with usage of their own, two to
 /// a row; whether the operator left with F3.
-fn one(host: &Host, surface: &mut Surface, f: &[(String, String)], users: &Rows) -> Result<bool, Fail> {
+fn one(
+    host: &Host,
+    surface: &mut Surface,
+    f: &[(String, String)],
+    users: &Rows,
+) -> Result<bool, Fail> {
     let mut d = dialog(host, "QUIFCNUSG")?;
     let id = get(f, "FCNID");
-    for k in ["FCNID", "FCNNAME", "FCNPROD", "FCNGRP", "FCNDFT", "FCNALLOBJ"] {
+    for k in [
+        "FCNID",
+        "FCNNAME",
+        "FCNPROD",
+        "FCNGRP",
+        "FCNDFT",
+        "FCNALLOBJ",
+    ] {
         d.set(k, &get(f, k));
     }
     // The description takes up to two lines of 50 (ours are one).
@@ -72,7 +87,8 @@ fn one(host: &Host, surface: &mut Surface, f: &[(String, String)], users: &Rows)
     let rest: String = desc.iter().skip(50).take(50).collect();
     d.set("FCNDESC", &first);
     d.set("FCNDESC2", &rest);
-    let mine: Vec<&Vec<(String, String)>> = users.iter().filter(|u| get(u, "FCNID") == id).collect();
+    let mine: Vec<&Vec<(String, String)>> =
+        users.iter().filter(|u| get(u, "FCNID") == id).collect();
     d.clear_list("USERS");
     for pair in mine.chunks(2) {
         let mut row = Vec::new();
@@ -133,7 +149,12 @@ fn fill(d: &mut UimDialog, fns: &Rows) {
 
 /// `WRKFCNUSG FCNID()`: the functions; option 2 prompts `CHGFCNUSG`,
 /// option 5 shows one.
-pub fn wrkfcnusg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkfcnusg(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let pattern = match parm(r, "FCNID") {
         p if p.is_empty() => "*ALL".to_string(),
         p => p,

@@ -30,7 +30,11 @@ impl How {
 
     /// From the form's value.
     pub fn from_code(s: &str) -> Self {
-        if s == "batch" { How::Batch } else { How::Interactive }
+        if s == "batch" {
+            How::Batch
+        } else {
+            How::Interactive
+        }
     }
 
     /// The word My commands shows.

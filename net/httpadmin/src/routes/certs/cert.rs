@@ -11,7 +11,9 @@ use qsweb::html::{esc, query};
 use qsweb::http::Response;
 use qsweb::msg::Kind;
 use qsweb::pages::confirm_body;
-use qsweb::partials::{Button, Cell, Col, List, Prop, PropGroup, buttons, form, list_table, props_table};
+use qsweb::partials::{
+    Button, Cell, Col, List, Prop, PropGroup, buttons, form, list_table, props_table,
+};
 
 use super::stores::password_field;
 use super::{Rq, dn, failed, invalid, store_url, url_q};
@@ -32,16 +34,30 @@ pub fn spaced(hex: &str) -> String {
 /// wizard's result show them.
 pub fn facts(rq: &Rq<'_>, d: &CertDetail) -> String {
     let r = &d.row;
-    let mut rows = vec![Prop::new("Label", esc(&r.label)).mono(), Prop::new("Subject", esc(&dn(&r.subject))).mono()];
+    let mut rows = vec![
+        Prop::new("Label", esc(&r.label)).mono(),
+        Prop::new("Subject", esc(&dn(&r.subject))).mono(),
+    ];
     if r.kind == EntryType::Request {
         rows.push(Prop::new("Key", esc(&r.key)));
     } else {
         rows.push(Prop::new("Issuer", esc(&dn(&r.issuer))).mono());
         rows.push(Prop::new("Serial", esc(&spaced(&d.serial))).mono());
-        rows.push(Prop::new("Valid", esc(&format!("{} to {}", rq.when(r.not_before), rq.when(r.not_after)))));
+        rows.push(Prop::new(
+            "Valid",
+            esc(&format!(
+                "{} to {}",
+                rq.when(r.not_before),
+                rq.when(r.not_after)
+            )),
+        ));
         rows.push(Prop::new("Fingerprint (SHA-256)", esc(&d.fingerprint)).mono());
     }
-    let heading = if r.kind == EntryType::Request { "Certificate request (PEM)" } else { "Certificate (PEM)" };
+    let heading = if r.kind == EntryType::Request {
+        "Certificate request (PEM)"
+    } else {
+        "Certificate (PEM)"
+    };
     format!(
         "{}<h3>{heading}</h3><pre class=\"out\">{}</pre>",
         props_table(&PRODUCT, &[PropGroup { title: None, rows }], false),
@@ -92,12 +108,18 @@ fn is_system(store: &str) -> bool {
 /// Copy to `*SYSTEM`: then on to Applications with the certificate
 /// chosen.
 fn copy(rq: &Rq<'_>, store: &str, label: &str) -> Response {
-    let back = format!("/certs/cert{}", query(&[("store", store), ("label", label)]));
+    let back = format!(
+        "/certs/cert{}",
+        query(&[("store", store), ("label", label)])
+    );
     match rq.env().certs.copy(rq.user(), store, label, "*SYSTEM") {
         Ok(()) => {
             rq.audit_change(store, &format!("certificate {label} copied to *SYSTEM"));
             let apps = format!("/certs/apps{}", query(&[("cert", label)]));
-            rq.done(&apps, msgs::message(Kind::Done, "HTP8309", &[label, "*SYSTEM", store]))
+            rq.done(
+                &apps,
+                msgs::message(Kind::Done, "HTP8309", &[label, "*SYSTEM", store]),
+            )
         }
         Err(e) => rq.done(&back, failed(&e)),
     }
@@ -106,18 +128,27 @@ fn copy(rq: &Rq<'_>, store: &str, label: &str) -> Response {
 /// The PKCS#12 download: the certificate with its private key, sealed
 /// with the password typed (used for this call only).
 fn pkcs12(rq: &Rq<'_>, store: &str, label: &str) -> Response {
-    let back = format!("/certs/cert{}", query(&[("store", store), ("label", label), ("export", "1")]));
+    let back = format!(
+        "/certs/cert{}",
+        query(&[("store", store), ("label", label), ("export", "1")])
+    );
     let f = rq.form();
     let (p1, p2) = (f.str("p1"), f.str("p2"));
     if p1 != p2 {
         return rq.done(&back, invalid("the two passwords are not the same"));
     }
     if p1.chars().count() < 6 {
-        return rq.done(&back, invalid("a file password needs at least 6 characters"));
+        return rq.done(
+            &back,
+            invalid("a file password needs at least 6 characters"),
+        );
     }
     match rq.env().certs.export_pkcs12(rq.user(), store, label, p1) {
         Ok(b) => {
-            rq.audit_change(store, &format!("certificate {label} exported with its private key"));
+            rq.audit_change(
+                store,
+                &format!("certificate {label} exported with its private key"),
+            );
             Response::download(&file_name(label, "p12"), "application/x-pkcs12", b)
         }
         Err(e) => rq.done(&back, failed(&e)),
@@ -145,7 +176,11 @@ fn own_forms(rq: &Rq<'_>, store: &str, d: &CertDetail, export: bool) -> String {
         ));
     }
     if !is_system(store) && (identity || d.row.kind == EntryType::Ca) {
-        out.push_str(&form(&rq.ctx, "", &buttons(&[Button::new("copy", "Copy to *SYSTEM")])));
+        out.push_str(&form(
+            &rq.ctx,
+            "",
+            &buttons(&[Button::new("copy", "Copy to *SYSTEM")]),
+        ));
     }
     out
 }
@@ -186,7 +221,11 @@ pub fn view(rq: &Rq<'_>) -> Response {
         ),
         own_forms(rq, &store, &d, export)
     );
-    let h1 = if export { "Export certificate" } else { "Certificate" };
+    let h1 = if export {
+        "Export certificate"
+    } else {
+        "Certificate"
+    };
     rq.page(Page {
         title: format!("{h1}: {label}"),
         crumb: vec!["Certificates".into(), "Certificate stores".into(), store.clone(), label.clone()],
@@ -204,7 +243,13 @@ pub fn view(rq: &Rq<'_>) -> Response {
 fn file_name(label: &str, ext: &str) -> String {
     let base: String = label
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '.' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '.' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     format!("{}.{ext}", base.trim_matches('.'))
 }
@@ -221,8 +266,16 @@ pub fn download(rq: &Rq<'_>) -> Response {
         .is_ok_and(|d| d.row.kind == EntryType::Request);
     match rq.env().certs.export(store, label, chain) {
         Ok(b) => {
-            let name = if request { file_name(label, "csr") } else { file_name(label, "pem") };
-            let ct = if request { "application/pkcs10" } else { "application/x-pem-file" };
+            let name = if request {
+                file_name(label, "csr")
+            } else {
+                file_name(label, "pem")
+            };
+            let ct = if request {
+                "application/pkcs10"
+            } else {
+                "application/x-pem-file"
+            };
             Response::download(&name, ct, b)
         }
         Err(e) => rq.done("/certs/stores", failed(&e)),
@@ -269,65 +322,83 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
             Err(e) => rq.done(&back, failed(&e)),
         };
     }
-    let (title, crumb, sentence, cols, row): (&str, Vec<String>, &str, Vec<&str>, Vec<Cell>) = match op.as_str() {
-        "delete" => {
-            let d = match certs.detail(&store, &label) {
-                Ok(d) => d,
-                Err(e) => return rq.done(&back, failed(&e)),
-            };
-            let apps: Vec<String> = if store == "*SYSTEM" {
-                certs.apps().into_iter().filter(|a| a.label.as_deref() == Some(label.as_str())).map(|a| a.id).collect()
-            } else {
-                Vec::new()
-            };
-            (
-                "Confirm Delete Certificate",
-                vec!["Certificates".into(), "Certificate stores".into(), store.clone()],
-                "Deleting a certificate removes it and its private key from the store. Applications assigned the certificate lose it. Press OK to delete the certificate listed below, or Cancel to return without deleting.",
-                vec!["Label", "Subject", "Expires", "Assigned to"],
-                vec![
-                    Cell::mono(&label),
-                    Cell::text(&dn(&d.row.subject)),
-                    Cell::text(&if d.row.not_after == 0 { String::new() } else { rq.stamp(d.row.not_after).0 }),
-                    Cell::mono(&if apps.is_empty() { "(none)".to_string() } else { apps.join(", ") }),
-                ],
-            )
-        }
-        "dltstore" => {
-            let Some(s) = certs.stores().into_iter().find(|s| s.name == store) else {
-                return rq.not_found(&format!("certificate store {store}"));
-            };
-            (
-                "Confirm Delete Certificate Store",
-                vec!["Certificates".into(), "Certificate stores".into()],
-                "Deleting a certificate store removes the store file, every certificate and private key in it, and its stashed password. Press OK to delete the store listed below, or Cancel to return without deleting.",
-                vec!["Store", "Type", "Path", "Certificates"],
-                vec![
-                    Cell::mono(&s.name),
-                    Cell::text(s.kind.label()),
-                    Cell::mono(&s.path),
-                    Cell::num(&s.certificates.to_string()),
-                ],
-            )
-        }
-        "unassign" => {
-            let Some(a) = certs.apps().into_iter().find(|a| a.id == app) else {
-                return rq.not_found(&format!("application {app}"));
-            };
-            (
-                "Confirm Remove Assignment",
-                vec!["Certificates".into(), "Applications".into()],
-                "Removing the assignment leaves the application without a certificate of its own; its server presents the store's default certificate the next time it starts. Press OK to remove the assignment listed below, or Cancel to return.",
-                vec!["Application ID", "Description", "Assigned certificate"],
-                vec![
-                    Cell::mono(&a.id),
-                    Cell::text(&a.description),
-                    Cell::text(a.label.as_deref().unwrap_or("(none)")),
-                ],
-            )
-        }
-        _ => return rq.not_found("such confirmation"),
-    };
+    let (title, crumb, sentence, cols, row): (&str, Vec<String>, &str, Vec<&str>, Vec<Cell>) =
+        match op.as_str() {
+            "delete" => {
+                let d = match certs.detail(&store, &label) {
+                    Ok(d) => d,
+                    Err(e) => return rq.done(&back, failed(&e)),
+                };
+                let apps: Vec<String> = if store == "*SYSTEM" {
+                    certs
+                        .apps()
+                        .into_iter()
+                        .filter(|a| a.label.as_deref() == Some(label.as_str()))
+                        .map(|a| a.id)
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                (
+                    "Confirm Delete Certificate",
+                    vec![
+                        "Certificates".into(),
+                        "Certificate stores".into(),
+                        store.clone(),
+                    ],
+                    "Deleting a certificate removes it and its private key from the store. Applications assigned the certificate lose it. Press OK to delete the certificate listed below, or Cancel to return without deleting.",
+                    vec!["Label", "Subject", "Expires", "Assigned to"],
+                    vec![
+                        Cell::mono(&label),
+                        Cell::text(&dn(&d.row.subject)),
+                        Cell::text(&if d.row.not_after == 0 {
+                            String::new()
+                        } else {
+                            rq.stamp(d.row.not_after).0
+                        }),
+                        Cell::mono(&if apps.is_empty() {
+                            "(none)".to_string()
+                        } else {
+                            apps.join(", ")
+                        }),
+                    ],
+                )
+            }
+            "dltstore" => {
+                let Some(s) = certs.stores().into_iter().find(|s| s.name == store) else {
+                    return rq.not_found(&format!("certificate store {store}"));
+                };
+                (
+                    "Confirm Delete Certificate Store",
+                    vec!["Certificates".into(), "Certificate stores".into()],
+                    "Deleting a certificate store removes the store file, every certificate and private key in it, and its stashed password. Press OK to delete the store listed below, or Cancel to return without deleting.",
+                    vec!["Store", "Type", "Path", "Certificates"],
+                    vec![
+                        Cell::mono(&s.name),
+                        Cell::text(s.kind.label()),
+                        Cell::mono(&s.path),
+                        Cell::num(&s.certificates.to_string()),
+                    ],
+                )
+            }
+            "unassign" => {
+                let Some(a) = certs.apps().into_iter().find(|a| a.id == app) else {
+                    return rq.not_found(&format!("application {app}"));
+                };
+                (
+                    "Confirm Remove Assignment",
+                    vec!["Certificates".into(), "Applications".into()],
+                    "Removing the assignment leaves the application without a certificate of its own; its server presents the store's default certificate the next time it starts. Press OK to remove the assignment listed below, or Cancel to return.",
+                    vec!["Application ID", "Description", "Assigned certificate"],
+                    vec![
+                        Cell::mono(&a.id),
+                        Cell::text(&a.description),
+                        Cell::text(a.label.as_deref().unwrap_or("(none)")),
+                    ],
+                )
+            }
+            _ => return rq.not_found("such confirmation"),
+        };
     let table = list_table(&List {
         cols: cols.iter().map(|c| Col::plain(c)).collect(),
         rows: vec![row],

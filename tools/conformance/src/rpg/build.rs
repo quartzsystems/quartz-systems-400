@@ -35,7 +35,10 @@ pub struct Objects {
 pub fn kwd(cmd: &str, kw: &str) -> String {
     let up = cmd.to_ascii_uppercase();
     let key = format!("{kw}(");
-    let Some(at) = up.find(&key).filter(|&i| i == 0 || !up.as_bytes()[i - 1].is_ascii_alphanumeric()) else {
+    let Some(at) = up
+        .find(&key)
+        .filter(|&i| i == 0 || !up.as_bytes()[i - 1].is_ascii_alphanumeric())
+    else {
         return String::new();
     };
     let rest = &up[at + key.len()..];
@@ -64,7 +67,10 @@ fn obj_name(q: &str) -> String {
 
 /// Names listed in a parameter (`MODULE(L/A L/B)`).
 pub fn names_of(list: &str) -> Vec<String> {
-    list.split_whitespace().map(obj_name).filter(|n| !n.is_empty()).collect()
+    list.split_whitespace()
+        .map(obj_name)
+        .filter(|n| !n.is_empty())
+        .collect()
 }
 
 /// A module's IR into a module object.
@@ -80,7 +86,9 @@ impl Objects {
             name: p.name.clone(),
             lib: "QGPL".into(),
             exports: p.exports.iter().map(|x| (x.name.clone(), x.kind)).collect(),
-            signature: p.signature().unwrap_or(ile::binder::signature::Signature([0; 16])),
+            signature: p
+                .signature()
+                .unwrap_or(ile::binder::signature::Signature([0; 16])),
         }
     }
 
@@ -122,14 +130,23 @@ impl Objects {
         }
         let lookup = |e: &BndDirEntry| -> Option<Resolved> {
             match e.kind {
-                BndEntryKind::SrvPgm => self.srvpgms.get(&e.name).map(|p| Resolved::SrvPgm(Self::srvpgm_info(p))),
-                BndEntryKind::Module => self.modules.get(&e.name).map(|m| Resolved::Module(m.clone(), "QGPL".into())),
+                BndEntryKind::SrvPgm => self
+                    .srvpgms
+                    .get(&e.name)
+                    .map(|p| Resolved::SrvPgm(Self::srvpgm_info(p))),
+                BndEntryKind::Module => self
+                    .modules
+                    .get(&e.name)
+                    .map(|m| Resolved::Module(m.clone(), "QGPL".into())),
             }
         };
         let mut opts = BindOptions::new(name, kind);
         opts.attr.actgrp = actgrp;
         ile::bind(BindInput {
-            modules: modules.into_iter().map(|m| (m, "QGPL".to_string())).collect(),
+            modules: modules
+                .into_iter()
+                .map(|m| (m, "QGPL".to_string()))
+                .collect(),
             bnddirs: dirs,
             lookup: &lookup,
             options: opts,
@@ -140,29 +157,47 @@ impl Objects {
 
     /// Run one setup command. `compile` compiles a member as a module:
     /// member name, module name, the command; it gives the IR.
-    pub fn setup(&mut self, cmd: &str, compile: &dyn Fn(&str, &str, &str) -> Result<String, String>) -> Result<(), String> {
+    pub fn setup(
+        &mut self,
+        cmd: &str,
+        compile: &dyn Fn(&str, &str, &str) -> Result<String, String>,
+    ) -> Result<(), String> {
         let up = cmd.trim().to_ascii_uppercase();
         let verb = up.split_whitespace().next().unwrap_or("").to_string();
         match verb.as_str() {
             "CRTRPGMOD" => {
                 let name = obj_name(&kwd(cmd, "MODULE"));
                 let mbr = kwd(cmd, "SRCMBR");
-                let mbr = if mbr.is_empty() || mbr == "*MODULE" { name.clone() } else { mbr };
+                let mbr = if mbr.is_empty() || mbr == "*MODULE" {
+                    name.clone()
+                } else {
+                    mbr
+                };
                 let ir = compile(&mbr, &name, cmd)?;
-                self.modules.insert(name.clone(), module_object(&ir, &name)?);
+                self.modules
+                    .insert(name.clone(), module_object(&ir, &name)?);
             }
             "CRTSQLRPGI" if kwd(cmd, "OBJTYPE").eq_ignore_ascii_case("*MODULE") => {
                 let name = obj_name(&kwd(cmd, "OBJ"));
                 let mbr = kwd(cmd, "SRCMBR");
-                let mbr = if mbr.is_empty() || mbr == "*OBJ" { name.clone() } else { mbr };
+                let mbr = if mbr.is_empty() || mbr == "*OBJ" {
+                    name.clone()
+                } else {
+                    mbr
+                };
                 let ir = compile(&mbr, &name, cmd)?;
-                self.modules.insert(name.clone(), module_object(&ir, &name)?);
+                self.modules
+                    .insert(name.clone(), module_object(&ir, &name)?);
             }
             "CRTBNDRPG" | "CRTSQLRPGI" => {
                 let sql = verb == "CRTSQLRPGI";
                 let name = obj_name(&kwd(cmd, if sql { "OBJ" } else { "PGM" }));
                 let mbr = kwd(cmd, "SRCMBR");
-                let mbr = if mbr.is_empty() || mbr == "*PGM" || mbr == "*OBJ" { name.clone() } else { mbr };
+                let mbr = if mbr.is_empty() || mbr == "*PGM" || mbr == "*OBJ" {
+                    name.clone()
+                } else {
+                    mbr
+                };
                 let ir = compile(&mbr, &name, cmd)?;
                 let m = qir::parse(&ir).map_err(|e| format!("{name}: {e}"))?;
                 let actgrp = if m.dftactgrp {
@@ -174,7 +209,8 @@ impl Objects {
                         qir::ActGrp::Named(n) => ActGrpAttr::Named(n.clone()),
                     }
                 };
-                let mo = ModuleObject::compile(m, CreateData::default(), CLOCK).map_err(|e| format!("{name}: {e}"))?;
+                let mo = ModuleObject::compile(m, CreateData::default(), CLOCK)
+                    .map_err(|e| format!("{name}: {e}"))?;
                 let p = self.bind(&name, PgmKind::Pgm, vec![mo], &[], &[], actgrp)?;
                 self.programs.insert(name, p);
             }
@@ -195,7 +231,8 @@ impl Objects {
                 self.srvpgms.insert(name, p);
             }
             "CRTBNDDIR" => {
-                self.bnddirs.insert(obj_name(&kwd(cmd, "BNDDIR")), BndDir::default());
+                self.bnddirs
+                    .insert(obj_name(&kwd(cmd, "BNDDIR")), BndDir::default());
             }
             "ADDBNDDIRE" => {
                 let dir = obj_name(&kwd(cmd, "BNDDIR"));
@@ -203,7 +240,11 @@ impl Objects {
                 let inner = obj.trim_matches(|c| c == '(' || c == ')');
                 let mut w = inner.split_whitespace();
                 let n = obj_name(w.next().unwrap_or(""));
-                let kind = if w.next().unwrap_or("*SRVPGM") == "*MODULE" { BndEntryKind::Module } else { BndEntryKind::SrvPgm };
+                let kind = if w.next().unwrap_or("*SRVPGM") == "*MODULE" {
+                    BndEntryKind::Module
+                } else {
+                    BndEntryKind::SrvPgm
+                };
                 self.bnddirs.entry(dir).or_default().add(
                     BndDirEntry {
                         name: n,

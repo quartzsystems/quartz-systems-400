@@ -28,7 +28,13 @@ pub enum Kind {
 
 impl Kind {
     /// Every kind, in the Objects select's order.
-    pub const ALL: [Kind; 5] = [Kind::Table, Kind::View, Kind::Alias, Kind::Physical, Kind::Logical];
+    pub const ALL: [Kind; 5] = [
+        Kind::Table,
+        Kind::View,
+        Kind::Alias,
+        Kind::Physical,
+        Kind::Logical,
+    ];
 
     /// `Table`, `Logical file`.
     pub fn label(self) -> &'static str {
@@ -96,7 +102,11 @@ impl Column {
     pub fn type_label(&self) -> String {
         match (self.typ.as_str(), self.scale) {
             ("DECIMAL" | "NUMERIC", Some(s)) => format!("{}({},{s})", self.typ, self.length),
-            ("CHAR" | "VARCHAR" | "GRAPHIC" | "VARGRAPHIC" | "BINARY" | "VARBINARY" | "CLOB" | "BLOB" | "DBCLOB", _) => {
+            (
+                "CHAR" | "VARCHAR" | "GRAPHIC" | "VARGRAPHIC" | "BINARY" | "VARBINARY" | "CLOB"
+                | "BLOB" | "DBCLOB",
+                _,
+            ) => {
                 format!("{}({})", self.typ, self.length)
             }
             _ => self.typ.clone(),
@@ -125,7 +135,16 @@ impl Column {
 pub fn is_numeric(typ: &str) -> bool {
     matches!(
         typ,
-        "SMALLINT" | "INTEGER" | "INT" | "BIGINT" | "DECIMAL" | "NUMERIC" | "DECFLOAT" | "REAL" | "DOUBLE" | "FLOAT"
+        "SMALLINT"
+            | "INTEGER"
+            | "INT"
+            | "BIGINT"
+            | "DECIMAL"
+            | "NUMERIC"
+            | "DECFLOAT"
+            | "REAL"
+            | "DOUBLE"
+            | "FLOAT"
     )
 }
 
@@ -297,7 +316,9 @@ impl ReqType {
 
     /// The type of a store key.
     pub fn of_key(k: &str) -> Option<ReqType> {
-        [ReqType::Sql, ReqType::CopyTo, ReqType::CopyFrom].into_iter().find(|t| t.key() == k)
+        [ReqType::Sql, ReqType::CopyTo, ReqType::CopyFrom]
+            .into_iter()
+            .find(|t| t.key() == k)
     }
 }
 
@@ -341,7 +362,14 @@ pub trait Db: Send + Sync {
     /// Run one statement, once for each parameter row (once without
     /// parameters for none); a query keeps its first `max_rows` rows and
     /// its cursor while there are more.
-    fn run(&self, user: &str, conn: u32, sql: &str, params: &[Vec<Val>], max_rows: usize) -> Outcome;
+    fn run(
+        &self,
+        user: &str,
+        conn: u32,
+        sql: &str,
+        params: &[Vec<Val>],
+        max_rows: usize,
+    ) -> Outcome;
     /// The next `max_rows` rows of an open cursor; the cursor is gone
     /// when there are no more.
     fn fetch(&self, user: &str, conn: u32, cursor: u32, max_rows: usize) -> Outcome;

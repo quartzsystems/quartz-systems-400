@@ -64,7 +64,10 @@ pub fn route(rq: &Rq<'_>, name: &str, rest: &[&str]) -> Response {
 
 /// The tab strip with tab `current` (its page name) bold.
 pub fn tab_strip(name: &str, current: &str) -> String {
-    let tabs: Vec<(&str, String)> = TABS.iter().map(|(l, p)| (*l, instances::url(name, p))).collect();
+    let tabs: Vec<(&str, String)> = TABS
+        .iter()
+        .map(|(l, p)| (*l, instances::url(name, p)))
+        .collect();
     let at = TABS.iter().position(|(_, p)| *p == current).unwrap_or(0);
     qsweb::partials::tabs(&tabs, at)
 }
@@ -72,7 +75,11 @@ pub fn tab_strip(name: &str, current: &str) -> String {
 /// A tab's page: `Manage instance: NAME`, the tab strip, then `body`.
 pub fn tab_page(v: &View, tab: &str, desc: Option<&str>, body: &str) -> Page {
     let label = TABS.iter().find(|(_, p)| *p == tab).map_or("", |(l, _)| *l);
-    let mut crumb = vec!["Manage".to_string(), "Server instances".to_string(), v.name().to_string()];
+    let mut crumb = vec![
+        "Manage".to_string(),
+        "Server instances".to_string(),
+        v.name().to_string(),
+    ];
     if tab != "general" {
         crumb.push(label.to_string());
     }
@@ -92,7 +99,11 @@ pub fn tab_page(v: &View, tab: &str, desc: Option<&str>, body: &str) -> Page {
 pub fn pick(name: &str, options: &[&str], chosen: &str) -> String {
     let mut s = format!("<select name=\"{}\">", esc(name));
     for (i, o) in options.iter().enumerate() {
-        let sel = if i > 0 && *o == chosen { " selected" } else { "" };
+        let sel = if i > 0 && *o == chosen {
+            " selected"
+        } else {
+            ""
+        };
         let _ = write!(s, "<option{sel}>{}</option>", esc(o));
     }
     s.push_str("</select>");
@@ -101,25 +112,37 @@ pub fn pick(name: &str, options: &[&str], chosen: &str) -> String {
 
 /// Check `*IOSYSCFG` for changing instance `v`.
 pub fn may_change(rq: &Rq<'_>, v: &View, function: &str) -> Result<(), Response> {
-    rq.require(Need::IoSysCfg, function, v.name(), &["Manage", "Server instances", v.name()])
+    rq.require(
+        Need::IoSysCfg,
+        function,
+        v.name(),
+        &["Manage", "Server instances", v.name()],
+    )
 }
 
 /// Change instance `v`'s configuration with `f` and write it safely
 /// (one `.bak`, temporary file and rename; restart required when it
 /// runs). Gives the completion message, or the error to show.
-pub fn edit(rq: &Rq<'_>, v: &View, f: impl FnOnce(&mut Conf) -> Result<(), Message>) -> Result<Message, Message> {
+pub fn edit(
+    rq: &Rq<'_>,
+    v: &View,
+    f: impl FnOnce(&mut Conf) -> Result<(), Message>,
+) -> Result<Message, Message> {
     let files = rq.env().files.as_ref();
-    let text = instance::read_conf(files, &v.entry.root).map_err(|e| io_error(v, &e.to_string()))?;
+    let text =
+        instance::read_conf(files, &v.entry.root).map_err(|e| io_error(v, &e.to_string()))?;
     let mut c = conf::parse(&text).map_err(|e| conf_error(v, &e))?;
     f(&mut c)?;
     let new = c.print();
     if new == text {
         return Ok(changed(v));
     }
-    instance::apply_conf(files, v.name(), &v.entry.root, &new, v.running()).map_err(|e| match e {
-        httpd::Error::Conf(ce) => conf_error(v, &ce),
-        e => io_error(v, &e.to_string()),
-    })?;
+    instance::apply_conf(files, v.name(), &v.entry.root, &new, v.running()).map_err(
+        |e| match e {
+            httpd::Error::Conf(ce) => conf_error(v, &ce),
+            e => io_error(v, &e.to_string()),
+        },
+    )?;
     rq.audit_change(&instance::conf_path(&v.entry.root), "configuration changed");
     Ok(changed(v))
 }
@@ -134,7 +157,12 @@ pub fn conf_error(v: &View, e: &conf::ConfError) -> Message {
     msgs::message(
         Kind::Error,
         "HTP8100",
-        &[&e.line.to_string(), &e.col.to_string(), &e.text, &instance::conf_path(&v.entry.root)],
+        &[
+            &e.line.to_string(),
+            &e.col.to_string(),
+            &e.text,
+            &instance::conf_path(&v.entry.root),
+        ],
     )
 }
 
@@ -152,6 +180,10 @@ pub fn bad_value(value: &str, field: &str, rule: &str) -> Message {
 /// or the instance list on OK.
 pub fn after(rq: &Rq<'_>, v: &View, tab: &str, m: Message) -> Response {
     let ok = rq.form().has("ok") && m.kind != Kind::Error;
-    let route = if ok { "/instances".to_string() } else { format!("/instance/{}/{tab}", v.name()) };
+    let route = if ok {
+        "/instances".to_string()
+    } else {
+        format!("/instance/{}/{tab}", v.name())
+    };
     rq.done(&route, m)
 }

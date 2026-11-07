@@ -62,9 +62,10 @@ pub fn write(addr: u64, d: &Desc, v: &Decimal, r: Rounding) -> bool {
         Kind::Zoned => Zoned::new(digits, d.dec).and_then(|z| z.encode(v, r)),
         Kind::Bin => Binary::new(digits, d.dec).and_then(|b| b.encode(v, r)),
         Kind::Float => return crate::value::write_num(addr, d, v).is_ok(),
-        Kind::Int | Kind::Uns => v
-            .rescale(0, r)
-            .and_then(|w| Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int).and_then(|i| i.encode(&w))),
+        Kind::Int | Kind::Uns => v.rescale(0, r).and_then(|w| {
+            Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int)
+                .and_then(|i| i.encode(&w))
+        }),
         _ => return false,
     };
     let Ok(enc) = enc else { return false };
@@ -84,7 +85,16 @@ pub fn write(addr: u64, d: &Desc, v: &Decimal, r: Rounding) -> bool {
 
 /// `_QRNX_CHARTONUM(dst, dd, src, sd, flags)`: the decimal point in
 /// the low byte of `flags`, half-adjust in bit 8.
-pub extern "sysv64" fn char_to_num(env: *mut Env, _argc: i64, _od: i64, dst: i64, dd: i64, src: i64, sd: i64, flags: i32) {
+pub extern "sysv64" fn char_to_num(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    dst: i64,
+    dd: i64,
+    src: i64,
+    sd: i64,
+    flags: i32,
+) {
     let s = Desc::of(sd);
     let raw = bytes(src.cast_unsigned(), s.size());
     let text = match s.kind {
@@ -92,14 +102,32 @@ pub extern "sysv64" fn char_to_num(env: *mut Env, _argc: i64, _od: i64, dst: i64
         _ => ccsid::from_ebcdic(raw),
     };
     let point = char::from(u8::try_from(flags & 0xFF).unwrap_or(b'.'));
-    let r = if flags & 0x100 != 0 { Rounding::HalfAdjust } else { Rounding::Truncate };
+    let r = if flags & 0x100 != 0 {
+        Rounding::HalfAdjust
+    } else {
+        Rounding::Truncate
+    };
     let j = job(env);
     let Some(v) = parse(&text, point) else {
-        let _ = j.send_message("RNX0105", "QRNXMSG", "*LIBL", Vec::new(), qir::MsgType::Escape, mi::QueueRef::Same);
+        let _ = j.send_message(
+            "RNX0105",
+            "QRNXMSG",
+            "*LIBL",
+            Vec::new(),
+            qir::MsgType::Escape,
+            mi::QueueRef::Same,
+        );
         return;
     };
     if !write(dst.cast_unsigned(), &Desc::of(dd), &v, r) {
-        let _ = j.send_message("RNX0103", "QRNXMSG", "*LIBL", Vec::new(), qir::MsgType::Escape, mi::QueueRef::Same);
+        let _ = j.send_message(
+            "RNX0103",
+            "QRNXMSG",
+            "*LIBL",
+            Vec::new(),
+            qir::MsgType::Escape,
+            mi::QueueRef::Same,
+        );
     }
 }
 

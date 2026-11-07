@@ -200,7 +200,13 @@ pub fn formats(list: &[(String, String)], message: Option<&str>) -> Screen {
     put(&mut s, 1, 29, Attr::HighIntensity, "Select Record Format");
     put(&mut s, 3, 2, Attr::Blue, "Type option, press Enter.");
     put(&mut s, 4, 4, Attr::Blue, "1=Select");
-    put(&mut s, 7, 2, Attr::HighIntensity, "Opt  Format         Description");
+    put(
+        &mut s,
+        7,
+        2,
+        Attr::HighIntensity,
+        "Opt  Format         Description",
+    );
     for (i, (name, text)) in list.iter().take(13).enumerate() {
         input(
             &mut s,
@@ -219,7 +225,11 @@ pub fn formats(list: &[(String, String)], message: Option<&str>) -> Screen {
     put(&mut s, 22, 74, Attr::HighIntensity, "Bottom");
     keys(
         &mut s,
-        &[(23, 2, "F3=Exit"), (23, 19, "F5=Refresh"), (23, 39, "F12=Cancel")],
+        &[
+            (23, 2, "F3=Exit"),
+            (23, 19, "F5=Refresh"),
+            (23, 39, "F12=Cancel"),
+        ],
     );
     bottom_line(&mut s, message, false);
     s.cursor = Some((8, 3));

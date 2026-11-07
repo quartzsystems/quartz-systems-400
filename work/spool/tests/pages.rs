@@ -33,7 +33,8 @@ fn mixed() -> Vec<u8> {
         line(&mut e, &format!("RUN {l}"));
     }
     // A font command, then a column and a move back up: page 5.
-    e.out.extend_from_slice(&[CSP, 0xD1, 7, 0x05, 0x00, 0x0B, 0x00, 0x00, 0x00]);
+    e.out
+        .extend_from_slice(&[CSP, 0xD1, 7, 0x05, 0x00, 0x0B, 0x00, 0x00, 0x00]);
     e.column(40);
     line(&mut e, "INDENTED");
     e.line(3);
@@ -112,7 +113,10 @@ fn a_file_without_pages() {
 
 #[test]
 fn presentation_position_codes_are_the_published_ones() {
-    assert_eq!((scs::AHPP, scs::RHPP, scs::AVPP, scs::RVPP), (0xC0, 0xC8, 0xC4, 0x4C));
+    assert_eq!(
+        (scs::AHPP, scs::RHPP, scs::AVPP, scs::RVPP),
+        (0xC0, 0xC8, 0xC4, 0x4C)
+    );
     // X'34C4' 5 is line 5; X'344C' 2 is two lines further down.
     let data = [0x34, 0xC4, 5, 0xC1, 0x15, 0x34, 0x4C, 2, 0xC2];
     let (pages, _) = decode(&data);

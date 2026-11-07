@@ -155,7 +155,11 @@ impl Client {
         let lease = cfg.previous.clone().filter(|l| !l.expired(now / 1000));
         let mut c = Self {
             cfg,
-            state: if lease.is_some() { State::InitReboot } else { State::Init },
+            state: if lease.is_some() {
+                State::InitReboot
+            } else {
+                State::Init
+            },
             xid: 0,
             rng: seed | 1,
             next: now,
@@ -180,7 +184,11 @@ impl Client {
 
     /// When [`Client::poll`] is next due.
     pub fn deadline(&self) -> u64 {
-        if self.state == State::Released { u64::MAX } else { self.next }
+        if self.state == State::Released {
+            u64::MAX
+        } else {
+            self.next
+        }
     }
 
     fn random(&mut self) -> u32 {
@@ -361,7 +369,10 @@ impl Client {
                 self.tries = 0;
                 self.send_select(now)
             }
-            (State::Requesting | State::Rebooting | State::Renewing | State::Rebinding, Some(Kind::Ack)) => {
+            (
+                State::Requesting | State::Rebooting | State::Renewing | State::Rebinding,
+                Some(Kind::Ack),
+            ) => {
                 if self.state == State::Requesting
                     && self.offer.as_ref().and_then(|o| o.options.server_id) != m.options.server_id
                     && m.options.server_id.is_some()
@@ -386,7 +397,10 @@ impl Client {
                 out.push(Out::Bind(l));
                 out
             }
-            (State::Requesting | State::Rebooting | State::Renewing | State::Rebinding, Some(Kind::Nak)) => {
+            (
+                State::Requesting | State::Rebooting | State::Renewing | State::Rebinding,
+                Some(Kind::Nak),
+            ) => {
                 let mut out = Vec::new();
                 if self.state.holds()
                     && let Some(old) = self.lease.take()
@@ -474,14 +488,19 @@ mod tests {
         assert_eq!(d, Dest::Broadcast);
         assert_eq!(disc.kind(), Some(Kind::Discover));
         assert!(disc.broadcast);
-        assert_eq!(disc.options.client_id.as_deref(), Some(&[1, 0x52, 0x54, 0, 0x12, 0x34, 0x56][..]));
+        assert_eq!(
+            disc.options.client_id.as_deref(),
+            Some(&[1, 0x52, 0x54, 0, 0x12, 0x34, 0x56][..])
+        );
         let (_, req) = sent(&c.receive(T0 + 10, &reply(&disc, Kind::Offer, lease)));
         assert_eq!(req.kind(), Some(Kind::Request));
         assert_eq!(req.options.requested_ip, Some(ME));
         assert_eq!(req.options.server_id, Some(SERVER));
         assert_eq!(req.xid, disc.xid);
         let out = c.receive(T0 + 20, &reply(&req, Kind::Ack, lease));
-        let Some(Out::Bind(l)) = out.last() else { panic!("{out:?}") };
+        let Some(Out::Bind(l)) = out.last() else {
+            panic!("{out:?}")
+        };
         assert_eq!(c.state(), State::Bound);
         (c, l.clone())
     }

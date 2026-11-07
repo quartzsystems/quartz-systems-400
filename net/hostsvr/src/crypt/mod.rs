@@ -310,7 +310,8 @@ pub fn recover_new_password(
                 .chunks(2)
                 .map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)]))
                 .collect();
-            String::from_utf16(&units).map_err(|_| Error::Invalid("the new password is not UTF-16".into()))
+            String::from_utf16(&units)
+                .map_err(|_| Error::Invalid("the new password is not UTF-16".into()))
         }
     }
 }

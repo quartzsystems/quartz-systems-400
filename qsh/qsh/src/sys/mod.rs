@@ -480,12 +480,7 @@ pub trait Sys: Send + Sync {
         Err(Errno::ENOSYS.into())
     }
     /// A spooled file's text, page by page.
-    fn spooled_file(
-        &self,
-        job: &str,
-        name: &str,
-        number: SplfNumber,
-    ) -> Result<Spooled, SysError> {
+    fn spooled_file(&self, job: &str, name: &str, number: SplfNumber) -> Result<Spooled, SysError> {
         let _ = (job, name, number);
         Err(Errno::ENOSYS.into())
     }

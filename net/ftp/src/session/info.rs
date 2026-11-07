@@ -19,56 +19,137 @@ use crate::xlate::Rep;
 /// Every command, with its line for `HELP`.
 pub const COMMANDS: &[(&str, &str)] = &[
     ("ABOR", "ABOR: stop the transfer that is running."),
-    ("ACCT", "ACCT <account>: no account is needed on this server."),
-    ("ADDM", "ADDM <file> <member>: add a member to a physical file."),
-    ("ADDV", "ADDV <file> <member>: add a member to a physical file."),
-    ("ALLO", "ALLO <bytes>: accepted; no space needs to be set aside."),
-    ("APPE", "APPE <name>: add the data sent to the end of a file or member."),
+    (
+        "ACCT",
+        "ACCT <account>: no account is needed on this server.",
+    ),
+    (
+        "ADDM",
+        "ADDM <file> <member>: add a member to a physical file.",
+    ),
+    (
+        "ADDV",
+        "ADDV <file> <member>: add a member to a physical file.",
+    ),
+    (
+        "ALLO",
+        "ALLO <bytes>: accepted; no space needs to be set aside.",
+    ),
+    (
+        "APPE",
+        "APPE <name>: add the data sent to the end of a file or member.",
+    ),
     ("AUTH", "AUTH TLS: protect the control connection with TLS."),
-    ("CCC", "CCC: carry on with the control connection in the clear."),
+    (
+        "CCC",
+        "CCC: carry on with the control connection in the clear.",
+    ),
     ("CDUP", "CDUP: go to the parent directory or to /QSYS.LIB."),
     ("CRTL", "CRTL <library>: create a library."),
-    ("CRTP", "CRTP <file> [<record length>]: create a physical file."),
-    ("CRTS", "CRTS <file> [<record length>]: create a source physical file."),
-    ("CWD", "CWD <directory or library>: change the current directory or library."),
+    (
+        "CRTP",
+        "CRTP <file> [<record length>]: create a physical file.",
+    ),
+    (
+        "CRTS",
+        "CRTS <file> [<record length>]: create a source physical file.",
+    ),
+    (
+        "CWD",
+        "CWD <directory or library>: change the current directory or library.",
+    ),
     ("DELE", "DELE <name>: delete a file or member."),
     ("DLTF", "DLTF <file>: delete a database file."),
     ("DLTL", "DLTL <library>: delete a library."),
-    ("EPRT", "EPRT |<proto>|<address>|<port>|: make the next data connection to this address."),
-    ("EPSV", "EPSV: wait for the next data connection on a port this reply names."),
+    (
+        "EPRT",
+        "EPRT |<proto>|<address>|<port>|: make the next data connection to this address.",
+    ),
+    (
+        "EPSV",
+        "EPSV: wait for the next data connection on a port this reply names.",
+    ),
     ("FEAT", "FEAT: list the extensions this server has."),
-    ("HELP", "HELP [<command>]: show the commands, or what one does."),
-    ("LIST", "LIST [<name>]: list a directory, library, file or member in full."),
+    (
+        "HELP",
+        "HELP [<command>]: show the commands, or what one does.",
+    ),
+    (
+        "LIST",
+        "LIST [<name>]: list a directory, library, file or member in full.",
+    ),
     ("MDTM", "MDTM <name>: the time a file last changed."),
     ("MKD", "MKD <name>: create a directory or library."),
-    ("MLSD", "MLSD [<directory>]: list a directory in the machine form of RFC 3659."),
-    ("MLST", "MLST [<name>]: describe one object in the machine form of RFC 3659."),
+    (
+        "MLSD",
+        "MLSD [<directory>]: list a directory in the machine form of RFC 3659.",
+    ),
+    (
+        "MLST",
+        "MLST [<name>]: describe one object in the machine form of RFC 3659.",
+    ),
     ("MODE", "MODE <S or B>: stream or block transfer mode."),
     ("NLST", "NLST [<name>]: list names only."),
     ("NOOP", "NOOP: do nothing."),
     ("OPTS", "OPTS <command> <options>: set a command's options."),
     ("PASS", "PASS <password>: the password of the USER."),
-    ("PASV", "PASV: wait for the next data connection on the address this reply names."),
-    ("PBSZ", "PBSZ 0: the protection buffer size, after AUTH TLS."),
-    ("PORT", "PORT <h1,h2,h3,h4,p1,p2>: make the next data connection to this address."),
-    ("PROT", "PROT <C or P>: data connections in the clear or under TLS."),
+    (
+        "PASV",
+        "PASV: wait for the next data connection on the address this reply names.",
+    ),
+    (
+        "PBSZ",
+        "PBSZ 0: the protection buffer size, after AUTH TLS.",
+    ),
+    (
+        "PORT",
+        "PORT <h1,h2,h3,h4,p1,p2>: make the next data connection to this address.",
+    ),
+    (
+        "PROT",
+        "PROT <C or P>: data connections in the clear or under TLS.",
+    ),
     ("PWD", "PWD: show the current directory or library."),
     ("QUIT", "QUIT: end the session."),
-    ("RCMD", "RCMD <command>: run a CL command in this session's job."),
+    (
+        "RCMD",
+        "RCMD <command>: run a CL command in this session's job.",
+    ),
     ("REIN", "REIN: sign off and start the session again."),
-    ("REST", "REST <offset>: start the next transfer at this byte."),
+    (
+        "REST",
+        "REST <offset>: start the next transfer at this byte.",
+    ),
     ("RETR", "RETR <name>: send a file or member to the client."),
     ("RMD", "RMD <name>: delete a directory or library."),
     ("RNFR", "RNFR <name>: the object to rename; RNTO follows."),
-    ("RNTO", "RNTO <name>: the new name of the object RNFR named."),
-    ("SITE", "SITE <subcommand>: NAMEFMT, LISTFMT, TRIM, NULLFLDS, CRTCCSID."),
+    (
+        "RNTO",
+        "RNTO <name>: the new name of the object RNFR named.",
+    ),
+    (
+        "SITE",
+        "SITE <subcommand>: NAMEFMT, LISTFMT, TRIM, NULLFLDS, CRTCCSID.",
+    ),
     ("SIZE", "SIZE <name>: how many bytes RETR would send."),
-    ("STAT", "STAT [<name>]: the session's state, or a listing on the control connection."),
-    ("STOR", "STOR <name>: store the data sent, replacing what was there."),
-    ("STOU", "STOU <name>: store the data sent under a name not yet used."),
+    (
+        "STAT",
+        "STAT [<name>]: the session's state, or a listing on the control connection.",
+    ),
+    (
+        "STOR",
+        "STOR <name>: store the data sent, replacing what was there.",
+    ),
+    (
+        "STOU",
+        "STOU <name>: store the data sent under a name not yet used.",
+    ),
     ("STRU", "STRU <F or R>: file or record structure."),
     ("SYST", "SYST: the operating system's name."),
-    ("TYPE", "TYPE <A, E, I, L 8, B, F or C n>: the data representation."),
+    (
+        "TYPE",
+        "TYPE <A, E, I, L 8, B, F or C n>: the data representation.",
+    ),
     ("USER", "USER <name>: the user profile to sign on as."),
     ("XCUP", "XCUP: as CDUP."),
     ("XCWD", "XCWD <name>: as CWD."),
@@ -152,7 +233,10 @@ pub fn opts(arg: &str) -> Reply {
 
 /// A `PORT` argument as an address.
 fn port_addr(arg: &str) -> Option<SocketAddr> {
-    let n: Vec<u8> = arg.split(',').map(|p| p.trim().parse::<u8>().ok()).collect::<Option<_>>()?;
+    let n: Vec<u8> = arg
+        .split(',')
+        .map(|p| p.trim().parse::<u8>().ok())
+        .collect::<Option<_>>()?;
     if n.len() != 6 {
         return None;
     }
@@ -203,13 +287,24 @@ impl<H: Host> Session<H> {
             format!("Quartz FTP server at {}, session state:", self.cfg.system),
             format!("Naming format (NAMEFMT) {}.", self.namefmt),
             format!("Listing format (LISTFMT) {}.", self.listfmt),
-            format!("Trailing blanks dropped from records sent (TRIM) {}.", self.trim),
-            format!("Files with null-capable fields allowed (NULLFLDS) {}.", self.nullflds),
-            format!("CCSID of database files created (CRTCCSID) {}.", self.crtccsid.text()),
+            format!(
+                "Trailing blanks dropped from records sent (TRIM) {}.",
+                self.trim
+            ),
+            format!(
+                "Files with null-capable fields allowed (NULLFLDS) {}.",
+                self.nullflds
+            ),
+            format!(
+                "CCSID of database files created (CRTCCSID) {}.",
+                self.crtccsid.text()
+            ),
             format!("Signed on as {user}; current directory {}.", self.cwd),
-            format!("Data representation {rep}; mode {}; structure {}.",
+            format!(
+                "Data representation {rep}; mode {}; structure {}.",
                 if self.block { "block" } else { "stream" },
-                if self.record { "record" } else { "file" }),
+                if self.record { "record" } else { "file" }
+            ),
             format!("{} bytes of control data so far.", self.ctl_bytes),
             if self.cfg.attrs.inacttimo == 0 {
                 "No inactivity limit.".into()
@@ -222,15 +317,25 @@ impl<H: Host> Session<H> {
     }
 
     pub(super) fn type_cmd(&mut self, arg: &str) -> Reply {
-        let words: Vec<String> = arg.split_whitespace().map(str::to_ascii_uppercase).collect();
+        let words: Vec<String> = arg
+            .split_whitespace()
+            .map(str::to_ascii_uppercase)
+            .collect();
         let first = words.first().map_or("", String::as_str);
         let second = words.get(1).map(String::as_str);
-        let stays = |code: u16, why: String| Reply::lines(code, vec![why, "The representation type stays as it was.".into()]);
+        let stays = |code: u16, why: String| {
+            Reply::lines(
+                code,
+                vec![why, "The representation type stays as it was.".into()],
+            )
+        };
         let (rep, text) = match (first, second) {
             ("A", None | Some("N")) => (Rep::Ascii, "ASCII".to_string()),
             ("E", None | Some("N")) => (Rep::Ebcdic, "EBCDIC".to_string()),
             ("I", None) | ("L", Some("8")) => (Rep::Image, "binary image".to_string()),
-            ("A" | "E" | "I", Some(f)) => return stays(504, format!("Format {first} {f} is not supported.")),
+            ("A" | "E" | "I", Some(f)) => {
+                return stays(504, format!("Format {first} {f} is not supported."));
+            }
             ("L", _) => return Reply::new(504, "Only a byte size of 8 is supported."),
             ("B", _) => (Rep::Ascii, "ASCII (double-byte)".to_string()),
             ("F", _) => (Rep::Ebcdic, "EBCDIC (double-byte)".to_string()),
@@ -239,7 +344,13 @@ impl<H: Host> Session<H> {
                 _ => return stays(504, format!("CCSID {n} cannot be used for transfers.")),
             },
             _ => {
-                return stays(501, format!("Type {} is not valid; use A, E, I, L 8, B, F or C.", arg.trim()));
+                return stays(
+                    501,
+                    format!(
+                        "Type {} is not valid; use A, E, I, L 8, B, F or C.",
+                        arg.trim()
+                    ),
+                );
             }
         };
         self.rep = rep;
@@ -252,7 +363,10 @@ impl<H: Host> Session<H> {
                 code,
                 vec![
                     why.to_string(),
-                    format!("Transfer mode stays {}.", if block { "block" } else { "stream" }),
+                    format!(
+                        "Transfer mode stays {}.",
+                        if block { "block" } else { "stream" }
+                    ),
                 ],
             )
         };
@@ -265,7 +379,11 @@ impl<H: Host> Session<H> {
                 self.block = true;
                 Reply::new(200, "Transfer mode is now block.")
             }
-            "C" => stays(504, "Compressed mode is not supported; use S or B.", self.block),
+            "C" => stays(
+                504,
+                "Compressed mode is not supported; use S or B.",
+                self.block,
+            ),
             m => stays(501, &format!("Transfer mode {m} is not valid."), self.block),
         }
     }
@@ -276,7 +394,10 @@ impl<H: Host> Session<H> {
                 code,
                 vec![
                     why.to_string(),
-                    format!("Data structure stays {}.", if record { "record" } else { "file" }),
+                    format!(
+                        "Data structure stays {}.",
+                        if record { "record" } else { "file" }
+                    ),
                 ],
             )
         };
@@ -290,7 +411,11 @@ impl<H: Host> Session<H> {
                 Reply::new(250, "Data structure is now record.")
             }
             "P" => stays(504, "Page structure is not supported.", self.record),
-            s => stays(501, &format!("Data structure {s} is not valid."), self.record),
+            s => stays(
+                501,
+                &format!("Data structure {s} is not valid."),
+                self.record,
+            ),
         }
     }
 
@@ -306,7 +431,10 @@ impl<H: Host> Session<H> {
 
     pub(super) fn epsv(&mut self, _arg: &str, net: &mut dyn Net) -> Reply {
         match net.passive(true) {
-            Ok(a) => Reply::new(229, format!("Entering Extended Passive Mode (|||{}|)", a.port())),
+            Ok(a) => Reply::new(
+                229,
+                format!("Entering Extended Passive Mode (|||{}|)", a.port()),
+            ),
             Err(e) => Reply::new(425, format!("No data port could be opened: {e}.")),
         }
     }
@@ -353,7 +481,10 @@ impl<H: Host> Session<H> {
         } else if !net.tls_available() {
             Reply::new(534, "TLS is not available on this server.")
         } else {
-            self.say(net, &Reply::new(234, "Starting TLS on the control connection."));
+            self.say(
+                net,
+                &Reply::new(234, "Starting TLS on the control connection."),
+            );
             if let Err(e) = net.start_tls() {
                 tracing::info!("FTP AUTH TLS: {e}");
                 return Flow::Close;
@@ -371,7 +502,10 @@ impl<H: Host> Session<H> {
 
     pub(super) fn pbsz_cmd(&mut self, arg: &str, net: &mut dyn Net) -> Reply {
         if !net.secure() {
-            return Reply::new(421, "PBSZ needs a protected control connection; send AUTH TLS first.");
+            return Reply::new(
+                421,
+                "PBSZ needs a protected control connection; send AUTH TLS first.",
+            );
         }
         if arg.trim().parse::<u64>().is_err() {
             return Reply::new(501, "PBSZ needs a number.");
@@ -402,10 +536,16 @@ impl<H: Host> Session<H> {
 
     pub(super) fn ccc(&mut self, net: &mut dyn Net) -> Flow {
         if !net.secure() {
-            self.say(net, &Reply::new(533, "The control connection is not protected."));
+            self.say(
+                net,
+                &Reply::new(533, "The control connection is not protected."),
+            );
             return Flow::Continue;
         }
-        self.say(net, &Reply::new(200, "The control connection is now in the clear."));
+        self.say(
+            net,
+            &Reply::new(200, "The control connection is now in the clear."),
+        );
         if let Err(e) = net.end_tls() {
             tracing::info!("FTP CCC: {e}");
             return Flow::Close;
@@ -420,10 +560,16 @@ mod tests {
 
     #[test]
     fn addresses() {
-        assert_eq!(port_addr("10,0,0,1,4,1"), Some(SocketAddr::from(([10, 0, 0, 1], 1025))));
+        assert_eq!(
+            port_addr("10,0,0,1,4,1"),
+            Some(SocketAddr::from(([10, 0, 0, 1], 1025)))
+        );
         assert_eq!(port_addr("1,2,3"), None);
         assert_eq!(port_addr("300,1,1,1,1,1"), None);
-        assert_eq!(eprt_addr("|1|10.0.0.1|1025|"), Some(SocketAddr::from(([10, 0, 0, 1], 1025))));
+        assert_eq!(
+            eprt_addr("|1|10.0.0.1|1025|"),
+            Some(SocketAddr::from(([10, 0, 0, 1], 1025)))
+        );
         assert!(eprt_addr("|2|::1|1025|").is_some());
         assert!(eprt_addr("|1|::1|1025|").is_none());
         assert!(eprt_addr("bad").is_none());

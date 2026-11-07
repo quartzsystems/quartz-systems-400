@@ -31,12 +31,20 @@ pub fn float_char(x: f64) -> String {
     let bits = x.to_bits();
     let raw_exp = (bits >> 52) & 0x7FF;
     let frac = bits & ((1 << 52) - 1);
-    let sig = if raw_exp == 0 { 64 - frac.leading_zeros() } else { 53 };
+    let sig = if raw_exp == 0 {
+        64 - frac.leading_zeros()
+    } else {
+        53
+    };
     // floor(sig * log10(2)) + 2: 17 for 53 bits, 2 for one.
     let digits = usize::try_from(u64::from(sig) * 30_103 / 100_000 + 2).expect("small");
     let s = format!("{:.*e}", digits - 1, x);
     let (mant, exp) = s.split_once('e').expect("exponent form");
-    let mant = if mant.contains('.') { mant.trim_end_matches('0').trim_end_matches('.') } else { mant };
+    let mant = if mant.contains('.') {
+        mant.trim_end_matches('0').trim_end_matches('.')
+    } else {
+        mant
+    };
     format!("{mant}E{exp}")
 }
 

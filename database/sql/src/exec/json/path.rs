@@ -67,7 +67,11 @@ impl Lex<'_> {
     fn word(&mut self) -> String {
         self.ws();
         let start = self.at;
-        while self.s.get(self.at).is_some_and(|c| c.is_alphanumeric() || *c == '_') {
+        while self
+            .s
+            .get(self.at)
+            .is_some_and(|c| c.is_alphanumeric() || *c == '_')
+        {
             self.at += 1;
         }
         self.s[start..self.at].iter().collect()
@@ -79,7 +83,11 @@ impl Lex<'_> {
         while self.s.get(self.at).is_some_and(char::is_ascii_digit) {
             self.at += 1;
         }
-        self.s[start..self.at].iter().collect::<String>().parse().ok()
+        self.s[start..self.at]
+            .iter()
+            .collect::<String>()
+            .parse()
+            .ok()
     }
 }
 
@@ -225,13 +233,20 @@ impl Path {
         Ok(items)
     }
 
-    fn step<'a>(&self, step: &Step, item: &'a Json, out: &mut Vec<&'a Json>) -> Result<(), PathError> {
+    fn step<'a>(
+        &self,
+        step: &Step,
+        item: &'a Json,
+        out: &mut Vec<&'a Json>,
+    ) -> Result<(), PathError> {
         match (step, item) {
             (Step::Member(k), Json::Object(m)) => {
                 let before = out.len();
                 out.extend(m.iter().filter(|(n, _)| n == k).map(|(_, v)| v).take(1));
                 if self.strict && out.len() == before {
-                    return Err(PathError::Structure(format!("the object has no member {k}")));
+                    return Err(PathError::Structure(format!(
+                        "the object has no member {k}"
+                    )));
                 }
             }
             (Step::AnyMember, Json::Object(m)) => out.extend(m.iter().map(|(_, v)| v)),
@@ -242,12 +257,16 @@ impl Path {
             }
             (Step::Member(k), _) => {
                 if self.strict {
-                    return Err(PathError::Structure(format!("member {k} of a value that is not an object")));
+                    return Err(PathError::Structure(format!(
+                        "member {k} of a value that is not an object"
+                    )));
                 }
             }
             (Step::AnyMember, _) => {
                 if self.strict {
-                    return Err(PathError::Structure("members of a value that is not an object".into()));
+                    return Err(PathError::Structure(
+                        "members of a value that is not an object".into(),
+                    ));
                 }
             }
             (Step::AnyElement, Json::Array(items)) => out.extend(items.iter()),
@@ -260,7 +279,9 @@ impl Path {
                         match usize::try_from(i).ok().and_then(|i| items.get(i)) {
                             Some(v) => out.push(v),
                             None if self.strict => {
-                                return Err(PathError::Structure(format!("index {i} is past the array")));
+                                return Err(PathError::Structure(format!(
+                                    "index {i} is past the array"
+                                )));
                             }
                             None => {}
                         }
@@ -279,7 +300,9 @@ impl Path {
                 }
             }
             (Step::AnyElement | Step::Elements(_), _) => {
-                return Err(PathError::Structure("an array accessor on a value that is not an array".into()));
+                return Err(PathError::Structure(
+                    "an array accessor on a value that is not an array".into(),
+                ));
             }
         }
         Ok(())
@@ -309,12 +332,27 @@ mod tests {
         assert_eq!(texts("$.\"a b\"", doc).unwrap(), ["3"]);
         assert_eq!(texts("lax $.a.b[5]", doc).unwrap(), Vec::<String>::new());
         assert_eq!(texts("$.a.*", doc).unwrap(), ["[10,20,30]"]);
-        assert_eq!(texts("lax $.a.b[0].c[0]", doc).unwrap(), Vec::<String>::new());
+        assert_eq!(
+            texts("lax $.a.b[0].c[0]", doc).unwrap(),
+            Vec::<String>::new()
+        );
         assert_eq!(texts("lax $[0]", "5").unwrap(), ["5"]);
-        assert!(matches!(texts("strict $.c", doc), Err(PathError::Structure(_))));
-        assert!(matches!(texts("strict $.a.b[5]", doc), Err(PathError::Structure(_))));
+        assert!(matches!(
+            texts("strict $.c", doc),
+            Err(PathError::Structure(_))
+        ));
+        assert!(matches!(
+            texts("strict $.a.b[5]", doc),
+            Err(PathError::Structure(_))
+        ));
         assert!(matches!(texts("bad path", doc), Err(PathError::Syntax(_))));
-        assert!(matches!(texts("$.a ? (@ > 1)", doc), Err(PathError::Unsupported(_))));
-        assert!(matches!(texts("$.a.type()", doc), Err(PathError::Unsupported(_))));
+        assert!(matches!(
+            texts("$.a ? (@ > 1)", doc),
+            Err(PathError::Unsupported(_))
+        ));
+        assert!(matches!(
+            texts("$.a.type()", doc),
+            Err(PathError::Unsupported(_))
+        ));
     }
 }

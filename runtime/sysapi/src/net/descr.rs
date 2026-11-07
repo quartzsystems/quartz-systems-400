@@ -9,14 +9,16 @@
 
 use mi::Job;
 use mi::fd::Kind;
+use sockets::Errno;
 use sockets::consts::{
-    F_DUPFD, F_GETFD, F_GETFL, F_SETFD, F_SETFL, FD_CLOEXEC, FIONBIO, FIONREAD, O_NONBLOCK, O_RDWR, POLLIN,
-    POLLOUT, POLLPRI,
+    F_DUPFD, F_GETFD, F_GETFL, F_SETFD, F_SETFL, FD_CLOEXEC, FIONBIO, FIONREAD, O_NONBLOCK, O_RDWR,
+    POLLIN, POLLOUT, POLLPRI,
 };
 use sockets::layout::misc::{FdSet, timeval};
-use sockets::Errno;
 
-use super::abi::{bound_c, errno, get_int, int, is_null, mem, opt_mem, put_int, raw, ret, uint, ushort};
+use super::abi::{
+    bound_c, errno, get_int, int, is_null, mem, opt_mem, put_int, raw, ret, uint, ushort,
+};
 use super::calls::{iovecs, poll_items};
 use super::net;
 
@@ -75,7 +77,12 @@ fn readv(j: &mut Job, fd: i64, iov: u128, n: i64) -> i64 {
         match k {
             Kind::Socket(s) => {
                 let mut views: Vec<&mut [u8]> = bufs.iter_mut().map(|b| &mut **b).collect();
-                net(j).borrow().sockets.borrow().recvv(s, &mut views, 0).map(|r| count(r.bytes))
+                net(j)
+                    .borrow()
+                    .sockets
+                    .borrow()
+                    .recvv(s, &mut views, 0)
+                    .map(|r| count(r.bytes))
             }
             Kind::Ifs(h) => {
                 let mut total = 0;
@@ -100,7 +107,12 @@ fn writev(j: &mut Job, fd: i64, iov: u128, n: i64) -> i64 {
         match k {
             Kind::Socket(s) => {
                 let views: Vec<&[u8]> = bufs.iter().map(|b| &**b).collect();
-                net(j).borrow().sockets.borrow().sendv(s, &views, 0, None).map(count)
+                net(j)
+                    .borrow()
+                    .sockets
+                    .borrow()
+                    .sendv(s, &views, 0, None)
+                    .map(count)
             }
             Kind::Ifs(h) => {
                 let mut total = 0;
@@ -150,15 +162,25 @@ fn fcntl(j: &mut Job, fd: i64, cmd: i64, arg: i64, p: u128) -> i64 {
     let fd = int(fd);
     let arg = int(arg);
     let r = (|| match int(cmd) {
-        F_GETFD => Ok(i64::from(if j.fds.cloexec(fd).map_err(errno)? { FD_CLOEXEC } else { 0 })),
-        F_SETFD => j.fds.set_cloexec(fd, arg & FD_CLOEXEC != 0).map(|()| 0).map_err(errno),
+        F_GETFD => Ok(i64::from(if j.fds.cloexec(fd).map_err(errno)? {
+            FD_CLOEXEC
+        } else {
+            0
+        })),
+        F_SETFD => j
+            .fds
+            .set_cloexec(fd, arg & FD_CLOEXEC != 0)
+            .map(|()| 0)
+            .map_err(errno),
         F_DUPFD => j.fds.dup_from(fd, arg).map(i64::from).map_err(errno),
         c => match j.fds.kind(fd).map_err(errno)? {
             Kind::Ifs(h) => {
                 let svc = i32::try_from(h).map_err(|_| Errno::EBADF)?;
                 let v = crate::ifs::fcntl_ifs(j, svc, c, arg, p)?;
                 if c == F_SETFL {
-                    j.fds.set_nonblock(fd, arg & O_NONBLOCK != 0).map_err(errno)?;
+                    j.fds
+                        .set_nonblock(fd, arg & O_NONBLOCK != 0)
+                        .map_err(errno)?;
                 }
                 Ok(v)
             }

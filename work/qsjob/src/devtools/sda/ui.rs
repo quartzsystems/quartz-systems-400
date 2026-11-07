@@ -123,7 +123,11 @@ const IMAGE_LEN: usize = 24 * 80 - 1;
 /// Show the design image (24 rows of 80, row 24 holding the message
 /// when there is one) as one input field and read it back as rows.
 /// `None` when the display is gone.
-pub fn show_image(surface: &mut Surface, rows: &[String], cursor: (usize, usize)) -> Option<(Key, Vec<String>, (usize, usize))> {
+pub fn show_image(
+    surface: &mut Surface,
+    rows: &[String],
+    cursor: (usize, usize),
+) -> Option<(Key, Vec<String>, (usize, usize))> {
     let flat: String = rows
         .iter()
         .map(|r| format!("{r:80}").chars().take(80).collect::<String>())
@@ -138,7 +142,12 @@ pub fn show_image(surface: &mut Surface, rows: &[String], cursor: (usize, usize)
     });
     surface.flush(Read::MdtFields);
     let (a, (row, col)) = surface.wait()?;
-    let text = surface.with_model(|m| m.fields().first().map(tn5250::screen::Field::text).unwrap_or_default());
+    let text = surface.with_model(|m| {
+        m.fields()
+            .first()
+            .map(tn5250::screen::Field::text)
+            .unwrap_or_default()
+    });
     let all: Vec<char> = std::iter::once(' ')
         .chain(text.chars())
         .chain(std::iter::repeat(' '))

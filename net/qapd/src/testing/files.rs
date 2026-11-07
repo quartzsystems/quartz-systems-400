@@ -70,9 +70,11 @@ pub const TEXT_DIR: &str = "/home/BOB/text";
 /// The single-byte CCSIDs [`TEXT`] is stored in.
 pub const TEXT_CCSIDS: [u16; 4] = [37, 273, 819, 1208];
 /// Text every single-byte CCSID above holds.
-pub const TEXT: &str = "Grüße aus Zürich: 1 + 1 = 2, ¡olé! [ok] {x} \\ ~\nZweite Zeile - äöü ÄÖÜ ß.\n";
+pub const TEXT: &str =
+    "Grüße aus Zürich: 1 + 1 = 2, ¡olé! [ok] {x} \\ ~\nZweite Zeile - äöü ÄÖÜ ß.\n";
 /// Japanese, mixed single and double byte, for CCSID 939.
-pub const JAPANESE: &str = "QS/400 は日本語を変換します。\nｶﾀｶﾅ ABC 123 東京都　千代田区\nabcあx 終わり\n";
+pub const JAPANESE: &str =
+    "QS/400 は日本語を変換します。\nｶﾀｶﾅ ABC 123 東京都　千代田区\nabcあx 終わり\n";
 /// The mixed CCSID.
 pub const MIXED: u16 = 939;
 /// The binary file's bytes.
@@ -141,7 +143,14 @@ pub fn text_file(ccsid: u16) -> String {
 pub const GROUP: &str = "DEV";
 
 /// The profiles: name and UID.
-const PROFILES: [(&str, u32); 6] = [("QSYS", 0), ("QSECOFR", 1), ("QDFTOWN", 3), ("BOB", 100), ("ANN", 101), ("WARN", 102)];
+const PROFILES: [(&str, u32); 6] = [
+    ("QSYS", 0),
+    ("QSECOFR", 1),
+    ("QDFTOWN", 3),
+    ("BOB", 100),
+    ("ANN", 101),
+    ("WARN", 102),
+];
 
 /// The profile `user` as the IFS checks it: `QSECOFR` with `*ALLOBJ`
 /// and `*SECADM`, every other with none; `BOB` in [`GROUP`].
@@ -154,7 +163,10 @@ pub fn principal(user: &str) -> Principal {
         ..Principal::default()
     };
     if user == "QSECOFR" || user == "QSYS" {
-        p.spcaut = SpecialAuth::ALLOBJ.0 | SpecialAuth::SECADM.0 | SpecialAuth::IOSYSCFG.0 | SpecialAuth::AUDIT.0;
+        p.spcaut = SpecialAuth::ALLOBJ.0
+            | SpecialAuth::SECADM.0
+            | SpecialAuth::IOSYSCFG.0
+            | SpecialAuth::AUDIT.0;
     }
     if user == "BOB" {
         p.groups = vec![GROUP.into()];
@@ -229,7 +241,10 @@ impl Files {
             audit: &*self.audit,
             job_ccsid: 37,
         };
-        f(&Direct { ifs: &self.ifs, cx: &cx })
+        f(&Direct {
+            ifs: &self.ifs,
+            cx: &cx,
+        })
     }
 
     fn install(&self) {
@@ -243,7 +258,12 @@ impl Files {
         self.as_user("BOB", MAKER, |c| {
             c.mkdir(MANY, 0o755).expect("many");
             for i in 0..MANY_COUNT {
-                put(c, &format!("{MANY}/f{i:04}.txt"), 1208, format!("file {i}\n").as_bytes());
+                put(
+                    c,
+                    &format!("{MANY}/f{i:04}.txt"),
+                    1208,
+                    format!("file {i}\n").as_bytes(),
+                );
             }
             c.mkdir(TEXT_DIR, 0o755).expect("text");
             for ccsid in TEXT_CCSIDS {
@@ -282,7 +302,8 @@ impl Files {
     /// Job [`HOLDER`] opens [`LOCKED`] sharing nothing, and keeps it open.
     pub fn hold_lock(&self) {
         self.as_user("QSECOFR", HOLDER, |c| {
-            c.open(LOCKED, OpenArgs::new(O_RDWR | O_SHARE_NONE)).expect("held");
+            c.open(LOCKED, OpenArgs::new(O_RDWR | O_SHARE_NONE))
+                .expect("held");
         });
     }
 
@@ -302,7 +323,9 @@ impl Files {
     pub fn change_twice(&self, path: &str) {
         let b = self.ifs.backend();
         self.as_user("QSECOFR", MAKER, |c| {
-            let s = c.stat(path, false).unwrap_or_else(|e| panic!("{path}: {e:?}"));
+            let s = c
+                .stat(path, false)
+                .unwrap_or_else(|e| panic!("{path}: {e:?}"));
             b.set_clock(Some(s.mtime));
             let r = (|| {
                 let fd = c.open(path, OpenArgs::new(O_RDWR))?;
@@ -330,7 +353,12 @@ impl Files {
         if !*made {
             self.as_user("BOB", 2, |c| {
                 let fd = c
-                    .open(BIG, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC | O_CCSID).mode(0o644).conv(65535))
+                    .open(
+                        BIG,
+                        OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC | O_CCSID)
+                            .mode(0o644)
+                            .conv(65535),
+                    )
                     .expect("big");
                 let mut at = 0u64;
                 let mut buf = Vec::with_capacity(ifs::client::CHUNK);
@@ -358,7 +386,12 @@ impl Default for Files {
 /// A new file of `data`, tagged `ccsid`.
 fn put(c: &dyn IfsClient, path: &str, ccsid: u16, data: &[u8]) {
     let fd = c
-        .open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC | O_CCSID).mode(0o644).conv(u32::from(ccsid)))
+        .open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC | O_CCSID)
+                .mode(0o644)
+                .conv(u32::from(ccsid)),
+        )
         .unwrap_or_else(|e| panic!("{path}: {e:?}"));
     ifs::client::write_all(c, fd, data).expect("data");
     c.close(fd).expect("closed");

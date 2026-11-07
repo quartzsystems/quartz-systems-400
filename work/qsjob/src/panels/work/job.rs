@@ -12,9 +12,7 @@ use mi::Job;
 use stg::Client;
 use stg::proto::JobDetail;
 
-use super::{
-    Flow, common, date_time, entry, parm, refill, render_fail, run_options, show_display,
-};
+use super::{Flow, common, date_time, entry, parm, refill, render_fail, run_options, show_display};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -31,17 +29,32 @@ pub enum Left {
 }
 
 /// `WRKJOB [JOB()] [OPTION()]`.
-pub fn wrkjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkjob(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     menu(job, host, surface, r, true)
 }
 
 /// `DSPJOB [JOB()] [OPTION()]`.
-pub fn dspjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dspjob(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     menu(job, host, surface, r, false)
 }
 
 /// `DSPJOBLOG [JOB()]`.
-pub fn dspjoblog(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dspjoblog(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let detail = fetch(host, &target(r))?;
     let mut d = crate::panels::dialog(host, GROUP)?;
     identify(&mut d, &detail);
@@ -102,7 +115,13 @@ fn own(host: &Host, detail: &JobDetail) -> bool {
     detail.job.number == host.start.number
 }
 
-fn menu(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, work: bool) -> Result<String, Fail> {
+fn menu(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    work: bool,
+) -> Result<String, Fail> {
     let q = target(r);
     let mut detail = fetch(host, &q)?;
     let mut d = crate::panels::dialog(host, GROUP)?;
@@ -326,7 +345,13 @@ fn attributes(host: &Host, d: &mut UimDialog, detail: &JobDetail) {
 }
 
 /// Option 4: the job's spooled files.
-fn spooled(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, q: &str) -> Result<Left, Fail> {
+fn spooled(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    q: &str,
+) -> Result<Left, Fail> {
     let mut history = Vec::new();
     loop {
         let files = host
@@ -341,7 +366,11 @@ fn spooled(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog,
                     ("FILE", f.name.clone()),
                     (
                         "DEVQ",
-                        if f.writer.is_empty() { queue } else { f.writer.clone() },
+                        if f.writer.is_empty() {
+                            queue
+                        } else {
+                            f.writer.clone()
+                        },
                     ),
                     ("USRDTA", f.usrdta.clone()),
                     ("SPLSTS", f.status.code().to_string()),
@@ -376,7 +405,11 @@ fn spooled(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog,
 
 /// The job log's lines: requests with their marks, messages under
 /// them; `all` keeps the detailed ones too, else the job's `LOG`.
-fn log_lines(entries: &[wm::joblog::Entry], attrs: &wm::job::JobAttrs, all: bool) -> Vec<Vec<(String, String)>> {
+fn log_lines(
+    entries: &[wm::joblog::Entry],
+    attrs: &wm::job::JobAttrs,
+    all: bool,
+) -> Vec<Vec<(String, String)>> {
     let entries: Vec<&wm::joblog::Entry> = entries.iter().collect();
     let kept = if all {
         entries
@@ -400,7 +433,13 @@ fn log_lines(entries: &[wm::joblog::Entry], attrs: &wm::job::JobAttrs, all: bool
 
 /// Option 10 and `DSPJOBLOG`: the job's log, the basic view first.
 /// Another job's comes from the service's copy, read again each time.
-fn joblog(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, detail: &JobDetail) -> Result<Left, Fail> {
+fn joblog(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    detail: &JobDetail,
+) -> Result<Left, Fail> {
     let mine = own(host, detail);
     let mut all = false;
     let mut history = Vec::new();
@@ -435,26 +474,37 @@ fn joblog(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, 
 }
 
 /// Option 11: the call stack, command entry at the bottom.
-fn callstack(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, detail: &JobDetail) -> Result<Left, Fail> {
+fn callstack(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    detail: &JobDetail,
+) -> Result<Left, Fail> {
     if !own(host, detail) {
         d.error("CPD9B9E", &[]);
         return Ok(Left::Back);
     }
     d.set("THREAD", &format!("{:08X}", detail.job.pid));
-    let mut rows = vec![entry(&[
-        ("PGM", "QCMD".into()),
-        ("PGMLIB", "QSYS".into()),
-    ])];
+    let mut rows = vec![entry(&[("PGM", "QCMD".into()), ("PGMLIB", "QSYS".into())])];
     let top = job.act.frames.len();
     for (i, f) in job.act.frames.iter().enumerate() {
-        let key = f.program.as_ref().map(|p| p.key.clone()).unwrap_or_default();
+        let key = f
+            .program
+            .as_ref()
+            .map(|p| p.key.clone())
+            .unwrap_or_default();
         let (lib, name) = key.split_once('/').unwrap_or(("", key.as_str()));
         let proc_name = f
             .program
             .as_ref()
             .and_then(|p| p.proc_name(f.code))
             .unwrap_or_default();
-        let stmt = if i + 1 == top { job.abi.cur_stmt } else { f.stmt };
+        let stmt = if i + 1 == top {
+            job.abi.cur_stmt
+        } else {
+            f.stmt
+        };
         rows.push(entry(&[
             ("RQSLVL", String::new()),
             ("PGM", name.to_string()),
@@ -468,11 +518,22 @@ fn callstack(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialo
 }
 
 /// Option 13: the library list with each library's text.
-fn libl(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, detail: &JobDetail) -> Result<Left, Fail> {
+fn libl(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    detail: &JobDetail,
+) -> Result<Left, Fail> {
     let l = &detail.attrs.libl;
     let mut libs: Vec<(String, &str)> = Vec::new();
     libs.extend(l.sys.iter().map(|x| (x.clone(), "SYS")));
-    libs.extend(l.prd.iter().filter(|x| !x.is_empty()).map(|x| (x.clone(), "PRD")));
+    libs.extend(
+        l.prd
+            .iter()
+            .filter(|x| !x.is_empty())
+            .map(|x| (x.clone(), "PRD")),
+    );
     libs.extend(l.cur.iter().map(|x| (x.clone(), "CUR")));
     libs.extend(l.usr.iter().map(|x| (x.clone(), "USR")));
     let rows = libs
@@ -497,7 +558,13 @@ fn libl(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, de
 }
 
 /// Option 14: the job's open files.
-fn openfiles(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, detail: &JobDetail) -> Result<Left, Fail> {
+fn openfiles(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    detail: &JobDetail,
+) -> Result<Left, Fail> {
     let rows: Vec<Vec<(String, String)>> = if own(host, detail) {
         job.files
             .values()
@@ -532,7 +599,13 @@ fn openfiles(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialo
 
 /// A list display without options: F3 leaves, Enter, F12 and F16
 /// go back to the menu, list options run as typed.
-fn simple(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, panel: &str) -> Result<Left, Fail> {
+fn simple(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    panel: &str,
+) -> Result<Left, Fail> {
     let mut history = Vec::new();
     loop {
         match d.show(surface, panel).map_err(|e| render_fail(&e))? {

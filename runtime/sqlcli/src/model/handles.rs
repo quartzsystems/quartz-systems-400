@@ -69,7 +69,14 @@ pub struct Env {
 
 impl Default for Env {
     fn default() -> Self {
-        Self { output_nts: true, server_mode: false, sys_naming: false, default_lib: String::new(), count: 1, diags: Diags::default() }
+        Self {
+            output_nts: true,
+            server_mode: false,
+            sys_naming: false,
+            default_lib: String::new(),
+            count: 1,
+            diags: Diags::default(),
+        }
     }
 }
 
@@ -96,7 +103,10 @@ pub struct Dbc {
 
 impl std::fmt::Debug for Dbc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Dbc").field("connected", &self.connected).field("scope", &self.scope).finish_non_exhaustive()
+        f.debug_struct("Dbc")
+            .field("connected", &self.connected)
+            .field("scope", &self.scope)
+            .finish_non_exhaustive()
     }
 }
 
@@ -212,7 +222,10 @@ impl Handles {
     /// The environment's number, if there is one.
     #[must_use]
     pub fn env_number(&self) -> Option<i32> {
-        self.map.iter().find(|(_, h)| matches!(h, Handle::Env(_))).map(|(n, _)| *n)
+        self.map
+            .iter()
+            .find(|(_, h)| matches!(h, Handle::Env(_)))
+            .map(|(n, _)| *n)
     }
 
     /// The environment.
@@ -245,13 +258,18 @@ impl Handles {
         use crate::consts::htype;
         matches!(
             (self.map.get(&n), t),
-            (Some(Handle::Env(_)), htype::ENV) | (Some(Handle::Dbc(_)), htype::DBC) | (Some(Handle::Stmt(_)), htype::STMT)
+            (Some(Handle::Env(_)), htype::ENV)
+                | (Some(Handle::Dbc(_)), htype::DBC)
+                | (Some(Handle::Stmt(_)), htype::STMT)
         )
     }
 
     /// The connections.
     pub fn dbcs(&self) -> impl Iterator<Item = i32> + '_ {
-        self.map.iter().filter(|(_, h)| matches!(h, Handle::Dbc(_))).map(|(n, _)| *n)
+        self.map
+            .iter()
+            .filter(|(_, h)| matches!(h, Handle::Dbc(_)))
+            .map(|(n, _)| *n)
     }
 
     /// A connection's statements.

@@ -64,12 +64,22 @@ pub struct SqlState {
 impl SqlState {
     /// `user`'s state.
     pub fn of(&self, user: &str) -> UserSql {
-        self.users.lock().expect("sql").get(user).cloned().unwrap_or_default()
+        self.users
+            .lock()
+            .expect("sql")
+            .get(user)
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Change `user`'s state.
     pub fn update(&self, user: &str, f: impl FnOnce(&mut UserSql)) {
-        f(self.users.lock().expect("sql").entry(user.to_string()).or_default());
+        f(self
+            .users
+            .lock()
+            .expect("sql")
+            .entry(user.to_string())
+            .or_default());
     }
 
     /// Note a statement run: newest first, each once, at most
@@ -131,9 +141,16 @@ fn sort_rows(columns: &[String], rows: &mut [Vec<Option<String>>], key: &str) {
 
 /// A result table, every column sortable; `keep` the query values the
 /// sort links keep.
-fn result_table(columns: &[String], rows: &[Vec<Option<String>>], keep: Vec<(String, String)>) -> String {
+fn result_table(
+    columns: &[String],
+    rows: &[Vec<Option<String>>],
+    keep: Vec<(String, String)>,
+) -> String {
     let list = List {
-        cols: columns.iter().map(|c| Col::sorted(c, &c.to_ascii_lowercase())).collect(),
+        cols: columns
+            .iter()
+            .map(|c| Col::sorted(c, &c.to_ascii_lowercase()))
+            .collect(),
         rows: rows
             .iter()
             .map(|r| r.iter().map(|v| Cell::mono(&shown(v.as_ref()))).collect())
@@ -191,10 +208,13 @@ pub fn csv(columns: &[String], rows: &[Vec<Option<String>>]) -> Vec<u8> {
         }
     }
     let mut out = String::new();
-    let line = |vals: Vec<String>| vals.iter().map(|v| field(v)).collect::<Vec<_>>().join(",") + "\r\n";
+    let line =
+        |vals: Vec<String>| vals.iter().map(|v| field(v)).collect::<Vec<_>>().join(",") + "\r\n";
     out.push_str(&line(columns.to_vec()));
     for r in rows {
-        out.push_str(&line(r.iter().map(|v| v.clone().unwrap_or_default()).collect()));
+        out.push_str(&line(
+            r.iter().map(|v| v.clone().unwrap_or_default()).collect(),
+        ));
     }
     out.into_bytes()
 }

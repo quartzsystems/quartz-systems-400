@@ -35,8 +35,7 @@ pub fn find(txn: &mut Txn<'_>, region: u16, bytes: &[u8]) -> store::Result<Vec<R
             continue;
         }
         let id = ObjectId::from_bytes(w);
-        let plausible =
-            id.serial > 0 && id.serial < next && type_by_code(id.type_code).is_some();
+        let plausible = id.serial > 0 && id.serial < next && type_by_code(id.type_code).is_some();
         if plausible && let Some(r) = describe(txn, id)? {
             out.push(RefEntry {
                 region,
@@ -67,7 +66,11 @@ pub(crate) fn describe(txn: &mut Txn<'_>, id: ObjectId) -> store::Result<Option<
         // An owned object (a member): its file's names.
         let file = ops::read_header(txn, h.library)?.1;
         let lib = ops::read_header(txn, file.library)?.1;
-        (*lib.name.as_bytes(), *file.name.as_bytes(), *h.name.as_bytes())
+        (
+            *lib.name.as_bytes(),
+            *file.name.as_bytes(),
+            *h.name.as_bytes(),
+        )
     };
     Ok(Some(RefEntry {
         original_id: id.to_bytes(),

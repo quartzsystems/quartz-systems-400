@@ -92,7 +92,11 @@ impl Sqlca {
     #[must_use]
     pub fn msgid(&self) -> String {
         let n = self.sqlcode.unsigned_abs();
-        if n > 9999 { format!("SQ{n:05}") } else { format!("SQL{n:04}") }
+        if n > 9999 {
+            format!("SQ{n:05}")
+        } else {
+            format!("SQL{n:04}")
+        }
     }
 
     /// One line as a listing shows it.
@@ -131,19 +135,31 @@ impl Warning {
     /// journaled.
     #[must_use]
     pub fn not_journaled(table: &str, library: &str) -> Self {
-        Self { sqlcode: 7905, sqlstate: "01567".into(), text: format!("table {table} in {library} was made but is not journaled") }
+        Self {
+            sqlcode: 7905,
+            sqlstate: "01567".into(),
+            text: format!("table {table} in {library} was made but is not journaled"),
+        }
     }
 
     /// `SQL0569`: a privilege the user did not have was not revoked.
     #[must_use]
     pub fn not_all_revoked(object: &str) -> Self {
-        Self { sqlcode: 569, sqlstate: "01006".into(), text: format!("not every privilege named was revoked from {object}") }
+        Self {
+            sqlcode: 569,
+            sqlstate: "01006".into(),
+            text: format!("not every privilege named was revoked from {object}"),
+        }
     }
 
     /// A warning with a code and state of its own (`SIGNAL`).
     #[must_use]
     pub fn coded(sqlcode: i32, sqlstate: &str, text: &str) -> Self {
-        Self { sqlcode, sqlstate: sqlstate.into(), text: text.into() }
+        Self {
+            sqlcode,
+            sqlstate: sqlstate.into(),
+            text: text.into(),
+        }
     }
 
     /// The SQLCA of a statement that succeeded with this warning.

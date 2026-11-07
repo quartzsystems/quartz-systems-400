@@ -13,8 +13,8 @@ use std::sync::Mutex;
 
 use qap_proto::Status;
 use qap_proto::ops::spool::{
-    DeviceType, ListOutputQueues, ListSpooledFiles, OutputQueue, OutputQueues, ReadSpooledFile, SpoolStatus,
-    SpooledData, SpooledFile, SpooledFileId, SpooledFiles,
+    DeviceType, ListOutputQueues, ListSpooledFiles, OutputQueue, OutputQueues, ReadSpooledFile,
+    SpoolStatus, SpooledData, SpooledFile, SpooledFileId, SpooledFiles,
 };
 use qap_proto::types::ObjectName;
 
@@ -121,12 +121,17 @@ pub struct Spool {
 /// A page of `v` from `start`, at most `max` (0 for all).
 fn page<T: Clone>(v: &[T], start: u32, max: u32) -> Vec<T> {
     let start = usize::try_from(start).unwrap_or(usize::MAX);
-    let max = if max == 0 { usize::MAX } else { usize::try_from(max).unwrap_or(usize::MAX) };
+    let max = if max == 0 {
+        usize::MAX
+    } else {
+        usize::try_from(max).unwrap_or(usize::MAX)
+    };
     v.iter().skip(start).take(max).cloned().collect()
 }
 
 fn same(a: &ObjectName, b: &ObjectName) -> bool {
-    a.name.eq_ignore_ascii_case(&b.name) && (b.library == "*LIBL" || a.library.eq_ignore_ascii_case(&b.library))
+    a.name.eq_ignore_ascii_case(&b.name)
+        && (b.library == "*LIBL" || a.library.eq_ignore_ascii_case(&b.library))
 }
 
 impl Spool {
@@ -206,7 +211,10 @@ impl Spool {
     /// on a queue that shows its files to anyone.
     fn may(&self, me: &str, key: u32, display: bool) -> Result<(), No> {
         let f = &self.files[&key];
-        let show = self.queues.iter().any(|q| same(&q.outq, &f.outq) && q.show_all);
+        let show = self
+            .queues
+            .iter()
+            .any(|q| same(&q.outq, &f.outq) && q.show_all);
         if f.owner() == me || self.splctl.iter().any(|u| u == me) || (display && show) {
             Ok(())
         } else {
@@ -216,7 +224,10 @@ impl Spool {
 
     fn may_use(&self, me: &str, q: usize) -> Result<(), No> {
         let q = &self.queues[q];
-        if q.users.is_empty() || q.users.iter().any(|u| u == me) || self.splctl.iter().any(|u| u == me) {
+        if q.users.is_empty()
+            || q.users.iter().any(|u| u == me)
+            || self.splctl.iter().any(|u| u == me)
+        {
             Ok(())
         } else {
             Err(no(Status::NotAuthorized, "CPF3303", &[me, &q.outq.name]))
@@ -240,7 +251,8 @@ impl Spool {
             self.may_use(me, i)?;
             self.queues[i].files.clone()
         } else {
-            let mut all: Vec<(&i64, &u32)> = self.files.iter().map(|(k, f)| (&f.created, k)).collect();
+            let mut all: Vec<(&i64, &u32)> =
+                self.files.iter().map(|(k, f)| (&f.created, k)).collect();
             all.sort();
             all.into_iter().map(|(_, k)| *k).collect()
         };
@@ -249,7 +261,11 @@ impl Spool {
             .filter_map(|k| self.files.get(k))
             .filter(|f| user.as_deref().is_none_or(|u| f.owner() == u))
             .filter(|f| req.status.is_none_or(|s| f.status == s))
-            .filter(|f| req.form_type.as_deref().is_none_or(|t| f.form_type.eq_ignore_ascii_case(t)))
+            .filter(|f| {
+                req.form_type
+                    .as_deref()
+                    .is_none_or(|t| f.form_type.eq_ignore_ascii_case(t))
+            })
             .filter(|f| req.user_data.as_deref().is_none_or(|d| f.user_data == d))
             .map(File::info)
             .collect();
@@ -278,7 +294,12 @@ impl Spool {
             Unreadable::Format => no(
                 Status::Error,
                 spool::NO_FORMAT,
-                &[&f.id.file, &number, spool::format_name(req.format), spool::device_name(f.device)],
+                &[
+                    &f.id.file,
+                    &number,
+                    spool::format_name(req.format),
+                    spool::device_name(f.device),
+                ],
             ),
             Unreadable::Range => no(Status::InvalidRequest, "CPD0084", &["FIRST_PAGE"]),
         })
@@ -337,7 +358,13 @@ impl Spool {
     /// # Errors
     /// `NotFound` (the file or the queue), `NotAuthorized`, `InUse`
     /// while printing.
-    pub fn move_to(&mut self, me: &str, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), No> {
+    pub fn move_to(
+        &mut self,
+        me: &str,
+        id: &SpooledFileId,
+        outq: &ObjectName,
+        first: bool,
+    ) -> Result<(), No> {
         let key = self.find(id)?;
         self.may(me, key, false)?;
         if self.files[&key].status == SpoolStatus::Printing {

@@ -99,7 +99,11 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         "CHGOWN" => {
             let (obj, own) = (p("OBJ"), parms.name("NEWOWN"));
-            let (rvk, s, sym) = (int("RVKOLDAUT", 1) == 1, sub("SUBTREE"), int("SYMLNK", 0) == 1);
+            let (rvk, s, sym) = (
+                int("RVKOLDAUT", 1) == 1,
+                sub("SUBTREE"),
+                int("SYMLNK", 0) == 1,
+            );
             Box::new(move |c| auth::chgown(c, &obj, &own, rvk, s, sym))
         }
         "CHGPGP" => {
@@ -107,7 +111,14 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
                 "*OLDPGP", "*PRIVATE", "*RWX", "*RX", "*RW", "*WX", "*R", "*W", "*X", "*EXCLUDE",
                 "*NONE",
             ];
-            const OBJ: [&str; 6] = ["*NONE", "*ALL", "*OBJEXIST", "*OBJMGT", "*OBJALTER", "*OBJREF"];
+            const OBJ: [&str; 6] = [
+                "*NONE",
+                "*ALL",
+                "*OBJEXIST",
+                "*OBJMGT",
+                "*OBJALTER",
+                "*OBJREF",
+            ];
             let pick = |t: &[&str], n: i64| -> String {
                 usize::try_from(n)
                     .ok()
@@ -142,7 +153,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         "STRJRN" => {
             let Some(jrn) = journal_name(&p("JRN")) else {
-                return Some(reply(Reply::fail(ifscmd::Msg::path("CPFA0DB", &p("JRN"))), ""));
+                return Some(reply(
+                    Reply::fail(ifscmd::Msg::path("CPFA0DB", &p("JRN"))),
+                    "",
+                ));
             };
             let a = attr::StrJrn {
                 objs: included(parms, "OBJ"),
@@ -172,7 +186,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             Box::new(move |c| udfs::dspudfs(c, &u))
         }
         "MOUNT" | "ADDMFS" => {
-            let (ty, mfs, over, opts) = (parms.name("TYPE"), p("MFS"), p("MNTOVRDIR"), p("OPTIONS"));
+            let (ty, mfs, over, opts) =
+                (parms.name("TYPE"), p("MFS"), p("MNTOVRDIR"), p("OPTIONS"));
             Box::new(move |c| udfs::mount(c, &ty, &mfs, &over, &opts))
         }
         "UNMOUNT" | "RMVMFS" => {
@@ -202,7 +217,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     };
     let mut out = super::stmf::with_job(system, r);
     // DSPUDFS OUTPUT(*PRINT): the text form as a spooled file.
-    if name == "DSPUDFS" && matches!(parms.name("OUTPUT").as_str(), "P" | "*PRINT") && out.escape.is_none() {
+    if name == "DSPUDFS"
+        && matches!(parms.name("OUTPUT").as_str(), "P" | "*PRINT")
+        && out.escape.is_none()
+    {
         let lines: Vec<String> = out.text.lines().map(str::to_string).collect();
         match crate::svc::security::print_as(system, "QSYSPRT", "DSPUDFS", &lines, false) {
             Ok(t) => out.text = t,
@@ -214,7 +232,11 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// A value, or `dft` when it is empty.
 fn or(v: String, dft: &str) -> String {
-    if v.trim().is_empty() { dft.to_string() } else { v }
+    if v.trim().is_empty() {
+        dft.to_string()
+    } else {
+        v
+    }
 }
 
 /// A path that was given, `None` when empty.
@@ -227,7 +249,12 @@ fn words(parms: &Parms, kwd: &str) -> Vec<String> {
     parms
         .list(kwd)
         .into_iter()
-        .map(|v| v.text().map_or_else(|| v.source(), str::to_string).trim().to_ascii_uppercase())
+        .map(|v| {
+            v.text()
+                .map_or_else(|| v.source(), str::to_string)
+                .trim()
+                .to_ascii_uppercase()
+        })
         .filter(|w| !w.is_empty())
         .collect()
 }
@@ -248,12 +275,18 @@ fn included(parms: &Parms, kwd: &str) -> Vec<String> {
     for v in parms.list(kwd) {
         let (path, inc) = match v {
             Value::Elems(e) => (
-                e.first().and_then(Option::as_ref).map(Value::source).unwrap_or_default(),
+                e.first()
+                    .and_then(Option::as_ref)
+                    .map(Value::source)
+                    .unwrap_or_default(),
                 e.get(1)
                     .and_then(Option::as_ref)
                     .is_none_or(|x| !matches!(x.source().trim(), "O" | "*OMIT")),
             ),
-            other => (other.text().map_or_else(|| other.source(), str::to_string), true),
+            other => (
+                other.text().map_or_else(|| other.source(), str::to_string),
+                true,
+            ),
         };
         let path = path.trim().trim_matches('\'').to_string();
         if inc {
@@ -292,7 +325,9 @@ fn journal_name(path: &str) -> Option<String> {
         return None;
     }
     match ifs::vfs::qsys::node_of(rest).ok()? {
-        ifs::vfs::qsys::QsysNode::Obj(lib, name, ty) if ty == "*JRN" => Some(format!("{lib}/{name}")),
+        ifs::vfs::qsys::QsysNode::Obj(lib, name, ty) if ty == "*JRN" => {
+            Some(format!("{lib}/{name}"))
+        }
         _ => None,
     }
 }

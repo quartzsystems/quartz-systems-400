@@ -50,7 +50,8 @@ fn written(text: &str, format: &str, values: &[(&str, &str)], inds: &[u8]) -> Ve
     }
     let mut rt = Runtime::new(df, false);
     let mut m = ScreenModel::new(false);
-    rt.write(&mut m, &Env::default(), format, &out, &[]).unwrap();
+    rt.write(&mut m, &Env::default(), format, &out, &[])
+        .unwrap();
     m.text_rows()
 }
 
@@ -81,10 +82,18 @@ fn sysreq_menu() {
 /// between 7 and 80.
 #[test]
 fn sysreq_menu_with_group_options() {
-    let rows = written(dspf::sys::QWSSYSRQ, "SYSRQ2", &[("SYSNAME", "S1")], &[50, 51, 52]);
+    let rows = written(
+        dspf::sys::QWSSYSRQ,
+        "SYSRQ2",
+        &[("SYSNAME", "S1")],
+        &[50, 51, 52],
+    );
     let want = golden_rows("sysreq-menu");
     for i in [0, 2, 4, 10, 17, 18, 21] {
-        assert_eq!(rows[i].trim_end(), want[i].trim_end().replace("SYSNAME", "S1"));
+        assert_eq!(
+            rows[i].trim_end(),
+            want[i].trim_end().replace("SYSNAME", "S1")
+        );
     }
     assert!(rows[11].contains("13."));
     assert!(rows[13].contains("15."));

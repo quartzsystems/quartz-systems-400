@@ -42,7 +42,9 @@ impl Parser {
         if self.is_word("OR") {
             // BLOCKED(rel): one trigger for several events, with the
             // INSERTING, UPDATING and DELETING predicates (7.2).
-            return Err(Self::unsupported("a trigger for more than one event (INSERT OR UPDATE ...)"));
+            return Err(Self::unsupported(
+                "a trigger for more than one event (INSERT OR UPDATE ...)",
+            ));
         }
         self.expect_word("ON")?;
         let table = self.object_name()?;
@@ -60,7 +62,14 @@ impl Parser {
             db2sql: None,
             options: Vec::new(),
             when: None,
-            body: Box::new(crate::ast::PlStmt { label: None, line: 0, kind: crate::ast::PlKind::Leave(crate::ast::Ident { value: String::new(), delimited: false }) }),
+            body: Box::new(crate::ast::PlStmt {
+                label: None,
+                line: 0,
+                kind: crate::ast::PlKind::Leave(crate::ast::Ident {
+                    value: String::new(),
+                    delimited: false,
+                }),
+            }),
             body_text: String::new(),
         };
         if self.eat_word("REFERENCING") {
@@ -77,10 +86,14 @@ impl Parser {
                 t.db2sql = Some(true);
             } else if self.eat_words(&["NOT", "SECURED"]) {
             } else if self.is_word("SECURED") {
-                return Err(Self::unsupported("SECURED triggers (row and column access control)"));
+                return Err(Self::unsupported(
+                    "SECURED triggers (row and column access control)",
+                ));
             } else if self.eat_words(&["SET", "OPTION"]) {
                 loop {
-                    let Tok::Word(k) = self.advance() else { return Err(self.expected("an option")) };
+                    let Tok::Word(k) = self.advance() else {
+                        return Err(self.expected("an option"));
+                    };
                     self.expect_sym("=")?;
                     let m = self.mark();
                     self.eat_sym("*");
@@ -121,9 +134,21 @@ impl Parser {
             } else if self.eat_word("NEW_TABLE") {
                 (false, true)
             } else if self.eat_word("OLD") {
-                (true, self.eat_word("TABLE") || { self.eat_word("ROW"); false })
+                (
+                    true,
+                    self.eat_word("TABLE") || {
+                        self.eat_word("ROW");
+                        false
+                    },
+                )
             } else if self.eat_word("NEW") {
-                (false, self.eat_word("TABLE") || { self.eat_word("ROW"); false })
+                (
+                    false,
+                    self.eat_word("TABLE") || {
+                        self.eat_word("ROW");
+                        false
+                    },
+                )
             } else {
                 break;
             };
@@ -139,7 +164,10 @@ impl Parser {
                 return Err(crate::error::SqlError::Coded {
                     code: -104,
                     state: "42601",
-                    what: format!("{} is the second name of the same kind in REFERENCING", n.value),
+                    what: format!(
+                        "{} is the second name of the same kind in REFERENCING",
+                        n.value
+                    ),
                 });
             }
             *slot = Some(n);

@@ -116,6 +116,10 @@ mod tests {
         let p = print_screen(&c, 0, "QSHQ400 (x)");
         let t = String::from_utf8_lossy(&p);
         assert!(t.starts_with("%PDF-1.4") && t.ends_with("%%EOF\n"));
-        assert!(t.contains("/MediaBox [0 0 842 595]") && t.contains("/Count 1") && t.contains("(QSHQ400 \\(x\\))"));
+        assert!(
+            t.contains("/MediaBox [0 0 842 595]")
+                && t.contains("/Count 1")
+                && t.contains("(QSHQ400 \\(x\\))")
+        );
     }
 }

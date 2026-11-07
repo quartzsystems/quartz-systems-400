@@ -76,11 +76,15 @@ impl GroupDb {
         };
         while let Some((line, after)) = rest.split_once('\n') {
             let f: Vec<&str> = line.split(' ').collect();
-            let [name, newest, len] = f.as_slice() else { break };
+            let [name, newest, len] = f.as_slice() else {
+                break;
+            };
             let (Ok(newest), Ok(len)) = (newest.parse(), len.parse::<usize>()) else {
                 break;
             };
-            let Some(manifest) = after.get(..len) else { break };
+            let Some(manifest) = after.get(..len) else {
+                break;
+            };
             db.groups.insert(
                 (*name).to_string(),
                 KnownGroup {

@@ -47,8 +47,11 @@ impl Mode {
     pub fn shown(self, dir: Direction) -> String {
         match (self, dir) {
             (Mode::Binary, _) => "Binary".into(),
-            (Mode::Text(c, _), Direction::Upload) | (Mode::Text(c, Endings::Lf), Direction::Download) => format!("Text, CCSID {c}, LF"),
-            (Mode::Text(c, Endings::CrLf), Direction::Download) => format!("Text, CCSID {c}, CR LF"),
+            (Mode::Text(c, _), Direction::Upload)
+            | (Mode::Text(c, Endings::Lf), Direction::Download) => format!("Text, CCSID {c}, LF"),
+            (Mode::Text(c, Endings::CrLf), Direction::Download) => {
+                format!("Text, CCSID {c}, CR LF")
+            }
         }
     }
 }
@@ -126,7 +129,12 @@ pub struct Queue {
 impl Queue {
     /// `user`'s transfers, oldest first.
     pub fn list(&self, user: &str) -> Vec<Transfer> {
-        self.users.lock().expect("queue").get(user).map(|q| q.1.clone()).unwrap_or_default()
+        self.users
+            .lock()
+            .expect("queue")
+            .get(user)
+            .map(|q| q.1.clone())
+            .unwrap_or_default()
     }
 
     /// One of `user`'s transfers.
@@ -151,7 +159,10 @@ impl Queue {
     /// Change transfer `id` of `user`; whether it is there.
     pub fn update(&self, user: &str, id: u32, f: impl FnOnce(&mut Transfer)) -> bool {
         let mut all = self.users.lock().expect("queue");
-        match all.get_mut(user).and_then(|q| q.1.iter_mut().find(|t| t.id == id)) {
+        match all
+            .get_mut(user)
+            .and_then(|q| q.1.iter_mut().find(|t| t.id == id))
+        {
             Some(t) => {
                 f(t);
                 true

@@ -330,7 +330,10 @@ impl Local {
                         x.name,
                         x.data_type,
                         // `WHFLDD`: digits, 0 for a character field.
-                        if matches!(x.data_type, 'A' | 'H' | 'G' | 'O' | 'L' | 'T' | 'Z' | 'J' | 'E') {
+                        if matches!(
+                            x.data_type,
+                            'A' | 'H' | 'G' | 'O' | 'L' | 'T' | 'Z' | 'J' | 'E'
+                        ) {
                             0
                         } else {
                             x.length

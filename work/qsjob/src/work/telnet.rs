@@ -192,10 +192,20 @@ impl Jobs {
 fn report(link: &mut Link, device: &str, jobs: &Jobs) {
     let mut list: Vec<(u32, String, String, u8)> = Vec::new();
     let a = &jobs.held[jobs.active];
-    list.push((a.number(), a.job.start.user.clone(), a.job.start.name.clone(), a.side));
+    list.push((
+        a.number(),
+        a.job.start.user.clone(),
+        a.job.start.name.clone(),
+        a.side,
+    ));
     for (i, h) in jobs.held.iter().enumerate() {
         if i != jobs.active {
-            list.push((h.number(), h.job.start.user.clone(), h.job.start.name.clone(), h.side));
+            list.push((
+                h.number(),
+                h.job.start.user.clone(),
+                h.job.start.name.clone(),
+                h.side,
+            ));
         }
     }
     let _ = link.ws_set(device.to_string(), list);
@@ -241,9 +251,12 @@ fn attrs(link: &Shared) -> TelnetAttrs {
 /// `TIMMRKTIMO`: how long a connection may be silent before a timing
 /// mark goes out, and how long the answer may take.
 fn timemark() -> Duration {
-    TIMEMARK.get().copied().unwrap_or(Duration::from_secs(u64::from(
-        servers::attrs::telnet::TIMMRKTIMO_DFT,
-    )))
+    TIMEMARK
+        .get()
+        .copied()
+        .unwrap_or(Duration::from_secs(u64::from(
+            servers::attrs::telnet::TIMMRKTIMO_DFT,
+        )))
 }
 
 static TIMEMARK: OnceLock<Duration> = OnceLock::new();
@@ -628,7 +641,10 @@ fn io_thread(mut s: Stream, out_rx: &Receiver<Vec<u8>>, ev_tx: &Sender<Ev>) {
     loop {
         match asked {
             Some(at) if at.elapsed() >= mark => {
-                eprintln!("qsjob: QTVDEVICE: no answer to the timing mark in {}s", mark.as_secs());
+                eprintln!(
+                    "qsjob: QTVDEVICE: no answer to the timing mark in {}s",
+                    mark.as_secs()
+                );
                 let _ = ev_tx.send(Ev::TcpGone);
                 s.shutdown();
                 return;
@@ -687,7 +703,12 @@ fn io_thread(mut s: Stream, out_rx: &Receiver<Vec<u8>>, ev_tx: &Sender<Ev>) {
 /// Ask a display's client for another device name, as other systems do
 /// when the one named is in use or not valid: the new name, or `None`
 /// when the client offers none, the same one, or goes.
-fn device_again(server: &mut Server, tr: &Transport, ev_rx: &Receiver<Ev>, old: &str) -> Result<Option<String>, String> {
+fn device_again(
+    server: &mut Server,
+    tr: &Transport,
+    ev_rx: &Receiver<Ev>,
+    old: &str,
+) -> Result<Option<String>, String> {
     let before = server.env_answers;
     tr.send(server.ask_device())?;
     let deadline = Instant::now() + Duration::from_secs(10);
@@ -703,7 +724,11 @@ fn device_again(server: &mut Server, tr: &Transport, ev_rx: &Receiver<Ev>, old: 
             Ok(_) => {}
         }
     }
-    let new = server.negotiated.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
+    let new = server
+        .negotiated
+        .var("DEVNAME")
+        .unwrap_or_default()
+        .to_ascii_uppercase();
     Ok((!new.is_empty() && new != old).then_some(new))
 }
 
@@ -731,8 +756,14 @@ fn session(
         .map(|a| a.to_string())
         .unwrap_or_default();
     let addrs = (
-        stream.peer_addr().map(|a| a.ip().to_string()).unwrap_or_default(),
-        stream.local_addr().map(|a| a.ip().to_string()).unwrap_or_default(),
+        stream
+            .peer_addr()
+            .map(|a| a.ip().to_string())
+            .unwrap_or_default(),
+        stream
+            .local_addr()
+            .map(|a| a.ip().to_string())
+            .unwrap_or_default(),
     );
     let secure = tls.is_some();
     let s = match tls {
@@ -791,7 +822,11 @@ fn session(
 /// client"): the same negotiation and device over a local socket from
 /// `slic`, always for `QSCONSOLE`, with the console job's own link and
 /// no exit programs.
-pub(super) fn console_session(stream: UnixStream, link: &mut Link, host: &str) -> Result<(), String> {
+pub(super) fn console_session(
+    stream: UnixStream,
+    link: &mut Link,
+    host: &str,
+) -> Result<(), String> {
     stream
         .set_read_timeout(Some(Duration::from_millis(50)))
         .map_err(|e| e.to_string())?;
@@ -862,7 +897,10 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
         // The console display is the console's, never a network session's.
         if requested == display::CONSOLE_DEVICE {
             if printer {
-                let _ = tr.send(startup_response(tn5250::startup::code::NOT_VALID, &requested));
+                let _ = tr.send(startup_response(
+                    tn5250::startup::code::NOT_VALID,
+                    &requested,
+                ));
                 return Err(format!("{peer}: {requested} is the console"));
             }
             match device_again(&mut server, &tr, &ev_rx, &requested)? {
@@ -893,12 +931,23 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
                     "qsjob: QTVTELNET: {peer}: {DEVINIT} gave no automatic sign-on (flag {}, user '{}'{})",
                     out.autosignon,
                     out.user.0.trim(),
-                    init.error.as_ref().map_or_else(String::new, |e| format!(", {e}"))
+                    init.error
+                        .as_ref()
+                        .map_or_else(String::new, |e| format!(", {e}"))
                 );
             }
         }
         if let Some((ptype, pmodel)) = printer_type_model(&neg.terminal_type) {
-            let r = printer_session(&tr, &mut server, link, &ev_rx, &requested, ptype, pmodel, peer);
+            let r = printer_session(
+                &tr,
+                &mut server,
+                link,
+                &ev_rx,
+                &requested,
+                ptype,
+                pmodel,
+                peer,
+            );
             let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
             return r;
         }
@@ -912,22 +961,29 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
     let (devtype, devmodel) = model.device_type_model();
     let kbdtype = neg.var("KBDTYPE").unwrap_or_else(|| "USB".into());
     let allocate = |link: &mut Link, name: &str| {
-        link.device_allocate(name.to_string(), devtype.into(), devmodel.into(), kbdtype.clone())
-            .map_err(|e| e.to_string())
+        link.device_allocate(
+            name.to_string(),
+            devtype.into(),
+            devmodel.into(),
+            kbdtype.clone(),
+        )
+        .map_err(|e| e.to_string())
     };
     // A display gets no start-up response record, as other systems send
     // none: a device in use or not valid is asked for again once, then
     // the connection closes.
     let device = match allocate(link, &requested)? {
         Ok(d) => d,
-        Err(code) if !requested.is_empty() && !console => match device_again(&mut server, &tr, &ev_rx, &requested)? {
-            Some(n) => {
-                requested = n;
-                desc.device.clone_from(&requested);
-                allocate(link, &requested)?.map_err(|c| format!("{peer}: no device: {c}"))?
+        Err(code) if !requested.is_empty() && !console => {
+            match device_again(&mut server, &tr, &ev_rx, &requested)? {
+                Some(n) => {
+                    requested = n;
+                    desc.device.clone_from(&requested);
+                    allocate(link, &requested)?.map_err(|c| format!("{peer}: no device: {c}"))?
+                }
+                None => return Err(format!("{peer}: no device: {code}")),
             }
-            None => return Err(format!("{peer}: no device: {code}")),
-        },
+        }
         Err(code) => return Err(format!("{peer}: no device: {code}")),
     };
     // QRMTSIGN: *VERIFY and *SAMEPRF sign on automatically; *FRCSIGNON,
@@ -949,7 +1005,9 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
         None
     };
     if auto.is_none() && !console && (exit_decides || neg.var("USER").is_some()) {
-        eprintln!("qsjob: QTVTELNET: {peer}: the sign-on display (QRMTSIGN {rmtsign}, exit program {exit_decides})");
+        eprintln!(
+            "qsjob: QTVTELNET: {peer}: the sign-on display (QRMTSIGN {rmtsign}, exit program {exit_decides})"
+        );
     }
     let r = serve_device(
         &tr,
@@ -994,7 +1052,12 @@ fn exit_session(
     let upper = |v: &str| neg.var(v).unwrap_or_default().to_ascii_uppercase();
     let num = |v: &str, d: i32| neg.var(v).and_then(|s| s.trim().parse().ok()).unwrap_or(d);
     regfac::formats::telnet::Session {
-        user: (upper("USER"), upper("IBMCURLIB"), upper("IBMPROGRAM"), upper("IBMIMENU")),
+        user: (
+            upper("USER"),
+            upper("IBMCURLIB"),
+            upper("IBMPROGRAM"),
+            upper("IBMIMENU"),
+        ),
         device: device.to_string(),
         keyboard: upper("KBDTYPE"),
         code_page: (num("CODEPAGE", 37), num("CHARSET", 697)),
@@ -1038,7 +1101,12 @@ fn printer_session(
     peer: &str,
 ) -> Result<(), String> {
     let device = match link
-        .device_allocate(requested.to_string(), devtype.into(), model.into(), String::new())
+        .device_allocate(
+            requested.to_string(),
+            devtype.into(),
+            model.into(),
+            String::new(),
+        )
         .map_err(|e| e.to_string())?
     {
         Ok(d) => d,
@@ -1060,7 +1128,8 @@ fn printer_session(
             match listener.accept() {
                 Ok((c, _)) => {
                     c.set_nonblocking(false).map_err(|e| e.to_string())?;
-                    c.set_read_timeout(Some(Duration::from_millis(50))).map_err(|e| e.to_string())?;
+                    c.set_read_timeout(Some(Duration::from_millis(50)))
+                        .map_err(|e| e.to_string())?;
                     writer = Some(Chan::new(c));
                 }
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
@@ -1153,7 +1222,11 @@ fn seed() -> [u8; 8] {
 /// Whether the client sent `USER` with an RFC 4777 substitute that is
 /// the profile's password (checked, nothing changed).
 fn verify_client(neg: &Negotiated, seed: [u8; 8], link: &mut Link) -> bool {
-    let (Some(user), Some(cs), Some(sub)) = (neg.var("USER"), neg.var_bytes("IBMRSEED"), neg.var_bytes("IBMSUBSPW")) else {
+    let (Some(user), Some(cs), Some(sub)) = (
+        neg.var("USER"),
+        neg.var_bytes("IBMRSEED"),
+        neg.var_bytes("IBMSUBSPW"),
+    ) else {
         return false;
     };
     let Ok(client_seed) = <[u8; 8]>::try_from(cs) else {
@@ -1164,7 +1237,8 @@ fn verify_client(neg: &Negotiated, seed: [u8; 8], link: &mut Link) -> bool {
         client_seed,
         substitute: sub.to_vec(),
     };
-    link.telnet_verify(user.to_ascii_uppercase(), proof).unwrap_or(false)
+    link.telnet_verify(user.to_ascii_uppercase(), proof)
+        .unwrap_or(false)
 }
 
 /// An exit program's automatic sign-on: its profile signed on without a
@@ -1178,15 +1252,32 @@ fn exit_signon(
     let (prf, curlib, pgm, menu) = user;
     match link.telnet_exit_signon(prf.trim().to_ascii_uppercase(), device.to_string()) {
         Ok(Ok(mut s)) => {
-            apply_typed(&mut s, &[String::new(), String::new(), pgm.clone(), menu.clone(), curlib.clone()]);
+            apply_typed(
+                &mut s,
+                &[
+                    String::new(),
+                    String::new(),
+                    pgm.clone(),
+                    menu.clone(),
+                    curlib.clone(),
+                ],
+            );
             Some(s)
         }
         Ok(Err(r)) => {
-            eprintln!("qsjob: QTVTELNET: the exit program's sign-on of {}: {} {}", prf.trim(), r.msgid, r.text);
+            eprintln!(
+                "qsjob: QTVTELNET: the exit program's sign-on of {}: {} {}",
+                prf.trim(),
+                r.msgid,
+                r.text
+            );
             None
         }
         Err(e) => {
-            eprintln!("qsjob: QTVTELNET: the exit program's sign-on of {}: {e}", prf.trim());
+            eprintln!(
+                "qsjob: QTVTELNET: the exit program's sign-on of {}: {e}",
+                prf.trim()
+            );
             None
         }
     }
@@ -1215,7 +1306,10 @@ fn auto_signon(
         };
     }
     if client_seed.len() != 8 {
-        eprintln!("qsjob: QTVTELNET: automatic sign-on of {user}: a client seed of {} bytes", client_seed.len());
+        eprintln!(
+            "qsjob: QTVTELNET: automatic sign-on of {user}: a client seed of {} bytes",
+            client_seed.len()
+        );
         return None;
     }
     let mut cs = [0u8; 8];
@@ -1228,7 +1322,10 @@ fn auto_signon(
     match link.sign_on_substitute(user.clone(), device.to_string(), proof) {
         Ok(Ok(s)) => Some(s),
         Ok(Err(r)) => {
-            eprintln!("qsjob: QTVTELNET: automatic sign-on of {user} refused: {} {}", r.msgid, r.text);
+            eprintln!(
+                "qsjob: QTVTELNET: automatic sign-on of {user} refused: {} {}",
+                r.msgid, r.text
+            );
             None
         }
         Err(e) => {
@@ -1329,7 +1426,12 @@ fn sign_on_libraries(link: &mut Link) -> Vec<String> {
         .sysval("QSYSLIBL".into())
         .ok()
         .flatten()
-        .map(|v| ccsid::from_ebcdic(&v.data).split_whitespace().map(str::to_string).collect())
+        .map(|v| {
+            ccsid::from_ebcdic(&v.data)
+                .split_whitespace()
+                .map(str::to_string)
+                .collect()
+        })
         .unwrap_or_default();
     if !v.iter().any(|l| l == "QSYS") {
         v.push("QSYS".into());
@@ -1373,7 +1475,11 @@ fn sign_on_display(
     let file = if long { "QDSIGNON2" } else { "QDSIGNON" };
     let mut rt = sign_on_libraries(link)
         .into_iter()
-        .find_map(|lib| link.dsp_open(file.into(), lib, "*JOB".into()).ok().and_then(Result::ok))
+        .find_map(|lib| {
+            link.dsp_open(file.into(), lib, "*JOB".into())
+                .ok()
+                .and_then(Result::ok)
+        })
         .and_then(|(b, _)| dspf::decode(&b).ok())
         .map(|df| dspf::rt::Runtime::new(df, model.wide()));
     let env = sign_on_env(link, host);
@@ -1393,7 +1499,11 @@ fn sign_on_display(
             };
             let out = display::dds::out_buffer(
                 &rec,
-                &[("QSYSNAME", host), ("SBSNAME", &subsystem), ("DEVNAME", device)],
+                &[
+                    ("QSYSNAME", host),
+                    ("SBSNAME", &subsystem),
+                    ("DEVNAME", device),
+                ],
             );
             rt.write(&mut m, &env, "SIGNON", &out, &[])
                 .map_err(|e| e.to_string())?;
@@ -1464,7 +1574,12 @@ fn sign_on_display(
             continue;
         }
         let checked = link
-            .sign_on(user, password, device.to_string(), device == display::CONSOLE_DEVICE)
+            .sign_on(
+                user,
+                password,
+                device.to_string(),
+                device == display::CONSOLE_DEVICE,
+            )
             .map_err(|e| e.to_string())?;
         match checked {
             Ok(mut s) => {
@@ -1481,7 +1596,12 @@ fn sign_on_display(
 fn sign_on_help(h: &dspf::help::HelpSpec, wide: bool) -> Option<uim::Screen> {
     let name = h.group.rsplit('/').next().unwrap_or(&h.group);
     let src = uim::shipped::source(name)?;
-    let c = uim::compile(src, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+    let c = uim::compile(
+        src,
+        &uim::NoImbeds,
+        &uim::NoImports,
+        &uim::CompileOpts::default(),
+    );
     let g = c.group?;
     let opts = uim::render::Options {
         wide,
@@ -1501,7 +1621,12 @@ fn sign_on_env(link: &mut Link, host: &str) -> dspf::rt::Env {
             .map(|v| ccsid::from_ebcdic(&v.data).trim().to_string())
             .unwrap_or_default()
     };
-    let formats = ccsid::nls::Formats::parse(&sysval("QDATFMT"), &sysval("QDATSEP"), &sysval("QTIMSEP"), &sysval("QDECFMT"));
+    let formats = ccsid::nls::Formats::parse(
+        &sysval("QDATFMT"),
+        &sysval("QDATSEP"),
+        &sysval("QTIMSEP"),
+        &sysval("QDECFMT"),
+    );
     display::dds::env_from(&now, formats, "", host)
 }
 
@@ -1554,7 +1679,10 @@ fn subsystem_for(link: &mut Link, device: &str) -> Option<(String, Sbsd)> {
     let mut parts = ctl.split_whitespace();
     let name = parts.next().unwrap_or("QCTL").to_string();
     let lib = parts.next().unwrap_or("QSYS").to_string();
-    let b = link.wm_object(format!("{lib}/{name}"), "*SBSD".into()).ok()?.ok()?;
+    let b = link
+        .wm_object(format!("{lib}/{name}"), "*SBSD".into())
+        .ok()?
+        .ok()?;
     Sbsd::decode(&b).ok().map(|d| (name, d))
 }
 
@@ -1576,9 +1704,7 @@ fn active_subsystem_for(link: &mut Link, device: &str) -> Option<(String, Sbsd)>
         }) {
             return Some((s.name, d));
         }
-        if by_type.is_none()
-            && d.wsts.iter().any(|w| type_entry_matches(&w.name, device))
-        {
+        if by_type.is_none() && d.wsts.iter().any(|w| type_entry_matches(&w.name, device)) {
             by_type = Some((s.name.clone(), d));
         }
     }
@@ -1789,11 +1915,10 @@ fn run_job(
                                 ));
                             }
                             queue_name => {
-                                let (q, lib) = action
-                                    .split_once(' ')
-                                    .map_or((queue_name.to_string(), "QSYS".to_string()), |(q, l)| {
-                                        (q.to_string(), l.trim().to_string())
-                                    });
+                                let (q, lib) = action.split_once(' ').map_or(
+                                    (queue_name.to_string(), "QSYS".to_string()),
+                                    |(q, l)| (q.to_string(), l.trim().to_string()),
+                                );
                                 let _ = link.exec(format!(
                                     "SNDMSG MSG('Display {device} has been inactive for the QINACTITV interval.') TOMSGQ({lib}/{q})"
                                 ));
@@ -2040,7 +2165,10 @@ mod tests {
         assert_eq!(level_of(SysValKind::Bin, &0i32.to_be_bytes()), Some(0));
         assert_eq!(level_of(SysValKind::Bin, &[0, 0]), None);
         // Read as text, the binary 3 was no number at all.
-        assert_eq!(level_of(SysValKind::Char, &ccsid::to_ebcdic("3").unwrap()), Some(3));
+        assert_eq!(
+            level_of(SysValKind::Char, &ccsid::to_ebcdic("3").unwrap()),
+            Some(3)
+        );
     }
 
     #[test]

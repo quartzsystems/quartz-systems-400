@@ -68,7 +68,10 @@ impl Registry {
             return Err(Msg::new(
                 msg::TRC_EXISTS,
                 Kind::Escape,
-                format!("A trace of {} exists; delete it before starting another.", what(&h.cfgobj, h.cfgtype)),
+                format!(
+                    "A trace of {} exists; delete it before starting another.",
+                    what(&h.cfgobj, h.cfgtype)
+                ),
             ));
         }
         h.status = Status::Active;
@@ -76,7 +79,10 @@ impl Registry {
         let done = Msg::new(
             msg::TRC_STARTED,
             Kind::Comp,
-            format!("Communications trace of {} started.", what(&h.cfgobj, h.cfgtype)),
+            format!(
+                "Communications trace of {} started.",
+                what(&h.cfgobj, h.cfgtype)
+            ),
         );
         let e = Entry {
             trace: Arc::new(Mutex::new(Trace::new(h))),
@@ -105,7 +111,10 @@ impl Registry {
             Status::Inactive => Err(Msg::new(
                 msg::TRC_ALREADY_ENDED,
                 Kind::Escape,
-                format!("The communications trace of {} has already ended.", what(&obj, ty)),
+                format!(
+                    "The communications trace of {} has already ended.",
+                    what(&obj, ty)
+                ),
             )),
             Status::Active | Status::Stopped | Status::Failed => {
                 t.header.status = Status::Inactive;
@@ -134,7 +143,10 @@ impl Registry {
             return Err(Msg::new(
                 msg::TRC_CANNOT_DELETE,
                 Kind::Escape,
-                format!("The communications trace of {} is active; end it before deleting it.", what(&obj, ty)),
+                format!(
+                    "The communications trace of {} is active; end it before deleting it.",
+                    what(&obj, ty)
+                ),
             ));
         }
         let e = self.entries.remove(i);
@@ -150,7 +162,11 @@ impl Registry {
     /// is `*ALL`), then the completion.
     pub fn check(&self, obj: Option<&str>, ty: Option<CfgType>) -> Result<Vec<Msg>, Msg> {
         if self.entries.is_empty() {
-            return Err(Msg::new(msg::TRC_NONE, Kind::Escape, "There are no communications traces."));
+            return Err(Msg::new(
+                msg::TRC_NONE,
+                Kind::Escape,
+                "There are no communications traces.",
+            ));
         }
         let obj = obj.map(str::to_ascii_uppercase);
         let mut out = Vec::new();
@@ -163,7 +179,12 @@ impl Registry {
             out.push(Msg::new(
                 msg::TRC_STATUS,
                 Kind::Info,
-                format!("Communications trace {} type {} is {}.", h.cfgobj, h.cfgtype.name(), h.status.name()),
+                format!(
+                    "Communications trace {} type {} is {}.",
+                    h.cfgobj,
+                    h.cfgtype.name(),
+                    h.status.name()
+                ),
             ));
         }
         if out.is_empty() {
@@ -174,10 +195,18 @@ impl Registry {
                     Kind::Escape,
                     format!("There are no communications traces of type {}.", t.name()),
                 ),
-                _ => Msg::new(msg::TRC_NONE, Kind::Escape, "There are no communications traces."),
+                _ => Msg::new(
+                    msg::TRC_NONE,
+                    Kind::Escape,
+                    "There are no communications traces.",
+                ),
             });
         }
-        out.push(Msg::new(msg::TRC_CHECKED, Kind::Comp, "Communications traces checked."));
+        out.push(Msg::new(
+            msg::TRC_CHECKED,
+            Kind::Comp,
+            "Communications traces checked.",
+        ));
         Ok(out)
     }
 }
@@ -190,16 +219,30 @@ mod tests {
     #[test]
     fn start_end_delete() {
         let mut r = Registry::default();
-        let (e, m) = r.start(Header { cfgobj: "ethline".into(), ..header() }).unwrap();
+        let (e, m) = r
+            .start(Header {
+                cfgobj: "ethline".into(),
+                ..header()
+            })
+            .unwrap();
         assert_eq!(m.id, "CPF39A0");
         assert_eq!(e.lock().header.cfgobj, "ETHLINE");
         assert_eq!(r.start(header()).unwrap_err().id, "CPF39AA");
-        assert_eq!(r.delete("ETHLINE", CfgType::Line).unwrap_err().id, "CPF39B2");
+        assert_eq!(
+            r.delete("ETHLINE", CfgType::Line).unwrap_err().id,
+            "CPF39B2"
+        );
         assert_eq!(r.end("ETHLINE", CfgType::Line, 9).unwrap().id, "CPF39A1");
         assert!(e.stop.load(Ordering::SeqCst));
         assert_eq!(e.lock().header.ended, Some(9));
-        assert_eq!(r.end("ETHLINE", CfgType::Line, 10).unwrap_err().id, "CPF39AE");
-        assert_eq!(r.end("ETHLINE", CfgType::Nwi, 10).unwrap_err().id, "CPF39B1");
+        assert_eq!(
+            r.end("ETHLINE", CfgType::Line, 10).unwrap_err().id,
+            "CPF39AE"
+        );
+        assert_eq!(
+            r.end("ETHLINE", CfgType::Nwi, 10).unwrap_err().id,
+            "CPF39B1"
+        );
         assert_eq!(r.delete("ETHLINE", CfgType::Line).unwrap().id, "CPF39A2");
         assert!(r.get("ETHLINE", CfgType::Line).is_none());
     }
@@ -209,7 +252,11 @@ mod tests {
         let mut r = Registry::default();
         assert_eq!(r.check(None, None).unwrap_err().id, "CPF39B0");
         r.start(header()).unwrap();
-        r.start(Header { cfgobj: "LOOP".into(), ..header() }).unwrap();
+        r.start(Header {
+            cfgobj: "LOOP".into(),
+            ..header()
+        })
+        .unwrap();
         r.end("LOOP", CfgType::Line, 1).unwrap();
         let m = r.check(None, None).unwrap();
         let ids: Vec<&str> = m.iter().map(|x| x.id).collect();
@@ -217,13 +264,22 @@ mod tests {
         assert!(m[1].text.contains("LOOP type *LIN is Inactive"));
         assert_eq!(r.check(Some("loop"), None).unwrap().len(), 2);
         assert_eq!(r.check(None, Some(CfgType::Nws)).unwrap_err().id, "CPF39BE");
-        assert_eq!(r.check(Some("X"), Some(CfgType::Line)).unwrap_err().id, "CPF39B1");
+        assert_eq!(
+            r.check(Some("X"), Some(CfgType::Line)).unwrap_err().id,
+            "CPF39B1"
+        );
     }
 
     #[test]
     fn a_stopped_trace_can_be_ended() {
         let mut r = Registry::default();
-        let (e, _) = r.start(Header { wrap: false, maxstg: 10, ..header() }).unwrap();
+        let (e, _) = r
+            .start(Header {
+                wrap: false,
+                maxstg: 10,
+                ..header()
+            })
+            .unwrap();
         assert!(!e.lock().push(5, true, &[0; 64]));
         assert_eq!(e.lock().header.status, Status::Stopped);
         assert_eq!(r.end("ETHLINE", CfgType::Line, 8).unwrap().id, "CPF39A1");

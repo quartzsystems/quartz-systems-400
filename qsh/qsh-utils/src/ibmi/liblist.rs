@@ -36,10 +36,7 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         Err(e) => return usage(cx, NAME, &e.to_string()),
     };
     let add = p.has('a') || p.has('f') || p.has('l');
-    let modes = [add, p.has('d'), p.has('c')]
-        .iter()
-        .filter(|b| **b)
-        .count();
+    let modes = [add, p.has('d'), p.has('c')].iter().filter(|b| **b).count();
     if modes > 1 || (p.has('f') && p.has('l')) {
         return usage(cx, NAME, "Use one of -a, -d and -c.");
     }

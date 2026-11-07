@@ -34,7 +34,9 @@ pub struct LiveDownload {
 
 fn read_file(m: &Main, path: &str) -> Result<Vec<u8>, Message> {
     let c = RemoteIfs::new(m.link.clone());
-    let fd = c.open(path, OpenArgs::new(O_RDONLY)).map_err(|e| Message::new(Kind::Error, &e.message_id(), e.text()))?;
+    let fd = c
+        .open(path, OpenArgs::new(O_RDONLY))
+        .map_err(|e| Message::new(Kind::Error, &e.message_id(), e.text()))?;
     let r = read_all(&c, fd).map_err(|e| Message::new(Kind::Error, &e.message_id(), e.text()));
     let _ = c.close(fd);
     r
@@ -62,11 +64,20 @@ impl Download for LiveDownload {
             let Ok(entries) = c.read_dir(DIR) else {
                 return Vec::new();
             };
-            let index = read_file(m, &format!("{DIR}/{INDEX}")).map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_default();
+            let index = read_file(m, &format!("{DIR}/{INDEX}"))
+                .map(|b| String::from_utf8_lossy(&b).into_owned())
+                .unwrap_or_default();
             let size = |f: &str| c.stat(&format!("{DIR}/{f}"), true).map_or(0, |s| s.size);
-            let present: Vec<String> = entries.into_iter().map(|e| e.name).filter(|n| n != INDEX && !n.starts_with('.')).collect();
+            let present: Vec<String> = entries
+                .into_iter()
+                .map(|e| e.name)
+                .filter(|n| n != INDEX && !n.starts_with('.'))
+                .collect();
             let mut out = Vec::new();
-            for line in index.lines().filter(|l| !l.trim().is_empty() && !l.starts_with('#')) {
+            for line in index
+                .lines()
+                .filter(|l| !l.trim().is_empty() && !l.starts_with('#'))
+            {
                 let f: Vec<&str> = line.split('\t').collect();
                 if f.len() < 3 || !present.iter().any(|p| p == f[1]) {
                     continue;

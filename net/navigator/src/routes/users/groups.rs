@@ -9,7 +9,9 @@
 use std::cmp::Reverse;
 
 use qsweb::http::Response;
-use qsweb::partials::{Button, Cell, Col, List, Prop, PropGroup, actions, buttons, form, input, list_table, props};
+use qsweb::partials::{
+    Button, Cell, Col, List, Prop, PropGroup, actions, buttons, form, input, list_table, props,
+};
 
 use super::list::in_group;
 use super::{GROUP, page, run, secadm};
@@ -24,7 +26,11 @@ pub fn list(rq: &Rq<'_>) -> Response {
     }
     let all = rq.env().users.profiles(rq.user());
     let members = |g: &Profile| all.iter().filter(|p| in_group(p, &g.name)).count();
-    let mut gs: Vec<(&Profile, usize)> = all.iter().filter(|p| p.is_group).map(|g| (g, members(g))).collect();
+    let mut gs: Vec<(&Profile, usize)> = all
+        .iter()
+        .filter(|p| p.is_group)
+        .map(|g| (g, members(g)))
+        .collect();
     match rq.query().str("sort") {
         "g" => gs.sort_by(|a, b| a.0.name.cmp(&b.0.name)),
         "m" => gs.sort_by_key(|(_, n)| Reverse(*n)),
@@ -36,7 +42,10 @@ pub fn list(rq: &Rq<'_>) -> Response {
             vec![
                 Cell::act(actions(&[
                     (rq.ctx.url(&format!("/users?g={}", g.name)), "Members"),
-                    (rq.ctx.url(&format!("/user/{}/general", g.name)), "Properties"),
+                    (
+                        rq.ctx.url(&format!("/user/{}/general", g.name)),
+                        "Properties",
+                    ),
                     (rq.ctx.url(&format!("/user/{}/delete", g.name)), "Delete"),
                 ])),
                 Cell::mono(&g.name),
@@ -63,9 +72,16 @@ pub fn list(rq: &Rq<'_>) -> Response {
         list_table(&list),
         form(&rq.ctx, "", &buttons(&[Button::bare("Create group...")]))
     );
-    page(rq, &["Groups"], "Groups", None, body, "groups", Some("/groups"))
+    page(
+        rq,
+        &["Groups"],
+        "Groups",
+        None,
+        body,
+        "groups",
+        Some("/groups"),
+    )
 }
-
 
 /// `/groups/create`: the group's name and text, then `CRTUSRPRF`.
 pub fn create(rq: &Rq<'_>) -> Response {

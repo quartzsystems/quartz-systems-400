@@ -33,7 +33,12 @@ impl Db {
             wal_pages: 128,
             now: 1_767_225_600,
         };
-        let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(d) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let mut t = store.begin().unwrap();
         let qsys = ops::bootstrap(&mut t, 1_767_225_600, "QS400").unwrap();
         let lib = ops::create(
@@ -52,7 +57,14 @@ impl Db {
         )
         .unwrap();
         t.commit().unwrap();
-        let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+        let mut ctx = SqlContext::new(
+            qsys,
+            JobHandle(1),
+            NameContext {
+                curlib: Some(lib),
+                libl: vec![lib],
+            },
+        );
         ctx.now = Some(1_767_225_600);
         ctx.user = "QSECOFR".into();
         let mut db = Self { store, ctx };
@@ -73,7 +85,8 @@ impl Db {
     }
 
     fn ok(&mut self, text: &str) -> Outcome {
-        self.run(text).unwrap_or_else(|e| panic!("{text}: {e} ({})", e.sqlcode()))
+        self.run(text)
+            .unwrap_or_else(|e| panic!("{text}: {e} ({})", e.sqlcode()))
     }
 
     fn rows(&mut self, text: &str) -> Vec<String> {
@@ -81,7 +94,18 @@ impl Db {
             Outcome::Rows(rs) => rs
                 .rows
                 .iter()
-                .map(|r| r.iter().map(|v| if v.is_null() { "-".into() } else { v.to_string().trim_end().to_string() }).collect::<Vec<_>>().join("|"))
+                .map(|r| {
+                    r.iter()
+                        .map(|v| {
+                            if v.is_null() {
+                                "-".into()
+                            } else {
+                                v.to_string().trim_end().to_string()
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join("|")
+                })
                 .collect(),
             o => panic!("{text}: {o:?}"),
         }
@@ -105,16 +129,40 @@ fn constraints_as_the_primary_answers() {
     db.ok("CREATE TABLE IT.IPARENT (ID INTEGER NOT NULL, NAME CHAR(10) NOT NULL WITH DEFAULT, AMT DECIMAL(7,2), CONSTRAINT IPARENT_PK PRIMARY KEY (ID), CONSTRAINT IPARENT_AMT CHECK (AMT >= 0), CONSTRAINT IPARENT_UQ UNIQUE (NAME))");
     db.ok("CREATE TABLE IT.ICHILD (CID INTEGER NOT NULL PRIMARY KEY, PID INTEGER, QTY INTEGER DEFAULT 1, CONSTRAINT ICHILD_FK FOREIGN KEY (PID) REFERENCES IT.IPARENT (ID) ON DELETE RESTRICT ON UPDATE RESTRICT)");
     db.ok("INSERT INTO IT.IPARENT VALUES (1, 'ONE', 1.00), (2, 'TWO', 2.00)");
-    assert_eq!(db.code("INSERT INTO IT.IPARENT VALUES (3, 'ONE', 1.00)"), c(-803, "23505"));
-    assert_eq!(db.code("INSERT INTO IT.IPARENT VALUES (1, 'XXX', 1.00)"), c(-803, "23505"));
-    assert_eq!(db.code("INSERT INTO IT.IPARENT VALUES (4, 'FOUR', -1.00)"), c(-545, "23513"));
-    assert_eq!(db.code("UPDATE IT.IPARENT SET AMT = -5 WHERE ID = 1"), c(-545, "23513"));
+    assert_eq!(
+        db.code("INSERT INTO IT.IPARENT VALUES (3, 'ONE', 1.00)"),
+        c(-803, "23505")
+    );
+    assert_eq!(
+        db.code("INSERT INTO IT.IPARENT VALUES (1, 'XXX', 1.00)"),
+        c(-803, "23505")
+    );
+    assert_eq!(
+        db.code("INSERT INTO IT.IPARENT VALUES (4, 'FOUR', -1.00)"),
+        c(-545, "23513")
+    );
+    assert_eq!(
+        db.code("UPDATE IT.IPARENT SET AMT = -5 WHERE ID = 1"),
+        c(-545, "23513")
+    );
     db.ok("INSERT INTO IT.ICHILD (CID, PID) VALUES (10, 1)");
-    assert_eq!(db.code("INSERT INTO IT.ICHILD (CID, PID) VALUES (11, 9)"), c(-530, "23503"));
+    assert_eq!(
+        db.code("INSERT INTO IT.ICHILD (CID, PID) VALUES (11, 9)"),
+        c(-530, "23503")
+    );
     db.ok("INSERT INTO IT.ICHILD (CID, PID) VALUES (12, NULL)");
-    assert_eq!(db.code("UPDATE IT.ICHILD SET PID = 8 WHERE CID = 10"), c(-530, "23503"));
-    assert_eq!(db.code("DELETE FROM IT.IPARENT WHERE ID = 1"), c(-532, "23001"));
-    assert_eq!(db.code("UPDATE IT.IPARENT SET ID = 5 WHERE ID = 1"), c(-531, "23001"));
+    assert_eq!(
+        db.code("UPDATE IT.ICHILD SET PID = 8 WHERE CID = 10"),
+        c(-530, "23503")
+    );
+    assert_eq!(
+        db.code("DELETE FROM IT.IPARENT WHERE ID = 1"),
+        c(-532, "23001")
+    );
+    assert_eq!(
+        db.code("UPDATE IT.IPARENT SET ID = 5 WHERE ID = 1"),
+        c(-531, "23001")
+    );
     db.ok("UPDATE IT.IPARENT SET ID = 6 WHERE ID = 2");
     assert_eq!(
         db.rows("SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, CONSTRAINT_KEYS, ENABLED, CHECK_PENDING FROM QSYS2.SYSCST WHERE TABLE_SCHEMA = 'IT' ORDER BY CONSTRAINT_NAME"),
@@ -135,29 +183,61 @@ fn constraints_as_the_primary_answers() {
         db.rows("SELECT CONSTRAINT_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_POSITION FROM QSYS2.SYSKEYCST WHERE TABLE_SCHEMA = 'IT' ORDER BY 1"),
         ["ICHILD_FK|PID|1|2", "IPARENT_PK|ID|1|1", "IPARENT_UQ|NAME|1|2", "Q_IT_ICHILD_CID_00001|CID|1|1"]
     );
-    assert_eq!(db.code("ALTER TABLE IT.IPARENT DROP CONSTRAINT IPARENT_PK RESTRICT"), c(-616, "42893"));
+    assert_eq!(
+        db.code("ALTER TABLE IT.IPARENT DROP CONSTRAINT IPARENT_PK RESTRICT"),
+        c(-616, "42893")
+    );
     // DROP PRIMARY KEY takes the foreign keys over it.
     db.ok("ALTER TABLE IT.IPARENT DROP PRIMARY KEY");
-    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SYSREFCST WHERE CONSTRAINT_SCHEMA = 'IT'"), ["0"]);
-    assert_eq!(db.code("ALTER TABLE IT.ICHILD DROP CONSTRAINT NOPE"), c(-204, "42704"));
-    assert_eq!(db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT ICHILD_QTY CHECK (QTY > 5)"), c(-544, "23512"));
+    assert_eq!(
+        db.rows("SELECT COUNT(*) FROM QSYS2.SYSREFCST WHERE CONSTRAINT_SCHEMA = 'IT'"),
+        ["0"]
+    );
+    assert_eq!(
+        db.code("ALTER TABLE IT.ICHILD DROP CONSTRAINT NOPE"),
+        c(-204, "42704")
+    );
+    assert_eq!(
+        db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT ICHILD_QTY CHECK (QTY > 5)"),
+        c(-544, "23512")
+    );
     db.ok("ALTER TABLE IT.ICHILD ADD CONSTRAINT ICHILD_Q2 CHECK (QTY < 100)");
-    assert_eq!(db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT ICHILD_PK2 PRIMARY KEY (PID)"), c(-624, "42889"));
+    assert_eq!(
+        db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT ICHILD_PK2 PRIMARY KEY (PID)"),
+        c(-624, "42889")
+    );
     db.ok("INSERT INTO IT.ICHILD (CID, PID) VALUES (13, NULL)");
-    assert_eq!(db.code("ALTER TABLE IT.ICHILD ADD UNIQUE (QTY)"), c(-603, "23515"));
-    assert_eq!(db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT IPARENT_UQ UNIQUE (CID)"), c(-601, "42710"));
-    assert_eq!(db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT C3 CHECK (CURRENT DATE > '2000-01-01')"), c(-546, "42621"));
+    assert_eq!(
+        db.code("ALTER TABLE IT.ICHILD ADD UNIQUE (QTY)"),
+        c(-603, "23515")
+    );
+    assert_eq!(
+        db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT IPARENT_UQ UNIQUE (CID)"),
+        c(-601, "42710")
+    );
+    assert_eq!(
+        db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT C3 CHECK (CURRENT DATE > '2000-01-01')"),
+        c(-546, "42621")
+    );
     db.ok("ALTER TABLE IT.ICHILD ADD CONSTRAINT C4 CHECK (UPPER('A') = 'A' AND QTY BETWEEN -5 AND 99 AND COALESCE(PID, 0) >= -5)");
-    assert_eq!(db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT C5 UNIQUE (CID, CID)"), c(-537, "42709"));
+    assert_eq!(
+        db.code("ALTER TABLE IT.ICHILD ADD CONSTRAINT C5 UNIQUE (CID, CID)"),
+        c(-537, "42709")
+    );
     db.ok("DROP TABLE IT.ICHILD");
     db.ok("DROP TABLE IT.IPARENT");
-    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SYSCST WHERE TABLE_SCHEMA = 'IT'"), ["0"]);
+    assert_eq!(
+        db.rows("SELECT COUNT(*) FROM QSYS2.SYSCST WHERE TABLE_SCHEMA = 'IT'"),
+        ["0"]
+    );
 }
 
 #[test]
 fn referential_rules() {
     let mut db = Db::new();
-    db.ok("CREATE TABLE IT.RPAR (ID INTEGER NOT NULL PRIMARY KEY, AMT DECIMAL(7,2) CHECK (AMT >= 0))");
+    db.ok(
+        "CREATE TABLE IT.RPAR (ID INTEGER NOT NULL PRIMARY KEY, AMT DECIMAL(7,2) CHECK (AMT >= 0))",
+    );
     db.ok("CREATE TABLE IT.RCH1 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT RCH1_FK FOREIGN KEY (PID) REFERENCES IT.RPAR ON DELETE CASCADE)");
     db.ok("CREATE TABLE IT.RCH2 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT RCH2_FK FOREIGN KEY (PID) REFERENCES IT.RPAR ON DELETE SET NULL)");
     db.ok("CREATE TABLE IT.RCH3 (CID INTEGER NOT NULL, PID INTEGER NOT NULL DEFAULT 0, CONSTRAINT RCH3_FK FOREIGN KEY (PID) REFERENCES IT.RPAR ON DELETE SET DEFAULT)");
@@ -174,15 +254,24 @@ fn referential_rules() {
     db.ok("INSERT INTO IT.RCH2 VALUES (20, 2)");
     db.ok("INSERT INTO IT.RCH3 VALUES (30, 2)");
     db.ok("INSERT INTO IT.RCH6 VALUES (60, 1)");
-    assert_eq!(db.code("DELETE FROM IT.RPAR WHERE ID = 1"), c(-532, "23504"));
-    assert_eq!(db.code("UPDATE IT.RPAR SET ID = 3 WHERE ID = 1"), c(-531, "23504"));
+    assert_eq!(
+        db.code("DELETE FROM IT.RPAR WHERE ID = 1"),
+        c(-532, "23504")
+    );
+    assert_eq!(
+        db.code("UPDATE IT.RPAR SET ID = 3 WHERE ID = 1"),
+        c(-531, "23504")
+    );
     db.ok("DELETE FROM IT.RPAR WHERE ID = 2");
     assert_eq!(db.rows("SELECT * FROM IT.RCH1"), ["10|1"]);
     assert_eq!(db.rows("SELECT * FROM IT.RCH2"), ["20|-"]);
     assert_eq!(db.rows("SELECT * FROM IT.RCH3"), ["30|0"]);
     assert_eq!(db.code("DROP TABLE IT.RPAR RESTRICT"), c(-478, "42893"));
     db.ok("DROP TABLE IT.RPAR CASCADE");
-    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SYSREFCST WHERE CONSTRAINT_SCHEMA = 'IT'"), ["0"]);
+    assert_eq!(
+        db.rows("SELECT COUNT(*) FROM QSYS2.SYSREFCST WHERE CONSTRAINT_SCHEMA = 'IT'"),
+        ["0"]
+    );
 }
 
 #[test]
@@ -192,25 +281,46 @@ fn identity_columns_and_sequences() {
     db.ok("INSERT INTO IT.IDT (V) VALUES ('a')");
     assert_eq!(db.rows("VALUES IDENTITY_VAL_LOCAL()"), ["32766"]);
     db.ok("INSERT INTO IT.IDT (V) VALUES ('b')");
-    assert_eq!(db.code("INSERT INTO IT.IDT (V) VALUES ('c')"), c(-359, "23522"));
-    assert_eq!(db.code("INSERT INTO IT.IDT VALUES (5, 'd')"), c(-798, "428C9"));
+    assert_eq!(
+        db.code("INSERT INTO IT.IDT (V) VALUES ('c')"),
+        c(-359, "23522")
+    );
+    assert_eq!(
+        db.code("INSERT INTO IT.IDT VALUES (5, 'd')"),
+        c(-798, "428C9")
+    );
     db.ok("INSERT INTO IT.IDT OVERRIDING SYSTEM VALUE VALUES (5, 'd')");
     db.ok("ALTER TABLE IT.IDT ALTER COLUMN ID RESTART WITH 1");
     db.ok("INSERT INTO IT.IDT (V) VALUES ('e')");
-    assert_eq!(db.rows("SELECT ID, V FROM IT.IDT ORDER BY V"), ["32766|a", "32767|b", "5|d", "1|e"]);
+    assert_eq!(
+        db.rows("SELECT ID, V FROM IT.IDT ORDER BY V"),
+        ["32766|a", "32767|b", "5|d", "1|e"]
+    );
     db.ok("ALTER TABLE IT.IDT ALTER COLUMN ID SET INCREMENT BY 10");
     db.ok("INSERT INTO IT.IDT (V) VALUES ('f')");
     db.ok("INSERT INTO IT.IDT (V) VALUES ('g')");
     // The values IBM had cached (a block of 20 from 1) are passed over.
-    assert_eq!(db.rows("SELECT ID FROM IT.IDT WHERE V IN ('f', 'g') ORDER BY V"), ["30", "40"]);
+    assert_eq!(
+        db.rows("SELECT ID FROM IT.IDT WHERE V IN ('f', 'g') ORDER BY V"),
+        ["30", "40"]
+    );
     db.ok("CREATE TABLE IT.CYC (ID BIGINT GENERATED BY DEFAULT AS IDENTITY (START WITH 3 MINVALUE 1 MAXVALUE 4 CYCLE), V INT)");
     for _ in 0..3 {
         db.ok("INSERT INTO IT.CYC (V) VALUES (0)");
     }
     assert_eq!(db.rows("SELECT ID FROM IT.CYC"), ["3", "4", "1"]);
-    assert_eq!(db.code("CREATE TABLE IT.BAD (ID INT GENERATED ALWAYS AS IDENTITY (MINVALUE 5 MAXVALUE 1))").0, -846);
+    assert_eq!(
+        db.code(
+            "CREATE TABLE IT.BAD (ID INT GENERATED ALWAYS AS IDENTITY (MINVALUE 5 MAXVALUE 1))"
+        )
+        .0,
+        -846
+    );
     db.ok("CREATE SEQUENCE IT.ORDSEQ AS BIGINT START WITH 100 INCREMENT BY 5 MAXVALUE 110");
-    assert_eq!(db.code("VALUES PREVIOUS VALUE FOR IT.ORDSEQ"), c(-845, "51035"));
+    assert_eq!(
+        db.code("VALUES PREVIOUS VALUE FOR IT.ORDSEQ"),
+        c(-845, "51035")
+    );
     assert_eq!(db.rows("VALUES NEXT VALUE FOR IT.ORDSEQ"), ["100"]);
     assert_eq!(db.rows("VALUES NEXT VALUE FOR IT.ORDSEQ"), ["105"]);
     assert_eq!(db.rows("VALUES PREVIOUS VALUE FOR IT.ORDSEQ"), ["105"]);
@@ -226,10 +336,16 @@ fn identity_columns_and_sequences() {
     // An identity column added numbers the rows there.
     db.ok("CREATE TABLE IT.ADDID (V INT)");
     db.ok("INSERT INTO IT.ADDID VALUES (7), (8), (9)");
-    assert_eq!(db.code("ALTER TABLE IT.ADDID ALTER COLUMN V RESTART WITH 3"), c(-190, "42837"));
+    assert_eq!(
+        db.code("ALTER TABLE IT.ADDID ALTER COLUMN V RESTART WITH 3"),
+        c(-190, "42837")
+    );
     db.ok("ALTER TABLE IT.ADDID ADD COLUMN Z BIGINT GENERATED ALWAYS AS IDENTITY");
     assert_eq!(db.rows("SELECT V, Z FROM IT.ADDID"), ["7|1", "8|2", "9|3"]);
-    assert_eq!(db.code("ALTER TABLE IT.ADDID ADD COLUMN Y INT GENERATED ALWAYS AS IDENTITY"), c(-372, "428C1"));
+    assert_eq!(
+        db.code("ALTER TABLE IT.ADDID ADD COLUMN Y INT GENERATED ALWAYS AS IDENTITY"),
+        c(-372, "428C1")
+    );
     db.ok("DROP SEQUENCE IT.ORDSEQ");
     assert_eq!(db.code("VALUES NEXT VALUE FOR IT.ORDSEQ").0, -204);
 }
@@ -245,11 +361,27 @@ fn row_change_timestamps_and_alter_columns() {
     assert_eq!(db.code("UPDATE IT.RCT SET OP = 'X'"), c(-798, "428C9"));
     db.ok("ALTER TABLE IT.RCT ADD COLUMN N DECIMAL(5, 0) NOT NULL DEFAULT 7 ADD CONSTRAINT N_OK CHECK (N > 0)");
     assert_eq!(db.rows("SELECT K, V, N FROM IT.RCT"), ["1|b|7"]);
-    assert_eq!(db.code("ALTER TABLE IT.RCT DROP COLUMN N RESTRICT"), c(-478, "42893"));
+    assert_eq!(
+        db.code("ALTER TABLE IT.RCT DROP COLUMN N RESTRICT"),
+        c(-478, "42893")
+    );
     db.ok("ALTER TABLE IT.RCT DROP COLUMN N CASCADE");
-    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SYSCHKCST WHERE CONSTRAINT_NAME = 'N_OK'"), ["0"]);
+    assert_eq!(
+        db.rows("SELECT COUNT(*) FROM QSYS2.SYSCHKCST WHERE CONSTRAINT_NAME = 'N_OK'"),
+        ["0"]
+    );
     db.ok("ALTER TABLE IT.RCT ALTER COLUMN V SET DATA TYPE CHAR(8)");
-    assert_eq!(db.code("INSERT INTO IT.RCT (K, V) VALUES (1, 'dup')"), c(-803, "23505"));
-    assert_eq!(db.code("ALTER TABLE IT.RCT ADD PARTITION BY RANGE (K)").0, -84);
-    assert_eq!(db.code("CREATE TABLE IT.HID (A INT, B INT IMPLICITLY HIDDEN)").0, -84);
+    assert_eq!(
+        db.code("INSERT INTO IT.RCT (K, V) VALUES (1, 'dup')"),
+        c(-803, "23505")
+    );
+    assert_eq!(
+        db.code("ALTER TABLE IT.RCT ADD PARTITION BY RANGE (K)").0,
+        -84
+    );
+    assert_eq!(
+        db.code("CREATE TABLE IT.HID (A INT, B INT IMPLICITLY HIDDEN)")
+            .0,
+        -84
+    );
 }

@@ -30,7 +30,10 @@ pub fn start(host: &Host, surface: &mut Surface, s: &mut Session) -> Flow {
         vals.insert("LIB".to_string(), s.test.1.clone());
         vals.insert("RECORD".to_string(), s.test.2.clone());
         vals.insert("MORE".to_string(), s.test.3.clone());
-        let screen = entry::test_dspf(&|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let screen = entry::test_dspf(
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         message = None;
         let Some(a) = ui::show(surface, &screen) else {
             return Flow::Gone;
@@ -46,7 +49,11 @@ pub fn start(host: &Host, surface: &mut Surface, s: &mut Session) -> Flow {
         }
         s.test = (a.up("FILE"), a.up("LIB"), a.up("RECORD"), a.up("MORE"));
         let (file, lib, record, more) = s.test.clone();
-        let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib };
+        let lib = if lib.is_empty() {
+            "*LIBL".to_string()
+        } else {
+            lib
+        };
         let opened = host
             .link
             .borrow_mut()
@@ -67,7 +74,11 @@ pub fn start(host: &Host, surface: &mut Surface, s: &mut Session) -> Flow {
             continue;
         }
         if !more.is_empty() && df.record(&more).is_none() {
-            message = Some(crate::display::msgline::say(host, "CPD9C90", &[&more, &file]));
+            message = Some(crate::display::msgline::say(
+                host,
+                "CPD9C90",
+                &[&more, &file],
+            ));
             continue;
         }
         match test(host, surface, &file, &df, &record, &more) {
@@ -99,13 +110,22 @@ fn key_name(a: u8) -> String {
         aid::ROLL_DOWN => "Page Up".into(),
         aid::HELP => "Help".into(),
         aid::PRINT => "Print".into(),
-        other => aid::function_of(other).map_or_else(|| format!("X'{other:02X}'"), |n| format!("F{n}")),
+        other => {
+            aid::function_of(other).map_or_else(|| format!("X'{other:02X}'"), |n| format!("F{n}"))
+        }
     }
 }
 
 /// Set the output, show the record, read it and show what came back.
 #[allow(clippy::too_many_lines)] // the test's three steps
-fn test(host: &Host, surface: &mut Surface, file: &str, df: &dspf::DisplayFile, record: &str, more: &str) -> Flow {
+fn test(
+    host: &Host,
+    surface: &mut Surface,
+    file: &str,
+    df: &dspf::DisplayFile,
+    record: &str,
+    more: &str,
+) -> Flow {
     let rec = df.record(record).cloned().expect("the record was checked");
     let outputs: Vec<(String, usize)> = rec
         .layout
@@ -245,7 +265,15 @@ fn test(host: &Host, surface: &mut Surface, file: &str, df: &dspf::DisplayFile, 
             .join(" ");
         let mut itop = 0;
         loop {
-            let screen = tscreen::show_input(file, record, &key_name(input.aid), &inds_text, &got, itop, None);
+            let screen = tscreen::show_input(
+                file,
+                record,
+                &key_name(input.aid),
+                &inds_text,
+                &got,
+                itop,
+                None,
+            );
             let Some(a) = ui::show(surface, &screen) else {
                 return Flow::Gone;
             };

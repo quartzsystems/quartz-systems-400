@@ -67,12 +67,17 @@ mod tests {
             let (src, diags) = Source::from_text(text);
             assert!(diags.is_empty(), "{name}: {diags:?}");
             let c = compile_dspf(&src, &NoRefs, &CompileOpts::default());
-            let df = c.definition.unwrap_or_else(|| panic!("{name}:\n{}", c.listing));
+            let df = c
+                .definition
+                .unwrap_or_else(|| panic!("{name}:\n{}", c.listing));
             if !name.starts_with("QDSIGNON") {
                 continue;
             }
             let rec = df.record("SIGNON").expect("the SIGNON format");
-            for f in ["QSYSNAME", "SBSNAME", "DEVNAME", "USERID", "PASSWRD", "PROGRAM", "MENU", "CURLIB", "UBUFFER"] {
+            for f in [
+                "QSYSNAME", "SBSNAME", "DEVNAME", "USERID", "PASSWRD", "PROGRAM", "MENU", "CURLIB",
+                "UBUFFER",
+            ] {
                 assert!(rec.field(f).is_some(), "{name} lacks {f}");
             }
         }

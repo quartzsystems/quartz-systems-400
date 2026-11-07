@@ -208,7 +208,8 @@ mod tests {
         let mut p = Program::new("CUSTDFU", "QGPL", "CUST");
         p.format = Format::Single;
         p.formats.push("CUSTR".into());
-        p.fields.push(("CUSTR".into(), vec!["ID".into(), "NAME".into()]));
+        p.fields
+            .push(("CUSTR".into(), vec!["ID".into(), "NAME".into()]));
         let q = Program::decode(&p.encode()).unwrap();
         assert_eq!(p, q);
         let all = ["ID".to_string(), "CITY".into(), "NAME".into()];

@@ -41,7 +41,10 @@ impl Grid {
     }
 
     fn rows(self) -> Vec<String> {
-        self.0.into_iter().map(|r| r.into_iter().collect()).collect()
+        self.0
+            .into_iter()
+            .map(|r| r.into_iter().collect())
+            .collect()
     }
 }
 
@@ -56,17 +59,37 @@ pub fn wrkrdbdire(entries: &[&RdbEntry], more: bool) -> Vec<String> {
     g.center(1, "Work with Relational Database Directory Entries");
     g.put(3, 2, "Position to  . . . . . .");
     g.put(5, 2, "Type options, press Enter.");
-    g.put(6, 4, "1=Add   2=Change   4=Remove   5=Display details   6=Print details");
+    g.put(
+        6,
+        4,
+        "1=Add   2=Change   4=Remove   5=Display details   6=Print details",
+    );
     g.put(8, 30, "Remote");
-    g.put(9, 2, "Option  Entry               Location                  Text");
+    g.put(
+        9,
+        2,
+        "Option  Entry               Location                  Text",
+    );
     for (i, e) in entries.iter().take(PAGE).enumerate() {
         let row = 11 + i;
         g.put(row, 10, &cut(e.name(), 18));
         g.put(row, 30, &cut(&e.rmtloc, 24));
         g.put(row, 56, &cut(&e.text, 24));
     }
-    g.put(22, 74, if more || entries.len() > PAGE { "More..." } else { "Bottom" });
-    g.put(23, 2, "F3=Exit   F5=Refresh   F6=Print list   F12=Cancel   F22=Display entire field");
+    g.put(
+        22,
+        74,
+        if more || entries.len() > PAGE {
+            "More..."
+        } else {
+            "Bottom"
+        },
+    );
+    g.put(
+        23,
+        2,
+        "F3=Exit   F5=Refresh   F6=Print list   F12=Cancel   F22=Display entire field",
+    );
     g.rows()
 }
 

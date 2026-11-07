@@ -22,7 +22,11 @@ use super::Console;
 /// is each trigger program the statement calls in its middle (answered
 /// at once, the statement going on). The reply, and the `OUT` and
 /// `INOUT` values by marker.
-pub fn run(link: &Shared, req: &Request, mut perform: impl FnMut(&CallPlan) -> Outcome) -> (Reply, Vec<(usize, Value)>) {
+pub fn run(
+    link: &Shared,
+    req: &Request,
+    mut perform: impl FnMut(&CallPlan) -> Outcome,
+) -> (Reply, Vec<(usize, Value)>) {
     // A connection statement, or any while a remote server is current.
     if let Some(r) = super::drda::route(link, req) {
         return (r, Vec::new());
@@ -32,28 +36,46 @@ pub fn run(link: &Shared, req: &Request, mut perform: impl FnMut(&CallPlan) -> O
     let mut sql = RemoteSql::new(link.clone());
     let reply = sql.run(&req);
     let reply = answered(&mut sql, &req.scope, reply, &mut perform);
-    let Some(plan) = reply.call.as_deref() else { return (reply, Vec::new()) };
+    let Some(plan) = reply.call.as_deref() else {
+        return (reply, Vec::new());
+    };
     let out = perform(plan);
     let called = Request {
         scope: req.scope.clone(),
-        desc: Desc { op: Op::Called, ..Desc::default() },
+        desc: Desc {
+            op: Op::Called,
+            ..Desc::default()
+        },
         inputs: out.called.inputs(),
     };
     let r = sql.run(&called);
     let r = answered(&mut sql, &req.scope, r, &mut perform);
-    let outs = if r.sqlca.is_error() { Vec::new() } else { out.outs };
+    let outs = if r.sqlca.is_error() {
+        Vec::new()
+    } else {
+        out.outs
+    };
     (r, outs)
 }
 
 /// The calls a statement makes in its middle, made and answered until
 /// its reply is its end (or a `CALL`'s plan).
-fn answered(sql: &mut RemoteSql, scope: &str, mut reply: Reply, perform: &mut impl FnMut(&CallPlan) -> Outcome) -> Reply {
+fn answered(
+    sql: &mut RemoteSql,
+    scope: &str,
+    mut reply: Reply,
+    perform: &mut impl FnMut(&CallPlan) -> Outcome,
+) -> Reply {
     use sql::exec::routine::{extfunc, midcall};
     while let Some(plan) = reply.call.take_if(|p| extfunc::is_mid(p)) {
         let answer = perform(&plan).answer.unwrap_or_default();
         reply = sql.run(&Request {
             scope: scope.to_string(),
-            desc: Desc { op: Op::Called, name: midcall::ANSWER.into(), ..Desc::default() },
+            desc: Desc {
+                op: Op::Called,
+                name: midcall::ANSWER.into(),
+                ..Desc::default()
+            },
             inputs: answer,
         });
     }
@@ -79,7 +101,11 @@ pub struct CallingSql {
 impl CallingSql {
     /// Over `link`, calls made in `job`.
     pub fn new(link: Shared, job: crate::work::hostsvr::job::Job) -> Self {
-        Self { link, job, outs: Vec::new() }
+        Self {
+            link,
+            job,
+            outs: Vec::new(),
+        }
     }
 }
 

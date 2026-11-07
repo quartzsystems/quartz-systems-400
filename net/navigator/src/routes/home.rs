@@ -78,7 +78,10 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
     let ptf = if s.ptf_level.is_empty() {
         String::new()
     } else {
-        format!(" &nbsp; {}", link(rq, "/ptf", &format!("PTF level {}", esc(&s.ptf_level))))
+        format!(
+            " &nbsp; {}",
+            link(rq, "/ptf", &format!("PTF level {}", esc(&s.ptf_level)))
+        )
     };
     vec![
         ("System name", mono(&rq.ctx.system)),
@@ -89,10 +92,20 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
         ("Memory", mb(s.main_storage)),
         (
             "IPL date/time",
-            format!("{id} {it} &nbsp; <span class=\"grey\">(up {})</span>", uptime(now.saturating_sub(s.ipl))),
+            format!(
+                "{id} {it} &nbsp; <span class=\"grey\">(up {})</span>",
+                uptime(now.saturating_sub(s.ipl))
+            ),
         ),
         ("IPL type / source", esc(&s.ipl_kind)),
-        ("Time", format!("{nd} {nt} {} &nbsp; {}", esc(&s.zone), link(rq, "/time", "Time management"))),
+        (
+            "Time",
+            format!(
+                "{nd} {nt} {} &nbsp; {}",
+                esc(&s.zone),
+                link(rq, "/time", "Time management")
+            ),
+        ),
     ]
 }
 
@@ -115,11 +128,21 @@ fn storage_rows(rq: &Rq<'_>, s: &Status) -> Vec<(&'static str, String)> {
     };
     vec![
         ("System ASP capacity", gb(s.asp_capacity)),
-        ("System ASP used", format!("{}% &nbsp; {}", tenths(s.asp_used), bar(s.asp_used / 10))),
-        ("Temporary storage used", format!("{} (peak {} since IPL)", mb(s.temp_used), mb(s.temp_peak))),
+        (
+            "System ASP used",
+            format!("{}% &nbsp; {}", tenths(s.asp_used), bar(s.asp_used / 10)),
+        ),
+        (
+            "Temporary storage used",
+            format!("{} (peak {} since IPL)", mb(s.temp_used), mb(s.temp_peak)),
+        ),
         (
             "Main storage pools",
-            format!("{}, machine pool {}", link(rq, "/sbs", &format!("{} pools", s.pools)), mb(s.machine_pool)),
+            format!(
+                "{}, machine pool {}",
+                link(rq, "/sbs", &format!("{} pools", s.pools)),
+                mb(s.machine_pool)
+            ),
         ),
         ("Disk units", link(rq, "/disk", &units)),
     ]
@@ -160,12 +183,19 @@ fn attention_rows(rq: &Rq<'_>, s: &Status) -> Vec<(&'static str, String)> {
     let inq = if s.inquiries == 0 {
         String::new()
     } else {
-        format!(", <span class=\"err\">{} inquiry unanswered</span>", s.inquiries)
+        format!(
+            ", <span class=\"err\">{} inquiry unanswered</span>",
+            s.inquiries
+        )
     };
     let errors = if s.units_failed == 0 {
         "<span class=\"ok\">0</span>".to_string()
     } else {
-        format!("<a class=\"err\" href=\"{}\">{}</a>", esc(&rq.ctx.url("/disk")), s.units_failed)
+        format!(
+            "<a class=\"err\" href=\"{}\">{}</a>",
+            esc(&rq.ctx.url("/disk")),
+            s.units_failed
+        )
     };
     let fixes = match s.ptfs_not_applied {
         0 => link(rq, "/ptf", "None"),
@@ -187,7 +217,10 @@ fn attention_rows(rq: &Rq<'_>, s: &Status) -> Vec<(&'static str, String)> {
             ),
         ),
         ("Disk units with errors", errors),
-        ("Failed sign-on attempts (24 h)", link(rq, "/audit?t=PW", &s.failed_signons.to_string())),
+        (
+            "Failed sign-on attempts (24 h)",
+            link(rq, "/audit?t=PW", &s.failed_signons.to_string()),
+        ),
         ("Fixes available from Quartz", fixes),
         ("TCP servers not started", down),
     ]
@@ -202,7 +235,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let mut activity = activity_rows(rq, &s);
     let cpu_label = format!("CPU used (elapsed {} s)", s.elapsed);
     activity[0].0 = "";
-    let activity_html = status_table(&activity).replacen("<td class=\"lbl\"></td>", &format!("<td class=\"lbl\">{}</td>", esc(&cpu_label)), 1);
+    let activity_html = status_table(&activity).replacen(
+        "<td class=\"lbl\"></td>",
+        &format!("<td class=\"lbl\">{}</td>", esc(&cpu_label)),
+        1,
+    );
     let (_, t) = rq.stamp(now);
     let body = format!(
         "{}\n<table class=\"home\" width=\"100%\"><tr>\n<td width=\"50%\">\n<h3>System</h3>{}\n<h3>Storage</h3>{}\n</td>\n<td width=\"50%\">\n<h3>Activity</h3>{activity_html}\n<h3>Attention</h3>{}\n</td></tr></table>\n<p class=\"small grey\">Values are as of {t}. Elapsed-interval values are measured since the last Refresh.</p>",

@@ -237,7 +237,9 @@ impl<R: Read> Reader<R> {
                         && end.parts == d.part_count
                         && parts.values().map(|p| p.len() as u64).sum::<u64>() == end.bytes
                         && end.bytes == d.size_bytes
-                        && parts.iter().all(|(k, p)| lens.get(k) == Some(&(p.len() as u64)))
+                        && parts
+                            .iter()
+                            .all(|(k, p)| lens.get(k) == Some(&(p.len() as u64)))
                         && crate::digest(&d, &parts) == end.digest
                         && signature.is_none_or(|s| s.index == d.index && s.digest == end.digest);
                     if !whole {
@@ -280,7 +282,11 @@ impl<R: Read> Reader<R> {
             return false;
         };
         let buf = parts.entry(ch.part).or_insert_with(|| {
-            Vec::with_capacity(usize::try_from(ch.part_len).unwrap_or(0).min(record::MAX_RAW))
+            Vec::with_capacity(
+                usize::try_from(ch.part_len)
+                    .unwrap_or(0)
+                    .min(record::MAX_RAW),
+            )
         });
         if *lens.entry(ch.part).or_insert(ch.part_len) != ch.part_len
             || buf.len() as u64 != ch.offset
@@ -330,7 +336,9 @@ pub fn read_index<R: Read + Seek>(r: &mut R) -> Result<(MediaHeader, Trailer, Ve
     r.seek(SeekFrom::Start(at))?;
     // Anything but a trailer at the end means the stream did not finish.
     let (h, b) = record_at(r, at).map_err(|_| Error::Truncated)?;
-    let trailer = Trailer::decode(&b).ok().filter(|_| h.kind == RecordKind::Trailer);
+    let trailer = Trailer::decode(&b)
+        .ok()
+        .filter(|_| h.kind == RecordKind::Trailer);
     let trailer = trailer
         .filter(|t| t.stream_id == header.stream_id && t.bytes == at)
         .ok_or(Error::Truncated)?;
@@ -374,7 +382,10 @@ fn record_at<R: Read>(r: &mut R, offset: u64) -> Result<(RecordHeader, Vec<u8>)>
 
 /// The descriptor of the object whose `Object` record is at `offset`
 /// (from the index), and its tail, read without its data.
-pub fn descriptor_at<R: Read + Seek>(r: &mut R, offset: u64) -> Result<(ObjectDescriptor, Vec<u8>)> {
+pub fn descriptor_at<R: Read + Seek>(
+    r: &mut R,
+    offset: u64,
+) -> Result<(ObjectDescriptor, Vec<u8>)> {
     r.seek(SeekFrom::Start(offset))?;
     let (h, b) = record_at(r, offset)?;
     if h.kind != RecordKind::Object {

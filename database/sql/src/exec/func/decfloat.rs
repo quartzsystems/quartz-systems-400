@@ -7,7 +7,6 @@
 //! `CHAR`/`VARCHAR` of a number in IBM's text. Results round in
 //! `CURRENT DECFLOAT ROUNDING MODE`.
 
-
 use qdecimal::{DecFloat, DfFormat};
 
 use super::super::SqlContext;
@@ -26,7 +25,14 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
         "TOTALORDER" => total_order,
         "DECFLOAT_FORMAT" => format,
         "HEX" if matches!(args.first(), Some(Value::Bool(_))) => {
-            return Some(Ok(Value::Str(if matches!(args[0], Value::Bool(true)) { "F1" } else { "F0" }.into())));
+            return Some(Ok(Value::Str(
+                if matches!(args[0], Value::Bool(true)) {
+                    "F1"
+                } else {
+                    "F0"
+                }
+                .into(),
+            )));
         }
         "CHAR" | "VARCHAR" if args.first().is_some_and(is_number) => {
             return Some(char_of(name, args));
@@ -40,7 +46,10 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
 }
 
 fn is_number(v: &Value) -> bool {
-    matches!(v, Value::Num(_) | Value::Double(_) | Value::Real(_) | Value::DecFloat(_))
+    matches!(
+        v,
+        Value::Num(_) | Value::Double(_) | Value::Real(_) | Value::DecFloat(_)
+    )
 }
 
 /// The `DECFLOAT` of either operand's width: 34 unless both are 16.
@@ -81,13 +90,17 @@ fn normalize(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
 fn quantize(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
     arity(name, args, 2, 2)?;
     let (a, b) = (df(&args[0], ctx)?, df(&args[1], ctx)?);
-    qdecimal::decfloat::quantize(&a, &b, ctx.decfloat_rounding).map(Value::DecFloat).map_err(decfloat_error)
+    qdecimal::decfloat::quantize(&a, &b, ctx.decfloat_rounding)
+        .map(Value::DecFloat)
+        .map_err(decfloat_error)
 }
 
 fn compare(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
     arity(name, args, 2, 2)?;
     let (a, b) = (df(&args[0], ctx)?, df(&args[1], ctx)?);
-    Ok(Value::int(i64::from(qdecimal::decfloat::compare_total(&a, &b))))
+    Ok(Value::int(i64::from(qdecimal::decfloat::compare_total(
+        &a, &b,
+    ))))
 }
 
 fn total_order(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
@@ -125,7 +138,11 @@ fn format(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
         body = body.replace([',', '$'], "");
         // A sign the format has no element for (pub400: SQ20477).
         if body.starts_with('-') && !f.contains('S') && !f.ends_with("MI") && !f.ends_with("PR") {
-            return Err(SqlError::Coded { code: -20477, state: "22018", what: format!("'{text}' does not match the format '{fmt}'") });
+            return Err(SqlError::Coded {
+                code: -20477,
+                state: "22018",
+                what: format!("'{text}' does not match the format '{fmt}'"),
+            });
         }
     }
     if let Some(r) = body.strip_prefix('-') {
@@ -146,7 +163,11 @@ fn char_of(name: &str, args: &[Value]) -> Result<Value> {
     let mut s = char_text(&args[0]);
     if let Some(dc) = args.get(1) {
         let dc = dc.as_text();
-        if dc.chars().count() != 1 || dc.chars().any(|c| c.is_ascii_digit() || c == ' ' || c == '+' || c == '-') {
+        if dc.chars().count() != 1
+            || dc
+                .chars()
+                .any(|c| c.is_ascii_digit() || c == ' ' || c == '+' || c == '-')
+        {
             return Err(SqlError::Coded {
                 code: -171,
                 state: "42815",

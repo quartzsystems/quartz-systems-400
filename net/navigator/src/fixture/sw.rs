@@ -12,7 +12,9 @@ use qsweb::msg::{Kind, Message};
 
 use super::text;
 use super::work::parse;
-use crate::env::sw::{Fix, ImageCatalog, LicenseKey, Product, Ptf, PtfGroup, PtfStatus, Software, UpdateAttrs};
+use crate::env::sw::{
+    Fix, ImageCatalog, LicenseKey, Product, Ptf, PtfGroup, PtfStatus, Software, UpdateAttrs,
+};
 use crate::fixture::PROFILES;
 use crate::util::{days, secs};
 
@@ -55,26 +57,110 @@ impl Default for FixtureSoftware {
 
 /// The product directory: id, option, text, status, license.
 const PRODUCTS: &[(&str, &str, &str, &str, &str)] = &[
-    ("QS00SS1", "*BASE", "QS/400 Operating System", "Compatible", "Unlimited"),
+    (
+        "QS00SS1",
+        "*BASE",
+        "QS/400 Operating System",
+        "Compatible",
+        "Unlimited",
+    ),
     ("QS00SS1", "1", "Extended Base Support", "Compatible", ""),
-    ("QS00SS1", "3", "Extended Base Directory Support", "Compatible", ""),
+    (
+        "QS00SS1",
+        "3",
+        "Extended Base Directory Support",
+        "Compatible",
+        "",
+    ),
     ("QS00SS1", "12", "Host Servers", "Compatible", ""),
-    ("QS00SS1", "30", "Integrated File System Shares (SMB)", "Compatible", ""),
-    ("QS00SS1", "33", "Portable Application Solutions Environment", "Compatible", ""),
+    (
+        "QS00SS1",
+        "30",
+        "Integrated File System Shares (SMB)",
+        "Compatible",
+        "",
+    ),
+    (
+        "QS00SS1",
+        "33",
+        "Portable Application Solutions Environment",
+        "Compatible",
+        "",
+    ),
     ("QS00SS1", "34", "Certificate Manager", "Compatible", ""),
-    ("QS00TC1", "*BASE", "TCP/IP Connectivity Utilities", "Compatible", "Unlimited"),
-    ("QS00DG1", "*BASE", "QS/400 HTTP Server", "Compatible", "Unlimited"),
-    ("QS00NV1", "*BASE", "Navigator for QS/400", "Compatible", "Unlimited"),
-    ("QS00XW1", "*BASE", "QS/400 Access for Web", "Compatible", "Unlimited"),
-    ("QS00WDS", "*BASE", "Development Tools", "Compatible", "Unlimited"),
+    (
+        "QS00TC1",
+        "*BASE",
+        "TCP/IP Connectivity Utilities",
+        "Compatible",
+        "Unlimited",
+    ),
+    (
+        "QS00DG1",
+        "*BASE",
+        "QS/400 HTTP Server",
+        "Compatible",
+        "Unlimited",
+    ),
+    (
+        "QS00NV1",
+        "*BASE",
+        "Navigator for QS/400",
+        "Compatible",
+        "Unlimited",
+    ),
+    (
+        "QS00XW1",
+        "*BASE",
+        "QS/400 Access for Web",
+        "Compatible",
+        "Unlimited",
+    ),
+    (
+        "QS00WDS",
+        "*BASE",
+        "Development Tools",
+        "Compatible",
+        "Unlimited",
+    ),
     ("QS00WDS", "31", "ILE RPG Compiler", "Compatible", ""),
     ("QS00WDS", "51", "ILE COBOL Compiler", "Installed", ""),
     ("QS00WDS", "56", "ILE C Compiler", "Compatible", ""),
-    ("QS00ST1", "*BASE", "SQL Development Kit", "Compatible", "Unlimited"),
-    ("QS00JV1", "*BASE", "Developer Kit for Java", "Compatible", "Unlimited"),
-    ("QS00BR1", "*BASE", "Backup Recovery and Media Services", "Installed", "Unlimited"),
-    ("QS00SM1", "*BASE", "Performance Tools", "Compatible", "Unlimited"),
-    ("QS00HA1", "*BASE", "High Availability Switchable Resources", "", "Unlimited"),
+    (
+        "QS00ST1",
+        "*BASE",
+        "SQL Development Kit",
+        "Compatible",
+        "Unlimited",
+    ),
+    (
+        "QS00JV1",
+        "*BASE",
+        "Developer Kit for Java",
+        "Compatible",
+        "Unlimited",
+    ),
+    (
+        "QS00BR1",
+        "*BASE",
+        "Backup Recovery and Media Services",
+        "Installed",
+        "Unlimited",
+    ),
+    (
+        "QS00SM1",
+        "*BASE",
+        "Performance Tools",
+        "Compatible",
+        "Unlimited",
+    ),
+    (
+        "QS00HA1",
+        "*BASE",
+        "High Availability Switchable Resources",
+        "",
+        "Unlimited",
+    ),
 ];
 
 fn products() -> Vec<Product> {
@@ -89,23 +175,77 @@ fn products() -> Vec<Product> {
             status: (*status).into(),
             license: (*lic).into(),
             library: format!("QS{}", &id[4..]),
-            installed_at: if status.is_empty() { 0 } else { secs(2026, 9, 1, 10, 0, 0) },
+            installed_at: if status.is_empty() {
+                0
+            } else {
+                secs(2026, 9, 1, 10, 0, 0)
+            },
         })
         .collect()
 }
 
 /// The ten PTFs the numbering repeats: product, status, IPL action, text.
 const PATTERN: [(&str, PtfStatus, &str, &str); 10] = [
-    ("QS00SS1", PtfStatus::Permanent, "None", "Security fix for TLS handshake"),
-    ("QS00SS1", PtfStatus::Permanent, "Yes - delayed", "Database: index rebuild after restore"),
-    ("QS00DG1", PtfStatus::Temporary, "None", "HTTP server: log rotation at month end"),
-    ("QS00TC1", PtfStatus::Temporary, "None", "FTP: passive mode port range"),
-    ("QS00SS1", PtfStatus::NotApplied, "Yes - delayed", "Save/restore: SAVACT lock timeout"),
-    ("QS00NV1", PtfStatus::Superseded, "None", "Navigator: spooled file PDF viewer"),
-    ("QS00XW1", PtfStatus::Permanent, "None", "Access for Web: 5250 field exit key"),
-    ("QS00SS1", PtfStatus::Temporary, "Yes - immediate", "Work management: job queue priority"),
-    ("QS00WDS", PtfStatus::Permanent, "None", "RPG compiler: %SCANRPL"),
-    ("QS00SS1", PtfStatus::NotApplied, "None", "Kernel: IPL time with large ASP"),
+    (
+        "QS00SS1",
+        PtfStatus::Permanent,
+        "None",
+        "Security fix for TLS handshake",
+    ),
+    (
+        "QS00SS1",
+        PtfStatus::Permanent,
+        "Yes - delayed",
+        "Database: index rebuild after restore",
+    ),
+    (
+        "QS00DG1",
+        PtfStatus::Temporary,
+        "None",
+        "HTTP server: log rotation at month end",
+    ),
+    (
+        "QS00TC1",
+        PtfStatus::Temporary,
+        "None",
+        "FTP: passive mode port range",
+    ),
+    (
+        "QS00SS1",
+        PtfStatus::NotApplied,
+        "Yes - delayed",
+        "Save/restore: SAVACT lock timeout",
+    ),
+    (
+        "QS00NV1",
+        PtfStatus::Superseded,
+        "None",
+        "Navigator: spooled file PDF viewer",
+    ),
+    (
+        "QS00XW1",
+        PtfStatus::Permanent,
+        "None",
+        "Access for Web: 5250 field exit key",
+    ),
+    (
+        "QS00SS1",
+        PtfStatus::Temporary,
+        "Yes - immediate",
+        "Work management: job queue priority",
+    ),
+    (
+        "QS00WDS",
+        PtfStatus::Permanent,
+        "None",
+        "RPG compiler: %SCANRPL",
+    ),
+    (
+        "QS00SS1",
+        PtfStatus::NotApplied,
+        "None",
+        "Kernel: IPL time with large ASP",
+    ),
 ];
 
 /// The 118 PTFs: QS10420 every third number, one loaded a day from
@@ -129,7 +269,9 @@ pub fn ptfs() -> Vec<Ptf> {
 }
 
 fn msg(kind: Kind, id: &str, data: &[&str]) -> Message {
-    let t = text::second_level(id, data).map(|s| s.text).unwrap_or_default();
+    let t = text::second_level(id, data)
+        .map(|s| s.text)
+        .unwrap_or_default();
     Message::new(kind, id, &t).with_data(data)
 }
 
@@ -154,17 +296,27 @@ impl State {
     fn run(&mut self, user: &str, command: &str) -> Result<Message, Message> {
         let (name, p) = parse(command);
         let get = |k: &str| p.get(k).map(String::as_str).unwrap_or_default().to_string();
-        let changes = !matches!(name.as_str(), "CHKPRDOPT" | "QSCHKUPD" | "DSPPTF" | "DSPLICKEY");
+        let changes = !matches!(
+            name.as_str(),
+            "CHKPRDOPT" | "QSCHKUPD" | "DSPPTF" | "DSPLICKEY"
+        );
         if changes && !all_obj(user) {
             return fail("CPF2207", &[&name, "QSYS", "*CMD"]);
         }
         match name.as_str() {
             "APYPTF" | "RMVPTF" | "LODPTF" => {
                 let product = get("LICPGM");
-                let ids: Vec<String> = get("SELECT").split_whitespace().map(ToString::to_string).collect();
+                let ids: Vec<String> = get("SELECT")
+                    .split_whitespace()
+                    .map(ToString::to_string)
+                    .collect();
                 let mut last = None;
                 for id in &ids {
-                    let Some(f) = self.ptfs.iter_mut().find(|f| f.id == *id && f.product == product) else {
+                    let Some(f) = self
+                        .ptfs
+                        .iter_mut()
+                        .find(|f| f.id == *id && f.product == product)
+                    else {
                         return fail("CPF0C1F", &[]);
                     };
                     let (to, id_) = match name.as_str() {
@@ -179,15 +331,27 @@ impl State {
                 last.ok_or_else(|| msg(Kind::Error, "CPF0C1F", &[]))
             }
             "INSPTF" => {
-                for f in self.ptfs.iter_mut().filter(|f| f.status == PtfStatus::NotApplied) {
+                for f in self
+                    .ptfs
+                    .iter_mut()
+                    .filter(|f| f.status == PtfStatus::NotApplied)
+                {
                     f.status = PtfStatus::Temporary;
                 }
                 done("CPC3606", &["*ALL", "*ALL"])
             }
             "DLTLICPGM" | "RSTLICPGM" => {
                 let (id, opt) = (get("LICPGM"), get("OPTION"));
-                let opt = if opt.is_empty() { "*BASE".to_string() } else { opt };
-                let Some(pr) = self.products.iter_mut().find(|x| x.id == id && x.option == opt) else {
+                let opt = if opt.is_empty() {
+                    "*BASE".to_string()
+                } else {
+                    opt
+                };
+                let Some(pr) = self
+                    .products
+                    .iter_mut()
+                    .find(|x| x.id == id && x.option == opt)
+                else {
                     return fail("CPF0C1F", &[]);
                 };
                 if name == "DLTLICPGM" {
@@ -280,7 +444,12 @@ impl Software for FixtureSoftware {
             text: text.into(),
         };
         vec![
-            g("QS400-CUM-26290", 26_290, "Installed", "Cumulative PTF package 26290"),
+            g(
+                "QS400-CUM-26290",
+                26_290,
+                "Installed",
+                "Cumulative PTF package 26290",
+            ),
             g("QS99100", 12, "Installed", "HIPER PTFs"),
             g("QS99001", 7, "Installed", "Database group"),
             g("QS99002", 4, "Not installed", "HTTP server group"),
@@ -300,19 +469,44 @@ impl Software for FixtureSoftware {
     }
 
     fn fixes(&self, _user: &str) -> Vec<Fix> {
-        let f = |id: &str, kind: &str, product: &str, d: u32, size: u64, text: &str, on: &str| Fix {
-            id: id.into(),
-            kind: kind.into(),
-            product: product.into(),
-            released: secs(2026, 10, d, 12, 0, 0),
-            size,
-            text: text.into(),
-            on_system: on.into(),
-        };
+        let f =
+            |id: &str, kind: &str, product: &str, d: u32, size: u64, text: &str, on: &str| Fix {
+                id: id.into(),
+                kind: kind.into(),
+                product: product.into(),
+                released: secs(2026, 10, d, 12, 0, 0),
+                size,
+                text: text.into(),
+                on_system: on.into(),
+            };
         vec![
-            f("QS10491", "PTF", "QS00SS1", 27, 12 * (1 << 20) / 10, "Security fix for sign-on server host name verification", ""),
-            f("QS10494", "PTF", "QS00DG1", 28, 4 * (1 << 20) / 10, "HTTP server: Listen on IPv6 link-local address", ""),
-            f("QS400-CUM-26290", "Cumulative package", "QS00SS1", 17, 412 << 20, "Cumulative PTF package 26290", "Applied"),
+            f(
+                "QS10491",
+                "PTF",
+                "QS00SS1",
+                27,
+                12 * (1 << 20) / 10,
+                "Security fix for sign-on server host name verification",
+                "",
+            ),
+            f(
+                "QS10494",
+                "PTF",
+                "QS00DG1",
+                28,
+                4 * (1 << 20) / 10,
+                "HTTP server: Listen on IPv6 link-local address",
+                "",
+            ),
+            f(
+                "QS400-CUM-26290",
+                "Cumulative package",
+                "QS00SS1",
+                17,
+                412 << 20,
+                "Cumulative PTF package 26290",
+                "Applied",
+            ),
         ]
     }
 

@@ -10,50 +10,49 @@
 
 #![forbid(unsafe_code)]
 
+mod afw5250;
+mod afwcmdstep;
+mod afwdbstep;
+mod afwfiles;
+mod afwstep;
 mod certstep;
 pub mod cl;
 pub mod cmdkit;
 mod cmn;
 mod console;
 pub mod db;
-pub mod ifsapi;
-pub mod ossnet;
+mod ddmstep;
 #[cfg(unix)]
 mod display;
 mod dspcmds;
 mod dspmsgs;
-#[cfg(unix)]
-mod hwrsrc;
-mod ddmstep;
 mod dst;
-mod fourdisk;
 mod error;
-mod hostsvr;
-mod httpsvr;
-mod httpadm;
-mod navstep;
-mod afw5250;
-mod afwdbstep;
-mod afwstep;
-mod afwfiles;
-mod afwcmdstep;
+mod fourdisk;
 pub mod ftp;
 mod ftpsrv;
 #[cfg(unix)]
 mod guest;
+mod hostsvr;
+mod httpadm;
+mod httpsvr;
+#[cfg(unix)]
+mod hwrsrc;
 mod ifs;
+pub mod ifsapi;
 mod install;
-mod load;
 mod leftovers;
-mod perfstep;
-mod secacg;
-pub mod soak;
+mod load;
 mod lpstep;
 pub mod media;
+mod medlib;
+mod navstep;
 mod netauto;
-mod nlsstep;
 mod netinst;
 mod nettools;
+mod nlsstep;
+pub mod ossnet;
+mod perfstep;
 mod phase2;
 mod phase5;
 mod phase6;
@@ -69,17 +68,18 @@ pub mod qir;
 mod qsh;
 mod relitems;
 mod restricted;
-mod savrst;
-mod medlib;
-mod tapeopt;
 pub mod rpg;
-pub mod sql;
-mod sqlqemu;
+mod savrst;
+mod secacg;
 mod servers;
 mod service;
 mod smallsvr;
+pub mod soak;
+pub mod sql;
+mod sqlqemu;
 mod steps;
 mod stglimit;
+mod tapeopt;
 mod tcp;
 mod tzstep;
 

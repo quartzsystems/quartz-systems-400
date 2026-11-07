@@ -82,10 +82,21 @@ impl Gen<'_> {
             _ => 'D',
         };
         let flag = |b: bool| if b { '1' } else { '0' };
-        let fmts = f.ext.as_ref().map(|e| e.formats.clone()).unwrap_or_default();
+        let fmts = f
+            .ext
+            .as_ref()
+            .map(|e| e.formats.clone())
+            .unwrap_or_default();
         let reclen = fmts.iter().map(|r| r.len).max().unwrap_or(f.reclen);
         let (complib, compfile) = match f.ext.as_ref() {
-            Some(e) => (e.lib.clone(), if f.desc.is_empty() { f.name.clone() } else { f.desc.clone() }),
+            Some(e) => (
+                e.lib.clone(),
+                if f.desc.is_empty() {
+                    f.name.clone()
+                } else {
+                    f.desc.clone()
+                },
+            ),
             None => (String::new(), String::new()),
         };
         let mut s = format!(
@@ -102,7 +113,13 @@ impl Gen<'_> {
             flag(f.update)
         );
         for fm in &fmts {
-            s.push_str(&format!(";R|{}|{}|{}|{}", fm.name, fm.level_id, fm.len, fm.keys.join(",")));
+            s.push_str(&format!(
+                ";R|{}|{}|{}|{}",
+                fm.name,
+                fm.level_id,
+                fm.len,
+                fm.keys.join(",")
+            ));
             for (i, x) in fm.fields.iter().enumerate() {
                 let (dt, len, dec) = datatype(&x.ty);
                 let (fmt, sep) = match &x.ty {
@@ -123,10 +140,15 @@ impl Gen<'_> {
 
     /// Give the runtime the handler for the open that follows.
     pub fn oa_open(&mut self, f: &File) {
-        let Some(k) = f.handler_kw.clone() else { return };
+        let Some(k) = f.handler_kw.clone() else {
+            return;
+        };
         let mut ptr = self.b.temp("char(16)");
         self.b.ins(format!("mov {ptr}, *LOVAL"));
-        let mut name = (self.b.temp("char(1)"), self.desc_of(&V::place(Ty::Char(1), String::new())));
+        let mut name = (
+            self.b.temp("char(1)"),
+            self.desc_of(&V::place(Ty::Char(1), String::new())),
+        );
         match k.arg(0).and_then(|a| a.expr.clone()) {
             Some(Expr::Lit(Lit::Char(t), _)) => {
                 if let Some(r) = self.literal(&Lit::Char(t)) {
@@ -136,21 +158,39 @@ impl Gen<'_> {
             }
             Some(Expr::Ref { name: n, steps, at }) => {
                 let up = n.to_ascii_uppercase();
-                let proto = matches!(self.t.find(self.scope, &up).and_then(|id| self.t.syms[id].kind.clone()), Some(Kind::Proto(_)));
+                let proto = matches!(
+                    self.t
+                        .find(self.scope, &up)
+                        .and_then(|id| self.t.syms[id].kind.clone()),
+                    Some(Kind::Proto(_))
+                );
                 if proto {
                     if let Some(id) = self.t.find(self.scope, &up) {
                         self.t.refer(id, self.at.line, false);
                     }
-                    let ext = match self.t.find(self.scope, &up).and_then(|id| self.t.syms[id].kind.clone()) {
-                        Some(Kind::Proto(pi)) => self.t.protos[pi].extproc.clone().unwrap_or_else(|| up.clone()),
+                    let ext = match self
+                        .t
+                        .find(self.scope, &up)
+                        .and_then(|id| self.t.syms[id].kind.clone())
+                    {
+                        Some(Kind::Proto(pi)) => self.t.protos[pi]
+                            .extproc
+                            .clone()
+                            .unwrap_or_else(|| up.clone()),
                         _ => up.clone(),
                     };
-                    let target = if self.local_procs.contains(&up) { mangle(&up) } else { mangle(&ext) };
+                    let target = if self.local_procs.contains(&up) {
+                        mangle(&up)
+                    } else {
+                        mangle(&ext)
+                    };
                     let r = self.b.reg();
                     self.b.ins(format!("{r} = procaddr {target}"));
                     ptr = self.b.temp("procptr");
                     self.b.ins(format!("store {ptr}, {r}"));
-                } else if let Some(v) = self.expr(&Expr::Ref { name: n, steps, at }, Want::default()) {
+                } else if let Some(v) =
+                    self.expr(&Expr::Ref { name: n, steps, at }, Want::default())
+                {
                     if v.ty == Ty::ProcPtr {
                         let r = self.b.reg();
                         self.b.ins(format!("{r} = load {}", v.op));
@@ -176,7 +216,11 @@ impl Gen<'_> {
                     if let Some(s) = v.sym {
                         self.t.refer(s, self.at.line, true);
                     }
-                    let op = if matches!(v.ty, Ty::Ds(_)) { format!("{}.all_", v.op) } else { v.op.clone() };
+                    let op = if matches!(v.ty, Ty::Ds(_)) {
+                        format!("{}.all_", v.op)
+                    } else {
+                        v.op.clone()
+                    };
                     let size = self.t.size(&v.ty) * v.dim.max(1);
                     (op, i32::try_from(size).unwrap_or(i32::MAX).max(1))
                 }
@@ -190,6 +234,11 @@ impl Gen<'_> {
             "($name: bytes(1) *VARSIZE, byval $nd: i64, $ptr: bytes(16) *VARSIZE, $ua: bytes(1) *VARSIZE, \
              byval $size: i32, const $desc: varchar(32000))",
         );
-        self.b.ins(format!("callb _QRNX_OAOPEN({}, {}, {ptr}, {ua}, {has}, {})", name.0, name.1, quote(&desc)));
+        self.b.ins(format!(
+            "callb _QRNX_OAOPEN({}, {}, {ptr}, {ua}, {has}, {})",
+            name.0,
+            name.1,
+            quote(&desc)
+        ));
     }
 }

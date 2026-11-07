@@ -49,13 +49,19 @@ impl Msgs for LiveMsgs {
     fn own_queue(&self, user: &str) -> (String, String) {
         let u = user.trim().to_ascii_uppercase();
         let fallback = ("QUSRSYS".to_string(), u.clone());
-        let q = self.link.read(user, move |m| match m.sec(Query::Profile { user: u }) {
-            Ok(Answer::Profile { data }) => sec::profile::UsrPrf::decode(&data).ok().map(|p| (p.msgq.1, p.msgq.0)),
-            _ => None,
-        });
+        let q = self
+            .link
+            .read(user, move |m| match m.sec(Query::Profile { user: u }) {
+                Ok(Answer::Profile { data }) => sec::profile::UsrPrf::decode(&data)
+                    .ok()
+                    .map(|p| (p.msgq.1, p.msgq.0)),
+                _ => None,
+            });
         match q {
             Some((lib, name)) if !name.is_empty() && !lib.starts_with('*') => (lib, name),
-            Some((_, name)) if !name.is_empty() && !name.starts_with('*') => ("QUSRSYS".into(), name),
+            Some((_, name)) if !name.is_empty() && !name.starts_with('*') => {
+                ("QUSRSYS".into(), name)
+            }
             _ => fallback,
         }
     }
@@ -65,7 +71,12 @@ impl Msgs for LiveMsgs {
         self.link
             .read(user, move |m| Some(m.ask(|l| l.msgq_list(q))))
             .unwrap_or_else(|| Err("CPF9897 Access for Web could not read the queue.".into()))
-            .map(|all| all.into_iter().filter(|m| m.kind != MsgKind::Rpy).map(queued).collect())
+            .map(|all| {
+                all.into_iter()
+                    .filter(|m| m.kind != MsgKind::Rpy)
+                    .map(queued)
+                    .collect()
+            })
             .map_err(|e| failure(&e))
     }
 

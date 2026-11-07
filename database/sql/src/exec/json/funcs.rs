@@ -54,7 +54,14 @@ fn format_at(opts: &Opts, i: usize) -> &'static str {
     }
 }
 
-fn object(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, operands: &[Expr], opts: &Opts, ret: Option<&TypeSpec>, env: &Env) -> Result<Value> {
+fn object(
+    ev: &mut Evaluator<'_>,
+    txn: &mut Txn<'_>,
+    operands: &[Expr],
+    opts: &Opts,
+    ret: Option<&TypeSpec>,
+    env: &Env,
+) -> Result<Value> {
     let absent = opts.or("null", "null") == "absent";
     let mut members = Vec::with_capacity(operands.len() / 2);
     for (i, pair) in operands.chunks(2).enumerate() {
@@ -74,13 +81,24 @@ fn object(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, operands: &[Expr], opts: &O
     {
         let mut seen = std::collections::HashSet::new();
         if let Some((k, _)) = m.iter().find(|(k, _)| !seen.insert(k.clone())) {
-            return Err(coded(-16400, "22030", format!("the key \"{k}\" is repeated")));
+            return Err(coded(
+                -16400,
+                "22030",
+                format!("the key \"{k}\" is repeated"),
+            ));
         }
     }
     returned(&j, ret)
 }
 
-fn array(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, operands: &[Expr], opts: &Opts, ret: Option<&TypeSpec>, env: &Env) -> Result<Value> {
+fn array(
+    ev: &mut Evaluator<'_>,
+    txn: &mut Txn<'_>,
+    operands: &[Expr],
+    opts: &Opts,
+    ret: Option<&TypeSpec>,
+    env: &Env,
+) -> Result<Value> {
     let absent = opts.or("null", "absent") == "absent";
     let mut values = Vec::new();
     if opts.get("sub") == Some("1") {
@@ -110,7 +128,9 @@ fn array(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, operands: &[Expr], opts: &Op
 fn path_error(e: PathError) -> SqlError {
     match e {
         PathError::Syntax(w) => coded(-16401, "22033", w),
-        PathError::Unsupported(w) => SqlError::Unsupported { what: format!("SQL/JSON path {w}") },
+        PathError::Unsupported(w) => SqlError::Unsupported {
+            what: format!("SQL/JSON path {w}"),
+        },
         PathError::Structure(w) => coded(-16410, "2203A", w),
     }
 }
@@ -174,13 +194,19 @@ fn json_value(
                     None => Value::Null,
                     Some(t) => match ret {
                         None => Value::Str(t),
-                        Some(spec) => crate::exec::cast::cast(&Value::Str(t), spec, ev.ctx.decfloat_rounding)
-                            .map_err(|e| coded(-406, "22023", e.to_string()))?,
+                        Some(spec) => {
+                            crate::exec::cast::cast(&Value::Str(t), spec, ev.ctx.decfloat_rounding)
+                                .map_err(|e| coded(-406, "22023", e.to_string()))?
+                        }
                     },
                 }))
             }
             [_] => Err(coded(-16413, "2203F", "the SQL/JSON item is not a scalar")),
-            _ => Err(coded(-16413, "22034", "the path gives more than one SQL/JSON item")),
+            _ => Err(coded(
+                -16413,
+                "22034",
+                "the path gives more than one SQL/JSON item",
+            )),
         }
     })();
     let default = |ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, e: &Expr| -> Result<Value> {
@@ -219,10 +245,16 @@ fn json_query(item: &Value, p: &str, opts: &Opts, format: &str) -> Result<Value>
             _ => false,
         };
         if wrap {
-            return Ok(Some(Json::Array(found.into_iter().cloned().collect()).text()));
+            return Ok(Some(
+                Json::Array(found.into_iter().cloned().collect()).text(),
+            ));
         }
         if found.len() > 1 {
-            return Err(coded(-16413, "22034", "the path gives more than one SQL/JSON item; add WITH WRAPPER"));
+            return Err(coded(
+                -16413,
+                "22034",
+                "the path gives more than one SQL/JSON item; add WITH WRAPPER",
+            ));
         }
         Ok(Some(match (found[0], opts.or("quotes", "keep")) {
             (Json::Str(s), "omit") => s.clone(),
@@ -249,17 +281,16 @@ fn json_query(item: &Value, p: &str, opts: &Opts, format: &str) -> Result<Value>
 }
 
 fn json_exists(item: &Value, p: &str, opts: &Opts, format: &str) -> Result<Value> {
-    let r = items(item, p, format).and_then(|(doc, path)| path.eval(&doc).map(|f| !f.is_empty()).map_err(path_error));
+    let r = items(item, p, format)
+        .and_then(|(doc, path)| path.eval(&doc).map(|f| !f.is_empty()).map_err(path_error));
     match r {
         Ok(b) => Ok(Value::Bool(b)),
-        Err(e) if handled(&e) => {
-            match opts.or("error", "false") {
-                "error" => Err(e),
-                "true" => Ok(Value::Bool(true)),
-                "unknown" => Ok(Value::Null),
-                _ => Ok(Value::Bool(false)),
-            }
-        }
+        Err(e) if handled(&e) => match opts.or("error", "false") {
+            "error" => Err(e),
+            "true" => Ok(Value::Bool(true)),
+            "unknown" => Ok(Value::Null),
+            _ => Ok(Value::Bool(false)),
+        },
         Err(e) => Err(e),
     }
 }

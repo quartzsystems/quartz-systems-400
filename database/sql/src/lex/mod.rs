@@ -80,8 +80,8 @@ pub struct Token {
 }
 
 const SYMS: &[&str] = &[
-    "<>", "!=", "<=", ">=", "||", "=>", "=", "<", ">", "+", "-", "*", "/", "(", ")", "[", "]", ",", ".", ";", "?",
-    "¬=",
+    "<>", "!=", "<=", ">=", "||", "=>", "=", "<", ">", "+", "-", "*", "/", "(", ")", "[", "]", ",",
+    ".", ";", "?", "¬=",
 ];
 
 struct Lexer<'a> {
@@ -218,7 +218,8 @@ impl Lexer<'_> {
             while self.peek().is_some_and(|b| b.is_ascii_digit()) {
                 self.bump();
             }
-        } else if self.peek() == Some(b'.') && self.peek2().is_none_or(|b| !b.is_ascii_alphabetic()) {
+        } else if self.peek() == Some(b'.') && self.peek2().is_none_or(|b| !b.is_ascii_alphabetic())
+        {
             self.bump();
             while self.peek().is_some_and(|b| b.is_ascii_digit()) {
                 self.bump();
@@ -227,7 +228,10 @@ impl Lexer<'_> {
         // A second decimal point ends the number wrongly (`1234.5,7`
         // under DECPNT(*COMMA)).
         if (comma.is_some() || self.text[start..self.at].contains('.'))
-            && (self.decimal_comma() || (self.comma && self.peek() == Some(b'.') && self.peek2().is_some_and(|b| b.is_ascii_digit())))
+            && (self.decimal_comma()
+                || (self.comma
+                    && self.peek() == Some(b'.')
+                    && self.peek2().is_some_and(|b| b.is_ascii_digit())))
         {
             let found = char::from(self.peek().unwrap_or(b','));
             return Err(self.syntax(&found.to_string(), "a separator after the number"));
@@ -282,7 +286,11 @@ impl Lexer<'_> {
                 .step_by(2)
                 .map(|i| u8::from_str_radix(&digits[i..i + 2], 16).expect("hex"))
                 .collect();
-            return Ok(token(if binary { Tok::BinHex(bytes) } else { Tok::Hex(bytes) }));
+            return Ok(token(if binary {
+                Tok::BinHex(bytes)
+            } else {
+                Tok::Hex(bytes)
+            }));
         }
         if matches!(b, b'G' | b'g' | b'N' | b'n') && self.peek2() == Some(b'\'') {
             self.bump();
@@ -458,9 +466,18 @@ mod tests {
     fn decimal_comma() {
         // A comma with a digit after it is the decimal point; with a
         // blank after it, a separator.
-        assert_eq!(super::decimal_comma("dec(-1234,5, 7, 2)").unwrap(), "dec(-1234.5, 7, 2)");
-        assert_eq!(super::decimal_comma("values (1,2)").unwrap(), "values (1.2)");
-        assert_eq!(super::decimal_comma("values 'a,1', x,1").unwrap(), "values 'a,1', x,1");
+        assert_eq!(
+            super::decimal_comma("dec(-1234,5, 7, 2)").unwrap(),
+            "dec(-1234.5, 7, 2)"
+        );
+        assert_eq!(
+            super::decimal_comma("values (1,2)").unwrap(),
+            "values (1.2)"
+        );
+        assert_eq!(
+            super::decimal_comma("values 'a,1', x,1").unwrap(),
+            "values 'a,1', x,1"
+        );
         assert_eq!(super::decimal_comma("1,5e3").unwrap(), "1.5e3");
         // pub400: a second decimal point is SQL0104.
         for bad in ["dec(-1234.5,7,2)", "1,5,2", "1,5.2"] {
@@ -469,7 +486,18 @@ mod tests {
             assert_eq!(e.sqlcode(), -104, "{bad}");
         }
         // Under the period nothing changes.
-        assert_eq!(toks("1,2"), [Tok::Num("1".into()), Tok::Sym(","), Tok::Num("2".into()), Tok::End]);
-        assert_eq!(tokenize_comma("1,2").unwrap()[0].tok, Tok::Num("1.2".into()));
+        assert_eq!(
+            toks("1,2"),
+            [
+                Tok::Num("1".into()),
+                Tok::Sym(","),
+                Tok::Num("2".into()),
+                Tok::End
+            ]
+        );
+        assert_eq!(
+            tokenize_comma("1,2").unwrap()[0].tok,
+            Tok::Num("1.2".into())
+        );
     }
 }

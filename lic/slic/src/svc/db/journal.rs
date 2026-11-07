@@ -323,7 +323,9 @@ pub fn strcmtctl(system: &mut System, p: &Params) -> Result<String, String> {
         };
         // A console command line is the default activation group's, whose
         // definition is the job's.
-        let group = actgrp.clone().unwrap_or_else(|| ctx.session.opener().to_string());
+        let group = actgrp
+            .clone()
+            .unwrap_or_else(|| ctx.session.opener().to_string());
         let scope = if by_group && group != db::odp::ovrdbf::DFTACTGRP {
             db::cmt::CmtScope::ActGrp(group)
         } else {
@@ -476,7 +478,8 @@ pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
     let n = n + super::dspf::dltovr(system, &file, (!every_level).then_some(level));
     let before = system.svc.msgf_overrides.len();
     system.svc.msgf_overrides.retain(|o| {
-        (!every_level && o.level != level) || (!file.eq_ignore_ascii_case("*ALL") && !o.file.eq_ignore_ascii_case(&file))
+        (!every_level && o.level != level)
+            || (!file.eq_ignore_ascii_case("*ALL") && !o.file.eq_ignore_ascii_case(&file))
     });
     let n = n + before - system.svc.msgf_overrides.len();
     Ok(format!("{n} override(s) deleted."))
@@ -525,7 +528,8 @@ fn public(txn: &mut store::Txn<'_>, id: store::obj::ObjectId, p: &Params) -> Res
     let Some(aut) = p.upper("AUT").filter(|a| a != "*LIBCRTAUT") else {
         return Ok(());
     };
-    let a = sec::auth::bits::Auth::parse(&[aut.as_str()], false).map_err(|e| format!("CPD0084 AUT({aut}): {e}"))?;
+    let a = sec::auth::bits::Auth::parse(&[aut.as_str()], false)
+        .map_err(|e| format!("CPD0084 AUT({aut}): {e}"))?;
     sec::auth::grant::set_public(txn, id, Some(a)).map_err(|e| e.to_string())
 }
 
@@ -618,14 +622,19 @@ pub fn cmpjrnimg(
             Some(Name::parse(mbr).map_err(|e| e.to_string())?)
         };
         let f = Filter {
-            object: Some((lib, Name::parse(&name.name.value).map_err(|e| e.to_string())?, member)),
+            object: Some((
+                lib,
+                Name::parse(&name.name.value).map_err(|e| e.to_string())?,
+                member,
+            )),
             codes: vec![b'R'],
             ..Filter::default()
         };
         let entries = jrn::dspjrn(txn, desc.attr.journal, &f).map_err(|e| jrn_err(&e))?;
         let mut changes = Vec::new();
         let mut compared = 0;
-        let mut last_after: std::collections::HashMap<u64, (u64, Vec<u8>)> = std::collections::HashMap::new();
+        let mut last_after: std::collections::HashMap<u64, (u64, Vec<u8>)> =
+            std::collections::HashMap::new();
         let mut pending: Option<(u64, u64, Vec<u8>)> = None;
         for e in &entries {
             let img = as_shown(e).data;
@@ -637,13 +646,23 @@ pub fn cmpjrnimg(
                         if rcdnbr.is_none_or(|n| n == e.count)
                             && let Some((s, prev)) = last_after.get(&e.count)
                         {
-                            changes.push(Change { rrn: e.count, seqs: (*s, e.seq), before: prev.clone(), after: img.clone() });
+                            changes.push(Change {
+                                rrn: e.count,
+                                seqs: (*s, e.seq),
+                                before: prev.clone(),
+                                after: img.clone(),
+                            });
                         }
                     } else if let Some((rrn, s, before)) = pending.take()
                         && rrn == e.count
                         && rcdnbr.is_none_or(|n| n == rrn)
                     {
-                        changes.push(Change { rrn, seqs: (s, e.seq), before, after: img.clone() });
+                        changes.push(Change {
+                            rrn,
+                            seqs: (s, e.seq),
+                            before,
+                            after: img.clone(),
+                        });
                     }
                     last_after.insert(e.count, (e.seq, img));
                 }
@@ -671,7 +690,11 @@ pub fn cmpjrnimg(
                     let part = |b: &[u8]| b.get(start..i.min(b.len())).unwrap_or(&[]).to_vec();
                     runs.push((start + 1, part(&c.before), part(&c.after)));
                 }
-                Compared { rrn: c.rrn, seqs: c.seqs, runs }
+                Compared {
+                    rrn: c.rrn,
+                    seqs: c.seqs,
+                    runs,
+                }
             })
             .filter(|c| !c.runs.is_empty())
             .collect();

@@ -88,7 +88,13 @@ pub fn apply(s: &mut Screen, key: Key) -> Outcome {
                 goto_field(s, next(s, fi));
             }
         }
-        Key::Enter | Key::Function(_) | Key::Attention | Key::SysReq | Key::Reset | Key::PageUp | Key::PageDown => {}
+        Key::Enter
+        | Key::Function(_)
+        | Key::Attention
+        | Key::SysReq
+        | Key::Reset
+        | Key::PageUp
+        | Key::PageDown => {}
     }
     Outcome::Edited
 }

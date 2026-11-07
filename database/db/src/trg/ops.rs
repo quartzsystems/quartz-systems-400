@@ -56,7 +56,11 @@ pub mod op {
 }
 
 fn refuse(op: u8, reason: Refusal, what: impl Into<String>) -> DbError {
-    DbError::Trigger { op, reason, what: what.into() }
+    DbError::Trigger {
+        op,
+        reason,
+        what: what.into(),
+    }
 }
 
 /// A trigger to add.
@@ -123,7 +127,15 @@ pub fn generated_name(lib: &str, file: &str, taken: &dyn Fn(&str) -> bool) -> St
 fn physical(txn: &mut Txn<'_>, file: ObjectId, op: u8) -> Result<file::FileDesc> {
     let desc = file::describe(txn, file)?;
     if desc.attr.kind != FileKind::Physical {
-        return Err(refuse(op, Refusal::NotPhysical, format!("file {} in library {} is not a physical data file", desc.name(), desc.library_name)));
+        return Err(refuse(
+            op,
+            Refusal::NotPhysical,
+            format!(
+                "file {} in library {} is not a physical data file",
+                desc.name(),
+                desc.library_name
+            ),
+        ));
     }
     Ok(desc)
 }
@@ -131,7 +143,12 @@ fn physical(txn: &mut Txn<'_>, file: ObjectId, op: u8) -> Result<file::FileDesc>
 /// `ADDPFTRG`'s authority: to the file, to the program and its library,
 /// and `*UPD` too when the trigger may change the record. SQL's `CREATE
 /// TRIGGER` checks the table's ALTER privilege itself.
-pub fn authorize_add(txn: &mut Txn<'_>, file: ObjectId, program: ObjectId, alwrepchg: bool) -> Result<()> {
+pub fn authorize_add(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    program: ObjectId,
+    alwrepchg: bool,
+) -> Result<()> {
     crate::auth::check(txn, "file.trigger-add", file)?;
     if alwrepchg {
         crate::auth::check(txn, "file.open-update", file)?;
@@ -160,13 +177,31 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewTrg, now: u64) -> Result<
             &|n| trgs.iter().any(|t| t.name == n),
         ),
     };
-    let next = trgs.iter().map(|t| t.number.max(t.issued)).max().unwrap_or(0) + 1;
-    let at = trgs.iter().position(|t| t.name == name && t.library == library);
+    let next = trgs
+        .iter()
+        .map(|t| t.number.max(t.issued))
+        .max()
+        .unwrap_or(0)
+        + 1;
+    let at = trgs
+        .iter()
+        .position(|t| t.name == name && t.library == library);
     if at.is_some() && !new.replace {
-        return Err(refuse(op::ADD, Refusal::Exists, format!("trigger {name} in library {library} is already on file {}", desc.name())));
+        return Err(refuse(
+            op::ADD,
+            Refusal::Exists,
+            format!(
+                "trigger {name} in library {library} is already on file {}",
+                desc.name()
+            ),
+        ));
     }
     if at.is_none() && trgs.len() >= MAX_TRIGGERS {
-        return Err(refuse(op::ADD, Refusal::TooMany, format!("file {} has {MAX_TRIGGERS} triggers", desc.name())));
+        return Err(refuse(
+            op::ADD,
+            Refusal::TooMany,
+            format!("file {} has {MAX_TRIGGERS} triggers", desc.name()),
+        ));
     }
     let mut t = Trigger::new(&name, library, new.time, new.event, new.program);
     t.alwrepchg = new.alwrepchg;
@@ -203,7 +238,9 @@ impl Pick {
     fn takes(&self, t: &Trigger) -> bool {
         match self {
             Self::Named(n, lib) => t.name == *n && lib.is_none_or(|l| l == t.library),
-            Self::When(time, event) => time.is_none_or(|x| x == t.time) && event.is_none_or(|e| e == t.event),
+            Self::When(time, event) => {
+                time.is_none_or(|x| x == t.time) && event.is_none_or(|e| e == t.event)
+            }
         }
     }
 }
@@ -216,8 +253,16 @@ pub fn remove(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, now: u64) -> Resul
     let (gone, kept): (Vec<Trigger>, Vec<Trigger>) = trgs.into_iter().partition(|t| pick.takes(t));
     if gone.is_empty() {
         return Err(match pick {
-            Pick::Named(n, _) => refuse(op::REMOVE, Refusal::NotFound, format!("trigger {n} is not on file {}", desc.name())),
-            Pick::When(..) => refuse(op::REMOVE, Refusal::NoneThere, format!("file {} has no trigger at that time and event", desc.name())),
+            Pick::Named(n, _) => refuse(
+                op::REMOVE,
+                Refusal::NotFound,
+                format!("trigger {n} is not on file {}", desc.name()),
+            ),
+            Pick::When(..) => refuse(
+                op::REMOVE,
+                Refusal::NoneThere,
+                format!("file {} has no trigger at that time and event", desc.name()),
+            ),
         });
     }
     store(txn, file, &kept, now)?;
@@ -226,7 +271,13 @@ pub fn remove(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, now: u64) -> Resul
 
 /// `CHGPFTRG STATE`: enable or disable the triggers `pick` names; how
 /// many.
-pub fn set_state(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, enabled: bool, now: u64) -> Result<usize> {
+pub fn set_state(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    pick: &Pick,
+    enabled: bool,
+    now: u64,
+) -> Result<usize> {
     let desc = physical(txn, file, op::CHANGE)?;
     let mut trgs = list(txn, file)?;
     let mut n = 0;
@@ -236,7 +287,11 @@ pub fn set_state(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, enabled: bool, 
     }
     if n == 0 {
         if let Pick::Named(name, _) = pick {
-            return Err(refuse(op::CHANGE, Refusal::NotFound, format!("trigger {name} is not on file {}", desc.name())));
+            return Err(refuse(
+                op::CHANGE,
+                Refusal::NotFound,
+                format!("trigger {name} is not on file {}", desc.name()),
+            ));
         }
         return Ok(0);
     }

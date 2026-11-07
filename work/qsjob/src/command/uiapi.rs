@@ -174,7 +174,10 @@ pub fn display(host: &Host, r: &Resolved) -> Result<String, Fail> {
     };
     let shown = e.show_help(&mut term, &[format!("{lib}/{doc}/{module}")], false, true);
     if shown == Some(false) {
-        return Err(Fail::new("CPF6E3B", format!("No help module {module} in {doc}.")));
+        return Err(Fail::new(
+            "CPF6E3B",
+            format!("No help module {module} in {doc}."),
+        ));
     }
     Ok(String::new())
 }

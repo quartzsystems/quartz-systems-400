@@ -15,7 +15,7 @@ use rpgsqlpre::scan::{self, Kind as TokKind, Tok};
 
 use super::xref::ebcdic_key;
 use crate::compile::Compiled;
-use crate::files::{ExtFiles, ExtField};
+use crate::files::{ExtField, ExtFiles};
 use crate::syms::Kind;
 use crate::types::Ty;
 
@@ -54,16 +54,125 @@ struct Xref<'a> {
 
 /// SQL words that are not names.
 const KEYWORDS: &[&str] = &[
-    "SELECT", "FROM", "WHERE", "ORDER", "BY", "GROUP", "HAVING", "INTO", "VALUES", "SET", "UPDATE", "DELETE", "INSERT", "AND",
-    "OR", "NOT", "IN", "LIKE", "BETWEEN", "IS", "NULL", "AS", "DESC", "ASC", "JOIN", "ON", "INNER", "LEFT", "RIGHT", "OUTER",
-    "FULL", "CROSS", "CASE", "WHEN", "THEN", "ELSE", "END", "DISTINCT", "FOR", "OF", "CURRENT", "ROWS", "ROW", "FETCH",
-    "FIRST", "ONLY", "WITH", "HOLD", "CURSOR", "DECLARE", "SCROLL", "OPEN", "CLOSE", "PREPARE", "EXECUTE", "IMMEDIATE",
-    "USING", "DESCRIPTOR", "DESCRIBE", "INPUT", "COMMIT", "ROLLBACK", "GET", "DIAGNOSTICS", "CONDITION", "NEXT", "PRIOR",
-    "LAST", "RELATIVE", "BEFORE", "AFTER", "ABSOLUTE", "CONCAT", "ALL", "UNION", "EXCEPT", "INTERSECT", "EXISTS", "ANY",
-    "SOME", "INDICATOR", "INT", "INTEGER", "SMALLINT", "BIGINT", "DECIMAL", "DEC", "NUMERIC", "CHAR", "CHARACTER",
-    "VARCHAR", "DATE", "TIME", "TIMESTAMP", "FLOAT", "DOUBLE", "REAL", "WORK", "HOLD", "OPTIMIZE", "READ", "UPDATE",
-    "DEFAULT", "TRUE", "FALSE", "LIMIT", "OFFSET", "WHENEVER", "SQLERROR", "SQLWARNING", "FOUND", "GO", "TO", "GOTO",
-    "CONTINUE", "OPTION", "INCLUDE", "NAMES", "LABELS",
+    "SELECT",
+    "FROM",
+    "WHERE",
+    "ORDER",
+    "BY",
+    "GROUP",
+    "HAVING",
+    "INTO",
+    "VALUES",
+    "SET",
+    "UPDATE",
+    "DELETE",
+    "INSERT",
+    "AND",
+    "OR",
+    "NOT",
+    "IN",
+    "LIKE",
+    "BETWEEN",
+    "IS",
+    "NULL",
+    "AS",
+    "DESC",
+    "ASC",
+    "JOIN",
+    "ON",
+    "INNER",
+    "LEFT",
+    "RIGHT",
+    "OUTER",
+    "FULL",
+    "CROSS",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+    "DISTINCT",
+    "FOR",
+    "OF",
+    "CURRENT",
+    "ROWS",
+    "ROW",
+    "FETCH",
+    "FIRST",
+    "ONLY",
+    "WITH",
+    "HOLD",
+    "CURSOR",
+    "DECLARE",
+    "SCROLL",
+    "OPEN",
+    "CLOSE",
+    "PREPARE",
+    "EXECUTE",
+    "IMMEDIATE",
+    "USING",
+    "DESCRIPTOR",
+    "DESCRIBE",
+    "INPUT",
+    "COMMIT",
+    "ROLLBACK",
+    "GET",
+    "DIAGNOSTICS",
+    "CONDITION",
+    "NEXT",
+    "PRIOR",
+    "LAST",
+    "RELATIVE",
+    "BEFORE",
+    "AFTER",
+    "ABSOLUTE",
+    "CONCAT",
+    "ALL",
+    "UNION",
+    "EXCEPT",
+    "INTERSECT",
+    "EXISTS",
+    "ANY",
+    "SOME",
+    "INDICATOR",
+    "INT",
+    "INTEGER",
+    "SMALLINT",
+    "BIGINT",
+    "DECIMAL",
+    "DEC",
+    "NUMERIC",
+    "CHAR",
+    "CHARACTER",
+    "VARCHAR",
+    "DATE",
+    "TIME",
+    "TIMESTAMP",
+    "FLOAT",
+    "DOUBLE",
+    "REAL",
+    "WORK",
+    "HOLD",
+    "OPTIMIZE",
+    "READ",
+    "UPDATE",
+    "DEFAULT",
+    "TRUE",
+    "FALSE",
+    "LIMIT",
+    "OFFSET",
+    "WHENEVER",
+    "SQLERROR",
+    "SQLWARNING",
+    "FOUND",
+    "GO",
+    "TO",
+    "GOTO",
+    "CONTINUE",
+    "OPTION",
+    "INCLUDE",
+    "NAMES",
+    "LABELS",
 ];
 
 fn keyword(w: &str) -> bool {
@@ -134,7 +243,14 @@ fn const_type(e: Option<&Expr>) -> String {
 }
 
 impl Xref<'_> {
-    fn add(&mut self, name: &str, define: Option<u32>, attr: String, what: What, qual: &str) -> usize {
+    fn add(
+        &mut self,
+        name: &str,
+        define: Option<u32>,
+        attr: String,
+        what: What,
+        qual: &str,
+    ) -> usize {
         self.entries.push(Entry {
             name: name.to_ascii_uppercase(),
             define,
@@ -153,24 +269,42 @@ impl Xref<'_> {
     /// The program's definitions in a scope; `proc` names the
     /// procedure they are in.
     fn defs(&mut self, defs: &[Def], scope: usize, proc: &str, consts: bool) {
-        let where_ = if proc.is_empty() { String::new() } else { format!(" IN RPG PROCEDURE {proc}") };
+        let where_ = if proc.is_empty() {
+            String::new()
+        } else {
+            format!(" IN RPG PROCEDURE {proc}")
+        };
         for d in defs {
             let line = self.rec(d.at.line);
             let name = d.name.to_ascii_uppercase();
             if name.is_empty() || name == "*N" {
                 continue;
             }
-            let sym = self.c.table.find(scope, &name).map(|id| &self.c.table.syms[id]);
+            let sym = self
+                .c
+                .table
+                .find(scope, &name)
+                .map(|id| &self.c.table.syms[id]);
             match d.kind {
                 DefKind::Pr => {
                     self.add(&name, Some(line), String::new(), What::Rpg(scope), "");
                 }
                 DefKind::Const => {
                     let attr = format!("{} CONSTANT{where_}", const_type(d.value.as_ref()));
-                    self.add(&name, Some(line), attr.trim_start().to_string(), What::Rpg(scope), "");
+                    self.add(
+                        &name,
+                        Some(line),
+                        attr.trim_start().to_string(),
+                        What::Rpg(scope),
+                        "",
+                    );
                 }
                 DefKind::Ds => {
-                    let named: Vec<&Def> = d.children.iter().filter(|s| !s.name.is_empty() && s.name != "*N").collect();
+                    let named: Vec<&Def> = d
+                        .children
+                        .iter()
+                        .filter(|s| !s.name.is_empty() && s.name != "*N")
+                        .collect();
                     let dim = sym.map_or(0, |s| s.dim);
                     let attr = if named.is_empty() {
                         let len = sym.map_or(0, |s| s.ty.size(&|i| self.c.table.ds_len(i)));
@@ -180,16 +314,32 @@ impl Xref<'_> {
                     } else {
                         "STRUCTURE".into()
                     };
-                    self.add(&name, Some(line), format!("{attr}{where_}"), What::Rpg(scope), "");
+                    self.add(
+                        &name,
+                        Some(line),
+                        format!("{attr}{where_}"),
+                        What::Rpg(scope),
+                        "",
+                    );
                     let di = match sym.map(|s| &s.kind) {
                         Some(Some(Kind::Ds(di))) => Some(*di),
                         _ => None,
                     };
                     for s in named {
                         let sname = s.name.to_ascii_uppercase();
-                        let ty = di.and_then(|di| self.c.table.subfield(di, &sname)).map(|id| self.c.table.syms[id].clone());
-                        let attr = ty.as_ref().map_or_else(String::new, |t| array(t.dim, &host_type(&t.ty)));
-                        self.add(&sname, Some(self.rec(s.at.line)), format!("{attr} IN {name}"), What::Rpg(scope), &name);
+                        let ty = di
+                            .and_then(|di| self.c.table.subfield(di, &sname))
+                            .map(|id| self.c.table.syms[id].clone());
+                        let attr = ty
+                            .as_ref()
+                            .map_or_else(String::new, |t| array(t.dim, &host_type(&t.ty)));
+                        self.add(
+                            &sname,
+                            Some(self.rec(s.at.line)),
+                            format!("{attr} IN {name}"),
+                            What::Rpg(scope),
+                            &name,
+                        );
                     }
                 }
                 DefKind::Standalone | DefKind::Parm => {
@@ -198,7 +348,11 @@ impl Xref<'_> {
                     if ty.is_empty() {
                         continue;
                     }
-                    let constant = if consts && d.kw("CONST").is_some() { " CONSTANT" } else { "" };
+                    let constant = if consts && d.kw("CONST").is_some() {
+                        " CONSTANT"
+                    } else {
+                        ""
+                    };
                     let attr = format!("{}{constant}{where_}", array(s.dim, &ty));
                     self.add(&name, Some(line), attr, What::Rpg(scope), "");
                 }
@@ -218,7 +372,11 @@ impl Xref<'_> {
                 for x in &fm.fields {
                     let name = crate::extfiles::prefixed(&x.name, f.prefix.as_ref());
                     let scope = What::Rpg(f.scope);
-                    if self.entries.iter().any(|e| e.name == name && e.what == scope) {
+                    if self
+                        .entries
+                        .iter()
+                        .any(|e| e.name == name && e.what == scope)
+                    {
                         continue;
                     }
                     // A binary field of a file lists as DECIMAL.
@@ -241,7 +399,9 @@ impl Xref<'_> {
         };
         let found = |e: &Entry, s: usize| matches!(e.what, What::Rpg(x) if x == s);
         let pick = |want: &str, qual: &str, s: usize| {
-            self.entries.iter().position(|e| e.name == want && e.qual == qual && found(e, s))
+            self.entries
+                .iter()
+                .position(|e| e.name == want && e.qual == qual && found(e, s))
         };
         let at = match &sub {
             Some(f) => pick(f, &base, scope).or_else(|| pick(f, &base, 0)),
@@ -251,9 +411,11 @@ impl Xref<'_> {
         match at {
             Some(i) => self.entries[i].refs.push(r),
             None => {
-                let i = self.entries.iter().position(|e| e.name == up && e.what == What::Undefined).unwrap_or_else(|| {
-                    self.add(&up, None, String::new(), What::Undefined, "")
-                });
+                let i = self
+                    .entries
+                    .iter()
+                    .position(|e| e.name == up && e.what == What::Undefined)
+                    .unwrap_or_else(|| self.add(&up, None, String::new(), What::Undefined, ""));
                 self.entries[i].refs.push(r);
             }
         }
@@ -263,7 +425,11 @@ impl Xref<'_> {
     fn named(&mut self, name: &str, what: What, attr: &str, line: u32) {
         let up = name.to_ascii_uppercase();
         let r = self.rec(line);
-        let i = self.entries.iter().position(|e| e.name == up && e.what == what).unwrap_or_else(|| self.add(&up, None, attr.into(), what, ""));
+        let i = self
+            .entries
+            .iter()
+            .position(|e| e.name == up && e.what == what)
+            .unwrap_or_else(|| self.add(&up, None, attr.into(), what, ""));
         self.entries[i].refs.push(r);
     }
 
@@ -272,12 +438,20 @@ impl Xref<'_> {
     fn column(&mut self, name: &str, qual: &str, line: u32) {
         let r = self.rec(line);
         let i = if qual.is_empty() {
-            self.entries.iter().position(|e| e.name == name && e.what == What::Column)
+            self.entries
+                .iter()
+                .position(|e| e.name == name && e.what == What::Column)
         } else {
-            self.entries.iter().position(|e| e.name == name && e.what == What::Column && e.qual == qual)
+            self.entries
+                .iter()
+                .position(|e| e.name == name && e.what == What::Column && e.qual == qual)
         };
         let i = i.unwrap_or_else(|| {
-            let attr = if qual.is_empty() { "COLUMN".to_string() } else { format!("COLUMN IN {qual}") };
+            let attr = if qual.is_empty() {
+                "COLUMN".to_string()
+            } else {
+                format!("COLUMN IN {qual}")
+            };
             self.add(name, None, attr, What::Column, qual)
         });
         self.entries[i].refs.push(r);
@@ -288,22 +462,48 @@ impl Xref<'_> {
         if self.described.iter().any(|t| t == table) {
             return;
         }
-        let Some(f) = ext.describe(table, "*LIBL") else { return };
+        let Some(f) = ext.describe(table, "*LIBL") else {
+            return;
+        };
         self.described.push(table.to_string());
         let r = self.rec(line);
         if let Some(fm) = f.formats.first() {
             for x in &fm.fields {
-                self.add(&x.name, Some(r), format!("{} IN {table}", column_type(x)), What::Described, table);
+                self.add(
+                    &x.name,
+                    Some(r),
+                    format!("{} IN {table}", column_type(x)),
+                    What::Described,
+                    table,
+                );
             }
         }
     }
 
     /// One statement's names.
-    fn statement(&mut self, ext: &mut dyn ExtFiles, src: &rpgsqlpre::Source, ok: bool, syntax: bool) {
+    fn statement(
+        &mut self,
+        ext: &mut dyn ExtFiles,
+        src: &rpgsqlpre::Source,
+        ok: bool,
+        syntax: bool,
+    ) {
         let toks = scan::tokens(&src.text);
         // A fixed-form statement refers from its first line.
-        let fixed = !self.c.read.lines.iter().find(|l| l.no == src.line).is_some_and(|l| l.fully_free || l.class == rpgfront::reader::Class::Free);
-        let line = |t: &Tok| if fixed { src.line } else { src.line + scan::line_of(&src.text, t.start) };
+        let fixed = !self
+            .c
+            .read
+            .lines
+            .iter()
+            .find(|l| l.no == src.line)
+            .is_some_and(|l| l.fully_free || l.class == rpgfront::reader::Class::Free);
+        let line = |t: &Tok| {
+            if fixed {
+                src.line
+            } else {
+                src.line + scan::line_of(&src.text, t.start)
+            }
+        };
         let word = |i: usize| toks.get(i).and_then(Tok::word).unwrap_or("");
         let verb = word(0).to_string();
         let mut skip = vec![false; toks.len()];
@@ -322,7 +522,9 @@ impl Xref<'_> {
                             .entries
                             .iter()
                             .position(|e| e.name == label && e.what == What::Label)
-                            .unwrap_or_else(|| self.add(&label, define, "LABEL".into(), What::Label, ""));
+                            .unwrap_or_else(|| {
+                                self.add(&label, define, "LABEL".into(), What::Label, "")
+                            });
                         self.entries[k].refs.push(r);
                     }
                 }
@@ -332,7 +534,10 @@ impl Xref<'_> {
         }
         // A statement that is not one: its host variables alone (one in
         // error is read up to the error).
-        let known = ["SELECT", "INSERT", "UPDATE", "DELETE", "VALUES", "SET", "DECLARE", "OPEN", "FETCH", "CLOSE", "PREPARE", "EXECUTE", "DESCRIBE", "GET"];
+        let known = [
+            "SELECT", "INSERT", "UPDATE", "DELETE", "VALUES", "SET", "DECLARE", "OPEN", "FETCH",
+            "CLOSE", "PREPARE", "EXECUTE", "DESCRIBE", "GET",
+        ];
         if syntax && !known.contains(&verb.as_str()) {
             for t in &toks {
                 if let TokKind::Host(h) = &t.kind {
@@ -367,11 +572,20 @@ impl Xref<'_> {
                 }
             } else if (matches!(verb.as_str(), "OPEN" | "CLOSE") && i == 1)
                 || (prev == "OF" && i >= 2 && word(i - 2) == "CURRENT")
-                || (verb == "FETCH" && i >= 1 && !keyword(w) && !w.is_empty() && !w.starts_with(|c: char| c.is_ascii_digit()) && !matches!(toks[i].kind, TokKind::Host(_)) && toks.get(i.wrapping_sub(1)).is_some_and(|t| !t.sym('.')) && cursor_pos(&toks) == Some(i))
+                || (verb == "FETCH"
+                    && i >= 1
+                    && !keyword(w)
+                    && !w.is_empty()
+                    && !w.starts_with(|c: char| c.is_ascii_digit())
+                    && !matches!(toks[i].kind, TokKind::Host(_))
+                    && toks.get(i.wrapping_sub(1)).is_some_and(|t| !t.sym('.'))
+                    && cursor_pos(&toks) == Some(i))
             {
                 self.named(w, What::Cursor, "CURSOR", line(&toks[i]));
                 skip[i] = true;
-            } else if (matches!(verb.as_str(), "PREPARE" | "DESCRIBE") && i == stmt_name_at(&toks)) || (verb == "EXECUTE" && i == 1 && w != "IMMEDIATE") {
+            } else if (matches!(verb.as_str(), "PREPARE" | "DESCRIBE") && i == stmt_name_at(&toks))
+                || (verb == "EXECUTE" && i == 1 && w != "IMMEDIATE")
+            {
                 self.named(w, What::Statement, "STATEMENT", line(&toks[i]));
                 skip[i] = true;
             }
@@ -388,7 +602,11 @@ impl Xref<'_> {
         // Tables and their correlation names.
         for k in 0..toks.len() {
             let w = word(k);
-            let after_from = k > 0 && (toks[k - 1].is("FROM") || toks[k - 1].is("JOIN") || (toks[k - 1].is("INTO") && verb == "INSERT") || (toks[k - 1].is("UPDATE") && k == 1));
+            let after_from = k > 0
+                && (toks[k - 1].is("FROM")
+                    || toks[k - 1].is("JOIN")
+                    || (toks[k - 1].is("INTO") && verb == "INSERT")
+                    || (toks[k - 1].is("UPDATE") && k == 1));
             let in_list = k > 0 && toks[k - 1].sym(',') && from_list(&toks, k);
             if (after_from || in_list) && !w.is_empty() && !keyword(w) && !skip[k] {
                 tables.push((w.to_string(), line(&toks[k])));
@@ -448,19 +666,34 @@ impl Xref<'_> {
 
 /// An array's type.
 fn array(dim: u32, ty: &str) -> String {
-    if dim > 0 { format!("ARRAY({dim}) {ty}") } else { ty.to_string() }
+    if dim > 0 {
+        format!("ARRAY({dim}) {ty}")
+    } else {
+        ty.to_string()
+    }
 }
 
 /// The token of `FETCH`'s cursor: the word before `INTO` or `USING`
 /// or the last word, after any orientation.
 fn cursor_pos(toks: &[Tok]) -> Option<usize> {
-    let end = toks.iter().position(|t| t.is("INTO") || t.is("USING") || t.is("FOR")).unwrap_or(toks.len());
-    (1..end).rev().find(|&i| toks[i].word().is_some_and(|w| !keyword(w) && !w.starts_with(|c: char| c.is_ascii_digit())))
+    let end = toks
+        .iter()
+        .position(|t| t.is("INTO") || t.is("USING") || t.is("FOR"))
+        .unwrap_or(toks.len());
+    (1..end).rev().find(|&i| {
+        toks[i]
+            .word()
+            .is_some_and(|w| !keyword(w) && !w.starts_with(|c: char| c.is_ascii_digit()))
+    })
 }
 
 /// `PREPARE s` and `DESCRIBE [INPUT] s`: the statement's token.
 fn stmt_name_at(toks: &[Tok]) -> usize {
-    if toks.get(1).is_some_and(|t| t.is("INPUT")) { 2 } else { 1 }
+    if toks.get(1).is_some_and(|t| t.is("INPUT")) {
+        2
+    } else {
+        1
+    }
 }
 
 /// Whether token `k`, after a comma, is in a `FROM` list.
@@ -502,7 +735,10 @@ fn select_lists(toks: &[Tok]) -> Vec<bool> {
             inside = true;
             continue;
         }
-        if inside && (t.is("FROM") || t.is("INTO")) && stack.last().is_some_and(|(d, _)| *d == depth) {
+        if inside
+            && (t.is("FROM") || t.is("INTO"))
+            && stack.last().is_some_and(|(d, _)| *d == depth)
+        {
             inside = false;
         }
         out[k] = inside;
@@ -512,15 +748,29 @@ fn select_lists(toks: &[Tok]) -> Vec<bool> {
 
 /// The line of the `TAG` that defines a label.
 fn tag_line(c: &Compiled, label: &str) -> Option<u32> {
-    let calcs = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter()));
+    let calcs = c
+        .module
+        .calcs
+        .iter()
+        .chain(c.module.procs.iter().flat_map(|p| p.calcs.iter()));
     calcs
         .filter(|s| s.op.code == "TAG")
-        .find(|s| s.op.f1.first().and_then(|e| e.name()).is_some_and(|n| n.eq_ignore_ascii_case(label)))
+        .find(|s| {
+            s.op.f1
+                .first()
+                .and_then(|e| e.name())
+                .is_some_and(|n| n.eq_ignore_ascii_case(label))
+        })
         .map(|s| s.at.line)
 }
 
 /// The cross-reference of a precompile.
-pub(crate) fn entries(c: &Compiled, p: &rpgsqlpre::Precompiled, ext: &mut dyn ExtFiles, record_of: &dyn Fn(u32) -> u32) -> Vec<XrefEntry> {
+pub(crate) fn entries(
+    c: &Compiled,
+    p: &rpgsqlpre::Precompiled,
+    ext: &mut dyn ExtFiles,
+    record_of: &dyn Fn(u32) -> u32,
+) -> Vec<XrefEntry> {
     let mut x = Xref {
         c,
         entries: Vec::new(),
@@ -532,7 +782,13 @@ pub(crate) fn entries(c: &Compiled, p: &rpgsqlpre::Precompiled, ext: &mut dyn Ex
     x.ext_fields();
     for (k, p) in m.procs.iter().enumerate() {
         let name = p.name.to_ascii_uppercase();
-        x.add(&name, Some(x.rec(p.at.line)), "RPG PROCEDURE".into(), What::Rpg(0), "");
+        x.add(
+            &name,
+            Some(x.rec(p.at.line)),
+            "RPG PROCEDURE".into(),
+            What::Rpg(0),
+            "",
+        );
         if let Some(pi) = &p.pi {
             x.defs(&pi.children, k + 1, &name, true);
         }
@@ -540,19 +796,37 @@ pub(crate) fn entries(c: &Compiled, p: &rpgsqlpre::Precompiled, ext: &mut dyn Ex
     }
     // The statements: cursor declarations first.
     let srcs = super::sqlgen::sources(c);
-    let bad: Vec<u32> = p.diags.iter().filter(|d| d.sev >= 20).map(|d| d.line).collect();
+    let bad: Vec<u32> = p
+        .diags
+        .iter()
+        .filter(|d| d.sev >= 20)
+        .map(|d| d.line)
+        .collect();
     let is_declare = |s: &rpgsqlpre::Source| {
         let up = s.text.to_ascii_uppercase();
-        up.split_whitespace().next() == Some("DECLARE") && up.split_whitespace().take(5).any(|w| w == "CURSOR")
+        up.split_whitespace().next() == Some("DECLARE")
+            && up.split_whitespace().take(5).any(|w| w == "CURSOR")
     };
-    let ordered: Vec<&rpgsqlpre::Source> = srcs.iter().filter(|s| is_declare(s)).chain(srcs.iter().filter(|s| !is_declare(s))).collect();
+    let ordered: Vec<&rpgsqlpre::Source> = srcs
+        .iter()
+        .filter(|s| is_declare(s))
+        .chain(srcs.iter().filter(|s| !is_declare(s)))
+        .collect();
     for s in ordered {
         let last = s.line + u32::try_from(s.text.matches('\n').count()).unwrap_or(0);
         let ok = !bad.iter().any(|l| *l >= s.line && *l <= last);
-        let syntax = p.diags.iter().any(|d| d.msgid == "SQL0104" && d.line >= s.line && d.line <= last);
+        let syntax = p
+            .diags
+            .iter()
+            .any(|d| d.msgid == "SQL0104" && d.line >= s.line && d.line <= last);
         x.statement(ext, s, ok, syntax);
     }
-    let mut v: Vec<(Vec<u8>, usize, Entry)> = x.entries.into_iter().enumerate().map(|(k, e)| (ebcdic_key(&e.name), k, e)).collect();
+    let mut v: Vec<(Vec<u8>, usize, Entry)> = x
+        .entries
+        .into_iter()
+        .enumerate()
+        .map(|(k, e)| (ebcdic_key(&e.name), k, e))
+        .collect();
     v.sort_by(|a, b| (&a.0, a.1).cmp(&(&b.0, b.1)));
     v.into_iter()
         .map(|(_, _, mut e)| {

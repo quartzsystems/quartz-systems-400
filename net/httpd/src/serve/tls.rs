@@ -40,9 +40,15 @@ pub fn config(
     app: ClientAuthMode,
 ) -> Result<Arc<ServerConfig>, String> {
     let off: Vec<Protocol> = spec.disabled.iter().filter_map(|d| protocol(d)).collect();
-    let keep: Vec<Protocol> = policy.protocols.iter().copied().filter(|p| !off.contains(p)).collect();
+    let keep: Vec<Protocol> = policy
+        .protocols
+        .iter()
+        .copied()
+        .filter(|p| !off.contains(p))
+        .collect();
     let p = policy.restricted_to(&keep);
-    server_config(identity, &p, client_auth(spec, app), roots).map_err(|e| format!("{}: {e}", spec.app_id))
+    server_config(identity, &p, client_auth(spec, app), roots)
+        .map_err(|e| format!("{}: {e}", spec.app_id))
 }
 
 #[cfg(test)]
@@ -53,9 +59,22 @@ mod tests {
     fn names() {
         assert_eq!(protocol("TLSv1.2"), Some(Protocol::Tls12));
         assert_eq!(protocol("SSLv3"), Some(Protocol::Ssl3));
-        let s = TlsSpec { app_id: "A".into(), disabled: Vec::new(), client_auth: Some(2) };
-        assert_eq!(client_auth(&s, ClientAuthMode::None), ClientAuthMode::Required);
-        let s = TlsSpec { client_auth: None, ..s };
-        assert_eq!(client_auth(&s, ClientAuthMode::Optional), ClientAuthMode::Optional);
+        let s = TlsSpec {
+            app_id: "A".into(),
+            disabled: Vec::new(),
+            client_auth: Some(2),
+        };
+        assert_eq!(
+            client_auth(&s, ClientAuthMode::None),
+            ClientAuthMode::Required
+        );
+        let s = TlsSpec {
+            client_auth: None,
+            ..s
+        };
+        assert_eq!(
+            client_auth(&s, ClientAuthMode::Optional),
+            ClientAuthMode::Optional
+        );
     }
 }

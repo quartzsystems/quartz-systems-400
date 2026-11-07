@@ -22,10 +22,18 @@ use tcpcfg::state::Snapshot;
 pub enum TcpOp {
     /// `STRTCP`: the configuration applied; the reply names the
     /// autostart servers when `strsvr`.
-    Start { strsvr: bool, strifc: bool, strip6: bool },
+    Start {
+        strsvr: bool,
+        strifc: bool,
+        strip6: bool,
+    },
     /// `ENDTCP`: the reply names the servers to end first when `endsvr`
     /// (`ending` true asks for the list only, before the stack ends).
-    End { immediate: bool, endsvr: bool, ending: bool },
+    End {
+        immediate: bool,
+        endsvr: bool,
+        ending: bool,
+    },
     /// `QTCPWRK`'s heartbeat: line and carrier changes.
     Tick,
     /// The status of TCP/IP, every interface and route.
@@ -43,7 +51,11 @@ pub enum TcpOp {
     /// Every server's autostart and attributes.
     Servers,
     /// Change one server's autostart (when given) and attributes.
-    SetServer { server: String, autostart: Option<bool>, bag: Vec<(String, String)> },
+    SetServer {
+        server: String,
+        autostart: Option<bool>,
+        bag: Vec<(String, String)>,
+    },
     /// What the kernel has against the configuration (`svc.tcp`).
     Report { what: String },
     /// `NETSTAT`'s views: `IFC`, `IFC6`, `RTE`, `RTE6`, `CNN`, `CNN6`,
@@ -70,7 +82,10 @@ wire_enum!(TcpOp {
 });
 
 /// A panel's data: variables and named lists of entries.
-pub type PanelData = (Vec<(String, String)>, Vec<(String, Vec<Vec<(String, String)>>)>);
+pub type PanelData = (
+    Vec<(String, String)>,
+    Vec<(String, Vec<Vec<(String, String)>>)>,
+);
 
 /// One server's autostart and attributes.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -83,23 +98,46 @@ pub struct ServerInfo {
     pub bag: Vec<(String, String)>,
 }
 
-wire_struct!(ServerInfo { server, autostart, bag });
+wire_struct!(ServerInfo {
+    server,
+    autostart,
+    bag
+});
 
 /// The answer to a [`TcpOp`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(missing_docs)] // one variant per kind of answer
 pub enum TcpReply {
     /// Done: the messages, and the servers the job is to start or end.
-    Done { notes: Vec<Note>, servers: Vec<String> },
+    Done {
+        notes: Vec<Note>,
+        servers: Vec<String>,
+    },
     /// Refused: the escape.
-    Failed { note: Note },
-    Snapshot { snap: Snapshot },
-    Panel { data: PanelData },
-    HostConfig { cfg: HostConfig },
-    PortRules { rules: Vec<PortRestriction> },
-    Services { table: ServicesTable },
-    Servers { list: Vec<ServerInfo> },
-    Lines { lines: Vec<String> },
+    Failed {
+        note: Note,
+    },
+    Snapshot {
+        snap: Snapshot,
+    },
+    Panel {
+        data: PanelData,
+    },
+    HostConfig {
+        cfg: HostConfig,
+    },
+    PortRules {
+        rules: Vec<PortRestriction>,
+    },
+    Services {
+        table: ServicesTable,
+    },
+    Servers {
+        list: Vec<ServerInfo>,
+    },
+    Lines {
+        lines: Vec<String>,
+    },
 }
 
 wire_enum!(TcpReply {
@@ -130,12 +168,32 @@ mod tests {
     #[test]
     fn round_trips() {
         for op in [
-            TcpOp::Start { strsvr: true, strifc: false, strip6: true },
-            TcpOp::End { immediate: true, endsvr: true, ending: false },
-            TcpOp::Panel { what: "IFC".into(), args: vec!["x".into()] },
-            TcpOp::SetServer { server: "*FTP".into(), autostart: Some(false), bag: vec![("PORT".into(), "21".into())] },
-            TcpOp::Netstat { what: "CNN5".into(), args: vec!["T|0.0.0.0:23|0.0.0.0:0".into()] },
-            TcpOp::EndCnn { key: "T|10.0.2.15:23|10.0.2.2:4000".into() },
+            TcpOp::Start {
+                strsvr: true,
+                strifc: false,
+                strip6: true,
+            },
+            TcpOp::End {
+                immediate: true,
+                endsvr: true,
+                ending: false,
+            },
+            TcpOp::Panel {
+                what: "IFC".into(),
+                args: vec!["x".into()],
+            },
+            TcpOp::SetServer {
+                server: "*FTP".into(),
+                autostart: Some(false),
+                bag: vec![("PORT".into(), "21".into())],
+            },
+            TcpOp::Netstat {
+                what: "CNN5".into(),
+                args: vec!["T|0.0.0.0:23|0.0.0.0:0".into()],
+            },
+            TcpOp::EndCnn {
+                key: "T|10.0.2.15:23|10.0.2.2:4000".into(),
+            },
         ] {
             assert_eq!(ipc::decode::<TcpOp>(&ipc::encode(&op)).unwrap(), op);
         }

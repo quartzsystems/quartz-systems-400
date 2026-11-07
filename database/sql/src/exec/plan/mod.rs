@@ -68,6 +68,11 @@ impl State {
         if self.joins.is_empty() {
             return None;
         }
-        Some(self.joins.iter().find(|m| **m != Method::NestedLoop).map_or('N', |m| m.code()))
+        Some(
+            self.joins
+                .iter()
+                .find(|m| **m != Method::NestedLoop)
+                .map_or('N', |m| m.code()),
+        )
     }
 }

@@ -666,7 +666,10 @@ impl Job {
     pub fn rclactgrp_eligible(&mut self) {
         let live: Vec<u32> = self.act.groups().map(|g| g.id).collect();
         let bases = self.act.reclaim_eligible();
-        let gone: Vec<u32> = live.into_iter().filter(|id| !self.act.groups().any(|g| g.id == *id)).collect();
+        let gone: Vec<u32> = live
+            .into_iter()
+            .filter(|id| !self.act.groups().any(|g| g.id == *id))
+            .collect();
         for id in gone {
             self.end_sql_group(id);
         }
@@ -758,7 +761,11 @@ impl Job {
     ) -> Result<u32, Cond> {
         // With no entry (a system API called at a command line) a
         // message to the current entry goes to the job itself.
-        let to = if matches!(to, QueueRef::Same) && self.act.frames.is_empty() { QueueRef::Ext } else { to };
+        let to = if matches!(to, QueueRef::Same) && self.act.frames.is_empty() {
+            QueueRef::Ext
+        } else {
+            to
+        };
         let target = self.queue_target(to)?;
         Ok(self.send_message_to(target, msgid, msgf, lib, data, msg_type))
     }

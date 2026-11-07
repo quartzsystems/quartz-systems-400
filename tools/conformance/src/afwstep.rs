@@ -29,7 +29,13 @@ const PREFIX: &str = "/qs400/accessweb";
 const USER: &str = "AFW153";
 const PASSWORD: &str = "AFW153PW";
 
-fn afw(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
+fn afw(
+    port: u16,
+    method: &str,
+    path: &str,
+    cookie: Option<&str>,
+    form: Option<&str>,
+) -> Result<Reply, String> {
     http_at(PREFIX, port, method, path, cookie, form)
 }
 
@@ -77,7 +83,10 @@ fn token(port: u16, path: &str, sid: &str) -> Result<String, String> {
 /// between.
 fn product(s: &mut Session) -> Result<(), String> {
     s.command("crtsavf FILE(QGPL/S153AFW)", CMD)?;
-    let saved = s.command("savlicpgm LICPGM(QS00AFW) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S153AFW)", CMD)?;
+    let saved = s.command(
+        "savlicpgm LICPGM(QS00AFW) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S153AFW)",
+        CMD,
+    )?;
     if saved.contains("CPF") {
         return Err(format!("SAVLICPGM QS00AFW: {saved}"));
     }
@@ -89,11 +98,18 @@ fn product(s: &mut Session) -> Result<(), String> {
     if !none.contains("TCP1A06") {
         return Err(format!("STRTCPSVR ACCESSWEB without QS00AFW:\n{none}"));
     }
-    let rst = s.command("rstlicpgm LICPGM(QS00AFW) DEV(*SAVF) SAVF(QGPL/S153AFW)", CMD)?;
+    let rst = s.command(
+        "rstlicpgm LICPGM(QS00AFW) DEV(*SAVF) SAVF(QGPL/S153AFW)",
+        CMD,
+    )?;
     if !rst.contains("CPC3D81") {
         return Err(format!("RSTLICPGM QS00AFW: {rst}"));
     }
-    for (o, t) in [("QZXWMSG", "*MSGF"), ("QZXWPOL", "*USRIDX"), ("QZXWPRF", "*USRIDX")] {
+    for (o, t) in [
+        ("QZXWMSG", "*MSGF"),
+        ("QZXWPOL", "*USRIDX"),
+        ("QZXWPRF", "*USRIDX"),
+    ] {
         let chk = s.command(&format!("chkobj OBJ(QUSRSYS/{o}) OBJTYPE({t})"), CMD)?;
         if chk.contains("CPF") {
             return Err(format!("{o} not restored: {chk}"));
@@ -106,20 +122,43 @@ fn product(s: &mut Session) -> Result<(), String> {
 fn preference(s: &mut Session, port: u16, sid: &str) -> Result<(), String> {
     let t = token(port, "/preferences?tab=home", sid)?;
     let form = format!("csrf={}&hl=compact&apply=Apply", enc(&t));
-    let r = afw(port, "POST", "/preferences?tab=home", Some(sid), Some(&form))?;
+    let r = afw(
+        port,
+        "POST",
+        "/preferences?tab=home",
+        Some(sid),
+        Some(&form),
+    )?;
     if r.status != 303 {
         let aut = s.command("dspobjaut OBJ(QUSRSYS/QZXWPRF) OBJTYPE(*USRIDX)", CMD)?;
-        return Err(format!("Preferences' Apply: {}\nthe store's authority:\n{aut}", message_row(&r.body)));
+        return Err(format!(
+            "Preferences' Apply: {}\nthe store's authority:\n{aut}",
+            message_row(&r.body)
+        ));
     }
     let back = afw(port, "GET", "/preferences?tab=home", Some(sid), None)?;
-    want(&back, 200, &["XWA0003", "value=\"compact\" checked"], "the preference kept")?;
+    want(
+        &back,
+        200,
+        &["XWA0003", "value=\"compact\" checked"],
+        "the preference kept",
+    )?;
     let home = afw(port, "GET", "/home", Some(sid), None)?;
     if home.body.contains("class=\"home\"") {
-        return Err(format!("the compact layout was not used:\n{}", home.brief()));
+        return Err(format!(
+            "the compact layout was not used:\n{}",
+            home.brief()
+        ));
     }
     let t = token(port, "/preferences?tab=home", sid)?;
     let form = format!("csrf={}&restore_defaults=Restore+defaults", enc(&t));
-    let r = afw(port, "POST", "/preferences?tab=home", Some(sid), Some(&form))?;
+    let r = afw(
+        port,
+        "POST",
+        "/preferences?tab=home",
+        Some(sid),
+        Some(&form),
+    )?;
     want(&r, 303, &[], "Restore defaults")
 }
 
@@ -127,7 +166,15 @@ fn preference(s: &mut Session, port: u16, sid: &str) -> Result<(), String> {
 fn policy(port: u16, sid: &str) -> Result<(), String> {
     let path = format!("/policies?p={USER}");
     let page = afw(port, "GET", &path, Some(sid), None)?;
-    want(&page, 200, &["<h1>Policies</h1>", &format!("Effective policies for {USER}")], "Policies")?;
+    want(
+        &page,
+        200,
+        &[
+            "<h1>Policies</h1>",
+            &format!("Effective policies for {USER}"),
+        ],
+        "Policies",
+    )?;
     let set = |v: &str| -> Result<(), String> {
         let t = token(port, &path, sid)?;
         let form = format!("csrf={}&p_signon_0={v}&apply=Apply", enc(&t));
@@ -156,7 +203,8 @@ impl Suite {
         let end = Instant::now() + Duration::from_secs(60);
         loop {
             let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(ACCESSWEB)", CMD)?;
-            if started.contains("TCP1A07") || (started.contains("TCP1A08") && Instant::now() > end) {
+            if started.contains("TCP1A07") || (started.contains("TCP1A08") && Instant::now() > end)
+            {
                 break;
             }
             if !started.contains("TCP1A08") {
@@ -166,23 +214,52 @@ impl Suite {
         }
         let plain = forward_port(self, GUEST, 2003)?;
         let page = afw(plain, "GET", "/signon", None, None)?;
-        want(&page, 200, &["QS/400 Access for Web", "name=\"password\""], "the sign-on page")?;
+        want(
+            &page,
+            200,
+            &["QS/400 Access for Web", "name=\"password\""],
+            "the sign-on page",
+        )?;
         let sid = sign_on(plain, "QSECOFR", SECOFR_PASSWORD)?;
         let home = afw(plain, "GET", "/home", Some(&sid), None)?;
-        want(&home, 200, &["<h1>My home page</h1>", "(<span class=\"mono\">QSECOFR</span>)"], "My home page")?;
-        let name = system_in(&home.body).ok_or_else(|| format!("no system name:\n{}", home.brief()))?;
+        want(
+            &home,
+            200,
+            &[
+                "<h1>My home page</h1>",
+                "(<span class=\"mono\">QSECOFR</span>)",
+            ],
+            "My home page",
+        )?;
+        let name =
+            system_in(&home.body).ok_or_else(|| format!("no system name:\n{}", home.brief()))?;
         let neta = s.command("DSPNETA", CMD)?;
         if !neta.contains(&name) {
             return Err(format!("My home page names {name}; DSPNETA:\n{neta}"));
         }
         preference(s, plain, &sid)?;
         policy(plain, &sid)?;
-        let forged = afw(plain, "POST", "/preferences", Some(&sid), Some("apply=Apply"))?;
-        want(&forged, 403, &["out of date"], "a POST without the form field")?;
+        let forged = afw(
+            plain,
+            "POST",
+            "/preferences",
+            Some(&sid),
+            Some("apply=Apply"),
+        )?;
+        want(
+            &forged,
+            403,
+            &["out of date"],
+            "a POST without the form field",
+        )?;
         let off = afw(plain, "GET", "/signoff", Some(&sid), None)?;
         want(&off, 303, &["Max-Age=0"], "sign-off")?;
         let after = afw(plain, "GET", "/home", Some(&sid), None)?;
-        if after.status != 303 || !after.header("Location").is_some_and(|l| l.ends_with("/signon")) {
+        if after.status != 303
+            || !after
+                .header("Location")
+                .is_some_and(|l| l.ends_with("/signon"))
+        {
             return Err(format!("the session outlived sign-off:\n{}", after.brief()));
         }
         // TLS on 2006: the certificate of QS400_HTTP_SERVER_ACCESSWEB,
@@ -191,16 +268,31 @@ impl Suite {
         let t = tls_at(secure, "GET", &format!("{PREFIX}/signon"), None, None)?;
         want(&t, 200, &["name=\"password\""], "the sign-on page over TLS")?;
         let form = format!("user=QSECOFR&password={}", enc(SECOFR_PASSWORD));
-        let ok = tls_at(secure, "POST", &format!("{PREFIX}/signon"), None, Some(&form))?;
+        let ok = tls_at(
+            secure,
+            "POST",
+            &format!("{PREFIX}/signon"),
+            None,
+            Some(&form),
+        )?;
         if ok.status != 303 {
             return Err(format!("signing on over TLS:\n{}", ok.brief()));
         }
-        let tsid = session_cookie(&ok).ok_or_else(|| format!("no session cookie over TLS:\n{}", ok.brief()))?;
+        let tsid = session_cookie(&ok)
+            .ok_or_else(|| format!("no session cookie over TLS:\n{}", ok.brief()))?;
         if !ok.head.contains("Secure") {
-            return Err(format!("the TLS session cookie is not Secure:\n{}", ok.brief()));
+            return Err(format!(
+                "the TLS session cookie is not Secure:\n{}",
+                ok.brief()
+            ));
         }
         let th = tls_at(secure, "GET", &format!("{PREFIX}/home"), Some(&tsid), None)?;
-        want(&th, 200, &["<h1>My home page</h1>"], "My home page over TLS")?;
+        want(
+            &th,
+            200,
+            &["<h1>My home page</h1>"],
+            "My home page over TLS",
+        )?;
         let ended = s.command("ENDTCPSVR SERVER(*HTTP) HTTPSVR(ACCESSWEB)", CMD)?;
         if !ended.contains("TCP1A0A") {
             return Err(format!("ENDTCPSVR ACCESSWEB:\n{ended}"));
@@ -218,8 +310,14 @@ mod tests {
 
     #[test]
     fn page_fields() {
-        assert_eq!(csrf_in("<input type=\"hidden\" name=\"csrf\" value=\"ab12\">").as_deref(), Some("ab12"));
-        assert_eq!(system_in("System: <b>QSHQ400</b> &nbsp;").as_deref(), Some("QSHQ400"));
+        assert_eq!(
+            csrf_in("<input type=\"hidden\" name=\"csrf\" value=\"ab12\">").as_deref(),
+            Some("ab12")
+        );
+        assert_eq!(
+            system_in("System: <b>QSHQ400</b> &nbsp;").as_deref(),
+            Some("QSHQ400")
+        );
         assert_eq!(system_in("System: <b> </b>"), None);
     }
 }

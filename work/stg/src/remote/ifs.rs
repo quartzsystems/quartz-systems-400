@@ -460,6 +460,12 @@ impl IfsClient for RemoteIfs {
         reply_as!(self.call(IfsOp::OwnerLocks), OwnerLocks)
     }
     fn job_locks(&self, job: u32, user: &str) -> Result<Vec<(ObjKey, LockInfo)>> {
-        reply_as!(self.call(IfsOp::JobLocks { job, user: user.into() }), OwnerLocks)
+        reply_as!(
+            self.call(IfsOp::JobLocks {
+                job,
+                user: user.into()
+            }),
+            OwnerLocks
+        )
     }
 }

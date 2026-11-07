@@ -47,7 +47,12 @@ impl JobSpec {
     /// `QTFTP00001`).
     pub fn numbered(&self, n: u32) -> String {
         match self.name.find("nnn") {
-            Some(at) => format!("{}{:03}{}", &self.name[..at], n % 1000, &self.name[at + 3..]),
+            Some(at) => format!(
+                "{}{:03}{}",
+                &self.name[..at],
+                n % 1000,
+                &self.name[at + 3..]
+            ),
             None => self.name.to_string(),
         }
     }
@@ -113,7 +118,9 @@ impl ServerSpec {
 
 /// The entry for a special value (case does not matter).
 pub fn lookup(special: &str) -> Option<&'static ServerSpec> {
-    SPECS.iter().find(|s| s.special.eq_ignore_ascii_case(special.trim()))
+    SPECS
+        .iter()
+        .find(|s| s.special.eq_ignore_ascii_case(special.trim()))
 }
 
 /// The entry whose job `name` is (a numbered name matches its
@@ -155,11 +162,17 @@ mod tests {
     fn every_entry_is_sound() {
         let mut seen = Vec::new();
         for s in SPECS {
-            assert!(s.special.starts_with('*') && s.special.len() <= 10, "{}", s.special);
+            assert!(
+                s.special.starts_with('*') && s.special.len() <= 10,
+                "{}",
+                s.special
+            );
             assert!(!seen.contains(&s.special), "{} twice", s.special);
             seen.push(s.special);
             if s.readiness == Readiness::Built {
-                let l = s.listener().unwrap_or_else(|| panic!("{} has no listener", s.special));
+                let l = s
+                    .listener()
+                    .unwrap_or_else(|| panic!("{} has no listener", s.special));
                 assert!(!l.role.is_empty(), "{} listener has no role", s.special);
             }
             for j in s.jobs {
@@ -169,7 +182,10 @@ mod tests {
         }
         // Every standard server of the configuration has an entry.
         for (special, _) in tcpcfg::model::svr::STANDARD {
-            assert!(lookup(special).is_some(), "{special} is not in the registry");
+            assert!(
+                lookup(special).is_some(),
+                "{special} is not in the registry"
+            );
         }
     }
 }

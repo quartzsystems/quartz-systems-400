@@ -25,7 +25,11 @@ pub fn mount_exec(dir: &Path, target: &str) -> Result<(), Errno> {
     let _ = fs::create_dir_all(target);
     mount_bind(dir, target)?;
     let _ = mount_change(target, MountPropagationFlags::PRIVATE);
-    mount_remount(target, MountFlags::BIND | MountFlags::NOSUID | MountFlags::NODEV, "")
+    mount_remount(
+        target,
+        MountFlags::BIND | MountFlags::NOSUID | MountFlags::NODEV,
+        "",
+    )
 }
 
 /// Unmount `target`, waiting for the filesystem to be written out.

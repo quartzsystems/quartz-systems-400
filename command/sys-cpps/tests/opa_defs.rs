@@ -85,7 +85,12 @@ fn values(w: &str) -> Vec<String> {
     w.get(34..)
         .unwrap_or("")
         .split_whitespace()
-        .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+        .filter(|t| {
+            *t != ">"
+                && !t
+                    .chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+        })
         .map(str::to_string)
         .collect()
 }
@@ -115,7 +120,10 @@ fn check_labels(name: &str, text: &str, keys: &[u8]) {
         .map(|r| label(r))
         .filter(|l| !ours.contains(l))
         .collect();
-    assert!(missing.is_empty(), "{name}: not shown {missing:?}\nours {ours:#?}");
+    assert!(
+        missing.is_empty(),
+        "{name}: not shown {missing:?}\nours {ours:#?}"
+    );
 }
 
 /// The options pub400's cleanup has, as the prompt override gives them.
@@ -126,7 +134,11 @@ const PUB400_CLNUP: &str = "ALWCLNUP(*YES) STRTIME('HH:MM:SS') USRMSG(31) SYSMSG
 #[test]
 fn chgclnup() {
     check("prompt-chgclnup", &format!("?CHGCLNUP {PUB400_CLNUP}"), &[]);
-    check_labels("prompt-chgclnup-f10", &format!("?CHGCLNUP {PUB400_CLNUP}"), &[10]);
+    check_labels(
+        "prompt-chgclnup-f10",
+        &format!("?CHGCLNUP {PUB400_CLNUP}"),
+        &[10],
+    );
 }
 
 #[test]
@@ -138,7 +150,11 @@ fn strclnup() {
 fn chgbckup() {
     check("prompt-chgbckup", "?CHGBCKUP", &[]);
     check("prompt-chgbckup-f10", "?CHGBCKUP BCKUPOPT(*DAILY)", &[0]);
-    check("prompt-chgbckup-f10-2", "?CHGBCKUP BCKUPOPT(*DAILY)", &[0, 8]);
+    check(
+        "prompt-chgbckup-f10-2",
+        "?CHGBCKUP BCKUPOPT(*DAILY)",
+        &[0, 8],
+    );
 }
 
 #[test]
@@ -151,11 +167,26 @@ fn runbckup_and_dspbckup() {
 #[test]
 fn where_they_run() {
     use sys_cpps::Site;
-    for c in ["CHGCLNUP", "STRCLNUP", "ENDCLNUP", "CHGBCKUP", "PRTSYSINF", "QSPMTOVR", "QSBCKUP"] {
-        assert_eq!(sys_cpps::entry(c).map(|e| e.site), Some(Site::Service), "{c}");
+    for c in [
+        "CHGCLNUP",
+        "STRCLNUP",
+        "ENDCLNUP",
+        "CHGBCKUP",
+        "PRTSYSINF",
+        "QSPMTOVR",
+        "QSBCKUP",
+    ] {
+        assert_eq!(
+            sys_cpps::entry(c).map(|e| e.site),
+            Some(Site::Service),
+            "{c}"
+        );
     }
     for c in ["QSMNSAVE", "QSMNRST", "RUNBCKUP", "DSPBCKUP", "DSPBCKSTS"] {
         assert_eq!(sys_cpps::entry(c).map(|e| e.site), Some(Site::Job), "{c}");
     }
-    assert!(sys_cpps::inventory::in_service_too("DSPBCKUP"), "DSPBCKUP's text is the service's");
+    assert!(
+        sys_cpps::inventory::in_service_too("DSPBCKUP"),
+        "DSPBCKUP's text is the service's"
+    );
 }

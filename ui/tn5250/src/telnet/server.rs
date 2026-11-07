@@ -234,7 +234,8 @@ impl Server {
         };
         let mut b = vec![OPT_NEW_ENVIRON];
         b.extend(env::encode(env::SEND, &[v]));
-        self.trace.push("> SB NEW-ENVIRON SEND USERVAR DEVNAME".into());
+        self.trace
+            .push("> SB NEW-ENVIRON SEND USERVAR DEVNAME".into());
         sub(&b)
     }
 

@@ -366,7 +366,10 @@ pub enum Error {
 /// `r` as the text of a `.qdx` file.
 pub fn to_text(r: &Request) -> String {
     let t = match r {
-        Request::Download { system, download: d } => Transfer {
+        Request::Download {
+            system,
+            download: d,
+        } => Transfer {
             kind: Type::Table,
             direction: Direction::Download,
             system: system.clone(),
@@ -465,23 +468,33 @@ mod tests {
 
     #[test]
     fn reads_the_desktops_and_round_trips() {
-        let Request::Download { system, download } = from_text(DESKTOP).unwrap() else { panic!("a download") };
+        let Request::Download { system, download } = from_text(DESKTOP).unwrap() else {
+            panic!("a download")
+        };
         assert_eq!(system, "qs400.example.net");
         assert_eq!(download.options.format, Format::Tsv);
         assert_eq!(download.options.dates, Dates::Job);
-        assert!(matches!(&download.source, Source::Table { where_clause, .. } if where_clause == "STATUS = 'ACTIVE'"));
+        assert!(
+            matches!(&download.source, Source::Table { where_clause, .. } if where_clause == "STATUS = 'ACTIVE'")
+        );
         let r = Request::Upload {
             system: "QSHQ400".into(),
             upload: Upload {
                 file: "assets_br1.csv".into(),
                 schema: "HLINV".into(),
                 table: "ASSETS".into(),
-                mapping: vec![Map { target: "ASSET_TAG".into(), from: SourceColumn::Name("tag".into()) }],
+                mapping: vec![Map {
+                    target: "ASSET_TAG".into(),
+                    from: SourceColumn::Name("tag".into()),
+                }],
                 ..Upload::default()
             },
         };
         let text = to_text(&r);
-        assert!(text.starts_with("[qsaccess]\nkind = \"transfer\"\nversion = 2\n"), "{text}");
+        assert!(
+            text.starts_with("[qsaccess]\nkind = \"transfer\"\nversion = 2\n"),
+            "{text}"
+        );
         assert!(!text.to_ascii_lowercase().contains("password"));
         assert_eq!(from_text(&text).unwrap(), r);
     }
@@ -493,7 +506,10 @@ mod tests {
             from_text("[qsaccess]\nkind = \"display\"\nversion = 1\n[transfer]\n").unwrap_err(),
             Error::Kind("display".into())
         );
-        assert_eq!(from_text("[qsaccess]\nkind = \"transfer\"\nversion = 3\n[transfer]\n").unwrap_err(), Error::Newer(3));
+        assert_eq!(
+            from_text("[qsaccess]\nkind = \"transfer\"\nversion = 3\n[transfer]\n").unwrap_err(),
+            Error::Newer(3)
+        );
         let files = "[qsaccess]\nkind = \"transfer\"\nversion = 2\n[transfer]\ntype = \"files\"\nsystem = \"S\"\nlocal = [\"a\"]\nremote = \"/home\"\n";
         assert_eq!(from_text(files).unwrap_err(), Error::Files);
     }

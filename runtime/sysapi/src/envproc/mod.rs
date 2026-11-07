@@ -131,7 +131,8 @@ thread_local! {
 }
 
 fn job_env() -> MutexGuard<'static, JobEnv> {
-    JOB.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    JOB.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// Give the job its system-level variables' keeper.
@@ -196,11 +197,17 @@ pub fn change(vars: &mut Vec<Var>, var: Var, mode: SetMode, level: &str) -> Resu
     match (at, mode) {
         (Some(_), SetMode::Add) => Err(EnvFail::new(
             "CPFA980",
-            format!("An environment variable {} is already at level {level}.", var.name),
+            format!(
+                "An environment variable {} is already at level {level}.",
+                var.name
+            ),
         )),
         (None, SetMode::Change) => Err(EnvFail::new(
             "CPFA981",
-            format!("There is no environment variable {} at level {level}.", var.name),
+            format!(
+                "There is no environment variable {} at level {level}.",
+                var.name
+            ),
         )),
         (Some(i), _) => {
             vars[i] = var;
@@ -273,13 +280,17 @@ mod tests {
         };
         change(&mut v, var("A", "1"), SetMode::Add, "*JOB").unwrap();
         assert_eq!(
-            change(&mut v, var("A", "2"), SetMode::Add, "*JOB").unwrap_err().msgid,
+            change(&mut v, var("A", "2"), SetMode::Add, "*JOB")
+                .unwrap_err()
+                .msgid,
             "CPFA980"
         );
         change(&mut v, var("A", "2"), SetMode::Change, "*JOB").unwrap();
         assert_eq!(v[0].value.as_deref(), Some("2"));
         assert_eq!(
-            change(&mut v, var("B", "2"), SetMode::Change, "*JOB").unwrap_err().msgid,
+            change(&mut v, var("B", "2"), SetMode::Change, "*JOB")
+                .unwrap_err()
+                .msgid,
             "CPFA981"
         );
         change(&mut v, var("B", "3"), SetMode::Put, "*JOB").unwrap();
@@ -310,7 +321,10 @@ mod tests {
             ccsid: 37,
         }]));
         install_system(Rc::new(sys));
-        assert_eq!(job_var("QIBM_MULTI_THREADED").unwrap().value.as_deref(), Some("Y"));
+        assert_eq!(
+            job_var("QIBM_MULTI_THREADED").unwrap().value.as_deref(),
+            Some("Y")
+        );
         set_job(
             Var {
                 name: "A".into(),
@@ -324,6 +338,13 @@ mod tests {
         remove_job("A").unwrap();
         assert_eq!(remove_job("A").unwrap_err().msgid, "CPFA981");
         // The system's copy is the system's: the job's change stays in the job.
-        assert!(system().unwrap().list().unwrap().iter().all(|v| v.name != "A"));
+        assert!(
+            system()
+                .unwrap()
+                .list()
+                .unwrap()
+                .iter()
+                .all(|v| v.name != "A")
+        );
     }
 }

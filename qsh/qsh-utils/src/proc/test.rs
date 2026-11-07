@@ -200,7 +200,8 @@ impl P<'_, '_, '_, '_> {
 fn int(s: &str) -> Result<i64, String> {
     let t = s.trim();
     let t = t.strip_prefix('+').unwrap_or(t);
-    t.parse::<i64>().map_err(|_| format!("{s} is not a number."))
+    t.parse::<i64>()
+        .map_err(|_| format!("{s} is not a number."))
 }
 
 /// Run `test`.

@@ -71,7 +71,10 @@ pub fn dspsysval(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
     d.set("SVLABEL", label(&name));
     let rows = pack(&elems, 51, 2);
     for i in 0..4 {
-        d.set(&format!("SVVAL{}", i + 1), rows.get(i).map_or("", String::as_str));
+        d.set(
+            &format!("SVVAL{}", i + 1),
+            rows.get(i).map_or("", String::as_str),
+        );
     }
     Some(display(surface, &mut d, "DSPSYSVAL"))
 }
@@ -100,7 +103,10 @@ pub fn wrksysval(
         d.clear_list("SYSVALS");
         // A type typed over Subset by Type narrows the list too.
         let typed = d.get("SUBSET").trim().to_ascii_uppercase();
-        let typed = typed.starts_with('*').then_some(typed).filter(|t| t != "*ALL");
+        let typed = typed
+            .starts_with('*')
+            .then_some(typed)
+            .filter(|t| t != "*ALL");
         for (name, group, text) in all {
             if typed.as_ref().is_some_and(|t| *t != group) {
                 continue;
@@ -134,7 +140,8 @@ pub fn wrksysval(
         l.top = top.min(l.rows.len().saturating_sub(1));
         if !pos.is_empty() {
             let at = l.rows.iter().position(|r| {
-                r.iter().any(|(k, v)| k == "SVNAME" && v.as_str() >= pos.as_str())
+                r.iter()
+                    .any(|(k, v)| k == "SVNAME" && v.as_str() >= pos.as_str())
             });
             l.top = at.unwrap_or(l.rows.len().saturating_sub(1));
         }

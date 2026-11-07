@@ -338,8 +338,13 @@ pub(crate) fn delete_line(system: &mut System, name: &str) -> Result<Vec<Note>, 
     let gone = objects::delete_lind(system, &name)?;
     lock().state.remove_line(&name);
     if let Some(rsrc) = port {
-        let shared = objects::lines(system)?.iter().any(|(_, l)| l.rsrcname == rsrc);
-        let ifname = kernel::ports(system).into_iter().find(|(r, _)| *r == rsrc).map(|(_, i)| i);
+        let shared = objects::lines(system)?
+            .iter()
+            .any(|(_, l)| l.rsrcname == rsrc);
+        let ifname = kernel::ports(system)
+            .into_iter()
+            .find(|(r, _)| *r == rsrc)
+            .map(|(_, i)| i);
         if let (false, Some(i)) = (shared, ifname)
             && let Err(e) = kernel::release(&i)
         {

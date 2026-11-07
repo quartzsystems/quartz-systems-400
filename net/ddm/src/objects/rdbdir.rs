@@ -80,7 +80,11 @@ impl RdbEntry {
     /// The entry's name: its alias when it has one (a second way to
     /// reach an RDB, such as a loopback to this system), else the RDB.
     pub fn name(&self) -> &str {
-        if self.alias.is_empty() || self.alias == "*NONE" { &self.rdb } else { &self.alias }
+        if self.alias.is_empty() || self.alias == "*NONE" {
+            &self.rdb
+        } else {
+            &self.alias
+        }
     }
 
     /// Whether it names this system.
@@ -118,7 +122,11 @@ impl RdbEntry {
 
     /// The line it stores as.
     pub fn encode(&self) -> String {
-        let mut v = vec![kv("RDB", &self.rdb), kv("RMTLOCNAME", &self.rmtloc), kv("TYPE", &self.loc_type)];
+        let mut v = vec![
+            kv("RDB", &self.rdb),
+            kv("RMTLOCNAME", &self.rmtloc),
+            kv("TYPE", &self.loc_type),
+        ];
         let opt = |k: &str, val: &str, dft: &str, v: &mut Vec<String>| {
             if val != dft {
                 v.push(kv(k, val));
@@ -146,7 +154,11 @@ impl RdbEntry {
     }
 
     fn from_pairs(p: &[(String, String)]) -> Option<Self> {
-        let mut e = Self::new(get(p, "RDB")?, get(p, "RMTLOCNAME")?, get(p, "TYPE").unwrap_or("*SNA"));
+        let mut e = Self::new(
+            get(p, "RDB")?,
+            get(p, "RMTLOCNAME")?,
+            get(p, "TYPE").unwrap_or("*SNA"),
+        );
         let set = |f: &mut String, k: &str| {
             if let Some(v) = get(p, k) {
                 *f = v.to_string();
@@ -204,7 +216,11 @@ impl RdbDirectory {
 
     /// The text to store.
     pub fn encode(&self) -> String {
-        self.entries.iter().map(RdbEntry::encode).collect::<Vec<_>>().join("\n")
+        self.entries
+            .iter()
+            .map(RdbEntry::encode)
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     fn sort(&mut self) {
@@ -225,7 +241,10 @@ impl RdbDirectory {
     /// `ADDRDBDIRE`.
     pub fn add(&mut self, e: RdbEntry) -> Result<(), Refused> {
         if self.find(e.name()).is_some() {
-            return Err(Refused::new(EXISTS, format!("The directory has an entry for {} already.", e.name())));
+            return Err(Refused::new(
+                EXISTS,
+                format!("The directory has an entry for {} already.", e.name()),
+            ));
         }
         if e.is_local() && self.local().is_some() {
             return Err(Refused::new(
@@ -245,7 +264,9 @@ impl RdbDirectory {
             .entries
             .iter_mut()
             .find(|e| e.name() == n)
-            .ok_or_else(|| Refused::new(NOT_FOUND, format!("The directory has no entry for {n}.")))?;
+            .ok_or_else(|| {
+                Refused::new(NOT_FOUND, format!("The directory has no entry for {n}."))
+            })?;
         f(e);
         Ok(())
     }
@@ -258,7 +279,10 @@ impl RdbDirectory {
         self.entries.retain(|e| !matches(&n, e));
         let gone = before - self.entries.len();
         if gone == 0 {
-            return Err(Refused::new(NOT_FOUND, format!("The directory has no entry for {n}.")));
+            return Err(Refused::new(
+                NOT_FOUND,
+                format!("The directory has no entry for {n}."),
+            ));
         }
         Ok(gone)
     }
@@ -296,7 +320,10 @@ mod tests {
         let text = d.encode();
         let back = RdbDirectory::decode(&text, "QS400");
         assert_eq!(back, d);
-        assert_eq!(back.find("remote1").unwrap().mechanisms()[0], Mechanism::EUsrIdPwd);
+        assert_eq!(
+            back.find("remote1").unwrap().mechanisms()[0],
+            Mechanism::EUsrIdPwd
+        );
         assert_eq!(RdbDirectory::decode("", "SYS").local().unwrap().rdb, "SYS");
         let mut d = back;
         d.change("REMOTE1", |e| e.port = "8446".into()).unwrap();

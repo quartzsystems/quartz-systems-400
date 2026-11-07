@@ -44,7 +44,13 @@ const DATES: &[(&str, u8, char)] = &[
     ("LONGJUL", 12, '/'),
 ];
 
-const TIMES: &[(&str, u8, char)] = &[("HMS", 32, ':'), ("ISO", 33, '.'), ("USA", 34, ':'), ("EUR", 35, '.'), ("JIS", 36, ':')];
+const TIMES: &[(&str, u8, char)] = &[
+    ("HMS", 32, ':'),
+    ("ISO", 33, '.'),
+    ("USA", 34, ':'),
+    ("EUR", 35, '.'),
+    ("JIS", 36, ':'),
+];
 
 /// The timestamp code.
 pub const STAMP: u8 = 64;
@@ -68,8 +74,14 @@ pub fn parse(word: &str, class: Class) -> Option<Conv> {
     let w = word.trim_start_matches('*').to_ascii_uppercase();
     if w == "JOBRUN" {
         return Some(match class {
-            Class::Time => Conv { code: 32, sep: Some(':') },
-            _ => Conv { code: 5, sep: Some('/') },
+            Class::Time => Conv {
+                code: 32,
+                sep: Some(':'),
+            },
+            _ => Conv {
+                code: 5,
+                sep: Some('/'),
+            },
         });
     }
     let (name, sep) = match w.chars().last() {
@@ -79,7 +91,12 @@ pub fn parse(word: &str, class: Class) -> Option<Conv> {
     let table = match class {
         Class::Date => DATES,
         Class::Time => TIMES,
-        Class::Stamp => return (name == "ISO").then_some(Conv { code: STAMP, sep: if sep == Some('0') { None } else { Some('-') } }),
+        Class::Stamp => {
+            return (name == "ISO").then_some(Conv {
+                code: STAMP,
+                sep: if sep == Some('0') { None } else { Some('-') },
+            });
+        }
     };
     let (_, code, dft) = table.iter().find(|(n, ..)| *n == name)?;
     let sep = match sep {
@@ -97,19 +114,27 @@ pub fn parse(word: &str, class: Class) -> Option<Conv> {
 /// The runtime code of a field's date format.
 #[must_use]
 pub fn date_code(f: DatFmt) -> u8 {
-    DATES.iter().find(|(n, ..)| f.name()[1..] == **n).map_or(1, |x| x.1)
+    DATES
+        .iter()
+        .find(|(n, ..)| f.name()[1..] == **n)
+        .map_or(1, |x| x.1)
 }
 
 /// The runtime code of a field's time format.
 #[must_use]
 pub fn time_code(f: TimFmt) -> u8 {
-    TIMES.iter().find(|(n, ..)| f.name()[1..] == **n).map_or(33, |x| x.1)
+    TIMES
+        .iter()
+        .find(|(n, ..)| f.name()[1..] == **n)
+        .map_or(33, |x| x.1)
 }
 
 /// The format word of a conversion format.
 #[must_use]
 pub fn word(c: Conv, frac: u8) -> i64 {
-    let sep = c.sep.map_or(0, |s| i64::from(u8::try_from(u32::from(s)).unwrap_or(b' ')));
+    let sep = c
+        .sep
+        .map_or(0, |s| i64::from(u8::try_from(u32::from(s)).unwrap_or(b' ')));
     i64::from(c.code) | sep << 8 | i64::from(frac) << 16
 }
 
@@ -118,9 +143,27 @@ pub fn word(c: Conv, frac: u8) -> i64 {
 pub fn of_type(t: &Ty) -> i64 {
     let none = |s: char| (s != '\0').then_some(s);
     match t {
-        Ty::Date(f, s) => word(Conv { code: date_code(*f), sep: none(*s) }, 0),
-        Ty::Time(f, s) => word(Conv { code: time_code(*f), sep: none(*s) }, 0),
-        Ty::Timestamp(p) => word(Conv { code: STAMP, sep: Some('-') }, *p),
+        Ty::Date(f, s) => word(
+            Conv {
+                code: date_code(*f),
+                sep: none(*s),
+            },
+            0,
+        ),
+        Ty::Time(f, s) => word(
+            Conv {
+                code: time_code(*f),
+                sep: none(*s),
+            },
+            0,
+        ),
+        Ty::Timestamp(p) => word(
+            Conv {
+                code: STAMP,
+                sep: Some('-'),
+            },
+            *p,
+        ),
         _ => 0,
     }
 }
@@ -145,7 +188,11 @@ pub fn field_time(word: &str) -> Option<(TimFmt, char)> {
 /// The characters of a civil date in a field's format.
 #[must_use]
 pub fn render_date(f: DatFmt, sep: char, y: u32, m: u32, d: u32) -> String {
-    let s = if sep == '\0' { String::new() } else { sep.to_string() };
+    let s = if sep == '\0' {
+        String::new()
+    } else {
+        sep.to_string()
+    };
     let yy = y % 100;
     match f {
         DatFmt::Iso | DatFmt::Jis => format!("{y:04}{s}{m:02}{s}{d:02}"),
@@ -172,7 +219,11 @@ pub fn render_date(f: DatFmt, sep: char, y: u32, m: u32, d: u32) -> String {
 /// The characters of a time in a field's format.
 #[must_use]
 pub fn render_time(f: TimFmt, sep: char, h: u32, m: u32, s: u32) -> String {
-    let c = if sep == '\0' { String::new() } else { sep.to_string() };
+    let c = if sep == '\0' {
+        String::new()
+    } else {
+        sep.to_string()
+    };
     if f == TimFmt::Usa {
         let (h12, ap) = match h {
             0 => (0, "AM"),
@@ -246,7 +297,8 @@ pub fn parse_date(f: DatFmt, sep: char, s: &str) -> Option<(u32, u32, u32)> {
             (y, m, n)
         }
     };
-    ((1..=9999).contains(&y) && (1..=12).contains(&m) && d >= 1 && d <= month_len(y, m)).then_some((y, m, d))
+    ((1..=9999).contains(&y) && (1..=12).contains(&m) && d >= 1 && d <= month_len(y, m))
+        .then_some((y, m, d))
 }
 
 fn month_len(y: u32, m: u32) -> u32 {
@@ -273,7 +325,8 @@ pub fn parse_time(f: TimFmt, sep: char, s: &str) -> Option<(u32, u32, u32)> {
         return (v[1] < 60).then_some((h, v[1], 0));
     }
     let v = fields(s, &[2, 2, 2], sep)?;
-    (v[0] < 24 && v[1] < 60 && v[2] < 60 || v[0] == 24 && v[1] == 0 && v[2] == 0).then_some((v[0], v[1], v[2]))
+    (v[0] < 24 && v[1] < 60 && v[2] < 60 || v[0] == 24 && v[1] == 0 && v[2] == 0)
+        .then_some((v[0], v[1], v[2]))
 }
 
 /// The characters a conversion format takes, separators included.
@@ -306,10 +359,31 @@ mod tests {
 
     #[test]
     fn names_parse_with_separators() {
-        assert_eq!(parse("*MDY-", Class::Date), Some(Conv { code: 5, sep: Some('-') }));
-        assert_eq!(parse("*ISO0", Class::Date), Some(Conv { code: 1, sep: None }));
-        assert_eq!(parse("*JUL&", Class::Date), Some(Conv { code: 8, sep: Some(' ') }));
-        assert_eq!(parse("*HMS,", Class::Time), Some(Conv { code: 32, sep: Some(',') }));
+        assert_eq!(
+            parse("*MDY-", Class::Date),
+            Some(Conv {
+                code: 5,
+                sep: Some('-')
+            })
+        );
+        assert_eq!(
+            parse("*ISO0", Class::Date),
+            Some(Conv { code: 1, sep: None })
+        );
+        assert_eq!(
+            parse("*JUL&", Class::Date),
+            Some(Conv {
+                code: 8,
+                sep: Some(' ')
+            })
+        );
+        assert_eq!(
+            parse("*HMS,", Class::Time),
+            Some(Conv {
+                code: 32,
+                sep: Some(',')
+            })
+        );
         assert_eq!(parse("*ISO/", Class::Date), None);
         assert_eq!(render_date(DatFmt::Jul, '/', 2026, 3, 5), "26/064");
         assert_eq!(render_time(TimFmt::Usa, ':', 14, 30, 5), "02:30 PM");

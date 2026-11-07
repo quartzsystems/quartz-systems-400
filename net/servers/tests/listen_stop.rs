@@ -42,7 +42,10 @@ fn a_stopped_loop_refuses_connects() {
     let mut before = TcpStream::connect(addr).unwrap();
     echo(&mut before, *b"hi");
     running.stop();
-    assert!(TcpStream::connect(addr).is_err(), "connected after the stop");
+    assert!(
+        TcpStream::connect(addr).is_err(),
+        "connected after the stop"
+    );
     // The connection served before the stop runs on.
     echo(&mut before, *b"ok");
 }

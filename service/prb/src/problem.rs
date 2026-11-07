@@ -45,10 +45,7 @@ impl PrbStatus {
     #[must_use]
     pub fn parse(s: &str) -> Option<Self> {
         let u = s.trim().to_ascii_uppercase();
-        Self::ALL
-            .iter()
-            .find(|e| e.1 == u || e.2 == u)
-            .map(|e| e.0)
+        Self::ALL.iter().find(|e| e.1 == u || e.2 == u).map(|e| e.0)
     }
 }
 

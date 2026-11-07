@@ -25,7 +25,9 @@ pub fn dspbcksts(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
                     return Ok(String::new());
                 }
             }
-            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(String::new()),
+            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => {
+                return Ok(String::new());
+            }
             _ => {}
         }
     }
@@ -49,13 +51,20 @@ fn history(host: &Host, surface: &mut Surface, d: &mut UimDialog) -> Result<bool
                         p.set(k, v);
                     }
                     p.clear_list("STEPS");
-                    let steps = row.iter().find(|(k, _)| k == "HSTEPS").map(|(_, v)| v.clone()).unwrap_or_default();
+                    let steps = row
+                        .iter()
+                        .find(|(k, _)| k == "HSTEPS")
+                        .map(|(_, v)| v.clone())
+                        .unwrap_or_default();
                     for s in steps.split(';').filter(|s| !s.is_empty()) {
                         p.add_row("STEPS", vec![("HSTEP".to_string(), s.to_string())]);
                     }
                     p.list_mut("STEPS").complete = true;
                     p.set("*DATETIME", &datetime(host));
-                    if matches!(show(&mut p, surface, "DSPBCKDTL")?, Response::Exit | Response::Gone) {
+                    if matches!(
+                        show(&mut p, surface, "DSPBCKDTL")?,
+                        Response::Exit | Response::Gone
+                    ) {
                         return Ok(true);
                     }
                 }

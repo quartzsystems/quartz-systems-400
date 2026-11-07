@@ -76,7 +76,11 @@ pub fn statement_at(records: &[String], at: usize) -> Option<Statement> {
     loop {
         // After `+` the next record's leading blanks go; after `-` they stay.
         let raw = records[last].as_str();
-        let src = if sign == Some('+') { raw.trim_start() } else { raw };
+        let src = if sign == Some('+') {
+            raw.trim_start()
+        } else {
+            raw
+        };
         let (t, s) = continued(src);
         text.push_str(&t);
         if s == Some('+') {
@@ -207,7 +211,10 @@ pub fn format(label: &str, command: &str, comment: &str, width: usize) -> Vec<St
         }
     }
     lines.push(cur);
-    lines.into_iter().map(|l| l.trim_end().to_string()).collect()
+    lines
+        .into_iter()
+        .map(|l| l.trim_end().to_string())
+        .collect()
 }
 
 #[cfg(test)]
@@ -257,7 +264,10 @@ mod tests {
 
     #[test]
     fn long_commands_continue() {
-        let cmd = format!("SNDPGMMSG MSG('{}') TOPGMQ(*EXT) MSGTYPE(*INFO)", "x".repeat(40));
+        let cmd = format!(
+            "SNDPGMMSG MSG('{}') TOPGMQ(*EXT) MSGTYPE(*INFO)",
+            "x".repeat(40)
+        );
         let l = format("", &cmd, "", 80);
         assert!(l.len() >= 2);
         assert!(l[0].ends_with('+'));

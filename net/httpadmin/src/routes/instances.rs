@@ -12,11 +12,13 @@ use httpd::registry::{Entry, Registry};
 use qsweb::frame::Page;
 use qsweb::html::esc;
 use qsweb::http::Response;
-use qsweb::partials::{Cell, Col, FilterField, List, Paging, actions, filter, list_table, paging, status};
+use qsweb::partials::{
+    Cell, Col, FilterField, List, Paging, actions, filter, list_table, paging, status,
+};
 
 use super::Rq;
-use crate::{PRODUCT, seed};
 use crate::env::{Env, HttpJob};
+use crate::{PRODUCT, seed};
 
 /// One instance as the pages see it.
 #[derive(Clone, Debug)]
@@ -44,15 +46,27 @@ impl View {
 
     /// `80, 443`.
     pub fn port_list(&self) -> String {
-        self.ports.iter().map(|p| p.port.to_string()).collect::<Vec<_>>().join(", ")
+        self.ports
+            .iter()
+            .map(|p| p.port.to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
     }
 }
 
 fn view(entry: Entry, env: &Env, jobs: &[HttpJob]) -> View {
     let conf = instance::load_conf(env.files.as_ref(), &entry.root).ok();
     let ports = conf.as_ref().map(instance::ports).unwrap_or_default();
-    let job = jobs.iter().find(|j| j.instance.eq_ignore_ascii_case(&entry.name)).cloned();
-    View { entry, conf, ports, job }
+    let job = jobs
+        .iter()
+        .find(|j| j.instance.eq_ignore_ascii_case(&entry.name))
+        .cloned();
+    View {
+        entry,
+        conf,
+        ports,
+        job,
+    }
 }
 
 /// Whether an entry is listed: Navigator's and Access for Web's only while
@@ -125,7 +139,11 @@ fn matches_name(name: &str, pat: &str) -> bool {
 pub fn list(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     let st = q.str("status");
-    let st = if matches!(st, "Running" | "Stopped") { st } else { "" };
+    let st = if matches!(st, "Running" | "Stopped") {
+        st
+    } else {
+        ""
+    };
     let name = q.str("name").trim().to_string();
     let sort = q.str("sort");
     let mut all: Vec<View> = views(rq.env())
@@ -141,7 +159,11 @@ pub fn list(rq: &Rq<'_>) -> Response {
         "name" => all.sort_by(|a, b| a.name().cmp(b.name())),
         "status" => all.sort_by_key(|v| !v.running()),
         "ports" => all.sort_by_key(|v| v.ports.first().map_or(u16::MAX, |p| p.port)),
-        "job" => all.sort_by_key(|v| v.job.as_ref().map_or(String::from("~"), |j| j.number.clone())),
+        "job" => all.sort_by_key(|v| {
+            v.job
+                .as_ref()
+                .map_or(String::from("~"), |j| j.number.clone())
+        }),
         "started" => all.sort_by_key(|v| v.job.as_ref().map_or(u64::MAX, |j| j.started)),
         _ => {}
     }
@@ -176,14 +198,22 @@ pub fn list(rq: &Rq<'_>) -> Response {
             };
             let (job, started) = match &v.job {
                 Some(j) => (
-                    format!("<a href=\"{}\">{}</a>", esc(&job_url(&j.qualified())), esc(&j.qualified())),
+                    format!(
+                        "<a href=\"{}\">{}</a>",
+                        esc(&job_url(&j.qualified())),
+                        esc(&j.qualified())
+                    ),
                     rq.when(j.started),
                 ),
                 None => (String::new(), String::new()),
             };
             vec![
                 Cell::act(acts),
-                Cell::mono_html(format!("<a href=\"{}\">{}</a>", esc(&url(n, "general")), esc(n))),
+                Cell::mono_html(format!(
+                    "<a href=\"{}\">{}</a>",
+                    esc(&url(n, "general")),
+                    esc(n)
+                )),
                 Cell::html(status_cell(v)),
                 Cell::text(&v.port_list()),
                 Cell::mono_html(job),
@@ -221,7 +251,12 @@ pub fn list(rq: &Rq<'_>) -> Response {
             qsweb::partials::Button::new("refresh", "Refresh"),
         ]),
     );
-    let body = format!("{}{}{}{buttons}", filter(&fields, true), list_table(&table), paging(&p));
+    let body = format!(
+        "{}{}{}{buttons}",
+        filter(&fields, true),
+        list_table(&table),
+        paging(&p)
+    );
     rq.page(Page {
         title: "Server instances".into(),
         crumb: vec!["Manage".into(), "Server instances".into()],

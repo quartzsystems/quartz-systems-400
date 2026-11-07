@@ -103,7 +103,9 @@ pub fn diags_rpg3(lines: &[String]) -> Vec<Diag> {
             section = "summary";
             continue;
         }
-        if t.starts_with("F i n a l   S u m m a r y") || t.starts_with("* * * * *   E N D   O F   C R O S S") {
+        if t.starts_with("F i n a l   S u m m a r y")
+            || t.starts_with("* * * * *   E N D   O F   C R O S S")
+        {
             section = "";
             continue;
         }
@@ -113,7 +115,10 @@ pub fn diags_rpg3(lines: &[String]) -> Vec<Diag> {
                     current = n;
                 } else if let Some(r) = t.strip_prefix('*') {
                     // `* 5014   5014-*****`: one or more numbers.
-                    for w in r.split_whitespace().take_while(|w| w.len() == 4 && w.chars().all(|c| c.is_ascii_digit())) {
+                    for w in r
+                        .split_whitespace()
+                        .take_while(|w| w.len() == 4 && w.chars().all(|c| c.is_ascii_digit()))
+                    {
                         marks.push((current, w.to_string()));
                     }
                 }
@@ -129,12 +134,19 @@ pub fn diags_rpg3(lines: &[String]) -> Vec<Diag> {
             "xref" => {
                 if let Some(r) = t.strip_prefix('*') {
                     let w: Vec<&str> = r.split_whitespace().collect();
-                    if w.first().is_some_and(|x| x.len() == 4 && x.chars().all(|c| c.is_ascii_digit())) {
+                    if w.first()
+                        .is_some_and(|x| x.len() == 4 && x.chars().all(|c| c.is_ascii_digit()))
+                    {
                         // The name, its attributes, then the references.
-                        let at = w[2..]
-                            .iter()
-                            .find_map(|x| x.trim_end_matches(['D', 'M']).parse::<u32>().ok().filter(|_| x.chars().next().is_some_and(|c| c.is_ascii_digit())))
-                            .unwrap_or(0);
+                        let at =
+                            w[2..]
+                                .iter()
+                                .find_map(|x| {
+                                    x.trim_end_matches(['D', 'M']).parse::<u32>().ok().filter(
+                                        |_| x.chars().next().is_some_and(|c| c.is_ascii_digit()),
+                                    )
+                                })
+                                .unwrap_or(0);
                         marks.push((at, w[0].to_string()));
                     }
                 }
@@ -156,7 +168,12 @@ pub fn diags_rpg3(lines: &[String]) -> Vec<Diag> {
         .map(|(line, n)| {
             let msgid = format!("QRG{n}");
             let severity = sev.iter().find(|(m, _)| *m == msgid).map_or(0, |(_, s)| *s);
-            Diag { line, msgid, severity, seq: String::new() }
+            Diag {
+                line,
+                msgid,
+                severity,
+                seq: String::new(),
+            }
         })
         .collect();
     out.sort();
@@ -189,7 +206,10 @@ fn source_line_number(body: &str) -> Option<u32> {
 fn sql_diag_line(t: &str) -> Option<Diag> {
     let mut w = t.split_whitespace();
     let msgid = w.next()?;
-    if msgid.len() != 7 || !msgid.starts_with("SQL") || !msgid[3..].chars().all(|c| c.is_ascii_digit()) {
+    if msgid.len() != 7
+        || !msgid.starts_with("SQL")
+        || !msgid[3..].chars().all(|c| c.is_ascii_digit())
+    {
         return None;
     }
     let severity: u8 = w.next()?.parse().ok()?;
@@ -259,7 +279,9 @@ pub fn mask(lines: &[String], m: &Mask) -> Vec<String> {
             continue;
         }
         let mut l = raw.trim_end().to_string();
-        if l.starts_with('1') && (l.contains("5770WDS") || l.contains("QS00WDS") || l.contains("Page")) {
+        if l.starts_with('1')
+            && (l.contains("5770WDS") || l.contains("QS00WDS") || l.contains("Page"))
+        {
             let page = l
                 .rsplit_once("Page")
                 .map(|(_, p)| p.trim().to_string())
@@ -267,7 +289,11 @@ pub fn mask(lines: &[String], m: &Mask) -> Vec<String> {
             out.push(format!("1{{heading}} page {page}"));
             continue;
         }
-        for (names, ph) in [(&m.libs, "{lib}"), (&m.users, "{user}"), (&m.systems, "{sys}")] {
+        for (names, ph) in [
+            (&m.libs, "{lib}"),
+            (&m.users, "{user}"),
+            (&m.systems, "{sys}"),
+        ] {
             for n in names.iter().filter(|n| !n.is_empty()) {
                 l = l.replace(n.as_str(), ph);
             }
@@ -328,8 +354,10 @@ mod tests {
         .map(|s| (*s).to_string())
         .collect();
         let d = diags(&lines);
-        let got: Vec<(u32, &str, u8, &str)> =
-            d.iter().map(|x| (x.line, x.msgid.as_str(), x.severity, x.seq.as_str())).collect();
+        let got: Vec<(u32, &str, u8, &str)> = d
+            .iter()
+            .map(|x| (x.line, x.msgid.as_str(), x.severity, x.seq.as_str()))
+            .collect();
         assert_eq!(
             got,
             vec![
@@ -358,7 +386,10 @@ mod tests {
         .map(|s| (*s).to_string())
         .collect();
         let d = diags(&lines);
-        let got: Vec<(u32, &str, u8)> = d.iter().map(|x| (x.line, x.msgid.as_str(), x.severity)).collect();
+        let got: Vec<(u32, &str, u8)> = d
+            .iter()
+            .map(|x| (x.line, x.msgid.as_str(), x.severity))
+            .collect();
         assert_eq!(got, vec![(7, "SQL0312", 30), (8, "SQL0104", 30)]);
     }
 

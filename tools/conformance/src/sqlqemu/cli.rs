@@ -50,8 +50,10 @@ fn printed(display: &str) -> Vec<String> {
             let t = l.trim_start();
             let (pl, rest) = t.split_once(char::is_whitespace)?;
             let (p, n) = pl.split_once('/')?;
-            (p.chars().all(|c| c.is_ascii_digit()) && n.chars().all(|c| c.is_ascii_digit()) && !p.is_empty())
-                .then(|| rest.trim().to_string())
+            (p.chars().all(|c| c.is_ascii_digit())
+                && n.chars().all(|c| c.is_ascii_digit())
+                && !p.is_empty())
+            .then(|| rest.trim().to_string())
         })
         .collect()
 }
@@ -60,14 +62,23 @@ fn printed(display: &str) -> Vec<String> {
 fn expected_lines(out: &str) -> Vec<String> {
     out.lines()
         .filter_map(|l| l.strip_prefix("  |"))
-        .map(|l| l.split_once(char::is_whitespace).map_or("", |(_, t)| t).trim().to_string())
+        .map(|l| {
+            l.split_once(char::is_whitespace)
+                .map_or("", |(_, t)| t)
+                .trim()
+                .to_string()
+        })
         .collect()
 }
 
 /// The `QSQSRVR` rows of `WRKACTJOB`.
 fn qsqsrvr(s: &mut Session) -> Result<Vec<String>, String> {
     let out = s.command("WRKACTJOB", CMD)?;
-    Ok(out.lines().filter(|l| l.contains("QSQSRVR")).map(str::to_string).collect())
+    Ok(out
+        .lines()
+        .filter(|l| l.contains("QSQSRVR"))
+        .map(str::to_string)
+        .collect())
 }
 
 impl Suite {
@@ -79,15 +90,31 @@ impl Suite {
         setup(s)?;
         let _ = sql(s, &format!("DROP TABLE {LIB}/CLIT"))?;
         let clit = kit("rpg/dds/CLIT.sql")?.replace("{lib}.", &format!("{LIB}/"));
-        let body: String = clit.lines().filter(|l| !l.starts_with("--")).collect::<Vec<_>>().join(" ");
+        let body: String = clit
+            .lines()
+            .filter(|l| !l.starts_with("--"))
+            .collect::<Vec<_>>()
+            .join(" ");
         for stmt in body.split(';').map(str::trim).filter(|t| !t.is_empty()) {
             let out = sql(s, stmt)?;
             if out.contains("SQLCODE -") {
                 return Err(format!("{stmt}: {out}"));
             }
         }
-        put(s, "QRPGLESRC", "CLIH", "RPGLEINC", &kit("rpg/b23cli/CLIH.rpginc")?)?;
-        put(s, "QRPGLESRC", "CLI001", "RPGLE", &kit("rpg/b23cli/CLI001.rpgle")?)?;
+        put(
+            s,
+            "QRPGLESRC",
+            "CLIH",
+            "RPGLEINC",
+            &kit("rpg/b23cli/CLIH.rpginc")?,
+        )?;
+        put(
+            s,
+            "QRPGLESRC",
+            "CLI001",
+            "RPGLE",
+            &kit("rpg/b23cli/CLI001.rpgle")?,
+        )?;
         put(s, "QRPGLESRC", "CLIWAIT", "RPGLE", CLIWAIT)?;
         let mut tn = Tn::open(self)?;
         for p in ["CLI001", "CLIWAIT"] {
@@ -105,7 +132,13 @@ impl Suite {
             let mut d = String::new();
             for i in 0..want.len().max(got.len()) {
                 if want.get(i) != got.get(i) {
-                    let _ = writeln!(d, "  line {}: want {:?} got {:?}", i + 1, want.get(i), got.get(i));
+                    let _ = writeln!(
+                        d,
+                        "  line {}: want {:?} got {:?}",
+                        i + 1,
+                        want.get(i),
+                        got.get(i)
+                    );
                 }
             }
             return Err(format!("CLI001 printed differently from pub400:\n{d}"));
@@ -113,11 +146,21 @@ impl Suite {
 
         // The prestart jobs: waiting, then one serving a held connection.
         let idle = qsqsrvr(s)?;
-        if !idle.iter().any(|l| l.contains("QSYSWRK") || l.contains(" PJ ")) || !idle.iter().any(|l| l.contains("PSRW")) {
-            return Err(format!("no QSQSRVR prestart job waiting (PJ, PSRW):\n{}", idle.join("\n")));
+        if !idle
+            .iter()
+            .any(|l| l.contains("QSYSWRK") || l.contains(" PJ "))
+            || !idle.iter().any(|l| l.contains("PSRW"))
+        {
+            return Err(format!(
+                "no QSQSRVR prestart job waiting (PJ, PSRW):\n{}",
+                idle.join("\n")
+            ));
         }
         let _ = s.command("STRSBS SBSD(QBATCH)", CMD);
-        let sub = s.command(&format!("SBMJOB CMD(CALL PGM({LIB}/CLIWAIT)) JOB(CLIWAIT) JOBQ(QGPL/QBATCH)"), CMD)?;
+        let sub = s.command(
+            &format!("SBMJOB CMD(CALL PGM({LIB}/CLIWAIT)) JOB(CLIWAIT) JOBQ(QGPL/QBATCH)"),
+            CMD,
+        )?;
         let until = Instant::now() + Duration::from_secs(40);
         let serving = loop {
             let rows = qsqsrvr(s)?;
@@ -125,7 +168,10 @@ impl Suite {
                 break r.clone();
             }
             if Instant::now() >= until {
-                return Err(format!("no QSQSRVR job serving CLIWAIT (CNDW) ({sub}):\n{}", rows.join("\n")));
+                return Err(format!(
+                    "no QSQSRVR job serving CLIWAIT (CNDW) ({sub}):\n{}",
+                    rows.join("\n")
+                ));
             }
             std::thread::sleep(Duration::from_secs(1));
         };

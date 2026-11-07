@@ -86,7 +86,12 @@ pub fn scale(buf: &mut [u8], c: u8) {
 /// P and, when `want_q`, Q of pages of `len` bytes; `coefs[i]` is the
 /// coefficient of `data[i]`.
 #[must_use]
-pub fn compute(data: &[&[u8]], coefs: &[u8], len: usize, want_q: bool) -> (Vec<u8>, Option<Vec<u8>>) {
+pub fn compute(
+    data: &[&[u8]],
+    coefs: &[u8],
+    len: usize,
+    want_q: bool,
+) -> (Vec<u8>, Option<Vec<u8>>) {
     let mut p = vec![0u8; len];
     let mut q = want_q.then(|| vec![0u8; len]);
     for (d, &c) in data.iter().zip(coefs) {
@@ -101,7 +106,12 @@ pub fn compute(data: &[&[u8]], coefs: &[u8], len: usize, want_q: bool) -> (Vec<u
 /// Fill in the unknown pages of `data` from P and Q. Returns false when
 /// there are more unknowns than known parity pages allow.
 #[must_use]
-pub fn solve(data: &mut [Option<Vec<u8>>], coefs: &[u8], p: Option<&[u8]>, q: Option<&[u8]>) -> bool {
+pub fn solve(
+    data: &mut [Option<Vec<u8>>],
+    coefs: &[u8],
+    p: Option<&[u8]>,
+    q: Option<&[u8]>,
+) -> bool {
     let unknown: Vec<usize> = (0..data.len()).filter(|&i| data[i].is_none()).collect();
     // What P and Q leave once the known pages are taken out.
     let rest = |with_q: bool| {
@@ -155,7 +165,13 @@ mod tests {
     use super::*;
 
     fn page(seed: u8, len: usize) -> Vec<u8> {
-        (0..len).map(|i| (i % 251).to_le_bytes()[0].wrapping_mul(31).wrapping_add(seed.wrapping_mul(97))).collect()
+        (0..len)
+            .map(|i| {
+                (i % 251).to_le_bytes()[0]
+                    .wrapping_mul(31)
+                    .wrapping_add(seed.wrapping_mul(97))
+            })
+            .collect()
     }
 
     #[test]
@@ -173,7 +189,9 @@ mod tests {
     fn recovers_any_one_or_two() {
         let len = 64;
         let n = 6;
-        let pages: Vec<Vec<u8>> = (0..n).map(|i| page(u8::try_from(i).unwrap() + 1, len)).collect();
+        let pages: Vec<Vec<u8>> = (0..n)
+            .map(|i| page(u8::try_from(i).unwrap() + 1, len))
+            .collect();
         let coefs: Vec<u8> = (0..n).map(|m| coef(m + 2)).collect();
         let refs: Vec<&[u8]> = pages.iter().map(Vec::as_slice).collect();
         let (p, q) = compute(&refs, &coefs, len, true);
@@ -184,7 +202,10 @@ mod tests {
                 d[x] = None;
                 d[y] = None;
                 assert!(solve(&mut d, &coefs, Some(&p), Some(&q)));
-                assert_eq!(d.iter().map(|x| x.clone().unwrap()).collect::<Vec<_>>(), pages);
+                assert_eq!(
+                    d.iter().map(|x| x.clone().unwrap()).collect::<Vec<_>>(),
+                    pages
+                );
                 // One page from Q alone.
                 if x == y {
                     let mut d: Vec<Option<Vec<u8>>> = pages.iter().cloned().map(Some).collect();

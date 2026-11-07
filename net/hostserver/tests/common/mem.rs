@@ -11,11 +11,11 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
+use hostserver::Auth;
 use hostserver::dtaq::{DataQueues, Entry, Fail, QueueAttrs};
 use hostserver::netprt::{Splf, SplfAction, Spool};
 use hostserver::session::Proof;
 use hostserver::signon::{Change, Info, Refusal, SignonHost};
-use hostserver::Auth;
 use hostsvr::common::rc;
 use hostsvr::crypt::{Level, substitute};
 use ifs::auth::MemEnv;
@@ -53,13 +53,22 @@ impl DataQueues for MemQueues {
         Ok(())
     }
     fn delete(&mut self, name: &str, lib: &str) -> Result<(), Fail> {
-        self.queues.remove(&(lib.into(), name.into())).map(|_| ()).ok_or_else(|| missing(name, lib))
+        self.queues
+            .remove(&(lib.into(), name.into()))
+            .map(|_| ())
+            .ok_or_else(|| missing(name, lib))
     }
     fn attributes(&mut self, name: &str, lib: &str) -> Result<QueueAttrs, Fail> {
-        self.queues.get(&(lib.into(), name.into())).map(|q| q.0.clone()).ok_or_else(|| missing(name, lib))
+        self.queues
+            .get(&(lib.into(), name.into()))
+            .map(|q| q.0.clone())
+            .ok_or_else(|| missing(name, lib))
     }
     fn write(&mut self, name: &str, lib: &str, key: &[u8], data: &[u8]) -> Result<(), Fail> {
-        let q = self.queues.get_mut(&(lib.into(), name.into())).ok_or_else(|| missing(name, lib))?;
+        let q = self
+            .queues
+            .get_mut(&(lib.into(), name.into()))
+            .ok_or_else(|| missing(name, lib))?;
         q.1.push(Entry {
             data: data.to_vec(),
             key: key.to_vec(),
@@ -67,27 +76,52 @@ impl DataQueues for MemQueues {
         });
         Ok(())
     }
-    fn read(&mut self, name: &str, lib: &str, order: &str, key: &[u8], _wait: i32, peek: bool) -> Result<Option<Entry>, Fail> {
-        let q = self.queues.get_mut(&(lib.into(), name.into())).ok_or_else(|| missing(name, lib))?;
+    fn read(
+        &mut self,
+        name: &str,
+        lib: &str,
+        order: &str,
+        key: &[u8],
+        _wait: i32,
+        peek: bool,
+    ) -> Result<Option<Entry>, Fail> {
+        let q = self
+            .queues
+            .get_mut(&(lib.into(), name.into()))
+            .ok_or_else(|| missing(name, lib))?;
         let at = if order.is_empty() {
-            if q.0.sequence == 'L' { q.1.len().checked_sub(1) } else { (!q.1.is_empty()).then_some(0) }
+            if q.0.sequence == 'L' {
+                q.1.len().checked_sub(1)
+            } else {
+                (!q.1.is_empty()).then_some(0)
+            }
         } else {
             q.1.iter().position(|e| e.key == key)
         };
         Ok(at.map(|i| if peek { q.1[i].clone() } else { q.1.remove(i) }))
     }
     fn clear(&mut self, name: &str, lib: &str, _order: &str, key: &[u8]) -> Result<(), Fail> {
-        let q = self.queues.get_mut(&(lib.into(), name.into())).ok_or_else(|| missing(name, lib))?;
+        let q = self
+            .queues
+            .get_mut(&(lib.into(), name.into()))
+            .ok_or_else(|| missing(name, lib))?;
         q.1.retain(|e| !key.is_empty() && e.key != key);
         Ok(())
     }
 }
 
-
 /// The IFS with `/home/QSTEST` and four directories in it.
 pub fn ifs() -> LocalIfs<MemBackend> {
-    let env = MemEnv::default().user("QSYS", 0).user("QSECOFR", 1).user("MASKUSER", 100).user("QDFTOWN", 3);
-    let ifs = Ifs::new(MemBackend::new(), Box::new(MemQsys::new(Bits::USE)), Config::default());
+    let env = MemEnv::default()
+        .user("QSYS", 0)
+        .user("QSECOFR", 1)
+        .user("MASKUSER", 100)
+        .user("QDFTOWN", 3);
+    let ifs = Ifs::new(
+        MemBackend::new(),
+        Box::new(MemQsys::new(Bits::USE)),
+        Config::default(),
+    );
     ifs.ensure_layout(&env).unwrap();
     let p = Principal {
         user: "QSECOFR".into(),
@@ -114,7 +148,6 @@ pub fn ifs() -> LocalIfs<MemBackend> {
     l
 }
 
-
 const NOW: u64 = 1_792_000_000;
 
 /// An SQL session over a store with `QSYS2`, `SYSIBM` and `QSTEST`.
@@ -136,7 +169,12 @@ pub fn store() -> (Rc<RefCell<Store>>, store::obj::ObjectId, NameContext) {
         wal_pages: 128,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "S062B175").unwrap();
     for l in ["QSYS2", "SYSIBM"] {
@@ -195,7 +233,6 @@ pub fn store() -> (Rc<RefCell<Store>>, store::obj::ObjectId, NameContext) {
     (Rc::new(RefCell::new(store)), qsys, names)
 }
 
-
 /// Spooled files in memory.
 #[derive(Clone)]
 pub struct MemSpool(pub Vec<Splf>);
@@ -220,7 +257,6 @@ impl Spool for MemSpool {
         Vec::new()
     }
 }
-
 
 /// A system with one user that checks substitutes at its level.
 #[derive(Clone)]
@@ -252,10 +288,26 @@ impl Host {
         }
         match proof {
             Proof::Substitute { seeds, bytes } => {
-                let want = substitute(Level::from_qpwdlvl(self.level), user, &self.password, &seeds).unwrap();
-                if want == bytes { Ok(()) } else { Err(rc::PASSWORD_INCORRECT) }
+                let want = substitute(
+                    Level::from_qpwdlvl(self.level),
+                    user,
+                    &self.password,
+                    &seeds,
+                )
+                .unwrap();
+                if want == bytes {
+                    Ok(())
+                } else {
+                    Err(rc::PASSWORD_INCORRECT)
+                }
             }
-            Proof::Token(t) => if t == [0x5A; 32] { Ok(()) } else { Err(rc::TOKEN_LENGTH) },
+            Proof::Token(t) => {
+                if t == [0x5A; 32] {
+                    Ok(())
+                } else {
+                    Err(rc::TOKEN_LENGTH)
+                }
+            }
         }
     }
 }
@@ -287,7 +339,13 @@ impl SignonHost for Host {
             messages: Vec::new(),
         })
     }
-    fn token(&mut self, user: &str, proof: Proof<'_>, _kind: u8, _timeout: u32) -> Result<Vec<u8>, u32> {
+    fn token(
+        &mut self,
+        user: &str,
+        proof: Proof<'_>,
+        _kind: u8,
+        _timeout: u32,
+    ) -> Result<Vec<u8>, u32> {
         self.check(user, proof)?;
         Ok(vec![0x5A; 32])
     }
@@ -313,4 +371,3 @@ impl SignonHost for Host {
         Ok(())
     }
 }
-

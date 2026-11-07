@@ -10,10 +10,10 @@
 use std::io::{Read, Write};
 
 use super::{Connection, reply_error};
+use crate::Error;
 use crate::cp::{param, rm, s38};
 use crate::file::{self, Ctl, Iofb, OpenFeedback, Optl, Rec, Ufcb};
 use crate::wire::{Dss, Object};
-use crate::Error;
 
 /// A remote file opened on a connection.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -42,7 +42,9 @@ pub struct FileReply {
 impl FileReply {
     /// Whether a message reports the end of data or a missing record.
     pub fn at_end(&self) -> bool {
-        self.messages.iter().any(|m| m.id == "CPF5001" || m.id == "CPF5006")
+        self.messages
+            .iter()
+            .any(|m| m.id == "CPF5001" || m.id == "CPF5006")
     }
 
     /// The first error message (severity 8 or more).
@@ -52,7 +54,12 @@ impl FileReply {
 }
 
 impl<S: Read + Write> Connection<S> {
-    fn file_exchange(&mut self, list: Vec<Dss>, reclen: usize, fields: usize) -> Result<FileReply, Error> {
+    fn file_exchange(
+        &mut self,
+        list: Vec<Dss>,
+        reclen: usize,
+        fields: usize,
+    ) -> Result<FileReply, Error> {
         let r = self.exchange(list)?;
         let mut out = FileReply::default();
         for d in &r {
@@ -109,15 +116,36 @@ impl<S: Read + Write> Connection<S> {
 
     /// Read: `op` from `file::op`, `lock` from `file::lock`, the control
     /// list for a key or a count.
-    pub fn get(&mut self, f: &RemoteFile, cp: u16, op: u8, lock: u8, ctll: &[Ctl]) -> Result<FileReply, Error> {
+    pub fn get(
+        &mut self,
+        f: &RemoteFile,
+        cp: u16,
+        op: u8,
+        lock: u8,
+        ctll: &[Ctl],
+    ) -> Result<FileReply, Error> {
         let corr = self.next_corr();
-        let optl = Optl { op, lock, opts: if lock == 0 { 1 } else { 3 } };
+        let optl = Optl {
+            op,
+            lock,
+            opts: if lock == 0 { 1 } else { 3 },
+        };
         let c = file::op_cmd(cp, &f.name, optl, ctll);
-        self.file_exchange(vec![Dss::request(corr, c)], usize::from(f.feedback.reclen), f.fields)
+        self.file_exchange(
+            vec![Dss::request(corr, c)],
+            usize::from(f.feedback.reclen),
+            f.fields,
+        )
     }
 
     /// Read by key.
-    pub fn get_key(&mut self, f: &RemoteFile, key: &[u8], key_fields: u32, lock: bool) -> Result<FileReply, Error> {
+    pub fn get_key(
+        &mut self,
+        f: &RemoteFile,
+        key: &[u8],
+        key_fields: u32,
+        lock: bool,
+    ) -> Result<FileReply, Error> {
         // As IBM i and JTOpen send it: the format, `0x0F` with two zero
         // bytes (V7R1 misreads the key fields without it), the count, the key.
         let ctll = [
@@ -126,7 +154,13 @@ impl<S: Read + Write> Connection<S> {
             Ctl::KeyFields(key_fields),
             Ctl::Key(key.to_vec()),
         ];
-        self.get(f, s38::S38GETK, file::op::KEY_EQUAL, if lock { file::lock::UPDATE } else { 0 }, &ctll)
+        self.get(
+            f,
+            s38::S38GETK,
+            file::op::KEY_EQUAL,
+            if lock { file::lock::UPDATE } else { 0 },
+            &ctll,
+        )
     }
 
     /// Add records.
@@ -145,7 +179,11 @@ impl<S: Read + Write> Connection<S> {
     /// Update the record last read for update.
     pub fn update_rec(&mut self, f: &RemoteFile, rec: &Rec) -> Result<FileReply, Error> {
         let corr = self.next_corr();
-        let optl = Optl { op: file::op::UPDATE, lock: file::lock::UPDATE, opts: 7 };
+        let optl = Optl {
+            op: file::op::UPDATE,
+            lock: file::lock::UPDATE,
+            opts: 7,
+        };
         self.file_exchange(
             vec![
                 Dss::request(corr, file::op_cmd(s38::S38UPDAT, &f.name, optl, &[])),

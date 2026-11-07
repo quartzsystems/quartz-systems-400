@@ -24,7 +24,11 @@ pub fn check_name(name: &str) -> Result<String> {
         && n.len() <= 10
         && n.starts_with(|c: char| c.is_ascii_alphabetic())
         && n.chars().all(|c| c.is_ascii_alphanumeric());
-    if ok { Ok(n) } else { Err(Error::BadName(name.trim().to_string())) }
+    if ok {
+        Ok(n)
+    } else {
+        Err(Error::BadName(name.trim().to_string()))
+    }
 }
 
 /// The default server root of instance `name`.
@@ -72,7 +76,9 @@ impl LogFormat {
         match self {
             LogFormat::Combined => "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"",
             LogFormat::Common => "%h %l %u %t \"%r\" %>s %b",
-            LogFormat::Extended => "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D",
+            LogFormat::Extended => {
+                "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D"
+            }
         }
     }
 }
@@ -124,8 +130,15 @@ pub fn generate(s: &Spec, stamp: &str) -> String {
         s.name, s.root, s.docroot, s.user
     );
     if let Some((path, fmt)) = &s.access_log {
-        let rel = path.strip_prefix(&format!("{}/", s.root.trim_end_matches('/'))).unwrap_or(path);
-        let _ = writeln!(out, "LogFormat {} {}", conf::quote(fmt.format()), fmt.nick());
+        let rel = path
+            .strip_prefix(&format!("{}/", s.root.trim_end_matches('/')))
+            .unwrap_or(path);
+        let _ = writeln!(
+            out,
+            "LogFormat {} {}",
+            conf::quote(fmt.format()),
+            fmt.nick()
+        );
         let _ = writeln!(out, "CustomLog {rel} {}", fmt.nick());
         if s.keep_days > 0 {
             let _ = writeln!(out, "LogMaint {rel} {} 0", s.keep_days);
@@ -167,7 +180,10 @@ pub fn create(files: &dyn Files, s: &Spec, stamp: &str, now: u64) -> Result<()> 
     if reg.get(&name).is_some() {
         return Err(Error::Exists(name));
     }
-    let s = &Spec { name: name.clone(), ..s.clone() };
+    let s = &Spec {
+        name: name.clone(),
+        ..s.clone()
+    };
     let text = match &s.copy_from {
         Some(from) => {
             let src = reg.get(from).ok_or_else(|| Error::NotFound(from.clone()))?;
@@ -190,7 +206,9 @@ pub fn create(files: &dyn Files, s: &Spec, stamp: &str, now: u64) -> Result<()> 
     if s.sample {
         let ip = format!("{}/index.html", s.docroot.trim_end_matches('/'));
         if !files.exists(&ip) {
-            files.write_atomic(&ip, sample_index(&name).as_bytes()).map_err(io(&ip))?;
+            files
+                .write_atomic(&ip, sample_index(&name).as_bytes())
+                .map_err(io(&ip))?;
         }
     }
     reg.put(registry::Entry {
@@ -209,7 +227,10 @@ pub fn create(files: &dyn Files, s: &Spec, stamp: &str, now: u64) -> Result<()> 
 /// are named in the `Some` (the error).
 pub fn delete(files: &dyn Files, name: &str) -> Result<Option<String>> {
     let mut reg = Registry::load(files)?;
-    let e = reg.get(name).cloned().ok_or_else(|| Error::NotFound(name.to_string()))?;
+    let e = reg
+        .get(name)
+        .cloned()
+        .ok_or_else(|| Error::NotFound(name.to_string()))?;
     reg.remove(name);
     reg.save(files)?;
     if !files.exists(&e.root) {
@@ -234,7 +255,13 @@ pub fn load_conf(files: &dyn Files, root: &str) -> Result<Conf> {
 /// temporary file and renamed, so an interrupted write leaves the old
 /// file in place. Marks the instance as needing a restart when
 /// `running`.
-pub fn apply_conf(files: &dyn Files, name: &str, root: &str, text: &str, running: bool) -> Result<()> {
+pub fn apply_conf(
+    files: &dyn Files,
+    name: &str,
+    root: &str,
+    text: &str,
+    running: bool,
+) -> Result<()> {
     conf::parse(text).map_err(Error::Conf)?;
     let p = conf_path(root);
     let bak = format!("{p}.bak");
@@ -271,7 +298,8 @@ pub fn ports(c: &Conf) -> Vec<Port> {
         .map(|(addr, port)| {
             let vhost = c.sections("VirtualHost").into_iter().find(|v| {
                 v.args.iter().any(|a| {
-                    conf::rules::listen_addr(a).is_ok_and(|(va, vp)| vp == port && (va.is_none() || va == addr))
+                    conf::rules::listen_addr(a)
+                        .is_ok_and(|(va, vp)| vp == port && (va.is_none() || va == addr))
                 })
             });
             Port {
@@ -288,8 +316,14 @@ pub fn ports(c: &Conf) -> Vec<Port> {
 
 /// The last `n` lines of `text` holding `filter` (all when empty).
 pub fn tail(text: &str, n: usize, filter: &str) -> Vec<String> {
-    let lines: Vec<&str> = text.lines().filter(|l| filter.is_empty() || l.contains(filter)).collect();
-    lines[lines.len().saturating_sub(n)..].iter().map(ToString::to_string).collect()
+    let lines: Vec<&str> = text
+        .lines()
+        .filter(|l| filter.is_empty() || l.contains(filter))
+        .collect();
+    lines[lines.len().saturating_sub(n)..]
+        .iter()
+        .map(ToString::to_string)
+        .collect()
 }
 
 #[cfg(test)]
@@ -328,9 +362,19 @@ mod tests {
         create(&f, &spec(), "10/27/26 18:40:55", 1).unwrap();
         let text = read_conf(&f, "/www/webstore").unwrap();
         assert!(text.starts_with("# Configuration for HTTP server instance WEBSTORE\n# Generated by QS/400 HTTP Server Administration 10/27/26 18:40:55\nServerRoot /www/webstore\nListen *:80\n"));
-        assert!(text.contains("CustomLog logs/access_log combined\nLogMaint logs/access_log 30 0\n"));
+        assert!(
+            text.contains("CustomLog logs/access_log combined\nLogMaint logs/access_log 30 0\n")
+        );
         let c = conf::parse(&text).unwrap();
-        assert_eq!(ports(&c), vec![Port { addr: None, port: 80, tls: false, server_name: None }]);
+        assert_eq!(
+            ports(&c),
+            vec![Port {
+                addr: None,
+                port: 80,
+                tls: false,
+                server_name: None
+            }]
+        );
         assert!(f.exists("/www/webstore/htdocs/index.html"));
         assert!(f.exists("/www/webstore/logs"));
         assert!(matches!(create(&f, &spec(), "", 2), Err(Error::Exists(_))));
@@ -340,16 +384,39 @@ mod tests {
         copy.docroot = "/www/web2/htdocs".into();
         copy.copy_from = Some("WEBSTORE".into());
         create(&f, &copy, "", 3).unwrap();
-        assert!(read_conf(&f, "/www/web2").unwrap().contains("ServerRoot /www/web2\nListen *:80\nDocumentRoot /www/web2/htdocs\n"));
+        assert!(
+            read_conf(&f, "/www/web2")
+                .unwrap()
+                .contains("ServerRoot /www/web2\nListen *:80\nDocumentRoot /www/web2/htdocs\n")
+        );
 
         let bad = apply_conf(&f, "WEBSTORE", "/www/webstore", "Listen x\n", true).unwrap_err();
         assert!(matches!(bad, Error::Conf(ref e) if e.line == 1), "{bad:?}");
-        let new = format!("{text}Listen *:443\n<VirtualHost *:443>\n   SSLEngine On\n   ServerName shop\n</VirtualHost>\n");
+        let new = format!(
+            "{text}Listen *:443\n<VirtualHost *:443>\n   SSLEngine On\n   ServerName shop\n</VirtualHost>\n"
+        );
         apply_conf(&f, "WEBSTORE", "/www/webstore", &new, true).unwrap();
-        assert_eq!(f.read("/www/webstore/conf/httpd.conf.bak").unwrap(), text.as_bytes());
-        assert!(Registry::load(&f).unwrap().get("WEBSTORE").unwrap().restart_required);
+        assert_eq!(
+            f.read("/www/webstore/conf/httpd.conf.bak").unwrap(),
+            text.as_bytes()
+        );
+        assert!(
+            Registry::load(&f)
+                .unwrap()
+                .get("WEBSTORE")
+                .unwrap()
+                .restart_required
+        );
         let p = ports(&load_conf(&f, "/www/webstore").unwrap());
-        assert_eq!(p[1], Port { addr: None, port: 443, tls: true, server_name: Some("shop".into()) });
+        assert_eq!(
+            p[1],
+            Port {
+                addr: None,
+                port: 443,
+                tls: true,
+                server_name: Some("shop".into())
+            }
+        );
 
         assert_eq!(delete(&f, "webstore").unwrap(), None);
         assert!(!f.exists("/www/webstore"));

@@ -18,7 +18,11 @@ use crate::error::{Result, SqlError};
 use crate::value::Value;
 
 fn err(sqlcode: i32, sqlstate: &'static str, what: impl Into<String>) -> SqlError {
-    SqlError::Integrity { sqlcode, sqlstate, what: what.into() }
+    SqlError::Integrity {
+        sqlcode,
+        sqlstate,
+        what: what.into(),
+    }
 }
 
 /// The range a column of SQL type `t` holds, `None` for a type an
@@ -48,26 +52,46 @@ pub fn attrs(id: &ast::Identity, range: (i128, i128), what: &str) -> Result<SeqA
     // primary restarts one below its START WITH).
     let sequence = what.starts_with("sequence");
     let first = if sequence { id.start } else { None };
-    let min = id.min.flatten().unwrap_or(if up { first.unwrap_or(1) } else { range.0 });
-    let max = id.max.flatten().unwrap_or(if up { range.1 } else { first.unwrap_or(-1) });
+    let min = id
+        .min
+        .flatten()
+        .unwrap_or(if up { first.unwrap_or(1) } else { range.0 });
+    let max = id
+        .max
+        .flatten()
+        .unwrap_or(if up { range.1 } else { first.unwrap_or(-1) });
     let start = id.start.unwrap_or(if up { min } else { max });
     for v in [min, max, start] {
         if v < range.0 || v > range.1 {
-            return Err(err(-846, "42815", format!("value {v} is outside the range of {what}")));
+            return Err(err(
+                -846,
+                "42815",
+                format!("value {v} is outside the range of {what}"),
+            ));
         }
     }
     if min > max {
-        return Err(err(-846, "42815", format!("MINVALUE must be less than MAXVALUE for {what}")));
+        return Err(err(
+            -846,
+            "42815",
+            format!("MINVALUE must be less than MAXVALUE for {what}"),
+        ));
     }
     // The primary takes a sequence's START WITH below its MINVALUE (an
     // ascending one gives it, a descending one has no values).
     if (start < min && !sequence) || start > max {
-        return Err(err(-846, "42815", format!("START WITH {start} is outside MINVALUE and MAXVALUE of {what}")));
+        return Err(err(
+            -846,
+            "42815",
+            format!("START WITH {start} is outside MINVALUE and MAXVALUE of {what}"),
+        ));
     }
     // The counter is eight bytes: a DECIMAL identity past them waits.
     if !sequence && (i64::try_from(min).is_err() || i64::try_from(max).is_err()) {
         return Err(SqlError::Unsupported {
-            what: format!("an identity or sequence range past 19 digits ({what}); BLOCKED(rel): an 8-byte counter"),
+            what: format!(
+                "an identity or sequence range past 19 digits ({what}); BLOCKED(rel): an 8-byte counter"
+            ),
         });
     }
     if id.order == Some(true) {
@@ -95,12 +119,35 @@ pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
     match &c.generated {
         // IBM generates identities, row change timestamps and auditing
         // columns only: an expression is a syntax error there.
-        Some(Generated::Expr(_)) => Err(err(-104, "42601", "GENERATED ALWAYS AS ( expects IDENTITY or an auditing value")),
-        Some(Generated::RowChangeTimestamp { .. }) if !matches!(c.type_spec.data_type, DataType::Timestamp(_)) => {
-            Err(err(-683, "42842", format!("column {} must be a TIMESTAMP to be a row change timestamp", c.name.value)))
+        Some(Generated::Expr(_)) => Err(err(
+            -104,
+            "42601",
+            "GENERATED ALWAYS AS ( expects IDENTITY or an auditing value",
+        )),
+        Some(Generated::RowChangeTimestamp { .. })
+            if !matches!(c.type_spec.data_type, DataType::Timestamp(_)) =>
+        {
+            Err(err(
+                -683,
+                "42842",
+                format!(
+                    "column {} must be a TIMESTAMP to be a row change timestamp",
+                    c.name.value
+                ),
+            ))
         }
-        Some(Generated::Audit { what, .. }) if what == "DATA CHANGE OPERATION" && !matches!(c.type_spec.data_type, DataType::Char(1)) => {
-            Err(err(-574, "42894", format!("column {} must be CHAR(1) to record the data change operation", c.name.value)))
+        Some(Generated::Audit { what, .. })
+            if what == "DATA CHANGE OPERATION"
+                && !matches!(c.type_spec.data_type, DataType::Char(1)) =>
+        {
+            Err(err(
+                -574,
+                "42894",
+                format!(
+                    "column {} must be CHAR(1) to record the data change operation",
+                    c.name.value
+                ),
+            ))
         }
         // USER is kept in a VARCHAR(18) or longer, another user or the
         // server in a VARCHAR(128), as pub400 requires.
@@ -108,14 +155,25 @@ pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
             if what != "DATA CHANGE OPERATION"
                 && !matches!(c.type_spec.data_type, DataType::Varchar(n) if n >= if what == "USER" { 18 } else { 128 }) =>
         {
-            Err(err(-574, "42894", format!("column {} is too short or not VARCHAR to record {what}", c.name.value)))
+            Err(err(
+                -574,
+                "42894",
+                format!(
+                    "column {} is too short or not VARCHAR to record {what}",
+                    c.name.value
+                ),
+            ))
         }
-        _ if c.generated.is_some() && c.identity.is_some() => {
-            Err(err(-574, "42894", format!("column {} cannot be generated twice", c.name.value)))
-        }
-        _ if c.generated.is_some() && c.default.is_some() => {
-            Err(err(-574, "42894", format!("a generated column {} cannot have a default", c.name.value)))
-        }
+        _ if c.generated.is_some() && c.identity.is_some() => Err(err(
+            -574,
+            "42894",
+            format!("column {} cannot be generated twice", c.name.value),
+        )),
+        _ if c.generated.is_some() && c.default.is_some() => Err(err(
+            -574,
+            "42894",
+            format!("a generated column {} cannot have a default", c.name.value),
+        )),
         _ => Ok(()),
     }
 }
@@ -125,9 +183,20 @@ pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
 pub fn entry_of(c: &ast::ColumnDef, f: &FieldDef) -> Result<Option<SqlColumn>> {
     let kind = if let Some(id) = &c.identity {
         let range = type_range(&c.type_spec.data_type).ok_or_else(|| {
-            err(-846, "42815", format!("identity column {} must be an integer or DECIMAL(n, 0)", c.name.value))
+            err(
+                -846,
+                "42815",
+                format!(
+                    "identity column {} must be an integer or DECIMAL(n, 0)",
+                    c.name.value
+                ),
+            )
         })?;
-        ColumnKind::Identity(attrs(id, range, &format!("identity column {}", c.name.value))?)
+        ColumnKind::Identity(attrs(
+            id,
+            range,
+            &format!("identity column {}", c.name.value),
+        )?)
     } else {
         match &c.generated {
             Some(Generated::RowChangeTimestamp { always }) => ColumnKind::RowChange(*always),
@@ -135,7 +204,12 @@ pub fn entry_of(c: &ast::ColumnDef, f: &FieldDef) -> Result<Option<SqlColumn>> {
             Some(Generated::Expr(_)) | None => return Ok(None),
         }
     };
-    Ok(Some(SqlColumn { field: f.name, kind, hidden: c.hidden, block_end: None }))
+    Ok(Some(SqlColumn {
+        field: f.name,
+        kind,
+        hidden: c.hidden,
+        block_end: None,
+    }))
 }
 
 /// `CREATE TABLE`: the `COLUMN` entries of `t`'s columns.
@@ -148,11 +222,29 @@ pub fn create(txn: &mut Txn<'_>, ctx: &SqlContext, file: ObjectId, t: &CreateTab
             entries.push(e);
         }
     }
-    if entries.iter().filter(|e| matches!(e.kind, ColumnKind::Identity(_))).count() > 1 {
-        return Err(err(-372, "428C1", "a table has one identity column at most"));
+    if entries
+        .iter()
+        .filter(|e| matches!(e.kind, ColumnKind::Identity(_)))
+        .count()
+        > 1
+    {
+        return Err(err(
+            -372,
+            "428C1",
+            "a table has one identity column at most",
+        ));
     }
-    if entries.iter().filter(|e| matches!(e.kind, ColumnKind::RowChange(_))).count() > 1 {
-        return Err(err(-372, "428C1", "a table has one row change timestamp column at most"));
+    if entries
+        .iter()
+        .filter(|e| matches!(e.kind, ColumnKind::RowChange(_)))
+        .count()
+        > 1
+    {
+        return Err(err(
+            -372,
+            "428C1",
+            "a table has one row change timestamp column at most",
+        ));
     }
     if entries.is_empty() {
         return Ok(());
@@ -217,12 +309,17 @@ impl Generation {
             let (always, value) = match &c.kind {
                 ColumnKind::RowChange(always) => (*always, {
                     let (secs, picos) = ctx.clock_picos();
-                    let (d, t) = (db::record::datetime::Date::from_unix(secs), db::record::datetime::Time::from_unix(secs));
+                    let (d, t) = (
+                        db::record::datetime::Date::from_unix(secs),
+                        db::record::datetime::Time::from_unix(secs),
+                    );
                     Value::Timestamp(crate::value::Timestamp::new(d, t, picos))
                 }),
                 ColumnKind::Audit(always, what) => {
                     let v = match what.as_str() {
-                        "DATA CHANGE OPERATION" => Value::Str(if insert { "I" } else { "U" }.into()),
+                        "DATA CHANGE OPERATION" => {
+                            Value::Str(if insert { "I" } else { "U" }.into())
+                        }
                         "CURRENT_SERVER" | "CURRENT SERVER" => Value::Str("QS400".into()),
                         _ => Value::Str(ctx.user.clone()),
                     };
@@ -231,7 +328,9 @@ impl Generation {
                 ColumnKind::Identity(_) | ColumnKind::Plain | ColumnKind::Expr(_) => continue,
             };
             if per_field[*i].is_some() && always && !overriding_system {
-                return Err(SqlError::IdentityValue { column: fields[*i].name.to_string() });
+                return Err(SqlError::IdentityValue {
+                    column: fields[*i].name.to_string(),
+                });
             }
             if per_field[*i].is_none() || always {
                 per_field[*i] = Some(value);

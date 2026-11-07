@@ -12,10 +12,12 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use mi::{FatPtr, Job};
-use sockets::consts::{AF_INET, AF_INET6, EAI_MEMORY, EAI_SYSTEM, INADDR_NONE, NETDB_MAX_HOST_NAME_LENGTH};
+use sockets::consts::{
+    AF_INET, AF_INET6, EAI_MEMORY, EAI_SYSTEM, INADDR_NONE, NETDB_MAX_HOST_NAME_LENGTH,
+};
 use sockets::layout::netdb::{self as images, Image};
 use sockets::layout::{HOSTENT, HOSTENT_DATA, i32_at};
-use sockets::resolver::{HostError, Hints, gai_strerror, hstrerror};
+use sockets::resolver::{Hints, HostError, gai_strerror, hstrerror};
 use sockets::{AddrForm, Errno, SockAddr};
 
 use super::abi::{bound_c, cstr, fail, fat, int, is_null, mem, opt_cstr, put_ptr, raw, ret, uint};
@@ -31,7 +33,10 @@ fn place(j: &Job, dst: &mut [u8], ptr: FatPtr, im: &Image) -> R<()> {
     }
     dst[..n].copy_from_slice(&im.bytes);
     for &(slot, target) in &im.ptrs {
-        let p = j.spaces.add(ptr, i64::try_from(target).expect("small")).map_err(|_| Errno::EFAULT)?;
+        let p = j
+            .spaces
+            .add(ptr, i64::try_from(target).expect("small"))
+            .map_err(|_| Errno::EFAULT)?;
         put_ptr(dst, slot, p);
     }
     Ok(())
@@ -183,7 +188,12 @@ fn gethostbyname(j: &mut Job, name: u128) -> u128 {
     };
     let found = net(j).borrow_mut().resolver.by_name(&name, AF_INET);
     match found {
-        Ok(h) => match fixed_image(j, "hostent", HOSTENT.size + HOSTENT_DATA.size, &host_image(&h)) {
+        Ok(h) => match fixed_image(
+            j,
+            "hostent",
+            HOSTENT.size + HOSTENT_DATA.size,
+            &host_image(&h),
+        ) {
             Ok(p) => raw(p),
             Err(_) => host_failed(j, HostError::NoRecovery),
         },
@@ -192,7 +202,12 @@ fn gethostbyname(j: &mut Job, name: u128) -> u128 {
 }
 
 /// Fill a caller's `hostent` and `hostent_data`.
-fn host_r(j: &mut Job, found: Result<sockets::resolver::Host, HostError>, result: u128, data: u128) -> i64 {
+fn host_r(
+    j: &mut Job,
+    found: Result<sockets::resolver::Host, HostError>,
+    result: u128,
+    data: u128,
+) -> i64 {
     let h = match found {
         Ok(h) => h,
         Err(e) => {
@@ -210,9 +225,15 @@ fn host_r(j: &mut Job, found: Result<sockets::resolver::Host, HostError>, result
         let dp = fat(data);
         head.copy_from_slice(&split.head);
         buf[..split.data.len()].copy_from_slice(&split.data);
-        for (slots, dst) in [(&split.head_ptrs, &mut *head), (&split.data_ptrs, &mut *buf)] {
+        for (slots, dst) in [
+            (&split.head_ptrs, &mut *head),
+            (&split.data_ptrs, &mut *buf),
+        ] {
             for &(slot, target) in slots {
-                let p = j.spaces.add(dp, i64::try_from(target).expect("small")).map_err(|_| Errno::EFAULT)?;
+                let p = j
+                    .spaces
+                    .add(dp, i64::try_from(target).expect("small"))
+                    .map_err(|_| Errno::EFAULT)?;
                 put_ptr(dst, slot, p);
             }
         }
@@ -240,7 +261,9 @@ fn addr_arg(j: &Job, a: u128, len: i64, ty: i64) -> Result<IpAddr, HostError> {
     let b = mem(j, a, n).map_err(|_| HostError::NoRecovery)?;
     match (int(ty), n) {
         (AF_INET, 4) => Ok(IpAddr::V4(Ipv4Addr::new(b[0], b[1], b[2], b[3]))),
-        (AF_INET6, 16) => Ok(IpAddr::V6(Ipv6Addr::from(<[u8; 16]>::try_from(&*b).expect("16")))),
+        (AF_INET6, 16) => Ok(IpAddr::V6(Ipv6Addr::from(
+            <[u8; 16]>::try_from(&*b).expect("16"),
+        ))),
         _ => Err(HostError::NoRecovery),
     }
 }
@@ -251,7 +274,12 @@ fn gethostbyaddr(j: &mut Job, a: u128, len: i64, ty: i64) -> u128 {
         Err(e) => Err(e),
     };
     match found {
-        Ok(h) => match fixed_image(j, "hostent", HOSTENT.size + HOSTENT_DATA.size, &host_image(&h)) {
+        Ok(h) => match fixed_image(
+            j,
+            "hostent",
+            HOSTENT.size + HOSTENT_DATA.size,
+            &host_image(&h),
+        ) {
             Ok(p) => raw(p),
             Err(_) => host_failed(j, HostError::NoRecovery),
         },
@@ -267,7 +295,14 @@ fn gethostbyaddr_r(j: &mut Job, a: u128, len: i64, ty: i64, result: u128, data: 
     host_r(j, found, result, data)
 }
 
-fn getaddrinfo(j: &mut Job, node: u128, service: u128, hints: u128, res: u128, form: AddrForm) -> i64 {
+fn getaddrinfo(
+    j: &mut Job,
+    node: u128,
+    service: u128,
+    hints: u128,
+    res: u128,
+    form: AddrForm,
+) -> i64 {
     let r = (|| {
         let node = opt_cstr(j, node, NETDB_MAX_HOST_NAME_LENGTH + 1).map_err(|_| EAI_SYSTEM)?;
         let service = opt_cstr(j, service, 64).map_err(|_| EAI_SYSTEM)?;
@@ -282,7 +317,10 @@ fn getaddrinfo(j: &mut Job, node: u128, service: u128, hints: u128, res: u128, f
         };
         mem(j, res, 16).map_err(|_| EAI_SYSTEM)?;
         let n = net(j);
-        let list = n.borrow_mut().resolver.getaddrinfo(node.as_deref(), service.as_deref(), &h)?;
+        let list = n
+            .borrow_mut()
+            .resolver
+            .getaddrinfo(node.as_deref(), service.as_deref(), &h)?;
         let im = images::addrinfo(&list, form);
         let mut nb = n.borrow_mut();
         let mut st = super::Net::keep_list(j, &im.bytes);
@@ -330,7 +368,10 @@ fn getnameinfo(
         let n = usize::try_from(uint(salen)).map_err(|_| sockets::consts::EAI_FAIL)?;
         let b = mem(j, sa, n.min(128)).map_err(|_| EAI_SYSTEM)?;
         let addr = SockAddr::decode(b, form).map_err(|_| sockets::consts::EAI_FAMILY)?;
-        let (h, s) = net(j).borrow_mut().resolver.getnameinfo(&addr, int(flags))?;
+        let (h, s) = net(j)
+            .borrow_mut()
+            .resolver
+            .getnameinfo(&addr, int(flags))?;
         let hl = usize::try_from(uint(hostlen)).unwrap_or(0);
         let sl = usize::try_from(uint(servlen)).unwrap_or(0);
         if !is_null(host) && hl > 0 {
@@ -373,12 +414,23 @@ fn res_close(_j: &mut Job) -> i64 {
     0
 }
 
-fn res_common(j: &mut Job, name: u128, class: i64, ty: i64, ans: u128, len: i64, search: bool) -> i64 {
+fn res_common(
+    j: &mut Job,
+    name: u128,
+    class: i64,
+    ty: i64,
+    ans: u128,
+    len: i64,
+    search: bool,
+) -> i64 {
     let Ok(name) = cstr(j, name, sockets::consts::MAXDNAME) else {
         j.h_errno.set(HostError::NoRecovery.code());
         return -1;
     };
-    let (class, ty) = (u16::try_from(int(class)).unwrap_or(0), u16::try_from(int(ty)).unwrap_or(0));
+    let (class, ty) = (
+        u16::try_from(int(class)).unwrap_or(0),
+        u16::try_from(int(ty)).unwrap_or(0),
+    );
     let got = {
         let n = net(j);
         let mut nb = n.borrow_mut();
@@ -428,7 +480,11 @@ fn getservbyname(j: &mut Job, name: u128, proto: u128) -> u128 {
     let (Ok(name), Ok(proto)) = (cstr(j, name, 64), opt_cstr(j, proto, 16)) else {
         return 0;
     };
-    let s = net(j).borrow().resolver.services().by_name(&name, proto.as_deref());
+    let s = net(j)
+        .borrow()
+        .resolver
+        .services()
+        .by_name(&name, proto.as_deref());
     serv_result(j, s)
 }
 
@@ -437,7 +493,11 @@ fn getservbyport(j: &mut Job, port: i64, proto: u128) -> u128 {
         return 0;
     };
     let port = u16::try_from(int(port)).unwrap_or(0);
-    let s = net(j).borrow().resolver.services().by_port(port, proto.as_deref());
+    let s = net(j)
+        .borrow()
+        .resolver
+        .services()
+        .by_port(port, proto.as_deref());
     serv_result(j, s)
 }
 
@@ -450,12 +510,30 @@ fn getaddrinfo44(j: &mut Job, n: u128, s: u128, h: u128, r: u128) -> i64 {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn getnameinfo43(j: &mut Job, sa: u128, sl: i64, h: u128, hl: i64, s: u128, svl: i64, f: i64) -> i64 {
+fn getnameinfo43(
+    j: &mut Job,
+    sa: u128,
+    sl: i64,
+    h: u128,
+    hl: i64,
+    s: u128,
+    svl: i64,
+    f: i64,
+) -> i64 {
     getnameinfo(j, sa, sl, h, hl, s, svl, f, AddrForm::Bsd43)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn getnameinfo44(j: &mut Job, sa: u128, sl: i64, h: u128, hl: i64, s: u128, svl: i64, f: i64) -> i64 {
+fn getnameinfo44(
+    j: &mut Job,
+    sa: u128,
+    sl: i64,
+    h: u128,
+    hl: i64,
+    s: u128,
+    svl: i64,
+    f: i64,
+) -> i64 {
     getnameinfo(j, sa, sl, h, hl, s, svl, f, AddrForm::Bsd44)
 }
 

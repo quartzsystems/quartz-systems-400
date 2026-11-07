@@ -32,7 +32,11 @@ pub struct Locators {
 
 /// `SQL0423`: a handle that is not a live locator.
 fn not_valid(h: u32) -> SqlError {
-    SqlError::Coded { code: -423, state: "0F001", what: format!("locator {h} is not valid") }
+    SqlError::Coded {
+        code: -423,
+        state: "0F001",
+        what: format!("locator {h} is not valid"),
+    }
 }
 
 impl Locators {
@@ -49,17 +53,26 @@ impl Locators {
 
     /// The value of a handle.
     pub fn get(&self, h: u32) -> Result<&Value> {
-        self.values.get(&h).map(|(v, _)| v).ok_or_else(|| not_valid(h))
+        self.values
+            .get(&h)
+            .map(|(v, _)| v)
+            .ok_or_else(|| not_valid(h))
     }
 
     /// `FREE LOCATOR h`.
     pub fn free(&mut self, h: u32) -> Result<()> {
-        self.values.remove(&h).map(|_| ()).ok_or_else(|| not_valid(h))
+        self.values
+            .remove(&h)
+            .map(|_| ())
+            .ok_or_else(|| not_valid(h))
     }
 
     /// `HOLD LOCATOR h`: kept past the end of the unit of work.
     pub fn hold(&mut self, h: u32) -> Result<()> {
-        self.values.get_mut(&h).map(|e| e.1 = true).ok_or_else(|| not_valid(h))
+        self.values
+            .get_mut(&h)
+            .map(|e| e.1 = true)
+            .ok_or_else(|| not_valid(h))
     }
 
     /// The unit of work ended: every handle not held is freed.

@@ -45,9 +45,9 @@ pub fn text(queue: &str, entries: &[Entry], long: bool, list: &[String]) -> Stri
         .iter()
         .filter(|e| {
             list.is_empty()
-                || list
-                    .iter()
-                    .any(|w| w.eq_ignore_ascii_case(&e.owner) || w.parse::<u32>().is_ok_and(|n| n == e.job))
+                || list.iter().any(|w| {
+                    w.eq_ignore_ascii_case(&e.owner) || w.parse::<u32>().is_ok_and(|n| n == e.job)
+                })
         })
         .collect();
     let mut out = String::new();
@@ -55,14 +55,30 @@ pub fn text(queue: &str, entries: &[Entry], long: bool, list: &[String]) -> Stri
         let _ = writeln!(out, "{queue}: no entries");
         return out;
     }
-    let _ = writeln!(out, "{queue}: {} {}", picked.len(), if picked.len() == 1 { "entry" } else { "entries" });
+    let _ = writeln!(
+        out,
+        "{queue}: {} {}",
+        picked.len(),
+        if picked.len() == 1 {
+            "entry"
+        } else {
+            "entries"
+        }
+    );
     if long {
         for (i, e) in picked.iter().enumerate() {
             let _ = writeln!(out, "\n{}: {:<10} [job {:06}]", e.owner, rank(i + 1), e.job);
-            let _ = writeln!(out, "        {:<10} {:>6} {:>4} {} bytes", e.file, e.number, e.status, e.size);
+            let _ = writeln!(
+                out,
+                "        {:<10} {:>6} {:>4} {} bytes",
+                e.file, e.number, e.status, e.size
+            );
         }
     } else {
-        let _ = writeln!(out, "Rank   Owner      Job    File       Status  Total Size");
+        let _ = writeln!(
+            out,
+            "Rank   Owner      Job    File       Status  Total Size"
+        );
         for (i, e) in picked.iter().enumerate() {
             let _ = writeln!(
                 out,
@@ -103,7 +119,10 @@ mod tests {
             "QGPL/QPRINT: 2 entries\nRank   Owner      Job    File       Status  Total Size\n1st    QTMPLPD    000012 NOTES      RDY     120 bytes\n2nd    ANNE       000014 INVOICE    RDY     120 bytes\n"
         );
         let s = text("Q", &q, true, &["anne".into()]);
-        assert!(s.starts_with("Q: 1 entry\n\nANNE: 1st") && s.contains("INVOICE"), "{s}");
+        assert!(
+            s.starts_with("Q: 1 entry\n\nANNE: 1st") && s.contains("INVOICE"),
+            "{s}"
+        );
         assert_eq!(text("Q", &q, false, &["99".into()]), "Q: no entries\n");
         assert_eq!(rank(11), "11th");
         assert_eq!(rank(22), "22nd");

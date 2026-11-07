@@ -131,7 +131,8 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     // designed with option 2.
     if option.as_deref() == Some("1") && src_given {
         let lib = file_library(host, &s.src.1, &s.src.0).unwrap_or_default();
-        if member_info(host, &lib, &s.src.0, &s.src.2).is_some_and(|(t, _, _)| t.trim() == "MNUDDS") {
+        if member_info(host, &lib, &s.src.0, &s.src.2).is_some_and(|(t, _, _)| t.trim() == "MNUDDS")
+        {
             option = Some("2".into());
         }
     }
@@ -206,7 +207,10 @@ pub fn exec(job: &mut Job, host: &Host, text: &str) -> Option<String> {
 pub fn must(job: &mut Job, host: &Host, text: &str) -> Result<(), String> {
     let out = crate::command::run(job, host, text);
     match out.escape {
-        Some(f) => Err(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &f))),
+        Some(f) => Err(crate::display::msgline::text_of(
+            host,
+            &crate::display::msgline::of_fail(host, &f),
+        )),
         None => Ok(()),
     }
 }
@@ -220,7 +224,12 @@ pub fn file_library(host: &Host, lib: &str, file: &str) -> Option<String> {
 }
 
 /// A member's source type, text and change date (`yy-mm-dd`).
-pub fn member_info(host: &Host, lib: &str, file: &str, member: &str) -> Option<(String, String, String)> {
+pub fn member_info(
+    host: &Host,
+    lib: &str,
+    file: &str,
+    member: &str,
+) -> Option<(String, String, String)> {
     host.link
         .borrow_mut()
         .with(|l| l.members(lib.into(), file.into()))
@@ -264,16 +273,30 @@ pub fn read_member(host: &Host, lib: &str, file: &str, member: &str) -> Option<V
 }
 
 /// Write a member's lines, the member made when missing.
-pub fn write_member(host: &Host, lib: &str, file: &str, member: &str, lines: Vec<String>, srctype: &str) -> Result<(), String> {
+pub fn write_member(
+    host: &Host,
+    lib: &str,
+    file: &str,
+    member: &str,
+    lines: Vec<String>,
+    srctype: &str,
+) -> Result<(), String> {
     host.link.borrow_mut().with(|l| {
-        l.pdm_write(lib.into(), file.into(), member.into(), lines, srctype.into())
+        l.pdm_write(
+            lib.into(),
+            file.into(),
+            member.into(),
+            lines,
+            srctype.into(),
+        )
     })
 }
 
 /// Whether a name is a valid object or member name.
 pub fn valid_name(n: &str) -> bool {
     let mut c = n.chars();
-    c.next().is_some_and(|f| f.is_ascii_uppercase() || "$#@".contains(f))
+    c.next()
+        .is_some_and(|f| f.is_ascii_uppercase() || "$#@".contains(f))
         && n.len() <= 10
         && c.all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || "$#@_.".contains(ch))
 }

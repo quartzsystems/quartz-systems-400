@@ -216,7 +216,10 @@ impl RecordLocks {
     /// Which job holds a record's update lock.
     #[must_use]
     pub fn holder(&self, member: ObjectId, rrn: u64) -> Option<JobHandle> {
-        self.held.get(&(member, rrn)).and_then(|e| e.update).map(|h| h.job)
+        self.held
+            .get(&(member, rrn))
+            .and_then(|e| e.update)
+            .map(|h| h.job)
     }
 
     /// The jobs holding a record's read locks.

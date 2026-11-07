@@ -101,7 +101,10 @@ fn parse_dbcs(path: &Path) -> (Pairs, Pairs) {
         u16::from_str_radix(s, 16)
             .unwrap_or_else(|_| panic!("{} line {n}: bad hex {s}", path.display()))
     };
-    let pair_ok = |b: u16| b == 0x4040 || ((b >> 8) >= 0x41 && (b >> 8) <= 0xFE && (b & 0xFF) >= 0x41 && (b & 0xFF) <= 0xFE);
+    let pair_ok = |b: u16| {
+        b == 0x4040
+            || ((b >> 8) >= 0x41 && (b >> 8) <= 0xFE && (b & 0xFF) >= 0x41 && (b & 0xFF) <= 0xFE)
+    };
     let (mut pairs, mut enc) = (Vec::new(), Vec::new());
     for (i, line) in text.lines().enumerate() {
         let n = i + 1;
@@ -124,7 +127,11 @@ fn parse_dbcs(path: &Path) -> (Pairs, Pairs) {
         for k in 0..=run {
             let (b, cp) = (b + k, cp + k);
             assert!(pair_ok(b), "{} line {n}: bad pair {b:04X}", path.display());
-            assert!(!(0xD800..0xE000).contains(&cp), "{} line {n}: surrogate", path.display());
+            assert!(
+                !(0xD800..0xE000).contains(&cp),
+                "{} line {n}: surrogate",
+                path.display()
+            );
             if let Some(&(last, _)) = pairs.last() {
                 assert!(b > last, "{} line {n}: pairs out of order", path.display());
             }
@@ -133,7 +140,11 @@ fn parse_dbcs(path: &Path) -> (Pairs, Pairs) {
     }
     let mut seen = std::collections::HashSet::new();
     for (_, cp) in &pairs {
-        assert!(seen.insert(*cp), "{}: U+{cp:04X} mapped twice", path.display());
+        assert!(
+            seen.insert(*cp),
+            "{}: U+{cp:04X} mapped twice",
+            path.display()
+        );
     }
     (pairs, enc)
 }

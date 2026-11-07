@@ -126,13 +126,25 @@ impl DecFloat {
     /// Zero of a format.
     #[must_use]
     pub fn zero(format: DfFormat) -> Self {
-        Self { neg: false, kind: DfKind::Finite, coeff: 0, exp: 0, format }
+        Self {
+            neg: false,
+            kind: DfKind::Finite,
+            coeff: 0,
+            exp: 0,
+            format,
+        }
     }
 
     /// A special value.
     #[must_use]
     pub fn special(kind: DfKind, neg: bool, format: DfFormat) -> Self {
-        Self { neg, kind, coeff: 0, exp: 0, format }
+        Self {
+            neg,
+            kind,
+            coeff: 0,
+            exp: 0,
+            format,
+        }
     }
 
     /// `coeff * 10^exp`, rounded to the format.
@@ -198,7 +210,13 @@ impl DecFloat {
         if !self.is_finite() {
             return Ok(Self { format, ..*self });
         }
-        Self::round_in(self.neg, &digits::from_u128(self.coeff), self.exp, format, mode)
+        Self::round_in(
+            self.neg,
+            &digits::from_u128(self.coeff),
+            self.exp,
+            format,
+            mode,
+        )
     }
 
     /// Round `mag * 10^exp` to the format, half-even; clamp the exponent.
@@ -208,17 +226,36 @@ impl DecFloat {
 
     /// Round `mag * 10^exp` to the format in `mode`; clamp the exponent.
     /// A result below the normal range that loses digits underflows.
-    pub(crate) fn round_in(neg: bool, mag: &[u8], exp: i32, format: DfFormat, mode: DfRounding) -> Result<Self> {
+    pub(crate) fn round_in(
+        neg: bool,
+        mag: &[u8],
+        exp: i32,
+        format: DfFormat,
+        mode: DfRounding,
+    ) -> Result<Self> {
         Self::round_impl(neg, mag, exp, format, mode, false)
     }
 
     /// As [`Self::round_in`], for an arithmetic result: one that loses
     /// digits below the smallest exponent underflows, as IBM i reports it.
-    pub(crate) fn round_arith(neg: bool, mag: &[u8], exp: i32, format: DfFormat, mode: DfRounding) -> Result<Self> {
+    pub(crate) fn round_arith(
+        neg: bool,
+        mag: &[u8],
+        exp: i32,
+        format: DfFormat,
+        mode: DfRounding,
+    ) -> Result<Self> {
         Self::round_impl(neg, mag, exp, format, mode, true)
     }
 
-    fn round_impl(neg: bool, mag: &[u8], exp: i32, format: DfFormat, mode: DfRounding, strict: bool) -> Result<Self> {
+    fn round_impl(
+        neg: bool,
+        mag: &[u8],
+        exp: i32,
+        format: DfFormat,
+        mode: DfRounding,
+        strict: bool,
+    ) -> Result<Self> {
         let mut mag: Digits = mag.to_vec();
         digits::trim(&mut mag);
         let mut exp = exp;
@@ -237,7 +274,9 @@ impl DecFloat {
             mag = kept;
             exp += drop;
             if strict && tiny && dropped.iter().any(|d| *d != 0) {
-                return Err(DecimalError::Underflow { what: "a DECFLOAT result is below its smallest exponent" });
+                return Err(DecimalError::Underflow {
+                    what: "a DECFLOAT result is below its smallest exponent",
+                });
             }
             if mode.rounds_up(neg, mag.first().copied().unwrap_or(0), &dropped) {
                 mag = digits::add_one(&mag);
@@ -253,13 +292,21 @@ impl DecFloat {
             // Fold down: pad with zeros when the digits allow.
             let pad = usize::try_from(exp - format.qmax()).expect("positive");
             if mag.len() + pad > p {
-                return Err(DecimalError::Overflow { what: "a DECFLOAT result exceeds its largest exponent" });
+                return Err(DecimalError::Overflow {
+                    what: "a DECFLOAT result exceeds its largest exponent",
+                });
             }
             mag = digits::shl(&mag, pad);
             exp = format.qmax();
         }
         let coeff = digits::to_u128(&mag).expect("at most 34 digits");
-        Ok(Self { neg, kind: DfKind::Finite, coeff, exp, format })
+        Ok(Self {
+            neg,
+            kind: DfKind::Finite,
+            coeff,
+            exp,
+            format,
+        })
     }
 
     /// From a decimal, rounded when it has more digits than the format.
@@ -269,13 +316,25 @@ impl DecFloat {
 
     /// From a decimal, rounded in `mode`.
     pub fn from_decimal_in(d: &Decimal, format: DfFormat, mode: DfRounding) -> Result<Self> {
-        Self::round_in(d.is_negative(), d.digits_le(), -i32::from(d.scale()), format, mode)
+        Self::round_in(
+            d.is_negative(),
+            d.digits_le(),
+            -i32::from(d.scale()),
+            format,
+            mode,
+        )
     }
 
     /// From an integer.
     #[must_use]
     pub fn from_i64(n: i64, format: DfFormat) -> Self {
-        Self::round(n < 0, &digits::from_u128(u128::from(n.unsigned_abs())), 0, format).expect("fits")
+        Self::round(
+            n < 0,
+            &digits::from_u128(u128::from(n.unsigned_abs())),
+            0,
+            format,
+        )
+        .expect("fits")
     }
 
     /// The exact decimal, when finite and within 63 digits and 63
@@ -290,7 +349,11 @@ impl DecFloat {
         if self.exp >= 0 {
             let e = usize::try_from(self.exp).expect("positive");
             if mag.len() + e > usize::from(crate::MAX_DIGITS) && !mag.is_empty() {
-                return Err(DecimalError::SizeOverflow { value: self.to_string(), digits: 63, scale: 0 });
+                return Err(DecimalError::SizeOverflow {
+                    value: self.to_string(),
+                    digits: 63,
+                    scale: 0,
+                });
             }
             return Decimal::from_digits(self.neg, digits::shl(&mag, e), 0);
         }
@@ -302,7 +365,11 @@ impl DecFloat {
             scale -= 1;
         }
         if scale > 63 {
-            return Err(DecimalError::SizeOverflow { value: self.to_string(), digits: 63, scale: 63 });
+            return Err(DecimalError::SizeOverflow {
+                value: self.to_string(),
+                digits: 63,
+                scale: 63,
+            });
         }
         Decimal::from_digits(self.neg, mag, u8::try_from(scale).expect("at most 63"))
     }
@@ -314,9 +381,14 @@ impl DecFloat {
         match self.kind {
             DfKind::Infinity => sign * f64::INFINITY,
             DfKind::NaN | DfKind::SNaN => f64::NAN,
-            DfKind::Finite => format!("{}{}E{}", if self.neg { "-" } else { "" }, self.coeff, self.exp)
-                .parse()
-                .unwrap_or(0.0),
+            DfKind::Finite => format!(
+                "{}{}E{}",
+                if self.neg { "-" } else { "" },
+                self.coeff,
+                self.exp
+            )
+            .parse()
+            .unwrap_or(0.0),
         }
     }
 
@@ -355,7 +427,11 @@ impl DecFloat {
             return self;
         }
         let coeff = self.coeff * 10u128.pow(self.exp.unsigned_abs());
-        Self { coeff, exp: 0, ..self }
+        Self {
+            coeff,
+            exp: 0,
+            ..self
+        }
     }
 
     /// Parse `[+-]digits[.digits][E[+-]n]`, `Infinity`, `Inf`, `NaN` or
@@ -366,7 +442,9 @@ impl DecFloat {
 
     /// Parse as [`Self::parse`], rounded in `mode`.
     pub fn parse_in(text: &str, format: DfFormat, mode: DfRounding) -> Result<Self> {
-        let bad = || DecimalError::Parse { text: text.to_string() };
+        let bad = || DecimalError::Parse {
+            text: text.to_string(),
+        };
         let s = text.trim();
         let (neg, s) = match s.strip_prefix('-') {
             Some(r) => (true, r),
@@ -399,13 +477,19 @@ impl DecFloat {
     /// Negated (the sign of a NaN too).
     #[must_use]
     pub fn negated(&self) -> Self {
-        Self { neg: !self.neg, ..*self }
+        Self {
+            neg: !self.neg,
+            ..*self
+        }
     }
 
     /// Without its sign.
     #[must_use]
     pub fn abs(&self) -> Self {
-        Self { neg: false, ..*self }
+        Self {
+            neg: false,
+            ..*self
+        }
     }
 
     /// Trailing zeros removed (`NORMALIZE_DECFLOAT`); zero is `0`.
@@ -422,7 +506,11 @@ impl DecFloat {
             c /= 10;
             e += 1;
         }
-        Self { coeff: c, exp: e, ..*self }
+        Self {
+            coeff: c,
+            exp: e,
+            ..*self
+        }
     }
 
     /// The IEEE encoding, big-endian, densely packed decimal.
@@ -435,7 +523,12 @@ impl DecFloat {
     pub fn decode(bytes: &[u8], format: DfFormat) -> Result<Self> {
         if bytes.len() != format.byte_len() {
             return Err(DecimalError::DecimalData {
-                what: format!("{} bytes where DECFLOAT({}) has {}", bytes.len(), format.digits(), format.byte_len()),
+                what: format!(
+                    "{} bytes where DECFLOAT({}) has {}",
+                    bytes.len(),
+                    format.digits(),
+                    format.byte_len()
+                ),
             });
         }
         Ok(dpd::decode(bytes, format))

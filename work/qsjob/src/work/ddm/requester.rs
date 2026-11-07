@@ -18,7 +18,9 @@ use ddm::client::{ConnectOpts, Connection};
 use ddm::file::{Rec, Ufcb, ufcb};
 use ddm::objects::{DdmFile, RdbDirectory};
 use ddm::sec::Mechanism;
-use mi::io::{DdmRedirect, FileInfo, IoFail, IoOp, IoRequest, IoResult, IoSource, KeyRef, OpenSpec};
+use mi::io::{
+    DdmRedirect, FileInfo, IoFail, IoOp, IoRequest, IoResult, IoSource, KeyRef, OpenSpec,
+};
 use stg::{Client, Shared};
 
 /// Handles of remote files start here, above any the service gives.
@@ -63,14 +65,24 @@ fn fail(msgid: &str, what: &str) -> IoFail {
 /// Where a DDM file goes: host, port, the RDB it is named by.
 pub fn destination(f: &DdmFile, dir: &RdbDirectory) -> Result<(String, u16, String), IoFail> {
     if f.rmtloc.eq_ignore_ascii_case("*RDB") {
-        let e = dir
-            .find(&f.rdb)
-            .ok_or_else(|| fail("CPF9190", &format!("No relational database directory entry {}.", f.rdb)))?;
-        let host = if e.is_local() { "127.0.0.1".to_string() } else { e.rmtloc.clone() };
+        let e = dir.find(&f.rdb).ok_or_else(|| {
+            fail(
+                "CPF9190",
+                &format!("No relational database directory entry {}.", f.rdb),
+            )
+        })?;
+        let host = if e.is_local() {
+            "127.0.0.1".to_string()
+        } else {
+            e.rmtloc.clone()
+        };
         return Ok((host, e.tcp_port(), e.rdb.clone()));
     }
     if !f.is_ip() {
-        return Err(fail("CPF9190", "DDM files over SNA are not supported; use RMTLOCNAME(name *IP)."));
+        return Err(fail(
+            "CPF9190",
+            "DDM files over SNA are not supported; use RMTLOCNAME(name *IP).",
+        ));
     }
     let host = f.rmtloc.trim().trim_matches('\'').to_string();
     Ok((host.clone(), f.port, host.to_ascii_uppercase()))
@@ -79,7 +91,9 @@ pub fn destination(f: &DdmFile, dir: &RdbDirectory) -> Result<(String, u16, Stri
 /// The user and password for `rdb` from the job user's entries.
 pub(crate) fn credentials(link: &Shared, rdb: &str) -> Option<(String, String)> {
     for server in [rdb, "QDDMDRDASERVER", "QDDMSERVER"] {
-        let got = link.borrow_mut().with(|l| l.svraute_get(server.to_string()));
+        let got = link
+            .borrow_mut()
+            .with(|l| l.svraute_get(server.to_string()));
         if let Some((u, p)) = got
             && !p.is_empty()
         {
@@ -90,13 +104,27 @@ pub(crate) fn credentials(link: &Shared, rdb: &str) -> Option<(String, String)> 
 }
 
 impl<I: IoSource> DdmIo<I> {
-    fn open_remote(&mut self, spec: &OpenSpec, redirect: &DdmRedirect) -> Result<(u32, FileInfo), IoFail> {
-        let desc = DdmFile::decode(&redirect.payload)
-            .ok_or_else(|| fail("CPF3204", &format!("DDM file {}/{} is damaged.", redirect.library, redirect.file)))?;
+    fn open_remote(
+        &mut self,
+        spec: &OpenSpec,
+        redirect: &DdmRedirect,
+    ) -> Result<(u32, FileInfo), IoFail> {
+        let desc = DdmFile::decode(&redirect.payload).ok_or_else(|| {
+            fail(
+                "CPF3204",
+                &format!(
+                    "DDM file {}/{} is damaged.",
+                    redirect.library, redirect.file
+                ),
+            )
+        })?;
         let dir = crate::command::ddm::directory_of(&self.link);
         let (host, port, rdb) = destination(&desc, &dir)?;
         let (user, password) = credentials(&self.link, &rdb).ok_or_else(|| {
-            fail("CPF9190", &format!("No server authentication entry with a password for {rdb} (ADDSVRAUTE)."))
+            fail(
+                "CPF9190",
+                &format!("No server authentication entry with a password for {rdb} (ADDSVRAUTE)."),
+            )
         })?;
         let addrs = crate::work::netsvc::resolve(&self.link, &host, port);
         let stream = addrs
@@ -108,20 +136,31 @@ impl<I: IoSource> DdmIo<I> {
         let mut opts = ConnectOpts::new(&rdb, &user, &password);
         opts.access_rdb = false;
         // The password itself first: it proves the user at any QPWDLVL.
-        opts.mechanisms = vec![Mechanism::EUsrIdPwd, Mechanism::UsrEncPwd, Mechanism::UsrSsbPwd, Mechanism::UsrSbsPwd];
+        opts.mechanisms = vec![
+            Mechanism::EUsrIdPwd,
+            Mechanism::UsrEncPwd,
+            Mechanism::UsrSsbPwd,
+            Mechanism::UsrSbsPwd,
+        ];
         opts.srvnam = crate::work::ddm::system_name(&self.link);
-        let mut conn = Connection::connect(stream, &opts).map_err(|e| fail("CPF9190", &format!("{rdb}: {e}")))?;
-        let (lib, file) = desc.remote_name().ok_or_else(|| fail("CPF9190", "A nonstandard remote file name is not supported."))?;
+        let mut conn = Connection::connect(stream, &opts)
+            .map_err(|e| fail("CPF9190", &format!("{rdb}: {e}")))?;
+        let (lib, file) = desc.remote_name().ok_or_else(|| {
+            fail(
+                "CPF9190",
+                "A nonstandard remote file name is not supported.",
+            )
+        })?;
         let flags = match spec.usage {
             qir::FileUsage::Input => ufcb::INPUT,
             qir::FileUsage::Output => ufcb::OUTPUT,
             qir::FileUsage::Update => ufcb::INPUT | ufcb::UPDATE | ufcb::DELETE,
             qir::FileUsage::All => ufcb::INPUT | ufcb::OUTPUT | ufcb::UPDATE | ufcb::DELETE,
         };
-        let (format, fields, keys) = redirect
-            .local
-            .as_ref()
-            .map_or_else(|| (file.clone(), 0, 0), |l| (l.name.clone(), l.fields as usize, l.keys));
+        let (format, fields, keys) = redirect.local.as_ref().map_or_else(
+            || (file.clone(), 0, 0),
+            |l| (l.name.clone(), l.fields as usize, l.keys),
+        );
         let block = Ufcb {
             file: file.clone(),
             library: lib.clone(),
@@ -170,14 +209,28 @@ fn status(code: u16, msgid: &str) -> IoResult {
 fn read_result(reply: Result<FileReply, ddm::Error>, keyed: bool) -> IoResult {
     let reply = match reply {
         Ok(r) => r,
-        Err(e) => return status(1299, if e.to_string().contains("CPF") { "CPF5029" } else { "CPF5001" }),
+        Err(e) => {
+            return status(
+                1299,
+                if e.to_string().contains("CPF") {
+                    "CPF5029"
+                } else {
+                    "CPF5001"
+                },
+            );
+        }
     };
     if let Some(r) = reply.records.into_iter().next() {
         return IoResult {
             found: true,
             equal: keyed,
             rrn: u64::from(r.rrn),
-            nulls: Some(r.nulls.iter().map(|n| if *n { 0xF1 } else { 0xF0 }).collect()),
+            nulls: Some(
+                r.nulls
+                    .iter()
+                    .map(|n| if *n { 0xF1 } else { 0xF0 })
+                    .collect(),
+            ),
             record: Some(r.data),
             ..IoResult::default()
         };
@@ -210,7 +263,10 @@ fn done(reply: Result<FileReply, ddm::Error>) -> IoResult {
 }
 
 fn rec(req: &IoRequest<'_>, fields: usize) -> Rec {
-    let mut nulls: Vec<bool> = req.nulls.map(|n| n.iter().map(|b| *b == 0xF1).collect()).unwrap_or_default();
+    let mut nulls: Vec<bool> = req
+        .nulls
+        .map(|n| n.iter().map(|b| *b == 0xF1).collect())
+        .unwrap_or_default();
     nulls.resize(fields, false);
     Rec {
         data: req.record.map(<[u8]>::to_vec).unwrap_or_default(),
@@ -236,10 +292,18 @@ impl<I: IoSource> IoSource for DdmIo<I> {
         let Some(r) = self.remote.get_mut(&handle) else {
             return self.inner.io(handle, req);
         };
-        let lock = if req.nolock { 0 } else { ddm::file::lock::UPDATE };
+        let lock = if req.nolock {
+            0
+        } else {
+            ddm::file::lock::UPDATE
+        };
         match (req.op, req.key) {
             (IoOp::Read, _) => {
-                let op = if r.positioned { ddm::file::op::NEXT } else { ddm::file::op::FIRST };
+                let op = if r.positioned {
+                    ddm::file::op::NEXT
+                } else {
+                    ddm::file::op::FIRST
+                };
                 r.positioned = true;
                 let g = r.conn.get(&r.file, ddm::cp::s38::S38GET, op, lock, &[]);
                 read_result(g, false)
@@ -295,7 +359,10 @@ mod tests {
         dir.add(e).unwrap();
         let mut f = DdmFile::new("QGPL", "RCUST", "QGPL/CUST", "*RDB", "*IP");
         f.rdb = "LOOP".into();
-        assert_eq!(destination(&f, &dir).unwrap(), ("127.0.0.1".into(), 446, "LOOP".into()));
+        assert_eq!(
+            destination(&f, &dir).unwrap(),
+            ("127.0.0.1".into(), 446, "LOOP".into())
+        );
         let g = DdmFile::new("QGPL", "RCUST", "QGPL/CUST", "other.example.com", "*IP");
         assert_eq!(destination(&g, &dir).unwrap().0, "other.example.com");
         f.rdb = "NOPE".into();

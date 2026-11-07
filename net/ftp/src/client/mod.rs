@@ -177,7 +177,11 @@ impl<H: Host, C: Console> Client<H, C> {
             app: regfac::formats::tcp::app::FTP_CLIENT,
             op: op_id,
             user: String::new(),
-            remote: self.conn.as_ref().map(|c| c.peer.ip().to_string()).unwrap_or_default(),
+            remote: self
+                .conn
+                .as_ref()
+                .map(|c| c.peer.ip().to_string())
+                .unwrap_or_default(),
             info: ccsid::to_ebcdic(info).unwrap_or_default(),
         });
         let a = self.host.exit(CLIENT_REQ, &req);
@@ -214,7 +218,11 @@ impl<H: Host, C: Console> Client<H, C> {
     fn echo(&mut self, line: &str) {
         let shown = match Sub::parse(line) {
             Some((Sub::User, args)) if args.split_whitespace().count() > 1 => {
-                format!("> {} {} ********", line.split_whitespace().next().unwrap_or(""), args.split_whitespace().next().unwrap_or(""))
+                format!(
+                    "> {} {} ********",
+                    line.split_whitespace().next().unwrap_or(""),
+                    args.split_whitespace().next().unwrap_or("")
+                )
             }
             Some((Sub::Pass, _)) => "> PASS ********".to_string(),
             _ => format!("> {line}"),
@@ -270,7 +278,14 @@ impl<H: Host, C: Console> Client<H, C> {
             }
         }
         if self.opts.security != Security::None {
-            for cmd in ["PBSZ 0", if self.opts.private { "PROT P" } else { "PROT C" }] {
+            for cmd in [
+                "PBSZ 0",
+                if self.opts.private {
+                    "PROT P"
+                } else {
+                    "PROT C"
+                },
+            ] {
                 if let Ok(r) = c.command(cmd) {
                     self.show(&r);
                 }
@@ -284,14 +299,20 @@ impl<H: Host, C: Console> Client<H, C> {
     /// Sign on: a line with the user (and the password after a blank),
     /// the password asked for when it is not there.
     fn login(&mut self) {
-        let Some(line) = self.console.read_line("Enter the user name (and password).") else {
+        let Some(line) = self
+            .console
+            .read_line("Enter the user name (and password).")
+        else {
             return;
         };
         let mut words = line.split_whitespace();
         let user = words.next().unwrap_or("").to_string();
         let pass = words.next().map(str::to_string);
         if self.opts.batch {
-            self.say(&format!("> {user}{}", if pass.is_some() { " ********" } else { "" }));
+            self.say(&format!(
+                "> {user}{}",
+                if pass.is_some() { " ********" } else { "" }
+            ));
         }
         self.user(&user, pass);
     }
@@ -353,7 +374,11 @@ impl<H: Host, C: Console> Client<H, C> {
     /// Send a command and show its reply.
     fn raw(&mut self, cmd: &str) -> Option<Reply> {
         if self.debug {
-            let shown = if cmd.starts_with("PASS ") { "PASS ********".to_string() } else { cmd.to_string() };
+            let shown = if cmd.starts_with("PASS ") {
+                "PASS ********".to_string()
+            } else {
+                cmd.to_string()
+            };
             self.say(&format!(">>> {shown}"));
         }
         let Some(c) = self.conn.as_mut() else {
@@ -406,7 +431,11 @@ impl<H: Host, C: Console> Client<H, C> {
             } else {
                 let got = read_all(d.as_mut())?;
                 drop(d);
-                if block { crate::block::decode(&got) } else { got }
+                if block {
+                    crate::block::decode(&got)
+                } else {
+                    got
+                }
             };
             if first.code < 200 {
                 log.push(c.reply()?);
@@ -436,7 +465,11 @@ impl<H: Host, C: Console> Client<H, C> {
         }
         match names::parse_lib_name(name) {
             Some(n) => {
-                let lib = n.lib.clone().or_else(|| names::library_of(&self.lcwd)).unwrap_or_else(|| "QGPL".into());
+                let lib = n
+                    .lib
+                    .clone()
+                    .or_else(|| names::library_of(&self.lcwd))
+                    .unwrap_or_else(|| "QGPL".into());
                 if let Some(m) = &n.mbr {
                     objects::member_path(&lib, &n.file, m)
                 } else {
@@ -460,15 +493,23 @@ impl<H: Host, C: Console> Client<H, C> {
 
     fn get(&mut self, args: &str, append: bool) {
         let replace = args.to_ascii_uppercase().contains("(REPLACE");
-        let words: Vec<&str> = args.split_whitespace().filter(|w| !w.starts_with('(')).collect();
+        let words: Vec<&str> = args
+            .split_whitespace()
+            .filter(|w| !w.starts_with('('))
+            .collect();
         let Some(remote) = words.first().map(|s| (*s).to_string()) else {
             self.say("GET needs a remote name.");
             return;
         };
-        let local = words.get(1).map_or_else(|| Self::default_local(&remote), |s| (*s).to_string());
+        let local = words
+            .get(1)
+            .map_or_else(|| Self::default_local(&remote), |s| (*s).to_string());
         let path = self.local_path(&local);
         if !append && !replace && objects::exists(self.host.ifs(), &path) {
-            self.say(&format!("{} exists; add (REPLACE to replace it.", store::describe(&path)));
+            self.say(&format!(
+                "{} exists; add (REPLACE to replace it.",
+                store::describe(&path)
+            ));
             return;
         }
         if !self.allowed(op::RECEIVE_FILE, &path) {
@@ -497,7 +538,9 @@ impl<H: Host, C: Console> Client<H, C> {
             return;
         };
         let path = self.local_path(&local);
-        let remote = words.get(1).map_or_else(|| Self::default_local(&local), |s| (*s).to_string());
+        let remote = words
+            .get(1)
+            .map_or_else(|| Self::default_local(&local), |s| (*s).to_string());
         if !self.allowed(op::SEND_FILE, &path) {
             return;
         }
@@ -505,7 +548,11 @@ impl<H: Host, C: Console> Client<H, C> {
         let data = match store::fetch(&mut self.host, &form, &path) {
             Ok(d) => d,
             Err(r) => {
-                self.say(&format!("{} cannot be sent: {}", store::describe(&path), r.lines.join(" ")));
+                self.say(&format!(
+                    "{} cannot be sent: {}",
+                    store::describe(&path),
+                    r.lines.join(" ")
+                ));
                 return;
             }
         };
@@ -516,8 +563,15 @@ impl<H: Host, C: Console> Client<H, C> {
         } else {
             "STOR"
         };
-        if self.transfer(&format!("{cmd} {remote}"), Some(&data)).is_some() {
-            self.say(&format!("{} bytes sent from {}.", data.len(), store::describe(&path)));
+        if self
+            .transfer(&format!("{cmd} {remote}"), Some(&data))
+            .is_some()
+        {
+            self.say(&format!(
+                "{} bytes sent from {}.",
+                data.len(),
+                store::describe(&path)
+            ));
         }
     }
 
@@ -541,7 +595,11 @@ impl<H: Host, C: Console> Client<H, C> {
             && let Some(n) = names::parse_lib_name(pattern)
             && let Some(m) = &n.mbr
         {
-            let lib = n.lib.clone().or_else(|| names::library_of(&self.lcwd)).unwrap_or_else(|| "QGPL".into());
+            let lib = n
+                .lib
+                .clone()
+                .or_else(|| names::library_of(&self.lcwd))
+                .unwrap_or_else(|| "QGPL".into());
             let dir = objects::file_path(&lib, &n.file);
             let ents = self.host.ifs().read_dir(&dir).unwrap_or_default();
             return ents
@@ -552,18 +610,37 @@ impl<H: Host, C: Console> Client<H, C> {
                 .collect();
         }
         let full = names::join(&self.lcwd, pattern, "/");
-        let (dir, pat) = full.rsplit_once('/').map_or(("/".to_string(), full.clone()), |(d, p)| {
-            (if d.is_empty() { "/".into() } else { d.to_string() }, p.to_string())
-        });
+        let (dir, pat) = full
+            .rsplit_once('/')
+            .map_or(("/".to_string(), full.clone()), |(d, p)| {
+                (
+                    if d.is_empty() {
+                        "/".into()
+                    } else {
+                        d.to_string()
+                    },
+                    p.to_string(),
+                )
+            });
         let ents = self.host.ifs().read_dir(&dir).unwrap_or_default();
         ents.into_iter()
             .filter(|e| names::matches(&pat, &e.name))
-            .map(|e| if dir == self.lcwd { e.name } else { format!("{dir}/{}", e.name) })
+            .map(|e| {
+                if dir == self.lcwd {
+                    e.name
+                } else {
+                    format!("{dir}/{}", e.name)
+                }
+            })
             .collect()
     }
 
     fn list(&mut self, verb: &str, args: &str) {
-        let cmd = if args.trim().is_empty() { verb.to_string() } else { format!("{verb} {}", args.trim()) };
+        let cmd = if args.trim().is_empty() {
+            verb.to_string()
+        } else {
+            format!("{verb} {}", args.trim())
+        };
         if let Some(d) = self.transfer(&cmd, None) {
             let text = String::from_utf8_lossy(&d).to_string();
             for l in text.lines() {
@@ -633,9 +710,16 @@ impl<H: Host, C: Console> Client<H, C> {
         let lines = vec![
             format!(
                 "Connected to {}.",
-                if self.conn.is_some() { self.remote.as_str() } else { "no system" }
+                if self.conn.is_some() {
+                    self.remote.as_str()
+                } else {
+                    "no system"
+                }
             ),
-            format!("Representation type {:?}; naming format {}.", self.rep, self.namefmt),
+            format!(
+                "Representation type {:?}; naming format {}.",
+                self.rep, self.namefmt
+            ),
             self.local_place(),
             format!(
                 "Passive {}; unique names {}; SITE sent {}; debug {}.",
@@ -666,7 +750,10 @@ impl<H: Host, C: Console> Client<H, C> {
             Sub::Open => {
                 let mut w = args.split_whitespace();
                 let host = w.next().unwrap_or("").to_string();
-                let port = w.next().and_then(|p| p.parse().ok()).unwrap_or(self.opts.port);
+                let port = w
+                    .next()
+                    .and_then(|p| p.parse().ok())
+                    .unwrap_or(self.opts.port);
                 if host.is_empty() {
                     self.say("OPEN needs a system name or address.");
                 } else {
@@ -712,11 +799,18 @@ impl<H: Host, C: Console> Client<H, C> {
             Sub::Append => self.put(args, "APPE"),
             Sub::Mget => {
                 let replace = args.to_ascii_uppercase().contains("(REPLACE");
-                let pats: Vec<String> = args.split_whitespace().filter(|w| !w.starts_with('(')).map(str::to_string).collect();
+                let pats: Vec<String> = args
+                    .split_whitespace()
+                    .filter(|w| !w.starts_with('('))
+                    .map(str::to_string)
+                    .collect();
                 for p in pats {
                     for n in self.remote_names(&p) {
                         let local = Self::default_local(&n);
-                        self.get(&format!("{n} {local}{}", if replace { " (REPLACE" } else { "" }), false);
+                        self.get(
+                            &format!("{n} {local}{}", if replace { " (REPLACE" } else { "" }),
+                            false,
+                        );
                     }
                 }
             }
@@ -738,7 +832,9 @@ impl<H: Host, C: Console> Client<H, C> {
                 if w.len() != 2 {
                     self.say("RENAME needs the old and the new name.");
                 } else if self.allowed(op::RENAME, args)
-                    && self.raw(&format!("RNFR {}", w[0])).is_some_and(|r| r.code == 350)
+                    && self
+                        .raw(&format!("RNFR {}", w[0]))
+                        .is_some_and(|r| r.code == 350)
                 {
                     self.raw(&format!("RNTO {}", w[1]));
                 }
@@ -772,7 +868,10 @@ impl<H: Host, C: Console> Client<H, C> {
             }
             Sub::Mode => {
                 let m = args.trim().to_ascii_uppercase();
-                if self.raw(&format!("MODE {m}")).is_some_and(|r| r.code == 200) {
+                if self
+                    .raw(&format!("MODE {m}"))
+                    .is_some_and(|r| r.code == 200)
+                {
                     self.block = m == "B";
                 }
             }
@@ -803,7 +902,12 @@ impl<H: Host, C: Console> Client<H, C> {
                 if self.allowed(op::COMMAND, args) {
                     match self.host.command(args.trim()) {
                         Ok(()) => self.say(&format!("Command {} ran.", args.trim())),
-                        Err(e) => self.say(&format!("Command {} failed: {} {}", args.trim(), e.msgid, e.text)),
+                        Err(e) => self.say(&format!(
+                            "Command {} failed: {} {}",
+                            args.trim(),
+                            e.msgid,
+                            e.text
+                        )),
                     }
                 }
             }
@@ -844,7 +948,10 @@ impl<H: Host, C: Console> Client<H, C> {
 
     /// Whether a library path is the local current one.
     pub fn in_library(&self) -> bool {
-        matches!(names::qsys_node(&self.lcwd), Some(QsysNode::Lib(_) | QsysNode::Root))
+        matches!(
+            names::qsys_node(&self.lcwd),
+            Some(QsysNode::Lib(_) | QsysNode::Root)
+        )
     }
 }
 

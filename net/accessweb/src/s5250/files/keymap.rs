@@ -216,5 +216,4 @@ mod tests {
         m.clear_function("Reset");
         assert!(m.function("Ctrl+R").is_none() && m.function("Right Ctrl").is_none());
     }
-
 }

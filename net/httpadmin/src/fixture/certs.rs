@@ -9,6 +9,7 @@
 
 use std::sync::{Arc, OnceLock};
 
+use certs::CertError;
 use certs::admin::entries::{self, Signer};
 use certs::admin::{Ctx, Keystore, appids, keystores};
 use certs::apps::AppKind;
@@ -19,12 +20,13 @@ use certs::files::{MemFiles, StoreFiles};
 pub use certs::paths::SIGNATURE_VERIFICATION_STORE;
 use certs::paths::{LOCAL_CA_STORE, OBJECT_SIGNING_STORE, SYSTEM_STORE};
 use certs::stash::KeySealer;
-use certs::CertError;
 use certs::store::{CertStore, StoreKind};
 use certs::x509::build::{self, CertKind, CertSpec, Subject};
 
 use crate::certmgr::{Manager, save_user_stores};
-use crate::env::{AppInfo, CertDetail, CertFailure, CertRow, Certs, Import, ImportSource, NewCert, StoreInfo};
+use crate::env::{
+    AppInfo, CertDetail, CertFailure, CertRow, Certs, Import, ImportSource, NewCert, StoreInfo,
+};
 use crate::util::{days, secs};
 
 /// The second CA's store: a CA whose key this system holds.
@@ -81,7 +83,11 @@ fn spec(cn: &str, kind: CertKind, from: (i64, u32, u32), to: (i64, u32, u32)) ->
     CertSpec {
         subject: subject(cn),
         kind,
-        san: if kind == CertKind::Server { vec![cn.to_string()] } else { Vec::new() },
+        san: if kind == CertKind::Server {
+            vec![cn.to_string()]
+        } else {
+            Vec::new()
+        },
         not_before: secs(from.0, from.1, from.2, 14, 11, 2),
         days: u32::try_from(n).unwrap_or(1),
     }
@@ -100,12 +106,34 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     let c = at(t0);
     let sys = Keystore::new(SYSTEM_STORE, STORE_PASSWORD);
     keystores::create(&c, &sys, true, false)?;
-    keystores::create(&c, &Keystore::new(OBJECT_SIGNING_STORE, STORE_PASSWORD), true, false)?;
-    keystores::create(&c, &Keystore::new(SIGNATURE_VERIFICATION_STORE, STORE_PASSWORD), true, false)?;
-    keystores::create(&c, &Keystore::new("/www/webstore/conf/webstore.kdb", STORE_PASSWORD), true, false)?;
+    keystores::create(
+        &c,
+        &Keystore::new(OBJECT_SIGNING_STORE, STORE_PASSWORD),
+        true,
+        false,
+    )?;
+    keystores::create(
+        &c,
+        &Keystore::new(SIGNATURE_VERIFICATION_STORE, STORE_PASSWORD),
+        true,
+        false,
+    )?;
+    keystores::create(
+        &c,
+        &Keystore::new("/www/webstore/conf/webstore.kdb", STORE_PASSWORD),
+        true,
+        false,
+    )?;
 
     // The local CA, trusted by *SYSTEM.
-    keystores::create_local_ca(&c, STORE_PASSWORD, &subject("QSHQ400 Local CA"), KeyAlgorithm::EcdsaP256, 3650, true)?;
+    keystores::create_local_ca(
+        &c,
+        STORE_PASSWORD,
+        &subject("QSHQ400 Local CA"),
+        KeyAlgorithm::EcdsaP256,
+        3650,
+        true,
+    )?;
     let sys = Keystore::new(SYSTEM_STORE, "");
     let rename = |from: &str, to: &str| {
         entries::change(
@@ -121,7 +149,14 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     rename(ca::CA_LABEL, "QSHQ400 Local CA")?;
 
     // A second CA whose key the system holds.
-    let mut internal = CertStore::create_with(files, INTERNAL_CA_STORE, STORE_PASSWORD, StoreKind::CertAuth, t0, FAST)?;
+    let mut internal = CertStore::create_with(
+        files,
+        INTERNAL_CA_STORE,
+        STORE_PASSWORD,
+        StoreKind::CertAuth,
+        t0,
+        FAST,
+    )?;
     let ca_spec = CertSpec {
         subject: subject("Quartz Internal Certificate Authority"),
         kind: CertKind::Ca,
@@ -141,11 +176,20 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
         target.save(files)
     };
     let server = CertKind::Server;
-    issue("*.quartz.example", &spec("*.quartz.example", server, (2025, 1, 2), (2028, 1, 2)), KeyAlgorithm::Rsa2048)?;
+    issue(
+        "*.quartz.example",
+        &spec("*.quartz.example", server, (2025, 1, 2), (2028, 1, 2)),
+        KeyAlgorithm::Rsa2048,
+    )?;
     rename(ca::CA_LABEL, "Quartz Internal CA")?;
     issue(
         "webstore.quartz.example",
-        &spec("webstore.quartz.example", server, (2025, 3, 14), (2027, 3, 14)),
+        &spec(
+            "webstore.quartz.example",
+            server,
+            (2025, 3, 14),
+            (2027, 3, 14),
+        ),
         KeyAlgorithm::Rsa2048,
     )?;
     issue(
@@ -168,7 +212,12 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     )?;
     issue(
         "old-webstore",
-        &spec("webstore.quartz.example", server, (2025, 8, 1), (2026, 3, 14)),
+        &spec(
+            "webstore.quartz.example",
+            server,
+            (2025, 8, 1),
+            (2026, 3, 14),
+        ),
         KeyAlgorithm::Rsa2048,
     )?;
     let dft = entries::Change {
@@ -182,12 +231,24 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
         &c,
         &Keystore::new(OBJECT_SIGNING_STORE, ""),
         "QSHQ400 code signing",
-        &spec("QSHQ400 code signing", CertKind::Client, (2025, 2, 1), (2028, 2, 1)),
+        &spec(
+            "QSHQ400 code signing",
+            CertKind::Client,
+            (2025, 2, 1),
+            (2028, 2, 1),
+        ),
         KeyAlgorithm::EcdsaP256,
         &Signer::SelfSigned,
     )?;
     let mut ver = c.open(&Keystore::new(SIGNATURE_VERIFICATION_STORE, ""))?;
-    for (i, cn) in ["Quartz Systems code signing", "QS/400 release signing", "Partner code signing"].iter().enumerate() {
+    for (i, cn) in [
+        "Quartz Systems code signing",
+        "QS/400 release signing",
+        "Partner code signing",
+    ]
+    .iter()
+    .enumerate()
+    {
         let key = PrivateKey::generate(KeyAlgorithm::EcdsaP256)?;
         let mut s = spec(cn, CertKind::Ca, (2025, 2, 1), (2030, 2, 1));
         s.not_before += i as u64;
@@ -201,7 +262,12 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
         &c,
         &web,
         "webstore-dev",
-        &spec("webstore-dev.quartz.example", server, (2026, 1, 5), (2027, 1, 5)),
+        &spec(
+            "webstore-dev.quartz.example",
+            server,
+            (2026, 1, 5),
+            (2027, 1, 5),
+        ),
         KeyAlgorithm::EcdsaP256,
         &Signer::SelfSigned,
     )?;
@@ -209,7 +275,12 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
         &c,
         &web,
         "webstore-2027-request",
-        &spec("webstore.quartz.example", server, (2026, 10, 20), (2027, 10, 20)),
+        &spec(
+            "webstore.quartz.example",
+            server,
+            (2026, 10, 20),
+            (2027, 10, 20),
+        ),
         KeyAlgorithm::EcdsaP256,
         &Signer::Request,
     )?;
@@ -217,10 +288,22 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     // Application IDs: the HTTP instances, the update client, the
     // descriptions and the assignments.
     for (id, kind, text) in [
-        ("QS400_HTTP_SERVER_WEBSTORE", AppKind::Server, "Instance WEBSTORE"),
+        (
+            "QS400_HTTP_SERVER_WEBSTORE",
+            AppKind::Server,
+            "Instance WEBSTORE",
+        ),
         ("QS400_HTTP_SERVER_API", AppKind::Server, "Instance API"),
-        ("QS400_HTTP_SERVER_INTRANET", AppKind::Server, "Instance INTRANET"),
-        ("QS400_UPDATE_CLIENT", AppKind::Client, "Fix download from Quartz update server"),
+        (
+            "QS400_HTTP_SERVER_INTRANET",
+            AppKind::Server,
+            "Instance INTRANET",
+        ),
+        (
+            "QS400_UPDATE_CLIENT",
+            AppKind::Client,
+            "Fix download from Quartz update server",
+        ),
     ] {
         appids::add(&c, id, kind, text)?;
     }
@@ -231,7 +314,10 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
         ("QS400_TELNET_SERVER", "Telnet server (TLS port 992)"),
         ("QS400_FTP_SERVER", "FTP server"),
         ("QS400_DDM_DRDA_SERVER", "DDM/DRDA server"),
-        ("QS400_CENTRAL_SERVER", "Host servers (central, database, signon)"),
+        (
+            "QS400_CENTRAL_SERVER",
+            "Host servers (central, database, signon)",
+        ),
     ] {
         let ch = appids::Change {
             text: Some(text.into()),
@@ -253,8 +339,11 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     ] {
         appids::assign(&c, id, Some(label))?;
     }
-    save_user_stores(&c, &[("WEBSTORE".into(), "/www/webstore/conf/webstore.kdb".into())])
-        .map_err(|e| CertError::Invalid(e.to_string()))?;
+    save_user_stores(
+        &c,
+        &[("WEBSTORE".into(), "/www/webstore/conf/webstore.kdb".into())],
+    )
+    .map_err(|e| CertError::Invalid(e.to_string()))?;
     Ok(())
 }
 
@@ -328,11 +417,23 @@ impl Certs for FixtureCerts {
         self.manager().export(store, label, chain)
     }
 
-    fn create_store(&self, _user: &str, name: &str, path: &str, password: &str) -> Result<(), CertFailure> {
+    fn create_store(
+        &self,
+        _user: &str,
+        name: &str,
+        path: &str,
+        password: &str,
+    ) -> Result<(), CertFailure> {
         self.manager().create_store(name, path, password)
     }
 
-    fn change_password(&self, _user: &str, store: &str, old: &str, new: &str) -> Result<(), CertFailure> {
+    fn change_password(
+        &self,
+        _user: &str,
+        store: &str,
+        old: &str,
+        new: &str,
+    ) -> Result<(), CertFailure> {
         self.manager().change_password(store, old, new)
     }
 
@@ -351,10 +452,9 @@ impl Certs for FixtureCerts {
     fn import(&self, _user: &str, import: &Import) -> Result<Vec<String>, CertFailure> {
         let mut i = import.clone();
         if let ImportSource::Path(p) = &import.source {
-            let data = self
-                .ifs
-                .read(p)
-                .map_err(|e| CertFailure::Invalid(format!("stream file {p} could not be read: {e}")))?;
+            let data = self.ifs.read(p).map_err(|e| {
+                CertFailure::Invalid(format!("stream file {p} could not be read: {e}"))
+            })?;
             i.source = ImportSource::Data(data);
         }
         self.manager().import(&i)
@@ -388,7 +488,13 @@ impl Certs for FixtureCerts {
         self.manager().copy(from, label, to)
     }
 
-    fn export_pkcs12(&self, _user: &str, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure> {
+    fn export_pkcs12(
+        &self,
+        _user: &str,
+        store: &str,
+        label: &str,
+        password: &str,
+    ) -> Result<Vec<u8>, CertFailure> {
         self.manager().export_pkcs12(store, label, password)
     }
 }
@@ -418,25 +524,42 @@ mod tests {
     fn through_the_wire() {
         let local = FixtureCerts::new(Arc::new(httpd::files::MemFiles::new()));
         let names: Vec<String> = local.stores().into_iter().map(|s| s.name).collect();
-        let r = Remote(Here(FixtureCerts::new(Arc::new(httpd::files::MemFiles::new()))));
-        assert_eq!(r.stores().into_iter().map(|s| s.name).collect::<Vec<_>>(), names);
-        r.create_store("BOB", "SHOP", "/www/shop/shop.kdb", "pass-word-1").unwrap();
-        let shop = r.stores().into_iter().find(|s| s.name == "SHOP").unwrap();
-        assert_eq!((shop.kind, shop.path.as_str()), (StoreType::Other, "/www/shop/shop.kdb"));
+        let r = Remote(Here(FixtureCerts::new(Arc::new(
+            httpd::files::MemFiles::new(),
+        ))));
         assert_eq!(
-            r.change_password("BOB", "SHOP", "wrong-one", "x").unwrap_err(),
+            r.stores().into_iter().map(|s| s.name).collect::<Vec<_>>(),
+            names
+        );
+        r.create_store("BOB", "SHOP", "/www/shop/shop.kdb", "pass-word-1")
+            .unwrap();
+        let shop = r.stores().into_iter().find(|s| s.name == "SHOP").unwrap();
+        assert_eq!(
+            (shop.kind, shop.path.as_str()),
+            (StoreType::Other, "/www/shop/shop.kdb")
+        );
+        assert_eq!(
+            r.change_password("BOB", "SHOP", "wrong-one", "x")
+                .unwrap_err(),
             CertFailure::BadPassword("SHOP".into())
         );
         // The stash opens it: no current password.
         assert!(shop.stashed);
         r.change_password("BOB", "SHOP", "", "pass-word-2").unwrap();
-        r.change_password("BOB", "SHOP", "pass-word-2", "pass-word-3").unwrap();
-        assert!(matches!(r.delete_store("BOB", "*SYSTEM"), Err(CertFailure::Invalid(_))));
+        r.change_password("BOB", "SHOP", "pass-word-2", "pass-word-3")
+            .unwrap();
+        assert!(matches!(
+            r.delete_store("BOB", "*SYSTEM"),
+            Err(CertFailure::Invalid(_))
+        ));
         r.delete_store("BOB", "SHOP").unwrap();
         assert!(r.stores().iter().all(|s| s.name != "SHOP"));
         assert_eq!(r.signers(), local.signers());
         assert_eq!(r.apps(), local.apps());
-        assert_eq!(r.app_label("QS400_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
+        assert_eq!(
+            r.app_label("QS400_HTTP_SERVER_API").as_deref(),
+            Some("api.quartz.example")
+        );
         let i = Import {
             store: "*SYSTEM".into(),
             source: ImportSource::Path("/tmp/x.pem".into()),
@@ -446,15 +569,19 @@ mod tests {
             ca: false,
             make_default: false,
         };
-        assert!(matches!(r.import("BOB", &i), Err(CertFailure::Invalid(t)) if t.contains("could not be read")));
+        assert!(
+            matches!(r.import("BOB", &i), Err(CertFailure::Invalid(t)) if t.contains("could not be read"))
+        );
     }
 
     #[test]
     fn sample_stores() {
         let f = FixtureCerts::new(Arc::new(httpd::files::MemFiles::new()));
         let stores = f.stores();
-        let counts: Vec<(&str, usize, Option<&str>)> =
-            stores.iter().map(|s| (s.name.as_str(), s.certificates, s.default.as_deref())).collect();
+        let counts: Vec<(&str, usize, Option<&str>)> = stores
+            .iter()
+            .map(|s| (s.name.as_str(), s.certificates, s.default.as_deref()))
+            .collect();
         assert_eq!(
             counts,
             [
@@ -465,14 +592,27 @@ mod tests {
             ]
         );
         let rows = f.entries("*SYSTEM").unwrap();
-        let api = rows.iter().find(|r| r.label == "api.quartz.example").unwrap();
+        let api = rows
+            .iter()
+            .find(|r| r.label == "api.quartz.example")
+            .unwrap();
         assert_eq!(api.key, "ECDSA P-256");
         assert_eq!(api.subject, "CN=api.quartz.example,O=Quartz Systems,C=US");
-        assert_eq!(api.issuer, "CN=Quartz Internal Certificate Authority,O=Quartz Systems,C=US");
+        assert_eq!(
+            api.issuer,
+            "CN=Quartz Internal Certificate Authority,O=Quartz Systems,C=US"
+        );
         assert_eq!((api.not_after - super::super::now()) / 86_400, 32);
-        let cas: Vec<&str> = rows.iter().filter(|r| r.kind == EntryType::Ca).map(|r| r.label.as_str()).collect();
+        let cas: Vec<&str> = rows
+            .iter()
+            .filter(|r| r.kind == EntryType::Ca)
+            .map(|r| r.label.as_str())
+            .collect();
         assert_eq!(cas, ["QSHQ400 Local CA", "Quartz Internal CA"]);
-        assert_eq!(f.app_label("QS400_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
+        assert_eq!(
+            f.app_label("QS400_HTTP_SERVER_API").as_deref(),
+            Some("api.quartz.example")
+        );
         assert_eq!(f.apps().len(), 11);
     }
 }

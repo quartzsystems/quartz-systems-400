@@ -72,14 +72,29 @@ pub struct TriggerResume {
 ///
 /// The program could not be called or ended in an exception.
 pub fn call(j: &mut Job, c: &mut TriggerCall) -> Result<(), TriggerFail> {
-    let mut len = u32::try_from(c.buffer.len()).unwrap_or(u32::MAX).to_be_bytes();
+    let mut len = u32::try_from(c.buffer.len())
+        .unwrap_or(u32::MAX)
+        .to_be_bytes();
     let addrs = [c.buffer.as_mut_ptr() as u64, len.as_mut_ptr() as u64];
-    let fail = |msgid: String, text: String, not_found| TriggerFail { trigger: c.trigger.clone(), msgid, text, not_found };
+    let fail = |msgid: String, text: String, not_found| TriggerFail {
+        trigger: c.trigger.clone(),
+        msgid,
+        text,
+        not_found,
+    };
     if let Err(cond) = j.call_program(&c.pgm, &c.lib, &addrs) {
         let _ = j.clear();
         let not_found = matches!(cond, crate::cond::Cond::Mch3401);
-        let id = if not_found { "CPF4160".to_string() } else { cond.msgid() };
-        return Err(fail(id, format!("{}/{} could not be called", c.lib, c.pgm), not_found));
+        let id = if not_found {
+            "CPF4160".to_string()
+        } else {
+            cond.msgid()
+        };
+        return Err(fail(
+            id,
+            format!("{}/{} could not be called", c.lib, c.pgm),
+            not_found,
+        ));
     }
     if let Some(e) = j.clear() {
         return Err(fail(e.msgid.clone(), ccsid::decode_trimmed(&e.data), false));
@@ -121,12 +136,19 @@ pub fn call_before(j: &mut Job, calls: &mut [TriggerCall]) -> TriggerResume {
 /// One record operation with its trigger programs: `io` runs the
 /// operation on the job's source (the same request, resumed once with the
 /// before calls' answer); the after calls follow.
-pub fn run(j: &mut Job, req: &IoRequest<'_>, io: &mut dyn FnMut(&mut Job, &IoRequest<'_>) -> IoResult) -> IoResult {
+pub fn run(
+    j: &mut Job,
+    req: &IoRequest<'_>,
+    io: &mut dyn FnMut(&mut Job, &IoRequest<'_>) -> IoResult,
+) -> IoResult {
     let mut r = io(j, req);
     if r.status == TRIGGERS_DUE {
         let mut calls = std::mem::take(&mut r.triggers);
         let resume = call_before(j, &mut calls);
-        let again = IoRequest { resume: Some(&resume), ..*req };
+        let again = IoRequest {
+            resume: Some(&resume),
+            ..*req
+        };
         r = io(j, &again);
     }
     if r.status == TRIGGERS_DUE {
@@ -154,10 +176,17 @@ pub fn run(j: &mut Job, req: &IoRequest<'_>, io: &mut dyn FnMut(&mut Job, &IoReq
 pub fn sql_run(j: &mut Job, req: &sql::embed::Request) -> Option<sql::embed::Reply> {
     use sql::exec::routine::midcall;
     let mut reply = j.sql.as_mut()?.run(req);
-    while let Some(plan) = reply.call.take_if(|p| sql::exec::routine::extfunc::is_mid(p)) {
+    while let Some(plan) = reply
+        .call
+        .take_if(|p| sql::exec::routine::extfunc::is_mid(p))
+    {
         let answer = sql::embed::Request {
             scope: req.scope.clone(),
-            desc: sql::embed::Desc { op: sql::embed::Op::Called, name: midcall::ANSWER.into(), ..sql::embed::Desc::default() },
+            desc: sql::embed::Desc {
+                op: sql::embed::Op::Called,
+                name: midcall::ANSWER.into(),
+                ..sql::embed::Desc::default()
+            },
             inputs: answer_mid(j, &plan),
         };
         reply = j.sql.as_mut()?.run(&answer);
@@ -171,7 +200,13 @@ pub fn answer_mid(j: &mut Job, plan: &sql::exec::routine::CallPlan) -> Vec<sql::
     if plan.style == sql::exec::routine::CallStyle::Function {
         return match j.function_calls {
             Some(f) => f(j, plan),
-            None => sql::exec::routine::extfunc::answer(sql::Value::Null, "42724", "this job cannot call external functions", None, -444),
+            None => sql::exec::routine::extfunc::answer(
+                sql::Value::Null,
+                "42724",
+                "this job cannot call external functions",
+                None,
+                -444,
+            ),
         };
     }
     answer_plan(j, plan)
@@ -189,7 +224,11 @@ pub fn answer_plan(j: &mut Job, plan: &sql::exec::routine::CallPlan) -> Vec<sql:
         buffer: midcall::plan_buffer(plan),
         ..TriggerCall::default()
     };
-    let failed = call(j, &mut c).err().map(|f| db::trg::Failure { msgid: f.msgid, text: f.text, not_found: f.not_found });
+    let failed = call(j, &mut c).err().map(|f| db::trg::Failure {
+        msgid: f.msgid,
+        text: f.text,
+        not_found: f.not_found,
+    });
     midcall::trigger_inputs(&c.buffer, failed.as_ref())
 }
 
@@ -216,7 +255,14 @@ impl TriggerResume {
         db::trg::fire::Resume {
             buffer: self.buffer.clone(),
             failed: self.failed.as_ref().map(|f| {
-                (f.trigger.clone(), db::trg::Failure { msgid: f.msgid.clone(), text: f.text.clone(), not_found: f.not_found })
+                (
+                    f.trigger.clone(),
+                    db::trg::Failure {
+                        msgid: f.msgid.clone(),
+                        text: f.text.clone(),
+                        not_found: f.not_found,
+                    },
+                )
             }),
         }
     }

@@ -66,7 +66,11 @@ pub struct Ufcb {
 impl Ufcb {
     /// The share entry an open with `flags` uses.
     pub fn share_for(flags: u16) -> u8 {
-        if flags & (UPDATE | DELETE) == 0 { 0xC0 } else { 0x40 }
+        if flags & (UPDATE | DELETE) == 0 {
+            0xC0
+        } else {
+            0x40
+        }
     }
 
     /// The bytes.
@@ -106,7 +110,9 @@ impl Ufcb {
         }
         let tail = &b[FIXED..];
         let arrival = find(tail, &[0x00, 0x3C]).is_none_or(|i| tail.get(i + 2) == Some(&0x80));
-        let share = find(tail, &[0x00, 0x3A]).and_then(|i| tail.get(i + 2).copied()).unwrap_or(0xC0);
+        let share = find(tail, &[0x00, 0x3A])
+            .and_then(|i| tail.get(i + 2).copied())
+            .unwrap_or(0xC0);
         let (blocking, format) = match find(tail, &[0x00, 0x09, 0x00, 0x01, 0x00, 0x01]) {
             Some(i) if i >= 2 => (
                 u16::from_be_bytes([tail[i - 2], tail[i - 1]]),

@@ -68,7 +68,11 @@ impl Screen {
                     'b' => 0x3A,
                     _ => 0x20,
                 };
-                let attr = if st.is_ascii_uppercase() { base | 0x04 } else { base };
+                let attr = if st.is_ascii_uppercase() {
+                    base | 0x04
+                } else {
+                    base
+                };
                 s.cells[r * cols + c] = Cell {
                     ch,
                     attr,
@@ -86,7 +90,13 @@ impl Screen {
             .chunks(self.cols)
             .map(|row| {
                 row.iter()
-                    .map(|c| if c.is_attr || render::style(c.attr).nondisplay { ' ' } else { c.ch })
+                    .map(|c| {
+                        if c.is_attr || render::style(c.attr).nondisplay {
+                            ' '
+                        } else {
+                            c.ch
+                        }
+                    })
                     .collect()
             })
             .collect()
@@ -138,7 +148,11 @@ impl View {
         let s = &self.screen;
         Oia {
             system: self.system.clone(),
-            state: if self.connected { String::new() } else { "Not connected".into() },
+            state: if self.connected {
+                String::new()
+            } else {
+                "Not connected".into()
+            },
             keyboard: self.connected.then_some(s.keyboard),
             insert: s.insert && self.connected,
             message_waiting: s.message_waiting && self.connected,
@@ -171,6 +185,9 @@ impl View {
     /// Width and height of the picture at `scale`.
     pub fn size(&self, scale: usize) -> (usize, usize) {
         let s = scale.max(1);
-        (self.screen.cols * font::GLYPH_W * s, (self.screen.rows + 1) * font::GLYPH_H * s)
+        (
+            self.screen.cols * font::GLYPH_W * s,
+            (self.screen.rows + 1) * font::GLYPH_H * s,
+        )
     }
 }

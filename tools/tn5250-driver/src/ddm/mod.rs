@@ -94,7 +94,11 @@ pub fn run(r: &TraceRun) -> Result<PathBuf> {
     }
     std::fs::write(&path, t.write()).with_context(|| format!("write {}", path.display()))?;
     let chunks: usize = t.connections.iter().map(|c| c.chunks().count()).sum();
-    println!("{}: {} connections, {chunks} chunks", path.display(), t.connections.len());
+    println!(
+        "{}: {} connections, {chunks} chunks",
+        path.display(),
+        t.connections.len()
+    );
     Ok(path)
 }
 
@@ -113,7 +117,12 @@ fn call<S: std::io::Read + std::io::Write>(c: &mut Connection<S>, stmt: &str) ->
         r.sets.len()
     );
     for (i, set) in r.sets.iter().enumerate() {
-        println!("  set {}: {} rows, end {:?}", i + 1, set.rows.len(), set.end.as_ref().map(|s| s.sqlcode));
+        println!(
+            "  set {}: {} rows, end {:?}",
+            i + 1,
+            set.rows.len(),
+            set.end.as_ref().map(|s| s.sqlcode)
+        );
         for row in &set.rows {
             let cells: Vec<String> = row.iter().map(ddm::sql::Value::render).collect();
             println!("  | {}", cells.join(" | "));
@@ -148,7 +157,10 @@ fn requester(r: &TraceRun, user: &str, password: &str) -> Result<()> {
         for d in &replies {
             if let Some(o) = d.first().filter(|o| o.cp == ddm::cp::rpy::ACCSECRD) {
                 let rd = ddm::msg::Accsecrd::from_object(o);
-                println!("SECMEC {code}: offered {:?}, SECCHKCD {:?}", rd.secmec, rd.secchkcd);
+                println!(
+                    "SECMEC {code}: offered {:?}, SECCHKCD {:?}",
+                    rd.secmec, rd.secchkcd
+                );
             }
         }
         return Ok(());
@@ -183,9 +195,16 @@ fn requester(r: &TraceRun, user: &str, password: &str) -> Result<()> {
         } else if upper == "COMMIT" {
             let ca = c.commit()?;
             println!("commit: {}", ca.sqlcode);
-        } else if upper.starts_with("SELECT") || upper.starts_with("WITH") || upper.starts_with("VALUES") {
+        } else if upper.starts_with("SELECT")
+            || upper.starts_with("WITH")
+            || upper.starts_with("VALUES")
+        {
             let p = c.prepare(stmt)?;
-            println!("prepared: {} columns, {:?}", p.columns.len(), p.sqlca.as_ref().map(|s| s.sqlcode));
+            println!(
+                "prepared: {} columns, {:?}",
+                p.columns.len(),
+                p.sqlca.as_ref().map(|s| s.sqlcode)
+            );
             for col in &p.columns {
                 println!("  {} {}", col.name, col.ty.sql_name());
             }
@@ -197,7 +216,10 @@ fn requester(r: &TraceRun, user: &str, password: &str) -> Result<()> {
                 let cells: Vec<String> = row.iter().map(ddm::sql::Value::render).collect();
                 println!("  | {}", cells.join(" | "));
             }
-            println!("end: {:?}", rows.end.as_ref().map(|s| (s.sqlcode, s.sqlstate.clone())));
+            println!(
+                "end: {:?}",
+                rows.end.as_ref().map(|s| (s.sqlcode, s.sqlstate.clone()))
+            );
             let ca = c.close(&p, &rows)?;
             println!("close: {}", ca.sqlcode);
         } else if upper.starts_with("CALL") {

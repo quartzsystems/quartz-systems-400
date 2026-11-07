@@ -35,10 +35,14 @@ fn serve(n: usize) -> u16 {
             let answer = if first.contains("/old") {
                 "HTTP/1.1 302 Found\r\nLocation: /new\r\nContent-Length: 0\r\n\r\n".to_string()
             } else if first.contains("/chunked") {
-                "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nok\r\n0\r\n\r\n".to_string()
+                "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nok\r\n0\r\n\r\n"
+                    .to_string()
             } else {
                 let b = format!("{} {}", first.trim(), String::from_utf8_lossy(&body));
-                format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{b}", b.len())
+                format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{b}",
+                    b.len()
+                )
             };
             s.write_all(answer.as_bytes()).unwrap();
         }

@@ -27,8 +27,13 @@ impl Help {
             .entry(key.clone())
             .or_insert_with(|| {
                 let src = uim::shipped::source(&key)?;
-                uim::compile(src, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default())
-                    .group
+                uim::compile(
+                    src,
+                    &uim::NoImbeds,
+                    &uim::NoImports,
+                    &uim::CompileOpts::default(),
+                )
+                .group
             })
             .as_ref()
     }
@@ -90,7 +95,11 @@ pub fn html(doc: &Document) -> String {
                 out.push_str("</pre>\n");
             }
             Block::List { kind, items, .. } => {
-                let tag = if *kind == ListKind::Ordered { "ol" } else { "ul" };
+                let tag = if *kind == ListKind::Ordered {
+                    "ol"
+                } else {
+                    "ul"
+                };
                 let _ = writeln!(out, "<{tag}>");
                 for i in items {
                     let _ = writeln!(out, "<li>{}</li>", html(i));

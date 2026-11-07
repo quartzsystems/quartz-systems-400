@@ -89,13 +89,24 @@ fn ensure_outq(txn: &mut Txn<'_>, qsys: ObjectId, name: &str) -> Result<(), Stri
     let lib = wm::obj::library(txn, qsys, "QUSRSYS").map_err(|e| e.to_string())?;
     let n = qsname::Name::parse(name).map_err(|_| code::NOT_VALID.to_string())?;
     let l = store::obj::library::Library::load(txn, lib).map_err(|e| e.to_string())?;
-    if l.lookup(txn, types::OUTQ, n).map_err(|e| e.to_string())?.is_some() {
+    if l.lookup(txn, types::OUTQ, n)
+        .map_err(|e| e.to_string())?
+        .is_some()
+    {
         return Ok(());
     }
     let q = wm::obj::outq::OutQ::new("Output queue of a TN5250E printer");
-    wm::obj::create(txn, lib, n, types::OUTQ, "Output queue of a TN5250E printer", &stamp(), &q.encode())
-        .map(|_| ())
-        .map_err(|_| code::CREATE_FAILED.to_string())
+    wm::obj::create(
+        txn,
+        lib,
+        n,
+        types::OUTQ,
+        "Output queue of a TN5250E printer",
+        &stamp(),
+        &q.encode(),
+    )
+    .map(|_| ())
+    .map_err(|_| code::CREATE_FAILED.to_string())
 }
 
 /// A message to the system operator from the telnet server.

@@ -69,7 +69,9 @@ impl Gen<'_> {
             return None;
         }
         match &items[1] {
-            Expr::Bif { name, args, .. } if name == "%XML" && !args.is_empty() && args.len() <= 2 => {
+            Expr::Bif { name, args, .. }
+                if name == "%XML" && !args.is_empty() && args.len() <= 2 =>
+            {
                 Some((items[0].clone(), args.clone()))
             }
             _ => {
@@ -81,9 +83,13 @@ impl Gen<'_> {
 
     /// `%XML` options written as a literal are checked here.
     fn xml_options_ok(&mut self, e: Option<&Expr>) -> bool {
-        let Some(Expr::Lit(Lit::Char(t), _)) = e else { return true };
+        let Some(Expr::Lit(Lit::Char(t), _)) = e else {
+            return true;
+        };
         let bad = t.split_whitespace().find(|w| {
-            let Some((k, v)) = w.split_once('=') else { return true };
+            let Some((k, v)) = w.split_once('=') else {
+                return true;
+            };
             let v = v.to_ascii_lowercase();
             match k.to_ascii_lowercase().as_str() {
                 "doc" => !matches!(v.as_str(), "string" | "file"),
@@ -112,7 +118,14 @@ impl Gen<'_> {
         // A UCS-2 document goes to the runtime as the job's characters.
         if let (Some(e), Ty::Ucs2(_) | Ty::VarUcs2(..)) = (e, &v.ty) {
             let at = self.at;
-            v = self.expr(&Expr::Bif { name: "%CHAR".into(), args: vec![e.clone()], at }, Want::default())?;
+            v = self.expr(
+                &Expr::Bif {
+                    name: "%CHAR".into(),
+                    args: vec![e.clone()],
+                    at,
+                },
+                Want::default(),
+            )?;
         }
         if !v.ty.is_string() && v.fig.is_none() {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, "%XML");
@@ -128,7 +141,12 @@ impl Gen<'_> {
         let stride = self.t.size(ty);
         match ty {
             Ty::Ds(i) => {
-                let subs = self.t.ds.get(*i).map(|d| d.subfields.clone()).unwrap_or_default();
+                let subs = self
+                    .t
+                    .ds
+                    .get(*i)
+                    .map(|d| d.subfields.clone())
+                    .unwrap_or_default();
                 out.push_str(&format!("{short},0,{off},{dim},{stride},{};", subs.len()));
                 for s in subs {
                     let sym = self.t.syms[s].clone();
@@ -146,12 +164,18 @@ impl Gen<'_> {
     /// %XML(doc:opts)`. The number of elements set goes to the PSDS
     /// (positions 372-379).
     pub fn xml_into(&mut self, op: &Op) {
-        let Some((first, xargs)) = self.xml_operands(op) else { return };
+        let Some((first, xargs)) = self.xml_operands(op) else {
+            return;
+        };
         if !self.xml_options_ok(xargs.get(1)) {
             return;
         }
-        let Some((doc, dd)) = self.xml_text(xargs.first()) else { return };
-        let Some((opts, od)) = self.xml_text(xargs.get(1)) else { return };
+        let Some((doc, dd)) = self.xml_text(xargs.first()) else {
+            return;
+        };
+        let Some((opts, od)) = self.xml_text(xargs.get(1)) else {
+            return;
+        };
         self.rt_proc(
             "_QRNX_XMLINTO",
             "($t: bytes(1) *VARSIZE, const $shape: varchar(32000), $doc: bytes(1) *VARSIZE, byval $dd: i64, \
@@ -160,7 +184,9 @@ impl Gen<'_> {
         let mut shape = String::new();
         let (target, hproc, comm) = match &first {
             Expr::Bif { name, args, .. } if name == "%HANDLER" => {
-                let Some((h, comm, parms)) = self.handler(args) else { return };
+                let Some((h, comm, parms)) = self.handler(args) else {
+                    return;
+                };
                 // The handler takes the communication area, the elements
                 // (a constant array) and their count (UNS(10) VALUE).
                 let fits = parms.len() == 3
@@ -182,12 +208,16 @@ impl Gen<'_> {
                 (buf, h, comm)
             }
             e => {
-                let Some(v) = self.expr(e, Want::default()) else { return };
+                let Some(v) = self.expr(e, Want::default()) else {
+                    return;
+                };
                 if v.kind != Vk::Place {
                     self.err(ids::NOT_ASSIGNABLE, 30, op.code.clone());
                     return;
                 }
-                let name = v.sym.map_or_else(String::new, |s| self.t.syms[s].name.clone());
+                let name = v
+                    .sym
+                    .map_or_else(String::new, |s| self.t.syms[s].name.clone());
                 if let Some(s) = v.sym {
                     self.t.refer(s, self.at.line, true);
                 }
@@ -218,7 +248,11 @@ impl Gen<'_> {
             self.err(ids::BIF_ARGS, 30, "%HANDLER");
             return None;
         };
-        let parms = match self.t.find(0, name).and_then(|id| self.t.syms[id].kind.clone()) {
+        let parms = match self
+            .t
+            .find(0, name)
+            .and_then(|id| self.t.syms[id].kind.clone())
+        {
             Some(Kind::Proto(pi)) => self.t.protos[pi].parms.clone(),
             _ => {
                 self.err(ids::NOT_DEFINED, 30, name.clone());
@@ -242,7 +276,9 @@ impl Gen<'_> {
 
     /// `XML-SAX %HANDLER(proc:comm) %XML(doc:opts)`.
     pub fn xml_sax(&mut self, op: &Op) {
-        let Some((first, xargs)) = self.xml_operands(op) else { return };
+        let Some((first, xargs)) = self.xml_operands(op) else {
+            return;
+        };
         let Expr::Bif { name, args, .. } = &first else {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
@@ -251,27 +287,39 @@ impl Gen<'_> {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
         }
-        let Some((h, comm, _)) = self.handler(&args.clone()) else { return };
+        let Some((h, comm, _)) = self.handler(&args.clone()) else {
+            return;
+        };
         if !self.xml_options_ok(xargs.get(1)) {
             return;
         }
-        let Some((doc, dd)) = self.xml_text(xargs.first()) else { return };
-        let Some((opts, od)) = self.xml_text(xargs.get(1)) else { return };
+        let Some((doc, dd)) = self.xml_text(xargs.first()) else {
+            return;
+        };
+        let Some((opts, od)) = self.xml_text(xargs.get(1)) else {
+            return;
+        };
         self.rt_proc(
             "_QRNX_XMLSAX",
             "($h: bytes(16) *VARSIZE, $comm: bytes(1) *VARSIZE, $doc: bytes(1) *VARSIZE, byval $dd: i64, \
              $opts: bytes(1) *VARSIZE, byval $od: i64)",
         );
-        self.b.ins(format!("callb _QRNX_XMLSAX({h}, {comm}, {doc}, {dd}, {opts}, {od})"));
+        self.b.ins(format!(
+            "callb _QRNX_XMLSAX({h}, {comm}, {doc}, {dd}, {opts}, {od})"
+        ));
     }
 }
 
 impl Gen<'_> {
     /// `%DATA` options written as a literal are checked here: `RNF0236`.
     fn data_options_ok(&mut self, e: Option<&Expr>, generate: bool) -> bool {
-        let Some(Expr::Lit(Lit::Char(t), _)) = e else { return true };
+        let Some(Expr::Lit(Lit::Char(t), _)) = e else {
+            return true;
+        };
         let bad = t.split_whitespace().find(|w| {
-            let Some((k, v)) = w.split_once('=') else { return true };
+            let Some((k, v)) = w.split_once('=') else {
+                return true;
+            };
             let v = v.to_ascii_lowercase();
             let yes_no = matches!(v.as_str(), "yes" | "no");
             match k.to_ascii_lowercase().as_str() {
@@ -281,7 +329,9 @@ impl Gen<'_> {
                 "allowmissing" | "allowextra" if !generate => !yes_no,
                 "trim" if !generate => !matches!(v.as_str(), "all" | "none"),
                 "path" | "countprefix" if !generate => false,
-                "countprefix" | "name" | "renameprefix" | "fileccsid" | "output" if generate => false,
+                "countprefix" | "name" | "renameprefix" | "fileccsid" | "output" if generate => {
+                    false
+                }
                 _ => true,
             }
         });
@@ -298,7 +348,10 @@ impl Gen<'_> {
     /// procedure pointer, and the user parameter as the runtime takes it
     /// (place, descriptor, kind: 0 none, 1 a string, 2 a variable, 3 a
     /// data structure).
-    pub fn callee_operands(&mut self, args: &[Expr]) -> Option<(String, i64, String, String, i64, i32)> {
+    pub fn callee_operands(
+        &mut self,
+        args: &[Expr],
+    ) -> Option<(String, i64, String, String, i64, i32)> {
         let first = args.first()?;
         let v = self.expr(first, Want::default())?;
         let mut ptr = self.b.temp("char(16)");
@@ -327,9 +380,17 @@ impl Gen<'_> {
                         self.t.refer(s, self.at.line, true);
                     }
                     let kind = if matches!(u.ty, Ty::Ds(_)) { 3 } else { 2 };
-                    let ty = if kind == 3 { Ty::Char(self.t.size(&u.ty)) } else { u.ty.clone() };
+                    let ty = if kind == 3 {
+                        Ty::Char(self.t.size(&u.ty))
+                    } else {
+                        u.ty.clone()
+                    };
                     let d = self.desc_of(&V::place(ty, String::new()));
-                    let op = if kind == 3 { format!("{}.all_", u.op) } else { u.op.clone() };
+                    let op = if kind == 3 {
+                        format!("{}.all_", u.op)
+                    } else {
+                        u.op.clone()
+                    };
                     (op, d, kind)
                 } else {
                     let r = self.rt_of(&u, None);
@@ -356,7 +417,10 @@ impl Gen<'_> {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
         }
-        let (Expr::Bif { args: dargs, .. }, Expr::Bif { args: pargs, .. }) = (&items[1], &items[2]) else { return };
+        let (Expr::Bif { args: dargs, .. }, Expr::Bif { args: pargs, .. }) = (&items[1], &items[2])
+        else {
+            return;
+        };
         let (dargs, pargs) = (dargs.clone(), pargs.clone());
         if !self.data_options_ok(dargs.get(1), generate) {
             return;
@@ -365,13 +429,21 @@ impl Gen<'_> {
             self.data_gen(op, &items[0], &dargs, &pargs);
             return;
         }
-        let Some((doc, dd)) = self.xml_text(dargs.first()) else { return };
-        let Some((opts, od)) = self.xml_text(dargs.get(1)) else { return };
-        let Some((name, nd, ptr, up, ud, uk)) = self.callee_operands(&pargs) else { return };
+        let Some((doc, dd)) = self.xml_text(dargs.first()) else {
+            return;
+        };
+        let Some((opts, od)) = self.xml_text(dargs.get(1)) else {
+            return;
+        };
+        let Some((name, nd, ptr, up, ud, uk)) = self.callee_operands(&pargs) else {
+            return;
+        };
         let mut shape = String::new();
         let (target, hproc, comm) = match &items[0] {
             Expr::Bif { name, args, .. } if name == "%HANDLER" => {
-                let Some((h, comm, parms)) = self.handler(&args.clone()) else { return };
+                let Some((h, comm, parms)) = self.handler(&args.clone()) else {
+                    return;
+                };
                 let fits = parms.len() == 3
                     && parms[1].dim > 0
                     && parms[1].konst
@@ -390,12 +462,16 @@ impl Gen<'_> {
                 (self.b.temp("char(1)"), h, comm)
             }
             e => {
-                let Some(v) = self.expr(e, Want::default()) else { return };
+                let Some(v) = self.expr(e, Want::default()) else {
+                    return;
+                };
                 if v.kind != Vk::Place {
                     self.err(ids::NOT_ASSIGNABLE, 30, op.code.clone());
                     return;
                 }
-                let name = v.sym.map_or_else(String::new, |s| self.t.syms[s].name.clone());
+                let name = v
+                    .sym
+                    .map_or_else(String::new, |s| self.t.syms[s].name.clone());
                 if let Some(s) = v.sym {
                     self.t.refer(s, self.at.line, true);
                 }

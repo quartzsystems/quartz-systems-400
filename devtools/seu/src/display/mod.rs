@@ -70,7 +70,14 @@ pub fn indara(on: &[u8]) -> Vec<u8> {
 }
 
 /// Write a record of an open file.
-pub fn put(rt: &mut Runtime, m: &mut ScreenModel, env: &Env, format: &str, values: &[(&str, &str)], on: &[u8]) {
+pub fn put(
+    rt: &mut Runtime,
+    m: &mut ScreenModel,
+    env: &Env,
+    format: &str,
+    values: &[(&str, &str)],
+    on: &[u8],
+) {
     let out = out_buffer(rt.file(), format, values);
     let _ = rt.write(m, env, format, &out, &indara(on));
 }
@@ -136,8 +143,19 @@ pub fn show_session(s: &mut Screens, m: &mut ScreenModel, env: &Env, v: &View) {
         }
         let data: String = data.into_iter().take(crate::session::WINDOW).collect();
         let lineno = format!("{:02}", r.row - 1);
-        let on: &[u8] = if r.kind == RowKind::Marker { &[50] } else { &[] };
-        put(rt, m, env, "LINE", &[("LINENO", &lineno), ("SEQ", &r.seq), ("DATA", &data)], on);
+        let on: &[u8] = if r.kind == RowKind::Marker {
+            &[50]
+        } else {
+            &[]
+        };
+        put(
+            rt,
+            m,
+            env,
+            "LINE",
+            &[("LINENO", &lineno), ("SEQ", &r.seq), ("DATA", &data)],
+            on,
+        );
     }
     if let Some(p) = &v.prompt {
         let lineno = format!("{:02}", p.top);
@@ -146,7 +164,11 @@ pub fn show_session(s: &mut Screens, m: &mut ScreenModel, env: &Env, v: &View) {
             m,
             env,
             "PROMPT",
-            &[("LINENO", &lineno), ("PTYPE", &format!("{:>2}", p.format)), ("PSEQ", &p.seq)],
+            &[
+                ("LINENO", &lineno),
+                ("PTYPE", &format!("{:>2}", p.format)),
+                ("PSEQ", &p.seq),
+            ],
             &[],
         );
         for (row, col, text) in &p.labels {
@@ -191,7 +213,10 @@ pub fn read_session(m: &ScreenModel, v: &View, cursor: (usize, usize)) -> Input 
         .map(|r| RowInput {
             row: r.row,
             seq: field_text(m, r.row, 1),
-            data: field_text(m, r.row, crate::session::DATA_COL).chars().take(w).collect(),
+            data: field_text(m, r.row, crate::session::DATA_COL)
+                .chars()
+                .take(w)
+                .collect(),
         })
         .collect();
     let prompt = v

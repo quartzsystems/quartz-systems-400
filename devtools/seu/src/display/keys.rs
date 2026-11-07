@@ -36,14 +36,26 @@ fn l(v: &[(usize, &'static str)]) -> Legend {
 #[must_use]
 pub fn session(mode: Mode, set: u8, prompt: bool) -> (Legend, Legend) {
     let defaults = (
-        l(&[(2, "F13=Change session defaults"), (32, "F14=Find/Change options")]),
+        l(&[
+            (2, "F13=Change session defaults"),
+            (32, "F14=Find/Change options"),
+        ]),
         l(&[(2, "F15=Browse/Copy options"), (32, "F24=More keys")]),
     );
     if prompt {
         return match set {
             0 => (
-                l(&[(2, "F3=Exit"), (12, "F4=Prompt"), (24, "F5=Refresh"), (44, "F11=Previous record")]),
-                l(&[(2, "F12=Cancel"), (24, "F23=Select prompt"), (44, "F24=More keys")]),
+                l(&[
+                    (2, "F3=Exit"),
+                    (12, "F4=Prompt"),
+                    (24, "F5=Refresh"),
+                    (44, "F11=Previous record"),
+                ]),
+                l(&[
+                    (2, "F12=Cancel"),
+                    (24, "F23=Select prompt"),
+                    (44, "F24=More keys"),
+                ]),
             ),
             _ => defaults,
         };
@@ -58,11 +70,19 @@ pub fn session(mode: Mode, set: u8, prompt: bool) -> (Legend, Legend) {
                 (51, "F10=Cursor"),
                 (64, "F11=Toggle"),
             ]),
-            l(&[(2, "F16=Repeat find"), (24, "F17=Repeat change"), (51, "F24=More keys")]),
+            l(&[
+                (2, "F16=Repeat find"),
+                (24, "F17=Repeat change"),
+                (51, "F24=More keys"),
+            ]),
         ),
         (Mode::Edit, 1) => defaults,
         (Mode::Edit, _) => (
-            l(&[(2, "F19=Left"), (13, "F20=Right"), (25, "F21=System command")]),
+            l(&[
+                (2, "F19=Left"),
+                (13, "F20=Right"),
+                (25, "F21=System command"),
+            ]),
             l(&[(2, "F23=Select prompt"), (25, "F24=More keys")]),
         ),
         (Mode::Browse, 0) => (
@@ -81,7 +101,11 @@ pub fn session(mode: Mode, set: u8, prompt: bool) -> (Legend, Legend) {
             l(&[(2, "F15=Browse options"), (32, "F24=More keys")]),
         ),
         (Mode::Browse, _) => (
-            l(&[(2, "F19=Left"), (13, "F20=Right"), (25, "F21=System command")]),
+            l(&[
+                (2, "F19=Left"),
+                (13, "F20=Right"),
+                (25, "F21=System command"),
+            ]),
             l(&[(2, "F24=More keys")]),
         ),
     }
@@ -93,7 +117,10 @@ pub fn defaults(mode: Mode) -> (Legend, Legend) {
     match mode {
         Mode::Edit => (
             l(&[(2, "F3=Exit"), (15, "F5=Refresh"), (28, "F12=Cancel")]),
-            l(&[(2, "F14=Find/Change options"), (28, "F15=Browse/Copy options")]),
+            l(&[
+                (2, "F14=Find/Change options"),
+                (28, "F15=Browse/Copy options"),
+            ]),
         ),
         Mode::Browse => (
             l(&[(2, "F3=Exit"), (12, "F5=Refresh"), (25, "F12=Cancel")]),
@@ -107,11 +134,25 @@ pub fn defaults(mode: Mode) -> (Legend, Legend) {
 pub fn find(mode: Mode) -> (Legend, Legend) {
     match mode {
         Mode::Edit => (
-            l(&[(2, "F3=Exit"), (12, "F5=Refresh"), (29, "F12=Cancel"), (42, "F13=Change session defaults")]),
-            l(&[(2, "F15=Browse/Copy options"), (29, "F16=Find"), (42, "F17=Change")]),
+            l(&[
+                (2, "F3=Exit"),
+                (12, "F5=Refresh"),
+                (29, "F12=Cancel"),
+                (42, "F13=Change session defaults"),
+            ]),
+            l(&[
+                (2, "F15=Browse/Copy options"),
+                (29, "F16=Find"),
+                (42, "F17=Change"),
+            ]),
         ),
         Mode::Browse => (
-            l(&[(2, "F3=Exit"), (12, "F5=Refresh"), (25, "F12=Cancel"), (38, "F13=Change session defaults")]),
+            l(&[
+                (2, "F3=Exit"),
+                (12, "F5=Refresh"),
+                (25, "F12=Cancel"),
+                (38, "F13=Change session defaults"),
+            ]),
             l(&[(2, "F15=Browse options"), (25, "F16=Find")]),
         ),
     }
@@ -125,7 +166,12 @@ pub fn browse(mode: Mode) -> (Legend, Legend) {
         Mode::Browse => "F14=Find options",
     };
     (
-        l(&[(2, "F3=Exit"), (16, "F4=Prompt"), (32, "F5=Refresh"), (49, "F12=Cancel")]),
+        l(&[
+            (2, "F3=Exit"),
+            (16, "F4=Prompt"),
+            (32, "F5=Refresh"),
+            (49, "F12=Cancel"),
+        ]),
         l(&[(2, "F13=Change session defaults"), (32, f14)]),
     )
 }
@@ -135,7 +181,12 @@ pub fn browse(mode: Mode) -> (Legend, Legend) {
 pub fn exit() -> (Legend, Legend) {
     (
         Legend::default(),
-        l(&[(2, "F3=Exit"), (12, "F4=Prompt"), (24, "F5=Refresh"), (37, "F12=Cancel")]),
+        l(&[
+            (2, "F3=Exit"),
+            (12, "F4=Prompt"),
+            (24, "F5=Refresh"),
+            (37, "F12=Cancel"),
+        ]),
     )
 }
 
@@ -148,7 +199,10 @@ pub fn window() -> Legend {
 /// Select Prompt's keys.
 #[must_use]
 pub fn select() -> (Legend, Legend) {
-    (Legend::default(), l(&[(2, "F12=Cancel"), (15, "F23=Select user prompt")]))
+    (
+        Legend::default(),
+        l(&[(2, "F12=Cancel"), (15, "F23=Select user prompt")]),
+    )
 }
 
 #[cfg(test)]

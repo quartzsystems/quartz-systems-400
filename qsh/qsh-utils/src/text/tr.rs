@@ -78,51 +78,51 @@ fn expand(s: &[u8], second: bool) -> Result<Vec<Item>, String> {
     };
     while i < s.len() {
         if s[i] == b'['
-            && let Some(end) = s[i + 1..].iter().position(|&b| b == b']') {
-                let inner = &s[i + 1..i + 1 + end];
-                if let Some(name) = inner.strip_prefix(b":").and_then(|x| x.strip_suffix(b":")) {
-                    let name = String::from_utf8_lossy(name).into_owned();
-                    let bytes =
-                        class_bytes(&name).ok_or(format!("The class {name} is not valid."))?;
-                    out.extend(bytes.into_iter().map(Item::Byte));
+            && let Some(end) = s[i + 1..].iter().position(|&b| b == b']')
+        {
+            let inner = &s[i + 1..i + 1 + end];
+            if let Some(name) = inner.strip_prefix(b":").and_then(|x| x.strip_suffix(b":")) {
+                let name = String::from_utf8_lossy(name).into_owned();
+                let bytes = class_bytes(&name).ok_or(format!("The class {name} is not valid."))?;
+                out.extend(bytes.into_iter().map(Item::Byte));
+                i += end + 2;
+                continue;
+            }
+            if let Some(eq) = inner.strip_prefix(b"=").and_then(|x| x.strip_suffix(b"=")) {
+                if eq.len() == 1 {
+                    out.push(Item::Byte(eq[0]));
                     i += end + 2;
                     continue;
                 }
-                if let Some(eq) = inner.strip_prefix(b"=").and_then(|x| x.strip_suffix(b"=")) {
-                    if eq.len() == 1 {
-                        out.push(Item::Byte(eq[0]));
-                        i += end + 2;
-                        continue;
+                return Err("The equivalence class is not valid.".to_string());
+            }
+            if let Some(star) = inner.iter().position(|&b| b == b'*')
+                && star >= 1
+            {
+                let mut j = i + 1;
+                let c = next_byte(&mut j).unwrap_or(b'[');
+                if j == i + 1 + star {
+                    let count = &inner[star + 1..];
+                    if !second {
+                        return Err("A repeat is only valid in the second string.".to_string());
                     }
-                    return Err("The equivalence class is not valid.".to_string());
-                }
-                if let Some(star) = inner.iter().position(|&b| b == b'*')
-                    && star >= 1
-                {
-                    let mut j = i + 1;
-                    let c = next_byte(&mut j).unwrap_or(b'[');
-                    if j == i + 1 + star {
-                        let count = &inner[star + 1..];
-                        if !second {
-                            return Err("A repeat is only valid in the second string.".to_string());
-                        }
-                        if count.is_empty() {
-                            out.push(Item::Fill(c));
+                    if count.is_empty() {
+                        out.push(Item::Fill(c));
+                    } else {
+                        let txt = String::from_utf8_lossy(count);
+                        let n = if txt.starts_with('0') && txt.len() > 1 {
+                            usize::from_str_radix(&txt[1..], 8).ok()
                         } else {
-                            let txt = String::from_utf8_lossy(count);
-                            let n = if txt.starts_with('0') && txt.len() > 1 {
-                                usize::from_str_radix(&txt[1..], 8).ok()
-                            } else {
-                                txt.parse().ok()
-                            }
-                            .ok_or("The repeat count is not valid.".to_string())?;
-                            out.extend(std::iter::repeat_n(Item::Byte(c), n));
+                            txt.parse().ok()
                         }
-                        i += end + 2;
-                        continue;
+                        .ok_or("The repeat count is not valid.".to_string())?;
+                        out.extend(std::iter::repeat_n(Item::Byte(c), n));
                     }
+                    i += end + 2;
+                    continue;
                 }
             }
+        }
         let Some(b) = next_byte(&mut i) else {
             break;
         };
@@ -152,7 +152,13 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     let complement = p.has('c') || p.has('C');
     let delete = p.has('d');
     let squeeze = p.has('s');
-    let want = if delete && !squeeze { 1 } else if delete || !squeeze { 2 } else { 1 };
+    let want = if delete && !squeeze {
+        1
+    } else if delete || !squeeze {
+        2
+    } else {
+        1
+    };
     let strings = &p.operands;
     if strings.len() < want || strings.len() > 2 || (delete && !squeeze && strings.len() != 1) {
         return usage(cx, name, "The number of strings is not right.");
@@ -210,7 +216,10 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             return usage(cx, name, "The second string is empty.");
         }
         for (k, &from) in s1_bytes.iter().enumerate() {
-            let to = s2_bytes.get(k).copied().unwrap_or(*s2_bytes.last().unwrap_or(&from));
+            let to = s2_bytes
+                .get(k)
+                .copied()
+                .unwrap_or(*s2_bytes.last().unwrap_or(&from));
             map[from as usize] = to;
         }
         if squeeze {

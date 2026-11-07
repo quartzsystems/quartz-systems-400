@@ -48,7 +48,13 @@ fn info(sent: u64, id: &str, sev: u8, text: &str, job: &str, program: &str) -> Q
 }
 
 /// An inquiry waiting for its reply.
-fn inquiry(m: QueuedMessage, replies: &str, default: &str, cause: &str, recovery: &str) -> QueuedMessage {
+fn inquiry(
+    m: QueuedMessage,
+    replies: &str,
+    default: &str,
+    cause: &str,
+    recovery: &str,
+) -> QueuedMessage {
     QueuedMessage {
         inquiry: true,
         replies: replies.into(),
@@ -184,7 +190,14 @@ fn qsysopr_night() -> Vec<QueuedMessage> {
                     "QWTMCEOJ",
                 )
             } else {
-                info(t, "CPF1241", 0, &format!("Job {job} completed normally."), &job, "QWTMCEOJ")
+                info(
+                    t,
+                    "CPF1241",
+                    0,
+                    &format!("Job {job} completed normally."),
+                    &job,
+                    "QWTMCEOJ",
+                )
             }
         })
         .collect()
@@ -192,25 +205,177 @@ fn qsysopr_night() -> Vec<QueuedMessage> {
 
 /// The history log's 19 newest entries, newest first.
 const QHST_NEWEST: &[(u32, u32, u32, &str, u8, &str, &str)] = &[
-    (14, 1, 55, "CPF1164", 0, "123499/QPGMR/RGZPFM00", "Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 seconds used; end code 0."),
-    (14, 1, 54, "CPF1124", 0, "123499/QPGMR/RGZPFM00", "Job 123499/QPGMR/RGZPFM00 started on 10/29/26 at 14:01:54 in subsystem QBATCH in QSYS."),
-    (13, 58, 2, "CPA5305", 99, "123503/TESTUSER/INVBATCH", "Record 4120 in use by job 123503/TESTUSER/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)"),
-    (13, 40, 11, "CPF0907", 40, "123105/QSYS/QSPLMAINT", "Serious storage condition may exist. Press HELP."),
-    (13, 22, 7, "CPA4002", 99, "123150/QSPLJOB/PRT01", "Verify alignment on printer PRT01. (I G N R C)"),
-    (13, 5, 10, "CPF1241", 0, "123488/TESTUSER/QPADEV0003", "Job 123488/TESTUSER/QPADEV0003 submitted to job queue QBATCH in QGPL."),
-    (12, 50, 0, "CPC1129", 0, "123200/QSYS/QINTER", "Job 123490/OPERATOR/QPADEV0004 started."),
-    (12, 49, 58, "CPF1164", 0, "123489/OPERATOR/QPADEV0004", "Job 123489/OPERATOR/QPADEV0004 ended on 10/29/26 at 12:49:58; 3 seconds used; end code 0."),
-    (12, 10, 33, "CPF2204", 30, "123457/QTMHHTTP/ADMIN", "User profile WEBUSER not found."),
-    (11, 42, 17, "HTP8110", 20, "123456/QTMHHTTP/ADMIN", "Request from 172.16.0.9 for /qs400/httpadmin/instance/WEBSTORE/general failed, user WEBUSER not authorized."),
-    (11, 0, 0, "CPI2209", 0, "123200/QSYS/QINTER", "User profile GUEST disabled because maximum number of sign-on attempts reached."),
-    (10, 59, 58, "CPF1107", 30, "123200/QSYS/QINTER", "Password not correct for user profile GUEST."),
-    (10, 59, 51, "CPF1107", 30, "123200/QSYS/QINTER", "Password not correct for user profile GUEST."),
-    (10, 31, 49, "CPA0702", 99, "123503/TESTUSER/INVBATCH", "CPF0001 received by procedure INVLOAD. (C D I R)"),
-    (9, 15, 12, "TCP1A03", 10, "123380/QTCP/QTCPIP", "Interface 10.0.10.21 on line ETHLIN02 started."),
-    (9, 0, 2, "CPC3703", 0, "123350/QSECOFR/SAVDAILY", "2 objects saved from library QGPL."),
-    (6, 0, 4, "HTP8001", 0, "123471/QTMHHTTP/API", "HTTP server instance API started, listening on *:9443."),
-    (6, 0, 3, "HTP8001", 0, "123456/QTMHHTTP/ADMIN", "HTTP server instance ADMIN started, listening on *:2001."),
-    (6, 0, 0, "CPF0927", 0, "123202/QSYS/QHTTPSVR", "Subsystem QHTTPSVR active."),
+    (
+        14,
+        1,
+        55,
+        "CPF1164",
+        0,
+        "123499/QPGMR/RGZPFM00",
+        "Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 seconds used; end code 0.",
+    ),
+    (
+        14,
+        1,
+        54,
+        "CPF1124",
+        0,
+        "123499/QPGMR/RGZPFM00",
+        "Job 123499/QPGMR/RGZPFM00 started on 10/29/26 at 14:01:54 in subsystem QBATCH in QSYS.",
+    ),
+    (
+        13,
+        58,
+        2,
+        "CPA5305",
+        99,
+        "123503/TESTUSER/INVBATCH",
+        "Record 4120 in use by job 123503/TESTUSER/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)",
+    ),
+    (
+        13,
+        40,
+        11,
+        "CPF0907",
+        40,
+        "123105/QSYS/QSPLMAINT",
+        "Serious storage condition may exist. Press HELP.",
+    ),
+    (
+        13,
+        22,
+        7,
+        "CPA4002",
+        99,
+        "123150/QSPLJOB/PRT01",
+        "Verify alignment on printer PRT01. (I G N R C)",
+    ),
+    (
+        13,
+        5,
+        10,
+        "CPF1241",
+        0,
+        "123488/TESTUSER/QPADEV0003",
+        "Job 123488/TESTUSER/QPADEV0003 submitted to job queue QBATCH in QGPL.",
+    ),
+    (
+        12,
+        50,
+        0,
+        "CPC1129",
+        0,
+        "123200/QSYS/QINTER",
+        "Job 123490/OPERATOR/QPADEV0004 started.",
+    ),
+    (
+        12,
+        49,
+        58,
+        "CPF1164",
+        0,
+        "123489/OPERATOR/QPADEV0004",
+        "Job 123489/OPERATOR/QPADEV0004 ended on 10/29/26 at 12:49:58; 3 seconds used; end code 0.",
+    ),
+    (
+        12,
+        10,
+        33,
+        "CPF2204",
+        30,
+        "123457/QTMHHTTP/ADMIN",
+        "User profile WEBUSER not found.",
+    ),
+    (
+        11,
+        42,
+        17,
+        "HTP8110",
+        20,
+        "123456/QTMHHTTP/ADMIN",
+        "Request from 172.16.0.9 for /qs400/httpadmin/instance/WEBSTORE/general failed, user WEBUSER not authorized.",
+    ),
+    (
+        11,
+        0,
+        0,
+        "CPI2209",
+        0,
+        "123200/QSYS/QINTER",
+        "User profile GUEST disabled because maximum number of sign-on attempts reached.",
+    ),
+    (
+        10,
+        59,
+        58,
+        "CPF1107",
+        30,
+        "123200/QSYS/QINTER",
+        "Password not correct for user profile GUEST.",
+    ),
+    (
+        10,
+        59,
+        51,
+        "CPF1107",
+        30,
+        "123200/QSYS/QINTER",
+        "Password not correct for user profile GUEST.",
+    ),
+    (
+        10,
+        31,
+        49,
+        "CPA0702",
+        99,
+        "123503/TESTUSER/INVBATCH",
+        "CPF0001 received by procedure INVLOAD. (C D I R)",
+    ),
+    (
+        9,
+        15,
+        12,
+        "TCP1A03",
+        10,
+        "123380/QTCP/QTCPIP",
+        "Interface 10.0.10.21 on line ETHLIN02 started.",
+    ),
+    (
+        9,
+        0,
+        2,
+        "CPC3703",
+        0,
+        "123350/QSECOFR/SAVDAILY",
+        "2 objects saved from library QGPL.",
+    ),
+    (
+        6,
+        0,
+        4,
+        "HTP8001",
+        0,
+        "123471/QTMHHTTP/API",
+        "HTTP server instance API started, listening on *:9443.",
+    ),
+    (
+        6,
+        0,
+        3,
+        "HTP8001",
+        0,
+        "123456/QTMHHTTP/ADMIN",
+        "HTTP server instance ADMIN started, listening on *:2001.",
+    ),
+    (
+        6,
+        0,
+        0,
+        "CPF0927",
+        0,
+        "123202/QSYS/QHTTPSVR",
+        "Subsystem QHTTPSVR active.",
+    ),
 ];
 
 /// The history log, oldest first: the night's batch jobs started and
@@ -244,13 +409,18 @@ fn history() -> Vec<HistEntry> {
             text: format!("Job {job} ended on {ed} at {et}; 40 seconds used; end code 0."),
         });
     }
-    out.extend(QHST_NEWEST.iter().rev().map(|&(h, m, s, id, sev, job, text)| HistEntry {
-        sent: today(h, m, s),
-        id: id.into(),
-        severity: sev,
-        job: job.into(),
-        text: text.into(),
-    }));
+    out.extend(
+        QHST_NEWEST
+            .iter()
+            .rev()
+            .map(|&(h, m, s, id, sev, job, text)| HistEntry {
+                sent: today(h, m, s),
+                id: id.into(),
+                severity: sev,
+                job: job.into(),
+                text: text.into(),
+            }),
+    );
     out
 }
 
@@ -367,7 +537,12 @@ impl FixtureMsgs {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn run_in(&self, user: &str, name: &str, p: &BTreeMap<String, String>) -> Result<Message, Message> {
+    fn run_in(
+        &self,
+        user: &str,
+        name: &str,
+        p: &BTreeMap<String, String>,
+    ) -> Result<Message, Message> {
         let get = |k: &str| p.get(k).map(String::as_str).unwrap_or_default();
         let mut qs = self.queues.lock().expect("queues");
         match name {
@@ -410,14 +585,21 @@ impl FixtureMsgs {
                     let (lib, qn) = split(&q, "QUSRSYS");
                     return fail("CPF2207", &[qn, lib, "*MSGQ"]);
                 }
-                let Some(m) = qs.get_mut(&q).and_then(|v| v.iter_mut().find(|m| m.key == key)) else {
+                let Some(m) = qs
+                    .get_mut(&q)
+                    .and_then(|v| v.iter_mut().find(|m| m.key == key))
+                else {
                     return fail("CPF2410", &[&key]);
                 };
                 if !m.waiting() {
                     return fail("CPF2422", &[&key]);
                 }
                 let r = unquote(get("RPY")).trim().to_ascii_uppercase();
-                let r = if r.is_empty() || r == "*DFT" { m.default.clone() } else { r };
+                let r = if r.is_empty() || r == "*DFT" {
+                    m.default.clone()
+                } else {
+                    r
+                };
                 m.reply = Some(r.clone());
                 if get("RMV") != "*NO" {
                     qs.get_mut(&q).expect("queue").retain(|m| m.key != key);
@@ -435,9 +617,15 @@ impl FixtureMsgs {
                     return fail("CPF2403", &[&qn, &lib]);
                 };
                 let clear = if name == "CLRMSGQ" {
-                    Some(if p.contains_key("CLEAR") { get("CLEAR") } else { "*ALL" })
+                    Some(if p.contains_key("CLEAR") {
+                        get("CLEAR")
+                    } else {
+                        "*ALL"
+                    })
                 } else {
-                    p.get("CLEAR").map(String::as_str).filter(|c| *c != "*BYKEY")
+                    p.get("CLEAR")
+                        .map(String::as_str)
+                        .filter(|c| *c != "*BYKEY")
                 };
                 if let Some(c) = clear {
                     let before = queue.len();
@@ -460,13 +648,19 @@ impl FixtureMsgs {
 
 impl Msgs for FixtureMsgs {
     fn queues(&self, _user: &str) -> Vec<(String, String)> {
-        ["QSYS/QSYSOPR", "QSYS/QSYSMSG", "QUSRSYS/QSECOFR", "QUSRSYS/TESTUSER", "QUSRSYS/QTCP"]
-            .iter()
-            .map(|q| {
-                let (l, n) = split(q, "QUSRSYS");
-                (l.to_string(), n.to_string())
-            })
-            .collect()
+        [
+            "QSYS/QSYSOPR",
+            "QSYS/QSYSMSG",
+            "QUSRSYS/QSECOFR",
+            "QUSRSYS/TESTUSER",
+            "QUSRSYS/QTCP",
+        ]
+        .iter()
+        .map(|q| {
+            let (l, n) = split(q, "QUSRSYS");
+            (l.to_string(), n.to_string())
+        })
+        .collect()
     }
 
     fn own_queue(&self, user: &str) -> (String, String) {

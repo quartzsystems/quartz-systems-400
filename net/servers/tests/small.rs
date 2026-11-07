@@ -53,12 +53,21 @@ fn framework() -> Framework {
 fn ntp_client_and_server() {
     let fw = framework();
     let mut env = Fake::default();
-    assert_eq!(fw.start(&mut env, &Request::new("*NTP")).unwrap(), "TCP1A07 NTP server starting.");
+    assert_eq!(
+        fw.start(&mut env, &Request::new("*NTP")).unwrap(),
+        "TCP1A07 NTP server starting."
+    );
     let j = &env.running[0];
-    assert_eq!((j.name.as_str(), j.user.as_str(), j.role.as_str()), ("QTOTNTP", "QNTP", "NTP"));
+    assert_eq!(
+        (j.name.as_str(), j.user.as_str(), j.role.as_str()),
+        ("QTOTNTP", "QNTP", "NTP")
+    );
     assert_eq!(NtpAttrs::parts(&j.rqsdta), (true, true));
     assert!(fw.active(&mut env, "*NTP"));
-    assert_eq!(fw.end(&mut env, &Request::new("*NTP"), false).unwrap(), "TCP1A0A NTP server ending.");
+    assert_eq!(
+        fw.end(&mut env, &Request::new("*NTP"), false).unwrap(),
+        "TCP1A0A NTP server ending."
+    );
     // With TCP/IP: only the parts whose autostart is on.
     let mut a = NtpAttrs::default();
     a.set("SVRAUTOSTR", "*YES").unwrap();
@@ -77,11 +86,31 @@ fn ntp_client_and_server() {
 fn lpd_numbered_listener() {
     let fw = framework();
     let mut env = Fake::default();
-    assert_eq!(fw.start(&mut env, &Request::new("*LPD")).unwrap(), "TCP1A07 LPD server starting.");
+    assert_eq!(
+        fw.start(&mut env, &Request::new("*LPD")).unwrap(),
+        "TCP1A07 LPD server starting."
+    );
     let j = &env.running[0];
-    assert_eq!((j.name.as_str(), j.user.as_str(), j.subsystem.as_str(), j.role.as_str()), ("QTLPD00001", "QTMPLPD", "QSYSWRK", "LPD"));
-    assert_eq!(fw.start(&mut env, &Request::new("*LPD")).unwrap(), "TCP1A08 LPD server already started.");
-    assert_eq!(fw.end(&mut env, &Request::new("*LPD"), true).unwrap(), "TCP1A0A LPD server ending.");
+    assert_eq!(
+        (
+            j.name.as_str(),
+            j.user.as_str(),
+            j.subsystem.as_str(),
+            j.role.as_str()
+        ),
+        ("QTLPD00001", "QTMPLPD", "QSYSWRK", "LPD")
+    );
+    assert_eq!(
+        fw.start(&mut env, &Request::new("*LPD")).unwrap(),
+        "TCP1A08 LPD server already started."
+    );
+    assert_eq!(
+        fw.end(&mut env, &Request::new("*LPD"), true).unwrap(),
+        "TCP1A0A LPD server ending."
+    );
     assert_eq!(env.ended, ["QTLPD00001"]);
-    assert_eq!(fw.end(&mut env, &Request::new("*LPD"), false).unwrap(), "TCP1A09 LPD server not active.");
+    assert_eq!(
+        fw.end(&mut env, &Request::new("*LPD"), false).unwrap(),
+        "TCP1A09 LPD server not active."
+    );
 }

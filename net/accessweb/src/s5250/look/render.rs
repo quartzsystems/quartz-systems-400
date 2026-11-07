@@ -170,7 +170,11 @@ impl Paint {
     pub fn of(cell: Cell) -> Paint {
         Paint {
             ch: if cell.is_attr { ' ' } else { cell.ch },
-            style: if cell.is_attr { BLANK } else { style(cell.attr) },
+            style: if cell.is_attr {
+                BLANK
+            } else {
+                style(cell.attr)
+            },
             cursor: false,
             selected: false,
         }
@@ -216,7 +220,11 @@ pub struct Canvas {
 impl Canvas {
     /// A canvas filled with `rgb`.
     pub fn new(w: usize, h: usize, rgb: u32) -> Canvas {
-        let mut c = Canvas { w, h, px: vec![0; w * h * 3] };
+        let mut c = Canvas {
+            w,
+            h,
+            px: vec![0; w * h * 3],
+        };
         c.fill(0, 0, w, h, rgb);
         c
     }
@@ -271,8 +279,16 @@ pub fn scanline(p: Paint, gy: usize) -> (u16, Option<Line>) {
     if p.style.underline && gy == GLYPH_H - 2 {
         return (0, Some(Line::Foreground));
     }
-    let row = if p.style.nondisplay { 0 } else { glyph(p.ch)[gy] };
-    let sep = if p.style.column_sep && gy.is_multiple_of(4) { 0x101 } else { 0 };
+    let row = if p.style.nondisplay {
+        0
+    } else {
+        glyph(p.ch)[gy]
+    };
+    let sep = if p.style.column_sep && gy.is_multiple_of(4) {
+        0x101
+    } else {
+        0
+    };
     (row | sep, None)
 }
 
@@ -367,7 +383,11 @@ pub fn oia_cells(o: &Oia, cols: usize) -> Vec<Paint> {
         put(21, "TLS", Color::Green, 3);
     }
     let room = cols.saturating_sub(26 + 7);
-    let label = if o.state.is_empty() { o.system.clone() } else { format!("{} {}", o.system, o.state) };
+    let label = if o.state.is_empty() {
+        o.system.clone()
+    } else {
+        format!("{} {}", o.system, o.state)
+    };
     put(26, &label, Color::Green, room);
     let rc = format!("{:02}/{:03}", o.cursor.0, o.cursor.1);
     put(cols.saturating_sub(5).max(1), &rc, Color::Green, 6);
@@ -375,7 +395,14 @@ pub fn oia_cells(o: &Oia, cols: usize) -> Vec<Paint> {
 }
 
 /// A grid of `rows` by `cols` and its status row, at scale `scale`.
-pub fn render(rows: usize, cols: usize, scale: usize, cells: &[Paint], status: &[Paint], look: Look) -> Canvas {
+pub fn render(
+    rows: usize,
+    cols: usize,
+    scale: usize,
+    cells: &[Paint],
+    status: &[Paint],
+    look: Look,
+) -> Canvas {
     let s = scale.max(1);
     let (w, h) = (cols * GLYPH_W * s, (rows + 1) * GLYPH_H * s);
     let mut c = Canvas::new(w, h, look.scheme.background());
@@ -401,7 +428,10 @@ mod tests {
         assert!(style(0x27).nondisplay && !style(0x27).underline);
         assert_eq!(style(0x28).color, Color::Red);
         assert!(style(0x30).column_sep && style(0x34).color == Color::Turquoise);
-        assert_eq!((style(0x38).color, style(0x3A).color), (Color::Pink, Color::Blue));
+        assert_eq!(
+            (style(0x38).color, style(0x3A).color),
+            (Color::Pink, Color::Blue)
+        );
     }
 
     #[test]

@@ -8,8 +8,8 @@
 //! displays; every other group is edited as keyword text.
 
 use dds::lex::Keyword;
-use uim::engine::LineMsg;
 pub use dds::lex::keyword::CONSTANT;
+use uim::engine::LineMsg;
 
 use crate::source::{Element, Kind, Usage};
 
@@ -42,17 +42,60 @@ pub struct Group {
 }
 
 const KEYS: &[&str] = &[
-    "CA##", "CF##", "ROLLUP", "ROLLDOWN", "PAGEUP", "PAGEDOWN", "CLEAR", "HOME", "HELP", "PRINT",
-    "VLDCMDKEY", "SETOF", "SETOFF", "INDTXT", "INDARA",
+    "CA##",
+    "CF##",
+    "ROLLUP",
+    "ROLLDOWN",
+    "PAGEUP",
+    "PAGEDOWN",
+    "CLEAR",
+    "HOME",
+    "HELP",
+    "PRINT",
+    "VLDCMDKEY",
+    "SETOF",
+    "SETOFF",
+    "INDTXT",
+    "INDARA",
 ];
 
 /// The file-level groups.
 pub const FILE: &[Group] = &[
-    Group { id: "GENERAL", row: 8, label: "General keywords", for_type: "", names: &[] },
-    Group { id: "INDICATOR", row: 9, label: "Indicator keywords", for_type: "", names: KEYS },
-    Group { id: "PRINT", row: 10, label: "Print keywords", for_type: "", names: &["PRINT"] },
-    Group { id: "HELP", row: 11, label: "Help keywords", for_type: "", names: &["HLP*", "ALTHELP"] },
-    Group { id: "DSPSIZ", row: 12, label: "Display sizes", for_type: "", names: &["DSPSIZ"] },
+    Group {
+        id: "GENERAL",
+        row: 8,
+        label: "General keywords",
+        for_type: "",
+        names: &[],
+    },
+    Group {
+        id: "INDICATOR",
+        row: 9,
+        label: "Indicator keywords",
+        for_type: "",
+        names: KEYS,
+    },
+    Group {
+        id: "PRINT",
+        row: 10,
+        label: "Print keywords",
+        for_type: "",
+        names: &["PRINT"],
+    },
+    Group {
+        id: "HELP",
+        row: 11,
+        label: "Help keywords",
+        for_type: "",
+        names: &["HLP*", "ALTHELP"],
+    },
+    Group {
+        id: "DSPSIZ",
+        row: 12,
+        label: "Display sizes",
+        for_type: "",
+        names: &["DSPSIZ"],
+    },
     Group {
         id: "ALTERNATE",
         row: 13,
@@ -60,8 +103,20 @@ pub const FILE: &[Group] = &[
         for_type: "",
         names: &["ALTPAGEUP", "ALTPAGEDWN", "ALTNAME"],
     },
-    Group { id: "DBCS", row: 14, label: "DBCS conversion", for_type: "", names: &["IGCCNV"] },
-    Group { id: "WINDOW", row: 15, label: "Window Borders", for_type: "", names: &["WDWBORDER"] },
+    Group {
+        id: "DBCS",
+        row: 14,
+        label: "DBCS conversion",
+        for_type: "",
+        names: &["IGCCNV"],
+    },
+    Group {
+        id: "WINDOW",
+        row: 15,
+        label: "Window Borders",
+        for_type: "",
+        names: &["WDWBORDER"],
+    },
     Group {
         id: "MENUBAR",
         row: 16,
@@ -73,23 +128,57 @@ pub const FILE: &[Group] = &[
 
 /// The record-level groups.
 pub const RECORD: &[Group] = &[
-    Group { id: "GENERAL", row: 8, label: "General keywords", for_type: "", names: &[] },
-    Group { id: "INDICATOR", row: 9, label: "Indicator keywords", for_type: "", names: KEYS },
-    Group { id: "APPHELP", row: 10, label: "Application help", for_type: "", names: &["HLPRTN", "HLPCMDKEY"] },
-    Group { id: "HELP", row: 11, label: "Help keywords", for_type: "", names: &["HLP*"] },
+    Group {
+        id: "GENERAL",
+        row: 8,
+        label: "General keywords",
+        for_type: "",
+        names: &[],
+    },
+    Group {
+        id: "INDICATOR",
+        row: 9,
+        label: "Indicator keywords",
+        for_type: "",
+        names: KEYS,
+    },
+    Group {
+        id: "APPHELP",
+        row: 10,
+        label: "Application help",
+        for_type: "",
+        names: &["HLPRTN", "HLPCMDKEY"],
+    },
+    Group {
+        id: "HELP",
+        row: 11,
+        label: "Help keywords",
+        for_type: "",
+        names: &["HLP*"],
+    },
     Group {
         id: "OUTPUT",
         row: 12,
         label: "Output keywords",
         for_type: "",
-        names: &["ALARM", "BLINK", "LOCK", "CSRLOC", "SLNO", "CLRL", "FRCDTA", "DSPMOD"],
+        names: &[
+            "ALARM", "BLINK", "LOCK", "CSRLOC", "SLNO", "CLRL", "FRCDTA", "DSPMOD",
+        ],
     },
     Group {
         id: "INPUT",
         row: 13,
         label: "Input keywords",
         for_type: "",
-        names: &["CHANGE", "RTNCSRLOC", "RTNDTA", "INZRCD", "INVITE", "UNLOCK", "MDTOFF"],
+        names: &[
+            "CHANGE",
+            "RTNCSRLOC",
+            "RTNDTA",
+            "INZRCD",
+            "INVITE",
+            "UNLOCK",
+            "MDTOFF",
+        ],
     },
     Group {
         id: "OVERLAY",
@@ -97,25 +186,72 @@ pub const RECORD: &[Group] = &[
         label: "Overlay keywords",
         for_type: "",
         names: &[
-            "OVERLAY", "PUTOVR", "PUTRETAIN", "OVRDTA", "OVRATR", "ERASE", "ERASEINP", "PROTECT",
-            "KEEP", "ASSUME", "INZINP",
+            "OVERLAY",
+            "PUTOVR",
+            "PUTRETAIN",
+            "OVRDTA",
+            "OVRATR",
+            "ERASE",
+            "ERASEINP",
+            "PROTECT",
+            "KEEP",
+            "ASSUME",
+            "INZINP",
         ],
     },
-    Group { id: "PRINT", row: 16, label: "Print keywords", for_type: "", names: &["PRINT"] },
-    Group { id: "ALTNAME", row: 17, label: "ALTNAME keyword", for_type: "", names: &["ALTNAME"] },
-    Group { id: "TEXT", row: 19, label: "TEXT keyword", for_type: "", names: &["TEXT"] },
+    Group {
+        id: "PRINT",
+        row: 16,
+        label: "Print keywords",
+        for_type: "",
+        names: &["PRINT"],
+    },
+    Group {
+        id: "ALTNAME",
+        row: 17,
+        label: "ALTNAME keyword",
+        for_type: "",
+        names: &["ALTNAME"],
+    },
+    Group {
+        id: "TEXT",
+        row: 19,
+        label: "TEXT keyword",
+        for_type: "",
+        names: &["TEXT"],
+    },
 ];
 
 /// The field-level groups.
 pub const FIELD: &[Group] = &[
-    Group { id: "DSPATR", row: 8, label: "Display attributes", for_type: "All except Hidden", names: &["DSPATR"] },
-    Group { id: "COLOR", row: 9, label: "Colors", for_type: "All except Hidden", names: &["COLOR"] },
+    Group {
+        id: "DSPATR",
+        row: 8,
+        label: "Display attributes",
+        for_type: "All except Hidden",
+        names: &["DSPATR"],
+    },
+    Group {
+        id: "COLOR",
+        row: 9,
+        label: "Colors",
+        for_type: "All except Hidden",
+        names: &["COLOR"],
+    },
     Group {
         id: "INPUT",
         row: 10,
         label: "Input keywords",
         for_type: "Input or Both",
-        names: &["AUTO", "BLANKS", "CHANGE", "CHGINPDFT", "DUP", "ENTFLDATR", "FLDCSRPRG"],
+        names: &[
+            "AUTO",
+            "BLANKS",
+            "CHANGE",
+            "CHGINPDFT",
+            "DUP",
+            "ENTFLDATR",
+            "FLDCSRPRG",
+        ],
     },
     Group {
         id: "VALIDITY",
@@ -124,7 +260,13 @@ pub const FIELD: &[Group] = &[
         for_type: "Input or Both",
         names: &["CHECK", "VALUES", "RANGE", "COMP", "CMP"],
     },
-    Group { id: "GENERAL", row: 13, label: "General keywords", for_type: "All types", names: &[] },
+    Group {
+        id: "GENERAL",
+        row: 13,
+        label: "General keywords",
+        for_type: "All types",
+        names: &[],
+    },
     Group {
         id: "EDIT",
         row: 14,
@@ -146,8 +288,20 @@ pub const FIELD: &[Group] = &[
         for_type: "Input, Output, Both",
         names: &["ERRMSG", "ERRMSGID"],
     },
-    Group { id: "MSGID", row: 17, label: "Message ID (MSGID)", for_type: "Output or Both", names: &["MSGID"] },
-    Group { id: "TEXT", row: 20, label: "TEXT keyword", for_type: "", names: &["TEXT"] },
+    Group {
+        id: "MSGID",
+        row: 17,
+        label: "Message ID (MSGID)",
+        for_type: "Output or Both",
+        names: &["MSGID"],
+    },
+    Group {
+        id: "TEXT",
+        row: 20,
+        label: "TEXT keyword",
+        for_type: "",
+        names: &["TEXT"],
+    },
 ];
 
 /// The groups of a level.
@@ -275,11 +429,17 @@ pub fn parse_keywords(text: &str) -> Result<Vec<Keyword>, LineMsg> {
         .iter()
         .map(crate::source::Line::text)
         .collect();
-    let (source, _) = dds::Source::from_text(&lines.join("
-"));
+    let (source, _) = dds::Source::from_text(&lines.join(
+        "
+",
+    ));
     let mut diags = dds::diag::Diagnostics::default();
     let specs = dds::lex::lex(&source, &mut diags);
-    if diags.as_slice().iter().any(|d| d.severity >= dds::Severity::Error) {
+    if diags
+        .as_slice()
+        .iter()
+        .any(|d| d.severity >= dds::Severity::Error)
+    {
         return Err(LineMsg::error("CPD9CEC", &[text.trim()]));
     }
     Ok(specs
@@ -308,10 +468,18 @@ mod tests {
     #[test]
     fn replace_a_group() {
         let mut kws = parse_keywords("CA03(03 'Exit') OVERLAY TEXT('A screen')").unwrap();
-        replace(Level::Record, "INDICATOR", &mut kws, &["CF05(05)".into(), "CA03(03 'Exit')".into()])
-            .unwrap();
+        replace(
+            Level::Record,
+            "INDICATOR",
+            &mut kws,
+            &["CF05(05)".into(), "CA03(03 'Exit')".into()],
+        )
+        .unwrap();
         let t: Vec<String> = kws.iter().map(ToString::to_string).collect();
-        assert_eq!(t, ["CF05(05)", "CA03(03 'Exit')", "OVERLAY", "TEXT('A screen')"]);
+        assert_eq!(
+            t,
+            ["CF05(05)", "CA03(03 'Exit')", "OVERLAY", "TEXT('A screen')"]
+        );
         assert!(replace(Level::Record, "GENERAL", &mut kws, &["X(".into()]).is_err());
     }
 }

@@ -150,7 +150,11 @@ pub fn override_values(job: &mut Job, host: &Host, r: &Resolved) -> Option<Resol
         .parms
         .iter()
         .filter(|b| b.specified)
-        .filter_map(|b| b.value.as_ref().map(|v| format!("{}({})", b.kwd, v.parm_source())))
+        .filter_map(|b| {
+            b.value
+                .as_ref()
+                .map(|v| format!("{}({})", b.kwd, v.parm_source()))
+        })
         .collect();
     let keys: Vec<&String> = given
         .iter()
@@ -159,12 +163,19 @@ pub fn override_values(job: &mut Job, host: &Host, r: &Resolved) -> Option<Resol
     if has_keys && keys.is_empty() {
         return None;
     }
-    let key = keys.iter().map(|k| k.replace('\'', "''")).collect::<Vec<_>>().join(" ");
+    let key = keys
+        .iter()
+        .map(|k| k.replace('\'', "''"))
+        .collect::<Vec<_>>()
+        .join(" ");
     let out = super::run(job, host, &format!("QSPMTOVR CMD({}) KEY('{key}')", r.name));
     if out.escape.is_some() || out.text.trim().is_empty() {
         return None;
     }
-    let typed: Vec<&str> = given.iter().map(|g| g.split('(').next().unwrap_or("")).collect();
+    let typed: Vec<&str> = given
+        .iter()
+        .map(|g| g.split('(').next().unwrap_or(""))
+        .collect();
     let mut line = format!("?{}", r.name);
     for w in words(out.text.trim()) {
         if !typed.contains(&w.split('(').next().unwrap_or("")) {

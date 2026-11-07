@@ -9,7 +9,11 @@
 //! `cargo test --release -p ftp --test bench -- --ignored --nocapture`
 //! and `QS400_FTP_BENCH_MIB=N` for the size (default 64).
 
-#![allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::many_single_char_names)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::many_single_char_names
+)]
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{Ipv4Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
@@ -48,9 +52,13 @@ impl Control {
     fn reply(&mut self) -> (u16, String) {
         loop {
             let mut l = String::new();
-            assert!(self.r.read_line(&mut l).unwrap() > 0, "control connection closed");
+            assert!(
+                self.r.read_line(&mut l).unwrap() > 0,
+                "control connection closed"
+            );
             let l = l.trim_end().to_string();
-            if l.len() >= 4 && l.as_bytes()[3] == b' ' && l[..3].bytes().all(|b| b.is_ascii_digit()) {
+            if l.len() >= 4 && l.as_bytes()[3] == b' ' && l[..3].bytes().all(|b| b.is_ascii_digit())
+            {
                 return (l[..3].parse().unwrap(), l);
             }
         }
@@ -66,7 +74,10 @@ impl Control {
         let (code, text) = self.cmd("PASV");
         assert_eq!(code, 227, "{text}");
         let inner = &text[text.find('(').unwrap() + 1..text.find(')').unwrap()];
-        let n: Vec<u16> = inner.split(',').map(|x| x.trim().parse().unwrap()).collect();
+        let n: Vec<u16> = inner
+            .split(',')
+            .map(|x| x.trim().parse().unwrap())
+            .collect();
         let ip = Ipv4Addr::new(n[0] as u8, n[1] as u8, n[2] as u8, n[3] as u8);
         TcpStream::connect((ip, n[4] * 256 + n[5])).unwrap()
     }
@@ -79,14 +90,20 @@ fn mib_per_s(bytes: usize, secs: f64) -> f64 {
 #[test]
 #[ignore = "bench: run in release with --ignored --nocapture"]
 fn ftp_binary_stor_retr() {
-    let mib: usize = std::env::var("QS400_FTP_BENCH_MIB").ok().and_then(|v| v.parse().ok()).unwrap_or(64);
+    let mib: usize = std::env::var("QS400_FTP_BENCH_MIB")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(64);
     let total = mib * CHUNK;
     let block: Vec<u8> = (0..CHUNK).map(|i| (i % 251) as u8).collect();
 
     let addr = server();
     let s = TcpStream::connect(addr).unwrap();
     s.set_nodelay(true).unwrap();
-    let mut c = Control { r: BufReader::new(s.try_clone().unwrap()), w: s };
+    let mut c = Control {
+        r: BufReader::new(s.try_clone().unwrap()),
+        w: s,
+    };
     assert_eq!(c.reply().0, 220);
     assert_eq!(c.cmd("USER BOB").0, 331);
     assert_eq!(c.cmd("PASS SECRET").0, 230);
@@ -136,5 +153,8 @@ fn ftp_binary_stor_retr() {
     println!("ftp: {mib} MiB stream file, binary, passive, loopback, MemBackend IFS");
     println!("  STOR {stor:.3} s  {:.1} MiB/s", mib_per_s(total, stor));
     println!("  RETR {retr:.3} s  {:.1} MiB/s", mib_per_s(total, retr));
-    println!("    of which reading the file before 150: {fetch:.3} s; sending: {:.3} s", retr - fetch);
+    println!(
+        "    of which reading the file before 150: {fetch:.3} s; sending: {:.3} s",
+        retr - fetch
+    );
 }

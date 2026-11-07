@@ -500,7 +500,11 @@ fn mixed_member_writes_keep_double_byte_runs_whole() {
                 },
             );
             let env = common::env();
-            let ifs = Ifs::new(ifs::backend::mem::MemBackend::new(), Box::new(q), Config::default());
+            let ifs = Ifs::new(
+                ifs::backend::mem::MemBackend::new(),
+                Box::new(q),
+                Config::default(),
+            );
             ifs.ensure_layout(&env).unwrap();
             let p = user("QSECOFR");
             let audit = ifs::ops::audit::NoAudit;
@@ -532,7 +536,10 @@ fn mixed_member_writes_keep_double_byte_runs_whole() {
             };
             // Text mode: one record a line, each cut on a character.
             let text = lines.join("\n") + "\n";
-            rw(O_WRONLY | O_TRUNC | O_TEXTDATA | O_CCSID, Some(text.as_bytes()));
+            rw(
+                O_WRONLY | O_TRUNC | O_TEXTDATA | O_CCSID,
+                Some(text.as_bytes()),
+            );
             let raw = rw(O_RDONLY, None);
             assert_eq!(raw.len(), len * lines.len(), "{c} {len}");
             let mut cut = Vec::new();

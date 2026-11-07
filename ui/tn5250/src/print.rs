@@ -180,7 +180,12 @@ pub trait Device {
 /// Send `scs` as one print job, each record answered before the next.
 /// `Ok` only when the null record, the last, is answered good. The
 /// number of records answered is in `sent`.
-pub fn deliver(dev: &mut dyn Device, scs: &[u8], chunk: usize, sent: &mut usize) -> Result<(), Failure> {
+pub fn deliver(
+    dev: &mut dyn Device,
+    scs: &[u8],
+    chunk: usize,
+    sent: &mut usize,
+) -> Result<(), Failure> {
     for rec in job_records(scs, chunk) {
         dev.send(rec).map_err(Failure::Lost)?;
         let r = loop {
@@ -231,7 +236,9 @@ mod tests {
         let r = record(flags::FIRST | flags::LAST, &[0x34, 0xC4, 0x01]);
         assert_eq!(
             &r[..16],
-            &[0x00, 0x13, 0x12, 0xA0, 0x01, 0x01, 0x0A, 0x18, 0x00, 0x01, 0, 0, 0, 0, 0, 0]
+            &[
+                0x00, 0x13, 0x12, 0xA0, 0x01, 0x01, 0x0A, 0x18, 0x00, 0x01, 0, 0, 0, 0, 0, 0
+            ]
         );
         assert_eq!(&r[16..], &[0x34, 0xC4, 0x01]);
     }
@@ -242,7 +249,9 @@ mod tests {
         assert_eq!(n.len(), NULL_LEN);
         assert_eq!(
             n,
-            vec![0x00, 0x11, 0x12, 0xA0, 0x01, 0x01, 0x0A, 0x08, 0x00, 0x01, 0, 0, 0, 0, 0, 0, 0x00]
+            vec![
+                0x00, 0x11, 0x12, 0xA0, 0x01, 0x01, 0x0A, 0x08, 0x00, 0x01, 0, 0, 0, 0, 0, 0, 0x00
+            ]
         );
     }
 
@@ -277,7 +286,10 @@ mod tests {
         assert_eq!(deliver(&mut s, &[0x40; 100], 4000, &mut n), Ok(()));
         assert_eq!(n, 2);
         assert_eq!(s.sent.len(), 2);
-        assert_eq!(&s.sent[0][..10], &[0x00, 0x74, 0x12, 0xA0, 0x01, 0x01, 0x0A, 0x10, 0x00, 0x01]);
+        assert_eq!(
+            &s.sent[0][..10],
+            &[0x00, 0x74, 0x12, 0xA0, 0x01, 0x01, 0x0A, 0x10, 0x00, 0x01]
+        );
         assert_eq!(s.sent[1], null_record());
     }
 

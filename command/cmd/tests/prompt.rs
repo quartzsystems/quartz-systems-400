@@ -146,13 +146,21 @@ fn sbmjob_groups_lists_and_selective() {
     assert_eq!(p.key(7, &fields, &mut env), Step::Show);
     // Page Down and Page Up from the display page the same way, and
     // stop at the ends.
-    let now = |p: &Prompter| p.screen().fields.iter().map(|f| f.value.clone()).collect::<Vec<String>>();
+    let now = |p: &Prompter| {
+        p.screen()
+            .fields
+            .iter()
+            .map(|f| f.value.clone())
+            .collect::<Vec<String>>()
+    };
     let first = p.screen().text();
     p.key(cmd::prompt::PAGE_UP, &now(&p), &mut env);
     assert!(p.screen().text().contains("Already at the first page."));
     let f = now(&p);
     p.key(cmd::prompt::PAGE_DOWN, &f, &mut env);
-    assert!(p.screen().text().contains("Bottom") && p.screen().text().contains("Hold on job queue"));
+    assert!(
+        p.screen().text().contains("Bottom") && p.screen().text().contains("Hold on job queue")
+    );
     let f = now(&p);
     p.key(cmd::prompt::PAGE_DOWN, &f, &mut env);
     assert!(p.screen().text().contains("Already at the last page."));
@@ -224,11 +232,7 @@ fn crtsbsd_pmtctl_two_step() {
 
 #[test]
 fn help_key_names_the_parameter_under_the_cursor() {
-    let text = CRTLIB.replacen(
-        "MAXPOS(2)",
-        "MAXPOS(2) HLPPNLGRP(QHLICMD) HLPID(CRTLIB)",
-        1,
-    );
+    let text = CRTLIB.replacen("MAXPOS(2)", "MAXPOS(2) HLPPNLGRP(QHLICMD) HLPID(CRTLIB)", 1);
     let mut src = MemSource::default();
     src.add("CRTLIB", &text).unwrap();
     let r = {

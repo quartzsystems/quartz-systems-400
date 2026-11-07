@@ -169,7 +169,11 @@ fn classes() -> Vec<(&'static str, &'static str, Cls)> {
             c(25, 500, 30, "System class, priority 25"),
         ),
         ("QGPL", "QCASERVR", c(20, 2000, 30, "Host server class")),
-        ("QSYS", "QPWFSERVER", c(20, 2000, 30, "File and database server class")),
+        (
+            "QSYS",
+            "QPWFSERVER",
+            c(20, 2000, 30, "File and database server class"),
+        ),
         (
             "QSYS",
             "QSYSCLS50",

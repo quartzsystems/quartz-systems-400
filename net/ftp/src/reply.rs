@@ -32,7 +32,11 @@ impl Reply {
 
     /// A multi-line reply.
     pub fn lines(code: u16, lines: Vec<String>) -> Self {
-        let lines = if lines.is_empty() { vec![String::new()] } else { lines };
+        let lines = if lines.is_empty() {
+            vec![String::new()]
+        } else {
+            lines
+        };
         Self {
             code,
             lines,

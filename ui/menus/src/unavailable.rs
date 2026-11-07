@@ -137,7 +137,10 @@ mod tests {
     #[test]
     fn names_are_found_past_prompts_and_libraries() {
         assert_eq!(command("?VFYCMN"), Some((COMMAND, "VFYCMN".into())));
-        assert_eq!(command("qsys/wrkalr x(1)"), Some((COMMAND, "WRKALR".into())));
+        assert_eq!(
+            command("qsys/wrkalr x(1)"),
+            Some((COMMAND, "WRKALR".into()))
+        );
         assert_eq!(command("WRKACTJOB"), None);
         assert_eq!(menu("query"), Some(MENU));
         assert_eq!(menu("MAIN"), None);

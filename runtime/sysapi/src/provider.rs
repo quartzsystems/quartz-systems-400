@@ -806,7 +806,14 @@ impl Provider for MemProvider {
 
     fn msgq_send(&mut self, lib: &str, name: &str, mut m: QueueMsg) -> ApiResult<u32> {
         let k = Self::find_key(&self.msgqs, lib, name).ok_or_else(|| no_queue(lib, name))?;
-        let key = self.msgqs.values().flatten().map(|m| m.key).max().unwrap_or(0) + 1;
+        let key = self
+            .msgqs
+            .values()
+            .flatten()
+            .map(|m| m.key)
+            .max()
+            .unwrap_or(0)
+            + 1;
         m.key = key;
         self.msgqs.entry(k).or_default().push(m);
         Ok(key)

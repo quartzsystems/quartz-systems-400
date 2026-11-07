@@ -20,7 +20,14 @@ fn captured() -> Captured {
     let mut cur: Option<String> = None;
     for line in text.lines() {
         if let Some(rest) = line.strip_prefix("CMD ") {
-            let name = rest.split_whitespace().next().unwrap_or("").rsplit('/').next().unwrap_or("").to_string();
+            let name = rest
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .to_string();
             out.entry(name.clone()).or_default();
             cur = Some(name);
             continue;
@@ -51,9 +58,31 @@ fn captured() -> Captured {
 }
 
 const COMMANDS: &[&str] = &[
-    "ADDTCPHTE", "ADDTCPIFC", "ADDTCPPORT", "ADDTCPRTE", "ADDTCPSVR", "CFGTCP", "CFGTCPAPP", "CHGTCPA",
-    "CHGTCPDMN", "CHGTCPHTE", "CHGTCPIFC", "CHGTCPRTE", "CHGTCPSVR", "CHGTELNA", "CHGFTPA", "FTP", "STRTCPFTP", "CPYTCPHT", "MRGTCPHT", "RMVTCPHTE",
-    "RMVTCPIFC", "RMVTCPPORT", "RMVTCPRTE", "RMVTCPSVR", "RNMTCPHTE",
+    "ADDTCPHTE",
+    "ADDTCPIFC",
+    "ADDTCPPORT",
+    "ADDTCPRTE",
+    "ADDTCPSVR",
+    "CFGTCP",
+    "CFGTCPAPP",
+    "CHGTCPA",
+    "CHGTCPDMN",
+    "CHGTCPHTE",
+    "CHGTCPIFC",
+    "CHGTCPRTE",
+    "CHGTCPSVR",
+    "CHGTELNA",
+    "CHGFTPA",
+    "FTP",
+    "STRTCPFTP",
+    "CPYTCPHT",
+    "MRGTCPHT",
+    "RMVTCPHTE",
+    "RMVTCPIFC",
+    "RMVTCPPORT",
+    "RMVTCPRTE",
+    "RMVTCPSVR",
+    "RNMTCPHTE",
 ];
 
 #[test]
@@ -62,7 +91,8 @@ fn definitions_match_the_capture() {
     let mut bad = Vec::new();
     for name in COMMANDS {
         let theirs = &cap[*name];
-        let src = sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
+        let src =
+            sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
         let def = cmd::source::compile(name, src).unwrap_or_else(|e| panic!("{name}: {e:?}"));
         let ours: Vec<&str> = def.parms.iter().map(|p| p.kwd.as_str()).collect();
         let want: Vec<&str> = theirs.iter().map(|p| p.0.as_str()).collect();
@@ -72,12 +102,20 @@ fn definitions_match_the_capture() {
         }
         for (p, (kwd, min, max, dft, spc)) in def.parms.iter().zip(theirs) {
             if p.min != *min || p.max != *max {
-                bad.push(format!("{name} {kwd}: MIN/MAX {}/{} against {min}/{max}", p.min, p.max));
+                bad.push(format!(
+                    "{name} {kwd}: MIN/MAX {}/{} against {min}/{max}",
+                    p.min, p.max
+                ));
             }
             if p.dft.as_deref() != dft.as_deref() && !(dft.is_none() && p.dft.is_none()) {
                 bad.push(format!("{name} {kwd}: DFT {:?} against {dft:?}", p.dft));
             }
-            let ours: Vec<String> = p.spcval.iter().chain(&p.sngval).map(|s| s.from.clone()).collect();
+            let ours: Vec<String> = p
+                .spcval
+                .iter()
+                .chain(&p.sngval)
+                .map(|s| s.from.clone())
+                .collect();
             for s in spc {
                 if !ours.iter().any(|o| o.eq_ignore_ascii_case(s)) {
                     bad.push(format!("{name} {kwd}: special value {s} missing"));
@@ -90,11 +128,19 @@ fn definitions_match_the_capture() {
 
 #[test]
 fn every_tcp_command_has_a_place() {
-    for name in COMMANDS
-        .iter()
-        .chain(&["STRTCP", "ENDTCP", "ENDTCPABN", "STRTCPIFC", "ENDTCPIFC", "WRKSRVTBLE", "ADDSRVTBLE"])
-    {
-        assert!(sys_cpps::entry(name).is_some(), "{name} is not in the inventory");
+    for name in COMMANDS.iter().chain(&[
+        "STRTCP",
+        "ENDTCP",
+        "ENDTCPABN",
+        "STRTCPIFC",
+        "ENDTCPIFC",
+        "WRKSRVTBLE",
+        "ADDSRVTBLE",
+    ]) {
+        assert!(
+            sys_cpps::entry(name).is_some(),
+            "{name} is not in the inventory"
+        );
     }
 }
 
@@ -105,7 +151,11 @@ fn chgtelna_values() {
     let mut src = cmd::analyze::MemSource::default();
     src.put(sys_cpps::install::object("CHGTELNA", 0).unwrap().def);
     let mut env = cmd::analyze::Env::new(&mut src);
-    let r = cmd::analyze(&mut env, "CHGTELNA TIMMRKTIMO(600) NBRSVR(*CALC) CCSID(*GERMAN)").unwrap();
+    let r = cmd::analyze(
+        &mut env,
+        "CHGTELNA TIMMRKTIMO(600) NBRSVR(*CALC) CCSID(*GERMAN)",
+    )
+    .unwrap();
     let p = cmd::block::Parms::from_bound(&r.def, r.parms.clone());
     assert_eq!(p.int("TIMMRKTIMO"), Some(600));
     assert_eq!(p.int("NBRSVR"), Some(-2));

@@ -246,7 +246,11 @@ fn new_users(
                     let aut = cell(d, "AUTS", i, "AUT").to_ascii_uppercase();
                     let bits = typed_bits(d, "AUTS", i);
                     let aut = if aut.is_empty() { bits.join(" ") } else { aut };
-                    let aut = if aut.is_empty() { "*USE".to_string() } else { aut };
+                    let aut = if aut.is_empty() {
+                        "*USE".to_string()
+                    } else {
+                        aut
+                    };
                     d.set_message(exec(job, host, &grant(&user, &aut)));
                     done += 1;
                 }
@@ -414,8 +418,15 @@ pub fn edtautl(
     d.set("DTAHEAD", &dashed("Data", 37));
     d.set("AUTVIEW", "OBJ");
     loop {
-        let rows = read!("EDTAUTL", host.link.borrow_mut().with(|l| l.autl_panel(name.clone())));
-        let owner = rows.first().and_then(|r| r.first()).cloned().unwrap_or_default();
+        let rows = read!(
+            "EDTAUTL",
+            host.link.borrow_mut().with(|l| l.autl_panel(name.clone()))
+        );
+        let owner = rows
+            .first()
+            .and_then(|r| r.first())
+            .cloned()
+            .unwrap_or_default();
         d.set("OWNER", &owner);
         let orig: Vec<(String, String, bool)> = rows
             .iter()
@@ -469,7 +480,11 @@ pub fn edtautl(
                         let line = if aut.is_empty() && user != "*PUBLIC" {
                             format!("RMVAUTLE AUTL({name}) USER({user})")
                         } else {
-                            let aut = if aut.is_empty() { "*EXCLUDE".into() } else { aut };
+                            let aut = if aut.is_empty() {
+                                "*EXCLUDE".into()
+                            } else {
+                                aut
+                            };
                             let extra = if now_mgt { " *AUTLMGT" } else { "" };
                             format!("CHGAUTLE AUTL({name}) USER({user}) AUT({aut}{extra})")
                         };
@@ -490,7 +505,9 @@ pub fn edtautl(
 
 /// Whether a system value is a list: shown one element to a row.
 fn is_list(name: &str, elems: &[String]) -> bool {
-    elems.len() > 1 || name.ends_with("LIBL") || matches!(name, "QAUDLVL" | "QAUDLVL2" | "QSETJOBATR")
+    elems.len() > 1
+        || name.ends_with("LIBL")
+        || matches!(name, "QAUDLVL" | "QAUDLVL2" | "QSETJOBATR")
 }
 
 /// `WRKSYSVAL` option 2: each system value typed 2 against, changed on
@@ -546,10 +563,14 @@ fn chgsysval(
             .map(|e| e.trim().to_string())
             .filter(|e| !e.is_empty() && e != "*NONE")
             .collect();
-        let entry = sysval::Catalog::builtin().ok().and_then(|c| c.get(name).cloned());
+        let entry = sysval::Catalog::builtin()
+            .ok()
+            .and_then(|c| c.get(name).cloned());
         // Up to eight characters: the short field with its choices
         // beside it, as the system shows QDATFMT.
-        let short = entry.as_ref().is_some_and(|e| e.len.is_some_and(|n| n <= 8));
+        let short = entry
+            .as_ref()
+            .is_some_and(|e| e.len.is_some_and(|n| n <= 8));
         let panel = if libl {
             super::fill(&mut d, "LIBS", sysl_rows(&shown));
             "CHGSVL"
@@ -564,7 +585,10 @@ fn chgsysval(
             super::fill(&mut d, "ELEMS", rows);
             "CHGSVE"
         } else if short {
-            let hint = entry.as_ref().and_then(|e| e.allowed.as_ref()).map(|a| a.join(", "));
+            let hint = entry
+                .as_ref()
+                .and_then(|e| e.allowed.as_ref())
+                .map(|a| a.join(", "));
             d.set("SVSHORT", elems.first().map_or("", |e| e.trim()));
             d.set("SVHINT", &hint.unwrap_or_default());
             "CHGSV"
@@ -595,17 +619,29 @@ fn chgsysval(
                         .map(|i| cell(&d, "ELEMS", i, "SVELEM"))
                         .filter(|e| !e.is_empty())
                         .collect();
-                    if v.is_empty() { "*NONE".to_string() } else { v.join(" ") }
+                    if v.is_empty() {
+                        "*NONE".to_string()
+                    } else {
+                        v.join(" ")
+                    }
                 } else {
                     let field = if short { "SVSHORT" } else { "SVVALUE" };
                     let v = d.get(field).trim().to_string();
                     let quoted = !v.starts_with('*') && v.contains(|c: char| !c.is_ascii_digit());
-                    if quoted { format!("'{}'", v.replace('\'', "''")) } else { v }
+                    if quoted {
+                        format!("'{}'", v.replace('\'', "''"))
+                    } else {
+                        v
+                    }
                 };
                 if value.trim_matches('\'') == before.trim() {
                     return Some(Ok(String::new()));
                 }
-                match exec(job, host, &format!("CHGSYSVAL SYSVAL({name}) VALUE({value})")) {
+                match exec(
+                    job,
+                    host,
+                    &format!("CHGSYSVAL SYSVAL({name}) VALUE({value})"),
+                ) {
                     Some(m) if m.error => d.send(m),
                     _ => return Some(Ok(String::new())),
                 }
@@ -633,7 +669,9 @@ mod tests {
 
     #[test]
     fn sysl_rows_are_two_columns_of_eight() {
-        let libs: Vec<String> = ["QSYS", "QSYS2", "QHLPSYS", "QUSRSYS"].map(String::from).to_vec();
+        let libs: Vec<String> = ["QSYS", "QSYS2", "QHLPSYS", "QUSRSYS"]
+            .map(String::from)
+            .to_vec();
         let rows = sysl_rows(&libs);
         assert_eq!(rows.len(), 8);
         assert_eq!(rows[0][0].1, "0");

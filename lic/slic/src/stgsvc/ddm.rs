@@ -12,11 +12,11 @@ use std::fmt::Write as _;
 
 use hostsvr::common::rc;
 use qsname::Name;
+use stg::{HostRefused, HostSignedOn};
 use store::obj::library::Library;
 use store::obj::ops;
 use store::obj::{JobHandle, ObjectId, types};
 use store::txn::Txn;
-use stg::{HostRefused, HostSignedOn};
 
 use super::served::JobCtx;
 use super::spool::with_store;
@@ -29,7 +29,13 @@ pub const DDMF: &str = "DDMF";
 const SVRAUT: &str = "QSYSVRAUT";
 
 /// `ddm_signon`: the password checked as a sign-on.
-pub fn signon(system: &mut System, ctx: &mut JobCtx, user: &str, password: &str, swap: bool) -> Result<HostSignedOn, HostRefused> {
+pub fn signon(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    user: &str,
+    password: &str,
+    swap: bool,
+) -> Result<HostSignedOn, HostRefused> {
     let upper = user.trim().to_ascii_uppercase();
     if upper.is_empty() {
         return Err(HostRefused {
@@ -38,14 +44,16 @@ pub fn signon(system: &mut System, ctx: &mut JobCtx, user: &str, password: &str,
             text: "No user was given.".into(),
         });
     }
-    let s = super::security::sign_on(system, &upper, password, "", false, None).map_err(|e| HostRefused {
-        rc: match e.msgid.as_str() {
-            "CPF1394" | "CPF1110" | "CPF1220" => rc::USER_DISABLED,
-            "CPF1118" => rc::PASSWORD_NONE,
-            _ => rc::PASSWORD_INCORRECT,
-        },
-        msgid: e.msgid,
-        text: e.text,
+    let s = super::security::sign_on(system, &upper, password, "", false, None).map_err(|e| {
+        HostRefused {
+            rc: match e.msgid.as_str() {
+                "CPF1394" | "CPF1110" | "CPF1220" => rc::USER_DISABLED,
+                "CPF1118" => rc::PASSWORD_NONE,
+                _ => rc::PASSWORD_INCORRECT,
+            },
+            msgid: e.msgid,
+            text: e.text,
+        }
     })?;
     if s.next == sec::signon::Next::ChangePassword {
         return Err(HostRefused {
@@ -80,7 +88,11 @@ fn stamp(owner: String) -> wm::obj::Stamp {
 }
 
 /// A `*FILE` named `n` in `lib`, with its attribute.
-fn file_in(txn: &mut Txn<'_>, lib: ObjectId, n: Name) -> Result<Option<(ObjectId, String)>, String> {
+fn file_in(
+    txn: &mut Txn<'_>,
+    lib: ObjectId,
+    n: Name,
+) -> Result<Option<(ObjectId, String)>, String> {
     let l = Library::load(txn, lib).map_err(|e| e.to_string())?;
     let Some(id) = l.lookup(txn, types::FILE, n).map_err(|e| e.to_string())? else {
         return Ok(None);
@@ -91,12 +103,24 @@ fn file_in(txn: &mut Txn<'_>, lib: ObjectId, n: Name) -> Result<Option<(ObjectId
 
 /// `ddmf_put`.
 #[allow(clippy::too_many_arguments)] // the request's fields
-pub fn put(system: &mut System, me: u32, lib: &str, file: &str, payload: &str, text: &str, create: bool, replace: bool) -> Result<String, String> {
+pub fn put(
+    system: &mut System,
+    me: u32,
+    lib: &str,
+    file: &str,
+    payload: &str,
+    text: &str,
+    create: bool,
+    replace: bool,
+) -> Result<String, String> {
     let lib = match lib.trim().to_ascii_uppercase().as_str() {
         "" | "*CURLIB" | "*LIBL" if create => "QGPL".to_string(),
         l => l.to_string(),
     };
-    let owner = system.jobs.get(me).map_or_else(|| "QSYS".into(), |j| j.user.clone());
+    let owner = system
+        .jobs
+        .get(me)
+        .map_or_else(|| "QSYS".into(), |j| j.user.clone());
     let n = name(file)?;
     let job = JobHandle(u64::from(me));
     with_store(system, |txn, qsys| {
@@ -106,15 +130,26 @@ pub fn put(system: &mut System, me: u32, lib: &str, file: &str, payload: &str, t
                 .map(|r| r.library)
                 .map_err(|_| format!("CPF9812 File {file} in library *LIBL not found."))?
         } else {
-            wm::obj::library(txn, qsys, &lib).map_err(|e| format!("CPF9810 Library {lib} not found: {e}"))?
+            wm::obj::library(txn, qsys, &lib)
+                .map_err(|e| format!("CPF9810 Library {lib} not found: {e}"))?
         };
         let found = file_in(txn, l, n)?;
         match (create, found) {
-            (true, Some((id, _))) if replace => ops::delete(txn, job, id).map_err(|e| format!("CPF7302 {e}"))?,
-            (true, Some(_)) => return Err(format!("CPF7302 File {file} in library {lib} exists already.")),
-            (false, None) => return Err(format!("CPF9812 File {file} in library {lib} not found.")),
+            (true, Some((id, _))) if replace => {
+                ops::delete(txn, job, id).map_err(|e| format!("CPF7302 {e}"))?
+            }
+            (true, Some(_)) => {
+                return Err(format!(
+                    "CPF7302 File {file} in library {lib} exists already."
+                ));
+            }
+            (false, None) => {
+                return Err(format!("CPF9812 File {file} in library {lib} not found."));
+            }
             (false, Some((_, a))) if a != DDMF => {
-                return Err(format!("CPF7304 File {file} in library {lib} is not a DDM file."));
+                return Err(format!(
+                    "CPF7304 File {file} in library {lib} is not a DDM file."
+                ));
             }
             (false, Some((id, _))) => {
                 wm::obj::write(txn, id, payload.as_bytes()).map_err(|e| e.to_string())?;
@@ -124,8 +159,15 @@ pub fn put(system: &mut System, me: u32, lib: &str, file: &str, payload: &str, t
             }
             (true, None) => {}
         }
-        wm::obj::create_attr(txn, l, (n, types::FILE, DDMF), text, &stamp(owner.clone()), payload.as_bytes())
-            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF7302")))?;
+        wm::obj::create_attr(
+            txn,
+            l,
+            (n, types::FILE, DDMF),
+            text,
+            &stamp(owner.clone()),
+            payload.as_bytes(),
+        )
+        .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF7302")))?;
         let (_, h) = ops::read_header(txn, l).map_err(|e| e.to_string())?;
         Ok(h.name.to_string().trim().to_string())
     })
@@ -150,7 +192,10 @@ pub fn get(system: &mut System, lib: &str, file: &str) -> Result<(String, String
         }
         let payload = wm::obj::read(txn, r.id).map_err(|e| e.to_string())?;
         let (_, lh) = ops::read_header(txn, r.library).map_err(|e| e.to_string())?;
-        Ok((lh.name.to_string().trim().to_string(), String::from_utf8_lossy(&payload).into_owned()))
+        Ok((
+            lh.name.to_string().trim().to_string(),
+            String::from_utf8_lossy(&payload).into_owned(),
+        ))
     })
 }
 
@@ -171,7 +216,9 @@ fn hex(s: &str) -> String {
 }
 
 fn unhex(s: &str) -> String {
-    let b: Vec<u8> = (0..s.len() / 2).filter_map(|i| u8::from_str_radix(s.get(2 * i..2 * i + 2)?, 16).ok()).collect();
+    let b: Vec<u8> = (0..s.len() / 2)
+        .filter_map(|i| u8::from_str_radix(s.get(2 * i..2 * i + 2)?, 16).ok())
+        .collect();
     String::from_utf8_lossy(&b).into_owned()
 }
 
@@ -179,7 +226,14 @@ fn unhex(s: &str) -> String {
 /// in hexadecimal.
 fn encode(entries: &[Entry]) -> String {
     entries.iter().fold(String::new(), |mut s, e| {
-        let _ = writeln!(s, "{} {} {} {}", e.user, hex(&e.server), hex(&e.usrid), hex(&e.password));
+        let _ = writeln!(
+            s,
+            "{} {} {} {}",
+            e.user,
+            hex(&e.server),
+            hex(&e.usrid),
+            hex(&e.password)
+        );
         s
     })
 }
@@ -202,7 +256,10 @@ fn entries(system: &mut System) -> Vec<Entry> {
     sec::guard::as_system(|| {
         with_store(system, |txn, qsys| {
             let l = Library::load(txn, qsys).map_err(|e| e.to_string())?;
-            let Some(id) = l.lookup(txn, types::USRSPC, name(SVRAUT)?).map_err(|e| e.to_string())? else {
+            let Some(id) = l
+                .lookup(txn, types::USRSPC, name(SVRAUT)?)
+                .map_err(|e| e.to_string())?
+            else {
                 return Ok(Vec::new());
             };
             let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
@@ -221,9 +278,18 @@ fn save(system: &mut System, all: &[Entry]) -> Result<(), String> {
             let id = if let Some(id) = l.lookup(txn, types::USRSPC, n).map_err(|e| e.to_string())? {
                 id
             } else {
-                let id = wm::obj::create(txn, qsys, n, types::USRSPC, "Server authentication entries", &stamp("QSYS".into()), b"")
+                let id = wm::obj::create(
+                    txn,
+                    qsys,
+                    n,
+                    types::USRSPC,
+                    "Server authentication entries",
+                    &stamp("QSYS".into()),
+                    b"",
+                )
+                .map_err(|e| e.to_string())?;
+                sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::EXCLUDE))
                     .map_err(|e| e.to_string())?;
-                sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::EXCLUDE)).map_err(|e| e.to_string())?;
                 id
             };
             wm::obj::write(txn, id, text.as_bytes()).map_err(|e| e.to_string())
@@ -237,14 +303,25 @@ fn current(ctx: &JobCtx) -> String {
 }
 
 /// `svraute`.
-pub fn svraute(system: &mut System, ctx: &JobCtx, op: &str, user: &str, server: &str, usrid: Option<String>, password: Option<String>) -> Result<String, String> {
+pub fn svraute(
+    system: &mut System,
+    ctx: &JobCtx,
+    op: &str,
+    user: &str,
+    server: &str,
+    usrid: Option<String>,
+    password: Option<String>,
+) -> Result<String, String> {
     let me = current(ctx);
     let user = match user.trim().to_ascii_uppercase().as_str() {
         "" | "*CURRENT" => me.clone(),
         u => u.to_string(),
     };
     if user != me {
-        super::security::require(sec::profile::SpecialAuth::SECADM, "change another profile's server authentication entries")?;
+        super::security::require(
+            sec::profile::SpecialAuth::SECADM,
+            "change another profile's server authentication entries",
+        )?;
     }
     if super::hostsvr::read(system, &user).is_none() {
         return Err(format!("CPF2204 User profile {user} not found."));
@@ -254,11 +331,29 @@ pub fn svraute(system: &mut System, ctx: &JobCtx, op: &str, user: &str, server: 
     let key = server.to_ascii_uppercase();
     let keep = super::security::sysval_text(system, "QRETSVRSEC").trim() == "1";
     let mut all = entries(system);
-    let at = all.iter().position(|e| e.user == user && e.server.to_ascii_uppercase() == key);
-    let usrid = usrid.map(|u| if u.eq_ignore_ascii_case("*USRPRF") { user.clone() } else { u });
-    let password = password.map(|p| if p.eq_ignore_ascii_case("*NONE") || !keep { String::new() } else { p });
+    let at = all
+        .iter()
+        .position(|e| e.user == user && e.server.to_ascii_uppercase() == key);
+    let usrid = usrid.map(|u| {
+        if u.eq_ignore_ascii_case("*USRPRF") {
+            user.clone()
+        } else {
+            u
+        }
+    });
+    let password = password.map(|p| {
+        if p.eq_ignore_ascii_case("*NONE") || !keep {
+            String::new()
+        } else {
+            p
+        }
+    });
     let done = match (op, at) {
-        ("ADD", Some(_)) => return Err(format!("CPF2112 Server authentication entry {server} exists already for {user}.")),
+        ("ADD", Some(_)) => {
+            return Err(format!(
+                "CPF2112 Server authentication entry {server} exists already for {user}."
+            ));
+        }
         ("ADD", None) => {
             all.push(Entry {
                 user: user.clone(),
@@ -281,11 +376,17 @@ pub fn svraute(system: &mut System, ctx: &JobCtx, op: &str, user: &str, server: 
             all.remove(i);
             "removed"
         }
-        (_, None) => return Err(format!("CPF9801 No server authentication entry {server} is kept for {user}.")),
+        (_, None) => {
+            return Err(format!(
+                "CPF9801 No server authentication entry {server} is kept for {user}."
+            ));
+        }
         _ => return Err(format!("CPD0084 {op}")),
     };
     save(system, &all)?;
-    Ok(format!("Server authentication entry {server} {done} for {user}.\n"))
+    Ok(format!(
+        "Server authentication entry {server} {done} for {user}.\n"
+    ))
 }
 
 /// `svraute_get`.

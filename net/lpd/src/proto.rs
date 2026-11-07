@@ -101,7 +101,9 @@ fn words(rest: &[u8]) -> Vec<String> {
 impl Command {
     /// From a line without its LF.
     pub fn parse(line: &[u8]) -> Result<Self, ProtoError> {
-        let (&code, rest) = line.split_first().ok_or_else(|| ProtoError::Malformed("empty".into()))?;
+        let (&code, rest) = line
+            .split_first()
+            .ok_or_else(|| ProtoError::Malformed("empty".into()))?;
         let mut w = words(rest);
         if w.is_empty() {
             return Err(ProtoError::Malformed("no queue name".into()));
@@ -117,7 +119,11 @@ impl Command {
                     return Err(ProtoError::Malformed("no agent".into()));
                 }
                 let agent = w.remove(0);
-                Self::Remove { queue, agent, list: w }
+                Self::Remove {
+                    queue,
+                    agent,
+                    list: w,
+                }
             }
             c => return Err(ProtoError::Code(c)),
         })
@@ -131,7 +137,10 @@ impl Command {
             Self::Receive { queue } => (2, vec![queue.clone()]),
             Self::ShortState { queue, list } => (3, [vec![queue.clone()], list.clone()].concat()),
             Self::LongState { queue, list } => (4, [vec![queue.clone()], list.clone()].concat()),
-            Self::Remove { queue, agent, list } => (5, [vec![queue.clone(), agent.clone()], list.clone()].concat()),
+            Self::Remove { queue, agent, list } => (
+                5,
+                [vec![queue.clone(), agent.clone()], list.clone()].concat(),
+            ),
         };
         let mut out = vec![code];
         out.extend_from_slice(parts.remove(0).as_bytes());
@@ -147,7 +156,9 @@ impl Command {
 impl Sub {
     /// From a line without its LF.
     pub fn parse(line: &[u8]) -> Result<Self, ProtoError> {
-        let (&code, rest) = line.split_first().ok_or_else(|| ProtoError::Malformed("empty".into()))?;
+        let (&code, rest) = line
+            .split_first()
+            .ok_or_else(|| ProtoError::Malformed("empty".into()))?;
         if code == 1 {
             return Ok(Self::Abort);
         }
@@ -186,7 +197,12 @@ pub fn read_line(r: &mut impl Read) -> io::Result<Option<Vec<u8>>> {
     loop {
         match r.read(&mut b) {
             Ok(0) if out.is_empty() => return Ok(None),
-            Ok(0) => return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "line cut short")),
+            Ok(0) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "line cut short",
+                ));
+            }
             Ok(_) if b[0] == b'\n' => {
                 if out.last() == Some(&b'\r') {
                     out.pop();
@@ -195,7 +211,10 @@ pub fn read_line(r: &mut impl Read) -> io::Result<Option<Vec<u8>>> {
             }
             Ok(_) => {
                 if out.len() >= MAX_LINE {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData, "LPD line too long"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "LPD line too long",
+                    ));
                 }
                 out.push(b[0]);
             }
@@ -212,13 +231,20 @@ mod tests {
     #[test]
     fn commands_round_trip() {
         let all = [
-            Command::PrintWaiting { queue: "QPRINT".into() },
-            Command::Receive { queue: "QGPL/PRT01".into() },
+            Command::PrintWaiting {
+                queue: "QPRINT".into(),
+            },
+            Command::Receive {
+                queue: "QGPL/PRT01".into(),
+            },
             Command::ShortState {
                 queue: "lp".into(),
                 list: vec!["anne".into(), "12".into()],
             },
-            Command::LongState { queue: "lp".into(), list: vec![] },
+            Command::LongState {
+                queue: "lp".into(),
+                list: vec![],
+            },
             Command::Remove {
                 queue: "lp".into(),
                 agent: "root".into(),
@@ -242,11 +268,23 @@ mod tests {
                 name: "cfA001host".into()
             }
         );
-        assert_eq!(Sub::parse(b"\x030 dfA001host").unwrap(), Sub::Data { count: 0, name: "dfA001host".into() });
+        assert_eq!(
+            Sub::parse(b"\x030 dfA001host").unwrap(),
+            Sub::Data {
+                count: 0,
+                name: "dfA001host".into()
+            }
+        );
         assert_eq!(Sub::parse(b"\x01").unwrap(), Sub::Abort);
-        let d = Sub::Data { count: 9, name: "dfA9h".into() };
+        let d = Sub::Data {
+            count: 9,
+            name: "dfA9h".into(),
+        };
         assert_eq!(Sub::parse(&d.encode()[..d.encode().len() - 1]).unwrap(), d);
-        assert!(matches!(Sub::parse(b"\x02x cf"), Err(ProtoError::Malformed(_))));
+        assert!(matches!(
+            Sub::parse(b"\x02x cf"),
+            Err(ProtoError::Malformed(_))
+        ));
         assert_eq!(Sub::parse(b"\x0912 n"), Err(ProtoError::Code(9)));
         assert_eq!(Command::parse(b"\x09q"), Err(ProtoError::Code(9)));
         assert!(Command::parse(b"\x02").is_err());

@@ -12,10 +12,10 @@
 use std::collections::BTreeMap;
 
 use mi::Job;
-use stg::Client;
 use sda::image::{View, element_text, place, render};
 use sda::screen::{entry, fields as fscreen};
 use sda::source::{Element, Kind, Member, Record, Usage};
+use stg::Client;
 
 use super::ui::{self, Key};
 use super::{Flow, Gone, Session, fields, kw};
@@ -34,7 +34,14 @@ struct DbField {
 
 /// Edit record `ri` of the member on the design image.
 #[allow(clippy::too_many_lines)] // the image's keys, in one place
-pub fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, m: &mut Member, ri: usize) -> Flow {
+pub fn edit(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    m: &mut Member,
+    ri: usize,
+) -> Flow {
     let _ = job;
     let mut work = m.records[ri].clone();
     let mut view = View::default();
@@ -91,7 +98,11 @@ pub fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
             .records
             .iter()
             .filter(|r| r.name != work.name)
-            .flat_map(|r| r.elements.iter().filter_map(|e| e.name().map(str::to_string)))
+            .flat_map(|r| {
+                r.elements
+                    .iter()
+                    .filter_map(|e| e.name().map(str::to_string))
+            })
             .collect();
         let typed = place_db(&rows, typed, &mut db, &mut work, &taken);
         let asked = match place::parse(&work, &rows, &typed) {
@@ -122,7 +133,11 @@ pub fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
                 Ok(msg) => message = msg,
             },
             Key::F(14) => {
-                view.ruler = if view.ruler.is_some() { None } else { Some(cursor) };
+                view.ruler = if view.ruler.is_some() {
+                    None
+                } else {
+                    Some(cursor)
+                };
             }
             Key::F(17) => message = Some(print(host, &work, &rows, s.flddef)),
             Key::F(20) => {
@@ -163,13 +178,22 @@ fn exit_display(surface: &mut Surface) -> Option<u8> {
 
 /// `&n` typed on blank places: database field `n` goes there (the `&`
 /// takes the attribute place). The typing with those taken out.
-fn place_db(shown: &[String], mut typed: Vec<String>, db: &mut Vec<DbField>, work: &mut Record, taken: &[String]) -> Vec<String> {
+fn place_db(
+    shown: &[String],
+    mut typed: Vec<String>,
+    db: &mut Vec<DbField>,
+    work: &mut Record,
+    taken: &[String],
+) -> Vec<String> {
     if db.is_empty() {
         return typed;
     }
     let mut placed: Vec<usize> = Vec::new();
     for (r, row) in typed.iter_mut().enumerate() {
-        let old: Vec<char> = shown.get(r).map(|s| s.chars().collect()).unwrap_or_default();
+        let old: Vec<char> = shown
+            .get(r)
+            .map(|s| s.chars().collect())
+            .unwrap_or_default();
         let mut chars: Vec<char> = row.chars().collect();
         let mut c = 0;
         while c < chars.len() {
@@ -178,12 +202,25 @@ fn place_db(shown: &[String], mut typed: Vec<String>, db: &mut Vec<DbField>, wor
                 while k < chars.len() && chars[k].is_ascii_digit() {
                     k += 1;
                 }
-                let n: usize = chars[c + 1..k].iter().collect::<String>().parse().unwrap_or(0);
+                let n: usize = chars[c + 1..k]
+                    .iter()
+                    .collect::<String>()
+                    .parse()
+                    .unwrap_or(0);
                 if let Some(f) = n.checked_sub(1).and_then(|i| db.get(i)) {
-                    if !taken.contains(&f.name) && !work.elements.iter().any(|e| e.name() == Some(&f.name)) {
+                    if !taken.contains(&f.name)
+                        && !work.elements.iter().any(|e| e.name() == Some(&f.name))
+                    {
                         let row = u16::try_from(r + 1).unwrap_or(1);
                         let col = u16::try_from(c + 2).unwrap_or(2);
-                        let e = Element::field(&f.name, f.usage, f.numeric, f.len, f.dec, Some((row, col)));
+                        let e = Element::field(
+                            &f.name,
+                            f.usage,
+                            f.numeric,
+                            f.len,
+                            f.dec,
+                            Some((row, col)),
+                        );
                         let at = work
                             .elements
                             .iter()
@@ -214,7 +251,12 @@ fn place_db(shown: &[String], mut typed: Vec<String>, db: &mut Vec<DbField>, wor
 
 /// Select Additional Records (F9): the member's other records with a Y
 /// to show them under this one. The message.
-fn additional(surface: &mut Surface, m: &Member, this: &str, with: &mut Vec<String>) -> Result<Option<String>, Gone> {
+fn additional(
+    surface: &mut Surface,
+    m: &Member,
+    this: &str,
+    with: &mut Vec<String>,
+) -> Result<Option<String>, Gone> {
     let names: Vec<(String, String)> = m
         .records
         .iter()
@@ -222,15 +264,29 @@ fn additional(surface: &mut Surface, m: &Member, this: &str, with: &mut Vec<Stri
         .map(|r| (r.name.clone(), r.ty.word().to_string()))
         .collect();
     if names.is_empty() {
-        return Ok(Some(crate::display::msgline::say(surface.host(), "CPI9BFE", &[])));
+        return Ok(Some(crate::display::msgline::say(
+            surface.host(),
+            "CPI9BFE",
+            &[],
+        )));
     }
-    let items: Vec<(&str, &str)> = names.iter().map(|(n, t)| (n.as_str(), t.as_str())).take(14).collect();
+    let items: Vec<(&str, &str)> = names
+        .iter()
+        .map(|(n, t)| (n.as_str(), t.as_str()))
+        .take(14)
+        .collect();
     let chosen = with.clone();
     let screen = fscreen::choose(
         "Select Additional Records",
         this,
         &items,
-        &|k| if chosen.iter().any(|c| c == k) { "Y".into() } else { String::new() },
+        &|k| {
+            if chosen.iter().any(|c| c == k) {
+                "Y".into()
+            } else {
+                String::new()
+            }
+        },
         None,
     );
     let a = ui::show(surface, &screen).ok_or(Gone)?;
@@ -247,14 +303,21 @@ fn additional(surface: &mut Surface, m: &Member, this: &str, with: &mut Vec<Stri
 
 /// Select Database Files (F10): the fields of the files chosen wait on
 /// the message line to be placed. The message.
-fn db_files(host: &Host, surface: &mut Surface, db: &mut Vec<DbField>) -> Result<Option<String>, Gone> {
+fn db_files(
+    host: &Host,
+    surface: &mut Surface,
+    db: &mut Vec<DbField>,
+) -> Result<Option<String>, Gone> {
     let mut vals: BTreeMap<String, String> = BTreeMap::new();
     for i in 0..4 {
         vals.insert(format!("LIB{i}"), "*LIBL".into());
     }
     let mut message: Option<String> = None;
     loop {
-        let screen = entry::db_files(&|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let screen = entry::db_files(
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         let a = ui::show(surface, &screen).ok_or(Gone)?;
         if matches!(a.key(), Key::F(3 | 12)) {
             return Ok(None);
@@ -280,14 +343,22 @@ fn db_files(host: &Host, surface: &mut Surface, db: &mut Vec<DbField>) -> Result
             };
             let file = a.up(&format!("FILE{i}"));
             let lib = a.up(&format!("LIB{i}"));
-            let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib };
+            let lib = if lib.is_empty() {
+                "*LIBL".to_string()
+            } else {
+                lib
+            };
             let rcd = a.up(&format!("RCD{i}"));
-            let formats = host.link.borrow_mut().with(|l| l.formats(lib.clone(), file.clone()));
-            let Some(f) = formats
-                .iter()
-                .find(|f| rcd.is_empty() || f.name == rcd)
-            else {
-                message = Some(crate::display::msgline::say(host, "CPD9C8A", &[&file, &lib, &rcd]));
+            let formats = host
+                .link
+                .borrow_mut()
+                .with(|l| l.formats(lib.clone(), file.clone()));
+            let Some(f) = formats.iter().find(|f| rcd.is_empty() || f.name == rcd) else {
+                message = Some(crate::display::msgline::say(
+                    host,
+                    "CPD9C8A",
+                    &[&file, &lib, &rcd],
+                ));
                 break;
             };
             for fi in &f.fields {
@@ -297,7 +368,11 @@ fn db_files(host: &Host, surface: &mut Surface, db: &mut Vec<DbField>) -> Result
                     usage,
                     numeric,
                     len: if numeric { fi.digits } else { fi.len },
-                    dec: if numeric { u8::try_from(fi.decimals).unwrap_or(0) } else { 0 },
+                    dec: if numeric {
+                        u8::try_from(fi.decimals).unwrap_or(0)
+                    } else {
+                        0
+                    },
                 });
                 added += 1;
             }
@@ -324,11 +399,24 @@ fn print(host: &Host, work: &Record, rows: &[String], flddef: bool) -> String {
     if flddef {
         lines.push(String::new());
         for e in &work.elements {
-            let at = e.pos.map(|(r, c)| format!("{r:02} {c:03}")).unwrap_or_default();
+            let at = e
+                .pos
+                .map(|(r, c)| format!("{r:02} {c:03}"))
+                .unwrap_or_default();
             let what = match &e.kind {
                 Kind::Constant { .. } => format!("constant  {}", element_text(e)),
-                Kind::Field { name, usage, len, dec, .. } => {
-                    format!("{name:<10} {} {len}{}", usage.letter(), dec.map(|d| format!(",{d}")).unwrap_or_default())
+                Kind::Field {
+                    name,
+                    usage,
+                    len,
+                    dec,
+                    ..
+                } => {
+                    format!(
+                        "{name:<10} {} {len}{}",
+                        usage.letter(),
+                        dec.map(|d| format!(",{d}")).unwrap_or_default()
+                    )
                 }
             };
             lines.push(format!("{at:7} {what}"));

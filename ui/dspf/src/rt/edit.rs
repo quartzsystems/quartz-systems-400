@@ -7,7 +7,9 @@
 //! `EDTWRD`, else the digits), and what the operator typed becomes the
 //! field's bytes again.
 
-use qdecimal::{Binary, Decimal, EditOpts, Float, Packed, Rounding, Shape, Zoned, edit_code, edit_word};
+use qdecimal::{
+    Binary, Decimal, EditOpts, Float, Packed, Rounding, Shape, Zoned, edit_code, edit_word,
+};
 
 use crate::model::{Edit, Field, TypeClass};
 
@@ -34,9 +36,13 @@ pub fn decode_number(f: &Field, bytes: &[u8]) -> Option<Decimal> {
         TypeClass::Zoned => Zoned::new(digits, f.decimals).ok()?.decode(bytes).ok(),
         TypeClass::Packed => Packed::new(digits, f.decimals).ok()?.decode(bytes).ok(),
         TypeClass::Binary => Binary::new(digits, f.decimals).ok()?.decode(bytes).ok(),
-        TypeClass::Float => if bytes.len() <= 4 { Float::SINGLE } else { Float::DOUBLE }
-            .decode(bytes)
-            .ok(),
+        TypeClass::Float => if bytes.len() <= 4 {
+            Float::SINGLE
+        } else {
+            Float::DOUBLE
+        }
+        .decode(bytes)
+        .ok(),
         _ => None,
     }
 }
@@ -45,13 +51,21 @@ pub fn decode_number(f: &Field, bytes: &[u8]) -> Option<Decimal> {
 pub fn encode_number(f: &Field, v: &Decimal) -> Result<Vec<u8>, BadValue> {
     let digits = u8::try_from(f.length).map_err(|_| BadValue::TooLong)?;
     let r = match f.ty.class {
-        TypeClass::Zoned => Zoned::new(digits, f.decimals)
-            .and_then(|z| z.encode(v, Rounding::Truncate)),
-        TypeClass::Packed => Packed::new(digits, f.decimals)
-            .and_then(|p| p.encode(v, Rounding::Truncate)),
-        TypeClass::Binary => Binary::new(digits, f.decimals)
-            .and_then(|b| b.encode(v, Rounding::Truncate)),
-        TypeClass::Float => if f.length <= 9 { Float::SINGLE } else { Float::DOUBLE }.encode(v),
+        TypeClass::Zoned => {
+            Zoned::new(digits, f.decimals).and_then(|z| z.encode(v, Rounding::Truncate))
+        }
+        TypeClass::Packed => {
+            Packed::new(digits, f.decimals).and_then(|p| p.encode(v, Rounding::Truncate))
+        }
+        TypeClass::Binary => {
+            Binary::new(digits, f.decimals).and_then(|b| b.encode(v, Rounding::Truncate))
+        }
+        TypeClass::Float => if f.length <= 9 {
+            Float::SINGLE
+        } else {
+            Float::DOUBLE
+        }
+        .encode(v),
         _ => return Err(BadValue::NotNumeric),
     };
     r.map_err(|_| BadValue::TooLong)
@@ -69,10 +83,7 @@ pub fn zero_bytes(f: &Field) -> Vec<u8> {
 #[must_use]
 pub fn plain_digits(v: &Decimal, length: u32, decimals: u8) -> String {
     let digits = u8::try_from(length).unwrap_or(1).max(1);
-    let shape = Shape::new(digits, decimals.min(digits)).unwrap_or(Shape {
-        digits,
-        scale: 0,
-    });
+    let shape = Shape::new(digits, decimals.min(digits)).unwrap_or(Shape { digits, scale: 0 });
     let fitted = v
         .fit_truncate(shape, Rounding::Truncate)
         .unwrap_or_else(|_| Decimal::zero());
@@ -87,7 +98,8 @@ pub fn plain_digits(v: &Decimal, length: u32, decimals: u8) -> String {
     if s.len() > usize::from(digits) {
         s = s[s.len() - usize::from(digits)..].to_string();
     }
-    if fitted.is_negative() && !fitted.is_zero()
+    if fitted.is_negative()
+        && !fitted.is_zero()
         && let Some(last) = s.pop()
     {
         s.push(match last {
@@ -103,10 +115,7 @@ pub fn plain_digits(v: &Decimal, length: u32, decimals: u8) -> String {
 #[must_use]
 pub fn display_number(f: &Field, v: &Decimal, fmts: &ccsid::nls::Formats) -> String {
     let digits = u8::try_from(f.length).unwrap_or(1).max(1);
-    let shape = Shape::new(digits, f.decimals.min(digits)).unwrap_or(Shape {
-        digits,
-        scale: 0,
-    });
+    let shape = Shape::new(digits, f.decimals.min(digits)).unwrap_or(Shape { digits, scale: 0 });
     let text = match &f.edit {
         Edit::Code(c, modifier) => {
             let opts = EditOpts {
@@ -170,9 +179,10 @@ pub fn parse_typed(f: &Field, text: &str) -> Result<Decimal, BadValue> {
         v = v.negated();
     }
     let digits = u8::try_from(f.length).map_err(|_| BadValue::TooLong)?;
-    let shape = Shape::new(digits.max(1), f.decimals.min(digits.max(1)))
-        .map_err(|_| BadValue::TooLong)?;
-    v.fit(shape, Rounding::Truncate).map_err(|_| BadValue::TooLong)
+    let shape =
+        Shape::new(digits.max(1), f.decimals.min(digits.max(1))).map_err(|_| BadValue::TooLong)?;
+    v.fit(shape, Rounding::Truncate)
+        .map_err(|_| BadValue::TooLong)
 }
 
 #[cfg(test)]
@@ -211,7 +221,10 @@ mod tests {
         let mut y = zoned(6, 0);
         y.edit = Edit::Code('Y', None);
         y.usage = crate::model::Usage::Output;
-        assert_eq!(display_number(&y, &Decimal::parse("041126").unwrap(), &de).trim(), "4.11.26");
+        assert_eq!(
+            display_number(&y, &Decimal::parse("041126").unwrap(), &de).trim(),
+            "4.11.26"
+        );
         let back = parse_typed(&f, " 1234.5-").unwrap();
         assert_eq!(back.char_text(2), "-1234.50");
         let bytes = encode_number(&f, &back).unwrap();

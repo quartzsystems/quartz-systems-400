@@ -201,7 +201,14 @@ fn dsppgm_3() {
 fn srv_rows(srv: &[(&str, &str, &str)]) -> ListState {
     let r: Vec<[(&str, &str); 4]> = srv
         .iter()
-        .map(|(n, a, s)| [("SRVNAME", *n), ("SRVLIB", "QSYS"), ("SRVACT", *a), ("SRVSIG", *s)])
+        .map(|(n, a, s)| {
+            [
+                ("SRVNAME", *n),
+                ("SRVLIB", "QSYS"),
+                ("SRVACT", *a),
+                ("SRVSIG", *s),
+            ]
+        })
         .collect();
     rows(&r)
 }
@@ -356,8 +363,21 @@ fn dspbnddir() {
         &format!("{}Creation{}", "-".repeat(7), "-".repeat(8)),
     );
     let names = [
-        "QC2SYS", "QC2IO", "QC2NIO", "QC2UTIL1", "QC2UTIL2", "QC2UTIL3", "QC2IFS", "QC2NIFS",
-        "QC2POSIX", "QC2NPOSX", "QC2LOCAL", "QC2ULOCL", "QC2VLOCC", "QC2VLOCL", "QC2ASYSIG",
+        "QC2SYS",
+        "QC2IO",
+        "QC2NIO",
+        "QC2UTIL1",
+        "QC2UTIL2",
+        "QC2UTIL3",
+        "QC2IFS",
+        "QC2NIFS",
+        "QC2POSIX",
+        "QC2NPOSX",
+        "QC2LOCAL",
+        "QC2ULOCL",
+        "QC2VLOCC",
+        "QC2VLOCL",
+        "QC2ASYSIG",
         "QC2X",
     ];
     let r: Vec<[(&str, &str); 6]> = names
@@ -382,8 +402,16 @@ fn wrkdevd() {
     let g = shipped("QUIWRKDEVD");
     let mut d = MapDialog::new();
     let names = [
-        "ABCDEFG", "ABCDEFG1", "ACCESS", "ADRIANO", "AUGUSTA_CH", "AUGUSTE", "BORIS1993P",
-        "CCHARPRT", "CDHOME", "CDX",
+        "ABCDEFG",
+        "ABCDEFG1",
+        "ACCESS",
+        "ADRIANO",
+        "AUGUSTA_CH",
+        "AUGUSTE",
+        "BORIS1993P",
+        "CCHARPRT",
+        "CDHOME",
+        "CDX",
     ];
     let r: Vec<[(&str, &str); 3]> = names
         .iter()
@@ -427,7 +455,10 @@ fn dspusrprf_objaut() {
             ("MGT", " X"),
         ]]),
     );
-    compare("dspusrprf-objaut", &render(&g, "OBJAUT", &d, &opts()).unwrap());
+    compare(
+        "dspusrprf-objaut",
+        &render(&g, "OBJAUT", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -441,7 +472,10 @@ fn dspusrprf_objpgp() {
     ]);
     d.set_cond("OBJVIEW", true).set_cond("DTAVIEW", false);
     d.set_list("AUTS", list(&[]));
-    compare("dspusrprf-objpgp", &render(&g, "OBJPGP", &d, &opts()).unwrap());
+    compare(
+        "dspusrprf-objpgp",
+        &render(&g, "OBJPGP", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -475,7 +509,10 @@ fn dspusrprf_objown() {
         })
         .collect();
     d.set_list("OWNS", rows(&r));
-    compare("dspusrprf-objown", &render(&g, "OBJOWN", &d, &opts()).unwrap());
+    compare(
+        "dspusrprf-objown",
+        &render(&g, "OBJOWN", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -483,7 +520,10 @@ fn dspusrprf_cmdaut() {
     let g = shipped("QUIUPRFTYP");
     let mut d = vars(&[("UPNAME", "USERNAME")]);
     d.set_list("CMDS", list(&[]));
-    compare("dspusrprf-cmdaut", &render(&g, "CMDAUT", &d, &opts()).unwrap());
+    compare(
+        "dspusrprf-cmdaut",
+        &render(&g, "CMDAUT", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -491,7 +531,10 @@ fn dspusrprf_devaut() {
     let g = shipped("QUIUPRFTYP");
     let mut d = vars(&[("UPNAME", "USERNAME")]);
     d.set_list("DEVS", list(&[]));
-    compare("dspusrprf-devaut", &render(&g, "DEVAUT", &d, &opts()).unwrap());
+    compare(
+        "dspusrprf-devaut",
+        &render(&g, "DEVAUT", &d, &opts()).unwrap(),
+    );
 }
 
 /// A group profile of the primary (V7R1M0) with its one member.
@@ -500,7 +543,10 @@ fn dspusrprf_grpmbr() {
     let g = shipped("QUIUPRFTYP");
     let mut d = vars(&[("UPNAME", "GRPA")]);
     d.set_list("MBRS", list(&[&[("MBRNAME", "OWNA")]]));
-    common::compare71("dspusrprf-grpmbr", &render(&g, "GRPMBR", &d, &opts()).unwrap());
+    common::compare71(
+        "dspusrprf-grpmbr",
+        &render(&g, "GRPMBR", &d, &opts()).unwrap(),
+    );
 }
 
 /// EDTLIBL's rows: sequence numbers ten apart, three columns of 15.
@@ -600,7 +646,10 @@ fn edtobjaut_f6() {
     let mut d = edtaut_dialog("DTL");
     let blank: Vec<[(&str, &str); 1]> = (0..12).map(|_| [("USER", "")]).collect();
     d.set_list("AUTS", rows(&blank));
-    compare("edtobjaut-f6", &render(&g, "ADDUSERS", &d, &plain()).unwrap());
+    compare(
+        "edtobjaut-f6",
+        &render(&g, "ADDUSERS", &d, &plain()).unwrap(),
+    );
 }
 
 /// A shipped authorization list of the primary (V7R1M0), left with F12.
@@ -644,7 +693,10 @@ fn mod_dialog(detail: &str) -> MapDialog {
 #[test]
 fn dspmod() {
     let g = shipped("QUIDSPPGM");
-    common::compare71("dspmod", &render(&g, "MODBASIC", &mod_dialog("*BASIC"), &opts()).unwrap());
+    common::compare71(
+        "dspmod",
+        &render(&g, "MODBASIC", &mod_dialog("*BASIC"), &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -687,7 +739,13 @@ fn dspautlobj() {
         } else if w.trim_start().starts_with("(No ") {
             assert_eq!(w.find('('), ours.find('('), "row {}: {ours}", i + 1);
         } else {
-            assert_eq!(w.trim_end(), ours.trim_end(), "row {}:\n{}", i + 1, got.join("\n"));
+            assert_eq!(
+                w.trim_end(),
+                ours.trim_end(),
+                "row {}:\n{}",
+                i + 1,
+                got.join("\n")
+            );
         }
     }
 }
@@ -745,7 +803,9 @@ fn chgsysval_list() {
         ("SVTEXT", "System part of the library list"),
     ]);
     let libs = ["", "QSYS", "QSYS2", "QHLPSYS", "QUSRSYS", "", "", ""];
-    let seqs: Vec<(String, String)> = (0..8).map(|i| ((i * 10).to_string(), (80 + i * 10).to_string())).collect();
+    let seqs: Vec<(String, String)> = (0..8)
+        .map(|i| ((i * 10).to_string(), (80 + i * 10).to_string()))
+        .collect();
     let r: Vec<[(&str, &str); 4]> = (0..8)
         .map(|i| {
             [
@@ -757,5 +817,8 @@ fn chgsysval_list() {
         })
         .collect();
     d.set_list("LIBS", rows(&r));
-    common::compare71("chgsysval-list", &render(&g, "CHGSVL", &d, &plain()).unwrap());
+    common::compare71(
+        "chgsysval-list",
+        &render(&g, "CHGSVL", &d, &plain()).unwrap(),
+    );
 }

@@ -21,14 +21,21 @@ use crate::stgsvc::cmntrc as trc;
 
 /// Run one of the commands; `None` when it is not one.
 pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
-    if !matches!(name, "STRCMNTRC" | "ENDCMNTRC" | "DLTCMNTRC" | "CHKCMNTRC" | "PRTCMNTRC") {
+    if !matches!(
+        name,
+        "STRCMNTRC" | "ENDCMNTRC" | "DLTCMNTRC" | "CHKCMNTRC" | "PRTCMNTRC"
+    ) {
         return None;
     }
     let obj = parms.name("CFGOBJ");
     let r = authorized(system).and_then(|()| match name {
         "STRCMNTRC" => start(parms, &obj).map(|m| vec![m]),
-        "ENDCMNTRC" => cfgtype(parms).and_then(|t| trc::end(&obj, t)).map(|m| vec![m]),
-        "DLTCMNTRC" => cfgtype(parms).and_then(|t| trc::delete(&obj, t)).map(|m| vec![m]),
+        "ENDCMNTRC" => cfgtype(parms)
+            .and_then(|t| trc::end(&obj, t))
+            .map(|m| vec![m]),
+        "DLTCMNTRC" => cfgtype(parms)
+            .and_then(|t| trc::delete(&obj, t))
+            .map(|m| vec![m]),
         "CHKCMNTRC" => check(parms, &obj),
         _ => print(system, parms, &obj),
     });
@@ -51,12 +58,24 @@ fn authorized(system: &mut System) -> Result<(), Msg> {
         return Ok(());
     }
     p.require(sec::profile::SpecialAuth::SERVICE, "communications trace")
-        .map_err(|_| Msg::new(msg::TRC_NOT_AUTH, Kind::Escape, "Using the communications trace needs *SERVICE special authority."))
+        .map_err(|_| {
+            Msg::new(
+                msg::TRC_NOT_AUTH,
+                Kind::Escape,
+                "Using the communications trace needs *SERVICE special authority.",
+            )
+        })
 }
 
 fn cfgtype(parms: &Parms) -> Result<CfgType, Msg> {
     let t = parms.name("CFGTYPE");
-    CfgType::parse(&t).ok_or_else(|| Msg::new(msg::TRC_CANNOT, Kind::Escape, format!("{t} is not a type that can be traced.")))
+    CfgType::parse(&t).ok_or_else(|| {
+        Msg::new(
+            msg::TRC_CANNOT,
+            Kind::Escape,
+            format!("{t} is not a type that can be traced."),
+        )
+    })
 }
 
 /// `MAXSTG`: `128K`, `1M`, `*MAX` (as bytes).
@@ -105,14 +124,22 @@ fn start(parms: &Parms, obj: &str) -> Result<Msg, Msg> {
 fn check(parms: &Parms, obj: &str) -> Result<Vec<Msg>, Msg> {
     let obj = (obj != "*ALL" && !obj.is_empty()).then_some(obj);
     let t = parms.name("CFGTYPE");
-    let ty = if t == "*ALL" || t.is_empty() { None } else { Some(cfgtype(parms)?) };
+    let ty = if t == "*ALL" || t.is_empty() {
+        None
+    } else {
+        Some(cfgtype(parms)?)
+    };
     trc::check(obj, ty)
 }
 
 fn addr(v: Option<&Value>) -> Option<IpAddr> {
     let t = v?.source();
     let t = t.trim().trim_matches('\'');
-    if t.eq_ignore_ascii_case("*ALL") { None } else { t.parse().ok() }
+    if t.eq_ignore_ascii_case("*ALL") {
+        None
+    } else {
+        t.parse().ok()
+    }
 }
 
 fn print(system: &mut System, parms: &Parms, obj: &str) -> Result<Vec<Msg>, Msg> {
@@ -134,12 +161,21 @@ fn print(system: &mut System, parms: &Parms, obj: &str) -> Result<Vec<Msg>, Msg>
     };
     let lines = trc::listing(system, obj, ty, &sel)?;
     let printed = crate::svc::security::print_as(system, "QSYSPRT", "CMNTRC", &lines, false)
-        .map_err(|e| Msg::new(msg::TRC_FAILED, Kind::Escape, format!("The trace could not be printed: {e}")))?;
+        .map_err(|e| {
+            Msg::new(
+                msg::TRC_FAILED,
+                Kind::Escape,
+                format!("The trace could not be printed: {e}"),
+            )
+        })?;
     let _ = printed;
     Ok(vec![Msg::new(
         msg::TRC_PRINTED,
         Kind::Comp,
-        format!("Communications trace of {obj} type {} printed to QSYSPRT.", ty.name()),
+        format!(
+            "Communications trace of {obj} type {} printed to QSYSPRT.",
+            ty.name()
+        ),
     )])
 }
 

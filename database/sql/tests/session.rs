@@ -253,7 +253,10 @@ fn catalogs() {
         -153
     );
     db.ok("CREATE VIEW nosel AS SELECT cusno FROM cust WHERE bal > 0");
-    assert_eq!(db.rows("SELECT cusno FROM nosel ORDER BY cusno"), [row(&["1"]), row(&["3"])]);
+    assert_eq!(
+        db.rows("SELECT cusno FROM nosel ORDER BY cusno"),
+        [row(&["1"]), row(&["3"])]
+    );
     db.ok("DROP VIEW active");
     assert_eq!(db.code("SELECT * FROM active"), -204);
 }
@@ -376,15 +379,40 @@ fn command_refuses_select() {
         SELECT * FROM t9;
         INSERT INTO t9 VALUES (1);
     ";
-    let opts = RunOpts { errlvl: 30, command: true, ..RunOpts::default() };
+    let opts = RunOpts {
+        errlvl: 30,
+        command: true,
+        ..RunOpts::default()
+    };
     let report = runsqlstm(&mut db.store, &mut db.ctx, script, &opts).unwrap();
-    assert_eq!((report.statements, report.errors, report.severity), (3, 1, 30));
+    assert_eq!(
+        (report.statements, report.errors, report.severity),
+        (3, 1, 30)
+    );
     let e = &report.entries[1];
-    assert_eq!((e.sqlcode, e.msgid.as_str()), (-84, "SQL0084"), "{}", report.listing);
+    assert_eq!(
+        (e.sqlcode, e.msgid.as_str()),
+        (-84, "SQL0084"),
+        "{}",
+        report.listing
+    );
     assert_eq!(db.rows("SELECT k FROM t9"), [row(&["1"])]);
     // ERRLVL(10), the command's default: the query ends the run.
-    let report = runsqlstm(&mut db.store, &mut db.ctx, "SELECT * FROM t9; INSERT INTO t9 VALUES (2);", &RunOpts { errlvl: 10, command: true, ..RunOpts::default() }).unwrap();
-    assert_eq!((report.statements, report.errors, report.severity), (1, 1, 40));
+    let report = runsqlstm(
+        &mut db.store,
+        &mut db.ctx,
+        "SELECT * FROM t9; INSERT INTO t9 VALUES (2);",
+        &RunOpts {
+            errlvl: 10,
+            command: true,
+            ..RunOpts::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        (report.statements, report.errors, report.severity),
+        (1, 1, 40)
+    );
 }
 
 #[test]
@@ -409,7 +437,9 @@ fn statement_files() {
         (5, 1, 30)
     );
     assert!(
-        report.listing.contains("CREATE TABLE: SQL7905 SQLCODE 7905"),
+        report
+            .listing
+            .contains("CREATE TABLE: SQL7905 SQLCODE 7905"),
         "{}",
         report.listing
     );
@@ -538,7 +568,11 @@ fn create_schema_journals_its_tables() {
         &cs,
     )
     .unwrap();
-    assert!(report.listing.contains("INSERT: SQLCODE 0  rows 1"), "{}", report.listing);
+    assert!(
+        report.listing.contains("INSERT: SQLCODE 0  rows 1"),
+        "{}",
+        report.listing
+    );
     assert!(report.listing.contains("SQL7008"), "{}", report.listing);
     assert_eq!(db.rows("SELECT COUNT(*) FROM hlsch/t"), [row(&["1"])]);
     assert!(prepare("CREATE SCHEMA a AUTHORIZATION b", Naming::Sys).is_err());

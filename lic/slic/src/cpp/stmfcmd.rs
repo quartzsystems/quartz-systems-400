@@ -61,7 +61,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// The parameters both commands share.
 fn common(parms: &Parms, end: EndLin) -> Common {
-    let ccsid = |k: &str| parms.int(k).filter(|n| *n > 0).and_then(|n| u16::try_from(n).ok());
+    let ccsid = |k: &str| {
+        parms
+            .int(k)
+            .filter(|n| *n > 0)
+            .and_then(|n| u16::try_from(n).ok())
+    };
     let tbl = parms.text("TBL");
     Common {
         cvtdta: Cvt::of(parms.int("CVTDTA").unwrap_or(1)),

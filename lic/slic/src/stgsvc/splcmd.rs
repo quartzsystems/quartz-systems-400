@@ -69,11 +69,18 @@ fn may_queue(system: &mut System, q: &str) -> Result<(), String> {
         return Ok(());
     }
     let (owner, manage, _) = outq_rights(system, &real)?;
-    let ok = if oq.autchk == "*OWNER" { owner == me.user } else { manage };
+    let ok = if oq.autchk == "*OWNER" {
+        owner == me.user
+    } else {
+        manage
+    };
     if ok {
         Ok(())
     } else {
-        Err(format!("CPF3303 {} is not authorized to output queue {real}", me.user))
+        Err(format!(
+            "CPF3303 {} is not authorized to output queue {real}",
+            me.user
+        ))
     }
 }
 
@@ -96,7 +103,11 @@ fn may_spool(system: &mut System, id: u32, display: bool) -> Result<(), String> 
     let (real, oq, _) = spool::on_queue(system, &a.outq)?;
     let (owner, manage, usable) = outq_rights(system, &real)?;
     let by_queue = (oq.oprctl && me.has(S::JOBCTL))
-        || if oq.autchk == "*OWNER" { owner == me.user } else { manage };
+        || if oq.autchk == "*OWNER" {
+            owner == me.user
+        } else {
+            manage
+        };
     let ok = if display {
         match oq.dspdta.as_str() {
             "*YES" => usable || by_queue,
@@ -289,7 +300,11 @@ pub(super) struct Listed {
 /// The output queues `WRKOUTQ` lists: in `libs` (by name, in that
 /// order), or in `QSYS` and every library when `None`. A library not
 /// found is `CPF2110` when `strict`, else passed over (a library list).
-pub(super) fn queues(system: &mut System, libs: Option<&[String]>, strict: bool) -> Result<Vec<Listed>, String> {
+pub(super) fn queues(
+    system: &mut System,
+    libs: Option<&[String]>,
+    strict: bool,
+) -> Result<Vec<Listed>, String> {
     with_store(system, |txn, qsys| {
         let mut all = vec![("QSYS".to_string(), qsys)];
         for (k, id) in ops::list(txn, qsys, Some(types::LIB)).map_err(|e| e.to_string())? {
@@ -345,7 +360,11 @@ fn all_queues(system: &mut System) -> Result<String, String> {
 
 /// The spooled files `WRKSPLF` lists: `user`'s (every user's when
 /// `None`), of jobs `job` matches, oldest first.
-pub(super) fn files_of<'a>(system: &'a System, user: Option<&str>, job: Option<&str>) -> Vec<&'a SplfAttrs> {
+pub(super) fn files_of<'a>(
+    system: &'a System,
+    user: Option<&str>,
+    job: Option<&str>,
+) -> Vec<&'a SplfAttrs> {
     let mut files: Vec<&SplfAttrs> = system
         .spool
         .files
@@ -431,7 +450,13 @@ fn wrksplf(system: &System, me: u32, p: &Params) -> String {
 /// `SNDTCPSPLF` and `LPR` in a job: the spooled file `FILE JOB
 /// SPLNBR` names, its authority checked and its reading audited as
 /// `DSPSPLF`'s, with its data.
-pub fn fetch(system: &mut System, me: u32, file: &str, job: &str, splnbr: &str) -> Result<(SplfAttrs, Vec<u8>), String> {
+pub fn fetch(
+    system: &mut System,
+    me: u32,
+    file: &str,
+    job: &str,
+    splnbr: &str,
+) -> Result<(SplfAttrs, Vec<u8>), String> {
     // `parse` skips a command word.
     let p = Params::parse(&format!("fetch {file} JOB({job}) SPLNBR({splnbr})"));
     let id = target(system, me, &p)?;
@@ -543,7 +568,12 @@ pub(super) fn release(system: &mut System, id: u32) -> Result<SplfAttrs, String>
         a.release();
         Ok(())
     })?;
-    Ok(system.spool.files.get(&id).map(|e| e.attrs.clone()).unwrap_or(a))
+    Ok(system
+        .spool
+        .files
+        .get(&id)
+        .map(|e| e.attrs.clone())
+        .unwrap_or(a))
 }
 
 /// `RLSSPLF FILE JOB SPLNBR` for its processing program: the file,
@@ -571,7 +601,11 @@ pub const NOT_LOCAL: &str = "CPF3496";
 /// `SNDTCPSPLF` sends over TCP/IP. `JOBSYSNAME`, `CRTDATE` and
 /// `DTAFMT` are accepted and change nothing. The file, its number and
 /// the users it went to.
-pub fn sndnetsplf(system: &mut System, me: u32, line: &str) -> Result<(String, u32, Vec<String>), String> {
+pub fn sndnetsplf(
+    system: &mut System,
+    me: u32,
+    line: &str,
+) -> Result<(String, u32, Vec<String>), String> {
     use wm::obj::splf::{NetSend, net_users};
     let p = Params::parse(line);
     let local = system.system_name();
@@ -658,7 +692,10 @@ fn not_printing(system: &System, id: u32) -> Result<(), String> {
         .get(&id)
         .is_some_and(|e| e.attrs.status == Status::Wtr)
     {
-        return Err(format!("CPF3330 spooled file {} is being printed", name_of(system, id)));
+        return Err(format!(
+            "CPF3330 spooled file {} is being printed",
+            name_of(system, id)
+        ));
     }
     Ok(())
 }
@@ -686,7 +723,12 @@ pub(super) fn hold(system: &mut System, id: u32, immediately: bool) -> Result<()
 
 /// Move spooled file `id` to queue `q` (`CHGSPLFA OUTQ`), `first` to its
 /// top; not while it prints. The queue's real `lib/name`.
-pub(super) fn move_file(system: &mut System, id: u32, q: &str, first: bool) -> Result<String, String> {
+pub(super) fn move_file(
+    system: &mut System,
+    id: u32,
+    q: &str,
+    first: bool,
+) -> Result<String, String> {
     not_printing(system, id)?;
     spool::move_to(system, id, q, first)
 }
@@ -707,7 +749,10 @@ fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String
         }
         "rlssplf" => {
             let a = release(system, id)?;
-            Ok(format!("{RELEASED} Spooled file {name} number {} released.\n", a.number))
+            Ok(format!(
+                "{RELEASED} Spooled file {name} number {} released.\n",
+                a.number
+            ))
         }
         "wrksplfa" => Ok(system
             .spool
@@ -782,7 +827,13 @@ pub fn attrs_panel(
 fn attr_vars(a: &SplfAttrs) -> Vec<(String, String)> {
     let (date, time) = wm::joblog::stamp_of(a.created);
     let (qlib, q) = qualified(&a.outq);
-    let star = |s: &str, none: &str| if s.trim().is_empty() { none.to_string() } else { s.to_string() };
+    let star = |s: &str, none: &str| {
+        if s.trim().is_empty() {
+            none.to_string()
+        } else {
+            s.to_string()
+        }
+    };
     [
         ("FILE", a.name.clone()),
         ("JOB", a.job.0.clone()),
@@ -811,7 +862,14 @@ fn attr_vars(a: &SplfAttrs) -> Vec<(String, String)> {
         ("LPI", a.lpi.to_string()),
         ("CPI", a.cpi.to_string()),
         ("OVRFLW", a.ovrflw.to_string()),
-        ("EXPDATE", if a.expires == 0 { "*NONE".to_string() } else { a.expires.to_string() }),
+        (
+            "EXPDATE",
+            if a.expires == 0 {
+                "*NONE".to_string()
+            } else {
+                a.expires.to_string()
+            },
+        ),
         ("USRDFNDTA", star(&a.usrdfndta, "*NONE")),
     ]
     .into_iter()
@@ -852,7 +910,13 @@ pub fn panel_lines(
     let rows = if hex {
         ::spool::view::hex(&data)
             .lines()
-            .map(|l| vec![pair("PAGE", "0".into()), pair("LNO", "0".into()), pair("TEXT", l.to_string())])
+            .map(|l| {
+                vec![
+                    pair("PAGE", "0".into()),
+                    pair("LNO", "0".into()),
+                    pair("TEXT", l.to_string()),
+                ]
+            })
             .collect()
     } else {
         let (pages, _) = ::spool::scs::decode(&data);

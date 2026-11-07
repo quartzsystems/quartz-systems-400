@@ -11,9 +11,9 @@ use ipc::{Wire, decode, encode};
 use qap_proto::ops::connection::choose_version;
 use qap_proto::ops::signon::Attach;
 use qap_proto::ops::sql::{
-    Column, Columns, CommitLevel, CursorRef, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables,
-    MAX_PICOS, Naming, Prepare, Prepared, Schema, Schemas, SetOptions, SqlFailure, SqlValue, StatementRef, Table,
-    TableKind, Tables,
+    Column, Columns, CommitLevel, CursorRef, Execute, Executed, Fetch, Fetched, ListColumns,
+    ListSchemas, ListTables, MAX_PICOS, Naming, Prepare, Prepared, Schema, Schemas, SetOptions,
+    SqlFailure, SqlValue, StatementRef, Table, TableKind, Tables,
 };
 use qap_proto::{Op, Service, Status, Token};
 
@@ -37,14 +37,28 @@ fn values() -> Vec<SqlValue> {
     vec![
         SqlValue::Null,
         SqlValue::Integer { value: -42 },
-        SqlValue::Decimal { text: "12345.67".into() },
-        SqlValue::Decimal { text: "1.5E-30".into() },
-        SqlValue::Decimal { text: "-Infinity".into() },
-        SqlValue::Decimal { text: "sNaN".into() },
+        SqlValue::Decimal {
+            text: "12345.67".into(),
+        },
+        SqlValue::Decimal {
+            text: "1.5E-30".into(),
+        },
+        SqlValue::Decimal {
+            text: "-Infinity".into(),
+        },
+        SqlValue::Decimal {
+            text: "sNaN".into(),
+        },
         SqlValue::Float { text: "0.1".into() },
-        SqlValue::Text { text: "Grüße".into() },
-        SqlValue::Binary { data: vec![0xC1, 0x00, 0xFF] },
-        SqlValue::Date { ms: 1_793_404_800_000 },
+        SqlValue::Text {
+            text: "Grüße".into(),
+        },
+        SqlValue::Binary {
+            data: vec![0xC1, 0x00, 0xFF],
+        },
+        SqlValue::Date {
+            ms: 1_793_404_800_000,
+        },
         SqlValue::Time { ms: 45_296_000 },
         SqlValue::Timestamp {
             ms: 1_793_404_800_123,
@@ -69,7 +83,10 @@ fn sql_bodies() {
         same(c.1);
         assert_eq!(encode(c.1), [u8::try_from(c.0).unwrap()]);
     }
-    assert_eq!((encode(&Naming::Sql), encode(&Naming::System)), (vec![0], vec![1]));
+    assert_eq!(
+        (encode(&Naming::Sql), encode(&Naming::System)),
+        (vec![0], vec![1])
+    );
     for (i, k) in TableKind::ALL.iter().enumerate() {
         same(k);
         assert_eq!(encode(k), [u8::try_from(i).unwrap()]);
@@ -102,7 +119,10 @@ fn sql_bodies() {
         updated: 12,
         cursor: Some(1),
     });
-    same(&Fetch { cursor: 1, max_rows: 100 });
+    same(&Fetch {
+        cursor: 1,
+        max_rows: 100,
+    });
     same(&Fetched {
         rows: vec![values()],
         end: true,
@@ -146,8 +166,12 @@ fn sql_bodies() {
         schema: "HLINV".into(),
         table: "ASSETS".into(),
     });
-    same(&Columns { columns: vec![column()] });
-    same(&Attach { token: Token::default() });
+    same(&Columns {
+        columns: vec![column()],
+    });
+    same(&Attach {
+        token: Token::default(),
+    });
 }
 
 #[test]
@@ -159,7 +183,10 @@ fn timestamp_layout() {
 
 #[test]
 fn flags_are_0_or_1() {
-    let mut b = encode(&Fetched { rows: vec![], end: true });
+    let mut b = encode(&Fetched {
+        rows: vec![],
+        end: true,
+    });
     *b.last_mut().unwrap() = 2;
     assert!(decode::<Fetched>(&b).is_err());
 }

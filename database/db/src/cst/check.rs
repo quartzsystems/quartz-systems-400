@@ -168,11 +168,15 @@ enum V {
 }
 
 fn eval_err(what: impl Into<String>) -> DbError {
-    DbError::Definition { what: format!("check condition: {}", what.into()) }
+    DbError::Definition {
+        what: format!("check condition: {}", what.into()),
+    }
 }
 
 fn cp037(s: &str) -> Vec<u8> {
-    s.chars().map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE)).collect()
+    s.chars()
+        .map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE))
+        .collect()
 }
 
 fn text_of(b: &[u8]) -> String {
@@ -191,11 +195,12 @@ pub struct Row<'a> {
 
 impl Row<'_> {
     fn field(&self, name: &Name) -> Result<V> {
-        let (i, f) = self
-            .format
-            .format
-            .field(name)
-            .ok_or_else(|| eval_err(format!("field {name} is not in format {}", self.format.format.name)))?;
+        let (i, f) = self.format.format.field(name).ok_or_else(|| {
+            eval_err(format!(
+                "field {name} is not in format {}",
+                self.format.format.name
+            ))
+        })?;
         let v = record::read_field(f, self.data, self.nulls, self.format.null_index(i))?;
         Ok(match v {
             Value::Null => V::Null,
@@ -237,7 +242,11 @@ impl Expr {
         match self {
             Expr::Col(_) | Expr::Num(_) | Expr::Float(_) | Expr::Str(_) | Expr::Null => {}
             Expr::Neg(a) | Expr::Not(a) | Expr::IsNull(a, _) => a.walk(f),
-            Expr::Arith(_, a, b) | Expr::Concat(a, b) | Expr::Cmp(_, a, b) | Expr::And(a, b) | Expr::Or(a, b) => {
+            Expr::Arith(_, a, b)
+            | Expr::Concat(a, b)
+            | Expr::Cmp(_, a, b)
+            | Expr::And(a, b)
+            | Expr::Or(a, b) => {
                 a.walk(f);
                 b.walk(f);
             }
@@ -248,7 +257,9 @@ impl Expr {
             }
             Expr::In(a, l, _) => {
                 a.walk(f);
-                for e in l { e.walk(f); }
+                for e in l {
+                    e.walk(f);
+                }
             }
             Expr::Like(a, b, c, _) => {
                 a.walk(f);
@@ -434,7 +445,9 @@ impl Expr {
                 o.extend_from_slice(&[15, u8::from(*not)]);
                 o.extend_from_slice(&u16::try_from(l.len()).expect("few").to_le_bytes());
                 a.put(o);
-                for e in l { e.put(o); }
+                for e in l {
+                    e.put(o);
+                }
             }
             Expr::Like(a, b, c, not) => {
                 o.extend_from_slice(&[16, u8::from(*not), u8::from(c.is_some())]);
@@ -446,7 +459,9 @@ impl Expr {
             }
             Expr::Call(f, args) => {
                 o.extend_from_slice(&[17, f.code(), u8::try_from(args.len()).expect("few")]);
-                for e in args { e.put(o); }
+                for e in args {
+                    e.put(o);
+                }
             }
         }
     }
@@ -566,7 +581,9 @@ impl Expr {
 }
 
 fn bad() -> DbError {
-    DbError::Corrupt { what: "check constraint program".into() }
+    DbError::Corrupt {
+        what: "check constraint program".into(),
+    }
 }
 
 fn truth(v: &V) -> Result<Option<bool>> {
@@ -639,16 +656,22 @@ fn compare(a: &V, b: &V) -> Result<Option<Ordering>> {
         (V::Text(x), V::Text(y)) => text_cmp(x, y),
         // A number against a string: the string as a number.
         (V::Num(_) | V::Float(_), V::Text(t)) => {
-            let n = Decimal::parse(text_of(t).trim()).map_err(|_| eval_err("a string that is not a number"))?;
+            let n = Decimal::parse(text_of(t).trim())
+                .map_err(|_| eval_err("a string that is not a number"))?;
             return compare(a, &V::Num(n));
         }
-        (V::Text(_), V::Num(_) | V::Float(_)) => return compare(b, a).map(|o| o.map(Ordering::reverse)),
+        (V::Text(_), V::Num(_) | V::Float(_)) => {
+            return compare(b, a).map(|o| o.map(Ordering::reverse));
+        }
         _ => return Err(eval_err("a predicate compared")),
     }))
 }
 
 fn trim_end(s: &[u8]) -> Vec<u8> {
-    let n = s.iter().rposition(|&c| c != ccsid::SPACE).map_or(0, |i| i + 1);
+    let n = s
+        .iter()
+        .rposition(|&c| c != ccsid::SPACE)
+        .map_or(0, |i| i + 1);
     s[..n].to_vec()
 }
 
@@ -681,8 +704,13 @@ fn int_arg(v: &V) -> Result<Option<i64>> {
     Ok(match v {
         V::Null => None,
         V::Num(d) => Some(
-            i64::try_from(d.rescale(0, qdecimal::Rounding::Truncate).ok().and_then(|d| d.to_i128()).unwrap_or(0))
-                .unwrap_or(0),
+            i64::try_from(
+                d.rescale(0, qdecimal::Rounding::Truncate)
+                    .ok()
+                    .and_then(|d| d.to_i128())
+                    .unwrap_or(0),
+            )
+            .unwrap_or(0),
         ),
         #[allow(clippy::cast_possible_truncation)]
         V::Float(x) => Some(*x as i64),
@@ -691,7 +719,10 @@ fn int_arg(v: &V) -> Result<Option<i64>> {
 }
 
 fn call(f: Func, args: &[Expr], row: &Row<'_>) -> Result<V> {
-    let vals = args.iter().map(|a| a.eval(row)).collect::<Result<Vec<_>>>()?;
+    let vals = args
+        .iter()
+        .map(|a| a.eval(row))
+        .collect::<Result<Vec<_>>>()?;
     if f == Func::Coalesce {
         return Ok(vals.into_iter().find(|v| *v != V::Null).unwrap_or(V::Null));
     }
@@ -707,7 +738,11 @@ fn call(f: Func, args: &[Expr], row: &Row<'_>) -> Result<V> {
     };
     let map = |t: Vec<u8>, up: bool| -> V {
         let s = text_of(&t);
-        V::Text(cp037(&if up { s.to_uppercase() } else { s.to_lowercase() }))
+        V::Text(cp037(&if up {
+            s.to_uppercase()
+        } else {
+            s.to_lowercase()
+        }))
     };
     Ok(match f {
         Func::Upper => map(text(0)?, true),
@@ -727,8 +762,18 @@ fn call(f: Func, args: &[Expr], row: &Row<'_>) -> Result<V> {
         }
         Func::Trim | Func::Ltrim | Func::Rtrim => {
             let t = text(0)?;
-            let lo = if f == Func::Rtrim { 0 } else { t.iter().position(|&c| c != ccsid::SPACE).unwrap_or(t.len()) };
-            let hi = if f == Func::Ltrim { t.len() } else { t.iter().rposition(|&c| c != ccsid::SPACE).map_or(lo, |i| i + 1) };
+            let lo = if f == Func::Rtrim {
+                0
+            } else {
+                t.iter().position(|&c| c != ccsid::SPACE).unwrap_or(t.len())
+            };
+            let hi = if f == Func::Ltrim {
+                t.len()
+            } else {
+                t.iter()
+                    .rposition(|&c| c != ccsid::SPACE)
+                    .map_or(lo, |i| i + 1)
+            };
             V::Text(t[lo..hi.max(lo)].to_vec())
         }
         Func::Abs => match &vals[0] {
@@ -738,7 +783,10 @@ fn call(f: Func, args: &[Expr], row: &Row<'_>) -> Result<V> {
         },
         Func::Mod => match (&vals[0], &vals[1]) {
             (V::Num(_), V::Num(_)) => {
-                let (a, b) = (int_arg(&vals[0])?.unwrap_or(0), int_arg(&vals[1])?.unwrap_or(0));
+                let (a, b) = (
+                    int_arg(&vals[0])?.unwrap_or(0),
+                    int_arg(&vals[1])?.unwrap_or(0),
+                );
                 if b == 0 {
                     return Err(eval_err("MOD by zero"));
                 }

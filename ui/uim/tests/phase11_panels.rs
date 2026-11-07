@@ -61,7 +61,9 @@ fn runs(row: &str) -> Vec<(usize, String)> {
 fn golden_fields(attr: &[String]) -> BTreeSet<(usize, usize, usize)> {
     let cells: Vec<char> = attr.iter().flat_map(|r| r.chars()).collect();
     let input = |c: char| {
-        let a = u32::from(c).checked_sub(u32::from('0')).map_or(0, |d| d + 0x20);
+        let a = u32::from(c)
+            .checked_sub(u32::from('0'))
+            .map_or(0, |d| d + 0x20);
         (0x20..=0x3f).contains(&a) && a & 0x04 != 0 && a & 0x07 != 0x07
     };
     let mut out = BTreeSet::new();
@@ -89,7 +91,8 @@ fn fkeys(rows: &[String]) -> BTreeSet<(usize, usize, String)> {
         .flat_map(|(r, t)| runs(t).into_iter().map(move |(c, s)| (r + 1, c, s)))
         .filter_map(|(r, c, s)| {
             let (k, _) = s.split_once('=')?;
-            (k.starts_with('F') && k[1..].chars().all(|d| d.is_ascii_digit())).then(|| (r, c, k.to_string()))
+            (k.starts_with('F') && k[1..].chars().all(|d| d.is_ascii_digit()))
+                .then(|| (r, c, k.to_string()))
         })
         .collect()
 }
@@ -126,7 +129,8 @@ fn differing(dir: &str, name: &str, s: &Screen, headings: &[usize]) -> BTreeSet<
     let attr = read(&d.join(format!("{name}.attr")));
     let ours = s.text_rows();
     let mut out = BTreeSet::new();
-    let fields: BTreeSet<(usize, usize, usize)> = s.fields.iter().map(|f| (f.row, f.col, f.len)).collect();
+    let fields: BTreeSet<(usize, usize, usize)> =
+        s.fields.iter().map(|f| (f.row, f.col, f.len)).collect();
     let want = golden_fields(&attr);
     if want != fields {
         println!("{name} fields:\n  want {want:?}\n  got  {fields:?}");
@@ -135,20 +139,36 @@ fn differing(dir: &str, name: &str, s: &Screen, headings: &[usize]) -> BTreeSet<
     for &h in headings {
         let cols = |r: &str| runs(r).into_iter().map(|(c, _)| c).collect::<Vec<_>>();
         if cols(&text[h - 1]) != cols(&ours[h - 1]) {
-            println!("{name} row {h}:\n  want {:?}\n  got  {:?}", text[h - 1].trim_end(), ours[h - 1].trim_end());
+            println!(
+                "{name} row {h}:\n  want {:?}\n  got  {:?}",
+                text[h - 1].trim_end(),
+                ours[h - 1].trim_end()
+            );
             out.insert(format!("headings {h}"));
         }
     }
     if options(&text) != options(&ours) {
-        println!("{name} options:\n  want {:?}\n  got  {:?}", options(&text), options(&ours));
+        println!(
+            "{name} options:\n  want {:?}\n  got  {:?}",
+            options(&text),
+            options(&ours)
+        );
         out.insert("options".to_string());
     }
     if fkeys(&text) != fkeys(&ours) {
-        println!("{name} keys:\n  want {:?}\n  got  {:?}", fkeys(&text), fkeys(&ours));
+        println!(
+            "{name} keys:\n  want {:?}\n  got  {:?}",
+            fkeys(&text),
+            fkeys(&ours)
+        );
         out.insert("keys".to_string());
     }
     if more(&text) != more(&ours) {
-        println!("{name} more:\n  want {:?}\n  got  {:?}", more(&text), more(&ours));
+        println!(
+            "{name} more:\n  want {:?}\n  got  {:?}",
+            more(&text),
+            more(&ours)
+        );
         out.insert("more".to_string());
     }
     out
@@ -163,7 +183,11 @@ fn list(rows: Vec<Vec<(&str, &str)>>) -> ListState {
         total: Some(rows.len()),
         rows: rows
             .into_iter()
-            .map(|r| r.into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect())
+            .map(|r| {
+                r.into_iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         complete: false,
@@ -192,7 +216,14 @@ fn wrksfwagr() {
     ];
     let rows = products
         .iter()
-        .map(|(id, t)| vec![("LPID", *id), ("LPRLS", "V7R5M0"), ("AGRSTS", "*ACCEPTED"), ("LPTEXT", *t)])
+        .map(|(id, t)| {
+            vec![
+                ("LPID", *id),
+                ("LPRLS", "V7R5M0"),
+                ("AGRSTS", "*ACCEPTED"),
+                ("LPTEXT", *t),
+            ]
+        })
         .collect();
     let mut d = MapDialog::new();
     d.set_list("AGRS", list(rows));
@@ -231,10 +262,21 @@ fn dspsavf() {
     ];
     let rows = objs
         .iter()
-        .map(|(o, t, a, k)| vec![("OBJ", *o), ("OBJTYPE", *t), ("OBJATR", *a), ("OBJSIZE", *k), ("OBJTEXT", "")])
+        .map(|(o, t, a, k)| {
+            vec![
+                ("OBJ", *o),
+                ("OBJTYPE", *t),
+                ("OBJATR", *a),
+                ("OBJSIZE", *k),
+                ("OBJTEXT", ""),
+            ]
+        })
         .collect();
     let mut d = MapDialog::new();
-    d.set("SAVF", "QSTSAVF").set("SAVFLIB", "USERNAMEB").set("SAVLIB", "USERNAMEB").set("OBJS", "14");
+    d.set("SAVF", "QSTSAVF")
+        .set("SAVFLIB", "USERNAMEB")
+        .set("SAVLIB", "USERNAMEB")
+        .set("OBJS", "14");
     d.set_list("OBJS", list(rows));
     let opts = Options {
         system: "SYSNAME".into(),
@@ -251,7 +293,9 @@ fn dspsavf() {
 /// the columns, the keys and the paging indicator.
 #[test]
 fn dspsfwrsc_libraries() {
-    let lic = ["AJSCB01", "AJSDH00", "AJSDJ01", "AJSGK01", "AJSGM01", "AJSLP01"];
+    let lic = [
+        "AJSCB01", "AJSDH00", "AJSDJ01", "AJSGK01", "AJSGM01", "AJSLP01",
+    ];
     let rows = lic
         .iter()
         .map(|id| {
@@ -330,8 +374,16 @@ fn dspipla() {
 #[test]
 fn wrkrdbdire() {
     let rows = vec![
-        vec![("RDB", "PUB400"), ("RMTLOC", "*LOCAL"), ("RDBTEXT", "please do not change|")],
-        vec![("RDB", "RZKHCOCKPIT"), ("RMTLOC", "cockpit.rzkh.de"), ("RDBTEXT", "")],
+        vec![
+            ("RDB", "PUB400"),
+            ("RMTLOC", "*LOCAL"),
+            ("RDBTEXT", "please do not change|"),
+        ],
+        vec![
+            ("RDB", "RZKHCOCKPIT"),
+            ("RMTLOC", "cockpit.rzkh.de"),
+            ("RDBTEXT", ""),
+        ],
     ];
     let mut d = MapDialog::new();
     let mut l = list(rows);
@@ -342,7 +394,10 @@ fn wrkrdbdire() {
         ..Options::default()
     };
     let s = render(&group("QUIRDBDIR"), "WRKRDBDIRE", &d, &opts).unwrap();
-    assert_eq!(differing("../phase10/misc", "wrkrdbdire", &s, &[9]), set(&["fields", "more"]));
+    assert_eq!(
+        differing("../phase10/misc", "wrkrdbdire", &s, &[9]),
+        set(&["fields", "more"])
+    );
 }
 
 /// `WRKMSGD MSGF(QSYS/QCPFMSG)` against pub400's first page
@@ -357,7 +412,10 @@ fn wrkmsgd() {
         ("CAE0005", "&1 Date entered must be in the format &2."),
         ("CAE0009", "Overflow occurred. Target item is too short."),
     ];
-    let rows = ids.iter().map(|(i, t)| vec![("WID", *i), ("IDTEXT", *t)]).collect();
+    let rows = ids
+        .iter()
+        .map(|(i, t)| vec![("WID", *i), ("IDTEXT", *t)])
+        .collect();
     let mut d = MapDialog::new();
     d.set("MSGF", "QCPFMSG").set("MSGFLIB", "QSYS");
     d.set_list("WIDS", list(rows));

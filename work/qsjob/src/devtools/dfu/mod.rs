@@ -71,8 +71,16 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 Some(f) => (f.to_string(), lib.unwrap_or_else(|| "*LIBL".into())),
             };
             let f = data::file(host, &lib, &file).ok_or_else(|| not_found(&file, &lib))?;
-            temp::run(job, host, &mut surface, &f, member(r), Some(&p), r.name == "DSPDTA")
-                .map_err(|m| Fail::new("CPF4101", m))?;
+            temp::run(
+                job,
+                host,
+                &mut surface,
+                &f,
+                member(r),
+                Some(&p),
+                r.name == "DSPDTA",
+            )
+            .map_err(|m| Fail::new("CPF4101", m))?;
             Ok(String::new())
         }
         other => Err(Fail::check(other, "not a DFU command")),

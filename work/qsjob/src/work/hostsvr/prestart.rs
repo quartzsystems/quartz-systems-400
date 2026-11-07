@@ -13,6 +13,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use hostserver::Handler;
 use hostserver::central::Central;
 use hostserver::database::{Database, DbConfig};
 use hostserver::dtaq::DtaqServer;
@@ -20,7 +21,6 @@ use hostserver::file::FileServer;
 use hostserver::netprt::NetPrint;
 use hostserver::rmtcmd::RmtCmd;
 use hostserver::signon::Signon;
-use hostserver::Handler;
 use hostsvr::server::ServerId;
 use ipc::chan::Chan;
 use sockets::relay;
@@ -42,14 +42,24 @@ fn maxuse(rqsdta: &str) -> u32 {
 }
 
 /// The request loop for `server` over `job`.
-fn handler(server: ServerId, job: &Job, link: &Shared, start: &Start, system: &str) -> Box<dyn Handler> {
+fn handler(
+    server: ServerId,
+    job: &Job,
+    link: &Shared,
+    start: &Start,
+    system: &str,
+) -> Box<dyn Handler> {
     let name = format!("{:06}/{}/{}", start.number, start.user, start.name);
     let auth = JobAuth {
         link: link.clone(),
         job: name,
     };
     let exits = JobExits(job.clone());
-    let me = (start.name.clone(), start.user.clone(), format!("{:06}", start.number));
+    let me = (
+        start.name.clone(),
+        start.user.clone(),
+        format!("{:06}", start.number),
+    );
     match server {
         ServerId::Signon => Box::new(Signon::new(auth, exits)),
         ServerId::Central => Box::new(Central::new(auth, exits)),
@@ -71,7 +81,11 @@ fn handler(server: ServerId, job: &Job, link: &Shared, start: &Start, system: &s
             },
             exits,
         )),
-        ServerId::File => Box::new(FileServer::new(auth, stg::remote::RemoteIfs::new(link.clone()), exits)),
+        ServerId::File => Box::new(FileServer::new(
+            auth,
+            stg::remote::RemoteIfs::new(link.clone()),
+            exits,
+        )),
         ServerId::NetPrint => Box::new(NetPrint::new(
             auth,
             JobSpool {
@@ -104,7 +118,12 @@ const TLS_KEEP: Duration = Duration::from_secs(600);
 /// The TLS configuration, made again when older than [`TLS_KEEP`].
 type TlsCache = Option<(Instant, Arc<rustls::ServerConfig>)>;
 
-fn tls_config(cache: &mut TlsCache, server: ServerId, link: &Shared, system: &str) -> Result<Arc<rustls::ServerConfig>, String> {
+fn tls_config(
+    cache: &mut TlsCache,
+    server: ServerId,
+    link: &Shared,
+    system: &str,
+) -> Result<Arc<rustls::ServerConfig>, String> {
     if let Some((at, c)) = cache
         && at.elapsed() < TLS_KEEP
     {
@@ -116,7 +135,11 @@ fn tls_config(cache: &mut TlsCache, server: ServerId, link: &Shared, system: &st
 }
 
 /// Serve one connection.
-fn serve(h: &mut dyn Handler, stream: TcpStream, tls: Option<Arc<rustls::ServerConfig>>) -> Result<(), String> {
+fn serve(
+    h: &mut dyn Handler,
+    stream: TcpStream,
+    tls: Option<Arc<rustls::ServerConfig>>,
+) -> Result<(), String> {
     let _ = stream.set_nodelay(true);
     if let Some(config) = tls {
         let conn = rustls::ServerConnection::new(config).map_err(|e| e.to_string())?;

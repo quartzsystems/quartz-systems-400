@@ -30,7 +30,12 @@ pub fn dspipla(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
 
 /// `WRKMSGD MSGID() MSGF()`: a message file's descriptions with change,
 /// remove and display.
-pub fn wrkmsgd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkmsgd(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let (msgf, lib) = qual(r, "MSGF");
     let real = host
         .link
@@ -56,11 +61,15 @@ pub fn wrkmsgd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
             .map_err(|e| crate::panels::failed(&e))?;
         let ids: Vec<(String, String)> = all
             .into_iter()
-            .filter(|(id, _)| from.is_empty() || from.starts_with('*') || id.as_str() >= from.as_str())
+            .filter(|(id, _)| {
+                from.is_empty() || from.starts_with('*') || id.as_str() >= from.as_str()
+            })
             .collect();
         // `Position to`: the list starts at the first identifier from it.
         let pos = d.get("POSTO").trim().to_ascii_uppercase();
-        let at = ids.iter().position(|(id, _)| !pos.is_empty() && id.as_str() >= pos.as_str());
+        let at = ids
+            .iter()
+            .position(|(id, _)| !pos.is_empty() && id.as_str() >= pos.as_str());
         let rows = ids
             .into_iter()
             .map(|(id, t)| vec![("WID".to_string(), id), ("IDTEXT".to_string(), t)])
@@ -74,7 +83,14 @@ pub fn wrkmsgd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Options(choices) => {
                 act(job, host, &mut d, &choices, &mut |d, c| {
-                    d.error(if c.option.trim() == "6" { "CPD9B84" } else { "CPD6A7C" }, &[]);
+                    d.error(
+                        if c.option.trim() == "6" {
+                            "CPD9B84"
+                        } else {
+                            "CPD6A7C"
+                        },
+                        &[],
+                    );
                     Ok(())
                 })?;
             }
@@ -95,9 +111,18 @@ pub fn wrkmsgd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
 
 /// `WRKRDBDIRE RDB()`: the relational database directory; option 5
 /// shows an entry's detail in the report viewer.
-pub fn wrkrdbdire(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkrdbdire(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let which = super::parm(r, "RDB");
-    let which = if which.is_empty() { "*ALL".to_string() } else { which };
+    let which = if which.is_empty() {
+        "*ALL".to_string()
+    } else {
+        which
+    };
     let mut d = dialog(host, "QUIRDBDIR")?;
     d.copyright = true;
     loop {
@@ -139,9 +164,20 @@ pub fn wrkrdbdire(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolve
                         return Ok(());
                     };
                     let rows = ddm::objects::panel::display_entry(e);
-                    let body: Vec<String> = rows.iter().skip(2).take(19).map(|l| l.trim_end().to_string()).collect();
+                    let body: Vec<String> = rows
+                        .iter()
+                        .skip(2)
+                        .take(19)
+                        .map(|l| l.trim_end().to_string())
+                        .collect();
                     let title = rows.first().map_or("", |t| t.trim()).to_string();
-                    crate::panels::system2::view_report(host, surface, &title, "QSYSPRT", &body.join("\n"))?;
+                    crate::panels::system2::view_report(
+                        host,
+                        surface,
+                        &title,
+                        "QSYSPRT",
+                        &body.join("\n"),
+                    )?;
                     Ok(())
                 })?;
             }

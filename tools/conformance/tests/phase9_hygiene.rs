@@ -18,7 +18,13 @@ fn repo_root() -> PathBuf {
 
 fn tracked_files(root: &Path) -> Vec<PathBuf> {
     let out = std::process::Command::new("git")
-        .args(["ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+        .args([
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ])
         .current_dir(root)
         .output()
         .expect("git ls-files");
@@ -41,13 +47,21 @@ fn ibm_texts(root: &Path) -> HashSet<String> {
         if p.extension().is_none_or(|x| x != "lst") {
             continue;
         }
-        let Ok(bytes) = std::fs::read(&p) else { continue };
+        let Ok(bytes) = std::fs::read(&p) else {
+            continue;
+        };
         for l in String::from_utf8_lossy(&bytes).lines() {
-            let Some(rest) = l.strip_prefix(" *RNF") else { continue };
+            let Some(rest) = l.strip_prefix(" *RNF") else {
+                continue;
+            };
             // ID digits, severity, count, then the text.
-            let Some(mut tail) = rest.get(4..).map(str::trim_start) else { continue };
+            let Some(mut tail) = rest.get(4..).map(str::trim_start) else {
+                continue;
+            };
             for _ in 0..2 {
-                tail = tail.trim_start_matches(|c: char| c.is_ascii_digit()).trim_start();
+                tail = tail
+                    .trim_start_matches(|c: char| c.is_ascii_digit())
+                    .trim_start();
             }
             let t = tail.trim();
             if t.len() > 24 {
@@ -71,12 +85,18 @@ fn listing_text_stays_in_the_corpus() {
         if f.starts_with(&corpus) || f.starts_with(root.join("target")) {
             continue;
         }
-        let Ok(text) = std::fs::read_to_string(&f) else { continue };
+        let Ok(text) = std::fs::read_to_string(&f) else {
+            continue;
+        };
         for t in &texts {
             if text.contains(t.as_str()) {
                 hits.push(format!("{}: {t}", f.display()));
             }
         }
     }
-    assert!(hits.is_empty(), "IBM listing text outside the corpus:\n  {}", hits.join("\n  "));
+    assert!(
+        hits.is_empty(),
+        "IBM listing text outside the corpus:\n  {}",
+        hits.join("\n  ")
+    );
 }

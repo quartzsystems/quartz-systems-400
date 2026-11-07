@@ -160,8 +160,15 @@ impl Queues {
     /// The queue `lib/name`, `*LIBL` searched.
     #[must_use]
     pub fn find(&self, lib: &str, n: &str) -> Option<usize> {
-        let (lib, n) = (lib.trim().to_ascii_uppercase(), n.trim().to_ascii_uppercase());
-        let at = |l: &str| self.queues.iter().position(|q| q.queue.library == l && q.queue.name == n);
+        let (lib, n) = (
+            lib.trim().to_ascii_uppercase(),
+            n.trim().to_ascii_uppercase(),
+        );
+        let at = |l: &str| {
+            self.queues
+                .iter()
+                .position(|q| q.queue.library == l && q.queue.name == n)
+        };
         match lib.as_str() {
             "" | "*LIBL" | "*CURLIB" => LIBL.iter().find_map(|l| at(l)),
             l => at(l),
@@ -197,7 +204,11 @@ impl Queues {
             all.reverse();
         }
         let start = usize::try_from(req.start).unwrap_or(usize::MAX);
-        let max = if req.max == 0 { usize::MAX } else { usize::try_from(req.max).unwrap_or(usize::MAX) };
+        let max = if req.max == 0 {
+            usize::MAX
+        } else {
+            usize::try_from(req.max).unwrap_or(usize::MAX)
+        };
         let total = u32::try_from(all.len()).unwrap_or(u32::MAX);
         Ok((total, all.into_iter().skip(start).take(max).collect()))
     }
@@ -207,16 +218,28 @@ impl Queues {
     /// # Errors
     /// `NotFound` (queue or key), `NotAuthorized`, `InvalidRequest` (not
     /// an inquiry waiting), `Error` (`CPF2420`, a reply it does not take).
-    pub fn reply(&mut self, me: &str, from: &JobId, now: i64, req: &ReplyMessage) -> Result<(), No> {
+    pub fn reply(
+        &mut self,
+        me: &str,
+        from: &JobId,
+        now: i64,
+        req: &ReplyMessage,
+    ) -> Result<(), No> {
         let qi = self.resolve(me, &req.queue)?;
         let k = u32::from_be_bytes(req.key);
         let q = &mut self.queues[qi];
-        let i = q.at(k).ok_or_else(|| no(Status::NotFound, "CPF2410", &[&hex(k)]))?;
+        let i = q
+            .at(k)
+            .ok_or_else(|| no(Status::NotFound, "CPF2410", &[&hex(k)]))?;
         let m = &q.msgs[i];
         if m.kind != MessageType::Inquiry || !m.waiting {
             return Err(no(Status::InvalidRequest, "CPF2422", &[&hex(k)]));
         }
-        let text = if req.reply.trim().is_empty() { m.dft.clone() } else { req.reply.trim().to_string() };
+        let text = if req.reply.trim().is_empty() {
+            m.dft.clone()
+        } else {
+            req.reply.trim().to_string()
+        };
         if !m.valid.is_empty() && !m.valid.iter().any(|v| v.eq_ignore_ascii_case(&text)) {
             return Err(no(Status::Error, "CPF2420", &[&text, &m.id]));
         }
@@ -253,7 +276,12 @@ impl Queues {
     pub fn remove(&mut self, me: &str, req: &RemoveMessages) -> Result<(), No> {
         let qi = self.resolve(me, &req.queue)?;
         let q = &mut self.queues[qi];
-        if let Some(k) = req.keys.iter().map(|k| u32::from_be_bytes(*k)).find(|k| q.at(*k).is_none()) {
+        if let Some(k) = req
+            .keys
+            .iter()
+            .map(|k| u32::from_be_bytes(*k))
+            .find(|k| q.at(*k).is_none())
+        {
             return Err(no(Status::NotFound, "CPF2410", &[&hex(k)]));
         }
         let keys: Vec<u32> = req.keys.iter().map(|k| u32::from_be_bytes(*k)).collect();
@@ -267,7 +295,13 @@ impl Queues {
     /// # Errors
     /// `NotFound` (queue or profile), `NotAuthorized`, `InvalidRequest`
     /// (no text).
-    pub fn send(&mut self, me: &str, from: &JobId, now: i64, req: &SendMessage) -> Result<Option<u32>, No> {
+    pub fn send(
+        &mut self,
+        me: &str,
+        from: &JobId,
+        now: i64,
+        req: &SendMessage,
+    ) -> Result<Option<u32>, No> {
         if req.text.trim().is_empty() {
             return Err(no(Status::InvalidRequest, "CPD0071", &["MSG"]));
         }
@@ -283,7 +317,11 @@ impl Queues {
             Recipient::Queue { queue } => self.resolve(me, queue)?,
         };
         let m = Msg {
-            kind: if req.inquiry { MessageType::Inquiry } else { MessageType::Informational },
+            kind: if req.inquiry {
+                MessageType::Inquiry
+            } else {
+                MessageType::Informational
+            },
             severity: if req.inquiry { 99 } else { 0 },
             text: req.text.clone(),
             sent: now,
@@ -330,13 +368,23 @@ fn every_kind(q: &mut MsgQueue, from: &JobId, at: &mut i64) {
             kind,
             severity: sev,
             text: text.into(),
-            help: if id.is_empty() { String::new() } else { format!("Help for {id}.") },
+            help: if id.is_empty() {
+                String::new()
+            } else {
+                format!("Help for {id}.")
+            },
             sent: *at,
             from: from.clone(),
             ..Msg::default()
         });
     };
-    put(MessageType::Informational, "", &[], 0, "Backups start at 22:00 tonight.");
+    put(
+        MessageType::Informational,
+        "",
+        &[],
+        0,
+        "Backups start at 22:00 tonight.",
+    );
     put(MessageType::Completion, "CPC2102", &["HLTEST"], 0, "");
     put(MessageType::Diagnostic, "CPD0071", &["MSG"], 30, "");
     put(MessageType::Escape, "CPF2103", &["HLTEST"], 40, "");

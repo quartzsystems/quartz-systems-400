@@ -71,7 +71,10 @@ impl LobRef {
                 }
                 Ok(Self::Inline(b[8..8 + n].to_vec()))
             }
-            1 => Ok(Self::Tree { id: u64::from_be_bytes(b[8..16].try_into().expect("8 bytes")), length }),
+            1 => Ok(Self::Tree {
+                id: u64::from_be_bytes(b[8..16].try_into().expect("8 bytes")),
+                length,
+            }),
             k => Err(corrupt(format!("LOB reference kind {k}"))),
         }
     }
@@ -117,7 +120,10 @@ pub fn owner(txn: &mut Txn<'_>, member: ObjectId) -> Result<ObjectId> {
     if core.attr.base_count == 0 {
         return Ok(member);
     }
-    core.base_members(txn)?.first().copied().ok_or_else(|| corrupt("a logical member with no based-on member"))
+    core.base_members(txn)?
+        .first()
+        .copied()
+        .ok_or_else(|| corrupt("a logical member with no based-on member"))
 }
 
 /// Store a value in `member`, giving the reference the field holds.
@@ -131,7 +137,9 @@ pub fn put(txn: &mut Txn<'_>, member: ObjectId, data: &[u8]) -> Result<Vec<u8>> 
     })?;
     let mut core = Core::load(txn, member)?;
     let mut tree: LobTree = BTree::open(core.roots[LOB_ROOT], member);
-    let id = tree.floor(txn, &u64::MAX)?.map_or(1, |(k, _)| (k >> 24) + 1);
+    let id = tree
+        .floor(txn, &u64::MAX)?
+        .map_or(1, |(k, _)| (k >> 24) + 1);
     if id >= 1 << 40 {
         return Err(corrupt("the member has used every LOB ID"));
     }
@@ -144,12 +152,21 @@ pub fn put(txn: &mut Txn<'_>, member: ObjectId, data: &[u8]) -> Result<Vec<u8>> 
 
 /// The bytes `start..start + len` of a value (cut at its end), read
 /// from `member`'s tree.
-pub fn read_part(txn: &mut Txn<'_>, member: ObjectId, r: &LobRef, start: u64, len: u64) -> Result<Vec<u8>> {
+pub fn read_part(
+    txn: &mut Txn<'_>,
+    member: ObjectId,
+    r: &LobRef,
+    start: u64,
+    len: u64,
+) -> Result<Vec<u8>> {
     let end = r.len().min(start.saturating_add(len));
     if start >= end {
         return Ok(Vec::new());
     }
-    let (s, e) = (usize::try_from(start).expect("fits"), usize::try_from(end).expect("fits"));
+    let (s, e) = (
+        usize::try_from(start).expect("fits"),
+        usize::try_from(end).expect("fits"),
+    );
     let (id, length) = match r {
         LobRef::Inline(d) => return Ok(d[s..e].to_vec()),
         LobRef::Tree { id, length } => (*id, *length),
@@ -169,7 +186,9 @@ pub fn read_part(txn: &mut Txn<'_>, member: ObjectId, r: &LobRef, start: u64, le
         }
     }
     if out.len() != e - s {
-        return Err(corrupt(format!("LOB {id} is shorter than its {length} bytes")));
+        return Err(corrupt(format!(
+            "LOB {id} is shorter than its {length} bytes"
+        )));
     }
     Ok(out)
 }
@@ -196,11 +215,21 @@ pub fn free(txn: &mut Txn<'_>, member: ObjectId, r: &LobRef) -> Result<()> {
 
 /// Free the chunks of every value not in `keep` (`RGZPFM`); the number
 /// of values freed.
-pub fn sweep<S: std::hash::BuildHasher>(txn: &mut Txn<'_>, member: ObjectId, keep: &std::collections::HashSet<u64, S>) -> Result<u64> {
+pub fn sweep<S: std::hash::BuildHasher>(
+    txn: &mut Txn<'_>,
+    member: ObjectId,
+    keep: &std::collections::HashSet<u64, S>,
+) -> Result<u64> {
     let mut core = Core::load(txn, member)?;
     let mut tree: LobTree = BTree::open(core.roots[LOB_ROOT], member);
-    let gone: Vec<u64> = tree.entries(txn)?.map(|e| e.map(|(k, _)| k)).collect::<store::Result<Vec<_>>>()?;
-    let gone: Vec<u64> = gone.into_iter().filter(|k| !keep.contains(&(k >> 24))).collect();
+    let gone: Vec<u64> = tree
+        .entries(txn)?
+        .map(|e| e.map(|(k, _)| k))
+        .collect::<store::Result<Vec<_>>>()?;
+    let gone: Vec<u64> = gone
+        .into_iter()
+        .filter(|k| !keep.contains(&(k >> 24)))
+        .collect();
     let mut freed = std::collections::HashSet::new();
     for k in gone {
         tree.delete(txn, &k)?;
@@ -242,7 +271,10 @@ mod tests {
     fn references() {
         let r = LobRef::Inline(b"abc".to_vec());
         assert_eq!(LobRef::decode(&r.encode()).unwrap(), r);
-        let t = LobRef::Tree { id: 7, length: 5000 };
+        let t = LobRef::Tree {
+            id: 7,
+            length: 5000,
+        };
         let b = t.encode();
         assert_eq!(&b[..8], &[0, 0, 0x13, 0x88, 1, 0, 0, 0]);
         assert_eq!(LobRef::decode(&b).unwrap(), t);

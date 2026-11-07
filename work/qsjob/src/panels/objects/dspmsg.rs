@@ -56,7 +56,11 @@ fn named(v: &str) -> Option<Level> {
 /// the profile's, `*SYSVAL` there meaning `QASTLVL`.
 #[must_use]
 pub fn level(parm: &str, previous: Option<Level>, profile: &str, sysval: &str) -> Level {
-    let profile = || named(profile).or_else(|| named(sysval)).unwrap_or(Level::Intermediate);
+    let profile = || {
+        named(profile)
+            .or_else(|| named(sysval))
+            .unwrap_or(Level::Intermediate)
+    };
     match parm.trim().to_ascii_uppercase().as_str() {
         "*USRPRF" => profile(),
         "" | "*PRV" => previous.unwrap_or_else(profile),
@@ -68,11 +72,18 @@ pub fn level(parm: &str, previous: Option<Level>, profile: &str, sysval: &str) -
 /// in `QUSRSYS`.
 #[must_use]
 pub fn profile_queue(user: &str, msgq: &(String, String)) -> String {
-    let (name, lib) = (msgq.0.trim().to_ascii_uppercase(), msgq.1.trim().to_ascii_uppercase());
+    let (name, lib) = (
+        msgq.0.trim().to_ascii_uppercase(),
+        msgq.1.trim().to_ascii_uppercase(),
+    );
     if name.is_empty() || name == "*USRPRF" {
         return format!("QUSRSYS/{}", user.to_ascii_uppercase());
     }
-    let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib };
+    let lib = if lib.is_empty() {
+        "*LIBL".to_string()
+    } else {
+        lib
+    };
     format!("{lib}/{name}")
 }
 
@@ -109,7 +120,6 @@ fn resolved(host: &Host, queue: &str) -> String {
         .with(|l| l.object(lib.clone(), name.clone(), "*MSGQ".into()))
         .map_or_else(|| queue.to_string(), |o| format!("{}/{name}", o.lib))
 }
-
 
 /// The job user's profile: its `MSGQ` and `ASTLVL`.
 fn profile(host: &Host) -> ((String, String), String) {
@@ -170,7 +180,11 @@ fn reply(host: &Host, queue: &str, key: u32, text: &str) -> Result<(), String> {
 /// The `From` line's value part: user, date and time sent.
 fn from_text(m: &QMsg) -> String {
     let (date, time) = wm::joblog::stamp_of(m.time);
-    format!("{:<10}     {date}   {}", m.job.1, &time[..8.min(time.len())])
+    format!(
+        "{:<10}     {date}   {}",
+        m.job.1,
+        &time[..8.min(time.len())]
+    )
 }
 
 /// One line of Display Messages: its text, and whether a reply field
@@ -365,7 +379,14 @@ fn header(host: &Host, d: &mut UimDialog, queue: &str) {
     d.set("MSGQLIB", &qlib);
     d.set("SEV", &format!("{:02}", attrs.severity));
     d.set("DLVRY", &attrs.delivery);
-    d.set("PGM", if attrs.brkpgm.0.is_empty() { "*DSPMSG" } else { &attrs.brkpgm.0 });
+    d.set(
+        "PGM",
+        if attrs.brkpgm.0.is_empty() {
+            "*DSPMSG"
+        } else {
+            &attrs.brkpgm.0
+        },
+    );
     d.set("PGMLIB", &attrs.brkpgm.1);
 }
 
@@ -524,7 +545,11 @@ fn basic(
         }
         owned.sort_by_key(|(_, m)| m.time);
         let msgs: Vec<QMsg> = owned.iter().map(|(_, m)| m.clone()).collect();
-        let rows = work_rows(&msgs, "Messages needing a reply", "Messages not needing a reply");
+        let rows = work_rows(
+            &msgs,
+            "Messages needing a reply",
+            "Messages not needing a reply",
+        );
         let title = if operator {
             "System Operator".to_string()
         } else {
@@ -608,7 +633,10 @@ mod tests {
         // The shipped default: the profile's own queue in QUSRSYS.
         let own = profile_queue("ALICE", &pair("*USRPRF", ""));
         assert_eq!(own, "QUSRSYS/ALICE");
-        assert_eq!(queues("*USRPRF", "", &own, "QPADEV0001", &[]), vec!["QUSRSYS/ALICE"]);
+        assert_eq!(
+            queues("*USRPRF", "", &own, "QPADEV0001", &[]),
+            vec!["QUSRSYS/ALICE"]
+        );
         // QSYSOPR only when the profile names it.
         let opr = profile_queue("BOB", &pair("QSYSOPR", "QSYS"));
         assert_eq!(opr, "QSYS/QSYSOPR");
@@ -627,7 +655,13 @@ mod tests {
         assert_eq!(queues("*WRKSTN", "", own, "DSP01", &[]), vec!["QSYS/DSP01"]);
         assert_eq!(queues("*SYSOPR", "", own, "DSP01", &[]), vec![QSYSOPR]);
         assert_eq!(
-            queues("*ALLWS", "", own, "DSP01", &["DSP01".into(), "DSP02".into()]),
+            queues(
+                "*ALLWS",
+                "",
+                own,
+                "DSP01",
+                &["DSP01".into(), "DSP02".into()]
+            ),
             vec!["QSYS/DSP01", "QSYS/DSP02"]
         );
         assert_eq!(queues("QSYSOPR", "", own, "", &[]), vec!["*LIBL/QSYSOPR"]);
@@ -637,10 +671,16 @@ mod tests {
     #[test]
     fn levels() {
         assert_eq!(level("*BASIC", None, "*SYSVAL", "*INTERMED"), Level::Basic);
-        assert_eq!(level("*PRV", Some(Level::Basic), "*INTERMED", ""), Level::Basic);
+        assert_eq!(
+            level("*PRV", Some(Level::Basic), "*INTERMED", ""),
+            Level::Basic
+        );
         assert_eq!(level("*PRV", None, "*BASIC", ""), Level::Basic);
         assert_eq!(level("*PRV", None, "*SYSVAL", "*BASIC"), Level::Basic);
-        assert_eq!(level("*USRPRF", Some(Level::Basic), "*ADVANCED", ""), Level::Intermediate);
+        assert_eq!(
+            level("*USRPRF", Some(Level::Basic), "*ADVANCED", ""),
+            Level::Intermediate
+        );
         assert_eq!(level("", None, "", ""), Level::Intermediate);
     }
 
@@ -663,7 +703,11 @@ mod tests {
         ];
         let lines = display_lines(&msgs);
         assert_eq!(lines[0].text, "  Job started.");
-        assert!(lines[1].text.starts_with("  From  . . . :   ALICE          "));
+        assert!(
+            lines[1]
+                .text
+                .starts_with("  From  . . . :   ALICE          ")
+        );
         assert_eq!(lines[2].text, "  Go on?");
         assert_eq!(
             lines[3],
@@ -687,11 +731,26 @@ mod tests {
         let rows = work_rows(&msgs, "Needs", "Rest");
         let texts: Vec<String> = rows
             .iter()
-            .map(|r| if r.head.is_empty() { r.text.clone() } else { r.head.trim().to_string() })
+            .map(|r| {
+                if r.head.is_empty() {
+                    r.text.clone()
+                } else {
+                    r.head.trim().to_string()
+                }
+            })
             .collect();
         assert_eq!(
             texts,
-            vec!["Needs", "Waiting?", "", "Rest", "Asked.", &texts[5], "  Reply . . :   N", "Old one."]
+            vec![
+                "Needs",
+                "Waiting?",
+                "",
+                "Rest",
+                "Asked.",
+                &texts[5],
+                "  Reply . . :   N",
+                "Old one."
+            ]
         );
         assert_eq!(rows[1].owner, Some((2, true)));
         assert_eq!(rows[5].owner, Some((1, false)));

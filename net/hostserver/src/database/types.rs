@@ -100,7 +100,11 @@ impl ColType {
 
     /// A VARCHAR of `n` bytes.
     pub fn varchar(name: &str, n: u32, null: bool) -> Self {
-        Self::from_describe(i64::from(sqltype::VARCHAR) + i64::from(null), i64::from(n), name)
+        Self::from_describe(
+            i64::from(sqltype::VARCHAR) + i64::from(null),
+            i64::from(n),
+            name,
+        )
     }
 
     /// An INTEGER.
@@ -144,7 +148,10 @@ impl ColType {
             sqltype::DECIMAL | sqltype::NUMERIC => self.precision,
             _ => 31,
         };
-        (u8::try_from(p.min(63)).unwrap_or(31), u8::try_from(self.scale.min(63)).unwrap_or(0))
+        (
+            u8::try_from(p.min(63)).unwrap_or(31),
+            u8::try_from(self.scale.min(63)).unwrap_or(0),
+        )
     }
 }
 
@@ -169,9 +176,12 @@ fn text_of(v: &Value, c: &ColType) -> String {
 /// The value a null field's bytes hold: empty text or zero.
 pub fn empty(c: &ColType) -> Value {
     match c.base {
-        sqltype::DECIMAL | sqltype::NUMERIC | sqltype::BIGINT | sqltype::INTEGER | sqltype::SMALLINT | sqltype::FLOAT => {
-            Value::int(0)
-        }
+        sqltype::DECIMAL
+        | sqltype::NUMERIC
+        | sqltype::BIGINT
+        | sqltype::INTEGER
+        | sqltype::SMALLINT
+        | sqltype::FLOAT => Value::int(0),
         sqltype::DATE | sqltype::TIME | sqltype::TIMESTAMP => Value::Null,
         _ => Value::Str(String::new()),
     }
@@ -190,7 +200,10 @@ pub fn encode(v: &Value, c: &ColType) -> Vec<u8> {
             out
         }
         sqltype::BINARY => bytes_of(v),
-        sqltype::DBCLOB_LOCATOR => u32::try_from(v.as_i64().unwrap_or(0)).unwrap_or(0).to_be_bytes().to_vec(),
+        sqltype::DBCLOB_LOCATOR => u32::try_from(v.as_i64().unwrap_or(0))
+            .unwrap_or(0)
+            .to_be_bytes()
+            .to_vec(),
         sqltype::VARCHAR | sqltype::LONGVARCHAR | sqltype::VARGRAPHIC => {
             let mut b = if c.graphic() {
                 text::utf16(&text_of(v, c))
@@ -202,7 +215,11 @@ pub fn encode(v: &Value, c: &ColType) -> Vec<u8> {
                 .to_be_bytes()
                 .to_vec();
             out.extend(b);
-            let pad = if c.graphic() { [0x00, 0x20] } else { [0x40, 0x40] };
+            let pad = if c.graphic() {
+                [0x00, 0x20]
+            } else {
+                [0x40, 0x40]
+            };
             while out.len() < n {
                 out.push(pad[out.len() % 2]);
             }
@@ -222,9 +239,19 @@ pub fn encode(v: &Value, c: &ColType) -> Vec<u8> {
         // A float as it is, past a decimal's digits too.
         sqltype::FLOAT => {
             let x = v.as_f64().unwrap_or(0.0);
-            if c.len == 4 { Float::SINGLE } else { Float::DOUBLE }.encode_f64(x).unwrap_or_default()
+            if c.len == 4 {
+                Float::SINGLE
+            } else {
+                Float::DOUBLE
+            }
+            .encode_f64(x)
+            .unwrap_or_default()
         }
-        sqltype::DECIMAL | sqltype::NUMERIC | sqltype::BIGINT | sqltype::INTEGER | sqltype::SMALLINT => {
+        sqltype::DECIMAL
+        | sqltype::NUMERIC
+        | sqltype::BIGINT
+        | sqltype::INTEGER
+        | sqltype::SMALLINT => {
             let d = v.as_decimal().unwrap_or_else(|_| Decimal::zero());
             number(&d, c)
         }
@@ -239,19 +266,26 @@ fn number(d: &Decimal, c: &ColType) -> Vec<u8> {
     let (p, s) = c.digits();
     let r = match c.base {
         // Positive packed values carry the preferred sign F.
-        sqltype::DECIMAL => Packed::new(p, s).and_then(|k| k.encode(d, Rounding::Truncate)).map(|mut b| {
-            if let Some(last) = b.last_mut()
-                && *last & 0x0F == 0x0C
-            {
-                *last |= 0x0F;
-            }
-            b
-        }),
+        sqltype::DECIMAL => Packed::new(p, s)
+            .and_then(|k| k.encode(d, Rounding::Truncate))
+            .map(|mut b| {
+                if let Some(last) = b.last_mut()
+                    && *last & 0x0F == 0x0C
+                {
+                    *last |= 0x0F;
+                }
+                b
+            }),
         sqltype::NUMERIC => Zoned::new(p, s).and_then(|k| k.encode(d, Rounding::Truncate)),
         sqltype::BIGINT => Integer::new(8, true).and_then(|k| k.encode(d)),
         sqltype::INTEGER => Integer::new(4, true).and_then(|k| k.encode(d)),
         sqltype::SMALLINT => Integer::new(2, true).and_then(|k| k.encode(d)),
-        _ => if c.len == 4 { Float::SINGLE } else { Float::DOUBLE }.encode(d),
+        _ => if c.len == 4 {
+            Float::SINGLE
+        } else {
+            Float::DOUBLE
+        }
+        .encode(d),
     };
     r.unwrap_or_default()
 }
@@ -265,7 +299,10 @@ pub fn decode(b: &[u8], c: &ColType) -> Value {
             if c.graphic() {
                 Value::Str(text::from_utf16(crate::reply::slice(b, 2, 2 * n)))
             } else {
-                Value::Str(text::decode(u32::from(c.ccsid), crate::reply::slice(b, 2, n)))
+                Value::Str(text::decode(
+                    u32::from(c.ccsid),
+                    crate::reply::slice(b, 2, n),
+                ))
             }
         }
         sqltype::CHAR | sqltype::GRAPHIC => {
@@ -300,12 +337,22 @@ pub fn decode(b: &[u8], c: &ColType) -> Value {
             Timestamp::parse(&fixed).map_or(Value::Null, Value::Timestamp)
         }
         #[allow(clippy::cast_possible_truncation)] // a single's bytes
-        sqltype::FLOAT => match if b.len() == 4 { Float::SINGLE } else { Float::DOUBLE }.decode_f64(b) {
+        sqltype::FLOAT => match if b.len() == 4 {
+            Float::SINGLE
+        } else {
+            Float::DOUBLE
+        }
+        .decode_f64(b)
+        {
             Ok(x) if b.len() == 4 => Value::Real(x as f32),
             Ok(x) => Value::Double(x),
             Err(_) => Value::Null,
         },
-        sqltype::DECIMAL | sqltype::NUMERIC | sqltype::BIGINT | sqltype::INTEGER | sqltype::SMALLINT => {
+        sqltype::DECIMAL
+        | sqltype::NUMERIC
+        | sqltype::BIGINT
+        | sqltype::INTEGER
+        | sqltype::SMALLINT => {
             let (p, s) = c.digits();
             let r = match c.base {
                 sqltype::DECIMAL => Packed::new(p, s).and_then(|k| k.decode(b)),
@@ -313,11 +360,18 @@ pub fn decode(b: &[u8], c: &ColType) -> Value {
                 sqltype::BIGINT => Integer::new(8, true).and_then(|k| k.decode(b)),
                 sqltype::INTEGER => Integer::new(4, true).and_then(|k| k.decode(b)),
                 sqltype::SMALLINT => Integer::new(2, true).and_then(|k| k.decode(b)),
-                _ => if b.len() == 4 { Float::SINGLE } else { Float::DOUBLE }.decode(b),
+                _ => if b.len() == 4 {
+                    Float::SINGLE
+                } else {
+                    Float::DOUBLE
+                }
+                .decode(b),
             };
             r.map_or(Value::Null, Value::Num)
         }
-        sqltype::VARBINARY => Value::Bin(crate::reply::slice(b, 2, usize::from(crate::reply::be16(b, 0))).to_vec()),
+        sqltype::VARBINARY => {
+            Value::Bin(crate::reply::slice(b, 2, usize::from(crate::reply::be16(b, 0))).to_vec())
+        }
         sqltype::BINARY => Value::Bin(b.to_vec()),
         _ => Value::Str(text::decode(u32::from(c.ccsid), b)),
     }
@@ -338,8 +392,18 @@ fn mdy(t: &str) -> Option<db::record::datetime::Date> {
     if p.len() != 3 {
         return None;
     }
-    let (m, d, y) = (p[0].parse::<u8>().ok()?, p[1].parse::<u8>().ok()?, p[2].parse::<u16>().ok()?);
-    let year = if y < 40 { 2000 + y } else if y < 100 { 1900 + y } else { y };
+    let (m, d, y) = (
+        p[0].parse::<u8>().ok()?,
+        p[1].parse::<u8>().ok()?,
+        p[2].parse::<u16>().ok()?,
+    );
+    let year = if y < 40 {
+        2000 + y
+    } else if y < 100 {
+        1900 + y
+    } else {
+        y
+    };
     Some(db::record::datetime::Date {
         year,
         month: m,

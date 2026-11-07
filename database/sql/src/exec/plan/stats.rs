@@ -107,7 +107,10 @@ impl ColumnStats {
             return *f;
         }
         let kept: f64 = self.frequent.iter().map(|(_, f)| f).sum();
-        let others = self.distinct.saturating_sub(self.frequent.len() as u64).max(1);
+        let others = self
+            .distinct
+            .saturating_sub(self.frequent.len() as u64)
+            .max(1);
         let nonnull = 1.0 - self.nulls as f64 / self.rows as f64;
         ((nonnull - kept).max(0.0) / others as f64).min(1.0)
     }
@@ -119,7 +122,11 @@ impl ColumnStats {
         if self.bounds.is_empty() || self.rows == 0 {
             return 0.0;
         }
-        let n = self.bounds.iter().take_while(|b| b.compare(v).ok().flatten() == Some(Ordering::Less)).count();
+        let n = self
+            .bounds
+            .iter()
+            .take_while(|b| b.compare(v).ok().flatten() == Some(Ordering::Less))
+            .count();
         let nonnull = 1.0 - self.nulls as f64 / self.rows as f64;
         let mut f = n as f64 / self.bounds.len() as f64 * nonnull;
         if or_equal {
@@ -132,7 +139,8 @@ impl ColumnStats {
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
     pub fn stale(&self, rows: u64, deleted: u64, slots: u64) -> bool {
-        let changed = rows.abs_diff(self.rows) + deleted.abs_diff(self.deleted) + slots.abs_diff(self.slots);
+        let changed =
+            rows.abs_diff(self.rows) + deleted.abs_diff(self.deleted) + slots.abs_diff(self.slots);
         changed as f64 > self.rows.max(1) as f64 * STALE
     }
 }
@@ -170,7 +178,12 @@ thread_local! {
 /// The statistics of `column` of `member`, when collected.
 #[must_use]
 pub fn get(member: ObjectId, column: &str) -> Option<ColumnStats> {
-    REGISTRY.with(|r| r.borrow().stats.get(&(member, column.to_string())).map(|(_, s)| s.clone()))
+    REGISTRY.with(|r| {
+        r.borrow()
+            .stats
+            .get(&(member, column.to_string()))
+            .map(|(_, s)| s.clone())
+    })
 }
 
 /// Read the statistics kept on `file` the first time it is asked for:
@@ -180,12 +193,16 @@ pub fn prime(txn: &mut Txn<'_>, file: ObjectId) {
     if REGISTRY.with(|r| !r.borrow_mut().loaded.insert(file)) {
         return;
     }
-    let Ok(kept) = db::sqlinf::colstats::load(txn, file) else { return };
+    let Ok(kept) = db::sqlinf::colstats::load(txn, file) else {
+        return;
+    };
     REGISTRY.with(|r| {
         let mut r = r.borrow_mut();
         for c in &kept {
             if let Some(s) = super::statsave::from_stored(c) {
-                r.stats.entry((c.member, s.system_column.clone())).or_insert((file, s));
+                r.stats
+                    .entry((c.member, s.system_column.clone()))
+                    .or_insert((file, s));
             }
         }
     });
@@ -196,7 +213,10 @@ pub fn request(file: ObjectId, member: ObjectId, column: &str) {
     REGISTRY.with(|r| {
         let mut r = r.borrow_mut();
         let key = (file, member, column.to_string());
-        if r.requests.len() < REQUESTS && !r.requests.contains(&key) && !r.stats.contains_key(&(member, column.to_string())) {
+        if r.requests.len() < REQUESTS
+            && !r.requests.contains(&key)
+            && !r.stats.contains_key(&(member, column.to_string()))
+        {
             r.requests.push(key);
         }
     });
@@ -219,12 +239,18 @@ pub fn forget(file: Option<ObjectId>) {
 
 /// Collect `columns` (system names) of the first member of `file`.
 /// Logical files and files without members have none.
-pub fn collect(txn: &mut Txn<'_>, file_id: ObjectId, columns: &[String], now: u64) -> Result<usize> {
+pub fn collect(
+    txn: &mut Txn<'_>,
+    file_id: ObjectId,
+    columns: &[String],
+    now: u64,
+) -> Result<usize> {
     let desc = file::describe(txn, file_id)?;
     if desc.attr.kind == FileKind::Logical {
         return Ok(0);
     }
-    let (Some(entry), Some(fmt)) = (desc.members.first().copied(), desc.formats.first().cloned()) else {
+    let (Some(entry), Some(fmt)) = (desc.members.first().copied(), desc.formats.first().cloned())
+    else {
         return Ok(0);
     };
     let fields: Vec<(usize, dds::FieldDef)> = fmt
@@ -241,13 +267,17 @@ pub fn collect(txn: &mut Txn<'_>, file_id: ObjectId, columns: &[String], now: u6
     prime(txn, file_id);
     let m = Member::open(txn, &desc, &entry)?;
     let attr = m.attr().clone();
-    let stride = usize::try_from(attr.record_count / SAMPLE as u64).unwrap_or(usize::MAX).max(1);
+    let stride = usize::try_from(attr.record_count / SAMPLE as u64)
+        .unwrap_or(usize::MAX)
+        .max(1);
     let mut acc: Vec<Acc> = fields.iter().map(|_| Acc::default()).collect();
     let mut from = 1;
     let mut seen = 0usize;
     loop {
         let slots = m.scan(txn, from, 512)?;
-        let Some(end) = slots.last().map(|s| s.rrn) else { break };
+        let Some(end) = slots.last().map(|s| s.rrn) else {
+            break;
+        };
         for s in &slots {
             let sampled = seen.is_multiple_of(stride);
             seen += 1;
@@ -274,7 +304,8 @@ pub fn collect(txn: &mut Txn<'_>, file_id: ObjectId, columns: &[String], now: u6
             s.updated = now;
             kept.extend(super::statsave::to_stored(entry.object, &s));
             r.stats.insert(key, (file_id, s));
-            r.requests.retain(|(_, m, c)| !(*m == entry.object && *c == f.name.to_string()));
+            r.requests
+                .retain(|(_, m, c)| !(*m == entry.object && *c == f.name.to_string()));
         }
     });
     let members: Vec<ObjectId> = desc.members.iter().map(|e| e.object).collect();
@@ -287,7 +318,12 @@ const AT_CREATE: u64 = 100_000;
 
 /// `CREATE INDEX` over `columns` of `t`: their statistics collected
 /// now when the table is not large, else asked of the collection job.
-pub fn on_index(txn: &mut Txn<'_>, t: &crate::exec::TableInfo, columns: &[String], now: u64) -> Result<()> {
+pub fn on_index(
+    txn: &mut Txn<'_>,
+    t: &crate::exec::TableInfo,
+    columns: &[String],
+    now: u64,
+) -> Result<()> {
     let rows = Member::open(txn, &t.desc, &t.member).map_or(0, |m| m.attr().record_count);
     if rows <= AT_CREATE {
         collect(txn, t.id, columns, now)?;
@@ -304,8 +340,11 @@ pub fn on_index(txn: &mut Txn<'_>, t: &crate::exec::TableInfo, columns: &[String
 pub fn collect_due(txn: &mut Txn<'_>, now: u64) -> Vec<String> {
     let (requests, kept) = REGISTRY.with(|r| {
         let r = r.borrow();
-        let kept: Vec<(ObjectId, ObjectId, String, u64, u64, u64)> =
-            r.stats.iter().map(|((m, c), (f, s))| (*f, *m, c.clone(), s.rows, s.deleted, s.slots)).collect();
+        let kept: Vec<(ObjectId, ObjectId, String, u64, u64, u64)> = r
+            .stats
+            .iter()
+            .map(|((m, c), (f, s))| (*f, *m, c.clone(), s.rows, s.deleted, s.slots))
+            .collect();
         (r.requests.clone(), kept)
     });
     let mut due: Vec<(ObjectId, Vec<String>)> = Vec::new();
@@ -322,8 +361,12 @@ pub fn collect_due(txn: &mut Txn<'_>, now: u64) -> Vec<String> {
             forget(Some(f));
             continue;
         };
-        let Some(entry) = desc.members.iter().find(|e| e.object == m) else { continue };
-        let Ok(mem) = Member::open(txn, &desc, entry) else { continue };
+        let Some(entry) = desc.members.iter().find(|e| e.object == m) else {
+            continue;
+        };
+        let Ok(mem) = Member::open(txn, &desc, entry) else {
+            continue;
+        };
         let a = mem.attr();
         let probe = ColumnStats {
             column: String::new(),
@@ -347,7 +390,9 @@ pub fn collect_due(txn: &mut Txn<'_>, now: u64) -> Vec<String> {
     let mut lines = Vec::new();
     for (f, cols) in due {
         match collect(txn, f, &cols, now) {
-            Ok(n) if n > 0 => lines.push(format!("statistics of {n} columns of file {f} collected")),
+            Ok(n) if n > 0 => {
+                lines.push(format!("statistics of {n} columns of file {f} collected"))
+            }
             Ok(_) => forget(Some(f)),
             Err(e) => {
                 lines.push(format!("statistics of file {f} not collected: {e}"));
@@ -393,16 +438,22 @@ impl Acc {
         }
     }
 
-    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[allow(
+        clippy::cast_precision_loss,
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss
+    )]
     fn finish(mut self, rows: u64) -> ColumnStats {
         let nonnull = self.count - self.nulls;
         let distinct = if self.overflow {
             // Extrapolated from where the exact count stopped.
-            ((self.exact.len() as f64) * (self.count as f64 / self.overflow_at.max(1) as f64)) as u64
+            ((self.exact.len() as f64) * (self.count as f64 / self.overflow_at.max(1) as f64))
+                as u64
         } else {
             self.exact.len() as u64
         };
-        self.sample.sort_by(|a, b| a.compare(b).ok().flatten().unwrap_or(Ordering::Equal));
+        self.sample
+            .sort_by(|a, b| a.compare(b).ok().flatten().unwrap_or(Ordering::Equal));
         let mut bounds = Vec::new();
         if !self.sample.is_empty() {
             let ranges = RANGES.min(self.sample.len());
@@ -418,7 +469,11 @@ impl Acc {
         let mut counts: Vec<(&Value, u64)> = Vec::new();
         for v in &self.sample {
             if seen.insert(v.key()) {
-                let c = if self.overflow { 0 } else { self.exact.get(&v.key()).copied().unwrap_or(0) };
+                let c = if self.overflow {
+                    0
+                } else {
+                    self.exact.get(&v.key()).copied().unwrap_or(0)
+                };
                 counts.push((v, c));
             }
         }
@@ -443,7 +498,10 @@ impl Acc {
             system_column: String::new(),
             distinct,
             nulls: self.nulls,
-            avg_len: self.len_sum.checked_div(nonnull).map_or(0, |x| u32::try_from(x).unwrap_or(u32::MAX)),
+            avg_len: self
+                .len_sum
+                .checked_div(nonnull)
+                .map_or(0, |x| u32::try_from(x).unwrap_or(u32::MAX)),
             max_len: self.max_len,
             bounds,
             frequent,
@@ -472,7 +530,11 @@ mod tests {
         let s = a.finish(2000);
         assert_eq!(s.distinct, 100);
         assert_eq!(s.nulls, 1000);
-        assert!((s.equal(&Value::int(5)) - 0.005).abs() < 1e-9, "{}", s.equal(&Value::int(5)));
+        assert!(
+            (s.equal(&Value::int(5)) - 0.005).abs() < 1e-9,
+            "{}",
+            s.equal(&Value::int(5))
+        );
         let below = s.below(&Value::int(50), false);
         assert!((below - 0.25).abs() < 0.02, "{below}");
         assert!(!s.stale(2000, 0, 0));

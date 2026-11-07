@@ -366,7 +366,10 @@ impl Net for TcpNet {
             }
             TcpStream::connect_timeout(&to, CONNECT_WAIT)?
         } else {
-            return Err(io::Error::new(io::ErrorKind::NotConnected, "no PASV or PORT"));
+            return Err(io::Error::new(
+                io::ErrorKind::NotConnected,
+                "no PASV or PORT",
+            ));
         };
         let _ = s.set_nodelay(true);
         if self.private {
@@ -460,7 +463,15 @@ pub fn pasv_text(a: SocketAddr) -> Option<String> {
         }
         IpAddr::V6(v6) => v6.to_ipv4_mapped().map(|v4| {
             let o = v4.octets();
-            format!("{},{},{},{},{},{}", o[0], o[1], o[2], o[3], a.port() >> 8, a.port() & 0xFF)
+            format!(
+                "{},{},{},{},{},{}",
+                o[0],
+                o[1],
+                o[2],
+                o[3],
+                a.port() >> 8,
+                a.port() & 0xFF
+            )
         }),
     }
 }

@@ -9,8 +9,8 @@
 use rpgspecs::{Form, cut, form};
 
 use crate::ast::{
-    CondInd, Conditioning, Def, DefCols, DefKind, Expr, FileCols, FileDecl, Input, InputField, Keyword,
-    Lit, Op, Output, OutputField, Pos, Proc, RecCode, Stmt,
+    CondInd, Conditioning, Def, DefCols, DefKind, Expr, FileCols, FileDecl, Input, InputField,
+    Keyword, Lit, Op, Output, OutputField, Pos, Proc, RecCode, Stmt,
 };
 use crate::diag::{Diag, ids};
 use crate::lex::{self, Segment};
@@ -40,7 +40,10 @@ fn keyword_area(b: &mut Builder<'_>, lines: &[&Line], col: usize) -> Vec<Keyword
         let open = t.matches('(').count() > t.matches(')').count();
         let beyond = !cut(&l.text, 81, 100).trim().is_empty();
         if open && beyond {
-            let start = t.rfind('(').and_then(|p| t[..p].rfind(' ')).map_or(0, |p| p + 1);
+            let start = t
+                .rfind('(')
+                .and_then(|p| t[..p].rfind(' '))
+                .map_or(0, |p| p + 1);
             t.truncate(start);
             b.diags.push(Diag::new(ids::KEYWORD_CUT, 20, l.pos(80)));
         }
@@ -69,9 +72,14 @@ fn factor(b: &mut Builder<'_>, l: &Line, from: usize, to: usize) -> Vec<Expr> {
     let t = text.trim_start();
     let digits = t.len() - t.trim_start_matches(|c: char| c.is_ascii_digit()).len();
     let rest = &t[digits..];
-    let exponent = rest.starts_with(['E', 'e']) && rest[1..].starts_with(|c: char| c.is_ascii_digit() || c == '+' || c == '-');
+    let exponent = rest.starts_with(['E', 'e'])
+        && rest[1..].starts_with(|c: char| c.is_ascii_digit() || c == '+' || c == '-');
     if digits > 0 && rest.starts_with(|c: char| c.is_ascii_alphabetic()) && !exponent {
-        b.diags.push(Diag::new(ids::ENTRY_DATA, 20, l.pos(u16::try_from(from).unwrap_or(0))));
+        b.diags.push(Diag::new(
+            ids::ENTRY_DATA,
+            20,
+            l.pos(u16::try_from(from).unwrap_or(0)),
+        ));
         let lead = text.len() - t.len() + digits;
         text = format!("{}{}", " ".repeat(lead), &text[lead..]);
     }
@@ -85,7 +93,12 @@ fn factor(b: &mut Builder<'_>, l: &Line, from: usize, to: usize) -> Vec<Expr> {
 fn cond_ind(s: &str) -> Option<CondInd> {
     let s3: Vec<char> = s.chars().collect();
     let not = s3.first().is_some_and(|c| c.eq_ignore_ascii_case(&'N'));
-    let ind: String = s3.iter().skip(1).collect::<String>().trim().to_ascii_uppercase();
+    let ind: String = s3
+        .iter()
+        .skip(1)
+        .collect::<String>()
+        .trim()
+        .to_ascii_uppercase();
     if ind.is_empty() {
         return None;
     }
@@ -150,7 +163,11 @@ fn right_adjusted(b: &mut Builder<'_>, l: &Line, form: &Form, field: &str) {
     // A special word (`*FILE`, `*STATUS`) starts in the first column.
     if !raw.trim().is_empty() && raw.ends_with(' ') && !raw.trim_start().starts_with('*') {
         let col = fd.from + raw.len() - raw.trim_start().len();
-        b.diags.push(Diag::new(ids::NOT_RIGHT_ADJUSTED, 20, l.pos(u16::try_from(col).unwrap_or(0))));
+        b.diags.push(Diag::new(
+            ids::NOT_RIGHT_ADJUSTED,
+            20,
+            l.pos(u16::try_from(col).unwrap_or(0)),
+        ));
     }
 }
 
@@ -200,7 +217,9 @@ fn long_name(lines: &[&Line]) -> (String, usize) {
         }
         break;
     }
-    let last = lines.get(k).map_or(String::new(), |l| cut(&l.text, 7, 21).trim().to_string());
+    let last = lines
+        .get(k)
+        .map_or(String::new(), |l| cut(&l.text, 7, 21).trim().to_string());
     name.push_str(last.trim_end_matches("..."));
     (name, k)
 }
@@ -214,7 +233,10 @@ fn def_spec(b: &mut Builder<'_>, lines: &[&Line], group: bool) -> bool {
     // columns.
     let special = c("from").starts_with('*');
     let (from, to) = if special {
-        (cut(&l.text, 26, 39).trim().to_ascii_uppercase(), String::new())
+        (
+            cut(&l.text, 26, 39).trim().to_ascii_uppercase(),
+            String::new(),
+        )
     } else {
         right_adjusted(b, l, df, "from");
         right_adjusted(b, l, df, "to");
@@ -246,7 +268,8 @@ fn def_spec(b: &mut Builder<'_>, lines: &[&Line], group: bool) -> bool {
         }
         _ => {
             // IBM takes a definition type it does not know as S.
-            b.diags.push(Diag::new(ids::BAD_DEF_TYPE, 20, l.pos(24)).arg(deftype));
+            b.diags
+                .push(Diag::new(ids::BAD_DEF_TYPE, 20, l.pos(24)).arg(deftype));
             DefKind::Standalone
         }
     };
@@ -296,7 +319,10 @@ fn def_spec(b: &mut Builder<'_>, lines: &[&Line], group: bool) -> bool {
                     } else {
                         DefKind::Subfield
                     };
-                    p.children.push(Def { kind: child_kind, ..d });
+                    p.children.push(Def {
+                        kind: child_kind,
+                        ..d
+                    });
                 }
                 None => b
                     .diags
@@ -335,12 +361,18 @@ fn proc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
             });
         }
         "E" => b.end_proc(l.pos(24)),
-        _ => b.diags.push(Diag::new(ids::BAD_KEYWORD, 30, l.pos(24)).arg(begin)),
+        _ => b
+            .diags
+            .push(Diag::new(ids::BAD_KEYWORD, 30, l.pos(24)).arg(begin)),
     }
 }
 
 /// Parse the `FOR` operand: `i = start [TO|DOWNTO limit] [BY step]`.
-pub fn for_operand(toks: &[lex::Tok], end: Pos, diags: &mut Vec<Diag>) -> (Option<Expr>, Vec<(String, Expr)>) {
+pub fn for_operand(
+    toks: &[lex::Tok],
+    end: Pos,
+    diags: &mut Vec<Diag>,
+) -> (Option<Expr>, Vec<(String, Expr)>) {
     // Cut at the words TO, DOWNTO and BY outside parentheses.
     let mut parts: Vec<(String, Vec<lex::Tok>)> = vec![(String::new(), Vec::new())];
     let mut depth = 0;
@@ -369,7 +401,12 @@ pub fn for_operand(toks: &[lex::Tok], end: Pos, diags: &mut Vec<Diag>) -> (Optio
 }
 
 /// The extended factor 2 of an operation, from its tokens.
-pub fn extended_operand(code: &str, toks: &[lex::Tok], end: Pos, diags: &mut Vec<Diag>) -> (Option<Expr>, Vec<(String, Expr)>) {
+pub fn extended_operand(
+    code: &str,
+    toks: &[lex::Tok],
+    end: Pos,
+    diags: &mut Vec<Diag>,
+) -> (Option<Expr>, Vec<(String, Expr)>) {
     match code {
         "EVAL" | "EVALR" | "EVAL-CORR" => {
             let mut c = expr::Cursor::new(toks, end);
@@ -392,11 +429,17 @@ pub fn extended_operand(code: &str, toks: &[lex::Tok], end: Pos, diags: &mut Vec
                     None => c.skip_all(),
                 }
             }
-            (Some(Expr::List(list, toks.first().map_or(end, |t| t.at))), Vec::new())
+            (
+                Some(Expr::List(list, toks.first().map_or(end, |t| t.at))),
+                Vec::new(),
+            )
         }
         "ON-ERROR" | "ON-EXCP" | "WHEN-IN" => {
             let list = expr::operands(toks, end, diags);
-            (Some(Expr::List(list, toks.first().map_or(end, |t| t.at))), Vec::new())
+            (
+                Some(Expr::List(list, toks.first().map_or(end, |t| t.at))),
+                Vec::new(),
+            )
         }
         _ if toks.is_empty() => (None, Vec::new()),
         _ => (expr::expr_all(toks, end, diags), Vec::new()),
@@ -407,7 +450,10 @@ pub fn extended_operand(code: &str, toks: &[lex::Tok], end: Pos, diags: &mut Vec
 fn split_ext(raw: &str) -> (String, String) {
     let up = raw.trim().to_ascii_uppercase();
     match up.split_once('(') {
-        Some((c, e)) => (c.trim().to_string(), e.trim_end_matches(')').trim().to_string()),
+        Some((c, e)) => (
+            c.trim().to_string(),
+            e.trim_end_matches(')').trim().to_string(),
+        ),
         None => (up, String::new()),
     }
 }
@@ -431,7 +477,10 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         let raw: Vec<char> = cf.cut(&c.text, "cond").chars().collect();
         let mut ind = cond_ind(&raw.iter().collect::<String>());
         // Column 9 is N or blank; columns 10-11 an indicator.
-        if raw.first().is_some_and(|ch| *ch != ' ' && !ch.eq_ignore_ascii_case(&'N')) {
+        if raw
+            .first()
+            .is_some_and(|ch| *ch != ' ' && !ch.eq_ignore_ascii_case(&'N'))
+        {
             b.diags.push(Diag::new(ids::COND_NOT, 20, c.pos(9)));
             ind = cond_ind(&format!(" {}", raw.iter().skip(1).collect::<String>()));
         }
@@ -451,7 +500,8 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
     } else if !ops::extenders_allowed(&code, &ext) {
         // Under the extender (pub400).
         let col = 26 + u16::try_from(code.len()).unwrap_or(0) + 1;
-        b.diags.push(Diag::new(ids::EXTENDER_NOT_FOR_OP, 20, l.pos(col)));
+        b.diags
+            .push(Diag::new(ids::EXTENDER_NOT_FOR_OP, 20, l.pos(col)));
         ext.clear();
     }
     let mut op = Op {
@@ -460,11 +510,13 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         ..Op::default()
     };
     if code.is_empty() {
-        b.diags.push(Diag::new(ids::BAD_OPCODE, 30, l.pos(26)).arg(String::new()));
+        b.diags
+            .push(Diag::new(ids::BAD_OPCODE, 30, l.pos(26)).arg(String::new()));
         return;
     }
     if !ops::known(&code) || ops::free_only(&code) {
-        b.diags.push(Diag::new(ids::BAD_FIXED_OPCODE, 30, l.pos(26)).arg(code.clone()));
+        b.diags
+            .push(Diag::new(ids::BAD_FIXED_OPCODE, 30, l.pos(26)).arg(code.clone()));
         return;
     }
     op.f1 = factor(b, l, 12, 25);
@@ -472,7 +524,8 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         b.diags.push(Diag::new(ids::NO_FACTOR1, 30, l.pos(12)));
     }
     if !op.f1.is_empty() && ops::no_factor1(&code) {
-        b.diags.push(Diag::new(ids::FACTOR1_NOT_BLANK, 20, l.pos(12)));
+        b.diags
+            .push(Diag::new(ids::FACTOR1_NOT_BLANK, 20, l.pos(12)));
     }
     if ops::extended(&code) {
         let areas: Vec<(u32, String)> = lines[op_at..]
@@ -531,9 +584,13 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
     if let Some(p) = prev
         && level.is_empty()
         && code != "BEGSR"
-        && (p.level == "LR" || p.level.len() == 2 && p.level.starts_with('L') && p.level.as_bytes()[1].is_ascii_digit())
+        && (p.level == "LR"
+            || p.level.len() == 2
+                && p.level.starts_with('L')
+                && p.level.as_bytes()[1].is_ascii_digit())
     {
-        b.diags.push(Diag::new(ids::LEVEL_BLANK_AFTER, 20, l.pos(7)));
+        b.diags
+            .push(Diag::new(ids::LEVEL_BLANK_AFTER, 20, l.pos(7)));
         level.clone_from(&p.level);
     }
     b.stmt(Stmt {
@@ -552,7 +609,11 @@ fn input_spec(b: &mut Builder<'_>, lines: &[&Line]) {
     // An external record line has nothing in columns 17-20 and 23-46.
     let external = cut(&l.text, 17, 20).trim().is_empty() && cut(&l.text, 23, 46).trim().is_empty();
     let name = if name.is_empty() {
-        b.module.inputs.last().map(|i| i.name.clone()).unwrap_or_default()
+        b.module
+            .inputs
+            .last()
+            .map(|i| i.name.clone())
+            .unwrap_or_default()
     } else {
         name
     };
@@ -576,9 +637,21 @@ fn input_spec(b: &mut Builder<'_>, lines: &[&Line]) {
                 let pos: u32 = ir.cut(text, &format!("pos{n}")).trim().parse().ok()?;
                 Some(RecCode {
                     pos,
-                    not: ir.cut(text, &format!("not{n}")).trim().eq_ignore_ascii_case("N"),
-                    part: ir.cut(text, &format!("part{n}")).chars().next().unwrap_or('C').to_ascii_uppercase(),
-                    ch: ir.cut(text, &format!("char{n}")).chars().next().unwrap_or(' '),
+                    not: ir
+                        .cut(text, &format!("not{n}"))
+                        .trim()
+                        .eq_ignore_ascii_case("N"),
+                    part: ir
+                        .cut(text, &format!("part{n}"))
+                        .chars()
+                        .next()
+                        .unwrap_or('C')
+                        .to_ascii_uppercase(),
+                    ch: ir
+                        .cut(text, &format!("char{n}"))
+                        .chars()
+                        .next()
+                        .unwrap_or(' '),
                 })
             })
             .collect()
@@ -605,7 +678,11 @@ fn input_spec(b: &mut Builder<'_>, lines: &[&Line]) {
             let name = ifx.cut(t, "field").trim().to_ascii_uppercase();
             let extname = ifx.cut(t, "extname").trim().to_ascii_uppercase();
             InputField {
-                extname: if extname.is_empty() { name.clone() } else { extname },
+                extname: if extname.is_empty() {
+                    name.clone()
+                } else {
+                    extname
+                },
                 name,
                 level: ifx.cut(t, "level").trim().to_ascii_uppercase(),
                 matching: ifx.cut(t, "match").trim().to_ascii_uppercase(),
@@ -652,7 +729,11 @@ fn output_cond(b: &mut Builder<'_>, l: &Line, c: &mut Conditioning, relation: &s
         let Some(ind) = cond_ind(&raw) else { continue };
         // N or blank, then an indicator; anything else is blanks.
         if !raw.starts_with([' ', 'N', 'n']) || !(valid_indicator(&ind.ind) || ind.ind == "1P") {
-            b.diags.push(Diag::new(ids::BAD_OUTPUT_IND, 20, l.pos(u16::try_from(21 + 3 * k).unwrap_or(21))));
+            b.diags.push(Diag::new(
+                ids::BAD_OUTPUT_IND,
+                20,
+                l.pos(u16::try_from(21 + 3 * k).unwrap_or(21)),
+            ));
             continue;
         }
         inds.push(ind);
@@ -673,7 +754,11 @@ fn output_spec(b: &mut Builder<'_>, lines: &[&Line]) {
     let t = &l.text;
     let name = or.cut(t, "name").trim().to_ascii_uppercase();
     let name = if name.is_empty() {
-        b.module.outputs.last().map(|o| o.name.clone()).unwrap_or_default()
+        b.module
+            .outputs
+            .last()
+            .map(|o| o.name.clone())
+            .unwrap_or_default()
     } else {
         name
     };
@@ -717,7 +802,8 @@ fn output_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         // A data format IBM does not know is blank.
         let mut format = of.cut(t, "format").trim().to_ascii_uppercase();
         if !format.is_empty() && !"BFILPRU".contains(format.as_str()) {
-            b.diags.push(Diag::new(ids::BAD_OUTPUT_FORMAT, 20, x.pos(52)));
+            b.diags
+                .push(Diag::new(ids::BAD_OUTPUT_FORMAT, 20, x.pos(52)));
             format.clear();
         }
         let constant_text = of.cut(t, "constant");
@@ -725,26 +811,47 @@ fn output_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         // lines' constant columns.
         let mut areas = vec![(x.no, constant_text.trim_end().to_string())];
         let mut last = x;
-        while areas.iter().map(|(_, a)| a.matches('\'').count()).sum::<usize>() % 2 == 1
+        while areas
+            .iter()
+            .map(|(_, a)| a.matches('\'').count())
+            .sum::<usize>()
+            % 2
+            == 1
             && k < lines.len()
             && cut(&lines[k].text, 7, 52).trim().is_empty()
         {
             last = lines[k];
-            areas.push((lines[k].no, of.cut(&lines[k].text, "constant").trim_end().to_string()));
+            areas.push((
+                lines[k].no,
+                of.cut(&lines[k].text, "constant").trim_end().to_string(),
+            ));
             k += 1;
         }
         let constant = if constant_text.trim().is_empty() {
             None
         } else {
-            let segs: Vec<lex::Segment<'_>> = areas.iter().map(|(no, a)| lex::Segment { line: *no, col: 53, text: a.as_str() }).collect();
+            let segs: Vec<lex::Segment<'_>> = areas
+                .iter()
+                .map(|(no, a)| lex::Segment {
+                    line: *no,
+                    col: 53,
+                    text: a.as_str(),
+                })
+                .collect();
             let toks = lex::lex(&segs, &mut b.diags);
-            expr::expr_all(&toks, last.pos(80), &mut b.diags).or_else(|| Some(Expr::Lit(Lit::Char(constant_text.trim().to_string()), x.pos(53))))
+            expr::expr_all(&toks, last.pos(80), &mut b.diags).or_else(|| {
+                Some(Expr::Lit(
+                    Lit::Char(constant_text.trim().to_string()),
+                    x.pos(53),
+                ))
+            })
         };
         // A hexadecimal constant needs whole bytes; the field is ignored.
         if let Some(Expr::Lit(Lit::Hex(h), _)) = &constant
             && (h.is_empty() || h.len() % 2 != 0)
         {
-            b.diags.push(Diag::new(ids::BAD_OUTPUT_CONSTANT, 30, x.pos(53)));
+            b.diags
+                .push(Diag::new(ids::BAD_OUTPUT_CONSTANT, 30, x.pos(53)));
             continue;
         }
         out.fields.push(OutputField {

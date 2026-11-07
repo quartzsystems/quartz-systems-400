@@ -23,7 +23,15 @@ use crate::error::Result;
 use crate::value::Value;
 
 /// The views here.
-const VIEWS: &[&str] = &["SYSCST", "SYSCSTCOL", "SYSKEYCST", "SYSCHKCST", "SYSREFCST", "SYSCSTDEP", "SYSSEQUENCES"];
+const VIEWS: &[&str] = &[
+    "SYSCST",
+    "SYSCSTCOL",
+    "SYSKEYCST",
+    "SYSCHKCST",
+    "SYSREFCST",
+    "SYSCSTDEP",
+    "SYSSEQUENCES",
+];
 
 /// Whether `name` is one of them.
 pub fn has(name: &ObjectName) -> bool {
@@ -51,7 +59,8 @@ enum T {
 }
 
 fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
-    let short = Name::parse(&name[..name.len().min(10)]).unwrap_or_else(|_| Name::parse("COL").expect("valid"));
+    let short = Name::parse(&name[..name.len().min(10)])
+        .unwrap_or_else(|_| Name::parse("COL").expect("valid"));
     let mut f = match t {
         T::Var(n) | T::Fix(n) => FieldDef::new(short, DataType::Char, n, 0),
         T::NVar(n) => {
@@ -72,7 +81,13 @@ fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
     if name.len() > 10 {
         f.alias = Some(name.to_string());
     }
-    ColInfo { name: name.to_string(), table: Some(alias.to_string()), field: Some(f), nullable, hidden: false }
+    ColInfo {
+        name: name.to_string(),
+        table: Some(alias.to_string()),
+        field: Some(f),
+        nullable,
+        hidden: false,
+    }
 }
 
 fn s(v: impl Into<String>) -> Value {
@@ -97,11 +112,18 @@ struct Owner {
 }
 
 fn sql_name(txn: &mut Txn<'_>, id: ObjectId, sys: Name) -> String {
-    db::sqlinf::load(txn, id).ok().flatten().and_then(|i| i.name()).unwrap_or_else(|| sys.to_string())
+    db::sqlinf::load(txn, id)
+        .ok()
+        .flatten()
+        .and_then(|i| i.name())
+        .unwrap_or_else(|| sys.to_string())
 }
 
 fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(Name, ObjectId)>> {
-    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     if !libs.contains(&ctx.qsys) {
         libs.insert(0, ctx.qsys);
     }
@@ -118,18 +140,30 @@ fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(Name, ObjectId)
 fn owners(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Owner>> {
     let mut out = Vec::new();
     for (lib, l) in libraries(txn, ctx)? {
-        let Ok(list) = ops::list(txn, l, Some(types::FILE)) else { continue };
+        let Ok(list) = ops::list(txn, l, Some(types::FILE)) else {
+            continue;
+        };
         for (_, id) in list {
-            let Ok(desc) = file::describe(txn, id) else { continue };
+            let Ok(desc) = file::describe(txn, id) else {
+                continue;
+            };
             if desc.attr.kind != FileKind::Physical || desc.header.sql.is_none() {
                 continue;
             }
-            let csts: Vec<Constraint> = db::cst::list(txn, id)?.into_iter().filter(|c| c.kind != Kind::Dependent).collect();
+            let csts: Vec<Constraint> = db::cst::list(txn, id)?
+                .into_iter()
+                .filter(|c| c.kind != Kind::Dependent)
+                .collect();
             if csts.is_empty() {
                 continue;
             }
             let sql = sql_name(txn, id, desc.name());
-            out.push(Owner { lib, desc, sql, csts });
+            out.push(Owner {
+                lib,
+                desc,
+                sql,
+                csts,
+            });
         }
     }
     Ok(out)
@@ -137,12 +171,21 @@ fn owners(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Owner>> {
 
 /// The SQL name of field `n` of a file.
 fn column(desc: &FileDesc, n: Name) -> String {
-    desc.formats[0].format.field(&n).and_then(|(_, f)| f.alias.clone()).unwrap_or_else(|| n.to_string())
+    desc.formats[0]
+        .format
+        .field(&n)
+        .and_then(|(_, f)| f.alias.clone())
+        .unwrap_or_else(|| n.to_string())
 }
 
 /// The columns and rows of view `which`.
 #[allow(clippy::too_many_lines)]
-pub fn table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str) -> Result<Option<Table>> {
+pub fn table(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    alias: &str,
+) -> Result<Option<Table>> {
     let which = name.name.value.as_str();
     let c = |n: &str, t: T, null: bool| col(alias, n, t, null);
     let v128 = T::Var(128);
@@ -153,7 +196,11 @@ pub fn table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str
             for o in owners(txn, ctx)? {
                 let lib = o.lib.to_string();
                 for k in &o.csts {
-                    let keys = if k.kind == Kind::Check { Value::Null } else { i(k.columns.len()) };
+                    let keys = if k.kind == Kind::Check {
+                        Value::Null
+                    } else {
+                        i(k.columns.len())
+                    };
                     let pending = match k.kind {
                         Kind::Unique | Kind::PrimaryKey => Value::Null,
                         _ if !k.enabled => Value::Null,
@@ -207,7 +254,16 @@ pub fn table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str
                 let owner = ccsid::decode_trimmed(&o.desc.header.owner);
                 for k in &o.csts {
                     if which == "SYSCSTDEP" {
-                        rows.push(vec![s(lib.clone()), s(o.sql.clone()), s(lib.clone()), s(k.name.clone()), s(sys.clone()), s(lib.clone()), i(0), s(lib.clone())]);
+                        rows.push(vec![
+                            s(lib.clone()),
+                            s(o.sql.clone()),
+                            s(lib.clone()),
+                            s(k.name.clone()),
+                            s(sys.clone()),
+                            s(lib.clone()),
+                            i(0),
+                            s(lib.clone()),
+                        ]);
                         continue;
                     }
                     if which == "SYSKEYCST" && k.kind == Kind::Check {
@@ -216,7 +272,17 @@ pub fn table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str
                     for (n, f) in k.columns.iter().enumerate() {
                         let cn = column(&o.desc, *f);
                         if which == "SYSCSTCOL" {
-                            rows.push(vec![s(lib.clone()), s(o.sql.clone()), s(cn), s(lib.clone()), s(k.name.clone()), s(f.to_string()), s(sys.clone()), s(lib.clone()), s(lib.clone())]);
+                            rows.push(vec![
+                                s(lib.clone()),
+                                s(o.sql.clone()),
+                                s(cn),
+                                s(lib.clone()),
+                                s(k.name.clone()),
+                                s(f.to_string()),
+                                s(sys.clone()),
+                                s(lib.clone()),
+                                s(lib.clone()),
+                            ]);
                         } else {
                             let pos = o.desc.formats[0].format.field(f).map_or(0, |(p, _)| p + 1);
                             rows.push(vec![
@@ -279,7 +345,13 @@ pub fn table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str
             for o in owners(txn, ctx)? {
                 let lib = o.lib.to_string();
                 for k in o.csts.iter().filter(|k| k.kind == Kind::Check) {
-                    rows.push(vec![s(lib.clone()), s(k.name.clone()), s(k.text.clone()), Value::Null, s(lib.clone())]);
+                    rows.push(vec![
+                        s(lib.clone()),
+                        s(k.name.clone()),
+                        s(k.text.clone()),
+                        Value::Null,
+                        s(lib.clone()),
+                    ]);
                 }
             }
             vec![
@@ -333,7 +405,13 @@ pub fn table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str
 /// CHAR columns' values blank padded to their length, as the catalogs give them.
 fn padded(cols: Vec<ColInfo>, mut rows: Vec<Row>) -> Table {
     for (i, c) in cols.iter().enumerate() {
-        let Some(f) = c.field.as_ref().filter(|f| f.data_type == DataType::Char && f.varlen.is_none()) else { continue };
+        let Some(f) = c
+            .field
+            .as_ref()
+            .filter(|f| f.data_type == DataType::Char && f.varlen.is_none())
+        else {
+            continue;
+        };
         let n = f.length as usize;
         for r in &mut rows {
             if let Some(Value::Str(s)) = r.get_mut(i) {
@@ -352,11 +430,19 @@ fn sequences(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<Table> 
     let c = |n: &str, t: T, null: bool| col(alias, n, t, null);
     let mut rows = Vec::new();
     for (lib, l) in libraries(txn, ctx)? {
-        let Ok(list) = ops::list(txn, l, Some(types::DTAARA)) else { continue };
+        let Ok(list) = ops::list(txn, l, Some(types::DTAARA)) else {
+            continue;
+        };
         for (sys, id) in list {
-            let Ok(Some(info)) = db::sqlinf::load(txn, id) else { continue };
-            let Some(body) = info.first(db::sqlinf::tag::SEQUENCE) else { continue };
-            let Ok(q) = db::sqlinf::seq::Sequence::decode(body) else { continue };
+            let Ok(Some(info)) = db::sqlinf::load(txn, id) else {
+                continue;
+            };
+            let Some(body) = info.first(db::sqlinf::tag::SEQUENCE) else {
+                continue;
+            };
+            let Ok(q) = db::sqlinf::seq::Sequence::decode(body) else {
+                continue;
+            };
             let (_, h) = ops::read_header(txn, id)?;
             let (ty, p) = match q.data_type {
                 1 => ("SMALLINT", 5),

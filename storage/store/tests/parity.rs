@@ -106,7 +106,11 @@ fn read_space(store: &mut Store, qsys: ObjectId, i: usize) -> (String, String) {
     let head = usrspc::read(&mut txn, id, 10, 8).unwrap();
     let tail = usrspc::read(&mut txn, id, 12 * 4000, 8).unwrap();
     txn.abort();
-    let text = |b: Vec<u8>| String::from_utf8_lossy(&b).trim_end_matches('\0').to_string();
+    let text = |b: Vec<u8>| {
+        String::from_utf8_lossy(&b)
+            .trim_end_matches('\0')
+            .to_string()
+    };
     (text(head), text(tail))
 }
 
@@ -175,7 +179,12 @@ fn start_over_units_holding_data_and_keep_parity() {
     assert!(rec.events.is_empty(), "{:?}", rec.events);
     let sb = store.asp().superblock().clone();
     assert_eq!(sb.parity.tags.len(), 4);
-    assert!(sb.parity.tags.iter().all(|t| t.state == MemberState::Active));
+    assert!(
+        sb.parity
+            .tags
+            .iter()
+            .all(|t| t.state == MemberState::Active)
+    );
     assert_eq!(sb.parity.work, None);
     assert!(store.parity_verify(1).unwrap().is_empty());
     assert_spaces(&mut store, qsys, 20);
@@ -214,7 +223,12 @@ fn a_missing_unit_leaves_the_asp_usable_and_is_rebuilt_when_back() {
     let p = store.parity_step(10).unwrap().unwrap();
     assert_eq!((p.kind, p.unit), (WorkKind::Rebuild, Some(2)));
     finish_work(&mut store, 50);
-    assert!(store.parity_sets()[0].members.iter().all(|m| m.status == "DPY/Active"));
+    assert!(
+        store.parity_sets()[0]
+            .members
+            .iter()
+            .all(|m| m.status == "DPY/Active")
+    );
     assert!(store.parity_verify(1).unwrap().is_empty());
     assert_spaces(&mut store, qsys, 18);
     store.close().unwrap();
@@ -275,7 +289,8 @@ fn an_epoch_cut_between_data_and_parity_is_repaired_with_a_unit_missing() {
     let (a, b) = (dm[0], dm[1]);
     let pno = |asp: &Asp, m: usize| {
         let unit = u16::try_from(m).unwrap();
-        asp.layout().logical(asp.span_of(unit).unwrap(), geo.row_of(stripe, m))
+        asp.layout()
+            .logical(asp.span_of(unit).unwrap(), geo.row_of(stripe, m))
     };
     let (pa, pb) = (pno(&asp, a), pno(&asp, b));
     let page = |fill: u8| {
@@ -330,7 +345,9 @@ fn an_epoch_cut_with_every_unit_present_is_resynchronized() {
     let stripe = 200 * geo.n as u64 + 2;
     let m = geo.data_members(stripe)[1];
     let unit = u16::try_from(m).unwrap();
-    let pno = asp.layout().logical(asp.span_of(unit).unwrap(), geo.row_of(stripe, m));
+    let pno = asp
+        .layout()
+        .logical(asp.span_of(unit).unwrap(), geo.row_of(stripe, m));
     asp.parity_fault(1, Some(Fault::StopAfterData));
     let mut p = Page::zeroed();
     p.body_mut()[..10].fill(7);
@@ -397,7 +414,11 @@ fn committed_data_survives_crashes_and_a_lost_unit() {
         );
         stale += rec.events.len();
         for i in 0..committed {
-            assert_eq!(read_space(&mut s, qsys, i).0, format!("space {i}"), "round {round}");
+            assert_eq!(
+                read_space(&mut s, qsys, i).0,
+                format!("space {i}"),
+                "round {round}"
+            );
         }
         finish_work(&mut s, 1000);
         assert!(s.parity_verify(1).unwrap().is_empty());
@@ -517,7 +538,10 @@ fn include_exclude_and_stop() {
     // Too few units for RAID 6.
     assert!(matches!(
         store.start_parity(Level::Raid6, &[0, 1, 2]),
-        Err(StoreError::Refused { reason: store::Refusal::ParityUnits { .. }, .. })
+        Err(StoreError::Refused {
+            reason: store::Refusal::ParityUnits { .. },
+            ..
+        })
     ));
 }
 
@@ -572,7 +596,8 @@ fn raid6_epoch_cut_is_repaired_with_two_units_missing() {
     assert_eq!(dm.len(), 3);
     let pno = |asp: &Asp, m: usize| {
         let unit = u16::try_from(m).unwrap();
-        asp.layout().logical(asp.span_of(unit).unwrap(), geo.row_of(stripe, m))
+        asp.layout()
+            .logical(asp.span_of(unit).unwrap(), geo.row_of(stripe, m))
     };
     let pages: Vec<u64> = dm.iter().map(|&m| pno(&asp, m)).collect();
     let page = |fill: u8| {
@@ -589,7 +614,13 @@ fn raid6_epoch_cut_is_repaired_with_two_units_missing() {
     asp.io().flush().unwrap();
     asp.parity_fault(1, Some(Fault::StopAfterData));
     asp.io()
-        .write_page(pages[0], &mut page(0x99), PageType::ObjectData, ObjectId::NONE, 2)
+        .write_page(
+            pages[0],
+            &mut page(0x99),
+            PageType::ObjectData,
+            ObjectId::NONE,
+            2,
+        )
         .unwrap();
     assert!(asp.io().flush().is_err());
     drop(asp);
@@ -600,9 +631,15 @@ fn raid6_epoch_cut_is_repaired_with_two_units_missing() {
     assert_eq!(events.len(), 2);
     for (i, &p) in pages.iter().enumerate().skip(1) {
         let want = 0x10 + u8::try_from(i).unwrap();
-        assert_eq!(&asp.io().read_page(p).unwrap().body()[..64], &[want; 64][..]);
+        assert_eq!(
+            &asp.io().read_page(p).unwrap().body()[..64],
+            &[want; 64][..]
+        );
     }
-    assert_eq!(&asp.io().read_page(pages[0]).unwrap().body()[..64], &[0x99; 64][..]);
+    assert_eq!(
+        &asp.io().read_page(pages[0]).unwrap().body()[..64],
+        &[0x99; 64][..]
+    );
 }
 
 #[test]
@@ -615,7 +652,10 @@ fn start_is_refused_when_parity_would_take_pages_in_use() {
         i += 1;
     }
     match store.start_parity(Level::Raid5, &[0, 1, 2]) {
-        Err(StoreError::Refused { reason: store::Refusal::ParityShareInUse(_), .. }) => {}
+        Err(StoreError::Refused {
+            reason: store::Refusal::ParityShareInUse(_),
+            ..
+        }) => {}
         other => panic!("started anyway: {:?}", other.map(|_| ())),
     }
     assert!(store.parity_sets().is_empty());
@@ -650,7 +690,12 @@ fn stamp(store: &mut Store, qsys: ObjectId, i: usize, v: usize) -> store::Result
         .find(|(k, _)| k.name.to_string() == name)
         .map(|(_, id)| id)
         .expect("space exists");
-    usrspc::write(&mut txn, id, 6 * 4000, format!("stamp {i} {v:>6}").as_bytes())?;
+    usrspc::write(
+        &mut txn,
+        id,
+        6 * 4000,
+        format!("stamp {i} {v:>6}").as_bytes(),
+    )?;
     txn.commit()
 }
 
@@ -666,7 +711,9 @@ fn read_stamp(store: &mut Store, qsys: ObjectId, i: usize) -> String {
         .unwrap();
     let b = usrspc::read(&mut txn, id, 6 * 4000, 32).unwrap();
     txn.abort();
-    String::from_utf8_lossy(&b).trim_end_matches('\0').to_string()
+    String::from_utf8_lossy(&b)
+        .trim_end_matches('\0')
+        .to_string()
 }
 
 /// The mark the last checkpoint recorded.
@@ -712,7 +759,12 @@ fn writes_during_synchronization_keep_the_stripes_below_the_mark() {
             }
         }
         assert!(checked > 10);
-        assert!(store.parity_sets()[0].members.iter().all(|m| m.status == "DPY/Active"));
+        assert!(
+            store.parity_sets()[0]
+                .members
+                .iter()
+                .all(|m| m.status == "DPY/Active")
+        );
         assert!(store.parity_verify(1).unwrap().is_empty());
         assert_spaces(&mut store, qsys, 16);
         for (i, &v) in stamps.iter().enumerate().filter(|(_, v)| **v > 0) {
@@ -814,12 +866,21 @@ fn reads_during_a_rebuild_use_the_new_unit_below_the_mark() {
     assert_eq!(store.parity_sets()[0].members[3].status, "DPY/Rebuild");
     store.close().unwrap();
     // Unit 0 lost with unit 3 half rebuilt: two unknown, RAID 6 holds.
-    let set = [d[0].clone(), d[1].clone(), d[2].clone(), fresh.clone(), d[4].clone()];
+    let set = [
+        d[0].clone(),
+        d[1].clone(),
+        d[2].clone(),
+        fresh.clone(),
+        d[4].clone(),
+    ];
     let (mut store, rec) = Store::open(boxed(&set, &[0]), config()).unwrap();
     assert_eq!(rec.events, vec![UnitEvent::ParityExposed { unit: 0 }]);
     assert_spaces(&mut store, qsys, 14);
     for v in 0..12 {
-        assert_eq!(read_stamp(&mut store, qsys, v), format!("stamp {v} {:>6}", v + 1));
+        assert_eq!(
+            read_stamp(&mut store, qsys, v),
+            format!("stamp {v} {:>6}", v + 1)
+        );
     }
 }
 
@@ -864,7 +925,12 @@ fn a_crash_during_a_rebuild_resumes_from_the_mark() {
     assert_eq!(store.parity_sets()[0].members[2].status, "DPY/Rebuild");
     assert_spaces(&mut store, qsys, 14);
     finish_work(&mut store, 50);
-    assert!(store.parity_sets()[0].members.iter().all(|m| m.status == "DPY/Active"));
+    assert!(
+        store.parity_sets()[0]
+            .members
+            .iter()
+            .all(|m| m.status == "DPY/Active")
+    );
     assert!(store.parity_verify(1).unwrap().is_empty());
     for (i, &v) in stamps.iter().enumerate().filter(|(_, v)| **v > 0) {
         assert_eq!(read_stamp(&mut store, qsys, i), format!("stamp {i} {v:>6}"));

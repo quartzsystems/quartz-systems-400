@@ -43,7 +43,10 @@ pub fn link_of(obj: &str, ty: CfgType) -> Result<String, Msg> {
         Msg::new(
             msg::TRC_CANNOT,
             Kind::Escape,
-            format!("{obj} type {} has no link to trace: vary it on first.", ty.name()),
+            format!(
+                "{obj} type {} has no link to trace: vary it on first.",
+                ty.name()
+            ),
         )
     };
     if ty != CfgType::Line {
@@ -69,9 +72,15 @@ pub fn start(mut h: Header) -> Result<Msg, Msg> {
     h.started = now_us();
     let (entry, done) = registry().start(h)?;
     let name = format!("cmntrc-{}", entry.lock().header.cfgobj.to_ascii_lowercase());
-    let spawned = std::thread::Builder::new().name(name).spawn(move || capture(&entry));
+    let spawned = std::thread::Builder::new()
+        .name(name)
+        .spawn(move || capture(&entry));
     if let Err(e) = spawned {
-        return Err(Msg::new(msg::TRC_FAILED, Kind::Escape, format!("The trace could not start: {e}")));
+        return Err(Msg::new(
+            msg::TRC_FAILED,
+            Kind::Escape,
+            format!("The trace could not start: {e}"),
+        ));
     }
     Ok(done)
 }
@@ -84,7 +93,9 @@ fn capture(e: &Entry) {
         Err(err) => {
             let mut t = e.lock();
             t.header.status = Status::Failed;
-            t.header.text = format!("{} (link {ifname}: {err})", t.header.text).trim().to_string();
+            t.header.text = format!("{} (link {ifname}: {err})", t.header.text)
+                .trim()
+                .to_string();
             return;
         }
     };
@@ -121,7 +132,11 @@ pub fn rows() -> Vec<(String, String, String)> {
         .map(|e| {
             let t = e.lock();
             let h = &t.header;
-            (h.cfgobj.clone(), h.cfgtype.name().to_string(), h.status.name().to_string())
+            (
+                h.cfgobj.clone(),
+                h.cfgtype.name().to_string(),
+                h.status.name().to_string(),
+            )
         })
         .collect()
 }
@@ -138,7 +153,10 @@ pub fn listing(system: &System, obj: &str, ty: CfgType, sel: &Select) -> Result<
         Msg::new(
             msg::TRC_NOT_FOUND,
             Kind::Escape,
-            format!("There is no communications trace of {obj} type {}.", ty.name()),
+            format!(
+                "There is no communications trace of {obj} type {}.",
+                ty.name()
+            ),
         )
     })?;
     let t = e.lock().clone();
@@ -147,7 +165,10 @@ pub fn listing(system: &System, obj: &str, ty: CfgType, sel: &Select) -> Result<
         return Err(Msg::new(
             msg::TRC_NO_DATA,
             Kind::Escape,
-            format!("The communications trace of {obj} type {} holds no data.", ty.name()),
+            format!(
+                "The communications trace of {obj} type {} holds no data.",
+                ty.name()
+            ),
         ));
     }
     let off = system

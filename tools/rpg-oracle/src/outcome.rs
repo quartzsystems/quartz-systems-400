@@ -88,9 +88,18 @@ pub fn mask_dump(rows: Vec<String>) -> Vec<String> {
     rows.into_iter()
         .map(|r| {
             let Some(at) = r.find(" :   ") else { return r };
-            let label = r[..at].split_whitespace().skip(1).take_while(|w| *w != ".").collect::<Vec<_>>().join(" ");
+            let label = r[..at]
+                .split_whitespace()
+                .skip(1)
+                .take_while(|w| *w != ".")
+                .collect::<Vec<_>>()
+                .join(" ");
             let label = label.trim_end_matches('.').trim();
-            if DUMP_MASKED.contains(&label) { format!("{}*", &r[..at + 5]) } else { r }
+            if DUMP_MASKED.contains(&label) {
+                format!("{}*", &r[..at + 5])
+            } else {
+                r
+            }
         })
         .collect()
 }
@@ -161,7 +170,11 @@ impl Outcome {
             }
         );
         for d in &self.diags {
-            let _ = writeln!(s, "diag: {} {:02} line {} seq {}", d.msgid, d.severity, d.line, d.seq);
+            let _ = writeln!(
+                s,
+                "diag: {} {:02} line {} seq {}",
+                d.msgid, d.severity, d.line, d.seq
+            );
         }
         match &self.run {
             Run::None => {}
@@ -183,7 +196,11 @@ impl Outcome {
             }
         }
         for m in &self.log {
-            let id = if m.msgid.is_empty() { "-" } else { m.msgid.as_str() };
+            let id = if m.msgid.is_empty() {
+                "-"
+            } else {
+                m.msgid.as_str()
+            };
             let _ = writeln!(s, "log: {id} {} {}", m.kind, m.data);
         }
         s
@@ -196,7 +213,12 @@ pub fn comparable(text: &str) -> String {
     let mut out = String::new();
     // A spooled line printed on line 66 is under pub400's page footer
     // there, which the tool drops: neither side's counts.
-    let footer = |l: &str| l.trim_start().strip_prefix('|').and_then(|r| r.split_whitespace().next()).is_some_and(|pl| pl.ends_with("/66"));
+    let footer = |l: &str| {
+        l.trim_start()
+            .strip_prefix('|')
+            .and_then(|r| r.split_whitespace().next())
+            .is_some_and(|pl| pl.ends_with("/66"))
+    };
     for l in text.lines().filter(|l| !l.starts_with('#') && !footer(l)) {
         out.push_str(l.trim_end_matches('\r'));
         out.push('\n');
@@ -216,7 +238,10 @@ mod tests {
             run: Run::Ok,
             spool: vec![Spooled {
                 file: "QSYSPRT".into(),
-                lines: fcfc_rows(&["1Hello".into(), "-".into(), " x -=* foot".into()], &["-=*"]),
+                lines: fcfc_rows(
+                    &["1Hello".into(), "-".into(), " x -=* foot".into()],
+                    &["-=*"],
+                ),
             }],
             ..Outcome::default()
         };

@@ -8,8 +8,8 @@
 
 mod wmcommon;
 
-use wmcommon::{compare, compare71, fields_on_row, golden, shipped};
 use uim::render::{ListState, MapDialog, Options, render};
+use wmcommon::{compare, compare71, fields_on_row, golden, shipped};
 
 /// A complete list from rows of `(variable, value)` pairs.
 fn list(rows: &[Vec<(&str, &str)>]) -> ListState {
@@ -50,15 +50,96 @@ fn opts(system: &str) -> Options {
 /// user, type, function, status, pool, priority, CPU seconds, threads,
 /// temporary storage.
 const ACTJOBS: &[[&str; 10]] = &[
-    ["#SYSLOAD", "QSYS", "SBS", "", "DEQW", "2", "0", "0,0", "2", "7"],
-    ["  SYSLOAD", "#SYSLOAD", "ASJ", "DLY-321", "DLYW", "2", "1", "3,9", "1", "13"],
-    ["QBATCH", "QSYS", "SBS", "", "DEQW", "2", "0", "82,1", "2", "7"],
-    ["  IRESTAPI", "JJMENDES", "BCH", "CMD-QSH", "TIMW", "2", "99", "0,0", "1", "8"],
-    ["  MAPEPIRE", "QSECOFR", "BCH", "CMD-STRQSH", "TIMW", "2", "99", "0,3", "1", "8"],
-    ["  QP0ZSPWT", "JJMENDES", "BCI", "PGM-node", "SELW", "2", "99", "4,9", "11", "68"],
-    ["  QP0ZSPWT", "QSECOFR", "BCI", "PGM-jFromPASE", "EVTW", "2", "99", "0,0", "1", "12"],
-    ["  QP0ZSPWT", "QSECOFR", "BCI", "JVM-/QOpenSys/", "THDW", "2", "99", "139,4", "61", "393"],
-    ["  QZSHSH", "JJMENDES", "BCI", "PGM-QZSHSH", "EVTW", "2", "99", "0,0", "1", "8"],
+    [
+        "#SYSLOAD", "QSYS", "SBS", "", "DEQW", "2", "0", "0,0", "2", "7",
+    ],
+    [
+        "  SYSLOAD",
+        "#SYSLOAD",
+        "ASJ",
+        "DLY-321",
+        "DLYW",
+        "2",
+        "1",
+        "3,9",
+        "1",
+        "13",
+    ],
+    [
+        "QBATCH", "QSYS", "SBS", "", "DEQW", "2", "0", "82,1", "2", "7",
+    ],
+    [
+        "  IRESTAPI",
+        "JJMENDES",
+        "BCH",
+        "CMD-QSH",
+        "TIMW",
+        "2",
+        "99",
+        "0,0",
+        "1",
+        "8",
+    ],
+    [
+        "  MAPEPIRE",
+        "QSECOFR",
+        "BCH",
+        "CMD-STRQSH",
+        "TIMW",
+        "2",
+        "99",
+        "0,3",
+        "1",
+        "8",
+    ],
+    [
+        "  QP0ZSPWT",
+        "JJMENDES",
+        "BCI",
+        "PGM-node",
+        "SELW",
+        "2",
+        "99",
+        "4,9",
+        "11",
+        "68",
+    ],
+    [
+        "  QP0ZSPWT",
+        "QSECOFR",
+        "BCI",
+        "PGM-jFromPASE",
+        "EVTW",
+        "2",
+        "99",
+        "0,0",
+        "1",
+        "12",
+    ],
+    [
+        "  QP0ZSPWT",
+        "QSECOFR",
+        "BCI",
+        "JVM-/QOpenSys/",
+        "THDW",
+        "2",
+        "99",
+        "139,4",
+        "61",
+        "393",
+    ],
+    [
+        "  QZSHSH",
+        "JJMENDES",
+        "BCI",
+        "PGM-QZSHSH",
+        "EVTW",
+        "2",
+        "99",
+        "0,0",
+        "1",
+        "8",
+    ],
 ];
 
 /// WRKACTJOB's dialog: a view, the CPU figure as shown.
@@ -96,7 +177,13 @@ fn wrkactjob_dialog(view: &str, cpu: &str, count: &str) -> MapDialog {
     d
 }
 
-fn wrkactjob_screen(panel: &str, view: usize, more_keys: bool, cpu: &str, count: &str) -> uim::Screen {
+fn wrkactjob_screen(
+    panel: &str,
+    view: usize,
+    more_keys: bool,
+    cpu: &str,
+    count: &str,
+) -> uim::Screen {
     let g = shipped("QWCWRKAJ");
     let d = wrkactjob_dialog(&(view + 1).to_string(), cpu, count);
     let o = Options {
@@ -110,34 +197,52 @@ fn wrkactjob_screen(panel: &str, view: usize, more_keys: bool, cpu: &str, count:
 #[test]
 #[ignore = "WRKACTJOB is a display file on the oracle: views 1 and 2 put their keys on a grid R7 does not make"]
 fn wrkactjob() {
-    compare(&golden("wrkactjob"), &wrkactjob_screen("WRKACTJ1", 0, false, "0,0", "922"));
+    compare(
+        &golden("wrkactjob"),
+        &wrkactjob_screen("WRKACTJ1", 0, false, "0,0", "922"),
+    );
 }
 
 #[test]
 #[ignore = "WRKACTJOB is a display file on the oracle: views 1 and 2 put their keys on a grid R7 does not make"]
 fn wrkactjob_f11() {
-    compare(&golden("wrkactjob-f11"), &wrkactjob_screen("WRKACTJ1", 1, false, "0,0", "922"));
+    compare(
+        &golden("wrkactjob-f11"),
+        &wrkactjob_screen("WRKACTJ1", 1, false, "0,0", "922"),
+    );
 }
 
 #[test]
 fn wrkactjob_f11_2() {
-    compare(&golden("wrkactjob-f11-2"), &wrkactjob_screen("WRKACTJ1", 2, false, "0,0", "922"));
+    compare(
+        &golden("wrkactjob-f11-2"),
+        &wrkactjob_screen("WRKACTJ1", 2, false, "0,0", "922"),
+    );
 }
 
 #[test]
 fn wrkactjob_f24() {
-    compare(&golden("wrkactjob-f24"), &wrkactjob_screen("WRKACTJ1", 2, true, "0,0", "922"));
+    compare(
+        &golden("wrkactjob-f24"),
+        &wrkactjob_screen("WRKACTJ1", 2, true, "0,0", "922"),
+    );
 }
 
 #[test]
 fn wrkactjob_f24_keys() {
-    compare(&golden("wrkactjob-f24-keys"), &wrkactjob_screen("WRKACTJ1", 0, true, "N.N", "594"));
+    compare(
+        &golden("wrkactjob-f24-keys"),
+        &wrkactjob_screen("WRKACTJ1", 0, true, "N.N", "594"),
+    );
 }
 
 #[test]
 #[ignore = "WRKACTJOB is a display file on the oracle: legends and keys sit on a fixed grid R7 does not make"]
 fn wrkactjob_f23_options() {
-    compare(&golden("wrkactjob-f23-options"), &wrkactjob_screen("WRKACTJ2", 0, false, "N.N", "594"));
+    compare(
+        &golden("wrkactjob-f23-options"),
+        &wrkactjob_screen("WRKACTJ2", 0, false, "N.N", "594"),
+    );
 }
 
 /// The job the WRKJOB and DSPJOB captures show.
@@ -157,13 +262,19 @@ fn job_screen(panel: &str, d: &MapDialog, o: &Options) -> uim::Screen {
 #[test]
 fn wrkjob() {
     let d = job_dialog(true);
-    compare(&golden("wrkjob"), &job_screen("WRKJOB", &d, &opts("SYSNAME")));
+    compare(
+        &golden("wrkjob"),
+        &job_screen("WRKJOB", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
 fn dspjob_menu() {
     let d = job_dialog(false);
-    compare(&golden("dspjob-menu"), &job_screen("DSPJOB", &d, &opts("SYSNAME")));
+    compare(
+        &golden("dspjob-menu"),
+        &job_screen("DSPJOB", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
@@ -186,7 +297,10 @@ fn dspjob_status() {
     ] {
         d.set(k, v);
     }
-    compare(&golden("dspjob-status"), &job_screen("STSA", &d, &opts("SYSNAME")));
+    compare(
+        &golden("dspjob-status"),
+        &job_screen("STSA", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
@@ -210,7 +324,10 @@ fn wrkjob_3_status() {
     ] {
         d.set(k, v);
     }
-    compare(&golden("wrkjob-3-status"), &job_screen("RUNA", &d, &opts("SYSNAME")));
+    compare(
+        &golden("wrkjob-3-status"),
+        &job_screen("RUNA", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
@@ -218,7 +335,10 @@ fn wrkjob_3_status() {
 fn wrkjob_4_splf() {
     let mut d = job_dialog(true);
     d.set_list("SPLF", list(&[]));
-    compare(&golden("wrkjob-4-splf"), &job_screen("SPLF", &d, &opts("SYSNAME")));
+    compare(
+        &golden("wrkjob-4-splf"),
+        &job_screen("SPLF", &d, &opts("SYSNAME")),
+    );
 }
 
 /// The job log header: the job's names with their leaders.
@@ -236,7 +356,10 @@ fn wrkjob_10_joblog() {
     let mut d = job_dialog(true);
     log_header(&mut d);
     d.set_list("MSGS", list(&[vec![("MSGLINE", "3>> wrkjob")]]));
-    compare(&golden("wrkjob-10-joblog"), &job_screen("JOBLOG", &d, &opts("SYSNAME")));
+    compare(
+        &golden("wrkjob-10-joblog"),
+        &job_screen("JOBLOG", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
@@ -245,7 +368,10 @@ fn dspjoblog() {
     let mut d = job_dialog(false);
     log_header(&mut d);
     d.set_list("MSGS", list(&[vec![("MSGLINE", "3>> dspjoblog")]]));
-    compare(&golden("dspjoblog"), &job_screen("JOBLOG", &d, &opts("SYSNAME")));
+    compare(
+        &golden("dspjoblog"),
+        &job_screen("JOBLOG", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
@@ -254,7 +380,10 @@ fn dspjoblog_f10() {
     let mut d = job_dialog(false);
     log_header(&mut d);
     d.set_list("MSGS", list(&[vec![("MSGLINE", "3>> dspjoblog")]]));
-    compare(&golden("dspjoblog-f10"), &job_screen("JOBLOGALL", &d, &opts("SYSNAME")));
+    compare(
+        &golden("dspjoblog-f10"),
+        &job_screen("JOBLOGALL", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
@@ -270,10 +399,20 @@ fn wrkjob_11_callstk() {
         ("3", "QUICMD", "/056F"),
     ]
     .iter()
-    .map(|(t, p, s)| vec![("RQSLVL", *t), ("PGM", *p), ("PGMLIB", "QSYS"), ("STMT", *s)])
+    .map(|(t, p, s)| {
+        vec![
+            ("RQSLVL", *t),
+            ("PGM", *p),
+            ("PGMLIB", "QSYS"),
+            ("STMT", *s),
+        ]
+    })
     .collect();
     d.set_list("STACK", list(&rows));
-    compare(&golden("wrkjob-11-callstk"), &job_screen("CALLSTK", &d, &opts("SYSNAME")));
+    compare(
+        &golden("wrkjob-11-callstk"),
+        &job_screen("CALLSTK", &d, &opts("SYSNAME")),
+    );
 }
 
 #[test]
@@ -285,7 +424,11 @@ fn wrkjob_13_libl() {
         ("QSYS2", "SYS", "System Library for CPI's"),
         ("QUSRSYS", "SYS", "System Library for Users"),
         ("QHLPSYS", "SYS", ""),
-        ("USERNAME1", "CUR", "USERNAME (*CURLIB your current library)"),
+        (
+            "USERNAME1",
+            "CUR",
+            "USERNAME (*CURLIB your current library)",
+        ),
         ("QGPL", "USR", "General Purpose Library"),
         ("QTEMP", "USR", ""),
         ("GAMES400", "USR", "$ fun library"),
@@ -327,7 +470,10 @@ fn wrkjob_14_openfiles() {
         })
         .collect();
     d.set_list("OPNF", list(&rows));
-    compare(&golden("wrkjob-14-openfiles"), &job_screen("OPNF", &d, &opts("SYSNAME")));
+    compare(
+        &golden("wrkjob-14-openfiles"),
+        &job_screen("OPNF", &d, &opts("SYSNAME")),
+    );
 }
 
 /// Jobs as WRKUSRJOB and WRKSBSJOB list them: name, user, type,
@@ -415,7 +561,10 @@ fn sbsd_screen(panel: &str, d: &MapDialog) -> uim::Screen {
 
 #[test]
 fn dspsbsd_menu() {
-    compare(&golden("dspsbsd-menu"), &sbsd_screen("DSPSBSD", &sbsd_dialog()));
+    compare(
+        &golden("dspsbsd-menu"),
+        &sbsd_screen("DSPSBSD", &sbsd_dialog()),
+    );
 }
 
 #[test]
@@ -468,7 +617,12 @@ fn dspsbsd_6_jobqe() {
     let mut d = sbsd_dialog();
     let mut rows = Vec::new();
     for (seq, q) in [("10", "QINTER"), ("20", "QS36MRT")] {
-        let mut r = vec![("SEQ", seq), ("JOBQ", q), ("JOBQLIB", "QGPL"), ("MAXACT", "*NOMAX")];
+        let mut r = vec![
+            ("SEQ", seq),
+            ("JOBQ", q),
+            ("JOBQLIB", "QGPL"),
+            ("MAXACT", "*NOMAX"),
+        ];
         for m in ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9"] {
             r.push((m, "*"));
         }
@@ -492,7 +646,13 @@ fn dspsbsd_7_rtge() {
     ]
     .iter()
     .map(|(s, p, c, n)| {
-        vec![("RTSEQ", *s), ("PGM", *p), ("PGMLIB", "QSYS"), ("CMPVAL", *c), ("STARTPOS", *n)]
+        vec![
+            ("RTSEQ", *s),
+            ("PGM", *p),
+            ("PGMLIB", "QSYS"),
+            ("CMPVAL", *c),
+            ("STARTPOS", *n),
+        ]
     })
     .collect();
     d.set_list("RTGES", list(&rows));
@@ -500,7 +660,10 @@ fn dspsbsd_7_rtge() {
 }
 
 /// An object list; option 1 types a new name on its add entry (R27).
-fn objects(var: &'static str, items: &[(&'static str, &'static str)]) -> Vec<Vec<(&'static str, &'static str)>> {
+fn objects(
+    var: &'static str,
+    items: &[(&'static str, &'static str)],
+) -> Vec<Vec<(&'static str, &'static str)>> {
     items
         .iter()
         .map(|(n, t)| vec![(var, *n), ("LIB", "QGPL"), ("TEXT", *t)])
@@ -566,7 +729,13 @@ fn jobd_dialog() -> MapDialog {
 
 #[test]
 fn dspjobd() {
-    let s = render(&shipped("QUIWRKJOBD"), "DSPJOBD", &jobd_dialog(), &opts("SYSNAME")).expect("render");
+    let s = render(
+        &shipped("QUIWRKJOBD"),
+        "DSPJOBD",
+        &jobd_dialog(),
+        &opts("SYSNAME"),
+    )
+    .expect("render");
     compare(&golden("dspjobd"), &s);
 }
 
@@ -699,22 +868,50 @@ fn wrksplf_views() {
     let g = shipped("QUIWRKSPLF");
     let screen = |view: usize| {
         let mut d = MapDialog::new();
-        d.set("VIEW", &(view + 1).to_string()).set_list("FILES", list(&rows));
-        let o = Options { view, ..opts("QS400") };
+        d.set("VIEW", &(view + 1).to_string())
+            .set_list("FILES", list(&rows));
+        let o = Options {
+            view,
+            ..opts("QS400")
+        };
         render(&g, "WRKSPLF", &d, &o).expect("render").text_rows()
     };
     let v1 = screen(0).join("\n");
-    assert!(v1.contains("Device or") && v1.contains("F11=View 2"), "{v1}");
+    assert!(
+        v1.contains("Device or") && v1.contains("F11=View 2"),
+        "{v1}"
+    );
     let v2 = screen(1).join("\n");
-    assert!(v2.contains("Form Type") && v2.contains("Nbr") && v2.contains("F11=View 3"), "{v2}");
+    assert!(
+        v2.contains("Form Type") && v2.contains("Nbr") && v2.contains("F11=View 3"),
+        "{v2}"
+    );
     let v3 = screen(2);
     let all = v3.join("\n");
-    assert!(all.contains("Job") && all.contains("Number") && all.contains("Date") && all.contains("Time"), "{all}");
+    assert!(
+        all.contains("Job")
+            && all.contains("Number")
+            && all.contains("Date")
+            && all.contains("Time"),
+        "{all}"
+    );
     assert!(all.contains("F11=View 1"), "{all}");
-    let a = v3.iter().find(|r| r.contains("15:45:02")).expect("first file");
-    let b = v3.iter().find(|r| r.contains("15:46:10")).expect("second file");
+    let a = v3
+        .iter()
+        .find(|r| r.contains("15:45:02"))
+        .expect("first file");
+    let b = v3
+        .iter()
+        .find(|r| r.contains("15:46:10"))
+        .expect("second file");
     for r in [a, b] {
-        assert!(r.contains("QSYSPRT") && r.contains("QPADEV0001") && r.contains("000225") && r.contains("11/01/26"), "{r}");
+        assert!(
+            r.contains("QSYSPRT")
+                && r.contains("QPADEV0001")
+                && r.contains("000225")
+                && r.contains("11/01/26"),
+            "{r}"
+        );
     }
 }
 
@@ -754,7 +951,10 @@ fn wrkoutq() {
     ];
     let mut d = MapDialog::new();
     d.set_list("QUEUES", more(&rows));
-    compare71("wrkoutq", &render(&g, "QUEUES", &d, &opts("SYSNAME")).unwrap());
+    compare71(
+        "wrkoutq",
+        &render(&g, "QUEUES", &d, &opts("SYSNAME")).unwrap(),
+    );
 }
 
 #[test]
@@ -763,13 +963,24 @@ fn wrkoutq_files() {
     let mut d = MapDialog::new();
     d.set("QUEUE", "QDKT").set("LIB", "QGPL").set("QSTS", "RLS");
     d.set_list("FILES", list(&[]));
-    compare71("wrkoutq-files", &render(&g, "FILES", &d, &opts("SYSNAME")).unwrap());
+    compare71(
+        "wrkoutq-files",
+        &render(&g, "FILES", &d, &opts("SYSNAME")).unwrap(),
+    );
 }
 
 #[test]
 fn wrkjobq() {
     let g = shipped("QUIWRKJOBQ");
-    let q = |n, l, s| e(&[("QUEUE", n), ("LIB", l), ("JOBS", "0"), ("SBS", s), ("STATUS", " RLS")]);
+    let q = |n, l, s| {
+        e(&[
+            ("QUEUE", n),
+            ("LIB", l),
+            ("JOBS", "0"),
+            ("SBS", s),
+            ("STATUS", " RLS"),
+        ])
+    };
     let rows = [
         q("QBASE", "QGPL", "QBASE"),
         q("QBATCH", "QGPL", "QBASE"),
@@ -786,16 +997,24 @@ fn wrkjobq() {
     ];
     let mut d = MapDialog::new();
     d.set_list("QUEUES", more(&rows));
-    compare71("wrkjobq", &render(&g, "QUEUES", &d, &opts("SYSNAME")).unwrap());
+    compare71(
+        "wrkjobq",
+        &render(&g, "QUEUES", &d, &opts("SYSNAME")).unwrap(),
+    );
 }
 
 #[test]
 fn wrkjobq_jobs() {
     let g = shipped("QUIWRKJOBQ");
     let mut d = MapDialog::new();
-    d.set("QUEUE", "QBATCH").set("LIB", "QGPL").set("QSTS", "RLS/SBS");
+    d.set("QUEUE", "QBATCH")
+        .set("LIB", "QGPL")
+        .set("QSTS", "RLS/SBS");
     d.set_list("JOBS", list(&[]));
-    compare71("wrkjobq-jobs", &render(&g, "JOBS", &d, &opts("SYSNAME")).unwrap());
+    compare71(
+        "wrkjobq-jobs",
+        &render(&g, "JOBS", &d, &opts("SYSNAME")).unwrap(),
+    );
 }
 
 #[test]
@@ -803,7 +1022,10 @@ fn wrkwtr() {
     let g = shipped("QUIWRKWTR");
     let mut d = MapDialog::new();
     d.set_list("WRITERS", list(&[]));
-    compare71("wrkwtr", &render(&g, "WRKWTR", &d, &opts("SYSNAME")).unwrap());
+    compare71(
+        "wrkwtr",
+        &render(&g, "WRKWTR", &d, &opts("SYSNAME")).unwrap(),
+    );
 }
 
 #[test]
@@ -812,5 +1034,8 @@ fn wrkjobscde() {
     let mut d = MapDialog::new();
     d.set("*DATETIME", "MM/DD/YY  HH:MM:SS");
     d.set_list("ENTRIES", list(&[]));
-    compare71("wrkjobscde", &render(&g, "WRKJOBSCDE", &d, &opts("S062B175")).unwrap());
+    compare71(
+        "wrkjobscde",
+        &render(&g, "WRKJOBSCDE", &d, &opts("S062B175")).unwrap(),
+    );
 }

@@ -89,7 +89,10 @@ impl DdmTcpAttrs {
 
     /// The server table's bag of `*DDM`.
     pub fn to_bag(&self) -> Vec<(String, String)> {
-        vec![("PWDRQD".into(), self.pwdrqd.clone()), ("ENCALG".into(), self.encalg.clone())]
+        vec![
+            ("PWDRQD".into(), self.pwdrqd.clone()),
+            ("ENCALG".into(), self.encalg.clone()),
+        ]
     }
 
     /// From the stored text (the defaults where it is silent).
@@ -116,6 +119,10 @@ mod tests {
         a.autostart = false;
         assert_eq!(DdmTcpAttrs::decode(&a.encode()), a);
         assert_eq!(a.mechanisms(), vec![Mechanism::EUsrIdPwd]);
-        assert!(!DdmTcpAttrs::default().mechanisms().contains(&Mechanism::UsrIdPwd));
+        assert!(
+            !DdmTcpAttrs::default()
+                .mechanisms()
+                .contains(&Mechanism::UsrIdPwd)
+        );
     }
 }

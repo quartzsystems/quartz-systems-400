@@ -27,7 +27,9 @@ fn want(out: &str, what: &str, words: &[&str]) -> Result<(), String> {
 /// The report's lines of one status.
 fn status_lines<'a>(out: &'a str, status: &str) -> Vec<&'a str> {
     out.lines()
-        .filter(|l| l.split_whitespace().nth(2) == Some(status) || l.contains(&format!(" {status} ")))
+        .filter(|l| {
+            l.split_whitespace().nth(2) == Some(status) || l.contains(&format!(" {status} "))
+        })
         .filter(|l| !l.contains("checks:"))
         .collect()
 }
@@ -46,7 +48,11 @@ fn wait_for(s: &mut Session, cmd: &str, word: &str, secs: u64) -> Result<String,
     Err(format!("{cmd}: no {word} after {secs}s:\n{out}"))
 }
 
-#[allow(clippy::unused_self, clippy::many_single_char_names, clippy::too_many_lines)] // the steps share one signature
+#[allow(
+    clippy::unused_self,
+    clippy::many_single_char_names,
+    clippy::too_many_lines
+)] // the steps share one signature
 impl Suite {
     /// Step 107: `QSSECCHK` clean, then a default password caught.
     pub(crate) fn security_check(&self, s: &mut Session) -> Result<String, String> {
@@ -54,7 +60,10 @@ impl Suite {
         want(&out, "QSSECCHK", &["System Security Check", "checks:"])?;
         let fails = status_lines(&out, "FAIL");
         if !fails.is_empty() {
-            return Err(format!("QSSECCHK failures on a fresh system:\n{}\n\n{out}", fails.join("\n")));
+            return Err(format!(
+                "QSSECCHK failures on a fresh system:\n{}\n\n{out}",
+                fails.join("\n")
+            ));
         }
         let warns: Vec<String> = status_lines(&out, "WARN")
             .iter()
@@ -70,13 +79,20 @@ impl Suite {
             .trim()
             .to_string();
         // A profile whose password is its name is a failure.
-        let made = s.command("CRTUSRPRF USRPRF(SECCHECK1) PASSWORD(SECCHECK1) PWDEXP(*NO)", CMD)?;
+        let made = s.command(
+            "CRTUSRPRF USRPRF(SECCHECK1) PASSWORD(SECCHECK1) PWDEXP(*NO)",
+            CMD,
+        )?;
         let caught = if made.contains("created") {
             let again = s.command("QSSECCHK OUTPUT(*)", LONG)?;
             let _ = s.command("DLTUSRPRF USRPRF(SECCHECK1)", CMD);
-            let hit = status_lines(&again, "FAIL").iter().any(|l| l.contains("SECCHECK1"));
+            let hit = status_lines(&again, "FAIL")
+                .iter()
+                .any(|l| l.contains("SECCHECK1"));
             if !hit {
-                return Err(format!("QSSECCHK missed SECCHECK1's default password:\n{again}"));
+                return Err(format!(
+                    "QSSECCHK missed SECCHECK1's default password:\n{again}"
+                ));
             }
             "default password caught"
         } else {
@@ -90,19 +106,36 @@ impl Suite {
     /// Step 108: job accounting end to end.
     pub(crate) fn job_accounting(&self, s: &mut Session) -> Result<String, String> {
         let _ = s.command("CRTJRNRCV JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)", CMD);
-        let j = s.command("CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)", CMD)?;
+        let j = s.command(
+            "CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)",
+            CMD,
+        )?;
         want(&j, "CRTJRN QACGJRN", &["QACGJRN"])?;
         let v = s.command("CHGSYSVAL SYSVAL(QACGLVL) VALUE('*JOB *PRINT')", CMD)?;
         let mut shown = s.command("svc.sysval QACGLVL", CMD)?;
         if !shown.contains("*PRINT") {
             let _ = s.command("svc.sysval QACGLVL *JOB *PRINT", CMD)?;
-            shown = format!("CHGSYSVAL did not set it; {}", s.command("svc.sysval QACGLVL", CMD)?);
+            shown = format!(
+                "CHGSYSVAL did not set it; {}",
+                s.command("svc.sysval QACGLVL", CMD)?
+            );
         }
-        want(&shown, &format!("QACGLVL after CHGSYSVAL ({v})"), &["*JOB", "*PRINT"])?;
-        let d = s.command("CRTJOBD JOBD(QGPL/ACGJOBD) ACGCDE(DEPTJOBD) TEXT('accounting')", CMD)?;
+        want(
+            &shown,
+            &format!("QACGLVL after CHGSYSVAL ({v})"),
+            &["*JOB", "*PRINT"],
+        )?;
+        let d = s.command(
+            "CRTJOBD JOBD(QGPL/ACGJOBD) ACGCDE(DEPTJOBD) TEXT('accounting')",
+            CMD,
+        )?;
         want(&d, "CRTJOBD ACGCDE", &["ACGJOBD"])?;
         let shown = s.command("svc.dspjobd QGPL/ACGJOBD", CMD)?;
-        want(&shown, "the job description's accounting code", &["DEPTJOBD"])?;
+        want(
+            &shown,
+            "the job description's accounting code",
+            &["DEPTJOBD"],
+        )?;
         let _ = s.command("strsbs QSYS/QBATCH", CMD);
         s.command(
             "SBMJOB CMD(DLYJOB DLY(1)) JOB(ACGJOB1) JOBQ(QGPL/QBATCH) ACGCDE(DEPT42)",
@@ -141,24 +174,44 @@ impl Suite {
             "svc.sql CREATE TABLE QGPL.ACGJB AS (SELECT * FROM QSYS.QAJBACG) WITH NO DATA;",
             LONG,
         )?;
-        let mk = if s.command("svc.sql SELECT COUNT(*) FROM QGPL.ACGJB;", LONG)?.contains("row(s)") {
+        let mk = if s
+            .command("svc.sql SELECT COUNT(*) FROM QGPL.ACGJB;", LONG)?
+            .contains("row(s)")
+        {
             mk
         } else {
-            format!("{mk}; {}", s.command("CPYF FROMFILE(QSYS/QAJBACG) TOFILE(QGPL/ACGJB) CRTFILE(*YES)", LONG)?)
+            format!(
+                "{mk}; {}",
+                s.command(
+                    "CPYF FROMFILE(QSYS/QAJBACG) TOFILE(QGPL/ACGJB) CRTFILE(*YES)",
+                    LONG
+                )?
+            )
         };
         let w = s.command(
             "DSPJRN JRN(QSYS/QACGJRN) JRNCDE(A) ENTTYP(JB) OUTPUT(*OUTFILE) OUTFILE(QGPL/ACGJB)",
             LONG,
         )?;
-        want(&w, &format!("DSPJRN JB outfile ({mk})"), &["entries written"])?;
+        want(
+            &w,
+            &format!("DSPJRN JB outfile ({mk})"),
+            &["entries written"],
+        )?;
         // The heading's sequence number is the model's JASEQN.
         let jb = s.command(
             "svc.sql SELECT JAJOB, JACDE, JATYPE, JACCDE, JARTGS, JACPU FROM QGPL.ACGJB WHERE JAJOB LIKE 'ACGJOB%' ORDER BY JASEQN;",
             LONG,
         )?;
-        want(&jb, &format!("JB entries in QAJBACG's format\n{all}"), &["ACGJOB1", "DEPT42", "ACGJOB2", "FIRST", "SECOND"])?;
+        want(
+            &jb,
+            &format!("JB entries in QAJBACG's format\n{all}"),
+            &["ACGJOB1", "DEPT42", "ACGJOB2", "FIRST", "SECOND"],
+        )?;
         let rows: Vec<&str> = jb.lines().filter(|l| l.contains("ACGJOB")).collect();
-        if !rows.iter().all(|l| l.split_whitespace().nth(2) == Some("B")) {
+        if !rows
+            .iter()
+            .all(|l| l.split_whitespace().nth(2) == Some("B"))
+        {
             return Err(format!("JATYPE is not B for the batch jobs:\n{jb}"));
         }
         let first = rows.iter().position(|l| l.contains("FIRST"));
@@ -170,8 +223,14 @@ impl Suite {
             "svc.sql CREATE TABLE QGPL.ACGSP AS (SELECT * FROM QSYS.QAPTACG) WITH NO DATA;",
             LONG,
         )?;
-        if !s.command("svc.sql SELECT COUNT(*) FROM QGPL.ACGSP;", LONG)?.contains("row(s)") {
-            let _ = s.command("CPYF FROMFILE(QSYS/QAPTACG) TOFILE(QGPL/ACGSP) CRTFILE(*YES)", LONG)?;
+        if !s
+            .command("svc.sql SELECT COUNT(*) FROM QGPL.ACGSP;", LONG)?
+            .contains("row(s)")
+        {
+            let _ = s.command(
+                "CPYF FROMFILE(QSYS/QAPTACG) TOFILE(QGPL/ACGSP) CRTFILE(*YES)",
+                LONG,
+            )?;
         }
         let w = s.command(
             "DSPJRN JRN(QSYS/QACGJRN) JRNCDE(A) ENTTYP(SP) OUTPUT(*OUTFILE) OUTFILE(QGPL/ACGSP)",
@@ -182,7 +241,11 @@ impl Suite {
             "svc.sql SELECT JASPFN, JACDE, JADFN, JATPAG, JATLIN FROM QGPL.ACGSP;",
             LONG,
         )?;
-        want(&sp, "the SP entry in QAPTACG's format", &["QPSYSSEC", "PRINTACG", "QSYSPRT"])?;
+        want(
+            &sp,
+            "the SP entry in QAPTACG's format",
+            &["QPSYSSEC", "PRINTACG", "QSYSPRT"],
+        )?;
         // As found.
         let _ = s.command("CHGACGCDE ACGCDE(*BLANK)", CMD);
         let _ = s.command("CHGSYSVAL SYSVAL(QACGLVL) VALUE(*NONE)", CMD);

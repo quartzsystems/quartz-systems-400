@@ -38,10 +38,17 @@ pub fn in_library(txn: &mut Txn<'_>, lib: ObjectId) -> Result<Vec<Found>> {
         if ops::read_header(txn, t.id).is_err() {
             continue;
         }
-        let Some(info) = db::sqlinf::load(txn, t.id)? else { continue };
+        let Some(info) = db::sqlinf::load(txn, t.id)? else {
+            continue;
+        };
         for r in Routine::all(&info)? {
             if r.def.specific == specific {
-                out.push(Found { lib, schema: schema.clone(), owner: t.id, routine: r });
+                out.push(Found {
+                    lib,
+                    schema: schema.clone(),
+                    owner: t.id,
+                    routine: r,
+                });
             }
         }
     }
@@ -83,8 +90,13 @@ pub fn path(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<ObjectId> {
 /// The SQL path's schema names (`SYSROUTINES.SQL_PATH`).
 #[must_use]
 pub fn path_names(ctx: &SqlContext) -> Vec<String> {
-    let mut v: Vec<String> = ["QSYS", "QSYS2", "SYSPROC", "SYSIBMADM"].iter().map(|s| (*s).to_string()).collect();
-    let own = ctx.current_schema.map_or_else(|| ctx.user.clone(), |n| n.to_string());
+    let mut v: Vec<String> = ["QSYS", "QSYS2", "SYSPROC", "SYSIBMADM"]
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect();
+    let own = ctx
+        .current_schema
+        .map_or_else(|| ctx.user.clone(), |n| n.to_string());
     if !v.contains(&own) {
         v.push(own);
     }
@@ -106,11 +118,18 @@ pub fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName) -> Resu
 
 /// The routines of a name and type (1 procedure, 2 function), in the
 /// first library of the path that has any.
-pub fn named(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, routine_type: u8) -> Result<Vec<Found>> {
+pub fn named(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    routine_type: u8,
+) -> Result<Vec<Found>> {
     for lib in libraries(txn, ctx, name)? {
         let found: Vec<Found> = in_library(txn, lib)?
             .into_iter()
-            .filter(|f| f.routine.def.routine_type == routine_type && f.routine.def.name == name.name.value)
+            .filter(|f| {
+                f.routine.def.routine_type == routine_type && f.routine.def.name == name.name.value
+            })
             .collect();
         if !found.is_empty() {
             return Ok(found);
@@ -122,7 +141,10 @@ pub fn named(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, routine_typ
 /// The routine of a specific name.
 pub fn specific(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName) -> Result<Option<Found>> {
     for lib in libraries(txn, ctx, name)? {
-        if let Some(f) = in_library(txn, lib)?.into_iter().find(|f| f.routine.def.specific == name.name.value) {
+        if let Some(f) = in_library(txn, lib)?
+            .into_iter()
+            .find(|f| f.routine.def.specific == name.name.value)
+        {
             return Ok(Some(f));
         }
     }

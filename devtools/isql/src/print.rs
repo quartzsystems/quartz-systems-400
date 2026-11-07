@@ -68,7 +68,13 @@ pub fn session(
 /// rows and the end line; data wider than `width` continues in
 /// further sections.
 #[must_use]
-pub fn select(data: &Data, stamp: &Stamp, width: usize, per_page: usize, w: &Words<'_>) -> Vec<Vec<String>> {
+pub fn select(
+    data: &Data,
+    stamp: &Stamp,
+    width: usize,
+    per_page: usize,
+    w: &Words<'_>,
+) -> Vec<Vec<String>> {
     let total = data.width();
     let mut body = Vec::new();
     let mut shift = 1;
@@ -129,7 +135,14 @@ mod tests {
             date: "26-11-05".into(),
             time: "19:38:09".into(),
         };
-        let p = session(&["select 1".into()], "5770ST1", "V7R5M0", &stamp, 60, &words);
+        let p = session(
+            &["select 1".into()],
+            "5770ST1",
+            "V7R5M0",
+            &stamp,
+            60,
+            &words,
+        );
         let h = &p[0][0];
         assert_eq!(h.find("Interactive"), Some(29));
         assert_eq!(h.find("26-11-05"), Some(55));

@@ -5,9 +5,9 @@
 //! A statement's outcome as text, the way `SqlKit.java` writes what `JTOpen`
 //! returns: status lines, column lines, value cells.
 
-use std::fmt::Write as _;
 use sql::embed::describe::Col;
 use sql::{ColumnDesc, ResultSet, Value};
+use std::fmt::Write as _;
 
 /// The status line.
 #[must_use]
@@ -24,13 +24,19 @@ pub fn status(code: i32, state: &str, msgid: &str, count: Option<u64>) -> String
 #[must_use]
 pub fn column_type(data_type: &str) -> String {
     let t: String = data_type.chars().filter(|c| !c.is_whitespace()).collect();
-    if t == "TIMESTAMP(6)" { "TIMESTAMP".into() } else { t }
+    if t == "TIMESTAMP(6)" {
+        "TIMESTAMP".into()
+    } else {
+        t
+    }
 }
 
 /// The scale of a `DECIMAL`/`NUMERIC` type, when it is one.
 fn scale(data_type: &str) -> Option<usize> {
     let t = column_type(data_type);
-    let args = t.strip_prefix("DECIMAL(").or_else(|| t.strip_prefix("NUMERIC("))?;
+    let args = t
+        .strip_prefix("DECIMAL(")
+        .or_else(|| t.strip_prefix("NUMERIC("))?;
     args.trim_end_matches(')').split(',').nth(1)?.parse().ok()
 }
 
@@ -56,7 +62,12 @@ pub fn jtopen_type(data_type: &str, described: Option<&Col>) -> String {
 /// A column line.
 #[must_use]
 pub fn column(c: &ColumnDesc, described: Option<&Col>) -> String {
-    format!("# {} {}{}", c.name, jtopen_type(&c.data_type, described), if c.nullable { "" } else { " NOT NULL" })
+    format!(
+        "# {} {}{}",
+        c.name,
+        jtopen_type(&c.data_type, described),
+        if c.nullable { "" } else { " NOT NULL" }
+    )
 }
 
 /// The server's name written `{server}` where it is a value, on both
@@ -81,7 +92,11 @@ pub fn java_float(x: f64, single: bool) -> String {
     }
     // Rust's `{:e}` is shortest round-trip digits too.
     #[allow(clippy::cast_possible_truncation)]
-    let e = if single { format!("{:e}", x as f32) } else { format!("{x:e}") };
+    let e = if single {
+        format!("{:e}", x as f32)
+    } else {
+        format!("{x:e}")
+    };
     let (mant, exp) = e.split_once('e').expect("exponent");
     let exp: i32 = exp.parse().expect("number");
     let neg = mant.starts_with('-');
@@ -146,7 +161,11 @@ pub fn value(v: &Value, data_type: &str) -> String {
 #[must_use]
 pub fn rows(rs: &ResultSet, described: &[Col]) -> String {
     let mut out = String::new();
-    let described = if described.len() == rs.columns.len() { described } else { &[] };
+    let described = if described.len() == rs.columns.len() {
+        described
+    } else {
+        &[]
+    };
     for (i, c) in rs.columns.iter().enumerate() {
         out.push_str(&column(c, described.get(i)));
         out.push('\n');
@@ -155,10 +174,15 @@ pub fn rows(rs: &ResultSet, described: &[Col]) -> String {
         out.push('|');
         for (i, (v, c)) in r.iter().zip(&rs.columns).enumerate() {
             out.push(' ');
-            let bits = described.get(i).is_some_and(|d| d.ccsid == 65535 && matches!(d.base, 448 | 452));
+            let bits = described
+                .get(i)
+                .is_some_and(|d| d.ccsid == 65535 && matches!(d.base, 448 | 452));
             match v {
                 // Character data FOR BIT DATA: JTOpen reads its bytes.
-                Value::Str(s) if bits => out.push_str(&value(&Value::Bin(ccsid::to_ebcdic(s).unwrap_or_default()), "")),
+                Value::Str(s) if bits => out.push_str(&value(
+                    &Value::Bin(ccsid::to_ebcdic(s).unwrap_or_default()),
+                    "",
+                )),
                 _ => out.push_str(&value(v, &c.data_type)),
             }
             out.push_str(" |");

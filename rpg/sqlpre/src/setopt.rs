@@ -9,16 +9,47 @@
 
 /// The options, in IBM's order of their `SQL5066` messages.
 pub const OPTIONS: &[&str] = &[
-    "NAMING", "COMMIT", "DECMPT", "DATFMT", "DATSEP", "TIMFMT", "TIMSEP", "RDBCNNMTH", "ALWBLK", "DLYPRP", "ALWCPYDTA",
-    "CLOSQLCSR", "USRPRF", "DYNUSRPRF", "DFTRDBCOL", "OPTLOB", "DYNDFTCOL", "DECRESULT", "COMPILEOPT", "SQLPATH",
-    "SQLCURRULE", "MONITOR", "DECFLTRND", "EXTIND", "CONACC", "SQLCA", "SRTSEQ", "LANGID", "CNULRQD", "CNULIGN",
-    "SYSTIME", "EVENTF",
+    "NAMING",
+    "COMMIT",
+    "DECMPT",
+    "DATFMT",
+    "DATSEP",
+    "TIMFMT",
+    "TIMSEP",
+    "RDBCNNMTH",
+    "ALWBLK",
+    "DLYPRP",
+    "ALWCPYDTA",
+    "CLOSQLCSR",
+    "USRPRF",
+    "DYNUSRPRF",
+    "DFTRDBCOL",
+    "OPTLOB",
+    "DYNDFTCOL",
+    "DECRESULT",
+    "COMPILEOPT",
+    "SQLPATH",
+    "SQLCURRULE",
+    "MONITOR",
+    "DECFLTRND",
+    "EXTIND",
+    "CONACC",
+    "SQLCA",
+    "SRTSEQ",
+    "LANGID",
+    "CNULRQD",
+    "CNULIGN",
+    "SYSTIME",
+    "EVENTF",
 ];
 
 /// Where an option comes in the listing's messages.
 #[must_use]
 pub fn rank(name: &str) -> usize {
-    OPTIONS.iter().position(|o| *o == name).unwrap_or(OPTIONS.len())
+    OPTIONS
+        .iter()
+        .position(|o| *o == name)
+        .unwrap_or(OPTIONS.len())
 }
 
 pub use sql::options::{Check, check};

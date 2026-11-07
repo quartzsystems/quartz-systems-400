@@ -40,7 +40,10 @@ const SQL_TEXT: usize = 22;
 /// A precompile diagnostic record: ` SQLnnnn  ss  rrrrrr  text`.
 fn is_sql_diag(l: &str) -> bool {
     let b = l.as_bytes();
-    b.len() > SQL_TEXT && b[1..4] == *b"SQL" && b[4..8].iter().all(u8::is_ascii_digit) && b[8] == b' '
+    b.len() > SQL_TEXT
+        && b[1..4] == *b"SQL"
+        && b[4..8].iter().all(u8::is_ascii_digit)
+        && b[8] == b' '
 }
 
 fn is_heading(l: &str) -> bool {
@@ -87,8 +90,14 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
     let lines: Vec<String> = lines
         .into_iter()
         .map(|l| {
-            if !l.starts_with('1') && (l.contains("5770WDS") || l.contains("QS00WDS")) && l.contains("Page") {
-                let page = l.rsplit_once("Page").map(|(_, p)| p.trim().to_string()).unwrap_or_default();
+            if !l.starts_with('1')
+                && (l.contains("5770WDS") || l.contains("QS00WDS"))
+                && l.contains("Page")
+            {
+                let page = l
+                    .rsplit_once("Page")
+                    .map(|(_, p)| p.trim().to_string())
+                    .unwrap_or_default();
                 format!("{}{{heading}} page {page}", &l[..1])
             } else {
                 l
@@ -128,7 +137,9 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
             in_text = Some(SQL_TEXT);
             continue;
         }
-        if t.starts_with("S o u r c e   L i s t i n g") || t.starts_with("A d d i t i o n a l   D i a g") {
+        if t.starts_with("S o u r c e   L i s t i n g")
+            || t.starts_with("A d d i t i o n a l   D i a g")
+        {
             sect = Sect::Diags;
         } else if t.starts_with("M e s s a g e   S u m m a r y") {
             sect = Sect::Summary;
@@ -147,7 +158,10 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
             continue;
         }
         // A text continued on the next page continues after its heading.
-        if is_heading(&l) || text_of(&l).starts_with("Line   <") || text_of(&l).starts_with("Number ") {
+        if is_heading(&l)
+            || text_of(&l).starts_with("Line   <")
+            || text_of(&l).starts_with("Number ")
+        {
             out.push(l);
             continue;
         }
@@ -168,7 +182,11 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
             in_text = Some(at);
             continue;
         }
-        if sect == Sect::Final && out.last().is_some_and(|p: &String| p.contains("E N D   O F   F I N A L")) {
+        if sect == Sect::Final
+            && out
+                .last()
+                .is_some_and(|p: &String| p.contains("E N D   O F   F I N A L"))
+        {
             out.push(format!("{}{{completion {}}}", &l[..1], severity_in(&l)));
             continue;
         }

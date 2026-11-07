@@ -91,10 +91,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             }
         }
         if let Err(e) = cx.sys.utimes(&abs, when)
-            && e.errno != Errno::ENOSYS {
-                complain_sys(cx, name, f, e);
-                status = 1;
-            }
+            && e.errno != Errno::ENOSYS
+        {
+            complain_sys(cx, name, f, e);
+            status = 1;
+        }
     }
     status
 }
@@ -105,11 +106,20 @@ mod tests {
 
     #[test]
     fn times() {
-        assert_eq!(parse_time("202610291230", 0), Some(to_epoch(2026, 10, 29, 12, 30, 0)));
-        assert_eq!(parse_time("2610291230.15", 0), Some(to_epoch(2026, 10, 29, 12, 30, 15)));
+        assert_eq!(
+            parse_time("202610291230", 0),
+            Some(to_epoch(2026, 10, 29, 12, 30, 0))
+        );
+        assert_eq!(
+            parse_time("2610291230.15", 0),
+            Some(to_epoch(2026, 10, 29, 12, 30, 15))
+        );
         assert_eq!(parse_time("7001010000", 0), Some(0));
         let now = to_epoch(2026, 5, 1, 0, 0, 0);
-        assert_eq!(parse_time("10291230", now), Some(to_epoch(2026, 10, 29, 12, 30, 0)));
+        assert_eq!(
+            parse_time("10291230", now),
+            Some(to_epoch(2026, 10, 29, 12, 30, 0))
+        );
         assert_eq!(parse_time("13011200", now), None);
         assert_eq!(parse_time("abc", now), None);
     }

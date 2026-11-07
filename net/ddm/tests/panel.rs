@@ -33,7 +33,8 @@ fn compare(name: &str, ours: &[String]) {
 fn pub400_directory(local_text: &str) -> RdbDirectory {
     let mut d = RdbDirectory::installed("PUB400");
     d.change("PUB400", |e| e.text = local_text.into()).unwrap();
-    d.add(RdbEntry::new("RZKHCOCKPIT", "cockpit.rzkh.de", "*IP")).unwrap();
+    d.add(RdbEntry::new("RZKHCOCKPIT", "cockpit.rzkh.de", "*IP"))
+        .unwrap();
     d
 }
 

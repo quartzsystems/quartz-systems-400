@@ -51,7 +51,12 @@ fn system(value: &str) -> (Store, ObjectId) {
         wal_pages: 256,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let p = |lib, n: &str, ty| CreateParams {
@@ -127,7 +132,11 @@ fn tmp(name: &str) -> PathBuf {
 /// a group, a cumulative package and the HIPER group.
 fn published(name: &str) -> PathBuf {
     let dir = tmp(name);
-    let ptfs = vec![make("QS00001", &[]), make("QS00002", &["QS00001"]), make("QS00003", &[])];
+    let ptfs = vec![
+        make("QS00001", &[]),
+        make("QS00002", &["QS00001"]),
+        make("QS00003", &[]),
+    ];
     let g = |n: &str, kind, ptfs: &[&str]| GroupDef {
         name: n.into(),
         kind,
@@ -138,7 +147,11 @@ fn published(name: &str) -> PathBuf {
     };
     let groups = vec![
         g("QS99001", GroupKind::Group, &["QS00002"]),
-        g("C26303110", GroupKind::Cumulative, &["QS00001", "QS00002", "QS00003"]),
+        g(
+            "C26303110",
+            GroupKind::Cumulative,
+            &["QS00001", "QS00002", "QS00003"],
+        ),
         g("QS99100", GroupKind::Hiper, &["QS00003"]),
     ];
     let p = Publication {
@@ -180,11 +193,17 @@ fn an_order_over_plain_http() {
     assert_eq!(r.order, "0000001");
     assert_eq!(
         r.ptfs,
-        [("QS00001".to_string(), Why::Requisite), ("QS00002".to_string(), Why::Group)]
+        [
+            ("QS00001".to_string(), Why::Requisite),
+            ("QS00002".to_string(), Why::Group)
+        ]
     );
     assert_eq!(r.groups, [("QS99001".to_string(), 3)]);
     // The answer agrees with the client's own resolution.
-    assert_eq!(ptf_update::order::resolve(&cat, &order(&["QS99001"])).ptfs, r.ptfs);
+    assert_eq!(
+        ptf_update::order::resolve(&cat, &order(&["QS99001"])).ptfs,
+        r.ptfs
+    );
     for (id, _) in &r.ptfs {
         let bytes = c.ptf(cat.ptf(id).unwrap()).unwrap();
         let pkg = package::open(&bytes, &trusted()).unwrap();
@@ -196,15 +215,24 @@ fn an_order_over_plain_http() {
     assert_eq!(g.level, 3);
     assert!(c.service("*TEST", "Cody").unwrap().starts_with("ok T"));
     // A problem report is answered with a ticket and kept by the server.
-    let line = c.problem("P001234567", "Cody", "Symptoms: CPF0001\n").unwrap();
+    let line = c
+        .problem("P001234567", "Cody", "Symptoms: CPF0001\n")
+        .unwrap();
     let ticket = line.strip_prefix("ok ").unwrap();
     let kept = std::fs::read_to_string(dir.join("problems").join(format!("{ticket}.txt"))).unwrap();
-    assert!(kept.contains("action *PRB") && kept.contains("problem P001234567") && kept.ends_with("Symptoms: CPF0001\n"));
+    assert!(
+        kept.contains("action *PRB")
+            && kept.contains("problem P001234567")
+            && kept.ends_with("Symptoms: CPF0001\n")
+    );
     let r = c.order(&order(&["*CUMPKG"])).unwrap();
     assert_eq!(r.order, "0000002");
     assert_eq!(r.ptfs.len(), 3);
     // Unknown things.
-    assert_eq!(c.group("QS99999", &trusted()).unwrap_err().msgid(), "CPF8C24");
+    assert_eq!(
+        c.group("QS99999", &trusted()).unwrap_err().msgid(),
+        "CPF8C24"
+    );
     let mut bad = cat.ptf("QS00001").unwrap().clone();
     bad.sha256 = "00".repeat(32);
     assert_eq!(c.ptf(&bad).unwrap_err().msgid(), "CPF8C32");
@@ -255,15 +283,47 @@ fn over_tls() {
         t_cost: 1,
         p_cost: 1,
     };
-    ca::create(&files, "capass1", &Subject::cn("Update CA"), KeyAlgorithm::EcdsaP256, now, 3650, fast).unwrap();
+    ca::create(
+        &files,
+        "capass1",
+        &Subject::cn("Update CA"),
+        KeyAlgorithm::EcdsaP256,
+        now,
+        3650,
+        fast,
+    )
+    .unwrap();
     let cas = CertStore::open(&files, LOCAL_CA_STORE, "capass1").unwrap();
-    let mut sys = CertStore::create_with(&files, SYSTEM_STORE, "system1", StoreKind::System, now, fast).unwrap();
-    ca::issue(&cas, &mut sys, "UPD", &CertSpec::server("localhost", now, 30), KeyAlgorithm::EcdsaP256).unwrap();
+    let mut sys = CertStore::create_with(
+        &files,
+        SYSTEM_STORE,
+        "system1",
+        StoreKind::System,
+        now,
+        fast,
+    )
+    .unwrap();
+    ca::issue(
+        &cas,
+        &mut sys,
+        "UPD",
+        &CertSpec::server("localhost", now, 30),
+        KeyAlgorithm::EcdsaP256,
+    )
+    .unwrap();
     let policy = tls::policy::TlsPolicy::opsys();
     let roots = tls::config::trusted_roots(&sys, &certs::apps::CaTrust::All).unwrap();
     let id = tls::config::Identity::from_store(&sys, "UPD", now).unwrap();
-    let server = tls::config::server_config(&id, &policy, tls::config::ClientAuthMode::None, roots.clone()).unwrap();
-    let client = tls::config::client_config(&policy, roots, None, tls::config::ServerAuthMode::Full).unwrap();
+    let server = tls::config::server_config(
+        &id,
+        &policy,
+        tls::config::ClientAuthMode::None,
+        roots.clone(),
+    )
+    .unwrap();
+    let client =
+        tls::config::client_config(&policy, roots, None, tls::config::ServerAuthMode::Full)
+            .unwrap();
 
     let dir = published("tls");
     let l = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -272,7 +332,10 @@ fn over_tls() {
     let c = Client::new(&url, "", Some(client)).unwrap();
     let cat = c.catalog(&trusted(), 0).unwrap();
     let bytes = c.ptf(cat.ptf("QS00003").unwrap()).unwrap();
-    assert_eq!(package::open(&bytes, &trusted()).unwrap().header.ptf, "QS00003");
+    assert_eq!(
+        package::open(&bytes, &trusted()).unwrap().header.ptf,
+        "QS00003"
+    );
     // Without a TLS configuration an https URL is refused.
     let none = Client::new(&url, "", None).unwrap();
     assert!(none.catalog(&trusted(), 0).is_err());
@@ -318,7 +381,12 @@ fn sndptford_delivers_and_qschkupd_compares() {
     let mut again = order(&["QS99001"]);
     again.have = deliver::have(&db);
     let mut sink2 = MemSink::default();
-    assert!(deliver::send_order(&c, &trusted(), 0, &again, &mut sink2).unwrap().delivered.is_empty());
+    assert!(
+        deliver::send_order(&c, &trusted(), 0, &again, &mut sink2)
+            .unwrap()
+            .delivered
+            .is_empty()
+    );
     // The check: the HIPER PTF is missing and the cumulative package is new.
     let cat = c.catalog(&trusted(), 0).unwrap();
     let f = deliver::compare(&cat, &db, &mut groups, "V1R0M0", &trusted());
@@ -333,7 +401,10 @@ fn sndptford_delivers_and_qschkupd_compares() {
         ptfs: vec!["QS00002".into()],
         related: Vec::new(),
     };
-    groups.put("QS99001", &ptf::group::sign_manifest(&ptf::group::manifest_text(&old), &key()));
+    groups.put(
+        "QS99001",
+        &ptf::group::sign_manifest(&ptf::group::manifest_text(&old), &key()),
+    );
     let f = deliver::compare(&cat, &db, &mut groups, "V1R0M0", &trusted());
     assert_eq!(f.newer, [("QS99001".to_string(), 1, 3)]);
     assert_eq!(groups.rows(&db, &trusted())[0].newer, Some(3));

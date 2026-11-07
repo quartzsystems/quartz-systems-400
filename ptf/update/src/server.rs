@@ -93,9 +93,12 @@ impl Server {
     /// mounted under (empty for the root).
     #[must_use]
     pub fn handle(&self, req: &Request, prefix: &str) -> Response {
-        let target = req.target.split_once("://").map_or(req.target.as_str(), |(_, rest)| {
-            rest.find('/').map_or("/", |i| &rest[i..])
-        });
+        let target = req
+            .target
+            .split_once("://")
+            .map_or(req.target.as_str(), |(_, rest)| {
+                rest.find('/').map_or("/", |i| &rest[i..])
+            });
         let Some(path) = target.strip_prefix(prefix) else {
             return Response::text(404, "not under this service");
         };
@@ -126,7 +129,12 @@ impl Server {
                 // A problem report is kept as `problems/T<n>.txt`.
                 if text.lines().any(|l| l == "action *PRB") {
                     let dir = self.dir.join("problems");
-                    if std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(dir.join(format!("T{n:06}.txt")), text.as_bytes())).is_err() {
+                    if std::fs::create_dir_all(&dir)
+                        .and_then(|()| {
+                            std::fs::write(dir.join(format!("T{n:06}.txt")), text.as_bytes())
+                        })
+                        .is_err()
+                    {
                         return Response::text(500, "the report could not be kept");
                     }
                 }

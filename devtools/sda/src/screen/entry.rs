@@ -25,20 +25,38 @@ struct Entry<'a> {
 }
 
 fn entry(s: &mut Screen, e: &Entry<'_>, v: Values<'_>) {
-    put(s, e.row, e.col, Attr::Normal, &leader(e.label, e.col, e.end));
+    put(
+        s,
+        e.row,
+        e.col,
+        Attr::Normal,
+        &leader(e.label, e.col, e.end),
+    );
     var(s, e.row, e.field, e.len, e.name, &v(e.name));
     put(s, e.row, e.hint.0, Attr::Normal, e.hint.1);
 }
 
-const EXIT_PROMPT_CANCEL: &[(usize, usize, &str)] =
-    &[(23, 2, "F3=Exit"), (23, 14, "F4=Prompt"), (23, 28, "F12=Cancel")];
+const EXIT_PROMPT_CANCEL: &[(usize, usize, &str)] = &[
+    (23, 2, "F3=Exit"),
+    (23, 14, "F4=Prompt"),
+    (23, 28, "F12=Cancel"),
+];
 
-const EXIT_REFRESH_CANCEL: &[(usize, usize, &str)] =
-    &[(23, 2, "F3=Exit"), (23, 14, "F5=Refresh"), (23, 29, "F12=Cancel")];
+const EXIT_REFRESH_CANCEL: &[(usize, usize, &str)] = &[
+    (23, 2, "F3=Exit"),
+    (23, 14, "F5=Refresh"),
+    (23, 29, "F12=Cancel"),
+];
 
 /// The member displays behind options 1 and 2: `SRCFILE`, `SRCLIB` and
 /// `SRCMBR` (`Member` or `Menu`).
-fn specify(title_col: usize, title_text: &str, what: &str, v: Values<'_>, msg: Option<&str>) -> Screen {
+fn specify(
+    title_col: usize,
+    title_text: &str,
+    what: &str,
+    v: Values<'_>,
+    msg: Option<&str>,
+) -> Screen {
     let mut s = blank();
     title(&mut s, title_col, title_text);
     put(&mut s, 3, 2, Attr::Blue, "Type choices, press Enter.");
@@ -161,11 +179,29 @@ pub fn recover(member: &str, file: &str, lib: &str, choice: &str) -> Screen {
     put(&mut s, 4, 21, Attr::HighIntensity, file);
     put(&mut s, 5, 4, Attr::Normal, "Library  . . :");
     put(&mut s, 5, 23, Attr::HighIntensity, lib);
-    put(&mut s, 7, 2, Attr::Normal, "The previous SDA session for the member shown");
+    put(
+        &mut s,
+        7,
+        2,
+        Attr::Normal,
+        "The previous SDA session for the member shown",
+    );
     put(&mut s, 8, 4, Attr::Normal, "abnormally ended.");
     put(&mut s, 10, 2, Attr::Blue, "Select one of the following:");
-    put(&mut s, 12, 6, Attr::Normal, "1. Recover changes made in the previous SDA session");
-    put(&mut s, 13, 6, Attr::Normal, "2. Discard changes and start a new session");
+    put(
+        &mut s,
+        12,
+        6,
+        Attr::Normal,
+        "1. Recover changes made in the previous SDA session",
+    );
+    put(
+        &mut s,
+        13,
+        6,
+        Attr::Normal,
+        "2. Discard changes and start a new session",
+    );
     put(&mut s, 20, 2, Attr::Normal, "Selection");
     var(&mut s, 21, 6, 1, "CHOICE", choice);
     keys(&mut s, &[(23, 2, "F3=Exit"), (23, 12, "F12=Cancel")]);
@@ -175,11 +211,7 @@ pub fn recover(member: &str, file: &str, lib: &str, choice: &str) -> Screen {
 
 /// Add New Record: `NAME` and `TYPE`.
 #[must_use]
-pub fn add_record(
-    head: (&str, &str, &str, &str),
-    v: Values<'_>,
-    msg: Option<&str>,
-) -> Screen {
+pub fn add_record(head: (&str, &str, &str, &str), v: Values<'_>, msg: Option<&str>) -> Screen {
     let mut s = blank();
     title(&mut s, 32, "Add New Record");
     member_head(&mut s, head.0, head.1, head.2, head.3);
@@ -298,20 +330,77 @@ pub fn defaults(v: Values<'_>, msg: Option<&str>) -> Screen {
 pub fn db_files(v: Values<'_>, msg: Option<&str>) -> Screen {
     let mut s = blank();
     title(&mut s, 30, "Select Database Files");
-    put(&mut s, 3, 2, Attr::Blue, "Type options and names, press Enter.");
+    put(
+        &mut s,
+        3,
+        2,
+        Attr::Blue,
+        "Type options and names, press Enter.",
+    );
     put(&mut s, 4, 4, Attr::Blue, "1=Display database field list");
-    put(&mut s, 5, 4, Attr::Blue, "2=Select all fields for input (I)");
-    put(&mut s, 6, 4, Attr::Blue, "3=Select all fields for output (O)");
-    put(&mut s, 7, 4, Attr::Blue, "4=Select all fields for both (B) input and output");
-    for (col, t) in [(2, "Option"), (12, "Database File"), (28, "Library"), (41, "Record")] {
+    put(
+        &mut s,
+        5,
+        4,
+        Attr::Blue,
+        "2=Select all fields for input (I)",
+    );
+    put(
+        &mut s,
+        6,
+        4,
+        Attr::Blue,
+        "3=Select all fields for output (O)",
+    );
+    put(
+        &mut s,
+        7,
+        4,
+        Attr::Blue,
+        "4=Select all fields for both (B) input and output",
+    );
+    for (col, t) in [
+        (2, "Option"),
+        (12, "Database File"),
+        (28, "Library"),
+        (41, "Record"),
+    ] {
         put(&mut s, 9, col, Attr::HighIntensity, t);
     }
     for i in 0..4 {
         let row = 10 + i;
-        var(&mut s, row, 4, 1, &format!("OPT{i}"), &v(&format!("OPT{i}")));
-        var(&mut s, row, 13, 10, &format!("FILE{i}"), &v(&format!("FILE{i}")));
-        var(&mut s, row, 28, 10, &format!("LIB{i}"), &v(&format!("LIB{i}")));
-        var(&mut s, row, 41, 10, &format!("RCD{i}"), &v(&format!("RCD{i}")));
+        var(
+            &mut s,
+            row,
+            4,
+            1,
+            &format!("OPT{i}"),
+            &v(&format!("OPT{i}")),
+        );
+        var(
+            &mut s,
+            row,
+            13,
+            10,
+            &format!("FILE{i}"),
+            &v(&format!("FILE{i}")),
+        );
+        var(
+            &mut s,
+            row,
+            28,
+            10,
+            &format!("LIB{i}"),
+            &v(&format!("LIB{i}")),
+        );
+        var(
+            &mut s,
+            row,
+            41,
+            10,
+            &format!("RCD{i}"),
+            &v(&format!("RCD{i}")),
+        );
     }
     keys(&mut s, EXIT_PROMPT_CANCEL);
     message(&mut s, msg);
@@ -325,8 +414,20 @@ pub fn image_exit(choice: &str, msg: Option<&str>) -> Screen {
     let mut s = blank();
     title(&mut s, 33, "Exit SDA Work Screen");
     put(&mut s, 3, 2, Attr::Blue, "Select one of the following:");
-    put(&mut s, 5, 6, Attr::Normal, "1. Save work since last Enter and exit work screen");
-    put(&mut s, 6, 6, Attr::Normal, "2. Exit without saving any work done on the work screen");
+    put(
+        &mut s,
+        5,
+        6,
+        Attr::Normal,
+        "1. Save work since last Enter and exit work screen",
+    );
+    put(
+        &mut s,
+        6,
+        6,
+        Attr::Normal,
+        "2. Exit without saving any work done on the work screen",
+    );
     put(&mut s, 7, 6, Attr::Normal, "3. Resume work screen session");
     put(&mut s, 20, 2, Attr::Normal, "Selection");
     var(&mut s, 21, 6, 1, "CHOICE", choice);
@@ -375,10 +476,23 @@ pub fn save(v: Values<'_>, msg: Option<&str>) -> Screen {
     put(&mut s, 9, 6, Attr::Normal, &leader("Text", 6, 43));
     var(&mut s, 9, 47, 50, "TEXT", &v("TEXT"));
     put(&mut s, 20, 4, Attr::Normal, "Specify additional");
-    put(&mut s, 21, 6, Attr::Normal, &leader("save or create options", 6, 43));
+    put(
+        &mut s,
+        21,
+        6,
+        Attr::Normal,
+        &leader("save or create options", 6, 43),
+    );
     var(&mut s, 21, 47, 1, "MORE", &v("MORE"));
     put(&mut s, 21, 60, Attr::Normal, "Y=Yes");
-    keys(&mut s, &[(23, 2, "F3=Exit"), (23, 12, "F4=Prompt"), (23, 24, "F12=Cancel")]);
+    keys(
+        &mut s,
+        &[
+            (23, 2, "F3=Exit"),
+            (23, 12, "F4=Prompt"),
+            (23, 24, "F12=Cancel"),
+        ],
+    );
     message(&mut s, msg);
     s.cursor = Some((5, 47));
     s
@@ -404,7 +518,14 @@ pub fn comments_exit(v: Values<'_>) -> Screen {
         },
         v,
     );
-    keys(&mut s, &[(23, 2, "F3=Exit"), (23, 12, "F5=Refresh"), (23, 25, "F12=Cancel")]);
+    keys(
+        &mut s,
+        &[
+            (23, 2, "F3=Exit"),
+            (23, 12, "F5=Refresh"),
+            (23, 25, "F12=Cancel"),
+        ],
+    );
     s.cursor = Some((5, 42));
     s
 }

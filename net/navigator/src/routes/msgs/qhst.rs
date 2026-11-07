@@ -35,7 +35,10 @@ fn of_job(job: &str, e: &HistEntry) -> bool {
 pub fn page(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     let (today, _) = rq.stamp(rq.env().system.now());
-    let val = |k: &str, dft: &str| q.get(k).map_or_else(|| dft.to_string(), |v| v.trim().to_ascii_uppercase());
+    let val = |k: &str, dft: &str| {
+        q.get(k)
+            .map_or_else(|| dft.to_string(), |v| v.trim().to_ascii_uppercase())
+    };
     let f = val("f", &today);
     let ft = val("ft", "00:00:00");
     let t = val("t", &today);
@@ -71,7 +74,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
         .collect();
     let p = Paging::from_query(q.str("page"), q.str("rows"), es.len(), kept);
     let input = |name: &str, v: &str, size: u32| {
-        format!("<input type=\"text\" name=\"{name}\" value=\"{}\" size=\"{size}\">", esc(v))
+        format!(
+            "<input type=\"text\" name=\"{name}\" value=\"{}\" size=\"{size}\">",
+            esc(v)
+        )
     };
     let filter = format!(
         "<form method=\"get\"><table class=\"filter\" cellspacing=\"0\"><tr><td>From:</td><td>{} {}</td><td>To:</td><td>{} {}</td><td>Message ID:</td><td>{}</td><td>Severity &ge;:</td><td>{}</td><td>Job:</td><td>{}</td><td><input type=\"submit\" value=\"Go\"> </td></tr></table></form>",

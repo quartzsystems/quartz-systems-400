@@ -102,7 +102,9 @@ pub enum DbError {
 
     /// A unique access path cannot be built: two records have the same
     /// key.
-    #[error("member {member} of file {file} has records with the same key {key}; the unique access path was not built")]
+    #[error(
+        "member {member} of file {file} has records with the same key {key}; the unique access path was not built"
+    )]
     DuplicateKeys {
         /// File name.
         file: String,
@@ -269,7 +271,9 @@ pub enum DbError {
 
     /// A foreign key with no parent key to match (insert or update of the
     /// dependent, or a `SET DEFAULT` delete rule).
-    #[error("referential constraint {cst} of member {member} in file {file}: no matching parent key")]
+    #[error(
+        "referential constraint {cst} of member {member} in file {file}: no matching parent key"
+    )]
     RefNoParent {
         /// The constraint.
         cst: String,
@@ -306,7 +310,9 @@ pub enum DbError {
     },
 
     /// A delete rule that changes dependent records needs the files journaled.
-    #[error("file {file} must be journaled, with its dependent files, for the delete rules of its constraints")]
+    #[error(
+        "file {file} must be journaled, with its dependent files, for the delete rules of its constraints"
+    )]
     RuleNeedsJournal {
         /// File name.
         file: String,

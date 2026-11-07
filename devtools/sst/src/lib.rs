@@ -17,7 +17,7 @@
 pub mod menu;
 pub mod screen;
 
-pub use menu::{SstMenu, start};
-pub use screen::{field_name, to_uim};
 /// A DST screen as the console kit builds it.
 pub use console::Screen as Grid;
+pub use menu::{SstMenu, start};
+pub use screen::{field_name, to_uim};

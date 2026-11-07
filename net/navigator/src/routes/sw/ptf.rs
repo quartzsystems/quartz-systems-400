@@ -15,8 +15,8 @@ use qsweb::http::Response;
 use qsweb::msg::Kind;
 use qsweb::pages::confirm_body;
 use qsweb::partials::{
-    Button, Cell, Col, FilterField, List, Paging, Prop, PropGroup, actions, buttons, filter, form, input, list_table,
-    mono, paging, props, props_table, radio,
+    Button, Cell, Col, FilterField, List, Paging, Prop, PropGroup, actions, buttons, filter, form,
+    input, list_table, mono, paging, props, props_table, radio,
 };
 
 use super::{GROUP, need, page, run_all};
@@ -58,8 +58,14 @@ pub fn list(rq: &Rq<'_>) -> Response {
         }
         if f.has("load") {
             let cats = sw.catalogs(user);
-            let c = cats.iter().find(|c| c.name.starts_with("QS400PTF")).or(cats.first());
-            return rq.redirect(&format!("/ptf/confirm{}", query(&[("op", "load"), ("c", c.map_or("", |c| c.name.as_str()))])));
+            let c = cats
+                .iter()
+                .find(|c| c.name.starts_with("QS400PTF"))
+                .or(cats.first());
+            return rq.redirect(&format!(
+                "/ptf/confirm{}",
+                query(&[("op", "load"), ("c", c.map_or("", |c| c.name.as_str()))])
+            ));
         }
         let mut q: Vec<(&str, &str)> = vec![("op", "apply")];
         for p in all.iter().filter(|p| p.status == PtfStatus::NotApplied) {
@@ -80,7 +86,11 @@ pub fn list(rq: &Rq<'_>) -> Response {
             products.push(p.product.clone());
         }
     }
-    let prod = products.iter().find(|p| **p == q.str("p")).cloned().unwrap_or_else(|| "*ALL".into());
+    let prod = products
+        .iter()
+        .find(|p| **p == q.str("p"))
+        .cloned()
+        .unwrap_or_else(|| "*ALL".into());
     let st = PtfStatus::ALL.into_iter().find(|s| s.label() == q.str("s"));
     let id = q.str("id").trim().to_ascii_uppercase();
     let mut ps: Vec<Ptf> = all
@@ -112,7 +122,13 @@ pub fn list(rq: &Rq<'_>) -> Response {
     let p = Paging::from_query(q.str("page"), q.str("rows"), ps.len(), kept);
     let mut statuses = vec!["*ALL".to_string()];
     statuses.extend(PtfStatus::ALL.iter().map(|s| s.label().to_string()));
-    let chosen = |v: &str| if v == "*ALL" { String::new() } else { v.to_string() };
+    let chosen = |v: &str| {
+        if v == "*ALL" {
+            String::new()
+        } else {
+            v.to_string()
+        }
+    };
     let f = filter(
         &[
             FilterField::Select("Product".into(), "p".into(), products, chosen(&prod)),
@@ -132,7 +148,11 @@ pub fn list(rq: &Rq<'_>) -> Response {
         messages.push(rq.message(
             Kind::Info,
             "CPI3599",
-            &[&missing(&fixes).to_string(), &host(&attrs.url), &rq.when(attrs.last)],
+            &[
+                &missing(&fixes).to_string(),
+                &host(&attrs.url),
+                &rq.when(attrs.last),
+            ],
         ));
     }
     let confirm = |op: &str, id: &str, t: Option<&str>| {
@@ -199,13 +219,29 @@ pub fn list(rq: &Rq<'_>) -> Response {
     let level = rq.env().system.status(user, false).ptf_level;
     let desc = format!("Program temporary fixes (DSPPTF / WRKPTF). Cumulative level {level}.");
     // The update server's note sits under the filter, part of the list.
-    let note: String = messages.iter().map(|m| qsweb::partials::message_row(&PRODUCT, m)).collect();
+    let note: String = messages
+        .iter()
+        .map(|m| qsweb::partials::message_row(&PRODUCT, m))
+        .collect();
     let body = format!("{f}{note}{}{}{bs}", list_table(&list), paging(&p));
-    page(rq, &["PTFs"], "PTFs", Some(&desc), Vec::new(), body, "ptf", Some("/ptf"))
+    page(
+        rq,
+        &["PTFs"],
+        "PTFs",
+        Some(&desc),
+        Vec::new(),
+        body,
+        "ptf",
+        Some("/ptf"),
+    )
 }
 
 /// `/ptf/confirm?op=&id=...&c=&t=`.
-#[allow(clippy::too_many_lines, clippy::many_single_char_names, clippy::type_complexity)]
+#[allow(
+    clippy::too_many_lines,
+    clippy::many_single_char_names,
+    clippy::type_complexity
+)]
 pub fn confirm(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     let sw = &rq.env().sw;
@@ -220,23 +256,47 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
     // The radio buttons: posted, else the link's, else the defaults.
     let pick_of = |name: &str, opts: &[&str]| {
         let v = if post { f.str(name) } else { q.str(name) };
-        opts.iter().find(|o| **o == v).copied().unwrap_or(opts[0]).to_string()
+        opts.iter()
+            .find(|o| **o == v)
+            .copied()
+            .unwrap_or(opts[0])
+            .to_string()
     };
     let t = pick_of("t", &["*TEMP", "*PERM"]);
     let d = pick_of("d", &["*NO", "*IPL"]);
-    let (what, sentence, cols, rows, commands, options): (&str, String, Vec<&str>, Vec<Vec<String>>, Vec<String>, String);
+    let (what, sentence, cols, rows, commands, options): (
+        &str,
+        String,
+        Vec<&str>,
+        Vec<Vec<String>>,
+        Vec<String>,
+        String,
+    );
     if op == "order" {
-        let fixes: Vec<Fix> = sw.fixes(user).into_iter().filter(|x| ids.contains(&x.id)).collect();
+        let fixes: Vec<Fix> = sw
+            .fixes(user)
+            .into_iter()
+            .filter(|x| ids.contains(&x.id))
+            .collect();
         if fixes.is_empty() {
             return rq.not_found("fix");
         }
         what = "Order Fixes";
         sentence = "Press OK to order the fixes listed below from the Quartz update server. Each PTF arrives as a save file in library QGPL, ready to load.".into();
         cols = vec!["Fix", "Type", "Product", "Description"];
-        rows = fixes.iter().map(|x| vec![mono(&x.id), esc(&x.kind), mono(&x.product), esc(&x.text)]).collect();
+        rows = fixes
+            .iter()
+            .map(|x| vec![mono(&x.id), esc(&x.kind), mono(&x.product), esc(&x.text)])
+            .collect();
         let items: Vec<String> = fixes
             .iter()
-            .map(|x| if x.kind == "PTF" { format!("({})", x.id) } else { "(*CUMPKG)".into() })
+            .map(|x| {
+                if x.kind == "PTF" {
+                    format!("({})", x.id)
+                } else {
+                    "(*CUMPKG)".into()
+                }
+            })
             .collect();
         commands = vec![format!("SNDPTFORD PTFID({})", items.join(" "))];
         options = String::new();
@@ -249,10 +309,17 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
         sentence = "Press OK to load and apply every PTF on the image catalog listed below. PTFs with a delayed IPL action are applied at the next IPL.".into();
         cols = vec!["Image catalog", "Device", "Text"];
         rows = vec![vec![mono(&c.name), mono(&c.device), esc(&c.text)]];
-        commands = vec![format!("INSPTF LICPGM(*ALL) DEV({}) INSTYPE(*DLYALL)", c.device)];
+        commands = vec![format!(
+            "INSPTF LICPGM(*ALL) DEV({}) INSTYPE(*DLYALL)",
+            c.device
+        )];
         options = String::new();
     } else {
-        let ptfs: Vec<Ptf> = sw.ptfs(user).into_iter().filter(|x| ids.contains(&x.id)).collect();
+        let ptfs: Vec<Ptf> = sw
+            .ptfs(user)
+            .into_iter()
+            .filter(|x| ids.contains(&x.id))
+            .collect();
         if ptfs.is_empty() || !matches!(op.as_str(), "load" | "apply" | "remove") {
             return rq.not_found("PTF");
         }
@@ -262,19 +329,40 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
                 products.push(&x.product);
             }
         }
-        let select = |p: &str| ptfs.iter().filter(|x| x.product == p).map(|x| x.id.as_str()).collect::<Vec<_>>().join(" ");
+        let select = |p: &str| {
+            ptfs.iter()
+                .filter(|x| x.product == p)
+                .map(|x| x.id.as_str())
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
         cols = vec!["PTF ID", "Product", "Status", "IPL action", "Description"];
         rows = ptfs
             .iter()
-            .map(|x| vec![mono(&x.id), mono(&x.product), status(x.status), esc(&x.ipl_action), esc(&x.text)])
+            .map(|x| {
+                vec![
+                    mono(&x.id),
+                    mono(&x.product),
+                    status(x.status),
+                    esc(&x.ipl_action),
+                    esc(&x.text),
+                ]
+            })
             .collect();
         match op.as_str() {
             "load" => {
                 what = "Load PTF";
-                sentence = "Press OK to load the PTFs listed below from their save files in library QGPL.".into();
+                sentence =
+                    "Press OK to load the PTFs listed below from their save files in library QGPL."
+                        .into();
                 commands = ptfs
                     .iter()
-                    .map(|x| format!("LODPTF LICPGM({}) DEV(*SAVF) SELECT({}) SAVF(QGPL/{})", x.product, x.id, x.id))
+                    .map(|x| {
+                        format!(
+                            "LODPTF LICPGM({}) DEV(*SAVF) SELECT({}) SAVF(QGPL/{})",
+                            x.product, x.id, x.id
+                        )
+                    })
                     .collect();
                 options = String::new();
             }
@@ -284,7 +372,12 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
                 let ipl = if d == "*IPL" { " IPLAPY(*YES)" } else { "" };
                 commands = products
                     .iter()
-                    .map(|p| format!("APYPTF LICPGM({p}) SELECT({}) APY({t}) DELAYED(*YES){ipl}", select(p)))
+                    .map(|p| {
+                        format!(
+                            "APYPTF LICPGM({p}) SELECT({}) APY({t}) DELAYED(*YES){ipl}",
+                            select(p)
+                        )
+                    })
                     .collect();
                 options = format!(
                     "Apply type: {} Temporarily (*TEMP) {} Permanently (*PERM) &nbsp; Delayed PTFs: {} Apply at next IPL {} Schedule IPL now<br>",
@@ -318,7 +411,10 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
     }
     let table = list_table(&List {
         cols: cols.iter().map(|c| Col::plain(c)).collect(),
-        rows: rows.into_iter().map(|r| r.into_iter().map(Cell::html).collect()).collect(),
+        rows: rows
+            .into_iter()
+            .map(|r| r.into_iter().map(Cell::html).collect())
+            .collect(),
         empty: String::new(),
         keep: Vec::new(),
     });
@@ -329,7 +425,16 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
     let body = confirm_body(&rq.ctx, &sentence, &table, &opts);
     let title = format!("Confirm {what}");
     let back = if op == "order" { "Fixes" } else { "PTFs" };
-    page(rq, &[back, &title], &title, None, Vec::new(), body, "confirm", None)
+    page(
+        rq,
+        &[back, &title],
+        &title,
+        None,
+        Vec::new(),
+        body,
+        "confirm",
+        None,
+    )
 }
 
 /// `/ptf/level`: the cumulative level and the PTF groups.
@@ -348,10 +453,22 @@ pub fn level(rq: &Rq<'_>) -> Response {
         true,
     );
     let list = List {
-        cols: vec![Col::plain("PTF group"), Col::plain("Level"), Col::plain("Status"), Col::plain("Text")],
+        cols: vec![
+            Col::plain("PTF group"),
+            Col::plain("Level"),
+            Col::plain("Status"),
+            Col::plain("Text"),
+        ],
         rows: groups
             .iter()
-            .map(|g| vec![Cell::mono(&g.name), Cell::num(&g.level.to_string()), Cell::text(&g.status), Cell::text(&g.text)])
+            .map(|g| {
+                vec![
+                    Cell::mono(&g.name),
+                    Cell::num(&g.level.to_string()),
+                    Cell::text(&g.status),
+                    Cell::text(&g.text),
+                ]
+            })
             .collect(),
         empty: "The system has no PTF groups.".into(),
         keep: Vec::new(),
@@ -371,10 +488,18 @@ pub fn level(rq: &Rq<'_>) -> Response {
 
 /// A cover letter in the help window.
 pub fn cover(rq: &Rq<'_>, id: &str) -> Response {
-    match rq.env().sw.cover_letter(rq.user(), &id.to_ascii_uppercase()) {
+    match rq
+        .env()
+        .sw
+        .cover_letter(rq.user(), &id.to_ascii_uppercase())
+    {
         Some(text) => Response::html(
             200,
-            qsweb::frame::help(&PRODUCT, &format!("Cover letter {id}"), &format!("<pre class=\"out\">{}</pre>", esc(&text))),
+            qsweb::frame::help(
+                &PRODUCT,
+                &format!("Cover letter {id}"),
+                &format!("<pre class=\"out\">{}</pre>", esc(&text)),
+            ),
         ),
         None => rq.not_found(&format!("cover letter for {id}")),
     }
@@ -382,7 +507,11 @@ pub fn cover(rq: &Rq<'_>, id: &str) -> Response {
 
 /// The automatic check's choices for `a`: label and `SCHEDULE`.
 fn schedules(a: &UpdateAttrs) -> [(String, &'static str); 3] {
-    let hhmm = format!("{}:{}", a.time.get(..2).unwrap_or("04"), a.time.get(2..4).unwrap_or("00"));
+    let hhmm = format!(
+        "{}:{}",
+        a.time.get(..2).unwrap_or("04"),
+        a.time.get(2..4).unwrap_or("00")
+    );
     [
         (format!("Weekly (Sunday {hhmm})"), "*WEEKLY"),
         ("Daily".into(), "*DAILY"),
@@ -393,7 +522,11 @@ fn schedules(a: &UpdateAttrs) -> [(String, &'static str); 3] {
 /// The size of a fix (`1.2 MB`, `412 MB`).
 fn size(bytes: u64) -> String {
     let t = (bytes * 10 + (1 << 19)) >> 20;
-    if t >= 100 { format!("{} MB", t / 10) } else { format!("{}.{} MB", t / 10, t % 10) }
+    if t >= 100 {
+        format!("{} MB", t / 10)
+    } else {
+        format!("{}.{} MB", t / 10, t % 10)
+    }
 }
 
 /// `/fixes`.
@@ -419,8 +552,14 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
             "" => "*NONE".to_string(),
             p => format!("'{}'", p.replace('\'', "''")),
         };
-        let schedule = choices.iter().find(|(l, _)| l == f.str("a")).map_or("*SAME", |(_, v)| v);
-        let cmd = format!("QSCHGUPDA URL('{}') PROXY({proxy}) SCHEDULE({schedule})", url.replace('\'', "''"));
+        let schedule = choices
+            .iter()
+            .find(|(l, _)| l == f.str("a"))
+            .map_or("*SAME", |(_, v)| v);
+        let cmd = format!(
+            "QSCHGUPDA URL('{}') PROXY({proxy}) SCHEDULE({schedule})",
+            url.replace('\'', "''")
+        );
         let t = Target::obj("QSYS", "QSUPDATTR", "*DTAARA");
         if let Err(r) = need(rq, "Change Update Attributes", &t, &[GROUP, "Fixes"]) {
             return r;
@@ -431,10 +570,23 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
     let rows = fixes
         .iter()
         .map(|x| {
-            let order = rq.ctx.url(&format!("/ptf/confirm{}", query(&[("op", "order"), ("id", &x.id)])));
-            let on = if x.on_system.is_empty() { word("No", Some(false)) } else { word(&x.on_system, Some(true)) };
+            let order = rq.ctx.url(&format!(
+                "/ptf/confirm{}",
+                query(&[("op", "order"), ("id", &x.id)])
+            ));
+            let on = if x.on_system.is_empty() {
+                word("No", Some(false))
+            } else {
+                word(&x.on_system, Some(true))
+            };
             vec![
-                Cell::act(actions(&[(order, "Download"), (rq.ctx.url(&format!("/fixes/{}/cover", x.id)), "Cover letter")])),
+                Cell::act(actions(&[
+                    (order, "Download"),
+                    (
+                        rq.ctx.url(&format!("/fixes/{}/cover", x.id)),
+                        "Cover letter",
+                    ),
+                ])),
                 Cell::mono(&x.id),
                 Cell::text(&x.kind),
                 Cell::mono(&x.product),
@@ -446,20 +598,40 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
         })
         .collect();
     let list = List {
-        cols: ["Actions", "Fix", "Type", "Product", "Released", "Size", "Description", "On this system"]
-            .iter()
-            .map(|c| Col::plain(c))
-            .collect(),
+        cols: [
+            "Actions",
+            "Fix",
+            "Type",
+            "Product",
+            "Released",
+            "Size",
+            "Description",
+            "On this system",
+        ]
+        .iter()
+        .map(|c| Col::plain(c))
+        .collect(),
         rows,
         empty: "The last check found no fixes this system lacks.".into(),
         keep: Vec::new(),
     };
-    let chosen = choices.iter().find(|(_, v)| *v == attrs.schedule).map_or(String::new(), |(l, _)| l.clone());
+    let chosen = choices
+        .iter()
+        .find(|(_, v)| *v == attrs.schedule)
+        .map_or(String::new(), |(l, _)| l.clone());
     let labels: Vec<String> = choices.iter().map(|(l, _)| l.clone()).collect();
-    let mut checked = if attrs.last == 0 { "Never".to_string() } else { rq.when(attrs.last) };
+    let mut checked = if attrs.last == 0 {
+        "Never".to_string()
+    } else {
+        rq.when(attrs.last)
+    };
     if attrs.last > 0 {
         let n = missing(&fixes);
-        let _ = write!(checked, " - {n} {} available", if n == 1 { "fix" } else { "fixes" });
+        let _ = write!(
+            checked,
+            " - {n} {} available",
+            if n == 1 { "fix" } else { "fixes" }
+        );
     }
     let settings = props(
         &rq.ctx,
@@ -472,7 +644,11 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
                 Prop::new("Last check", esc(&checked)),
             ],
         }],
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     let body = format!("{}{settings}", list_table(&list));
     page(

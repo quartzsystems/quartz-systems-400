@@ -205,7 +205,10 @@ mod tests {
     /// Every value but `AT_FDCWD` against the captured headers.
     #[test]
     fn header_capture_agrees() {
-        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../../tools/conformance/oracle/qsysinc/");
+        let root = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tools/conformance/oracle/qsysinc/"
+        );
         let text: String = [
             "H/FCNTL.txt",
             "SYS/STAT.txt",

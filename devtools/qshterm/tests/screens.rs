@@ -55,7 +55,10 @@ fn a_new_session() {
 fn after_ls_of_the_root() {
     let mut t = Term::new();
     t.output(b"$\n");
-    assert_eq!(t.key(Key::Enter, "ls /"), qshterm::Action::Run("ls /".into()));
+    assert_eq!(
+        t.key(Key::Enter, "ls /"),
+        qshterm::Action::Run("ls /".into())
+    );
     let listing = [
         "> ls /",
         "_welcome.txt",

@@ -19,8 +19,14 @@ const IBM_ESCAPES: &[u64] = &[542];
 
 #[test]
 fn fuzzed_programs_compile_and_run() {
-    let n: u64 = std::env::var("QS400_FUZZ_N").ok().and_then(|v| v.parse().ok()).unwrap_or(if cfg!(debug_assertions) { 300 } else { 2000 });
-    let write: u64 = std::env::var("QS400_FUZZ_WRITE").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
+    let n: u64 = std::env::var("QS400_FUZZ_N")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(if cfg!(debug_assertions) { 300 } else { 2000 });
+    let write: u64 = std::env::var("QS400_FUZZ_WRITE")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("rpg/b14fuzz");
     let mut bad = Vec::new();
     for seed in 0..n {
@@ -36,7 +42,9 @@ fn fuzzed_programs_compile_and_run() {
                 let worst = o.diags.iter().map(|d| d.severity).max().unwrap_or(0);
                 if !o.created || worst > 10 {
                     let ids: Vec<&str> = o.diags.iter().map(|d| d.msgid.as_str()).collect();
-                    bad.push(format!("{name}: not created, severity {worst} {ids:?} {notes}"));
+                    bad.push(format!(
+                        "{name}: not created, severity {worst} {ids:?} {notes}"
+                    ));
                 } else if let Run::Escape(m) = &o.run
                     && !IBM_ESCAPES.contains(&seed)
                 {
@@ -46,7 +54,12 @@ fn fuzzed_programs_compile_and_run() {
             Err(e) => bad.push(format!("{name}: {e}")),
         }
     }
-    assert!(bad.is_empty(), "{} of {n} fuzzed programs failed:\n  {}", bad.len(), bad.join("\n  "));
+    assert!(
+        bad.is_empty(),
+        "{} of {n} fuzzed programs failed:\n  {}",
+        bad.len(),
+        bad.join("\n  ")
+    );
 }
 
 /// The members `rpg-oracle fuzz` writes, 20 programs to a member: each
@@ -63,7 +76,9 @@ fn fuzz_bundles_compile_and_run() {
                 let worst = o.diags.iter().map(|d| d.severity).max().unwrap_or(0);
                 if !o.created || worst > 10 {
                     let ids: Vec<&str> = o.diags.iter().map(|d| d.msgid.as_str()).collect();
-                    bad.push(format!("{name}: not created, severity {worst} {ids:?} {notes}"));
+                    bad.push(format!(
+                        "{name}: not created, severity {worst} {ids:?} {notes}"
+                    ));
                 } else if let Run::Escape(m) = &o.run
                     && !IBM_ESCAPES.iter().any(|s| (first..first + 20).contains(s))
                 {
@@ -73,5 +88,10 @@ fn fuzz_bundles_compile_and_run() {
             Err(e) => bad.push(format!("{name}: {e}")),
         }
     }
-    assert!(bad.is_empty(), "{} bundles failed:\n  {}", bad.len(), bad.join("\n  "));
+    assert!(
+        bad.is_empty(),
+        "{} bundles failed:\n  {}",
+        bad.len(),
+        bad.join("\n  ")
+    );
 }

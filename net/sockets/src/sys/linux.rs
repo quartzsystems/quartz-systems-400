@@ -12,14 +12,14 @@ use std::net::{SocketAddrV4, SocketAddrV6};
 use std::num::NonZeroU32;
 use std::os::fd::{AsFd, AsRawFd, OwnedFd};
 
+use rustix::event::Timespec;
 use rustix::event::{PollFd, PollFlags};
+use rustix::net::ipproto;
 use rustix::net::{
     AddressFamily, Protocol, RecvAncillaryBuffer, RecvAncillaryMessage, RecvFlags, ReturnFlags,
     SendAncillaryBuffer, SendAncillaryMessage, SendFlags, Shutdown, SocketAddrAny, SocketAddrUnix,
     SocketFlags, SocketType,
 };
-use rustix::event::Timespec;
-use rustix::net::ipproto;
 
 use super::{Info, Received};
 use crate::consts::{
@@ -95,15 +95,25 @@ fn protocol(proto: i32) -> Result<Option<Protocol>, Errno> {
 /// `socket()`: the descriptor is close-on-exec in the process; the
 /// job's own `FD_CLOEXEC` is the table's.
 pub fn socket(domain: i32, ty: i32, proto: i32) -> Result<Fd, Errno> {
-    let fd = rustix::net::socket_with(family(domain)?, socktype(ty)?, SocketFlags::CLOEXEC, protocol(proto)?)
-        .map_err(errno)?;
+    let fd = rustix::net::socket_with(
+        family(domain)?,
+        socktype(ty)?,
+        SocketFlags::CLOEXEC,
+        protocol(proto)?,
+    )
+    .map_err(errno)?;
     Ok(Fd(fd))
 }
 
 /// `socketpair()`.
 pub fn socketpair(domain: i32, ty: i32, proto: i32) -> Result<(Fd, Fd), Errno> {
-    let (a, b) = rustix::net::socketpair(family(domain)?, socktype(ty)?, SocketFlags::CLOEXEC, protocol(proto)?)
-        .map_err(errno)?;
+    let (a, b) = rustix::net::socketpair(
+        family(domain)?,
+        socktype(ty)?,
+        SocketFlags::CLOEXEC,
+        protocol(proto)?,
+    )
+    .map_err(errno)?;
     Ok((Fd(a), Fd(b)))
 }
 
@@ -179,7 +189,10 @@ fn from_any(a: SocketAddrAny) -> Option<SockAddr> {
         return Some(SockAddr::V6(v));
     }
     if let Ok(u) = SocketAddrUnix::try_from(a) {
-        let path = u.path().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+        let path = u
+            .path()
+            .map(|p| p.to_string_lossy().into_owned())
+            .unwrap_or_default();
         return Some(SockAddr::Unix(path));
     }
     None
@@ -276,7 +289,9 @@ pub fn sendv(fd: &Fd, bufs: &[&[u8]], flags: i32, to: Option<&SockAddr>) -> Resu
         None | Some(SockAddr::Unspec) => rustix::net::sendmsg(&fd.0, &iov, &mut control, f),
         Some(SockAddr::V4(v)) => rustix::net::sendmsg_addr(&fd.0, v, &iov, &mut control, f),
         Some(SockAddr::V6(v)) => rustix::net::sendmsg_addr(&fd.0, v, &iov, &mut control, f),
-        Some(SockAddr::Unix(p)) => rustix::net::sendmsg_addr(&fd.0, &unix(p)?, &iov, &mut control, f),
+        Some(SockAddr::Unix(p)) => {
+            rustix::net::sendmsg_addr(&fd.0, &unix(p)?, &iov, &mut control, f)
+        }
     }
     .map_err(errno)
 }
@@ -297,7 +312,8 @@ pub fn recvfrom(fd: &Fd, buf: &mut [u8], flags: i32) -> Result<(usize, Option<So
 pub fn recvv(fd: &Fd, bufs: &mut [&mut [u8]], flags: i32) -> Result<Received, Errno> {
     let mut iov: Vec<IoSliceMut<'_>> = bufs.iter_mut().map(|b| IoSliceMut::new(b)).collect();
     let mut control = RecvAncillaryBuffer::new(&mut []);
-    let r = rustix::net::recvmsg(&fd.0, &mut iov, &mut control, recv_flags(flags)).map_err(errno)?;
+    let r =
+        rustix::net::recvmsg(&fd.0, &mut iov, &mut control, recv_flags(flags)).map_err(errno)?;
     Ok(Received {
         bytes: r.bytes,
         from: r.address.and_then(from_any),
@@ -334,7 +350,9 @@ pub fn sockname(fd: &Fd) -> Result<SockAddr, Errno> {
 
 /// `getpeername()`.
 pub fn peername(fd: &Fd) -> Result<SockAddr, Errno> {
-    let a = rustix::net::getpeername(&fd.0).map_err(errno)?.ok_or(Errno::ENOTCONN)?;
+    let a = rustix::net::getpeername(&fd.0)
+        .map_err(errno)?
+        .ok_or(Errno::ENOTCONN)?;
     from_any(a).ok_or(Errno::EAFNOSUPPORT)
 }
 
@@ -427,8 +445,13 @@ pub fn send_fd(sock: &Fd, fd: &Fd) -> Result<(), Errno> {
     let mut control = SendAncillaryBuffer::new(&mut space);
     let fds = [fd.0.as_fd()];
     control.push(SendAncillaryMessage::ScmRights(&fds));
-    rustix::net::sendmsg(&sock.0, &[IoSlice::new(&[1u8])], &mut control, SendFlags::NOSIGNAL)
-        .map_err(errno)?;
+    rustix::net::sendmsg(
+        &sock.0,
+        &[IoSlice::new(&[1u8])],
+        &mut control,
+        SendFlags::NOSIGNAL,
+    )
+    .map_err(errno)?;
     Ok(())
 }
 

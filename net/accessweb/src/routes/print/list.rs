@@ -157,7 +157,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
     }
     let hits: Vec<Splf> = all.into_iter().filter(|f| flt.matches(f)).collect();
     let sort = q.str("sort").to_string();
-    let auto = q.get("auto").filter(|a| AUTO[1..].contains(a)).unwrap_or("Off").to_string();
+    let auto = q
+        .get("auto")
+        .filter(|a| AUTO[1..].contains(a))
+        .unwrap_or("Off")
+        .to_string();
     let rows = q
         .str("rows")
         .parse()
@@ -192,7 +196,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let mut body = format!(
         "<form method=\"get\"><table class=\"filter\" cellspacing=\"0\"><tr><td>User:</td><td>{}</td><td>Output queue:</td><td>{} or <input type=\"text\" name=\"qn\" value=\"{}\" size=\"20\" class=\"cmd\"></td><td>Status:</td><td>{}</td><td>Form type:</td><td><input type=\"text\" name=\"ft\" value=\"{}\" size=\"8\"></td><td>User data:</td><td><input type=\"text\" name=\"ud\" value=\"{}\" size=\"10\"></td><td><input type=\"submit\" value=\"Go\"> <input type=\"submit\" name=\"refresh\" value=\"Refresh\"> &nbsp; Auto-refresh: {} s</td></tr></table></form>",
         select("u", &strs(&users), &flt.user),
-        select("q", &strs(&queues), if typed.is_empty() { &flt.queue } else { "*ALL" }),
+        select(
+            "q",
+            &strs(&queues),
+            if typed.is_empty() { &flt.queue } else { "*ALL" }
+        ),
         esc(typed),
         select("s", &strs(&statuses), &flt.status),
         esc(&flt.form),
@@ -221,10 +229,16 @@ pub fn page(rq: &Rq<'_>) -> Response {
             if text {
                 acts.push((format!("{v}/text"), "Text"));
             }
-            acts.push((rq.ctx.url(&format!("/print/props/{}", f.id())), "Properties"));
+            acts.push((
+                rq.ctx.url(&format!("/print/props/{}", f.id())),
+                "Properties",
+            ));
             let (d, t) = rq.stamp(f.created);
             vec![
-                Cell::html(format!("<input type=\"checkbox\" name=\"s{i}\" value=\"{}\">", esc(&f.id()))),
+                Cell::html(format!(
+                    "<input type=\"checkbox\" name=\"s{i}\" value=\"{}\">",
+                    esc(&f.id())
+                )),
                 Cell::act(actions(&acts)),
                 Cell::mono_html(qsweb::partials::link(&open, &f.file)),
                 Cell::mono(&f.user),
@@ -258,7 +272,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
         empty: "No spooled files match the filter.".into(),
         keep,
     };
-    body.push_str(&qsweb::partials::form(&rq.ctx, "", &format!("{}{}", list_table(&list), buttons(rq))));
+    body.push_str(&qsweb::partials::form(
+        &rq.ctx,
+        "",
+        &format!("{}{}", list_table(&list), buttons(rq)),
+    ));
     body.push_str(&paging(&pg));
     rq.page(Page {
         title: "Printer output".into(),
@@ -296,7 +314,11 @@ fn buttons(rq: &Rq<'_>) -> String {
     if rq.allowed(policy::PRINT_TEXT) {
         s.push_str("<input type=\"submit\" name=\"text\" value=\"Save as text\">");
     }
-    let s = s.trim_end().trim_end_matches("&nbsp;").trim_end().to_string();
+    let s = s
+        .trim_end()
+        .trim_end_matches("&nbsp;")
+        .trim_end()
+        .to_string();
     format!("{s}</div>")
 }
 
@@ -310,7 +332,11 @@ fn details_table(details: &str) -> String {
             let result = if id.is_empty() {
                 qsweb::partials::status("Done", Some(true))
             } else {
-                format!("{} {}", qsweb::partials::msgid(&crate::PRODUCT, id), esc(text))
+                format!(
+                    "{} {}",
+                    qsweb::partials::msgid(&crate::PRODUCT, id),
+                    esc(text)
+                )
             };
             Some(vec![Cell::mono(file), Cell::html(result)])
         })
@@ -328,14 +354,20 @@ pub fn selected(rq: &Rq<'_>) -> Vec<String> {
     rq.form()
         .pairs()
         .iter()
-        .filter(|(k, _)| k.len() > 1 && k.starts_with('s') && k[1..].bytes().all(|b| b.is_ascii_digit()))
+        .filter(|(k, _)| {
+            k.len() > 1 && k.starts_with('s') && k[1..].bytes().all(|b| b.is_ascii_digit())
+        })
         .map(|(_, v)| v.clone())
         .collect()
 }
 
 /// A summary of `n` actions with `failed` refused, the desktop's way.
 pub fn summary(rq: &Rq<'_>, failed: usize, n: usize) -> qsweb::msg::Message {
-    rq.message(Kind::Error, msgs::SPLF_SUMMARY, &[&failed.to_string(), &n.to_string()])
+    rq.message(
+        Kind::Error,
+        msgs::SPLF_SUMMARY,
+        &[&failed.to_string(), &n.to_string()],
+    )
 }
 
 fn strs(v: &[String]) -> Vec<&str> {

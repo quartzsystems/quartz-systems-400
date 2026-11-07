@@ -168,7 +168,8 @@ impl Catalog {
         let _ = writeln!(out, "sequence = {}", self.sequence);
         let _ = writeln!(out, "generated = {}", self.generated);
         let mut products = self.products.clone();
-        products.sort_by(|a, b| (&a.id, &a.option, &a.release).cmp(&(&b.id, &b.option, &b.release)));
+        products
+            .sort_by(|a, b| (&a.id, &a.option, &a.release).cmp(&(&b.id, &b.option, &b.release)));
         for p in &products {
             let _ = write!(
                 out,
@@ -228,7 +229,9 @@ impl Catalog {
     pub fn parse(text: &str, trusted: &[[u8; 32]]) -> Result<Self> {
         let (body, ok) = ptf::group::verify_signed(text, trusted);
         if !ok {
-            return Err(Error::Verify("the catalog is not signed by a trusted signer".into()));
+            return Err(Error::Verify(
+                "the catalog is not signed by a trusted signer".into(),
+            ));
         }
         Self::parse_body(body)
     }

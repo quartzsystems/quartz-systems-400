@@ -29,7 +29,11 @@ fn list(rows: Vec<Vec<(&str, &str)>>) -> ListState {
     ListState {
         rows: rows
             .into_iter()
-            .map(|r| r.into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect())
+            .map(|r| {
+                r.into_iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: Some(n),
@@ -48,7 +52,9 @@ fn golden_fields(name: &str) -> BTreeSet<(usize, usize, usize)> {
         .flat_map(|l| format!("{l:<80}").chars().collect::<Vec<_>>())
         .collect();
     let input = |c: char| {
-        let a = u32::from(c).checked_sub(u32::from('0')).map_or(0, |d| d + 0x20);
+        let a = u32::from(c)
+            .checked_sub(u32::from('0'))
+            .map_or(0, |d| d + 0x20);
         (0x20..=0x3f).contains(&a) && a & 0x04 != 0 && a & 0x07 != 0x07
     };
     let mut out = BTreeSet::new();
@@ -85,10 +91,15 @@ fn golden_rows(name: &str, first: usize, last: usize, from: usize) -> Vec<String
     text.lines()
         .skip(first - 1)
         .take(last + 1 - first)
-        .map(|l| l.chars().skip(from).collect::<String>().trim_end().to_string())
+        .map(|l| {
+            l.chars()
+                .skip(from)
+                .collect::<String>()
+                .trim_end()
+                .to_string()
+        })
         .collect()
 }
-
 
 /// Rows and fields against golden `name`.
 fn check(name: &str, s: &Screen) {
@@ -105,9 +116,17 @@ fn check_no_message(name: &str, s: &Screen) {
     let mut diff = String::new();
     for (i, w) in want.iter().enumerate().take(23) {
         let g = got.get(i).cloned().unwrap_or_default();
-        let g = g.replace("12/31/26", "MM/DD/YY").replace("23:59:59", "HH:MM:SS");
+        let g = g
+            .replace("12/31/26", "MM/DD/YY")
+            .replace("23:59:59", "HH:MM:SS");
         if g.trim_end() != w.trim_end() {
-            let _ = writeln!(diff, "row {:>2}:\n  want |{}|\n  got  |{}|", i + 1, w.trim_end(), g.trim_end());
+            let _ = writeln!(
+                diff,
+                "row {:>2}:\n  want |{}|\n  got  |{}|",
+                i + 1,
+                w.trim_end(),
+                g.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{name} differs:\n{diff}");
@@ -128,7 +147,13 @@ fn header(d: &mut MapDialog, queue: &str, lib: &str, sev: &str, dlvry: &str) {
 fn lines(rows: &[(&str, bool)]) -> ListState {
     list(
         rows.iter()
-            .map(|(t, f)| vec![("LINE", *t), ("RPYOK", if *f { "Y" } else { "" }), ("RPY", "")])
+            .map(|(t, f)| {
+                vec![
+                    ("LINE", *t),
+                    ("RPYOK", if *f { "Y" } else { "" }),
+                    ("RPY", ""),
+                ]
+            })
             .collect(),
     )
 }
@@ -142,9 +167,16 @@ fn dspmsg_inquiry() {
     header(&mut d, "USERNAME", "QUSRSYS", "00", "*BREAK");
     d.set_list(
         "MSGS",
-        lines(&[(FROM, false), ("  Capture inquiry: answer Y or N.", false), ("    Reply . . .", true)]),
+        lines(&[
+            (FROM, false),
+            ("  Capture inquiry: answer Y or N.", false),
+            ("    Reply . . .", true),
+        ]),
     );
-    check("dspmsg-inquiry", &render(&g, "DSPMSG", &d, &opts()).unwrap());
+    check(
+        "dspmsg-inquiry",
+        &render(&g, "DSPMSG", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -187,11 +219,18 @@ fn dspmsg_more_keys() {
     d.set("KSET", "1");
     d.set_list(
         "MSGS",
-        lines(&[(FROM, false), ("  Capture inquiry: answer Y or N.", false), ("    Reply . . :", false)]),
+        lines(&[
+            (FROM, false),
+            ("  Capture inquiry: answer Y or N.", false),
+            ("    Reply . . :", false),
+        ]),
     );
     check("dspmsg-f24", &render(&g, "DSPMSG", &d, &opts()).unwrap());
     d.set("KSET", "0");
-    check("dspmsg-wrkstn-copy", &render(&g, "DSPMSG", &d, &opts()).unwrap());
+    check(
+        "dspmsg-wrkstn-copy",
+        &render(&g, "DSPMSG", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -204,14 +243,23 @@ fn dspmsg_qsysopr() {
     let texts: Vec<String> = golden_rows("dspmsg-qsysopr", 8, 20, 1);
     let rows: Vec<(&str, bool)> = texts.iter().map(|t| (t.as_str(), false)).collect();
     d.set_list("MSGS", lines(&rows));
-    check("dspmsg-qsysopr", &render(&g, "DSPMSG", &d, &opts()).unwrap());
+    check(
+        "dspmsg-qsysopr",
+        &render(&g, "DSPMSG", &d, &opts()).unwrap(),
+    );
 }
 
 /// Work with Messages rows: `(text, heading, first row of a message)`.
 fn work(rows: &[(&str, &str, bool)]) -> ListState {
     list(
         rows.iter()
-            .map(|(t, h, f)| vec![("WLINE", *t), ("WHEAD", *h), ("FIRST", if *f { "Y" } else { "" })])
+            .map(|(t, h, f)| {
+                vec![
+                    ("WLINE", *t),
+                    ("WHEAD", *h),
+                    ("FIRST", if *f { "Y" } else { "" }),
+                ]
+            })
             .collect(),
     )
 }
@@ -239,7 +287,10 @@ fn wrkmsg_basic() {
     );
     check("dspmsg-basic", &render(&g, "WRKMSG", &d, &opts()).unwrap());
     d.set("KSET", "1");
-    check("dspmsg-basic-f24", &render(&g, "WRKMSG", &d, &opts()).unwrap());
+    check(
+        "dspmsg-basic-f24",
+        &render(&g, "WRKMSG", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -257,7 +308,10 @@ fn wrkmsg_basic_empty() {
             ("(No messages available)", "", false),
         ]),
     );
-    check("dspmsg-basic-empty", &render(&g, "WRKMSG", &d, &opts()).unwrap());
+    check(
+        "dspmsg-basic-empty",
+        &render(&g, "WRKMSG", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -273,7 +327,10 @@ fn wrkmsg_operator() {
     rows.push(("", REST, false));
     rows.push(("Job message queue wrapped.", "", true));
     d.set_list("WMSGS", work(&rows));
-    check("dspmsg-basic-f6", &render(&g, "WRKOPR", &d, &opts()).unwrap());
+    check(
+        "dspmsg-basic-f6",
+        &render(&g, "WRKOPR", &d, &opts()).unwrap(),
+    );
 }
 
 /// Additional Message Information's header for the capture's inquiry.
@@ -285,7 +342,10 @@ fn info(d: &mut MapDialog) {
         .set("SNTTIME", "HH:MM:SS");
     d.set_list(
         "INFO",
-        list(vec![vec![("LINE", "Message . . . . :   Capture inquiry: answer Y or N.")]]),
+        list(vec![vec![(
+            "LINE",
+            "Message . . . . :   Capture inquiry: answer Y or N.",
+        )]]),
     );
 }
 
@@ -294,7 +354,10 @@ fn addmsg_reply_field() {
     let g = shipped("QUIDSPMSG");
     let mut d = MapDialog::new();
     info(&mut d);
-    check("dspmsg-basic-5", &render(&g, "ADDMSGR", &d, &opts()).unwrap());
+    check(
+        "dspmsg-basic-5",
+        &render(&g, "ADDMSGR", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -303,5 +366,8 @@ fn addmsg_replied() {
     let mut d = MapDialog::new();
     info(&mut d);
     d.set("REPLY", "N");
-    check_no_message("dspmsg-basic-replied", &render(&g, "ADDMSGA", &d, &opts()).unwrap());
+    check_no_message(
+        "dspmsg-basic-replied",
+        &render(&g, "ADDMSGA", &d, &opts()).unwrap(),
+    );
 }

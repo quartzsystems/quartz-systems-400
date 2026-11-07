@@ -73,7 +73,10 @@ impl Session {
         }
         (
             DssType::Object,
-            Object::data(obj::SQLCARD, sqlca::sqlcard(ca.as_ref(), crate::fdoca::Repr::default(), self.sqlam)),
+            Object::data(
+                obj::SQLCARD,
+                sqlca::sqlcard(ca.as_ref(), crate::fdoca::Repr::default(), self.sqlam),
+            ),
         )
     }
 
@@ -122,7 +125,10 @@ impl Session {
             DssType::Object,
             Object::coll(
                 obj::SQLDTARD,
-                vec![Object::data(obj::FDODSC, desc::qrydsc_early(&fields)), Object::data(obj::FDODTA, w.out)],
+                vec![
+                    Object::data(obj::FDODSC, desc::qrydsc_early(&fields)),
+                    Object::data(obj::FDODTA, w.out),
+                ],
             ),
         )
     }
@@ -183,14 +189,23 @@ impl Session {
             return Ok(Vec::new());
         };
         let bad = |_| Sqlca::error(-30_000, "58008", "SQLDTA");
-        let descriptor = sqldta.get(obj::FDODSC).map(Object::bytes).unwrap_or_default();
-        let values = sqldta.get(obj::FDODTA).map(Object::bytes).unwrap_or_default();
+        let descriptor = sqldta
+            .get(obj::FDODSC)
+            .map(Object::bytes)
+            .unwrap_or_default();
+        let values = sqldta
+            .get(obj::FDODTA)
+            .map(Object::bytes)
+            .unwrap_or_default();
         let fields = desc::fields(descriptor).map_err(bad)?;
         let mut r = Reader::new(values, self.their_repr);
         if r.peek() == Some(rows::PRESENT) {
             r.u8().map_err(bad)?;
         }
-        fields.iter().map(|f| rows::read_value(&mut r, f).map_err(bad)).collect()
+        fields
+            .iter()
+            .map(|f| rows::read_value(&mut r, f).map_err(bad))
+            .collect()
     }
 
     /// The reply to a `CALL` that left result sets, at most `max` of
@@ -209,7 +224,10 @@ impl Session {
         };
         let at = |i: usize| base.at(u16::try_from(i + 1).unwrap_or(u16::MAX));
         let list: Vec<Object> = (0..n).map(|i| at(i).to_object()).collect();
-        let mut out = vec![(DssType::Reply, reply::rslsetrm(&list)), self.sqlcard(Some(ca))];
+        let mut out = vec![
+            (DssType::Reply, reply::rslsetrm(&list)),
+            self.sqlcard(Some(ca)),
+        ];
         let mut w = Writer::new(crate::fdoca::Repr::default());
         w.i16(i16::try_from(n).unwrap_or(i16::MAX));
         for (i, cursor) in names.iter().take(n).enumerate() {
@@ -241,7 +259,10 @@ impl Session {
             let mut cin = Writer::new(crate::fdoca::Repr::default());
             sqlda::write_cinrd(&mut cin, &columns);
             out.push((DssType::Object, Object::data(obj::SQLCINRD, cin.out)));
-            out.push((DssType::Object, Object::data(obj::QRYDSC, desc::qrydsc_early(&fields))));
+            out.push((
+                DssType::Object,
+                Object::data(obj::QRYDSC, desc::qrydsc_early(&fields)),
+            ));
             let block = self.cfg.block_rows.max(1);
             let batch = match self.sql.fetch(&sec, block) {
                 Ok(b) => b,
@@ -283,7 +304,10 @@ impl Session {
                     .iter()
                     .filter(|o| o.cp == obj::SQLSTT)
                     .filter_map(|o| sqlstt_bytes(o.bytes()).ok())
-                    .map(|(b, _)| ccsid::conv::to_string(self.their_repr.ccsid, &b).unwrap_or_else(|_| crate::wire::text(&b)))
+                    .map(|(b, _)| {
+                        ccsid::conv::to_string(self.their_repr.ccsid, &b)
+                            .unwrap_or_else(|_| crate::wire::text(&b))
+                    })
                     .collect();
                 for t in texts {
                     if let Err(ca) = self.sql.execute_immediate(&t) {
@@ -306,11 +330,20 @@ impl Session {
                     self.sql.describe(&sec)
                 };
                 let wants_da = c.cp == cmd::DSCSQLSTT
-                    || c.get(param::RTNSQLDA).and_then(|x| x.bytes().first().copied()) == Some(0xF1);
+                    || c.get(param::RTNSQLDA)
+                        .and_then(|x| x.bytes().first().copied())
+                        == Some(0xF1);
                 match res {
                     Ok(columns) if wants_da => {
                         let mut w = Writer::new(crate::fdoca::Repr::default());
-                        sqlda::write(&mut w, &Sqldard { sqlca: None, columns }, self.sqlam);
+                        sqlda::write(
+                            &mut w,
+                            &Sqldard {
+                                sqlca: None,
+                                columns,
+                            },
+                            self.sqlam,
+                        );
                         vec![(DssType::Object, Object::data(obj::SQLDARD, w.out))]
                     }
                     Ok(_) => vec![self.sqlcard(None)],
@@ -327,7 +360,9 @@ impl Session {
                 }
                 let params = match self.params(data) {
                     Ok(p) => p,
-                    Err(ca) => return vec![rpy(reply::opnqflrm(&self.cfg.rdb)), self.sqlcard(Some(&ca))],
+                    Err(ca) => {
+                        return vec![rpy(reply::opnqflrm(&self.cfg.rdb)), self.sqlcard(Some(&ca))];
+                    }
                 };
                 match self.sql.open(&sec, &params) {
                     Ok(columns) => {
@@ -400,7 +435,9 @@ impl Session {
             }
             cmd::EXCSQLIMM => match self.statement(data) {
                 Some(text) => match self.sql.execute_immediate(&text) {
-                    Ok(ca) => vec![self.sqlcard(Some(&ca).filter(|c| c.sqlcode != 0 || c.sqlerrd[2] != 0))],
+                    Ok(ca) => vec![
+                        self.sqlcard(Some(&ca).filter(|c| c.sqlcode != 0 || c.sqlerrd[2] != 0)),
+                    ],
                     Err(ca) => vec![self.sqlcard(Some(&ca))],
                 },
                 None => vec![rpy(reply::syntaxrm(0x0E, obj::SQLSTT))],
@@ -413,7 +450,10 @@ impl Session {
                     Ok(p) => p,
                     Err(ca) => return vec![self.sqlcard(Some(&ca))],
                 };
-                let outexp = c.get(param::OUTEXP).and_then(|x| x.bytes().first().copied()) == Some(0xF1);
+                let outexp = c
+                    .get(param::OUTEXP)
+                    .and_then(|x| x.bytes().first().copied())
+                    == Some(0xF1);
                 let max = c.get_u16(param::MAXRSLCNT).unwrap_or(0);
                 let sec = section_of(&pkg);
                 match self.sql.execute(&sec, &params) {
@@ -432,13 +472,19 @@ impl Session {
                         }
                     }
                     Ok(ca) if ca.sqlcode == 466 && max > 0 => self.result_sets(&pkg, &ca, max),
-                    Ok(ca) => vec![self.sqlcard(Some(&ca).filter(|c| c.sqlcode != 0 || c.sqlerrd[2] != 0))],
+                    Ok(ca) => vec![
+                        self.sqlcard(Some(&ca).filter(|c| c.sqlcode != 0 || c.sqlerrd[2] != 0)),
+                    ],
                     Err(ca) => vec![self.sqlcard(Some(&ca))],
                 }
             }
             cmd::RDBCMM | cmd::RDBRLLBCK => {
                 let commit = c.cp == cmd::RDBCMM;
-                let res = if commit { self.sql.commit() } else { self.sql.rollback() };
+                let res = if commit {
+                    self.sql.commit()
+                } else {
+                    self.sql.rollback()
+                };
                 for (sec, _) in self.queries.drain() {
                     let _ = self.sql.close(&sec);
                 }

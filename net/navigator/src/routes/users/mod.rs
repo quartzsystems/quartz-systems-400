@@ -46,7 +46,11 @@ pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
 
 /// Profile `name`.
 fn profile(rq: &Rq<'_>, name: &str) -> Option<Profile> {
-    rq.env().users.profiles(rq.user()).into_iter().find(|p| p.name == name)
+    rq.env()
+        .users
+        .profiles(rq.user())
+        .into_iter()
+        .find(|p| p.name == name)
 }
 
 /// A page of the group; `item` is the tree's current item for a list
@@ -76,5 +80,10 @@ fn run(rq: &Rq<'_>, command: &str, back: &str) -> Response {
 /// The profile commands need `*SECADM`: the Not authorized page
 /// otherwise.
 fn secadm(rq: &Rq<'_>, function: &str, name: &str, crumb: &[&str]) -> Result<(), Response> {
-    rq.require(Need::SecAdm, function, &Target::obj("QSYS", name, "*USRPRF"), crumb)
+    rq.require(
+        Need::SecAdm,
+        function,
+        &Target::obj("QSYS", name, "*USRPRF"),
+        crumb,
+    )
 }

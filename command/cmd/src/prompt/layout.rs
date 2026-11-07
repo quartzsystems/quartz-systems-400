@@ -170,7 +170,10 @@ pub fn pmtctl_decided(def: &CmdDef, label: &str, texts: &HashMap<Path, String>) 
         let Some(idx) = def.index(&c.ctl) else {
             return true;
         };
-        let spcfd = c.conds.iter().all(|(_, w)| w == "*SPCFD" || w == "*UNSPCFD");
+        let spcfd = c
+            .conds
+            .iter()
+            .all(|(_, w)| w == "*SPCFD" || w == "*UNSPCFD");
         spcfd
             || texts
                 .get(&Path::parm(idx))
@@ -336,7 +339,17 @@ fn group_or_qual(
                         }
                     }
                 }
-                value_line(q, &path.step(k), ind, &lbl, sel, marker && k == 0, c, v, out);
+                value_line(
+                    q,
+                    &path.step(k),
+                    ind,
+                    &lbl,
+                    sel,
+                    marker && k == 0,
+                    c,
+                    v,
+                    out,
+                );
             }
         }
         ParmType::Elem { .. } => {

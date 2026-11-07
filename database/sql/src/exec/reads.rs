@@ -31,7 +31,12 @@ use crate::value::Value;
 
 /// `SQL0084`: no trigger program can be called from here.
 fn not_callable(t: &TableInfo, why: &str) -> SqlError {
-    SqlError::Unsupported { what: format!("a query of {}: it has read triggers, and {why}", t.desc.name()) }
+    SqlError::Unsupported {
+        what: format!(
+            "a query of {}: it has read triggers, and {why}",
+            t.desc.name()
+        ),
+    }
 }
 
 /// Whether a query here may read `t`, whose reads fire triggers.
@@ -39,7 +44,10 @@ pub fn callable(ctx: &SqlContext, t: &TableInfo) -> Result<()> {
     if ctx.trigger_caller().is_none() && !quiet(t.id) {
         // BLOCKED(rel): a context with no job (the service console, the
         // kit) has nothing to call a program with.
-        return Err(not_callable(t, "no trigger program can be called from this statement"));
+        return Err(not_callable(
+            t,
+            "no trigger program can be called from this statement",
+        ));
     }
     Ok(())
 }
@@ -54,14 +62,21 @@ fn physical(txn: &mut Txn<'_>, t: &TableInfo) -> Result<Member> {
     let [base] = m.bases.as_slice() else {
         // BLOCKED(rel): a join or multi-format logical file's rows are
         // not one member's records.
-        return Err(not_callable(t, "it is a logical file over more than one member"));
+        return Err(not_callable(
+            t,
+            "it is a logical file over more than one member",
+        ));
     };
     let file_id = ops::read_header(txn, base.member)?.1.library;
     let desc = file::describe(txn, file_id)?;
-    let md = *desc.members.iter().find(|d| d.object == base.member).ok_or_else(|| SqlError::ObjectNotFound {
-        name: desc.name().to_string(),
-        kind: "member",
-    })?;
+    let md = *desc
+        .members
+        .iter()
+        .find(|d| d.object == base.member)
+        .ok_or_else(|| SqlError::ObjectNotFound {
+            name: desc.name().to_string(),
+            kind: "member",
+        })?;
     Ok(Member::open(txn, &desc, &md)?)
 }
 
@@ -79,18 +94,31 @@ pub fn fire(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &TableInfo, rows: &[Row]
         return Ok(());
     }
     let Some(caller) = ctx.trigger_caller() else {
-        return Err(not_callable(t, "no trigger program can be called from this statement"));
+        return Err(not_callable(
+            t,
+            "no trigger program can be called from this statement",
+        ));
     };
     let mut m = physical(txn, t)?;
-    let Some(active) = m.trgs.clone() else { return Ok(()) };
+    let Some(active) = m.trgs.clone() else {
+        return Ok(());
+    };
     let lvl = db::odp::trigger::level_digit(ctx.session.commit_def().map(|c| c.borrow().lcklvl()));
     for r in rows {
         let Some(rrn) = rrn_of(r) else { continue };
-        let Some(slot) = m.read(txn, rrn)? else { continue };
+        let Some(slot) = m.read(txn, rrn)? else {
+            continue;
+        };
         if slot.deleted {
             continue;
         }
-        let row = db::trg::fire::Row { event: Event::Read, rrn, old: Some((&slot.record, &slot.null_map)), new: None, set: None };
+        let row = db::trg::fire::Row {
+            event: Event::Read,
+            rrn,
+            old: Some((&slot.record, &slot.null_map)),
+            new: None,
+            set: None,
+        };
         db::trg::fire::call_all(txn, &caller, &active, &m, Time::After, &row, lvl)?;
         // The program's own requests may have changed the member.
         m.refresh(txn)?;

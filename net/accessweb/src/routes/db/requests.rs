@@ -55,7 +55,11 @@ pub fn route(rq: &Rq<'_>, rest: &[&str]) -> Response {
 
 fn find(rq: &Rq<'_>, id: u32) -> Option<Request> {
     let groups = rq.env().system.groups(rq.user());
-    rq.env().db.requests(rq.user(), &groups).into_iter().find(|r| r.id == id)
+    rq.env()
+        .db
+        .requests(rq.user(), &groups)
+        .into_iter()
+        .find(|r| r.id == id)
 }
 
 /// What a copy request moves (`vendors.csv -> HLINV.MANUFACTURERS`).
@@ -80,11 +84,15 @@ pub fn source(r: &Request) -> String {
             out
         }
         _ => match qdx::from_text(&r.body) {
-            Ok(qdx::Request::Upload { upload: u, .. }) => format!("{} -> {}.{}", u.file, u.schema, u.table),
+            Ok(qdx::Request::Upload { upload: u, .. }) => {
+                format!("{} -> {}.{}", u.file, u.schema, u.table)
+            }
             Ok(qdx::Request::Download { download: d, .. }) => {
                 let from = match &d.source {
                     qdx::Source::Table { schema, table, .. } => format!("{schema}.{table}"),
-                    qdx::Source::Query { sql } => sql.split_whitespace().take(6).collect::<Vec<_>>().join(" "),
+                    qdx::Source::Query { sql } => {
+                        sql.split_whitespace().take(6).collect::<Vec<_>>().join(" ")
+                    }
                 };
                 format!("{from} -> {}", d.file)
             }
@@ -97,7 +105,10 @@ pub fn source(r: &Request) -> String {
 fn open_url(r: &Request, run: bool) -> String {
     let id = r.id.to_string();
     match r.typ {
-        ReqType::Sql => PRODUCT.url(&format!("/sql{}", query(&[("req", &id), ("run", if run { "1" } else { "" })]))),
+        ReqType::Sql => PRODUCT.url(&format!(
+            "/sql{}",
+            query(&[("req", &id), ("run", if run { "1" } else { "" })])
+        )),
         ReqType::CopyTo => PRODUCT.url(&format!("/db/copy/to{}", query(&[("req", &id)]))),
         ReqType::CopyFrom => PRODUCT.url(&format!("/db/copy/from{}", query(&[("req", &id)]))),
     }
@@ -136,21 +147,31 @@ fn list(rq: &Rq<'_>) -> Response {
         .map(|r| {
             let mine = r.owner == rq.user();
             let base = format!("/requests/{}", r.id);
-            let mut acts = vec![
-                format!("<a href=\"{}\">Run</a>", esc(&open_url(r, true))),
-            ];
+            let mut acts = vec![format!("<a href=\"{}\">Run</a>", esc(&open_url(r, true)))];
             if mine {
                 acts.push(format!("<a href=\"{}\">Edit</a>", esc(&open_url(r, false))));
             }
-            acts.push(format!("<a href=\"{}\">Download .qdx / .sql</a>", url(&format!("{base}/download"))));
+            acts.push(format!(
+                "<a href=\"{}\">Download .qdx / .sql</a>",
+                url(&format!("{base}/download"))
+            ));
             if mine && save {
-                acts.push(format!("<a href=\"{}\">Copy</a>", url(&format!("{base}/copy"))));
+                acts.push(format!(
+                    "<a href=\"{}\">Copy</a>",
+                    url(&format!("{base}/copy"))
+                ));
             }
             if mine {
-                acts.push(format!("<a href=\"{}\">Delete</a>", url(&format!("{base}/delete/confirm"))));
+                acts.push(format!(
+                    "<a href=\"{}\">Delete</a>",
+                    url(&format!("{base}/delete/confirm"))
+                ));
             }
             if mine && share {
-                acts.push(format!("<a href=\"{}\">Share</a>", url(&format!("{base}/share"))));
+                acts.push(format!(
+                    "<a href=\"{}\">Share</a>",
+                    url(&format!("{base}/share"))
+                ));
             }
             vec![
                 Cell::act(acts.join(" | ")),
@@ -218,14 +239,37 @@ fn import(rq: &Rq<'_>) -> Response {
     if let Err(r) = rq.policy(policy::DB_SAVE, CRUMB) {
         return r;
     }
-    let Some(p) = rq.req.multipart().unwrap_or_default().into_iter().find(|p| p.name == "f" && p.filename.is_some()) else {
-        return rq.done("/requests", rq.message(MsgKind::Error, msgs::FILE_UNREADABLE, &["(none)", "no file was sent"]));
+    let Some(p) = rq
+        .req
+        .multipart()
+        .unwrap_or_default()
+        .into_iter()
+        .find(|p| p.name == "f" && p.filename.is_some())
+    else {
+        return rq.done(
+            "/requests",
+            rq.message(
+                MsgKind::Error,
+                msgs::FILE_UNREADABLE,
+                &["(none)", "no file was sent"],
+            ),
+        );
     };
     let name = p.filename.clone().unwrap_or_default();
     let Ok(text) = String::from_utf8(p.data) else {
-        return rq.done("/requests", rq.message(MsgKind::Error, msgs::NOT_A_REQUEST, &[&name, "it is not text"]));
+        return rq.done(
+            "/requests",
+            rq.message(
+                MsgKind::Error,
+                msgs::NOT_A_REQUEST,
+                &[&name, "it is not text"],
+            ),
+        );
     };
-    let stem = name.rsplit_once('.').map_or(name.as_str(), |x| x.0).to_string();
+    let stem = name
+        .rsplit_once('.')
+        .map_or(name.as_str(), |x| x.0)
+        .to_string();
     let r = if name.to_ascii_lowercase().ends_with(".sql") {
         Request {
             name: stem,
@@ -238,17 +282,33 @@ fn import(rq: &Rq<'_>) -> Response {
         match qdx::from_text(&text) {
             Ok(q) => Request {
                 name: stem,
-                typ: if matches!(q, qdx::Request::Upload { .. }) { ReqType::CopyTo } else { ReqType::CopyFrom },
+                typ: if matches!(q, qdx::Request::Upload { .. }) {
+                    ReqType::CopyTo
+                } else {
+                    ReqType::CopyFrom
+                },
                 format: copy_format(&text),
                 body: text,
                 ..Request::default()
             },
-            Err(e) => return rq.done("/requests", rq.message(MsgKind::Error, msgs::NOT_A_REQUEST, &[&name, &e.to_string()])),
+            Err(e) => {
+                return rq.done(
+                    "/requests",
+                    rq.message(
+                        MsgKind::Error,
+                        msgs::NOT_A_REQUEST,
+                        &[&name, &e.to_string()],
+                    ),
+                );
+            }
         }
     };
     let name = r.name.clone();
     match rq.env().db.save_request(rq.user(), &r) {
-        Ok(_) => rq.done("/requests", rq.message(MsgKind::Done, msgs::REQUEST_SAVED, &[&name])),
+        Ok(_) => rq.done(
+            "/requests",
+            rq.message(MsgKind::Done, msgs::REQUEST_SAVED, &[&name]),
+        ),
         Err(m) => rq.done("/requests", m),
     }
 }
@@ -259,7 +319,10 @@ pub fn keep(rq: &Rq<'_>, r: &Request) -> Response {
         return resp;
     }
     match rq.env().db.save_request(rq.user(), r) {
-        Ok(_) => rq.done("/requests", rq.message(MsgKind::Done, msgs::REQUEST_SAVED, &[&r.name])),
+        Ok(_) => rq.done(
+            "/requests",
+            rq.message(MsgKind::Done, msgs::REQUEST_SAVED, &[&r.name]),
+        ),
         Err(m) => rq.done("/requests", m),
     }
 }
@@ -278,7 +341,10 @@ fn save(rq: &Rq<'_>) -> Response {
         }
         let name = f.str("name").trim().to_string();
         if name.is_empty() {
-            return rq.done("/requests/save", rq.message(MsgKind::Error, msgs::BAD_VALUE, &["", "Request name"]));
+            return rq.done(
+                "/requests/save",
+                rq.message(MsgKind::Error, msgs::BAD_VALUE, &["", "Request name"]),
+            );
         }
         let fmt = f.str("fmt").to_string();
         return keep(
@@ -292,7 +358,10 @@ fn save(rq: &Rq<'_>) -> Response {
             },
         );
     }
-    let formats: Vec<String> = ["HTML", "CSV", "TSV", "XLSX", "ODS", "Fixed width", "PDF"].iter().map(ToString::to_string).collect();
+    let formats: Vec<String> = ["HTML", "CSV", "TSV", "XLSX", "ODS", "Fixed width", "PDF"]
+        .iter()
+        .map(ToString::to_string)
+        .collect();
     let body = form(
         &rq.ctx,
         "",
@@ -308,7 +377,9 @@ fn save(rq: &Rq<'_>) -> Response {
         title: "Save request".into(),
         crumb: crumb(&["My requests", "Save request"]),
         h1: "Save request".into(),
-        desc: Some("Keep the Run SQL script with your requests, to run it again or share it.".into()),
+        desc: Some(
+            "Keep the Run SQL script with your requests, to run it again or share it.".into(),
+        ),
         body,
         help: "db-requests".into(),
         nav: Some((GROUP, Some("/requests"))),
@@ -317,10 +388,28 @@ fn save(rq: &Rq<'_>) -> Response {
 }
 
 fn download(r: &Request) -> Response {
-    let file: String = r.name.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c.to_ascii_lowercase() } else { '-' }).collect();
+    let file: String = r
+        .name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect();
     match r.typ {
-        ReqType::Sql => Response::download(&format!("{file}.sql"), "application/sql; charset=utf-8", r.body.clone().into_bytes()),
-        _ => Response::download(&format!("{file}.qdx"), "application/toml; charset=utf-8", r.body.clone().into_bytes()),
+        ReqType::Sql => Response::download(
+            &format!("{file}.sql"),
+            "application/sql; charset=utf-8",
+            r.body.clone().into_bytes(),
+        ),
+        _ => Response::download(
+            &format!("{file}.qdx"),
+            "application/toml; charset=utf-8",
+            r.body.clone().into_bytes(),
+        ),
     }
 }
 
@@ -334,7 +423,11 @@ fn copy(rq: &Rq<'_>, r: &Request) -> Response {
             return rq.redirect("/requests");
         }
         let name = f.str("name").trim();
-        let name = if name.is_empty() { format!("Copy of {}", r.name) } else { name.to_string() };
+        let name = if name.is_empty() {
+            format!("Copy of {}", r.name)
+        } else {
+            name.to_string()
+        };
         return keep(
             rq,
             &Request {
@@ -389,18 +482,35 @@ fn share(rq: &Rq<'_>, r: &Request) -> Response {
         }
         let to = f.str("to");
         if !choices.iter().any(|c| c == to) {
-            return rq.done("/requests", rq.message(MsgKind::Error, msgs::BAD_VALUE, &[to, "Share with"]));
+            return rq.done(
+                "/requests",
+                rq.message(MsgKind::Error, msgs::BAD_VALUE, &[to, "Share with"]),
+            );
         }
-        let shared = if to == NOBODY { String::new() } else { to.to_string() };
+        let shared = if to == NOBODY {
+            String::new()
+        } else {
+            to.to_string()
+        };
         let mut n = r.clone();
         n.shared.clone_from(&shared);
         return match rq.env().db.save_request(rq.user(), &n) {
-            Ok(_) if shared.is_empty() => rq.done("/requests", rq.message(MsgKind::Done, msgs::REQUEST_SAVED, &[&r.name])),
-            Ok(_) => rq.done("/requests", rq.message(MsgKind::Done, msgs::REQUEST_SHARED, &[&r.name, &shared])),
+            Ok(_) if shared.is_empty() => rq.done(
+                "/requests",
+                rq.message(MsgKind::Done, msgs::REQUEST_SAVED, &[&r.name]),
+            ),
+            Ok(_) => rq.done(
+                "/requests",
+                rq.message(MsgKind::Done, msgs::REQUEST_SHARED, &[&r.name, &shared]),
+            ),
             Err(m) => rq.done("/requests", m),
         };
     }
-    let chosen = if r.shared.is_empty() { NOBODY } else { r.shared.as_str() };
+    let chosen = if r.shared.is_empty() {
+        NOBODY
+    } else {
+        r.shared.as_str()
+    };
     let body = form(
         &rq.ctx,
         "",
@@ -429,12 +539,20 @@ fn delete(rq: &Rq<'_>, r: &Request) -> Response {
             return rq.redirect("/requests");
         }
         return match rq.env().db.delete_request(rq.user(), r.id) {
-            Ok(()) => rq.done("/requests", rq.message(MsgKind::Done, msgs::REQUEST_DELETED, &[&r.name])),
+            Ok(()) => rq.done(
+                "/requests",
+                rq.message(MsgKind::Done, msgs::REQUEST_DELETED, &[&r.name]),
+            ),
             Err(m) => rq.done("/requests", m),
         };
     }
     let lst = List {
-        cols: vec![Col::plain("Request"), Col::plain("Type"), Col::plain("Statement / source"), Col::plain("Shared with")],
+        cols: vec![
+            Col::plain("Request"),
+            Col::plain("Type"),
+            Col::plain("Statement / source"),
+            Col::plain("Shared with"),
+        ],
         rows: vec![vec![
             Cell::text(&r.name),
             Cell::text(r.typ.label()),

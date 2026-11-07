@@ -93,7 +93,11 @@ fn line_of(ifname: &str) -> String {
 fn links() -> HashMap<u32, (String, u32, bool)> {
     netlink::route::Rtnl::open()
         .and_then(|mut r| r.links())
-        .map(|v| v.into_iter().map(|l| (l.index, (l.name.clone(), l.mtu, l.is_up()))).collect())
+        .map(|v| {
+            v.into_iter()
+                .map(|l| (l.index, (l.name.clone(), l.mtu, l.is_up())))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -129,14 +133,22 @@ fn interfaces(system: &System, cfg: &Config, st: &State) -> Vec<Ifc> {
             .map_or(1500, |l| l.1);
         out.push(Ifc {
             addr,
-            special: if addr.is_none() { i.key() } else { String::new() },
+            special: if addr.is_none() {
+                i.key()
+            } else {
+                String::new()
+            },
             prefix,
             line: i.line.name().to_string(),
             line_type: i.line_type().to_string(),
             status: st.ifc_status(&i.key()).name().to_string(),
             alias: i.alias.clone().unwrap_or_default(),
             host: addr.map(host).unwrap_or_default(),
-            mtu: i.mtu.unwrap_or(if addr.is_some_and(|a| a.is_loopback()) { 576 } else { link_mtu }),
+            mtu: i.mtu.unwrap_or(if addr.is_some_and(|a| a.is_loopback()) {
+                576
+            } else {
+                link_mtu
+            }),
             autostart: i.autostart,
             dhcp: matches!(i.addr, IfcAddr::Dhcp4),
             vlan: i.vlan,
@@ -176,8 +188,16 @@ fn interfaces(system: &System, cfg: &Config, st: &State) -> Vec<Ifc> {
             addr: Some(a.addr),
             prefix: a.prefix,
             line: line_of(&name),
-            line_type: if name == "lo" { "*NONE".into() } else { "*ELAN".into() },
-            status: if up { "Active".into() } else { "Inactive".into() },
+            line_type: if name == "lo" {
+                "*NONE".into()
+            } else {
+                "*ELAN".into()
+            },
+            status: if up {
+                "Active".into()
+            } else {
+                "Inactive".into()
+            },
             host: host(a.addr),
             mtu,
             autostart: false,
@@ -200,11 +220,20 @@ fn routes(cfg: &Config, ifcs: &[Ifc]) -> Vec<Rte> {
         }
         let link = r.oif.and_then(|i| links.get(&i));
         let configured = cfg.rtes.list.iter().find(|c| {
-            c.next_hop == r.gateway.unwrap_or(c.next_hop) && r.gateway.is_some() && c.prefix == r.dst_len
+            c.next_hop == r.gateway.unwrap_or(c.next_hop)
+                && r.gateway.is_some()
+                && c.prefix == r.dst_len
         });
         let ifc = r.prefsrc.or_else(|| {
             let name = &link?.0;
-            ifcs.iter().find(|i| line_of(name) == i.line && i.addr.is_some_and(|a| a.is_ipv6() == r.dst.or(r.gateway).is_some_and(|d| d.is_ipv6()))).and_then(|i| i.addr)
+            ifcs.iter()
+                .find(|i| {
+                    line_of(name) == i.line
+                        && i.addr.is_some_and(|a| {
+                            a.is_ipv6() == r.dst.or(r.gateway).is_some_and(|d| d.is_ipv6())
+                        })
+                })
+                .and_then(|i| i.addr)
         });
         out.push(Rte {
             dest: if r.dst_len == 0 { None } else { r.dst },
@@ -223,7 +252,11 @@ fn routes(cfg: &Config, ifcs: &[Ifc]) -> Vec<Rte> {
     // The loopback network lives in the kernel's local table; the
     // system lists it with the others.
     let lo: IpAddr = Ipv4Addr::new(127, 0, 0, 0).into();
-    if ifcs.iter().any(|i| i.addr.is_some_and(|a| a.is_loopback() && a.is_ipv4())) && !out.iter().any(|r| r.dest == Some(lo)) {
+    if ifcs
+        .iter()
+        .any(|i| i.addr.is_some_and(|a| a.is_loopback() && a.is_ipv4()))
+        && !out.iter().any(|r| r.dest == Some(lo))
+    {
         out.push(Rte {
             dest: Some(lo),
             prefix: 8,
@@ -277,7 +310,11 @@ fn conns(system: &System, socks: &[InetSock]) -> Vec<Conn> {
                 local: s.id.local,
                 remote: s.id.remote,
                 state: state(s),
-                idle_ms: if s.state == netlink::diag::TcpState::Listen { 0 } else { idle },
+                idle_ms: if s.state == netlink::diag::TcpState::Listen {
+                    0
+                } else {
+                    idle
+                },
                 user: user.clone(),
                 jobs: job
                     .map(|j| {
@@ -342,7 +379,10 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelDa
         "IFC" | "IFC6" => {
             let v6 = what == "IFC6";
             let rows = netstat::ifcs(&interfaces(system, &cfg, &st), v6);
-            list(if v6 { "IFC6S" } else { "IFCS" }, rename(rows, v6, "I", "X"))
+            list(
+                if v6 { "IFC6S" } else { "IFCS" },
+                rename(rows, v6, "I", "X"),
+            )
         }
         "IFC5" => {
             let all = interfaces(system, &cfg, &st);
@@ -355,7 +395,10 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelDa
             let v6 = what == "RTE6" || (what == "RTEOF" && arg.contains(':'));
             if what == "RTEOF" {
                 let a: Option<IpAddr> = arg.parse().ok();
-                all.retain(|r| r.ifc == a || a.is_some_and(|a| r.dest.is_some_and(|d| same_net(d, a, r.prefix))));
+                all.retain(|r| {
+                    r.ifc == a
+                        || a.is_some_and(|a| r.dest.is_some_and(|d| same_net(d, a, r.prefix)))
+                });
             }
             let rows = netstat::rtes(&all, v6)
                 .into_iter()
@@ -368,7 +411,10 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelDa
                     r
                 })
                 .collect();
-            list(if v6 { "RTE6S" } else { "RTES" }, rename(rows, v6, "R", "Y"))
+            list(
+                if v6 { "RTE6S" } else { "RTES" },
+                rename(rows, v6, "R", "Y"),
+            )
         }
         "RTE5" => {
             let ifcs = interfaces(system, &cfg, &st);
@@ -380,7 +426,10 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelDa
             let v6 = what == "CNN6";
             let all = conns(system, &sockets());
             let rows = netstat::conns(&all, v6, &port_namer(&cfg));
-            list(if v6 { "CNN6S" } else { "CNNS" }, rename(rows, v6, "C", "Z"))
+            list(
+                if v6 { "CNN6S" } else { "CNNS" },
+                rename(rows, v6, "C", "Z"),
+            )
         }
         "CNN5" => {
             let all = conns(system, &sockets());
@@ -389,11 +438,18 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelDa
                 if a.is_loopback() {
                     Some("LOOPBACK".to_string())
                 } else {
-                    cfg.hosts.list.iter().find(|e| e.addr == a).and_then(|e| e.names.first().cloned())
+                    cfg.hosts
+                        .list
+                        .iter()
+                        .find(|e| e.addr == a)
+                        .and_then(|e| e.names.first().cloned())
                 }
             };
             let last_seen = now_unix().saturating_sub(c.idle_ms / 1000);
-            (netstat::conn_detail(c, &names, &port_namer(&cfg), &when(system, last_seen)), Vec::new())
+            (
+                netstat::conn_detail(c, &names, &port_namer(&cfg), &when(system, last_seen)),
+                Vec::new(),
+            )
         }
         "CNN8" => {
             let all = conns(system, &sockets());
@@ -408,7 +464,11 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelDa
             let s = Stack {
                 v4: active,
                 v6: active,
-                active_secs: if active { now_unix().saturating_sub(st.started) } else { 0 },
+                active_secs: if active {
+                    now_unix().saturating_sub(st.started)
+                } else {
+                    0
+                },
                 started: when(system, st.started),
                 ended: when(system, end_time),
                 starter: who_started,
@@ -437,7 +497,12 @@ pub fn sql(system: &mut System) -> Result<sql::exec::catalog::services::host::Ne
             }
         }
     }
-    Ok(sql::exec::catalog::services::host::Netstat { interfaces, routes, connections, port_names })
+    Ok(sql::exec::catalog::services::host::Netstat {
+        interfaces,
+        routes,
+        connections,
+        port_names,
+    })
 }
 
 /// The IPv6 lists' variables have their own first letter.
@@ -448,7 +513,13 @@ fn rename(rows: Vec<netstat::Row>, v6: bool, from: &str, to: &str) -> Vec<netsta
     rows.into_iter()
         .map(|r| {
             r.into_iter()
-                .map(|(k, v)| (k.strip_prefix(from).map_or_else(|| k.clone(), |rest| format!("{to}{rest}")), v))
+                .map(|(k, v)| {
+                    (
+                        k.strip_prefix(from)
+                            .map_or_else(|| k.clone(), |rest| format!("{to}{rest}")),
+                        v,
+                    )
+                })
                 .collect()
         })
         .collect()
@@ -457,11 +528,19 @@ fn rename(rows: Vec<netstat::Row>, v6: bool, from: &str, to: &str) -> Vec<netsta
 fn same_net(a: IpAddr, b: IpAddr, prefix: u8) -> bool {
     match (a, b) {
         (IpAddr::V4(a), IpAddr::V4(b)) => {
-            let m = if prefix == 0 { 0 } else { u32::MAX << (32 - u32::from(prefix.min(32))) };
+            let m = if prefix == 0 {
+                0
+            } else {
+                u32::MAX << (32 - u32::from(prefix.min(32)))
+            };
             u32::from(a) & m == u32::from(b) & m
         }
         (IpAddr::V6(a), IpAddr::V6(b)) => {
-            let m = if prefix == 0 { 0 } else { u128::MAX << (128 - u32::from(prefix.min(128))) };
+            let m = if prefix == 0 {
+                0
+            } else {
+                u128::MAX << (128 - u32::from(prefix.min(128)))
+            };
             u128::from(a) & m == u128::from(b) & m
         }
         _ => false,
@@ -479,21 +558,38 @@ pub fn end(_system: &mut System, key: &str) -> Result<Note, Note> {
     let socks = sockets();
     let parts: Vec<&str> = key.splitn(3, '|').collect();
     let [proto, local, remote] = parts[..] else {
-        return Err(Note::diag("TCP1D07", format!("The connection was not found: {key}")));
+        return Err(Note::diag(
+            "TCP1D07",
+            format!("The connection was not found: {key}"),
+        ));
     };
     let (local, remote): (SocketAddr, SocketAddr) = match (local.parse(), remote.parse()) {
         (Ok(l), Ok(r)) => (l, r),
-        _ => return Err(Note::diag("TCP1D07", format!("The connection was not found: {key}"))),
+        _ => {
+            return Err(Note::diag(
+                "TCP1D07",
+                format!("The connection was not found: {key}"),
+            ));
+        }
     };
     let tcp = proto == "T";
     let Some(s) = socks
         .iter()
         .find(|s| (s.proto == Proto::Tcp) == tcp && s.id.local == local && s.id.remote == remote)
     else {
-        return Err(Note::diag("TCP1D07", format!("The connection was not found: {key}")));
+        return Err(Note::diag(
+            "TCP1D07",
+            format!("The connection was not found: {key}"),
+        ));
     };
     match Diag::open().and_then(|mut d| d.destroy(s)) {
-        Ok(()) => Ok(Note::info("TCP1D05", format!("The connection from {local} to {remote} was ended."))),
-        Err(e) => Err(Note::diag("TCP1D07", format!("The connection could not be ended: {e}"))),
+        Ok(()) => Ok(Note::info(
+            "TCP1D05",
+            format!("The connection from {local} to {remote} was ended."),
+        )),
+        Err(e) => Err(Note::diag(
+            "TCP1D07",
+            format!("The connection could not be ended: {e}"),
+        )),
     }
 }

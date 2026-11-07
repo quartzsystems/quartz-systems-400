@@ -27,9 +27,9 @@ mod state;
 pub use linux::{give, idle, queued, serve, take, take_as};
 pub use state::State;
 
+use crate::Errno;
 use crate::pass::{DescriptorPassing, JobId};
 use crate::sys::Fd;
-use crate::Errno;
 
 /// Where the storage service listens.
 pub const SOCKET: &str = "/run/qs400/fdrelay";
@@ -103,12 +103,23 @@ mod host {
     use super::{Errno, Fd, JobId, Taken};
 
     /// No relay off Linux.
-    pub fn give(_path: &str, _fd: &Fd, _target: &JobId, _source: &JobId, _note: &[u8]) -> Result<(), Errno> {
+    pub fn give(
+        _path: &str,
+        _fd: &Fd,
+        _target: &JobId,
+        _source: &JobId,
+        _note: &[u8],
+    ) -> Result<(), Errno> {
         Err(Errno::ENOSYS)
     }
 
     /// No relay off Linux.
-    pub fn take(_path: &str, _me: &JobId, _source: Option<&JobId>, _wait_ms: u32) -> Result<Option<Taken>, Errno> {
+    pub fn take(
+        _path: &str,
+        _me: &JobId,
+        _source: Option<&JobId>,
+        _wait_ms: u32,
+    ) -> Result<Option<Taken>, Errno> {
         Err(Errno::ENOSYS)
     }
 

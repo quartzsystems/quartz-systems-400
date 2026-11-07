@@ -92,7 +92,10 @@ impl Suite {
         let queries = local.run_queries(&kit)?;
 
         let out = s.command(
-            &format!("svc.obj crt *LIB QSYS/{} Database conformance", kit::LIBRARY),
+            &format!(
+                "svc.obj crt *LIB QSYS/{} Database conformance",
+                kit::LIBRARY
+            ),
             CMD,
         )?;
         ok(&out, "create library", "created")?;
@@ -213,7 +216,10 @@ impl Suite {
             }
         }
         let n = self.bench;
-        let out = s.command(&format!("svc.dbbench {n}"), Duration::from_secs(300 + n / 50))?;
+        let out = s.command(
+            &format!("svc.dbbench {n}"),
+            Duration::from_secs(300 + n / 50),
+        )?;
         let bench = out
             .lines()
             .find(|l| l.starts_with("insert"))
@@ -285,7 +291,10 @@ impl Suite {
         let out = s.command("strcmtctl LCKLVL(*CHG)", CMD)?;
         ok(&out, "strcmtctl", "started")?;
         let out = s.command(
-            &format!("svc.sql UPDATE {}/CUSTOMER SET BAL = BAL + 1000;", kit::LIBRARY),
+            &format!(
+                "svc.sql UPDATE {}/CUSTOMER SET BAL = BAL + 1000;",
+                kit::LIBRARY
+            ),
             CMD,
         )?;
         ok(&out, "update under commitment control", "row(s) affected")?;

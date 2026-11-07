@@ -63,13 +63,18 @@ pub fn document(c: &Compiled, s: &Subject<'_>) -> Result<String, String> {
             .iter()
             .filter(|p| exported(p))
             .map(|p| {
-                let proto = t.protos.iter().find(|x| x.name.eq_ignore_ascii_case(&p.name));
+                let proto = t
+                    .protos
+                    .iter()
+                    .find(|x| x.name.eq_ignore_ascii_case(&p.name));
                 Program {
                     name: p.name.to_ascii_uppercase(),
                     entry: Some(p.name.to_ascii_uppercase()),
                     integer: proto.and_then(|x| x.ret.clone()) == Some(Ty::Int(10)),
                     line: p.at.line,
-                    parms: proto.map(|x| x.parms.iter().map(item).collect()).unwrap_or_default(),
+                    parms: proto
+                        .map(|x| x.parms.iter().map(item).collect())
+                        .unwrap_or_default(),
                 }
             })
             .collect()
@@ -106,17 +111,33 @@ pub fn document(c: &Compiled, s: &Subject<'_>) -> Result<String, String> {
         collect(t, &p.ty, &mut structs)?;
     }
     let mut out = String::from("<pcml version=\"7.0\">\n");
-    let _ = writeln!(out, "   <!-- RPG {}: {}  -->", if s.module { "module" } else { "program" }, s.name);
+    let _ = writeln!(
+        out,
+        "   <!-- RPG {}: {}  -->",
+        if s.module { "module" } else { "program" },
+        s.name
+    );
     let _ = writeln!(out, "   <!-- created: {} -->", s.created);
     let _ = writeln!(out, "   <!-- source: {} -->", s.source);
     for i in &structs {
         let d = &t.ds[*i];
-        let (name, line) = t.syms.get(d.sym).map_or(("DS", 0), |x| (x.name.as_str(), x.def_line));
+        let (name, line) = t
+            .syms
+            .get(d.sym)
+            .map_or(("DS", 0), |x| (x.name.as_str(), x.def_line));
         let _ = writeln!(out, "   <!-- {line} -->");
-        let _ = writeln!(out, "   <struct name=\"{}\">", esc(&name.to_ascii_uppercase()));
+        let _ = writeln!(
+            out,
+            "   <struct name=\"{}\">",
+            esc(&name.to_ascii_uppercase())
+        );
         for f in &d.subfields {
             if let Some(sf) = t.syms.get(*f) {
-                let _ = writeln!(out, "      {}", data(t, &sf.name, &sf.ty, sf.dim, None, "inherit"));
+                let _ = writeln!(
+                    out,
+                    "      {}",
+                    data(t, &sf.name, &sf.ty, sf.dim, None, "inherit")
+                );
             }
         }
         out.push_str("   </struct>\n");
@@ -164,7 +185,9 @@ fn item(p: &Parm) -> Item {
 /// A type PCML can describe; pointers and objects it cannot.
 fn check(name: &str, ty: &Ty) -> Result<(), String> {
     match ty {
-        Ty::Ptr | Ty::ProcPtr | Ty::Object | Ty::Unknown | Ty::Dur(_) => Err(name.to_ascii_uppercase()),
+        Ty::Ptr | Ty::ProcPtr | Ty::Object | Ty::Unknown | Ty::Dur(_) => {
+            Err(name.to_ascii_uppercase())
+        }
         _ => Ok(()),
     }
 }
@@ -194,8 +217,12 @@ fn data(t: &Table, name: &str, ty: &Ty, dim: u32, passby: Option<&str>, usage: &
     let _ = match ty {
         Ty::Char(n) => write!(a, "type=\"char\" length=\"{n}\""),
         Ty::VarChar(n, _) => write!(a, "type=\"varchar\" length=\"{n}\""),
-        Ty::Ucs2(n) | Ty::Graph(n) => write!(a, "type=\"char\" length=\"{n}\" chartype=\"twobyte\""),
-        Ty::VarUcs2(n, _) | Ty::VarGraph(n, _) => write!(a, "type=\"varchar\" length=\"{n}\" chartype=\"twobyte\""),
+        Ty::Ucs2(n) | Ty::Graph(n) => {
+            write!(a, "type=\"char\" length=\"{n}\" chartype=\"twobyte\"")
+        }
+        Ty::VarUcs2(n, _) | Ty::VarGraph(n, _) => {
+            write!(a, "type=\"varchar\" length=\"{n}\" chartype=\"twobyte\"")
+        }
         Ty::Ind => write!(a, "type=\"char\" length=\"1\""),
         Ty::Packed(d, s) => write!(a, "type=\"packed\" length=\"{d}\" precision=\"{s}\""),
         Ty::Zoned(d, s) => write!(a, "type=\"zoned\" length=\"{d}\" precision=\"{s}\""),
@@ -205,17 +232,30 @@ fn data(t: &Table, name: &str, ty: &Ty, dim: u32, passby: Option<&str>, usage: &
         }
         Ty::Int(d) => {
             let (len, bits) = int_size(*d);
-            write!(a, "type=\"int\" length=\"{len}\" precision=\"{}\"", bits - 1)
+            write!(
+                a,
+                "type=\"int\" length=\"{len}\" precision=\"{}\"",
+                bits - 1
+            )
         }
         Ty::Uns(d) => {
             let (len, bits) = int_size(*d);
             write!(a, "type=\"int\" length=\"{len}\" precision=\"{bits}\"")
         }
         Ty::Float(n) => write!(a, "type=\"float\" length=\"{n}\""),
-        Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_) => write!(a, "type=\"char\" length=\"{}\"", t.size(ty)),
+        Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_) => {
+            write!(a, "type=\"char\" length=\"{}\"", t.size(ty))
+        }
         Ty::Ds(i) => {
-            let s = t.ds.get(*i).and_then(|d| t.syms.get(d.sym)).map_or("DS", |x| x.name.as_str());
-            write!(a, "type=\"struct\" struct=\"{}\"", esc(&s.to_ascii_uppercase()))
+            let s =
+                t.ds.get(*i)
+                    .and_then(|d| t.syms.get(d.sym))
+                    .map_or("DS", |x| x.name.as_str());
+            write!(
+                a,
+                "type=\"struct\" struct=\"{}\"",
+                esc(&s.to_ascii_uppercase())
+            )
         }
         Ty::Ptr | Ty::ProcPtr | Ty::Object | Ty::Unknown | Ty::Dur(_) => Ok(()),
     };
@@ -240,7 +280,10 @@ fn int_size(digits: u8) -> (u8, u8) {
 }
 
 fn esc(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 #[cfg(test)]
@@ -270,7 +313,9 @@ mod tests {
 
     /// Ours against IBM's, every line but the time.
     fn same(ours: &str, capture: &str) {
-        let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/oracle/rpg/pcml").join(capture);
+        let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tools/conformance/oracle/rpg/pcml")
+            .join(capture);
         let theirs = std::fs::read_to_string(&file).unwrap().replace('\r', "");
         let keep = |l: &&str| !l.contains("<!-- created:");
         let a: Vec<&str> = ours.lines().filter(keep).collect();
@@ -282,7 +327,13 @@ mod tests {
     fn a_program_as_ibm_writes_it() {
         let c = compiled(PROGRAM, "PCMLT", crate::Command::CrtBndRpg);
         assert!(c.created, "{:?}", c.diags);
-        let s = Subject { name: "PCMLT", lib: "{user}1", module: false, source: "{user}1/QSPCMLSRC(PCMLT)", created: "x" };
+        let s = Subject {
+            name: "PCMLT",
+            lib: "{user}1",
+            module: false,
+            source: "{user}1/QSPCMLSRC(PCMLT)",
+            created: "x",
+        };
         same(&document(&c, &s).unwrap(), "pcmlt.pcml");
     }
 
@@ -290,14 +341,30 @@ mod tests {
     fn a_module_as_ibm_writes_it() {
         let c = compiled(MODULE, "PCMLM", crate::Command::CrtRpgMod);
         assert!(c.created, "{:?}", c.diags);
-        let s = Subject { name: "PCMLM", lib: "{user}1", module: true, source: "{user}1/QSPCMLSRC(PCMLM)", created: "x" };
+        let s = Subject {
+            name: "PCMLM",
+            lib: "{user}1",
+            module: true,
+            source: "{user}1/QSPCMLSRC(PCMLM)",
+            created: "x",
+        };
         same(&document(&c, &s).unwrap(), "pcmlm.pcml");
     }
 
     #[test]
     fn a_pointer_has_no_pcml() {
-        let c = compiled("**FREE\ndcl-pi *n;\n  p pointer;\nend-pi;\n*inlr = *on;\n", "T", crate::Command::CrtBndRpg);
-        let s = Subject { name: "T", lib: "QGPL", module: false, source: "", created: "" };
+        let c = compiled(
+            "**FREE\ndcl-pi *n;\n  p pointer;\nend-pi;\n*inlr = *on;\n",
+            "T",
+            crate::Command::CrtBndRpg,
+        );
+        let s = Subject {
+            name: "T",
+            lib: "QGPL",
+            module: false,
+            source: "",
+            created: "",
+        };
         assert_eq!(document(&c, &s).unwrap_err(), "P");
     }
 }

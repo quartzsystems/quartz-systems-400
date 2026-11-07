@@ -15,7 +15,9 @@ pub fn mangle(name: &str) -> String {
         match c {
             '@' => out.push_str("_at_"),
             '$' => out.push_str("_dl_"),
-            c if c.is_ascii_alphanumeric() || c == '_' || c == '#' => out.push(c.to_ascii_uppercase()),
+            c if c.is_ascii_alphanumeric() || c == '_' || c == '#' => {
+                out.push(c.to_ascii_uppercase())
+            }
             _ => out.push_str("_x_"),
         }
     }

@@ -199,8 +199,7 @@ pub fn decode_buf(b: &[u8], reclen: usize, fields: usize) -> Result<Vec<Rec>, Er
             b.len()
         )));
     }
-    Ok(b
-        .chunks(each)
+    Ok(b.chunks(each)
         .map(|c| Rec {
             data: c[..reclen].to_vec(),
             flags: u16::from_be_bytes([c[reclen], c[reclen + 1]]),

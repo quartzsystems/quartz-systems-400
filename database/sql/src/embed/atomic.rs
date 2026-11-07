@@ -18,7 +18,13 @@ impl Session {
         let now = self.ctx.clock();
         let mut st = self.store.store();
         let r = st.begin().map_err(SqlError::from).and_then(|mut txn| {
-            match self.ctx.session.strcmtctl_in(&mut txn, lcklvl, None, now, CmtScope::ActGrp(group.to_string())) {
+            match self.ctx.session.strcmtctl_in(
+                &mut txn,
+                lcklvl,
+                None,
+                now,
+                CmtScope::ActGrp(group.to_string()),
+            ) {
                 Ok(()) | Err(db::DbError::CommitActive) => {}
                 Err(e) => return Err(SqlError::from(e)),
             }
@@ -37,7 +43,10 @@ impl Session {
         let now = self.ctx.now;
         let mut st = self.store.store();
         let r = st.begin().map_err(SqlError::from).and_then(|mut txn| {
-            self.ctx.session.commit(&mut txn, now).map_err(SqlError::from)?;
+            self.ctx
+                .session
+                .commit(&mut txn, now)
+                .map_err(SqlError::from)?;
             txn.commit().map_err(SqlError::from)
         });
         r.err().map(|e| Sqlca::from_error(&e))

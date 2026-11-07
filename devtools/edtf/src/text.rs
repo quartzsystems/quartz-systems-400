@@ -143,7 +143,11 @@ impl Text {
     #[must_use]
     pub fn decode(bytes: &[u8], file_ccsid: u16) -> Option<Self> {
         let s = ccsid::conv::to_string(file_ccsid, bytes).ok()?;
-        let eol = detect(&s).unwrap_or(if is_ebcdic(file_ccsid) { Eol::Nl } else { Eol::Crlf });
+        let eol = detect(&s).unwrap_or(if is_ebcdic(file_ccsid) {
+            Eol::Nl
+        } else {
+            Eol::Crlf
+        });
         let (lines, final_eol) = split(&s);
         let raw = lines
             .iter()
@@ -218,10 +222,16 @@ mod tests {
         assert_eq!(t.lines.len(), 3);
         assert_eq!(t.eol, Eol::Crlf);
         assert!(t.final_eol);
-        assert_eq!(Text::encode(&t.lines, t.eol, t.final_eol, 819).unwrap(), PROBE);
+        assert_eq!(
+            Text::encode(&t.lines, t.eol, t.final_eol, 819).unwrap(),
+            PROBE
+        );
         let lf = Text::decode(b"a\nb", 819).unwrap();
         assert_eq!((lf.eol, lf.final_eol), (Eol::Lf, false));
-        assert_eq!(Text::encode(&lf.lines, lf.eol, lf.final_eol, 819).unwrap(), b"a\nb");
+        assert_eq!(
+            Text::encode(&lf.lines, lf.eol, lf.final_eol, 819).unwrap(),
+            b"a\nb"
+        );
         assert_eq!(shown("\tx", 37), " x");
         assert_eq!(record_length(PROBE.len(), 22), 59);
     }

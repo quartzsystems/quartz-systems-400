@@ -32,8 +32,10 @@ pub fn lp(ctx: &Ctx) -> Result<Vec<PathBuf>> {
     fs::create_dir_all(&out)?;
     let mut made = Vec::new();
     for m in manifests {
-        let text = fs::read_to_string(&m).with_context(|| format!("cannot read {}", m.display()))?;
-        let b = lpbuild::build(&text, &key, now).with_context(|| format!("packaging {}", m.display()))?;
+        let text =
+            fs::read_to_string(&m).with_context(|| format!("cannot read {}", m.display()))?;
+        let b = lpbuild::build(&text, &key, now)
+            .with_context(|| format!("packaging {}", m.display()))?;
         let path = out.join(format!("{}.savf", b.product));
         fs::write(&path, &b.stream).with_context(|| format!("cannot write {}", path.display()))?;
         info!(

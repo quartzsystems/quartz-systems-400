@@ -62,7 +62,12 @@ pub(super) fn render(
     }
     let columns = columns(ctx, area, limit);
     let body = top + height - row;
-    let shown = |c: &Column<'_>| c.rows.iter().filter(|r| !matches!(r, Row::Hidden(..))).count();
+    let shown = |c: &Column<'_>| {
+        c.rows
+            .iter()
+            .filter(|r| !matches!(r, Row::Hidden(..)))
+            .count()
+    };
     let longest = columns.iter().map(shown).max().unwrap_or(0);
     // R10: pages only when the content overflows.
     // `SCROLL=IND` keeps the indicator's row on every page.
@@ -496,7 +501,9 @@ fn walk<'a>(
         DataNode::Group(g) => {
             if !rows.is_empty() {
                 match g.grpsep {
-                    Separator::Space | Separator::SysName | Separator::DateTime => rows.push(Row::Blank),
+                    Separator::Space | Separator::SysName | Separator::DateTime => {
+                        rows.push(Row::Blank)
+                    }
                     Separator::Rule => rows.push(Row::Rule),
                     Separator::None => {}
                 }

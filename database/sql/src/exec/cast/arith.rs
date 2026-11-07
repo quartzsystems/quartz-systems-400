@@ -17,7 +17,10 @@ use crate::exec::eval;
 use crate::value::Value;
 
 fn is_number(v: &Value) -> bool {
-    matches!(v, Value::Num(_) | Value::Double(_) | Value::Real(_) | Value::DecFloat(_))
+    matches!(
+        v,
+        Value::Num(_) | Value::Double(_) | Value::Real(_) | Value::DecFloat(_)
+    )
 }
 
 /// A string beside `other` (a number) as a value of `other`'s type: a
@@ -28,9 +31,17 @@ pub fn string_as(s: &str, other: &Value) -> Result<Value> {
         Value::Num(d) => Value::Num(number::parse(s)?.decimal(d.scale(), s)?),
         Value::Double(_) | Value::Real(_) => {
             number::parse(s)?;
-            Value::Double(s.trim_matches(' ').parse().map_err(|_| super::bad_chars(s))?)
+            Value::Double(
+                s.trim_matches(' ')
+                    .parse()
+                    .map_err(|_| super::bad_chars(s))?,
+            )
         }
-        _ => Value::DecFloat(to_decfloat(&Value::Str(s.to_string()), DfFormat::D34, DfRounding::HalfEven)?),
+        _ => Value::DecFloat(to_decfloat(
+            &Value::Str(s.to_string()),
+            DfFormat::D34,
+            DfRounding::HalfEven,
+        )?),
     })
 }
 
@@ -41,10 +52,15 @@ pub fn binary(a: &Value, op: BinOp, b: &Value, mode: DfRounding) -> Result<Value
         return Ok(Value::Null);
     }
     if op == BinOp::Concat {
-        let datetime = |v: &Value| matches!(v, Value::Date(_) | Value::Time(_) | Value::Timestamp(_));
+        let datetime =
+            |v: &Value| matches!(v, Value::Date(_) | Value::Time(_) | Value::Timestamp(_));
         if datetime(a) || datetime(b) {
             let n = if datetime(a) { 1 } else { 2 };
-            return Err(coded(-171, "42815", format!("argument {n} of CONCAT is a date, time or timestamp")));
+            return Err(coded(
+                -171,
+                "42815",
+                format!("argument {n} of CONCAT is a date, time or timestamp"),
+            ));
         }
         if is_number(a) || is_number(b) {
             return Ok(Value::Str(format!("{}{}", char_text(a), char_text(b))));
@@ -52,7 +68,11 @@ pub fn binary(a: &Value, op: BinOp, b: &Value, mode: DfRounding) -> Result<Value
         return eval::binary(a, op, b);
     }
     if matches!(a, Value::Bool(_)) || matches!(b, Value::Bool(_)) {
-        return Err(coded(-402, "42819", "a BOOLEAN operand of an arithmetic operator"));
+        return Err(coded(
+            -402,
+            "42819",
+            "a BOOLEAN operand of an arithmetic operator",
+        ));
     }
     // A string beside a number takes the number's type.
     let (a, b) = match (a, b) {

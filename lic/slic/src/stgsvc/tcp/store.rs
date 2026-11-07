@@ -39,7 +39,12 @@ fn definition(l: &Layout) -> Result<PfDefinition, String> {
             Ty::B => DataType::Binary,
             Ty::G => DataType::Graphic,
         };
-        let mut x = FieldDef::new(Name::parse(fd.name).map_err(|e| e.to_string())?, ty, fd.len, 0);
+        let mut x = FieldDef::new(
+            Name::parse(fd.name).map_err(|e| e.to_string())?,
+            ty,
+            fd.len,
+            0,
+        );
         x.text = Some(fd.text.to_string());
         if fd.ty == Ty::G {
             x.ccsid = Some(13488);
@@ -48,7 +53,12 @@ fn definition(l: &Layout) -> Result<PfDefinition, String> {
     }
     f.lay_out();
     if f.record_len as usize != l.record_len() {
-        return Err(format!("{}: record length {} is not {}", l.file, f.record_len, l.record_len()));
+        return Err(format!(
+            "{}: record length {} is not {}",
+            l.file,
+            f.record_len,
+            l.record_len()
+        ));
     }
     Ok(PfDefinition {
         format: f,
@@ -115,7 +125,8 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Res
                 ..db::CreateFileOpts::default()
             };
             let name = Name::parse(l.file).map_err(|e| e.to_string())?;
-            let id = db::file::create_pf(txn, lib, name, &def, &opts).map_err(|e| format!("{}: {e}", l.file))?;
+            let id = db::file::create_pf(txn, lib, name, &def, &opts)
+                .map_err(|e| format!("{}: {e}", l.file))?;
             write(txn, id, &data)?;
             made += 1;
         }
@@ -144,7 +155,12 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Res
 /// starts: the files made when missing, then the interface and the
 /// default route `ADDTCPIFC` and `ADDTCPRTE` would add
 /// (`tcpcfg::install`). The commands it stands for.
-pub fn install_answers(system: &mut System, ip: &str, gateway: Option<&str>, line: &str) -> Result<Vec<String>, String> {
+pub fn install_answers(
+    system: &mut System,
+    ip: &str,
+    gateway: Option<&str>,
+    line: &str,
+) -> Result<Vec<String>, String> {
     let cmds = tcpcfg::install::commands(ip, gateway, line).map_err(|e| e.text)?;
     let stamp = wm::obj::Stamp {
         owner: "QSYS".into(),
@@ -196,7 +212,8 @@ pub fn save(system: &mut System, cfg: &Config, t: Table) -> Result<(), String> {
     with_store(system, |txn, qsys| {
         let lib = lib_of(txn, qsys)?;
         for (file, recs) in files::encode(cfg, t) {
-            let id = find(txn, lib, file)?.ok_or_else(|| format!("CPF9812 File {file} in library {LIB} not found."))?;
+            let id = find(txn, lib, file)?
+                .ok_or_else(|| format!("CPF9812 File {file} in library {LIB} not found."))?;
             write(txn, id, &recs)?;
         }
         Ok(())
@@ -205,7 +222,13 @@ pub fn save(system: &mut System, cfg: &Config, t: Table) -> Result<(), String> {
 
 /// `CPYTCPHT`: the IPv4 host table records into `lib/file` (created in
 /// the `QHOSTS` format when missing), replacing its records or added.
-pub fn copy_to(system: &mut System, lib: &str, file: &str, recs: &[Vec<u8>], add: bool) -> Result<(), String> {
+pub fn copy_to(
+    system: &mut System,
+    lib: &str,
+    file: &str,
+    recs: &[Vec<u8>],
+    add: bool,
+) -> Result<(), String> {
     with_store(system, |txn, qsys| {
         let l = wm::obj::library(txn, qsys, lib).map_err(|e| format!("CPF2110 {lib}: {e}"))?;
         let id = if let Some(id) = find(txn, l, file)? {
@@ -213,10 +236,12 @@ pub fn copy_to(system: &mut System, lib: &str, file: &str, recs: &[Vec<u8>], add
         } else {
             let def = definition(&defs::QATOCHOST)?;
             let name = Name::parse(file).map_err(|e| e.to_string())?;
-            db::file::create_pf(txn, l, name, &def, &db::CreateFileOpts::default()).map_err(|e| e.to_string())?
+            db::file::create_pf(txn, l, name, &def, &db::CreateFileOpts::default())
+                .map_err(|e| e.to_string())?
         };
         if add {
-            let mut m = db::Member::open_by(txn, id, MemberSpec::First).map_err(|e| e.to_string())?;
+            let mut m =
+                db::Member::open_by(txn, id, MemberSpec::First).map_err(|e| e.to_string())?;
             let nulls = vec![0u8; usize::from(m.format().null_map_len)];
             for r in recs {
                 m.write_new(txn, r, &nulls).map_err(|e| e.to_string())?;

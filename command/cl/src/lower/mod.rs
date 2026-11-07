@@ -219,7 +219,8 @@ impl Gen<'_, '_> {
         let first = self.t.first_exec.unwrap_or(usize::MAX);
         for s in &p.stmts {
             if let (Kind::MonMsg(ids, cmp, exec), true) = (&s.kind, s.n < first) {
-                self.pgm_monmsg.push((ids.clone(), cmp.clone(), exec.clone()));
+                self.pgm_monmsg
+                    .push((ids.clone(), cmp.clone(), exec.clone()));
             }
         }
         self.declare_vars();
@@ -429,12 +430,7 @@ impl Gen<'_, '_> {
 
     /// One statement with its monitors; `next_else` is the `ELSE` that
     /// follows an `IF`.
-    fn statement(
-        &mut self,
-        s: &Stmt,
-        monitors: &[Monitor],
-        next_else: Option<&Stmt>,
-    ) {
+    fn statement(&mut self, s: &Stmt, monitors: &[Monitor], next_else: Option<&Stmt>) {
         let l = Self::stmt_label(s.n);
         self.label(&l);
         if self.opts.dbgview != "*NONE" {
@@ -486,8 +482,7 @@ impl Gen<'_, '_> {
         // The monitor region around the statement, the handlers after.
         let region = self.fresh("M");
         let next = self.fresh("N");
-        let mut handlers: Vec<(String, Monitor)> =
-            Vec::new();
+        let mut handlers: Vec<(String, Monitor)> = Vec::new();
         let mut sels = Vec::new();
         for (ids, cmp, exec) in &all {
             let h = self.fresh("H");
@@ -553,7 +548,10 @@ impl Gen<'_, '_> {
                 let part = self.temp_varying(7);
                 self.ins(&format!("str.subst {part}, {mid}, 1, {len}"));
                 let same = self.reg("c");
-                self.ins(&format!("{same} = str.cmp.eq {part}, {}", expr::qstr(&id[..len])));
+                self.ins(&format!(
+                    "{same} = str.cmp.eq {part}, {}",
+                    expr::qstr(&id[..len])
+                ));
                 let no = self.fresh("X");
                 self.term(&format!("brif {same}, {h}, {no}"));
                 self.label(&no);

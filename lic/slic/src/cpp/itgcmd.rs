@@ -16,8 +16,8 @@ use stg::proto::CmdReply;
 use store::obj::{ops, types};
 
 use super::direct::{failed, in_store};
-use super::savout::{self, Fld, Row};
 use super::savcmd::trusted_keys;
+use super::savout::{self, Fld, Row};
 use crate::ipl::system::{System, now_unix};
 
 /// Run `name`, or `None` when it is not this.
@@ -58,14 +58,29 @@ struct Violation {
 /// 10151 bytes, as the V7R1M0 oracle's `DSPFFD` shows it
 /// (`golden/verified/oracle71/questions/dspffd-qasychki-*`).
 const QSYCHKIT: &[Fld] = &[
-    ("AIDCEN", 'A', 1, 0), ("AIDDAT", 'A', 6, 0), ("AIDTIM", 'A', 6, 0),
-    ("AISYST", 'A', 8, 0), ("AIOIND", 'A', 1, 0), ("AINAME", 'A', 10, 0),
-    ("AILIB", 'A', 10, 0), ("AITYPE", 'A', 8, 0), ("AIOWNR", 'A', 10, 0),
-    ("AIVIOL", 'A', 10, 0), ("AITRUN", 'A', 1, 0), ("AICCSD", 'B', 5, 0),
-    ("AICTID", 'A', 2, 0), ("AILNID", 'A', 3, 0), ("AIRES1", 'A', 3, 0),
-    ("AIPBYT", 'P', 5, 0), ("AIFLID", 'A', 16, 0), ("AIRES2", 'A', 20, 0),
-    ("AIPATH", 'V', 9997, 0), ("AILASP", 'A', 10, 0), ("AILASN", 'A', 5, 0),
-    ("AIOASP", 'A', 10, 0), ("AIOASN", 'A', 5, 0),
+    ("AIDCEN", 'A', 1, 0),
+    ("AIDDAT", 'A', 6, 0),
+    ("AIDTIM", 'A', 6, 0),
+    ("AISYST", 'A', 8, 0),
+    ("AIOIND", 'A', 1, 0),
+    ("AINAME", 'A', 10, 0),
+    ("AILIB", 'A', 10, 0),
+    ("AITYPE", 'A', 8, 0),
+    ("AIOWNR", 'A', 10, 0),
+    ("AIVIOL", 'A', 10, 0),
+    ("AITRUN", 'A', 1, 0),
+    ("AICCSD", 'B', 5, 0),
+    ("AICTID", 'A', 2, 0),
+    ("AILNID", 'A', 3, 0),
+    ("AIRES1", 'A', 3, 0),
+    ("AIPBYT", 'P', 5, 0),
+    ("AIFLID", 'A', 16, 0),
+    ("AIRES2", 'A', 20, 0),
+    ("AIPATH", 'V', 9997, 0),
+    ("AILASP", 'A', 10, 0),
+    ("AILASN", 'A', 5, 0),
+    ("AIOASP", 'A', 10, 0),
+    ("AIOASN", 'A', 5, 0),
 ];
 
 /// One outfile record: when (`CYYMMDD`, `HHMMSS`), where, the object
@@ -107,7 +122,11 @@ fn chkobjitg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let ty = parms.text("OBJTYPE").to_ascii_uppercase();
     let type_code = match ty.as_str() {
         "" | "*ALL" => None,
-        t => Some(types::type_by_name(t).ok_or_else(|| format!("CPD0084 OBJTYPE({t}) is not valid"))?.code),
+        t => Some(
+            types::type_by_name(t)
+                .ok_or_else(|| format!("CPD0084 OBJTYPE({t}) is not valid"))?
+                .code,
+        ),
     };
     let owner = parms.text("USRPRF").to_ascii_uppercase();
     let chksig = parms.text("CHKSIG").to_ascii_uppercase();
@@ -171,16 +190,29 @@ fn chkobjitg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     // As on the system, an outfile only when there is something in it.
     if !parms.qual("OUTFILE").0.is_empty() && n > 0 {
         let sys = system.system_name();
-        let rows: Vec<Row> = lines.iter().map(|v| outfile_row(v, &sys, now_unix())).collect();
+        let rows: Vec<Row> = lines
+            .iter()
+            .map(|v| outfile_row(v, &sys, now_unix()))
+            .collect();
         text.push_str(&savout::write(system, parms, "QSYCHKIT", QSYCHKIT, &rows)?);
     }
     let (id, line) = if n == 0 {
-        (CLEAN, format!("{CLEAN} {checked} objects checked, no violations"))
+        (
+            CLEAN,
+            format!("{CLEAN} {checked} objects checked, no violations"),
+        )
     } else {
-        (VIOLATIONS, format!("{VIOLATIONS} {checked} objects checked, {n} with violations"))
+        (
+            VIOLATIONS,
+            format!("{VIOLATIONS} {checked} objects checked, {n} with violations"),
+        )
     };
     let _ = writeln!(text, "{line}");
-    Ok(super::done(text, id, &[(&checked.to_string(), 10), (&n.to_string(), 10)]))
+    Ok(super::done(
+        text,
+        id,
+        &[(&checked.to_string(), 10), (&n.to_string(), 10)],
+    ))
 }
 
 #[cfg(test)]

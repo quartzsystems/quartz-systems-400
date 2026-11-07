@@ -467,11 +467,18 @@ impl Registry {
     /// `ADDIMGCLGE FROMDEV` from a real drive: the medium read from
     /// `src` into a new image file of the catalog (named as `to_file`
     /// says, `*GEN` by default), then added as `p` says.
-    pub fn addimgclge_from(&mut self, name: &str, p: &AddImgClgE, src: &mut dyn std::io::Read) -> Result<u16> {
+    pub fn addimgclge_from(
+        &mut self,
+        name: &str,
+        p: &AddImgClgE,
+        src: &mut dyn std::io::Read,
+    ) -> Result<u16> {
         let c = self.catalog(name)?;
         let (kind, dir, cname) = (c.kind, c.dir.clone(), c.name.clone());
         if kind != ImgType::Opt {
-            return Err(Error::Invalid("FROMDEV needs an optical image catalog".into()));
+            return Err(Error::Invalid(
+                "FROMDEV needs an optical image catalog".into(),
+            ));
         }
         let index = p
             .index

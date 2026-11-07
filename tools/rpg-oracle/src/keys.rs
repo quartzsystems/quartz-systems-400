@@ -82,7 +82,8 @@ pub fn parse(step: &str) -> Result<Vec<Action>, String> {
                 exit,
             });
         } else {
-            let k = tn5250_driver::script::key_named(&w).ok_or_else(|| format!("{w}: not a key"))?;
+            let k =
+                tn5250_driver::script::key_named(&w).ok_or_else(|| format!("{w}: not a key"))?;
             out.push(Action::Key(k));
         }
     }
@@ -102,7 +103,12 @@ pub fn play(t: &mut Terminal, actions: &[Action]) -> Result<(), String> {
     };
     for a in actions {
         match a {
-            Action::Field { row, col, text, exit } => {
+            Action::Field {
+                row,
+                col,
+                text,
+                exit,
+            } => {
                 t.set_cursor(*row, *col);
                 check(t.type_str(text))?;
                 if *exit {

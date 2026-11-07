@@ -29,9 +29,9 @@
 
 use qap_proto::Status;
 use qap_proto::ops::manage::{
-    Asp, DiskUnit, DiskUnits, EndSubsystem, HardwareResource, HardwareResources, IplAction, IplMode,
-    IplStatus, PowerDown, PreviousEnd, Protection, Ptf, PtfStatus, ResourceStatus, ResourceType, SetSystemValue,
-    Subsystem, SubsystemStatus, SystemValue, UnitStatus, ValueKind,
+    Asp, DiskUnit, DiskUnits, EndSubsystem, HardwareResource, HardwareResources, IplAction,
+    IplMode, IplStatus, PowerDown, PreviousEnd, Protection, Ptf, PtfStatus, ResourceStatus,
+    ResourceType, SetSystemValue, Subsystem, SubsystemStatus, SystemValue, UnitStatus, ValueKind,
 };
 use qap_proto::types::{JobId, ObjectName};
 
@@ -41,7 +41,14 @@ use crate::manage::ExitRequest;
 /// The groups whose values `sec::sysval` calls security values.
 const SECURITY: &str = "SEC";
 /// The auditing values (`sec::sysval::AUDIT`).
-const AUDIT: &[&str] = &["QAUDCTL", "QAUDENDACN", "QAUDFRCLVL", "QAUDLVL", "QAUDLVL2", "QCRTOBJAUD"];
+const AUDIT: &[&str] = &[
+    "QAUDCTL",
+    "QAUDENDACN",
+    "QAUDFRCLVL",
+    "QAUDLVL",
+    "QAUDLVL2",
+    "QCRTOBJAUD",
+];
 
 /// A rule an exit program applies: true refuses the request.
 pub type ExitRule = Box<dyn Fn(&ExitRequest) -> bool + Send>;
@@ -112,7 +119,13 @@ fn ptf(id: &str, status: PtfStatus, action: IplAction, delayed: bool) -> Ptf {
     }
 }
 
-fn unit(unit: u16, asp: u16, resource: &str, status: UnitStatus, protection: Protection) -> DiskUnit {
+fn unit(
+    unit: u16,
+    asp: u16,
+    resource: &str,
+    status: UnitStatus,
+    protection: Protection,
+) -> DiskUnit {
     const TB: u64 = 1_000_204_886_016;
     DiskUnit {
         unit,
@@ -127,7 +140,14 @@ fn unit(unit: u16, asp: u16, resource: &str, status: UnitStatus, protection: Pro
     }
 }
 
-fn hw(name: &str, depth: u8, tm: &str, text: &str, location: &str, parent: &str) -> HardwareResource {
+fn hw(
+    name: &str,
+    depth: u8,
+    tm: &str,
+    text: &str,
+    location: &str,
+    parent: &str,
+) -> HardwareResource {
     HardwareResource {
         name: name.into(),
         depth,
@@ -176,7 +196,13 @@ fn values() -> Vec<Value> {
         val("QAUDLVL", List, "*AUTFAIL *SECURITY", SECURITY, &[]),
         val("QCCSID", Integer, "37", "SYSCTL", &[]),
         val("QCTLSBSD", List, "QCTL QSYS", "SYSCTL", &[]),
-        val("QDATFMT", Character, "MDY", "DATTIM", &["MDY", "DMY", "YMD", "JUL"]),
+        val(
+            "QDATFMT",
+            Character,
+            "MDY",
+            "DATTIM",
+            &["MDY", "DMY", "YMD", "JUL"],
+        ),
         val("QIPLTYPE", Character, "0", "SYSCTL", &["0", "1", "2"]),
         val("QMAXSIGN", Decimal, "3", SECURITY, &[]),
         val("QPWDEXPITV", Decimal, "90", SECURITY, &[]),
@@ -186,7 +212,13 @@ fn values() -> Vec<Value> {
         val("QTIMSEP", Character, ":", "DATTIM", &[":", ".", ",", " "]),
         val("QUPSDLYTIM", Character, "*CALC", "SYSCTL", &[]),
         val("QDSCJOBITV", Character, "240", "SYSCTL", &[]),
-        val("QRMTSIGN", Character, "*VERIFY", SECURITY, &["*FRCSIGNON", "*SAMEPRF", "*VERIFY", "*REJECT"]),
+        val(
+            "QRMTSIGN",
+            Character,
+            "*VERIFY",
+            SECURITY,
+            &["*FRCSIGNON", "*SAMEPRF", "*VERIFY", "*REJECT"],
+        ),
         val("QSHRMEMCTL", Character, "0", SECURITY, &["0", "1"]),
     ]
 }
@@ -211,7 +243,13 @@ fn disks() -> DiskUnits {
             unit(1, 1, "DD002", UnitStatus::Active, Protection::Mirrored),
             unit(2, 1, "DD003", UnitStatus::Active, Protection::Mirrored),
             unit(2, 1, "DD004", UnitStatus::Resuming, Protection::Mirrored),
-            unit(0, 0, "DD005", UnitStatus::NonConfigured, Protection::Unprotected),
+            unit(
+                0,
+                0,
+                "DD005",
+                UnitStatus::NonConfigured,
+                Protection::Unprotected,
+            ),
         ],
         asps: vec![Asp {
             asp: 1,
@@ -230,13 +268,62 @@ fn hardware() -> Vec<(Vec<ResourceType>, HardwareResource)> {
     vec![
         (prc(), hw("PN01", 0, "QP01-001", "Processor", "cpu0", "")),
         (prc(), hw("PN02", 0, "QP01-001", "Processor", "cpu1", "")),
-        (prc(), hw("MS01", 0, "QM01-001", "Main Storage", "memory", "")),
-        (vec![T::All, T::Communication, T::Storage], hw("CMB01", 0, "QB01-001", "PCI Bridge", "0000:00:00.0", "")),
-        (cmn(), hw("LIN01", 1, "QN01-001", "Network Adapter", "0000:00:03.0", "CMB01")),
-        (cmn(), hw("CMN01", 2, "QN01-001", "Ethernet Port", "0000:00:03.0", "LIN01")),
-        (cmn(), hw("CMN02", 1, "QS01-001", "Serial Port", "ttyS0", "CMB01")),
-        (cmn(), hw("CMN03", 1, "QV01-001", "Virtual Channel", "org.qemu.guest_agent.0", "CMB01")),
-        (stg(), hw("DC01", 1, "QD02-001", "Storage Controller", "0000:00:1f.2", "CMB01")),
+        (
+            prc(),
+            hw("MS01", 0, "QM01-001", "Main Storage", "memory", ""),
+        ),
+        (
+            vec![T::All, T::Communication, T::Storage],
+            hw("CMB01", 0, "QB01-001", "PCI Bridge", "0000:00:00.0", ""),
+        ),
+        (
+            cmn(),
+            hw(
+                "LIN01",
+                1,
+                "QN01-001",
+                "Network Adapter",
+                "0000:00:03.0",
+                "CMB01",
+            ),
+        ),
+        (
+            cmn(),
+            hw(
+                "CMN01",
+                2,
+                "QN01-001",
+                "Ethernet Port",
+                "0000:00:03.0",
+                "LIN01",
+            ),
+        ),
+        (
+            cmn(),
+            hw("CMN02", 1, "QS01-001", "Serial Port", "ttyS0", "CMB01"),
+        ),
+        (
+            cmn(),
+            hw(
+                "CMN03",
+                1,
+                "QV01-001",
+                "Virtual Channel",
+                "org.qemu.guest_agent.0",
+                "CMB01",
+            ),
+        ),
+        (
+            stg(),
+            hw(
+                "DC01",
+                1,
+                "QD02-001",
+                "Storage Controller",
+                "0000:00:1f.2",
+                "CMB01",
+            ),
+        ),
         (stg(), hw("DD001", 2, "SSD", "Disk Drive", "sda", "DC01")),
         (stg(), hw("DD002", 2, "SSD", "Disk Drive", "sdb", "DC01")),
         (stg(), hw("DD003", 2, "SSD", "Disk Drive", "sdc", "DC01")),
@@ -289,7 +376,8 @@ impl Manage {
             .cloned()
             .collect();
         v.sort_by(|a, b| {
-            (a.status != SubsystemStatus::Active, &a.sbsd.name).cmp(&(b.status != SubsystemStatus::Active, &b.sbsd.name))
+            (a.status != SubsystemStatus::Active, &a.sbsd.name)
+                .cmp(&(b.status != SubsystemStatus::Active, &b.sbsd.name))
         });
         v
     }
@@ -311,7 +399,11 @@ impl Manage {
         let i = self.find(o)?;
         let s = &mut self.subsystems[i];
         if s.status == SubsystemStatus::Active {
-            let job = s.monitor.as_ref().map(|j| j.number.clone()).unwrap_or_default();
+            let job = s
+                .monitor
+                .as_ref()
+                .map(|j| j.number.clone())
+                .unwrap_or_default();
             return Err((Status::Error, "CPF1010", vec![s.sbsd.name.clone(), job]));
         }
         self.next_job += 1;
@@ -379,7 +471,10 @@ impl Manage {
     /// What `CHGSYSVAL` of `name` needs: the special authorities, all.
     #[must_use]
     pub fn needs(&self, name: &str) -> &'static [&'static str] {
-        let security = self.values.iter().any(|v| v.value.name == name && v.value.category == SECURITY);
+        let security = self
+            .values
+            .iter()
+            .any(|v| v.value.name == name && v.value.category == SECURITY);
         if AUDIT.contains(&name) {
             &["*AUDIT"]
         } else if security {
@@ -415,7 +510,12 @@ impl Manage {
     #[must_use]
     pub fn ptfs(&self, product: &str) -> Vec<Ptf> {
         let p = product.trim().to_ascii_uppercase();
-        let mut v: Vec<Ptf> = self.ptfs.iter().filter(|f| p == "*ALL" || p.is_empty() || f.product == p).cloned().collect();
+        let mut v: Vec<Ptf> = self
+            .ptfs
+            .iter()
+            .filter(|f| p == "*ALL" || p.is_empty() || f.product == p)
+            .cloned()
+            .collect();
         v.sort_by(|a, b| (&a.product, &a.id).cmp(&(&b.product, &b.id)));
         v
     }
@@ -424,7 +524,12 @@ impl Manage {
     #[must_use]
     pub fn hardware(&self, kind: ResourceType) -> HardwareResources {
         HardwareResources {
-            resources: self.hardware.iter().filter(|(t, _)| t.contains(&kind)).map(|(_, r)| r.clone()).collect(),
+            resources: self
+                .hardware
+                .iter()
+                .filter(|(t, _)| t.contains(&kind))
+                .map(|(_, r)| r.clone())
+                .collect(),
         }
     }
 

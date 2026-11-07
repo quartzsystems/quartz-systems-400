@@ -8,25 +8,25 @@
 
 mod array;
 mod change;
+mod cte;
 mod ddl;
-mod integrity;
-mod sequence;
-mod variable;
-mod from;
 mod dml;
 mod expr;
+mod from;
+mod integrity;
 mod objects;
-mod cte;
 mod olap;
+mod sequence;
+mod variable;
 
 pub use olap::GROUPING_SETS;
 mod json;
 mod pl;
 mod query;
 mod routine;
-mod trigger;
 mod savepoint;
 mod temp;
+mod trigger;
 mod types;
 
 use crate::ast::{
@@ -157,7 +157,11 @@ impl Parser {
         if let Tok::Word(w) = &t.tok
             && KEYWORDS.contains(&w.as_str())
         {
-            return SqlError::Keyword { word: t.tok.describe(), line: t.line, col: t.col };
+            return SqlError::Keyword {
+                word: t.tok.describe(),
+                line: t.line,
+                col: t.col,
+            };
         }
         SqlError::Syntax {
             line: t.line,
@@ -182,7 +186,11 @@ impl Parser {
     /// `SQL0199`: the current keyword is not expected.
     fn keyword(&self) -> SqlError {
         let t = &self.toks[self.at.min(self.toks.len() - 1)];
-        SqlError::Keyword { word: t.tok.describe(), line: t.line, col: t.col }
+        SqlError::Keyword {
+            word: t.tok.describe(),
+            line: t.line,
+            col: t.col,
+        }
     }
 
     fn unsupported(what: &str) -> SqlError {
@@ -284,7 +292,9 @@ impl Parser {
         match self.tok() {
             // Not the concurrent access resolution clause.
             Tok::Word(w)
-                if self.is_words(&["WAIT", "FOR"]) || self.is_words(&["SKIP", "LOCKED"]) || self.is_words(&["USE", "CURRENTLY"]) =>
+                if self.is_words(&["WAIT", "FOR"])
+                    || self.is_words(&["SKIP", "LOCKED"])
+                    || self.is_words(&["USE", "CURRENTLY"]) =>
             {
                 let _ = w;
                 Ok(None)
@@ -308,7 +318,11 @@ impl Parser {
         let first = self.ident()?;
         // System naming takes the period as well as the slash (V7R5M0,
         // `rpg/perf/PERF04.sqlrpgle`).
-        let sep = if self.naming == Naming::Sys && self.is_sym(".") { "." } else { self.separator() };
+        let sep = if self.naming == Naming::Sys && self.is_sym(".") {
+            "."
+        } else {
+            self.separator()
+        };
         if !self.eat_sym(sep) {
             return Ok(ObjectName {
                 schema: None,
@@ -395,7 +409,11 @@ impl Parser {
         };
         self.expect_sym(")")?;
         // `2G` is the largest LOB, one byte short of 2 to the 31st.
-        let n = if n * unit == 1 << 31 { (1 << 31) - 1 } else { n * unit };
+        let n = if n * unit == 1 << 31 {
+            (1 << 31) - 1
+        } else {
+            n * unit
+        };
         u32::try_from(n)
             .ok()
             .filter(|n| (1..=2_147_483_647).contains(n))
@@ -417,11 +435,42 @@ impl Parser {
     /// `CAST`'s), resolved as the statement runs (`exec::udt`).
     pub(crate) fn type_spec_or_udt(&mut self) -> Result<TypeSpec> {
         const BUILT_IN: &[&str] = &[
-            "CHAR", "CHARACTER", "VARCHAR", "GRAPHIC", "VARGRAPHIC", "DECIMAL", "DEC", "NUMERIC", "NUM", "SMALLINT", "INTEGER", "INT",
-            "BIGINT", "REAL", "DOUBLE", "FLOAT", "DATE", "TIME", "TIMESTAMP", "DECFLOAT", "BINARY", "VARBINARY", "BOOLEAN", "BLOB",
-            "CLOB", "DBCLOB", "NCHAR", "NVARCHAR", "NCLOB", "NATIONAL", "XML", "ROWID", "DATALINK",
+            "CHAR",
+            "CHARACTER",
+            "VARCHAR",
+            "GRAPHIC",
+            "VARGRAPHIC",
+            "DECIMAL",
+            "DEC",
+            "NUMERIC",
+            "NUM",
+            "SMALLINT",
+            "INTEGER",
+            "INT",
+            "BIGINT",
+            "REAL",
+            "DOUBLE",
+            "FLOAT",
+            "DATE",
+            "TIME",
+            "TIMESTAMP",
+            "DECFLOAT",
+            "BINARY",
+            "VARBINARY",
+            "BOOLEAN",
+            "BLOB",
+            "CLOB",
+            "DBCLOB",
+            "NCHAR",
+            "NVARCHAR",
+            "NCLOB",
+            "NATIONAL",
+            "XML",
+            "ROWID",
+            "DATALINK",
         ];
-        let built_in = matches!(self.tok(), Tok::Word(w) if BUILT_IN.contains(&w.as_str())) && !matches!(self.tok_at(1), Tok::Sym(s) if *s == ".");
+        let built_in = matches!(self.tok(), Tok::Word(w) if BUILT_IN.contains(&w.as_str()))
+            && !matches!(self.tok_at(1), Tok::Sym(s) if *s == ".");
         if built_in || !matches!(self.tok(), Tok::Word(_) | Tok::Delimited(_)) {
             return self.type_spec();
         }
@@ -430,7 +479,12 @@ impl Parser {
             Some(s) => format!("{}.{}", s.value, n.name.value),
             None => n.name.value.clone(),
         };
-        Ok(TypeSpec { data_type: DataType::Integer, ccsid: None, bit_data: false, udt: Some(name) })
+        Ok(TypeSpec {
+            data_type: DataType::Integer,
+            ccsid: None,
+            bit_data: false,
+            udt: Some(name),
+        })
     }
 
     /// A data type with `CCSID` and `FOR BIT DATA`.
@@ -502,7 +556,9 @@ impl Parser {
             },
             "BINARY" => {
                 if self.eat_word("VARYING") {
-                    let (n, _) = self.length_args()?.ok_or_else(|| self.expected("a length"))?;
+                    let (n, _) = self
+                        .length_args()?
+                        .ok_or_else(|| self.expected("a length"))?;
                     DataType::Varbinary(n)
                 } else if self.eat_words(&["LARGE", "OBJECT"]) {
                     DataType::Blob(self.lob_length()?)
@@ -511,7 +567,9 @@ impl Parser {
                 }
             }
             "VARBINARY" => {
-                let (n, _) = self.length_args()?.ok_or_else(|| self.expected("a length"))?;
+                let (n, _) = self
+                    .length_args()?
+                    .ok_or_else(|| self.expected("a length"))?;
                 DataType::Varbinary(n)
             }
             "BOOLEAN" => DataType::Boolean,
@@ -522,13 +580,25 @@ impl Parser {
             // BLOCKED(rel): an XML column needs a stored field type (DB_FORMAT
             // has none); ROWID needs the generated values of SQL-2's generated
             // columns; DATALINK needs file links the IFS does not keep.
-            "XML" => return Err(Self::unsupported("the XML data type for a column or a CAST (XMLPARSE and XMLSERIALIZE take XML text)")),
-            "ROWID" => return Err(Self::unsupported("ROWID columns (generated row identifiers)")),
+            "XML" => {
+                return Err(Self::unsupported(
+                    "the XML data type for a column or a CAST (XMLPARSE and XMLSERIALIZE take XML text)",
+                ));
+            }
+            "ROWID" => {
+                return Err(Self::unsupported(
+                    "ROWID columns (generated row identifiers)",
+                ));
+            }
             "DATALINK" => return Err(Self::unsupported("the DATALINK data type")),
             // BLOCKED(rel): a distinct type is a column's or a CAST's
             // (`type_spec_or_udt`); a variable, parameter, sequence or
             // source type of one needs SQL PL values to carry it.
-            _ if self.is_sym(".") => return Err(Self::unsupported("a distinct type here (only columns and CAST take one)")),
+            _ if self.is_sym(".") => {
+                return Err(Self::unsupported(
+                    "a distinct type here (only columns and CAST take one)",
+                ));
+            }
             _ => return Err(self.expected("a data type")),
         };
         let mut spec = TypeSpec {
@@ -638,7 +708,9 @@ impl Parser {
             return Err(e);
         }
         if std::mem::take(&mut self.skip_locked) {
-            return Err(Self::unsupported("SKIP LOCKED DATA on a statement that is not a query"));
+            return Err(Self::unsupported(
+                "SKIP LOCKED DATA on a statement that is not a query",
+            ));
         }
         Ok(s)
     }
@@ -697,11 +769,11 @@ impl Parser {
             "CALL" => self.call_stmt(),
             "SIGNAL" | "RESIGNAL" => Ok(Statement::Signal(self.signal()?)),
             "SAVEPOINT" => self.savepoint(),
-            "RELEASE" if self.is_word_at(1, "TO") || self.is_word_at(1, "SAVEPOINT") => self.release_savepoint(),
-            "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE"
-            | "CONNECT" | "DISCONNECT" | "RELEASE" | "REFRESH" => {
-                Err(Self::unsupported(&format!("{w} statement")))
+            "RELEASE" if self.is_word_at(1, "TO") || self.is_word_at(1, "SAVEPOINT") => {
+                self.release_savepoint()
             }
+            "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE" | "CONNECT" | "DISCONNECT" | "RELEASE"
+            | "REFRESH" => Err(Self::unsupported(&format!("{w} statement"))),
             _ => Err(self.expected("a statement")),
         }
     }
@@ -855,7 +927,10 @@ impl Parser {
         for (words, name) in [
             (&["CURRENT", "DEGREE"][..], "CURRENT DEGREE"),
             (&["CURRENT_DEGREE"][..], "CURRENT DEGREE"),
-            (&["CURRENT", "IMPLICIT", "XMLPARSE", "OPTION"][..], "CURRENT IMPLICIT XMLPARSE OPTION"),
+            (
+                &["CURRENT", "IMPLICIT", "XMLPARSE", "OPTION"][..],
+                "CURRENT IMPLICIT XMLPARSE OPTION",
+            ),
         ] {
             if self.eat_words(words) {
                 self.eat_sym("=");

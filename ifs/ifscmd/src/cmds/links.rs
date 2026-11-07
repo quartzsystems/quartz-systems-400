@@ -93,7 +93,9 @@ pub fn ren(c: &dyn IfsClient, obj: &str, new: &str) -> Reply {
 /// Where `MOV` and `CPY` put an object: `TOOBJ`, else `TODIR` and the
 /// object's name.
 fn target(from: &str, todir: &str, toobj: Option<&str>) -> String {
-    if let Some(t) = toobj { t.to_string() } else {
+    if let Some(t) = toobj {
+        t.to_string()
+    } else {
         let (_, last) = split(from.trim_end_matches('/'));
         join(if todir.is_empty() { "." } else { todir }, &last)
     }
@@ -246,8 +248,11 @@ pub fn cpy(c: &dyn IfsClient, a: &Cpy) -> Reply {
     if all.len() == 1 {
         return match one(&all[0]) {
             Ok(to) => Reply::done(Msg::paths("CPCA087", &[&all[0], &to])),
-            Err(e) => Reply::fail(Msg::paths("CPFA097", &[&all[0], &target(&all[0], &a.todir, a.toobj.as_deref())]))
-                .diag(Msg::errno(e, &all[0])),
+            Err(e) => Reply::fail(Msg::paths(
+                "CPFA097",
+                &[&all[0], &target(&all[0], &a.todir, a.toobj.as_deref())],
+            ))
+            .diag(Msg::errno(e, &all[0])),
         };
     }
     let mut r = Reply::default();
@@ -266,7 +271,10 @@ pub fn cpy(c: &dyn IfsClient, a: &Cpy) -> Reply {
         return r;
     }
     let to = if a.todir.is_empty() { "." } else { &a.todir };
-    r.with(crate::msg::COMPLETION, Msg::paths("CPCA082", &[&a.obj, to]).bin4(ok))
+    r.with(
+        crate::msg::COMPLETION,
+        Msg::paths("CPCA082", &[&a.obj, to]).bin4(ok),
+    )
 }
 
 /// `ADDLNK`: a symbolic link holding `obj`'s text, or a hard link.

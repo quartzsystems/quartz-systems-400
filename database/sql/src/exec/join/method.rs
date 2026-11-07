@@ -83,7 +83,11 @@ pub fn costs(i: &Inputs) -> [(Method, Option<f64>); 3] {
     } else {
         (None, None)
     };
-    [(Method::NestedLoop, Some(nl)), (Method::Hash, hash), (Method::Merge, merge)]
+    [
+        (Method::NestedLoop, Some(nl)),
+        (Method::Hash, hash),
+        (Method::Merge, merge),
+    ]
 }
 
 /// The cheapest method; a tie goes to the simpler one.
@@ -105,29 +109,52 @@ mod tests {
     use super::*;
 
     fn inputs(left: u64, right: u64) -> Inputs {
-        Inputs { left, right, equality: true, room: u64::MAX, ..Inputs::default() }
+        Inputs {
+            left,
+            right,
+            equality: true,
+            room: u64::MAX,
+            ..Inputs::default()
+        }
     }
 
     #[test]
     fn small_inputs_loop() {
         assert_eq!(choose(&inputs(5, 5)), Method::NestedLoop);
         assert_eq!(choose(&inputs(1, 10_000)), Method::NestedLoop);
-        assert_eq!(choose(&Inputs { equality: false, ..inputs(1000, 1000) }), Method::NestedLoop);
+        assert_eq!(
+            choose(&Inputs {
+                equality: false,
+                ..inputs(1000, 1000)
+            }),
+            Method::NestedLoop
+        );
     }
 
     #[test]
     fn large_inputs_hash_or_merge() {
         assert_eq!(choose(&inputs(1000, 1000)), Method::Hash);
-        let sorted = Inputs { left_sorted: true, right_sorted: true, ..inputs(1000, 1000) };
+        let sorted = Inputs {
+            left_sorted: true,
+            right_sorted: true,
+            ..inputs(1000, 1000)
+        };
         assert_eq!(choose(&sorted), Method::Merge);
         // No room for the hash table: the merge sorts instead.
-        let tight = Inputs { hash_bytes: 10, room: 5, ..inputs(1000, 1000) };
+        let tight = Inputs {
+            hash_bytes: 10,
+            room: 5,
+            ..inputs(1000, 1000)
+        };
         assert_eq!(choose(&tight), Method::Merge);
     }
 
     #[test]
     fn a_row_goal_favours_the_loop() {
-        let goal = Inputs { goal: Some(1), ..inputs(1000, 20) };
+        let goal = Inputs {
+            goal: Some(1),
+            ..inputs(1000, 20)
+        };
         assert_eq!(choose(&goal), Method::NestedLoop);
         assert_eq!(choose(&inputs(1000, 20)), Method::Hash);
     }

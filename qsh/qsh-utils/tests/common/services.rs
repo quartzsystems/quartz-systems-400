@@ -209,7 +209,11 @@ fn sql(req: &SqlRequest) -> SqlOutcome {
     }
     let people = ["PEOPLE", "QGPL.PEOPLE", "QGPL/PEOPLE"];
     let from = st.split(" FROM ").nth(1).unwrap_or_default().to_string();
-    let table = from.split_whitespace().next().unwrap_or_default().to_string();
+    let table = from
+        .split_whitespace()
+        .next()
+        .unwrap_or_default()
+        .to_string();
     if st.starts_with("SELECT COUNT(*)") && people.contains(&table.as_str()) {
         return SqlOutcome::Rows {
             columns: vec![col("00001", 11, true)],
@@ -240,11 +244,18 @@ fn sql(req: &SqlRequest) -> SqlOutcome {
     if st.starts_with("SELECT") && table == "WIDE" {
         return SqlOutcome::Rows {
             columns: vec![col("A", 1, false), col("LONG_COLUMN_NAME", 3, true)],
-            rows: vec![vec![v("x"), v("-1.5")], vec![v("longer value"), v("123456")]],
+            rows: vec![
+                vec![v("x"), v("-1.5")],
+                vec![v("longer value"), v("123456")],
+            ],
         };
     }
     if st.starts_with("SELECT") {
-        let name = table.rsplit(['.', '/']).next().unwrap_or_default().to_string();
+        let name = table
+            .rsplit(['.', '/'])
+            .next()
+            .unwrap_or_default()
+            .to_string();
         return SqlOutcome::Error {
             sqlstate: "42704".to_string(),
             code: -204,
@@ -257,7 +268,9 @@ fn sql(req: &SqlRequest) -> SqlOutcome {
     if st.starts_with("UPDATE") || st.starts_with("DELETE") {
         return SqlOutcome::Done { count: Some(3) };
     }
-    for w in ["CREATE", "DROP", "COMMIT", "ROLLBACK", "SET", "LABEL", "GRANT"] {
+    for w in [
+        "CREATE", "DROP", "COMMIT", "ROLLBACK", "SET", "LABEL", "GRANT",
+    ] {
         if st.starts_with(w) {
             return SqlOutcome::Done { count: None };
         }
@@ -428,7 +441,11 @@ pub fn seed(s: &MemSys) {
     ] {
         s.set_sysval(k, val);
     }
-    for (k, val) in [("SYSNAME", "QS400"), ("LCLNETID", "APPN"), ("LCLCPNAME", "QS400")] {
+    for (k, val) in [
+        ("SYSNAME", "QS400"),
+        ("LCLNETID", "APPN"),
+        ("LCLCPNAME", "QS400"),
+    ] {
         s.set_netattr(k, val);
     }
 

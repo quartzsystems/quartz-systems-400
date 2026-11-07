@@ -154,7 +154,11 @@ fn notify(system: &mut System, e: Event, j: &Job<'_>) {
             if !(want_sbs.is_empty() || want_sbs == "*ANY" || want_sbs == sbs) {
                 continue;
             }
-            let lib = if p.lib.is_empty() { "*LIBL" } else { p.lib.as_str() };
+            let lib = if p.lib.is_empty() {
+                "*LIBL"
+            } else {
+                p.lib.as_str()
+            };
             let found = sec::guard::as_system(|| {
                 wm::obj::find(txn, qsys, &NameContext::default(), lib, &p.pgm, types::DTAQ)
             });

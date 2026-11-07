@@ -72,7 +72,10 @@ impl Stream for TlsPrinter {
 
 impl TlsConnector for PrinterTls {
     fn connect(&self, host: &str, tcp: std::net::TcpStream) -> std::io::Result<Box<dyn Stream>> {
-        let config = self.0.clone().map_err(|e| std::io::Error::other(format!("{host}: no TLS client: {e}")))?;
+        let config = self
+            .0
+            .clone()
+            .map_err(|e| std::io::Error::other(format!("{host}: no TLS client: {e}")))?;
         let name = tls::config::server_name(host).map_err(std::io::Error::other)?;
         let s = tls::stream::TlsStream::connect(config, name, tcp)
             .map_err(|e| std::io::Error::other(format!("{host}: {e}")))?;
@@ -96,7 +99,9 @@ impl tn5250::print::Device for SessionDevice {
     fn recv(&mut self) -> Result<Vec<u8>, String> {
         match self.0.recv::<wm::dev::FromDevice>() {
             Ok(wm::dev::FromDevice::Printed { record }) => Ok(record),
-            Ok(wm::dev::FromDevice::Record { .. } | wm::dev::FromDevice::Reset { .. }) => Ok(Vec::new()),
+            Ok(wm::dev::FromDevice::Record { .. } | wm::dev::FromDevice::Reset { .. }) => {
+                Ok(Vec::new())
+            }
             Ok(wm::dev::FromDevice::Gone) => Err("the printer session went away".into()),
             Err(_) => Err("the printer session did not answer".into()),
         }
@@ -152,7 +157,11 @@ pub fn run(c: &mut Console, link: &Shared, name: &str) -> u16 {
             if !c.idle(IDLE) {
                 return 0;
             }
-            let ending = link.borrow_mut().with(Client::wtr_list).iter().any(|w| w.0 == name && w.2 == "END");
+            let ending = link
+                .borrow_mut()
+                .with(Client::wtr_list)
+                .iter()
+                .any(|w| w.0 == name && w.2 == "END");
             if ending {
                 return 0;
             }
@@ -217,7 +226,13 @@ const LOST: Duration = Duration::from_secs(2);
 /// A file to a printer session: complete only when the client took all
 /// of it; otherwise ready again, with a message or an inquiry. Whether
 /// the session was lost.
-fn print_on_session(link: &Shared, name: &str, device: &str, attrs: &SplfAttrs, data: &[u8]) -> bool {
+fn print_on_session(
+    link: &Shared,
+    name: &str,
+    device: &str,
+    attrs: &SplfAttrs,
+    data: &[u8],
+) -> bool {
     use tn5250::print::Failure;
     let mut was_lost = false;
     let r = match send_to_session(device, data) {
@@ -255,4 +270,3 @@ fn capture(link: &Shared, name: &str, attrs: &SplfAttrs, data: &[u8]) {
         eprintln!("qsjob: writer {name}: {e}");
     }
 }
-

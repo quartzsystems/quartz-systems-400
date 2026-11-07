@@ -78,7 +78,9 @@ impl<H: Host> Session<H> {
     /// when it is under it.
     fn shown(&self, full: &str) -> String {
         let cwd = self.cwd.trim_end_matches('/');
-        let under = if cwd.is_empty() { Some(full.trim_start_matches('/')) } else {
+        let under = if cwd.is_empty() {
+            Some(full.trim_start_matches('/'))
+        } else {
             full.strip_prefix(cwd).and_then(|r| r.strip_prefix('/'))
         };
         match under {
@@ -98,7 +100,11 @@ impl<H: Host> Session<H> {
             if objtype == "*LIB" {
                 continue;
             }
-            let st = self.host.ifs().stat(&format!("{dir}/{}", e.name), false).ok();
+            let st = self
+                .host
+                .ifs()
+                .stat(&format!("{dir}/{}", e.name), false)
+                .ok();
             out.push(LibObj { name, objtype, st });
         }
         out.sort_by(|a, b| a.name.cmp(&b.name).then(a.objtype.cmp(&b.objtype)));
@@ -116,7 +122,11 @@ impl<H: Host> Session<H> {
             if t != "*MBR" {
                 continue;
             }
-            let st = self.host.ifs().stat(&format!("{dir}/{}", e.name), false).ok();
+            let st = self
+                .host
+                .ifs()
+                .stat(&format!("{dir}/{}", e.name), false)
+                .ok();
             out.push(Mbr { name, st });
         }
         out.sort_by(|a, b| a.name.cmp(&b.name));
@@ -127,7 +137,9 @@ impl<H: Host> Session<H> {
     /// whatever the file (the IFS counts them for source members only).
     fn member_size(&mut self, lib: &str, file: &str, st: &Stat) -> u64 {
         match self.host.file(lib, file) {
-            Some(d) if !d.source && d.rec_len > 0 => st.size / d.rec_len as u64 * (d.rec_len as u64 + 2),
+            Some(d) if !d.source && d.rec_len > 0 => {
+                st.size / d.rec_len as u64 * (d.rec_len as u64 + 2)
+            }
             _ => st.size,
         }
     }
@@ -149,7 +161,15 @@ impl<H: Host> Session<H> {
 
     /// The lines of the members of `lib/file` that `pick` takes, named
     /// `prefix` `FILE.MBR`.
-    fn member_lines(&mut self, lib: &str, file: &str, pick: Option<&str>, prefix: &str, nlst: bool, out: &mut Vec<String>) -> usize {
+    fn member_lines(
+        &mut self,
+        lib: &str,
+        file: &str,
+        pick: Option<&str>,
+        prefix: &str,
+        nlst: bool,
+        out: &mut Vec<String>,
+    ) -> usize {
         let owner = self
             .host
             .ifs()
@@ -176,13 +196,29 @@ impl<H: Host> Session<H> {
     }
 
     /// A file with its members (`LIB/FILE`, a library's listing).
-    fn file_and_members(&mut self, lib: &str, o: &LibObj, prefix: &str, nlst: bool, out: &mut Vec<String>) {
-        let shown_type = if o.objtype == "*SAVF" { "*FILE" } else { o.objtype.as_str() };
+    fn file_and_members(
+        &mut self,
+        lib: &str,
+        o: &LibObj,
+        prefix: &str,
+        nlst: bool,
+        out: &mut Vec<String>,
+    ) {
+        let shown_type = if o.objtype == "*SAVF" {
+            "*FILE"
+        } else {
+            o.objtype.as_str()
+        };
         if o.objtype != "*FILE" {
             // Other objects are in a full listing only.
             if !nlst && let Some(st) = &o.st {
                 out.push(if self.listfmt == 0 {
-                    stat_line0(st, shown_type, self.offset(), &format!("{prefix}{}", o.name))
+                    stat_line0(
+                        st,
+                        shown_type,
+                        self.offset(),
+                        &format!("{prefix}{}", o.name),
+                    )
                 } else {
                     stat_line1(st, false, 1, self.offset(), self.host.now(), &o.name)
                 });
@@ -191,7 +227,12 @@ impl<H: Host> Session<H> {
         }
         if !nlst && let Some(st) = &o.st {
             out.push(if self.listfmt == 0 {
-                stat_line0(st, shown_type, self.offset(), &format!("{prefix}{}", o.name))
+                stat_line0(
+                    st,
+                    shown_type,
+                    self.offset(),
+                    &format!("{prefix}{}", o.name),
+                )
             } else {
                 stat_line1(st, true, 1, self.offset(), self.host.now(), &o.name)
             });
@@ -208,7 +249,8 @@ impl<H: Host> Session<H> {
         if arg.is_empty() {
             return self.list_library(&cur, &cur, nlst);
         }
-        let n = names::parse_lib_name(arg).ok_or_else(|| Reply::new(501, format!("{arg} is not a name in format 0.")))?;
+        let n = names::parse_lib_name(arg)
+            .ok_or_else(|| Reply::new(501, format!("{arg} is not a name in format 0.")))?;
         match (&n.lib, &n.mbr) {
             (None, None) if names::generic(&n.file) => {
                 let objs = self
@@ -221,7 +263,10 @@ impl<H: Host> Session<H> {
                 if out.is_empty() {
                     return Ok(Listed {
                         lines: out,
-                        note: Some(format!("No members (*ALL) in files {} of library {cur}.", n.file)),
+                        note: Some(format!(
+                            "No members (*ALL) in files {} of library {cur}.",
+                            n.file
+                        )),
                     });
                 }
                 Ok(Listed::of(out))
@@ -229,7 +274,11 @@ impl<H: Host> Session<H> {
             (None, None) => self.list_library(&n.file, &cur, nlst),
             (lib, mbr) => {
                 let lib = lib.clone().unwrap_or_else(|| cur.clone());
-                let prefix = if lib == cur { String::new() } else { format!("{lib}/") };
+                let prefix = if lib == cur {
+                    String::new()
+                } else {
+                    format!("{lib}/")
+                };
                 let mut out = Vec::new();
                 let file_obj = objects::file_path(&lib, &n.file);
                 let is_file = objects::exists(self.host.ifs(), &file_obj);
@@ -237,27 +286,45 @@ impl<H: Host> Session<H> {
                     if !objects::exists(self.host.ifs(), &names::library_dir(&lib)) {
                         return Err(Reply::new(550, format!("Library {lib} not found.")));
                     }
-                    if mbr.is_some() && objects::exists(self.host.ifs(), &objects::savf_path(&lib, &n.file)) {
+                    if mbr.is_some()
+                        && objects::exists(self.host.ifs(), &objects::savf_path(&lib, &n.file))
+                    {
                         return Ok(Listed {
                             lines: out,
-                            note: Some(format!("No members (*ALL) in file {} in library {lib}.", n.file)),
+                            note: Some(format!(
+                                "No members (*ALL) in file {} in library {lib}.",
+                                n.file
+                            )),
                         });
                     }
                     if names::generic(&n.file) {
                         let objs = self
                             .lib_objects(&lib)
                             .map_err(|_| Reply::new(550, format!("Library {lib} not found.")))?;
-                        for o in objs.iter().filter(|o| o.objtype == "*FILE" && names::matches(&n.file, &o.name)) {
+                        for o in objs
+                            .iter()
+                            .filter(|o| o.objtype == "*FILE" && names::matches(&n.file, &o.name))
+                        {
                             match mbr {
                                 Some(m) => {
-                                    self.member_lines(&lib, &o.name, Some(m), &prefix, nlst, &mut out);
+                                    self.member_lines(
+                                        &lib,
+                                        &o.name,
+                                        Some(m),
+                                        &prefix,
+                                        nlst,
+                                        &mut out,
+                                    );
                                 }
                                 None => self.file_and_members(&lib, o, &prefix, nlst, &mut out),
                             }
                         }
                         return Ok(Listed::of(out));
                     }
-                    return Err(Reply::new(550, format!("File {} in library {lib} not found.", n.file)));
+                    return Err(Reply::new(
+                        550,
+                        format!("File {} in library {lib} not found.", n.file),
+                    ));
                 }
                 match mbr {
                     None => {
@@ -271,12 +338,20 @@ impl<H: Host> Session<H> {
                         Ok(Listed::of(out))
                     }
                     Some(m) => {
-                        let found = self.member_lines(&lib, &n.file, Some(m), &prefix, nlst, &mut out);
+                        let found =
+                            self.member_lines(&lib, &n.file, Some(m), &prefix, nlst, &mut out);
                         if found == 0 {
-                            let shown = if names::generic(m) && m == "*" { "*ALL" } else { m };
+                            let shown = if names::generic(m) && m == "*" {
+                                "*ALL"
+                            } else {
+                                m
+                            };
                             return Ok(Listed {
                                 lines: out,
-                                note: Some(format!("Member {shown} of file {} in library {lib} not found.", n.file)),
+                                note: Some(format!(
+                                    "Member {shown} of file {} in library {lib} not found.",
+                                    n.file
+                                )),
                             });
                         }
                         Ok(Listed::of(out))
@@ -292,7 +367,11 @@ impl<H: Host> Session<H> {
         let objs = self
             .lib_objects(lib)
             .map_err(|_| Reply::new(550, format!("Library {lib} not found.")))?;
-        let prefix = if lib == cur || self.listfmt == 1 && !nlst { String::new() } else { format!("{lib}/") };
+        let prefix = if lib == cur || self.listfmt == 1 && !nlst {
+            String::new()
+        } else {
+            format!("{lib}/")
+        };
         let mut out = Vec::new();
         for o in &objs {
             self.file_and_members(lib, o, &prefix, nlst, &mut out);
@@ -304,7 +383,11 @@ impl<H: Host> Session<H> {
     /// answer when it is a symbolic link.
     fn ifs_line(&mut self, full: &str, nlst: bool) -> Option<String> {
         let lst = self.host.ifs().stat(full, false).ok()?;
-        let st = self.host.ifs().stat(full, true).unwrap_or_else(|_| lst.clone());
+        let st = self
+            .host
+            .ifs()
+            .stat(full, true)
+            .unwrap_or_else(|_| lst.clone());
         let dir = objects::kind_of(full, &st).is_dir();
         let slash = if dir { "/" } else { "" };
         if nlst {
@@ -312,7 +395,12 @@ impl<H: Host> Session<H> {
         }
         let off = self.offset();
         if self.listfmt == 0 {
-            return Some(stat_line0(&st, &st.objtype, off, &format!("{}{slash}", self.shown(full))));
+            return Some(stat_line0(
+                &st,
+                &st.objtype,
+                off,
+                &format!("{}{slash}", self.shown(full)),
+            ));
         }
         if lst.mode & S_IFMT == S_IFLNK {
             let target = self.host.ifs().readlink(full).unwrap_or_default();
@@ -328,14 +416,29 @@ impl<H: Host> Session<H> {
                 &format!("{} -> {target}", base(full)),
             ));
         }
-        Some(stat_line1(&st, dir, st.nlink.max(1), off, self.host.now(), base(full)))
+        Some(stat_line1(
+            &st,
+            dir,
+            st.nlink.max(1),
+            off,
+            self.host.now(),
+            base(full),
+        ))
     }
 
     /// A `NAMEFMT 1` listing of a path; its last part may be generic.
     #[allow(clippy::too_many_lines)] // one arm per kind of object
     fn list1(&mut self, arg: &str, nlst: bool) -> Result<Listed, Reply> {
-        let arg = if self.listfmt == 1 { strip_options(arg) } else { arg.trim().to_string() };
-        let typed = if arg.is_empty() { self.cwd.clone() } else { arg.clone() };
+        let arg = if self.listfmt == 1 {
+            strip_options(arg)
+        } else {
+            arg.trim().to_string()
+        };
+        let typed = if arg.is_empty() {
+            self.cwd.clone()
+        } else {
+            arg.clone()
+        };
         let joined = if arg.is_empty() {
             self.cwd.clone()
         } else {
@@ -354,21 +457,33 @@ impl<H: Host> Session<H> {
         };
         // A save file answers to its name as a file too.
         let dir = match names::qsys_node(&dir) {
-            Some(QsysNode::Obj(l, o, t)) if t == "*FILE" && !objects::exists(self.host.ifs(), &dir) => {
+            Some(QsysNode::Obj(l, o, t))
+                if t == "*FILE" && !objects::exists(self.host.ifs(), &dir) =>
+            {
                 let savf = objects::savf_path(&l, &o);
-                if objects::exists(self.host.ifs(), &savf) { savf } else { dir }
+                if objects::exists(self.host.ifs(), &savf) {
+                    savf
+                } else {
+                    dir
+                }
             }
             _ => dir,
         };
         // In a library, names need an extension the database knows.
         if names::in_qsys(&path) {
-            let comps: Vec<&str> = path[names::QSYS_LIB.len()..].split('/').filter(|c| !c.is_empty()).collect();
+            let comps: Vec<&str> = path[names::QSYS_LIB.len()..]
+                .split('/')
+                .filter(|c| !c.is_empty())
+                .collect();
             if comps.len() >= 2 {
                 let last = comps[comps.len() - 1];
                 let ext = last.rsplit_once('.').map(|(_, e)| e.to_ascii_uppercase());
                 let ok = matches!(ext.as_deref(), Some("FILE" | "MBR" | "SAVF"));
                 if !ok {
-                    return Err(Reply::new(501, "Only .FILE and .MBR names can be listed in a library."));
+                    return Err(Reply::new(
+                        501,
+                        "Only .FILE and .MBR names can be listed in a library.",
+                    ));
                 }
             }
         }
@@ -391,8 +506,15 @@ impl<H: Host> Session<H> {
         match k {
             Kind::Library(lib) => {
                 for o in self.lib_objects(&lib).unwrap_or_default() {
-                    let comp = format!("{}.{}", show_name(&o.name), o.objtype.trim_start_matches('*'));
-                    if pattern.as_deref().is_some_and(|p| !names::matches(p, &comp)) {
+                    let comp = format!(
+                        "{}.{}",
+                        show_name(&o.name),
+                        o.objtype.trim_start_matches('*')
+                    );
+                    if pattern
+                        .as_deref()
+                        .is_some_and(|p| !names::matches(p, &comp))
+                    {
                         continue;
                     }
                     let full = format!("{dir}/{comp}");
@@ -402,7 +524,10 @@ impl<H: Host> Session<H> {
                         }
                         for m in self.file_members(&lib, &o.name) {
                             let mfull = format!("{full}/{}.MBR", show_name(&m.name));
-                            out.push(member0(o.st.as_ref().map_or("", |s| s.owner.as_str()), &self.shown(&mfull)));
+                            out.push(member0(
+                                o.st.as_ref().map_or("", |s| s.owner.as_str()),
+                                &self.shown(&mfull),
+                            ));
                         }
                     } else if let Some(l) = self.ifs_line(&full, nlst) {
                         out.push(l);
@@ -431,19 +556,24 @@ impl<H: Host> Session<H> {
                 }
             }
             Kind::Dir => {
-                let mut ents = self
-                    .host
-                    .ifs()
-                    .read_dir(&dir)
-                    .map_err(|e| Reply::new(550, format!("{dir} cannot be listed: {}.", errno_text(e))))?;
+                let mut ents = self.host.ifs().read_dir(&dir).map_err(|e| {
+                    Reply::new(550, format!("{dir} cannot be listed: {}.", errno_text(e)))
+                })?;
                 if names::in_qsys(&dir) {
                     ents.sort_by(|a, b| a.name.cmp(&b.name));
                 }
                 for e in ents {
-                    if pattern.as_deref().is_some_and(|p| !names::matches(p, &e.name)) {
+                    if pattern
+                        .as_deref()
+                        .is_some_and(|p| !names::matches(p, &e.name))
+                    {
                         continue;
                     }
-                    let full = if dir == "/" { format!("/{}", e.name) } else { format!("{dir}/{}", e.name) };
+                    let full = if dir == "/" {
+                        format!("/{}", e.name)
+                    } else {
+                        format!("{dir}/{}", e.name)
+                    };
                     if let Some(l) = self.ifs_line(&full, nlst) {
                         out.push(l);
                     }
@@ -506,7 +636,11 @@ impl<H: Host> Session<H> {
     }
 
     pub(super) fn list(&mut self, arg: &str, nlst: bool, net: &mut dyn Net) -> Reply {
-        let what = if arg.trim().is_empty() { self.cwd.clone() } else { arg.trim().to_string() };
+        let what = if arg.trim().is_empty() {
+            self.cwd.clone()
+        } else {
+            arg.trim().to_string()
+        };
         if !self.allowed(net, op::LIST, &what) {
             return Reply::new(550, format!("An exit program refused to list {what}."));
         }
@@ -530,7 +664,10 @@ impl<H: Host> Session<H> {
         if xlate::is_ebcdic(to) {
             data = xlate::ebcdic_lines(&data);
         }
-        let prelim = Reply::new(125, listed.note.unwrap_or_else(|| "Listing follows.".into()));
+        let prelim = Reply::new(
+            125,
+            listed.note.unwrap_or_else(|| "Listing follows.".into()),
+        );
         self.send_data(net, &prelim, &data, Reply::new(250, "Listing complete."))
     }
 
@@ -566,7 +703,10 @@ impl<H: Host> Session<H> {
         match objects::look(self.host.ifs(), &path) {
             Ok((k, st)) => {
                 let f = self.facts(&path, &st, &k, &path);
-                Reply::lines(250, vec![format!("Facts of {path}:"), format!(" {f}"), "End.".into()])
+                Reply::lines(
+                    250,
+                    vec![format!("Facts of {path}:"), format!(" {f}"), "End.".into()],
+                )
             }
             Err(e) => self.list_missing(&path, &path, e),
         }
@@ -586,11 +726,17 @@ impl<H: Host> Session<H> {
         }
         let ents = match self.host.ifs().read_dir(&path) {
             Ok(e) => e,
-            Err(e) => return Reply::new(550, format!("{path} cannot be listed: {}.", errno_text(e))),
+            Err(e) => {
+                return Reply::new(550, format!("{path} cannot be listed: {}.", errno_text(e)));
+            }
         };
         let mut text = String::new();
         for e in ents {
-            let full = if path == "/" { format!("/{}", e.name) } else { format!("{path}/{}", e.name) };
+            let full = if path == "/" {
+                format!("/{}", e.name)
+            } else {
+                format!("{path}/{}", e.name)
+            };
             if let Ok((k, st)) = objects::look(self.host.ifs(), &full) {
                 let f = self.facts(&full, &st, &k, &e.name);
                 text.push_str(&f);
@@ -598,7 +744,12 @@ impl<H: Host> Session<H> {
             }
         }
         let data = xlate::convert(1208, self.ascii(), text.as_bytes());
-        self.send_data(net, &Reply::new(150, "Listing follows."), &data, Reply::new(226, "Listing complete."))
+        self.send_data(
+            net,
+            &Reply::new(150, "Listing follows."),
+            &data,
+            Reply::new(226, "Listing complete."),
+        )
     }
 
     pub(super) fn size(&mut self, arg: &str) -> Reply {
@@ -607,9 +758,10 @@ impl<H: Host> Session<H> {
             Err(r) => return r,
         };
         match objects::look(self.host.ifs(), &path) {
-            Ok((k, _)) if k.is_dir() && !matches!(k, Kind::File(..)) => {
-                Reply::new(550, format!("{} is a directory or library.", describe(&path)))
-            }
+            Ok((k, _)) if k.is_dir() && !matches!(k, Kind::File(..)) => Reply::new(
+                550,
+                format!("{} is a directory or library.", describe(&path)),
+            ),
             Ok(_) => match self.fetch(&path) {
                 Ok(d) => Reply::new(213, d.len().to_string()),
                 Err(r) => r,
@@ -628,7 +780,10 @@ impl<H: Host> Session<H> {
                 let c = civil(secs(st.mtime));
                 Reply::new(
                     213,
-                    format!("{:04}{:02}{:02}{:02}{:02}{:02}", c.year, c.month, c.day, c.hour, c.minute, c.second),
+                    format!(
+                        "{:04}{:02}{:02}{:02}{:02}{:02}",
+                        c.year, c.month, c.day, c.hour, c.minute, c.second
+                    ),
                 )
             }
             Err(e) => self.missing(&path, e),

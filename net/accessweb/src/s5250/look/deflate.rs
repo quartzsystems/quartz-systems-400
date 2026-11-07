@@ -44,13 +44,23 @@ const D_CODES: usize = 30;
 const BL_CODES: usize = 19;
 const HEAP_SIZE: usize = 2 * L_CODES + 1;
 const END_BLOCK: usize = 256;
-const BL_ORDER: [usize; BL_CODES] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
-const EXTRA_LBITS: [u8; 29] = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
-const BASE_LENGTH: [u16; 29] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 255];
-const EXTRA_DBITS: [u8; D_CODES] = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+const BL_ORDER: [usize; BL_CODES] = [
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+];
+const EXTRA_LBITS: [u8; 29] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
+];
+const BASE_LENGTH: [u16; 29] = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128,
+    160, 192, 224, 255,
+];
+const EXTRA_DBITS: [u8; D_CODES] = [
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13,
+    13,
+];
 const BASE_DIST: [u16; D_CODES] = [
-    0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288,
-    16384, 24576,
+    0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536,
+    2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576,
 ];
 const EXTRA_BLBITS: [u8; BL_CODES] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7];
 
@@ -158,7 +168,12 @@ impl<'a> Deflater<'a> {
     }
 
     fn word(&self, i: usize) -> u32 {
-        u32::from_le_bytes([self.byte(i), self.byte(i + 1), self.byte(i + 2), self.byte(i + 3)])
+        u32::from_le_bytes([
+            self.byte(i),
+            self.byte(i + 1),
+            self.byte(i + 2),
+            self.byte(i + 3),
+        ])
     }
 
     fn lookahead(&self) -> usize {
@@ -216,7 +231,10 @@ impl<'a> Deflater<'a> {
                 len > best
             } else {
                 let off = best - 7;
-                (0..8).all(|i| self.byte(c + i) == self.byte(s + i) && self.byte(c + off + i) == self.byte(s + off + i))
+                (0..8).all(|i| {
+                    self.byte(c + i) == self.byte(s + i)
+                        && self.byte(c + off + i) == self.byte(s + off + i)
+                })
             };
             if passes {
                 if len <= best {
@@ -253,7 +271,10 @@ impl<'a> Deflater<'a> {
     }
 
     fn tally(&mut self, dist: usize, lc: usize) -> bool {
-        self.syms.push(Sym { dist: dist as u16, lc: lc as u8 });
+        self.syms.push(Sym {
+            dist: dist as u16,
+            lc: lc as u8,
+        });
         if dist == 0 {
             self.lfreq[lc] += 1;
         } else {
@@ -329,7 +350,8 @@ impl<'a> Deflater<'a> {
             let n = stored_len as u16;
             out.bytes.extend_from_slice(&n.to_le_bytes());
             out.bytes.extend_from_slice(&(!n).to_le_bytes());
-            out.bytes.extend_from_slice(&self.data[self.block_start..self.strstart]);
+            out.bytes
+                .extend_from_slice(&self.data[self.block_start..self.strstart]);
         } else if static_lenb == opt_lenb {
             out.put(2 | u32::from(last), 3);
             let (lt, dt) = static_trees();
@@ -348,11 +370,17 @@ impl<'a> Deflater<'a> {
 }
 
 fn length_code(lc: usize) -> usize {
-    (0..29).rev().find(|&c| usize::from(BASE_LENGTH[c]) <= lc).unwrap_or(0)
+    (0..29)
+        .rev()
+        .find(|&c| usize::from(BASE_LENGTH[c]) <= lc)
+        .unwrap_or(0)
 }
 
 fn dist_code(d: usize) -> usize {
-    (0..D_CODES).rev().find(|&c| usize::from(BASE_DIST[c]) <= d).unwrap_or(0)
+    (0..D_CODES)
+        .rev()
+        .find(|&c| usize::from(BASE_DIST[c]) <= d)
+        .unwrap_or(0)
 }
 
 /// A code: its bits (reversed for sending) and length.
@@ -852,7 +880,10 @@ mod tests {
                 continue;
             } else if kind == 1 {
                 let (l, d) = static_trees();
-                (table(&l.iter().map(|c| c.len).collect::<Vec<_>>()), table(&d.iter().map(|c| c.len).collect::<Vec<_>>()))
+                (
+                    table(&l.iter().map(|c| c.len).collect::<Vec<_>>()),
+                    table(&d.iter().map(|c| c.len).collect::<Vec<_>>()),
+                )
             } else {
                 let hlit = r.bits(5) as usize + 257;
                 let hdist = r.bits(5) as usize + 1;
@@ -886,9 +917,12 @@ mod tests {
                     break;
                 } else {
                     let c = s - 257;
-                    let len = usize::from(BASE_LENGTH[c]) + 3 + r.bits(u32::from(EXTRA_LBITS[c])) as usize;
+                    let len = usize::from(BASE_LENGTH[c])
+                        + 3
+                        + r.bits(u32::from(EXTRA_LBITS[c])) as usize;
                     let d = r.sym(&dt);
-                    let dist = usize::from(BASE_DIST[d]) + 1 + r.bits(u32::from(EXTRA_DBITS[d])) as usize;
+                    let dist =
+                        usize::from(BASE_DIST[d]) + 1 + r.bits(u32::from(EXTRA_DBITS[d])) as usize;
                     for _ in 0..len {
                         out.push(out[out.len() - dist]);
                     }
@@ -907,13 +941,26 @@ mod tests {
         let mut x = 7u32;
         for i in 0..300_000u32 {
             x = x.wrapping_mul(1_103_515_245).wrapping_add(12345);
-            big.push(if i % 7 < 4 { (x >> 24) as u8 } else { (i / 1000) as u8 });
+            big.push(if i % 7 < 4 {
+                (x >> 24) as u8
+            } else {
+                (i / 1000) as u8
+            });
         }
-        for data in [Vec::new(), b"a".to_vec(), b"abcabcabcabcabcabc".to_vec(), vec![0; 100_000], big] {
+        for data in [
+            Vec::new(),
+            b"a".to_vec(),
+            b"abcabcabcabcabcabc".to_vec(),
+            vec![0; 100_000],
+            big,
+        ] {
             let z = zlib(&data);
             assert_eq!(&z[..2], &[0x78, 0x5e]);
             assert_eq!(inflate(&z), data);
-            assert_eq!(u32::from_be_bytes(z[z.len() - 4..].try_into().unwrap()), adler32(&data));
+            assert_eq!(
+                u32::from_be_bytes(z[z.len() - 4..].try_into().unwrap()),
+                adler32(&data)
+            );
         }
     }
 }

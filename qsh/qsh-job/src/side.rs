@@ -81,7 +81,12 @@ pub trait Side {
         nosys()
     }
     /// Call `lib/pgm` with the arguments as parameters.
-    fn call_program(&mut self, lib: &str, pgm: &str, args: &[String]) -> Result<ProgramRun, SysError> {
+    fn call_program(
+        &mut self,
+        lib: &str,
+        pgm: &str,
+        args: &[String],
+    ) -> Result<ProgramRun, SysError> {
         nosys()
     }
     /// Start a child job.
@@ -146,7 +151,12 @@ pub trait Side {
         nosys()
     }
     /// A spooled file's text.
-    fn spooled_file(&mut self, job: &str, name: &str, number: SplfNumber) -> Result<Spooled, SysError> {
+    fn spooled_file(
+        &mut self,
+        job: &str,
+        name: &str,
+        number: SplfNumber,
+    ) -> Result<Spooled, SysError> {
         nosys()
     }
 }

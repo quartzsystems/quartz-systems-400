@@ -15,7 +15,9 @@ use super::eval::{ColInfo, Env, Evaluator, Row, Schema};
 use super::query::{Scan, from_rows};
 use super::restype::SqlType;
 use super::{SqlContext, join};
-use crate::ast::{ChangeRows, CmpOp, ColumnRef, Expr, Ident, JoinKind, ObjectName, OrderItem, Statement, TableRef};
+use crate::ast::{
+    ChangeRows, CmpOp, ColumnRef, Expr, Ident, JoinKind, ObjectName, OrderItem, Statement, TableRef,
+};
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
@@ -24,12 +26,24 @@ pub const ORDER_COLUMN: &str = "*ORD";
 
 /// [`ORDER_COLUMN`] of correlation `alias`.
 pub(crate) fn order_column(alias: &str) -> ColInfo {
-    ColInfo { name: ORDER_COLUMN.into(), table: Some(alias.to_string()), field: Some(SqlType::bigint(false).to_field()), nullable: false, hidden: true }
+    ColInfo {
+        name: ORDER_COLUMN.into(),
+        table: Some(alias.to_string()),
+        field: Some(SqlType::bigint(false).to_field()),
+        nullable: false,
+        hidden: true,
+    }
 }
 
 /// A column reference written as a delimited name.
 fn col(table: Option<&str>, name: &str) -> Expr {
-    Expr::Column(ColumnRef { table: table.map(Ident::new), column: Ident { value: name.into(), delimited: true } })
+    Expr::Column(ColumnRef {
+        table: table.map(Ident::new),
+        column: Ident {
+            value: name.into(),
+            delimited: true,
+        },
+    })
 }
 
 /// The schema of a join: right columns null-capable for a left or full
@@ -37,12 +51,18 @@ fn col(table: Option<&str>, name: &str) -> Expr {
 fn joined(ls: &Schema, rs: &Schema, kind: JoinKind) -> Vec<ColInfo> {
     let mut cols = ls.cols.clone();
     cols.extend(rs.cols.iter().cloned().map(|mut c| {
-        if matches!(kind, JoinKind::Left | JoinKind::LeftException | JoinKind::Full) {
+        if matches!(
+            kind,
+            JoinKind::Left | JoinKind::LeftException | JoinKind::Full
+        ) {
             c.nullable = true;
         }
         c
     }));
-    if matches!(kind, JoinKind::Right | JoinKind::RightException | JoinKind::Full) {
+    if matches!(
+        kind,
+        JoinKind::Right | JoinKind::RightException | JoinKind::Full
+    ) {
         for c in &mut cols[..ls.cols.len()] {
             c.nullable = true;
         }
@@ -72,7 +92,9 @@ pub(super) fn join_using(
     let (rs, right_rows, _) = from_rows(txn, ctx, params, right, scans, outer, &[], explain_only)?;
     let mut li = Vec::new();
     let mut ri = Vec::new();
-    let missing = |c: &Ident| SqlError::ColumnNotFound { name: c.value.clone() };
+    let missing = |c: &Ident| SqlError::ColumnNotFound {
+        name: c.value.clone(),
+    };
     for c in columns {
         li.push(ls.find(None, &c.value)?.ok_or_else(|| missing(c))?);
         ri.push(rs.find(None, &c.value)?.ok_or_else(|| missing(c))?);
@@ -86,19 +108,37 @@ pub(super) fn join_using(
         rs2.cols[i].table = None;
         // Found by the new name only, not its field's system name.
         rs2.cols[i].field = None;
-        let eq = Expr::Compare(Box::new(col(None, &ls.cols[li[k]].name)), CmpOp::Eq, Box::new(col(None, &tmp)), None);
+        let eq = Expr::Compare(
+            Box::new(col(None, &ls.cols[li[k]].name)),
+            CmpOp::Eq,
+            Box::new(col(None, &tmp)),
+            None,
+        );
         on = Some(match on {
             None => eq,
             Some(prev) => Expr::And(Box::new(prev), Box::new(eq)),
         });
     }
-    let schema = Rc::new(Schema { cols: joined(&ls, &rs2, kind) });
+    let schema = Rc::new(Schema {
+        cols: joined(&ls, &rs2, kind),
+    });
     let rows = if explain_only {
         ctx.explain.push(format!("JOIN {kind:?} USING nested loop"));
         Vec::new()
     } else {
         let mut ev = Evaluator { ctx, params };
-        join::join(txn, &mut ev, &schema, &ls, &rs2, &left_rows, &right_rows, kind, on.as_ref(), outer)?
+        join::join(
+            txn,
+            &mut ev,
+            &schema,
+            &ls,
+            &rs2,
+            &left_rows,
+            &right_rows,
+            kind,
+            on.as_ref(),
+            outer,
+        )?
     };
     // The coalesced columns, then both sides with the named ones hidden.
     let mut cols: Vec<ColInfo> = Vec::new();
@@ -110,7 +150,13 @@ pub(super) fn join_using(
             JoinKind::Full => l.nullable || r.nullable,
             _ => l.nullable,
         };
-        cols.push(ColInfo { name: c.value.clone(), table: None, field: l.field.clone(), nullable, hidden: false });
+        cols.push(ColInfo {
+            name: c.value.clone(),
+            table: None,
+            field: l.field.clone(),
+            nullable,
+            hidden: false,
+        });
     }
     let mut sides = joined(&ls, &rs, kind);
     for &i in &li {
@@ -127,7 +173,13 @@ pub(super) fn join_using(
             let mut v: Row = li
                 .iter()
                 .zip(&ri)
-                .map(|(&a, &b)| if r[a].is_null() && !r[width + b].is_null() { r[width + b].clone() } else { r[a].clone() })
+                .map(|(&a, &b)| {
+                    if r[a].is_null() && !r[width + b].is_null() {
+                        r[width + b].clone()
+                    } else {
+                        r[a].clone()
+                    }
+                })
                 .collect();
             v.extend(r);
             v
@@ -153,9 +205,12 @@ pub(super) fn lateral_join(
     explain_only: bool,
 ) -> Result<(Rc<Schema>, Vec<Row>, bool)> {
     if !matches!(kind, JoinKind::Inner | JoinKind::Cross | JoinKind::Left) {
-        return Err(SqlError::Unsupported { what: format!("a {kind:?} join to a LATERAL table") });
+        return Err(SqlError::Unsupported {
+            what: format!("a {kind:?} join to a LATERAL table"),
+        });
     }
-    let (ls, left_rows, lord) = from_rows(txn, ctx, params, left, scans, outer, order, explain_only)?;
+    let (ls, left_rows, lord) =
+        from_rows(txn, ctx, params, left, scans, outer, order, explain_only)?;
     let mut rschema: Option<Rc<Schema>> = None;
     let mut out = Vec::new();
     let mut charge = ctx.charge();
@@ -164,7 +219,9 @@ pub(super) fn lateral_join(
             ctx.tick(txn)?;
             let env = outer.with(ls.clone(), l.clone());
             let (rs, right_rows, _) = from_rows(txn, ctx, params, right, scans, &env, &[], false)?;
-            let schema = Rc::new(Schema { cols: joined(&ls, &rs, kind) });
+            let schema = Rc::new(Schema {
+                cols: joined(&ls, &rs, kind),
+            });
             let rs_len = rs.cols.len();
             rschema.get_or_insert(rs);
             let mut matched = false;
@@ -196,17 +253,23 @@ pub(super) fn lateral_join(
     let rs = if let Some(s) = rschema {
         s
     } else {
-            let env = outer.with(ls.clone(), vec![Value::Null; ls.cols.len()]);
-            let saved = std::mem::take(&mut ctx.explain);
-            let r = from_rows(txn, ctx, params, right, scans, &env, &[], true);
-            let mut lines = std::mem::replace(&mut ctx.explain, saved);
-            if explain_only {
-                ctx.explain.push("LATERAL nested loop".into());
-                ctx.explain.append(&mut lines);
-            }
-            r?.0
+        let env = outer.with(ls.clone(), vec![Value::Null; ls.cols.len()]);
+        let saved = std::mem::take(&mut ctx.explain);
+        let r = from_rows(txn, ctx, params, right, scans, &env, &[], true);
+        let mut lines = std::mem::replace(&mut ctx.explain, saved);
+        if explain_only {
+            ctx.explain.push("LATERAL nested loop".into());
+            ctx.explain.append(&mut lines);
+        }
+        r?.0
     };
-    Ok((Rc::new(Schema { cols: joined(&ls, &rs, kind) }), out, lord && kind != JoinKind::Cross))
+    Ok((
+        Rc::new(Schema {
+            cols: joined(&ls, &rs, kind),
+        }),
+        out,
+        lord && kind != JoinKind::Cross,
+    ))
 }
 
 /// `TABLE (f(args)) AS x (cols)`: a table function a provider answers.
@@ -229,10 +292,17 @@ pub(super) fn table_function(
             values.push(ev.eval(txn, a, outer)?);
         }
     }
-    let unnest = name.schema.is_none() && matches!(name.name.value.as_str(), "*UNNEST" | "*UNNESTO");
+    let unnest =
+        name.schema.is_none() && matches!(name.name.value.as_str(), "*UNNEST" | "*UNNESTO");
     let found = if unnest {
-        Some(super::array::unnest(ctx, &values, name.name.value == "*UNNESTO")?)
-    } else if let Some(t) = super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? {
+        Some(super::array::unnest(
+            ctx,
+            &values,
+            name.name.value == "*UNNESTO",
+        )?)
+    } else if let Some(t) =
+        super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)?
+    {
         Some(t)
     } else {
         // A user table function (`routine::udf`).
@@ -240,12 +310,28 @@ pub(super) fn table_function(
         super::routine::udf::table(txn, ctx, name, &values, &forms, &alias.value).transpose()?
     };
     let Some((mut schema, rows)) = found else {
-        return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" });
+        return Err(SqlError::ObjectNotFound {
+            name: name.to_string(),
+            kind: "function",
+        });
     };
     if !columns.is_empty() {
-        let visible: Vec<usize> = schema.cols.iter().enumerate().filter(|(_, c)| !c.hidden).map(|(i, _)| i).collect();
+        let visible: Vec<usize> = schema
+            .cols
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| !c.hidden)
+            .map(|(i, _)| i)
+            .collect();
         if visible.len() != columns.len() {
-            return Err(SqlError::ValueCount { what: format!("{} names {} columns for {}", alias.value, columns.len(), visible.len()) });
+            return Err(SqlError::ValueCount {
+                what: format!(
+                    "{} names {} columns for {}",
+                    alias.value,
+                    columns.len(),
+                    visible.len()
+                ),
+            });
         }
         for (i, c) in visible.into_iter().zip(columns) {
             schema.cols[i].name.clone_from(&c.value);
@@ -255,7 +341,8 @@ pub(super) fn table_function(
         c.table = Some(alias.value.clone());
     }
     if explain_only {
-        ctx.explain.push(format!("TABLE FUNCTION {name} ({})", alias.value));
+        ctx.explain
+            .push(format!("TABLE FUNCTION {name} ({})", alias.value));
     }
     Ok((Rc::new(schema), rows, false))
 }
@@ -272,7 +359,15 @@ pub(super) fn data_change(
     columns: &[Ident],
     explain_only: bool,
 ) -> Result<(Rc<Schema>, Vec<Row>, bool)> {
-    let (mut schema, rows) = super::change::data_change_rows(txn, ctx, params, kind, statement, &alias.value, explain_only)?;
+    let (mut schema, rows) = super::change::data_change_rows(
+        txn,
+        ctx,
+        params,
+        kind,
+        statement,
+        &alias.value,
+        explain_only,
+    )?;
     if !columns.is_empty() {
         for (c, n) in schema.cols.iter_mut().filter(|c| !c.hidden).zip(columns) {
             c.name.clone_from(&n.value);

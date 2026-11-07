@@ -90,7 +90,8 @@ pub struct Zone {
 }
 
 /// The shipped set, built once.
-static SHIPPED_ZONES: LazyLock<Vec<Zone>> = LazyLock::new(|| SHIPPED.iter().map(Zone::from_shipped).collect());
+static SHIPPED_ZONES: LazyLock<Vec<Zone>> =
+    LazyLock::new(|| SHIPPED.iter().map(Zone::from_shipped).collect());
 
 /// The set the storage service installed.
 static LIVE: RwLock<Option<Vec<Zone>>> = RwLock::new(None);
@@ -109,7 +110,9 @@ pub fn message_text(id: &str) -> Option<&'static str> {
 
 /// Make `zones` the set [`find`] and [`all`] answer from.
 pub fn install(zones: Vec<Zone>) {
-    *LIVE.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(zones);
+    *LIVE
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(zones);
 }
 
 /// Every zone: the installed set, else the shipped one.
@@ -126,14 +129,19 @@ static CURRENT: RwLock<String> = RwLock::new(String::new());
 
 /// Note the `QTIMZON` value.
 pub fn set_current(name: &str) {
-    *CURRENT.write().unwrap_or_else(std::sync::PoisonError::into_inner) = name.trim().to_string();
+    *CURRENT
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = name.trim().to_string();
 }
 
 /// The offset from UTC in seconds at `unix` of the zone `QTIMZON`
 /// names (UTC before any value was seen or for an unknown name).
 #[must_use]
 pub fn current_offset(unix: u64) -> i64 {
-    let name = CURRENT.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+    let name = CURRENT
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
     find(&name).map_or(0, |z| i64::from(z.offset_at(unix)))
 }
 
@@ -141,7 +149,9 @@ pub fn current_offset(unix: u64) -> i64 {
 #[must_use]
 pub fn find(name: &str) -> Option<Zone> {
     let name = name.trim();
-    let live = LIVE.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let live = LIVE
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     match live.as_ref() {
         Some(z) => z.iter().find(|z| z.name == name).cloned(),
         None => shipped().iter().find(|z| z.name == name).cloned(),
@@ -196,11 +206,15 @@ pub fn list_order(a: &Zone, b: &Zone) -> std::cmp::Ordering {
         -1 => (1, -z.offset),
         _ => (2, -z.offset),
     };
-    key(a).cmp(&key(b)).then_with(|| ebcdic(&a.name).cmp(&ebcdic(&b.name)))
+    key(a)
+        .cmp(&key(b))
+        .then_with(|| ebcdic(&a.name).cmp(&ebcdic(&b.name)))
 }
 
 fn ebcdic(s: &str) -> Vec<u8> {
-    s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0xFF)).collect()
+    s.chars()
+        .map(|c| ccsid::byte_of(c).unwrap_or(0xFF))
+        .collect()
 }
 
 const H: i32 = 3600;
@@ -218,7 +232,11 @@ impl Zone {
             dst_full: dst_full.into(),
             dst_msg: dst_msg.into(),
             msgf: ("QCPFMSG".into(), "*LIBL".into()),
-            dst: s.rule.map(|r| DstRule { start: r.start, end: r.end, shift: r.shift }),
+            dst: s.rule.map(|r| DstRule {
+                start: r.start,
+                end: r.end,
+                shift: r.shift,
+            }),
             year_offset: 0,
             alt: s.alt.into(),
             text: String::new(),
@@ -235,7 +253,8 @@ impl Zone {
     #[must_use]
     pub fn in_dst(&self, unix: u64) -> bool {
         let unix = i64::try_from(unix).unwrap_or(i64::MAX);
-        self.dst.is_some_and(|r| r.in_force(unix, i64::from(self.std_offset())))
+        self.dst
+            .is_some_and(|r| r.in_force(unix, i64::from(self.std_offset())))
     }
 
     /// Offset from UTC in seconds at `unix`, daylight saving included.
@@ -259,13 +278,21 @@ impl Zone {
     /// The abbreviation in force at `unix`.
     #[must_use]
     pub fn abbr_at(&self, unix: u64) -> &str {
-        if self.in_dst(unix) { &self.dst_abbr } else { &self.std_abbr }
+        if self.in_dst(unix) {
+            &self.dst_abbr
+        } else {
+            &self.std_abbr
+        }
     }
 
     /// The description a list shows: the text, else the standard name.
     #[must_use]
     pub fn description(&self) -> &str {
-        if self.text.trim().is_empty() { &self.std_full } else { &self.text }
+        if self.text.trim().is_empty() {
+            &self.std_full
+        } else {
+            &self.text
+        }
     }
 }
 
@@ -282,15 +309,33 @@ mod tests {
         names.dedup();
         assert_eq!(names.len(), 93);
         assert!(find("Q0000UTC").is_some_and(|z| z.dst.is_none() && z.offset == 0));
-        assert!(SHIPPED.iter().filter(|z| matches!(z.rule, Some(ShippedRule { source: Source::Tzdata(_), .. }))).count() >= 35);
+        assert!(
+            SHIPPED
+                .iter()
+                .filter(|z| matches!(
+                    z.rule,
+                    Some(ShippedRule {
+                        source: Source::Tzdata(_),
+                        ..
+                    })
+                ))
+                .count()
+                >= 35
+        );
         assert!(!TZDATA_VERSION.is_empty());
     }
 
     #[test]
     fn eastern_offsets_across_the_year() {
         let est = find("QN0500EST3").unwrap();
-        assert_eq!(est.utc_offset_text(civil_to_unix(2026, 1, 15, 12, 0, 0)), "-0500");
-        assert_eq!(est.utc_offset_text(civil_to_unix(2026, 7, 4, 12, 0, 0)), "-0400");
+        assert_eq!(
+            est.utc_offset_text(civil_to_unix(2026, 1, 15, 12, 0, 0)),
+            "-0500"
+        );
+        assert_eq!(
+            est.utc_offset_text(civil_to_unix(2026, 7, 4, 12, 0, 0)),
+            "-0400"
+        );
         // 2026: DST starts March 8 at 07:00 UTC, ends November 1 at 06:00 UTC.
         assert_eq!(est.offset_at(civil_to_unix(2026, 3, 8, 6, 59, 59)), -5 * H);
         assert_eq!(est.offset_at(civil_to_unix(2026, 3, 8, 7, 0, 0)), -4 * H);

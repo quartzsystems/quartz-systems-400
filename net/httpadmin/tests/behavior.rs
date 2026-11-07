@@ -18,23 +18,47 @@ fn sign_on_rules() {
     let mut b = Browser::new();
     // Not signed on: every page sends you to the sign-on page.
     let r = b.get("/instances");
-    assert_eq!((r.status, r.header("Location")), (303, Some("/qs400/httpadmin/signon")));
+    assert_eq!(
+        (r.status, r.header("Location")),
+        (303, Some("/qs400/httpadmin/signon"))
+    );
     // A wrong password stays on the page with the message and a PW entry.
     let r = b.sign_on("qsecofr", "nope");
     assert_eq!(r.status, 200);
     assert!(r.text().contains("CPF22E2"), "{}", r.text());
     assert!(r.text().contains("value=\"QSECOFR\""));
-    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Password { code: 'P', .. })));
+    assert!(
+        b.fx.system
+            .audit
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|a| matches!(a, Audit::Password { code: 'P', .. }))
+    );
     // A user without *IOSYSCFG is refused, with an AF entry.
     let r = b.sign_on("WEBUSER", PASSWORD);
     assert_eq!(r.status, 200);
     assert!(r.text().contains("HTP8111"));
     assert!(b.cookie.is_none());
-    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Refused { user, .. } if user == "WEBUSER")));
+    assert!(
+        b.fx.system
+            .audit
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|a| matches!(a, Audit::Refused { user, .. } if user == "WEBUSER"))
+    );
     // *IOSYSCFG alone is enough.
     let r = b.sign_on("webadm", PASSWORD);
-    assert_eq!((r.status, r.header("Location")), (303, Some("/qs400/httpadmin/instances")));
-    assert!(r.header("Set-Cookie").unwrap().contains("HttpOnly; SameSite=Strict"));
+    assert_eq!(
+        (r.status, r.header("Location")),
+        (303, Some("/qs400/httpadmin/instances"))
+    );
+    assert!(
+        r.header("Set-Cookie")
+            .unwrap()
+            .contains("HttpOnly; SameSite=Strict")
+    );
     assert!(b.get("/instances").text().contains("User: <b>WEBADM</b>"));
     // Sign off ends the session.
     let r = b.get("/signoff");
@@ -59,10 +83,17 @@ fn messages_and_help_resolve() {
     assert_eq!(r.status, 200);
     let t = r.text();
     let at = |s: &str| t.find(s).unwrap_or_else(|| panic!("{s} missing"));
-    assert!(at("<h2>Message</h2>") < at("<h2>Cause</h2>") && at("<h2>Cause</h2>") < at("<h2>Recovery</h2>"));
+    assert!(
+        at("<h2>Message</h2>") < at("<h2>Cause</h2>")
+            && at("<h2>Cause</h2>") < at("<h2>Recovery</h2>")
+    );
     assert!(t.contains("HTTP server instance WEBSTORE must be stopped first."));
     assert_eq!(b.get("/msg/HTP9999").status, 404);
-    assert!(b.get("/help/instances").text().contains("<title>Help: Server instances - QS/400</title>"));
+    assert!(
+        b.get("/help/instances")
+            .text()
+            .contains("<title>Help: Server instances - QS/400</title>")
+    );
     assert!(b.get("/help/nothing").text().contains("Contents"));
     let css = b.get(qsweb::frame::CSS_PATH);
     assert_eq!(css.bytes(), qsweb::CSS);
@@ -83,7 +114,11 @@ fn filters_sort_and_page() {
     assert!(!t.contains(">INTRANET</a>"));
     let t = b.get("/instances?rows=10&page=1").text();
     assert!(t.contains("Page 1 of 1") && t.contains("<option selected>10</option>"));
-    assert!(b.get("/instances?name=NONE").text().contains("No instances match the filter."));
+    assert!(
+        b.get("/instances?name=NONE")
+            .text()
+            .contains("No instances match the filter.")
+    );
 }
 
 /// Routes not built yet; each step removes its own.
@@ -104,7 +139,9 @@ fn crawl() {
         let r = b.get(&url);
         // A wizard's start link sets it up and redirects into it.
         if r.status == 303
-            && let Some(to) = r.header("Location").filter(|l| l.starts_with(PRODUCT.prefix))
+            && let Some(to) = r
+                .header("Location")
+                .filter(|l| l.starts_with(PRODUCT.prefix))
         {
             queue.push_back(to.to_string());
             continue;
@@ -131,7 +168,12 @@ fn crawl() {
             if abs == "#" || abs.starts_with("/qs400/navigator/") {
                 continue;
             }
-            assert!(proto(&abs).is_some() || abs.starts_with(PRODUCT.prefix) || abs == qsweb::frame::CSS_PATH, "{url} links to {abs}");
+            assert!(
+                proto(&abs).is_some()
+                    || abs.starts_with(PRODUCT.prefix)
+                    || abs == qsweb::frame::CSS_PATH,
+                "{url} links to {abs}"
+            );
             if method == "GET" {
                 queue.push_back(abs);
             }
@@ -144,8 +186,21 @@ fn crawl() {
 /// No IBM product or feature names in the product's sources or pages.
 #[test]
 fn no_ibm_wording() {
-    let words = ["IBM", "iSeries", "System i", "AS/400", "OS/400", "i5/OS", "WebSphere", "Digital Certificate Manager", "Navigator for i", "Access for Web for i"];
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    let words = [
+        "IBM",
+        "iSeries",
+        "System i",
+        "AS/400",
+        "OS/400",
+        "i5/OS",
+        "WebSphere",
+        "Digital Certificate Manager",
+        "Navigator for i",
+        "Access for Web for i",
+    ];
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap();
     let mut hits = Vec::new();
     for dir in ["httpadmin/src", "qsweb/src", "qsweb/templates", "httpd/src"] {
         for f in walk(&root.join(dir)) {
@@ -197,7 +252,9 @@ fn a_server_cert(b: &Browser) -> String {
     let soon = httpadmin::fixture::now() + 61 * 86_400;
     let rows = b.fx.certs.entries("*SYSTEM").unwrap();
     rows.into_iter()
-        .find(|r| r.kind == httpadmin::env::EntryType::Server && r.not_after > soon && !r.is_default)
+        .find(|r| {
+            r.kind == httpadmin::env::EntryType::Server && r.not_after > soon && !r.is_default
+        })
         .unwrap()
         .label
 }
@@ -205,7 +262,11 @@ fn a_server_cert(b: &Browser) -> String {
 /// The `*SYSTEM` store's default certificate.
 fn store_default(b: &Browser) -> Option<String> {
     use httpadmin::env::Certs as _;
-    b.fx.certs.stores().into_iter().find(|s| s.name == "*SYSTEM").and_then(|s| s.default)
+    b.fx.certs
+        .stores()
+        .into_iter()
+        .find(|s| s.name == "*SYSTEM")
+        .and_then(|s| s.default)
 }
 
 /// The page a redirect leads to, with its message.
@@ -245,12 +306,28 @@ fn tls_on_an_unregistered_instance() {
     // says the instance has no TLS port.
     let cert = a_server_cert(&b);
     let t = b.get("/instance/QSTEST/tls").text();
-    assert!(t.contains("<select name=\"cert\"><option>(none)</option>"), "{t}");
+    assert!(
+        t.contains("<select name=\"cert\"><option>(none)</option>"),
+        "{t}"
+    );
     assert!(t.contains(&format!("<option>{cert} (expires ")), "{t}");
-    assert!(t.contains("The instance has no TLS port.") && !t.contains("TLS 1.1 (not"), "{t}");
+    assert!(
+        t.contains("The instance has no TLS port.") && !t.contains("TLS 1.1 (not"),
+        "{t}"
+    );
     let on = |c: &str| {
-        let fields = [("tls", "on"), ("t13", "on"), ("t12", "on"), ("cipher", "*DFT (system value QSSLCSL)"), ("ca", "none"), ("apply", "Apply")];
-        let mut v: Vec<(String, String)> = fields.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect();
+        let fields = [
+            ("tls", "on"),
+            ("t13", "on"),
+            ("t12", "on"),
+            ("cipher", "*DFT (system value QSSLCSL)"),
+            ("ca", "none"),
+            ("apply", "Apply"),
+        ];
+        let mut v: Vec<(String, String)> = fields
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect();
         v.push(("cert".into(), c.to_string()));
         v
     };
@@ -265,7 +342,15 @@ fn tls_on_an_unregistered_instance() {
 
     // A TLS port registers the ID: unassigned, it has the store's
     // default; with no default TLS needs a certificate chosen.
-    let r = b.post("/instance/QSTEST/ports", &[("addr", "*ALL"), ("port", "8443"), ("tls", "on"), ("add", "Add")]);
+    let r = b.post(
+        "/instance/QSTEST/ports",
+        &[
+            ("addr", "*ALL"),
+            ("port", "8443"),
+            ("tls", "on"),
+            ("add", "Add"),
+        ],
+    );
     assert!(flashed(&mut b, &r).contains("HTP8022"));
     let default = store_default(&b).unwrap();
     assert_eq!(job_trust(&b, app), Ok(Some(default.clone())));
@@ -283,12 +368,25 @@ fn tls_on_an_unregistered_instance() {
     );
     // The assigned certificate comes first; no (none).
     let t = b.get("/instance/QSTEST/tls").text();
-    assert!(t.contains(&format!("<select name=\"cert\"><option>{cert} (expires ")), "{t}");
+    assert!(
+        t.contains(&format!("<select name=\"cert\"><option>{cert} (expires ")),
+        "{t}"
+    );
     // The job's plan: TLS on 8443 for the application, 1.2 and 1.3 on.
-    let plan = httpd::serve::site::Plan::new("QSTEST", "/www/qstest", &httpd::conf::parse(&c).unwrap());
-    let tls = plan.listeners.iter().find(|l| l.port == 8443).and_then(|l| l.tls.clone()).unwrap();
+    let plan =
+        httpd::serve::site::Plan::new("QSTEST", "/www/qstest", &httpd::conf::parse(&c).unwrap());
+    let tls = plan
+        .listeners
+        .iter()
+        .find(|l| l.port == 8443)
+        .and_then(|l| l.tls.clone())
+        .unwrap();
     assert_eq!(tls.app_id, app);
-    assert!(!tls.disabled.iter().any(|d| d == "TLSv1.2" || d == "TLSv1.3"));
+    assert!(
+        !tls.disabled
+            .iter()
+            .any(|d| d == "TLSv1.2" || d == "TLSv1.3")
+    );
 }
 
 /// A new instance has its application ID; deleting it takes the ID,
@@ -321,7 +419,12 @@ fn create_registers_and_delete_removes() {
     assert!(flashed(&mut b, &r).contains("HTP8021"));
     assert!(!b.fx.files.exists("/www/shop"));
     assert!(!b.fx.certs.apps().iter().any(|a| a.id == app));
-    assert!(httpd::registry::Registry::load(b.fx.files.as_ref()).unwrap().get("SHOP").is_none());
+    assert!(
+        httpd::registry::Registry::load(b.fx.files.as_ref())
+            .unwrap()
+            .get("SHOP")
+            .is_none()
+    );
 }
 
 /// Files whose trees cannot be removed.
@@ -347,7 +450,10 @@ impl httpd::files::Files for Stuck {
         self.0.remove(path)
     }
     fn remove_tree(&self, path: &str) -> std::io::Result<()> {
-        Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, format!("{path}/logs/error_log: not authorized")))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            format!("{path}/logs/error_log: not authorized"),
+        ))
     }
     fn list(&self, dir: &str) -> std::io::Result<Vec<httpd::files::Entry>> {
         self.0.list(dir)
@@ -376,7 +482,10 @@ fn delete_with_files_left() {
     assert_eq!(b.sign_on("QSECOFR", PASSWORD).status, 303);
     let r = b.post("/instance/WEBSTORE/confirm?op=delete", &[("ok", "OK")]);
     let t = flashed(&mut b, &r);
-    assert!(t.contains("HTP8023") && t.contains("/www/webstore remain"), "{t}");
+    assert!(
+        t.contains("HTP8023") && t.contains("/www/webstore remain"),
+        "{t}"
+    );
     assert!(!t.contains(">WEBSTORE</a>"), "{t}");
     assert!(b.fx.files.exists("/www/webstore/conf/httpd.conf"));
     assert_eq!(b.get("/instance/WEBSTORE/general").status, 404);
@@ -399,7 +508,11 @@ fn every_page_carries_the_product_title() {
     let mut seen = BTreeSet::new();
     let mut framed = 0;
     while let Some(url) = queue.pop_front() {
-        if !seen.insert(url.clone()) || url.ends_with("/signoff") || url.contains("/help/") || url == qsweb::frame::CSS_PATH {
+        if !seen.insert(url.clone())
+            || url.ends_with("/signoff")
+            || url.contains("/help/")
+            || url == qsweb::frame::CSS_PATH
+        {
             continue;
         }
         let r = b.get(&url);
@@ -423,15 +536,25 @@ fn every_page_carries_the_product_title() {
 #[test]
 fn message_page_job_log() {
     let mut b = Browser::signed_on();
-    let url = "/msg/HTP8106?d=QSTEST&d=denied&back=%2Fqs400%2Fhttpadmin%2Finstance%2FWEBSTORE%2Fgeneral";
+    let url =
+        "/msg/HTP8106?d=QSTEST&d=denied&back=%2Fqs400%2Fhttpadmin%2Finstance%2FWEBSTORE%2Fgeneral";
     let t = b.get(url).text();
-    assert!(t.contains("name=\"joblog\" value=\"Job log\"") && t.contains("name=\"back\""), "{t}");
+    assert!(
+        t.contains("name=\"joblog\" value=\"Job log\"") && t.contains("name=\"back\""),
+        "{t}"
+    );
     let r = b.post(url, &[("joblog", "Job log")]);
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/joblog"));
     let t = b.get("/joblog").text();
-    assert!(t.contains("Job log: 123457/QTMHHTTP/ADMIN") && t.contains("HTP8001"), "{t}");
+    assert!(
+        t.contains("Job log: 123457/QTMHHTTP/ADMIN") && t.contains("HTP8001"),
+        "{t}"
+    );
     let r = b.post(url, &[("back", "< Back")]);
-    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instance/WEBSTORE/general"));
+    assert_eq!(
+        r.header("Location"),
+        Some("/qs400/httpadmin/instance/WEBSTORE/general")
+    );
     let r = b.post(url, &[("close", "Close")]);
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instances"));
 }

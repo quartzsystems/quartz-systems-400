@@ -25,7 +25,11 @@ fn qual(lib: &str, name: &str) -> String {
 }
 
 /// Each record format's key fields, in key order.
-pub fn keys(system: &mut System, lib: &str, file: &str) -> Result<Vec<(String, Vec<String>)>, String> {
+pub fn keys(
+    system: &mut System,
+    lib: &str,
+    file: &str,
+) -> Result<Vec<(String, Vec<String>)>, String> {
     let (store, ctx) = db(system)?;
     with_txn(store, |txn| {
         let id = file_id(txn, ctx, &qual(lib, file))?;

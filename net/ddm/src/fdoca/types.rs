@@ -87,8 +87,14 @@ pub fn drda_of(t: &ColType) -> (u8, u16) {
         Kind::Integer => (drda::INTEGER, 4),
         Kind::BigInt => (drda::INTEGER8, 8),
         Kind::Double => (drda::FLOAT8, 8),
-        Kind::Decimal => (drda::DECIMAL, (u16::from(t.precision) << 8) | u16::from(t.scale)),
-        Kind::Numeric => (drda::ZDECIMAL, (u16::from(t.precision) << 8) | u16::from(t.scale)),
+        Kind::Decimal => (
+            drda::DECIMAL,
+            (u16::from(t.precision) << 8) | u16::from(t.scale),
+        ),
+        Kind::Numeric => (
+            drda::ZDECIMAL,
+            (u16::from(t.precision) << 8) | u16::from(t.scale),
+        ),
         Kind::Char => (drda::CHAR, u16::try_from(t.length).unwrap_or(u16::MAX)),
         Kind::VarChar => (drda::VARCHAR, u16::try_from(t.length).unwrap_or(u16::MAX)),
         Kind::Date => (drda::DATE, 10),
@@ -150,7 +156,13 @@ pub fn sqltype_of(t: &ColType) -> i16 {
 
 /// The column type of an `SQLTYPE` with the SQLDA's precision, scale,
 /// length and CCSID.
-pub fn col_of_sqltype(code: i16, precision: i16, scale: i16, length: i64, ccsid: u16) -> Option<ColType> {
+pub fn col_of_sqltype(
+    code: i16,
+    precision: i16,
+    scale: i16,
+    length: i64,
+    ccsid: u16,
+) -> Option<ColType> {
     let nullable = code & 1 == 1;
     let kind = match u16::try_from(code & !1).ok()? {
         sqltype::SMALLINT => Kind::SmallInt,

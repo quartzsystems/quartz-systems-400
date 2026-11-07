@@ -71,7 +71,9 @@ fn yyddd(t: u64) -> String {
 }
 
 fn esc(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('\t', "\\t").replace('\n', "\\n")
+    s.replace('\\', "\\\\")
+        .replace('\t', "\\t")
+        .replace('\n', "\\n")
 }
 
 fn unesc(s: &str) -> String {
@@ -96,7 +98,8 @@ impl ProblemLog {
     /// Log a problem; an open problem with the same symptoms gets a note
     /// instead of a second entry. The identifier.
     pub fn create(&mut self, kind: PrbType, d: &Detected, system: &str, now: u64) -> String {
-        let (origin, severity, text, symptoms) = (d.origin.clone(), d.severity, &d.text, &d.symptoms);
+        let (origin, severity, text, symptoms) =
+            (d.origin.clone(), d.severity, &d.text, &d.symptoms);
         if let Some(p) = self
             .problems
             .values_mut()

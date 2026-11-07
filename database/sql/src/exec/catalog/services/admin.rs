@@ -41,13 +41,19 @@ fn command(args: &Args) -> Result<String> {
         if v.eq_ignore_ascii_case("*SAME") {
             continue;
         }
-        let v = if *kw == "TEXT" { format!("'{}'", v.replace('\'', "''")) } else { v.to_ascii_uppercase() };
+        let v = if *kw == "TEXT" {
+            format!("'{}'", v.replace('\'', "''"))
+        } else {
+            v.to_ascii_uppercase()
+        };
         let _ = write!(cmd, " {kw}({v})");
     }
     if let Some(n) = args.int("P_USER_EXPIRATION_INTERVAL") {
         let _ = write!(cmd, " USREXPITV({n})");
     }
-    let action = args.word("P_SPECIAL_AUTHORITY_ACTION").unwrap_or_else(|| "*SAME".into());
+    let action = args
+        .word("P_SPECIAL_AUTHORITY_ACTION")
+        .unwrap_or_else(|| "*SAME".into());
     if action != "*SAME" {
         // BLOCKED(rel): adding or removing one special authority needs
         // the profile's current list; only a whole list is given here.
@@ -62,7 +68,12 @@ fn command(args: &Args) -> Result<String> {
 
 /// `SYSTOOLS.CHANGE_USER_PROFILE`: with `PREVIEW => 'YES'` the
 /// command only, else the command run.
-pub fn change_user_profile(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+pub fn change_user_profile(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     let cmd = command(args)?;
     let preview = args.word("PREVIEW").is_none_or(|p| p != "NO");
     out.row();
@@ -85,19 +96,35 @@ pub fn change_user_profile(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out
 
 /// A procedure QS/400 refuses: SQL0084 with what is missing.
 fn refused(what: &str) -> SqlError {
-    SqlError::Coded { code: -84, state: "42612", what: what.into() }
+    SqlError::Coded {
+        code: -84,
+        state: "42612",
+        what: what.into(),
+    }
 }
 
 /// `SET_SERVER_SBS_ROUTING`: the host servers' prestart jobs run in
 /// `QUSRWRK` for every user; routing by user is not kept.
-pub fn set_server_sbs_routing(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Args) -> Result<Vec<Value>> {
-    Err(refused("QSYS2.SET_SERVER_SBS_ROUTING: host server routing by user is not supported"))
+pub fn set_server_sbs_routing(
+    _txn: &mut Txn<'_>,
+    _ctx: &mut SqlContext,
+    _args: &Args,
+) -> Result<Vec<Value>> {
+    Err(refused(
+        "QSYS2.SET_SERVER_SBS_ROUTING: host server routing by user is not supported",
+    ))
 }
 
 /// `SET_PASE_SHELL_INFO`: the SSH server starts QSH for every user; a
 /// user's PASE shell is not kept.
-pub fn set_pase_shell_info(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Args) -> Result<Vec<Value>> {
-    Err(refused("QSYS2.SET_PASE_SHELL_INFO: a user's PASE shell is not supported; SSH sessions run QSH"))
+pub fn set_pase_shell_info(
+    _txn: &mut Txn<'_>,
+    _ctx: &mut SqlContext,
+    _args: &Args,
+) -> Result<Vec<Value>> {
+    Err(refused(
+        "QSYS2.SET_PASE_SHELL_INFO: a user's PASE shell is not supported; SSH sessions run QSH",
+    ))
 }
 
 /// `SYSTOOLS.LPRINTF`: the job log is the job's, not the storage
@@ -105,7 +132,9 @@ pub fn set_pase_shell_info(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Ar
 pub fn lprintf(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Args) -> Result<Vec<Value>> {
     // BLOCKED(rel): a statement runs in the storage service, which
     // cannot write the asking job's log.
-    Err(refused("SYSTOOLS.LPRINTF: writing the job log from a statement is not supported"))
+    Err(refused(
+        "SYSTOOLS.LPRINTF: writing the job log from a statement is not supported",
+    ))
 }
 
 /// `OVERRIDE_TABLE(TABLE_SCHEMA, TABLE_NAME, BLOCK_SIZE)`: the table
@@ -115,16 +144,39 @@ pub fn override_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> R
     let schema = args.word("TABLE_SCHEMA").unwrap_or_default();
     let table = args.word("TABLE_NAME").unwrap_or_default();
     let size = args.word("BLOCK_SIZE").unwrap_or_default();
-    let valid = matches!(size.as_str(), "*DEFAULT" | "*BUF32KB" | "*BUF64KB" | "*BUF128KB" | "*BUF256KB" | "*BUF512KB" | "*BUF1MB" | "*BUF2MB" | "*BUF4MB" | "*BUF8MB" | "*BUF16MB")
-        || size.parse::<u64>().is_ok_and(|n| n > 0);
+    let valid = matches!(
+        size.as_str(),
+        "*DEFAULT"
+            | "*BUF32KB"
+            | "*BUF64KB"
+            | "*BUF128KB"
+            | "*BUF256KB"
+            | "*BUF512KB"
+            | "*BUF1MB"
+            | "*BUF2MB"
+            | "*BUF4MB"
+            | "*BUF8MB"
+            | "*BUF16MB"
+    ) || size.parse::<u64>().is_ok_and(|n| n > 0);
     if !valid {
-        return Err(SqlError::Coded { code: -171, state: "42815", what: format!("BLOCK_SIZE {size}") });
+        return Err(SqlError::Coded {
+            code: -171,
+            state: "42815",
+            what: format!("BLOCK_SIZE {size}"),
+        });
     }
-    let found = super::objects::libraries(txn, ctx, &schema)?.into_iter().any(|l| {
-        ops::list(txn, l, Some(types::FILE)).is_ok_and(|v| v.iter().any(|(k, _)| k.name.to_string() == table))
-    });
+    let found = super::objects::libraries(txn, ctx, &schema)?
+        .into_iter()
+        .any(|l| {
+            ops::list(txn, l, Some(types::FILE))
+                .is_ok_and(|v| v.iter().any(|(k, _)| k.name.to_string() == table))
+        });
     if !found {
-        return Err(SqlError::Coded { code: -204, state: "42704", what: format!("{schema}.{table} *FILE") });
+        return Err(SqlError::Coded {
+            code: -204,
+            state: "42704",
+            what: format!("{schema}.{table} *FILE"),
+        });
     }
     Ok(Vec::new())
 }

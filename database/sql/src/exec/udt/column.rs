@@ -33,15 +33,32 @@ pub fn resolve(cols: &[ColumnDef]) -> Result<Cow<'_, [ColumnDef]>> {
 
 /// Record that `file`'s fields named in `typed` are of the distinct types
 /// (`SCHEMA.NAME`) given.
-pub fn record(txn: &mut Txn<'_>, file: ObjectId, typed: &[(Name, String)], kind: Kind, now: u64) -> Result<()> {
+pub fn record(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    typed: &[(Name, String)],
+    kind: Kind,
+    now: u64,
+) -> Result<()> {
     if typed.is_empty() {
         return Ok(());
     }
     let mut info = sqlinf::load(txn, file)?.unwrap_or_else(|| SqlInfo::new(kind));
     info.remove(tag::COLTYPE);
     for (field, q) in typed {
-        let Some(d) = registry::by_qualified(q) else { continue };
-        info.push(tag::COLTYPE, ColType { field: *field, id: d.id, library: d.schema, name: d.name.clone() }.encode());
+        let Some(d) = registry::by_qualified(q) else {
+            continue;
+        };
+        info.push(
+            tag::COLTYPE,
+            ColType {
+                field: *field,
+                id: d.id,
+                library: d.schema,
+                name: d.name.clone(),
+            }
+            .encode(),
+        );
     }
     sqlinf::save(txn, file, &info, now)?;
     Ok(())
@@ -50,13 +67,20 @@ pub fn record(txn: &mut Txn<'_>, file: ObjectId, typed: &[(Name, String)], kind:
 /// The fields of a format that are of a distinct type, for [`record`].
 #[must_use]
 pub fn typed(fields: &[FieldDef]) -> Vec<(Name, String)> {
-    fields.iter().filter_map(|f| f.udt.clone().map(|u| (f.name, u))).collect()
+    fields
+        .iter()
+        .filter_map(|f| f.udt.clone().map(|u| (f.name, u)))
+        .collect()
 }
 
 /// The `COLTYPE` entries of `file`.
 pub fn of(txn: &mut Txn<'_>, file: ObjectId) -> Result<Vec<ColType>> {
-    let Some(info) = sqlinf::load(txn, file)? else { return Ok(Vec::new()) };
-    info.all(tag::COLTYPE).map(|b| ColType::decode(b).map_err(Into::into)).collect()
+    let Some(info) = sqlinf::load(txn, file)? else {
+        return Ok(Vec::new());
+    };
+    info.all(tag::COLTYPE)
+        .map(|b| ColType::decode(b).map_err(Into::into))
+        .collect()
 }
 
 /// Mark `fields` (of `file`) with the distinct types of its columns.
@@ -82,9 +106,13 @@ pub fn qualified(c: &ColType) -> String {
 /// `SQL0478`: its name.
 pub fn user_of(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId) -> Result<Option<String>> {
     for (_, lib) in ops::list(txn, qsys, Some(types::LIB))? {
-        let Ok(files) = ops::list(txn, lib, Some(types::FILE)) else { continue };
+        let Ok(files) = ops::list(txn, lib, Some(types::FILE)) else {
+            continue;
+        };
         for (k, file) in files {
-            let Ok((_, h)) = ops::read_header(txn, file) else { continue };
+            let Ok((_, h)) = ops::read_header(txn, file) else {
+                continue;
+            };
             if h.sql.is_none() {
                 continue;
             }

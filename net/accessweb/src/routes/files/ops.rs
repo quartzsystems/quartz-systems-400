@@ -11,15 +11,25 @@ use qsweb::frame::Page;
 use qsweb::http::Response;
 use qsweb::msg::{Kind, Message};
 use qsweb::pages::confirm_body;
-use qsweb::partials::{Button, Cell, Col, List, Prop, PropGroup, input_cmd, list_table, mono, props};
+use qsweb::partials::{
+    Button, Cell, Col, List, Prop, PropGroup, input_cmd, list_table, mono, props,
+};
 
-use super::{CLIP, GROUP, back, browse_route, error, good_name, join, name_of, parent, path_arg, token_ok};
+use super::{
+    CLIP, GROUP, back, browse_route, error, good_name, join, name_of, parent, path_arg, token_ok,
+};
 use crate::msgs;
 use crate::policy;
 use crate::routes::Rq;
 
 /// A small form page of Browse files.
-fn form_page(rq: &Rq<'_>, title: &str, last: &str, rows: Vec<Prop>, messages: Vec<Message>) -> Response {
+fn form_page(
+    rq: &Rq<'_>,
+    title: &str,
+    last: &str,
+    rows: Vec<Prop>,
+    messages: Vec<Message>,
+) -> Response {
     let body = props(
         &rq.ctx,
         &[PropGroup { title: None, rows }],
@@ -57,7 +67,13 @@ pub fn mkdir(rq: &Rq<'_>) -> Response {
         if good_name(&name) {
             let p = join(&dir, &name);
             match rq.env().files.mkdir(rq.user(), &p) {
-                Ok(()) => return back(rq, &dir, rq.message(Kind::Done, msgs::FOLDER_CREATED, &[&p])),
+                Ok(()) => {
+                    return back(
+                        rq,
+                        &dir,
+                        rq.message(Kind::Done, msgs::FOLDER_CREATED, &[&p]),
+                    );
+                }
                 Err(m) => messages.push(error(rq, &m)),
             }
         } else {
@@ -105,14 +121,24 @@ pub fn rename(rq: &Rq<'_>) -> Response {
                     return r;
                 }
                 match rq.env().files.rename(rq.user(), &path, &to) {
-                    Ok(()) => return back(rq, &dir, rq.message(Kind::Done, msgs::RENAMED, &[&path, &to])),
+                    Ok(()) => {
+                        return back(
+                            rq,
+                            &dir,
+                            rq.message(Kind::Done, msgs::RENAMED, &[&path, &to]),
+                        );
+                    }
                     Err(m) => messages.push(error(rq, &m)),
                 }
             }
             None => messages.push(bad(rq, &new, "New name")),
         }
     }
-    let value = if rq.post() { f.str("name").to_string() } else { name.clone() };
+    let value = if rq.post() {
+        f.str("name").to_string()
+    } else {
+        name.clone()
+    };
     form_page(
         rq,
         &format!("Rename: {name}"),
@@ -161,7 +187,11 @@ pub fn paste(rq: &Rq<'_>, dir: &str) -> Response {
         };
         if let Err(m) = r {
             // What was pasted before stays; the rest stays to paste.
-            let left: Vec<&str> = paths.iter().filter(|q| !done.contains(q)).map(String::as_str).collect();
+            let left: Vec<&str> = paths
+                .iter()
+                .filter(|q| !done.contains(q))
+                .map(String::as_str)
+                .collect();
             rq.set(&[(CLIP, &format!("{how}\n{}", left.join("\n")))]);
             return back(rq, dir, error(rq, &m));
         }
@@ -170,8 +200,16 @@ pub fn paste(rq: &Rq<'_>, dir: &str) -> Response {
     if how == "cut" {
         rq.set(&[(CLIP, "")]);
     }
-    let what = if paths.len() == 1 { paths[0].clone() } else { format!("{} entries", paths.len()) };
-    let id = if how == "cut" { msgs::RENAMED } else { msgs::COPIED };
+    let what = if paths.len() == 1 {
+        paths[0].clone()
+    } else {
+        format!("{} entries", paths.len())
+    };
+    let id = if how == "cut" {
+        msgs::RENAMED
+    } else {
+        msgs::COPIED
+    };
     back(rq, dir, rq.message(Kind::Done, id, &[&what, dir]))
 }
 
@@ -207,11 +245,19 @@ pub fn delete(rq: &Rq<'_>) -> Response {
                 Ok(c) => gone += c,
                 Err((at, m, _)) => {
                     let why = format!("{} {}", m.id, m.text);
-                    return back(rq, &dir, rq.message(Kind::Error, msgs::DELETE_STOPPED, &[&p, &at, &why]));
+                    return back(
+                        rq,
+                        &dir,
+                        rq.message(Kind::Error, msgs::DELETE_STOPPED, &[&p, &at, &why]),
+                    );
                 }
             }
         }
-        let what = if names.len() == 1 { join(&dir, &names[0]) } else { format!("{} entries ({gone} objects)", names.len()) };
+        let what = if names.len() == 1 {
+            join(&dir, &names[0])
+        } else {
+            format!("{} entries ({gone} objects)", names.len())
+        };
         return back(rq, &dir, rq.message(Kind::Done, msgs::DELETED, &[&what]));
     }
     let mut rows = Vec::new();
@@ -226,12 +272,20 @@ pub fn delete(rq: &Rq<'_>) -> Response {
         all += c;
         rows.push(vec![
             Cell::mono(n),
-            Cell::text(if e.kind == crate::env::files::Kind::Dir { "Directory" } else { "File" }),
+            Cell::text(if e.kind == crate::env::files::Kind::Dir {
+                "Directory"
+            } else {
+                "File"
+            }),
             Cell::num(&crate::transfer::grouped(c)),
         ]);
     }
     let table = list_table(&List {
-        cols: vec![Col::plain("Name"), Col::plain("Type"), Col::plain("Objects")],
+        cols: vec![
+            Col::plain("Name"),
+            Col::plain("Type"),
+            Col::plain("Objects"),
+        ],
         rows,
         empty: String::new(),
         keep: Vec::new(),

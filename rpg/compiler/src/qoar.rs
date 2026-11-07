@@ -21,7 +21,9 @@ pub const MEMBERS: &[(&str, &str)] = &[
 /// A shipped member, when `lib/file,name` names one.
 #[must_use]
 pub fn member(lib: &str, file: &str, name: &str) -> Option<Member> {
-    if !(lib.eq_ignore_ascii_case("QOAR") || lib == "*LIBL") || !file.eq_ignore_ascii_case("QRPGLESRC") {
+    if !(lib.eq_ignore_ascii_case("QOAR") || lib == "*LIBL")
+        || !file.eq_ignore_ascii_case("QRPGLESRC")
+    {
         return None;
     }
     MEMBERS
@@ -35,6 +37,8 @@ pub struct WithQoar<'a>(pub &'a mut dyn Includes);
 
 impl Includes for WithQoar<'_> {
     fn member(&mut self, lib: &str, file: &str, name: &str) -> Option<Member> {
-        self.0.member(lib, file, name).or_else(|| member(lib, file, name))
+        self.0
+            .member(lib, file, name)
+            .or_else(|| member(lib, file, name))
     }
 }

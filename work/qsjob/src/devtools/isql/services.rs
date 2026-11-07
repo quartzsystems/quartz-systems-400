@@ -93,12 +93,17 @@ fn print_session(host: &Host, surface: &mut Surface, s: &Session) -> Option<Resu
     let mut file = "QSYSPRT".to_string();
     let mut msg: Option<String> = None;
     loop {
-        let a = show(surface, &panels::printer_file(&file, msg.take().as_deref(), &w))?;
+        let a = show(
+            surface,
+            &panels::printer_file(&file, msg.take().as_deref(), &w),
+        )?;
         file = a.up("PRTF");
         match a.key {
             Key::F(3 | 12) => return None,
             Key::F(5) => file = "QSYSPRT".into(),
-            Key::Enter if file.is_empty() => msg = Some(crate::display::msgline::say(host, "CPD9BF4", &[])),
+            Key::Enter if file.is_empty() => {
+                msg = Some(crate::display::msgline::say(host, "CPD9BF4", &[]))
+            }
             Key::Enter => {
                 let pages = print::session(
                     &session_lines(s),
@@ -203,9 +208,15 @@ pub fn exit(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
                 "1" => {
                     let text = s.saved();
                     // Bound first: the link's borrow ends before the message is read.
-                    let put = host.link.borrow_mut().with(|l| l.isql_session_put(Some(text)));
+                    let put = host
+                        .link
+                        .borrow_mut()
+                        .with(|l| l.isql_session_put(Some(text)));
                     if let Err(e) = put {
-                        msg = Some(crate::display::msgline::text_of(host, &crate::panels::line(&e)));
+                        msg = Some(crate::display::msgline::text_of(
+                            host,
+                            &crate::panels::line(&e),
+                        ));
                         continue;
                     }
                     end(host, s, true);
@@ -249,7 +260,10 @@ fn save_source(host: &Host, surface: &mut Surface, s: &mut Session) -> Option<()
     let mut form = SourceFile::new(&lib);
     let mut msg: Option<String> = None;
     loop {
-        let a = show(surface, &panels::source_file(&form, msg.take().as_deref(), &txt))?;
+        let a = show(
+            surface,
+            &panels::source_file(&form, msg.take().as_deref(), &txt),
+        )?;
         form.file = a.up("FILE");
         form.lib = a.up("LIB");
         form.member = a.up("MBR");
@@ -269,23 +283,38 @@ fn save_source(host: &Host, surface: &mut Surface, s: &mut Session) -> Option<()
                     continue;
                 }
                 if form.aut != "*EXCLUDE" || !form.text.is_empty() {
-                    msg = Some(crate::display::msgline::say(host, "SQL0084", &[&"AUT TEXT"]));
+                    msg = Some(crate::display::msgline::say(
+                        host,
+                        "SQL0084",
+                        &[&"AUT TEXT"],
+                    ));
                     continue;
                 }
                 // `*FILE` and `*FIRST` name the member after the file.
-                let member = if form.member.starts_with('*') { form.file.clone() } else { form.member.clone() };
+                let member = if form.member.starts_with('*') {
+                    form.file.clone()
+                } else {
+                    form.member.clone()
+                };
                 let mut lines = source_lines(&s.h.entries);
                 if form.option == "5"
-                    && let Ok(Some(mut old)) =
-                        host.link.borrow_mut().with(|l| l.pdm_read(form.lib.clone(), form.file.clone(), member.clone()))
+                    && let Ok(Some(mut old)) = host
+                        .link
+                        .borrow_mut()
+                        .with(|l| l.pdm_read(form.lib.clone(), form.file.clone(), member.clone()))
                 {
                     old.append(&mut lines);
                     lines = old;
                 }
-                let r = host
-                    .link
-                    .borrow_mut()
-                    .with(|l| l.pdm_write(form.lib.clone(), form.file.clone(), member.clone(), lines, "SQL".into()));
+                let r = host.link.borrow_mut().with(|l| {
+                    l.pdm_write(
+                        form.lib.clone(),
+                        form.file.clone(),
+                        member.clone(),
+                        lines,
+                        "SQL".into(),
+                    )
+                });
                 match r {
                     Ok(()) => note(host, &mut s.h, "CPI9BEF", &[&member, &form.lib, &form.file]),
                     Err(e) => note_error(host, &mut s.h, &e),

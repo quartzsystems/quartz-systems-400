@@ -480,8 +480,12 @@ impl Odp {
         use crate::cst::enforce;
         match (event, rrn, new) {
             (RowEvent::Insert, _, Some((d, n))) => enforce::before_write(txn, &self.member, d, n),
-            (RowEvent::Update, Some(rrn), Some((d, n))) => enforce::before_update(txn, &self.member, rrn, d, n),
-            (RowEvent::Delete, Some(rrn), _) => enforce::before_delete(txn, &mut self.member, rrn, self.cmt.as_ref()),
+            (RowEvent::Update, Some(rrn), Some((d, n))) => {
+                enforce::before_update(txn, &self.member, rrn, d, n)
+            }
+            (RowEvent::Delete, Some(rrn), _) => {
+                enforce::before_delete(txn, &mut self.member, rrn, self.cmt.as_ref())
+            }
             _ => Ok(()),
         }
     }
@@ -522,14 +526,29 @@ impl Odp {
         let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
         let (rec, nulls) = lfwrite::to_base(&lf_fmt, &log, &base_fmt, data, null_map, None)?;
         let lvl = self.trg_level();
-        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((&rec, &nulls)), set: None };
-        let (rec, nulls) = self.trg.before(txn, &mut base, &row, lvl)?.unwrap_or((rec, nulls));
+        let row = Row {
+            event: Event::Insert,
+            rrn: 0,
+            old: None,
+            new: Some((&rec, &nulls)),
+            set: None,
+        };
+        let (rec, nulls) = self
+            .trg
+            .before(txn, &mut base, &row, lvl)?
+            .unwrap_or((rec, nulls));
         crate::cst::enforce::before_write(txn, &base, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
         let rrn = base.write_new(txn, &rec, &nulls)?;
         self.hold_new(base.id(), rrn);
         self.fb.rrn = rrn;
-        let row = Row { event: Event::Insert, rrn, old: None, new: Some((&rec, &nulls)), set: None };
+        let row = Row {
+            event: Event::Insert,
+            rrn,
+            old: None,
+            new: Some((&rec, &nulls)),
+            set: None,
+        };
         self.trg.after(txn, &mut base, &row, lvl)?;
         Ok(rrn)
     }
@@ -563,11 +582,20 @@ impl Odp {
             new: Some((&rec, &nulls)),
             set: None,
         };
-        let (rec, nulls) = self.trg.before(txn, &mut base, &row, lvl)?.unwrap_or((rec, nulls));
+        let (rec, nulls) = self
+            .trg
+            .before(txn, &mut base, &row, lvl)?
+            .unwrap_or((rec, nulls));
         crate::cst::enforce::before_update(txn, &base, rrn, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
         base.update(txn, rrn, &rec, &nulls)?;
-        let row = Row { event: Event::Update, rrn, old: Some((&old.record, &old.null_map)), new: Some((&rec, &nulls)), set: None };
+        let row = Row {
+            event: Event::Update,
+            rrn,
+            old: Some((&old.record, &old.null_map)),
+            new: Some((&rec, &nulls)),
+            set: None,
+        };
         self.trg.after(txn, &mut base, &row, lvl)
     }
 
@@ -585,7 +613,15 @@ impl Odp {
         let mut base = self.member.open_base(txn, fi)?;
         let old = Self::old_for(txn, &base, Event::Delete, rrn)?;
         let lvl = self.trg_level();
-        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None, set: None };
+        let row = Row {
+            event: Event::Delete,
+            rrn,
+            old: old
+                .as_ref()
+                .map(|s| (s.record.as_slice(), s.null_map.as_slice())),
+            new: None,
+            set: None,
+        };
         self.trg.before(txn, &mut base, &row, lvl)?;
         self.begin_change_on(txn, &mut base)?;
         crate::cst::enforce::before_delete(txn, &mut base, rrn, self.cmt.as_ref())?;
@@ -594,7 +630,12 @@ impl Odp {
     }
 
     /// The record as it was, when `m` has triggers for `event`.
-    fn old_for(txn: &mut Txn<'_>, m: &Member, event: Event, rrn: u64) -> Result<Option<crate::member::Slot>> {
+    fn old_for(
+        txn: &mut Txn<'_>,
+        m: &Member,
+        event: Event,
+        rrn: u64,
+    ) -> Result<Option<crate::member::Slot>> {
         if m.trgs.as_ref().is_some_and(|a| a.any(event)) {
             m.read(txn, rrn)
         } else {
@@ -606,37 +647,64 @@ impl Odp {
     /// record, after triggers.
     fn write_physical(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
         let lvl = self.trg_level();
-        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((data, null_map)), set: None };
+        let row = Row {
+            event: Event::Insert,
+            rrn: 0,
+            old: None,
+            new: Some((data, null_map)),
+            set: None,
+        };
         let replaced = self.trg.before(txn, &mut self.member, &row, lvl)?;
-        let (data, null_map) = replaced.as_ref().map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
+        let (data, null_map) = replaced
+            .as_ref()
+            .map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
         self.before_row(txn, RowEvent::Insert, None, Some((data, null_map)))?;
         self.begin_change(txn)?;
         let rrn = self.member.write_new(txn, data, null_map)?;
         self.fb.rrn = rrn;
         let member = self.member.id();
         self.hold_new(member, rrn);
-        let row = Row { event: Event::Insert, rrn, old: None, new: Some((data, null_map)), set: None };
+        let row = Row {
+            event: Event::Insert,
+            rrn,
+            old: None,
+            new: Some((data, null_map)),
+            set: None,
+        };
         self.trg.after(txn, &mut self.member, &row, lvl)?;
         Ok(rrn)
     }
 
     /// `UPDATE` of a physical record.
-    fn update_physical(&mut self, txn: &mut Txn<'_>, rrn: u64, data: &[u8], null_map: &[u8]) -> Result<()> {
+    fn update_physical(
+        &mut self,
+        txn: &mut Txn<'_>,
+        rrn: u64,
+        data: &[u8],
+        null_map: &[u8],
+    ) -> Result<()> {
         let old = Self::old_for(txn, &self.member, Event::Update, rrn)?;
         let lvl = self.trg_level();
         let row = Row {
             event: Event::Update,
             rrn,
-            old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())),
+            old: old
+                .as_ref()
+                .map(|s| (s.record.as_slice(), s.null_map.as_slice())),
             new: Some((data, null_map)),
             set: None,
         };
         let replaced = self.trg.before(txn, &mut self.member, &row, lvl)?;
-        let (data, null_map) = replaced.as_ref().map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
+        let (data, null_map) = replaced
+            .as_ref()
+            .map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
         self.before_row(txn, RowEvent::Update, Some(rrn), Some((data, null_map)))?;
         self.begin_change(txn)?;
         self.member.update(txn, rrn, data, null_map)?;
-        let row = Row { new: Some((data, null_map)), ..row };
+        let row = Row {
+            new: Some((data, null_map)),
+            ..row
+        };
         self.trg.after(txn, &mut self.member, &row, lvl)
     }
 
@@ -644,7 +712,15 @@ impl Odp {
     fn delete_physical(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
         let old = Self::old_for(txn, &self.member, Event::Delete, rrn)?;
         let lvl = self.trg_level();
-        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None, set: None };
+        let row = Row {
+            event: Event::Delete,
+            rrn,
+            old: old
+                .as_ref()
+                .map(|s| (s.record.as_slice(), s.null_map.as_slice())),
+            new: None,
+            set: None,
+        };
         self.trg.before(txn, &mut self.member, &row, lvl)?;
         self.begin_change(txn)?;
         self.before_row(txn, RowEvent::Delete, Some(rrn), None)?;
@@ -669,7 +745,9 @@ impl Odp {
         if self.member.is_logical() {
             let refused = matches!(self.trg.mode, Mode::Refuse) || self.member.bases.len() != 1;
             if self.member.base_read_triggers && refused && !self.trg.quiet_reads {
-                return Err(DbError::TriggerNotCallable { file: self.member.file.name().to_string() });
+                return Err(DbError::TriggerNotCallable {
+                    file: self.member.file.name().to_string(),
+                });
             }
             return Ok(());
         }
@@ -680,15 +758,27 @@ impl Odp {
     /// read triggers, with its record (as the primary's `CPYF` from an
     /// index fires them).
     fn base_read(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
-        let [base] = self.member.bases.as_slice() else { return Ok(()) };
+        let [base] = self.member.bases.as_slice() else {
+            return Ok(());
+        };
         let id = base.member;
         let file_id = store::obj::ops::read_header(txn, id)?.1.library;
         let desc = file::describe(txn, file_id)?;
-        let Some(md) = desc.members.iter().find(|d| d.object == id).copied() else { return Ok(()) };
+        let Some(md) = desc.members.iter().find(|d| d.object == id).copied() else {
+            return Ok(());
+        };
         let mut bm = Member::open(txn, &desc, &md)?;
-        let Some(slot) = bm.read(txn, rrn)? else { return Ok(()) };
+        let Some(slot) = bm.read(txn, rrn)? else {
+            return Ok(());
+        };
         let lvl = self.trg_level();
-        let row = Row { event: Event::Read, rrn, old: Some((&slot.record, &slot.null_map)), new: None, set: None };
+        let row = Row {
+            event: Event::Read,
+            rrn,
+            old: Some((&slot.record, &slot.null_map)),
+            new: None,
+            set: None,
+        };
         self.trg.after(txn, &mut bm, &row, lvl)
     }
 
@@ -702,7 +792,10 @@ impl Odp {
         match &self.cmt {
             Some(c) => c.borrow_mut().hold(member, k.rrn, who),
             None => {
-                self.locks.lock().expect("lock table").unlock(member, k.rrn, who);
+                self.locks
+                    .lock()
+                    .expect("lock table")
+                    .unlock(member, k.rrn, who);
             }
         }
     }
@@ -714,7 +807,11 @@ impl Odp {
             return;
         };
         let who = self.holder();
-        let _ = self.locks.lock().expect("lock table").lock(member, rrn, who);
+        let _ = self
+            .locks
+            .lock()
+            .expect("lock table")
+            .lock(member, rrn, who);
         c.borrow_mut().hold(member, rrn, who);
     }
 
@@ -1110,7 +1207,11 @@ impl Odp {
         }
         if let Some((member, k)) = self.locked.take() {
             // A record the cycle changed stays locked to its end.
-            if self.cmt.as_ref().is_some_and(|c| c.borrow().holds(member, k.rrn)) {
+            if self
+                .cmt
+                .as_ref()
+                .is_some_and(|c| c.borrow().holds(member, k.rrn))
+            {
                 return;
             }
             self.locks
@@ -1141,15 +1242,27 @@ impl Odp {
                     self.fb.fail(&e);
                     return Err(e);
                 }
-                if self.member.is_logical() && self.member.base_read_triggers && !self.trg.quiet_reads {
+                if self.member.is_logical()
+                    && self.member.base_read_triggers
+                    && !self.trg.quiet_reads
+                {
                     if let Err(e) = self.base_read(txn, k.rrn) {
                         self.unlock();
                         self.fb.fail(&e);
                         return Err(e);
                     }
-                } else if !self.member.is_logical() && self.member.trgs.is_some() && !self.trg.quiet_reads {
+                } else if !self.member.is_logical()
+                    && self.member.trgs.is_some()
+                    && !self.trg.quiet_reads
+                {
                     let lvl = self.trg_level();
-                    let row = Row { event: Event::Read, rrn: k.rrn, old: Some((&r.data, &r.null_map)), new: None, set: None };
+                    let row = Row {
+                        event: Event::Read,
+                        rrn: k.rrn,
+                        old: Some((&r.data, &r.null_map)),
+                        new: None,
+                        set: None,
+                    };
                     if let Err(e) = self.trg.after(txn, &mut self.member, &row, lvl) {
                         self.unlock();
                         self.fb.fail(&e);

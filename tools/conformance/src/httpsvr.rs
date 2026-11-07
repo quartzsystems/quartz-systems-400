@@ -49,12 +49,21 @@ fn job_shown(s: &mut Session, name: &str, present: bool) -> Result<String, Strin
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let out = s.command("wrkactjob", CMD)?;
-        let shown = out.lines().any(|l| l.split_whitespace().next() == Some(name));
+        let shown = out
+            .lines()
+            .any(|l| l.split_whitespace().next() == Some(name));
         if shown == present {
             return Ok(out);
         }
         if Instant::now() > end {
-            return Err(format!("{name} {} in:\n{out}", if present { "never shown" } else { "still shown" }));
+            return Err(format!(
+                "{name} {} in:\n{out}",
+                if present {
+                    "never shown"
+                } else {
+                    "still shown"
+                }
+            ));
         }
         std::thread::sleep(Duration::from_millis(500));
     }
@@ -69,8 +78,11 @@ fn fetch(port: u16, path: &str) -> Result<String, String> {
             .map_err(|e| e.to_string())
             .and_then(|mut c| {
                 let _ = c.set_read_timeout(Some(Duration::from_secs(10)));
-                c.write_all(format!("GET {path} HTTP/1.1\r\nHost: stepweb\r\nConnection: close\r\n\r\n").as_bytes())
-                    .map_err(|e| e.to_string())?;
+                c.write_all(
+                    format!("GET {path} HTTP/1.1\r\nHost: stepweb\r\nConnection: close\r\n\r\n")
+                        .as_bytes(),
+                )
+                .map_err(|e| e.to_string())?;
                 let mut out = Vec::new();
                 let _ = c.read_to_end(&mut out);
                 Ok(String::from_utf8_lossy(&out).into_owned())
@@ -128,15 +140,29 @@ fn diagnostics(s: &mut Session) -> String {
 impl Suite {
     /// Step 86: an HTTP server instance started, serving and ended.
     pub(crate) fn http_instance(&self, s: &mut Session) -> Result<String, String> {
-        for d in ["/www", "/www/stepweb", "/www/stepweb/conf", "/www/stepweb/htdocs", "/www/stepweb/logs"] {
+        for d in [
+            "/www",
+            "/www/stepweb",
+            "/www/stepweb/conf",
+            "/www/stepweb/htdocs",
+            "/www/stepweb/logs",
+        ] {
             let _ = s.command(&format!("svc.ifs mkdir {d}"), CMD);
         }
         put(s, "/www/stepweb/conf/httpd.conf", "S86CONF", CONF)?;
-        put(s, "/www/stepweb/htdocs/index.html", "S86PAGE", "<h1>Step 86 page</h1>\n")?;
+        put(
+            s,
+            "/www/stepweb/htdocs/index.html",
+            "S86PAGE",
+            "<h1>Step 86 page</h1>\n",
+        )?;
         put(s, "/www/instances.json", "S86REG", REGISTRY)?;
         // The instance runs as QTMHHTTP: it reads the tree and writes
         // its logs and registry entry.
-        s.command("CHGAUT OBJ('/www') USER(*PUBLIC) DTAAUT(*RWX) OBJAUT(*ALL) SUBTREE(*ALL)", CMD)?;
+        s.command(
+            "CHGAUT OBJ('/www') USER(*PUBLIC) DTAAUT(*RWX) OBJAUT(*ALL) SUBTREE(*ALL)",
+            CMD,
+        )?;
         expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(STEPWEB)", "TCP1A07")?;
         job_shown(s, "STEPWEB", true)?;
         let port = forward_port(self, GUEST, PORT)?;
@@ -150,11 +176,23 @@ impl Suite {
         }
         expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(STEPWEB)", "TCP1A08")?;
         expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(NOSUCH)", "TCP1A06")?;
-        expect(s, "svc.ifs cat /www/stepweb/logs/access_log", "\"GET / HTTP/1.1\" 200")?;
-        expect(s, "ENDTCPSVR SERVER(*HTTP) HTTPSVR(STEPWEB) OPTION(*CNTRLD) DELAY(5)", "TCP1A0A")?;
+        expect(
+            s,
+            "svc.ifs cat /www/stepweb/logs/access_log",
+            "\"GET / HTTP/1.1\" 200",
+        )?;
+        expect(
+            s,
+            "ENDTCPSVR SERVER(*HTTP) HTTPSVR(STEPWEB) OPTION(*CNTRLD) DELAY(5)",
+            "TCP1A0A",
+        )?;
         job_shown(s, "STEPWEB", false)?;
         gone(port)?;
-        expect(s, "svc.ifs cat /www/instances.json", "ENDTCPSVR *HTTP, controlled")?;
+        expect(
+            s,
+            "svc.ifs cat /www/instances.json",
+            "ENDTCPSVR *HTTP, controlled",
+        )?;
         expect(s, "ENDTCPSVR SERVER(*HTTP) HTTPSVR(STEPWEB)", "TCP1A09")?;
         Ok("STEPWEB started in QHTTPSVR, served its document root and access log on 8186, refused a second start and an unknown instance, ended controlled".into())
     }

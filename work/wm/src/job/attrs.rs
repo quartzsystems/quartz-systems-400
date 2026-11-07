@@ -104,7 +104,8 @@ impl LibList {
     /// `QSYS29xx`) just ahead of `QSYS`, any other language library
     /// out; `None` takes it out.
     pub fn set_language(&mut self, lib: Option<&str>) {
-        self.sys.retain(|l| ccsid::nls::feature_of_library(l).is_none());
+        self.sys
+            .retain(|l| ccsid::nls::feature_of_library(l).is_none());
         if let Some(lib) = lib {
             let at = self.sys.iter().position(|l| l == "QSYS").unwrap_or(0);
             self.sys.insert(at, lib.to_string());
@@ -331,9 +332,8 @@ impl JobAttrs {
         prf: &UserDft,
     ) -> Self {
         let num = |name: &str, dft: u32| sv(name).trim().parse().unwrap_or(dft);
-        let qualified = |lib: &str, n: &str| {
-            format!("{}/{n}", if lib.is_empty() { "*LIBL" } else { lib })
-        };
+        let qualified =
+            |lib: &str, n: &str| format!("{}/{n}", if lib.is_empty() { "*LIBL" } else { lib });
         let outq = match d.outq.1.as_str() {
             "*USRPRF" => match prf.outq.split_once('/') {
                 Some((lib, n)) if !n.starts_with('*') && !n.is_empty() => qualified(lib, n),
@@ -400,7 +400,11 @@ impl JobAttrs {
             cputime: limit(c.cputime),
             maxtmpstg: limit(c.maxtmpstg),
             maxthd: limit(c.maxthd),
-            ccsid: if prf.ccsid == 0 { num("QCCSID", 65535) } else { prf.ccsid },
+            ccsid: if prf.ccsid == 0 {
+                num("QCCSID", 65535)
+            } else {
+                prf.ccsid
+            },
             dftccsid: 0,
             langid: specific(&prf.langid).unwrap_or_else(|| sv("QLANGID")),
             cntryid: specific(&prf.cntryid).unwrap_or_else(|| sv("QCNTRYID")),
@@ -659,7 +663,10 @@ mod tests {
             ..UserDft::default()
         };
         let b = JobAttrs::resolve_for("X", &JobD::default(), &Cls::default(), &sv, &prf);
-        assert_eq!((b.langid.as_str(), b.cntryid.as_str(), b.ccsid, b.dftccsid), ("ESP", "ES", 284, 284));
+        assert_eq!(
+            (b.langid.as_str(), b.cntryid.as_str(), b.ccsid, b.dftccsid),
+            ("ESP", "ES", 284, 284)
+        );
     }
 
     #[test]

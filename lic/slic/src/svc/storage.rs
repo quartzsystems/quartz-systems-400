@@ -399,7 +399,10 @@ fn parity_lines(st: &store::Store, out: &mut String) {
 /// The ASP's protection as `asp` shows it.
 fn protection(bits: u8) -> &'static str {
     use store::asp::superblock::{PROTECTION_MIRRORED, PROTECTION_PARITY};
-    match (bits & PROTECTION_MIRRORED != 0, bits & PROTECTION_PARITY != 0) {
+    match (
+        bits & PROTECTION_MIRRORED != 0,
+        bits & PROTECTION_PARITY != 0,
+    ) {
         (true, true) => "mirrored, device parity",
         (true, false) => "mirrored",
         (false, true) => "device parity",

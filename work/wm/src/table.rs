@@ -144,7 +144,10 @@ impl JobTable {
                 let n: u32 = number.parse().ok()?;
                 self.get(n).filter(|j| j.user == *user && j.name == *name)
             }
-            [user, name] => self.jobs.values().find(|j| j.user == *user && j.name == *name),
+            [user, name] => self
+                .jobs
+                .values()
+                .find(|j| j.user == *user && j.name == *name),
             [name] => {
                 let mut named = self.jobs.values().filter(|j| j.name == *name);
                 let first = named.clone().next();

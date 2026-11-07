@@ -19,8 +19,8 @@ use std::time::{Duration, Instant};
 
 use qap_proto::ops::command::CommandText;
 use qap_proto::ops::spool::{
-    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadFormat, ReadSpooledFile, SpooledData, SpooledFileId,
-    SpooledFiles,
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadFormat, ReadSpooledFile, SpooledData,
+    SpooledFileId, SpooledFiles,
 };
 use qap_proto::{Envelope, Kind, Op, Status};
 use qapd::Closed;
@@ -143,13 +143,23 @@ fn readable(r: &mut Run) -> (Vec<Readable>, u32, u32) {
 }
 
 /// Send one random request; what its reply must be.
-fn send(r: &mut Run, rng: &mut Rng, files: &[Readable], totals: (u32, u32), tally: &mut Tally) -> (u32, Expect) {
+fn send(
+    r: &mut Run,
+    rng: &mut Rng,
+    files: &[Readable],
+    totals: (u32, u32),
+    tally: &mut Tally,
+) -> (u32, Expect) {
     let pick = rng.below(100);
     let (name, id, expect) = match pick {
         0..=34 => {
             let f = &files[rng.index(files.len())];
             let first = rng.between(1, f.pages.max(1));
-            let last = if rng.below(4) == 0 { 0 } else { rng.between(first, f.pages.max(first)) };
+            let last = if rng.below(4) == 0 {
+                0
+            } else {
+                rng.between(first, f.pages.max(first))
+            };
             let req = ReadSpooledFile {
                 id: f.id.clone(),
                 format: f.format,
@@ -161,14 +171,23 @@ fn send(r: &mut Run, rng: &mut Rng, files: &[Readable], totals: (u32, u32), tall
         }
         35..=49 => {
             let req = ListSpooledFiles {
-                user: if rng.below(2) == 0 { "*ALL" } else { "*CURRENT" }.into(),
+                user: if rng.below(2) == 0 {
+                    "*ALL"
+                } else {
+                    "*CURRENT"
+                }
+                .into(),
                 start: rng.between(0, 3),
                 max: rng.between(0, 4),
                 ..ListSpooledFiles::default()
             };
             let all = req.user == "*ALL";
             let id = r.client.request(Op::ListSpooledFiles, &req);
-            ("ListSpooledFiles", id, Expect::Files(if all { totals.0 } else { 0 }))
+            (
+                "ListSpooledFiles",
+                id,
+                Expect::Files(if all { totals.0 } else { 0 }),
+            )
         }
         50..=62 => {
             let req = ListOutputQueues {
@@ -186,11 +205,20 @@ fn send(r: &mut Run, rng: &mut Rng, files: &[Readable], totals: (u32, u32), tall
                 1..=7 => ("DLYJOB DLY(0)", Status::Ok),
                 8..=12 => ("CHGAUT OBJ('/home/bob') USER(BOB) DTAAUT(*RX)", Status::Ok),
                 13..=15 => ("NOSUCHCMD", Status::NotFound),
-                16..=17 => ("CPYFRMSTMF FROMSTMF('/tmp/a.txt') TOMBR('/QSYS.LIB/QGPL.LIB/A.FILE/A.MBR')", Status::Ok),
+                16..=17 => (
+                    "CPYFRMSTMF FROMSTMF('/tmp/a.txt') TOMBR('/QSYS.LIB/QGPL.LIB/A.FILE/A.MBR')",
+                    Status::Ok,
+                ),
                 _ => ("DLTUSRPRF USRPRF(ANN)", Status::NotAuthorized),
             };
-            let body = CommandText { command: command.into() };
-            ("RunCommand", r.client.request(Op::RunCommand, &body), Expect::Command(status))
+            let body = CommandText {
+                command: command.into(),
+            };
+            (
+                "RunCommand",
+                r.client.request(Op::RunCommand, &body),
+                Expect::Command(status),
+            )
         }
     };
     *tally.by_op.entry(name).or_default() += 1;
@@ -223,7 +251,9 @@ fn check(conn: u64, e: &Envelope, expect: &Expect, cancelled: bool) {
             let d: SpooledData = e.body_as().unwrap();
             assert_eq!(d.pages, *pages, "connection {conn}");
         }
-        Expect::Command(status) => assert_eq!(e.status, *status, "connection {conn}: {:?}", e.message),
+        Expect::Command(status) => {
+            assert_eq!(e.status, *status, "connection {conn}: {:?}", e.message)
+        }
     }
 }
 
@@ -241,8 +271,17 @@ fn connection(c: &Arc<Controls>, conn: u64, seed: u64, until: Instant) -> Tally 
     while Instant::now() < until {
         let window = usize::try_from(1 + rng.below(WINDOW)).unwrap();
         while waiting.len() < window {
-            let (id, expect) = send(&mut r, &mut rng, &files, (files_total, queues_total), &mut tally);
-            assert!(waiting.insert(id, (expect, false)).is_none(), "IDs are not reused while outstanding");
+            let (id, expect) = send(
+                &mut r,
+                &mut rng,
+                &files,
+                (files_total, queues_total),
+                &mut tally,
+            );
+            assert!(
+                waiting.insert(id, (expect, false)).is_none(),
+                "IDs are not reused while outstanding"
+            );
         }
         // Now and then, cancel one.
         if rng.below(40) == 0 {
@@ -269,7 +308,11 @@ fn take_one(r: &mut Run, conn: u64, waiting: &mut HashMap<u32, (Expect, bool)>) 
         while !r.server.is_finished() && Instant::now() < until {
             thread::sleep(Duration::from_millis(10));
         }
-        let why = if r.server.is_finished() { "closed" } else { "still serving" };
+        let why = if r.server.is_finished() {
+            "closed"
+        } else {
+            "still serving"
+        };
         panic!(
             "connection {conn} (job {}) closed with {} requests outstanding; the server {why}",
             r.job,
@@ -310,8 +353,14 @@ fn soak(secs: u64) {
     }
     let mut ops: Vec<_> = total.by_op.iter().collect();
     ops.sort();
-    eprintln!("soak: {CONNECTIONS} connections, {secs} s, seed {seed:#x}: {ops:?}, {} cancels", total.cancels);
-    assert!(failed.is_empty(), "connections that failed: {failed:?} (seed {seed:#x})");
+    eprintln!(
+        "soak: {CONNECTIONS} connections, {secs} s, seed {seed:#x}: {ops:?}, {} cancels",
+        total.cancels
+    );
+    assert!(
+        failed.is_empty(),
+        "connections that failed: {failed:?} (seed {seed:#x})"
+    );
 }
 
 #[test]

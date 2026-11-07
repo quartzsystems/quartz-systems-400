@@ -18,12 +18,12 @@ mod console;
 mod devtools;
 #[cfg(target_os = "linux")]
 mod display;
+#[cfg(any(target_os = "linux", test))]
+mod httpenv;
 #[cfg(target_os = "linux")]
 mod panels;
 #[cfg(target_os = "linux")]
 mod platform;
-#[cfg(any(target_os = "linux", test))]
-mod httpenv;
 #[cfg(any(target_os = "linux", test))]
 mod printmap;
 #[cfg(any(target_os = "linux", test))]

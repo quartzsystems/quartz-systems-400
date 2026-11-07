@@ -186,13 +186,19 @@ pub(crate) fn unit_of(sb: &Superblock, uuid: &[u8; 16]) -> Option<u16> {
 pub(crate) fn geometry_of(sb: &Superblock, set: u8) -> Result<Geometry> {
     let members = sb.parity.members(set);
     let bad = |what: String| StoreError::Corrupt { page: 1, what };
-    let level = members.first().map(|t| t.level).ok_or_else(|| bad(format!("parity set {set} is empty")))?;
+    let level = members
+        .first()
+        .map(|t| t.level)
+        .ok_or_else(|| bad(format!("parity set {set} is empty")))?;
     let mut smallest = u64::MAX;
     for (i, t) in members.iter().enumerate() {
         if usize::from(t.member) != i || t.level != level {
-            return Err(bad(format!("parity set {set}: member numbers or levels disagree")));
+            return Err(bad(format!(
+                "parity set {set}: member numbers or levels disagree"
+            )));
         }
-        let unit = unit_of(sb, &t.unit_uuid).ok_or_else(|| bad(format!("parity set {set}: a member is not in the table")))?;
+        let unit = unit_of(sb, &t.unit_uuid)
+            .ok_or_else(|| bad(format!("parity set {set}: a member is not in the table")))?;
         smallest = smallest.min(sb.units[usize::from(unit)].usable_pages);
     }
     Geometry::new(level, members.len(), smallest)
@@ -203,7 +209,10 @@ pub(crate) fn geometry_of(sb: &Superblock, set: u8) -> Result<Geometry> {
 /// over the devices found, decide what a missing or returned member
 /// means, repair the last epoch, and put the members' devices in the
 /// I/O layer's place.
-pub(crate) fn attach(units: &mut [UnitDev], sb: &mut Superblock) -> Result<(ParitySets, Vec<UnitEvent>)> {
+pub(crate) fn attach(
+    units: &mut [UnitDev],
+    sb: &mut Superblock,
+) -> Result<(ParitySets, Vec<UnitEvent>)> {
     let mut sets = ParitySets::default();
     let mut events = Vec::new();
     let work = sb.parity.work;
@@ -216,8 +225,12 @@ pub(crate) fn attach(units: &mut [UnitDev], sb: &mut Superblock) -> Result<(Pari
             let unit = unit_of(sb, &t.unit_uuid).expect("checked");
             let dev = units[usize::from(unit)].dev.take();
             let mark = |kind: WorkKind| {
-                work.filter(|w| w.set == set && w.kind == kind && (kind == WorkKind::Sync || usize::from(w.member) == i))
-                    .map_or(0, |w| w.done)
+                work.filter(|w| {
+                    w.set == set
+                        && w.kind == kind
+                        && (kind == WorkKind::Sync || usize::from(w.member) == i)
+                })
+                .map_or(0, |w| w.done)
             };
             let missing = || StoreError::UnitMissing {
                 unit,
@@ -271,7 +284,10 @@ pub(crate) fn attach(units: &mut [UnitDev], sb: &mut Superblock) -> Result<(Pari
                 .unwrap_or(0);
             return Err(StoreError::UnitMissing {
                 unit: lost,
-                what: format!("parity set {set} has {unknown} units out of step; it can lose {}", geo.k()),
+                what: format!(
+                    "parity set {set} has {unknown} units out of step; it can lose {}",
+                    geo.k()
+                ),
             });
         }
         engine.recover().map_err(StoreError::from)?;

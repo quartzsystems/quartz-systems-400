@@ -391,7 +391,11 @@ fn a_lent_transaction_suspends_between_reads() {
     }
     reader.resume().unwrap();
     let tree: BTree<u64, u64> = BTree::open(reader.objdir_root(), ObjectId::NONE);
-    assert_eq!(tree.get(&mut reader, &2).unwrap(), Some(20), "sees what was committed meanwhile");
+    assert_eq!(
+        tree.get(&mut reader, &2).unwrap(),
+        Some(20),
+        "sees what was committed meanwhile"
+    );
     // A transaction that changed something keeps the store.
     reader.alloc_run(1).unwrap();
     assert!(!reader.suspend());

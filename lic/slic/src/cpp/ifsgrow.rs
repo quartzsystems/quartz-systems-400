@@ -38,7 +38,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         Err(GrowError::NoRoom(room)) => failed(
             name,
-            &format!("CPF3E21 ASP 1 has room for {} MB more below its threshold", mb(room)),
+            &format!(
+                "CPF3E21 ASP 1 has room for {} MB more below its threshold",
+                mb(room)
+            ),
         ),
         Err(GrowError::InPartition) => failed(name, "CPF3E22 the IFS is in its own partition"),
         Err(GrowError::Failed(why)) => failed(name, &format!("CPF3E23 {why}")),

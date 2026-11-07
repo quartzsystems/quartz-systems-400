@@ -43,7 +43,8 @@ pub fn list(txn: &mut Txn<'_>, file: ObjectId) -> Result<Vec<Trigger>> {
 
 /// Replace the triggers of `file`.
 pub fn store(txn: &mut Txn<'_>, file: ObjectId, trgs: &[Trigger], now: u64) -> Result<()> {
-    let mut info = sqlinf::load(txn, file)?.unwrap_or_else(|| sqlinf::SqlInfo::new(sqlinf::Kind::Table));
+    let mut info =
+        sqlinf::load(txn, file)?.unwrap_or_else(|| sqlinf::SqlInfo::new(sqlinf::Kind::Table));
     info.remove(tag::TRIGGER);
     for t in trgs {
         info.push(tag::TRIGGER, t.encode());
@@ -64,7 +65,10 @@ impl Active {
         if file.header.sql.is_none() {
             return Ok(None);
         }
-        let mut triggers: Vec<Trigger> = list(txn, file.id)?.into_iter().filter(|t| t.enabled).collect();
+        let mut triggers: Vec<Trigger> = list(txn, file.id)?
+            .into_iter()
+            .filter(|t| t.enabled)
+            .collect();
         if triggers.is_empty() {
             return Ok(None);
         }
@@ -74,7 +78,9 @@ impl Active {
 
     /// Those that fire for `event` at `time`.
     pub fn matching(&self, time: Time, event: Event) -> impl Iterator<Item = &Trigger> {
-        self.triggers.iter().filter(move |t| t.time == time && t.event == event)
+        self.triggers
+            .iter()
+            .filter(move |t| t.time == time && t.event == event)
     }
 
     /// Whether any fires for `event`.

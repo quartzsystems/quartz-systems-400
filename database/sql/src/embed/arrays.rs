@@ -37,7 +37,9 @@ pub(super) fn has_arrays(locs: &str) -> bool {
 }
 
 fn bad() -> SqlError {
-    SqlError::Unsupported { what: "a statement descriptor with a bad array entry".into() }
+    SqlError::Unsupported {
+        what: "a statement descriptor with a bad array entry".into(),
+    }
 }
 
 fn outs(locs: &str) -> Result<Vec<Out>, SqlError> {
@@ -50,13 +52,19 @@ fn outs(locs: &str) -> Result<Vec<Out>, SqlError> {
         let f: Vec<&str> = p[1..].split('~').collect();
         let num = |s: &str| s.parse::<usize>().map_err(|_| bad());
         let (k, index, rest) = if elem {
-            let [k, j, rest @ ..] = f.as_slice() else { return Err(bad()) };
+            let [k, j, rest @ ..] = f.as_slice() else {
+                return Err(bad());
+            };
             (num(k)?, Some(num(j)?), rest)
         } else {
-            let [k, rest @ ..] = f.as_slice() else { return Err(bad()) };
+            let [k, rest @ ..] = f.as_slice() else {
+                return Err(bad());
+            };
             (num(k)?, None, rest)
         };
-        let [old, max, ty] = rest else { return Err(bad()) };
+        let [old, max, ty] = rest else {
+            return Err(bad());
+        };
         v.push(Out {
             k,
             index,
@@ -69,7 +77,10 @@ fn outs(locs: &str) -> Result<Vec<Out>, SqlError> {
 }
 
 fn handle(v: &Value) -> u32 {
-    v.as_i64().ok().and_then(|h| u32::try_from(h).ok()).unwrap_or(0)
+    v.as_i64()
+        .ok()
+        .and_then(|h| u32::try_from(h).ok())
+        .unwrap_or(0)
 }
 
 impl Session {
@@ -94,11 +105,23 @@ impl Session {
             }
         }
         // The hidden inputs: the old handles and the indexes.
-        let hidden: Vec<usize> = outs.iter().flat_map(|o| std::iter::once(o.old).chain(o.index)).collect();
-        let marked = hidden.iter().min().copied().unwrap_or(inputs.len()).min(inputs.len());
+        let hidden: Vec<usize> = outs
+            .iter()
+            .flat_map(|o| std::iter::once(o.old).chain(o.index))
+            .collect();
+        let marked = hidden
+            .iter()
+            .min()
+            .copied()
+            .unwrap_or(inputs.len())
+            .min(inputs.len());
         let extra = inputs.split_off(marked);
         let hidden_at = |i: usize| extra.get(i - marked).cloned().unwrap_or(Value::Null);
-        let sub = Request { scope: req.scope.clone(), desc: d.clone(), inputs };
+        let sub = Request {
+            scope: req.scope.clone(),
+            desc: d.clone(),
+            inputs,
+        };
         let mut r = self.run_inner(&sub);
         if r.sqlca.is_error() {
             return Ok(r);
@@ -106,7 +129,9 @@ impl Session {
         let mut freed = Vec::new();
         for row in &mut r.rows {
             for o in &outs {
-                let Some(cell) = row.get_mut(o.k) else { continue };
+                let Some(cell) = row.get_mut(o.k) else {
+                    continue;
+                };
                 let old = handle(&hidden_at(o.old));
                 let value = match o.index {
                     None => std::mem::replace(cell, Value::Null),
@@ -124,7 +149,11 @@ impl Session {
                     }
                 };
                 if !value.is_null() && !matches!(value, Value::Array(_)) {
-                    return Err(SqlError::Coded { code: -408, state: "42821", what: format!("a {} value for an array variable", value.type_name()) });
+                    return Err(SqlError::Coded {
+                        code: -408,
+                        state: "42821",
+                        what: format!("a {} value for an array variable", value.type_name()),
+                    });
                 }
                 let value = array::to_type(&value, &o.ty, o.max)?;
                 if value.is_null() {

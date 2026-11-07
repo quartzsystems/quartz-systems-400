@@ -41,7 +41,12 @@ pub fn connect(port: u16, cn: &str, pin: &[u8]) -> Result<(Conn, Vec<u8>), Strin
 }
 
 /// [`connect`], trying for at most `wait` (zero: once).
-pub fn connect_for(port: u16, cn: &str, pin: &[u8], wait: Duration) -> Result<(Conn, Vec<u8>), String> {
+pub fn connect_for(
+    port: u16,
+    cn: &str,
+    pin: &[u8],
+    wait: Duration,
+) -> Result<(Conn, Vec<u8>), String> {
     let policy = tls::policy::TlsPolicy::opsys();
     let cfg = tls::config::client_config(
         &policy,
@@ -58,11 +63,14 @@ pub fn connect_for(port: u16, cn: &str, pin: &[u8], wait: Duration) -> Result<(C
             .and_then(|c| {
                 let _ = c.set_nodelay(true);
                 let _ = c.set_read_timeout(Some(Duration::from_secs(30)));
-                tls::stream::TlsStream::connect(cfg.clone(), name.clone(), c).map_err(|e| e.to_string())
+                tls::stream::TlsStream::connect(cfg.clone(), name.clone(), c)
+                    .map_err(|e| e.to_string())
             });
         match r {
             Ok(t) => break t,
-            Err(e) if Instant::now() > end => return Err(format!("QAP over TLS on host port {port}: {e}")),
+            Err(e) if Instant::now() > end => {
+                return Err(format!("QAP over TLS on host port {port}: {e}"));
+            }
             Err(_) => std::thread::sleep(Duration::from_millis(500)),
         }
     };
@@ -73,12 +81,17 @@ pub fn connect_for(port: u16, cn: &str, pin: &[u8], wait: Duration) -> Result<(C
     if pin.is_empty() {
         let info = certs::x509::CertInfo::from_der(&der).map_err(|e| e.to_string())?;
         if info.common_name.as_deref() != Some(cn) {
-            return Err(format!("QAP presented {} rather than CN={cn}", info.subject));
+            return Err(format!(
+                "QAP presented {} rather than CN={cn}",
+                info.subject
+            ));
         }
     } else if der != pin {
         return Err("QAP presented another certificate than the first connection's".into());
     }
-    let _ = tls.get_ref().set_read_timeout(Some(Duration::from_millis(200)));
+    let _ = tls
+        .get_ref()
+        .set_read_timeout(Some(Duration::from_millis(200)));
     Ok((
         Conn {
             tls,
@@ -96,7 +109,9 @@ impl Conn {
     fn send(&mut self, env: &Envelope) -> Result<(), String> {
         let mut b = Vec::new();
         env.write_to(&mut b).map_err(|e| e.to_string())?;
-        self.tls.write_all(&b).map_err(|e| format!("sending: {e}"))?;
+        self.tls
+            .write_all(&b)
+            .map_err(|e| format!("sending: {e}"))?;
         self.tls.flush().map_err(|e| format!("sending: {e}"))
     }
 
@@ -119,7 +134,11 @@ impl Conn {
         let end = Instant::now() + wait;
         let mut buf = vec![0u8; 64 * 1024];
         loop {
-            while let Some(env) = self.frames.next_frame().map_err(|e| format!("a bad frame: {e}"))? {
+            while let Some(env) = self
+                .frames
+                .next_frame()
+                .map_err(|e| format!("a bad frame: {e}"))?
+            {
                 if let Some(whole) = self.asm.push(env) {
                     return Ok(Some(whole));
                 }
@@ -142,7 +161,11 @@ impl Conn {
     /// The reply to request `id` within `wait`, or `None`; whatever else
     /// comes meanwhile is kept.
     pub fn poll_reply(&mut self, id: u32, wait: Duration) -> Result<Option<Envelope>, String> {
-        if let Some(i) = self.held.iter().position(|e| e.kind == Kind::Reply && e.request_id == id) {
+        if let Some(i) = self
+            .held
+            .iter()
+            .position(|e| e.kind == Kind::Reply && e.request_id == id)
+        {
             return Ok(self.held.remove(i));
         }
         let end = Instant::now() + wait;
@@ -234,7 +257,12 @@ impl Conn {
 
     /// Attach to the session `token` names.
     pub fn attach(&mut self, token: &qap_proto::Token) -> Result<SignOnReply, String> {
-        self.ok(Op::Attach, &Attach { token: token.clone() })
+        self.ok(
+            Op::Attach,
+            &Attach {
+                token: token.clone(),
+            },
+        )
     }
 
     /// The connection's job.

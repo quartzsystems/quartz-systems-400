@@ -14,7 +14,11 @@ use crate::value::Value;
 
 /// A double, or null when not finite.
 fn double(x: f64) -> Value {
-    if x.is_finite() { Value::Double(x) } else { Value::Null }
+    if x.is_finite() {
+        Value::Double(x)
+    } else {
+        Value::Null
+    }
 }
 
 /// The population or sample variance in decimal, kept to 16 significant
@@ -25,7 +29,10 @@ fn variance_decimal(values: &[Value], sample: bool) -> Result<Option<f64>> {
         return Ok(None);
     }
     let nd = Decimal::new(i128::try_from(n).expect("fits"), 0).expect("fits");
-    let ds: Vec<Decimal> = values.iter().map(Value::as_decimal).collect::<Result<_>>()?;
+    let ds: Vec<Decimal> = values
+        .iter()
+        .map(Value::as_decimal)
+        .collect::<Result<_>>()?;
     let mut sum = Decimal::zero();
     for d in &ds {
         sum = sum.add_exact(d).map_err(super::overflow)?;
@@ -34,17 +41,27 @@ fn variance_decimal(values: &[Value], sample: bool) -> Result<Option<f64>> {
     let mut sq = Decimal::zero();
     for d in &ds {
         let dev = d.sub_exact(&mean).map_err(super::overflow)?;
-        let dev = dev.rescale(20.min(dev.scale()), Rounding::Truncate).map_err(super::overflow)?;
+        let dev = dev
+            .rescale(20.min(dev.scale()), Rounding::Truncate)
+            .map_err(super::overflow)?;
         let p = dev.mul_exact(&dev).map_err(super::overflow)?;
-        let p = p.rescale(p.scale().min(31), Rounding::Truncate).map_err(super::overflow)?;
+        let p = p
+            .rescale(p.scale().min(31), Rounding::Truncate)
+            .map_err(super::overflow)?;
         sq = sq.add_exact(&p).map_err(super::overflow)?;
     }
-    let div = if sample { Decimal::new(i128::try_from(n - 1).expect("fits"), 0).expect("fits") } else { nd };
+    let div = if sample {
+        Decimal::new(i128::try_from(n - 1).expect("fits"), 0).expect("fits")
+    } else {
+        nd
+    };
     let v = sq.div_to_scale(&div, 31).map_err(super::overflow)?;
     // Sixteen significant digits, the rest dropped.
     let int_digits = v.digits_needed().saturating_sub(v.scale());
     let keep = 16u8.saturating_sub(int_digits.max(1)).min(v.scale());
-    let v = v.rescale(keep, Rounding::Truncate).map_err(super::overflow)?;
+    let v = v
+        .rescale(keep, Rounding::Truncate)
+        .map_err(super::overflow)?;
     Ok(Some(Value::Num(v).as_f64()?))
 }
 

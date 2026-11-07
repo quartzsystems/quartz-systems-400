@@ -38,12 +38,14 @@ pub struct LiveConfig {
 fn category(name: &str, group: Option<Group>) -> &'static str {
     match name {
         "QDSCJOBITV" => return "security",
-        "QAUTOCFG" | "QAUTORMT" | "QAUTOVRT" | "QDEVNAMING" | "QDEVRCYACN" | "QPRTDEV" | "QCMNRCYLMT"
-        | "QCMNARB" | "QCONSOLE" | "QSTRPRTWTR" => return "devices",
-        "QPWRDWNLMT" | "QPWRRSTIPL" | "QUPSDLYTIM" | "QUPSMSGQ" | "QIPLDATTIM" | "QRMTIPL" => return "power",
+        "QAUTOCFG" | "QAUTORMT" | "QAUTOVRT" | "QDEVNAMING" | "QDEVRCYACN" | "QPRTDEV"
+        | "QCMNRCYLMT" | "QCMNARB" | "QCONSOLE" | "QSTRPRTWTR" => return "devices",
+        "QPWRDWNLMT" | "QPWRRSTIPL" | "QUPSDLYTIM" | "QUPSMSGQ" | "QIPLDATTIM" | "QRMTIPL" => {
+            return "power";
+        }
         "QSAVACCPTH" => return "save",
-        "QDYNPTYADJ" | "QDYNPTYSCD" | "QPFRADJ" | "QQRYDEGREE" | "QQRYTIMLMT" | "QTHDRSCADJ" | "QTHDRSCAFN"
-        | "QMAXACTLVL" | "QBASACTLVL" | "QTSEPOOL" => return "perf",
+        "QDYNPTYADJ" | "QDYNPTYSCD" | "QPFRADJ" | "QQRYDEGREE" | "QQRYTIMLMT" | "QTHDRSCADJ"
+        | "QTHDRSCAFN" | "QMAXACTLVL" | "QBASACTLVL" | "QTSEPOOL" => return "perf",
         "QENDJOBLMT" | "QSETJOBATR" | "QALWJOBITP" => return "jobs",
         _ => {}
     }
@@ -85,7 +87,8 @@ fn sysvals(m: &Main) -> Vec<SysVal> {
     all.into_iter()
         .map(|(name, _, text)| {
             let n = name.clone();
-            let value = m.ask(|l| l.sysval_panel(n))
+            let value = m
+                .ask(|l| l.sysval_panel(n))
                 .map(|(_, _, elems)| elems.iter().map(|e| e.trim()).collect::<Vec<_>>().join(" "))
                 .unwrap_or_default();
             let e = cat.and_then(|c| c.get(&name));
@@ -167,7 +170,11 @@ fn disks(m: &Main, reset: bool) -> Disks {
     let pct = val(&sys, "ASPPCT").trim().parse::<f64>().unwrap_or(0.0);
     let used_pct = parse::tenths(val(&sys, "ASPPCT"));
     // From the exact percent: the tenths round a fresh system to 0.
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_precision_loss
+    )]
     let used = (capacity as f64 * pct / 100.0).round().max(0.0) as u64;
     let protection = asp_protection(&units);
     Disks {
@@ -232,7 +239,8 @@ fn resources(m: &Main) -> Vec<Resource> {
         .map(|row| {
             let r = t.get(&row.name);
             let n = row.name.clone();
-            let cfg = m.ask(|l| l.hw_cfgds(n))
+            let cfg = m
+                .ask(|l| l.hw_cfgds(n))
                 .into_iter()
                 .map(|(d, ty)| (d, cfg_type(&ty)))
                 .collect();
@@ -278,7 +286,9 @@ fn last_poll(bag: &[(String, String)]) -> (Option<(u64, i64)>, Option<String>) {
         let (at, us) = v.split_once(' ')?;
         Some((at.parse().ok()?, us.trim().parse().ok()?))
     });
-    let fail = get("LASTFAIL").filter(|v| !v.is_empty()).map(str::to_string);
+    let fail = get("LASTFAIL")
+        .filter(|v| !v.is_empty())
+        .map(str::to_string);
     (sync, fail)
 }
 
@@ -290,13 +300,27 @@ fn time(m: &Main) -> Time {
     let (last_sync, last_fail) = last_poll(&bag);
     let jobs = m.ask(Client::active_jobs);
     // The descriptions in QSYS as the service has them (CRTTIMZON's too).
-    let (_, rows) = m.ask(|l| l.panel2_data("TIMZON".into(), vec!["*ALL".into()])).unwrap_or_default();
-    let cell = |r: &[(String, String)], k: &str| r.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
+    let (_, rows) = m
+        .ask(|l| l.panel2_data("TIMZON".into(), vec!["*ALL".into()]))
+        .unwrap_or_default();
+    let cell = |r: &[(String, String)], k: &str| {
+        r.iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    };
     let mut zones: Vec<(String, String)> = rows
         .iter()
         .map(|r| {
             let text = cell(r, "TEXT");
-            (cell(r, "TIMZON"), if text.trim().is_empty() { cell(r, "FULL") } else { text })
+            (
+                cell(r, "TIMZON"),
+                if text.trim().is_empty() {
+                    cell(r, "FULL")
+                } else {
+                    text
+                },
+            )
         })
         .collect();
     if !zone.is_empty() && !zones.iter().any(|(n, _)| *n == zone) {
@@ -304,10 +328,17 @@ fn time(m: &Main) -> Time {
     }
     let adjust = sysval(m, "QTIMADJ");
     let mut adjusters = vec![
-        ("*NONE".to_string(), "No time adjustment software".to_string()),
+        (
+            "*NONE".to_string(),
+            "No time adjustment software".to_string(),
+        ),
         (SNTP.to_string(), "The system's SNTP client".to_string()),
     ];
-    if !adjust.is_empty() && !adjusters.iter().any(|(v, _)| v.eq_ignore_ascii_case(&adjust)) {
+    if !adjust.is_empty()
+        && !adjusters
+            .iter()
+            .any(|(v, _)| v.eq_ignore_ascii_case(&adjust))
+    {
         adjusters.push((adjust.clone(), String::new()));
     }
     Time {
@@ -372,8 +403,19 @@ mod tests {
         assert_eq!(shipped(v), "*ALL");
         assert_eq!(offset_text(-4 * 3600), "-04:00");
         assert_eq!(offset_text(5 * 3600 + 1800), "+05:30");
-        let bag = |s: &str, f: &str| vec![("LASTSYNC".to_string(), s.to_string()), ("LASTFAIL".to_string(), f.to_string())];
-        assert_eq!(last_poll(&bag("1793000000 -4000", "")), (Some((1_793_000_000, -4000)), None));
-        assert_eq!(last_poll(&bag("", "h: timed out")), (None, Some("h: timed out".into())));
+        let bag = |s: &str, f: &str| {
+            vec![
+                ("LASTSYNC".to_string(), s.to_string()),
+                ("LASTFAIL".to_string(), f.to_string()),
+            ]
+        };
+        assert_eq!(
+            last_poll(&bag("1793000000 -4000", "")),
+            (Some((1_793_000_000, -4000)), None)
+        );
+        assert_eq!(
+            last_poll(&bag("", "h: timed out")),
+            (None, Some("h: timed out".into()))
+        );
     }
 }

@@ -20,7 +20,10 @@ pub type Row = Vec<(String, String)>;
 pub type Data = (Vec<(String, String)>, Vec<(String, Vec<Row>)>);
 
 fn row(pairs: &[(&str, String)]) -> Row {
-    pairs.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect()
+    pairs
+        .iter()
+        .map(|(k, v)| ((*k).to_string(), v.clone()))
+        .collect()
 }
 
 /// An interface, configured or found on a kernel link.
@@ -63,16 +66,25 @@ pub struct Ifc {
 impl Ifc {
     /// The key option 5 passes back.
     pub fn key(&self) -> String {
-        self.addr.map_or_else(|| self.special.clone(), |a| a.to_string())
+        self.addr
+            .map_or_else(|| self.special.clone(), |a| a.to_string())
     }
 }
 
 fn mask_of(prefix: u8, v6: bool) -> IpAddr {
     if v6 {
-        let bits = if prefix == 0 { 0 } else { u128::MAX << (128 - u32::from(prefix.min(128))) };
+        let bits = if prefix == 0 {
+            0
+        } else {
+            u128::MAX << (128 - u32::from(prefix.min(128)))
+        };
         IpAddr::V6(bits.into())
     } else {
-        let bits = if prefix == 0 { 0 } else { u32::MAX << (32 - u32::from(prefix.min(32))) };
+        let bits = if prefix == 0 {
+            0
+        } else {
+            u32::MAX << (32 - u32::from(prefix.min(32)))
+        };
         IpAddr::V4(bits.into())
     }
 }
@@ -103,14 +115,20 @@ pub fn ifcs(list: &[Ifc], v6: bool) -> Vec<Row> {
     });
     v.into_iter()
         .map(|i| {
-            let net = i.addr.map_or_else(|| "*".into(), |a| and(a, mask_of(i.prefix, v6), false).to_string());
+            let net = i.addr.map_or_else(
+                || "*".into(),
+                |a| and(a, mask_of(i.prefix, v6), false).to_string(),
+            );
             row(&[
                 ("IADR", i.key()),
                 ("INET", net),
                 ("IPFX", i.prefix.to_string()),
                 ("ILIND", i.line.clone()),
                 ("ISTS", i.status.clone()),
-                ("IVLAN", i.vlan.map_or_else(|| "*NONE".into(), |v| v.to_string())),
+                (
+                    "IVLAN",
+                    i.vlan.map_or_else(|| "*NONE".into(), |v| v.to_string()),
+                ),
             ])
         })
         .collect()
@@ -128,7 +146,12 @@ pub fn ifc_detail(i: &Ifc) -> Vec<(String, String)> {
                 }
                 _ => "*NONE".into(),
             };
-            (m.to_string(), and(a, m, false).to_string(), and(a, m, true).to_string(), bcast)
+            (
+                m.to_string(),
+                and(a, m, false).to_string(),
+                and(a, m, true).to_string(),
+                bcast,
+            )
         }
         None => ("*".into(), "*".into(), "*".into(), "*NONE".into()),
     };
@@ -149,15 +172,46 @@ pub fn ifc_detail(i: &Ifc) -> Vec<(String, String)> {
         ("DSTS", i.status.clone()),
         ("DCHG", i.changed.clone()),
         ("DLIND", i.line.clone()),
-        ("DVLAN", i.vlan.map_or_else(|| "*NONE".into(), |v| v.to_string())),
+        (
+            "DVLAN",
+            i.vlan.map_or_else(|| "*NONE".into(), |v| v.to_string()),
+        ),
         ("DLTYPE", i.line_type.clone()),
-        ("DLCLIFC", if i.local_ifc.is_empty() { "*NONE".into() } else { i.local_ifc.clone() }),
-        ("DTOS", if i.tos.is_empty() { "*NORMAL".into() } else { i.tos.clone() }),
+        (
+            "DLCLIFC",
+            if i.local_ifc.is_empty() {
+                "*NONE".into()
+            } else {
+                i.local_ifc.clone()
+            },
+        ),
+        (
+            "DTOS",
+            if i.tos.is_empty() {
+                "*NORMAL".into()
+            } else {
+                i.tos.clone()
+            },
+        ),
         ("DMTU", i.mtu.to_string()),
         ("DAUTO", yes(i.autostart)),
         ("DDHCP", yes(i.dhcp)),
-        ("DALIAS", if i.alias.is_empty() { "*NONE".into() } else { i.alias.clone() }),
-        ("DTEXT", if i.text.is_empty() { "*NONE".into() } else { i.text.clone() }),
+        (
+            "DALIAS",
+            if i.alias.is_empty() {
+                "*NONE".into()
+            } else {
+                i.alias.clone()
+            },
+        ),
+        (
+            "DTEXT",
+            if i.text.is_empty() {
+                "*NONE".into()
+            } else {
+                i.text.clone()
+            },
+        ),
     ])
 }
 
@@ -195,12 +249,15 @@ pub struct Rte {
 impl Rte {
     /// `*DFTROUTE`, or the destination.
     pub fn dest_text(&self) -> String {
-        self.dest.map_or_else(|| "*DFTROUTE".into(), |d| d.to_string())
+        self.dest
+            .map_or_else(|| "*DFTROUTE".into(), |d| d.to_string())
     }
 
     /// The route type: `*DFTROUTE`, `*DIRECT`, `*HOST` or `*NET`.
     pub fn kind(&self) -> &'static str {
-        let host = self.dest.is_some_and(|d| u32::from(self.prefix) == if d.is_ipv6() { 128 } else { 32 });
+        let host = self
+            .dest
+            .is_some_and(|d| u32::from(self.prefix) == if d.is_ipv6() { 128 } else { 32 });
         match (self.dest, self.hop) {
             (None, _) => "*DFTROUTE",
             (Some(_), None) => "*DIRECT",
@@ -243,10 +300,27 @@ pub fn rtes(list: &[Rte], v6: bool) -> Vec<Row> {
             row(&[
                 ("RDEST", r.dest_text()),
                 ("RMASK", mask),
-                ("RHOP", r.hop.map_or_else(|| "*DIRECT".into(), |h| h.to_string())),
+                (
+                    "RHOP",
+                    r.hop.map_or_else(|| "*DIRECT".into(), |h| h.to_string()),
+                ),
                 ("RAVAIL", yes(r.available)),
-                ("RSTS", if r.available { "*ACTIVE".into() } else { "*INACTIVE".into() }),
-                ("RTOS", if r.tos.is_empty() { "*NORMAL".into() } else { r.tos.clone() }),
+                (
+                    "RSTS",
+                    if r.available {
+                        "*ACTIVE".into()
+                    } else {
+                        "*INACTIVE".into()
+                    },
+                ),
+                (
+                    "RTOS",
+                    if r.tos.is_empty() {
+                        "*NORMAL".into()
+                    } else {
+                        r.tos.clone()
+                    },
+                ),
                 ("RMTU", r.mtu.to_string()),
                 ("RTYPE", r.kind().into()),
                 ("RSRC", "*CFG".into()),
@@ -261,18 +335,47 @@ pub fn rte_detail(r: &Rte) -> Vec<(String, String)> {
     let v6 = r.dest.or(r.hop).is_some_and(|a| a.is_ipv6());
     row(&[
         ("DDEST", r.dest_text()),
-        ("DMASK", if r.dest.is_none() { "*NONE".into() } else if v6 { r.prefix.to_string() } else { mask_of(r.prefix, false).to_string() }),
+        (
+            "DMASK",
+            if r.dest.is_none() {
+                "*NONE".into()
+            } else if v6 {
+                r.prefix.to_string()
+            } else {
+                mask_of(r.prefix, false).to_string()
+            },
+        ),
         ("DORDER", r.order.max(1).to_string()),
-        ("DHOP", r.hop.map_or_else(|| "*DIRECT".into(), |h| h.to_string())),
-        ("DTOS", if r.tos.is_empty() { "*NORMAL".into() } else { r.tos.clone() }),
+        (
+            "DHOP",
+            r.hop.map_or_else(|| "*DIRECT".into(), |h| h.to_string()),
+        ),
+        (
+            "DTOS",
+            if r.tos.is_empty() {
+                "*NORMAL".into()
+            } else {
+                r.tos.clone()
+            },
+        ),
         ("DAVAIL", yes(r.available)),
         ("DTYPE", r.kind().into()),
         ("DSRC", "*CFG".into()),
         ("DCHG", String::new()),
         ("DMTU", r.mtu.to_string()),
         ("DDUP", r.dup_pty.to_string()),
-        ("DIFC", r.ifc.map_or_else(|| "*NONE".into(), |a| a.to_string())),
-        ("DTEXT", if r.text.is_empty() { "*NONE".into() } else { r.text.clone() }),
+        (
+            "DIFC",
+            r.ifc.map_or_else(|| "*NONE".into(), |a| a.to_string()),
+        ),
+        (
+            "DTEXT",
+            if r.text.is_empty() {
+                "*NONE".into()
+            } else {
+                r.text.clone()
+            },
+        ),
     ])
 }
 
@@ -327,7 +430,12 @@ pub struct Conn {
 impl Conn {
     /// The key the options pass back: protocol, local, remote.
     pub fn key(&self) -> String {
-        format!("{}|{}|{}", if self.tcp { "T" } else { "U" }, self.local, self.remote)
+        format!(
+            "{}|{}|{}",
+            if self.tcp { "T" } else { "U" },
+            self.local,
+            self.remote
+        )
     }
 
     /// On an IPv4 address (an IPv4-mapped one included).
@@ -367,14 +475,22 @@ pub fn cut(s: &str, w: usize) -> String {
     if s.chars().count() <= w {
         s.to_string()
     } else {
-        format!("{} >", s.chars().take(w.saturating_sub(2)).collect::<String>())
+        format!(
+            "{} >",
+            s.chars().take(w.saturating_sub(2)).collect::<String>()
+        )
     }
 }
 
 /// An idle time as the list shows it: `hhh:mm:ss`.
 pub fn idle(ms: u64) -> String {
     let s = ms / 1000;
-    format!("{:03}:{:02}:{:02}", (s / 3600).min(999), s / 60 % 60, s % 60)
+    format!(
+        "{:03}:{:02}:{:02}",
+        (s / 3600).min(999),
+        s / 60 % 60,
+        s % 60
+    )
 }
 
 /// An idle time as option 5 shows it: `hhh:mm:ss.mmm`.
@@ -387,7 +503,11 @@ fn addr_or_star(a: IpAddr) -> String {
         IpAddr::V6(v) => v.to_ipv4_mapped().map_or(a, IpAddr::V4),
         IpAddr::V4(_) => a,
     };
-    if a.is_unspecified() { "*".into() } else { a.to_string() }
+    if a.is_unspecified() {
+        "*".into()
+    } else {
+        a.to_string()
+    }
 }
 
 fn port_or_star(p: u16) -> String {
@@ -405,7 +525,11 @@ pub fn conns(list: &[Conn], v6: bool, name: &dyn Fn(u16, bool) -> Option<String>
         if v6 {
             !c.v4()
         } else {
-            c.v4() || (c.dual() && !list.iter().any(|o| o.tcp == c.tcp && o.v4() && o.local.port() == c.local.port()))
+            c.v4()
+                || (c.dual()
+                    && !list
+                        .iter()
+                        .any(|o| o.tcp == c.tcp && o.v4() && o.local.port() == c.local.port()))
         }
     };
     let mut v: Vec<&Conn> = list.iter().filter(|c| shown(c)).collect();
@@ -424,7 +548,14 @@ pub fn conns(list: &[Conn], v6: bool, name: &dyn Fn(u16, bool) -> Option<String>
                 ("CRPORT", pname(c.remote.port())),
                 ("CLPORT", pname(c.local.port())),
                 ("CIDLE", idle(c.idle_ms)),
-                ("CSTATE", if c.tcp { c.state.clone() } else { "*UDP".into() }),
+                (
+                    "CSTATE",
+                    if c.tcp {
+                        c.state.clone()
+                    } else {
+                        "*UDP".into()
+                    },
+                ),
                 ("CUSER", c.user.clone()),
                 ("COUT", c.counters.bytes_out.to_string()),
                 ("CIN", c.counters.bytes_in.to_string()),
@@ -447,7 +578,13 @@ pub fn conn_detail(
     ports: &dyn Fn(u16, bool) -> Option<String>,
     when: &str,
 ) -> Vec<(String, String)> {
-    let host = |a: IpAddr| if a.is_unspecified() { String::new() } else { names(a).unwrap_or_default() };
+    let host = |a: IpAddr| {
+        if a.is_unspecified() {
+            String::new()
+        } else {
+            names(a).unwrap_or_default()
+        }
+    };
     let port = |p: u16| {
         if p == 0 {
             "*".to_string()
@@ -466,7 +603,14 @@ pub fn conn_detail(
         ("DLPORT", port(c.local.port())),
         ("DUSER", c.user.clone()),
         ("DSTATE", c.state.clone()),
-        ("DOPEN", if c.passive { "Passive".into() } else { "Active".into() }),
+        (
+            "DOPEN",
+            if c.passive {
+                "Passive".into()
+            } else {
+                "Active".into()
+            },
+        ),
         ("DIDLE", idle_detail(c.idle_ms)),
         ("DLAST", when.to_string()),
         ("DRTT", secs(k.rtt_us)),
@@ -547,7 +691,13 @@ pub struct Stack {
 
 /// Option 10.
 pub fn status(s: &Stack) -> Vec<(String, String)> {
-    let a = |b: bool| if b { "Active".to_string() } else { "Inactive".to_string() };
+    let a = |b: bool| {
+        if b {
+            "Active".to_string()
+        } else {
+            "Inactive".to_string()
+        }
+    };
     row(&[
         ("S4", a(s.v4)),
         ("S6", a(s.v6)),
@@ -568,7 +718,10 @@ pub fn status(s: &Stack) -> Vec<(String, String)> {
 /// line, then a line per entry with `cols`' values.
 pub fn text(title: &str, rows: &[Row], cols: &[(&str, &str, usize)]) -> Vec<String> {
     // A column is as wide as its heading at least.
-    let cols: Vec<(&str, &str, usize)> = cols.iter().map(|(k, h, w)| (*k, *h, (*w).max(h.len()))).collect();
+    let cols: Vec<(&str, &str, usize)> = cols
+        .iter()
+        .map(|(k, h, w)| (*k, *h, (*w).max(h.len())))
+        .collect();
     let mut out = vec![title.to_string()];
     let head = cols.iter().fold(String::new(), |mut s, (_, h, w)| {
         let _ = write!(s, "{h:<w$}  ");
@@ -577,7 +730,10 @@ pub fn text(title: &str, rows: &[Row], cols: &[(&str, &str, usize)]) -> Vec<Stri
     out.push(head.trim_end().to_string());
     for r in rows {
         let line = cols.iter().fold(String::new(), |mut s, (k, _, w)| {
-            let v = r.iter().find(|(n, _)| n == k).map_or("", |(_, v)| v.as_str());
+            let v = r
+                .iter()
+                .find(|(n, _)| n == k)
+                .map_or("", |(_, v)| v.as_str());
             let _ = write!(s, "{v:<w$}  ");
             s
         });
@@ -594,7 +750,10 @@ mod tests {
     use super::*;
 
     fn val(r: &[(String, String)], k: &str) -> String {
-        r.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default()
+        r.iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
     }
 
     fn loopback() -> Ifc {
@@ -614,7 +773,12 @@ mod tests {
 
     #[test]
     fn interfaces_as_option_1() {
-        let dhcp = Ifc { special: "*IP4DHCP".into(), line: "LINETH".into(), status: "Inactive".into(), ..Ifc::default() };
+        let dhcp = Ifc {
+            special: "*IP4DHCP".into(),
+            line: "LINETH".into(),
+            status: "Inactive".into(),
+            ..Ifc::default()
+        };
         let eth = Ifc {
             addr: Some("185.113.5.134".parse().unwrap()),
             prefix: 24,
@@ -622,9 +786,17 @@ mod tests {
             status: "Active".into(),
             ..Ifc::default()
         };
-        let v6 = Ifc { addr: Some("::1".parse().unwrap()), prefix: 128, line: "*LOOPBACK".into(), ..Ifc::default() };
+        let v6 = Ifc {
+            addr: Some("::1".parse().unwrap()),
+            prefix: 128,
+            line: "*LOOPBACK".into(),
+            ..Ifc::default()
+        };
         let rows = ifcs(&[eth, loopback(), dhcp, v6], false);
-        let got: Vec<(String, String)> = rows.iter().map(|r| (val(r, "IADR"), val(r, "INET"))).collect();
+        let got: Vec<(String, String)> = rows
+            .iter()
+            .map(|r| (val(r, "IADR"), val(r, "INET")))
+            .collect();
         assert_eq!(
             got,
             [
@@ -639,16 +811,36 @@ mod tests {
         assert_eq!(val(&d, "DHOSTA"), "0.0.0.1");
         assert_eq!(val(&d, "DBCAST"), "*NONE");
         assert_eq!(val(&d, "DHOST"), "LOOPBACK");
-        let e = ifc_detail(&Ifc { addr: Some("10.0.2.15".parse().unwrap()), prefix: 24, ..Ifc::default() });
+        let e = ifc_detail(&Ifc {
+            addr: Some("10.0.2.15".parse().unwrap()),
+            prefix: 24,
+            ..Ifc::default()
+        });
         assert_eq!(val(&e, "DBCAST"), "10.0.2.255");
     }
 
     #[test]
     fn routes_default_last() {
         let list = [
-            Rte { dest: None, hop: Some("185.113.5.253".parse().unwrap()), mtu: 1500, available: true, ..Rte::default() },
-            Rte { dest: Some("127.0.0.0".parse().unwrap()), prefix: 8, mtu: 576, available: true, ..Rte::default() },
-            Rte { dest: Some("::1".parse().unwrap()), prefix: 128, ..Rte::default() },
+            Rte {
+                dest: None,
+                hop: Some("185.113.5.253".parse().unwrap()),
+                mtu: 1500,
+                available: true,
+                ..Rte::default()
+            },
+            Rte {
+                dest: Some("127.0.0.0".parse().unwrap()),
+                prefix: 8,
+                mtu: 576,
+                available: true,
+                ..Rte::default()
+            },
+            Rte {
+                dest: Some("::1".parse().unwrap()),
+                prefix: 128,
+                ..Rte::default()
+            },
         ];
         let r = rtes(&list, false);
         assert_eq!(val(&r[0], "RDEST"), "127.0.0.0");
@@ -683,10 +875,25 @@ mod tests {
             counters: Counters::default(),
             passive: true,
         };
-        let six = Conn { local: "[::]:23".parse().unwrap(), remote: "[::]:0".parse().unwrap(), ..l(23, "Listen") };
-        let udp = Conn { tcp: false, ..l(123, "Closed") };
-        let rows = conns(&[l(23, "Listen"), l(21, "Listen"), udp, six.clone()], false, &names);
-        assert_eq!(rows.len(), 3, "the IPv6 telnet socket stays out: an IPv4 one has port 23");
+        let six = Conn {
+            local: "[::]:23".parse().unwrap(),
+            remote: "[::]:0".parse().unwrap(),
+            ..l(23, "Listen")
+        };
+        let udp = Conn {
+            tcp: false,
+            ..l(123, "Closed")
+        };
+        let rows = conns(
+            &[l(23, "Listen"), l(21, "Listen"), udp, six.clone()],
+            false,
+            &names,
+        );
+        assert_eq!(
+            rows.len(),
+            3,
+            "the IPv6 telnet socket stays out: an IPv4 one has port 23"
+        );
         assert_eq!(conns(&[six], false, &names).len(), 1, "alone, it shows");
         assert_eq!(val(&rows[0], "CLPORT"), "ftp-con >");
         assert_eq!(val(&rows[0], "CRADR"), "*");
@@ -695,7 +902,18 @@ mod tests {
         assert_eq!(val(&rows[1], "CLPORT"), "telnet");
         assert_eq!(val(&rows[2], "CSTATE"), "*UDP");
         assert_eq!(val(&rows[2], "CLPORTN"), "123");
-        let rows6 = conns(&[l(21, "Listen"), Conn { local: "[::]:21".parse().unwrap(), remote: "[::]:0".parse().unwrap(), ..l(21, "Listen") }], true, &names);
+        let rows6 = conns(
+            &[
+                l(21, "Listen"),
+                Conn {
+                    local: "[::]:21".parse().unwrap(),
+                    remote: "[::]:0".parse().unwrap(),
+                    ..l(21, "Listen")
+                },
+            ],
+            true,
+            &names,
+        );
         assert_eq!(rows6.len(), 1);
         assert_eq!(val(&rows6[0], "CLPORT"), "ftp-c >");
     }
@@ -709,14 +927,30 @@ mod tests {
             state: state_name(1).into(),
             idle_ms: 0,
             user: "QTCP".into(),
-            jobs: vec![("QTVTELNET".into(), "QTCP".into(), "000123".into(), "*BCH".into(), "QTCP".into())],
-            counters: Counters { bytes_out: 10, bytes_in: 20, rtt_us: 1_500, ..Counters::default() },
+            jobs: vec![(
+                "QTVTELNET".into(),
+                "QTCP".into(),
+                "000123".into(),
+                "*BCH".into(),
+                "QTCP".into(),
+            )],
+            counters: Counters {
+                bytes_out: 10,
+                bytes_in: 20,
+                rtt_us: 1_500,
+                ..Counters::default()
+            },
             passive: true,
         };
         let rows = conns(std::slice::from_ref(&conn), false, &|_, _| None);
         assert_eq!(val(&rows[0], "CRADR"), "10.0.2.2");
         assert_eq!(val(&rows[0], "CSTATE"), "Established");
-        let detail = conn_detail(&conn, &|_| Some("GATEWAY".into()), &|_, _| None, "10/30/26  12:00:00");
+        let detail = conn_detail(
+            &conn,
+            &|_| Some("GATEWAY".into()),
+            &|_, _| None,
+            "10/30/26  12:00:00",
+        );
         assert_eq!(val(&detail, "DRHOST"), "GATEWAY");
         assert_eq!(val(&detail, "DRTT"), "0.001");
         assert_eq!(val(&detail, "DOPEN"), "Passive");

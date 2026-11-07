@@ -73,7 +73,11 @@ pub fn views(system: &mut System) -> Vec<UnitView> {
         })
         .collect();
     // Devices by the unit UUID in their header, as DST finds them.
-    let devices: Vec<_> = s.devices.iter().map(|d| (unit_uuid_of(d), d.clone())).collect();
+    let devices: Vec<_> = s
+        .devices
+        .iter()
+        .map(|d| (unit_uuid_of(d), d.clone()))
+        .collect();
     s.store
         .units()
         .into_iter()
@@ -86,7 +90,11 @@ pub fn views(system: &mut System) -> Vec<UnitView> {
             let (type_code, model) = identity(&hw, device);
             let parity = dpy.iter().find(|(n, _)| *n == u.unit).map(|(_, d)| d);
             let held = parity.map_or(0, |d| d.held);
-            let (ifs_pages, ifs_used) = if u.unit == 0 { ifs.unwrap_or((0, 0)) } else { (0, 0) };
+            let (ifs_pages, ifs_used) = if u.unit == 0 {
+                ifs.unwrap_or((0, 0))
+            } else {
+                (0, 0)
+            };
             UnitView {
                 unit: u.unit,
                 type_code,
@@ -122,7 +130,10 @@ pub fn parity_held(system: &System) -> u64 {
 /// it, else from sysfs) and the disk's model.
 fn identity(hw: &hwrsrc::Table, device: Option<&Path>) -> (String, String) {
     let Some(device) = device else {
-        return (hwrsrc::Kind::Disk.default_type_model().0.to_string(), String::new());
+        return (
+            hwrsrc::Kind::Disk.default_type_model().0.to_string(),
+            String::new(),
+        );
     };
     let disk = diskimg::locate::disk_of(device).unwrap_or_else(|| {
         device
@@ -192,12 +203,24 @@ mod tests {
         assert_eq!(protection(0, NO_PARTNER, None), "None");
         assert_eq!(protection(0, 1, None), "Mirrored (A)");
         assert_eq!(protection(1, 0, None), "Mirrored (B)");
-        assert_eq!(protection(2, NO_PARTNER, Some(Level::Raid5)), "Device parity (RAID 5)");
-        assert_eq!(protection(2, NO_PARTNER, Some(Level::Raid6)), "Device parity (RAID 6)");
+        assert_eq!(
+            protection(2, NO_PARTNER, Some(Level::Raid5)),
+            "Device parity (RAID 5)"
+        );
+        assert_eq!(
+            protection(2, NO_PARTNER, Some(Level::Raid6)),
+            "Device parity (RAID 6)"
+        );
         assert_eq!(parity_status("DPY/Rebuild", None, false), "Rebuilding");
         assert_eq!(parity_status("DPY/Unprotected", None, false), "Unprotected");
-        assert_eq!(parity_status("DPY/Unprotected", Some(37), false), "Synchronizing 37%");
-        assert_eq!(parity_status("DPY/Unprotected", Some(37), true), "Synchronization stopped");
+        assert_eq!(
+            parity_status("DPY/Unprotected", Some(37), false),
+            "Synchronizing 37%"
+        );
+        assert_eq!(
+            parity_status("DPY/Unprotected", Some(37), true),
+            "Synchronization stopped"
+        );
         assert_eq!(parity_status("DPY/Active", None, false), "Active");
     }
 }

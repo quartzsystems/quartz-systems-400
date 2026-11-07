@@ -15,7 +15,8 @@ fn read(rel: &str) -> String {
 }
 
 fn block<'a>(toml: &'a str, id: &str) -> Option<&'a str> {
-    toml.split("[[msg]]").find(|b| b.contains(&format!("id = \"{id}\"")))
+    toml.split("[[msg]]")
+        .find(|b| b.contains(&format!("id = \"{id}\"")))
 }
 
 fn vars(block: &str) -> Vec<String> {
@@ -41,7 +42,10 @@ fn layout(capture: &str, id: &str) -> Option<Vec<String>> {
         f[3].split('&')
             .filter(|s| !s.is_empty())
             .map(|s| s.split_once(' ').unwrap().1.trim().to_string())
-            .map(|t| t.replace("*UBIN", "*BIN").replace("*QTDCHAR *VARY", "*CHAR *VARY"))
+            .map(|t| {
+                t.replace("*UBIN", "*BIN")
+                    .replace("*QTDCHAR *VARY", "*CHAR *VARY")
+            })
             .collect()
     })
 }
@@ -53,9 +57,14 @@ fn every_identifier_is_described_with_the_oracle_layout() {
     let tcp_oracle = read("../../tools/conformance/oracle/net/pub400/messages-qtcpmsg-tools.txt");
     let cpf_oracle = read("../../tools/conformance/oracle/net/pub400/messages-cmntrc.txt");
     for id in nettools::msg::ALL {
-        let (toml, oracle) = if id.starts_with("TCP") { (&tcp, &tcp_oracle) } else { (&cpf, &cpf_oracle) };
+        let (toml, oracle) = if id.starts_with("TCP") {
+            (&tcp, &tcp_oracle)
+        } else {
+            (&cpf, &cpf_oracle)
+        };
         let b = block(toml, id).unwrap_or_else(|| panic!("{id} has no description"));
-        let theirs = layout(oracle, id).unwrap_or_else(|| panic!("{id} is not in the oracle's capture"));
+        let theirs =
+            layout(oracle, id).unwrap_or_else(|| panic!("{id} is not in the oracle's capture"));
         assert_eq!(vars(b), theirs, "{id}");
     }
 }

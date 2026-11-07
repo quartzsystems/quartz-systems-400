@@ -87,7 +87,12 @@ fn tls_error(e: impl std::fmt::Display) -> io::Error {
 impl Control {
     /// Connect to `host` on `port`; TLS from the first byte with
     /// `implicit`.
-    pub fn connect(host: &str, port: u16, tls: Option<Arc<ClientConfig>>, implicit: bool) -> io::Result<Self> {
+    pub fn connect(
+        host: &str,
+        port: u16,
+        tls: Option<Arc<ClientConfig>>,
+        implicit: bool,
+    ) -> io::Result<Self> {
         let mut last = io::Error::new(io::ErrorKind::NotFound, format!("{host} has no address"));
         let mut found = None;
         for addr in (host, port).to_socket_addrs()? {
@@ -119,7 +124,10 @@ impl Control {
 
     /// The TLS handshake on the control connection.
     pub fn start_tls(&mut self) -> io::Result<()> {
-        let cfg = self.tls.clone().ok_or_else(|| tls_error("no TLS configuration"))?;
+        let cfg = self
+            .tls
+            .clone()
+            .ok_or_else(|| tls_error("no TLS configuration"))?;
         let name = tls::config::server_name(&self.host).map_err(tls_error)?;
         match std::mem::replace(&mut self.ctl, Ctl::Gone) {
             Ctl::Plain(s) => {
@@ -161,13 +169,18 @@ impl Control {
         loop {
             if let Some(at) = self.pending.iter().position(|&b| b == b'\n') {
                 let raw: Vec<u8> = self.pending.drain(..=at).collect();
-                let s: String = String::from_utf8_lossy(&raw).trim_end_matches(['\r', '\n']).to_string();
+                let s: String = String::from_utf8_lossy(&raw)
+                    .trim_end_matches(['\r', '\n'])
+                    .to_string();
                 return Ok(s);
             }
             let mut buf = [0u8; 4096];
             let n = self.ctl.read(&mut buf)?;
             if n == 0 {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "the server closed the connection"));
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "the server closed the connection",
+                ));
             }
             self.pending.extend_from_slice(&buf[..n]);
         }
@@ -186,7 +199,11 @@ impl Control {
             let r = self.command(if v6 { "EPSV" } else { "PASV" })?;
             log(&r);
             let text = r.lines.join(" ");
-            let addr = if v6 { epsv_addr(&text, self.peer.ip()) } else { pasv_addr(&text, self.peer.ip()) };
+            let addr = if v6 {
+                epsv_addr(&text, self.peer.ip())
+            } else {
+                pasv_addr(&text, self.peer.ip())
+            };
             return addr
                 .map(DataSetup::Connect)
                 .ok_or_else(|| io::Error::other(format!("no data address in reply {}", r.code)));
@@ -196,14 +213,26 @@ impl Control {
         let cmd = match a.ip() {
             IpAddr::V4(v4) => {
                 let o = v4.octets();
-                format!("PORT {},{},{},{},{},{}", o[0], o[1], o[2], o[3], a.port() >> 8, a.port() & 0xFF)
+                format!(
+                    "PORT {},{},{},{},{},{}",
+                    o[0],
+                    o[1],
+                    o[2],
+                    o[3],
+                    a.port() >> 8,
+                    a.port() & 0xFF
+                )
             }
             IpAddr::V6(v6) => format!("EPRT |2|{v6}|{}|", a.port()),
         };
         let r = self.command(&cmd)?;
         log(&r);
         if r.code >= 400 {
-            return Err(io::Error::other(format!("{} {}", r.code, r.lines.join(" "))));
+            return Err(io::Error::other(format!(
+                "{} {}",
+                r.code,
+                r.lines.join(" ")
+            )));
         }
         Ok(DataSetup::Listen(l))
     }
@@ -220,7 +249,10 @@ impl Control {
         let _ = s.set_nodelay(true);
         s.set_read_timeout(Some(REPLY_WAIT))?;
         if self.private {
-            let cfg = self.tls.clone().ok_or_else(|| tls_error("no TLS configuration"))?;
+            let cfg = self
+                .tls
+                .clone()
+                .ok_or_else(|| tls_error("no TLS configuration"))?;
             let name = tls::config::server_name(&self.host).map_err(tls_error)?;
             let t = TlsStream::connect(cfg, name, s).map_err(tls_error)?;
             return Ok(Box::new(TlsData(t)));
@@ -287,14 +319,21 @@ pub fn pasv_addr(text: &str, ctl: IpAddr) -> Option<SocketAddr> {
         .skip_while(|c| !c.is_ascii_digit())
         .take_while(|c| c.is_ascii_digit() || *c == ',')
         .collect();
-    let n: Vec<u8> = digits.split(',').map(|p| p.parse::<u8>().ok()).collect::<Option<_>>()?;
+    let n: Vec<u8> = digits
+        .split(',')
+        .map(|p| p.parse::<u8>().ok())
+        .collect::<Option<_>>()?;
     if n.len() != 6 {
         return None;
     }
     let port = u16::from(n[4]) << 8 | u16::from(n[5]);
     let ip = IpAddr::from([n[0], n[1], n[2], n[3]]);
     let ip = match (ip, ctl) {
-        (IpAddr::V4(v), IpAddr::V4(c)) if (v.is_private() || v.is_unspecified()) && !c.is_private() && !c.is_loopback() => ctl,
+        (IpAddr::V4(v), IpAddr::V4(c))
+            if (v.is_private() || v.is_unspecified()) && !c.is_private() && !c.is_loopback() =>
+        {
+            ctl
+        }
         _ => ip,
     };
     Some(SocketAddr::new(ip, port))

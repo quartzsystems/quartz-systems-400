@@ -111,11 +111,7 @@ impl ConsoleTerminal {
             return Vec::new();
         };
         let _ = self.term.key(k);
-        self.term
-            .take_outbox()
-            .iter()
-            .map(Record::encode)
-            .collect()
+        self.term.take_outbox().iter().map(Record::encode).collect()
     }
 
     /// Whether the keyboard is locked.

@@ -78,9 +78,12 @@ impl Registry {
 
     /// Write the registry whole.
     pub fn save(&self, files: &dyn Files) -> Result<()> {
-        let mut text = serde_json::to_string_pretty(self).map_err(|e| Error::Damaged(e.to_string()))?;
+        let mut text =
+            serde_json::to_string_pretty(self).map_err(|e| Error::Damaged(e.to_string()))?;
         text.push('\n');
-        files.mkdir_all("/www").map_err(|e| Error::Io("/www".into(), e.to_string()))?;
+        files
+            .mkdir_all("/www")
+            .map_err(|e| Error::Io("/www".into(), e.to_string()))?;
         files
             .write_atomic(PATH, text.as_bytes())
             .map_err(|e| Error::Io(PATH.into(), e.to_string()))
@@ -88,12 +91,16 @@ impl Registry {
 
     /// Entry `name` (case-blind).
     pub fn get(&self, name: &str) -> Option<&Entry> {
-        self.instances.iter().find(|e| e.name.eq_ignore_ascii_case(name))
+        self.instances
+            .iter()
+            .find(|e| e.name.eq_ignore_ascii_case(name))
     }
 
     /// Entry `name`, to change.
     pub fn get_mut(&mut self, name: &str) -> Option<&mut Entry> {
-        self.instances.iter_mut().find(|e| e.name.eq_ignore_ascii_case(name))
+        self.instances
+            .iter_mut()
+            .find(|e| e.name.eq_ignore_ascii_case(name))
     }
 
     /// Replace an entry in place, or add it at the end (the list keeps
@@ -108,14 +115,17 @@ impl Registry {
     /// Remove entry `name`; whether it was there.
     pub fn remove(&mut self, name: &str) -> bool {
         let before = self.instances.len();
-        self.instances.retain(|x| !x.name.eq_ignore_ascii_case(name));
+        self.instances
+            .retain(|x| !x.name.eq_ignore_ascii_case(name));
         before != self.instances.len()
     }
 
     /// Change entry `name` and save; `NotFound` when it is not there.
     pub fn update(files: &dyn Files, name: &str, f: impl FnOnce(&mut Entry)) -> Result<()> {
         let mut r = Self::load(files)?;
-        let e = r.get_mut(name).ok_or_else(|| Error::NotFound(name.to_string()))?;
+        let e = r
+            .get_mut(name)
+            .ok_or_else(|| Error::NotFound(name.to_string()))?;
         f(e);
         r.save(files)
     }
@@ -143,10 +153,25 @@ mod tests {
         });
         r.save(&f).unwrap();
         let back = Registry::load(&f).unwrap();
-        assert_eq!(back.instances.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["WEBSTORE", "ADMIN"]);
+        assert_eq!(
+            back.instances
+                .iter()
+                .map(|e| e.name.as_str())
+                .collect::<Vec<_>>(),
+            ["WEBSTORE", "ADMIN"]
+        );
         Registry::update(&f, "webstore", |e| e.restart_required = true).unwrap();
-        assert!(Registry::load(&f).unwrap().get("WEBSTORE").unwrap().restart_required);
-        assert!(matches!(Registry::update(&f, "NONE", |_| {}), Err(Error::NotFound(_))));
+        assert!(
+            Registry::load(&f)
+                .unwrap()
+                .get("WEBSTORE")
+                .unwrap()
+                .restart_required
+        );
+        assert!(matches!(
+            Registry::update(&f, "NONE", |_| {}),
+            Err(Error::NotFound(_))
+        ));
         f.put(PATH, b"{bad");
         assert!(matches!(Registry::load(&f), Err(Error::Damaged(_))));
     }

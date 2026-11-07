@@ -300,7 +300,12 @@ fn dltdevd(system: &mut System, parms: &Parms) -> Result<String, String> {
             ) {
                 return Err(format!("CPF2653 device {n} is in use"));
             }
-            if d.media.is_some() && !matches!(d.status, wm::obj::devd::DevStatus::VariedOff | wm::obj::devd::DevStatus::Failed) {
+            if d.media.is_some()
+                && !matches!(
+                    d.status,
+                    wm::obj::devd::DevStatus::VariedOff | wm::obj::devd::DevStatus::Failed
+                )
+            {
                 return Err(format!("CPF2653 device {n} is varied on"));
             }
             if crate::stgsvc::media::catalog_on(&n).is_some() {

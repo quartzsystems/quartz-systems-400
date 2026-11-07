@@ -133,12 +133,9 @@ pub fn sqlrun(system: &mut System, p: &Params) -> Result<String, String> {
     let text = if name.contains('/') {
         crate::cpp::stmf::read_as_job(system, &name)?
     } else {
-        system
-            .svc
-            .xfer
-            .get(&name)
-            .cloned()
-            .ok_or_else(|| format!("{name}: no such buffer or stream file; xfer put it or give a path"))?
+        system.svc.xfer.get(&name).cloned().ok_or_else(|| {
+            format!("{name}: no such buffer or stream file; xfer put it or give a path")
+        })?
     };
     let opts = RunOpts {
         commit: match p.upper("COMMIT").as_deref() {

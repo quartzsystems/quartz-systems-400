@@ -19,7 +19,11 @@ use sshd::Daemon;
 use sshd::keys::{KeyKind, PrivateKey};
 
 fn tool(name: &str) -> Option<PathBuf> {
-    let exe = if cfg!(windows) { format!("{name}.exe") } else { name.to_string() };
+    let exe = if cfg!(windows) {
+        format!("{name}.exe")
+    } else {
+        name.to_string()
+    };
     let mut dirs: Vec<PathBuf> = std::env::split_paths(&std::env::var_os("PATH")?).collect();
     if cfg!(windows) {
         dirs.push(PathBuf::from(r"C:\Windows\System32\OpenSSH"));
@@ -62,7 +66,11 @@ fn openssh_clients() {
         eprintln!("OpenSSH clients not found; skipped");
         return;
     };
-    let port = TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port();
+    let port = TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
     let w = common::world(&format!(
         "ListenAddress 127.0.0.1:{port}\n\
          Subsystem sftp /QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/sftp-server\n"
@@ -125,7 +133,11 @@ fn openssh_clients() {
         .arg(target)
         .output()
         .unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     assert_eq!(std::fs::read(&back).unwrap(), data);
     assert!(std::fs::read(dir.join("hello.mbr")).unwrap().len() >= 160);
     assert!(w.fs.get("/home/QSTEST/moved.bin").is_none());
@@ -138,9 +150,21 @@ fn openssh_clients() {
         if legacy {
             cmd.arg("-O");
         }
-        let out = cmd.arg(&local).arg(format!("{target}:{name}")).output().unwrap();
-        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
-        assert_eq!(w.fs.get(&format!("/home/QSTEST/{name}")).unwrap(), data, "{name}");
+        let out = cmd
+            .arg(&local)
+            .arg(format!("{target}:{name}"))
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert_eq!(
+            w.fs.get(&format!("/home/QSTEST/{name}")).unwrap(),
+            data,
+            "{name}"
+        );
     }
 
     stop.store(true, std::sync::atomic::Ordering::SeqCst);

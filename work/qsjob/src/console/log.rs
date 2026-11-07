@@ -71,7 +71,10 @@ impl Console {
 pub fn dspjoblog(job: &mut Job, host: &Host, which: Option<&str>) -> Result<String, String> {
     let which = which.map(str::trim).filter(|w| !w.is_empty() && *w != "*");
     if let Some(q) = which {
-        let detail = host.link.borrow_mut().with(|l| l.job_detail(q.to_string()))?;
+        let detail = host
+            .link
+            .borrow_mut()
+            .with(|l| l.job_detail(q.to_string()))?;
         if detail.job.number != host.start.number {
             let entries = host
                 .link

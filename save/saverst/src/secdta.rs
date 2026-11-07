@@ -80,7 +80,11 @@ impl AuthEntry {
 }
 
 fn decode_table(b: &[u8]) -> Vec<AuthEntry> {
-    b.as_chunks::<ENTRY_LEN>().0.iter().map(|c| AuthEntry::decode(c)).collect()
+    b.as_chunks::<ENTRY_LEN>()
+        .0
+        .iter()
+        .map(|c| AuthEntry::decode(c))
+        .collect()
 }
 
 /// A profile's private authorities, by name.
@@ -350,7 +354,10 @@ fn one_profile(
             .lock(job, id, store::obj::LockState::Exclusive)
             .is_err()
         {
-            return Err(crate::Error::refused(msg::NOT_RESTORED_IN_USE, d.object_name()));
+            return Err(crate::Error::refused(
+                msg::NOT_RESTORED_IN_USE,
+                d.object_name(),
+            ));
         }
         id
     } else {

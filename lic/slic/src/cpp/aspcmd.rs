@@ -80,8 +80,12 @@ fn names_asp1(parms: &Parms) -> Option<CmdReply> {
     if asps.is_empty() && devs.is_empty() {
         return Some(escape("CPD18A3", &[]));
     }
-    let asp_ok = asps.iter().all(|v| matches!(v.source().to_ascii_uppercase().as_str(), "*ALL" | "0" | "1"));
-    let dev_ok = devs.iter().all(|v| v.source().eq_ignore_ascii_case("*ALLAVL"));
+    let asp_ok = asps
+        .iter()
+        .all(|v| matches!(v.source().to_ascii_uppercase().as_str(), "*ALL" | "0" | "1"));
+    let dev_ok = devs
+        .iter()
+        .all(|v| v.source().eq_ignore_ascii_case("*ALLAVL"));
     (!(asp_ok && dev_ok)).then(|| escape("CPD18AC", &[]))
 }
 
@@ -124,7 +128,10 @@ fn straspbal(system: &mut System, parms: &Parms) -> CmdReply {
         "*HSM" | "*MP" => return balance_error("7"),
         _ => {}
     }
-    let spans = system.storage.as_ref().map_or(0, |s| s.store.span_fill().len());
+    let spans = system
+        .storage
+        .as_ref()
+        .map_or(0, |s| s.store.span_fill().len());
     if spans < 2 {
         return balance_error("5");
     }
@@ -133,7 +140,11 @@ fn straspbal(system: &mut System, parms: &Parms) -> CmdReply {
         m => Some(now_unix() + m.parse::<u64>().unwrap_or(1) * 60),
     };
     system.aspbal = Some((store::BalanceCursor::default(), until));
-    messages(vec![msg("CPC18A5", 4, &[("1", 5), (ASP_NAME, 10), ("*CAPACITY", 10)])])
+    messages(vec![msg(
+        "CPC18A5",
+        4,
+        &[("1", 5), (ASP_NAME, 10), ("*CAPACITY", 10)],
+    )])
 }
 
 fn endaspbal(system: &mut System, parms: &Parms) -> CmdReply {

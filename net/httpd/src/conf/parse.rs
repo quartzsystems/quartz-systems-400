@@ -7,8 +7,8 @@
 //! Every node keeps its source text so an unedited file prints back
 //! byte for byte.
 
-use super::{Conf, ConfError, Directive, Node, Section};
 use super::rules;
+use super::{Conf, ConfError, Directive, Node, Section};
 
 /// Split a directive's argument text into words: double quotes group,
 /// `\"` and `\\` escape inside them.
@@ -49,7 +49,11 @@ pub fn split_args(s: &str, line: u32, col0: u32) -> Result<Vec<String>, ConfErro
         }
     }
     if quoted {
-        return Err(ConfError::new(line, quote_col, "A quoted argument is not closed."));
+        return Err(ConfError::new(
+            line,
+            quote_col,
+            "A quoted argument is not closed.",
+        ));
     }
     if in_word {
         out.push(cur);
@@ -106,29 +110,50 @@ pub fn parse(src: &str) -> Result<Conf, ConfError> {
             Some(Node::Comment(l.raw))
         } else if let Some(rest) = t.strip_prefix("</") {
             let Some(name) = rest.strip_suffix('>') else {
-                return Err(ConfError::new(l.line, col, "A section end is missing its closing '>'."));
+                return Err(ConfError::new(
+                    l.line,
+                    col,
+                    "A section end is missing its closing '>'.",
+                ));
             };
             let name = name.trim();
             let Some(mut sec) = stack.pop() else {
-                return Err(ConfError::new(l.line, col, &format!("</{name}> without a matching <{name}>.")));
+                return Err(ConfError::new(
+                    l.line,
+                    col,
+                    &format!("</{name}> without a matching <{name}>."),
+                ));
             };
             if !sec.name.eq_ignore_ascii_case(name) {
                 return Err(ConfError::new(
                     l.line,
                     col,
-                    &format!("</{name}> closes <{}> opened on line {}.", sec.name, sec.line),
+                    &format!(
+                        "</{name}> closes <{}> opened on line {}.",
+                        sec.name, sec.line
+                    ),
                 ));
             }
             sec.close_raw = Some(l.raw);
             Some(Node::Section(sec))
         } else if let Some(rest) = t.strip_prefix('<') {
             let Some(inner) = rest.strip_suffix('>') else {
-                return Err(ConfError::new(l.line, col, "A section start is missing its closing '>'."));
+                return Err(ConfError::new(
+                    l.line,
+                    col,
+                    "A section start is missing its closing '>'.",
+                ));
             };
             let (name, args) = inner.split_once(char::is_whitespace).unwrap_or((inner, ""));
             let args_col = col + 1 + u32::try_from(name.len() + 1).unwrap_or(0);
             let args = split_args(args, l.line, args_col)?;
-            rules::check_section(name, &args, l.line, col, stack.last().map(|s| s.name.as_str()))?;
+            rules::check_section(
+                name,
+                &args,
+                l.line,
+                col,
+                stack.last().map(|s| s.name.as_str()),
+            )?;
             stack.push(Section {
                 name: name.to_string(),
                 args,
@@ -142,7 +167,13 @@ pub fn parse(src: &str) -> Result<Conf, ConfError> {
             let (name, rest) = t.split_once(char::is_whitespace).unwrap_or((t, ""));
             let args_col = col + u32::try_from(t.len() - rest.len()).unwrap_or(0);
             let args = split_args(rest, l.line, args_col)?;
-            rules::check_directive(name, &args, l.line, col, stack.last().map(|s| s.name.as_str()))?;
+            rules::check_directive(
+                name,
+                &args,
+                l.line,
+                col,
+                stack.last().map(|s| s.name.as_str()),
+            )?;
             Some(Node::Directive(Directive {
                 name: name.to_string(),
                 args,

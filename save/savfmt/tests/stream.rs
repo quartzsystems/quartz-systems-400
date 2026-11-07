@@ -11,7 +11,7 @@ use std::io::Cursor;
 use savfmt::object::{NO_OWNER, flags};
 use savfmt::{
     AuthorityEntry, Compression, Error, MediaHeader, ObjectDescriptor, Part, Reader, SaveKind,
-    Scan, SavedObject, Writer, digest, name10, read_index,
+    SavedObject, Scan, Writer, digest, name10, read_index,
 };
 
 struct Rng(u64);
@@ -134,7 +134,8 @@ fn corpus(rng: &mut Rng, n: usize) -> Vec<Obj> {
 
 fn write(objs: &[Obj], c: Compression) -> Vec<u8> {
     let mut w = Writer::new(Vec::new(), &header(c)).unwrap();
-    w.parameters("SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/S1)").unwrap();
+    w.parameters("SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/S1)")
+        .unwrap();
     for o in objs {
         w.begin_object(o.desc.clone(), &o.tail).unwrap();
         if !o.auths.is_empty() {
@@ -253,7 +254,10 @@ fn torn_stream_keeps_every_whole_object() {
             }
         }
         // Only the last object may be incomplete.
-        let damaged = scans.iter().filter(|s| matches!(s, Scan::Damaged(_))).count();
+        let damaged = scans
+            .iter()
+            .filter(|s| matches!(s, Scan::Damaged(_)))
+            .count();
         assert!(damaged <= 1, "cut at {cut}: {damaged} damaged");
     }
 }
@@ -277,7 +281,9 @@ fn bad_crc_damages_one_object_only() {
     let bytes = write(&objs, Compression::Low);
     let (_, _, index) = read_index(&mut Cursor::new(bytes.clone())).unwrap();
     // Flip a byte in the last data record of an object with a space.
-    let k = (0..9).find(|&i| index[i].size_bytes > 4096).expect("a big object");
+    let k = (0..9)
+        .find(|&i| index[i].size_bytes > 4096)
+        .expect("a big object");
     let end = usize::try_from(index[k + 1].offset).unwrap();
     let mut bad = bytes.clone();
     bad[end - 48 - 24 - 10] ^= 0x5a;
@@ -365,7 +371,10 @@ fn a_version_1_stream_still_reads() {
     let objs = corpus(&mut rng, 4);
     let mut bytes = write(&objs, Compression::None);
     // The media header as version 1 wrote it: the version, its CRC.
-    assert_eq!(u16::from_be_bytes([bytes[8], bytes[9]]), savfmt::header::VERSION);
+    assert_eq!(
+        u16::from_be_bytes([bytes[8], bytes[9]]),
+        savfmt::header::VERSION
+    );
     bytes[8..10].copy_from_slice(&1u16.to_be_bytes());
     let crc = savfmt::record::crc32c(&bytes[..124]);
     bytes[124..128].copy_from_slice(&crc.to_be_bytes());
@@ -376,5 +385,8 @@ fn a_version_1_stream_still_reads() {
     bytes[8..10].copy_from_slice(&9u16.to_be_bytes());
     let crc = savfmt::record::crc32c(&bytes[..124]);
     bytes[124..128].copy_from_slice(&crc.to_be_bytes());
-    assert!(matches!(Reader::new(Cursor::new(&bytes[..])), Err(Error::Version(9))));
+    assert!(matches!(
+        Reader::new(Cursor::new(&bytes[..])),
+        Err(Error::Version(9))
+    ));
 }

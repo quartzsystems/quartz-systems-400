@@ -76,24 +76,80 @@ pub const SHIPPED: &[(&str, AppKind, &str)] = &[
     ("QS400_FTP_SERVER", AppKind::Server, "FTP server"),
     ("QS400_FTP_CLIENT", AppKind::Client, "FTP client"),
     ("QS400_SMTP_CLIENT", AppKind::Client, "SMTP client"),
-    ("QS400_CENTRAL_SERVER", AppKind::Server, "Central host server"),
-    ("QS400_DATABASE_SERVER", AppKind::Server, "Database host server"),
-    ("QS400_DTAQ_SERVER", AppKind::Server, "Data queue host server"),
-    ("QS400_NETPRT_SERVER", AppKind::Server, "Network print host server"),
-    ("QS400_RMTCMD_SERVER", AppKind::Server, "Remote command host server"),
-    ("QS400_SIGNON_SERVER", AppKind::Server, "Sign-on host server"),
+    (
+        "QS400_CENTRAL_SERVER",
+        AppKind::Server,
+        "Central host server",
+    ),
+    (
+        "QS400_DATABASE_SERVER",
+        AppKind::Server,
+        "Database host server",
+    ),
+    (
+        "QS400_DTAQ_SERVER",
+        AppKind::Server,
+        "Data queue host server",
+    ),
+    (
+        "QS400_NETPRT_SERVER",
+        AppKind::Server,
+        "Network print host server",
+    ),
+    (
+        "QS400_RMTCMD_SERVER",
+        AppKind::Server,
+        "Remote command host server",
+    ),
+    (
+        "QS400_SIGNON_SERVER",
+        AppKind::Server,
+        "Sign-on host server",
+    ),
     ("QS400_FILE_SERVER", AppKind::Server, "File host server"),
-    ("QS400_DDM_DRDA_SERVER", AppKind::Server, "DDM and DRDA server"),
-    ("QS400_DDM_DRDA_CLIENT", AppKind::Client, "DDM and DRDA client"),
-    ("QS400_HTTP_SERVER_ADMIN", AppKind::Server, "HTTP administration server"),
-    ("QS400_HTTP_SERVER_NAVIGATOR", AppKind::Server, "Navigator for QS/400"),
-    ("QS400_HTTP_SERVER_ACCESSWEB", AppKind::Server, "QS/400 Access for Web"),
-    ("QS400_DIRECTORY_SERVER", AppKind::Server, "Directory server"),
-    ("QS400_DIRECTORY_CLIENT", AppKind::Client, "Directory client"),
+    (
+        "QS400_DDM_DRDA_SERVER",
+        AppKind::Server,
+        "DDM and DRDA server",
+    ),
+    (
+        "QS400_DDM_DRDA_CLIENT",
+        AppKind::Client,
+        "DDM and DRDA client",
+    ),
+    (
+        "QS400_HTTP_SERVER_ADMIN",
+        AppKind::Server,
+        "HTTP administration server",
+    ),
+    (
+        "QS400_HTTP_SERVER_NAVIGATOR",
+        AppKind::Server,
+        "Navigator for QS/400",
+    ),
+    (
+        "QS400_HTTP_SERVER_ACCESSWEB",
+        AppKind::Server,
+        "QS/400 Access for Web",
+    ),
+    (
+        "QS400_DIRECTORY_SERVER",
+        AppKind::Server,
+        "Directory server",
+    ),
+    (
+        "QS400_DIRECTORY_CLIENT",
+        AppKind::Client,
+        "Directory client",
+    ),
     ("QS400_VPN_IKE_SERVER", AppKind::Server, "VPN key manager"),
     ("QS400_LPD_SERVER", AppKind::Server, "LPD server"),
     ("QS400_NTP_CLIENT", AppKind::Client, "NTP client"),
-    ("QS400_ACCESS_SERVER", AppKind::Server, "QAP server (QS/400 Access)"),
+    (
+        "QS400_ACCESS_SERVER",
+        AppKind::Server,
+        "QAP server (QS/400 Access)",
+    ),
 ];
 
 /// The IBM i IDs (old) and the IDs they name here (new).
@@ -126,7 +182,10 @@ const OLD_HTTP_SERVER_PREFIX: &str = "QIBM_HTTP_SERVER_";
 
 /// The ID of HTTP instance `instance`.
 pub fn http_server(instance: &str) -> String {
-    format!("{HTTP_SERVER_PREFIX}{}", instance.trim().to_ascii_uppercase())
+    format!(
+        "{HTTP_SERVER_PREFIX}{}",
+        instance.trim().to_ascii_uppercase()
+    )
 }
 
 /// The ID `id` names: the new one for an old one, else `id` itself.
@@ -390,7 +449,10 @@ mod tests {
             assert!(SHIPPED.iter().any(|s| s.0 == *new), "{old}");
             assert_eq!(canonical(old), *new);
         }
-        assert_eq!(canonical("QIBM_HTTP_SERVER_ADMIN"), "QS400_HTTP_SERVER_ADMIN");
+        assert_eq!(
+            canonical("QIBM_HTTP_SERVER_ADMIN"),
+            "QS400_HTTP_SERVER_ADMIN"
+        );
         assert_eq!(canonical("QIBM_HTTP_SERVER_SHOP"), "QS400_HTTP_SERVER_SHOP");
         assert_eq!(canonical("QIBM_HTTP_SERVER_"), "QIBM_HTTP_SERVER_");
         assert_eq!(canonical("QIBM_MYAPP"), "QIBM_MYAPP");
@@ -401,9 +463,16 @@ mod tests {
     fn old_ids_are_accepted_everywhere() {
         let mut r = AppRegistry::shipped();
         r.assign("QIBM_QTV_TELNET_SERVER", Some("T")).unwrap();
-        assert_eq!(r.get("QS400_TELNET_SERVER").unwrap().label.as_deref(), Some("T"));
-        assert_eq!(r.get("QIBM_QTV_TELNET_SERVER").unwrap().id, "QS400_TELNET_SERVER");
-        r.register("QIBM_HTTP_SERVER_SHOP", AppKind::Server, "Shop").unwrap();
+        assert_eq!(
+            r.get("QS400_TELNET_SERVER").unwrap().label.as_deref(),
+            Some("T")
+        );
+        assert_eq!(
+            r.get("QIBM_QTV_TELNET_SERVER").unwrap().id,
+            "QS400_TELNET_SERVER"
+        );
+        r.register("QIBM_HTTP_SERVER_SHOP", AppKind::Server, "Shop")
+            .unwrap();
         assert!(r.get("QS400_HTTP_SERVER_SHOP").is_ok());
         assert!(matches!(
             r.register("QS400_HTTP_SERVER_SHOP", AppKind::Server, ""),
@@ -438,12 +507,22 @@ mod tests {
         file.save(&files).unwrap();
         let r = AppRegistry::load(&files).unwrap();
         assert_eq!(r.apps.len(), SHIPPED.len() + 2);
-        assert!(r.apps.iter().all(|a| !a.id.starts_with("QIBM_") || a.id == "QIBM_MYAPP"));
+        assert!(
+            r.apps
+                .iter()
+                .all(|a| !a.id.starts_with("QIBM_") || a.id == "QIBM_MYAPP")
+        );
         let admin = r.get("QS400_HTTP_SERVER_ADMIN").unwrap();
-        assert_eq!((admin.label.as_deref(), admin.client_auth), (Some("ADMIN-CERT01"), ClientAuth::Optional));
+        assert_eq!(
+            (admin.label.as_deref(), admin.client_auth),
+            (Some("ADMIN-CERT01"), ClientAuth::Optional)
+        );
         let web = r.get("QS400_HTTP_SERVER_WEB1").unwrap();
         assert_eq!((web.label.as_deref(), web.shipped), (Some("WEB"), false));
-        assert_eq!(r.get("QS400_TELNET_SERVER").unwrap().label.as_deref(), Some("TN"));
+        assert_eq!(
+            r.get("QS400_TELNET_SERVER").unwrap().label.as_deref(),
+            Some("TN")
+        );
         r.save(&files).unwrap();
         assert_eq!(AppRegistry::load(&files).unwrap(), r);
     }

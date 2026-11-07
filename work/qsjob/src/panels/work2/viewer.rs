@@ -66,7 +66,9 @@ pub fn parse(text: &str) -> Control {
         "+" => number(rest).map_or_else(bad, |n| Control::Down(Some(n))),
         "-" => number(rest).map_or_else(bad, |n| Control::Up(Some(n))),
         "P" => number(rest).map_or_else(bad, Control::Page),
-        "W" => number(rest).filter(|n| *n > 0).map_or_else(bad, Control::Column),
+        "W" => number(rest)
+            .filter(|n| *n > 0)
+            .map_or_else(bad, Control::Column),
         "T" | "B" => bad(),
         _ => number(&t).map_or_else(bad, Control::Line),
     }

@@ -87,7 +87,13 @@ impl Answers {
 
     /// `q` ran over `floor` outer frames with `rows`: kept when it read
     /// none of them.
-    pub fn leave(&mut self, entered: Entered, q: &Query, floor: usize, rows: Option<&Rc<Vec<Row>>>) {
+    pub fn leave(
+        &mut self,
+        entered: Entered,
+        q: &Query,
+        floor: usize,
+        rows: Option<&Rc<Vec<Row>>>,
+    ) {
         let reach = self.reach;
         self.reach = entered.0.min(reach);
         if reach >= floor

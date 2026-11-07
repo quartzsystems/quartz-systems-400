@@ -22,7 +22,10 @@ fn job(env: *mut Env) -> &'static mut mi::Job {
 fn zoned(n: i128, digits: u8) -> Vec<u8> {
     let z = Zoned::new(digits, 0).expect("valid");
     let mut b = z
-        .encode(&Decimal::new(n, 0).unwrap_or_else(|_| Decimal::zero()), Rounding::Truncate)
+        .encode(
+            &Decimal::new(n, 0).unwrap_or_else(|_| Decimal::zero()),
+            Rounding::Truncate,
+        )
         .unwrap_or_else(|_| vec![0xF0; usize::from(digits)]);
     if n >= 0
         && let Some(last) = b.last_mut()
@@ -97,7 +100,9 @@ fn put(ds: &mut [u8], pos: usize, data: &[u8]) {
 }
 
 fn ebcdic(s: &str) -> Vec<u8> {
-    s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0x40)).collect()
+    s.chars()
+        .map(|c| ccsid::byte_of(c).unwrap_or(0x40))
+        .collect()
 }
 
 /// Text at a field, blank-padded to its length.
@@ -108,7 +113,15 @@ fn put_text(ds: &mut [u8], (pos, len): Field, s: &str) {
 }
 
 /// `_QRNX_PSDSINIT(ds, len, name, parms)`: the fixed fields at start.
-pub extern "sysv64" fn psds_init(env: *mut Env, _argc: i64, _od: i64, ds: i64, len: i32, name: i64, parms: i32) {
+pub extern "sysv64" fn psds_init(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    ds: i64,
+    len: i32,
+    name: i64,
+    parms: i32,
+) {
     let n = usize::try_from(len).unwrap_or(0);
     if n == 0 {
         return;
@@ -145,9 +158,18 @@ pub extern "sysv64" fn user(env: *mut Env, _argc: i64, _od: i64, dst: i64) {
 
 /// `_QRNX_PSDSERR(ds, len, status)`: the exception the last handler
 /// took into the PSDS and the last status.
-pub extern "sysv64" fn psds_err(env: *mut Env, _argc: i64, _od: i64, ds: i64, len: i32, status: i64) {
+pub extern "sysv64" fn psds_err(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    ds: i64,
+    len: i32,
+    status: i64,
+) {
     let j = job(env);
-    let Some(e) = j.handled.last().cloned() else { return };
+    let Some(e) = j.handled.last().cloned() else {
+        return;
+    };
     let st = i128::from(e.status);
     bytes(status.cast_unsigned(), 5).copy_from_slice(&zoned(st, 5));
     let n = usize::try_from(len).unwrap_or(0);
@@ -178,8 +200,17 @@ pub extern "sysv64" fn psds_err(env: *mut Env, _argc: i64, _od: i64, ds: i64, le
 /// as an escape to the running entry, where no handler waits for it.
 pub extern "sysv64" fn reraise(env: *mut Env, _argc: i64, _od: i64) {
     let j = job(env);
-    let Some(e) = j.handled.last().cloned() else { return };
-    let _ = j.send_message(&e.msgid, &e.msgf, "*LIBL", e.data, qir::MsgType::Escape, mi::QueueRef::Same);
+    let Some(e) = j.handled.last().cloned() else {
+        return;
+    };
+    let _ = j.send_message(
+        &e.msgid,
+        &e.msgf,
+        "*LIBL",
+        e.data,
+        qir::MsgType::Escape,
+        mi::QueueRef::Same,
+    );
 }
 
 /// `_QRNX_FILEERR(status, file)`: a file operation's error that neither
@@ -191,5 +222,12 @@ pub extern "sysv64" fn file_err(env: *mut Env, _argc: i64, _od: i64, status: i32
     data.extend([0, 0]);
     data.extend_from_slice(bytes(file.cast_unsigned(), 10));
     let id = format!("RNX{:04}", status.clamp(0, 9999));
-    let _ = j.send_message(&id, "QRNXMSG", "*LIBL", data, qir::MsgType::Escape, mi::QueueRef::Same);
+    let _ = j.send_message(
+        &id,
+        "QRNXMSG",
+        "*LIBL",
+        data,
+        qir::MsgType::Escape,
+        mi::QueueRef::Same,
+    );
 }

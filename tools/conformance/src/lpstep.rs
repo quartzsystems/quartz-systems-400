@@ -90,19 +90,27 @@ impl Suite {
             return Err(format!("CHKPRDOPT PRDID(5770WDS): {chk}"));
         }
         s.command("crtsavf FILE(QGPL/S80WDS)", CMD)?;
-        let saved = s.command("savlicpgm LICPGM(QS00WDS) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S80WDS)", CMD)?;
+        let saved = s.command(
+            "savlicpgm LICPGM(QS00WDS) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S80WDS)",
+            CMD,
+        )?;
         if saved.contains("CPF") {
             return Err(format!("SAVLICPGM: {saved}"));
         }
         // QS00RPG requires QS00WDS option 31: saved and deleted first.
         s.command("crtsavf FILE(QGPL/S80RPG)", CMD)?;
-        let saved = s.command("savlicpgm LICPGM(QS00RPG) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S80RPG)", CMD)?;
+        let saved = s.command(
+            "savlicpgm LICPGM(QS00RPG) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S80RPG)",
+            CMD,
+        )?;
         if saved.contains("CPF") {
             return Err(format!("SAVLICPGM QS00RPG: {saved}"));
         }
         let refused = s.command("dltlicpgm LICPGM(QS00WDS)", CMD)?;
         if !refused.contains("CPF") {
-            return Err(format!("DLTLICPGM QS00WDS with QS00RPG installed was not refused:\n{refused}"));
+            return Err(format!(
+                "DLTLICPGM QS00WDS with QS00RPG installed was not refused:\n{refused}"
+            ));
         }
         let del = s.command("dltlicpgm LICPGM(QS00RPG)", CMD)?;
         want(&del, "DLTLICPGM QS00RPG", &["CPC3D82"])?;
@@ -110,31 +118,51 @@ impl Suite {
         want(&del, "DLTLICPGM QS00WDS", &["CPC3D82"])?;
         let rpg = "crtbndrpg PGM(QGPL/S80PGM) SRCFILE(QGPL/QRPGLESRC) SRCMBR(S80PGM)";
         let refused = s.command(rpg, CMD)?;
-        want(&refused, "CRTBNDRPG without the compiler", &["CPF0C1F", "QS00WDS"])?;
+        want(
+            &refused,
+            "CRTBNDRPG without the compiler",
+            &["CPF0C1F", "QS00WDS"],
+        )?;
         let rsf = s.command("dspsfwrsc", CMD)?;
         if rsf.contains("QS00WDS") {
             return Err(format!("DSPSFWRSC still lists QS00WDS:\n{rsf}"));
         }
         // *BASE first, then the compiler's option, as IBM's RSTLICPGM.
-        let rst = s.command("rstlicpgm LICPGM(QS00WDS) DEV(*SAVF) SAVF(QGPL/S80WDS)", CMD)?;
+        let rst = s.command(
+            "rstlicpgm LICPGM(QS00WDS) DEV(*SAVF) SAVF(QGPL/S80WDS)",
+            CMD,
+        )?;
         want(&rst, "RSTLICPGM QS00WDS", &["CPC3D81"])?;
-        let rst = s.command("rstlicpgm LICPGM(5770WDS) DEV(*SAVF) OPTION(31) SAVF(QGPL/S80WDS)", CMD)?;
+        let rst = s.command(
+            "rstlicpgm LICPGM(5770WDS) DEV(*SAVF) OPTION(31) SAVF(QGPL/S80WDS)",
+            CMD,
+        )?;
         want(&rst, "RSTLICPGM QS00WDS option 31", &["CPC3D81"])?;
         let again = s.command(rpg, CMD)?;
         if again.contains("CPF0C1F") {
             return Err(format!("CRTBNDRPG after RSTLICPGM: {again}"));
         }
         let rsf = s.command("dspsfwrsc", CMD)?;
-        want(&rsf, "DSPSFWRSC after RSTLICPGM", &["QS00WDS", "QS00999", "QS00SS1"])?;
+        want(
+            &rsf,
+            "DSPSFWRSC after RSTLICPGM",
+            &["QS00WDS", "QS00999", "QS00SS1"],
+        )?;
         if rsf.contains("5770") {
             return Err(format!("DSPSFWRSC shows an IBM product ID:\n{rsf}"));
         }
-        let rst = s.command("rstlicpgm LICPGM(QS00RPG) DEV(*SAVF) SAVF(QGPL/S80RPG)", CMD)?;
+        let rst = s.command(
+            "rstlicpgm LICPGM(QS00RPG) DEV(*SAVF) SAVF(QGPL/S80RPG)",
+            CMD,
+        )?;
         want(&rst, "RSTLICPGM QS00RPG", &["CPC3D81"])?;
 
         // A vendor product.
         s.command("crtlib LIB(QS80PRD)", CMD)?;
-        s.command("crtdtaara DTAARA(QS80PRD/INVDTA) TYPE(*CHAR) LEN(10) VALUE('vendor')", CMD)?;
+        s.command(
+            "crtdtaara DTAARA(QS80PRD/INVDTA) TYPE(*CHAR) LEN(10) VALUE('vendor')",
+            CMD,
+        )?;
         crate::qsh::push_hex(s, "S80MAN", manifest().as_bytes())?;
         let put = s.command("svc.ifs putx /tmp/s80.toml S80MAN", CMD)?;
         want(&put, "the manifest in the IFS", &["bytes"])?;
@@ -149,10 +177,21 @@ impl Suite {
         if gone.contains("vendor") {
             return Err(format!("the data area is still there: {gone}"));
         }
-        let rst = s.command(&format!("rstlicpgm LICPGM({PRODUCT}) DEV(*SAVF) SAVF(QGPL/S80PRD)"), CMD)?;
+        let rst = s.command(
+            &format!("rstlicpgm LICPGM({PRODUCT}) DEV(*SAVF) SAVF(QGPL/S80PRD)"),
+            CMD,
+        )?;
         want(&rst, "RSTLICPGM of the vendor product", &["CPC3D81"])?;
-        want(&s.command("svc.dtaara get QS80PRD/INVDTA", CMD)?, "the product's object", &["vendor"])?;
-        want(&s.command("dspsfwrsc", CMD)?, "DSPSFWRSC lists the vendor product", &[PRODUCT])?;
+        want(
+            &s.command("svc.dtaara get QS80PRD/INVDTA", CMD)?,
+            "the product's object",
+            &["vendor"],
+        )?;
+        want(
+            &s.command("dspsfwrsc", CMD)?,
+            "DSPSFWRSC lists the vendor product",
+            &[PRODUCT],
+        )?;
 
         // A key for one user, signed by the vendor.
         let serial = serial(s)?;

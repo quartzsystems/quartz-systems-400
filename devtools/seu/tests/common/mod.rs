@@ -18,7 +18,12 @@ use tn5250::screen::ScreenModel;
 
 /// The masks the captures put over values that differ by system.
 pub const MASKS: &[&str] = &[
-    "SYSNAME", "USERNAME", "NNNNNN", "QPADEV000X", "MM/DD/YY", "HH:MM:SS",
+    "SYSNAME",
+    "USERNAME",
+    "NNNNNN",
+    "QPADEV000X",
+    "MM/DD/YY",
+    "HH:MM:SS",
 ];
 
 /// The pub400 golden directory.
@@ -74,7 +79,13 @@ pub fn dds_member() -> Buffer {
 
 /// An edit session over it.
 pub fn edit_session() -> Session {
-    let mut s = Session::new(Mode::Edit, dds_member(), "", ("USERNAME1", "QDDSSRC", "QDFUZZIN"), 261_023);
+    let mut s = Session::new(
+        Mode::Edit,
+        dds_member(),
+        "",
+        ("USERNAME1", "QDDSSRC", "QDFUZZIN"),
+        261_023,
+    );
     let _ = s.view();
     s
 }
@@ -109,7 +120,10 @@ pub fn seq_on(input: &mut Input, row: usize, text: &str) {
 /// columns; a copyright line counts only where it starts.
 fn masked(golden: &str, ours: &str) -> String {
     let mark = "(C) COPYRIGHT";
-    if golden.find(mark).is_some_and(|i| ours.find(mark) == Some(i)) {
+    if golden
+        .find(mark)
+        .is_some_and(|i| ours.find(mark) == Some(i))
+    {
         return golden.to_string();
     }
     let mut out: Vec<char> = ours.chars().collect();
@@ -143,7 +157,12 @@ pub fn compare_rows(name: &str, m: &ScreenModel, rows: std::ops::RangeInclusive<
         let ours = got.get(i - 1).map_or("", String::as_str);
         let ours = masked(w, ours);
         if w.trim_end() != ours.trim_end() {
-            let _ = writeln!(diff, "row {i}:\n  want |{}|\n  got  |{}|", w.trim_end(), ours.trim_end());
+            let _ = writeln!(
+                diff,
+                "row {i}:\n  want |{}|\n  got  |{}|",
+                w.trim_end(),
+                ours.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{name} differs:\n{diff}");

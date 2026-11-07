@@ -72,7 +72,10 @@ impl Response {
     /// A file the browser saves as `filename`.
     pub fn download(filename: &str, content_type: &str, data: Vec<u8>) -> Self {
         let mut r = Self::new(200, content_type, data);
-        r.headers.push(("Content-Disposition".into(), format!("attachment; filename=\"{filename}\"")));
+        r.headers.push((
+            "Content-Disposition".into(),
+            format!("attachment; filename=\"{filename}\""),
+        ));
         r
     }
 
@@ -82,7 +85,10 @@ impl Response {
             status: 200,
             headers: vec![
                 ("Content-Type".into(), content_type.into()),
-                ("Content-Disposition".into(), format!("attachment; filename=\"{filename}\"")),
+                (
+                    "Content-Disposition".into(),
+                    format!("attachment; filename=\"{filename}\""),
+                ),
             ],
             body: Body::Stream(from),
         }
@@ -104,7 +110,10 @@ impl Response {
 
     /// The value of header `name` (case-blind).
     pub fn header(&self, name: &str) -> Option<&str> {
-        self.headers.iter().find(|(k, _)| k.eq_ignore_ascii_case(name)).map(|(_, v)| v.as_str())
+        self.headers
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(name))
+            .map(|(_, v)| v.as_str())
     }
 
     /// The body, for a byte body.
@@ -133,7 +142,11 @@ impl Response {
         for (k, v) in &self.headers {
             let _ = write!(head, "{k}: {v}\r\n");
         }
-        let _ = write!(head, "Connection: {}\r\n", if keep { "keep-alive" } else { "close" });
+        let _ = write!(
+            head,
+            "Connection: {}\r\n",
+            if keep { "keep-alive" } else { "close" }
+        );
         match self.body {
             Body::Upgrade(_) => {
                 head.push_str("\r\n");
@@ -169,7 +182,10 @@ impl Response {
                 if !head_only {
                     let sent = io::copy(&mut r.take(len), w)?;
                     if sent < len {
-                        return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "the body ended early"));
+                        return Err(io::Error::new(
+                            io::ErrorKind::UnexpectedEof,
+                            "the body ended early",
+                        ));
                     }
                 }
             }
@@ -215,17 +231,24 @@ mod tests {
     #[test]
     fn encodes_bytes_and_streams() {
         let mut out = Vec::new();
-        Response::redirect("/x").write(&mut out, false, true).unwrap();
+        Response::redirect("/x")
+            .write(&mut out, false, true)
+            .unwrap();
         let s = String::from_utf8(out).unwrap();
         assert!(s.starts_with("HTTP/1.1 303 See Other\r\n"));
         assert!(s.contains("Location: /x\r\nConnection: keep-alive\r\nContent-Length: 0\r\n\r\n"));
         let mut out = Vec::new();
-        Response::stream("a.log", "text/plain", Box::new(&b"hello"[..])).write(&mut out, false, false).unwrap();
+        Response::stream("a.log", "text/plain", Box::new(&b"hello"[..]))
+            .write(&mut out, false, false)
+            .unwrap();
         let s = String::from_utf8(out).unwrap();
         assert!(s.ends_with("Transfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"));
         assert!(s.contains("attachment; filename=\"a.log\""));
         let mut out = Vec::new();
-        Response::new(200, "x/y", Vec::new()).body_sized(3, Box::new(&b"abcdef"[..])).write(&mut out, false, true).unwrap();
+        Response::new(200, "x/y", Vec::new())
+            .body_sized(3, Box::new(&b"abcdef"[..]))
+            .write(&mut out, false, true)
+            .unwrap();
         let s = String::from_utf8(out).unwrap();
         assert!(s.ends_with("Content-Length: 3\r\n\r\nabc"), "{s}");
         let mut out = Vec::new();

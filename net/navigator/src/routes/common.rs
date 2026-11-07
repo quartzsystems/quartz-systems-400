@@ -21,7 +21,11 @@ use super::Rq;
 pub fn pick(name: &str, options: &[String], chosen: &str) -> String {
     let mut s = format!("<select name=\"{}\">", esc(name));
     for (i, o) in options.iter().enumerate() {
-        let sel = if i > 0 && o == chosen { " selected" } else { "" };
+        let sel = if i > 0 && o == chosen {
+            " selected"
+        } else {
+            ""
+        };
         let _ = write!(s, "<option{sel}>{}</option>", esc(o));
     }
     s.push_str("</select>");
@@ -135,7 +139,11 @@ pub struct Confirm<'a> {
 pub fn confirm_in(rq: &Rq<'_>, group: &'static str, c: &Confirm<'_>) -> Response {
     let list = List {
         cols: c.cols.iter().map(|l| Col::plain(l)).collect(),
-        rows: c.rows.iter().map(|r| r.iter().map(|h| Cell::html(h.clone())).collect()).collect(),
+        rows: c
+            .rows
+            .iter()
+            .map(|r| r.iter().map(|h| Cell::html(h.clone())).collect())
+            .collect(),
         empty: String::new(),
         keep: Vec::new(),
     };

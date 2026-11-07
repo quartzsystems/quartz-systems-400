@@ -268,7 +268,11 @@ pub fn levels(env: &Env, subject: &str, is_group: bool) -> Vec<Level> {
     let mut out = Vec::new();
     if subject != PUBLIC {
         out.push(Level {
-            by: if is_group { SetBy::Group(subject.into()) } else { SetBy::User(subject.into()) },
+            by: if is_group {
+                SetBy::Group(subject.into())
+            } else {
+                SetBy::User(subject.into())
+            },
             settings: env.policy.settings(subject),
         });
         if !is_group {
@@ -292,7 +296,11 @@ pub fn levels(env: &Env, subject: &str, is_group: bool) -> Vec<Level> {
 pub fn resolve(levels: &[Level], function: &str, secadm: bool) -> Effective {
     if function == POLICIES_CHANGE {
         return Effective {
-            setting: if secadm { Setting::Allow } else { Setting::Deny },
+            setting: if secadm {
+                Setting::Allow
+            } else {
+                Setting::Deny
+            },
             by: SetBy::System,
         };
     }
@@ -351,20 +359,47 @@ mod tests {
     fn deny_wins_at_any_level() {
         let lv = [
             level(SetBy::User("U".into()), &[(DB_WRITE, Setting::Allow)]),
-            level(SetBy::Group("G".into()), &[(DB_WRITE, Setting::Deny), (DB_SQL, Setting::Allow)]),
-            level(SetBy::Public, &[(DB_SQL, Setting::Deny), (FILES_EDIT, Setting::Allow)]),
+            level(
+                SetBy::Group("G".into()),
+                &[(DB_WRITE, Setting::Deny), (DB_SQL, Setting::Allow)],
+            ),
+            level(
+                SetBy::Public,
+                &[(DB_SQL, Setting::Deny), (FILES_EDIT, Setting::Allow)],
+            ),
         ];
         assert_eq!(resolve(&lv, DB_WRITE, false).by, SetBy::Group("G".into()));
-        assert_eq!(resolve(&lv, DB_SQL, false), Effective { setting: Setting::Deny, by: SetBy::Public });
-        assert_eq!(resolve(&lv, FILES_EDIT, false), Effective { setting: Setting::Allow, by: SetBy::Public });
-        assert_eq!(resolve(&lv, DB_BROWSE, false), Effective { setting: Setting::Allow, by: SetBy::Default });
+        assert_eq!(
+            resolve(&lv, DB_SQL, false),
+            Effective {
+                setting: Setting::Deny,
+                by: SetBy::Public
+            }
+        );
+        assert_eq!(
+            resolve(&lv, FILES_EDIT, false),
+            Effective {
+                setting: Setting::Allow,
+                by: SetBy::Public
+            }
+        );
+        assert_eq!(
+            resolve(&lv, DB_BROWSE, false),
+            Effective {
+                setting: Setting::Allow,
+                by: SetBy::Default
+            }
+        );
         assert!(!resolve(&lv, POLICIES_CHANGE, false).allowed());
         assert_eq!(resolve(&lv, POLICIES_CHANGE, true).by, SetBy::System);
     }
 
     #[test]
     fn every_function_once() {
-        let all: Vec<&str> = SECTIONS.iter().flat_map(|s| s.functions.iter().map(|f| f.0)).collect();
+        let all: Vec<&str> = SECTIONS
+            .iter()
+            .flat_map(|s| s.functions.iter().map(|f| f.0))
+            .collect();
         for (i, f) in all.iter().enumerate() {
             assert!(!all[i + 1..].contains(f), "{f} twice");
         }

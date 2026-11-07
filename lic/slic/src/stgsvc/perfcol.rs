@@ -83,13 +83,21 @@ fn sysval_text(system: &System, name: &str) -> String {
         .unwrap_or_default()
 }
 
-fn in_store<T>(system: &mut System, f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Result<T, String>) -> Result<T, String> {
+fn in_store<T>(
+    system: &mut System,
+    f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Result<T, String>,
+) -> Result<T, String> {
     let s = system.storage.as_mut().ok_or("object store not open")?;
     let qsys = s.qsys.ok_or("object store not initialized")?;
     crate::svc::db::with_txn(&mut s.store, |txn| f(txn, qsys))
 }
 
-fn lookup(txn: &mut Txn<'_>, lib: ObjectId, ty: u16, name: &str) -> Result<Option<ObjectId>, String> {
+fn lookup(
+    txn: &mut Txn<'_>,
+    lib: ObjectId,
+    ty: u16,
+    name: &str,
+) -> Result<Option<ObjectId>, String> {
     let n = Name::parse(name).map_err(|e| format!("CPD0074 {e}"))?;
     store::obj::library::Library::load(txn, lib)
         .and_then(|l| l.lookup(txn, ty, n))
@@ -102,10 +110,12 @@ pub fn config(system: &mut System) -> Config {
         let Some(id) = lookup(txn, qsys, types::DTAARA, CONFIG)? else {
             return Ok(Config::default());
         };
-        Ok(match store::obj::dtaara::read(txn, id).map_err(|e| e.to_string())? {
-            store::obj::dtaara::DataAreaValue::Char(t) => Config::decode(&t),
-            _ => Config::default(),
-        })
+        Ok(
+            match store::obj::dtaara::read(txn, id).map_err(|e| e.to_string())? {
+                store::obj::dtaara::DataAreaValue::Char(t) => Config::decode(&t),
+                _ => Config::default(),
+            },
+        )
     })
     .unwrap_or_default()
 }
@@ -136,7 +146,12 @@ pub fn save_config(system: &mut System, c: &Config) -> Result<(), String> {
 }
 
 /// Library `name`, created when it is missing.
-fn ensure_library(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, system: &str) -> Result<ObjectId, String> {
+fn ensure_library(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    name: &str,
+    system: &str,
+) -> Result<ObjectId, String> {
     if let Some(id) = lookup(txn, qsys, types::LIB, name)? {
         return Ok(id);
     }
@@ -184,7 +199,11 @@ pub fn start(system: &mut System, colprf: &str, cycle: bool) -> Result<String, S
             let r = release::RELEASE;
             format!("V{}R{}M{}", r.v, r.r, r.m)
         },
-        dbf_library: if cfg.create_files { cfg.library.clone() } else { String::new() },
+        dbf_library: if cfg.create_files {
+            cfg.library.clone()
+        } else {
+            String::new()
+        },
         cycle,
     };
     let payload = mgtcol::new_payload(&header);
@@ -196,7 +215,9 @@ pub fn start(system: &mut System, colprf: &str, cycle: bool) -> Result<String, S
         expire(txn, l, retention, now)?;
         let n = Name::parse(&name).map_err(|e| e.to_string())?;
         if lookup(txn, l, types::MGTCOL, &name)?.is_some() {
-            return Err(format!("CPFB993 Management collection {name} exists in {lib}."));
+            return Err(format!(
+                "CPFB993 Management collection {name} exists in {lib}."
+            ));
         }
         wm::obj::create_attr(
             txn,
@@ -215,7 +236,11 @@ pub fn start(system: &mut System, colprf: &str, cycle: bool) -> Result<String, S
     })?;
     let every = Duration::from_secs(u64::from(cfg.interval.max(1)));
     let cycle_at = cycle.then(|| {
-        let hh: u64 = cfg.cycle_time.get(..2).and_then(|h| h.parse().ok()).unwrap_or(0);
+        let hh: u64 = cfg
+            .cycle_time
+            .get(..2)
+            .and_then(|h| h.parse().ok())
+            .unwrap_or(0);
         let hours = started / 3600;
         let mut at = hours - hours % 24 + hh;
         while at <= hours {
@@ -238,7 +263,12 @@ pub fn start(system: &mut System, colprf: &str, cycle: bool) -> Result<String, S
 }
 
 /// Collections in `lib` older than `retention` seconds, deleted.
-fn expire(txn: &mut Txn<'_>, lib: ObjectId, retention: Option<u64>, now: u64) -> Result<(), String> {
+fn expire(
+    txn: &mut Txn<'_>,
+    lib: ObjectId,
+    retention: Option<u64>,
+    now: u64,
+) -> Result<(), String> {
     let Some(keep) = retention else {
         return Ok(());
     };
@@ -253,17 +283,30 @@ fn expire(txn: &mut Txn<'_>, lib: ObjectId, retention: Option<u64>, now: u64) ->
 
 /// Append `bytes` to the payload of object `id` and patch its head:
 /// the interval count and, when ending, the end time.
-fn append(txn: &mut Txn<'_>, id: ObjectId, bytes: &[u8], count: u32, ended: Option<u64>) -> Result<(), String> {
+fn append(
+    txn: &mut Txn<'_>,
+    id: ObjectId,
+    bytes: &[u8],
+    count: u32,
+    ended: Option<u64>,
+) -> Result<(), String> {
     let (space, _) = Space::load(txn, id).map_err(|e| e.to_string())?;
     let head = space.read(txn, 0, 4).map_err(|e| e.to_string())?;
-    let len = u64::from(u32::from_le_bytes(head[..4].try_into().expect("four bytes")));
+    let len = u64::from(u32::from_le_bytes(
+        head[..4].try_into().expect("four bytes"),
+    ));
     let new_len = len + bytes.len() as u64;
     let space = Space::ensure(txn, id, 4 + new_len, 0).map_err(|e| e.to_string())?;
     if !bytes.is_empty() {
-        space.write(txn, 4 + len, bytes).map_err(|e| e.to_string())?;
+        space
+            .write(txn, 4 + len, bytes)
+            .map_err(|e| e.to_string())?;
     }
-    let total = u32::try_from(new_len).map_err(|_| "management collection over 4 GiB".to_string())?;
-    space.write(txn, 0, &total.to_le_bytes()).map_err(|e| e.to_string())?;
+    let total =
+        u32::try_from(new_len).map_err(|_| "management collection over 4 GiB".to_string())?;
+    space
+        .write(txn, 0, &total.to_le_bytes())
+        .map_err(|e| e.to_string())?;
     space
         .write(txn, 4 + mgtcol::OFF_COUNT as u64, &count.to_be_bytes())
         .map_err(|e| e.to_string())?;
@@ -342,9 +385,21 @@ pub fn tick(system: &mut System) {
         if let Err(e) = record(system, None) {
             eprintln!("qsstg: Collection Services: {e}");
         }
-        let cycle = system.stats.perf.active.as_ref().and_then(|a| a.cycle_at).is_some_and(|h| local_now(system) / 3600 >= h);
+        let cycle = system
+            .stats
+            .perf
+            .active
+            .as_ref()
+            .and_then(|a| a.cycle_at)
+            .is_some_and(|h| local_now(system) / 3600 >= h);
         if cycle {
-            let prf = system.stats.perf.active.as_ref().map(|a| a.header.profile.clone()).unwrap_or_default();
+            let prf = system
+                .stats
+                .perf
+                .active
+                .as_ref()
+                .map(|a| a.header.profile.clone())
+                .unwrap_or_default();
             let _ = end(system, true);
             if let Err(e) = start(system, &prf, true) {
                 eprintln!("qsstg: Collection Services: {e}");
@@ -363,7 +418,12 @@ fn adjust_tick(system: &mut System) {
         system.stats.perf.adjust = None;
         return;
     }
-    let due = system.stats.perf.adjust.as_ref().is_none_or(|(at, _)| at.elapsed() >= ADJUST_EVERY);
+    let due = system
+        .stats
+        .perf
+        .adjust
+        .as_ref()
+        .is_none_or(|(at, _)| at.elapsed() >= ADJUST_EVERY);
     if !due {
         return;
     }
@@ -404,8 +464,14 @@ fn apply(system: &mut System, i: &Interval) {
         .iter()
         .filter(|p| p.name.starts_with('*'))
         .map(|p| {
-            let (priority, min_pct, max_pct, fault_min, fault_thread, fault_max) = perf::adjust::defaults(&p.name);
-            let threads: u32 = i.jobs.iter().filter(|j| j.pool == p.number).map(|j| j.threads).sum();
+            let (priority, min_pct, max_pct, fault_min, fault_thread, fault_max) =
+                perf::adjust::defaults(&p.name);
+            let threads: u32 = i
+                .jobs
+                .iter()
+                .filter(|j| j.pool == p.number)
+                .map(|j| j.threads)
+                .sum();
             perf::adjust::Pool {
                 name: p.name.clone(),
                 size_kb: p.size_kb,
@@ -432,7 +498,11 @@ fn apply(system: &mut System, i: &Interval) {
     // (QWCSHRPOOL) stay as CHGSHRPOOL left them.
     for c in &changes {
         system.pools.define(&c.name, c.size_kb, c.actlvl);
-        system.stats.perf.adjusted.insert(c.name.clone(), (c.size_kb, c.actlvl));
+        system
+            .stats
+            .perf
+            .adjusted
+            .insert(c.name.clone(), (c.size_kb, c.actlvl));
         let dir = stats::pool_dir(&c.name);
         let _ = std::fs::write(format!("{dir}/memory.high"), (c.size_kb * 1024).to_string());
     }
@@ -451,7 +521,8 @@ pub fn check(system: &System) -> Option<(String, String, u32)> {
 /// Collection `lib/name` read back.
 pub fn read(system: &mut System, lib: &str, name: &str) -> Result<Collection, String> {
     in_store(system, |txn, qsys| {
-        let l = lookup(txn, qsys, types::LIB, lib)?.ok_or_else(|| format!("CPF2110 Library {lib} not found."))?;
+        let l = lookup(txn, qsys, types::LIB, lib)?
+            .ok_or_else(|| format!("CPF2110 Library {lib} not found."))?;
         let id = lookup(txn, l, types::MGTCOL, name)?
             .ok_or_else(|| format!("CPFB995 Management collection {name} not found in {lib}."))?;
         let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
@@ -471,7 +542,9 @@ pub fn write_files(
     replace: bool,
 ) -> Result<usize, String> {
     let have = profile::of_mask(c.header.categories);
-    let cats: Vec<Category> = cats.map_or(have.clone(), |w| w.iter().copied().filter(|x| have.contains(x)).collect());
+    let cats: Vec<Category> = cats.map_or(have.clone(), |w| {
+        w.iter().copied().filter(|x| have.contains(x)).collect()
+    });
     let mut files: Vec<&str> = vec!["QAPMCONF"];
     for cat in &cats {
         files.extend(cat.files());

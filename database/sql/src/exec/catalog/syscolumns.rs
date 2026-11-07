@@ -118,7 +118,13 @@ fn shape(f: &FieldDef) -> Shape {
         // An SQL integer's length is its bytes, its precision its digits.
         DataType::Binary => {
             let bytes = u64::from(f.data_len());
-            num(if f.int_range { bytes } else { len }, Some(dec), len, 10, bytes)
+            num(
+                if f.int_range { bytes } else { len },
+                Some(dec),
+                len,
+                10,
+                bytes,
+            )
         }
         DataType::Packed => num(len, Some(dec), len, 10, len / 2 + 1),
         DataType::Zoned => num(len, Some(dec), len, 10, len),
@@ -143,7 +149,16 @@ fn shape(f: &FieldDef) -> Shape {
         DataType::Blob => chr(Some(65535), len + 29, len),
         DataType::Clob => chr(ccsid(37), len + 29, len),
         DataType::Dbclob => chr(ccsid(1200), len / 2 + 14, 2 * len),
-        DataType::Boolean => Shape { length: 1, scale: None, precision: None, radix: None, ccsid: None, storage: 1, chars: None, datetime: None },
+        DataType::Boolean => Shape {
+            length: 1,
+            scale: None,
+            precision: None,
+            radix: None,
+            ccsid: None,
+            storage: 1,
+            chars: None,
+            datetime: None,
+        },
     }
 }
 
@@ -158,7 +173,10 @@ fn heading(f: &FieldDef) -> Value {
     for (i, line) in f.colhdg.iter().enumerate() {
         out.push_str(line);
         if i + 1 < f.colhdg.len() {
-            out.extend(std::iter::repeat_n(' ', 20usize.saturating_sub(line.chars().count())));
+            out.extend(std::iter::repeat_n(
+                ' ',
+                20usize.saturating_sub(line.chars().count()),
+            ));
         }
     }
     let out = out.trim_end();
@@ -169,7 +187,9 @@ fn heading(f: &FieldDef) -> Value {
 fn default_text(d: &DefaultValue) -> String {
     let t = super::sys::default_text(d);
     match d {
-        DefaultValue::Expr(_) => t.strip_prefix("CURRENT ").map_or(t.clone(), |r| format!("CURRENT_{r}")),
+        DefaultValue::Expr(_) => t
+            .strip_prefix("CURRENT ")
+            .map_or(t.clone(), |r| format!("CURRENT_{r}")),
         _ => t,
     }
 }
@@ -199,8 +219,16 @@ pub(super) fn rows(
         let view = kind == "V";
         let by_sql = m.kind.is_some();
         // Columns of a distinct type.
-        let typed = if crate::exec::udt::registry::any() { crate::exec::udt::column::of(txn, d.id)? } else { Vec::new() };
-        let generated = if by_sql { db::sqlinf::seq::columns(txn, d.id).unwrap_or_default() } else { Vec::new() };
+        let typed = if crate::exec::udt::registry::any() {
+            crate::exec::udt::column::of(txn, d.id)?
+        } else {
+            Vec::new()
+        };
+        let generated = if by_sql {
+            db::sqlinf::seq::columns(txn, d.id).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
         let updatable = if view {
             match crate::exec::view::definition(txn, d.id) {
                 Some((v, _)) => !v.read_only,
@@ -242,7 +270,11 @@ pub(super) fn rows(
                 s(m.sql.clone()),
                 s(owner.clone()),
                 n(i as u64 + 1),
-                s(if udt.is_some() { "DISTINCT".into() } else { super::sys::data_type_name(f) }),
+                s(if udt.is_some() {
+                    "DISTINCT".into()
+                } else {
+                    super::sys::data_type_name(f)
+                }),
                 n(sh.length),
                 opt(sh.scale),
                 s(if f.allow_null { "Y" } else { "N" }),
@@ -259,11 +291,16 @@ pub(super) fn rows(
                 opt(sh.chars.map(|c| c.1)),
                 opt(sh.radix),
                 opt(sh.datetime),
-                f.text.clone().filter(|t| !t.trim().is_empty()).map_or(Value::Null, |t| s(t.trim_end())),
+                f.text
+                    .clone()
+                    .filter(|t| !t.trim().is_empty())
+                    .map_or(Value::Null, |t| s(t.trim_end())),
                 s(f.name.to_string()),
                 s(d.name().to_string()),
                 s(lib.to_string()),
-                udt.map_or(Value::Null, |c| s(c.library.to_string().trim_end().to_string())),
+                udt.map_or(Value::Null, |c| {
+                    s(c.library.to_string().trim_end().to_string())
+                }),
                 udt.map_or(Value::Null, |c| s(c.name.clone())),
                 s(if identity.is_some() { "YES" } else { "NO" }),
                 generation.map_or(Value::Null, |a| s(if a { "ALWAYS" } else { "BY DEFAULT" })),
@@ -275,7 +312,11 @@ pub(super) fn rows(
                 identity.map_or(Value::Null, |a| n(u64::from(a.cache))),
                 identity.map_or(Value::Null, |a| yes_no(a.order)),
                 Value::Null,
-                s(if g.is_some_and(|g| g.hidden) { "I" } else { "N" }),
+                s(if g.is_some_and(|g| g.hidden) {
+                    "I"
+                } else {
+                    "N"
+                }),
                 s("N"),
             ]);
         }

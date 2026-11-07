@@ -51,23 +51,62 @@ fn eval_shows_rpg_names_at_breakpoints() {
     let case = Case::parse("DBGRPG", SOURCE);
     let c = rpg::compile(&case, None);
     assert!(c.created, "{}", rpg::notes(&c));
-    assert!(c.qir.contains("debug.var \"REC.ID\""), "subfields are named");
+    assert!(
+        c.qir.contains("debug.var \"REC.ID\""),
+        "subfields are named"
+    );
     let m = build::module_object(&c.qir, "DBGRPG").expect("a module");
-    assert!(m.debug_code.is_some(), "a debug view asks for the debug variant");
+    assert!(
+        m.debug_code.is_some(),
+        "a debug view asks for the debug variant"
+    );
     let p = build::Objects::default()
-        .bind("DBGRPG", PgmKind::Pgm, vec![m], &[], &[], ActGrpAttr::Caller)
+        .bind(
+            "DBGRPG",
+            PgmKind::Pgm,
+            vec![m],
+            &[],
+            &[],
+            ActGrpAttr::Caller,
+        )
         .expect("a program");
     let mut src = MemSource::default();
     src.add("QGPL", p);
     let mut job = Job::boxed(Box::new(src));
     qrpgrt::install(&mut job);
-    let line = |text: &str| u32::try_from(SOURCE.lines().position(|l| l.trim() == text).expect("a line") + 1).unwrap();
-    let (at_bump, at_amt, at_ret) = (line("count += 10;"), line("amt = twice(amt);"), line("return v * 2;"));
+    let line = |text: &str| {
+        u32::try_from(
+            SOURCE
+                .lines()
+                .position(|l| l.trim() == text)
+                .expect("a line")
+                + 1,
+        )
+        .unwrap()
+    };
+    let (at_bump, at_amt, at_ret) = (
+        line("count += 10;"),
+        line("amt = twice(amt);"),
+        line("return v * 2;"),
+    );
     let seen: Rc<RefCell<Stops>> = Rc::default();
     let s = seen.clone();
     job.set_debug_hook(Box::new(move |j: &mut Job, stop: &Stop| {
-        let names = ["COUNT", "NAME", "AMT", "LIST", "LIST(2)", "REC", "REC.LABEL", "V", "LOCAL"];
-        let vals = names.iter().map(|n| format!("{n}={}", j.eval(n).unwrap_or_else(|_| "-".into()))).collect();
+        let names = [
+            "COUNT",
+            "NAME",
+            "AMT",
+            "LIST",
+            "LIST(2)",
+            "REC",
+            "REC.LABEL",
+            "V",
+            "LOCAL",
+        ];
+        let vals = names
+            .iter()
+            .map(|n| format!("{n}={}", j.eval(n).unwrap_or_else(|_| "-".into())))
+            .collect();
         s.borrow_mut().push((stop.stmt, vals));
         Resume::Go
     }));
@@ -77,18 +116,33 @@ fn eval_shows_rpg_names_at_breakpoints() {
     }
     job.call_program("DBGRPG", "QGPL", &[]).expect("it runs");
     let seen = seen.borrow();
-    let at = |l: u32| &seen.iter().find(|(s, _)| *s == l).unwrap_or_else(|| panic!("no stop at {l}: {seen:?}")).1;
+    let at = |l: u32| {
+        &seen
+            .iter()
+            .find(|(s, _)| *s == l)
+            .unwrap_or_else(|| panic!("no stop at {l}: {seen:?}"))
+            .1
+    };
     let bump = at(at_bump);
     assert!(bump.contains(&"COUNT=4".to_string()), "{bump:?}");
     assert!(bump.contains(&"NAME='QUARTZ  '".to_string()), "{bump:?}");
     assert!(bump.contains(&"LIST(2)='ab'".to_string()), "{bump:?}");
-    assert!(bump.contains(&"LIST=LIST(1) = 'ab'\nLIST(2) = 'ab'\nLIST(3) = 'ab'".to_string()), "{bump:?}");
-    assert!(bump.contains(&"REC=REC.ID = 42\nREC.LABEL = 'rec '".to_string()), "{bump:?}");
+    assert!(
+        bump.contains(&"LIST=LIST(1) = 'ab'\nLIST(2) = 'ab'\nLIST(3) = 'ab'".to_string()),
+        "{bump:?}"
+    );
+    assert!(
+        bump.contains(&"REC=REC.ID = 42\nREC.LABEL = 'rec '".to_string()),
+        "{bump:?}"
+    );
     let amt = at(at_amt);
     assert!(amt.contains(&"COUNT=14".to_string()), "{amt:?}");
     assert!(amt.contains(&"AMT=12.50".to_string()), "{amt:?}");
     let ret = at(at_ret);
     assert!(ret.contains(&"V=12.50".to_string()), "{ret:?}");
     assert!(ret.contains(&"LOCAL='loc'".to_string()), "{ret:?}");
-    assert!(ret.contains(&"COUNT=14".to_string()), "globals are seen in a subprocedure: {ret:?}");
+    assert!(
+        ret.contains(&"COUNT=14".to_string()),
+        "globals are seen in a subprocedure: {ret:?}"
+    );
 }

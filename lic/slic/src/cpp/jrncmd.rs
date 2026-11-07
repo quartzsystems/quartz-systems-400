@@ -29,7 +29,11 @@ fn failed(name: &str, e: &str) -> CmdReply {
 
 fn qualified(parms: &Parms, kwd: &str) -> String {
     let (n, l) = parms.qual(kwd);
-    if l.is_empty() || l == "*LIBL" { n } else { format!("{l}/{n}") }
+    if l.is_empty() || l == "*LIBL" {
+        n
+    } else {
+        format!("{l}/{n}")
+    }
 }
 
 /// `CMPJRNIMG`: the differences printed to `QPCMPIMG`, `CPC7029`.
@@ -37,7 +41,19 @@ fn cmpjrnimg(system: &mut System, parms: &Parms) -> CmdReply {
     const NAME: &str = "CMPJRNIMG";
     // The receiver range and entry selection beyond the member and
     // record are the journal's whole chain here.
-    for k in ["FROMENTLRG", "FROMENT", "FROMTIME", "TOENTLRG", "TOENT", "TOTIME", "JOB", "PGM", "USRPRF", "CCIDLRG", "CMTCYCID"] {
+    for k in [
+        "FROMENTLRG",
+        "FROMENT",
+        "FROMTIME",
+        "TOENTLRG",
+        "TOENT",
+        "TOTIME",
+        "JOB",
+        "PGM",
+        "USRPRF",
+        "CCIDLRG",
+        "CMTCYCID",
+    ] {
         if parms.specified(k) {
             // BLOCKED(rel): CMPJRNIMG's entry selection (sequence numbers,
             // times, job, program, user, commit cycle) is not taken yet.
@@ -51,13 +67,20 @@ fn cmpjrnimg(system: &mut System, parms: &Parms) -> CmdReply {
     let file = qualified(parms, "FILE");
     let mbr = parms.name("MBR");
     let after = parms.name("CMPOPT") == "*AFTER";
-    let rcd = parms.int("RCDNBR").and_then(|n| u64::try_from(n).ok()).filter(|n| *n > 0);
+    let rcd = parms
+        .int("RCDNBR")
+        .and_then(|n| u64::try_from(n).ok())
+        .filter(|n| *n > 0);
     let hex = parms.name("OUTFMT") == "*HEX";
     let (changes, compared) = match journal::cmpjrnimg(system, (&file, &mbr), after, rcd) {
         Ok(r) => r,
         Err(e) => return failed(NAME, &e),
     };
-    let member = if mbr.is_empty() { "*FIRST".to_string() } else { mbr };
+    let member = if mbr.is_empty() {
+        "*FIRST".to_string()
+    } else {
+        mbr
+    };
     let shown = |b: &[u8]| -> String {
         if hex {
             b.iter().fold(String::new(), |mut s, x| {
@@ -76,10 +99,17 @@ fn cmpjrnimg(system: &mut System, parms: &Parms) -> CmdReply {
         String::new(),
     ];
     for c in &changes {
-        let (rrn, first, second) = (c.rrn.to_string(), c.seqs.0.to_string(), c.seqs.1.to_string());
+        let (rrn, first, second) = (
+            c.rrn.to_string(),
+            c.seqs.0.to_string(),
+            c.seqs.1.to_string(),
+        );
         lines.push(txt(system, "TXT0B22", &[&rrn, &first, &second]));
         for (off, before, after) in &c.runs {
-            lines.push(format!("  {}", txt(system, "TXT0B23", &[&off.to_string(), &shown(before)])));
+            lines.push(format!(
+                "  {}",
+                txt(system, "TXT0B23", &[&off.to_string(), &shown(before)])
+            ));
             lines.push(format!("  {}", txt(system, "TXT0B24", &[&shown(after)])));
         }
     }
@@ -87,14 +117,25 @@ fn cmpjrnimg(system: &mut System, parms: &Parms) -> CmdReply {
         lines.push(txt(system, "TXT0B25", &[]));
     }
     let mut reply = match crate::svc::security::print(system, "QPCMPIMG", &lines) {
-        Ok(t) => CmdReply { text: t, ..CmdReply::default() },
+        Ok(t) => CmdReply {
+            text: t,
+            ..CmdReply::default()
+        },
         Err(e) => return failed(NAME, &e),
     };
     let count = compared.to_string();
     reply.messages.push(CmdMsg {
         msgid: "CPC7029".into(),
         kind: 4,
-        data: cmd::error::data(&[("", 10), ("", 10), (&member, 10), ("", 10), ("", 10), ("", 10), (&count, 10)]),
+        data: cmd::error::data(&[
+            ("", 10),
+            ("", 10),
+            (&member, 10),
+            ("", 10),
+            ("", 10),
+            ("", 10),
+            (&count, 10),
+        ]),
     });
     reply
 }
@@ -106,22 +147,31 @@ fn txt(system: &mut System, id: &str, values: &[&str]) -> String {
 /// The job's data (request 270): `JRNE`, the entries of the `dspjrn`
 /// filter line `args[0]`, each a row `REC` (hex), and `LAST`, the last
 /// sequence number.
-pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<stg::proto::Sys2Data, String>> {
+pub fn panel(
+    system: &mut System,
+    what: &str,
+    args: &[String],
+) -> Option<Result<stg::proto::Sys2Data, String>> {
     if what != "JRNE" {
         return None;
     }
     let line = args.first().cloned().unwrap_or_default();
-    Some(journal::type1_entries(system, &line).map(|(records, last)| {
-        let rows = records
-            .iter()
-            .map(|r| {
-                let hex = r.iter().fold(String::new(), |mut s, b| {
-                    let _ = write!(s, "{b:02X}");
-                    s
-                });
-                vec![("REC".to_string(), hex)]
-            })
-            .collect();
-        (vec![("LAST".to_string(), last.to_string())], vec![("ENTRIES".to_string(), rows)])
-    }))
+    Some(
+        journal::type1_entries(system, &line).map(|(records, last)| {
+            let rows = records
+                .iter()
+                .map(|r| {
+                    let hex = r.iter().fold(String::new(), |mut s, b| {
+                        let _ = write!(s, "{b:02X}");
+                        s
+                    });
+                    vec![("REC".to_string(), hex)]
+                })
+                .collect();
+            (
+                vec![("LAST".to_string(), last.to_string())],
+                vec![("ENTRIES".to_string(), rows)],
+            )
+        }),
+    )
 }

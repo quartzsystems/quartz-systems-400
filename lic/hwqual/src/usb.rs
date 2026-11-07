@@ -22,17 +22,25 @@ pub struct Stick {
 
 /// Whether block device `dev` (`class/block/<name>`) sits on a USB bus.
 fn on_usb(sys: &Path, name: &str) -> bool {
-    fs::canonicalize(sys.join("class/block").join(name)).is_ok_and(|p| p.components().any(|c| c.as_os_str().to_string_lossy().starts_with("usb")))
+    fs::canonicalize(sys.join("class/block").join(name)).is_ok_and(|p| {
+        p.components()
+            .any(|c| c.as_os_str().to_string_lossy().starts_with("usb"))
+    })
 }
 
 /// Whether the first sector holds a FAT boot sector.
 fn fat_at(dev: &Path) -> bool {
     let mut b = [0u8; 512];
-    let Ok(mut f) = fs::File::open(dev) else { return false };
+    let Ok(mut f) = fs::File::open(dev) else {
+        return false;
+    };
     if f.read_exact(&mut b).is_err() || b[510..512] != [0x55, 0xAA] {
         return false;
     }
-    &b[82..87] == b"FAT32" || &b[54..59] == b"FAT16" || &b[54..59] == b"FAT12" || &b[54..57] == b"FAT"
+    &b[82..87] == b"FAT32"
+        || &b[54..59] == b"FAT16"
+        || &b[54..59] == b"FAT12"
+        || &b[54..57] == b"FAT"
 }
 
 /// The USB sticks with a FAT file system, by kernel name: each disk's
@@ -40,20 +48,36 @@ fn fat_at(dev: &Path) -> bool {
 #[must_use]
 pub fn sticks(sys: &Path, dev: &Path) -> Vec<Stick> {
     let mut names: Vec<String> = fs::read_dir(sys.join("class/block"))
-        .map(|rd| rd.filter_map(Result::ok).map(|e| e.file_name().to_string_lossy().into_owned()).collect())
+        .map(|rd| {
+            rd.filter_map(Result::ok)
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .collect()
+        })
         .unwrap_or_default();
     names.sort();
     let mut v = Vec::new();
-    for disk in names.iter().filter(|n| !sys.join("class/block").join(n).join("partition").exists()) {
+    for disk in names
+        .iter()
+        .filter(|n| !sys.join("class/block").join(n).join("partition").exists())
+    {
         if !on_usb(sys, disk) {
             continue;
         }
-        let model = fs::read_to_string(sys.join("class/block").join(disk).join("device/model")).unwrap_or_default().trim().to_string();
-        let parts: Vec<&String> = names.iter().filter(|p| p.starts_with(disk.as_str()) && *p != disk).collect();
+        let model = fs::read_to_string(sys.join("class/block").join(disk).join("device/model"))
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        let parts: Vec<&String> = names
+            .iter()
+            .filter(|p| p.starts_with(disk.as_str()) && *p != disk)
+            .collect();
         let tries: Vec<&String> = if parts.is_empty() { vec![disk] } else { parts };
         for p in tries {
             if fat_at(&dev.join(p)) {
-                v.push(Stick { name: p.clone(), model: model.clone() });
+                v.push(Stick {
+                    name: p.clone(),
+                    model: model.clone(),
+                });
             }
         }
     }
@@ -66,13 +90,15 @@ pub fn sticks(sys: &Path, dev: &Path) -> Vec<Stick> {
 /// # Errors
 /// The volume is not FAT, or the write failed.
 pub fn write_to<D: Read + Write + Seek>(disk: D, file: &str, text: &str) -> Result<(), String> {
-    let fs = fatfs::FileSystem::new(disk, fatfs::FsOptions::new()).map_err(|e| format!("not a FAT volume: {e}"))?;
+    let fs = fatfs::FileSystem::new(disk, fatfs::FsOptions::new())
+        .map_err(|e| format!("not a FAT volume: {e}"))?;
     {
         let root = fs.root_dir();
         let mut f = root.create_file(file).map_err(|e| e.to_string())?;
         f.truncate().map_err(|e| e.to_string())?;
         // DOS line ends, so any machine's editor shows the lines.
-        f.write_all(text.replace('\n', "\r\n").as_bytes()).map_err(|e| e.to_string())?;
+        f.write_all(text.replace('\n', "\r\n").as_bytes())
+            .map_err(|e| e.to_string())?;
         f.flush().map_err(|e| e.to_string())?;
     }
     fs.unmount().map_err(|e| e.to_string())
@@ -84,9 +110,14 @@ pub fn write_to<D: Read + Write + Seek>(disk: D, file: &str, text: &str) -> Resu
 /// # Errors
 /// The volume is not FAT, or has no such file.
 pub fn read_from<D: Read + Write + Seek>(disk: D, file: &str) -> Result<String, String> {
-    let fs = fatfs::FileSystem::new(disk, fatfs::FsOptions::new()).map_err(|e| format!("not a FAT volume: {e}"))?;
+    let fs = fatfs::FileSystem::new(disk, fatfs::FsOptions::new())
+        .map_err(|e| format!("not a FAT volume: {e}"))?;
     let mut s = String::new();
-    fs.root_dir().open_file(file).map_err(|e| format!("{file}: {e}"))?.read_to_string(&mut s).map_err(|e| e.to_string())?;
+    fs.root_dir()
+        .open_file(file)
+        .map_err(|e| format!("{file}: {e}"))?
+        .read_to_string(&mut s)
+        .map_err(|e| e.to_string())?;
     Ok(s)
 }
 
@@ -97,12 +128,25 @@ pub fn read_from<D: Read + Write + Seek>(disk: D, file: &str) -> Result<String, 
 /// No stick, or the write failed.
 pub fn write_report(sys: &Path, dev: &Path, text: &str) -> Result<String, String> {
     let Some(s) = sticks(sys, dev).into_iter().next() else {
-        return Err("No USB device with a FAT file system was found. Insert one and try again.".into());
+        return Err(
+            "No USB device with a FAT file system was found. Insert one and try again.".into(),
+        );
     };
-    let f = OpenOptions::new().read(true).write(true).open(dev.join(&s.name)).map_err(|e| format!("{}: {e}", s.name))?;
+    let f = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(dev.join(&s.name))
+        .map_err(|e| format!("{}: {e}", s.name))?;
     write_to(f, crate::USB_FILE, text)?;
-    let on = if s.model.is_empty() { s.name.clone() } else { format!("{} ({})", s.name, s.model) };
-    Ok(format!("The report was written to {} on {on}.", crate::USB_FILE))
+    let on = if s.model.is_empty() {
+        s.name.clone()
+    } else {
+        format!("{} ({})", s.name, s.model)
+    };
+    Ok(format!(
+        "The report was written to {} on {on}.",
+        crate::USB_FILE
+    ))
 }
 
 #[cfg(test)]
@@ -122,7 +166,11 @@ mod tests {
         img.set_position(0);
         let fs = fatfs::FileSystem::new(&mut img, fatfs::FsOptions::new()).unwrap();
         let mut s = String::new();
-        fs.root_dir().open_file("QSHWQUAL.TXT").unwrap().read_to_string(&mut s).unwrap();
+        fs.root_dir()
+            .open_file("QSHWQUAL.TXT")
+            .unwrap()
+            .read_to_string(&mut s)
+            .unwrap();
         assert_eq!(s, "short\r\n");
         drop(fs);
         let p = std::env::temp_dir().join(format!("hwqual-fat-{}", std::process::id()));

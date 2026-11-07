@@ -46,7 +46,11 @@ impl Suite {
         let id = problem_id(&all, "QS74 severe test")
             .ok_or_else(|| format!("no problem for the break message:\n{all}"))?;
         let one = s.command(&format!("dspprb PRBID({id})"), CMD)?;
-        want(&one, "DSPPRB of the problem", &[&id, "QS74 severe test", "MSG/*IMMED", "type 1"])?;
+        want(
+            &one,
+            "DSPPRB of the problem",
+            &[&id, "QS74 severe test", "MSG/*IMMED", "type 1"],
+        )?;
         // A formatted object dump to QPSRVDMP logs a problem too.
         let dmp = s.command("dmpobj OBJ(QGPL/QDFTJOBD) OBJTYPE(*JOBD)", CMD)?;
         want(&dmp, "DMPOBJ", &["printed", "problem"])?;
@@ -61,9 +65,17 @@ impl Suite {
         let dumps = s.command("svc.sysdump list", CMD)?;
         want(&dumps, "dump list", &[&name])?;
         let shown = s.command(&format!("svc.sysdump show {name}"), CMD)?;
-        want(&shown, "dump contents", &["Job table", "Licensed Internal Code log"])?;
+        want(
+            &shown,
+            "dump contents",
+            &["Job table", "Licensed Internal Code log"],
+        )?;
         let all = s.command("dspprb", CMD)?;
-        want(&all, "problems after the dumps", &[&format!("DUMP/{name}"), "DUMP/QGPL/QDFTJOBD"])?;
+        want(
+            &all,
+            "problems after the dumps",
+            &[&format!("DUMP/{name}"), "DUMP/QGPL/QDFTJOBD"],
+        )?;
         // A job trace of the console's own job.
         let st = s.command("strtrc SSNID(T74) JOB(*)", CMD)?;
         want(&st, "STRTRC", &["T74", "started"])?;

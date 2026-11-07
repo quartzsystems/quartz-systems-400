@@ -91,7 +91,12 @@ fn another_jobs_locks() {
         .lock_range(&b, fb, F_SETLK, RangeKind::Write, SEEK_SET, 0, 4)
         .unwrap();
     // Job 1 sees job 2's open and its range lock.
-    let seen = Direct { ifs: &s.ifs, cx: &a }.job_locks(2, "QSECOFR").unwrap();
+    let seen = Direct {
+        ifs: &s.ifs,
+        cx: &a,
+    }
+    .job_locks(2, "QSECOFR")
+    .unwrap();
     assert!(seen.iter().any(|(_, l)| matches!(l.what, Held::Open(..))));
     assert!(seen.iter().all(|(_, l)| l.owner == Owner(2)));
     assert!(seen.len() >= 2);
@@ -99,7 +104,12 @@ fn another_jobs_locks() {
     let bob = user("BOB");
     let c = s.cx(&bob, 3);
     assert_eq!(
-        Direct { ifs: &s.ifs, cx: &c }.job_locks(2, "QSECOFR").unwrap_err(),
+        Direct {
+            ifs: &s.ifs,
+            cx: &c
+        }
+        .job_locks(2, "QSECOFR")
+        .unwrap_err(),
         Errno::EPERM
     );
 }

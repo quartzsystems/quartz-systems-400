@@ -34,7 +34,12 @@ impl Timestamp {
     /// A timestamp of precision 6.
     #[must_use]
     pub fn new(date: Date, time: Time, picos: u64) -> Self {
-        Self { date, time, picos, precision: 6 }
+        Self {
+            date,
+            time,
+            picos,
+            precision: 6,
+        }
     }
 
     /// Midnight of a date.
@@ -53,7 +58,8 @@ impl Timestamp {
             return None;
         }
         let date = Date::parse(&t[..10], DateFmt::Iso)?;
-        let time = Time::parse(&t[11..19], TimeFmt::Hms).or_else(|| Time::parse(&t[11..19], TimeFmt::Iso))?;
+        let time = Time::parse(&t[11..19], TimeFmt::Hms)
+            .or_else(|| Time::parse(&t[11..19], TimeFmt::Iso))?;
         let (picos, digits) = match t.get(19..) {
             None | Some("") => (0, 0),
             Some(f) => {
@@ -62,17 +68,28 @@ impl Timestamp {
                     return None;
                 }
                 let n: u64 = if f.is_empty() { 0 } else { f.parse().ok()? };
-                (n * 10u64.pow(12 - u32::try_from(f.len()).expect("small")), f.len())
+                (
+                    n * 10u64.pow(12 - u32::try_from(f.len()).expect("small")),
+                    f.len(),
+                )
             }
         };
-        Some(Self { date, time, picos, precision: u8::try_from(digits.max(6)).expect("small") })
+        Some(Self {
+            date,
+            time,
+            picos,
+            precision: u8::try_from(digits.max(6)).expect("small"),
+        })
     }
 
     /// As [`Self::parse`], the precision exactly the digits given.
     #[must_use]
     pub fn parse_exact(text: &str) -> Option<Self> {
         let digits = text.trim().get(20..).map_or(0, str::len);
-        Self::parse(text).map(|t| Self { precision: u8::try_from(digits.min(12)).expect("small"), ..t })
+        Self::parse(text).map(|t| Self {
+            precision: u8::try_from(digits.min(12)).expect("small"),
+            ..t
+        })
     }
 
     /// Microseconds past the second.
@@ -85,7 +102,11 @@ impl Timestamp {
     #[must_use]
     pub fn with_precision(self, p: u8) -> Self {
         let unit = 10u64.pow(12 - u32::from(p.min(12)));
-        Self { picos: self.picos / unit * unit, precision: p.min(12), ..self }
+        Self {
+            picos: self.picos / unit * unit,
+            precision: p.min(12),
+            ..self
+        }
     }
 
     /// The fraction as shown: `.` and `precision` digits, or nothing.
@@ -100,19 +121,34 @@ impl Timestamp {
     /// `yyyy-mm-dd-hh.mm.ss[.f]`, as a `Z` field holds it.
     #[must_use]
     pub fn render_field(&self) -> String {
-        format!("{}-{}{}", self.date.render(DateFmt::Iso, None), self.time.render(TimeFmt::Iso, None), self.fraction())
+        format!(
+            "{}-{}{}",
+            self.date.render(DateFmt::Iso, None),
+            self.time.render(TimeFmt::Iso, None),
+            self.fraction()
+        )
     }
 
     /// Text that is equal for equal timestamps whatever their precision.
     #[must_use]
     pub fn key(&self) -> String {
-        Self { precision: 12, ..*self }.render_field()
+        Self {
+            precision: 12,
+            ..*self
+        }
+        .render_field()
     }
 }
 
 impl fmt::Display for Timestamp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}{}", self.date.render(DateFmt::Iso, None), self.time.render(TimeFmt::Hms, None), self.fraction())
+        write!(
+            f,
+            "{} {}{}",
+            self.date.render(DateFmt::Iso, None),
+            self.time.render(TimeFmt::Hms, None),
+            self.fraction()
+        )
     }
 }
 
@@ -151,13 +187,33 @@ mod tests {
         let fine = Timestamp::parse("2026-01-02 10:20:30.123456789012").unwrap();
         assert_eq!((fine.precision, fine.picos), (12, 123_456_789_012));
         assert_eq!(fine.render_field(), "2026-01-02-10.20.30.123456789012");
-        assert_eq!(fine.with_precision(3).to_string(), "2026-01-02 10:20:30.123");
+        assert_eq!(
+            fine.with_precision(3).to_string(),
+            "2026-01-02 10:20:30.123"
+        );
         assert_eq!(fine.with_precision(0).render_field(), "2026-01-02-10.20.30");
         assert!(fine > ts);
-        assert_eq!(Timestamp::parse("2026-01-02 10:20:30").unwrap().precision, 6);
-        assert_eq!(Timestamp::parse("2026-01-02-10.20.30").unwrap().with_precision(0).precision, 0);
+        assert_eq!(
+            Timestamp::parse("2026-01-02 10:20:30").unwrap().precision,
+            6
+        );
+        assert_eq!(
+            Timestamp::parse("2026-01-02-10.20.30")
+                .unwrap()
+                .with_precision(0)
+                .precision,
+            0
+        );
         assert!(Timestamp::parse("2026-01-02 10:20:30.1234567890123").is_none());
-        assert_eq!(fine.with_precision(9), Timestamp::parse("2026-01-02 10:20:30.123456789").unwrap());
-        assert_eq!(fine.with_precision(9).key(), Timestamp::parse("2026-01-02 10:20:30.123456789000").unwrap().key());
+        assert_eq!(
+            fine.with_precision(9),
+            Timestamp::parse("2026-01-02 10:20:30.123456789").unwrap()
+        );
+        assert_eq!(
+            fine.with_precision(9).key(),
+            Timestamp::parse("2026-01-02 10:20:30.123456789000")
+                .unwrap()
+                .key()
+        );
     }
 }

@@ -461,7 +461,10 @@ fn configured_units_holding_data_pair_with_each_other() {
     };
     add_spaces(&mut store, qsys, 0, 12, 20);
     let used: Vec<u64> = store.units().iter().map(|u| u.used_pages).collect();
-    assert!(used.iter().all(|&n| n > 0), "every unit holds data: {used:?}");
+    assert!(
+        used.iter().all(|&n| n > 0),
+        "every unit holds data: {used:?}"
+    );
 
     // Unit 4 (3 from 0) leaves; then a crash before the pair forms.
     let dev3 = store.remove_unit(3).unwrap();
@@ -517,7 +520,10 @@ fn configured_units_holding_data_pair_with_each_other() {
         let halves: Vec<&Arc<MemBlockDev>> = keep.iter().map(|&i| &d[i]).collect();
         let (mut s, _) = Store::open(boxed(&halves), config()).unwrap();
         for i in 0..12 {
-            assert_eq!(read_marker(&mut s, qsys, &format!("S{i}")), format!("space {i}"));
+            assert_eq!(
+                read_marker(&mut s, qsys, &format!("S{i}")),
+                format!("space {i}")
+            );
         }
         drop(s);
     }
@@ -580,7 +586,11 @@ fn a_resume_goes_on_across_reopens_with_writes_between() {
     add_spaces(&mut store, qsys, 12, 14, 30);
     let mut res = store.resume_unit(1, &mut journal).unwrap();
     assert_eq!(res.progress().chunks_done, 5);
-    while !store.resume_step(&mut res, &mut journal, 1).unwrap().complete {
+    while !store
+        .resume_step(&mut res, &mut journal, 1)
+        .unwrap()
+        .complete
+    {
         let n = 14 + usize::try_from(res.progress().chunks_done).unwrap();
         add_spaces(&mut store, qsys, n, n + 1, 10);
     }
@@ -590,6 +600,9 @@ fn a_resume_goes_on_across_reopens_with_writes_between() {
     // Half B alone carries every space.
     let (mut s, _) = Store::open(boxed(&[&b]), config()).unwrap();
     for i in 0..14 {
-        assert_eq!(read_marker(&mut s, qsys, &format!("S{i}")), format!("space {i}"));
+        assert_eq!(
+            read_marker(&mut s, qsys, &format!("S{i}")),
+            format!("space {i}")
+        );
     }
 }

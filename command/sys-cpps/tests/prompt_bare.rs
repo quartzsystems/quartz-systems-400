@@ -27,6 +27,9 @@ fn required_parameters_wait_for_the_prompt() {
         let r = analyze(&mut env, text).unwrap_or_else(|e| panic!("{text}: {e}"));
         assert!(r.prompt, "{text}");
         let screen = Prompter::new(&r).screen().text();
-        assert!(screen.contains(&format!("({})", &text[1..])), "{text}:\n{screen}");
+        assert!(
+            screen.contains(&format!("({})", &text[1..])),
+            "{text}:\n{screen}"
+        );
     }
 }

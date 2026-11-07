@@ -56,7 +56,8 @@ fn open(rq: &Rq<'_>, path: &str) -> Result<Opened, Message> {
     }
     let data = read_all(rq, path, size)?;
     let writable = e.ccsid != BINARY && looks_text(&data) && size <= READ_ONLY;
-    let raw = decode(&data, e.ccsid).unwrap_or_else(|_| String::from_utf8_lossy(&data).into_owned());
+    let raw =
+        decode(&data, e.ccsid).unwrap_or_else(|_| String::from_utf8_lossy(&data).into_owned());
     let crlf = raw.contains("\r\n");
     let text = raw.replace("\r\n", "\n");
     Ok(Opened {
@@ -108,7 +109,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
         return rq.redirect(&browse_route(&dir));
     }
     if f.has("reset") || !o.writable {
-        return rq.redirect(&format!("/files/edit{}", qsweb::html::query(&[("path", &path)])));
+        return rq.redirect(&format!(
+            "/files/edit{}",
+            qsweb::html::query(&[("path", &path)])
+        ));
     }
     let text = f.str("t").to_string();
     if f.has("saveas") {
@@ -116,7 +120,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
     }
     if f.has("saveas_ok") {
         let to = f.str("to").trim();
-        let to = if to.starts_with('/') { super::clean(to) } else { join(&dir, to) };
+        let to = if to.starts_with('/') {
+            super::clean(to)
+        } else {
+            join(&dir, to)
+        };
         if !super::good_name(name_of(&to)) {
             let m = rq.message(Kind::Error, msgs::BAD_VALUE, &[f.str("to"), "Save as"]);
             return save_as(rq, &path, &text, vec![m]);
@@ -155,7 +163,10 @@ fn write(rq: &Rq<'_>, path: &str, text: &str, o: &Opened) -> Response {
     match rq.env().files.write(rq.user(), path, &data, ccsid) {
         Ok(()) => {
             let m = rq.message(Kind::Done, msgs::SAVED, &[path]);
-            rq.done(&format!("/files/edit{}", qsweb::html::query(&[("path", path)])), m)
+            rq.done(
+                &format!("/files/edit{}", qsweb::html::query(&[("path", path)])),
+                m,
+            )
         }
         Err(m) => {
             let m = error(rq, &m);
@@ -170,7 +181,13 @@ fn save_as(rq: &Rq<'_>, path: &str, text: &str, messages: Vec<Message>) -> Respo
     let replace = messages.iter().any(|m| m.id == msgs::FILE_EXISTS);
     let mut inner = format!(
         "<table class=\"props\" cellspacing=\"0\">\n<tr><th>Save as <span class=\"req\">*</span></th><td>{}</td></tr>\n</table>\n<input type=\"hidden\" name=\"t\" value=\"{}\">",
-        qsweb::partials::input_cmd("to", &rq.form().get("to").map_or_else(|| path.to_string(), ToString::to_string), 50),
+        qsweb::partials::input_cmd(
+            "to",
+            &rq.form()
+                .get("to")
+                .map_or_else(|| path.to_string(), ToString::to_string),
+            50
+        ),
         esc(text)
     );
     if replace {
@@ -194,11 +211,22 @@ fn save_as(rq: &Rq<'_>, path: &str, text: &str, messages: Vec<Message>) -> Respo
     })
 }
 
-fn show(rq: &Rq<'_>, path: &str, o: &Opened, text: &str, messages: Vec<Message>, ask: bool) -> Response {
+fn show(
+    rq: &Rq<'_>,
+    path: &str,
+    o: &Opened,
+    text: &str,
+    messages: Vec<Message>,
+    ask: bool,
+) -> Response {
     let dir = parent(path);
     let name = name_of(path);
     // A text area drops one newline at its start.
-    let shown = if text.starts_with('\n') { format!("\n{text}") } else { text.to_string() };
+    let shown = if text.starts_with('\n') {
+        format!("\n{text}")
+    } else {
+        text.to_string()
+    };
     let head = format!(
         "<p class=\"small\">Path: <span class=\"mono\">{}</span> &nbsp; {} bytes &nbsp; CCSID {} &nbsp; Line ends: {} &nbsp; {}</p>",
         esc(path),
@@ -209,7 +237,8 @@ fn show(rq: &Rq<'_>, path: &str, o: &Opened, text: &str, messages: Vec<Message>,
     );
     let ro = if o.writable { "" } else { " readonly" };
     let buttons = if !o.writable {
-        "<div class=\"buttons\"><input type=\"submit\" name=\"cancel\" value=\"Cancel\"></div>".to_string()
+        "<div class=\"buttons\"><input type=\"submit\" name=\"cancel\" value=\"Cancel\"></div>"
+            .to_string()
     } else if ask {
         "<div class=\"buttons\"><input type=\"submit\" name=\"overwrite\" value=\"Overwrite\"><input type=\"submit\" name=\"reset\" value=\"Reload\"><input type=\"submit\" name=\"cancel\" value=\"Cancel\"></div>".to_string()
     } else {
@@ -220,7 +249,10 @@ fn show(rq: &Rq<'_>, path: &str, o: &Opened, text: &str, messages: Vec<Message>,
         qsweb::partials::form(
             &rq.ctx,
             "",
-            &format!("<textarea name=\"t\" class=\"conf\" rows=\"30\" wrap=\"off\"{ro}>{}</textarea>{buttons}", esc(&shown))
+            &format!(
+                "<textarea name=\"t\" class=\"conf\" rows=\"30\" wrap=\"off\"{ro}>{}</textarea>{buttons}",
+                esc(&shown)
+            )
         )
     );
     let title = format!("Edit file: {name}");

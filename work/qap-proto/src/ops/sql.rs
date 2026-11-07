@@ -161,7 +161,11 @@ pub struct SqlFailure {
     pub row: Option<u32>,
 }
 
-wire_struct!(SqlFailure { sqlstate, sqlcode, row });
+wire_struct!(SqlFailure {
+    sqlstate,
+    sqlcode,
+    row
+});
 
 /// What a catalog entry is.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -314,7 +318,11 @@ pub struct ListSchemas {
     pub max: u32,
 }
 
-wire_struct!(ListSchemas { pattern, start, max });
+wire_struct!(ListSchemas {
+    pattern,
+    start,
+    max
+});
 
 /// A schema.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

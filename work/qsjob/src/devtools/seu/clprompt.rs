@@ -28,13 +28,41 @@ pub fn analyze(ctx: &mut Ctx<'_>, command: &str, definition: bool) -> Result<(),
             .map_err(|d| d.first().map_or_else(|| "*N".into(), diag_text));
     }
     // A CL statement the compiler knows that no command defines.
-    let verb = command.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+    let verb = command
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_uppercase();
     if matches!(
         verb.as_str(),
-        "PGM" | "ENDPGM" | "DO" | "ENDDO" | "ELSE" | "DCL" | "DCLF" | "IF" | "MONMSG" | "GOTO" | "CHGVAR"
-            | "DOWHILE" | "DOUNTIL" | "DOFOR" | "LEAVE" | "ITERATE" | "SELECT" | "WHEN" | "OTHERWISE"
-            | "ENDSELECT" | "SUBR" | "ENDSUBR" | "CALLSUBR" | "RTNSUBR" | "INCLUDE" | "DCLPRCOPT"
-            | "COPYRIGHT" | "RETURN"
+        "PGM"
+            | "ENDPGM"
+            | "DO"
+            | "ENDDO"
+            | "ELSE"
+            | "DCL"
+            | "DCLF"
+            | "IF"
+            | "MONMSG"
+            | "GOTO"
+            | "CHGVAR"
+            | "DOWHILE"
+            | "DOUNTIL"
+            | "DOFOR"
+            | "LEAVE"
+            | "ITERATE"
+            | "SELECT"
+            | "WHEN"
+            | "OTHERWISE"
+            | "ENDSELECT"
+            | "SUBR"
+            | "ENDSUBR"
+            | "CALLSUBR"
+            | "RTNSUBR"
+            | "INCLUDE"
+            | "DCLPRCOPT"
+            | "COPYRIGHT"
+            | "RETURN"
     ) {
         return Ok(());
     }

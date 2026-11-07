@@ -351,7 +351,11 @@ impl MacroFile {
     /// The name to show: `[macro] name`, else the file's name.
     pub fn display_name(&self) -> String {
         let n = self.info.name.trim();
-        if n.is_empty() { "Macro".into() } else { n.to_owned() }
+        if n.is_empty() {
+            "Macro".into()
+        } else {
+            n.to_owned()
+        }
     }
 
     /// Checks a step as the editor would save it.
@@ -401,14 +405,15 @@ impl MacroFile {
         })
     }
 
-
     /// What the macro waits for, as the Macros list says it.
     pub fn waits(&self) -> String {
         let mut out = Vec::new();
         let mut texts = 0;
         for s in &self.steps {
             match &s.action {
-                Action::WaitText { row, col, text, .. } if text.trim() == "===>" => out.push(format!("Command line at {row}/{col}")),
+                Action::WaitText { row, col, text, .. } if text.trim() == "===>" => {
+                    out.push(format!("Command line at {row}/{col}"))
+                }
                 Action::WaitText { row, col, text, .. } => {
                     texts += 1;
                     let lead = if texts == 1 { "Screen text " } else { "" };
@@ -418,7 +423,11 @@ impl MacroFile {
                 _ => {}
             }
         }
-        if out.is_empty() { "Nothing".into() } else { out.join("; ") }
+        if out.is_empty() {
+            "Nothing".into()
+        } else {
+            out.join("; ")
+        }
     }
 
     /// The steps one a line, as the web editor shows them.
@@ -426,15 +435,36 @@ impl MacroFile {
         let mut out = String::new();
         for s in &self.steps {
             let q = |t: &str| format!("\"{}\"", t.replace('\\', "\\\\").replace('"', "\\\""));
-            let within = |ms: u32| if ms == DEFAULT_TIMEOUT_MS { String::new() } else { format!(" for {ms} ms") };
+            let within = |ms: u32| {
+                if ms == DEFAULT_TIMEOUT_MS {
+                    String::new()
+                } else {
+                    format!(" for {ms} ms")
+                }
+            };
             let mut line = match &s.action {
                 Action::Type { text } => format!("type  {}", q(text)),
                 Action::Key { key } => format!("key   {key}"),
                 Action::WaitUnlock { timeout_ms } => format!("wait  unlock{}", within(*timeout_ms)),
-                Action::WaitText { row, col, text, timeout_ms } => format!("wait  screen {} at {row},{col}{}", q(text), within(*timeout_ms)),
+                Action::WaitText {
+                    row,
+                    col,
+                    text,
+                    timeout_ms,
+                } => format!(
+                    "wait  screen {} at {row},{col}{}",
+                    q(text),
+                    within(*timeout_ms)
+                ),
                 Action::Pause { ms } => format!("pause {ms}"),
-                Action::Prompt { label, hidden: true } => format!("prompt {}", q(label)),
-                Action::Prompt { label, hidden: false } => format!("prompt shown {}", q(label)),
+                Action::Prompt {
+                    label,
+                    hidden: true,
+                } => format!("prompt {}", q(label)),
+                Action::Prompt {
+                    label,
+                    hidden: false,
+                } => format!("prompt shown {}", q(label)),
             };
             if let Some(c) = s.extra.get("comment").and_then(toml::Value::as_str) {
                 line.push_str("   ; ");
@@ -460,17 +490,26 @@ impl MacroFile {
             let (verb, rest) = body.split_once(char::is_whitespace).unwrap_or((body, ""));
             let rest = rest.trim();
             let action = match verb {
-                "type" => Action::Type { text: quoted(rest).map_err(at)?.0 },
-                "key" => Action::Key { key: rest.to_string() },
+                "type" => Action::Type {
+                    text: quoted(rest).map_err(at)?.0,
+                },
+                "key" => Action::Key {
+                    key: rest.to_string(),
+                },
                 "pause" => Action::Pause {
-                    ms: rest.parse().map_err(|_| at(format!("pause needs milliseconds, not \"{rest}\"")))?,
+                    ms: rest
+                        .parse()
+                        .map_err(|_| at(format!("pause needs milliseconds, not \"{rest}\"")))?,
                 },
                 "prompt" => {
                     let (hidden, rest) = match rest.strip_prefix("shown") {
                         Some(r) => (false, r.trim()),
                         None => (true, rest),
                     };
-                    Action::Prompt { label: quoted(rest).map_err(at)?.0, hidden }
+                    Action::Prompt {
+                        label: quoted(rest).map_err(at)?.0,
+                        hidden,
+                    }
                 }
                 "wait" => {
                     let (what, rest) = rest.split_once(char::is_whitespace).unwrap_or((rest, ""));
@@ -484,18 +523,34 @@ impl MacroFile {
                                 .strip_prefix("at")
                                 .map(str::trim)
                                 .ok_or_else(|| at("wait screen needs \"at ROW,COL\"".into()))?;
-                            let (r, c) = pos.split_once(',').ok_or_else(|| at(format!("\"{pos}\" is not ROW,COL")))?;
-                            let num = |v: &str| v.trim().parse::<u8>().map_err(|_| at(format!("\"{pos}\" is not ROW,COL")));
-                            Action::WaitText { row: num(r)?, col: num(c)?, text, timeout_ms }
+                            let (r, c) = pos
+                                .split_once(',')
+                                .ok_or_else(|| at(format!("\"{pos}\" is not ROW,COL")))?;
+                            let num = |v: &str| {
+                                v.trim()
+                                    .parse::<u8>()
+                                    .map_err(|_| at(format!("\"{pos}\" is not ROW,COL")))
+                            };
+                            Action::WaitText {
+                                row: num(r)?,
+                                col: num(c)?,
+                                text,
+                                timeout_ms,
+                            }
                         }
                         _ => return Err(at(format!("wait \"{what}\" is not unlock or screen"))),
                     }
                 }
-                other => return Err(at(format!("\"{other}\" is not type, key, wait, pause or prompt"))),
+                other => {
+                    return Err(at(format!(
+                        "\"{other}\" is not type, key, wait, pause or prompt"
+                    )));
+                }
             };
             let mut step = Step::new(action);
             if let Some(c) = comment {
-                step.extra.insert("comment".into(), toml::Value::String(c.to_string()));
+                step.extra
+                    .insert("comment".into(), toml::Value::String(c.to_string()));
             }
             MacroFile::check_step(&step, size).map_err(at)?;
             steps.push(step);
@@ -525,7 +580,9 @@ fn split_comment(line: &str) -> (&str, Option<&str>) {
 
 /// A `"..."` at the start of `s`, and what follows it.
 fn quoted(s: &str) -> Result<(String, &str), String> {
-    let body = s.strip_prefix('"').ok_or_else(|| format!("{s} is not in quotes"))?;
+    let body = s
+        .strip_prefix('"')
+        .ok_or_else(|| format!("{s} is not in quotes"))?;
     let mut out = String::new();
     let mut chars = body.char_indices();
     while let Some((i, c)) = chars.next() {
@@ -544,7 +601,10 @@ fn quoted(s: &str) -> Result<(String, &str), String> {
 
 /// A trailing `for N ms` (or `for N s`), else the default wait.
 fn within(s: &str) -> Result<(u32, &str), String> {
-    let Some(i) = s.rfind(" for ").or_else(|| s.starts_with("for ").then_some(0)) else {
+    let Some(i) = s
+        .rfind(" for ")
+        .or_else(|| s.starts_with("for ").then_some(0))
+    else {
         return Ok((DEFAULT_TIMEOUT_MS, s));
     };
     let tail = s[i..].trim().trim_start_matches("for").trim();
@@ -564,7 +624,10 @@ mod tests {
 
     #[test]
     fn the_desktops_files_read_and_round_trip() {
-        for text in [include_str!("testdata/qs400-signon-24x80.qsm"), include_str!("testdata/sign-on-wrkactjob-f3.qsm")] {
+        for text in [
+            include_str!("testdata/qs400-signon-24x80.qsm"),
+            include_str!("testdata/sign-on-wrkactjob-f3.qsm"),
+        ] {
             let m = MacroFile::parse(text).unwrap();
             assert!(!m.steps.is_empty());
             assert_eq!(MacroFile::parse(&m.to_text()).unwrap(), m);
@@ -580,12 +643,23 @@ mod tests {
         let mut m = MacroFile::new("SIGNON-DEV", ScreenSize::S24x80);
         m.steps = steps;
         assert_eq!(m.to_lines(), text);
-        assert_eq!(m.waits(), "Screen text 'Sign On' at 1/35; 'Main Menu' at 1/36");
+        assert_eq!(
+            m.waits(),
+            "Screen text 'Sign On' at 1/35; 'Main Menu' at 1/36"
+        );
         assert_eq!(MacroFile::parse(&m.to_text()).unwrap(), m);
         let bad = MacroFile::from_lines("key   Warp\n", ScreenSize::S24x80).unwrap_err();
         assert!(bad.starts_with("line 1:") && bad.contains("Warp"), "{bad}");
-        assert!(MacroFile::from_lines("wait  screen \"x\" at 30,1\n", ScreenSize::S24x80).unwrap_err().contains("row 30"));
-        let s = MacroFile::from_lines("wait  unlock for 5 s\npause 200\nprompt shown \"Library\"\n", ScreenSize::S24x80).unwrap();
+        assert!(
+            MacroFile::from_lines("wait  screen \"x\" at 30,1\n", ScreenSize::S24x80)
+                .unwrap_err()
+                .contains("row 30")
+        );
+        let s = MacroFile::from_lines(
+            "wait  unlock for 5 s\npause 200\nprompt shown \"Library\"\n",
+            ScreenSize::S24x80,
+        )
+        .unwrap();
         assert_eq!(s[0].action, Action::WaitUnlock { timeout_ms: 5000 });
     }
 }

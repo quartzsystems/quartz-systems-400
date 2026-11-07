@@ -9,12 +9,12 @@
 //! `17-errors.txt`), created through DDS when the file is missing.
 
 use cmd::block::Parms;
-use stg::proto::CmdMsg;
 use db::Member;
 use db::file::{self, CreateFileOpts};
 use dds::{CompileOpts, NoRefs, Source, compile_pf};
 use qsname::MemberSpec;
 use saverst::{RestoreReport, SaveReport};
+use stg::proto::CmdMsg;
 use store::obj::{JobHandle, types};
 
 use super::direct::{in_store, lib_or};
@@ -26,60 +26,157 @@ pub(crate) type Fld = (&'static str, char, u16, u8);
 
 /// `QSRSAV`, 76 fields, 3732 bytes.
 const QSRSAV: &[Fld] = &[
-    ("SROCMD", 'A', 10, 0), ("SROINF", 'A', 10, 0), ("SROSYS", 'A', 8, 0),
-    ("SROSRL", 'A', 6, 0), ("SROLIB", 'A', 10, 0), ("SROASP", 'S', 2, 0),
-    ("SROSAV", 'S', 6, 0), ("SROERR", 'S', 6, 0), ("SROSEQ", 'S', 4, 0),
-    ("SROLBL", 'A', 17, 0), ("SROVOL", 'A', 60, 0), ("SROSVT", 'A', 13, 0),
-    ("SRONAM", 'A', 10, 0), ("SROMNM", 'A', 10, 0), ("SROTYP", 'A', 8, 0),
-    ("SROATT", 'A', 10, 0), ("SROSIZ", 'S', 15, 0), ("SROOWN", 'A', 10, 0),
-    ("SROSTA", 'A', 1, 0), ("SROMSG", 'A', 7, 0), ("SROSWA", 'A', 13, 0),
-    ("SROTXT", 'A', 50, 0), ("SRODEV", 'A', 40, 0), ("SROSVF", 'A', 10, 0),
-    ("SROSFL", 'A', 10, 0), ("SROTRL", 'A', 6, 0), ("SROSTF", 'A', 1, 0),
-    ("SROACP", 'A', 1, 0), ("SROSFD", 'A', 1, 0), ("SROCMP", 'A', 1, 0),
-    ("SROCOM", 'A', 1, 0), ("SRORFD", 'A', 7, 0), ("SRORFT", 'A', 6, 0),
-    ("SROEXP", 'A', 7, 0), ("SROXVM", 'V', 390, 0), ("SROPGP", 'A', 10, 0),
-    ("SROSQ2", 'S', 10, 0), ("SROMIT", 'A', 1, 0), ("SROFMT", 'A', 1, 0),
-    ("SROMFN", 'S', 3, 0), ("SROTMF", 'S', 3, 0), ("SROMDN", 'A', 10, 0),
-    ("SROMDL", 'A', 10, 0), ("SROVLC", 'S', 3, 0), ("SROVLL", 'S', 3, 0),
-    ("SROVLD", 'V', 2400, 0), ("SROOPT", 'V', 256, 0), ("SROAS1", 'A', 10, 0),
-    ("SROAS2", 'S', 5, 0), ("SROTSZ", 'P', 21, 0), ("SROPRT", 'A', 1, 0),
-    ("SROJN", 'A', 10, 0), ("SROJL", 'A', 10, 0), ("SROJRN", 'A', 10, 0),
-    ("SROJRL", 'A', 10, 0), ("SROJRA", 'A', 10, 0), ("SROPFL", 'A', 10, 0),
-    ("SROPFN", 'S', 6, 0), ("SROPJB", 'A', 10, 0), ("SROPUN", 'A', 10, 0),
-    ("SROPJN", 'A', 6, 0), ("SROPJS", 'A', 8, 0), ("SROPCD", 'A', 7, 0),
-    ("SROPCT", 'A', 6, 0), ("SROPQN", 'A', 10, 0), ("SROPQL", 'A', 10, 0),
-    ("SROPUD", 'A', 10, 0), ("SROPFT", 'A', 10, 0), ("SROPPG", 'P', 11, 0),
-    ("SROPCP", 'S', 3, 0), ("SROPSZ", 'P', 15, 0), ("SROPXD", 'A', 7, 0),
-    ("SROPVA", 'A', 1, 0), ("SROSYN", 'A', 10, 0), ("SROSYO", 'S', 2, 0),
+    ("SROCMD", 'A', 10, 0),
+    ("SROINF", 'A', 10, 0),
+    ("SROSYS", 'A', 8, 0),
+    ("SROSRL", 'A', 6, 0),
+    ("SROLIB", 'A', 10, 0),
+    ("SROASP", 'S', 2, 0),
+    ("SROSAV", 'S', 6, 0),
+    ("SROERR", 'S', 6, 0),
+    ("SROSEQ", 'S', 4, 0),
+    ("SROLBL", 'A', 17, 0),
+    ("SROVOL", 'A', 60, 0),
+    ("SROSVT", 'A', 13, 0),
+    ("SRONAM", 'A', 10, 0),
+    ("SROMNM", 'A', 10, 0),
+    ("SROTYP", 'A', 8, 0),
+    ("SROATT", 'A', 10, 0),
+    ("SROSIZ", 'S', 15, 0),
+    ("SROOWN", 'A', 10, 0),
+    ("SROSTA", 'A', 1, 0),
+    ("SROMSG", 'A', 7, 0),
+    ("SROSWA", 'A', 13, 0),
+    ("SROTXT", 'A', 50, 0),
+    ("SRODEV", 'A', 40, 0),
+    ("SROSVF", 'A', 10, 0),
+    ("SROSFL", 'A', 10, 0),
+    ("SROTRL", 'A', 6, 0),
+    ("SROSTF", 'A', 1, 0),
+    ("SROACP", 'A', 1, 0),
+    ("SROSFD", 'A', 1, 0),
+    ("SROCMP", 'A', 1, 0),
+    ("SROCOM", 'A', 1, 0),
+    ("SRORFD", 'A', 7, 0),
+    ("SRORFT", 'A', 6, 0),
+    ("SROEXP", 'A', 7, 0),
+    ("SROXVM", 'V', 390, 0),
+    ("SROPGP", 'A', 10, 0),
+    ("SROSQ2", 'S', 10, 0),
+    ("SROMIT", 'A', 1, 0),
+    ("SROFMT", 'A', 1, 0),
+    ("SROMFN", 'S', 3, 0),
+    ("SROTMF", 'S', 3, 0),
+    ("SROMDN", 'A', 10, 0),
+    ("SROMDL", 'A', 10, 0),
+    ("SROVLC", 'S', 3, 0),
+    ("SROVLL", 'S', 3, 0),
+    ("SROVLD", 'V', 2400, 0),
+    ("SROOPT", 'V', 256, 0),
+    ("SROAS1", 'A', 10, 0),
+    ("SROAS2", 'S', 5, 0),
+    ("SROTSZ", 'P', 21, 0),
+    ("SROPRT", 'A', 1, 0),
+    ("SROJN", 'A', 10, 0),
+    ("SROJL", 'A', 10, 0),
+    ("SROJRN", 'A', 10, 0),
+    ("SROJRL", 'A', 10, 0),
+    ("SROJRA", 'A', 10, 0),
+    ("SROPFL", 'A', 10, 0),
+    ("SROPFN", 'S', 6, 0),
+    ("SROPJB", 'A', 10, 0),
+    ("SROPUN", 'A', 10, 0),
+    ("SROPJN", 'A', 6, 0),
+    ("SROPJS", 'A', 8, 0),
+    ("SROPCD", 'A', 7, 0),
+    ("SROPCT", 'A', 6, 0),
+    ("SROPQN", 'A', 10, 0),
+    ("SROPQL", 'A', 10, 0),
+    ("SROPUD", 'A', 10, 0),
+    ("SROPFT", 'A', 10, 0),
+    ("SROPPG", 'P', 11, 0),
+    ("SROPCP", 'S', 3, 0),
+    ("SROPSZ", 'P', 15, 0),
+    ("SROPXD", 'A', 7, 0),
+    ("SROPVA", 'A', 1, 0),
+    ("SROSYN", 'A', 10, 0),
+    ("SROSYO", 'S', 2, 0),
     ("SROPSN", 'A', 32, 0),
 ];
 
 /// `QSRRST`, 71 fields.
 const QSRRST: &[Fld] = &[
-    ("RSRECR", 'A', 1, 0), ("RSOSTA", 'A', 1, 0), ("RSOMSG", 'A', 7, 0),
-    ("RSOSEC", 'A', 1, 0), ("RSNAME", 'A', 10, 0), ("RSMNAM", 'A', 10, 0),
-    ("RSTYPE", 'A', 8, 0), ("RSATTR", 'A', 10, 0), ("RSSIZE", 'S', 15, 0),
-    ("RSOOWN", 'A', 10, 0), ("RSOTXT", 'A', 50, 0), ("RSRPLV", 'V', 704, 0),
-    ("RSOLIB", 'A', 10, 0), ("RSOASP", 'S', 2, 0), ("RSOSEQ", 'S', 4, 0),
-    ("RSLABL", 'A', 17, 0), ("RSSVDT", 'A', 13, 0), ("RSRSDT", 'A', 13, 0),
-    ("RSVLID", 'V', 450, 0), ("RSODEV", 'A', 40, 0), ("RSOSVF", 'A', 10, 0),
-    ("RSOSFL", 'A', 10, 0), ("RSOCMD", 'A', 10, 0), ("RSSYSN", 'A', 8, 0),
-    ("RSORRL", 'A', 6, 0), ("RSOSRL", 'A', 6, 0), ("RSOPGP", 'A', 10, 0),
-    ("RSOSQ2", 'S', 10, 0), ("RSONLB", 'A', 10, 0), ("RSOFMT", 'A', 1, 0),
-    ("RSOMFN", 'S', 3, 0), ("RSOTMF", 'S', 3, 0), ("RSOMDN", 'A', 10, 0),
-    ("RSOMDL", 'A', 10, 0), ("RSOVLC", 'S', 3, 0), ("RSOVLL", 'S', 3, 0),
-    ("RSOVLD", 'V', 2400, 0), ("RSOOPT", 'V', 256, 0), ("RSOAS1", 'A', 10, 0),
-    ("RSOAS2", 'S', 5, 0), ("RSOPRT", 'A', 1, 0), ("RSOJN", 'A', 10, 0),
-    ("RSOJL", 'A', 10, 0), ("RSOJRN", 'A', 10, 0), ("RSOJRL", 'A', 10, 0),
-    ("RSOJRA", 'A', 10, 0), ("RSOPFL", 'A', 10, 0), ("RSOPFN", 'S', 6, 0),
-    ("RSOPJB", 'A', 10, 0), ("RSOPUN", 'A', 10, 0), ("RSOPJN", 'A', 6, 0),
-    ("RSOPJS", 'A', 8, 0), ("RSOPCD", 'A', 7, 0), ("RSOPCT", 'A', 6, 0),
-    ("RSOPQN", 'A', 10, 0), ("RSOPQL", 'A', 10, 0), ("RSOPUD", 'A', 10, 0),
-    ("RSOPFT", 'A', 10, 0), ("RSOPPG", 'P', 11, 0), ("RSOPCP", 'S', 3, 0),
-    ("RSOPSZ", 'P', 15, 0), ("RSOPXD", 'A', 7, 0), ("RSOPDR", 'A', 7, 0),
-    ("RSOPTR", 'A', 6, 0), ("RSOPQR", 'A', 10, 0), ("RSOPLR", 'A', 10, 0),
-    ("RSOPVA", 'A', 1, 0), ("RSOPVS", 'S', 10, 0), ("RSOPVR", 'S', 10, 0),
-    ("RSODFR", 'A', 1, 0), ("RSODFI", 'A', 10, 0),
+    ("RSRECR", 'A', 1, 0),
+    ("RSOSTA", 'A', 1, 0),
+    ("RSOMSG", 'A', 7, 0),
+    ("RSOSEC", 'A', 1, 0),
+    ("RSNAME", 'A', 10, 0),
+    ("RSMNAM", 'A', 10, 0),
+    ("RSTYPE", 'A', 8, 0),
+    ("RSATTR", 'A', 10, 0),
+    ("RSSIZE", 'S', 15, 0),
+    ("RSOOWN", 'A', 10, 0),
+    ("RSOTXT", 'A', 50, 0),
+    ("RSRPLV", 'V', 704, 0),
+    ("RSOLIB", 'A', 10, 0),
+    ("RSOASP", 'S', 2, 0),
+    ("RSOSEQ", 'S', 4, 0),
+    ("RSLABL", 'A', 17, 0),
+    ("RSSVDT", 'A', 13, 0),
+    ("RSRSDT", 'A', 13, 0),
+    ("RSVLID", 'V', 450, 0),
+    ("RSODEV", 'A', 40, 0),
+    ("RSOSVF", 'A', 10, 0),
+    ("RSOSFL", 'A', 10, 0),
+    ("RSOCMD", 'A', 10, 0),
+    ("RSSYSN", 'A', 8, 0),
+    ("RSORRL", 'A', 6, 0),
+    ("RSOSRL", 'A', 6, 0),
+    ("RSOPGP", 'A', 10, 0),
+    ("RSOSQ2", 'S', 10, 0),
+    ("RSONLB", 'A', 10, 0),
+    ("RSOFMT", 'A', 1, 0),
+    ("RSOMFN", 'S', 3, 0),
+    ("RSOTMF", 'S', 3, 0),
+    ("RSOMDN", 'A', 10, 0),
+    ("RSOMDL", 'A', 10, 0),
+    ("RSOVLC", 'S', 3, 0),
+    ("RSOVLL", 'S', 3, 0),
+    ("RSOVLD", 'V', 2400, 0),
+    ("RSOOPT", 'V', 256, 0),
+    ("RSOAS1", 'A', 10, 0),
+    ("RSOAS2", 'S', 5, 0),
+    ("RSOPRT", 'A', 1, 0),
+    ("RSOJN", 'A', 10, 0),
+    ("RSOJL", 'A', 10, 0),
+    ("RSOJRN", 'A', 10, 0),
+    ("RSOJRL", 'A', 10, 0),
+    ("RSOJRA", 'A', 10, 0),
+    ("RSOPFL", 'A', 10, 0),
+    ("RSOPFN", 'S', 6, 0),
+    ("RSOPJB", 'A', 10, 0),
+    ("RSOPUN", 'A', 10, 0),
+    ("RSOPJN", 'A', 6, 0),
+    ("RSOPJS", 'A', 8, 0),
+    ("RSOPCD", 'A', 7, 0),
+    ("RSOPCT", 'A', 6, 0),
+    ("RSOPQN", 'A', 10, 0),
+    ("RSOPQL", 'A', 10, 0),
+    ("RSOPUD", 'A', 10, 0),
+    ("RSOPFT", 'A', 10, 0),
+    ("RSOPPG", 'P', 11, 0),
+    ("RSOPCP", 'S', 3, 0),
+    ("RSOPSZ", 'P', 15, 0),
+    ("RSOPXD", 'A', 7, 0),
+    ("RSOPDR", 'A', 7, 0),
+    ("RSOPTR", 'A', 6, 0),
+    ("RSOPQR", 'A', 10, 0),
+    ("RSOPLR", 'A', 10, 0),
+    ("RSOPVA", 'A', 1, 0),
+    ("RSOPVS", 'S', 10, 0),
+    ("RSOPVR", 'S', 10, 0),
+    ("RSODFR", 'A', 1, 0),
+    ("RSODFI", 'A', 10, 0),
 ];
 
 /// One row: field name and value (text, or a number for `S`/`P`).
@@ -161,7 +258,9 @@ fn model_def(src: &str) -> Result<dds::PfDefinition, String> {
 /// The record format of model `format` with `fields`.
 #[cfg(test)]
 pub(crate) fn model(format: &str, fields: &[Fld]) -> dds::RecordFormat {
-    model_def(&dds(format, fields)).expect("model format").format
+    model_def(&dds(format, fields))
+        .expect("model format")
+        .format
 }
 
 /// One record of `row` in format `fmt`, as the database writes it:
@@ -170,9 +269,15 @@ pub(crate) fn encode(fmt: &dds::RecordFormat, row: &Row) -> Result<Vec<u8>, Stri
     let mut rec = vec![0u8; usize::try_from(fmt.record_len).unwrap_or(0)];
     for f in &fmt.fields {
         let fname = f.name.to_string();
-        let v = row.iter().find(|(k, _)| *k == fname).map_or("", |(_, v)| v.as_str());
+        let v = row
+            .iter()
+            .find(|(k, _)| *k == fname)
+            .map_or("", |(_, v)| v.as_str());
         let val = if f.data_type.is_numeric() {
-            db::Value::Num(qdecimal::Decimal::parse(if v.is_empty() { "0" } else { v }).map_err(|e| e.to_string())?)
+            db::Value::Num(
+                qdecimal::Decimal::parse(if v.is_empty() { "0" } else { v })
+                    .map_err(|e| e.to_string())?,
+            )
         } else {
             db::Value::Char(ccsid::to_ebcdic(v).unwrap_or_default())
         };
@@ -213,7 +318,10 @@ impl Written {
     /// The text with a line for a file created.
     fn into_text(self) -> String {
         match self.created {
-            Some((n, l)) => format!("Outfile {l}/{n} created in the model format.\n{}", self.text),
+            Some((n, l)) => format!(
+                "Outfile {l}/{n} created in the model format.\n{}",
+                self.text
+            ),
             None => self.text,
         }
     }
@@ -277,7 +385,12 @@ fn write_file(
     let src = dds(format, fields);
     let job = JobHandle(u64::from(system.current_job));
     in_store(system, |txn, qsys, names| {
-        let l = super::direct::library(txn, qsys, names, if lib == "*LIBL" { "*CURLIB" } else { &lib })?;
+        let l = super::direct::library(
+            txn,
+            qsys,
+            names,
+            if lib == "*LIBL" { "*CURLIB" } else { &lib },
+        )?;
         let n = qsname::Name::parse(&name).map_err(|e| format!("CPD0074 {e}"))?;
         let existing = store::obj::library::Library::load(txn, l)
             .and_then(|x| x.lookup(txn, types::FILE, n))
@@ -367,7 +480,10 @@ pub fn save(
         };
         if inftype == "*LIB" {
             let mut row = base("*LIB");
-            row.push(("SROTSZ", r.objects.iter().map(|o| o.size).sum::<u64>().to_string()));
+            row.push((
+                "SROTSZ",
+                r.objects.iter().map(|o| o.size).sum::<u64>().to_string(),
+            ));
             rows.push(row);
             continue;
         }
@@ -385,7 +501,14 @@ pub fn save(
                 ("SROSTA", if o.msgid.is_none() { "1" } else { "0" }.into()),
                 ("SROMSG", o.msgid.unwrap_or("").into()),
                 ("SROTXT", o.text.clone()),
-                ("SROPGP", if o.primary_group.is_empty() { "*NONE".into() } else { o.primary_group.clone() }),
+                (
+                    "SROPGP",
+                    if o.primary_group.is_empty() {
+                        "*NONE".into()
+                    } else {
+                        o.primary_group.clone()
+                    },
+                ),
                 ("SROSQ2", "0".into()),
             ]);
             rows.push(row);
@@ -435,7 +558,14 @@ pub fn restore(
             ("RSSYSN", sys.clone()),
             ("RSORRL", rel.clone()),
             ("RSOSRL", rel.clone()),
-            ("RSOPGP", if o.primary_group.is_empty() { "*NONE".into() } else { o.primary_group.clone() }),
+            (
+                "RSOPGP",
+                if o.primary_group.is_empty() {
+                    "*NONE".into()
+                } else {
+                    o.primary_group.clone()
+                },
+            ),
             ("RSOSQ2", "0".into()),
             ("RSONLB", o.library.clone()),
             ("RSOFMT", "0".into()),

@@ -198,7 +198,9 @@ impl RemoteQ {
     /// The `DESTTYPE` special value.
     #[must_use]
     pub fn desttype_name(&self) -> &'static str {
-        DESTTYPE.get(usize::from(self.desttype)).unwrap_or(&"*OTHER")
+        DESTTYPE
+            .get(usize::from(self.desttype))
+            .unwrap_or(&"*OTHER")
     }
 
     /// One `CRTOUTQ` or `CHGOUTQ` keyword of this section; `false`
@@ -208,9 +210,14 @@ impl RemoteQ {
         let up = v.trim().to_ascii_uppercase();
         match k {
             "DESTTYPE" => {
-                let up = if up == "*IBMI" { "*OS400".to_string() } else { up };
-                self.desttype = u8::try_from(DESTTYPE.iter().position(|d| *d == up).ok_or_else(bad)?)
-                    .unwrap_or(0);
+                let up = if up == "*IBMI" {
+                    "*OS400".to_string()
+                } else {
+                    up
+                };
+                self.desttype =
+                    u8::try_from(DESTTYPE.iter().position(|d| *d == up).ok_or_else(bad)?)
+                        .unwrap_or(0);
             }
             "TRANSFORM" => {
                 self.transform = match up.as_str() {
@@ -268,11 +275,7 @@ impl RemoteQ {
                     .into_iter()
                     .map(|s| s.to_ascii_uppercase())
                     .collect();
-                let items = if items.is_empty() {
-                    vec![up]
-                } else {
-                    items
-                };
+                let items = if items.is_empty() { vec![up] } else { items };
                 self.usrdfnopt = if items.iter().any(|s| s == "*NONE") {
                     String::new()
                 } else {

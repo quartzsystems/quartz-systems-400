@@ -47,8 +47,24 @@ impl Grp {
     /// The fields the group's form posts.
     fn keys(self) -> &'static [&'static str] {
         match self {
-            Grp::General => &[p::ROWS, p::DATE, p::TIME, p::ZONE, p::LANG, p::HELP, p::CONFIRM_DELETE, p::CONFIRM_END, p::CONFIRM_HOLD],
-            Grp::Database => &[p::SCHEMA, p::NAMING, p::OUTPUT, p::MAX_ROWS, p::SYSTEM_NAMES],
+            Grp::General => &[
+                p::ROWS,
+                p::DATE,
+                p::TIME,
+                p::ZONE,
+                p::LANG,
+                p::HELP,
+                p::CONFIRM_DELETE,
+                p::CONFIRM_END,
+                p::CONFIRM_HOLD,
+            ],
+            Grp::Database => &[
+                p::SCHEMA,
+                p::NAMING,
+                p::OUTPUT,
+                p::MAX_ROWS,
+                p::SYSTEM_NAMES,
+            ],
             Grp::S5250 => &[p::SCREEN, p::COLOURS, p::KEYPAD, p::FONT, p::CURSOR],
             Grp::Files => &[p::EXISTING, p::TRANSFER, p::ENDINGS],
             Grp::Print => &[p::PRINT_OPEN],
@@ -59,7 +75,11 @@ impl Grp {
 
 /// The tabs: label, `?tab=` value, the groups shown.
 const TABS: &[(&str, &str, &[Grp])] = &[
-    ("General", "", &[Grp::General, Grp::Database, Grp::S5250, Grp::Home]),
+    (
+        "General",
+        "",
+        &[Grp::General, Grp::Database, Grp::S5250, Grp::Home],
+    ),
     ("Database", "database", &[Grp::Database]),
     ("5250", "5250", &[Grp::S5250]),
     ("Files", "files", &[Grp::Files]),
@@ -68,13 +88,24 @@ const TABS: &[(&str, &str, &[Grp])] = &[
 ];
 
 /// The checkboxes: their keys.
-const BOXES: &[&str] = &[p::CONFIRM_DELETE, p::CONFIRM_END, p::CONFIRM_HOLD, p::SYSTEM_NAMES, p::KEYPAD, p::COUNTS];
+const BOXES: &[&str] = &[
+    p::CONFIRM_DELETE,
+    p::CONFIRM_END,
+    p::CONFIRM_HOLD,
+    p::SYSTEM_NAMES,
+    p::KEYPAD,
+    p::COUNTS,
+];
 
 /// A select; the first option is the default and is not marked.
 fn pick(name: &str, options: &[String], chosen: &str) -> String {
     let mut s = format!("<select name=\"{}\">", esc(name));
     for (i, o) in options.iter().enumerate() {
-        let sel = if i > 0 && o == chosen { " selected" } else { "" };
+        let sel = if i > 0 && o == chosen {
+            " selected"
+        } else {
+            ""
+        };
         let _ = write!(s, "<option{sel}>{}</option>", esc(o));
     }
     s.push_str("</select>");
@@ -82,7 +113,11 @@ fn pick(name: &str, options: &[String], chosen: &str) -> String {
 }
 
 fn picks(name: &str, options: &[&str], chosen: &str) -> String {
-    pick(name, &options.iter().map(ToString::to_string).collect::<Vec<_>>(), chosen)
+    pick(
+        name,
+        &options.iter().map(ToString::to_string).collect::<Vec<_>>(),
+        chosen,
+    )
 }
 
 /// Radio buttons, each followed by its label.
@@ -106,21 +141,44 @@ fn check(name: &str, on: bool) -> String {
 
 /// The time zone choices: the system's, UTC.
 fn zones(rq: &Rq<'_>) -> Vec<String> {
-    vec![format!("{} ({})", p::ZONE_SYSTEM, rq.env().system.zone_label()), p::ZONE_UTC.into()]
+    vec![
+        format!("{} ({})", p::ZONE_SYSTEM, rq.env().system.zone_label()),
+        p::ZONE_UTC.into(),
+    ]
 }
 
 fn group(rq: &Rq<'_>, g: Grp, v: &Prefs) -> PropGroup {
     let rows = match g {
         Grp::General => {
             let z = zones(rq);
-            let zone = if v.get(p::ZONE) == p::ZONE_UTC { z[1].clone() } else { z[0].clone() };
+            let zone = if v.get(p::ZONE) == p::ZONE_UTC {
+                z[1].clone()
+            } else {
+                z[0].clone()
+            };
             vec![
-                Prop::new("Rows per page", picks(p::ROWS, p::ROW_CHOICES, &v.get(p::ROWS))),
-                Prop::new("Date format", picks(p::DATE, p::DATE_FORMATS, &v.get(p::DATE))),
-                Prop::new("Time format", picks(p::TIME, p::TIME_FORMATS, &v.get(p::TIME))),
+                Prop::new(
+                    "Rows per page",
+                    picks(p::ROWS, p::ROW_CHOICES, &v.get(p::ROWS)),
+                ),
+                Prop::new(
+                    "Date format",
+                    picks(p::DATE, p::DATE_FORMATS, &v.get(p::DATE)),
+                ),
+                Prop::new(
+                    "Time format",
+                    picks(p::TIME, p::TIME_FORMATS, &v.get(p::TIME)),
+                ),
                 Prop::new("Time zone", pick(p::ZONE, &z, &zone)),
                 Prop::new("Language", picks(p::LANG, p::LANGUAGES, &v.get(p::LANG))),
-                Prop::new("Open help in", radios(p::HELP, &[("win", "New window"), ("same", "Same window")], &v.get(p::HELP))),
+                Prop::new(
+                    "Open help in",
+                    radios(
+                        p::HELP,
+                        &[("win", "New window"), ("same", "Same window")],
+                        &v.get(p::HELP),
+                    ),
+                ),
                 Prop::new(
                     "Confirm before",
                     format!(
@@ -133,34 +191,92 @@ fn group(rq: &Rq<'_>, g: Grp, v: &Prefs) -> PropGroup {
             ]
         }
         Grp::Database => vec![
-            Prop::new("Default schema", pick(p::SCHEMA, &v.schemas, &v.get(p::SCHEMA))),
+            Prop::new(
+                "Default schema",
+                pick(p::SCHEMA, &v.schemas, &v.get(p::SCHEMA)),
+            ),
             Prop::new(
                 "Naming convention",
-                radios(p::NAMING, &[("sql", "*SQL (schema.table)"), ("sys", "*SYS (library/file)")], &v.get(p::NAMING)),
+                radios(
+                    p::NAMING,
+                    &[
+                        ("sql", "*SQL (schema.table)"),
+                        ("sys", "*SYS (library/file)"),
+                    ],
+                    &v.get(p::NAMING),
+                ),
             ),
-            Prop::new("Default output", picks(p::OUTPUT, p::OUTPUTS, &v.get(p::OUTPUT))),
-            Prop::new("Maximum rows returned", qsweb::partials::input(p::MAX_ROWS, &v.get(p::MAX_ROWS), 6)),
-            Prop::new("Show system column names", check(p::SYSTEM_NAMES, v.on(p::SYSTEM_NAMES))),
+            Prop::new(
+                "Default output",
+                picks(p::OUTPUT, p::OUTPUTS, &v.get(p::OUTPUT)),
+            ),
+            Prop::new(
+                "Maximum rows returned",
+                qsweb::partials::input(p::MAX_ROWS, &v.get(p::MAX_ROWS), 6),
+            ),
+            Prop::new(
+                "Show system column names",
+                check(p::SYSTEM_NAMES, v.on(p::SYSTEM_NAMES)),
+            ),
         ],
         Grp::S5250 => vec![
-            Prop::new("Default screen size", radios(p::SCREEN, &[("24", "24 x 80"), ("27", "27 x 132")], &v.get(p::SCREEN))),
-            Prop::new("Colours", radios(p::COLOURS, &[("g", "Green on black"), ("w", "Black on white")], &v.get(p::COLOURS))),
+            Prop::new(
+                "Default screen size",
+                radios(
+                    p::SCREEN,
+                    &[("24", "24 x 80"), ("27", "27 x 132")],
+                    &v.get(p::SCREEN),
+                ),
+            ),
+            Prop::new(
+                "Colours",
+                radios(
+                    p::COLOURS,
+                    &[("g", "Green on black"), ("w", "Black on white")],
+                    &v.get(p::COLOURS),
+                ),
+            ),
             Prop::new("Show keypad", check(p::KEYPAD, v.on(p::KEYPAD))),
             Prop::new("Font size", picks(p::FONT, p::FONTS, &v.get(p::FONT))),
             Prop::new("Cursor", picks(p::CURSOR, p::CURSORS, &v.get(p::CURSOR))),
         ],
         Grp::Files => vec![
-            Prop::new("When a file exists", picks(p::EXISTING, p::EXISTING_CHOICES, &v.get(p::EXISTING))),
-            Prop::new("Transfer files as", picks(p::TRANSFER, p::TRANSFERS, &v.get(p::TRANSFER))),
-            Prop::new("Text line endings", picks(p::ENDINGS, p::ENDING_CHOICES, &v.get(p::ENDINGS))),
+            Prop::new(
+                "When a file exists",
+                picks(p::EXISTING, p::EXISTING_CHOICES, &v.get(p::EXISTING)),
+            ),
+            Prop::new(
+                "Transfer files as",
+                picks(p::TRANSFER, p::TRANSFERS, &v.get(p::TRANSFER)),
+            ),
+            Prop::new(
+                "Text line endings",
+                picks(p::ENDINGS, p::ENDING_CHOICES, &v.get(p::ENDINGS)),
+            ),
         ],
-        Grp::Print => vec![Prop::new("Open printer output as", picks(p::PRINT_OPEN, p::PRINT_CHOICES, &v.get(p::PRINT_OPEN)))],
+        Grp::Print => vec![Prop::new(
+            "Open printer output as",
+            picks(p::PRINT_OPEN, p::PRINT_CHOICES, &v.get(p::PRINT_OPEN)),
+        )],
         Grp::Home => vec![
             Prop::new(
                 "Layout",
-                radios(p::LAYOUT, &[("list", "List with descriptions"), ("compact", "Compact links only")], &v.get(p::LAYOUT)),
+                radios(
+                    p::LAYOUT,
+                    &[
+                        ("list", "List with descriptions"),
+                        ("compact", "Compact links only"),
+                    ],
+                    &v.get(p::LAYOUT),
+                ),
             ),
-            Prop::new("Show at sign-on", format!("{} Message and spooled file counts", check(p::COUNTS, v.on(p::COUNTS)))),
+            Prop::new(
+                "Show at sign-on",
+                format!(
+                    "{} Message and spooled file counts",
+                    check(p::COUNTS, v.on(p::COUNTS))
+                ),
+            ),
         ],
     };
     PropGroup {
@@ -183,7 +299,11 @@ fn url(tab: usize) -> String {
 }
 
 fn show(rq: &Rq<'_>, tab: usize, v: &Prefs, messages: Vec<qsweb::msg::Message>) -> Response {
-    let tablist: Vec<(&str, String)> = TABS.iter().enumerate().map(|(i, t)| (t.0, PRODUCT.url(&url(i)))).collect();
+    let tablist: Vec<(&str, String)> = TABS
+        .iter()
+        .enumerate()
+        .map(|(i, t)| (t.0, PRODUCT.url(&url(i))))
+        .collect();
     let groups: Vec<PropGroup> = TABS[tab].2.iter().map(|g| group(rq, *g, v)).collect();
     let mut bs = vec![
         Button::new("apply", "Apply"),
@@ -217,9 +337,17 @@ fn take(rq: &Rq<'_>, g: Grp, f: &Form, v: &mut Prefs) -> Result<(), qsweb::msg::
     for key in g.keys() {
         let posted = f.str(key).trim().to_string();
         let value = if BOXES.contains(key) {
-            if f.has(key) { p::ON.to_string() } else { String::new() }
+            if f.has(key) {
+                p::ON.to_string()
+            } else {
+                String::new()
+            }
         } else if *key == p::ZONE {
-            if posted == p::ZONE_UTC { p::ZONE_UTC.into() } else { p::ZONE_SYSTEM.into() }
+            if posted == p::ZONE_UTC {
+                p::ZONE_UTC.into()
+            } else {
+                p::ZONE_SYSTEM.into()
+            }
         } else {
             posted
         };
@@ -232,7 +360,9 @@ fn take(rq: &Rq<'_>, g: Grp, f: &Form, v: &mut Prefs) -> Result<(), qsweb::msg::
             p::SCHEMA => v.schemas.contains(&value) || (v.schemas.is_empty() && value.is_empty()),
             p::NAMING => ["sql", "sys"].contains(&value.as_str()),
             p::OUTPUT => p::OUTPUTS.contains(&value.as_str()),
-            p::MAX_ROWS => value.parse::<u32>().is_ok_and(|n| (1..=100_000).contains(&n)),
+            p::MAX_ROWS => value
+                .parse::<u32>()
+                .is_ok_and(|n| (1..=100_000).contains(&n)),
             p::SCREEN => ["24", "27"].contains(&value.as_str()),
             p::COLOURS => ["g", "w"].contains(&value.as_str()),
             p::FONT => p::FONTS.contains(&value.as_str()),

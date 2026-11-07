@@ -58,7 +58,10 @@ impl Kit {
             let p = e?.path();
             if p.extension().is_some_and(|x| x == "qir") {
                 out.push(Case {
-                    name: p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default(),
+                    name: p
+                        .file_stem()
+                        .map(|s| s.to_string_lossy().to_string())
+                        .unwrap_or_default(),
                     text: fs::read_to_string(&p)?.replace("\r\n", "\n"),
                 });
             }

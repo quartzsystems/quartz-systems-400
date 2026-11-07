@@ -74,7 +74,10 @@ impl Qtemp {
     /// The job's `QTEMP` is `lib`, made at `created` when the job started
     /// (the storage service's one `QTEMP` per job).
     pub fn adopt(&self, lib: ObjectId, created: u64) {
-        *self.0.borrow_mut() = State { lib: Some((lib, created)), ..State::default() };
+        *self.0.borrow_mut() = State {
+            lib: Some((lib, created)),
+            ..State::default()
+        };
     }
 
     /// The library made now, if a job's end left one to drop.
@@ -85,7 +88,12 @@ impl Qtemp {
     }
 
     fn declared(&self, id: ObjectId) -> Option<Declared> {
-        self.0.borrow().declared.iter().find(|d| d.file == id).copied()
+        self.0
+            .borrow()
+            .declared
+            .iter()
+            .find(|d| d.file == id)
+            .copied()
     }
 
     fn forget(&self, id: ObjectId) {
@@ -109,7 +117,13 @@ impl Qtemp {
 
     /// `file` is opened for a change.
     pub fn changing(&self, file: ObjectId) {
-        if let Some(d) = self.0.borrow_mut().declared.iter_mut().find(|d| d.file == file) {
+        if let Some(d) = self
+            .0
+            .borrow_mut()
+            .declared
+            .iter_mut()
+            .find(|d| d.file == file)
+        {
             d.changed = true;
         }
     }
@@ -154,7 +168,11 @@ impl SqlContext {
             return Ok(id);
         }
         let now = self.clock();
-        let owner = if self.user.is_empty() { "QSYS" } else { self.user.as_str() };
+        let owner = if self.user.is_empty() {
+            "QSYS"
+        } else {
+            self.user.as_str()
+        };
         let clean = txn.is_clean();
         let id = ops::create_temporary_root(txn, Name::parse(QTEMP).expect("valid"), owner, now)?;
         // Made durable at once when nothing else is pending, so no
@@ -168,13 +186,23 @@ impl SqlContext {
     }
 
     /// A file named through `QTEMP` or `SESSION`.
-    pub(crate) fn resolve_in_qtemp(&self, txn: &mut Txn<'_>, name: &ObjectName, session: bool) -> Result<Option<ObjectId>> {
-        let Some(lib) = self.qtemp_library(txn) else { return Ok(None) };
+    pub(crate) fn resolve_in_qtemp(
+        &self,
+        txn: &mut Txn<'_>,
+        name: &ObjectName,
+        session: bool,
+    ) -> Result<Option<ObjectId>> {
+        let Some(lib) = self.qtemp_library(txn) else {
+            return Ok(None);
+        };
         let id = if let Some(n) = names::direct(&name.name) {
             store::obj::library::Library::load(txn, lib)?.lookup(txn, types::FILE, n)?
         } else {
             let mut found = None;
-            for space in [db::sqlinf::names::Space::Table, db::sqlinf::names::Space::Index] {
+            for space in [
+                db::sqlinf::names::Space::Table,
+                db::sqlinf::names::Space::Index,
+            ] {
                 if let Some(id) = names::find(txn, lib, space, &name.name.value)? {
                     found = Some(id);
                     break;
@@ -188,44 +216,78 @@ impl SqlContext {
 
 /// `SQL0526`: what a declared temporary table cannot have or be used for.
 fn not_for_declared(what: &str) -> SqlError {
-    SqlError::Coded { code: -526, state: "42995", what: format!("{what} does not apply to a declared temporary table") }
+    SqlError::Coded {
+        code: -526,
+        state: "42995",
+        what: format!("{what} does not apply to a declared temporary table"),
+    }
 }
 
 /// Refuse `what` on `file` when it is a declared temporary table.
 pub fn refuse_declared(ctx: &SqlContext, file: ObjectId, what: &str) -> Result<()> {
-    if ctx.qtemp.is_declared(file) { Err(not_for_declared(what)) } else { Ok(()) }
+    if ctx.qtemp.is_declared(file) {
+        Err(not_for_declared(what))
+    } else {
+        Ok(())
+    }
 }
 
 /// `SQL0707`: an object kind `QTEMP` cannot hold.
 pub fn refuse_in_qtemp(name: &ObjectName, kind: &str) -> Result<()> {
     if qualifier(name) == Some(false) {
-        return Err(SqlError::Coded { code: -707, state: "42939", what: format!("a {kind} cannot be made in QTEMP") });
+        return Err(SqlError::Coded {
+            code: -707,
+            state: "42939",
+            what: format!("a {kind} cannot be made in QTEMP"),
+        });
     }
     Ok(())
 }
 
 /// `DECLARE GLOBAL TEMPORARY TABLE`: rows inserted (`AS ... WITH DATA`).
-pub fn declare(txn: &mut Txn<'_>, ctx: &mut SqlContext, d: &DeclareTemp, params: &[Value]) -> Result<u64> {
+pub fn declare(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    d: &DeclareTemp,
+    params: &[Value],
+) -> Result<u64> {
     let t = &d.table;
     if let Some(s) = &t.name.schema
         && s.value != SESSION
     {
-        return Err(SqlError::SchemaNotValid { schema: s.value.clone(), name: t.name.name.value.clone() });
+        return Err(SqlError::SchemaNotValid {
+            schema: s.value.clone(),
+            name: t.name.name.value.clone(),
+        });
     }
     if !t.constraints.is_empty() || t.columns.iter().any(|c| !c.constraints.is_empty()) {
         return Err(not_for_declared("a constraint"));
     }
     let mut table = t.clone();
-    table.name = ObjectName { schema: Some(Ident { value: QTEMP.into(), delimited: false }), name: t.name.name.clone() };
+    table.name = ObjectName {
+        schema: Some(Ident {
+            value: QTEMP.into(),
+            delimited: false,
+        }),
+        name: t.name.name.clone(),
+    };
     let lib = ctx.make_qtemp(txn)?;
     if let Some(old) = ctx.resolve_in_qtemp(txn, &table.name, false)? {
         if !d.replace {
-            return Err(SqlError::Exists { name: t.name.name.value.clone(), kind: "*FILE" });
+            return Err(SqlError::Exists {
+                name: t.name.name.value.clone(),
+                kind: "*FILE",
+            });
         }
         drop_file(txn, ctx, old)?;
     }
     let count = super::table::create(txn, ctx, &table, params)?;
-    let id = ctx.resolve_in_qtemp(txn, &table.name, false)?.ok_or_else(|| SqlError::ObjectNotFound { name: t.name.name.value.clone(), kind: "table" })?;
+    let id = ctx
+        .resolve_in_qtemp(txn, &table.name, false)?
+        .ok_or_else(|| SqlError::ObjectNotFound {
+            name: t.name.name.value.clone(),
+            kind: "table",
+        })?;
     ctx.qtemp.0.borrow_mut().plain.retain(|p| *p != id);
     if !d.not_logged {
         journal(txn, ctx, lib, id)?;
@@ -238,7 +300,8 @@ pub fn declare(txn: &mut Txn<'_>, ctx: &mut SqlContext, d: &DeclareTemp, params:
         changed: false,
     });
     // As 7.5 reports it: logged, but in no schema's journal.
-    ctx.warning = (!d.not_logged).then(|| crate::sqlca::Warning::not_journaled(&t.name.name.value, QTEMP));
+    ctx.warning =
+        (!d.not_logged).then(|| crate::sqlca::Warning::not_journaled(&t.name.name.value, QTEMP));
     Ok(count)
 }
 
@@ -251,10 +314,27 @@ fn journal(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, file: ObjectId) -
     let journal = if let Some(j) = l.lookup(txn, jrn::JRN, fixed(super::schema::JOURNAL))? {
         j
     } else {
-            let rcv = jrn::rcv::crtjrnrcv(txn, lib, fixed(super::schema::RECEIVER), &jrn::rcv::CrtJrnRcvOpts { now, ..jrn::rcv::CrtJrnRcvOpts::default() })
-                .map_err(db::DbError::from)?;
-            jrn::journal::crtjrn(txn, lib, fixed(super::schema::JOURNAL), rcv, &jrn::journal::CrtJrnOpts { now, ..jrn::journal::CrtJrnOpts::default() })
-                .map_err(db::DbError::from)?
+        let rcv = jrn::rcv::crtjrnrcv(
+            txn,
+            lib,
+            fixed(super::schema::RECEIVER),
+            &jrn::rcv::CrtJrnRcvOpts {
+                now,
+                ..jrn::rcv::CrtJrnRcvOpts::default()
+            },
+        )
+        .map_err(db::DbError::from)?;
+        jrn::journal::crtjrn(
+            txn,
+            lib,
+            fixed(super::schema::JOURNAL),
+            rcv,
+            &jrn::journal::CrtJrnOpts {
+                now,
+                ..jrn::journal::CrtJrnOpts::default()
+            },
+        )
+        .map_err(db::DbError::from)?
     };
     db::journal::strjrnpf(txn, ctx.job, file, journal, true, false, now)?;
     Ok(())
@@ -281,8 +361,15 @@ pub fn dropped(ctx: &SqlContext, id: ObjectId) {
 pub fn end_of_unit(txn: &mut Txn<'_>, ctx: &mut SqlContext, rollback: bool) -> Result<()> {
     let declared: Vec<Declared> = ctx.qtemp.0.borrow().declared.clone();
     for d in declared {
-        let held = ctx.cursors.values().any(|c| c.open && c.hold && c.table.as_ref().is_some_and(|t| t.id == d.file));
-        let clear = if rollback && d.not_logged { d.changed && !d.rollback_preserve } else { d.delete_rows && !held };
+        let held = ctx
+            .cursors
+            .values()
+            .any(|c| c.open && c.hold && c.table.as_ref().is_some_and(|t| t.id == d.file));
+        let clear = if rollback && d.not_logged {
+            d.changed && !d.rollback_preserve
+        } else {
+            d.delete_rows && !held
+        };
         if clear && ops::read_header(txn, d.file).is_ok() {
             db::util::clrpfm(txn, ctx.job, d.file, MemberSpec::First)?;
         }
@@ -294,10 +381,19 @@ pub fn end_of_unit(txn: &mut Txn<'_>, ctx: &mut SqlContext, rollback: bool) -> R
 }
 
 /// Drop a job's SQL `QTEMP` and everything in it.
-pub fn drop_library(txn: &mut Txn<'_>, qsys: ObjectId, job: JobHandle, lib: ObjectId) -> Result<()> {
+pub fn drop_library(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    job: JobHandle,
+    lib: ObjectId,
+) -> Result<()> {
     let mut ctx = SqlContext::new(qsys, job, ops::NameContext::default());
     ctx.qtemp.0.borrow_mut().lib = Some((lib, ops::read_header(txn, lib)?.1.created));
-    let objects: Vec<ObjectId> = ops::list(txn, lib, None)?.into_iter().map(|(_, id)| id).filter(|&id| id != lib).collect();
+    let objects: Vec<ObjectId> = ops::list(txn, lib, None)?
+        .into_iter()
+        .map(|(_, id)| id)
+        .filter(|&id| id != lib)
+        .collect();
     for &id in objects.iter().filter(|id| id.type_code == types::FILE) {
         if ops::read_header(txn, id).is_err() {
             continue;
@@ -316,7 +412,10 @@ pub fn drop_library(txn: &mut Txn<'_>, qsys: ObjectId, job: JobHandle, lib: Obje
     for &id in objects.iter().filter(|id| id.type_code == jrn::JRNRCV) {
         jrn::rcv::dltjrnrcv(txn, job, id).map_err(db::DbError::from)?;
     }
-    for &id in objects.iter().filter(|id| ![types::FILE, jrn::JRN, jrn::JRNRCV].contains(&id.type_code)) {
+    for &id in objects
+        .iter()
+        .filter(|id| ![types::FILE, jrn::JRN, jrn::JRNRCV].contains(&id.type_code))
+    {
         if ops::read_header(txn, id).is_ok() {
             ops::delete(txn, job, id)?;
         }
@@ -347,7 +446,9 @@ pub fn unsupported_in_qtemp(name: &ObjectName, what: &str) -> Result<()> {
     if qualifier(name).is_some() {
         // BLOCKED(rel): routines, types and triggers in QTEMP need their
         // programs and catalog entries kept per job.
-        return Err(SqlError::Unsupported { what: format!("{what} in QTEMP") });
+        return Err(SqlError::Unsupported {
+            what: format!("{what} in QTEMP"),
+        });
     }
     Ok(())
 }

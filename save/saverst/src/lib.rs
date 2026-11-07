@@ -19,8 +19,8 @@ pub mod order;
 pub mod restore;
 pub mod save;
 pub mod secdta;
-pub mod sign;
 pub mod select;
+pub mod sign;
 
 pub use error::{Error, Result};
 pub use hooks::{AllowAll, Hooks};

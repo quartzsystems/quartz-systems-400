@@ -157,7 +157,11 @@ pub fn schidx_add(
 
 /// `RMVSCHIDXE`: the topics of a panel group (of any library) out of a
 /// search index.
-pub fn schidx_remove(system: &mut System, (name, lib): (&str, &str), pnlgrp: &str) -> Result<String, String> {
+pub fn schidx_remove(
+    system: &mut System,
+    (name, lib): (&str, &str),
+    pnlgrp: &str,
+) -> Result<String, String> {
     in_store(system, |txn, qsys, names| {
         let (id, _) = find(txn, qsys, names, (name, lib), schidx_type())
             .map_err(|e| format!("CPF6E13 {e}"))?;

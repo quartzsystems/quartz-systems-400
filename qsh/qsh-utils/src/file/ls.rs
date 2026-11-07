@@ -98,10 +98,8 @@ impl Lister<'_, '_> {
         };
         let (st, link) = if lst.ftype == FileType::Symlink {
             let target = sys.readlink(path).ok();
-            let follow_operand = operand
-                && !self.o.dir_self
-                && !self.o.classify
-                && self.o.layout != Layout::Long;
+            let follow_operand =
+                operand && !self.o.dir_self && !self.o.classify && self.o.layout != Layout::Long;
             if self.o.follow || follow_operand {
                 (sys.stat(path).unwrap_or(lst), target)
             } else {
@@ -122,16 +120,16 @@ impl Lister<'_, '_> {
         items.sort_by(|a, b| {
             let o = match self.o.sort {
                 SortBy::Name => a.name.as_bytes().cmp(b.name.as_bytes()),
-                SortBy::Time => b
-                    .st
-                    .mtime
-                    .cmp(&a.st.mtime)
-                    .then_with(|| a.name.as_bytes().cmp(b.name.as_bytes())),
-                SortBy::Size => b
-                    .st
-                    .size
-                    .cmp(&a.st.size)
-                    .then_with(|| a.name.as_bytes().cmp(b.name.as_bytes())),
+                SortBy::Time => {
+                    b.st.mtime
+                        .cmp(&a.st.mtime)
+                        .then_with(|| a.name.as_bytes().cmp(b.name.as_bytes()))
+                }
+                SortBy::Size => {
+                    b.st.size
+                        .cmp(&a.st.size)
+                        .then_with(|| a.name.as_bytes().cmp(b.name.as_bytes()))
+                }
             };
             if self.o.reverse { o.reverse() } else { o }
         });
@@ -142,7 +140,11 @@ impl Lister<'_, '_> {
         if self.o.classify {
             if is_link && it.st.ftype == FileType::Symlink {
                 // The long format shows the target instead.
-                return if self.o.layout == Layout::Long { "" } else { "@" };
+                return if self.o.layout == Layout::Long {
+                    ""
+                } else {
+                    "@"
+                };
             }
             match it.st.ftype {
                 FileType::Dir => "/",
@@ -366,7 +368,11 @@ pub fn total_line(bytes: u64) -> String {
         (K * K * K, "gigabytes")
     };
     let thousandths = (u128::from(bytes) * 1000).div_ceil(u128::from(div));
-    format!("total: {}.{:03} {unit}\n", thousandths / 1000, thousandths % 1000)
+    format!(
+        "total: {}.{:03} {unit}\n",
+        thousandths / 1000,
+        thousandths % 1000
+    )
 }
 
 /// Names in columns across `width`, down each column unless `rows`.
@@ -412,7 +418,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         Err(e) => return usage(cx, name, &e.to_string()),
     };
     let terminal = cx.fd(1).is_some_and(|f| f.is_terminal());
-    let mut layout = if terminal { Layout::Columns } else { Layout::One };
+    let mut layout = if terminal {
+        Layout::Columns
+    } else {
+        Layout::One
+    };
     let mut sort = SortBy::Name;
     let mut o = Opts {
         layout,

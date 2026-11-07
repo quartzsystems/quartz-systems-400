@@ -176,7 +176,9 @@ impl Layout {
     /// scale clamped to it, the grid centered.
     #[must_use]
     pub fn compute(xres: usize, yres: usize, rows: usize, cols: usize, scale: Scale) -> Self {
-        let fit = (xres / (cols * GLYPH_W)).min(yres / (rows * GLYPH_H)).max(1);
+        let fit = (xres / (cols * GLYPH_W))
+            .min(yres / (rows * GLYPH_H))
+            .max(1);
         let s = match scale {
             Scale::Auto => fit,
             Scale::Fixed(n) => n.clamp(1, fit),
@@ -489,8 +491,14 @@ mod tests {
 
     #[test]
     fn a_fixed_scale_is_clamped_to_what_fits() {
-        assert_eq!(Layout::compute(1920, 1080, 24, 80, Scale::Fixed(1)).scale, 1);
-        assert_eq!(Layout::compute(1920, 1080, 24, 80, Scale::Fixed(9)).scale, 2);
+        assert_eq!(
+            Layout::compute(1920, 1080, 24, 80, Scale::Fixed(1)).scale,
+            1
+        );
+        assert_eq!(
+            Layout::compute(1920, 1080, 24, 80, Scale::Fixed(9)).scale,
+            2
+        );
         assert_eq!(Scale::parse("3"), Scale::Fixed(3));
         assert_eq!(Scale::parse("auto"), Scale::Auto);
         assert_eq!(Scale::parse("0"), Scale::Auto);
@@ -525,10 +533,7 @@ mod tests {
         assert_eq!(RGB565.pack(0x00FF_0000), 0xF800);
         assert_eq!(RGB565.pack(0x0000_FF00), 0x07E0);
         assert_eq!(RGB565.encode(0x0000_00FF)[..2], [0x1F, 0x00]);
-        let bgr24 = PixelFormat {
-            bpp: 24,
-            ..x
-        };
+        let bgr24 = PixelFormat { bpp: 24, ..x };
         assert_eq!(bgr24.bytes(), 3);
         assert_eq!(bgr24.encode(0x0012_3456)[..3], [0x56, 0x34, 0x12]);
         for f in [x, xbgr, RGB565, bgr24] {
@@ -538,7 +543,13 @@ mod tests {
         assert_eq!(RGB565.decode(&RGB565.encode(0x00FF_FFFF)), 0x00FF_FFFF);
         assert_eq!(x.decode(&x.encode(palette::GREEN)), palette::GREEN);
         assert!(!PixelFormat { bpp: 8, ..x }.supported());
-        assert!(!PixelFormat { red: ch(28, 8), ..x }.supported());
+        assert!(
+            !PixelFormat {
+                red: ch(28, 8),
+                ..x
+            }
+            .supported()
+        );
     }
 
     fn text(s: &mut Screen, row: usize, t: &str) {

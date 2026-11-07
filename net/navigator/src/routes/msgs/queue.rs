@@ -13,7 +13,9 @@ use std::fmt::Write as _;
 use qsweb::html::esc;
 use qsweb::http::Response;
 use qsweb::msg::Kind;
-use qsweb::partials::{Cell, Col, FilterField, List, Paging, actions, filter, form, list_table, paging, radio};
+use qsweb::partials::{
+    Cell, Col, FilterField, List, Paging, actions, filter, form, list_table, paging, radio,
+};
 
 use super::{GROUP, QSYSOPR, back, from, idlink, job_link, run};
 use crate::env::Need;
@@ -23,7 +25,12 @@ use crate::routes::common::{Confirm, confirm_in, keep, mono, quote, strings};
 use crate::util::parse_mdy;
 
 /// The Type filter's choices.
-const TYPES: &[&str] = &["All", "Inquiry (unanswered)", "Informational", "Severity 30+"];
+const TYPES: &[&str] = &[
+    "All",
+    "Inquiry (unanswered)",
+    "Informational",
+    "Severity 30+",
+];
 /// The longest text the operator's list shows whole.
 const SHOWN: usize = 70;
 
@@ -87,7 +94,10 @@ pub fn page(rq: &Rq<'_>, lib: &str, name: &str, my: bool) -> Response {
     }
     let queues = rq.env().msgs.queues(rq.user());
     if !my
-        && let Some(want) = q.get("q").map(str::to_ascii_uppercase).filter(|w| *w != name)
+        && let Some(want) = q
+            .get("q")
+            .map(str::to_ascii_uppercase)
+            .filter(|w| *w != name)
         && let Some((l, n)) = queues.iter().find(|(_, n)| *n == want)
     {
         let mut kept: Vec<(&str, &str)> = Vec::new();
@@ -104,8 +114,14 @@ pub fn page(rq: &Rq<'_>, lib: &str, name: &str, my: bool) -> Response {
     };
     ms.reverse();
     let (today, _) = rq.stamp(rq.env().system.now());
-    let t = TYPES.iter().find(|t| q.str("t") == **t).copied().unwrap_or("All");
-    let d = q.get("d").map_or_else(|| today.clone(), |d| d.trim().to_string());
+    let t = TYPES
+        .iter()
+        .find(|t| q.str("t") == **t)
+        .copied()
+        .unwrap_or("All");
+    let d = q
+        .get("d")
+        .map_or_else(|| today.clone(), |d| d.trim().to_string());
     if !my {
         let since = parse_mdy(&d);
         ms.retain(|m| since.is_none_or(|s| m.sent >= s));
@@ -126,7 +142,10 @@ pub fn page(rq: &Rq<'_>, lib: &str, name: &str, my: bool) -> Response {
         kept.push(("sort".into(), key.clone()));
     }
     let p = Paging::from_query(q.str("page"), q.str("rows"), ms.len(), kept);
-    let rows = ms[p.range()].iter().map(|m| row(rq, &lib, &name, m, my)).collect();
+    let rows = ms[p.range()]
+        .iter()
+        .map(|m| row(rq, &lib, &name, m, my))
+        .collect();
     let list = List {
         cols: vec![
             Col::plain("Actions"),
@@ -148,15 +167,35 @@ pub fn page(rq: &Rq<'_>, lib: &str, name: &str, my: bool) -> Response {
     }
     let title = format!("Message queue: {name}");
     if my {
-        return super::page(rq, &["My messages"], &title, &title, None, body, "mymsgs", Some((GROUP, Some("/mymsgs"))));
+        return super::page(
+            rq,
+            &["My messages"],
+            &title,
+            &title,
+            None,
+            body,
+            "mymsgs",
+            Some((GROUP, Some("/mymsgs"))),
+        );
     }
     let desc = if lib == "QSYS" && name == "QSYSOPR" {
         "System operator message queue (DSPMSG QSYSOPR). Inquiry messages awaiting a reply are shown in bold.".to_string()
     } else {
-        format!("Message queue {lib}/{name} (DSPMSG {lib}/{name}). Inquiry messages awaiting a reply are shown in bold.")
+        format!(
+            "Message queue {lib}/{name} (DSPMSG {lib}/{name}). Inquiry messages awaiting a reply are shown in bold."
+        )
     };
     let item = (format!("/msgq/{lib}/{name}") == QSYSOPR).then_some(QSYSOPR);
-    super::page(rq, &[&name], &title, &title, Some(&desc), body, "msgq", Some((GROUP, item)))
+    super::page(
+        rq,
+        &[&name],
+        &title,
+        &title,
+        Some(&desc),
+        body,
+        "msgq",
+        Some((GROUP, item)),
+    )
 }
 
 /// The filter row: the queue's name and Refresh for My messages; the
@@ -169,8 +208,16 @@ fn head(queues: &[(String, String)], name: &str, my: bool, t: &str, d: &str) -> 
         );
     }
     let names: Vec<String> = queues.iter().map(|(_, n)| n.clone()).collect();
-    let chosen = if names.first().is_some_and(|f| f == name) { String::new() } else { name.to_string() };
-    let tc = if t == "All" { String::new() } else { t.to_string() };
+    let chosen = if names.first().is_some_and(|f| f == name) {
+        String::new()
+    } else {
+        name.to_string()
+    };
+    let tc = if t == "All" {
+        String::new()
+    } else {
+        t.to_string()
+    };
     filter(
         &[
             FilterField::Select("Queue".into(), "q".into(), names, chosen),
@@ -198,14 +245,22 @@ fn row(rq: &Rq<'_>, lib: &str, name: &str, m: &QueuedMessage, my: bool) -> Vec<C
     let (dd, tt) = rq.stamp(m.sent);
     let txt = text(m);
     let txt = esc(&if my { txt } else { cut(&txt) });
-    let txt = if m.waiting() { format!("<b>{txt}</b>") } else { txt };
+    let txt = if m.waiting() {
+        format!("<b>{txt}</b>")
+    } else {
+        txt
+    };
     vec![
         Cell::act(actions(&acts)),
         Cell::mono(&format!("{dd} {tt}")),
         Cell::num(&format!("{:02}", m.severity)),
         Cell::mono_html(idlink(rq, &m.id)),
         Cell::html(txt),
-        if my { Cell::html(mono(&m.job)) } else { Cell::mono_html(job_link(rq, &m.job)) },
+        if my {
+            Cell::html(mono(&m.job))
+        } else {
+            Cell::mono_html(job_link(rq, &m.job))
+        },
         Cell::text(kind(m)),
     ]
 }
@@ -213,14 +268,20 @@ fn row(rq: &Rq<'_>, lib: &str, name: &str, m: &QueuedMessage, my: bool) -> Vec<C
 /// My messages' Send message form; To user is the sender of the newest
 /// message a user typed.
 fn send_form(rq: &Rq<'_>, ms: &[QueuedMessage]) -> String {
-    let to = ms.iter().find(|m| m.id.is_empty()).map(|m| m.user.clone()).unwrap_or_default();
+    let to = ms
+        .iter()
+        .find(|m| m.id.is_empty())
+        .map(|m| m.user.clone())
+        .unwrap_or_default();
     let mut s = String::from("<h3>Send message</h3><table class=\"props\">");
     let _ = write!(
         s,
         "<tr><th>To user</th><td><input type=\"text\" name=\"to\" value=\"{}\" size=\"10\"> or message queue <input type=\"text\" name=\"toq\" value=\"\" size=\"10\"></td></tr>",
         esc(&to)
     );
-    s.push_str("<tr><th>Message</th><td><textarea name=\"m\" rows=\"3\" cols=\"70\"></textarea></td></tr>");
+    s.push_str(
+        "<tr><th>Message</th><td><textarea name=\"m\" rows=\"3\" cols=\"70\"></textarea></td></tr>",
+    );
     let _ = write!(
         s,
         "<tr><th>Type</th><td>{} Informational {} Inquiry (reply to my queue)</td></tr></table>",
@@ -301,8 +362,16 @@ pub fn clear(rq: &Rq<'_>, lib: &str, name: &str) -> Response {
         if f.has("cancel") {
             return rq.redirect(&back);
         }
-        let which = if f.str("clr") == "*ALL" { "*ALL" } else { "*KEEPUNANS" };
-        return run(rq, &format!("CLRMSGQ MSGQ({lib}/{name}) CLEAR({which})"), &back);
+        let which = if f.str("clr") == "*ALL" {
+            "*ALL"
+        } else {
+            "*KEEPUNANS"
+        };
+        return run(
+            rq,
+            &format!("CLRMSGQ MSGQ({lib}/{name}) CLEAR({which})"),
+            &back,
+        );
     }
     let waiting = ms.iter().filter(|m| m.waiting()).count();
     let options = format!(

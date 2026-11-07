@@ -37,7 +37,9 @@ fn source() -> String {
          text = \"Access for Web messages\"\n",
     );
     for m in MESSAGES {
-        let n = vars_in(m.text).max(vars_in(m.cause)).max(vars_in(m.recovery));
+        let n = vars_in(m.text)
+            .max(vars_in(m.cause))
+            .max(vars_in(m.recovery));
         let _ = write!(
             out,
             "\n[[msg]]\nid = \"{}\"\nsev = {}\ntext = {}\nhelp = {}\n",
@@ -61,7 +63,9 @@ fn message_file_matches_the_table() {
     if std::env::var_os("QS400_UPDATE_MSGF").is_some() {
         std::fs::write(&path, &want).unwrap();
     }
-    let have = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
+    let have = std::fs::read_to_string(&path)
+        .unwrap_or_default()
+        .replace("\r\n", "\n");
     assert!(
         have == want,
         "runtime/msgf/msgs/qzxwmsg.toml differs from src/msgs.rs; QS400_UPDATE_MSGF=1 cargo test -p accessweb --test msgf rewrites it"
@@ -73,7 +77,16 @@ fn message_file_matches_the_table() {
         let d = file.find(m.id).unwrap();
         assert_eq!(d.text, m.text);
         assert_eq!(u16::from(m.severity), d.severity);
-        assert_eq!(msgs::split_help(&d.help), (m.cause.to_string(), m.recovery.to_string()), "{}", m.id);
+        assert_eq!(
+            msgs::split_help(&d.help),
+            (m.cause.to_string(), m.recovery.to_string()),
+            "{}",
+            m.id
+        );
     }
-    assert!(msgf::source::PRODUCT_FILES.iter().any(|f| f.0 == "QUSRSYS" && f.2 == msgf::source::QZXWMSG));
+    assert!(
+        msgf::source::PRODUCT_FILES
+            .iter()
+            .any(|f| f.0 == "QUSRSYS" && f.2 == msgf::source::QZXWMSG)
+    );
 }

@@ -35,7 +35,11 @@ pub fn ccsid_word(w: &str) -> Option<StmfCcsid> {
         "" | "*STMF" | "-1" | "0" => Some(StmfCcsid::Stmf),
         "*PCASCII" | "-2" => Some(StmfCcsid::PcAscii),
         "*STDASCII" | "-3" => Some(StmfCcsid::StdAscii),
-        n => n.parse::<u16>().ok().filter(|n| *n > 0).map(StmfCcsid::Ccsid),
+        n => n
+            .parse::<u16>()
+            .ok()
+            .filter(|n| *n > 0)
+            .map(StmfCcsid::Ccsid),
     }
 }
 
@@ -88,12 +92,14 @@ pub fn write_text(c: &dyn IfsClient, path: &str, text: &[u8], w: Write) -> Resul
     }
     let target = resolve(w.ccsid, existing);
     if let (Some(have), Opt::Add) = (existing, w.opt)
-        && have != target && !empty {
-            return Err(Msg::new("CPDA08A")
-                .bin4(i64::from(target))
-                .bin4(i64::from(have))
-                .vary(path));
-        }
+        && have != target
+        && !empty
+    {
+        return Err(Msg::new("CPDA08A")
+            .bin4(i64::from(target))
+            .bin4(i64::from(have))
+            .vary(path));
+    }
     let bytes = if target == 1208 || target == 65535 {
         text.to_vec()
     } else {

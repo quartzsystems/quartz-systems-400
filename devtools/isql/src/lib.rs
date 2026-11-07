@@ -52,7 +52,9 @@ impl IsqlError {
     #[must_use]
     pub fn msg(&self) -> uim::engine::LineMsg {
         match self {
-            Self::BadValue { field, value } => uim::engine::LineMsg::error("CPD9CD1", &[value, field]),
+            Self::BadValue { field, value } => {
+                uim::engine::LineMsg::error("CPD9CD1", &[value, field])
+            }
             Self::Missing(what) => uim::engine::LineMsg::error("CPD9CD2", &[what]),
             Self::Damaged(_) => uim::engine::LineMsg::error("CPD9CD3", &[]),
         }

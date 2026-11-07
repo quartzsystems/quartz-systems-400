@@ -144,7 +144,10 @@ fn corpus() {
     let mut total = 0;
     for path in files() {
         let fname = path.file_name().unwrap_or_default().to_string_lossy();
-        if prefix.as_ref().is_some_and(|p| !fname.starts_with(p.as_str())) {
+        if prefix
+            .as_ref()
+            .is_some_and(|p| !fname.starts_with(p.as_str()))
+        {
             continue;
         }
         let text = std::fs::read_to_string(&path)

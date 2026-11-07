@@ -51,10 +51,13 @@ impl Asp {
             });
         }
         for e in volume.extents() {
-            let (span, lba) = self.layout().locate(e.start).ok_or_else(|| StoreError::Corrupt {
-                page: head,
-                what: format!("IFS extent at {} beyond the ASP", e.start),
-            })?;
+            let (span, lba) = self
+                .layout()
+                .locate(e.start)
+                .ok_or_else(|| StoreError::Corrupt {
+                    page: head,
+                    what: format!("IFS extent at {} beyond the ASP", e.start),
+                })?;
             let s = self.layout().span(span);
             if lba < RESERVED_HEAD || lba + e.pages > s.pages - 1 {
                 return Err(StoreError::Corrupt {
@@ -115,9 +118,7 @@ impl Asp {
 
     /// Pages device parity holds over the whole ASP.
     fn parity_share(&self) -> u64 {
-        (0..self.io.unit_count())
-            .map(|u| self.parity_held(u))
-            .sum()
+        (0..self.io.unit_count()).map(|u| self.parity_held(u)).sum()
     }
 
     /// Pages the volume may still grow by: what keeps the ASP at or

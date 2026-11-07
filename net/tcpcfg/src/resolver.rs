@@ -46,7 +46,12 @@ impl HostConfig {
     pub fn from_config(cfg: &Config) -> Self {
         let d = &cfg.domain;
         Self {
-            hosts: cfg.hosts.list.iter().map(|e| (e.addr, e.names.clone())).collect(),
+            hosts: cfg
+                .hosts
+                .list
+                .iter()
+                .map(|e| (e.addr, e.names.clone()))
+                .collect(),
             host_name: d.host_name.clone(),
             dmn_name: d.domain_name.clone(),
             dmn_sch_list: d.search(),
@@ -112,15 +117,31 @@ mod tests {
         let mut cfg = Config::default();
         cfg.domain.domain_name = "EXAMPLE.COM".into();
         cfg.hosts
-            .add(HostEntry::new("10.0.2.15".parse().unwrap(), &["qs400.example.com".into()], "").unwrap())
+            .add(
+                HostEntry::new(
+                    "10.0.2.15".parse().unwrap(),
+                    &["qs400.example.com".into()],
+                    "",
+                )
+                .unwrap(),
+            )
             .unwrap();
         let h = HostConfig::from_config(&cfg);
-        assert_eq!(h.lookup("localhost"), vec!["127.0.0.1".parse::<IpAddr>().unwrap()]);
-        assert_eq!(h.lookup("qs400"), vec!["10.0.2.15".parse::<IpAddr>().unwrap()]);
+        assert_eq!(
+            h.lookup("localhost"),
+            vec!["127.0.0.1".parse::<IpAddr>().unwrap()]
+        );
+        assert_eq!(
+            h.lookup("qs400"),
+            vec!["10.0.2.15".parse::<IpAddr>().unwrap()]
+        );
         assert_eq!(h.lookup("QS400.EXAMPLE.COM."), h.lookup("qs400"));
         assert!(h.lookup("nothere").is_empty());
         assert_eq!(h.name_of("::1".parse().unwrap()), Some("IPV6-LOOPBACK"));
         assert!(h.host_sch_pty_local);
-        assert_eq!((h.port, h.tcp, h.init_qry_int, h.qry_timeout), (53, false, 2, 4));
+        assert_eq!(
+            (h.port, h.tcp, h.init_qry_int, h.qry_timeout),
+            (53, false, 2, 4)
+        );
     }
 }

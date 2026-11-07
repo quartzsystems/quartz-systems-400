@@ -191,7 +191,11 @@ impl Prompter {
     #[must_use]
     pub fn help(&self, cursor: Option<(u8, u8)>) -> Option<HelpRequest> {
         let group = self.def.hlppnlgrp.as_ref()?;
-        let id = self.def.hlpid.clone().unwrap_or_else(|| self.def.name.clone());
+        let id = self
+            .def
+            .hlpid
+            .clone()
+            .unwrap_or_else(|| self.def.name.clone());
         let base = if group.lib.is_empty() || group.lib.starts_with('*') {
             format!("{}/{id}", group.name)
         } else {
@@ -209,16 +213,18 @@ impl Prompter {
         // The parameter of the field on the cursor's row, or of the
         // nearest field above it (a list's or group's heading row).
         let last_row = u8::try_from(FIRST_ROW + PAGE_ROWS).unwrap_or(21);
-        let parm = cursor.filter(|(r, _)| (2..last_row).contains(r)).and_then(|(row, _)| {
-            shown
-                .fields
-                .iter()
-                .filter(|f| f.row <= row)
-                .filter_map(|f| f.path.as_ref().map(|p| (f.row, p.parm)))
-                .filter(|(_, p)| *p != SOURCE_PARM)
-                .max_by_key(|(r, _)| *r)
-                .map(|(_, p)| p)
-        });
+        let parm = cursor
+            .filter(|(r, _)| (2..last_row).contains(r))
+            .and_then(|(row, _)| {
+                shown
+                    .fields
+                    .iter()
+                    .filter(|f| f.row <= row)
+                    .filter_map(|f| f.path.as_ref().map(|p| (f.row, p.parm)))
+                    .filter(|(_, p)| *p != SOURCE_PARM)
+                    .max_by_key(|(r, _)| *r)
+                    .map(|(_, p)| p)
+            });
         let title_row = cursor.is_some_and(|(r, _)| r == 1);
         let module = match parm.and_then(|i| self.def.parms.get(i)) {
             Some(p) if !title_row => format!("{base}/{}", p.kwd),
@@ -542,15 +548,12 @@ impl Prompter {
             }
             3 | 12 => Step::Cancel,
             4 => {
-                let path = self
-                    .error
-                    .clone()
-                    .or_else(|| {
-                        shown
-                            .fields
-                            .iter()
-                            .find_map(|f| f.path.clone().filter(|p| p.parm != SOURCE_PARM))
-                    });
+                let path = self.error.clone().or_else(|| {
+                    shown
+                        .fields
+                        .iter()
+                        .find_map(|f| f.path.clone().filter(|p| p.parm != SOURCE_PARM))
+                });
                 if let Some(path) = path {
                     let values = self.choices_of(&path);
                     self.window = Some(Window::Choices { path, values });

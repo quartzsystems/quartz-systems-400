@@ -67,7 +67,9 @@ impl P<'_> {
 
     fn value(&mut self) -> Result<Json, BadJson> {
         self.ws();
-        let Some(&c) = self.s.get(self.at) else { return self.bad() };
+        let Some(&c) = self.s.get(self.at) else {
+            return self.bad();
+        };
         match c {
             '{' => {
                 self.depth += 1;
@@ -181,7 +183,9 @@ impl P<'_> {
     fn hex4(&mut self) -> Result<u32, BadJson> {
         let mut v = 0;
         for _ in 0..4 {
-            let Some(d) = self.s.get(self.at).and_then(|c| c.to_digit(16)) else { return self.bad() };
+            let Some(d) = self.s.get(self.at).and_then(|c| c.to_digit(16)) else {
+                return self.bad();
+            };
             v = v * 16 + d;
             self.at += 1;
         }
@@ -192,12 +196,16 @@ impl P<'_> {
         self.at += 1;
         let mut out = String::new();
         loop {
-            let Some(&c) = self.s.get(self.at) else { return self.bad() };
+            let Some(&c) = self.s.get(self.at) else {
+                return self.bad();
+            };
             self.at += 1;
             match c {
                 '"' => return Ok(out),
                 '\\' => {
-                    let Some(&e) = self.s.get(self.at) else { return self.bad() };
+                    let Some(&e) = self.s.get(self.at) else {
+                        return self.bad();
+                    };
                     self.at += 1;
                     out.push(match e {
                         '"' => '"',
@@ -231,7 +239,11 @@ impl P<'_> {
 /// Parse JSON text: one value, blanks around it.
 pub fn parse(text: &str) -> Result<Json, BadJson> {
     let s: Vec<char> = text.chars().collect();
-    let mut p = P { s: &s, at: 0, depth: 0 };
+    let mut p = P {
+        s: &s,
+        at: 0,
+        depth: 0,
+    };
     let v = p.value()?;
     p.ws();
     if p.at != s.len() {
@@ -313,7 +325,8 @@ impl Json {
         match self {
             Self::Object(m) => {
                 let mut seen = std::collections::HashSet::new();
-                m.iter().any(|(k, _)| !seen.insert(k.as_str())) || m.iter().any(|(_, v)| v.has_duplicate_keys())
+                m.iter().any(|(k, _)| !seen.insert(k.as_str()))
+                    || m.iter().any(|(_, v)| v.has_duplicate_keys())
             }
             Self::Array(items) => items.iter().any(Self::has_duplicate_keys),
             _ => false,

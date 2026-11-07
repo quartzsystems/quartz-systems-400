@@ -16,10 +16,10 @@ use httpd::files::{Entry, Files};
 use qsweb::msg::{Kind, Message};
 use stg::Client;
 
-use crate::work::web::bridge::Bridge;
-use crate::work::web::run_as;
 use crate::httpenv::reply;
 use crate::work::ifsfiles::IfsFiles;
+use crate::work::web::bridge::Bridge;
+use crate::work::web::run_as;
 
 /// The instances' jobs.
 pub struct LiveJobs {
@@ -28,7 +28,11 @@ pub struct LiveJobs {
 }
 
 fn gone() -> Message {
-    Message::new(Kind::Error, "CPF9897", "The administration server is ending; the request was not run.")
+    Message::new(
+        Kind::Error,
+        "CPF9897",
+        "The administration server is ending; the request was not run.",
+    )
 }
 
 impl Jobs for LiveJobs {
@@ -40,19 +44,27 @@ impl Jobs for LiveJobs {
 
     fn start(&self, user: &str, instance: &str) -> Result<Message, Message> {
         let (user, line) = (user.to_string(), reply::start_command(instance));
-        self.bridge.call(move |m| run_as(m, Some(&user), &line)).unwrap_or_else(|| Err(gone()))
+        self.bridge
+            .call(move |m| run_as(m, Some(&user), &line))
+            .unwrap_or_else(|| Err(gone()))
     }
 
     fn end(&self, user: &str, instance: &str, how: EndHow) -> Result<Message, Message> {
         let (user, line) = (user.to_string(), reply::end_command(instance, how));
-        self.bridge.call(move |m| run_as(m, Some(&user), &line)).unwrap_or_else(|| Err(gone()))
+        self.bridge
+            .call(move |m| run_as(m, Some(&user), &line))
+            .unwrap_or_else(|| Err(gone()))
     }
 
     fn authorize(&self, root: &str, profile: &str) -> Result<(), Message> {
         // As the job: it owns what it made under /www.
         let lines = httpadmin::env::authorize_commands(root, profile);
         self.bridge
-            .call(move |m| lines.iter().try_for_each(|l| run_as(m, None, l).map(|_| ())))
+            .call(move |m| {
+                lines
+                    .iter()
+                    .try_for_each(|l| run_as(m, None, l).map(|_| ()))
+            })
             .unwrap_or_else(|| Err(gone()))
     }
 }
@@ -64,7 +76,10 @@ pub struct LiveFiles {
 }
 
 impl LiveFiles {
-    fn on<T: Send + 'static>(&self, f: impl FnOnce(&IfsFiles) -> io::Result<T> + Send + 'static) -> io::Result<T> {
+    fn on<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&IfsFiles) -> io::Result<T> + Send + 'static,
+    ) -> io::Result<T> {
         self.bridge
             .call(move |m| f(&m.files))
             .unwrap_or_else(|| Err(io::Error::other("the administration server is ending")))
@@ -131,7 +146,9 @@ impl Transport for CertLink {
         let user = user.map(String::from);
         self.bridge
             .call(move |m| match user {
-                Some(u) => m.as_user(&u, |m| m.link.borrow_mut().with(|l| l.web_certs(call))).ok(),
+                Some(u) => m
+                    .as_user(&u, |m| m.link.borrow_mut().with(|l| l.web_certs(call)))
+                    .ok(),
                 None => Some(m.link.borrow_mut().with(|l| l.web_certs(call))),
             })
             .flatten()

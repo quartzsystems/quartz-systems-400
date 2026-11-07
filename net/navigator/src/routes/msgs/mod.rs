@@ -103,7 +103,11 @@ fn idlink(rq: &Rq<'_>, id: &str) -> String {
 /// system.
 fn job_link(rq: &Rq<'_>, job: &str) -> String {
     if !job.is_empty() && rq.env().work.job(rq.user(), job).is_some() {
-        format!("<a href=\"{}\">{}</a>", esc(&rq.ctx.url(&format!("/job/{job}/general"))), esc(job))
+        format!(
+            "<a href=\"{}\">{}</a>",
+            esc(&rq.ctx.url(&format!("/job/{job}/general"))),
+            esc(job)
+        )
     } else {
         esc(job)
     }

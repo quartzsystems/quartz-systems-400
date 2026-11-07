@@ -32,8 +32,12 @@ pub fn framework() -> Framework {
     f.register(Box::new(servers::framework::Ftp));
     f.register(Box::new(servers::framework::HostSvr));
     f.register(Box::new(servers::framework::HttpServer));
-    f.register(Box::new(servers::framework::Standard::of("*QAP").expect("in the registry")));
-    f.register(Box::new(servers::framework::Standard::of("*DDM").expect("in the registry")));
+    f.register(Box::new(
+        servers::framework::Standard::of("*QAP").expect("in the registry"),
+    ));
+    f.register(Box::new(
+        servers::framework::Standard::of("*DDM").expect("in the registry"),
+    ));
     f
 }
 
@@ -47,11 +51,10 @@ pub fn http_instances(host: &Host) -> Vec<servers::framework::HttpInstance> {
         reg.instances
             .iter()
             .map(|e| {
-                let user = httpd::instance::load_conf(files, &e.root)
-                    .map_or_else(
-                        |_| httpd::serve::site::DEFAULT_USER.to_string(),
-                        |c| httpd::serve::site::Plan::new(&e.name, &e.root, &c).user,
-                    );
+                let user = httpd::instance::load_conf(files, &e.root).map_or_else(
+                    |_| httpd::serve::site::DEFAULT_USER.to_string(),
+                    |c| httpd::serve::site::Plan::new(&e.name, &e.root, &c).user,
+                );
                 servers::framework::HttpInstance {
                     name: e.name.to_ascii_uppercase(),
                     autostart: e.autostart,
@@ -118,7 +121,10 @@ impl<'a> JobEnv<'a> {
     }
 
     fn state(&self, name: &str) -> u8 {
-        self.host.link.borrow_mut().with(|l| l.job_state(name.into()))
+        self.host
+            .link
+            .borrow_mut()
+            .with(|l| l.job_state(name.into()))
     }
 
     fn command(&mut self, line: &str) -> Result<String, String> {
@@ -136,11 +142,7 @@ impl Env for JobEnv<'_> {
     }
 
     fn start_job(&mut self, j: &JobStart) -> Result<(), String> {
-        let number = self
-            .host
-            .link
-            .borrow_mut()
-            .with(Client::job_number)?;
+        let number = self.host.link.borrow_mut().with(Client::job_number)?;
         let start = wm::ctl::Start {
             name: j.name.clone(),
             user: j.user.clone(),
@@ -167,7 +169,10 @@ impl Env for JobEnv<'_> {
         {
             let mut children = self.host.children.borrow_mut();
             children.retain_mut(|s| matches!(s.child.try_wait(), Ok(None)));
-            if let Some(s) = children.iter_mut().find(|s| s.start.name.eq_ignore_ascii_case(job)) {
+            if let Some(s) = children
+                .iter_mut()
+                .find(|s| s.start.name.eq_ignore_ascii_case(job))
+            {
                 return s
                     .chan
                     .send(&wm::ctl::ToJob::End { immediate })
@@ -175,7 +180,8 @@ impl Env for JobEnv<'_> {
             }
         }
         let option = if immediate { "*IMMED" } else { "*CNTRLD" };
-        self.command(&format!("ENDJOB JOB({job}) OPTION({option})")).map(|_| ())
+        self.command(&format!("ENDJOB JOB({job}) OPTION({option})"))
+            .map(|_| ())
     }
 
     fn attrs(&mut self, server: &str) -> ServerAttrs {
@@ -186,7 +192,8 @@ impl Env for JobEnv<'_> {
         if self.state(name) == 1 {
             return Ok(());
         }
-        self.command(&format!("STRSBS SBSD(QSYS/{name})")).map(|_| ())
+        self.command(&format!("STRSBS SBSD(QSYS/{name})"))
+            .map(|_| ())
     }
 
     fn http_instances(&mut self) -> Vec<servers::framework::HttpInstance> {
@@ -243,7 +250,11 @@ fn server_list(r: &Resolved) -> Vec<String> {
         .map(|v| text(v).to_ascii_uppercase())
         .filter(|s| !s.is_empty())
         .collect();
-    if list.is_empty() { vec!["*ALL".into()] } else { list }
+    if list.is_empty() {
+        vec!["*ALL".into()]
+    } else {
+        list
+    }
 }
 
 /// The instance `HTTPSVR` and `INSTANCE` name.
@@ -355,7 +366,10 @@ pub fn chgtelna(host: &Host, r: &Resolved) -> Result<String, Fail> {
         bag: attrs.to_bag(),
     };
     match host.link.borrow_mut().with(|l| l.tcp(op)) {
-        TcpReply::Done { .. } => Ok(format!("{} TELNET attributes changed.\n", servers::msg::ATTRS_CHANGED)),
+        TcpReply::Done { .. } => Ok(format!(
+            "{} TELNET attributes changed.\n",
+            servers::msg::ATTRS_CHANGED
+        )),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
         other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
@@ -385,8 +399,11 @@ pub fn chgftpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
         bag: attrs.to_bag(),
     };
     match host.link.borrow_mut().with(|l| l.tcp(op)) {
-        TcpReply::Done { .. } => Ok(format!("{} FTP attributes changed.
-", servers::msg::ATTRS_CHANGED)),
+        TcpReply::Done { .. } => Ok(format!(
+            "{} FTP attributes changed.
+",
+            servers::msg::ATTRS_CHANGED
+        )),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
         other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
@@ -417,7 +434,12 @@ mod tests {
         assert_eq!(ours, theirs);
         for d in hostserver::jobs::DAEMONS {
             let (_, j) = servers::registry::of_job(d.name).expect("in the registry");
-            assert_eq!((j.subsystem, j.role), (d.subsystem, "HOSTSVRD"), "{}", d.name);
+            assert_eq!(
+                (j.subsystem, j.role),
+                (d.subsystem, "HOSTSVRD"),
+                "{}",
+                d.name
+            );
         }
     }
 

@@ -33,7 +33,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     let procs = match cx.sys.processes() {
         Ok(v) => v,
         Err(e) => {
-            complain(cx, NAME, &format!("The processes cannot be listed: {}", e.errno.text()));
+            complain(
+                cx,
+                NAME,
+                &format!("The processes cannot be listed: {}", e.errno.text()),
+            );
             return 1;
         }
     };

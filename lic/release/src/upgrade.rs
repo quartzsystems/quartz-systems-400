@@ -36,7 +36,9 @@ pub enum InstallKind {
 #[derive(Clone, Copy, Debug, Error, PartialEq, Eq)]
 pub enum UpgradeError {
     /// The media is older than the system.
-    #[error("the media holds {media}, older than the installed {installed}; downgrade is not allowed")]
+    #[error(
+        "the media holds {media}, older than the installed {installed}; downgrade is not allowed"
+    )]
     Downgrade {
         /// On the system.
         installed: Release,
@@ -122,7 +124,10 @@ mod tests {
 
     #[test]
     fn the_rule() {
-        assert_eq!(check_upgrade(p("V1R0M0"), p("V1R0M0")), Ok(InstallKind::Slip));
+        assert_eq!(
+            check_upgrade(p("V1R0M0"), p("V1R0M0")),
+            Ok(InstallKind::Slip)
+        );
         assert_eq!(
             check_upgrade(p("V1R0M0"), p("V1R1M0")),
             Ok(InstallKind::Upgrade {

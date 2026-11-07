@@ -235,7 +235,11 @@ fn read_source(cx: &UtilCtx<'_>, o: &Opts, f: &str) -> Result<Source, qsh::sys::
         cx.sys.stat(&cx.path(f)).ok().map(|st| st.mtime)
     };
     Ok(Source {
-        name: if f == "-" { String::new() } else { f.to_string() },
+        name: if f == "-" {
+            String::new()
+        } else {
+            f.to_string()
+        },
         lines,
         mtime,
     })
@@ -359,7 +363,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     };
     let files = crate::common::io::inputs(&ops);
     let trailer = !o.no_header && o.length > 10;
-    let body = if trailer { o.length - 10 } else { o.length.max(1) };
+    let body = if trailer {
+        o.length - 10
+    } else {
+        o.length.max(1)
+    };
     let rows_per_page = if o.double { (body / 2).max(1) } else { body };
     let mut status = 0;
     let mut sources = Vec::new();

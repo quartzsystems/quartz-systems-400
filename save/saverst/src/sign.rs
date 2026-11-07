@@ -50,7 +50,10 @@ pub fn content_digest(txn: &mut Txn<'_>, id: ObjectId) -> Result<[u8; 32]> {
 /// references' stream flags cleared, which depend on what else the save
 /// held. It is what [`content_digest`] gave when the object was signed.
 #[must_use]
-pub fn saved_content_digest(d: &savfmt::object::ObjectDescriptor, parts: &BTreeMap<Part, Vec<u8>>) -> [u8; 32] {
+pub fn saved_content_digest(
+    d: &savfmt::object::ObjectDescriptor,
+    parts: &BTreeMap<Part, Vec<u8>>,
+) -> [u8; 32] {
     let Some(b) = parts.get(&Part::REFS) else {
         return savfmt::digest(d, parts);
     };
@@ -79,7 +82,8 @@ pub fn verify_saved(
     stream_digest: &[u8; 32],
     signature: &[u8; 64],
 ) -> bool {
-    verify(public, stream_digest, signature) || verify(public, &saved_content_digest(d, parts), signature)
+    verify(public, stream_digest, signature)
+        || verify(public, &saved_content_digest(d, parts), signature)
 }
 
 /// What `CHKOBJITG` finds for one object.

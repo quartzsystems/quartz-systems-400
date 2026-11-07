@@ -141,9 +141,20 @@ fn version_1_spooled_files_upgrade_once() {
     use wm::obj::splf::{self, SplfAttrs};
     let (mut store, qsys) = open_new();
     let mut t = store.begin().unwrap();
-    let qgpl = ops::find_library(&mut t, qsys, Name::parse("QGPL").unwrap()).unwrap().id;
+    let qgpl = ops::find_library(&mut t, qsys, Name::parse("QGPL").unwrap())
+        .unwrap()
+        .id;
     let make = |t: &mut store::txn::Txn<'_>, n: &str, data: &[u8]| {
-        let id = wm::obj::create(t, qgpl, Name::parse(n).unwrap(), types::SPLF, "QSYSPRT", &stamp(), &[]).unwrap();
+        let id = wm::obj::create(
+            t,
+            qgpl,
+            Name::parse(n).unwrap(),
+            types::SPLF,
+            "QSYSPRT",
+            &stamp(),
+            &[],
+        )
+        .unwrap();
         let mut a = SplfAttrs {
             name: "QSYSPRT".into(),
             devtype: "*SCS".into(),
@@ -159,20 +170,39 @@ fn version_1_spooled_files_upgrade_once() {
     assert!(!splf::upgrade(&mut t, old, |_, _| unreachable!()).unwrap());
     // Marked version 1, as files written before the published codes are.
     let (space, _) = store::obj::space::Space::load(&mut t, old).unwrap();
-    space.write(&mut t, 8, &splf::VERSION_OLD_PP.to_le_bytes()[..2]).unwrap();
-    assert!(splf::upgrade(&mut t, old, |a, d| {
-        assert_eq!(a.devtype, "*SCS");
-        Some(d.iter().map(|&b| if b == 0x4C { 0xC4 } else { b }).collect())
-    })
-    .unwrap());
+    space
+        .write(&mut t, 8, &splf::VERSION_OLD_PP.to_le_bytes()[..2])
+        .unwrap();
+    assert!(
+        splf::upgrade(&mut t, old, |a, d| {
+            assert_eq!(a.devtype, "*SCS");
+            Some(
+                d.iter()
+                    .map(|&b| if b == 0x4C { 0xC4 } else { b })
+                    .collect(),
+            )
+        })
+        .unwrap()
+    );
     let a = splf::read_attrs(&mut t, old).unwrap();
-    assert_eq!(splf::read_data(&mut t, old, &a).unwrap(), [0x34, 0xC4, 5, 0xC1]);
-    assert_eq!((splf::version(&mut t, old).unwrap(), a.pages, a.records), (splf::VERSION, 1, 2));
-    assert!(!splf::upgrade(&mut t, old, |_, _| unreachable!()).unwrap(), "once only");
+    assert_eq!(
+        splf::read_data(&mut t, old, &a).unwrap(),
+        [0x34, 0xC4, 5, 0xC1]
+    );
+    assert_eq!(
+        (splf::version(&mut t, old).unwrap(), a.pages, a.records),
+        (splf::VERSION, 1, 2)
+    );
+    assert!(
+        !splf::upgrade(&mut t, old, |_, _| unreachable!()).unwrap(),
+        "once only"
+    );
     // A version 1 file the rewrite leaves is still marked done.
     let kept = make(&mut t, "SP00000002", &[0xC1]);
     let (space, _) = store::obj::space::Space::load(&mut t, kept).unwrap();
-    space.write(&mut t, 8, &splf::VERSION_OLD_PP.to_le_bytes()[..2]).unwrap();
+    space
+        .write(&mut t, 8, &splf::VERSION_OLD_PP.to_le_bytes()[..2])
+        .unwrap();
     assert!(!splf::upgrade(&mut t, kept, |_, _| None).unwrap());
     assert_eq!(splf::version(&mut t, kept).unwrap(), splf::VERSION);
     t.commit().unwrap();

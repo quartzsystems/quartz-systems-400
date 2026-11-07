@@ -20,7 +20,11 @@ use crate::value::Value;
 
 /// `SQ20398`: text that is no well-formed XML document.
 fn parse_failed(why: &str) -> SqlError {
-    SqlError::Coded { code: -20398, state: "2200M", what: format!("XML parsing failed: {why}") }
+    SqlError::Coded {
+        code: -20398,
+        state: "2200M",
+        what: format!("XML parsing failed: {why}"),
+    }
 }
 
 struct P<'a> {
@@ -31,12 +35,17 @@ struct P<'a> {
 }
 
 fn name_char(c: char, first: bool) -> bool {
-    c.is_alphabetic() || c == '_' || c == ':' || (!first && (c.is_ascii_digit() || c == '-' || c == '.'))
+    c.is_alphabetic()
+        || c == '_'
+        || c == ':'
+        || (!first && (c.is_ascii_digit() || c == '-' || c == '.'))
 }
 
 impl P<'_> {
     fn starts(&self, w: &str) -> bool {
-        (self.at..).zip(w.chars()).all(|(i, c)| self.s.get(i) == Some(&c))
+        (self.at..)
+            .zip(w.chars())
+            .all(|(i, c)| self.s.get(i) == Some(&c))
     }
 
     fn eat(&mut self, w: &str) -> bool {
@@ -50,7 +59,11 @@ impl P<'_> {
 
     fn ws(&mut self) -> bool {
         let start = self.at;
-        while self.s.get(self.at).is_some_and(|c| matches!(c, ' ' | '\t' | '\n' | '\r')) {
+        while self
+            .s
+            .get(self.at)
+            .is_some_and(|c| matches!(c, ' ' | '\t' | '\n' | '\r'))
+        {
             self.at += 1;
         }
         self.at > start
@@ -58,7 +71,11 @@ impl P<'_> {
 
     fn name(&mut self) -> Result<String> {
         let start = self.at;
-        while self.s.get(self.at).is_some_and(|c| name_char(*c, self.at == start)) {
+        while self
+            .s
+            .get(self.at)
+            .is_some_and(|c| name_char(*c, self.at == start))
+        {
             self.at += 1;
         }
         if self.at == start {
@@ -95,7 +112,9 @@ impl P<'_> {
                 } else {
                     b.strip_prefix('#').and_then(|d| d.parse().ok())
                 };
-                return n.and_then(char::from_u32).ok_or_else(|| parse_failed(&format!("&{b}; is not a known reference")));
+                return n
+                    .and_then(char::from_u32)
+                    .ok_or_else(|| parse_failed(&format!("&{b}; is not a known reference")));
             }
         };
         Ok(c)
@@ -112,7 +131,11 @@ impl P<'_> {
             let target = self.name()?;
             let rest = self.until("?>")?;
             let rest = rest.trim_start();
-            let _ = write!(self.out, "<?{target}{}{rest}?>", if rest.is_empty() { "" } else { " " });
+            let _ = write!(
+                self.out,
+                "<?{target}{}{rest}?>",
+                if rest.is_empty() { "" } else { " " }
+            );
             return Ok(true);
         }
         Ok(false)
@@ -153,7 +176,9 @@ impl P<'_> {
             let mut value = String::new();
             loop {
                 match self.s.get(self.at) {
-                    None | Some('<') => return Err(parse_failed("an attribute value is not closed")),
+                    None | Some('<') => {
+                        return Err(parse_failed("an attribute value is not closed"));
+                    }
                     Some(c) if c.to_string() == q => {
                         self.at += 1;
                         break;
@@ -266,7 +291,12 @@ impl P<'_> {
 /// `XMLPARSE(DOCUMENT text)`: the document's serialized form.
 pub fn parse(text: &str, preserve: bool) -> Result<String> {
     let s: Vec<char> = text.chars().collect();
-    let mut p = P { s: &s, at: 0, strip: !preserve, out: String::new() };
+    let mut p = P {
+        s: &s,
+        at: 0,
+        strip: !preserve,
+        out: String::new(),
+    };
     p.document()?;
     Ok(p.out)
 }
@@ -275,7 +305,11 @@ pub fn parse(text: &str, preserve: bool) -> Result<String> {
 /// job's CCSID 37 is `IBM037`).
 #[must_use]
 pub fn serialize(xml: &str, declaration: bool) -> String {
-    if declaration { format!("<?xml version=\"1.0\" encoding=\"IBM037\"?>{xml}") } else { xml.to_string() }
+    if declaration {
+        format!("<?xml version=\"1.0\" encoding=\"IBM037\"?>{xml}")
+    } else {
+        xml.to_string()
+    }
 }
 
 /// Evaluated operands of `XMLPARSE` (`[text]`, opts `w` = preserve).
@@ -303,16 +337,32 @@ mod tests {
             parse("<a>  <b x=\"1\"  y='2'>x &amp; y</b>  </a>", false).unwrap(),
             "<a><b x=\"1\" y=\"2\">x &amp; y</b></a>"
         );
-        assert_eq!(parse("<a>  <b>x</b>  </a>", true).unwrap(), "<a>  <b>x</b>  </a>");
+        assert_eq!(
+            parse("<a>  <b>x</b>  </a>", true).unwrap(),
+            "<a>  <b>x</b>  </a>"
+        );
         assert_eq!(parse("<?xml version=\"1.0\"?><a/>", false).unwrap(), "<a/>");
         assert_eq!(
             parse("<a><!-- c --><?pi x?><![CDATA[<z>]]>&lt;&#65;</a>", false).unwrap(),
             "<a><!-- c --><?pi x?>&lt;z&gt;&lt;A</a>"
         );
-        assert_eq!(parse("<a b=\"&quot;\"/>", false).unwrap(), "<a b=\"&quot;\"/>");
+        assert_eq!(
+            parse("<a b=\"&quot;\"/>", false).unwrap(),
+            "<a b=\"&quot;\"/>"
+        );
         assert_eq!(parse("<a>&#xE9;é</a>", false).unwrap(), "<a>éé</a>");
-        assert_eq!(serialize("<a/>", true), "<?xml version=\"1.0\" encoding=\"IBM037\"?><a/>");
-        for bad in ["<a>x</b>", "text", "<a", "<a b=1/>", "<a/><b/>", "<a>&nope;</a>"] {
+        assert_eq!(
+            serialize("<a/>", true),
+            "<?xml version=\"1.0\" encoding=\"IBM037\"?><a/>"
+        );
+        for bad in [
+            "<a>x</b>",
+            "text",
+            "<a",
+            "<a b=1/>",
+            "<a/><b/>",
+            "<a>&nope;</a>",
+        ] {
             assert_eq!(parse(bad, false).unwrap_err().sqlcode(), -20398, "{bad}");
         }
     }

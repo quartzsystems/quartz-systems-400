@@ -45,9 +45,17 @@ pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
         ["5250", n, "delete", "confirm"] => with_saved(rq, id(n), config::delete),
         ["5250", n, "keymap"] => with_saved(rq, id(n), keymap::page),
         ["5250", n, "keymap", "export"] => with_saved(rq, id(n), keymap::export),
-        ["5250", n, "keymap", "json"] => with_saved(rq, id(n), |_, s| Response::new(200, "application/json", keymap::json(&s.file.keymap()).into_bytes())),
+        ["5250", n, "keymap", "json"] => with_saved(rq, id(n), |_, s| {
+            Response::new(
+                200,
+                "application/json",
+                keymap::json(&s.file.keymap()).into_bytes(),
+            )
+        }),
         ["5250", n, "macros"] => with_saved(rq, id(n), macros::page),
-        ["5250", n, "macros", m, rest @ ..] => with_saved(rq, id(n), |rq, s| macros::one(rq, s, m, rest)),
+        ["5250", n, "macros", m, rest @ ..] => {
+            with_saved(rq, id(n), |rq, s| macros::one(rq, s, m, rest))
+        }
         _ => rq.not_found(&format!("page {}", esc(&segs.join("/")))),
     }
 }
@@ -59,7 +67,11 @@ fn with_id(rq: &Rq<'_>, id: Option<u32>, f: impl FnOnce(&Rq<'_>, u32) -> Respons
     }
 }
 
-fn with_saved(rq: &Rq<'_>, id: Option<u32>, f: impl FnOnce(&Rq<'_>, Saved) -> Response) -> Response {
+fn with_saved(
+    rq: &Rq<'_>,
+    id: Option<u32>,
+    f: impl FnOnce(&Rq<'_>, Saved) -> Response,
+) -> Response {
     match id.and_then(|n| saved(rq, n)) {
         Some(s) => f(rq, s),
         None => rq.not_found("saved 5250 session"),
@@ -71,7 +83,11 @@ pub fn saved(rq: &Rq<'_>, id: u32) -> Option<Saved> {
     if id == 0 {
         return config::unsaved(rq);
     }
-    rq.env().session5250.sessions(rq.user()).into_iter().find(|s| s.id == id)
+    rq.env()
+        .session5250
+        .sessions(rq.user())
+        .into_iter()
+        .find(|s| s.id == id)
 }
 
 /// The policy check every page of the area makes first.
@@ -86,7 +102,11 @@ pub fn when_short(rq: &Rq<'_>, secs: u64) -> String {
     }
     let (d, t) = rq.stamp(secs);
     // HH:MM:SS or HH:MM:SS AM: drop the seconds.
-    let hm = if t.len() > 8 { format!("{}{}", &t[..5], &t[8..]) } else { t[..5.min(t.len())].to_string() };
+    let hm = if t.len() > 8 {
+        format!("{}{}", &t[..5], &t[8..])
+    } else {
+        t[..5.min(t.len())].to_string()
+    };
     format!("{d} {hm}")
 }
 
@@ -95,7 +115,11 @@ pub fn when_short(rq: &Rq<'_>, secs: u64) -> String {
 pub fn select(name: &str, options: &[String], chosen: usize) -> String {
     let mut s = format!("<select name=\"{}\">", esc(name));
     for (i, o) in options.iter().enumerate() {
-        let sel = if i == chosen && i > 0 { " selected" } else { "" };
+        let sel = if i == chosen && i > 0 {
+            " selected"
+        } else {
+            ""
+        };
         let _ = write!(s, "<option{sel}>{}</option>", esc(o));
     }
     s.push_str("</select>");

@@ -10,8 +10,8 @@ use std::fmt::Debug;
 use ipc::{Wire, decode, encode};
 use qap_proto::ops::connection::choose_version;
 use qap_proto::ops::ifs::{
-    CreateDirectory, Entries, Entry, EntryKind, FileData, FromTo, ListDirectory, PathRef, ReadFile, WriteFile,
-    WriteMode, Written,
+    CreateDirectory, Entries, Entry, EntryKind, FileData, FromTo, ListDirectory, PathRef, ReadFile,
+    WriteFile, WriteMode, Written,
 };
 use qap_proto::{Envelope, Op, Service, Status, VERSION};
 
@@ -105,7 +105,12 @@ fn layouts() {
         next_offset: 2,
         data: vec![9],
     });
-    assert_eq!(b, [3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 9]);
+    assert_eq!(
+        b,
+        [
+            3, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 9
+        ]
+    );
 }
 
 #[test]
@@ -186,7 +191,9 @@ fn large_reads_split_and_join() {
             ..ReadFile::default()
         },
     );
-    let data: Vec<u8> = (0..3 * qap_proto::MAX_FRAME).map(|i| u8::try_from(i % 251).unwrap()).collect();
+    let data: Vec<u8> = (0..3 * qap_proto::MAX_FRAME)
+        .map(|i| u8::try_from(i % 251).unwrap())
+        .collect();
     let body = encode(&FileData {
         size: u64::try_from(data.len()).unwrap(),
         next_offset: u64::try_from(data.len()).unwrap(),

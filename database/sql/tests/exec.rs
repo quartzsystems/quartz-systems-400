@@ -289,7 +289,12 @@ fn tables_inserts_and_selects() {
         [row(&["3"]), row(&["4"]), row(&["1"]), row(&["2"])]
     );
     // DB2 for i has no NULLS FIRST or NULLS LAST (pub400: SQL0199).
-    assert_eq!(db.run("SELECT cusno FROM cust ORDER BY since NULLS LAST, cusno").unwrap_err().sqlcode(), -199);
+    assert_eq!(
+        db.run("SELECT cusno FROM cust ORDER BY since NULLS LAST, cusno")
+            .unwrap_err()
+            .sqlcode(),
+        -199
+    );
 }
 
 #[test]
@@ -352,7 +357,14 @@ fn joins_groups_and_subqueries() {
     // Aggregates with and without groups, HAVING.
     assert_eq!(
         db.rows("SELECT COUNT(*), COUNT(since), SUM(bal), AVG(bal), MIN(name), MAX(bal) FROM cust"),
-        [row(&["4", "2", "260.50", "65.125000000000000000000000", "Alice", "250.00"])]
+        [row(&[
+            "4",
+            "2",
+            "260.50",
+            "65.125000000000000000000000",
+            "Alice",
+            "250.00"
+        ])]
     );
     assert_eq!(
         db.rows("SELECT COUNT(*) FROM cust WHERE cusno > 100"),
@@ -566,7 +578,10 @@ fn indexes_and_plans() {
     setup(&mut db);
     // The primary key is a constraint the planner reads by key.
     let p = db.plan("SELECT * FROM cust WHERE cusno = 3");
-    assert!(p.contains("keyed via QSTEST/CUST constraint Q_QSTEST_CUST_CUSNO_00001 eq=1"), "{p}");
+    assert!(
+        p.contains("keyed via QSTEST/CUST constraint Q_QSTEST_CUST_CUSNO_00001 eq=1"),
+        "{p}"
+    );
     let p = db.plan("SELECT * FROM cust WHERE cusno BETWEEN 2 AND 3 ORDER BY cusno");
     assert!(
         p.contains("range=yes") && p.contains("ordered") && p.contains("ORDER BY satisfied"),
@@ -628,7 +643,10 @@ fn indexes_and_plans() {
     // A unique index over rows that repeat a key (two null notes count
     // as one key) is not made; once they differ it is, and refuses a
     // duplicate.
-    assert_eq!(db.code("CREATE UNIQUE INDEX qstest/cusnote ON cust (note)"), -603);
+    assert_eq!(
+        db.code("CREATE UNIQUE INDEX qstest/cusnote ON cust (note)"),
+        -603
+    );
     db.ok("UPDATE cust SET note = 'dave' WHERE cusno = 4");
     db.ok("CREATE UNIQUE INDEX qstest/cusnote ON cust (note)");
     assert_eq!(

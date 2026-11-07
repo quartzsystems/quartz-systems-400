@@ -18,7 +18,8 @@ fn dtaq() {
         let t = trace("dtaq", s);
         let auth = TraceAuth::of(&t);
         let diffs = replay(&t, &Masks::default(), &mut || {
-            Box::new(DtaqServer::new(auth.clone(), MemQueues::default(), NoExits)) as Box<dyn Handler>
+            Box::new(DtaqServer::new(auth.clone(), MemQueues::default(), NoExits))
+                as Box<dyn Handler>
         });
         accept(&format!("dtaq-{s}"), &diffs);
     }

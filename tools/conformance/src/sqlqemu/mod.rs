@@ -98,7 +98,12 @@ impl Tn {
             .lines()
             .find_map(|l| {
                 let i = l.find("Message ID")?;
-                l[i..].split(':').nth(1)?.split_whitespace().next().map(str::to_string)
+                l[i..]
+                    .split(':')
+                    .nth(1)?
+                    .split_whitespace()
+                    .next()
+                    .map(str::to_string)
             })
             .ok_or_else(|| format!("no message ID shown:\n{screen}"))?;
         self.run("key f12\nsettle 800\nunlock\n")?;
@@ -116,7 +121,10 @@ impl Tn {
 /// The library and source files, the password the sessions sign on
 /// with, made once whichever step runs first.
 pub(crate) fn setup(s: &mut Session) -> Result<(), String> {
-    let set = s.command(&format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"), CMD)?;
+    let set = s.command(
+        &format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"),
+        CMD,
+    )?;
     if set.trim_start().starts_with("CPF") {
         return Err(format!("CHGUSRPRF QSECOFR: {set}"));
     }
@@ -128,10 +136,19 @@ pub(crate) fn setup(s: &mut Session) -> Result<(), String> {
 }
 
 /// A source member into `SQLQ/file` over the service console.
-pub(crate) fn put(s: &mut Session, file: &str, name: &str, kind: &str, text: &str) -> Result<(), String> {
+pub(crate) fn put(
+    s: &mut Session,
+    file: &str,
+    name: &str,
+    kind: &str,
+    text: &str,
+) -> Result<(), String> {
     let buf = format!("Q{name}");
     crate::qir::qemu::push(s, &buf, text)?;
-    let r = s.command(&format!("svc.srcput {LIB}/{file} {name} SRCTYPE({kind}) FROMSTMF({buf})"), CMD)?;
+    let r = s.command(
+        &format!("svc.srcput {LIB}/{file} {name} SRCTYPE({kind}) FROMSTMF({buf})"),
+        CMD,
+    )?;
     if !r.contains("written") {
         return Err(format!("srcput {name}: {r}"));
     }
@@ -166,7 +183,10 @@ pub(crate) fn spooled(s: &mut Session, file: &str) -> Result<String, String> {
     let [_, splnbr, job, user, number, ..] = row[..] else {
         return Err(format!("a short row for {file}: {row:?}"));
     };
-    s.command(&format!("svc.dspsplf {file} JOB({number}/{user}/{job}) SPLNBR({splnbr})"), CMD)
+    s.command(
+        &format!("svc.dspsplf {file} JOB({number}/{user}/{job}) SPLNBR({splnbr})"),
+        CMD,
+    )
 }
 
 /// The DDM server up and `LOOP`, an *RDB entry aliasing this system,
@@ -188,14 +208,21 @@ pub(crate) fn loop_rdb(s: &mut Session) -> Result<(), String> {
     let _ = s.command("RMVRDBDIRE RDB(LOOP)", CMD);
     // This system's database again, by the alias LOOP, as IBM i reaches itself.
     let local = local_rdb(s)?;
-    let add = s.command(&format!("ADDRDBDIRE RDB({local} LOOP) RMTLOCNAME('127.0.0.1' *IP) TEXT('This system again')"), CMD)?;
+    let add = s.command(
+        &format!(
+            "ADDRDBDIRE RDB({local} LOOP) RMTLOCNAME('127.0.0.1' *IP) TEXT('This system again')"
+        ),
+        CMD,
+    )?;
     if add.trim_start().starts_with("CPF") {
         return Err(format!("ADDRDBDIRE: {add}"));
     }
     let _ = s.command("CHGSYSVAL SYSVAL(QRETSVRSEC) VALUE('1')", CMD);
     let _ = s.command("RMVSVRAUTE USRPRF(QSECOFR) SERVER(LOOP)", CMD);
     let aute = s.command(
-        &format!("ADDSVRAUTE USRPRF(QSECOFR) SERVER(LOOP) USRID(QSECOFR) PASSWORD('{SECOFR_PASSWORD}')"),
+        &format!(
+            "ADDSVRAUTE USRPRF(QSECOFR) SERVER(LOOP) USRID(QSECOFR) PASSWORD('{SECOFR_PASSWORD}')"
+        ),
         CMD,
     )?;
     if aute.trim_start().starts_with("CPF") {

@@ -32,7 +32,9 @@ struct Facts {
 
 fn facts(ctx: &Ctx) -> Result<Facts> {
     let pin = fetch::read_pin(&ctx.paths)?;
-    let sha256 = pin.sha256.context("kernel/SHA256 is missing: the source offer needs the pin")?;
+    let sha256 = pin
+        .sha256
+        .context("kernel/SHA256 is missing: the source offer needs the pin")?;
     Ok(Facts {
         url: fetch::tarball_url(&pin.version),
         version: pin.version,
@@ -140,27 +142,54 @@ pub fn files(ctx: &Ctx) -> Result<(Files, String)> {
     let resolved = fs::read_to_string(kernel::config_path(ctx))
         .context("the resolved kernel .config: build the kernel first")?
         .lines()
-        .map(|l| if l.starts_with("CONFIG_INITRAMFS_SOURCE=") { "CONFIG_INITRAMFS_SOURCE=\"qs400-initramfs.cpio\"" } else { l })
+        .map(|l| {
+            if l.starts_with("CONFIG_INITRAMFS_SOURCE=") {
+                "CONFIG_INITRAMFS_SOURCE=\"qs400-initramfs.cpio\""
+            } else {
+                l
+            }
+        })
         .collect::<Vec<_>>()
         .join("\n")
         + "\n";
     let resolved = resolved.into_bytes();
     let fragment = fs::read(ctx.paths.fragments().join(FRAGMENT))?;
-    let text = |id: &str| crate::notices::text(id).map(|t| t.as_bytes().to_vec()).unwrap_or_default();
+    let text = |id: &str| {
+        crate::notices::text(id)
+            .map(|t| t.as_bytes().to_vec())
+            .unwrap_or_default()
+    };
     let mut out = vec![
-        (format!("{DIR}/SOURCE-OFFER.txt"), offer.clone().into_bytes()),
-        (format!("{DIR}/BUILDING-THE-KERNEL.md"), building(&f).into_bytes()),
-        (format!("{DIR}/PATCHES.txt"), b"QS/400 applies no patches to the kernel source.\n".to_vec()),
+        (
+            format!("{DIR}/SOURCE-OFFER.txt"),
+            offer.clone().into_bytes(),
+        ),
+        (
+            format!("{DIR}/BUILDING-THE-KERNEL.md"),
+            building(&f).into_bytes(),
+        ),
+        (
+            format!("{DIR}/PATCHES.txt"),
+            b"QS/400 applies no patches to the kernel source.\n".to_vec(),
+        ),
         (format!("{DIR}/{FRAGMENT}"), fragment),
         (format!("{DIR}/config-{}-qs400", f.version), resolved),
-        (format!("{DIR}/COPYING"), include_bytes!("../../licenses/linux-COPYING.txt").to_vec()),
+        (
+            format!("{DIR}/COPYING"),
+            include_bytes!("../../licenses/linux-COPYING.txt").to_vec(),
+        ),
         (format!("{DIR}/GPL-2.0.txt"), text("GPL-2.0")),
-        (format!("{DIR}/Linux-syscall-note.txt"), text("Linux-syscall-note")),
+        (
+            format!("{DIR}/Linux-syscall-note.txt"),
+            text("Linux-syscall-note"),
+        ),
     ];
     for (_, data) in &mut out {
         // One line ending whatever the checkout's.
         if !data.contains(&0) {
-            *data = String::from_utf8_lossy(data).replace("\r\n", "\n").into_bytes();
+            *data = String::from_utf8_lossy(data)
+                .replace("\r\n", "\n")
+                .into_bytes();
         }
     }
     Ok((out, offer))

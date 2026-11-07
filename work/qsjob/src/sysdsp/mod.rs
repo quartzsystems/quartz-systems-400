@@ -48,7 +48,12 @@ pub fn install(job: &mut Job, host: &Host) {
 }
 
 /// The commands of the system displays, run in the job.
-pub fn run(job: &mut Job, host: &Host, r: &Resolved, _out: &mut Outcome) -> Option<Result<String, Fail>> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    r: &Resolved,
+    _out: &mut Outcome,
+) -> Option<Result<String, Fail>> {
     let _ = job;
     Some(match r.name.as_str() {
         "SETATNPGM" => attn::setatnpgm(host, &parm(r, "PGM"), &parm(r, "SET")),

@@ -41,7 +41,9 @@ struct LeaseSink {
 impl LeaseSink {
     fn index(&self) -> Result<u32, String> {
         let mut r = Rtnl::open().map_err(|e| e.to_string())?;
-        r.link_by_name(&self.link).map(|l| l.index).map_err(|e| format!("{}: {e}", self.link))
+        r.link_by_name(&self.link)
+            .map(|l| l.index)
+            .map_err(|e| format!("{}: {e}", self.link))
     }
 
     fn route(l: &dhcp::Lease, index: u32) -> Option<netlink::route::Route> {
@@ -146,7 +148,12 @@ fn route_of(r: &KRoute) -> netlink::route::Route {
 
 impl NetOps for Kernel {
     fn links(&mut self) -> NetResult<Vec<LinkInfo>> {
-        Ok(Self::rtnl()?.links().map_err(err)?.iter().map(info).collect())
+        Ok(Self::rtnl()?
+            .links()
+            .map_err(err)?
+            .iter()
+            .map(info)
+            .collect())
     }
 
     fn set_up(&mut self, index: u32, up: bool) -> NetResult<()> {
@@ -158,11 +165,15 @@ impl NetOps for Kernel {
     }
 
     fn create_dummy(&mut self, name: &str) -> NetResult<LinkInfo> {
-        Ok(info(&Self::rtnl()?.create_simple(name, "dummy").map_err(err)?))
+        Ok(info(
+            &Self::rtnl()?.create_simple(name, "dummy").map_err(err)?,
+        ))
     }
 
     fn create_vlan(&mut self, name: &str, parent: u32, id: u16) -> NetResult<LinkInfo> {
-        Ok(info(&Self::rtnl()?.create_vlan(name, parent, id).map_err(err)?))
+        Ok(info(
+            &Self::rtnl()?.create_vlan(name, parent, id).map_err(err)?,
+        ))
     }
 
     fn delete_link(&mut self, index: u32) -> NetResult<()> {
@@ -260,7 +271,8 @@ impl NetOps for Kernel {
             link: link.to_string(),
             added: (false, false),
         });
-        let a = dhcp::run::Agent::spawn(link, cfg, sink).map_err(|e| NetError::new(format!("DHCP on {link}: {e}")))?;
+        let a = dhcp::run::Agent::spawn(link, cfg, sink)
+            .map_err(|e| NetError::new(format!("DHCP on {link}: {e}")))?;
         self.agents.insert(link.to_string(), a);
         Ok(())
     }

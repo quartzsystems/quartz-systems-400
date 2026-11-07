@@ -74,7 +74,10 @@ fn the_primary_s_points_are_shipped() {
     }
     // 7.5 only, or REL-5's.
     assert!(reg.point("QIBM_QSY_VLD_PASSWRD", "VLDP0200").is_none());
-    assert_eq!(reg.point("QIBM_QWT_PREATTNPGMS", "ATTN0100").unwrap().max, Some(8));
+    assert_eq!(
+        reg.point("QIBM_QWT_PREATTNPGMS", "ATTN0100").unwrap().max,
+        Some(8)
+    );
 }
 
 #[test]
@@ -114,7 +117,11 @@ fn a_password_program_that_refuses_ends_the_calls() {
         new: "x".into(),
         ..Password::default()
     });
-    let mut reg = with("QIBM_QSY_VLD_PASSWRD", "VLDP0100", &["OKPWD", "NOPWD", "OKPWD"]);
+    let mut reg = with(
+        "QIBM_QSY_VLD_PASSWRD",
+        "VLDP0100",
+        &["OKPWD", "NOPWD", "OKPWD"],
+    );
     let mut c = Fake::default();
     let a = call_exit(&mut reg, &mut c, "QIBM_QSY_VLD_PASSWRD", &req);
     assert!(!a.allow);
@@ -140,13 +147,23 @@ fn a_notification_ignores_a_broken_program() {
 fn prerestrict_checks_then_executes_or_cancels() {
     let mut reg = with("QIBM_QWC_PRERESTRICT", "PRER0100", &["FIRST", "WAITS"]);
     let mut c = Fake::default();
-    let r = prepare(&mut reg, &mut c, "QIBM_QWC_PRERESTRICT", "PRER0100", wm::delay::IMMED);
+    let r = prepare(
+        &mut reg,
+        &mut c,
+        "QIBM_QWC_PRERESTRICT",
+        "PRER0100",
+        wm::delay::IMMED,
+    );
     assert!(r.allowed);
     assert_eq!(r.wait, 90);
     let acts: Vec<&str> = c.calls.iter().map(|(_, a)| a.as_str()).collect();
     assert_eq!(acts, ["1", "1", "2", "2"]);
 
-    let mut reg = with("QIBM_QWC_PRERESTRICT", "PRER0100", &["FIRST", "SAYSNO", "LAST"]);
+    let mut reg = with(
+        "QIBM_QWC_PRERESTRICT",
+        "PRER0100",
+        &["FIRST", "SAYSNO", "LAST"],
+    );
     let mut c = Fake::default();
     let r = prepare(&mut reg, &mut c, "QIBM_QWC_PRERESTRICT", "PRER0100", 60);
     assert!(!r.allowed);
@@ -154,11 +171,24 @@ fn prerestrict_checks_then_executes_or_cancels() {
     let seen: Vec<(String, String)> = c.calls.clone();
     assert_eq!(
         seen,
-        [("FIRST".into(), "1".into()), ("SAYSNO".into(), "1".into()), ("FIRST".into(), "3".into())],
+        [
+            ("FIRST".into(), "1".into()),
+            ("SAYSNO".into(), "1".into()),
+            ("FIRST".into(), "3".into())
+        ],
         "the one that said no and the ones never asked are not told to cancel"
     );
     // A program that cannot be called counts as yes.
     let mut reg = with("QIBM_QWC_PWRDWNSYS", "PWRD0200", &["BROKEN"]);
-    assert!(prepare(&mut reg, &mut Fake::default(), "QIBM_QWC_PWRDWNSYS", "PWRD0200", -1).allowed);
+    assert!(
+        prepare(
+            &mut reg,
+            &mut Fake::default(),
+            "QIBM_QWC_PWRDWNSYS",
+            "PWRD0200",
+            -1
+        )
+        .allowed
+    );
     assert_eq!(action::CHECK, '1');
 }

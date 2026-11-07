@@ -121,7 +121,10 @@ pub fn text_to_scs(b: &[u8], fcfc: bool) -> (Vec<u8>, u32, u32, u16) {
     });
     for (ff, line) in &records {
         if fcfc {
-            let (c, rest) = line.chars().next().map_or((' ', ""), |c| (c, &line[c.len_utf8()..]));
+            let (c, rest) = line
+                .chars()
+                .next()
+                .map_or((' ', ""), |c| (c, &line[c.len_utf8()..]));
             let ctl = Control::fcfc(c, p.fmt.ovrflw).unwrap_or_else(Control::line);
             p.write_str(rest, ctl);
         } else if *ff && p.line() > 0 {
@@ -152,7 +155,11 @@ pub fn spooled(job: &Job) -> Vec<Spooled> {
     job.data
         .iter()
         .map(|(name, bytes)| {
-            let mine: Vec<u8> = prints.iter().filter(|(_, n)| n == name).map(|(c, _)| *c).collect();
+            let mine: Vec<u8> = prints
+                .iter()
+                .filter(|(_, n)| n == name)
+                .map(|(c, _)| *c)
+                .collect();
             let letter = mine.first().copied().unwrap_or(b'f');
             let copies = u16::try_from(mine.len().max(1)).unwrap_or(1);
             if let Some(a) = &sent {
@@ -217,7 +224,10 @@ mod tests {
         assert_eq!((pages, records, width), (2, 3, 80));
         let (decoded, _) = spool::scs::decode(&scs);
         let text = spool::view::text(&decoded);
-        assert!(text.contains("one") && text.contains("two     x") && text.contains("three"), "{text}");
+        assert!(
+            text.contains("one") && text.contains("two     x") && text.contains("three"),
+            "{text}"
+        );
         let wide = "w".repeat(100);
         assert_eq!(text_to_scs(wide.as_bytes(), false).3, 132);
     }
@@ -237,7 +247,10 @@ mod tests {
     fn plain_text_and_binary() {
         let s = spooled(&job(b"Hpc1\nPanne\nNnotes.txt\n", b'f', b"hello\n"));
         assert_eq!(s.len(), 1);
-        assert_eq!((s[0].attrs.file.as_str(), s[0].attrs.usrdta.as_str()), ("NOTES", "anne"));
+        assert_eq!(
+            (s[0].attrs.file.as_str(), s[0].attrs.usrdta.as_str()),
+            ("NOTES", "anne")
+        );
         assert_eq!(s[0].attrs.devtype, "*SCS");
         assert_eq!((s[0].user.as_str(), s[0].host.as_str()), ("anne", "pc1"));
         let s = spooled(&job(b"Hpc1\nPanne\n", b'o', b"%!PS\n"));
@@ -269,11 +282,21 @@ mod tests {
         let j = Job {
             queue: "QPRINT".into(),
             control_name: "cfA001QS400B".into(),
-            data: vec![(print::sink::lpr::control::data_name("QS400B", 1), scs.clone())],
+            data: vec![(
+                print::sink::lpr::control::data_name("QS400B", 1),
+                scs.clone(),
+            )],
             control: cf,
         };
         let s = spooled(&j);
-        assert_eq!((s[0].attrs.file.as_str(), s[0].attrs.copies, s[0].attrs.page_len), ("PAYROLL", 2, 51));
+        assert_eq!(
+            (
+                s[0].attrs.file.as_str(),
+                s[0].attrs.copies,
+                s[0].attrs.page_len
+            ),
+            ("PAYROLL", 2, 51)
+        );
         assert_eq!(s[0].data, scs);
     }
 }

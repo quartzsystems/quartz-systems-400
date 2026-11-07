@@ -41,12 +41,14 @@ pub struct Env {
 impl Env {
     /// A date's digits in the job's order, two- or four-digit year.
     fn date_digits(&self, d: (u16, u8, u8), year4: bool) -> String {
-        self.formats.date_digits(i64::from(d.0), u32::from(d.1), u32::from(d.2), year4)
+        self.formats
+            .date_digits(i64::from(d.0), u32::from(d.1), u32::from(d.2), year4)
     }
 
     /// The same with the job's separators, as `EDTCDE(Y)` shows it.
     fn date_edited(&self, d: (u16, u8, u8), year4: bool) -> String {
-        self.formats.date(i64::from(d.0), u32::from(d.1), u32::from(d.2), year4)
+        self.formats
+            .date(i64::from(d.0), u32::from(d.1), u32::from(d.2), year4)
     }
 }
 
@@ -62,11 +64,9 @@ pub fn cond_on(c: &Cond, inds: &[bool; 100], size_name: &str) -> bool {
     if c.any.is_empty() {
         return true;
     }
-    c.any.iter().any(|group| {
-        group
-            .iter()
-            .all(|i| inds[usize::from(i.number)] == i.on)
-    })
+    c.any
+        .iter()
+        .any(|group| group.iter().all(|i| inds[usize::from(i.number)] == i.on))
 }
 
 /// How a field is shown and taken.
@@ -86,7 +86,12 @@ pub struct Look {
 /// that are in effect. `chginpdft` is the `CHGINPDFT` in force, if any:
 /// its words replace the underline input fields get by default.
 #[must_use]
-pub fn look_of(f: &Field, inds: &[bool; 100], size_name: &str, chginpdft: Option<&[String]>) -> Look {
+pub fn look_of(
+    f: &Field,
+    inds: &[bool; 100],
+    size_name: &str,
+    chginpdft: Option<&[String]>,
+) -> Look {
     let input = f.usage.is_input();
     let mut words: Vec<String> = Vec::new();
     if input {
@@ -215,7 +220,8 @@ pub fn constant_text(c: &Constant, f: &Field, env: &Env) -> String {
         }
         Constant::Time { .. } => {
             let (hh, mm, ss) = env.time;
-            env.formats.time(u32::from(hh), u32::from(mm), u32::from(ss))
+            env.formats
+                .time(u32::from(hh), u32::from(mm), u32::from(ss))
         }
         Constant::User => format!("{:<10}", env.user),
         Constant::SysName => format!("{:<8}", env.sysname),
@@ -368,10 +374,16 @@ mod tests {
             ),
             "10/23/2026"
         );
-        assert_eq!(constant_text(&Constant::Time { sys: false }, &f, &e), "09:05:07");
+        assert_eq!(
+            constant_text(&Constant::Time { sys: false }, &f, &e),
+            "09:05:07"
+        );
         assert_eq!(constant_text(&Constant::SysName, &f, &e), "QS400   ");
         let mut dmy = e.clone();
         dmy.formats = ccsid::nls::Formats::parse("*DMY", ".", ".", "");
-        assert_eq!(constant_text(&Constant::Time { sys: false }, &f, &dmy), "09.05.07");
+        assert_eq!(
+            constant_text(&Constant::Time { sys: false }, &f, &dmy),
+            "09.05.07"
+        );
     }
 }

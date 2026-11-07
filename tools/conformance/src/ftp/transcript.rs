@@ -64,7 +64,9 @@ pub fn parse(name: &str, text: &str) -> Transcript {
     };
     let mut hexbuf: Option<Vec<u8>> = None;
     let mut textbuf: Option<(usize, Vec<String>, usize)> = None;
-    let flush = |t: &mut Transcript, hexbuf: &mut Option<Vec<u8>>, textbuf: &mut Option<(usize, Vec<String>, usize)>| {
+    let flush = |t: &mut Transcript,
+                 hexbuf: &mut Option<Vec<u8>>,
+                 textbuf: &mut Option<(usize, Vec<String>, usize)>| {
         if let Some(h) = hexbuf.take()
             && let Some(s) = t.steps.last_mut()
         {
@@ -97,7 +99,11 @@ pub fn parse(name: &str, text: &str) -> Transcript {
             }
         } else if let Some(d) = line.strip_prefix("D: ") {
             flush(&mut t, &mut hexbuf, &mut textbuf);
-            let len = d.split_whitespace().next().and_then(|n| n.parse().ok()).unwrap_or(0);
+            let len = d
+                .split_whitespace()
+                .next()
+                .and_then(|n| n.parse().ok())
+                .unwrap_or(0);
             if d.ends_with("(hex)") {
                 hexbuf = Some(Vec::new());
             } else {
@@ -107,7 +113,10 @@ pub fn parse(name: &str, text: &str) -> Transcript {
             if let Some(h) = &mut hexbuf {
                 h.extend(hex(d.trim()));
             } else if let Some((_, lines, more)) = &mut textbuf {
-                if let Some(n) = d.strip_prefix("... (").and_then(|r| r.strip_suffix(" more lines)")) {
+                if let Some(n) = d
+                    .strip_prefix("... (")
+                    .and_then(|r| r.strip_suffix(" more lines)"))
+                {
                     *more = n.parse().unwrap_or(0);
                 } else {
                     lines.push(d.to_string());
@@ -115,7 +124,11 @@ pub fn parse(name: &str, text: &str) -> Transcript {
             }
         } else if let Some(d) = line.strip_prefix("D> ") {
             flush(&mut t, &mut hexbuf, &mut textbuf);
-            let n = d.split_whitespace().next().and_then(|n| n.parse().ok()).unwrap_or(0);
+            let n = d
+                .split_whitespace()
+                .next()
+                .and_then(|n| n.parse().ok())
+                .unwrap_or(0);
             if let Some(s) = t.steps.last_mut() {
                 s.sent = Some((n, if n == 0 { Some(Vec::new()) } else { None }));
             }

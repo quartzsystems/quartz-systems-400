@@ -11,8 +11,8 @@
 //! `qapd::spool::read`.
 
 use qap_proto::ops::spool::{
-    DeviceType, ListOutputQueues, ListSpooledFiles, OutputQueue, OutputQueues, ReadSpooledFile, SpoolStatus,
-    SpooledData, SpooledFile, SpooledFileId, SpooledFiles,
+    DeviceType, ListOutputQueues, ListSpooledFiles, OutputQueue, OutputQueues, ReadSpooledFile,
+    SpoolStatus, SpooledData, SpooledFile, SpooledFileId, SpooledFiles,
 };
 use qap_proto::types::{JobId, ObjectName};
 use qapd::spool::{self as read, Unreadable};
@@ -21,7 +21,7 @@ use wm::obj::params::qualified;
 use wm::obj::splf::{SplfAttrs, Status};
 
 use super::super::served::JobCtx;
-use super::super::{spool, splcmd};
+use super::super::{splcmd, spool};
 use super::{ERROR, NOT_AUTHORIZED, connection_job, refused};
 use crate::ipl::system::System;
 
@@ -96,7 +96,11 @@ fn file_of(a: &SplfAttrs) -> SpooledFile {
         outq: object(&a.outq),
         user: a.job.1.clone(),
         user_data: a.usrdta.clone(),
-        form_type: if a.formtype.trim().is_empty() { "*STD".into() } else { a.formtype.clone() },
+        form_type: if a.formtype.trim().is_empty() {
+            "*STD".into()
+        } else {
+            a.formtype.clone()
+        },
         device_type: device_of(&a.devtype),
         pages: a.pages,
         copies: a.copies,
@@ -107,14 +111,29 @@ fn file_of(a: &SplfAttrs) -> SpooledFile {
 
 /// The spooled file `id` names.
 fn find(system: &System, id: &SpooledFileId) -> Result<u32, QapRefused> {
-    let job = format!("{}/{}/{}", id.job.number.trim(), id.job.user.trim().to_ascii_uppercase(), id.job.name.trim().to_ascii_uppercase());
-    spool::find(system, &id.file.trim().to_ascii_uppercase(), &job, &id.number.to_string()).map_err(|e| failed(&e))
+    let job = format!(
+        "{}/{}/{}",
+        id.job.number.trim(),
+        id.job.user.trim().to_ascii_uppercase(),
+        id.job.name.trim().to_ascii_uppercase()
+    );
+    spool::find(
+        system,
+        &id.file.trim().to_ascii_uppercase(),
+        &job,
+        &id.number.to_string(),
+    )
+    .map_err(|e| failed(&e))
 }
 
 /// A page of `v` from `start`, at most `max` (0 for all).
 fn page<T: Clone>(v: &[T], start: u32, max: u32) -> Vec<T> {
     let start = usize::try_from(start).unwrap_or(usize::MAX);
-    let max = if max == 0 { usize::MAX } else { usize::try_from(max).unwrap_or(usize::MAX) };
+    let max = if max == 0 {
+        usize::MAX
+    } else {
+        usize::try_from(max).unwrap_or(usize::MAX)
+    };
     v.iter().skip(start).take(max).cloned().collect()
 }
 
@@ -124,7 +143,11 @@ fn count(n: usize) -> u32 {
 
 /// `qap_splf_list`: `WRKSPLF SELECT(user)`'s files, or `WRKOUTQ`'s for
 /// one queue, then the filters.
-pub fn list(system: &mut System, ctx: &JobCtx, req: &ListSpooledFiles) -> Result<SpooledFiles, QapRefused> {
+pub fn list(
+    system: &mut System,
+    ctx: &JobCtx,
+    req: &ListSpooledFiles,
+) -> Result<SpooledFiles, QapRefused> {
     connection_job(ctx)?;
     let user = match req.user.trim().to_ascii_uppercase().as_str() {
         "" | "*CURRENT" => Some(me(ctx)),
@@ -138,18 +161,33 @@ pub fn list(system: &mut System, ctx: &JobCtx, req: &ListSpooledFiles) -> Result
     };
     let files: Vec<SplfAttrs> = match &req.outq {
         Some(q) => {
-            let q = format!("{}/{}", q.library.trim().to_ascii_uppercase(), q.name.trim().to_ascii_uppercase());
+            let q = format!(
+                "{}/{}",
+                q.library.trim().to_ascii_uppercase(),
+                q.name.trim().to_ascii_uppercase()
+            );
             spool::on_queue(system, &q).map_err(|e| failed(&e))?.2
         }
-        None => splcmd::files_of(system, None, None).into_iter().cloned().collect(),
+        None => splcmd::files_of(system, None, None)
+            .into_iter()
+            .cloned()
+            .collect(),
     };
     let hits: Vec<SpooledFile> = files
         .iter()
         .filter(|a| user.as_deref().is_none_or(|u| a.job.1 == u))
         .map(file_of)
         .filter(|f| req.status.is_none_or(|s| f.status == s))
-        .filter(|f| req.form_type.as_deref().is_none_or(|t| f.form_type.eq_ignore_ascii_case(t.trim())))
-        .filter(|f| req.user_data.as_deref().is_none_or(|d| f.user_data.trim() == d.trim()))
+        .filter(|f| {
+            req.form_type
+                .as_deref()
+                .is_none_or(|t| f.form_type.eq_ignore_ascii_case(t.trim()))
+        })
+        .filter(|f| {
+            req.user_data
+                .as_deref()
+                .is_none_or(|d| f.user_data.trim() == d.trim())
+        })
         .collect();
     Ok(SpooledFiles {
         total: count(hits.len()),
@@ -158,7 +196,11 @@ pub fn list(system: &mut System, ctx: &JobCtx, req: &ListSpooledFiles) -> Result
 }
 
 /// `qap_splf_read`: checked and audited as `DSPSPLF`, then the pages.
-pub fn read(system: &mut System, ctx: &JobCtx, req: &ReadSpooledFile) -> Result<SpooledData, QapRefused> {
+pub fn read(
+    system: &mut System,
+    ctx: &JobCtx,
+    req: &ReadSpooledFile,
+) -> Result<SpooledData, QapRefused> {
     connection_job(ctx)?;
     let id = find(system, &req.id)?;
     let (a, data) = splcmd::display(system, id).map_err(|e| failed(&e))?;
@@ -170,14 +212,24 @@ pub fn read(system: &mut System, ctx: &JobCtx, req: &ReadSpooledFile) -> Result<
             ERROR,
             read::NO_FORMAT,
             "",
-            &[&a.name, &number, read::format_name(req.format), read::device_name(f.device_type)],
+            &[
+                &a.name,
+                &number,
+                read::format_name(req.format),
+                read::device_name(f.device_type),
+            ],
         ),
         Unreadable::Range => refused(INVALID_REQUEST, "CPD0084", "", &["FIRST_PAGE"]),
     })
 }
 
 /// `qap_splf_hold`, as `HLDSPLF`.
-pub fn hold(system: &mut System, ctx: &JobCtx, id: &SpooledFileId, immediately: bool) -> Result<(), QapRefused> {
+pub fn hold(
+    system: &mut System,
+    ctx: &JobCtx,
+    id: &SpooledFileId,
+    immediately: bool,
+) -> Result<(), QapRefused> {
     connection_job(ctx)?;
     let id = find(system, id)?;
     splcmd::may_act(system, id, "hldsplf").map_err(|e| failed(&e))?;
@@ -189,7 +241,9 @@ pub fn release(system: &mut System, ctx: &JobCtx, id: &SpooledFileId) -> Result<
     connection_job(ctx)?;
     let id = find(system, id)?;
     splcmd::may_act(system, id, "rlssplf").map_err(|e| failed(&e))?;
-    splcmd::release(system, id).map(|_| ()).map_err(|e| failed(&e))
+    splcmd::release(system, id)
+        .map(|_| ())
+        .map_err(|e| failed(&e))
 }
 
 /// `qap_splf_delete`, as `DLTSPLF`.
@@ -201,18 +255,34 @@ pub fn delete(system: &mut System, ctx: &JobCtx, id: &SpooledFileId) -> Result<(
 }
 
 /// `qap_splf_move`, as `CHGSPLFA OUTQ`.
-pub fn move_to(system: &mut System, ctx: &JobCtx, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), QapRefused> {
+pub fn move_to(
+    system: &mut System,
+    ctx: &JobCtx,
+    id: &SpooledFileId,
+    outq: &ObjectName,
+    first: bool,
+) -> Result<(), QapRefused> {
     connection_job(ctx)?;
     let id = find(system, id)?;
     splcmd::may_act(system, id, "chgsplfa").map_err(|e| failed(&e))?;
     let lib = outq.library.trim().to_ascii_uppercase();
-    let q = format!("{}/{}", if lib.is_empty() { "*LIBL" } else { &lib }, outq.name.trim().to_ascii_uppercase());
-    splcmd::move_file(system, id, &q, first).map(|_| ()).map_err(|e| failed(&e))
+    let q = format!(
+        "{}/{}",
+        if lib.is_empty() { "*LIBL" } else { &lib },
+        outq.name.trim().to_ascii_uppercase()
+    );
+    splcmd::move_file(system, id, &q, first)
+        .map(|_| ())
+        .map_err(|e| failed(&e))
 }
 
 /// `qap_outq_list`: `WRKOUTQ`'s queues in every library, the job's
 /// library list, or one library.
-pub fn queues(system: &mut System, ctx: &JobCtx, req: &ListOutputQueues) -> Result<OutputQueues, QapRefused> {
+pub fn queues(
+    system: &mut System,
+    ctx: &JobCtx,
+    req: &ListOutputQueues,
+) -> Result<OutputQueues, QapRefused> {
     connection_job(ctx)?;
     let lib = req.library.trim().to_ascii_uppercase();
     let libs: Option<Vec<String>> = match lib.as_str() {

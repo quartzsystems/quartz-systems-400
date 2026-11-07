@@ -97,7 +97,11 @@ pub struct Node {
 
 fn kind_of(t: &ParmType) -> Kind {
     match t {
-        ParmType::Name | ParmType::SName | ParmType::CName | ParmType::VarName | ParmType::Qual { .. } => Kind::Name,
+        ParmType::Name
+        | ParmType::SName
+        | ParmType::CName
+        | ParmType::VarName
+        | ParmType::Qual { .. } => Kind::Name,
         ParmType::Generic => Kind::Generic,
         ParmType::Dec => Kind::Decimal,
         ParmType::Lgl => Kind::Logical,
@@ -106,9 +110,11 @@ fn kind_of(t: &ParmType) -> Kind {
         ParmType::Time => Kind::Time,
         ParmType::PName => Kind::Path,
         ParmType::Cmd | ParmType::CmdStr => Kind::Command,
-        ParmType::Char | ParmType::X | ParmType::ZeroElem | ParmType::Null | ParmType::Elem { .. } => {
-            Kind::Character
-        }
+        ParmType::Char
+        | ParmType::X
+        | ParmType::ZeroElem
+        | ParmType::Null
+        | ParmType::Elem { .. } => Kind::Character,
     }
 }
 
@@ -132,8 +138,16 @@ fn push(out: &mut Vec<Node>, p: &Parm, role: Role, parent: Option<usize>, show: 
         index,
         parent,
         role,
-        keyword: if role == Role::Parameter { p.kwd.clone() } else { String::new() },
-        prompt: p.prompt.as_ref().map(|(t, _)| t.clone()).unwrap_or_default(),
+        keyword: if role == Role::Parameter {
+            p.kwd.clone()
+        } else {
+            String::new()
+        },
+        prompt: p
+            .prompt
+            .as_ref()
+            .map(|(t, _)| t.clone())
+            .unwrap_or_default(),
         kind: kind_of(&p.ty),
         length: len.map_or(0, |l| l.len),
         decimals: len.map_or(0, |l| l.dec),
@@ -141,7 +155,12 @@ fn push(out: &mut Vec<Node>, p: &Parm, role: Role, parent: Option<usize>, show: 
         min: p.min,
         max: p.max,
         default: p.dft.clone(),
-        special: p.spcval.iter().chain(&p.sngval).map(|s| s.from.clone()).collect(),
+        special: p
+            .spcval
+            .iter()
+            .chain(&p.sngval)
+            .map(|s| s.from.clone())
+            .collect(),
         values: if p.rstd { p.values.clone() } else { Vec::new() },
         range: p.range.clone(),
         show,
@@ -193,8 +212,10 @@ mod tests {
     fn the_prompters_order() {
         let def = compile("TEST", SRC).unwrap();
         let n = nodes(&def);
-        let kw: Vec<(&str, Role, Option<usize>, Show)> =
-            n.iter().map(|x| (x.keyword.as_str(), x.role, x.parent, x.show)).collect();
+        let kw: Vec<(&str, Role, Option<usize>, Show)> = n
+            .iter()
+            .map(|x| (x.keyword.as_str(), x.role, x.parent, x.show))
+            .collect();
         assert_eq!(
             kw,
             [
@@ -215,8 +236,14 @@ mod tests {
         assert_eq!(n[2].default.as_deref(), Some("*LIBL"));
         assert_eq!(n[2].special, ["*LIBL", "*CURLIB"]);
         assert_eq!(n[3].values, ["*FILE", "*PGM"]);
-        assert_eq!((n[5].kind, n[5].prompt.as_str()), (Kind::Integer, "Records"));
-        assert_eq!((n[7].kind, n[7].length, n[7].decimals), (Kind::Decimal, 5, 2));
+        assert_eq!(
+            (n[5].kind, n[5].prompt.as_str()),
+            (Kind::Integer, "Records")
+        );
+        assert_eq!(
+            (n[7].kind, n[7].length, n[7].decimals),
+            (Kind::Decimal, 5, 2)
+        );
         assert_eq!(n[7].range, Some(("1".into(), "100".into())));
     }
 }

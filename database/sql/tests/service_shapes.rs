@@ -51,7 +51,11 @@ fn values(line: &str) -> Vec<Option<String>> {
 }
 
 fn take(cur: &mut String, was_quoted: &mut bool) -> Option<String> {
-    let v = if *was_quoted { cur.clone() } else { cur.trim().to_string() };
+    let v = if *was_quoted {
+        cur.clone()
+    } else {
+        cur.trim().to_string()
+    };
     cur.clear();
     let q = std::mem::take(was_quoted);
     if !q && v == "NULL" { None } else { Some(v) }
@@ -104,7 +108,11 @@ fn parm_type(ty: &str, chars: u32, prec: u32) -> (String, u32) {
 
 /// One word for the shapes file: blanks would split it.
 fn word(s: &str) -> String {
-    if s.is_empty() { "-".into() } else { s.replace(' ', "_") }
+    if s.is_empty() {
+        "-".into()
+    } else {
+        s.replace(' ', "_")
+    }
 }
 
 type Pair = (String, String);
@@ -119,7 +127,9 @@ fn generate(capture: &str) -> String {
         }
     }
     for r in &s[1] {
-        let Some((_, cols)) = views.get_mut(&(v(r, 0), v(r, 1))) else { continue };
+        let Some((_, cols)) = views.get_mut(&(v(r, 0), v(r, 1))) else {
+            continue;
+        };
         let ty = v(r, 5);
         let len = match ty.as_str() {
             "TIMESTMP" => (n(r, 6).saturating_sub(7)) * 2,
@@ -161,7 +171,10 @@ fn generate(capture: &str) -> String {
                 v(r, 5),
                 n(r, 9),
                 n(r, 11),
-                r.get(12).cloned().flatten().map_or_else(|| "-".into(), |d| d.trim().to_string())
+                r.get(12)
+                    .cloned()
+                    .flatten()
+                    .map_or_else(|| "-".into(), |d| d.trim().to_string())
             ),
             "R" => format!("c {} - {ty} {len} {} {null} {}", v(r, 5), n(r, 9), n(r, 11)),
             _ => format!("r {ty} {len} {} {}", n(r, 9), n(r, 11)),
@@ -179,7 +192,11 @@ fn generate(capture: &str) -> String {
     routines.sort_by(|a, b| (&a.0.0, &a.1.0, &a.0.1).cmp(&(&b.0.0, &b.1.0, &b.0.1)));
     for ((schema, specific), (name, kind)) in routines {
         let _ = writeln!(out, "F {schema} {name} {specific} {kind}");
-        for l in parms.get(&(schema.clone(), specific.clone())).into_iter().flatten() {
+        for l in parms
+            .get(&(schema.clone(), specific.clone()))
+            .into_iter()
+            .flatten()
+        {
             let _ = writeln!(out, "{l}");
         }
     }
@@ -188,13 +205,20 @@ fn generate(capture: &str) -> String {
 
 #[test]
 fn shapes_are_the_capture() {
-    let capture = std::fs::read_to_string(root().join("tools/conformance/sql/expected/services/SVCCOLS.out")).expect("the capture");
+    let capture =
+        std::fs::read_to_string(root().join("tools/conformance/sql/expected/services/SVCCOLS.out"))
+            .expect("the capture");
     let want = generate(&capture.replace("\r\n", "\n"));
     let path = root().join("database/sql/src/exec/catalog/services/shapes.txt");
     if std::env::var("QS400_UPDATE_SHAPES").is_ok_and(|v| v == "1") {
         std::fs::write(&path, &want).expect("write shapes.txt");
         return;
     }
-    let have = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
-    assert!(have == want, "shapes.txt differs from the capture; QS400_UPDATE_SHAPES=1 rewrites it");
+    let have = std::fs::read_to_string(&path)
+        .unwrap_or_default()
+        .replace("\r\n", "\n");
+    assert!(
+        have == want,
+        "shapes.txt differs from the capture; QS400_UPDATE_SHAPES=1 rewrites it"
+    );
 }

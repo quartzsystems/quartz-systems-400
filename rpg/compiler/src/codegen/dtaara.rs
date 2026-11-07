@@ -16,15 +16,24 @@ impl Gen<'_> {
     /// Whether an operation's operand names a data area field.
     #[must_use]
     pub fn names_dtaara(&self, op: &Op) -> bool {
-        op.f2.first().or_else(|| op.result.first()).is_some_and(|e| match e {
-            Expr::Special { word, .. } => word == "*DTAARA",
-            _ => e.name().and_then(|n| self.t.find(self.scope, n)).is_some_and(|id| self.t.dtaaras.contains_key(&id)),
-        })
+        op.f2
+            .first()
+            .or_else(|| op.result.first())
+            .is_some_and(|e| match e {
+                Expr::Special { word, .. } => word == "*DTAARA",
+                _ => e
+                    .name()
+                    .and_then(|n| self.t.find(self.scope, n))
+                    .is_some_and(|id| self.t.dtaaras.contains_key(&id)),
+            })
     }
 
     /// `IN [*LOCK] name`, `OUT [*LOCK] name`, `UNLOCK name`.
     pub fn dtaara_op(&mut self, op: &Op, base: &str) {
-        let lock = op.f1.iter().any(|e| matches!(e, Expr::Special { word, .. } if word == "*LOCK"));
+        let lock = op
+            .f1
+            .iter()
+            .any(|e| matches!(e, Expr::Special { word, .. } if word == "*LOCK"));
         let Some(target) = op.f2.first().or_else(|| op.result.first()) else {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
@@ -38,7 +47,11 @@ impl Gen<'_> {
             e => match e.name().and_then(|n| self.t.find(self.scope, n)) {
                 Some(id) if self.t.dtaaras.contains_key(&id) => vec![id],
                 _ => {
-                    self.err(ids::NOT_DEFINED, 30, e.name().unwrap_or_default().to_string());
+                    self.err(
+                        ids::NOT_DEFINED,
+                        30,
+                        e.name().unwrap_or_default().to_string(),
+                    );
                     return;
                 }
             },
@@ -49,7 +62,10 @@ impl Gen<'_> {
                 Some((l, n)) => (l.to_string(), n.to_string()),
                 None => ("*LIBL".to_string(), area.clone()),
             };
-            let (n, l) = (quote(&name.to_ascii_uppercase()), quote(&lib.to_ascii_uppercase()));
+            let (n, l) = (
+                quote(&name.to_ascii_uppercase()),
+                quote(&lib.to_ascii_uppercase()),
+            );
             let place = super::place_of(self.t, id);
             self.t.refer(id, self.at.line, base == "IN");
             match base {
@@ -62,7 +78,11 @@ impl Gen<'_> {
                 "OUT" => {
                     // The area must be locked first (status 412).
                     self.rt_proc("_QRNX_DTALCK", "(const $n: char(10), const $l: char(10))");
-                    self.b.ins(format!("callb _QRNX_DTALCK({}, {})", quote(&format!("{:<10}", name.to_ascii_uppercase())), quote(&format!("{:<10}", lib.to_ascii_uppercase()))));
+                    self.b.ins(format!(
+                        "callb _QRNX_DTALCK({}, {})",
+                        quote(&format!("{:<10}", name.to_ascii_uppercase())),
+                        quote(&format!("{:<10}", lib.to_ascii_uppercase()))
+                    ));
                     self.b.ins(format!("dtaara.write {n}, {l}, {place}"));
                     // Written without *LOCK, the area is released.
                     if !lock {

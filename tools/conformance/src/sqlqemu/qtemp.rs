@@ -12,20 +12,29 @@ use crate::steps::{CMD, SRC_SEQUENCE, Suite};
 
 /// A query typed on Enter SQL Statements: Display Data's screen.
 fn query(tn: &mut Tn, text: &str) -> Result<String, String> {
-    tn.run(&format!("key eraseinput\npick \"===>\" {text}\nkey enter\nwait \"Display Data\"\nsettle 800\n"))?;
+    tn.run(&format!(
+        "key eraseinput\npick \"===>\" {text}\nkey enter\nwait \"Display Data\"\nsettle 800\n"
+    ))?;
     let shown = tn.screen();
     tn.run("key f3\nwait \"Enter SQL Statements\"\n")?;
     Ok(shown)
 }
 
 fn stmt(tn: &mut Tn, text: &str) -> Result<String, String> {
-    tn.run(&format!("key eraseinput\npick \"===>\" {text}\nkey enter\nsettle 1500\nunlock\n"))?;
+    tn.run(&format!(
+        "key eraseinput\npick \"===>\" {text}\nkey enter\nsettle 1500\nunlock\n"
+    ))?;
     Ok(tn.screen())
 }
 
 /// The serial log's lines after `from` that hold `word`.
 fn lines_with(log: &str, from: usize, word: &str) -> Vec<String> {
-    log.get(from..).unwrap_or("").lines().filter(|l| l.contains(word)).map(str::to_string).collect()
+    log.get(from..)
+        .unwrap_or("")
+        .lines()
+        .filter(|l| l.contains(word))
+        .map(str::to_string)
+        .collect()
 }
 
 impl Suite {
@@ -37,17 +46,26 @@ impl Suite {
         setup(s)?;
         let mut tn = Tn::open(self)?;
         tn.cmd("CRTPF FILE(QTEMP/X) RCDLEN(20)", "")?;
-        tn.cmd("RUNSQL SQL('INSERT INTO QTEMP/X VALUES(''QTEMPROW'')') COMMIT(*NONE)", "")?;
-        tn.run("key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n")?;
+        tn.cmd(
+            "RUNSQL SQL('INSERT INTO QTEMP/X VALUES(''QTEMPROW'')') COMMIT(*NONE)",
+            "",
+        )?;
+        tn.run(
+            "key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n",
+        )?;
         let x = query(&mut tn, "select * from qtemp/x")?;
         if !x.contains("QTEMPROW") {
-            return Err(format!("STRSQL does not see the row RUNSQL put in QTEMP/X:\n{x}"));
+            return Err(format!(
+                "STRSQL does not see the row RUNSQL put in QTEMP/X:\n{x}"
+            ));
         }
         stmt(&mut tn, "declare global temporary table gtt (a int)")?;
         stmt(&mut tn, "insert into qtemp/gtt values (42)")?;
         let g = query(&mut tn, "select a * 10 as big from qtemp/gtt")?;
         if !g.contains("420") {
-            return Err(format!("the global temporary table did not answer 420:\n{g}"));
+            return Err(format!(
+                "the global temporary table did not answer 420:\n{g}"
+            ));
         }
         // Another job, the console's, has a QTEMP of its own.
         let other = sql(s, "SELECT * FROM QTEMP/X")?;
@@ -63,7 +81,10 @@ impl Suite {
         let _ = s.command("WRKACTJOB", CMD)?;
         let errs = lines_with(&s.log, mark, "QTEMP of");
         if !errs.is_empty() {
-            return Err(format!("the job's end did not drop its QTEMP:\n{}", errs.join("\n")));
+            return Err(format!(
+                "the job's end did not drop its QTEMP:\n{}",
+                errs.join("\n")
+            ));
         }
         // An IPL: nothing is left for the purge of ended jobs' QTEMPs.
         let mark = s.log.len();
@@ -73,7 +94,10 @@ impl Suite {
         s.expect(crate::PROMPT, CMD)?;
         let left = lines_with(&s.log, mark, "SQL QTEMP");
         if left.iter().any(|l| l.contains("dropped")) {
-            return Err(format!("the IPL found QTEMP libraries left:\n{}", left.join("\n")));
+            return Err(format!(
+                "the IPL found QTEMP libraries left:\n{}",
+                left.join("\n")
+            ));
         }
         crate::tcp::guest_address(s)?;
         Ok("CRTPF QTEMP/X, RUNSQL INSERT and STRSQL SELECT in one job; DECLARE GLOBAL TEMPORARY TABLE answered 420; the console's job got SQL0204; sign-off dropped QTEMP and the IPL purged nothing".into())

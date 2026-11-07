@@ -29,7 +29,10 @@ fn selected(r: &Resolved) -> Vec<&'static Daemon> {
             |v| {
                 v.source()
                     .split_whitespace()
-                    .map(|s| s.trim_matches(|c| c == '(' || c == ')').to_ascii_uppercase())
+                    .map(|s| {
+                        s.trim_matches(|c| c == '(' || c == ')')
+                            .to_ascii_uppercase()
+                    })
                     .collect()
             },
         );
@@ -72,7 +75,11 @@ pub fn start(host: &Host, r: &Resolved) -> Result<String, Fail> {
         let mut s = crate::work::spawn::job(start).map_err(|e| Fail::check("STRHOSTSVR", e))?;
         crate::work::spawn::ready(&mut s).map_err(|e| Fail::check("STRHOSTSVR", e))?;
         host.children.borrow_mut().push(s);
-        let _ = writeln!(out, "Host server {} started as job {number:06}/QUSER/{}.", d.keyword, d.name);
+        let _ = writeln!(
+            out,
+            "Host server {} started as job {number:06}/QUSER/{}.",
+            d.keyword, d.name
+        );
     }
     if out.is_empty() {
         out.push_str("The host servers named are already active.\n");
@@ -87,7 +94,8 @@ pub fn end(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
         if !active(host, d.name) {
             continue;
         }
-        let o = crate::command::run(job, host, &format!("ENDJOB JOB({}) OPTION(*IMMED)", d.name)).text;
+        let o =
+            crate::command::run(job, host, &format!("ENDJOB JOB({}) OPTION(*IMMED)", d.name)).text;
         if let Some(id) = super::jobsite::leading_msgid(o.trim()) {
             return Err(Fail::new(id, o.trim().to_string()));
         }

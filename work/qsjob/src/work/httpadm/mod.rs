@@ -49,7 +49,11 @@ fn start_listeners(
 ) -> Result<Vec<Running>, String> {
     let settings = Settings::load(env.files.as_ref());
     // The product redirects to its settings' TLS port: listen there.
-    let port = if settings.admin_tls_port == 0 { a.tls_port } else { settings.admin_tls_port };
+    let port = if settings.admin_tls_port == 0 {
+        a.tls_port
+    } else {
+        settings.admin_tls_port
+    };
     let now = env.system.now();
     let (d, t) = env.system.stamp(now);
     let stamp = format!("{d} {t}");
@@ -64,14 +68,35 @@ fn start_listeners(
             bridge.call(move |m| super::netsvc::joblog(&m.link, PGM, "HTP8106", &text));
         }
     };
-    made("ADMIN", httpadmin::seed::ensure_admin(env.files.as_ref(), a.port, tls, &stamp, now));
+    made(
+        "ADMIN",
+        httpadmin::seed::ensure_admin(env.files.as_ref(), a.port, tls, &stamp, now),
+    );
     // The products' instances, listed once their products are installed.
-    if env.system.product_installed(httpadmin::seed::NAVIGATOR_PRODUCT) {
-        let r = httpadmin::seed::ensure_navigator(env.files.as_ref(), nav.port, nav.tls_port, &stamp, now);
+    if env
+        .system
+        .product_installed(httpadmin::seed::NAVIGATOR_PRODUCT)
+    {
+        let r = httpadmin::seed::ensure_navigator(
+            env.files.as_ref(),
+            nav.port,
+            nav.tls_port,
+            &stamp,
+            now,
+        );
         made(httpadmin::seed::NAVIGATOR, r);
     }
-    if env.system.product_installed(httpadmin::seed::ACCESSWEB_PRODUCT) {
-        let r = httpadmin::seed::ensure_accessweb(env.files.as_ref(), afw.port, afw.tls_port, &stamp, now);
+    if env
+        .system
+        .product_installed(httpadmin::seed::ACCESSWEB_PRODUCT)
+    {
+        let r = httpadmin::seed::ensure_accessweb(
+            env.files.as_ref(),
+            afw.port,
+            afw.tls_port,
+            &stamp,
+            now,
+        );
         made(httpadmin::seed::ACCESSWEB, r);
     }
     let admin = Arc::new(Admin::new(env));
@@ -115,9 +140,15 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let core = Core::new(bridge.clone(), Dates::of(&main), name.clone());
     let env = Env {
         system: Arc::new(LiveSystem { core, job }),
-        jobs: Arc::new(LiveJobs { bridge: bridge.clone() }),
-        files: Arc::new(LiveFiles { bridge: bridge.clone() }),
-        certs: Arc::new(Remote(CertLink { bridge: bridge.clone() })),
+        jobs: Arc::new(LiveJobs {
+            bridge: bridge.clone(),
+        }),
+        files: Arc::new(LiveFiles {
+            bridge: bridge.clone(),
+        }),
+        certs: Arc::new(Remote(CertLink {
+            bridge: bridge.clone(),
+        })),
     };
     let starter = bridge.clone();
     let setup = std::thread::spawn(move || start_listeners(&starter, env, (a, nav, afw), name));

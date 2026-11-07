@@ -21,7 +21,9 @@ use crate::display::uim::{CMDLINE_VAR, Response, UimDialog};
 fn until_left(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<String, Fail> {
     loop {
         match show(d, surface, panel)? {
-            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(String::new()),
+            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => {
+                return Ok(String::new());
+            }
             Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
@@ -56,7 +58,9 @@ enum Step {
 
 /// A row's value.
 fn get<'a>(row: &'a [(String, String)], key: &str) -> &'a str {
-    row.iter().find(|(k, _)| k == key).map_or("", |(_, v)| v.as_str())
+    row.iter()
+        .find(|(k, _)| k == key)
+        .map_or("", |(_, v)| v.as_str())
 }
 
 /// Option 5 on a library's own entry; elsewhere the object display
@@ -90,7 +94,13 @@ pub fn dsptap(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
     for (k, v) in &vars {
         d.set(k, v);
     }
-    let take = |name: &str| lists.iter().find(|(n, _)| n == name).map(|(_, rows)| rows.clone()).unwrap_or_default();
+    let take = |name: &str| {
+        lists
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, rows)| rows.clone())
+            .unwrap_or_default()
+    };
     let (files, objs) = (take("FILES"), take("OBJS"));
     if data == "*VOLLBL" || files.is_empty() {
         return until_left(&mut d, surface, "DSPTAPVOL");
@@ -132,18 +142,34 @@ fn file_display(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result
 }
 
 /// Display Saved Objects for the save in file `seq`.
-fn saved_objects(d: &mut UimDialog, surface: &mut Surface, seq: &str, objs: &[Vec<(String, String)>]) -> Result<Step, Fail> {
-    let rows: Vec<Vec<(String, String)>> = objs.iter().filter(|r| get(r, "OSEQ") == seq).cloned().collect();
+fn saved_objects(
+    d: &mut UimDialog,
+    surface: &mut Surface,
+    seq: &str,
+    objs: &[Vec<(String, String)>],
+) -> Result<Step, Fail> {
+    let rows: Vec<Vec<(String, String)>> = objs
+        .iter()
+        .filter(|r| get(r, "OSEQ") == seq)
+        .cloned()
+        .collect();
     super::fill(d, "OBJS", rows);
     d.list_mut("OBJS").top = 0;
     let mut alternate = false;
     loop {
-        match show(d, surface, if alternate { "DSPTAPSAV2" } else { "DSPTAPSAV" })? {
+        match show(
+            d,
+            surface,
+            if alternate { "DSPTAPSAV2" } else { "DSPTAPSAV" },
+        )? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(Step::Leave),
             Response::Return(11) => alternate = !alternate,
             Response::Return(16) => {
                 d.page = 0;
-                if matches!(show(d, surface, "DSPTAPHDR")?, Response::Exit | Response::Gone) {
+                if matches!(
+                    show(d, surface, "DSPTAPHDR")?,
+                    Response::Exit | Response::Gone
+                ) {
                     return Ok(Step::Leave);
                 }
             }
@@ -168,7 +194,11 @@ fn saved_objects(d: &mut UimDialog, surface: &mut Surface, seq: &str, objs: &[Ve
 pub fn dsptapctg(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let ctgs = parm_list(r, "CTG").join(",");
     let (_, lists) = fetch(host, "TAPCTG", &[parm(r, "DEV"), ctgs, parm(r, "CGY")])?;
-    let rows = lists.into_iter().find(|(n, _)| n == "CTGS").map(|(_, rows)| rows).unwrap_or_default();
+    let rows = lists
+        .into_iter()
+        .find(|(n, _)| n == "CTGS")
+        .map(|(_, rows)| rows)
+        .unwrap_or_default();
     let mut d = dialog(host, "QSMEDIA")?;
     for row in &rows {
         for (k, v) in row {
@@ -205,7 +235,12 @@ pub fn dspopt(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
 /// device asked for changes. Option 1 on the add entry above the list
 /// prompts `ADDOPTCTG`, whose parameters name no volume, as the 7.1
 /// oracle's does (`audit/displays/wrkoptvol-add-prompt71`).
-pub fn wrkoptvol(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkoptvol(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let vol = parm(r, "VOL");
     let csi = parm(r, "CSI");
     let mut dev = parm(r, "DEV");
@@ -214,7 +249,10 @@ pub fn wrkoptvol(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
     let mut read = true;
     loop {
         if read {
-            load(&mut d, fetch(host, "OPTVOLS", &[dev.clone(), vol.clone(), csi.clone()])?);
+            load(
+                &mut d,
+                fetch(host, "OPTVOLS", &[dev.clone(), vol.clone(), csi.clone()])?,
+            );
             read = false;
         }
         match show(&mut d, surface, "WRKOPTVOL")? {

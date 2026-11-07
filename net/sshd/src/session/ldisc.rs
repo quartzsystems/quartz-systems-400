@@ -126,7 +126,10 @@ mod tests {
         let mut l = LineDiscipline::default();
         let mut echo = Vec::new();
         let got = l.feed(b"ecx\x7fho hi\r\n\x1b[Als\r", &mut echo);
-        assert_eq!(got, [Input::Line("echo hi".into()), Input::Line("ls".into())]);
+        assert_eq!(
+            got,
+            [Input::Line("echo hi".into()), Input::Line("ls".into())]
+        );
         assert_eq!(echo, b"ecx\x08 \x08ho hi\r\nls\r\n");
         let got = l.feed(b"abc\x03\x04", &mut Vec::new());
         assert_eq!(got, [Input::Interrupt, Input::Eof]);

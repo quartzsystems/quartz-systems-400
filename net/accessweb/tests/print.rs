@@ -55,13 +55,32 @@ fn printer_output_page() {
         "122990-CWELLMAN-INVBATCH-ASSETEXP-1",
     ];
     for (i, id) in ids.iter().enumerate() {
-        fix(&mut g, &format!("name=\"s{i}\">"), &format!("name=\"s{i}\" value=\"{id}\">"));
+        fix(
+            &mut g,
+            &format!("name=\"s{i}\">"),
+            &format!("name=\"s{i}\" value=\"{id}\">"),
+        );
     }
     // Data: Auto-refresh is off until chosen (the page then refreshes).
-    fix(&mut g, "<option selected>30</option>", "<option>30</option>");
+    fix(
+        &mut g,
+        "<option selected>30</option>",
+        "<option>30</option>",
+    );
     // Nameless buttons in one form cannot be told apart.
-    for (v, n) in [("Hold", "hold"), ("Release", "release"), ("Delete...", "delete"), ("Move", "move"), ("Save as PDF", "pdf"), ("Save as text", "text")] {
-        fix(&mut g, &format!("<input type=\"submit\" value=\"{v}\">"), &format!("<input type=\"submit\" name=\"{n}\" value=\"{v}\">"));
+    for (v, n) in [
+        ("Hold", "hold"),
+        ("Release", "release"),
+        ("Delete...", "delete"),
+        ("Move", "move"),
+        ("Save as PDF", "pdf"),
+        ("Save as text", "text"),
+    ] {
+        fix(
+            &mut g,
+            &format!("<input type=\"submit\" value=\"{v}\">"),
+            &format!("<input type=\"submit\" name=\"{n}\" value=\"{v}\">"),
+        );
     }
     assert_text(&r.text(), &g, "web/printer-output.html");
 }
@@ -91,12 +110,32 @@ fn viewer_is_navigators_page() {
     assert_eq!(r.status, 200);
     let mut g = content(&golden("nav/spooled-view.html").replace("\r\n", "\n")).to_string();
     // In this product's tree.
-    fix(&mut g, "Navigator &gt; Work management &gt; Output queues &gt; QPRINT &gt; INVRPT", "Access for Web &gt; Print &gt; Printer output &gt; INVRPT");
-    fix(&mut g, "<a href=\"spooled-files.html\">Back to QPRINT</a>", "<a href=\"../web/printer-output.html\">Back to Printer output</a>");
+    fix(
+        &mut g,
+        "Navigator &gt; Work management &gt; Output queues &gt; QPRINT &gt; INVRPT",
+        "Access for Web &gt; Print &gt; Printer output &gt; INVRPT",
+    );
+    fix(
+        &mut g,
+        "<a href=\"spooled-files.html\">Back to QPRINT</a>",
+        "<a href=\"../web/printer-output.html\">Back to Printer output</a>",
+    );
     // Page 1 of 12: no previous page; the next is page 2.
-    fix(&mut g, "<a href=\"#\">&lt; Previous</a>", "<span class=\"grey\">&lt; Previous</span>");
-    fix(&mut g, "<a href=\"#\">Next &gt;</a>", "<a href=\"spooled-view.html\">Next &gt;</a>");
-    fix(&mut g, "<a href=\"#\">View as PDF</a> &nbsp; <a href=\"#\">Download text</a>", "<a href=\"spooled-view.html\">View as PDF</a> &nbsp; <a href=\"spooled-view.html\">Download text</a>");
+    fix(
+        &mut g,
+        "<a href=\"#\">&lt; Previous</a>",
+        "<span class=\"grey\">&lt; Previous</span>",
+    );
+    fix(
+        &mut g,
+        "<a href=\"#\">Next &gt;</a>",
+        "<a href=\"spooled-view.html\">Next &gt;</a>",
+    );
+    fix(
+        &mut g,
+        "<a href=\"#\">View as PDF</a> &nbsp; <a href=\"#\">Download text</a>",
+        "<a href=\"spooled-view.html\">View as PDF</a> &nbsp; <a href=\"spooled-view.html\">Download text</a>",
+    );
     // Hold and Release are links (a GET form cannot hold); Delete asks.
     fix(
         &mut g,
@@ -106,12 +145,24 @@ fn viewer_is_navigators_page() {
     let served = r.text();
     assert_text(content(&served), &g, "nav/spooled-view.html");
     // Find moves to the page holding the text; PDF and text are whole.
-    assert!(b.get(&format!("/print/view/{INVRPT}?f=OF%20PAGE%20%20%203")).text().contains("value=\"3\""));
+    assert!(
+        b.get(&format!("/print/view/{INVRPT}?f=OF%20PAGE%20%20%203"))
+            .text()
+            .contains("value=\"3\"")
+    );
     let r = b.get(&format!("/print/view/{INVRPT}/pdf"));
     assert!(r.bytes().starts_with(b"%PDF-"));
-    assert!(r.header("Content-Disposition").unwrap().starts_with("inline"));
+    assert!(
+        r.header("Content-Disposition")
+            .unwrap()
+            .starts_with("inline")
+    );
     let r = b.get(&format!("/print/view/{INVRPT}/text?save=1"));
-    assert!(r.header("Content-Disposition").unwrap().starts_with("attachment"));
+    assert!(
+        r.header("Content-Disposition")
+            .unwrap()
+            .starts_with("attachment")
+    );
     assert_eq!(r.text().matches('\u{c}').count(), 11);
 }
 
@@ -119,23 +170,59 @@ fn viewer_is_navigators_page() {
 fn hold_release_move_delete() {
     let mut b = Browser::signed_on();
     // Hold one at the end of the page.
-    let r = b.post("/print", &[("s0", INVRPT), ("hold", "Hold"), ("hw", "page")]);
+    let r = b.post(
+        "/print",
+        &[("s0", INVRPT), ("hold", "Hold"), ("hw", "page")],
+    );
     assert_eq!(r.header("Location"), Some("/qs400/accessweb/print"));
-    assert!(b.get("/print").text().contains("QAD6002</a> - Spooled file INVRPT held."));
-    assert!(b.fx.print.ran.lock().unwrap().last().unwrap().ends_with("OPTION(*PAGEEND)"));
+    assert!(
+        b.get("/print")
+            .text()
+            .contains("QAD6002</a> - Spooled file INVRPT held.")
+    );
+    assert!(
+        b.fx.print
+            .ran
+            .lock()
+            .unwrap()
+            .last()
+            .unwrap()
+            .ends_with("OPTION(*PAGEEND)")
+    );
     // Release two, one of them ready: the summary and each file's result.
     let qsys = "123311-CWELLMAN-QPADEV0003-QSYSPRT-2";
-    b.post("/print", &[("s0", INVRPT), ("s3", qsys), ("release", "Release")]);
+    b.post(
+        "/print",
+        &[("s0", INVRPT), ("s3", qsys), ("release", "Release")],
+    );
     let t = b.get("/print").text();
-    assert!(t.contains("QAD6006</a> - 1 of 2 actions failed; see the details."), "{t}");
+    assert!(
+        t.contains("QAD6006</a> - 1 of 2 actions failed; see the details."),
+        "{t}"
+    );
     assert!(t.contains("CPF3337"), "{t}");
     assert!(!b.get("/print").text().contains("CPF3337"));
     // Move to the top of another queue.
-    b.post("/print", &[("s3", qsys), ("to", "QGPL/PRT02"), ("top", "on"), ("move", "Move")]);
-    assert!(b.get("/print").text().contains("QAD6005</a> - Spooled file QSYSPRT moved to QGPL/PRT02."));
+    b.post(
+        "/print",
+        &[
+            ("s3", qsys),
+            ("to", "QGPL/PRT02"),
+            ("top", "on"),
+            ("move", "Move"),
+        ],
+    );
+    assert!(
+        b.get("/print")
+            .text()
+            .contains("QAD6005</a> - Spooled file QSYSPRT moved to QGPL/PRT02.")
+    );
     assert_eq!(b.fx.print.files.lock().unwrap()[0].outq, "QGPL/PRT02");
     // Move to a queue not offered.
-    b.post("/print", &[("s3", qsys), ("to", "QSYS/NOPE"), ("move", "Move")]);
+    b.post(
+        "/print",
+        &[("s3", qsys), ("to", "QSYS/NOPE"), ("move", "Move")],
+    );
     assert!(b.get("/print").text().contains("XWA0004"));
     // Delete asks first.
     let r = b.post("/print", &[("s1", INVRPT), ("delete", "Delete...")]);
@@ -146,10 +233,20 @@ fn hold_release_move_delete() {
     assert_eq!(r.status, 303);
     assert!(b.fx.print.find("CWELLMAN", INVRPT).is_err());
     // Save as PDF needs one file.
-    b.post("/print", &[("s0", qsys), ("s1", "123290-CWELLMAN-INVBATCH-INVLABEL-1"), ("pdf", "Save as PDF")]);
+    b.post(
+        "/print",
+        &[
+            ("s0", qsys),
+            ("s1", "123290-CWELLMAN-INVBATCH-INVLABEL-1"),
+            ("pdf", "Save as PDF"),
+        ],
+    );
     assert!(b.get("/print").text().contains("XWA0045"));
     let r = b.post("/print", &[("s0", qsys), ("text", "Save as text")]);
-    assert_eq!(r.header("Location"), Some(format!("/qs400/accessweb/print/view/{qsys}/text?save=1").as_str()));
+    assert_eq!(
+        r.header("Location"),
+        Some(format!("/qs400/accessweb/print/view/{qsys}/text?save=1").as_str())
+    );
 }
 
 #[test]
@@ -162,7 +259,11 @@ fn filters_paging_and_auto_refresh() {
     let t = b.get("/print?rows=10&qn=QEZJOBLOG").text();
     assert!(t.contains("2 entries"), "{t}");
     let t = b.get("/print?auto=30").text();
-    assert!(t.contains("<meta http-equiv=\"refresh\" content=\"30\" />") && t.contains("<option selected>30</option>"), "{t}");
+    assert!(
+        t.contains("<meta http-equiv=\"refresh\" content=\"30\" />")
+            && t.contains("<option selected>30</option>"),
+        "{t}"
+    );
     // The page shown sorted by pages.
     let t = b.get("/print?sort=p").text();
     assert!(t.find(">QPJOBLOG</a>").unwrap() < t.find(">INVLABEL</a>").unwrap());
@@ -174,17 +275,35 @@ fn policies_and_authority() {
     let mut w = Browser::as_user("WEBUSER");
     let t = w.get("/print?u=*ALL").text();
     assert!(!t.contains("QPGMR"), "{t}");
-    assert!(w.get(&format!("/print/props/{INVRPT}")).text().contains("CPF3303") || w.get("/print").status == 200);
+    assert!(
+        w.get(&format!("/print/props/{INVRPT}"))
+            .text()
+            .contains("CPF3303")
+            || w.get("/print").status == 200
+    );
     // Policies take actions away and refuse their posts.
     let mut b = Browser::signed_on();
-    b.fx.policy.put("ADMINS", &[(policy::PRINT_OWN.into(), Setting::Deny), (policy::PRINT_PDF.into(), Setting::Deny)]).unwrap();
+    b.fx.policy
+        .put(
+            "ADMINS",
+            &[
+                (policy::PRINT_OWN.into(), Setting::Deny),
+                (policy::PRINT_PDF.into(), Setting::Deny),
+            ],
+        )
+        .unwrap();
     let t = b.get("/print").text();
-    assert!(!t.contains("name=\"hold\"") && !t.contains("Save as PDF") && !t.contains("/pdf\""), "{t}");
+    assert!(
+        !t.contains("name=\"hold\"") && !t.contains("Save as PDF") && !t.contains("/pdf\""),
+        "{t}"
+    );
     let r = b.post("/print", &[("s0", INVRPT), ("hold", "Hold")]);
     assert_eq!(r.status, 403);
     assert!(r.text().contains("XWA0001"));
     assert_eq!(b.get(&format!("/print/view/{INVRPT}/pdf")).status, 403);
-    b.fx.policy.put("ADMINS", &[(policy::PRINT_OTHERS.into(), Setting::Deny)]).unwrap();
+    b.fx.policy
+        .put("ADMINS", &[(policy::PRINT_OTHERS.into(), Setting::Deny)])
+        .unwrap();
     assert_eq!(b.get("/print?u=*ALL").status, 403);
     // A file still being written.
     b.fx.policy.put("ADMINS", &[]).unwrap();

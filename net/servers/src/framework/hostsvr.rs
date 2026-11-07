@@ -31,7 +31,10 @@ pub struct HostSvr;
 
 impl HostSvr {
     fn daemons(&self) -> impl Iterator<Item = &'static registry::JobSpec> {
-        self.spec().jobs.iter().filter(|j| j.kind == JobKind::Listener)
+        self.spec()
+            .jobs
+            .iter()
+            .filter(|j| j.kind == JobKind::Listener)
     }
 
     fn job(j: &registry::JobSpec) -> JobStart {
@@ -75,11 +78,19 @@ impl TcpServer for HostSvr {
         let mut idle = self.jobs(req, &attrs)?;
         idle.retain(|j| !env.active(&j.name));
         if idle.is_empty() {
-            return Ok(format!("{} {} server already started.", msg::ALREADY, spec.name));
+            return Ok(format!(
+                "{} {} server already started.",
+                msg::ALREADY,
+                spec.name
+            ));
         }
         for j in &idle {
-            env.start_job(j)
-                .map_err(|e| Refusal::new(msg::NOT_STARTED, format!("{} could not be started: {e}", spec.special)))?;
+            env.start_job(j).map_err(|e| {
+                Refusal::new(
+                    msg::NOT_STARTED,
+                    format!("{} could not be started: {e}", spec.special),
+                )
+            })?;
         }
         Ok(format!("{} {} server starting.", msg::STARTING, spec.name))
     }

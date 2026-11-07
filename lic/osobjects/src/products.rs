@@ -13,8 +13,11 @@ use store::txn::Txn;
 use crate::{Error, piece};
 
 /// Products with objects of their own, and their libraries.
-pub const PRODUCTS: &[(&str, &[&str])] =
-    &[("QS00DG1", &["QHTTPSVR"]), ("QS00RPG", &["QRPG"]), ("QS00AFW", &["QUSRSYS"])];
+pub const PRODUCTS: &[(&str, &[&str])] = &[
+    ("QS00DG1", &["QHTTPSVR"]),
+    ("QS00RPG", &["QRPG"]),
+    ("QS00AFW", &["QUSRSYS"]),
+];
 
 /// Access for Web's stores in `QUSRSYS` (`net/accessweb`, docs/ACCESSWEB.md):
 /// name, text. The system owns them; the product changes them through
@@ -44,7 +47,11 @@ pub fn libraries(product: &str) -> &'static [&'static str] {
 /// Access for Web's stores missing from `QUSRSYS`; how many were made.
 fn afw_stores(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Result<usize, Error> {
     let what = "Access for Web stores";
-    let lib = piece(what, ops::find_library(txn, qsys, Name::parse("QUSRSYS").expect("valid")))?.id;
+    let lib = piece(
+        what,
+        ops::find_library(txn, qsys, Name::parse("QUSRSYS").expect("valid")),
+    )?
+    .id;
     let have = piece(what, ops::list(txn, lib, Some(types::USRIDX)))?;
     let mut made = 0;
     for (name, text) in AFW_STORES {
@@ -63,7 +70,10 @@ fn afw_stores(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
             now: stamp.now,
             by_system: true,
         };
-        piece(what, usridx::create(txn, &params, false, AFW_KEY, AFW_ENTRY))?;
+        piece(
+            what,
+            usridx::create(txn, &params, false, AFW_KEY, AFW_ENTRY),
+        )?;
         made += 1;
     }
     Ok(made)

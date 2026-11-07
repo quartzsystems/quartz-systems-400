@@ -127,9 +127,9 @@ pub fn fuzz(t: &Target, o: &Options) -> std::io::Result<Report> {
     fs::create_dir_all(&o.corpus)?;
     quiet_panics();
     let seed = if o.seed == 0 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_or(1, |d| u64::try_from(d.as_nanos() & u128::from(u64::MAX)).unwrap_or(1))
+        SystemTime::now().duration_since(UNIX_EPOCH).map_or(1, |d| {
+            u64::try_from(d.as_nanos() & u128::from(u64::MAX)).unwrap_or(1)
+        })
     } else {
         o.seed
     };
@@ -158,7 +158,10 @@ pub fn fuzz(t: &Target, o: &Options) -> std::io::Result<Report> {
                         let input = running.lock().map(|r| r.clone()).unwrap_or_default();
                         let _ = fs::create_dir_all(&crashes);
                         let _ = fs::write(crashes.join(format!("hang-{}", name(&input))), &input);
-                        eprintln!("fuzz {tname}: an input ran past {hang:?}; saved in {}", crashes.display());
+                        eprintln!(
+                            "fuzz {tname}: an input ran past {hang:?}; saved in {}",
+                            crashes.display()
+                        );
                         std::process::exit(3);
                     }
                 }
@@ -206,7 +209,9 @@ pub fn fuzz(t: &Target, o: &Options) -> std::io::Result<Report> {
             mutate(&mut rng, &mut buf, other, t.dict, t.max_len);
             current(&buf);
             started.store(
-                u64::try_from(epoch.elapsed().as_millis()).unwrap_or(1).max(1),
+                u64::try_from(epoch.elapsed().as_millis())
+                    .unwrap_or(1)
+                    .max(1),
                 Ordering::Relaxed,
             );
             let r = run_one(t, &buf);

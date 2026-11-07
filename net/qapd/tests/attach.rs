@@ -43,7 +43,12 @@ fn bob(sys: &Arc<Controls>) -> (Run, Token) {
 }
 
 fn attach(r: &mut Run, token: &Token) -> Envelope {
-    r.client.call(Op::Attach, &Attach { token: token.clone() })
+    r.client.call(
+        Op::Attach,
+        &Attach {
+            token: token.clone(),
+        },
+    )
 }
 
 /// A new version 4 connection attached to `token`'s session.
@@ -56,7 +61,13 @@ fn attached(sys: &Arc<Controls>, token: &Token) -> Run {
 
 /// The status and the message's ID.
 fn status_msg(got: &Envelope) -> (Status, String) {
-    (got.status, got.message.as_ref().map(|m| m.id.clone()).unwrap_or_default())
+    (
+        got.status,
+        got.message
+            .as_ref()
+            .map(|m| m.id.clone())
+            .unwrap_or_default(),
+    )
 }
 
 /// Close the client and wait for its job to detach.
@@ -83,7 +94,10 @@ fn job_number(reply: &CommandReply) -> u32 {
 /// The `SessionEnded` event, then the close; the message's ID.
 fn session_ended(r: &mut Run) -> String {
     let got = r.client.recv().expect("SessionEnded");
-    assert_eq!((got.kind, got.request_id, got.service, got.op), (Kind::Event, 0, Service::SignOn, event::SESSION_ENDED));
+    assert_eq!(
+        (got.kind, got.request_id, got.service, got.op),
+        (Kind::Event, 0, Service::SignOn, event::SESSION_ENDED)
+    );
     assert_eq!(got.status, Status::Ok);
     let m = got.message.expect("a message");
     assert!(m.text.ends_with("(lang of BOB)"), "{}", m.text);
@@ -100,30 +114,52 @@ fn attach_statuses() {
     let got = attach(&mut two, &token);
     assert_eq!(got.status, Status::Ok);
     let reply: SignOnReply = got.body_as().unwrap();
-    assert_eq!((reply.token, reply.profile.as_str()), (token.clone(), "BOB"));
+    assert_eq!(
+        (reply.token, reply.profile.as_str()),
+        (token.clone(), "BOB")
+    );
     assert_eq!(two.client.call(Op::SystemInfo, &()).status, Status::Ok);
-    assert_eq!(one.client.call(Op::SystemInfo, &()).status, Status::Ok, "the session stays with the first");
+    assert_eq!(
+        one.client.call(Op::SystemInfo, &()).status,
+        Status::Ok,
+        "the session stays with the first"
+    );
     let running = sys.running_as.lock().unwrap().clone();
-    assert_eq!((running.len(), running.values().all(|u| u == "BOB")), (2, true));
+    assert_eq!(
+        (running.len(), running.values().all(|u| u == "BOB")),
+        (2, true)
+    );
     // On one signed-on connection: refused, the connection and session stay.
     assert_eq!(attach(&mut two, &token).status, Status::InvalidRequest);
     assert_eq!(attach(&mut one, &token).status, Status::InvalidRequest);
     assert_eq!(two.client.call(Op::SystemInfo, &()).status, Status::Ok);
     // An unknown token.
     let mut three = hello(&sys, 4);
-    assert_eq!(status_msg(&attach(&mut three, &Token([0xEE; 32]))), (Status::SessionExpired, "TCP1A53".into()));
-    assert_eq!(three.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        status_msg(&attach(&mut three, &Token([0xEE; 32]))),
+        (Status::SessionExpired, "TCP1A53".into())
+    );
+    assert_eq!(
+        three.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     // Not the first request after Hello: not after one failed one, nor
     // after one Ping.
     assert_eq!(attach(&mut three, &token).status, Status::InvalidRequest);
     let mut pinged = hello(&sys, 4);
     assert_eq!(pinged.client.call(Op::Ping, &()).status, Status::Ok);
     assert_eq!(attach(&mut pinged, &token).status, Status::InvalidRequest);
-    assert_eq!(pinged.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        pinged.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     // A version 3 connection: no such operation.
     let mut v3 = hello(&sys, 3);
     assert_eq!(attach(&mut v3, &token).status, Status::InvalidRequest);
-    assert_eq!(v3.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        v3.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
 }
 
 #[test]
@@ -133,7 +169,10 @@ fn an_expired_session_does_not_attach() {
     close(one);
     sys.advance(600);
     let mut two = hello(&sys, 4);
-    assert_eq!(status_msg(&attach(&mut two, &token)), (Status::SessionExpired, "TCP1A53".into()));
+    assert_eq!(
+        status_msg(&attach(&mut two, &token)),
+        (Status::SessionExpired, "TCP1A53".into())
+    );
 }
 
 #[test]
@@ -150,13 +189,23 @@ fn each_connection_has_its_own_job_state() {
     assert_ne!(ja, jb, "a job each");
     let curlib = sys.curlib.lock().unwrap().clone();
     assert_eq!(curlib.get(&ja).map(String::as_str), Some("MINE"));
-    assert_eq!(curlib.get(&jb), None, "the second's current library is its own");
+    assert_eq!(
+        curlib.get(&jb),
+        None,
+        "the second's current library is its own"
+    );
     assert_eq!(run(&mut two, "CHGCURLIB CURLIB(THEIRS)").0, Status::Ok);
     let curlib = sys.curlib.lock().unwrap().clone();
-    assert_eq!((curlib[&ja].as_str(), curlib[&jb].as_str()), ("MINE", "THEIRS"));
+    assert_eq!(
+        (curlib[&ja].as_str(), curlib[&jb].as_str()),
+        ("MINE", "THEIRS")
+    );
     // Both run as the session's profile.
     let running = sys.running_as.lock().unwrap().clone();
-    assert_eq!((running[&ja].as_str(), running[&jb].as_str()), ("BOB", "BOB"));
+    assert_eq!(
+        (running[&ja].as_str(), running[&jb].as_str()),
+        ("BOB", "BOB")
+    );
 }
 
 #[test]
@@ -168,7 +217,10 @@ fn sixteen_connections_at_most() {
     let got = attach(&mut full, &token);
     assert_eq!(status_msg(&got), (Status::Busy, "TCP1A59".into()));
     assert!(got.message.unwrap().text.contains("BOB"));
-    assert_eq!(full.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        full.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     // One closes: one more fits.
     close(more.pop().unwrap());
     let mut again = hello(&sys, 4);
@@ -196,7 +248,10 @@ fn sign_off_on_one_ends_the_others() {
     // The second signs off: its Ok, and it stays open, not signed on.
     let off = two.client.call(Op::SignOff, &());
     assert_eq!((off.status, off.body.len()), (Status::Ok, 0));
-    assert_eq!(two.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        two.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     assert_eq!(two.client.call(Op::Ping, &()).status, Status::Ok);
     // The others: SessionEnded, then closed.
     assert_eq!(session_ended(&mut one), "TCP1A58");
@@ -205,7 +260,17 @@ fn sign_off_on_one_ends_the_others() {
     assert_eq!(three.server.join().unwrap(), Closed::SessionEnded);
     // The token is gone.
     let mut four = hello(&sys, 4);
-    assert_eq!(four.client.call(Op::Resume, &Resume { token: token.clone() }).status, Status::SessionExpired);
+    assert_eq!(
+        four.client
+            .call(
+                Op::Resume,
+                &Resume {
+                    token: token.clone()
+                }
+            )
+            .status,
+        Status::SessionExpired
+    );
     let mut five = hello(&sys, 4);
     assert_eq!(attach(&mut five, &token).status, Status::SessionExpired);
 }
@@ -241,11 +306,36 @@ fn resume_moves_only_the_resumable_connection() {
     close(one);
     // Resume takes the place of the connection that signed on.
     let mut three = hello(&sys, 4);
-    assert_eq!(three.client.call(Op::Resume, &Resume { token: token.clone() }).status, Status::Ok);
-    assert_eq!(two.client.call(Op::SystemInfo, &()).status, Status::Ok, "the second stays attached");
+    assert_eq!(
+        three
+            .client
+            .call(
+                Op::Resume,
+                &Resume {
+                    token: token.clone()
+                }
+            )
+            .status,
+        Status::Ok
+    );
+    assert_eq!(
+        two.client.call(Op::SystemInfo, &()).status,
+        Status::Ok,
+        "the second stays attached"
+    );
     // Resume with the session's connection still open moves it; the second stays.
     let mut four = hello(&sys, 4);
-    assert_eq!(four.client.call(Op::Resume, &Resume { token: token.clone() }).status, Status::Ok);
+    assert_eq!(
+        four.client
+            .call(
+                Op::Resume,
+                &Resume {
+                    token: token.clone()
+                }
+            )
+            .status,
+        Status::Ok
+    );
     assert_eq!(two.client.call(Op::SystemInfo, &()).status, Status::Ok);
     // The second signs off: the fourth, the resumable one now, ends.
     assert_eq!(two.client.call(Op::SignOff, &()).status, Status::Ok);
@@ -284,5 +374,8 @@ fn job_info_names_each_connections_own_job() {
     assert_eq!(c.user, c.job.user);
     // Not a version 3 operation.
     let mut v3 = hello(&sys, 3);
-    assert_eq!(v3.client.call(Op::JobInfo, &()).status, Status::InvalidRequest);
+    assert_eq!(
+        v3.client.call(Op::JobInfo, &()).status,
+        Status::InvalidRequest
+    );
 }

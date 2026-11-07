@@ -95,8 +95,14 @@ impl Cleanup {
         if let Some((l, n)) = kv.get("jobq").and_then(|v| v.split_once('/')) {
             c.jobq = (l.to_string(), n.to_string());
         }
-        c.jrnrcvsiz = kv.get("jrnrcvsiz").and_then(|v| v.parse().ok()).unwrap_or(c.jrnrcvsiz);
-        c.runpty = kv.get("runpty").and_then(|v| v.parse().ok()).unwrap_or(c.runpty);
+        c.jrnrcvsiz = kv
+            .get("jrnrcvsiz")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(c.jrnrcvsiz);
+        c.runpty = kv
+            .get("runpty")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(c.runpty);
         c.scheduled = kv.get("scheduled").and_then(|v| yes_no(v)).unwrap_or(false);
         c.last_run = kv.get("last_run").and_then(|v| v.parse().ok()).unwrap_or(0);
         c.last_result = kv.get("last_result").cloned().unwrap_or_default();
@@ -162,7 +168,9 @@ impl Cleanup {
         }
         if let Some(v) = val("JOBQ") {
             let v = v.to_ascii_uppercase();
-            let (l, n) = v.split_once('/').map_or(("*LIBL", v.as_str()), |(l, n)| (l, n));
+            let (l, n) = v
+                .split_once('/')
+                .map_or(("*LIBL", v.as_str()), |(l, n)| (l, n));
             if qsname::Name::parse(n).is_err() {
                 return Err(Bad("JOBQ", v.clone()));
             }
@@ -214,7 +222,8 @@ impl Cleanup {
     /// The schedule entry's time, `HHMMSS`; `None` for `*SCDPWROFF`.
     #[must_use]
     pub fn scdtime(&self) -> Option<String> {
-        time_of_day(&self.strtime).map(|s| format!("{:02}{:02}{:02}", s / 3600, s / 60 % 60, s % 60))
+        time_of_day(&self.strtime)
+            .map(|s| format!("{:02}{:02}{:02}", s / 3600, s / 60 % 60, s % 60))
     }
 
     /// The `ADDJOBSCDE` of the daily cleanup.
@@ -270,7 +279,14 @@ impl Removed {
 /// inquiries waiting for a reply never go; a critical message (severity
 /// 90 or more on `QSYSOPR`) follows `CRITSYSMSG`.
 #[must_use]
-pub fn message_expired(c: &Cleanup, system_queue: bool, severity: u8, unanswered: bool, sent: u64, now: u64) -> bool {
+pub fn message_expired(
+    c: &Cleanup,
+    system_queue: bool,
+    severity: u8,
+    unanswered: bool,
+    sent: u64,
+    now: u64,
+) -> bool {
     if unanswered {
         return false;
     }
@@ -288,27 +304,44 @@ mod tests {
     use super::*;
 
     fn get<'a>(kv: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
-        move |k| kv.iter().find(|(x, _)| *x == k).map(|(_, v)| (*v).to_string())
+        move |k| {
+            kv.iter()
+                .find(|(x, _)| *x == k)
+                .map(|(_, v)| (*v).to_string())
+        }
     }
 
     #[test]
     fn change_keeps_what_is_same() {
         let mut c = Cleanup::default();
-        c.apply(get(&[("USRMSG", "31"), ("STRTIME", "'063000'"), ("SYSMSG", "*SAME")])).unwrap();
+        c.apply(get(&[
+            ("USRMSG", "31"),
+            ("STRTIME", "'063000'"),
+            ("SYSMSG", "*SAME"),
+        ]))
+        .unwrap();
         assert_eq!(c.usrmsg, Keep::Days(31));
         assert_eq!(c.sysmsg, Keep::Days(4));
         assert_eq!(c.strtime, "06:30:00");
         assert_eq!(c.scdtime().as_deref(), Some("063000"));
         let before = c.clone();
-        assert_eq!(c.apply(get(&[("USRMSG", "1"), ("SYSLOG", "0")])), Err(Bad("SYSLOG", "0".into())));
+        assert_eq!(
+            c.apply(get(&[("USRMSG", "1"), ("SYSLOG", "0")])),
+            Err(Bad("SYSLOG", "0".into()))
+        );
         assert_eq!(c, before, "a bad value changes nothing");
     }
 
     #[test]
     fn options_persist() {
         let mut c = Cleanup::default();
-        c.apply(get(&[("ALWCLNUP", "*NO"), ("CRITSYSMSG", "60"), ("JOBQ", "QGPL/NIGHT"), ("RUNPTY", "20")]))
-            .unwrap();
+        c.apply(get(&[
+            ("ALWCLNUP", "*NO"),
+            ("CRITSYSMSG", "60"),
+            ("JOBQ", "QGPL/NIGHT"),
+            ("RUNPTY", "20"),
+        ]))
+        .unwrap();
         c.last_run = 1_792_540_800;
         c.last_result = "3 spooled file(s) removed".into();
         let back = Cleanup::decode(&c.encode());
@@ -324,7 +357,13 @@ mod tests {
         assert!(message_expired(&c, false, 0, false, now - 8 * DAY, now));
         assert!(!message_expired(&c, false, 0, false, now - 6 * DAY, now));
         assert!(message_expired(&c, true, 10, false, now - 5 * DAY, now));
-        assert!(!message_expired(&c, true, 99, false, 0, now), "critical kept");
-        assert!(!message_expired(&c, true, 10, true, 0, now), "an inquiry waits");
+        assert!(
+            !message_expired(&c, true, 99, false, 0, now),
+            "critical kept"
+        );
+        assert!(
+            !message_expired(&c, true, 10, true, 0, now),
+            "an inquiry waits"
+        );
     }
 }

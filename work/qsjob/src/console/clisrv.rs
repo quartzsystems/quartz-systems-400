@@ -38,8 +38,20 @@ struct ServerJob {
 impl Runner for ServerJob {
     fn run(&mut self, req: &Request) -> (Reply, Vec<(usize, Value)>) {
         let lost = || {
-            let ca = sql::Sqlca { sqlcode: -30080, sqlstate: "08S01".into(), sqlerrmc: "The connection's server job ended.".into(), ..sql::Sqlca::default() };
-            (Reply { sqlca: ca, rows: Vec::new(), call: None }, Vec::new())
+            let ca = sql::Sqlca {
+                sqlcode: -30080,
+                sqlstate: "08S01".into(),
+                sqlerrmc: "The connection's server job ended.".into(),
+                ..sql::Sqlca::default()
+            };
+            (
+                Reply {
+                    sqlca: ca,
+                    rows: Vec::new(),
+                    call: None,
+                },
+                Vec::new(),
+            )
         };
         if !self.open || self.chan.send(&run_message(req)).is_err() {
             self.open = false;
@@ -69,14 +81,21 @@ impl Drop for ServerJob {
 
 /// Start a connection's server job.
 fn connect(link: &Shared, me: &sockets::JobId, req: &ConnectReq) -> Result<Box<dyn Runner>, Diag> {
-    let failed = |why: &str| Diag::cli("08001", &format!("No server job could be started for the connection: {why}."));
+    let failed = |why: &str| {
+        Diag::cli(
+            "08001",
+            &format!("No server job could be started for the connection: {why}."),
+        )
+    };
     let (mine, theirs) = UnixStream::pair().map_err(|e| failed(&e.to_string()))?;
     let ticket = link.borrow_mut().with(Client::sqlsrv_ticket);
     let fd = sockets::Fd::from(OwnedFd::from(theirs));
-    relay::give(relay::SOCKET, &fd, &relay::pool(PROGRAM), me, b"Q").map_err(|e| failed(&format!("{e:?}")))?;
+    relay::give(relay::SOCKET, &fd, &relay::pool(PROGRAM), me, b"Q")
+        .map_err(|e| failed(&format!("{e:?}")))?;
     drop(fd);
     let mut chan = Chan::new(mine);
-    chan.set_timeout(Some(ANSWER)).map_err(|e| failed(&e.to_string()))?;
+    chan.set_timeout(Some(ANSWER))
+        .map_err(|e| failed(&e.to_string()))?;
     let hello = ToServer::Hello {
         ticket,
         user: req.user.clone().unwrap_or_default(),
@@ -88,7 +107,11 @@ fn connect(link: &Shared, me: &sockets::JobId, req: &ConnectReq) -> Result<Box<d
             chan.set_timeout(None).map_err(|e| failed(&e.to_string()))?;
             Ok(Box::new(ServerJob { chan, open: true }))
         }
-        Ok(FromServer::Refused { state, code, text }) => Err(Diag { state, native: code, text }),
+        Ok(FromServer::Refused { state, code, text }) => Err(Diag {
+            state,
+            native: code,
+            text,
+        }),
         Ok(FromServer::Done { .. }) => Err(failed("the server job answered out of turn")),
         Err(e) => Err(failed(&e.to_string())),
     }

@@ -21,7 +21,10 @@ use crate::{Config, Result};
 /// `gateway`.
 pub fn commands(ip: &str, gateway: Option<&str>, line: &str) -> Result<Vec<String>> {
     let mut v = if is_dhcp(ip) {
-        vec![format!("ADDTCPIFC INTNETADR(*IP4DHCP) LIND({}) AUTOSTART(*YES)", line.to_ascii_uppercase())]
+        vec![format!(
+            "ADDTCPIFC INTNETADR(*IP4DHCP) LIND({}) AUTOSTART(*YES)",
+            line.to_ascii_uppercase()
+        )]
     } else {
         let (addr, prefix) = split(ip)?;
         vec![format!(
@@ -94,7 +97,10 @@ mod tests {
                 "ADDTCPRTE RTEDEST(*DFTROUTE) NEXTHOP('10.0.2.2')",
             ]
         );
-        assert_eq!(commands("192.168.1.9/16", None, "ETHLINE").unwrap().len(), 1);
+        assert_eq!(
+            commands("192.168.1.9/16", None, "ETHLINE").unwrap().len(),
+            1
+        );
         assert!(commands("10.0.2.15", None, "ETH0").is_err());
         assert!(commands("10.0.2.15/33", None, "ETH0").is_err());
     }
@@ -104,21 +110,42 @@ mod tests {
         let mut cfg = Config::default();
         let t = apply(&mut cfg, "10.0.2.15/24", Some("10.0.2.2"), "eth0").unwrap();
         assert_eq!(t, [Table::Ifc, Table::Rte]);
-        let i = cfg.ifcs.get(&IfcAddr::Ip("10.0.2.15".parse().unwrap())).unwrap();
+        let i = cfg
+            .ifcs
+            .get(&IfcAddr::Ip("10.0.2.15".parse().unwrap()))
+            .unwrap();
         assert_eq!(i.line, LineRef::Line("ETH0".into()));
         assert_eq!(i.mask, Some(Ipv4Addr::new(255, 255, 255, 0)));
         assert!(i.autostart);
-        let r = cfg.rtes.list.iter().find(|r| r.dest == Dest::DftRoute).unwrap();
+        let r = cfg
+            .rtes
+            .list
+            .iter()
+            .find(|r| r.dest == Dest::DftRoute)
+            .unwrap();
         assert_eq!(r.next_hop, IpAddr::V4(Ipv4Addr::new(10, 0, 2, 2)));
         // The next IPL finds them and adds nothing.
-        assert!(apply(&mut cfg, "10.0.2.15/24", Some("10.0.2.2"), "eth0").unwrap().is_empty());
+        assert!(
+            apply(&mut cfg, "10.0.2.15/24", Some("10.0.2.2"), "eth0")
+                .unwrap()
+                .is_empty()
+        );
         // No gateway, no route.
         let mut cfg = Config::default();
-        assert_eq!(apply(&mut cfg, "10.0.2.15/24", None, "ETH0").unwrap(), [Table::Ifc]);
+        assert_eq!(
+            apply(&mut cfg, "10.0.2.15/24", None, "ETH0").unwrap(),
+            [Table::Ifc]
+        );
         // DHCP.
         let mut cfg = Config::default();
-        assert_eq!(commands("*IP4DHCP", None, "eth0").unwrap(), ["ADDTCPIFC INTNETADR(*IP4DHCP) LIND(ETH0) AUTOSTART(*YES)"]);
-        assert_eq!(apply(&mut cfg, "*ip4dhcp", None, "ETH0").unwrap(), [Table::Ifc]);
+        assert_eq!(
+            commands("*IP4DHCP", None, "eth0").unwrap(),
+            ["ADDTCPIFC INTNETADR(*IP4DHCP) LIND(ETH0) AUTOSTART(*YES)"]
+        );
+        assert_eq!(
+            apply(&mut cfg, "*ip4dhcp", None, "ETH0").unwrap(),
+            [Table::Ifc]
+        );
         assert!(cfg.ifcs.get(&IfcAddr::Dhcp4).is_some_and(|i| i.autostart));
     }
 }

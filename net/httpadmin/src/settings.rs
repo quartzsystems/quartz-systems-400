@@ -89,19 +89,31 @@ impl Settings {
 pub fn in_net(addr: std::net::IpAddr, net: &str) -> bool {
     use std::net::IpAddr;
     let (a, bits) = net.trim().split_once('/').unwrap_or((net.trim(), ""));
-    let Ok(base) = a.parse::<IpAddr>() else { return false };
+    let Ok(base) = a.parse::<IpAddr>() else {
+        return false;
+    };
     match (addr, base) {
         (IpAddr::V4(x), IpAddr::V4(y)) => {
             let bits: u32 = bits.parse().unwrap_or(32).min(32);
-            let mask = if bits == 0 { 0 } else { u32::MAX << (32 - bits) };
+            let mask = if bits == 0 {
+                0
+            } else {
+                u32::MAX << (32 - bits)
+            };
             u32::from(x) & mask == u32::from(y) & mask
         }
         (IpAddr::V6(x), IpAddr::V6(y)) => {
             let bits: u32 = bits.parse().unwrap_or(128).min(128);
-            let mask = if bits == 0 { 0 } else { u128::MAX << (128 - bits) };
+            let mask = if bits == 0 {
+                0
+            } else {
+                u128::MAX << (128 - bits)
+            };
             u128::from(x) & mask == u128::from(y) & mask
         }
-        (IpAddr::V6(x), IpAddr::V4(_)) => x.to_ipv4_mapped().is_some_and(|v4| in_net(IpAddr::V4(v4), net)),
+        (IpAddr::V6(x), IpAddr::V4(_)) => x
+            .to_ipv4_mapped()
+            .is_some_and(|v4| in_net(IpAddr::V4(v4), net)),
         _ => false,
     }
 }

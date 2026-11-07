@@ -158,7 +158,12 @@ fn check_rows(name: &str, screen: &Screen, rows: &[usize]) {
     let mut bad = String::new();
     for &r in rows {
         if !same(&golden[r - 1], &ours[r - 1]) {
-            let _ = writeln!(bad, "row {r}:\n  golden |{}|\n  ours   |{}|", golden[r - 1], ours[r - 1]);
+            let _ = writeln!(
+                bad,
+                "row {r}:\n  golden |{}|\n  ours   |{}|",
+                golden[r - 1],
+                ours[r - 1]
+            );
         }
     }
     assert!(bad.is_empty(), "{name}:\n{bad}");
@@ -182,7 +187,12 @@ fn uim_exthelp() {
     let _ = d.show(&mut t, "WRK");
     check_rows("uim-exthelp", &t.shown[1], &[1, 22, 23]);
     // A further module's title is a heading at column 2.
-    assert!(t.shown[1].text_rows().iter().any(|r| r.trim_end() == " Options"));
+    assert!(
+        t.shown[1]
+            .text_rows()
+            .iter()
+            .any(|r| r.trim_end() == " Options")
+    );
 }
 
 #[test]
@@ -205,11 +215,20 @@ fn uim_help_keys() {
 #[test]
 fn uim_position_window() {
     let mut d = dialog();
-    let mut t = Script::keys(&[(Key::F(17), (8, 3)), (Key::F(12), (1, 1)), (Key::F(3), (1, 1))]);
+    let mut t = Script::keys(&[
+        (Key::F(17), (8, 3)),
+        (Key::F(12), (1, 1)),
+        (Key::F(3), (1, 1)),
+    ]);
     assert_eq!(d.show(&mut t, "WRK").unwrap(), Response::Exit);
     let win = &t.shown[1];
     check_rows("uim-position-window", win, &[2, 3, 4, 5, 6, 7, 11, 12, 13]);
-    let attrs = |r: usize, c: usize| win.fields.iter().find(|f| (f.row, f.col) == (r, c)).map(|f| (f.len, f.target.clone()));
+    let attrs = |r: usize, c: usize| {
+        win.fields
+            .iter()
+            .find(|f| (f.row, f.col) == (r, c))
+            .map(|f| (f.len, f.target.clone()))
+    };
     assert_eq!(attrs(5, 32), Some((10, Target::Var("POSOBJ".into()))));
     assert_eq!(attrs(6, 34), Some((8, Target::Var("POSTYPE".into()))));
 }
@@ -248,7 +267,8 @@ fn uim_option_not_valid() {
     let again = &t.0.shown[1];
     let f = again.fields.iter().find(|f| (f.row, f.col) == at).unwrap();
     // The golden shows the field underlined and reversed (attribute 0x25).
-    let attr = std::fs::read_to_string(common::golden_dir().join("uim-option-not-valid.attr")).unwrap();
+    let attr =
+        std::fs::read_to_string(common::golden_dir().join("uim-option-not-valid.attr")).unwrap();
     let row8: Vec<char> = attr.lines().nth(7).unwrap().chars().collect();
     assert_eq!((row8[1], row8[2]), ('5', '5'));
     assert_eq!(f.attr, Attr::Reverse);

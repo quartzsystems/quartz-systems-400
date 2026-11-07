@@ -12,8 +12,8 @@ use seu::exit::ExitForm;
 use seu::session::{Action, Key, Target};
 use seu::{Buffer, Mode, Session};
 use stg::Client;
-use uim::engine::LineMsg;
 use tn5250::ds::attr;
+use uim::engine::LineMsg;
 
 use super::{Ctx, key_of};
 use crate::command::Fail;
@@ -23,8 +23,11 @@ pub fn exit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<bool, Fail> {
     let changed = s.buf.changed() || !ctx.exists;
     let reseq = !matches!(s.defaults.reseq, Reseq::No);
     let errors = s.has_errors();
-    let mut form = ExitForm::new(&ctx.at.2, &ctx.at.1, &ctx.at.0, &s.text, changed, reseq, errors);
-    let mut message: Option<String> = errors.then(|| crate::display::msgline::text(ctx.host, "CPD9BDC", &[]));
+    let mut form = ExitForm::new(
+        &ctx.at.2, &ctx.at.1, &ctx.at.0, &s.text, changed, reseq, errors,
+    );
+    let mut message: Option<String> =
+        errors.then(|| crate::display::msgline::text(ctx.host, "CPD9BDC", &[]));
     loop {
         let shown = form.clone();
         let msg = message.take();
@@ -62,14 +65,20 @@ pub fn exit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<bool, Fail> {
                 continue;
             }
             if let Err(e) = ctx.save(s, (&choice.lib, &choice.file, &choice.member)) {
-                message = Some(crate::display::msgline::text_of(ctx.host, &crate::panels::line(&e)));
+                message = Some(crate::display::msgline::text_of(
+                    ctx.host,
+                    &crate::panels::line(&e),
+                ));
                 continue;
             }
         }
         if choice.print
             && let Err(e) = super::print::records(ctx, &choice.member, &s.records())
         {
-            message = Some(crate::display::msgline::text_of(ctx.host, &crate::display::msgline::of_fail(ctx.host, &e)));
+            message = Some(crate::display::msgline::text_of(
+                ctx.host,
+                &crate::display::msgline::of_fail(ctx.host, &e),
+            ));
             continue;
         }
         if choice.ret {
@@ -242,7 +251,10 @@ pub fn browse(ctx: &mut Ctx<'_>, s: &mut Session) {
         let (records, srctype, width) = match other {
             Ok(x) => x,
             Err(e) => {
-                message = Some(crate::display::msgline::text_of(ctx.host, &crate::panels::line(&e)));
+                message = Some(crate::display::msgline::text_of(
+                    ctx.host,
+                    &crate::panels::line(&e),
+                ));
                 continue;
             }
         };
@@ -250,7 +262,10 @@ pub fn browse(ctx: &mut Ctx<'_>, s: &mut Session) {
             let lines: Vec<String> = records.into_iter().map(|r| r.2).collect();
             let n = lines.len();
             let after = s.buf.len().checked_sub(1);
-            match s.buf.insert(after, &lines, s.defaults.increment.max(100), s.today) {
+            match s
+                .buf
+                .insert(after, &lines, s.defaults.increment.max(100), s.today)
+            {
                 Ok(_) => s.message = Some(LineMsg::info("CPI9BC8", &[&n.to_string(), &member])),
                 Err(e) => s.message = Some(e.msg()),
             }
@@ -258,7 +273,13 @@ pub fn browse(ctx: &mut Ctx<'_>, s: &mut Session) {
         }
         // Browse the other member over the display; F3 or F12 comes back.
         let today = s.today;
-        let mut b = Session::new(Mode::Browse, Buffer::new(width, records), &srctype, (&lib, &file, &member), today);
+        let mut b = Session::new(
+            Mode::Browse,
+            Buffer::new(width, records),
+            &srctype,
+            (&lib, &file, &member),
+            today,
+        );
         browse_only(ctx, &mut b);
         return;
     }
@@ -268,7 +289,9 @@ pub fn browse(ctx: &mut Ctx<'_>, s: &mut Session) {
 fn browse_only(ctx: &mut Ctx<'_>, b: &mut Session) {
     loop {
         let v = b.view();
-        let Some((a, cursor)) = ctx.exchange(|sc, m, env| seu::display::show_session(sc, m, env, &v)) else {
+        let Some((a, cursor)) =
+            ctx.exchange(|sc, m, env| seu::display::show_session(sc, m, env, &v))
+        else {
             return;
         };
         let Some(key) = key_of(a) else {
@@ -322,7 +345,12 @@ pub fn command(ctx: &mut Ctx<'_>, s: &mut Session) {
         let out = crate::command::run(ctx.job, ctx.host, &text);
         cmd = typed;
         match out.escape {
-            Some(f) => message = Some(crate::display::msgline::text_of(ctx.host, &crate::display::msgline::of_fail(ctx.host, &f))),
+            Some(f) => {
+                message = Some(crate::display::msgline::text_of(
+                    ctx.host,
+                    &crate::display::msgline::of_fail(ctx.host, &f),
+                ))
+            }
             None => return,
         }
     }
@@ -336,7 +364,9 @@ pub fn select(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
     let mut message: Option<String> = None;
     loop {
         let msg = message.take();
-        let Some((a, _)) = ctx.exchange(|sc, m, env| sc.show_select(m, env, &lines, msg.as_deref())) else {
+        let Some((a, _)) =
+            ctx.exchange(|sc, m, env| sc.show_select(m, env, &lines, msg.as_deref()))
+        else {
             return;
         };
         match key_of(a) {
@@ -352,7 +382,11 @@ pub fn select(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
             return;
         }
         if !st.prompt_formats().contains(&fmt.as_str()) {
-            message = Some(crate::display::msgline::text(ctx.host, "EDT1023", &[&fmt, &st.name]));
+            message = Some(crate::display::msgline::text(
+                ctx.host,
+                "EDT1023",
+                &[&fmt, &st.name],
+            ));
             continue;
         }
         if let Action::ClPrompt(t, _) = s.start_prompt(t, Some(&fmt)) {

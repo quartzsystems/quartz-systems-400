@@ -91,9 +91,13 @@ fn locate(
         "" | "*LIBL" => names.libl.clone(),
         "*CURLIB" => names.curlib.into_iter().collect(),
         l => vec![
-            ops::find_library(txn, qsys, Name::parse(l).map_err(|e| format!("CPD0078 {e}"))?)
-                .map_err(|_| format!("CPF2110 Library {l} not found."))?
-                .id,
+            ops::find_library(
+                txn,
+                qsys,
+                Name::parse(l).map_err(|e| format!("CPD0078 {e}"))?,
+            )
+            .map_err(|_| format!("CPF2110 Library {l} not found."))?
+            .id,
         ],
     };
     for l in libs {
@@ -110,7 +114,9 @@ fn locate(
         }
     }
     let shown = if lib.is_empty() { "*LIBL" } else { lib };
-    Err(format!("CPF9801 Object {name} in library {shown} not found."))
+    Err(format!(
+        "CPF9801 Object {name} in library {shown} not found."
+    ))
 }
 
 /// Run `f` over the object store with `QSYS`.
@@ -171,7 +177,15 @@ fn program_vars(p: &ProgramObject) -> Vars {
         ("PGMTYPE", "ILE".into()),
         ("PEPMOD", pep),
         ("PEPMODL", pepl),
-        ("EXPSRCF", if p.binder_source.is_some() { "*BINDER" } else { "*NONE" }.into()),
+        (
+            "EXPSRCF",
+            if p.binder_source.is_some() {
+                "*BINDER"
+            } else {
+                "*NONE"
+            }
+            .into(),
+        ),
         ("EXPMBR", String::new()),
         ("ACTGRP", p.attr.actgrp.to_string()),
         ("SHRACTGRP", "*NO".into()),
@@ -199,9 +213,28 @@ fn program_vars(p: &ProgramObject) -> Vars {
         ("TSPEP", "*NO".into()),
         ("TSMOD", "*NO".into()),
         ("STGMDL", "*SNGLVL".into()),
-        ("PGMSTATE", if p.attr.user_state { "*USER" } else { "*SYSTEM" }.into()),
-        ("PGMDOMAIN", if p.attr.user_domain { "*USER" } else { "*SYSTEM" }.into()),
-        ("OBSERV", if p.attr.observable { "*ALL" } else { "*NONE" }.into()),
+        (
+            "PGMSTATE",
+            if p.attr.user_state {
+                "*USER"
+            } else {
+                "*SYSTEM"
+            }
+            .into(),
+        ),
+        (
+            "PGMDOMAIN",
+            if p.attr.user_domain {
+                "*USER"
+            } else {
+                "*SYSTEM"
+            }
+            .into(),
+        ),
+        (
+            "OBSERV",
+            if p.attr.observable { "*ALL" } else { "*NONE" }.into(),
+        ),
         ("TGTRLS", p.attr.tgtrls.clone()),
         ("LVLCHK", yes(p.attr.lvlchk)),
         ("SIZECUR", kb(code + p.static_size)),
@@ -214,7 +247,12 @@ fn program_vars(p: &ProgramObject) -> Vars {
         ("STCMAX", "16777216".into()),
         (
             "KIND",
-            if p.attr.kind == PgmKind::SrvPgm { "SRVPGM" } else { "PGM" }.into(),
+            if p.attr.kind == PgmKind::SrvPgm {
+                "SRVPGM"
+            } else {
+                "PGM"
+            }
+            .into(),
         ),
     ])
 }
@@ -298,20 +336,25 @@ fn module(system: &mut System, lib: &str, name: &str) -> Result<Sys2Data, String
             ("CODESIZE", m.code.code.len().to_string()),
             ("CODEGEN", m.code.version.to_string()),
         ]));
-        let procs = m
-            .ir
-            .procs
-            .iter()
-            .map(|p| {
-                vars(&[
-                    ("PROCNAME", p.name.clone()),
-                    ("PROCTYPE", if p.entry { "ENTRY POINT" } else { "REGULAR" }.into()),
-                    ("ARGOPT", "*NO".into()),
-                    ("PROCSCOPE", if p.export { "*EXPORT" } else { "*LOCAL" }.into()),
-                    ("PROCPEP", if p.entry { "*PEP" } else { "" }.into()),
-                ])
-            })
-            .collect();
+        let procs =
+            m.ir.procs
+                .iter()
+                .map(|p| {
+                    vars(&[
+                        ("PROCNAME", p.name.clone()),
+                        (
+                            "PROCTYPE",
+                            if p.entry { "ENTRY POINT" } else { "REGULAR" }.into(),
+                        ),
+                        ("ARGOPT", "*NO".into()),
+                        (
+                            "PROCSCOPE",
+                            if p.export { "*EXPORT" } else { "*LOCAL" }.into(),
+                        ),
+                        ("PROCPEP", if p.entry { "*PEP" } else { "" }.into()),
+                    ])
+                })
+                .collect();
         Ok((v, vec![("PROCS".into(), procs)]))
     })
 }
@@ -390,14 +433,26 @@ fn command(system: &mut System, lib: &str, name: &str) -> Result<Sys2Data, Strin
                 ("ALLOW2", get(&allow, 1)),
                 ("ALLOW3", get(&allow, 2)),
                 ("ALWLMTUSR", yes(d.alwlmtusr)),
-                ("MAXPOS", d.maxpos.map_or("*NOMAX".to_string(), |m| m.to_string())),
+                (
+                    "MAXPOS",
+                    d.maxpos.map_or("*NOMAX".to_string(), |m| m.to_string()),
+                ),
                 ("PMTFILE", name_of(&d.pmtfile)),
                 ("PMTFILEL", lib_of(&d.pmtfile)),
-                ("MSGTXT", if d.pmtfile.is_some() { "*DYNAMIC" } else { "" }.into()),
+                (
+                    "MSGTXT",
+                    if d.pmtfile.is_some() { "*DYNAMIC" } else { "" }.into(),
+                ),
                 ("MSGF", d.msgf.name.clone()),
                 ("MSGFLIB", d.msgf.lib.clone()),
-                ("CURLIB", d.curlib.clone().unwrap_or_else(|| "*NOCHG".into())),
-                ("PRDLIB", d.prdlib.clone().unwrap_or_else(|| "*NOCHG".into())),
+                (
+                    "CURLIB",
+                    d.curlib.clone().unwrap_or_else(|| "*NOCHG".into()),
+                ),
+                (
+                    "PRDLIB",
+                    d.prdlib.clone().unwrap_or_else(|| "*NOCHG".into()),
+                ),
                 ("HLPPNLGRP", name_of(&d.hlppnlgrp)),
                 ("HLPPNLGRPL", lib_of(&d.hlppnlgrp)),
                 ("HLPID", d.hlpid.clone().unwrap_or_else(|| "*NONE".into())),
@@ -449,8 +504,10 @@ fn devds(system: &mut System) -> Result<Sys2Data, String> {
 /// `WRKHDWRSC`/`DSPHDWRSC`: the resources of a type, from the hardware
 /// resource service, in the tree order of `hwrsrc::view`.
 fn hardware(system: &mut System, ty: &str) -> Result<Sys2Data, String> {
-    let spec = hwrsrc::view::spec(ty).ok_or_else(|| format!("CPD0084 {ty} is not a type of resource."))?;
-    let t = hwrsrc::client::table(false).map_err(|e| format!("CPF9898 hardware resource service: {e}"))?;
+    let spec =
+        hwrsrc::view::spec(ty).ok_or_else(|| format!("CPD0084 {ty} is not a type of resource."))?;
+    let t = hwrsrc::client::table(false)
+        .map_err(|e| format!("CPF9898 hardware resource service: {e}"))?;
     let mut w = |id: &str, v: &[&str]| super::msgs::text(system, id, v);
     let rows = hwrsrc::view::list(&t, spec, &mut w)
         .into_iter()
@@ -477,7 +534,10 @@ pub fn cfg_descriptions(system: &mut System, rsrc: &str) -> Vec<(String, String)
         .map(|n| (n, "*LIND".to_string()))
         .collect();
     for (n, d) in super::media::devices::all(system).unwrap_or_default() {
-        if d.media.as_ref().is_some_and(|m| m.rsrcname.eq_ignore_ascii_case(rsrc)) {
+        if d.media
+            .as_ref()
+            .is_some_and(|m| m.rsrcname.eq_ignore_ascii_case(rsrc))
+        {
             out.push((n, "*DEVD".into()));
         }
     }
@@ -534,11 +594,9 @@ fn user_objects(system: &mut System, user: &str, ty: &str) -> Result<Sys2Data, S
                 .display(id.type_code == types::AUTL)
                 .to_string();
             match ty.as_str() {
-                "*CMDAUT" if id.type_code == types::CMD => cmds.push(vars(&[
-                    ("CMDNAME", name),
-                    ("CMDLIB", lib),
-                    ("CMDAUT", aut),
-                ])),
+                "*CMDAUT" if id.type_code == types::CMD => {
+                    cmds.push(vars(&[("CMDNAME", name), ("CMDLIB", lib), ("CMDAUT", aut)]))
+                }
                 "*DEVAUT" if id.type_code == types::DEVD => {
                     devs.push(vars(&[("DEVNAME", name), ("DEVAUT", aut)]));
                 }
@@ -582,4 +640,3 @@ fn user_objects(system: &mut System, user: &str, ty: &str) -> Result<Sys2Data, S
         ))
     })
 }
-

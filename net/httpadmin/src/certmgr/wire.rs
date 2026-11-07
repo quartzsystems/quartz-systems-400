@@ -13,7 +13,9 @@
 use serde::{Deserialize, Serialize};
 
 use super::Manager;
-use crate::env::{AppInfo, CertDetail, CertFailure, CertRow, Certs, Import, ImportSource, NewCert, StoreInfo};
+use crate::env::{
+    AppInfo, CertDetail, CertFailure, CertRow, Certs, Import, ImportSource, NewCert, StoreInfo,
+};
 
 /// One call.
 #[derive(Clone, Serialize, Deserialize)]
@@ -142,7 +144,10 @@ impl CertCall {
     /// instances' application IDs follow the instances, which any user
     /// with `*IOSYSCFG` creates and deletes.
     pub fn by_server(&self) -> bool {
-        matches!(self, CertCall::RegisterInstance { .. } | CertCall::DeregisterInstance { .. })
+        matches!(
+            self,
+            CertCall::RegisterInstance { .. } | CertCall::DeregisterInstance { .. }
+        )
     }
 
     /// The bytes sent.
@@ -197,9 +202,19 @@ pub fn answer(m: &Manager<'_>, call: CertCall) -> CertReply {
         CertCall::Stores => CertReply::Stores(m.stores()),
         CertCall::Entries { store } => CertReply::Rows(m.entries(&store)),
         CertCall::Detail { store, label } => CertReply::Detail(m.detail(&store, &label)),
-        CertCall::Export { store, label, chain } => CertReply::Bytes(m.export(&store, &label, chain)),
-        CertCall::CreateStore { name, path, password } => CertReply::Done(m.create_store(&name, &path, &password)),
-        CertCall::ChangePassword { store, old, new } => CertReply::Done(m.change_password(&store, &old, &new)),
+        CertCall::Export {
+            store,
+            label,
+            chain,
+        } => CertReply::Bytes(m.export(&store, &label, chain)),
+        CertCall::CreateStore {
+            name,
+            path,
+            password,
+        } => CertReply::Done(m.create_store(&name, &path, &password)),
+        CertCall::ChangePassword { store, old, new } => {
+            CertReply::Done(m.change_password(&store, &old, &new))
+        }
         CertCall::DeleteStore { store } => CertReply::Done(m.delete_store(&store)),
         CertCall::Signers => CertReply::Names(m.signer_names()),
         CertCall::Create(n) => CertReply::Detail(m.create(&n)),
@@ -209,11 +224,15 @@ pub fn answer(m: &Manager<'_>, call: CertCall) -> CertReply {
         CertCall::Apps => CertReply::Apps(m.apps()),
         CertCall::Assign { app, label } => CertReply::Done(m.assign(&app, label.as_deref())),
         CertCall::RegisterInstance { instance } => CertReply::Done(m.register_instance(&instance)),
-        CertCall::DeregisterInstance { instance } => CertReply::Done(m.deregister_instance(&instance)),
-        CertCall::Copy { from, label, to } => CertReply::Done(m.copy(&from, &label, &to)),
-        CertCall::ExportPkcs12 { store, label, password } => {
-            CertReply::Bytes(m.export_pkcs12(&store, &label, &password))
+        CertCall::DeregisterInstance { instance } => {
+            CertReply::Done(m.deregister_instance(&instance))
         }
+        CertCall::Copy { from, label, to } => CertReply::Done(m.copy(&from, &label, &to)),
+        CertCall::ExportPkcs12 {
+            store,
+            label,
+            password,
+        } => CertReply::Bytes(m.export_pkcs12(&store, &label, &password)),
     }
 }
 
@@ -264,7 +283,12 @@ impl<T: Transport> Certs for Remote<T> {
     }
 
     fn entries(&self, store: &str) -> Result<Vec<CertRow>, CertFailure> {
-        match self.ask(None, &CertCall::Entries { store: store.into() }) {
+        match self.ask(
+            None,
+            &CertCall::Entries {
+                store: store.into(),
+            },
+        ) {
             Some(CertReply::Rows(r)) => r,
             Some(CertReply::Refused(f)) => Err(f),
             _ => Err(silent()),
@@ -296,7 +320,13 @@ impl<T: Transport> Certs for Remote<T> {
         }
     }
 
-    fn create_store(&self, user: &str, name: &str, path: &str, password: &str) -> Result<(), CertFailure> {
+    fn create_store(
+        &self,
+        user: &str,
+        name: &str,
+        path: &str,
+        password: &str,
+    ) -> Result<(), CertFailure> {
         let c = CertCall::CreateStore {
             name: name.into(),
             path: path.into(),
@@ -305,7 +335,13 @@ impl<T: Transport> Certs for Remote<T> {
         self.done(user, &c)
     }
 
-    fn change_password(&self, user: &str, store: &str, old: &str, new: &str) -> Result<(), CertFailure> {
+    fn change_password(
+        &self,
+        user: &str,
+        store: &str,
+        old: &str,
+        new: &str,
+    ) -> Result<(), CertFailure> {
         let c = CertCall::ChangePassword {
             store: store.into(),
             old: old.into(),
@@ -315,7 +351,12 @@ impl<T: Transport> Certs for Remote<T> {
     }
 
     fn delete_store(&self, user: &str, store: &str) -> Result<(), CertFailure> {
-        self.done(user, &CertCall::DeleteStore { store: store.into() })
+        self.done(
+            user,
+            &CertCall::DeleteStore {
+                store: store.into(),
+            },
+        )
     }
 
     fn signers(&self) -> Vec<String> {
@@ -336,10 +377,9 @@ impl<T: Transport> Certs for Remote<T> {
     fn import(&self, user: &str, import: &Import) -> Result<Vec<String>, CertFailure> {
         let mut i = import.clone();
         if let ImportSource::Path(p) = &import.source {
-            let data = self
-                .0
-                .read_as(user, p)
-                .map_err(|e| CertFailure::Invalid(format!("stream file {p} could not be read: {e}")))?;
+            let data = self.0.read_as(user, p).map_err(|e| {
+                CertFailure::Invalid(format!("stream file {p} could not be read: {e}"))
+            })?;
             i.source = ImportSource::Data(data);
         }
         match self.ask(Some(user), &CertCall::Import(i)) {
@@ -381,11 +421,15 @@ impl<T: Transport> Certs for Remote<T> {
     }
 
     fn register_instance(&self, instance: &str) -> Result<(), CertFailure> {
-        self.server_done(&CertCall::RegisterInstance { instance: instance.into() })
+        self.server_done(&CertCall::RegisterInstance {
+            instance: instance.into(),
+        })
     }
 
     fn deregister_instance(&self, instance: &str) -> Result<(), CertFailure> {
-        self.server_done(&CertCall::DeregisterInstance { instance: instance.into() })
+        self.server_done(&CertCall::DeregisterInstance {
+            instance: instance.into(),
+        })
     }
 
     fn copy(&self, user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure> {
@@ -397,7 +441,13 @@ impl<T: Transport> Certs for Remote<T> {
         self.done(user, &c)
     }
 
-    fn export_pkcs12(&self, user: &str, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure> {
+    fn export_pkcs12(
+        &self,
+        user: &str,
+        store: &str,
+        label: &str,
+        password: &str,
+    ) -> Result<Vec<u8>, CertFailure> {
         let c = CertCall::ExportPkcs12 {
             store: store.into(),
             label: label.into(),

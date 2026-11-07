@@ -30,11 +30,23 @@ struct StoreSource {
 }
 
 impl ObjectSource for StoreSource {
-    fn program(&mut self, name: &str, _lib: &str, kind: PgmKind) -> Option<(Arc<ProgramObject>, String)> {
+    fn program(
+        &mut self,
+        name: &str,
+        _lib: &str,
+        kind: PgmKind,
+    ) -> Option<(Arc<ProgramObject>, String)> {
         let mut st = self.store.borrow_mut();
         let mut txn = st.begin().ok()?;
-        let ty = if kind == PgmKind::Pgm { types::PGM } else { types::SRVPGM };
-        let id = Library::load(&mut txn, self.lib).ok()?.lookup(&mut txn, ty, Name::parse(name).ok()?).ok()??;
+        let ty = if kind == PgmKind::Pgm {
+            types::PGM
+        } else {
+            types::SRVPGM
+        };
+        let id = Library::load(&mut txn, self.lib)
+            .ok()?
+            .lookup(&mut txn, ty, Name::parse(name).ok()?)
+            .ok()??;
         let p = ile::store::load_program(&mut txn, id).ok()?;
         txn.abort();
         Some((Arc::new(p), "QSTEST".into()))
@@ -58,7 +70,12 @@ fn env() -> Env {
         wal_pages: 512,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -78,15 +95,26 @@ fn env() -> Env {
     .unwrap();
     t.commit().unwrap();
     let store = Rc::new(RefCell::new(store));
-    let names = NameContext { curlib: Some(lib), libl: vec![lib] };
+    let names = NameContext {
+        curlib: Some(lib),
+        libl: vec![lib],
+    };
     let mut ctx = SqlContext::new(qsys, JobHandle(1), names);
     ctx.now = Some(NOW);
     ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
     let session = Session::with_ctx(Box::new(Rc::clone(&store)), ctx);
-    let mut job = mi::Job::boxed(Box::new(StoreSource { store: Rc::clone(&store), lib }));
+    let mut job = mi::Job::boxed(Box::new(StoreSource {
+        store: Rc::clone(&store),
+        lib,
+    }));
     qrpgrt::install(&mut job);
     job.sql = Some(Box::new(session));
-    Env { job, store, qsys, lib }
+    Env {
+        job,
+        store,
+        qsys,
+        lib,
+    }
 }
 
 impl Env {
@@ -98,7 +126,12 @@ impl Env {
     fn run_with(&mut self, text: &str, inputs: Vec<Value>) -> (Reply, Vec<(usize, Value)>) {
         let req = Request {
             scope: "1:TEST".into(),
-            desc: Desc { op: Op::Exec, sql_naming: true, text: text.into(), ..Desc::default() },
+            desc: Desc {
+                op: Op::Exec,
+                sql_naming: true,
+                text: text.into(),
+                ..Desc::default()
+            },
             inputs,
         };
         qrpgrt::sqlcall::run_request(&mut self.job, req)
@@ -114,7 +147,13 @@ impl Env {
     fn rows(&mut self, text: &str) -> Vec<Vec<Value>> {
         let req = Request {
             scope: "1:TEST".into(),
-            desc: Desc { op: Op::Open, name: "Q".into(), sql_naming: true, text: text.into(), ..Desc::default() },
+            desc: Desc {
+                op: Op::Open,
+                name: "Q".into(),
+                sql_naming: true,
+                text: text.into(),
+                ..Desc::default()
+            },
             inputs: Vec::new(),
         };
         let s = self.job.sql.as_mut().unwrap();
@@ -124,7 +163,12 @@ impl Env {
         loop {
             let f = s.run(&Request {
                 scope: "1:TEST".into(),
-                desc: Desc { op: Op::Fetch, name: "Q".into(), sql_naming: true, ..Desc::default() },
+                desc: Desc {
+                    op: Op::Fetch,
+                    name: "Q".into(),
+                    sql_naming: true,
+                    ..Desc::default()
+                },
                 inputs: Vec::new(),
             });
             if f.sqlca.sqlcode != 0 {
@@ -134,7 +178,12 @@ impl Env {
         }
         s.run(&Request {
             scope: "1:TEST".into(),
-            desc: Desc { op: Op::Close, name: "Q".into(), sql_naming: true, ..Desc::default() },
+            desc: Desc {
+                op: Op::Close,
+                name: "Q".into(),
+                sql_naming: true,
+                ..Desc::default()
+            },
             inputs: Vec::new(),
         });
         out
@@ -161,7 +210,10 @@ fn a_procedure_changes_a_table() {
     e.ok("CALL QSTEST.ADD_ROW(2, 'two')");
     e.ok("CALL QSTEST.ADD_ROW(3, 'three')");
     let rows = e.rows("SELECT ID, NAME, AMT FROM QSTEST.T ORDER BY ID");
-    let got: Vec<String> = rows.iter().map(|r| r.iter().map(text).collect::<Vec<_>>().join(",")).collect();
+    let got: Vec<String> = rows
+        .iter()
+        .map(|r| r.iter().map(text).collect::<Vec<_>>().join(","))
+        .collect();
     assert_eq!(got, ["2,two,3.00", "3,three,4.50"]);
 }
 
@@ -192,7 +244,10 @@ fn control_flow_and_out_parameters() {
     let outs: Vec<String> = outs.iter().map(|(_, v)| text(v)).collect();
     assert_eq!(outs, ["120", "big"]);
     let (_, outs) = e.run_with("CALL QSTEST.FACT(3, ?, ?)", vec![Value::Null, Value::Null]);
-    assert_eq!(outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(), ["6", "medium"]);
+    assert_eq!(
+        outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(),
+        ["6", "medium"]
+    );
 }
 
 #[test]
@@ -213,18 +268,21 @@ fn handlers_and_signals() {
     let (r, outs) = e.run_with("CALL QSTEST.ADDK(7, ?)", vec![Value::Null]);
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert_eq!(text(&outs[0].1), "2");
-    e.ok(
-        "CREATE PROCEDURE QSTEST.FAILS (IN P INTEGER)
+    e.ok("CREATE PROCEDURE QSTEST.FAILS (IN P INTEGER)
          LANGUAGE SQL
          BEGIN
            IF P < 0 THEN
              SIGNAL SQLSTATE '75001' SET MESSAGE_TEXT = 'negative';
            END IF;
-         END",
-    );
+         END");
     e.ok("CALL QSTEST.FAILS(1)");
     let r = e.run("CALL QSTEST.FAILS(-1)");
-    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-438, "75001"), "{:?}", r.sqlca);
+    assert_eq!(
+        (r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()),
+        (-438, "75001"),
+        "{:?}",
+        r.sqlca
+    );
     assert_eq!(r.sqlca.sqlerrmc, "negative");
     // An exception no handler takes ends the procedure with it.
     let r = e.run("CALL QSTEST.ADDK(1, 2)");
@@ -252,7 +310,12 @@ fn result_sets_go_to_the_caller() {
     loop {
         let f = s.run(&Request {
             scope: "1:TEST".into(),
-            desc: Desc { op: Op::Fetch, name: "RS#1".into(), sql_naming: true, ..Desc::default() },
+            desc: Desc {
+                op: Op::Fetch,
+                name: "RS#1".into(),
+                sql_naming: true,
+                ..Desc::default()
+            },
             inputs: Vec::new(),
         });
         if f.sqlca.sqlcode != 0 {
@@ -295,9 +358,15 @@ fn loops_cursors_and_catalogs() {
            CLOSE C;
          END",
     );
-    let (r, outs) = e.run_with("CALL QSTEST.SUMS(?, ?, ?)", vec![Value::Null, Value::Null, Value::Null]);
+    let (r, outs) = e.run_with(
+        "CALL QSTEST.SUMS(?, ?, ?)",
+        vec![Value::Null, Value::Null, Value::Null],
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    assert_eq!(outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(), ["10", "2", "4"]);
+    assert_eq!(
+        outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(),
+        ["10", "2", "4"]
+    );
     let rows = e.rows("SELECT ROUTINE_NAME, ROUTINE_TYPE, EXTERNAL_NAME, OUT_PARMS FROM QSYS2.SYSROUTINES WHERE ROUTINE_SCHEMA = 'QSTEST'");
     assert_eq!(rows.len(), 1, "{rows:?}");
     assert_eq!(text(&rows[0][2]), "QSTEST/SUMS");
@@ -312,8 +381,7 @@ fn sqlstate_and_sqlcode_variables() {
     let mut e = env();
     e.ok("CREATE TABLE QSTEST.X (ID INTEGER NOT NULL PRIMARY KEY)");
     e.ok("CREATE TABLE QSTEST.XL (STEP INTEGER NOT NULL, ST CHAR(5), CODE INTEGER)");
-    e.ok(
-        "CREATE PROCEDURE QSTEST.STATES ()
+    e.ok("CREATE PROCEDURE QSTEST.STATES ()
          LANGUAGE SQL
          BEGIN
            DECLARE SQLSTATE CHAR(5) DEFAULT '00000';
@@ -329,11 +397,13 @@ fn sqlstate_and_sqlcode_variables() {
            INSERT INTO QSTEST.XL VALUES (2, V_ST, V_CODE);
            SELECT ID INTO V FROM QSTEST.X WHERE ID = 99;
            INSERT INTO QSTEST.XL VALUES (3, V_ST, V_CODE);
-         END",
-    );
+         END");
     e.ok("CALL QSTEST.STATES");
     let rows = e.rows("SELECT STEP, ST, CODE FROM QSTEST.XL ORDER BY STEP");
-    let got: Vec<String> = rows.iter().map(|r| r.iter().map(text).collect::<Vec<_>>().join(",")).collect();
+    let got: Vec<String> = rows
+        .iter()
+        .map(|r| r.iter().map(text).collect::<Vec<_>>().join(","))
+        .collect();
     assert_eq!(got, ["1,00000,0", "2,23505,-803", "3,02000,100"]);
 }
 
@@ -352,15 +422,30 @@ impl Env {
         let mut txn = st.begin().unwrap();
         let c = ile::store::Ctx {
             qsys: self.qsys,
-            names: NameContext { curlib: Some(self.lib), libl: vec![self.lib] },
+            names: NameContext {
+                curlib: Some(self.lib),
+                libl: vec![self.lib],
+            },
             now: NOW,
             owner: "QSECOFR".into(),
             system: "QS400".into(),
         };
         let n = Name::parse(name).unwrap();
         let m = ile::store::crtmod(&mut txn, &c, self.lib, n, &object, "").unwrap();
-        let spec = ile::store::ObjSpec { lib: qsname::LibSpec::Name(Name::parse("QSTEST").unwrap()), name: n };
-        ile::store::crtpgm(&mut txn, &c, self.lib, &[spec], &[], ile::BindOptions::new(name, kind), "").unwrap();
+        let spec = ile::store::ObjSpec {
+            lib: qsname::LibSpec::Name(Name::parse("QSTEST").unwrap()),
+            name: n,
+        };
+        ile::store::crtpgm(
+            &mut txn,
+            &c,
+            self.lib,
+            &[spec],
+            &[],
+            ile::BindOptions::new(name, kind),
+            "",
+        )
+        .unwrap();
         store::obj::ops::delete(&mut txn, JobHandle(0), m).unwrap();
         txn.commit().unwrap();
     }
@@ -384,9 +469,19 @@ L0:
 ",
     );
     e.ok("CREATE PROCEDURE QSTEST.EXTP (INOUT A INTEGER, INOUT B DECIMAL(7, 2), OUT C CHAR(4)) LANGUAGE RPGLE EXTERNAL NAME QSTEST.EXTP PARAMETER STYLE GENERAL");
-    let (r, outs) = e.run_with("CALL QSTEST.EXTP(?, ?, ?)", vec![Value::int(21), Value::Num(qdecimal::Decimal::parse("1.50").unwrap()), Value::Null]);
+    let (r, outs) = e.run_with(
+        "CALL QSTEST.EXTP(?, ?, ?)",
+        vec![
+            Value::int(21),
+            Value::Num(qdecimal::Decimal::parse("1.50").unwrap()),
+            Value::Null,
+        ],
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    assert_eq!(outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(), ["42", "2.50", "done"]);
+    assert_eq!(
+        outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(),
+        ["42", "2.50", "done"]
+    );
     // No procedure of that name: the program itself, its arguments by
     // their own types.
     e.ok("DROP PROCEDURE QSTEST.EXTP");
@@ -394,7 +489,8 @@ L0:
     assert_eq!(text(&rows[0][0]), "0");
     let r = e.run("CALL QSTEST.EXTP(1, 12345.67, 'abcd')");
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    let r = e.run("CREATE PROCEDURE QSTEST.NOPE (IN A INTEGER) LANGUAGE C EXTERNAL NAME QSTEST.NOPE");
+    let r =
+        e.run("CREATE PROCEDURE QSTEST.NOPE (IN A INTEGER) LANGUAGE C EXTERNAL NAME QSTEST.NOPE");
     assert_eq!(r.sqlca.sqlcode, -84, "{:?}", r.sqlca);
 }
 
@@ -429,9 +525,15 @@ L0:
         PgmKind::SrvPgm,
     );
     e.ok("CREATE PROCEDURE QSTEST.SUM8 (INOUT A INTEGER, IN B INTEGER, IN C INTEGER, IN D INTEGER, IN E INTEGER, IN F INTEGER, IN G INTEGER, IN H INTEGER) LANGUAGE RPGLE EXTERNAL NAME 'QSTEST/SRV8(SUM8)' PARAMETER STYLE GENERAL");
-    let (r, outs) = e.run_with("CALL QSTEST.SUM8(?, 2, 3, 4, 5, 6, 7, 8)", vec![Value::int(1)]);
+    let (r, outs) = e.run_with(
+        "CALL QSTEST.SUM8(?, 2, 3, 4, 5, 6, 7, 8)",
+        vec![Value::int(1)],
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    assert_eq!(outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(), ["36"]);
+    assert_eq!(
+        outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(),
+        ["36"]
+    );
     e.ok("CREATE PROCEDURE QSTEST.NOSUCH (INOUT A INTEGER) LANGUAGE RPGLE EXTERNAL NAME 'QSTEST/SRV8(NOSUCH)' PARAMETER STYLE GENERAL");
     let (r, _) = e.run_with("CALL QSTEST.NOSUCH(?)", vec![Value::int(1)]);
     assert_eq!(r.sqlca.sqlcode, -204, "{:?}", r.sqlca);

@@ -12,8 +12,8 @@ use navigator::PRODUCT;
 use qsweb::frame::{Ctx, NavGroup, Page, Product, render};
 use qsweb::msg::{Kind, Message};
 use qsweb::partials::{
-    Button, Cell, Col, FilterField, List, Paging, Prop, PropGroup, buttons, filter, form, list_table, paging, props,
-    props_table, tabs, wizard,
+    Button, Cell, Col, FilterField, List, Paging, Prop, PropGroup, buttons, filter, form,
+    list_table, paging, props, props_table, tabs, wizard,
 };
 
 #[test]
@@ -22,7 +22,11 @@ fn signon() {
     let r = b.get("/signon");
     assert_eq!(r.status, 200);
     // The form posts back to the sign-on route, not to the home page.
-    assert_golden(&r.text(), "nav/signon.html", &[("action=\"home.html\"", "action=\"signon.html\"")]);
+    assert_golden(
+        &r.text(),
+        "nav/signon.html",
+        &[("action=\"home.html\"", "action=\"signon.html\"")],
+    );
 }
 
 #[test]
@@ -102,7 +106,10 @@ fn components() {
         keep: Vec::new(),
     };
     let empty = List {
-        cols: ["Job name", "User", "Number", "Status"].iter().map(|c| Col::plain(c)).collect(),
+        cols: ["Job name", "User", "Number", "Status"]
+            .iter()
+            .map(|c| Col::plain(c))
+            .collect(),
         rows: Vec::new(),
         empty: "No active jobs match the filter.".into(),
         keep: Vec::new(),
@@ -114,19 +121,36 @@ fn components() {
             PropGroup {
                 title: Some("Identification".into()),
                 rows: vec![
-                    Prop::new("Instance name", "<span class=\"mono\">WEBSTORE</span>".into()),
-                    Prop::new("Description", qsweb::partials::input("desc", "Web store front end", 40)).help("desc"),
+                    Prop::new(
+                        "Instance name",
+                        "<span class=\"mono\">WEBSTORE</span>".into(),
+                    ),
+                    Prop::new(
+                        "Description",
+                        qsweb::partials::input("desc", "Web store front end", 40),
+                    )
+                    .help("desc"),
                 ],
             },
             PropGroup {
                 title: Some("Startup".into()),
                 rows: vec![
-                    Prop::new("Start with STRTCP", qsweb::partials::checkbox("autostart", true)),
-                    Prop::new("Server user profile", qsweb::partials::input("usrprf", "QTMHHTTP", 10)),
+                    Prop::new(
+                        "Start with STRTCP",
+                        qsweb::partials::checkbox("autostart", true),
+                    ),
+                    Prop::new(
+                        "Server user profile",
+                        qsweb::partials::input("usrprf", "QTMHHTTP", 10),
+                    ),
                 ],
             },
         ],
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     let wiz_body = format!(
         "<h2>Server root</h2><p class=\"small grey\">The directory that holds the configuration, logs and content of the instance.</p>{}",
@@ -134,7 +158,10 @@ fn components() {
             &P,
             &[PropGroup {
                 title: None,
-                rows: vec![Prop::new("Server root", qsweb::partials::input_cmd("root", "/www/webstore", 40))],
+                rows: vec![Prop::new(
+                    "Server root",
+                    qsweb::partials::input_cmd("root", "/www/webstore", 40)
+                )],
             }],
             false
         )
@@ -155,8 +182,16 @@ fn components() {
             &P,
             &[
                 Message::new(Kind::Info, "CPF1321", "Job 123456/QUSER/QPADEV0001 ended."),
-                Message::new(Kind::Done, "HTP8001", "HTTP server instance WEBSTORE started."),
-                Message::new(Kind::Error, "SQL0204", "TABLE CUSTMAST in QGPL type *FILE not found."),
+                Message::new(
+                    Kind::Done,
+                    "HTP8001",
+                    "HTTP server instance WEBSTORE started."
+                ),
+                Message::new(
+                    Kind::Error,
+                    "SQL0204",
+                    "TABLE CUSTMAST in QGPL type *FILE not found."
+                ),
             ]
         ),
         filter(
@@ -164,7 +199,9 @@ fn components() {
                 FilterField::Select(
                     "Subsystem".into(),
                     "sbs".into(),
-                    ["*ALL", "QINTER", "QBATCH", "QHTTPSVR"].map(String::from).to_vec(),
+                    ["*ALL", "QINTER", "QBATCH", "QHTTPSVR"]
+                        .map(String::from)
+                        .to_vec(),
                     String::new()
                 ),
                 FilterField::Text("User".into(), "user".into(), String::new(), 10),
@@ -180,14 +217,28 @@ fn components() {
         list_table(&jobs),
         paging(&Paging::from_query("1", "25", 288, Vec::new())),
         list_table(&empty),
-        tabs(&[tab("General"), tab("Options"), tab("Security"), tab("Logs")], 0),
+        tabs(
+            &[tab("General"), tab("Options"), tab("Security"), tab("Logs")],
+            0
+        ),
         props_body,
         wizard(
             &ctx,
-            &["Name and description", "Server root", "Document root", "IP address and port", "Access log", "Create"],
+            &[
+                "Name and description",
+                "Server root",
+                "Document root",
+                "IP address and port",
+                "Access log",
+                "Create"
+            ],
             2,
             &wiz_body,
-            &[Button::new("back", "< Back"), Button::new("next", "Next >"), Button::new("cancel", "Cancel")]
+            &[
+                Button::new("back", "< Back"),
+                Button::new("next", "Next >"),
+                Button::new("cancel", "Cancel")
+            ]
         ),
         PRODUCT.url("/sbs/QINTER/end"),
         PRODUCT.url("/msg/CPF2204"),
@@ -209,9 +260,14 @@ fn components() {
         &render(&ctx, &page),
         "shared/components.html",
         &[
-            ("<a href=\"components.html\">Options</a> | <a href=\"components.html\">Security</a> | <a href=\"components.html\">Logs</a>",
-             "<a href=\"help.html\">Options</a> | <a href=\"help.html\">Security</a> | <a href=\"help.html\">Logs</a>"),
-            ("<a href=\"error.html\">Error page</a>", "<a href=\"help.html\">Error page</a>"),
+            (
+                "<a href=\"components.html\">Options</a> | <a href=\"components.html\">Security</a> | <a href=\"components.html\">Logs</a>",
+                "<a href=\"help.html\">Options</a> | <a href=\"help.html\">Security</a> | <a href=\"help.html\">Logs</a>",
+            ),
+            (
+                "<a href=\"error.html\">Error page</a>",
+                "<a href=\"help.html\">Error page</a>",
+            ),
         ],
     );
 }

@@ -19,7 +19,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         Ok(p) => p,
         Err(e) => return usage(cx, name, &e.to_string()),
     };
-    let mut env: Vec<(String, String)> = if p.has('i') { Vec::new() } else { cx.env.clone() };
+    let mut env: Vec<(String, String)> = if p.has('i') {
+        Vec::new()
+    } else {
+        cx.env.clone()
+    };
     let mut rest = p.operands.as_slice();
     while let Some(a) = rest.first() {
         let Some((k, v)) = a.split_once('=') else {
@@ -59,8 +63,10 @@ pub fn run_printenv(cx: &mut UtilCtx<'_>) -> i32 {
     let mut out = Out::stdout(cx);
     if p.operands.is_empty() {
         for (k, v) in &cx.env {
-            out.text(&format!("{k}={v}
-"));
+            out.text(&format!(
+                "{k}={v}
+"
+            ));
         }
         return out.finish(cx, name, 0);
     }
@@ -68,8 +74,10 @@ pub fn run_printenv(cx: &mut UtilCtx<'_>) -> i32 {
     for n in &p.operands {
         match cx.getenv(n) {
             Some(v) => {
-                out.text(&format!("{v}
-"));
+                out.text(&format!(
+                    "{v}
+"
+                ));
             }
             None => status = 1,
         }

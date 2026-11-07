@@ -39,35 +39,67 @@ fn maxuse(rqsdta: &str) -> u32 {
 
 /// Serve one connection until its job says goodbye or goes away.
 fn serve(chan: &mut Chan, job: &Job, link: &Shared, me: &str) -> Result<(), String> {
-    chan.set_timeout(Some(Duration::from_secs(30))).map_err(|e| e.to_string())?;
-    let Ok(ToServer::Hello { ticket, user, password }) = chan.recv::<ToServer>() else {
+    chan.set_timeout(Some(Duration::from_secs(30)))
+        .map_err(|e| e.to_string())?;
+    let Ok(ToServer::Hello {
+        ticket,
+        user,
+        password,
+    }) = chan.recv::<ToServer>()
+    else {
         return Err("the connection did not say who it is".into());
     };
     chan.set_timeout(None).map_err(|e| e.to_string())?;
-    match link.borrow_mut().with(|l| l.sqlsrv_assume(ticket, user, password)) {
+    match link
+        .borrow_mut()
+        .with(|l| l.sqlsrv_assume(ticket, user, password))
+    {
         Ok(_client) => {}
         Err(r) => {
-            let refused = FromServer::Refused { state: "08001".into(), code: -30082, text: format!("{}: {}", r.msgid, r.text) };
+            let refused = FromServer::Refused {
+                state: "08001".into(),
+                code: -30082,
+                text: format!("{}: {}", r.msgid, r.text),
+            };
             return chan.send(&refused).map_err(|e| e.to_string());
         }
     }
     job.borrow_mut().swapped();
-    chan.send(&FromServer::Ready { job: me.to_string() }).map_err(|e| e.to_string())?;
+    chan.send(&FromServer::Ready {
+        job: me.to_string(),
+    })
+    .map_err(|e| e.to_string())?;
     loop {
         stg::remote::status(link, Status::Cndw, "");
-        let Ok(m) = chan.recv::<ToServer>() else { break };
+        let Ok(m) = chan.recv::<ToServer>() else {
+            break;
+        };
         stg::remote::status(link, Status::Run, "");
         let (scope, desc, inputs) = match m {
-            ToServer::Run { scope, desc, inputs } => (scope, desc, inputs),
+            ToServer::Run {
+                scope,
+                desc,
+                inputs,
+            } => (scope, desc, inputs),
             ToServer::Bye => break,
             ToServer::Hello { .. } => return Err("a second hello".into()),
         };
         let reply = if let Some(req) = request_of(&scope, &desc, &inputs) {
-            let (reply, outs) = sqlcall::run(link, &req, |p| sqlcall::perform(&mut job.borrow_mut(), p));
+            let (reply, outs) =
+                sqlcall::run(link, &req, |p| sqlcall::perform(&mut job.borrow_mut(), p));
             done_message(&reply, &outs)
         } else {
-            let e = sql::SqlError::Unsupported { what: "statement".into() };
-            done_message(&sql::embed::Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new(), call: None }, &[])
+            let e = sql::SqlError::Unsupported {
+                what: "statement".into(),
+            };
+            done_message(
+                &sql::embed::Reply {
+                    sqlca: sql::Sqlca::from_error(&e),
+                    rows: Vec::new(),
+                    call: None,
+                },
+                &[],
+            )
         };
         if chan.send(&reply).is_err() {
             break;
@@ -81,10 +113,18 @@ fn serve(chan: &mut Chan, job: &Job, link: &Shared, me: &str) -> Result<(), Stri
 fn clean_up(link: &Shared) {
     let rollback = Request {
         scope: "CLI:".into(),
-        desc: Desc { op: Op::Exec, text: "ROLLBACK".into(), ..Desc::default() },
+        desc: Desc {
+            op: Op::Exec,
+            text: "ROLLBACK".into(),
+            ..Desc::default()
+        },
         inputs: Vec::new(),
     };
-    let _ = sqlcall::run(link, &rollback, |_| qrpgrt::sqlcall::Outcome { called: sql::exec::routine::Called::default(), outs: Vec::new(), answer: None });
+    let _ = sqlcall::run(link, &rollback, |_| qrpgrt::sqlcall::Outcome {
+        called: sql::exec::routine::Called::default(),
+        outs: Vec::new(),
+        answer: None,
+    });
     link.borrow_mut().with(Client::sqlsrv_end);
 }
 

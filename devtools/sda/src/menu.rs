@@ -66,7 +66,8 @@ pub fn template(menu: &str) -> Member {
     let mut title = constant(&name, 1, 2);
     title.colors.push("BLU".into());
     r.elements.push(title);
-    r.elements.push(constant("Select one of the following:", 3, 2));
+    r.elements
+        .push(constant("Select one of the following:", 3, 2));
     for (i, row) in (5..=7).enumerate() {
         r.elements.push(constant(&format!("{}.", i + 1), row, 7));
     }
@@ -92,7 +93,10 @@ pub fn options(record: &Record) -> Vec<u8> {
         .elements
         .iter()
         .filter_map(|e| match &e.kind {
-            Kind::Constant { text, keyword: None } => text
+            Kind::Constant {
+                text,
+                keyword: None,
+            } => text
                 .trim()
                 .strip_suffix('.')
                 .and_then(|n| n.parse::<u8>().ok())

@@ -281,7 +281,10 @@ fn transport(f: &mut Frame, b: &[u8], at: usize, proto: u8) {
         })(),
         1 | 58 => (|| {
             f.payload = at + 4;
-            Some(L4::Icmp { kind: *t.first()?, code: *t.get(1)? })
+            Some(L4::Icmp {
+                kind: *t.first()?,
+                code: *t.get(1)?,
+            })
         })(),
         _ => None,
     };
@@ -290,7 +293,10 @@ fn transport(f: &mut Frame, b: &[u8], at: usize, proto: u8) {
 /// The names of the TCP flag bits set, in the order of the bits.
 pub fn tcp_flags(flags: u8) -> Vec<&'static str> {
     const NAMES: [&str; 8] = ["FIN", "SYN", "RST", "PSH", "ACK", "URG", "ECE", "CWR"];
-    (0..8).filter(|i| flags & (1 << i) != 0).map(|i| NAMES[i]).collect()
+    (0..8)
+        .filter(|i| flags & (1 << i) != 0)
+        .map(|i| NAMES[i])
+        .collect()
 }
 
 /// Frames for tests: an Ethernet header and an IPv4 header around a
@@ -338,8 +344,19 @@ mod tests {
         assert_eq!(ip.frag, (true, false, 0));
         assert_eq!(ip.len, 44);
         match &f.l4 {
-            Some(L4::Tcp { src, dst, seq, ack, flags, window, .. }) => {
-                assert_eq!((*src, *dst, *seq, *ack, *window), (23, 40000, 1000, 2000, 0xffff));
+            Some(L4::Tcp {
+                src,
+                dst,
+                seq,
+                ack,
+                flags,
+                window,
+                ..
+            }) => {
+                assert_eq!(
+                    (*src, *dst, *seq, *ack, *window),
+                    (23, 40000, 1000, 2000, 0xffff)
+                );
                 assert_eq!(tcp_flags(*flags), ["PSH", "ACK"]);
             }
             other => panic!("{other:?}"),
@@ -352,7 +369,14 @@ mod tests {
     fn udp_and_short_frames() {
         let b = sample(17, [10, 0, 2, 15], [10, 0, 2, 3], 5353, 53);
         let f = parse(&b).unwrap();
-        assert_eq!(f.l4, Some(L4::Udp { src: 5353, dst: 53, len: 12 }));
+        assert_eq!(
+            f.l4,
+            Some(L4::Udp {
+                src: 5353,
+                dst: 53,
+                len: 12
+            })
+        );
         assert_eq!(&b[f.payload..], b"ping");
         assert_eq!(parse(&b[..13]), None);
         let cut = parse(&b[..20]).unwrap();

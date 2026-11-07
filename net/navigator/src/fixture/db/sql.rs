@@ -53,7 +53,8 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
                 }
             }
             out.push(Tok::Str(v));
-        } else if c.is_ascii_digit() || (c == '-' && b.get(i + 1).is_some_and(char::is_ascii_digit)) {
+        } else if c.is_ascii_digit() || (c == '-' && b.get(i + 1).is_some_and(char::is_ascii_digit))
+        {
             let st = i;
             i += 1;
             while i < b.len() && (b[i].is_ascii_digit() || b[i] == '.') {
@@ -62,10 +63,14 @@ fn lex(s: &str) -> Result<Vec<Tok>, String> {
             out.push(Tok::Num(b[st..i].iter().collect()));
         } else if c.is_alphanumeric() || matches!(c, '_' | '$' | '#' | '@') {
             let st = i;
-            while i < b.len() && (b[i].is_alphanumeric() || matches!(b[i], '_' | '$' | '#' | '@' | '.' | '/')) {
+            while i < b.len()
+                && (b[i].is_alphanumeric() || matches!(b[i], '_' | '$' | '#' | '@' | '.' | '/'))
+            {
                 i += 1;
             }
-            out.push(Tok::Word(b[st..i].iter().collect::<String>().to_ascii_uppercase()));
+            out.push(Tok::Word(
+                b[st..i].iter().collect::<String>().to_ascii_uppercase(),
+            ));
         } else {
             let two: String = b[i..(i + 2).min(b.len())].iter().collect();
             if matches!(two.as_str(), "<>" | "<=" | ">=" | "!=") {
@@ -150,11 +155,17 @@ impl P<'_> {
 type Fail = (&'static str, Vec<String>);
 
 fn syntax(p: &P<'_>) -> Fail {
-    ("SQL0104", vec!["1".into(), (p.at + 1).to_string(), p.near()])
+    (
+        "SQL0104",
+        vec!["1".into(), (p.at + 1).to_string(), p.near()],
+    )
 }
 
 fn column(t: &Table, name: &str) -> Result<usize, Fail> {
-    t.columns.iter().position(|c| c.name == name).ok_or(("SQL0206", vec![name.to_string()]))
+    t.columns
+        .iter()
+        .position(|c| c.name == name)
+        .ok_or(("SQL0206", vec![name.to_string()]))
 }
 
 /// The table a name stands for: `S.T`, `S/T` or `T` in the schema.
@@ -170,7 +181,10 @@ fn find<'a>(tables: &'a mut [Table], name: &str, opts: &SqlOptions) -> Result<&'
     if s != "HLINV" {
         return Err(("SQL0204", vec![t, s]));
     }
-    tables.iter_mut().find(|x| x.obj.name == t).ok_or(("SQL0204", vec![t, s]))
+    tables
+        .iter_mut()
+        .find(|x| x.obj.name == t)
+        .ok_or(("SQL0204", vec![t, s]))
 }
 
 fn condition(p: &mut P<'_>, t: &Table) -> Result<Vec<Test>, Fail> {
@@ -206,7 +220,11 @@ fn condition(p: &mut P<'_>, t: &Table) -> Result<Vec<Test>, Fail> {
             tests.push(Test::Null(c, !not));
         } else {
             let op = match p.peek() {
-                Some(Tok::Sym(s)) if matches!(s.as_str(), "=" | "<>" | "!=" | "<" | ">" | "<=" | ">=") => s.clone(),
+                Some(Tok::Sym(s))
+                    if matches!(s.as_str(), "=" | "<>" | "!=" | "<" | ">" | "<=" | ">=") =>
+                {
+                    s.clone()
+                }
                 _ => return Err(syntax(p)),
             };
             p.at += 1;
@@ -230,19 +248,24 @@ fn like(v: &str, pat: &str) -> bool {
     match pat.split_once('%') {
         None => v.trim_end() == pat,
         Some((pre, rest)) => {
-            v.starts_with(pre) && (rest.is_empty() || v.len() >= pre.len() && like_tail(&v[pre.len()..], rest))
+            v.starts_with(pre)
+                && (rest.is_empty() || v.len() >= pre.len() && like_tail(&v[pre.len()..], rest))
         }
     }
 }
 
 fn like_tail(v: &str, pat: &str) -> bool {
-    (0..=v.len()).filter(|i| v.is_char_boundary(*i)).any(|i| like(&v[i..], pat))
+    (0..=v.len())
+        .filter(|i| v.is_char_boundary(*i))
+        .any(|i| like(&v[i..], pat))
 }
 
 fn holds(row: &[Option<String>], tests: &[Test]) -> bool {
     tests.iter().all(|t| match t {
         Test::Null(c, null) => row[*c].is_none() == *null,
-        Test::In(c, vs) => row[*c].as_ref().is_some_and(|v| vs.iter().any(|x| compare(v, x).is_eq())),
+        Test::In(c, vs) => row[*c]
+            .as_ref()
+            .is_some_and(|v| vs.iter().any(|x| compare(v, x).is_eq())),
         Test::Like(c, pat) => row[*c].as_ref().is_some_and(|v| like(v.trim_end(), pat)),
         Test::Cmp(c, op, x) => row[*c].as_ref().is_some_and(|v| {
             let o = compare(v, x);
@@ -265,7 +288,12 @@ fn may_change(user: &str) -> bool {
         .is_some_and(|p| p.special.contains(&"*ALLOBJ"))
 }
 
-fn select(tables: &mut [Table], p: &mut P<'_>, opts: &SqlOptions, max: Option<usize>) -> Result<SqlOutcome, Fail> {
+fn select(
+    tables: &mut [Table],
+    p: &mut P<'_>,
+    opts: &SqlOptions,
+    max: Option<usize>,
+) -> Result<SqlOutcome, Fail> {
     let mut names = Vec::new();
     if !p.sym("*") {
         loop {
@@ -287,7 +315,10 @@ fn select(tables: &mut [Table], p: &mut P<'_>, opts: &SqlOptions, max: Option<us
     let idx: Vec<usize> = if names.is_empty() {
         (0..t.columns.len()).collect()
     } else {
-        names.iter().map(|n| column(t, n)).collect::<Result<_, _>>()?
+        names
+            .iter()
+            .map(|n| column(t, n))
+            .collect::<Result<_, _>>()?
     };
     let tests = condition(p, t)?;
     if p.word("ORDER") {
@@ -322,7 +353,13 @@ fn select(tables: &mut [Table], p: &mut P<'_>, opts: &SqlOptions, max: Option<us
     })
 }
 
-fn change(tables: &mut [Table], p: &mut P<'_>, user: &str, opts: &SqlOptions, update: bool) -> Result<SqlOutcome, Fail> {
+fn change(
+    tables: &mut [Table],
+    p: &mut P<'_>,
+    user: &str,
+    opts: &SqlOptions,
+    update: bool,
+) -> Result<SqlOutcome, Fail> {
     if !update && !p.word("FROM") {
         return Err(syntax(p));
     }
@@ -343,7 +380,11 @@ fn change(tables: &mut [Table], p: &mut P<'_>, user: &str, opts: &SqlOptions, up
             if !p.sym("=") {
                 return Err(syntax(p));
             }
-            let v = if p.word("NULL") { None } else { Some(p.literal().ok_or_else(|| syntax(p))?) };
+            let v = if p.word("NULL") {
+                None
+            } else {
+                Some(p.literal().ok_or_else(|| syntax(p))?)
+            };
             sets.push((c, v));
             if !p.sym(",") {
                 break;
@@ -369,7 +410,11 @@ fn change(tables: &mut [Table], p: &mut P<'_>, user: &str, opts: &SqlOptions, up
         t.obj.rows = t.rows.len() as u64;
     }
     let m = if n == 0 {
-        msg(Kind::Info, "SQL0100", &[if update { "UPDATE" } else { "DELETE" }])
+        msg(
+            Kind::Info,
+            "SQL0100",
+            &[if update { "UPDATE" } else { "DELETE" }],
+        )
     } else {
         let id = if update { "SQL7957" } else { "SQL7955" };
         msg(Kind::Done, id, &[&name, &schema, &n.to_string()])
@@ -381,7 +426,13 @@ fn change(tables: &mut [Table], p: &mut P<'_>, user: &str, opts: &SqlOptions, up
 }
 
 /// Run `statement` over HLINV's tables as `user`.
-pub fn run(tables: &mut [Table], user: &str, statement: &str, opts: &SqlOptions, max: Option<usize>) -> SqlOutcome {
+pub fn run(
+    tables: &mut [Table],
+    user: &str,
+    statement: &str,
+    opts: &SqlOptions,
+    max: Option<usize>,
+) -> SqlOutcome {
     let toks = match lex(statement) {
         Ok(t) => t,
         Err(near) => {
@@ -412,7 +463,11 @@ fn failed((id, data): Fail) -> SqlOutcome {
 }
 
 /// The access plan of a query: a scan of its table with the selection.
-pub fn explain(tables: &[Table], statement: &str, opts: &SqlOptions) -> Result<Vec<String>, qsweb::msg::Message> {
+pub fn explain(
+    tables: &[Table],
+    statement: &str,
+    opts: &SqlOptions,
+) -> Result<Vec<String>, qsweb::msg::Message> {
     let mut copy = tables.to_vec();
     let out = run(&mut copy, "QSECOFR", statement, opts, Some(0));
     if out.failed() {
@@ -429,11 +484,21 @@ pub fn explain(tables: &[Table], statement: &str, opts: &SqlOptions) -> Result<V
         })
         .unwrap_or_default();
     let (s, t) = table_of(&target, opts);
-    let rows = tables.iter().find(|x| x.obj.name == t).map_or(0, |x| x.rows.len());
+    let rows = tables
+        .iter()
+        .find(|x| x.obj.name == t)
+        .map_or(0, |x| x.rows.len());
     let selection = toks.iter().any(|t| *t == Tok::Word("WHERE".into()));
     Ok(vec![
         format!("1  Table scan        {s}.{t}  ({rows} rows estimated)"),
-        format!("2  Selection         {}", if selection { "WHERE clause, row by row" } else { "none" }),
+        format!(
+            "2  Selection         {}",
+            if selection {
+                "WHERE clause, row by row"
+            } else {
+                "none"
+            }
+        ),
         "3  Final result      rows in arrival order".into(),
     ])
 }
@@ -452,19 +517,49 @@ mod tests {
     #[test]
     fn statements() {
         let mut t = super::super::tables();
-        let o = run(&mut t, "QSECOFR", "SELECT asset_tag FROM assets WHERE status IN ('ACTIVE', 'SPARE')", &opts(), None);
+        let o = run(
+            &mut t,
+            "QSECOFR",
+            "SELECT asset_tag FROM assets WHERE status IN ('ACTIVE', 'SPARE')",
+            &opts(),
+            None,
+        );
         assert_eq!(o.rows.len(), 12);
-        let o = run(&mut t, "QSECOFR", "select * from hlinv.assets where location like 'QS-BR%' and status = 'SPARE'", &opts(), None);
+        let o = run(
+            &mut t,
+            "QSECOFR",
+            "select * from hlinv.assets where location like 'QS-BR%' and status = 'SPARE'",
+            &opts(),
+            None,
+        );
         assert_eq!((o.rows.len(), o.columns.len()), (1, 12));
-        let o = run(&mut t, "WEBUSER", "UPDATE assets SET status = 'SPARE'", &opts(), None);
+        let o = run(
+            &mut t,
+            "WEBUSER",
+            "UPDATE assets SET status = 'SPARE'",
+            &opts(),
+            None,
+        );
         assert_eq!(o.messages[0].id, "SQL0551");
-        let o = run(&mut t, "QSECOFR", "UPDATE assets SET status = 'SPARE' WHERE asset_tag = 'QS000101'", &opts(), None);
+        let o = run(
+            &mut t,
+            "QSECOFR",
+            "UPDATE assets SET status = 'SPARE' WHERE asset_tag = 'QS000101'",
+            &opts(),
+            None,
+        );
         assert_eq!(o.messages[0].id, "SQL7957");
         let o = run(&mut t, "QSECOFR", "SELECT nope FROM assets", &opts(), None);
         assert_eq!(o.messages[0].id, "SQL0206");
         let o = run(&mut t, "QSECOFR", "SELECT * FROM qsys2.x", &opts(), None);
         assert_eq!(o.messages[0].id, "SQL0204");
-        let o = run(&mut t, "QSECOFR", "SELECT * FROM assets WHERE", &opts(), None);
+        let o = run(
+            &mut t,
+            "QSECOFR",
+            "SELECT * FROM assets WHERE",
+            &opts(),
+            None,
+        );
         assert_eq!(o.messages[0].id, "SQL0104");
     }
 }

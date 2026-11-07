@@ -128,14 +128,18 @@ fn starts_with_msgid(s: &str) -> bool {
     if let Some(rest) = t.strip_prefix('{')
         && let Some(end) = rest.find('}')
         && end > 2
-        && rest[..end].chars().all(|c| c.is_ascii_uppercase() || c == '_' || c.is_ascii_digit())
+        && rest[..end]
+            .chars()
+            .all(|c| c.is_ascii_uppercase() || c == '_' || c.is_ascii_digit())
     {
         return true;
     }
     let b = t.as_bytes();
     b.len() >= 7
         && b[..3].iter().all(u8::is_ascii_uppercase)
-        && b[3..7].iter().all(|c| c.is_ascii_digit() || (b'A'..=b'F').contains(c))
+        && b[3..7]
+            .iter()
+            .all(|c| c.is_ascii_digit() || (b'A'..=b'F').contains(c))
         && b.get(7).is_none_or(|c| !c.is_ascii_alphanumeric())
 }
 
@@ -143,7 +147,10 @@ fn starts_with_msgid(s: &str) -> bool {
 #[must_use]
 pub fn kind_of(text: &str, calls: &[String]) -> Kind {
     // The innermost function call, through `format!` and the like.
-    let call = calls.iter().rev().find(|c| !c.ends_with('!') || c.as_str() == "bail!");
+    let call = calls
+        .iter()
+        .rev()
+        .find(|c| !c.ends_with('!') || c.as_str() == "bail!");
     if starts_with_msgid(text) || call.is_some_and(|c| MESSAGE_CALLS.contains(&c.as_str())) {
         Kind::Message
     } else if calls.iter().any(|c| DETAIL_CALLS.contains(&c.as_str())) {
@@ -203,7 +210,10 @@ impl Report {
     /// One line per crate, then the total.
     #[must_use]
     pub fn summary(&self) -> String {
-        let mut s = format!("{:<14} {:>6} {:>8} {:>7} {:>8}\n", "crate", "sites", "message", "detail", "display");
+        let mut s = format!(
+            "{:<14} {:>6} {:>8} {:>7} {:>8}\n",
+            "crate", "sites", "message", "detail", "display"
+        );
         let count = |v: &[Site], k: Kind| v.iter().filter(|x| x.kind == k).count();
         for (c, v) in &self.sites {
             let _ = writeln!(
@@ -282,7 +292,9 @@ fn sources(p: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
                 continue;
             }
             sources(&e, out)?;
-        } else if e.extension().is_some_and(|x| x == "rs") && e.file_name().is_none_or(|n| n != "tests.rs") {
+        } else if e.extension().is_some_and(|x| x == "rs")
+            && e.file_name().is_none_or(|n| n != "tests.rs")
+        {
             out.push(e);
         }
     }
@@ -295,7 +307,10 @@ pub fn scope(root: &Path) -> Result<Scope> {
 }
 
 fn rel(root: &Path, p: &Path) -> String {
-    p.strip_prefix(root).unwrap_or(p).to_string_lossy().replace('\\', "/")
+    p.strip_prefix(root)
+        .unwrap_or(p)
+        .to_string_lossy()
+        .replace('\\', "/")
 }
 
 /// The sites of the tree at `root`, by crate.
@@ -311,7 +326,10 @@ pub fn sites(root: &Path) -> Result<BTreeMap<String, Vec<Site>>> {
         let mut v = Vec::new();
         for f in files {
             let r = rel(root, &f);
-            if c.exclude.iter().any(|x| r == *x || r.starts_with(&format!("{x}/"))) {
+            if c.exclude
+                .iter()
+                .any(|x| r == *x || r.starts_with(&format!("{x}/")))
+            {
                 continue;
             }
             let lits = scan::literals(&read(&f)?).ok_or_else(|| Error::Parse(f.clone()))?;
@@ -340,7 +358,10 @@ pub fn baseline(root: &Path) -> Result<BTreeMap<String, usize>> {
     let p = root.join(BASELINE);
     let text = if p.exists() { read(&p)? } else { String::new() };
     let mut m = BTreeMap::new();
-    for l in text.lines().filter(|l| !l.starts_with('#') && !l.is_empty()) {
+    for l in text
+        .lines()
+        .filter(|l| !l.starts_with('#') && !l.is_empty())
+    {
         *m.entry(l.to_string()).or_insert(0) += 1;
     }
     Ok(m)

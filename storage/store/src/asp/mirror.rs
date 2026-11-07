@@ -301,7 +301,10 @@ impl Asp {
             return Err(StoreError::refused(keep, Refusal::NotMirrored));
         }
         if self.io.unit_state(keep) != UnitState::Active {
-            return Err(StoreError::refused(keep, Refusal::HalfState(self.io.unit_state(keep).to_string())));
+            return Err(StoreError::refused(
+                keep,
+                Refusal::HalfState(self.io.unit_state(keep).to_string()),
+            ));
         }
         let other = entry.mirror_partner;
         let span = self.span_of(keep)?;
@@ -341,7 +344,10 @@ impl Asp {
         let entry = self.unit_entry(unit)?.clone();
         let partner = self.active_partner(unit, &entry)?;
         if self.io.unit_state(unit) != UnitState::Active {
-            return Err(StoreError::refused(unit, Refusal::HalfState(self.io.unit_state(unit).to_string())));
+            return Err(StoreError::refused(
+                unit,
+                Refusal::HalfState(self.io.unit_state(unit).to_string()),
+            ));
         }
         self.set_state(unit, UnitState::Suspended);
         info!(
@@ -363,7 +369,10 @@ impl Asp {
         match self.io.unit_state(unit) {
             UnitState::Suspended | UnitState::Resuming | UnitState::NotOperational => {}
             other => {
-                return Err(StoreError::refused(unit, Refusal::HalfState(other.to_string())));
+                return Err(StoreError::refused(
+                    unit,
+                    Refusal::HalfState(other.to_string()),
+                ));
             }
         }
         let span = self.span_of(unit)?;
@@ -481,7 +490,10 @@ impl Asp {
             self.io.unit_state(unit),
             UnitState::Missing | UnitState::NotOperational | UnitState::Suspended
         ) {
-            return Err(StoreError::refused(unit, Refusal::HalfState(self.io.unit_state(unit).to_string())));
+            return Err(StoreError::refused(
+                unit,
+                Refusal::HalfState(self.io.unit_state(unit).to_string()),
+            ));
         }
         let pages = dev.blocks();
         if pages < entry.usable_pages {
@@ -558,7 +570,10 @@ impl Asp {
         }
         let partner = entry.mirror_partner;
         if self.io.unit_state(partner) != UnitState::Active || !self.io.unit_attached(partner) {
-            return Err(StoreError::refused(partner, Refusal::HalfState(self.io.unit_state(partner).to_string())));
+            return Err(StoreError::refused(
+                partner,
+                Refusal::HalfState(self.io.unit_state(partner).to_string()),
+            ));
         }
         Ok(partner)
     }
@@ -637,7 +652,12 @@ mod tests {
         s.background = true;
         assert!(ResumeState::decode(&s.encode()).unwrap().background);
         let bytes = s.encode();
-        assert!(!ResumeState::decode(&bytes[..bytes.len() - 1]).unwrap().background, "an older journal");
+        assert!(
+            !ResumeState::decode(&bytes[..bytes.len() - 1])
+                .unwrap()
+                .background,
+            "an older journal"
+        );
         s.background = false;
         assert!(ResumeState::decode(b"nothing").is_none());
         s.set_done(0);

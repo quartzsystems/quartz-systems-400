@@ -35,22 +35,71 @@ fn img(env: *mut Env, addr: i64, d: i64) -> Option<Vec<u8>> {
 }
 
 /// `_QRNX_MOVEA(pad, dst, dd, dcount, src, sd, scount)`.
-pub extern "sysv64" fn movea(env: *mut Env, _argc: i64, _od: i64, pad: i32, dst: i64, dd: i64, dcount: i64, src: i64, sd: i64, scount: i64) {
-    if let Err(c) = mov::movea(pad != 0, a(dst), &Desc::of(dd), n(dcount), a(src), &Desc::of(sd), n(scount)) {
+pub extern "sysv64" fn movea(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    pad: i32,
+    dst: i64,
+    dd: i64,
+    dcount: i64,
+    src: i64,
+    sd: i64,
+    scount: i64,
+) {
+    if let Err(c) = mov::movea(
+        pad != 0,
+        a(dst),
+        &Desc::of(dd),
+        n(dcount),
+        a(src),
+        &Desc::of(sd),
+        n(scount),
+    ) {
         raise(env, c);
     }
 }
 
 /// `_QRNX_ZONE(op, dst, dd, src, sd)`: the zone moves.
-pub extern "sysv64" fn zone(env: *mut Env, _argc: i64, _od: i64, op: i32, dst: i64, dd: i64, src: i64, sd: i64) {
+pub extern "sysv64" fn zone(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    op: i32,
+    dst: i64,
+    dd: i64,
+    src: i64,
+    sd: i64,
+) {
     if let Err(c) = mov::zone(op, a(dst), &Desc::of(dd), a(src), &Desc::of(sd)) {
         raise(env, c);
     }
 }
 
 /// `_QRNX_CAT(pad, blanks, dst, dd, a, ad, b, bd)`.
-pub extern "sysv64" fn cat(env: *mut Env, _argc: i64, _od: i64, pad: i32, blanks: i64, dst: i64, dd: i64, x: i64, xd: i64, y: i64, yd: i64) {
-    if let Err(c) = strops::cat(pad != 0, blanks, a(dst), &Desc::of(dd), a(x), &Desc::of(xd), a(y), &Desc::of(yd)) {
+pub extern "sysv64" fn cat(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    pad: i32,
+    blanks: i64,
+    dst: i64,
+    dd: i64,
+    x: i64,
+    xd: i64,
+    y: i64,
+    yd: i64,
+) {
+    if let Err(c) = strops::cat(
+        pad != 0,
+        blanks,
+        a(dst),
+        &Desc::of(dd),
+        a(x),
+        &Desc::of(xd),
+        a(y),
+        &Desc::of(yd),
+    ) {
         raise(env, c);
     }
 }
@@ -71,7 +120,9 @@ pub extern "sysv64" fn scan(
     rd: i64,
     count: i64,
 ) -> i32 {
-    let (Some(mut ne), Some(h)) = (img(env, needle, nd), img(env, hay, hd)) else { return 0 };
+    let (Some(mut ne), Some(h)) = (img(env, needle, nd), img(env, hay, hd)) else {
+        return 0;
+    };
     if nlen >= 0 {
         ne.truncate(n(nlen));
     }
@@ -104,7 +155,9 @@ pub extern "sysv64" fn check(
     rd: i64,
     count: i64,
 ) -> i32 {
-    let (Some(s), Some(t)) = (img(env, set, sd), img(env, src, srcd)) else { return 0 };
+    let (Some(s), Some(t)) = (img(env, set, sd), img(env, src, srcd)) else {
+        return 0;
+    };
     let start = if start == 0 {
         if right != 0 { t.len() } else { 1 }
     } else {
@@ -139,7 +192,10 @@ pub extern "sysv64" fn xlate(
     dst: i64,
     dd: i64,
 ) -> i32 {
-    let (Some(f), Some(t), Some(s)) = (img(env, from, fd), img(env, to, td), img(env, src, srcd)) else { return 0 };
+    let (Some(f), Some(t), Some(s)) = (img(env, from, fd), img(env, to, td), img(env, src, srcd))
+    else {
+        return 0;
+    };
     if start < 1 || n(start) > s.len().max(1) {
         return 2;
     }
@@ -150,7 +206,18 @@ pub extern "sysv64" fn xlate(
 
 /// `_QRNX_SUBST(pad, len, src, sd, start, dst, dd) -> i32`: `len`
 /// negative takes the rest; 2 for a start or length outside the string.
-pub extern "sysv64" fn subst(env: *mut Env, _argc: i64, _od: i64, pad: i32, len: i64, src: i64, sd: i64, start: i64, dst: i64, dd: i64) -> i32 {
+pub extern "sysv64" fn subst(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    pad: i32,
+    len: i64,
+    src: i64,
+    sd: i64,
+    start: i64,
+    dst: i64,
+    dd: i64,
+) -> i32 {
     let Some(s) = img(env, src, sd) else { return 0 };
     if start < 1 || n(start) > s.len() {
         return 2;
@@ -175,7 +242,14 @@ pub extern "sysv64" fn testz(env: *mut Env, _argc: i64, _od: i64, src: i64, sd: 
 }
 
 /// `_QRNX_BITS(op, dst, mask) -> i32`: one byte each.
-pub extern "sysv64" fn bits(_env: *mut Env, _argc: i64, _od: i64, op: i32, dst: i64, mask: i64) -> i32 {
+pub extern "sysv64" fn bits(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    op: i32,
+    dst: i64,
+    mask: i64,
+) -> i32 {
     let m = bytes(a(mask), 1)[0];
     let b = &mut bytes(a(dst), 1)[0];
     strops::bits(op, b, m)
@@ -198,15 +272,41 @@ pub extern "sysv64" fn lookup(
     stride: i64,
     off: i64,
 ) -> i64 {
-    match arrays::lookup(a(arg), a(arr) + a(off), &Desc::of(ed), n(start), n(count), want, a(stride)) {
+    match arrays::lookup(
+        a(arg),
+        a(arr) + a(off),
+        &Desc::of(ed),
+        n(start),
+        n(count),
+        want,
+        a(stride),
+    ) {
         Some((i, k)) => i64::try_from(i).unwrap_or(0) | (i64::from(k) << 32),
         None => 0,
     }
 }
 
 /// `_QRNX_SORTA(base, start, count, elsize, keyoff, kd, desc)`.
-pub extern "sysv64" fn sorta(_env: *mut Env, _argc: i64, _od: i64, base: i64, start: i64, count: i64, elsize: i64, keyoff: i64, kd: i64, desc: i32) {
-    arrays::sorta(a(base) + a(start) * a(elsize), n(count), n(elsize), n(keyoff), &Desc::of(kd), desc != 0);
+pub extern "sysv64" fn sorta(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    base: i64,
+    start: i64,
+    count: i64,
+    elsize: i64,
+    keyoff: i64,
+    kd: i64,
+    desc: i32,
+) {
+    arrays::sorta(
+        a(base) + a(start) * a(elsize),
+        n(count),
+        n(elsize),
+        n(keyoff),
+        &Desc::of(kd),
+        desc != 0,
+    );
 }
 
 /// Text into a varying field of `cap` bytes.
@@ -216,8 +316,20 @@ fn put_var(dst: i64, cap: i64, text: &[u8]) {
 }
 
 /// `_QRNX_SCANR(needle, nd, hay, hd, start, len) -> i32`.
-pub extern "sysv64" fn scanr(env: *mut Env, _argc: i64, _od: i64, needle: i64, nd: i64, hay: i64, hd: i64, start: i64, len: i64) -> i32 {
-    let (Some(ne), Some(h)) = (img(env, needle, nd), img(env, hay, hd)) else { return 0 };
+pub extern "sysv64" fn scanr(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    needle: i64,
+    nd: i64,
+    hay: i64,
+    hd: i64,
+    start: i64,
+    len: i64,
+) -> i32 {
+    let (Some(ne), Some(h)) = (img(env, needle, nd), img(env, hay, hd)) else {
+        return 0;
+    };
     if let Some(p) = strops::scanr(&ne, &h, start, len) {
         i32::try_from(p).unwrap_or(0)
     } else {
@@ -242,7 +354,10 @@ pub extern "sysv64" fn scanrpl(
     start: i64,
     len: i64,
 ) {
-    let (Some(s), Some(r), Some(t)) = (img(env, scan, sd), img(env, repl, rd), img(env, src, srcd)) else { return };
+    let (Some(s), Some(r), Some(t)) = (img(env, scan, sd), img(env, repl, rd), img(env, src, srcd))
+    else {
+        return;
+    };
     match strops::scanrpl(&s, &r, &t, start, len) {
         Some(out) => put_var(dst, cap, &out),
         None => raise(env, mi::Cond::Rnx0100),
@@ -251,8 +366,21 @@ pub extern "sysv64" fn scanrpl(
 
 /// `_QRNX_SPLIT(dst, elen, cap, src, sd, seps, sepd) -> i64`: the
 /// pieces into an array of `cap` varying elements of `elen` bytes.
-pub extern "sysv64" fn split(env: *mut Env, _argc: i64, _od: i64, dst: i64, elen: i64, cap: i64, src: i64, sd: i64, seps: i64, pd: i64) -> i64 {
-    let (Some(s), Some(p)) = (img(env, src, sd), img(env, seps, pd)) else { return 0 };
+pub extern "sysv64" fn split(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    dst: i64,
+    elen: i64,
+    cap: i64,
+    src: i64,
+    sd: i64,
+    seps: i64,
+    pd: i64,
+) -> i64 {
+    let (Some(s), Some(p)) = (img(env, src, sd), img(env, seps, pd)) else {
+        return 0;
+    };
     let pieces = strops::split(&s, &p);
     let size = i64::try_from(n(elen) + crate::value::prefix_for(n(elen))).unwrap_or(0);
     let mut k = 0;
@@ -264,8 +392,27 @@ pub extern "sysv64" fn split(env: *mut Env, _argc: i64, _od: i64, dst: i64, elen
 }
 
 /// `_QRNX_EXTREME(arr, ed, start, count, stride, off, max) -> i64`.
-pub extern "sysv64" fn extreme(_env: *mut Env, _argc: i64, _od: i64, arr: i64, ed: i64, start: i64, count: i64, stride: i64, off: i64, max: i32) -> i64 {
-    i64::try_from(arrays::extreme(a(arr) + a(off), &Desc::of(ed), n(start), n(count), a(stride), max != 0)).unwrap_or(0)
+pub extern "sysv64" fn extreme(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    arr: i64,
+    ed: i64,
+    start: i64,
+    count: i64,
+    stride: i64,
+    off: i64,
+    max: i32,
+) -> i64 {
+    i64::try_from(arrays::extreme(
+        a(arr) + a(off),
+        &Desc::of(ed),
+        n(start),
+        n(count),
+        a(stride),
+        max != 0,
+    ))
+    .unwrap_or(0)
 }
 
 /// `_QRNX_STRGET(dst, cap, src)`: the bytes before the first null.
@@ -278,7 +425,15 @@ pub extern "sysv64" fn strget(_env: *mut Env, _argc: i64, _od: i64, dst: i64, ca
 
 /// `_QRNX_STRSET(dst, cap, src, sd)`: the value and a null, in `cap`
 /// bytes at most.
-pub extern "sysv64" fn strset(env: *mut Env, _argc: i64, _od: i64, dst: i64, cap: i64, src: i64, sd: i64) {
+pub extern "sysv64" fn strset(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    dst: i64,
+    cap: i64,
+    src: i64,
+    sd: i64,
+) {
     let Some(v) = img(env, src, sd) else { return };
     let out = bytes(a(dst), n(cap));
     let k = v.len().min(out.len().saturating_sub(1));

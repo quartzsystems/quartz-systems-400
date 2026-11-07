@@ -9,8 +9,8 @@
 //! and stream files written.
 
 use ifs::Errno;
-use ifs::client::{IfsClient, read_all};
 use ifs::client::write_all;
+use ifs::client::{IfsClient, read_all};
 use ifs::ops::OpenArgs;
 use ifs::ops::flags::{O_CCSID, O_RDONLY, O_TEXTDATA};
 use ifs::ops::flags::{O_CREAT, O_TRUNC, O_WRONLY};
@@ -29,7 +29,10 @@ use crate::stgsvc::ifs as service;
 pub fn read_text(c: &dyn IfsClient, path: &str) -> Result<String, String> {
     let fail = |e: Errno| format!("{} {path}: {}", e.command_message(), e.text());
     let fd = c
-        .open(path, OpenArgs::new(O_RDONLY | O_TEXTDATA | O_CCSID).conv(1208))
+        .open(
+            path,
+            OpenArgs::new(O_RDONLY | O_TEXTDATA | O_CCSID).conv(1208),
+        )
         .map_err(fail)?;
     let data = read_all(c, fd);
     let _ = c.close(fd);
@@ -46,7 +49,12 @@ pub fn read_text(c: &dyn IfsClient, path: &str) -> Result<String, String> {
 pub fn write_text(c: &dyn IfsClient, path: &str, text: &str) -> Result<(), String> {
     let fail = |e: Errno| format!("{} {path}: {}", e.command_message(), e.text());
     let fd = c
-        .open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC | O_CCSID).mode(0o644).conv(1208))
+        .open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC | O_CCSID)
+                .mode(0o644)
+                .conv(1208),
+        )
         .map_err(fail)?;
     let r = write_all(c, fd, text.as_bytes());
     let _ = c.close(fd);
@@ -113,7 +121,12 @@ pub fn candidates(target: &str, incdir: &[String], src_dir: &str) -> Vec<String>
 }
 
 /// The first candidate that reads, as a member.
-pub fn find(read: &mut dyn FnMut(&str) -> Option<String>, target: &str, incdir: &[String], src_dir: &str) -> Option<Member> {
+pub fn find(
+    read: &mut dyn FnMut(&str) -> Option<String>,
+    target: &str,
+    incdir: &[String],
+    src_dir: &str,
+) -> Option<Member> {
     candidates(target, incdir, src_dir)
         .into_iter()
         .find_map(|p| read(&p).map(|t| member_of(&p, &t)))
@@ -145,7 +158,10 @@ pub fn read_as_job(system: &mut System, path: &str) -> Result<String, String> {
 pub fn default_name(path: &str) -> String {
     let base = path.rsplit('/').next().unwrap_or(path);
     let stem = base.split('.').next().unwrap_or(base);
-    stem.chars().take(10).collect::<String>().to_ascii_uppercase()
+    stem.chars()
+        .take(10)
+        .collect::<String>()
+        .to_ascii_uppercase()
 }
 
 #[cfg(test)]
@@ -157,7 +173,12 @@ mod tests {
         let inc = vec!["/inc".to_string(), "/more/".to_string()];
         assert_eq!(
             candidates("p.rpgleinc", &inc, "/home/QSTEST"),
-            ["p.rpgleinc", "/inc/p.rpgleinc", "/more/p.rpgleinc", "/home/QSTEST/p.rpgleinc"]
+            [
+                "p.rpgleinc",
+                "/inc/p.rpgleinc",
+                "/more/p.rpgleinc",
+                "/home/QSTEST/p.rpgleinc"
+            ]
         );
         assert_eq!(candidates("/abs/x", &inc, "/src"), ["/abs/x"]);
         assert_eq!(dir_of("/a/b.c"), "/a");
@@ -168,7 +189,10 @@ mod tests {
     #[test]
     fn a_stream_file_as_a_member() {
         let m = member_of("/s/x.rpgle", "**free\r\ndsply 'hi';\n");
-        assert_eq!((m.lib.as_str(), m.file.as_str(), m.name.as_str()), (STMF, "/s", "/s/x.rpgle"));
+        assert_eq!(
+            (m.lib.as_str(), m.file.as_str(), m.name.as_str()),
+            (STMF, "/s", "/s/x.rpgle")
+        );
         assert_eq!(m.records[1].seq, "000200");
         assert_eq!(m.records[1].text, "dsply 'hi';");
     }

@@ -453,7 +453,10 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                 if s.options != saved
                     && let Err(e) = write(s)
                 {
-                    message = Some(crate::display::msgline::text_of(surface.host(), &crate::panels::line(&e)));
+                    message = Some(crate::display::msgline::text_of(
+                        surface.host(),
+                        &crate::panels::line(&e),
+                    ));
                     continue;
                 }
                 return if a.key == Key::F(3) {
@@ -526,7 +529,9 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                                 return Flow::Gone;
                             }
                         }
-                        other => message = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
+                        other => {
+                            message = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                        }
                     }
                 }
                 if !deletes.is_empty() {
@@ -540,7 +545,11 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                         Some(Key::Enter) => {
                             s.options
                                 .retain(|o| !deletes.iter().any(|d| d.code == o.code));
-                            message = Some(crate::display::msgline::say(host, "CPI9BDA", &[&deletes.len()]));
+                            message = Some(crate::display::msgline::say(
+                                host,
+                                "CPI9BDA",
+                                &[&deletes.len()],
+                            ));
                         }
                         Some(_) => {}
                     }
@@ -606,7 +615,11 @@ fn edit_option(
                     .iter()
                     .any(|o| o.code == code && Some(&o.code) != replacing.as_ref())
                 {
-                    message = Some(crate::display::msgline::say(surface.host(), "CPD9BFA", &[&code]));
+                    message = Some(crate::display::msgline::say(
+                        surface.host(),
+                        "CPD9BFA",
+                        &[&code],
+                    ));
                     continue;
                 }
                 if let Some(old) = replacing {
@@ -617,7 +630,11 @@ fn edit_option(
                     command,
                 });
                 s.options.sort_by(|a, b| a.code.cmp(&b.code));
-                return Some(crate::display::msgline::say(surface.host(), "CPI9B8A", &[&code]));
+                return Some(crate::display::msgline::say(
+                    surface.host(),
+                    "CPI9B8A",
+                    &[&code],
+                ));
             }
             _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }

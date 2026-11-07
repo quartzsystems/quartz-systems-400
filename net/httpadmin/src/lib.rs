@@ -45,7 +45,10 @@ pub const NAV: &[NavGroup] = &[
     },
     NavGroup {
         label: "Certificates",
-        items: &[("Certificate stores", "/certs/stores"), ("Applications", "/certs/apps")],
+        items: &[
+            ("Certificate stores", "/certs/stores"),
+            ("Applications", "/certs/apps"),
+        ],
     },
     NavGroup {
         label: "Advanced",
@@ -83,7 +86,9 @@ impl Admin {
         let s = settings::Settings::load(env.files.as_ref());
         Self {
             env,
-            sessions: Sessions::new(Duration::from_secs(u64::from(s.session_minutes.max(1)) * 60)),
+            sessions: Sessions::new(Duration::from_secs(
+                u64::from(s.session_minutes.max(1)) * 60,
+            )),
             tls_up: AtomicBool::new(true),
         }
     }

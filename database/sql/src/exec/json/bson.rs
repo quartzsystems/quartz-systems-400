@@ -126,7 +126,10 @@ impl R<'_> {
     fn document(&mut self) -> Result<Vec<(String, Json)>, BadBson> {
         let start = self.at;
         let len = usize::try_from(self.u32()?).map_err(|_| BadBson)?;
-        let end = start.checked_add(len).filter(|e| *e <= self.b.len() && len >= 5).ok_or(BadBson)?;
+        let end = start
+            .checked_add(len)
+            .filter(|e| *e <= self.b.len() && len >= 5)
+            .ok_or(BadBson)?;
         let mut members = Vec::new();
         loop {
             let kind = *self.take(1)?.first().expect("one");
@@ -137,7 +140,11 @@ impl R<'_> {
             let v = match kind {
                 0x01 => {
                     let x = f64::from_le_bytes(self.take(8)?.try_into().expect("eight"));
-                    Json::Num(if x.is_finite() { format!("{x}") } else { return Err(BadBson) })
+                    Json::Num(if x.is_finite() {
+                        format!("{x}")
+                    } else {
+                        return Err(BadBson);
+                    })
                 }
                 0x02 => {
                     let n = usize::try_from(self.u32()?).map_err(|_| BadBson)?;
@@ -149,8 +156,12 @@ impl R<'_> {
                 0x04 => Json::Array(self.document()?.into_iter().map(|(_, v)| v).collect()),
                 0x08 => Json::Bool(*self.take(1)?.first().expect("one") != 0),
                 0x0A => Json::Null,
-                0x10 => Json::Num(i32::from_le_bytes(self.take(4)?.try_into().expect("four")).to_string()),
-                0x12 => Json::Num(i64::from_le_bytes(self.take(8)?.try_into().expect("eight")).to_string()),
+                0x10 => Json::Num(
+                    i32::from_le_bytes(self.take(4)?.try_into().expect("four")).to_string(),
+                ),
+                0x12 => Json::Num(
+                    i64::from_le_bytes(self.take(8)?.try_into().expect("eight")).to_string(),
+                ),
                 _ => return Err(BadBson),
             };
             members.push((k, v));
@@ -187,7 +198,10 @@ mod tests {
         );
         let mut s = String::new();
         decode(&encode(&j)).unwrap().write(&mut s, true);
-        assert_eq!(s, r#"{"a":1,"b":"x","c":[true, null ],"d":1.5,"e":12345678901}"#);
+        assert_eq!(
+            s,
+            r#"{"a":1,"b":"x","c":[true, null ],"d":1.5,"e":12345678901}"#
+        );
         assert!(decode(&[5, 0, 0]).is_err());
     }
 }

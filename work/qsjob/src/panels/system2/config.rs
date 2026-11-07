@@ -45,10 +45,7 @@ pub fn wrkdevd(
     loop {
         let rows: Vec<_> = list_of(&data, "DEVS")
             .into_iter()
-            .filter(|row| {
-                row.iter()
-                    .any(|(k, v)| k == "DEVD" && wanted(&which, v))
-            })
+            .filter(|row| row.iter().any(|(k, v)| k == "DEVD" && wanted(&which, v)))
             .collect();
         fill(&mut d, "DEVS", rows);
         let resp = match show(&mut d, surface, "WRKDEVD") {
@@ -96,4 +93,3 @@ pub fn wrkdevd(
         }
     }
 }
-

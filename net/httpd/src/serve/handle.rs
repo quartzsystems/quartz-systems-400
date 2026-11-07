@@ -73,7 +73,11 @@ fn strip<'a>(url: &'a str, prefix: &str) -> Option<&'a str> {
 fn join(base: &str, rest: &str) -> String {
     let b = base.trim_end_matches('/');
     if rest.is_empty() {
-        if b.is_empty() { "/".into() } else { b.to_string() }
+        if b.is_empty() {
+            "/".into()
+        } else {
+            b.to_string()
+        }
     } else {
         format!("{b}{rest}")
     }
@@ -121,7 +125,10 @@ pub fn default_error(status: u16) -> Response {
         404 => ("Not found", "The page you asked for is not on this server."),
         405 => ("Method not allowed", "This page cannot be used that way."),
         410 => ("Gone", "The page you asked for has been removed."),
-        416 => ("Range not satisfiable", "The part of the file asked for is not there."),
+        416 => (
+            "Range not satisfiable",
+            "The part of the file asked for is not there.",
+        ),
         501 => ("Not implemented", "This server cannot do that yet."),
         503 => ("Unavailable", "The server is ending; try again later."),
         _ => ("Server error", "The server could not answer the request."),
@@ -131,7 +138,14 @@ pub fn default_error(status: u16) -> Response {
 
 impl Server {
     /// An error status for a request, through `ErrorDocument`.
-    pub(super) fn error_page(&self, status: u16, site: &Site, d: &DirConf, ctx: &Ctx, depth: u8) -> Response {
+    pub(super) fn error_page(
+        &self,
+        status: u16,
+        site: &Site,
+        d: &DirConf,
+        ctx: &Ctx,
+        depth: u8,
+    ) -> Response {
         let Some(doc) = d.error_doc(status) else {
             return default_error(status);
         };
@@ -143,17 +157,36 @@ impl Server {
                 return default_error(status);
             }
             let inner = self.route(&Request::new("GET", doc), site, ctx, 1).0;
-            return if inner.status == 200 { inner.with_status(status) } else { default_error(status) };
+            return if inner.status == 200 {
+                inner.with_status(status)
+            } else {
+                default_error(status)
+            };
         }
-        Response::new(status, "text/html; charset=utf-8", doc.trim_matches('"').as_bytes().to_vec())
+        Response::new(
+            status,
+            "text/html; charset=utf-8",
+            doc.trim_matches('"').as_bytes().to_vec(),
+        )
     }
 
     /// Answer `req` on `site`.
-    pub(super) fn route(&self, req: &Request, site: &Site, ctx: &Ctx, depth: u8) -> (Response, Outcome) {
+    pub(super) fn route(
+        &self,
+        req: &Request,
+        site: &Site,
+        ctx: &Ctx,
+        depth: u8,
+    ) -> (Response, Outcome) {
         let mut out = Outcome::default();
         let client = ctx.peer.ip().to_string();
         let Some(url) = clean(&req.path) else {
-            self.log_error(site, Level::Error, Some(&client), &format!("Invalid URL path {}", req.path));
+            self.log_error(
+                site,
+                Level::Error,
+                Some(&client),
+                &format!("Invalid URL path {}", req.path),
+            );
             return (default_error(400), out);
         };
         let method = req.method.as_str();
@@ -162,7 +195,11 @@ impl Server {
         if let Some((r, to)) = redirect(&d, &url) {
             let resp = match to {
                 Some(t) => {
-                    let q = if req.query.is_empty() { String::new() } else { format!("?{}", req.query) };
+                    let q = if req.query.is_empty() {
+                        String::new()
+                    } else {
+                        format!("?{}", req.query)
+                    };
                     Response::redirect(&format!("{t}{q}")).with_status(r.status)
                 }
                 None => self.error_page(r.status, site, &d, ctx, depth),
@@ -170,18 +207,32 @@ impl Server {
             return (resp, out);
         }
         if !d.access.allows(ctx.peer.ip()) {
-            self.log_error(site, Level::Error, Some(&client), &format!("Client denied by the configuration: {fs}"));
+            self.log_error(
+                site,
+                Level::Error,
+                Some(&client),
+                &format!("Client denied by the configuration: {fs}"),
+            );
             return (self.error_page(403, site, &d, ctx, depth), out);
         }
         match auth::gate(&d, req.header("authorization"), self.deps.auth.as_ref()) {
             Gate::Open(u) => out.user = u,
             Gate::Challenge(realm) => {
                 if req.header("authorization").is_some() {
-                    self.log_error(site, Level::Error, Some(&client), &format!("User not accepted for {url}"));
+                    self.log_error(
+                        site,
+                        Level::Error,
+                        Some(&client),
+                        &format!("User not accepted for {url}"),
+                    );
                 }
                 let r = self.error_page(401, site, &d, ctx, depth);
                 let realm = realm.replace('"', "'");
-                return (r.with_status(401).with("WWW-Authenticate", &format!("Basic realm=\"{realm}\"")), out);
+                return (
+                    r.with_status(401)
+                        .with("WWW-Authenticate", &format!("Basic realm=\"{realm}\"")),
+                    out,
+                );
             }
             Gate::Forbidden(why) => {
                 if let Some(w) = why {
@@ -193,30 +244,59 @@ impl Server {
         if script {
             // BLOCKED(rel): CGI programs do not run; a ScriptAlias
             // answers 501 and says so in the error log.
-            self.log_error(site, Level::Error, Some(&client), &format!("CGI is not supported yet: {fs}"));
+            self.log_error(
+                site,
+                Level::Error,
+                Some(&client),
+                &format!("CGI is not supported yet: {fs}"),
+            );
             return (self.error_page(501, site, &d, ctx, depth), out);
         }
         if !matches!(method, "GET" | "HEAD" | "POST" | "OPTIONS") {
-            return (self.error_page(501, site, &d, ctx, depth).with("Allow", "GET, HEAD, OPTIONS"), out);
+            return (
+                self.error_page(501, site, &d, ctx, depth)
+                    .with("Allow", "GET, HEAD, OPTIONS"),
+                out,
+            );
         }
         if method == "OPTIONS" {
-            return (Response::new(200, "text/plain; charset=utf-8", Vec::new()).with("Allow", "GET, HEAD, OPTIONS"), out);
+            return (
+                Response::new(200, "text/plain; charset=utf-8", Vec::new())
+                    .with("Allow", "GET, HEAD, OPTIONS"),
+                out,
+            );
         }
         let files = self.deps.files.as_ref();
         let Ok(e) = files.stat(&fs) else {
-            self.log_error(site, Level::Info, Some(&client), &format!("File does not exist: {fs}"));
+            self.log_error(
+                site,
+                Level::Info,
+                Some(&client),
+                &format!("File does not exist: {fs}"),
+            );
             return (self.error_page(404, site, &d, ctx, depth), out);
         };
         if method == "POST" {
-            return (self.error_page(405, site, &d, ctx, depth).with("Allow", "GET, HEAD, OPTIONS"), out);
+            return (
+                self.error_page(405, site, &d, ctx, depth)
+                    .with("Allow", "GET, HEAD, OPTIONS"),
+                out,
+            );
         }
         if !e.dir {
             out.file.clone_from(&fs);
             return (statics::file(files, &fs, &e, req, &d), out);
         }
         if !url.ends_with('/') {
-            let q = if req.query.is_empty() { String::new() } else { format!("?{}", req.query) };
-            return (Response::redirect(&format!("{url}/{q}")).with_status(301), out);
+            let q = if req.query.is_empty() {
+                String::new()
+            } else {
+                format!("?{}", req.query)
+            };
+            return (
+                Response::redirect(&format!("{url}/{q}")).with_status(301),
+                out,
+            );
         }
         for i in &d.index {
             let p = format!("{}/{i}", fs.trim_end_matches('/'));
@@ -235,7 +315,12 @@ impl Server {
                 Err(_) => (self.error_page(403, site, &d, ctx, depth), out),
             };
         }
-        self.log_error(site, Level::Error, Some(&client), &format!("Directory index forbidden by Options: {fs}"));
+        self.log_error(
+            site,
+            Level::Error,
+            Some(&client),
+            &format!("Directory index forbidden by Options: {fs}"),
+        );
         (self.error_page(403, site, &d, ctx, depth), out)
     }
 }

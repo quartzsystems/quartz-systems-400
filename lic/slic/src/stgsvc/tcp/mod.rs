@@ -45,7 +45,10 @@ thread_local! {
 }
 
 /// Run `f` with the runtime, loading the configuration on first use.
-pub fn with<T>(system: &mut System, f: impl FnOnce(&mut System, &mut Runtime) -> T) -> Result<T, String> {
+pub fn with<T>(
+    system: &mut System,
+    f: impl FnOnce(&mut System, &mut Runtime) -> T,
+) -> Result<T, String> {
     let taken = RT.with(|r| r.borrow_mut().take());
     let mut rt = if let Some(rt) = taken {
         rt
@@ -128,7 +131,8 @@ pub fn change(
     table: Table,
     f: impl FnOnce(&mut Config) -> tcpcfg::Result<String>,
 ) -> tcpcfg::Result<(String, Vec<Note>)> {
-    let mut next = with(system, |_, rt| rt.cfg.clone()).map_err(|e| tcpcfg::Error::new("CPF9898", e))?;
+    let mut next =
+        with(system, |_, rt| rt.cfg.clone()).map_err(|e| tcpcfg::Error::new("CPF9898", e))?;
     let text = f(&mut next)?;
     store::save(system, &next, table).map_err(|e| tcpcfg::Error::new("CPF9898", e))?;
     let notes = with(system, |sys, rt| {
@@ -169,11 +173,18 @@ pub fn request(system: &mut System, op: TcpOp) -> TcpReply {
 #[allow(clippy::too_many_lines)] // one arm per operation
 fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
     // What the DHCP clients hold now, for the displays.
-    if matches!(op, TcpOp::Snapshot | TcpOp::Panel { .. } | TcpOp::Netstat { .. } | TcpOp::Report { .. }) {
+    if matches!(
+        op,
+        TcpOp::Snapshot | TcpOp::Panel { .. } | TcpOp::Netstat { .. } | TcpOp::Report { .. }
+    ) {
         let _ = operate(system, |c| Ok(apply::refresh_dhcp(c)));
     }
     Ok(match op {
-        TcpOp::Start { strsvr, strifc, strip6 } => {
+        TcpOp::Start {
+            strsvr,
+            strifc,
+            strip6,
+        } => {
             // STRTCP reads the files afresh: they may have been changed
             // by other means.
             let cfg = store::load(system)?;
@@ -187,8 +198,16 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
                     lines: &mut l,
                     now: now_unix(),
                 };
-                apply::start_tcp(&mut c, StartOpts { strifc, strip6 })
-                    .map(|n| (n, if strsvr { rt.cfg.servers.autostart() } else { Vec::new() }))
+                apply::start_tcp(&mut c, StartOpts { strifc, strip6 }).map(|n| {
+                    (
+                        n,
+                        if strsvr {
+                            rt.cfg.servers.autostart()
+                        } else {
+                            Vec::new()
+                        },
+                    )
+                })
             })?;
             match r {
                 Ok((notes, servers)) => {
@@ -236,16 +255,23 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
             snap: with(system, |_, rt| rt.st.snapshot(&rt.cfg))?,
         },
         TcpOp::Panel { what, args } => {
-            let data = with(system, |_, rt| tcpcfg::panel::data(&rt.cfg, &rt.st, &what, &args))?;
+            let data = with(system, |_, rt| {
+                tcpcfg::panel::data(&rt.cfg, &rt.st, &what, &args)
+            })?;
             match data {
                 Some(data) => TcpReply::Panel { data },
                 None => TcpReply::Failed {
-                    note: Note::diag(msg::NOT_FOUND, format!("The entry was not found: {}", args.join(" "))),
+                    note: Note::diag(
+                        msg::NOT_FOUND,
+                        format!("The entry was not found: {}", args.join(" ")),
+                    ),
                 },
             }
         }
         TcpOp::HostConfig => TcpReply::HostConfig {
-            cfg: with(system, |_, rt| tcpcfg::resolver::HostConfig::from_config(&rt.cfg))?,
+            cfg: with(system, |_, rt| {
+                tcpcfg::resolver::HostConfig::from_config(&rt.cfg)
+            })?,
         },
         TcpOp::PortRules => TcpReply::PortRules {
             rules: with(system, |_, rt| tcpcfg::resolver::port_rules(&rt.cfg))?,
@@ -267,7 +293,11 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
                     .collect()
             })?,
         },
-        TcpOp::SetServer { server, autostart, bag } => {
+        TcpOp::SetServer {
+            server,
+            autostart,
+            bag,
+        } => {
             let r = change(system, Table::Servers, |cfg| {
                 let a = cfg.servers.get_mut(&server);
                 if let Some(on) = autostart {
@@ -297,7 +327,9 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
             Err(note) => TcpReply::Failed { note },
         },
         TcpOp::Report { what } => TcpReply::Lines {
-            lines: with(system, |_, rt| apply::report(&rt.cfg, &rt.st, &mut rt.net, &what))?,
+            lines: with(system, |_, rt| {
+                apply::report(&rt.cfg, &rt.st, &mut rt.net, &what)
+            })?,
         },
     })
 }
@@ -305,18 +337,27 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
 /// `svc.tcp [ifc|rte|port|attr|host]`: what the kernel has against
 /// the configuration, one line each.
 pub fn console(system: &mut System, line: &str) -> String {
-    let what = line.split_whitespace().nth(1).unwrap_or("").to_ascii_lowercase();
+    let what = line
+        .split_whitespace()
+        .nth(1)
+        .unwrap_or("")
+        .to_ascii_lowercase();
     if !matches!(what.as_str(), "" | "ifc" | "rte" | "port" | "attr" | "host") {
         return "svc.tcp [ifc|rte|port|attr|host]
-".into();
+"
+        .into();
     }
-    match with(system, |_, rt| apply::report(&rt.cfg, &rt.st, &mut rt.net, &what)) {
+    match with(system, |_, rt| {
+        apply::report(&rt.cfg, &rt.st, &mut rt.net, &what)
+    }) {
         Ok(lines) => lines.iter().fold(String::new(), |mut s, l| {
             s.push_str(l);
             s.push('\n');
             s
         }),
-        Err(e) => format!("CPF9898 {e}
-"),
+        Err(e) => format!(
+            "CPF9898 {e}
+"
+        ),
     }
 }

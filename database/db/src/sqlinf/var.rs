@@ -23,7 +23,11 @@ pub static VARIABLE_LAYOUT: Layout = Layout {
         field("type_len", 2, 2),
         field("default_len", 4, 4),
         field("reserved2", 8, 8),
-        Field { name: "parts", offset: Some(16), size: None },
+        Field {
+            name: "parts",
+            offset: Some(16),
+            size: None,
+        },
     ],
 };
 
@@ -40,7 +44,11 @@ pub static TYPE_LAYOUT: Layout = Layout {
         field("source_len", 2, 2),
         field("reserved2", 4, 4),
         field("cardinality", 8, 8),
-        Field { name: "parts", offset: Some(16), size: None },
+        Field {
+            name: "parts",
+            offset: Some(16),
+            size: None,
+        },
     ],
 };
 
@@ -58,7 +66,11 @@ pub static COLTYPE_LAYOUT: Layout = Layout {
         field("library", 28, 10),
         field("name_len", 38, 2),
         field("reserved2", 40, 8),
-        Field { name: "name", offset: Some(48), size: None },
+        Field {
+            name: "name",
+            offset: Some(48),
+            size: None,
+        },
     ],
 };
 
@@ -101,7 +113,12 @@ impl ColType {
             .ok_or_else(|| bad("column type entry"))?;
         let field = qsname::Name::from_bytes(b[0..10].try_into().expect("10 bytes"));
         let library = qsname::Name::from_bytes(b[28..38].try_into().expect("10 bytes"));
-        Ok(Self { field, id: store::obj::ObjectId::from_bytes(&b[12..28]), library, name })
+        Ok(Self {
+            field,
+            id: store::obj::ObjectId::from_bytes(&b[12..28]),
+            library,
+            name,
+        })
     }
 }
 
@@ -117,7 +134,9 @@ pub struct Variable {
 }
 
 fn bad(what: &str) -> DbError {
-    DbError::Corrupt { what: format!("SQL information: {what}") }
+    DbError::Corrupt {
+        what: format!("SQL information: {what}"),
+    }
 }
 
 fn len16(n: usize) -> [u8; 2] {
@@ -145,10 +164,17 @@ impl Variable {
         }
         let t = usize::from(u16::from_le_bytes([b[2], b[3]]));
         let d = u32::from_le_bytes(b[4..8].try_into().expect("4")) as usize;
-        let text = |s: Option<&[u8]>| s.and_then(|s| String::from_utf8(s.to_vec()).ok()).ok_or_else(|| bad("variable entry"));
+        let text = |s: Option<&[u8]>| {
+            s.and_then(|s| String::from_utf8(s.to_vec()).ok())
+                .ok_or_else(|| bad("variable entry"))
+        };
         let data_type = text(b.get(VARIABLE_FIXED..VARIABLE_FIXED + t))?;
         let default = text(b.get(VARIABLE_FIXED + t..VARIABLE_FIXED + t + d))?;
-        Ok(Self { data_type, default: (b[0] & 2 != 0).then_some(default), constant: b[0] & 1 != 0 })
+        Ok(Self {
+            data_type,
+            default: (b[0] & 2 != 0).then_some(default),
+            constant: b[0] & 1 != 0,
+        })
     }
 }
 
@@ -186,7 +212,11 @@ impl Udt {
             .and_then(|s| String::from_utf8(s.to_vec()).ok())
             .ok_or_else(|| bad("type entry"))?;
         let cardinality = u64::from_le_bytes(b[8..16].try_into().expect("8 bytes"));
-        Ok(Self { metatype: b[0], source, cardinality })
+        Ok(Self {
+            metatype: b[0],
+            source,
+            cardinality,
+        })
     }
 }
 
@@ -197,18 +227,46 @@ mod tests {
     #[test]
     fn round_trip() {
         for v in [
-            Variable { data_type: "DECIMAL(9, 2)".into(), default: Some("1.5".into()), constant: false },
-            Variable { data_type: "INTEGER".into(), default: None, constant: true },
-            Variable { data_type: "VARCHAR(20)".into(), default: Some(String::new()), constant: false },
+            Variable {
+                data_type: "DECIMAL(9, 2)".into(),
+                default: Some("1.5".into()),
+                constant: false,
+            },
+            Variable {
+                data_type: "INTEGER".into(),
+                default: None,
+                constant: true,
+            },
+            Variable {
+                data_type: "VARCHAR(20)".into(),
+                default: Some(String::new()),
+                constant: false,
+            },
         ] {
             assert_eq!(Variable::decode(&v.encode()).unwrap(), v);
         }
-        for u in [Udt { metatype: b'T', source: "CHARACTER(4)".into(), cardinality: 0 }, Udt { metatype: b'A', source: "INTEGER".into(), cardinality: 5 }] {
+        for u in [
+            Udt {
+                metatype: b'T',
+                source: "CHARACTER(4)".into(),
+                cardinality: 0,
+            },
+            Udt {
+                metatype: b'A',
+                source: "INTEGER".into(),
+                cardinality: 5,
+            },
+        ] {
             assert_eq!(Udt::decode(&u.encode()).unwrap(), u);
         }
         let c = ColType {
             field: qsname::Name::parse("AMT").unwrap(),
-            id: store::obj::ObjectId { asp: 1, type_code: store::obj::types::SQLUDT, serial: 9, generation: 0 },
+            id: store::obj::ObjectId {
+                asp: 1,
+                type_code: store::obj::types::SQLUDT,
+                serial: 9,
+                generation: 0,
+            },
             library: qsname::Name::parse("QSTEST").unwrap(),
             name: "MONEY".into(),
         };

@@ -39,7 +39,8 @@ impl Gen<'_> {
     /// One display file operation statement.
     pub fn dsp_op(&mut self, op: &Op, base: &str, f: &File, fmt: Option<RecFmt>, target: &Expr) {
         let n = mangle(&f.name);
-        let by_file = matches!(target, Expr::Ref { name, steps, .. } if *name == f.name && steps.is_empty());
+        let by_file =
+            matches!(target, Expr::Ref { name, steps, .. } if *name == f.name && steps.is_empty());
         let rec = format!("$rb_{n}");
         // The format: named, or (a READ by file name) the file's.
         let fmt = if by_file && base == "READ" { None } else { fmt };
@@ -47,8 +48,13 @@ impl Gen<'_> {
             self.err(ids::BAD_FILE_OP, 30, f.name.clone());
             return;
         }
-        let subfile = fmt.as_ref().and_then(|r| r.fmt.dsp.as_ref()).is_some_and(|d| d.subfile);
-        let fname = fmt.as_ref().map_or_else(|| mangle(&f.obj.1), |r| mangle(&r.fmt.name));
+        let subfile = fmt
+            .as_ref()
+            .and_then(|r| r.fmt.dsp.as_ref())
+            .is_some_and(|d| d.subfile);
+        let fname = fmt
+            .as_ref()
+            .map_or_else(|| mangle(&f.obj.1), |r| mangle(&r.fmt.name));
         let inds = self.inds_area(f);
         let status = match base {
             "WRITE" | "EXFMT" | "UPDATE" => {
@@ -87,7 +93,9 @@ impl Gen<'_> {
                     self.err(ids::BAD_FILE_OP, 30, fname);
                     return;
                 };
-                let Some(v) = self.expr(&k, Want::default()) else { return };
+                let Some(v) = self.expr(&k, Want::default()) else {
+                    return;
+                };
                 let Some(r) = self.int_reg(&v) else { return };
                 self.dspio(&n, base, &fname, &rec, Some(&r), inds.as_deref())
             }
@@ -162,7 +170,15 @@ impl Gen<'_> {
     }
 
     /// The `dspio` instruction; its status register.
-    fn dspio(&mut self, n: &str, op: &str, fmt: &str, rec: &str, rrn: Option<&str>, inds: Option<&str>) -> String {
+    fn dspio(
+        &mut self,
+        n: &str,
+        op: &str,
+        fmt: &str,
+        rec: &str,
+        rrn: Option<&str>,
+        inds: Option<&str>,
+    ) -> String {
         let r = self.b.reg();
         let mut s = format!("{r} = dspio {n} {op} fmt({fmt}) rec({rec})");
         if let Some(x) = rrn {
@@ -247,7 +263,11 @@ impl Gen<'_> {
 
     /// The `SFILE` field of a subfile record format.
     fn sfile_field(&mut self, f: &File, r: &RecFmt) -> Option<V> {
-        let (_, field) = f.sfiles.iter().find(|(fm, _)| *fm == r.name || *fm == r.fmt.name)?.clone();
+        let (_, field) = f
+            .sfiles
+            .iter()
+            .find(|(fm, _)| *fm == r.name || *fm == r.fmt.name)?
+            .clone();
         let e = Expr::Ref {
             name: field,
             steps: Vec::new(),
@@ -270,11 +290,23 @@ impl Gen<'_> {
             }
         }
         for (i, fd) in r.fmt.fields.iter().enumerate() {
-            let Some((Some(off), _)) = d.offsets.get(i).copied() else { continue };
-            let Some(name) = r.names.get(i).cloned() else { continue };
-            let Some(id) = self.t.find(self.scope, &name) else { continue };
-            let src = V::place(self.t.syms[id].ty.clone(), crate::codegen::place_of(self.t, id));
-            let dst = V::place(fd.ty.clone(), format!("[{p} +{off}]:{}", self.ir_ty(&fd.ty)));
+            let Some((Some(off), _)) = d.offsets.get(i).copied() else {
+                continue;
+            };
+            let Some(name) = r.names.get(i).cloned() else {
+                continue;
+            };
+            let Some(id) = self.t.find(self.scope, &name) else {
+                continue;
+            };
+            let src = V::place(
+                self.t.syms[id].ty.clone(),
+                crate::codegen::place_of(self.t, id),
+            );
+            let dst = V::place(
+                fd.ty.clone(),
+                format!("[{p} +{off}]:{}", self.ir_ty(&fd.ty)),
+            );
             if dst.ty == src.ty {
                 self.b.ins(format!("mov {}, {}", dst.op, src.op));
             } else {
@@ -297,12 +329,24 @@ impl Gen<'_> {
             }
         }
         for (i, fd) in r.fmt.fields.iter().enumerate() {
-            let Some((_, Some(off))) = d.offsets.get(i).copied() else { continue };
-            let Some(name) = r.names.get(i).cloned() else { continue };
-            let Some(id) = self.t.find(self.scope, &name) else { continue };
+            let Some((_, Some(off))) = d.offsets.get(i).copied() else {
+                continue;
+            };
+            let Some(name) = r.names.get(i).cloned() else {
+                continue;
+            };
+            let Some(id) = self.t.find(self.scope, &name) else {
+                continue;
+            };
             self.t.refer(id, self.at.line, true);
-            let dst = V::place(self.t.syms[id].ty.clone(), crate::codegen::place_of(self.t, id));
-            let src = V::place(fd.ty.clone(), format!("[{p} +{off}]:{}", self.ir_ty(&fd.ty)));
+            let dst = V::place(
+                self.t.syms[id].ty.clone(),
+                crate::codegen::place_of(self.t, id),
+            );
+            let src = V::place(
+                fd.ty.clone(),
+                format!("[{p} +{off}]:{}", self.ir_ty(&fd.ty)),
+            );
             if dst.ty == src.ty {
                 self.b.ins(format!("mov {}, {}", dst.op, src.op));
             } else {
@@ -335,7 +379,8 @@ impl Gen<'_> {
             let hit = self.b.label();
             let c = self.b.reg();
             let name = crate::codegen::emit::quote(&format!("{:<8}", r.fmt.name));
-            self.b.ins(format!("{c} = str.cmp.eq [{a} +37]:char(8), {name}"));
+            self.b
+                .ins(format!("{c} = str.cmp.eq [{a} +37]:char(8), {name}"));
             self.b.term(format!("brif {c}, {hit}, {next}"));
             self.b.place(&hit);
             self.dsp_in(f, r);
@@ -383,7 +428,10 @@ impl Gen<'_> {
         self.dsp_out(f, &r);
         let n = mangle(&f.name);
         let st = self.b.reg();
-        self.b.ins(format!("{st} = prtio {n} WRITE fmt({}) rec($rb_{n})", mangle(&r.fmt.name)));
+        self.b.ins(format!(
+            "{st} = prtio {n} WRITE fmt({}) rec($rb_{n})",
+            mangle(&r.fmt.name)
+        ));
         if let Some(ind) = f.oflind.clone() {
             let ov = self.overflow_crossed(&f.name, &st);
             let on = self.b.label();
@@ -396,7 +444,12 @@ impl Gen<'_> {
     }
 
     fn used_mark(&mut self, r: &RecFmt) {
-        if let Some(i) = self.t.recfmts.iter().position(|x| x.file_name == r.file_name && x.name == r.name) {
+        if let Some(i) = self
+            .t
+            .recfmts
+            .iter()
+            .position(|x| x.file_name == r.file_name && x.name == r.name)
+        {
             self.used_formats.insert(i);
         }
     }

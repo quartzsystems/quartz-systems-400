@@ -70,7 +70,8 @@ impl Packer {
     }
 
     fn end(&mut self) {
-        self.out.extend_from_slice(&self.buf[..self.offset.div_ceil(8)]);
+        self.out
+            .extend_from_slice(&self.buf[..self.offset.div_ceil(8)]);
         self.offset = 0;
     }
 }
@@ -301,6 +302,9 @@ mod tests {
     #[test]
     fn known_bytes() {
         // "aaa": codes 97, 257 at 9 bits.
-        assert_eq!(compress(b"aaa", 16), vec![0x1f, 0x9d, 0x90, 0x61, 0x02, 0x02]);
+        assert_eq!(
+            compress(b"aaa", 16),
+            vec![0x1f, 0x9d, 0x90, 0x61, 0x02, 0x02]
+        );
     }
 }

@@ -27,12 +27,17 @@ pub type Pairs = Vec<(String, String)>;
 
 /// A variable's value, blank when it is not there.
 pub fn val<'a>(row: &'a [(String, String)], key: &str) -> &'a str {
-    row.iter().find(|(k, _)| k == key).map_or("", |(_, v)| v.as_str())
+    row.iter()
+        .find(|(k, _)| k == key)
+        .map_or("", |(_, v)| v.as_str())
 }
 
 /// A `panel2_data` display's variables and rows, empty when refused.
 pub fn panel(m: &Main, what: &str, args: &[&str]) -> (Pairs, Vec<Pairs>) {
-    let (w, a) = (what.to_string(), args.iter().map(ToString::to_string).collect());
+    let (w, a) = (
+        what.to_string(),
+        args.iter().map(ToString::to_string).collect(),
+    );
     m.ask(|l| l.panel2_data(w, a)).unwrap_or_default()
 }
 
@@ -52,7 +57,10 @@ fn system(m: &Main) -> SysActivity {
         active
             .iter()
             .find(|j| j.number == n)
-            .and_then(|j| j.job_type().map(|t| wrkactjob_type(t, j.sub_type()).trim().to_string()))
+            .and_then(|j| {
+                j.job_type()
+                    .map(|t| wrkactjob_type(t, j.sub_type()).trim().to_string())
+            })
             .unwrap_or_default()
     };
     let jobs: Vec<JobActivity> = rows

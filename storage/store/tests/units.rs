@@ -303,7 +303,12 @@ fn a_tree_in_a_header_root_slot_moves_with_the_unit() {
     store.add_unit(Box::new(extra), [8; 16], "EXTRA2").unwrap();
     // A tree in slot 2 of a user space, as a profile keeps its indexes.
     let entries: Vec<(Vec<u8>, Vec<u8>)> = (0..400u32)
-        .map(|i| (i.to_be_bytes().to_vec(), vec![u8::try_from(i % 251).unwrap(); 40]))
+        .map(|i| {
+            (
+                i.to_be_bytes().to_vec(),
+                vec![u8::try_from(i % 251).unwrap(); 40],
+            )
+        })
         .collect();
     let id = {
         let mut t = store.begin().unwrap();

@@ -102,9 +102,12 @@ pub fn import(
     let pem_text = match format {
         ImportFormat::Pkcs12 => None,
         ImportFormat::Pem => Some(
-            std::str::from_utf8(data).map_err(|_| CertError::Invalid("the PEM file is not text".into()))?,
+            std::str::from_utf8(data)
+                .map_err(|_| CertError::Invalid("the PEM file is not text".into()))?,
         ),
-        ImportFormat::Auto => std::str::from_utf8(data).ok().filter(|t| t.contains("-----BEGIN ")),
+        ImportFormat::Auto => std::str::from_utf8(data)
+            .ok()
+            .filter(|t| t.contains("-----BEGIN ")),
     };
     let shown = ks.shown();
     let mut notes = Vec::new();
@@ -191,7 +194,9 @@ pub fn export(ctx: &Ctx<'_>, ks: &Keystore, label: &str, format: &ExportFormat) 
             }
             store.export_pkcs12(label, pw)
         }
-        ExportFormat::Pem { with_key } => Ok(store.export_pem(label, *with_key)?.as_bytes().to_vec()),
+        ExportFormat::Pem { with_key } => {
+            Ok(store.export_pem(label, *with_key)?.as_bytes().to_vec())
+        }
     }
 }
 
@@ -270,12 +275,19 @@ pub fn remove(ctx: &Ctx<'_>, ks: &Keystore, label: &str) -> Result<Vec<Note>> {
 /// CA certificate. A waiting request stays where its key is.
 pub fn copy(ctx: &Ctx<'_>, from: &Keystore, label: &str, to: &Keystore) -> Result<Vec<Note>> {
     if from.path == to.path {
-        return Err(CertError::Invalid(format!("{label} is already in {}", to.shown())));
+        return Err(CertError::Invalid(format!(
+            "{label} is already in {}",
+            to.shown()
+        )));
     }
     let src = ctx.open(from)?;
     let e = src.get(label)?;
     let mut dst = ctx.open(to)?;
-    let waiting = || CertError::Invalid(format!("{label} is a request still waiting for its certificate"));
+    let waiting = || {
+        CertError::Invalid(format!(
+            "{label} is a request still waiting for its certificate"
+        ))
+    };
     let cert = e.cert.clone().ok_or_else(waiting)?;
     match e.kind {
         EntryKind::Server | EntryKind::Client => {
@@ -366,8 +378,15 @@ mod tests {
     fn self_signed_listed_with_days_left() {
         let w = World::with_system();
         let ks = Keystore::system();
-        let c = create(&w.ctx(), &ks, "WEB", &server("web.example", 90), KeyAlgorithm::EcdsaP256, &Signer::SelfSigned)
-            .unwrap();
+        let c = create(
+            &w.ctx(),
+            &ks,
+            "WEB",
+            &server("web.example", 90),
+            KeyAlgorithm::EcdsaP256,
+            &Signer::SelfSigned,
+        )
+        .unwrap();
         assert_eq!(c.notes, [Note::new(msgs::CREATED, &["WEB", "*SYSTEM"])]);
         let rows = list(&w.ctx(), &ks).unwrap();
         assert_eq!(rows.len(), 1);
@@ -379,7 +398,14 @@ mod tests {
         let gone = list(&w.at(NOW + 91 * DAY), &ks).unwrap();
         assert_eq!(gone[0].status(), "Expired");
         assert!(matches!(
-            create(&w.ctx(), &ks, "WEB", &server("x", 1), KeyAlgorithm::EcdsaP256, &Signer::SelfSigned),
+            create(
+                &w.ctx(),
+                &ks,
+                "WEB",
+                &server("x", 1),
+                KeyAlgorithm::EcdsaP256,
+                &Signer::SelfSigned
+            ),
             Err(CertError::LabelExists(_))
         ));
     }
@@ -387,11 +413,25 @@ mod tests {
     #[test]
     fn the_local_ca_signs_and_the_store_trusts_it() {
         let w = World::with_system();
-        keystores::create_local_ca(&w.ctx(), "cacert1", &Subject::cn("Local CA"), KeyAlgorithm::EcdsaP256, 3650, true)
-            .unwrap();
+        keystores::create_local_ca(
+            &w.ctx(),
+            "cacert1",
+            &Subject::cn("Local CA"),
+            KeyAlgorithm::EcdsaP256,
+            3650,
+            true,
+        )
+        .unwrap();
         let ks = Keystore::system();
-        create(&w.ctx(), &ks, "SRV", &server("srv.example", 365), KeyAlgorithm::EcdsaP256, &Signer::LocalCa(None))
-            .unwrap();
+        create(
+            &w.ctx(),
+            &ks,
+            "SRV",
+            &server("srv.example", 365),
+            KeyAlgorithm::EcdsaP256,
+            &Signer::LocalCa(None),
+        )
+        .unwrap();
         let rows = list(&w.ctx(), &ks).unwrap();
         let srv = rows.iter().find(|r| r.label == "SRV").unwrap();
         assert_eq!(srv.info.as_ref().unwrap().issuer, "CN=Local CA");
@@ -401,46 +441,119 @@ mod tests {
     #[test]
     fn a_request_goes_out_and_its_certificate_comes_back() {
         let w = World::with_system();
-        keystores::create_local_ca(&w.ctx(), "cacert1", &Subject::cn("Local CA"), KeyAlgorithm::EcdsaP256, 3650, true)
-            .unwrap();
+        keystores::create_local_ca(
+            &w.ctx(),
+            "cacert1",
+            &Subject::cn("Local CA"),
+            KeyAlgorithm::EcdsaP256,
+            3650,
+            true,
+        )
+        .unwrap();
         let ks = Keystore::system();
-        let made = create(&w.ctx(), &ks, "REQ", &server("req.example", 30), KeyAlgorithm::Rsa2048, &Signer::Request)
-            .unwrap();
+        let made = create(
+            &w.ctx(),
+            &ks,
+            "REQ",
+            &server("req.example", 30),
+            KeyAlgorithm::Rsa2048,
+            &Signer::Request,
+        )
+        .unwrap();
         let csr_pem = made.csr_pem.unwrap();
         assert!(csr_pem.starts_with("-----BEGIN CERTIFICATE REQUEST-----"));
-        assert_eq!(export(&w.ctx(), &ks, "REQ", &ExportFormat::Request).unwrap(), csr_pem.as_bytes());
+        assert_eq!(
+            export(&w.ctx(), &ks, "REQ", &ExportFormat::Request).unwrap(),
+            csr_pem.as_bytes()
+        );
         assert!(export(&w.ctx(), &ks, "REQ", &ExportFormat::Pem { with_key: false }).is_err());
         let csr = pem::blocks(&csr_pem).unwrap().remove(0).der;
         let ca_store = w.ctx().open(&Keystore::new("*LCLCA", "")).unwrap();
         let cert = ca::sign_request(&ca_store, &csr, CertKind::Server, NOW, 30).unwrap();
-        let notes = import(&w.ctx(), &ks, "REQ", pem::encode("CERTIFICATE", &cert).as_bytes(), ImportFormat::Auto, None, true)
-            .unwrap();
+        let notes = import(
+            &w.ctx(),
+            &ks,
+            "REQ",
+            pem::encode("CERTIFICATE", &cert).as_bytes(),
+            ImportFormat::Auto,
+            None,
+            true,
+        )
+        .unwrap();
         assert_eq!(notes[0].msgid, msgs::IMPORTED);
         let rows = list(&w.ctx(), &ks).unwrap();
-        assert_eq!(rows.iter().find(|r| r.label == "REQ").unwrap().kind, EntryKind::Server);
+        assert_eq!(
+            rows.iter().find(|r| r.label == "REQ").unwrap().kind,
+            EntryKind::Server
+        );
     }
 
     #[test]
     fn export_and_import_round_trip() {
         let w = World::with_system();
         let ks = Keystore::system();
-        create(&w.ctx(), &ks, "A", &server("a.example", 30), KeyAlgorithm::EcdsaP256, &Signer::SelfSigned).unwrap();
+        create(
+            &w.ctx(),
+            &ks,
+            "A",
+            &server("a.example", 30),
+            KeyAlgorithm::EcdsaP256,
+            &Signer::SelfSigned,
+        )
+        .unwrap();
         let p12 = export(&w.ctx(), &ks, "A", &ExportFormat::Pkcs12("pw1234".into())).unwrap();
         let pem_key = export(&w.ctx(), &ks, "A", &ExportFormat::Pem { with_key: true }).unwrap();
         assert!(String::from_utf8_lossy(&pem_key).contains("PRIVATE KEY"));
         assert!(export(&w.ctx(), &ks, "A", &ExportFormat::Pkcs12(String::new())).is_err());
         let other = Keystore::new("/home/o.kdb", "other1");
         keystores::create(&w.ctx(), &other, false, false).unwrap();
-        import(&w.ctx(), &other, "FROMP12", &p12, ImportFormat::Auto, Some("pw1234"), true).unwrap();
-        import(&w.ctx(), &other, "FROMPEM", &pem_key, ImportFormat::Pem, None, true).unwrap();
+        import(
+            &w.ctx(),
+            &other,
+            "FROMP12",
+            &p12,
+            ImportFormat::Auto,
+            Some("pw1234"),
+            true,
+        )
+        .unwrap();
+        import(
+            &w.ctx(),
+            &other,
+            "FROMPEM",
+            &pem_key,
+            ImportFormat::Pem,
+            None,
+            true,
+        )
+        .unwrap();
         let rows = list(&w.ctx(), &other).unwrap();
         let labels: Vec<&str> = rows.iter().map(|r| r.label.as_str()).collect();
         assert_eq!(labels, ["FROMP12", "FROMPEM"]);
-        assert!(import(&w.ctx(), &other, "BAD", &p12, ImportFormat::Pkcs12, Some("wrong"), true).is_err());
+        assert!(
+            import(
+                &w.ctx(),
+                &other,
+                "BAD",
+                &p12,
+                ImportFormat::Pkcs12,
+                Some("wrong"),
+                true
+            )
+            .is_err()
+        );
         // A CA certificate alone, untrusted on request.
         let ca_der = crate::roots::roots()[0].der.clone();
-        let notes = import(&w.ctx(), &other, "ROOT", pem::encode("CERTIFICATE", &ca_der).as_bytes(), ImportFormat::Auto, None, false)
-            .unwrap();
+        let notes = import(
+            &w.ctx(),
+            &other,
+            "ROOT",
+            pem::encode("CERTIFICATE", &ca_der).as_bytes(),
+            ImportFormat::Auto,
+            None,
+            false,
+        )
+        .unwrap();
         assert_eq!(notes[0].data[0], "ROOT");
         let rows = list(&w.ctx(), &other).unwrap();
         let root = rows.iter().find(|r| r.label == "ROOT").unwrap();
@@ -455,18 +568,39 @@ mod tests {
         let other = Keystore::new("/QIBM/UserData/ICSS/Cert/QSTORE01.KDB", "other123");
         keystores::create(&w.ctx(), &other, true, false).unwrap();
         let other = Keystore::new(&other.path, "");
-        create(&w.ctx(), &other, "ADMIN-CERT01", &server("qs400.example", 365), KeyAlgorithm::EcdsaP256, &Signer::SelfSigned)
-            .unwrap();
-        create(&w.ctx(), &other, "REQ", &server("r.example", 30), KeyAlgorithm::EcdsaP256, &Signer::Request).unwrap();
+        create(
+            &w.ctx(),
+            &other,
+            "ADMIN-CERT01",
+            &server("qs400.example", 365),
+            KeyAlgorithm::EcdsaP256,
+            &Signer::SelfSigned,
+        )
+        .unwrap();
+        create(
+            &w.ctx(),
+            &other,
+            "REQ",
+            &server("r.example", 30),
+            KeyAlgorithm::EcdsaP256,
+            &Signer::Request,
+        )
+        .unwrap();
         let sys = Keystore::system();
         assert!(appids::assign(&w.ctx(), "QS400_HTTP_SERVER_ADMIN", Some("ADMIN-CERT01")).is_err());
         let notes = copy(&w.ctx(), &other, "ADMIN-CERT01", &sys).unwrap();
-        assert_eq!(notes, [Note::new(msgs::IMPORTED, &["ADMIN-CERT01", "*SYSTEM"])]);
+        assert_eq!(
+            notes,
+            [Note::new(msgs::IMPORTED, &["ADMIN-CERT01", "*SYSTEM"])]
+        );
         let s = w.ctx().open(&sys).unwrap();
         let a = s.get("ADMIN-CERT01").unwrap();
         assert!(a.has_identity() && a.kind == EntryKind::Server);
         appids::assign(&w.ctx(), "QIBM_HTTP_SERVER_ADMIN", Some("ADMIN-CERT01")).unwrap();
-        assert!(matches!(copy(&w.ctx(), &other, "ADMIN-CERT01", &sys), Err(CertError::LabelExists(_))));
+        assert!(matches!(
+            copy(&w.ctx(), &other, "ADMIN-CERT01", &sys),
+            Err(CertError::LabelExists(_))
+        ));
         assert!(copy(&w.ctx(), &other, "REQ", &sys).is_err());
         assert!(copy(&w.ctx(), &sys, "ADMIN-CERT01", &Keystore::system()).is_err());
     }
@@ -475,7 +609,15 @@ mod tests {
     fn rename_follows_into_the_assignments_and_remove_clears_them() {
         let w = World::with_system();
         let ks = Keystore::system();
-        create(&w.ctx(), &ks, "OLD", &server("o.example", 30), KeyAlgorithm::EcdsaP256, &Signer::SelfSigned).unwrap();
+        create(
+            &w.ctx(),
+            &ks,
+            "OLD",
+            &server("o.example", 30),
+            KeyAlgorithm::EcdsaP256,
+            &Signer::SelfSigned,
+        )
+        .unwrap();
         appids::assign(&w.ctx(), "QS400_HTTP_SERVER_ADMIN", Some("OLD")).unwrap();
         let c = Change {
             new_label: Some("NEW".into()),
@@ -488,10 +630,24 @@ mod tests {
         assert_eq!(rows[0].text, "admin");
         assert!(rows[0].is_default);
         assert_eq!(rows[0].apps, ["QS400_HTTP_SERVER_ADMIN"]);
-        assert!(change(&w.ctx(), &ks, "NEW", &Change { trusted: Some(true), ..Change::default() }).is_err());
+        assert!(
+            change(
+                &w.ctx(),
+                &ks,
+                "NEW",
+                &Change {
+                    trusted: Some(true),
+                    ..Change::default()
+                }
+            )
+            .is_err()
+        );
         remove(&w.ctx(), &ks, "NEW").unwrap();
         let reg = AppRegistry::load(&w.files).unwrap();
         assert_eq!(reg.get("QS400_HTTP_SERVER_ADMIN").unwrap().label, None);
-        assert!(matches!(remove(&w.ctx(), &ks, "NEW"), Err(CertError::LabelNotFound(_))));
+        assert!(matches!(
+            remove(&w.ctx(), &ks, "NEW"),
+            Err(CertError::LabelNotFound(_))
+        ));
     }
 }

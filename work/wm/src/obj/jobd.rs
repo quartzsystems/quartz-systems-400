@@ -250,7 +250,10 @@ impl JobD {
             splfacn: r.text("SplfAcn"),
             ddmcnv: r.text("DdmCnv"),
             text: r.text("Text"),
-            acgcde: match r.tail().get(used.saturating_add(n)..used.saturating_add(n) + ACGCDE_LEN) {
+            acgcde: match r
+                .tail()
+                .get(used.saturating_add(n)..used.saturating_add(n) + ACGCDE_LEN)
+            {
                 Some(b) if version >= 2 => crate::rec::text_of(b),
                 _ => "*USRPRF".into(),
             },

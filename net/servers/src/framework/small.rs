@@ -61,10 +61,15 @@ impl TcpServer for Lpd {
         let spec = self.spec();
         check_instance(spec, req)?;
         if !self.active(env, req) {
-            return Ok(format!("{} {} server not active.", msg::NOT_ACTIVE, spec.name));
+            return Ok(format!(
+                "{} {} server not active.",
+                msg::NOT_ACTIVE,
+                spec.name
+            ));
         }
-        env.end_job(&Self::job(), immediate)
-            .map_err(|e| Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special)))?;
+        env.end_job(&Self::job(), immediate).map_err(|e| {
+            Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special))
+        })?;
         Ok(format!("{} {} server ending.", msg::ENDING, spec.name))
     }
 }

@@ -64,7 +64,11 @@ fn resolve(system: &mut System, jobd: &str, user: &str) -> String {
         .ok()
         .and_then(|b| wm::obj::jobd::JobD::decode(&b).ok())
         .map_or_else(|| "*USRPRF".into(), |d| d.acgcde);
-    if d == "*USRPRF" { profile_code(system, user) } else { d }
+    if d == "*USRPRF" {
+        profile_code(system, user)
+    } else {
+        d
+    }
 }
 
 /// The accounting code of `user`'s profile; blank for a special value.
@@ -75,12 +79,22 @@ fn profile_code(system: &mut System, user: &str) -> String {
             .map_err(|e| e.to_string())
     })
     .unwrap_or_default();
-    if code.starts_with('*') { String::new() } else { code }
+    if code.starts_with('*') {
+        String::new()
+    } else {
+        code
+    }
 }
 
 /// Job `number`'s accounting code; blank when it has none.
 pub fn code(system: &System, number: u32) -> String {
-    system.stats.acg.codes.get(&number).cloned().unwrap_or_default()
+    system
+        .stats
+        .acg
+        .codes
+        .get(&number)
+        .cloned()
+        .unwrap_or_default()
 }
 
 /// The code a submitted job starts with: `SBMJOB ACGCDE()` as given,
@@ -170,7 +184,11 @@ fn close_segment(system: &mut System, number: u32, completion: u16) {
     };
     let off = offset(system, now);
     let local = |t: u64| i64::try_from(t).unwrap_or(0) + off;
-    let datfmt = system.attrs.get(&number).map(|a| a.datfmt.clone()).unwrap_or_default();
+    let datfmt = system
+        .attrs
+        .get(&number)
+        .map(|a| a.datfmt.clone())
+        .unwrap_or_default();
     let u = acg::JobUse {
         job: j.name.clone(),
         user: j.user.clone(),
@@ -283,11 +301,14 @@ pub fn printed(system: &mut System, a: &SplfAttrs, device: &str) {
 /// `CHGACGCDE JOB() ACGCDE()` from job `me`: the old segment journaled
 /// under the old code, the new code from now.
 pub fn chgacgcde(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
-    let job = p.kw("JOB").map_or_else(String::new, |j| j.trim().to_string());
+    let job = p
+        .kw("JOB")
+        .map_or_else(String::new, |j| j.trim().to_string());
     let number = if job.is_empty() || job == "*" {
         me
     } else {
-        let id = wm::job::JobId::parse(&job).ok_or_else(|| format!("CPF1070 job {job} not found"))?;
+        let id =
+            wm::job::JobId::parse(&job).ok_or_else(|| format!("CPF1070 job {job} not found"))?;
         let found = system
             .jobs
             .get(id.number)
@@ -306,7 +327,11 @@ pub fn chgacgcde(system: &mut System, me: u32, p: &Params) -> Result<String, Str
     if v.eq_ignore_ascii_case("*SAME") {
         return Ok("Accounting code not changed.".into());
     }
-    let new = if v.eq_ignore_ascii_case("*BLANK") { String::new() } else { v };
+    let new = if v.eq_ignore_ascii_case("*BLANK") {
+        String::new()
+    } else {
+        v
+    };
     if new.chars().count() > 15 {
         return Err("CPD0074 ACGCDE: at most 15 characters".into());
     }

@@ -14,7 +14,14 @@ use crate::exec::json::Opts;
 
 /// Calls whose result is JSON text: a value of one in a constructor is
 /// `FORMAT JSON` without saying so.
-const MAKES_JSON: &[&str] = &["JSON_OBJECT", "JSON_ARRAY", "JSON_QUERY", "JSON_ARRAYAGG", "JSON_OBJECTAGG", "BSON_TO_JSON"];
+const MAKES_JSON: &[&str] = &[
+    "JSON_OBJECT",
+    "JSON_ARRAY",
+    "JSON_QUERY",
+    "JSON_ARRAYAGG",
+    "JSON_OBJECTAGG",
+    "BSON_TO_JSON",
+];
 
 fn null() -> Expr {
     Expr::Literal(Literal::Null)
@@ -26,7 +33,12 @@ fn made(name: &str, opts: &Opts, ret: Option<TypeSpec>, operands: Vec<Expr>) -> 
         ret.map_or_else(null, |t| Expr::Cast(Box::new(null()), t)),
     ];
     args.extend(operands);
-    Expr::Function(Function { name: name.into(), distinct: false, star: false, args })
+    Expr::Function(Function {
+        name: name.into(),
+        distinct: false,
+        star: false,
+        args,
+    })
 }
 
 impl Parser {
@@ -42,9 +54,10 @@ impl Parser {
             "JSON_OBJECTAGG" => self.json_objectagg()?,
             "XMLPARSE" => self.xml_parse()?,
             "XMLSERIALIZE" => self.xml_serialize()?,
-            "JSON_TABLE" | "XMLQUERY" | "XMLEXISTS" | "XMLTABLE" | "XMLVALIDATE" | "XMLAGG" | "XMLELEMENT"
-            | "XMLFOREST" | "XMLCONCAT" | "XMLATTRIBUTES" | "XMLDOCUMENT" | "XMLTEXT" | "XMLPI" | "XMLCOMMENT"
-            | "XMLNAMESPACES" | "XMLGROUP" | "XMLROW" | "XSLTRANSFORM" => {
+            "JSON_TABLE" | "XMLQUERY" | "XMLEXISTS" | "XMLTABLE" | "XMLVALIDATE" | "XMLAGG"
+            | "XMLELEMENT" | "XMLFOREST" | "XMLCONCAT" | "XMLATTRIBUTES" | "XMLDOCUMENT"
+            | "XMLTEXT" | "XMLPI" | "XMLCOMMENT" | "XMLNAMESPACES" | "XMLGROUP" | "XMLROW"
+            | "XSLTRANSFORM" => {
                 return Err(Self::unsupported(&match name {
                     "JSON_TABLE" => "JSON_TABLE outside FROM".to_string(),
                     n => format!("the {n} function"),
@@ -52,7 +65,10 @@ impl Parser {
             }
             // Not on IBM i 7.5 (pub400 answers SQL0204).
             "JSON_UPDATE" => {
-                return Err(crate::error::SqlError::ObjectNotFound { name: "JSON_UPDATE".into(), kind: "function" });
+                return Err(crate::error::SqlError::ObjectNotFound {
+                    name: "JSON_UPDATE".into(),
+                    kind: "function",
+                });
             }
             _ => return Ok(None),
         }))
@@ -76,7 +92,9 @@ impl Parser {
     /// (`SQL0206`), as the primary reports it.
     fn json_operand(&mut self) -> Result<Expr> {
         if self.is_word("NULL") && !self.is_word_at(1, "ON") {
-            return Err(crate::error::SqlError::ColumnNotFound { name: "NULL".into() });
+            return Err(crate::error::SqlError::ColumnNotFound {
+                name: "NULL".into(),
+            });
         }
         self.expr()
     }
@@ -226,7 +244,11 @@ impl Parser {
     fn json_value(&mut self) -> Result<Expr> {
         let mut opts = Opts::default();
         let mut operands = self.json_context(&mut opts)?;
-        let ret = if self.eat_word("RETURNING") { Some(self.type_spec()?) } else { None };
+        let ret = if self.eat_word("RETURNING") {
+            Some(self.type_spec()?)
+        } else {
+            None
+        };
         let [empty, error] = self.json_behaviors(&mut opts)?;
         operands.push(empty);
         operands.push(error);
@@ -408,16 +430,34 @@ impl Parser {
             let lit = |s: String| Expr::Literal(Literal::Str(s));
             if self.eat_words(&["FOR", "ORDINALITY"]) {
                 col.set("k", "ord");
-                args.extend([lit(col.text()), lit(name.value), null(), null(), null(), null()]);
+                args.extend([
+                    lit(col.text()),
+                    lit(name.value),
+                    null(),
+                    null(),
+                    null(),
+                    null(),
+                ]);
             } else {
                 let t = self.type_spec()?;
                 if self.eat_words(&["FORMAT", "JSON"]) {
                     col.set("fmt", "J");
                 }
-                let path = if self.eat_word("PATH") { self.string()? } else { format!("$.{}", name.value.to_lowercase()) };
+                let path = if self.eat_word("PATH") {
+                    self.string()?
+                } else {
+                    format!("$.{}", name.value.to_lowercase())
+                };
                 let [empty, error] = self.json_behaviors(&mut col)?;
                 col.set("k", "val");
-                args.extend([lit(col.text()), lit(name.value), lit(path), Expr::Cast(Box::new(null()), t), empty, error]);
+                args.extend([
+                    lit(col.text()),
+                    lit(name.value),
+                    lit(path),
+                    Expr::Cast(Box::new(null()), t),
+                    empty,
+                    error,
+                ]);
             }
             if !self.eat_sym(",") {
                 break;
@@ -431,14 +471,24 @@ impl Parser {
             t.set("k", "terr");
             let lit = |s: String| Expr::Literal(Literal::Str(s));
             args.extend([lit(t.text()), null(), null(), null(), null(), null()]);
-        } else if !self.eat_words(&["EMPTY", "ON", "ERROR"]) && (self.is_word("NULL") || self.is_word("DEFAULT")) {
+        } else if !self.eat_words(&["EMPTY", "ON", "ERROR"])
+            && (self.is_word("NULL") || self.is_word("DEFAULT"))
+        {
             // Not a table's behavior: SQL0199, as pub400.
             return Err(self.keyword());
         }
         self.expect_sym(")")?;
         let (alias, columns) = self.correlation()?;
         let alias = alias.ok_or_else(|| self.expected("a correlation name"))?;
-        let name = ObjectName { schema: None, name: Ident::new("JSON_TABLE") };
-        Ok(TableRef::Lateral(Box::new(TableRef::Function { name, args, alias, columns })))
+        let name = ObjectName {
+            schema: None,
+            name: Ident::new("JSON_TABLE"),
+        };
+        Ok(TableRef::Lateral(Box::new(TableRef::Function {
+            name,
+            args,
+            alias,
+            columns,
+        })))
     }
 }

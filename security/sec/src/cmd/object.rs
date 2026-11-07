@@ -634,7 +634,11 @@ pub fn secured_objects(
             text: text_of(&oh.text),
         });
     }
-    Ok((text_of(&h.owner), none_if_empty(text_of(&h.primary_group)), out))
+    Ok((
+        text_of(&h.owner),
+        none_if_empty(text_of(&h.primary_group)),
+        out,
+    ))
 }
 
 /// `DSPAUTLOBJ AUTL()`: the objects the list secures.
@@ -642,7 +646,11 @@ pub fn dspautlobj(txn: &mut Txn<'_>, env: &Env<'_>, name: &str) -> Result<String
     let (_, _, list) = secured_objects(txn, env, name)?;
     let mut o = format!(" Authorization list {name}\n Object      Library     Type        Owner\n");
     for x in list {
-        let _ = writeln!(o, " {:<10}  {:<10}  {:<10}  {}", x.name, x.lib, x.ty, x.owner);
+        let _ = writeln!(
+            o,
+            " {:<10}  {:<10}  {:<10}  {}",
+            x.name, x.lib, x.ty, x.owner
+        );
     }
     Ok(o)
 }

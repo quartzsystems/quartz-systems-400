@@ -303,16 +303,16 @@ pub fn overlong(p: &Parm) -> Option<String> {
     }
     let len = p.length().len as usize;
     let specials = || p.spcval.iter().chain(&p.sngval);
-    let mapped = |v: &str| {
-        specials().any(|s| s.to.is_some() && s.from.eq_ignore_ascii_case(v))
-    };
+    let mapped = |v: &str| specials().any(|s| s.to.is_some() && s.from.eq_ignore_ascii_case(v));
     // A list's default names one value per item.
     let dft: Vec<&str> = match &p.dft {
         Some(d) if p.is_list() && !d.starts_with('\'') => d.split_whitespace().collect(),
         Some(d) => vec![d.as_str()],
         None => Vec::new(),
     };
-    let unmapped = specials().filter(|s| s.to.is_none()).map(|s| s.from.as_str());
+    let unmapped = specials()
+        .filter(|s| s.to.is_none())
+        .map(|s| s.from.as_str());
     dft.into_iter()
         .chain(p.values.iter().map(String::as_str))
         .chain(unmapped)

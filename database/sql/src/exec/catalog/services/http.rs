@@ -40,12 +40,22 @@ fn method_of(name: &str) -> Option<(&'static str, bool)> {
 }
 
 fn failed(what: impl Into<String>) -> SqlError {
-    SqlError::Coded { code: -443, state: "38501", what: what.into() }
+    SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what: what.into(),
+    }
 }
 
 /// The request of `url`, `body` and the options' JSON.
 fn request(method: &str, url: &str, body: Vec<u8>, options: Option<&str>) -> Result<HttpRequest> {
-    let mut req = HttpRequest { method: method.into(), url: url.trim().into(), body, redirects: 10, ..HttpRequest::default() };
+    let mut req = HttpRequest {
+        method: method.into(),
+        url: url.trim().into(),
+        body,
+        redirects: 10,
+        ..HttpRequest::default()
+    };
     let Some(text) = options.filter(|t| !t.trim().is_empty()) else {
         return Ok(req);
     };
@@ -62,29 +72,48 @@ fn request(method: &str, url: &str, body: Vec<u8>, options: Option<&str>) -> Res
         match k.as_str() {
             "header" => {
                 let t = text_of(&v);
-                let (n, val) = t.split_once(',').ok_or_else(|| failed("a header option is not name,value"))?;
+                let (n, val) = t
+                    .split_once(',')
+                    .ok_or_else(|| failed("a header option is not name,value"))?;
                 req.headers.push((n.trim().into(), val.trim().into()));
             }
             "headers" => {
-                let Json::Object(h) = v else { return Err(failed("headers is not a JSON object")) };
+                let Json::Object(h) = v else {
+                    return Err(failed("headers is not a JSON object"));
+                };
                 for (n, val) in h {
                     req.headers.push((n, text_of(&val)));
                 }
             }
             "basicAuth" => {
                 let t = text_of(&v);
-                let (u, p) = t.split_once(',').ok_or_else(|| failed("basicAuth is not user,password"))?;
-                let token = super::super::super::func::services::base64_encode(format!("{u}:{p}").as_bytes());
-                req.headers.push(("Authorization".into(), format!("Basic {token}")));
+                let (u, p) = t
+                    .split_once(',')
+                    .ok_or_else(|| failed("basicAuth is not user,password"))?;
+                let token = super::super::super::func::services::base64_encode(
+                    format!("{u}:{p}").as_bytes(),
+                );
+                req.headers
+                    .push(("Authorization".into(), format!("Basic {token}")));
             }
             "sslTolerate" => req.tolerate = text_of(&v).eq_ignore_ascii_case("true"),
             "ioTimeout" | "connectTimeout" => {
                 // Milliseconds; the client takes whole seconds.
-                let ms: u64 = text_of(&v).parse().map_err(|_| failed(format!("{k} is not a number")))?;
+                let ms: u64 = text_of(&v)
+                    .parse()
+                    .map_err(|_| failed(format!("{k} is not a number")))?;
                 let secs = u32::try_from(ms.div_ceil(1000)).unwrap_or(u32::MAX);
-                req.timeout = if req.timeout == 0 { secs } else { req.timeout.max(secs) };
+                req.timeout = if req.timeout == 0 {
+                    secs
+                } else {
+                    req.timeout.max(secs)
+                };
             }
-            "redirect" => req.redirects = text_of(&v).parse().map_err(|_| failed("redirect is not a number"))?,
+            "redirect" => {
+                req.redirects = text_of(&v)
+                    .parse()
+                    .map_err(|_| failed("redirect is not a number"))?
+            }
             other => return Err(failed(format!("option {other} is not supported"))),
         }
     }
@@ -92,8 +121,13 @@ fn request(method: &str, url: &str, body: Vec<u8>, options: Option<&str>) -> Res
 }
 
 fn send(ctx: &SqlContext, req: &HttpRequest) -> Result<HttpResponse> {
-    let host = ctx.host.as_deref().ok_or_else(|| super::unreachable_here("the HTTP client"))?;
-    host.http(req).ok_or_else(|| super::unreachable_here("the HTTP client"))?.map_err(failed)
+    let host = ctx
+        .host
+        .as_deref()
+        .ok_or_else(|| super::unreachable_here("the HTTP client"))?;
+    host.http(req)
+        .ok_or_else(|| super::unreachable_here("the HTTP client"))?
+        .map_err(failed)
 }
 
 /// The body argument: text as UTF-8, binary as it is.
@@ -113,19 +147,31 @@ pub(crate) fn scalar(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Res
         let with_body = matches!(method, "POST" | "PUT" | "PATCH");
         let need = if with_body { 2 } else { 1 };
         if args.len() < need || args.len() > need + 1 {
-            return Err(SqlError::Coded { code: -440, state: "42884", what: format!("QSYS2.{bare} with {} arguments", args.len()) });
+            return Err(SqlError::Coded {
+                code: -440,
+                state: "42884",
+                what: format!("QSYS2.{bare} with {} arguments", args.len()),
+            });
         }
         if args[0].is_null() {
             return Ok(Value::Null);
         }
-        let body = if with_body { body_of(&args[1]) } else { Vec::new() };
+        let body = if with_body {
+            body_of(&args[1])
+        } else {
+            Vec::new()
+        };
         let options = args.get(need).filter(|v| !v.is_null()).map(Value::as_text);
         let req = request(method, &args[0].as_text(), body, options.as_deref())?;
         let res = send(ctx, &req)?;
         if !(200..300).contains(&res.status) {
             return Err(failed(format!("the server answered HTTP {}", res.status)));
         }
-        Ok(if binary { Value::Bin(res.body) } else { Value::Str(String::from_utf8_lossy(&res.body).into_owned()) })
+        Ok(if binary {
+            Value::Bin(res.body)
+        } else {
+            Value::Str(String::from_utf8_lossy(&res.body).into_owned())
+        })
     })())
 }
 
@@ -156,7 +202,14 @@ fn header_json(res: &HttpResponse) -> String {
 }
 
 /// A `_VERBOSE` table function: one row, the body and the headers.
-pub fn verbose(_txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out, method: &str, binary: bool) -> Result<()> {
+pub fn verbose(
+    _txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    args: &Args,
+    out: &mut Out,
+    method: &str,
+    binary: bool,
+) -> Result<()> {
     let Some(url) = args.text("URL") else {
         return Ok(());
     };
@@ -167,7 +220,10 @@ pub fn verbose(_txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out,
     if binary {
         out.set("RESPONSE_MESSAGE", Value::Bin(res.body.clone()));
     } else {
-        out.text("RESPONSE_MESSAGE", String::from_utf8_lossy(&res.body).into_owned());
+        out.text(
+            "RESPONSE_MESSAGE",
+            String::from_utf8_lossy(&res.body).into_owned(),
+        );
     }
     out.text("RESPONSE_HTTP_HEADER", header_json(&res));
     Ok(())

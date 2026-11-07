@@ -122,7 +122,9 @@ pub fn prefix_mask(prefix: u8) -> Ipv4Addr {
 /// The network of `ip/prefix`.
 pub fn network(ip: IpAddr, prefix: u8) -> IpAddr {
     match ip {
-        IpAddr::V4(v4) => IpAddr::V4(Ipv4Addr::from(u32::from(v4) & u32::from(prefix_mask(prefix)))),
+        IpAddr::V4(v4) => IpAddr::V4(Ipv4Addr::from(
+            u32::from(v4) & u32::from(prefix_mask(prefix)),
+        )),
         IpAddr::V6(v6) => {
             let p = u32::from(prefix.min(128));
             let mask = if p == 0 { 0 } else { u128::MAX << (128 - p) };

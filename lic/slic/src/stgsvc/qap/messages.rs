@@ -30,8 +30,16 @@ fn failed(r: &Refused, lib: &str, name: &str) -> QapRefused {
         "CPF2403" => (NOT_FOUND, vec![name.into(), lib.into()]),
         "CPF2204" => (NOT_FOUND, Vec::new()),
         "CPF2410" | "CPF2422" => (
-            if r.msgid == "CPF2410" { NOT_FOUND } else { INVALID_REQUEST },
-            if r.data.is_empty() { vec![r.text.clone()] } else { r.data.clone() },
+            if r.msgid == "CPF2410" {
+                NOT_FOUND
+            } else {
+                INVALID_REQUEST
+            },
+            if r.data.is_empty() {
+                vec![r.text.clone()]
+            } else {
+                r.data.clone()
+            },
         ),
         "CPF9820" => (NOT_AUTHORIZED, vec![lib.into()]),
         "CPF2189" | "CPF2182" | "CPF9802" | "CPF22E9" => {
@@ -62,8 +70,12 @@ fn me(ctx: &JobCtx) -> String {
 /// `CPF2204` when there is no such profile.
 fn queue_of(system: &mut System, user: &str) -> Result<(String, String), QapRefused> {
     let user = user.trim().to_ascii_uppercase();
-    let p = super::super::hostsvr::read(system, &user).ok_or_else(|| refused(NOT_FOUND, "CPF2204", "", &[]))?;
-    let (name, lib) = (p.msgq.0.trim().to_ascii_uppercase(), p.msgq.1.trim().to_ascii_uppercase());
+    let p = super::super::hostsvr::read(system, &user)
+        .ok_or_else(|| refused(NOT_FOUND, "CPF2204", "", &[]))?;
+    let (name, lib) = (
+        p.msgq.0.trim().to_ascii_uppercase(),
+        p.msgq.1.trim().to_ascii_uppercase(),
+    );
     Ok(match name.as_str() {
         "" | "*USRPRF" => ("QUSRSYS".into(), user),
         _ if lib.is_empty() => ("*LIBL".into(), name),
@@ -80,7 +92,11 @@ fn sender(system: &System, ctx: &JobCtx) -> (String, String, u32) {
 }
 
 /// A queue as library and name.
-fn resolve(system: &mut System, ctx: &JobCtx, queue: &Queue) -> Result<(String, String), QapRefused> {
+fn resolve(
+    system: &mut System,
+    ctx: &JobCtx,
+    queue: &Queue,
+) -> Result<(String, String), QapRefused> {
     match queue {
         Queue::Own => queue_of(system, &me(ctx)),
         Queue::SystemOperator => Ok(("QSYS".into(), "QSYSOPR".into())),
@@ -96,17 +112,31 @@ fn resolve(system: &mut System, ctx: &JobCtx, queue: &Queue) -> Result<(String, 
 
 fn page(v: Vec<QMsg>, start: u32, max: u32) -> Vec<QMsg> {
     let start = usize::try_from(start).unwrap_or(usize::MAX);
-    let max = if max == 0 { usize::MAX } else { usize::try_from(max).unwrap_or(usize::MAX) };
+    let max = if max == 0 {
+        usize::MAX
+    } else {
+        usize::try_from(max).unwrap_or(usize::MAX)
+    };
     v.into_iter().skip(start).take(max).collect()
 }
 
 /// `qap_msg_list`: the queue's messages as `DSPMSG` reads them, in
 /// arrival order, paged.
-pub fn list(system: &mut System, ctx: &JobCtx, queue: &Queue, newest_first: bool, start: u32, max: u32) -> Result<(u32, Vec<QMsg>), QapRefused> {
+pub fn list(
+    system: &mut System,
+    ctx: &JobCtx,
+    queue: &Queue,
+    newest_first: bool,
+    start: u32,
+    max: u32,
+) -> Result<(u32, Vec<QMsg>), QapRefused> {
     connection_job(ctx)?;
     let (lib, name) = resolve(system, ctx, queue)?;
     let mut all = msgs::with_queue(system, "msgq.receive", &lib, &name, |q, _| {
-        Ok((q.by_arrival().into_iter().cloned().collect::<Vec<_>>(), false))
+        Ok((
+            q.by_arrival().into_iter().cloned().collect::<Vec<_>>(),
+            false,
+        ))
     })
     .map_err(|e| failed(&Refused::of(&e), &lib, &name))?;
     if newest_first {
@@ -117,7 +147,13 @@ pub fn list(system: &mut System, ctx: &JobCtx, queue: &Queue, newest_first: bool
 }
 
 /// `qap_msg_reply`: as `SNDRPYMSG`.
-pub fn reply(system: &mut System, ctx: &JobCtx, queue: &Queue, key: u32, reply: &str) -> Result<(), QapRefused> {
+pub fn reply(
+    system: &mut System,
+    ctx: &JobCtx,
+    queue: &Queue,
+    key: u32,
+    reply: &str,
+) -> Result<(), QapRefused> {
     connection_job(ctx)?;
     let (lib, name) = resolve(system, ctx, queue)?;
     let from = sender(system, ctx);
@@ -137,7 +173,12 @@ pub fn reply(system: &mut System, ctx: &JobCtx, queue: &Queue, key: u32, reply: 
 
 /// `qap_msg_remove`: as `RMVMSG` for each key; a key not on the queue
 /// (`CPF2410`) removes none.
-pub fn remove(system: &mut System, ctx: &JobCtx, queue: &Queue, keys: &[u32]) -> Result<(), QapRefused> {
+pub fn remove(
+    system: &mut System,
+    ctx: &JobCtx,
+    queue: &Queue,
+    keys: &[u32],
+) -> Result<(), QapRefused> {
     connection_job(ctx)?;
     let (lib, name) = resolve(system, ctx, queue)?;
     msgs::with_queue(system, "msgq.remove", &lib, &name, |q, _| {
@@ -165,7 +206,13 @@ pub fn remove(system: &mut System, ctx: &JobCtx, queue: &Queue, keys: &[u32]) ->
 
 /// `qap_msg_send`: as `SNDMSG`; an inquiry's reply comes to the user's
 /// own queue, the key it will answer returned.
-pub fn send(system: &mut System, ctx: &JobCtx, to: &Recipient, text: &str, inquiry: bool) -> Result<Option<u32>, QapRefused> {
+pub fn send(
+    system: &mut System,
+    ctx: &JobCtx,
+    to: &Recipient,
+    text: &str,
+    inquiry: bool,
+) -> Result<Option<u32>, QapRefused> {
     connection_job(ctx)?;
     if text.trim().is_empty() {
         return Err(refused(INVALID_REQUEST, "CPD0071", "", &["MSG"]));

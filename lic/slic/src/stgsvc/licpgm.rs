@@ -58,7 +58,10 @@ pub fn with<T>(
     system: &mut System,
     f: impl FnOnce(&mut Products<'_, '_>, &Cell<'_>, ObjectId) -> Result<T, String>,
 ) -> Result<T, String> {
-    let s = system.storage.as_mut().ok_or("CPF3700 object store not open")?;
+    let s = system
+        .storage
+        .as_mut()
+        .ok_or("CPF3700 object store not open")?;
     let qsys = s.qsys.ok_or("CPF3700 object store not initialized")?;
     let cell = RefCell::new(&mut s.store);
     sec::guard::as_system(|| {
@@ -82,7 +85,6 @@ pub fn quartz_key() -> Option<[u8; 32]> {
     let b = std::fs::read(LICENSE_KEY_PATH).ok()?;
     b.get(..32)?.try_into().ok()
 }
-
 
 /// Whether a product option's code is installed (state 90 or another
 /// installed state). A store without product records counts as having

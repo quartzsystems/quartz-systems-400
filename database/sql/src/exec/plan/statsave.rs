@@ -21,7 +21,11 @@ fn date_bytes(d: Date) -> Vec<u8> {
 }
 
 fn date_of(b: &[u8]) -> Option<Date> {
-    Date::new(u16::from_le_bytes([*b.first()?, *b.get(1)?]), *b.get(2)?, *b.get(3)?)
+    Date::new(
+        u16::from_le_bytes([*b.first()?, *b.get(1)?]),
+        *b.get(2)?,
+        *b.get(3)?,
+    )
 }
 
 fn time_of(b: &[u8]) -> Option<Time> {
@@ -68,7 +72,12 @@ pub fn decode_value((kind, b): &StatValue) -> Option<Value> {
         7 => Value::Time(time_of(b)?),
         8 => {
             let picos = u64::from_le_bytes(b.get(8..16)?.try_into().ok()?);
-            Value::Timestamp(Timestamp { date: date_of(b)?, time: time_of(b.get(4..7)?)?, picos, precision: *b.get(7)? })
+            Value::Timestamp(Timestamp {
+                date: date_of(b)?,
+                time: time_of(b.get(4..7)?)?,
+                picos,
+                precision: *b.get(7)?,
+            })
         }
         9 => Value::Bin(b.clone()),
         10 => Value::Bool(*b.first()? != 0),
@@ -93,7 +102,11 @@ pub fn to_stored(member: ObjectId, s: &ColumnStats) -> Option<ColStats> {
         created: s.created,
         updated: s.updated,
         bounds: s.bounds.iter().filter_map(encode_value).collect(),
-        frequent: s.frequent.iter().filter_map(|(v, f)| encode_value(v).map(|e| (*f, e))).collect(),
+        frequent: s
+            .frequent
+            .iter()
+            .filter_map(|(v, f)| encode_value(v).map(|e| (*f, e)))
+            .collect(),
     })
 }
 
@@ -108,8 +121,16 @@ pub fn from_stored(c: &ColStats) -> Option<ColumnStats> {
         nulls: c.nulls,
         avg_len: c.avg_len,
         max_len: c.max_len,
-        bounds: c.bounds.iter().map(decode_value).collect::<Option<Vec<_>>>()?,
-        frequent: c.frequent.iter().map(|(f, v)| decode_value(v).map(|v| (v, *f))).collect::<Option<Vec<_>>>()?,
+        bounds: c
+            .bounds
+            .iter()
+            .map(decode_value)
+            .collect::<Option<Vec<_>>>()?,
+        frequent: c
+            .frequent
+            .iter()
+            .map(|(f, v)| decode_value(v).map(|v| (v, *f)))
+            .collect::<Option<Vec<_>>>()?,
         rows: c.rows,
         deleted: c.deleted,
         slots: c.slots,
@@ -135,13 +156,26 @@ mod tests {
             Value::DecFloat(DecFloat::parse("1.0E+3", DfFormat::D34).unwrap()),
             Value::Date(d),
             Value::Time(t),
-            Value::Timestamp(Timestamp { date: d, time: t, picos: 123_456_789_012, precision: 12 }),
+            Value::Timestamp(Timestamp {
+                date: d,
+                time: t,
+                picos: 123_456_789_012,
+                precision: 12,
+            }),
             Value::Bin(vec![0, 255, 7]),
             Value::Bool(true),
         ];
         for v in vals {
             let back = decode_value(&encode_value(&v).unwrap()).unwrap();
-            assert_eq!(back.compare(&v).ok().flatten(), if v.is_null() { None } else { Some(std::cmp::Ordering::Equal) }, "{v:?}");
+            assert_eq!(
+                back.compare(&v).ok().flatten(),
+                if v.is_null() {
+                    None
+                } else {
+                    Some(std::cmp::Ordering::Equal)
+                },
+                "{v:?}"
+            );
             assert_eq!(std::mem::discriminant(&back), std::mem::discriminant(&v));
         }
     }

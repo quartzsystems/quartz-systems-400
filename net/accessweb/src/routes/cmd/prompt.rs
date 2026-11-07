@@ -32,7 +32,11 @@ type Values = Vec<Vec<String>>;
 /// The field name of parameter `p`, element `i` of a list.
 fn field(p: &Param, i: usize) -> String {
     let k = p.keyword.to_ascii_lowercase();
-    if p.max > 1 { format!("{k}{}", i + 1) } else { k }
+    if p.max > 1 {
+        format!("{k}{}", i + 1)
+    } else {
+        k
+    }
 }
 
 /// The values the command string gives each parameter (keyword or
@@ -85,7 +89,11 @@ fn from_form(def: &CmdDef, f: &Form) -> Values {
 fn string_of(def: &CmdDef, values: &Values) -> String {
     let mut s = def.name.clone();
     for (p, v) in def.params.iter().zip(values) {
-        let v: Vec<&str> = v.iter().map(String::as_str).filter(|x| !x.is_empty()).collect();
+        let v: Vec<&str> = v
+            .iter()
+            .map(String::as_str)
+            .filter(|x| !x.is_empty())
+            .collect();
         if v.is_empty() {
             continue;
         }
@@ -101,7 +109,11 @@ fn control(p: &Param, v: &[String], shown: &str, more: usize) -> String {
         let cur = v.first().map_or("", String::as_str);
         let mut s = format!("<select name=\"{}\">", field(p, 0));
         for (i, o) in p.values.iter().enumerate() {
-            let sel = if i > 0 && o.eq_ignore_ascii_case(cur) { " selected" } else { "" };
+            let sel = if i > 0 && o.eq_ignore_ascii_case(cur) {
+                " selected"
+            } else {
+                ""
+            };
             let _ = write!(s, "<option{sel}>{}</option>", esc(o));
         }
         s.push_str("</select>");
@@ -125,7 +137,10 @@ fn control(p: &Param, v: &[String], shown: &str, more: usize) -> String {
         let href = format!(
             "{}{}",
             PRODUCT.url("/cmd/prompt"),
-            query(&[("cmd", shown), (&format!("n.{}", p.keyword), &(n + 1).to_string())])
+            query(&[
+                ("cmd", shown),
+                (&format!("n.{}", p.keyword), &(n + 1).to_string())
+            ])
         );
         let _ = write!(s, " <a href=\"{}\">+</a>", esc(&href));
     }
@@ -147,7 +162,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let f = rq.form();
     if rq.post() && f.has("prompt") {
         // Prompt from Run command: the page for the typed string.
-        return rq.redirect(&format!("/cmd/prompt{}", query(&[("cmd", f.str("cmd").trim())])));
+        return rq.redirect(&format!(
+            "/cmd/prompt{}",
+            query(&[("cmd", f.str("cmd").trim())])
+        ));
     }
     let q = rq.query();
     let given = q.str("cmd").trim().to_string();
@@ -159,7 +177,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
         Ok(d) => d,
         Err(m) => return rq.done(&format!("/cmd{}", query(&[("c", &given)])), m),
     };
-    let values = if rq.post() { from_form(&def, &f) } else { from_string(&def, &given) };
+    let values = if rq.post() {
+        from_form(&def, &f)
+    } else {
+        from_string(&def, &given)
+    };
     let string = string_of(&def, &values);
     if rq.post() {
         if f.has("run") {
@@ -178,11 +200,19 @@ pub fn page(rq: &Rq<'_>) -> Response {
         }
     }
     let more = q.str("more") == "1";
-    let shown: Vec<(usize, &Param)> = def.params.iter().enumerate().filter(|(_, p)| more || !p.additional).collect();
+    let shown: Vec<(usize, &Param)> = def
+        .params
+        .iter()
+        .enumerate()
+        .filter(|(_, p)| more || !p.additional)
+        .collect();
     let rows = shown
         .iter()
         .map(|(i, p)| {
-            let extra: usize = q.str(&format!("n.{}", p.keyword)).parse::<usize>().map_or(0, |n| n.saturating_sub(1));
+            let extra: usize = q
+                .str(&format!("n.{}", p.keyword))
+                .parse::<usize>()
+                .map_or(0, |n| n.saturating_sub(1));
             let mut kw = esc(&p.keyword);
             if p.required {
                 kw.push_str(" <span class=\"req\">*</span>");
@@ -205,14 +235,25 @@ pub fn page(rq: &Rq<'_>) -> Response {
         rq.ctx.csrf_field()
     );
     body.push_str(&list_table(&List {
-        cols: ["Keyword", "Parameter", "Value", "Choices"].iter().map(|c| Col::plain(c)).collect(),
+        cols: ["Keyword", "Parameter", "Value", "Choices"]
+            .iter()
+            .map(|c| Col::plain(c))
+            .collect(),
         rows,
         empty: "The command has no parameters.".into(),
         keep: Vec::new(),
     }));
     if !more && def.params.iter().any(|p| p.additional) {
-        let href = format!("{}{}", PRODUCT.url("/cmd/prompt"), query(&[("cmd", &string), ("more", "1")]));
-        let _ = write!(body, "<p class=\"small\"><a href=\"{}\">Additional parameters</a></p>", esc(&href));
+        let href = format!(
+            "{}{}",
+            PRODUCT.url("/cmd/prompt"),
+            query(&[("cmd", &string), ("more", "1")])
+        );
+        let _ = write!(
+            body,
+            "<p class=\"small\"><a href=\"{}\">Additional parameters</a></p>",
+            esc(&href)
+        );
     }
     body.push_str("<div class=\"buttons\">");
     if rq.allowed(policy::CMD_RUN) {
@@ -263,7 +304,14 @@ mod tests {
     fn strings() {
         let d = def();
         let v = from_string(&d, "WRKX X L(P Q) T('a b')");
-        assert_eq!(v, [vec!["X".to_string()], vec!["P".into(), "Q".into()], vec!["'a b'".into()]]);
+        assert_eq!(
+            v,
+            [
+                vec!["X".to_string()],
+                vec!["P".into(), "Q".into()],
+                vec!["'a b'".into()]
+            ]
+        );
         assert_eq!(string_of(&d, &v), "WRKX A(X) L(P Q) T('a b')");
         assert_eq!(string_of(&d, &from_string(&d, "WRKX")), "WRKX A(*ALL)");
         assert_eq!(keyword("T", "it's"), "T('it''s')");

@@ -6,7 +6,7 @@
 
 use stg::Client;
 
-use super::{display};
+use super::display;
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -49,7 +49,11 @@ pub fn dspneta(host: &Host, surface: &mut Surface) -> Option<Result<String, Fail
                 d.set("NETSRVCP", &c);
             }
             "ALRBCKFP" | "ALRRQSFP" => {
-                let net = if k == "ALRBCKFP" { "ALRBCKNET" } else { "ALRRQSNET" };
+                let net = if k == "ALRBCKFP" {
+                    "ALRBCKNET"
+                } else {
+                    "ALRRQSNET"
+                };
                 if v == "*NONE" {
                     d.set(k, "");
                     d.set(net, "*NONE");
@@ -92,7 +96,11 @@ pub fn dspsfwrsc(host: &Host, surface: &mut Surface) -> Option<Result<String, Fa
     loop {
         match d.show(surface, panel) {
             Ok(Response::Return(11)) => {
-                panel = if panel == "DSPSFWRSC" { "DSPSFWLIB" } else { "DSPSFWRSC" };
+                panel = if panel == "DSPSFWRSC" {
+                    "DSPSFWLIB"
+                } else {
+                    "DSPSFWRSC"
+                };
             }
             Ok(Response::Return(19)) => {
                 d.info("CPI9B83", &[crate::panels::licpgm::NOTICES]);

@@ -35,7 +35,9 @@ impl Package {
     /// The statement named `name`.
     #[must_use]
     pub fn stmt(&self, name: &str) -> Option<&PkgStmt> {
-        self.stmts.iter().find(|s| s.name.eq_ignore_ascii_case(name.trim()))
+        self.stmts
+            .iter()
+            .find(|s| s.name.eq_ignore_ascii_case(name.trim()))
     }
 
     /// The statement with this text.
@@ -49,7 +51,11 @@ impl Package {
     /// primary's packages show (`QZB027CC62A9389001`).
     #[must_use]
     pub fn next_name(&self) -> String {
-        format!("QZ{:013X}{:03}", self.attr.token & 0x000F_FFFF_FFFF_FFFF, (self.stmts.len() + 1) % 1000)
+        format!(
+            "QZ{:013X}{:03}",
+            self.attr.token & 0x000F_FFFF_FFFF_FFFF,
+            (self.stmts.len() + 1) % 1000
+        )
     }
 }
 
@@ -61,7 +67,15 @@ pub fn find(txn: &mut Txn<'_>, lib: ObjectId, name: Name) -> Result<Option<Objec
 }
 
 /// Make package `name` in `lib` with no statements, owned by `owner`.
-pub fn create(txn: &mut Txn<'_>, lib: ObjectId, name: Name, attr: &PkgAttr, owner: &str, text: &str, now: u64) -> Result<ObjectId> {
+pub fn create(
+    txn: &mut Txn<'_>,
+    lib: ObjectId,
+    name: Name,
+    attr: &PkgAttr,
+    owner: &str,
+    text: &str,
+    now: u64,
+) -> Result<ObjectId> {
     let id = ops::create(
         txn,
         &CreateParams {
@@ -76,7 +90,14 @@ pub fn create(txn: &mut Txn<'_>, lib: ObjectId, name: Name, attr: &PkgAttr, owne
             by_system: false,
         },
     )?;
-    save(txn, id, &Package { attr: attr.clone(), stmts: Vec::new() })?;
+    save(
+        txn,
+        id,
+        &Package {
+            attr: attr.clone(),
+            stmts: Vec::new(),
+        },
+    )?;
     Ok(id)
 }
 
@@ -90,7 +111,10 @@ pub fn load(txn: &mut Txn<'_>, id: ObjectId) -> Result<Package> {
         let (space, _) = Space::load(txn, id)?;
         space.read(txn, 0, usize::try_from(len).expect("fits"))?
     };
-    Ok(Package { attr, stmts: PkgStmt::decode_all(&bytes, count)? })
+    Ok(Package {
+        attr,
+        stmts: PkgStmt::decode_all(&bytes, count)?,
+    })
 }
 
 /// Write `pkg` as package `id`'s contents.
@@ -102,7 +126,12 @@ pub fn save(txn: &mut Txn<'_>, id: ObjectId, pkg: &Package) -> Result<()> {
         space.write_relocating(txn, 0, &body)?;
     }
     let (page, _) = ops::read_header(txn, id)?;
-    ops::write_attr(txn, page, 0, &pkg.attr.encode(pkg.stmts.len(), body.len() as u64))?;
+    ops::write_attr(
+        txn,
+        page,
+        0,
+        &pkg.attr.encode(pkg.stmts.len(), body.len() as u64),
+    )?;
     Ok(())
 }
 
@@ -128,18 +157,36 @@ mod tests {
             cols: vec![1, 2, 3],
             markers: vec![4, 5],
         };
-        let t = PkgStmt { name: "S2".into(), section: 2, text: "DECLARE C2 CURSOR FOR S2".into(), ..PkgStmt::default() };
+        let t = PkgStmt {
+            name: "S2".into(),
+            section: 2,
+            text: "DECLARE C2 CURSOR FOR S2".into(),
+            ..PkgStmt::default()
+        };
         let mut b = s.encode();
         b.extend(t.encode());
         assert_eq!(PkgStmt::decode_all(&b, 2).unwrap(), vec![s, t]);
-        let a = PkgAttr { kind: PkgKind::Bound, sql_naming: true, commit: 2, token: 77, default_collection: "QSTEST".into(), ..PkgAttr::default() };
+        let a = PkgAttr {
+            kind: PkgKind::Bound,
+            sql_naming: true,
+            commit: 2,
+            token: 77,
+            default_collection: "QSTEST".into(),
+            ..PkgAttr::default()
+        };
         let (back, n, len) = PkgAttr::decode(&a.encode(2, b.len() as u64)).unwrap();
         assert_eq!((back, n, len), (a, 2, b.len() as u64));
     }
 
     #[test]
     fn names_follow_the_primary() {
-        let p = Package { attr: PkgAttr { token: 0x000B_027C_C62A_9389_u64, ..PkgAttr::default() }, stmts: Vec::new() };
+        let p = Package {
+            attr: PkgAttr {
+                token: 0x000B_027C_C62A_9389_u64,
+                ..PkgAttr::default()
+            },
+            stmts: Vec::new(),
+        };
         assert_eq!(p.next_name(), "QZB027CC62A9389001");
     }
 }

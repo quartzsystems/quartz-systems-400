@@ -23,7 +23,9 @@ use super::done;
 use crate::ipl::system::{System, now_unix};
 use crate::stgsvc::spool::with_store;
 
-const MONTHS: [&str; 12] = ["*JAN", "*FEB", "*MAR", "*APR", "*MAY", "*JUN", "*JUL", "*AUG", "*SEP", "*OCT", "*NOV", "*DEC"];
+const MONTHS: [&str; 12] = [
+    "*JAN", "*FEB", "*MAR", "*APR", "*MAY", "*JUN", "*JUL", "*AUG", "*SEP", "*OCT", "*NOV", "*DEC",
+];
 const DAYS: [&str; 7] = ["*SUN", "*MON", "*TUE", "*WED", "*THU", "*FRI", "*SAT"];
 /// `*SAME` of the numeric parameters.
 const SAME: i64 = 9999;
@@ -34,7 +36,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CRTTIMZON" => crt(system, parms),
         "CHGTIMZON" => chg(system, parms),
         "DLTTIMZON" => dlt(system, parms),
-        "WRKTIMZON" => Ok(CmdReply { text: listing(system, &parms.name("TIMZON")), ..CmdReply::default() }),
+        "WRKTIMZON" => Ok(CmdReply {
+            text: listing(system, &parms.name("TIMZON")),
+            ..CmdReply::default()
+        }),
         _ => return None,
     };
     Some(r.unwrap_or_else(|e| *e))
@@ -44,20 +49,26 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 fn fail(msgid: &str, fields: &[(&str, usize)]) -> Box<CmdReply> {
     Box::new(CmdReply {
         text: String::new(),
-        escape: Some(CmdMsg { msgid: msgid.into(), kind: 7, data: cmd::error::data(fields) }),
+        escape: Some(CmdMsg {
+            msgid: msgid.into(),
+            kind: 7,
+            data: cmd::error::data(fields),
+        }),
         ..CmdReply::default()
     })
 }
 
 fn not_found(name: &str) -> Box<CmdReply> {
-    fail(
-        "CPF2105",
-        &[(name, 10), ("QSYS", 10), ("*TIMZON", 10)],
-    )
+    fail("CPF2105", &[(name, 10), ("QSYS", 10), ("*TIMZON", 10)])
 }
 
 fn text_of(v: Option<&Value>) -> Option<String> {
-    v.map(|v| v.text().map_or_else(|| v.source(), str::to_string).trim_end().to_string())
+    v.map(|v| {
+        v.text()
+            .map_or_else(|| v.source(), str::to_string)
+            .trim_end()
+            .to_string()
+    })
 }
 
 fn int_of(v: Option<&Value>) -> Option<i64> {
@@ -72,20 +83,37 @@ fn int_of(v: Option<&Value>) -> Option<i64> {
 /// `*SAME` or when not given.
 fn edge(parms: &Parms, kwd: &str) -> Result<Option<Edge>, Box<CmdReply>> {
     let elems = parms.elems(kwd);
-    if elems.is_empty() || matches!(elems.as_slice(), [Some(Value::Char(v))] if v.eq_ignore_ascii_case("*SAME")) {
+    if elems.is_empty()
+        || matches!(elems.as_slice(), [Some(Value::Char(v))] if v.eq_ignore_ascii_case("*SAME"))
+    {
         return Ok(None);
     }
     let bad = || fail("CPD0072", &[(kwd, 10)]);
-    let get = |i: usize| elems.get(i).copied().flatten().and_then(|v| text_of(Some(v))).map(|v| v.to_ascii_uppercase());
+    let get = |i: usize| {
+        elems
+            .get(i)
+            .copied()
+            .flatten()
+            .and_then(|v| text_of(Some(v)))
+            .map(|v| v.to_ascii_uppercase())
+    };
     let (Some(mon), Some(day), Some(rel), Some(time)) = (get(0), get(1), get(2), get(3)) else {
         return Err(bad());
     };
     let month = MONTHS.iter().position(|x| *x == mon).ok_or_else(bad)?;
     let weekday = DAYS.iter().position(|x| *x == day).ok_or_else(bad)?;
-    let week: u8 = if rel == "*LAST" { 5 } else { rel.parse().map_err(|_| bad())? };
+    let week: u8 = if rel == "*LAST" {
+        5
+    } else {
+        rel.parse().map_err(|_| bad())?
+    };
     let digits: String = time.chars().filter(char::is_ascii_digit).collect();
     let num: u32 = digits.parse().map_err(|_| bad())?;
-    let (hh, mm, ss) = if digits.len() <= 4 { (num / 100, num % 100, 0) } else { (num / 10_000, num / 100 % 100, num % 100) };
+    let (hh, mm, ss) = if digits.len() <= 4 {
+        (num / 100, num % 100, 0)
+    } else {
+        (num / 10_000, num / 100 % 100, num % 100)
+    };
     if hh > 23 || mm > 59 || ss > 59 {
         return Err(bad());
     }
@@ -100,7 +128,12 @@ fn edge(parms: &Parms, kwd: &str) -> Result<Option<Edge>, Box<CmdReply>> {
 /// `UTC-05:00S`: the generated abbreviation of an offset.
 fn generated(offset: i32, dst: bool) -> String {
     let sign = if offset < 0 { '-' } else { '+' };
-    format!("UTC{sign}{:02}:{:02}{}", offset.abs() / 60, offset.abs() % 60, if dst { 'D' } else { 'S' })
+    format!(
+        "UTC{sign}{:02}:{:02}{}",
+        offset.abs() / 60,
+        offset.abs() % 60,
+        if dst { 'D' } else { 'S' }
+    )
 }
 
 /// The names a message gives: its text as the full name, the
@@ -123,10 +156,24 @@ fn from_msg(system: &mut System, msgid: &str, dst: bool) -> (String, String) {
 }
 
 /// Apply `STDNAME`/`DSTNAME` and their messages to `z`.
-fn names(system: &mut System, parms: &Parms, z: &mut Zone, create: bool) -> Result<(), Box<CmdReply>> {
+fn names(
+    system: &mut System,
+    parms: &Parms,
+    z: &mut Zone,
+    create: bool,
+) -> Result<(), Box<CmdReply>> {
     let std = parms.elems("STDNAME");
-    let (abbr, full) = (text_of(std.first().copied().flatten()), text_of(std.get(1).copied().flatten()));
-    let abbr = abbr.unwrap_or_else(|| if create { "*GEN".into() } else { "*SAME".into() });
+    let (abbr, full) = (
+        text_of(std.first().copied().flatten()),
+        text_of(std.get(1).copied().flatten()),
+    );
+    let abbr = abbr.unwrap_or_else(|| {
+        if create {
+            "*GEN".into()
+        } else {
+            "*SAME".into()
+        }
+    });
     match abbr.to_ascii_uppercase().as_str() {
         "*SAME" => {}
         "*GEN" => {
@@ -153,8 +200,17 @@ fn names(system: &mut System, parms: &Parms, z: &mut Zone, create: bool) -> Resu
         }
     }
     let dst = parms.elems("DSTNAME");
-    let (abbr, full) = (text_of(dst.first().copied().flatten()), text_of(dst.get(1).copied().flatten()));
-    let abbr = abbr.unwrap_or_else(|| if create { "*NONE".into() } else { "*SAME".into() });
+    let (abbr, full) = (
+        text_of(dst.first().copied().flatten()),
+        text_of(dst.get(1).copied().flatten()),
+    );
+    let abbr = abbr.unwrap_or_else(|| {
+        if create {
+            "*NONE".into()
+        } else {
+            "*SAME".into()
+        }
+    });
     match abbr.to_ascii_uppercase().as_str() {
         "*SAME" => {}
         "*NONE" => {
@@ -183,7 +239,14 @@ fn names(system: &mut System, parms: &Parms, z: &mut Zone, create: bool) -> Resu
     }
     let (m, l) = parms.qual("MSGF");
     if !m.is_empty() && !m.eq_ignore_ascii_case("*SAME") {
-        z.msgf = (m.to_ascii_uppercase(), if l.is_empty() { "*LIBL".into() } else { l.to_ascii_uppercase() });
+        z.msgf = (
+            m.to_ascii_uppercase(),
+            if l.is_empty() {
+                "*LIBL".into()
+            } else {
+                l.to_ascii_uppercase()
+            },
+        );
     }
     Ok(())
 }
@@ -198,11 +261,19 @@ fn rule(parms: &Parms, z: &mut Zone) -> Result<(), Box<CmdReply>> {
     let end = edge(parms, "DSTEND")?;
     let shift = int_of(parms.get("DSTSHIFT")).filter(|s| *s != SAME);
     let old = z.dst;
-    let (Some(start), Some(end)) = (start.or(old.map(|r| r.start)), end.or(old.map(|r| r.end))) else {
-        let kwd = if start.is_none() && old.is_none() { "DSTSTR" } else { "DSTEND" };
+    let (Some(start), Some(end)) = (start.or(old.map(|r| r.start)), end.or(old.map(|r| r.end)))
+    else {
+        let kwd = if start.is_none() && old.is_none() {
+            "DSTSTR"
+        } else {
+            "DSTEND"
+        };
         return Err(fail("CPD0072", &[(kwd, 10)]));
     };
-    let shift = shift.map_or_else(|| old.map_or(60, |r| r.shift), |s| u16::try_from(s).unwrap_or(60));
+    let shift = shift.map_or_else(
+        || old.map_or(60, |r| r.shift),
+        |s| u16::try_from(s).unwrap_or(60),
+    );
     z.dst = Some(DstRule { start, end, shift });
     Ok(())
 }
@@ -211,7 +282,11 @@ fn rule(parms: &Parms, z: &mut Zone) -> Result<(), Box<CmdReply>> {
 fn rest(parms: &Parms, z: &mut Zone) {
     let t = parms.text("TEXT");
     if parms.get("TEXT").is_some() && !t.eq_ignore_ascii_case("*SAME") {
-        z.text = if t.eq_ignore_ascii_case("*BLANK") { String::new() } else { t };
+        z.text = if t.eq_ignore_ascii_case("*BLANK") {
+            String::new()
+        } else {
+            t
+        };
     }
     if let Some(y) = int_of(parms.get("YEAROFS")).filter(|y| *y != SAME) {
         z.year_offset = i16::try_from(y).unwrap_or(0);
@@ -247,26 +322,56 @@ fn crt(system: &mut System, parms: &Parms) -> Result<CmdReply, Box<CmdReply>> {
     rule(parms, &mut z)?;
     rest(parms, &mut z);
     let n = Name::parse(&name).map_err(|_| fail("CPD0078", &[(&name, 10)]))?;
-    let user = crate::stgsvc::security::actor().map_or_else(|| "QSYS".to_string(), |p| p.user.clone());
+    let user =
+        crate::stgsvc::security::actor().map_or_else(|| "QSYS".to_string(), |p| p.user.clone());
     let made = with_store(system, |txn, qsys| {
         let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
-        if lib.lookup(txn, types::TIMZON, n).map_err(|e| e.to_string())?.is_some() {
+        if lib
+            .lookup(txn, types::TIMZON, n)
+            .map_err(|e| e.to_string())?
+            .is_some()
+        {
             return Ok(false);
         }
-        let stamp = wm::obj::Stamp { owner: user, system: "QS400".into(), now: now_unix() };
-        wm::obj::create(txn, qsys, n, types::TIMZON, &z.text, &stamp, &wm::obj::timzon::encode(&z))
-            .map_err(|e| e.to_string())?;
+        let stamp = wm::obj::Stamp {
+            owner: user,
+            system: "QS400".into(),
+            now: now_unix(),
+        };
+        wm::obj::create(
+            txn,
+            qsys,
+            n,
+            types::TIMZON,
+            &z.text,
+            &stamp,
+            &wm::obj::timzon::encode(&z),
+        )
+        .map_err(|e| e.to_string())?;
         Ok(true)
     })
     .map_err(|e| Box::new(super::check("CRTTIMZON", &e)))?;
     if !made {
         let what = ccsid::to_ebcdic(&name).unwrap_or_default();
-        let mut data = u16::try_from(what.len()).unwrap_or(0).to_be_bytes().to_vec();
+        let mut data = u16::try_from(what.len())
+            .unwrap_or(0)
+            .to_be_bytes()
+            .to_vec();
         data.extend(what);
-        return Err(Box::new(CmdReply { escape: Some(CmdMsg { msgid: "CPF2112".into(), kind: 7, data }), ..CmdReply::default() }));
+        return Err(Box::new(CmdReply {
+            escape: Some(CmdMsg {
+                msgid: "CPF2112".into(),
+                kind: 7,
+                data,
+            }),
+            ..CmdReply::default()
+        }));
     }
     crate::stgsvc::timzon::reload(system);
-    Ok(CmdReply { text: txt(system, "TXT0E19", &[&name]) + "\n", ..CmdReply::default() })
+    Ok(CmdReply {
+        text: txt(system, "TXT0E19", &[&name]) + "\n",
+        ..CmdReply::default()
+    })
 }
 
 fn chg(system: &mut System, parms: &Parms) -> Result<CmdReply, Box<CmdReply>> {
@@ -288,13 +393,19 @@ fn chg(system: &mut System, parms: &Parms) -> Result<CmdReply, Box<CmdReply>> {
     let n = Name::parse(&name).map_err(|_| fail("CPD0078", &[(&name, 10)]))?;
     with_store(system, |txn, qsys| {
         let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
-        let id = lib.lookup(txn, types::TIMZON, n).map_err(|e| e.to_string())?.ok_or("gone")?;
+        let id = lib
+            .lookup(txn, types::TIMZON, n)
+            .map_err(|e| e.to_string())?
+            .ok_or("gone")?;
         wm::obj::write(txn, id, &payload).map_err(|e| e.to_string())?;
         ops::change_text(txn, id, &text, now_unix()).map_err(|e| e.to_string())
     })
     .map_err(|_| not_found(&name))?;
     crate::stgsvc::timzon::reload(system);
-    Ok(CmdReply { text: txt(system, "TXT0E1A", &[&name]) + "\n", ..CmdReply::default() })
+    Ok(CmdReply {
+        text: txt(system, "TXT0E1A", &[&name]) + "\n",
+        ..CmdReply::default()
+    })
 }
 
 fn dlt(system: &mut System, parms: &Parms) -> Result<CmdReply, Box<CmdReply>> {
@@ -314,9 +425,14 @@ fn dlt(system: &mut System, parms: &Parms) -> Result<CmdReply, Box<CmdReply>> {
         let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
         let mut deleted = Vec::new();
         let mut kept = Vec::new();
-        for (k, id) in lib.list(txn, Some(types::TIMZON)).map_err(|e| e.to_string())? {
+        for (k, id) in lib
+            .list(txn, Some(types::TIMZON))
+            .map_err(|e| e.to_string())?
+        {
             let n = k.name.to_string();
-            let hit = prefix.as_ref().map_or(n == name, |p| n.starts_with(p.as_str()));
+            let hit = prefix
+                .as_ref()
+                .map_or(n == name, |p| n.starts_with(p.as_str()));
             if !hit {
                 continue;
             }
@@ -347,12 +463,27 @@ fn dlt(system: &mut System, parms: &Parms) -> Result<CmdReply, Box<CmdReply>> {
         let mut data = d.to_be_bytes().to_vec();
         data.extend_from_slice(&k.to_be_bytes());
         data.extend(cmd::error::data(&[("TIMZON", 7)]));
-        return Err(Box::new(CmdReply { text, escape: Some(CmdMsg { msgid: "CPF2117".into(), kind: 7, data }), ..CmdReply::default() }));
+        return Err(Box::new(CmdReply {
+            text,
+            escape: Some(CmdMsg {
+                msgid: "CPF2117".into(),
+                kind: 7,
+                data,
+            }),
+            ..CmdReply::default()
+        }));
     }
     if let [one] = deleted.as_slice() {
-        return Ok(done(text, "CPC2191", &[(one, 10), ("QSYS", 10), ("*TIMZON", 10)]));
+        return Ok(done(
+            text,
+            "CPC2191",
+            &[(one, 10), ("QSYS", 10), ("*TIMZON", 10)],
+        ));
     }
-    Ok(CmdReply { text, ..CmdReply::default() })
+    Ok(CmdReply {
+        text,
+        ..CmdReply::default()
+    })
 }
 
 /// One description from the store.
@@ -360,7 +491,10 @@ fn load(system: &mut System, name: &str) -> Option<Zone> {
     let n = Name::parse(name).ok()?;
     with_store(system, |txn, qsys| {
         let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
-        let id = lib.lookup(txn, types::TIMZON, n).map_err(|e| e.to_string())?.ok_or("missing")?;
+        let id = lib
+            .lookup(txn, types::TIMZON, n)
+            .map_err(|e| e.to_string())?
+            .ok_or("missing")?;
         let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
         wm::obj::timzon::decode(name, &b).map_err(|e| e.to_string())
     })
@@ -377,7 +511,11 @@ pub fn override_values(system: &mut System, key: &str) -> String {
         return String::new();
     };
     let q = |s: &str| format!("'{}'", s.replace('\'', "''"));
-    let std = if z.std_msg.is_empty() { format!("({} {})", q(&z.std_abbr), q(&z.std_full)) } else { "(*MSG)".into() };
+    let std = if z.std_msg.is_empty() {
+        format!("({} {})", q(&z.std_abbr), q(&z.std_full))
+    } else {
+        "(*MSG)".into()
+    };
     let dst = if z.dst_abbr.is_empty() {
         "(*NONE)".to_string()
     } else if z.dst_msg.is_empty() {
@@ -394,7 +532,11 @@ pub fn override_values(system: &mut System, key: &str) -> String {
     }
     if let Some(r) = z.dst {
         for (k, e) in [("DSTSTR", r.start), ("DSTEND", r.end)] {
-            let week = if e.week >= 5 { "*LAST".to_string() } else { e.week.to_string() };
+            let week = if e.week >= 5 {
+                "*LAST".to_string()
+            } else {
+                e.week.to_string()
+            };
             let _ = write!(
                 s,
                 " {k}({} {} {week} '{:02}:{:02}:{:02}')",
@@ -407,7 +549,16 @@ pub fn override_values(system: &mut System, key: &str) -> String {
         }
         let _ = write!(s, " DSTSHIFT({})", r.shift);
     }
-    let _ = write!(s, " TEXT({}) YEAROFS({})", if z.text.is_empty() { "*BLANK".into() } else { q(&z.text) }, z.year_offset);
+    let _ = write!(
+        s,
+        " TEXT({}) YEAROFS({})",
+        if z.text.is_empty() {
+            "*BLANK".into()
+        } else {
+            q(&z.text)
+        },
+        z.year_offset
+    );
     if !z.alt.is_empty() {
         let _ = write!(s, " ALTNAME({})", q(&z.alt));
     }
@@ -453,7 +604,11 @@ fn offset_text(min: i32) -> String {
 }
 
 fn current_name(system: &System) -> String {
-    system.sysvals.as_ref().map(sysval::SysVals::zone_name).unwrap_or_default()
+    system
+        .sysvals
+        .as_ref()
+        .map(sysval::SysVals::zone_name)
+        .unwrap_or_default()
 }
 
 /// `WRKTIMZON`'s list (`QSTIMZON`'s `ZONES`): the descriptions a name
@@ -472,7 +627,14 @@ pub fn list_panel(system: &mut System, filter: &str) -> stg::proto::PanelData {
         .map(|z| {
             [
                 ("OFFSET", offset_text(z.offset)),
-                ("MARK", if z.name == current { ">".to_string() } else { String::new() }),
+                (
+                    "MARK",
+                    if z.name == current {
+                        ">".to_string()
+                    } else {
+                        String::new()
+                    },
+                ),
                 ("TIMZON", z.name.clone()),
                 ("ABBR", z.std_abbr.clone()),
                 ("FULL", z.std_full.clone()),
@@ -500,7 +662,10 @@ fn word(system: &mut System, base: u32, n: usize) -> String {
 /// with daylight saving time, `DSPTZN` without).
 fn detail_vars(system: &mut System, z: &Zone) -> Vec<(String, String)> {
     let mut v = vec![
-        ("PANEL", if z.dst.is_some() { "DSPTZ" } else { "DSPTZN" }.to_string()),
+        (
+            "PANEL",
+            if z.dst.is_some() { "DSPTZ" } else { "DSPTZN" }.to_string(),
+        ),
         ("ZONE", z.name.clone()),
         ("ZOFFSET", offset_text(z.offset)),
         ("STDFULL", z.std_full.clone()),
@@ -516,11 +681,28 @@ fn detail_vars(system: &mut System, z: &Zone) -> Vec<(String, String)> {
         ("ZTEXT", z.text.clone()),
     ];
     if let Some(r) = z.dst {
-        for (keys, e) in [(["SMONTH", "SDAY", "SREL", "STIME"], r.start), (["EMONTH", "EDAY", "EREL", "ETIME"], r.end)] {
-            v.push((keys[0], word(system, 0x01, usize::from(e.month.clamp(1, 12) - 1))));
+        for (keys, e) in [
+            (["SMONTH", "SDAY", "SREL", "STIME"], r.start),
+            (["EMONTH", "EDAY", "EREL", "ETIME"], r.end),
+        ] {
+            v.push((
+                keys[0],
+                word(system, 0x01, usize::from(e.month.clamp(1, 12) - 1)),
+            ));
             v.push((keys[1], word(system, 0x0D, usize::from(e.weekday % 7))));
-            v.push((keys[2], word(system, 0x14, usize::from(e.week.clamp(1, 5) - 1))));
-            v.push((keys[3], format!("{:02}:{:02}:{:02}", e.secs / 3600, e.secs % 3600 / 60, e.secs % 60)));
+            v.push((
+                keys[2],
+                word(system, 0x14, usize::from(e.week.clamp(1, 5) - 1)),
+            ));
+            v.push((
+                keys[3],
+                format!(
+                    "{:02}:{:02}:{:02}",
+                    e.secs / 3600,
+                    e.secs % 3600 / 60,
+                    e.secs % 60
+                ),
+            ));
         }
         v.push(("SHIFT", r.shift.to_string()));
     }
@@ -542,19 +724,52 @@ pub fn detail_panel(system: &mut System, name: &str) -> Result<stg::proto::Panel
 pub fn print_panel(system: &mut System, name: &str) -> Result<stg::proto::PanelData, String> {
     let z = load(system, name).ok_or_else(|| missing(name))?;
     let vars = detail_vars(system, &z);
-    let get = |k: &str| vars.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
+    let get = |k: &str| {
+        vars.iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    };
     let label = |system: &mut System, id: &str| format!("  {:<30}:", txt(system, id, &[]));
-    let mut lines = vec![format!("{} {}", txt(system, "TXT0E1E", &[]), z.name), String::new()];
+    let mut lines = vec![
+        format!("{} {}", txt(system, "TXT0E1E", &[]), z.name),
+        String::new(),
+    ];
     lines.push(format!("{}   {}", label(system, "TXT0E1F"), get("ZOFFSET")));
-    lines.push(format!("{}   {}  {}  {}", label(system, "TXT0E20"), get("STDABBR"), get("STDFULL"), get("STDMSG")));
+    lines.push(format!(
+        "{}   {}  {}  {}",
+        label(system, "TXT0E20"),
+        get("STDABBR"),
+        get("STDFULL"),
+        get("STDMSG")
+    ));
     if z.dst.is_some() {
-        lines.push(format!("{}   {}  {}  {}", label(system, "TXT0E21"), get("DSTABBR"), get("DSTFULL"), get("DSTMSG")));
-        let edge = |p: &str| format!("{} {} {} {}", get(&format!("{p}MONTH")), get(&format!("{p}DAY")), get(&format!("{p}REL")), get(&format!("{p}TIME")));
+        lines.push(format!(
+            "{}   {}  {}  {}",
+            label(system, "TXT0E21"),
+            get("DSTABBR"),
+            get("DSTFULL"),
+            get("DSTMSG")
+        ));
+        let edge = |p: &str| {
+            format!(
+                "{} {} {} {}",
+                get(&format!("{p}MONTH")),
+                get(&format!("{p}DAY")),
+                get(&format!("{p}REL")),
+                get(&format!("{p}TIME"))
+            )
+        };
         lines.push(format!("{}   {}", label(system, "TXT0E22"), edge("S")));
         lines.push(format!("{}   {}", label(system, "TXT0E23"), edge("E")));
         lines.push(format!("{}   {}", label(system, "TXT0E24"), get("SHIFT")));
     }
-    lines.push(format!("{}   {}/{}", label(system, "TXT0E25"), get("MSGFLIB"), get("MSGF")));
+    lines.push(format!(
+        "{}   {}/{}",
+        label(system, "TXT0E25"),
+        get("MSGFLIB"),
+        get("MSGF")
+    ));
     lines.push(format!("{}   {}", label(system, "TXT0E26"), get("YEAROFS")));
     lines.push(format!("{}   {}", label(system, "TXT0E27"), get("ALTNAME")));
     lines.push(format!("{}   {}", label(system, "TXT0E28"), get("ZTEXT")));

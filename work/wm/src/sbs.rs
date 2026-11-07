@@ -49,7 +49,11 @@ pub struct SbsState {
     pub keep: Option<u32>,
 }
 
-wire_struct!(SbsState { ending, end_jobs, keep });
+wire_struct!(SbsState {
+    ending,
+    end_jobs,
+    keep
+});
 
 /// A storage pool.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

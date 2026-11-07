@@ -15,7 +15,13 @@ fn member(n: u32) -> Buffer {
 }
 
 fn session(n: u32) -> Session {
-    let mut s = Session::new(Mode::Edit, member(n), "", ("MYLIB", "QDDSSRC", "MBR"), 261023);
+    let mut s = Session::new(
+        Mode::Edit,
+        member(n),
+        "",
+        ("MYLIB", "QDDSSRC", "MBR"),
+        261023,
+    );
     let _ = s.view();
     s
 }
@@ -49,7 +55,11 @@ fn line_cmd(s: &mut Session, cmds: &[(usize, &str)]) -> Action {
 }
 
 fn data(s: &Session) -> Vec<String> {
-    s.buf.records().iter().map(|r| r.data.trim().to_string()).collect()
+    s.buf
+        .records()
+        .iter()
+        .map(|r| r.data.trim().to_string())
+        .collect()
 }
 
 #[test]
@@ -117,7 +127,18 @@ fn block_pending_then_done() {
     assert!(s.message.is_some());
     line_cmd(&mut s, &[(6, "cc"), (8, "a")]);
     assert!(s.pending.is_empty());
-    assert_eq!(data(&s), ["A            F1", "A            F2", "A            F3", "A            F4", "A            F1", "A            F2", "A            F5"]);
+    assert_eq!(
+        data(&s),
+        [
+            "A            F1",
+            "A            F2",
+            "A            F3",
+            "A            F4",
+            "A            F1",
+            "A            F2",
+            "A            F5"
+        ]
+    );
 }
 
 #[test]
@@ -191,7 +212,10 @@ fn command_line() {
     };
     s.key(Key::Enter, &input("find F25"));
     let m = s.message.clone().unwrap();
-    assert_eq!((m.id.as_str(), m.data.as_slice()), ("EDT1619", &["F25".to_string()][..]));
+    assert_eq!(
+        (m.id.as_str(), m.data.as_slice()),
+        ("EDT1619", &["F25".to_string()][..])
+    );
     let v = s.view();
     assert!(v.rows.iter().any(|r| r.data.contains("F25")));
     s.key(Key::Enter, &input("find zzzz"));
@@ -246,7 +270,13 @@ fn roll_and_shift() {
 #[test]
 fn rpg_window_and_dates() {
     let b = Buffer::new(100, vec![(1, 0, "     D*** x".into())]);
-    let mut s = Session::new(Mode::Browse, b, "RPGLE", ("QSYSINC", "QRPGLESRC", "QUSEC"), 0);
+    let mut s = Session::new(
+        Mode::Browse,
+        b,
+        "RPGLE",
+        ("QSYSINC", "QRPGLESRC", "QUSEC"),
+        0,
+    );
     let v = s.view();
     assert_eq!(v.header.columns, "    6  76");
     assert_eq!(v.header.fmt_label, "FMT * ");
@@ -280,9 +310,21 @@ fn keys_and_actions() {
         ..Input::default()
     };
     let _ = s.view();
-    assert_eq!(s.key(Key::F(23), &at_record), Action::SelectPrompt(Target::Rec(1)));
+    assert_eq!(
+        s.key(Key::F(23), &at_record),
+        Action::SelectPrompt(Target::Rec(1))
+    );
     let _ = s.view();
-    assert_eq!(s.key(Key::F(4), &Input { cursor: (4, 20), ..Input::default() }), Action::Show);
+    assert_eq!(
+        s.key(
+            Key::F(4),
+            &Input {
+                cursor: (4, 20),
+                ..Input::default()
+            }
+        ),
+        Action::Show
+    );
     assert!(s.message.is_some());
 }
 
@@ -299,11 +341,20 @@ fn fixed_form_prompt() {
     assert_eq!(s.body_rows(), 7);
     let v = s.view();
     let p = v.prompt.unwrap();
-    assert_eq!((p.top, p.format.as_str(), p.seq.as_str()), (11, "DP", "0003.00"));
+    assert_eq!(
+        (p.top, p.format.as_str(), p.seq.as_str()),
+        (11, "DP", "0003.00")
+    );
     let mut fields: Vec<String> = p.fields.iter().map(|f| f.3.clone()).collect();
     assert_eq!(fields[3].trim(), "F3");
     fields[3] = "NAME".into();
-    s.key(Key::Enter, &Input { prompt: fields, ..Input::default() });
+    s.key(
+        Key::Enter,
+        &Input {
+            prompt: fields,
+            ..Input::default()
+        },
+    );
     assert!(s.prompt.is_none());
     assert_eq!(s.buf.records()[2].data, "     A            NAME");
 }
@@ -317,9 +368,21 @@ fn insert_with_prompt_continues() {
     let p = s.prompt.clone().unwrap();
     assert_eq!(p.format, "C");
     let v = s.view();
-    let mut fields: Vec<String> = v.prompt.unwrap().fields.iter().map(|f| f.3.clone()).collect();
+    let mut fields: Vec<String> = v
+        .prompt
+        .unwrap()
+        .fields
+        .iter()
+        .map(|f| f.3.clone())
+        .collect();
     fields[3] = "EVAL".into();
-    s.key(Key::Enter, &Input { prompt: fields, ..Input::default() });
+    s.key(
+        Key::Enter,
+        &Input {
+            prompt: fields,
+            ..Input::default()
+        },
+    );
     assert_eq!(s.buf.len(), 3);
     assert!(matches!(s.prompt.as_ref().unwrap().target, Target::Ins(_)));
     s.key(Key::F(12), &Input::default());
@@ -329,15 +392,33 @@ fn insert_with_prompt_continues() {
 
 #[test]
 fn cl_lines_go_to_the_command_prompter() {
-    let mut s = Session::new(Mode::Edit, Buffer::new(80, vec![(100, 0, "             DSPLIB".into())]), "CLP", ("L", "F", "M"), 0);
+    let mut s = Session::new(
+        Mode::Edit,
+        Buffer::new(80, vec![(100, 0, "             DSPLIB".into())]),
+        "CLP",
+        ("L", "F", "M"),
+        0,
+    );
     let _ = s.view();
-    let a = s.key(Key::F(4), &Input { cursor: (5, 20), ..Input::default() });
+    let a = s.key(
+        Key::F(4),
+        &Input {
+            cursor: (5, 20),
+            ..Input::default()
+        },
+    );
     assert!(matches!(a, Action::ClPrompt(Target::Rec(_), ref t) if t.contains("DSPLIB")));
 }
 
 #[test]
 fn prompt_a_line_just_typed() {
-    let mut s = Session::new(Mode::Edit, Buffer::new(80, vec![(100, 0, "PGM".into())]), "CLP", ("L", "F", "M"), 0);
+    let mut s = Session::new(
+        Mode::Edit,
+        Buffer::new(80, vec![(100, 0, "PGM".into())]),
+        "CLP",
+        ("L", "F", "M"),
+        0,
+    );
     let _ = s.view();
     line_cmd(&mut s, &[(5, "i")]);
     let mut input = Input {
@@ -347,7 +428,10 @@ fn prompt_a_line_just_typed() {
     };
     input.rows[2].data = "             dsplib".into();
     let a = s.key(Key::F(4), &input);
-    assert!(matches!(a, Action::ClPrompt(Target::Rec(_), ref t) if t.contains("DSPLIB")), "{a:?}");
+    assert!(
+        matches!(a, Action::ClPrompt(Target::Rec(_), ref t) if t.contains("DSPLIB")),
+        "{a:?}"
+    );
 }
 
 #[test]

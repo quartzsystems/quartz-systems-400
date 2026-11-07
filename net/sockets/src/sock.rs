@@ -173,7 +173,10 @@ impl Sockets {
             && matches!(info.family, AF_INET | AF_INET6)
             && let Err(e) = sys::set_mark(fd, mark)
         {
-            tracing::warn!(?e, "SO_MARK not set: the port backstop will drop this socket's traffic on restricted ports");
+            tracing::warn!(
+                ?e,
+                "SO_MARK not set: the port backstop will drop this socket's traffic on restricted ports"
+            );
         }
         Ok(())
     }
@@ -210,7 +213,9 @@ impl Sockets {
 
     /// `sendmsg()`, `writev()`.
     pub fn sendv(&self, k: i32, bufs: &[&[u8]], flags: i32, to: Option<&SockAddr>) -> R<usize> {
-        let ka = to.map(|a| self.ifs_to_kernel(a, UnixUse::Connect)).transpose()?;
+        let ka = to
+            .map(|a| self.ifs_to_kernel(a, UnixUse::Connect))
+            .transpose()?;
         sys::sendv(self.fd(k)?, bufs, flags, ka.as_ref())
     }
 
@@ -306,7 +311,9 @@ impl Sockets {
         }
         if known.is_empty() {
             if timeout_ms > 0 {
-                std::thread::sleep(std::time::Duration::from_millis(u64::try_from(timeout_ms).unwrap_or(0)));
+                std::thread::sleep(std::time::Duration::from_millis(
+                    u64::try_from(timeout_ms).unwrap_or(0),
+                ));
             }
             return Ok(Vec::new());
         }

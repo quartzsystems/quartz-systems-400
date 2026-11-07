@@ -174,16 +174,31 @@ mod tests {
 
     #[test]
     fn decfloat_text_keeps_the_exponent() {
-        let comma = ImpfOpts { decpnt: ',', ..ImpfOpts::default() };
+        let comma = ImpfOpts {
+            decpnt: ',',
+            ..ImpfOpts::default()
+        };
         for len in [16, 34] {
-            let f = FieldDef::new(qsname::Name::parse("F").unwrap(), DataType::DecFloat, len, 0);
-            for text in ["1.5", "1.50", "1.500", "1E+2", "100", "0", "0.00", "0E+3", "-0", "-1.50", "0.000001", "1E-7"] {
+            let f = FieldDef::new(
+                qsname::Name::parse("F").unwrap(),
+                DataType::DecFloat,
+                len,
+                0,
+            );
+            for text in [
+                "1.5", "1.50", "1.500", "1E+2", "100", "0", "0.00", "0E+3", "-0", "-1.50",
+                "0.000001", "1E-7",
+            ] {
                 let opts = ImpfOpts::default();
                 let v = from::field_value(&f, text, &opts).unwrap();
                 assert!(matches!(v, Value::DecFloat(_)));
                 assert_eq!(to::field_text(&f, &v, &opts), text, "{text} {len}");
                 let local = to::field_text(&f, &v, &comma);
-                assert_eq!(from::field_value(&f, &local, &comma).unwrap(), v, "{text} {len}");
+                assert_eq!(
+                    from::field_value(&f, &local, &comma).unwrap(),
+                    v,
+                    "{text} {len}"
+                );
             }
         }
     }

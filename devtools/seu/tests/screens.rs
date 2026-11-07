@@ -19,8 +19,21 @@ use seu::{Mode, Session};
 use tn5250::screen::ScreenModel;
 
 fn browse_session() -> Session {
-    let b = member(&[("seu-browse", 6), ("seu-browse-pgdn", 6), ("seu-browse-bottom", 5)], 100);
-    let mut s = Session::new(Mode::Browse, b, "RPGLE", ("QSYSINC", "QRPGLESRC", "QUSEC"), 261_023);
+    let b = member(
+        &[
+            ("seu-browse", 6),
+            ("seu-browse-pgdn", 6),
+            ("seu-browse-bottom", 5),
+        ],
+        100,
+    );
+    let mut s = Session::new(
+        Mode::Browse,
+        b,
+        "RPGLE",
+        ("QSYSINC", "QRPGLESRC", "QUSEC"),
+        261_023,
+    );
     let _ = s.view();
     s
 }
@@ -127,7 +140,9 @@ fn seu_edit_messages() {
     let mut s = edit_session();
     key(&mut s, Key::F(16), (2, 9), none);
     compare_rows("seu-edit-f16", &draw(&mut s), 1..=23);
-    key(&mut s, Key::Enter, (2, 9), |i| i.cmdline = "find IID".into());
+    key(&mut s, Key::Enter, (2, 9), |i| {
+        i.cmdline = "find IID".into()
+    });
     compare_rows("seu-edit-find", &draw(&mut s), 1..=3);
     key(&mut s, Key::Enter, (2, 9), |i| i.cmdline = "XYZ".into());
     compare_rows("seu-edit-badcmd", &draw(&mut s), 1..=23);
@@ -199,7 +214,9 @@ fn seu_prompt_rpg() {
         let mut s = edit_session();
         s.set_srctype("RPGLE");
         let _ = s.view();
-        key(&mut s, Key::Enter, (2, 9), |i| seq_on(i, 7, &format!("ip{fmt}")));
+        key(&mut s, Key::Enter, (2, 9), |i| {
+            seq_on(i, 7, &format!("ip{fmt}"))
+        });
         let top = s.view().prompt.expect("a prompt").top;
         compare_rows(golden, &draw(&mut s), top..=23);
         compare_rows(golden, &draw(&mut s), 1..=1);
@@ -271,7 +288,12 @@ fn seu_edit_f21() {
     let mut sc = Screens::new(false);
     sc.show_window(&mut m, &plain_env(), "", None);
     compare("seu-edit-f21", &m);
-    sc.show_window(&mut m, &plain_env(), "strseu srcfile(*curlib/qddssrc) srcmbr(qdfuzzin) option(2)", Some("in use"));
+    sc.show_window(
+        &mut m,
+        &plain_env(),
+        "strseu srcfile(*curlib/qddssrc) srcmbr(qdfuzzin) option(2)",
+        Some("in use"),
+    );
     compare_rows("seu-edit-inuse", &m, 18..=22);
 }
 

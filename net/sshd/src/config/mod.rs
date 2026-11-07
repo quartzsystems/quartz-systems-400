@@ -324,7 +324,10 @@ impl Config {
             let bad = |c: &mut Self| note(c, format!("{kw}: value {v0} not valid; ignored"));
             match kw.as_str() {
                 "match" => {
-                    note(&mut c, "Match blocks are not supported; the rest of the file is ignored".into());
+                    note(
+                        &mut c,
+                        "Match blocks are not supported; the rest of the file is ignored".into(),
+                    );
                     break;
                 }
                 "port" => match v0.parse::<u16>() {
@@ -383,7 +386,10 @@ impl Config {
                     if args.len() < 2 {
                         bad(&mut c);
                     } else if c.subsystems.iter().any(|(n, _)| *n == v0) {
-                        note(&mut c, format!("Subsystem {v0} given twice; the first is used"));
+                        note(
+                            &mut c,
+                            format!("Subsystem {v0} given twice; the first is used"),
+                        );
                     } else {
                         c.subsystems.push((v0.clone(), args[1..].join(" ")));
                     }
@@ -545,7 +551,10 @@ mod tests {
             ["/home/QSTEST/.ssh/authorized_keys", "/etc/keys/QSTEST"]
         );
         assert_eq!(c.allow_users, ["qstest", "bob@10.*"]);
-        assert_eq!(c.subsystem("sftp"), Some("/QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/sftp-server"));
+        assert_eq!(
+            c.subsystem("sftp"),
+            Some("/QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/sftp-server")
+        );
         assert_eq!(c.client_alive_interval, 90);
         assert_eq!(c.max_auth_tries, 3);
         assert_eq!(c.banner.as_deref(), Some("/etc/banner"));

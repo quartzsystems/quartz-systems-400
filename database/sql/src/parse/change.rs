@@ -14,7 +14,12 @@ impl Parser {
         self.expect_word("TRUNCATE")?;
         self.eat_word("TABLE");
         let table = self.object_name()?;
-        let mut t = Truncate { table, reuse: false, restrict_triggers: false, restart_identity: false };
+        let mut t = Truncate {
+            table,
+            reuse: false,
+            restrict_triggers: false,
+            restart_identity: false,
+        };
         loop {
             if self.eat_words(&["DROP", "STORAGE"]) {
                 t.reuse = false;

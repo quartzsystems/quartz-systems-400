@@ -54,7 +54,11 @@ impl Prompt {
     #[must_use]
     pub fn field_len(&self, i: usize) -> usize {
         let f = self.layout.fields[i];
-        let to = if self.layout == FREE { self.width } else { f.to };
+        let to = if self.layout == FREE {
+            self.width
+        } else {
+            f.to
+        };
         if f.from > self.width {
             return 0;
         }
@@ -78,7 +82,10 @@ impl Prompt {
             if len == 0 {
                 continue;
             }
-            let v: Vec<char> = fields.get(i).map(|s| s.chars().collect()).unwrap_or_default();
+            let v: Vec<char> = fields
+                .get(i)
+                .map(|s| s.chars().collect())
+                .unwrap_or_default();
             for k in 0..len {
                 chars[f.from - 1 + k] = v.get(k).copied().unwrap_or(' ');
             }
@@ -100,7 +107,10 @@ mod tests {
         assert_eq!(p.values[6], "A");
         let mut v = p.values.clone();
         v[3] = "NAME".into();
-        assert_eq!(p.record("     A            OP             2A", &v), "     A            NAME           2A");
+        assert_eq!(
+            p.record("     A            OP             2A", &v),
+            "     A            NAME           2A"
+        );
     }
 
     #[test]

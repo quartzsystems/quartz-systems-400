@@ -29,8 +29,7 @@ fn licp0100(
         return Err(ApiError::new("CPF24B4"));
     }
     let pid = char_at(b, 0, 7);
-    let product = ProductId::input(&pid)
-        .map_err(|_| ApiError::new("CPF9E11").text(&pid, 7))?;
+    let product = ProductId::input(&pid).map_err(|_| ApiError::new("CPF9E11").text(&pid, 7))?;
     let rs = char_at(b, 7, 6);
     let release = if rs == "*ONLY" {
         let rels: Vec<Release> = defs

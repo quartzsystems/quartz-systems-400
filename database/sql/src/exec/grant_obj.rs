@@ -24,7 +24,11 @@ use crate::sqlca::Warning;
 
 /// The privileges of a kind.
 fn privileges(kind: &str) -> &'static [&'static str] {
-    if kind == "TYPE" { &["USAGE", "ALTER"] } else { &["READ", "WRITE", "ALTER"] }
+    if kind == "TYPE" {
+        &["USAGE", "ALTER"]
+    } else {
+        &["READ", "WRITE", "ALTER"]
+    }
 }
 
 /// The authorities of a privilege of a kind.
@@ -54,16 +58,39 @@ fn object(txn: &mut Txn<'_>, ctx: &SqlContext, kind: &str, name: &ObjectName) ->
     } else {
         super::var::find(txn, ctx, name)?.map(|f| f.id)
     };
-    found.ok_or_else(|| SqlError::ObjectNotFound { name: name.to_string(), kind: if kind == "TYPE" { "type" } else { "variable" } })
+    found.ok_or_else(|| SqlError::ObjectNotFound {
+        name: name.to_string(),
+        kind: if kind == "TYPE" { "type" } else { "variable" },
+    })
 }
 
 /// `GRANT` (`revoke` false) or `REVOKE` on types or variables.
-pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, g: &Grant, kind: &str, names: &[ObjectName], revoke: bool) -> Result<()> {
+pub fn run(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    g: &Grant,
+    kind: &str,
+    names: &[ObjectName],
+    revoke: bool,
+) -> Result<()> {
     // A privilege the kind has not is a syntax error on the primary.
-    if let Some(p) = g.privileges.iter().find(|p| !p.columns.is_empty() || bits_of(kind, &p.name).is_none()) {
-        return Err(SqlError::Syntax { line: 1, col: 1, found: p.name.clone(), expected: format!("a {} privilege", kind.to_lowercase()) });
+    if let Some(p) = g
+        .privileges
+        .iter()
+        .find(|p| !p.columns.is_empty() || bits_of(kind, &p.name).is_none())
+    {
+        return Err(SqlError::Syntax {
+            line: 1,
+            col: 1,
+            found: p.name.clone(),
+            expected: format!("a {} privilege", kind.to_lowercase()),
+        });
     }
-    let privs: Vec<&str> = if g.all { privileges(kind).to_vec() } else { g.privileges.iter().map(|p| p.name.as_str()).collect() };
+    let privs: Vec<&str> = if g.all {
+        privileges(kind).to_vec()
+    } else {
+        g.privileges.iter().map(|p| p.name.as_str()).collect()
+    };
     for name in names {
         let id = object(txn, ctx, kind, name)?;
         let h = grant::header(txn, id).map_err(sec_err)?;
@@ -72,7 +99,10 @@ pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, g: &Grant, kind: &str, names
             if revoke {
                 revoke_one(txn, ctx, (kind, id), who, &privs, g.all, &name.name.value)?;
             } else {
-                let mut bits = privs.iter().filter_map(|p| bits_of(kind, p)).fold(0, |a, b| a | b);
+                let mut bits = privs
+                    .iter()
+                    .filter_map(|p| bits_of(kind, p))
+                    .fold(0, |a, b| a | b);
                 if g.grant_option {
                     bits |= A::OBJMGT;
                 }
@@ -112,7 +142,11 @@ fn revoke_one(
             left &= !need;
         }
         // `*OBJOPR *EXECUTE` go with the last use of the object.
-        let uses = if kind == "TYPE" { A::EXECUTE } else { A::READ | A::UPD };
+        let uses = if kind == "TYPE" {
+            A::EXECUTE
+        } else {
+            A::READ | A::UPD
+        };
         if left & uses == 0 {
             left &= !(A::OBJOPR | A::EXECUTE);
         }

@@ -28,7 +28,9 @@ pub fn stale(root: &Path) -> Result<Vec<String>> {
     let mut out = Vec::new();
     for (name, src) in cmdhelp::generate(root)? {
         let p = root.join(cmdhelp::OUT_DIR).join(format!("{name}.pnlgrp"));
-        let on_disk = std::fs::read_to_string(&p).unwrap_or_default().replace("\r\n", "\n");
+        let on_disk = std::fs::read_to_string(&p)
+            .unwrap_or_default()
+            .replace("\r\n", "\n");
         if on_disk != src {
             out.push(name);
         }

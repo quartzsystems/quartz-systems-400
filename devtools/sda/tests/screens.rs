@@ -54,8 +54,15 @@ fn sda_strsda() {
 
 #[test]
 fn sda_design_screens() {
-    let m = map(&[("SRCFILE", "QDDSSRC"), ("SRCLIB", "USERNAME1"), ("SRCMBR", "SDAPROBE")]);
-    compare("sda-design-screens", &entry::design_screens(&values(&m), None));
+    let m = map(&[
+        ("SRCFILE", "QDDSSRC"),
+        ("SRCLIB", "USERNAME1"),
+        ("SRCMBR", "SDAPROBE"),
+    ]);
+    compare(
+        "sda-design-screens",
+        &entry::design_screens(&values(&m), None),
+    );
 }
 
 #[test]
@@ -72,7 +79,10 @@ fn sda_test_dspf() {
 
 #[test]
 fn sda_recover() {
-    compare("sda-recover", &entry::recover("SDAPROBE", "QDDSSRC", "USERNAME1", "1"));
+    compare(
+        "sda-recover",
+        &entry::recover("SDAPROBE", "QDDSSRC", "USERNAME1", "1"),
+    );
 }
 
 fn record_rows() -> Vec<records::Row> {
@@ -99,7 +109,10 @@ fn view(text: bool, keys2: bool) -> records::View {
 
 #[test]
 fn sda_records() {
-    compare("sda-records", &records::records(&view(false, false), &record_rows(), ("", ""), None));
+    compare(
+        "sda-records",
+        &records::records(&view(false, false), &record_rows(), ("", ""), None),
+    );
 }
 
 #[test]
@@ -215,7 +228,10 @@ fn sda_fldkwd() {
     let m = member();
     let e = &m.records[0].elements[0];
     let groups = keywords::field_groups(e);
-    assert_eq!(groups, on_page(Level::Field, &["DSPATR", "COLOR", "GENERAL", "TEXT"]));
+    assert_eq!(
+        groups,
+        on_page(Level::Field, &["DSPATR", "COLOR", "GENERAL", "TEXT"])
+    );
     let s = fields::select_keywords(&fields::Head::of(e), &groups, &|_| String::new(), None);
     compare("sda-fldkwd", &s);
 }
@@ -229,7 +245,10 @@ fn sda_fields() {
         .enumerate()
         .map(|(i, e)| fields::Row::of(u32::try_from(i + 1).unwrap() * 10, e, false))
         .collect();
-    compare("sda-fields", &fields::work_with_fields("SCREEN1", &rows, 0, "6", None));
+    compare(
+        "sda-fields",
+        &fields::work_with_fields("SCREEN1", &rows, 0, "6", None),
+    );
 }
 
 #[test]

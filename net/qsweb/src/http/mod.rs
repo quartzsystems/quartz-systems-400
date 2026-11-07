@@ -98,14 +98,17 @@ fn serve_with<C: Read + Write>(
             }
         };
         if req.version != "HTTP/1.1" && req.version != "HTTP/1.0" {
-            let _ = plain(505, "This server speaks HTTP/1.1 and HTTP/1.0.").write(conn, false, false);
+            let _ =
+                plain(505, "This server speaks HTTP/1.1 and HTTP/1.0.").write(conn, false, false);
             return;
         }
         let keep = req.keep_alive() && n < MAX_REQUESTS;
         let head_only = req.method == "HEAD";
         let (mut resp, more) = respond(req);
         if let response::Body::Upgrade(_) = resp.body {
-            let response::Body::Upgrade(run) = std::mem::replace(&mut resp.body, Body::Bytes(Vec::new())) else {
+            let response::Body::Upgrade(run) =
+                std::mem::replace(&mut resp.body, Body::Bytes(Vec::new()))
+            else {
                 return;
             };
             let mut head = format!("HTTP/1.1 101 {}\r\n", response::reason(101));
@@ -113,7 +116,11 @@ fn serve_with<C: Read + Write>(
                 let _ = write!(head, "{k}: {v}\r\n");
             }
             head.push_str("Connection: Upgrade\r\n\r\n");
-            if conn.write_all(head.as_bytes()).and_then(|()| conn.flush()).is_ok() {
+            if conn
+                .write_all(head.as_bytes())
+                .and_then(|()| conn.flush())
+                .is_ok()
+            {
                 // Bytes read past the request are the protocol's.
                 let mut c = Rewind {
                     pre: std::mem::take(&mut pending),
@@ -160,7 +167,11 @@ impl<C: Write> Write for Rewind<'_, C> {
 
 /// A short plain-text answer for requests that never reach a handler.
 pub fn plain(status: u16, says: &str) -> Response {
-    Response::new(status, "text/plain; charset=utf-8", format!("{says}\n").into_bytes())
+    Response::new(
+        status,
+        "text/plain; charset=utf-8",
+        format!("{says}\n").into_bytes(),
+    )
 }
 
 #[cfg(test)]

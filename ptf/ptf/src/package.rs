@@ -9,10 +9,10 @@ use std::collections::BTreeMap;
 use std::io::Cursor;
 
 use ed25519_dalek::SigningKey;
-use savfmt::object::flags;
-use savfmt::{Compression, MediaHeader, ObjectDescriptor, Part, Reader, SaveKind, Scan, Writer};
 use saverst::sign;
 use saverst::{AllowAll, ObjSel, SaveOptions};
+use savfmt::object::flags;
+use savfmt::{Compression, MediaHeader, ObjectDescriptor, Part, Reader, SaveKind, Scan, Writer};
 use store::Store;
 use store::obj::{JobHandle, ObjectId, Signature, ops};
 
@@ -108,14 +108,25 @@ pub fn build(store: &mut Store, qsys: ObjectId, b: &Build<'_>, now: u64) -> Resu
     for (lib, name, ty) in &b.objects {
         let id = {
             let mut t = store.begin()?;
-            let l = ops::find_library(&mut t, qsys, qsname::Name::parse(lib).map_err(|e| Error::NotPtf(e.to_string()))?)?.id;
-            let found = store::obj::library::Library::load(&mut t, l)?
-                .lookup(&mut t, *ty, qsname::Name::parse(name).map_err(|e| Error::NotPtf(e.to_string()))?)?;
+            let l = ops::find_library(
+                &mut t,
+                qsys,
+                qsname::Name::parse(lib).map_err(|e| Error::NotPtf(e.to_string()))?,
+            )?
+            .id;
+            let found = store::obj::library::Library::load(&mut t, l)?.lookup(
+                &mut t,
+                *ty,
+                qsname::Name::parse(name).map_err(|e| Error::NotPtf(e.to_string()))?,
+            )?;
             t.abort();
             found.ok_or_else(|| Error::NotPtf(format!("{lib}/{name} not found")))?
         };
         sign_object(store, id, b.key)?;
-        by_lib.entry(lib.clone()).or_default().push((name.clone(), *ty));
+        by_lib
+            .entry(lib.clone())
+            .or_default()
+            .push((name.clone(), *ty));
     }
     let mut header = b.header.clone();
     header.object_count = u32::try_from(b.objects.len()).expect("objects");
@@ -240,7 +251,10 @@ pub fn peek(bytes: &[u8]) -> Result<(PtfHeader, String)> {
             && o.descriptor.type_code == HEADER_TYPE
         {
             let h = PtfHeader::decode(o.part(Part::typed(0)))?;
-            return Ok((h, String::from_utf8_lossy(o.part(Part::typed(1))).into_owned()));
+            return Ok((
+                h,
+                String::from_utf8_lossy(o.part(Part::typed(1))).into_owned(),
+            ));
         }
     }
     Err(Error::NotPtf("no PTF header".into()))

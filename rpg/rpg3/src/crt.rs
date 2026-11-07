@@ -53,8 +53,22 @@ impl Default for Options {
             src: ("QGPL".into(), "QRPGSRC".into(), "MAIN".into()),
             genlvl: 9,
             text: "*SRCMBRTXT".into(),
-            option: vec!["*SOURCE".into(), "*XREF".into(), "*GEN".into(), "*NODUMP".into(), "*NOSECLVL".into(), "*NOSRCDBG".into(), "*NOLSTDBG".into()],
-            genopt: vec!["*NOLIST".into(), "*NOXREF".into(), "*NOATR".into(), "*NODUMP".into(), "*NOOPTIMIZE".into()],
+            option: vec![
+                "*SOURCE".into(),
+                "*XREF".into(),
+                "*GEN".into(),
+                "*NODUMP".into(),
+                "*NOSECLVL".into(),
+                "*NOSRCDBG".into(),
+                "*NOLSTDBG".into(),
+            ],
+            genopt: vec![
+                "*NOLIST".into(),
+                "*NOXREF".into(),
+                "*NOATR".into(),
+                "*NODUMP".into(),
+                "*NOOPTIMIZE".into(),
+            ],
             replace: true,
             tgtrls: "*CURRENT".into(),
             usrprf: "*USER".into(),
@@ -120,13 +134,21 @@ fn unreferenced(main: &Member, inner: &rpgc::Compiled, diags: &mut Vec<Diag>) {
     let files: Vec<String> = main
         .records
         .iter()
-        .filter(|r| r.text.chars().nth(5).is_some_and(|c| c.eq_ignore_ascii_case(&'F')) && r.text.chars().nth(6) != Some('*'))
+        .filter(|r| {
+            r.text
+                .chars()
+                .nth(5)
+                .is_some_and(|c| c.eq_ignore_ascii_case(&'F'))
+                && r.text.chars().nth(6) != Some('*')
+        })
         .map(|r| f.cut(&r.text, "name").trim().to_ascii_uppercase())
         .filter(|n| !n.is_empty())
         .collect();
     for l in &inner.listing {
         let t = l.get(1..).unwrap_or("").trim_start();
-        let Some(rest) = t.strip_prefix("*RNF7031") else { continue };
+        let Some(rest) = t.strip_prefix("*RNF7031") else {
+            continue;
+        };
         let w: Vec<&str> = rest.split_whitespace().collect();
         let Some(name) = w.first() else { continue };
         if name.chars().all(|c| c.is_ascii_digit()) || files.iter().any(|f| f == name) {
@@ -134,12 +156,27 @@ fn unreferenced(main: &Member, inner: &rpgc::Compiled, diags: &mut Vec<Diag>) {
         }
         // A field of an externally described file is defined by no
         // statement of the source (RPG/400's statement 0).
-        let defined = w.iter().find_map(|x| x.strip_suffix('D').and_then(|n| n.parse::<u32>().ok()));
+        let defined = w
+            .iter()
+            .find_map(|x| x.strip_suffix('D').and_then(|n| n.parse::<u32>().ok()));
         let stmt = defined
-            .and_then(|d| inner.read.lines.iter().find(|r| inner.listing_line(r.no) == d))
+            .and_then(|d| {
+                inner
+                    .read
+                    .lines
+                    .iter()
+                    .find(|r| inner.listing_line(r.no) == d)
+            })
             .map_or(0, |line| stmt_of(&line.seq));
-        let name = name.strip_prefix("*IN").filter(|n| n.len() == 2).unwrap_or(name).to_string();
-        if !diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == stmt && d.args.first() == Some(&name)) {
+        let name = name
+            .strip_prefix("*IN")
+            .filter(|n| n.len() == 2)
+            .unwrap_or(name)
+            .to_string();
+        if !diags
+            .iter()
+            .any(|d| d.msgid == "QRG7031" && d.stmt == stmt && d.args.first() == Some(&name))
+        {
             diags.push(Diag {
                 stmt,
                 msgid: "QRG7031".into(),
@@ -158,7 +195,11 @@ fn unused_overflow(main: &Member, diags: &mut Vec<Diag>) {
     let f = rpgspecs::rpg3_form("F");
     for r in &main.records {
         let t = &r.text;
-        if t.chars().nth(5).is_none_or(|c| !c.eq_ignore_ascii_case(&'F')) || t.chars().nth(6) == Some('*') {
+        if t.chars()
+            .nth(5)
+            .is_none_or(|c| !c.eq_ignore_ascii_case(&'F'))
+            || t.chars().nth(6) == Some('*')
+        {
             continue;
         }
         let ind = f.cut(t, "overflow").trim().to_ascii_uppercase();
@@ -175,15 +216,23 @@ fn unused_overflow(main: &Member, diags: &mut Vec<Diag>) {
                 Some('C') => {
                     let c = rpgspecs::rpg3_form("C");
                     cols(7, 17).contains(&ind)
-                        || ["hi", "lo", "eq"].iter().any(|n| c.cut(&o, n).trim() == ind)
-                        || ["factor1", "factor2", "result"].iter().any(|n| c.cut(&o, n).contains(&format!("*IN{ind}")))
+                        || ["hi", "lo", "eq"]
+                            .iter()
+                            .any(|n| c.cut(&o, n).trim() == ind)
+                        || ["factor1", "factor2", "result"]
+                            .iter()
+                            .any(|n| c.cut(&o, n).contains(&format!("*IN{ind}")))
                 }
                 Some('O') => cols(23, 31).contains(&ind),
                 _ => false,
             }
         });
         let stmt = stmt_of(&r.seq);
-        if !used && !diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == stmt && d.args.first() == Some(&ind)) {
+        if !used
+            && !diags
+                .iter()
+                .any(|d| d.msgid == "QRG7031" && d.stmt == stmt && d.args.first() == Some(&ind))
+        {
             diags.push(Diag {
                 stmt,
                 msgid: "QRG7031".into(),
@@ -206,7 +255,11 @@ fn unused_indicators(main: &Member, diags: &mut Vec<Diag>) {
     let mut set: Vec<(String, u32)> = Vec::new();
     let mut used: Vec<String> = Vec::new();
     let mut whole_array = false;
-    for r in main.records.iter().take_while(|r| !r.text.starts_with("**")) {
+    for r in main
+        .records
+        .iter()
+        .take_while(|r| !r.text.starts_with("**"))
+    {
         let t = r.text.to_ascii_uppercase();
         if t.chars().nth(6) == Some('*') {
             continue;
@@ -260,7 +313,11 @@ fn unused_indicators(main: &Member, diags: &mut Vec<Diag>) {
         return;
     }
     for (n, stmt) in set {
-        if !used.contains(&n) && !diags.iter().any(|d| d.msgid == "QRG7031" && d.args.first() == Some(&n)) {
+        if !used.contains(&n)
+            && !diags
+                .iter()
+                .any(|d| d.msgid == "QRG7031" && d.args.first() == Some(&n))
+        {
             diags.push(Diag {
                 stmt,
                 msgid: "QRG7031".into(),
@@ -275,13 +332,25 @@ fn unused_indicators(main: &Member, diags: &mut Vec<Diag>) {
 /// A program-described output file no output specification names
 /// (`QRG7064`, severity 40).
 fn no_output(main: &Member, diags: &mut Vec<Diag>) {
-    let (fs, os, cs) = (rpgspecs::rpg3_form("F"), rpgspecs::rpg3_form("O"), rpgspecs::rpg3_form("C"));
+    let (fs, os, cs) = (
+        rpgspecs::rpg3_form("F"),
+        rpgspecs::rpg3_form("O"),
+        rpgspecs::rpg3_form("C"),
+    );
     let live = |t: &str, letter: char| {
-        t.chars().nth(5).is_some_and(|c| c.eq_ignore_ascii_case(&letter)) && t.chars().nth(6) != Some('*')
+        t.chars()
+            .nth(5)
+            .is_some_and(|c| c.eq_ignore_ascii_case(&letter))
+            && t.chars().nth(6) != Some('*')
     };
-    for r in main.records.iter().take_while(|r| !r.text.starts_with("**")) {
+    for r in main
+        .records
+        .iter()
+        .take_while(|r| !r.text.starts_with("**"))
+    {
         let t = r.text.to_ascii_uppercase();
-        if !live(&t, 'F') || fs.cut(&t, "type").trim() != "O" || fs.cut(&t, "format").trim() != "F" {
+        if !live(&t, 'F') || fs.cut(&t, "type").trim() != "O" || fs.cut(&t, "format").trim() != "F"
+        {
             continue;
         }
         let name = fs.cut(&t, "name").trim().to_string();
@@ -326,8 +395,17 @@ fn compiled_text(t: &str) -> String {
         return format!("{}FORMOFL({}){}", &t[..at], n + 1, &t[at + 9 + end..]);
     }
     let c = rpgspecs::form("C").expect("the C form");
-    let is_c = t.chars().nth(5).is_some_and(|ch| ch.eq_ignore_ascii_case(&'C')) && t.chars().nth(6) != Some('*');
-    if is_c && matches!(c.cut(t, "opcode").trim().to_ascii_uppercase().as_str(), "FREE" | "DEBUG") {
+    let is_c = t
+        .chars()
+        .nth(5)
+        .is_some_and(|ch| ch.eq_ignore_ascii_case(&'C'))
+        && t.chars().nth(6) != Some('*');
+    if is_c
+        && matches!(
+            c.cut(t, "opcode").trim().to_ascii_uppercase().as_str(),
+            "FREE" | "DEBUG"
+        )
+    {
         let mut s: String = t.chars().take(6).collect();
         s.push('*');
         s.extend(t.chars().skip(7));
@@ -337,7 +415,12 @@ fn compiled_text(t: &str) -> String {
 }
 
 /// Compile an RPG III member.
-pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::ExtFiles, o: &Options) -> Compiled {
+pub fn compile(
+    main: &Member,
+    includes: &mut dyn Includes,
+    ext: &mut dyn rpgc::ExtFiles,
+    o: &Options,
+) -> Compiled {
     let texts: Vec<String> = main.records.iter().map(|r| r.text.clone()).collect();
     let conversion = cvt::convert(&texts);
     // The converted member keeps each line's RPG III sequence number.
@@ -369,7 +452,11 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
         genlvl: 10,
         dbgview: "*NONE".into(),
         dftactgrp: true,
-        alwnull: if o.alwnull { "*YES".into() } else { "*NO".into() },
+        alwnull: if o.alwnull {
+            "*YES".into()
+        } else {
+            "*NO".into()
+        },
         replace: o.replace,
         ..rpgc::Options::default()
     };
@@ -377,7 +464,11 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
     let mut diags: Vec<Diag> = Vec::new();
     // Only what the converter could not convert is the compile's error;
     // its notes (CALL, FREE, DEBUG) are not.
-    for m in conversion.messages.iter().filter(|m| m.id.starts_with("RNM059")) {
+    for m in conversion
+        .messages
+        .iter()
+        .filter(|m| m.id.starts_with("RNM059"))
+    {
         diags.push(Diag {
             stmt: main.records.get(m.at).map_or(0, |r| stmt_of(&r.seq)),
             msgid: msgs::conversion_qrg(m.id).to_string(),
@@ -387,7 +478,9 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
         });
     }
     for d in &inner.diags {
-        let Some((id, sev, place)) = qrg(d.msgid, d.severity) else { continue };
+        let Some((id, sev, place)) = qrg(d.msgid, d.severity) else {
+            continue;
+        };
         let stmt = stmt_of(&inner.stmt_seq(d.at.line));
         let diag = Diag {
             stmt,
@@ -396,7 +489,10 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
             place,
             args: d.args.clone(),
         };
-        if !diags.iter().any(|x| x.msgid == diag.msgid && x.stmt == diag.stmt) {
+        if !diags
+            .iter()
+            .any(|x| x.msgid == diag.msgid && x.stmt == diag.stmt)
+        {
             diags.push(diag);
         }
     }
@@ -406,7 +502,9 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
     no_output(main, &mut diags);
     diags.sort();
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);
-    let created = inner.created && max_severity <= o.genlvl && !o.option.iter().any(|x| x.eq_ignore_ascii_case("*NOGEN"));
+    let created = inner.created
+        && max_severity <= o.genlvl
+        && !o.option.iter().any(|x| x.eq_ignore_ascii_case("*NOGEN"));
     let mut c = Compiled {
         conversion,
         inner,

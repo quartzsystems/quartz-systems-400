@@ -154,7 +154,13 @@ pub fn print_as(
 }
 
 /// Lines as console output, or a spooled file with `OUTPUT(*PRINT)`.
-fn show(system: &mut System, p: &Params, file: &str, lines: &[String], print_default: bool) -> Result<String, String> {
+fn show(
+    system: &mut System,
+    p: &Params,
+    file: &str,
+    lines: &[String],
+    print_default: bool,
+) -> Result<String, String> {
     let printed = match p.upper("OUTPUT").as_deref() {
         Some("*PRINT") => true,
         Some("*") => false,
@@ -215,17 +221,24 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
             })
             .map(|s| format!("{s}\n"))
         }
-        "chgusraud" => in_store(system, |txn, env| sec::cmd::audit::chgusraud(txn, env, &k)).map(|s| format!("{s}\n")),
+        "chgusraud" => in_store(system, |txn, env| sec::cmd::audit::chgusraud(txn, env, &k))
+            .map(|s| format!("{s}\n")),
         "dspaudjrne" => {
             let lines = sec::cmd::audit::Selection::from_keywords(&k)
                 .map_err(|e| e.to_string())
-                .and_then(|sel| in_store(system, |txn, env| sec::cmd::audit::dspaudjrne(txn, env, &sel)));
+                .and_then(|sel| {
+                    in_store(system, |txn, env| {
+                        sec::cmd::audit::dspaudjrne(txn, env, &sel)
+                    })
+                });
             lines.and_then(|l| show(system, &p, "QPAUDENT", &l, false))
         }
         "cpyaudjrne" => cpyaudjrne(system, &p, &k),
         "prtusrprf" => {
             let kind = p.upper("TYPE").unwrap_or_else(|| "*AUTINFO".into());
-            let lines = in_store(system, |txn, env| sec::cmd::usrprf::prtusrprf(txn, env, &kind));
+            let lines = in_store(system, |txn, env| {
+                sec::cmd::usrprf::prtusrprf(txn, env, &kind)
+            });
             lines.and_then(|l| show(system, &p, "QPUSRPRF", &l, true))
         }
         "anzprfact" => {
@@ -236,8 +249,10 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
             if days == 0 {
                 Err("CPD0084 DAYS: 1 to 366 is needed".to_string())
             } else {
-                in_store(system, |txn, env| sec::cmd::usrprf::anzprfact(txn, env, days))
-                    .map(|s| format!("{s}\n"))
+                in_store(system, |txn, env| {
+                    sec::cmd::usrprf::anzprfact(txn, env, days)
+                })
+                .map(|s| format!("{s}\n"))
             }
         }
         "prtadpobj" | "prtusrobj" => {
@@ -249,7 +264,11 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
                     sec::cmd::audit::prtusrobj(txn, env, &user)
                 }
             });
-            let file = if cmd == "prtadpobj" { "QPSECADP" } else { "QPUSROBJ" };
+            let file = if cmd == "prtadpobj" {
+                "QPSECADP"
+            } else {
+                "QPUSROBJ"
+            };
             lines.and_then(|l| show(system, &p, file, &l, true))
         }
         "prtpvtaut" | "prtpubaut" => {
@@ -261,7 +280,11 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
                     sec::cmd::audit::prtpubaut(txn, env, &t)
                 }
             });
-            let file = if cmd == "prtpvtaut" { "QPPVTAUT" } else { "QPPUBAUT" };
+            let file = if cmd == "prtpvtaut" {
+                "QPPVTAUT"
+            } else {
+                "QPPUBAUT"
+            };
             lines.and_then(|l| show(system, &p, file, &l, true))
         }
         "prtsysseca" => {
@@ -280,7 +303,12 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
             let lines = in_store(system, |txn, env| {
                 let inputs = seccheck_inputs(txn, env);
                 let found = sec::cmd::seccheck::run(txn, env, &inputs)?;
-                Ok(sec::cmd::seccheck::report(&found, &system_name, &product, env.now))
+                Ok(sec::cmd::seccheck::report(
+                    &found,
+                    &system_name,
+                    &product,
+                    env.now,
+                ))
             });
             lines.and_then(|l| show(system, &p, "QPSECCHK", &l, true))
         }
@@ -317,7 +345,10 @@ fn seccheck_inputs(txn: &mut store::Txn<'_>, env: &Env<'_>) -> sec::cmd::secchec
         })
         .collect();
     let list = |n: &str| -> Vec<String> {
-        (env.sysval)(n).split_whitespace().map(str::to_string).collect()
+        (env.sysval)(n)
+            .split_whitespace()
+            .map(str::to_string)
+            .collect()
     };
     let (pcl, csl) = (list("QSSLPCL"), list("QSSLCSL"));
     let policy = tls::policy::TlsPolicy::from_sysvals(
@@ -326,9 +357,21 @@ fn seccheck_inputs(txn: &mut store::Txn<'_>, env: &Env<'_>) -> sec::cmd::secchec
         &(env.sysval)("QSSLCSLCTL"),
     );
     let tls = TlsFacts {
-        enabled: policy.protocols.iter().map(|v| v.name().to_string()).collect(),
-        refused: policy.unsupported_protocols.iter().map(|v| v.name().to_string()).collect(),
-        suites: policy.usable_suites().iter().map(|s| s.name.to_string()).collect(),
+        enabled: policy
+            .protocols
+            .iter()
+            .map(|v| v.name().to_string())
+            .collect(),
+        refused: policy
+            .unsupported_protocols
+            .iter()
+            .map(|v| v.name().to_string())
+            .collect(),
+        suites: policy
+            .usable_suites()
+            .iter()
+            .map(|s| s.name.to_string())
+            .collect(),
         unmapped: policy.unmapped_suites.clone(),
     };
     Inputs {
@@ -357,10 +400,15 @@ fn cpyaudjrne(system: &mut System, p: &Params, k: &Keywords) -> Result<String, S
         return Err("CPD0071 ENTTYP is required".into());
     }
     let (lib, prefix) = qual(&p.upper("OUTFILE").unwrap_or_else(|| "QTEMP/QAUDIT".into()));
-    let lib = if lib == "*LIBL" { "QTEMP".to_string() } else { lib };
+    let lib = if lib == "*LIBL" {
+        "QTEMP".to_string()
+    } else {
+        lib
+    };
     let system_name = system.system_name();
     let entries = in_store(system, |txn, env| {
-        env.actor.require(sec::profile::SpecialAuth::AUDIT, "copy audit entries")?;
+        env.actor
+            .require(sec::profile::SpecialAuth::AUDIT, "copy audit entries")?;
         sec::cmd::audit::selected(txn, env.qsys, &sel)
     })?;
     let mut out = String::new();
@@ -368,7 +416,11 @@ fn cpyaudjrne(system: &mut System, p: &Params, k: &Keywords) -> Result<String, S
         let name = sec::cmd::audit::outfile_name(&prefix, *kind);
         let fields: Vec<(qsname::Name, u32)> = sec::cmd::audit::outfile_fields(*kind)
             .into_iter()
-            .map(|(n, l)| qsname::Name::parse(&n).map(|n| (n, l)).map_err(|e| e.to_string()))
+            .map(|(n, l)| {
+                qsname::Name::parse(&n)
+                    .map(|n| (n, l))
+                    .map_err(|e| e.to_string())
+            })
             .collect::<Result<_, _>>()?;
         let rows: Vec<String> = entries
             .iter()
@@ -387,16 +439,29 @@ fn cpyaudjrne(system: &mut System, p: &Params, k: &Keywords) -> Result<String, S
             let library = if lib == "QTEMP" {
                 root
             } else {
-                store::obj::ops::find_library(txn, root, qsname::Name::parse(&lib).map_err(|e| e.to_string())?)
-                    .map_err(|e| e.to_string())?
-                    .id
+                store::obj::ops::find_library(
+                    txn,
+                    root,
+                    qsname::Name::parse(&lib).map_err(|e| e.to_string())?,
+                )
+                .map_err(|e| e.to_string())?
+                .id
             };
             let fname = qsname::Name::parse(&name).map_err(|e| e.to_string())?;
             let l = store::obj::library::Library::load(txn, library).map_err(|e| e.to_string())?;
-            let file = match l.lookup(txn, types::FILE, fname).map_err(|e| e.to_string())? {
+            let file = match l
+                .lookup(txn, types::FILE, fname)
+                .map_err(|e| e.to_string())?
+            {
                 Some(id) => id,
-                None => db::file::create_pf_fields(txn, library, fname, &fields, &db::CreateFileOpts::default())
-                    .map_err(|e| e.to_string())?,
+                None => db::file::create_pf_fields(
+                    txn,
+                    library,
+                    fname,
+                    &fields,
+                    &db::CreateFileOpts::default(),
+                )
+                .map_err(|e| e.to_string())?,
             };
             db::util::put_lines(txn, job, file, qsname::MemberSpec::First, &rows, true)
                 .map_err(|e| e.to_string())?;
@@ -431,7 +496,10 @@ fn wm_report(system: &mut System, cmd: &str) -> Result<Vec<String>, String> {
                 continue;
             }
             let h = store::obj::ops::read_header(txn, id)?.1;
-            let lib = store::obj::ops::read_header(txn, h.library)?.1.name.to_string();
+            let lib = store::obj::ops::read_header(txn, h.library)?
+                .1
+                .name
+                .to_string();
             let public = sec::auth::bits::Auth::of(h.public_authority).display(false);
             let payload = wm::obj::read(txn, id).unwrap_or_default();
             let extra = match id.type_code {
@@ -451,7 +519,13 @@ fn wm_report(system: &mut System, cmd: &str) -> Result<Vec<String>, String> {
                 _ if h.public_authority.0 == 0 => continue,
                 _ => String::new(),
             };
-            out.push(format!(" {:<10} {:<10} {:<8} {:<9} {extra}", h.name, lib, types::type_by_code(id.type_code).map_or("", |t| t.name), public));
+            out.push(format!(
+                " {:<10} {:<10} {:<8} {:<9} {extra}",
+                h.name,
+                lib,
+                types::type_by_code(id.type_code).map_or("", |t| t.name),
+                public
+            ));
         }
         Ok(out)
     })

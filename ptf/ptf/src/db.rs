@@ -96,7 +96,12 @@ impl PtfDb {
             let replaced = r
                 .replaced
                 .iter()
-                .map(|x| format!("{}/{}/{:04X}/{}", x.library, x.name, x.type_code, x.saved_as))
+                .map(|x| {
+                    format!(
+                        "{}/{}/{:04X}/{}",
+                        x.library, x.name, x.type_code, x.saved_as
+                    )
+                })
                 .collect::<Vec<_>>()
                 .join(",");
             let action = match r.action {
@@ -208,7 +213,10 @@ mod tests {
             lic: false,
             savf: "QGPL/QS00001".into(),
             superseded_by: String::new(),
-            prereqs: vec![PtfRef { ptf: "QS00000".into(), product: "5770SS1".into() }],
+            prereqs: vec![PtfRef {
+                ptf: "QS00000".into(),
+                product: "5770SS1".into(),
+            }],
             coreqs: Vec::new(),
             replaced: Vec::new(),
             changed: 7,

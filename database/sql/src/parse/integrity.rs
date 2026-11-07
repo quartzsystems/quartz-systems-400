@@ -6,7 +6,8 @@
 
 use super::Parser;
 use crate::ast::{
-    AlterAction, AlterTable, ColumnDef, Constraint, DropKind, Generated, Ident, Identity, RefRule, Statement,
+    AlterAction, AlterTable, ColumnDef, Constraint, DropKind, Generated, Ident, Identity, RefRule,
+    Statement,
 };
 use crate::error::Result;
 use crate::lex::Tok;
@@ -22,11 +23,21 @@ impl Parser {
 
     /// A table constraint.
     pub(crate) fn constraint(&mut self) -> Result<Constraint> {
-        let name = if self.eat_word("CONSTRAINT") { Some(self.ident()?) } else { None };
+        let name = if self.eat_word("CONSTRAINT") {
+            Some(self.ident()?)
+        } else {
+            None
+        };
         let c = if self.eat_words(&["PRIMARY", "KEY"]) {
-            Constraint::PrimaryKey { name, columns: self.ident_list()? }
+            Constraint::PrimaryKey {
+                name,
+                columns: self.ident_list()?,
+            }
         } else if self.eat_word("UNIQUE") {
-            Constraint::Unique { name, columns: self.ident_list()? }
+            Constraint::Unique {
+                name,
+                columns: self.ident_list()?,
+            }
         } else if self.eat_words(&["FOREIGN", "KEY"]) {
             let columns = self.ident_list()?;
             self.expect_word("REFERENCES")?;
@@ -46,7 +57,10 @@ impl Parser {
         self.expect_sym("(")?;
         let from = self.at;
         let cond = self.expr()?;
-        let text: String = self.toks[from..self.at].iter().map(|t| t.tok.describe() + " ").collect();
+        let text: String = self.toks[from..self.at]
+            .iter()
+            .map(|t| t.tok.describe() + " ")
+            .collect();
         self.expect_sym(")")?;
         Ok(Constraint::Check { name, cond, text })
     }
@@ -54,7 +68,11 @@ impl Parser {
     /// `parent [(cols)] [ON DELETE rule] [ON UPDATE rule]`, after `REFERENCES`.
     fn references(&mut self, name: Option<Ident>, columns: Vec<Ident>) -> Result<Constraint> {
         let parent = self.object_name()?;
-        let parent_columns = if self.is_sym("(") { self.ident_list()? } else { Vec::new() };
+        let parent_columns = if self.is_sym("(") {
+            self.ident_list()?
+        } else {
+            Vec::new()
+        };
         let (mut on_delete, mut on_update) = (RefRule::NoAction, RefRule::NoAction);
         while self.eat_word("ON") {
             if self.eat_word("DELETE") {
@@ -69,7 +87,9 @@ impl Parser {
                 } else if self.eat_words(&["SET", "DEFAULT"]) {
                     RefRule::SetDefault
                 } else {
-                    return Err(self.expected("NO ACTION, RESTRICT, CASCADE, SET NULL or SET DEFAULT"));
+                    return Err(
+                        self.expected("NO ACTION, RESTRICT, CASCADE, SET NULL or SET DEFAULT")
+                    );
                 };
             } else {
                 self.expect_word("UPDATE")?;
@@ -83,21 +103,40 @@ impl Parser {
                 };
             }
         }
-        Ok(Constraint::ForeignKey { name, columns, parent, parent_columns, on_delete, on_update })
+        Ok(Constraint::ForeignKey {
+            name,
+            columns,
+            parent,
+            parent_columns,
+            on_delete,
+            on_update,
+        })
     }
 
     /// What may follow a constraint: refused unless it says what IBM's
     /// constraints are anyway.
     fn constraint_attributes(&mut self) -> Result<()> {
         loop {
-            if self.eat_words(&["NOT", "DEFERRABLE"]) || self.eat_words(&["INITIALLY", "IMMEDIATE"]) || self.eat_word("ENFORCED") {
+            if self.eat_words(&["NOT", "DEFERRABLE"])
+                || self.eat_words(&["INITIALLY", "IMMEDIATE"])
+                || self.eat_word("ENFORCED")
+            {
                 continue;
             }
-            if self.is_words(&["NOT", "ENFORCED"]) || self.is_word("DEFERRABLE") || self.is_words(&["INITIALLY", "DEFERRED"]) {
-                return Err(Self::unsupported("informational (NOT ENFORCED) and deferrable constraints"));
+            if self.is_words(&["NOT", "ENFORCED"])
+                || self.is_word("DEFERRABLE")
+                || self.is_words(&["INITIALLY", "DEFERRED"])
+            {
+                return Err(Self::unsupported(
+                    "informational (NOT ENFORCED) and deferrable constraints",
+                ));
             }
-            if self.is_words(&["ENABLE", "QUERY", "OPTIMIZATION"]) || self.is_words(&["DISABLE", "QUERY", "OPTIMIZATION"]) {
-                return Err(Self::unsupported("ENABLE/DISABLE QUERY OPTIMIZATION on a constraint"));
+            if self.is_words(&["ENABLE", "QUERY", "OPTIMIZATION"])
+                || self.is_words(&["DISABLE", "QUERY", "OPTIMIZATION"])
+            {
+                return Err(Self::unsupported(
+                    "ENABLE/DISABLE QUERY OPTIMIZATION on a constraint",
+                ));
             }
             return Ok(());
         }
@@ -114,9 +153,15 @@ impl Parser {
         };
         let cols = vec![col.name.clone()];
         let c = if self.eat_words(&["PRIMARY", "KEY"]) {
-            Constraint::PrimaryKey { name, columns: cols }
+            Constraint::PrimaryKey {
+                name,
+                columns: cols,
+            }
         } else if self.eat_word("UNIQUE") {
-            Constraint::Unique { name, columns: cols }
+            Constraint::Unique {
+                name,
+                columns: cols,
+            }
         } else if self.eat_word("CHECK") {
             self.check(name)?
         } else if self.eat_word("REFERENCES") {
@@ -139,13 +184,26 @@ impl Parser {
             self.expect_words(&["BY", "DEFAULT"])?;
             false
         };
-        if self.eat_words(&["FOR", "EACH", "ROW", "ON", "UPDATE", "AS", "ROW", "CHANGE", "TIMESTAMP"]) {
+        if self.eat_words(&[
+            "FOR",
+            "EACH",
+            "ROW",
+            "ON",
+            "UPDATE",
+            "AS",
+            "ROW",
+            "CHANGE",
+            "TIMESTAMP",
+        ]) {
             c.generated = Some(Generated::RowChangeTimestamp { always });
             return Ok(());
         }
         self.expect_word("AS")?;
         if self.eat_word("IDENTITY") {
-            let mut id = Identity { always, ..Identity::default() };
+            let mut id = Identity {
+                always,
+                ..Identity::default()
+            };
             if self.eat_sym("(") {
                 self.identity_options(&mut id, false)?;
                 self.expect_sym(")")?;
@@ -220,7 +278,11 @@ impl Parser {
             } else if self.eat_word("ORDER") {
                 id.order = Some(true);
             } else if alter && self.eat_word("RESTART") {
-                id.restart = Some(if self.eat_word("WITH") { Some(self.big_integer()?) } else { None });
+                id.restart = Some(if self.eat_word("WITH") {
+                    Some(self.big_integer()?)
+                } else {
+                    None
+                });
             } else {
                 return Ok(());
             }
@@ -248,7 +310,11 @@ impl Parser {
 
     pub(crate) fn alter(&mut self) -> Result<Statement> {
         self.expect_word("ALTER")?;
-        if self.is_word("PROCEDURE") || self.is_word("FUNCTION") || self.is_words(&["SPECIFIC", "PROCEDURE"]) || self.is_words(&["SPECIFIC", "FUNCTION"]) {
+        if self.is_word("PROCEDURE")
+            || self.is_word("FUNCTION")
+            || self.is_words(&["SPECIFIC", "PROCEDURE"])
+            || self.is_words(&["SPECIFIC", "FUNCTION"])
+        {
             return self.alter_routine();
         }
         if self.eat_word("SEQUENCE") {
@@ -259,8 +325,13 @@ impl Parser {
         let mut actions = Vec::new();
         loop {
             if self.eat_word("ADD") {
-                if self.is_word("PARTITION") || self.is_words(&["PARTITIONING", "KEY"]) || self.is_word("MATERIALIZED") {
-                    return Err(Self::unsupported("partitioned and materialized query tables"));
+                if self.is_word("PARTITION")
+                    || self.is_words(&["PARTITIONING", "KEY"])
+                    || self.is_word("MATERIALIZED")
+                {
+                    return Err(Self::unsupported(
+                        "partitioned and materialized query tables",
+                    ));
                 }
                 if self.starts_constraint() {
                     actions.push(AlterAction::AddConstraint(self.constraint()?));
@@ -269,8 +340,13 @@ impl Parser {
                     actions.push(AlterAction::AddColumn(self.column_def()?));
                 }
             } else if self.eat_word("DROP") {
-                if self.is_word("PARTITION") || self.is_word("PARTITIONING") || self.is_word("MATERIALIZED") {
-                    return Err(Self::unsupported("partitioned and materialized query tables"));
+                if self.is_word("PARTITION")
+                    || self.is_word("PARTITIONING")
+                    || self.is_word("MATERIALIZED")
+                {
+                    return Err(Self::unsupported(
+                        "partitioned and materialized query tables",
+                    ));
                 }
                 let cascade = |p: &mut Self| {
                     if p.eat_word("RESTRICT") {
@@ -283,7 +359,11 @@ impl Parser {
                 if self.eat_words(&["PRIMARY", "KEY"]) {
                     let cascade = cascade(self);
                     actions.push(AlterAction::DropPrimaryKey { cascade });
-                } else if self.is_word("CONSTRAINT") || self.is_word("UNIQUE") || self.is_words(&["FOREIGN", "KEY"]) || self.is_word("CHECK") {
+                } else if self.is_word("CONSTRAINT")
+                    || self.is_word("UNIQUE")
+                    || self.is_words(&["FOREIGN", "KEY"])
+                    || self.is_word("CHECK")
+                {
                     let kind = if self.eat_word("CONSTRAINT") {
                         DropKind::Any
                     } else if self.eat_word("UNIQUE") {
@@ -296,7 +376,11 @@ impl Parser {
                     };
                     let name = self.ident()?;
                     let cascade = cascade(self);
-                    actions.push(AlterAction::DropConstraint { name, kind, cascade });
+                    actions.push(AlterAction::DropConstraint {
+                        name,
+                        kind,
+                        cascade,
+                    });
                 } else {
                     self.eat_word("COLUMN");
                     let col = self.ident()?;
@@ -343,10 +427,15 @@ impl Parser {
         if self.eat_words(&["DROP", "IDENTITY"]) {
             return Ok(AlterAction::DropIdentity(col));
         }
-        if self.eat_words(&["DROP", "GENERATED"]) || self.eat_words(&["DROP", "ROW", "CHANGE", "TIMESTAMP"]) {
+        if self.eat_words(&["DROP", "GENERATED"])
+            || self.eat_words(&["DROP", "ROW", "CHANGE", "TIMESTAMP"])
+        {
             return Ok(AlterAction::DropGenerated(col));
         }
-        if self.is_word("SET") && (self.is_words(&["SET", "IMPLICITLY", "HIDDEN"]) || self.is_words(&["SET", "NOT", "HIDDEN"])) {
+        if self.is_word("SET")
+            && (self.is_words(&["SET", "IMPLICITLY", "HIDDEN"])
+                || self.is_words(&["SET", "NOT", "HIDDEN"]))
+        {
             return Err(Self::unsupported("changing whether a column is hidden"));
         }
         // SET GENERATED ALWAYS|BY DEFAULT [AS IDENTITY], SET INCREMENT BY ...,
@@ -383,6 +472,10 @@ impl Parser {
         if !any {
             return Err(self.expected("SET DATA TYPE, SET/DROP DEFAULT, SET/DROP NOT NULL, SET GENERATED, DROP IDENTITY or RESTART"));
         }
-        Ok(AlterAction::AlterIdentity { column: col, always, options: id })
+        Ok(AlterAction::AlterIdentity {
+            column: col,
+            always,
+            options: id,
+        })
     }
 }

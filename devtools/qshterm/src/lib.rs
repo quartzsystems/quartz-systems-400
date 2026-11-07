@@ -283,7 +283,11 @@ impl Term {
             }
             Key::F(8) | Key::PageDown => {
                 let first = self.first_shown(rows) + ROWS;
-                self.top = if first + ROWS >= rows { None } else { Some(first) };
+                self.top = if first + ROWS >= rows {
+                    None
+                } else {
+                    Some(first)
+                };
             }
             Key::F(11) => self.wrap = !self.wrap,
             Key::F(13) => {

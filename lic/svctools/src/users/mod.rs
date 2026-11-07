@@ -127,7 +127,9 @@ fn valid_password(p: &str) -> Result<(), SignOnError> {
         return Err(SignOnError::BadPassword("empty".into()));
     }
     if p.len() > PASSWORD_LEN {
-        return Err(SignOnError::BadPassword("longer than 128 characters".into()));
+        return Err(SignOnError::BadPassword(
+            "longer than 128 characters".into(),
+        ));
     }
     if p.chars().any(char::is_control) {
         return Err(SignOnError::BadPassword("control characters".into()));

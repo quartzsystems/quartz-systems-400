@@ -24,9 +24,14 @@ pub const WATCH: &str = "_mw";
 pub const ARRIVED: &str = "_ma";
 
 /// The Watch select's options and their codes.
-pub const WATCH_CHOICES: [(&str, &str); 3] = [("My queue", "own"), ("My queue and QSYSOPR", "both"), ("Off", "off")];
+pub const WATCH_CHOICES: [(&str, &str); 3] = [
+    ("My queue", "own"),
+    ("My queue and QSYSOPR", "both"),
+    ("Off", "off"),
+];
 /// The Arrived select's options and their codes.
-pub const ARRIVED_CHOICES: [(&str, &str); 3] = [("Inquiries only", "inq"), ("All", "all"), ("None", "none")];
+pub const ARRIVED_CHOICES: [(&str, &str); 3] =
+    [("Inquiries only", "inq"), ("All", "all"), ("None", "none")];
 
 /// The operator's queue.
 pub const QSYSOPR: (&str, &str) = ("QSYS", "QSYSOPR");
@@ -63,13 +68,14 @@ fn newer(rq: &Rq<'_>) -> Vec<(String, Vec<QueuedMessage>, u64, u64)> {
         let q = format!("{lib}/{name}");
         let top = ms.iter().map(QueuedMessage::order).max().unwrap_or(0);
         let mark = |k: &str| rq.get(k).parse::<u64>().ok();
-        let (seen, arrived) = if let (Some(s), Some(a)) = (mark(&seen_key(&q)), mark(&arrived_key(&q))) {
-            (s, a)
-        } else {
-            let t = top.to_string();
-            rq.set(&[(&seen_key(&q), &t), (&arrived_key(&q), &t)]);
-            (top, top)
-        };
+        let (seen, arrived) =
+            if let (Some(s), Some(a)) = (mark(&seen_key(&q)), mark(&arrived_key(&q))) {
+                (s, a)
+            } else {
+                let t = top.to_string();
+                rq.set(&[(&seen_key(&q), &t), (&arrived_key(&q), &t)]);
+                (top, top)
+            };
         out.push((q, ms, seen, arrived));
     }
     out
@@ -78,13 +84,23 @@ fn newer(rq: &Rq<'_>) -> Vec<(String, Vec<QueuedMessage>, u64, u64)> {
 /// The user looked at queue `q` (`lib/name`) up to key `top`.
 pub fn seen(rq: &Rq<'_>, q: &str, top: u64) {
     let t = top.to_string();
-    let a = rq.get(&arrived_key(q)).parse::<u64>().unwrap_or(0).max(top).to_string();
+    let a = rq
+        .get(&arrived_key(q))
+        .parse::<u64>()
+        .unwrap_or(0)
+        .max(top)
+        .to_string();
     rq.set(&[(&seen_key(q), &t), (&arrived_key(q), &a)]);
 }
 
 /// Message Arrived was shown for message `key` of queue `q`.
 pub fn acknowledged(rq: &Rq<'_>, q: &str, key: u64) {
-    let a = rq.get(&arrived_key(q)).parse::<u64>().unwrap_or(0).max(key).to_string();
+    let a = rq
+        .get(&arrived_key(q))
+        .parse::<u64>()
+        .unwrap_or(0)
+        .max(key)
+        .to_string();
     rq.set(&[(&arrived_key(q), &a)]);
 }
 
@@ -94,7 +110,10 @@ pub fn note(rq: &Rq<'_>) -> Option<String> {
     if !rq.get(EXPIRED).is_empty() {
         return None;
     }
-    let n: usize = newer(rq).iter().map(|(_, ms, seen, _)| ms.iter().filter(|m| m.order() > *seen).count()).sum();
+    let n: usize = newer(rq)
+        .iter()
+        .map(|(_, ms, seen, _)| ms.iter().filter(|m| m.order() > *seen).count())
+        .sum();
     (n > 0).then(|| {
         format!(
             "<a href=\"{}\">Messages waiting: <b>{n}</b></a>",
@@ -128,7 +147,10 @@ pub fn arrived(rq: &Rq<'_>, segs: &[&str]) -> Option<Response> {
     if rq.post() || !rq.get(EXPIRED).is_empty() {
         return None;
     }
-    if matches!(segs.first(), Some(&("messages" | "msg" | "help" | "nav" | "password" | "signoff")) | None) {
+    if matches!(
+        segs.first(),
+        Some(&("messages" | "msg" | "help" | "nav" | "password" | "signoff")) | None
+    ) {
         return None;
     }
     first_arrived(rq)?;

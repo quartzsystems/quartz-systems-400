@@ -101,7 +101,11 @@ pub fn job_of(attrs: &SplfAttrs, dest: &WtrDest) -> PrintJob {
         } else {
             attrs.font.clone()
         },
-        chrid: if chrid == "*SYSVAL" { "*DEVD".into() } else { chrid },
+        chrid: if chrid == "*SYSVAL" {
+            "*DEVD".into()
+        } else {
+            chrid
+        },
         prtqlty: ["*STD", "*DRAFT", "*NLQ", "*DEVD"]
             .get(usize::from(attrs.prtqlty))
             .unwrap_or(&"*STD")
@@ -205,7 +209,10 @@ mod tests {
         let job = job_of(&attrs(), &dest);
         print::deliver::deliver_with(&mut f, &t.transform(), &job, &scs()).unwrap();
         let (j, doc) = &f.got[0];
-        assert_eq!((j.copies, j.duplex, j.chrid.as_str()), (2, Duplex::Yes, "697 850"));
+        assert_eq!(
+            (j.copies, j.duplex, j.chrid.as_str()),
+            (2, Duplex::Yes, "697 850")
+        );
         assert!(String::from_utf8_lossy(&doc.data).contains("WRITER TEST\r\n"));
         assert!(doc.data.starts_with(b"\x1bE"));
     }

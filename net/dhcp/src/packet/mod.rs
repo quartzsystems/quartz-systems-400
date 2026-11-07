@@ -156,7 +156,10 @@ impl Message {
         let mut chaddr = [0u8; 6];
         chaddr.copy_from_slice(&b[28..34]);
         let file_raw = &b[108..236];
-        let end = file_raw.iter().position(|&c| c == 0).unwrap_or(file_raw.len());
+        let end = file_raw
+            .iter()
+            .position(|&c| c == 0)
+            .unwrap_or(file_raw.len());
         let mut options = Options::decode(&b[FIXED + 4..])?;
         // Option 52: the file and sname fields hold more options.
         if let Some(over) = options.overload {

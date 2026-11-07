@@ -196,7 +196,13 @@ pub struct Resource {
 impl Resource {
     /// A new operational resource.
     #[must_use]
-    pub fn new(name: String, kind: Kind, location: String, description: String, devpath: String) -> Self {
+    pub fn new(
+        name: String,
+        kind: Kind,
+        location: String,
+        description: String,
+        devpath: String,
+    ) -> Self {
         Self {
             name,
             kind,
@@ -318,15 +324,30 @@ impl Table {
         let relevant = matches!(ev.action.as_str(), "add" | "remove" | "change")
             && matches!(
                 ev.subsystem.as_str(),
-                "pci" | "block" | "net" | "tty" | "input" | "scsi_tape" | "scsi_generic" | "virtio" | "scsi" | "virtio-ports"
+                "pci"
+                    | "block"
+                    | "net"
+                    | "tty"
+                    | "input"
+                    | "scsi_tape"
+                    | "scsi_generic"
+                    | "virtio"
+                    | "scsi"
+                    | "virtio-ports"
             );
-        if relevant { self.rescan(root) } else { Vec::new() }
+        if relevant {
+            self.rescan(root)
+        } else {
+            Vec::new()
+        }
     }
 
     /// A resource by name.
     #[must_use]
     pub fn get(&self, name: &str) -> Option<&Resource> {
-        self.resources.iter().find(|r| r.name.eq_ignore_ascii_case(name))
+        self.resources
+            .iter()
+            .find(|r| r.name.eq_ignore_ascii_case(name))
     }
 
     /// The table as text, for the service console.
@@ -362,7 +383,13 @@ impl Table {
         format!("{}{:0width$}", kind.prefix(), n + 1, width = kind.width())
     }
 
-    fn add(&mut self, kind: Kind, location: String, description: String, devpath: String) -> &mut Resource {
+    fn add(
+        &mut self,
+        kind: Kind,
+        location: String,
+        description: String,
+        devpath: String,
+    ) -> &mut Resource {
         let name = self.next_name(kind);
         self.resources
             .push(Resource::new(name, kind, location, description, devpath));
@@ -438,8 +465,15 @@ impl Table {
         ids.sort_unstable();
         for id in ids {
             let dir = cpus.join(format!("cpu{id}"));
-            let Some(devpath) = devpath_in(root, &dir) else { continue };
-            self.add(Kind::Processor, format!("cpu{id}"), format!("processor {id}"), devpath);
+            let Some(devpath) = devpath_in(root, &dir) else {
+                continue;
+            };
+            self.add(
+                Kind::Processor,
+                format!("cpu{id}"),
+                format!("processor {id}"),
+                devpath,
+            );
         }
         let mem = root.join("devices/system/memory");
         if mem.is_dir()
@@ -447,12 +481,22 @@ impl Table {
         {
             let blocks = sorted_dir(&mem)
                 .iter()
-                .filter(|n| n.starts_with("memory") && read_trim(&mem.join(n).join("online")) == "1")
+                .filter(|n| {
+                    n.starts_with("memory") && read_trim(&mem.join(n).join("online")) == "1"
+                })
                 .count();
-            let size = u64::from_str_radix(read_trim(&mem.join("block_size_bytes")).trim_start_matches("0x"), 16)
-                .unwrap_or(0);
+            let size = u64::from_str_radix(
+                read_trim(&mem.join("block_size_bytes")).trim_start_matches("0x"),
+                16,
+            )
+            .unwrap_or(0);
             let mib = size * blocks as u64 / (1024 * 1024);
-            self.add(Kind::Memory, "memory".into(), format!("main storage {mib} MiB"), devpath);
+            self.add(
+                Kind::Memory,
+                "memory".into(),
+                format!("main storage {mib} MiB"),
+                devpath,
+            );
         }
     }
 
@@ -477,7 +521,12 @@ impl Table {
         for node in tape_nodes(&entries) {
             let dev = class("scsi_tape").join(&node).join("device");
             if let Some(hctl) = hctl_of(&dev) {
-                scanned.push(Scanned { kind: ResourceKind::Tape, node, hctl, serial: serial(&dev) });
+                scanned.push(Scanned {
+                    kind: ResourceKind::Tape,
+                    node,
+                    hctl,
+                    serial: serial(&dev),
+                });
             }
         }
         for node in sorted_dir(&class("scsi_generic")) {
@@ -486,7 +535,12 @@ impl Table {
                 continue;
             }
             if let Some(hctl) = hctl_of(&dev) {
-                scanned.push(Scanned { kind: ResourceKind::Library, node, hctl, serial: serial(&dev) });
+                scanned.push(Scanned {
+                    kind: ResourceKind::Library,
+                    node,
+                    hctl,
+                    serial: serial(&dev),
+                });
             }
         }
         for r in assign(&scanned, &[]) {
@@ -494,10 +548,18 @@ impl Table {
                 ResourceKind::Tape => Kind::Tape,
                 ResourceKind::Library => Kind::TapeLibrary,
             };
-            let sub = if kind == Kind::Tape { "scsi_tape" } else { "scsi_generic" };
+            let sub = if kind == Kind::Tape {
+                "scsi_tape"
+            } else {
+                "scsi_generic"
+            };
             let devpath = devpath_in(root, &class(sub).join(&r.device.node)).unwrap_or_default();
             let [h, c, t, l] = r.device.hctl;
-            let what = if kind == Kind::Tape { "tape drive" } else { "tape media changer" };
+            let what = if kind == Kind::Tape {
+                "tape drive"
+            } else {
+                "tape media changer"
+            };
             let mut res = Resource::new(
                 r.name,
                 kind,
@@ -551,7 +613,9 @@ impl Table {
     fn add_block(&mut self, root: &Path, name: &str) -> Option<String> {
         let sys = root.join("class/block").join(name);
         if sys.join("partition").exists()
-            || ["loop", "ram", "zram", "dm-", "md", "ublkb"].iter().any(|p| name.starts_with(p))
+            || ["loop", "ram", "zram", "dm-", "md", "ublkb"]
+                .iter()
+                .any(|p| name.starts_with(p))
         {
             return None;
         }
@@ -563,12 +627,15 @@ impl Table {
         } else {
             Kind::Disk
         };
-        let at = storage::hctl(&devpath).map_or(String::new(), |[h, c, t, l]| {
-            format!(" at {h}:{c}:{t}:{l}")
-        });
+        let at = storage::hctl(&devpath)
+            .map_or(String::new(), |[h, c, t, l]| format!(" at {h}:{c}:{t}:{l}"));
         let desc = format!("{name} {mib} MiB{at}");
         let serial = serial_of(&sys.join("device"));
-        let serial = if serial.is_empty() { serial_of(&sys) } else { serial };
+        let serial = if serial.is_empty() {
+            serial_of(&sys)
+        } else {
+            serial
+        };
         let r = self.add(kind, name.to_string(), desc, devpath);
         r.serial = serial;
         // A disk's type is its medium, with no model.
@@ -657,7 +724,11 @@ impl Table {
         }
         let devpath = devpath_in(root, &sys)?;
         let desc = format!("serial port {name}");
-        Some(self.add(Kind::Comm, name.to_string(), desc, devpath).name.clone())
+        Some(
+            self.add(Kind::Comm, name.to_string(), desc, devpath)
+                .name
+                .clone(),
+        )
     }
 
     /// The hypervisor's channels to the guest: each named virtio-serial
@@ -671,14 +742,26 @@ impl Table {
             if name.is_empty() {
                 continue;
             }
-            let Some(devpath) = devpath_in(root, &dir.join(&port)) else { continue };
+            let Some(devpath) = devpath_in(root, &dir.join(&port)) else {
+                continue;
+            };
             let desc = format!("virtual channel {name} ({port})");
             self.add(Kind::Channel, name, desc, devpath);
         }
         let vsock = root.join("bus/virtio/drivers/vmw_vsock_virtio_transport");
-        for dev in sorted_dir(&vsock).into_iter().filter(|d| d.starts_with("virtio")) {
-            let Some(devpath) = devpath_in(root, &vsock.join(&dev)) else { continue };
-            self.add(Kind::Channel, "vsock".into(), format!("virtual socket device ({dev})"), devpath);
+        for dev in sorted_dir(&vsock)
+            .into_iter()
+            .filter(|d| d.starts_with("virtio"))
+        {
+            let Some(devpath) = devpath_in(root, &vsock.join(&dev)) else {
+                continue;
+            };
+            self.add(
+                Kind::Channel,
+                "vsock".into(),
+                format!("virtual socket device ({dev})"),
+                devpath,
+            );
         }
     }
 

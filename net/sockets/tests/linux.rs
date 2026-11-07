@@ -15,13 +15,14 @@ use std::io::{Read, Write};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream, UdpSocket};
 
 use sockets::consts::{
-    AF_INET, AF_UNIX, IPPROTO_TCP, POLLIN, POLLNVAL, POLLOUT, SO_KEEPALIVE, SO_REUSEADDR, SO_TYPE, SOCK_DGRAM,
-    SOCK_STREAM, SOL_SOCKET, TCP_NODELAY,
+    AF_INET, AF_UNIX, IPPROTO_TCP, POLLIN, POLLNVAL, POLLOUT, SO_KEEPALIVE, SO_REUSEADDR, SO_TYPE,
+    SOCK_DGRAM, SOCK_STREAM, SOL_SOCKET, TCP_NODELAY,
 };
 use sockets::layout::i32_at;
 use sockets::resolver::{Hints, Resolver};
 use sockets::{
-    AllowAll, Errno, InProcess, PortRules, Restriction, Restrictions, RootedPaths, SockAddr, Sockets,
+    AllowAll, Errno, InProcess, PortRules, Restriction, Restrictions, RootedPaths, SockAddr,
+    Sockets,
 };
 
 fn job(rules: Box<dyn PortRules>, relay: InProcess) -> Sockets {
@@ -44,7 +45,8 @@ fn loopback(port: u16) -> SockAddr {
 fn tcp_echo_through_a_listener() {
     let mut s = plain();
     let l = s.socket(AF_INET, SOCK_STREAM, 0).unwrap();
-    s.setopt(l, SOL_SOCKET, SO_REUSEADDR, &1i32.to_be_bytes()).unwrap();
+    s.setopt(l, SOL_SOCKET, SO_REUSEADDR, &1i32.to_be_bytes())
+        .unwrap();
     s.bind(l, &loopback(0)).unwrap();
     s.listen(l, 5).unwrap();
     let port = s.sockname(l).unwrap().port();
@@ -63,10 +65,20 @@ fn tcp_echo_through_a_listener() {
     assert_eq!(&buf[..n], b"hello");
     assert_eq!(s.send(a, &buf[..n], 0).unwrap(), 5);
     assert_eq!(&peer.join().unwrap(), b"hello");
-    assert_eq!(i32_at(&s.getopt(a, SOL_SOCKET, SO_TYPE).unwrap(), 0), SOCK_STREAM);
-    s.setopt(a, IPPROTO_TCP, TCP_NODELAY, &1i32.to_be_bytes()).unwrap();
-    assert_eq!(i32_at(&s.getopt(a, IPPROTO_TCP, TCP_NODELAY).unwrap(), 0), 1);
-    assert_eq!(i32_at(&s.getopt(a, SOL_SOCKET, SO_KEEPALIVE).unwrap(), 0), 0);
+    assert_eq!(
+        i32_at(&s.getopt(a, SOL_SOCKET, SO_TYPE).unwrap(), 0),
+        SOCK_STREAM
+    );
+    s.setopt(a, IPPROTO_TCP, TCP_NODELAY, &1i32.to_be_bytes())
+        .unwrap();
+    assert_eq!(
+        i32_at(&s.getopt(a, IPPROTO_TCP, TCP_NODELAY).unwrap(), 0),
+        1
+    );
+    assert_eq!(
+        i32_at(&s.getopt(a, SOL_SOCKET, SO_KEEPALIVE).unwrap(), 0),
+        0
+    );
     assert_eq!(s.getopt(a, SOL_SOCKET, 9999), Err(Errno::ENOPROTOOPT));
     s.close(a).unwrap();
     s.close(l).unwrap();
@@ -120,7 +132,10 @@ fn unix_sockets_live_under_the_path_map() {
     let (x, y) = s.socketpair(AF_UNIX, SOCK_STREAM, 0).unwrap();
     s.send(x, b"pair", 0).unwrap();
     assert_eq!(s.recv(y, &mut buf, 0).unwrap(), 4);
-    assert_eq!(s.socketpair(AF_INET, SOCK_STREAM, 0), Err(Errno::EAFNOSUPPORT));
+    assert_eq!(
+        s.socketpair(AF_INET, SOCK_STREAM, 0),
+        Err(Errno::EAFNOSUPPORT)
+    );
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
@@ -218,9 +233,13 @@ fn getaddrinfo_localhost_then_connect() {
         socktype: SOCK_STREAM,
         ..Hints::default()
     };
-    let list = r.getaddrinfo(Some("localhost"), Some(&port.to_string()), &hints).unwrap();
+    let list = r
+        .getaddrinfo(Some("localhost"), Some(&port.to_string()), &hints)
+        .unwrap();
     let mut s = plain();
-    let sd = s.socket(AF_INET, list[0].socktype, list[0].protocol).unwrap();
+    let sd = s
+        .socket(AF_INET, list[0].socktype, list[0].protocol)
+        .unwrap();
     s.connect(sd, &list[0].addr).unwrap();
     let (_, peer) = listener.accept().unwrap();
     assert_eq!(s.sockname(sd).unwrap().port(), peer.port());
@@ -228,8 +247,8 @@ fn getaddrinfo_localhost_then_connect() {
 
 #[test]
 fn descriptors_pass_between_processes_through_the_relay() {
-    use std::os::fd::OwnedFd;
     use sockets::relay;
+    use std::os::fd::OwnedFd;
     let dir = std::env::temp_dir().join(format!("qs400-relay-{}", std::process::id()));
     let path = dir.join("fdrelay").display().to_string();
     {
@@ -248,7 +267,9 @@ fn descriptors_pass_between_processes_through_the_relay() {
     let fd = sockets::Fd::from(OwnedFd::from(server));
     relay::give(&path, &fd, &pool, &[7; 16], b"T").unwrap();
     drop(fd);
-    let t = relay::take(&path, &pool, None, 2000).unwrap().expect("a descriptor");
+    let t = relay::take(&path, &pool, None, 2000)
+        .unwrap()
+        .expect("a descriptor");
     assert_eq!(t.source, [7; 16]);
     assert_eq!(t.note, b"T");
     let mut taken = TcpStream::from(t.fd.into_owned());

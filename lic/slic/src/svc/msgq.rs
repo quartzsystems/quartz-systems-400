@@ -164,7 +164,9 @@ fn dltmsgq(system: &mut System, p: &Params) -> Result<String, String> {
 fn clrmsgq(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.pos_or(0, "MSGQ")?);
     let which = p.upper("CLEAR").unwrap_or_else(|| "*ALL".into());
-    let n = with_queue(system, "msgq.clear", &lib, &name, |q, _| Ok((q.clear(&which), true)))?;
+    let n = with_queue(system, "msgq.clear", &lib, &name, |q, _| {
+        Ok((q.clear(&which), true))
+    })?;
     Ok(format!("{n} message(s) removed from {name}.\n"))
 }
 
@@ -241,11 +243,21 @@ fn rcvmsg(system: &mut System, p: &Params) -> Result<String, String> {
         None => None,
     };
     let remove = !matches!(p.upper("RMV").as_deref(), Some("*NO"));
-    let m = with_queue(system, if remove { "msgq.remove" } else { "msgq.receive" }, &lib, &name, |q, _| {
-        let m = q.receive(kind, key, remove);
-        let changed = m.is_some();
-        Ok((m, changed))
-    })?;
+    let m = with_queue(
+        system,
+        if remove {
+            "msgq.remove"
+        } else {
+            "msgq.receive"
+        },
+        &lib,
+        &name,
+        |q, _| {
+            let m = q.receive(kind, key, remove);
+            let changed = m.is_some();
+            Ok((m, changed))
+        },
+    )?;
     Ok(match m {
         Some(m) => format!(
             "{:08X} {} {:02} {}\n",
@@ -262,7 +274,9 @@ fn rcvmsg(system: &mut System, p: &Params) -> Result<String, String> {
 fn rmvmsg(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.upper("MSGQ").ok_or("CPD0071 MSGQ is needed")?);
     if let Some(which) = p.upper("CLEAR") {
-        let n = with_queue(system, "msgq.clear", &lib, &name, |q, _| Ok((q.clear(&which), true)))?;
+        let n = with_queue(system, "msgq.clear", &lib, &name, |q, _| {
+            Ok((q.clear(&which), true))
+        })?;
         return Ok(format!("{n} message(s) removed.\n"));
     }
     let key = u32::from_str_radix(

@@ -18,8 +18,8 @@ use tracing::{info, warn};
 use crate::Error;
 use crate::abi::{
     self, ATTR_FUA, ATTR_VOLATILE_CACHE, CMD_ADD_DEV, CMD_DEL_DEV, CMD_SET_PARAMS, CMD_START_DEV,
-    CMD_STOP_DEV, CMD_UPDATE_SIZE, DevInfo, F_CMD_IOCTL_ENCODE, F_UPDATE_SIZE, IO_COMMIT_AND_FETCH_REQ,
-    IO_FETCH_REQ, IoDesc,
+    CMD_STOP_DEV, CMD_UPDATE_SIZE, DevInfo, F_CMD_IOCTL_ENCODE, F_UPDATE_SIZE,
+    IO_COMMIT_AND_FETCH_REQ, IO_FETCH_REQ, IoDesc,
 };
 use crate::sys::{Descs, Ring};
 use crate::target::{BLOCK, Target, serve};
@@ -44,14 +44,22 @@ fn fail(what: &str, e: impl std::fmt::Display) -> Error {
 }
 
 /// One control command: submitted, waited for, its result.
-fn control(ring: &mut Ring, ctrl: &File, op: u32, cmd: &[u8; abi::CTRL_CMD_LEN], what: &str) -> Result<i32, Error> {
+fn control(
+    ring: &mut Ring,
+    ctrl: &File,
+    op: u32,
+    cmd: &[u8; abi::CTRL_CMD_LEN],
+    what: &str,
+) -> Result<i32, Error> {
     use std::os::fd::AsRawFd;
     let sqe = abi::uring_cmd(ctrl.as_raw_fd(), op, u64::from(op), cmd);
     if !ring.push(&sqe) {
         return Err(Error::Kernel(format!("{what}: control ring full")));
     }
     ring.submit_and_wait(1).map_err(|e| fail(what, e))?;
-    let c = ring.pop().ok_or_else(|| Error::Kernel(format!("{what}: no completion")))?;
+    let c = ring
+        .pop()
+        .ok_or_else(|| Error::Kernel(format!("{what}: no completion")))?;
     let (_, res) = abi::cqe(&c);
     if res < 0 {
         return Err(Error::Kernel(format!("{what}: errno {}", -res)));
@@ -141,7 +149,8 @@ impl Device {
     /// Tell the kernel the device's new size.
     pub fn resize(&self, blocks: u64) -> Result<(), Error> {
         let cmd = abi::ctrl_cmd(self.id, 0, 0, blocks * (BLOCK as u64 / 512));
-        self.control(CMD_UPDATE_SIZE, &cmd, "update size").map(|_| ())
+        self.control(CMD_UPDATE_SIZE, &cmd, "update size")
+            .map(|_| ())
     }
 
     /// Stop the device (its fetches end), let the queue thread go and
@@ -197,14 +206,21 @@ fn queue(cdev: &File, target: &dyn Target, ready: &mpsc::Sender<Result<(), Error
         }
     };
     let blocks = MAX_IO as usize / BLOCK;
-    let mut bufs: Vec<blockdev::AlignedBuf> = (0..DEPTH).map(|_| blockdev::AlignedBuf::new(blocks)).collect();
+    let mut bufs: Vec<blockdev::AlignedBuf> = (0..DEPTH)
+        .map(|_| blockdev::AlignedBuf::new(blocks))
+        .collect();
     let fd = {
         use std::os::fd::AsRawFd;
         cdev.as_raw_fd()
     };
     for tag in 0..DEPTH {
         let addr = bufs[usize::from(tag)].as_mut_ptr() as u64;
-        let sqe = abi::uring_cmd(fd, IO_FETCH_REQ, u64::from(tag), &abi::io_cmd(0, tag, 0, addr));
+        let sqe = abi::uring_cmd(
+            fd,
+            IO_FETCH_REQ,
+            u64::from(tag),
+            &abi::io_cmd(0, tag, 0, addr),
+        );
         ring.push(&sqe);
     }
     if let Err(e) = ring.submit_and_wait(0) {
@@ -235,7 +251,12 @@ fn queue(cdev: &File, target: &dyn Target, ready: &mpsc::Sender<Result<(), Error
                 warn!("ublk: request {d:?} failed: errno {}", -result);
             }
             let addr = buf.as_mut_ptr() as u64;
-            let sqe = abi::uring_cmd(fd, IO_COMMIT_AND_FETCH_REQ, user, &abi::io_cmd(0, tag, result, addr));
+            let sqe = abi::uring_cmd(
+                fd,
+                IO_COMMIT_AND_FETCH_REQ,
+                user,
+                &abi::io_cmd(0, tag, result, addr),
+            );
             ring.push(&sqe);
         }
     }

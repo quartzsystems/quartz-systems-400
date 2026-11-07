@@ -58,7 +58,8 @@ fn space(
     let id = usrspc::create(txn, &params, 16, true, 0).map_err(|e| e.to_string())?;
     // QSYS's own spaces are shipped *PUBLIC *USE (QSSECCHK checks it).
     if lib_id == qsys {
-        sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::USE)).map_err(|e| e.to_string())?;
+        sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::USE))
+            .map_err(|e| e.to_string())?;
     }
     Ok(Some(id))
 }
@@ -89,7 +90,13 @@ pub fn load_text(system: &mut System, lib: &str, name: &str) -> Result<Option<St
 }
 
 /// Keep `text` in a text space, made with description `desc` when new.
-pub fn store_text(system: &mut System, lib: &str, name: &str, text: &str, desc: &str) -> Result<(), String> {
+pub fn store_text(
+    system: &mut System,
+    lib: &str,
+    name: &str,
+    text: &str,
+    desc: &str,
+) -> Result<(), String> {
     with_store(system, |txn, qsys| {
         let id = space(txn, qsys, lib, name, Some(desc))?.expect("created");
         usrspc::write(txn, id, 0, &(text.len() as u64).to_be_bytes()).map_err(|e| e.to_string())?;
@@ -118,7 +125,13 @@ pub fn contact(system: &mut System) -> Result<Contact, String> {
 
 /// Keep the support contact information.
 pub fn set_contact(system: &mut System, c: &Contact) -> Result<(), String> {
-    store_text(system, "QSYS", CONTACT, &c.encode(), "Support contact information")
+    store_text(
+        system,
+        "QSYS",
+        CONTACT,
+        &c.encode(),
+        "Support contact information",
+    )
 }
 
 /// Log a problem the system detected; its identifier.
@@ -127,7 +140,12 @@ pub fn log(system: &mut System, kind: PrbType, d: &Detected) -> Result<String, S
     let mut l = load(system)?;
     let id = l.create(kind, d, &name, now_unix());
     store(system, &l)?;
-    super::liclog::write(0x0400, 0x0001, system.current_job, &format!("Problem {id}: {}", d.symptoms));
+    super::liclog::write(
+        0x0400,
+        0x0001,
+        system.current_job,
+        &format!("Problem {id}: {}", d.symptoms),
+    );
     super::trace::internal("PRB", system.current_job, &format!("{id} {}", d.symptoms));
     Ok(id)
 }
@@ -148,7 +166,10 @@ struct ToService {
 
 impl Sender for ToService {
     fn send(&mut self, id: &str, report: &str) -> Result<String, String> {
-        let line = self.client.problem(id, &self.contact, report).map_err(|e| format!("{} {e}", e.msgid()))?;
+        let line = self
+            .client
+            .problem(id, &self.contact, report)
+            .map_err(|e| format!("{} {e}", e.msgid()))?;
         line.strip_prefix("ok ")
             .map(|t| t.trim().to_string())
             .ok_or_else(|| line.clone())
@@ -186,6 +207,11 @@ pub fn report(system: &mut System, id: &str) -> Result<Reported, String> {
         .report(id, s.as_mut(), now_unix())
         .ok_or_else(|| format!("CPF3925 Problem {id} not found in the problem log."))?;
     store(system, &l)?;
-    super::liclog::write(0x0400, 0x0002, system.current_job, &format!("Problem {id}: {r:?}"));
+    super::liclog::write(
+        0x0400,
+        0x0002,
+        system.current_job,
+        &format!("Problem {id}: {r:?}"),
+    );
     Ok(r)
 }

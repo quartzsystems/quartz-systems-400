@@ -79,11 +79,17 @@ pub fn cpytoimpf_paused(
             }
             return Ok(out.into_bytes());
         }
-        each_record_paused(txn, &mut m, &Order::default(), &mut |txn, slot| {
-            out.push_str(&render(txn, owner, &fmt, &slot, opts)?);
-            out.push_str(opts.rcddlm.text());
-            Ok(true)
-        }, pause)?;
+        each_record_paused(
+            txn,
+            &mut m,
+            &Order::default(),
+            &mut |txn, slot| {
+                out.push_str(&render(txn, owner, &fmt, &slot, opts)?);
+                out.push_str(opts.rcddlm.text());
+                Ok(true)
+            },
+            pause,
+        )?;
         Ok(out.into_bytes())
     });
     hold.release(txn);
@@ -148,7 +154,13 @@ fn join_order(txn: &mut Txn<'_>, m: &Member) -> Result<Option<Vec<u64>>> {
 
 /// One record as text, without the record delimiter; a LOB field's
 /// value is read from `owner`'s LOB tree.
-pub fn render(txn: &mut Txn<'_>, owner: ObjectId, fmt: &FormatDef, slot: &Slot, opts: &ImpfOpts) -> Result<String> {
+pub fn render(
+    txn: &mut Txn<'_>,
+    owner: ObjectId,
+    fmt: &FormatDef,
+    slot: &Slot,
+    opts: &ImpfOpts,
+) -> Result<String> {
     let mut out = String::new();
     for (i, f) in fmt.format.fields.iter().enumerate() {
         let null = record::is_null(&slot.null_map, fmt.null_index(i));
@@ -200,13 +212,18 @@ pub(super) fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
         Value::Num(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
         Value::DecFloat(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
         Value::Float(x) => record::float_shown(f, *x).replace('.', &opts.decpnt.to_string()),
-        Value::Char(bytes) if matches!(f.data_type, DataType::Bytes | DataType::Blob) => bytes.iter().fold(String::new(), |mut s, b| {
-            let _ = write!(s, "{b:02X}");
-            s
-        }),
-        Value::Char(bytes) if f.data_type == DataType::Boolean => {
-            if bytes.first() == Some(&0xF1) { "TRUE" } else { "FALSE" }.into()
+        Value::Char(bytes) if matches!(f.data_type, DataType::Bytes | DataType::Blob) => {
+            bytes.iter().fold(String::new(), |mut s, b| {
+                let _ = write!(s, "{b:02X}");
+                s
+            })
         }
+        Value::Char(bytes) if f.data_type == DataType::Boolean => if bytes.first() == Some(&0xF1) {
+            "TRUE"
+        } else {
+            "FALSE"
+        }
+        .into(),
         Value::Char(bytes) => {
             let s = if record::is_utf16(f) || f.data_type == DataType::Dbclob {
                 record::utf16_text(bytes)

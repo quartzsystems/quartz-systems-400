@@ -104,7 +104,10 @@ pub struct TelnetTicketReply {
     pub expires_secs: u32,
 }
 
-wire_struct!(TelnetTicketReply { ticket, expires_secs });
+wire_struct!(TelnetTicketReply {
+    ticket,
+    expires_secs
+});
 
 /// `PasswordStatus`'s reply.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -116,4 +119,7 @@ pub struct PasswordStatus {
     pub warning_days: u16,
 }
 
-wire_struct!(PasswordStatus { expires, warning_days });
+wire_struct!(PasswordStatus {
+    expires,
+    warning_days
+});

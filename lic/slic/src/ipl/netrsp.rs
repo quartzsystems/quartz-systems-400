@@ -53,7 +53,10 @@ pub fn device_path_is_network(mut p: &[u8]) -> bool {
 /// The response file's text for `src` (a URL, or beside the boot file).
 pub fn text(system: &mut System, src: &Source) -> Result<String, String> {
     let key = format!("{src:?}");
-    if let Some((k, t)) = FETCHED.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    if let Some((k, t)) = FETCHED
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
         && k == key
     {
         return Ok(t);
@@ -71,8 +74,12 @@ pub fn text(system: &mut System, src: &Source) -> Result<String, String> {
     };
     let body = get(&url)?;
     let t = String::from_utf8(body).map_err(|_| format!("{url}: not text"))?;
-    system.out.serial(&format!("slic: install: response file from {url}\n"));
-    *FETCHED.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some((key, t.clone()));
+    system
+        .out
+        .serial(&format!("slic: install: response file from {url}\n"));
+    *FETCHED
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some((key, t.clone()));
     Ok(t)
 }
 
@@ -110,7 +117,8 @@ fn trusted_roots() -> tls::rustls::RootCertStore {
         let _ = roots.add(tls::rustls::pki_types::CertificateDer::from(r.der.clone()));
     }
     if let Ok(f) = super::media::locate()
-        && let Ok(Some(pem)) = super::media::with_media(&f, |at| std::fs::read_to_string(at.join(TRUST)).ok())
+        && let Ok(Some(pem)) =
+            super::media::with_media(&f, |at| std::fs::read_to_string(at.join(TRUST)).ok())
         && let Ok(ders) = certs::x509::pem_certificates(&pem)
     {
         for d in ders {
@@ -137,7 +145,10 @@ mod tests {
         p.extend([0x7f, 0xff, 4, 0]);
         assert!(device_path_is_network(&p));
         // A disk: Pci/Sata/HD/File, no network node.
-        let disk = [2, 1, 12, 0, 0xd0, 0x41, 3, 0x0a, 0, 0, 0, 0, 3, 18, 10, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0xff, 4, 0];
+        let disk = [
+            2, 1, 12, 0, 0xd0, 0x41, 3, 0x0a, 0, 0, 0, 0, 3, 18, 10, 0, 0, 0, 0, 0, 0, 0, 0x7f,
+            0xff, 4, 0,
+        ];
         assert!(!device_path_is_network(&disk));
         assert!(!device_path_is_network(&[3, 11, 2, 0]));
     }

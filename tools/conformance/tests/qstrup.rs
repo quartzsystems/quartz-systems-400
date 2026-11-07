@@ -35,5 +35,8 @@ fn qstrup_compiles() {
     let c = cl::compile(source, &opts, &mut env, &mut cl::NoFiles);
     let why: Vec<String> = c.diags.iter().map(ToString::to_string).collect();
     assert!(c.created, "{}", why.join("\n"));
-    assert!(c.qir.contains("QSIPLA"), "the IPL attributes' data area is read");
+    assert!(
+        c.qir.contains("QSIPLA"),
+        "the IPL attributes' data area is read"
+    );
 }

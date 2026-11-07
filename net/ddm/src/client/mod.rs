@@ -118,7 +118,13 @@ impl<S: Read + Write> Connection<S> {
             srvrlslv: Some(release_level()),
             managers: Attributes::requester_managers()
                 .into_iter()
-                .map(|(m, l)| if m == mgr::SQLAM { (m, o.sqlam) } else { (m, l) })
+                .map(|(m, l)| {
+                    if m == mgr::SQLAM {
+                        (m, o.sqlam)
+                    } else {
+                        (m, l)
+                    }
+                })
                 .collect(),
         };
         let first = o.mechanisms.first().copied().unwrap_or(Mechanism::UsrIdPwd);
@@ -149,13 +155,19 @@ impl<S: Read + Write> Connection<S> {
                 .copied()
                 .find(|m| rd.secmec.contains(&m.code()))
                 .ok_or_else(|| Error::Reply {
-                    name: format!("no common security mechanism (server offers {:?})", rd.secmec),
+                    name: format!(
+                        "no common security mechanism (server offers {:?})",
+                        rd.secmec
+                    ),
                     svrcod: svrcod::ERROR,
                 })?;
             req = Requester::new(pick);
             let corr = c.next_corr();
             let r = c.exchange(vec![Dss::request(corr, c.accsec(&req, o))])?;
-            let obj = r.first().and_then(Dss::first).ok_or(Error::Missing("ACCSECRD"))?;
+            let obj = r
+                .first()
+                .and_then(Dss::first)
+                .ok_or(Error::Missing("ACCSECRD"))?;
             if obj.cp != rpy::ACCSECRD {
                 return Err(reply_error(obj));
             }

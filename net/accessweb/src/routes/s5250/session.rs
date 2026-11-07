@@ -70,7 +70,11 @@ pub const KEYPAD: &[(&str, &str)] = &[
 
 /// The functions that send the screen to the system.
 pub fn is_aid(f: &str) -> bool {
-    f.starts_with("F:") || matches!(f, "Enter" | "PageUp" | "PageDown" | "Attention" | "SysReq" | "Help" | "Print" | "Clear")
+    f.starts_with("F:")
+        || matches!(
+            f,
+            "Enter" | "PageUp" | "PageDown" | "Attention" | "SysReq" | "Help" | "Print" | "Clear"
+        )
 }
 
 /// The menus: key and name.
@@ -114,7 +118,11 @@ fn prefs(rq: &Rq<'_>, s: &Saved) -> Prefs {
     Prefs {
         scale,
         keypad,
-        scheme: if bw { Scheme::BlackOnWhite } else { Scheme::Console },
+        scheme: if bw {
+            Scheme::BlackOnWhite
+        } else {
+            Scheme::Console
+        },
     }
 }
 
@@ -146,7 +154,12 @@ fn live(rq: &Rq<'_>, s: &Saved, connect: bool) -> Result<Live, Message> {
 
 fn gone(s: &Saved) -> Message {
     let sys = s.file.system.name.as_str();
-    Message::new(Kind::Error, "QAD1006", &format!("Session to {sys} disconnected.")).with_data(&[sys])
+    Message::new(
+        Kind::Error,
+        "QAD1006",
+        &format!("Session to {sys} disconnected."),
+    )
+    .with_data(&[sys])
 }
 
 /// Connect, auto sign-on only where the policy allows it; the session's
@@ -207,11 +220,21 @@ pub fn page(rq: &Rq<'_>, id: u32) -> Response {
     {
         messages.push(m.clone());
     }
-    let menu = q.get("menu").map_or_else(|| rq.get(&key(id, "menu")), ToString::to_string);
-    let menu = if MENUS.iter().any(|m| m.0 == menu) { menu } else { "file".into() };
+    let menu = q
+        .get("menu")
+        .map_or_else(|| rq.get(&key(id, "menu")), ToString::to_string);
+    let menu = if MENUS.iter().any(|m| m.0 == menu) {
+        menu
+    } else {
+        "file".into()
+    };
     rq.set(&[(&key(id, "menu"), &menu)]);
     let p = prefs(rq, &s);
-    let wide = if l.view.screen.rows == 27 { " (27x132)" } else { "" };
+    let wide = if l.view.screen.rows == 27 {
+        " (27x132)"
+    } else {
+        ""
+    };
     let body = body(rq, &s, &l, &p, &menu);
     let h1 = format!("5250 display: {title}{wide}");
     let mut page = Page {
@@ -234,15 +257,26 @@ pub fn page(rq: &Rq<'_>, id: u32) -> Response {
 /// page's one script.
 fn wide_frame(html: &str, rq: &Rq<'_>, id: u32, p: &Prefs) -> String {
     let mut out = html.to_string();
-    if let (Some(a), Some(b)) = (out.find("<td class=\"nav\" valign=\"top\">"), out.find("<td class=\"content\" valign=\"top\">")) {
+    if let (Some(a), Some(b)) = (
+        out.find("<td class=\"nav\" valign=\"top\">"),
+        out.find("<td class=\"content\" valign=\"top\">"),
+    ) {
         out.replace_range(a..b, "");
     }
-    out = out.replacen("<td class=\"content\" valign=\"top\">", "<td class=\"content\" valign=\"top\" colspan=\"2\">", 1);
+    out = out.replacen(
+        "<td class=\"content\" valign=\"top\">",
+        "<td class=\"content\" valign=\"top\" colspan=\"2\">",
+        1,
+    );
     let script = format!(
         "<script src=\"{}\" data-session=\"{id}\" data-scale=\"{}\" data-scheme=\"{}\"></script>\n",
         esc(&rq.ctx.url("/5250/script.js")),
         p.scale,
-        if p.scheme == Scheme::BlackOnWhite { "bw" } else { "console" }
+        if p.scheme == Scheme::BlackOnWhite {
+            "bw"
+        } else {
+            "console"
+        }
     );
     out.replacen("</head>", &format!("{script}</head>"), 1)
 }
@@ -256,10 +290,26 @@ fn body(rq: &Rq<'_>, s: &Saved, l: &Live, p: &Prefs, menu: &str) -> String {
     // Menu bar: the menu names, the open menu's items below.
     let names: Vec<String> = MENUS
         .iter()
-        .map(|(k, n)| if *k == menu { format!("<b>{n}</b>") } else { format!("<a href=\"{}{}\">{n}</a>", url(&here), esc(&query(&[("menu", k)]))) })
+        .map(|(k, n)| {
+            if *k == menu {
+                format!("<b>{n}</b>")
+            } else {
+                format!(
+                    "<a href=\"{}{}\">{n}</a>",
+                    url(&here),
+                    esc(&query(&[("menu", k)]))
+                )
+            }
+        })
         .chain([
-            format!("<a href=\"{}\">Macro</a>", url(&format!("/5250/{id}/macros"))),
-            format!("<a href=\"{}\">Help</a>", esc(&rq.ctx.product.help("5250session"))),
+            format!(
+                "<a href=\"{}\">Macro</a>",
+                url(&format!("/5250/{id}/macros"))
+            ),
+            format!(
+                "<a href=\"{}\">Help</a>",
+                esc(&rq.ctx.product.help("5250session"))
+            ),
         ])
         .collect();
     let connected = l.state != State::Disconnected;
@@ -270,11 +320,24 @@ fn body(rq: &Rq<'_>, s: &Saved, l: &Live, p: &Prefs, menu: &str) -> String {
         names.join(" &nbsp;&nbsp; ")
     );
     // Toolbar.
-    let tb = |v: &str, on: bool| format!("<input type=\"submit\" name=\"tb\" value=\"{v}\"{}>", if on { "" } else { " disabled" });
+    let tb = |v: &str, on: bool| {
+        format!(
+            "<input type=\"submit\" name=\"tb\" value=\"{v}\"{}>",
+            if on { "" } else { " disabled" }
+        )
+    };
     let scale = if p.scale == 2 {
-        format!("<a href=\"{}{}\">1x</a> <b>2x</b>", url(&here), esc(&query(&[("scale", "1")])))
+        format!(
+            "<a href=\"{}{}\">1x</a> <b>2x</b>",
+            url(&here),
+            esc(&query(&[("scale", "1")]))
+        )
     } else {
-        format!("<b>1x</b> <a href=\"{}{}\">2x</a>", url(&here), esc(&query(&[("scale", "2")])))
+        format!(
+            "<b>1x</b> <a href=\"{}{}\">2x</a>",
+            url(&here),
+            esc(&query(&[("scale", "2")]))
+        )
     };
     let print = rq.allowed(policy::S5250_PRINT);
     let _ = write!(
@@ -293,7 +356,13 @@ fn body(rq: &Rq<'_>, s: &Saved, l: &Live, p: &Prefs, menu: &str) -> String {
     let mut view = l.view.clone();
     view.scheme = p.scheme;
     let (w, h) = view.size(p.scale);
-    let png = format!("/5250/session/{id}/screen.png{}", query(&[("v", &l.version.to_string()), ("scale", &p.scale.to_string())]));
+    let png = format!(
+        "/5250/session/{id}/screen.png{}",
+        query(&[
+            ("v", &l.version.to_string()),
+            ("scale", &p.scale.to_string())
+        ])
+    );
     let _ = write!(
         b,
         "<form method=\"post\">{}<table cellspacing=\"0\" cellpadding=\"0\" style=\"border:1px solid #808080\"><tr><td style=\"padding:0;vertical-align:top;background:#000000\"><img src=\"{}\" width=\"{w}\" height=\"{h}\" alt=\"5250 screen\" style=\"display:block;image-rendering:pixelated;image-rendering:crisp-edges\"></td>",
@@ -305,9 +374,16 @@ fn body(rq: &Rq<'_>, s: &Saved, l: &Live, p: &Prefs, menu: &str) -> String {
         for (i, row) in KEYPAD.chunks(3).enumerate() {
             b.push_str("<tr>");
             for (label, _) in row {
-                let td = if i == 8 { "<td style=\"padding-top:8px\">" } else { "<td>" };
+                let td = if i == 8 {
+                    "<td style=\"padding-top:8px\">"
+                } else {
+                    "<td>"
+                };
                 let dis = if connected { "" } else { " disabled" };
-                let _ = write!(b, "{td}<input type=\"submit\" name=\"k\" value=\"{label}\" style=\"{BUTTON}\"{dis}></td>");
+                let _ = write!(
+                    b,
+                    "{td}<input type=\"submit\" name=\"k\" value=\"{label}\" style=\"{BUTTON}\"{dis}></td>"
+                );
             }
             b.push_str("</tr>");
         }
@@ -316,12 +392,23 @@ fn body(rq: &Rq<'_>, s: &Saved, l: &Live, p: &Prefs, menu: &str) -> String {
     b.push_str("</tr></table></form>");
     // Status bar: message, indicator, system and state.
     let (msg, ind, cls, state) = match l.state {
-        State::Disconnected => ("Not connected. Communication &gt; Connect, or Reconnect.".to_string(), String::new(), "err", "Not connected"),
+        State::Disconnected => (
+            "Not connected. Communication &gt; Connect, or Reconnect.".to_string(),
+            String::new(),
+            "err",
+            "Not connected",
+        ),
         st => {
             let (r, c) = l.view.screen.cursor;
             let tls = if l.view.tls { "TLS &nbsp; " } else { "" };
-            let state = if st == State::SigningOn { "Connected, signing on" } else { "Connected" };
-            let msg = recording(rq, id).map(|n| format!("Recording macro {}", esc(&n))).unwrap_or_default();
+            let state = if st == State::SigningOn {
+                "Connected, signing on"
+            } else {
+                "Connected"
+            };
+            let msg = recording(rq, id)
+                .map(|n| format!("Recording macro {}", esc(&n)))
+                .unwrap_or_default();
             (msg, format!("{tls}{r:02}/{c:03}"), "ok", state)
         }
     };
@@ -335,21 +422,45 @@ fn body(rq: &Rq<'_>, s: &Saved, l: &Live, p: &Prefs, menu: &str) -> String {
 
 fn menu_items(rq: &Rq<'_>, s: &Saved, menu: &str, connected: bool) -> String {
     let id = s.id;
-    let link = |route: &str, label: &str| format!("<a href=\"{}\">{label}</a>", esc(&rq.ctx.url(route)));
+    let link =
+        |route: &str, label: &str| format!("<a href=\"{}\">{label}</a>", esc(&rq.ctx.url(route)));
     let posts = |name: &str, labels: &[&str], on: bool| -> String {
         let buttons = labels.iter().fold(String::new(), |mut s, l| {
-            let _ = write!(s, "<input type=\"submit\" name=\"{name}\" value=\"{l}\"{}>", if on { "" } else { " disabled" });
+            let _ = write!(
+                s,
+                "<input type=\"submit\" name=\"{name}\" value=\"{l}\"{}>",
+                if on { "" } else { " disabled" }
+            );
             s
         });
-        format!("<form method=\"post\">{}{buttons}</form>", rq.ctx.csrf_field())
+        format!(
+            "<form method=\"post\">{}{buttons}</form>",
+            rq.ctx.csrf_field()
+        )
     };
     let sep = " &nbsp;|&nbsp; ";
     match menu {
-        "edit" => [link(&format!("/5250/session/{id}/copy"), "Copy"), link(&format!("/5250/session/{id}/paste"), "Paste")].join(sep),
+        "edit" => [
+            link(&format!("/5250/session/{id}/copy"), "Copy"),
+            link(&format!("/5250/session/{id}/paste"), "Paste"),
+        ]
+        .join(sep),
         "view" => posts("tb", &["Keypad", "Colour map"], true),
-        "communication" => posts("tb", if connected { &["Disconnect", "Reconnect"] } else { &["Connect", "Reconnect"] }, true),
+        "communication" => posts(
+            "tb",
+            if connected {
+                &["Disconnect", "Reconnect"]
+            } else {
+                &["Connect", "Reconnect"]
+            },
+            true,
+        ),
         "actions" => [
-            posts("k", &["Enter", "Reset", "Attn", "SysRq", "Help", "Clear"], connected),
+            posts(
+                "k",
+                &["Enter", "Reset", "Attn", "SysRq", "Help", "Clear"],
+                connected,
+            ),
             link(&format!("/5250/{id}/keymap"), "Keyboard map"),
             link(&format!("/5250/{id}/keymap"), "Load keyboard map"),
             link(&format!("/5250/{id}/keymap/export"), "Export keyboard map"),
@@ -357,12 +468,24 @@ fn menu_items(rq: &Rq<'_>, s: &Saved, menu: &str, connected: bool) -> String {
         .join(sep),
         _ => [
             link("/5250", "Open session..."),
-            format!("<a href=\"{}{}\">Save session</a>", esc(&rq.ctx.url(&format!("/5250/session/{id}"))), esc(&query(&[("save", "1")]))),
+            format!(
+                "<a href=\"{}{}\">Save session</a>",
+                esc(&rq.ctx.url(&format!("/5250/session/{id}"))),
+                esc(&query(&[("save", "1")]))
+            ),
             link("/5250", "Save session as..."),
-            format!("<a href=\"{}{}\">Recent sessions</a>", esc(&rq.ctx.url("/5250")), esc(&query(&[("sort", "l")]))),
+            format!(
+                "<a href=\"{}{}\">Recent sessions</a>",
+                esc(&rq.ctx.url("/5250")),
+                esc(&query(&[("sort", "l")]))
+            ),
             link(&format!("/5250/{id}/properties"), "Properties..."),
             link(&format!("/5250/session/{id}/print"), "Print screen"),
-            format!("<a href=\"{}{}\">Close</a>", esc(&rq.ctx.url("/5250")), esc(&query(&[("close", &id.to_string())]))),
+            format!(
+                "<a href=\"{}{}\">Close</a>",
+                esc(&rq.ctx.url("/5250")),
+                esc(&query(&[("close", &id.to_string())]))
+            ),
         ]
         .join(sep),
     }
@@ -378,10 +501,17 @@ fn save(rq: &Rq<'_>, s: &Saved) -> Response {
     let p = prefs(rq, s);
     let mut s = s.clone();
     s.file.session.keypad_visible = p.keypad;
-    s.file.session.colour_map = if p.scheme == Scheme::BlackOnWhite { ColorMap::BlackOnWhite } else { ColorMap::Console };
+    s.file.session.colour_map = if p.scheme == Scheme::BlackOnWhite {
+        ColorMap::BlackOnWhite
+    } else {
+        ColorMap::Console
+    };
     let back = format!("/5250/session/{}", s.id);
     match rq.env().session5250.put(rq.user(), s) {
-        Ok(_) => rq.done(&back, rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title])),
+        Ok(_) => rq.done(
+            &back,
+            rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title]),
+        ),
         Err(m) => rq.done(&back, m),
     }
 }
@@ -423,7 +553,14 @@ fn post(rq: &Rq<'_>, s: &Saved) -> Response {
         }
         "Colour map" => {
             let p = prefs(rq, s);
-            rq.set(&[(&key(id, "col"), if p.scheme == Scheme::BlackOnWhite { "console" } else { "bw" })]);
+            rq.set(&[(
+                &key(id, "col"),
+                if p.scheme == Scheme::BlackOnWhite {
+                    "console"
+                } else {
+                    "bw"
+                },
+            )]);
         }
         "Keyboard Map" => return rq.redirect(&format!("/5250/{id}/keymap")),
         _ => {}
@@ -435,9 +572,14 @@ fn post(rq: &Rq<'_>, s: &Saved) -> Response {
 pub fn send(rq: &Rq<'_>, id: u32, input: Input) -> Result<(), Message> {
     let env = &rq.env().session5250;
     if let Some(name) = recording(rq, id) {
-        let nondisplay = env.live(rq.user(), id).is_some_and(|l| in_nondisplay(&l.view.screen));
+        let nondisplay = env
+            .live(rq.user(), id)
+            .is_some_and(|l| in_nondisplay(&l.view.screen));
         let step = match &input {
-            Input::Text(_) if nondisplay => Some(Action::Prompt { label: "Password".into(), hidden: true }),
+            Input::Text(_) if nondisplay => Some(Action::Prompt {
+                label: "Password".into(),
+                hidden: true,
+            }),
             Input::Text(t) => Some(Action::Type { text: t.clone() }),
             Input::Key(k) => Some(Action::Key { key: k.clone() }),
             Input::Cursor(..) => None,
@@ -449,7 +591,9 @@ pub fn send(rq: &Rq<'_>, id: u32, input: Input) -> Result<(), Message> {
             if let Input::Key(k) = &input
                 && is_aid(k)
             {
-                m.steps.push(Step::new(Action::WaitUnlock { timeout_ms: crate::s5250::files::qsm::DEFAULT_TIMEOUT_MS }));
+                m.steps.push(Step::new(Action::WaitUnlock {
+                    timeout_ms: crate::s5250::files::qsm::DEFAULT_TIMEOUT_MS,
+                }));
             }
             steps.push_str(&m.to_lines());
             rq.set(&[(&key(id, "recsteps"), &steps)]);
@@ -463,7 +607,9 @@ fn in_nondisplay(s: &Screen) -> bool {
     let (r, c) = s.cursor;
     s.cells
         .get((r.max(1) - 1) * s.cols + c.max(1) - 1)
-        .is_some_and(|cell| !cell.is_attr && crate::s5250::look::render::style(cell.attr).nondisplay)
+        .is_some_and(|cell| {
+            !cell.is_attr && crate::s5250::look::render::style(cell.attr).nondisplay
+        })
 }
 
 /// The macro being recorded in session `id`, if one is.
@@ -505,12 +651,21 @@ fn play(rq: &Rq<'_>, s: &Saved, name: &str) -> Response {
                 std::thread::sleep(Duration::from_millis(u64::from(*ms).min(5000)));
                 Ok(())
             }
-            Action::WaitUnlock { timeout_ms } => wait_for(rq, s.id, *timeout_ms, |l| l.view.screen.keyboard == crate::s5250::look::render::Keyboard::Open)
-                .then_some(())
-                .ok_or_else(|| "the keyboard stayed locked".to_string()),
-            Action::WaitText { row, col, text, timeout_ms } => wait_for(rq, s.id, *timeout_ms, |l| at(&l.view.screen, *row, *col, text))
-                .then_some(())
-                .ok_or_else(|| format!("\"{text}\" did not appear at {row},{col}")),
+            Action::WaitUnlock { timeout_ms } => wait_for(rq, s.id, *timeout_ms, |l| {
+                l.view.screen.keyboard == crate::s5250::look::render::Keyboard::Open
+            })
+            .then_some(())
+            .ok_or_else(|| "the keyboard stayed locked".to_string()),
+            Action::WaitText {
+                row,
+                col,
+                text,
+                timeout_ms,
+            } => wait_for(rq, s.id, *timeout_ms, |l| {
+                at(&l.view.screen, *row, *col, text)
+            })
+            .then_some(())
+            .ok_or_else(|| format!("\"{text}\" did not appear at {row},{col}")),
             Action::Prompt { .. } => Err("a prompt needs the page's script to ask".into()),
         };
         if let Err(why) = r {
@@ -525,7 +680,12 @@ fn play(rq: &Rq<'_>, s: &Saved, name: &str) -> Response {
 pub fn at(s: &Screen, row: u8, col: u8, text: &str) -> bool {
     let rows = s.text_rows();
     rows.get(usize::from(row).saturating_sub(1))
-        .is_some_and(|r| r.chars().skip(usize::from(col).saturating_sub(1)).collect::<String>().starts_with(text))
+        .is_some_and(|r| {
+            r.chars()
+                .skip(usize::from(col).saturating_sub(1))
+                .collect::<String>()
+                .starts_with(text)
+        })
 }
 
 fn wait_for(rq: &Rq<'_>, id: u32, timeout_ms: u32, ok: impl Fn(&Live) -> bool) -> bool {
@@ -569,7 +729,11 @@ pub fn part(rq: &Rq<'_>, id: u32, rest: &str) -> Response {
     };
     match rest {
         "screen.png" => {
-            let scale = if rq.query().get("scale") == Some("2") { 2 } else { 1 };
+            let scale = if rq.query().get("scale") == Some("2") {
+                2
+            } else {
+                1
+            };
             let Some(v) = current() else {
                 return rq.not_found("screen");
             };
@@ -579,7 +743,11 @@ pub fn part(rq: &Rq<'_>, id: u32, rest: &str) -> Response {
             let Some(v) = current() else {
                 return rq.not_found("screen");
             };
-            Response::new(200, "text/plain; charset=utf-8", v.screen.text_rows().join("\n").into_bytes())
+            Response::new(
+                200,
+                "text/plain; charset=utf-8",
+                v.screen.text_rows().join("\n").into_bytes(),
+            )
         }
         "print" => {
             if let Err(r) = rq.policy(policy::S5250_PRINT, &crumb) {
@@ -588,8 +756,15 @@ pub fn part(rq: &Rq<'_>, id: u32, rest: &str) -> Response {
             let Some(v) = current() else {
                 return rq.not_found("screen");
             };
-            let name: String = title.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
-            let pdf = pdf::print_screen(&v.picture(1), v.scheme.background(), &format!("{title}: 5250 screen"));
+            let name: String = title
+                .chars()
+                .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+                .collect();
+            let pdf = pdf::print_screen(
+                &v.picture(1),
+                v.scheme.background(),
+                &format!("{title}: 5250 screen"),
+            );
             Response::download(&format!("{name}.pdf"), "application/pdf", pdf)
         }
         "key" => {
@@ -610,7 +785,14 @@ pub fn part(rq: &Rq<'_>, id: u32, rest: &str) -> Response {
             }
             rq.redirect(&format!("/5250/session/{id}"))
         }
-        "copy" => text_page(rq, &s, "Copy", &current().map(|v| v.screen.copy((1, 1), (v.screen.rows, v.screen.cols))).unwrap_or_default()),
+        "copy" => text_page(
+            rq,
+            &s,
+            "Copy",
+            &current()
+                .map(|v| v.screen.copy((1, 1), (v.screen.rows, v.screen.cols)))
+                .unwrap_or_default(),
+        ),
         "paste" => paste(rq, &s),
         _ => rq.not_found("page"),
     }
@@ -670,9 +852,24 @@ pub fn row_json(s: &Screen, r: usize) -> String {
     let cells = &s.cells[r * s.cols..(r + 1) * s.cols];
     let text: String = cells
         .iter()
-        .map(|c| if c.is_attr || crate::s5250::look::render::style(c.attr).nondisplay { ' ' } else { c.ch })
+        .map(|c| {
+            if c.is_attr || crate::s5250::look::render::style(c.attr).nondisplay {
+                ' '
+            } else {
+                c.ch
+            }
+        })
         .collect();
-    let styles: String = cells.iter().map(|c| if c.is_attr { '.' } else { char::from(b'@' + (c.attr & 0x1F)) }).collect();
+    let styles: String = cells
+        .iter()
+        .map(|c| {
+            if c.is_attr {
+                '.'
+            } else {
+                char::from(b'@' + (c.attr & 0x1F))
+            }
+        })
+        .collect();
     format!("[{r},{},{}]", json(&text), json(&styles))
 }
 
@@ -696,11 +893,15 @@ fn json(s: &str) -> String {
 /// else the rows that changed.
 pub fn screen_message(l: &Live, prev: Option<&Live>) -> String {
     let s = &l.view.screen;
-    let same_shape = prev.is_some_and(|p| p.view.screen.rows == s.rows && p.view.screen.cols == s.cols);
+    let same_shape =
+        prev.is_some_and(|p| p.view.screen.rows == s.rows && p.view.screen.cols == s.cols);
     let rows: Vec<String> = (0..s.rows)
         .filter(|r| {
             !same_shape
-                || prev.is_some_and(|p| p.view.screen.cells[r * s.cols..(r + 1) * s.cols] != s.cells[r * s.cols..(r + 1) * s.cols])
+                || prev.is_some_and(|p| {
+                    p.view.screen.cells[r * s.cols..(r + 1) * s.cols]
+                        != s.cells[r * s.cols..(r + 1) * s.cols]
+                })
         })
         .map(|r| row_json(s, r))
         .collect();
@@ -764,7 +965,10 @@ pub fn parse_input(msg: &str) -> Option<Input> {
     match field("t")?.as_str() {
         "key" => Some(Input::Key(field("k")?)),
         "type" => Some(Input::Text(field("s")?)),
-        "cursor" => Some(Input::Cursor(field("r")?.parse().ok()?, field("c")?.parse().ok()?)),
+        "cursor" => Some(Input::Cursor(
+            field("r")?.parse().ok()?,
+            field("c")?.parse().ok()?,
+        )),
         _ => None,
     }
 }
@@ -806,7 +1010,11 @@ pub fn ws(rq: &Rq<'_>, id: u32) -> Response {
                     if let Some(input) = parse_input(&t)
                         && let Err(m) = env.input(&user, id, input)
                     {
-                        let _ = sock.send(&format!("{{\"t\":\"message\",\"id\":{},\"text\":{}}}", json(&m.id), json(&m.text)));
+                        let _ = sock.send(&format!(
+                            "{{\"t\":\"message\",\"id\":{},\"text\":{}}}",
+                            json(&m.id),
+                            json(&m.text)
+                        ));
                     }
                 }
                 Ok(_) => {}

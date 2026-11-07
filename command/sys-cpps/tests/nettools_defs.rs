@@ -27,7 +27,14 @@ fn captured() -> Captured {
     let mut cur: Option<String> = None;
     for line in text.lines() {
         if let Some(rest) = line.strip_prefix("CMD ") {
-            let name = rest.split_whitespace().next().unwrap_or("").rsplit('/').next().unwrap_or("").to_string();
+            let name = rest
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .to_string();
             out.entry(name.clone()).or_default();
             cur = Some(name);
             continue;
@@ -65,7 +72,8 @@ fn definitions_match_the_capture() {
     let mut bad = Vec::new();
     for name in COMMANDS {
         let theirs = &cap[*name];
-        let src = sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
+        let src =
+            sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
         let def = cmd::source::compile(name, src).unwrap_or_else(|e| panic!("{name}: {e:?}"));
         let ours: Vec<&str> = def.parms.iter().map(|p| p.kwd.as_str()).collect();
         let want: Vec<&str> = theirs.iter().map(|p| p.0.as_str()).collect();
@@ -75,12 +83,20 @@ fn definitions_match_the_capture() {
         }
         for (p, (kwd, min, max, dft, spc)) in def.parms.iter().zip(theirs) {
             if p.min != *min || p.max != *max {
-                bad.push(format!("{name} {kwd}: MIN/MAX {}/{} against {min}/{max}", p.min, p.max));
+                bad.push(format!(
+                    "{name} {kwd}: MIN/MAX {}/{} against {min}/{max}",
+                    p.min, p.max
+                ));
             }
             if p.dft.as_deref() != dft.as_deref() && !(dft.is_none() && p.dft.is_none()) {
                 bad.push(format!("{name} {kwd}: DFT {:?} against {dft:?}", p.dft));
             }
-            let ours: Vec<String> = p.spcval.iter().chain(&p.sngval).map(|s| s.from.clone()).collect();
+            let ours: Vec<String> = p
+                .spcval
+                .iter()
+                .chain(&p.sngval)
+                .map(|s| s.from.clone())
+                .collect();
             for s in spc {
                 if !ours.iter().any(|o| o.eq_ignore_ascii_case(s)) {
                     bad.push(format!("{name} {kwd}: special value {s} missing"));
@@ -93,11 +109,17 @@ fn definitions_match_the_capture() {
 
 #[test]
 fn every_tool_has_a_place() {
-    for name in COMMANDS
-        .iter()
-        .chain(&["STRCMNTRC", "ENDCMNTRC", "DLTCMNTRC", "CHKCMNTRC", "PRTCMNTRC"])
-    {
-        assert!(sys_cpps::entry(name).is_some(), "{name} is not in the inventory");
+    for name in COMMANDS.iter().chain(&[
+        "STRCMNTRC",
+        "ENDCMNTRC",
+        "DLTCMNTRC",
+        "CHKCMNTRC",
+        "PRTCMNTRC",
+    ]) {
+        assert!(
+            sys_cpps::entry(name).is_some(),
+            "{name} is not in the inventory"
+        );
     }
 }
 
@@ -168,7 +190,12 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !values.iter().all(|v| tail.contains(v)) {

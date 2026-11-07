@@ -52,7 +52,11 @@ pub const SPEC: &[ParamSpec] = &[
     p("TCPR2CNT", "16", &[Kind::Int(2, 16)]),
     p("TCPMINRTM", "250", &[Kind::Int(100, 1000)]),
     p("TCPCLOTIMO", "120", &[Kind::Int(0, 14400)]),
-    p("TCPCNNMSG", "*THRESHOLD", &[Kind::Choice(&["*THRESHOLD", "*ALL", "*NONE"])]),
+    p(
+        "TCPCNNMSG",
+        "*THRESHOLD",
+        &[Kind::Choice(&["*THRESHOLD", "*ALL", "*NONE"])],
+    ),
     p("UDPCKS", "*YES", &[Kind::Choice(YN)]),
     g(
         "IPPATHMTU",
@@ -65,7 +69,11 @@ pub const SPEC: &[ParamSpec] = &[
     p("IPRSBTIMO", "10", &[Kind::Int(5, 120)]),
     p("IPTTL", "64", &[Kind::Int(1, 255)]),
     p("IPQOSENB", "*NO", &[Kind::Choice(&["*TOS", "*YES", "*NO"])]),
-    p("IPQOSBCH", "*NORMAL", &[Kind::Choice(&["*NORMAL", "*MINDELAY"])]),
+    p(
+        "IPQOSBCH",
+        "*NORMAL",
+        &[Kind::Choice(&["*NORMAL", "*MINDELAY"])],
+    ),
     p("IPQOSTMR", "100", &[Kind::Int(5, 5000)]),
     g(
         "IPDEADGATE",
@@ -95,7 +103,11 @@ pub const SPEC: &[ParamSpec] = &[
     p("IP6ERRLMT", "10", &[Kind::Int(1, 255)]),
     p("IP6ERRRATE", "10", &[Kind::Int(1, 255)]),
     p("IP6HOPLMT", "64", &[Kind::Int(1, 255)]),
-    p("IP6DUPRTLS", "*DFT", &[Kind::Choice(&["*DFT", "*NONE", "*RTR"])]),
+    p(
+        "IP6DUPRTLS",
+        "*DFT",
+        &[Kind::Choice(&["*DFT", "*NONE", "*RTR"])],
+    ),
     p("IP6TMPAVL", "7.0", &[Kind::Tenths(1, 300)]),
     p("IP6TMPAPL", "1.0", &[Kind::Tenths(1, 300)]),
     p("IP6TMPAXP", "", &[Kind::Text]),
@@ -228,7 +240,10 @@ pub fn stored_only() -> Vec<&'static str> {
         .map(|m| m.param)
         .chain(["IPPATHMTU", "IP6HOPLMT", "IP6TMPAVL", "IP6TMPAPL"])
         .collect();
-    SPEC.iter().map(|s| s.kwd).filter(|k| !mapped.contains(k)).collect()
+    SPEC.iter()
+        .map(|s| s.kwd)
+        .filter(|k| !mapped.contains(k))
+        .collect()
 }
 
 /// The number netlink's mapping converts for a parameter's value.
@@ -248,8 +263,15 @@ fn ibm_number(kwd: &str, v: &str) -> Option<u64> {
 fn tenths(v: &str) -> Option<i64> {
     let t = v.trim().replace(',', ".");
     let (whole, frac) = t.split_once('.').unwrap_or((&t, "0"));
-    let w: i64 = if whole.is_empty() { 0 } else { whole.parse().ok()? };
-    let f: i64 = frac.chars().next().map_or(Some(0), |c| c.to_digit(10).map(i64::from))?;
+    let w: i64 = if whole.is_empty() {
+        0
+    } else {
+        whole.parse().ok()?
+    };
+    let f: i64 = frac
+        .chars()
+        .next()
+        .map_or(Some(0), |c| c.to_digit(10).map(i64::from))?;
     Some(w * 10 + f)
 }
 
@@ -258,7 +280,11 @@ fn normalize(v: &str) -> String {
     v.split_whitespace()
         .map(|w| {
             let w = w.trim_matches('\'');
-            if w.starts_with('*') { w.to_ascii_uppercase() } else { w.to_string() }
+            if w.starts_with('*') {
+                w.to_ascii_uppercase()
+            } else {
+                w.to_string()
+            }
         })
         .collect::<Vec<_>>()
         .join(" ")
@@ -315,7 +341,8 @@ mod tests {
         for s in SPEC {
             let mut b = Attributes::default();
             if !s.default.is_empty() {
-                b.set(s.kwd, s.default).unwrap_or_else(|e| panic!("{}: {e}", s.kwd));
+                b.set(s.kwd, s.default)
+                    .unwrap_or_else(|e| panic!("{}: {e}", s.kwd));
             }
         }
     }
@@ -327,15 +354,26 @@ mod tests {
         a.set("TCPRCVBUF", "131072").unwrap();
         a.set("IPDTGFWD", "*YES").unwrap();
         a.set("TCPURGPTR", "*RFC").unwrap();
-        let w = a.sysctls(&mut |k| (k == "ipv4/tcp_rmem" || k == "ipv4/tcp_wmem").then(|| "4096 131072 6291456".into()));
+        let w = a.sysctls(&mut |k| {
+            (k == "ipv4/tcp_rmem" || k == "ipv4/tcp_wmem").then(|| "4096 131072 6291456".into())
+        });
         let get = |k: &str| w.iter().find(|(x, _)| x == k).map(|(_, v)| v.clone());
         assert_eq!(get("ipv4/tcp_keepalive_time").as_deref(), Some("120"));
-        assert_eq!(get("ipv4/tcp_rmem").as_deref(), Some("4096\t131072\t6291456"));
-        assert_eq!(get("ipv4/tcp_wmem").as_deref(), Some("4096\t65535\t6291456"));
+        assert_eq!(
+            get("ipv4/tcp_rmem").as_deref(),
+            Some("4096\t131072\t6291456")
+        );
+        assert_eq!(
+            get("ipv4/tcp_wmem").as_deref(),
+            Some("4096\t65535\t6291456")
+        );
         assert_eq!(get("ipv6/conf/all/forwarding").as_deref(), Some("1"));
         assert_eq!(get("ipv4/tcp_stdurg").as_deref(), Some("1"));
         assert_eq!(get("ipv4/ip_no_pmtu_disc").as_deref(), Some("0"));
-        assert_eq!(get("ipv6/conf/default/temp_valid_lft").as_deref(), Some("604800"));
+        assert_eq!(
+            get("ipv6/conf/default/temp_valid_lft").as_deref(),
+            Some("604800")
+        );
         assert!(stored_only().contains(&"TCPMINRTM"));
         assert!(!stored_only().contains(&"ARPTIMO"));
     }

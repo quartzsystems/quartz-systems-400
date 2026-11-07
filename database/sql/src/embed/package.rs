@@ -36,12 +36,21 @@ use crate::value::Value;
 
 /// An input as text.
 fn text(inputs: &[Value], i: usize) -> String {
-    inputs.get(i).map(Value::as_text).unwrap_or_default().trim_end().to_string()
+    inputs
+        .get(i)
+        .map(Value::as_text)
+        .unwrap_or_default()
+        .trim_end()
+        .to_string()
 }
 
 /// An input as a small number.
 fn num(inputs: &[Value], i: usize) -> u8 {
-    inputs.get(i).and_then(|v| v.as_i64().ok()).and_then(|n| u8::try_from(n).ok()).unwrap_or(0)
+    inputs
+        .get(i)
+        .and_then(|v| v.as_i64().ok())
+        .and_then(|n| u8::try_from(n).ok())
+        .unwrap_or(0)
 }
 
 /// An input's first byte (a separator).
@@ -62,11 +71,23 @@ fn failed(e: &SqlError) -> Reply {
 }
 
 /// Package `name` in library `lib`: the library's and the package's IDs.
-fn locate(txn: &mut Txn<'_>, ctx: &SqlContext, lib: &str, name: &str) -> Result<(ObjectId, Name, Option<ObjectId>), Reply> {
-    let not_found = |what: &str, kind: &'static str| failed(&SqlError::ObjectNotFound { kind, name: what.into() });
+fn locate(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    lib: &str,
+    name: &str,
+) -> Result<(ObjectId, Name, Option<ObjectId>), Reply> {
+    let not_found = |what: &str, kind: &'static str| {
+        failed(&SqlError::ObjectNotFound {
+            kind,
+            name: what.into(),
+        })
+    };
     let lib_name = Name::parse(lib).map_err(|_| not_found(lib, "schema"))?;
     let pkg = Name::parse(name).map_err(|_| not_found(name, "package"))?;
-    let lib_id = ops::find_library(txn, ctx.qsys, lib_name).map_err(|_| not_found(lib, "schema"))?.id;
+    let lib_id = ops::find_library(txn, ctx.qsys, lib_name)
+        .map_err(|_| not_found(lib, "schema"))?
+        .id;
     let id = sqlpkg::find(txn, lib_id, pkg).map_err(|e| failed(&e.into()))?;
     Ok((lib_id, pkg, id))
 }
@@ -77,7 +98,13 @@ fn check(txn: &mut Txn<'_>, op: &'static str, id: ObjectId) -> Result<(), Reply>
 
 /// The attribute row of `RETURN`.
 fn attr_row(a: &PkgAttr) -> Vec<Value> {
-    let ch = |b: u8| Value::Str(if b == 0 { String::new() } else { char::from(b).to_string() });
+    let ch = |b: u8| {
+        Value::Str(if b == 0 {
+            String::new()
+        } else {
+            char::from(b).to_string()
+        })
+    };
     vec![
         Value::int(i64::from(u8::from(a.kind == PkgKind::Bound))),
         Value::int(i64::from(u8::from(a.sql_naming))),
@@ -108,7 +135,8 @@ fn stmt_row(s: &PkgStmt) -> Vec<Value> {
 /// The token of a package made now: the time in microseconds.
 fn token(ctx: &SqlContext) -> u64 {
     let (secs, picos) = ctx.clock_picos();
-    secs.saturating_mul(1_000_000).saturating_add(picos / 1_000_000)
+    secs.saturating_mul(1_000_000)
+        .saturating_add(picos / 1_000_000)
 }
 
 impl Session {
@@ -123,14 +151,23 @@ impl Session {
                 Ok(x) => x,
                 Err(r) => return r,
             };
-            let missing = || failed(&SqlError::ObjectNotFound { kind: "package", name: format!("{lib}/{name}") });
+            let missing = || {
+                failed(&SqlError::ObjectNotFound {
+                    kind: "package",
+                    name: format!("{lib}/{name}"),
+                })
+            };
             let r: Result<Reply, Reply> = (|| match action.as_str() {
                 "CREATE" => {
                     if id.is_some() {
                         return Ok(Reply::of(code(-601, "42710")));
                     }
                     let attr = PkgAttr {
-                        kind: if num(inputs, 2) == 1 { PkgKind::Bound } else { PkgKind::Extended },
+                        kind: if num(inputs, 2) == 1 {
+                            PkgKind::Bound
+                        } else {
+                            PkgKind::Extended
+                        },
                         sql_naming: num(inputs, 3) == 1,
                         commit: num(inputs, 4),
                         date_format: num(inputs, 5),
@@ -142,7 +179,16 @@ impl Session {
                         default_collection: text(inputs, 10),
                     };
                     let now = ctx.clock();
-                    sqlpkg::create(txn, lib_id, pkg_name, &attr, &ctx.user, &text(inputs, 11), now).map_err(|e| failed(&e.into()))?;
+                    sqlpkg::create(
+                        txn,
+                        lib_id,
+                        pkg_name,
+                        &attr,
+                        &ctx.user,
+                        &text(inputs, 11),
+                        now,
+                    )
+                    .map_err(|e| failed(&e.into()))?;
                     Ok(Reply::default())
                 }
                 "BIND" => {
@@ -161,12 +207,23 @@ impl Session {
                         .chunks(2)
                         .filter(|c| c.len() == 2)
                         .map(|c| {
-                            let section = c[0].as_i64().ok().and_then(|n| u16::try_from(n).ok()).unwrap_or(0);
-                            PkgStmt { name: format!("S{section}"), section, text: c[1].as_text(), ..PkgStmt::default() }
+                            let section = c[0]
+                                .as_i64()
+                                .ok()
+                                .and_then(|n| u16::try_from(n).ok())
+                                .unwrap_or(0);
+                            PkgStmt {
+                                name: format!("S{section}"),
+                                section,
+                                text: c[1].as_text(),
+                                ..PkgStmt::default()
+                            }
                         })
                         .collect();
-                    let new = sqlpkg::create(txn, lib_id, pkg_name, &attr, &ctx.user, "", now).map_err(|e| failed(&e.into()))?;
-                    sqlpkg::save(txn, new, &Package { attr, stmts }).map_err(|e| failed(&e.into()))?;
+                    let new = sqlpkg::create(txn, lib_id, pkg_name, &attr, &ctx.user, "", now)
+                        .map_err(|e| failed(&e.into()))?;
+                    sqlpkg::save(txn, new, &Package { attr, stmts })
+                        .map_err(|e| failed(&e.into()))?;
                     Ok(Reply::default())
                 }
                 "ADD" => {
@@ -190,7 +247,11 @@ impl Session {
                         sqlpkg::save(txn, id, &p).map_err(|e| failed(&e.into()))?;
                         name
                     };
-                    Ok(Reply { sqlca: Sqlca::default(), rows: vec![vec![Value::Str(name)]], call: None })
+                    Ok(Reply {
+                        sqlca: Sqlca::default(),
+                        rows: vec![vec![Value::Str(name)]],
+                        call: None,
+                    })
                 }
                 "RETURN" => {
                     let id = id.ok_or_else(missing)?;
@@ -198,7 +259,11 @@ impl Session {
                     let p = sqlpkg::load(txn, id).map_err(|e| failed(&e.into()))?;
                     let mut rows = vec![attr_row(&p.attr)];
                     rows.extend(p.stmts.iter().map(stmt_row));
-                    Ok(Reply { sqlca: Sqlca::default(), rows, call: None })
+                    Ok(Reply {
+                        sqlca: Sqlca::default(),
+                        rows,
+                        call: None,
+                    })
                 }
                 "CLEAR" => {
                     let id = id.ok_or_else(missing)?;

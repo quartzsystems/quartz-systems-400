@@ -225,14 +225,24 @@ fn ext_uses(i: &Inst, out: &mut Vec<Reg>) {
             IoInst::DbOpen { infds, .. } => opt_place_uses(infds.as_ref(), out),
             IoInst::DbClose { .. } | IoInst::DbFb { .. } | IoInst::FileRef { .. } => {}
             IoInst::FileBind { handle, .. } => operand_uses(handle, out),
-            IoInst::DbIo { rec, key, rrn, nulls, .. } => {
+            IoInst::DbIo {
+                rec,
+                key,
+                rrn,
+                nulls,
+                ..
+            } => {
                 opt_place_uses(rec.as_ref(), out);
                 opt_place_uses(nulls.as_ref(), out);
                 opt_uses(key.as_ref(), out);
                 opt_uses(rrn.as_ref(), out);
             }
             IoInst::DevIo {
-                rec, ctl, rrn, inds, ..
+                rec,
+                ctl,
+                rrn,
+                inds,
+                ..
             } => {
                 opt_place_uses(rec.as_ref(), out);
                 opt_uses(rrn.as_ref(), out);

@@ -17,7 +17,11 @@ fn deep_nesting_is_sql0101() {
     assert_eq!(parse(&nots, Naming::Sql).unwrap_err(), SqlError::TooComplex);
     let negs = format!("SELECT {}1 FROM T", "- ".repeat(5000));
     assert_eq!(parse(&negs, Naming::Sql).unwrap_err(), SqlError::TooComplex);
-    let subs = format!("SELECT 1 FROM T WHERE EXISTS {}SELECT 1 FROM T{}", "(SELECT 1 FROM T WHERE EXISTS (".repeat(200), "))".repeat(200));
+    let subs = format!(
+        "SELECT 1 FROM T WHERE EXISTS {}SELECT 1 FROM T{}",
+        "(SELECT 1 FROM T WHERE EXISTS (".repeat(200),
+        "))".repeat(200)
+    );
     assert!(parse(&subs, Naming::Sql).is_err());
     // Ordinary nesting is fine.
     let ok = format!("SELECT {}1{} FROM T", "(".repeat(20), ")".repeat(20));

@@ -25,7 +25,10 @@ pub fn forwards(taken: Option<u16>) -> Vec<(u16, u16)> {
     // Held open together so no two are the same, nor the telnet port.
     let mut held = Vec::new();
     let mut out = Vec::new();
-    for g in std::iter::once(449).chain(8470..=8476).chain(std::iter::once(446)) {
+    for g in std::iter::once(449)
+        .chain(8470..=8476)
+        .chain(std::iter::once(446))
+    {
         while let Ok(l) = std::net::TcpListener::bind("127.0.0.1:0") {
             let p = l.local_addr().map_or(0, |a| a.port());
             held.push(l);
@@ -40,16 +43,26 @@ pub fn forwards(taken: Option<u16>) -> Vec<(u16, u16)> {
 
 /// A port mapper lookup through the forwarded 449.
 fn lookup(port: u16, service: &str) -> Result<Vec<u8>, String> {
-    let mut s = TcpStream::connect(("127.0.0.1", port)).map_err(|e| format!("connect {port}: {e}"))?;
-    s.set_read_timeout(Some(Duration::from_secs(20))).map_err(|e| e.to_string())?;
+    let mut s =
+        TcpStream::connect(("127.0.0.1", port)).map_err(|e| format!("connect {port}: {e}"))?;
+    s.set_read_timeout(Some(Duration::from_secs(20)))
+        .map_err(|e| e.to_string())?;
     s.write_all(service.as_bytes()).map_err(|e| e.to_string())?;
     let mut b = [0u8; 5];
-    s.read_exact(&mut b).map_err(|e| format!("no port mapper reply: {e}"))?;
+    s.read_exact(&mut b)
+        .map_err(|e| format!("no port mapper reply: {e}"))?;
     Ok(b.to_vec())
 }
 
 /// The jobs the step waits for.
-pub(crate) const JOBS: &[&str] = &["QZSOSMAPD", "QZSOSGND", "QZRCSRVSD", "QZDASRVSD", "QZRCSRVS", "QZDASOINIT"];
+pub(crate) const JOBS: &[&str] = &[
+    "QZSOSMAPD",
+    "QZSOSGND",
+    "QZRCSRVSD",
+    "QZDASRVSD",
+    "QZRCSRVS",
+    "QZDASOINIT",
+];
 
 fn host_port(suite: &Suite, guest: u16) -> Result<u16, String> {
     suite
@@ -63,15 +76,18 @@ fn host_port(suite: &Suite, guest: u16) -> Result<u16, String> {
 
 /// A seed exchange on the remote command server: its reply's ID.
 fn seed_exchange(port: u16) -> Result<u16, String> {
-    let mut s = TcpStream::connect(("127.0.0.1", port)).map_err(|e| format!("connect {port}: {e}"))?;
-    s.set_read_timeout(Some(Duration::from_secs(20))).map_err(|e| e.to_string())?;
+    let mut s =
+        TcpStream::connect(("127.0.0.1", port)).map_err(|e| format!("connect {port}: {e}"))?;
+    s.set_read_timeout(Some(Duration::from_secs(20)))
+        .map_err(|e| e.to_string())?;
     let mut f = vec![0, 0, 0, 28, 3, 0, 0xE0, 0x08];
     f.extend([0; 8]);
     f.extend([0, 8, 0x70, 0x01]);
     f.extend([1, 2, 3, 4, 5, 6, 7, 8]);
     s.write_all(&f).map_err(|e| e.to_string())?;
     let mut head = [0u8; 20];
-    s.read_exact(&mut head).map_err(|e| format!("no reply on {port}: {e}"))?;
+    s.read_exact(&mut head)
+        .map_err(|e| format!("no reply on {port}: {e}"))?;
     Ok(u16::from_be_bytes([head[18], head[19]]))
 }
 
@@ -83,7 +99,9 @@ fn repo() -> PathBuf {
 /// WSL works: its paths are converted), else `PATH`.
 pub(crate) fn tool(name: &str) -> (String, bool) {
     match std::env::var("QS_JAVA_HOME") {
-        Ok(home) if Path::new(&format!("{home}/bin/{name}.exe")).exists() => (format!("{home}/bin/{name}.exe"), true),
+        Ok(home) if Path::new(&format!("{home}/bin/{name}.exe")).exists() => {
+            (format!("{home}/bin/{name}.exe"), true)
+        }
         Ok(home) => (format!("{home}/bin/{name}"), false),
         Err(_) => (name.to_string(), false),
     }
@@ -99,7 +117,10 @@ fn native(p: &Path, windows: bool) -> String {
         .arg(p)
         .output()
         .ok()
-        .map_or_else(|| p.display().to_string(), |o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .map_or_else(
+            || p.display().to_string(),
+            |o| String::from_utf8_lossy(&o.stdout).trim().to_string(),
+        )
 }
 
 /// The suite's classes by scenario (the port mapper's needs port 449
@@ -127,8 +148,14 @@ pub(crate) fn compile(suite: &Suite, jar: &str) -> Result<(String, String), Stri
     let (javac, win) = tool("javac");
     let jar_p = native(Path::new(jar), win);
     let mut c = Command::new(&javac);
-    c.arg("-d").arg(native(&classes, win)).arg("-cp").arg(&jar_p);
-    for e in std::fs::read_dir(&src).map_err(|e| e.to_string())?.flatten() {
+    c.arg("-d")
+        .arg(native(&classes, win))
+        .arg("-cp")
+        .arg(&jar_p);
+    for e in std::fs::read_dir(&src)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
         if e.path().extension().is_some_and(|x| x == "java") {
             c.arg(native(&e.path(), win));
         }
@@ -138,11 +165,23 @@ pub(crate) fn compile(suite: &Suite, jar: &str) -> Result<(String, String), Stri
         return Err(format!("javac: {}", String::from_utf8_lossy(&out.stderr)));
     }
     let (java, win) = tool("java");
-    Ok((java, format!("{}{}{jar_p}", native(&classes, win), if win { ";" } else { ":" })))
+    Ok((
+        java,
+        format!(
+            "{}{}{jar_p}",
+            native(&classes, win),
+            if win { ";" } else { ":" }
+        ),
+    ))
 }
 
 /// Run one class of the suite against the guest; its output.
-pub(crate) fn run_class(suite: &Suite, java: &str, cp: &str, class: &str) -> Result<String, String> {
+pub(crate) fn run_class(
+    suite: &Suite,
+    java: &str,
+    cp: &str,
+    class: &str,
+) -> Result<String, String> {
     let mut c = Command::new(java);
     c.arg("-cp").arg(cp).arg(class);
     let mut vars = vec![
@@ -161,7 +200,11 @@ pub(crate) fn run_class(suite: &Suite, java: &str, cp: &str, class: &str) -> Res
         c.env(k, v);
     }
     let out = c.output().map_err(|e| format!("{java}: {e}"))?;
-    Ok(format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr)))
+    Ok(format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    ))
 }
 
 /// The suite against the guest (`QS_HS_SUITE`): each scenario's result
@@ -183,7 +226,10 @@ fn whole_suite(suite: &Suite, java: &str, cp: &str) -> String {
         let _ = std::fs::write(dir.join(format!("{name}.out")), &lines);
         let _ = std::fs::write(dir.join(format!("{name}.log")), &out);
         let ok = lines.lines().filter(|l| l.starts_with("ok")).count();
-        let all = lines.lines().filter(|l| l.starts_with("ok") || l.starts_with("fail")).count();
+        let all = lines
+            .lines()
+            .filter(|l| l.starts_with("ok") || l.starts_with("fail"))
+            .count();
         counts.push(format!("{name} {ok}/{all}"));
     }
     counts.join(", ")
@@ -202,7 +248,8 @@ impl Suite {
                 break out;
             }
             if Instant::now() >= until {
-                let missing: Vec<&str> = JOBS.iter().copied().filter(|j| !out.contains(j)).collect();
+                let missing: Vec<&str> =
+                    JOBS.iter().copied().filter(|j| !out.contains(j)).collect();
                 return Err(format!("host server jobs missing {missing:?}:\n{out}"));
             }
             std::thread::sleep(Duration::from_secs(2));
@@ -221,25 +268,42 @@ impl Suite {
                     Err(e) => format!("telnet does not answer either: {e}"),
                 },
             );
-            let ports: Vec<String> = self.launch.host_ports.iter().map(|(h, g)| format!("{h}->{g}")).collect();
+            let ports: Vec<String> = self
+                .launch
+                .host_ports
+                .iter()
+                .map(|(h, g)| format!("{h}->{g}"))
+                .collect();
             format!("{e}; {telnet}; forwards {}", ports.join(" "))
         })?;
         if mapped != [0x2B, 0, 0, 0x21, 0x1B] {
-            return Err(format!("the port mapper answered {mapped:02x?} for as-rmtcmd"));
+            return Err(format!(
+                "the port mapper answered {mapped:02x?} for as-rmtcmd"
+            ));
         }
         let id = seed_exchange(host_port(self, 8475)?)?;
         if id != 0xF001 {
-            return Err(format!("the remote command server answered {id:04x}, not f001"));
+            return Err(format!(
+                "the remote command server answered {id:04x}, not f001"
+            ));
         }
-        let mut report = String::from("daemons and prestart jobs active; the port mapper answered; a seed exchange reached QZRCSRVS");
-        match (std::env::var("QS_JT400_JAR"), Command::new(tool("java").0).arg("-version").output()) {
+        let mut report = String::from(
+            "daemons and prestart jobs active; the port mapper answered; a seed exchange reached QZRCSRVS",
+        );
+        match (
+            std::env::var("QS_JT400_JAR"),
+            Command::new(tool("java").0).arg("-version").output(),
+        ) {
             (Ok(jar), Ok(_)) => {
                 // What the suite works in on the oracle: QSTEST and /home/QSTEST.
                 let _ = s.command("CRTLIB LIB(QSTEST) TEXT('Host server tests')", CMD);
                 let _ = s.command("svc.ifs mkdir /home", CMD);
                 let _ = s.command("svc.ifs mkdir /home/QSTEST", CMD);
                 // The suite's password, whether or not an earlier step set it.
-                let set = s.command(&format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"), CMD)?;
+                let set = s.command(
+                    &format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"),
+                    CMD,
+                )?;
                 if set.trim_start().starts_with("CPF") {
                     return Err(format!("CHGUSRPRF QSECOFR: {set}"));
                 }

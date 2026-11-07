@@ -75,9 +75,16 @@ fn one_volume_save_and_restore() {
     let p = volume(&d, "VOL001", 8);
     let mut t = VirtualTape::open(rw(&p).unwrap()).unwrap();
     let data = stream(300_000);
-    let w = TapeWriter::new(&mut t, &mut NoMoreVolumes, save_file("mylib")).write_stream(&data).unwrap();
-    assert_eq!((w.seq, w.volumes.as_slice(), w.file.as_str()), (1, &["VOL001".to_string()][..], "MYLIB"));
-    let w2 = TapeWriter::new(&mut t, &mut NoMoreVolumes, save_file("OTHER")).write_stream(b"x").unwrap();
+    let w = TapeWriter::new(&mut t, &mut NoMoreVolumes, save_file("mylib"))
+        .write_stream(&data)
+        .unwrap();
+    assert_eq!(
+        (w.seq, w.volumes.as_slice(), w.file.as_str()),
+        (1, &["VOL001".to_string()][..], "MYLIB")
+    );
+    let w2 = TapeWriter::new(&mut t, &mut NoMoreVolumes, save_file("OTHER"))
+        .write_stream(b"x")
+        .unwrap();
     assert_eq!(w2.seq, 2);
     let mut none = NoMoreVolumes;
     let mut r = TapeReader::new(
@@ -97,10 +104,14 @@ fn one_volume_save_and_restore() {
     // An active file is protected unless the save may clear it.
     let mut again = save_file("MYLIB");
     again.seq = SeqNbr::Number(1);
-    let e = TapeWriter::new(&mut t, &mut NoMoreVolumes, again.clone()).write_stream(b"y").unwrap_err();
+    let e = TapeWriter::new(&mut t, &mut NoMoreVolumes, again.clone())
+        .write_stream(b"y")
+        .unwrap_err();
     assert_eq!(e.msgid(), "CPA4036");
     again.allow_active = true;
-    TapeWriter::new(&mut t, &mut NoMoreVolumes, again).write_stream(b"y").unwrap();
+    TapeWriter::new(&mut t, &mut NoMoreVolumes, again)
+        .write_stream(b"y")
+        .unwrap();
     std::fs::remove_dir_all(d).unwrap();
 }
 
@@ -118,12 +129,19 @@ fn two_volume_save_from_the_catalog() {
     );
     let mut t = VirtualTape::open(rw(&a).unwrap()).unwrap();
     let data = stream(1_500_000);
-    let w = TapeWriter::new(&mut t, &mut cat, save_file("BIG")).write_stream(&data).unwrap();
+    let w = TapeWriter::new(&mut t, &mut cat, save_file("BIG"))
+        .write_stream(&data)
+        .unwrap();
     assert_eq!(w.volumes, ["VOL001", "VOL002"]);
     assert_eq!(cat.mounted, ["VOL002"]);
     drop(t);
 
-    let mut back_cat = CatalogTapes::new(entries, Some("VOL001".into()), Box::new(|p: &str| rw(p)), Box::new(|_| false));
+    let mut back_cat = CatalogTapes::new(
+        entries,
+        Some("VOL001".into()),
+        Box::new(|p: &str| rw(p)),
+        Box::new(|_| false),
+    );
     let mut t = VirtualTape::open(rw(&a).unwrap()).unwrap();
     let mut r = TapeReader::new(
         &mut t,
@@ -159,7 +177,10 @@ fn no_next_volume_asks_and_cancels() {
     let e = TapeWriter::new(&mut t, &mut cat, save_file("BIG"))
         .write_stream(&stream(1_500_000))
         .unwrap_err();
-    assert!(matches!(e, medio::MediaError::Tape(TapeError::Cancelled)), "{e}");
+    assert!(
+        matches!(e, medio::MediaError::Tape(TapeError::Cancelled)),
+        "{e}"
+    );
     assert_eq!(*asked.lock().unwrap(), [2]);
     std::fs::remove_dir_all(d).unwrap();
 }
@@ -167,19 +188,31 @@ fn no_next_volume_asks_and_cancels() {
 #[test]
 fn optical_save_files() {
     assert_eq!(save_path("*", SaveTarget::Library("qgpl")), "/QGPL");
-    assert_eq!(save_path("'SAVES/*'", SaveTarget::Library("QGPL")), "/SAVES/QGPL");
+    assert_eq!(
+        save_path("'SAVES/*'", SaveTarget::Library("QGPL")),
+        "/SAVES/QGPL"
+    );
     assert_eq!(save_path("/A/B", SaveTarget::Library("QGPL")), "/A/B");
     let set = VolumeSet::default();
     let store = Arc::new(MemImage::new(Vec::new()));
-    set.insert(Volume::create(store, "SAVE01", "", 8 << 20, 1).unwrap()).unwrap();
+    set.insert(Volume::create(store, "SAVE01", "", 8 << 20, 1).unwrap())
+        .unwrap();
     let data = stream(100_000);
-    let w = OpticalWriter::new(&set, "SAVE01", "/SAVES/QGPL", false).write_stream(&data).unwrap();
+    let w = OpticalWriter::new(&set, "SAVE01", "/SAVES/QGPL", false)
+        .write_stream(&data)
+        .unwrap();
     assert_eq!(w.volumes, ["SAVE01"]);
-    let e = OpticalWriter::new(&set, "SAVE01", "/SAVES/QGPL", false).write_stream(b"x").unwrap_err();
+    let e = OpticalWriter::new(&set, "SAVE01", "/SAVES/QGPL", false)
+        .write_stream(b"x")
+        .unwrap_err();
     assert_eq!(e.msgid(), "OPT1210");
-    let (back, _) = OpticalReader::new(&set, "SAVE01", "/SAVES/QGPL").read_stream().unwrap();
+    let (back, _) = OpticalReader::new(&set, "SAVE01", "/SAVES/QGPL")
+        .read_stream()
+        .unwrap();
     assert_eq!(back, data);
-    let e = OpticalReader::new(&set, "SAVE01", "/NONE").read_stream().unwrap_err();
+    let e = OpticalReader::new(&set, "SAVE01", "/NONE")
+        .read_stream()
+        .unwrap_err();
     assert_eq!(e.msgid(), "OPT1115");
 }
 
@@ -198,11 +231,14 @@ fn optical_saves_span_volumes() {
     let set = VolumeSet::default();
     for v in ["SPAN01", "SPAN02", "SPAN03"] {
         let store = Arc::new(MemImage::new(Vec::new()));
-        set.insert(Volume::create(store, v, "", 1 << 20, 1).unwrap()).unwrap();
+        set.insert(Volume::create(store, v, "", 1 << 20, 1).unwrap())
+            .unwrap();
     }
     let data = stream(2_500_000);
     // Without further volumes it does not fit.
-    let e = OpticalWriter::new(&set, "SPAN01", "/BIG", false).write_stream(&data).unwrap_err();
+    let e = OpticalWriter::new(&set, "SPAN01", "/BIG", false)
+        .write_stream(&data)
+        .unwrap_err();
     assert_eq!(e.msgid(), "OPT1335");
     let mut next = Spare(vec!["SPAN02".into(), "SPAN03".into()], Vec::new());
     let w = OpticalWriter::new(&set, "SPAN01", "/BIG", false)
@@ -217,19 +253,41 @@ fn optical_saves_span_volumes() {
 
     // Read back across the three.
     let mut next = Spare(vec!["SPAN02".into(), "SPAN03".into()], Vec::new());
-    let (back, vols) = OpticalReader::new(&set, "SPAN01", "/BIG").spanning(&mut next).read_stream().unwrap();
+    let (back, vols) = OpticalReader::new(&set, "SPAN01", "/BIG")
+        .spanning(&mut next)
+        .read_stream()
+        .unwrap();
     assert_eq!(vols, ["SPAN01", "SPAN02", "SPAN03"]);
     assert_eq!(back, data);
     // Without the next volumes, or from the second, it refuses.
-    assert!(OpticalReader::new(&set, "SPAN01", "/BIG").read_stream().is_err());
-    let e = OpticalReader::new(&set, "SPAN02", "/BIG").read_stream().unwrap_err();
+    assert!(
+        OpticalReader::new(&set, "SPAN01", "/BIG")
+            .read_stream()
+            .is_err()
+    );
+    let e = OpticalReader::new(&set, "SPAN02", "/BIG")
+        .read_stream()
+        .unwrap_err();
     assert!(e.to_string().contains("first volume"), "{e}");
     // Out of volumes: the write ends.
-    set.insert(Volume::create(Arc::new(MemImage::new(Vec::new())), "SPAN04", "", 1 << 20, 1).unwrap()).unwrap();
+    set.insert(
+        Volume::create(
+            Arc::new(MemImage::new(Vec::new())),
+            "SPAN04",
+            "",
+            1 << 20,
+            1,
+        )
+        .unwrap(),
+    )
+    .unwrap();
     let mut none = Spare(Vec::new(), Vec::new());
     let e = OpticalWriter::new(&set, "SPAN04", "/BIG2", false)
         .spanning(&mut none)
         .write_stream(&data)
         .unwrap_err();
-    assert!(matches!(e, medio::MediaError::Tape(TapeError::Cancelled)), "{e}");
+    assert!(
+        matches!(e, medio::MediaError::Tape(TapeError::Cancelled)),
+        "{e}"
+    );
 }

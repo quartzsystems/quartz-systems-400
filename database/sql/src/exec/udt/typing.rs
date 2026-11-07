@@ -64,13 +64,18 @@ pub fn source_function(t: &DataType) -> &'static str {
 
 /// `SQL0204`: no such type.
 pub fn not_found(name: &str) -> SqlError {
-    SqlError::ObjectNotFound { name: name.to_string(), kind: "type" }
+    SqlError::ObjectNotFound {
+        name: name.to_string(),
+        kind: "type",
+    }
 }
 
 /// A type as written resolved: a distinct type's name to its source type,
 /// marked as the type.
 pub fn resolve(spec: &TypeSpec) -> Result<Cow<'_, TypeSpec>> {
-    let Some(name) = &spec.udt else { return Ok(Cow::Borrowed(spec)) };
+    let Some(name) = &spec.udt else {
+        return Ok(Cow::Borrowed(spec));
+    };
     let d = registry::find(name).ok_or_else(|| not_found(name))?;
     Ok(Cow::Owned(d.spec()))
 }
@@ -84,15 +89,24 @@ fn same_kind(a: &DataType, b: &DataType) -> bool {
 }
 
 fn text(t: &DataType) -> bool {
-    matches!(t, DataType::Char(_) | DataType::Varchar(_) | DataType::Clob(_))
+    matches!(
+        t,
+        DataType::Char(_) | DataType::Varchar(_) | DataType::Clob(_)
+    )
 }
 
 fn graphic(t: &DataType) -> bool {
-    matches!(t, DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_))
+    matches!(
+        t,
+        DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_)
+    )
 }
 
 fn binary(t: &DataType) -> bool {
-    matches!(t, DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_))
+    matches!(
+        t,
+        DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_)
+    )
 }
 
 fn number_rank(t: &DataType) -> Option<u8> {
@@ -135,7 +149,19 @@ fn promotes(from: &DataType, to: &DataType) -> bool {
 pub fn cast(from: Option<&SqlType>, to: &TypeSpec) -> Result<TypeSpec> {
     let to = resolve(to)?.into_owned();
     let Some(f) = from else { return Ok(to) };
-    let refused = || coded(-461, "42846", format!("a value of {} cannot be cast to {}", describe(f), to.udt.clone().unwrap_or_else(|| crate::exec::cast::type_name(&to.data_type).into())));
+    let refused = || {
+        coded(
+            -461,
+            "42846",
+            format!(
+                "a value of {} cannot be cast to {}",
+                describe(f),
+                to.udt
+                    .clone()
+                    .unwrap_or_else(|| crate::exec::cast::type_name(&to.data_type).into())
+            ),
+        )
+    };
     match (f.spec.udt.as_deref(), to.udt.as_deref()) {
         (Some(a), Some(b)) if a != b => Err(refused()),
         (Some(_), None) if !same_kind(f.data_type(), &to.data_type) => Err(refused()),
@@ -145,7 +171,10 @@ pub fn cast(from: Option<&SqlType>, to: &TypeSpec) -> Result<TypeSpec> {
 }
 
 fn describe(t: &SqlType) -> String {
-    t.spec.udt.clone().unwrap_or_else(|| crate::exec::cast::type_name(t.data_type()).into())
+    t.spec
+        .udt
+        .clone()
+        .unwrap_or_else(|| crate::exec::cast::type_name(t.data_type()).into())
 }
 
 /// A comparison of `a` with `b` (`=`, `IN`, `BETWEEN`, a quantified
@@ -153,7 +182,15 @@ fn describe(t: &SqlType) -> String {
 pub fn compare(a: Option<&SqlType>, b: Option<&SqlType>) -> Result<()> {
     let (x, y) = (udt(a), udt(b));
     if (x.is_some() || y.is_some()) && x != y && a.is_some() && b.is_some() {
-        return Err(coded(-401, "42818", format!("the operands of a comparison are {} and {}", a.map(describe).unwrap_or_default(), b.map(describe).unwrap_or_default())));
+        return Err(coded(
+            -401,
+            "42818",
+            format!(
+                "the operands of a comparison are {} and {}",
+                a.map(describe).unwrap_or_default(),
+                b.map(describe).unwrap_or_default()
+            ),
+        ));
     }
     Ok(())
 }
@@ -161,7 +198,11 @@ pub fn compare(a: Option<&SqlType>, b: Option<&SqlType>) -> Result<()> {
 /// `LIKE` over `a`.
 pub fn like(a: Option<&SqlType>) -> Result<()> {
     match udt(a) {
-        Some(u) => Err(coded(-131, "42818", format!("LIKE does not take an operand of distinct type {u}"))),
+        Some(u) => Err(coded(
+            -131,
+            "42818",
+            format!("LIKE does not take an operand of distinct type {u}"),
+        )),
         None => Ok(()),
     }
 }
@@ -169,29 +210,56 @@ pub fn like(a: Option<&SqlType>) -> Result<()> {
 /// An arithmetic operator (`SQL0402`) or concatenation (`SQL0171`) over
 /// `a` and `b`.
 pub fn operator(a: Option<&SqlType>, b: Option<&SqlType>, concat: bool) -> Result<()> {
-    let Some(u) = udt(a).or(udt(b)) else { return Ok(()) };
+    let Some(u) = udt(a).or(udt(b)) else {
+        return Ok(());
+    };
     if concat {
-        return Err(coded(-171, "42815", format!("CONCAT does not take an argument of distinct type {u}")));
+        return Err(coded(
+            -171,
+            "42815",
+            format!("CONCAT does not take an argument of distinct type {u}"),
+        ));
     }
-    Err(coded(-402, "42819", format!("an arithmetic operand is of distinct type {u}")))
+    Err(coded(
+        -402,
+        "42819",
+        format!("an arithmetic operand is of distinct type {u}"),
+    ))
 }
 
 /// The numeric casting functions, which IBM refuses as arithmetic.
-const NUMERIC_CASTS: &[&str] = &["DECIMAL", "DEC", "NUMERIC", "ZONED", "INTEGER", "INT", "SMALLINT", "BIGINT", "DOUBLE", "FLOAT", "REAL", "DECFLOAT"];
+const NUMERIC_CASTS: &[&str] = &[
+    "DECIMAL", "DEC", "NUMERIC", "ZONED", "INTEGER", "INT", "SMALLINT", "BIGINT", "DOUBLE",
+    "FLOAT", "REAL", "DECFLOAT",
+];
 
 /// What a call of `name` with arguments of `args` is when a distinct type
 /// takes part: the result type of a generated function, an error for a
 /// function that takes no distinct type, or `None` to type it as usual.
-pub fn function(name: &str, args: &[Option<SqlType>], distinct_args: bool) -> Result<Option<SqlType>> {
+pub fn function(
+    name: &str,
+    args: &[Option<SqlType>],
+    distinct_args: bool,
+) -> Result<Option<SqlType>> {
     if let Some(d) = to_type(name, args.len()) {
         let a = args.first().and_then(Option::as_ref);
         return match a {
-            Some(t) if t.spec.udt.as_deref().is_some_and(|u| u != d.qualified()) || (t.spec.udt.is_none() && !promotes(t.data_type(), &d.source.data_type)) => Err(not_found(name)),
+            Some(t)
+                if t.spec.udt.as_deref().is_some_and(|u| u != d.qualified())
+                    || (t.spec.udt.is_none() && !promotes(t.data_type(), &d.source.data_type)) =>
+            {
+                Err(not_found(name))
+            }
             // A function's result may be null (an overflow is SQL0802's null).
-            _ => Ok(Some(SqlType { spec: d.spec(), nullable: true })),
+            _ => Ok(Some(SqlType {
+                spec: d.spec(),
+                nullable: true,
+            })),
         };
     }
-    let Some(u) = args.iter().find_map(|a| udt(a.as_ref())) else { return Ok(None) };
+    let Some(u) = args.iter().find_map(|a| udt(a.as_ref())) else {
+        return Ok(None);
+    };
     // `IS [NOT] DISTINCT FROM` is a comparison.
     if let ("*DISTINCT" | "*NOTDISTINCT", [a, b]) = (name, args) {
         compare(a.as_ref(), b.as_ref())?;
@@ -201,20 +269,34 @@ pub fn function(name: &str, args: &[Option<SqlType>], distinct_args: bool) -> Re
     if let (Some(d), [Some(t)]) = (&d, args)
         && is_to_source(name, d)
     {
-        return Ok(Some(SqlType { spec: d.source.clone(), nullable: t.nullable }));
+        return Ok(Some(SqlType {
+            spec: d.source.clone(),
+            nullable: t.nullable,
+        }));
     }
     let base = name.rsplit_once('.').map_or(name, |(_, n)| n);
     // A function of a user's schema that takes no such argument.
-    if name.split_once('.').is_some_and(|(s, _)| !matches!(s, "SYSIBM" | "QSYS" | "QSYS2" | "SYSPROC" | "SYSFUN")) {
+    if name
+        .split_once('.')
+        .is_some_and(|(s, _)| !matches!(s, "SYSIBM" | "QSYS" | "QSYS2" | "SYSPROC" | "SYSFUN"))
+    {
         return Err(not_found(name));
     }
     if base == "COUNT" && !distinct_args {
         return Ok(None);
     }
     if NUMERIC_CASTS.contains(&base) {
-        return Err(coded(-402, "42819", format!("{base} does not take an argument of distinct type {u}")));
+        return Err(coded(
+            -402,
+            "42819",
+            format!("{base} does not take an argument of distinct type {u}"),
+        ));
     }
-    Err(coded(-171, "42815", format!("{base} does not take an argument of distinct type {u}")))
+    Err(coded(
+        -171,
+        "42815",
+        format!("{base} does not take an argument of distinct type {u}"),
+    ))
 }
 
 /// The distinct type a function name of `n` arguments makes: the type's
@@ -264,7 +346,13 @@ pub fn call(name: &str, arg: impl FnOnce() -> Option<SqlType>) -> Option<Call> {
 /// type (`SQL0408`).
 pub fn assign(column: Option<&str>, value: Option<&SqlType>) -> Result<()> {
     match (column, udt(value)) {
-        (Some(c), Some(v)) if c != v => Err(coded(-408, "42821", format!("a value of distinct type {v} cannot be assigned to a column of distinct type {c}"))),
+        (Some(c), Some(v)) if c != v => Err(coded(
+            -408,
+            "42821",
+            format!(
+                "a value of distinct type {v} cannot be assigned to a column of distinct type {c}"
+            ),
+        )),
         _ => Ok(()),
     }
 }
@@ -304,10 +392,13 @@ pub fn check(e: &crate::ast::Expr, scope: &crate::exec::restype::Scope<'_>) -> R
     use crate::ast::Expr;
     // A name the joined tables share (a USING column) is the scan's to
     // settle; its type is not needed here.
-    let type_in = |e: &Expr, scope: &crate::exec::restype::Scope<'_>| match crate::exec::restype::type_in(e, scope) {
-        Err(SqlError::AmbiguousColumn { .. }) => Ok(None),
-        r => r,
-    };
+    let type_in =
+        |e: &Expr, scope: &crate::exec::restype::Scope<'_>| match crate::exec::restype::type_in(
+            e, scope,
+        ) {
+            Err(SqlError::AmbiguousColumn { .. }) => Ok(None),
+            r => r,
+        };
     match e {
         Expr::And(a, b) | Expr::Or(a, b) => {
             check(a, scope)?;
@@ -350,13 +441,21 @@ pub fn is_generated(name: &crate::ast::ObjectName) -> bool {
         Some(s) => format!("{}.{}", s.value, name.name.value),
         None => name.name.value.clone(),
     };
-    registry::find(&full).is_some() || name.schema.as_ref().is_some_and(|s| registry::with_source_in(&s.value, &name.name.value))
+    registry::find(&full).is_some()
+        || name
+            .schema
+            .as_ref()
+            .is_some_and(|s| registry::with_source_in(&s.value, &name.name.value))
 }
 
 /// `SQL0432`: an untyped parameter marker beside a distinct type.
 fn marker(e: &crate::ast::Expr, other: Option<&SqlType>) -> Result<()> {
     match (e, udt(other)) {
-        (crate::ast::Expr::Param(_), Some(u)) => Err(coded(-432, "42841", format!("a parameter marker cannot have distinct type {u}; CAST it"))),
+        (crate::ast::Expr::Param(_), Some(u)) => Err(coded(
+            -432,
+            "42841",
+            format!("a parameter marker cannot have distinct type {u}; CAST it"),
+        )),
         _ => Ok(()),
     }
 }

@@ -7,9 +7,9 @@
 
 use db::file::{self, CreateFileOpts, FileKind, MemberOpt};
 use db::util::Hold;
-use store::obj::LockState;
 use dds::{CompileOpts, MapRefs, NoRefs, Source, compile_lf, compile_pf};
 use qsname::Name;
+use store::obj::LockState;
 use store::txn::Txn;
 
 use super::{SqlContext, TableInfo};
@@ -91,9 +91,11 @@ pub(super) fn system_default(t: &DataType) -> &'static str {
         DataType::Time => "'00.00.00'",
         DataType::Timestamp(_) => "'0001-01-01-00.00.00.000000'",
         DataType::Boolean => "'FALSE'",
-        DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_) | DataType::Clob(_) | DataType::Dbclob(_) => {
-            "''"
-        }
+        DataType::Binary(_)
+        | DataType::Varbinary(_)
+        | DataType::Blob(_)
+        | DataType::Clob(_)
+        | DataType::Dbclob(_) => "''",
         _ => "' '",
     }
 }
@@ -131,10 +133,19 @@ fn float_constant(e: &Expr) -> Option<String> {
 /// must be, in lines of twenty characters.
 pub(crate) fn default_heading(name: &str) -> Vec<String> {
     let plain = name.starts_with(|ch: char| ch.is_ascii_uppercase() || "$#@".contains(ch))
-        && name.chars().all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || "$#@_".contains(ch));
-    let head = if plain { name.to_string() } else { format!("\"{}\"", name.replace('"', "\"\"")) };
+        && name
+            .chars()
+            .all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || "$#@_".contains(ch));
+    let head = if plain {
+        name.to_string()
+    } else {
+        format!("\"{}\"", name.replace('"', "\"\""))
+    };
     let chars: Vec<char> = head.chars().take(60).collect();
-    chars.chunks(20).map(|ch| ch.iter().collect::<String>().trim_end().to_string()).collect()
+    chars
+        .chunks(20)
+        .map(|ch| ch.iter().collect::<String>().trim_end().to_string())
+        .collect()
 }
 
 /// What DDS cannot say about a column, set on the compiled field: the
@@ -151,10 +162,15 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
     if let Some(id) = &c.identity {
         // The full attributes are the table's `COLUMN` entry (`column`);
         // the field keeps what four bytes hold.
-        let range = super::column::type_range(&c.type_spec.data_type).ok_or_else(|| SqlError::Integrity {
-            sqlcode: -846,
-            sqlstate: "42815",
-            what: format!("identity column {} must be an integer or DECIMAL(n, 0)", c.name.value),
+        let range = super::column::type_range(&c.type_spec.data_type).ok_or_else(|| {
+            SqlError::Integrity {
+                sqlcode: -846,
+                sqlstate: "42815",
+                what: format!(
+                    "identity column {} must be an integer or DECIMAL(n, 0)",
+                    c.name.value
+                ),
+            }
         })?;
         let a = super::column::attrs(id, range, &format!("identity column {}", c.name.value))?;
         f.identity = Some(dds::IdentityDef {
@@ -165,7 +181,9 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
         });
     }
     match &c.default {
-        Some(ColumnDefault::Value(Expr::Register(r))) => f.default = Some(dds::DefaultValue::Expr(register_text(*r)?)),
+        Some(ColumnDefault::Value(Expr::Register(r))) => {
+            f.default = Some(dds::DefaultValue::Expr(register_text(*r)?))
+        }
         Some(ColumnDefault::Value(e)) if float_constant(e).is_some() => {
             f.default = float_constant(e).map(dds::DefaultValue::Number);
         }
@@ -177,7 +195,10 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
         _ => {}
     }
     // SQL's integers hold their bytes' whole range.
-    f.int_range = matches!(c.type_spec.data_type, DataType::SmallInt | DataType::Integer | DataType::BigInt);
+    f.int_range = matches!(
+        c.type_spec.data_type,
+        DataType::SmallInt | DataType::Integer | DataType::BigInt
+    );
     if let DataType::Timestamp(p) = c.type_spec.data_type {
         f.length = dds::DataType::timestamp_length(p);
         f.byte_len = f.length;
@@ -198,7 +219,11 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
             dds::DataType::Dbclob => Some(1200),
             _ => c.type_spec.ccsid,
         };
-        if let Some(d) = c.default.as_ref().filter(|d| !matches!(d, ColumnDefault::Value(Expr::Register(_)))) {
+        if let Some(d) = c
+            .default
+            .as_ref()
+            .filter(|d| !matches!(d, ColumnDefault::Value(Expr::Register(_))))
+        {
             f.default = match d {
                 ColumnDefault::Value(Expr::Literal(Literal::Bin(b) | Literal::Hex(b))) => {
                     Some(dds::DefaultValue::Hex(b.clone()))
@@ -215,7 +240,11 @@ fn no_lob_keys(rf: &dds::RecordFormat, keys: impl Iterator<Item = usize>) -> Res
     for k in keys {
         if let Some(f) = rf.fields.get(k).filter(|f| f.data_type.is_lob()) {
             // IBM: SQL0350, a LOB cannot be a key.
-            return Err(SqlError::Coded { code: -350, state: "42962", what: format!("the LOB column {} cannot be a key", f.name) });
+            return Err(SqlError::Coded {
+                code: -350,
+                state: "42962",
+                what: format!("the LOB column {} cannot be a key", f.name),
+            });
         }
     }
     Ok(())
@@ -256,7 +285,10 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
     crate::exec::cast::check_column(&c.type_spec)?;
     super::defaults::check(c)?;
     if c.name.value.chars().count() > db::format::sections::ALIAS_MAX {
-        return Err(SqlError::NameTooLong { name: c.name.value.clone(), max: db::format::sections::ALIAS_MAX });
+        return Err(SqlError::NameTooLong {
+            name: c.name.value.clone(),
+            max: db::format::sections::ALIAS_MAX,
+        });
     }
     let (len, ty, dec, mut kws): (String, &str, String, Vec<String>) = match &c.type_spec.data_type
     {
@@ -288,7 +320,16 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
         // stands in, and `finish_field` gives it its type.
         t => {
             let (n, varlen) = sql_only_shape(t);
-            (n.to_string(), "A", String::new(), if varlen { vec!["VARLEN".into()] } else { vec![] })
+            (
+                n.to_string(),
+                "A",
+                String::new(),
+                if varlen {
+                    vec!["VARLEN".into()]
+                } else {
+                    vec![]
+                },
+            )
         }
     };
     let sql_only = sql_only_type(&c.type_spec.data_type).is_some();
@@ -298,7 +339,11 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
         kws.push(format!("CCSID({ccsid})"));
     }
     // An identity column and a row change timestamp are NOT NULL as IBM makes them.
-    let generated_not_null = c.identity.is_some() || matches!(c.generated, Some(crate::ast::Generated::RowChangeTimestamp { .. }));
+    let generated_not_null = c.identity.is_some()
+        || matches!(
+            c.generated,
+            Some(crate::ast::Generated::RowChangeTimestamp { .. })
+        );
     if !c.not_null && !generated_not_null {
         kws.push("ALWNULL".into());
     }
@@ -311,7 +356,8 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
         Some(ColumnDefault::Value(e)) if float_constant(e).is_some() => {}
         Some(ColumnDefault::Value(e)) => kws.push(format!("DFT({})", dds_literal(e)?)),
         // The current date or time is set on the field (`finish_field`).
-        Some(ColumnDefault::System) if super::defaults::current_register(&c.type_spec.data_type).is_some() => {}
+        Some(ColumnDefault::System)
+            if super::defaults::current_register(&c.type_spec.data_type).is_some() => {}
         Some(ColumnDefault::System) => {
             kws.push(format!("DFT({})", system_default(&c.type_spec.data_type)));
         }
@@ -329,7 +375,11 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
 
 /// `CREATE TABLE` of columns: a physical file from the generated DDS,
 /// its SQL names kept. `AS`, `LIKE` and `OR REPLACE` are `table`'s.
-pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) -> Result<store::obj::ObjectId> {
+pub fn create_table_def(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    t: &CreateTable,
+) -> Result<store::obj::ObjectId> {
     let library = ctx.library_for(txn, &t.name)?;
     let (name, sql) = super::names::new_object(txn, library, &t.name.name, t.system_name.as_ref())?;
     let col_names = super::table::column_names(&t.columns)?;
@@ -368,13 +418,22 @@ pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable
         },
     )?;
     finish_table(txn, ctx, library, id, sql.as_deref(), &t.name.name.value)?;
-    let typed: Vec<(Name, String)> = cols.iter().zip(&col_names).filter_map(|(c, n)| c.type_spec.udt.clone().map(|u| (*n, u))).collect();
+    let typed: Vec<(Name, String)> = cols
+        .iter()
+        .zip(&col_names)
+        .filter_map(|(c, n)| c.type_spec.udt.clone().map(|u| (*n, u)))
+        .collect();
     super::udt::column::record(txn, id, &typed, db::sqlinf::Kind::Table, ctx.clock())?;
     super::column::create(txn, ctx, id, t)?;
     // The constraints: the columns' own, then the table's, numbered
     // in that order.
     let rf = file::describe(txn, id)?.formats[0].format.clone();
-    for c in t.columns.iter().flat_map(|c| &c.constraints).chain(&t.constraints) {
+    for c in t
+        .columns
+        .iter()
+        .flat_map(|c| &c.constraints)
+        .chain(&t.constraints)
+    {
         super::cst::add(txn, ctx, id, &rf, c)?;
     }
     Ok(id)
@@ -442,7 +501,10 @@ pub(crate) fn finish_table(
 ) -> Result<()> {
     super::names::record(txn, library, id, db::sqlinf::Kind::Table, sql, ctx.clock())?;
     // `QTEMP` is no schema: its journal is a logged declared table's.
-    let lib = store::obj::ops::read_header(txn, library)?.1.name.to_string();
+    let lib = store::obj::ops::read_header(txn, library)?
+        .1
+        .name
+        .to_string();
     if lib != "QTEMP" && !journal_in_schema(txn, ctx, library, id)? {
         ctx.warning = Some(crate::sqlca::Warning::not_journaled(shown, &lib));
     }
@@ -458,7 +520,8 @@ fn journal_in_schema(
     file: store::obj::ObjectId,
 ) -> Result<bool> {
     let lib = store::obj::library::Library::load(txn, library)?;
-    let Some(journal) = lib.lookup(txn, jrn::JRN, Name::parse(SCHEMA_JOURNAL).expect("valid"))? else {
+    let Some(journal) = lib.lookup(txn, jrn::JRN, Name::parse(SCHEMA_JOURNAL).expect("valid"))?
+    else {
         return Ok(false);
     };
     db::journal::strjrnpf(txn, ctx.job, file, journal, true, false, ctx.clock())?;
@@ -479,7 +542,9 @@ pub(super) fn compile_table(lines: &[String]) -> Result<dds::PfDefinition> {
 pub(super) fn field_of(c: &ColumnDef) -> Result<dds::FieldDef> {
     if c.type_spec.udt.is_some() {
         // BLOCKED(rel): ALTER TABLE keeps no COLTYPE entries yet.
-        return Err(SqlError::Unsupported { what: "ALTER TABLE with a column of a distinct type".into() });
+        return Err(SqlError::Unsupported {
+            what: "ALTER TABLE with a column of a distinct type".into(),
+        });
     }
     let mut lines = vec![dds("R", "ALTERED", "", "", "", "")];
     lines.extend(column_lines(c)?);
@@ -502,9 +567,9 @@ pub(super) fn default_def(d: &ColumnDefault, t: &DataType) -> Result<Option<dds:
     use dds::DefaultValue as D;
     Ok(Some(match d {
         // A date, time or timestamp's is the current one, as IBM's.
-        ColumnDefault::System if super::defaults::current_register(t).is_some() => {
-            D::Expr(register_text(super::defaults::current_register(t).expect("a register"))?)
-        }
+        ColumnDefault::System if super::defaults::current_register(t).is_some() => D::Expr(
+            register_text(super::defaults::current_register(t).expect("a register"))?,
+        ),
         ColumnDefault::System => {
             let text = system_default(t);
             match text.strip_prefix('\'').and_then(|s| s.strip_suffix('\'')) {
@@ -575,8 +640,17 @@ fn create_index_with_text(
     }
     for (c, desc) in &i.columns {
         let col = SqlContext::sys_name(c)?;
-        if let Some((_, f)) = table.format.format.field(&col).filter(|(_, f)| f.data_type.is_lob()) {
-            return Err(SqlError::Coded { code: -350, state: "42962", what: format!("the LOB column {} cannot be a key", f.name) });
+        if let Some((_, f)) = table
+            .format
+            .format
+            .field(&col)
+            .filter(|(_, f)| f.data_type.is_lob())
+        {
+            return Err(SqlError::Coded {
+                code: -350,
+                state: "42962",
+                what: format!("the LOB column {} cannot be a key", f.name),
+            });
         }
         if table.format.format.field(&col).is_none() {
             return Err(SqlError::ColumnNotFound {
@@ -635,7 +709,10 @@ pub(crate) fn build_index(
     let base_hold = Hold::take(
         txn,
         job,
-        &[(base, LockState::SharedNoUpdate), (table.member.object, LockState::SharedNoUpdate)],
+        &[
+            (base, LockState::SharedNoUpdate),
+            (table.member.object, LockState::SharedNoUpdate),
+        ],
         &what,
     )?;
     let opts = CreateFileOpts {
@@ -651,11 +728,13 @@ pub(crate) fn build_index(
             return Err(e.into());
         }
     };
-    let built = Hold::take(txn, job, &[(lf, LockState::Exclusive)], &name.to_string()).and_then(|hold| {
-        let r = file::add_lf_member_paused(txn, lf, name, &text, None, now, &mut |t| ctx.pause(t));
-        hold.release(txn);
-        r
-    });
+    let built =
+        Hold::take(txn, job, &[(lf, LockState::Exclusive)], &name.to_string()).and_then(|hold| {
+            let r =
+                file::add_lf_member_paused(txn, lf, name, &text, None, now, &mut |t| ctx.pause(t));
+            hold.release(txn);
+            r
+        });
     if built.is_err() {
         // Nothing of it stays, the parts it committed included.
         let _ = file::delete_file(txn, job, lf);
@@ -812,7 +891,9 @@ pub fn create_view(
             SelectItem::Expr(Expr::Column(c), alias) => {
                 // A name DDS cannot write (long or delimited): the view runs
                 // its query instead.
-                let not_dds = || SqlError::Unsupported { what: "a view column DDS cannot name".into() };
+                let not_dds = || SqlError::Unsupported {
+                    what: "a view column DDS cannot name".into(),
+                };
                 let base = SqlContext::sys_name(&c.column).map_err(|_| not_dds())?;
                 if table.format.format.field(&base).is_none() {
                     return Err(not_dds());
@@ -900,6 +981,10 @@ pub fn create_view(
         &mut |_| Ok(base_id),
         // IBM leaves an SQL view's text blank; its kind is in its
         // `*SQLINF`.
-        &CreateFileOpts { now: ctx.clock(), text: String::new(), ..CreateFileOpts::default() },
+        &CreateFileOpts {
+            now: ctx.clock(),
+            text: String::new(),
+            ..CreateFileOpts::default()
+        },
     )?)
 }

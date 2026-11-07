@@ -97,7 +97,15 @@ impl SqlType {
     /// The type a data type names.
     #[must_use]
     pub fn of_data_type(t: &DataType, null: bool) -> Self {
-        Self { spec: TypeSpec { data_type: t.clone(), ccsid: None, bit_data: false, udt: None }, nullable: null }
+        Self {
+            spec: TypeSpec {
+                data_type: t.clone(),
+                ccsid: None,
+                bit_data: false,
+                udt: None,
+            },
+            nullable: null,
+        }
     }
 
     /// A column's type, null-capable as `null` says.
@@ -272,7 +280,10 @@ impl SqlType {
     /// Whether an integer.
     #[must_use]
     pub fn is_integer(&self) -> bool {
-        matches!(self.spec.data_type, DataType::SmallInt | DataType::Integer | DataType::BigInt)
+        matches!(
+            self.spec.data_type,
+            DataType::SmallInt | DataType::Integer | DataType::BigInt
+        )
     }
 
     /// Whether a character string.
@@ -306,6 +317,10 @@ pub fn unify_or(a: SqlType, b: &SqlType) -> SqlType {
 /// rules give none.
 #[must_use]
 pub fn arith_or(a: &SqlType, op: BinOp, b: &SqlType) -> SqlType {
-    let t = if op == BinOp::Concat { super::unify::concat(a, b) } else { super::arith(a, op, b) };
+    let t = if op == BinOp::Concat {
+        super::unify::concat(a, b)
+    } else {
+        super::arith(a, op, b)
+    };
     t.unwrap_or_else(|| SqlType::double(a.nullable || b.nullable))
 }

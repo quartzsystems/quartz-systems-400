@@ -29,17 +29,17 @@ pub(crate) fn job_opt(env: *mut codegen::abi::Env) -> Option<&'static mut crate:
     (!env.is_null()).then(|| mem::job(env))
 }
 pub use core::{
-    ATTN, attention, auto_alloc, call_pgm, call_pgm_ptr, call_pgm_var, copy, deref, dsply, enter, leave,
-    monitor_match, mov_str, note_stack_fault, proc_addr, proc_target, ptr_add, ptr_addr, ptr_diff,
-    raise, unresolved,
+    ATTN, attention, auto_alloc, call_pgm, call_pgm_ptr, call_pgm_var, copy, deref, dsply, enter,
+    leave, monitor_match, mov_str, note_stack_fault, proc_addr, proc_target, ptr_add, ptr_addr,
+    ptr_diff, raise, unresolved,
 };
 pub use date::{dt_add, dt_diff, dt_extract, dt_now, dt_test};
 pub use debug::{dbg_stmt, dbg_var};
 pub use decimal::{dec_bin, dec_cmp, dec_to_float, dec_to_int, dec_un};
 pub use heap::{alloc, dealloc, realloc};
 pub use io::{
-    db_close, db_io, db_open, dev_io, dsp_io, dtaara, dtaq_rcv, dtaq_snd, file_bind, file_ref, prt_ctl,
-    rslvsp,
+    db_close, db_io, db_open, dev_io, dsp_io, dtaara, dtaq_rcv, dtaq_snd, file_bind, file_ref,
+    prt_ctl, rslvsp,
 };
 pub use msg::{rcvmsg, rmvmsg, sndpgmmsg};
 pub use string::{

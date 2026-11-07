@@ -46,7 +46,10 @@ impl Json<'_> {
     }
 
     fn err(&self) -> Fail {
-        Fail { status: 357, reason: u32::try_from(self.i).unwrap_or(0) }
+        Fail {
+            status: 357,
+            reason: u32::try_from(self.i).unwrap_or(0),
+        }
     }
 
     fn string(&mut self) -> Result<String, Fail> {
@@ -68,7 +71,12 @@ impl Json<'_> {
                         'b' => out.push('\u{8}'),
                         'f' => out.push('\u{c}'),
                         'u' => {
-                            let h: String = self.s.get(self.i..self.i + 4).ok_or_else(|| self.err())?.iter().collect();
+                            let h: String = self
+                                .s
+                                .get(self.i..self.i + 4)
+                                .ok_or_else(|| self.err())?
+                                .iter()
+                                .collect();
                             self.i += 4;
                             let v = u32::from_str_radix(&h, 16).map_err(|_| self.err())?;
                             out.push(char::from_u32(v).unwrap_or('\u{FFFD}'));
@@ -150,14 +158,22 @@ impl Json<'_> {
             }
             Some(c) if c == '-' || c.is_ascii_digit() => {
                 let start = self.i;
-                while self.s.get(self.i).is_some_and(|c| c.is_ascii_digit() || matches!(c, '-' | '+' | '.' | 'e' | 'E')) {
+                while self
+                    .s
+                    .get(self.i)
+                    .is_some_and(|c| c.is_ascii_digit() || matches!(c, '-' | '+' | '.' | 'e' | 'E'))
+                {
                     self.i += 1;
                 }
                 let v: String = self.s[start..self.i].iter().collect();
                 b.value(&v)
             }
             Some(_) => {
-                let (t, f) = if self.ind { ("1", "0") } else { ("true", "false") };
+                let (t, f) = if self.ind {
+                    ("1", "0")
+                } else {
+                    ("true", "false")
+                };
                 for (word, v) in [("true", t), ("false", f), ("null", "")] {
                     let w: Vec<char> = word.chars().collect();
                     if self.s.get(self.i..self.i + w.len()) == Some(&w[..]) {
@@ -175,8 +191,15 @@ impl Json<'_> {
 /// Parse JSON into the builder; `opts` the parser's options.
 pub fn parse_json(text: &str, opts: &str, b: &mut Builder) -> Result<(), Fail> {
     let chars: Vec<char> = text.chars().collect();
-    let ind = opts.split_whitespace().any(|w| w.eq_ignore_ascii_case("boolean=ind"));
-    let mut p = Json { s: &chars, i: 0, depth: 0, ind };
+    let ind = opts
+        .split_whitespace()
+        .any(|w| w.eq_ignore_ascii_case("boolean=ind"));
+    let mut p = Json {
+        s: &chars,
+        i: 0,
+        depth: 0,
+        ind,
+    };
     b.start()?;
     p.value(b)?;
     p.ws();
@@ -188,7 +211,10 @@ pub fn parse_json(text: &str, opts: &str, b: &mut Builder) -> Result<(), Fail> {
 
 /// Parse XML into the builder.
 pub fn parse_xml(text: &str, _opts: &str, b: &mut Builder) -> Result<(), Fail> {
-    let root = crate::xml::tree(text).map_err(|e| Fail { status: 357, reason: u32::try_from(e.offset).unwrap_or(0) })?;
+    let root = crate::xml::tree(text).map_err(|e| Fail {
+        status: 357,
+        reason: u32::try_from(e.offset).unwrap_or(0),
+    })?;
     b.start()?;
     b.name(&root.name)?;
     element(&root, b)?;
@@ -214,10 +240,27 @@ fn element(e: &crate::xml::Element, b: &mut Builder) -> Result<(), Fail> {
 pub fn natives() -> Vec<(&'static str, mi::job::NativeFn)> {
     use std::rc::Rc;
     vec![
-        ("QRNPJSON", Rc::new(|j: &mut mi::Job, args: &[u64]| parser(j, args, parse_json)) as mi::job::NativeFn),
-        ("QRNPXML", Rc::new(|j: &mut mi::Job, args: &[u64]| parser(j, args, parse_xml))),
-        ("QRNGJSON", Rc::new(|j: &mut mi::Job, args: &[u64]| crate::datagen::shipped_generator(j, args, crate::datagen::Style::Json))),
-        ("QRNGXML", Rc::new(|j: &mut mi::Job, args: &[u64]| crate::datagen::shipped_generator(j, args, crate::datagen::Style::Xml))),
+        (
+            "QRNPJSON",
+            Rc::new(|j: &mut mi::Job, args: &[u64]| parser(j, args, parse_json))
+                as mi::job::NativeFn,
+        ),
+        (
+            "QRNPXML",
+            Rc::new(|j: &mut mi::Job, args: &[u64]| parser(j, args, parse_xml)),
+        ),
+        (
+            "QRNGJSON",
+            Rc::new(|j: &mut mi::Job, args: &[u64]| {
+                crate::datagen::shipped_generator(j, args, crate::datagen::Style::Json)
+            }),
+        ),
+        (
+            "QRNGXML",
+            Rc::new(|j: &mut mi::Job, args: &[u64]| {
+                crate::datagen::shipped_generator(j, args, crate::datagen::Style::Xml)
+            }),
+        ),
     ]
 }
 
@@ -237,14 +280,22 @@ mod tests {
     #[test]
     fn json_becomes_the_tree() {
         let mut b = Builder::default();
-        parse_json(r#"{"o": {"id": 7, "tags": ["a", "b"], "ok": true, "x": null}}"#, "boolean=ind", &mut b).unwrap();
+        parse_json(
+            r#"{"o": {"id": 7, "tags": ["a", "b"], "ok": true, "x": null}}"#,
+            "boolean=ind",
+            &mut b,
+        )
+        .unwrap();
         let (name, n) = b.root().unwrap();
         assert_eq!(name, "o");
         assert_eq!(
             n,
             Node::Struct(vec![
                 ("id".into(), Node::Value("7".into())),
-                ("tags".into(), Node::Array(vec![Node::Value("a".into()), Node::Value("b".into())])),
+                (
+                    "tags".into(),
+                    Node::Array(vec![Node::Value("a".into()), Node::Value("b".into())])
+                ),
                 ("ok".into(), Node::Value("1".into())),
                 ("x".into(), Node::Value(String::new())),
             ])
@@ -254,7 +305,12 @@ mod tests {
     #[test]
     fn xml_becomes_the_tree() {
         let mut b = Builder::default();
-        parse_xml(r#"<cust id="5"><name>Al</name><tag>x</tag><tag>y</tag></cust>"#, "", &mut b).unwrap();
+        parse_xml(
+            r#"<cust id="5"><name>Al</name><tag>x</tag><tag>y</tag></cust>"#,
+            "",
+            &mut b,
+        )
+        .unwrap();
         let (n, node) = b.root().unwrap();
         assert_eq!(n, "cust");
         assert_eq!(

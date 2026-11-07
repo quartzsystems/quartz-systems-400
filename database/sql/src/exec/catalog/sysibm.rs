@@ -45,7 +45,8 @@ const SERVER: &str = "QS400";
 /// Whether `name` is one of the views here: `SYSIBM` qualifies them.
 #[must_use]
 pub fn has(name: &ObjectName) -> bool {
-    name.schema.as_ref().is_some_and(|s| s.value == "SYSIBM") && VIEWS.contains(&name.name.value.as_str())
+    name.schema.as_ref().is_some_and(|s| s.value == "SYSIBM")
+        && VIEWS.contains(&name.name.value.as_str())
 }
 
 /// A column's shape.
@@ -61,7 +62,8 @@ enum Ty {
 }
 
 fn col(alias: &str, name: &str, ty: Ty, nullable: bool) -> ColInfo {
-    let short = Name::parse(&name[..name.len().min(10)]).unwrap_or_else(|_| Name::parse("COL").expect("valid"));
+    let short = Name::parse(&name[..name.len().min(10)])
+        .unwrap_or_else(|_| Name::parse("COL").expect("valid"));
     let mut f = match ty {
         Ty::Var(n) | Ty::Fixed(n) => FieldDef::new(short, DataType::Char, n, 0),
         Ty::Graphic(n) => FieldDef::new(short, DataType::Graphic, n, 0),
@@ -114,17 +116,28 @@ impl View {
                 cols: sch.cols.iter().map(|c| c.name.clone()).collect(),
                 rows,
             },
-            None => Self { cols: Vec::new(), rows: Vec::new() },
+            None => Self {
+                cols: Vec::new(),
+                rows: Vec::new(),
+            },
         })
     }
 
     fn at<'a>(&self, r: &'a Row, c: &str) -> &'a Value {
-        self.cols.iter().position(|x| x == c).and_then(|i| r.get(i)).unwrap_or(&N)
+        self.cols
+            .iter()
+            .position(|x| x == c)
+            .and_then(|i| r.get(i))
+            .unwrap_or(&N)
     }
 
     fn text(&self, r: &Row, c: &str) -> String {
         let v = self.at(r, c);
-        if v.is_null() { String::new() } else { v.as_text().trim_end().to_string() }
+        if v.is_null() {
+            String::new()
+        } else {
+            v.as_text().trim_end().to_string()
+        }
     }
 
     fn num(&self, r: &Row, c: &str) -> Option<i64> {
@@ -183,21 +196,48 @@ fn type_info(data_type: &str, len: i64, scale: Option<i64>, ccsid: Option<i64>) 
         "CHAR" | "CHARACTER" => t(1, "CHAR", 1, 1),
         "VARCHAR" if bits => t(-3, "VARCHAR () FOR BIT DATA", -3, -3),
         "VARCHAR" => t(12, "VARCHAR", 12, 12),
-        "GRAPHIC" => TypeInfo { buffer: len * 2, octets: Some(len * 2), ..t(-95, "GRAPHIC", 1, 95) },
-        "VARG" | "VARGRAPHIC" => TypeInfo { buffer: len * 2, octets: Some(len * 2), ..t(-96, "VARGRAPHIC", 12, 96) },
+        "GRAPHIC" => TypeInfo {
+            buffer: len * 2,
+            octets: Some(len * 2),
+            ..t(-95, "GRAPHIC", 1, 95)
+        },
+        "VARG" | "VARGRAPHIC" => TypeInfo {
+            buffer: len * 2,
+            octets: Some(len * 2),
+            ..t(-96, "VARGRAPHIC", 12, 96)
+        },
         "BINARY" => t(-2, "BINARY", -2, -2),
         "VARBIN" | "VARBINARY" => t(-3, "VARBINARY", -3, -3),
         "BLOB" => t(-98, "BLOB", 2004, 13),
         "CLOB" => t(-99, "CLOB", 2005, 14),
-        "DBCLOB" => TypeInfo { buffer: len * 2, octets: Some(len * 2), ..t(-350, "DBCLOB", 2005, 15) },
+        "DBCLOB" => TypeInfo {
+            buffer: len * 2,
+            octets: Some(len * 2),
+            ..t(-350, "DBCLOB", 2005, 15)
+        },
         "SMALLINT" => exact(5, "SMALLINT", 5, 5, 2),
         "INTEGER" => exact(4, "INTEGER", 4, 10, 4),
-        "BIGINT" => TypeInfo { jdbc: -5, ..exact(-5, "BIGINT", 19, 19, 8) },
+        "BIGINT" => TypeInfo {
+            jdbc: -5,
+            ..exact(-5, "BIGINT", 19, 19, 8)
+        },
         "DECIMAL" => exact(3, "DECIMAL", 3, len, len + 2),
         "NUMERIC" => exact(2, "NUMERIC", 2, len, len + 2),
-        "REAL" => TypeInfo { digits: None, radix: Some(2), ..exact(7, "REAL", 7, 24, 4) },
-        "FLOAT" if len == 4 => TypeInfo { digits: None, radix: Some(2), ..exact(7, "REAL", 7, 24, 4) },
-        "DOUBLE" | "FLOAT" => TypeInfo { digits: None, radix: Some(2), ..exact(8, "DOUBLE", 8, 53, 8) },
+        "REAL" => TypeInfo {
+            digits: None,
+            radix: Some(2),
+            ..exact(7, "REAL", 7, 24, 4)
+        },
+        "FLOAT" if len == 4 => TypeInfo {
+            digits: None,
+            radix: Some(2),
+            ..exact(7, "REAL", 7, 24, 4)
+        },
+        "DOUBLE" | "FLOAT" => TypeInfo {
+            digits: None,
+            radix: Some(2),
+            ..exact(8, "DOUBLE", 8, 53, 8)
+        },
         "DECFLOAT" => TypeInfo {
             jdbc: 1111,
             digits: None,
@@ -213,7 +253,10 @@ fn type_info(data_type: &str, len: i64, scale: Option<i64>, ccsid: Option<i64>) 
         }
         "ROWID" => t(-100, "ROWID", -8, 24),
         "XML" => t(-370, "XML", 2009, -370),
-        "BOOLEAN" => TypeInfo { octets: None, ..t(16, "BOOLEAN", 16, 16) },
+        "BOOLEAN" => TypeInfo {
+            octets: None,
+            ..t(16, "BOOLEAN", 16, 16)
+        },
         _ => t(1111, "OTHER", 1111, 1111),
     }
 }
@@ -230,11 +273,22 @@ fn table_type(t: &str) -> Option<&'static str> {
 }
 
 /// The constant rows of `SQLTABLETYPES` and `SYSTABLETYPES`.
-const TABLE_TYPES: &[(&str, &str)] = &[("ALIAS", "A"), ("MATERIALIZED QUERY TABLE", "M"), ("SYSTEM TABLE", "?"), ("TABLE", "T"), ("VIEW", "V")];
+const TABLE_TYPES: &[(&str, &str)] = &[
+    ("ALIAS", "A"),
+    ("MATERIALIZED QUERY TABLE", "M"),
+    ("SYSTEM TABLE", "?"),
+    ("TABLE", "T"),
+    ("VIEW", "V"),
+];
 
 /// The rows and columns of a view here, or `None` when `name` is not one.
 #[allow(clippy::too_many_lines)] // one arm per view
-pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str) -> Result<Option<(Schema, Vec<Row>)>> {
+pub fn virtual_table(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    alias: &str,
+) -> Result<Option<(Schema, Vec<Row>)>> {
     if !has(name) {
         return Ok(None);
     }
@@ -285,14 +339,44 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                             "VIEW" => views
                                 .rows
                                 .iter()
-                                .find(|v| views.text(v, "TABLE_SCHEMA") == sch && views.text(v, "TABLE_NAME") == tab)
-                                .map_or_else(|| "NO".to_string(), |v| views.text(v, "IS_INSERTABLE_INTO")),
+                                .find(|v| {
+                                    views.text(v, "TABLE_SCHEMA") == sch
+                                        && views.text(v, "TABLE_NAME") == tab
+                                })
+                                .map_or_else(
+                                    || "NO".to_string(),
+                                    |v| views.text(v, "IS_INSERTABLE_INTO"),
+                                ),
                             _ => "YES".into(),
                         };
                         let kind = if kind == "TABLE" { "BASE TABLE" } else { kind };
-                        return Some(vec![s(SERVER), s(sch), s(tab), s(kind), N, N, N, N, N, s(insertable)]);
+                        return Some(vec![
+                            s(SERVER),
+                            s(sch),
+                            s(tab),
+                            s(kind),
+                            N,
+                            N,
+                            N,
+                            N,
+                            N,
+                            s(insertable),
+                        ]);
                     }
-                    Some(vec![s(SERVER), s(sch), s(tab), s(kind), N, N, N, N, N, N, N, s(t.text(r, "TABLE_TEXT"))])
+                    Some(vec![
+                        s(SERVER),
+                        s(sch),
+                        s(tab),
+                        s(kind),
+                        N,
+                        N,
+                        N,
+                        N,
+                        N,
+                        N,
+                        N,
+                        s(t.text(r, "TABLE_TEXT")),
+                    ])
                 })
                 .collect();
             (cols, rows)
@@ -309,7 +393,19 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                     c("KEY_SEQ", Ty::Small, false),
                     c("PK_NAME", v128, false),
                 ];
-                let rows = keys.into_iter().map(|k| vec![s(SERVER), s(k.schema), s(k.table), s(k.column), int(k.seq), s(k.name)]).collect();
+                let rows = keys
+                    .into_iter()
+                    .map(|k| {
+                        vec![
+                            s(SERVER),
+                            s(k.schema),
+                            s(k.table),
+                            s(k.column),
+                            int(k.seq),
+                            s(k.name),
+                        ]
+                    })
+                    .collect();
                 (cols, rows)
             } else {
                 let cols = vec![
@@ -333,7 +429,9 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                     .into_iter()
                     .filter_map(|k| {
                         let r = cview.rows.iter().find(|r| {
-                            cview.text(r, "TABLE_SCHEMA") == k.schema && cview.text(r, "TABLE_NAME") == k.table && cview.text(r, "COLUMN_NAME") == k.column
+                            cview.text(r, "TABLE_SCHEMA") == k.schema
+                                && cview.text(r, "TABLE_NAME") == k.table
+                                && cview.text(r, "COLUMN_NAME") == k.column
                         })?;
                         let ti = column_type(&cview, r);
                         Some(vec![
@@ -373,7 +471,17 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                 let rows = sch
                     .rows
                     .iter()
-                    .map(|r| vec![s(SERVER), s(sch.text(r, "SCHEMA_NAME")), s(sch.text(r, "SCHEMA_OWNER")), s(SERVER), s("SYSIBM"), s("IBM37   "), N])
+                    .map(|r| {
+                        vec![
+                            s(SERVER),
+                            s(sch.text(r, "SCHEMA_NAME")),
+                            s(sch.text(r, "SCHEMA_OWNER")),
+                            s(SERVER),
+                            s("SYSIBM"),
+                            s("IBM37   "),
+                            N,
+                        ]
+                    })
                     .collect();
                 (cols, rows)
             } else {
@@ -432,7 +540,10 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                 c("DBNAME", Ty::Var(8), true),
                 c("TYPE", Ty::Fixed(1), false),
             ];
-            let rows = TABLE_TYPES.iter().map(|(t, k)| vec![s(SERVER), N, N, s(*t), N, N, N, N, N, N, N, s(*k)]).collect();
+            let rows = TABLE_TYPES
+                .iter()
+                .map(|(t, k)| vec![s(SERVER), N, N, s(*t), N, N, N, N, N, N, N, s(*k)])
+                .collect();
             (cols, rows)
         }
         "SYSTABLETYPES" => {
@@ -444,7 +555,10 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                 c("DBNAME", Ty::Var(8), true),
                 c("TYPE", Ty::Fixed(1), false),
             ];
-            let rows = TABLE_TYPES.iter().map(|(t, k)| vec![N, N, s(*t), N, N, s(*k)]).collect();
+            let rows = TABLE_TYPES
+                .iter()
+                .map(|(t, k)| vec![N, N, s(*t), N, N, s(*k)])
+                .collect();
             (cols, rows)
         }
         "SQLTYPEINFO" => type_rows(alias),
@@ -508,7 +622,11 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                         s(v.text(r, "TABLE_NAME")),
                         def,
                         s(check),
-                        s(if v.text(r, "IS_UPDATABLE") == "Y" { "YES" } else { "NO" }),
+                        s(if v.text(r, "IS_UPDATABLE") == "Y" {
+                            "YES"
+                        } else {
+                            "NO"
+                        }),
                     ]
                 })
                 .collect();
@@ -523,8 +641,17 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
 fn column_type(v: &View, r: &Row) -> TypeInfo {
     // A timestamp's precision is DATETIME_PRECISION (its NUMERIC_SCALE is null).
     let ty = v.text(r, "DATA_TYPE");
-    let scale = if ty == "TIMESTMP" { v.num(r, "DATETIME_PRECISION") } else { v.num(r, "NUMERIC_SCALE") };
-    type_info(&ty, v.num(r, "LENGTH").unwrap_or(0), scale, v.num(r, "CCSID"))
+    let scale = if ty == "TIMESTMP" {
+        v.num(r, "DATETIME_PRECISION")
+    } else {
+        v.num(r, "NUMERIC_SCALE")
+    };
+    type_info(
+        &ty,
+        v.num(r, "LENGTH").unwrap_or(0),
+        scale,
+        v.num(r, "CCSID"),
+    )
 }
 
 /// The digits of an exact numeric as the information schema gives them:
@@ -557,16 +684,28 @@ fn ansi_type(t: &TypeInfo) -> &'static str {
 }
 
 #[allow(clippy::too_many_lines)] // the two views' columns
-fn columns(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str, ansi: bool) -> Result<(Vec<ColInfo>, Vec<Row>)> {
+fn columns(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    alias: &str,
+    ansi: bool,
+) -> Result<(Vec<ColInfo>, Vec<Row>)> {
     let c = |n: &str, ty: Ty, null: bool| col(alias, n, ty, null);
     let v128 = Ty::Var(128);
     let mut v = View::load(txn, ctx, "SYSCOLUMNS")?;
     // An index's columns are not listed: only those of what SYSTABLES lists.
     let t = View::load(txn, ctx, "SYSTABLES")?;
-    let listed: std::collections::HashSet<(String, String)> =
-        t.rows.iter().filter(|r| table_type(&t.text(r, "TABLE_TYPE")).is_some()).map(|r| (t.text(r, "TABLE_SCHEMA"), t.text(r, "TABLE_NAME"))).collect();
+    let listed: std::collections::HashSet<(String, String)> = t
+        .rows
+        .iter()
+        .filter(|r| table_type(&t.text(r, "TABLE_TYPE")).is_some())
+        .map(|r| (t.text(r, "TABLE_SCHEMA"), t.text(r, "TABLE_NAME")))
+        .collect();
     let rows = std::mem::take(&mut v.rows);
-    v.rows = rows.into_iter().filter(|r| listed.contains(&(v.text(r, "TABLE_SCHEMA"), v.text(r, "TABLE_NAME")))).collect();
+    v.rows = rows
+        .into_iter()
+        .filter(|r| listed.contains(&(v.text(r, "TABLE_SCHEMA"), v.text(r, "TABLE_NAME"))))
+        .collect();
     let v = v;
     let default = |r: &Row| match v.at(r, "COLUMN_DEFAULT") {
         Value::Null => N,
@@ -626,7 +765,8 @@ fn columns(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str, ansi: bool) -> Resu
                 let ti = column_type(&v, r);
                 let len = v.num(r, "LENGTH").unwrap_or(0);
                 let charlike = ti.octets.is_some() && ti.radix.is_none();
-                let text_set = charlike && !matches!(ti.jdbc, -2 | -3 | 2004) && v.num(r, "CCSID") == Some(37);
+                let text_set =
+                    charlike && !matches!(ti.jdbc, -2 | -3 | 2004) && v.num(r, "CCSID") == Some(37);
                 let datetime = ti.datetime_sub.map(|_| ti.digits.unwrap_or(0));
                 let mut row = vec![
                     s(SERVER),
@@ -635,19 +775,42 @@ fn columns(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str, ansi: bool) -> Resu
                     s(v.text(r, "COLUMN_NAME")),
                     v.at(r, "ORDINAL_POSITION").clone(),
                     default(r),
-                    s(if v.text(r, "IS_NULLABLE") == "Y" { "YES" } else { "NO" }),
+                    s(if v.text(r, "IS_NULLABLE") == "Y" {
+                        "YES"
+                    } else {
+                        "NO"
+                    }),
                     s(ansi_type(&ti)),
                     if charlike { int(len) } else { N },
-                    if charlike { ti.octets.map_or(N, int) } else { N },
-                    if ti.radix.is_some() { ansi_precision(&ti, len).map_or(N, int) } else { N },
+                    if charlike {
+                        ti.octets.map_or(N, int)
+                    } else {
+                        N
+                    },
+                    if ti.radix.is_some() {
+                        ansi_precision(&ti, len).map_or(N, int)
+                    } else {
+                        N
+                    },
                     ti.radix.map_or(N, int),
-                    if ti.radix == Some(10) { ti.digits.map_or(N, int) } else { N },
+                    if ti.radix == Some(10) {
+                        ti.digits.map_or(N, int)
+                    } else {
+                        N
+                    },
                     datetime.map_or(N, int),
                     N,
                     N,
                 ];
                 if text_set {
-                    row.extend([s(SERVER), s("SYSIBM"), s("IBM37   "), s(SERVER), s("SYSIBM"), s("IBMDEFAULT")]);
+                    row.extend([
+                        s(SERVER),
+                        s("SYSIBM"),
+                        s("IBM37   "),
+                        s(SERVER),
+                        s("SYSIBM"),
+                        s("IBMDEFAULT"),
+                    ]);
                 } else {
                     row.extend([N, N, N, N, N, N]);
                 }
@@ -710,9 +873,15 @@ fn columns(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str, ansi: bool) -> Resu
                 int(i64::from(nullable)),
                 N,
                 default(r),
-                int(if ti.datetime_sub.is_some() { 9 } else { ti.odbc }),
+                int(if ti.datetime_sub.is_some() {
+                    9
+                } else {
+                    ti.odbc
+                }),
                 ti.datetime_sub.map_or(N, int),
-                ti.octets.filter(|_| ti.radix.is_none() && ti.datetime_sub.is_none()).map_or(N, int),
+                ti.octets
+                    .filter(|_| ti.radix.is_none() && ti.datetime_sub.is_none())
+                    .map_or(N, int),
                 v.at(r, "ORDINAL_POSITION").clone(),
                 s(if nullable { "YES" } else { "NO" }),
                 int(ti.jdbc),
@@ -749,11 +918,16 @@ fn constraint_cols(txn: &mut Txn<'_>, ctx: &SqlContext, types: &[&str]) -> Resul
         if !types.contains(&cst.text(r, "CONSTRAINT_TYPE").as_str()) {
             continue;
         }
-        let (cs, cn) = (cst.text(r, "CONSTRAINT_SCHEMA"), cst.text(r, "CONSTRAINT_NAME"));
+        let (cs, cn) = (
+            cst.text(r, "CONSTRAINT_SCHEMA"),
+            cst.text(r, "CONSTRAINT_NAME"),
+        );
         let mut cols: Vec<KeyCol> = keys
             .rows
             .iter()
-            .filter(|k| keys.text(k, "CONSTRAINT_SCHEMA") == cs && keys.text(k, "CONSTRAINT_NAME") == cn)
+            .filter(|k| {
+                keys.text(k, "CONSTRAINT_SCHEMA") == cs && keys.text(k, "CONSTRAINT_NAME") == cn
+            })
             .map(|k| KeyCol {
                 schema: cst.text(r, "TABLE_SCHEMA"),
                 table: cst.text(r, "TABLE_NAME"),
@@ -783,11 +957,24 @@ fn rule(r: &str) -> i64 {
     }
 }
 
-fn foreign_keys(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<(Vec<ColInfo>, Vec<Row>)> {
+fn foreign_keys(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    alias: &str,
+) -> Result<(Vec<ColInfo>, Vec<Row>)> {
     let c = |n: &str, ty: Ty, null: bool| col(alias, n, ty, null);
     let v128 = Ty::Var(128);
     let mut cols = Vec::new();
-    for n in ["PKTABLE_CAT", "PKTABLE_SCHEM", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM", "FKTABLE_NAME", "FKCOLUMN_NAME"] {
+    for n in [
+        "PKTABLE_CAT",
+        "PKTABLE_SCHEM",
+        "PKTABLE_NAME",
+        "PKCOLUMN_NAME",
+        "FKTABLE_CAT",
+        "FKTABLE_SCHEM",
+        "FKTABLE_NAME",
+        "FKCOLUMN_NAME",
+    ] {
         cols.push(c(n, v128, false));
     }
     for n in ["KEY_SEQ", "UPDATE_RULE", "DELETE_RULE"] {
@@ -799,14 +986,22 @@ fn foreign_keys(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<(Vec
     cols.push(c("UNIQUE_OR_PRIMARY", Ty::Fixed(7), false));
     let refs = View::load(txn, ctx, "SYSREFCST")?;
     let uniques = constraint_cols(txn, ctx, &["PRIMARY KEY", "UNIQUE"])?;
-    let primary: Vec<String> = primary_keys(txn, ctx)?.into_iter().map(|k| k.name).collect();
+    let primary: Vec<String> = primary_keys(txn, ctx)?
+        .into_iter()
+        .map(|k| k.name)
+        .collect();
     let fks = constraint_cols(txn, ctx, &["FOREIGN KEY"])?;
     let mut rows = Vec::new();
     for r in &refs.rows {
-        let (fk, pk) = (refs.text(r, "CONSTRAINT_NAME"), refs.text(r, "UNIQUE_CONSTRAINT_NAME"));
+        let (fk, pk) = (
+            refs.text(r, "CONSTRAINT_NAME"),
+            refs.text(r, "UNIQUE_CONSTRAINT_NAME"),
+        );
         let parent: Vec<&KeyCol> = uniques.iter().filter(|k| k.name == pk).collect();
         for f in fks.iter().filter(|k| k.name == fk) {
-            let Some(p) = parent.iter().find(|p| p.seq == f.seq) else { continue };
+            let Some(p) = parent.iter().find(|p| p.seq == f.seq) else {
+                continue;
+            };
             rows.push(vec![
                 s(SERVER),
                 s(&p.schema),
@@ -822,14 +1017,22 @@ fn foreign_keys(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<(Vec
                 s(&fk),
                 s(&pk),
                 int(7),
-                s(if primary.contains(&pk) { "PRIMARY" } else { "UNIQUE " }),
+                s(if primary.contains(&pk) {
+                    "PRIMARY"
+                } else {
+                    "UNIQUE "
+                }),
             ]);
         }
     }
     Ok((cols, rows))
 }
 
-fn statistics(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<(Vec<ColInfo>, Vec<Row>)> {
+fn statistics(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    alias: &str,
+) -> Result<(Vec<ColInfo>, Vec<Row>)> {
     let c = |n: &str, ty: Ty, null: bool| col(alias, n, ty, null);
     let v128 = Ty::Var(128);
     let cols = vec![
@@ -851,17 +1054,40 @@ fn statistics(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<(Vec<C
     let mut rows = Vec::new();
     // The tables' primary keys: their own access paths.
     for k in primary_keys(txn, ctx)? {
-        rows.push(vec![s(SERVER), s(&k.schema), s(&k.table), int(0), s(&k.schema), s(&k.table), int(3), int(k.seq), s(&k.column), s("A"), N, N, N, int(1)]);
+        rows.push(vec![
+            s(SERVER),
+            s(&k.schema),
+            s(&k.table),
+            int(0),
+            s(&k.schema),
+            s(&k.table),
+            int(3),
+            int(k.seq),
+            s(&k.column),
+            s("A"),
+            N,
+            N,
+            N,
+            int(1),
+        ]);
     }
     let idx = View::load(txn, ctx, "SYSINDEXES")?;
     let keys = View::load(txn, ctx, "SYSKEYS")?;
     for r in &idx.rows {
         let (is, iname) = (idx.text(r, "INDEX_SCHEMA"), idx.text(r, "INDEX_NAME"));
         let unique = matches!(idx.text(r, "IS_UNIQUE").as_str(), "U" | "P");
-        let mut ks: Vec<&Row> = keys.rows.iter().filter(|k| keys.text(k, "INDEX_SCHEMA") == is && keys.text(k, "INDEX_NAME") == iname).collect();
+        let mut ks: Vec<&Row> = keys
+            .rows
+            .iter()
+            .filter(|k| keys.text(k, "INDEX_SCHEMA") == is && keys.text(k, "INDEX_NAME") == iname)
+            .collect();
         ks.sort_by_key(|k| keys.num(k, "ORDINAL_POSITION").unwrap_or(0));
         for (n, k) in ks.into_iter().enumerate() {
-            let order = if keys.text(k, "ORDERING") == "D" { "D" } else { "A" };
+            let order = if keys.text(k, "ORDERING") == "D" {
+                "D"
+            } else {
+                "A"
+            };
             rows.push(vec![
                 s(SERVER),
                 s(idx.text(r, "TABLE_SCHEMA")),
@@ -894,7 +1120,22 @@ fn statistics(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<(Vec<C
             .find(|x| stat.text(x, "TABLE_SCHEMA") == sch && stat.text(x, "TABLE_NAME") == tab)
             .and_then(|x| stat.num(x, "NUMBER_ROWS"))
             .unwrap_or(0);
-        rows.push(vec![s(SERVER), s(sch), s(tab), N, N, N, int(0), N, N, N, int(count), int(1), N, int(0)]);
+        rows.push(vec![
+            s(SERVER),
+            s(sch),
+            s(tab),
+            N,
+            N,
+            N,
+            int(0),
+            N,
+            N,
+            N,
+            int(count),
+            int(1),
+            N,
+            int(0),
+        ]);
     }
     Ok((cols, rows))
 }
@@ -929,48 +1170,331 @@ fn type_rows(alias: &str) -> (Vec<ColInfo>, Vec<Row>) {
     ];
     // name, type, size, prefix, suffix, params, nullable, case, searchable,
     // unsigned, fixed, auto, min scale, max scale, sql type, sub, radix, jdbc, internal.
-    type T = (&'static str, i64, Option<i64>, Option<&'static str>, Option<&'static str>, Option<&'static str>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, Option<i64>, i64, i64);
+    type T = (
+        &'static str,
+        i64,
+        Option<i64>,
+        Option<&'static str>,
+        Option<&'static str>,
+        Option<&'static str>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        i64,
+        i64,
+    );
     let q = Some("'");
     let len = Some("length");
     let ps = Some("precision,scale");
     let num = |n, t, size, us, fixed, max: i64, radix, jdbc, int_| -> T {
-        (n, t, Some(size), None, None, None, Some(1), Some(0), Some(2), Some(us), Some(fixed), Some(0), Some(0), Some(max), Some(t), None, Some(radix), jdbc, int_)
+        (
+            n,
+            t,
+            Some(size),
+            None,
+            None,
+            None,
+            Some(1),
+            Some(0),
+            Some(2),
+            Some(us),
+            Some(fixed),
+            Some(0),
+            Some(0),
+            Some(max),
+            Some(t),
+            None,
+            Some(radix),
+            jdbc,
+            int_,
+        )
     };
     let chars = |n, t, size, pre, case, jdbc, int_| -> T {
-        (n, t, Some(size), pre, q, len, Some(1), Some(case), Some(3), None, Some(0), Some(0), None, None, Some(t), None, None, jdbc, int_)
+        (
+            n,
+            t,
+            Some(size),
+            pre,
+            q,
+            len,
+            Some(1),
+            Some(case),
+            Some(3),
+            None,
+            Some(0),
+            Some(0),
+            None,
+            None,
+            Some(t),
+            None,
+            None,
+            jdbc,
+            int_,
+        )
     };
-    let bins = |n, t, size, pre, suf, jdbc, int_| -> T { (n, t, Some(size), pre, suf, len, Some(1), Some(0), Some(3), None, Some(0), Some(0), None, None, Some(t), None, None, jdbc, int_) };
-    let dt = |n, t, size, min, max, sub| -> T { (n, t, Some(size), q, q, None, Some(1), Some(0), Some(2), None, Some(0), Some(0), min, max, Some(9), Some(sub), None, t, t) };
+    let bins = |n, t, size, pre, suf, jdbc, int_| -> T {
+        (
+            n,
+            t,
+            Some(size),
+            pre,
+            suf,
+            len,
+            Some(1),
+            Some(0),
+            Some(3),
+            None,
+            Some(0),
+            Some(0),
+            None,
+            None,
+            Some(t),
+            None,
+            None,
+            jdbc,
+            int_,
+        )
+    };
+    let dt = |n, t, size, min, max, sub| -> T {
+        (
+            n,
+            t,
+            Some(size),
+            q,
+            q,
+            None,
+            Some(1),
+            Some(0),
+            Some(2),
+            None,
+            Some(0),
+            Some(0),
+            min,
+            max,
+            Some(9),
+            Some(sub),
+            None,
+            t,
+            t,
+        )
+    };
     let rows: Vec<T> = vec![
-        ("XML", -370, Some(2_147_483_647), q, q, len, Some(1), Some(1), Some(3), None, None, None, None, None, Some(-370), None, None, 2009, -370),
-        ("DECFLOAT", -360, Some(34), None, None, Some("precision"), Some(1), Some(0), Some(2), Some(0), Some(0), Some(0), Some(0), Some(34), Some(-360), None, Some(10), 1111, -360),
+        (
+            "XML",
+            -370,
+            Some(2_147_483_647),
+            q,
+            q,
+            len,
+            Some(1),
+            Some(1),
+            Some(3),
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(-370),
+            None,
+            None,
+            2009,
+            -370,
+        ),
+        (
+            "DECFLOAT",
+            -360,
+            Some(34),
+            None,
+            None,
+            Some("precision"),
+            Some(1),
+            Some(0),
+            Some(2),
+            Some(0),
+            Some(0),
+            Some(0),
+            Some(0),
+            Some(34),
+            Some(-360),
+            None,
+            Some(10),
+            1111,
+            -360,
+        ),
         chars("DBCLOB", -350, 1_073_741_823, q, 1, 2005, 15),
-        ("ROWID", -100, Some(40), None, None, None, Some(0), Some(0), Some(2), None, Some(0), Some(0), None, None, Some(-100), None, None, -8, 24),
+        (
+            "ROWID",
+            -100,
+            Some(40),
+            None,
+            None,
+            None,
+            Some(0),
+            Some(0),
+            Some(2),
+            None,
+            Some(0),
+            Some(0),
+            None,
+            None,
+            Some(-100),
+            None,
+            None,
+            -8,
+            24,
+        ),
         chars("CLOB", -99, 2_147_483_647, q, 1, 2005, 14),
-        bins("BLOB", -98, 2_147_483_647, Some("BLOB(X'"), Some("')"), 2004, 13),
+        bins(
+            "BLOB",
+            -98,
+            2_147_483_647,
+            Some("BLOB(X'"),
+            Some("')"),
+            2004,
+            13,
+        ),
         chars("VARGRAPHIC", -96, 16369, q, 1, 12, 96),
         chars("GRAPHIC", -95, 16382, q, 1, 1, 95),
         chars("NCLOB", -10, 1_073_741_823, Some("N'"), 1, 2005, 15),
         chars("NVARCHAR", -9, 16369, Some("N'"), 1, 12, 96),
         chars("NCHAR", -8, 16382, Some("N'"), 1, 1, 95),
         num("BIGINT", -5, 19, 0, 1, 0, 10, -5, 19),
-        bins("VARBINARY", -3, 32739, Some("VARBINARY(X'"), Some("')"), -3, -3),
+        bins(
+            "VARBINARY",
+            -3,
+            32739,
+            Some("VARBINARY(X'"),
+            Some("')"),
+            -3,
+            -3,
+        ),
         bins("VARCHAR () FOR BIT DATA", -3, 32739, Some("X'"), q, -3, -3),
         bins("BINARY", -2, 32765, Some("BINARY(X'"), Some("')"), -2, -2),
         bins("CHAR () FOR BIT DATA", -2, 32765, Some("X'"), q, -2, -2),
         chars("CHAR", 1, 32765, q, 1, 1, 1),
-        ("NUMERIC", 2, Some(63), None, None, ps, Some(1), Some(0), Some(2), Some(0), Some(0), Some(0), Some(0), Some(63), Some(2), None, Some(10), 2, 2),
-        ("DECIMAL", 3, Some(63), None, None, ps, Some(1), Some(0), Some(2), Some(0), Some(0), Some(0), Some(0), Some(63), Some(3), None, Some(10), 3, 3),
+        (
+            "NUMERIC",
+            2,
+            Some(63),
+            None,
+            None,
+            ps,
+            Some(1),
+            Some(0),
+            Some(2),
+            Some(0),
+            Some(0),
+            Some(0),
+            Some(0),
+            Some(63),
+            Some(2),
+            None,
+            Some(10),
+            2,
+            2,
+        ),
+        (
+            "DECIMAL",
+            3,
+            Some(63),
+            None,
+            None,
+            ps,
+            Some(1),
+            Some(0),
+            Some(2),
+            Some(0),
+            Some(0),
+            Some(0),
+            Some(0),
+            Some(63),
+            Some(3),
+            None,
+            Some(10),
+            3,
+            3,
+        ),
         num("INTEGER", 4, 10, 0, 1, 0, 10, 4, 4),
         num("SMALLINT", 5, 5, 0, 1, 0, 10, 5, 5),
-        ("REAL", 7, Some(24), None, None, None, Some(1), Some(0), Some(2), Some(0), Some(0), Some(0), None, None, Some(7), None, Some(2), 7, 7),
-        ("DOUBLE", 8, Some(53), None, None, None, Some(1), Some(0), Some(2), Some(0), Some(0), Some(0), None, None, Some(8), None, Some(2), 8, 8),
+        (
+            "REAL",
+            7,
+            Some(24),
+            None,
+            None,
+            None,
+            Some(1),
+            Some(0),
+            Some(2),
+            Some(0),
+            Some(0),
+            Some(0),
+            None,
+            None,
+            Some(7),
+            None,
+            Some(2),
+            7,
+            7,
+        ),
+        (
+            "DOUBLE",
+            8,
+            Some(53),
+            None,
+            None,
+            None,
+            Some(1),
+            Some(0),
+            Some(2),
+            Some(0),
+            Some(0),
+            Some(0),
+            None,
+            None,
+            Some(8),
+            None,
+            Some(2),
+            8,
+            8,
+        ),
         chars("VARCHAR", 12, 32739, q, 1, 12, 12),
-        ("DATALINK", 70, Some(32717), None, None, len, Some(1), Some(0), Some(0), None, Some(0), Some(0), None, None, Some(70), None, None, 70, 16),
+        (
+            "DATALINK",
+            70,
+            Some(32717),
+            None,
+            None,
+            len,
+            Some(1),
+            Some(0),
+            Some(0),
+            None,
+            Some(0),
+            Some(0),
+            None,
+            None,
+            Some(70),
+            None,
+            None,
+            70,
+            16,
+        ),
         dt("DATE", 91, 10, None, None, 1),
         dt("TIME", 92, 8, Some(0), Some(0), 2),
         dt("TIMESTAMP", 93, 26, Some(6), Some(6), 3),
-        ("DISTINCT", 2001, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, 2001, 2001),
+        (
+            "DISTINCT", 2001, None, None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, 2001, 2001,
+        ),
     ];
     let o = |v: Option<i64>| v.map_or(N, int);
     let t = |v: Option<&str>| v.map_or(N, s);
@@ -1012,13 +1536,22 @@ mod tests {
     #[test]
     fn types_are_described_as_the_primary_describes_them() {
         let i = type_info("INTEGER", 4, Some(0), None);
-        assert_eq!((i.odbc, i.size, i.buffer, i.digits, i.radix, i.jdbc), (4, Some(10), 4, Some(0), Some(10), 4));
+        assert_eq!(
+            (i.odbc, i.size, i.buffer, i.digits, i.radix, i.jdbc),
+            (4, Some(10), 4, Some(0), Some(10), 4)
+        );
         let d = type_info("DECIMAL", 9, Some(2), None);
         assert_eq!((d.size, d.buffer, d.digits), (Some(9), 11, Some(2)));
         let dt = type_info("DATE", 4, None, None);
-        assert_eq!((dt.odbc, dt.size, dt.buffer, dt.digits, dt.datetime_sub), (91, Some(10), 6, Some(0), Some(1)));
+        assert_eq!(
+            (dt.odbc, dt.size, dt.buffer, dt.digits, dt.datetime_sub),
+            (91, Some(10), 6, Some(0), Some(1))
+        );
         let c = type_info("CHAR", 4, None, Some(37));
         assert_eq!((c.odbc, c.name, c.octets), (1, "CHAR", Some(4)));
-        assert_eq!(type_info("CHAR", 5, None, Some(65535)).name, "CHAR () FOR BIT DATA");
+        assert_eq!(
+            type_info("CHAR", 5, None, Some(65535)).name,
+            "CHAR () FOR BIT DATA"
+        );
     }
 }

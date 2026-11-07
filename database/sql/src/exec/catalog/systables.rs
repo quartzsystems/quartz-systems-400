@@ -61,7 +61,11 @@ pub(super) fn columns(alias: &str) -> Vec<ColInfo> {
 fn insertable(txn: &mut Txn<'_>, d: &FileDesc) -> bool {
     match crate::exec::view::definition(txn, d.id) {
         Some((v, _)) => !v.read_only,
-        None => !d.formats.first().and_then(|f| f.logical.as_ref()).is_some_and(|l| l.join),
+        None => !d
+            .formats
+            .first()
+            .and_then(|f| f.logical.as_ref())
+            .is_some_and(|l| l.join),
     }
 }
 
@@ -88,7 +92,10 @@ pub(super) fn rows(
             sql: m.sql.clone(),
             owner: owner.clone(),
             kind,
-            count: d.formats.first().map_or(0, |f| f.format.fields.len() as u64),
+            count: d
+                .formats
+                .first()
+                .map_or(0, |f| f.format.fields.len() as u64),
             len: u64::from(d.attr.record_len),
             text: ccsid::decode_trimmed(&d.header.text),
             comment: m.comment(None),
@@ -96,7 +103,11 @@ pub(super) fn rows(
             altered: d.header.changed.max(d.header.created),
             system: d.name().to_string(),
             library: lib.to_string(),
-            file_type: if d.attr.kind == FileKind::Source { "S" } else { "D" },
+            file_type: if d.attr.kind == FileKind::Source {
+                "S"
+            } else {
+                "D"
+            },
             base: None,
             select_omit,
             insertable: insert,
@@ -147,7 +158,9 @@ fn row(p: &RowParts) -> Row {
         p.base.as_ref().map_or(Value::Null, |b| s(b.0.clone())),
         p.base.as_ref().map_or(Value::Null, |b| s(b.1.clone())),
         // The member as a name in ten characters, blanks kept.
-        p.base.as_ref().map_or(Value::Null, |b| s(format!("{:<10}", b.2))),
+        p.base
+            .as_ref()
+            .map_or(Value::Null, |b| s(format!("{:<10}", b.2))),
         yn(false),
         yn(p.select_omit),
         s(if p.insertable { "YES" } else { "NO" }),
@@ -169,7 +182,10 @@ fn row(p: &RowParts) -> Row {
 /// lists them, and the table each names.
 fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
     let mut rows = Vec::new();
-    let mut libraries: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    let mut libraries: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     if !libraries.contains(&ctx.qsys) {
         libraries.insert(0, ctx.qsys);
     }
@@ -196,9 +212,16 @@ fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
             let (bschema, bname) = match ctx.resolve_table(txn, &target) {
                 Ok(t) => {
                     let tl = ops::read_header(txn, t.id).map_or(t.id, |(_, h)| h.library);
-                    (crate::exec::names::schema_name(txn, tl), crate::exec::names::sql_name(txn, t.id))
+                    (
+                        crate::exec::names::schema_name(txn, tl),
+                        crate::exec::names::sql_name(txn, t.id),
+                    )
                 }
-                Err(_) => (def.library.map_or_else(|| "*LIBL".into(), |l| l.to_string()), def.file.to_string()),
+                Err(_) => (
+                    def.library
+                        .map_or_else(|| "*LIBL".into(), |l| l.to_string()),
+                    def.file.to_string(),
+                ),
             };
             rows.push(row(&RowParts {
                 sql: crate::exec::names::sql_name(txn, id),
@@ -213,7 +236,12 @@ fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
                 system: h.name.to_string(),
                 library: lh.name.to_string(),
                 file_type: "D",
-                base: Some((bschema, bname, def.member.map_or_else(|| "*FIRST".into(), |m| m.to_string()))),
+                base: Some((
+                    bschema,
+                    bname,
+                    def.member
+                        .map_or_else(|| "*FIRST".into(), |m| m.to_string()),
+                )),
                 select_omit: false,
                 insertable: false,
                 definer: String::new(),

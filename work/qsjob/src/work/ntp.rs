@@ -158,7 +158,10 @@ fn report(link: &Shared, a: &NtpAttrs, p: &Polled, may_adjust: bool, quiet: &mut
                     link,
                     msg::NTP_TOO_FAR,
                     40,
-                    &format!("Clock not adjusted: {} differs by {secs} seconds, more than MAXADJ.", sample.server),
+                    &format!(
+                        "Clock not adjusted: {} differs by {secs} seconds, more than MAXADJ.",
+                        sample.server
+                    ),
                 ),
                 (Decision::Slew(_) | Decision::Step(_), Err(e)) => {
                     eprintln!("qsjob: QTOTNTP: adjusting the clock: {e}");
@@ -170,7 +173,10 @@ fn report(link: &Shared, a: &NtpAttrs, p: &Polled, may_adjust: bool, quiet: &mut
                     link,
                     msg::NTP_STEPPED,
                     10,
-                    &format!("Clock set at once: {} differed by {secs} seconds.", sample.server),
+                    &format!(
+                        "Clock set at once: {} differed by {secs} seconds.",
+                        sample.server
+                    ),
                 );
             }
         }
@@ -178,7 +184,10 @@ fn report(link: &Shared, a: &NtpAttrs, p: &Polled, may_adjust: bool, quiet: &mut
             let text = if why.is_empty() {
                 "no remote system is configured or none resolved".to_string()
             } else {
-                why.iter().map(|(h, e)| format!("{h}: {e}")).collect::<Vec<_>>().join("; ")
+                why.iter()
+                    .map(|(h, e)| format!("{h}: {e}"))
+                    .collect::<Vec<_>>()
+                    .join("; ")
             };
             let said = format!("No time server answered: {text}.");
             netsvc::joblog(link, PGM, msg::NTP_NO_SERVER, &said);
@@ -202,10 +211,16 @@ fn record(link: &Shared, p: &Polled, may_adjust: bool) {
             decision,
             applied,
         } => match (decision, applied) {
-            _ if !may_adjust => bag.push(("LASTFAIL".into(), "QTIMADJ names another adjuster".into())),
+            _ if !may_adjust => {
+                bag.push(("LASTFAIL".into(), "QTIMADJ names another adjuster".into()))
+            }
             (Decision::TooFar(_), _) => bag.push((
                 "LASTFAIL".into(),
-                format!("{} differs by {} s, more than MAXADJ", sample.server, secs(sample.offset)),
+                format!(
+                    "{} differs by {} s, more than MAXADJ",
+                    sample.server,
+                    secs(sample.offset)
+                ),
             )),
             (_, Err(e)) => bag.push(("LASTFAIL".into(), format!("adjusting the clock: {e}"))),
             (_, Ok(())) => {
@@ -218,7 +233,10 @@ fn record(link: &Shared, p: &Polled, may_adjust: bool) {
             let text = if why.is_empty() {
                 "no remote system resolved".to_string()
             } else {
-                why.iter().map(|(h, e)| format!("{h}: {e}")).collect::<Vec<_>>().join("; ")
+                why.iter()
+                    .map(|(h, e)| format!("{h}: {e}"))
+                    .collect::<Vec<_>>()
+                    .join("; ")
             };
             bag.push(("LASTFAIL".into(), text));
         }
@@ -234,8 +252,13 @@ fn record(link: &Shared, p: &Polled, may_adjust: bool) {
 }
 
 /// The server on UDP `port`, its requests reported back when logged.
-fn start_server(a: &NtpAttrs, up: &Upstream, tx: &Sender<Event>) -> Result<server::Running, String> {
-    let sock = UdpSocket::bind(("0.0.0.0", a.port)).map_err(|e| format!("UDP port {}: {e}", a.port))?;
+fn start_server(
+    a: &NtpAttrs,
+    up: &Upstream,
+    tx: &Sender<Event>,
+) -> Result<server::Running, String> {
+    let sock =
+        UdpSocket::bind(("0.0.0.0", a.port)).map_err(|e| format!("UDP port {}: {e}", a.port))?;
     let log: Option<server::Log> = if a.svractlog == "*NONE" {
         None
     } else {
@@ -247,7 +270,14 @@ fn start_server(a: &NtpAttrs, up: &Upstream, tx: &Sender<Event>) -> Result<serve
             }
         }))
     };
-    server::serve(sock, Arc::new(ntp::clock::ReadOnly), up.clone(), a.syncrqd, log).map_err(|e| e.to_string())
+    server::serve(
+        sock,
+        Arc::new(ntp::clock::ReadOnly),
+        up.clone(),
+        a.syncrqd,
+        log,
+    )
+    .map_err(|e| e.to_string())
 }
 
 /// Run `QTOTNTP`. Never returns.
@@ -295,7 +325,10 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
                     link,
                     PGM,
                     msg::NTP_SERVED,
-                    &format!("SNTP request from {peer} {}.", if answered { "answered" } else { "not answered" }),
+                    &format!(
+                        "SNTP request from {peer} {}.",
+                        if answered { "answered" } else { "not answered" }
+                    ),
                 ),
             }
         }

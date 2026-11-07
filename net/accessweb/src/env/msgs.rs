@@ -49,11 +49,16 @@ impl QueuedMessage {
     /// as `C D I R`; empty when it names none.
     pub fn replies(&self) -> String {
         let t = self.text.trim_end();
-        let Some(open) = t.strip_suffix(')').and_then(|s| s.rfind('(').map(|i| &s[i + 1..])) else {
+        let Some(open) = t
+            .strip_suffix(')')
+            .and_then(|s| s.rfind('(').map(|i| &s[i + 1..]))
+        else {
             return String::new();
         };
         let ok = !open.is_empty()
-            && open.split(' ').all(|w| !w.is_empty() && w.len() <= 4 && w.chars().all(|c| c.is_ascii_alphanumeric()));
+            && open.split(' ').all(|w| {
+                !w.is_empty() && w.len() <= 4 && w.chars().all(|c| c.is_ascii_alphanumeric())
+            });
         if ok { open.to_string() } else { String::new() }
     }
 }
@@ -80,7 +85,10 @@ mod tests {
             text: t.into(),
             ..QueuedMessage::default()
         };
-        assert_eq!(m("CPF0001 received by procedure INVLOAD. (C D I R)").replies(), "C D I R");
+        assert_eq!(
+            m("CPF0001 received by procedure INVLOAD. (C D I R)").replies(),
+            "C D I R"
+        );
         assert_eq!(m("Load the tape (volume TAPE01).").replies(), "");
         assert_eq!(m("No replies").replies(), "");
     }

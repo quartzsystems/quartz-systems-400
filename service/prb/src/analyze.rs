@@ -92,7 +92,10 @@ impl Area {
     pub const ALL: [(Self, &'static str); 5] = [
         (Self::Job, "A job or program ended, looped or waited"),
         (Self::Message, "A message was shown"),
-        (Self::Device, "A display, printer, tape, optical or disk device"),
+        (
+            Self::Device,
+            "A display, printer, tape, optical or disk device",
+        ),
         (Self::Communications, "Communications or a remote system"),
         (Self::Performance, "Performance"),
     ];

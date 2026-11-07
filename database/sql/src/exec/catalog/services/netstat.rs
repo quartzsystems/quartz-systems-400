@@ -21,10 +21,18 @@ pub const INFO_NO_VALUE: &[&str] = &["SOCKET_STATE"];
 
 /// `NETSTAT_ROUTE_INFO`'s: a route the kernel has with no interface
 /// QS/400 knows has no line.
-pub const ROUTE_NO_VALUE: &[&str] = &["LOCAL_BINDING_LINE_DESCRIPTION", "LOCAL_BINDING_LINE_TYPE", "LOCAL_BINDING_VIRTUAL_LAN_ID"];
+pub const ROUTE_NO_VALUE: &[&str] = &[
+    "LOCAL_BINDING_LINE_DESCRIPTION",
+    "LOCAL_BINDING_LINE_TYPE",
+    "LOCAL_BINDING_VIRTUAL_LAN_ID",
+];
 
 fn lists(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Netstat> {
-    ask(txn, ctx, "the network state", |h| h.netstat())?.map_err(|e| SqlError::Coded { code: -443, state: "38501", what: e })
+    ask(txn, ctx, "the network state", |h| h.netstat())?.map_err(|e| SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what: e,
+    })
 }
 
 fn kind(a: IpAddr) -> &'static str {
@@ -33,7 +41,11 @@ fn kind(a: IpAddr) -> &'static str {
 
 /// A prefix's mask as an IPv4 dotted quad.
 fn mask(prefix: u8) -> String {
-    let m: u32 = if prefix == 0 { 0 } else { u32::MAX << (32 - u32::from(prefix.min(32))) };
+    let m: u32 = if prefix == 0 {
+        0
+    } else {
+        u32::MAX << (32 - u32::from(prefix.min(32)))
+    };
     std::net::Ipv4Addr::from(m).to_string()
 }
 
@@ -41,18 +53,29 @@ fn mask(prefix: u8) -> String {
 fn network(a: IpAddr, prefix: u8) -> IpAddr {
     match a {
         IpAddr::V4(v) => {
-            let m: u32 = if prefix == 0 { 0 } else { u32::MAX << (32 - u32::from(prefix.min(32))) };
+            let m: u32 = if prefix == 0 {
+                0
+            } else {
+                u32::MAX << (32 - u32::from(prefix.min(32)))
+            };
             IpAddr::V4((u32::from(v) & m).into())
         }
         IpAddr::V6(v) => {
-            let m: u128 = if prefix == 0 { 0 } else { u128::MAX << (128 - u32::from(prefix.min(128))) };
+            let m: u128 = if prefix == 0 {
+                0
+            } else {
+                u128::MAX << (128 - u32::from(prefix.min(128)))
+            };
             IpAddr::V6((u128::from(v) & m).into())
         }
     }
 }
 
 fn port_name(n: &Netstat, port: u16, tcp: bool) -> Option<&str> {
-    n.port_names.iter().find(|(p, t, _)| *p == port && *t == tcp).map(|(_, _, s)| s.as_str())
+    n.port_names
+        .iter()
+        .find(|(p, t, _)| *p == port && *t == tcp)
+        .map(|(_, _, s)| s.as_str())
 }
 
 fn ends(out: &mut Out, n: &Netstat, c: &nettools::netstat::Conn) {
@@ -81,13 +104,19 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         if c.tcp {
             out.text("TCP_STATE", c.state.to_ascii_uppercase().replace(' ', "-"));
         }
-        out.dec("IDLE_TIME", &format!("{}.{:03}", c.idle_ms / 1000, c.idle_ms % 1000));
+        out.dec(
+            "IDLE_TIME",
+            &format!("{}.{:03}", c.idle_ms / 1000, c.idle_ms % 1000),
+        );
         out.text("BIND_USER", c.user.as_str());
         out.int("BYTES_SENT_REMOTELY", c.counters.bytes_out);
         out.int("BYTES_RECEIVED_LOCALLY", c.counters.bytes_in);
         out.text("NETWORK_CONNECTION_TYPE", "*TCP");
         if c.tcp {
-            out.text("CONNECTION_OPEN_TYPE", if c.passive { "PASSIVE" } else { "ACTIVE" });
+            out.text(
+                "CONNECTION_OPEN_TYPE",
+                if c.passive { "PASSIVE" } else { "ACTIVE" },
+            );
             out.int("ROUND_TRIP_TIME", c.counters.rtt_us / 1000);
             out.int("ROUND_TRIP_VARIANCE", c.counters.rttvar_us / 1000);
             out.int("CURRENT_RETRANSMISSIONS", c.counters.cur_retrans);
@@ -120,7 +149,10 @@ pub fn jobs(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
             {
                 // The start stamp is not in the list: the identifier's
                 // number part is right, its stamp zero.
-                out.set("INTERNAL_JOB_ID", crate::value::Value::Bin(id.internal(0).0.to_vec()));
+                out.set(
+                    "INTERNAL_JOB_ID",
+                    crate::value::Value::Bin(id.internal(0).0.to_vec()),
+                );
             }
             out.text_or_null("JOB_TYPE_SYSTEM", ty);
             let long = match ty.trim() {
@@ -153,18 +185,31 @@ pub fn interfaces(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<
             if let IpAddr::V4(v) = a
                 && i.prefix < 31
             {
-                out.text("DIRECTED_BROADCAST_ADDRESS", std::net::Ipv4Addr::from(u32::from(v) | bits).to_string());
+                out.text(
+                    "DIRECTED_BROADCAST_ADDRESS",
+                    std::net::Ipv4Addr::from(u32::from(v) | bits).to_string(),
+                );
             }
         }
         out.int("PREFIX_LENGTH", i.prefix);
         out.text("LINE_DESCRIPTION", i.line.as_str());
         out.text("INTERFACE_LINE_TYPE", i.line_type.trim_start_matches('*'));
         out.text("INTERFACE_STATUS", i.status.to_ascii_uppercase());
-        out.text("VIRTUAL_LAN_ID", i.vlan.map_or_else(|| "NONE".into(), |v| v.to_string()));
+        out.text(
+            "VIRTUAL_LAN_ID",
+            i.vlan.map_or_else(|| "NONE".into(), |v| v.to_string()),
+        );
         out.text("MAXIMUM_TRANSMISSION_UNIT", i.mtu.to_string());
         out.text("CONFIGURED_MAXIMUM_TRANSMISSION_UNIT", "LIND");
         out.yes("AUTOSTART", i.autostart);
-        out.text("HOST_ADDRESS", if a.is_ipv6() { "::".to_string() } else { "0.0.0.0".to_string() });
+        out.text(
+            "HOST_ADDRESS",
+            if a.is_ipv6() {
+                "::".to_string()
+            } else {
+                "0.0.0.0".to_string()
+            },
+        );
         out.text_or_null("ASSOCIATED_LOCAL_INTERFACE", &i.local_ifc);
         out.text_or_null("SERVICE_TYPE", i.tos.trim_start_matches('*'));
         out.text_or_null("ALIAS_NAME", &i.alias);
@@ -187,7 +232,10 @@ pub fn routes(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> 
         } else {
             out.text("SUBNET_MASK", mask(r.prefix));
         }
-        out.text("NEXT_HOP", r.hop.map_or_else(|| "*DIRECT".into(), |h| h.to_string()));
+        out.text(
+            "NEXT_HOP",
+            r.hop.map_or_else(|| "*DIRECT".into(), |h| h.to_string()),
+        );
         out.yes("ROUTE_STATUS", r.available);
         out.text("ROUTE_MAXIMUM_TRANSMISSION_UNIT", r.mtu.to_string());
         out.text("ROUTE_TYPE", r.kind().trim_start_matches('*'));
@@ -196,14 +244,26 @@ pub fn routes(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> 
         if let Some(i) = r.ifc {
             out.text("LOCAL_BINDING_INTERFACE", i.to_string());
             if let Some(f) = n.interfaces.iter().find(|f| f.addr == Some(i)) {
-                out.text("LOCAL_BINDING_INTERFACE_STATUS", f.status.to_ascii_uppercase());
-                out.text("LOCAL_BINDING_NETWORK_ADDRESS", network(i, f.prefix).to_string());
+                out.text(
+                    "LOCAL_BINDING_INTERFACE_STATUS",
+                    f.status.to_ascii_uppercase(),
+                );
+                out.text(
+                    "LOCAL_BINDING_NETWORK_ADDRESS",
+                    network(i, f.prefix).to_string(),
+                );
                 if i.is_ipv4() {
                     out.text("LOCAL_BINDING_SUBNET_MASK", mask(f.prefix));
                 }
                 out.text("LOCAL_BINDING_LINE_DESCRIPTION", f.line.as_str());
-                out.text("LOCAL_BINDING_LINE_TYPE", f.line_type.trim_start_matches('*'));
-                out.text("LOCAL_BINDING_VIRTUAL_LAN_ID", f.vlan.map_or_else(|| "NONE".into(), |v| v.to_string()));
+                out.text(
+                    "LOCAL_BINDING_LINE_TYPE",
+                    f.line_type.trim_start_matches('*'),
+                );
+                out.text(
+                    "LOCAL_BINDING_VIRTUAL_LAN_ID",
+                    f.vlan.map_or_else(|| "NONE".into(), |v| v.to_string()),
+                );
             }
         }
         out.int("ROUTE_PRECEDENCE", r.dup_pty);

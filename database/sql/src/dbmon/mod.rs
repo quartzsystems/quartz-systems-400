@@ -39,7 +39,10 @@ pub struct MonError {
 }
 
 fn err(id: &'static str, text: impl Into<String>) -> MonError {
-    MonError { id, text: text.into() }
+    MonError {
+        id,
+        text: text.into(),
+    }
 }
 
 /// The job a session belongs to, as the records name it.
@@ -157,22 +160,44 @@ pub const CALC_RECORDS: usize = 64;
 /// Whether a monitor watches job `number`.
 #[must_use]
 pub fn watching(number: u32) -> bool {
-    MONITORS.with(|m| m.borrow().iter().any(|x| x.scope == Scope::All || x.scope == Scope::Job(number)))
+    MONITORS.with(|m| {
+        m.borrow()
+            .iter()
+            .any(|x| x.scope == Scope::All || x.scope == Scope::Job(number))
+    })
 }
 
 /// The monitors' `(id, scope, lib/file)`, for displays and tests.
 #[must_use]
 pub fn active() -> Vec<(String, Scope, String)> {
-    MONITORS.with(|m| m.borrow().iter().map(|x| (x.id.clone(), x.scope.clone(), format!("{}/{}", x.lib, x.file))).collect())
+    MONITORS.with(|m| {
+        m.borrow()
+            .iter()
+            .map(|x| {
+                (
+                    x.id.clone(),
+                    x.scope.clone(),
+                    format!("{}/{}", x.lib, x.file),
+                )
+            })
+            .collect()
+    })
 }
 
 /// Start a monitor: the output file made or checked, the member
 /// replaced unless `*ADD`, the start record held. The monitor's ID.
-pub fn start(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &StartSpec) -> Result<String, MonError> {
+pub fn start(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    spec: &StartSpec,
+) -> Result<String, MonError> {
     if let Scope::Job(n) = spec.scope
         && MONITORS.with(|m| m.borrow().iter().any(|x| x.scope == Scope::Job(n)))
     {
-        return Err(err("CPF436C", format!("Job {} is already being monitored.", spec.job_text)));
+        return Err(err(
+            "CPF436C",
+            format!("Job {} is already being monitored.", spec.job_text),
+        ));
     }
     let lib = write::prepare_file(txn, ctx, spec)?;
     let seq = NEXT_ID.with(|n| {
@@ -190,7 +215,15 @@ pub fn start(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &StartSpec) -> Resul
         starter: spec.starter.clone(),
         pending: Vec::new(),
     };
-    let r = record::monitor(ctx, &spec.starter, &mon.scope, &id, true, &spec.comment, &spec.command);
+    let r = record::monitor(
+        ctx,
+        &spec.starter,
+        &mon.scope,
+        &id,
+        true,
+        &spec.comment,
+        &spec.command,
+    );
     mon.pending.push(r);
     MONITORS.with(|m| m.borrow_mut().push(mon));
     Ok(id)
@@ -198,7 +231,14 @@ pub fn start(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &StartSpec) -> Resul
 
 /// End the monitors `scope` (and `monid`, `*ALL` for every one of the
 /// scope) names: each writes what it holds and its end record.
-pub fn end(txn: &mut Txn<'_>, ctx: &mut SqlContext, scope: &Scope, job_text: &str, monid: Option<&str>, comment: &str) -> Result<usize, MonError> {
+pub fn end(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    scope: &Scope,
+    job_text: &str,
+    monid: Option<&str>,
+    comment: &str,
+) -> Result<usize, MonError> {
     let all_ids = monid == Some("*ALL");
     let picked: Vec<usize> = MONITORS.with(|m| {
         m.borrow()
@@ -209,10 +249,16 @@ pub fn end(txn: &mut Txn<'_>, ctx: &mut SqlContext, scope: &Scope, job_text: &st
             .collect()
     });
     if picked.is_empty() {
-        return Err(err("CPF436D", format!("Job {job_text} is not being monitored.")));
+        return Err(err(
+            "CPF436D",
+            format!("Job {job_text} is not being monitored."),
+        ));
     }
     if picked.len() > 1 && monid.is_none() {
-        return Err(err("CPF43A1", format!("Job {job_text} on ENDDBMON is not unique: name the monitor with MONID.")));
+        return Err(err(
+            "CPF43A1",
+            format!("Job {job_text} on ENDDBMON is not unique: name the monitor with MONID."),
+        ));
     }
     let mut ended = Vec::new();
     MONITORS.with(|m| {
@@ -231,7 +277,13 @@ pub fn end(txn: &mut Txn<'_>, ctx: &mut SqlContext, scope: &Scope, job_text: &st
 
 /// Write `records` to a monitor file of its own, `lib/file` made or
 /// replaced (`DUMP_PLAN_CACHE`).
-pub(crate) fn dump(txn: &mut Txn<'_>, ctx: &mut SqlContext, lib: &str, file: &str, records: &[Record]) -> Result<(), MonError> {
+pub(crate) fn dump(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    lib: &str,
+    file: &str,
+    records: &[Record],
+) -> Result<(), MonError> {
     let spec = StartSpec {
         lib: lib.to_string(),
         file: file.to_string(),
@@ -262,7 +314,9 @@ pub fn begin(ctx: &mut SqlContext) -> bool {
 /// True when one holds enough to write.
 pub fn finish(ctx: &mut SqlContext, o: &Observed<'_>) -> bool {
     let plan = ctx.dbmon.trace.take().unwrap_or_default();
-    let Some(job) = ctx.dbmon.ident.clone() else { return false };
+    let Some(job) = ctx.dbmon.ident.clone() else {
+        return false;
+    };
     ctx.dbmon.statements += 1;
     let ucnt = if plan.is_empty() && o.rows.is_none() {
         0
@@ -274,9 +328,17 @@ pub fn finish(ctx: &mut SqlContext, o: &Observed<'_>) -> bool {
     let recs = record::statement(ctx, &job, o, &plan, ucnt, stn);
     MONITORS.with(|m| {
         let mut due = false;
-        for mon in m.borrow_mut().iter_mut().filter(|x| x.scope == Scope::All || x.scope == Scope::Job(job.number)) {
+        for mon in m
+            .borrow_mut()
+            .iter_mut()
+            .filter(|x| x.scope == Scope::All || x.scope == Scope::Job(job.number))
+        {
             mon.pending.extend(recs.iter().cloned());
-            let limit = if mon.frcrcd == 0 { CALC_RECORDS } else { usize::from(mon.frcrcd) };
+            let limit = if mon.frcrcd == 0 {
+                CALC_RECORDS
+            } else {
+                usize::from(mon.frcrcd)
+            };
             due |= mon.pending.len() >= limit;
         }
         due
@@ -290,10 +352,20 @@ fn take_due(force: bool) -> Vec<(String, String, Vec<Record>)> {
         m.borrow_mut()
             .iter_mut()
             .filter(|x| {
-                let limit = if x.frcrcd == 0 { CALC_RECORDS } else { usize::from(x.frcrcd) };
+                let limit = if x.frcrcd == 0 {
+                    CALC_RECORDS
+                } else {
+                    usize::from(x.frcrcd)
+                };
                 !x.pending.is_empty() && (force || x.pending.len() >= limit)
             })
-            .map(|x| (x.lib.clone(), x.file.clone(), std::mem::take(&mut x.pending)))
+            .map(|x| {
+                (
+                    x.lib.clone(),
+                    x.file.clone(),
+                    std::mem::take(&mut x.pending),
+                )
+            })
             .collect()
     })
 }

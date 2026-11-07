@@ -39,7 +39,9 @@ pub fn install_lic_menu() -> Submenu {
             (
                 4,
                 "Run hardware qualification (QSHWQUAL)",
-                Some(Box::new(|_env| Flow::Push(Box::new(crate::install::hwqual::menu())))),
+                Some(Box::new(|_env| {
+                    Flow::Push(Box::new(crate::install::hwqual::menu()))
+                })),
             ),
         ],
     )
@@ -71,7 +73,13 @@ pub fn lic_options_menu(env: &mut dyn DstEnv) -> Submenu {
         Some(d) => vec![
             "Current load source, where option 1 restores the LIC:".to_string(),
             format!("  {NONCONFIGURED_HEADINGS}"),
-            format!("  {}", nonconfigured_row(&NonConfigured { has_data: false, ..d })),
+            format!(
+                "  {}",
+                nonconfigured_row(&NonConfigured {
+                    has_data: false,
+                    ..d
+                })
+            ),
         ],
         None => vec!["No installed load source was found.".to_string()],
     };
@@ -79,11 +87,7 @@ pub fn lic_options_menu(env: &mut dyn DstEnv) -> Submenu {
         "install-lic-options",
         "Install Licensed Internal Code (LIC)",
         vec![
-            (
-                1,
-                "Restore Licensed Internal Code",
-                Some(Box::new(restore)),
-            ),
+            (1, "Restore Licensed Internal Code", Some(Box::new(restore))),
             (
                 2,
                 "Install Licensed Internal Code and Initialize System",
@@ -353,7 +357,10 @@ mod tests {
             size_mib: 4096,
             ..NonConfigured::default()
         };
-        e.spare = vec![disk("/dev/vda", "DD001", true), disk("/dev/vdb", "DD002", false)];
+        e.spare = vec![
+            disk("/dev/vda", "DD001", true),
+            disk("/dev/vdb", "DD002", false),
+        ];
         let mut r = start();
         r.enter(&f(&["1"]), &mut e);
         r.enter(&f(&["3"]), &mut e);
@@ -373,7 +380,10 @@ mod tests {
         r.enter(&f(&["1"]), &mut e);
         assert!(r.screen(&mut e).dump().contains("mirrored partner"));
         assert_eq!(r.function(10, &mut e), Some(Outcome::Reboot));
-        assert_eq!(e.actions, vec!["install-lic /dev/vdb RestoreUnits auto=false"]);
+        assert_eq!(
+            e.actions,
+            vec!["install-lic /dev/vdb RestoreUnits auto=false"]
+        );
     }
 
     #[test]
@@ -386,7 +396,10 @@ mod tests {
             size_mib: 4096,
             ..NonConfigured::default()
         };
-        e.spare = vec![disk("/dev/vda", "DD001", false), disk("/dev/vdb", "DD002", true)];
+        e.spare = vec![
+            disk("/dev/vda", "DD001", false),
+            disk("/dev/vdb", "DD002", true),
+        ];
         let mut r = start();
         r.enter(&f(&["1"]), &mut e);
         let d = r.screen(&mut e).dump();

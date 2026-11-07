@@ -63,8 +63,16 @@ impl Echo {
     /// from the sequence number, so a reply's data can be checked.
     pub fn request(v6: bool, id: u16, seq: u16, len: usize) -> Self {
         let start = seq.to_be_bytes()[1];
-        let data = (0..len).map(|i| i.to_le_bytes()[0].wrapping_add(start)).collect();
-        Self { v6, reply: false, id, seq, data }
+        let data = (0..len)
+            .map(|i| i.to_le_bytes()[0].wrapping_add(start))
+            .collect();
+        Self {
+            v6,
+            reply: false,
+            id,
+            seq,
+            data,
+        }
     }
 
     /// The type byte.
@@ -120,7 +128,10 @@ impl Echo {
     /// The reply a host would send to this request.
     #[must_use]
     pub fn answer(&self) -> Self {
-        Self { reply: true, ..self.clone() }
+        Self {
+            reply: true,
+            ..self.clone()
+        }
     }
 }
 

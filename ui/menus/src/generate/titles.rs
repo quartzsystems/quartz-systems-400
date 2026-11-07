@@ -86,7 +86,9 @@ pub fn title_of(source: &str) -> Option<String> {
 fn cmd_value(source: &str, kwd: &str) -> Option<String> {
     let text = strip_comments(source);
     let stmts = statements(&text);
-    let cmd = stmts.iter().find(|s| s.split_whitespace().next() == Some("CMD"))?;
+    let cmd = stmts
+        .iter()
+        .find(|s| s.split_whitespace().next() == Some("CMD"))?;
     let at = cmd.find(&format!("{kwd}("))?;
     let rest = &cmd[at + kwd.len() + 1..];
     let v = rest[..rest.find(')')?].trim();

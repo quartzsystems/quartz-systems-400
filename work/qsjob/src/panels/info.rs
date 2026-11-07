@@ -79,7 +79,10 @@ fn parm(r: &Resolved, kwd: &str) -> String {
 /// Every value of a list parameter, upper case.
 fn parm_list(r: &Resolved, kwd: &str) -> Vec<String> {
     match r.get(kwd).and_then(|b| b.value.as_ref()) {
-        Some(Value::List(items)) => items.iter().map(|v| v.source().trim().to_ascii_uppercase()).collect(),
+        Some(Value::List(items)) => items
+            .iter()
+            .map(|v| v.source().trim().to_ascii_uppercase())
+            .collect(),
         Some(v) => vec![v.source().trim().to_ascii_uppercase()],
         None => Vec::new(),
     }
@@ -92,7 +95,11 @@ fn qual(r: &Resolved, kwd: &str) -> (String, String) {
     match r.get(kwd).and_then(|b| b.value.as_ref()) {
         Some(Value::Qual(parts)) => (
             parts.first().map(up).unwrap_or_default(),
-            parts.get(1).map(up).filter(|l| !l.is_empty()).unwrap_or_else(|| "*LIBL".into()),
+            parts
+                .get(1)
+                .map(up)
+                .filter(|l| !l.is_empty())
+                .unwrap_or_else(|| "*LIBL".into()),
         ),
         Some(v) => (up(v), "*LIBL".into()),
         None => (String::new(), "*LIBL".into()),

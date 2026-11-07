@@ -72,7 +72,10 @@ fn httpadmin(rq: &Rq<'_>, route: &str) -> String {
 
 /// Navigator's page of job `j` (`joblog`, `general`, `end`).
 fn job_page(rq: &Rq<'_>, j: &UserJob, page: &str) -> String {
-    navigator(rq, &format!("/job/{}/{}/{}/{page}", j.number, j.user, j.name))
+    navigator(
+        rq,
+        &format!("/job/{}/{}/{}/{page}", j.number, j.user, j.name),
+    )
 }
 
 /// Run `command` as the user; back to My jobs with its message.
@@ -93,7 +96,10 @@ fn mine(rq: &Rq<'_>) -> Response {
         return r;
     }
     let all = rq.env().jobs.user_jobs(rq.user());
-    let find = |q: &str| all.iter().find(|j| j.qualified().eq_ignore_ascii_case(q.trim()));
+    let find = |q: &str| {
+        all.iter()
+            .find(|j| j.qualified().eq_ignore_ascii_case(q.trim()))
+    };
     if rq.post() {
         let f = rq.form();
         if f.has("cancel") {
@@ -102,7 +108,11 @@ fn mine(rq: &Rq<'_>) -> Response {
         let Some(j) = find(f.str("job")) else {
             return rq.done("/jobs", rq.message(Kind::Error, "CPF1070", &[f.str("job")]));
         };
-        let verb = if f.str("op") == "release" { "RLSJOB" } else { "HLDJOB" };
+        let verb = if f.str("op") == "release" {
+            "RLSJOB"
+        } else {
+            "HLDJOB"
+        };
         return run(rq, &format!("{verb} JOB({})", j.qualified()));
     }
     let q = rq.query();
@@ -127,9 +137,25 @@ fn mine(rq: &Rq<'_>) -> Response {
     let chosen = q.str("s");
     let stage = STAGES.iter().find(|s| s.0 == chosen).and_then(|s| s.1);
     let labels: Vec<String> = STAGES.iter().map(|s| s.0.to_string()).collect();
-    let pick = if chosen == STAGES[0].0 { String::new() } else { chosen.to_string() };
-    body.push_str(&filter(&[FilterField::Select("Status".into(), "s".into(), labels, pick)], false));
-    let mut jobs: Vec<UserJob> = all.iter().filter(|j| stage.is_none_or(|s| j.stage == s)).cloned().collect();
+    let pick = if chosen == STAGES[0].0 {
+        String::new()
+    } else {
+        chosen.to_string()
+    };
+    body.push_str(&filter(
+        &[FilterField::Select(
+            "Status".into(),
+            "s".into(),
+            labels,
+            pick,
+        )],
+        false,
+    ));
+    let mut jobs: Vec<UserJob> = all
+        .iter()
+        .filter(|j| stage.is_none_or(|s| j.stage == s))
+        .cloned()
+        .collect();
     match q.str("sort") {
         "n" => jobs.sort_by(|a, b| a.name.cmp(&b.name).then(a.number.cmp(&b.number))),
         "s" => jobs.sort_by(|a, b| a.status.cmp(&b.status).then(a.number.cmp(&b.number))),
@@ -143,7 +169,10 @@ fn mine(rq: &Rq<'_>) -> Response {
             let with = |k: &str| PRODUCT.url(&format!("/jobs{}", query(&[(k, &j.qualified())])));
             let mut acts = vec![
                 (job_page(rq, j, "joblog"), "Job log"),
-                (PRODUCT.url(&format!("/print{}", query(&[("job", &j.qualified())]))), "Printer output"),
+                (
+                    PRODUCT.url(&format!("/print{}", query(&[("job", &j.qualified())]))),
+                    "Printer output",
+                ),
                 (with("hold"), "Hold"),
                 (with("release"), "Release"),
             ];
@@ -165,7 +194,10 @@ fn mine(rq: &Rq<'_>) -> Response {
             ]
         })
         .collect();
-    let keep: Vec<(String, String)> = q.get("s").map(|s| vec![("s".to_string(), s.to_string())]).unwrap_or_default();
+    let keep: Vec<(String, String)> = q
+        .get("s")
+        .map(|s| vec![("s".to_string(), s.to_string())])
+        .unwrap_or_default();
     body.push_str(&list_table(&List {
         cols: vec![
             Col::plain("Actions"),
@@ -206,9 +238,18 @@ fn server(rq: &Rq<'_>) -> Response {
     let rows = jobs
         .iter()
         .map(|j| {
-            let mut acts = vec![(job_page(rq, j, "joblog"), "Job log"), (job_page(rq, j, "general"), "Properties")];
+            let mut acts = vec![
+                (job_page(rq, j, "joblog"), "Job log"),
+                (job_page(rq, j, "general"), "Properties"),
+            ];
             if end_ok {
-                acts.push((PRODUCT.url(&format!("/jobs/server/{}/{}/{}/end", j.number, j.user, j.name)), "End"));
+                acts.push((
+                    PRODUCT.url(&format!(
+                        "/jobs/server/{}/{}/{}/end",
+                        j.number, j.user, j.name
+                    )),
+                    "End",
+                ));
             }
             vec![
                 Cell::act(qsweb::partials::actions(&acts)),
@@ -225,14 +266,27 @@ fn server(rq: &Rq<'_>) -> Response {
         .collect();
     let mut body = format!(
         "<p class=\"small\">Jobs that run the Access for Web server (HTTP instance <a href=\"{}\">{}</a>) and the host servers serving your session.</p>",
-        esc(&httpadmin(rq, &format!("/instance/{}/general", crate::SELF_INSTANCE))),
+        esc(&httpadmin(
+            rq,
+            &format!("/instance/{}/general", crate::SELF_INSTANCE)
+        )),
         crate::SELF_INSTANCE
     );
     body.push_str(&list_table(&List {
-        cols: ["Actions", "Job name", "User", "Number", "Type", "Status", "Subsystem", "Function", "Serving"]
-            .iter()
-            .map(|c| Col::plain(c))
-            .collect(),
+        cols: [
+            "Actions",
+            "Job name",
+            "User",
+            "Number",
+            "Type",
+            "Status",
+            "Subsystem",
+            "Function",
+            "Serving",
+        ]
+        .iter()
+        .map(|c| Col::plain(c))
+        .collect(),
         rows,
         empty: "No server jobs are active.".into(),
         keep: Vec::new(),
@@ -255,12 +309,26 @@ fn end_server(rq: &Rq<'_>, number: &str, user: &str, name: &str) -> Response {
     if let Err(r) = rq.policy(policy::JOBS_END_SERVER, crumb) {
         return r;
     }
-    if let Err(r) = rq.require(Need::JobCtl, "End server jobs", ("QSYS", "ENDJOB", "*CMD"), crumb) {
+    if let Err(r) = rq.require(
+        Need::JobCtl,
+        "End server jobs",
+        ("QSYS", "ENDJOB", "*CMD"),
+        crumb,
+    ) {
         return r;
     }
     let jobs = rq.env().jobs.server_jobs(rq.user());
-    let Some(j) = jobs.iter().find(|j| j.number == number && j.user.eq_ignore_ascii_case(user) && j.name.eq_ignore_ascii_case(name)) else {
-        return rq.done("/jobs/server", rq.message(Kind::Error, "CPF1070", &[&format!("{number}/{user}/{name}")]));
+    let Some(j) = jobs.iter().find(|j| {
+        j.number == number && j.user.eq_ignore_ascii_case(user) && j.name.eq_ignore_ascii_case(name)
+    }) else {
+        return rq.done(
+            "/jobs/server",
+            rq.message(
+                Kind::Error,
+                "CPF1070",
+                &[&format!("{number}/{user}/{name}")],
+            ),
+        );
     };
     Response::redirect(&job_page(rq, j, "end"))
 }

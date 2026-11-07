@@ -67,7 +67,10 @@ impl Level {
     /// From the value's text (`*NONE`, `*JOB *PRINT` ...).
     #[must_use]
     pub fn parse(text: &str) -> Self {
-        let w: Vec<String> = text.split_whitespace().map(str::to_ascii_uppercase).collect();
+        let w: Vec<String> = text
+            .split_whitespace()
+            .map(str::to_ascii_uppercase)
+            .collect();
         Self {
             job: w.iter().any(|x| x == "*JOB"),
             print: w.iter().any(|x| x == "*PRINT"),
@@ -111,7 +114,11 @@ pub fn install_models(txn: &mut Txn<'_>, qsys: ObjectId, now: u64) -> Result<usi
     let mut made = 0;
     for (name, _) in FILES {
         let n = Name::parse(name).map_err(|e| e.to_string())?;
-        if lib.lookup(txn, types::FILE, n).map_err(|e| e.to_string())?.is_some() {
+        if lib
+            .lookup(txn, types::FILE, n)
+            .map_err(|e| e.to_string())?
+            .is_some()
+        {
             continue;
         }
         let def = definition(name)?;
@@ -141,7 +148,10 @@ pub fn encode(fmt: &RecordFormat, row: &Row) -> Result<Vec<u8>, String> {
     let mut rec = vec![0x40u8; usize::try_from(fmt.record_len).unwrap_or(0)];
     for f in &fmt.fields {
         let name = f.name.to_string();
-        let v = row.iter().find(|(k, _)| *k == name).map_or("", |(_, v)| v.as_str());
+        let v = row
+            .iter()
+            .find(|(k, _)| *k == name)
+            .map_or("", |(_, v)| v.as_str());
         let val = if f.data_type.is_numeric() {
             let d = qdecimal::Decimal::parse(if v.is_empty() { "0" } else { v })
                 .map_err(|e| format!("{name}: {e}"))?;
@@ -367,7 +377,9 @@ pub fn print_data(p: &Printed) -> Result<Vec<u8>, String> {
     let (splf, splnbr) = p
         .splf
         .as_ref()
-        .map_or((String::new(), String::new()), |(f, nbr)| (f.clone(), format!("{:04}", nbr % 10_000)));
+        .map_or((String::new(), String::new()), |(f, nbr)| {
+            (f.clone(), format!("{:04}", nbr % 10_000))
+        });
     let row: Row = vec![
         ("JAJOB", p.job.clone()),
         ("JAUSER", p.user.clone()),
@@ -513,7 +525,12 @@ mod tests {
         let mut rec = vec![0x40u8; HEADING];
         rec.extend(&d);
         let field = |n: &str| {
-            let f = def.format.fields.iter().find(|f| f.name.to_string() == n).unwrap();
+            let f = def
+                .format
+                .fields
+                .iter()
+                .find(|f| f.name.to_string() == n)
+                .unwrap();
             db::record::read_field(f, &rec, &[], None).unwrap()
         };
         let num = |n: &str| match field(n) {
@@ -534,7 +551,13 @@ mod tests {
 
     #[test]
     fn levels_and_dates() {
-        assert_eq!(Level::parse("*JOB *PRINT"), Level { job: true, print: true });
+        assert_eq!(
+            Level::parse("*JOB *PRINT"),
+            Level {
+                job: true,
+                print: true
+            }
+        );
         assert!(Level::parse("*NONE").none());
         assert_eq!(short_date(1_793_339_970, "*MDY"), "103026");
         assert_eq!(short_date(1_793_339_970, "*JUL"), "026303");

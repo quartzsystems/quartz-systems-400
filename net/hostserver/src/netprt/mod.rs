@@ -210,7 +210,9 @@ fn find(list: &[Splf], idd: &[u8]) -> Option<Splf> {
     let name = get(ids::SPOOLFILE)?.text();
     let number = get(ids::SPLFNUM).map_or(-1, attrs::Raw::bin4);
     let job = get(ids::JOBNAME).map(attrs::Raw::text).unwrap_or_default();
-    let jnum = get(ids::JOBNUMBER).map(attrs::Raw::text).unwrap_or_default();
+    let jnum = get(ids::JOBNUMBER)
+        .map(attrs::Raw::text)
+        .unwrap_or_default();
     list.iter()
         .find(|s| {
             s.file == name
@@ -248,13 +250,21 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
     }
 
     fn answer(f: &Frame, code: u16, params: Vec<Param>) -> Vec<u8> {
-        reply::frame(&f.header, Self::rid(f), template(Self::act(f), 0, code), params)
+        reply::frame(
+            &f.header,
+            Self::rid(f),
+            template(Self::act(f), 0, code),
+            params,
+        )
     }
 
     fn server(&mut self, f: &Frame) -> Outcome {
         match Self::act(f) {
             action::RETRIEVE_ATTRIBUTES => {
-                let want = f.param(cp::ATTR_IDS).map(|p| attrs::ids_of(&p.data)).unwrap_or_default();
+                let want = f
+                    .param(cp::ATTR_IDS)
+                    .map(|p| attrs::ids_of(&p.data))
+                    .unwrap_or_default();
                 let mut out = Vec::new();
                 for a in want {
                     let v = match a {
@@ -267,7 +277,11 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                     };
                     out.push((a, v));
                 }
-                Outcome::one(Self::answer(f, rc::OK, vec![Param::new(cp::ATTRS, attrs::encode(&out))]))
+                Outcome::one(Self::answer(
+                    f,
+                    rc::OK,
+                    vec![Param::new(cp::ATTRS, attrs::encode(&out))],
+                ))
             }
             action::CHANGE_ATTRIBUTES => {
                 let p = f.param(cp::ATTRS).cloned().into_iter().collect();
@@ -278,17 +292,24 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
     }
 
     fn selection(f: &Frame) -> (String, Option<(String, String)>) {
-        let raws = f.param(cp::SELECTION).map(|p| attrs::decode(&p.data)).unwrap_or_default();
+        let raws = f
+            .param(cp::SELECTION)
+            .map(|p| attrs::decode(&p.data))
+            .unwrap_or_default();
         let get = |i: u16| raws.iter().find(|r| r.id == i).map(attrs::Raw::text);
         let user = get(ids::JOBUSER).unwrap_or_else(|| "*CURRENT".into());
-        let outq = get(ids::OUTQUE).filter(|q| !q.is_empty() && q != "*ALL").map(|q| {
-            (get(ids::OUTQUELIB).unwrap_or_else(|| "*LIBL".into()), q)
-        });
+        let outq = get(ids::OUTQUE)
+            .filter(|q| !q.is_empty() && q != "*ALL")
+            .map(|q| (get(ids::OUTQUELIB).unwrap_or_else(|| "*LIBL".into()), q));
         (user, outq)
     }
 
     fn user_of(&self, user: &str) -> String {
-        if user == "*CURRENT" { self.user() } else { user.to_string() }
+        if user == "*CURRENT" {
+            self.user()
+        } else {
+            user.to_string()
+        }
     }
 
     fn spooled(&mut self, f: &Frame) -> Outcome {
@@ -297,7 +318,10 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
             action::LIST => {
                 let (user, outq) = Self::selection(f);
                 let user = self.user_of(&user);
-                let want = f.param(cp::ATTR_IDS).map(|p| attrs::ids_of(&p.data)).unwrap_or_default();
+                let want = f
+                    .param(cp::ATTR_IDS)
+                    .map(|p| attrs::ids_of(&p.data))
+                    .unwrap_or_default();
                 let list = self.spool.list(&user, outq);
                 if list.is_empty() {
                     return Outcome::one(Self::answer(f, rc::EMPTY_LIST, Vec::new()));
@@ -307,13 +331,21 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                     .iter()
                     .enumerate()
                     .map(|(i, s)| {
-                        let values: Vec<(u16, Value)> = want.iter().filter_map(|a| splf_attr(s, *a).map(|v| (*a, v))).collect();
+                        let values: Vec<(u16, Value)> = want
+                            .iter()
+                            .filter_map(|a| splf_attr(s, *a).map(|v| (*a, v)))
+                            .collect();
                         let mut params = vec![Param::new(cp::ID, attrs::encode(&splf_id(s)))];
                         if !want.is_empty() {
                             params.push(Param::new(cp::ATTRS, attrs::encode(&values)));
                         }
                         let flags = if i + 1 < n { 0x8000_0000 } else { 0 };
-                        reply::frame(&f.header, Self::rid(f), template(action::LIST, flags, rc::OK), params)
+                        reply::frame(
+                            &f.header,
+                            Self::rid(f),
+                            template(action::LIST, flags, rc::OK),
+                            params,
+                        )
                     })
                     .collect();
                 Outcome {
@@ -327,7 +359,9 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                 };
                 let user = self.user();
                 let all = self.spool.list("*ALL", None);
-                let Some(s) = find(&all, &idp.data).or_else(|| find(&self.spool.list(&user, None), &idp.data)) else {
+                let Some(s) = find(&all, &idp.data)
+                    .or_else(|| find(&self.spool.list(&user, None), &idp.data))
+                else {
                     return Outcome::one(Self::answer(f, rc::SPLF_NOT_FOUND, Vec::new()));
                 };
                 let sid = SplfId {
@@ -347,7 +381,10 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                 };
                 match act {
                     action::RETRIEVE_ATTRIBUTES => {
-                        let want = f.param(cp::ATTR_IDS).map(|p| attrs::ids_of(&p.data)).unwrap_or_default();
+                        let want = f
+                            .param(cp::ATTR_IDS)
+                            .map(|p| attrs::ids_of(&p.data))
+                            .unwrap_or_default();
                         let mut values: Vec<(u16, Value)> = Vec::new();
                         for a in want {
                             let v = if a == ids::NUMBYTES {
@@ -364,14 +401,38 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                                 values.push((a, v));
                             }
                         }
-                        Outcome::one(Self::answer(f, rc::OK, vec![Param::new(cp::ATTRS, attrs::encode(&values))]))
+                        Outcome::one(Self::answer(
+                            f,
+                            rc::OK,
+                            vec![Param::new(cp::ATTRS, attrs::encode(&values))],
+                        ))
                     }
-                    action::HOLD => Outcome::one(Self::answer(f, done(self.spool.act(&s, SplfAction::Hold)), Vec::new())),
-                    action::RELEASE => Outcome::one(Self::answer(f, done(self.spool.act(&s, SplfAction::Release)), Vec::new())),
-                    action::DELETE => Outcome::one(Self::answer(f, done(self.spool.act(&s, SplfAction::Delete)), Vec::new())),
+                    action::HOLD => Outcome::one(Self::answer(
+                        f,
+                        done(self.spool.act(&s, SplfAction::Hold)),
+                        Vec::new(),
+                    )),
+                    action::RELEASE => Outcome::one(Self::answer(
+                        f,
+                        done(self.spool.act(&s, SplfAction::Release)),
+                        Vec::new(),
+                    )),
+                    action::DELETE => Outcome::one(Self::answer(
+                        f,
+                        done(self.spool.act(&s, SplfAction::Delete)),
+                        Vec::new(),
+                    )),
                     action::MOVE => {
-                        let raws = f.param(cp::TARGET_OUTQ).map(|p| attrs::decode(&p.data)).unwrap_or_default();
-                        let get = |i: u16| raws.iter().find(|r| r.id == i).map(attrs::Raw::text).unwrap_or_default();
+                        let raws = f
+                            .param(cp::TARGET_OUTQ)
+                            .map(|p| attrs::decode(&p.data))
+                            .unwrap_or_default();
+                        let get = |i: u16| {
+                            raws.iter()
+                                .find(|r| r.id == i)
+                                .map(attrs::Raw::text)
+                                .unwrap_or_default()
+                        };
                         let to = SplfAction::Move(get(ids::OUTQUELIB), get(ids::OUTQUE));
                         Outcome::one(Self::answer(f, done(self.spool.act(&s, to)), Vec::new()))
                     }
@@ -381,7 +442,11 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                             self.opened = self.opened.wrapping_add(1);
                             // The oracle's handle: nine bytes, the count in the fifth.
                             let handle = vec![0x02, 0, 0, 0, self.opened, 0, 0, 0, 0];
-                            Outcome::one(Self::answer(f, rc::OK, vec![Param::new(cp::HANDLE, handle)]))
+                            Outcome::one(Self::answer(
+                                f,
+                                rc::OK,
+                                vec![Param::new(cp::HANDLE, handle)],
+                            ))
                         }
                         Err(_) => Outcome::one(Self::answer(f, rc::CPF_MESSAGE, Vec::new())),
                     },
@@ -403,7 +468,11 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                 // NUMBYTES in the attributes asks for that many bytes.
                 let want = f
                     .param(cp::ATTRS)
-                    .and_then(|p| attrs::decode(&p.data).into_iter().find(|r| r.id == ids::NUMBYTES))
+                    .and_then(|p| {
+                        attrs::decode(&p.data)
+                            .into_iter()
+                            .find(|r| r.id == ids::NUMBYTES)
+                    })
                     .map_or(4096, |r| usize::try_from(r.bin4()).unwrap_or(4096))
                     .clamp(1, 1 << 20);
                 let (d, at) = self.open.as_mut()?;
@@ -416,7 +485,12 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                 let r = if n == 0 {
                     reply::frame(&f.header, Self::rid(f), tmpl(rc::READ_EOF), Vec::new())
                 } else {
-                    reply::frame(&f.header, Self::rid(f), tmpl(rc::OK), vec![Param::new(cp::DATA, chunk)])
+                    reply::frame(
+                        &f.header,
+                        Self::rid(f),
+                        tmpl(rc::OK),
+                        vec![Param::new(cp::DATA, chunk)],
+                    )
                 };
                 Some(Outcome::one(r))
             }
@@ -454,7 +528,12 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
             .enumerate()
             .map(|(i, v)| {
                 let flags = if i + 1 < n { 0x8000_0000 } else { 0 };
-                reply::frame(&f.header, Self::rid(f), template(action::LIST, flags, rc::OK), vec![Param::new(cp::ID, attrs::encode(v))])
+                reply::frame(
+                    &f.header,
+                    Self::rid(f),
+                    template(action::LIST, flags, rc::OK),
+                    vec![Param::new(cp::ID, attrs::encode(v))],
+                )
             })
             .collect();
         Outcome {
@@ -470,8 +549,12 @@ impl<A: Auth, S: Spool, X: Exits> Handler for NetPrint<A, S, X> {
             return Outcome::close();
         };
         if let Some(o) = self.session.common(&f, &mut self.auth) {
-            if o.replies.len() == 1 && f.header.req_rep_id == hostsvr::common::id::START_SERVER && self.session.started() {
-                let req = ExitRequest::host("ENTR0100", entr0100(&who(&self.user(), func::NPS_ENTRY)));
+            if o.replies.len() == 1
+                && f.header.req_rep_id == hostsvr::common::id::START_SERVER
+                && self.session.started()
+            {
+                let req =
+                    ExitRequest::host("ENTR0100", entr0100(&who(&self.user(), func::NPS_ENTRY)));
                 if !self.exits.allow(EXIT_ENTRY, &req) {
                     return Outcome::close();
                 }

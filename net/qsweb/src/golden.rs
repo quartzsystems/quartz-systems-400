@@ -68,7 +68,9 @@ pub fn decode_entities(s: &str) -> String {
             "mdash" => Some('\u{2014}'),
             "ndash" => Some('\u{2013}'),
             "copy" => Some('\u{a9}'),
-            n if n.starts_with("#x") => u32::from_str_radix(&n[2..], 16).ok().and_then(char::from_u32),
+            n if n.starts_with("#x") => u32::from_str_radix(&n[2..], 16)
+                .ok()
+                .and_then(char::from_u32),
             n if n.starts_with('#') => n[1..].parse().ok().and_then(char::from_u32),
             _ => None,
         };
@@ -168,7 +170,9 @@ pub fn tokens(html: &str) -> Vec<Tok> {
             rest = rest.find('>').map_or("", |e| &rest[e + 1..]);
             continue;
         }
-        if rest.starts_with('<') && rest[1..].starts_with(|c: char| c.is_ascii_alphabetic() || c == '/') {
+        if rest.starts_with('<')
+            && rest[1..].starts_with(|c: char| c.is_ascii_alphabetic() || c == '/')
+        {
             let end = rest.find('>').unwrap_or(rest.len() - 1);
             let inner = &rest[1..end];
             rest = &rest[(end + 1).min(rest.len())..];
@@ -179,7 +183,9 @@ pub fn tokens(html: &str) -> Vec<Tok> {
                 }
                 out.push(Tok::Close(name));
             } else {
-                let split = inner.find(|c: char| c.is_ascii_whitespace() || c == '/').unwrap_or(inner.len());
+                let split = inner
+                    .find(|c: char| c.is_ascii_whitespace() || c == '/')
+                    .unwrap_or(inner.len());
                 let name = inner[..split].to_ascii_lowercase();
                 if name == "pre" || name == "textarea" {
                     verbatim += 1;
@@ -197,7 +203,11 @@ pub fn tokens(html: &str) -> Vec<Tok> {
         } else {
             collapse(&decode_entities(raw))
         };
-        if text.trim_matches(|c: char| c.is_whitespace() && c != '\u{a0}').is_empty() && verbatim == 0 {
+        if text
+            .trim_matches(|c: char| c.is_whitespace() && c != '\u{a0}')
+            .is_empty()
+            && verbatim == 0
+        {
             continue;
         }
         match out.last_mut() {
@@ -223,7 +233,9 @@ fn normalize(toks: Vec<Tok>, n: Option<&Normalize<'_>>) -> Vec<Tok> {
     for t in toks {
         match t {
             Tok::Open(name, attrs)
-                if name == "input" && attrs.get("name").map(String::as_str) == Some(crate::session::CSRF_FIELD) => {}
+                if name == "input"
+                    && attrs.get("name").map(String::as_str)
+                        == Some(crate::session::CSRF_FIELD) => {}
             Tok::Open(name, mut attrs) => {
                 if let Some(n) = n {
                     for a in URL_ATTRS {
@@ -247,7 +259,11 @@ fn normalize(toks: Vec<Tok>, n: Option<&Normalize<'_>>) -> Vec<Tok> {
 pub fn diff(served: &str, golden: &str, n: &Normalize<'_>) -> Option<String> {
     let a = normalize(tokens(served), Some(n));
     let b = normalize(tokens(golden), None);
-    let at = a.iter().zip(&b).position(|(x, y)| x != y).or_else(|| (a.len() != b.len()).then(|| a.len().min(b.len())))?;
+    let at = a
+        .iter()
+        .zip(&b)
+        .position(|(x, y)| x != y)
+        .or_else(|| (a.len() != b.len()).then(|| a.len().min(b.len())))?;
     let ctx = |v: &[Tok]| {
         v[at.saturating_sub(3)..(at + 3).min(v.len())]
             .iter()
@@ -277,12 +293,17 @@ pub fn links(html: &str) -> Vec<(String, String)> {
                     }
                 }
                 "form" => {
-                    let method = attrs.get("method").map_or("GET".into(), |m| m.to_ascii_uppercase());
+                    let method = attrs
+                        .get("method")
+                        .map_or("GET".into(), |m| m.to_ascii_uppercase());
                     out.push((method, attrs.get("action").cloned().unwrap_or_default()));
                 }
                 // A submit button that posts somewhere else.
                 "input" | "button" if attrs.contains_key("formaction") => {
-                    out.push(("POST".into(), attrs.get("formaction").cloned().unwrap_or_default()));
+                    out.push((
+                        "POST".into(),
+                        attrs.get("formaction").cloned().unwrap_or_default(),
+                    ));
                 }
                 _ => {}
             }
@@ -306,8 +327,14 @@ mod tests {
         assert!(d.contains("served: \"x\""), "{d}");
         assert!(diff("<pre>a b</pre>", "<pre>a  b</pre>", &n).is_some());
         assert_eq!(
-            links("<a href=\"/x\">x</a><form method=\"post\" action=\"/y\"></form><form method=\"get\">"),
-            vec![("GET".into(), "/x".into()), ("POST".into(), "/y".into()), ("GET".into(), String::new())]
+            links(
+                "<a href=\"/x\">x</a><form method=\"post\" action=\"/y\"></form><form method=\"get\">"
+            ),
+            vec![
+                ("GET".into(), "/x".into()),
+                ("POST".into(), "/y".into()),
+                ("GET".into(), String::new())
+            ]
         );
     }
 }

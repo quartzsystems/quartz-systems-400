@@ -92,7 +92,9 @@ pub fn triplets(b: &[u8]) -> Result<Vec<Triplet>, Error> {
     while at < b.len() {
         let len = usize::from(b[at]);
         if len < 3 || at + len > b.len() {
-            return Err(Error::Invalid(format!("FD:OCA triplet length {len} at {at}")));
+            return Err(Error::Invalid(format!(
+                "FD:OCA triplet length {len} at {at}"
+            )));
         }
         out.push(Triplet {
             ttype: b[at + 1],
@@ -194,13 +196,12 @@ pub fn fields(b: &[u8]) -> Result<Vec<Field>, Error> {
             }
             SDA => {
                 let fdt = t.data.first().copied().unwrap_or(0);
-                let ccsid = t
-                    .data
-                    .get(1..5)
-                    .map_or(0, |c| u16::try_from(u32::from_be_bytes([c[0], c[1], c[2], c[3]])).unwrap_or(0));
-                let drda = pending_drda
-                    .take()
-                    .ok_or_else(|| Error::Invalid(format!("SDA of FD:OCA type {fdt:#04x} without an MDD")))?;
+                let ccsid = t.data.get(1..5).map_or(0, |c| {
+                    u16::try_from(u32::from_be_bytes([c[0], c[1], c[2], c[3]])).unwrap_or(0)
+                });
+                let drda = pending_drda.take().ok_or_else(|| {
+                    Error::Invalid(format!("SDA of FD:OCA type {fdt:#04x} without an MDD"))
+                })?;
                 locals.retain(|(id, _)| *id != t.id);
                 locals.push((t.id, Local { drda, ccsid }));
                 in_group = false;
@@ -219,9 +220,17 @@ pub fn fields(b: &[u8]) -> Result<Vec<Field>, Error> {
                         len,
                     }
                 } else {
-                    let probe = Field { drda: c[0], ccsid: 0, len };
+                    let probe = Field {
+                        drda: c[0],
+                        ccsid: 0,
+                        len,
+                    };
                     let ccsid = probe.col().map_or(0, |t| t.ccsid);
-                    Field { drda: c[0], ccsid, len }
+                    Field {
+                        drda: c[0],
+                        ccsid,
+                        len,
+                    }
                 };
                 out.push(f);
             }
@@ -252,7 +261,9 @@ fn describe(fields: &[Field], early: bool) -> Vec<u8> {
             continue;
         }
         let fdt = f.fdoca() | if f.nullable() { 0x80 } else { 0 };
-        let lid = if let Some(&(lid, _, _)) = lids.iter().find(|(_, d, c)| *d == f.drda && *c == f.ccsid) {
+        let lid = if let Some(&(lid, _, _)) =
+            lids.iter().find(|(_, d, c)| *d == f.drda && *c == f.ccsid)
+        {
             lid
         } else {
             let lid = FIRST_LID + u8::try_from(lids.len()).unwrap_or(0);
@@ -354,20 +365,33 @@ mod tests {
     fn reads_the_pub400_form() {
         // QRYDSC of VARCHAR(128), VARCHAR(128), CHAR(1) from pub400.
         let b = [
-            0x07, 0x78, 0x00, 0x05, 0x01, 0x01, 0x32, 0x0c, 0x70, 0x80, 0x11, 0x00, 0x00, 0x00, 0x25,
-            0x01, 0x01, 0x7f, 0xff, 0x07, 0x78, 0x00, 0x05, 0x01, 0x01, 0x30, 0x0c, 0x70, 0x81, 0x10,
-            0x00, 0x00, 0x00, 0x25, 0x01, 0x00, 0x7f, 0xff, 0x07, 0x78, 0x00, 0x05, 0x02, 0x01, 0xd0,
-            0x0c, 0x76, 0xd0, 0x80, 0x00, 0x80, 0x80, 0x00, 0x80, 0x81, 0x00, 0x01, 0x07, 0x78, 0x00,
-            0x05, 0x03, 0x01, 0xe0, 0x09, 0x71, 0xe0, 0x54, 0x00, 0x01, 0xd0, 0x00, 0x01, 0x07, 0x78,
-            0x00, 0x05, 0x04, 0x01, 0xf0, 0x06, 0x71, 0xf0, 0xe0, 0x00, 0x00,
+            0x07, 0x78, 0x00, 0x05, 0x01, 0x01, 0x32, 0x0c, 0x70, 0x80, 0x11, 0x00, 0x00, 0x00,
+            0x25, 0x01, 0x01, 0x7f, 0xff, 0x07, 0x78, 0x00, 0x05, 0x01, 0x01, 0x30, 0x0c, 0x70,
+            0x81, 0x10, 0x00, 0x00, 0x00, 0x25, 0x01, 0x00, 0x7f, 0xff, 0x07, 0x78, 0x00, 0x05,
+            0x02, 0x01, 0xd0, 0x0c, 0x76, 0xd0, 0x80, 0x00, 0x80, 0x80, 0x00, 0x80, 0x81, 0x00,
+            0x01, 0x07, 0x78, 0x00, 0x05, 0x03, 0x01, 0xe0, 0x09, 0x71, 0xe0, 0x54, 0x00, 0x01,
+            0xd0, 0x00, 0x01, 0x07, 0x78, 0x00, 0x05, 0x04, 0x01, 0xf0, 0x06, 0x71, 0xf0, 0xe0,
+            0x00, 0x00,
         ];
         let f = fields(&b).unwrap();
         assert_eq!(
             f,
             vec![
-                Field { drda: 0x32, ccsid: 37, len: 128 },
-                Field { drda: 0x32, ccsid: 37, len: 128 },
-                Field { drda: 0x30, ccsid: 37, len: 1 },
+                Field {
+                    drda: 0x32,
+                    ccsid: 37,
+                    len: 128
+                },
+                Field {
+                    drda: 0x32,
+                    ccsid: 37,
+                    len: 128
+                },
+                Field {
+                    drda: 0x30,
+                    ccsid: 37,
+                    len: 1
+                },
             ]
         );
     }

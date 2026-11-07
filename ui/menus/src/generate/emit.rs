@@ -49,14 +49,29 @@ pub enum ItemHelp {
 fn keys_help(p: &Panel<'_>) -> String {
     let mut s = String::from(":HELP NAME=HLPKEYS.Function keys\n:PARML.\n");
     let mut keys = vec![
-        ("F1=Help", "Shows help for the item the cursor is on; on the title, help for the whole menu."),
-        ("F3=Exit", "Leaves the menu and the menus it was reached from."),
-        ("F4=Prompt", "Prompts the command on the command line, or the command of the option typed."),
-        ("F9=Retrieve", "Puts the last command run back on the command line; press it again for the one before."),
+        (
+            "F1=Help",
+            "Shows help for the item the cursor is on; on the title, help for the whole menu.",
+        ),
+        (
+            "F3=Exit",
+            "Leaves the menu and the menus it was reached from.",
+        ),
+        (
+            "F4=Prompt",
+            "Prompts the command on the command line, or the command of the option typed.",
+        ),
+        (
+            "F9=Retrieve",
+            "Puts the last command run back on the command line; press it again for the one before.",
+        ),
         ("F12=Cancel", "Returns to the previous menu."),
     ];
     if p.info_key {
-        keys.push(("F13=Information Assistant", "Shows the Information Assistant menu."));
+        keys.push((
+            "F13=Information Assistant",
+            "Shows the Information Assistant menu.",
+        ));
     }
     keys.push((p.f16.1, "Shows that menu."));
     for (k, t) in keys {

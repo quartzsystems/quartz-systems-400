@@ -67,51 +67,105 @@ fn fw() -> Framework {
 fn env() -> Fake {
     Fake {
         instances: vec![
-            HttpInstance { name: "WEB1".into(), autostart: true, user: "QTMHHTTP".into() },
-            HttpInstance { name: "SHOP".into(), autostart: false, user: "WEBUSER".into() },
+            HttpInstance {
+                name: "WEB1".into(),
+                autostart: true,
+                user: "QTMHHTTP".into(),
+            },
+            HttpInstance {
+                name: "SHOP".into(),
+                autostart: false,
+                user: "WEBUSER".into(),
+            },
         ],
         ..Fake::default()
     }
 }
 
 fn named(n: &str) -> Request {
-    Request { instance: Instance::Named(n.into()), ..Request::new("*HTTP") }
+    Request {
+        instance: Instance::Named(n.into()),
+        ..Request::new("*HTTP")
+    }
 }
 
 #[test]
 fn one_instance_starts_and_ends() {
     let (fw, mut env) = (fw(), env());
-    assert_eq!(fw.start(&mut env, &named("shop")).unwrap(), "TCP1A07 HTTP server starting: instance SHOP.");
+    assert_eq!(
+        fw.start(&mut env, &named("shop")).unwrap(),
+        "TCP1A07 HTTP server starting: instance SHOP."
+    );
     let j = &env.running[0];
     assert_eq!(
-        (j.name.as_str(), j.user.as_str(), j.subsystem.as_str(), j.role.as_str(), j.rqsdta.as_str()),
+        (
+            j.name.as_str(),
+            j.user.as_str(),
+            j.subsystem.as_str(),
+            j.role.as_str(),
+            j.rqsdta.as_str()
+        ),
         ("SHOP", "WEBUSER", "QHTTPSVR", "HTTPSVR", "INSTANCE(SHOP)")
     );
     assert_eq!(env.subsystems, ["QHTTPSVR"]);
     let again = fw.start(&mut env, &named("SHOP")).unwrap_err();
-    assert_eq!((again.msgid.as_str(), again.text.as_str()), ("TCP1A08", "HTTP server instance SHOP already started."));
-    assert_eq!(fw.start(&mut env, &named("NOPE")).unwrap_err().msgid, "TCP1A06");
-    assert_eq!(fw.end(&mut env, &named("NOPE"), false).unwrap_err().msgid, "TCP1A06");
+    assert_eq!(
+        (again.msgid.as_str(), again.text.as_str()),
+        ("TCP1A08", "HTTP server instance SHOP already started.")
+    );
+    assert_eq!(
+        fw.start(&mut env, &named("NOPE")).unwrap_err().msgid,
+        "TCP1A06"
+    );
+    assert_eq!(
+        fw.end(&mut env, &named("NOPE"), false).unwrap_err().msgid,
+        "TCP1A06"
+    );
     let mut end = named("SHOP");
     end.delay = Some(90);
-    assert_eq!(fw.end(&mut env, &end, false).unwrap(), "TCP1A0A HTTP server ending: instance SHOP.");
+    assert_eq!(
+        fw.end(&mut env, &end, false).unwrap(),
+        "TCP1A0A HTTP server ending: instance SHOP."
+    );
     assert_eq!(env.endings, [("SHOP".to_string(), false, 90)]);
-    assert_eq!(fw.end(&mut env, &named("SHOP"), true).unwrap_err().msgid, "TCP1A09");
+    assert_eq!(
+        fw.end(&mut env, &named("SHOP"), true).unwrap_err().msgid,
+        "TCP1A09"
+    );
     // The administration instance is still *ADMIN (or ADMIN).
-    assert_eq!(fw.start(&mut env, &named("ADMIN")).unwrap(), "TCP1A07 HTTP server starting.");
+    assert_eq!(
+        fw.start(&mut env, &named("ADMIN")).unwrap(),
+        "TCP1A07 HTTP server starting."
+    );
     assert_eq!(env.running[0].role, "HTTPADM");
 }
 
 #[test]
 fn all_and_autostart() {
     let (fw, mut env) = (fw(), env());
-    let out = fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
+    let out = fw.run(
+        &mut env,
+        &["*HTTP".to_string()],
+        &Instance::All,
+        true,
+        false,
+    );
     let text = out[0].1.as_ref().unwrap();
-    assert_eq!(text, "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1.");
+    assert_eq!(
+        text,
+        "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1."
+    );
     let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
     assert_eq!(names, ["ADMIN", "WEB1"]);
     // Ending *ALL ends both, with the delay given.
-    let out = fw.run_with(&mut env, &["*HTTP".to_string()], &Instance::All, false, false, Some(5));
+    let out = fw.run_with(
+        &mut env,
+        &["*HTTP".to_string()],
+        &Instance::All,
+        false,
+        false,
+        Some(5),
+    );
     assert_eq!(out[0].1.as_ref().unwrap().lines().count(), 2);
     assert!(env.running.is_empty());
     assert_eq!(env.endings, [("WEB1".to_string(), false, 5)]);
@@ -125,7 +179,10 @@ fn all_and_autostart() {
         "TCP1A07 HTTP server starting: instance WEB1."
     );
     assert!(fw.active(&mut env, "*HTTP"));
-    assert_eq!(fw.start(&mut env, &Request::autostart("*HTTP")).unwrap(), "");
+    assert_eq!(
+        fw.start(&mut env, &Request::autostart("*HTTP")).unwrap(),
+        ""
+    );
 }
 
 /// `CHGHTTPA AUTOSTART(*YES)` turns the table's flag on: `STRTCP` then
@@ -133,10 +190,19 @@ fn all_and_autostart() {
 #[test]
 fn chghttpa_autostart() {
     let (fw, mut env) = (fw(), env());
-    assert_eq!(servers::registry::lookup("*HTTP").unwrap().attrs_cmd, Some("CHGHTTPA"));
-    assert!(!fw.expand(&mut env, &["*AUTOSTART".to_string()], true).contains(&"*HTTP".to_string()));
+    assert_eq!(
+        servers::registry::lookup("*HTTP").unwrap().attrs_cmd,
+        Some("CHGHTTPA")
+    );
+    assert!(
+        !fw.expand(&mut env, &["*AUTOSTART".to_string()], true)
+            .contains(&"*HTTP".to_string())
+    );
     env.cfg.get_mut("*HTTP").autostart = true;
-    assert!(fw.expand(&mut env, &["*AUTOSTART".to_string()], true).contains(&"*HTTP".to_string()));
+    assert!(
+        fw.expand(&mut env, &["*AUTOSTART".to_string()], true)
+            .contains(&"*HTTP".to_string())
+    );
     assert_eq!(
         fw.start(&mut env, &Request::autostart("*HTTP")).unwrap(),
         "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1."
@@ -152,37 +218,83 @@ fn chghttpa_autostart() {
 fn navigator_is_an_instance_of_its_own() {
     let (fw, mut env) = (fw(), env());
     env.cfg.get_mut("*HTTP").set("NAVPORT", "8002");
-    env.instances.push(HttpInstance { name: "NAVIGATOR".into(), autostart: false, user: "QTMHHTTP".into() });
+    env.instances.push(HttpInstance {
+        name: "NAVIGATOR".into(),
+        autostart: false,
+        user: "QTMHHTTP".into(),
+    });
     assert_eq!(
         fw.start(&mut env, &named("navigator")).unwrap(),
         "TCP1A07 HTTP server starting: instance NAVIGATOR."
     );
     let j = &env.running[0];
     assert_eq!(
-        (j.name.as_str(), j.user.as_str(), j.subsystem.as_str(), j.role.as_str(), j.rqsdta.as_str()),
-        ("NAVIGATOR", "QTMHHTTP", "QHTTPSVR", "HTTPNAV", "PORT(8002) TLSPORT(2005)")
+        (
+            j.name.as_str(),
+            j.user.as_str(),
+            j.subsystem.as_str(),
+            j.role.as_str(),
+            j.rqsdta.as_str()
+        ),
+        (
+            "NAVIGATOR",
+            "QTMHHTTP",
+            "QHTTPSVR",
+            "HTTPNAV",
+            "PORT(8002) TLSPORT(2005)"
+        )
     );
-    assert_eq!(fw.start(&mut env, &named("NAVIGATOR")).unwrap_err().msgid, "TCP1A08");
+    assert_eq!(
+        fw.start(&mut env, &named("NAVIGATOR")).unwrap_err().msgid,
+        "TCP1A08"
+    );
     // Ending the administration instance leaves Navigator running.
     fw.start(&mut env, &named("*ADMIN")).unwrap();
     fw.end(&mut env, &named("*ADMIN"), false).unwrap();
     let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
     assert_eq!(names, ["NAVIGATOR"]);
-    assert_eq!(fw.end(&mut env, &named("NAVIGATOR"), true).unwrap(), "TCP1A0A HTTP server ending: instance NAVIGATOR.");
-    assert_eq!(fw.end(&mut env, &named("NAVIGATOR"), true).unwrap_err().msgid, "TCP1A09");
+    assert_eq!(
+        fw.end(&mut env, &named("NAVIGATOR"), true).unwrap(),
+        "TCP1A0A HTTP server ending: instance NAVIGATOR."
+    );
+    assert_eq!(
+        fw.end(&mut env, &named("NAVIGATOR"), true)
+            .unwrap_err()
+            .msgid,
+        "TCP1A09"
+    );
     // Marked autostart, *ALL starts it with the rest.
     env.instances.last_mut().unwrap().autostart = true;
-    fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
+    fw.run(
+        &mut env,
+        &["*HTTP".to_string()],
+        &Instance::All,
+        true,
+        false,
+    );
     let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
     assert_eq!(names, ["ADMIN", "NAVIGATOR", "WEB1"]);
-    fw.run_with(&mut env, &["*HTTP".to_string()], &Instance::All, false, false, None);
+    fw.run_with(
+        &mut env,
+        &["*HTTP".to_string()],
+        &Instance::All,
+        false,
+        false,
+        None,
+    );
     assert!(env.running.is_empty());
     // Without QS00NAV there is no such instance, whatever the registry says.
     env.no_navigator = true;
     let e = fw.start(&mut env, &named("NAVIGATOR")).unwrap_err();
     assert_eq!(e.msgid, "TCP1A06");
     assert!(e.text.contains("QS00NAV"), "{}", e.text);
-    fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
+    fw.run(
+        &mut env,
+        &["*HTTP".to_string()],
+        &Instance::All,
+        true,
+        false,
+    );
     assert!(!env.running.iter().any(|j| j.name == "NAVIGATOR"));
 }
 
@@ -192,20 +304,54 @@ fn navigator_is_an_instance_of_its_own() {
 fn accessweb_is_an_instance_of_its_own() {
     let (fw, mut env) = (fw(), env());
     env.cfg.get_mut("*HTTP").set("AFWPORT", "8003");
-    env.instances.push(HttpInstance { name: "ACCESSWEB".into(), autostart: false, user: "QTMHHTTP".into() });
+    env.instances.push(HttpInstance {
+        name: "ACCESSWEB".into(),
+        autostart: false,
+        user: "QTMHHTTP".into(),
+    });
     assert_eq!(
         fw.start(&mut env, &named("accessweb")).unwrap(),
         "TCP1A07 HTTP server starting: instance ACCESSWEB."
     );
     let j = &env.running[0];
     assert_eq!(
-        (j.name.as_str(), j.user.as_str(), j.subsystem.as_str(), j.role.as_str(), j.rqsdta.as_str()),
-        ("ACCESSWEB", "QTMHHTTP", "QHTTPSVR", "HTTPAFW", "PORT(8003) TLSPORT(2006)")
+        (
+            j.name.as_str(),
+            j.user.as_str(),
+            j.subsystem.as_str(),
+            j.role.as_str(),
+            j.rqsdta.as_str()
+        ),
+        (
+            "ACCESSWEB",
+            "QTMHHTTP",
+            "QHTTPSVR",
+            "HTTPAFW",
+            "PORT(8003) TLSPORT(2006)"
+        )
     );
     // Not a user instance: *ALL leaves it alone unless marked autostart.
-    fw.run_with(&mut env, &["*HTTP".to_string()], &Instance::All, false, false, None);
+    fw.run_with(
+        &mut env,
+        &["*HTTP".to_string()],
+        &Instance::All,
+        false,
+        false,
+        None,
+    );
     assert!(env.running.is_empty());
-    fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
+    fw.run(
+        &mut env,
+        &["*HTTP".to_string()],
+        &Instance::All,
+        true,
+        false,
+    );
     assert!(!env.running.iter().any(|j| j.name == "ACCESSWEB"));
-    assert_eq!(fw.end(&mut env, &named("ACCESSWEB"), true).unwrap_err().msgid, "TCP1A09");
+    assert_eq!(
+        fw.end(&mut env, &named("ACCESSWEB"), true)
+            .unwrap_err()
+            .msgid,
+        "TCP1A09"
+    );
 }

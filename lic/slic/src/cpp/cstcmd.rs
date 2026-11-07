@@ -36,14 +36,22 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// A message with character data.
 fn msg(id: &str, kind: u8, fields: &[(&str, usize)]) -> CmdMsg {
-    CmdMsg { msgid: id.into(), kind, data: cmd::error::data(fields) }
+    CmdMsg {
+        msgid: id.into(),
+        kind,
+        data: cmd::error::data(fields),
+    }
 }
 
 /// A completion message of a count (`*BIN 4`) and a file.
 fn counted(id: &str, n: usize, file: &str) -> CmdMsg {
     let mut data = i32::try_from(n).unwrap_or(i32::MAX).to_be_bytes().to_vec();
     data.extend(cmd::error::data(&[(file, 10)]));
-    CmdMsg { msgid: id.into(), kind: 4, data }
+    CmdMsg {
+        msgid: id.into(),
+        kind: 4,
+        data,
+    }
 }
 
 /// Diagnostics, then the escape `esc` naming the file.
@@ -64,9 +72,15 @@ fn failure(e: &str) -> CmdMsg {
 /// refused it.
 type Step<T> = Result<T, CmdMsg>;
 
-fn file_of(txn: &mut Txn<'_>, qsys: ObjectId, names: &objops::NameContext, q: &(String, String)) -> Step<ObjectId> {
+fn file_of(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    names: &objops::NameContext,
+    q: &(String, String),
+) -> Step<ObjectId> {
     let lib = lib_or(&q.1);
-    wm::obj::find(txn, qsys, names, &lib, &q.0, types::FILE).map_err(|_| msg("CPF9812", 5, &[(&q.0, 10), (&lib, 10)]))
+    wm::obj::find(txn, qsys, names, &lib, &q.0, types::FILE)
+        .map_err(|_| msg("CPF9812", 5, &[(&q.0, 10), (&lib, 10)]))
 }
 
 /// A constraint name as given: upper case unless quoted.
@@ -103,8 +117,15 @@ fn kind(word: &str) -> Option<Kind> {
 /// primary gives one, else the error's own.
 fn diag(e: &db::DbError, cst: &str, file: &str) -> CmdMsg {
     match e {
-        db::DbError::Constraint { reason: ops::Refusal::NotFound, .. } => msg("CPD32B1", 5, &[(cst, 258), (file, 10)]),
-        other => msg(other.msgid().unwrap_or("CPF9898"), 5, &[(&other.to_string(), 256)]),
+        db::DbError::Constraint {
+            reason: ops::Refusal::NotFound,
+            ..
+        } => msg("CPD32B1", 5, &[(cst, 258), (file, 10)]),
+        other => msg(
+            other.msgid().unwrap_or("CPF9898"),
+            5,
+            &[(&other.to_string(), 256)],
+        ),
     }
 }
 
@@ -128,7 +149,14 @@ fn add(system: &mut System, parms: &Parms) -> CmdReply {
     let r = work(system, |txn, qsys, nm| {
         let id = file_of(txn, qsys, nm, &q)?;
         let k = kind(&ty).ok_or_else(|| msg("CPD0084", 5, &[(&ty, 10)]))?;
-        let mut n = NewCst::new(k, if k == Kind::Check { Vec::new() } else { names(parms, "KEY")? });
+        let mut n = NewCst::new(
+            k,
+            if k == Kind::Check {
+                Vec::new()
+            } else {
+                names(parms, "KEY")?
+            },
+        );
         n.pending_ok = true;
         let c = parms.text("CST");
         if !c.is_empty() && !c.eq_ignore_ascii_case("*GEN") {
@@ -145,19 +173,30 @@ fn add(system: &mut System, parms: &Parms) -> CmdReply {
         }
         if k == Kind::Check {
             let text = parms.text("CHKCST");
-            let e = sql::parse::parse_expr(&text, sql::Naming::Sys).map_err(|e| failure(&e.to_string()))?;
-            let rf = db::file::describe(txn, id).map_err(|e| failure(&e.to_string()))?.formats[0].format.clone();
-            let prog = sql::exec::cst::compile_check(&e, &rf, n.name.as_deref().unwrap_or("*N")).map_err(|e| failure(&e.to_string()))?;
+            let e = sql::parse::parse_expr(&text, sql::Naming::Sys)
+                .map_err(|e| failure(&e.to_string()))?;
+            let rf = db::file::describe(txn, id)
+                .map_err(|e| failure(&e.to_string()))?
+                .formats[0]
+                .format
+                .clone();
+            let prog = sql::exec::cst::compile_check(&e, &rf, n.name.as_deref().unwrap_or("*N"))
+                .map_err(|e| failure(&e.to_string()))?;
             n.check = Some((text, prog));
         }
         if k.keyed() && n.columns.is_empty() {
             return Err(msg("CPD0071", 5, &[("KEY", 10)]));
         }
-        ops::add(txn, id, &n, now_unix()).map_err(|e| diag(&e, n.name.as_deref().unwrap_or("*GEN"), &file_name))
+        ops::add(txn, id, &n, now_unix())
+            .map_err(|e| diag(&e, n.name.as_deref().unwrap_or("*GEN"), &file_name))
     });
     match r {
         Ok(report) => {
-            let mut messages: Vec<CmdMsg> = report.names.iter().map(|n| msg("CPI32B0", 4, &[(n, 258), (&file_name, 10)])).collect();
+            let mut messages: Vec<CmdMsg> = report
+                .names
+                .iter()
+                .map(|n| msg("CPI32B0", 4, &[(n, 258), (&file_name, 10)]))
+                .collect();
             for (id, data) in &report.messages {
                 messages.push(match *id {
                     "CPI32B4" | "CPI32B5" => msg(id, 4, &[(data, 10)]),
@@ -166,7 +205,10 @@ fn add(system: &mut System, parms: &Parms) -> CmdReply {
                 });
             }
             messages.push(counted("CPC32B0", 1, &file_name));
-            CmdReply { messages, ..CmdReply::default() }
+            CmdReply {
+                messages,
+                ..CmdReply::default()
+            }
         }
         Err(m) => refused(vec![m], "CPF32B0", &file_name),
     }
@@ -195,10 +237,18 @@ fn remove(system: &mut System, parms: &Parms) -> CmdReply {
         let id = file_of(txn, qsys, nm, &q)?;
         let store = |e: db::DbError| failure(&e.to_string());
         if pending_only {
-            let names: Vec<String> = db::cst::list(txn, id).map_err(store)?.into_iter().filter(|c| c.check_pending).map(|c| c.name).collect();
+            let names: Vec<String> = db::cst::list(txn, id)
+                .map_err(store)?
+                .into_iter()
+                .filter(|c| c.check_pending)
+                .map(|c| c.name)
+                .collect();
             let mut all = ops::Removed::default();
             for n in names {
-                let one = Pick { name: Some(n), kinds: Vec::new() };
+                let one = Pick {
+                    name: Some(n),
+                    kinds: Vec::new(),
+                };
                 let r = ops::remove(txn, id, &one, cascade, now_unix()).map_err(store)?;
                 all.removed.extend(r.removed);
                 all.refused.extend(r.refused);
@@ -209,10 +259,21 @@ fn remove(system: &mut System, parms: &Parms) -> CmdReply {
     });
     match r {
         Ok(done) => {
-            let mut messages: Vec<CmdMsg> = done.refused.iter().map(|n| msg("CPD32B1", 5, &[(n, 258), (&file_name, 10)])).collect();
-            messages.extend(done.removed.iter().map(|n| msg("CPI32B1", 4, &[(n, 258), (&file_name, 10)])));
+            let mut messages: Vec<CmdMsg> = done
+                .refused
+                .iter()
+                .map(|n| msg("CPD32B1", 5, &[(n, 258), (&file_name, 10)]))
+                .collect();
+            messages.extend(
+                done.removed
+                    .iter()
+                    .map(|n| msg("CPI32B1", 4, &[(n, 258), (&file_name, 10)])),
+            );
             messages.push(counted("CPC32B1", done.removed.len(), &file_name));
-            CmdReply { messages, ..CmdReply::default() }
+            CmdReply {
+                messages,
+                ..CmdReply::default()
+            }
         }
         Err(m) => refused(vec![m], "CPF32B1", &file_name),
     }
@@ -231,13 +292,25 @@ fn change(system: &mut System, parms: &Parms) -> CmdReply {
             return Ok(out);
         }
         let enabled = state == "*ENABLED";
-        let picks: Vec<Pick> = if list.iter().any(|c| matches!(c.to_ascii_uppercase().as_str(), "*ALL" | "*CHKPND")) {
-            vec![Pick { name: None, kinds: Vec::new() }]
+        let picks: Vec<Pick> = if list
+            .iter()
+            .any(|c| matches!(c.to_ascii_uppercase().as_str(), "*ALL" | "*CHKPND"))
+        {
+            vec![Pick {
+                name: None,
+                kinds: Vec::new(),
+            }]
         } else {
-            list.iter().map(|c| Pick { name: Some(cst_name(c)), kinds: Vec::new() }).collect()
+            list.iter()
+                .map(|c| Pick {
+                    name: Some(cst_name(c)),
+                    kinds: Vec::new(),
+                })
+                .collect()
         };
         for p in picks {
-            let r = ops::set_state(txn, id, &p, enabled, now_unix()).map_err(|e| failure(&e.to_string()))?;
+            let r = ops::set_state(txn, id, &p, enabled, now_unix())
+                .map_err(|e| failure(&e.to_string()))?;
             out.changed.extend(r.changed);
             out.pending.extend(r.pending);
         }
@@ -250,9 +323,16 @@ fn change(system: &mut System, parms: &Parms) -> CmdReply {
                 messages.push(msg("CPD32C5", 5, &[(n, 258)]));
                 messages.push(msg("CPD32B7", 5, &[(&file_name, 10)]));
             }
-            messages.extend(done.changed.iter().map(|n| msg("CPI32B2", 4, &[(n, 258), (&file_name, 10)])));
+            messages.extend(
+                done.changed
+                    .iter()
+                    .map(|n| msg("CPI32B2", 4, &[(n, 258), (&file_name, 10)])),
+            );
             messages.push(counted("CPC32B2", done.changed.len(), &file_name));
-            CmdReply { messages, ..CmdReply::default() }
+            CmdReply {
+                messages,
+                ..CmdReply::default()
+            }
         }
         Err(m) => refused(vec![m], "CPF32B2", &file_name),
     }
@@ -279,7 +359,10 @@ fn display(system: &mut System, parms: &Parms) -> CmdReply {
             for n in &rrns {
                 let _ = writeln!(text, "{n:>12}");
             }
-            CmdReply { text, ..CmdReply::default() }
+            CmdReply {
+                text,
+                ..CmdReply::default()
+            }
         }
         Err(m) => refused(vec![m], "CPF32B6", &file_name),
     }
@@ -293,7 +376,11 @@ fn state_of(c: &Constraint) -> (&'static str, &'static str) {
         Kind::Unique | Kind::PrimaryKey => ("", ""),
         _ => (
             if c.enabled { "EST/ENB" } else { "EST/DSB" },
-            if c.check_pending && c.enabled { "  YES" } else { "  NO" },
+            if c.check_pending && c.enabled {
+                "  YES"
+            } else {
+                "  NO"
+            },
         ),
     }
 }
@@ -301,7 +388,13 @@ fn state_of(c: &Constraint) -> (&'static str, &'static str) {
 /// `WRKPFCST`'s list (`QSDBCST`'s `CSTS`): `lib` and `file` as the
 /// command names them, generic names included; `cst` a name, `*ALL` or
 /// `*CHKPND`; `ty` a type or `*ALL`.
-pub fn wrkpfcst_panel(system: &mut System, lib: &str, file: &str, cst: &str, ty: &str) -> Result<PanelData, String> {
+pub fn wrkpfcst_panel(
+    system: &mut System,
+    lib: &str,
+    file: &str,
+    cst: &str,
+    ty: &str,
+) -> Result<PanelData, String> {
     let pending_only = cst == "*CHKPND";
     let name = (!matches!(cst, "*ALL" | "*CHKPND" | "")).then(|| cst_name(cst));
     let want = kind(ty);
@@ -309,7 +402,10 @@ pub fn wrkpfcst_panel(system: &mut System, lib: &str, file: &str, cst: &str, ty:
     in_store(system, |txn, qsys, nm| {
         let mut rows = Vec::new();
         for (l, f, c) in every(txn, qsys, nm, file, lib)? {
-            if (pending_only && !c.check_pending) || name.as_ref().is_some_and(|n| *n != c.name) || want.is_some_and(|k| k != c.kind) {
+            if (pending_only && !c.check_pending)
+                || name.as_ref().is_some_and(|n| *n != c.name)
+                || want.is_some_and(|k| k != c.kind)
+            {
                 continue;
             }
             let (state, pending) = state_of(&c);
@@ -351,25 +447,47 @@ pub fn edtcpcst_panel(system: &mut System) -> Result<PanelData, String> {
 
 /// The constraints of the files a `FILE(lib/file)` names, generic names
 /// and `*ALL` included.
-fn every(txn: &mut Txn<'_>, qsys: ObjectId, nm: &objops::NameContext, file: &str, lib: &str) -> Result<Vec<(String, String, Constraint)>, String> {
+fn every(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    nm: &objops::NameContext,
+    file: &str,
+    lib: &str,
+) -> Result<Vec<(String, String, Constraint)>, String> {
     let libs: Vec<ObjectId> = match lib_or(lib).as_str() {
-        "*ALL" | "*ALLUSR" => objops::list(txn, qsys, Some(types::LIB)).map_err(|e| e.to_string())?.into_iter().map(|(_, id)| id).collect(),
+        "*ALL" | "*ALLUSR" => objops::list(txn, qsys, Some(types::LIB))
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|(_, id)| id)
+            .collect(),
         "*LIBL" | "*USRLIBL" => nm.libl.clone(),
         "*CURLIB" => nm.curlib.into_iter().collect(),
-        l => vec![wm::obj::find(txn, qsys, nm, "*LIBL", l, types::LIB).map_err(|_| l.to_string()).map_err(|l| format!("CPF2110 {l}"))?],
+        l => vec![
+            wm::obj::find(txn, qsys, nm, "*LIBL", l, types::LIB)
+                .map_err(|_| l.to_string())
+                .map_err(|l| format!("CPF2110 {l}"))?,
+        ],
     };
     let generic = file.strip_suffix('*');
     let mut out = Vec::new();
     for l in libs {
-        let Ok((_, lh)) = objops::read_header(txn, l) else { continue };
-        let Ok(list) = objops::list(txn, l, Some(types::FILE)) else { continue };
+        let Ok((_, lh)) = objops::read_header(txn, l) else {
+            continue;
+        };
+        let Ok(list) = objops::list(txn, l, Some(types::FILE)) else {
+            continue;
+        };
         for (k, id) in list {
             let n = k.name.to_string();
             let take = file == "*ALL" || generic.map_or(n == file, |g| n.starts_with(g));
             if !take {
                 continue;
             }
-            for c in db::cst::list(txn, id).unwrap_or_default().into_iter().filter(|c| c.kind != Kind::Dependent) {
+            for c in db::cst::list(txn, id)
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|c| c.kind != Kind::Dependent)
+            {
                 out.push((lh.name.to_string(), n.clone(), c));
             }
         }

@@ -49,7 +49,10 @@ fn columns(w: &mut Writer, cols: &[Column], label_is_name: bool) {
     for c in cols {
         let t = &c.ty;
         // Precision and scale are a decimal's only, as IBM i sends them.
-        let digits = matches!(t.kind, crate::sql::Kind::Decimal | crate::sql::Kind::Numeric);
+        let digits = matches!(
+            t.kind,
+            crate::sql::Kind::Decimal | crate::sql::Kind::Numeric
+        );
         w.i16(if digits { i16::from(t.precision) } else { 0 });
         w.i16(if digits { i16::from(t.scale) } else { 0 });
         w.i64(i64::from(t.length));

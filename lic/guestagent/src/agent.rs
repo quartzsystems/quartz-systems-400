@@ -98,7 +98,9 @@ impl<G: Guest> Agent<G> {
         for p in self.framer.push(input) {
             match p {
                 Piece::Object(text) => out.extend(self.request(&text)),
-                Piece::Junk => out.extend(bytes(&error("GenericError", "Invalid JSON syntax"), false)),
+                Piece::Junk => {
+                    out.extend(bytes(&error("GenericError", "Invalid JSON syntax"), false))
+                }
             }
         }
         out
@@ -114,7 +116,10 @@ impl<G: Guest> Agent<G> {
             return bytes(&error("GenericError", "Expecting the key 'execute'"), false);
         };
         let empty = Map::new();
-        let args = req.get("arguments").and_then(Value::as_object).unwrap_or(&empty);
+        let args = req
+            .get("arguments")
+            .and_then(Value::as_object)
+            .unwrap_or(&empty);
         let delimited = cmd == "guest-sync-delimited";
         let mut v = match self.run(cmd, args) {
             Ok(None) => return Vec::new(),
@@ -172,7 +177,12 @@ impl<G: Guest> Agent<G> {
                 })
             }
             "qs400-set-power-source" => return self.power(args),
-            _ => return Err(error("CommandNotFound", &format!("The command {cmd} has not been found"))),
+            _ => {
+                return Err(error(
+                    "CommandNotFound",
+                    &format!("The command {cmd} has not been found"),
+                ));
+            }
         };
         Ok(Some(r))
     }
@@ -180,7 +190,11 @@ impl<G: Guest> Agent<G> {
     fn osinfo(&mut self) -> Value {
         let s = self.guest.status();
         let k = self.guest.kernel();
-        let rel = if s.release.is_empty() { release::RELEASE.to_string() } else { s.release };
+        let rel = if s.release.is_empty() {
+            release::RELEASE.to_string()
+        } else {
+            s.release
+        };
         let r = release::RELEASE;
         json!({
             "id": "qs400",
@@ -246,20 +260,42 @@ impl<G: Guest> Agent<G> {
         let on_battery = match args.get("source").and_then(Value::as_str) {
             Some("utility") => false,
             Some("battery") => true,
-            Some(s) => return Err(error("GenericError", &format!("Parameter 'source' does not accept value '{s}'"))),
+            Some(s) => {
+                return Err(error(
+                    "GenericError",
+                    &format!("Parameter 'source' does not accept value '{s}'"),
+                ));
+            }
             None => return Err(error("GenericError", "Parameter 'source' is missing")),
         };
-        let battery_low = args.get("battery-low").and_then(Value::as_bool).unwrap_or(false);
-        let p = crate::ups::Power { on_battery, battery_low };
-        self.guest.set_power(p).map_err(|e| error("GenericError", &e))?;
+        let battery_low = args
+            .get("battery-low")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        let p = crate::ups::Power {
+            on_battery,
+            battery_low,
+        };
+        self.guest
+            .set_power(p)
+            .map_err(|e| error("GenericError", &e))?;
         Ok(Some(json!({})))
     }
 
     fn shutdown(&mut self, args: &Map<String, Value>) -> Result<Option<Value>, Value> {
-        let how = match args.get("mode").and_then(Value::as_str).unwrap_or("powerdown") {
+        let how = match args
+            .get("mode")
+            .and_then(Value::as_str)
+            .unwrap_or("powerdown")
+        {
             "powerdown" | "halt" => Stop::PowerDown,
             "reboot" => Stop::Restart,
-            m => return Err(error("GenericError", &format!("Parameter 'mode' does not accept value '{m}'"))),
+            m => {
+                return Err(error(
+                    "GenericError",
+                    &format!("Parameter 'mode' does not accept value '{m}'"),
+                ));
+            }
         };
         if self.stopping.is_some() {
             return Err(error("GenericError", "A power down is already in progress"));

@@ -211,7 +211,9 @@ impl Suite {
             .map_err(fail)?;
         s.discard();
         crate::tcp::guest_address(&mut s).map_err(fail)?;
-        let port = launch.telnet_port.ok_or_else(|| fail("no telnet port".into()))?;
+        let port = launch
+            .telnet_port
+            .ok_or_else(|| fail("no telnet port".into()))?;
         // The first sign-on changes QSECOFR's expired password; the
         // others sign on with the new one.
         {
@@ -308,7 +310,10 @@ impl Suite {
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(30));
         s.discard();
-        let _ = std::fs::write(crate::target_dir().join("conformance/load-serial.log"), &s.log);
+        let _ = std::fs::write(
+            crate::target_dir().join("conformance/load-serial.log"),
+            &s.log,
+        );
         Ok(report)
     }
 }

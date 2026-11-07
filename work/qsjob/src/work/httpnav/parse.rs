@@ -18,7 +18,9 @@ pub fn tenths(text: &str) -> u32 {
 pub fn hms(text: &str) -> u32 {
     text.trim()
         .split(':')
-        .try_fold(0u32, |acc, p| p.trim().parse::<u32>().ok().map(|n| acc * 60 + n))
+        .try_fold(0u32, |acc, p| {
+            p.trim().parse::<u32>().ok().map(|n| acc * 60 + n)
+        })
         .unwrap_or(0)
 }
 

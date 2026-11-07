@@ -39,7 +39,10 @@ mod tests {
 
     #[test]
     fn escapes_and_queries() {
-        assert_eq!(esc("<a href=\"x\">&'"), "&lt;a href=&quot;x&quot;&gt;&amp;&#39;");
+        assert_eq!(
+            esc("<a href=\"x\">&'"),
+            "&lt;a href=&quot;x&quot;&gt;&amp;&#39;"
+        );
         assert_eq!(query(&[("status", ""), ("sort", "name")]), "?sort=name");
         assert_eq!(query(&[("q", "a b")]), "?q=a%20b");
     }

@@ -89,7 +89,11 @@ impl Uri {
         };
         let (host, port) = if let Some(v6) = auth.strip_prefix('[') {
             let (h, after) = v6.split_once(']').ok_or_else(bad)?;
-            let port = after.strip_prefix(':').map(str::parse).transpose().map_err(|_| bad())?;
+            let port = after
+                .strip_prefix(':')
+                .map(str::parse)
+                .transpose()
+                .map_err(|_| bad())?;
             (h.to_string(), port)
         } else {
             match auth.rsplit_once(':') {
@@ -163,7 +167,9 @@ impl Attr {
     /// The value as an integer, when it is four bytes.
     #[must_use]
     pub fn as_int(&self) -> Option<i32> {
-        <[u8; 4]>::try_from(self.value.as_slice()).ok().map(i32::from_be_bytes)
+        <[u8; 4]>::try_from(self.value.as_slice())
+            .ok()
+            .map(i32::from_be_bytes)
     }
 }
 
@@ -246,12 +252,19 @@ impl Message {
                 });
                 continue;
             }
-            let g = m.groups.last_mut().ok_or_else(|| bad("value before a group"))?;
+            let g = m
+                .groups
+                .last_mut()
+                .ok_or_else(|| bad("value before a group"))?;
             let nl = u16_at(i)?;
-            let name = b.get(i + 2..i + 2 + nl).ok_or_else(|| bad("truncated name"))?;
+            let name = b
+                .get(i + 2..i + 2 + nl)
+                .ok_or_else(|| bad("truncated name"))?;
             i += 2 + nl;
             let vl = u16_at(i)?;
-            let value = b.get(i + 2..i + 2 + vl).ok_or_else(|| bad("truncated value"))?;
+            let value = b
+                .get(i + 2..i + 2 + vl)
+                .ok_or_else(|| bad("truncated value"))?;
             i += 2 + vl;
             g.attrs.push(Attr {
                 tag: t,
@@ -266,7 +279,10 @@ impl Message {
     /// The first attribute called `name`.
     #[must_use]
     pub fn attr(&self, name: &str) -> Option<&Attr> {
-        self.groups.iter().flat_map(|g| &g.attrs).find(|a| a.name == name)
+        self.groups
+            .iter()
+            .flat_map(|g| &g.attrs)
+            .find(|a| a.name == name)
     }
 }
 
@@ -300,7 +316,11 @@ pub fn print_job(uri: &Uri, job: &PrintJob, doc: &Output, request_id: u32) -> Me
     ];
     // The paper the PCL transform chose; IPP printers pick it from the
     // keyword, PCL ones from the data.
-    jobattrs.push(Attr::text(tag::KEYWORD, "media", page::layout(job).paper.media));
+    jobattrs.push(Attr::text(
+        tag::KEYWORD,
+        "media",
+        page::layout(job).paper.media,
+    ));
     Message {
         version: (1, 1),
         code: PRINT_JOB,
@@ -328,7 +348,12 @@ fn read_response(s: &mut dyn Stream) -> Result<(u16, Vec<u8>), SinkError> {
         .split_whitespace()
         .nth(1)
         .and_then(|c| c.parse().ok())
-        .ok_or_else(|| SinkError::new(SinkErrorKind::Protocol, format!("HTTP status line {line:?}")))?;
+        .ok_or_else(|| {
+            SinkError::new(
+                SinkErrorKind::Protocol,
+                format!("HTTP status line {line:?}"),
+            )
+        })?;
     let (mut len, mut chunked) = (None, false);
     loop {
         line.clear();
@@ -418,7 +443,8 @@ impl Sink for IppSink {
             self.uri.port,
             body.len()
         );
-        s.write_all(head.as_bytes()).map_err(|e| SinkError::io(&e))?;
+        s.write_all(head.as_bytes())
+            .map_err(|e| SinkError::io(&e))?;
         s.write_all(&body).map_err(|e| SinkError::io(&e))?;
         s.flush().map_err(|e| SinkError::io(&e))?;
         let (status, reply) = read_response(s.as_mut())?;
@@ -438,7 +464,10 @@ impl Sink for IppSink {
             };
             return Err(SinkError::new(kind, format!("IPP status 0x{:04X}", m.code)));
         }
-        let job_id = m.attr("job-id").and_then(Attr::as_int).map(|n| n.to_string());
+        let job_id = m
+            .attr("job-id")
+            .and_then(Attr::as_int)
+            .map(|n| n.to_string());
         Ok(Receipt {
             bytes: doc.data.len() as u64,
             detail: format!(
@@ -458,7 +487,10 @@ mod tests {
     #[test]
     fn uris() {
         let u = Uri::parse("ipp://lj4.example:6310/printers/a", false).unwrap();
-        assert_eq!((u.host.as_str(), u.port, u.path.as_str(), u.secure), ("lj4.example", 6310, "/printers/a", false));
+        assert_eq!(
+            (u.host.as_str(), u.port, u.path.as_str(), u.secure),
+            ("lj4.example", 6310, "/printers/a", false)
+        );
         let u = Uri::parse("10.0.0.5", true).unwrap();
         assert_eq!(u.text(), "ipps://10.0.0.5:631/ipp/print");
         let u = Uri::parse("https://[fe80::1]/ipp", false).unwrap();
@@ -483,8 +515,14 @@ mod tests {
         assert_eq!(back, m);
         assert_eq!(back.attr("copies").unwrap().as_int(), Some(3));
         assert_eq!(back.attr("sides").unwrap().as_str(), "two-sided-short-edge");
-        assert_eq!(back.attr("document-format").unwrap().as_str(), "application/pdf");
-        assert_eq!(back.attr("printer-uri").unwrap().as_str(), "ipp://p:631/ipp/print");
+        assert_eq!(
+            back.attr("document-format").unwrap().as_str(),
+            "application/pdf"
+        );
+        assert_eq!(
+            back.attr("printer-uri").unwrap().as_str(),
+            "ipp://p:631/ipp/print"
+        );
         assert_eq!(back.data, b"%PDF-1.4");
     }
 }

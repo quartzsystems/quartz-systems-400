@@ -5,9 +5,7 @@
 //! UIM panels: the panel's help, the key list's, and every place F1
 //! can land on.
 
-use uim::model::{
-    Area, DataNode, Display, ListColNode, MenuNode, Panel, PanelGroup, Span,
-};
+use uim::model::{Area, DataNode, Display, ListColNode, MenuNode, Panel, PanelGroup, Span};
 
 use crate::{Category, Groups};
 
@@ -19,7 +17,10 @@ pub fn audit(groups: &Groups) -> Category {
         for p in &g.panels {
             let at = |what: &str| format!("{dir}/{name}.pnlgrp {} {what}", p.name);
             c.check(groups.has_text(g, p.help.as_deref()), || at("(panel)"));
-            if let Some(k) = g.key_lists.iter().find(|k| k.name.eq_ignore_ascii_case(&p.keyl))
+            if let Some(k) = g
+                .key_lists
+                .iter()
+                .find(|k| k.name.eq_ignore_ascii_case(&p.keyl))
                 && k.keys.iter().any(|i| !i.text.trim().is_empty())
             {
                 c.check(groups.has_text(g, k.help.as_deref()), || {
@@ -50,9 +51,11 @@ fn items(
             Area::List(l) => {
                 for col in l.columns.iter().flat_map(|n| match n {
                     ListColNode::Column(col) => vec![(col, None)],
-                    ListColNode::Group(gr) => {
-                        gr.columns.iter().map(|col| (col, gr.help.as_deref())).collect()
-                    }
+                    ListColNode::Group(gr) => gr
+                        .columns
+                        .iter()
+                        .map(|col| (col, gr.help.as_deref()))
+                        .collect(),
                 }) {
                     let (col, grp) = col;
                     if col.display == Display::No {
@@ -107,11 +110,15 @@ fn data(
         match n {
             DataNode::Group(gr) => data(groups, g, &gr.items, area, c, at),
             DataNode::Field(f) if f.display != Display::No => {
-                let ok = [f.help.as_deref(), area].into_iter().any(|h| groups.has_text(g, h));
+                let ok = [f.help.as_deref(), area]
+                    .into_iter()
+                    .any(|h| groups.has_text(g, h));
                 c.check(ok, || at(&format!("data item {}", f.var)));
             }
             DataNode::Select(s) if s.display != Display::No => {
-                let ok = [s.help.as_deref(), area].into_iter().any(|h| groups.has_text(g, h));
+                let ok = [s.help.as_deref(), area]
+                    .into_iter()
+                    .any(|h| groups.has_text(g, h));
                 c.check(ok, || at(&format!("selection {}", s.var)));
             }
             _ => {}

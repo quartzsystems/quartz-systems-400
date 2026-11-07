@@ -179,7 +179,10 @@ impl Parser<'_, '_> {
                     Some(n) => (n, true),
                     None => (s.as_str(), false),
                 };
-                Prim::Size(Num::parse(num).ok_or(format!("The size {s} is not valid."))?, bytes)
+                Prim::Size(
+                    Num::parse(num).ok_or(format!("The size {s} is not valid."))?,
+                    bytes,
+                )
             }
             "-mtime" | "-atime" | "-ctime" => {
                 let s = self.arg(&p)?;
@@ -226,8 +229,8 @@ impl Parser<'_, '_> {
                     Some(s) => (s, true),
                     None => (m.as_str(), false),
                 };
-                let bits = mode::parse(spec, 0, false, 0)
-                    .ok_or(format!("The mode {m} is not valid."))?;
+                let bits =
+                    mode::parse(spec, 0, false, 0).ok_or(format!("The mode {m} is not valid."))?;
                 Prim::Perm(bits, all)
             }
             "-prune" => Prim::Prune,
@@ -299,7 +302,11 @@ impl Run<'_, '_> {
                 t == *c
             }
             Prim::Size(n, bytes) => {
-                let v = if *bytes { st.size } else { st.size.div_ceil(512) };
+                let v = if *bytes {
+                    st.size
+                } else {
+                    st.size.div_ceil(512)
+                };
                 n.test(v)
             }
             Prim::Mtime(n) => {

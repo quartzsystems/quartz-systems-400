@@ -27,7 +27,11 @@ fn list(rows: &[&[(&str, &str)]]) -> ListState {
     ListState {
         rows: rows
             .iter()
-            .map(|r| r.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect())
+            .map(|r| {
+                r.iter()
+                    .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: Some(rows.len()),
@@ -39,8 +43,13 @@ fn rows_of(panel: &str, d: &MapDialog) -> Vec<String> {
     let s = render(&group(), panel, d, &opts()).unwrap();
     let rows = s.text_rows();
     if std::env::var_os("QS400_SHOW").is_some() {
-        eprintln!("{}", rows.join("
-"));
+        eprintln!(
+            "{}",
+            rows.join(
+                "
+"
+            )
+        );
     }
     assert_eq!(rows.len(), 24);
     for r in &rows {
@@ -62,7 +71,13 @@ fn wrkcrt_lists_labels_with_their_expiry() {
     d.set_list(
         "CERTS",
         list(&[
-            &[("CRTLABEL", "ADMIN"), ("CRTTYPE", "Server"), ("CRTEXP", "2027-10-30"), ("CRTSTS", "Valid"), ("CRTDFT", "Yes")],
+            &[
+                ("CRTLABEL", "ADMIN"),
+                ("CRTTYPE", "Server"),
+                ("CRTEXP", "2027-10-30"),
+                ("CRTSTS", "Valid"),
+                ("CRTDFT", "Yes"),
+            ],
             &[
                 ("CRTLABEL", "LOCAL_CERTIFICATE_AUTHORITY"),
                 ("CRTTYPE", "CA"),
@@ -114,8 +129,18 @@ fn wrkappid_lists_the_applications() {
     d.set_list(
         "APPS",
         list(&[
-            &[("APPID", "QS400_HTTP_SERVER_ADMIN"), ("APPTYPE", "*SERVER"), ("APPCRT", "ADMIN"), ("APPAUTH", "*NONE")],
-            &[("APPID", "QS400_TELNET_SERVER"), ("APPTYPE", "*SERVER"), ("APPCRT", "*NONE"), ("APPAUTH", "*NONE")],
+            &[
+                ("APPID", "QS400_HTTP_SERVER_ADMIN"),
+                ("APPTYPE", "*SERVER"),
+                ("APPCRT", "ADMIN"),
+                ("APPAUTH", "*NONE"),
+            ],
+            &[
+                ("APPID", "QS400_TELNET_SERVER"),
+                ("APPTYPE", "*SERVER"),
+                ("APPCRT", "*NONE"),
+                ("APPAUTH", "*NONE"),
+            ],
         ]),
     );
     let rows = rows_of("WRKAPPID", &d);

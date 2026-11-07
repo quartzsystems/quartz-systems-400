@@ -76,7 +76,11 @@ pub struct Options {
 }
 
 fn addrs(v: &[u8]) -> Vec<Ipv4Addr> {
-    v.as_chunks::<4>().0.iter().map(|c| Ipv4Addr::from(*c)).collect()
+    v.as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| Ipv4Addr::from(*c))
+        .collect()
 }
 
 fn addr(v: &[u8]) -> Option<Ipv4Addr> {
@@ -88,7 +92,9 @@ fn u32_of(v: &[u8]) -> Option<u32> {
 }
 
 fn text(v: &[u8]) -> String {
-    String::from_utf8_lossy(v).trim_end_matches('\0').to_string()
+    String::from_utf8_lossy(v)
+        .trim_end_matches('\0')
+        .to_string()
 }
 
 /// One option: its code, length (at most 255 bytes, longer data is
@@ -132,10 +138,26 @@ impl Options {
             put(out, code::SUBNET_MASK, &m.octets());
         }
         if !self.routers.is_empty() {
-            put(out, code::ROUTER, &self.routers.iter().flat_map(Ipv4Addr::octets).collect::<Vec<_>>());
+            put(
+                out,
+                code::ROUTER,
+                &self
+                    .routers
+                    .iter()
+                    .flat_map(Ipv4Addr::octets)
+                    .collect::<Vec<_>>(),
+            );
         }
         if !self.dns.is_empty() {
-            put(out, code::DNS, &self.dns.iter().flat_map(Ipv4Addr::octets).collect::<Vec<_>>());
+            put(
+                out,
+                code::DNS,
+                &self
+                    .dns
+                    .iter()
+                    .flat_map(Ipv4Addr::octets)
+                    .collect::<Vec<_>>(),
+            );
         }
         if let Some(d) = &self.domain {
             put(out, code::DOMAIN, d.as_bytes());
@@ -178,8 +200,13 @@ impl Options {
             if c == code::END {
                 break;
             }
-            let len = usize::from(*b.get(i + 1).ok_or(Error::Malformed("an option without a length"))?);
-            let data = b.get(i + 2..i + 2 + len).ok_or(Error::Malformed("an option past the end"))?;
+            let len = usize::from(
+                *b.get(i + 1)
+                    .ok_or(Error::Malformed("an option without a length"))?,
+            );
+            let data = b
+                .get(i + 2..i + 2 + len)
+                .ok_or(Error::Malformed("an option past the end"))?;
             match raw.iter_mut().find(|(x, _)| *x == c) {
                 Some((_, v)) => v.extend_from_slice(data),
                 None => raw.push((c, data.to_vec())),
@@ -217,7 +244,21 @@ impl Options {
         macro_rules! fill {
             ($($f:ident),*) => { $( if self.$f.is_none() { self.$f = more.$f; } )* };
         }
-        fill!(kind, server_id, requested_ip, lease_secs, renewal_secs, rebinding_secs, subnet_mask, domain, host_name, client_id, max_size, message, bootfile);
+        fill!(
+            kind,
+            server_id,
+            requested_ip,
+            lease_secs,
+            renewal_secs,
+            rebinding_secs,
+            subnet_mask,
+            domain,
+            host_name,
+            client_id,
+            max_size,
+            message,
+            bootfile
+        );
         if self.routers.is_empty() {
             self.routers = more.routers;
         }
@@ -272,8 +313,14 @@ mod tests {
         };
         let mut b = Vec::new();
         o.encode(&mut b);
-        assert_eq!(Options::decode(&b).unwrap().domain.as_deref(), Some(long.as_str()));
+        assert_eq!(
+            Options::decode(&b).unwrap().domain.as_deref(),
+            Some(long.as_str())
+        );
         assert!(Options::decode(&[51, 4, 0]).is_err());
-        assert_eq!(Options::decode(&[0, 0, 255, 51]).unwrap(), Options::default());
+        assert_eq!(
+            Options::decode(&[0, 0, 255, 51]).unwrap(),
+            Options::default()
+        );
     }
 }

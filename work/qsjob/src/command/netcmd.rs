@@ -20,15 +20,15 @@ use ifs::ops::flags::O_RDONLY;
 use mail::smtp::{self, Connector, Envelope, NoTls, Relay, RustlsConnector, TlsMode};
 use mail::{Address, Attachment, Body, Message};
 use mi::Job;
+use servers::attrs::is_same;
 use servers::attrs::lpd::LpdAttrs;
 use servers::attrs::ntp::{self as ntpa, NtpAttrs};
 use servers::attrs::qap::{self as qapa, QapAttrs};
 use servers::attrs::smtp::{self as smtpa, SmtpAttrs, SmtpTls};
-use servers::attrs::is_same;
 use servers::msg;
-use stg::{Client, Shared};
 use stg::remote::RemoteIfs;
 use stg::tcp::{TcpOp, TcpReply};
+use stg::{Client, Shared};
 use wm::wtr::WtrDest;
 
 use super::{Fail, parms_of};
@@ -66,14 +66,23 @@ fn bad(e: &str) -> Fail {
 }
 
 /// Store a server's attributes.
-fn store(host: &Host, server: &str, name: &str, autostart: Option<bool>, bag: Vec<(String, String)>) -> Result<String, Fail> {
+fn store(
+    host: &Host,
+    server: &str,
+    name: &str,
+    autostart: Option<bool>,
+    bag: Vec<(String, String)>,
+) -> Result<String, Fail> {
     let op = TcpOp::SetServer {
         server: server.into(),
         autostart,
         bag,
     };
     match host.link.borrow_mut().with(|l| l.tcp(op)) {
-        TcpReply::Done { .. } => Ok(format!("{} {name} attributes changed.\n", msg::ATTRS_CHANGED)),
+        TcpReply::Done { .. } => Ok(format!(
+            "{} {name} attributes changed.\n",
+            msg::ATTRS_CHANGED
+        )),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
         other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
@@ -93,7 +102,12 @@ fn chgntpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let mut a = NtpAttrs::from_bag(&netsvc::bag(&host.link, "*NTP"));
     for kwd in ntpa::KEYWORDS {
         let v = match *kwd {
-            "RMTSYS" => parms.list(kwd).into_iter().map(text_of).collect::<Vec<_>>().join(" "),
+            "RMTSYS" => parms
+                .list(kwd)
+                .into_iter()
+                .map(text_of)
+                .collect::<Vec<_>>()
+                .join(" "),
             _ => match parms.get(kwd) {
                 Some(v) => text_of(v),
                 None => continue,
@@ -111,7 +125,13 @@ fn chglpda(host: &Host, r: &Resolved) -> Result<String, Fail> {
     if let Some(v) = parms.get("NBRSVR") {
         a.set("NBRSVR", &text_of(v)).map_err(|e| bad(&e))?;
     }
-    store(host, "*LPD", "LPD", yes_no(&parms.name("AUTOSTART")), a.to_bag())
+    store(
+        host,
+        "*LPD",
+        "LPD",
+        yes_no(&parms.name("AUTOSTART")),
+        a.to_bag(),
+    )
 }
 
 /// `CHGQAPA`.
@@ -123,7 +143,13 @@ fn chgqapa(host: &Host, r: &Resolved) -> Result<String, Fail> {
             a.set(kwd, &text_of(v)).map_err(|e| bad(&e))?;
         }
     }
-    store(host, "*QAP", "QAP", yes_no(&parms.name("AUTOSTART")), a.to_bag())
+    store(
+        host,
+        "*QAP",
+        "QAP",
+        yes_no(&parms.name("AUTOSTART")),
+        a.to_bag(),
+    )
 }
 
 /// `CHGHTTPA`: `AUTOSTART` only; the bag (the ports) is left alone.
@@ -143,7 +169,13 @@ fn chgsmtpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
         }
         a.set(kwd, &text_of(v)).map_err(|e| bad(&e))?;
     }
-    store(host, "*SMTP", "SMTP", yes_no(&parms.name("AUTOSTART")), a.to_bag())
+    store(
+        host,
+        "*SMTP",
+        "SMTP",
+        yes_no(&parms.name("AUTOSTART")),
+        a.to_bag(),
+    )
 }
 
 /// This system's host name for protocol lines: `HOSTNAME.DMNNAME`, or
@@ -154,24 +186,39 @@ fn local_host(link: &Shared) -> String {
     {
         let h = cfg.host_name.trim().to_ascii_lowercase();
         let d = cfg.dmn_name.trim().to_ascii_lowercase();
-        return if d.is_empty() || h.contains('.') { h } else { format!("{h}.{d}") };
+        return if d.is_empty() || h.contains('.') {
+            h
+        } else {
+            format!("{h}.{d}")
+        };
     }
     link.borrow_mut()
         .with(|l| l.sysval("QSYSNAME".into()))
-        .map_or_else(|| "qs400".to_string(), |v| ccsid::from_ebcdic(&v.data).trim().to_ascii_lowercase())
+        .map_or_else(
+            || "qs400".to_string(),
+            |v| ccsid::from_ebcdic(&v.data).trim().to_ascii_lowercase(),
+        )
 }
 
 /// The customizing object `SNDTCPSPLF` prints through: `WSCST(lib/name)`
 /// with `MFRTYPMDL(*WSCST)`, else the shipped object of a model that has
 /// one (`print::wscst::shipped`); empty for none. A named object that
 /// is not there is `CPF9801`.
-fn wscst_of(link: &Shared, (name, lib): &(String, String), mfrtypmdl: &str) -> Result<Vec<u8>, Fail> {
+fn wscst_of(
+    link: &Shared,
+    (name, lib): &(String, String),
+    mfrtypmdl: &str,
+) -> Result<Vec<u8>, Fail> {
     let name = name.trim().to_ascii_uppercase();
     if mfrtypmdl.eq_ignore_ascii_case("*WSCST") {
         if name.is_empty() || name == "*NONE" {
             return Err(Fail::new("CPD0084", "MFRTYPMDL(*WSCST) needs WSCST(name)."));
         }
-        let lib = if lib.trim().is_empty() { "*LIBL".to_string() } else { lib.trim().to_ascii_uppercase() };
+        let lib = if lib.trim().is_empty() {
+            "*LIBL".to_string()
+        } else {
+            lib.trim().to_ascii_uppercase()
+        };
         let q = format!("{lib}/{name}");
         return link
             .borrow_mut()
@@ -182,7 +229,11 @@ fn wscst_of(link: &Shared, (name, lib): &(String, String), mfrtypmdl: &str) -> R
         return Ok(Vec::new());
     }
     Ok(print::wscst::shipped::for_mfrtypmdl(mfrtypmdl)
-        .and_then(|n| link.borrow_mut().with(|l| l.wm_object(format!("QSYS/{n}"), "*WSCST".into())).ok())
+        .and_then(|n| {
+            link.borrow_mut()
+                .with(|l| l.wm_object(format!("QSYS/{n}"), "*WSCST".into()))
+                .ok()
+        })
         .unwrap_or_default())
 }
 
@@ -190,7 +241,12 @@ fn wscst_of(link: &Shared, (name, lib): &(String, String), mfrtypmdl: &str) -> R
 fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     let parms = parms_of(r);
     let file = parms.name("FILE");
-    let not_sent = |why: &str| Fail::new(msg::SPLF_NOT_SENT, format!("Spooled file {file} not sent: {why}."));
+    let not_sent = |why: &str| {
+        Fail::new(
+            msg::SPLF_NOT_SENT,
+            format!("Spooled file {file} not sent: {why}."),
+        )
+    };
     let mut rmtsys = parms.text("RMTSYS");
     if rmtsys.eq_ignore_ascii_case("*INTNETADR") {
         rmtsys = parms.text("INTNETADR");
@@ -229,8 +285,14 @@ fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
         local_host: local_host(&host.link),
     };
     let target = crate::printmap::target_of(&dest).ok_or_else(|| not_sent("no destination"))?;
-    crate::printmap::send_network(&target, &attrs, &dest, &data, Arc::new(print::sink::PlainConnector))
-        .map_err(|(id, detail, _)| not_sent(&format!("{id} {detail}")))?;
+    crate::printmap::send_network(
+        &target,
+        &attrs,
+        &dest,
+        &data,
+        Arc::new(print::sink::PlainConnector),
+    )
+    .map_err(|(id, detail, _)| not_sent(&format!("{id} {detail}")))?;
     let mut out = format!(
         "{} Spooled file {} sent to queue {} on {}.\n",
         msg::SPLF_SENT,
@@ -239,7 +301,12 @@ fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
         rmtsys.trim()
     );
     if parms.yes("DLTSPLF") {
-        let line = format!("DLTSPLF FILE({}) JOB({}) SPLNBR({})", attrs.name, attrs.job_text(), attrs.number);
+        let line = format!(
+            "DLTSPLF FILE({}) JOB({}) SPLNBR({})",
+            attrs.name,
+            attrs.job_text(),
+            attrs.number
+        );
         let o = super::run(job, host, &line);
         if let Some(f) = o.escape {
             let _ = writeln!(out, "{} {}", f.msgid, f.text);
@@ -251,7 +318,11 @@ fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
 /// The job user's mail address: `user@host.domain`.
 fn sender(host: &Host) -> String {
     let me = host.link.borrow_mut().with(stg::Client::whoami);
-    format!("{}@{}", me.user.trim().to_ascii_lowercase(), local_host(&host.link))
+    format!(
+        "{}@{}",
+        me.user.trim().to_ascii_lowercase(),
+        local_host(&host.link)
+    )
 }
 
 /// The mail router `CHGSMTPA` names, and TLS for it.
@@ -273,15 +344,18 @@ fn relay(link: &Shared) -> Result<(Relay, Box<dyn Connector>), String> {
         SmtpTls::Offered if h.port == smtp::TLS_PORT => TlsMode::Implicit,
         SmtpTls::Offered => TlsMode::Opportunistic,
     };
-    r.auth = link.borrow_mut().with(|l| l.smtp_relay_auth(h.host.clone()));
+    r.auth = link
+        .borrow_mut()
+        .with(|l| l.smtp_relay_auth(h.host.clone()));
     let auth = relay_auth(r.tls);
-    let tls: Box<dyn Connector> = match crate::work::tls::client_config_with(&mut link.borrow_mut(), auth) {
-        Ok(cfg) => Box::new(RustlsConnector(cfg)),
-        Err(e) => {
-            eprintln!("qsjob: mail router TLS: {e}");
-            Box::new(NoTls)
-        }
-    };
+    let tls: Box<dyn Connector> =
+        match crate::work::tls::client_config_with(&mut link.borrow_mut(), auth) {
+            Ok(cfg) => Box::new(RustlsConnector(cfg)),
+            Err(e) => {
+                eprintln!("qsjob: mail router TLS: {e}");
+                Box::new(NoTls)
+            }
+        };
     Ok((r, tls))
 }
 
@@ -316,7 +390,9 @@ fn deliver(link: &Shared, env: &Envelope, message: &[u8]) -> Result<String, Stri
 /// A stream file's bytes.
 fn read_file(link: &Shared, path: &str) -> Result<Vec<u8>, String> {
     let c = RemoteIfs::new(link.clone());
-    let fd = c.open(path, OpenArgs::new(O_RDONLY)).map_err(|e| format!("{path}: {}", e.text()))?;
+    let fd = c
+        .open(path, OpenArgs::new(O_RDONLY))
+        .map_err(|e| format!("{path}: {}", e.text()))?;
     let r = read_all(&c, fd).map_err(|e| format!("{path}: {}", e.text()));
     let _ = c.close(fd);
     r
@@ -344,8 +420,15 @@ fn sndsmtpemm(host: &Host, r: &Resolved) -> Result<String, Fail> {
     for item in parms.list("RCP") {
         let (addr, kind) = match item {
             Value::Elems(e) => (
-                e.first().cloned().flatten().map(|v| text_of(&v)).unwrap_or_default(),
-                e.get(1).cloned().flatten().map_or_else(|| "*PRI".into(), |v| text_of(&v)),
+                e.first()
+                    .cloned()
+                    .flatten()
+                    .map(|v| text_of(&v))
+                    .unwrap_or_default(),
+                e.get(1)
+                    .cloned()
+                    .flatten()
+                    .map_or_else(|| "*PRI".into(), |v| text_of(&v)),
             ),
             other => (text_of(other), "*PRI".into()),
         };
@@ -357,7 +440,11 @@ fn sndsmtpemm(host: &Host, r: &Resolved) -> Result<String, Fail> {
         }
     }
     let note = parms.text("NOTE");
-    let note = if note.eq_ignore_ascii_case("*NONE") { String::new() } else { note };
+    let note = if note.eq_ignore_ascii_case("*NONE") {
+        String::new()
+    } else {
+        note
+    };
     let body = if parms.name("CONTENT") == "*HTML" {
         Body::Html(note)
     } else {
@@ -366,12 +453,26 @@ fn sndsmtpemm(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let mut attachments = Vec::new();
     for item in parms.list("ATTACH") {
         let Value::Elems(e) = item else { continue };
-        let path = e.first().cloned().flatten().map(|v| text_of(&v)).unwrap_or_default();
+        let path = e
+            .first()
+            .cloned()
+            .flatten()
+            .map(|v| text_of(&v))
+            .unwrap_or_default();
         if path.is_empty() || path.eq_ignore_ascii_case("*NONE") {
             continue;
         }
-        let kind = e.get(1).cloned().flatten().map(|v| text_of(&v)).unwrap_or_default();
-        let text = e.get(2).cloned().flatten().is_some_and(|v| text_of(&v).eq_ignore_ascii_case("*TXT"));
+        let kind = e
+            .get(1)
+            .cloned()
+            .flatten()
+            .map(|v| text_of(&v))
+            .unwrap_or_default();
+        let text = e
+            .get(2)
+            .cloned()
+            .flatten()
+            .is_some_and(|v| text_of(&v).eq_ignore_ascii_case("*TXT"));
         let data = read_file(&host.link, &path).map_err(|e| fail(&e))?;
         let name = path.rsplit('/').next().unwrap_or(&path).to_string();
         attachments.push(Attachment {
@@ -406,11 +507,17 @@ fn sndsmtpemm(host: &Host, r: &Resolved) -> Result<String, Fail> {
 pub fn qtmm(link: &Shared, req: &sysapi::mail::MailRequest) -> Result<(), String> {
     let message = read_file(link, &req.file)?;
     let env = Envelope {
-        from: Address::parse(&req.originator).map_err(|e| e.to_string())?.mailbox,
+        from: Address::parse(&req.originator)
+            .map_err(|e| e.to_string())?
+            .mailbox,
         to: req
             .recipients
             .iter()
-            .map(|(a, _)| Address::parse(a).map(|x| x.mailbox).map_err(|e| e.to_string()))
+            .map(|(a, _)| {
+                Address::parse(a)
+                    .map(|x| x.mailbox)
+                    .map_err(|e| e.to_string())
+            })
             .collect::<Result<_, _>>()?,
     };
     deliver(link, &env, &message).map(|_| ())

@@ -11,9 +11,9 @@
 
 use std::cmp::Ordering;
 
-use super::class;
 use super::super::eval::Row;
 use super::super::mem::Charge;
+use super::class;
 use crate::error::Result;
 use crate::value::Value;
 
@@ -134,7 +134,11 @@ impl Runs {
             }
             runs[li] = Some((at, end));
         }
-        Ok(Some(Self { sorted: rids, by_left: runs, _charge: charge }))
+        Ok(Some(Self {
+            sorted: rids,
+            by_left: runs,
+            _charge: charge,
+        }))
     }
 
     /// The right rows left row `li` may match, in their order; `None`
@@ -151,7 +155,9 @@ mod tests {
     use crate::exec::mem::Meter;
 
     fn rows(vals: &[Option<i64>]) -> Vec<Row> {
-        vals.iter().map(|v| vec![v.map_or(Value::Null, Value::int)]).collect()
+        vals.iter()
+            .map(|v| vec![v.map_or(Value::Null, Value::int)])
+            .collect()
     }
 
     #[test]
@@ -159,13 +165,27 @@ mod tests {
         let meter = Meter::default();
         let left = rows(&[Some(3), Some(1), None, Some(3), Some(9)]);
         let right = rows(&[Some(3), Some(1), Some(3), None, Some(2)]);
-        let r = Runs::build(Charge::new(&meter, usize::MAX), &left, 0, false, &right, 0, false).unwrap().unwrap();
+        let r = Runs::build(
+            Charge::new(&meter, usize::MAX),
+            &left,
+            0,
+            false,
+            &right,
+            0,
+            false,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(r.lookup(0), Some(&[0, 2][..]));
         assert_eq!(r.lookup(1), Some(&[1][..]));
         assert_eq!(r.lookup(2), Some(&[][..]));
         assert_eq!(r.lookup(3), Some(&[0, 2][..]));
         assert_eq!(r.lookup(4), Some(&[][..]));
-        assert!(in_order(rows(&[Some(1), None, Some(2), Some(2)]).iter().map(|r| &r[0])));
+        assert!(in_order(
+            rows(&[Some(1), None, Some(2), Some(2)])
+                .iter()
+                .map(|r| &r[0])
+        ));
         assert!(!in_order(rows(&[Some(2), Some(1)]).iter().map(|r| &r[0])));
     }
 
@@ -174,7 +194,17 @@ mod tests {
         let meter = Meter::default();
         let left = vec![vec![Value::Str("1".into())]];
         let right = rows(&[Some(1)]);
-        let r = Runs::build(Charge::new(&meter, usize::MAX), &left, 0, false, &right, 0, false).unwrap().unwrap();
+        let r = Runs::build(
+            Charge::new(&meter, usize::MAX),
+            &left,
+            0,
+            false,
+            &right,
+            0,
+            false,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(r.lookup(0), None);
     }
 }

@@ -15,12 +15,19 @@ use super::Out;
 use crate::error::Result;
 
 /// `NOT NULL` columns QS/400 has no value for.
-pub const NO_VALUE: &[&str] = &["NETSERVER_DISABLED", "AUTHORITY_COLLECTION_ACTIVE", "AUTHORITY_COLLECTION_REPOSITORY_EXISTS"];
+pub const NO_VALUE: &[&str] = &[
+    "NETSERVER_DISABLED",
+    "AUTHORITY_COLLECTION_ACTIVE",
+    "AUTHORITY_COLLECTION_REPOSITORY_EXISTS",
+];
 
 /// Every profile the user can read, by name.
 fn profiles(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<(store::obj::ObjectId, UsrPrf)> {
     let names = profile::objects::list(txn, ctx.qsys).unwrap_or_default();
-    let mut out: Vec<_> = names.iter().filter_map(|n| profile::objects::read(txn, ctx.qsys, n).ok()).collect();
+    let mut out: Vec<_> = names
+        .iter()
+        .filter_map(|n| profile::objects::read(txn, ctx.qsys, n).ok())
+        .collect();
     out.sort_by(|a, b| a.1.name.cmp(&b.1.name));
     out
 }
@@ -40,7 +47,13 @@ fn tri(t: profile::Tri) -> &'static str {
 
 /// Names in ten-character columns, as IBM lists them.
 fn columns<S: AsRef<str>>(names: &[S]) -> String {
-    names.iter().map(|s| format!("{:<10}", s.as_ref())).collect::<Vec<_>>().concat().trim_end().to_string()
+    names
+        .iter()
+        .map(|s| format!("{:<10}", s.as_ref()))
+        .collect::<Vec<_>>()
+        .concat()
+        .trim_end()
+        .to_string()
 }
 
 /// Unix seconds as a timestamp; days count in seconds too.
@@ -72,7 +85,10 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
                 out.int("PASSWORD_EXPIRATION_INTERVAL", n);
                 let expires = p.pwd_changed + u64::from(n) * DAY;
                 out.stamp("DATE_PASSWORD_EXPIRES", expires - expires % DAY);
-                out.int("DAYS_UNTIL_PASSWORD_EXPIRES", (expires.saturating_sub(now)) / DAY);
+                out.int(
+                    "DAYS_UNTIL_PASSWORD_EXPIRES",
+                    (expires.saturating_sub(now)) / DAY,
+                );
             }
         }
         out.yes("SET_PASSWORD_TO_EXPIRE", p.pwdexp);
@@ -81,7 +97,14 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         if !sp.is_empty() {
             out.text("SPECIAL_AUTHORITIES", columns(&sp));
         }
-        out.text("GROUP_PROFILE_NAME", if p.grpprf.trim().is_empty() { "*NONE" } else { p.grpprf.as_str() });
+        out.text(
+            "GROUP_PROFILE_NAME",
+            if p.grpprf.trim().is_empty() {
+                "*NONE"
+            } else {
+                p.grpprf.as_str()
+            },
+        );
         out.int("SUPPLEMENTAL_GROUP_COUNT", p.supgrpprf.len());
         if !p.supgrpprf.is_empty() {
             out.text("SUPPLEMENTAL_GROUP_LIST", columns(&p.supgrpprf));
@@ -90,8 +113,18 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         out.text_or_null("GROUP_AUTHORITY", &p.grpaut);
         out.text_or_null("ASSISTANCE_LEVEL", &p.astlvl);
         out.text_or_null("CURRENT_LIBRARY_NAME", &p.curlib);
-        qualified(out, "INITIAL_MENU_NAME", "INITIAL_MENU_LIBRARY_NAME", &p.inlmnu);
-        qualified(out, "INITIAL_PROGRAM_NAME", "INITIAL_PROGRAM_LIBRARY_NAME", &p.inlpgm);
+        qualified(
+            out,
+            "INITIAL_MENU_NAME",
+            "INITIAL_MENU_LIBRARY_NAME",
+            &p.inlmnu,
+        );
+        qualified(
+            out,
+            "INITIAL_PROGRAM_NAME",
+            "INITIAL_PROGRAM_LIBRARY_NAME",
+            &p.inlpgm,
+        );
         out.text("LIMIT_CAPABILITIES", p.lmtcpb.name());
         out.text_or_null("TEXT_DESCRIPTION", &p.text);
         out.text("DISPLAY_SIGNON_INFORMATION", tri(p.dspsgninf));
@@ -104,34 +137,75 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         }
         out.int("STORAGE_USED", p.stg_used);
         out.text("HIGHEST_SCHEDULING_PRIORITY", p.ptylmt.to_string());
-        qualified(out, "JOB_DESCRIPTION_NAME", "JOB_DESCRIPTION_LIBRARY_NAME", &p.jobd);
+        qualified(
+            out,
+            "JOB_DESCRIPTION_NAME",
+            "JOB_DESCRIPTION_LIBRARY_NAME",
+            &p.jobd,
+        );
         out.text_or_null("ACCOUNTING_CODE", &p.acgcde);
-        let msgq = if p.msgq.0 == "*USRPRF" { (p.name.clone(), "QUSRSYS".to_string()) } else { p.msgq.clone() };
-        qualified(out, "MESSAGE_QUEUE_NAME", "MESSAGE_QUEUE_LIBRARY_NAME", &msgq);
+        let msgq = if p.msgq.0 == "*USRPRF" {
+            (p.name.clone(), "QUSRSYS".to_string())
+        } else {
+            p.msgq.clone()
+        };
+        qualified(
+            out,
+            "MESSAGE_QUEUE_NAME",
+            "MESSAGE_QUEUE_LIBRARY_NAME",
+            &msgq,
+        );
         out.text_or_null("MESSAGE_QUEUE_DELIVERY_METHOD", &p.dlvry);
         out.int("MESSAGE_QUEUE_SEVERITY", p.sev);
-        qualified(out, "OUTPUT_QUEUE_NAME", "OUTPUT_QUEUE_LIBRARY_NAME", &p.outq);
+        qualified(
+            out,
+            "OUTPUT_QUEUE_NAME",
+            "OUTPUT_QUEUE_LIBRARY_NAME",
+            &p.outq,
+        );
         out.text_or_null("PRINT_DEVICE", &p.prtdev);
         out.text_or_null("SPECIAL_ENVIRONMENT", &p.spcenv);
-        qualified(out, "ATTENTION_KEY_HANDLING_PROGRAM_NAME", "ATTENTION_KEY_HANDLING_PROGRAM_LIBRARY_NAME", &p.atnpgm);
+        qualified(
+            out,
+            "ATTENTION_KEY_HANDLING_PROGRAM_NAME",
+            "ATTENTION_KEY_HANDLING_PROGRAM_LIBRARY_NAME",
+            &p.atnpgm,
+        );
         out.text_or_null("LANGUAGE_ID", &p.langid);
         out.text_or_null("COUNTRY_OR_REGION_ID", &p.cntryid);
-        out.text("CHARACTER_CODE_SET_ID", if p.ccsid == 0 { "QCCSID".to_string() } else { p.ccsid.to_string() });
+        out.text(
+            "CHARACTER_CODE_SET_ID",
+            if p.ccsid == 0 {
+                "QCCSID".to_string()
+            } else {
+                p.ccsid.to_string()
+            },
+        );
         if !p.usropt.is_empty() {
             out.text("USER_OPTIONS", columns(&p.usropt));
         }
-        qualified(out, "SORT_SEQUENCE_TABLE_NAME", "SORT_SEQUENCE_TABLE_LIBRARY_NAME", &p.srtseq);
+        qualified(
+            out,
+            "SORT_SEQUENCE_TABLE_NAME",
+            "SORT_SEQUENCE_TABLE_LIBRARY_NAME",
+            &p.srtseq,
+        );
         out.text_or_null("OBJECT_AUDITING_VALUE", &p.objaud);
         if !p.audlvl.is_empty() {
             out.text("USER_ACTION_AUDIT_LEVEL", columns(&p.audlvl));
         }
-        out.text("GROUP_AUTHORITY_TYPE", if p.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" });
+        out.text(
+            "GROUP_AUTHORITY_TYPE",
+            if p.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" },
+        );
         out.int("USER_ID_NUMBER", p.uid);
         out.int("GROUP_ID_NUMBER", p.gid);
         if !p.setjobatr.is_empty() {
             out.text("LOCALE_JOB_ATTRIBUTES", p.setjobatr.join(" "));
         }
-        let member = !profile::groups::members(txn, ctx.qsys, &p.name).unwrap_or_default().is_empty();
+        let member = !profile::groups::members(txn, ctx.qsys, &p.name)
+            .unwrap_or_default()
+            .is_empty();
         out.yes("GROUP_MEMBER_INDICATOR", member);
         out.yes("DIGITAL_CERTIFICATE_INDICATOR", false);
         out.text_or_null("CHARACTER_IDENTIFIER_CONTROL", &p.chridctl);
@@ -143,7 +217,14 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         }
         out.int("USER_EXPIRATION_INTERVAL", p.usrexpitv);
         out.stamp("USER_EXPIRATION_DATE", p.usrexpdate);
-        out.text("USER_EXPIRATION_ACTION", if p.usrexpdate == 0 && p.usrexpitv == 0 { "*NONE" } else { "*DISABLE" });
+        out.text(
+            "USER_EXPIRATION_ACTION",
+            if p.usrexpdate == 0 && p.usrexpitv == 0 {
+                "*NONE"
+            } else {
+                "*DISABLE"
+            },
+        );
         out.text_or_null("HOME_DIRECTORY", &p.homedir);
         out.text_or_null("LOCALE_PATH_NAME", &p.locale);
         if let Ok((_, h)) = ops::read_header(txn, id) {

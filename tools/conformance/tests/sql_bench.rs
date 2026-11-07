@@ -42,10 +42,19 @@ struct StoreSource {
 }
 
 impl mi::act::ObjectSource for StoreSource {
-    fn program(&mut self, name: &str, _lib: &str, kind: ile::PgmKind) -> Option<(Arc<ile::ProgramObject>, String)> {
+    fn program(
+        &mut self,
+        name: &str,
+        _lib: &str,
+        kind: ile::PgmKind,
+    ) -> Option<(Arc<ile::ProgramObject>, String)> {
         let mut st = self.store.borrow_mut();
         let mut txn = st.begin().ok()?;
-        let ty = if kind == ile::PgmKind::Pgm { types::PGM } else { types::SRVPGM };
+        let ty = if kind == ile::PgmKind::Pgm {
+            types::PGM
+        } else {
+            types::SRVPGM
+        };
         let l = store::obj::library::Library::load(&mut txn, self.lib).ok()?;
         let id = l.lookup(&mut txn, ty, Name::parse(name).ok()?).ok()??;
         let p = ile::store::load_program(&mut txn, id).ok()?;
@@ -71,7 +80,12 @@ impl Bench {
             wal_pages: 32_768,
             now: NOW,
         };
-        let mut store = Store::format(vec![Box::new(dev) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(dev) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let mut txn = store.begin().unwrap();
         let qsys = ops::bootstrap(&mut txn, NOW, "QS400").unwrap();
         let lib = ops::create(
@@ -90,17 +104,34 @@ impl Bench {
         )
         .unwrap();
         txn.commit().unwrap();
-        let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+        let mut ctx = SqlContext::new(
+            qsys,
+            JobHandle(1),
+            NameContext {
+                curlib: Some(lib),
+                libl: vec![lib],
+            },
+        );
         ctx.now = Some(NOW);
         ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
         // The large table's rows are held at once by the sort and the join.
         ctx.memory_limit = 4 << 30;
         let store = Rc::new(RefCell::new(store));
-        let session = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&store)), ctx)));
-        let mut job = mi::Job::boxed(Box::new(StoreSource { store: Rc::clone(&store), lib }));
+        let session = Rc::new(RefCell::new(Session::with_ctx(
+            Box::new(Rc::clone(&store)),
+            ctx,
+        )));
+        let mut job = mi::Job::boxed(Box::new(StoreSource {
+            store: Rc::clone(&store),
+            lib,
+        }));
         qrpgrt::install(&mut job);
         job.sql = Some(Box::new(Shared(Rc::clone(&session))));
-        Self { store, session, job }
+        Self {
+            store,
+            session,
+            job,
+        }
     }
 
     /// Run `text` with `params`; its outcome. Panics on an error.
@@ -124,7 +155,12 @@ impl Bench {
     fn call(&mut self, text: &str) {
         let req = Request {
             scope: "1:BENCH".into(),
-            desc: Desc { op: Op::Exec, sql_naming: true, text: text.into(), ..Desc::default() },
+            desc: Desc {
+                op: Op::Exec,
+                sql_naming: true,
+                text: text.into(),
+                ..Desc::default()
+            },
             inputs: Vec::new(),
         };
         let (reply, _) = qrpgrt::sqlcall::run_request(&mut self.job, req);
@@ -136,12 +172,18 @@ fn timed<T>(name: &str, what: &str, f: impl FnOnce() -> T) -> (T, Duration) {
     let t = Instant::now();
     let r = f();
     let d = t.elapsed();
-    println!("bench {name:<16} {:>10.1} ms  {what}", d.as_secs_f64() * 1000.0);
+    println!(
+        "bench {name:<16} {:>10.1} ms  {what}",
+        d.as_secs_f64() * 1000.0
+    );
     (r, d)
 }
 
 fn rows_wanted() -> u64 {
-    std::env::var("QS400_SQL_BENCH_ROWS").ok().and_then(|v| v.parse().ok()).unwrap_or(1_000_000)
+    std::env::var("QS400_SQL_BENCH_ROWS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(1_000_000)
 }
 
 fn load(b: &mut Bench, n: u64) {
@@ -150,17 +192,41 @@ fn load(b: &mut Bench, n: u64) {
     let mut i = 1;
     while i <= n {
         let end = (i + 999).min(n);
-        let vals: Vec<String> = (i..=end).map(|k| format!("({k}, {}, {}, 'N{}')", k % 1000, (k * 7919) % 1_000_003, k % 97)).collect();
-        b.run(&format!("INSERT INTO QSTEST.BIG VALUES {}", vals.join(", ")), &[]);
+        let vals: Vec<String> = (i..=end)
+            .map(|k| {
+                format!(
+                    "({k}, {}, {}, 'N{}')",
+                    k % 1000,
+                    (k * 7919) % 1_000_003,
+                    k % 97
+                )
+            })
+            .collect();
+        b.run(
+            &format!("INSERT INTO QSTEST.BIG VALUES {}", vals.join(", ")),
+            &[],
+        );
         i = end + 1;
     }
     b.run("CREATE UNIQUE INDEX QSTEST.BIGID ON QSTEST.BIG (ID)", &[]);
-    b.run("CREATE TABLE QSTEST.GRP (GRP INTEGER NOT NULL PRIMARY KEY, REGION INTEGER NOT NULL)", &[]);
+    b.run(
+        "CREATE TABLE QSTEST.GRP (GRP INTEGER NOT NULL PRIMARY KEY, REGION INTEGER NOT NULL)",
+        &[],
+    );
     let vals: Vec<String> = (0..1000).map(|g| format!("({g}, {})", g % 10)).collect();
-    b.run(&format!("INSERT INTO QSTEST.GRP VALUES {}", vals.join(", ")), &[]);
-    b.run("CREATE TABLE QSTEST.REGION (REGION INTEGER NOT NULL PRIMARY KEY, LABEL CHAR(10) NOT NULL)", &[]);
+    b.run(
+        &format!("INSERT INTO QSTEST.GRP VALUES {}", vals.join(", ")),
+        &[],
+    );
+    b.run(
+        "CREATE TABLE QSTEST.REGION (REGION INTEGER NOT NULL PRIMARY KEY, LABEL CHAR(10) NOT NULL)",
+        &[],
+    );
     let vals: Vec<String> = (0..10).map(|r| format!("({r}, 'R{r}')")).collect();
-    b.run(&format!("INSERT INTO QSTEST.REGION VALUES {}", vals.join(", ")), &[]);
+    b.run(
+        &format!("INSERT INTO QSTEST.REGION VALUES {}", vals.join(", ")),
+        &[],
+    );
 }
 
 #[test]
@@ -169,9 +235,17 @@ fn load(b: &mut Bench, n: u64) {
 fn sql_benchmarks() {
     let n = rows_wanted();
     let mut b = Bench::new();
-    timed("load", &format!("{n} rows inserted, 1,000 a statement"), || load(&mut b, n));
+    timed(
+        "load",
+        &format!("{n} rows inserted, 1,000 a statement"),
+        || load(&mut b, n),
+    );
 
-    let (r, _) = timed("order-by", &format!("SELECT * FROM BIG ORDER BY V ({n} rows sorted)"), || b.rows("SELECT * FROM QSTEST.BIG ORDER BY V"));
+    let (r, _) = timed(
+        "order-by",
+        &format!("SELECT * FROM BIG ORDER BY V ({n} rows sorted)"),
+        || b.rows("SELECT * FROM QSTEST.BIG ORDER BY V"),
+    );
     assert_eq!(r.len() as u64, n);
     drop(r);
 
@@ -186,27 +260,48 @@ fn sql_benchmarks() {
     assert_eq!(r[0][0].as_i64().unwrap(), 99_999);
 
     let w = n.min(100_000);
-    let (r, _) = timed("window", &format!("SUM() OVER (PARTITION BY GRP ORDER BY ID) over {w} rows"), || {
-        b.rows(&format!("SELECT ID, SUM(V) OVER (PARTITION BY GRP ORDER BY ID ROWS UNBOUNDED PRECEDING) FROM QSTEST.BIG WHERE ID <= {w}"))
-    });
+    let (r, _) = timed(
+        "window",
+        &format!("SUM() OVER (PARTITION BY GRP ORDER BY ID) over {w} rows"),
+        || {
+            b.rows(&format!("SELECT ID, SUM(V) OVER (PARTITION BY GRP ORDER BY ID ROWS UNBOUNDED PRECEDING) FROM QSTEST.BIG WHERE ID <= {w}"))
+        },
+    );
     assert_eq!(r.len() as u64, w);
 
-    b.run("CREATE PROCEDURE QSTEST.BUMP (INOUT N INTEGER) LANGUAGE SQL BEGIN SET N = N + 1; END", &[]);
+    b.run(
+        "CREATE PROCEDURE QSTEST.BUMP (INOUT N INTEGER) LANGUAGE SQL BEGIN SET N = N + 1; END",
+        &[],
+    );
     b.run(
         "CREATE PROCEDURE QSTEST.LOOP10K () LANGUAGE SQL BEGIN DECLARE I INTEGER DEFAULT 0; DECLARE X INTEGER DEFAULT 0; \
          WHILE I < 10000 DO CALL QSTEST.BUMP(X); SET I = I + 1; END WHILE; END",
         &[],
     );
-    timed("procedure-loop", "an SQL procedure calling another 10,000 times", || b.call("CALL QSTEST.LOOP10K()"));
+    timed(
+        "procedure-loop",
+        "an SQL procedure calling another 10,000 times",
+        || b.call("CALL QSTEST.LOOP10K()"),
+    );
 
-    b.run("CREATE TABLE QSTEST.DOCS (ID INTEGER NOT NULL, D CLOB(200M))", &[]);
+    b.run(
+        "CREATE TABLE QSTEST.DOCS (ID INTEGER NOT NULL, D CLOB(200M))",
+        &[],
+    );
     let text: String = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-+"
         .chars()
         .cycle()
         .take(100 << 20)
         .collect();
     let v = Value::Str(text);
-    timed("clob-write", "a 100 MB CLOB inserted", || b.run("INSERT INTO QSTEST.DOCS VALUES (1, ?)", std::slice::from_ref(&v)));
-    let (r, _) = timed("clob-read", "and read back", || b.rows("SELECT D FROM QSTEST.DOCS WHERE ID = 1"));
+    timed("clob-write", "a 100 MB CLOB inserted", || {
+        b.run(
+            "INSERT INTO QSTEST.DOCS VALUES (1, ?)",
+            std::slice::from_ref(&v),
+        )
+    });
+    let (r, _) = timed("clob-read", "and read back", || {
+        b.rows("SELECT D FROM QSTEST.DOCS WHERE ID = 1")
+    });
     assert_eq!(r[0][0], v);
 }

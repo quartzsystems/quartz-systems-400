@@ -28,15 +28,25 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
     let op = cut3("C", r, "opcode");
     let ext = cut3("C", r, "halfadj");
     // Every indicator but the last on a line of its own.
-    let (last, before) = conds.split_last().map_or((None, &[][..]), |(l, b)| (Some(l.clone()), b));
+    let (last, before) = conds
+        .split_last()
+        .map_or((None, &[][..]), |(l, b)| (Some(l.clone()), b));
     for (k, c) in before.iter().enumerate() {
         let mut line = Rec::new("C", r);
-        let lv = if k == 0 { level.clone() } else { "AN".to_string() };
+        let lv = if k == 0 {
+            level.clone()
+        } else {
+            "AN".to_string()
+        };
         line.put("level", &lv).put("cond", c);
         out.push(Sect::C, &line.text(), at);
     }
     let mut c = Rec::new("C", r);
-    let lv = if before.is_empty() { level.clone() } else { "AN".to_string() };
+    let lv = if before.is_empty() {
+        level.clone()
+    } else {
+        "AN".to_string()
+    };
     c.put("level", &lv);
     if let Some(l) = &last {
         c.put("cond", l);

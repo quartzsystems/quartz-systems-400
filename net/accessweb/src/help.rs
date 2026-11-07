@@ -207,7 +207,12 @@ pub fn topic(key: &str) -> (String, String) {
     }
     let mut body = String::from("<p>Help is available for these pages:</p>\n<ul>\n");
     for t in TOPICS {
-        let _ = writeln!(body, "<li><a href=\"{}\">{}</a></li>", esc(&crate::PRODUCT.help(t.key)), esc(t.title));
+        let _ = writeln!(
+            body,
+            "<li><a href=\"{}\">{}</a></li>",
+            esc(&crate::PRODUCT.help(t.key)),
+            esc(t.title)
+        );
     }
     body.push_str("</ul>");
     ("Contents".into(), body)

@@ -100,7 +100,15 @@ fn civil(unix: i64) -> (i64, u32, u32, u32, u32, u32, usize) {
     // 1970-01-01 was a Thursday.
     let wd = usize::try_from((days + 4).rem_euclid(7)).unwrap_or(0);
     let n = |v: i64| u32::try_from(v).unwrap_or(0);
-    (y, n(m), n(d), n(rem / 3600), n(rem % 3600 / 60), n(rem % 60), wd)
+    (
+        y,
+        n(m),
+        n(d),
+        n(rem / 3600),
+        n(rem % 3600 / 60),
+        n(rem % 60),
+        wd,
+    )
 }
 
 /// The `Date:` value of a Unix time, in UTC.
@@ -108,10 +116,15 @@ fn civil(unix: i64) -> (i64, u32, u32, u32, u32, u32, usize) {
 #[allow(clippy::many_single_char_names)]
 pub fn date(unix: i64) -> String {
     const DAYS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const MONTHS: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
     let (y, m, d, h, mi, s, wd) = civil(unix);
     let month = MONTHS[usize::try_from(m.clamp(1, 12) - 1).unwrap_or(0)];
-    format!("{}, {d:02} {month} {y} {h:02}:{mi:02}:{s:02} +0000", DAYS[wd])
+    format!(
+        "{}, {d:02} {month} {y} {h:02}:{mi:02}:{s:02} +0000",
+        DAYS[wd]
+    )
 }
 
 #[cfg(test)]

@@ -76,7 +76,13 @@ pub fn records(v: &View, rows: &[Row], add: (&str, &str), msg: Option<&str>) -> 
         put(&mut s, row, col, Attr::Blue, t);
     }
     let heads: &[(usize, &str)] = if v.text {
-        &[(2, "Opt"), (7, "Order"), (16, "Record"), (30, "Type"), (39, "Text")]
+        &[
+            (2, "Opt"),
+            (7, "Order"),
+            (16, "Record"),
+            (30, "Type"),
+            (39, "Text"),
+        ]
     } else {
         &[
             (2, "Opt"),

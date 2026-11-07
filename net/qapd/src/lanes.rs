@@ -16,11 +16,14 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 
 use ipc::Wire;
-use qap_proto::ops::connection::{Hello, HelloReply, JobInfoReply, PingReply, SignOnMethod, choose_version};
+use qap_proto::ops::connection::{
+    Hello, HelloReply, JobInfoReply, PingReply, SignOnMethod, choose_version,
+};
 use qap_proto::ops::messages::{ListMessages, RemoveMessages, ReplyMessage, SendMessage};
 use qap_proto::ops::signon::{Attach, ChangePassword, Resume, SignOn, SignOnReply};
 use qap_proto::ops::spool::{
-    HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, ReadSpooledFile, SpooledFileRef,
+    HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, ReadSpooledFile,
+    SpooledFileRef,
 };
 use qap_proto::types::JobId;
 use qap_proto::{Envelope, HELLO_ID, Op, Service, Status, VERSION};
@@ -41,9 +44,20 @@ pub(crate) enum ToMain {
 }
 
 /// Route requests until the connection closes or `Hello` refuses it.
-pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Threads, main: &Sender<ToMain>, watch: &Arc<Watch>) {
+pub(crate) fn dispatch(
+    shared: &Arc<Shared>,
+    rx: &Receiver<In>,
+    threads: &Threads,
+    main: &Sender<ToMain>,
+    watch: &Arc<Watch>,
+) {
     let mut own = threads();
-    let mut pool = Pool::new(Arc::clone(shared), Arc::clone(threads), main.clone(), Arc::clone(watch));
+    let mut pool = Pool::new(
+        Arc::clone(shared),
+        Arc::clone(threads),
+        main.clone(),
+        Arc::clone(watch),
+    );
     // Requests routed: `Hello` is the first, so the second is the first
     // after it.
     let mut routed = 0u64;
@@ -51,7 +65,15 @@ pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Thread
         match i {
             In::Request(req) => {
                 routed += 1;
-                if let Some(why) = route(shared, &mut *own, &mut pool, main, req, routed == 2, watch.job()) {
+                if let Some(why) = route(
+                    shared,
+                    &mut *own,
+                    &mut pool,
+                    main,
+                    req,
+                    routed == 2,
+                    watch.job(),
+                ) {
                     let _ = main.send(ToMain::Closed(why));
                     return;
                 }
@@ -63,7 +85,9 @@ pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Thread
         }
     }
     // The pump says why before it ends, or its panic is reported.
-    let _ = main.send(ToMain::Closed(Closed::Broken("the connection's reader ended".into())));
+    let _ = main.send(ToMain::Closed(Closed::Broken(
+        "the connection's reader ended".into(),
+    )));
 }
 
 /// Send one request on its way; `first` when it is the first after
@@ -92,7 +116,9 @@ fn route(
     match op {
         None => shared.reply(&req, Answer::status(Status::InvalidRequest)),
         // An operation newer than the connection's version.
-        Some(op) if op.since() > version => shared.reply(&req, Answer::status(Status::InvalidRequest)),
+        Some(op) if op.since() > version => {
+            shared.reply(&req, Answer::status(Status::InvalidRequest))
+        }
         Some(Op::Hello) => {
             shared.reply(&req, Answer::status(Status::InvalidRequest));
             return Some(Closed::Refused);
@@ -106,8 +132,16 @@ fn route(
         ),
         // Answered where it is routed, as Ping.
         Some(Op::JobInfo) => {
-            let user = lock(&shared.session).as_ref().map_or_else(|| job.user.clone(), |(_, p)| p.clone());
-            shared.finish(&req, Answer::ok(&JobInfoReply { job: job.clone(), user }));
+            let user = lock(&shared.session)
+                .as_ref()
+                .map_or_else(|| job.user.clone(), |(_, p)| p.clone());
+            shared.finish(
+                &req,
+                Answer::ok(&JobInfoReply {
+                    job: job.clone(),
+                    user,
+                }),
+            );
         }
         // Only first after Hello; signed on it cannot be.
         Some(Op::Attach) if !first || shared.signed_on() => {
@@ -205,7 +239,12 @@ impl Pool {
             let report = move |why| {
                 let _ = main.send(ToMain::Closed(why));
             };
-            watch::spawn(format!("qap-worker-{}", self.made), &self.watch, body, report);
+            watch::spawn(
+                format!("qap-worker-{}", self.made),
+                &self.watch,
+                body,
+                report,
+            );
         }
         let _ = self.work.send((op, req));
     }
@@ -230,15 +269,26 @@ fn operation(shared: &Arc<Shared>, host: &mut dyn ThreadHost, op: Op, req: &Enve
         },
         Op::ListSpooledFiles => body(req, |b: ListSpooledFiles| ok(host.list_spooled_files(&b))),
         Op::ReadSpooledFile => body(req, |b: ReadSpooledFile| ok(host.read_spooled_file(&b))),
-        Op::HoldSpooledFile => body(req, |b: HoldSpooledFile| done(host.hold_spooled_file(&b.id, b.immediately))),
-        Op::ReleaseSpooledFile => body(req, |b: SpooledFileRef| done(host.release_spooled_file(&b.id))),
-        Op::DeleteSpooledFile => body(req, |b: SpooledFileRef| done(host.delete_spooled_file(&b.id))),
-        Op::MoveSpooledFile => body(req, |b: MoveSpooledFile| done(host.move_spooled_file(&b.id, &b.outq, b.first))),
+        Op::HoldSpooledFile => body(req, |b: HoldSpooledFile| {
+            done(host.hold_spooled_file(&b.id, b.immediately))
+        }),
+        Op::ReleaseSpooledFile => body(req, |b: SpooledFileRef| {
+            done(host.release_spooled_file(&b.id))
+        }),
+        Op::DeleteSpooledFile => body(req, |b: SpooledFileRef| {
+            done(host.delete_spooled_file(&b.id))
+        }),
+        Op::MoveSpooledFile => body(req, |b: MoveSpooledFile| {
+            done(host.move_spooled_file(&b.id, &b.outq, b.first))
+        }),
         Op::ListOutputQueues => body(req, |b: ListOutputQueues| ok(host.list_output_queues(&b))),
         Op::ListSchemas | Op::ListTables | Op::ListColumns => crate::sql::catalog(host, op, req),
         op if op.code().0 == Service::Ifs => crate::files::serve(host, &shared.files, op, req),
         op if op.code().0 == Service::Manage => {
-            let user = lock(&shared.session).as_ref().map(|(_, p)| p.clone()).unwrap_or_default();
+            let user = lock(&shared.session)
+                .as_ref()
+                .map(|(_, p)| p.clone())
+                .unwrap_or_default();
             crate::manage::serve(host, &user, op, req)
         }
         Op::ListMessages => body(req, |b: ListMessages| ok(host.list_messages(&b))),

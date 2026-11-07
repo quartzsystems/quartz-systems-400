@@ -46,12 +46,19 @@ pub fn trees(ifs: &Path) -> (PathBuf, PathBuf) {
 /// IFS mounted at `ifs`, with the host's devices from `dev`. `exec`, when
 /// given, is a mount of `/QOpenSys` that allows programs (the IFS mount
 /// does not), used in its place.
-pub fn plan(ifs: &Path, exec: Option<&Path>, stage: &Path, dev: &Path) -> std::io::Result<Vec<Step>> {
+pub fn plan(
+    ifs: &Path,
+    exec: Option<&Path>,
+    stage: &Path,
+    dev: &Path,
+) -> std::io::Result<Vec<Step>> {
     let (root, qopensys) = trees(ifs);
     let qopensys = exec.map_or(qopensys, Path::to_path_buf);
     let mut steps = Vec::new();
     let mut names = Vec::new();
-    let mut entries: Vec<_> = std::fs::read_dir(&qopensys)?.filter_map(Result::ok).collect();
+    let mut entries: Vec<_> = std::fs::read_dir(&qopensys)?
+        .filter_map(Result::ok)
+        .collect();
     entries.sort_by_key(std::fs::DirEntry::file_name);
     for e in entries {
         let name = e.file_name();
@@ -122,7 +129,10 @@ mod tests {
 
     #[test]
     fn paths_inside_the_view() {
-        assert_eq!(inside("/QOpenSys/tmp/x").as_deref(), Some("/QOpenSys/tmp/x"));
+        assert_eq!(
+            inside("/QOpenSys/tmp/x").as_deref(),
+            Some("/QOpenSys/tmp/x")
+        );
         assert_eq!(inside("/HOME/QSECOFR").as_deref(), Some("/home/QSECOFR"));
         assert_eq!(inside("/QSYS.LIB/QGPL.LIB"), None);
         assert_eq!(inside("/qopensys/tmp"), None);
@@ -144,7 +154,10 @@ mod tests {
         assert!(steps.contains(&Step::Bind(base.join("root/home"), stage.join("home"))));
         assert!(steps.contains(&Step::Proc(stage.join("proc"))));
         assert_eq!(
-            steps.iter().filter(|s| **s == Step::Dir(stage.join("tmp"))).count(),
+            steps
+                .iter()
+                .filter(|s| **s == Step::Dir(stage.join("tmp")))
+                .count(),
             1
         );
         let _ = std::fs::remove_dir_all(&base);

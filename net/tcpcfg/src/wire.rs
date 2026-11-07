@@ -17,14 +17,52 @@ use crate::resolver::HostConfig;
 use crate::state::{IfcView, RteView, Snapshot};
 
 wire_enum!(Proto { 0 => Tcp, 1 => Udp });
-wire_struct!(PortRestriction { lower, upper, proto, user });
-wire_struct!(ServiceEntry { name, port, proto, aliases, text });
+wire_struct!(PortRestriction {
+    lower,
+    upper,
+    proto,
+    user
+});
+wire_struct!(ServiceEntry {
+    name,
+    port,
+    proto,
+    aliases,
+    text
+});
 wire_struct!(ServicesTable { list });
 wire_struct!(Note { msgid, text, error });
 wire_struct!(IfcView {
-    addr, mask, prefix, line, vlan, line_type, status, alias, local_ifc, tos, mtu, autostart, text, link, error
+    addr,
+    mask,
+    prefix,
+    line,
+    vlan,
+    line_type,
+    status,
+    alias,
+    local_ifc,
+    tos,
+    mtu,
+    autostart,
+    text,
+    link,
+    error
 });
-wire_struct!(RteView { dest, mask, next_hop, bind_ifc, tos, mtu, dup_pty, metric, redist, text, status, link });
+wire_struct!(RteView {
+    dest,
+    mask,
+    next_hop,
+    bind_ifc,
+    tos,
+    mtu,
+    dup_pty,
+    metric,
+    redist,
+    text,
+    status,
+    link
+});
 wire_struct!(Snapshot { tcp, ifcs, rtes });
 
 fn ip_text(ip: &IpAddr) -> String {
@@ -37,7 +75,11 @@ fn ip_of(s: &str) -> Result<IpAddr, WireError> {
 
 impl Wire for HostConfig {
     fn put(&self, out: &mut Vec<u8>) {
-        let hosts: Vec<(String, Vec<String>)> = self.hosts.iter().map(|(a, n)| (ip_text(a), n.clone())).collect();
+        let hosts: Vec<(String, Vec<String>)> = self
+            .hosts
+            .iter()
+            .map(|(a, n)| (ip_text(a), n.clone()))
+            .collect();
         let dns: Vec<String> = self.dns.iter().map(ip_text).collect();
         hosts.put(out);
         self.host_name.put(out);

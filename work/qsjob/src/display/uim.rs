@@ -182,7 +182,12 @@ mod tests {
     /// screen switches it to 24x80, a 27x132 screen back.
     #[test]
     fn screen_sets_the_mode() {
-        let c = uim::compile(GROUP, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let c = uim::compile(
+            GROUP,
+            &uim::NoImbeds,
+            &uim::NoImports,
+            &uim::CompileOpts::default(),
+        );
         let g = Rc::new(c.group.unwrap_or_else(|| panic!("{}", c.listing)));
         let d = UimDialog::new(g, "QS400");
         let opts = uim::Options {
@@ -205,8 +210,17 @@ mod tests {
     /// into a terminal: its text and attribute grids.
     fn main_grids(cmdline: &str) -> (Vec<String>, Vec<String>) {
         let src = menus::shipped::source("MAIN").expect("MAIN");
-        let compiled = uim::compile(src, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
-        let group = Rc::new(compiled.group.unwrap_or_else(|| panic!("{}", compiled.listing)));
+        let compiled = uim::compile(
+            src,
+            &uim::NoImbeds,
+            &uim::NoImports,
+            &uim::CompileOpts::default(),
+        );
+        let group = Rc::new(
+            compiled
+                .group
+                .unwrap_or_else(|| panic!("{}", compiled.listing)),
+        );
         let mut d = UimDialog::new(group, "QS400");
         d.set(CMDLINE_VAR, cmdline);
         let opts = uim::Options {
@@ -244,7 +258,9 @@ mod tests {
                 std::fs::write(&path, &ours).unwrap();
             }
             let theirs = std::fs::read_to_string(&path)
-                .unwrap_or_else(|e| panic!("{}: {e} (QS400_UPDATE_GOLDEN=1 writes it)", path.display()))
+                .unwrap_or_else(|e| {
+                    panic!("{}: {e} (QS400_UPDATE_GOLDEN=1 writes it)", path.display())
+                })
                 .replace('\r', "");
             assert_eq!(ours, theirs, "{}", path.display());
         }

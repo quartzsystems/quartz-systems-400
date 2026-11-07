@@ -42,7 +42,13 @@ fn is_commit(s: &Stmt) -> bool {
 #[must_use]
 pub fn code_lines(s: &Stmt) -> u32 {
     let w = &s.whenever;
-    let tests = 3 * u32::try_from([&w.error, &w.warning, &w.not_found].iter().filter(|x| x.is_some()).count()).unwrap_or(0);
+    let tests = 3 * u32::try_from(
+        [&w.error, &w.warning, &w.not_found]
+            .iter()
+            .filter(|x| x.is_some())
+            .count(),
+    )
+    .unwrap_or(0);
     let base = match s.desc.op {
         Op::Nothing => return 0,
         // SQLER5, SQLER6, the call with the array (5 lines).
@@ -69,7 +75,11 @@ pub fn code_lines(s: &Stmt) -> u32 {
 /// gives each scope's first calculation (the main source is scope 0);
 /// `fully_free` a `**FREE` member.
 #[must_use]
-pub fn generated(p: &Precompiled, first_calc: &dyn Fn(usize) -> u32, fully_free: bool) -> Vec<(u32, u32)> {
+pub fn generated(
+    p: &Precompiled,
+    first_calc: &dyn Fn(usize) -> u32,
+    fully_free: bool,
+) -> Vec<(u32, u32)> {
     if p.stmts.is_empty() {
         return Vec::new();
     }
@@ -81,7 +91,10 @@ pub fn generated(p: &Precompiled, first_calc: &dyn Fn(usize) -> u32, fully_free:
             *heads.entry(s.scope).or_insert(0) += n + if fixed && fully_free { 2 } else { 0 };
         }
     }
-    let mut out: Vec<(u32, u32)> = heads.into_iter().map(|(scope, n)| (first_calc(scope), n)).collect();
+    let mut out: Vec<(u32, u32)> = heads
+        .into_iter()
+        .map(|(scope, n)| (first_calc(scope), n))
+        .collect();
     for s in &p.stmts {
         let n = code_lines(s);
         if n > 0 {

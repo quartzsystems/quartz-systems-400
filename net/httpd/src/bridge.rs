@@ -106,7 +106,11 @@ fn gone() -> io::Error {
 impl Remote {
     fn ask<T>(&self, make: impl FnOnce(Sender<io::Result<T>>) -> Op) -> io::Result<T> {
         let (tx, rx) = mpsc::channel();
-        self.tx.lock().map_err(|_| gone())?.send(make(tx)).map_err(|_| gone())?;
+        self.tx
+            .lock()
+            .map_err(|_| gone())?
+            .send(make(tx))
+            .map_err(|_| gone())?;
         rx.recv().map_err(|_| gone())?
     }
 }
@@ -144,7 +148,12 @@ impl Files for Remote {
 impl Pump {
     /// Run `work` over `remote` on a helper thread, answering its
     /// operations through `files` here until it is done.
-    pub fn run<T: Send>(&self, remote: &Remote, files: &dyn Local, work: impl FnOnce(&dyn Files) -> T + Send) -> T {
+    pub fn run<T: Send>(
+        &self,
+        remote: &Remote,
+        files: &dyn Local,
+        work: impl FnOnce(&dyn Files) -> T + Send,
+    ) -> T {
         std::thread::scope(|s| {
             let h = s.spawn(|| work(remote));
             while !h.is_finished() {
@@ -213,13 +222,19 @@ mod tests {
             let f: &dyn Files = r2.as_ref();
             Files::append(f, "/a/b.txt", b"!").unwrap();
             let e = Files::stat(f, "/a/b.txt").unwrap();
-            (Files::read(f, "/a/b.txt").unwrap(), e.size, f.exists("/nope"))
+            (
+                Files::read(f, "/a/b.txt").unwrap(),
+                e.size,
+                f.exists("/nope"),
+            )
         });
         while !t.is_finished() {
             pump.serve(&mem, Duration::from_millis(20));
         }
         assert_eq!(t.join().unwrap(), (b"hello!".to_vec(), 6, false));
-        let names = pump.run(&remote, &mem, |f| crate::registry::Registry::load(f).map(|r| r.instances.len()));
+        let names = pump.run(&remote, &mem, |f| {
+            crate::registry::Registry::load(f).map(|r| r.instances.len())
+        });
         assert_eq!(names, Ok(0));
         drop(pump);
         assert!(Files::read(remote.as_ref(), "/a/b.txt").is_err());

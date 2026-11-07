@@ -49,7 +49,14 @@ fn outcomes(lines: &[String]) -> Vec<String> {
     lines
         .iter()
         .filter(|l| !l.starts_with(' '))
-        .map(|l| l.split(':').next().unwrap_or(l).split_whitespace().collect::<Vec<_>>().join(" "))
+        .map(|l| {
+            l.split(':')
+                .next()
+                .unwrap_or(l)
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
         .collect()
 }
 
@@ -57,7 +64,13 @@ fn outcomes(lines: &[String]) -> Vec<String> {
 fn normalized(lines: &[String]) -> Vec<String> {
     lines
         .iter()
-        .map(|l| if l.starts_with("fail") { outcomes(std::slice::from_ref(l)).concat() } else { l.clone() })
+        .map(|l| {
+            if l.starts_with("fail") {
+                outcomes(std::slice::from_ref(l)).concat()
+            } else {
+                l.clone()
+            }
+        })
         .collect()
 }
 
@@ -83,13 +96,20 @@ impl Suite {
         let Ok(jar) = std::env::var("QS_JT400_JAR") else {
             return Err("QS_JT400_JAR is not set: the step needs jt400.jar".into());
         };
-        if Command::new(tool("java").0).arg("-version").output().is_err() {
+        if Command::new(tool("java").0)
+            .arg("-version")
+            .output()
+            .is_err()
+        {
             return Err("no java (QS_JAVA_HOME or PATH)".into());
         }
         setup(s)?;
         // New tables in the primary's QSTEST are *PUBLIC *EXCLUDE
         // (oracle/sql-catalog/PRIVS), which the privilege rows show.
-        let _ = s.command("CRTLIB LIB(QSTEST) TEXT('Host server tests') CRTAUT(*EXCLUDE)", CMD);
+        let _ = s.command(
+            "CRTLIB LIB(QSTEST) TEXT('Host server tests') CRTAUT(*EXCLUDE)",
+            CMD,
+        );
         let _ = s.command("CHGLIB LIB(QSTEST) CRTAUT(*EXCLUDE)", CMD);
         let _ = s.command("svc.ifs mkdir /home", CMD);
         let _ = s.command("svc.ifs mkdir /home/QSTEST", CMD);
@@ -121,7 +141,8 @@ impl Suite {
             let got = results(&out);
             let _ = std::fs::write(dir.join(format!("{name}.out")), got.join("\n") + "\n");
             let _ = std::fs::write(dir.join(format!("{name}.log")), &out);
-            let want_text = std::fs::read_to_string(expected.join(format!("{name}.out"))).map_err(|e| format!("{name}.out: {e}"))?;
+            let want_text = std::fs::read_to_string(expected.join(format!("{name}.out")))
+                .map_err(|e| format!("{name}.out: {e}"))?;
             let want = results(&want_text);
             let (w, g) = match how {
                 Match::Whole => (want, got.clone()),

@@ -60,7 +60,12 @@ fn functions(text: &str) -> Vec<(String, String, String)> {
     let starts: Vec<usize> = text
         .match_indices("pub fn ")
         .map(|(i, _)| i)
-        .filter(|&i| text[..i].rsplit('\n').next().is_some_and(|l| l.trim().is_empty()))
+        .filter(|&i| {
+            text[..i]
+                .rsplit('\n')
+                .next()
+                .is_some_and(|l| l.trim().is_empty())
+        })
         .collect();
     let mut out = Vec::new();
     for (n, &i) in starts.iter().enumerate() {
@@ -95,7 +100,9 @@ fn entry_points_check_or_are_exempt() {
         let fns = v["fns"].as_array().unwrap();
         exempt.insert(
             file.clone(),
-            fns.iter().map(|f| f.as_str().unwrap().to_string()).collect(),
+            fns.iter()
+                .map(|f| f.as_str().unwrap().to_string())
+                .collect(),
         );
     }
 
@@ -119,7 +126,10 @@ fn entry_points_check_or_are_exempt() {
             }
         }
     }
-    assert!(checked > 50, "the scan found only {checked} checked functions");
+    assert!(
+        checked > 50,
+        "the scan found only {checked} checked functions"
+    );
 
     let mut missing = Vec::new();
     for (file, names) in &unchecked {
@@ -159,6 +169,9 @@ fn runtime_entry_points_check_state() {
             .nth(1)
             .unwrap_or_else(|| panic!("{file}: no {name}"));
         let body = body.split("\n    pub fn ").next().unwrap_or("");
-        assert!(body.contains(marker), "{file}: {name} does not check ({marker})");
+        assert!(
+            body.contains(marker),
+            "{file}: {name} does not check ({marker})"
+        );
     }
 }

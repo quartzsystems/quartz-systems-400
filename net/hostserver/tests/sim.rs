@@ -25,7 +25,10 @@ struct Job;
 
 impl Commands for Job {
     fn run(&mut self, command: &str) -> (bool, Vec<JobMessage>) {
-        if command.to_ascii_uppercase().starts_with("CHKOBJ OBJ(QSYS/QSYSOPR)") {
+        if command
+            .to_ascii_uppercase()
+            .starts_with("CHKOBJ OBJ(QSYS/QSYSOPR)")
+        {
             (true, Vec::new())
         } else {
             (
@@ -56,8 +59,13 @@ impl Commands for Job {
 }
 
 fn host() -> Host {
-    let level = std::env::var("QS_HS_SIM_PWDLVL").ok().and_then(|l| l.parse().ok()).unwrap_or(0);
-    let user = std::env::var("QS_HS_USER").unwrap_or_else(|_| "QSECOFR".into()).to_uppercase();
+    let level = std::env::var("QS_HS_SIM_PWDLVL")
+        .ok()
+        .and_then(|l| l.parse().ok())
+        .unwrap_or(0);
+    let user = std::env::var("QS_HS_USER")
+        .unwrap_or_else(|_| "QSECOFR".into())
+        .to_uppercase();
     let pass = std::env::var("QS_HS_PASS").unwrap_or_default();
     let mut h = Host::new(level, &user, &pass);
     h.seed = [0x31, 0x41, 0x59, 0x26, 0x53, 0x58, 0x97, 0x93];
@@ -75,10 +83,23 @@ fn serve(port: u16, s: TcpStream) {
     let mut handler: Box<dyn Handler> = match port {
         8476 => Box::new(Signon::new(h, NoExits)),
         8470 => Box::new(Central::new(h, NoExits)),
-        8471 => Box::new(Database::new(h, session(), NoExits, DbConfig { rdb: "QS400SIM".into(), job: job("QZDASOINIT") })),
+        8471 => Box::new(Database::new(
+            h,
+            session(),
+            NoExits,
+            DbConfig {
+                rdb: "QS400SIM".into(),
+                job: job("QZDASOINIT"),
+            },
+        )),
         8472 => Box::new(DtaqServer::new(h, MemQueues::default(), NoExits)),
         8473 => Box::new(FileServer::new(h, ifs(), NoExits)),
-        8474 => Box::new(NetPrint::new(h, MemSpool(Vec::<Splf>::new()), NoExits, job("QNPSERVS"))),
+        8474 => Box::new(NetPrint::new(
+            h,
+            MemSpool(Vec::<Splf>::new()),
+            NoExits,
+            job("QNPSERVS"),
+        )),
         _ => Box::new(RmtCmd::new(h, Job, NoExits)),
     };
     if let Err(e) = hostserver::io::serve(&mut s, &mut *handler) {
@@ -89,10 +110,14 @@ fn serve(port: u16, s: TcpStream) {
 #[test]
 #[ignore = "serves until QS_HS_SIM_SECS pass"]
 fn sim() {
-    let secs = std::env::var("QS_HS_SIM_SECS").ok().and_then(|s| s.parse().ok()).unwrap_or(120);
+    let secs = std::env::var("QS_HS_SIM_SECS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(120);
     let end = Instant::now() + Duration::from_secs(secs);
     for port in [449, 8470, 8471, 8472, 8473, 8474, 8475, 8476] {
-        let l = TcpListener::bind(("127.0.0.1", port)).unwrap_or_else(|e| panic!("port {port}: {e}"));
+        let l =
+            TcpListener::bind(("127.0.0.1", port)).unwrap_or_else(|e| panic!("port {port}: {e}"));
         std::thread::spawn(move || {
             for s in l.incoming().flatten() {
                 std::thread::spawn(move || serve(port, s));

@@ -33,12 +33,28 @@ impl Suite {
             &format!("PING RMTSYS('{GUEST}') NBRPKT(2)"),
             &["TCP3204", "TCP3215", "TCP3211", "TCP3210", "2 of 2"],
         )?;
-        expect(s, "PING RMTSYS(LOOPBACK) NBRPKT(1)", &["TCP3203", "127.0.0.1", "1 of 1"])?;
-        expect(s, "PING RMTSYS(*INTNETADR) INTNETADR('::1') NBRPKT(1)", &["TCP3217", "1 of 1"])?;
-        let out = expect(s, "PING RMTSYS(NO.SUCH.HOST.QS400.) NBRPKT(1)", &["TCP3202"])?;
+        expect(
+            s,
+            "PING RMTSYS(LOOPBACK) NBRPKT(1)",
+            &["TCP3203", "127.0.0.1", "1 of 1"],
+        )?;
+        expect(
+            s,
+            "PING RMTSYS(*INTNETADR) INTNETADR('::1') NBRPKT(1)",
+            &["TCP3217", "1 of 1"],
+        )?;
+        let out = expect(
+            s,
+            "PING RMTSYS(NO.SUCH.HOST.QS400.) NBRPKT(1)",
+            &["TCP3202"],
+        )?;
         let _ = out;
         // The trace runs while the gateway is pinged.
-        expect(s, "STRCMNTRC CFGOBJ(ETH0) CFGTYPE(*LIN) TEXT('Step 66')", &["CPF39A0"])?;
+        expect(
+            s,
+            "STRCMNTRC CFGOBJ(ETH0) CFGTYPE(*LIN) TEXT('Step 66')",
+            &["CPF39A0"],
+        )?;
         expect(
             s,
             &format!("PING RMTSYS('{GATEWAY}') NBRPKT(3) WAITTIME(2)"),
@@ -62,7 +78,11 @@ impl Suite {
         // NETSTAT without a display: the views as text.
         expect(s, "NETSTAT OPTION(*IFC)", &["127.0.0.1", GUEST, "Active"])?;
         // The IPL gives the guest its address and no default route.
-        expect(s, "NETSTAT OPTION(*RTE)", &["10.0.2.0", "255.255.255.0", "*DIRECT", "127.0.0.0"])?;
+        expect(
+            s,
+            "NETSTAT OPTION(*RTE)",
+            &["10.0.2.0", "255.255.255.0", "*DIRECT", "127.0.0.0"],
+        )?;
         expect(s, "NETSTAT OPTION(*CNN)", &["Listen", "23"])?;
         expect(s, "NETSTAT OPTION(*IFC6)", &["::1"])?;
         expect(s, "NETSTAT OPTION(*STATUS)", &["IPv4 stack status"])?;

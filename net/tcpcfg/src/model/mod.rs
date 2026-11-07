@@ -37,14 +37,16 @@ pub enum Tos {
 impl Tos {
     /// From the special value or the number the definition maps it to.
     pub fn parse(s: &str) -> Result<Self> {
-        Ok(match crate::addr::unquote(s).to_ascii_uppercase().as_str() {
-            "" | "*NORMAL" | "6" => Self::Normal,
-            "*MINDELAY" | "2" => Self::MinDelay,
-            "*MAXTHRPUT" | "3" => Self::MaxThrput,
-            "*MAXRLB" | "4" => Self::MaxRlb,
-            "*MINCOST" | "5" => Self::MinCost,
-            other => return Err(bad("TOS", other)),
-        })
+        Ok(
+            match crate::addr::unquote(s).to_ascii_uppercase().as_str() {
+                "" | "*NORMAL" | "6" => Self::Normal,
+                "*MINDELAY" | "2" => Self::MinDelay,
+                "*MAXTHRPUT" | "3" => Self::MaxThrput,
+                "*MAXRLB" | "4" => Self::MaxRlb,
+                "*MINCOST" | "5" => Self::MinCost,
+                other => return Err(bad("TOS", other)),
+            },
+        )
     }
 
     /// The special value.
@@ -138,7 +140,11 @@ pub enum Proto {
 impl Proto {
     /// From `*TCP`/`*UDP` (or `TCP`, `tcp`).
     pub fn parse(s: &str) -> Result<Self> {
-        match crate::addr::unquote(s).trim_start_matches('*').to_ascii_uppercase().as_str() {
+        match crate::addr::unquote(s)
+            .trim_start_matches('*')
+            .to_ascii_uppercase()
+            .as_str()
+        {
             "TCP" => Ok(Self::Tcp),
             "UDP" => Ok(Self::Udp),
             other => Err(bad("PROTOCOL", other)),
@@ -177,7 +183,10 @@ pub fn is_same(s: &str) -> bool {
 /// A `TEXT` value: `*BLANK` and nothing are empty.
 pub fn text_of(s: &str) -> String {
     let t = s.trim();
-    let t = t.strip_prefix('\'').and_then(|x| x.strip_suffix('\'')).unwrap_or(t);
+    let t = t
+        .strip_prefix('\'')
+        .and_then(|x| x.strip_suffix('\''))
+        .unwrap_or(t);
     if t.eq_ignore_ascii_case("*BLANK") {
         String::new()
     } else {

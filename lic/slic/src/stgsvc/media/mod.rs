@@ -63,7 +63,9 @@ fn sync() {
 
 /// Run `f` over the catalogs, then bring `/QOPT` in line. An error is
 /// its message identifier and text.
-pub(crate) fn with_catalogs<T>(f: impl FnOnce(&mut Registry) -> imgclg::Result<T>) -> Result<T, String> {
+pub(crate) fn with_catalogs<T>(
+    f: impl FnOnce(&mut Registry) -> imgclg::Result<T>,
+) -> Result<T, String> {
     let r = {
         let mut g = lock();
         let reg = g.get_or_insert_with(catalogs::empty);

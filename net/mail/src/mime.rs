@@ -65,7 +65,10 @@ pub struct Message {
 /// for the rest.
 #[must_use]
 pub fn content_type_for(name: &str) -> &'static str {
-    let ext = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
+    let ext = name
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_ascii_lowercase())
+        .unwrap_or_default();
     match ext.as_str() {
         "txt" | "log" => "text/plain",
         "csv" => "text/csv",
@@ -86,7 +89,11 @@ pub fn content_type_for(name: &str) -> &'static str {
 }
 
 fn list(addrs: &[Address]) -> String {
-    addrs.iter().map(Address::header).collect::<Vec<_>>().join(",\r\n ")
+    addrs
+        .iter()
+        .map(Address::header)
+        .collect::<Vec<_>>()
+        .join(",\r\n ")
 }
 
 /// A file name for a `name=` parameter: quoted, or RFC 2047 when not
@@ -166,7 +173,11 @@ impl Message {
         }
         let _ = write!(h, "Subject: {}\r\n", word(&self.subject));
         let _ = write!(h, "Date: {}\r\n", date(self.date));
-        let _ = write!(h, "Message-ID: <{:016x}.{}@{}>\r\n", self.unique, self.date, self.host);
+        let _ = write!(
+            h,
+            "Message-ID: <{:016x}.{}@{}>\r\n",
+            self.unique, self.date, self.host
+        );
         h.push_str("MIME-Version: 1.0\r\n");
         if self.attachments.is_empty() {
             h.push_str(&self.note());
@@ -192,7 +203,10 @@ mod tests {
             from: Address::mailbox("qsecofr@qs400.example.com"),
             to: vec![Address::parse("Anne <anne@example.com>").unwrap()],
             cc: vec![Address::mailbox("bob@example.com")],
-            bcc: vec![Address::mailbox("audit@example.com"), Address::mailbox("ANNE@example.com")],
+            bcc: vec![
+                Address::mailbox("audit@example.com"),
+                Address::mailbox("ANNE@example.com"),
+            ],
             subject: "Nightly totals".into(),
             body: Body::Plain("All batches ended.\nTotal: 42".into()),
             attachments: Vec::new(),
@@ -207,12 +221,17 @@ mod tests {
         let m = sample();
         let text = String::from_utf8(m.render()).unwrap();
         assert!(text.starts_with("From: qsecofr@qs400.example.com\r\nTo: Anne <anne@example.com>\r\nCc: bob@example.com\r\n"));
-        assert!(text.contains("Subject: Nightly totals\r\nDate: Fri, 30 Oct 2026 12:34:56 +0000\r\n"));
+        assert!(
+            text.contains("Subject: Nightly totals\r\nDate: Fri, 30 Oct 2026 12:34:56 +0000\r\n")
+        );
         assert!(text.contains("Message-ID: <000000000000abcd.1793363696@qs400.example.com>\r\n"));
         assert!(text.contains("Content-Type: text/plain; charset=utf-8\r\n"));
         assert!(text.ends_with("\r\n\r\nAll batches ended.\r\nTotal: 42\r\n"));
         assert!(!text.contains("audit@"), "no Bcc header");
-        assert_eq!(m.recipients(), ["anne@example.com", "bob@example.com", "audit@example.com"]);
+        assert_eq!(
+            m.recipients(),
+            ["anne@example.com", "bob@example.com", "audit@example.com"]
+        );
     }
 
     #[test]
@@ -235,11 +254,15 @@ mod tests {
         ];
         let text = String::from_utf8(m.render()).unwrap();
         let b = m.boundary();
-        assert!(text.contains(&format!("Content-Type: multipart/mixed; boundary=\"{b}\"\r\n\r\n--{b}\r\n")));
+        assert!(text.contains(&format!(
+            "Content-Type: multipart/mixed; boundary=\"{b}\"\r\n\r\n--{b}\r\n"
+        )));
         assert!(text.contains("Content-Type: text/html; charset=utf-8\r\n"));
         assert!(text.contains("Content-Type: text/csv; charset=utf-8; name=\"totals.csv\"\r\n"));
         assert!(text.contains("a,b\r\n1,2\r\n"));
-        assert!(text.contains("Content-Type: image/png; name=\"logo.png\"\r\nContent-Transfer-Encoding: base64\r\n"));
+        assert!(text.contains(
+            "Content-Type: image/png; name=\"logo.png\"\r\nContent-Transfer-Encoding: base64\r\n"
+        ));
         assert!(text.contains("iVBORw==\r\n"));
         assert!(text.ends_with(&format!("--{b}--\r\n")));
         assert_eq!(content_type_for("X.PDF"), "application/pdf");

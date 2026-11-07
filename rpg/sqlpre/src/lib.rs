@@ -18,7 +18,11 @@
 //! ([`lines`]) so diagnostics land where the oracle puts them.
 
 #![deny(missing_docs)]
-#![allow(clippy::too_many_lines, clippy::struct_excessive_bools, clippy::many_single_char_names)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::struct_excessive_bools,
+    clippy::many_single_char_names
+)]
 
 pub mod lines;
 pub mod listing;
@@ -237,7 +241,12 @@ pub fn precompile(srcs: &[Source], env: &mut dyn Env, opts: &Options) -> Precomp
             stmts.push(x);
         }
         // SET OPTION statements may follow one another at the start.
-        let words: Vec<String> = s.text.split_whitespace().take(2).map(str::to_ascii_uppercase).collect();
+        let words: Vec<String> = s
+            .text
+            .split_whitespace()
+            .take(2)
+            .map(str::to_ascii_uppercase)
+            .collect();
         if words != ["SET", "OPTION"] {
             st.first = false;
         }
@@ -245,7 +254,13 @@ pub fn precompile(srcs: &[Source], env: &mut dyn Env, opts: &Options) -> Precomp
     let mut diags = std::mem::take(&mut st.diags);
     // SET OPTION's messages come in IBM's order of the options.
     diags.sort_by(|a, b| {
-        let rank = |d: &Diag| if d.msgid == "SQL5066" { d.args.first().map_or(0, |n| setopt::rank(n)) } else { 0 };
+        let rank = |d: &Diag| {
+            if d.msgid == "SQL5066" {
+                d.args.first().map_or(0, |n| setopt::rank(n))
+            } else {
+                0
+            }
+        };
         (a.line, a.msgid, a.sev, rank(a), &a.args).cmp(&(b.line, b.msgid, b.sev, rank(b), &b.args))
     });
     diags.dedup();
@@ -267,7 +282,10 @@ fn count(env: &dyn Env, scope: usize, hosts: &[HostRef]) -> u32 {
         .iter()
         .map(|h| {
             let v = env.host(scope, &h.name).map_or(1, |i| i.fields.max(1));
-            let i = h.ind.as_ref().map_or(0, |n| env.host(scope, n).map_or(1, |i| i.dim.max(1)));
+            let i = h
+                .ind
+                .as_ref()
+                .map_or(0, |n| env.host(scope, n).map_or(1, |i| i.dim.max(1)));
             v + i
         })
         .sum()

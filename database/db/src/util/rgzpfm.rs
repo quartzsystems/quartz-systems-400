@@ -90,7 +90,13 @@ pub fn rgzpfm_paused(
     result
 }
 
-fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file::FileDesc, pause: crate::Pause<'_>) -> Result<RgzReport> {
+fn reorganize(
+    txn: &mut Txn<'_>,
+    m: &mut Member,
+    keyfile: &KeyFile,
+    desc: &file::FileDesc,
+    pause: crate::Pause<'_>,
+) -> Result<RgzReport> {
     let mut records: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
     let mut seen = HashSet::new();
     match keyfile {
@@ -105,11 +111,17 @@ fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file:
                 keyed: true,
                 ..Order::default()
             };
-            each_record_paused(txn, m, &keyed, &mut |_, s| {
-                seen.insert(s.rrn);
-                records.push((s.record, s.null_map));
-                Ok(true)
-            }, pause)?;
+            each_record_paused(
+                txn,
+                m,
+                &keyed,
+                &mut |_, s| {
+                    seen.insert(s.rrn);
+                    records.push((s.record, s.null_map));
+                    Ok(true)
+                },
+                pause,
+            )?;
         }
         KeyFile::Logical { file, member } => {
             let mut lf = Member::open_by(txn, *file, *member)?;
@@ -156,7 +168,14 @@ fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file:
     let lob_fields: Vec<_> = desc
         .formats
         .first()
-        .map(|f| f.format.fields.iter().filter(|f| f.data_type.is_lob()).cloned().collect())
+        .map(|f| {
+            f.format
+                .fields
+                .iter()
+                .filter(|f| f.data_type.is_lob())
+                .cloned()
+                .collect()
+        })
         .unwrap_or_default();
     if lob_fields.is_empty() {
         m.clear(txn)?;
@@ -166,13 +185,19 @@ fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file:
     let mut named = HashSet::new();
     for (record, nulls) in &records {
         for f in &lob_fields {
-            if let lob::LobRef::Tree { id, .. } = lob::LobRef::decode(crate::record::field_bytes(f, record))? {
+            if let lob::LobRef::Tree { id, .. } =
+                lob::LobRef::decode(crate::record::field_bytes(f, record))?
+            {
                 named.insert(id);
             }
         }
         m.write_new(txn, record, nulls)?;
     }
-    let lobs_freed = if lob_fields.is_empty() { 0 } else { lob::sweep(txn, m.id(), &named)? };
+    let lobs_freed = if lob_fields.is_empty() {
+        0
+    } else {
+        lob::sweep(txn, m.id(), &named)?
+    };
     Ok(RgzReport {
         records: records.len() as u64,
         deleted_removed,

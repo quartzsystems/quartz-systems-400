@@ -44,7 +44,12 @@ fn change(r: &mut Run, user: &str, old: &str, new: &str) -> Envelope {
 }
 
 fn resume(r: &mut Run, token: &Token) -> Envelope {
-    r.client.call(Op::Resume, &Resume { token: token.clone() })
+    r.client.call(
+        Op::Resume,
+        &Resume {
+            token: token.clone(),
+        },
+    )
 }
 
 fn hello(c: &Arc<Controls>) -> Run {
@@ -64,7 +69,10 @@ fn refused(e: &Envelope, status: Status) -> String {
 fn good_sign_on() {
     let c = Controls::new();
     let mut r = hello(&c);
-    assert_eq!(r.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        r.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     let s = sign_on(&mut r, "bob", "SECRET1");
     assert_eq!(s.status, Status::Ok);
     let reply: SignOnReply = s.body_as().unwrap();
@@ -76,8 +84,14 @@ fn good_sign_on() {
     let info = r.client.call(Op::SystemInfo, &());
     assert_eq!(info.status, Status::Ok);
     let info: SystemInfo = info.body_as().unwrap();
-    assert_eq!((info.system_name.as_str(), info.products.len()), ("QSHQ400", 3));
-    assert_eq!(sign_on(&mut r, "BOB", "SECRET1").status, Status::InvalidRequest);
+    assert_eq!(
+        (info.system_name.as_str(), info.products.len()),
+        ("QSHQ400", 3)
+    );
+    assert_eq!(
+        sign_on(&mut r, "BOB", "SECRET1").status,
+        Status::InvalidRequest
+    );
     assert_eq!(resume(&mut r, &reply.token).status, Status::InvalidRequest);
 }
 
@@ -85,21 +99,39 @@ fn good_sign_on() {
 fn bad_passwords_up_to_qmaxsign() {
     let c = Controls::new();
     let mut r = hello(&c);
-    assert_eq!(refused(&sign_on(&mut r, "BOB", "wrong"), Status::SignOnFailed), "CPF1107");
-    assert_eq!(refused(&sign_on(&mut r, "BOB", "wrong"), Status::SignOnFailed), "CPF1392");
-    assert_eq!(refused(&sign_on(&mut r, "BOB", "wrong"), Status::SignOnFailed), "CPF1393");
+    assert_eq!(
+        refused(&sign_on(&mut r, "BOB", "wrong"), Status::SignOnFailed),
+        "CPF1107"
+    );
+    assert_eq!(
+        refused(&sign_on(&mut r, "BOB", "wrong"), Status::SignOnFailed),
+        "CPF1392"
+    );
+    assert_eq!(
+        refused(&sign_on(&mut r, "BOB", "wrong"), Status::SignOnFailed),
+        "CPF1393"
+    );
     assert!(c.get("BOB").disabled);
     // Disabled now: the right password does not help.
-    assert_eq!(refused(&sign_on(&mut r, "BOB", "SECRET1"), Status::SignOnFailed), "CPF1394");
+    assert_eq!(
+        refused(&sign_on(&mut r, "BOB", "SECRET1"), Status::SignOnFailed),
+        "CPF1394"
+    );
     assert_eq!(
         *c.audit.lock().unwrap(),
         ["PW P BOB", "PW P BOB", "PW P BOB", "PW Q BOB"]
     );
     // An unknown user reads like a wrong password.
-    assert_eq!(refused(&sign_on(&mut r, "NOBODY", "x"), Status::SignOnFailed), "CPF1107");
+    assert_eq!(
+        refused(&sign_on(&mut r, "NOBODY", "x"), Status::SignOnFailed),
+        "CPF1107"
+    );
     assert_eq!(c.audit.lock().unwrap().last().unwrap(), "PW U NOBODY");
     // Still not signed on.
-    assert_eq!(r.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        r.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
 }
 
 #[test]
@@ -113,7 +145,10 @@ fn disabled_and_none_profiles() {
     let e = sign_on(&mut r, "ANN", "PASSWD1");
     assert_eq!(refused(&e, Status::SignOnFailed), "CPF1394");
     assert_eq!(e.message.unwrap().data, b"ANN");
-    assert_eq!(refused(&sign_on(&mut r, "SVC", ""), Status::SignOnFailed), "CPF1118");
+    assert_eq!(
+        refused(&sign_on(&mut r, "SVC", ""), Status::SignOnFailed),
+        "CPF1118"
+    );
 }
 
 #[test]
@@ -121,12 +156,27 @@ fn expired_password_then_change() {
     let c = Controls::new();
     c.edit("BOB", |u| u.expired = true);
     let mut r = hello(&c);
-    assert_eq!(refused(&sign_on(&mut r, "BOB", "SECRET1"), Status::PasswordExpired), "CPD9BAE");
-    assert_eq!(r.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        refused(&sign_on(&mut r, "BOB", "SECRET1"), Status::PasswordExpired),
+        "CPD9BAE"
+    );
+    assert_eq!(
+        r.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     // The system's rules refuse a new password; the old one is checked
     // as a sign-on is.
-    assert_eq!(refused(&change(&mut r, "BOB", "SECRET1", "abc"), Status::Error), "CPF2362");
-    assert_eq!(refused(&change(&mut r, "BOB", "nope", "NEWPASS1"), Status::SignOnFailed), "CPF1107");
+    assert_eq!(
+        refused(&change(&mut r, "BOB", "SECRET1", "abc"), Status::Error),
+        "CPF2362"
+    );
+    assert_eq!(
+        refused(
+            &change(&mut r, "BOB", "nope", "NEWPASS1"),
+            Status::SignOnFailed
+        ),
+        "CPF1107"
+    );
     let ok = change(&mut r, "BOB", "SECRET1", "NEWPASS1");
     assert_eq!(ok.status, Status::Ok);
     let reply: SignOnReply = ok.body_as().unwrap();
@@ -140,12 +190,25 @@ fn change_password_when_signed_on() {
     let c = Controls::new();
     c.user("ANN", "PASSWD1");
     let mut r = hello(&c);
-    let token = sign_on(&mut r, "BOB", "SECRET1").body_as::<SignOnReply>().unwrap().token;
+    let token = sign_on(&mut r, "BOB", "SECRET1")
+        .body_as::<SignOnReply>()
+        .unwrap()
+        .token;
     // Only the session's own profile.
-    assert_eq!(refused(&change(&mut r, "ANN", "PASSWD1", "PASSWD2"), Status::NotAuthorized), "CPF22E9");
+    assert_eq!(
+        refused(
+            &change(&mut r, "ANN", "PASSWD1", "PASSWD2"),
+            Status::NotAuthorized
+        ),
+        "CPF22E9"
+    );
     let ok = change(&mut r, "BOB", "SECRET1", "SECRET2");
     assert_eq!(ok.status, Status::Ok);
-    assert_eq!(ok.body_as::<SignOnReply>().unwrap().token, token, "the session goes on");
+    assert_eq!(
+        ok.body_as::<SignOnReply>().unwrap().token,
+        token,
+        "the session goes on"
+    );
     assert_eq!(c.get("BOB").password, "SECRET2");
 }
 
@@ -153,7 +216,10 @@ fn change_password_when_signed_on() {
 fn resume_within_and_after_the_timeout() {
     let c = Controls::new();
     let mut a = hello(&c);
-    let token = sign_on(&mut a, "BOB", "SECRET1").body_as::<SignOnReply>().unwrap().token;
+    let token = sign_on(&mut a, "BOB", "SECRET1")
+        .body_as::<SignOnReply>()
+        .unwrap()
+        .token;
     drop(a.client);
     assert_eq!(a.server.join().unwrap(), Closed::Peer);
     // Within the idle timeout: the same session, timeout restarted.
@@ -162,38 +228,65 @@ fn resume_within_and_after_the_timeout() {
     let back = resume(&mut b, &token);
     assert_eq!(back.status, Status::Ok);
     let reply: SignOnReply = back.body_as().unwrap();
-    assert_eq!((reply.token.clone(), reply.profile.as_str()), (token.clone(), "BOB"));
+    assert_eq!(
+        (reply.token.clone(), reply.profile.as_str()),
+        (token.clone(), "BOB")
+    );
     assert_eq!(b.client.call(Op::SystemInfo, &()).status, Status::Ok);
     drop(b.client);
     b.server.join().unwrap();
     // After it: expired.
     c.advance(600);
     let mut d = hello(&c);
-    assert_eq!(refused(&resume(&mut d, &token), Status::SessionExpired), "TCP1A53");
-    assert_eq!(d.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        refused(&resume(&mut d, &token), Status::SessionExpired),
+        "TCP1A53"
+    );
+    assert_eq!(
+        d.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
 }
 
 #[test]
 fn sign_off_ends_the_session() {
     let c = Controls::new();
     let mut r = hello(&c);
-    let token = sign_on(&mut r, "BOB", "SECRET1").body_as::<SignOnReply>().unwrap().token;
+    let token = sign_on(&mut r, "BOB", "SECRET1")
+        .body_as::<SignOnReply>()
+        .unwrap()
+        .token;
     let off = r.client.call(Op::SignOff, &());
     assert_eq!((off.status, off.body.len()), (Status::Ok, 0));
-    assert!(c.running_as.lock().unwrap().is_empty(), "the job runs as QUSER again");
-    assert_eq!(r.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert!(
+        c.running_as.lock().unwrap().is_empty(),
+        "the job runs as QUSER again"
+    );
+    assert_eq!(
+        r.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     assert_eq!(r.client.call(Op::SignOff, &()).status, Status::NotSignedOn);
-    assert_eq!(refused(&resume(&mut r, &token), Status::SessionExpired), "TCP1A53");
+    assert_eq!(
+        refused(&resume(&mut r, &token), Status::SessionExpired),
+        "TCP1A53"
+    );
 }
 
 #[test]
 fn an_operator_ends_the_session() {
     let c = Controls::new();
     let mut r = hello(&c);
-    let token = sign_on(&mut r, "BOB", "SECRET1").body_as::<SignOnReply>().unwrap().token;
+    let token = sign_on(&mut r, "BOB", "SECRET1")
+        .body_as::<SignOnReply>()
+        .unwrap()
+        .token;
     *c.ending.lock().unwrap() = Some(Ending::Operator);
     let e = r.client.recv().unwrap();
-    assert_eq!((e.kind, e.request_id, e.service, e.op), (Kind::Event, 0, Service::SignOn, event::SESSION_ENDED));
+    assert_eq!(
+        (e.kind, e.request_id, e.service, e.op),
+        (Kind::Event, 0, Service::SignOn, event::SESSION_ENDED)
+    );
     assert_eq!(e.status, Status::Ok);
     let m = e.message.unwrap();
     assert_eq!(m.id, "TCP1A54");
@@ -202,7 +295,10 @@ fn an_operator_ends_the_session() {
     assert!(r.client.closed());
     assert_eq!(r.server.join().unwrap(), Closed::Operator);
     let mut again = hello(&c);
-    assert_eq!(refused(&resume(&mut again, &token), Status::SessionExpired), "TCP1A53");
+    assert_eq!(
+        refused(&resume(&mut again, &token), Status::SessionExpired),
+        "TCP1A53"
+    );
 }
 
 #[test]
@@ -249,7 +345,12 @@ fn passwords_and_tokens_never_print() {
         user: "BOB".into(),
         password: Secret::from("SECRET1"),
     };
-    let t = Resume { token: Token([7; 32]) };
+    let t = Resume {
+        token: Token([7; 32]),
+    };
     let printed = format!("{s:?} {t:?}");
-    assert!(!printed.contains("SECRET1") && !printed.contains("7, 7"), "{printed}");
+    assert!(
+        !printed.contains("SECRET1") && !printed.contains("7, 7"),
+        "{printed}"
+    );
 }

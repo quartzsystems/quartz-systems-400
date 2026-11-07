@@ -1540,7 +1540,10 @@ impl Suite {
             .to_string();
         let lib = crate::db::kit::LIBRARY;
         let sum = |s: &mut Session| -> Result<String, String> {
-            let out = s.command(&format!("svc.sql SELECT SUM(BAL) FROM {lib}/CUSTOMER;"), CMD)?;
+            let out = s.command(
+                &format!("svc.sql SELECT SUM(BAL) FROM {lib}/CUSTOMER;"),
+                CMD,
+            )?;
             let lines: Vec<&str> = out.lines().map(str::trim).collect();
             lines
                 .iter()

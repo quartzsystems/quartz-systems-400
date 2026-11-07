@@ -36,7 +36,10 @@ fn who(cx: &UtilCtx<'_>, user: Option<&str>) -> Result<Credentials, String> {
                 .or_else(|| u.parse().ok().filter(|n| cx.sys.user_name(*n).is_some()))
                 .ok_or_else(|| format!("{u}: The user is not known."))?;
             Ok(Credentials {
-                user: cx.sys.user_name(uid).unwrap_or_else(|| u.to_ascii_uppercase()),
+                user: cx
+                    .sys
+                    .user_name(uid)
+                    .unwrap_or_else(|| u.to_ascii_uppercase()),
                 uid,
                 gid: 0,
                 groups: Vec::new(),

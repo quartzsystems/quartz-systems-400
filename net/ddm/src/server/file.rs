@@ -8,8 +8,8 @@
 //! `S38IOFB` and an `S38MSGRM` (`CPF5001`, `CPF5006`); writes, updates
 //! and deletes answer `S38IOFB`; close and commands answer `S38MSGRM`.
 
-use super::backend::{FileError, FileInfo, FileOpen, ReadAt};
 use super::Session;
+use super::backend::{FileError, FileInfo, FileOpen, ReadAt};
 use crate::cp::{param, s38, svrcod};
 use crate::file::{self, Ctl, Iofb, OpenFeedback, Optl, Rec, Ufcb, ufcb};
 use crate::wire::{DssType, Object, text};
@@ -58,10 +58,16 @@ impl Session {
     }
 
     pub(super) fn file_command(&mut self, c: &Object, data: &[Object]) -> Out {
-        let name = c.get(param::DCLNAM).map(|d| text(d.bytes())).unwrap_or_default();
+        let name = c
+            .get(param::DCLNAM)
+            .map(|d| text(d.bytes()))
+            .unwrap_or_default();
         match c.cp {
             s38::S38CMD => {
-                let cmd = c.get(param::S38CMDST).map(|d| text(d.bytes())).unwrap_or_default();
+                let cmd = c
+                    .get(param::S38CMDST)
+                    .map(|d| text(d.bytes()))
+                    .unwrap_or_default();
                 match self.files.command(&cmd) {
                     Ok(msgs) if msgs.is_empty() => vec![done()],
                     Ok(msgs) => msgs
@@ -81,8 +87,14 @@ impl Session {
                 }
             }
             s38::S38OPEN => {
-                let Some(u) = c.get(param::S38UFCB).and_then(|u| Ufcb::decode(u.bytes()).ok()) else {
-                    return vec![(DssType::Reply, crate::msg::reply::syntaxrm(0x0E, param::S38UFCB))];
+                let Some(u) = c
+                    .get(param::S38UFCB)
+                    .and_then(|u| Ufcb::decode(u.bytes()).ok())
+                else {
+                    return vec![(
+                        DssType::Reply,
+                        crate::msg::reply::syntaxrm(0x0E, param::S38UFCB),
+                    )];
                 };
                 let req = FileOpen {
                     file: u.file.clone(),

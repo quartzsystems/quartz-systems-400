@@ -78,7 +78,8 @@ pub fn sign_manifest(toml_text: &str, key: &SigningKey) -> String {
 /// signed it.
 pub fn parse(text: &str, trusted: &[[u8; 32]]) -> Result<(Group, bool)> {
     let (body, verified) = verify_signed(text, trusted);
-    let g: Group = toml::from_str(body).map_err(|e| Error::NotPtf(format!("group manifest: {e}")))?;
+    let g: Group =
+        toml::from_str(body).map_err(|e| Error::NotPtf(format!("group manifest: {e}")))?;
     Ok((g, verified))
 }
 
@@ -157,7 +158,11 @@ pub fn status(g: &Group, verified: bool, db: &PtfDb) -> GroupStatus {
     if recs.iter().flatten().any(|r| r.status == Status::Damaged) {
         return GroupStatus::Error;
     }
-    if recs.iter().flatten().any(|r| r.action == Action::ApplyAtIpl) {
+    if recs
+        .iter()
+        .flatten()
+        .any(|r| r.action == Action::ApplyAtIpl)
+    {
         return GroupStatus::ApplyAtIpl;
     }
     if recs

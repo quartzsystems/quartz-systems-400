@@ -9,8 +9,8 @@
 pub mod attr;
 pub mod catsplf;
 pub mod clrtmp;
-pub mod datarea;
 pub mod dataq;
+pub mod datarea;
 pub mod db2;
 pub mod getjobid;
 pub mod ipcs;

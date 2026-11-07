@@ -513,7 +513,11 @@ impl SplfAttrs {
     /// print once closed.
     #[must_use]
     pub fn net_copy(&self, user: &str, outq: &str, number: u32) -> Self {
-        let outq = if outq.is_empty() || outq.starts_with('*') { "QGPL/QPRINT" } else { outq };
+        let outq = if outq.is_empty() || outq.starts_with('*') {
+            "QGPL/QPRINT"
+        } else {
+            outq
+        };
         Self {
             job: (PRTJOB.into(), user.to_ascii_uppercase(), number),
             outq: outq.to_string(),
@@ -618,7 +622,10 @@ pub enum NetSend {
 pub fn net_users(tousrid: &str, local: &str) -> std::result::Result<Vec<String>, NetSend> {
     let local = local.trim().to_ascii_uppercase();
     let flat = tousrid.replace(['(', ')'], " ");
-    let words: Vec<String> = flat.split_whitespace().map(str::to_ascii_uppercase).collect();
+    let words: Vec<String> = flat
+        .split_whitespace()
+        .map(str::to_ascii_uppercase)
+        .collect();
     if words.is_empty() {
         return Err(NetSend::NoUser);
     }
@@ -694,7 +701,11 @@ pub fn version(txn: &mut Txn<'_>, id: ObjectId) -> Result<u64> {
 /// it), then the version. Before anything rewrites the attributes,
 /// which would mark the file version 2 with its data unchanged. True
 /// when the data was rewritten.
-pub fn upgrade(txn: &mut Txn<'_>, id: ObjectId, rewrite: impl FnOnce(&SplfAttrs, &[u8]) -> Option<Vec<u8>>) -> Result<bool> {
+pub fn upgrade(
+    txn: &mut Txn<'_>,
+    id: ObjectId,
+    rewrite: impl FnOnce(&SplfAttrs, &[u8]) -> Option<Vec<u8>>,
+) -> Result<bool> {
     if version(txn, id)? != VERSION_OLD_PP {
         return Ok(false);
     }
@@ -758,13 +769,22 @@ mod tests {
 
     #[test]
     fn sndnetsplf_local_delivery() {
-        assert_eq!(net_users("((BOB QS400))", "QS400"), Ok(vec!["BOB".to_string()]));
+        assert_eq!(
+            net_users("((BOB QS400))", "QS400"),
+            Ok(vec!["BOB".to_string()])
+        );
         assert_eq!(
             net_users("((bob qs400) (ann QS400))", "qs400 "),
             Ok(vec!["BOB".to_string(), "ANN".to_string()])
         );
-        assert_eq!(net_users("((BOB OTHER))", "QS400"), Err(NetSend::Remote("OTHER".into())));
-        assert_eq!(net_users("((BOB QS400) (ANN OTHER))", "QS400"), Err(NetSend::Remote("OTHER".into())));
+        assert_eq!(
+            net_users("((BOB OTHER))", "QS400"),
+            Err(NetSend::Remote("OTHER".into()))
+        );
+        assert_eq!(
+            net_users("((BOB QS400) (ANN OTHER))", "QS400"),
+            Err(NetSend::Remote("OTHER".into()))
+        );
         assert_eq!(net_users("", "QS400"), Err(NetSend::NoUser));
         assert_eq!(net_users("((BOB))", "QS400"), Err(NetSend::NoUser));
         let a = SplfAttrs {
@@ -779,7 +799,10 @@ mod tests {
         };
         let c = a.net_copy("bob", "QGPL/BOBQ", 231);
         assert_eq!(c.job, ("QPRTJOB".into(), "BOB".into(), 231));
-        assert_eq!((c.outq.as_str(), c.writer.as_str(), c.last_page, c.pages), ("QGPL/BOBQ", "", 0, 2));
+        assert_eq!(
+            (c.outq.as_str(), c.writer.as_str(), c.last_page, c.pages),
+            ("QGPL/BOBQ", "", 0, 2)
+        );
         assert_eq!(c.schedule, Schedule::Immed);
         assert_eq!(a.net_copy("BOB", "*WRKSTN", 231).outq, "QGPL/QPRINT");
         assert_eq!(a.net_copy("BOB", "*DEV", 231).outq, "QGPL/QPRINT");

@@ -15,29 +15,159 @@ use crate::transform::Model;
 
 /// The names, in `DSPOBJD`'s order.
 pub const NAMES: &[&str] = &[
-    "QCTXPDF", "QCTXPDFMBD", "QCTXPDFWT", "QWP4070EP", "QWPCPQPM20", "QWPDEFAULT", "QWPEAP2250",
-    "QWPEAP3250", "QWPEAP5500", "QWPEFX1170", "QWPEFX5000", "QWPEFX850", "QWPELQ1070",
-    "QWPELQ1170", "QWPELQ2550", "QWPELQ510", "QWPELQ860", "QWPELX810", "QWPEPLPCL4", "QWPEPLPCL5",
-    "QWPESCP", "QWPESQ1170", "QWPGIF", "QWPHP550C", "QWPHP5SI", "QWPHPCOLOR", "QWPHPDBCS",
-    "QWPHPDSKJT", "QWPHPEURO", "QWPHPLSR2", "QWPHPLSR2D", "QWPHPLSR3", "QWPHPLSR3D", "QWPHPLSR4",
-    "QWPHPLSR5", "QWPHPLSR6", "QWPHPLSRE", "QWPHPXL300", "QWPIBM2380", "QWPIBM2390", "QWPIBM2412",
-    "QWPIBM241B", "QWPIBM2705", "QWPIBM2706", "QWPIBM2770", "QWPIBM3130", "QWPIBM3812",
-    "QWPIBM3816", "QWPIBM4019", "QWPIBM4029", "QWPIBM4070", "QWPIBM4072", "QWPIBM4202",
-    "QWPIBM4208", "QWPIBM4212", "QWPIBM4226", "QWPIBM4232", "QWPIBM424D", "QWPIBM424L",
-    "QWPIBM424M", "QWPIBM424X", "QWPIBM4308", "QWPIBM4312", "QWPIBM4320", "QWPIBM4321",
-    "QWPIBM4324", "QWPIBM4332", "QWPIBM4770", "QWPIBM4912", "QWPIBM5152", "QWPIBM5201",
-    "QWPIBM5202", "QWPIBM5204", "QWPIBM5216", "QWPIBM64EP", "QWPIBM64XX", "QWPIBM65EP",
-    "QWPIBMESCP", "QWPIBMEURO", "QWPIBMIP2K", "QWPIOCANC", "QWPIP1116", "QWPIP1200", "QWPIP2190",
-    "QWPIPCOLOR", "QWPLEX2380", "QWPLEX2390", "QWPLEX4227", "QWPLEXMRK", "QWPLEXMRKC", "QWPLEXOP",
-    "QWPLEXOPC", "QWPLEXOPN", "QWPLEXOPS", "QWPLEXOPSC", "QWPLEXOPT", "QWPLIPS3", "QWPLIPS3NP",
-    "QWPNEC201", "QWPNEC2200", "QWPNEC5300", "QWPNEC6300", "QWPNECP2", "QWPOKI184", "QWPOKI320",
-    "QWPOKI3410", "QWPOKI390", "QWPOKI393", "QWPOKI400", "QWPOKI590", "QWPOKI800", "QWPOKI810",
-    "QWPPAGE300", "QWPPAGE3NP", "QWPPAGES", "QWPPAGESNP", "QWPPAN1123", "QWPPAN1124", "QWPPAN1180",
-    "QWPPAN1695", "QWPPAN2123", "QWPPAN2124", "QWPPAN2180", "QWPPAN2624", "QWPPANDP", "QWPPANDP1",
-    "QWPPANDPC", "QWPPANLBP4", "QWPPANLBP5", "QWPRICOH1", "QWPRICOH10", "QWPRICOH11", "QWPRICOH12",
-    "QWPRICOH13", "QWPRICOH14", "QWPRICOH15", "QWPRICOH16", "QWPRICOH17", "QWPRICOH18",
-    "QWPRICOH2", "QWPRICOH3", "QWPRICOH4", "QWPRICOH5", "QWPRICOH6", "QWPRICOH7", "QWPRICOH8",
-    "QWPRICOH9", "QWPTIFFG4", "QWPTIFFPB", "QWPXRX4219", "QWPXRX4220", "QWPXRX4235", "QWPXRX4700",
+    "QCTXPDF",
+    "QCTXPDFMBD",
+    "QCTXPDFWT",
+    "QWP4070EP",
+    "QWPCPQPM20",
+    "QWPDEFAULT",
+    "QWPEAP2250",
+    "QWPEAP3250",
+    "QWPEAP5500",
+    "QWPEFX1170",
+    "QWPEFX5000",
+    "QWPEFX850",
+    "QWPELQ1070",
+    "QWPELQ1170",
+    "QWPELQ2550",
+    "QWPELQ510",
+    "QWPELQ860",
+    "QWPELX810",
+    "QWPEPLPCL4",
+    "QWPEPLPCL5",
+    "QWPESCP",
+    "QWPESQ1170",
+    "QWPGIF",
+    "QWPHP550C",
+    "QWPHP5SI",
+    "QWPHPCOLOR",
+    "QWPHPDBCS",
+    "QWPHPDSKJT",
+    "QWPHPEURO",
+    "QWPHPLSR2",
+    "QWPHPLSR2D",
+    "QWPHPLSR3",
+    "QWPHPLSR3D",
+    "QWPHPLSR4",
+    "QWPHPLSR5",
+    "QWPHPLSR6",
+    "QWPHPLSRE",
+    "QWPHPXL300",
+    "QWPIBM2380",
+    "QWPIBM2390",
+    "QWPIBM2412",
+    "QWPIBM241B",
+    "QWPIBM2705",
+    "QWPIBM2706",
+    "QWPIBM2770",
+    "QWPIBM3130",
+    "QWPIBM3812",
+    "QWPIBM3816",
+    "QWPIBM4019",
+    "QWPIBM4029",
+    "QWPIBM4070",
+    "QWPIBM4072",
+    "QWPIBM4202",
+    "QWPIBM4208",
+    "QWPIBM4212",
+    "QWPIBM4226",
+    "QWPIBM4232",
+    "QWPIBM424D",
+    "QWPIBM424L",
+    "QWPIBM424M",
+    "QWPIBM424X",
+    "QWPIBM4308",
+    "QWPIBM4312",
+    "QWPIBM4320",
+    "QWPIBM4321",
+    "QWPIBM4324",
+    "QWPIBM4332",
+    "QWPIBM4770",
+    "QWPIBM4912",
+    "QWPIBM5152",
+    "QWPIBM5201",
+    "QWPIBM5202",
+    "QWPIBM5204",
+    "QWPIBM5216",
+    "QWPIBM64EP",
+    "QWPIBM64XX",
+    "QWPIBM65EP",
+    "QWPIBMESCP",
+    "QWPIBMEURO",
+    "QWPIBMIP2K",
+    "QWPIOCANC",
+    "QWPIP1116",
+    "QWPIP1200",
+    "QWPIP2190",
+    "QWPIPCOLOR",
+    "QWPLEX2380",
+    "QWPLEX2390",
+    "QWPLEX4227",
+    "QWPLEXMRK",
+    "QWPLEXMRKC",
+    "QWPLEXOP",
+    "QWPLEXOPC",
+    "QWPLEXOPN",
+    "QWPLEXOPS",
+    "QWPLEXOPSC",
+    "QWPLEXOPT",
+    "QWPLIPS3",
+    "QWPLIPS3NP",
+    "QWPNEC201",
+    "QWPNEC2200",
+    "QWPNEC5300",
+    "QWPNEC6300",
+    "QWPNECP2",
+    "QWPOKI184",
+    "QWPOKI320",
+    "QWPOKI3410",
+    "QWPOKI390",
+    "QWPOKI393",
+    "QWPOKI400",
+    "QWPOKI590",
+    "QWPOKI800",
+    "QWPOKI810",
+    "QWPPAGE300",
+    "QWPPAGE3NP",
+    "QWPPAGES",
+    "QWPPAGESNP",
+    "QWPPAN1123",
+    "QWPPAN1124",
+    "QWPPAN1180",
+    "QWPPAN1695",
+    "QWPPAN2123",
+    "QWPPAN2124",
+    "QWPPAN2180",
+    "QWPPAN2624",
+    "QWPPANDP",
+    "QWPPANDP1",
+    "QWPPANDPC",
+    "QWPPANLBP4",
+    "QWPPANLBP5",
+    "QWPRICOH1",
+    "QWPRICOH10",
+    "QWPRICOH11",
+    "QWPRICOH12",
+    "QWPRICOH13",
+    "QWPRICOH14",
+    "QWPRICOH15",
+    "QWPRICOH16",
+    "QWPRICOH17",
+    "QWPRICOH18",
+    "QWPRICOH2",
+    "QWPRICOH3",
+    "QWPRICOH4",
+    "QWPRICOH5",
+    "QWPRICOH6",
+    "QWPRICOH7",
+    "QWPRICOH8",
+    "QWPRICOH9",
+    "QWPTIFFG4",
+    "QWPTIFFPB",
+    "QWPXRX4219",
+    "QWPXRX4220",
+    "QWPXRX4235",
+    "QWPXRX4700",
 ];
 
 /// The object `MFRTYPMDL` names for a LaserJet-class model.
@@ -74,20 +204,28 @@ fn model_of(name: &str) -> Option<Model> {
         return Some(m);
     }
     let pcl = ["QWPHP", "QWPLEX", "QWPEPLPCL", "QWPCPQPM20", "QWPPANLBP"];
-    pcl.iter().any(|p| name.starts_with(p)).then_some(Model::Hp4)
+    pcl.iter()
+        .any(|p| name.starts_with(p))
+        .then_some(Model::Hp4)
 }
 
 /// The class (`DEVCLASS`, the object's attribute) of a shipped object.
 #[must_use]
 pub fn class(name: &str) -> &'static str {
-    if name.starts_with("QCTX") { "CTXFORM" } else { "TRANSFORM" }
+    if name.starts_with("QCTX") {
+        "CTXFORM"
+    } else {
+        "TRANSFORM"
+    }
 }
 
 /// The source of a shipped object.
 #[must_use]
 pub fn source(name: &str) -> String {
     if class(name) == "CTXFORM" {
-        return format!("/* {name}: a content transform object; the host print transform uses none of it. */\n:WSCST DEVCLASS=CTXFORM.\n:EWSCST.\n");
+        return format!(
+            "/* {name}: a content transform object; the host print transform uses none of it. */\n:WSCST DEVCLASS=CTXFORM.\n:EWSCST.\n"
+        );
     }
     match model_of(name) {
         Some(m) => super::Wscst::source_for(m).replacen(
@@ -123,7 +261,11 @@ mod tests {
         assert_eq!(NAMES.len(), 153);
         for n in NAMES {
             let w = super::super::Wscst::parse(&source(n)).unwrap_or_else(|e| panic!("{n}: {e}"));
-            assert_eq!(super::super::Wscst::decode(&w.encode()).unwrap().init, w.init, "{n}");
+            assert_eq!(
+                super::super::Wscst::decode(&w.encode()).unwrap().init,
+                w.init,
+                "{n}"
+            );
         }
         for m in Model::all() {
             assert!(NAMES.contains(&of_model(m)), "{}", m.name());

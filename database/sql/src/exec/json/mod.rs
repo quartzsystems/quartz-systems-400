@@ -30,8 +30,18 @@ use crate::value::Value;
 pub use value::Json;
 
 /// The functions written with JSON clauses.
-pub const CLAUSED: &[&str] =
-    &["JSON_OBJECT", "JSON_ARRAY", "JSON_VALUE", "JSON_QUERY", "JSON_EXISTS", "IS JSON", "JSON_ARRAYAGG", "JSON_OBJECTAGG", "XMLPARSE", "XMLSERIALIZE"];
+pub const CLAUSED: &[&str] = &[
+    "JSON_OBJECT",
+    "JSON_ARRAY",
+    "JSON_VALUE",
+    "JSON_QUERY",
+    "JSON_EXISTS",
+    "IS JSON",
+    "JSON_ARRAYAGG",
+    "JSON_OBJECTAGG",
+    "XMLPARSE",
+    "XMLSERIALIZE",
+];
 
 /// The clauses of a call: `name=value` pairs.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -99,7 +109,11 @@ fn returning(f: &Function) -> Option<&TypeSpec> {
 
 /// An error with IBM's code.
 pub(crate) fn coded(code: i32, state: &'static str, what: impl Into<String>) -> SqlError {
-    SqlError::Coded { code, state, what: what.into() }
+    SqlError::Coded {
+        code,
+        state,
+        what: what.into(),
+    }
 }
 
 /// `SQ16402`: text that is not JSON.
@@ -109,7 +123,12 @@ pub(crate) fn not_json(what: &str) -> SqlError {
 
 /// Evaluate `f` when it is a JSON call the parser wrote; `None` for any
 /// other function.
-pub fn call(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, f: &Function, env: &Env) -> Option<Result<Value>> {
+pub fn call(
+    ev: &mut Evaluator<'_>,
+    txn: &mut Txn<'_>,
+    f: &Function,
+    env: &Env,
+) -> Option<Result<Value>> {
     // The aggregates are a family of `exec::agg`.
     if !CLAUSED.contains(&f.name.as_str())
         || agg::is(&f.name, f.args.len())
@@ -129,8 +148,17 @@ pub fn call(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, f: &Function, env: &Env) 
 pub(crate) fn plain(name: &str, args: &[Value], _ctx: &super::SqlContext) -> Option<Result<Value>> {
     let f: fn(&Value) -> Result<Value> = match name {
         "JSON_TO_BSON" => |v| match v {
-            Value::Str(s) => value::parse(s).map(|j| Value::Bin(bson::encode(&j))).map_err(|_| not_json("the argument")),
-            v => Err(coded(-171, "42815", format!("argument 1 of JSON_TO_BSON is {}, not character", v.type_name()))),
+            Value::Str(s) => value::parse(s)
+                .map(|j| Value::Bin(bson::encode(&j)))
+                .map_err(|_| not_json("the argument")),
+            v => Err(coded(
+                -171,
+                "42815",
+                format!(
+                    "argument 1 of JSON_TO_BSON is {}, not character",
+                    v.type_name()
+                ),
+            )),
         },
         "BSON_TO_JSON" => |v| match v {
             Value::Bin(b) => bson::decode(b)
@@ -140,12 +168,23 @@ pub(crate) fn plain(name: &str, args: &[Value], _ctx: &super::SqlContext) -> Opt
                     Value::Str(s)
                 })
                 .map_err(|_| coded(-16402, "22032", "the argument is not valid BSON")),
-            v => Err(coded(-171, "42815", format!("argument 1 of BSON_TO_JSON is {}, not binary", v.type_name()))),
+            v => Err(coded(
+                -171,
+                "42815",
+                format!(
+                    "argument 1 of BSON_TO_JSON is {}, not binary",
+                    v.type_name()
+                ),
+            )),
         },
         _ => return None,
     };
     if args.len() != 1 {
-        return Some(Err(coded(-170, "42605", format!("{name} takes one argument"))));
+        return Some(Err(coded(
+            -170,
+            "42605",
+            format!("{name} takes one argument"),
+        )));
     }
     if args[0].is_null() {
         return Some(Ok(Value::Null));
@@ -156,31 +195,69 @@ pub(crate) fn plain(name: &str, args: &[Value], _ctx: &super::SqlContext) -> Opt
 /// The result types of the JSON functions.
 #[must_use]
 pub fn types(name: &str, args: &[Option<SqlType>], exprs: &[Expr]) -> Option<SqlType> {
-    let clob = || SqlType { spec: plain_spec(DataType::Clob(i32::MAX.unsigned_abs())), nullable: true };
+    let clob = || SqlType {
+        spec: plain_spec(DataType::Clob(i32::MAX.unsigned_abs())),
+        nullable: true,
+    };
     let ret = || match exprs.get(1) {
-        Some(Expr::Cast(_, t)) => Some(SqlType { spec: t.clone(), nullable: true }),
+        Some(Expr::Cast(_, t)) => Some(SqlType {
+            spec: t.clone(),
+            nullable: true,
+        }),
         _ => None,
     };
     let claused = matches!(exprs.first(), Some(Expr::Literal(Literal::Str(_))));
     Some(match name {
-        "JSON_OBJECT" | "JSON_ARRAY" | "JSON_VALUE" | "JSON_QUERY" | "JSON_ARRAYAGG" | "JSON_OBJECTAGG" if claused => {
+        "JSON_OBJECT" | "JSON_ARRAY" | "JSON_VALUE" | "JSON_QUERY" | "JSON_ARRAYAGG"
+        | "JSON_OBJECTAGG"
+            if claused =>
+        {
             ret().unwrap_or_else(clob)
         }
         "JSON_EXISTS" | "IS JSON" if claused => {
-            let nullable = args.get(2).and_then(Option::as_ref).is_none_or(|t| t.nullable);
-            SqlType { spec: plain_spec(DataType::Boolean), nullable: nullable && name == "IS JSON" }
+            let nullable = args
+                .get(2)
+                .and_then(Option::as_ref)
+                .is_none_or(|t| t.nullable);
+            SqlType {
+                spec: plain_spec(DataType::Boolean),
+                nullable: nullable && name == "IS JSON",
+            }
         }
         // An XML value is its text; QS/400 has no XML type to describe.
-        "XMLPARSE" if claused => SqlType { spec: plain_spec(DataType::Clob(2_147_483_646)), nullable: args.get(2).and_then(Option::as_ref).is_none_or(|t| t.nullable) },
-        "XMLSERIALIZE" if claused => SqlType { spec: ret()?.spec, nullable: args.get(2).and_then(Option::as_ref).is_none_or(|t| t.nullable) },
-        "BSON_TO_JSON" => SqlType { spec: plain_spec(DataType::Clob(i32::MAX.unsigned_abs())), nullable: args.first()?.as_ref()?.nullable },
-        "JSON_TO_BSON" => SqlType { spec: plain_spec(DataType::Blob(i32::MAX.unsigned_abs())), nullable: args.first()?.as_ref()?.nullable },
+        "XMLPARSE" if claused => SqlType {
+            spec: plain_spec(DataType::Clob(2_147_483_646)),
+            nullable: args
+                .get(2)
+                .and_then(Option::as_ref)
+                .is_none_or(|t| t.nullable),
+        },
+        "XMLSERIALIZE" if claused => SqlType {
+            spec: ret()?.spec,
+            nullable: args
+                .get(2)
+                .and_then(Option::as_ref)
+                .is_none_or(|t| t.nullable),
+        },
+        "BSON_TO_JSON" => SqlType {
+            spec: plain_spec(DataType::Clob(i32::MAX.unsigned_abs())),
+            nullable: args.first()?.as_ref()?.nullable,
+        },
+        "JSON_TO_BSON" => SqlType {
+            spec: plain_spec(DataType::Blob(i32::MAX.unsigned_abs())),
+            nullable: args.first()?.as_ref()?.nullable,
+        },
         _ => return None,
     })
 }
 
 fn plain_spec(t: DataType) -> TypeSpec {
-    TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }
+    TypeSpec {
+        data_type: t,
+        ccsid: None,
+        bit_data: false,
+        udt: None,
+    }
 }
 
 /// A document from a context item: JSON text, or BSON in a binary
@@ -192,9 +269,15 @@ pub(crate) fn document(v: &Value, format: &str) -> Result<Json> {
             value::parse(&t).map_err(|_| not_json("the value"))
         }
         (Value::Bin(b), _) => bson::decode(b).map_err(|_| not_json("the BSON value")),
-        (Value::Str(s), "bson") => Err(not_json(&format!("'{s}' (FORMAT BSON needs a binary string)"))),
+        (Value::Str(s), "bson") => Err(not_json(&format!(
+            "'{s}' (FORMAT BSON needs a binary string)"
+        ))),
         (Value::Str(s), _) => value::parse(s).map_err(|_| not_json("the value")),
-        (v, _) => Err(coded(-171, "42815", format!("a {} value is not a JSON document", v.type_name()))),
+        (v, _) => Err(coded(
+            -171,
+            "42815",
+            format!("a {} value is not a JSON document", v.type_name()),
+        )),
     }
 }
 
@@ -225,27 +308,55 @@ pub(crate) fn of_value(v: &Value, format: &str) -> Result<Json> {
 /// binary type takes the BSON.
 pub(crate) fn returned(j: &Json, ret: Option<&TypeSpec>) -> Result<Value> {
     let text = j.text();
-    let Some(t) = ret else { return Ok(Value::Str(text)) };
+    let Some(t) = ret else {
+        return Ok(Value::Str(text));
+    };
     let max = match t.data_type {
-        DataType::Char(n) | DataType::Varchar(n) | DataType::Clob(n) | DataType::Graphic(n) | DataType::Vargraphic(n) | DataType::Dbclob(n) => n,
+        DataType::Char(n)
+        | DataType::Varchar(n)
+        | DataType::Clob(n)
+        | DataType::Graphic(n)
+        | DataType::Vargraphic(n)
+        | DataType::Dbclob(n) => n,
         DataType::Varbinary(n) | DataType::Blob(n) | DataType::Binary(n) => {
             let parsed = value::parse(&text).map_err(|_| not_json("the result"))?;
             let b = bson::encode(&parsed);
             if b.len() > usize::try_from(n).unwrap_or(usize::MAX) {
-                return Err(coded(-802, "22001", "the BSON result is longer than its type"));
+                return Err(coded(
+                    -802,
+                    "22001",
+                    "the BSON result is longer than its type",
+                ));
             }
             return Ok(Value::Bin(b));
         }
-        _ => return Err(coded(-171, "42815", "RETURNING needs a character or binary string type")),
+        _ => {
+            return Err(coded(
+                -171,
+                "42815",
+                "RETURNING needs a character or binary string type",
+            ));
+        }
     };
     if text.chars().count() > usize::try_from(max).unwrap_or(usize::MAX) {
-        return Err(coded(-802, "22001", format!("the JSON result is longer than {max} characters")));
+        return Err(coded(
+            -802,
+            "22001",
+            format!("the JSON result is longer than {max} characters"),
+        ));
     }
     Ok(Value::Str(text))
 }
 
 /// `XMLPARSE` and `XMLSERIALIZE`, written the same way as the JSON calls.
-fn xml(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, f: &Function, opts: &Opts, ret: Option<&TypeSpec>, env: &Env) -> Result<Value> {
+fn xml(
+    ev: &mut Evaluator<'_>,
+    txn: &mut Txn<'_>,
+    f: &Function,
+    opts: &Opts,
+    ret: Option<&TypeSpec>,
+    env: &Env,
+) -> Result<Value> {
     let v = ev.eval(txn, &f.args[2], env)?;
     if f.name == "XMLPARSE" {
         return super::xml::call_parse(&v, opts.get("ws") == Some("preserve"));

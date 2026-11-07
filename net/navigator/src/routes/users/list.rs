@@ -9,7 +9,10 @@ use std::cmp::Reverse;
 
 use qsweb::html::esc;
 use qsweb::http::Response;
-use qsweb::partials::{Button, Cell, Col, FilterField, List, Paging, actions, buttons, filter, form, list_table, paging};
+use qsweb::partials::{
+    Button, Cell, Col, FilterField, List, Paging, actions, buttons, filter, form, list_table,
+    paging,
+};
 
 use super::page;
 use crate::env::users::Profile;
@@ -23,7 +26,11 @@ pub const CLASSES: &[&str] = &["*USER", "*SYSOPR", "*PGMR", "*SECADM", "*SECOFR"
 
 /// A profile's status word, green or red.
 pub fn status(p: &Profile) -> String {
-    if p.enabled { word("*ENABLED", Some(true)) } else { word("*DISABLED", Some(false)) }
+    if p.enabled {
+        word("*ENABLED", Some(true))
+    } else {
+        word("*DISABLED", Some(false))
+    }
 }
 
 /// Whether `p` is in group `g` (primary or supplemental).
@@ -47,10 +54,18 @@ fn sort(ps: &mut [Profile], key: &str) {
 pub fn list(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     let pat = all_or(q.str("p"));
-    let st = STATUS.iter().find(|s| q.str("s") == **s).copied().unwrap_or("*ALL");
+    let st = STATUS
+        .iter()
+        .find(|s| q.str("s") == **s)
+        .copied()
+        .unwrap_or("*ALL");
     let mut classes = vec!["*ALL"];
     classes.extend_from_slice(CLASSES);
-    let cl = classes.iter().find(|c| q.str("c") == **c).copied().unwrap_or("*ALL");
+    let cl = classes
+        .iter()
+        .find(|c| q.str("c") == **c)
+        .copied()
+        .unwrap_or("*ALL");
     let grp = all_or(q.str("g"));
     let key = q.str("sort").to_string();
     let mut ps: Vec<Profile> = rq
@@ -70,7 +85,13 @@ pub fn list(rq: &Rq<'_>) -> Response {
         kept.push(("sort".into(), key.clone()));
     }
     let p = Paging::from_query(q.str("page"), q.str("rows"), ps.len(), kept);
-    let chosen = |v: &str| if v == "*ALL" { String::new() } else { v.to_string() };
+    let chosen = |v: &str| {
+        if v == "*ALL" {
+            String::new()
+        } else {
+            v.to_string()
+        }
+    };
     let f = filter(
         &[
             FilterField::Text("Profile".into(), "p".into(), pat.clone(), 10),
@@ -119,8 +140,19 @@ pub fn list(rq: &Rq<'_>) -> Response {
     let create = form(
         &rq.ctx,
         &rq.ctx.url("/users/create/step/1"),
-        &buttons(&[Button::new("create", "Create user..."), Button::new("refresh", "Refresh")]),
+        &buttons(&[
+            Button::new("create", "Create user..."),
+            Button::new("refresh", "Refresh"),
+        ]),
     );
     let body = format!("{f}{}{}{create}", list_table(&list), paging(&p));
-    page(rq, &["Users"], "Users", Some("User profiles on the system (WRKUSRPRF)."), body, "users", Some("/users"))
+    page(
+        rq,
+        &["Users"],
+        "Users",
+        Some("User profiles on the system (WRKUSRPRF)."),
+        body,
+        "users",
+        Some("/users"),
+    )
 }

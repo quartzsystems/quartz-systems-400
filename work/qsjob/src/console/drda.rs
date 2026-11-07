@@ -35,13 +35,24 @@ struct JobNet<'a> {
 impl Connector for JobNet<'_> {
     fn local(&self) -> String {
         let dir = crate::command::ddm::directory_of(self.link);
-        dir.entries.iter().find(|e| e.is_local()).map_or_else(|| crate::work::ddm::system_name(self.link), |e| e.rdb.clone())
+        dir.entries.iter().find(|e| e.is_local()).map_or_else(
+            || crate::work::ddm::system_name(self.link),
+            |e| e.rdb.clone(),
+        )
     }
 
-    fn connect(&mut self, rdb: &str, user: Option<(&str, &str)>) -> Result<Box<dyn Server>, sql::Sqlca> {
+    fn connect(
+        &mut self,
+        rdb: &str,
+        user: Option<(&str, &str)>,
+    ) -> Result<Box<dyn Server>, sql::Sqlca> {
         let dir = crate::command::ddm::directory_of(self.link);
         let e = dir.find(rdb).ok_or_else(|| coded(-950, "42705", rdb))?;
-        let host = if e.is_local() { "127.0.0.1".to_string() } else { e.rmtloc.clone() };
+        let host = if e.is_local() {
+            "127.0.0.1".to_string()
+        } else {
+            e.rmtloc.clone()
+        };
         let port = e.tcp_port();
         let (user, password) = match user {
             Some((u, p)) => (u.to_string(), p.to_string()),
@@ -58,7 +69,12 @@ impl Connector for JobNet<'_> {
         let _ = stream.set_nodelay(true);
         let _ = stream.set_read_timeout(Some(Duration::from_secs(120)));
         let mut opts = ConnectOpts::new(&e.rdb, &user, &password);
-        opts.mechanisms = vec![Mechanism::EUsrIdPwd, Mechanism::UsrEncPwd, Mechanism::UsrSsbPwd, Mechanism::UsrSbsPwd];
+        opts.mechanisms = vec![
+            Mechanism::EUsrIdPwd,
+            Mechanism::UsrEncPwd,
+            Mechanism::UsrSsbPwd,
+            Mechanism::UsrSbsPwd,
+        ];
         opts.srvnam = crate::work::ddm::system_name(self.link);
         opts.collection = PACKAGE.0.into();
         opts.package = PACKAGE.1.into();
@@ -87,7 +103,11 @@ pub fn route(link: &Shared, req: &Request) -> Option<Reply> {
 fn monitored(link: &Shared, req: &Request, r: &Reply) {
     use sql::embed::{Desc, Op};
     let text = match req.desc.op {
-        Op::ExecImm | Op::Prepare if req.desc.text.is_empty() => req.inputs.first().map(sql::Value::as_text).unwrap_or_default(),
+        Op::ExecImm | Op::Prepare if req.desc.text.is_empty() => req
+            .inputs
+            .first()
+            .map(sql::Value::as_text)
+            .unwrap_or_default(),
         Op::Fetch => format!("FETCH {}", req.desc.name),
         Op::Close => format!("CLOSE {}", req.desc.name),
         _ => req.desc.text.clone(),
@@ -97,7 +117,11 @@ fn monitored(link: &Shared, req: &Request, r: &Reply) {
     }
     let note = Request {
         scope: req.scope.clone(),
-        desc: Desc { op: Op::Routed, text, ..Desc::default() },
+        desc: Desc {
+            op: Op::Routed,
+            text,
+            ..Desc::default()
+        },
         inputs: vec![
             sql::Value::int(i64::from(r.sqlca.sqlcode)),
             sql::Value::Str(r.sqlca.sqlstate.clone()),

@@ -113,8 +113,8 @@ fn free_type(word: &str, in_group: bool) -> Ty {
     match word {
         "ctl-opt" => Ty::Spec('H'),
         "dcl-f" => Ty::Spec('F'),
-        "dcl-s" | "dcl-c" | "dcl-ds" | "dcl-pr" | "dcl-pi" | "end-ds" | "end-pr" | "end-pi" | "dcl-subf"
-        | "dcl-parm" => Ty::Spec('D'),
+        "dcl-s" | "dcl-c" | "dcl-ds" | "dcl-pr" | "dcl-pi" | "end-ds" | "end-pr" | "end-pi"
+        | "dcl-subf" | "dcl-parm" => Ty::Spec('D'),
         "dcl-proc" => Ty::Spec('P'),
         "end-proc" => Ty::EndProc,
         _ if in_group => Ty::Spec('D'),
@@ -125,9 +125,15 @@ fn free_type(word: &str, in_group: bool) -> Ty {
 /// Whether a free `DCL-DS`/`DCL-PR`/`DCL-PI` opens a group that an
 /// `END-xx` closes.
 fn opens_group(s: &Stmt) -> bool {
-    let words: Vec<&str> = s.text.split(|c: char| !name_char(c)).filter(|w| !w.is_empty()).collect();
+    let words: Vec<&str> = s
+        .text
+        .split(|c: char| !name_char(c))
+        .filter(|w| !w.is_empty())
+        .collect();
     match s.word.as_str() {
-        "dcl-ds" => !words.iter().any(|w| matches!(*w, "end-ds" | "likeds" | "likerec")),
+        "dcl-ds" => !words
+            .iter()
+            .any(|w| matches!(*w, "end-ds" | "likeds" | "likerec")),
         "dcl-pr" => !words.contains(&"end-pr"),
         "dcl-pi" => !words.contains(&"end-pi"),
         _ => false,
@@ -136,10 +142,19 @@ fn opens_group(s: &Stmt) -> bool {
 
 fn level_kind(op: &str) -> Option<char> {
     let op = op.split('(').next().unwrap_or("");
-    let b = ["if", "dow", "dou", "for", "for-each", "select", "monitor", "do"];
-    let x = ["else", "elseif", "when", "when-in", "when-is", "other", "on-error", "on-excp", "on-exit"];
+    let b = [
+        "if", "dow", "dou", "for", "for-each", "select", "monitor", "do",
+    ];
+    let x = [
+        "else", "elseif", "when", "when-in", "when-is", "other", "on-error", "on-excp", "on-exit",
+    ];
     let e = ["end", "endif", "enddo", "endfor", "endsl", "endmon"];
-    if b.contains(&op) || (op.len() == 4 && (op.starts_with("ifl") || op.starts_with("ifg") || op.starts_with("ife") || op.starts_with("ifn")))
+    if b.contains(&op)
+        || (op.len() == 4
+            && (op.starts_with("ifl")
+                || op.starts_with("ifg")
+                || op.starts_with("ife")
+                || op.starts_with("ifn")))
         || (op.len() == 5 && (op.starts_with("dow") || op.starts_with("dou")))
     {
         return Some('B');
@@ -201,7 +216,9 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
             starts: false,
         })
         .collect();
-    let free_idx: Vec<usize> = (0..n).filter(|&i| matches!(lines[i].class, Class::Free | Class::Sql)).collect();
+    let free_idx: Vec<usize> = (0..n)
+        .filter(|&i| matches!(lines[i].class, Class::Free | Class::Sql))
+        .collect();
     let stmts = free_stmts(lines, &free_idx);
     let mut units: Vec<Unit> = Vec::new();
     let mut si = 0;
@@ -240,9 +257,15 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
             // definition's continuation lines.
             let near = |u: &Unit| {
                 u.last + 1 >= i
-                    || (matches!(letter, 'F' | 'D') && lines[u.last + 1..i].iter().all(|x| matches!(x.class, Class::Comment | Class::Blank)))
+                    || (matches!(letter, 'F' | 'D')
+                        && lines[u.last + 1..i]
+                            .iter()
+                            .all(|x| matches!(x.class, Class::Comment | Class::Blank)))
             };
-            let cont = units.last().is_some_and(|u| u.fixed && u.ty == Ty::Spec(letter) && near(u)) && continues(letter, t, long_name);
+            let cont = units
+                .last()
+                .is_some_and(|u| u.fixed && u.ty == Ty::Spec(letter) && near(u))
+                && continues(letter, t, long_name);
             long_name = matches!(letter, 'D' | 'P') && cols(t, 7, 80).trim_end().ends_with("...");
             if cont {
                 if let Some(u) = units.last_mut() {
@@ -256,7 +279,9 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
             if matches!(letter, 'D' | 'P') {
                 let mut j = i;
                 while cols(decl_line, 7, 80).trim_end().ends_with("...")
-                    && let Some(next) = lines[j + 1..].iter().position(|x| matches!(x.class, Class::Spec(_)))
+                    && let Some(next) = lines[j + 1..]
+                        .iter()
+                        .position(|x| matches!(x.class, Class::Spec(_)))
                 {
                     j += 1 + next;
                     decl_line = lines[j].text.as_str();
@@ -265,15 +290,25 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
             let decl = cols(decl_line, 24, 25).trim().to_ascii_uppercase();
             // Named constants do not end a group.
             let (opens, sub) = if letter == 'D' {
-                (matches!(decl.as_str(), "DS" | "PR" | "PI"), decl.is_empty() || decl == "C")
+                (
+                    matches!(decl.as_str(), "DS" | "PR" | "PI"),
+                    decl.is_empty() || decl == "C",
+                )
             } else {
                 (false, false)
             };
             if letter != 'D' || !sub {
                 in_group = false;
             }
-            let op = if letter == 'C' { cols(t, 26, 35).trim().to_ascii_lowercase() } else { String::new() };
-            let ty = match (letter, cols(decl_line, 24, 24).to_ascii_uppercase().as_str()) {
+            let op = if letter == 'C' {
+                cols(t, 26, 35).trim().to_ascii_lowercase()
+            } else {
+                String::new()
+            };
+            let ty = match (
+                letter,
+                cols(decl_line, 24, 24).to_ascii_uppercase().as_str(),
+            ) {
                 ('P', "E") => Ty::EndProc,
                 _ => Ty::Spec(letter),
             };
@@ -294,14 +329,23 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
     }
     // Where each statement's diagnostics print: free form after its
     // last line, fixed form just before the next statement.
-    let next_first: Vec<usize> = units.iter().skip(1).map(|u| u.first).chain(std::iter::once(n)).collect();
+    let next_first: Vec<usize> = units
+        .iter()
+        .skip(1)
+        .map(|u| u.first)
+        .chain(std::iter::once(n))
+        .collect();
     let mut level: usize = 0;
     let mut cas: Vec<usize> = Vec::new();
     let mut group_start: Option<usize> = None;
     for (k, u) in units.iter().enumerate() {
         // Comments and directives before the next statement belong to
         // a fixed-form one.
-        let end = if u.fixed { next_first[k].saturating_sub(1).max(u.last) } else { u.last };
+        let end = if u.fixed {
+            next_first[k].saturating_sub(1).max(u.last)
+        } else {
+            u.last
+        };
         let mut mark = match u.ty {
             Ty::Spec('C') => level_kind(&u.op),
             _ => None,

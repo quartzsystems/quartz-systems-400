@@ -80,9 +80,7 @@ fn shipped_profiles_match_the_outfile() {
         // be partial, the rest absent.
         let complete = f.len().saturating_sub(1);
         let get = |name: &str| -> Option<&str> {
-            col(name)
-                .filter(|&i| i < complete)
-                .map(|i| f[i].as_str())
+            col(name).filter(|&i| i < complete).map(|i| f[i].as_str())
         };
         let Some(name) = get("UPUPRF") else { continue };
         let Some(s) = PROFILES.iter().find(|s| s.name == name) else {
@@ -122,7 +120,10 @@ fn shipped_profiles_match_the_outfile() {
         check("UPINPL", p.inlpgm.1.clone());
         check("UPJBDS", p.jobd.0.clone());
         check("UPJBDL", p.jobd.1.clone());
-        check("UPOWNR", (if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" }).into());
+        check(
+            "UPOWNR",
+            (if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" }).into(),
+        );
         check("UPGRPF", p.grpprf.clone());
         check("UPGRAU", p.grpaut.clone());
         check("UPACCD", p.acgcde.clone());
@@ -140,7 +141,10 @@ fn shipped_profiles_match_the_outfile() {
         check("UPPRDV", p.prtdev.clone());
         check("UPATPG", p.atnpgm.0.clone());
         check("UPATPL", p.atnpgm.1.clone());
-        check("UPSTAT", (if p.disabled { "*DISABLED" } else { "*ENABLED" }).into());
+        check(
+            "UPSTAT",
+            (if p.disabled { "*DISABLED" } else { "*ENABLED" }).into(),
+        );
         check("UPKBDB", p.kbdbuf.clone());
         check("UPASTL", p.astlvl.clone());
         check("UPLANG", p.langid.clone());

@@ -84,12 +84,21 @@ pub fn name_of(path: &str) -> &str {
 
 /// `dir/name`.
 pub fn join(dir: &str, name: &str) -> String {
-    if dir == "/" { format!("/{name}") } else { format!("{dir}/{name}") }
+    if dir == "/" {
+        format!("/{name}")
+    } else {
+        format!("{dir}/{name}")
+    }
 }
 
 /// Whether `name` may name an entry of a directory.
 pub fn good_name(name: &str) -> bool {
-    !name.is_empty() && name != "." && name != ".." && !name.contains('/') && !name.contains('\0') && name.len() <= 255
+    !name.is_empty()
+        && name != "."
+        && name != ".."
+        && !name.contains('/')
+        && !name.contains('\0')
+        && name.len() <= 255
 }
 
 /// Whether `path` is `dir` or under it.
@@ -142,7 +151,10 @@ pub fn back(rq: &Rq<'_>, dir: &str, m: Message) -> Response {
 /// A refused link: the token was missing.
 pub fn stale(rq: &Rq<'_>) -> Response {
     let _ = rq;
-    qsweb::http::plain(403, "The link is out of date. Go back, reload the page and try again.")
+    qsweb::http::plain(
+        403,
+        "The link is out of date. Go back, reload the page and try again.",
+    )
 }
 
 /// A message row of the system's error.
@@ -227,7 +239,10 @@ mod tests {
         assert_eq!(parent("/home"), "/");
         assert_eq!(parent("/home/CWELLMAN"), "/home");
         assert_eq!(join("/", "home"), "/home");
-        assert!(within("/home/CWELLMAN/x", "/home/CWELLMAN") && !within("/home/CWELLMANX", "/home/CWELLMAN"));
+        assert!(
+            within("/home/CWELLMAN/x", "/home/CWELLMAN")
+                && !within("/home/CWELLMANX", "/home/CWELLMAN")
+        );
         assert!(matches("*.CSV", "assets_br1.csv") && matches("a?sets*", "assets_br1.csv"));
         assert!(!matches("*.txt", "notes.txt.bak") && matches("*", ".profile"));
         assert_eq!(rwx(0o750), "rwxr-x---");

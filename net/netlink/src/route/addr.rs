@@ -63,11 +63,7 @@ impl Address {
 
     /// The IPv4 broadcast address of `addr/prefix`.
     pub fn default_broadcast(addr: Ipv4Addr, prefix: u8) -> Ipv4Addr {
-        let host = if prefix >= 32 {
-            0
-        } else {
-            u32::MAX >> prefix
-        };
+        let host = if prefix >= 32 { 0 } else { u32::MAX >> prefix };
         Ipv4Addr::from(u32::from(addr) | host)
     }
 }

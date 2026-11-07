@@ -52,16 +52,26 @@ fn arm_slot(system: &mut System, iplsrc: u8) {
         return;
     };
     match crate::cpp::ptflic::arm(record, named) {
-        Ok(Some(s)) => system.out.serial(&format!("slic: next IPL from slot {s:?}\n")),
+        Ok(Some(s)) => system
+            .out
+            .serial(&format!("slic: next IPL from slot {s:?}\n")),
         Ok(None) => {}
-        Err(e) => system.out.serial(&format!("slic: IPL source not set: {e}\n")),
+        Err(e) => system
+            .out
+            .serial(&format!("slic: IPL source not set: {e}\n")),
     }
 }
 
 /// `PWRDWNSYS`: power down with the work ending controlled within
 /// `delay` seconds, or at once. A restart is `QIPLSTS` 2 next time;
 /// `iplsrc` 1 or 2 boots slot A or B once.
-pub fn down_ending(system: &mut System, restart: bool, immediate: bool, delay: u32, iplsrc: u8) -> ! {
+pub fn down_ending(
+    system: &mut System,
+    restart: bool,
+    immediate: bool,
+    delay: u32,
+    iplsrc: u8,
+) -> ! {
     system.emit(&src::PWRDWN_STARTED);
     // The console's session ends first; its jobs end with their
     // subsystems.

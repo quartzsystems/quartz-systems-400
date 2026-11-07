@@ -12,11 +12,12 @@ use qap_proto::ops::connection::choose_version;
 use qap_proto::ops::event;
 use qap_proto::ops::ifs::{Entry, EntryKind, Stat};
 use qap_proto::ops::messages::{
-    ListMessages, MessageArrived, MessageType, Messages, Queue, QueueRef, QueuedMessage, Recipient, RemoveMessages,
-    ReplyMessage, SendMessage, Sent,
+    ListMessages, MessageArrived, MessageType, Messages, Queue, QueueRef, QueuedMessage, Recipient,
+    RemoveMessages, ReplyMessage, SendMessage, Sent,
 };
 use qap_proto::ops::spool::{
-    SpoolChange, SpoolStatus, SpoolTarget, SpooledFile, SpooledFileChanged, SpooledFileId, WatchSpool,
+    SpoolChange, SpoolStatus, SpoolTarget, SpooledFile, SpooledFileChanged, SpooledFileId,
+    WatchSpool,
 };
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Envelope, Op, Service, Status, VERSION};
@@ -36,7 +37,11 @@ fn job() -> JobId {
 fn message(kind: MessageType) -> QueuedMessage {
     QueuedMessage {
         key: [0, 0, 1, 7],
-        id: if kind == MessageType::Informational { String::new() } else { "CPA2401".into() },
+        id: if kind == MessageType::Informational {
+            String::new()
+        } else {
+            "CPA2401".into()
+        },
         kind,
         severity: 99,
         text: "Prêt à répondre ?".into(),
@@ -93,11 +98,18 @@ fn messages_bodies() {
         assert_eq!(encode(q)[0], u8::try_from(i).unwrap());
     }
     assert!(decode::<Queue>(&[3]).is_err());
-    same(&Recipient::User { profile: "ANN".into() });
+    same(&Recipient::User {
+        profile: "ANN".into(),
+    });
     same(&Recipient::Queue {
         queue: Queue::SystemOperator,
     });
-    assert_eq!(encode(&Recipient::User { profile: String::new() })[0], 0);
+    assert_eq!(
+        encode(&Recipient::User {
+            profile: String::new()
+        })[0],
+        0
+    );
     same(&ListMessages {
         queue: Queue::Own,
         newest_first: true,
@@ -118,11 +130,15 @@ fn messages_bodies() {
         keys: vec![[0; 4], [255; 4]],
     });
     same(&SendMessage {
-        to: Recipient::User { profile: "BOB".into() },
+        to: Recipient::User {
+            profile: "BOB".into(),
+        },
         text: "Lunch?".into(),
         inquiry: true,
     });
-    same(&Sent { key: Some([0, 0, 0, 9]) });
+    same(&Sent {
+        key: Some([0, 0, 0, 9]),
+    });
     same(&Sent { key: None });
     same(&QueueRef { queue: Queue::Own });
     same(&MessageArrived {
@@ -156,7 +172,9 @@ fn spool_watch_bodies() {
     }
     assert!(decode::<SpoolChange>(&[3]).is_err());
     let targets = [
-        SpoolTarget::Queue { outq: queue("PRT01") },
+        SpoolTarget::Queue {
+            outq: queue("PRT01"),
+        },
         SpoolTarget::User {
             profile: "*CURRENT".into(),
         },
@@ -223,7 +241,10 @@ fn version_6_values() {
     assert_eq!(Op::of(Service::Spool, 8), Some(Op::WatchSpool));
     assert_eq!(Op::of(Service::Spool, 9), Some(Op::UnwatchSpool));
     assert_eq!(Op::of(Service::Ifs, 9), Some(Op::Stat));
-    for op in names.into_iter().chain([Op::WatchSpool, Op::UnwatchSpool, Op::Stat]) {
+    for op in names
+        .into_iter()
+        .chain([Op::WatchSpool, Op::UnwatchSpool, Op::Stat])
+    {
         assert_eq!(op.since(), 6, "{op:?}");
         assert!(!op.before_signon(), "{op:?}");
         // Concurrent, never in the lane.
@@ -240,17 +261,37 @@ fn version_6_values() {
 
 #[test]
 fn events_by_version() {
-    assert_eq!(event::since(Service::Connection, event::SERVER_ENDING), Some(1));
+    assert_eq!(
+        event::since(Service::Connection, event::SERVER_ENDING),
+        Some(1)
+    );
     assert_eq!(event::since(Service::SignOn, event::SESSION_ENDED), Some(1));
-    assert_eq!(event::since(Service::Messages, event::MESSAGE_ARRIVED), Some(6));
-    assert_eq!(event::since(Service::Spool, event::SPOOLED_FILE_CHANGED), Some(6));
+    assert_eq!(
+        event::since(Service::Messages, event::MESSAGE_ARRIVED),
+        Some(6)
+    );
+    assert_eq!(
+        event::since(Service::Spool, event::SPOOLED_FILE_CHANGED),
+        Some(6)
+    );
     assert_eq!(event::since(Service::Ifs, 100), None);
-    let arrived = Envelope::event(Service::Messages, event::MESSAGE_ARRIVED, Status::Ok, None).with_body(&MessageArrived {
-        queue: Queue::Own,
-        message: message(MessageType::Informational),
-    });
-    let changed = Envelope::event(Service::Spool, event::SPOOLED_FILE_CHANGED, Status::Ok, None);
-    let ending = Envelope::event(Service::Connection, event::SERVER_ENDING, Status::ServerEnding, None);
+    let arrived = Envelope::event(Service::Messages, event::MESSAGE_ARRIVED, Status::Ok, None)
+        .with_body(&MessageArrived {
+            queue: Queue::Own,
+            message: message(MessageType::Informational),
+        });
+    let changed = Envelope::event(
+        Service::Spool,
+        event::SPOOLED_FILE_CHANGED,
+        Status::Ok,
+        None,
+    );
+    let ending = Envelope::event(
+        Service::Connection,
+        event::SERVER_ENDING,
+        Status::ServerEnding,
+        None,
+    );
     for v in 1..=5 {
         assert!(!arrived.defined_in(v));
         // Spool is version 3's, its event version 6's.
@@ -265,7 +306,14 @@ fn events_by_version() {
     let reply = Envelope::reply(&req, Status::Ok, None, Vec::new());
     assert!(!reply.defined_in(5) && reply.defined_in(6));
     let r = Envelope::reply(&req, Status::Exists, None, Vec::new());
-    assert!(r.defined_in(6) && !Envelope { service: Service::Ifs, ..r }.defined_in(4));
+    assert!(
+        r.defined_in(6)
+            && !Envelope {
+                service: Service::Ifs,
+                ..r
+            }
+            .defined_in(4)
+    );
 }
 
 #[test]

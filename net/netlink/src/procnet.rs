@@ -66,12 +66,18 @@ pub fn read(table: Table) -> io::Result<Vec<ProcSock>> {
 
 /// Read a table from a directory laid out like `/proc/net`.
 pub fn read_in(dir: &Path, table: Table) -> io::Result<Vec<ProcSock>> {
-    Ok(parse(&fs::read_to_string(dir.join(table.file()))?, table.v6()))
+    Ok(parse(
+        &fs::read_to_string(dir.join(table.file()))?,
+        table.v6(),
+    ))
 }
 
 /// Parse a table's text. Malformed lines are skipped.
 pub fn parse(text: &str, v6: bool) -> Vec<ProcSock> {
-    text.lines().skip(1).filter_map(|l| parse_line(l, v6)).collect()
+    text.lines()
+        .skip(1)
+        .filter_map(|l| parse_line(l, v6))
+        .collect()
 }
 
 fn parse_line(line: &str, v6: bool) -> Option<ProcSock> {

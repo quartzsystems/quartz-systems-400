@@ -58,15 +58,28 @@ fn bits(out: &mut Out, b: u32, autl: bool) {
 
 /// Every object of every library the user can list, with its header:
 /// library, type name, object, header.
-fn objects(txn: &mut Txn<'_>, ctx: &SqlContext, only: Option<u16>) -> Result<Vec<(String, &'static str, ObjectId, ObjectHeader)>> {
-    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+fn objects(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    only: Option<u16>,
+) -> Result<Vec<(String, &'static str, ObjectId, ObjectHeader)>> {
+    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     libs.insert(0, ctx.qsys);
     let mut out = Vec::new();
     for lib in libs {
-        let Ok((_, lh)) = ops::read_header(txn, lib) else { continue };
-        let Ok(list) = ops::list(txn, lib, only) else { continue };
+        let Ok((_, lh)) = ops::read_header(txn, lib) else {
+            continue;
+        };
+        let Ok(list) = ops::list(txn, lib, only) else {
+            continue;
+        };
         for (k, id) in list {
-            let Some(ti) = types::type_by_code(k.type_code) else { continue };
+            let Some(ti) = types::type_by_code(k.type_code) else {
+                continue;
+            };
             if matches!(ti.name, "*MBR" | "*SPLF" | "*SQLINF") {
                 continue;
             }
@@ -99,7 +112,11 @@ fn holders(txn: &mut Txn<'_>, h: &ObjectHeader) -> Vec<(String, u32, bool)> {
 pub fn privileges(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     for (lib, ty, id, h) in objects(txn, ctx, None)? {
         let schema = crate::exec::names::schema_name(txn, h.library);
-        let name = if ty == "*FILE" { crate::exec::names::sql_name(txn, id) } else { h.name.to_string() };
+        let name = if ty == "*FILE" {
+            crate::exec::names::sql_name(txn, id)
+        } else {
+            h.name.to_string()
+        };
         let owner = ccsid::decode_trimmed(&h.owner);
         let autl = ccsid::decode_trimmed(&h.autl);
         let group = ccsid::decode_trimmed(&h.primary_group);
@@ -126,7 +143,18 @@ pub fn privileges(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<
 /// `OBJECT_OWNERSHIP`: each profile's owned objects.
 pub fn ownership(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     let mut all = objects(txn, ctx, None)?;
-    all.sort_by(|a, b| (ccsid::decode_trimmed(&a.3.owner), &a.0, a.3.name.to_string()).cmp(&(ccsid::decode_trimmed(&b.3.owner), &b.0, b.3.name.to_string())));
+    all.sort_by(|a, b| {
+        (
+            ccsid::decode_trimmed(&a.3.owner),
+            &a.0,
+            a.3.name.to_string(),
+        )
+            .cmp(&(
+                ccsid::decode_trimmed(&b.3.owner),
+                &b.0,
+                b.3.name.to_string(),
+            ))
+    });
     for (lib, ty, _, h) in all {
         out.row();
         out.text("AUTHORIZATION_NAME", ccsid::decode_trimmed(&h.owner));
@@ -148,8 +176,12 @@ pub fn autl_objects(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Resul
     for l in lists {
         let objs = sec::auth::autl::secured(txn, ctx.qsys, &l).unwrap_or_default();
         for id in objs {
-            let Ok((_, h)) = ops::read_header(txn, id) else { continue };
-            let Ok((_, lh)) = ops::read_header(txn, h.library) else { continue };
+            let Ok((_, h)) = ops::read_header(txn, id) else {
+                continue;
+            };
+            let Ok((_, lh)) = ops::read_header(txn, h.library) else {
+                continue;
+            };
             let ty = ops::list(txn, h.library, None)
                 .ok()
                 .and_then(|v| v.into_iter().find(|(_, o)| *o == id))
@@ -161,7 +193,10 @@ pub fn autl_objects(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Resul
             out.text("SYSTEM_OBJECT_NAME", h.name.to_string());
             out.text("SYSTEM_OBJECT_TYPE", ty);
             out.text_or_null("OBJECT_ATTRIBUTE", &ccsid::decode_trimmed(&h.attribute));
-            out.text("OBJECT_SCHEMA", crate::exec::names::schema_name(txn, h.library));
+            out.text(
+                "OBJECT_SCHEMA",
+                crate::exec::names::schema_name(txn, h.library),
+            );
             out.text("OBJECT_NAME", h.name.to_string());
             out.text("OBJECT_TYPE", ty);
             out.text("OBJECT_OWNER", ccsid::decode_trimmed(&h.owner));
@@ -178,8 +213,12 @@ pub fn autl_objects(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Resul
 pub fn autl_users(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     let lists = sec::auth::autl::list(txn, ctx.qsys).unwrap_or_default();
     for l in lists {
-        let Ok(id) = sec::auth::autl::find(txn, ctx.qsys, &l) else { continue };
-        let Ok((_, h)) = ops::read_header(txn, id) else { continue };
+        let Ok(id) = sec::auth::autl::find(txn, ctx.qsys, &l) else {
+            continue;
+        };
+        let Ok((_, h)) = ops::read_header(txn, id) else {
+            continue;
+        };
         let text = ccsid::decode_trimmed(&h.text);
         for (who, b, owner) in holders(txn, &h) {
             out.row();
@@ -199,7 +238,9 @@ pub fn autl_users(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<
 pub fn storage(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     let names = profile::objects::list(txn, ctx.qsys).unwrap_or_default();
     for n in names {
-        let Ok((_, p)) = profile::objects::read(txn, ctx.qsys, &n) else { continue };
+        let Ok((_, p)) = profile::objects::read(txn, ctx.qsys, &n) else {
+            continue;
+        };
         out.row();
         out.text("AUTHORIZATION_NAME", p.name.as_str());
         out.text("ASPGRP", "*SYSBAS");

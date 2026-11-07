@@ -22,7 +22,11 @@ impl Args {
     /// Bind `given` to `shape`'s parameters. Too many arguments, a name
     /// it has no parameter for, or a parameter given twice is SQL0440,
     /// as IBM reports a call that matches no routine.
-    pub fn bind(shape: &Shape, given: Vec<(Option<String>, Value)>, ctx: &SqlContext) -> Result<Self> {
+    pub fn bind(
+        shape: &Shape,
+        given: Vec<(Option<String>, Value)>,
+        ctx: &SqlContext,
+    ) -> Result<Self> {
         let parms: Vec<_> = shape.parms.iter().filter(|p| p.mode != "OUT").collect();
         let no_match = |why: &str| SqlError::Coded {
             code: -440,
@@ -35,7 +39,10 @@ impl Args {
             let p = match name {
                 Some(n) => {
                     named = true;
-                    parms.iter().find(|p| p.name == n.to_ascii_uppercase()).ok_or_else(|| no_match(&format!("no parameter {n}")))?
+                    parms
+                        .iter()
+                        .find(|p| p.name == n.to_ascii_uppercase())
+                        .ok_or_else(|| no_match(&format!("no parameter {n}")))?
                 }
                 None if named => return Err(no_match("a positional argument after a named one")),
                 None => parms.get(i).ok_or_else(|| no_match("too many arguments"))?,
@@ -88,7 +95,11 @@ impl Args {
     pub fn int(&self, name: &str) -> Option<i64> {
         match self.get(name) {
             Value::Null => None,
-            v => v.as_decimal().ok().and_then(|d| d.to_string().parse::<f64>().ok()).map(|f| f as i64),
+            v => v
+                .as_decimal()
+                .ok()
+                .and_then(|d| d.to_string().parse::<f64>().ok())
+                .map(|f| f as i64),
         }
     }
 }

@@ -92,7 +92,12 @@ impl Parts {
     #[must_use]
     pub fn of(rec_len: usize, fields: usize) -> Self {
         let new = past(HEADER_LEN + rec_len + fields);
-        Self { rec_len, fields, new, total: past(new + rec_len + fields) }
+        Self {
+            rec_len,
+            fields,
+            new,
+            total: past(new + rec_len + fields),
+        }
     }
 }
 
@@ -103,13 +108,24 @@ fn put32(b: &mut [u8], at: usize, v: usize) {
 /// The per-field null map of an image.
 fn null_bytes(fmt: &FormatDef, nulls: &[u8]) -> Vec<u8> {
     (0..fmt.format.fields.len())
-        .map(|i| if record::is_null(nulls, fmt.null_index(i)) { 0xF1 } else { 0xF0 })
+        .map(|i| {
+            if record::is_null(nulls, fmt.null_index(i)) {
+                0xF1
+            } else {
+                0xF0
+            }
+        })
         .collect()
 }
 
 /// Build the buffer for `fmt`'s records.
 #[must_use]
-pub fn build(h: &Header, fmt: &FormatDef, old: Option<Image<'_>>, new: Option<Image<'_>>) -> Vec<u8> {
+pub fn build(
+    h: &Header,
+    fmt: &FormatDef,
+    old: Option<Image<'_>>,
+    new: Option<Image<'_>>,
+) -> Vec<u8> {
     let rec_len = fmt.format.record_len as usize;
     let fields = fmt.format.fields.len();
     let p = Parts::of(rec_len, fields);
@@ -119,7 +135,11 @@ pub fn build(h: &Header, fmt: &FormatDef, old: Option<Image<'_>>, new: Option<Im
     b[10..20].copy_from_slice(h.library.as_bytes());
     b[20..30].copy_from_slice(h.member.as_bytes());
     b[30] = 0xF0 + h.event.code();
-    b[31] = if h.time.buffer_code() == b'1' { 0xF1 } else { 0xF2 };
+    b[31] = if h.time.buffer_code() == b'1' {
+        0xF1
+    } else {
+        0xF2
+    };
     b[32] = 0xF0 + h.commit_level;
     put32(&mut b, 36, h.ccsid as usize);
     put32(&mut b, 40, h.rrn as usize);
@@ -154,7 +174,10 @@ pub fn new_image(fmt: &FormatDef, buf: &[u8], nulls_len: usize) -> Option<(Vec<u
     }
     let rec = buf[p.new..p.new + p.rec_len].to_vec();
     let mut nulls = vec![0u8; nulls_len];
-    for (i, &c) in buf[p.new + p.rec_len..p.new + p.rec_len + p.fields].iter().enumerate() {
+    for (i, &c) in buf[p.new + p.rec_len..p.new + p.rec_len + p.fields]
+        .iter()
+        .enumerate()
+    {
         if let Some(k) = fmt.null_index(i) {
             record::set_null(&mut nulls, k, c == 0xF1);
         }
@@ -181,7 +204,12 @@ mod tests {
     #[test]
     fn parts_as_the_primary_lays_them_out() {
         // Record length and fields of the probes' tables, and what came back.
-        for (len, fields, new, total) in [(22, 4, 144, 192), (104, 2, 224, 352), (20, 20, 160, 224), (5, 1, 128, 160)] {
+        for (len, fields, new, total) in [
+            (22, 4, 144, 192),
+            (104, 2, 224, 352),
+            (20, 20, 160, 224),
+            (5, 1, 128, 160),
+        ] {
             let p = Parts::of(len, fields);
             assert_eq!((p.new, p.total), (new, total), "{len} {fields}");
         }

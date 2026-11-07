@@ -82,7 +82,12 @@ impl Raw {
 
     /// A binary value.
     pub fn bin4(&self) -> i32 {
-        i32::from_be_bytes(self.data.get(..4).and_then(|b| b.try_into().ok()).unwrap_or([0; 4]))
+        i32::from_be_bytes(
+            self.data
+                .get(..4)
+                .and_then(|b| b.try_into().ok())
+                .unwrap_or([0; 4]),
+        )
     }
 }
 
@@ -151,9 +156,7 @@ pub fn decode(d: &[u8]) -> Vec<Raw> {
 pub fn ids_of(d: &[u8]) -> Vec<u16> {
     let n = usize::from(crate::reply::be16(d, 0));
     let el = usize::from(crate::reply::be16(d, 2)).max(2);
-    (0..n)
-        .map(|i| crate::reply::be16(d, 4 + i * el))
-        .collect()
+    (0..n).map(|i| crate::reply::be16(d, 4 + i * el)).collect()
 }
 
 #[cfg(test)]
@@ -166,7 +169,9 @@ mod tests {
         let d = encode(&[(ids::NPSCCSID, Value::Bin4(37))]);
         assert_eq!(
             d,
-            [0, 1, 0, 0x0c, 0, 0x8a, 0, 3, 0, 0, 0, 4, 0, 0, 0, 0x16, 0, 0, 0, 0x25]
+            [
+                0, 1, 0, 0x0c, 0, 0x8a, 0, 3, 0, 0, 0, 4, 0, 0, 0, 0x16, 0, 0, 0, 0x25
+            ]
         );
         let r = decode(&d);
         assert_eq!(r[0].bin4(), 37);

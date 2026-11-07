@@ -81,7 +81,13 @@ fn trimmed(r: &[u8], blank: u8) -> &[u8] {
 /// `stmf`. A source member's records lose their trailing blanks
 /// (except `*FIXED`); every record but `*FIXED`'s ends with the line
 /// end, encoded in the stream's CCSID (the member's with `*NONE`).
-pub fn to_stream(m: &MemberData, dbf: u16, stmf: u16, cvt: Cvt, e: EndLin) -> Result<Vec<u8>, Unsupported> {
+pub fn to_stream(
+    m: &MemberData,
+    dbf: u16,
+    stmf: u16,
+    cvt: Cvt,
+    e: EndLin,
+) -> Result<Vec<u8>, Unsupported> {
     let out_ccsid = if cvt == Cvt::None { dbf } else { stmf };
     let end = encode(out_ccsid, line_end(e))?;
     let b = blank(dbf);
@@ -286,15 +292,36 @@ mod tests {
 
     #[test]
     fn line_ends_tabs_and_cuts() {
-        assert_eq!(split_text("a\nb\r\nc\rd\n\re", EndLin::All), ["a", "b", "c", "d", "e"]);
+        assert_eq!(
+            split_text("a\nb\r\nc\rd\n\re", EndLin::All),
+            ["a", "b", "c", "d", "e"]
+        );
         assert_eq!(split_text("a\nb\n", EndLin::Lf), ["a", "b"]);
         assert_eq!(split_text("a\nb\r\n", EndLin::Crlf), ["a\nb"]);
-        assert_eq!(expand_tabs("a\tb\t\tc"), format!("a{}b{}c", " ".repeat(7), " ".repeat(15)));
-        let r = to_records(b"0123456789ABC\nx", 819, 37, 10, Cvt::Auto, EndLin::Lf, false).unwrap();
+        assert_eq!(
+            expand_tabs("a\tb\t\tc"),
+            format!("a{}b{}c", " ".repeat(7), " ".repeat(15))
+        );
+        let r = to_records(
+            b"0123456789ABC\nx",
+            819,
+            37,
+            10,
+            Cvt::Auto,
+            EndLin::Lf,
+            false,
+        )
+        .unwrap();
         assert_eq!(r.truncated, 1);
         assert_eq!(r.records.len(), 2);
         let f = to_records(b"abcdef", 819, 37, 4, Cvt::Auto, EndLin::Fixed, false).unwrap();
-        assert_eq!(f.records, [ccsid::conv::from_str(37, "abcd").unwrap(), ccsid::conv::from_str(37, "ef  ").unwrap()]);
+        assert_eq!(
+            f.records,
+            [
+                ccsid::conv::from_str(37, "abcd").unwrap(),
+                ccsid::conv::from_str(37, "ef  ").unwrap()
+            ]
+        );
     }
 
     /// Whether a mixed record's shifts balance.
@@ -315,11 +342,16 @@ mod tests {
 
     #[test]
     fn mixed_records_keep_double_byte_runs_whole() {
-        let lines = ["QS/400 は日本語を変換します。", "ｶﾀｶﾅ ABC 東京都千代田区", "abc"];
+        let lines = [
+            "QS/400 は日本語を変換します。",
+            "ｶﾀｶﾅ ABC 東京都千代田区",
+            "abc",
+        ];
         let utf8 = lines.join("\n") + "\n";
         for c in [930, 939] {
             for len in 4..40 {
-                let r = to_records(utf8.as_bytes(), 1208, c, len, Cvt::Auto, EndLin::Lf, false).unwrap();
+                let r = to_records(utf8.as_bytes(), 1208, c, len, Cvt::Auto, EndLin::Lf, false)
+                    .unwrap();
                 let mut cut = 0;
                 for (rec, line) in r.records.iter().zip(lines) {
                     assert_eq!(rec.len(), len);
@@ -342,8 +374,20 @@ mod tests {
                 assert_eq!(back.records, r.records, "{c} {len}");
                 // *FIXED wraps the whole text: every record balanced, nothing lost.
                 let text = lines.concat();
-                let f = to_records(text.as_bytes(), 1208, c, len, Cvt::Auto, EndLin::Fixed, false).unwrap();
-                assert!(f.records.iter().all(|r| r.len() == len && balanced(r)), "{c} {len}");
+                let f = to_records(
+                    text.as_bytes(),
+                    1208,
+                    c,
+                    len,
+                    Cvt::Auto,
+                    EndLin::Fixed,
+                    false,
+                )
+                .unwrap();
+                assert!(
+                    f.records.iter().all(|r| r.len() == len && balanced(r)),
+                    "{c} {len}"
+                );
                 let joined: String = f
                     .records
                     .iter()

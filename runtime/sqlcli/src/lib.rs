@@ -14,7 +14,13 @@
 //! server mode. `docs/SYSAPI.md` §13 has what is supported.
 
 // The functions take IBM's arguments, one by one.
-#![allow(clippy::too_many_arguments, clippy::many_single_char_names, clippy::similar_names, clippy::match_same_arms, clippy::struct_excessive_bools)]
+#![allow(
+    clippy::too_many_arguments,
+    clippy::many_single_char_names,
+    clippy::similar_names,
+    clippy::match_same_arms,
+    clippy::struct_excessive_bools
+)]
 
 pub mod abi;
 pub mod consts;
@@ -59,9 +65,16 @@ mod tests {
         let mut seen = std::collections::HashSet::new();
         for n in &ours {
             assert!(seen.insert(*n), "{n} registered twice");
-            assert_eq!(ile::system_srvpgm(n), Some(SRVPGM), "{n} is not bound to {SRVPGM}");
+            assert_eq!(
+                ile::system_srvpgm(n),
+                Some(SRVPGM),
+                "{n} is not bound to {SRVPGM}"
+            );
         }
-        for (n, _) in ile::SYSTEM_SRVPGM_PROCS.iter().filter(|(_, s)| *s == SRVPGM) {
+        for (n, _) in ile::SYSTEM_SRVPGM_PROCS
+            .iter()
+            .filter(|(_, s)| *s == SRVPGM)
+        {
             assert!(ours.contains(n), "{n} has no procedure");
         }
     }

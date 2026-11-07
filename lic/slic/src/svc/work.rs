@@ -49,8 +49,12 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
         "chgjob" => chgjob(system, &p),
         "chgacgcde" => {
             let me = system.current_job;
-            crate::stgsvc::acg::chgacgcde(system, me, &p).map(|s| format!("{s}
-"))
+            crate::stgsvc::acg::chgacgcde(system, me, &p).map(|s| {
+                format!(
+                    "{s}
+"
+                )
+            })
         }
         "dspjob" => dspjob(system, &p),
         _ => return None,

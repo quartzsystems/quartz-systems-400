@@ -27,7 +27,10 @@ fn v71(group: &uim::PanelGroup) -> Options {
 }
 
 fn row(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
-    pairs.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect()
+    pairs
+        .iter()
+        .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+        .collect()
 }
 
 #[test]
@@ -41,12 +44,19 @@ fn dspseca() {
         .set("SASYSVAL", "*YES")
         .set("SACERT", "*YES")
         .set("SASTPWD", "*NO");
-    compare_in(&d3(), "dspseca", &render(&g, "DSPSECA", &d, &v71(&g)).unwrap());
+    compare_in(
+        &d3(),
+        "dspseca",
+        &render(&g, "DSPSECA", &d, &v71(&g)).unwrap(),
+    );
 }
 
 /// The functions of the capture's first page, by ID and name.
 const FIRST_PAGE: &[(&str, &str)] = &[
-    ("QIBM_DIRSRV_ADMIN", "IBM Tivoli Directory Server Administrator"),
+    (
+        "QIBM_DIRSRV_ADMIN",
+        "IBM Tivoli Directory Server Administrator",
+    ),
     ("QIBM_ACCESS_ALLOBJ_JOBLOG", "Access job log of *ALLOBJ job"),
     ("QIBM_ALLOBJ_TRACE_ANY_USER", "Trace any user"),
     ("QIBM_WATCH_ANY_JOB", "Watch any job"),
@@ -79,7 +89,11 @@ fn wrkfcnusg() {
             ..ListState::default()
         },
     );
-    compare_in(&d3(), "wrkfcnusg-1", &render(&g, "WRKFCNUSG", &d, &v71(&g)).unwrap());
+    compare_in(
+        &d3(),
+        "wrkfcnusg-1",
+        &render(&g, "WRKFCNUSG", &d, &v71(&g)).unwrap(),
+    );
 }
 
 #[test]
@@ -102,7 +116,11 @@ fn dspfcnusg_with_no_users() {
             total: Some(0),
         },
     );
-    compare_in(&d3(), "dspfcnusg-sqladm", &render(&g, "DSPFCNUSG", &d, &v71(&g)).unwrap());
+    compare_in(
+        &d3(),
+        "dspfcnusg-sqladm",
+        &render(&g, "DSPFCNUSG", &d, &v71(&g)).unwrap(),
+    );
 }
 
 #[test]
@@ -118,5 +136,9 @@ fn wrkjrnrcv_with_none_found() {
             total: Some(0),
         },
     );
-    compare_in(&d3(), "wrkjrnrcv", &render(&g, "WRKJRNRCV", &d, &v71(&g)).unwrap());
+    compare_in(
+        &d3(),
+        "wrkjrnrcv",
+        &render(&g, "WRKJRNRCV", &d, &v71(&g)).unwrap(),
+    );
 }

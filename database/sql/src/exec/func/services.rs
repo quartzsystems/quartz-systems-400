@@ -18,12 +18,20 @@ use crate::value::Value;
 /// The name without a `QSYS2.` qualifier, when it is one of ours.
 fn ours(name: &str) -> Option<&str> {
     let bare = name.strip_prefix("QSYS2.").unwrap_or(name);
-    matches!(bare, "BASE64_ENCODE" | "BASE64_DECODE" | "URL_ENCODE" | "URL_DECODE").then_some(bare)
+    matches!(
+        bare,
+        "BASE64_ENCODE" | "BASE64_DECODE" | "URL_ENCODE" | "URL_DECODE"
+    )
+    .then_some(bare)
 }
 
 /// SQL0443 with SQLSTATE 38501, as pub400 fails these functions.
 fn failed(what: impl Into<String>) -> SqlError {
-    SqlError::Coded { code: -443, state: "38501", what: what.into() }
+    SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what: what.into(),
+    }
 }
 
 /// The family's functions.
@@ -38,7 +46,10 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
     if let Some(r) = super::super::catalog::services::procs::qcmdexc_scalar(name, args, ctx) {
         return Some(r);
     }
-    if matches!(name, "GENERATE_SPREADSHEET" | "SYSTOOLS.GENERATE_SPREADSHEET") {
+    if matches!(
+        name,
+        "GENERATE_SPREADSHEET" | "SYSTOOLS.GENERATE_SPREADSHEET"
+    ) {
         // IBM's runs the Access Client Solutions Java program.
         return Some(Err(SqlError::Coded {
             code: -84,
@@ -53,7 +64,11 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
 fn run(name: &str, args: &[Value]) -> Result<Value> {
     let max = if name == "URL_ENCODE" { 2 } else { 1 };
     if args.is_empty() || args.len() > max {
-        return Err(SqlError::Coded { code: -440, state: "42884", what: format!("QSYS2.{name} with {} arguments", args.len()) });
+        return Err(SqlError::Coded {
+            code: -440,
+            state: "42884",
+            what: format!("QSYS2.{name} with {} arguments", args.len()),
+        });
     }
     if args[0].is_null() {
         return Ok(Value::Null);
@@ -66,16 +81,24 @@ fn run(name: &str, args: &[Value]) -> Result<Value> {
             };
             Ok(Value::Str(base64_encode(&bytes)))
         }
-        "BASE64_DECODE" => base64_decode(&args[0].as_text()).map(Value::Bin).ok_or_else(|| failed("the text is not base64")),
+        "BASE64_DECODE" => base64_decode(&args[0].as_text())
+            .map(Value::Bin)
+            .ok_or_else(|| failed("the text is not base64")),
         "URL_ENCODE" => {
             if args.get(1).is_some_and(|m| !m.is_null()) {
                 // BLOCKED(rel): the encoding modes pub400 accepts are not
                 // yet settled; every mode it was given was SQL0171.
-                return Err(SqlError::Coded { code: -171, state: "42815", what: "argument 2 of URL_ENCODE".into() });
+                return Err(SqlError::Coded {
+                    code: -171,
+                    state: "42815",
+                    what: "argument 2 of URL_ENCODE".into(),
+                });
             }
             Ok(Value::Str(url_encode(&args[0].as_text())))
         }
-        _ => url_decode(&args[0].as_text()).map(Value::Str).ok_or_else(|| failed("the text is not URL encoded")),
+        _ => url_decode(&args[0].as_text())
+            .map(Value::Str)
+            .ok_or_else(|| failed("the text is not URL encoded")),
     }
 }
 
@@ -86,7 +109,9 @@ const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx
 pub fn base64_encode(b: &[u8]) -> String {
     let mut out = String::with_capacity(b.len().div_ceil(3) * 4);
     for chunk in b.chunks(3) {
-        let n = (u32::from(chunk[0]) << 16) | (u32::from(*chunk.get(1).unwrap_or(&0)) << 8) | u32::from(*chunk.get(2).unwrap_or(&0));
+        let n = (u32::from(chunk[0]) << 16)
+            | (u32::from(*chunk.get(1).unwrap_or(&0)) << 8)
+            | u32::from(*chunk.get(2).unwrap_or(&0));
         for i in 0..4 {
             if i <= chunk.len() {
                 out.push(char::from(ALPHABET[((n >> (18 - 6 * i)) & 63) as usize]));
@@ -172,7 +197,11 @@ pub fn url_decode(s: &str) -> Option<String> {
 }
 
 /// The result types, as pub400 describes them.
-pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], _exprs: &[crate::ast::Expr]) -> Option<SqlType> {
+pub(crate) fn result_type(
+    name: &str,
+    given: &[Option<SqlType>],
+    _exprs: &[crate::ast::Expr],
+) -> Option<SqlType> {
     if name.starts_with("=>") {
         return given.first().cloned().flatten();
     }

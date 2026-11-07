@@ -65,7 +65,13 @@ impl Tickets {
     }
 
     /// Use `token` for `user`: gone whatever the answer.
-    pub fn redeem(&mut self, token: &Token, user: &str, now: u64, tls: bool) -> Result<(), Refused> {
+    pub fn redeem(
+        &mut self,
+        token: &Token,
+        user: &str,
+        now: u64,
+        tls: bool,
+    ) -> Result<(), Refused> {
         let t = self.map.remove(&token.0).ok_or(Refused::Unknown)?;
         if !tls {
             Err(Refused::NotTls)
@@ -146,12 +152,27 @@ mod tests {
             table.issue(&tok(n), "BOB", 100);
         }
         assert_eq!(table.redeem(&tok(1), "bob", 159, true), Ok(()));
-        assert_eq!(table.redeem(&tok(1), "BOB", 159, true), Err(Refused::Unknown));
-        assert_eq!(table.redeem(&tok(2), "BOB", 160, true), Err(Refused::Expired));
-        assert_eq!(table.redeem(&tok(3), "ANN", 110, true), Err(Refused::WrongUser));
+        assert_eq!(
+            table.redeem(&tok(1), "BOB", 159, true),
+            Err(Refused::Unknown)
+        );
+        assert_eq!(
+            table.redeem(&tok(2), "BOB", 160, true),
+            Err(Refused::Expired)
+        );
+        assert_eq!(
+            table.redeem(&tok(3), "ANN", 110, true),
+            Err(Refused::WrongUser)
+        );
         // Refused for plain Telnet, and used up all the same.
-        assert_eq!(table.redeem(&tok(4), "BOB", 110, false), Err(Refused::NotTls));
-        assert_eq!(table.redeem(&tok(4), "BOB", 110, true), Err(Refused::Unknown));
+        assert_eq!(
+            table.redeem(&tok(4), "BOB", 110, false),
+            Err(Refused::NotTls)
+        );
+        assert_eq!(
+            table.redeem(&tok(4), "BOB", 110, true),
+            Err(Refused::Unknown)
+        );
         assert!(table.is_empty());
     }
 
@@ -165,11 +186,23 @@ mod tests {
             table.issue(&tok(n), "BOB", 100);
         }
         let ok = |_: &str| true;
-        assert_eq!(check(&mut table, &tok(1), "BOB", 110, true, true, ok), Ok(()));
-        assert_eq!(check(&mut table, &tok(2), "BOB", 160, true, true, ok), Err(Refused::Expired));
+        assert_eq!(
+            check(&mut table, &tok(1), "BOB", 110, true, true, ok),
+            Ok(())
+        );
+        assert_eq!(
+            check(&mut table, &tok(2), "BOB", 160, true, true, ok),
+            Err(Refused::Expired)
+        );
         let expired = |u: &str| u != "BOB";
-        assert_eq!(check(&mut table, &tok(3), "bob", 110, true, true, expired), Err(Refused::Profile));
-        assert_eq!(check(&mut table, &tok(4), "BOB", 110, true, false, ok), Err(Refused::NotAllowed));
+        assert_eq!(
+            check(&mut table, &tok(3), "bob", 110, true, true, expired),
+            Err(Refused::Profile)
+        );
+        assert_eq!(
+            check(&mut table, &tok(4), "BOB", 110, true, false, ok),
+            Err(Refused::NotAllowed)
+        );
         assert!(table.is_empty(), "used up whatever the answer");
     }
 

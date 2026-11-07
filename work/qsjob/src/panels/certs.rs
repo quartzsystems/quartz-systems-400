@@ -17,9 +17,21 @@ use crate::display::surface::Surface;
 use crate::display::uim::{CMDLINE_VAR, Choice, LineMsg, Response, UimDialog};
 
 /// The driver of a command, if it is one of these.
-pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out: &mut Outcome) -> Option<Result<String, Fail>> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    _out: &mut Outcome,
+) -> Option<Result<String, Fail>> {
     let res = match r.name.as_str() {
-        "QSWRKCRT" => wrkcrt(job, host, surface, &parm(r, "KEYSTORE"), &parm(r, "PASSWORD")),
+        "QSWRKCRT" => wrkcrt(
+            job,
+            host,
+            surface,
+            &parm(r, "KEYSTORE"),
+            &parm(r, "PASSWORD"),
+        ),
         "QSWRKAPPID" => wrkappid(job, host, surface, &parm(r, "APPID")),
         _ => return None,
     };
@@ -52,7 +64,11 @@ fn dialog(host: &Host) -> Result<UimDialog, Fail> {
     Ok(d)
 }
 
-pub(super) fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
+pub(super) fn show(
+    d: &mut UimDialog,
+    surface: &mut Surface,
+    panel: &str,
+) -> Result<Response, Fail> {
     d.show(surface, panel)
         .map_err(|e| crate::panels::failed(format!("panel {panel}: {e}")))
 }
@@ -114,7 +130,13 @@ pub(super) fn options(
 }
 
 /// `QSWRKCRT KEYSTORE() PASSWORD()`.
-fn wrkcrt(job: &mut Job, host: &Host, surface: &mut Surface, store: &str, password: &str) -> Result<(), Fail> {
+fn wrkcrt(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    store: &str,
+    password: &str,
+) -> Result<(), Fail> {
     let args = vec![store.to_string(), password.to_string()];
     let mut d = dialog(host)?;
     let mut last = String::new();
@@ -205,7 +227,9 @@ fn generic(pattern: &str, id: &str) -> bool {
         return true;
     }
     match p.strip_suffix('*') {
-        Some(prefix) => id.to_ascii_uppercase().starts_with(&prefix.to_ascii_uppercase()),
+        Some(prefix) => id
+            .to_ascii_uppercase()
+            .starts_with(&prefix.to_ascii_uppercase()),
         None => id.eq_ignore_ascii_case(p),
     }
 }

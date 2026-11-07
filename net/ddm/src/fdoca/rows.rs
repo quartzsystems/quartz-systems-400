@@ -35,11 +35,16 @@ pub fn write_value(w: &mut Writer, f: &Field, v: &Value) -> Result<(), Error> {
         }
         w.u8(PRESENT);
     } else if matches!(v, Value::Null) {
-        return Err(Error::Invalid("a null value in a column that is not nullable".into()));
+        return Err(Error::Invalid(
+            "a null value in a column that is not nullable".into(),
+        ));
     }
     let bad = |e: qdecimal::DecimalError| Error::Invalid(e.to_string());
     let base = u16::from(f.drda & !1);
-    let (p, s) = (u8::try_from(f.len >> 8).unwrap_or(0), u8::try_from(f.len & 0xFF).unwrap_or(0));
+    let (p, s) = (
+        u8::try_from(f.len >> 8).unwrap_or(0),
+        u8::try_from(f.len & 0xFF).unwrap_or(0),
+    );
     match base {
         drda::SMALL => w.i16(i16::try_from(int_of(v)?).map_err(|_| overflow())?),
         drda::INTEGER => w.i32(i32::try_from(int_of(v)?).map_err(|_| overflow())?),
@@ -57,11 +62,21 @@ pub fn write_value(w: &mut Writer, f: &Field, v: &Value) -> Result<(), Error> {
         }
         drda::DECIMAL => {
             let d = dec_of(v)?;
-            w.bytes(&Packed::new(p, s).map_err(bad)?.encode(&d, Rounding::Truncate).map_err(bad)?);
+            w.bytes(
+                &Packed::new(p, s)
+                    .map_err(bad)?
+                    .encode(&d, Rounding::Truncate)
+                    .map_err(bad)?,
+            );
         }
         drda::ZDECIMAL => {
             let d = dec_of(v)?;
-            w.bytes(&Zoned::new(p, s).map_err(bad)?.encode(&d, Rounding::Truncate).map_err(bad)?);
+            w.bytes(
+                &Zoned::new(p, s)
+                    .map_err(bad)?
+                    .encode(&d, Rounding::Truncate)
+                    .map_err(bad)?,
+            );
         }
         drda::CHAR | drda::MIX | drda::DATE | drda::TIME | drda::TIMESTAMP => {
             w.fixed(&v.render(), usize::from(f.len));
@@ -84,7 +99,13 @@ fn overflow() -> Error {
 fn int_of(v: &Value) -> Result<i64, Error> {
     match v {
         Value::Int(i) => Ok(*i),
-        Value::Dec(d) => d.to_string().split('.').next().unwrap_or("0").parse().map_err(|_| overflow()),
+        Value::Dec(d) => d
+            .to_string()
+            .split('.')
+            .next()
+            .unwrap_or("0")
+            .parse()
+            .map_err(|_| overflow()),
         #[allow(clippy::cast_possible_truncation)] // the fraction goes, as SQL's CAST
         Value::Double(f) => Ok(f.trunc() as i64),
         Value::Text(t) => t.trim().parse().map_err(|_| overflow()),
@@ -106,7 +127,10 @@ pub fn read_value(r: &mut Reader<'_>, f: &Field) -> Result<Value, Error> {
     }
     let bad = |e: qdecimal::DecimalError| Error::Invalid(e.to_string());
     let base = u16::from(f.drda & !1);
-    let (p, s) = (u8::try_from(f.len >> 8).unwrap_or(0), u8::try_from(f.len & 0xFF).unwrap_or(0));
+    let (p, s) = (
+        u8::try_from(f.len >> 8).unwrap_or(0),
+        u8::try_from(f.len & 0xFF).unwrap_or(0),
+    );
     Ok(match base {
         drda::SMALL => Value::Int(i64::from(r.i16()?)),
         drda::INTEGER => Value::Int(i64::from(r.i32()?)),

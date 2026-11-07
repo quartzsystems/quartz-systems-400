@@ -8,9 +8,9 @@
 
 use crc::{CRC_32_ISCSI, Crc, Table};
 
-use crate::bytes::{get_u32, get_u64, put_u32, put_u64};
 use crate::asp::parity::geometry::PPL_ENTRIES;
 use crate::asp::parity::table::Level;
+use crate::bytes::{get_u32, get_u64, put_u32, put_u64};
 use crate::page::PAGE_SIZE;
 use crate::spec::{Layout, field};
 
@@ -103,7 +103,10 @@ pub fn pages_for(count: usize) -> usize {
 /// Encode a slot: the header page and the partial pages.
 #[must_use]
 pub fn encode(id: &Ident, seq: u64, entries: &[Entry]) -> Vec<u8> {
-    assert!(entries.len() <= PPL_ENTRIES, "slot holds {PPL_ENTRIES} entries");
+    assert!(
+        entries.len() <= PPL_ENTRIES,
+        "slot holds {PPL_ENTRIES} entries"
+    );
     let mut out = vec![0u8; pages_for(entries.len()) * PAGE_SIZE];
     out[..8].copy_from_slice(MAGIC);
     put_u64(&mut out, OFF_SEQ, seq);
@@ -112,7 +115,11 @@ pub fn encode(id: &Ident, seq: u64, entries: &[Entry]) -> Vec<u8> {
     out[OFF_LEVEL] = id.level.as_u8();
     out[OFF_MEMBERS] = id.members;
     out[OFF_MEMBER] = id.member;
-    put_u32(&mut out, OFF_COUNT, u32::try_from(entries.len()).expect("small"));
+    put_u32(
+        &mut out,
+        OFF_COUNT,
+        u32::try_from(entries.len()).expect("small"),
+    );
     put_u64(&mut out, OFF_BLOCKS, id.blocks);
     for (i, e) in entries.iter().enumerate() {
         let at = HEADER_LEN + i * ENTRY_LEN;

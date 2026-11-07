@@ -29,7 +29,11 @@ fn find(
 }
 
 /// A panel group's payload and real library.
-pub fn open_pnlgrp(system: &mut System, name: &str, lib: &str) -> Result<(Vec<u8>, String), String> {
+pub fn open_pnlgrp(
+    system: &mut System,
+    name: &str,
+    lib: &str,
+) -> Result<(Vec<u8>, String), String> {
     let ty = pnlgrp_type();
     crate::stgsvc::spool::with_store(system, |txn, qsys| {
         let (id, real) = find(txn, qsys, lib, name, ty)?;
@@ -47,4 +51,3 @@ pub fn open_menu(system: &mut System, name: &str, lib: &str) -> Result<(Vec<u8>,
         Ok((b, real))
     })
 }
-

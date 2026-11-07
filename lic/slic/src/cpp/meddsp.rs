@@ -28,12 +28,17 @@ pub(crate) fn mdy(d: Date) -> String {
 /// Year, month and day of a label date.
 pub(crate) fn ymd(d: Date) -> (u16, u8, u8) {
     const DAYS: [u16; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let leap = (d.year.is_multiple_of(4) && !d.year.is_multiple_of(100)) || d.year.is_multiple_of(400);
+    let leap =
+        (d.year.is_multiple_of(4) && !d.year.is_multiple_of(100)) || d.year.is_multiple_of(400);
     let mut left = d.day.max(1);
     for (i, n) in DAYS.iter().enumerate() {
         let n = if i == 1 && leap { 29 } else { *n };
         if left <= n {
-            return (d.year, u8::try_from(i + 1).unwrap_or(12), u8::try_from(left).unwrap_or(31));
+            return (
+                d.year,
+                u8::try_from(i + 1).unwrap_or(12),
+                u8::try_from(left).unwrap_or(31),
+            );
         }
         left -= n;
     }
@@ -136,11 +141,19 @@ struct Dsp {
     end_opt: tape::EndOpt,
 }
 
-type DspOut = (tape::volume::VolumeLabels, Vec<(u32, String, Vec<u8>)>, String);
+type DspOut = (
+    tape::volume::VolumeLabels,
+    Vec<(u32, String, Vec<u8>)>,
+    String,
+);
 
 impl TapeJob for Dsp {
     type Out = DspOut;
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, p: &mut dyn VolumeProvider<D>) -> Result<DspOut, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        p: &mut dyn VolumeProvider<D>,
+    ) -> Result<DspOut, MediaError> {
         let l = tape::volume::labels(d, self.vol.as_deref(), tape::EndOpt::Rewind)?;
         let density = d.status().map(|s| s.density).unwrap_or_default();
         let mut out = Vec::new();
@@ -205,8 +218,14 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
         VolumeKind::Labeled { vol1, code } => (
             vol1.owner.clone(),
             "*SL",
-            if *code == Code::Ascii { "*ASCII" } else { "*EBCDIC" },
-            vol1.encode(Code::Ascii).map(|r| label_text(&r)).unwrap_or_default(),
+            if *code == Code::Ascii {
+                "*ASCII"
+            } else {
+                "*EBCDIC"
+            },
+            vol1.encode(Code::Ascii)
+                .map(|r| label_text(&r))
+                .unwrap_or_default(),
         ),
         VolumeKind::Unlabeled => (String::new(), "*NL", "", String::new()),
         VolumeKind::Blank => (String::new(), "", "", String::new()),
@@ -256,11 +275,18 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
     let mut objects = Vec::new();
     let mut headers = Vec::new();
     for (seq, _, bytes) in &saves {
-        let Ok((_, rows)) = super::savcmd::stream_listing(bytes) else { continue };
-        if let Ok((head, _, index)) = savfmt::read_index(&mut std::io::Cursor::new(bytes.as_slice())) {
+        let Ok((_, rows)) = super::savcmd::stream_listing(bytes) else {
+            continue;
+        };
+        if let Ok((head, _, index)) =
+            savfmt::read_index(&mut std::io::Cursor::new(bytes.as_slice()))
+        {
             let library = index
                 .iter()
-                .find(|e| e.owner_index == savfmt::object::NO_OWNER && e.type_code != store::obj::types::LIB)
+                .find(|e| {
+                    e.owner_index == savfmt::object::NO_OWNER
+                        && e.type_code != store::obj::types::LIB
+                })
                 .map(|e| savfmt::text(&e.library))
                 .unwrap_or_default();
             headers.push(TapSave {
@@ -303,7 +329,12 @@ pub(crate) struct CtgView {
 /// The cartridges of library `dev` that `ids` and `cgy` select;
 /// `CPF9814` when there is no such device, `CPF6745` when it is not a
 /// tape media library.
-pub(crate) fn cartridges(system: &mut System, dev: &str, ids: &[String], cgy: &str) -> Result<Vec<CtgView>, String> {
+pub(crate) fn cartridges(
+    system: &mut System,
+    dev: &str,
+    ids: &[String],
+    cgy: &str,
+) -> Result<Vec<CtgView>, String> {
     let dev = dev.trim().to_ascii_uppercase();
     let d = devices::read(system, &dev).map_err(|e| {
         if e.starts_with(devices::NOT_FOUND) {
@@ -316,17 +347,35 @@ pub(crate) fn cartridges(system: &mut System, dev: &str, ids: &[String], cgy: &s
         return Err(format!("CPF6745 device {dev} is not a tape media library"));
     }
     // `CGY(*ALL *CURRENT)`: the category, not its system qualifier.
-    let cgy = cgy.trim_matches(|c| c == '(' || c == ')').split_whitespace().next().unwrap_or("");
+    let cgy = cgy
+        .trim_matches(|c| c == '(' || c == ')')
+        .split_whitespace()
+        .next()
+        .unwrap_or("");
     let rows = media::library::rows(system, &dev, ids, cgy)?;
     if rows.is_empty() {
         // Nothing matched: the cartridge asked for, else the category.
         if let Some(id) = ids.iter().find(|i| !i.starts_with('*')) {
-            return Err(format!("CPF67A1 Cartridge {id} is not in media library {dev}."));
+            return Err(format!(
+                "CPF67A1 Cartridge {id} is not in media library {dev}."
+            ));
         }
-        let cgy = if cgy.trim().is_empty() { "*ALL" } else { cgy.trim() };
-        return Err(format!("CPF67EE Media library {dev} has no cartridges in category {cgy}."));
+        let cgy = if cgy.trim().is_empty() {
+            "*ALL"
+        } else {
+            cgy.trim()
+        };
+        return Err(format!(
+            "CPF67EE Media library {dev} has no cartridges in category {cgy}."
+        ));
     }
-    Ok(rows.into_iter().map(|row| CtgView { dev: dev.clone(), row }).collect())
+    Ok(rows
+        .into_iter()
+        .map(|row| CtgView {
+            dev: dev.clone(),
+            row,
+        })
+        .collect())
 }
 
 // ---------------------------------------------------------------- optical
@@ -364,7 +413,13 @@ pub(crate) fn opt_hms(t: &optical::iso::Timestamp) -> String {
 
 /// The volume `VOL` names on `DEV` (or wherever it is loaded) and what
 /// `DATA` asks of it; `PATH` for the directories and files.
-pub(crate) fn optical_view(system: &mut System, vol: &str, dev: &str, data: &str, path: &str) -> Result<OptView, String> {
+pub(crate) fn optical_view(
+    system: &mut System,
+    vol: &str,
+    dev: &str,
+    data: &str,
+    path: &str,
+) -> Result<OptView, String> {
     let v = named(vol);
     let dev = dev.trim().to_ascii_uppercase();
     let (t, volid) = if !dev.is_empty() && !dev.starts_with('*') {
@@ -383,12 +438,14 @@ pub(crate) fn optical_view(system: &mut System, vol: &str, dev: &str, data: &str
         "*DIRATR" => OptView::Dirs(
             t.dev,
             volid.clone(),
-            set.with(&volid, |v| optical::volume::ops::dir_attrs(v, path, true)).map_err(opt)?,
+            set.with(&volid, |v| optical::volume::ops::dir_attrs(v, path, true))
+                .map_err(opt)?,
         ),
         "*FILATR" => OptView::Files(
             t.dev,
             volid.clone(),
-            set.with(&volid, |v| optical::volume::ops::file_attrs(v, path)).map_err(opt)?,
+            set.with(&volid, |v| optical::volume::ops::file_attrs(v, path))
+                .map_err(opt)?,
         ),
         "*SAVRST" => {
             let mut files: Vec<String> = set
@@ -415,7 +472,9 @@ pub(crate) fn optical_view(system: &mut System, vol: &str, dev: &str, data: &str
         }
         _ => OptView::Volume(OptVolume {
             dev: t.dev,
-            attrs: set.with(&volid, |v| optical::volume::ops::volume_attrs(v)).map_err(opt)?,
+            attrs: set
+                .with(&volid, |v| optical::volume::ops::volume_attrs(v))
+                .map_err(opt)?,
         }),
     })
 }
@@ -440,20 +499,38 @@ pub(crate) struct OptVolRow {
 
 /// The optical volumes on optical devices `DEV` (`*ALL` for each) that
 /// `VOL` (generic) selects, by device, then volume.
-pub(crate) fn optical_volumes(system: &mut System, dev: &str, vol: &str) -> Result<Vec<OptVolRow>, String> {
+pub(crate) fn optical_volumes(
+    system: &mut System,
+    dev: &str,
+    vol: &str,
+) -> Result<Vec<OptVolRow>, String> {
     let dev = dev.trim().to_ascii_uppercase();
     let vol = vol.trim().trim_matches('\'').to_ascii_uppercase();
     let wanted = |v: &str| {
-        vol.is_empty() || vol == "*ALL" || v.eq_ignore_ascii_case(&vol) || vol.strip_suffix('*').is_some_and(|p| v.to_ascii_uppercase().starts_with(p))
+        vol.is_empty()
+            || vol == "*ALL"
+            || v.eq_ignore_ascii_case(&vol)
+            || vol
+                .strip_suffix('*')
+                .is_some_and(|p| v.to_ascii_uppercase().starts_with(p))
     };
     let devs = devices::all(system)?;
     let mut out = Vec::new();
-    for (n, _) in devs.iter().filter(|(_, d)| d.media_kind() == Some(MediaKind::Optical)) {
+    for (n, _) in devs
+        .iter()
+        .filter(|(_, d)| d.media_kind() == Some(MediaKind::Optical))
+    {
         if !(dev.is_empty() || dev == "*ALL" || *n == dev) {
             continue;
         }
-        let Some(c) = media::catalog_on(n) else { continue };
-        for e in c.entries.iter().filter(|e| e.status != imgclg::EntryStatus::Available) {
+        let Some(c) = media::catalog_on(n) else {
+            continue;
+        };
+        for e in c
+            .entries
+            .iter()
+            .filter(|e| e.status != imgclg::EntryStatus::Available)
+        {
             if !wanted(&e.volume) {
                 continue;
             }
@@ -461,14 +538,19 @@ pub(crate) fn optical_volumes(system: &mut System, dev: &str, vol: &str) -> Resu
                 vol: e.volume.clone(),
                 dev: n.clone(),
                 vol_type: "*PRIMARY",
-                media_type: if e.write_protect { "*CD-ROM" } else { "*DVD-RAM" },
+                media_type: if e.write_protect {
+                    "*CD-ROM"
+                } else {
+                    "*DVD-RAM"
+                },
                 autl: "*NONE",
                 catalog: c.name.clone(),
                 protected: e.write_protect,
             });
         }
     }
-    if out.is_empty() && !(dev.is_empty() || dev == "*ALL") && !devs.iter().any(|(n, _)| *n == dev) {
+    if out.is_empty() && !(dev.is_empty() || dev == "*ALL") && !devs.iter().any(|(n, _)| *n == dev)
+    {
         return Err(format!("CPF9814 Device {dev} not found."));
     }
     Ok(out)
@@ -481,7 +563,19 @@ mod tests {
     #[test]
     fn label_dates_as_the_displays_show_them() {
         assert_eq!(mdy(Date { year: 2026, day: 1 }), "01/01/26");
-        assert_eq!(mdy(Date { year: 2024, day: 60 }), "02/29/24");
-        assert_eq!(mdy(Date { year: 2026, day: 365 }), "12/31/26");
+        assert_eq!(
+            mdy(Date {
+                year: 2024,
+                day: 60
+            }),
+            "02/29/24"
+        );
+        assert_eq!(
+            mdy(Date {
+                year: 2026,
+                day: 365
+            }),
+            "12/31/26"
+        );
     }
 }

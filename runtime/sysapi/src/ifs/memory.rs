@@ -75,7 +75,12 @@ impl MemIfs {
         q.add_obj("QGPL", "QCLSRC", "*FILE", "PF-SRC", "QSYS");
         q.add_member("QGPL", "QCLSRC", "HELLO", source(&["PGM", "ENDPGM"], 80));
         q.add_obj("QSTEST", "QRPGLESRC", "*FILE", "PF-SRC", "QSTEST");
-        q.add_member("QSTEST", "QRPGLESRC", "PROTOS", source(&["**FREE", "dcl-s from_member int(10);"], 92));
+        q.add_member(
+            "QSTEST",
+            "QRPGLESRC",
+            "PROTOS",
+            source(&["**FREE", "dcl-s from_member int(10);"], 92),
+        );
         let env = MemEnv::default()
             .user("QSYS", 0)
             .user("QSECOFR", 1)

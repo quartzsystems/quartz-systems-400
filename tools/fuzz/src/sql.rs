@@ -44,10 +44,17 @@ pub fn run(data: &[u8]) {
     if OUTSIDE.iter().any(|w| upper.contains(w)) {
         return;
     }
-    let Ok(stmts) = sql::parse_all(&t, Naming::Sql) else { return };
-    let Some((mut store, mut ctx)) = fresh() else { return };
+    let Ok(stmts) = sql::parse_all(&t, Naming::Sql) else {
+        return;
+    };
+    let Some((mut store, mut ctx)) = fresh() else {
+        return;
+    };
     for st in stmts.into_iter().take(16) {
-        let p = sql::Prepared { statement: st, naming: Naming::Sql };
+        let p = sql::Prepared {
+            statement: st,
+            naming: Naming::Sql,
+        };
         let Ok(mut txn) = store.begin() else { return };
         let (ca, _) = p.run(&mut txn, &mut ctx, &[]);
         if ca.sqlcode < 0 {
@@ -61,8 +68,20 @@ pub fn run(data: &[u8]) {
 /// A small store with QSYS and the library `FZ`, and a context over it.
 fn fresh() -> Option<(Store, SqlContext)> {
     let dev = Arc::new(MemBlockDev::new(8192));
-    let params = FormatParams { asp_number: 1, asp_uuid: [4; 16], unit_uuids: vec![[5; 16]], unit_serials: Vec::new(), wal_pages: 256, now: NOW };
-    let mut store = Store::format(vec![Box::new(dev) as Box<dyn BlockDev>], &params, StoreConfig::default()).ok()?;
+    let params = FormatParams {
+        asp_number: 1,
+        asp_uuid: [4; 16],
+        unit_uuids: vec![[5; 16]],
+        unit_serials: Vec::new(),
+        wal_pages: 256,
+        now: NOW,
+    };
+    let mut store = Store::format(
+        vec![Box::new(dev) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .ok()?;
     let mut txn = store.begin().ok()?;
     let qsys = ops::bootstrap(&mut txn, NOW, "QS400").ok()?;
     let lib = ops::create(
@@ -81,7 +100,14 @@ fn fresh() -> Option<(Store, SqlContext)> {
     )
     .ok()?;
     txn.commit().ok()?;
-    let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+    let mut ctx = SqlContext::new(
+        qsys,
+        JobHandle(1),
+        NameContext {
+            curlib: Some(lib),
+            libl: vec![lib],
+        },
+    );
     ctx.now = Some(NOW);
     ctx.current_schema = Name::parse("FZ").ok();
     ctx.user = "QSECOFR".into();
@@ -111,14 +137,83 @@ pub const SEEDS: &[&[u8]] = &[
 
 /// Tokens mutations insert.
 pub const DICT: &[&[u8]] = &[
-    b"SELECT ", b" FROM ", b" WHERE ", b" JOIN ", b"(", b")", b"'", b"CASE WHEN ", b" UNION ", b"MERGE INTO ",
-    b"CREATE TABLE ", b"ALTER TABLE ", b" ADD COLUMN ", b" ALTER COLUMN ", b" SET DATA TYPE ", b"CREATE INDEX ", b"CREATE VIEW ",
-    b"CREATE SEQUENCE ", b" GENERATED ALWAYS AS IDENTITY ", b" PRIMARY KEY ", b" REFERENCES ", b" ON DELETE CASCADE", b" CHECK (",
-    b"LABEL ON ", b"COMMENT ON ", b"GRANT ", b"DROP ", b" RESTRICT", b" CASCADE",
-    b"BEGIN ", b" END", b"DECLARE ", b" HANDLER FOR ", b"SIGNAL SQLSTATE ", b"RESIGNAL", b"GET DIAGNOSTICS ", b"FOR ", b" DO ",
-    b"LEAVE ", b"ITERATE ", b"WHILE ", b"REPEAT ", b"UNTIL ", b"RETURN ", b"CALL ", b"EXECUTE IMMEDIATE ", b"SET ", b";",
-    b" OVER (", b"PARTITION BY ", b" ROWS BETWEEN ", b" UNBOUNDED PRECEDING", b" FOLLOWING", b"ROW_NUMBER()", b"LAG(", b"NTILE(",
-    b"WITH ", b"RECURSIVE ", b" AS (", b" SEARCH DEPTH FIRST BY ", b" CYCLE ",
-    b"JSON_VALUE(", b"JSON_TABLE(", b"JSON_OBJECT(", b"JSON_ARRAYAGG(", b"$.", b"[*]", b"lax ", b"strict ", b" COLUMNS (", b" PATH ",
-    b"DECFLOAT(", b"BOOLEAN", b"CLOB(", b"VARGRAPHIC(", b" FOR BIT DATA", b" CCSID 1200", b"CAST(", b"TIMESTAMP(12)",
+    b"SELECT ",
+    b" FROM ",
+    b" WHERE ",
+    b" JOIN ",
+    b"(",
+    b")",
+    b"'",
+    b"CASE WHEN ",
+    b" UNION ",
+    b"MERGE INTO ",
+    b"CREATE TABLE ",
+    b"ALTER TABLE ",
+    b" ADD COLUMN ",
+    b" ALTER COLUMN ",
+    b" SET DATA TYPE ",
+    b"CREATE INDEX ",
+    b"CREATE VIEW ",
+    b"CREATE SEQUENCE ",
+    b" GENERATED ALWAYS AS IDENTITY ",
+    b" PRIMARY KEY ",
+    b" REFERENCES ",
+    b" ON DELETE CASCADE",
+    b" CHECK (",
+    b"LABEL ON ",
+    b"COMMENT ON ",
+    b"GRANT ",
+    b"DROP ",
+    b" RESTRICT",
+    b" CASCADE",
+    b"BEGIN ",
+    b" END",
+    b"DECLARE ",
+    b" HANDLER FOR ",
+    b"SIGNAL SQLSTATE ",
+    b"RESIGNAL",
+    b"GET DIAGNOSTICS ",
+    b"FOR ",
+    b" DO ",
+    b"LEAVE ",
+    b"ITERATE ",
+    b"WHILE ",
+    b"REPEAT ",
+    b"UNTIL ",
+    b"RETURN ",
+    b"CALL ",
+    b"EXECUTE IMMEDIATE ",
+    b"SET ",
+    b";",
+    b" OVER (",
+    b"PARTITION BY ",
+    b" ROWS BETWEEN ",
+    b" UNBOUNDED PRECEDING",
+    b" FOLLOWING",
+    b"ROW_NUMBER()",
+    b"LAG(",
+    b"NTILE(",
+    b"WITH ",
+    b"RECURSIVE ",
+    b" AS (",
+    b" SEARCH DEPTH FIRST BY ",
+    b" CYCLE ",
+    b"JSON_VALUE(",
+    b"JSON_TABLE(",
+    b"JSON_OBJECT(",
+    b"JSON_ARRAYAGG(",
+    b"$.",
+    b"[*]",
+    b"lax ",
+    b"strict ",
+    b" COLUMNS (",
+    b" PATH ",
+    b"DECFLOAT(",
+    b"BOOLEAN",
+    b"CLOB(",
+    b"VARGRAPHIC(",
+    b" FOR BIT DATA",
+    b" CCSID 1200",
+    b"CAST(",
+    b"TIMESTAMP(12)",
 ];

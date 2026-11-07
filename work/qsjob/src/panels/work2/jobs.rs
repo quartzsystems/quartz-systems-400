@@ -97,7 +97,9 @@ pub fn wrksbsd(
                     sbsd = d.get(CMDLINE_VAR).trim().to_ascii_uppercase();
                     d.set(CMDLINE_VAR, "");
                 }
-                let lib = cell(d, &c.list, c.row, "SBSDLIB").trim().to_ascii_uppercase();
+                let lib = cell(d, &c.list, c.row, "SBSDLIB")
+                    .trim()
+                    .to_ascii_uppercase();
                 let cmd = match (sbsd.is_empty(), lib.is_empty()) {
                     (true, _) => "?CRTSBSD".to_string(),
                     (false, true) => format!("?CRTSBSD SBSD({sbsd})"),

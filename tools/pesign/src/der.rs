@@ -30,7 +30,11 @@ pub fn tlv(tag: u8, content: &[u8]) -> Vec<u8> {
     if n < 0x80 {
         out.push(u8::try_from(n).unwrap_or(0));
     } else {
-        let bytes: Vec<u8> = n.to_be_bytes().into_iter().skip_while(|b| *b == 0).collect();
+        let bytes: Vec<u8> = n
+            .to_be_bytes()
+            .into_iter()
+            .skip_while(|b| *b == 0)
+            .collect();
         out.push(0x80 | u8::try_from(bytes.len()).unwrap_or(0));
         out.extend(bytes);
     }
@@ -116,8 +120,18 @@ pub fn read(b: &[u8]) -> Result<(Tlv<'_>, &[u8]), Error> {
         }
         (len, 2 + n)
     };
-    let end = head.checked_add(len).filter(|e| *e <= b.len()).ok_or_else(bad)?;
-    Ok((Tlv { tag, whole: &b[..end], content: &b[head..end] }, &b[end..]))
+    let end = head
+        .checked_add(len)
+        .filter(|e| *e <= b.len())
+        .ok_or_else(bad)?;
+    Ok((
+        Tlv {
+            tag,
+            whole: &b[..end],
+            content: &b[head..end],
+        },
+        &b[end..],
+    ))
 }
 
 /// Every value in `b`, in order.
@@ -137,7 +151,12 @@ mod tests {
 
     #[test]
     fn oids_and_lengths() {
-        assert_eq!(oid("1.2.840.113549.1.7.2"), [0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02]);
+        assert_eq!(
+            oid("1.2.840.113549.1.7.2"),
+            [
+                0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02
+            ]
+        );
         assert_eq!(oid("2.16.840.1.101.3.4.2.1")[..4], [0x06, 0x09, 0x60, 0x86]);
         let long = tlv(OCTETS, &[0u8; 300]);
         assert_eq!(&long[..4], &[0x04, 0x82, 0x01, 0x2C]);

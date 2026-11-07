@@ -14,9 +14,9 @@ pub mod routines;
 pub mod services;
 pub mod sys;
 mod syscolumns;
+pub mod sysibm;
 mod systables;
 pub mod systools;
-pub mod sysibm;
 
 use store::txn::Txn;
 
@@ -39,14 +39,38 @@ pub(crate) struct Provider {
 
 /// The providers.
 const PROVIDERS: &[Provider] = &[
-    Provider { has: sys::has, table: sys::virtual_table },
-    Provider { has: auth::has, table: auth::virtual_table },
-    Provider { has: cst::has, table: cst::table },
-    Provider { has: routines::has, table: routines::virtual_table },
-    Provider { has: services::has, table: services::table },
-    Provider { has: sysibm::has, table: sysibm::virtual_table },
-    Provider { has: objects2::has, table: objects2::virtual_table },
-    Provider { has: packages::has, table: packages::virtual_table },
+    Provider {
+        has: sys::has,
+        table: sys::virtual_table,
+    },
+    Provider {
+        has: auth::has,
+        table: auth::virtual_table,
+    },
+    Provider {
+        has: cst::has,
+        table: cst::table,
+    },
+    Provider {
+        has: routines::has,
+        table: routines::virtual_table,
+    },
+    Provider {
+        has: services::has,
+        table: services::table,
+    },
+    Provider {
+        has: sysibm::has,
+        table: sysibm::virtual_table,
+    },
+    Provider {
+        has: objects2::has,
+        table: objects2::virtual_table,
+    },
+    Provider {
+        has: packages::has,
+        table: packages::virtual_table,
+    },
 ];
 
 /// Whether `name` names a computed view.
@@ -75,8 +99,14 @@ pub fn virtual_table(
 
 /// A table function call: the function, its arguments' values and
 /// expressions, the correlation name.
-pub(crate) type FunctionCall =
-    fn(&mut Txn<'_>, &SqlContext, &ObjectName, &[crate::value::Value], &[crate::ast::Expr], &str) -> Result<Option<Table>>;
+pub(crate) type FunctionCall = fn(
+    &mut Txn<'_>,
+    &SqlContext,
+    &ObjectName,
+    &[crate::value::Value],
+    &[crate::ast::Expr],
+    &str,
+) -> Result<Option<Table>>;
 
 /// One provider of table functions: `TABLE (name(args)) AS x`.
 pub(crate) struct FunctionProvider {
@@ -89,9 +119,18 @@ pub(crate) struct FunctionProvider {
 
 /// The table function providers, asked in order.
 const FUNCTIONS: &[FunctionProvider] = &[
-    FunctionProvider { has: systools::has, call: systools::call },
-    FunctionProvider { has: super::json::table::has, call: super::json::table::call },
-    FunctionProvider { has: services::is_table_function, call: services::call },
+    FunctionProvider {
+        has: systools::has,
+        call: systools::call,
+    },
+    FunctionProvider {
+        has: super::json::table::has,
+        call: super::json::table::call,
+    },
+    FunctionProvider {
+        has: services::is_table_function,
+        call: services::call,
+    },
 ];
 
 /// Whether `name` names a table function.

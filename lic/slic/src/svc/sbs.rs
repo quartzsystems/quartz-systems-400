@@ -40,8 +40,12 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
             Ok(())
         }),
         "dltsbsd" => dltsbsd(system, &p),
-        "addrtge" => with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, true)).inspect(|_| se(&p, "A")),
-        "chgrtge" => with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, false)).inspect(|_| se(&p, "C")),
+        "addrtge" => {
+            with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, true)).inspect(|_| se(&p, "A"))
+        }
+        "chgrtge" => {
+            with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, false)).inspect(|_| se(&p, "C"))
+        }
         "rmvrtge" => with_sbsd(system, &p, edit(sbsdcmd::rmvrtge)).inspect(|_| se(&p, "R")),
         "addwse" => with_sbsd(system, &p, edit(sbsdcmd::addwse)),
         "rmvwse" => with_sbsd(system, &p, edit(sbsdcmd::rmvwse)),

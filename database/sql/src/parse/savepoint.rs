@@ -38,7 +38,11 @@ impl Parser {
     /// After `ROLLBACK [WORK] TO`: `SAVEPOINT [name]`.
     pub(crate) fn rollback_to(&mut self) -> Result<Statement> {
         self.expect_word("SAVEPOINT")?;
-        let name = if self.at_end() || self.is_sym(";") { None } else { Some(self.ident()?) };
+        let name = if self.at_end() || self.is_sym(";") {
+            None
+        } else {
+            Some(self.ident()?)
+        };
         Ok(Statement::Savepoint(SavepointStmt::RollbackTo(name)))
     }
 }

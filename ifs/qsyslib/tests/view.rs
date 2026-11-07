@@ -453,9 +453,11 @@ fn change_counters_rise_within_one_second() {
     // A member's records written twice, then the file's text changed,
     // all in the same second (the store keeps `changed` in seconds).
     let rec = |s: &str| ccsid::to_ebcdic(&format!("{s:<80}")).unwrap();
-    v.write_member("QGPL", "QCLSRC", "HELLO", vec![rec("PGM")]).unwrap();
+    v.write_member("QGPL", "QCLSRC", "HELLO", vec![rec("PGM")])
+        .unwrap();
     let m1 = mbr(&v);
-    v.write_member("QGPL", "QCLSRC", "HELLO", vec![rec("PGM"), rec("ENDPGM")]).unwrap();
+    v.write_member("QGPL", "QCLSRC", "HELLO", vec![rec("PGM"), rec("ENDPGM")])
+        .unwrap();
     let m2 = mbr(&v);
     assert!(m0 < m1 && m1 < m2, "{m0} {m1} {m2}");
     let id = v.access().with_main(&mut |t, qsys| {
@@ -481,7 +483,8 @@ fn change_counters_rise_within_one_second() {
     assert!(file(&v) > f1);
     // A user space's bytes.
     let s0 = v.object("QGPL", "SPACE", "*USRSPC").unwrap().change;
-    v.write_stream("QGPL", "SPACE", "*USRSPC", &[1; 16]).unwrap();
+    v.write_stream("QGPL", "SPACE", "*USRSPC", &[1; 16])
+        .unwrap();
     assert!(v.object("QGPL", "SPACE", "*USRSPC").unwrap().change > s0);
     // Reading changes nothing.
     let m = mbr(&v);

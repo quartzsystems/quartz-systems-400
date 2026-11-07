@@ -12,7 +12,8 @@ use common::{Browser, assert_golden};
 use qsweb::partials::{Cell, Col, List, list_table};
 
 /// The prototype's statement.
-const STATEMENT: &str = "SELECT asset_tag, location, manufacturer, model, serial, asset_type, status, acquired
+const STATEMENT: &str =
+    "SELECT asset_tag, location, manufacturer, model, serial, asset_type, status, acquired
   FROM hlinv.assets
  WHERE status IN ('ACTIVE', 'SPARE')
  ORDER BY location, asset_tag";
@@ -32,7 +33,16 @@ fn ok(b: &mut Browser, route: &str) -> String {
 }
 
 fn run(b: &mut Browser, sql: &str) {
-    let r = b.post("/sql", &[("schema", "HLINV"), ("naming", "*SQL"), ("iso", "*NONE"), ("sql", sql), ("run", "Run")]);
+    let r = b.post(
+        "/sql",
+        &[
+            ("schema", "HLINV"),
+            ("naming", "*SQL"),
+            ("iso", "*NONE"),
+            ("sql", sql),
+            ("run", "Run"),
+        ],
+    );
     assert_eq!(r.header("Location"), Some("/qs400/navigator/sql"));
 }
 
@@ -52,16 +62,28 @@ fn run_sql() {
     assert_golden(
         &ok(&mut b, "/sql"),
         "nav/run-sql.html",
-        &[SQL0100, ("<a href=\"#\">Download as CSV</a>", "<a href=\"run-sql.html\">Download as CSV</a>")],
+        &[
+            SQL0100,
+            (
+                "<a href=\"#\">Download as CSV</a>",
+                "<a href=\"run-sql.html\">Download as CSV</a>",
+            ),
+        ],
     );
     // A previous statement comes back into the box.
     let t = ok(&mut b, "/sql?h=3");
-    assert!(t.contains("class=\"conf\">UPDATE hlinv.assets SET status = &#39;RETIRED&#39;"), "{t}");
+    assert!(
+        t.contains("class=\"conf\">UPDATE hlinv.assets SET status = &#39;RETIRED&#39;"),
+        "{t}"
+    );
     // The full result as CSV.
     let r = b.get("/sql?csv=1");
     assert_eq!(r.header("Content-Type"), Some("text/csv; charset=utf-8"));
     let csv = r.text();
-    assert!(csv.starts_with("ASSET_TAG,LOCATION,") && csv.lines().count() == 13, "{csv}");
+    assert!(
+        csv.starts_with("ASSET_TAG,LOCATION,") && csv.lines().count() == 13,
+        "{csv}"
+    );
     // Sorting the result shown.
     let t = ok(&mut b, "/sql?sort=manufacturer");
     assert!(t.find("ARISTA").unwrap() < t.find("QUANTA").unwrap());
@@ -74,17 +96,34 @@ fn run_sql() {
 #[test]
 fn run_sql_as_the_user() {
     let mut b = Browser::as_user("WEBUSER");
-    run(&mut b, "UPDATE hlinv.assets SET status = 'SPARE' WHERE asset_tag = 'QS000101'");
+    run(
+        &mut b,
+        "UPDATE hlinv.assets SET status = 'SPARE' WHERE asset_tag = 'QS000101'",
+    );
     let t = ok(&mut b, "/sql");
     assert!(t.contains(">SQL0551</a>"), "{t}");
-    assert!(b.fx.db.ran.lock().unwrap().iter().any(|s| s.starts_with("UPDATE")));
+    assert!(
+        b.fx.db
+            .ran
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|s| s.starts_with("UPDATE"))
+    );
     // History is per user.
     let mut q = Browser::signed_on();
     assert!(!ok(&mut q, "/sql").contains("Previous statements"));
     // Errors show their message; Explain shows a plan.
     run(&mut b, "SELECT nothing FROM hlinv.assets");
     assert!(ok(&mut b, "/sql").contains(">SQL0206</a> - Column NOTHING not found."));
-    b.post("/sql", &[("schema", "HLINV"), ("sql", "SELECT * FROM assets"), ("explain", "Explain")]);
+    b.post(
+        "/sql",
+        &[
+            ("schema", "HLINV"),
+            ("sql", "SELECT * FROM assets"),
+            ("explain", "Explain"),
+        ],
+    );
     assert!(ok(&mut b, "/sql").contains("Table scan        HLINV.ASSETS"));
 }
 
@@ -92,7 +131,10 @@ fn run_sql_as_the_user() {
 fn history_keeps_fifty() {
     let mut b = Browser::signed_on();
     for n in 0..55 {
-        run(&mut b, &format!("SELECT * FROM hlinv.assets WHERE rack_u = {n}"));
+        run(
+            &mut b,
+            &format!("SELECT * FROM hlinv.assets WHERE rack_u = {n}"),
+        );
     }
     let h = b.nav.sql.of("QSECOFR").history;
     assert_eq!(h.len(), 50);
@@ -106,7 +148,12 @@ fn schemas() {
     assert_golden(&ok(&mut b, "/db/HLINV"), "nav/schemas.html", &[]);
     let t = ok(&mut b, "/db/HLINV?show=indexes");
     assert!(t.contains("<h3>Indexes</h3>") && t.contains("ASSETS_SERIAL"));
-    assert!(ok(&mut b, "/db/HLINV?sort=r").find("NOTES").unwrap() < ok(&mut b, "/db/HLINV?sort=r").find("ASSETS</a></td>").unwrap());
+    assert!(
+        ok(&mut b, "/db/HLINV?sort=r").find("NOTES").unwrap()
+            < ok(&mut b, "/db/HLINV?sort=r")
+                .find("ASSETS</a></td>")
+                .unwrap()
+    );
     assert_eq!(b.get("/db/NOSUCH").status, 404);
 }
 
@@ -117,7 +164,10 @@ fn table_columns() {
         &ok(&mut b, "/db/HLINV/ASSETS/columns"),
         "nav/table-columns.html",
         // The DDL link went nowhere.
-        &[("<a href=\"#\">Generate SQL (DDL)</a>", "<a href=\"table-columns.html\">Generate SQL (DDL)</a>")],
+        &[(
+            "<a href=\"#\">Generate SQL (DDL)</a>",
+            "<a href=\"table-columns.html\">Generate SQL (DDL)</a>",
+        )],
     );
     for (tab, has) in [
         ("keys", "ASSETS_LOC_FK"),
@@ -126,7 +176,10 @@ fn table_columns() {
         ("properties", "Deleted rows"),
         ("ddl", "CREATE TABLE HLINV.ASSETS ("),
     ] {
-        assert!(ok(&mut b, &format!("/db/HLINV/ASSETS/{tab}")).contains(has), "{tab}");
+        assert!(
+            ok(&mut b, &format!("/db/HLINV/ASSETS/{tab}")).contains(has),
+            "{tab}"
+        );
     }
     assert_eq!(b.get("/db/HLINV/NOSUCH/columns").status, 404);
 }
@@ -137,10 +190,18 @@ fn first_page() -> String {
     let t = fx.db.tables.lock().unwrap();
     let a = &t[0];
     list_table(&List {
-        cols: a.columns.iter().map(|c| Col::sorted(&c.name, &c.name.to_ascii_lowercase())).collect(),
+        cols: a
+            .columns
+            .iter()
+            .map(|c| Col::sorted(&c.name, &c.name.to_ascii_lowercase()))
+            .collect(),
         rows: a.rows[..25]
             .iter()
-            .map(|r| r.iter().map(|v| Cell::mono(v.as_deref().unwrap_or("NULL"))).collect())
+            .map(|r| {
+                r.iter()
+                    .map(|v| Cell::mono(v.as_deref().unwrap_or("NULL")))
+                    .collect()
+            })
             .collect(),
         empty: String::new(),
         keep: Vec::new(),
@@ -162,11 +223,19 @@ fn table_data() {
             // for SELECT * over 412: the table's columns, 25 a page.
             (&golden[start..end], page.as_str()),
             ("12 rows returned", "412 rows returned"),
-            ("<a href=\"#\">Download as CSV</a>", "<a href=\"table-data.html\">Download as CSV</a>"),
+            (
+                "<a href=\"#\">Download as CSV</a>",
+                "<a href=\"table-data.html\">Download as CSV</a>",
+            ),
         ],
     );
     let t = ok(&mut b, "/db/HLINV/ASSETS/data?w=status%20%3D%20%27SPARE%27");
-    assert!(t.contains("QS000403") && t.contains("1 entry") && t.contains("WHERE status = &#39;SPARE&#39; ORDER BY ASSET_TAG"), "{t}");
+    assert!(
+        t.contains("QS000403")
+            && t.contains("1 entry")
+            && t.contains("WHERE status = &#39;SPARE&#39; ORDER BY ASSET_TAG"),
+        "{t}"
+    );
     let t = ok(&mut b, "/db/HLINV/ASSETS/data?w=nope%20%3D%201");
     assert!(t.contains(">SQL0206</a>"));
     let r = b.get("/db/HLINV/ASSETS/data?csv=1");

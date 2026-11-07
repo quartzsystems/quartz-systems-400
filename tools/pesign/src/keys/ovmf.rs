@@ -21,7 +21,9 @@ const START: u16 = 0x55AA;
 const HEADER: usize = 60;
 
 fn le16(b: &[u8], o: usize) -> Result<usize, Error> {
-    b.get(o..o + 2).map(|s| usize::from(u16::from_le_bytes([s[0], s[1]]))).ok_or(Error::Pe("truncated variable store"))
+    b.get(o..o + 2)
+        .map(|s| usize::from(u16::from_le_bytes([s[0], s[1]])))
+        .ok_or(Error::Pe("truncated variable store"))
 }
 
 fn le32(b: &[u8], o: usize) -> Result<usize, Error> {
@@ -47,7 +49,9 @@ pub fn add_db(vars: &[u8], esl: &[u8]) -> Result<Vec<u8>, Error> {
         }
         off = (off + HEADER + ns + ds + 3) & !3;
     }
-    let (at, ns, ds) = db.ok_or(Error::Pe("the variable store has no db: start from a store with keys enrolled"))?;
+    let (at, ns, ds) = db.ok_or(Error::Pe(
+        "the variable store has no db: start from a store with keys enrolled",
+    ))?;
     let mut new = d[at..at + HEADER + ns + ds].to_vec();
     new.extend_from_slice(esl);
     let size = u32::try_from(ds + esl.len()).map_err(|_| Error::Pe("db too large"))?;

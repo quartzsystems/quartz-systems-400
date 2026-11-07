@@ -93,7 +93,10 @@ impl Service {
     /// The services version `v` defines, in value order.
     #[must_use]
     pub fn of_version(v: u16) -> Vec<Service> {
-        Service::ALL.into_iter().filter(|s| s.since() <= v).collect()
+        Service::ALL
+            .into_iter()
+            .filter(|s| s.since() <= v)
+            .collect()
     }
 }
 
@@ -171,7 +174,11 @@ impl Status {
     /// the same message) when `v` does not define it.
     #[must_use]
     pub const fn for_version(self, v: u16) -> Status {
-        if self.since() <= v { self } else { Status::Error }
+        if self.since() <= v {
+            self
+        } else {
+            Status::Error
+        }
     }
 
     /// Every status, in value order.

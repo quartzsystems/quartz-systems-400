@@ -94,7 +94,13 @@ pub trait SignonHost: Auth {
     /// becoming that user.
     fn verify(&mut self, user: &str, proof: Proof<'_>) -> Result<Info, Refusal>;
     /// A profile token for `user`.
-    fn token(&mut self, user: &str, proof: Proof<'_>, kind: u8, timeout: u32) -> Result<Vec<u8>, u32>;
+    fn token(
+        &mut self,
+        user: &str,
+        proof: Proof<'_>,
+        kind: u8,
+        timeout: u32,
+    ) -> Result<Vec<u8>, u32>;
     /// Change `user`'s password.
     fn change_password(&mut self, user: &str, c: &Change) -> Result<(), Refusal>;
 }
@@ -120,7 +126,10 @@ fn messages(msgs: &[JobMessage]) -> Vec<Param> {
         return Vec::new();
     }
     let mut v = vec![Param::u16(cp::MESSAGE_COUNT, reply::len16(msgs.len()))];
-    v.extend(msgs.iter().map(|m| Param::new(cp::MESSAGE, m.to_host().encode())));
+    v.extend(
+        msgs.iter()
+            .map(|m| Param::new(cp::MESSAGE, m.to_host().encode())),
+    );
     v
 }
 
@@ -199,12 +208,26 @@ impl<H: SignonHost, X: Exits> Signon<H, X> {
         let rid = id::SIGNON_INFO_REPLY;
         let (user, proof) = match self.proof(f) {
             Ok(x) => x,
-            Err(code) => return Outcome::one(reply::frame(&f.header, rid, code.to_be_bytes().to_vec(), Vec::new())),
+            Err(code) => {
+                return Outcome::one(reply::frame(
+                    &f.header,
+                    rid,
+                    code.to_be_bytes().to_vec(),
+                    Vec::new(),
+                ));
+            }
         };
         if !self.allowed(&user, func::RETRIEVE_SIGNON) {
-            return Outcome::one(reply::frame(&f.header, rid, rc::GENERAL.to_be_bytes().to_vec(), Vec::new()));
+            return Outcome::one(reply::frame(
+                &f.header,
+                rid,
+                rc::GENERAL.to_be_bytes().to_vec(),
+                Vec::new(),
+            ));
         }
-        let want_msgs = f.param(cp::RETURN_MESSAGES).is_some_and(|p| p.data.first() == Some(&1));
+        let want_msgs = f
+            .param(cp::RETURN_MESSAGES)
+            .is_some_and(|p| p.data.first() == Some(&1));
         match self.host.verify(&user, proof) {
             Ok(i) => {
                 let mut params = Vec::new();
@@ -223,11 +246,25 @@ impl<H: SignonHost, X: Exits> Signon<H, X> {
                 if want_msgs {
                     params.extend(messages(&i.messages));
                 }
-                Outcome::one(reply::frame(&f.header, rid, rc::OK.to_be_bytes().to_vec(), params))
+                Outcome::one(reply::frame(
+                    &f.header,
+                    rid,
+                    rc::OK.to_be_bytes().to_vec(),
+                    params,
+                ))
             }
             Err((code, msgs)) => {
-                let params = if want_msgs { messages(&msgs) } else { Vec::new() };
-                Outcome::one(reply::frame(&f.header, rid, code.to_be_bytes().to_vec(), params))
+                let params = if want_msgs {
+                    messages(&msgs)
+                } else {
+                    Vec::new()
+                };
+                Outcome::one(reply::frame(
+                    &f.header,
+                    rid,
+                    code.to_be_bytes().to_vec(),
+                    params,
+                ))
             }
         }
     }
@@ -237,30 +274,64 @@ impl<H: SignonHost, X: Exits> Signon<H, X> {
         let user = f.param(cp::USER_ID).map(user_of).unwrap_or_default();
         let get = |c| f.param(c).map(|p| p.data.clone()).unwrap_or_default();
         let Some(seeds) = self.seeds() else {
-            return Outcome::one(reply::frame(&f.header, rid, rc::REQUEST_NOT_VALID.to_be_bytes().to_vec(), Vec::new()));
+            return Outcome::one(reply::frame(
+                &f.header,
+                rid,
+                rc::REQUEST_NOT_VALID.to_be_bytes().to_vec(),
+                Vec::new(),
+            ));
         };
         let c = Change {
             seeds,
             substitute: get(cp::PASSWORD),
             new_protected: get(cp::NEW_PASSWORD),
             old_protected: get(cp::OLD_PASSWORD),
-            new_len: f.param(cp::NEW_PASSWORD_LENGTH).and_then(Param::as_u32).unwrap_or(0),
-            old_len: f.param(cp::OLD_PASSWORD_LENGTH).and_then(Param::as_u32).unwrap_or(0),
+            new_len: f
+                .param(cp::NEW_PASSWORD_LENGTH)
+                .and_then(Param::as_u32)
+                .unwrap_or(0),
+            old_len: f
+                .param(cp::OLD_PASSWORD_LENGTH)
+                .and_then(Param::as_u32)
+                .unwrap_or(0),
         };
         if !self.allowed(&user, func::CHANGE_PASSWORD) {
-            return Outcome::one(reply::frame(&f.header, rid, rc::GENERAL.to_be_bytes().to_vec(), Vec::new()));
+            return Outcome::one(reply::frame(
+                &f.header,
+                rid,
+                rc::GENERAL.to_be_bytes().to_vec(),
+                Vec::new(),
+            ));
         }
-        let want_msgs = f.param(cp::RETURN_MESSAGES).is_some_and(|p| p.data.first() == Some(&1));
+        let want_msgs = f
+            .param(cp::RETURN_MESSAGES)
+            .is_some_and(|p| p.data.first() == Some(&1));
         let (code, msgs) = match self.host.change_password(&user, &c) {
             Ok(()) => (rc::OK, Vec::new()),
             Err(r) => r,
         };
-        let params = if want_msgs { messages(&msgs) } else { Vec::new() };
-        Outcome::one(reply::frame(&f.header, rid, code.to_be_bytes().to_vec(), params))
+        let params = if want_msgs {
+            messages(&msgs)
+        } else {
+            Vec::new()
+        };
+        Outcome::one(reply::frame(
+            &f.header,
+            rid,
+            code.to_be_bytes().to_vec(),
+            params,
+        ))
     }
 
     fn token(&mut self, f: &Frame, rid: u16) -> Outcome {
-        let fail = |code: u32| Outcome::one(reply::frame(&f.header, rid, code.to_be_bytes().to_vec(), Vec::new()));
+        let fail = |code: u32| {
+            Outcome::one(reply::frame(
+                &f.header,
+                rid,
+                code.to_be_bytes().to_vec(),
+                Vec::new(),
+            ))
+        };
         let (user, proof) = match self.proof(f) {
             Ok(x) => x,
             Err(code) => return fail(code),
@@ -272,7 +343,10 @@ impl<H: SignonHost, X: Exits> Signon<H, X> {
             .param(cp::TOKEN_TYPE)
             .and_then(|p| p.data.first().copied())
             .unwrap_or(hostsvr::signon::token_type::SINGLE_USE);
-        let timeout = f.param(cp::TOKEN_TIMEOUT).and_then(Param::as_u32).unwrap_or(3600);
+        let timeout = f
+            .param(cp::TOKEN_TIMEOUT)
+            .and_then(Param::as_u32)
+            .unwrap_or(3600);
         match self.host.token(&user, proof, kind, timeout) {
             Ok(t) => Outcome::one(reply::frame(
                 &f.header,

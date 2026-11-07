@@ -23,10 +23,22 @@ fn moves_definitions_and_renames_operations() {
     ));
     let c = rpg3::convert(&src);
     let t = c.text();
-    assert_eq!(t[1], "     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)");
-    assert_eq!(t[2], "     D ARR             S              3  0 DIM(8) CTDATA PERRCD(4)");
-    assert_eq!(t[3], "     C     ARR(1)        ADD       1             X                 3 0");
-    assert_eq!(t[4], "     C                   SETOFF                                       LR");
+    assert_eq!(
+        t[1],
+        "     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)"
+    );
+    assert_eq!(
+        t[2],
+        "     D ARR             S              3  0 DIM(8) CTDATA PERRCD(4)"
+    );
+    assert_eq!(
+        t[3],
+        "     C     ARR(1)        ADD       1             X                 3 0"
+    );
+    assert_eq!(
+        t[4],
+        "     C                   SETOFF                                       LR"
+    );
     assert_eq!(t[5], "     C   01");
     assert_eq!(t[6], "     CAN 02");
     assert_eq!(t[7], "     CANN03              EXCEPT    LINE");

@@ -142,7 +142,10 @@ pub fn error_stamp(secs: u64) -> String {
 /// last written).
 pub fn stamp(secs: u64) -> String {
     let c = civil(secs);
-    format!("{:04}{:02}{:02}{:02}{:02}{:02}", c.year, c.month, c.day, c.hour, c.min, c.sec)
+    format!(
+        "{:04}{:02}{:02}{:02}{:02}{:02}",
+        c.year, c.month, c.day, c.hour, c.min, c.sec
+    )
 }
 
 /// Whether `s` is a rotated log's suffix: 14 digits (8 from logs
@@ -158,9 +161,15 @@ mod tests {
     #[test]
     fn formats_and_parses() {
         assert_eq!(http_date(784_111_777), "Sun, 06 Nov 1994 08:49:37 GMT");
-        assert_eq!(parse_http_date("Sun, 06 Nov 1994 08:49:37 GMT"), Some(784_111_777));
+        assert_eq!(
+            parse_http_date("Sun, 06 Nov 1994 08:49:37 GMT"),
+            Some(784_111_777)
+        );
         assert_eq!(parse_http_date("Sunday, 06-Nov-94 08:49:37 GMT"), None);
-        assert_eq!(parse_http_date(&http_date(1_793_232_000)), Some(1_793_232_000));
+        assert_eq!(
+            parse_http_date(&http_date(1_793_232_000)),
+            Some(1_793_232_000)
+        );
         assert_eq!(clf(1_793_232_000), "[29/Oct/2026:00:00:00 +0000]");
         assert_eq!(error_stamp(1_793_232_000), "Thu Oct 29 00:00:00 2026");
         assert_eq!(stamp(1_793_232_000 + 3723), "20261029010203");

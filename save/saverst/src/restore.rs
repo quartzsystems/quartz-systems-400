@@ -21,10 +21,10 @@ use std::io::Read;
 use db::file::{self, DependentEntry, FileAttr, FileKind, members};
 use savfmt::object::NO_OWNER;
 use savfmt::{ObjectDescriptor, Part, Reader, RefEntry, SavedObject, Scan};
+use store::Store;
 use store::obj::header::{Domain, text_of};
 use store::obj::library::Library;
 use store::obj::{Authority, JobHandle, LockState, ObjectId, ops, types};
-use store::Store;
 use store::txn::Txn;
 use tracing::debug;
 
@@ -304,7 +304,9 @@ pub fn restore<R: Read>(
             Scan::Object(o) => *o,
             Scan::Damaged(d) => {
                 if let Some(d) = d.filter(|d| d.owner_index == NO_OWNER) {
-                    report.objects.push(result_of(&d, Some(msg::NOT_RESTORED_DAMAGED)));
+                    report
+                        .objects
+                        .push(result_of(&d, Some(msg::NOT_RESTORED_DAMAGED)));
                 }
                 continue;
             }
@@ -394,7 +396,10 @@ pub fn restore<R: Read>(
             .objects
             .iter()
             .any(|o| sel.matches(&o.name, o.type_code))
-            || report.skipped.iter().any(|(_, n)| crate::select::generic(&sel.name, n));
+            || report
+                .skipped
+                .iter()
+                .any(|(_, n)| crate::select::generic(&sel.name, n));
         if !seen && !report.not_found.contains(&sel.name) {
             report.not_found.push(sel.name.clone());
         }
@@ -421,12 +426,21 @@ fn result_of(d: &ObjectDescriptor, msgid: Option<&'static str>) -> ObjResult {
 }
 
 fn lib_selected(opts: &RestoreOptions, lib: &str) -> bool {
-    (opts.libraries.is_empty() || opts.libraries.iter().any(|l| crate::select::generic(l, lib)))
-        && !opts.omit_libraries.iter().any(|l| crate::select::generic(l, lib))
+    (opts.libraries.is_empty()
+        || opts
+            .libraries
+            .iter()
+            .any(|l| crate::select::generic(l, lib)))
+        && !opts
+            .omit_libraries
+            .iter()
+            .any(|l| crate::select::generic(l, lib))
 }
 
 fn target_name(opts: &RestoreOptions, saved: &str) -> String {
-    opts.target_library.clone().unwrap_or_else(|| saved.to_string())
+    opts.target_library
+        .clone()
+        .unwrap_or_else(|| saved.to_string())
 }
 
 fn target_lib(
@@ -466,7 +480,8 @@ fn library(
         return Ok(());
     }
     let name = target_name(cx.opts, &saved);
-    let n = qsname::Name::parse(&name).map_err(|_| Error::refused(msg::NO_LIBRARY, name.clone()))?;
+    let n =
+        qsname::Name::parse(&name).map_err(|_| Error::refused(msg::NO_LIBRARY, name.clone()))?;
     let mut txn = store.begin()?;
     let params = ops::CreateParams {
         library: cx.qsys,
@@ -482,7 +497,15 @@ fn library(
     let id = ops::create(&mut txn, &params)?;
     image::import(&mut txn, id, &o.parts)?;
     image::import_schema_name(&mut txn, cx.qsys, id, &o.parts)?;
-    set_header(&mut txn, cx, id, &o.descriptor, &o.authorities, true, &mut Vec::new())?;
+    set_header(
+        &mut txn,
+        cx,
+        id,
+        &o.descriptor,
+        &o.authorities,
+        true,
+        &mut Vec::new(),
+    )?;
     txn.commit()?;
     st.libs.insert(saved, Some(id));
     report.created_libraries.push(name);
@@ -501,7 +524,11 @@ fn owner_for(
     }
     notes.push((
         msg::DEFAULT_OWNER,
-        format!("{} {}: owner {owner} not found", d.library_name(), d.object_name()),
+        format!(
+            "{} {}: owner {owner} not found",
+            d.library_name(),
+            d.object_name()
+        ),
     ));
     cx.opts.default_owner.clone()
 }
@@ -553,7 +580,10 @@ fn one(
             return Err(Error::refused(m, d.object_name()));
         }
     }
-    let existing_h = existing.map(|id| ops::read_header(txn, id)).transpose()?.map(|x| x.1);
+    let existing_h = existing
+        .map(|id| ops::read_header(txn, id))
+        .transpose()?
+        .map(|x| x.1);
     cx.hooks
         .may_restore(txn, d, lib, existing_h.as_ref())
         .map_err(|m| Error::refused(m, d.object_name()))?;
@@ -589,7 +619,12 @@ fn signable(type_code: u16) -> bool {
 fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>> {
     let d = &o.descriptor;
     let a = cx.opts.allow_restore;
-    let refuse = |what: &str| Err(Error::refused(msg::NOT_RESTORED_SYSVAL, format!("{}: {what}", d.object_name())));
+    let refuse = |what: &str| {
+        Err(Error::refused(
+            msg::NOT_RESTORED_SYSVAL,
+            format!("{}: {what}", d.object_name()),
+        ))
+    };
     if !a.all && signable(d.type_code) {
         if d.state == 0 && !a.system_state {
             return refuse("system state");
@@ -603,7 +638,11 @@ fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>
         // Signed at build time over the content digest; the stream's
         // digest also covers the references' save-time flags.
         let good = cx.hooks.verify(s.key_id, &s.digest, &s.signature) == Some(true)
-            || cx.hooks.verify(s.key_id, &crate::sign::saved_content_digest(d, &o.parts), &s.signature) == Some(true);
+            || cx.hooks.verify(
+                s.key_id,
+                &crate::sign::saved_content_digest(d, &o.parts),
+                &s.signature,
+            ) == Some(true);
         (s, good)
     });
     if level >= 2 && signable(d.type_code) {
@@ -615,20 +654,20 @@ fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>
         };
         match sig {
             None if level >= 4 => return bad("not signed"),
-            Some((_, false))
-                if matches!(level, 3 | 5) && !(a.all || a.validation_errors) =>
-            {
+            Some((_, false)) if matches!(level, 3 | 5) && !(a.all || a.validation_errors) => {
                 return bad("signature does not verify");
             }
             _ => {}
         }
     }
     // Only a signature that verifies is kept.
-    Ok(sig.filter(|(_, good)| *good).map(|(s, _)| store::obj::Signature {
-        bytes: s.signature,
-        key_id: s.key_id,
-        system: cx.hooks.system_key(s.key_id),
-    }))
+    Ok(sig
+        .filter(|(_, good)| *good)
+        .map(|(s, _)| store::obj::Signature {
+            bytes: s.signature,
+            key_id: s.key_id,
+            system: cx.hooks.system_key(s.key_id),
+        }))
 }
 
 /// `ALWOBJDIF`: may the saved object replace `h`? The differences it
@@ -644,19 +683,31 @@ fn differs(
         if !(allow.owner || allow.all) {
             return Err(Error::refused(msg::NOT_RESTORED_OWNER, name));
         }
-        out.push((msg::OWNER_KEPT, format!("{} owns {name}", text_of(&h.owner))));
+        out.push((
+            msg::OWNER_KEPT,
+            format!("{} owns {name}", text_of(&h.owner)),
+        ));
     }
     if d.primary_group != h.primary_group {
         if !(allow.pgp || allow.all) {
             return Err(Error::refused(msg::NOT_RESTORED_PGP, name));
         }
-        out.push((msg::PGP_KEPT, format!("{} stays the primary group of {name}", text_of(&h.primary_group))));
+        out.push((
+            msg::PGP_KEPT,
+            format!(
+                "{} stays the primary group of {name}",
+                text_of(&h.primary_group)
+            ),
+        ));
     }
     if d.autl != h.autl {
         if !(allow.autl || allow.all) {
             return Err(Error::refused(msg::NOT_RESTORED_OWNER, name));
         }
-        out.push((msg::CHANGES, format!("{name}: the authorization list on the system stays")));
+        out.push((
+            msg::CHANGES,
+            format!("{name}: the authorization list on the system stays"),
+        ));
     }
     Ok(out)
 }
@@ -674,10 +725,13 @@ fn patch_refs(
 ) -> Result<Vec<RefEntry>> {
     let mut unresolved = Vec::new();
     for r in image::refs(parts)? {
-        let mapped = map
-            .get(&r.original_id)
-            .copied()
-            .or_else(|| staged.map.iter().find(|(o, _)| *o == r.original_id).map(|x| x.1));
+        let mapped = map.get(&r.original_id).copied().or_else(|| {
+            staged
+                .map
+                .iter()
+                .find(|(o, _)| *o == r.original_id)
+                .map(|x| x.1)
+        });
         if let Some(id) = mapped {
             image::patch(parts, &r, id);
             continue;
@@ -724,12 +778,22 @@ fn restore_plain(
     let mut parts = o.parts.clone();
     patch_refs(txn, cx, &HashMap::new(), id, &mut parts, staged)?;
     image::import(txn, id, &parts)?;
-    set_header(txn, cx, id, d, &o.authorities, existing.is_none(), &mut staged.notes)?;
+    set_header(
+        txn,
+        cx,
+        id,
+        d,
+        &o.authorities,
+        existing.is_none(),
+        &mut staged.notes,
+    )?;
     image::import_sqlinf(txn, cx.job, id, &parts, cx.opts.now)?;
     convert(txn, cx, o, id, staged)?;
     set_signature(txn, id, staged.signature)?;
     if existing.is_some() {
-        txn.store().locks_mut().unlock(cx.job, id, LockState::Exclusive);
+        txn.store()
+            .locks_mut()
+            .unlock(cx.job, id, LockState::Exclusive);
     }
     if d.type_code == order::JRN {
         staged.journal = Some(id);
@@ -764,7 +828,9 @@ fn convert(
     }
     let level = cx.opts.convert;
     let invalid = o.signature.is_some() && staged.signature.is_none();
-    let all = matches!(level, 5 | 7) || (level >= 4 && staged.signature.is_none()) || (level >= 1 && invalid);
+    let all = matches!(level, 5 | 7)
+        || (level >= 4 && staged.signature.is_none())
+        || (level >= 1 && invalid);
     if !all && level < 2 {
         return Ok(());
     }
@@ -774,7 +840,10 @@ fn convert(
             staged.signature = None;
             Ok(())
         }
-        Err(why) => Err(Error::refused(msg::NOT_RESTORED, format!("{}: not converted: {why}", d.object_name()))),
+        Err(why) => Err(Error::refused(
+            msg::NOT_RESTORED,
+            format!("{}: not converted: {why}", d.object_name()),
+        )),
     }
 }
 
@@ -894,7 +963,11 @@ fn set_header(
     Ok(())
 }
 
-fn set_signature(txn: &mut Txn<'_>, id: ObjectId, sig: Option<store::obj::Signature>) -> Result<()> {
+fn set_signature(
+    txn: &mut Txn<'_>,
+    id: ObjectId,
+    sig: Option<store::obj::Signature>,
+) -> Result<()> {
     let (page, mut h) = ops::read_header(txn, id)?;
     if h.signature != sig {
         h.signature = sig;
@@ -993,7 +1066,9 @@ fn restore_file(
     staged.map.push((d.original_id, fid));
     if logical {
         // An existing logical file keeps its definition and paths.
-        txn.store().locks_mut().unlock(cx.job, fid, LockState::Exclusive);
+        txn.store()
+            .locks_mut()
+            .unlock(cx.job, fid, LockState::Exclusive);
         return Ok(());
     }
     let (space, _) = store::obj::space::Space::load(txn, fid)?;
@@ -1005,12 +1080,17 @@ fn restore_file(
     if format_differs && allow.all {
         // `*ALL`: the file on the system is renamed and the saved one
         // restored in its place.
-        txn.store().locks_mut().unlock(cx.job, fid, LockState::Exclusive);
+        txn.store()
+            .locks_mut()
+            .unlock(cx.job, fid, LockState::Exclusive);
         let new = renamed(txn, lib, d)?;
         ops::rename(txn, fid, new, cx.opts.now)?;
         staged.map.retain(|(o, _)| *o != d.original_id);
         staged.changes += 1;
-        staged.notes.push((msg::FILE_RENAMED, format!("{} renamed to {new}", d.object_name())));
+        staged.notes.push((
+            msg::FILE_RENAMED,
+            format!("{} renamed to {new}", d.object_name()),
+        ));
         return restore_file(txn, cx, lib, o, saved_members, None, staged);
     }
     if format_differs || (created_differs && !(allow.filelvl || allow.all)) {
@@ -1023,7 +1103,10 @@ fn restore_file(
         attr.member_count,
     );
     let have: Vec<String> = desc.members.iter().map(|m| m.name.to_string()).collect();
-    let saved: Vec<String> = saved_members.iter().map(|m| m.descriptor.object_name()).collect();
+    let saved: Vec<String> = saved_members
+        .iter()
+        .map(|m| m.descriptor.object_name())
+        .collect();
     if cx.opts.mbropt == MbrOpt::Match {
         let (mut a, mut b) = (have.clone(), saved.clone());
         a.sort();
@@ -1072,7 +1155,9 @@ fn restore_file(
     let (page, mut h) = ops::read_header(txn, fid)?;
     h.last_restored = cx.opts.now;
     ops::write_header(txn, page, &h)?;
-    txn.store().locks_mut().unlock(cx.job, fid, LockState::Exclusive);
+    txn.store()
+        .locks_mut()
+        .unlock(cx.job, fid, LockState::Exclusive);
     staged.members = u32::try_from(done.len()).expect("members");
     staged.file = Some(FileDone {
         id: fid,

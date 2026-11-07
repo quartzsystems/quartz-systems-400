@@ -176,6 +176,10 @@ mod tests {
         dev.write_all(&[0xa5; 8192]).unwrap();
         let esp = fat::build(&fat::DISK_ESP, &[]).unwrap();
         write_image(&mut dev, &plan, &Guids::FIXED, &esp).unwrap();
-        assert!(dev.read_at(plan.asp1.offset(), 8192).iter().all(|&b| b == 0));
+        assert!(
+            dev.read_at(plan.asp1.offset(), 8192)
+                .iter()
+                .all(|&b| b == 0)
+        );
     }
 }

@@ -18,7 +18,11 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 
 fn check(r: libc::c_int) -> io::Result<libc::c_int> {
-    if r < 0 { Err(io::Error::last_os_error()) } else { Ok(r) }
+    if r < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(r)
+    }
 }
 
 fn check_len(r: libc::ssize_t) -> io::Result<usize> {
@@ -86,7 +90,9 @@ fn from_storage(ss: &libc::sockaddr_storage) -> Option<IpAddr> {
         libc::AF_INET => {
             // SAFETY: the family says the storage holds a `sockaddr_in`.
             let sin = unsafe { &*std::ptr::from_ref(ss).cast::<libc::sockaddr_in>() };
-            Some(IpAddr::V4(Ipv4Addr::from(sin.sin_addr.s_addr.to_ne_bytes())))
+            Some(IpAddr::V4(Ipv4Addr::from(
+                sin.sin_addr.s_addr.to_ne_bytes(),
+            )))
         }
         libc::AF_INET6 => {
             // SAFETY: the family says the storage holds a `sockaddr_in6`.
@@ -116,12 +122,23 @@ pub fn connect(fd: &OwnedFd, a: &SocketAddr) -> io::Result<()> {
 /// `send` on a connected socket.
 pub fn send(fd: &OwnedFd, buf: &[u8]) -> io::Result<usize> {
     // SAFETY: `buf` is valid for `buf.len()` bytes for the call.
-    check_len(unsafe { libc::send(fd.as_raw_fd(), buf.as_ptr().cast(), buf.len(), libc::MSG_NOSIGNAL) })
+    check_len(unsafe {
+        libc::send(
+            fd.as_raw_fd(),
+            buf.as_ptr().cast(),
+            buf.len(),
+            libc::MSG_NOSIGNAL,
+        )
+    })
 }
 
 /// `poll` one descriptor; the returned events, 0 on time-out.
 pub fn poll(fd: &OwnedFd, events: i16, timeout_ms: i32) -> io::Result<i16> {
-    let mut p = libc::pollfd { fd: fd.as_raw_fd(), events, revents: 0 };
+    let mut p = libc::pollfd {
+        fd: fd.as_raw_fd(),
+        events,
+        revents: 0,
+    };
     // SAFETY: one `pollfd` that lives across the call.
     let n = check(unsafe { libc::poll(&raw mut p, 1, timeout_ms) })?;
     Ok(if n == 0 { 0 } else { p.revents })
@@ -145,7 +162,10 @@ pub struct Received {
 pub fn recvmsg(fd: &OwnedFd, buf: &mut [u8], ctrl: &mut [u8], flags: i32) -> io::Result<Received> {
     // SAFETY: plain bytes; zeros are valid.
     let mut ss: libc::sockaddr_storage = unsafe { zeroed() };
-    let mut iov = libc::iovec { iov_base: buf.as_mut_ptr().cast(), iov_len: buf.len() };
+    let mut iov = libc::iovec {
+        iov_base: buf.as_mut_ptr().cast(),
+        iov_len: buf.len(),
+    };
     // SAFETY: `msghdr` is plain data; zeros are valid before it is set.
     let mut m: libc::msghdr = unsafe { zeroed() };
     m.msg_name = std::ptr::from_mut(&mut ss).cast();
@@ -160,8 +180,14 @@ pub fn recvmsg(fd: &OwnedFd, buf: &mut [u8], ctrl: &mut [u8], flags: i32) -> io:
     let n = check_len(unsafe { libc::recvmsg(fd.as_raw_fd(), &raw mut m, flags) })?;
     Ok(Received {
         len: n,
-        ctrl_len: usize::try_from(m.msg_controllen).unwrap_or(0).min(ctrl.len()),
-        from: if m.msg_namelen > 0 { from_storage(&ss) } else { None },
+        ctrl_len: usize::try_from(m.msg_controllen)
+            .unwrap_or(0)
+            .min(ctrl.len()),
+        from: if m.msg_namelen > 0 {
+            from_storage(&ss)
+        } else {
+            None
+        },
     })
 }
 
@@ -170,14 +196,24 @@ const ETH_P_ALL: u16 = 0x0003;
 
 /// An `AF_PACKET` raw socket on link `ifindex`, every protocol.
 pub fn packet_socket(ifindex: i32) -> io::Result<OwnedFd> {
-    let fd = socket(libc::AF_PACKET, libc::SOCK_RAW, i32::from(ETH_P_ALL.to_be()))?;
+    let fd = socket(
+        libc::AF_PACKET,
+        libc::SOCK_RAW,
+        i32::from(ETH_P_ALL.to_be()),
+    )?;
     // SAFETY: plain data; zeros are valid.
     let mut ll: libc::sockaddr_ll = unsafe { zeroed() };
     ll.sll_family = libc::c_ushort::try_from(libc::AF_PACKET).unwrap_or(17);
     ll.sll_protocol = ETH_P_ALL.to_be();
     ll.sll_ifindex = ifindex;
     // SAFETY: `ll` is a complete `sockaddr_ll` passed with its size.
-    check(unsafe { libc::bind(fd.as_raw_fd(), std::ptr::from_ref(&ll).cast(), len_of::<libc::sockaddr_ll>()) })?;
+    check(unsafe {
+        libc::bind(
+            fd.as_raw_fd(),
+            std::ptr::from_ref(&ll).cast(),
+            len_of::<libc::sockaddr_ll>(),
+        )
+    })?;
     Ok(fd)
 }
 
@@ -213,7 +249,13 @@ pub fn vsock_listen(port: u32) -> io::Result<OwnedFd> {
     vm.svm_cid = libc::VMADDR_CID_ANY;
     // SAFETY: `vm` is a `sockaddr_vm` this function owns, its size given;
     // the descriptor is open for the call.
-    check(unsafe { libc::bind(fd.as_raw_fd(), std::ptr::from_ref(&vm).cast(), len_of::<libc::sockaddr_vm>()) })?;
+    check(unsafe {
+        libc::bind(
+            fd.as_raw_fd(),
+            std::ptr::from_ref(&vm).cast(),
+            len_of::<libc::sockaddr_vm>(),
+        )
+    })?;
     // SAFETY: integers only; the descriptor is open.
     check(unsafe { libc::listen(fd.as_raw_fd(), 4) })?;
     Ok(fd)
@@ -224,7 +266,12 @@ pub fn accept(fd: &OwnedFd) -> io::Result<OwnedFd> {
     // SAFETY: no address is asked for (null pointers are allowed); the
     // descriptor is open for the call.
     let c = check(unsafe {
-        libc::accept4(fd.as_raw_fd(), std::ptr::null_mut(), std::ptr::null_mut(), libc::SOCK_CLOEXEC)
+        libc::accept4(
+            fd.as_raw_fd(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            libc::SOCK_CLOEXEC,
+        )
     })?;
     // SAFETY: `c` was just returned by `accept4` and nothing else owns it.
     Ok(unsafe { OwnedFd::from_raw_fd(c) })

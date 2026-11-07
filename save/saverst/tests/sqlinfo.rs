@@ -10,8 +10,8 @@ use std::io::Cursor;
 use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
-use savfmt::{Compression, MediaHeader, Part, Reader, SaveKind, Scan, Writer};
 use saverst::{AllowAll, RestoreOptions, SaveOptions, restore, save_library};
+use savfmt::{Compression, MediaHeader, Part, Reader, SaveKind, Scan, Writer};
 use sql::{Naming, Outcome, SqlContext, prepare};
 use store::obj::ops::NameContext;
 use store::obj::{JobHandle, ObjectId, ops};
@@ -29,7 +29,12 @@ fn system() -> (Store, ObjectId) {
         wal_pages: 512,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     t.commit().unwrap();
@@ -39,14 +44,24 @@ fn system() -> (Store, ObjectId) {
 fn sql(s: &mut Store, ctx: &mut SqlContext, text: &str) -> Outcome {
     let p = prepare(text, Naming::Sql).unwrap_or_else(|e| panic!("{text}: {e}"));
     let mut t = s.begin().unwrap();
-    let o = p.execute(&mut t, ctx, &[]).unwrap_or_else(|e| panic!("{text}: {e}"));
+    let o = p
+        .execute(&mut t, ctx, &[])
+        .unwrap_or_else(|e| panic!("{text}: {e}"));
     t.commit().unwrap();
     o
 }
 
 fn rows(s: &mut Store, ctx: &mut SqlContext, text: &str) -> Vec<Vec<String>> {
     match sql(s, ctx, text) {
-        Outcome::Rows(rs) => rs.rows.iter().map(|r| r.iter().map(|v| v.to_string().trim_end().to_string()).collect()).collect(),
+        Outcome::Rows(rs) => rs
+            .rows
+            .iter()
+            .map(|r| {
+                r.iter()
+                    .map(|v| v.to_string().trim_end().to_string())
+                    .collect()
+            })
+            .collect(),
         o => panic!("{text}: {o:?}"),
     }
 }
@@ -61,17 +76,45 @@ fn a_schema_round_trips_with_its_sql_names() {
     let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext::default());
     ctx.now = Some(NOW);
     sql(&mut s, &mut ctx, "CREATE SCHEMA SALES_HISTORY_SCHEMA");
-    sql(&mut s, &mut ctx, "CREATE TABLE SALES_HISTORY_SCHEMA.CUSTOMER_MASTER (CUSTOMER_NUMBER INT NOT NULL, CUSTOMER_NAME VARCHAR(20))");
-    sql(&mut s, &mut ctx, "CREATE TABLE SALES_HISTORY_SCHEMA.ORDERS (ORDER_ID INT, CUSTOMER_NUMBER INT, AMOUNT DECIMAL(9, 2))");
-    sql(&mut s, &mut ctx, "INSERT INTO SALES_HISTORY_SCHEMA.CUSTOMER_MASTER VALUES (1, 'Alice'), (2, 'Bob')");
-    sql(&mut s, &mut ctx, "INSERT INTO SALES_HISTORY_SCHEMA.ORDERS VALUES (10, 1, 5.00), (11, 1, 7.50), (12, 2, 1.25)");
-    sql(&mut s, &mut ctx, "CREATE VIEW SALES_HISTORY_SCHEMA.CUSTOMER_TOTALS AS SELECT C.CUSTOMER_NAME, SUM(O.AMOUNT) AS TOTAL FROM SALES_HISTORY_SCHEMA.CUSTOMER_MASTER C JOIN SALES_HISTORY_SCHEMA.ORDERS O ON C.CUSTOMER_NUMBER = O.CUSTOMER_NUMBER GROUP BY C.CUSTOMER_NAME");
-    sql(&mut s, &mut ctx, "CREATE INDEX SALES_HISTORY_SCHEMA.ORDERS_BY_CUSTOMER ON SALES_HISTORY_SCHEMA.ORDERS (CUSTOMER_NUMBER) WHERE AMOUNT > 2");
+    sql(
+        &mut s,
+        &mut ctx,
+        "CREATE TABLE SALES_HISTORY_SCHEMA.CUSTOMER_MASTER (CUSTOMER_NUMBER INT NOT NULL, CUSTOMER_NAME VARCHAR(20))",
+    );
+    sql(
+        &mut s,
+        &mut ctx,
+        "CREATE TABLE SALES_HISTORY_SCHEMA.ORDERS (ORDER_ID INT, CUSTOMER_NUMBER INT, AMOUNT DECIMAL(9, 2))",
+    );
+    sql(
+        &mut s,
+        &mut ctx,
+        "INSERT INTO SALES_HISTORY_SCHEMA.CUSTOMER_MASTER VALUES (1, 'Alice'), (2, 'Bob')",
+    );
+    sql(
+        &mut s,
+        &mut ctx,
+        "INSERT INTO SALES_HISTORY_SCHEMA.ORDERS VALUES (10, 1, 5.00), (11, 1, 7.50), (12, 2, 1.25)",
+    );
+    sql(
+        &mut s,
+        &mut ctx,
+        "CREATE VIEW SALES_HISTORY_SCHEMA.CUSTOMER_TOTALS AS SELECT C.CUSTOMER_NAME, SUM(O.AMOUNT) AS TOTAL FROM SALES_HISTORY_SCHEMA.CUSTOMER_MASTER C JOIN SALES_HISTORY_SCHEMA.ORDERS O ON C.CUSTOMER_NUMBER = O.CUSTOMER_NUMBER GROUP BY C.CUSTOMER_NAME",
+    );
+    sql(
+        &mut s,
+        &mut ctx,
+        "CREATE INDEX SALES_HISTORY_SCHEMA.ORDERS_BY_CUSTOMER ON SALES_HISTORY_SCHEMA.ORDERS (CUSTOMER_NUMBER) WHERE AMOUNT > 2",
+    );
     let catalog = "SELECT TABLE_NAME, SYSTEM_TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'SALES_HISTORY_SCHEMA' AND TABLE_NAME NOT LIKE 'SYS%' ORDER BY TABLE_NAME";
     let before = rows(&mut s, &mut ctx, catalog);
     assert_eq!(
         before,
-        [row(&["CUSTOMER_MASTER", "CUSTO00001", "T"]), row(&["CUSTOMER_TOTALS", "CUSTO00002", "V"]), row(&["ORDERS", "ORDERS", "T"])]
+        [
+            row(&["CUSTOMER_MASTER", "CUSTO00001", "T"]),
+            row(&["CUSTOMER_TOTALS", "CUSTO00002", "V"]),
+            row(&["ORDERS", "ORDERS", "T"])
+        ]
     );
 
     // SAVLIB of the library the schema is.
@@ -88,8 +131,20 @@ fn a_schema_round_trips_with_its_sql_names() {
         user: "QSYS".into(),
     };
     let mut w = Writer::new(Vec::new(), &h).unwrap();
-    let opts = SaveOptions { update_history: false, ..SaveOptions::default() };
-    save_library(&mut s, JobHandle(1), &AllowAll, qsys, "SALES00001", &opts, &mut w).unwrap();
+    let opts = SaveOptions {
+        update_history: false,
+        ..SaveOptions::default()
+    };
+    save_library(
+        &mut s,
+        JobHandle(1),
+        &AllowAll,
+        qsys,
+        "SALES00001",
+        &opts,
+        &mut w,
+    )
+    .unwrap();
     let bytes = w.finish(0).unwrap().1;
     // The library and every SQL object carry an `sqlinf` part.
     let mut r = Reader::new(Cursor::new(&bytes[..])).unwrap();
@@ -101,23 +156,55 @@ fn a_schema_round_trips_with_its_sql_names() {
             with_sql.push(qsname::Name::from_bytes(o.descriptor.name).to_string());
         }
     }
-    for n in ["SALES00001", "CUSTO00001", "CUSTO00002", "ORDERS", "ORDER00001"] {
-        assert!(with_sql.iter().any(|x| x == n), "{n} has no sqlinf part: {with_sql:?}");
+    for n in [
+        "SALES00001",
+        "CUSTO00001",
+        "CUSTO00002",
+        "ORDERS",
+        "ORDER00001",
+    ] {
+        assert!(
+            with_sql.iter().any(|x| x == n),
+            "{n} has no sqlinf part: {with_sql:?}"
+        );
     }
 
     // The schema goes, then comes back from the stream.
     sql(&mut s, &mut ctx, "DROP SCHEMA SALES_HISTORY_SCHEMA");
     let mut r = Reader::new(Cursor::new(&bytes[..])).unwrap();
-    let rep = restore(&mut s, JobHandle(1), &AllowAll, qsys, &mut r, &RestoreOptions::default()).unwrap();
+    let rep = restore(
+        &mut s,
+        JobHandle(1),
+        &AllowAll,
+        qsys,
+        &mut r,
+        &RestoreOptions::default(),
+    )
+    .unwrap();
     assert!(rep.restored() >= 5, "{rep:?}");
     assert_eq!(rows(&mut s, &mut ctx, catalog), before);
     assert_eq!(
-        rows(&mut s, &mut ctx, "SELECT CUSTOMER_NAME, TOTAL FROM SALES_HISTORY_SCHEMA.CUSTOMER_TOTALS ORDER BY CUSTOMER_NAME"),
+        rows(
+            &mut s,
+            &mut ctx,
+            "SELECT CUSTOMER_NAME, TOTAL FROM SALES_HISTORY_SCHEMA.CUSTOMER_TOTALS ORDER BY CUSTOMER_NAME"
+        ),
         [row(&["Alice", "12.50"]), row(&["Bob", "1.25"])]
     );
     assert_eq!(
-        rows(&mut s, &mut ctx, "SELECT INDEX_NAME, SEARCH_CONDITION FROM QSYS2.SYSINDEXES WHERE INDEX_SCHEMA = 'SALES_HISTORY_SCHEMA'"),
+        rows(
+            &mut s,
+            &mut ctx,
+            "SELECT INDEX_NAME, SEARCH_CONDITION FROM QSYS2.SYSINDEXES WHERE INDEX_SCHEMA = 'SALES_HISTORY_SCHEMA'"
+        ),
         [row(&["ORDERS_BY_CUSTOMER", "AMOUNT > 2"])]
     );
-    assert_eq!(rows(&mut s, &mut ctx, "SELECT COUNT(*) FROM SALES_HISTORY_SCHEMA.CUSTOMER_MASTER"), [row(&["2"])]);
+    assert_eq!(
+        rows(
+            &mut s,
+            &mut ctx,
+            "SELECT COUNT(*) FROM SALES_HISTORY_SCHEMA.CUSTOMER_MASTER"
+        ),
+        [row(&["2"])]
+    );
 }

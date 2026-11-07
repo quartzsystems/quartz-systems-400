@@ -469,13 +469,19 @@ mod tests {
         assert_eq!(find("*a", "x*a", Syntax::Basic), Some((1, 3)));
         assert_eq!(find("a\\{2\\}", "aaa", Syntax::Basic), Some((0, 2)));
         assert_eq!(find("\\(ab\\)\\1", "xababy", Syntax::Basic), Some((1, 5)));
-        assert_eq!(find("[[:digit:]][[:digit:]]*", "ab12", Syntax::Basic), Some((2, 4)));
+        assert_eq!(
+            find("[[:digit:]][[:digit:]]*", "ab12", Syntax::Basic),
+            Some((2, 4))
+        );
     }
 
     #[test]
     fn extended_and_longest() {
         assert_eq!(find("ab|abcd", "abcd", Syntax::Extended), Some((0, 4)));
-        assert_eq!(find("(a|ab)(c|bcd)", "abcd", Syntax::Extended), Some((0, 4)));
+        assert_eq!(
+            find("(a|ab)(c|bcd)", "abcd", Syntax::Extended),
+            Some((0, 4))
+        );
         assert_eq!(find("a+", "baaa", Syntax::Extended), Some((1, 4)));
         assert_eq!(find("x?", "abc", Syntax::Extended), Some((0, 0)));
         assert_eq!(find("a{2,3}", "aaaa", Syntax::Extended), Some((0, 3)));
@@ -494,12 +500,30 @@ mod tests {
         assert_eq!(m.group(b"xaab", 2), Some(&b"b"[..]));
         let m = r.find_at(b"xaa", 0).unwrap();
         assert_eq!(m.group(b"xaa", 2), None);
-        assert_eq!(Regex::new(b"(", Syntax::Extended, false).unwrap_err(), Error::Unmatched('('));
-        assert_eq!(Regex::new(b"[a", Syntax::Basic, false).unwrap_err(), Error::Unmatched('['));
-        assert_eq!(Regex::new(b"\\1", Syntax::Basic, false).unwrap_err(), Error::BadBackref);
-        assert_eq!(Regex::new(b"a\\", Syntax::Basic, false).unwrap_err(), Error::TrailingBackslash);
-        assert_eq!(Regex::new(b"[[:nope:]]", Syntax::Basic, false).unwrap_err(), Error::BadClass);
-        assert_eq!(Regex::new(b"[z-a]", Syntax::Basic, false).unwrap_err(), Error::BadRange);
+        assert_eq!(
+            Regex::new(b"(", Syntax::Extended, false).unwrap_err(),
+            Error::Unmatched('(')
+        );
+        assert_eq!(
+            Regex::new(b"[a", Syntax::Basic, false).unwrap_err(),
+            Error::Unmatched('[')
+        );
+        assert_eq!(
+            Regex::new(b"\\1", Syntax::Basic, false).unwrap_err(),
+            Error::BadBackref
+        );
+        assert_eq!(
+            Regex::new(b"a\\", Syntax::Basic, false).unwrap_err(),
+            Error::TrailingBackslash
+        );
+        assert_eq!(
+            Regex::new(b"[[:nope:]]", Syntax::Basic, false).unwrap_err(),
+            Error::BadClass
+        );
+        assert_eq!(
+            Regex::new(b"[z-a]", Syntax::Basic, false).unwrap_err(),
+            Error::BadRange
+        );
     }
 
     #[test]
@@ -511,7 +535,10 @@ mod tests {
         let r = Regex::new(b"abc", Syntax::Basic, true).unwrap();
         assert!(r.is_match(b"xABCx"));
         let r = Regex::new(b"[a-c]+", Syntax::Extended, true).unwrap();
-        assert_eq!(r.find_at(b"xABCx", 0).map(|m| (m.start, m.end)), Some((1, 4)));
+        assert_eq!(
+            r.find_at(b"xABCx", 0).map(|m| (m.start, m.end)),
+            Some((1, 4))
+        );
         let r = Regex::literal(b"a.b", false);
         assert!(r.is_match(b"xa.b") && !r.is_match(b"axb"));
     }

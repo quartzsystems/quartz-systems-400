@@ -50,7 +50,8 @@ pub fn write_sum(file: &Path, hex: &str) -> Result<PathBuf> {
         .to_string_lossy()
         .into_owned();
     let out = file.with_file_name(format!("{name}.sha256"));
-    fs::write(&out, sum_line(hex, &name)).with_context(|| format!("cannot write {}", out.display()))?;
+    fs::write(&out, sum_line(hex, &name))
+        .with_context(|| format!("cannot write {}", out.display()))?;
     Ok(out)
 }
 

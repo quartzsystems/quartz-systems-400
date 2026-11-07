@@ -22,9 +22,13 @@ use crate::Error;
 pub const LEN: usize = 73;
 
 /// The fixed fields of a successful start-up.
-const FIXED_OK: [u8; 12] = [0x90, 0x00, 0x05, 0x60, 0x06, 0x00, 0x20, 0xC0, 0x00, 0x3D, 0x00, 0x00];
+const FIXED_OK: [u8; 12] = [
+    0x90, 0x00, 0x05, 0x60, 0x06, 0x00, 0x20, 0xC0, 0x00, 0x3D, 0x00, 0x00,
+];
 /// The fixed fields of a refused start-up.
-const FIXED_ERR: [u8; 12] = [0x90, 0x00, 0x05, 0x60, 0x06, 0x00, 0x82, 0x00, 0x00, 0x3D, 0x00, 0x00];
+const FIXED_ERR: [u8; 12] = [
+    0x90, 0x00, 0x05, 0x60, 0x06, 0x00, 0x82, 0x00, 0x00, 0x3D, 0x00, 0x00,
+];
 
 /// The response codes QS/400 sends.
 pub mod code {
@@ -43,7 +47,14 @@ pub mod code {
     /// Automatic configuration failed or is not allowed.
     pub const NO_AUTOCFG: &str = "8940";
     /// Every code QS/400 sends.
-    pub const ALL: [&str; 6] = [LESS_FUNCTION, STARTED, BUSY, NOT_VALID, CREATE_FAILED, NO_AUTOCFG];
+    pub const ALL: [&str; 6] = [
+        LESS_FUNCTION,
+        STARTED,
+        BUSY,
+        NOT_VALID,
+        CREATE_FAILED,
+        NO_AUTOCFG,
+    ];
 }
 
 /// Whether `code` starts a session (`I9xx`).
@@ -76,7 +87,11 @@ pub fn encode(code: &str, system: &str, device: &str) -> Vec<u8> {
     let mut r = Vec::with_capacity(LEN);
     r.extend_from_slice(&u16::try_from(LEN).unwrap_or(0).to_be_bytes());
     r.extend_from_slice(&crate::record::GDS.to_be_bytes());
-    r.extend_from_slice(if is_success(code) { &FIXED_OK } else { &FIXED_ERR });
+    r.extend_from_slice(if is_success(code) {
+        &FIXED_OK
+    } else {
+        &FIXED_ERR
+    });
     r.extend(ebcdic(code, 4));
     r.extend(ebcdic(system, 8));
     r.extend(ebcdic(device, 10));
@@ -117,7 +132,10 @@ C9D5E3C5D9400000000000000000000000000000000000000000000000000000\
 000000000000000000";
 
     fn hex(s: &str) -> Vec<u8> {
-        (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
     }
 
     #[test]
@@ -125,7 +143,10 @@ C9D5E3C5D9400000000000000000000000000000000000000000000000000000\
         assert_eq!(encode("I902", "TARGET", "PCPRINTER"), hex(RFC_OK));
         assert_eq!(encode("8902", "TARGET", "PCPRINTER"), hex(RFC_ERR));
         let d = decode(&hex(RFC_ERR)).unwrap();
-        assert_eq!((d.code.as_str(), d.system.as_str(), d.device.as_str()), ("8902", "TARGET", "PCPRINTER"));
+        assert_eq!(
+            (d.code.as_str(), d.system.as_str(), d.device.as_str()),
+            ("8902", "TARGET", "PCPRINTER")
+        );
     }
 
     #[test]
@@ -133,12 +154,23 @@ C9D5E3C5D9400000000000000000000000000000000000000000000000000000\
         for c in code::ALL {
             let r = encode(c, "QSHQ400", "QPADEV0001");
             assert_eq!(r.len(), LEN);
-            assert_eq!(r[10..12], if is_success(c) { [0x20, 0xC0] } else { [0x82, 0x00] }, "{c}");
+            assert_eq!(
+                r[10..12],
+                if is_success(c) {
+                    [0x20, 0xC0]
+                } else {
+                    [0x82, 0x00]
+                },
+                "{c}"
+            );
             assert_eq!(decode(&r).unwrap().code, c);
         }
         // Long names are cut to their fields.
         let r = decode(&encode("I902", "SYSTEMNAME9", "DEVICENAME12")).unwrap();
-        assert_eq!((r.system.as_str(), r.device.as_str()), ("SYSTEMNA", "DEVICENAME"));
+        assert_eq!(
+            (r.system.as_str(), r.device.as_str()),
+            ("SYSTEMNA", "DEVICENAME")
+        );
         // An ordinary 5250 record is not one.
         assert!(!is_startup(&[0, 10, 0x12, 0xA0, 0, 0, 4, 0, 0, 3]));
     }

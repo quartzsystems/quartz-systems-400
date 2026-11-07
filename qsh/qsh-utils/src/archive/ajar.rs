@@ -71,7 +71,9 @@ fn parse(args: &[String]) -> Result<(Keys, Vec<Operand>), String> {
         }
     }
     for c in pending {
-        let v = args.get(i).ok_or(format!("Key letter {c} needs an argument."))?;
+        let v = args
+            .get(i)
+            .ok_or(format!("Key letter {c} needs an argument."))?;
         i += 1;
         if c == 'f' {
             k.file = Some(v.clone());
@@ -86,7 +88,11 @@ fn parse(args: &[String]) -> Result<(Keys, Vec<Operand>), String> {
     let mut dir = None;
     while i < args.len() {
         if args[i] == "-C" {
-            dir = Some(args.get(i + 1).ok_or("Option -C needs a directory.")?.clone());
+            dir = Some(
+                args.get(i + 1)
+                    .ok_or("Option -C needs a directory.")?
+                    .clone(),
+            );
             i += 2;
             continue;
         }
@@ -111,7 +117,8 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             let Some(f) = k.file.as_deref().filter(|f| *f != "-") else {
                 return usage(cx, NAME, "Updating needs an archive named with f.");
             };
-            match read_all(cx, Some(f)).and_then(|d| zip::read(&d).map_err(|t| format!("{f}: {t}"))) {
+            match read_all(cx, Some(f)).and_then(|d| zip::read(&d).map_err(|t| format!("{f}: {t}")))
+            {
                 Ok(es) => create(cx, &k, &ops, es),
                 Err(t) => {
                     complain(cx, NAME, &t);
@@ -166,10 +173,11 @@ fn create(cx: &UtilCtx<'_>, k: &Keys, ops: &[Operand], mut entries: Vec<Entry>) 
         let _ = if to_stdout { cx.err(&t) } else { cx.out(&t) };
     };
     let mut status = 0;
-    let put = |entries: &mut Vec<Entry>, e: Entry| match entries.iter_mut().find(|x| x.name == e.name) {
-        Some(old) => *old = e,
-        None => entries.push(e),
-    };
+    let put =
+        |entries: &mut Vec<Entry>, e: Entry| match entries.iter_mut().find(|x| x.name == e.name) {
+            Some(old) => *old = e,
+            None => entries.push(e),
+        };
     let have_manifest = entries.iter().any(|e| e.name == MANIFEST);
     if !k.no_manifest && (!have_manifest || k.manifest.is_some()) {
         match manifest(cx, k) {
@@ -202,7 +210,10 @@ fn create(cx: &UtilCtx<'_>, k: &Keys, ops: &[Operand], mut entries: Vec<Entry>) 
         let sub = UtilCtx {
             argv: Vec::new(),
             env: cx.env.clone(),
-            cwd: op.dir.as_deref().map_or_else(|| cx.cwd.clone(), |d| cx.path(d)),
+            cwd: op
+                .dir
+                .as_deref()
+                .map_or_else(|| cx.cwd.clone(), |d| cx.path(d)),
             umask: cx.umask,
             fds: cx.fds.clone(),
             sys: cx.sys,
@@ -216,7 +227,10 @@ fn create(cx: &UtilCtx<'_>, k: &Keys, ops: &[Operand], mut entries: Vec<Entry>) 
                     return true;
                 }
             };
-            if archive.as_deref().is_some_and(|a| cx.sys.realpath(&found.abs).is_ok_and(|r| r == a)) {
+            if archive
+                .as_deref()
+                .is_some_and(|a| cx.sys.realpath(&found.abs).is_ok_and(|r| r == a))
+            {
                 return true;
             }
             let dir = found.st.ftype == FileType::Dir;
@@ -307,7 +321,11 @@ fn extract(cx: &UtilCtx<'_>, k: &Keys, ops: &[Operand]) -> i32 {
     for e in entries.iter().filter(|e| wanted(ops, &e.name)) {
         let name = entry_name(&e.name, false);
         if name.is_empty() || name.split('/').any(|c| c == "..") {
-            complain(cx, NAME, &format!("{}: The name is not safe to extract.", e.name));
+            complain(
+                cx,
+                NAME,
+                &format!("{}: The name is not safe to extract.", e.name),
+            );
             status = 1;
             continue;
         }
@@ -317,7 +335,9 @@ fn extract(cx: &UtilCtx<'_>, k: &Keys, ops: &[Operand]) -> i32 {
         } else {
             match e.plain() {
                 Ok(d) => {
-                    let parent = abs.rsplit_once('/').map_or("/", |(a, _)| if a.is_empty() { "/" } else { a });
+                    let parent = abs
+                        .rsplit_once('/')
+                        .map_or("/", |(a, _)| if a.is_empty() { "/" } else { a });
                     mkdirs(cx, parent)
                         .and_then(|()| write_file(cx, &abs, &d))
                         .map(|()| "extracted")

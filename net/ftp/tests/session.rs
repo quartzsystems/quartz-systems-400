@@ -6,9 +6,9 @@
 //! session starts with, `RCMD`, members in each type, RFC 3659.
 
 use ftp::memhost::MemHost;
+use ftp::net::Net;
 use ftp::net::mem::MemNet;
 use ftp::session::{Config, Flow, Session};
-use ftp::net::Net;
 use ftp::{Host, Reply};
 use regfac::{ExitAnswer, ExitRequest};
 use servers::attrs::ftp::FtpAttrs;
@@ -56,7 +56,10 @@ impl T {
     }
 
     fn text(&mut self, line: &str) -> String {
-        self.cmd(line).last().map(|r| r.lines.join("\n")).unwrap_or_default()
+        self.cmd(line)
+            .last()
+            .map(|r| r.lines.join("\n"))
+            .unwrap_or_default()
     }
 
     fn login(&mut self) {
@@ -68,7 +71,10 @@ impl T {
         self.net.passive(false).unwrap();
         let r = self.cmd(line);
         // Transfers end in 226, listings in 250 (IBM's).
-        assert!(matches!(r.last().map(|r| r.code), Some(226 | 250)), "{line}: {r:?}");
+        assert!(
+            matches!(r.last().map(|r| r.code), Some(226 | 250)),
+            "{line}: {r:?}"
+        );
         self.net.take_sent().pop().unwrap_or_default()
     }
 
@@ -107,11 +113,21 @@ fn the_default_attributes_start_in_the_current_library() {
 
 #[test]
 fn the_home_directory_and_paths() {
-    let mut t = T::new(world(), attrs(&[("NAMEFMT", "*PATH"), ("CURDIR", "*HOMEDIR"), ("LISTFMT", "*UNIX")]));
+    let mut t = T::new(
+        world(),
+        attrs(&[
+            ("NAMEFMT", "*PATH"),
+            ("CURDIR", "*HOMEDIR"),
+            ("LISTFMT", "*UNIX"),
+        ]),
+    );
     t.login();
     assert_eq!(t.text("PWD"), "\"/home/BOB\" is current directory.");
     assert_eq!(t.code("SITE NAMEFMT 0"), 550, "the home is not a library");
-    assert_eq!(t.put("STOR a.txt", b"one\r\ntwo\r\n").last().unwrap().code, 226);
+    assert_eq!(
+        t.put("STOR a.txt", b"one\r\ntwo\r\n").last().unwrap().code,
+        226
+    );
     assert_eq!(t.get("RETR a.txt"), b"one\r\ntwo\r\n");
     assert_eq!(t.text("SIZE a.txt"), "10");
     assert_eq!(t.text("MDTM a.txt").len(), 14);
@@ -126,7 +142,12 @@ fn the_home_directory_and_paths() {
     // A member by path, in EBCDIC.
     assert_eq!(t.code("TYPE E"), 200);
     let e = t.get("RETR /QSYS.LIB/BOBLIB.LIB/QCLSRC.FILE/HELLO.MBR");
-    assert_eq!(e, [0xD7, 0xC7, 0xD4, 0x15, 0xC5, 0xD5, 0xC4, 0xD7, 0xC7, 0xD4, 0x15]);
+    assert_eq!(
+        e,
+        [
+            0xD7, 0xC7, 0xD4, 0x15, 0xC5, 0xD5, 0xC4, 0xD7, 0xC7, 0xD4, 0x15
+        ]
+    );
 }
 
 #[test]
@@ -134,16 +155,36 @@ fn members_files_made_and_records() {
     let mut t = T::new(world(), FtpAttrs::default());
     t.login();
     // A file STOR makes: records as long as the longest line.
-    assert_eq!(t.put("STOR NEWF.M1", b"abc\r\nabcdef\r\n").last().unwrap().code, 226);
-    assert!(t.s.host.commands.iter().any(|c| c.starts_with("CRTPF FILE(BOBLIB/NEWF) RCDLEN(6) MBR(M1)")));
-    assert_eq!(t.s.host.member_text("BOBLIB", "NEWF", "M1").unwrap(), ["abc", "abcdef"]);
+    assert_eq!(
+        t.put("STOR NEWF.M1", b"abc\r\nabcdef\r\n")
+            .last()
+            .unwrap()
+            .code,
+        226
+    );
+    assert!(
+        t.s.host
+            .commands
+            .iter()
+            .any(|c| c.starts_with("CRTPF FILE(BOBLIB/NEWF) RCDLEN(6) MBR(M1)"))
+    );
+    assert_eq!(
+        t.s.host.member_text("BOBLIB", "NEWF", "M1").unwrap(),
+        ["abc", "abcdef"]
+    );
     // A second member in it; a line too long is cut and said so.
     let r = t.put("STOR NEWF.M2", b"1234567890\r\n");
     assert_eq!(r.last().unwrap().code, 426);
-    assert_eq!(t.s.host.member_text("BOBLIB", "NEWF", "M2").unwrap(), ["123456"]);
+    assert_eq!(
+        t.s.host.member_text("BOBLIB", "NEWF", "M2").unwrap(),
+        ["123456"]
+    );
     // APPE adds records.
     assert_eq!(t.put("APPE NEWF.M1", b"z\r\n").last().unwrap().code, 226);
-    assert_eq!(t.s.host.member_text("BOBLIB", "NEWF", "M1").unwrap(), ["abc", "abcdef", "z"]);
+    assert_eq!(
+        t.s.host.member_text("BOBLIB", "NEWF", "M1").unwrap(),
+        ["abc", "abcdef", "z"]
+    );
     // Binary: records of 512 bytes, padded with nulls.
     assert_eq!(t.code("TYPE I"), 200);
     assert_eq!(t.put("STOR BINF", &[1, 2, 3]).last().unwrap().code, 226);
@@ -167,7 +208,10 @@ fn members_files_made_and_records() {
 fn rcmd_runs_in_the_job() {
     let mut t = T::new(world(), FtpAttrs::default());
     t.login();
-    assert_eq!(t.code("RCMD CRTSRCPF FILE(BOBLIB/QRPGSRC) RCDLEN(112)"), 250);
+    assert_eq!(
+        t.code("RCMD CRTSRCPF FILE(BOBLIB/QRPGSRC) RCDLEN(112)"),
+        250
+    );
     let r = t.cmd("RCMD CHKOBJ OBJ(BOBLIB/NOPE) OBJTYPE(*FILE)");
     assert_eq!(r[0].code, 550);
     assert_eq!(r[0].lines.len(), 2);
@@ -205,7 +249,9 @@ fn anonymous_ftp_through_the_logon_exit() {
         if point != "QIBM_QTMF_SVR_LOGON" || req.format() != "TCPL0100" {
             return None;
         }
-        let ExitRequest::Logon { logon, .. } = req else { return None };
+        let ExitRequest::Logon { logon, .. } = req else {
+            return None;
+        };
         let anonymous = logon.user_id.eq_ignore_ascii_case("anonymous");
         Some(answer(req, |p| {
             // Return code 3: sign on as the profile returned, no
@@ -227,12 +273,16 @@ fn anonymous_ftp_through_the_logon_exit() {
 fn the_request_exit_refuses() {
     let mut h = world();
     h.exits = Some(Box::new(|point, req| {
-        let ExitRequest::Validate(v) = req else { return None };
+        let ExitRequest::Validate(v) = req else {
+            return None;
+        };
         if point != "QIBM_QTMF_SERVER_REQ" {
             return None;
         }
         let allow = v.op != regfac::formats::tcp::op::SEND_FILE;
-        Some(answer(req, |p| p[7] = i32::from(allow).to_be_bytes().to_vec()))
+        Some(answer(req, |p| {
+            p[7] = i32::from(allow).to_be_bytes().to_vec()
+        }))
     }));
     let mut t = T::new(h, FtpAttrs::default());
     t.login();
@@ -240,7 +290,9 @@ fn the_request_exit_refuses() {
     assert_eq!(t.code("CWD QGPL"), 250);
     // A session the exit refuses outright.
     let mut h = world();
-    h.exits = Some(Box::new(|_, req| Some(answer(req, |p| p[7] = 0i32.to_be_bytes().to_vec()))));
+    h.exits = Some(Box::new(|_, req| {
+        Some(answer(req, |p| p[7] = 0i32.to_be_bytes().to_vec()))
+    }));
     let mut s = Session::new(h, Config::new(FtpAttrs::default(), "QS400T"));
     let mut net = MemNet::default();
     assert_eq!(s.greet(&mut net), Flow::Close);

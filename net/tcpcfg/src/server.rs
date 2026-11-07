@@ -30,7 +30,10 @@ pub trait ServerStarter {
 }
 
 /// What starting the autostart servers did: one line per server.
-pub fn start_all(starter: &mut dyn ServerStarter, servers: &[String]) -> Vec<(String, Result<String, String>)> {
+pub fn start_all(
+    starter: &mut dyn ServerStarter,
+    servers: &[String],
+) -> Vec<(String, Result<String, String>)> {
     servers
         .iter()
         .map(|s| {
@@ -116,7 +119,11 @@ mod tests {
         let list = vec!["*TELNET".to_string(), "*FTP".to_string()];
         let r = start_all(&mut f, &list);
         assert!(r[0].1.is_ok() && r[1].1.is_err());
-        assert_eq!(start_all(&mut f, &list)[0].1, Ok(String::new()), "already running");
+        assert_eq!(
+            start_all(&mut f, &list)[0].1,
+            Ok(String::new()),
+            "already running"
+        );
         let e = end_all(&mut f, &list, false);
         assert_eq!(e.len(), 1);
         assert!(f.running.is_empty());
@@ -134,7 +141,10 @@ mod tests {
         start_all(&mut f, &list);
         let e = end_all(&mut f, &list, true);
         assert_eq!(e.len(), 1);
-        assert!(f.pauses > 0, "ENDTCP returned while the server was still ending");
+        assert!(
+            f.pauses > 0,
+            "ENDTCP returned while the server was still ending"
+        );
         let r = start_all(&mut f, &list);
         assert_eq!(r[0].1, Ok("*TELNET starting".to_string()));
     }

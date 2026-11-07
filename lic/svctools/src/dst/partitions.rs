@@ -38,7 +38,12 @@ impl Panel for NotSupported {
         for (i, line) in TEXT.iter().enumerate() {
             s.put(ui::BODY_ROW + i, ui::BODY_COL, line, Attr::GREEN);
         }
-        s.put(ui::BODY_ROW + TEXT.len() + 1, ui::BODY_COL, "Press Enter to return.", Attr::GREEN);
+        s.put(
+            ui::BODY_ROW + TEXT.len() + 1,
+            ui::BODY_COL,
+            "Press Enter to return.",
+            Attr::GREEN,
+        );
         ui::keys(&mut s, "F3=Exit   F12=Cancel");
         s
     }

@@ -75,7 +75,11 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
         return;
     }
     if check {
-        let id = if s.attrs.get("PROCESS") == "*VLD" { "CPI9BEB" } else { "CPI9BEC" };
+        let id = if s.attrs.get("PROCESS") == "*VLD" {
+            "CPI9BEB"
+        } else {
+            "CPI9BEC"
+        };
         note(host, &mut s.h, id, &[]);
     } else if r.columns.is_empty() {
         done(host, s, &r);
@@ -102,7 +106,8 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
                 let pages = isql::print::select(&d, &super::services::stamp(host), 132, 60, &w);
                 // The query report's printer file; QSYSPRT where it is
                 // not there.
-                let r = spool(host, "QPQUPRFIL", &pages).or_else(|_| spool(host, "QSYSPRT", &pages));
+                let r =
+                    spool(host, "QPQUPRFIL", &pages).or_else(|_| spool(host, "QSYSPRT", &pages));
                 if let Err(e) = r {
                     note_error(host, &mut s.h, &e);
                 }
@@ -147,7 +152,11 @@ fn decimal_point(host: &Host, s: &Session, text: &str) -> Result<String, Box<Isq
 /// server's. A query at a remote server is refused
 /// ([`crate::console::drda::remote_query_refused`]).
 fn connection(host: &Host, s: &Session, text: &str) -> Option<IsqlReply> {
-    let words: Vec<String> = text.split_whitespace().take(2).map(str::to_ascii_uppercase).collect();
+    let words: Vec<String> = text
+        .split_whitespace()
+        .take(2)
+        .map(str::to_ascii_uppercase)
+        .collect();
     let w = |i: usize| words.get(i).map_or("", String::as_str);
     let name = match (w(0), w(1)) {
         ("CONNECT" | "DISCONNECT", _) => w(0).to_string(),
@@ -158,7 +167,11 @@ fn connection(host: &Host, s: &Session, text: &str) -> Option<IsqlReply> {
     };
     let reply = |ca: sql::Sqlca, statement: String| IsqlReply {
         sqlcode: ca.sqlcode,
-        msgid: if ca.sqlcode < 0 { ca.msgid() } else { String::new() },
+        msgid: if ca.sqlcode < 0 {
+            ca.msgid()
+        } else {
+            String::new()
+        },
         sqlstate: ca.sqlstate,
         text: ca.sqlerrmc,
         statement,
@@ -169,7 +182,12 @@ fn connection(host: &Host, s: &Session, text: &str) -> Option<IsqlReply> {
     }
     let req = Request {
         scope: "QSQISQL:".into(),
-        desc: Desc { op: Op::Exec, sql_naming: s.attrs.sql_naming(), text: text.to_string(), ..Desc::default() },
+        desc: Desc {
+            op: Op::Exec,
+            sql_naming: s.attrs.sql_naming(),
+            text: text.to_string(),
+            ..Desc::default()
+        },
         inputs: Vec::new(),
     };
     let r = crate::console::drda::route(&host.link, &req)?;
@@ -178,7 +196,9 @@ fn connection(host: &Host, s: &Session, text: &str) -> Option<IsqlReply> {
 
 /// Whether a statement is a `CALL`.
 fn is_call(text: &str) -> bool {
-    text.split_whitespace().next().is_some_and(|w| w.eq_ignore_ascii_case("CALL"))
+    text.split_whitespace()
+        .next()
+        .is_some_and(|w| w.eq_ignore_ascii_case("CALL"))
 }
 
 /// A `CALL`: run as the job's embedded SQL, the procedure called in a
@@ -196,15 +216,22 @@ fn call(host: &Host, s: &mut Session, text: &str) -> IsqlReply {
         desc,
         inputs: vec![sql::Value::Str(text.to_string())],
     };
-    let job = s.calls.get_or_insert_with(|| crate::console::build_job(host).0);
+    let job = s
+        .calls
+        .get_or_insert_with(|| crate::console::build_job(host).0);
     let a = host.attrs();
     job.ident.libl = a.libl.search();
     job.ident.curlib = a.libl.cur;
-    let (r, _) = crate::console::sqlcall::run(&host.link, &req, |p| qrpgrt::sqlcall::perform(job, p));
+    let (r, _) =
+        crate::console::sqlcall::run(&host.link, &req, |p| qrpgrt::sqlcall::perform(job, p));
     let ca = r.sqlca;
     IsqlReply {
         sqlcode: ca.sqlcode,
-        msgid: if ca.sqlcode < 0 { ca.msgid() } else { String::new() },
+        msgid: if ca.sqlcode < 0 {
+            ca.msgid()
+        } else {
+            String::new()
+        },
         sqlstate: ca.sqlstate,
         text: ca.sqlerrmc,
         statement: "CALL".into(),
@@ -257,7 +284,11 @@ pub fn display(surface: &mut Surface, d: &Data, note: Option<&str>) {
                     msg = Some(crate::display::msgline::say(surface.host(), "CPD9BF2", &[]));
                 }
                 if !p.shift_to(&a.get("SHIFT"), width) {
-                    msg = Some(crate::display::msgline::say(surface.host(), "CPD9BF3", &[&width]));
+                    msg = Some(crate::display::msgline::say(
+                        surface.host(),
+                        "CPD9BF3",
+                        &[&width],
+                    ));
                 }
             }
             _ => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
@@ -295,7 +326,10 @@ pub fn spool(host: &Host, file: &str, pages: &[Vec<String>]) -> Result<(), Strin
         }
     }
     let bytes = p.take();
-    let put = host.link.borrow_mut().with(|l| l.splf_put(id, bytes, p.pages, p.records));
+    let put = host
+        .link
+        .borrow_mut()
+        .with(|l| l.splf_put(id, bytes, p.pages, p.records));
     let closed = host.link.borrow_mut().with(|l| l.splf_close(id, prtf.hold));
     put.and(closed)
 }
@@ -324,12 +358,18 @@ fn to_file(host: &Host, s: &Session, query: &str) -> Result<(), (String, String)
     let steps: Vec<(String, bool)> = match a.get("OUTOPT").as_str() {
         "1" => vec![(create, false)],
         "2" => vec![(format!("DROP TABLE {target}"), true), (create, false)],
-        "4" => vec![(format!("DELETE FROM {target}"), false), (format!("INSERT INTO {target} {query}"), false)],
+        "4" => vec![
+            (format!("DELETE FROM {target}"), false),
+            (format!("INSERT INTO {target} {query}"), false),
+        ],
         "5" => vec![(format!("INSERT INTO {target} {query}"), false)],
         _ => return Err(refuse("OUTOPT(3)")),
     };
     for (stmt, may_fail) in steps {
-        let r = host.link.borrow_mut().with(|l| l.isql_run(stmt, s.naming(), false, 0));
+        let r = host
+            .link
+            .borrow_mut()
+            .with(|l| l.isql_run(stmt, s.naming(), false, 0));
         if r.sqlcode < 0 && !may_fail {
             let text = if r.text.is_empty() {
                 crate::display::msgline::say(host, &r.msgid, &[])

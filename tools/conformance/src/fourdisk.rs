@@ -178,7 +178,10 @@ fn configure(s: &mut Session, boot: Duration) -> Result<String, String> {
     add_units(s, 3)?;
     ipl_from_dst(s, boot)?;
     let (lib, count, kib) = FILL;
-    let out = s.command(&format!("svc.obj fill {lib} {count} {kib}"), Duration::from_mins(20))?;
+    let out = s.command(
+        &format!("svc.obj fill {lib} {count} {kib}"),
+        Duration::from_mins(20),
+    )?;
     if !out.contains("filled") {
         return Err(format!("obj fill:\n{out}"));
     }
@@ -193,7 +196,10 @@ fn configure(s: &mut Session, boot: Duration) -> Result<String, String> {
 
 /// `obj verify` of what `fill` made.
 fn verify(s: &mut Session, lib: &str, n: u32, kib: u32) -> Result<(), String> {
-    let out = s.command(&format!("svc.obj verify {lib} {n} {kib}"), Duration::from_mins(10))?;
+    let out = s.command(
+        &format!("svc.obj verify {lib} {n} {kib}"),
+        Duration::from_mins(10),
+    )?;
     if out.contains("intact") {
         Ok(())
     } else {
@@ -207,8 +213,10 @@ fn ifs_put(s: &mut Session, tag: &str) -> Result<(), String> {
     let text = format!("qsifs{tag} ").repeat(200);
     let out = s.command(&format!("svc.ifs put /tmp/par13{tag}.txt {text}"), CMD)?;
     if out.contains("CPE") || out.contains("error") {
-        return Err(format!("ifs put {tag}:
-{out}"));
+        return Err(format!(
+            "ifs put {tag}:
+{out}"
+        ));
     }
     Ok(())
 }
@@ -218,8 +226,10 @@ fn ifs_check(s: &mut Session, tags: &[&str]) -> Result<(), String> {
     for tag in tags {
         let out = s.command(&format!("svc.ifs cat /tmp/par13{tag}.txt"), CMD)?;
         if out.matches(&format!("qsifs{tag}")).count() < 200 {
-            return Err(format!("ifs cat {tag}:
-{out}"));
+            return Err(format!(
+                "ifs cat {tag}:
+{out}"
+            ));
         }
     }
     Ok(())
@@ -266,7 +276,11 @@ impl Suite {
         let name = "16 hot spare";
         let start = Instant::now();
         if !self.wanted(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let [d1, d2, d3, d4] = self.four(installed, "spare")?;
         let d5 = self.out_dir.join("spare-5.img");
@@ -302,7 +316,9 @@ impl Suite {
             if !asp.contains("hot spare ") {
                 return Err(format!("svc.asp shows no hot spare:\n{asp}"));
             }
-            Ok(format!("{filled}; RAID 5 with a hot spare started in DST; DPY/Active {waited}s after the IPL"))
+            Ok(format!(
+                "{filled}; RAID 5 with a hot spare started in DST; DPY/Active {waited}s after the IPL"
+            ))
         })();
         let first = match r {
             Ok(d) => d,
@@ -391,7 +407,11 @@ impl Suite {
         let name = "12 four-unit mirror";
         let start = Instant::now();
         if !self.wanted(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let [d1, d2, d3, d4] = self.four(installed, "mirror4")?;
         let boot = self.boot_timeout;
@@ -422,7 +442,8 @@ impl Suite {
             let pairs = |x: u8, y: u8| {
                 u.iter().any(|p| {
                     disk_of(&p.serial) == Some(x)
-                        && p.partner.and_then(|q| u.iter().find(|o| o.unit == q))
+                        && p.partner
+                            .and_then(|q| u.iter().find(|o| o.unit == q))
                             .is_some_and(|o| disk_of(&o.serial) == Some(y))
                 })
             };
@@ -467,7 +488,10 @@ impl Suite {
             if !out.contains("filled") {
                 return Err(format!("obj fill QMIR2 on one half:\n{out}"));
             }
-            Ok(format!("{first}; with disk 4 pulled: A6001255, unit {} Missing, IPL complete, data intact, written on one half", gone[0].unit + 1))
+            Ok(format!(
+                "{first}; with disk 4 pulled: A6001255, unit {} Missing, IPL complete, data intact, written on one half",
+                gone[0].unit + 1
+            ))
         })();
         let second = match r {
             Ok(d) => d,
@@ -503,7 +527,11 @@ impl Suite {
             Ok(format!(
                 "{second}; disk 4 back: unit {} Suspended, resumed with the system up, QMIR3 written {}",
                 stale.unit + 1,
-                if resuming { "while it ran" } else { "(it had ended)" }
+                if resuming {
+                    "while it ran"
+                } else {
+                    "(it had ended)"
+                }
             ))
         })();
         let third = match r {
@@ -560,7 +588,11 @@ impl Suite {
         let name = "13 device parity RAID 5";
         let start = Instant::now();
         if !self.wanted(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let [d1, d2, d3, d4] = self.four(installed, "parity4")?;
         let boot = self.boot_timeout;
@@ -570,8 +602,10 @@ impl Suite {
             let filled = configure(&mut s, boot)?;
             let vol = s.command("svc.ifs", CMD)?;
             if !vol.contains("volume in ASP 1") {
-                return Err(format!("the IFS is not in ASP 1:
-{vol}"));
+                return Err(format!(
+                    "the IFS is not in ASP 1:
+{vol}"
+                ));
             }
             ifs_put(&mut s, "a")?;
             enter_dst(&mut s, boot)?;
@@ -587,7 +621,10 @@ impl Suite {
             s.expect("Confirm Start Device Parity Protection", CMD)?;
             self.snap("parity4-confirm");
             s.send("key f10")?;
-            s.expect("parity is computed in the background", Duration::from_mins(2))?;
+            s.expect(
+                "parity is computed in the background",
+                Duration::from_mins(2),
+            )?;
             s.send("1")?;
             s.expect("Display Device Parity Status", CMD)?;
             let shown = s.expect("F3=Exit", CMD)?;
@@ -680,7 +717,9 @@ impl Suite {
             ifs_check(&mut s, &["a", "b"])?;
             ifs_put(&mut s, "c")?;
             ifs_check(&mut s, &["c"])?;
-            Ok(format!("{first}; disk 4 pulled: A6001257, DPY/Failed, every page and IFS file read through parity, written exposed"))
+            Ok(format!(
+                "{first}; disk 4 pulled: A6001257, DPY/Failed, every page and IFS file read through parity, written exposed"
+            ))
         })();
         let second = match r {
             Ok(d) => d,

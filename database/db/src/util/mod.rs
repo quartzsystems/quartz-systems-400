@@ -17,14 +17,17 @@ pub mod rgzpfm;
 
 pub use chkpath::{PathReport, verify_all, verify_file};
 pub use clrpfm::clrpfm;
-pub use cpyf::{CpyfOpts, CpyfReport, FmtOpt, MbrOpt, Target, ToMember, cpyf, cpyf_firing, cpyf_paused};
+pub use cpyf::{
+    CpyfOpts, CpyfReport, FmtOpt, MbrOpt, Target, ToMember, cpyf, cpyf_firing, cpyf_paused,
+};
 pub use impf::{
-    DtaFmt, ImpfOpts, ImpfReport, RcdDlm, RmvBlank, cpyfrmimpf, cpyfrmimpf_paused, cpytoimpf, cpytoimpf_paused,
+    DtaFmt, ImpfOpts, ImpfReport, RcdDlm, RmvBlank, cpyfrmimpf, cpyfrmimpf_paused, cpytoimpf,
+    cpytoimpf_paused,
 };
 pub use inzpfm::{default_record, inzpfm};
 pub use lines::put_lines;
 pub use putrcds::put_records;
-pub use rgzpfm::{rgzpfm_paused, KeyFile, RgzReport, rgzpfm};
+pub use rgzpfm::{KeyFile, RgzReport, rgzpfm, rgzpfm_paused};
 
 use std::ops::Bound;
 

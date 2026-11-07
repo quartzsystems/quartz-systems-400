@@ -395,7 +395,10 @@ impl Store {
             guard: None,
             headers: (None, HashMap::new()),
             group: None,
-            ifs_limits: (crate::asp::ifs::ops::MIN_GROW, crate::asp::ifs::ops::CREATE_MIN),
+            ifs_limits: (
+                crate::asp::ifs::ops::MIN_GROW,
+                crate::asp::ifs::ops::CREATE_MIN,
+            ),
             asp,
         }
     }

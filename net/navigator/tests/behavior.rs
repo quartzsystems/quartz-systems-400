@@ -18,17 +18,34 @@ fn sign_on_rules() {
     let mut b = Browser::new();
     // Not signed on: every page sends you to the sign-on page.
     let r = b.get("/home");
-    assert_eq!((r.status, r.header("Location")), (303, Some("/qs400/navigator/signon")));
+    assert_eq!(
+        (r.status, r.header("Location")),
+        (303, Some("/qs400/navigator/signon"))
+    );
     // A wrong password stays on the page with the message and a PW entry.
     let r = b.sign_on("qsecofr", "nope");
     assert_eq!(r.status, 200);
     assert!(r.text().contains("CPF22E2"), "{}", r.text());
     assert!(r.text().contains("value=\"QSECOFR\""));
-    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Password { code: 'P', .. })));
+    assert!(
+        b.fx.system
+            .audit
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|a| matches!(a, Audit::Password { code: 'P', .. }))
+    );
     // Any profile the system accepts signs on.
     let r = b.sign_on("webuser", PASSWORD);
-    assert_eq!((r.status, r.header("Location")), (303, Some("/qs400/navigator/home")));
-    assert!(r.header("Set-Cookie").unwrap().contains("HttpOnly; SameSite=Strict"));
+    assert_eq!(
+        (r.status, r.header("Location")),
+        (303, Some("/qs400/navigator/home"))
+    );
+    assert!(
+        r.header("Set-Cookie")
+            .unwrap()
+            .contains("HttpOnly; SameSite=Strict")
+    );
     assert!(b.get("/home").text().contains("User: <b>WEBUSER</b>"));
     // Sign off ends the session.
     let r = b.get("/signoff");
@@ -40,7 +57,10 @@ fn sign_on_rules() {
 fn posts_need_the_token() {
     let mut b = Browser::signed_on();
     assert_eq!(b.post_raw("/home", &[("x", "1")]).status, 403);
-    assert_eq!(b.post_raw("/home", &[("csrf", "0000"), ("x", "1")]).status, 403);
+    assert_eq!(
+        b.post_raw("/home", &[("csrf", "0000"), ("x", "1")]).status,
+        403
+    );
     assert_eq!(b.post("/home", &[("x", "1")]).status, 200);
 }
 
@@ -51,10 +71,17 @@ fn messages_and_help_resolve() {
     assert_eq!(r.status, 200);
     let t = r.text();
     let at = |s: &str| t.find(s).unwrap_or_else(|| panic!("{s} missing"));
-    assert!(at("<h2>Message</h2>") < at("<h2>Cause</h2>") && at("<h2>Cause</h2>") < at("<h2>Recovery</h2>"));
+    assert!(
+        at("<h2>Message</h2>") < at("<h2>Cause</h2>")
+            && at("<h2>Cause</h2>") < at("<h2>Recovery</h2>")
+    );
     assert!(t.contains("Not authorized to use object ADMIN in library QSYS type *JOB."));
     assert_eq!(b.get("/msg/CPF9999").status, 404);
-    assert!(b.get("/help/home").text().contains("<title>Help: System status - QS/400</title>"));
+    assert!(
+        b.get("/help/home")
+            .text()
+            .contains("<title>Help: System status - QS/400</title>")
+    );
     assert!(b.get("/help/nothing").text().contains("Contents"));
     assert_eq!(b.get(qsweb::frame::CSS_PATH).bytes(), qsweb::CSS);
 }
@@ -66,7 +93,11 @@ fn auto_refresh() {
     assert!(t.contains("<meta http-equiv=\"refresh\" content=\"120\" />"));
     assert!(t.contains("<option selected>120</option>"));
     // Only the offered intervals.
-    assert!(!b.get("/home?auto=1").text().contains("http-equiv=\"refresh\""));
+    assert!(
+        !b.get("/home?auto=1")
+            .text()
+            .contains("http-equiv=\"refresh\"")
+    );
 }
 
 #[test]
@@ -95,13 +126,18 @@ fn crawl() {
     let mut queue = VecDeque::from([PRODUCT.url("/home")]);
     let mut broken = Vec::new();
     while let Some(url) = queue.pop_front() {
-        if !seen.insert(url.clone()) || url.ends_with("/signoff") || url.contains("/qs400/httpadmin/") {
+        if !seen.insert(url.clone())
+            || url.ends_with("/signoff")
+            || url.contains("/qs400/httpadmin/")
+        {
             continue;
         }
         let r = b.get(&url);
         // A wizard's start link or the tree's [+] redirects.
         if r.status == 303
-            && let Some(to) = r.header("Location").filter(|l| l.starts_with(PRODUCT.prefix))
+            && let Some(to) = r
+                .header("Location")
+                .filter(|l| l.starts_with(PRODUCT.prefix))
         {
             queue.push_back(to.to_string());
             continue;
@@ -129,7 +165,10 @@ fn crawl() {
             if abs == "#" {
                 continue;
             }
-            assert!(proto(&abs).is_some() || abs == qsweb::frame::CSS_PATH, "{url} links to {abs}");
+            assert!(
+                proto(&abs).is_some() || abs == qsweb::frame::CSS_PATH,
+                "{url} links to {abs}"
+            );
             if method == "GET" {
                 queue.push_back(abs);
             }
@@ -143,11 +182,24 @@ fn crawl() {
 #[test]
 fn no_ibm_wording() {
     let words = [
-        "IBM", "iSeries", "System i", "AS/400", "OS/400", "i5/OS", "WebSphere", "Navigator for i", "Access Client Solutions",
+        "IBM",
+        "iSeries",
+        "System i",
+        "AS/400",
+        "OS/400",
+        "i5/OS",
+        "WebSphere",
+        "Navigator for i",
+        "Access Client Solutions",
     ];
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut hits = Vec::new();
-    for dir in ["src", "tests/behavior.rs", "tests/golden.rs", "tests/common"] {
+    for dir in [
+        "src",
+        "tests/behavior.rs",
+        "tests/golden.rs",
+        "tests/common",
+    ] {
         for f in walk(&root.join(dir)) {
             let t = std::fs::read_to_string(&f).unwrap_or_default();
             for (n, line) in t.lines().enumerate() {

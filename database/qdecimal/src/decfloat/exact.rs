@@ -41,9 +41,16 @@ impl DecFloat {
         let neg = bits >> 63 == 1;
         let raw_exp = i32::try_from((bits >> 52) & 0x7FF).expect("11 bits");
         let frac = bits & ((1 << 52) - 1);
-        let (m, e) = if raw_exp == 0 { (frac, -1074) } else { (frac | (1 << 52), raw_exp - 1075) };
+        let (m, e) = if raw_exp == 0 {
+            (frac, -1074)
+        } else {
+            (frac | (1 << 52), raw_exp - 1075)
+        };
         if m == 0 {
-            return Ok(Self { neg, ..Self::zero(format) });
+            return Ok(Self {
+                neg,
+                ..Self::zero(format)
+            });
         }
         let (d, exp) = exact_digits(m, e);
         Ok(Self::round_in(neg, &d, exp, format, mode)?.normalized())

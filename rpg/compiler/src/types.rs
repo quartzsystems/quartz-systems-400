@@ -226,7 +226,9 @@ impl Ty {
     pub fn size(&self, ds_len: &dyn Fn(usize) -> u32) -> u32 {
         match self {
             Self::Unknown => 0,
-            Self::Char(n) | Self::Graph(n) => *n * if matches!(self, Self::Graph(_)) { 2 } else { 1 },
+            Self::Char(n) | Self::Graph(n) => {
+                *n * if matches!(self, Self::Graph(_)) { 2 } else { 1 }
+            }
             Self::VarChar(n, p) => n + u32::from(*p),
             Self::Ucs2(n) => 2 * n,
             Self::VarUcs2(n, p) | Self::VarGraph(n, p) => 2 * n + u32::from(*p),
@@ -269,7 +271,12 @@ impl Ty {
     pub fn is_numeric(&self) -> bool {
         matches!(
             self,
-            Self::Packed(..) | Self::Zoned(..) | Self::Bin(..) | Self::Int(_) | Self::Uns(_) | Self::Float(_)
+            Self::Packed(..)
+                | Self::Zoned(..)
+                | Self::Bin(..)
+                | Self::Int(_)
+                | Self::Uns(_)
+                | Self::Float(_)
         )
     }
 
@@ -290,14 +297,22 @@ impl Ty {
     pub fn is_string(&self) -> bool {
         matches!(
             self,
-            Self::Char(_) | Self::VarChar(..) | Self::Ucs2(_) | Self::VarUcs2(..) | Self::Graph(_) | Self::VarGraph(..)
+            Self::Char(_)
+                | Self::VarChar(..)
+                | Self::Ucs2(_)
+                | Self::VarUcs2(..)
+                | Self::Graph(_)
+                | Self::VarGraph(..)
         )
     }
 
     /// Whether the type is varying.
     #[must_use]
     pub fn is_varying(&self) -> bool {
-        matches!(self, Self::VarChar(..) | Self::VarUcs2(..) | Self::VarGraph(..))
+        matches!(
+            self,
+            Self::VarChar(..) | Self::VarUcs2(..) | Self::VarGraph(..)
+        )
     }
 
     /// Whether the type is a date, time or timestamp.
@@ -321,9 +336,12 @@ impl Ty {
     #[must_use]
     pub fn str_len(&self) -> Option<u32> {
         Some(match self {
-            Self::Char(n) | Self::VarChar(n, _) | Self::Ucs2(n) | Self::VarUcs2(n, _) | Self::Graph(n) | Self::VarGraph(n, _) => {
-                *n
-            }
+            Self::Char(n)
+            | Self::VarChar(n, _)
+            | Self::Ucs2(n)
+            | Self::VarUcs2(n, _)
+            | Self::Graph(n)
+            | Self::VarGraph(n, _) => *n,
             _ => return None,
         })
     }
@@ -348,7 +366,9 @@ impl Ty {
             Self::Uns(d) => int_ir('u', *d),
             Self::Float(b) => format!("f{}", u32::from(*b) * 8),
             // Dates are their characters (`codegen::dates`).
-            Self::Date(..) | Self::Time(..) | Self::Timestamp(_) => format!("char({})", self.size(&|_| 0)),
+            Self::Date(..) | Self::Time(..) | Self::Timestamp(_) => {
+                format!("char({})", self.size(&|_| 0))
+            }
             Self::Dur(_) => "i64".into(),
             Self::Ptr | Self::Object => "ptr".into(),
             Self::ProcPtr => "procptr".into(),

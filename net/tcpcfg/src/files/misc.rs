@@ -27,7 +27,11 @@ pub(super) fn encode_hosts(t: &HostTable) -> Vec<(&'static Layout, Vec<Rec>)> {
     let mut v4 = Vec::new();
     let mut v6 = Vec::new();
     for e in &t.list {
-        let layout = if e.addr.is_ipv4() { &QATOCHOST } else { &QATOCHST6 };
+        let layout = if e.addr.is_ipv4() {
+            &QATOCHOST
+        } else {
+            &QATOCHST6
+        };
         for (n, chunk) in e.names.chunks(4).enumerate() {
             let mut r = layout.blank();
             r.set("INTERNET", &e.addr.to_string());
@@ -109,7 +113,10 @@ pub(super) fn encode_tcpip(a: &Attributes, d: &Domain) -> Vec<(&'static Layout, 
     put("PORT", &d.port.to_string());
     put("PROTOCOL", d.protocol.name());
     put("INLDMNSVR", d.initial.name());
-    put("DMNSVRRTY", &format!("{} {}", d.retry_attempts, d.retry_interval));
+    put(
+        "DMNSVRRTY",
+        &format!("{} {}", d.retry_attempts, d.retry_interval),
+    );
     put("DNSSEC", yes(d.dnssec));
     vec![(&QATOCTCPIP, out)]
 }
@@ -127,16 +134,32 @@ pub(super) fn decode_tcpip(recs: &[Rec]) -> (Attributes, Domain) {
                 "DMNNAME" => d.domain_name.clone_from(&v),
                 "DMNSCHLIST" => d.search_list = words().collect(),
                 "HOSTSCHPTY" => {
-                    d.priority = if v == "*REMOTE" { SearchPriority::Remote } else { SearchPriority::Local };
+                    d.priority = if v == "*REMOTE" {
+                        SearchPriority::Remote
+                    } else {
+                        SearchPriority::Local
+                    };
                 }
-                "INTNETADR" => d.dns = v.split_whitespace().filter_map(|x| x.parse().ok()).collect(),
+                "INTNETADR" => {
+                    d.dns = v
+                        .split_whitespace()
+                        .filter_map(|x| x.parse().ok())
+                        .collect()
+                }
                 "PORT" => d.port = v.parse().unwrap_or(53),
                 "PROTOCOL" => d.protocol = Proto::parse(&v).unwrap_or(Proto::Udp),
                 "INLDMNSVR" => {
-                    d.initial = if v == "*ROTATE" { InitialServer::Rotate } else { InitialServer::First };
+                    d.initial = if v == "*ROTATE" {
+                        InitialServer::Rotate
+                    } else {
+                        InitialServer::First
+                    };
                 }
                 "DMNSVRRTY" => {
-                    let n: Vec<u8> = v.split_whitespace().filter_map(|x| x.parse().ok()).collect();
+                    let n: Vec<u8> = v
+                        .split_whitespace()
+                        .filter_map(|x| x.parse().ok())
+                        .collect();
                     if n.len() == 2 {
                         d.retry_attempts = n[0];
                         d.retry_interval = n[1];
@@ -187,7 +210,9 @@ pub(super) fn encode_servers(s: &Servers) -> Vec<(&'static Layout, Vec<Rec>)> {
     let mut bag = Vec::new();
     for a in &s.attrs {
         let mut r = QATOCSTART.blank();
-        r.set("SERVERTYPE", "S").set("SERVER", &a.server).set("AUTOSTART", yes(a.autostart));
+        r.set("SERVERTYPE", "S")
+            .set("SERVER", &a.server)
+            .set("AUTOSTART", yes(a.autostart));
         start.push(r);
         for (k, v) in &a.bag {
             let mut b = QATOCSVRA.blank();
@@ -231,7 +256,9 @@ pub(super) fn decode_servers(start: &[Rec], bag: &[Rec]) -> Servers {
     for r in bag {
         let server = r.get("SERVER");
         if !server.is_empty() {
-            s.get_mut(&server).bag.push((r.get("KEYWORD"), r.get("DATA")));
+            s.get_mut(&server)
+                .bag
+                .push((r.get("KEYWORD"), r.get("DATA")));
         }
     }
     s
@@ -244,7 +271,11 @@ fn set_aliases(r: &mut Rec, aliases: &[String]) {
 }
 
 fn aliases(r: &Rec) -> Vec<String> {
-    ALIAS_FIELDS.iter().map(|f| r.get(f)).filter(|a| !a.is_empty()).collect()
+    ALIAS_FIELDS
+        .iter()
+        .map(|f| r.get(f))
+        .filter(|a| !a.is_empty())
+        .collect()
 }
 
 pub(super) fn encode_services(t: &ServicesTable) -> Vec<(&'static Layout, Vec<Rec>)> {
@@ -286,7 +317,9 @@ pub(super) fn encode_protocols(t: &[ProtocolEntry]) -> Vec<(&'static Layout, Vec
         .iter()
         .map(|e| {
             let mut r = QATOCPP.blank();
-            r.set("PROTOCOL", &e.name).set_bin("PCLNBR", i64::from(e.number)).set("TEXT", &e.text);
+            r.set("PROTOCOL", &e.name)
+                .set_bin("PCLNBR", i64::from(e.number))
+                .set("TEXT", &e.text);
             set_aliases(&mut r, &e.aliases);
             r
         })

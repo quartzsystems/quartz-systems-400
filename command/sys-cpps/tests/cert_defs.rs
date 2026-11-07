@@ -11,19 +11,37 @@ use sys_cpps::Site;
 const COMMANDS: &[(&str, &[&str])] = &[
     (
         "QSCRTCRTS",
-        &["KEYSTORE", "PASSWORD", "STASH", "ROOTS", "CN", "ORG", "ORGUNIT", "LOCALITY", "STATE", "COUNTRY", "KEYALG", "VALIDITY"],
+        &[
+            "KEYSTORE", "PASSWORD", "STASH", "ROOTS", "CN", "ORG", "ORGUNIT", "LOCALITY", "STATE",
+            "COUNTRY", "KEYALG", "VALIDITY",
+        ],
     ),
     ("QSDLTCRTS", &["KEYSTORE", "PASSWORD"]),
     (
         "QSCRTCRT",
         &[
-            "LABEL", "CN", "KEYSTORE", "PASSWORD", "SIGNER", "USAGE", "ORG", "ORGUNIT", "LOCALITY", "STATE", "COUNTRY", "ALTNAME",
-            "KEYALG", "VALIDITY", "CSR", "LCLCAPWD", "TEXT",
+            "LABEL", "CN", "KEYSTORE", "PASSWORD", "SIGNER", "USAGE", "ORG", "ORGUNIT", "LOCALITY",
+            "STATE", "COUNTRY", "ALTNAME", "KEYALG", "VALIDITY", "CSR", "LCLCAPWD", "TEXT",
         ],
     ),
-    ("QSIMPCRT", &["FROMSTMF", "LABEL", "KEYSTORE", "PASSWORD", "FORMAT", "IMPPWD", "TRUST"]),
-    ("QSEXPCRT", &["LABEL", "TOSTMF", "KEYSTORE", "PASSWORD", "FORMAT", "INCKEY", "EXPPWD", "REPLACE"]),
-    ("QSCHGCRT", &["LABEL", "KEYSTORE", "PASSWORD", "NEWLABEL", "TRUST", "DFTCRT", "TEXT"]),
+    (
+        "QSIMPCRT",
+        &[
+            "FROMSTMF", "LABEL", "KEYSTORE", "PASSWORD", "FORMAT", "IMPPWD", "TRUST",
+        ],
+    ),
+    (
+        "QSEXPCRT",
+        &[
+            "LABEL", "TOSTMF", "KEYSTORE", "PASSWORD", "FORMAT", "INCKEY", "EXPPWD", "REPLACE",
+        ],
+    ),
+    (
+        "QSCHGCRT",
+        &[
+            "LABEL", "KEYSTORE", "PASSWORD", "NEWLABEL", "TRUST", "DFTCRT", "TEXT",
+        ],
+    ),
     ("QSDLTCRT", &["LABEL", "KEYSTORE", "PASSWORD"]),
     ("QSWRKCRT", &["KEYSTORE", "PASSWORD"]),
     ("QSASNCRT", &["APPID", "LABEL"]),
@@ -37,7 +55,8 @@ const COMMANDS: &[(&str, &[&str])] = &[
 #[test]
 fn definitions_have_their_keywords() {
     for (name, kwds) in COMMANDS {
-        let src = sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
+        let src =
+            sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
         let def = cmd::source::compile(name, src).unwrap_or_else(|e| panic!("{name}: {e:?}"));
         let ours: Vec<&str> = def.parms.iter().map(|p| p.kwd.as_str()).collect();
         assert_eq!(&ours, kwds, "{name}");
@@ -49,10 +68,17 @@ fn the_panels_run_in_the_job_the_rest_in_the_service() {
     for (name, _) in COMMANDS {
         let e = sys_cpps::entry(name).unwrap_or_else(|| panic!("{name} has no entry"));
         let job = matches!(*name, "QSWRKCRT" | "QSWRKAPPID");
-        assert_eq!(e.site, if job { Site::Job } else { Site::Service }, "{name}");
+        assert_eq!(
+            e.site,
+            if job { Site::Job } else { Site::Service },
+            "{name}"
+        );
         assert!(e.cpp.starts_with("QSZC"), "{name}: {}", e.cpp);
         if job {
-            assert!(sys_cpps::inventory::in_service_too(name), "{name} has no text form");
+            assert!(
+                sys_cpps::inventory::in_service_too(name),
+                "{name} has no text form"
+            );
         }
     }
 }
@@ -61,9 +87,16 @@ fn the_panels_run_in_the_job_the_rest_in_the_service() {
 fn passwords_are_not_shown() {
     for (name, kwds) in COMMANDS {
         let def = cmd::source::compile(name, sys_cpps::defs::source(name).unwrap()).unwrap();
-        for k in kwds.iter().filter(|k| k.ends_with("PWD") || **k == "PASSWORD") {
+        for k in kwds
+            .iter()
+            .filter(|k| k.ends_with("PWD") || **k == "PASSWORD")
+        {
             let p = def.parms.iter().find(|p| p.kwd == *k).unwrap();
-            assert_eq!(p.dspinput, cmd::def::DspInput::No, "{name} {k} shows its input");
+            assert_eq!(
+                p.dspinput,
+                cmd::def::DspInput::No,
+                "{name} {k} shows its input"
+            );
         }
     }
 }

@@ -26,7 +26,11 @@ use crate::routes::files::{error, token_ok};
 /// Back to the list the form was on.
 fn back_to(rq: &Rq<'_>) -> String {
     let q = rq.req.query.clone();
-    if q.is_empty() { OUTPUT.to_string() } else { format!("{OUTPUT}?{q}") }
+    if q.is_empty() {
+        OUTPUT.to_string()
+    } else {
+        format!("{OUTPUT}?{q}")
+    }
 }
 
 /// `act` on each of `ids`, then back to `to` with the result.
@@ -47,7 +51,12 @@ fn run(rq: &Rq<'_>, ids: &[String], act: &Act, to: &str) -> Response {
     }
     let mut results: Vec<(Splf, Option<Message>)> = Vec::new();
     for f in files {
-        let r = rq.env().print.act(rq.user(), &f, act).err().map(|m| error(rq, &m));
+        let r = rq
+            .env()
+            .print
+            .act(rq.user(), &f, act)
+            .err()
+            .map(|m| error(rq, &m));
         results.push((f, r));
     }
     let failed = results.iter().filter(|r| r.1.is_some()).count();
@@ -68,7 +77,12 @@ fn run(rq: &Rq<'_>, ids: &[String], act: &Act, to: &str) -> Response {
                 .iter()
                 .map(|(f, r)| match r {
                     None => format!("{}\t\t", f.file),
-                    Some(m) => format!("{}\t{}\t{}", f.file, m.id, m.text.replace(['\t', '\n'], " ")),
+                    Some(m) => format!(
+                        "{}\t{}\t{}",
+                        f.file,
+                        m.id,
+                        m.text.replace(['\t', '\n'], " ")
+                    ),
                 })
                 .collect();
             rq.set(&[(DETAILS, &lines.join("\n"))]);
@@ -96,7 +110,14 @@ pub fn post(rq: &Rq<'_>) -> Response {
         return rq.done(&back, rq.message(Kind::Info, msgs::NONE_SELECTED, &[]));
     }
     if f.has("hold") {
-        return run(rq, &ids, &Act::Hold { page_end: f.str("hw") == "page" }, &back);
+        return run(
+            rq,
+            &ids,
+            &Act::Hold {
+                page_end: f.str("hw") == "page",
+            },
+            &back,
+        );
     }
     if f.has("release") {
         return run(rq, &ids, &Act::Release, &back);
@@ -104,16 +125,30 @@ pub fn post(rq: &Rq<'_>) -> Response {
     if f.has("move") {
         let outq = f.str("to").trim().to_ascii_uppercase();
         if !rq.env().print.queues(rq.user()).contains(&outq) {
-            return rq.done(&back, rq.message(Kind::Error, msgs::BAD_VALUE, &[&outq, "Move to"]));
+            return rq.done(
+                &back,
+                rq.message(Kind::Error, msgs::BAD_VALUE, &[&outq, "Move to"]),
+            );
         }
-        return run(rq, &ids, &Act::Move { outq, top: f.has("top") }, &back);
+        return run(
+            rq,
+            &ids,
+            &Act::Move {
+                outq,
+                top: f.has("top"),
+            },
+            &back,
+        );
     }
     if f.has("delete") {
         let mut q: Vec<(&str, &str)> = ids.iter().map(|i| ("s", i.as_str())).collect();
         q.push(("back", &back));
         return rq.redirect(&format!("/print/confirm{}", query(&q)));
     }
-    for (button, what, title) in [("pdf", "pdf", "Save as PDF"), ("text", "text", "Save as text")] {
+    for (button, what, title) in [
+        ("pdf", "pdf", "Save as PDF"),
+        ("text", "text", "Save as text"),
+    ] {
         if f.has(button) {
             return match ids.as_slice() {
                 [one] => rq.redirect(&format!("/print/view/{one}/{what}?save=1")),
@@ -152,7 +187,11 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
     }
     let q = rq.query();
     let ids: Vec<String> = q.all("s").into_iter().map(ToString::to_string).collect();
-    let back = q.get("back").filter(|b| b.starts_with(OUTPUT)).unwrap_or(OUTPUT).to_string();
+    let back = q
+        .get("back")
+        .filter(|b| b.starts_with(OUTPUT))
+        .unwrap_or(OUTPUT)
+        .to_string();
     if ids.is_empty() {
         return rq.redirect(&back);
     }
@@ -178,7 +217,10 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
         ]);
     }
     let table = list_table(&List {
-        cols: ["File", "User", "Status", "Pages", "Job", "File nbr"].iter().map(|c| Col::plain(c)).collect(),
+        cols: ["File", "User", "Status", "Pages", "Job", "File nbr"]
+            .iter()
+            .map(|c| Col::plain(c))
+            .collect(),
         rows,
         empty: String::new(),
         keep: Vec::new(),

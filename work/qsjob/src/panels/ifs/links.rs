@@ -32,7 +32,13 @@ struct Level {
 }
 
 /// `WRKLNK` (`work`) or `DSPLNK`.
-pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, work: bool) -> Result<String, Fail> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    work: bool,
+) -> Result<String, Fail> {
     let c = client(host);
     let obj = match text(r, "OBJ") {
         s if s.is_empty() => "*".to_string(),
@@ -75,7 +81,12 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, work
                 } else {
                     d.set(CMDLINE_VAR, "");
                     last.clone_from(&t);
-                    exec(job, host, &mut d, &format!("?{}", t.trim_start_matches('?')));
+                    exec(
+                        job,
+                        host,
+                        &mut d,
+                        &format!("?{}", t.trim_start_matches('?')),
+                    );
                     reload = true;
                 }
             }

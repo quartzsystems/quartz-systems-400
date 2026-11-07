@@ -96,7 +96,14 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         total.words += cnt.words;
         total.bytes += cnt.bytes;
         total.chars += cnt.chars;
-        out.text(&line(&cnt, if f == "-" && p.operands.is_empty() { "" } else { f }));
+        out.text(&line(
+            &cnt,
+            if f == "-" && p.operands.is_empty() {
+                ""
+            } else {
+                f
+            },
+        ));
     }
     if files.len() > 1 {
         out.text(&line(&total, "total"));

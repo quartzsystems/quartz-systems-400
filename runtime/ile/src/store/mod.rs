@@ -299,7 +299,9 @@ pub fn bind_in_store(
     let mut dirs = Vec::new();
     // BNDSRVPGM's service programs come first, as a directory of their own.
     if !options.bndsrvpgm.is_empty() {
-        dirs.push(BndDir { entries: options.bndsrvpgm.clone() });
+        dirs.push(BndDir {
+            entries: options.bndsrvpgm.clone(),
+        });
     }
     for d in bnddirs {
         let id = ctx.resolve(txn, d.lib, d.name, types::BNDDIR)?;

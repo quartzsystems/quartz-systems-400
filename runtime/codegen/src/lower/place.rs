@@ -94,12 +94,16 @@ impl Lowerer<'_, '_> {
     /// The address of a whole by-reference parameter, unchecked: zero
     /// when it was omitted, so `addr` of it is a null pointer.
     pub(crate) fn param_addr(&self, place: &Place) -> Option<(Value, Type)> {
-        let PlaceBase::Var(r) = &place.base else { return None };
+        let PlaceBase::Var(r) = &place.base else {
+            return None;
+        };
         if !place.path.is_empty() || r.scope != Scope::Proc {
             return None;
         }
         let v = self.m.var(*r, Some(self.p))?;
-        let StorageClass::Param(k) = v.class else { return None };
+        let StorageClass::Param(k) = v.class else {
+            return None;
+        };
         if self.p.params[k as usize].by_value {
             return None;
         }
@@ -110,18 +114,26 @@ impl Lowerer<'_, '_> {
     /// for: zero when its pointer is null, as the pointer itself is
     /// what the callee gets; `None` for any other place.
     pub(crate) fn based_arg_addr(&mut self, place: &Place) -> Result<Option<Value>> {
-        let PlaceBase::Var(r) = &place.base else { return Ok(None) };
+        let PlaceBase::Var(r) = &place.base else {
+            return Ok(None);
+        };
         if !place.path.is_empty() {
             return Ok(None);
         }
         let v = self.m.var(*r, Some(self.p)).expect("verified");
-        let StorageClass::Based(on) = v.class else { return Ok(None) };
+        let StorageClass::Based(on) = v.class else {
+            return Ok(None);
+        };
         let pa = self.var_addr(on)?;
         let fat = self.b.ins().load(types::I128, le(), pa, 0);
         let (lo, _) = self.b.ins().isplit(fat);
         let kind = self.b.ins().band_imm_u(lo, 0xFF);
         let null = self.b.ins().icmp_imm_s(IntCC::Equal, kind, 0);
-        let (zero_blk, deref_blk, merge) = (self.b.create_block(), self.b.create_block(), self.b.create_block());
+        let (zero_blk, deref_blk, merge) = (
+            self.b.create_block(),
+            self.b.create_block(),
+            self.b.create_block(),
+        );
         self.b.append_block_param(merge, types::I64);
         self.b.ins().brif(null, zero_blk, &[], deref_blk, &[]);
         self.b.switch_to_block(zero_blk);
@@ -154,7 +166,9 @@ impl Lowerer<'_, '_> {
                 let fat = self.b.ins().load(types::I128, le(), pa, 0);
                 self.deref(fat)
             }
-            (Scope::Proc, StorageClass::Auto | StorageClass::Param(_)) if self.big.contains_key(&r.index) => {
+            (Scope::Proc, StorageClass::Auto | StorageClass::Param(_))
+                if self.big.contains_key(&r.index) =>
+            {
                 self.big[&r.index]
             }
             (Scope::Proc, StorageClass::Auto) => {

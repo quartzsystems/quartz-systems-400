@@ -16,12 +16,20 @@ use crate::display::uim::{Response, UimDialog};
 
 /// `DSPPTF LICPGM() SELECT()`: the product's PTFs; option 5 shows what
 /// the database holds for one.
-pub fn dspptf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dspptf(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let product = parm(r, "LICPGM");
     let select = parm_list(r, "SELECT").join(",");
     let mut d = dialog(host, "QUIDSPPTF")?;
     loop {
-        load(&mut d, fetch(host, "PTF", &[product.clone(), select.clone()])?);
+        load(
+            &mut d,
+            fetch(host, "PTF", &[product.clone(), select.clone()])?,
+        );
         match show(&mut d, surface, "DSPPTF")? {
             Response::Exit | Response::Cancel | Response::Gone | Response::Return(0) => {
                 return Ok(String::new());
@@ -37,7 +45,10 @@ pub fn dspptf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
                     let detail = fetch(host, "PTFD", &[id])?;
                     let mut p = dialog(host, "QUIDSPPTF")?;
                     load(&mut p, detail);
-                    if matches!(show(&mut p, surface, "DSPPTFD")?, Response::Exit | Response::Gone) {
+                    if matches!(
+                        show(&mut p, surface, "DSPPTFD")?,
+                        Response::Exit | Response::Gone
+                    ) {
                         return Err(Fail::new("CPF6801", ""));
                     }
                     Ok(())
@@ -64,7 +75,10 @@ pub fn wrkptfgrp(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
     let pattern = parm(r, "PTFGRP");
     let mut d = dialog(host, "QUIDSPPTF")?;
     loop {
-        load(&mut d, fetch(host, "PTFGRP", std::slice::from_ref(&pattern))?);
+        load(
+            &mut d,
+            fetch(host, "PTFGRP", std::slice::from_ref(&pattern))?,
+        );
         match show(&mut d, surface, "WRKPTFGRP")? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Return(11) => d.view = 1 - d.view.min(1),
@@ -96,7 +110,12 @@ fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
 /// `DSPPTFCVR LICPGM() SELECT() CVRATR() STATUS()`: the cover letters
 /// that match, one shown at once when only one does; option 5 shows a
 /// letter, option 6 prints it.
-pub fn dspptfcvr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dspptfcvr(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let args = [
         parm(r, "LICPGM"),
         parm_list(r, "SELECT").join(","),
@@ -111,7 +130,9 @@ pub fn dspptfcvr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
     }
     loop {
         match show(&mut d, surface, "SELCVR")? {
-            Response::Exit | Response::Gone | Response::Cancel | Response::Return(0) => return Ok(String::new()),
+            Response::Exit | Response::Gone | Response::Cancel | Response::Return(0) => {
+                return Ok(String::new());
+            }
             Response::Options(choices) => {
                 for c in &choices {
                     match c.option.trim() {

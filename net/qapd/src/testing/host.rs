@@ -11,19 +11,21 @@ use std::time::{Duration, Instant};
 
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
 use qap_proto::ops::manage::{
-    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType, SetSystemValue, Subsystem,
-    SystemValue, SystemValues,
+    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType,
+    SetSystemValue, Subsystem, SystemValue, SystemValues,
 };
 use qap_proto::ops::messages::{
-    ListMessages, MessageType, Messages, QueuedMessage, RemoveMessages, ReplyMessage, SendMessage, Sent,
+    ListMessages, MessageType, Messages, QueuedMessage, RemoveMessages, ReplyMessage, SendMessage,
+    Sent,
 };
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
-    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId,
+    SpooledFiles,
 };
 use qap_proto::ops::sql::{
-    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared, Schemas, SetOptions,
-    Tables,
+    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared,
+    Schemas, SetOptions, Tables,
 };
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::{JobId, ObjectName};
@@ -123,7 +125,13 @@ impl MemHost {
             s
         };
         let failed = r.escape.is_some();
-        let messages: Vec<ServerMessage> = r.messages.into_iter().map(|(_, m)| m).chain(r.escape).map(msg).collect();
+        let messages: Vec<ServerMessage> = r
+            .messages
+            .into_iter()
+            .map(|(_, m)| m)
+            .chain(r.escape)
+            .map(msg)
+            .collect();
         Ran {
             status: if failed { Status::Error } else { Status::Ok },
             escape: messages.last().filter(|_| failed).cloned(),
@@ -135,8 +143,13 @@ impl MemHost {
     }
 
     fn ran(&mut self, status: Status, ids: &[(&str, &[&str])]) -> Ran {
-        let messages: Vec<ServerMessage> = ids.iter().map(|(id, data)| self.message(id, data)).collect();
-        let escape = (status != Status::Ok).then(|| messages.last().cloned()).flatten();
+        let messages: Vec<ServerMessage> = ids
+            .iter()
+            .map(|(id, data)| self.message(id, data))
+            .collect();
+        let escape = (status != Status::Ok)
+            .then(|| messages.last().cloned())
+            .flatten();
         Ran {
             status,
             escape,
@@ -158,7 +171,11 @@ impl Host for MemHost {
             return Some(Ending::Server);
         }
         let e = lock(&self.sys.ending).take();
-        e.or_else(|| lock(&self.sys.sessions).take_ended(self.job).map(Ending::Session))
+        e.or_else(|| {
+            lock(&self.sys.sessions)
+                .take_ended(self.job)
+                .map(Ending::Session)
+        })
     }
 
     fn sign_off(&mut self, token: &Token) {
@@ -182,7 +199,10 @@ impl Host for MemHost {
         let (name, parms) = parse(command);
         let _running = self.sys.command_runs(self.job, &name);
         let Some(c) = find(&name) else {
-            return self.ran(Status::NotFound, &[("CPD0030", &[&name, "*LIBL"]), ("CPF0006", &[])]);
+            return self.ran(
+                Status::NotFound,
+                &[("CPD0030", &[&name, "*LIBL"]), ("CPF0006", &[])],
+            );
         };
         if !c.authorized {
             return self.ran(Status::NotAuthorized, &[("CPF9802", &["*CMD", c.name])]);
@@ -210,7 +230,9 @@ impl Host for MemHost {
                 self.ran(Status::NotAuthorized, &[("CPF9802", &["*FILE", "SECRET"])])
             }
             "DLYJOB" => {
-                let secs = get("DLY").and_then(|d| d.trim().parse::<u64>().ok()).unwrap_or(1);
+                let secs = get("DLY")
+                    .and_then(|d| d.trim().parse::<u64>().ok())
+                    .unwrap_or(1);
                 let until = Instant::now() + Duration::from_secs(secs);
                 while Instant::now() < until {
                     if cancelled() {
@@ -238,7 +260,10 @@ impl Host for MemHost {
                 self.ran(Status::Ok, &[])
             }
             "CHGOWN" => {
-                let (obj, own) = (unquote(&get("OBJ").unwrap_or_default()), get("NEWOWN").unwrap_or_default());
+                let (obj, own) = (
+                    unquote(&get("OBJ").unwrap_or_default()),
+                    get("NEWOWN").unwrap_or_default(),
+                );
                 let rvk = get("RVKOLDAUT").is_none_or(|v| yes(&v));
                 let sym = get("SYMLNK").is_some_and(|v| yes(&v));
                 let sub = Subtree::of(&get("SUBTREE").unwrap_or_default());
@@ -249,7 +274,9 @@ impl Host for MemHost {
                     obj: unquote(&get("OBJ").unwrap_or_default()),
                     newpgp: get("NEWPGP").unwrap_or_default(),
                     dtaaut: get("DTAAUT").unwrap_or_else(|| "*OLDPGP".into()),
-                    objaut: get("OBJAUT").map_or_else(Vec::new, |v| v.split_whitespace().map(String::from).collect()),
+                    objaut: get("OBJAUT").map_or_else(Vec::new, |v| {
+                        v.split_whitespace().map(String::from).collect()
+                    }),
                     rvkoldaut: get("RVKOLDAUT").is_none_or(|v| yes(&v)),
                     subtree: Subtree::of(&get("SUBTREE").unwrap_or_default()),
                     symlnk: get("SYMLNK").is_some_and(|v| yes(&v)),
@@ -257,8 +284,22 @@ impl Host for MemHost {
                 self.ifs_command(|c| auth::chgpgp(c, &a))
             }
             "CHGAUT" => {
-                let dta = get("DTAAUT").unwrap_or_else(|| "*SAME".into()).to_ascii_uppercase();
-                if matches!(dta.as_str(), "*SAME" | "*RWX" | "*RW" | "*RX" | "*R" | "*WX" | "*W" | "*X" | "*EXCLUDE" | "*NONE") {
+                let dta = get("DTAAUT")
+                    .unwrap_or_else(|| "*SAME".into())
+                    .to_ascii_uppercase();
+                if matches!(
+                    dta.as_str(),
+                    "*SAME"
+                        | "*RWX"
+                        | "*RW"
+                        | "*RX"
+                        | "*R"
+                        | "*WX"
+                        | "*W"
+                        | "*X"
+                        | "*EXCLUDE"
+                        | "*NONE"
+                ) {
                     self.ran(Status::Ok, &[])
                 } else {
                     self.ran(Status::Error, &[("CPDA091", &[])])
@@ -271,12 +312,22 @@ impl Host for MemHost {
     fn check_command(&mut self, command: &str) -> (Status, Vec<ServerMessage>) {
         let (name, parms) = parse(command);
         let Some(c) = commands::find(&name) else {
-            return (Status::NotFound, vec![self.message("CPD0030", &[&name, "*LIBL"])]);
+            return (
+                Status::NotFound,
+                vec![self.message("CPD0030", &[&name, "*LIBL"])],
+            );
         };
-        match c.required.iter().find(|k| !parms.iter().any(|(p, _)| p == *k)) {
+        match c
+            .required
+            .iter()
+            .find(|k| !parms.iter().any(|(p, _)| p == *k))
+        {
             Some(missing) => (
                 Status::Error,
-                vec![self.message("CPD0071", &[missing]), self.message("CPF0006", &[])],
+                vec![
+                    self.message("CPD0071", &[missing]),
+                    self.message("CPF0006", &[]),
+                ],
             ),
             None => (Status::Ok, Vec::new()),
         }
@@ -287,7 +338,9 @@ impl Host for MemHost {
         let found = find(&command.name).filter(|_| matches!(lib.as_str(), "" | "*LIBL" | "QSYS"));
         match found {
             None => Err(self.refuse(Status::NotFound, "CPD0030", &[&command.name, &lib])),
-            Some(c) if !c.authorized => Err(self.refuse(Status::NotAuthorized, "CPF9802", &["*CMD", c.name])),
+            Some(c) if !c.authorized => {
+                Err(self.refuse(Status::NotAuthorized, "CPF9802", &["*CMD", c.name]))
+            }
             Some(c) => Ok(definition(c)),
         }
     }
@@ -462,14 +515,21 @@ impl MemThread {
 
     /// A resume or attach: the job runs as the session's profile, its
     /// job state its own.
-    fn joined(&mut self, token: &Token, r: Result<crate::sessions::Session, Gone>) -> Result<SignOnReply, Refusal> {
+    fn joined(
+        &mut self,
+        token: &Token,
+        r: Result<crate::sessions::Session, Gone>,
+    ) -> Result<SignOnReply, Refusal> {
         match r {
             Ok(s) => {
                 lock(&self.sys.running_as).insert(self.job, s.user.clone());
                 Ok(self.reply(token.clone(), &s.user))
             }
             Err(Gone::Full) => {
-                let user = lock(&self.sys.sessions).get(token).map(|s| s.user.clone()).unwrap_or_default();
+                let user = lock(&self.sys.sessions)
+                    .get(token)
+                    .map(|s| s.user.clone())
+                    .unwrap_or_default();
                 Err(self.refuse(Status::Busy, "TCP1A59", &[&user]))
             }
             Err(_) => Err(self.refuse(Status::SessionExpired, "TCP1A53", &[])),
@@ -547,11 +607,18 @@ impl ThreadHost for MemThread {
         Ok(self.open(&user))
     }
 
-    fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal> {
+    fn change_password(
+        &mut self,
+        user: &str,
+        old: &Secret,
+        new: &Secret,
+    ) -> Result<SignOnReply, Refusal> {
         let me = self.me();
         let user = user.trim().to_ascii_uppercase();
         match &me {
-            Some(m) if *m != user => return Err(self.refuse(Status::NotAuthorized, "CPF22E9", &[&user])),
+            Some(m) if *m != user => {
+                return Err(self.refuse(Status::NotAuthorized, "CPF22E9", &[&user]));
+            }
             Some(_) => {
                 if self.sys.get(&user).password != old.expose() {
                     return Err(self.refuse(Status::Error, "CPF22E2", &[&user]));
@@ -596,7 +663,11 @@ impl ThreadHost for MemThread {
         let u = self.sys.get(&me);
         let ms = |s: u64| i64::try_from(s).unwrap_or(i64::MAX) * 1000;
         PasswordStatus {
-            expires: if u.expired { Some(ms(self.sys.now())) } else { u.expires.map(ms) },
+            expires: if u.expired {
+                Some(ms(self.sys.now()))
+            } else {
+                u.expires.map(ms)
+            },
             warning_days: self.sys.warning_days,
         }
     }
@@ -676,7 +747,12 @@ impl ThreadHost for MemThread {
         r.map_err(|n| self.no(&n))
     }
 
-    fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal> {
+    fn move_spooled_file(
+        &mut self,
+        id: &SpooledFileId,
+        outq: &ObjectName,
+        first: bool,
+    ) -> Result<(), Refusal> {
         let me = self.me().unwrap_or_default();
         let r = lock(&self.sys.spool).move_to(&me, id, outq, first);
         r.map_err(|n| self.no(&n))
@@ -705,10 +781,19 @@ impl ThreadHost for MemThread {
         super::sql::list_columns(&lock(&self.sys.sql), &me, req, &msg)
     }
 
-    fn exit_allows(&mut self, _point: &str, _format: &str, req: &ExitRequest) -> Result<(), Refusal> {
+    fn exit_allows(
+        &mut self,
+        _point: &str,
+        _format: &str,
+        req: &ExitRequest,
+    ) -> Result<(), Refusal> {
         if lock(&self.sys.manage).exit(req) {
             lock(&self.sys.audit).push(format!("GR F {}", req.user));
-            return Err(self.refuse(Status::NotAuthorized, crate::manage::EXIT_REFUSED, &["QAPXEXIT", "QGPL"]));
+            return Err(self.refuse(
+                Status::NotAuthorized,
+                crate::manage::EXIT_REFUSED,
+                &["QAPXEXIT", "QGPL"],
+            ));
         }
         Ok(())
     }
@@ -731,7 +816,8 @@ impl ThreadHost for MemThread {
 
     fn system_values(&mut self, names: &[String]) -> Result<SystemValues, Refusal> {
         let r = lock(&self.sys.manage).values(names);
-        r.map(|values| SystemValues { values }).map_err(|n| self.no(&n))
+        r.map(|values| SystemValues { values })
+            .map_err(|n| self.no(&n))
     }
 
     fn set_system_value(&mut self, req: &SetSystemValue) -> Result<SystemValue, Refusal> {

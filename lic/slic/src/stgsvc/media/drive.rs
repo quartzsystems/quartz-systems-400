@@ -47,7 +47,10 @@ pub(crate) fn target(system: &mut System, dev: &str) -> Result<Target, String> {
     let dev = dev.to_ascii_uppercase();
     let d = devices::read(system, &dev)?;
     if !devices::usable(&d) {
-        return Err(format!("{NOT_AVAILABLE} device {dev} is not available ({})", d.status.text()));
+        return Err(format!(
+            "{NOT_AVAILABLE} device {dev} is not available ({})",
+            d.status.text()
+        ));
     }
     let m = d.media.clone().unwrap_or_default();
     Ok(Target {
@@ -88,7 +91,13 @@ impl<D: ?Sized> VolumeProvider<D> for NoVolumes {
 pub(crate) fn ask_volume(system: &mut System, dev: &str, req: &VolumeRequest) -> bool {
     let vol = req.expected.clone().unwrap_or_else(|| "*MOUNTED".into());
     let seq = req.volume_seq.to_string();
-    operator::inquiry(system, NEXT_VOLUME, &[(&vol, 6), (&req.file_label, 17), (dev, 10), (&seq, 4)], "C").is(RETRY)
+    operator::inquiry(
+        system,
+        NEXT_VOLUME,
+        &[(&vol, 6), (&req.file_label, 17), (dev, 10), (&seq, 4)],
+        "C",
+    )
+    .is(RETRY)
 }
 
 /// A real drive's next volume: the operator puts it in and replies
@@ -117,11 +126,19 @@ fn failed(system: &mut System, t: &Target, e: &MediaError) -> String {
 /// Mount entry `vol` of the catalog loaded on `dev` when it is in the
 /// catalog and not mounted.
 fn mount(dev: &str, vol: &str) -> Result<(), String> {
-    let Some(c) = super::catalog_on(dev) else { return Ok(()) };
-    if c.mounted().is_some_and(|e| e.volume.eq_ignore_ascii_case(vol)) {
+    let Some(c) = super::catalog_on(dev) else {
+        return Ok(());
+    };
+    if c.mounted()
+        .is_some_and(|e| e.volume.eq_ignore_ascii_case(vol))
+    {
         return Ok(());
     }
-    let Some(e) = c.entries.iter().find(|e| e.volume.eq_ignore_ascii_case(vol)) else {
+    let Some(e) = c
+        .entries
+        .iter()
+        .find(|e| e.volume.eq_ignore_ascii_case(vol))
+    else {
         return Ok(());
     };
     let (name, index) = (c.name.clone(), e.index);
@@ -135,9 +152,18 @@ fn mount(dev: &str, vol: &str) -> Result<(), String> {
 /// back to `*LOADED` and the next loaded entry after it (or the first)
 /// is mounted. With no other loaded entry it stays mounted.
 fn unload_entry(dev: &str, vol: &str) -> Result<(), String> {
-    let Some(c) = super::catalog_on(dev) else { return Ok(()) };
-    let loaded: Vec<&imgclg::Entry> = c.entries.iter().filter(|e| e.status != imgclg::EntryStatus::Available).collect();
-    let Some(at) = loaded.iter().position(|e| e.volume.eq_ignore_ascii_case(vol)) else {
+    let Some(c) = super::catalog_on(dev) else {
+        return Ok(());
+    };
+    let loaded: Vec<&imgclg::Entry> = c
+        .entries
+        .iter()
+        .filter(|e| e.status != imgclg::EntryStatus::Available)
+        .collect();
+    let Some(at) = loaded
+        .iter()
+        .position(|e| e.volume.eq_ignore_ascii_case(vol))
+    else {
         return Ok(());
     };
     let next = loaded[at + 1..].iter().chain(loaded[..at].iter()).next();
@@ -176,16 +202,32 @@ fn virtual_tape<J: TapeJob>(
     if let Some(v) = vols.first() {
         mount(&tgt.dev, v)?;
     }
-    let clg = super::catalog_on(&tgt.dev).ok_or_else(|| format!("{NOT_READY} device {} not ready: no image catalog is loaded", tgt.dev))?;
+    let clg = super::catalog_on(&tgt.dev).ok_or_else(|| {
+        format!(
+            "{NOT_READY} device {} not ready: no image catalog is loaded",
+            tgt.dev
+        )
+    })?;
     if clg.kind != imgclg::ImgType::Tap {
-        return Err(format!("{NOT_READY} device {} not ready: image catalog {} is not a tape catalog", tgt.dev, clg.name));
+        return Err(format!(
+            "{NOT_READY} device {} not ready: image catalog {} is not a tape catalog",
+            tgt.dev, clg.name
+        ));
     }
     let ent = clg
         .mounted()
-        .ok_or_else(|| format!("{NOT_READY} device {} not ready: no volume is mounted", tgt.dev))?
+        .ok_or_else(|| {
+            format!(
+                "{NOT_READY} device {} not ready: no volume is mounted",
+                tgt.dev
+            )
+        })?
         .clone();
     if write && ent.write_protect {
-        return Err(format!("CPF6768 volume {} on device {} is write protected", ent.volume, tgt.dev));
+        return Err(format!(
+            "CPF6768 volume {} on device {} is write protected",
+            ent.volume, tgt.dev
+        ));
     }
     let path = clg.path_of(&ent);
     let file = super::catalogs::open_image(&path).map_err(|x| format!("CPF6708 {path}: {x}"))?;
@@ -242,19 +284,33 @@ fn library_tape<J: TapeJob>(
         }
         let (i, vol) = match vols.first() {
             Some(v) => (lib.mount(v).map_err(lib_err)?, v.clone()),
-            None => lib
-                .mounted()
-                .ok_or_else(|| format!("{NOT_READY} device {}: no cartridge is mounted; name one with VOL", t.dev))?,
+            None => lib.mounted().ok_or_else(|| {
+                format!(
+                    "{NOT_READY} device {}: no cartridge is mounted; name one with VOL",
+                    t.dev
+                )
+            })?,
         };
-        let protected = lib.changer.drive(i).is_some_and(|d| d.header().write_protect);
+        let protected = lib
+            .changer
+            .drive(i)
+            .is_some_and(|d| d.header().write_protect);
         if write && protected {
-            return Err(format!("CPF6768 volume {vol} on device {} is write protected", t.dev));
+            return Err(format!(
+                "CPF6768 volume {vol} on device {} is write protected",
+                t.dev
+            ));
         }
         let spares = lib.spares();
         let dev = t.dev.clone();
         let r = {
             let sys = &mut *system;
-            let mut prov = LibraryVolumes::new(i, spares, Some(vol), Box::new(move |r| ask_volume(sys, &dev, r)));
+            let mut prov = LibraryVolumes::new(
+                i,
+                spares,
+                Some(vol),
+                Box::new(move |r| ask_volume(sys, &dev, r)),
+            );
             job.run(&mut lib.changer, &mut prov)
         };
         if let Err(e) = lib.after(i) {
@@ -266,9 +322,20 @@ fn library_tape<J: TapeJob>(
 
 /// Run `job` on a real drive.
 fn real_tape<J: TapeJob>(system: &mut System, t: &Target, job: &mut J) -> Result<J::Out, String> {
-    let node = devices::node_of(system, &t.rsrc).ok_or_else(|| format!("{NOT_READY} device {} not ready: resource {} not found", t.dev, t.rsrc))?;
+    let node = devices::node_of(system, &t.rsrc).ok_or_else(|| {
+        format!(
+            "{NOT_READY} device {} not ready: resource {} not found",
+            t.dev, t.rsrc
+        )
+    })?;
     let path = std::path::PathBuf::from(format!("/dev/n{node}"));
-    let io = tape::st::LinuxSt::open(&path).map_err(|e| format!("{NOT_READY} device {} not ready: {}: {e}", t.dev, path.display()))?;
+    let io = tape::st::LinuxSt::open(&path).map_err(|e| {
+        format!(
+            "{NOT_READY} device {} not ready: {}: {e}",
+            t.dev,
+            path.display()
+        )
+    })?;
     let mut drive = tape::st::StTransport::new(io);
     let r = {
         let mut prov = Operator {
@@ -283,7 +350,11 @@ fn real_tape<J: TapeJob>(system: &mut System, t: &Target, job: &mut J) -> Result
 /// The optical volume a device presents: the mounted entry of its
 /// catalog (`vol` mounted first when the catalog has it), as a volume
 /// of the set `/QOPT` shows. The device and the volume's identifier.
-pub(crate) fn optical(system: &mut System, dev: &str, vol: Option<&str>) -> Result<(Target, String), String> {
+pub(crate) fn optical(
+    system: &mut System,
+    dev: &str,
+    vol: Option<&str>,
+) -> Result<(Target, String), String> {
     let t = target(system, dev)?;
     if t.kind != MediaKind::Optical {
         return Err(format!("OPT1203 device {} is not an optical device", t.dev));
@@ -294,8 +365,11 @@ pub(crate) fn optical(system: &mut System, dev: &str, vol: Option<&str>) -> Resu
     if let Some(v) = vol {
         mount(&t.dev, v)?;
     }
-    let c = super::catalog_on(&t.dev).ok_or_else(|| format!("{OPT_EMPTY} optical device {} is empty", t.dev))?;
-    let e = c.mounted().ok_or_else(|| format!("{OPT_EMPTY} optical device {} is empty", t.dev))?;
+    let c = super::catalog_on(&t.dev)
+        .ok_or_else(|| format!("{OPT_EMPTY} optical device {} is empty", t.dev))?;
+    let e = c
+        .mounted()
+        .ok_or_else(|| format!("{OPT_EMPTY} optical device {} is empty", t.dev))?;
     if let Some(v) = vol
         && !e.volume.eq_ignore_ascii_case(v)
     {
@@ -323,13 +397,19 @@ pub(crate) fn mount_optical(dev: &str, vol: &str) -> Result<(), String> {
 
 /// The optical volume `vol` wherever it is loaded (`DSPOPT VOL(x)
 /// DEV(*ALL)`): the device it is on, and the identifier.
-pub(crate) fn optical_by_volume(system: &mut System, vol: &str) -> Result<(Target, String), String> {
+pub(crate) fn optical_by_volume(
+    system: &mut System,
+    vol: &str,
+) -> Result<(Target, String), String> {
     let devs = devices::all(system)?;
     for (n, d) in devs {
         if d.media_kind() != Some(MediaKind::Optical) {
             continue;
         }
-        if super::catalog_on(&n).and_then(|c| c.mounted().cloned()).is_some_and(|e| e.volume.eq_ignore_ascii_case(vol)) {
+        if super::catalog_on(&n)
+            .and_then(|c| c.mounted().cloned())
+            .is_some_and(|e| e.volume.eq_ignore_ascii_case(vol))
+        {
             return optical(system, &n, Some(vol));
         }
     }
@@ -343,17 +423,30 @@ pub(crate) fn optical_failed(system: &mut System, t: &Target, e: &MediaError) ->
 
 /// The mounted volume of a virtual tape device, opened.
 fn open_virtual(t: &Target) -> Result<VirtualTape<std::fs::File>, String> {
-    let c = super::catalog_on(&t.dev).ok_or_else(|| format!("{NOT_READY} device {} not ready: no image catalog is loaded", t.dev))?;
-    let e = c
-        .mounted()
-        .ok_or_else(|| format!("{NOT_READY} device {} not ready: no volume is mounted", t.dev))?;
+    let c = super::catalog_on(&t.dev).ok_or_else(|| {
+        format!(
+            "{NOT_READY} device {} not ready: no image catalog is loaded",
+            t.dev
+        )
+    })?;
+    let e = c.mounted().ok_or_else(|| {
+        format!(
+            "{NOT_READY} device {} not ready: no volume is mounted",
+            t.dev
+        )
+    })?;
     let path = c.path_of(e);
     let f = super::catalogs::open_image(&path).map_err(|x| format!("CPF6708 {path}: {x}"))?;
     VirtualTape::open(f).map_err(|x| format!("CPF6772 {path}: {x}"))
 }
 
 /// `DUPTAP` between two virtual tape devices: how many files.
-pub(crate) fn dup_tape(system: &mut System, from: &str, to: &str, opts: &tape::volume::DupOptions) -> Result<usize, String> {
+pub(crate) fn dup_tape(
+    system: &mut System,
+    from: &str,
+    to: &str,
+    opts: &tape::volume::DupOptions,
+) -> Result<usize, String> {
     let (src, dst) = (target(system, from)?, target(system, to)?);
     let tape_ok = |t: &Target| t.virtual_ && t.kind == MediaKind::Tape;
     if !tape_ok(&src) || !tape_ok(&dst) {
@@ -367,5 +460,6 @@ pub(crate) fn dup_tape(system: &mut System, from: &str, to: &str, opts: &tape::v
     for q in asked.borrow().iter() {
         ask_volume(system, &dst.dev, q);
     }
-    r.map(|v| v.len()).map_err(|e| failed(system, &dst, &MediaError::Tape(e)))
+    r.map(|v| v.len())
+        .map_err(|e| failed(system, &dst, &MediaError::Tape(e)))
 }

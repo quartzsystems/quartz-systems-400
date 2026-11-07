@@ -60,18 +60,40 @@ fn ensure_outq(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, owner: &str) -> Re
     let lib = wm::obj::library(txn, qsys, "QUSRSYS").map_err(|e| err(&e))?;
     let n = qsname::Name::parse(name).map_err(|e| format!("CPD0078 {name}: {e}"))?;
     let l = Library::load(txn, lib).map_err(|e| e.to_string())?;
-    if l.lookup(txn, types::OUTQ, n).map_err(|e| e.to_string())?.is_some() {
+    if l.lookup(txn, types::OUTQ, n)
+        .map_err(|e| e.to_string())?
+        .is_some()
+    {
         return Ok(());
     }
     let text = format!("Output queue of LAN printer {name}");
     let q = wm::obj::outq::OutQ::new(&text);
-    wm::obj::create(txn, lib, n, types::OUTQ, &text, &stamp(owner.into()), &q.encode())
-        .map(|_| ())
-        .map_err(|e| err(&e))
+    wm::obj::create(
+        txn,
+        lib,
+        n,
+        types::OUTQ,
+        &text,
+        &stamp(owner.into()),
+        &q.encode(),
+    )
+    .map(|_| ())
+    .map_err(|e| err(&e))
 }
 
-fn find_device(txn: &mut Txn<'_>, qsys: ObjectId, name: &str) -> Result<Option<(ObjectId, Devd)>, String> {
-    match wm::obj::find(txn, qsys, &NameContext::default(), "QSYS", name, types::DEVD) {
+fn find_device(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    name: &str,
+) -> Result<Option<(ObjectId, Devd)>, String> {
+    match wm::obj::find(
+        txn,
+        qsys,
+        &NameContext::default(),
+        "QSYS",
+        name,
+        types::DEVD,
+    ) {
         Ok(id) => {
             let b = wm::obj::read(txn, id).map_err(|e| err(&e))?;
             Ok(Some((id, Devd::decode(&b).map_err(|e| err(&e))?)))
@@ -100,7 +122,10 @@ fn check(name: &str, l: &LanPrinter) -> Result<(), String> {
 pub fn crt_chg(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
     let name = p.pos_or(0, "DEVD")?.to_ascii_uppercase();
     let user = owner(system, me);
-    let online = p.upper("ONLINE").filter(|v| v != "*SAME").map(|v| v == "*YES");
+    let online = p
+        .upper("ONLINE")
+        .filter(|v| v != "*SAME")
+        .map(|v| v == "*YES");
     let text = text(p);
     if cmd == "crtdevprt" {
         let devcls = p.upper("DEVCLS").unwrap_or_default();
@@ -130,9 +155,17 @@ pub fn crt_chg(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<St
             }
             ensure_outq(txn, qsys, &name, &user)?;
             let n = qsname::Name::parse(&name).map_err(|e| format!("CPD0084 DEVD({name}): {e}"))?;
-            wm::obj::create(txn, qsys, n, types::DEVD, &d.text, &stamp(user.clone()), &d.encode())
-                .map(|_| ())
-                .map_err(|e| err(&e))
+            wm::obj::create(
+                txn,
+                qsys,
+                n,
+                types::DEVD,
+                &d.text,
+                &stamp(user.clone()),
+                &d.encode(),
+            )
+            .map(|_| ())
+            .map_err(|e| err(&e))
         })?;
         return Ok(format!("Description for device {name} created.\n"));
     }
@@ -173,7 +206,11 @@ fn qualified(v: &str, dft_lib: &str) -> (String, String) {
 /// [TEXT(*SRCMBRTXT|text)] [REPLACE(*YES|*NO)]`.
 pub fn crtwscst(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     let (lib, name) = qualified(&p.pos_or(0, "WSCST")?, "*CURLIB");
-    let lib = if lib == "*LIBL" { "QGPL".to_string() } else { lib };
+    let lib = if lib == "*LIBL" {
+        "QGPL".to_string()
+    } else {
+        lib
+    };
     let (slib, sfile) = qualified(p.kw("SRCFILE").unwrap_or("QTXTSRC"), "*LIBL");
     let mbr = match p.upper("SRCMBR").as_deref() {
         None | Some("*WSCST") => name.clone(),
@@ -200,12 +237,25 @@ pub fn crtwscst(system: &mut System, me: u32, p: &Params) -> Result<String, Stri
             }
             ops::delete(txn, JobHandle(u64::from(me)), old).map_err(|e| e.to_string())?;
         }
-        let class = if source.contains("DEVCLASS=CTXFORM") { "CTXFORM" } else { "TRANSFORM" };
-        wm::obj::create_attr(txn, l, (n, types::WSCST, class), &w.text, &stamp(user.clone()), &w.encode())
-            .map(|_| ())
-            .map_err(|e| err(&e))
+        let class = if source.contains("DEVCLASS=CTXFORM") {
+            "CTXFORM"
+        } else {
+            "TRANSFORM"
+        };
+        wm::obj::create_attr(
+            txn,
+            l,
+            (n, types::WSCST, class),
+            &w.text,
+            &stamp(user.clone()),
+            &w.encode(),
+        )
+        .map(|_| ())
+        .map_err(|e| err(&e))
     })?;
-    Ok(format!("Workstation customizing object {name} created in library {lib}.\n"))
+    Ok(format!(
+        "Workstation customizing object {name} created in library {lib}.\n"
+    ))
 }
 
 /// `RTVWSCST DEVTYPE(*TRANSFORM) MFRTYPMDL() SRCMBR() [SRCFILE()] [TEXT()]`:
@@ -220,29 +270,44 @@ pub fn rtvwscst(system: &mut System, p: &Params) -> Result<String, String> {
             if let Some(model) = Model::parse(&m) {
                 (Wscst::source_for(model), model.name().to_string())
             } else {
-                let n = print::wscst::shipped::for_mfrtypmdl(&m)
-                    .ok_or_else(|| format!("CPD0084 MFRTYPMDL({m}): not a model the transform knows"))?;
+                let n = print::wscst::shipped::for_mfrtypmdl(&m).ok_or_else(|| {
+                    format!("CPD0084 MFRTYPMDL({m}): not a model the transform knows")
+                })?;
                 (print::wscst::shipped::source(n), m.clone())
             }
         }
         "*CTXFORM" => (print::wscst::shipped::source("QCTXPDF"), devtype.clone()),
-        other => return Err(format!("CPD0084 DEVTYPE({other}): display station sources are not kept here")),
+        other => {
+            return Err(format!(
+                "CPD0084 DEVTYPE({other}): display station sources are not kept here"
+            ));
+        }
     };
     let mbr = p
         .upper("SRCMBR")
         .ok_or_else(|| "CPD0071 SRCMBR is needed".to_string())?;
     let (slib, sfile) = qualified(p.kw("SRCFILE").unwrap_or("QTXTSRC"), "*LIBL");
-    let slib = if slib == "*LIBL" { "QGPL".to_string() } else { slib };
+    let slib = if slib == "*LIBL" {
+        "QGPL".to_string()
+    } else {
+        slib
+    };
     let lines: Vec<String> = source.lines().map(str::to_string).collect();
     super::pdm::write(system, &slib, &sfile, &mbr, &lines, "WSCST")?;
-    Ok(format!("Customizing source for {what} written to member {mbr} of {slib}/{sfile}.\n"))
+    Ok(format!(
+        "Customizing source for {what} written to member {mbr} of {slib}/{sfile}.\n"
+    ))
 }
 
 /// `DLTWSCST WSCST(lib/name)`: the objects a name or generic name
 /// gives, each deleted as `DLTOBJ` deletes (`*OBJEXIST` checked).
 pub fn dltwscst(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     let (lib, name) = qualified(&p.pos_or(0, "WSCST")?, "*LIBL");
-    let lib = if lib == "*LIBL" { "QGPL".to_string() } else { lib };
+    let lib = if lib == "*LIBL" {
+        "QGPL".to_string()
+    } else {
+        lib
+    };
     let prefix = name.strip_suffix('*').map(str::to_string);
     let deleted = with_store(system, |txn, qsys| {
         let l = wm::obj::library(txn, qsys, &lib).map_err(|e| err(&e))?;
@@ -258,7 +323,9 @@ pub fn dltwscst(system: &mut System, me: u32, p: &Params) -> Result<String, Stri
             })
             .collect();
         if ids.is_empty() {
-            return Err(format!("CPF2105 Object {name} in {lib} type *WSCST not found."));
+            return Err(format!(
+                "CPF2105 Object {name} in {lib} type *WSCST not found."
+            ));
         }
         for (_, id) in &ids {
             ops::delete(txn, JobHandle(u64::from(me)), *id).map_err(|e| format!("CPF2117 {e}"))?;

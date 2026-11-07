@@ -129,8 +129,9 @@ pub fn session(job: &mut Job, host: &Host) -> Result<String, Fail> {
             }
             Action::Print => {
                 let lines = term.lines();
-                let m = crate::qsh::cmd::print(host, "QPRINT", &lines)
-                    .unwrap_or_else(|e| crate::display::msgline::text_of(host, &crate::panels::line(&e)));
+                let m = crate::qsh::cmd::print(host, "QPRINT", &lines).unwrap_or_else(|e| {
+                    crate::display::msgline::text_of(host, &crate::panels::line(&e))
+                });
                 term.set_message(&m);
             }
             Action::ClEntry => {

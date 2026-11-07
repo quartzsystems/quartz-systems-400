@@ -49,11 +49,19 @@ fn splf(a: &SplfAttrs) -> Splf {
         pages: a.pages,
         current_page: a.last_page,
         copies: u32::from(a.copies.max(1)),
-        form_type: if a.formtype.trim().is_empty() { "*STD".into() } else { a.formtype.trim().to_string() },
+        form_type: if a.formtype.trim().is_empty() {
+            "*STD".into()
+        } else {
+            a.formtype.trim().to_string()
+        },
         outq: a.outq.clone(),
         created: a.created / 1_000_000,
         priority: a.outpty,
-        device_type: if a.devtype.trim().is_empty() { "*SCS".into() } else { a.devtype.trim().to_string() },
+        device_type: if a.devtype.trim().is_empty() {
+            "*SCS".into()
+        } else {
+            a.devtype.trim().to_string()
+        },
         page_len: u32::from(a.page_len),
         page_width: u32::from(a.page_width),
         lpi: u32::from(a.lpi),
@@ -82,7 +90,13 @@ impl LivePrint {
     fn data(&self, user: &str, f: &Splf) -> Result<Vec<u8>, Message> {
         let (file, job, nbr) = (f.file.clone(), f.job.clone(), f.number.to_string());
         self.link
-            .read(user, move |m: &mut Main| Some(m.ask(|l| l.splf_fetch(file, job, nbr)).map(|x| x.1).map_err(|e| error(&e))))
+            .read(user, move |m: &mut Main| {
+                Some(
+                    m.ask(|l| l.splf_fetch(file, job, nbr))
+                        .map(|x| x.1)
+                        .map_err(|e| error(&e)),
+                )
+            })
             .unwrap_or_else(|| Err(gone()))
     }
 }
@@ -92,7 +106,11 @@ impl Print for LivePrint {
         let all = self.sees_all(user);
         if owner.is_some_and(|o| o != user) && !all {
             let o = owner.unwrap_or_default();
-            return Err(Message::new(Kind::Error, "CPF3303", &format!("{user} is not authorized to the spooled files of {o}.")));
+            return Err(Message::new(
+                Kind::Error,
+                "CPF3303",
+                &format!("{user} is not authorized to the spooled files of {o}."),
+            ));
         }
         let who = match owner {
             Some(o) => o.to_string(),
@@ -101,7 +119,9 @@ impl Print for LivePrint {
         };
         let mut v: Vec<Splf> = self
             .link
-            .read(user, move |m: &mut Main| m.ask(|l| l.splf_list(who, String::new())))
+            .read(user, move |m: &mut Main| {
+                m.ask(|l| l.splf_list(who, String::new()))
+            })
             .iter()
             .map(splf)
             .collect();
@@ -113,7 +133,9 @@ impl Print for LivePrint {
         if !self.sees_all(user) {
             return Vec::new();
         }
-        let files: Vec<SplfAttrs> = self.link.read(user, |m: &mut Main| m.ask(|l| l.splf_list(String::new(), String::new())));
+        let files: Vec<SplfAttrs> = self.link.read(user, |m: &mut Main| {
+            m.ask(|l| l.splf_list(String::new(), String::new()))
+        });
         let mut users: Vec<String> = files.iter().map(|f| f.job.1.clone()).collect();
         users.sort();
         users.dedup();
@@ -136,13 +158,19 @@ impl Print for LivePrint {
         self.spooled(user, Some(&owner))?
             .into_iter()
             .find(|f| f.id() == id)
-            .ok_or_else(|| Message::new(Kind::Error, "CPF3309", &format!("No spooled file {id}.")).with_data(&[id]))
+            .ok_or_else(|| {
+                Message::new(Kind::Error, "CPF3309", &format!("No spooled file {id}."))
+                    .with_data(&[id])
+            })
     }
 
     fn text(&self, user: &str, f: &Splf) -> Result<Vec<String>, Message> {
         let data = self.data(user, f)?;
         let (pages, _) = spool::scs::decode(&data);
-        Ok(pages.iter().map(|p| spool::view::text(std::slice::from_ref(p))).collect())
+        Ok(pages
+            .iter()
+            .map(|p| spool::view::text(std::slice::from_ref(p)))
+            .collect())
     }
 
     fn pdf(&self, user: &str, f: &Splf) -> Result<Vec<u8>, Message> {
@@ -153,13 +181,25 @@ impl Print for LivePrint {
 
     fn act(&self, user: &str, f: &Splf, act: &Act) -> Result<(), Message> {
         let cmd = match act {
-            Act::Hold { page_end } => format!("HLDSPLF {} OPTION({})", f.parms(), if *page_end { "*PAGEEND" } else { "*IMMED" }),
+            Act::Hold { page_end } => format!(
+                "HLDSPLF {} OPTION({})",
+                f.parms(),
+                if *page_end { "*PAGEEND" } else { "*IMMED" }
+            ),
             Act::Release => format!("RLSSPLF {}", f.parms()),
             Act::Delete => format!("DLTSPLF {}", f.parms()),
             Act::Move { top: true, .. } => {
                 // BLOCKED(rel): no command or service request a web job may use puts a spooled file at the top of a queue (QAP's move does, on its own connection job only); refused with XWA0099.
-                let text = accessweb::msgs::second_level(accessweb::msgs::NOT_AVAILABLE, &["Move to the top of a queue"]).map(|s| s.text).unwrap_or_default();
-                return Err(Message::new(Kind::Error, accessweb::msgs::NOT_AVAILABLE, &text).with_data(&["Move to the top of a queue"]));
+                let text = accessweb::msgs::second_level(
+                    accessweb::msgs::NOT_AVAILABLE,
+                    &["Move to the top of a queue"],
+                )
+                .map(|s| s.text)
+                .unwrap_or_default();
+                return Err(
+                    Message::new(Kind::Error, accessweb::msgs::NOT_AVAILABLE, &text)
+                        .with_data(&["Move to the top of a queue"]),
+                );
             }
             Act::Move { outq, .. } => format!("CHGSPLFA {} OUTQ({outq})", f.parms()),
         };

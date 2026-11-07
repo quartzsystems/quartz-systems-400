@@ -40,7 +40,11 @@ pub fn answer(job: &mut mi::Job, plan: &CallPlan) -> Option<Outcome> {
         CallStyle::Function => function_answer(job, plan),
         _ => return None,
     };
-    Some(Outcome { called: Called::default(), outs: Vec::new(), answer: Some(answer) })
+    Some(Outcome {
+        called: Called::default(),
+        outs: Vec::new(),
+        answer: Some(answer),
+    })
 }
 
 /// Make an external function's call (`PARAMETER STYLE SQL`): its
@@ -49,7 +53,9 @@ pub fn answer(job: &mut mi::Job, plan: &CallPlan) -> Option<Outcome> {
 /// answer for the database (`extfunc::answer`).
 pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
     use sql::exec::routine::extfunc;
-    let fail = |code: i32, state: &str, text: String| extfunc::answer(Value::Null, state, &text, None, code);
+    let fail = |code: i32, state: &str, text: String| {
+        extfunc::answer(Value::Null, state, &text, None, code)
+    };
     let mut bufs: Vec<Vec<u8>> = Vec::new();
     let mut inds: Vec<Vec<u8>> = Vec::new();
     let mut result = None;
@@ -67,7 +73,12 @@ pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
                 pad = Some(s);
             }
             1 if p.extra == 1 && p.desc == 0 => {
-                call_type = Some(i32::try_from(p.value.as_i64().unwrap_or(0)).unwrap_or(0).to_be_bytes().to_vec());
+                call_type = Some(
+                    i32::try_from(p.value.as_i64().unwrap_or(0))
+                        .unwrap_or(0)
+                        .to_be_bytes()
+                        .to_vec(),
+                );
             }
             _ => {
                 let d = Desc::of(p.desc);
@@ -76,7 +87,13 @@ pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
                 } else {
                     match crate::sql::value_image(&p.value, &d, p.extra) {
                         Ok(b) => (b, 0),
-                        Err((code, state)) => return fail(code, state, "an argument does not fit its parameter".into()),
+                        Err((code, state)) => {
+                            return fail(
+                                code,
+                                state,
+                                "an argument does not fit its parameter".into(),
+                            );
+                        }
                     }
                 };
                 if p.mode == 2 {
@@ -87,7 +104,9 @@ pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
             }
         }
     }
-    let Some((at, rd, rextra)) = result else { return fail(-84, "42612", "a function call with no result".into()) };
+    let Some((at, rd, rextra)) = result else {
+        return fail(-84, "42612", "a function call with no result".into());
+    };
     let mut state = ebcdic("00000");
     let mut fname = varchar(&plan.routine, 517);
     let mut sname = varchar(&plan.specific, 128);
@@ -106,7 +125,18 @@ pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
     }
     DEPTH.with(|d| d.set(d.get() + 1));
     let r = if plan.entry.is_empty() {
-        job.call_program(&plan.program, &plan.library, &args).map_err(|c| (-444, format!("program {}/{} could not be called: {}", plan.library, plan.program, c.msgid())))
+        job.call_program(&plan.program, &plan.library, &args)
+            .map_err(|c| {
+                (
+                    -444,
+                    format!(
+                        "program {}/{} could not be called: {}",
+                        plan.library,
+                        plan.program,
+                        c.msgid()
+                    ),
+                )
+            })
     } else {
         call_procedure(job, plan, &args).map_err(|(c, m)| (if c == -204 { -444 } else { c }, m))
     };
@@ -115,7 +145,11 @@ pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
         return fail(code, if code == -444 { "42724" } else { "42612" }, text);
     }
     if let Some(e) = job.clear() {
-        return fail(-443, "38501", format!("function {} ended with {}", plan.routine, e.msgid));
+        return fail(
+            -443,
+            "38501",
+            format!("function {} ended with {}", plan.routine, e.msgid),
+        );
     }
     let st = ccsid::from_ebcdic(&state);
     let pad = pad.map(|s| s[4..].to_vec());
@@ -123,7 +157,11 @@ pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
         return extfunc::answer(Value::Null, &st, &read_varchar(&diag), pad, -443);
     }
     let null = i16::from_be_bytes([inds[at][0], inds[at][1]]) < 0;
-    let v = if null { Value::Null } else { crate::sql::value_of(&bufs[at], &rd, rextra) };
+    let v = if null {
+        Value::Null
+    } else {
+        crate::sql::value_of(&bufs[at], &rd, rextra)
+    };
     extfunc::answer(v, &st, &read_varchar(&diag), pad, 0)
 }
 
@@ -149,13 +187,35 @@ fn call_procedure(job: &mut mi::Job, plan: &CallPlan, args: &[u64]) -> Result<()
     let p = job
         .act
         .load_program(&plan.program, &plan.library, ile::PgmKind::SrvPgm, &table)
-        .map_err(|c| (-204, format!("service program procedure {what} could not be called: {}", c.msgid())))?;
+        .map_err(|c| {
+            (
+                -204,
+                format!(
+                    "service program procedure {what} could not be called: {}",
+                    c.msgid()
+                ),
+            )
+        })?;
     let addr = p
         .export_addr(&plan.entry)
         .or_else(|| p.export_addr(&plan.entry.to_ascii_uppercase()))
-        .ok_or_else(|| (-204, format!("service program {}/{} exports no procedure {}", plan.library, plan.program, plan.entry)))?;
+        .ok_or_else(|| {
+            (
+                -204,
+                format!(
+                    "service program {}/{} exports no procedure {}",
+                    plan.library, plan.program, plan.entry
+                ),
+            )
+        })?;
     if !mi::act::call_by_ref_many(job, addr, args) {
-        return Err((-84, format!("CALL of {what} with more than {} parameters in all: not supported", mi::act::MAX_BY_REF)));
+        return Err((
+            -84,
+            format!(
+                "CALL of {what} with more than {} parameters in all: not supported",
+                mi::act::MAX_BY_REF
+            ),
+        ));
     }
     Ok(())
 }
@@ -188,7 +248,11 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
                     called.sqlcode = code;
                     called.sqlstate = state.into();
                     called.message = "an argument does not fit its parameter".into();
-                    return Outcome { called, outs: Vec::new(), answer: None };
+                    return Outcome {
+                        called,
+                        outs: Vec::new(),
+                        answer: None,
+                    };
                 }
             }
         };
@@ -220,7 +284,18 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
     }
     DEPTH.with(|d| d.set(d.get() + 1));
     let r = if plan.entry.is_empty() {
-        job.call_program(&plan.program, &plan.library, &args).map_err(|c| (-204, format!("program {}/{} could not be called: {}", plan.library, plan.program, c.msgid())))
+        job.call_program(&plan.program, &plan.library, &args)
+            .map_err(|c| {
+                (
+                    -204,
+                    format!(
+                        "program {}/{} could not be called: {}",
+                        plan.library,
+                        plan.program,
+                        c.msgid()
+                    ),
+                )
+            })
     } else {
         call_procedure(job, plan, &args)
     };
@@ -229,14 +304,22 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
         called.sqlcode = code;
         called.sqlstate = if code == -204 { "42704" } else { "42612" }.into();
         called.message = message;
-        return Outcome { called, outs: Vec::new(), answer: None };
+        return Outcome {
+            called,
+            outs: Vec::new(),
+            answer: None,
+        };
     }
     if let Some(e) = job.clear() {
         // The program ended with an exception it did not handle.
         called.sqlcode = -443;
         called.sqlstate = "38501".into();
         called.message = format!("procedure {} ended with {}", plan.routine, e.msgid);
-        return Outcome { called, outs: Vec::new(), answer: None };
+        return Outcome {
+            called,
+            outs: Vec::new(),
+            answer: None,
+        };
     }
     match plan.style {
         CallStyle::SqlRoutine => {
@@ -265,30 +348,56 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
             }
             let null = match plan.style {
                 CallStyle::General => false,
-                CallStyle::GeneralNulls => i16::from_be_bytes([ind_array[2 * i], ind_array[2 * i + 1]]) < 0,
+                CallStyle::GeneralNulls => {
+                    i16::from_be_bytes([ind_array[2 * i], ind_array[2 * i + 1]]) < 0
+                }
                 _ => i16::from_be_bytes([ind_bufs[i][0], ind_bufs[i][1]]) < 0,
             };
-            let v = if null { Value::Null } else { crate::sql::value_of(&bufs[i], &Desc::of(p.desc), p.extra) };
+            let v = if null {
+                Value::Null
+            } else {
+                crate::sql::value_of(&bufs[i], &Desc::of(p.desc), p.extra)
+            };
             outs.push((m, v));
         }
     }
-    Outcome { called, outs, answer: None }
+    Outcome {
+        called,
+        outs,
+        answer: None,
+    }
 }
 
 /// Run one statement for a requester in the job that has no host
 /// variables of its own (a command line, a server): a `CALL` it plans is
 /// made here, its `OUT` and `INOUT` values given back by marker.
-pub fn run_request(job: &mut mi::Job, mut req: sql::embed::Request) -> (sql::embed::Reply, Vec<(usize, Value)>) {
+pub fn run_request(
+    job: &mut mi::Job,
+    mut req: sql::embed::Request,
+) -> (sql::embed::Reply, Vec<(usize, Value)>) {
     req.desc.calls = true;
-    let Some(reply) = mi::io::trigger::sql_run(job, &req) else { return (sql::embed::Reply::default(), Vec::new()) };
-    let Some(plan) = reply.call.clone() else { return (reply, Vec::new()) };
+    let Some(reply) = mi::io::trigger::sql_run(job, &req) else {
+        return (sql::embed::Reply::default(), Vec::new());
+    };
+    let Some(plan) = reply.call.clone() else {
+        return (reply, Vec::new());
+    };
     let out = perform(job, &plan);
     let req2 = sql::embed::Request {
         scope: req.scope.clone(),
-        desc: sql::embed::Desc { op: sql::embed::Op::Called, ..sql::embed::Desc::default() },
+        desc: sql::embed::Desc {
+            op: sql::embed::Op::Called,
+            ..sql::embed::Desc::default()
+        },
         inputs: out.called.inputs(),
     };
-    let Some(r) = mi::io::trigger::sql_run(job, &req2) else { return (sql::embed::Reply::default(), Vec::new()) };
-    let outs = if r.sqlca.is_error() { Vec::new() } else { out.outs };
+    let Some(r) = mi::io::trigger::sql_run(job, &req2) else {
+        return (sql::embed::Reply::default(), Vec::new());
+    };
+    let outs = if r.sqlca.is_error() {
+        Vec::new()
+    } else {
+        out.outs
+    };
     (r, outs)
 }

@@ -95,7 +95,13 @@ pub fn blank(ccsid: u16) -> u8 {
 /// line end counts.
 pub fn lines(ccsid: u16, data: &[u8]) -> Vec<Vec<u8>> {
     let ebcdic = is_ebcdic(ccsid);
-    let is_end = |b: u8| if ebcdic { b == NL || b == EBCDIC_LF } else { b == 0x0A };
+    let is_end = |b: u8| {
+        if ebcdic {
+            b == NL || b == EBCDIC_LF
+        } else {
+            b == 0x0A
+        }
+    };
     let mut out = Vec::new();
     let mut cur = Vec::new();
     for &b in data {
@@ -246,7 +252,10 @@ mod tests {
     use super::*;
 
     const TEXT: &[u8] = b"Quartz FTP probe line 1\r\nsecond line, 2\r\n\r\nlast line\r\n";
-    const C: Codes = Codes { ascii: 819, ebcdic: 37 };
+    const C: Codes = Codes {
+        ascii: 819,
+        ebcdic: 37,
+    };
 
     #[test]
     fn stream_types() {
@@ -280,7 +289,10 @@ mod tests {
 
     #[test]
     fn mixed_members_keep_double_byte_runs_whole() {
-        let c = Codes { ascii: 1208, ebcdic: 37 };
+        let c = Codes {
+            ascii: 1208,
+            ebcdic: 37,
+        };
         let text = "QS/400 は日本語を変換します。\r\n";
         let full = ccsid::conv::from_str(939, text.trim_end()).unwrap();
         for len in 1..full.len() + 2 {

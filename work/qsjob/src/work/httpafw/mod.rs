@@ -13,14 +13,14 @@
 //! preference stores are the product's own (`QUSRSYS/QZXWPOL`,
 //! `QZXWPRF`), read and written as the job.
 
-mod s5250;
-mod db;
-mod files;
-mod print;
 mod cmd;
+mod db;
 mod download;
+mod files;
 mod jobs;
 mod msgs;
+mod print;
+mod s5250;
 mod store;
 mod system;
 
@@ -45,21 +45,35 @@ pub struct Link {
 }
 
 fn gone() -> Message {
-    Message::new(Kind::Error, "CPF9897", "Access for Web is ending; the request was not run.")
+    Message::new(
+        Kind::Error,
+        "CPF9897",
+        "Access for Web is ending; the request was not run.",
+    )
 }
 
 impl Link {
     /// `f` on the job's thread with the job swapped to `user`, so the
     /// service checks that user's authority; the default when the user
     /// is not signed on here or the job is ending.
-    pub fn read<T: Send + Default + 'static>(&self, user: &str, f: impl FnOnce(&mut Main) -> T + Send + 'static) -> T {
+    pub fn read<T: Send + Default + 'static>(
+        &self,
+        user: &str,
+        f: impl FnOnce(&mut Main) -> T + Send + 'static,
+    ) -> T {
         let u = user.to_string();
-        self.bridge.call(move |m| m.as_user(&u, f).ok()).flatten().unwrap_or_default()
+        self.bridge
+            .call(move |m| m.as_user(&u, f).ok())
+            .flatten()
+            .unwrap_or_default()
     }
 
     /// `f` on the job's thread as the job itself (the product's own
     /// stores); `None` when the job is ending.
-    pub fn job<T: Send + 'static>(&self, f: impl FnOnce(&mut Main) -> T + Send + 'static) -> Option<T> {
+    pub fn job<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&mut Main) -> T + Send + 'static,
+    ) -> Option<T> {
         self.bridge.call(f)
     }
 
@@ -74,7 +88,12 @@ impl Link {
 }
 
 /// The listeners, started off the job's thread.
-fn start_listeners(bridge: &Bridge, app: Arc<AccessWeb>, a: HttpAttrs, system: String) -> Result<Vec<Running>, String> {
+fn start_listeners(
+    bridge: &Bridge,
+    app: Arc<AccessWeb>,
+    a: HttpAttrs,
+    system: String,
+) -> Result<Vec<Running>, String> {
     let mut running = Vec::new();
     let plain = listen::bind(a.port)
         .and_then(|l| listen::serve(l, None, Web::new(app.clone())))
@@ -107,19 +126,31 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let dates = Dates::of(&main);
     let core = Core::new(bridge.clone(), dates.clone(), name.clone());
     let print_core = Arc::new(Core::new(bridge.clone(), dates.clone(), name.clone()));
-    let l = Link { bridge: bridge.clone() };
+    let l = Link {
+        bridge: bridge.clone(),
+    };
     let env = Env {
-        system: Arc::new(system::LiveSystem { core, dates, link: l.clone() }),
+        system: Arc::new(system::LiveSystem {
+            core,
+            dates,
+            link: l.clone(),
+        }),
         policy: Arc::new(store::LivePolicy { link: l.clone() }),
         prefs: Arc::new(store::LivePrefs { link: l.clone() }),
         session5250: Arc::new(s5250::LiveS5250::new(l.clone())),
         db: Arc::new(db::LiveDb::new(l.clone(), start.number)),
         files: Arc::new(files::LiveFiles::new(l.clone())),
-        print: Arc::new(print::LivePrint { link: l.clone(), core: print_core }),
+        print: Arc::new(print::LivePrint {
+            link: l.clone(),
+            core: print_core,
+        }),
         msgs: Arc::new(msgs::LiveMsgs { link: l.clone() }),
         jobs: Arc::new(jobs::LiveJobs { link: l.clone() }),
         cmd: Arc::new(cmd::LiveCmd::new(l.clone())),
-        download: Arc::new(download::LiveDownload { link: l.clone(), system: name.clone() }),
+        download: Arc::new(download::LiveDownload {
+            link: l.clone(),
+            system: name.clone(),
+        }),
     };
     let app = Arc::new(AccessWeb::new(env));
     let starter = bridge.clone();
@@ -147,7 +178,12 @@ mod tests {
         for (name, src) in sources {
             for (n, line) in src.lines().enumerate() {
                 let held = line.contains(".borrow_mut()") || line.contains(".borrow()");
-                assert!(!held, "{name}:{}: use Main::ask, not the link's RefCell: {}", n + 1, line.trim());
+                assert!(
+                    !held,
+                    "{name}:{}: use Main::ask, not the link's RefCell: {}",
+                    n + 1,
+                    line.trim()
+                );
             }
         }
     }

@@ -23,15 +23,17 @@ pub struct LiveSystem {
 impl System for LiveSystem {
     fn product_installed(&self, product: &str) -> bool {
         let product = product.to_string();
-        self.core.bridge().call(move |m| {
-            let rows = m
-                .link
-                .borrow_mut()
-                .with(|l| l.licpgm_panel("INSTALLED".into(), Vec::new()))
-                .unwrap_or_default();
-            crate::command::tcpsvr::base_installed(&rows, &product)
-        })
-        .unwrap_or(true)
+        self.core
+            .bridge()
+            .call(move |m| {
+                let rows = m
+                    .link
+                    .borrow_mut()
+                    .with(|l| l.licpgm_panel("INSTALLED".into(), Vec::new()))
+                    .unwrap_or_default();
+                crate::command::tcpsvr::base_installed(&rows, &product)
+            })
+            .unwrap_or(true)
     }
 
     fn name(&self) -> String {
@@ -68,7 +70,9 @@ impl System for LiveSystem {
 
     fn audit(&self, entry: Audit) {
         match entry {
-            Audit::Password { user, code } => self.core.audit("PW", user, code.to_string(), String::new()),
+            Audit::Password { user, code } => {
+                self.core.audit("PW", user, code.to_string(), String::new())
+            }
             Audit::Refused { user, object, need } => self.core.audit("AF", user, object, need),
             Audit::Change { user, object, what } => self.core.audit("ZC", user, object, what),
         }
@@ -95,18 +99,20 @@ impl System for LiveSystem {
     fn interfaces(&self) -> Vec<String> {
         self.core
             .bridge()
-            .call(|m| match m.link.borrow_mut().with(|l| l.tcp(TcpOp::Snapshot)) {
-                TcpReply::Snapshot { snap } => {
-                    let mut out: Vec<String> = Vec::new();
-                    for i in snap.ifcs {
-                        if !i.addr.is_empty() && !out.contains(&i.addr) {
-                            out.push(i.addr);
+            .call(
+                |m| match m.link.borrow_mut().with(|l| l.tcp(TcpOp::Snapshot)) {
+                    TcpReply::Snapshot { snap } => {
+                        let mut out: Vec<String> = Vec::new();
+                        for i in snap.ifcs {
+                            if !i.addr.is_empty() && !out.contains(&i.addr) {
+                                out.push(i.addr);
+                            }
                         }
+                        out
                     }
-                    out
-                }
-                _ => Vec::new(),
-            })
+                    _ => Vec::new(),
+                },
+            )
             .unwrap_or_default()
     }
 }

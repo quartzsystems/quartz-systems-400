@@ -14,8 +14,8 @@ use ifs::vfs::qsys::{QsysNode, node_of};
 use mi::{FatPtr, Job, PtrKind};
 
 use super::consts::{
-    QP0L_BYPASS_NO_ERRORID, QP0L_END_PROCESS_SUBTREE, QP0L_SELECT_DONE, QP0L_SELECT_NOT_OK, QP0L_SELECT_OK,
-    QP0L_SUBTREE_NO, QP0L_USER_FUNCTION_PGM, QP0L_USER_FUNCTION_PTR,
+    QP0L_BYPASS_NO_ERRORID, QP0L_END_PROCESS_SUBTREE, QP0L_SELECT_DONE, QP0L_SELECT_NOT_OK,
+    QP0L_SELECT_OK, QP0L_SUBTREE_NO, QP0L_USER_FUNCTION_PGM, QP0L_USER_FUNCTION_PTR,
 };
 use super::file::bound_r9;
 use super::layout::{self as lay, QSYS_INFO, USER_FUNCTION};
@@ -68,7 +68,11 @@ fn qsys_info(path: &str, ccsid: u16) -> Result<Vec<u8>, ApiFail> {
         QsysNode::Root => (Some("QSYS".to_string()), None, None),
         QsysNode::Lib(l) => (Some(l.clone()), None, None),
         QsysNode::Obj(l, o, t) => (Some(l.clone()), Some((o.clone(), t.clone())), None),
-        QsysNode::Mbr(l, f, m) => (Some(l.clone()), Some((f.clone(), "*FILE".to_string())), Some(m.clone())),
+        QsysNode::Mbr(l, f, m) => (
+            Some(l.clone()),
+            Some((f.clone(), "*FILE".to_string())),
+            Some(m.clone()),
+        ),
     };
     if let Some(lname) = lib {
         field(&mut b, "Lib_Name", &lname);
@@ -91,7 +95,9 @@ fn cvt_path(j: &mut Job, p: u128, out: u128, fmt: u128, room: i64, ccsid: i64, e
     let ec_addr = native(j, err);
     let errc = ErrCode::at(&Args(&[ec_addr]), 0);
     let r: Result<(), ApiFail> = (|| {
-        let f = mem(j, fmt, 8).map(|b| ccsid::from_ebcdic(b)).map_err(|_| ApiFail::id("CPF3CF1"))?;
+        let f = mem(j, fmt, 8)
+            .map(|b| ccsid::from_ebcdic(b))
+            .map_err(|_| ApiFail::id("CPF3CF1"))?;
         if f != "QSYS0100" {
             return Err(ApiFail::id("CPF3C21").text(&f, 8));
         }
@@ -103,7 +109,9 @@ fn cvt_path(j: &mut Job, p: u128, out: u128, fmt: u128, room: i64, ccsid: i64, e
         let abs = if path.starts_with('/') {
             path
         } else {
-            let cwd = client(j).getcwd().map_err(|e| ApiFail::id(&e.message_id()))?;
+            let cwd = client(j)
+                .getcwd()
+                .map_err(|e| ApiFail::id(&e.message_id()))?;
             ifs::path::join_lexical(&cwd, &path)
         };
         let cc = match u16::try_from(uint(ccsid)) {
@@ -114,7 +122,9 @@ fn cvt_path(j: &mut Job, p: u128, out: u128, fmt: u128, room: i64, ccsid: i64, e
         let n = room.min(b.len());
         lay::put_n(&mut b, &QSYS_INFO, "Bytes_Returned", n as u64);
         lay::put_n(&mut b, &QSYS_INFO, "Bytes_Available", QSYS_INFO.size as u64);
-        mem(j, out, n).map_err(|_| ApiFail::id("CPF3CF1"))?.copy_from_slice(&b[..n]);
+        mem(j, out, n)
+            .map_err(|_| ApiFail::id("CPF3CF1"))?
+            .copy_from_slice(&b[..n]);
         Ok(())
     })();
     match r {
@@ -151,12 +161,17 @@ fn exit_of(j: &Job, uf: u128) -> R<Exit> {
             if p.kind() != Some(PtrKind::Procedure) {
                 return Err(Errno::EINVAL);
             }
-            usize::try_from(p.offset).map(Exit::Proc).map_err(|_| Errno::EINVAL)
+            usize::try_from(p.offset)
+                .map(Exit::Proc)
+                .map_err(|_| Errno::EINVAL)
         }
         QP0L_USER_FUNCTION_PGM => {
             let lib = ccsid::decode_trimmed(&b[4..14]);
             let pgm = ccsid::decode_trimmed(&b[14..24]);
-            Ok(Exit::Pgm(pgm, if lib.is_empty() { "*LIBL".into() } else { lib }))
+            Ok(Exit::Pgm(
+                pgm,
+                if lib.is_empty() { "*LIBL".into() } else { lib },
+            ))
         }
         _ => Err(Errno::EINVAL),
     }
@@ -202,7 +217,13 @@ impl Call {
 /// Call the exit once; whether the walk goes on.
 fn call_exit(j: &mut Job, exit: &Exit, path: &str, status: u32, error: i32, info: u64) -> R<bool> {
     let mut c = Call::new(j, path, status, error);
-    let params = [c.status.native(), c.error.native(), c.ret.native(), c.name.native(), info];
+    let params = [
+        c.status.native(),
+        c.error.native(),
+        c.ret.native(),
+        c.name.native(),
+        info,
+    ];
     match exit {
         Exit::Proc(addr) => mi::act::call_by_ref(j, *addr, &params),
         Exit::Pgm(pgm, lib) => {
@@ -236,7 +257,8 @@ fn process_subtree(
         let wanted: Vec<String> = match opt_mem(j, types, 4)? {
             None => Vec::new(),
             Some(b) => {
-                let n = usize::try_from(u32::from_be_bytes(b[..4].try_into().expect("4 bytes"))).unwrap_or(0);
+                let n = usize::try_from(u32::from_be_bytes(b[..4].try_into().expect("4 bytes")))
+                    .unwrap_or(0);
                 let all = mem(j, types, 4 + 11 * n)?;
                 (0..n)
                     .map(|i| ccsid::decode_trimmed(&all[4 + 11 * i..14 + 11 * i]))
@@ -248,18 +270,25 @@ fn process_subtree(
         let mut exclude: Vec<String> = Vec::new();
         if let Some(b) = opt_mem(j, inex, 16)? {
             let kind = u32::from_be_bytes(b[..4].try_into().expect("4 bytes"));
-            let n = usize::try_from(u32::from_be_bytes(b[4..8].try_into().expect("4 bytes"))).unwrap_or(0);
+            let n = usize::try_from(u32::from_be_bytes(b[4..8].try_into().expect("4 bytes")))
+                .unwrap_or(0);
             let all = mem(j, inex, 16 + 16 * n)?;
             for i in 0..n {
                 let q = ptr_at(all, 16 + 16 * i);
                 let s = qlg_path(j, q)?;
-                if kind == 0 { include.push(s) } else { exclude.push(s) }
+                if kind == 0 {
+                    include.push(s)
+                } else {
+                    exclude.push(s)
+                }
             }
         }
         let under = |p: &str, roots: &[String]| {
             roots.iter().any(|r| {
                 let r = r.trim_end_matches('/');
-                p.eq_ignore_ascii_case(r) || p.to_ascii_lowercase().starts_with(&format!("{}/", r.to_ascii_lowercase()))
+                p.eq_ignore_ascii_case(r)
+                    || p.to_ascii_lowercase()
+                        .starts_with(&format!("{}/", r.to_ascii_lowercase()))
             })
         };
         let info_addr = native(j, info);
@@ -267,7 +296,9 @@ fn process_subtree(
         let root_depth = ifs::path::components(&path).len();
         let err_opt = uint(err_opt);
         for e in entries {
-            let depth = ifs::path::components(&e.path).len().saturating_sub(root_depth);
+            let depth = ifs::path::components(&e.path)
+                .len()
+                .saturating_sub(root_depth);
             if uint(subtree) == QP0L_SUBTREE_NO && depth > 1 {
                 continue;
             }
@@ -388,7 +419,10 @@ mod tests {
         assert_eq!(text(&b, "Mbr_Name"), "HELLO");
         assert_eq!(text(&b, "Mbr_Type"), "*MBR");
         let b = qsys_info("/qsys.lib/X.PGM", 37).unwrap();
-        assert_eq!((text(&b, "Lib_Name"), text(&b, "Obj_Name")), ("QSYS".into(), "X".into()));
+        assert_eq!(
+            (text(&b, "Lib_Name"), text(&b, "Obj_Name")),
+            ("QSYS".into(), "X".into())
+        );
         assert_eq!(qsys_info("/home/x", 37).unwrap_err().msgid, "CPFA0DB");
     }
 }

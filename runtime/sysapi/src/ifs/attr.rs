@@ -16,10 +16,10 @@ use mi::Job;
 use sec::auth::bits::Auth;
 
 use super::consts::QP0L_FOLLOW_SYMLNK;
+use super::file::bound_r9;
 use super::layout::{self as lay, ATTR_HEADER, AUTH_GENERAL, AUTH_USERS, CHECKOUT, JOURNAL_INFO};
 use super::path::qlg_path;
 use super::{R, client};
-use super::file::bound_r9;
 use crate::net::abi::{get_int, is_null, mem, put_int, ret, uint};
 use crate::param::fixed;
 
@@ -80,7 +80,9 @@ fn flag(b: bool) -> Vec<u8> {
 }
 
 fn u4(v: u64) -> R<Vec<u8>> {
-    u32::try_from(v).map(|x| x.to_be_bytes().to_vec()).map_err(|_| Errno::EOVERFLOW)
+    u32::try_from(v)
+        .map(|x| x.to_be_bytes().to_vec())
+        .map_err(|_| Errno::EOVERFLOW)
 }
 
 fn time(t: i64) -> Vec<u8> {
@@ -101,7 +103,10 @@ fn crtobjaud_name(c: CrtObjAud) -> Vec<u8> {
 
 /// The bit of an authority by its name.
 fn bit(name: &str) -> u32 {
-    sec::auth::bits::NAMES.iter().find(|(n, _)| *n == name).map_or(0, |(_, b)| *b)
+    sec::auth::bits::NAMES
+        .iter()
+        .find(|(n, _)| *n == name)
+        .map_or(0, |(_, b)| *b)
 }
 
 /// `QP0L_ATTR_AUTH`'s data: the general part, then one user entry per
@@ -111,14 +116,28 @@ fn auth_data(list: &AuthList) -> Vec<u8> {
     let u = &AUTH_USERS;
     let mut b = vec![0u8; g.size];
     lay::put(&mut b, g, "Object_owner", &fixed(&list.owner, 10));
-    lay::put(&mut b, g, "Primary_group", &fixed(list.group.as_deref().unwrap_or("*NONE"), 10));
-    lay::put(&mut b, g, "Auth_list_name", &fixed(list.autl.as_deref().unwrap_or("*NONE"), 10));
+    lay::put(
+        &mut b,
+        g,
+        "Primary_group",
+        &fixed(list.group.as_deref().unwrap_or("*NONE"), 10),
+    );
+    lay::put(
+        &mut b,
+        g,
+        "Auth_list_name",
+        &fixed(list.autl.as_deref().unwrap_or("*NONE"), 10),
+    );
     lay::put_n(&mut b, g, "UserArray_Offset", g.size as u64);
     lay::put_n(&mut b, g, "Number_of_users", list.entries.len() as u64);
     lay::put_n(&mut b, g, "UserEntry_size", u.size as u64);
     for e in &list.entries {
         let mut r = vec![0u8; u.size];
-        let who = if e.role == Role::Public { "*PUBLIC" } else { e.who.as_str() };
+        let who = if e.role == Role::Public {
+            "*PUBLIC"
+        } else {
+            e.who.as_str()
+        };
         lay::put(&mut r, u, "User_name", &fixed(who, 10));
         lay::put(&mut r, u, "User_data_auth", &fixed(&e.data, 10));
         let has = |a: Auth, n: &str| u64::from(a.0 & bit(n) != 0);
@@ -152,7 +171,9 @@ fn data_of(a: &Attr, auth: &dyn Fn() -> R<AuthList>) -> R<(u32, Vec<u8>)> {
             v
         }
         Attr::DataSize(n) | Attr::AllocSize(n) | Attr::ExtendedAttrSize(n) => u4(*n)?,
-        Attr::CreateTime(t) | Attr::AccessTime(t) | Attr::ChangeTime(t) | Attr::ModifyTime(t) => time(*t),
+        Attr::CreateTime(t) | Attr::AccessTime(t) | Attr::ChangeTime(t) | Attr::ModifyTime(t) => {
+            time(*t)
+        }
         Attr::StgFree(b)
         | Attr::LocalRemote(b)
         | Attr::PcReadOnly(b)
@@ -205,7 +226,10 @@ fn data_of(a: &Attr, auth: &dyn Fn() -> R<AuthList>) -> R<(u32, Vec<u8>)> {
                 }
                 lay::put_n(&mut v, l, "Options", opts);
                 lay::put(&mut v, l, "Journal_Identifier", &j.jid);
-                let (lib, name) = j.journal.split_once('/').unwrap_or(("", j.journal.as_str()));
+                let (lib, name) = j
+                    .journal
+                    .split_once('/')
+                    .unwrap_or(("", j.journal.as_str()));
                 lay::put(&mut v, l, "Journal_Name", &fixed(name, 10));
                 lay::put(&mut v, l, "Journal_Library", &fixed(lib, 10));
                 lay::put_n(&mut v, l, "Time_Last_Started", lay::secs(j.start));
@@ -240,7 +264,12 @@ fn chain(entries: &[(u32, Vec<u8>)]) -> Vec<u8> {
         }
         if i + 1 < entries.len() {
             let next = b.len() as u64;
-            lay::put_n(&mut b[start..start + 16], &ATTR_HEADER, "Next_Attr_Offset", next);
+            lay::put_n(
+                &mut b[start..start + 16],
+                &ATTR_HEADER,
+                "Next_Attr_Offset",
+                next,
+            );
         }
     }
     b
@@ -281,7 +310,8 @@ pub(crate) fn get_buffer(j: &mut Job, path: &str, ids: &[u32], follow: bool) -> 
     let mut entries: Vec<(u32, Vec<u8>)> = Vec::new();
     for id in order {
         match (id, find(id), find(1), find(2)) {
-            (DATA_SIZE_64, _, Some(Attr::DataSize(n)), _) | (ALLOC_SIZE_64, _, _, Some(Attr::AllocSize(n))) => {
+            (DATA_SIZE_64, _, Some(Attr::DataSize(n)), _)
+            | (ALLOC_SIZE_64, _, _, Some(Attr::AllocSize(n))) => {
                 entries.push((id, n.to_be_bytes().to_vec()));
             }
             (_, Some(a), _, _) => match data_of(a, &list) {
@@ -298,7 +328,16 @@ pub(crate) fn get_buffer(j: &mut Job, path: &str, ids: &[u32], follow: bool) -> 
 }
 
 #[allow(clippy::too_many_arguments)]
-fn get_attr(j: &mut Job, p: u128, list: u128, buf: u128, size: i64, needed: u128, returned: u128, follow: i64) -> i64 {
+fn get_attr(
+    j: &mut Job,
+    p: u128,
+    list: u128,
+    buf: u128,
+    size: i64,
+    needed: u128,
+    returned: u128,
+    follow: i64,
+) -> i64 {
     let r = (|| {
         let path = qlg_path(j, p)?;
         let ids: Vec<u32> = if is_null(list) {
@@ -334,7 +373,11 @@ fn attr_of(id: u32, d: &[u8]) -> R<Attr> {
             .map(|x| u16::from_be_bytes([x[0], x[1]]))
             .ok_or(Errno::EINVAL)
     };
-    let text10 = || ccsid::from_ebcdic(d.get(..10).unwrap_or(d)).trim_end().to_string();
+    let text10 = || {
+        ccsid::from_ebcdic(d.get(..10).unwrap_or(d))
+            .trim_end()
+            .to_string()
+    };
     let stg = |v: u8| match v {
         0 => Ok(StgOpt::Normal),
         1 => Ok(StgOpt::Minimize),
@@ -369,7 +412,11 @@ fn attr_of(id: u32, d: &[u8]) -> R<Attr> {
         AttrId::Audit => Attr::Audit(aud(&text10())?),
         AttrId::Crtobjaud => {
             let t = text10();
-            Attr::Crtobjaud(if t == "*SYSVAL" { CrtObjAud::SysVal } else { CrtObjAud::Value(aud(&t)?) })
+            Attr::Crtobjaud(if t == "*SYSVAL" {
+                CrtObjAud::SysVal
+            } else {
+                CrtObjAud::Value(aud(&t)?)
+            })
         }
         AttrId::Text => {
             let t = d.get(4..).ok_or(Errno::EINVAL)?;
@@ -385,9 +432,12 @@ pub(crate) fn parse_buffer(b: &[u8]) -> R<Vec<Attr>> {
     let mut at = 0usize;
     loop {
         let h = b.get(at..at + ATTR_HEADER.size).ok_or(Errno::EINVAL)?;
-        let id = u32::try_from(lay::get_n(h, &ATTR_HEADER, "Attr_ID")).map_err(|_| Errno::EINVAL)?;
-        let n = usize::try_from(lay::get_n(h, &ATTR_HEADER, "Attr_Size")).map_err(|_| Errno::EINVAL)?;
-        let next = usize::try_from(lay::get_n(h, &ATTR_HEADER, "Next_Attr_Offset")).map_err(|_| Errno::EINVAL)?;
+        let id =
+            u32::try_from(lay::get_n(h, &ATTR_HEADER, "Attr_ID")).map_err(|_| Errno::EINVAL)?;
+        let n =
+            usize::try_from(lay::get_n(h, &ATTR_HEADER, "Attr_Size")).map_err(|_| Errno::EINVAL)?;
+        let next = usize::try_from(lay::get_n(h, &ATTR_HEADER, "Next_Attr_Offset"))
+            .map_err(|_| Errno::EINVAL)?;
         let d = b.get(at + 16..at + 16 + n).ok_or(Errno::EINVAL)?;
         out.push(attr_of(id, d)?);
         if next == 0 {
@@ -449,7 +499,10 @@ mod tests {
     #[test]
     fn every_data_size_is_the_codes() {
         for (name, id, _) in DATA {
-            assert!(AttrId::from_u32(*id).is_some() || [14, 15].contains(id), "{name}");
+            assert!(
+                AttrId::from_u32(*id).is_some() || [14, 15].contains(id),
+                "{name}"
+            );
         }
     }
 }

@@ -84,7 +84,10 @@ impl Image {
     /// One payload's bytes.
     #[must_use]
     pub fn get(&self, p: &Payload) -> Option<&[u8]> {
-        self.files.iter().find(|(q, _)| q == p).map(|(_, d)| d.as_slice())
+        self.files
+            .iter()
+            .find(|(q, _)| q == p)
+            .map(|(_, d)| d.as_slice())
     }
 
     /// What the media holds.
@@ -107,7 +110,9 @@ pub fn check(m: &Manifest, p: &Payload, data: &[u8]) -> Result<()> {
         )));
     }
     if !f.sha256.eq_ignore_ascii_case(&sha(data)) {
-        return Err(Error::media(format!("{path} does not match its hash in the manifest")));
+        return Err(Error::media(format!(
+            "{path} does not match its hash in the manifest"
+        )));
     }
     Ok(())
 }
@@ -480,7 +485,10 @@ mod tests {
         )
         .unwrap();
         assert!(recognize_tape(&mut t).unwrap().is_none());
-        assert_eq!(write_tape(&mut t, &img, &TapeWrite::new(today())).unwrap(), 6);
+        assert_eq!(
+            write_tape(&mut t, &img, &TapeWrite::new(today())).unwrap(),
+            6
+        );
         assert!(user_files(&mut t).unwrap().is_empty());
         let c = recognize_tape(&mut t).unwrap().unwrap();
         assert!(c.savsys && c.has_os());
@@ -511,16 +519,22 @@ mod tests {
         // A plain volume is not install media.
         let other = Arc::new(MemImage::default());
         Volume::create(other.clone(), "DATA01", "", 1 << 20, 1).unwrap();
-        assert!(recognize_iso(&IsoImage::open(other).unwrap()).unwrap().is_none());
+        assert!(
+            recognize_iso(&IsoImage::open(other).unwrap())
+                .unwrap()
+                .is_none()
+        );
         // The same, read on the mounted volume.
         let c = recognize_volume(&v).unwrap().unwrap();
         assert!(c.savsys && c.has_os());
-        let plain = Volume::create(Arc::new(MemImage::default()), "DATA02", "", 1 << 20, 1).unwrap();
+        let plain =
+            Volume::create(Arc::new(MemImage::default()), "DATA02", "", 1 << 20, 1).unwrap();
         assert!(recognize_volume(&plain).unwrap().is_none());
     }
 
     fn labeled(vol: &str) -> VirtualTape<Cursor<Vec<u8>>> {
-        let mut t = VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(8, vol)).unwrap();
+        let mut t =
+            VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(8, vol)).unwrap();
         inztap(
             &mut t,
             &InzOptions {
@@ -556,10 +570,19 @@ mod tests {
             w.finish().unwrap();
         }
         let u = user_files(&mut t).unwrap();
-        assert_eq!(u, vec![(7, "MYLIB".to_string()), (8, "QSAVIFS".to_string())]);
+        assert_eq!(
+            u,
+            vec![(7, "MYLIB".to_string()), (8, "QSAVIFS".to_string())]
+        );
         // Still install media, and its payloads still read.
         assert!(recognize_tape(&mut t).unwrap().unwrap().savsys);
-        assert_eq!(TapeSource::open(&mut t).unwrap().read(&Payload::SecData).unwrap(), vec![4; 5]);
+        assert_eq!(
+            TapeSource::open(&mut t)
+                .unwrap()
+                .read(&Payload::SecData)
+                .unwrap(),
+            vec![4; 5]
+        );
     }
 
     #[test]
@@ -572,7 +595,10 @@ mod tests {
         };
         write_tape(&mut t, &image(true), &perm).unwrap();
         let again = write_tape(&mut t, &image(true), &perm);
-        assert!(matches!(again, Err(Error::Tape(tape::TapeError::ActiveFile { .. }))));
+        assert!(matches!(
+            again,
+            Err(Error::Tape(tape::TapeError::ActiveFile { .. }))
+        ));
         let clear = TapeWrite {
             allow_active: true,
             ..perm
@@ -589,7 +615,12 @@ mod tests {
         let mut bad = img.clone();
         bad.files[1].1 = vec![9; 10];
         let mut s = (bad, c);
-        assert!(s.read(&Payload::LicB).unwrap_err().to_string().contains("hash"));
+        assert!(
+            s.read(&Payload::LicB)
+                .unwrap_err()
+                .to_string()
+                .contains("hash")
+        );
         assert!(s.read(&Payload::LicA).is_ok());
     }
 }

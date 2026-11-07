@@ -21,11 +21,21 @@ fn lit(s: &str) -> String {
 
 /// One column of a catalog result.
 fn col(name: &str, sql_type: i16, size: i32, nullable: bool) -> ColDesc {
-    ColDesc { name: name.into(), sql_type, size, scale: 0, nullable, ccsid: 0 }
+    ColDesc {
+        name: name.into(),
+        sql_type,
+        size,
+        scale: 0,
+        nullable,
+        ccsid: 0,
+    }
 }
 
 fn names(cols: &[ColDesc]) -> String {
-    cols.iter().map(|c| c.name.as_str()).collect::<Vec<_>>().join(", ")
+    cols.iter()
+        .map(|c| c.name.as_str())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// `SQLTables`' result.
@@ -84,16 +94,26 @@ fn filter(conds: &[(&str, Option<String>, bool)]) -> String {
         .iter()
         .filter_map(|(c, v, like)| {
             let v = v.as_ref().filter(|v| !v.is_empty())?;
-            Some(if *like { format!("{c} LIKE {}", lit(v)) } else { format!("{c} = {}", lit(v)) })
+            Some(if *like {
+                format!("{c} LIKE {}", lit(v))
+            } else {
+                format!("{c} = {}", lit(v))
+            })
         })
         .collect();
-    if parts.is_empty() { String::new() } else { format!(" WHERE {}", parts.join(" AND ")) }
+    if parts.is_empty() {
+        String::new()
+    } else {
+        format!(" WHERE {}", parts.join(" AND "))
+    }
 }
 
 impl Cli {
     /// Run a catalog query on statement `h` with the oracle's columns.
     fn catalog(&mut self, host: &mut dyn Host, h: i32, text: &str, cols: Vec<ColDesc>) -> i32 {
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         if s.state == crate::model::handles::StmtState::Open {
             return self.fail(h, "HY010", "The statement has a cursor open.");
         }
@@ -113,7 +133,19 @@ impl Cli {
     /// `SQLTables`: the catalog argument is not a filter; the types are
     /// a comma-separated list, quoted or not.
     #[allow(clippy::too_many_arguments)]
-    pub fn tables(&mut self, host: &mut dyn Host, h: i32, _cat: Ptr, _catl: i16, sch: Ptr, schl: i16, tab: Ptr, tabl: i16, typ: Ptr, typl: i16) -> i32 {
+    pub fn tables(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        _cat: Ptr,
+        _catl: i16,
+        sch: Ptr,
+        schl: i16,
+        tab: Ptr,
+        tabl: i16,
+        typ: Ptr,
+        typl: i16,
+    ) -> i32 {
         if !self.handles.is(h, crate::consts::htype::STMT) || !self.begin(h) {
             return rc::INVALID_HANDLE;
         }
@@ -121,19 +153,42 @@ impl Cli {
         let tab = get_str(host, tab, i32::from(tabl));
         let types = get_str(host, typ, i32::from(typl)).unwrap_or_default();
         let mut w = filter(&[("TABLE_SCHEM", sch, true), ("TABLE_NAME", tab, true)]);
-        let list: Vec<String> = types.split(',').map(|t| t.trim().trim_matches('\'').trim().to_ascii_uppercase()).filter(|t| !t.is_empty()).collect();
+        let list: Vec<String> = types
+            .split(',')
+            .map(|t| t.trim().trim_matches('\'').trim().to_ascii_uppercase())
+            .filter(|t| !t.is_empty())
+            .collect();
         if !list.is_empty() {
             let inl = list.iter().map(|t| lit(t)).collect::<Vec<_>>().join(", ");
-            w = if w.is_empty() { format!(" WHERE TABLE_TYPE IN ({inl})") } else { format!("{w} AND TABLE_TYPE IN ({inl})") };
+            w = if w.is_empty() {
+                format!(" WHERE TABLE_TYPE IN ({inl})")
+            } else {
+                format!("{w} AND TABLE_TYPE IN ({inl})")
+            };
         }
         let cols = tables_cols();
-        let text = format!("SELECT {} FROM SYSIBM.SQLTABLES{w} ORDER BY TABLE_TYPE, TABLE_SCHEM, TABLE_NAME", names(&cols));
+        let text = format!(
+            "SELECT {} FROM SYSIBM.SQLTABLES{w} ORDER BY TABLE_TYPE, TABLE_SCHEM, TABLE_NAME",
+            names(&cols)
+        );
         self.catalog(host, h, &text, cols)
     }
 
     /// `SQLColumns`.
     #[allow(clippy::too_many_arguments)]
-    pub fn columns(&mut self, host: &mut dyn Host, h: i32, _cat: Ptr, _catl: i16, sch: Ptr, schl: i16, tab: Ptr, tabl: i16, colp: Ptr, coll: i16) -> i32 {
+    pub fn columns(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        _cat: Ptr,
+        _catl: i16,
+        sch: Ptr,
+        schl: i16,
+        tab: Ptr,
+        tabl: i16,
+        colp: Ptr,
+        coll: i16,
+    ) -> i32 {
         if !self.handles.is(h, crate::consts::htype::STMT) || !self.begin(h) {
             return rc::INVALID_HANDLE;
         }
@@ -143,21 +198,40 @@ impl Cli {
             ("COLUMN_NAME", get_str(host, colp, i32::from(coll)), true),
         ]);
         let cols = columns_cols();
-        let text = format!("SELECT {} FROM SYSIBM.SQLCOLUMNS{w} ORDER BY TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION", names(&cols));
+        let text = format!(
+            "SELECT {} FROM SYSIBM.SQLCOLUMNS{w} ORDER BY TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION",
+            names(&cols)
+        );
         self.catalog(host, h, &text, cols)
     }
 
     /// `SQLPrimaryKeys`: the table is named, not a pattern; without one,
     /// every key of the schema.
     #[allow(clippy::too_many_arguments)]
-    pub fn primary_keys(&mut self, host: &mut dyn Host, h: i32, _cat: Ptr, _catl: i16, sch: Ptr, schl: i16, tab: Ptr, tabl: i16) -> i32 {
+    pub fn primary_keys(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        _cat: Ptr,
+        _catl: i16,
+        sch: Ptr,
+        schl: i16,
+        tab: Ptr,
+        tabl: i16,
+    ) -> i32 {
         if !self.handles.is(h, crate::consts::htype::STMT) || !self.begin(h) {
             return rc::INVALID_HANDLE;
         }
         let tab = get_str(host, tab, i32::from(tabl));
-        let w = filter(&[("TABLE_SCHEM", get_str(host, sch, i32::from(schl)), false), ("TABLE_NAME", tab, false)]);
+        let w = filter(&[
+            ("TABLE_SCHEM", get_str(host, sch, i32::from(schl)), false),
+            ("TABLE_NAME", tab, false),
+        ]);
         let cols = keys_cols();
-        let text = format!("SELECT {} FROM SYSIBM.SQLPRIMARYKEYS{w} ORDER BY TABLE_SCHEM, TABLE_NAME, KEY_SEQ", names(&cols));
+        let text = format!(
+            "SELECT {} FROM SYSIBM.SQLPRIMARYKEYS{w} ORDER BY TABLE_SCHEM, TABLE_NAME, KEY_SEQ",
+            names(&cols)
+        );
         self.catalog(host, h, &text, cols)
     }
 }

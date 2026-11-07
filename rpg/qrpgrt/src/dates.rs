@@ -213,7 +213,8 @@ pub fn month_days(y: i64, m: i64) -> i64 {
 
 /// The days of a valid date.
 fn ymd(y: i64, m: i64, d: i64) -> Option<i64> {
-    ((1..=9999).contains(&y) && (1..=12).contains(&m) && d >= 1 && d <= month_days(y, m)).then(|| days_of(y, m, d))
+    ((1..=9999).contains(&y) && (1..=12).contains(&m) && d >= 1 && d <= month_days(y, m))
+        .then(|| days_of(y, m, d))
 }
 
 /// One field of a layout.
@@ -336,7 +337,8 @@ pub fn parse_date(s: &str, f: Fmt) -> Option<i64> {
     match ddd {
         Some(n) => {
             let len = if leap(year) { 366 } else { 365 };
-            ((1..=9999).contains(&year) && (1..=len).contains(&n)).then(|| days_of(year, 1, 1) + n - 1)
+            ((1..=9999).contains(&year) && (1..=len).contains(&n))
+                .then(|| days_of(year, 1, 1) + n - 1)
         }
         None => ymd(year, m, d),
     }
@@ -471,7 +473,11 @@ pub fn parse_stamp(s: &str, sep: bool) -> Option<Dt> {
     if f.len() > 12 || !f.bytes().all(|b| b.is_ascii_digit()) {
         return None;
     }
-    let pico: i64 = if f.is_empty() { 0 } else { format!("{f:0<12}").parse().ok()? };
+    let pico: i64 = if f.is_empty() {
+        0
+    } else {
+        format!("{f:0<12}").parse().ok()?
+    };
     // 24.00.00 ends a day only with no fraction.
     if secs == DAY_SECS && pico != 0 {
         return None;
@@ -499,7 +505,11 @@ pub fn parse(s: &str, f: Fmt) -> Option<Dt> {
             let days = parse_date(s, f)?;
             let (lo, hi) = f.years();
             let y = civil(days).0;
-            ((lo..=hi).contains(&y)).then_some(Dt { days, secs: 0, pico: 0 })
+            ((lo..=hi).contains(&y)).then_some(Dt {
+                days,
+                secs: 0,
+                pico: 0,
+            })
         }
         Class::Time => Some(Dt {
             days: 0,
@@ -552,7 +562,9 @@ fn text_of(b: &[u8]) -> String {
 pub fn read(addr: u64, d: &Desc, f: Fmt) -> Result<Dt, DtErr> {
     if d.numeric() {
         let v = read_num(addr, d).map_err(|_| DtErr::Invalid)?;
-        let v = v.rescale(0, Rounding::Truncate).map_err(|_| DtErr::Invalid)?;
+        let v = v
+            .rescale(0, Rounding::Truncate)
+            .map_err(|_| DtErr::Invalid)?;
         if v.is_negative() {
             return Err(DtErr::Invalid);
         }
@@ -563,7 +575,14 @@ pub fn read(addr: u64, d: &Desc, f: Fmt) -> Result<Dt, DtErr> {
         }
         s = format!("{s:0>want$}");
         let f = bare(f);
-        let f = if f.is_stamp() { Fmt { frac: u8::try_from(want - 14).unwrap_or(0), ..f } } else { f };
+        let f = if f.is_stamp() {
+            Fmt {
+                frac: u8::try_from(want - 14).unwrap_or(0),
+                ..f
+            }
+        } else {
+            f
+        };
         return parse(&s, f).ok_or(DtErr::Invalid);
     }
     let b = bytes(addr, d.size());
@@ -588,7 +607,10 @@ pub fn write(addr: u64, d: &Desc, f: Fmt, v: Dt) -> Result<(), DtErr> {
         return write_num(addr, d, &n).map_err(|()| DtErr::Mapping);
     }
     let s = render(v, f)?;
-    let e: Vec<u8> = s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0x40)).collect();
+    let e: Vec<u8> = s
+        .chars()
+        .map(|c| ccsid::byte_of(c).unwrap_or(0x40))
+        .collect();
     if d.kind == Kind::VarChar {
         let max = usize::try_from(d.len).unwrap_or(0);
         crate::value::write_var(addr, d.prefix(), &e[..e.len().min(max)]);
@@ -604,11 +626,18 @@ pub fn write(addr: u64, d: &Desc, f: Fmt, v: Dt) -> Result<(), DtErr> {
 fn write_num(addr: u64, d: &Desc, v: &Decimal) -> Result<(), ()> {
     let digits = u8::try_from(d.len.clamp(1, 63)).unwrap_or(63);
     let enc = match d.kind {
-        Kind::Packed => qdecimal::Packed::new(digits, d.dec).and_then(|p| p.encode(v, Rounding::Truncate)),
-        Kind::Zoned => qdecimal::Zoned::new(digits, d.dec).and_then(|z| z.encode(v, Rounding::Truncate)),
-        Kind::Bin => qdecimal::Binary::new(digits, d.dec).and_then(|b| b.encode(v, Rounding::Truncate)),
+        Kind::Packed => {
+            qdecimal::Packed::new(digits, d.dec).and_then(|p| p.encode(v, Rounding::Truncate))
+        }
+        Kind::Zoned => {
+            qdecimal::Zoned::new(digits, d.dec).and_then(|z| z.encode(v, Rounding::Truncate))
+        }
+        Kind::Bin => {
+            qdecimal::Binary::new(digits, d.dec).and_then(|b| b.encode(v, Rounding::Truncate))
+        }
         Kind::Int | Kind::Uns => {
-            qdecimal::Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int).and_then(|i| i.encode(v))
+            qdecimal::Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int)
+                .and_then(|i| i.encode(v))
         }
         _ => return Err(()),
     }
@@ -622,8 +651,16 @@ fn write_num(addr: u64, d: &Desc, v: &Decimal) -> Result<(), ()> {
 #[must_use]
 pub fn recast(v: Dt, from: Class, to: Class) -> Dt {
     match (from, to) {
-        (Class::Stamp | Class::Time, Class::Date) => Dt { secs: 0, pico: 0, ..v },
-        (Class::Stamp, Class::Time) => Dt { days: 0, pico: 0, ..v },
+        (Class::Stamp | Class::Time, Class::Date) => Dt {
+            secs: 0,
+            pico: 0,
+            ..v
+        },
+        (Class::Stamp, Class::Time) => Dt {
+            days: 0,
+            pico: 0,
+            ..v
+        },
         _ => v,
     }
 }
@@ -688,7 +725,8 @@ pub fn add(v: Dt, class: Class, n: i64, u: i32) -> Result<Dt, DtErr> {
 }
 
 fn to_pico(v: Dt) -> i128 {
-    (i128::from(v.days) * i128::from(DAY_SECS) + i128::from(v.secs)) * i128::from(PICO) + i128::from(v.pico)
+    (i128::from(v.days) * i128::from(DAY_SECS) + i128::from(v.secs)) * i128::from(PICO)
+        + i128::from(v.pico)
 }
 
 fn from_pico(p: i128) -> Option<Dt> {
@@ -771,7 +809,11 @@ mod tests {
     use super::*;
 
     fn f(c: u8, sep: Option<u8>) -> Fmt {
-        Fmt { code: c, sep, frac: 0 }
+        Fmt {
+            code: c,
+            sep,
+            frac: 0,
+        }
     }
 
     #[test]
@@ -795,13 +837,23 @@ mod tests {
         assert_eq!(parse_date("126/03/05", f(code::CYMD, Some(b'/'))), Some(d));
         assert_eq!(parse_date("26064", f(code::JUL, None)), Some(d));
         assert_eq!(parse_date("2026-02-30", f(code::ISO, Some(b'-'))), None);
-        assert_eq!(time_text(14 * 3600 + 30 * 60 + 5, f(code::TUSA, Some(b':'))), "02:30 PM");
-        assert_eq!(parse_time("12:15 AM", f(code::TUSA, Some(b':'))), Some(15 * 60));
+        assert_eq!(
+            time_text(14 * 3600 + 30 * 60 + 5, f(code::TUSA, Some(b':'))),
+            "02:30 PM"
+        );
+        assert_eq!(
+            parse_time("12:15 AM", f(code::TUSA, Some(b':'))),
+            Some(15 * 60)
+        );
     }
 
     #[test]
     fn arithmetic_follows_rpg() {
-        let jan31 = Dt { days: days_of(2024, 1, 31), secs: 0, pico: 0 };
+        let jan31 = Dt {
+            days: days_of(2024, 1, 31),
+            secs: 0,
+            pico: 0,
+        };
         let feb = add(jan31, Class::Date, 1, unit::MONTHS).unwrap();
         assert_eq!(civil(feb.days), (2024, 2, 29));
         let s = parse_stamp("2026-03-05-23.59.59.999999", true).unwrap();

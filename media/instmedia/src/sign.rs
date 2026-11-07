@@ -75,6 +75,11 @@ mod tests {
         bad.release = "V1R1M0".into();
         assert!(verify(&bad, &public).is_err());
         let other = SigningKey::from_bytes(&[8; 32]).verifying_key().to_bytes();
-        assert!(verify(&back, &other).unwrap_err().to_string().contains("not the system"));
+        assert!(
+            verify(&back, &other)
+                .unwrap_err()
+                .to_string()
+                .contains("not the system")
+        );
     }
 }

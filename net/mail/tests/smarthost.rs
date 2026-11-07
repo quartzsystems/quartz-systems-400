@@ -46,7 +46,11 @@ fn line(s: &mut dyn Rw) -> Option<String> {
             return None;
         }
         if b[0] == b'\n' {
-            return Some(String::from_utf8_lossy(&out).trim_end_matches('\r').to_string());
+            return Some(
+                String::from_utf8_lossy(&out)
+                    .trim_end_matches('\r')
+                    .to_string(),
+            );
         }
         out.push(b[0]);
     }
@@ -114,7 +118,12 @@ fn host(listener: TcpListener, script: Script) -> (SocketAddr, JoinHandle<(Vec<S
                 say(s, "334 UGFzc3dvcmQ6\r\n");
                 cmds.push(line(s).unwrap());
                 say(s, "235 ok\r\n");
-            } else if up.starts_with("RCPT TO") && script.refuse.iter().any(|r| up.contains(&r.to_ascii_uppercase())) {
+            } else if up.starts_with("RCPT TO")
+                && script
+                    .refuse
+                    .iter()
+                    .any(|r| up.contains(&r.to_ascii_uppercase()))
+            {
                 say(s, "550 no such user\r\n");
             } else if up == "DATA" {
                 say(s, "354 send it\r\n");
@@ -172,9 +181,22 @@ fn plain_dialogue_with_auth_login() {
             refuse: &["ghost@"],
         },
     );
-    let r = smtp::send(&relay(addr, TlsMode::Opportunistic, Some(("anne", "pw"))), &envelope(), MESSAGE, &NoTls).unwrap();
+    let r = smtp::send(
+        &relay(addr, TlsMode::Opportunistic, Some(("anne", "pw"))),
+        &envelope(),
+        MESSAGE,
+        &NoTls,
+    )
+    .unwrap();
     assert_eq!(r.accepted, ["anne@example.com"]);
-    assert_eq!(r.refused, [("ghost@example.com".to_string(), 550, "no such user".to_string())]);
+    assert_eq!(
+        r.refused,
+        [(
+            "ghost@example.com".to_string(),
+            550,
+            "no such user".to_string()
+        )]
+    );
     assert_eq!(r.reply, "250 queued as 42");
     assert!(!r.secure);
     let (cmds, data) = t.join().unwrap();
@@ -207,8 +229,17 @@ fn refusals() {
             refuse: &["@example.com"],
         },
     );
-    let e = smtp::send(&relay(addr, TlsMode::None, None), &envelope(), MESSAGE, &NoTls).unwrap_err();
-    assert!(matches!(e, SmtpError::NoRecipients(ref r) if r.len() == 2), "{e:?}");
+    let e = smtp::send(
+        &relay(addr, TlsMode::None, None),
+        &envelope(),
+        MESSAGE,
+        &NoTls,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(e, SmtpError::NoRecipients(ref r) if r.len() == 2),
+        "{e:?}"
+    );
     t.join().unwrap();
     // TLS required but not offered.
     let (addr, _t) = host(
@@ -219,11 +250,23 @@ fn refusals() {
             refuse: &[],
         },
     );
-    let e = smtp::send(&relay(addr, TlsMode::Required, None), &envelope(), MESSAGE, &NoTls).unwrap_err();
+    let e = smtp::send(
+        &relay(addr, TlsMode::Required, None),
+        &envelope(),
+        MESSAGE,
+        &NoTls,
+    )
+    .unwrap_err();
     assert!(matches!(e, SmtpError::Tls(_)), "{e:?}");
     // Nobody listening.
     let free = listener().local_addr().unwrap();
-    let e = smtp::send(&relay(free, TlsMode::None, None), &envelope(), MESSAGE, &NoTls).unwrap_err();
+    let e = smtp::send(
+        &relay(free, TlsMode::None, None),
+        &envelope(),
+        MESSAGE,
+        &NoTls,
+    )
+    .unwrap_err();
     assert!(matches!(e, SmtpError::Connect(_)), "{e:?}");
 }
 
@@ -244,13 +287,43 @@ fn starttls_and_auth_plain() {
     };
     let files = MemFiles::new();
     let now = now();
-    ca::create(&files, "capass1", &Subject::cn("Test CA"), KeyAlgorithm::EcdsaP256, now, 3650, fast).unwrap();
+    ca::create(
+        &files,
+        "capass1",
+        &Subject::cn("Test CA"),
+        KeyAlgorithm::EcdsaP256,
+        now,
+        3650,
+        fast,
+    )
+    .unwrap();
     let ca_store = CertStore::open(&files, LOCAL_CA_STORE, "capass1").unwrap();
-    let mut system = CertStore::create_with(&files, SYSTEM_STORE, "system1", StoreKind::System, now, fast).unwrap();
-    ca::issue(&ca_store, &mut system, "RELAY", &CertSpec::server(HOST, now, 30), KeyAlgorithm::EcdsaP256).unwrap();
+    let mut system = CertStore::create_with(
+        &files,
+        SYSTEM_STORE,
+        "system1",
+        StoreKind::System,
+        now,
+        fast,
+    )
+    .unwrap();
+    ca::issue(
+        &ca_store,
+        &mut system,
+        "RELAY",
+        &CertSpec::server(HOST, now, 30),
+        KeyAlgorithm::EcdsaP256,
+    )
+    .unwrap();
     let policy = TlsPolicy::opsys();
     let id = Identity::from_store(&system, "RELAY", now).unwrap();
-    let scfg = server_config(&id, &policy, tls::config::ClientAuthMode::None, tls::rustls::RootCertStore::empty()).unwrap();
+    let scfg = server_config(
+        &id,
+        &policy,
+        tls::config::ClientAuthMode::None,
+        tls::rustls::RootCertStore::empty(),
+    )
+    .unwrap();
     let roots = trusted_roots(&system, &certs::apps::CaTrust::All).unwrap();
     let ccfg = client_config(&policy, roots, None, ServerAuthMode::Full).unwrap();
 
@@ -272,7 +345,14 @@ fn starttls_and_auth_plain() {
     assert!(r.secure);
     assert_eq!(r.accepted.len(), 2);
     let (cmds, data) = t.join().unwrap();
-    assert_eq!(cmds[..3], ["EHLO qs400.example.com", "STARTTLS", "EHLO qs400.example.com"]);
+    assert_eq!(
+        cmds[..3],
+        [
+            "EHLO qs400.example.com",
+            "STARTTLS",
+            "EHLO qs400.example.com"
+        ]
+    );
     // NUL anne NUL pw.
     assert_eq!(cmds[3], "AUTH PLAIN AGFubmUAcHc=");
     assert!(data.contains("..hidden"));

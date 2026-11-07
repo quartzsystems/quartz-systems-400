@@ -9,7 +9,9 @@
 //! gives.
 
 use ifs::client::{CHUNK, IfsClient};
-use ifs::ops::flags::{O_APPEND, O_CCSID, O_CREAT, O_INHERITMODE, O_RDONLY, O_TRUNC, O_WRONLY, S_IFDIR, S_IFMT};
+use ifs::ops::flags::{
+    O_APPEND, O_CCSID, O_CREAT, O_INHERITMODE, O_RDONLY, O_TRUNC, O_WRONLY, S_IFDIR, S_IFMT,
+};
 use ifs::ops::{OpenArgs, Stat};
 use ifs::vfs::qsys::QsysNode;
 use ifs::{Errno, Result};
@@ -136,7 +138,12 @@ pub fn savf_path(lib: &str, name: &str) -> String {
 }
 
 /// A member's records and its file's description.
-pub fn read_member(host: &mut dyn Host, lib: &str, file: &str, mbr: &str) -> Result<(Vec<Vec<u8>>, DbFile)> {
+pub fn read_member(
+    host: &mut dyn Host,
+    lib: &str,
+    file: &str,
+    mbr: &str,
+) -> Result<(Vec<Vec<u8>>, DbFile)> {
     let desc = host.file(lib, file).ok_or(Errno::ENOENT)?;
     let bytes = read_bytes(host.ifs(), &member_path(lib, file, mbr))?;
     let len = desc.rec_len.max(1);
@@ -146,13 +153,22 @@ pub fn read_member(host: &mut dyn Host, lib: &str, file: &str, mbr: &str) -> Res
 
 /// Replace a member's records (each the record length already), making
 /// the member when the file has no such member.
-pub fn write_member(host: &mut dyn Host, lib: &str, file: &str, mbr: &str, records: &[Vec<u8>]) -> Result<()> {
+pub fn write_member(
+    host: &mut dyn Host,
+    lib: &str,
+    file: &str,
+    mbr: &str,
+    records: &[Vec<u8>],
+) -> Result<()> {
     let data = records.concat();
     let path = member_path(lib, file, mbr);
     let ifs = host.ifs();
     let fd = match ifs.open(&path, OpenArgs::new(O_WRONLY | O_TRUNC)) {
         Ok(fd) => fd,
-        Err(Errno::ENOENT) => ifs.open(&path, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o777))?,
+        Err(Errno::ENOENT) => ifs.open(
+            &path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o777),
+        )?,
         Err(e) => return Err(e),
     };
     let mut r = Ok(());

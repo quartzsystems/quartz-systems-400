@@ -196,7 +196,8 @@ fn strip_docs(ts: TokenStream) -> TokenStream {
 
 fn is_cfg_test(attrs: &[syn::Attribute]) -> bool {
     attrs.iter().any(|a| {
-        a.path().is_ident("cfg") && a.meta.to_token_stream().to_string().replace(' ', "") == "cfg(test)"
+        a.path().is_ident("cfg")
+            && a.meta.to_token_stream().to_string().replace(' ', "") == "cfg(test)"
     })
 }
 
@@ -237,8 +238,9 @@ fn matches(item: &syn::Item, kind: &str, name: &str) -> bool {
             syn::Type::Path(p) => p.path.segments.last().is_some_and(|s| s.ident == name),
             _ => false,
         },
-        ("macro", I::Macro(i)) => i.mac.path.is_ident(name)
-            || i.ident.as_ref().is_some_and(|id| id == name),
+        ("macro", I::Macro(i)) => {
+            i.mac.path.is_ident(name) || i.ident.as_ref().is_some_and(|id| id == name)
+        }
         _ => false,
     }
 }
@@ -299,8 +301,12 @@ fn version_value(root: &Path, r: &str) -> Result<String, Error> {
     let f = parse(root, file)?;
     for item in &f.items {
         match item {
-            syn::Item::Const(c) if c.ident == name => return Ok(c.expr.to_token_stream().to_string()),
-            syn::Item::Static(c) if c.ident == name => return Ok(c.expr.to_token_stream().to_string()),
+            syn::Item::Const(c) if c.ident == name => {
+                return Ok(c.expr.to_token_stream().to_string());
+            }
+            syn::Item::Static(c) if c.ident == name => {
+                return Ok(c.expr.to_token_stream().to_string());
+            }
             _ => {}
         }
     }
@@ -394,5 +400,7 @@ pub fn find_root(from: &Path) -> Option<PathBuf> {
 
 /// Parses `src` as Rust tokens with docs removed (for tests).
 pub fn canonical(src: &str) -> Option<String> {
-    TokenStream::from_str(src).ok().map(|t| strip_docs(t).to_string())
+    TokenStream::from_str(src)
+        .ok()
+        .map(|t| strip_docs(t).to_string())
 }

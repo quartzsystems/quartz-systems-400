@@ -16,7 +16,11 @@ use super::{Args, Out, ask};
 use crate::error::{Result, SqlError};
 
 fn failed(e: String) -> SqlError {
-    SqlError::Coded { code: -443, state: "38501", what: e }
+    SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what: e,
+    }
 }
 
 #[allow(clippy::cast_precision_loss)] // sizes far below 2^52
@@ -60,14 +64,23 @@ pub fn pools(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
 
 /// `MEMORY_POOL(RESET_STATISTICS)`: the host keeps one interval;
 /// `RESET_STATISTICS => 'YES'` is refused.
-pub fn pool_function(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+pub fn pool_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     reset_refused(args)?;
     pools(txn, ctx, out)
 }
 
 fn reset_refused(args: &Args) -> Result<()> {
     if args.word("RESET_STATISTICS").is_some_and(|w| w == "YES") {
-        return Err(SqlError::Coded { code: -443, state: "38501", what: "RESET_STATISTICS => 'YES' is not supported".into() });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: "RESET_STATISTICS => 'YES' is not supported".into(),
+        });
     }
     Ok(())
 }
@@ -83,7 +96,10 @@ pub fn activity(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &mut Out
 }
 
 /// `ASP_INFO`'s `NOT NULL` columns with no value here.
-pub const ASP_NO_VALUE: &[&str] = &["STORAGE_THRESHOLD_PERCENTAGE", "COMPRESSION_RECOVERY_POLICY"];
+pub const ASP_NO_VALUE: &[&str] = &[
+    "STORAGE_THRESHOLD_PERCENTAGE",
+    "COMPRESSION_RECOVERY_POLICY",
+];
 
 /// `ASP_INFO`: ASP 1, from its units.
 pub fn asp(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
@@ -99,7 +115,11 @@ pub fn asp(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     out.yes("ENCRYPTED_ASP", false);
     out.int("TOTAL_CAPACITY", cap >> 20);
     out.int("TOTAL_CAPACITY_AVAILABLE", free >> 20);
-    let (p, u) = if mirrored { ("PROTECTED", "UNPROTECTED") } else { ("UNPROTECTED", "PROTECTED") };
+    let (p, u) = if mirrored {
+        ("PROTECTED", "UNPROTECTED")
+    } else {
+        ("UNPROTECTED", "PROTECTED")
+    };
     out.int(&format!("{p}_CAPACITY"), cap >> 20);
     out.int(&format!("{p}_CAPACITY_AVAILABLE"), free >> 20);
     out.int(&format!("{u}_CAPACITY"), 0);
@@ -113,7 +133,12 @@ pub fn asp(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
 }
 
 /// `ASP_INFO()` as a table function.
-pub fn asp_function(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &mut Out) -> Result<()> {
+pub fn asp_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    _args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     asp(txn, ctx, out)
 }
 
@@ -140,22 +165,43 @@ pub fn disks(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         out.int("UNIT_NUMBER", u.unit);
         out.text("SERIAL_NUMBER", u.serial.as_str());
         out.text("RESOURCE_STATUS", u.status.to_ascii_uppercase());
-        out.text("HARDWARE_STATUS", if u.status == "Active" { "OPERATIONAL" } else { "DEGRADED" });
+        out.text(
+            "HARDWARE_STATUS",
+            if u.status == "Active" {
+                "OPERATIONAL"
+            } else {
+                "DEGRADED"
+            },
+        );
         out.yes("IS_ZERO", false);
         out.int("BLOCK_SIZE", 4096);
         out.yes("MULTIPLE_PATH_UNIT", false);
-        out.int("UNIT_TYPE", i32::from(u.type_code == "SSD" || u.type_code == "NVME"));
+        out.int(
+            "UNIT_TYPE",
+            i32::from(u.type_code == "SSD" || u.type_code == "NVME"),
+        );
         out.int("UNIT_NVME", i32::from(u.type_code == "NVME"));
         out.int("UNIT_STORAGE_CAPACITY", u.capacity);
         out.int("UNIT_SPACE_AVAILABLE", u.free);
         out.int("UNIT_SPACE_AVAILABLE_GB", u.free / 1_000_000_000);
         if u.capacity > 0 {
-            out.float("PERCENT_USED", (u.capacity - u.free.min(u.capacity)) as f64 * 100.0 / u.capacity as f64, 3);
+            out.float(
+                "PERCENT_USED",
+                (u.capacity - u.free.min(u.capacity)) as f64 * 100.0 / u.capacity as f64,
+                3,
+            );
         }
         out.int("UNIT_MEDIA_CAPACITY", u.capacity);
         out.int("UNIT_MEDIA_CAPACITY_GB", u.capacity / 1_000_000_000);
         out.yes("STORAGE_ALLOCATION_ALLOWED", true);
-        out.text_or_null("PROTECTION_TYPE", if u.protection.starts_with("Mirrored") { "MIRROR" } else { "" });
+        out.text_or_null(
+            "PROTECTION_TYPE",
+            if u.protection.starts_with("Mirrored") {
+                "MIRROR"
+            } else {
+                ""
+            },
+        );
         out.text("PROTECTION_STATUS", u.status.to_ascii_uppercase());
         out.yes("AVAILABILITY_PARITY_SET_UNIT", false);
         out.yes("HYPERSWAP", false);
@@ -169,28 +215,48 @@ pub fn disks(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         let [er, ew, ers, ews, ebusy] = u.elapsed;
         if secs > 0.0 {
             let per_s = |n: u64| n as f64 / secs;
-            let kb = |sectors: u64, n: u64| if n == 0 { 0.0 } else { sectors as f64 / 2.0 / n as f64 };
+            let kb = |sectors: u64, n: u64| {
+                if n == 0 {
+                    0.0
+                } else {
+                    sectors as f64 / 2.0 / n as f64
+                }
+            };
             out.float("ELAPSED_IO_REQUESTS", per_s(er + ew), 1);
             out.float("ELAPSED_REQUEST_SIZE", kb(ers + ews, er + ew), 1);
             out.float("ELAPSED_READ_REQUESTS", per_s(er), 1);
             out.float("ELAPSED_WRITE_REQUESTS", per_s(ew), 1);
             out.float("ELAPSED_DATA_READ", kb(ers, er), 1);
             out.float("ELAPSED_DATA_WRITTEN", kb(ews, ew), 1);
-            out.float("ELAPSED_PERCENT_BUSY", (ebusy as f64 * 100.0 / u.elapsed_ms as f64).min(100.0), 1);
+            out.float(
+                "ELAPSED_PERCENT_BUSY",
+                (ebusy as f64 * 100.0 / u.elapsed_ms as f64).min(100.0),
+                1,
+            );
         }
     }
     Ok(())
 }
 
 /// `SYSDISKSTAT(RESET_STATISTICS)`.
-pub fn disk_function(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+pub fn disk_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     reset_refused(args)?;
     disks(txn, ctx, out)
 }
 
 /// `HARDWARE_RESOURCE_INFO`'s `NOT NULL` columns with no value here:
 /// the machine's internal resource kinds.
-pub const HW_NO_VALUE: &[&str] = &["RESOURCE_KIND", "RESOURCE_KIND1", "RESOURCE_KIND2", "RESOURCE_KIND3"];
+pub const HW_NO_VALUE: &[&str] = &[
+    "RESOURCE_KIND",
+    "RESOURCE_KIND1",
+    "RESOURCE_KIND2",
+    "RESOURCE_KIND3",
+];
 
 /// `HARDWARE_RESOURCE_INFO`.
 pub fn hardware(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
@@ -199,22 +265,35 @@ pub fn hardware(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()
 
 /// `HARDWARE_RESOURCE_INFO(RESOURCE_CATEGORY, ...)`: `*ALL` or one
 /// category.
-pub fn hardware_function(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+pub fn hardware_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     // `WRKHDWRSC`'s type names the categories too.
-    let cat = args.word("RESOURCE_CATEGORY").filter(|c| c != "*ALL" && c != "ALL").map(|c| {
-        match c.as_str() {
-            "*CMN" => "COMM",
-            "*LWS" => "LWS",
-            "*PRC" => "PROCESSOR",
-            "*STG" => "STORAGE",
-            other => other,
-        }
-        .to_string()
-    });
+    let cat = args
+        .word("RESOURCE_CATEGORY")
+        .filter(|c| c != "*ALL" && c != "ALL")
+        .map(|c| {
+            match c.as_str() {
+                "*CMN" => "COMM",
+                "*LWS" => "LWS",
+                "*PRC" => "PROCESSOR",
+                "*STG" => "STORAGE",
+                other => other,
+            }
+            .to_string()
+        });
     hardware_of(txn, ctx, cat.as_deref(), out)
 }
 
-fn hardware_of(txn: &mut Txn<'_>, ctx: &SqlContext, category: Option<&str>, out: &mut Out) -> Result<()> {
+fn hardware_of(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    category: Option<&str>,
+    out: &mut Out,
+) -> Result<()> {
     let list = ask(txn, ctx, "the hardware resources", |h| h.hardware())?.map_err(failed)?;
     for (i, r) in list.iter().enumerate() {
         if category.is_some_and(|c| c != r.category) {
@@ -227,13 +306,30 @@ fn hardware_of(txn: &mut Txn<'_>, ctx: &SqlContext, category: Option<&str>, out:
         }
         out.text("RESOURCE_CATEGORY", r.category.as_str());
         out.text("RESOURCE_NAME", r.name.as_str());
-        out.text("STATUS", if r.operational { "OPERATIONAL" } else { "NOT DETECTED" });
+        out.text(
+            "STATUS",
+            if r.operational {
+                "OPERATIONAL"
+            } else {
+                "NOT DETECTED"
+            },
+        );
         out.text_or_null("DEVICE_TYPE", &r.type_model.0);
         out.text_or_null("DEVICE_MODEL", &r.type_model.1);
         out.text_or_null("TEXT_DESCRIPTION", &r.text);
         out.text_or_null("LAN_ADAPTER_ADDRESS", &r.mac);
         out.text("SERIAL_NUMBER", r.serial.as_str());
-        out.text("SERIAL_NUMBER_SHORT", r.serial.chars().rev().take(10).collect::<Vec<_>>().into_iter().rev().collect::<String>());
+        out.text(
+            "SERIAL_NUMBER_SHORT",
+            r.serial
+                .chars()
+                .rev()
+                .take(10)
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect::<String>(),
+        );
         out.text_or_null("LOCATION_CODE", &r.location);
     }
     Ok(())

@@ -108,7 +108,8 @@ impl Shared {
         }
         let mut c = self.write();
         for (span, unit, what) in fails {
-            if c.others(span, unit) && c.units[usize::from(unit)].state != UnitState::NotOperational {
+            if c.others(span, unit) && c.units[usize::from(unit)].state != UnitState::NotOperational
+            {
                 warn!("asp: unit {unit} taken out of service: {what}");
                 c.units[usize::from(unit)].state = UnitState::NotOperational;
                 self.push_event(IoEvent::UnitFailed { unit, what });
@@ -240,7 +241,11 @@ impl Core {
         let mut first_err = None;
         for unit in self.readers(span, turn) {
             let mut buf = blockdev::AlignedBuf::new(usize::try_from(count).expect("count fits"));
-            match self.dev(unit).expect("reader is attached").read(lba, &mut buf) {
+            match self
+                .dev(unit)
+                .expect("reader is attached")
+                .read(lba, &mut buf)
+            {
                 Ok(()) => return Ok(buf),
                 Err(e) => {
                     let what = format!("read {count} pages at {pno}: {e}");
@@ -262,7 +267,11 @@ impl Core {
         }
         let mut failed = Vec::new();
         for &unit in &writers {
-            if let Err(e) = self.dev(unit).expect("writer is attached").write(lba, bytes) {
+            if let Err(e) = self
+                .dev(unit)
+                .expect("writer is attached")
+                .write(lba, bytes)
+            {
                 failed.push((unit, e));
             }
         }
@@ -464,7 +473,10 @@ impl AspIo {
         let mut first_err = None;
         for (i, &unit) in readers.iter().enumerate() {
             let mut page = Page::zeroed();
-            let read = c.dev(unit).expect("reader is attached").read(lba, page.bytes_mut());
+            let read = c
+                .dev(unit)
+                .expect("reader is attached")
+                .read(lba, page.bytes_mut());
             match read
                 .map_err(StoreError::from)
                 .and_then(|()| page.verify(pno).map(|_| ()))
@@ -492,7 +504,16 @@ impl AspIo {
 
     /// Rewrite a page on the half that could not serve it.
     #[allow(clippy::too_many_arguments)]
-    fn heal(c: &Core, shared: &Shared, span: u16, unit: u16, lba: u64, pno: PageNo, page: &Page, fails: &mut Fails) {
+    fn heal(
+        c: &Core,
+        shared: &Shared,
+        span: u16,
+        unit: u16,
+        lba: u64,
+        pno: PageNo,
+        page: &Page,
+        fails: &mut Fails,
+    ) {
         if !c.state(unit).writable() || fails.iter().any(|f| f.1 == unit) {
             return;
         }

@@ -111,7 +111,9 @@ impl Default for Servers {
 impl Servers {
     /// A standard server's attributes.
     pub fn get(&self, server: &str) -> Option<&ServerAttrs> {
-        self.attrs.iter().find(|a| a.server.eq_ignore_ascii_case(server))
+        self.attrs
+            .iter()
+            .find(|a| a.server.eq_ignore_ascii_case(server))
     }
 
     /// A standard server's attributes, to change; added when a server
@@ -136,7 +138,12 @@ impl Servers {
             .iter()
             .filter(|a| a.autostart)
             .map(|a| a.server.clone())
-            .chain(self.user.iter().filter(|u| u.autostart).map(|u| u.special.clone()))
+            .chain(
+                self.user
+                    .iter()
+                    .filter(|u| u.autostart)
+                    .map(|u| u.special.clone()),
+            )
             .collect()
     }
 
@@ -145,8 +152,16 @@ impl Servers {
         if !s.special.starts_with('*') || s.special.len() > 10 {
             return Err(bad("SVRSPCVAL", &s.special));
         }
-        if self.get(&s.special).is_some() || self.user.iter().any(|u| u.special.eq_ignore_ascii_case(&s.special)) {
-            return Err(Error::new(msg::EXISTS, format!("Server {} already exists.", s.special)));
+        if self.get(&s.special).is_some()
+            || self
+                .user
+                .iter()
+                .any(|u| u.special.eq_ignore_ascii_case(&s.special))
+        {
+            return Err(Error::new(
+                msg::EXISTS,
+                format!("Server {} already exists.", s.special),
+            ));
         }
         self.user.push(s);
         Ok(())
@@ -158,7 +173,9 @@ impl Servers {
             .user
             .iter_mut()
             .find(|u| u.special.eq_ignore_ascii_case(special))
-            .ok_or_else(|| Error::new(msg::NOT_FOUND, format!("Server {special} is not defined.")))?;
+            .ok_or_else(|| {
+                Error::new(msg::NOT_FOUND, format!("Server {special} is not defined."))
+            })?;
         f(u);
         Ok(())
     }
@@ -169,7 +186,9 @@ impl Servers {
             .user
             .iter()
             .position(|u| u.special.eq_ignore_ascii_case(special))
-            .ok_or_else(|| Error::new(msg::NOT_FOUND, format!("Server {special} is not defined.")))?;
+            .ok_or_else(|| {
+                Error::new(msg::NOT_FOUND, format!("Server {special} is not defined."))
+            })?;
         Ok(self.user.remove(at))
     }
 }
@@ -181,7 +200,10 @@ mod tests {
     #[test]
     fn autostart_list() {
         let mut s = Servers::default();
-        assert_eq!(s.autostart(), vec!["*TELNET".to_string(), "*FTP".to_string()]);
+        assert_eq!(
+            s.autostart(),
+            vec!["*TELNET".to_string(), "*FTP".to_string()]
+        );
         s.get_mut("*ftp").autostart = false;
         s.get_mut("*NEWSVR").set("port", "9999");
         assert_eq!(s.get("*NEWSVR").unwrap().get("PORT"), Some("9999"));
@@ -194,7 +216,10 @@ mod tests {
             text: String::new(),
         })
         .unwrap();
-        assert_eq!(s.autostart(), vec!["*TELNET".to_string(), "*MYSVR".to_string()]);
+        assert_eq!(
+            s.autostart(),
+            vec!["*TELNET".to_string(), "*MYSVR".to_string()]
+        );
         assert!(s.add_user(s.user[0].clone()).is_err());
         s.change_user("*mysvr", |u| u.autostart = false).unwrap();
         assert_eq!(s.autostart().len(), 1);

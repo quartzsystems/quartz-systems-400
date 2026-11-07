@@ -110,7 +110,10 @@ pub fn export(txn: &mut Txn<'_>, id: ObjectId, data: bool) -> Result<Exported> {
     }
     // A schema's SQL name, from QSYS's index.
     if tc == types::LIB
-        && let Some((name, _)) = db::sqlinf::names::list(txn, header.library, db::sqlinf::names::Space::Schema)?.into_iter().find(|(_, t)| t.id == id)
+        && let Some((name, _)) =
+            db::sqlinf::names::list(txn, header.library, db::sqlinf::names::Space::Schema)?
+                .into_iter()
+                .find(|(_, t)| t.id == id)
     {
         let mut info = db::sqlinf::SqlInfo::new(db::sqlinf::Kind::Schema);
         info.set(db::sqlinf::tag::NAME, name.into_bytes());
@@ -244,17 +247,34 @@ fn sqlinf_part(info: &db::sqlinf::SqlInfo) -> Vec<u8> {
 /// Give a restored object the SQL information it was saved with, or
 /// none when it had none, and its SQL name its place in the library's
 /// name index again.
-pub fn import_sqlinf(txn: &mut Txn<'_>, job: store::obj::JobHandle, id: ObjectId, parts: &BTreeMap<Part, Vec<u8>>, now: u64) -> Result<()> {
+pub fn import_sqlinf(
+    txn: &mut Txn<'_>,
+    job: store::obj::JobHandle,
+    id: ObjectId,
+    parts: &BTreeMap<Part, Vec<u8>>,
+    now: u64,
+) -> Result<()> {
     use db::sqlinf::{self, entry, names};
     names::forget(txn, id)?;
     let Some(b) = parts.get(&Part::SQLINF) else {
         sqlinf::clear(txn, job, id)?;
         return Ok(());
     };
-    let head = b.get(..entry::ATTR_LEN).ok_or_else(|| db::DbError::Corrupt { what: "saved SQL information".into() })?;
+    let head = b
+        .get(..entry::ATTR_LEN)
+        .ok_or_else(|| db::DbError::Corrupt {
+            what: "saved SQL information".into(),
+        })?;
     let (kind, count, len) = entry::decode_attr(head)?;
-    let body = b.get(entry::ATTR_LEN..entry::ATTR_LEN + usize::try_from(len).unwrap_or(usize::MAX)).ok_or_else(|| db::DbError::Corrupt { what: "saved SQL information".into() })?;
-    let mut info = sqlinf::SqlInfo { kind, entries: entry::decode(body, count)? };
+    let body = b
+        .get(entry::ATTR_LEN..entry::ATTR_LEN + usize::try_from(len).unwrap_or(usize::MAX))
+        .ok_or_else(|| db::DbError::Corrupt {
+            what: "saved SQL information".into(),
+        })?;
+    let mut info = sqlinf::SqlInfo {
+        kind,
+        entries: entry::decode(body, count)?,
+    };
     let (_, h) = ops::read_header(txn, id)?;
     // Routines are found by their specific names; an SQL routine's
     // program is the object itself, in the library it is restored to.
@@ -264,17 +284,34 @@ pub fn import_sqlinf(txn: &mut Txn<'_>, job: store::obj::JobHandle, id: ObjectId
             r.def.program_library.clone_from(&lib_name);
             sqlinf::routine::Routine::replace(&mut info, &r.def.specific.clone(), Some(&r))?;
         }
-        names::put(txn, h.library, names::Space::Specific, &r.def.specific, names::Target { id, system: h.name })?;
+        names::put(
+            txn,
+            h.library,
+            names::Space::Specific,
+            &r.def.specific,
+            names::Target { id, system: h.name },
+        )?;
     }
     sqlinf::save(txn, id, &info, now)?;
     if let Some(name) = info.name() {
-        names::put(txn, h.library, kind.space(), &name, names::Target { id, system: h.name })?;
+        names::put(
+            txn,
+            h.library,
+            kind.space(),
+            &name,
+            names::Target { id, system: h.name },
+        )?;
     }
     Ok(())
 }
 
 /// A restored library's schema name back in QSYS's index.
-pub fn import_schema_name(txn: &mut Txn<'_>, qsys: ObjectId, lib: ObjectId, parts: &BTreeMap<Part, Vec<u8>>) -> Result<()> {
+pub fn import_schema_name(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    lib: ObjectId,
+    parts: &BTreeMap<Part, Vec<u8>>,
+) -> Result<()> {
     use db::sqlinf::{entry, names};
     let Some(b) = parts.get(&Part::SQLINF) else {
         return Ok(());
@@ -283,11 +320,25 @@ pub fn import_schema_name(txn: &mut Txn<'_>, qsys: ObjectId, lib: ObjectId, part
         return Ok(());
     };
     let (_, count, len) = entry::decode_attr(head)?;
-    let body = b.get(entry::ATTR_LEN..entry::ATTR_LEN + usize::try_from(len).unwrap_or(usize::MAX)).unwrap_or(&[]);
-    let info = db::sqlinf::SqlInfo { kind: db::sqlinf::Kind::Schema, entries: entry::decode(body, count)? };
+    let body = b
+        .get(entry::ATTR_LEN..entry::ATTR_LEN + usize::try_from(len).unwrap_or(usize::MAX))
+        .unwrap_or(&[]);
+    let info = db::sqlinf::SqlInfo {
+        kind: db::sqlinf::Kind::Schema,
+        entries: entry::decode(body, count)?,
+    };
     if let Some(name) = info.name() {
         let (_, h) = ops::read_header(txn, lib)?;
-        names::put(txn, qsys, names::Space::Schema, &name, names::Target { id: lib, system: h.name })?;
+        names::put(
+            txn,
+            qsys,
+            names::Space::Schema,
+            &name,
+            names::Target {
+                id: lib,
+                system: h.name,
+            },
+        )?;
     }
     Ok(())
 }

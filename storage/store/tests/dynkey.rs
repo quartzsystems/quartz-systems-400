@@ -123,7 +123,11 @@ fn a_load_in_steps() {
                 let root = l.snapshot(&mut p).unwrap();
                 p.commit().unwrap();
                 let tree: BTree<DynKey, ()> = BTree::with_key_len(root, ObjectId::NONE, key_len);
-                let got: Vec<DynKey> = tree.entries(&mut p).unwrap().map(|r| r.unwrap().0).collect();
+                let got: Vec<DynKey> = tree
+                    .entries(&mut p)
+                    .unwrap()
+                    .map(|r| r.unwrap().0)
+                    .collect();
                 assert_eq!(got, keys[..=i], "{key_len}: after {i}");
                 if cut.is_none() {
                     cut = Some((root, i + 1));
@@ -132,7 +136,11 @@ fn a_load_in_steps() {
         }
         let tree = l.finish(&mut p).unwrap();
         p.commit().unwrap();
-        let got: Vec<DynKey> = tree.entries(&mut p).unwrap().map(|r| r.unwrap().0).collect();
+        let got: Vec<DynKey> = tree
+            .entries(&mut p)
+            .unwrap()
+            .map(|r| r.unwrap().0)
+            .collect();
         assert_eq!(got, keys);
         assert_eq!(
             tree.pages(&mut p).unwrap().len() as u64 + base,
@@ -140,8 +148,17 @@ fn a_load_in_steps() {
             "{key_len}: only the tree's pages are in use"
         );
         let mut q = MemPager::new(64 * 1024);
-        let bulk = BTree::<DynKey, ()>::bulk_load_with_key_len(&mut q, ObjectId::NONE, key_len, keys.iter().map(|k| (k.clone(), ()))).unwrap();
-        assert!(tree.pages(&mut p).unwrap().len() <= bulk.pages(&mut q).unwrap().len() + usize::try_from(count).unwrap() / 50 + 2);
+        let bulk = BTree::<DynKey, ()>::bulk_load_with_key_len(
+            &mut q,
+            ObjectId::NONE,
+            key_len,
+            keys.iter().map(|k| (k.clone(), ())),
+        )
+        .unwrap();
+        assert!(
+            tree.pages(&mut p).unwrap().len()
+                <= bulk.pages(&mut q).unwrap().len() + usize::try_from(count).unwrap() / 50 + 2
+        );
         // A load cut short after its first snapshot: freed from that root,
         // nothing of it stays.
         let mut p = MemPager::new(64 * 1024);

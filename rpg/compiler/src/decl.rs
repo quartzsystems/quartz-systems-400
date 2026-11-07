@@ -53,7 +53,12 @@ pub fn word_arg(k: &Keyword, i: usize) -> Option<String> {
     match &k.arg(i)?.expr {
         Some(Expr::Ref { name, steps, .. }) if steps.is_empty() => Some(name.clone()),
         Some(Expr::Special { word, .. }) => Some(word.clone()),
-        _ => k.arg(i)?.toks.first().map(rpgfront::lex::Tok::text).map(|s| s.to_ascii_uppercase()),
+        _ => k
+            .arg(i)?
+            .toks
+            .first()
+            .map(rpgfront::lex::Tok::text)
+            .map(|s| s.to_ascii_uppercase()),
     }
 }
 
@@ -116,13 +121,22 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         // Numbers, named constants and %LEN, %SIZE or %ELEM of what is
         // declared already.
         let nums: Vec<Option<i64>> = (0..3)
-            .map(|i| int_arg(k, i).or_else(|| k.arg(i).and_then(|a| a.expr.as_ref()).and_then(|e| const_int(cx, e))))
+            .map(|i| {
+                int_arg(k, i).or_else(|| {
+                    k.arg(i)
+                        .and_then(|a| a.expr.as_ref())
+                        .and_then(|e| const_int(cx, e))
+                })
+            })
             .collect();
         let n = |i: usize| nums.get(i).copied().flatten();
         // A prefix size other than 2 or 4 is taken as 2.
-        if matches!(k.name.as_str(), "VARCHAR" | "VARUCS2" | "VARGRAPH") && n(1).is_some_and(|p| p != 2 && p != 4) {
+        if matches!(k.name.as_str(), "VARCHAR" | "VARUCS2" | "VARGRAPH")
+            && n(1).is_some_and(|p| p != 2 && p != 4)
+        {
             let at = k.arg(1).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
-            cx.diags.push(Diag::new(ids::VARYING_PREFIX, 20, at).arg(k.name.clone()));
+            cx.diags
+                .push(Diag::new(ids::VARYING_PREFIX, 20, at).arg(k.name.clone()));
         }
         let ty = match k.name.as_str() {
             "CHAR" => Ty::Char(len_ok(cx, k, n(0))?),
@@ -166,7 +180,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
                     diag(cx, ids::INT_DIGITS, 20, k.at, &k.name);
                     10
                 };
-                if k.name == "INT" { Ty::Int(digits) } else { Ty::Uns(digits) }
+                if k.name == "INT" {
+                    Ty::Int(digits)
+                } else {
+                    Ty::Uns(digits)
+                }
             }
             "FLOAT" => {
                 let b = u8::try_from(n(0)?).ok()?;
@@ -231,7 +249,10 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     let mut dec: Option<u8> = cols.decimals.parse().ok();
     // A length that is not a number is blanks; a negative one is a
     // LIKE adjustment, no length.
-    let adjust = cols.to.strip_prefix('-').is_some_and(|r| !r.is_empty() && r.bytes().all(|b| b.is_ascii_digit()));
+    let adjust = cols
+        .to
+        .strip_prefix('-')
+        .is_some_and(|r| !r.is_empty() && r.bytes().all(|b| b.is_ascii_digit()));
     // With LIKE, a signed length adjusts the length.
     let like_adj = cols.to.starts_with(['+', '-']) && d.kw("LIKE").is_some();
     if !cols.to.is_empty() && to.is_none() && !adjust && !like_adj {
@@ -245,7 +266,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         }
         (None, Some(t)) => Some(t),
         // A blank length takes LEN(n).
-        (None, None) => d.kw("LEN").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok()).filter(|&v| v > 0),
+        (None, None) => d
+            .kw("LEN")
+            .and_then(|k| int_arg(k, 0))
+            .and_then(|v| u32::try_from(v).ok())
+            .filter(|&v| v > 0),
         _ => None,
     };
     // More decimal positions than digits: as many as the digits (by
@@ -254,7 +279,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         && !positional_digits_ok(&cols.ty, from.is_some(), n, dc)
     {
         cx.diags.push(Diag::new(ids::SCALE_OVER_DIGITS, 20, d.at));
-        dec = Some(if from.is_none() { u8::try_from(n).unwrap_or(0).min(dc) } else { 0 });
+        dec = Some(if from.is_none() {
+            u8::try_from(n).unwrap_or(0).min(dc)
+        } else {
+            0
+        });
     }
     let positional = from.is_some();
     let varying = d.kw("VARYING").is_some();
@@ -263,7 +292,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         match d.kw("VARYING").and_then(|k| int_arg(k, 0)) {
             Some(4) => 4,
             Some(_) => 2,
-            None => Ty::var_prefix_for(if positional { n.saturating_sub(2) / chars } else { n }),
+            None => Ty::var_prefix_for(if positional {
+                n.saturating_sub(2) / chars
+            } else {
+                n
+            }),
         }
     };
     // A data type IBM does not know is blank.
@@ -300,7 +333,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             let n = need_len(cx)?;
             if varying {
                 let p = vpfx(n, 1);
-                let n = if positional { n.saturating_sub(u32::from(p)) } else { n };
+                let n = if positional {
+                    n.saturating_sub(u32::from(p))
+                } else {
+                    n
+                };
                 Ty::VarChar(n, p)
             } else {
                 Ty::Char(n)
@@ -310,7 +347,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             let n = need_len(cx)?;
             if varying {
                 let p = vpfx(n, 2);
-                let n = if positional { n.saturating_sub(u32::from(p)) / 2 } else { n };
+                let n = if positional {
+                    n.saturating_sub(u32::from(p)) / 2
+                } else {
+                    n
+                };
                 Ty::VarUcs2(n, p)
             } else {
                 Ty::Ucs2(if positional { n / 2 } else { n })
@@ -320,7 +361,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             let n = need_len(cx)?;
             if varying {
                 let p = vpfx(n, 2);
-                let n = if positional { n.saturating_sub(u32::from(p)) / 2 } else { n };
+                let n = if positional {
+                    n.saturating_sub(u32::from(p)) / 2
+                } else {
+                    n
+                };
                 Ty::VarGraph(n, p)
             } else {
                 Ty::Graph(if positional { n / 2 } else { n })
@@ -367,7 +412,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
                 diag(cx, ids::BAD_LENGTH, 30, at, code);
                 return None;
             }
-            if code == "I" { Ty::Int(digits) } else { Ty::Uns(digits) }
+            if code == "I" {
+                Ty::Int(digits)
+            } else {
+                Ty::Uns(digits)
+            }
         }
         "F" => {
             let n = need_len(cx)?;
@@ -378,22 +427,34 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             Ty::Float(u8::try_from(n).ok()?)
         }
         "D" => {
-            let (f, s) = d.kw("DATFMT").and_then(datfmt_arg).unwrap_or((cx.datfmt, cx.datsep));
+            let (f, s) = d
+                .kw("DATFMT")
+                .and_then(datfmt_arg)
+                .unwrap_or((cx.datfmt, cx.datsep));
             Ty::Date(f, s)
         }
         "T" => {
-            let (f, s) = d.kw("TIMFMT").and_then(timfmt_arg).unwrap_or((cx.timfmt, cx.timsep));
+            let (f, s) = d
+                .kw("TIMFMT")
+                .and_then(timfmt_arg)
+                .unwrap_or((cx.timfmt, cx.timsep));
             Ty::Time(f, s)
         }
         // The length, from the positions when they are given.
-        "Z" => Ty::Timestamp(match cols.to.trim().parse::<u32>().map(|to| match cols.from.trim().parse::<u32>() {
-            Ok(from) if from > 0 && to >= from => to - from + 1,
-            _ => to,
-        }) {
-            Ok(n) if n > 20 => u8::try_from(n - 20).unwrap_or(6),
-            Ok(19) => 0,
-            _ => 6,
-        }),
+        "Z" => {
+            Ty::Timestamp(
+                match cols.to.trim().parse::<u32>().map(|to| {
+                    match cols.from.trim().parse::<u32>() {
+                        Ok(from) if from > 0 && to >= from => to - from + 1,
+                        _ => to,
+                    }
+                }) {
+                    Ok(n) if n > 20 => u8::try_from(n - 20).unwrap_or(6),
+                    Ok(19) => 0,
+                    _ => 6,
+                },
+            )
+        }
         "*" => {
             if d.kw("PROCPTR").is_some() {
                 Ty::ProcPtr
@@ -417,7 +478,11 @@ fn len_ok(cx: &mut Cx<'_>, k: &Keyword, n: Option<i64>) -> Option<u32> {
         Some(v) if v > 16_773_104 => {
             diag(cx, ids::LEN_TOO_BIG, 20, k.at, &k.name);
             // A varying field's longest leaves room for its prefix.
-            Some(if k.name == "VARCHAR" { 16_773_100 } else { 16_773_104 })
+            Some(if k.name == "VARCHAR" {
+                16_773_100
+            } else {
+                16_773_104
+            })
         }
         Some(_) => {
             let id = match k.name.as_str() {
@@ -438,7 +503,12 @@ fn len_ok(cx: &mut Cx<'_>, k: &Keyword, n: Option<i64>) -> Option<u32> {
 
 /// An integer argument written with a sign (`-1`).
 fn signed_arg(k: &Keyword, i: usize) -> Option<i64> {
-    let txt: String = k.arg(i)?.toks.iter().map(rpgfront::lex::Tok::text).collect();
+    let txt: String = k
+        .arg(i)?
+        .toks
+        .iter()
+        .map(rpgfront::lex::Tok::text)
+        .collect();
     txt.parse().ok()
 }
 
@@ -471,7 +541,9 @@ pub fn const_int(cx: &Cx<'_>, e: &Expr) -> Option<i64> {
         Expr::Bif { name, args, .. } if args.len() == 1 => {
             let a = &args[0];
             if let Expr::Lit(Lit::Char(s), _) = a {
-                return matches!(name.as_str(), "%LEN" | "%SIZE").then(|| i64::try_from(s.chars().count()).ok()).flatten();
+                return matches!(name.as_str(), "%LEN" | "%SIZE")
+                    .then(|| i64::try_from(s.chars().count()).ok())
+                    .flatten();
             }
             let id = cx.t.find(cx.scope, a.name()?)?;
             let s = &cx.t.syms[id];
@@ -480,7 +552,9 @@ pub fn const_int(cx: &Cx<'_>, e: &Expr) -> Option<i64> {
                 "%SIZE" => Some(i64::from(cx.t.size(&s.ty))),
                 "%LEN" => match &s.ty {
                     t if t.is_string() => t.str_len().map(i64::from),
-                    t if t.is_numeric() && !matches!(t, Ty::Float(_)) => t.shape().map(|(d, _)| i64::from(d)),
+                    t if t.is_numeric() && !matches!(t, Ty::Float(_)) => {
+                        t.shape().map(|(d, _)| i64::from(d))
+                    }
                     _ => None,
                 },
                 _ => None,
@@ -521,17 +595,27 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
     if let Some(Some(Expr::Ref { name, steps, .. })) = k.arg(0).map(|a| a.expr.clone())
         && let Some(rpgfront::ast::Step::Field(f)) = steps.first()
     {
-        let ds = cx.t.find(cx.scope, &name).and_then(|id| match cx.t.syms[id].kind {
-            Some(Kind::Ds(i)) if cx.t.ds[i].qualified => Some(i),
-            _ => None,
-        });
-        let sub = ds.and_then(|i| cx.t.subfield(i, f)).filter(|_| steps.len() == 1);
+        let ds =
+            cx.t.find(cx.scope, &name)
+                .and_then(|id| match cx.t.syms[id].kind {
+                    Some(Kind::Ds(i)) if cx.t.ds[i].qualified => Some(i),
+                    _ => None,
+                });
+        let sub = ds
+            .and_then(|i| cx.t.subfield(i, f))
+            .filter(|_| steps.len() == 1);
         let Some(s) = sub else {
             // The subfield, the qualified name and the definition are
             // each not defined.
             cx.diags.push(Diag::new(ids::BAD_SIMPLE_QUALIFIED, 20, at));
             diag(cx, ids::NOT_DEFINED, 30, k.at, f);
-            diag(cx, ids::NOT_DEFINED, 30, k.at, &format!("{}.{}", name.to_ascii_uppercase(), f.to_ascii_uppercase()));
+            diag(
+                cx,
+                ids::NOT_DEFINED,
+                30,
+                k.at,
+                &format!("{}.{}", name.to_ascii_uppercase(), f.to_ascii_uppercase()),
+            );
             diag(cx, ids::NOT_DEFINED, 30, k.at, &d.name.to_ascii_uppercase());
             return None;
         };
@@ -582,13 +666,19 @@ fn like_adjusted(cx: &mut Cx<'_>, d: &Def, k: &Keyword, base: Ty) -> Option<Ty> 
     // Fixed form: the adjustment is in the length columns.
     let adj = adj.or_else(|| {
         let t = d.fixed.as_ref()?.to.trim();
-        if t.starts_with(['+', '-']) { t.trim_start_matches('+').parse::<i64>().ok() } else { None }
+        if t.starts_with(['+', '-']) {
+            t.trim_start_matches('+').parse::<i64>().ok()
+        } else {
+            None
+        }
     });
     Some(match (base, adj) {
         (t, None) => t,
         (Ty::Char(n), Some(a)) => Ty::Char(adjust(n, a)?),
         (Ty::VarChar(n, p), Some(a)) => Ty::VarChar(adjust(n, a)?, p),
-        (Ty::Packed(dg, s), Some(a)) => Ty::Packed(u8::try_from(adjust(u32::from(dg), a)?).ok()?, s),
+        (Ty::Packed(dg, s), Some(a)) => {
+            Ty::Packed(u8::try_from(adjust(u32::from(dg), a)?).ok()?, s)
+        }
         (Ty::Zoned(dg, s), Some(a)) => Ty::Zoned(u8::try_from(adjust(u32::from(dg), a)?).ok()?, s),
         (Ty::Bin(dg, s), Some(a)) => Ty::Bin(u8::try_from(adjust(u32::from(dg), a)?).ok()?, s),
         (Ty::Ucs2(n), Some(a)) => Ty::Ucs2(adjust(n, a)?),
@@ -605,20 +695,86 @@ fn adjust(n: u32, a: i64) -> Option<u32> {
 
 /// Definition keywords, the free-form types among them.
 const DEF_KEYWORDS: &[&str] = &[
-    "ALIAS", "ALIGN", "ALT", "ALTSEQ", "ASCEND", "BASED", "BINDEC", "CCSID", "CHAR", "CLASS", "CONST",
-    "CTDATA", "DATE", "DATFMT", "DESCEND", "DIM", "DTAARA", "EXPORT", "EXT", "EXTFLD", "EXTFMT", "EXTNAME",
-    "EXTPGM", "EXTPROC", "FLOAT", "FROMFILE", "GRAPH", "IMPORT", "IND", "INT", "INZ", "LEN", "LIKE",
-    "LIKEDS", "LIKEFILE", "LIKEREC", "NOOPT", "NULLIND", "OBJECT", "OCCURS", "OPDESC", "OPTIONS",
-    "OVERLAY", "OVERLOAD", "PACKED", "PACKEVEN", "PERRCD", "POINTER", "POS", "PREFIX", "PROCPTR", "PSDS",
-    "QUALIFIED", "REQPROTO", "RTNPARM", "SAMEPOS", "SQLTYPE", "STATIC", "TEMPLATE", "TIME", "TIMESTAMP",
-    "TIMFMT", "TOFILE", "UCS2", "UNS", "VALUE", "VARCHAR", "VARGRAPH", "VARUCS2", "VARYING", "ZONED",
+    "ALIAS",
+    "ALIGN",
+    "ALT",
+    "ALTSEQ",
+    "ASCEND",
+    "BASED",
+    "BINDEC",
+    "CCSID",
+    "CHAR",
+    "CLASS",
+    "CONST",
+    "CTDATA",
+    "DATE",
+    "DATFMT",
+    "DESCEND",
+    "DIM",
+    "DTAARA",
+    "EXPORT",
+    "EXT",
+    "EXTFLD",
+    "EXTFMT",
+    "EXTNAME",
+    "EXTPGM",
+    "EXTPROC",
+    "FLOAT",
+    "FROMFILE",
+    "GRAPH",
+    "IMPORT",
+    "IND",
+    "INT",
+    "INZ",
+    "LEN",
+    "LIKE",
+    "LIKEDS",
+    "LIKEFILE",
+    "LIKEREC",
+    "NOOPT",
+    "NULLIND",
+    "OBJECT",
+    "OCCURS",
+    "OPDESC",
+    "OPTIONS",
+    "OVERLAY",
+    "OVERLOAD",
+    "PACKED",
+    "PACKEVEN",
+    "PERRCD",
+    "POINTER",
+    "POS",
+    "PREFIX",
+    "PROCPTR",
+    "PSDS",
+    "QUALIFIED",
+    "REQPROTO",
+    "RTNPARM",
+    "SAMEPOS",
+    "SQLTYPE",
+    "STATIC",
+    "TEMPLATE",
+    "TIME",
+    "TIMESTAMP",
+    "TIMFMT",
+    "TOFILE",
+    "UCS2",
+    "UNS",
+    "VALUE",
+    "VARCHAR",
+    "VARGRAPH",
+    "VARUCS2",
+    "VARYING",
+    "ZONED",
 ];
 
 /// The special subfields of a program status structure.
 const PSDS_SUBFIELDS: &[&str] = &["*PROC", "*STATUS", "*ROUTINE", "*PARMS"];
 
 /// The special subfields of a file information structure.
-const INFDS_SUBFIELDS: &[&str] = &["*FILE", "*STATUS", "*OPCODE", "*ROUTINE", "*RECORD", "*SIZE", "*INP", "*OUT", "*MODE"];
+const INFDS_SUBFIELDS: &[&str] = &[
+    "*FILE", "*STATUS", "*OPCODE", "*ROUTINE", "*RECORD", "*SIZE", "*INP", "*OUT", "*MODE",
+];
 
 /// Keywords not allowed after another, with IBM's identifier.
 const EXCLUSIVE: &[(&str, &str, &str)] = &[
@@ -637,18 +793,37 @@ const EXCLUSIVE: &[(&str, &str, &str)] = &[
 ];
 
 /// The values `OPTIONS` takes.
-const PARM_OPTIONS: &[&str] = &["*NOPASS", "*OMIT", "*VARSIZE", "*STRING", "*TRIM", "*RIGHTADJ", "*NULLIND", "*CONVERT", "*EXACT"];
+const PARM_OPTIONS: &[&str] = &[
+    "*NOPASS",
+    "*OMIT",
+    "*VARSIZE",
+    "*STRING",
+    "*TRIM",
+    "*RIGHTADJ",
+    "*NULLIND",
+    "*CONVERT",
+    "*EXACT",
+];
 
 /// Keywords that take a parameter.
 const NEEDS_PARM: &[&str] = &[
     "ALT", "BASED", "BINDEC", "CCSID", "CHAR", "CLASS", "DATFMT", "DIM", "EXTFMT", "EXTNAME",
     "FLOAT", "FROMFILE", "GRAPH", "INT", "LEN", "LIKE", "LIKEDS", "LIKEFILE", "LIKEREC", "OCCURS",
-    "OPTIONS", "OVERLAY", "PACKED", "PERRCD", "POS", "PREFIX", "SQLTYPE", "TIMFMT", "TOFILE", "UCS2", "UNS",
-    "VARCHAR", "VARGRAPH", "VARUCS2", "ZONED",
+    "OPTIONS", "OVERLAY", "PACKED", "PERRCD", "POS", "PREFIX", "SQLTYPE", "TIMFMT", "TOFILE",
+    "UCS2", "UNS", "VARCHAR", "VARGRAPH", "VARUCS2", "ZONED",
 ];
 
 /// Keywords a standalone field does not take.
-const NOT_FOR_FIELD: &[&str] = &["EXTFLD", "OVERLAY", "POS", "EXTNAME", "OCCURS", "PREFIX", "PSDS", "QUALIFIED"];
+const NOT_FOR_FIELD: &[&str] = &[
+    "EXTFLD",
+    "OVERLAY",
+    "POS",
+    "EXTNAME",
+    "OCCURS",
+    "PREFIX",
+    "PSDS",
+    "QUALIFIED",
+];
 
 /// A definition's keywords: each known, given once, with a parameter
 /// when it takes one, and not excluded by another; a constant takes
@@ -657,8 +832,9 @@ const NOT_FOR_FIELD: &[&str] = &["EXTFLD", "OVERLAY", "POS", "EXTNAME", "OCCURS"
 pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
     let mut seen: Vec<&str> = Vec::new();
     let mut keep = Vec::new();
-    let psds = ds.is_some_and(|p| p.kw("PSDS").is_some() || p.fixed.as_ref().is_some_and(|c| c.dstype == "S"))
-        && !cx.t.ds.iter().any(|x| x.psds);
+    let psds = ds.is_some_and(|p| {
+        p.kw("PSDS").is_some() || p.fixed.as_ref().is_some_and(|c| c.dstype == "S")
+    }) && !cx.t.ds.iter().any(|x| x.psds);
     let infds = ds.is_some_and(|p| cx.t.infds.contains(&p.name.to_ascii_uppercase()));
     for k in &d.kws {
         let n = k.name.as_str();
@@ -666,13 +842,20 @@ pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
             && (psds && PSDS_SUBFIELDS.contains(&n) || infds && INFDS_SUBFIELDS.contains(&n));
         let bad = if d.kind == DefKind::Const {
             // A second value is the constant's value twice.
-            let id = if n.starts_with(|c: char| c.is_ascii_alphabetic() || c == '*') { ids::CONST_KEYWORD } else { ids::KEYWORD_TWICE };
+            let id = if n.starts_with(|c: char| c.is_ascii_alphabetic() || c == '*') {
+                ids::CONST_KEYWORD
+            } else {
+                ids::KEYWORD_TWICE
+            };
             Some(Diag::new(id, 20, k.at))
         } else if !DEF_KEYWORDS.contains(&n) && !special {
             Some(Diag::new(ids::UNKNOWN_DEF_KEYWORD, 20, k.at).arg(n))
         } else if seen.contains(&n) {
             Some(Diag::new(ids::KEYWORD_TWICE, 20, k.at).arg(n))
-        } else if let Some((first, _, id)) = EXCLUSIVE.iter().find(|(a, b, _)| *b == n && seen.contains(a)) {
+        } else if let Some((first, _, id)) = EXCLUSIVE
+            .iter()
+            .find(|(a, b, _)| *b == n && seen.contains(a))
+        {
             Some(Diag::new(id, 20, k.at).arg(*first))
         } else if NEEDS_PARM.contains(&n) && k.args.is_empty() {
             Some(Diag::new(ids::NEEDS_PARM, 20, k.at).arg(n))
@@ -680,16 +863,30 @@ pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
             Some(Diag::new(ids::NOT_FOR_FIELD, 20, k.at).arg(n))
         } else if matches!(n, "EXPORT" | "IMPORT") && cx.scope != 0 {
             Some(Diag::new(ids::NOT_IN_PROC, 20, k.at).arg(n))
-        } else if n == "OPTIONS" && (0..k.args.len()).any(|i| word_arg(k, i).is_none_or(|w| !PARM_OPTIONS.contains(&w.as_str()))) {
+        } else if n == "OPTIONS"
+            && (0..k.args.len())
+                .any(|i| word_arg(k, i).is_none_or(|w| !PARM_OPTIONS.contains(&w.as_str())))
+        {
             let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
             cx.diags.push(Diag::new(ids::OPTIONS_PARM, 20, at));
             Some(Diag::new(ids::TEXT_SKIPPED, 0, at))
-        } else if n == "OPTIONS" && seen.contains(&"VALUE")
-            && let Some(i) = (0..k.args.len()).find(|&i| matches!(word_arg(k, i).as_deref(), Some("*OMIT" | "*VARSIZE" | "*NULLIND")))
+        } else if n == "OPTIONS"
+            && seen.contains(&"VALUE")
+            && let Some(i) = (0..k.args.len()).find(|&i| {
+                matches!(
+                    word_arg(k, i).as_deref(),
+                    Some("*OMIT" | "*VARSIZE" | "*NULLIND")
+                )
+            })
         {
             let at = k.arg(i).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
             Some(Diag::new(ids::OPTIONS_VALUE, 20, at))
-        } else if n == "EXTPROC" && matches!(k.arg(extproc_name_arg(k)).and_then(|a| a.expr.as_ref()), Some(Expr::Lit(Lit::Num(_), _))) {
+        } else if n == "EXTPROC"
+            && matches!(
+                k.arg(extproc_name_arg(k)).and_then(|a| a.expr.as_ref()),
+                Some(Expr::Lit(Lit::Num(_), _))
+            )
+        {
             let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
             Some(Diag::new(ids::EXTPROC_PARM, 20, at))
         } else if n == "EXTPGM" && word_arg(k, 0).is_some_and(|w| w.starts_with('*')) {
@@ -702,7 +899,11 @@ pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
             Some(Diag::new(ids::FIXED_ONLY_KEYWORD, 20, k.at).arg(n))
         } else if n == "CTDATA" && d.kw("DIM").is_none() {
             Some(Diag::new(ids::CTDATA_NOT_ARRAY, 20, k.at))
-        } else if matches!(n, "EXPORT" | "IMPORT") && k.arg(0).is_some() && str_arg(k, 0).is_none() && word_arg(k, 0).as_deref() != Some("*DCLCASE") {
+        } else if matches!(n, "EXPORT" | "IMPORT")
+            && k.arg(0).is_some()
+            && str_arg(k, 0).is_none()
+            && word_arg(k, 0).as_deref() != Some("*DCLCASE")
+        {
             let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
             Some(Diag::new(ids::EXPORT_PARM, 20, at).arg(n))
         } else {
@@ -713,24 +914,35 @@ pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
             // A bad external name leaves the keyword without it.
             Some(x) if x.msgid == ids::EXPORT_PARM => {
                 cx.diags.push(x);
-                keep.push(Keyword { args: Vec::new(), ..k.clone() });
+                keep.push(Keyword {
+                    args: Vec::new(),
+                    ..k.clone()
+                });
             }
             Some(x) => cx.diags.push(x),
             None => keep.push(k.clone()),
         }
     }
-    Def { kws: keep, ..d.clone() }
+    Def {
+        kws: keep,
+        ..d.clone()
+    }
 }
 
 /// Once a parameter is `OPTIONS(*NOPASS)`, every one after it is too.
 pub fn nopass_order(cx: &mut Cx<'_>, d: &Def) {
-    let nopass = |c: &Def| c.kw("OPTIONS").is_some_and(|k| (0..k.args.len()).any(|i| word_arg(k, i).as_deref() == Some("*NOPASS")));
+    let nopass = |c: &Def| {
+        c.kw("OPTIONS").is_some_and(|k| {
+            (0..k.args.len()).any(|i| word_arg(k, i).as_deref() == Some("*NOPASS"))
+        })
+    };
     let mut after = false;
     for c in &d.children {
         if nopass(c) {
             after = true;
         } else if after {
-            cx.diags.push(Diag::new(ids::NOPASS_MISSING, 20, c.at).arg(c.name.to_ascii_uppercase()));
+            cx.diags
+                .push(Diag::new(ids::NOPASS_MISSING, 20, c.at).arg(c.name.to_ascii_uppercase()));
         }
     }
 }
@@ -764,7 +976,13 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         DefKind::Const => {
             // A constant without a value is ignored.
             let Some(v) = d.value.clone() else {
-                diag(cx, ids::CONST_NO_VALUE, 30, d.at, &d.name.to_ascii_uppercase());
+                diag(
+                    cx,
+                    ids::CONST_NO_VALUE,
+                    30,
+                    d.at,
+                    &d.name.to_ascii_uppercase(),
+                );
                 diag(cx, ids::NOT_DEFINED, 30, d.at, &d.name.to_ascii_uppercase());
                 return None;
             };
@@ -780,7 +998,11 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         DefKind::Standalone => {
             let before = cx.diags.len();
             let ty = type_of(cx, d, false);
-            if ty.is_none() && cx.diags[before..].iter().all(|x| x.msgid == ids::BAD_LEN_ENTRY) {
+            if ty.is_none()
+                && cx.diags[before..]
+                    .iter()
+                    .all(|x| x.msgid == ids::BAD_LEN_ENTRY)
+            {
                 no_type(cx, d.at, &d.name.to_ascii_uppercase(), d.fixed.is_some());
             }
             let ty = ty.unwrap_or(Ty::Unknown);
@@ -798,7 +1020,11 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                 def_line: d.at.line,
                 template: d.kw("TEMPLATE").is_some(),
                 ctdata: d.kw("CTDATA").is_some(),
-                perrcd: d.kw("PERRCD").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok()).unwrap_or(1),
+                perrcd: d
+                    .kw("PERRCD")
+                    .and_then(|k| int_arg(k, 0))
+                    .and_then(|v| u32::try_from(v).ok())
+                    .unwrap_or(1),
                 table: d.name.to_ascii_uppercase().starts_with("TAB"),
                 alt: d.kw("ALT").and_then(|k| word_arg(k, 0)).unwrap_or_default(),
                 vardim: match d.kw("DIM").and_then(|k| word_arg(k, 0)).as_deref() {
@@ -806,11 +1032,24 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                     Some("*VAR") => 2,
                     _ => 0,
                 },
-                seq: if d.kw("ASCEND").is_some() { 1 } else if d.kw("DESCEND").is_some() { 2 } else { 0 },
+                seq: if d.kw("ASCEND").is_some() {
+                    1
+                } else if d.kw("DESCEND").is_some() {
+                    2
+                } else {
+                    0
+                },
                 nullind: d.kw("NULLIND").is_some(),
-                altseq_none: d.kw("ALTSEQ").and_then(|k| word_arg(k, 0)).as_deref() == Some("*NONE"),
-                fromfile: d.kw("FROMFILE").and_then(|k| word_arg(k, 0)).unwrap_or_default(),
-                tofile: d.kw("TOFILE").and_then(|k| word_arg(k, 0)).unwrap_or_default(),
+                altseq_none: d.kw("ALTSEQ").and_then(|k| word_arg(k, 0)).as_deref()
+                    == Some("*NONE"),
+                fromfile: d
+                    .kw("FROMFILE")
+                    .and_then(|k| word_arg(k, 0))
+                    .unwrap_or_default(),
+                tofile: d
+                    .kw("TOFILE")
+                    .and_then(|k| word_arg(k, 0))
+                    .unwrap_or_default(),
                 external: d
                     .kw("EXPORT")
                     .or_else(|| d.kw("IMPORT"))
@@ -821,7 +1060,8 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             let id = add(cx, s, d.at)?;
             if let Some(k) = d.kw("DTAARA") {
                 let (area, auto) = dtaara_of(k);
-                cx.t.dtaaras.insert(id, area.unwrap_or_else(|| d.name.to_ascii_uppercase()));
+                cx.t.dtaaras
+                    .insert(id, area.unwrap_or_else(|| d.name.to_ascii_uppercase()));
                 if auto {
                     cx.t.dtaara_auto.insert(id);
                 }
@@ -873,7 +1113,9 @@ fn add(cx: &mut Cx<'_>, s: Sym, at: Pos) -> Option<SymId> {
 fn dim_of(cx: &mut Cx<'_>, d: &Def) -> u32 {
     let Some(k) = d.kw("DIM") else { return 0 };
     if matches!(word_arg(k, 0).as_deref(), Some("*AUTO" | "*VAR")) {
-        return int_arg(k, 1).and_then(|n| u32::try_from(n).ok()).unwrap_or(0);
+        return int_arg(k, 1)
+            .and_then(|n| u32::try_from(n).ok())
+            .unwrap_or(0);
     }
     match int_arg(k, 0).or_else(|| signed_arg(k, 0)) {
         Some(n) if (1..=16_773_104).contains(&n) => u32::try_from(n).unwrap_or(0),
@@ -885,7 +1127,8 @@ fn dim_of(cx: &mut Cx<'_>, d: &Def) -> u32 {
             // `DIM(%ELEM(x))` and named constants are resolved here.
             if let Some(Some(Expr::Ref { name, .. })) = k.arg(0).map(|a| a.expr.clone())
                 && let Some(id) = cx.t.find(cx.scope, &name)
-                && let Some(Kind::Const(ConstVal::Expr(Expr::Lit(Lit::Num(n), _)))) = &cx.t.syms[id].kind
+                && let Some(Kind::Const(ConstVal::Expr(Expr::Lit(Lit::Num(n), _)))) =
+                    &cx.t.syms[id].kind
             {
                 return n.parse().unwrap_or(0);
             }
@@ -936,7 +1179,13 @@ fn no_type(cx: &mut Cx<'_>, at: Pos, name: &str, fixed: bool) {
 fn positional_digits_ok(ty: &str, positional: bool, len: u32, dec: u8) -> bool {
     let digits = match (ty, positional) {
         ("P" | "", true) => 2 * len - 1,
-        ("B", true) => if len == 2 { 4 } else { 9 },
+        ("B", true) => {
+            if len == 2 {
+                4
+            } else {
+                9
+            }
+        }
         ("I" | "U" | "F" | "A" | "D" | "T" | "Z" | "N" | "*" | "G" | "C" | "O", _) => return true,
         _ => len,
     };
@@ -951,7 +1200,8 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     } else {
         d.name.to_ascii_uppercase()
     };
-    let mut qualified = d.kw("QUALIFIED").is_some() || d.kw("LIKEDS").is_some() || d.kw("LIKEREC").is_some();
+    let mut qualified =
+        d.kw("QUALIFIED").is_some() || d.kw("LIKEDS").is_some() || d.kw("LIKEREC").is_some();
     let ds_index = cx.t.ds.len();
     let dim = dim_of(cx, d);
     // An array of structures must be qualified; IBM keeps its
@@ -965,12 +1215,24 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let storage = storage_of(cx, d);
     let ir = ir_name(cx, &name);
     let fixed_len: Option<u32> = d.fixed.as_ref().and_then(|c| {
-        if c.from.is_empty() { c.to.parse().ok() } else { None }
+        if c.from.is_empty() {
+            c.to.parse().ok()
+        } else {
+            None
+        }
     });
     // LEN(0) is no length.
-    let len_kw = d.kw("LEN").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok()).filter(|&v| v > 0);
+    let len_kw = d
+        .kw("LEN")
+        .and_then(|k| int_arg(k, 0))
+        .and_then(|v| u32::try_from(v).ok())
+        .filter(|&v| v > 0);
     let occurs = match d.kw("OCCURS") {
-        Some(k) => match int_arg(k, 0).or_else(|| k.arg(0).and_then(|a| a.expr.as_ref()).and_then(|e| const_int(cx, e))) {
+        Some(k) => match int_arg(k, 0).or_else(|| {
+            k.arg(0)
+                .and_then(|a| a.expr.as_ref())
+                .and_then(|e| const_int(cx, e))
+        }) {
             Some(n) if n >= 1 => u32::try_from(n).unwrap_or(0),
             _ => {
                 let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
@@ -1004,8 +1266,14 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         dtaara: d
             .kw("DTAARA")
             .map(|k| dtaara_of(k).0.unwrap_or_else(|| name.clone()))
-            .or_else(|| (d.fixed.as_ref().is_some_and(|c| c.dstype == "U")).then(|| "*LDA".to_string())),
-        ir_type: format!("{}DS_{}", cx.prefix.to_ascii_lowercase(), names::mangle(&name)),
+            .or_else(|| {
+                (d.fixed.as_ref().is_some_and(|c| c.dstype == "U")).then(|| "*LDA".to_string())
+            }),
+        ir_type: format!(
+            "{}DS_{}",
+            cx.prefix.to_ascii_lowercase(),
+            names::mangle(&name)
+        ),
         ..Ds::default()
     };
     // LIKEDS: copy the other structure's layout.
@@ -1031,7 +1299,8 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     ds.sym = id;
     if let Some(area) = &ds.dtaara {
         cx.t.dtaaras.insert(id, area.to_ascii_uppercase());
-        let auto = d.kw("DTAARA").is_some_and(|k| dtaara_of(k).1) || d.fixed.as_ref().is_some_and(|c| c.dstype == "U");
+        let auto = d.kw("DTAARA").is_some_and(|k| dtaara_of(k).1)
+            || d.fixed.as_ref().is_some_and(|c| c.dstype == "U");
         if auto {
             cx.t.dtaara_auto.insert(id);
         }
@@ -1051,7 +1320,10 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         // The other structure's initial values come along only with
         // INZ(*LIKEDS); otherwise the copy starts blank (or, with INZ,
         // each subfield at its type's default).
-        let inz_likeds = d.kw("INZ").and_then(|k| word_arg(k, 0)).is_some_and(|w| w == "*LIKEDS");
+        let inz_likeds = d
+            .kw("INZ")
+            .and_then(|k| word_arg(k, 0))
+            .is_some_and(|w| w == "*LIKEDS");
         let mut subs = Vec::new();
         for &s in &src.subfields {
             let mut c = cx.t.syms[s].clone();
@@ -1076,12 +1348,18 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     // EXTNAME and LIKEREC: the format's fields.
     if let Some((subs, len)) = crate::extfiles::ds_subfields(cx, d) {
         // INZ(*EXTDFT): each subfield starts at its DFT value.
-        let extdft = d.kw("INZ").and_then(|k| word_arg(k, 0)).is_some_and(|w| w == "*EXTDFT");
+        let extdft = d
+            .kw("INZ")
+            .and_then(|k| word_arg(k, 0))
+            .is_some_and(|w| w == "*EXTDFT");
         // An INZ on a subfield the structure names (EXTFLD has renamed it).
-        let mut child_inz: std::collections::HashMap<usize, Option<Expr>> = std::collections::HashMap::new();
+        let mut child_inz: std::collections::HashMap<usize, Option<Expr>> =
+            std::collections::HashMap::new();
         for c in &d.children {
             let cname = c.name.to_ascii_uppercase();
-            let Some(i) = subs.iter().position(|s| s.0 == cname) else { continue };
+            let Some(i) = subs.iter().position(|s| s.0 == cname) else {
+                continue;
+            };
             if let Some(k) = c.kw("INZ") {
                 child_inz.insert(i, k.arg(0).and_then(|a| a.expr.clone()));
             }
@@ -1110,7 +1388,9 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             } else {
                 match cx.t.find_in(cx.scope, &n) {
                     // A file's field of the same name is this subfield.
-                    Some(old) if cx.t.syms[old].implicit && cx.t.syms[old].kind == Some(Kind::Field) => {
+                    Some(old)
+                        if cx.t.syms[old].implicit && cx.t.syms[old].kind == Some(Kind::Field) =>
+                    {
                         cx.t.syms[old].kind = None;
                         let sid = cx.t.add_hidden(sub);
                         cx.t.rebind(cx.scope, &n, sid);
@@ -1137,7 +1417,8 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         let clipped;
         let c = match (len_kw.or(fixed_len), &c.fixed) {
             (Some(given), Some(f))
-                if f.from.parse::<u32>().is_ok() && f.to.parse::<u32>().is_ok_and(|t| t > given) =>
+                if f.from.parse::<u32>().is_ok()
+                    && f.to.parse::<u32>().is_ok_and(|t| t > given) =>
             {
                 cx.diags.push(Diag::new(ids::TO_PAST_DS, 20, c.at));
                 let mut n = c.clone();
@@ -1152,9 +1433,15 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         let cname = c.name.to_ascii_uppercase();
         // A subfield named twice in its structure is ignored, but for
         // the room it takes.
-        let twice = !cname.is_empty() && cname != "*N" && cx.t.ds[ds_index].subfields.iter().any(|&s| cx.t.syms[s].name == cname);
+        let twice = !cname.is_empty()
+            && cname != "*N"
+            && cx.t.ds[ds_index]
+                .subfields
+                .iter()
+                .any(|&s| cx.t.syms[s].name == cname);
         if twice {
-            cx.diags.push(Diag::new(ids::SUBFIELD_TWICE, 20, c.at).arg(cname.clone()));
+            cx.diags
+                .push(Diag::new(ids::SUBFIELD_TWICE, 20, c.at).arg(cname.clone()));
         }
         let special = crate::extfiles::special_subfield(c, is_psds);
         let ty = match &special {
@@ -1217,18 +1504,21 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             .as_ref()
             .and_then(|f| f.from.parse::<u32>().ok())
             .or_else(|| special.as_ref().map(|(_, p)| *p));
-        let pos_kw = c.kw("POS").and_then(|k| {
-            match int_arg(k, 0).or_else(|| signed_arg(k, 0)) {
+        let pos_kw = c
+            .kw("POS")
+            .and_then(|k| match int_arg(k, 0).or_else(|| signed_arg(k, 0)) {
                 Some(v) if (1..=16_773_104).contains(&v) => u32::try_from(v).ok(),
                 _ => {
                     let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
                     cx.diags.push(Diag::new(ids::POS_RANGE, 20, at));
                     None
                 }
-            }
-        });
+            });
         let overlay = c.kw("OVERLAY").cloned();
-        let samepos = c.kw("SAMEPOS").and_then(|k| word_arg(k, 0)).and_then(|n| cx.t.subfield(ds_index, &n));
+        let samepos = c
+            .kw("SAMEPOS")
+            .and_then(|k| word_arg(k, 0))
+            .and_then(|n| cx.t.subfield(ds_index, &n));
         let offset = if let Some((_, o)) = special {
             o
         } else if let Some(s) = samepos {
@@ -1248,7 +1538,13 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             if target == name && c.fixed.is_none() {
                 cx.diags.push(Diag::new(ids::OVERLAY_SELF, 20, arg_at));
             }
-            match k.arg(1).map(|a| a.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>().to_ascii_uppercase()) {
+            match k.arg(1).map(|a| {
+                a.toks
+                    .iter()
+                    .map(rpgfront::lex::Tok::text)
+                    .collect::<String>()
+                    .to_ascii_uppercase()
+            }) {
                 Some(p) if p == "*NEXT" => {
                     let key = base_sym.unwrap_or(id);
                     let at = *overlay_next.get(&key).unwrap_or(&base_off);
@@ -1277,10 +1573,16 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         } else {
             // ALIGN: integers and floats on a multiple of their size.
             let align = match &ty {
-                Ty::Int(_) | Ty::Uns(_) | Ty::Float(_) if d.kw("ALIGN").is_some() => cx.t.size(&ty).max(1),
+                Ty::Int(_) | Ty::Uns(_) | Ty::Float(_) if d.kw("ALIGN").is_some() => {
+                    cx.t.size(&ty).max(1)
+                }
                 _ => 1,
             };
-            let at = if is_ptr { next.div_ceil(16) * 16 } else { next.div_ceil(align) * align };
+            let at = if is_ptr {
+                next.div_ceil(16) * 16
+            } else {
+                next.div_ceil(align) * align
+            };
             next = at + size;
             at
         };
@@ -1306,7 +1608,11 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         let (sdim, stride, ovl_root) = match base {
             Some(b) => {
                 let bs = &cx.t.syms[b];
-                let stride = if bs.stride > 0 { bs.stride } else { cx.t.size(&bs.ty) };
+                let stride = if bs.stride > 0 {
+                    bs.stride
+                } else {
+                    cx.t.size(&bs.ty)
+                };
                 (bs.dim, stride, Some(bs.ovl_root.unwrap_or(b)))
             }
             None => (sdim, 0, None),
@@ -1323,7 +1629,13 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             storage: Storage::InDs,
             parent: Some(id),
             offset,
-            seq: if c.kw("ASCEND").is_some() { 1 } else if c.kw("DESCEND").is_some() { 2 } else { 0 },
+            seq: if c.kw("ASCEND").is_some() {
+                1
+            } else if c.kw("DESCEND").is_some() {
+                2
+            } else {
+                0
+            },
             inz: c.kw("INZ").map(|k| k.arg(0).and_then(|a| a.expr.clone())),
             def_line: c.at.line,
             ..Sym::default()
@@ -1349,14 +1661,22 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             let sym = &cx.t.syms[s];
             let size = cx.t.size(&sym.ty) * sym.dim.max(1);
             if sym.offset + size > given {
-                let at = Pos { line: sym.def_line, col: 0 };
-                cx.diags.push(Diag::new(ids::PAST_DS_LEN, 30, at).arg(sym.name.clone()));
+                let at = Pos {
+                    line: sym.def_line,
+                    col: 0,
+                };
+                cx.diags
+                    .push(Diag::new(ids::PAST_DS_LEN, 30, at).arg(sym.name.clone()));
             }
         }
     }
     // A given length stands even when the subfields pass it.
     let len = len_kw.or(fixed_len).unwrap_or(end).max(1);
-    if d.children.is_empty() && d.kw("EXTNAME").is_none() && d.kw("LIKEREC").is_none() && d.fixed.as_ref().is_none_or(|c| c.ext != "E") {
+    if d.children.is_empty()
+        && d.kw("EXTNAME").is_none()
+        && d.kw("LIKEREC").is_none()
+        && d.fixed.as_ref().is_none_or(|c| c.ext != "E")
+    {
         diag(cx, ids::DS_NO_SUBFIELDS, 0, d.at, &name);
     }
     cx.t.ds[ds_index].len = len;
@@ -1376,9 +1696,11 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
     });
     let mut p = Proto {
         name: d.name.to_ascii_uppercase(),
-        extpgm: d
-            .kw("EXTPGM")
-            .map(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase())),
+        extpgm: d.kw("EXTPGM").map(|k| {
+            str_arg(k, 0)
+                .or_else(|| word_arg(k, 0))
+                .unwrap_or_else(|| d.name.to_ascii_uppercase())
+        }),
         extproc: d.kw("EXTPROC").map(|k| {
             let i = extproc_name_arg(k);
             // A qualified procedure pointer: `DS.SUBFIELD`.
@@ -1390,7 +1712,9 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
             match word_arg(k, i).as_deref() {
                 // The name as the source writes it.
                 Some("*DCLCASE") => d.name.clone(),
-                _ => str_arg(k, i).or_else(|| word_arg(k, i)).unwrap_or_else(|| d.name.to_ascii_uppercase()),
+                _ => str_arg(k, i)
+                    .or_else(|| word_arg(k, i))
+                    .unwrap_or_else(|| d.name.to_ascii_uppercase()),
             }
         }),
         extproc_word: d.kw("EXTPROC").is_some_and(|k| {
@@ -1429,7 +1753,10 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
             varsize: opts.iter().any(|o| o == "*VARSIZE"),
             string: opts.iter().any(|o| o == "*STRING"),
             trim: opts.iter().any(|o| o == "*TRIM"),
-            likefile: c.kw("LIKEFILE").and_then(|k| word_arg(k, 0)).map(|n| n.to_ascii_uppercase()),
+            likefile: c
+                .kw("LIKEFILE")
+                .and_then(|k| word_arg(k, 0))
+                .map(|n| n.to_ascii_uppercase()),
         });
     }
     p

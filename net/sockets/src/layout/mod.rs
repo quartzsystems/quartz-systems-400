@@ -118,7 +118,11 @@ pub const SOCKADDR_UN_43: Layout = Layout {
 pub const SOCKADDR_UN_44: Layout = Layout {
     name: "sockaddr_un (BSD 4.4)",
     size: 128,
-    fields: &[f("sun_len", 0, 1), f("sun_family", 1, 1), f("sun_path", 2, 126)],
+    fields: &[
+        f("sun_len", 0, 1),
+        f("sun_family", 1, 1),
+        f("sun_path", 2, 126),
+    ],
 };
 
 /// `struct sockaddr_storage`.
@@ -156,7 +160,11 @@ pub const MSGHDR: Layout = Layout {
 pub const CMSGHDR: Layout = Layout {
     name: "cmsghdr",
     size: 12,
-    fields: &[f("cmsg_len", 0, 4), f("cmsg_level", 4, 4), f("cmsg_type", 8, 4)],
+    fields: &[
+        f("cmsg_len", 0, 4),
+        f("cmsg_level", 4, 4),
+        f("cmsg_type", 8, 4),
+    ],
 };
 
 /// `struct linger`.

@@ -16,7 +16,11 @@ pub fn civil(days: i64) -> (i64, u32, u32) {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = yoe + era * 400 + i64::from(m <= 2);
-    (y, u32::try_from(m).unwrap_or(1), u32::try_from(d).unwrap_or(1))
+    (
+        y,
+        u32::try_from(m).unwrap_or(1),
+        u32::try_from(d).unwrap_or(1),
+    )
 }
 
 /// Days since 1970-01-01 of a date.
@@ -52,7 +56,10 @@ pub fn stamp(secs: u64, offset: i64, date: &str, ampm: bool) -> (String, String)
     let (h, mi, s) = (r / 3600, r % 3600 / 60, r % 60);
     let time = if ampm {
         let h12 = if h % 12 == 0 { 12 } else { h % 12 };
-        format!("{h12:02}:{mi:02}:{s:02} {}", if h < 12 { "AM" } else { "PM" })
+        format!(
+            "{h12:02}:{mi:02}:{s:02} {}",
+            if h < 12 { "AM" } else { "PM" }
+        )
     } else {
         format!("{h:02}:{mi:02}:{s:02}")
     };
@@ -66,9 +73,18 @@ mod tests {
     #[test]
     fn formats() {
         let t = secs(2026, 10, 29, 17, 5, 0);
-        assert_eq!(stamp(t, -4 * 3600, "MM/DD/YY", false), ("10/29/26".into(), "13:05:00".into()));
-        assert_eq!(stamp(t, 0, "YYYY-MM-DD", true), ("2026-10-29".into(), "05:05:00 PM".into()));
+        assert_eq!(
+            stamp(t, -4 * 3600, "MM/DD/YY", false),
+            ("10/29/26".into(), "13:05:00".into())
+        );
+        assert_eq!(
+            stamp(t, 0, "YYYY-MM-DD", true),
+            ("2026-10-29".into(), "05:05:00 PM".into())
+        );
         assert_eq!(stamp(t, 0, "DD.MM.YYYY", false).0, "29.10.2026");
-        assert_eq!(stamp(secs(2026, 1, 1, 0, 30, 0), 0, "DD/MM/YY", true).1, "12:30:00 AM");
+        assert_eq!(
+            stamp(secs(2026, 1, 1, 0, 30, 0), 0, "DD/MM/YY", true).1,
+            "12:30:00 AM"
+        );
     }
 }

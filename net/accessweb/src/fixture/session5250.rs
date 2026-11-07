@@ -57,13 +57,37 @@ pub fn pictures() -> Vec<(&'static str, View, usize)> {
     let mut wait = signon();
     wait.keyboard = Keyboard::System;
     vec![
-        ("5250-24x80.png", view(wrkactjob(24, 80), true, true, Scheme::Console), 1),
-        ("5250-24x80-x2.png", view(wrkactjob(24, 80), true, true, Scheme::Console), 2),
-        ("5250-24x80-white.png", view(wrkactjob(24, 80), true, true, Scheme::BlackOnWhite), 1),
-        ("5250-27x132.png", view(wrkactjob(27, 132), true, true, Scheme::Console), 1),
-        ("5250-signon.png", view(signon(), true, true, Scheme::Console), 1),
+        (
+            "5250-24x80.png",
+            view(wrkactjob(24, 80), true, true, Scheme::Console),
+            1,
+        ),
+        (
+            "5250-24x80-x2.png",
+            view(wrkactjob(24, 80), true, true, Scheme::Console),
+            2,
+        ),
+        (
+            "5250-24x80-white.png",
+            view(wrkactjob(24, 80), true, true, Scheme::BlackOnWhite),
+            1,
+        ),
+        (
+            "5250-27x132.png",
+            view(wrkactjob(27, 132), true, true, Scheme::Console),
+            1,
+        ),
+        (
+            "5250-signon.png",
+            view(signon(), true, true, Scheme::Console),
+            1,
+        ),
         ("5250-wait.png", view(wait, true, true, Scheme::Console), 1),
-        ("5250-24x80-off.png", view(signon(), false, true, Scheme::Console), 1),
+        (
+            "5250-24x80-off.png",
+            view(signon(), false, true, Scheme::Console),
+            1,
+        ),
     ]
 }
 
@@ -82,13 +106,25 @@ fn saved(
     last_used: u64,
 ) -> Saved {
     let mut f = SessionFile::new(system);
-    f.system.host = if system == "QSHQ400" { "10.0.10.20".into() } else { "10.0.30.20".into() };
+    f.system.host = if system == "QSHQ400" {
+        "10.0.10.20".into()
+    } else {
+        "10.0.30.20".into()
+    };
     f.system.tls = tls;
     f.system.telnet_port = if tls { 992 } else { 23 };
     f.session.title = title.into();
-    f.session.screen_size = if wide { ScreenSize::S27x132 } else { ScreenSize::S24x80 };
+    f.session.screen_size = if wide {
+        ScreenSize::S27x132
+    } else {
+        ScreenSize::S24x80
+    };
     f.session.device_name = device.into();
-    f.session.colour_map = if bw { ColorMap::BlackOnWhite } else { ColorMap::Console };
+    f.session.colour_map = if bw {
+        ColorMap::BlackOnWhite
+    } else {
+        ColorMap::Console
+    };
     f.session.keypad_visible = keypad;
     f.session.auto_connect = auto.0;
     f.session.auto_sign_on = auto.1;
@@ -118,12 +154,18 @@ pub fn macros() -> Vec<SavedMacro> {
             shared: String::new(),
         },
         SavedMacro {
-            file: macro_file("WRKACTJOB-HTTP", "wait  screen \"===>\" at 22,7\ntype  \"WRKACTJOB SBS(QHTTPSVR)\"\nkey   Enter\n"),
+            file: macro_file(
+                "WRKACTJOB-HTTP",
+                "wait  screen \"===>\" at 22,7\ntype  \"WRKACTJOB SBS(QHTTPSVR)\"\nkey   Enter\n",
+            ),
             recorded: local(10, 22, 14, 30),
             shared: "WAREHOUSE".into(),
         },
         SavedMacro {
-            file: macro_file("DSPMSG-QSYSOPR", "wait  screen \"===>\" at 22,7\ntype  \"DSPMSG QSYSOPR\"\n"),
+            file: macro_file(
+                "DSPMSG-QSYSOPR",
+                "wait  screen \"===>\" at 22,7\ntype  \"DSPMSG QSYSOPR\"\n",
+            ),
             recorded: local(10, 22, 14, 33),
             shared: String::new(),
         },
@@ -133,10 +175,54 @@ pub fn macros() -> Vec<SavedMacro> {
 /// The prototype's saved sessions.
 pub fn sessions() -> Vec<Saved> {
     let mut v = vec![
-        saved(1, "QSHQ400 operator", "QSHQ400", false, "QPADEV0003", true, false, true, (true, true), local(10, 29, 13, 10)),
-        saved(2, "QSHQ400 default", "QSHQ400", false, "", true, true, false, (false, false), local(10, 22, 9, 41)),
-        saved(3, "QSHQ400 wide", "QSHQ400", true, "QPADEV0004", true, false, false, (true, true), local(10, 14, 18, 40)),
-        saved(4, "QSBR1400 branch", "QSBR1400", false, "", false, false, true, (false, false), local(10, 15, 16, 2)),
+        saved(
+            1,
+            "QSHQ400 operator",
+            "QSHQ400",
+            false,
+            "QPADEV0003",
+            true,
+            false,
+            true,
+            (true, true),
+            local(10, 29, 13, 10),
+        ),
+        saved(
+            2,
+            "QSHQ400 default",
+            "QSHQ400",
+            false,
+            "",
+            true,
+            true,
+            false,
+            (false, false),
+            local(10, 22, 9, 41),
+        ),
+        saved(
+            3,
+            "QSHQ400 wide",
+            "QSHQ400",
+            true,
+            "QPADEV0004",
+            true,
+            false,
+            false,
+            (true, true),
+            local(10, 14, 18, 40),
+        ),
+        saved(
+            4,
+            "QSBR1400 branch",
+            "QSBR1400",
+            false,
+            "",
+            false,
+            false,
+            true,
+            (false, false),
+            local(10, 15, 16, 2),
+        ),
     ];
     v[0].macros = macros();
     v
@@ -154,10 +240,36 @@ fn lives() -> BTreeMap<(String, u32), Live> {
         message,
         version: 1,
     };
-    m.insert((user.clone(), 1), live(view(wrkactjob(24, 80), true, true, Scheme::Console), State::Connected, None));
-    let closed = Message::new(Kind::Error, "QAD1005", "Session to QSHQ400 ended by the system.").with_data(&["QSHQ400"]);
-    m.insert((user.clone(), 2), live(view(signon(), false, true, Scheme::Console), State::Disconnected, Some(closed)));
-    m.insert((user, 3), live(view(wrkactjob(27, 132), true, true, Scheme::Console), State::Connected, None));
+    m.insert(
+        (user.clone(), 1),
+        live(
+            view(wrkactjob(24, 80), true, true, Scheme::Console),
+            State::Connected,
+            None,
+        ),
+    );
+    let closed = Message::new(
+        Kind::Error,
+        "QAD1005",
+        "Session to QSHQ400 ended by the system.",
+    )
+    .with_data(&["QSHQ400"]);
+    m.insert(
+        (user.clone(), 2),
+        live(
+            view(signon(), false, true, Scheme::Console),
+            State::Disconnected,
+            Some(closed),
+        ),
+    );
+    m.insert(
+        (user, 3),
+        live(
+            view(wrkactjob(27, 132), true, true, Scheme::Console),
+            State::Connected,
+            None,
+        ),
+    );
     m
 }
 
@@ -176,10 +288,15 @@ pub struct Fixture5250 {
 
 impl Default for Fixture5250 {
     fn default() -> Self {
-        let laptop = KeymapFile::parse(include_str!("../s5250/files/testdata/operations.qkm")).map(|f| f.map).unwrap_or_default();
+        let laptop = KeymapFile::parse(include_str!("../s5250/files/testdata/operations.qkm"))
+            .map(|f| f.map)
+            .unwrap_or_default();
         Self {
             saved: Mutex::new(BTreeMap::from([(super::USER.to_string(), sessions())])),
-            keymaps: Mutex::new(BTreeMap::from([(super::USER.to_string(), vec![("CWELLMAN-laptop".to_string(), laptop)])])),
+            keymaps: Mutex::new(BTreeMap::from([(
+                super::USER.to_string(),
+                vec![("CWELLMAN-laptop".to_string(), laptop)],
+            )])),
             live: Mutex::new(lives()),
             inputs: Mutex::new(Vec::new()),
             changed: Condvar::new(),
@@ -202,7 +319,12 @@ impl Fixture5250 {
 
 impl Session5250 for Fixture5250 {
     fn sessions(&self, user: &str) -> Vec<Saved> {
-        self.saved.lock().expect("saved").get(user).cloned().unwrap_or_default()
+        self.saved
+            .lock()
+            .expect("saved")
+            .get(user)
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn put(&self, user: &str, mut saved: Saved) -> Result<u32, Message> {
@@ -224,12 +346,20 @@ impl Session5250 for Fixture5250 {
         if let Some(v) = m.get_mut(user) {
             v.retain(|s| s.id != id);
         }
-        self.live.lock().expect("live").remove(&(user.to_string(), id));
+        self.live
+            .lock()
+            .expect("live")
+            .remove(&(user.to_string(), id));
         Ok(())
     }
 
     fn keymaps(&self, user: &str) -> Vec<(String, KeyMap)> {
-        self.keymaps.lock().expect("keymaps").get(user).cloned().unwrap_or_default()
+        self.keymaps
+            .lock()
+            .expect("keymaps")
+            .get(user)
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn put_keymap(&self, user: &str, name: &str, map: &KeyMap) -> Result<(), Message> {
@@ -247,16 +377,32 @@ impl Session5250 for Fixture5250 {
             message: message.into(),
         };
         let host = format!("{}.quartz.example", system.to_ascii_lowercase());
-        let addr = if system == "QSHQ400" { "10.0.10.20" } else { "10.0.30.20" };
+        let addr = if system == "QSHQ400" {
+            "10.0.10.20"
+        } else {
+            "10.0.30.20"
+        };
         vec![
             c("Name lookup", Some(true), &format!("{host} = {addr}")),
             c("Telnet port 23", Some(true), ""),
-            c("Telnet TLS port 992: handshake and certificate", Some(true), "*.quartz.example, Quartz Internal CA, expires 01/02/28"),
+            c(
+                "Telnet TLS port 992: handshake and certificate",
+                Some(true),
+                "*.quartz.example, Quartz Internal CA, expires 01/02/28",
+            ),
             c("QAP port 2320", Some(true), ""),
-            c("TLS 1.3 handshake and certificate (QS400_ACCESS_SERVER)", Some(true), ""),
+            c(
+                "TLS 1.3 handshake and certificate (QS400_ACCESS_SERVER)",
+                Some(true),
+                "",
+            ),
             c("QAP Hello", Some(true), "QAP version 6"),
             if sign_on {
-                c("Test sign-on", Some(true), &format!("Signed on as {user} and off again"))
+                c(
+                    "Test sign-on",
+                    Some(true),
+                    &format!("Signed on as {user} and off again"),
+                )
             } else {
                 c("Test sign-on", None, "Not requested")
             },
@@ -265,7 +411,11 @@ impl Session5250 for Fixture5250 {
 
     fn connect(&self, user: &str, saved: &Saved) -> Result<(), Message> {
         let (rows, cols) = saved.file.session.screen_size.rows_cols();
-        let mut screen = if rows == 24 { signon() } else { Screen::blank(rows, cols) };
+        let mut screen = if rows == 24 {
+            signon()
+        } else {
+            Screen::blank(rows, cols)
+        };
         if saved.file.session.auto_sign_on && saved.file.system.tls {
             screen = wrkactjob(rows, cols);
         }
@@ -274,7 +424,10 @@ impl Session5250 for Fixture5250 {
             ColorMap::BlackOnWhite => Scheme::BlackOnWhite,
         };
         let mut m = self.live.lock().expect("live");
-        let version = m.get(&(user.to_string(), saved.id)).map_or(0, |l| l.version) + 1;
+        let version = m
+            .get(&(user.to_string(), saved.id))
+            .map_or(0, |l| l.version)
+            + 1;
         m.insert(
             (user.to_string(), saved.id),
             Live {
@@ -295,7 +448,11 @@ impl Session5250 for Fixture5250 {
     }
 
     fn live(&self, user: &str, id: u32) -> Option<Live> {
-        self.live.lock().expect("live").get(&(user.to_string(), id)).cloned()
+        self.live
+            .lock()
+            .expect("live")
+            .get(&(user.to_string(), id))
+            .cloned()
     }
 
     fn wait(&self, user: &str, id: u32, version: u64, timeout: Duration) -> Option<Live> {
@@ -303,20 +460,33 @@ impl Session5250 for Fixture5250 {
         let m = self.live.lock().expect("live");
         let (m, _) = self
             .changed
-            .wait_timeout_while(m, timeout, |m| m.get(&key).is_some_and(|l| l.version <= version))
+            .wait_timeout_while(m, timeout, |m| {
+                m.get(&key).is_some_and(|l| l.version <= version)
+            })
             .expect("live");
         m.get(&key).cloned()
     }
 
     #[allow(clippy::many_single_char_names)]
     fn input(&self, user: &str, id: u32, input: Input) -> Result<(), Message> {
-        self.inputs.lock().expect("inputs").push((user.to_string(), id, input.clone()));
+        self.inputs
+            .lock()
+            .expect("inputs")
+            .push((user.to_string(), id, input.clone()));
         let mut m = self.live.lock().expect("live");
         let Some(l) = m.get_mut(&(user.to_string(), id)) else {
-            return Err(Message::new(Kind::Error, "QAD1006", "Session to QSHQ400 disconnected.").with_data(&["QSHQ400"]));
+            return Err(
+                Message::new(Kind::Error, "QAD1006", "Session to QSHQ400 disconnected.")
+                    .with_data(&["QSHQ400"]),
+            );
         };
         if l.state == State::Disconnected {
-            return Err(Message::new(Kind::Error, "QAD1006", &format!("Session to {} disconnected.", l.view.system)).with_data(&[&l.view.system]));
+            return Err(Message::new(
+                Kind::Error,
+                "QAD1006",
+                &format!("Session to {} disconnected.", l.view.system),
+            )
+            .with_data(&[&l.view.system]));
         }
         let s = &mut l.view.screen;
         match input {
@@ -327,10 +497,16 @@ impl Session5250 for Fixture5250 {
                     if let Some(cell) = s.cells.get_mut(i) {
                         *cell = Cell { ch, ..*cell };
                     }
-                    s.cursor = if c < s.cols { (r, c + 1) } else { (r % s.rows + 1, 1) };
+                    s.cursor = if c < s.cols {
+                        (r, c + 1)
+                    } else {
+                        (r % s.rows + 1, 1)
+                    };
                 }
             }
-            Input::Cursor(r, c) if r >= 1 && c >= 1 && r <= s.rows && c <= s.cols => s.cursor = (r, c),
+            Input::Cursor(r, c) if r >= 1 && c >= 1 && r <= s.rows && c <= s.cols => {
+                s.cursor = (r, c)
+            }
             Input::Cursor(..) | Input::Key(_) => {}
         }
         l.version += 1;
@@ -343,7 +519,14 @@ impl Session5250 for Fixture5250 {
         if let Some(l) = m.get_mut(&(user.to_string(), id)) {
             l.state = State::Disconnected;
             l.view.connected = false;
-            l.message = Some(Message::new(Kind::Info, "QAD1006", &format!("Session to {} disconnected.", l.view.system)).with_data(&[&l.view.system]));
+            l.message = Some(
+                Message::new(
+                    Kind::Info,
+                    "QAD1006",
+                    &format!("Session to {} disconnected.", l.view.system),
+                )
+                .with_data(&[&l.view.system]),
+            );
             l.version += 1;
         }
         self.changed.notify_all();

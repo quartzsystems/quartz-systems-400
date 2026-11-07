@@ -51,7 +51,8 @@ fn over_a_connection(h: &Arc<dyn Handler>, peer: &Peer) {
             Ok(())
         }
     }
-    let two = b"GET /boom HTTP/1.1\r\nHost: x\r\n\r\nGET /fine HTTP/1.1\r\nHost: x\r\n\r\n".to_vec();
+    let two =
+        b"GET /boom HTTP/1.1\r\nHost: x\r\n\r\nGET /fine HTTP/1.1\r\nHost: x\r\n\r\n".to_vec();
     let mut c = Conn {
         input: std::io::Cursor::new(two),
         out: Vec::new(),
@@ -60,7 +61,10 @@ fn over_a_connection(h: &Arc<dyn Handler>, peer: &Peer) {
     let out = String::from_utf8_lossy(&c.out);
     assert!(out.starts_with("HTTP/1.1 500"), "{out}");
     assert!(out.contains("could not be shown"), "{out}");
-    assert!(!out.contains("/fine"), "the connection was not closed: {out}");
+    assert!(
+        !out.contains("/fine"),
+        "the connection was not closed: {out}"
+    );
 }
 
 fn main() {

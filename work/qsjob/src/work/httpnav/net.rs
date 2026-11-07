@@ -60,16 +60,30 @@ fn config(m: &Main) -> TcpConfig {
         c.host = h.host_name;
         c.domain = h.dmn_name;
         c.search = h.dmn_sch_list.join(" ");
-        c.priority = if h.host_sch_pty_local { "*LOCAL" } else { "*REMOTE" }.into();
+        c.priority = if h.host_sch_pty_local {
+            "*LOCAL"
+        } else {
+            "*REMOTE"
+        }
+        .into();
         c.dns = h.dns.iter().map(ToString::to_string).collect();
     }
-    if let TcpReply::Lines { lines } = tcp(m, TcpOp::Report { what: "attr".into() }) {
+    if let TcpReply::Lines { lines } = tcp(
+        m,
+        TcpOp::Report {
+            what: "attr".into(),
+        },
+    ) {
         c.forwarding = forwarding(&lines);
     }
     let v6 = snap.ifcs.iter().filter(|i| i.addr.contains(':')).count();
     let active = snap.tcp == "Active";
     c.ipv6 = (v6 > 0).then(|| {
-        let up = snap.ifcs.iter().filter(|i| i.addr.contains(':') && i.status == "Active").count();
+        let up = snap
+            .ifcs
+            .iter()
+            .filter(|i| i.addr.contains(':') && i.status == "Active")
+            .count();
         u32::try_from(up).unwrap_or(0)
     });
     if active
@@ -94,7 +108,8 @@ fn interfaces(m: &Main) -> Vec<Interface> {
         .into_iter()
         .map(|i| {
             let v6 = i.addr.contains(':');
-            let generated = i.line == "*LOOPBACK" || i.addr.to_ascii_lowercase().starts_with("fe80");
+            let generated =
+                i.line == "*LOOPBACK" || i.addr.to_ascii_lowercase().starts_with("fe80");
             Interface {
                 address: if v6 && i.prefix > 0 && !i.addr.contains('/') {
                     format!("{}/{}", i.addr, i.prefix)
@@ -105,7 +120,11 @@ fn interfaces(m: &Main) -> Vec<Interface> {
                 active: i.status == "Active",
                 autostart: i.autostart,
                 mtu: i.mtu.parse().unwrap_or(0),
-                alias: if i.alias == "*NONE" { String::new() } else { i.alias },
+                alias: if i.alias == "*NONE" {
+                    String::new()
+                } else {
+                    i.alias
+                },
                 line: i.line,
                 line_type: i.line_type,
                 generated,
@@ -180,7 +199,10 @@ pub fn servers(m: &Main) -> Vec<Server> {
                 registry::of_job(&j.name)
                     .is_some_and(|(o, js)| o.special == s.special && js.kind == JobKind::Listener)
             });
-            let autostart = list.iter().find(|i| i.server == s.special).is_some_and(autostarts);
+            let autostart = list
+                .iter()
+                .find(|i| i.server == s.special)
+                .is_some_and(autostarts);
             Server {
                 name: s.special.to_string(),
                 text: text(s),

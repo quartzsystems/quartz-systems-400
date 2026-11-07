@@ -140,7 +140,17 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
     let ctx = Ctx::new(cli.verbose)?;
-    if !cfg!(target_os = "linux") && !matches!(cli.command, Command::Doctor | Command::Deny | Command::Notices { .. } | Command::Fuzz { .. } | Command::Kc | Command::Bench { .. }) {
+    if !cfg!(target_os = "linux")
+        && !matches!(
+            cli.command,
+            Command::Doctor
+                | Command::Deny
+                | Command::Notices { .. }
+                | Command::Fuzz { .. }
+                | Command::Kc
+                | Command::Bench { .. }
+        )
+    {
         tracing::warn!("the pipeline needs a Linux host; run this from WSL");
     }
 
@@ -184,7 +194,9 @@ fn main() -> Result<()> {
         Command::Notices { check } => {
             notices::notices(&ctx, check)?;
         }
-        Command::Fuzz { target, secs, jobs } => host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?,
+        Command::Fuzz { target, secs, jobs } => {
+            host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?
+        }
         Command::Kc => {
             image::release::kc(&ctx)?;
         }

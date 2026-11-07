@@ -30,7 +30,11 @@ fn list(rows: Vec<Vec<(&str, &str)>>, complete: bool) -> ListState {
     ListState {
         rows: rows
             .into_iter()
-            .map(|r| r.into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect())
+            .map(|r| {
+                r.into_iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: complete.then_some(n),
@@ -49,7 +53,9 @@ fn golden_fields(name: &str) -> BTreeSet<(usize, usize, usize)> {
         .flat_map(|l| format!("{l:<80}").chars().collect::<Vec<_>>())
         .collect();
     let input = |c: char| {
-        let a = u32::from(c).checked_sub(u32::from('0')).map_or(0, |d| d + 0x20);
+        let a = u32::from(c)
+            .checked_sub(u32::from('0'))
+            .map_or(0, |d| d + 0x20);
         (0x20..=0x3f).contains(&a) && a & 0x04 != 0 && a & 0x07 != 0x07
     };
     let mut out = BTreeSet::new();
@@ -91,10 +97,18 @@ fn dspptf() {
     d.set("PRODID", "5770999")
         .set("IPLSRC", "##MACH#B  ##SERV#P")
         .set("RELEASE", "V7R1M0 L00");
-    let ids = ["RE16082", "RE16053", "RE16032", "RE15349", "RE15279", "RE15097", "RE14245", "RE14197"];
+    let ids = [
+        "RE16082", "RE16053", "RE16032", "RE15349", "RE15279", "RE15097", "RE14245", "RE14197",
+    ];
     let rows = ids
         .iter()
-        .map(|id| vec![("PTFID", *id), ("PSTS", "Permanently applied"), ("PACT", "None")])
+        .map(|id| {
+            vec![
+                ("PTFID", *id),
+                ("PSTS", "Permanently applied"),
+                ("PACT", "None"),
+            ]
+        })
         .collect();
     d.set_list("PTFS", list(rows, false));
     check("dspptf", &render(&g, "DSPPTF", &d, &opts()).unwrap());

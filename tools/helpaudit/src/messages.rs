@@ -15,7 +15,8 @@ pub const DIR: &str = "runtime/msgf/msgs";
 /// The text is a single substitution variable.
 fn sender_text(text: &str) -> bool {
     let t = text.trim();
-    t.strip_prefix('&').is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()))
+    t.strip_prefix('&')
+        .is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()))
 }
 
 /// Audit every message.

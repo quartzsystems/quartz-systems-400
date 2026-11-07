@@ -78,8 +78,11 @@ fn obj_list(parms: &Parms) -> Result<Vec<ObjLock>, String> {
             Some(v) => (v.source(), String::new()),
             None => return Err("CPD0084 OBJ: an object name is needed".into()),
         };
-        let ty = part(1).map(|v| v.source().to_ascii_uppercase()).unwrap_or_default();
-        let state = part(2).map_or_else(|| "*EXCL".to_string(), |v| v.source().to_ascii_uppercase());
+        let ty = part(1)
+            .map(|v| v.source().to_ascii_uppercase())
+            .unwrap_or_default();
+        let state =
+            part(2).map_or_else(|| "*EXCL".to_string(), |v| v.source().to_ascii_uppercase());
         out.push(ObjLock {
             name: name.to_ascii_uppercase(),
             lib: lib.to_ascii_uppercase(),
@@ -168,7 +171,11 @@ fn wrkobjlck(system: &mut System, parms: &Parms) -> Result<String, String> {
                 .map_or(("*UNKNOWN".to_string(), String::new(), 0), |j| {
                     (j.name.clone(), j.user.clone(), j.number)
                 });
-            let _ = writeln!(out, "{jn:<10}  {ju:<10}  {nbr:06}  {:<8} HELD", h.state.name());
+            let _ = writeln!(
+                out,
+                "{jn:<10}  {ju:<10}  {nbr:06}  {:<8} HELD",
+                h.state.name()
+            );
         }
         Ok(out)
     })
@@ -200,8 +207,8 @@ fn chglib(system: &mut System, parms: &Parms) -> Result<String, String> {
                 }
             }
             if let Some(a) = crtaut.filter(|a| a != "*SAME") {
-                l.attr.create_authority =
-                    store::obj::header::text(&a).map_err(|e| format!("CPD0084 CRTAUT({a}): {e}"))?;
+                l.attr.create_authority = store::obj::header::text(&a)
+                    .map_err(|e| format!("CPD0084 CRTAUT({a}): {e}"))?;
             }
             l.save(txn).map_err(|e| e.to_string())?;
         }
@@ -281,7 +288,11 @@ fn updsrvpgm(system: &mut System, parms: &Parms) -> String {
         .collect();
     super::direct::old(
         system,
-        &format!("updpgm PGM({}/{n}) MODULE({})", lib_or(&l), modules.join(" ")),
+        &format!(
+            "updpgm PGM({}/{n}) MODULE({})",
+            lib_or(&l),
+            modules.join(" ")
+        ),
     )
 }
 
@@ -307,16 +318,30 @@ fn rmvbnddire(system: &mut System, parms: &Parms) -> Result<String, String> {
             Some("*MODULE") => ile::BndEntryKind::Module,
             Some(t) => return Err(format!("CPD0084 OBJ: type {t} is not *SRVPGM or *MODULE")),
         };
-        entries.push((name.to_ascii_uppercase(), lib.map(|l| l.to_ascii_uppercase()), kind));
+        entries.push((
+            name.to_ascii_uppercase(),
+            lib.map(|l| l.to_ascii_uppercase()),
+            kind,
+        ));
     }
     in_store(system, |txn, qsys, names| {
-        let id = wm::obj::find(txn, qsys, names, &lib_or(&q.1), &q.0, types::BNDDIR)
-            .map_err(|_| format!("CPF9801 binding directory {}/{} not found", lib_or(&q.1), q.0))?;
+        let id =
+            wm::obj::find(txn, qsys, names, &lib_or(&q.1), &q.0, types::BNDDIR).map_err(|_| {
+                format!(
+                    "CPF9801 binding directory {}/{} not found",
+                    lib_or(&q.1),
+                    q.0
+                )
+            })?;
         let mut n = 0;
         for (name, lib, kind) in &entries {
             n += ile::store::rmvbnddire(txn, id, name, lib.as_deref(), *kind)
                 .map_err(|e| format!("CPF5D01 {e}"))?;
         }
-        Ok(format!("{n} entr{} removed from binding directory {}.\n", if n == 1 { "y" } else { "ies" }, q.0))
+        Ok(format!(
+            "{n} entr{} removed from binding directory {}.\n",
+            if n == 1 { "y" } else { "ies" },
+            q.0
+        ))
     })
 }

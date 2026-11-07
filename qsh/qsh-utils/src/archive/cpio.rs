@@ -64,7 +64,11 @@ pub fn encode(m: &Member, f: Cpio) -> Vec<u8> {
             out.extend_from_slice(data);
         }
         Cpio::Newc | Cpio::Crc => {
-            out.extend_from_slice(if f == Cpio::Newc { b"070701" } else { b"070702" });
+            out.extend_from_slice(if f == Cpio::Newc {
+                b"070701"
+            } else {
+                b"070702"
+            });
             hex(&mut out, m.ino);
             hex(&mut out, mode);
             hex(&mut out, u64::from(m.uid));

@@ -80,8 +80,16 @@ fn number(field: usize, s: &str, max_whole: u32, _what: &str) -> Result<u32, Exi
     if f.len() > 2 || !w.chars().chain(f.chars()).all(|c| c.is_ascii_digit()) || t.is_empty() {
         return Err(bad());
     }
-    let whole: u32 = if w.is_empty() { 0 } else { w.parse().map_err(|_| bad())? };
-    let mut frac: u32 = if f.is_empty() { 0 } else { f.parse().map_err(|_| bad())? };
+    let whole: u32 = if w.is_empty() {
+        0
+    } else {
+        w.parse().map_err(|_| bad())?
+    };
+    let mut frac: u32 = if f.is_empty() {
+        0
+    } else {
+        f.parse().map_err(|_| bad())?
+    };
     if f.len() == 1 {
         frac *= 10;
     }
@@ -111,7 +119,15 @@ impl ExitForm {
     /// resequence by the session default, back to editing when the
     /// member has syntax errors.
     #[must_use]
-    pub fn new(member: &str, file: &str, lib: &str, text: &str, changed: bool, reseq: bool, errors: bool) -> Self {
+    pub fn new(
+        member: &str,
+        file: &str,
+        lib: &str,
+        text: &str,
+        changed: bool,
+        reseq: bool,
+        errors: bool,
+    ) -> Self {
         let yn = |b: bool| if b { "Y" } else { "N" }.to_string();
         Self {
             change: yn(changed),
@@ -185,7 +201,12 @@ mod tests {
         let c = f.choice().unwrap();
         assert!(!c.save);
         assert_eq!(c.reseq, Some((100, 100)));
-        assert!(ExitForm::new("A", "F", "L", "", true, true, false).choice().unwrap().save);
+        assert!(
+            ExitForm::new("A", "F", "L", "", true, true, false)
+                .choice()
+                .unwrap()
+                .save
+        );
     }
 
     #[test]

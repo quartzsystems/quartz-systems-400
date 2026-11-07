@@ -23,9 +23,21 @@ pub fn work_with_remote_service() -> Submenu {
                 "Display remote service support status",
                 Some(Box::new(|_env| Flow::Push(Box::new(status())))),
             ),
-            (2, "Activate remote service support", says(answers::NO_REMOTE_LINE)),
-            (3, "Deactivate remote service support", says(answers::REMOTE_NOT_ACTIVE)),
-            (4, "Change remote service support attributes", says(answers::NO_REMOTE_LINE)),
+            (
+                2,
+                "Activate remote service support",
+                says(answers::NO_REMOTE_LINE),
+            ),
+            (
+                3,
+                "Deactivate remote service support",
+                says(answers::REMOTE_NOT_ACTIVE),
+            ),
+            (
+                4,
+                "Change remote service support attributes",
+                says(answers::NO_REMOTE_LINE),
+            ),
         ],
     )
 }

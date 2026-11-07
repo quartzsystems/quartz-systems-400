@@ -124,12 +124,16 @@ pub fn apply(cat: &mut Catalog, src: &[u8]) -> Result<(), (usize, String)> {
                 .collect();
             match word {
                 b"set" => {
-                    let w = args.first().ok_or_else(|| err("$set needs a number.".into()))?;
+                    let w = args
+                        .first()
+                        .ok_or_else(|| err("$set needs a number.".into()))?;
                     set = number(w, SET_MAX, "set").map_err(err)?;
                     cat.sets.entry(set).or_default();
                 }
                 b"delset" => {
-                    let w = args.first().ok_or_else(|| err("$delset needs a number.".into()))?;
+                    let w = args
+                        .first()
+                        .ok_or_else(|| err("$delset needs a number.".into()))?;
                     let n = number(w, SET_MAX, "set").map_err(err)?;
                     cat.sets.remove(&n);
                 }
@@ -178,7 +182,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         args
     };
     if args.len() < 2 {
-        return usage(cx, NAME, "A catalog and at least one source file are needed.");
+        return usage(
+            cx,
+            NAME,
+            "A catalog and at least one source file are needed.",
+        );
     }
     let catfile = args[0].clone();
     let sources = args[1..].to_vec();
@@ -192,7 +200,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
                 Ok(b) => match Catalog::decode(&b) {
                     Some(c) => cat = c,
                     None => {
-                        complain(cx, NAME, &format!("{catfile}: The file is not a message catalog."));
+                        complain(
+                            cx,
+                            NAME,
+                            &format!("{catfile}: The file is not a message catalog."),
+                        );
                         return 1;
                     }
                 },
@@ -224,8 +236,7 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             None => Ok(()),
         }
     } else {
-        open_write(cx, &catfile, false)
-            .and_then(|fd| write_all(&*fd, &bytes).map_err(Into::into))
+        open_write(cx, &catfile, false).and_then(|fd| write_all(&*fd, &bytes).map_err(Into::into))
     };
     match r {
         Ok(()) => 0,

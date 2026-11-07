@@ -34,7 +34,9 @@ impl Why {
             Self::SystemSql => "QS/400 monitors the statements jobs run, not its own",
             Self::Detail => "TYPE(*DETAIL) adds 3019 records, which are not written",
             Self::TimeLimit => "the planner makes no time estimate a limit could hold a query to",
-            Self::StorageLimit => "the planner makes no storage estimate a limit could hold a query to",
+            Self::StorageLimit => {
+                "the planner makes no storage estimate a limit could hold a query to"
+            }
             Self::OptionsLibrary => "query options are set with QSYS2.OVERRIDE_QAQQINI",
             Self::Tasks => "a number of tasks is not kept",
             Self::HostVariables => "the 3010 record holds each host variable's value whole",

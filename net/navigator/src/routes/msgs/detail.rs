@@ -35,11 +35,26 @@ pub fn page(rq: &Rq<'_>, lib: &str, name: &str, key: &str) -> Response {
             return rq.redirect(&back);
         }
         let r = f.str("reply").trim();
-        let rpy = if r.is_empty() { "*DFT".to_string() } else { quote(r) };
-        return run(rq, &format!("SNDRPYMSG MSGKEY({}) MSGQ({lib}/{name}) RPY({rpy}) RMV(*NO)", m.key), &back);
+        let rpy = if r.is_empty() {
+            "*DFT".to_string()
+        } else {
+            quote(r)
+        };
+        return run(
+            rq,
+            &format!(
+                "SNDRPYMSG MSGKEY({}) MSGQ({lib}/{name}) RPY({rpy}) RMV(*NO)",
+                m.key
+            ),
+            &back,
+        );
     }
     let (d, t) = rq.stamp(m.sent);
-    let id = if m.id.is_empty() { String::new() } else { msgid(rq.ctx.product, &m.id) };
+    let id = if m.id.is_empty() {
+        String::new()
+    } else {
+        msgid(rq.ctx.product, &m.id)
+    };
     let mut rows = vec![
         Prop::new("Message ID", id),
         Prop::new("Severity", format!("{:02}", m.severity)),
@@ -57,36 +72,72 @@ pub fn page(rq: &Rq<'_>, lib: &str, name: &str, key: &str) -> Response {
         rows,
     }];
     let mut body = props_table(rq.ctx.product, &groups, true);
-    let _ = write!(body, "<h2>Message</h2><pre class=\"out\">{}</pre>", esc(&text(&m)));
+    let _ = write!(
+        body,
+        "<h2>Message</h2><pre class=\"out\">{}</pre>",
+        esc(&text(&m))
+    );
     if !m.cause.is_empty() {
         let _ = write!(body, "<h2>Cause</h2><p>{}</p>", commands_mono(&m.cause));
     }
     if !m.recovery.is_empty() {
-        let _ = write!(body, "<h2>Recovery</h2><p>{}</p>", commands_mono(&m.recovery));
+        let _ = write!(
+            body,
+            "<h2>Recovery</h2><p>{}</p>",
+            commands_mono(&m.recovery)
+        );
     }
     if m.waiting() {
         body.push_str(&reply_form(rq, &m));
     }
-    let label = if m.id.is_empty() { format!("from {}", m.user) } else { m.id.clone() };
+    let label = if m.id.is_empty() {
+        format!("from {}", m.user)
+    } else {
+        m.id.clone()
+    };
     let title = format!("Message {label}");
-    let crumb = if back == "/mymsgs" { "My messages".to_string() } else { name.clone() };
+    let crumb = if back == "/mymsgs" {
+        "My messages".to_string()
+    } else {
+        name.clone()
+    };
     let desc = if m.waiting() {
         "Second-level text and reply for an inquiry message."
     } else {
         "Second-level text of a message."
     };
-    let shown = if m.id.is_empty() { "Message".to_string() } else { m.id.clone() };
-    super::page(rq, &[&crumb, &shown], &title, &title, Some(desc), body, "message", None)
+    let shown = if m.id.is_empty() {
+        "Message".to_string()
+    } else {
+        m.id.clone()
+    };
+    super::page(
+        rq,
+        &[&crumb, &shown],
+        &title,
+        &title,
+        Some(desc),
+        body,
+        "message",
+        None,
+    )
 }
 
 /// The Reply form: an empty reply sends the default.
 fn reply_form(rq: &Rq<'_>, m: &QueuedMessage) -> String {
-    let valid = if m.replies.is_empty() { "*ANY" } else { m.replies.as_str() };
+    let valid = if m.replies.is_empty() {
+        "*ANY"
+    } else {
+        m.replies.as_str()
+    };
     let inner = format!(
         "<h2>Reply</h2><table class=\"props\"><tr><th>Reply</th><td><input type=\"text\" name=\"reply\" value=\"\" size=\"10\" class=\"cmd\"> &nbsp; Valid replies: {} &nbsp; Default: {}</td></tr></table>{}",
         mono(valid),
         mono(&m.default),
-        buttons(&[Button::new("send", "Reply"), Button::new("cancel", "Cancel")])
+        buttons(&[
+            Button::new("send", "Reply"),
+            Button::new("cancel", "Cancel")
+        ])
     );
     form(&rq.ctx, "", &inner)
 }
@@ -96,7 +147,8 @@ fn reply_form(rq: &Rq<'_>, m: &QueuedMessage) -> String {
 fn command_name(w: &str) -> bool {
     (3..=10).contains(&w.len())
         && w.starts_with(|c: char| c.is_ascii_uppercase())
-        && w.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+        && w.chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
 }
 
 /// Whether `w` is a `KEYWORD(value)` parameter, trailing punctuation
@@ -104,11 +156,18 @@ fn command_name(w: &str) -> bool {
 fn parameter(w: &str) -> Option<usize> {
     let open = w.find('(')?;
     let kw = &w[..open];
-    if kw.is_empty() || !kw.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()) {
+    if kw.is_empty()
+        || !kw
+            .chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+    {
         return None;
     }
     let close = w.rfind(')')?;
-    w[close + 1..].chars().all(|c| ".,;:".contains(c)).then_some(close + 1)
+    w[close + 1..]
+        .chars()
+        .all(|c| ".,;:".contains(c))
+        .then_some(close + 1)
 }
 
 /// Text with the command strings in it (`DSPRCDLCK FILE(...) ...`) in

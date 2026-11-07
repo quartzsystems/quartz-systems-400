@@ -128,7 +128,11 @@ impl Run<'_> {
             (None, Mode::Change | Mode::Display) => {
                 if self.file.keyed {
                     for name in &self.fmt().keys {
-                        if let Some(f) = fields.iter().chain(self.fmt().fields.iter()).find(|x| x.name == *name) {
+                        if let Some(f) = fields
+                            .iter()
+                            .chain(self.fmt().fields.iter())
+                            .find(|x| x.name == *name)
+                        {
                             keys.push(Row::input(&f.name, &f.name, f.width(), &value(f, None)));
                         }
                     }
@@ -197,7 +201,8 @@ impl Run<'_> {
                 Key::PageDown => 100,
                 Key::PageUp => 101,
                 Key::Help | Key::Other => {
-                    self.message = Some(crate::display::msgline::say(surface.host(), "CPD9B82", &[]));
+                    self.message =
+                        Some(crate::display::msgline::say(surface.host(), "CPD9B82", &[]));
                     continue;
                 }
             };
@@ -218,7 +223,8 @@ impl Run<'_> {
                     Some(false) => {}
                 },
                 Step::Invalid => {
-                    self.message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[]));
+                    self.message =
+                        Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[]));
                 }
             }
         }
@@ -336,13 +342,21 @@ impl Run<'_> {
                 self.page = 0;
             }
             _ if r.status >= 1000 && r.status != 1211 && r.status != 1218 => {
-                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BE9", &[&self.member]));
+                self.message = Some(crate::display::msgline::say(
+                    &self.host,
+                    "CPD9BE9",
+                    &[&self.member],
+                ));
             }
             _ if r.status == 1218 => {
                 self.message = Some(crate::display::msgline::say(&self.host, "CPD9BEA", &[]));
             }
             _ => {
-                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BE9", &[&self.member]));
+                self.message = Some(crate::display::msgline::say(
+                    &self.host,
+                    "CPD9BE9",
+                    &[&self.member],
+                ));
             }
         }
     }
@@ -448,7 +462,8 @@ impl Run<'_> {
                     "N" => return Some(false),
                     other => {
                         answer = other.to_string();
-                        message = Some(crate::display::msgline::say(surface.host(), "CPD9B98", &[]));
+                        message =
+                            Some(crate::display::msgline::say(surface.host(), "CPD9B98", &[]));
                     }
                 },
                 _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),

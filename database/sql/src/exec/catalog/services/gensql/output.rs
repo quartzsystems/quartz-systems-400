@@ -23,7 +23,11 @@ const WIDTH: u32 = 80;
 
 fn name(args: &Args, arg: &str) -> Result<Name> {
     let w = args.word(arg).unwrap_or_default();
-    Name::parse(&w).map_err(|_| SqlError::Coded { code: -443, state: "22023", what: format!("{arg} {w} is not a name") })
+    Name::parse(&w).map_err(|_| SqlError::Coded {
+        code: -443,
+        state: "22023",
+        what: format!("{arg} {w} is not a name"),
+    })
 }
 
 /// Write the records to the source member the arguments name, making
@@ -37,9 +41,17 @@ pub fn keep(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, records: &[String]
     let library = if crate::exec::qtemp::is_qtemp(lib) {
         ctx.make_qtemp(txn)?
     } else {
-        ops::find_library(txn, ctx.qsys, lib).map_err(|_| SqlError::ObjectNotFound { name: lib.to_string(), kind: "schema" })?.id
+        ops::find_library(txn, ctx.qsys, lib)
+            .map_err(|_| SqlError::ObjectNotFound {
+                name: lib.to_string(),
+                kind: "schema",
+            })?
+            .id
     };
-    let found = ops::list(txn, library, Some(types::FILE))?.into_iter().find(|(k, _)| k.name == file).map(|(_, id)| id);
+    let found = ops::list(txn, library, Some(types::FILE))?
+        .into_iter()
+        .find(|(k, _)| k.name == file)
+        .map(|(_, id)| id);
     let now = ctx.clock();
     let id = match found {
         Some(id) => id,
@@ -48,16 +60,30 @@ pub fn keep(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, records: &[String]
             library,
             file,
             WIDTH + 12,
-            &db::file::CreateFileOpts { now, member: db::file::MemberOpt::None, ..db::file::CreateFileOpts::default() },
+            &db::file::CreateFileOpts {
+                now,
+                member: db::file::MemberOpt::None,
+                ..db::file::CreateFileOpts::default()
+            },
         )?,
     };
     let desc = db::file::describe(txn, id)?;
     if !desc.members.iter().any(|m| m.name == member) {
-        db::file::add_member(txn, id, member, "", Some(Name::parse("SQL").expect("valid")), now)?;
+        db::file::add_member(
+            txn,
+            id,
+            member,
+            "",
+            Some(Name::parse("SQL").expect("valid")),
+            now,
+        )?;
     }
     let codec = ccsid::conv::Codec::of(desc.attr.ccsid).ok().flatten();
     let mut lines: Vec<Vec<u8>> = if append {
-        db::source::records(txn, id, MemberSpec::Name(member))?.into_iter().map(|(_, _, d)| d).collect()
+        db::source::records(txn, id, MemberSpec::Name(member))?
+            .into_iter()
+            .map(|(_, _, d)| d)
+            .collect()
     } else {
         Vec::new()
     };
@@ -81,7 +107,11 @@ pub fn keep(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, records: &[String]
 /// `SRCDTA`, and say so (`SQL0466`).
 pub fn answer(ctx: &mut SqlContext, records: &[String]) {
     let d = db::record::datetime::Date::from_unix(ctx.clock());
-    let date = Decimal::new(i128::from(d.year % 100) * 10_000 + i128::from(d.month) * 100 + i128::from(d.day), 0).expect("six digits");
+    let date = Decimal::new(
+        i128::from(d.year % 100) * 10_000 + i128::from(d.month) * 100 + i128::from(d.day),
+        0,
+    )
+    .expect("six digits");
     let rows: Vec<Vec<Value>> = records
         .iter()
         .enumerate()
@@ -91,14 +121,34 @@ pub fn answer(ctx: &mut SqlContext, records: &[String]) {
             while srcdta.chars().count() < WIDTH as usize {
                 srcdta.push(' ');
             }
-            vec![Value::Num(seq), Value::Num(date.clone()), Value::Str(srcdta)]
+            vec![
+                Value::Num(seq),
+                Value::Num(date.clone()),
+                Value::Str(srcdta),
+            ]
         })
         .collect();
     let columns = vec![
-        ColumnDesc { name: "SRCSEQ".into(), data_type: "NUMERIC(6,2)".into(), nullable: false },
-        ColumnDesc { name: "SRCDAT".into(), data_type: "NUMERIC(6,0)".into(), nullable: false },
-        ColumnDesc { name: "SRCDTA".into(), data_type: "CHAR(80)".into(), nullable: false },
+        ColumnDesc {
+            name: "SRCSEQ".into(),
+            data_type: "NUMERIC(6,2)".into(),
+            nullable: false,
+        },
+        ColumnDesc {
+            name: "SRCDAT".into(),
+            data_type: "NUMERIC(6,0)".into(),
+            nullable: false,
+        },
+        ColumnDesc {
+            name: "SRCDTA".into(),
+            data_type: "CHAR(80)".into(),
+            nullable: false,
+        },
     ];
     crate::exec::cursor::open_rows(ctx, CURSOR, columns, rows);
-    ctx.warning = Some(crate::sqlca::Warning::coded(466, "0100C", "1 result set is available from procedure GENERATE_SQL"));
+    ctx.warning = Some(crate::sqlca::Warning::coded(
+        466,
+        "0100C",
+        "1 result set is available from procedure GENERATE_SQL",
+    ));
 }

@@ -409,7 +409,9 @@ pub enum CertFailure {
 impl std::fmt::Display for CertFailure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CertFailure::BadPassword(s) => write!(f, "the password is not correct for certificate store {s}"),
+            CertFailure::BadPassword(s) => {
+                write!(f, "the password is not correct for certificate store {s}")
+            }
             CertFailure::NoStore(s) => write!(f, "certificate store {s} does not exist"),
             CertFailure::StoreExists(s) => write!(f, "certificate store {s} exists already"),
             CertFailure::NoLabel(l) => write!(f, "no certificate has label {l}"),
@@ -428,7 +430,9 @@ pub fn authorize_commands(root: &str, profile: &str) -> Vec<String> {
     vec![
         format!("CHGAUT OBJ('/www') USER({profile}) DTAAUT(*RWX) OBJAUT(*NONE)"),
         format!("CHGAUT OBJ('{root}') USER({profile}) DTAAUT(*RX) OBJAUT(*NONE) SUBTREE(*ALL)"),
-        format!("CHGAUT OBJ('{root}/logs') USER({profile}) DTAAUT(*RWX) OBJAUT(*NONE) SUBTREE(*ALL)"),
+        format!(
+            "CHGAUT OBJ('{root}/logs') USER({profile}) DTAAUT(*RWX) OBJAUT(*NONE) SUBTREE(*ALL)"
+        ),
         format!("CHGAUT OBJ('{reg}') USER({profile}) DTAAUT(*RW) OBJAUT(*NONE)"),
     ]
 }
@@ -454,11 +458,23 @@ pub trait Certs: Send + Sync {
     fn export(&self, store: &str, label: &str, chain: bool) -> Result<Vec<u8>, CertFailure>;
     /// Make an empty store `name` at `path` with `password`, its
     /// password stashed (`QSCRTCRTS STASH(*YES)`).
-    fn create_store(&self, user: &str, name: &str, path: &str, password: &str) -> Result<(), CertFailure>;
+    fn create_store(
+        &self,
+        user: &str,
+        name: &str,
+        path: &str,
+        password: &str,
+    ) -> Result<(), CertFailure>;
     /// Change a store's password; `old` must open it, or is empty when
     /// the store's stash opens it (the user manages certificates, so
     /// has `*SECADM` and `*ALLOBJ`). The stash follows.
-    fn change_password(&self, user: &str, store: &str, old: &str, new: &str) -> Result<(), CertFailure>;
+    fn change_password(
+        &self,
+        user: &str,
+        store: &str,
+        old: &str,
+        new: &str,
+    ) -> Result<(), CertFailure>;
     /// Delete a store made by someone (`QSDLTCRTS`); the system's own
     /// stores are refused.
     fn delete_store(&self, user: &str, store: &str) -> Result<(), CertFailure>;
@@ -493,11 +509,20 @@ pub trait Certs: Send + Sync {
     fn copy(&self, user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure>;
     /// The entry with its private key and issuers as a PKCS#12 file
     /// sealed with `password`.
-    fn export_pkcs12(&self, user: &str, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure>;
+    fn export_pkcs12(
+        &self,
+        user: &str,
+        store: &str,
+        label: &str,
+        password: &str,
+    ) -> Result<Vec<u8>, CertFailure>;
     /// The label assigned to application ID `app` (or its old ID).
     fn app_label(&self, app: &str) -> Option<String> {
         let want = certs::apps::canonical(app);
-        self.apps().into_iter().find(|a| a.id == want).and_then(|a| a.label)
+        self.apps()
+            .into_iter()
+            .find(|a| a.id == want)
+            .and_then(|a| a.label)
     }
     /// The `*SYSTEM` server certificates application `app` may present,
     /// the one assigned to it first: label and expiry (seconds since

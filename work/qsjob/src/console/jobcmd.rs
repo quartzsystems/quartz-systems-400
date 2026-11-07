@@ -88,11 +88,13 @@ fn chgpwd(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     let user = host.link.borrow_mut().with(stg::Client::whoami).user;
     // At a display the passwords are typed on Change Password.
     if new.is_empty() && host.has_display() {
-        return Ok(if crate::work::chgpwd::show(job, host, &user, String::new()) {
-            "Password changed successfully.\n".into()
-        } else {
-            String::new()
-        });
+        return Ok(
+            if crate::work::chgpwd::show(job, host, &user, String::new()) {
+                "Password changed successfully.\n".into()
+            } else {
+                String::new()
+            },
+        );
     }
     if new.is_empty() {
         return Err("CPD0071 NEWPWD is required".into());
@@ -410,7 +412,10 @@ fn dlyjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
         host.breaks(job);
         if crate::sysdsp::keys::take_outside_end() {
             stg::remote::status(&host.link, wm::job::Status::Run, "");
-            return Err(format!("{} The request was ended.", crate::sysdsp::keys::ENDED));
+            return Err(format!(
+                "{} The request was ended.",
+                crate::sysdsp::keys::ENDED
+            ));
         }
     }
     stg::remote::status(&host.link, wm::job::Status::Run, "");

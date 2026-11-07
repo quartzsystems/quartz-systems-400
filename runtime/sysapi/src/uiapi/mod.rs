@@ -251,7 +251,10 @@ impl Terminal for ApiTerm<'_> {
     }
 
     fn message_text(&mut self, m: &LineMsg) -> Option<String> {
-        let d = self.job.msgs.describe(&m.id, crate::param::file_of(&m.id), "*LIBL")?;
+        let d = self
+            .job
+            .msgs
+            .describe(&m.id, crate::param::file_of(&m.id), "*LIBL")?;
         Some(d.format(&d.data_of(&m.data)))
     }
 

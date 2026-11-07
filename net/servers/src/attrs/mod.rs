@@ -52,8 +52,14 @@ mod tests {
 
     #[test]
     fn keywords() {
-        assert_eq!(keyword("PORT(2001) TLSPORT(2005)", "PORT").as_deref(), Some("2001"));
-        assert_eq!(keyword("TLSPORT(2005) PORT(2001)", "port").as_deref(), Some("2001"));
+        assert_eq!(
+            keyword("PORT(2001) TLSPORT(2005)", "PORT").as_deref(),
+            Some("2001")
+        );
+        assert_eq!(
+            keyword("TLSPORT(2005) PORT(2001)", "port").as_deref(),
+            Some("2001")
+        );
         assert_eq!(keyword("TLSPORT(2005)", "PORT"), None);
         assert!(is_same("*same") && is_same("-1") && !is_same("5"));
     }

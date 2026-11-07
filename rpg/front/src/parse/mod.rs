@@ -74,15 +74,27 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
                 let (semi, open_after) = statement_ends(&rpgspecs::cut(&l.text, 8, 80));
                 // A `//` comment there is not reported.
                 let past = rpgspecs::cut(&l.text, 81, 100);
-                if !l.fully_free && !past.trim().is_empty() && !past.trim_start().starts_with("//") && (in_free_block || open_stmt || !semi) {
+                if !l.fully_free
+                    && !past.trim().is_empty()
+                    && !past.trim_start().starts_with("//")
+                    && (in_free_block || open_stmt || !semi)
+                {
                     diags.push(Diag::new(ids::FREE_COMMENT, 20, l.pos(81)));
                 }
-                open_stmt = if semi { open_after } else { open_stmt || open_after };
+                open_stmt = if semi {
+                    open_after
+                } else {
+                    open_stmt || open_after
+                };
                 free.push(i);
                 i += 1;
                 continue;
             }
-            Class::Blank | Class::Comment | Class::Skipped | Class::FreeMarker | Class::Directive(_) => {
+            Class::Blank
+            | Class::Comment
+            | Class::Skipped
+            | Class::FreeMarker
+            | Class::Directive(_) => {
                 match &l.class {
                     Class::Directive(crate::reader::Directive::Free) => in_free_block = true,
                     Class::Directive(crate::reader::Directive::EndFree) => in_free_block = false,
@@ -122,12 +134,28 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
                         && let Class::Directive(d) = &n.class
                         && matches!(
                             d,
-                            Directive::If(_) | Directive::ElseIf(_) | Directive::Else | Directive::EndIf | Directive::Define(_) | Directive::Undefine(_)
+                            Directive::If(_)
+                                | Directive::ElseIf(_)
+                                | Directive::Else
+                                | Directive::EndIf
+                                | Directive::Define(_)
+                                | Directive::Undefine(_)
                         )
                         && lines[i + 1..]
                             .iter()
-                            .find(|m| !matches!(m.class, Class::Blank | Class::Comment | Class::Skipped | Class::Directive(_)))
-                            .is_some_and(|m| m.class == Class::Spec('C') && rpgspecs::cut(&m.text, 7, 35).trim().is_empty())
+                            .find(|m| {
+                                !matches!(
+                                    m.class,
+                                    Class::Blank
+                                        | Class::Comment
+                                        | Class::Skipped
+                                        | Class::Directive(_)
+                                )
+                            })
+                            .is_some_and(|m| {
+                                m.class == Class::Spec('C')
+                                    && rpgspecs::cut(&m.text, 7, 35).trim().is_empty()
+                            })
                     {
                         i += 1;
                         continue;
@@ -196,7 +224,10 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
             Class::Sql => {
                 let mut block = vec![i];
                 i += 1;
-                let opened = lines[block[0]].text.to_ascii_uppercase().contains("/EXEC SQL");
+                let opened = lines[block[0]]
+                    .text
+                    .to_ascii_uppercase()
+                    .contains("/EXEC SQL");
                 if opened {
                     while i < lines.len() {
                         if lines[i].class == Class::Sql {
@@ -206,7 +237,10 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
                             if end {
                                 break;
                             }
-                        } else if matches!(lines[i].class, Class::Blank | Class::Comment | Class::Skipped) {
+                        } else if matches!(
+                            lines[i].class,
+                            Class::Blank | Class::Comment | Class::Skipped
+                        ) {
                             i += 1;
                         } else {
                             break;
@@ -378,7 +412,10 @@ impl Builder<'_> {
     pub fn last_group(&mut self) -> Option<&mut Def> {
         match &mut self.proc {
             Some(p) => {
-                if p.defs.last().is_some_and(|d| matches!(d.kind, DefKind::Ds | DefKind::Pr)) {
+                if p.defs
+                    .last()
+                    .is_some_and(|d| matches!(d.kind, DefKind::Ds | DefKind::Pr))
+                {
                     p.defs.last_mut()
                 } else {
                     p.pi.as_mut()
@@ -421,7 +458,10 @@ pub fn parse(read: &Read) -> (Module, Vec<Diag>) {
     let mut b = Builder {
         lines: &read.lines,
         module: Module {
-            fully_free: read.lines.first().is_some_and(|l| l.class == Class::FreeMarker),
+            fully_free: read
+                .lines
+                .first()
+                .is_some_and(|l| l.class == Class::FreeMarker),
             ..Module::default()
         },
         proc: None,
@@ -451,7 +491,8 @@ pub fn parse(read: &Read) -> (Module, Vec<Diag>) {
                 {
                     if r < rank {
                         let at = b.lines[spec.lines[0]].pos(6);
-                        b.diags.push(Diag::new(ids::FORM_SEQUENCE, 30, at).arg(spec.form.to_string()));
+                        b.diags
+                            .push(Diag::new(ids::FORM_SEQUENCE, 30, at).arg(spec.form.to_string()));
                         k += 1;
                         continue;
                     }

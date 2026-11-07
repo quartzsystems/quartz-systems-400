@@ -9,8 +9,8 @@ mod common;
 
 use common::mem::MemSpool;
 use common::{Masks, TraceAuth, accept, replay, trace};
-use hostserver::netprt::{NetPrint, Splf};
 use hostserver::netprt::attrs::{Raw, decode, ids};
+use hostserver::netprt::{NetPrint, Splf};
 use hostserver::{Handler, NoExits};
 use hostsvr::frame::Frame;
 use hostsvr::trace::{Dir, Trace};
@@ -25,7 +25,12 @@ fn files(t: &Trace) -> Vec<Splf> {
             }
             let mut raws: Vec<Raw> = f.param(0x0001).map(|p| decode(&p.data)).unwrap_or_default();
             raws.extend(f.param(0x0008).map(|p| decode(&p.data)).unwrap_or_default());
-            let get = |i: u16| raws.iter().find(|r| r.id == i).map(Raw::text).unwrap_or_default();
+            let get = |i: u16| {
+                raws.iter()
+                    .find(|r| r.id == i)
+                    .map(Raw::text)
+                    .unwrap_or_default()
+            };
             let bin = |i: u16| raws.iter().find(|r| r.id == i).map_or(0, Raw::bin4);
             v.push(Splf {
                 job: (get(ids::JOBNAME), get(ids::JOBUSER), get(ids::JOBNUMBER)),
@@ -54,17 +59,35 @@ fn splf() {
     let auth = TraceAuth::of(&t);
     let spool = MemSpool(files(&t));
     assert_eq!(spool.0.len(), 139);
-    let job = ("QNPSERVS".to_string(), "QUSER".to_string(), "007848".to_string());
+    let job = (
+        "QNPSERVS".to_string(),
+        "QUSER".to_string(),
+        "007848".to_string(),
+    );
     let masks = Masks {
         // The attribute values: we answer the subset QS/400 keeps.
         skip: vec![0x0008],
         ..Masks::default()
     };
-    let diffs = replay(&t, &masks, &mut || Box::new(NetPrint::new(auth.clone(), spool.clone(), NoExits, job.clone())) as Box<dyn Handler>);
+    let diffs = replay(&t, &masks, &mut || {
+        Box::new(NetPrint::new(
+            auth.clone(),
+            spool.clone(),
+            NoExits,
+            job.clone(),
+        )) as Box<dyn Handler>
+    });
     accept("netprt-splf", &diffs);
     let t = trace("netprt", "svrmap");
     let auth = TraceAuth::of(&t);
-    let diffs = replay(&t, &masks, &mut || Box::new(NetPrint::new(auth.clone(), spool.clone(), NoExits, job.clone())) as Box<dyn Handler>);
+    let diffs = replay(&t, &masks, &mut || {
+        Box::new(NetPrint::new(
+            auth.clone(),
+            spool.clone(),
+            NoExits,
+            job.clone(),
+        )) as Box<dyn Handler>
+    });
     accept("netprt-svrmap", &diffs);
 }
 
@@ -116,11 +139,22 @@ fn splf_data() {
     let data = data_of(&t);
     assert!(!data.is_empty());
     let spool = WithData(MemSpool(files(&t)), data);
-    let job = ("QNPSERVS".to_string(), "QUSER".to_string(), "008049".to_string());
+    let job = (
+        "QNPSERVS".to_string(),
+        "QUSER".to_string(),
+        "008049".to_string(),
+    );
     let masks = Masks {
         skip: vec![0x0008],
         ..Masks::default()
     };
-    let diffs = replay(&t, &masks, &mut || Box::new(NetPrint::new(auth.clone(), spool.clone(), NoExits, job.clone())) as Box<dyn Handler>);
+    let diffs = replay(&t, &masks, &mut || {
+        Box::new(NetPrint::new(
+            auth.clone(),
+            spool.clone(),
+            NoExits,
+            job.clone(),
+        )) as Box<dyn Handler>
+    });
     accept("netprt-splfdata", &diffs);
 }

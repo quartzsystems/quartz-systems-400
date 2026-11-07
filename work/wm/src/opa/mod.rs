@@ -61,7 +61,10 @@ impl Keep {
 
 /// The items of `items` past keeping, by the age `made` gives each.
 pub fn select<T>(items: &[T], keep: Keep, now: u64, made: impl Fn(&T) -> u64) -> Vec<&T> {
-    items.iter().filter(|i| keep.expired(made(i), now)).collect()
+    items
+        .iter()
+        .filter(|i| keep.expired(made(i), now))
+        .collect()
 }
 
 /// `key=value` lines, in key order.
@@ -100,7 +103,12 @@ fn yn(b: bool) -> &'static str {
 /// Whether `s` is `HH:MM:SS` (or `HHMMSS`), a time of day; its seconds.
 #[must_use]
 pub fn time_of_day(text: &str) -> Option<u32> {
-    let digits: String = text.trim().trim_matches('\'').chars().filter(|c| *c != ':').collect();
+    let digits: String = text
+        .trim()
+        .trim_matches('\'')
+        .chars()
+        .filter(|c| *c != ':')
+        .collect();
     if digits.len() != 6 || !digits.bytes().all(|b| b.is_ascii_digit()) {
         return None;
     }

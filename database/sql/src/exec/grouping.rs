@@ -55,7 +55,9 @@ fn alternatives(e: &Expr, inside_sets: bool) -> Result<Vec<Vec<Expr>>> {
         }
         Expr::Function(Function { name, args, .. }) if name == GROUPING_SETS => {
             if inside_sets {
-                return Err(SqlError::Unsupported { what: "GROUPING SETS inside GROUPING SETS".into() });
+                return Err(SqlError::Unsupported {
+                    what: "GROUPING SETS inside GROUPING SETS".into(),
+                });
             }
             let mut out = Vec::new();
             for a in args {
@@ -132,7 +134,11 @@ pub fn rewrite(e: &Expr, set: &GroupingSet) -> Expr {
         && f.name == "GROUPING"
         && f.args.len() == 1
     {
-        return Expr::num(if set.absent.contains(&f.args[0]) { "1" } else { "0" });
+        return Expr::num(if set.absent.contains(&f.args[0]) {
+            "1"
+        } else {
+            "0"
+        });
     }
     // Inside an aggregate the columns are the rows' own.
     if super::agg::call_of(e).is_some() {
@@ -147,7 +153,12 @@ pub fn rewrite(e: &Expr, set: &GroupingSet) -> Expr {
 fn map_children(e: &mut Expr, f: &dyn Fn(&Expr) -> Expr) {
     let m = |x: &mut Box<Expr>| **x = f(x);
     match e {
-        Expr::Neg(a) | Expr::Not(a) | Expr::IsNull(a, _) | Expr::Cast(a, _) | Expr::Duration(a, _) | Expr::InSubquery(a, _, _) => m(a),
+        Expr::Neg(a)
+        | Expr::Not(a)
+        | Expr::IsNull(a, _)
+        | Expr::Cast(a, _)
+        | Expr::Duration(a, _)
+        | Expr::InSubquery(a, _, _) => m(a),
         Expr::Binary(a, _, b) | Expr::And(a, b) | Expr::Or(a, b) | Expr::Compare(a, _, b, _) => {
             m(a);
             m(b);
@@ -170,7 +181,11 @@ fn map_children(e: &mut Expr, f: &dyn Fn(&Expr) -> Expr) {
                 m(x);
             }
         }
-        Expr::Case { operand, whens, otherwise } => {
+        Expr::Case {
+            operand,
+            whens,
+            otherwise,
+        } => {
             if let Some(o) = operand {
                 m(o);
             }

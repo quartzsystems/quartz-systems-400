@@ -89,7 +89,9 @@ impl Suite {
         let port = if self.tn_port.get().is_some() {
             crate::tcp::forward_port(self, crate::tcp::VIP, 23)?
         } else {
-            self.launch.telnet_port.ok_or("the launch has no telnet port")?
+            self.launch
+                .telnet_port
+                .ok_or("the launch has no telnet port")?
         };
         let c = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let options = ScriptOptions {
@@ -105,20 +107,30 @@ impl Suite {
         let mut report = String::new();
 
         // Communications: the virtio NIC's port with its type.
-        run(&mut d, &mut ctx, "type \"WRKHDWRSC TYPE(*CMN)\"\nkey enter\nsettle 2500\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type \"WRKHDWRSC TYPE(*CMN)\"\nkey enter\nsettle 2500\n",
+        )?;
         let cmn = screen(&d);
         if !d.term.contains("Work with Communication Resources") {
             return Err(format!("WRKHDWRSC TYPE(*CMN) shows no list:\n{cmn}"));
         }
         let row = row_of(&d, "CMN01").ok_or_else(|| format!("no CMN01:\n{cmn}"))?;
         if !row.contains("QN01") || !row.contains("Operational") {
-            return Err(format!("CMN01 is not the operational virtio port: {row}\n{cmn}"));
+            return Err(format!(
+                "CMN01 is not the operational virtio port: {row}\n{cmn}"
+            ));
         }
         if !names(&d, "LIN").contains(&"LIN01".to_string()) {
             return Err(format!("no LIN01 above CMN01:\n{cmn}"));
         }
         // Option 7: the port's detail with its adapter address.
-        run(&mut d, &mut ctx, "pick \"CMN01\" 7\nkey enter\nsettle 1500\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "pick \"CMN01\" 7\nkey enter\nsettle 1500\n",
+        )?;
         let detail = screen(&d);
         if !d.term.contains("Display Resource Detail") || !d.term.contains("CMN01") {
             return Err(format!("option 7 on CMN01:\n{detail}"));
@@ -133,20 +145,32 @@ impl Suite {
             detail2.push_str(&screen(&d));
         }
         if !detail2.contains("Adapter address") {
-            return Err(format!("CMN01's detail has no adapter address:\n{detail}{detail2}"));
+            return Err(format!(
+                "CMN01's detail has no adapter address:\n{detail}{detail2}"
+            ));
         }
         let _ = write!(report, "--- *CMN\n{cmn}--- CMN01 detail\n{detail}{detail2}");
-        run(&mut d, &mut ctx, "key f12\nsettle 1000\nkey f3\nsettle 1500\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "key f12\nsettle 1000\nkey f3\nsettle 1500\n",
+        )?;
 
         // Storage: the virtio disk controller, DD001, the SCSI controller.
-        run(&mut d, &mut ctx, "type \"WRKHDWRSC TYPE(*STG)\"\nkey enter\nsettle 2500\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type \"WRKHDWRSC TYPE(*STG)\"\nkey enter\nsettle 2500\n",
+        )?;
         let stg = screen(&d);
         if !d.term.contains("Work with Storage Resources") {
             return Err(format!("WRKHDWRSC TYPE(*STG) shows no list:\n{stg}"));
         }
         let dc01 = row_of(&d, "DC01").ok_or_else(|| format!("no DC01:\n{stg}"))?;
         if !dc01.contains("QD01") {
-            return Err(format!("DC01 is not the virtio disk controller: {dc01}\n{stg}"));
+            return Err(format!(
+                "DC01 is not the virtio disk controller: {dc01}\n{stg}"
+            ));
         }
         if row_of(&d, "DD001").is_none() {
             return Err(format!("no DD001:\n{stg}"));
@@ -171,7 +195,10 @@ impl Suite {
                 break n.clone();
             }
             if Instant::now() > until {
-                return Err(format!("no new disk unit after the hot add:\n{}", screen(&d)));
+                return Err(format!(
+                    "no new disk unit after the hot add:\n{}",
+                    screen(&d)
+                ));
             }
         };
         let after = screen(&d);
@@ -197,6 +224,8 @@ impl Suite {
             return Err(format!("svc.hw does not show {added}:\n{hw}"));
         }
         std::fs::write(self.out_dir.join("step83.txt"), &report).map_err(|e| e.to_string())?;
-        Ok(format!("CMN01 QN01, DC01 QD01, DD001; {added} hot-added and listed"))
+        Ok(format!(
+            "CMN01 QN01, DC01 QD01, DD001; {added} hot-added and listed"
+        ))
     }
 }

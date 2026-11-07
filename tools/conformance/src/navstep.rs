@@ -26,7 +26,13 @@ use crate::tcp::{GUEST, forward_port};
 /// The product's URLs.
 const PREFIX: &str = "/qs400/navigator";
 
-fn nav(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
+fn nav(
+    port: u16,
+    method: &str,
+    path: &str,
+    cookie: Option<&str>,
+    form: Option<&str>,
+) -> Result<Reply, String> {
     http_at(PREFIX, port, method, path, cookie, form)
 }
 
@@ -67,7 +73,8 @@ impl Suite {
         let end = Instant::now() + Duration::from_secs(60);
         loop {
             let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(NAVIGATOR)", CMD)?;
-            if started.contains("TCP1A07") || (started.contains("TCP1A08") && Instant::now() > end) {
+            if started.contains("TCP1A07") || (started.contains("TCP1A08") && Instant::now() > end)
+            {
                 break;
             }
             if !started.contains("TCP1A08") {
@@ -77,17 +84,24 @@ impl Suite {
         }
         let plain = forward_port(self, GUEST, 2002)?;
         let page = nav(plain, "GET", "/signon", None, None)?;
-        want(&page, 200, &["Navigator for QS/400", "name=\"password\""], "the sign-on page")?;
+        want(
+            &page,
+            200,
+            &["Navigator for QS/400", "name=\"password\""],
+            "the sign-on page",
+        )?;
         let form = format!("user=QSECOFR&password={}", enc(SECOFR_PASSWORD));
         let ok = nav(plain, "POST", "/signon", None, Some(&form))?;
         if ok.status != 303 || !ok.header("Location").is_some_and(|l| l.ends_with("/home")) {
             return Err(format!("signing on as QSECOFR:\n{}", ok.brief()));
         }
-        let sid = session_cookie(&ok).ok_or_else(|| format!("no session cookie:\n{}", ok.brief()))?;
+        let sid =
+            session_cookie(&ok).ok_or_else(|| format!("no session cookie:\n{}", ok.brief()))?;
         // System status, with the system's name.
         let home = nav(plain, "GET", "/home", Some(&sid), None)?;
         want(&home, 200, &["<h1>System status</h1>"], "System status")?;
-        let name = system_in(&home.body).ok_or_else(|| format!("no system name:\n{}", home.brief()))?;
+        let name =
+            system_in(&home.body).ok_or_else(|| format!("no system name:\n{}", home.brief()))?;
         let neta = s.command("DSPNETA", CMD)?;
         if !neta.contains(&name) {
             return Err(format!("System status names {name}; DSPNETA:\n{neta}"));
@@ -95,7 +109,8 @@ impl Suite {
         // Active jobs: this job, in a job the system knows.
         let jobs = nav(plain, "GET", "/jobs?user=QTMHHTTP", Some(&sid), None)?;
         want(&jobs, 200, &["NAVIGATOR"], "Active jobs")?;
-        let job = nav_job(&jobs.body).ok_or_else(|| format!("no NAVIGATOR job on Active jobs:\n{}", jobs.brief()))?;
+        let job = nav_job(&jobs.body)
+            .ok_or_else(|| format!("no NAVIGATOR job on Active jobs:\n{}", jobs.brief()))?;
         let shown = s.command(&format!("dspjob JOB({job})"), CMD)?;
         if !shown.contains("NAVIGATOR") || shown.contains("CPF1070") {
             return Err(format!("dspjob of the page's job {job}:\n{shown}"));
@@ -107,17 +122,33 @@ impl Suite {
         let work = work_pages(s, plain, &sid)?;
         // A POST without the form's field is refused.
         let forged = nav(plain, "POST", "/mymsgs", Some(&sid), Some("send=Send"))?;
-        want(&forged, 403, &["out of date"], "a POST without the form field")?;
+        want(
+            &forged,
+            403,
+            &["out of date"],
+            "a POST without the form field",
+        )?;
         // Run SQL over the catalog, then the software and audit pages.
         let sql = nav(plain, "GET", "/sql", Some(&sid), None)?;
-        let token = csrf_in(&sql.body).ok_or_else(|| format!("no form field on Run SQL:\n{}", sql.brief()))?;
+        let token = csrf_in(&sql.body)
+            .ok_or_else(|| format!("no form field on Run SQL:\n{}", sql.brief()))?;
         let form = format!("csrf={}&sql={}&run=Run", enc(&token), enc(QUERY));
         let ran = nav(plain, "POST", "/sql", Some(&sid), Some(&form))?;
         want(&ran, 303, &[], "Run SQL's POST")?;
         let result = nav(plain, "GET", "/sql", Some(&sid), None)?;
-        want(&result, 200, &["class=\"list\"", "TABLE_NAME", "SQL7958"], "Run SQL's result table")?;
+        want(
+            &result,
+            200,
+            &["class=\"list\"", "TABLE_NAME", "SQL7958"],
+            "Run SQL's result table",
+        )?;
         let lp = nav(plain, "GET", "/licpgm", Some(&sid), None)?;
-        want(&lp, 200, &["Licensed programs", "QS00SS1", "QS00NAV"], "Licensed programs")?;
+        want(
+            &lp,
+            200,
+            &["Licensed programs", "QS00SS1", "QS00NAV"],
+            "Licensed programs",
+        )?;
         let ptf = nav(plain, "GET", "/ptf", Some(&sid), None)?;
         want(&ptf, 200, &["PTFs"], "PTFs")?;
         let audit = nav(plain, "GET", "/audit", Some(&sid), None)?;
@@ -125,7 +156,11 @@ impl Suite {
         let off = nav(plain, "GET", "/signoff", Some(&sid), None)?;
         want(&off, 303, &["Max-Age=0"], "sign-off")?;
         let after = nav(plain, "GET", "/home", Some(&sid), None)?;
-        if after.status != 303 || !after.header("Location").is_some_and(|l| l.ends_with("/signon")) {
+        if after.status != 303
+            || !after
+                .header("Location")
+                .is_some_and(|l| l.ends_with("/signon"))
+        {
             return Err(format!("the session outlived sign-off:\n{}", after.brief()));
         }
         // TLS on 2005: the certificate of QS400_HTTP_SERVER_NAVIGATOR,
@@ -166,7 +201,10 @@ fn writer_links(body: &str) -> Vec<String> {
     let mut rest = body;
     while let Some(at) = rest.find(&key) {
         rest = &rest[at + key.len()..];
-        let dev: String = rest.chars().take_while(|c| c.is_ascii_alphanumeric() || "#@$_".contains(*c)).collect();
+        let dev: String = rest
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || "#@$_".contains(*c))
+            .collect();
         if !dev.is_empty() && !out.contains(&dev) {
             out.push(dev);
         }
@@ -181,9 +219,11 @@ fn writer_links(body: &str) -> Vec<String> {
 fn work_pages(s: &mut Session, port: u16, sid: &str) -> Result<String, String> {
     work_pages_of(s, port, sid).map_err(|e| {
         let jobs = s.command("WRKACTJOB", CMD).unwrap_or_default();
-        format!("{e}
+        format!(
+            "{e}
 WRKACTJOB:
-{jobs}")
+{jobs}"
+        )
     })
 }
 
@@ -192,10 +232,16 @@ fn work_pages_of(s: &mut Session, port: u16, sid: &str) -> Result<String, String
     s.command("STRSBS QSYS/QSPL", CMD)?;
     let started = s.command("STRPRTWTR DEV(QSCAPTURE)", CMD)?;
     let end = Instant::now() + Duration::from_secs(10);
-    while !s.command("WRKWTR", CMD)?.lines().any(|l| l.contains("QSCAPTURE") && l.contains("STR")) {
+    while !s
+        .command("WRKWTR", CMD)?
+        .lines()
+        .any(|l| l.contains("QSCAPTURE") && l.contains("STR"))
+    {
         if Instant::now() > end {
-            return Err(format!("the QSCAPTURE writer did not start:
-{started}"));
+            return Err(format!(
+                "the QSCAPTURE writer did not start:
+{started}"
+            ));
         }
         std::thread::sleep(Duration::from_millis(250));
     }
@@ -212,16 +258,29 @@ fn work_pages_of(s: &mut Session, port: u16, sid: &str) -> Result<String, String
         want(&p, 200, &[title], path)?;
     }
     let list = nav(port, "GET", "/writers", Some(sid), None)?;
-    want(&list, 200, &["QSCAPTURE", "Started"], "Printers with a writer started")?;
+    want(
+        &list,
+        200,
+        &["QSCAPTURE", "Started"],
+        "Printers with a writer started",
+    )?;
     let devs = writer_links(&list.body);
     for d in &devs {
         let p = nav(port, "GET", &format!("/writers/{d}"), Some(sid), None)?;
-        want(&p, 200, &[&format!("Printer: {d}")], &format!("printer {d}"))?;
+        want(
+            &p,
+            200,
+            &[&format!("Printer: {d}")],
+            &format!("printer {d}"),
+        )?;
     }
     let start = nav(port, "GET", "/writers?start=1", Some(sid), None)?;
     want(&start, 200, &["Start writer"], "Start writer")?;
     s.command("ENDWTR WTR(QSCAPTURE) OPTION(*IMMED)", CMD)?;
-    Ok(format!("work management's pages and {} printer(s)", devs.len()))
+    Ok(format!(
+        "work management's pages and {} printer(s)",
+        devs.len()
+    ))
 }
 
 /// System values, interfaces, servers and System activity from live
@@ -230,21 +289,29 @@ fn work_pages_of(s: &mut Session, port: u16, sid: &str) -> Result<String, String
 fn live_config(s: &mut Session, port: u16, sid: &str) -> Result<String, String> {
     let sv = nav(port, "GET", "/sysval?cat=security", Some(sid), None)?;
     want(&sv, 200, &["QSECURITY"], "Security values")?;
-    let level = mono_after(&sv.body, "QSECURITY</td>").ok_or_else(|| format!("no QSECURITY value:\n{}", sv.brief()))?;
+    let level = mono_after(&sv.body, "QSECURITY</td>")
+        .ok_or_else(|| format!("no QSECURITY value:\n{}", sv.brief()))?;
     let shown = s.command("DSPSYSVAL SYSVAL(QSECURITY)", CMD)?;
     if level.is_empty() || !shown.contains(&level) {
-        return Err(format!("Security values show QSECURITY {level}; DSPSYSVAL:\n{shown}"));
+        return Err(format!(
+            "Security values show QSECURITY {level}; DSPSYSVAL:\n{shown}"
+        ));
     }
     let ifc = nav(port, "GET", "/tcp/ifc", Some(sid), None)?;
     want(&ifc, 200, &["10.0.2.15"], "TCP/IP interfaces")?;
     let svr = nav(port, "GET", "/tcp/servers", Some(sid), None)?;
     want(&svr, 200, &["*HTTP"], "TCP servers")?;
     if !row_of(&svr.body, "*HTTP</a>").is_some_and(|r| r.contains("Started")) {
-        return Err(format!("*HTTP is not started on TCP servers:\n{}", svr.brief()));
+        return Err(format!(
+            "*HTTP is not started on TCP servers:\n{}",
+            svr.brief()
+        ));
     }
     let act = nav(port, "GET", "/perf/sys", Some(sid), None)?;
     want(&act, 200, &["<h1>System activity</h1>"], "System activity")?;
-    Ok(format!("QSECURITY {level} as DSPSYSVAL, 10.0.2.15, *HTTP started, System activity"))
+    Ok(format!(
+        "QSECURITY {level} as DSPSYSVAL, 10.0.2.15, *HTTP started, System activity"
+    ))
 }
 
 #[cfg(test)]
@@ -253,15 +320,22 @@ mod tests {
 
     #[test]
     fn names_and_jobs() {
-        assert_eq!(system_in("System: <b>QS400</b> &nbsp;").as_deref(), Some("QS400"));
         assert_eq!(
-            nav_job("<a href=\"/qs400/navigator/job/012345/QTMHHTTP/NAVIGATOR/general\">").as_deref(),
+            system_in("System: <b>QS400</b> &nbsp;").as_deref(),
+            Some("QS400")
+        );
+        assert_eq!(
+            nav_job("<a href=\"/qs400/navigator/job/012345/QTMHHTTP/NAVIGATOR/general\">")
+                .as_deref(),
             Some("012345/QTMHHTTP/NAVIGATOR")
         );
         assert_eq!(nav_job("x/QTMHHTTP/NAVIGATOR"), None);
         let body = "<tr><td class=\"mono\">QSECURITY</td>\n<td class=\"mono\">40</td></tr><tr><td>x</td></tr>";
         assert_eq!(mono_after(body, "QSECURITY</td>").as_deref(), Some("40"));
         assert!(row_of(body, "QSECURITY").is_some_and(|r| !r.contains('x')));
-        assert_eq!(csrf_in("<input type=\"hidden\" name=\"csrf\" value=\"ab12\">").as_deref(), Some("ab12"));
+        assert_eq!(
+            csrf_in("<input type=\"hidden\" name=\"csrf\" value=\"ab12\">").as_deref(),
+            Some("ab12")
+        );
     }
 }

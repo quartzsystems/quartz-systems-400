@@ -192,7 +192,16 @@ impl Prefs {
     /// `secs` as `user` reads dates and times, `offset` the system
     /// zone's at `secs`.
     pub fn when(&self, secs: u64, offset: i64) -> (String, String) {
-        let offset = if self.get(ZONE) == ZONE_UTC { 0 } else { offset };
-        crate::util::stamp(secs, offset, &self.get(DATE), self.get(TIME) != TIME_FORMATS[0])
+        let offset = if self.get(ZONE) == ZONE_UTC {
+            0
+        } else {
+            offset
+        };
+        crate::util::stamp(
+            secs,
+            offset,
+            &self.get(DATE),
+            self.get(TIME) != TIME_FORMATS[0],
+        )
     }
 }

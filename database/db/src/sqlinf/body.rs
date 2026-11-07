@@ -19,8 +19,16 @@ pub static VIEW_LAYOUT: Layout = Layout {
         field("flags", 1, 1),
         field("column_count", 2, 2),
         field("query_len", 4, 4),
-        Field { name: "query", offset: Some(8), size: None },
-        Field { name: "columns", offset: None, size: None },
+        Field {
+            name: "query",
+            offset: Some(8),
+            size: None,
+        },
+        Field {
+            name: "columns",
+            offset: None,
+            size: None,
+        },
     ],
 };
 
@@ -35,9 +43,21 @@ pub static INDEX_LAYOUT: Layout = Layout {
         field("include_count", 4, 2),
         field("reserved2", 6, 2),
         field("where_len", 8, 4),
-        Field { name: "where", offset: Some(12), size: None },
-        Field { name: "keys", offset: None, size: None },
-        Field { name: "includes", offset: None, size: None },
+        Field {
+            name: "where",
+            offset: Some(12),
+            size: None,
+        },
+        Field {
+            name: "keys",
+            offset: None,
+            size: None,
+        },
+        Field {
+            name: "includes",
+            offset: None,
+            size: None,
+        },
     ],
 };
 
@@ -86,12 +106,16 @@ impl TableDef {
     /// From the entry body; flags it does not know are left alone.
     pub fn decode(b: &[u8]) -> Result<Self> {
         let head = b.get(..2).ok_or_else(|| bad("table"))?;
-        Ok(Self { volatile: head[0] & 1 != 0 })
+        Ok(Self {
+            volatile: head[0] & 1 != 0,
+        })
     }
 }
 
 fn bad(what: &str) -> DbError {
-    DbError::Corrupt { what: format!("SQL information: {what}") }
+    DbError::Corrupt {
+        what: format!("SQL information: {what}"),
+    }
 }
 
 /// Bytes `n` at `at`, moving `at` on.
@@ -147,9 +171,20 @@ impl ViewDef {
     /// The entry body.
     #[must_use]
     pub fn encode(&self) -> Vec<u8> {
-        let mut out = vec![self.check as u8, u8::from(self.read_only) | u8::from(self.sys_naming) << 1];
-        out.extend_from_slice(&u16::try_from(self.columns.len()).expect("columns").to_le_bytes());
-        out.extend_from_slice(&u32::try_from(self.query.len()).expect("query").to_le_bytes());
+        let mut out = vec![
+            self.check as u8,
+            u8::from(self.read_only) | u8::from(self.sys_naming) << 1,
+        ];
+        out.extend_from_slice(
+            &u16::try_from(self.columns.len())
+                .expect("columns")
+                .to_le_bytes(),
+        );
+        out.extend_from_slice(
+            &u32::try_from(self.query.len())
+                .expect("query")
+                .to_le_bytes(),
+        );
         out.extend_from_slice(self.query.as_bytes());
         for c in &self.columns {
             put_short(&mut out, c);
@@ -175,7 +210,13 @@ impl ViewDef {
             let n = u16_at(b, &mut at, "view column")?;
             columns.push(text(b, &mut at, n.into(), "view column")?);
         }
-        Ok(Self { check, read_only: head[1] & 1 != 0, sys_naming: head[1] & 2 != 0, query, columns })
+        Ok(Self {
+            check,
+            read_only: head[1] & 1 != 0,
+            sys_naming: head[1] & 2 != 0,
+            query,
+            columns,
+        })
     }
 }
 
@@ -212,9 +253,17 @@ impl IndexDef {
         let flags = u8::from(self.where_not_null) | u8::from(self.encoded_vector) << 1;
         let mut out = vec![flags, 0];
         out.extend_from_slice(&u16::try_from(self.keys.len()).expect("keys").to_le_bytes());
-        out.extend_from_slice(&u16::try_from(self.includes.len()).expect("includes").to_le_bytes());
+        out.extend_from_slice(
+            &u16::try_from(self.includes.len())
+                .expect("includes")
+                .to_le_bytes(),
+        );
         out.extend_from_slice(&[0, 0]);
-        out.extend_from_slice(&u32::try_from(self.where_text.len()).expect("where").to_le_bytes());
+        out.extend_from_slice(
+            &u32::try_from(self.where_text.len())
+                .expect("where")
+                .to_le_bytes(),
+        );
         out.extend_from_slice(self.where_text.as_bytes());
         for k in &self.keys {
             out.push(u8::from(k.expression));
@@ -241,14 +290,24 @@ impl IndexDef {
             let kd = take(b, &mut at, 2, "index key")?;
             let (expression, descend) = (kd[0] != 0, kd[1] != 0);
             let n = u16_at(b, &mut at, "index key")?;
-            keys.push(IndexKey { expression, descend, text: text(b, &mut at, n.into(), "index key")? });
+            keys.push(IndexKey {
+                expression,
+                descend,
+                text: text(b, &mut at, n.into(), "index key")?,
+            });
         }
         let mut includes = Vec::with_capacity(inc_n.into());
         for _ in 0..inc_n {
             let n = u16_at(b, &mut at, "index include")?;
             includes.push(text(b, &mut at, n.into(), "index include")?);
         }
-        Ok(Self { where_not_null: flags & 1 != 0, encoded_vector: flags & 2 != 0, where_text, keys, includes })
+        Ok(Self {
+            where_not_null: flags & 1 != 0,
+            encoded_vector: flags & 2 != 0,
+            where_text,
+            keys,
+            includes,
+        })
     }
 }
 
@@ -306,8 +365,16 @@ mod tests {
             encoded_vector: false,
             where_text: "AMT > 2".into(),
             keys: vec![
-                IndexKey { expression: true, descend: false, text: "UPPER(NAME)".into() },
-                IndexKey { expression: false, descend: true, text: "ID".into() },
+                IndexKey {
+                    expression: true,
+                    descend: false,
+                    text: "UPPER(NAME)".into(),
+                },
+                IndexKey {
+                    expression: false,
+                    descend: true,
+                    text: "ID".into(),
+                },
             ],
             includes: vec!["SUM(AMT)".into()],
         };

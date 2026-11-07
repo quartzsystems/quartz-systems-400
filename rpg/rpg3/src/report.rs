@@ -74,7 +74,11 @@ fn yes(b: bool) -> &'static str {
 
 /// A page heading.
 fn heading(p: &Params, page: u32) -> String {
-    format!("1QS00RPG  {}  CVTRPGSRC                                      {}   Page {page:>4}", release::RELEASE, p.when)
+    format!(
+        "1QS00RPG  {}  CVTRPGSRC                                      {}   Page {page:>4}",
+        release::RELEASE,
+        p.when
+    )
 }
 
 /// The records with messages, each followed by its messages, and the
@@ -86,9 +90,21 @@ fn messages(out: &mut Vec<String>, c: &Conversion, p: &Params) {
     ats.sort_unstable();
     ats.dedup();
     for (k, at) in ats.iter().enumerate() {
-        let seq = p.seqs.get(*at).cloned().unwrap_or_else(|| format!("{:06}", (at + 1) * 100));
-        let line = c.lines.iter().find(|l| l.from == *at).map_or(String::new(), |l| l.text.chars().skip(5).collect());
-        out.push(format!("{}  {seq} {line}", if k == 0 { ' ' } else { '0' }).trim_end().to_string());
+        let seq = p
+            .seqs
+            .get(*at)
+            .cloned()
+            .unwrap_or_else(|| format!("{:06}", (at + 1) * 100));
+        let line = c
+            .lines
+            .iter()
+            .find(|l| l.from == *at)
+            .map_or(String::new(), |l| l.text.chars().skip(5).collect());
+        out.push(
+            format!("{}  {seq} {line}", if k == 0 { ' ' } else { '0' })
+                .trim_end()
+                .to_string(),
+        );
         for m in c.messages.iter().filter(|m| m.at == *at) {
             out.push(format!(" *{} {:02} {}", m.id, m.severity, text(m.id)));
         }
@@ -105,9 +121,15 @@ fn messages(out: &mut Vec<String>, c: &Conversion, p: &Params) {
         }
     }
     for (k, (id, sev, n)) in ids.iter().enumerate() {
-        out.push(format!("{}*{id} {sev:02} {n:>6} {}", if k == 0 { ' ' } else { '0' }, text(id)));
+        out.push(format!(
+            "{}*{id} {sev:02} {n:>6} {}",
+            if k == 0 { ' ' } else { '0' },
+            text(id)
+        ));
     }
-    out.push("0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *".to_string());
+    out.push(
+        "0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *".to_string(),
+    );
 }
 
 /// The report's records for one member.
@@ -128,7 +150,9 @@ pub fn report(c: &Conversion, p: &Params) -> Vec<String> {
         format!("     Library  . . . . . . . . . . . :     {}", p.to.0),
         format!("   To member  . . . . . . . . . . . :   {}", p.to.2),
         format!("0  Log file . . . . . . . . . . . . :   {log_file}"),
-        format!("     Library  . . . . . . . . . . . :     {log_lib}").trim_end().to_string(),
+        format!("     Library  . . . . . . . . . . . :     {log_lib}")
+            .trim_end()
+            .to_string(),
         format!("   Log member . . . . . . . . . . . :   {}", p.log.1),
         format!("0  Expand copy members. . . . . . . :   {}", yes(p.expcpy)),
         format!("   Print conversion report  . . . . :   {}", yes(p.cvtrpt)),
@@ -136,15 +160,33 @@ pub fn report(c: &Conversion, p: &Params) -> Vec<String> {
         format!("   Insert specification template. . :   {}", yes(p.insrtpl)),
         heading(p, 2),
     ];
-    let to_mbr = if p.to.2 == "*FROMMBR" { p.from.2.clone() } else { p.to.2.clone() };
-    out.push(format!("0  From file  . . . . . . . . . . . :   {}/{}({})", p.from.0, p.from.1, p.from.2));
-    out.push(format!("   To file. . . . . . . . . . . . . :   {}/{}({to_mbr})", p.to.0, p.to.1));
-    out.push(format!("   Log file . . . . . . . . . . . . :   {}", p.log.0));
+    let to_mbr = if p.to.2 == "*FROMMBR" {
+        p.from.2.clone()
+    } else {
+        p.to.2.clone()
+    };
+    out.push(format!(
+        "0  From file  . . . . . . . . . . . :   {}/{}({})",
+        p.from.0, p.from.1, p.from.2
+    ));
+    out.push(format!(
+        "   To file. . . . . . . . . . . . . :   {}/{}({to_mbr})",
+        p.to.0, p.to.1
+    ));
+    out.push(format!(
+        "   Log file . . . . . . . . . . . . :   {}",
+        p.log.0
+    ));
     out.push("-                       C o n v e r s i o n    R e p o r t".to_string());
     if !c.messages.is_empty() {
         messages(&mut out, c, p);
     }
-    let count = |lo: u8, hi: u8| c.messages.iter().filter(|m| m.severity >= lo && m.severity <= hi).count();
+    let count = |lo: u8, hi: u8| {
+        c.messages
+            .iter()
+            .filter(|m| m.severity >= lo && m.severity <= hi)
+            .count()
+    };
     let (info, warn, severe) = (count(0, 9), count(10, 29), count(30, 99));
     let highest = c.messages.iter().map(|m| m.severity).max().unwrap_or(0);
     out.extend([
@@ -154,10 +196,19 @@ pub fn report(c: &Conversion, p: &Params) -> Vec<String> {
         format!("     Warning      (10) . . . . . . . :  {warn:>7}"),
         format!("     Severe Error (30+)  . . . . . . :  {severe:>7}"),
         "     ---------------------------------  -------".to_string(),
-        format!("     Total . . . . . . . . . . . . . :  {:>7}", info + warn + severe),
+        format!(
+            "     Total . . . . . . . . . . . . . :  {:>7}",
+            info + warn + severe
+        ),
         "-  Source Totals:".to_string(),
-        format!("0    Original Records Read . . . . . . :  {:>7}", c.counts.records),
-        format!("     Converted Records Written . . . . :  {:>7}", c.counts.written),
+        format!(
+            "0    Original Records Read . . . . . . :  {:>7}",
+            c.counts.records
+        ),
+        format!(
+            "     Converted Records Written . . . . :  {:>7}",
+            c.counts.written
+        ),
         format!("     Highest Severity Message Issued . :  {highest:>7}"),
         "-         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *".to_string(),
         "-          * * * * *   E N D   O F   C O N V E R S I O N   * * * * *".to_string(),

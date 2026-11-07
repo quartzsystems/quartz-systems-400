@@ -137,7 +137,9 @@ fn spans() {
             .unwrap_or_else(|e| panic!("{pat:?} did not compile: {e}"));
         let got = r.find_at(text.as_bytes(), 0).map(|m| (m.start, m.end));
         if got != *want {
-            bad.push(format!("{pat:?} {syn:?} on {text:?}: got {got:?}, want {want:?}"));
+            bad.push(format!(
+                "{pat:?} {syn:?} on {text:?}: got {got:?}, want {want:?}"
+            ));
         }
     }
     assert!(bad.is_empty(), "{}", bad.join("\n"));
@@ -149,8 +151,18 @@ const GROUPS: &[(&str, Syntax, &str, &[Option<&str>])] = &[
     ("(a+)(b+)?", E, "aa", &[Some("aa"), None]),
     ("(a)|(b)", E, "b", &[None, Some("b")]),
     ("(x(y)z)", E, "xyz", &[Some("xyz"), Some("y")]),
-    ("\\(.*\\) \\(.*\\)", B, "john smith", &[Some("john"), Some("smith")]),
-    ("([0-9]+)-([0-9]+)", E, "tel 555-1234", &[Some("555"), Some("1234")]),
+    (
+        "\\(.*\\) \\(.*\\)",
+        B,
+        "john smith",
+        &[Some("john"), Some("smith")],
+    ),
+    (
+        "([0-9]+)-([0-9]+)",
+        E,
+        "tel 555-1234",
+        &[Some("555"), Some("1234")],
+    ),
     ("(a*)b", E, "b", &[Some("")]),
     ("(ab)*", E, "ababab", &[Some("ab")]),
 ];
@@ -161,7 +173,9 @@ fn groups() {
         let r = Regex::new(pat.as_bytes(), *syn, false).expect("compile");
         let m = r.find_at(text.as_bytes(), 0).expect("match");
         for (i, w) in want.iter().enumerate() {
-            let got = m.group(text.as_bytes(), i + 1).map(|g| String::from_utf8_lossy(g).into_owned());
+            let got = m
+                .group(text.as_bytes(), i + 1)
+                .map(|g| String::from_utf8_lossy(g).into_owned());
             assert_eq!(got.as_deref(), *w, "{pat:?} group {} on {text:?}", i + 1);
         }
         assert_eq!(r.groups(), want.len(), "{pat:?} group count");
@@ -235,7 +249,10 @@ fn find_all_steps() {
     assert_eq!(spans("x*", B, "ab"), vec![(0, 0), (1, 1), (2, 2)]);
     assert_eq!(spans("^a", B, "aaa"), vec![(0, 1)]);
     assert_eq!(spans("a$", B, "aaa"), vec![(2, 3)]);
-    assert_eq!(spans("[0-9]+", E, "a1b22c333"), vec![(1, 2), (3, 5), (6, 9)]);
+    assert_eq!(
+        spans("[0-9]+", E, "a1b22c333"),
+        vec![(1, 2), (3, 5), (6, 9)]
+    );
 }
 
 #[test]
@@ -360,13 +377,39 @@ fn random_simple_patterns_agree_with_brute_force() {
 #[test]
 fn random_patterns_never_panic() {
     let alphabet: &[&str] = &[
-        "a", "b", ".", "*", "+", "?", "|", "(", ")", "[", "]", "^", "$", "\\", "{", "}", ",",
-        "1", "2", "-", "[:alpha:]", "\\(", "\\)", "\\{", "\\}", "\\1",
+        "a",
+        "b",
+        ".",
+        "*",
+        "+",
+        "?",
+        "|",
+        "(",
+        ")",
+        "[",
+        "]",
+        "^",
+        "$",
+        "\\",
+        "{",
+        "}",
+        ",",
+        "1",
+        "2",
+        "-",
+        "[:alpha:]",
+        "\\(",
+        "\\)",
+        "\\{",
+        "\\}",
+        "\\1",
     ];
     let mut rng = Rng(42);
     for _ in 0..20_000 {
         let n = rng.below(10);
-        let pat: String = (0..n).map(|_| alphabet[rng.below(alphabet.len())]).collect();
+        let pat: String = (0..n)
+            .map(|_| alphabet[rng.below(alphabet.len())])
+            .collect();
         for syn in [B, E] {
             if let Ok(r) = Regex::new(pat.as_bytes(), syn, rng.below(2) == 0) {
                 let _ = r.find_all(b"ab(a)b{1}a*b");

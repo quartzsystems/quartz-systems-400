@@ -157,11 +157,14 @@ fn numeric(digits: &[u8], neg: bool, shape: Shape, s: Spec, opts: &EditOpts) -> 
         body.extend(frac.iter().map(|&d| digit_char(d)));
     }
     if opts.decimal_comma {
-        body = body.chars().map(|c| match c {
-            '.' => ',',
-            ',' => '.',
-            c => c,
-        }).collect();
+        body = body
+            .chars()
+            .map(|c| match c {
+                '.' => ',',
+                ',' => '.',
+                c => c,
+            })
+            .collect();
     }
     // The first printed character: a digit or the decimal point.
     let first = body.find(|c: char| c != fill).unwrap_or(0);

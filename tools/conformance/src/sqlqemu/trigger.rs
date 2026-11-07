@@ -81,20 +81,31 @@ impl Suite {
         setup(s)?;
         let _ = sql(s, &format!("DROP TABLE {LIB}/TRGT"))?;
         let _ = sql(s, &format!("DROP TABLE {LIB}/TRGLOG"))?;
-        sql_has(s, &format!("CREATE TABLE {LIB}/TRGT (ID INT NOT NULL, NAME CHAR(10), STAMP CHAR(10))"), &["OK"])?;
         sql_has(
             s,
-            &format!("CREATE TABLE {LIB}/TRGLOG (LFILE CHAR(10), LEVENT CHAR(1), LTIME CHAR(1), LID INT, LSTAMP CHAR(10))"),
+            &format!("CREATE TABLE {LIB}/TRGT (ID INT NOT NULL, NAME CHAR(10), STAMP CHAR(10))"),
+            &["OK"],
+        )?;
+        sql_has(
+            s,
+            &format!(
+                "CREATE TABLE {LIB}/TRGLOG (LFILE CHAR(10), LEVENT CHAR(1), LTIME CHAR(1), LID INT, LSTAMP CHAR(10))"
+            ),
             &["OK"],
         )?;
         put(s, "QSQLSRC", "TRGB", "SQL", TRGB)?;
         put(s, "QRPGLESRC", "TRGAFT", "RPGLE", TRGAFT)?;
         put(s, "QRPGLESRC", "RPGWRT", "RPGLE", RPGWRT)?;
         let mut tn = Tn::open(self)?;
-        tn.cmd(&format!("RUNSQLSTM SRCFILE({LIB}/QSQLSRC) SRCMBR(TRGB) COMMIT(*NONE)"), "")?;
+        tn.cmd(
+            &format!("RUNSQLSTM SRCFILE({LIB}/QSQLSRC) SRCMBR(TRGB) COMMIT(*NONE)"),
+            "",
+        )?;
         sql_has(
             s,
-            &format!("SELECT TRIGGER_NAME, ACTION_TIMING FROM QSYS2/SYSTRIGGERS WHERE TRIGGER_SCHEMA = '{LIB}'"),
+            &format!(
+                "SELECT TRIGGER_NAME, ACTION_TIMING FROM QSYS2/SYSTRIGGERS WHERE TRIGGER_SCHEMA = '{LIB}'"
+            ),
             &["TRGTB"],
         )?;
         for p in ["TRGAFT", "RPGWRT"] {
@@ -104,21 +115,35 @@ impl Suite {
             )?;
         }
         tn.cmd(
-            &format!("ADDPFTRG FILE({LIB}/TRGT) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM({LIB}/TRGAFT)"),
+            &format!(
+                "ADDPFTRG FILE({LIB}/TRGT) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM({LIB}/TRGAFT)"
+            ),
             "",
         )?;
         let shown = tn.cmd(&format!("CALL PGM({LIB}/RPGWRT)"), "RPG write done")?;
         tn.close()?;
         let _ = shown;
-        sql_has(s, &format!("SELECT ID, NAME, STAMP FROM {LIB}/TRGT"), &["RPGWRITE", "BEFORE", "1 row(s)"])?;
+        sql_has(
+            s,
+            &format!("SELECT ID, NAME, STAMP FROM {LIB}/TRGT"),
+            &["RPGWRITE", "BEFORE", "1 row(s)"],
+        )?;
         let log = sql_has(
             s,
             &format!("SELECT LFILE, LEVENT, LTIME, LID, LSTAMP FROM {LIB}/TRGLOG"),
             &["TRGT", "BEFORE", "1 row(s)"],
         )?;
-        let row = log.lines().find(|l| l.contains("TRGT")).unwrap_or("").split_whitespace().collect::<Vec<_>>().join(" ");
+        let row = log
+            .lines()
+            .find(|l| l.contains("TRGT"))
+            .unwrap_or("")
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
         if !row.contains("TRGT 1 1 1 BEFORE") {
-            return Err(format!("the after trigger's buffer was not an after insert of row 1 stamped BEFORE:\n{log}"));
+            return Err(format!(
+                "the after trigger's buffer was not an after insert of row 1 stamped BEFORE:\n{log}"
+            ));
         }
         Ok(format!(
             "RPG WRITE fired the SQL before trigger (the row is stamped BEFORE) and the RPG after trigger program (logged {row})"

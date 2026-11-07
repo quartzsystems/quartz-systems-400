@@ -111,7 +111,11 @@ pub const CURRENT: &[(&str, &str)] = &[
 /// Built-in global variables by schema and name.
 pub const GLOBALS: &[(&str, &str, &str)] = &[
     ("QSYS2", "JOB_NAME", "QSYS2.JOB_NAME"),
-    ("QSYS2", "SERVER_MODE_JOB_NAME", "QSYS2.SERVER_MODE_JOB_NAME"),
+    (
+        "QSYS2",
+        "SERVER_MODE_JOB_NAME",
+        "QSYS2.SERVER_MODE_JOB_NAME",
+    ),
     ("QSYS2", "PROCESS_ID", "QSYS2.PROCESS_ID"),
     ("QSYS2", "THREAD_ID", "QSYS2.THREAD_ID"),
     ("SYSIBM", "CLIENT_HOST", "SYSIBM.CLIENT_HOST"),
@@ -121,14 +125,21 @@ pub const GLOBALS: &[(&str, &str, &str)] = &[
     ("SYSIBM", "PACKAGE_SCHEMA", "SYSIBM.PACKAGE_SCHEMA"),
     ("SYSIBM", "PACKAGE_VERSION", "SYSIBM.PACKAGE_VERSION"),
     ("SYSIBM", "ROUTINE_SCHEMA", "SYSIBM.ROUTINE_SCHEMA"),
-    ("SYSIBM", "ROUTINE_SPECIFIC_NAME", "SYSIBM.ROUTINE_SPECIFIC_NAME"),
+    (
+        "SYSIBM",
+        "ROUTINE_SPECIFIC_NAME",
+        "SYSIBM.ROUTINE_SPECIFIC_NAME",
+    ),
     ("SYSIBM", "ROUTINE_TYPE", "SYSIBM.ROUTINE_TYPE"),
 ];
 
 /// The canonical name of a built-in global variable.
 #[must_use]
 pub fn global(schema: Option<&str>, name: &str) -> Option<&'static str> {
-    GLOBALS.iter().find(|(s, n, _)| *n == name && schema.is_none_or(|x| x == *s)).map(|(_, _, c)| *c)
+    GLOBALS
+        .iter()
+        .find(|(s, n, _)| *n == name && schema.is_none_or(|x| x == *s))
+        .map(|(_, _, c)| *c)
 }
 
 /// Whether `SET` may change the register.
@@ -168,7 +179,9 @@ impl Registers {
     /// `SET` of a settable register: the value checked as IBM checks it.
     pub fn set(&mut self, name: &str, v: &Value) -> Result<()> {
         let text = v.as_text().trim().to_ascii_uppercase();
-        let bad = || SqlError::Conversion { what: format!("'{text}' is not a value of {name}") };
+        let bad = || SqlError::Conversion {
+            what: format!("'{text}' is not a value of {name}"),
+        };
         match name {
             "CURRENT DEGREE" => {
                 let ok = matches!(text.as_str(), "ANY" | "NONE" | "MAX" | "IO" | "OPTIMIZE")
@@ -184,7 +197,11 @@ impl Registers {
                 }
                 self.xmlparse = text;
             }
-            _ => return Err(SqlError::Unsupported { what: format!("SET {name}") }),
+            _ => {
+                return Err(SqlError::Unsupported {
+                    what: format!("SET {name}"),
+                });
+            }
         }
         Ok(())
     }
@@ -195,8 +212,13 @@ impl Registers {
 pub fn result_type(name: &str) -> SqlType {
     match name {
         "CURRENT DEGREE" => SqlType::char(5, false),
-        "CURRENT DECFLOAT ROUNDING MODE" | "CURRENT IMPLICIT XMLPARSE OPTION" => SqlType::varchar(128, false),
-        "CURRENT CLIENT_ACCTNG" | "CURRENT CLIENT_APPLNAME" | "CURRENT CLIENT_USERID" | "CURRENT CLIENT_PROGRAMID"
+        "CURRENT DECFLOAT ROUNDING MODE" | "CURRENT IMPLICIT XMLPARSE OPTION" => {
+            SqlType::varchar(128, false)
+        }
+        "CURRENT CLIENT_ACCTNG"
+        | "CURRENT CLIENT_APPLNAME"
+        | "CURRENT CLIENT_USERID"
+        | "CURRENT CLIENT_PROGRAMID"
         | "CURRENT CLIENT_WRKSTNNAME" => SqlType::varchar(255, false),
         "QSYS2.JOB_NAME" | "QSYS2.SERVER_MODE_JOB_NAME" => SqlType::varchar(28, true),
         "QSYS2.PROCESS_ID" | "SYSIBM.CLIENT_PORT" => SqlType::int(true),
@@ -213,10 +235,14 @@ const SYSTEM_PATH: &str = "\"QSYS\",\"QSYS2\",\"SYSPROC\",\"SYSIBMADM\"";
 #[must_use]
 pub fn path_text(ctx: &super::SqlContext, entries: &[crate::ast::PathEntry]) -> String {
     use crate::ast::PathEntry as P;
-    let current = ctx.registers.path.clone().unwrap_or_else(|| match ctx.naming {
-        crate::ast::Naming::Sys => "*LIBL".into(),
-        crate::ast::Naming::Sql => format!("{SYSTEM_PATH},\"{}\"", ctx.user),
-    });
+    let current = ctx
+        .registers
+        .path
+        .clone()
+        .unwrap_or_else(|| match ctx.naming {
+            crate::ast::Naming::Sys => "*LIBL".into(),
+            crate::ast::Naming::Sql => format!("{SYSTEM_PATH},\"{}\"", ctx.user),
+        });
     let parts: Vec<String> = entries
         .iter()
         .map(|e| match e {

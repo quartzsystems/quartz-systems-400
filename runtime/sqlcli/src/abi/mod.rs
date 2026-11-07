@@ -54,7 +54,11 @@ struct JobHost<'a> {
 
 impl JobHost<'_> {
     fn extent(&self, p: u128) -> Option<(u64, usize)> {
-        let (at, avail) = self.job.spaces.extent(FatPtr::from_bytes(&p.to_le_bytes())).ok()?;
+        let (at, avail) = self
+            .job
+            .spaces
+            .extent(FatPtr::from_bytes(&p.to_le_bytes()))
+            .ok()?;
         Some((at, usize::try_from(avail).unwrap_or(usize::MAX)))
     }
 }
@@ -70,7 +74,9 @@ impl Host for JobHost<'_> {
     }
 
     fn write(&mut self, p: u128, b: &[u8]) -> bool {
-        let Some((at, avail)) = self.extent(p) else { return false };
+        let Some((at, avail)) = self.extent(p) else {
+            return false;
+        };
         if b.len() > avail {
             return false;
         }
@@ -80,8 +86,18 @@ impl Host for JobHost<'_> {
 
     fn run(&mut self, req: &Request) -> (Reply, Vec<(usize, Value)>) {
         if self.job.sql.is_none() {
-            let e = sql::SqlError::Database { what: "no database for SQL in this job".into(), msgid: None };
-            return (Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new(), call: None }, Vec::new());
+            let e = sql::SqlError::Database {
+                what: "no database for SQL in this job".into(),
+                msgid: None,
+            };
+            return (
+                Reply {
+                    sqlca: sql::Sqlca::from_error(&e),
+                    rows: Vec::new(),
+                    call: None,
+                },
+                Vec::new(),
+            );
         }
         qrpgrt::sqlcall::run_request(self.job, req.clone())
     }
@@ -92,7 +108,9 @@ impl Host for JobHost<'_> {
 pub fn with(job: &mut Job, f: impl FnOnce(&mut Cli, &mut dyn Host) -> i32) -> i32 {
     let key = std::ptr::from_ref(job) as usize;
     let cli = STATE.with(|m| Rc::clone(m.borrow_mut().entry(key).or_default()));
-    let Ok(mut c) = cli.try_borrow_mut() else { return rc::ERROR };
+    let Ok(mut c) = cli.try_borrow_mut() else {
+        return rc::ERROR;
+    };
     let mut host = JobHost { job };
     f(&mut c, &mut host)
 }

@@ -70,7 +70,11 @@ struct Once<R> {
 }
 
 impl<R: Restorer> Restorer for Once<R> {
-    fn restore(&mut self, stream: &[u8], library: &str) -> std::result::Result<Vec<ObjEntry>, RestoreError> {
+    fn restore(
+        &mut self,
+        stream: &[u8],
+        library: &str,
+    ) -> std::result::Result<Vec<ObjEntry>, RestoreError> {
         if let Some((_, o)) = self.done.iter().find(|(l, _)| l == library) {
             return Ok(o.clone());
         }
@@ -285,7 +289,8 @@ pub fn retranslate_user_programs(
             continue;
         }
         for ty in PROGRAM_TYPES {
-            let ids = ops::list(&mut t, lib, Some(ty)).map_err(|e| Error::Install(e.to_string()))?;
+            let ids =
+                ops::list(&mut t, lib, Some(ty)).map_err(|e| Error::Install(e.to_string()))?;
             for (_, id) in ids {
                 n += retranslate(&mut t, id, all).map_err(Error::Install)?;
             }

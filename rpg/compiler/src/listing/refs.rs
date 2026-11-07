@@ -10,7 +10,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use rpgfront::ast::{Conditioning, Def, Expr, Keyword, Stmt, Step};
+use rpgfront::ast::{Conditioning, Def, Expr, Keyword, Step, Stmt};
 use rpgfront::lex::Kind as TokKind;
 
 use crate::compile::Compiled;
@@ -50,10 +50,44 @@ fn indicator(word: &str) -> Option<String> {
 fn keeps_result(op: &str) -> bool {
     matches!(
         op,
-        "COMP" | "TESTN" | "TESTZ" | "TEST" | "LOOKUP" | "SETLL" | "SETGT" | "WRITE" | "UPDATE" | "DELETE" | "DSPLY"
-            | "CALL" | "CALLB" | "KFLD" | "TAG" | "GOTO" | "EXSR" | "PLIST" | "KLIST" | "OPEN" | "CLOSE"
-            | "FEOD" | "UNLOCK" | "EXCEPT" | "CAB" | "CABEQ" | "CABNE" | "CABLT" | "CABLE" | "CABGT" | "CABGE"
-            | "CAS" | "CASEQ" | "CASNE" | "CASLT" | "CASLE" | "CASGT" | "CASGE"
+        "COMP"
+            | "TESTN"
+            | "TESTZ"
+            | "TEST"
+            | "LOOKUP"
+            | "SETLL"
+            | "SETGT"
+            | "WRITE"
+            | "UPDATE"
+            | "DELETE"
+            | "DSPLY"
+            | "CALL"
+            | "CALLB"
+            | "KFLD"
+            | "TAG"
+            | "GOTO"
+            | "EXSR"
+            | "PLIST"
+            | "KLIST"
+            | "OPEN"
+            | "CLOSE"
+            | "FEOD"
+            | "UNLOCK"
+            | "EXCEPT"
+            | "CAB"
+            | "CABEQ"
+            | "CABNE"
+            | "CABLT"
+            | "CABLE"
+            | "CABGT"
+            | "CABGE"
+            | "CAS"
+            | "CASEQ"
+            | "CASNE"
+            | "CASLT"
+            | "CASLE"
+            | "CASGT"
+            | "CASGE"
     )
 }
 
@@ -61,9 +95,24 @@ fn keeps_result(op: &str) -> bool {
 fn not_names(kw: &str) -> bool {
     matches!(
         kw,
-        "EXTNAME" | "EXTFLD" | "EXTFILE" | "EXTMBR" | "PREFIX" | "DATFMT" | "TIMFMT" | "OPTIONS"
-            | "RENAME" | "INCLUDE" | "IGNORE" | "DTAARA" | "CCSID" | "EXTDESC" | "EXPORT" | "IMPORT"
-            | "OFLIND" | "RAFDATA"
+        "EXTNAME"
+            | "EXTFLD"
+            | "EXTFILE"
+            | "EXTMBR"
+            | "PREFIX"
+            | "DATFMT"
+            | "TIMFMT"
+            | "OPTIONS"
+            | "RENAME"
+            | "INCLUDE"
+            | "IGNORE"
+            | "DTAARA"
+            | "CCSID"
+            | "EXTDESC"
+            | "EXPORT"
+            | "IMPORT"
+            | "OFLIND"
+            | "RAFDATA"
     )
 }
 
@@ -118,7 +167,11 @@ impl Walk<'_> {
             self.sym(id, line, flag);
             Some(id)
         } else {
-            self.out.undefined.entry((self.scope, name.to_string())).or_default().push((line, flag));
+            self.out
+                .undefined
+                .entry((self.scope, name.to_string()))
+                .or_default()
+                .push((line, flag));
             None
         }
     }
@@ -126,11 +179,23 @@ impl Walk<'_> {
     fn special(&mut self, word: &str, line: u32, modified: bool) {
         let flag = if modified { 'M' } else { ' ' };
         if let Some(ind) = indicator(word) {
-            self.out.fields.entry(word.to_string()).or_default().push((line, flag));
+            self.out
+                .fields
+                .entry(word.to_string())
+                .or_default()
+                .push((line, flag));
             self.out.inds.entry(ind).or_default().push((line, flag));
         } else if word == "*IN" {
-            self.out.fields.entry("*IN".to_string()).or_default().push((line, flag));
-            self.out.inds.entry("*IN".to_string()).or_default().push((line, flag));
+            self.out
+                .fields
+                .entry("*IN".to_string())
+                .or_default()
+                .push((line, flag));
+            self.out
+                .inds
+                .entry("*IN".to_string())
+                .or_default()
+                .push((line, flag));
         } else if let Some(l) = self.out.labels.get_mut(&(self.scope, word.to_string())) {
             l.1.push((line, flag));
         }
@@ -150,23 +215,44 @@ impl Walk<'_> {
     fn cond_on(&mut self, c: &Conditioning, line: u32) {
         // Each indicator on the line it is written on: up to three a
         // line, `AND` and `OR` lines after the first.
-        let text = |no: u32| self.c.read.lines.iter().find(|l| l.no == no).map(|l| l.text.clone()).unwrap_or_default();
+        let text = |no: u32| {
+            self.c
+                .read
+                .lines
+                .iter()
+                .find(|l| l.no == no)
+                .map(|l| l.text.clone())
+                .unwrap_or_default()
+        };
         let mut slots = Vec::new();
         let mut no = line;
         loop {
             let t = text(no);
-            let n = (0..3).filter(|k| t.get(20 + 3 * k..23 + 3 * k).is_some_and(|s| !s.trim().is_empty())).count();
+            let n = (0..3)
+                .filter(|k| {
+                    t.get(20 + 3 * k..23 + 3 * k)
+                        .is_some_and(|s| !s.trim().is_empty())
+                })
+                .count();
             slots.extend(std::iter::repeat_n(no, n));
             no += 1;
             let next = text(no);
-            if !matches!(next.get(15..18).map(|s| s.trim().to_ascii_uppercase()).as_deref(), Some("AND" | "OR")) {
+            if !matches!(
+                next.get(15..18)
+                    .map(|s| s.trim().to_ascii_uppercase())
+                    .as_deref(),
+                Some("AND" | "OR")
+            ) {
                 break;
             }
         }
         let mut k = 0;
         for (a, alt) in c.iter().enumerate() {
             for ci in alt {
-                let at = slots.get(k).copied().unwrap_or(line + u32::try_from(a).unwrap_or(0));
+                let at = slots
+                    .get(k)
+                    .copied()
+                    .unwrap_or(line + u32::try_from(a).unwrap_or(0));
                 self.ind(&ci.ind, at, ' ');
                 k += 1;
             }
@@ -199,8 +285,16 @@ impl Walk<'_> {
                                 self.expr(x, false);
                             }
                         }
-                        Step::Field(f) if id.is_some_and(|i| matches!(self.c.table.syms[i].kind, Some(Kind::File(_)))) => {
-                            self.out.formats.entry(f.clone()).or_default().push((at.line, ' '));
+                        Step::Field(f)
+                            if id.is_some_and(|i| {
+                                matches!(self.c.table.syms[i].kind, Some(Kind::File(_)))
+                            }) =>
+                        {
+                            self.out
+                                .formats
+                                .entry(f.clone())
+                                .or_default()
+                                .push((at.line, ' '));
                         }
                         Step::Field(f) => {
                             let sub = match &ty {
@@ -211,7 +305,11 @@ impl Walk<'_> {
                             if let Some(sid) = sub {
                                 self.sym(sid, at.line, ' ');
                             } else if let Some(ds) = id {
-                                self.out.undefined_subs.entry((ds, f.clone())).or_default().push((at.line, ' '));
+                                self.out
+                                    .undefined_subs
+                                    .entry((ds, f.clone()))
+                                    .or_default()
+                                    .push((at.line, ' '));
                             }
                         }
                     }
@@ -223,7 +321,11 @@ impl Walk<'_> {
                     if let Some(n) = lit_index(i) {
                         // An element named by its index is noted last.
                         let line = at.line + LATE;
-                        self.out.inds.entry(format!("{n:02}")).or_default().push((line, flag));
+                        self.out
+                            .inds
+                            .entry(format!("{n:02}"))
+                            .or_default()
+                            .push((line, flag));
                     }
                     self.expr(i, false);
                 }
@@ -273,13 +375,23 @@ impl Walk<'_> {
     fn movea(&mut self, s: &Stmt) -> bool {
         let line = s.at.line;
         let ind_of = |e: &Expr| match e {
-            Expr::Special { word, index: Some(i), .. } if word == "*IN" => lit_index(i),
+            Expr::Special {
+                word,
+                index: Some(i),
+                ..
+            } if word == "*IN" => lit_index(i),
             _ => None,
         };
-        let (Some(f2), Some(r)) = (s.op.f2.first(), s.op.result.first()) else { return false };
+        let (Some(f2), Some(r)) = (s.op.f2.first(), s.op.result.first()) else {
+            return false;
+        };
         let (start, len, flag) = if let Some(n) = ind_of(r) {
             let all = matches!(f2, Expr::Fig(..));
-            let len = if all { 100 - n } else { operand_len(self.c, self.scope, f2).unwrap_or(1) };
+            let len = if all {
+                100 - n
+            } else {
+                operand_len(self.c, self.scope, f2).unwrap_or(1)
+            };
             self.expr(f2, false);
             (n, len, 'M')
         } else if let Some(n) = ind_of(f2) {
@@ -289,10 +401,22 @@ impl Walk<'_> {
         } else {
             return false;
         };
-        self.out.fields.entry("*IN".to_string()).or_default().push((line, flag));
-        self.out.inds.entry("*IN".to_string()).or_default().push((line, flag));
+        self.out
+            .fields
+            .entry("*IN".to_string())
+            .or_default()
+            .push((line, flag));
+        self.out
+            .inds
+            .entry("*IN".to_string())
+            .or_default()
+            .push((line, flag));
         for k in start..(start + len).min(100) {
-            self.out.inds.entry(format!("{k:02}")).or_default().push((line, flag));
+            self.out
+                .inds
+                .entry(format!("{k:02}"))
+                .or_default()
+                .push((line, flag));
         }
         true
     }
@@ -335,7 +459,13 @@ impl Walk<'_> {
                 .lines
                 .iter()
                 .find(|l| l.no == line)
-                .is_none_or(|l| !l.free_area().1.trim_start().to_ascii_uppercase().starts_with("CALLP"));
+                .is_none_or(|l| {
+                    !l.free_area()
+                        .1
+                        .trim_start()
+                        .to_ascii_uppercase()
+                        .starts_with("CALLP")
+                });
         if let Some(x) = &s.op.xf2 {
             if let ("FOR", Expr::Assign(_, a, b, _)) = (op, x) {
                 self.expr(a, false);
@@ -425,7 +555,9 @@ impl Walk<'_> {
                     let held = ds.take();
                     match &t.kind {
                         TokKind::Name(n) if after_dot && held.is_some() => {
-                            if let Some(sid) = held.and_then(|di| self.c.table.subfield(di, &n.to_ascii_uppercase())) {
+                            if let Some(sid) = held
+                                .and_then(|di| self.c.table.subfield(di, &n.to_ascii_uppercase()))
+                            {
                                 self.sym(sid, t.at.line, ' ');
                                 if let Ty::Ds(di) = self.c.table.syms[sid].ty {
                                     ds = Some(di);
@@ -439,11 +571,19 @@ impl Walk<'_> {
                                     ds = Some(di);
                                 }
                                 self.sym(id, t.at.line, ' ');
-                            } else if let Some(l) = self.out.labels.get_mut(&(self.scope, n.to_ascii_uppercase())) {
+                            } else if let Some(l) = self
+                                .out
+                                .labels
+                                .get_mut(&(self.scope, n.to_ascii_uppercase()))
+                            {
                                 // A subroutine (INFSR).
                                 l.1.push((t.at.line, ' '));
                             } else if self.c.table.recfmts.iter().any(|r| r.name == *n) {
-                                self.out.formats.entry(n.clone()).or_default().push((t.at.line, ' '));
+                                self.out
+                                    .formats
+                                    .entry(n.clone())
+                                    .or_default()
+                                    .push((t.at.line, ' '));
                             }
                         }
                         TokKind::Special(w) => self.special(w, t.at.line, false),
@@ -459,14 +599,19 @@ impl Walk<'_> {
         if let Some(v) = &d.value {
             self.expr(v, false);
         }
-        let ds = self.find(&d.name.to_ascii_uppercase()).and_then(|id| match self.c.table.syms[id].kind {
-            Some(Kind::Ds(di)) => Some(di),
-            _ => None,
+        let ds = self.find(&d.name.to_ascii_uppercase()).and_then(|id| {
+            match self.c.table.syms[id].kind {
+                Some(Kind::Ds(di)) => Some(di),
+                _ => None,
+            }
         });
         for ch in &d.children {
             // OVERLAY naming a subfield of a qualified structure.
             if let Some(di) = ds
-                && let Some(k) = ch.kws.iter().find(|k| k.name.eq_ignore_ascii_case("OVERLAY"))
+                && let Some(k) = ch
+                    .kws
+                    .iter()
+                    .find(|k| k.name.eq_ignore_ascii_case("OVERLAY"))
                 && let Some(t) = k.args.first().and_then(|a| a.toks.first())
                 && let TokKind::Name(n) = &t.kind
                 && self.find(&n.to_ascii_uppercase()).is_none()
@@ -479,11 +624,17 @@ impl Walk<'_> {
                 continue;
             }
             // An overlay of its own structure beside POS is dropped.
-            let dropped = self.c.diags.iter().any(|x| x.msgid == "RNF3575" && x.at.line == ch.at.line);
+            let dropped = self
+                .c
+                .diags
+                .iter()
+                .any(|x| x.msgid == "RNF3575" && x.at.line == ch.at.line);
             let own = |k: &&Keyword| {
                 dropped
                     && k.name.eq_ignore_ascii_case("OVERLAY")
-                    && k.args.first().and_then(|a| a.toks.first()).is_some_and(|t| matches!(&t.kind, TokKind::Name(n) if n.eq_ignore_ascii_case(&d.name)))
+                    && k.args.first().and_then(|a| a.toks.first()).is_some_and(
+                        |t| matches!(&t.kind, TokKind::Name(n) if n.eq_ignore_ascii_case(&d.name)),
+                    )
             };
             if ch.kws.iter().any(|k| own(&k)) {
                 let mut ch = ch.clone();
@@ -500,7 +651,9 @@ impl Walk<'_> {
 fn label_name(e: &Expr) -> Option<String> {
     match e {
         Expr::Ref { name, steps, .. } if steps.is_empty() => Some(name.clone()),
-        Expr::Special { word, index: None, .. } => Some(word.clone()),
+        Expr::Special {
+            word, index: None, ..
+        } => Some(word.clone()),
         _ => None,
     }
 }
@@ -518,16 +671,17 @@ fn labels(c: &Compiled) -> BTreeMap<(usize, String), (&'static str, Vec<At>)> {
                 "PLIST" => "PLIST",
                 _ => continue,
             };
-            if let Some(n) = s.op.f1.first().and_then(label_name)
-
-            {
+            if let Some(n) = s.op.f1.first().and_then(label_name) {
                 out.insert((scope, n), (what, Vec::new()));
             }
         }
     }
     for o in &c.module.outputs {
         if !o.except.is_empty() {
-            out.entry((0, o.except.to_ascii_uppercase())).or_insert(("EXCEPT", Vec::new())).1.push((o.at.line, 'D'));
+            out.entry((0, o.except.to_ascii_uppercase()))
+                .or_insert(("EXCEPT", Vec::new()))
+                .1
+                .push((o.at.line, 'D'));
         }
     }
     out
@@ -556,30 +710,55 @@ fn generated_defs(c: &Compiled) -> HashMap<String, u32> {
 /// error: IBM still lists their references.
 fn dropped(w: &mut Walk<'_>) {
     let c = w.c;
-    let kept: std::collections::HashSet<u32> =
-        c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter())).map(|s| s.at.line).collect();
+    let kept: std::collections::HashSet<u32> = c
+        .module
+        .calcs
+        .iter()
+        .chain(c.module.procs.iter().flat_map(|p| p.calcs.iter()))
+        .map(|s| s.at.line)
+        .collect();
     let info = super::stmts::analyze(&c.read.lines);
     for (l, inf) in c.read.lines.iter().zip(&info) {
-        if l.member != 0 || !inf.starts || inf.ty != super::stmts::Ty::Spec('C') || kept.contains(&l.no) || !l.fully_free {
+        if l.member != 0
+            || !inf.starts
+            || inf.ty != super::stmts::Ty::Spec('C')
+            || kept.contains(&l.no)
+            || !l.fully_free
+        {
             continue;
         }
         // Calculations between procedures are ignored.
-        let in_proc = c.module.procs.iter().any(|p| p.at.line <= l.no && l.no <= p.end.line);
+        let in_proc = c
+            .module
+            .procs
+            .iter()
+            .any(|p| p.at.line <= l.no && l.no <= p.end.line);
         if !in_proc && c.module.procs.first().is_some_and(|p| l.no > p.at.line) {
             continue;
         }
         // What follows an ended statement is ignored altogether.
-        if c.diags.iter().any(|d| d.at.line == l.no && d.msgid == "RNF5508") {
+        if c.diags
+            .iter()
+            .any(|d| d.at.line == l.no && d.msgid == "RNF5508")
+        {
             continue;
         }
         let text = l.text.split("//").next().unwrap_or("").to_ascii_uppercase();
-        let words: Vec<&str> = text.split(|ch: char| !(ch.is_ascii_alphanumeric() || "_#@$=*".contains(ch))).filter(|t| !t.is_empty()).collect();
+        let words: Vec<&str> = text
+            .split(|ch: char| !(ch.is_ascii_alphanumeric() || "_#@$=*".contains(ch)))
+            .filter(|t| !t.is_empty())
+            .collect();
         let op = words.first().copied().unwrap_or("");
         let assign = words.get(1) == Some(&"=");
-        let names: Vec<&str> = words.iter().copied().filter(|t| *t != "=" && !t.starts_with('*') && w.find(t).is_some()).collect();
+        let names: Vec<&str> = words
+            .iter()
+            .copied()
+            .filter(|t| *t != "=" && !t.starts_with('*') && w.find(t).is_some())
+            .collect();
         let last = names.len().saturating_sub(1);
         for (k, n) in names.iter().enumerate() {
-            let changed = ((assign || matches!(op, "CLEAR" | "RESET")) && k == 0) || (op == "DSPLY" && k == last.min(2) && k > 0);
+            let changed = ((assign || matches!(op, "CLEAR" | "RESET")) && k == 0)
+                || (op == "DSPLY" && k == last.min(2) && k > 0);
             w.name(n, l.no, if changed { 'M' } else { ' ' });
         }
     }
@@ -611,7 +790,14 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
         }
         w.ind(&i.rid, i.at.line, 'D');
         for f in &i.fields {
-            let line = if i.external { gen_lines.get(&f.name.to_ascii_uppercase()).copied().unwrap_or(f.at.line) } else { f.at.line };
+            let line = if i.external {
+                gen_lines
+                    .get(&f.name.to_ascii_uppercase())
+                    .copied()
+                    .unwrap_or(f.at.line)
+            } else {
+                f.at.line
+            };
             // A program-described field input again is changed there.
             if !i.external
                 && let Some(id) = w.find(&f.name.to_ascii_uppercase())
@@ -626,7 +812,11 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
         }
     }
     let free_at = |line: u32| {
-        c.read.lines.iter().find(|l| l.no == line).is_some_and(|l| !matches!(l.class, rpgfront::reader::Class::Spec(_)))
+        c.read
+            .lines
+            .iter()
+            .find(|l| l.no == line)
+            .is_some_and(|l| !matches!(l.class, rpgfront::reader::Class::Spec(_)))
     };
     // Calculations between procedures are ignored.
     let first_proc = m.procs.first().map_or(u32::MAX, |p| p.at.line);
@@ -635,7 +825,12 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
         w.stmt(s);
     }
     for o in &m.outputs {
-        let named = c.read.lines.iter().find(|l| l.no == o.at.line).is_none_or(|l| !l.text.get(6..16).unwrap_or("").trim().is_empty());
+        let named = c
+            .read
+            .lines
+            .iter()
+            .find(|l| l.no == o.at.line)
+            .is_none_or(|l| !l.text.get(6..16).unwrap_or("").trim().is_empty());
         if named && let Some(id) = w.find(&o.name.to_ascii_uppercase()) {
             w.sym(id, o.at.line, ' ');
         }
@@ -658,15 +853,23 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
             // So do a free-form END-PROC and DCL-PI that name it.
             let names = |t: &str, word: &str| {
                 let up = t.trim_start().to_ascii_uppercase();
-                up.strip_prefix(word).is_some_and(|r| r.split([' ', ';']).find(|w| !w.is_empty()) == Some(p.name.to_ascii_uppercase().as_str()))
+                up.strip_prefix(word).is_some_and(|r| {
+                    r.split([' ', ';']).find(|w| !w.is_empty())
+                        == Some(p.name.to_ascii_uppercase().as_str())
+                })
             };
             let named_end = c.read.lines.iter().any(|l| {
                 l.no == p.end.line
-                    && ((matches!(l.class, rpgfront::reader::Class::Spec('P' | 'p')) && !l.text.get(6..21).unwrap_or("").trim().is_empty())
+                    && ((matches!(l.class, rpgfront::reader::Class::Spec('P' | 'p'))
+                        && !l.text.get(6..21).unwrap_or("").trim().is_empty())
                         || (l.class == rpgfront::reader::Class::Free && names(&l.text, "END-PROC")))
             });
             if let Some(pi) = &p.pi
-                && c.read.lines.iter().any(|l| l.no == pi.at.line && l.class == rpgfront::reader::Class::Free && names(&l.text, "DCL-PI"))
+                && c.read.lines.iter().any(|l| {
+                    l.no == pi.at.line
+                        && l.class == rpgfront::reader::Class::Free
+                        && names(&l.text, "DCL-PI")
+                })
             {
                 w.sym(id, pi.at.line, ' ');
             }
@@ -707,7 +910,10 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
                 .find_map(|d| d.kws.iter().find(|k| k.name == "OFLIND").map(|k| k.at.line))
                 .unwrap_or(f.def_line);
             w.ind(of, line, 'd');
-            let word = format!("*IN{}", of.trim().to_ascii_uppercase().trim_start_matches("*IN"));
+            let word = format!(
+                "*IN{}",
+                of.trim().to_ascii_uppercase().trim_start_matches("*IN")
+            );
             w.out.fields.entry(word).or_default().push((line, 'd'));
         }
     }
@@ -726,16 +932,30 @@ pub(crate) fn unset_indicators(c: &Compiled) -> Vec<rpgfront::Diag> {
     use rpgfront::Diag;
     let refs = collect(c);
     // A file with an indicator area (INDARA) sets any of them.
-    if refs.inds.contains_key("*IN") || c.files.iter().any(|f| f.ext.as_ref().is_some_and(|e| e.indara)) {
+    if refs.inds.contains_key("*IN")
+        || c.files
+            .iter()
+            .any(|f| f.ext.as_ref().is_some_and(|e| e.indara))
+    {
         return Vec::new();
     }
     let mut by_files = std::collections::BTreeSet::new();
     for f in &c.files {
-        for r in f.ext.iter().flat_map(|e| e.formats.iter()).filter_map(|r| r.dsp.as_ref()) {
+        for r in f
+            .ext
+            .iter()
+            .flat_map(|e| e.formats.iter())
+            .filter_map(|r| r.dsp.as_ref())
+        {
             by_files.extend(r.option_inds.iter().chain(&r.response_inds).copied());
         }
     }
-    let calcs: Vec<&Stmt> = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter())).collect();
+    let calcs: Vec<&Stmt> = c
+        .module
+        .calcs
+        .iter()
+        .chain(c.module.procs.iter().flat_map(|p| p.calcs.iter()))
+        .collect();
     let mut out = Vec::new();
     for (ind, at) in &refs.inds {
         let Ok(n) = ind.parse::<u8>() else { continue };
@@ -755,10 +975,30 @@ pub(crate) fn unset_indicators(c: &Compiled) -> Vec<rpgfront::Diag> {
         lines.sort_unstable();
         lines.dedup();
         let first = lines[0];
-        out.push(Diag::new(ids::NOT_DEFINED, 30, rpgfront::ast::Pos { line: first, col: col(first) }).arg(word.clone()));
+        out.push(
+            Diag::new(
+                ids::NOT_DEFINED,
+                30,
+                rpgfront::ast::Pos {
+                    line: first,
+                    col: col(first),
+                },
+            )
+            .arg(word.clone()),
+        );
         for l in lines {
-            if calcs.iter().any(|s| s.at.line == l && !s.fixed && s.cond.is_empty()) {
-                out.push(Diag::new(ids::UNDEFINED_OPERAND, 30, rpgfront::ast::Pos { line: l, col: col(l) }));
+            if calcs
+                .iter()
+                .any(|s| s.at.line == l && !s.fixed && s.cond.is_empty())
+            {
+                out.push(Diag::new(
+                    ids::UNDEFINED_OPERAND,
+                    30,
+                    rpgfront::ast::Pos {
+                        line: l,
+                        col: col(l),
+                    },
+                ));
             }
         }
     }
@@ -771,13 +1011,19 @@ pub(crate) fn has_definition(c: &Compiled, id: SymId) -> bool {
     let s = &c.table.syms[id];
     match s.kind {
         Some(Kind::Proto(_)) => {
-            let declared = |defs: &[Def]| defs.iter().any(|d| d.kind == rpgfront::ast::DefKind::Pr && d.name.eq_ignore_ascii_case(&s.name));
+            let declared = |defs: &[Def]| {
+                defs.iter().any(|d| {
+                    d.kind == rpgfront::ast::DefKind::Pr && d.name.eq_ignore_ascii_case(&s.name)
+                })
+            };
             declared(&c.module.defs) || c.module.procs.iter().any(|p| declared(&p.defs))
         }
         Some(Kind::Subr | Kind::Label | Kind::Klist | Kind::Plist) => false,
         // Subfields a LIKEDS copies are defined where the original is.
         Some(Kind::Subfield) if s.name.is_empty() => false,
-        Some(Kind::Subfield) => s.parent.is_none_or(|p| c.table.syms[p].def_line <= s.def_line),
+        Some(Kind::Subfield) => s
+            .parent
+            .is_none_or(|p| c.table.syms[p].def_line <= s.def_line),
         // A basing pointer BASED declares.
         Some(Kind::Field) if s.implicit && s.def_line == 0 => false,
         _ => true,
@@ -789,7 +1035,9 @@ pub(crate) fn has_definition(c: &Compiled, id: SymId) -> bool {
 fn name_start(c: &Compiled, line: u32) -> u32 {
     let continued = |no: u32| {
         c.read.lines.iter().find(|l| l.no == no).is_some_and(|l| {
-            matches!(l.class, rpgfront::reader::Class::Spec(_)) && !l.fully_free && l.text.get(6..).unwrap_or("").trim_end().ends_with("...")
+            matches!(l.class, rpgfront::reader::Class::Spec(_))
+                && !l.fully_free
+                && l.text.get(6..).unwrap_or("").trim_end().ends_with("...")
         })
     };
     let mut at = line;

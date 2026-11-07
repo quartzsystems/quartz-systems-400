@@ -28,7 +28,10 @@ pub fn poll(host: &Host) {
     if waiting.is_empty() {
         return;
     }
-    if waiting.iter().all(|(_, (pgm, _), _)| pgm.is_empty() || pgm.starts_with('*')) {
+    if waiting
+        .iter()
+        .all(|(_, (pgm, _), _)| pgm.is_empty() || pgm.starts_with('*'))
+    {
         breaks(host, waiting.into_iter().map(|(q, _, m)| (q, m)).collect());
         return;
     }
@@ -47,9 +50,17 @@ pub fn breaks(host: &Host, msgs: Vec<(String, QMsg)>) {
             queues.push(q);
         }
     }
-    let saved = host.display.borrow().as_ref().map(crate::display::Display::snapshot);
+    let saved = host
+        .display
+        .borrow()
+        .as_ref()
+        .map(crate::display::Display::snapshot);
     for q in queues {
-        let q = if q.contains('/') { q } else { format!("*LIBL/{q}") };
+        let q = if q.contains('/') {
+            q
+        } else {
+            format!("*LIBL/{q}")
+        };
         let _ = keys::command(host, &format!("DSPMSG MSGQ({q})"), RunMode::Run);
         if keys::unwinding() {
             return;
@@ -103,11 +114,21 @@ pub mod rows {
 
 /// Lay Display Program Messages out on a model: the message lines,
 /// and with a reply the instruction and the field (its index).
-pub fn draw(m: &mut ScreenModel, lines: &[String], reply: Option<&str>, message: &str) -> Option<usize> {
+pub fn draw(
+    m: &mut ScreenModel,
+    lines: &[String],
+    reply: Option<&str>,
+    message: &str,
+) -> Option<usize> {
     m.clear();
     let title = "Display Program Messages";
     let cols = m.cols();
-    m.put(rows::TITLE, 1 + (cols - title.len()) / 2, title, attr::WHITE);
+    m.put(
+        rows::TITLE,
+        1 + (cols - title.len()) / 2,
+        title,
+        attr::WHITE,
+    );
     for (i, l) in lines.iter().take(rows::LAST - rows::FIRST + 1).enumerate() {
         let shown: String = l.chars().take(cols - 3).collect();
         m.put(rows::FIRST + i, 2, &shown, attr::GREEN);
@@ -153,7 +174,11 @@ pub fn inquiry_lines(from: &str, text: &str) -> Vec<String> {
 
 /// Ask the operator; the reply, `None` for the default.
 fn ask(host: &Host, q: &Inquiry) -> Option<String> {
-    let saved = host.display.borrow().as_ref().map(crate::display::Display::snapshot);
+    let saved = host
+        .display
+        .borrow()
+        .as_ref()
+        .map(crate::display::Display::snapshot);
     let mut surface = Surface::new(host.clone());
     let text = format!("{} {}", q.msgid, q.text.trim()).trim().to_string();
     let lines = inquiry_lines(&host.start.user, &text);
@@ -197,13 +222,18 @@ fn ask(host: &Host, q: &Inquiry) -> Option<String> {
 /// Enter to go on; with `reply` the operator's answer (blank for F3 or
 /// F12, as when nothing is typed).
 pub fn dsply(host: &Host, text: &str, reply: bool) -> String {
-    let saved = host.display.borrow().as_ref().map(crate::display::Display::snapshot);
+    let saved = host
+        .display
+        .borrow()
+        .as_ref()
+        .map(crate::display::Display::snapshot);
     let mut surface = Surface::new(host.clone());
     let lines = dsply_lines(text);
     let mut message = String::new();
     let mut typed = String::new();
     let answer = loop {
-        let field = surface.with_model(|m| draw(m, &lines, reply.then_some(typed.as_str()), &message));
+        let field =
+            surface.with_model(|m| draw(m, &lines, reply.then_some(typed.as_str()), &message));
         surface.flush(Read::MdtFields);
         let Some((a, _)) = surface.wait() else {
             break String::new();

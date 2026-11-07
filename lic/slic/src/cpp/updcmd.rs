@@ -58,7 +58,10 @@ fn kv_load(system: &mut System, name: &str) -> BTreeMap<String, String> {
     let r = in_store(system, |txn, qsys, _| {
         let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
         let n = qsname::Name::parse(name).expect("name");
-        let Some(id) = lib.lookup(txn, types::DTAARA, n).map_err(|e| e.to_string())? else {
+        let Some(id) = lib
+            .lookup(txn, types::DTAARA, n)
+            .map_err(|e| e.to_string())?
+        else {
             return Ok(String::new());
         };
         Ok(match dtaara::read(txn, id).map_err(|e| e.to_string())? {
@@ -73,7 +76,12 @@ fn kv_load(system: &mut System, name: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
-fn kv_store(system: &mut System, name: &str, text: &str, kv: &BTreeMap<String, String>) -> Result<(), String> {
+fn kv_store(
+    system: &mut System,
+    name: &str,
+    text: &str,
+    kv: &BTreeMap<String, String>,
+) -> Result<(), String> {
     let mut body = String::new();
     for (k, v) in kv {
         let _ = writeln!(body, "{k}={v}");
@@ -85,7 +93,10 @@ fn kv_store(system: &mut System, name: &str, text: &str, kv: &BTreeMap<String, S
         let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
         let n = qsname::Name::parse(name).expect("name");
         let v = DataAreaValue::Char(body);
-        match lib.lookup(txn, types::DTAARA, n).map_err(|e| e.to_string())? {
+        match lib
+            .lookup(txn, types::DTAARA, n)
+            .map_err(|e| e.to_string())?
+        {
             Some(id) => dtaara::write(txn, id, &v).map_err(|e| e.to_string()),
             None => dtaara::create(
                 txn,
@@ -194,10 +205,14 @@ fn sndptford(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
     let rmt = parms.text("RMTCPNAME").to_ascii_uppercase();
     if !rmt.is_empty() && rmt != "*IBMSRV" {
-        return Err(format!("CPF8C24 remote control point {rmt}: orders go to the update service (*IBMSRV)"));
+        return Err(format!(
+            "CPF8C24 remote control point {rmt}: orders go to the update service (*IBMSRV)"
+        ));
     }
     if parms.text("DLVRYFMT") == "*IMAGE" {
-        return Err("CPF9814 DLVRYFMT(*IMAGE): image catalogs are not available yet; use *SAVF".into());
+        return Err(
+            "CPF9814 DLVRYFMT(*IMAGE): image catalogs are not available yet; use *SAVF".into(),
+        );
     }
     let rel = release_text();
     let mut items = Vec::new();
@@ -210,9 +225,16 @@ fn sndptford(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             .unwrap_or("")
             .trim()
             .to_ascii_uppercase();
-        let release = e.get(2).and_then(|x| x.as_ref()).and_then(cmd::Value::text).unwrap_or("").trim();
+        let release = e
+            .get(2)
+            .and_then(|x| x.as_ref())
+            .and_then(cmd::Value::text)
+            .unwrap_or("")
+            .trim();
         if !release.is_empty() && release != "*ONLYRLS" && release != rel {
-            return Err(format!("CPF3598 {id}: release {release}; this system is {rel}"));
+            return Err(format!(
+                "CPF3598 {id}: release {release}; this system is {rel}"
+            ));
         }
         items.push(match id.as_str() {
             "*HIPERGRP" => "*HIPER".to_string(),
@@ -244,7 +266,13 @@ fn sndptford(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     let now = now_unix();
     for (id, savf) in &d.delivered {
-        deliver::record(&mut db, d.catalog.ptf(id).expect("checked"), savf, cover_only, now);
+        deliver::record(
+            &mut db,
+            d.catalog.ptf(id).expect("checked"),
+            savf,
+            cover_only,
+            now,
+        );
     }
     ptfcmd::store_db(system, &db)?;
     let mut groups = ptfcmd::load_groups(system)?;
@@ -255,7 +283,10 @@ fn sndptford(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         groups.offer(g, *level);
     }
     ptfcmd::store_groups(system, &groups)?;
-    a.insert("sequence".into(), d.catalog.sequence.max(sequence(&a)).to_string());
+    a.insert(
+        "sequence".into(),
+        d.catalog.sequence.max(sequence(&a)).to_string(),
+    );
     store_attrs(system, &a)?;
     let mut reply = CmdReply::default();
     for (id, savf) in &d.delivered {
@@ -268,16 +299,28 @@ fn sndptford(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         let _ = writeln!(reply.text, "{m} is not known to the update service");
     }
     if d.delivered.is_empty() && d.order.groups.is_empty() {
-        let _ = writeln!(reply.text, "Nothing to deliver: this system has what was ordered");
+        let _ = writeln!(
+            reply.text,
+            "Nothing to deliver: this system has what was ordered"
+        );
     }
     let n = d.delivered.len().to_string();
-    let _ = writeln!(reply.text, "{ORDERED} order {} complete, {n} PTF(s)", d.order.order);
-    reply.messages.push(msg(ORDERED, 4, &[(&d.order.order, 10), (&n, 5)]));
+    let _ = writeln!(
+        reply.text,
+        "{ORDERED} order {} complete, {n} PTF(s)",
+        d.order.order
+    );
+    reply
+        .messages
+        .push(msg(ORDERED, 4, &[(&d.order.order, 10), (&n, 5)]));
     Ok(reply)
 }
 
 fn chgupda(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    crate::stgsvc::security::require(sec::profile::SpecialAuth::IOSYSCFG, "change the update attributes")?;
+    crate::stgsvc::security::require(
+        sec::profile::SpecialAuth::IOSYSCFG,
+        "change the update attributes",
+    )?;
     let mut a = attrs(system);
     let url = parms.text("URL");
     match url.trim() {
@@ -296,7 +339,8 @@ fn chgupda(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             a.remove("proxy");
         }
         p => {
-            ptf_update::url::host_port(p, 8080).ok_or_else(|| format!("CPD0084 PROXY({p}) is not host:port"))?;
+            ptf_update::url::host_port(p, 8080)
+                .ok_or_else(|| format!("CPD0084 PROXY({p}) is not host:port"))?;
             a.insert("proxy".into(), p.into());
         }
     }
@@ -337,12 +381,18 @@ pub fn chkupd(system: &mut System) -> Result<(CmdReply, bool), String> {
     let mut groups = ptfcmd::load_groups(system)?;
     let found = deliver::compare(&cat, &db, &mut groups, &release_text(), &trusted_keys());
     ptfcmd::store_groups(system, &groups)?;
-    kv.insert("sequence".into(), cat.sequence.max(sequence(&kv)).to_string());
+    kv.insert(
+        "sequence".into(),
+        cat.sequence.max(sequence(&kv)).to_string(),
+    );
     kv.insert("last".into(), now_unix().to_string());
     store_attrs(system, &kv)?;
     let mut text = String::new();
     for (g, have, new) in &found.newer {
-        let _ = writeln!(text, "PTF group {g}: level {new} available, {have} installed");
+        let _ = writeln!(
+            text,
+            "PTF group {g}: level {new} available, {have} installed"
+        );
     }
     for p in &found.hiper {
         let _ = writeln!(text, "HIPER PTF {p} is not on this system");
@@ -352,12 +402,19 @@ pub fn chkupd(system: &mut System) -> Result<(CmdReply, bool), String> {
     }
     if !found.any() {
         return Ok((
-            super::done(format!("{CURRENT} this system has the newest fixes the service offers\n"), CURRENT, &[]),
+            super::done(
+                format!("{CURRENT} this system has the newest fixes the service offers\n"),
+                CURRENT,
+                &[],
+            ),
             false,
         ));
     }
-    let count = (found.newer.len() + found.hiper.len() + usize::from(found.cumulative.is_some())).to_string();
-    let summary = format!("Updates are available from the update service: {count} item(s). WRKPTFGRP shows the groups.");
+    let count = (found.newer.len() + found.hiper.len() + usize::from(found.cumulative.is_some()))
+        .to_string();
+    let summary = format!(
+        "Updates are available from the update service: {count} item(s). WRKPTFGRP shows the groups."
+    );
     let m = wm::obj::msgq::QMsg {
         msgid: AVAILABLE.into(),
         msgf: ("QCPFMSG".into(), "QSYS".into()),
@@ -454,7 +511,9 @@ fn sndsrvrqs(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     }
     let who = contact(system);
     let (c, _) = client(system)?;
-    let line = c.service("*TEST", &who).map_err(|e| format!("{} {e}", e.msgid()))?;
+    let line = c
+        .service("*TEST", &who)
+        .map_err(|e| format!("{} {e}", e.msgid()))?;
     let ticket = line.strip_prefix("ok ").unwrap_or(&line).trim().to_string();
     Ok(super::done(
         format!("{SENT} test request answered by {}: {ticket}\n", c.url),
@@ -462,4 +521,3 @@ fn sndsrvrqs(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         &[(&ticket, 10)],
     ))
 }
-

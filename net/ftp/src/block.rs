@@ -63,7 +63,9 @@ mod tests {
 
     #[test]
     fn round_trip() {
-        let data: Vec<u8> = (0..70_000u32).map(|i| u8::try_from(i % 251).unwrap()).collect();
+        let data: Vec<u8> = (0..70_000u32)
+            .map(|i| u8::try_from(i % 251).unwrap())
+            .collect();
         let b = encode(&data);
         assert!(complete(&b));
         assert!(!complete(&b[..b.len() - 1]));

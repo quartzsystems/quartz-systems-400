@@ -162,7 +162,11 @@ thread_local! {
 /// goes to another job) or runs again, its function unchanged.
 pub fn display_wait(link: &Shared, waiting: bool) {
     let function = FUNCTION.with(|f| f.borrow().clone());
-    status(link, if waiting { Status::Dspw } else { Status::Run }, &function);
+    status(
+        link,
+        if waiting { Status::Dspw } else { Status::Run },
+        &function,
+    );
 }
 
 /// Tell the service what the job is doing. A runnable job waits here,
@@ -213,8 +217,7 @@ impl IoSource for RemoteIo {
     fn io(&mut self, handle: u32, req: &IoRequest<'_>) -> IoResult {
         let req = OwnedRequest::from_request(req);
         let wait = self.waits.get(&handle).copied().unwrap_or(0);
-        let until = Instant::now()
-            + Duration::from_millis(u64::try_from(wait).unwrap_or(0));
+        let until = Instant::now() + Duration::from_millis(u64::try_from(wait).unwrap_or(0));
         let mut waited = false;
         loop {
             let r = self.link.borrow_mut().with(|l| l.io(handle, req.clone()));
@@ -238,6 +241,8 @@ impl IoSource for RemoteIo {
     }
 
     fn commit(&mut self, rollback: bool, actgrp: &str) -> Option<Result<(), IoFail>> {
-        self.link.borrow_mut().with(|l| l.io_commit(rollback, actgrp.to_string()))
+        self.link
+            .borrow_mut()
+            .with(|l| l.io_commit(rollback, actgrp.to_string()))
     }
 }

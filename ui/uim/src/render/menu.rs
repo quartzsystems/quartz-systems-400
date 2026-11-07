@@ -186,7 +186,10 @@ mod tests {
         assert_eq!(split_right("User tasks"), ("User tasks".into(), None));
         assert_eq!(split_right("Start TCP/IP"), ("Start TCP/IP".into(), None));
         assert_eq!(split_right("Sign off"), ("Sign off".into(), None));
-        assert_eq!(split_right("Interactive SQL"), ("Interactive SQL".into(), None));
+        assert_eq!(
+            split_right("Interactive SQL"),
+            ("Interactive SQL".into(), None)
+        );
         assert_eq!(
             split_right("Change Job  CHGJOB"),
             ("Change Job".into(), Some("CHGJOB".into()))

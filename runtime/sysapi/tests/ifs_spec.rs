@@ -13,7 +13,9 @@ type Row = (usize, usize, String);
 
 fn section() -> String {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/IFS.md");
-    let md = std::fs::read_to_string(path).expect("docs/IFS.md").replace("\r\n", "\n");
+    let md = std::fs::read_to_string(path)
+        .expect("docs/IFS.md")
+        .replace("\r\n", "\n");
     let start = md.find("\n## APIs").expect("an APIs section");
     let rest = &md[start + 1..];
     let end = rest[3..].find("\n## ").map_or(rest.len(), |i| i + 3);
@@ -59,7 +61,13 @@ fn attribute_sizes_match_the_spec() {
     let s = section();
     let doc: Vec<(String, u32, usize)> = table(&s, "### Attribute data")
         .into_iter()
-        .map(|c| (c[0].clone(), c[1].parse().expect("id"), c[2].parse().expect("size")))
+        .map(|c| {
+            (
+                c[0].clone(),
+                c[1].parse().expect("id"),
+                c[2].parse().expect("size"),
+            )
+        })
         .collect();
     let code: Vec<(String, u32, usize)> = sysapi::ifs::ATTR_DATA
         .iter()
@@ -74,7 +82,9 @@ fn layouts_match_the_spec() {
     let mut doc: BTreeMap<String, (usize, Vec<Row>)> = BTreeMap::new();
     let mut lines = s.lines().peekable();
     while let Some(l) = lines.next() {
-        let Some(rest) = l.strip_prefix("#### `") else { continue };
+        let Some(rest) = l.strip_prefix("#### `") else {
+            continue;
+        };
         let (name, tail) = rest.split_once('`').expect("closing backtick");
         let size: usize = tail
             .trim()
@@ -92,16 +102,26 @@ fn layouts_match_the_spec() {
                 continue;
             }
             let c = cells(n);
-            fields.push((c[0].parse().expect("offset"), c[1].parse().expect("size"), c[2].clone()));
+            fields.push((
+                c[0].parse().expect("offset"),
+                c[1].parse().expect("size"),
+                c[2].clone(),
+            ));
         }
         doc.insert(name.to_string(), (size, fields));
     }
     let code = sysapi::ifs::layout::layouts();
     assert_eq!(doc.len(), code.len(), "one table per layout");
     for l in code {
-        let (size, fields) = doc.get(l.name).unwrap_or_else(|| panic!("no table for {}", l.name));
+        let (size, fields) = doc
+            .get(l.name)
+            .unwrap_or_else(|| panic!("no table for {}", l.name));
         assert_eq!(*size, l.size, "{}", l.name);
-        let want: Vec<Row> = l.fields.iter().map(|f| (f.offset, f.size, f.name.to_string())).collect();
+        let want: Vec<Row> = l
+            .fields
+            .iter()
+            .map(|f| (f.offset, f.size, f.name.to_string()))
+            .collect();
         assert_eq!(fields, &want, "{}", l.name);
     }
 }

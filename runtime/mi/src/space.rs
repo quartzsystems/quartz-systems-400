@@ -407,7 +407,11 @@ mod tests {
         assert_eq!(sp.deref(fr).unwrap(), 5000);
         assert_eq!(sp.add(fr, 8).unwrap().offset, 8);
         assert_eq!(sp.add(fr, 9), Err(Cond::Mch0601));
-        assert_eq!(sp.extent(st), Ok((1010, 90)), "a static space covers its area");
+        assert_eq!(
+            sp.extent(st),
+            Ok((1010, 90)),
+            "a static space covers its area"
+        );
         assert_eq!(sp.extent(sp.add(fr, 8).unwrap()), Err(Cond::Mch0601));
         assert_eq!(sp.diff(sp.add(st, 20).unwrap(), st).unwrap(), 20);
         assert_eq!(sp.diff(st, fr), Err(Cond::Mch0601));

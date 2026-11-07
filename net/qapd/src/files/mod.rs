@@ -73,7 +73,11 @@ impl Stop {
     /// `from` cannot be converted to `to`.
     #[must_use]
     pub fn conversion(from: u16, to: u16) -> Self {
-        Self::Text(Status::Error, NO_CONVERSION, vec![from.to_string(), to.to_string()])
+        Self::Text(
+            Status::Error,
+            NO_CONVERSION,
+            vec![from.to_string(), to.to_string()],
+        )
     }
 }
 
@@ -131,7 +135,13 @@ impl Memo {
 /// Whether another job holds a byte-range lock over `len` bytes (0: to
 /// the end) from `start` that the access `kind` would conflict with:
 /// `EBUSY`, which the commands report as the object in use.
-pub(crate) fn held(c: &dyn IfsClient, fd: i32, kind: RangeKind, start: u64, len: u64) -> Result<(), Errno> {
+pub(crate) fn held(
+    c: &dyn IfsClient,
+    fd: i32,
+    kind: RangeKind,
+    start: u64,
+    len: u64,
+) -> Result<(), Errno> {
     let s = i64::try_from(start).unwrap_or(i64::MAX);
     let l = i64::try_from(len).unwrap_or(0);
     match c.lock_range(fd, F_GETLK, kind, SEEK_SET, s, l)? {

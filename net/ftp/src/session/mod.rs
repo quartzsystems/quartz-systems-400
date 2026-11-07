@@ -159,13 +159,18 @@ impl<H: Host> Session<H> {
     }
 
     fn home(&self) -> String {
-        self.user.as_ref().map_or_else(|| "/".into(), |p| p.home.clone())
+        self.user
+            .as_ref()
+            .map_or_else(|| "/".into(), |p| p.home.clone())
     }
 
     /// The banner, or the refusal when the request exit says no.
     pub fn greet(&mut self, net: &mut dyn Net) -> Flow {
         if !self.validate(net, regfac::formats::tcp::op::SESSION, "*N", b"") {
-            let _ = net.send(&Reply::new(421, "The server is not taking this connection."));
+            let _ = net.send(&Reply::new(
+                421,
+                "The server is not taking this connection.",
+            ));
             return Flow::Close;
         }
         let minutes = self.cfg.attrs.inacttimo / 60;
@@ -202,7 +207,11 @@ impl<H: Host> Session<H> {
             None => (line.trim().to_ascii_uppercase(), String::new()),
         };
         // A rename is RNFR followed at once by RNTO.
-        let from = if verb == "RNTO" { self.rnfr.take() } else { None };
+        let from = if verb == "RNTO" {
+            self.rnfr.take()
+        } else {
+            None
+        };
         if verb != "RNFR" && verb != "RNTO" {
             self.rnfr = None;
         }
@@ -266,7 +275,9 @@ impl<H: Host> Session<H> {
             "MDTM" => self.mdtm(&arg),
             "SITE" => self.site(&arg),
             "RCMD" => self.rcmd(&arg, net),
-            "ADDM" | "ADDV" | "CRTL" | "CRTP" | "CRTS" | "DLTF" | "DLTL" => self.object_cmd(&verb, &arg, net),
+            "ADDM" | "ADDV" | "CRTL" | "CRTP" | "CRTS" | "DLTF" | "DLTL" => {
+                self.object_cmd(&verb, &arg, net)
+            }
             "ABOR" => Reply::new(226, "No transfer is running; nothing to abort."),
             _ => unknown(&verb),
         };
@@ -286,7 +297,8 @@ impl<H: Host> Session<H> {
             op,
             user: user.to_string(),
             remote: net.peer().ip().to_string(),
-            info: ccsid::to_ebcdic(&String::from_utf8_lossy(info)).unwrap_or_else(|_| info.to_vec()),
+            info: ccsid::to_ebcdic(&String::from_utf8_lossy(info))
+                .unwrap_or_else(|_| info.to_vec()),
         });
         let a = self.host.exit(SERVER_REQ, &req);
         a.called.is_empty() || a.allow

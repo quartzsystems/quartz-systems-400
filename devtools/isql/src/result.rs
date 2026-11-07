@@ -94,7 +94,10 @@ impl Column {
     /// Whether values sit on the right.
     #[must_use]
     pub fn numeric(&self) -> bool {
-        matches!(self.kind(), Kind::Decimal(..) | Kind::Integer(_) | Kind::Float(_))
+        matches!(
+            self.kind(),
+            Kind::Decimal(..) | Kind::Integer(_) | Kind::Float(_)
+        )
     }
 
     /// The column's width on the line.
@@ -403,5 +406,4 @@ mod tests {
         p.left();
         assert_eq!(p.shift, 41);
     }
-
 }

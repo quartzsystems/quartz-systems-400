@@ -101,11 +101,14 @@ impl Words {
     }
 
     fn end(&self) -> bool {
-        matches!(self.toks.get(self.at), None | Some(Tok::End)) || matches!(self.toks.get(self.at), Some(Tok::Sym(";")))
+        matches!(self.toks.get(self.at), None | Some(Tok::End))
+            || matches!(self.toks.get(self.at), Some(Tok::Sym(";")))
     }
 
     fn here(&self) -> String {
-        self.toks.get(self.at).map_or_else(String::new, Tok::describe)
+        self.toks
+            .get(self.at)
+            .map_or_else(String::new, Tok::describe)
     }
 
     fn target(&mut self) -> Option<Target> {
@@ -124,8 +127,14 @@ impl Words {
 /// What `text` asks of the requester.
 #[must_use]
 pub fn classify(text: &str) -> Verb {
-    let Ok(toks) = tokenize(text) else { return Verb::Other };
-    let mut w = Words { toks: toks.into_iter().map(|t| t.tok).collect(), at: 0, inputs: 0 };
+    let Ok(toks) = tokenize(text) else {
+        return Verb::Other;
+    };
+    let mut w = Words {
+        toks: toks.into_iter().map(|t| t.tok).collect(),
+        at: 0,
+        inputs: 0,
+    };
     let first = w.word(0).map(str::to_string);
     let verb = match first.as_deref() {
         Some("CONNECT") => {
@@ -136,7 +145,9 @@ pub fn classify(text: &str) -> Verb {
             if w.eat("RESET") {
                 Verb::ConnectReset
             } else if w.eat("TO") {
-                let Some(rdb) = w.operand() else { return Verb::Syntax(w.here()) };
+                let Some(rdb) = w.operand() else {
+                    return Verb::Syntax(w.here());
+                };
                 let (mut user, mut using) = (None, None);
                 if w.eat("USER") {
                     user = w.operand();
@@ -175,10 +186,16 @@ pub fn classify(text: &str) -> Verb {
             }
         }
         Some("COMMIT") => return Verb::Commit,
-        Some("ROLLBACK") if !text.to_ascii_uppercase().contains("SAVEPOINT") => return Verb::Rollback,
+        Some("ROLLBACK") if !text.to_ascii_uppercase().contains("SAVEPOINT") => {
+            return Verb::Rollback;
+        }
         _ => return Verb::Other,
     };
-    if w.end() { verb } else { Verb::Syntax(w.here()) }
+    if w.end() {
+        verb
+    } else {
+        Verb::Syntax(w.here())
+    }
 }
 
 #[cfg(test)]
@@ -191,13 +208,30 @@ mod tests {
         assert_eq!(classify("connect reset"), Verb::ConnectReset);
         assert_eq!(
             classify("CONNECT TO S062B175 USER ? USING ?"),
-            Verb::Connect { rdb: Operand::Text("S062B175".into()), user: Some(Operand::Input(0)), using: Some(Operand::Input(1)) }
+            Verb::Connect {
+                rdb: Operand::Text("S062B175".into()),
+                user: Some(Operand::Input(0)),
+                using: Some(Operand::Input(1))
+            }
         );
-        assert_eq!(classify("CONNECT TO :rdb"), Verb::Connect { rdb: Operand::Input(0), user: None, using: None });
-        assert_eq!(classify("SET CONNECTION REMOTE1"), Verb::SetConnection(Operand::Text("REMOTE1".into())));
+        assert_eq!(
+            classify("CONNECT TO :rdb"),
+            Verb::Connect {
+                rdb: Operand::Input(0),
+                user: None,
+                using: None
+            }
+        );
+        assert_eq!(
+            classify("SET CONNECTION REMOTE1"),
+            Verb::SetConnection(Operand::Text("REMOTE1".into()))
+        );
         assert_eq!(classify("RELEASE ALL SQL"), Verb::Release(Target::All));
         assert_eq!(classify("RELEASE CURRENT"), Verb::Release(Target::Current));
-        assert_eq!(classify("DISCONNECT X"), Verb::Disconnect(Target::Named(Operand::Text("X".into()))));
+        assert_eq!(
+            classify("DISCONNECT X"),
+            Verb::Disconnect(Target::Named(Operand::Text("X".into())))
+        );
         assert_eq!(classify("RELEASE SAVEPOINT A"), Verb::Other);
         assert_eq!(classify("ROLLBACK TO SAVEPOINT A"), Verb::Other);
         assert_eq!(classify("COMMIT WORK"), Verb::Commit);

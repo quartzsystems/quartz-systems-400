@@ -87,12 +87,16 @@ impl Opener {
         read_exact(r, &mut len)?;
         let n = u32::from_be_bytes(len) as usize;
         if !(5..=MAX_PACKET).contains(&n) {
-            return Err(SshError::Protocol(format!("packet length {n} out of range")));
+            return Err(SshError::Protocol(format!(
+                "packet length {n} out of range"
+            )));
         }
         let body = match &mut self.protect {
             Protect::Clear => {
                 if !(n + 4).is_multiple_of(8) {
-                    return Err(SshError::Protocol("packet not a multiple of the block".into()));
+                    return Err(SshError::Protocol(
+                        "packet not a multiple of the block".into(),
+                    ));
                 }
                 let mut body = vec![0u8; n];
                 read_exact(r, &mut body)?;
@@ -100,7 +104,9 @@ impl Opener {
             }
             Protect::Gcm(aes, iv) => {
                 if !n.is_multiple_of(16) {
-                    return Err(SshError::Protocol("packet not a multiple of the block".into()));
+                    return Err(SshError::Protocol(
+                        "packet not a multiple of the block".into(),
+                    ));
                 }
                 let mut body = vec![0u8; n + 16];
                 read_exact(r, &mut body)?;

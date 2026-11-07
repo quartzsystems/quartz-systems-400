@@ -30,8 +30,14 @@ pub type Upgrade = Box<dyn FnOnce(&mut dyn Duplex, SetTimeout<'_>) + Send>;
 
 /// Whether `req` asks for a WebSocket.
 pub fn is_upgrade(req: &Request) -> bool {
-    let has = |h: &str, v: &str| req.header(h).is_some_and(|x| x.split(',').any(|p| p.trim().eq_ignore_ascii_case(v)));
-    req.method == "GET" && has("upgrade", "websocket") && has("connection", "upgrade") && req.header("sec-websocket-key").is_some()
+    let has = |h: &str, v: &str| {
+        req.header(h)
+            .is_some_and(|x| x.split(',').any(|p| p.trim().eq_ignore_ascii_case(v)))
+    };
+    req.method == "GET"
+        && has("upgrade", "websocket")
+        && has("connection", "upgrade")
+        && req.header("sec-websocket-key").is_some()
 }
 
 /// `Sec-WebSocket-Accept` for a client's key.
@@ -46,7 +52,9 @@ fn base64(b: &[u8]) -> String {
     const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut s = String::new();
     for c in b.chunks(3) {
-        let n = (u32::from(c[0]) << 16) | (u32::from(*c.get(1).unwrap_or(&0)) << 8) | u32::from(*c.get(2).unwrap_or(&0));
+        let n = (u32::from(c[0]) << 16)
+            | (u32::from(*c.get(1).unwrap_or(&0)) << 8)
+            | u32::from(*c.get(2).unwrap_or(&0));
         for i in 0..4 {
             if i <= c.len() {
                 s.push(A[(n >> (18 - 6 * i)) as usize & 63] as char);
@@ -62,7 +70,8 @@ fn base64(b: &[u8]) -> String {
 /// the connection; `400` when `req` is not a WebSocket handshake.
 pub fn upgrade(req: &Request, run: impl FnOnce(&mut Socket<'_>) + Send + 'static) -> Response {
     if !is_upgrade(req) || req.header("sec-websocket-version").map(str::trim) != Some("13") {
-        return crate::http::plain(400, "This address speaks WebSocket version 13 only.").with("Sec-WebSocket-Version", "13");
+        return crate::http::plain(400, "This address speaks WebSocket version 13 only.")
+            .with("Sec-WebSocket-Version", "13");
     }
     let accept = accept_key(req.header("sec-websocket-key").unwrap_or(""));
     Response {
@@ -115,7 +124,14 @@ impl Socket<'_> {
             match self.conn.read(&mut chunk) {
                 Ok(0) => return Err(io::ErrorKind::UnexpectedEof.into()),
                 Ok(n) => self.buf.extend_from_slice(&chunk[..n]),
-                Err(e) if matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut) => return Ok(None),
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut
+                    ) =>
+                {
+                    return Ok(None);
+                }
                 Err(e) => return Err(e),
             }
         }
@@ -131,23 +147,37 @@ impl Socket<'_> {
             let fin = b[0] & 0x80 != 0;
             let op = b[0] & 0x0F;
             if b[1] & 0x80 == 0 {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "a client frame must be masked"));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "a client frame must be masked",
+                ));
             }
             let (len, mut at) = match b[1] & 0x7F {
                 126 if b.len() >= 4 => (usize::from(u16::from_be_bytes([b[2], b[3]])), 4),
-                127 if b.len() >= 10 => (usize::try_from(u64::from_be_bytes(b[2..10].try_into().unwrap_or_default())).unwrap_or(usize::MAX), 10),
+                127 if b.len() >= 10 => (
+                    usize::try_from(u64::from_be_bytes(b[2..10].try_into().unwrap_or_default()))
+                        .unwrap_or(usize::MAX),
+                    10,
+                ),
                 126 | 127 => return Ok(None),
                 n => (usize::from(n), 2),
             };
             if len > MAX_MESSAGE || self.parts.len() + len > MAX_MESSAGE {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "message too large"));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "message too large",
+                ));
             }
             if b.len() < at + 4 + len {
                 return Ok(None);
             }
             let mask = [b[at], b[at + 1], b[at + 2], b[at + 3]];
             at += 4;
-            let data: Vec<u8> = b[at..at + len].iter().enumerate().map(|(i, x)| x ^ mask[i % 4]).collect();
+            let data: Vec<u8> = b[at..at + len]
+                .iter()
+                .enumerate()
+                .map(|(i, x)| x ^ mask[i % 4])
+                .collect();
             self.buf.drain(..at + len);
             match op {
                 0x8 => {
@@ -165,7 +195,9 @@ impl Socket<'_> {
                     if fin {
                         let whole = std::mem::take(&mut self.parts);
                         return Ok(Some(if self.text {
-                            Message::Text(String::from_utf8(whole).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "text is not UTF-8"))?)
+                            Message::Text(String::from_utf8(whole).map_err(|_| {
+                                io::Error::new(io::ErrorKind::InvalidData, "text is not UTF-8")
+                            })?)
                         } else {
                             Message::Binary(whole)
                         }));
@@ -229,7 +261,11 @@ pub fn server_texts(mut b: &[u8]) -> Vec<String> {
         let op = b[0] & 0x0F;
         let (len, at) = match b[1] & 0x7F {
             126 => (usize::from(u16::from_be_bytes([b[2], b[3]])), 4),
-            127 => (usize::try_from(u64::from_be_bytes(b[2..10].try_into().unwrap_or_default())).unwrap_or(0), 10),
+            127 => (
+                usize::try_from(u64::from_be_bytes(b[2..10].try_into().unwrap_or_default()))
+                    .unwrap_or(0),
+                10,
+            ),
             n => (usize::from(n), 2),
         };
         if b.len() < at + len {
@@ -249,7 +285,10 @@ mod tests {
 
     #[test]
     fn the_rfc_example_key() {
-        assert_eq!(accept_key("dGhlIHNhbXBsZSBub25jZQ=="), "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=");
+        assert_eq!(
+            accept_key("dGhlIHNhbXBsZSBub25jZQ=="),
+            "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+        );
         assert_eq!(base64(b"ab"), "YWI=");
     }
 
@@ -260,7 +299,11 @@ mod tests {
     impl Read for Pipe {
         fn read(&mut self, b: &mut [u8]) -> io::Result<usize> {
             let n = self.input.read(b)?;
-            if n == 0 { Err(io::ErrorKind::WouldBlock.into()) } else { Ok(n) }
+            if n == 0 {
+                Err(io::ErrorKind::WouldBlock.into())
+            } else {
+                Ok(n)
+            }
         }
     }
     impl Write for Pipe {
@@ -288,8 +331,14 @@ mod tests {
             parts: Vec::new(),
             text: false,
         };
-        assert_eq!(s.recv(Duration::from_millis(1)).unwrap(), Some(Message::Text("hello".into())));
-        assert_eq!(s.recv(Duration::from_millis(1)).unwrap(), Some(Message::Text("x".repeat(300))));
+        assert_eq!(
+            s.recv(Duration::from_millis(1)).unwrap(),
+            Some(Message::Text("hello".into()))
+        );
+        assert_eq!(
+            s.recv(Duration::from_millis(1)).unwrap(),
+            Some(Message::Text("x".repeat(300)))
+        );
         assert_eq!(s.recv(Duration::from_millis(1)).unwrap(), None);
         s.send("screen").unwrap();
         assert_eq!(server_texts(&p.output), ["screen"]);

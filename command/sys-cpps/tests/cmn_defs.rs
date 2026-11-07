@@ -44,13 +44,39 @@ fn crtlineth_has_the_captured_parameters() {
     in_order(
         &d,
         &[
-            "LIND", "RSRCNAME", "BRIDGE", "ONLINE", "VRYWAIT", "AGGPCY", "AGGRSCL", "NETCTL", "NWS",
-            "ASSOCPORT", "ADPTADR", "GRPADR", "ETHSTD", "LINESPEED", "DUPLEX", "SRVOPT", "MAXFRAME",
-            "SSAP", "CMNRCYLMT", "MSGQ", "AUT", "TEXT",
+            "LIND",
+            "RSRCNAME",
+            "BRIDGE",
+            "ONLINE",
+            "VRYWAIT",
+            "AGGPCY",
+            "AGGRSCL",
+            "NETCTL",
+            "NWS",
+            "ASSOCPORT",
+            "ADPTADR",
+            "GRPADR",
+            "ETHSTD",
+            "LINESPEED",
+            "DUPLEX",
+            "SRVOPT",
+            "MAXFRAME",
+            "SSAP",
+            "CMNRCYLMT",
+            "MSGQ",
+            "AUT",
+            "TEXT",
         ],
     );
     // And the documented ones the capture leaves out.
-    for k in ["EXCHID", "AUTOCRTCTL", "AUTODLTCTL", "MAXCTL", "THRESHOLD", "GENTSTFRM"] {
+    for k in [
+        "EXCHID",
+        "AUTOCRTCTL",
+        "AUTODLTCTL",
+        "MAXCTL",
+        "THRESHOLD",
+        "GENTSTFRM",
+    ] {
         parm(&d, k);
     }
     assert_eq!(parm(&d, "LIND").min, 1);
@@ -84,9 +110,24 @@ fn chglineth_defaults_to_same() {
     in_order(
         &d,
         &[
-            "LIND", "RSRCNAME", "BRIDGE", "ONLINE", "VRYWAIT", "AGGPCY", "AGGRSCL", "ASSOCPORT",
-            "ADPTADR", "GRPADR", "SSAP", "LINESPEED", "DUPLEX", "SRVOPT", "MAXFRAME", "CMNRCYLMT",
-            "MSGQ", "TEXT",
+            "LIND",
+            "RSRCNAME",
+            "BRIDGE",
+            "ONLINE",
+            "VRYWAIT",
+            "AGGPCY",
+            "AGGRSCL",
+            "ASSOCPORT",
+            "ADPTADR",
+            "GRPADR",
+            "SSAP",
+            "LINESPEED",
+            "DUPLEX",
+            "SRVOPT",
+            "MAXFRAME",
+            "CMNRCYLMT",
+            "MSGQ",
+            "TEXT",
         ],
     );
     for p in d.parms.iter().filter(|p| p.kwd != "LIND") {
@@ -134,19 +175,42 @@ fn vrycfg_and_wrkcfgsts() {
     let d = def("WRKCFGSTS");
     in_order(
         &d,
-        &["CFGTYPE", "CFGD", "OUTPUT", "RMTLOCNAME", "ASTLVL", "RANGE", "STATUS"],
+        &[
+            "CFGTYPE",
+            "CFGD",
+            "OUTPUT",
+            "RMTLOCNAME",
+            "ASTLVL",
+            "RANGE",
+            "STATUS",
+        ],
     );
     assert_eq!(parm(&d, "STATUS").dft.as_deref(), Some("*ALL"));
     assert_eq!(
         parm(&d, "STATUS").values,
-        ["*ALL", "*ACTIVE", "*FAILED", "*VARYOFF", "*VARYON", "*AVAILABLE"]
+        [
+            "*ALL",
+            "*ACTIVE",
+            "*FAILED",
+            "*VARYOFF",
+            "*VARYON",
+            "*AVAILABLE"
+        ]
     );
 }
 
 #[test]
 fn where_they_run() {
     use sys_cpps::inventory::{DIRECT, JOB_SITE};
-    for c in ["CRTLINETH", "CHGLINETH", "DLTLIND", "DSPLIND", "WRKLIND", "VRYCFG", "WRKCFGSTS"] {
+    for c in [
+        "CRTLINETH",
+        "CHGLINETH",
+        "DLTLIND",
+        "DSPLIND",
+        "WRKLIND",
+        "VRYCFG",
+        "WRKCFGSTS",
+    ] {
         assert!(DIRECT.contains(&c), "{c} runs in the service");
     }
     for c in ["DSPLIND", "WRKLIND", "WRKCFGSTS"] {

@@ -44,7 +44,8 @@ struct StoreFiles<'a> {
 /// display file.
 fn display_formats(system: &mut System, lib: &str, name: &str) -> Option<Vec<cl::Format>> {
     in_store(system, |txn, qsys, names| {
-        let id = wm::obj::find(txn, qsys, names, lib, name, types::FILE).map_err(|e| e.to_string())?;
+        let id =
+            wm::obj::find(txn, qsys, names, lib, name, types::FILE).map_err(|e| e.to_string())?;
         let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
         if ccsid::decode_trimmed(&h.attribute) != crate::svc::db::dspf::ATTR {
             return Ok(None);

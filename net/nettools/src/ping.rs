@@ -97,7 +97,11 @@ fn first(t: &Target) -> Msg {
             Kind::Info,
             format!("Checking the connection to host {n} at {}.", t.addr),
         ),
-        None => Msg::new(msg::VERIFY, Kind::Info, format!("Checking the connection to host {}.", t.rmtsys)),
+        None => Msg::new(
+            msg::VERIFY,
+            Kind::Info,
+            format!("Checking the connection to host {}.", t.rmtsys),
+        ),
     }
 }
 
@@ -113,12 +117,20 @@ fn reply_msg(n: u32, ms: u128, r: &Reply, dup: bool) -> Msg {
     Msg::new(
         id,
         Kind::Info,
-        format!("Reply {n} from {} in {ms} ms: {} bytes, {limit} {ttl}.{tail}", r.from, r.len),
+        format!(
+            "Reply {n} from {} in {ms} ms: {} bytes, {limit} {ttl}.{tail}",
+            r.from, r.len
+        ),
     )
 }
 
 /// Ping `t` through `e`; `clock` reads the time (a fake one in tests).
-pub fn run(t: &Target, o: &Options, e: &mut dyn Echoer, clock: &mut dyn FnMut() -> Instant) -> Outcome {
+pub fn run(
+    t: &Target,
+    o: &Options,
+    e: &mut dyn Echoer,
+    clock: &mut dyn FnMut() -> Instant,
+) -> Outcome {
     let mut msgs = vec![first(t)];
     let mut times: Vec<u128> = Vec::new();
     // When each packet went, and whether it was answered, by number.
@@ -167,7 +179,10 @@ pub fn run(t: &Target, o: &Options, e: &mut dyn Echoer, clock: &mut dyn FnMut() 
             msgs.push(Msg::new(
                 msg::NO_REPLY,
                 Kind::Diag,
-                format!("No reply within {} seconds to packet {n}.", o.wait.as_secs().max(1)),
+                format!(
+                    "No reply within {} seconds to packet {n}.",
+                    o.wait.as_secs().max(1)
+                ),
             ));
         }
     }
@@ -181,7 +196,11 @@ pub fn run(t: &Target, o: &Options, e: &mut dyn Echoer, clock: &mut dyn FnMut() 
         ));
     }
     let pct = (ok * 100).checked_div(o.count).unwrap_or(0);
-    let kind = if o.escape && ok < o.count { Kind::Escape } else { Kind::Comp };
+    let kind = if o.escape && ok < o.count {
+        Kind::Escape
+    } else {
+        Kind::Comp
+    };
     msgs.push(Msg::new(
         msg::STATS,
         kind,
@@ -223,7 +242,12 @@ mod tests {
         fn recv(&mut self, deadline: Instant) -> Result<Option<Reply>, String> {
             if let Some((seq, ms)) = self.queue.pop_front() {
                 self.now.set(self.now.get() + Duration::from_millis(ms));
-                Ok(Some(Reply { seq, from: "127.0.0.1".parse().unwrap(), ttl: Some(64), len: 256 }))
+                Ok(Some(Reply {
+                    seq,
+                    from: "127.0.0.1".parse().unwrap(),
+                    ttl: Some(64),
+                    len: 256,
+                }))
             } else {
                 self.now.set(deadline);
                 Ok(None)
@@ -233,8 +257,17 @@ mod tests {
 
     fn ping(plan: &[Option<u64>], o: Options, dup: bool) -> Outcome {
         let now = std::rc::Rc::new(std::cell::Cell::new(Instant::now()));
-        let mut f = Fake { plan: plan.iter().copied().collect(), queue: VecDeque::new(), now: now.clone(), dup };
-        let t = Target { rmtsys: "*INTNETADR".into(), name: None, addr: "127.0.0.1".parse().unwrap() };
+        let mut f = Fake {
+            plan: plan.iter().copied().collect(),
+            queue: VecDeque::new(),
+            now: now.clone(),
+            dup,
+        };
+        let t = Target {
+            rmtsys: "*INTNETADR".into(),
+            name: None,
+            addr: "127.0.0.1".parse().unwrap(),
+        };
         run(&t, &o, &mut f, &mut || now.get())
     }
 
@@ -244,40 +277,100 @@ mod tests {
 
     #[test]
     fn all_answered() {
-        let o = ping(&[Some(0), Some(2), Some(4)], Options { count: 3, ..Options::default() }, false);
-        assert_eq!(ids(&o), ["TCP3204", "TCP3215", "TCP3215", "TCP3215", "TCP3211", "TCP3210"]);
+        let o = ping(
+            &[Some(0), Some(2), Some(4)],
+            Options {
+                count: 3,
+                ..Options::default()
+            },
+            false,
+        );
+        assert_eq!(
+            ids(&o),
+            [
+                "TCP3204", "TCP3215", "TCP3215", "TCP3215", "TCP3211", "TCP3210"
+            ]
+        );
         assert_eq!(o.ok, 3);
         assert!(o.msgs[4].text.ends_with("0/2/4."), "{}", o.msgs[4].text);
-        assert!(o.msgs[5].text.starts_with("3 of 3 packets answered (100 %)"));
+        assert!(
+            o.msgs[5]
+                .text
+                .starts_with("3 of 3 packets answered (100 %)")
+        );
         assert_eq!(o.escape(), None);
-        assert!(o.msgs[2].text.contains("Reply 2 from 127.0.0.1 in 2 ms: 256 bytes, TTL 64"));
+        assert!(
+            o.msgs[2]
+                .text
+                .contains("Reply 2 from 127.0.0.1 in 2 ms: 256 bytes, TTL 64")
+        );
     }
 
     #[test]
     fn timeouts_as_the_oracle_sends_them() {
-        let o = ping(&[None, None], Options { count: 2, ..Options::default() }, false);
+        let o = ping(
+            &[None, None],
+            Options {
+                count: 2,
+                ..Options::default()
+            },
+            false,
+        );
         assert_eq!(ids(&o), ["TCP3204", "TCP3206", "TCP3206", "TCP3210"]);
         assert_eq!(o.msgs[3].kind, Kind::Comp);
-        let o = ping(&[None], Options { count: 1, verbose: false, escape: true, ..Options::default() }, false);
+        let o = ping(
+            &[None],
+            Options {
+                count: 1,
+                verbose: false,
+                escape: true,
+                ..Options::default()
+            },
+            false,
+        );
         assert_eq!(ids(&o), ["TCP3204", "TCP3210"]);
         assert_eq!(o.escape().unwrap().text, "0 of 1 packets answered (0 %).");
     }
 
     #[test]
     fn quiet_keeps_the_summaries() {
-        let o = ping(&[Some(1), Some(1)], Options { count: 2, verbose: false, ..Options::default() }, false);
+        let o = ping(
+            &[Some(1), Some(1)],
+            Options {
+                count: 2,
+                verbose: false,
+                ..Options::default()
+            },
+            false,
+        );
         assert_eq!(ids(&o), ["TCP3204", "TCP3211", "TCP3210"]);
     }
 
     #[test]
     fn a_duplicate_is_marked() {
-        let o = ping(&[Some(1), Some(1)], Options { count: 2, ..Options::default() }, true);
-        assert_eq!(ids(&o), ["TCP3204", "TCP3215", "TCP3216", "TCP3215", "TCP3211", "TCP3210"]);
+        let o = ping(
+            &[Some(1), Some(1)],
+            Options {
+                count: 2,
+                ..Options::default()
+            },
+            true,
+        );
+        assert_eq!(
+            ids(&o),
+            [
+                "TCP3204", "TCP3215", "TCP3216", "TCP3215", "TCP3211", "TCP3210"
+            ]
+        );
     }
 
     #[test]
     fn named_target() {
-        let t = Target { rmtsys: "LOOPBACK".into(), name: Some("LOOPBACK".into()), addr: "127.0.0.1".parse().unwrap() };
+        let t = Target {
+            rmtsys: "LOOPBACK".into(),
+            name: Some("LOOPBACK".into()),
+            addr: "127.0.0.1".parse().unwrap(),
+        };
         let m = first(&t);
         assert_eq!(m.id, "TCP3203");
         assert!(m.text.contains("LOOPBACK at 127.0.0.1"));

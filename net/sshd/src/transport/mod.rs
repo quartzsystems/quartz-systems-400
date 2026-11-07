@@ -41,7 +41,9 @@ pub fn read_ident(r: &mut dyn BufRead) -> SshResult<String> {
             return Ok(text);
         }
         if text.starts_with("SSH-") {
-            return Err(SshError::Protocol(format!("protocol version not supported: {text}")));
+            return Err(SshError::Protocol(format!(
+                "protocol version not supported: {text}"
+            )));
         }
     }
     Err(SshError::Protocol("no identification line".into()))

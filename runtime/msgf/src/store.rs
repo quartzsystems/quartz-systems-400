@@ -208,7 +208,10 @@ pub fn install_product_files(
             id
         };
         let name = Name::parse(&f.name)?;
-        if Library::load(txn, plib)?.lookup(txn, types::MSGF, name)?.is_some() {
+        if Library::load(txn, plib)?
+            .lookup(txn, types::MSGF, name)?
+            .is_some()
+        {
             continue;
         }
         let id = crtmsgf(txn, ctx, plib, name, &f.text, true)?;
@@ -238,7 +241,13 @@ pub fn set_ccsid(txn: &mut Txn<'_>, id: ObjectId, ccsid: u16) -> Result<()> {
 
 /// The library `name` in `QSYS`, made with `text` when absent; whether
 /// it was made.
-pub fn ensure_library(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId, name: &str, text: &str) -> Result<(ObjectId, bool)> {
+pub fn ensure_library(
+    txn: &mut Txn<'_>,
+    ctx: &Ctx,
+    qsys: ObjectId,
+    name: &str,
+    text: &str,
+) -> Result<(ObjectId, bool)> {
     let lname = Name::parse(name)?;
     if let Some(id) = Library::load(txn, qsys)?.lookup(txn, types::LIB, lname)? {
         return Ok((id, false));

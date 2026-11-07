@@ -21,14 +21,14 @@ use ifscmd::cmds::dirs::{Md, md};
 use ifscmd::cmds::links::{Mov, del, mov};
 use qap_proto::ops::connection::HelloReply;
 use qap_proto::ops::ifs::{
-    CreateDirectory, Entries, Entry, EntryKind, FileData, FromTo, ListDirectory, PathRef, ReadFile, WriteFile,
-    WriteMode, Written,
+    CreateDirectory, Entries, Entry, EntryKind, FileData, FromTo, ListDirectory, PathRef, ReadFile,
+    WriteFile, WriteMode, Written,
 };
 use qap_proto::{Envelope, Op, Service, Status};
 use qapd::testing::files::{
-    BIG_SIZE, BINARY_FILE, BROKEN, BROKEN_TARGET, CHECKED_OUT, CHECKED_OUT_TO, JAPANESE, LINK, LOCKED, MANY,
-    MANY_COUNT, MIXED, PRIVATE, PRIVATE_FILE, TEXT, TEXT_CCSIDS, TEXT_DIR, TREE, TREE_DIRS, TREE_FILES, TREE_HELD,
-    big_byte, text_file,
+    BIG_SIZE, BINARY_FILE, BROKEN, BROKEN_TARGET, CHECKED_OUT, CHECKED_OUT_TO, JAPANESE, LINK,
+    LOCKED, MANY, MANY_COUNT, MIXED, PRIVATE, PRIVATE_FILE, TEXT, TEXT_CCSIDS, TEXT_DIR, TREE,
+    TREE_DIRS, TREE_FILES, TREE_HELD, big_byte, text_file,
 };
 
 use common::{Controls, Run, cfg, start_with};
@@ -51,13 +51,20 @@ fn bob() -> (Arc<Controls>, Run) {
 
 /// The status and message ID of a reply.
 fn said(e: &Envelope) -> (Status, String) {
-    (e.status, e.message.as_ref().map(|m| m.id.clone()).unwrap_or_default())
+    (
+        e.status,
+        e.message.as_ref().map(|m| m.id.clone()).unwrap_or_default(),
+    )
 }
 
 /// The reply's message is the command's `m`: identifier and data.
 fn same_message(e: &Envelope, m: &Msg) {
     let got = e.message.as_ref().expect("a message");
-    assert_eq!((got.id.as_str(), got.data.as_slice()), (m.id.as_str(), m.data.as_slice()), "{e:?}");
+    assert_eq!(
+        (got.id.as_str(), got.data.as_slice()),
+        (m.id.as_str(), m.data.as_slice()),
+        "{e:?}"
+    );
 }
 
 fn list(r: &mut Run, path: &str, pattern: &str, start: u32, max: u32) -> Envelope {
@@ -93,7 +100,14 @@ fn data(e: &Envelope) -> FileData {
     e.body_as().unwrap()
 }
 
-fn write(r: &mut Run, path: &str, mode: WriteMode, offset: u64, data: &[u8], data_ccsid: Option<u16>) -> Envelope {
+fn write(
+    r: &mut Run,
+    path: &str,
+    mode: WriteMode,
+    offset: u64,
+    data: &[u8],
+    data_ccsid: Option<u16>,
+) -> Envelope {
     r.client.call(
         Op::WriteFile,
         &WriteFile {
@@ -126,7 +140,9 @@ fn from_to(r: &mut Run, op: Op, from: &str, to: &str, replace: bool) -> Envelope
 /// A file's bytes as stored, read by the test system as `user`.
 fn stored(c: &Controls, path: &str) -> Vec<u8> {
     c.files.as_user("QSECOFR", 9, |cl| {
-        let fd = cl.open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY)).unwrap();
+        let fd = cl
+            .open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY))
+            .unwrap();
         let b = ifs::client::read_all(cl, fd).unwrap();
         cl.close(fd).unwrap();
         b
@@ -140,7 +156,10 @@ fn read_on(r: &mut Run, path: &str, step: u64, as_ccsid: Option<u16>) -> Vec<Vec
     let mut at = 0;
     loop {
         let d = data(&read(r, path, at, step, as_ccsid));
-        assert!(d.next_offset > at || d.next_offset >= d.size, "no progress at {at}");
+        assert!(
+            d.next_offset > at || d.next_offset >= d.size,
+            "no progress at {at}"
+        );
         assert!(d.next_offset <= at + step);
         out.push(d.data);
         at = d.next_offset;
@@ -170,32 +189,53 @@ fn list_directory_pages_and_patterns() {
         start += u32::try_from(p.entries.len()).unwrap();
         names.extend(p.entries.into_iter().map(|e| e.name));
     }
-    assert_eq!(names, e.entries.iter().map(|e| e.name.clone()).collect::<Vec<_>>());
+    assert_eq!(
+        names,
+        e.entries.iter().map(|e| e.name.clone()).collect::<Vec<_>>()
+    );
     let p: Entries = list(&mut r, MANY, "f11??.TXT", 90, 0).body_as().unwrap();
     assert_eq!((p.total, p.entries.len()), (100, 10));
     assert_eq!(p.entries[0].name, "f1190.txt");
     let f = &p.entries[0];
-    assert_eq!((f.kind, f.size, f.owner.as_str(), f.ccsid), (EntryKind::File, 10, "BOB", 1208));
+    assert_eq!(
+        (f.kind, f.size, f.owner.as_str(), f.ccsid),
+        (EntryKind::File, 10, "BOB", 1208)
+    );
     assert!(f.modified > 1_700_000_000_000);
     // Kinds, links and their targets.
     let home: Entries = list(&mut r, "/home/BOB", "*", 0, 0).body_as().unwrap();
     let by = |n: &str| home.entries.iter().find(|e| e.name == n).unwrap().clone();
     assert_eq!(by("many").kind, EntryKind::Directory);
     assert_eq!(by("link1208").kind, EntryKind::Symlink);
-    assert_eq!(by("link1208").target.as_deref(), Some(text_file(1208).as_str()));
+    assert_eq!(
+        by("link1208").target.as_deref(),
+        Some(text_file(1208).as_str())
+    );
     assert_eq!(by("broken").target.as_deref(), Some(BROKEN_TARGET));
     assert_eq!(by("locked.txt").kind, EntryKind::File);
     // /QSYS.LIB lists as the commands list it.
     let q: Entries = list(&mut r, "/QSYS.LIB", "*.LIB", 0, 0).body_as().unwrap();
-    assert!(q.entries.iter().any(|e| e.name == "QGPL.LIB" && e.kind == EntryKind::Directory), "{q:?}");
-    let q: Entries = list(&mut r, "/QSYS.LIB/QGPL.LIB", "*", 0, 0).body_as().unwrap();
+    assert!(
+        q.entries
+            .iter()
+            .any(|e| e.name == "QGPL.LIB" && e.kind == EntryKind::Directory),
+        "{q:?}"
+    );
+    let q: Entries = list(&mut r, "/QSYS.LIB/QGPL.LIB", "*", 0, 0)
+        .body_as()
+        .unwrap();
     assert!(q.entries.iter().any(|e| e.name == "QCLSRC.FILE"), "{q:?}");
     // Statuses.
-    assert_eq!(said(&list(&mut r, "/home/BOB/nope", "*", 0, 0)), (Status::NotFound, "CPFA0A9".into()));
+    assert_eq!(
+        said(&list(&mut r, "/home/BOB/nope", "*", 0, 0)),
+        (Status::NotFound, "CPFA0A9".into())
+    );
     let e = list(&mut r, PRIVATE, "*", 0, 0);
     assert_eq!(said(&e), (Status::NotAuthorized, "CPFA09C".into()));
     // As WRKLNK answers BOB.
-    let cmd = sys.files.as_user("BOB", 50, |cl| ifscmd::display::links(cl, &format!("{PRIVATE}/*"), "*ALL"));
+    let cmd = sys.files.as_user("BOB", 50, |cl| {
+        ifscmd::display::links(cl, &format!("{PRIVATE}/*"), "*ALL")
+    });
     same_message(&e, &Msg::errno(cmd.unwrap_err(), PRIVATE));
 }
 
@@ -203,11 +243,20 @@ fn list_directory_pages_and_patterns() {
 fn get_info() {
     let (_sys, mut r) = bob();
     let e: Entry = info(&mut r, &text_file(37)).body_as().unwrap();
-    assert_eq!((e.name.as_str(), e.kind, e.ccsid, e.owner.as_str()), ("text37.txt", EntryKind::File, 37, "BOB"));
-    assert_eq!(e.size, ccsid::conv::from_str(37, TEXT).unwrap().len() as u64);
+    assert_eq!(
+        (e.name.as_str(), e.kind, e.ccsid, e.owner.as_str()),
+        ("text37.txt", EntryKind::File, 37, "BOB")
+    );
+    assert_eq!(
+        e.size,
+        ccsid::conv::from_str(37, TEXT).unwrap().len() as u64
+    );
     assert_eq!(e.target, None);
     let l: Entry = info(&mut r, LINK).body_as().unwrap();
-    assert_eq!((l.kind, l.target.as_deref()), (EntryKind::Symlink, Some(text_file(1208).as_str())));
+    assert_eq!(
+        (l.kind, l.target.as_deref()),
+        (EntryKind::Symlink, Some(text_file(1208).as_str()))
+    );
     // A broken link is still a link.
     let b: Entry = info(&mut r, BROKEN).body_as().unwrap();
     assert_eq!(b.kind, EntryKind::Symlink);
@@ -217,7 +266,10 @@ fn get_info() {
     assert_eq!(q.kind, EntryKind::Directory);
     let bin: Entry = info(&mut r, BINARY_FILE).body_as().unwrap();
     assert_eq!(bin.ccsid, 65535);
-    assert_eq!(said(&info(&mut r, BROKEN_TARGET)), (Status::NotFound, "CPFA0A9".into()));
+    assert_eq!(
+        said(&info(&mut r, BROKEN_TARGET)),
+        (Status::NotFound, "CPFA0A9".into())
+    );
     assert_eq!(said(&info(&mut r, PRIVATE_FILE)).0, Status::NotAuthorized);
     let m: Entry = info(&mut r, &text_file(MIXED)).body_as().unwrap();
     assert_eq!(m.ccsid, MIXED);
@@ -228,7 +280,10 @@ fn read_as_stored() {
     let (c, mut r) = bob();
     let whole = stored(&c, &text_file(37));
     let d = data(&read(&mut r, &text_file(37), 0, 0, None));
-    assert_eq!((d.data.as_slice(), d.size, d.next_offset), (whole.as_slice(), whole.len() as u64, whole.len() as u64));
+    assert_eq!(
+        (d.data.as_slice(), d.size, d.next_offset),
+        (whole.as_slice(), whole.len() as u64, whole.len() as u64)
+    );
     let d = data(&read(&mut r, &text_file(37), 5, 7, None));
     assert_eq!((d.data.as_slice(), d.next_offset), (&whole[5..12], 12));
     // The same CCSID is as stored.
@@ -241,9 +296,15 @@ fn read_as_stored() {
     let d = data(&read(&mut r, LINK, 0, 0, None));
     assert_eq!(d.data, TEXT.as_bytes());
     assert_eq!(said(&read(&mut r, BROKEN, 0, 0, None)).0, Status::NotFound);
-    assert_eq!(said(&read(&mut r, PRIVATE_FILE, 0, 0, None)), (Status::NotAuthorized, "CPFA09C".into()));
+    assert_eq!(
+        said(&read(&mut r, PRIVATE_FILE, 0, 0, None)),
+        (Status::NotAuthorized, "CPFA09C".into())
+    );
     assert_eq!(said(&read(&mut r, TEXT_DIR, 0, 0, None)).0, Status::Error);
-    assert_eq!(read(&mut r, &text_file(37), 0, 0, Some(0)).status, Status::InvalidRequest);
+    assert_eq!(
+        read(&mut r, &text_file(37), 0, 0, Some(0)).status,
+        Status::InvalidRequest
+    );
 }
 
 #[test]
@@ -256,7 +317,11 @@ fn reads_convert_whole_characters() {
         for to in TEXT_CCSIDS {
             let whole = ccsid::conv::convert(from, to, &stored(&c, &path)).unwrap();
             // A step shorter than a character could not move on.
-            let steps: &[u64] = if from == 1208 { &[4, 5, 7, 64] } else { &[1, 2, 3, 5, 7, 64] };
+            let steps: &[u64] = if from == 1208 {
+                &[4, 5, 7, 64]
+            } else {
+                &[1, 2, 3, 5, 7, 64]
+            };
             for &step in steps {
                 let parts = read_on(&mut r, &path, step, Some(to));
                 assert_eq!(parts.concat(), whole, "{from} to {to} by {step}");
@@ -268,7 +333,10 @@ fn reads_convert_whole_characters() {
     let at = TEXT.find('ü').unwrap() as u64;
     let d = data(&read(&mut r, &path, 0, at + 1, Some(37)));
     assert_eq!(d.next_offset, at);
-    assert_eq!(ccsid::conv::to_string(37, &d.data).unwrap(), &TEXT[..usize::try_from(at).unwrap()]);
+    assert_eq!(
+        ccsid::conv::to_string(37, &d.data).unwrap(),
+        &TEXT[..usize::try_from(at).unwrap()]
+    );
     // Without conversion, next_offset is offset plus the bytes.
     let d = data(&read(&mut r, &path, 0, at + 1, None));
     assert_eq!(d.next_offset, at + 1);
@@ -302,9 +370,11 @@ fn mixed_reads_join_into_the_whole_conversion() {
         let fd = cl
             .open(
                 p,
-                ifs::ops::OpenArgs::new(ifs::ops::flags::O_WRONLY | ifs::ops::flags::O_CREAT | ifs::ops::flags::O_CCSID)
-                    .mode(0o644)
-                    .conv(1208),
+                ifs::ops::OpenArgs::new(
+                    ifs::ops::flags::O_WRONLY | ifs::ops::flags::O_CREAT | ifs::ops::flags::O_CCSID,
+                )
+                .mode(0o644)
+                .conv(1208),
             )
             .unwrap();
         ifs::client::write_all(cl, fd, JAPANESE.as_bytes()).unwrap();
@@ -316,9 +386,16 @@ fn mixed_reads_join_into_the_whole_conversion() {
         let parts = read_on(&mut r, jp, step, Some(MIXED));
         for p in &parts {
             let last = p.iter().rev().find(|b| **b == 0x0E || **b == 0x0F);
-            assert_ne!(last, Some(&0x0E), "a reply ends in double-byte state: {p:02X?}");
+            assert_ne!(
+                last,
+                Some(&0x0E),
+                "a reply ends in double-byte state: {p:02X?}"
+            );
         }
-        let text: String = parts.iter().map(|p| ccsid::conv::to_string(MIXED, p).unwrap()).collect();
+        let text: String = parts
+            .iter()
+            .map(|p| ccsid::conv::to_string(MIXED, p).unwrap())
+            .collect();
         assert_eq!(text, JAPANESE, "by {step}");
     }
 }
@@ -333,17 +410,39 @@ fn binary_does_not_convert() {
     assert_eq!(d.data, qapd::testing::files::BINARY);
     let d = data(&read(&mut r, BINARY_FILE, 0, 0, Some(65535)));
     assert_eq!(d.data, qapd::testing::files::BINARY);
-    assert_eq!(said(&read(&mut r, &text_file(37), 0, 0, Some(65535))).0, Status::Error);
+    assert_eq!(
+        said(&read(&mut r, &text_file(37), 0, 0, Some(65535))).0,
+        Status::Error
+    );
 }
 
 #[test]
 fn a_file_another_job_holds_is_in_use() {
     let (c, mut r) = bob();
-    assert_eq!(said(&read(&mut r, LOCKED, 0, 0, None)), (Status::InUse, "CPFA09E".into()));
-    assert_eq!(said(&write(&mut r, LOCKED, WriteMode::Append, 0, b"x", None)).0, Status::InUse);
-    assert_eq!(said(&from_to(&mut r, Op::Copy, LOCKED, "/home/BOB/copy.txt", false)).0, Status::InUse);
+    assert_eq!(
+        said(&read(&mut r, LOCKED, 0, 0, None)),
+        (Status::InUse, "CPFA09E".into())
+    );
+    assert_eq!(
+        said(&write(&mut r, LOCKED, WriteMode::Append, 0, b"x", None)).0,
+        Status::InUse
+    );
+    assert_eq!(
+        said(&from_to(
+            &mut r,
+            Op::Copy,
+            LOCKED,
+            "/home/BOB/copy.txt",
+            false
+        ))
+        .0,
+        Status::InUse
+    );
     c.release_lock();
-    assert_eq!(data(&read(&mut r, LOCKED, 0, 0, None)).data, b"held by another job\n");
+    assert_eq!(
+        data(&read(&mut r, LOCKED, 0, 0, None)).data,
+        b"held by another job\n"
+    );
     c.files.hold_lock();
     assert_eq!(read(&mut r, LOCKED, 0, 0, None).status, Status::InUse);
 }
@@ -356,12 +455,16 @@ fn a_byte_range_lock_of_another_job_is_in_use() {
     let path = text_file(1208);
     let fd = c.files.as_user("QSECOFR", 70, |cl| {
         let fd = cl.open(&path, ifs::ops::OpenArgs::new(O_RDWR)).unwrap();
-        cl.lock_range(fd, F_SETLK, RangeKind::Write, SEEK_SET, 10, 5).unwrap();
+        cl.lock_range(fd, F_SETLK, RangeKind::Write, SEEK_SET, 10, 5)
+            .unwrap();
         fd
     });
     assert_eq!(read(&mut r, &path, 0, 0, None).status, Status::InUse);
     assert_eq!(read(&mut r, &path, 0, 10, None).status, Status::Ok);
-    assert_eq!(write(&mut r, &path, WriteMode::Update, 12, b"x", None).status, Status::InUse);
+    assert_eq!(
+        write(&mut r, &path, WriteMode::Update, 12, b"x", None).status,
+        Status::InUse
+    );
     c.files.as_user("QSECOFR", 70, |cl| cl.close(fd).unwrap());
     assert_eq!(read(&mut r, &path, 0, 0, None).status, Status::Ok);
 }
@@ -371,32 +474,96 @@ fn the_big_file_reads_in_frames() {
     let (c, mut r) = bob();
     let path = c.big_file();
     let d = data(&read(&mut r, path, 0, 0, None));
-    assert_eq!((d.size, d.next_offset, d.data.len() as u64), (BIG_SIZE, BIG_SIZE, BIG_SIZE));
+    assert_eq!(
+        (d.size, d.next_offset, d.data.len() as u64),
+        (BIG_SIZE, BIG_SIZE, BIG_SIZE)
+    );
     for i in (0..BIG_SIZE).step_by(65_521) {
         assert_eq!(d.data[usize::try_from(i).unwrap()], big_byte(i), "{i}");
     }
     let d = data(&read(&mut r, path, BIG_SIZE - 3, 10, None));
-    assert_eq!(d.data, [BIG_SIZE - 3, BIG_SIZE - 2, BIG_SIZE - 1].map(big_byte));
+    assert_eq!(
+        d.data,
+        [BIG_SIZE - 3, BIG_SIZE - 2, BIG_SIZE - 1].map(big_byte)
+    );
 }
 
 #[test]
 fn write_modes() {
     let (c, mut r) = bob();
     let p = "/home/BOB/new.txt";
-    assert_eq!(written(&write(&mut r, p, WriteMode::Create, 0, b"hello", None)), 5);
+    assert_eq!(
+        written(&write(&mut r, p, WriteMode::Create, 0, b"hello", None)),
+        5
+    );
     let e: Entry = info(&mut r, p).body_as().unwrap();
     assert_eq!((e.ccsid, e.owner.as_str()), (1208, "BOB"));
-    assert_eq!(said(&write(&mut r, p, WriteMode::Create, 0, b"x", None)), (Status::Exists, "CPFA0A0".into()));
-    assert_eq!(written(&write(&mut r, p, WriteMode::Update, 1, b"EL", None)), 5);
-    assert_eq!(written(&write(&mut r, p, WriteMode::Append, 0, b" world", None)), 11);
+    assert_eq!(
+        said(&write(&mut r, p, WriteMode::Create, 0, b"x", None)),
+        (Status::Exists, "CPFA0A0".into())
+    );
+    assert_eq!(
+        written(&write(&mut r, p, WriteMode::Update, 1, b"EL", None)),
+        5
+    );
+    assert_eq!(
+        written(&write(&mut r, p, WriteMode::Append, 0, b" world", None)),
+        11
+    );
     assert_eq!(stored(&c, p), b"hELlo world");
-    assert_eq!(written(&write(&mut r, p, WriteMode::Replace, 0, b"new", None)), 3);
+    assert_eq!(
+        written(&write(&mut r, p, WriteMode::Replace, 0, b"new", None)),
+        3
+    );
     assert_eq!(stored(&c, p), b"new");
     // Update needs the file; Append and Replace make it.
-    assert_eq!(said(&write(&mut r, "/home/BOB/none.txt", WriteMode::Update, 0, b"x", None)).0, Status::NotFound);
-    assert_eq!(written(&write(&mut r, "/home/BOB/app.txt", WriteMode::Append, 0, b"ab", None)), 2);
-    assert_eq!(said(&write(&mut r, "/home/BOB/nodir/x.txt", WriteMode::Create, 0, b"x", None)).0, Status::NotFound);
-    assert_eq!(said(&write(&mut r, "/home/ANN/private/x.txt", WriteMode::Create, 0, b"x", None)).0, Status::NotAuthorized);
+    assert_eq!(
+        said(&write(
+            &mut r,
+            "/home/BOB/none.txt",
+            WriteMode::Update,
+            0,
+            b"x",
+            None
+        ))
+        .0,
+        Status::NotFound
+    );
+    assert_eq!(
+        written(&write(
+            &mut r,
+            "/home/BOB/app.txt",
+            WriteMode::Append,
+            0,
+            b"ab",
+            None
+        )),
+        2
+    );
+    assert_eq!(
+        said(&write(
+            &mut r,
+            "/home/BOB/nodir/x.txt",
+            WriteMode::Create,
+            0,
+            b"x",
+            None
+        ))
+        .0,
+        Status::NotFound
+    );
+    assert_eq!(
+        said(&write(
+            &mut r,
+            "/home/ANN/private/x.txt",
+            WriteMode::Create,
+            0,
+            b"x",
+            None
+        ))
+        .0,
+        Status::NotAuthorized
+    );
     // A new file takes the CCSID asked for.
     let e = r.client.call(
         Op::WriteFile,
@@ -413,9 +580,40 @@ fn write_modes() {
     assert_eq!(stored(&c, "/home/BOB/e.txt"), [0xC1, 0xC2]);
     // The size is the file's, in its own CCSID: ü is two bytes of UTF-8,
     // one of 37.
-    assert_eq!(written(&write(&mut r, "/home/BOB/e.txt", WriteMode::Append, 0, "ü".as_bytes(), Some(1208))), 3);
-    assert_eq!(said(&write(&mut r, "/home/BOB/e.txt", WriteMode::Append, 0, b"x", Some(65535))), (Status::Error, "TCP1A5A".into()));
-    assert_eq!(write(&mut r, "/home/BOB/e.txt", WriteMode::Append, 0, b"x", Some(0)).status, Status::InvalidRequest);
+    assert_eq!(
+        written(&write(
+            &mut r,
+            "/home/BOB/e.txt",
+            WriteMode::Append,
+            0,
+            "ü".as_bytes(),
+            Some(1208)
+        )),
+        3
+    );
+    assert_eq!(
+        said(&write(
+            &mut r,
+            "/home/BOB/e.txt",
+            WriteMode::Append,
+            0,
+            b"x",
+            Some(65535)
+        )),
+        (Status::Error, "TCP1A5A".into())
+    );
+    assert_eq!(
+        write(
+            &mut r,
+            "/home/BOB/e.txt",
+            WriteMode::Append,
+            0,
+            b"x",
+            Some(0)
+        )
+        .status,
+        Status::InvalidRequest
+    );
 }
 
 /// `text` in pieces of `n` characters.
@@ -452,7 +650,14 @@ fn converted_writes_in_pieces_make_one_file() {
             written(&r.client.call(Op::WriteFile, &new(&path)));
             let mut last = 0;
             for piece in pieces(text, n) {
-                last = written(&write(&mut r, &path, WriteMode::Append, 0, piece.as_bytes(), Some(1208)));
+                last = written(&write(
+                    &mut r,
+                    &path,
+                    WriteMode::Append,
+                    0,
+                    piece.as_bytes(),
+                    Some(1208),
+                ));
             }
             assert_eq!(stored(&c, &path), whole, "{ccsid} in pieces of {n}");
             assert_eq!(last, size);
@@ -462,7 +667,14 @@ fn converted_writes_in_pieces_make_one_file() {
         written(&r.client.call(Op::WriteFile, &new(&path)));
         let mut at = 0;
         for piece in pieces(text, 4) {
-            at = written(&write(&mut r, &path, WriteMode::Update, at, piece.as_bytes(), Some(1208)));
+            at = written(&write(
+                &mut r,
+                &path,
+                WriteMode::Update,
+                at,
+                piece.as_bytes(),
+                Some(1208),
+            ));
         }
         assert_eq!(stored(&c, &path), whole, "{ccsid} by Update");
     }
@@ -481,16 +693,30 @@ fn create_directory() {
         )
     };
     assert_eq!(mk(&mut r, "/home/BOB/d", false).status, Status::Ok);
-    assert_eq!(info(&mut r, "/home/BOB/d").body_as::<Entry>().unwrap().kind, EntryKind::Directory);
-    assert_eq!(said(&mk(&mut r, "/home/BOB/d", false)), (Status::Exists, "CPFA0A0".into()));
-    assert_eq!(said(&mk(&mut r, "/home/BOB/x/y/z", false)).0, Status::NotFound);
+    assert_eq!(
+        info(&mut r, "/home/BOB/d").body_as::<Entry>().unwrap().kind,
+        EntryKind::Directory
+    );
+    assert_eq!(
+        said(&mk(&mut r, "/home/BOB/d", false)),
+        (Status::Exists, "CPFA0A0".into())
+    );
+    assert_eq!(
+        said(&mk(&mut r, "/home/BOB/x/y/z", false)).0,
+        Status::NotFound
+    );
     assert_eq!(mk(&mut r, "/home/BOB/x/y/z", true).status, Status::Ok);
     assert_eq!(mk(&mut r, "/home/BOB/x/y/z", true).status, Status::Ok);
-    assert_eq!(said(&mk(&mut r, "/home/BOB/many/f0001.txt/q", true)).0, Status::Error);
+    assert_eq!(
+        said(&mk(&mut r, "/home/BOB/many/f0001.txt/q", true)).0,
+        Status::Error
+    );
     // As MD answers BOB.
     let e = mk(&mut r, "/home/ANN/mine", false);
     assert_eq!(e.status, Status::NotAuthorized);
-    let cmd = c.files.as_user("BOB", 50, |cl| md(cl, &Md::new("/home/ANN/mine")));
+    let cmd = c
+        .files
+        .as_user("BOB", 50, |cl| md(cl, &Md::new("/home/ANN/mine")));
     same_message(&e, &cmd.escape.unwrap());
 }
 
@@ -502,7 +728,9 @@ fn delete() {
     assert_eq!(said(&info(&mut r, &text_file(37))).0, Status::NotFound);
     let audit = c.files.audit.take();
     assert!(
-        audit.iter().any(|a| a.kind == AuditKind::Delete && a.user == "BOB" && a.path == text_file(37)),
+        audit
+            .iter()
+            .any(|a| a.kind == AuditKind::Delete && a.user == "BOB" && a.path == text_file(37)),
         "{audit:?}"
     );
     // A link goes, not what it names.
@@ -519,13 +747,17 @@ fn delete() {
         },
     );
     assert_eq!(del_(&mut r, "/home/BOB/empty").status, Status::Ok);
-    assert_eq!(said(&del_(&mut r, "/home/BOB/empty")), (Status::NotFound, "CPFA0A9".into()));
+    assert_eq!(
+        said(&del_(&mut r, "/home/BOB/empty")),
+        (Status::NotFound, "CPFA0A9".into())
+    );
     // As RMVLNK answers BOB for a file of ANN's.
     c.files.as_user("ANN", 51, |cl| {
         let fd = cl
             .open(
                 "/home/ANN/a.txt",
-                ifs::ops::OpenArgs::new(ifs::ops::flags::O_WRONLY | ifs::ops::flags::O_CREAT).mode(0o644),
+                ifs::ops::OpenArgs::new(ifs::ops::flags::O_WRONLY | ifs::ops::flags::O_CREAT)
+                    .mode(0o644),
             )
             .unwrap();
         cl.close(fd).unwrap();
@@ -547,31 +779,84 @@ fn rename() {
     assert_eq!(said(&info(&mut r, a)).0, Status::NotFound);
     assert_eq!(stored(&c, b), b"A");
     written(&write(&mut r, a, WriteMode::Create, 0, b"A2", None));
-    assert_eq!(said(&from_to(&mut r, Op::Rename, a, b, false)), (Status::Exists, "CPFA0A0".into()));
+    assert_eq!(
+        said(&from_to(&mut r, Op::Rename, a, b, false)),
+        (Status::Exists, "CPFA0A0".into())
+    );
     assert_eq!(from_to(&mut r, Op::Rename, a, b, true).status, Status::Ok);
     assert_eq!(stored(&c, b), b"A2");
-    assert_eq!(said(&from_to(&mut r, Op::Rename, a, b, true)).0, Status::NotFound);
-    assert_eq!(said(&from_to(&mut r, Op::Rename, b, "/home/ANN/private/b.txt", false)).0, Status::NotAuthorized);
+    assert_eq!(
+        said(&from_to(&mut r, Op::Rename, a, b, true)).0,
+        Status::NotFound
+    );
+    assert_eq!(
+        said(&from_to(
+            &mut r,
+            Op::Rename,
+            b,
+            "/home/ANN/private/b.txt",
+            false
+        ))
+        .0,
+        Status::NotAuthorized
+    );
     // Directories move too.
-    assert_eq!(from_to(&mut r, Op::Rename, TEXT_DIR, "/home/BOB/texts", false).status, Status::Ok);
-    assert_eq!(info(&mut r, "/home/BOB/texts/text37.txt").status, Status::Ok);
+    assert_eq!(
+        from_to(&mut r, Op::Rename, TEXT_DIR, "/home/BOB/texts", false).status,
+        Status::Ok
+    );
+    assert_eq!(
+        info(&mut r, "/home/BOB/texts/text37.txt").status,
+        Status::Ok
+    );
 }
 
 #[test]
 fn copy_keeps_the_ccsid() {
     let (c, mut r) = bob();
     let to = "/home/BOB/copy939.txt";
-    assert_eq!(from_to(&mut r, Op::Copy, &text_file(MIXED), to, false).status, Status::Ok);
+    assert_eq!(
+        from_to(&mut r, Op::Copy, &text_file(MIXED), to, false).status,
+        Status::Ok
+    );
     let e: Entry = info(&mut r, to).body_as().unwrap();
     assert_eq!(e.ccsid, MIXED);
     assert_eq!(stored(&c, to), stored(&c, &text_file(MIXED)));
-    assert_eq!(said(&from_to(&mut r, Op::Copy, &text_file(37), to, false)), (Status::Exists, "CPFA0A0".into()));
-    assert_eq!(from_to(&mut r, Op::Copy, &text_file(37), to, true).status, Status::Ok);
+    assert_eq!(
+        said(&from_to(&mut r, Op::Copy, &text_file(37), to, false)),
+        (Status::Exists, "CPFA0A0".into())
+    );
+    assert_eq!(
+        from_to(&mut r, Op::Copy, &text_file(37), to, true).status,
+        Status::Ok
+    );
     assert_eq!(info(&mut r, to).body_as::<Entry>().unwrap().ccsid, 37);
-    assert_eq!(said(&from_to(&mut r, Op::Copy, TEXT_DIR, "/home/BOB/t2", false)), (Status::Error, "CPFA0DA".into()));
-    assert_eq!(said(&from_to(&mut r, Op::Copy, PRIVATE_FILE, "/home/BOB/s.txt", false)).0, Status::NotAuthorized);
-    assert_eq!(said(&from_to(&mut r, Op::Copy, BROKEN, "/home/BOB/s.txt", false)).0, Status::NotFound);
-    let e = from_to(&mut r, Op::Copy, &text_file(37), "/home/ANN/private/x", false);
+    assert_eq!(
+        said(&from_to(&mut r, Op::Copy, TEXT_DIR, "/home/BOB/t2", false)),
+        (Status::Error, "CPFA0DA".into())
+    );
+    assert_eq!(
+        said(&from_to(
+            &mut r,
+            Op::Copy,
+            PRIVATE_FILE,
+            "/home/BOB/s.txt",
+            false
+        ))
+        .0,
+        Status::NotAuthorized
+    );
+    assert_eq!(
+        said(&from_to(&mut r, Op::Copy, BROKEN, "/home/BOB/s.txt", false)).0,
+        Status::NotFound
+    );
+    let e = from_to(
+        &mut r,
+        Op::Copy,
+        &text_file(37),
+        "/home/ANN/private/x",
+        false,
+    );
     assert_eq!(said(&e).0, Status::NotAuthorized);
 }
 
@@ -585,8 +870,13 @@ fn ifs_runs_beside_the_lane() {
             command: "DLYJOB DLY(2)".into(),
         },
     );
-    assert!(c.wait_running(r.job, std::time::Duration::from_secs(5)).is_some());
-    let id = r.client.request(Op::GetInfo, &PathRef { path: LINK.into() });
+    assert!(
+        c.wait_running(r.job, std::time::Duration::from_secs(5))
+            .is_some()
+    );
+    let id = r
+        .client
+        .request(Op::GetInfo, &PathRef { path: LINK.into() });
     assert_eq!(r.client.reply(id).status, Status::Ok);
     assert_eq!(r.client.reply(cmd).kind, qap_proto::Kind::Reply);
 }
@@ -596,8 +886,15 @@ fn not_before_sign_on() {
     let c = Controls::new();
     let mut r = start_with(cfg(), Arc::clone(&c));
     r.client.hello_range(5, 5);
-    for op in Op::ALL.into_iter().filter(|o| o.code().0 == Service::Ifs && o.since() <= 5) {
-        assert_eq!(r.client.call(op, &PathRef::default()).status, Status::NotSignedOn, "{op:?}");
+    for op in Op::ALL
+        .into_iter()
+        .filter(|o| o.code().0 == Service::Ifs && o.since() <= 5)
+    {
+        assert_eq!(
+            r.client.call(op, &PathRef::default()).status,
+            Status::NotSignedOn,
+            "{op:?}"
+        );
     }
     r.client.sign_on("BOB", "SECRET1");
     // A body that does not decode.
@@ -619,7 +916,13 @@ fn a_file_checked_out_to_another_user_is_in_use() {
     let cmd = c.files.as_user("BOB", 50, |cl| del(cl, CHECKED_OUT));
     same_message(&e, &cmd.escape.unwrap());
     // Rename as MOV, a write as an open for writing.
-    let e = from_to(&mut r, Op::Rename, CHECKED_OUT, "/home/BOB/moved.txt", false);
+    let e = from_to(
+        &mut r,
+        Op::Rename,
+        CHECKED_OUT,
+        "/home/BOB/moved.txt",
+        false,
+    );
     assert_eq!(said(&e), (Status::InUse, "CPFA09E".into()));
     let cmd = c.files.as_user("BOB", 50, |cl| {
         mov(
@@ -638,13 +941,24 @@ fn a_file_checked_out_to_another_user_is_in_use() {
         assert_eq!(said(&e), (Status::InUse, "CPFA09E".into()), "{mode:?}");
     }
     // Reading it is not refused, and nothing changed.
-    assert_eq!(data(&read(&mut r, CHECKED_OUT, 0, 0, None)).data, b"checked out to ANN\n");
+    assert_eq!(
+        data(&read(&mut r, CHECKED_OUT, 0, 0, None)).data,
+        b"checked out to ANN\n"
+    );
     let e: Entry = info(&mut r, CHECKED_OUT).body_as().unwrap();
     assert_eq!(e.owner, "BOB");
-    assert_eq!(said(&info(&mut r, "/home/BOB/moved.txt")).0, Status::NotFound);
+    assert_eq!(
+        said(&info(&mut r, "/home/BOB/moved.txt")).0,
+        Status::NotFound
+    );
     // The user it is checked out to may change it.
     c.files.as_user(CHECKED_OUT_TO, 51, |cl| {
-        let fd = cl.open(CHECKED_OUT, ifs::ops::OpenArgs::new(ifs::ops::flags::O_WRONLY)).unwrap();
+        let fd = cl
+            .open(
+                CHECKED_OUT,
+                ifs::ops::OpenArgs::new(ifs::ops::flags::O_WRONLY),
+            )
+            .unwrap();
         cl.close(fd).unwrap();
     });
 }
@@ -653,7 +967,11 @@ fn a_file_checked_out_to_another_user_is_in_use() {
 /// listing order, subfolders first deleted whole, then the folder; the
 /// first refusal stops it with its path, status and message ID. `done`
 /// gets what went.
-fn delete_tree(r: &mut Run, path: &str, done: &mut Vec<String>) -> Result<(), (String, (Status, String))> {
+fn delete_tree(
+    r: &mut Run,
+    path: &str,
+    done: &mut Vec<String>,
+) -> Result<(), (String, (Status, String))> {
     let entries: Entries = list(r, path, "*", 0, 0).body_as().unwrap();
     for e in entries.entries {
         let p = format!("{path}/{}", e.name);
@@ -693,12 +1011,21 @@ fn a_recursive_delete_stops_at_a_checked_out_file() {
     // Every other file deletes; the held file's folder stays.
     for f in TREE_FILES {
         if !done.iter().any(|d| d == f) {
-            assert_eq!(r.client.call(Op::Delete, &PathRef { path: f.into() }).status, Status::Ok, "{f}");
+            assert_eq!(
+                r.client
+                    .call(Op::Delete, &PathRef { path: f.into() })
+                    .status,
+                Status::Ok,
+                "{f}"
+            );
         }
     }
     let lib = TREE_DIRS[3];
     let left: Entries = list(&mut r, lib, "*", 0, 0).body_as().unwrap();
     let names: Vec<&str> = left.entries.iter().map(|e| e.name.as_str()).collect();
     assert_eq!(names, ["m.txt"]);
-    assert_eq!(said(&r.client.call(Op::Delete, &PathRef { path: lib.into() })).0, Status::Error);
+    assert_eq!(
+        said(&r.client.call(Op::Delete, &PathRef { path: lib.into() })).0,
+        Status::Error
+    );
 }

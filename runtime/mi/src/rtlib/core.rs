@@ -225,9 +225,12 @@ pub extern "sysv64" fn ptr_addr(env: *mut Env, out: i64, native: i64, len: i64, 
     }
     let j = job(env);
     let depth = j.depth;
-    let p = j
-        .spaces
-        .addr(native.cast_unsigned(), len.cast_unsigned(), depth, frame != 0);
+    let p = j.spaces.addr(
+        native.cast_unsigned(),
+        len.cast_unsigned(),
+        depth,
+        frame != 0,
+    );
     write_ptr(out, p);
 }
 
@@ -304,7 +307,10 @@ fn call_failed(j: &mut Job, c: Cond, name: &str, lib: &str) {
         .and_then(|f| f.program.as_ref())
         .is_some_and(|p| {
             !p.object.modules.is_empty()
-                && p.object.modules.iter().all(|m| m.module.ir.lang == qir::module::Lang::Clle)
+                && p.object
+                    .modules
+                    .iter()
+                    .all(|m| m.module.ir.lang == qir::module::Lang::Clle)
         });
     // Not found: the program itself, not a service program it binds.
     let missing = c == Cond::Mch3401
@@ -330,8 +336,22 @@ fn call_failed(j: &mut Job, c: Cond, name: &str, lib: &str) {
     };
     data.extend(field(name));
     data.extend(field(lib));
-    let _ = j.send_message(diag, "QCPFMSG", "QSYS", data, qir::MsgType::Diag, crate::msg::QueueRef::Same);
-    let _ = j.send_message("CPF0001", "QCPFMSG", "QSYS", field("CALL"), qir::MsgType::Escape, crate::msg::QueueRef::Same);
+    let _ = j.send_message(
+        diag,
+        "QCPFMSG",
+        "QSYS",
+        data,
+        qir::MsgType::Diag,
+        crate::msg::QueueRef::Same,
+    );
+    let _ = j.send_message(
+        "CPF0001",
+        "QCPFMSG",
+        "QSYS",
+        field("CALL"),
+        qir::MsgType::Escape,
+        crate::msg::QueueRef::Same,
+    );
 }
 
 /// `call_pgm(env, name, lib, argc, argv)`.

@@ -257,8 +257,10 @@ mod tests {
         assert!(validate(&f, " ").is_some());
         let mut n = Field::new(Some("N".into()), FieldType::zoned(), 5, 0, Usage::Both);
         n.bytes = 5;
-        n.validity
-            .push(Validity::Range(Literal::Word("1".into()), Literal::Word("100".into())));
+        n.validity.push(Validity::Range(
+            Literal::Word("1".into()),
+            Literal::Word("100".into()),
+        ));
         assert_eq!(validate(&n, "  50"), None);
         assert!(validate(&n, "101").is_some());
         n.validity.clear();
@@ -266,7 +268,10 @@ mod tests {
             .push(Validity::Comp(CompOp::Ne, Literal::Word("0".into())));
         assert!(validate(&n, "0").is_some());
         assert_eq!(validate(&n, "7"), None);
-        assert_eq!(typed_bytes(&n, "7").unwrap(), vec![0xF0, 0xF0, 0xF0, 0xF0, 0xC7]);
+        assert_eq!(
+            typed_bytes(&n, "7").unwrap(),
+            vec![0xF0, 0xF0, 0xF0, 0xF0, 0xC7]
+        );
         assert_eq!(typed_bytes(&f, "a").unwrap(), vec![0x81]);
     }
 }

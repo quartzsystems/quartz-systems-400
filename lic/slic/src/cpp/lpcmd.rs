@@ -24,8 +24,8 @@ use licpgm::plan::{NoExits, Objects};
 use licpgm::{Date, LicTerm, LoadId, OptionNo, ProductId, ProductStore, QualName, catalog, id};
 use lpstore::{Cell, Products, SaveRestorer, SavfMedia, save_product};
 use qsname::Name;
-use savfmt::{Compression, MediaHeader, SaveKind};
 use saverst::AllowAll;
+use savfmt::{Compression, MediaHeader, SaveKind};
 use sec::profile::SpecialAuth;
 use stg::proto::CmdReply;
 use store::obj::{JobHandle, ObjectId, ops, savf, types};
@@ -35,8 +35,8 @@ use super::done;
 use crate::ipl::system::{System, now_unix};
 use crate::stgsvc::licpgm::{self as lp, system_info};
 use crate::stgsvc::media::stream;
-use optical::volume::layout::SaveTarget as OptTarget;
 use crate::stgsvc::security::{actor, require};
+use optical::volume::layout::SaveTarget as OptTarget;
 
 /// Run `name`, or `None` when it is not one of these.
 pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
@@ -130,8 +130,7 @@ fn product(s: &str) -> Result<ProductId, String> {
     if let Some(p) = catalog::shipped().product(&s) {
         return Ok(p.definition.product.clone());
     }
-    ProductId::input(&s)
-        .map_err(|_| format!("{NOT_INSTALLED} product {s} is not valid"))
+    ProductId::input(&s).map_err(|_| format!("{NOT_INSTALLED} product {s} is not valid"))
 }
 
 fn option_of(s: &str) -> Result<Option<OptionNo>, String> {
@@ -173,10 +172,10 @@ fn objects_of(s: &str) -> Objects {
 
 /// The first `DEV` value.
 fn dev_name(parms: &Parms) -> String {
-    parms
-        .list("DEV")
-        .first()
-        .map_or_else(|| parms.text("DEV").to_ascii_uppercase(), |v| v.source().to_ascii_uppercase())
+    parms.list("DEV").first().map_or_else(
+        || parms.text("DEV").to_ascii_uppercase(),
+        |v| v.source().to_ascii_uppercase(),
+    )
 }
 
 /// The first `DEV` value: `None` for a save file, else the media
@@ -196,7 +195,10 @@ fn device(parms: &Parms) -> Result<Option<stream::Media>, String> {
 /// The product streams install media on `dev` holds (`OPT01`, a
 /// virtual device the installer sees, docs/INSTALL.md): one, or every
 /// product's when `product` is `None`.
-pub(crate) fn media_streams(dev: &str, product: Option<&str>) -> Result<Vec<(String, Vec<u8>)>, String> {
+pub(crate) fn media_streams(
+    dev: &str,
+    product: Option<&str>,
+) -> Result<Vec<(String, Vec<u8>)>, String> {
     let found = crate::ipl::instdev::scan(None, true);
     let f = found
         .iter()
@@ -212,7 +214,9 @@ pub(crate) fn media_streams(dev: &str, product: Option<&str>) -> Result<Vec<(Str
         out.push((id, s));
     }
     if out.is_empty() {
-        return Err(format!("{NOT_RESTORED} the media on {dev} holds no such product"));
+        return Err(format!(
+            "{NOT_RESTORED} the media on {dev} holds no such product"
+        ));
     }
     Ok(out)
 }
@@ -263,7 +267,13 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     // from the text the system carries, whatever the device.
     if matches!(objects_of(&parms.text("RSTOBJ")), Objects::Lng)
         && product(&parms.text("LICPGM")).is_ok_and(|p| p.as_str() == release::PRODUCT_ID)
-        && parms.text("LNG").trim().parse().ok().and_then(msgf::nls::language).is_some()
+        && parms
+            .text("LNG")
+            .trim()
+            .parse()
+            .ok()
+            .and_then(msgf::nls::language)
+            .is_some()
     {
         return inslng(system, &parms.text("LNG"), true);
     }
@@ -285,7 +295,10 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             super::savcmd::may_read_savf(txn, qsys, savf_id, &file)?;
             savf::read(txn, savf_id).map_err(|e| e.to_string())
         })?
-    } else if let Some((_, s)) = media_streams(&dev, Some(&label)).ok().and_then(|mut v| v.pop()) {
+    } else if let Some((_, s)) = media_streams(&dev, Some(&label))
+        .ok()
+        .and_then(|mut v| v.pop())
+    {
         // The install media's product loads.
         s
     } else if let Some(m) = device(parms)? {
@@ -294,7 +307,9 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         return Err(format!("CPF9814 device {dev} not found"));
     };
     if stream.is_empty() {
-        return Err(format!("{NOT_RESTORED} the save file holds no licensed program"));
+        return Err(format!(
+            "{NOT_RESTORED} the save file holds no licensed program"
+        ));
     }
     let media = SavfMedia::read(stream).map_err(|e| format!("{NOT_RESTORED} {e}"))?;
     let sys = system_info(system);
@@ -372,8 +387,11 @@ impl Remover for StoreRemover<'_, '_> {
 
     fn delete_object(&mut self, o: &ObjEntry) -> Result<(), String> {
         let qsys = self.qsys;
-        let (Ok(l), Ok(n), Some(ty)) = (Name::parse(&o.lib), Name::parse(&o.name), types::type_by_name(&o.typ))
-        else {
+        let (Ok(l), Ok(n), Some(ty)) = (
+            Name::parse(&o.lib),
+            Name::parse(&o.name),
+            types::type_by_name(&o.typ),
+        ) else {
             return Ok(());
         };
         self.txn(|t| {
@@ -431,11 +449,17 @@ fn inslng(system: &mut System, lng: &str, replace: bool) -> Result<CmdReply, Str
         system: system.system_name(),
         now: now_unix(),
     };
-    let (lib, n) = in_store(system, |txn, qsys, _| osobjects::nls::install_language(txn, qsys, &stamp, feature, replace))?;
+    let (lib, n) = in_store(system, |txn, qsys, _| {
+        osobjects::nls::install_language(txn, qsys, &stamp, feature, replace)
+    })?;
     let f = feature.to_string();
     let count = n.to_string();
     let text = crate::stgsvc::msgs::text(system, "TXT0202", &[&f, &lib, &count]);
-    Ok(done(format!("{text}\n"), "TXT0202", &[(&f, 4), (&lib, 10), (&count, 6)]))
+    Ok(done(
+        format!("{text}\n"),
+        "TXT0202",
+        &[(&f, 4), (&lib, 10), (&count, 6)],
+    ))
 }
 
 fn dltlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -450,17 +474,23 @@ fn dltlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     let (n, paths) = lp::with(system, |p, cell, qsys| {
         let plan = plan_delete(p, &req).map_err(|e| format!("{NOT_DELETED} {e}"))?;
-        let mut rm = StoreRemover { cell, qsys, paths: Vec::new() };
-        execute_delete(&plan, p, &mut rm, &mut NoExits).map_err(|e| format!("{NOT_DELETED} {e}"))?;
+        let mut rm = StoreRemover {
+            cell,
+            qsys,
+            paths: Vec::new(),
+        };
+        execute_delete(&plan, p, &mut rm, &mut NoExits)
+            .map_err(|e| format!("{NOT_DELETED} {e}"))?;
         Ok((plan.loads.len(), rm.paths))
     })?;
     // The product's directories and stream files go with it; one already
     // gone is no error.
     for path in &paths {
-        let gone = crate::stgsvc::ifs::with_job_ifs(system, |fs, cx| match fs.remove_tree(cx, path) {
-            Ok(()) | Err(ifs::Errno::ENOENT) => Ok(()),
-            Err(e) => Err(format!("{NOT_DELETED} {path}: {e}")),
-        });
+        let gone =
+            crate::stgsvc::ifs::with_job_ifs(system, |fs, cx| match fs.remove_tree(cx, path) {
+                Ok(()) | Err(ifs::Errno::ENOENT) => Ok(()),
+                Err(e) => Err(format!("{NOT_DELETED} {path}: {e}")),
+            });
         if let Some(Err(e)) = gone {
             return Err(e);
         }
@@ -494,7 +524,12 @@ fn header(system: &System, kind: SaveKind) -> MediaHeader {
 }
 
 /// Write a product stream into a save file, `CLEAR` honoured.
-fn to_savf(system: &mut System, file: &(String, String), clear: &str, bytes: &[u8]) -> Result<(), String> {
+fn to_savf(
+    system: &mut System,
+    file: &(String, String),
+    clear: &str,
+    bytes: &[u8],
+) -> Result<(), String> {
     let id = find_savf(system, file)?;
     let clear = clear.to_ascii_uppercase();
     in_store(system, |txn, qsys, _| {
@@ -507,7 +542,8 @@ fn to_savf(system: &mut System, file: &(String, String), clear: &str, bytes: &[u
 }
 
 fn savlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    require(SpecialAuth::SAVSYS, "save licensed programs").or_else(|_| require(SpecialAuth::ALLOBJ, "save licensed programs"))?;
+    require(SpecialAuth::SAVSYS, "save licensed programs")
+        .or_else(|_| require(SpecialAuth::ALLOBJ, "save licensed programs"))?;
     let media = device(parms)?;
     let pid = product(&parms.text("LICPGM"))?;
     let tgt = parms.text("TGTRLS");
@@ -560,8 +596,12 @@ fn chkprdopt_cmd(system: &mut System, parms: &Parms) -> Result<CmdReply, String>
         }
         for f in findings {
             let line = match f {
-                Finding::Missing(o) => format!("  object {}/{} {} is missing", o.lib, o.name, o.typ),
-                Finding::Damaged(o) => format!("  object {}/{} {} is damaged", o.lib, o.name, o.typ),
+                Finding::Missing(o) => {
+                    format!("  object {}/{} {} is missing", o.lib, o.name, o.typ)
+                }
+                Finding::Damaged(o) => {
+                    format!("  object {}/{} {} is damaged", o.lib, o.name, o.typ)
+                }
                 Finding::WrongRelease(o, r) => {
                     format!("  object {}/{} {} is at release {r}", o.lib, o.name, o.typ)
                 }
@@ -594,10 +634,23 @@ pub fn sfwrsc_rows(system: &mut System) -> Vec<Vec<String>> {
 pub fn sfwrsc_full(system: &mut System) -> Vec<Vec<String>> {
     let rls = release::RELEASE.to_string();
     let mut rows = vec![
-        [release::LIC_ID, "*BASE", "5050", "Licensed Internal Code", "*CODE", "", &rls, "", "", "", "", ""]
-            .iter()
-            .map(|s| (*s).to_string())
-            .collect::<Vec<String>>(),
+        [
+            release::LIC_ID,
+            "*BASE",
+            "5050",
+            "Licensed Internal Code",
+            "*CODE",
+            "",
+            &rls,
+            "",
+            "",
+            "",
+            "",
+            "",
+        ]
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect::<Vec<String>>(),
     ];
     let res = lp::with(system, |p, _, _| {
         let loads = p.loads();
@@ -606,13 +659,21 @@ pub fn sfwrsc_full(system: &mut System) -> Vec<Vec<String>> {
             .into_iter()
             .map(|r| {
                 let load = loads.iter().find(|(_, l)| {
-                    l.key.product == r.product && l.key.option == r.option && l.key.load_id == r.feature
+                    l.key.product == r.product
+                        && l.key.option == r.option
+                        && l.key.load_id == r.feature
                 });
                 let lib = load
                     .and_then(|(_, l)| l.principal().map(|e| e.installed.clone()))
                     .unwrap_or_default();
-                let def = defs.iter().map(|(_, d)| d).find(|d| d.product == r.product && d.release == r.release);
-                let msg = def.and_then(|d| d.option(r.option)).map(|o| o.msg_id.clone()).unwrap_or_default();
+                let def = defs
+                    .iter()
+                    .map(|(_, d)| d)
+                    .find(|d| d.product == r.product && d.release == r.release);
+                let msg = def
+                    .and_then(|d| d.option(r.option))
+                    .map(|o| o.msg_id.clone())
+                    .unwrap_or_default();
                 let (mf, ml) = def
                     .and_then(|d| d.msgf.clone())
                     .map_or((String::new(), String::new()), |q| (q.name, q.lib));
@@ -648,7 +709,11 @@ pub fn sfwrsc_full(system: &mut System) -> Vec<Vec<String>> {
 fn dspsfwrsc_text(system: &mut System) -> String {
     let mut out = String::from("Resource ID  Option  Feature  Release  Description\n");
     for r in sfwrsc_rows(system) {
-        let _ = writeln!(out, "{:<11}  {:<6}  {:<7}  {:<7}  {}", r[0], r[1], r[2], r[6], r[3]);
+        let _ = writeln!(
+            out,
+            "{:<11}  {:<6}  {:<7}  {:<7}  {}",
+            r[0], r[1], r[2], r[6], r[3]
+        );
     }
     out
 }
@@ -708,7 +773,8 @@ fn wrklicinf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         "" | "*INSTALLED" | "*ALL" => None,
         x => Some(product(x)?.to_string()),
     };
-    let mut out = String::from("Product  Term    Feature  Compliance  Limit    Count  Peak   Threshold\n");
+    let mut out =
+        String::from("Product  Term    Feature  Compliance  Limit    Count  Peak   Threshold\n");
     for r in licinf_rows(system, filter.as_deref()) {
         let _ = writeln!(
             out,
@@ -741,11 +807,17 @@ fn addlickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         let key = LicenseKey::parse(&groups.join(" ")).map_err(|e| format!("CPF9E78 {e}"))?;
         let usage_limit = match parms.text("USGLMT").to_ascii_uppercase().as_str() {
             "" | "*NOMAX" => None,
-            n => Some(n.parse().map_err(|_| format!("CPF9E15 usage limit {n} is not valid"))?),
+            n => Some(
+                n.parse()
+                    .map_err(|_| format!("CPF9E15 usage limit {n} is not valid"))?,
+            ),
         };
         let expiration = match parms.text("EXPDATE").to_ascii_uppercase().as_str() {
             "" | "*NONE" => None,
-            d => Some(Date::parse(d).ok_or_else(|| format!("CPF9E15 expiration date {d} is not valid"))?),
+            d => Some(
+                Date::parse(d)
+                    .ok_or_else(|| format!("CPF9E15 expiration date {d} is not valid"))?,
+            ),
         };
         let fields = KeyFields {
             product: product(&parms.text("PRDID"))?,
@@ -766,13 +838,25 @@ fn addlickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let sys = system_info(system);
     let qkey = lp::quartz_key();
     let n = records.len();
-    let first = records.first().map(|r| r.fields.product.to_string()).unwrap_or_default();
+    let first = records
+        .first()
+        .map(|r| r.fields.product.to_string())
+        .unwrap_or_default();
     lp::with(system, |p, _, _| {
         let defs: Vec<_> = p.definitions().into_iter().map(|(_, d)| d).collect();
         let mut repo = p.licenses();
         for r in records {
-            repo.add_key(&defs, qkey.as_ref(), &sys, AddLicKey { fields: r.fields, key: r.key }, today())
-                .map_err(|e| format!("{} {e}", e.msg_id()))?;
+            repo.add_key(
+                &defs,
+                qkey.as_ref(),
+                &sys,
+                AddLicKey {
+                    fields: r.fields,
+                    key: r.key,
+                },
+                today(),
+            )
+            .map_err(|e| format!("{} {e}", e.msg_id()))?;
         }
         p.save_licenses(&repo).map_err(|e| e.to_string())
     })?;
@@ -794,7 +878,8 @@ fn rmvlickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require(SpecialAuth::ALLOBJ, "remove license keys")?;
     let pid = product(&parms.text("PRDID"))?;
     let term: Option<LicTerm> = all_or(&parms.text("LICTRM"), |t| {
-        t.parse().map_err(|_| format!("CPF9E15 license term {t} is not valid"))
+        t.parse()
+            .map_err(|_| format!("CPF9E15 license term {t} is not valid"))
     })?;
     let feature = all_or(&parms.text("FEATURE"), |f| {
         LoadId::feature(f).map_err(|_| format!("CPF9E15 feature {f} is not valid"))
@@ -809,7 +894,13 @@ fn rmvlickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let n = lp::with(system, |p, _, _| {
         let mut repo = p.licenses();
         let n = repo
-            .remove_keys(&pid, term.as_ref(), feature.as_ref(), serial.as_deref(), grp.as_deref())
+            .remove_keys(
+                &pid,
+                term.as_ref(),
+                feature.as_ref(),
+                serial.as_deref(),
+                grp.as_deref(),
+            )
             .map_err(|e| format!("{} {e}", e.msg_id()))?;
         p.save_licenses(&repo).map_err(|e| e.to_string())?;
         Ok(n)
@@ -834,7 +925,13 @@ pub(crate) struct KeyView {
 
 /// The keys `PRDID`, `LICTRM`, `FEATURE` and `SERIAL` select, in key
 /// order; `CPF9E58` when none does.
-pub(crate) fn lickeys(system: &mut System, prdid: &str, lictrm: &str, feature: &str, serial: &str) -> Result<Vec<KeyView>, String> {
+pub(crate) fn lickeys(
+    system: &mut System,
+    prdid: &str,
+    lictrm: &str,
+    feature: &str,
+    serial: &str,
+) -> Result<Vec<KeyView>, String> {
     let pid = all_or(prdid, product)?;
     let term = all_or(lictrm, |t| Ok(t.to_string()))?;
     let feature = all_or(feature, |f| Ok(f.to_string()))?;
@@ -852,7 +949,9 @@ pub(crate) fn lickeys(system: &mut System, prdid: &str, lictrm: &str, feature: &
             pid.as_ref().is_none_or(|p| r.product == p.as_str())
                 && term.as_ref().is_none_or(|t| &r.term == t)
                 && feature.as_ref().is_none_or(|f| &r.feature == f)
-                && serial.as_ref().is_none_or(|s| r.serial.eq_ignore_ascii_case(s) || r.serial == "*ANY")
+                && serial
+                    .as_ref()
+                    .is_none_or(|s| r.serial.eq_ignore_ascii_case(s) || r.serial == "*ANY")
         })
         .map(|row| {
             let text = texts
@@ -882,7 +981,9 @@ fn dsplickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             .filter(|k| {
                 pid.as_ref().is_none_or(|p| &k.fields.product == p)
                     && term.as_ref().is_none_or(|t| k.fields.term.as_str() == t)
-                    && feature.as_ref().is_none_or(|f| k.fields.feature.as_str() == f)
+                    && feature
+                        .as_ref()
+                        .is_none_or(|f| k.fields.feature.as_str() == f)
             })
             .map(|k| KeyRecord {
                 fields: k.fields.clone(),
@@ -897,7 +998,13 @@ fn dsplickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             ..CmdReply::default()
         });
     }
-    let keys = lickeys(system, &parms.text("PRDID"), &parms.text("LICTRM"), &parms.text("FEATURE"), &parms.text("SERIAL"))?;
+    let keys = lickeys(
+        system,
+        &parms.text("PRDID"),
+        &parms.text("LICTRM"),
+        &parms.text("FEATURE"),
+        &parms.text("SERIAL"),
+    )?;
     let mut lines = Vec::new();
     for k in &keys {
         let r = &k.row;
@@ -906,13 +1013,23 @@ fn dsplickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         lines.push(format!("Feature . . . . . . . . . . :   {}", r.feature));
         lines.push(format!("Description . . . . . . . . :   {}", k.text));
         lines.push(format!("System serial number  . . . :   {}", r.serial));
-        lines.push(format!("Processor group . . . . . . :   {}", r.processor_group));
+        lines.push(format!(
+            "Processor group . . . . . . :   {}",
+            r.processor_group
+        ));
         for (i, l) in r.key.iter().enumerate() {
-            lines.push(if i == 0 { format!("License key . . . . . . . . :   {l}") } else { format!("                                {l}") });
+            lines.push(if i == 0 {
+                format!("License key . . . . . . . . :   {l}")
+            } else {
+                format!("                                {l}")
+            });
         }
         lines.push(format!("Usage limit . . . . . . . . :   {}", r.usage_limit));
         lines.push(format!("Expiration date . . . . . . :   {}", r.expiration));
-        lines.push(format!("Vendor data . . . . . . . . :   {}", none(&r.vendor_data)));
+        lines.push(format!(
+            "Vendor data . . . . . . . . :   {}",
+            none(&r.vendor_data)
+        ));
         lines.push(String::new());
     }
     if parms.text("OUTPUT") == "*PRINT" {
@@ -930,7 +1047,11 @@ fn dsplickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 
 /// `*NONE` for an empty value.
 fn none(s: &str) -> String {
-    if s.trim().is_empty() { "*NONE".into() } else { s.to_string() }
+    if s.trim().is_empty() {
+        "*NONE".into()
+    } else {
+        s.to_string()
+    }
 }
 
 fn chglicinf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -940,8 +1061,8 @@ fn chglicinf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         .text("LICTRM")
         .parse()
         .map_err(|_| "CPF9E15 the license term is not valid".to_string())?;
-    let feature =
-        LoadId::feature(&parms.text("FEATURE")).map_err(|_| "CPF9E15 the feature is not valid".to_string())?;
+    let feature = LoadId::feature(&parms.text("FEATURE"))
+        .map_err(|_| "CPF9E15 the feature is not valid".to_string())?;
     let num = |k: &str, none: &[&str]| -> Result<Option<Option<u32>>, String> {
         let v = parms.text(k).to_ascii_uppercase();
         match v.as_str() {
@@ -987,7 +1108,9 @@ pub fn agreement_rows(system: &mut System) -> Vec<Vec<String>> {
             .map(|(_, d)| d)
             .filter(|d| {
                 loads.iter().any(|(_, l)| {
-                    l.key.product == d.product && l.key.release == d.release && l.state.is_installed()
+                    l.key.product == d.product
+                        && l.key.release == d.release
+                        && l.state.is_installed()
                 })
             })
             .map(|d| (d.product.clone(), d.release, d.text.clone()))
@@ -1046,8 +1169,16 @@ fn qspkgprd(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         }
         let objs = Products::new(cell, qsys, lpstore::stamp(now_unix()));
         for o in &options {
-            licpgm::api::pkgpo::package(p, &objs, &pid, Some(rel), *o, &licpgm::api::pkgpo::LoadSel::All, true)
-                .map_err(|e| format!("{} option {o}", e.id))?;
+            licpgm::api::pkgpo::package(
+                p,
+                &objs,
+                &pid,
+                Some(rel),
+                *o,
+                &licpgm::api::pkgpo::LoadSel::All,
+                true,
+            )
+            .map_err(|e| format!("{} option {o}", e.id))?;
         }
         Ok(())
     })?;

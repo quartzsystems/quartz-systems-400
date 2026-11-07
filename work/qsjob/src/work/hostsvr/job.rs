@@ -46,7 +46,12 @@ fn run(job: &Job, command: &str) -> (bool, Vec<JobMessage>) {
     let host = c.host.clone();
     let before = c.job().log_outbox.len();
     let o = crate::command::run(c.job(), &host, command);
-    let entries: Vec<wm::joblog::Entry> = c.job().log_outbox.get(before..).map(<[_]>::to_vec).unwrap_or_default();
+    let entries: Vec<wm::joblog::Entry> = c
+        .job()
+        .log_outbox
+        .get(before..)
+        .map(<[_]>::to_vec)
+        .unwrap_or_default();
     c.sync_log();
     let mut msgs: Vec<JobMessage> = entries
         .iter()
@@ -125,7 +130,12 @@ impl Commands for JobCommands {
                 }])
             }
             Err(why) => {
-                let id = why.split(':').next().unwrap_or("CPF9811").trim().to_string();
+                let id = why
+                    .split(':')
+                    .next()
+                    .unwrap_or("CPF9811")
+                    .trim()
+                    .to_string();
                 CallResult::Failed(vec![JobMessage {
                     id,
                     kind: 15,
@@ -164,12 +174,17 @@ fn fail(r: &(bool, Vec<JobMessage>)) -> Result<(), Fail> {
         return Ok(());
     }
     let m = r.1.iter().rev().find(|m| m.kind == 15).or(r.1.last());
-    Err(m.map_or_else(|| ("CPF9898".into(), String::new()), |m| (m.id.clone(), bare(&m.id, &m.text))))
+    Err(m.map_or_else(
+        || ("CPF9898".into(), String::new()),
+        |m| (m.id.clone(), bare(&m.id, &m.text)),
+    ))
 }
 
 /// A message's text without the identifier some texts start with.
 fn bare(id: &str, text: &str) -> String {
-    text.strip_prefix(id).map_or(text, str::trim_start).to_string()
+    text.strip_prefix(id)
+        .map_or(text, str::trim_start)
+        .to_string()
 }
 
 fn api(e: &sysapi::ApiFail) -> Fail {
@@ -183,11 +198,18 @@ impl DataQueues for JobQueues {
             'K' => "*KEYED",
             _ => "*FIFO",
         };
-        let mut cmd = format!("CRTDTAQ DTAQ({lib}/{name}) MAXLEN({}) SEQ({seq})", a.max_len.max(1));
+        let mut cmd = format!(
+            "CRTDTAQ DTAQ({lib}/{name}) MAXLEN({}) SEQ({seq})",
+            a.max_len.max(1)
+        );
         if a.sequence == 'K' {
             let _ = write!(cmd, " KEYLEN({})", a.key_len.max(1));
         }
-        cmd.push_str(if a.sender { " SENDERID(*YES)" } else { " SENDERID(*NO)" });
+        cmd.push_str(if a.sender {
+            " SENDERID(*YES)"
+        } else {
+            " SENDERID(*NO)"
+        });
         let _ = write!(cmd, " AUT({})", a.authority);
         if !a.text.is_empty() {
             let _ = write!(cmd, " TEXT('{}')", a.text.replace('\'', "''"));
@@ -224,13 +246,24 @@ impl DataQueues for JobQueues {
             .map_err(|e| api(&e))
     }
 
-    fn read(&mut self, name: &str, lib: &str, order: &str, key: &[u8], wait: i32, peek: bool) -> Result<Option<Entry>, Fail> {
-        let until = (wait >= 0).then(|| Instant::now() + Duration::from_secs(u64::try_from(wait).unwrap_or(0)));
+    fn read(
+        &mut self,
+        name: &str,
+        lib: &str,
+        order: &str,
+        key: &[u8],
+        wait: i32,
+        peek: bool,
+    ) -> Result<Option<Entry>, Fail> {
+        let until = (wait >= 0)
+            .then(|| Instant::now() + Duration::from_secs(u64::try_from(wait).unwrap_or(0)));
         loop {
             let got = self
                 .link
                 .borrow_mut()
-                .with(|l| l.api_dtaq_receive(lib.into(), name.into(), order.into(), key.to_vec(), !peek))
+                .with(|l| {
+                    l.api_dtaq_receive(lib.into(), name.into(), order.into(), key.to_vec(), !peek)
+                })
                 .map_err(|e| api(&e))?;
             if let Some(e) = got {
                 return Ok(Some(Entry {
@@ -280,13 +313,28 @@ impl Spool for JobSpool {
     }
 
     fn list(&mut self, user: &str, outq: Option<(String, String)>) -> Vec<Splf> {
-        let who = if user == "*ALL" { String::new() } else { user.to_string() };
-        let all = self.link.borrow_mut().with(|l| l.splf_list(who, String::new()));
+        let who = if user == "*ALL" {
+            String::new()
+        } else {
+            user.to_string()
+        };
+        let all = self
+            .link
+            .borrow_mut()
+            .with(|l| l.splf_list(who, String::new()));
         all.into_iter()
-            .filter(|a| outq.as_ref().is_none_or(|(_, q)| a.outq.rsplit('/').next() == Some(q.as_str())))
+            .filter(|a| {
+                outq.as_ref()
+                    .is_none_or(|(_, q)| a.outq.rsplit('/').next() == Some(q.as_str()))
+            })
             .map(|a| {
                 let (date, time) = created(a.created);
-                let (ql, qn) = a.outq.split_once('/').map_or(("QGPL".to_string(), a.outq.clone()), |(l, n)| (l.into(), n.into()));
+                let (ql, qn) = a
+                    .outq
+                    .split_once('/')
+                    .map_or(("QGPL".to_string(), a.outq.clone()), |(l, n)| {
+                        (l.into(), n.into())
+                    });
                 Splf {
                     job: (a.job.0.clone(), a.job.1.clone(), format!("{:06}", a.job.2)),
                     file: a.name.clone(),
@@ -294,38 +342,55 @@ impl Spool for JobSpool {
                     system: self.system.clone(),
                     date,
                     time,
-                    status: format!("*{}", match a.status.code() {
-                        "RDY" => "READY",
-                        "HLD" => "HELD",
-                        "SAV" => "SAVED",
-                        "WTR" => "WRITING",
-                        "OPN" => "OPEN",
-                        "CLO" => "CLOSED",
-                        "PND" => "PENDING",
-                        "DFR" => "DEFERRED",
-                        _ => "MESSAGE",
-                    }),
+                    status: format!(
+                        "*{}",
+                        match a.status.code() {
+                            "RDY" => "READY",
+                            "HLD" => "HELD",
+                            "SAV" => "SAVED",
+                            "WTR" => "WRITING",
+                            "OPN" => "OPEN",
+                            "CLO" => "CLOSED",
+                            "PND" => "PENDING",
+                            "DFR" => "DEFERRED",
+                            _ => "MESSAGE",
+                        }
+                    ),
                     pages: i32::try_from(a.pages).unwrap_or(0),
                     copies: i32::from(a.copies),
                     outq: (ql, qn),
                     prtf: ("QSYS".into(), a.name.clone()),
                     user_data: a.usrdta.clone(),
                     form_type: a.formtype.clone(),
-                    device_type: if a.devtype.is_empty() { "*SCS".into() } else { a.devtype.clone() },
+                    device_type: if a.devtype.is_empty() {
+                        "*SCS".into()
+                    } else {
+                        a.devtype.clone()
+                    },
                     priority: a.outpty.to_string(),
-                    page: (i64::from(a.page_len), i64::from(a.page_width), i64::from(a.lpi)),
+                    page: (
+                        i64::from(a.page_len),
+                        i64::from(a.page_width),
+                        i64::from(a.lpi),
+                    ),
                 }
             })
             .collect()
     }
 
     fn act(&mut self, s: &Splf, what: SplfAction) -> Result<(), String> {
-        let id = format!("FILE({}) JOB({}/{}/{}) SPLNBR({})", s.file, s.job.2, s.job.1, s.job.0, s.number);
+        let id = format!(
+            "FILE({}) JOB({}/{}/{}) SPLNBR({})",
+            s.file, s.job.2, s.job.1, s.job.0, s.number
+        );
         let cmd = match what {
             SplfAction::Hold => format!("HLDSPLF {id}"),
             SplfAction::Release => format!("RLSSPLF {id}"),
             SplfAction::Delete => format!("DLTSPLF {id}"),
-            SplfAction::Move(l, q) => format!("CHGSPLFA {id} OUTQ({}/{q})", if l.is_empty() { "*LIBL" } else { &l }),
+            SplfAction::Move(l, q) => format!(
+                "CHGSPLFA {id} OUTQ({}/{q})",
+                if l.is_empty() { "*LIBL" } else { &l }
+            ),
         };
         fail(&run(&self.job, &cmd)).map_err(|(id, t)| format!("{id} {t}"))
     }

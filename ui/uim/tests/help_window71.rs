@@ -48,7 +48,11 @@ fn window(name: &str, w: HelpWindow, keys: &[&str], message: &str) {
         ..Options::default()
     };
     let s = render_view(&[], &view, &opts, 24, 80, Some(&under));
-    let got: Vec<String> = s.text_rows().iter().map(|r| r.trim_end().to_string()).collect();
+    let got: Vec<String> = s
+        .text_rows()
+        .iter()
+        .map(|r| r.trim_end().to_string())
+        .collect();
     let want = golden(name);
     for (i, (g, w)) in got.iter().zip(&want).enumerate() {
         assert_eq!(g, w, "{name} row {}", i + 1);

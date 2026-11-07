@@ -17,10 +17,20 @@ use crate::error::Result;
 /// The rows.
 #[allow(clippy::unnecessary_wraps)] // a view's rows may fail
 pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
-    let parts: Vec<(String, Option<&str>)> = match ctx.host.as_deref().and_then(super::host::SystemHost::library_list) {
+    let parts: Vec<(String, Option<&str>)> = match ctx
+        .host
+        .as_deref()
+        .and_then(super::host::SystemHost::library_list)
+    {
         Some(l) => {
-            let mut v: Vec<(String, Option<&str>)> = l.sys.iter().map(|n| (n.clone(), Some("SYSTEM"))).collect();
-            v.extend(l.prd.iter().filter(|n| !n.trim().is_empty()).map(|n| (n.clone(), Some("PRODUCT"))));
+            let mut v: Vec<(String, Option<&str>)> =
+                l.sys.iter().map(|n| (n.clone(), Some("SYSTEM"))).collect();
+            v.extend(
+                l.prd
+                    .iter()
+                    .filter(|n| !n.trim().is_empty())
+                    .map(|n| (n.clone(), Some("PRODUCT"))),
+            );
             v.extend(l.cur.iter().map(|n| (n.clone(), Some("CURRENT"))));
             v.extend(l.usr.iter().map(|n| (n.clone(), Some("USER"))));
             v
@@ -29,7 +39,11 @@ pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
             .names
             .libl
             .iter()
-            .filter_map(|id| ops::read_header(txn, *id).ok().map(|(_, h)| (h.name.to_string(), None)))
+            .filter_map(|id| {
+                ops::read_header(txn, *id)
+                    .ok()
+                    .map(|(_, h)| (h.name.to_string(), None))
+            })
             .collect(),
     };
     for (i, (name, part)) in parts.iter().enumerate() {
@@ -37,7 +51,13 @@ pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         let id = library(txn, ctx, name);
         out.row();
         out.int("ORDINAL_POSITION", i + 1);
-        out.text("SCHEMA_NAME", id.map_or_else(|| name.to_string(), |id| crate::exec::names::schema_name(txn, id)));
+        out.text(
+            "SCHEMA_NAME",
+            id.map_or_else(
+                || name.to_string(),
+                |id| crate::exec::names::schema_name(txn, id),
+            ),
+        );
         out.text("SYSTEM_SCHEMA_NAME", name);
         if let Some(p) = part {
             out.text("TYPE", *p);

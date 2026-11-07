@@ -27,7 +27,11 @@ pub(crate) fn read(b: &[u8], t: &Type) -> Option<(i128, u8)> {
             let mut v: i128 = 0;
             for k in 0..n {
                 let byte = b[k / 2];
-                let d = if k.is_multiple_of(2) { byte >> 4 } else { byte & 0xF };
+                let d = if k.is_multiple_of(2) {
+                    byte >> 4
+                } else {
+                    byte & 0xF
+                };
                 if d > 9 || (k < pad && d != 0) {
                     return None;
                 }
@@ -77,7 +81,11 @@ fn rescale(v: i128, from: u8, to: u8, halfadj: bool) -> Option<i128> {
     }
     let p = pow10(u32::from(from - to))?;
     let (q, r) = (v / p, (v % p).abs());
-    Some(if halfadj && r >= p / 2 { q + v.signum() } else { q })
+    Some(if halfadj && r >= p / 2 {
+        q + v.signum()
+    } else {
+        q
+    })
 }
 
 /// Whether `v` (at the shape's scale) has no more than `digits` digits.
@@ -88,18 +96,35 @@ fn fits(v: i128, digits: u8) -> bool {
 /// Add (0), subtract (1), multiply (2) or divide (3) at the precision `digits`,
 /// `scale`: the exact result truncated to it, a size error when its
 /// integer part does not fit.
-pub(crate) fn bin(op: i64, (a, sa): (i128, u8), (b, sb): (i128, u8), digits: u8, scale: u8) -> Option<Result<i128, Cond>> {
+pub(crate) fn bin(
+    op: i64,
+    (a, sa): (i128, u8),
+    (b, sb): (i128, u8),
+    digits: u8,
+    scale: u8,
+) -> Option<Result<i128, Cond>> {
     let (v, s) = match op {
         0 | 1 => {
             let s = sa.max(sb);
             let a = rescale(a, sa, s, false)?;
             let b = rescale(b, sb, s, false)?;
-            (if op == 0 { a.checked_add(b)? } else { a.checked_sub(b)? }, s)
+            (
+                if op == 0 {
+                    a.checked_add(b)?
+                } else {
+                    a.checked_sub(b)?
+                },
+                s,
+            )
         }
         2 => {
             let exact = sa.checked_add(sb)?;
             let p = a.checked_mul(b)?;
-            if exact > scale { (rescale(p, exact, scale, false)?, scale) } else { (p, exact) }
+            if exact > scale {
+                (rescale(p, exact, scale, false)?, scale)
+            } else {
+                (p, exact)
+            }
         }
         3 => {
             // The quotient truncated to the precision's decimals; a zero
@@ -114,12 +139,23 @@ pub(crate) fn bin(op: i64, (a, sa): (i128, u8), (b, sb): (i128, u8), digits: u8,
         _ => return None,
     };
     let v = rescale(v, s, scale, false)?;
-    Some(if fits(v, digits) { Ok(v) } else { Err(Cond::Mch1210) })
+    Some(if fits(v, digits) {
+        Ok(v)
+    } else {
+        Err(Cond::Mch1210)
+    })
 }
 
 /// Store `v` at scale `scale` into a packed, zoned or integer target;
 /// `fsign` writes a positive sign as `F`.
-pub(crate) fn write(b: &mut [u8], t: &Type, v: i128, scale: u8, halfadj: bool, fsign: bool) -> Option<Result<(), Cond>> {
+pub(crate) fn write(
+    b: &mut [u8],
+    t: &Type,
+    v: i128,
+    scale: u8,
+    halfadj: bool,
+    fsign: bool,
+) -> Option<Result<(), Cond>> {
     match t {
         Type::Packed(s) if s.digits <= 38 => {
             let w = rescale(v, scale, s.scale, halfadj)?;
@@ -128,7 +164,13 @@ pub(crate) fn write(b: &mut [u8], t: &Type, v: i128, scale: u8, halfadj: bool, f
             }
             let mut m = w.unsigned_abs();
             let n = b.len();
-            let sign = if w < 0 { 0xD } else if fsign { 0xF } else { 0xC };
+            let sign = if w < 0 {
+                0xD
+            } else if fsign {
+                0xF
+            } else {
+                0xC
+            };
             b[n - 1] = sign | (u8::try_from(m % 10).unwrap_or(0) << 4);
             m /= 10;
             for k in (0..n - 1).rev() {
@@ -151,15 +193,32 @@ pub(crate) fn write(b: &mut [u8], t: &Type, v: i128, scale: u8, halfadj: bool, f
                 m /= 10;
             }
             let n = b.len();
-            let zone = if w < 0 { 0xD0 } else if fsign { 0xF0 } else { 0xC0 };
+            let zone = if w < 0 {
+                0xD0
+            } else if fsign {
+                0xF0
+            } else {
+                0xC0
+            };
             b[n - 1] = zone | (b[n - 1] & 0x0F);
             Some(Ok(()))
         }
-        Type::I8 | Type::I16 | Type::I32 | Type::I64 | Type::U8 | Type::U16 | Type::U32 | Type::U64 => {
+        Type::I8
+        | Type::I16
+        | Type::I32
+        | Type::I64
+        | Type::U8
+        | Type::U16
+        | Type::U32
+        | Type::U64 => {
             let w = rescale(v, scale, 0, halfadj)?;
             let bits = u32::try_from(b.len() * 8).ok()?;
             let signed = matches!(t, Type::I8 | Type::I16 | Type::I32 | Type::I64);
-            let (lo, hi) = if signed { (-(1i128 << (bits - 1)), (1i128 << (bits - 1)) - 1) } else { (0, (1i128 << bits) - 1) };
+            let (lo, hi) = if signed {
+                (-(1i128 << (bits - 1)), (1i128 << (bits - 1)) - 1)
+            } else {
+                (0, (1i128 << bits) - 1)
+            };
             if w < lo || w > hi {
                 return Some(Err(Cond::Mch1210));
             }
@@ -182,14 +241,28 @@ mod tests {
 
     #[test]
     fn packed_and_zoned_round_trip_as_the_codec_does() {
-        for (text, d, s) in [("12.3", 3, 1), ("-12.3", 5, 2), ("0", 4, 0), ("-0.07", 7, 3), ("99999", 5, 0)] {
+        for (text, d, s) in [
+            ("12.3", 3, 1),
+            ("-12.3", 5, 2),
+            ("0", 4, 0),
+            ("-0.07", 7, 3),
+            ("99999", 5, 0),
+        ] {
             let v = Decimal::parse(text).unwrap();
-            let p = Packed::new(d, s).unwrap().encode(&v, Rounding::Truncate).unwrap();
+            let p = Packed::new(d, s)
+                .unwrap()
+                .encode(&v, Rounding::Truncate)
+                .unwrap();
             let (n, sc) = read(&p, &packed(d, s)).unwrap();
             let mut out = vec![0; p.len()];
-            write(&mut out, &packed(d, s), n, sc, false, false).unwrap().unwrap();
+            write(&mut out, &packed(d, s), n, sc, false, false)
+                .unwrap()
+                .unwrap();
             assert_eq!(out, p, "{text}");
-            let z = Zoned::new(d, s).unwrap().encode(&v, Rounding::Truncate).unwrap();
+            let z = Zoned::new(d, s)
+                .unwrap()
+                .encode(&v, Rounding::Truncate)
+                .unwrap();
             let zt = Type::Zoned(qdecimal::Shape::new(d, s).unwrap());
             let (n, sc) = read(&z, &zt).unwrap();
             let mut out = vec![0; z.len()];

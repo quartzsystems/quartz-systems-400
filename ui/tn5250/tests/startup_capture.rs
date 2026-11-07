@@ -15,8 +15,14 @@ use tn5250::startup;
 fn record_of(raw: &[u8]) -> Vec<u8> {
     let text = String::from_utf8_lossy(raw);
     let hex: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    let mut b = if !hex.is_empty() && hex.len().is_multiple_of(2) && hex.chars().all(|c| c.is_ascii_hexdigit()) {
-        (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()).collect()
+    let mut b = if !hex.is_empty()
+        && hex.len().is_multiple_of(2)
+        && hex.chars().all(|c| c.is_ascii_hexdigit())
+    {
+        (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+            .collect()
     } else {
         raw.to_vec()
     };
@@ -27,7 +33,11 @@ fn record_of(raw: &[u8]) -> Vec<u8> {
     let mut i = 0;
     while i < b.len() {
         out.push(b[i]);
-        i += if b[i] == 0xFF && b.get(i + 1) == Some(&0xFF) { 2 } else { 1 };
+        i += if b[i] == 0xFF && b.get(i + 1) == Some(&0xFF) {
+            2
+        } else {
+            1
+        };
     }
     out
 }

@@ -272,12 +272,7 @@ fn application_ids_at_environment_init() {
     // The assigned certificate expired: the environment will not start.
     let mut late = Gsk::new(ctx(&files, now + 40 * 86_400, TlsPolicy::opsys()));
     let e = late.environment_open().unwrap();
-    set(
-        &mut late,
-        e,
-        GSK_OS400_APPLICATION_ID,
-        "QS400_FTP_SERVER",
-    );
+    set(&mut late, e, GSK_OS400_APPLICATION_ID, "QS400_FTP_SERVER");
     assert_eq!(late.environment_init(e), Err(GSK_KEYFILE_CERT_EXPIRED));
 
     // Without the stash, the system store cannot open.

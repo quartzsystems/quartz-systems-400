@@ -32,7 +32,12 @@ enum Node {
 }
 
 fn tokens(s: &str) -> Vec<String> {
-    s.replace('(', " ( ").replace(')', " ) ").replace('/', " OR ").split_whitespace().map(str::to_string).collect()
+    s.replace('(', " ( ")
+        .replace(')', " ) ")
+        .replace('/', " OR ")
+        .split_whitespace()
+        .map(str::to_string)
+        .collect()
 }
 
 struct Parser {
@@ -57,7 +62,11 @@ impl Parser {
             self.i += 1;
             v.push(self.and()?);
         }
-        Ok(if v.len() == 1 { v.remove(0) } else { Node::Or(v) })
+        Ok(if v.len() == 1 {
+            v.remove(0)
+        } else {
+            Node::Or(v)
+        })
     }
 
     fn and(&mut self) -> Result<Node, String> {
@@ -66,7 +75,11 @@ impl Parser {
             self.i += 1;
             v.push(self.with()?);
         }
-        Ok(if v.len() == 1 { v.remove(0) } else { Node::And(v) })
+        Ok(if v.len() == 1 {
+            v.remove(0)
+        } else {
+            Node::And(v)
+        })
     }
 
     fn with(&mut self) -> Result<Node, String> {
@@ -98,7 +111,10 @@ impl Parser {
 }
 
 fn rank(id: &str) -> usize {
-    PREFERENCE.iter().position(|p| *p == id).unwrap_or(PREFERENCE.len())
+    PREFERENCE
+        .iter()
+        .position(|p| *p == id)
+        .unwrap_or(PREFERENCE.len())
 }
 
 fn choose(n: &Node, allowed: &[String]) -> Option<Vec<String>> {
@@ -122,7 +138,10 @@ fn choose(n: &Node, allowed: &[String]) -> Option<Vec<String>> {
 /// an error when the expression does not parse or no allowed choice
 /// satisfies it.
 pub fn chosen(expr: &str, allowed: &[String]) -> Result<Vec<String>, String> {
-    let mut p = Parser { t: tokens(expr), i: 0 };
+    let mut p = Parser {
+        t: tokens(expr),
+        i: 0,
+    };
     let n = p.or()?;
     if p.i != p.t.len() {
         return Err(format!("trailing tokens in {expr:?}"));
@@ -135,7 +154,16 @@ mod tests {
     use super::chosen;
 
     fn allow() -> Vec<String> {
-        ["MIT", "Apache-2.0", "Unicode-3.0", "Apache-2.0 WITH LLVM-exception", "ISC"].iter().map(|s| (*s).to_string()).collect()
+        [
+            "MIT",
+            "Apache-2.0",
+            "Unicode-3.0",
+            "Apache-2.0 WITH LLVM-exception",
+            "ISC",
+        ]
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect()
     }
 
     #[test]
@@ -144,10 +172,22 @@ mod tests {
         assert_eq!(chosen("MIT OR Apache-2.0", &a).unwrap(), ["MIT"]);
         assert_eq!(chosen("Apache-2.0 OR MIT", &a).unwrap(), ["MIT"]);
         assert_eq!(chosen("MIT/Apache-2.0", &a).unwrap(), ["MIT"]);
-        assert_eq!(chosen("(MIT OR Apache-2.0) AND Unicode-3.0", &a).unwrap(), ["MIT", "Unicode-3.0"]);
-        assert_eq!(chosen("Apache-2.0 WITH LLVM-exception", &a).unwrap(), ["Apache-2.0 WITH LLVM-exception"]);
-        assert_eq!(chosen("MIT OR Apache-2.0 OR LGPL-2.1-or-later", &a).unwrap(), ["MIT"]);
-        assert_eq!(chosen("Apache-2.0 AND ISC", &a).unwrap(), ["Apache-2.0", "ISC"]);
+        assert_eq!(
+            chosen("(MIT OR Apache-2.0) AND Unicode-3.0", &a).unwrap(),
+            ["MIT", "Unicode-3.0"]
+        );
+        assert_eq!(
+            chosen("Apache-2.0 WITH LLVM-exception", &a).unwrap(),
+            ["Apache-2.0 WITH LLVM-exception"]
+        );
+        assert_eq!(
+            chosen("MIT OR Apache-2.0 OR LGPL-2.1-or-later", &a).unwrap(),
+            ["MIT"]
+        );
+        assert_eq!(
+            chosen("Apache-2.0 AND ISC", &a).unwrap(),
+            ["Apache-2.0", "ISC"]
+        );
         assert!(chosen("GPL-3.0-only", &a).is_err());
         assert!(chosen("MIT AND GPL-2.0", &a).is_err());
         assert!(chosen("(MIT", &a).is_err());

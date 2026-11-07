@@ -47,13 +47,21 @@ fn info(r: &mut Run, path: &str) -> Envelope {
 
 /// The status and message (identifier and data) of a reply.
 fn said(e: &Envelope) -> (Status, Option<(String, Vec<u8>)>) {
-    (e.status, e.message.as_ref().map(|m| (m.id.clone(), m.data.clone())))
+    (
+        e.status,
+        e.message.as_ref().map(|m| (m.id.clone(), m.data.clone())),
+    )
 }
 
 #[test]
 fn stat_answers_what_get_info_answers() {
     let (_c, mut r) = bob();
-    for p in [text_file(37), TEXT_DIR.to_string(), LINK.to_string(), BROKEN.to_string()] {
+    for p in [
+        text_file(37),
+        TEXT_DIR.to_string(),
+        LINK.to_string(),
+        BROKEN.to_string(),
+    ] {
         let s = stat(&mut r, &p);
         let e: Entry = info(&mut r, &p).body_as().unwrap();
         assert_eq!(s.entry, e, "{p}");
@@ -63,7 +71,10 @@ fn stat_answers_what_get_info_answers() {
     assert_eq!(stat(&mut r, TEXT_DIR).entry.kind, EntryKind::Directory);
     // A link is not followed: it has a counter of its own.
     let l = stat(&mut r, LINK);
-    assert_eq!((l.entry.kind, l.entry.target.as_deref()), (EntryKind::Symlink, Some(text_file(1208).as_str())));
+    assert_eq!(
+        (l.entry.kind, l.entry.target.as_deref()),
+        (EntryKind::Symlink, Some(text_file(1208).as_str()))
+    );
     assert_ne!(l.change, stat(&mut r, &text_file(1208)).change);
     // Statuses and messages as GetInfo's.
     for p in [BROKEN_TARGET, PRIVATE_FILE] {
@@ -117,11 +128,17 @@ fn changes_on_the_system_raise_it() {
     let (c, mut r) = bob();
     let p = text_file(819);
     let before = stat(&mut r, &p);
-    c.files.as_user("QSECOFR", 9, |cl| cl.set_attr(&p, &Attr::Ccsid(1252), false)).unwrap();
+    c.files
+        .as_user("QSECOFR", 9, |cl| {
+            cl.set_attr(&p, &Attr::Ccsid(1252), false)
+        })
+        .unwrap();
     let ccsid = stat(&mut r, &p);
     assert_eq!(ccsid.entry.ccsid, 1252);
     assert!(ccsid.change > before.change);
-    c.files.as_user("QSECOFR", 9, |cl| cl.chgown(&p, "ANN", false)).unwrap();
+    c.files
+        .as_user("QSECOFR", 9, |cl| cl.chgown(&p, "ANN", false))
+        .unwrap();
     let owner = stat(&mut r, &p);
     assert_eq!(owner.entry.owner, "ANN");
     assert!(owner.change > ccsid.change);
@@ -137,7 +154,12 @@ fn two_changes_in_one_millisecond() {
     // Same size, same time to the millisecond: only the counter tells.
     assert_eq!(after.entry.modified, before.entry.modified);
     assert_eq!(after.entry, before.entry);
-    assert!(after.change >= before.change + 2, "{} then {}", before.change, after.change);
+    assert!(
+        after.change >= before.change + 2,
+        "{} then {}",
+        before.change,
+        after.change
+    );
 }
 
 #[test]
@@ -147,6 +169,9 @@ fn version_5_has_no_stat() {
     let h: HelloReply = r.client.hello_range(1, 5).body_as().unwrap();
     assert_eq!(h.version, 5);
     r.client.sign_on("BOB", "SECRET1");
-    assert_eq!(stat_of(&mut r, &text_file(37)).status, Status::InvalidRequest);
+    assert_eq!(
+        stat_of(&mut r, &text_file(37)).status,
+        Status::InvalidRequest
+    );
     assert_eq!(info(&mut r, &text_file(37)).status, Status::Ok);
 }

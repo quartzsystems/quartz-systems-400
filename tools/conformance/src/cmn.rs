@@ -118,7 +118,9 @@ impl Suite {
             .filter(|l| l.starts_with("  ") && l.contains("ACTIVE"))
             .collect();
         if net.len() != 2 {
-            return Err(format!("controller and device are not ACTIVE under {LINE}:\n{out}"));
+            return Err(format!(
+                "controller and device are not ACTIVE under {LINE}:\n{out}"
+            ));
         }
         set_link(self, false)?;
         wait_status(s, &["RCYPND"], Duration::from_secs(20))?;

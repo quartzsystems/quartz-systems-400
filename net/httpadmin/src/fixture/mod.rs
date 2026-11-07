@@ -36,7 +36,12 @@ pub struct FixtureSystem {
     /// Audit entries written.
     pub audit: Mutex<Vec<Audit>>,
     /// Users: name, special authorities, class, groups.
-    pub users: Vec<(&'static str, Vec<&'static str>, &'static str, Vec<&'static str>)>,
+    pub users: Vec<(
+        &'static str,
+        Vec<&'static str>,
+        &'static str,
+        Vec<&'static str>,
+    )>,
     /// Licensed programs deleted (`QS00NAV` hides `NAVIGATOR`).
     pub deleted: Mutex<Vec<&'static str>>,
 }
@@ -49,7 +54,16 @@ impl Default for FixtureSystem {
             users: vec![
                 (
                     "QSECOFR",
-                    vec!["*ALLOBJ", "*AUDIT", "*IOSYSCFG", "*JOBCTL", "*SAVSYS", "*SECADM", "*SERVICE", "*SPLCTL"],
+                    vec![
+                        "*ALLOBJ",
+                        "*AUDIT",
+                        "*IOSYSCFG",
+                        "*JOBCTL",
+                        "*SAVSYS",
+                        "*SECADM",
+                        "*SERVICE",
+                        "*SPLCTL",
+                    ],
                     "*SECOFR",
                     vec![],
                 ),
@@ -85,9 +99,17 @@ impl System for FixtureSystem {
             code: if known { 'P' } else { 'U' },
         });
         Err(if known {
-            Message::new(qsweb::msg::Kind::Error, "CPF22E2", "The password is not correct for the user profile.")
+            Message::new(
+                qsweb::msg::Kind::Error,
+                "CPF22E2",
+                "The password is not correct for the user profile.",
+            )
         } else {
-            Message::new(qsweb::msg::Kind::Error, "CPF2204", &format!("User profile {u} not found."))
+            Message::new(
+                qsweb::msg::Kind::Error,
+                "CPF2204",
+                &format!("User profile {u} not found."),
+            )
         })
     }
 
@@ -108,7 +130,11 @@ impl System for FixtureSystem {
     }
 
     fn user_class(&self, user: &str) -> String {
-        self.users.iter().find(|x| x.0 == user).map_or("*USER", |x| x.2).to_string()
+        self.users
+            .iter()
+            .find(|x| x.0 == user)
+            .map_or("*USER", |x| x.2)
+            .to_string()
     }
 
     fn profile_exists(&self, user: &str) -> bool {
@@ -135,7 +161,9 @@ impl System for FixtureSystem {
     }
 
     fn interfaces(&self) -> Vec<String> {
-        ["10.0.10.20", "10.0.10.21", "172.16.0.5", "127.0.0.1"].map(String::from).to_vec()
+        ["10.0.10.20", "10.0.10.21", "172.16.0.5", "127.0.0.1"]
+            .map(String::from)
+            .to_vec()
     }
 
     fn product_installed(&self, product: &str) -> bool {
@@ -173,7 +201,11 @@ impl Jobs for FixtureJobs {
     fn start(&self, _user: &str, instance: &str) -> Result<Message, Message> {
         let mut jobs = self.jobs.lock().expect("jobs");
         if jobs.iter().any(|j| j.instance == instance) {
-            return Err(msgs::message(qsweb::msg::Kind::Error, "HTP8103", &[instance]));
+            return Err(msgs::message(
+                qsweb::msg::Kind::Error,
+                "HTP8103",
+                &[instance],
+            ));
         }
         let mut n = self.next.lock().expect("jobs");
         *n += 1;
@@ -196,7 +228,11 @@ impl Jobs for FixtureJobs {
                     .join(", ")
             })
             .unwrap_or_default();
-        Ok(msgs::message(qsweb::msg::Kind::Done, "HTP8001", &[instance, &listen]))
+        Ok(msgs::message(
+            qsweb::msg::Kind::Done,
+            "HTP8001",
+            &[instance, &listen],
+        ))
     }
 
     fn end(&self, user: &str, instance: &str, _how: EndHow) -> Result<Message, Message> {
@@ -210,11 +246,18 @@ impl Jobs for FixtureJobs {
                 &format!("HTTP server instance {instance} not active."),
             ));
         }
-        Ok(msgs::message(qsweb::msg::Kind::Done, "HTP8002", &[instance, user]))
+        Ok(msgs::message(
+            qsweb::msg::Kind::Done,
+            "HTP8002",
+            &[instance, user],
+        ))
     }
 
     fn authorize(&self, root: &str, profile: &str) -> Result<(), Message> {
-        self.granted.lock().expect("jobs").extend(crate::env::authorize_commands(root, profile));
+        self.granted
+            .lock()
+            .expect("jobs")
+            .extend(crate::env::authorize_commands(root, profile));
         Ok(())
     }
 }
@@ -310,7 +353,10 @@ fn sample_conf(s: &Sample) -> String {
     };
     let text = instance::generate(&spec, "10/27/26 18:40:55");
     let mut lines: Vec<String> = text.lines().map(ToString::to_string).collect();
-    let at = lines.iter().position(|l| l.starts_with("Listen ")).unwrap_or(3);
+    let at = lines
+        .iter()
+        .position(|l| l.starts_with("Listen "))
+        .unwrap_or(3);
     lines.remove(at);
     for (i, l) in s.listen.iter().enumerate() {
         lines.insert(at + i, format!("Listen {l}"));
@@ -343,7 +389,10 @@ pub fn fixture() -> Fixture {
             sample_conf(s)
         };
         files.put(&instance::conf_path(&root), conf.as_bytes());
-        files.put(&format!("{root}/htdocs/index.html"), instance::sample_index(s.name).as_bytes());
+        files.put(
+            &format!("{root}/htdocs/index.html"),
+            instance::sample_index(s.name).as_bytes(),
+        );
         files.put(&format!("{root}/logs/error_log"), b"");
         let mut e = Entry {
             name: s.name.into(),
@@ -358,10 +407,17 @@ pub fn fixture() -> Fixture {
             e.last_ended = Some(secs(2026, 10, 28, 2, 0, 0));
             e.ended_how = "ENDTCPSVR *HTTP, controlled".into();
             e.hot_backup = Some("WEBSTORE2".into());
-            files.put("/www/webstore/logs/access_log", include_bytes!("webstore-access.log"));
+            files.put(
+                "/www/webstore/logs/access_log",
+                include_bytes!("webstore-access.log"),
+            );
             // Twelve days of rotated access logs: 14 log files, 212 MB.
             for d in 17..29 {
-                files.put_sized(&format!("/www/webstore/logs/access_log.2026-10-{d}"), b"", 18_525_000);
+                files.put_sized(
+                    &format!("/www/webstore/logs/access_log.2026-10-{d}"),
+                    b"",
+                    18_525_000,
+                );
             }
         }
         reg.put(e);

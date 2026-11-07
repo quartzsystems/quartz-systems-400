@@ -118,14 +118,19 @@ impl<W: Write> Conn<'_, W> {
                     ));
                 }
                 let id = self.new_chan_id();
-                self.channels.insert(id, Channel::new(remote, window, max, true));
+                self.channels
+                    .insert(id, Channel::new(remote, window, max, true));
                 self.send(Self::confirm(remote, id))
             }
             "direct-tcpip" => {
                 let host = r.str()?.to_string();
                 let port = r.u32()?;
                 if !self.local_forward_allowed() {
-                    return self.send(Self::open_failure_msg(remote, msg::open_failure::PROHIBITED, PROHIBITED));
+                    return self.send(Self::open_failure_msg(
+                        remote,
+                        msg::open_failure::PROHIBITED,
+                        PROHIBITED,
+                    ));
                 }
                 let conn = u16::try_from(port)
                     .map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidInput))
@@ -155,7 +160,10 @@ impl<W: Write> Conn<'_, W> {
 
     fn local_forward_allowed(&self) -> bool {
         self.srv.config.allow_tcp_forwarding.local()
-            && self.authed.as_ref().is_some_and(|a| !a.options.no_port_forwarding)
+            && self
+                .authed
+                .as_ref()
+                .is_some_and(|a| !a.options.no_port_forwarding)
     }
 
     /// Wire a forwarded connection to channel `id`.
@@ -170,7 +178,10 @@ impl<W: Write> Conn<'_, W> {
         let tx = self.tx.clone();
         std::thread::spawn(move || {
             let _ = std::io::copy(&mut from, &mut out);
-            let _ = tx.send(Event::Finished { chan: id, exit: None });
+            let _ = tx.send(Event::Finished {
+                chan: id,
+                exit: None,
+            });
         });
         std::thread::spawn(move || {
             let _ = std::io::copy(&mut stdin_r, &mut to);
@@ -256,7 +267,9 @@ impl<W: Write> Conn<'_, W> {
         let Some(ch) = self.channels.get_mut(&chan) else {
             return Ok(());
         };
-        ch.consumed = ch.consumed.saturating_add(u32::try_from(n).unwrap_or(u32::MAX));
+        ch.consumed = ch
+            .consumed
+            .saturating_add(u32::try_from(n).unwrap_or(u32::MAX));
         if ch.consumed >= WINDOW / 2 && !ch.sent_close {
             let mut w = Writer::msg(msg::CHANNEL_WINDOW_ADJUST);
             w.u32(ch.remote).u32(ch.consumed);
@@ -547,13 +560,21 @@ impl<W: Write> Conn<'_, W> {
     fn remote_forward(&mut self, addr: &str, port: u32) -> Option<Vec<u8>> {
         let authed = self.authed.as_ref()?;
         if !self.srv.config.allow_tcp_forwarding.remote() || authed.options.no_port_forwarding {
-            tracing::info!(user = authed.account.name, port, "remote forward refused by the configuration");
+            tracing::info!(
+                user = authed.account.name,
+                port,
+                "remote forward refused by the configuration"
+            );
             return None;
         }
         let port = u16::try_from(port).ok()?;
         // IPPROTO_TCP.
         if !self.srv.deps.ports.may_bind(6, port, &authed.account.name) {
-            tracing::info!(user = authed.account.name, port, "remote forward refused by a port restriction");
+            tracing::info!(
+                user = authed.account.name,
+                port,
+                "remote forward refused by a port restriction"
+            );
             return None;
         }
         let listener = self.srv.deps.forwarder.listen(addr, port).ok()?;

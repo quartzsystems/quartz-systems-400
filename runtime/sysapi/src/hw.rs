@@ -38,7 +38,11 @@ fn common(o: &mut Out, off: usize, category: u32, depth: usize, r: &Resource) {
     o.char(off + 26, 3, &md);
     o.ch(off + 29, status(r));
     o.char(off + 30, 8, "");
-    let mac = r.port.as_ref().map(|p| p.mac.replace(':', "").to_ascii_uppercase()).unwrap_or_default();
+    let mac = r
+        .port
+        .as_ref()
+        .map(|p| p.mac.replace(':', "").to_ascii_uppercase())
+        .unwrap_or_default();
     o.char(off + 38, 12, &mac);
     o.char(off + 50, 50, r.kind.text());
 }
@@ -112,7 +116,10 @@ fn qgyrhrl(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
             o.deliver(&a, 0, 1);
             e.ok();
         }
-        None => e.fail(j, &ApiFail::id("CPF9898").text(&format!("Resource category {cat} is not valid."), 512)),
+        None => e.fail(
+            j,
+            &ApiFail::id("CPF9898").text(&format!("Resource category {cat} is not valid."), 512),
+        ),
     }
 }
 
@@ -132,7 +139,13 @@ fn qgyrhri(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
             o.deliver(&a, 0, 1);
             e.ok();
         }
-        None => e.fail(j, &ApiFail::id("CPF9898").text(&format!("Hardware resource {} was not found.", name.trim()), 512)),
+        None => e.fail(
+            j,
+            &ApiFail::id("CPF9898").text(
+                &format!("Hardware resource {} was not found.", name.trim()),
+                512,
+            ),
+        ),
     }
 }
 
@@ -143,12 +156,22 @@ mod tests {
     use super::*;
 
     fn table() -> Table {
-        let r = |n: &str, k: Kind, p: &str| Resource::new(n.into(), k, String::new(), String::new(), p.into());
+        let r = |n: &str, k: Kind, p: &str| {
+            Resource::new(n.into(), k, String::new(), String::new(), p.into())
+        };
         let mut t = Table {
             resources: vec![
                 r("DC01", Kind::Storage, "/devices/pci0000:00/0000:00:03.0"),
-                r("DD001", Kind::Disk, "/devices/pci0000:00/0000:00:03.0/virtio1/block/vda"),
-                r("CMN01", Kind::Port, "/devices/pci0000:00/0000:00:02.0/virtio0/net/eth0"),
+                r(
+                    "DD001",
+                    Kind::Disk,
+                    "/devices/pci0000:00/0000:00:03.0/virtio1/block/vda",
+                ),
+                r(
+                    "CMN01",
+                    Kind::Port,
+                    "/devices/pci0000:00/0000:00:02.0/virtio0/net/eth0",
+                ),
             ],
         };
         t.resources[1].serial = "QS400DISK0001".into();

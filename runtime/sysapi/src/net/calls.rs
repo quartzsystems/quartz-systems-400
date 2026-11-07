@@ -11,9 +11,7 @@ use mi::fd::Kind;
 use sockets::layout::misc::{PollFd, iovec, msghdr};
 use sockets::{AddrForm, Errno, SockAddr};
 
-use super::abi::{
-    bound_c, get_int, int, is_null, mem, opt_mem, ptr_at, put_int, ret,
-};
+use super::abi::{bound_c, get_int, int, is_null, mem, opt_mem, ptr_at, put_int, ret};
 use super::net;
 
 type R<T> = Result<T, Errno>;
@@ -44,7 +42,13 @@ fn addr_in(j: &Job, p: u128, len: i64, form: AddrForm) -> R<SockAddr> {
 }
 
 /// Store an address and its length when the caller asked for it.
-pub(crate) fn addr_out(j: &Job, p: u128, lenp: u128, a: Option<&SockAddr>, form: AddrForm) -> R<()> {
+pub(crate) fn addr_out(
+    j: &Job,
+    p: u128,
+    lenp: u128,
+    a: Option<&SockAddr>,
+    form: AddrForm,
+) -> R<()> {
     if is_null(p) || is_null(lenp) {
         return Ok(());
     }
@@ -66,7 +70,11 @@ fn len_of(v: i64) -> R<usize> {
 
 fn socket(j: &mut Job, domain: i64, ty: i64, proto: i64) -> i64 {
     let r = (|| {
-        let k = net(j).borrow().sockets.borrow_mut().socket(int(domain), int(ty), int(proto))?;
+        let k = net(j)
+            .borrow()
+            .sockets
+            .borrow_mut()
+            .socket(int(domain), int(ty), int(proto))?;
         adopt(j, k).map(i64::from)
     })();
     ret(j, r)
@@ -75,7 +83,12 @@ fn socket(j: &mut Job, domain: i64, ty: i64, proto: i64) -> i64 {
 fn socketpair(j: &mut Job, domain: i64, ty: i64, proto: i64, sv: u128) -> i64 {
     let r = (|| {
         mem(j, sv, 8)?;
-        let (a, b) = net(j).borrow().sockets.borrow_mut().socketpair(int(domain), int(ty), int(proto))?;
+        let (a, b) =
+            net(j)
+                .borrow()
+                .sockets
+                .borrow_mut()
+                .socketpair(int(domain), int(ty), int(proto))?;
         let na = adopt(j, a)?;
         let nb = match adopt(j, b) {
             Ok(n) => n,
@@ -170,22 +183,45 @@ fn send(j: &mut Job, sd: i64, buf: u128, len: i64, flags: i64) -> i64 {
     let r = (|| {
         let k = kernel(j, int(sd))?;
         let b = mem(j, buf, len_of(len)?)?;
-        net(j).borrow().sockets.borrow().send(k, b, int(flags)).map(count)
+        net(j)
+            .borrow()
+            .sockets
+            .borrow()
+            .send(k, b, int(flags))
+            .map(count)
     })();
     ret(j, r)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn sendto(j: &mut Job, sd: i64, buf: u128, len: i64, flags: i64, to: u128, tolen: i64, form: AddrForm) -> i64 {
+fn sendto(
+    j: &mut Job,
+    sd: i64,
+    buf: u128,
+    len: i64,
+    flags: i64,
+    to: u128,
+    tolen: i64,
+    form: AddrForm,
+) -> i64 {
     let r = (|| {
         let k = kernel(j, int(sd))?;
         let b = mem(j, buf, len_of(len)?)?;
         let s = net(j);
         if is_null(to) {
-            return s.borrow().sockets.borrow().send(k, b, int(flags)).map(count);
+            return s
+                .borrow()
+                .sockets
+                .borrow()
+                .send(k, b, int(flags))
+                .map(count);
         }
         let addr = addr_in(j, to, tolen, form)?;
-        s.borrow().sockets.borrow().sendto(k, b, int(flags), &addr).map(count)
+        s.borrow()
+            .sockets
+            .borrow()
+            .sendto(k, b, int(flags), &addr)
+            .map(count)
     })();
     ret(j, r)
 }
@@ -194,17 +230,35 @@ fn recv(j: &mut Job, sd: i64, buf: u128, len: i64, flags: i64) -> i64 {
     let r = (|| {
         let k = kernel(j, int(sd))?;
         let b = mem(j, buf, len_of(len)?)?;
-        net(j).borrow().sockets.borrow().recv(k, b, int(flags)).map(count)
+        net(j)
+            .borrow()
+            .sockets
+            .borrow()
+            .recv(k, b, int(flags))
+            .map(count)
     })();
     ret(j, r)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn recvfrom(j: &mut Job, sd: i64, buf: u128, len: i64, flags: i64, from: u128, fromlen: u128, form: AddrForm) -> i64 {
+fn recvfrom(
+    j: &mut Job,
+    sd: i64,
+    buf: u128,
+    len: i64,
+    flags: i64,
+    from: u128,
+    fromlen: u128,
+    form: AddrForm,
+) -> i64 {
     let r = (|| {
         let k = kernel(j, int(sd))?;
         let b = mem(j, buf, len_of(len)?)?;
-        let (n, a) = net(j).borrow().sockets.borrow().recvfrom(k, b, int(flags))?;
+        let (n, a) = net(j)
+            .borrow()
+            .sockets
+            .borrow()
+            .recvfrom(k, b, int(flags))?;
         addr_out(j, from, fromlen, a.as_ref(), form)?;
         Ok(count(n))
     })();
@@ -221,9 +275,14 @@ pub(crate) fn iovecs(j: &Job, iov: u128, n: i64) -> R<Vec<&'static mut [u8]>> {
     let mut out = Vec::with_capacity(n);
     for i in 0..n {
         let e = &arr[i * iovec::SIZE..(i + 1) * iovec::SIZE];
-        let len = usize::try_from(sockets::layout::u32_at(e, iovec::LEN)).map_err(|_| Errno::EINVAL)?;
+        let len =
+            usize::try_from(sockets::layout::u32_at(e, iovec::LEN)).map_err(|_| Errno::EINVAL)?;
         let base = ptr_at(e, iovec::BASE);
-        out.push(if len == 0 { &mut [][..] } else { mem(j, base, len)? });
+        out.push(if len == 0 {
+            &mut [][..]
+        } else {
+            mem(j, base, len)?
+        });
     }
     Ok(out)
 }
@@ -239,9 +298,18 @@ fn sendmsg(j: &mut Job, sd: i64, msg: u128, flags: i64, form: AddrForm) -> i64 {
         } else {
             Some(addr_in(j, name, namelen, form)?)
         };
-        let bufs = iovecs(j, ptr_at(m, msghdr::IOV), i64::from(sockets::layout::i32_at(m, msghdr::IOVLEN)))?;
+        let bufs = iovecs(
+            j,
+            ptr_at(m, msghdr::IOV),
+            i64::from(sockets::layout::i32_at(m, msghdr::IOVLEN)),
+        )?;
         let views: Vec<&[u8]> = bufs.iter().map(|b| &**b).collect();
-        net(j).borrow().sockets.borrow().sendv(k, &views, int(flags), to.as_ref()).map(count)
+        net(j)
+            .borrow()
+            .sockets
+            .borrow()
+            .sendv(k, &views, int(flags), to.as_ref())
+            .map(count)
     })();
     ret(j, r)
 }
@@ -250,9 +318,17 @@ fn recvmsg(j: &mut Job, sd: i64, msg: u128, flags: i64, form: AddrForm) -> i64 {
     let r = (|| {
         let k = kernel(j, int(sd))?;
         let m = mem(j, msg, msghdr::SIZE)?;
-        let mut bufs = iovecs(j, ptr_at(m, msghdr::IOV), i64::from(sockets::layout::i32_at(m, msghdr::IOVLEN)))?;
+        let mut bufs = iovecs(
+            j,
+            ptr_at(m, msghdr::IOV),
+            i64::from(sockets::layout::i32_at(m, msghdr::IOVLEN)),
+        )?;
         let mut views: Vec<&mut [u8]> = bufs.iter_mut().map(|b| &mut **b).collect();
-        let got = net(j).borrow().sockets.borrow().recvv(k, &mut views, int(flags))?;
+        let got = net(j)
+            .borrow()
+            .sockets
+            .borrow()
+            .recvv(k, &mut views, int(flags))?;
         let name = ptr_at(m, msghdr::NAME);
         if !is_null(name) {
             let avail = usize::try_from(sockets::layout::i32_at(m, msghdr::NAMELEN)).unwrap_or(0);
@@ -285,7 +361,11 @@ fn shutdown(j: &mut Job, sd: i64, how: i64) -> i64 {
 fn getsockopt(j: &mut Job, sd: i64, level: i64, name: i64, val: u128, lenp: u128) -> i64 {
     let r = (|| {
         let k = kernel(j, int(sd))?;
-        let v = net(j).borrow().sockets.borrow().getopt(k, int(level), int(name))?;
+        let v = net(j)
+            .borrow()
+            .sockets
+            .borrow()
+            .getopt(k, int(level), int(name))?;
         let avail = usize::try_from(get_int(j, lenp)?).map_err(|_| Errno::EINVAL)?;
         let n = avail.min(v.len());
         mem(j, val, n)?.copy_from_slice(&v[..n]);
@@ -299,7 +379,11 @@ fn setsockopt(j: &mut Job, sd: i64, level: i64, name: i64, val: u128, len: i64) 
     let r = (|| {
         let k = kernel(j, int(sd))?;
         let v = mem(j, val, len_of(len)?)?;
-        net(j).borrow().sockets.borrow().setopt(k, int(level), int(name), v)?;
+        net(j)
+            .borrow()
+            .sockets
+            .borrow()
+            .setopt(k, int(level), int(name), v)?;
         Ok(0)
     })();
     ret(j, r)
@@ -339,12 +423,17 @@ pub(crate) fn poll_items(j: &mut Job, items: &[(i32, i16)], timeout: i32) -> R<V
             Err(_) => slots.push(Some(usize::MAX)),
         }
     }
-    let any_ifs_ready = slots.iter().zip(items).any(|(s, (_, ev))| s.is_none() && *ev & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM) != 0);
+    let any_ifs_ready = slots
+        .iter()
+        .zip(items)
+        .any(|(s, (_, ev))| s.is_none() && *ev & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM) != 0);
     let bad = slots.contains(&Some(usize::MAX));
     let wait = if any_ifs_ready || bad { 0 } else { timeout };
     let got = if kernel_items.is_empty() {
         if wait > 0 {
-            std::thread::sleep(std::time::Duration::from_millis(u64::try_from(wait).unwrap_or(0)));
+            std::thread::sleep(std::time::Duration::from_millis(
+                u64::try_from(wait).unwrap_or(0),
+            ));
         }
         Vec::new()
     } else {
@@ -402,7 +491,8 @@ fn givedescriptor(j: &mut Job, sd: i64, target: u128) -> i64 {
 
 fn takedescriptor(j: &mut Job, source: u128) -> i64 {
     let r = (|| {
-        let src: Option<[u8; 16]> = opt_mem(j, source, 16)?.map(|b| (&*b).try_into().expect("16 bytes"));
+        let src: Option<[u8; 16]> =
+            opt_mem(j, source, 16)?.map(|b| (&*b).try_into().expect("16 bytes"));
         let k = net(j).borrow().sockets.borrow_mut().take(src.as_ref())?;
         adopt(j, k).map(i64::from)
     })();
@@ -549,4 +639,3 @@ pub(super) fn procedures() -> Vec<(&'static str, usize)> {
         ("gethostname", at!(b_gethostname)),
     ]
 }
-

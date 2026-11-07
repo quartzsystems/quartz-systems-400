@@ -44,7 +44,10 @@ const FAT_AT: usize = 2048 * 512;
 
 /// A blank FAT stick image.
 fn stick(path: &Path) -> Result<(), String> {
-    let readme = ("README.TXT".to_string(), b"QS/400 conformance stick\r\n".to_vec());
+    let readme = (
+        "README.TXT".to_string(),
+        b"QS/400 conformance stick\r\n".to_vec(),
+    );
     let img = crate::media::fat_stick_of(&[readme])?;
     // Room for the report.
     let mut img = img;
@@ -57,7 +60,10 @@ fn stick(path: &Path) -> Result<(), String> {
 /// The report on the stick, read with the same FAT code that wrote it.
 pub(crate) fn report_on_stick(path: &Path) -> Result<String, String> {
     let img = fs::read(path).map_err(|e| e.to_string())?;
-    let part = img.get(FAT_AT..).ok_or("the stick has no partition")?.to_vec();
+    let part = img
+        .get(FAT_AT..)
+        .ok_or("the stick has no partition")?
+        .to_vec();
     hwqual::usb::read_from(Cursor::new(part), hwqual::USB_FILE)
 }
 
@@ -91,8 +97,10 @@ struct Agent {
 
 impl Agent {
     fn connect(path: &Path) -> Result<Self, String> {
-        let s = std::os::unix::net::UnixStream::connect(path).map_err(|e| format!("{}: {e}", path.display()))?;
-        s.set_read_timeout(Some(Duration::from_millis(500))).map_err(|e| e.to_string())?;
+        let s = std::os::unix::net::UnixStream::connect(path)
+            .map_err(|e| format!("{}: {e}", path.display()))?;
+        s.set_read_timeout(Some(Duration::from_millis(500)))
+            .map_err(|e| e.to_string())?;
         Ok(Self { s, buf: Vec::new() })
     }
 
@@ -104,9 +112,7 @@ impl Agent {
     fn line(&mut self, wait: Duration, delimited: bool) -> Result<Value, String> {
         let deadline = Instant::now() + wait;
         loop {
-            if delimited
-                && let Some(i) = self.buf.iter().position(|b| *b == 0xFF)
-            {
+            if delimited && let Some(i) = self.buf.iter().position(|b| *b == 0xFF) {
                 self.buf.drain(..=i);
             }
             if (!delimited || !self.buf.is_empty())
@@ -123,7 +129,11 @@ impl Agent {
             match self.s.read(&mut b) {
                 Ok(0) => return Err("the guest agent's socket closed".into()),
                 Ok(n) => self.buf.extend_from_slice(&b[..n]),
-                Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => {}
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                    ) => {}
                 Err(e) => return Err(e.to_string()),
             }
         }
@@ -138,7 +148,10 @@ impl Agent {
             self.buf.clear();
             // A raw 0xFF first: the agent drops anything half read.
             let mut req = vec![0xFF];
-            req.extend(format!("{{\"execute\":\"guest-sync-delimited\",\"arguments\":{{\"id\":{id}}}}}\n").into_bytes());
+            req.extend(
+                format!("{{\"execute\":\"guest-sync-delimited\",\"arguments\":{{\"id\":{id}}}}}\n")
+                    .into_bytes(),
+            );
             self.send(&req)?;
             if let Ok(v) = self.line(Duration::from_secs(2), true)
                 && v["return"] == id
@@ -184,7 +197,9 @@ impl Suite {
     /// Steps 114 to 117 in their own guest; with `--only` when named.
     pub(crate) fn guest_steps(&self) -> Result<Vec<StepReport>, crate::HarnessError> {
         if let Some(only) = &self.only
-            && !NAMES.iter().any(|n| only.iter().any(|p| n.starts_with(p.as_str())))
+            && !NAMES
+                .iter()
+                .any(|n| only.iter().any(|p| n.starts_with(p.as_str())))
         {
             return Ok(Vec::new());
         }
@@ -245,7 +260,11 @@ impl Suite {
                 return Err(format!("QSHWQUAL shows no `{want}`:\n{out}"));
             }
         }
-        let tpm = if out.contains("PASS   TPM") { "TPM 2.0 passed (swtpm)" } else { "TPM absent: WARN" };
+        let tpm = if out.contains("PASS   TPM") {
+            "TPM 2.0 passed (swtpm)"
+        } else {
+            "TPM absent: WARN"
+        };
         if !out.contains("PASS   TPM") && !out.contains("WARN   TPM") {
             return Err(format!("QSHWQUAL has no TPM line:\n{out}"));
         }
@@ -266,7 +285,9 @@ impl Suite {
         if !word.contains("End of report") {
             return Err(format!("svc.qshwqual: {word}"));
         }
-        Ok(format!("result {result}; {tpm}; AHCI and virtio controllers; printed; written to the stick"))
+        Ok(format!(
+            "result {result}; {tpm}; AHCI and virtio controllers; printed; written to the stick"
+        ))
     }
 
     /// 115: sync, ping, info and the facts, as libvirt and Proxmox ask.
@@ -284,9 +305,18 @@ impl Suite {
         let info = a.call("guest-info", None)?;
         let cmds: Vec<String> = info["supported_commands"]
             .as_array()
-            .map(|v| v.iter().filter_map(|c| c["name"].as_str().map(String::from)).collect())
+            .map(|v| {
+                v.iter()
+                    .filter_map(|c| c["name"].as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default();
-        for want in ["guest-shutdown", "guest-network-get-interfaces", "guest-get-fsinfo", "guest-get-osinfo"] {
+        for want in [
+            "guest-shutdown",
+            "guest-network-get-interfaces",
+            "guest-get-fsinfo",
+            "guest-get-osinfo",
+        ] {
             if !cmds.iter().any(|c| c == want) {
                 return Err(format!("guest-info lacks {want}: {info}"));
             }
@@ -353,8 +383,13 @@ impl Suite {
         }
         let name = row.split_whitespace().next().unwrap_or("").to_string();
         let hw = s.command("svc.hw", CMD)?;
-        if !hw.lines().any(|l| l.starts_with(&name) && l.contains("org.qemu.guest_agent.0")) {
-            return Err(format!("svc.hw does not name {name} the agent's port:\n{hw}"));
+        if !hw
+            .lines()
+            .any(|l| l.starts_with(&name) && l.contains("org.qemu.guest_agent.0"))
+        {
+            return Err(format!(
+                "svc.hw does not name {name} the agent's port:\n{hw}"
+            ));
         }
         // The panel at a display: its row laid out as the port's.
         let set = s.command(
@@ -365,7 +400,10 @@ impl Suite {
             return Err(format!("CHGUSRPRF QSECOFR: {set}"));
         }
         crate::tcp::guest_address(s)?;
-        let port = self.launch.telnet_port.ok_or("the launch has no telnet port")?;
+        let port = self
+            .launch
+            .telnet_port
+            .ok_or("the launch has no telnet port")?;
         let c = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let options = ScriptOptions {
             golden: None,
@@ -377,14 +415,25 @@ impl Suite {
         let mut d = connect(port, "QSECOFR", SECOFR_PASSWORD)?;
         secofr(&mut d, &mut ctx)?;
         run(&mut d, &mut ctx, "wait \"Main Menu\"\n")?;
-        run(&mut d, &mut ctx, "type \"WRKHDWRSC TYPE(*CMN)\"\nkey enter\nsettle 2500\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type \"WRKHDWRSC TYPE(*CMN)\"\nkey enter\nsettle 2500\n",
+        )?;
         let screen = crate::hwrsrc::screen(&d);
         fs::write(self.out_dir.join("wrkhdwrsc-cmn.txt"), &screen).map_err(|e| e.to_string())?;
-        let mine = crate::hwrsrc::row_of(&d, &name).ok_or_else(|| format!("WRKHDWRSC *CMN has no {name}:\n{screen}"))?;
-        let port_row = crate::hwrsrc::row_of(&d, "CMN01").ok_or_else(|| format!("no CMN01:\n{screen}"))?;
+        let mine = crate::hwrsrc::row_of(&d, &name)
+            .ok_or_else(|| format!("WRKHDWRSC *CMN has no {name}:\n{screen}"))?;
+        let port_row =
+            crate::hwrsrc::row_of(&d, "CMN01").ok_or_else(|| format!("no CMN01:\n{screen}"))?;
         let col = |r: &str, w: &str| r.find(w);
-        if !mine.contains("QV01") || !mine.contains("Virtual Channel") || col(&mine, "Operational") != col(&port_row, "Operational") {
-            return Err(format!("{name}'s row is not laid out as CMN01's:\n{port_row}\n{mine}"));
+        if !mine.contains("QV01")
+            || !mine.contains("Virtual Channel")
+            || col(&mine, "Operational") != col(&port_row, "Operational")
+        {
+            return Err(format!(
+                "{name}'s row is not laid out as CMN01's:\n{port_row}\n{mine}"
+            ));
         }
         run(&mut d, &mut ctx, "key f3\nsettle 1000\n")?;
         Ok(format!("`{}`; on the panel `{}`", row, mine.trim()))
@@ -409,9 +458,14 @@ impl Suite {
         let back = wait_opr(s, "power to the system returned", 60)?;
         let _ = s.command("CHGSYSVAL SYSVAL(QUPSDLYTIM) VALUE(*CALC)", CMD);
         if s.log.contains("SRC D1001000") {
-            return Err(format!("the system powered down on battery:\n{failed}\n{back}"));
+            return Err(format!(
+                "the system powered down on battery:\n{failed}\n{back}"
+            ));
         }
-        Ok("CPF1816 on battery, CPF1817 on utility power, no power down within QUPSDLYTIM(600)".into())
+        Ok(
+            "CPF1816 on battery, CPF1817 on utility power, no power down within QUPSDLYTIM(600)"
+                .into(),
+        )
     }
 
     fn agent_power_down(&self, s: &mut Session) -> Result<String, String> {
@@ -446,13 +500,16 @@ impl Suite {
         self.snap("media-qshwqual");
         if !screen.contains("Result . . . . . . . :") || !screen.contains("UEFI") {
             // The panel as the serial line drew it.
-            s.expect("UEFI", CMD).map_err(|e| format!("{e}; the report display:\n{screen}"))?;
+            s.expect("UEFI", CMD)
+                .map_err(|e| format!("{e}; the report display:\n{screen}"))?;
         }
         s.send("key f12")?;
         s.expect("Selection", CMD)?;
         s.send("2")?;
         // The message line may not reach the serial line; the stick is read below.
-        let told = s.expect("written to QSHWQUAL.TXT", Duration::from_secs(30)).is_ok();
+        let told = s
+            .expect("written to QSHWQUAL.TXT", Duration::from_secs(30))
+            .is_ok();
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(20));
         let text = report_on_stick(&stick)?;
@@ -467,7 +524,10 @@ impl Suite {
             .trim()
             .to_string();
         let said = if told { "; the message said so" } else { "" };
-        Ok(format!("from the media's menu: {result}; the report on the stick ({} lines){said}", text.lines().count()))
+        Ok(format!(
+            "from the media's menu: {result}; the report on the stick ({} lines){said}",
+            text.lines().count()
+        ))
     }
 
     /// Media step 5's guest: the ISO alone with a SATA disk and a stick.
@@ -476,10 +536,18 @@ impl Suite {
         if let Some(only) = &self.only
             && !only.iter().any(|p| name.starts_with(p.as_str()))
         {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let usb = self.out_dir.join("media-stick.img");
-        stick(&usb).map_err(|reason| crate::HarnessError::Failed { step: name, reason, log: String::new() })?;
+        stick(&usb).map_err(|reason| crate::HarnessError::Failed {
+            step: name,
+            reason,
+            log: String::new(),
+        })?;
         let sata = self.out_dir.join("media-sata.img");
         fs::File::create(&sata)?.set_len(2 << 30)?;
         let launch = Launch {

@@ -12,39 +12,38 @@
 //! when its connection closes. `docs/STORAGE_SERVICE.md` has the design.
 
 pub(crate) mod acg;
+pub(crate) mod afwstore;
 pub(crate) mod arb;
 mod census;
 pub(crate) mod certs;
 pub(crate) mod cmn;
 pub(crate) mod cmntrc;
-pub(crate) mod ddm;
 mod dbg;
+pub(crate) mod ddm;
 pub(crate) mod devices;
+mod dfu;
+pub(crate) mod dumps;
 pub(crate) mod exec;
+pub(crate) mod fmt;
 pub(crate) mod hist;
 mod hostsvr;
 pub(crate) mod ifs;
 pub(crate) mod ifsvol;
 mod isql;
 mod joblog;
-pub(crate) mod media;
-mod pdm;
-mod dfu;
-pub(crate) mod sst;
-pub(crate) mod dumps;
-pub(crate) mod liclog;
-mod svcop;
-pub(crate) mod trace;
 pub(crate) mod jobntfy;
 pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod jobscd;
+pub(crate) mod liclog;
 pub(crate) mod licpgm;
-pub(crate) mod fmt;
+pub(crate) mod media;
 pub(crate) mod msgs;
-pub(crate) mod prtf;
-pub(crate) mod prtdev;
+mod pdm;
+pub(crate) mod perfcol;
 pub(crate) mod prblog;
+pub(crate) mod prtdev;
+pub(crate) mod prtf;
 pub(crate) mod qap;
 pub(crate) mod qsh;
 pub(crate) mod regfac;
@@ -52,32 +51,33 @@ pub(crate) mod sbs;
 pub(crate) mod security;
 pub(crate) mod splcmd;
 pub(crate) mod spool;
-pub(crate) mod perfcol;
+pub(crate) mod sst;
 pub(crate) mod stats;
+mod svcop;
 pub(crate) mod tcp;
 pub(crate) mod timzon;
-mod units;
-mod work2;
+pub(crate) mod trace;
 mod uiapi;
+mod units;
 pub(crate) mod webadm;
-pub(crate) mod afwstore;
+mod work2;
 pub(crate) mod wtr;
 
 pub use jobs::chgjob;
-mod served;
-mod sqlhost;
-mod sqlsrv;
-mod fiber;
-mod turns;
-#[cfg(test)]
-mod longtests;
-mod seu;
-pub(crate) mod sysdata;
 mod authdata;
 mod cppdata;
 mod cppmedia;
-mod system2;
+mod fiber;
+#[cfg(test)]
+mod longtests;
+mod served;
+mod seu;
+mod sqlhost;
+mod sqlsrv;
+pub(crate) mod sysdata;
 mod sysdsp;
+mod system2;
+mod turns;
 
 use std::fs;
 use std::os::unix::net::UnixListener;
@@ -219,7 +219,8 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     };
     security::guard(system);
     let text = format!("{text}; {}", ifs_line(system));
-    let text = certs::ensure_system(system).map_or_else(|| text.clone(), |made| format!("{text}; {made}"));
+    let text =
+        certs::ensure_system(system).map_or_else(|| text.clone(), |made| format!("{text}; {made}"));
     system.pools = sbs::pool_table_saved(system);
     let iplsts = jobs::take_next_iplsts(system);
     if iplsts != 0
@@ -236,7 +237,10 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     };
     // SRCs raised while opening (delayed PTFs) ride after a separator
     // for slic to show; there is no reply to carry them yet.
-    let raised: Vec<&str> = std::mem::take(&mut system.raised).into_iter().map(|s| s.code).collect();
+    let raised: Vec<&str> = std::mem::take(&mut system.raised)
+        .into_iter()
+        .map(|s| s.code)
+        .collect();
     if !raised.is_empty() {
         text.push(SRC_SEP);
         text.push_str(&raised.join(","));
@@ -256,7 +260,9 @@ fn ifs_line(system: &mut System) -> String {
 /// Drop the SQL `QTEMP` libraries the jobs of a stopped system left in
 /// ASP 1 (`sql::exec::qtemp`).
 fn purge_sql_qtemp(system: &mut System) {
-    let Some(s) = system.storage.as_mut() else { return };
+    let Some(s) = system.storage.as_mut() else {
+        return;
+    };
     let Some(qsys) = s.qsys else { return };
     let Ok(mut txn) = s.store.begin() else { return };
     match sql::exec::qtemp::purge(&mut txn, qsys, store::obj::JobHandle(0)) {
@@ -264,7 +270,10 @@ fn purge_sql_qtemp(system: &mut System) {
             if let Err(e) = txn.commit() {
                 eprintln!("qsstg: SQL QTEMP purge: {e}");
             } else if n > 0 {
-                eprintln!("qsstg: dropped {n} SQL QTEMP librar{} left by ended jobs", if n == 1 { "y" } else { "ies" });
+                eprintln!(
+                    "qsstg: dropped {n} SQL QTEMP librar{} left by ended jobs",
+                    if n == 1 { "y" } else { "ies" }
+                );
             }
         }
         Err(e) => {

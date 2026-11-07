@@ -84,7 +84,12 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     stg::remote::status(link, wm::job::Status::Timw, "");
     link.borrow_mut().on_lost(super::host::lost);
     let mut host = JobHost::new(link, start, ctl);
-    let why = qapd::serve(Tls(StreamOwned::new(tls, sock)), &mut host, qapd::Config::default(), who);
+    let why = qapd::serve(
+        Tls(StreamOwned::new(tls, sock)),
+        &mut host,
+        qapd::Config::default(),
+        who,
+    );
     host.console.sync_log();
     let _ = host.console.host.ctl.borrow_mut().send(&FromJob::Ending {
         reason: format!("QAP connection closed: {why}"),
@@ -101,5 +106,8 @@ fn log_closes() {
         .with_writer(io::stderr)
         .with_ansi(false);
     let only = Targets::new().with_target("qapd", LevelFilter::INFO);
-    let _ = tracing_subscriber::registry().with(layer).with(only).try_init();
+    let _ = tracing_subscriber::registry()
+        .with(layer)
+        .with(only)
+        .try_init();
 }

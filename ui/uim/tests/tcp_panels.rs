@@ -16,7 +16,11 @@ fn list(rows: &[&[(&str, &str)]]) -> ListState {
     ListState {
         rows: rows
             .iter()
-            .map(|r| r.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect())
+            .map(|r| {
+                r.iter()
+                    .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: Some(rows.len()),
@@ -271,7 +275,10 @@ fn hosts() -> ListState {
         ("", "WWW.PUB400.COM"),
         ("", "IPUBLIC.ONLINE"),
     ];
-    let v: Vec<Vec<(&str, &str)>> = rows.iter().map(|(a, n)| vec![("HTEADR", *a), ("HTENAME", *n)]).collect();
+    let v: Vec<Vec<(&str, &str)>> = rows
+        .iter()
+        .map(|(a, n)| vec![("HTEADR", *a), ("HTENAME", *n)])
+        .collect();
     let refs: Vec<&[(&str, &str)]> = v.iter().map(Vec::as_slice).collect();
     list(&refs)
 }
@@ -306,7 +313,10 @@ fn cfgtcp_10_hte_5() {
     let g = shipped("QTOCHTE");
     let mut d = MapDialog::new();
     d.set("DADR", "127.0.0.1");
-    d.set_list("NAMES", list(&[&[("DNAME", "LOOPBACK")], &[("DNAME", "LOCALHOST")]]));
+    d.set_list(
+        "NAMES",
+        list(&[&[("DNAME", "LOOPBACK")], &[("DNAME", "LOCALHOST")]]),
+    );
     let s = render(&g, "DSPHTE", &d, &opts()).unwrap();
     compare("cfgtcp-10-hte-5", &s);
 }

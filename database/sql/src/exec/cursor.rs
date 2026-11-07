@@ -101,9 +101,16 @@ pub fn declare(ctx: &mut SqlContext, d: &DeclareCursor) -> Outcome {
 
 /// A cursor open on rows a service made (`GENERATE_SQL`), returned to
 /// the procedure's caller.
-pub(crate) fn open_rows(ctx: &mut SqlContext, name: &str, columns: Vec<ColumnDesc>, rows: Vec<Vec<Value>>) {
+pub(crate) fn open_rows(
+    ctx: &mut SqlContext,
+    name: &str,
+    columns: Vec<ColumnDesc>,
+    rows: Vec<Vec<Value>>,
+) {
     // The query is never run: the cursor is open on its rows.
-    let Ok(crate::ast::Statement::Select(query)) = crate::parse::parse("VALUES 0", crate::Naming::Sql) else {
+    let Ok(crate::ast::Statement::Select(query)) =
+        crate::parse::parse("VALUES 0", crate::Naming::Sql)
+    else {
         return;
     };
     let n = rows.len();
@@ -158,11 +165,17 @@ pub fn open(
         return Err(SqlError::Coded {
             code: -243,
             state: "36001",
-            what: format!("cursor {name} is SENSITIVE but its query does not read one table plainly"),
+            what: format!(
+                "cursor {name} is SENSITIVE but its query does not read one table plainly"
+            ),
         });
     }
     let c = get(ctx, name)?;
-    c.params = if sensitive { params.to_vec() } else { Vec::new() };
+    c.params = if sensitive {
+        params.to_vec()
+    } else {
+        Vec::new()
+    };
     c.columns = rs.columns;
     c.rows = rs.rows;
     c.table = table;
@@ -182,7 +195,10 @@ fn reread(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str) -> Result<()> {
         return Ok(());
     }
     let (query, params) = (c.query.clone(), c.params.clone());
-    let current = c.pos.checked_sub(1).and_then(|i| c.rrns.get(i).copied().flatten());
+    let current = c
+        .pos
+        .checked_sub(1)
+        .and_then(|i| c.rrns.get(i).copied().flatten());
     let (rs, _, rrns) = run_cursor_query(txn, ctx, &params, &query)?;
     let c = get(ctx, name)?;
     let after = c.pos > c.rows.len();
@@ -202,7 +218,12 @@ fn reread(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str) -> Result<()> {
 /// `FETCH`: the row fetched as a one-row result set, or an empty one
 /// past either end (the SQLCA then says `+100`).
 #[allow(clippy::many_single_char_names)]
-pub fn fetch(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Fetch, params: &[Value]) -> Result<Outcome> {
+pub fn fetch(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    f: &Fetch,
+    params: &[Value],
+) -> Result<Outcome> {
     let name = f.cursor.value.as_str();
     reread(txn, ctx, name)?;
     let offset = |e: &crate::ast::Expr| -> Result<i64> {

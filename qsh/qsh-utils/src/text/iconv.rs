@@ -58,11 +58,19 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         return usage(cx, name, "Both -f and -t are needed.");
     };
     let (Some(fc), Some(tc)) = (ccsid_of(from), ccsid_of(to)) else {
-        complain(cx, name, &format!("A conversion from {from} to {to} is not available."));
+        complain(
+            cx,
+            name,
+            &format!("A conversion from {from} to {to} is not available."),
+        );
         return 1;
     };
     let Ok(mut conv) = ccsid::conv::Converter::new(fc, tc) else {
-        complain(cx, name, &format!("A conversion from {from} to {to} is not available."));
+        complain(
+            cx,
+            name,
+            &format!("A conversion from {from} to {to} is not available."),
+        );
         return 1;
     };
     let mut status = 0;

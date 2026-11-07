@@ -34,7 +34,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             // The objects go first, as IBM's DLTLIB deletes them.
             let lib = parms.name("LIB");
             if libl_held(system, &lib) {
-                return Some(escape_with("CPF2114", &[(&lib, 10), ("QSYS", 10), ("LIB", 7)]));
+                return Some(escape_with(
+                    "CPF2114",
+                    &[(&lib, 10), ("QSYS", 10), ("LIB", 7)],
+                ));
             }
             let cleared = clrlib(system, &lib);
             if cleared.escape.is_some() {
@@ -94,7 +97,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
                 out,
                 name,
                 "CPC2192",
-                &[(&n, 10), (&l, 10), (&new, 10), (ty.trim_start_matches('*'), 10)],
+                &[
+                    (&n, 10),
+                    (&l, 10),
+                    (&new, 10),
+                    (ty.trim_start_matches('*'), 10),
+                ],
             )
         }
         "MOVOBJ" => {
@@ -113,7 +121,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
                 out,
                 name,
                 "CPC2193",
-                &[(&n, 10), (&l, 10), (&to, 10), (ty.trim_start_matches('*'), 10)],
+                &[
+                    (&n, 10),
+                    (&l, 10),
+                    (&to, 10),
+                    (ty.trim_start_matches('*'), 10),
+                ],
             )
         }
         "DSPOBJD" | "WRKOBJ" => {
@@ -154,7 +167,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             let (n, l) = match parms.elems("DTAARA").first().copied().flatten() {
                 Some(cmd::Value::Qual(p)) => (
                     p.first().map(cmd::Value::source).unwrap_or_default(),
-                    p.get(1).map(cmd::Value::source).filter(|l| l != "''").unwrap_or_default(),
+                    p.get(1)
+                        .map(cmd::Value::source)
+                        .filter(|l| l != "''")
+                        .unwrap_or_default(),
                 ),
                 Some(v) => (v.source(), String::new()),
                 None => (String::new(), String::new()),
@@ -177,9 +193,20 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             };
             let sender = parms.text("SENDERID").trim() == "*YES";
             let qual = format!("{}/{n}", lib_or(&l));
-            let out = crate::svc::objects::crt_dtaq(system, &qual, &text, order, num("MAXLEN", 1024), sender)
-                .unwrap_or_else(|e| format!("CPF9898 {e}
-"));
+            let out = crate::svc::objects::crt_dtaq(
+                system,
+                &qual,
+                &text,
+                order,
+                num("MAXLEN", 1024),
+                sender,
+            )
+            .unwrap_or_else(|e| {
+                format!(
+                    "CPF9898 {e}
+"
+                )
+            });
             finish(out, name, "CPC9801", &[(&n, 10), (&l, 10), ("DTAQ", 10)])
         }
         "DLTDTAQ" => {
@@ -494,7 +521,11 @@ fn crtcmd(system: &mut System, parms: &Parms) -> CmdReply {
     let replace = parms.yes("REPLACE");
     let cx = ctx(system);
     // SRCSTMF: the definition source is a stream file read in the job's name.
-    let stmf = match parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty()) {
+    let stmf = match parms
+        .specified("SRCSTMF")
+        .then(|| parms.text("SRCSTMF"))
+        .filter(|s| !s.is_empty())
+    {
         Some(path) => match super::stmf::read_as_job(system, &path) {
             Ok(t) => Some(t.replace("\r\n", "\n")),
             Err(e) => return failed("CRTCMD", &e),
@@ -733,7 +764,12 @@ fn libl_held(system: &System, lib: &str) -> bool {
         let l = &a.libl;
         *n != me
             && system.jobs.get(*n).is_some()
-            && l.sys.iter().chain(&l.prd).chain(&l.usr).chain(l.cur.iter()).any(|x| x == lib)
+            && l.sys
+                .iter()
+                .chain(&l.prd)
+                .chain(&l.usr)
+                .chain(l.cur.iter())
+                .any(|x| x == lib)
     })
 }
 

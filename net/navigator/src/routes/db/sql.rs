@@ -36,7 +36,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
     }
     let schemas = rq.env().db.sql_schemas(rq.user());
     let mut last = state.last.clone();
-    let mut statement = last.as_ref().map(|l| l.statement.clone()).unwrap_or_default();
+    let mut statement = last
+        .as_ref()
+        .map(|l| l.statement.clone())
+        .unwrap_or_default();
     let mut opts = last.as_ref().map_or_else(
         || SqlOptions {
             schema: schemas.first().cloned().unwrap_or_default(),
@@ -50,7 +53,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
         if let Some(sc) = q.get("s") {
             opts.schema = sc.to_ascii_uppercase();
         }
-    } else if let Some(s) = q.get("h").and_then(|h| h.parse::<usize>().ok()).and_then(|h| state.history.get(h)) {
+    } else if let Some(s) = q
+        .get("h")
+        .and_then(|h| h.parse::<usize>().ok())
+        .and_then(|h| state.history.get(h))
+    {
         statement.clone_from(s);
         last = None;
     }
@@ -81,7 +88,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
         &format!(
             "{}{}",
             props_table(&PRODUCT, &[fields], false),
-            buttons(&[Button::new("run", "Run"), Button::new("explain", "Explain"), Button::new("clear", "Clear")])
+            buttons(&[
+                Button::new("run", "Run"),
+                Button::new("explain", "Explain"),
+                Button::new("clear", "Clear")
+            ])
         ),
     );
     if let Some(l) = &last {
@@ -99,7 +110,12 @@ pub fn page(rq: &Rq<'_>) -> Response {
             if n > 0 {
                 body.push_str("<br>");
             }
-            let _ = write!(body, "<a href=\"{}\">{}</a>", esc(&rq.ctx.url(&format!("/sql?h={i}"))), esc(s));
+            let _ = write!(
+                body,
+                "<a href=\"{}\">{}</a>",
+                esc(&rq.ctx.url(&format!("/sql?h={i}"))),
+                esc(s)
+            );
         }
         body.push_str("</div>");
     }
@@ -148,7 +164,13 @@ fn post(rq: &Rq<'_>) -> Response {
         return rq.redirect("/sql");
     }
     let schemas = rq.env().db.sql_schemas(&user);
-    let choose = |v: &str, all: &[String]| all.iter().find(|o| *o == v).or(all.first()).cloned().unwrap_or_default();
+    let choose = |v: &str, all: &[String]| {
+        all.iter()
+            .find(|o| *o == v)
+            .or(all.first())
+            .cloned()
+            .unwrap_or_default()
+    };
     let opts = SqlOptions {
         schema: choose(f.str("schema"), &schemas),
         naming: choose(f.str("naming"), &strings(&NAMINGS)),
@@ -188,5 +210,9 @@ fn download(rq: &Rq<'_>, last: Option<&Last>) -> Response {
     if o.failed() {
         return rq.redirect("/sql");
     }
-    Response::download("result.csv", "text/csv; charset=utf-8", csv(&o.columns, &o.rows))
+    Response::download(
+        "result.csv",
+        "text/csv; charset=utf-8",
+        csv(&o.columns, &o.rows),
+    )
 }

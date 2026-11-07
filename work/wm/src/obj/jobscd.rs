@@ -329,7 +329,10 @@ impl ScdEntry {
             if !self.runs_on(day) {
                 continue;
             }
-            let at = to_utc(u64::try_from(day).ok()? * 86_400 + u64::from(self.time), off);
+            let at = to_utc(
+                u64::try_from(day).ok()? * 86_400 + u64::from(self.time),
+                off,
+            );
             if at > after {
                 return Some(at);
             }

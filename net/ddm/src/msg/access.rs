@@ -91,10 +91,18 @@ impl Accsecrd {
         Self {
             secmec: o
                 .all(param::SECMEC)
-                .flat_map(|m| m.bytes().as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c)))
+                .flat_map(|m| {
+                    m.bytes()
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|c| u16::from_be_bytes(*c))
+                })
                 .collect(),
             sectkn: o.get(param::SECTKN).map(|t| t.bytes().to_vec()),
-            secchkcd: o.get(param::SECCHKCD).and_then(|c| c.bytes().first().copied()),
+            secchkcd: o
+                .get(param::SECCHKCD)
+                .and_then(|c| c.bytes().first().copied()),
         }
     }
 }
@@ -205,7 +213,9 @@ impl TypDef {
         let ovr = o.get(obj::TYPDEFOVR);
         let c = |cp| ovr.and_then(|x| x.get_u16(cp));
         Self {
-            name: o.get_chars(obj::TYPDEFNAM).unwrap_or_else(|| "QTDSQL400".into()),
+            name: o
+                .get_chars(obj::TYPDEFNAM)
+                .unwrap_or_else(|| "QTDSQL400".into()),
             sbc: c(param::CCSIDSBC),
             dbc: c(param::CCSIDDBC),
             mbc: c(param::CCSIDMBC),
@@ -292,7 +302,10 @@ impl Accrdbrm {
     pub fn from_object(o: &Object) -> Self {
         Self {
             svrcod: o.svrcod(),
-            prdid: o.get(param::PRDID).map(|p| text(p.bytes())).unwrap_or_default(),
+            prdid: o
+                .get(param::PRDID)
+                .map(|p| text(p.bytes()))
+                .unwrap_or_default(),
             typdef: TypDef::from(o),
             crrtkn: o.get(param::CRRTKN).map(|t| t.bytes().to_vec()),
         }

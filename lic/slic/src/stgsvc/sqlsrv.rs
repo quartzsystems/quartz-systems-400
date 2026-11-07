@@ -36,7 +36,9 @@ fn tickets() -> &'static Mutex<HashMap<Vec<u8>, Ticket>> {
 }
 
 fn now() -> u64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs())
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs())
 }
 
 /// A job's qualified name, `number/user/name`.
@@ -52,25 +54,45 @@ pub fn ticket(ctx: &JobCtx) -> Vec<u8> {
     let mut all = tickets().lock().unwrap_or_else(PoisonError::into_inner);
     let at = now();
     all.retain(|_, x| x.until > at);
-    all.insert(t.clone(), Ticket { job: qualified(&ctx.job), user: ctx.session.borrow().principal.user.clone(), until: at + TICKET_SECS });
+    all.insert(
+        t.clone(),
+        Ticket {
+            job: qualified(&ctx.job),
+            user: ctx.session.borrow().principal.user.clone(),
+            until: at + TICKET_SECS,
+        },
+    );
     t
 }
 
 /// A refusal with its message's text.
 fn refused(system: &mut System, msgid: &str, values: &[&str]) -> HostRefused {
-    HostRefused { rc: 1, msgid: msgid.into(), text: super::msgs::text(system, msgid, values) }
+    HostRefused {
+        rc: 1,
+        msgid: msgid.into(),
+        text: super::msgs::text(system, msgid, values),
+    }
 }
 
 /// `sqlsrv_assume`: the calling `QSQSRVR` prestart job takes the
 /// ticket's connection; it runs as the client's user or as `user`. The
 /// client's qualified name back.
-pub fn assume(system: &mut System, ctx: &mut JobCtx, ticket: &[u8], user: &str, password: &str) -> Result<String, HostRefused> {
+pub fn assume(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    ticket: &[u8],
+    user: &str,
+    password: &str,
+) -> Result<String, HostRefused> {
     if ctx.job.name.trim() != SERVER_JOB || ctx.job.subtype != 'J' {
         // Only a QSQSRVR prestart job serves SQL connections.
         let user = ctx.job.user.clone();
         return Err(refused(system, "CPF2217", &[&user]));
     }
-    let t = tickets().lock().unwrap_or_else(PoisonError::into_inner).remove(ticket);
+    let t = tickets()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .remove(ticket);
     let Some(t) = t.filter(|t| t.until > now()) else {
         return Err(refused(system, "CPF4AB8", &[]));
     };

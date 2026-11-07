@@ -6,19 +6,19 @@
 //! and `Prepared::execute`. Queries are planned in `query`, data
 //! changes in `dml`, definitions in `ddl`, expressions in `eval`.
 
-pub mod alter;
-pub mod array;
-mod column;
 pub mod agg;
 pub mod alias;
+pub mod alter;
 mod answers;
+pub mod array;
 pub mod cast;
-mod change;
 pub mod catalog;
+mod change;
+mod column;
 pub mod cst;
 mod cte;
-pub mod datetime;
 pub mod cursor;
+pub mod datetime;
 pub mod ddl;
 mod defaults;
 pub mod dml;
@@ -30,28 +30,27 @@ pub use from::ORDER_COLUMN;
 pub mod func;
 pub mod grant;
 mod grant_obj;
-pub mod index;
-pub mod label;
-pub mod json;
-pub mod locator;
 mod grouping;
+pub mod index;
 mod join;
-pub(crate) mod plan;
+pub mod json;
+pub mod label;
+pub mod locator;
 pub mod mem;
 pub mod names;
-pub mod opnqryf;
 mod olap;
+pub mod opnqryf;
+pub(crate) mod plan;
 pub mod qtemp;
-pub mod reads;
 pub mod query;
+pub mod reads;
 pub mod rename;
 mod savepoint;
 pub use savepoint::ATOMIC_SAVEPOINT;
-pub mod routine;
-pub mod schema;
 pub mod registers;
 pub mod restype;
-pub mod xml;
+pub mod routine;
+pub mod schema;
 pub mod seq;
 mod sort;
 pub mod spill;
@@ -61,6 +60,7 @@ pub mod udt;
 pub mod var;
 pub mod view;
 pub mod warn;
+pub mod xml;
 
 use db::file::{self, FileDesc, MemberEntry};
 use db::format::FormatDef;
@@ -93,7 +93,14 @@ impl TableInfo {
     /// The field named, with its index.
     #[must_use]
     pub fn field(&self, name: &str) -> Option<(usize, &FieldDef)> {
-        let by_alias = || self.format.format.fields.iter().enumerate().find(|(_, f)| f.alias.as_deref() == Some(name));
+        let by_alias = || {
+            self.format
+                .format
+                .fields
+                .iter()
+                .enumerate()
+                .find(|(_, f)| f.alias.as_deref() == Some(name))
+        };
         match Name::parse(name) {
             Ok(n) => self.format.format.field(&n).or_else(by_alias),
             Err(_) => by_alias(),
@@ -108,7 +115,11 @@ impl TableInfo {
     /// Whether the format has LOB fields.
     #[must_use]
     pub fn has_lobs(&self) -> bool {
-        self.format.format.fields.iter().any(|f| f.data_type.is_lob())
+        self.format
+            .format
+            .fields
+            .iter()
+            .any(|f| f.data_type.is_lob())
     }
 }
 
@@ -394,7 +405,12 @@ impl SqlContext {
 
     /// Under a yielder, `*SHRRD` on each object a scan reads, held until
     /// [`SqlContext::release_held`].
-    pub(crate) fn hold(&mut self, txn: &mut Txn<'_>, objects: &[ObjectId], what: &str) -> Result<()> {
+    pub(crate) fn hold(
+        &mut self,
+        txn: &mut Txn<'_>,
+        objects: &[ObjectId],
+        what: &str,
+    ) -> Result<()> {
         if self.yielder.is_none() {
             return Ok(());
         }
@@ -425,12 +441,22 @@ impl SqlContext {
     /// Read-lock record `rrn` of physical member `member`: by the commit
     /// definition until the unit of work ends, else until the statement
     /// ends. Another job's update lock refuses it (`SQL0913`).
-    pub(crate) fn lock_read(&mut self, member: ObjectId, rrn: u64, file: &str, mbr: &str) -> Result<()> {
+    pub(crate) fn lock_read(
+        &mut self,
+        member: ObjectId,
+        rrn: u64,
+        file: &str,
+        mbr: &str,
+    ) -> Result<()> {
         let r = if let Some(d) = self.session.commit_def() {
             d.borrow_mut().lock_read(member, rrn)
         } else {
             let who = odp::Holder::new(self.job, self.stmt_owner);
-            let r = self.locks.lock().expect("lock table").lock_read(member, rrn, who);
+            let r = self
+                .locks
+                .lock()
+                .expect("lock table")
+                .lock_read(member, rrn, who);
             if r == Ok(true) {
                 self.stmt_reads.push((member, rrn));
             }
@@ -458,7 +484,13 @@ impl SqlContext {
     /// of `member` locked, so the row is left out.
     pub(crate) fn skips(&self, member: Option<ObjectId>, rrn: u64) -> bool {
         self.skip_locked
-            && member.is_some_and(|m| self.locks.lock().expect("lock table").holder(m, rrn).is_some_and(|j| j != self.job))
+            && member.is_some_and(|m| {
+                self.locks
+                    .lock()
+                    .expect("lock table")
+                    .holder(m, rrn)
+                    .is_some_and(|j| j != self.job)
+            })
     }
 
     /// The statement ended: the read locks it kept itself go.
@@ -545,11 +577,20 @@ impl SqlContext {
 
     /// A turn for the others when it is time: whether it yielded, `None`
     /// when the yielder ended the statement.
-    fn turn(&mut self, txn: &mut Txn<'_>, own: u32, commit: bool) -> std::result::Result<Option<bool>, store::StoreError> {
+    fn turn(
+        &mut self,
+        txn: &mut Txn<'_>,
+        own: u32,
+        commit: bool,
+    ) -> std::result::Result<Option<bool>, store::StoreError> {
         let Some(y) = self.yielder.clone() else {
             return Ok(Some(false));
         };
-        if self.open != own || self.last_yield.is_some_and(|t| t.elapsed() < self.yield_every) {
+        if self.open != own
+            || self
+                .last_yield
+                .is_some_and(|t| t.elapsed() < self.yield_every)
+        {
             return Ok(Some(false));
         }
         if commit {
@@ -571,13 +612,20 @@ impl SqlContext {
         let Some(y) = self.yielder.clone() else {
             return Ok(());
         };
-        if self.last_yield.is_some_and(|t| t.elapsed() < self.yield_every) {
+        if self
+            .last_yield
+            .is_some_and(|t| t.elapsed() < self.yield_every)
+        {
             return Ok(());
         }
         let stop = y();
         self.yields += 1;
         self.last_yield = Some(std::time::Instant::now());
-        if stop { Err(SqlError::Cancelled) } else { Ok(()) }
+        if stop {
+            Err(SqlError::Cancelled)
+        } else {
+            Ok(())
+        }
     }
 
     /// Give back the locks a yielding statement took.
@@ -612,7 +660,9 @@ impl SqlContext {
             Some(s) => (s, 0),
             None => std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
-                .map_or((0, 0), |d| (d.as_secs(), u64::from(d.subsec_nanos()) * 1000)),
+                .map_or((0, 0), |d| {
+                    (d.as_secs(), u64::from(d.subsec_nanos()) * 1000)
+                }),
         }
     }
 
@@ -650,7 +700,11 @@ impl SqlContext {
 
     /// The library a schema name means, by its system name or its SQL
     /// name.
-    pub fn schema_library(&self, txn: &mut Txn<'_>, schema: &crate::ast::Ident) -> Result<ObjectId> {
+    pub fn schema_library(
+        &self,
+        txn: &mut Txn<'_>,
+        schema: &crate::ast::Ident,
+    ) -> Result<ObjectId> {
         names::schema(txn, self.qsys, schema)?.ok_or_else(|| SqlError::ObjectNotFound {
             name: schema.value.clone(),
             kind: "schema",
@@ -658,7 +712,11 @@ impl SqlContext {
     }
 
     /// The system name of the library a schema name means.
-    pub fn schema_system_name(&self, txn: &mut Txn<'_>, schema: &crate::ast::Ident) -> Result<Name> {
+    pub fn schema_system_name(
+        &self,
+        txn: &mut Txn<'_>,
+        schema: &crate::ast::Ident,
+    ) -> Result<Name> {
         if let Some(n) = names::direct(schema) {
             return Ok(n);
         }
@@ -706,7 +764,9 @@ impl SqlContext {
             kind: "table",
         };
         if let Some(session) = qtemp::qualifier(name) {
-            return self.resolve_in_qtemp(txn, name, session)?.ok_or_else(not_found);
+            return self
+                .resolve_in_qtemp(txn, name, session)?
+                .ok_or_else(not_found);
         }
         let lib = self.lib_spec_in(txn, name).map_err(|_| not_found())?;
         // Through the library list `QTEMP` comes first.
@@ -724,7 +784,9 @@ impl SqlContext {
         names::check_length(&name.name)?;
         let libs = match lib {
             LibSpec::Name(n) => {
-                let l = ops::find_library(txn, self.qsys, n).map_err(|_| not_found())?.id;
+                let l = ops::find_library(txn, self.qsys, n)
+                    .map_err(|_| not_found())?
+                    .id;
                 store::obj::guard::check_id(txn, "lib.search", l).map_err(|_| not_found())?;
                 vec![l]
             }
@@ -732,7 +794,10 @@ impl SqlContext {
             LibSpec::Libl => self.names.libl.clone(),
         };
         for l in libs {
-            for space in [db::sqlinf::names::Space::Table, db::sqlinf::names::Space::Index] {
+            for space in [
+                db::sqlinf::names::Space::Table,
+                db::sqlinf::names::Space::Index,
+            ] {
                 if let Some(id) = names::find(txn, l, space, &name.name.value)? {
                     return Ok(id);
                 }
@@ -761,15 +826,19 @@ impl SqlContext {
             udt::column::mark(txn, id, &mut f.format.fields)?;
         }
         // A view that runs its query has no member: it is read only (`SQL0150`).
-        if desc.member(spec).is_none() && view::definition(txn, id).is_some_and(|(v, _)| v.read_only) {
-            return Err(SqlError::Coded { code: -150, state: "42807", what: format!("view {name} is read only") });
+        if desc.member(spec).is_none()
+            && view::definition(txn, id).is_some_and(|(v, _)| v.read_only)
+        {
+            return Err(SqlError::Coded {
+                code: -150,
+                state: "42807",
+                what: format!("view {name} is read only"),
+            });
         }
-        let member = *desc
-            .member(spec)
-            .ok_or_else(|| SqlError::ObjectNotFound {
-                name: format!("{name} (no member)"),
-                kind: "table",
-            })?;
+        let member = *desc.member(spec).ok_or_else(|| SqlError::ObjectNotFound {
+            name: format!("{name} (no member)"),
+            kind: "table",
+        })?;
         let format = desc
             .formats
             .first()
@@ -794,7 +863,11 @@ impl SqlContext {
         if usage.output || usage.update || usage.delete {
             self.qtemp.changing(t.id);
         }
-        let cmt = if nc { None } else { self.session.commit_def().cloned() };
+        let cmt = if nc {
+            None
+        } else {
+            self.session.commit_def().cloned()
+        };
         let opts = OpenOpts {
             member: MemberSpec::Name(t.member.name),
             usage,
@@ -819,7 +892,9 @@ impl SqlContext {
         if let Some(c) = &self.triggers {
             return Some(c.clone());
         }
-        self.midcall.as_ref().map(|m| routine::midcall::Triggers::shared(m.clone(), self.later_triggers.clone()))
+        self.midcall
+            .as_ref()
+            .map(|m| routine::midcall::Triggers::shared(m.clone(), self.later_triggers.clone()))
     }
 }
 
@@ -963,7 +1038,9 @@ pub struct Prepared {
 /// Parse a statement.
 pub fn prepare(text: &str, naming: Naming) -> Result<Prepared> {
     // The plan cache keeps what was parsed before.
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
     if let Some(statement) = plan::cache::lookup(text, naming, now) {
         return Ok(Prepared { statement, naming });
     }
@@ -1002,7 +1079,9 @@ impl Prepared {
         };
         // `MODE DB2SQL` after triggers fire once every row has changed.
         let later = ctx.later_triggers.clone();
-        let r = r.and_then(|o| routine::midcall::fire_deferred(txn, ctx.midcall.as_ref(), &later).map(|()| o));
+        let r = r.and_then(|o| {
+            routine::midcall::fire_deferred(txn, ctx.midcall.as_ref(), &later).map(|()| o)
+        });
         later.borrow_mut().clear();
         routine::extfunc::finish(txn, ctx);
         ctx.release_stmt_reads();
@@ -1010,7 +1089,12 @@ impl Prepared {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn dispatch(&self, txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value]) -> Result<Outcome> {
+    fn dispatch(
+        &self,
+        txn: &mut Txn<'_>,
+        ctx: &mut SqlContext,
+        params: &[Value],
+    ) -> Result<Outcome> {
         match &self.statement {
             Statement::Select(q) => {
                 let rs = query::run_query(txn, ctx, params, q, &eval::Env::default())?;
@@ -1019,27 +1103,48 @@ impl Prepared {
             Statement::Insert(i) => dml::insert(txn, ctx, params, i).map(Outcome::Count),
             Statement::Update(u) => dml::update(txn, ctx, params, u).map(Outcome::Count),
             Statement::Delete(d) => dml::delete(txn, ctx, params, d).map(Outcome::Count),
-            Statement::CreateTable(t) => table::create(txn, ctx, t, params).map(|n| if n == 0 { Outcome::Done } else { Outcome::Count(n) }),
-            Statement::DeclareTemp(d) => qtemp::declare(txn, ctx, d, params).map(|n| if n == 0 { Outcome::Done } else { Outcome::Count(n) }),
+            Statement::CreateTable(t) => table::create(txn, ctx, t, params).map(|n| {
+                if n == 0 {
+                    Outcome::Done
+                } else {
+                    Outcome::Count(n)
+                }
+            }),
+            Statement::DeclareTemp(d) => qtemp::declare(txn, ctx, d, params).map(|n| {
+                if n == 0 {
+                    Outcome::Done
+                } else {
+                    Outcome::Count(n)
+                }
+            }),
             Statement::CreateIndex(i) => index::create(txn, ctx, i).map(|()| Outcome::Done),
             Statement::CreateSchema(name) => schema::create(txn, ctx, name).map(|()| Outcome::Done),
-            Statement::DropSchema { name, restrict, .. } => schema::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done),
+            Statement::DropSchema { name, restrict, .. } => {
+                schema::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done)
+            }
             Statement::AlterTable(a) => alter::alter_table(txn, ctx, a).map(|()| Outcome::Done),
             Statement::CreateSequence(s) => seq::create(txn, ctx, s).map(|()| Outcome::Done),
-            Statement::AlterSequence { name, options } => seq::alter(txn, ctx, name, options).map(|()| Outcome::Done),
+            Statement::AlterSequence { name, options } => {
+                seq::alter(txn, ctx, name, options).map(|()| Outcome::Done)
+            }
             Statement::DropSequence { name } => seq::drop(txn, ctx, name).map(|()| Outcome::Done),
             Statement::CreateVariable(v) => var::create(txn, ctx, v).map(|()| Outcome::Done),
             Statement::DropVariable { name } => var::drop(txn, ctx, name).map(|()| Outcome::Done),
-            Statement::SetVariables { targets, values } => var::set(txn, ctx, params, targets, values).map(|()| Outcome::Done),
+            Statement::SetVariables { targets, values } => {
+                var::set(txn, ctx, params, targets, values).map(|()| Outcome::Done)
+            }
             Statement::CreateType(t) => udt::create(txn, ctx, t).map(|()| Outcome::Done),
             Statement::CreateTrigger(t) => trigger::create(txn, ctx, t).map(|()| Outcome::Done),
             Statement::DropTrigger(name) => trigger::drop(txn, ctx, name).map(|()| Outcome::Done),
             Statement::DropType { name } => udt::drop(txn, ctx, name).map(|()| Outcome::Done),
-            Statement::DropTable { name, restrict, .. } | Statement::DropView { name, restrict, .. } => {
+            Statement::DropTable { name, restrict, .. }
+            | Statement::DropView { name, restrict, .. } => {
                 drop::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done)
             }
             Statement::DropIndex(name) => drop::drop(txn, ctx, name, false).map(|()| Outcome::Done),
-            st @ (Statement::CreateAlias { .. } | Statement::DropAlias(_)) => alias::run(txn, ctx, st).map(|()| Outcome::Done),
+            st @ (Statement::CreateAlias { .. } | Statement::DropAlias(_)) => {
+                alias::run(txn, ctx, st).map(|()| Outcome::Done)
+            }
             Statement::Commit { hold } => {
                 if ctx.session.commit_def().is_some() {
                     ctx.session.commit(txn, ctx.now)?;
@@ -1114,7 +1219,11 @@ impl Prepared {
                 ctx.explain.clear();
                 query::explain(txn, ctx, params, q)?;
                 let lines = std::mem::take(&mut ctx.explain);
-                let col = |n: &str, t: &str, nullable: bool| ColumnDesc { name: n.into(), data_type: t.into(), nullable };
+                let col = |n: &str, t: &str, nullable: bool| ColumnDesc {
+                    name: n.into(),
+                    data_type: t.into(),
+                    nullable,
+                };
                 Ok(Outcome::Rows(ResultSet {
                     columns: vec![
                         col("PLAN", "VARCHAR(132)", false),
@@ -1134,7 +1243,13 @@ impl Prepared {
             }
             Statement::Rename(r) => rename::run(txn, ctx, r).map(|()| Outcome::Done),
             // The count is not reported, only SQL0100 when there was nothing.
-            Statement::Truncate(t) => change::truncate(txn, ctx, params, t).map(|n| if n == 0 { Outcome::Count(0) } else { Outcome::Done }),
+            Statement::Truncate(t) => change::truncate(txn, ctx, params, t).map(|n| {
+                if n == 0 {
+                    Outcome::Count(0)
+                } else {
+                    Outcome::Done
+                }
+            }),
             Statement::SetRegister { name, value } => {
                 let v = eval::Evaluator { ctx, params }.eval(txn, value, &eval::Env::default())?;
                 ctx.registers.set(name, &v)?;
@@ -1235,11 +1350,15 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::Revoke(_) => "REVOKE",
         Statement::Truncate(_) => "TRUNCATE",
         Statement::SetRegister { .. } | Statement::SetVariables { .. } => "SET",
-        Statement::CreateRoutine(r) if r.kind == crate::ast::RoutineKind::Procedure => "CREATE PROCEDURE",
+        Statement::CreateRoutine(r) if r.kind == crate::ast::RoutineKind::Procedure => {
+            "CREATE PROCEDURE"
+        }
         Statement::CreateRoutine(_) => "CREATE FUNCTION",
         Statement::Call(_) => "CALL",
         Statement::DropRoutine(_) => "DROP ROUTINE",
-        Statement::AlterRoutine(a) if a.target.kind == crate::ast::RoutineKind::Procedure => "ALTER PROCEDURE",
+        Statement::AlterRoutine(a) if a.target.kind == crate::ast::RoutineKind::Procedure => {
+            "ALTER PROCEDURE"
+        }
         Statement::AlterRoutine(_) => "ALTER FUNCTION",
         Statement::Signal(_) => "SIGNAL",
         Statement::SetResultSets(_) => "SET RESULT SETS",
@@ -1250,7 +1369,9 @@ pub fn statement_name(s: &Statement) -> &'static str {
 impl From<store::StoreError> for SqlError {
     fn from(e: store::StoreError) -> Self {
         if matches!(e, store::StoreError::NotAuthorized { .. }) {
-            return Self::NotAuthorized { what: e.to_string() };
+            return Self::NotAuthorized {
+                what: e.to_string(),
+            };
         }
         Self::Database {
             what: e.to_string(),
@@ -1264,17 +1385,24 @@ impl From<db::DbError> for SqlError {
     fn from(e: db::DbError) -> Self {
         use db::DbError as D;
         match &e {
-            D::Store(s @ store::StoreError::NotAuthorized { .. }) => Self::NotAuthorized { what: s.to_string() },
-            D::Store(store::StoreError::AlreadyExists { name, .. }) => Self::Exists { name: name.clone(), kind: "*FILE" },
+            D::Store(s @ store::StoreError::NotAuthorized { .. }) => Self::NotAuthorized {
+                what: s.to_string(),
+            },
+            D::Store(store::StoreError::AlreadyExists { name, .. }) => Self::Exists {
+                name: name.clone(),
+                kind: "*FILE",
+            },
             D::DuplicateKey { .. } => Self::DuplicateKey {
                 what: e.to_string(),
             },
             D::DuplicateKeys { .. } => Self::DuplicateRows {
                 what: e.to_string(),
             },
-            D::RecordLocked { .. } | D::RecordLockedInJob { .. } | D::FileLocked { .. } => Self::Locked {
-                what: e.to_string(),
-            },
+            D::RecordLocked { .. } | D::RecordLockedInJob { .. } | D::FileLocked { .. } => {
+                Self::Locked {
+                    what: e.to_string(),
+                }
+            }
             D::CommitNeedsJournal { .. } => Self::NotJournaled {
                 what: e.to_string(),
             },
@@ -1309,7 +1437,9 @@ impl From<db::DbError> for SqlError {
             // BLOCKED(rel): statements run where no trigger program can
             // be called (the service console, a statement not on a fiber).
             D::TriggerNotCallable { file } => Self::Unsupported {
-                what: format!("a change of {file} here: it has triggers, and trigger programs cannot be called by this statement"),
+                what: format!(
+                    "a change of {file} here: it has triggers, and trigger programs cannot be called by this statement"
+                ),
             },
             D::NotAFile { .. } | D::MemberNotFound { .. } => Self::ObjectNotFound {
                 name: e.to_string(),

@@ -102,7 +102,10 @@ pub fn run(system: &mut System, text: &str, naming: &str, check: bool, max_rows:
             let id = ctx.resolve_file(&mut txn, &t).ok()?;
             let h = store::obj::ops::describe(&mut txn, id).ok()?;
             let lib = store::obj::ops::describe(&mut txn, h.library).ok()?;
-            Some((h.name.to_string().trim().to_string(), lib.name.to_string().trim().to_string()))
+            Some((
+                h.name.to_string().trim().to_string(),
+                lib.name.to_string().trim().to_string(),
+            ))
         })
         .unwrap_or_default();
     if ca.is_error() {

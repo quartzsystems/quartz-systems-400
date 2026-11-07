@@ -82,7 +82,12 @@ impl Dict {
     #[must_use]
     pub fn value(&self, cmd: &str, kwd: &str, value: &str, types: bool) -> Option<&str> {
         self.command(cmd, &format!("{kwd}.{value}"))
-            .or_else(|| self.kwvalues.get(kwd).and_then(|m| m.get(value)).map(String::as_str))
+            .or_else(|| {
+                self.kwvalues
+                    .get(kwd)
+                    .and_then(|m| m.get(value))
+                    .map(String::as_str)
+            })
             .or_else(|| {
                 types
                     .then(|| self.objtypes.get(value).map(String::as_str))

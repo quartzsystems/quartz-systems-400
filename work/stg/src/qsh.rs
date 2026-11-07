@@ -123,7 +123,9 @@ mod tests {
                 var: var.clone(),
                 mode: set_mode::PUT,
             },
-            QshOp::SysEnvRemove { name: "*ALL".into() },
+            QshOp::SysEnvRemove {
+                name: "*ALL".into(),
+            },
             QshOp::Profiles,
         ] {
             assert_eq!(ipc::decode::<QshOp>(&ipc::encode(&op)).unwrap(), op);

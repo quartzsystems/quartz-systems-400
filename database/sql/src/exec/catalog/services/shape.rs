@@ -71,9 +71,14 @@ impl Col {
     #[must_use]
     pub fn info(&self, alias: &str, nullable: bool) -> ColInfo {
         let (ty, len, dec, varying) = engine_type(&self.ty, self.len, self.scale);
-        let short = if self.system.is_empty() { &self.name } else { &self.system };
+        let short = if self.system.is_empty() {
+            &self.name
+        } else {
+            &self.system
+        };
         let mut f = FieldDef::new(
-            Name::parse(&short[..short.len().min(10)]).unwrap_or_else(|_| Name::parse("COL").expect("valid")),
+            Name::parse(&short[..short.len().min(10)])
+                .unwrap_or_else(|_| Name::parse("COL").expect("valid")),
             ty,
             len,
             dec,
@@ -89,7 +94,13 @@ impl Col {
         if self.name.len() > 10 || self.name != short.trim() {
             f.alias = Some(self.name.clone());
         }
-        ColInfo { name: self.name.clone(), table: Some(alias.to_string()), field: Some(f), nullable, hidden: false }
+        ColInfo {
+            name: self.name.clone(),
+            table: Some(alias.to_string()),
+            field: Some(f),
+            nullable,
+            hidden: false,
+        }
     }
 }
 
@@ -112,7 +123,12 @@ fn engine_type(ty: &str, len: u32, scale: u8) -> (DataType, u32, u8, bool) {
         "NUMERIC" => (DataType::Zoned, len, scale, false),
         "DATE" => (DataType::Date, 10, 0, false),
         "TIME" => (DataType::Time, 8, 0, false),
-        "TIMESTMP" => (DataType::Timestamp, if len == 0 { 19 } else { 20 + len }, 0, false),
+        "TIMESTMP" => (
+            DataType::Timestamp,
+            if len == 0 { 19 } else { 20 + len },
+            0,
+            false,
+        ),
         "DOUBLE" | "FLOAT" => (DataType::Float, 8, 0, false),
         // XML has no engine type: its text, as XMLSERIALIZE gives it.
         "XML" => (DataType::Clob, 2_147_483_647, 0, false),
@@ -154,7 +170,11 @@ pub fn parse(text: &str) -> Vec<Shape> {
                 if let Some(s) = out.last_mut() {
                     s.cols.push(Col {
                         name: w[1].into(),
-                        system: if w[2] == "-" { String::new() } else { w[2].into() },
+                        system: if w[2] == "-" {
+                            String::new()
+                        } else {
+                            w[2].into()
+                        },
                         ty: w[3].into(),
                         len: num(4),
                         scale: u8::try_from(num(5)).unwrap_or(0),
@@ -168,7 +188,11 @@ pub fn parse(text: &str) -> Vec<Shape> {
             Some("p") if w.len() >= 9 => {
                 if let Some(s) = out.last_mut() {
                     // An unnamed parameter is known by its position.
-                    let name = if w[2].is_empty() { format!("#{}", s.parms.len() + 1) } else { w[2].to_string() };
+                    let name = if w[2].is_empty() {
+                        format!("#{}", s.parms.len() + 1)
+                    } else {
+                        w[2].to_string()
+                    };
                     s.parms.push(Col {
                         name,
                         system: String::new(),
@@ -236,7 +260,10 @@ pub fn view(schema: &str, name: &str) -> Option<&'static Shape> {
 /// The routines named `schema.name`, every overload.
 #[must_use]
 pub fn routines(schema: &str, name: &str) -> &'static [Shape] {
-    index().routines.get(&format!("{schema}.{name}")).map_or(&[], Vec::as_slice)
+    index()
+        .routines
+        .get(&format!("{schema}.{name}"))
+        .map_or(&[], Vec::as_slice)
 }
 
 /// The routine `schema.name` of `kind` (`T`, `S`, `P`), the first.
@@ -248,5 +275,9 @@ pub fn routine(schema: &str, name: &str, kind: char) -> Option<&'static Shape> {
 /// The routine with specific name `schema.specific`.
 #[must_use]
 pub fn index_specific(schema: &str, specific: &str) -> Option<&'static Shape> {
-    index().routines.values().flatten().find(|s| s.schema == schema && s.specific == specific)
+    index()
+        .routines
+        .values()
+        .flatten()
+        .find(|s| s.schema == schema && s.specific == specific)
 }

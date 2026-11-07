@@ -515,7 +515,13 @@ mod tests {
         assert!(c.locked());
         assert_eq!(
             rx.try_recv().unwrap(),
-            Input::SignOn(vec!["a".into(), String::new(), String::new(), String::new(), String::new()])
+            Input::SignOn(vec![
+                "a".into(),
+                String::new(),
+                String::new(),
+                String::new(),
+                String::new()
+            ])
         );
         let dump = c.screen().dump();
         assert!(dump.lines().nth(23).unwrap().starts_with(INHIBITED));
@@ -556,7 +562,10 @@ mod tests {
             Ok(Input::Enter(vec!["1".into(), "pw".into()]))
         );
         c.handle(Command::Virtual(Key::Function(12)));
-        assert_eq!(rx.try_recv(), Ok(Input::Function(12, vec!["1".into(), "pw".into()])));
+        assert_eq!(
+            rx.try_recv(),
+            Ok(Input::Function(12, vec!["1".into(), "pw".into()]))
+        );
         // No fields: Enter reports nothing.
         c.handle(Command::ShowScreen(Screen::new()));
         c.handle(Command::Virtual(Key::Enter));

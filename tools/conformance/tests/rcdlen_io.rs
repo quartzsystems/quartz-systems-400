@@ -35,7 +35,10 @@ fn update_open_of_a_program_described_file() {
     let wmlck = {
         let mut s = store.borrow_mut();
         let mut t = s.begin().unwrap();
-        let lib = store::obj::ops::read_header(&mut t, cust).unwrap().1.library;
+        let lib = store::obj::ops::read_header(&mut t, cust)
+            .unwrap()
+            .1
+            .library;
         let id = db::file::create_pf_rcdlen(
             &mut t,
             lib,
@@ -91,6 +94,9 @@ fn update_open_of_a_program_described_file() {
     assert!(
         job.raised.iter().any(|e| e.msgid == "CPD9D0B"),
         "raised {:?}",
-        job.raised.iter().map(|e| e.msgid.clone()).collect::<Vec<_>>()
+        job.raised
+            .iter()
+            .map(|e| e.msgid.clone())
+            .collect::<Vec<_>>()
     );
 }

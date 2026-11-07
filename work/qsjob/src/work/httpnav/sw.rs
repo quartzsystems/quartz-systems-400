@@ -13,7 +13,9 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
-use navigator::env::sw::{Fix, ImageCatalog, LicenseKey, Product, Ptf, PtfGroup, PtfStatus, Software, UpdateAttrs};
+use navigator::env::sw::{
+    Fix, ImageCatalog, LicenseKey, Product, Ptf, PtfGroup, PtfStatus, Software, UpdateAttrs,
+};
 use qsweb::msg::{Kind, Message};
 use stg::Client;
 
@@ -50,7 +52,10 @@ fn lp_rows(m: &Main, what: &str, args: &[String]) -> Vec<Vec<String>> {
 type Vars = HashMap<String, String>;
 
 fn sys2(m: &Main, what: &str, args: &[&str], list: &str) -> Result<(Vars, Vec<Vars>), String> {
-    let (w, a) = (what.to_string(), args.iter().map(|s| (*s).to_string()).collect());
+    let (w, a) = (
+        what.to_string(),
+        args.iter().map(|s| (*s).to_string()).collect(),
+    );
     let (vars, lists) = m.ask(|l| l.sys2_panel(w, a))?;
     let rows = lists
         .into_iter()
@@ -69,7 +74,9 @@ fn get(r: &HashMap<String, String>, k: &str) -> String {
 fn status_word(s: &str) -> String {
     let w = s.trim().trim_start_matches('*').to_ascii_lowercase();
     let mut c = w.chars();
-    c.next().map(|f| f.to_ascii_uppercase().to_string() + c.as_str()).unwrap_or_default()
+    c.next()
+        .map(|f| f.to_ascii_uppercase().to_string() + c.as_str())
+        .unwrap_or_default()
 }
 
 /// A usage limit as the pages show it.
@@ -97,8 +104,15 @@ fn products(m: &Main) -> Vec<Product> {
         .map(|r| {
             let (id, option) = (r[0].trim().to_string(), r[1].trim().to_string());
             Product {
-                license: if option == "*BASE" { keys.get(&id).cloned().unwrap_or_default() } else { String::new() },
-                library: libs.get(&(id.clone(), option.clone())).cloned().unwrap_or_default(),
+                license: if option == "*BASE" {
+                    keys.get(&id).cloned().unwrap_or_default()
+                } else {
+                    String::new()
+                },
+                library: libs
+                    .get(&(id.clone(), option.clone()))
+                    .cloned()
+                    .unwrap_or_default(),
                 installed: true,
                 status: status_word(&r[2]),
                 text: r[3].trim().to_string(),
@@ -113,7 +127,8 @@ fn products(m: &Main) -> Vec<Product> {
 
 fn catalogs(m: &Main) -> Vec<ImageCatalog> {
     let args = vec!["*ALL".to_string(), "*ALL".to_string()];
-    let rows = m.ask(|l| l.panel2_data("IMGCLG".into(), args))
+    let rows = m
+        .ask(|l| l.panel2_data("IMGCLG".into(), args))
         .map(|(_, r)| r)
         .unwrap_or_default();
     rows.into_iter()
@@ -130,7 +145,11 @@ fn catalogs(m: &Main) -> Vec<ImageCatalog> {
 
 fn catalog_products(m: &Main, name: &str) -> Result<Vec<Product>, Message> {
     let Some(c) = catalogs(m).into_iter().find(|c| c.name == name) else {
-        return Err(Message::new(Kind::Error, "CPF9897", &format!("Image catalog {name} was not found.")));
+        return Err(Message::new(
+            Kind::Error,
+            "CPF9897",
+            &format!("Image catalog {name} was not found."),
+        ));
     };
     if c.device.is_empty() {
         return Err(Message::new(
@@ -139,24 +158,26 @@ fn catalog_products(m: &Main, name: &str) -> Result<Vec<Product>, Message> {
             &format!("Image catalog {name} is not loaded in a virtual device (LODIMGCLG)."),
         ));
     }
-    let rows = m.ask(|l| l.licpgm_panel("MEDIA".into(), vec![c.device.clone()]))
+    let rows = m
+        .ask(|l| l.licpgm_panel("MEDIA".into(), vec![c.device.clone()]))
         .map_err(|e| super::msgs::failure(&e))?;
     let have = products(m);
     let mut seen = BTreeMap::new();
     for r in rows.into_iter().filter(|r| r.len() >= 6) {
         let (id, option) = (r[0].trim().to_string(), r[1].trim().to_string());
         let mine = have.iter().find(|p| p.id == id && p.option == option);
-        seen.entry((id.clone(), option.clone())).or_insert_with(|| Product {
-            release: r[4].trim().to_string(),
-            text: r[5].trim().to_string(),
-            installed: mine.is_some(),
-            status: mine.map(|p| p.status.clone()).unwrap_or_default(),
-            license: mine.map(|p| p.license.clone()).unwrap_or_default(),
-            library: mine.map(|p| p.library.clone()).unwrap_or_default(),
-            installed_at: 0,
-            id,
-            option,
-        });
+        seen.entry((id.clone(), option.clone()))
+            .or_insert_with(|| Product {
+                release: r[4].trim().to_string(),
+                text: r[5].trim().to_string(),
+                installed: mine.is_some(),
+                status: mine.map(|p| p.status.clone()).unwrap_or_default(),
+                license: mine.map(|p| p.license.clone()).unwrap_or_default(),
+                library: mine.map(|p| p.library.clone()).unwrap_or_default(),
+                installed_at: 0,
+                id,
+                option,
+            });
     }
     Ok(seen.into_values().collect())
 }
@@ -192,7 +213,16 @@ fn ptf_status(s: &str) -> Option<PtfStatus> {
 /// Every cover letter, by PTF.
 fn letters(m: &Main, select: &str) -> HashMap<String, String> {
     sys2(m, "PTFCVR", &["*ALL", select, "", ""], "CVRS")
-        .map(|(_, rows)| rows.iter().map(|r| (get(r, "PTFID"), r.get("LETTER").cloned().unwrap_or_default())).collect())
+        .map(|(_, rows)| {
+            rows.iter()
+                .map(|r| {
+                    (
+                        get(r, "PTFID"),
+                        r.get("LETTER").cloned().unwrap_or_default(),
+                    )
+                })
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -212,12 +242,17 @@ fn ptfs(m: &Main) -> Vec<Ptf> {
             let Some(status) = ptf_status(&get(&r, "PSTS")) else {
                 continue;
             };
-            let delayed = sys2(m, "PTFD", &[&ptf], "")
-                .is_ok_and(|(v, _)| get(&v, "DELAYED") == "*YES");
+            let delayed =
+                sys2(m, "PTFD", &[&ptf], "").is_ok_and(|(v, _)| get(&v, "DELAYED") == "*YES");
             let pending = get(&r, "PACT") != "None";
             let text = letters
                 .get(&ptf)
-                .and_then(|l| l.lines().map(str::trim).find(|l| !l.is_empty()).map(str::to_string))
+                .and_then(|l| {
+                    l.lines()
+                        .map(str::trim)
+                        .find(|l| !l.is_empty())
+                        .map(str::to_string)
+                })
                 .unwrap_or_default();
             out.push(Ptf {
                 ipl_action: if pending || (delayed && status == PtfStatus::NotApplied) {
@@ -257,9 +292,12 @@ fn ptf_groups(m: &Main) -> Vec<PtfGroup> {
 
 /// `key=value` lines of `QSYS/QSUPDATTR`.
 fn update_attrs(m: &Main) -> UpdateAttrs {
-    let area = m.ask(|l| l.api_dtaara_read("QSYS".into(), "QSUPDATTR".into()))
+    let area = m
+        .ask(|l| l.api_dtaara_read("QSYS".into(), "QSUPDATTR".into()))
         .ok();
-    let text = area.map(|a| ccsid::from_ebcdic(&a.value)).unwrap_or_default();
+    let text = area
+        .map(|a| ccsid::from_ebcdic(&a.value))
+        .unwrap_or_default();
     let kv: HashMap<String, String> = text
         .split(['\n', '\u{85}'])
         .filter_map(|l| l.split_once('='))
@@ -269,7 +307,10 @@ fn update_attrs(m: &Main) -> UpdateAttrs {
     UpdateAttrs {
         url: kv.get("url").cloned().unwrap_or_else(|| DEFAULT_URL.into()),
         proxy: v("proxy"),
-        schedule: kv.get("schedule").cloned().unwrap_or_else(|| "*NONE".into()),
+        schedule: kv
+            .get("schedule")
+            .cloned()
+            .unwrap_or_else(|| "*NONE".into()),
         time: v("time"),
         last: v("last").parse().unwrap_or(0),
     }
@@ -297,7 +338,11 @@ fn fixes_of(text: &str, now: u64) -> Vec<Fix> {
             out.push(fix(id, "PTF", "HIPER PTF not on this system".into()));
         } else if let Some(r) = l.strip_prefix("Cumulative package ") {
             let id = r.split_whitespace().next().unwrap_or_default();
-            out.push(fix(id, "Cumulative package", "Cumulative PTF package".into()));
+            out.push(fix(
+                id,
+                "Cumulative package",
+                "Cumulative PTF package".into(),
+            ));
         }
     }
     out
@@ -305,7 +350,11 @@ fn fixes_of(text: &str, now: u64) -> Vec<Fix> {
 
 /// The command's name, upper case.
 fn verb(command: &str) -> String {
-    command.split_whitespace().next().unwrap_or_default().to_ascii_uppercase()
+    command
+        .split_whitespace()
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase()
 }
 
 impl Software for LiveSoftware {
@@ -321,7 +370,13 @@ impl Software for LiveSoftware {
         let c = catalog.trim().to_ascii_uppercase();
         self.link
             .read(user, move |m| Some(catalog_products(m, &c)))
-            .unwrap_or_else(|| Err(Message::new(Kind::Error, "CPF9897", "Navigator could not read the catalog.")))
+            .unwrap_or_else(|| {
+                Err(Message::new(
+                    Kind::Error,
+                    "CPF9897",
+                    "Navigator could not read the catalog.",
+                ))
+            })
     }
 
     fn license_keys(&self, user: &str) -> Vec<LicenseKey> {
@@ -360,7 +415,8 @@ impl Software for LiveSoftware {
             .bridge
             .call(move |m| {
                 let now = m.ask(Client::now).unix;
-                crate::work::web::run_text_as(m, Some(&u), &line).map(|(r, text)| (r, fixes_of(&text, now)))
+                crate::work::web::run_text_as(m, Some(&u), &line)
+                    .map(|(r, text)| (r, fixes_of(&text, now)))
             })
             .unwrap_or_else(|| Err(super::gone()));
         match r {
@@ -379,8 +435,8 @@ impl Software for LiveSoftware {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::db::utc_secs;
+    use super::*;
 
     #[test]
     fn words() {
@@ -400,7 +456,10 @@ mod tests {
             now,
         );
         assert_eq!(f.len(), 3);
-        assert_eq!((f[0].id.as_str(), f[0].kind.as_str()), ("QS400-CUM-26300", "PTF group"));
+        assert_eq!(
+            (f[0].id.as_str(), f[0].kind.as_str()),
+            ("QS400-CUM-26300", "PTF group")
+        );
         assert_eq!(f[1].id, "QS10500");
         assert_eq!(f[2].kind, "Cumulative package");
         assert_eq!(f[2].released, now);

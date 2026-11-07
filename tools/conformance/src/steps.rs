@@ -150,7 +150,9 @@ impl Suite {
             None => None,
         };
         match (media, iso) {
-            (Media::Iso | Media::IsoRaw | Media::IsoFat, None) => return Err(HarnessError::ImageMissing(out_dir.join("iso.path"))),
+            (Media::Iso | Media::IsoRaw | Media::IsoFat, None) => {
+                return Err(HarnessError::ImageMissing(out_dir.join("iso.path")));
+            }
             (Media::Iso | Media::IsoRaw | Media::IsoFat, Some(iso)) if !iso.is_file() => {
                 return Err(HarnessError::ImageMissing(iso.to_path_buf()));
             }
@@ -314,10 +316,15 @@ impl Suite {
             return Err(format!("svc.asp did not report the store: {asp}"));
         }
         if !s.log.contains("SRC C6004130") {
-            return Ok("LIC written by option 4, re-IPL, operating system made at the first IPL, sign-on".into());
+            return Ok(
+                "LIC written by option 4, re-IPL, operating system made at the first IPL, sign-on"
+                    .into(),
+            );
         }
         let sig = crate::install::signatures_clean(s)?;
-        Ok(format!("LIC written by option 4, re-IPL, QS00SS1 restored from the media, sign-on; {sig}"))
+        Ok(format!(
+            "LIC written by option 4, re-IPL, QS00SS1 restored from the media, sign-on; {sig}"
+        ))
     }
 
     /// Install step 3: option 2 through every screen, over the disk
@@ -404,7 +411,9 @@ impl Suite {
         }
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
         let web = Self::admin_instance(s)?;
-        Ok(format!("C1001080 and C6001005 seen, sign-on at {last:.1}s; {web}"))
+        Ok(format!(
+            "C1001080 and C6001005 seen, sign-on at {last:.1}s; {web}"
+        ))
     }
 
     /// `/www` belongs to `QTMHHTTP`, and the `ADMIN` job makes its
@@ -425,7 +434,9 @@ impl Suite {
             }
             if std::time::Instant::now() > deadline {
                 let log = s.command("svc.ifs ls /www", CMD).unwrap_or_default();
-                return Err(format!("no ADMIN instance:\n{started}\n{reg}\n{conf}\n{log}"));
+                return Err(format!(
+                    "no ADMIN instance:\n{started}\n{reg}\n{conf}\n{log}"
+                ));
             }
             std::thread::sleep(Duration::from_secs(3));
         }
@@ -644,10 +655,22 @@ impl Suite {
         reports.push(self.step(&mut s, "87 HTTP administration", Self::http_admin)?);
         reports.push(self.step(&mut s, "88 Navigator", Self::navigator)?);
         reports.push(self.step(&mut s, "153 Access for Web", Self::access_web)?);
-        reports.push(self.step(&mut s, "154 Access for Web 5250 session", Self::access_web_5250)?);
+        reports.push(self.step(
+            &mut s,
+            "154 Access for Web 5250 session",
+            Self::access_web_5250,
+        )?);
         reports.push(self.step(&mut s, "155 Access for Web database", Self::access_web_db)?);
-        reports.push(self.step(&mut s, "156 Access for Web files and print", Self::access_web_files)?);
-        reports.push(self.step(&mut s, "157 Access for Web messages, jobs and commands", Self::access_web_work)?);
+        reports.push(self.step(
+            &mut s,
+            "156 Access for Web files and print",
+            Self::access_web_files,
+        )?);
+        reports.push(self.step(
+            &mut s,
+            "157 Access for Web messages, jobs and commands",
+            Self::access_web_work,
+        )?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
@@ -655,7 +678,11 @@ impl Suite {
         reports.push(self.step(&mut s, "93 QAP messages", Self::qap_messages)?);
         reports.push(self.step(&mut s, "123 QAP manage", Self::qap_manage)?);
         reports.push(self.step(&mut s, "96 DHCP client", Self::dhcp_client)?);
-        reports.push(self.step(&mut s, "97 telnet automatic sign-on", Self::telnet_auto_signon)?);
+        reports.push(self.step(
+            &mut s,
+            "97 telnet automatic sign-on",
+            Self::telnet_auto_signon,
+        )?);
         reports.push(self.step(&mut s, "98 SMTP relay credentials", Self::smtp_relay_auth)?);
         reports.push(self.step(&mut s, "100 DDM", Self::ddm)?);
         reports.push(self.step(&mut s, "101 WSCST", Self::wscst)?);
@@ -682,10 +709,26 @@ impl Suite {
         reports.push(self.step(&mut s, "143 time zone descriptions", Self::time_zones)?);
         reports.push(self.step(&mut s, "144 WRKTIMZON", Self::work_time_zones)?);
         reports.push(self.step(&mut s, "145 CCSID tables", Self::ccsid_tables)?);
-        reports.push(self.step(&mut s, "104 wrapped command lines", Self::wrapped_command_lines)?);
-        reports.push(self.step(&mut s, "146 security and work management exit points", Self::exit_points)?);
-        reports.push(self.step(&mut s, "147 function usage and security attributes", Self::function_usage)?);
-        reports.push(self.step(&mut s, "148 journal commands and save file data", Self::journal_and_savf_data)?);
+        reports.push(self.step(
+            &mut s,
+            "104 wrapped command lines",
+            Self::wrapped_command_lines,
+        )?);
+        reports.push(self.step(
+            &mut s,
+            "146 security and work management exit points",
+            Self::exit_points,
+        )?);
+        reports.push(self.step(
+            &mut s,
+            "147 function usage and security attributes",
+            Self::function_usage,
+        )?);
+        reports.push(self.step(
+            &mut s,
+            "148 journal commands and save file data",
+            Self::journal_and_savf_data,
+        )?);
         reports.push(self.step(&mut s, "142 batch restricted state", Self::batch_restricted)?);
         // Last: it ends every subsystem.
         reports.push(self.step(&mut s, "103 restricted state", Self::restricted_state)?);

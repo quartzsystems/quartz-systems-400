@@ -137,7 +137,9 @@ pub fn known() -> Vec<&'static str> {
         "STGL0100",
     ]);
     v.extend(sec::PROFILE_FORMATS);
-    v.extend(["VLDP0100", "CHKP0100", "PRER0100", "PWRD0100", "PWRD0200", "ATTN0100", "NTFY0100"]);
+    v.extend([
+        "VLDP0100", "CHKP0100", "PRER0100", "PWRD0100", "PWRD0200", "ATTN0100", "NTFY0100",
+    ]);
     v
 }
 
@@ -246,7 +248,11 @@ impl ExitRequest {
             Self::Logon { format, logon } => tcp::tcpl(format, logon),
             Self::DevInit(s) => telnet::init0100(s),
             Self::DevTerm(s) => telnet::term0100(s),
-            Self::Profile { point, format, user } => vec![sec::profile_info(point, format, user)],
+            Self::Profile {
+                point,
+                format,
+                user,
+            } => vec![sec::profile_info(point, format, user)],
             Self::Password(p) => sec::password_parms(p),
             Self::Prepare(p) => wm::prepare_parms(p),
             Self::Bare { .. } => Vec::new(),

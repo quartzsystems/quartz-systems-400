@@ -134,7 +134,13 @@ fn blank_to(v: &str, dft: &str) -> String {
 }
 
 /// Run a DFU Program: change or display a file with one.
-fn run_menu(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<String>) -> Left {
+fn run_menu(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    v: &mut Values,
+    msg: &mut Option<String>,
+) -> Left {
     let mut message: Option<String> = None;
     loop {
         let screen = menu::run("", message.as_deref());
@@ -179,7 +185,13 @@ fn run_menu(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, m
     }
 }
 
-fn run_program(job: &mut Job, host: &Host, surface: &mut Surface, v: &Values, display: bool) -> Result<(), String> {
+fn run_program(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    v: &Values,
+    display: bool,
+) -> Result<(), String> {
     let name = v.get("PGM");
     if name.is_empty() {
         return Err("Type the name of a DFU program.".into());
@@ -201,8 +213,18 @@ fn run_program(job: &mut Job, host: &Host, surface: &mut Surface, v: &Values, di
 
 /// Create (or change) a DFU program: the entry panel, then Define
 /// General Information; Enter there stores the program.
-fn create(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<String>, change: bool) -> Left {
-    let panel = if change { &prompt::CHANGE } else { &prompt::CREATE };
+fn create(
+    host: &Host,
+    surface: &mut Surface,
+    v: &mut Values,
+    msg: &mut Option<String>,
+    change: bool,
+) -> Left {
+    let panel = if change {
+        &prompt::CHANGE
+    } else {
+        &prompt::CREATE
+    };
     let mut m: Option<String> = None;
     loop {
         match entry(surface, panel, v, m.take().as_deref()) {
@@ -224,11 +246,19 @@ fn create(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
         };
         let mut p = match (found, change) {
             (Some(_), false) => {
-                m = Some(crate::display::msgline::say(host, "CPD9CDE", &[&name, &lib]));
+                m = Some(crate::display::msgline::say(
+                    host,
+                    "CPD9CDE",
+                    &[&name, &lib],
+                ));
                 continue;
             }
             (None, true) => {
-                m = Some(crate::display::msgline::say(host, "CPF9811", &[&name, &lib]));
+                m = Some(crate::display::msgline::say(
+                    host,
+                    "CPF9811",
+                    &[&name, &lib],
+                ));
                 continue;
             }
             (Some((_, p)), true) => p,
@@ -244,7 +274,11 @@ fn create(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
             continue;
         }
         let Some(f) = data::file(host, &p.file_lib, &p.file) else {
-            m = Some(crate::display::msgline::say(host, "CPF9812", &[&p.file, &p.file_lib]));
+            m = Some(crate::display::msgline::say(
+                host,
+                "CPF9812",
+                &[&p.file, &p.file_lib],
+            ));
             continue;
         };
         match general(surface, &mut p, f.keyed) {
@@ -270,7 +304,12 @@ fn general(surface: &mut Surface, p: &mut Program, keyed: bool) -> Left {
         let Some(a) = show(surface, &screen) else {
             return Left::Exit;
         };
-        let value = |k: &str| a.vars.get(k).map(|v| v.trim().to_string()).unwrap_or_default();
+        let value = |k: &str| {
+            a.vars
+                .get(k)
+                .map(|v| v.trim().to_string())
+                .unwrap_or_default()
+        };
         if let Err(e) = define::apply(p, &value) {
             message = Some(crate::display::msgline::text_of(surface.host(), &e));
             continue;
@@ -284,7 +323,11 @@ fn general(surface: &mut Surface, p: &mut Program, keyed: bool) -> Left {
                 message = Some(crate::display::msgline::say(surface.host(), "CPD9BE7", &[]));
             }
             Key::F(14) => {
-                message = Some(crate::display::msgline::say(surface.host(), "CPI9BD4", &[&p.file_lib, &p.file, &p.format.code()]));
+                message = Some(crate::display::msgline::say(
+                    surface.host(),
+                    "CPI9BD4",
+                    &[&p.file_lib, &p.file, &p.format.code()],
+                ));
             }
             _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
@@ -312,7 +355,13 @@ fn delete(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
 }
 
 /// Update Data Using Temporary Program.
-fn temporary(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<String>) -> Left {
+fn temporary(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    v: &mut Values,
+    msg: &mut Option<String>,
+) -> Left {
     let mut m: Option<String> = None;
     loop {
         match entry(surface, &prompt::TEMP, v, m.take().as_deref()) {
@@ -322,7 +371,11 @@ fn temporary(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, 
         let file = v.get("FILE");
         let lib = blank_to(&v.get("FILELIB"), "*LIBL");
         let Some(f) = data::file(host, &lib, &file) else {
-            m = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
+            m = Some(crate::display::msgline::say(
+                host,
+                "CPF9812",
+                &[&file, &lib],
+            ));
             continue;
         };
         let mbr = Some(v.get("MBR")).filter(|x| !x.is_empty() && x != "*FIRST");

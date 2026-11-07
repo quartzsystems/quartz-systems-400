@@ -18,7 +18,13 @@ use pase::{Exit, Launch};
 fn tree() -> PathBuf {
     let base = std::env::temp_dir().join(format!("pase-ifs-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
-    for d in ["root/home/QSTEST", "QOpenSys/tmp", "QOpenSys/usr/bin", "QOpenSys/etc", "stage"] {
+    for d in [
+        "root/home/QSTEST",
+        "QOpenSys/tmp",
+        "QOpenSys/usr/bin",
+        "QOpenSys/etc",
+        "stage",
+    ] {
         std::fs::create_dir_all(base.join(d)).unwrap();
     }
     std::os::unix::fs::symlink("usr/bin", base.join("QOpenSys/bin")).unwrap();
@@ -59,8 +65,14 @@ fn a_probe_runs_in_its_own_namespaces() {
     assert_eq!(end, Exit::Code(0), "{out}");
     assert!(out.contains("uid=1234 gid=1235"), "{out}");
     assert!(out.contains("pid=1\n"), "{out}");
-    assert!(out.contains("procs=1\n"), "the host's processes show:\n{out}");
-    assert!(out.contains("root: QOpenSys bin dev etc home proc tmp usr"), "{out}");
+    assert!(
+        out.contains("procs=1\n"),
+        "the host's processes show:\n{out}"
+    );
+    assert!(
+        out.contains("root: QOpenSys bin dev etc home proc tmp usr"),
+        "{out}"
+    );
     assert!(out.contains("tmp: paseprobe"), "{out}");
     assert!(out.contains("home=true"), "{out}");
     assert!(out.contains("pidfd_open: refused errno 1"), "{out}");
@@ -68,6 +80,9 @@ fn a_probe_runs_in_its_own_namespaces() {
     // A program outside the view does not start.
     let mut l2 = l.clone();
     l2.program = "/QSYS.LIB/X.PGM".into();
-    assert!(matches!(pase::start(&l2), Err(pase::PaseError::NotVisible(_))));
+    assert!(matches!(
+        pase::start(&l2),
+        Err(pase::PaseError::NotVisible(_))
+    ));
     let _ = std::fs::remove_dir_all(&base);
 }

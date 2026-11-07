@@ -232,11 +232,20 @@ fn phase9_types_and_file_handles_round_trip() {
     let m = parse(PHASE9).unwrap_or_else(|e| panic!("{e}"));
     verify(&m).unwrap_or_else(|e| panic!("{e}"));
     let text = print(&m);
-    assert!(text.contains("varchar(70000:4)") && text.contains("array[3:10] of char(3)"), "{text}");
-    assert!(text.contains("filebind F, %h") && text.contains("nulls($nm)"), "{text}");
+    assert!(
+        text.contains("varchar(70000:4)") && text.contains("array[3:10] of char(3)"),
+        "{text}"
+    );
+    assert!(
+        text.contains("filebind F, %h") && text.contains("nulls($nm)"),
+        "{text}"
+    );
     assert_eq!(parse(&text).unwrap(), m);
     assert_eq!(qir::binary::read(&qir::binary::write(&m)).unwrap(), m);
     let (_, main) = m.proc_named("MAIN").unwrap();
-    assert_eq!(main.reg_type(main.reg_named("h").unwrap()), Some(&Type::I32));
+    assert_eq!(
+        main.reg_type(main.reg_named("h").unwrap()),
+        Some(&Type::I32)
+    );
     assert!(parse(&PHASE9.replace("varchar(70000:4)", "varchar(70000)")).is_err());
 }

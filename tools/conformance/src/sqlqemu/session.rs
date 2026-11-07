@@ -30,13 +30,20 @@ impl Suite {
         stmt(&mut tn, &format!("insert into {lib}/sesst values(138)"))?;
         exit(&mut tn, 1)?;
         tn.close()?;
-        sql_has(s, &format!("SELECT N FROM {LIB}/SESST"), &["138", "1 row(s)"])?;
+        sql_has(
+            s,
+            &format!("SELECT N FROM {LIB}/SESST"),
+            &["138", "1 row(s)"],
+        )?;
 
         // Signed on again: a new job.
         let mut tn = Tn::open(self)?;
-        tn.run("key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n")?;
+        tn.run(
+            "key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n",
+        )?;
         let resumed = tn.screen();
-        let back = resumed.contains(&format!("insert into {lib}/sesst values(138)")) && resumed.contains(&format!("create table {lib}/sesst"));
+        let back = resumed.contains(&format!("insert into {lib}/sesst values(138)"))
+            && resumed.contains(&format!("create table {lib}/sesst"));
         let rows = tn.d.term.text_rows();
         let at = rows
             .iter()
@@ -49,7 +56,9 @@ impl Suite {
         let result = if back && id == "SQL6102" {
             Ok("STRSQL saved with option 1, signed off; the next sign-on's STRSQL showed both statements again with SQL6102".to_string())
         } else {
-            Err(format!("after a new sign-on STRSQL showed {id}, statements back: {back}:\n{resumed}"))
+            Err(format!(
+                "after a new sign-on STRSQL showed {id}, statements back: {back}:\n{resumed}"
+            ))
         };
         for _ in 0..3 {
             if tn.screen().contains("Enter SQL Statements") && !tn.screen().contains("Help") {

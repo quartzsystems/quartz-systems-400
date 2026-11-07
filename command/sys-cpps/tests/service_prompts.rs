@@ -75,14 +75,22 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                !t.chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !shown.iter().all(|v| tail.contains(v)) {
             diffs.push(format!("row {}:\n  want {w:?}\n  got  {got:?}", i + 1));
         }
     }
-    assert!(diffs.is_empty(), "{name}:\n{}\n\nours:\n{}", diffs.join("\n"), s.rows.join("\n"));
+    assert!(
+        diffs.is_empty(),
+        "{name}:\n{}\n\nours:\n{}",
+        diffs.join("\n"),
+        s.rows.join("\n")
+    );
 }
 
 #[test]
@@ -95,8 +103,21 @@ fn dspprb_prompt_pages() {
 #[test]
 fn the_service_commands_have_their_place() {
     for name in [
-        "ANZPRB", "SNDSRVRQS", "WRKCNTINF", "CHGCNTINF", "DSPSRVSTS", "WRKSRVPVD", "DMPOBJ", "DMPSYSOBJ",
-        "DMPJOB", "STRTRC", "ENDTRC", "PRTTRC", "TRCJOB", "TRCINT", "RCLDBXREF",
+        "ANZPRB",
+        "SNDSRVRQS",
+        "WRKCNTINF",
+        "CHGCNTINF",
+        "DSPSRVSTS",
+        "WRKSRVPVD",
+        "DMPOBJ",
+        "DMPSYSOBJ",
+        "DMPJOB",
+        "STRTRC",
+        "ENDTRC",
+        "PRTTRC",
+        "TRCJOB",
+        "TRCINT",
+        "RCLDBXREF",
     ] {
         assert!(sys_cpps::entry(name).is_some(), "{name} has no definition");
     }

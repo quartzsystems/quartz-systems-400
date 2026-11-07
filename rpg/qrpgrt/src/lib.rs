@@ -8,23 +8,28 @@
 //! a job (`docs/RPG.md`, the runtime interface).
 
 #![deny(missing_docs)]
-#![allow(clippy::too_many_arguments, clippy::many_single_char_names, clippy::trivially_copy_pass_by_ref, clippy::unreadable_literal)]
+#![allow(
+    clippy::too_many_arguments,
+    clippy::many_single_char_names,
+    clippy::trivially_copy_pass_by_ref,
+    clippy::unreadable_literal
+)]
 
+pub mod arrays;
 pub mod ctl;
 pub mod cvt;
 pub mod datagen;
 pub mod datainto;
-pub mod exc;
-pub mod arrays;
 pub mod dates;
 pub mod dtnat;
 pub mod dump;
+pub mod exc;
 pub mod fmt;
 pub mod mov;
-pub mod oa;
-pub mod shipped;
 pub mod natives;
+pub mod oa;
 pub mod ops;
+pub mod shipped;
 pub mod sql;
 pub mod sqlcall;
 pub mod strops;

@@ -76,12 +76,19 @@ pub fn start(
     let target = match found.as_slice() {
         [] => return Err(format!("CPF3520 Job {job} not found.")),
         [one] => one.clone(),
-        _ => return Err(format!("CPF1071 More than one job named {job}; give its number.")),
+        _ => {
+            return Err(format!(
+                "CPF1071 More than one job named {job}; give its number."
+            ));
+        }
     };
     if target.number == me.number {
         return Err("CPF3501 A job cannot service itself.".into());
     }
-    if target.user != me.user && !special.has(SpecialAuth::SERVICE) && !special.has(SpecialAuth::ALLOBJ) {
+    if target.user != me.user
+        && !special.has(SpecialAuth::SERVICE)
+        && !special.has(SpecialAuth::ALLOBJ)
+    {
         return Err(format!(
             "CPF3502 Not authorized to service job {}.",
             qualified(&target)
@@ -91,7 +98,9 @@ pub fn start(
     TABLE.with(|t| {
         let mut t = t.borrow_mut();
         if t.serving.values().any(|j| j.number == target.number)
-            && t.serving.get(&me.number).is_none_or(|j| j.number != target.number)
+            && t.serving
+                .get(&me.number)
+                .is_none_or(|j| j.number != target.number)
         {
             return Err(format!("CPF3503 Job {q} is already being serviced."));
         }
@@ -110,7 +119,10 @@ pub fn end(me: u32) -> Result<String, String> {
             .remove(&me)
             .ok_or_else(|| "CPF3504 No job is being serviced.".to_string())?;
         // A stopped job must not wait for a servicer that left.
-        t.orders.entry(j.number).or_default().push_back(DbgOrder::End);
+        t.orders
+            .entry(j.number)
+            .or_default()
+            .push_back(DbgOrder::End);
         t.events.remove(&me);
         Ok(qualified(&j))
     })
@@ -118,7 +130,13 @@ pub fn end(me: u32) -> Result<String, String> {
 
 /// The job `me` services.
 pub fn serving(me: u32) -> String {
-    TABLE.with(|t| t.borrow().serving.get(&me).map(qualified).unwrap_or_default())
+    TABLE.with(|t| {
+        t.borrow()
+            .serving
+            .get(&me)
+            .map(qualified)
+            .unwrap_or_default()
+    })
 }
 
 /// An order from `me` for the job it services.
@@ -185,9 +203,13 @@ fn locate(
         "" | "*LIBL" => names.libl.clone(),
         "*CURLIB" => names.curlib.into_iter().collect(),
         l => vec![
-            ops::find_library(txn, qsys, Name::parse(l).map_err(|e| format!("CPD0078 {e}"))?)
-                .map_err(|_| format!("CPF2110 Library {l} not found."))?
-                .id,
+            ops::find_library(
+                txn,
+                qsys,
+                Name::parse(l).map_err(|e| format!("CPD0078 {e}"))?,
+            )
+            .map_err(|_| format!("CPF2110 Library {l} not found."))?
+            .id,
         ],
     };
     for ty in [types::PGM, types::SRVPGM] {
@@ -206,7 +228,9 @@ fn locate(
         }
     }
     let shown = if lib.is_empty() { "*LIBL" } else { lib };
-    Err(format!("CPF9801 Program {name} in library {shown} not found."))
+    Err(format!(
+        "CPF9801 Program {name} in library {shown} not found."
+    ))
 }
 
 /// A program's modules for Display Module Source.

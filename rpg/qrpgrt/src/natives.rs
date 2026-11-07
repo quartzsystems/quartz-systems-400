@@ -19,7 +19,15 @@ fn job(env: *mut Env) -> &'static mut mi::Job {
 }
 
 /// `_QRNX_CHARNUM(dst: varchar, src, desc, point)`: `%CHAR` of a number.
-pub extern "sysv64" fn charnum(env: *mut Env, _argc: i64, _od: i64, dst: i64, src: i64, desc: i64, point: i32) {
+pub extern "sysv64" fn charnum(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    dst: i64,
+    src: i64,
+    desc: i64,
+    point: i32,
+) {
     let d = Desc::of(desc);
     let zero = point & 0x100 != 0;
     let point = char::from(u8::try_from(point & 0xff).unwrap_or(b'.'));
@@ -63,7 +71,10 @@ pub extern "sysv64" fn editc(
     // The fill in the low byte; DATEDIT's format (bits 8-9: MDY, DMY,
     // YMD) and separator (bits 16-23, 0 for the default); DECEDIT's
     // comma (bit 24) and leading zero (bit 25).
-    let date_sep = u8::try_from((fill >> 16) & 0xFF).ok().filter(|b| *b != 0).map(char::from);
+    let date_sep = u8::try_from((fill >> 16) & 0xFF)
+        .ok()
+        .filter(|b| *b != 0)
+        .map(char::from);
     let opts = EditOpts {
         fill: match fill & 0xFF {
             1 => Fill::Asterisk,
@@ -104,7 +115,10 @@ pub extern "sysv64" fn editw(
         }
     };
     let Some(shape) = d.shape() else { return };
-    let w = ccsid::from_ebcdic(bytes(word.cast_unsigned(), usize::try_from(wlen).unwrap_or(0)));
+    let w = ccsid::from_ebcdic(bytes(
+        word.cast_unsigned(),
+        usize::try_from(wlen).unwrap_or(0),
+    ));
     let text = qdecimal::edit_word(&v, shape, &w).unwrap_or_default();
     let out = bytes(dst.cast_unsigned(), usize::try_from(dlen).unwrap_or(0));
     out.fill(0x40);
@@ -125,7 +139,14 @@ pub extern "sysv64" fn move_(
     src: i64,
     sd: i64,
 ) {
-    if let Err(c) = mov::mov(left != 0, pad != 0, dst.cast_unsigned(), &Desc::of(dd), src.cast_unsigned(), &Desc::of(sd)) {
+    if let Err(c) = mov::mov(
+        left != 0,
+        pad != 0,
+        dst.cast_unsigned(),
+        &Desc::of(dd),
+        src.cast_unsigned(),
+        &Desc::of(sd),
+    ) {
         job(env).raise(c);
     }
 }
@@ -142,7 +163,16 @@ pub extern "sysv64" fn pow(_env: *mut Env, _argc: i64, _od: i64, a: f64, b: f64)
 /// operation done exactly, the result the double toward zero from the
 /// exact value. Error-free transforms tell whether the rounded result
 /// passes the exact one.
-pub extern "sysv64" fn flt_mix(env: *mut Env, _argc: i64, _od: i64, op: i32, f: f64, src: i64, desc: i64, first: i32) -> f64 {
+pub extern "sysv64" fn flt_mix(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    op: i32,
+    f: f64,
+    src: i64,
+    desc: i64,
+    first: i32,
+) -> f64 {
     let d = Desc::of(desc);
     let value = match read_num(src.cast_unsigned(), &d) {
         Ok(v) => v,
@@ -159,7 +189,11 @@ pub extern "sysv64" fn flt_mix(env: *mut Env, _argc: i64, _od: i64, op: i32, f: 
     if hi != 0.0 && lo != 0.0 && (lo < 0.0) == (hi > 0.0) {
         hi = f64::from_bits(hi.to_bits() - 1);
     }
-    let ((a, alo), (b, blo)) = if first != 0 { ((f, 0.0), (hi, 0.0)) } else { ((hi, 0.0), (f, 0.0)) };
+    let ((a, alo), (b, blo)) = if first != 0 {
+        ((f, 0.0), (hi, 0.0))
+    } else {
+        ((hi, 0.0), (f, 0.0))
+    };
     let (r, err) = match op {
         0 | 1 => {
             let (b, blo) = if op == 1 { (-b, -blo) } else { (b, blo) };
@@ -197,10 +231,14 @@ fn remainder(text: &str, hi: f64) -> f64 {
     // The double's exact value to 60 decimals is enough for the sign
     // and size of a remainder far below its last place.
     let exact = format!("{hi:.60}");
-    let (Ok(x), Ok(h)) = (qdecimal::Decimal::parse(text), qdecimal::Decimal::parse(trim_to_63(&exact))) else {
+    let (Ok(x), Ok(h)) = (
+        qdecimal::Decimal::parse(text),
+        qdecimal::Decimal::parse(trim_to_63(&exact)),
+    ) else {
         return 0.0;
     };
-    x.sub_exact(&h).map_or(0.0, |r| r.to_string().parse().unwrap_or(0.0))
+    x.sub_exact(&h)
+        .map_or(0.0, |r| r.to_string().parse().unwrap_or(0.0))
 }
 
 /// A decimal string cut to 63 significant digits.
@@ -221,7 +259,14 @@ fn trim_to_63(s: &str) -> &str {
 pub extern "sysv64" fn sqrt(env: *mut Env, _argc: i64, _od: i64, a: f64) -> f64 {
     // The square root of a negative number is status 101.
     if a < 0.0 {
-        let _ = job(env).send_message("RNX0101", "QRNXMSG", "*LIBL", Vec::new(), qir::MsgType::Escape, mi::QueueRef::Same);
+        let _ = job(env).send_message(
+            "RNX0101",
+            "QRNXMSG",
+            "*LIBL",
+            Vec::new(),
+            qir::MsgType::Escape,
+            mi::QueueRef::Same,
+        );
         return 0.0;
     }
     a.sqrt()
@@ -232,15 +277,31 @@ pub extern "sysv64" fn sqrt(env: *mut Env, _argc: i64, _od: i64, a: f64) -> f64 
 #[must_use]
 pub fn editflt_text(f: f64, single: bool) -> String {
     #[allow(clippy::cast_possible_truncation)]
-    let s = if single { format!("{:.7e}", f as f32) } else { format!("{f:.15e}") };
+    let s = if single {
+        format!("{:.7e}", f as f32)
+    } else {
+        format!("{f:.15e}")
+    };
     let (m, e) = s.split_once('e').unwrap_or((&s, "0"));
     let (neg, m) = m.strip_prefix('-').map_or((false, m), |r| (true, r));
     let ev: i32 = e.parse().unwrap_or(0);
     let width = if single { 2 } else { 3 };
-    format!("{}{m}E{}{:0width$}", if neg { '-' } else { '+' }, if ev < 0 { '-' } else { '+' }, ev.abs())
+    format!(
+        "{}{m}E{}{:0width$}",
+        if neg { '-' } else { '+' },
+        if ev < 0 { '-' } else { '+' },
+        ev.abs()
+    )
 }
 
 /// `_QRNX_EDITFLT(dst: varchar, f, single)`: `%EDITFLT`.
-pub extern "sysv64" fn editflt(_env: *mut Env, _argc: i64, _od: i64, dst: i64, f: f64, single: i32) {
+pub extern "sysv64" fn editflt(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    dst: i64,
+    f: f64,
+    single: i32,
+) {
     write_varchar(dst.cast_unsigned(), &ebcdic(&editflt_text(f, single != 0)));
 }

@@ -10,7 +10,10 @@ use std::fmt::Write as _;
 
 use qsweb::html::{esc, query};
 use qsweb::http::Response;
-use qsweb::partials::{Cell, Col, List, Paging, Prop, PropGroup, input_cmd, link, list_table, mono, paging, props_table, tabs};
+use qsweb::partials::{
+    Cell, Col, List, Paging, Prop, PropGroup, input_cmd, link, list_table, mono, paging,
+    props_table, tabs,
+};
 
 use super::{MAX_ROWS, csv, mb10, message_line, messages, result_table, returned, sort_rows};
 use crate::PRODUCT;
@@ -29,12 +32,18 @@ const TABS: [(&str, &str); 5] = [
 
 fn find(rq: &Rq<'_>, schema: &str, table: &str) -> Result<TableDesc, Response> {
     let (s, t) = (schema.to_ascii_uppercase(), table.to_ascii_uppercase());
-    rq.env().db.table(rq.user(), &s, &t).ok_or_else(|| rq.not_found(&format!("table {s}.{t}")))
+    rq.env()
+        .db
+        .table(rq.user(), &s, &t)
+        .ok_or_else(|| rq.not_found(&format!("table {s}.{t}")))
 }
 
 /// Run SQL's link for `statement` in `schema`.
 fn run_sql_link(rq: &Rq<'_>, statement: &str, schema: &str) -> String {
-    rq.ctx.url(&format!("/sql{}", query(&[("q", statement), ("s", schema)])))
+    rq.ctx.url(&format!(
+        "/sql{}",
+        query(&[("q", statement), ("s", schema)])
+    ))
 }
 
 /// One tab of a table.
@@ -48,7 +57,10 @@ pub fn tab(rq: &Rq<'_>, schema: &str, table: &str, tab: &str) -> Response {
         return rq.not_found(&format!("db/{schema}/{table}/{tab}"));
     }
     let base = format!("/db/{}/{}", t.schema, t.table.name);
-    let bar: Vec<(&str, String)> = TABS.iter().map(|(l, k)| (*l, rq.ctx.url(&format!("{base}/{k}")))).collect();
+    let bar: Vec<(&str, String)> = TABS
+        .iter()
+        .map(|(l, k)| (*l, rq.ctx.url(&format!("{base}/{k}"))))
+        .collect();
     let all = format!("SELECT * FROM {}.{}", t.schema, t.table.name);
     let mut body = tabs(&bar, current.unwrap_or(usize::MAX));
     let _ = write!(
@@ -72,7 +84,15 @@ pub fn tab(rq: &Rq<'_>, schema: &str, table: &str, tab: &str) -> Response {
     };
     body.push_str(&content);
     let title = format!("Table: {}.{}", t.schema, t.table.name);
-    super::page(rq, &["Schemas", &t.schema, &t.table.name], &title, None, body, "db-table", None)
+    super::page(
+        rq,
+        &["Schemas", &t.schema, &t.table.name],
+        &title,
+        None,
+        body,
+        "db-table",
+        None,
+    )
 }
 
 fn columns(t: &TableDesc, sort: &str) -> String {
@@ -115,11 +135,23 @@ fn columns(t: &TableDesc, sort: &str) -> String {
 
 fn keys(t: &TableDesc) -> String {
     list_table(&List {
-        cols: vec![Col::plain("Constraint"), Col::plain("Type"), Col::plain("Columns"), Col::plain("References")],
+        cols: vec![
+            Col::plain("Constraint"),
+            Col::plain("Type"),
+            Col::plain("Columns"),
+            Col::plain("References"),
+        ],
         rows: t
             .constraints
             .iter()
-            .map(|c| vec![Cell::mono(&c.name), Cell::text(&c.kind), Cell::mono(&c.columns), Cell::mono(&c.references)])
+            .map(|c| {
+                vec![
+                    Cell::mono(&c.name),
+                    Cell::text(&c.kind),
+                    Cell::mono(&c.columns),
+                    Cell::mono(&c.references),
+                ]
+            })
             .collect(),
         empty: "The table has no constraints.".into(),
         keep: Vec::new(),
@@ -141,7 +173,10 @@ fn indexes(rq: &Rq<'_>, t: &TableDesc) -> String {
             .map(|x| {
                 vec![
                     Cell::mono(&x.name),
-                    Cell::mono_html(link(&rq.ctx.url(&format!("/db/{}?show=indexes", x.schema)), &x.schema)),
+                    Cell::mono_html(link(
+                        &rq.ctx.url(&format!("/db/{}?show=indexes", x.schema)),
+                        &x.schema,
+                    )),
                     Cell::mono(&x.columns),
                     Cell::text(if x.unique { "Yes" } else { "No" }),
                     Cell::text(&x.text),
@@ -184,7 +219,10 @@ fn properties(rq: &Rq<'_>, t: &TableDesc) -> String {
     let when = |s: u64| esc(&rq.when(s));
     let rows = vec![
         Prop::new("Table", mono(&format!("{}.{}", t.schema, t.table.name))),
-        Prop::new("System name", mono(&format!("{}/{}", t.schema, t.system_name))),
+        Prop::new(
+            "System name",
+            mono(&format!("{}/{}", t.schema, t.system_name)),
+        ),
         Prop::new("Text", esc(&t.table.text)),
         Prop::new("Owner", mono(&t.owner)),
         Prop::new("Record format", mono(&t.format)),
@@ -195,7 +233,11 @@ fn properties(rq: &Rq<'_>, t: &TableDesc) -> String {
         Prop::new("Size", format!("{} MB", mb10(t.table.size))),
         Prop::new(
             "Journal",
-            if t.journal.is_empty() { "None".into() } else { mono(&t.journal) },
+            if t.journal.is_empty() {
+                "None".into()
+            } else {
+                mono(&t.journal)
+            },
         ),
     ];
     props_table(&PRODUCT, &[PropGroup { title: None, rows }], true)
@@ -248,7 +290,10 @@ pub fn data(rq: &Rq<'_>, schema: &str, table: &str) -> Response {
     let hidden = if sort.is_empty() {
         String::new()
     } else {
-        format!("<input type=\"hidden\" name=\"sort\" value=\"{}\">", esc(&sort))
+        format!(
+            "<input type=\"hidden\" name=\"sort\" value=\"{}\">",
+            esc(&sort)
+        )
     };
     let _ = write!(
         body,
@@ -269,11 +314,23 @@ pub fn data(rq: &Rq<'_>, schema: &str, table: &str) -> Response {
         }
         let p = Paging::from_query(q.str("page"), q.str("rows"), o.rows.len(), kept.clone());
         body.push_str(&result_table(&o.columns, &o.rows[p.range()], keep));
-        let mut csv_q: Vec<(&str, &str)> = kept.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+        let mut csv_q: Vec<(&str, &str)> =
+            kept.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
         csv_q.push(("csv", "1"));
-        body.push_str(&returned(o.rows.len(), &rq.ctx.url(&format!("{base}/data{}", query(&csv_q)))));
+        body.push_str(&returned(
+            o.rows.len(),
+            &rq.ctx.url(&format!("{base}/data{}", query(&csv_q))),
+        ));
         body.push_str(&paging(&p));
     }
     let title = format!("View data: {}.{}", t.schema, t.table.name);
-    super::page(rq, &["Schemas", &t.schema, &t.table.name, "Data"], &title, None, body, "db-data", None)
+    super::page(
+        rq,
+        &["Schemas", &t.schema, &t.table.name, "Data"],
+        &title,
+        None,
+        body,
+        "db-data",
+        None,
+    )
 }

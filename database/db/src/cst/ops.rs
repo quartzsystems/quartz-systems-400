@@ -62,7 +62,12 @@ pub enum Refusal {
 }
 
 fn refuse(msgid: &'static str, reason: Refusal, cst: &str, what: impl Into<String>) -> DbError {
-    DbError::Constraint { msgid, reason, cst: cst.to_string(), what: what.into() }
+    DbError::Constraint {
+        msgid,
+        reason,
+        cst: cst.to_string(),
+        what: what.into(),
+    }
 }
 
 /// A constraint to add.
@@ -122,7 +127,12 @@ fn physical(desc: &FileDesc, msgid: &'static str, cst: &str) -> Result<()> {
     if desc.attr.kind == FileKind::Physical {
         Ok(())
     } else {
-        Err(refuse(msgid, Refusal::NotPhysical, cst, format!("{} is not a physical data file", desc.name())))
+        Err(refuse(
+            msgid,
+            Refusal::NotPhysical,
+            cst,
+            format!("{} is not a physical data file", desc.name()),
+        ))
     }
 }
 
@@ -145,40 +155,94 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
     }
     let name = if let Some(n) = &new.name {
         if names::find(txn, lib, Space::Constraint, n)?.is_some() {
-            return Err(refuse(ADD, Refusal::Exists, n, format!("constraint {n} exists in library {}", desc.library_name)));
+            return Err(refuse(
+                ADD,
+                Refusal::Exists,
+                n,
+                format!("constraint {n} exists in library {}", desc.library_name),
+            ));
         }
         n.clone()
     } else {
         let lib_name = desc.library_name.to_string();
-        let taken: Vec<String> = names::list(txn, lib, Space::Constraint)?.into_iter().map(|(n, _)| n).collect();
-        super::generated_name(&lib_name, &desc.name().to_string(), &c, &|n| taken.iter().any(|t| t == n))
+        let taken: Vec<String> = names::list(txn, lib, Space::Constraint)?
+            .into_iter()
+            .map(|(n, _)| n)
+            .collect();
+        super::generated_name(&lib_name, &desc.name().to_string(), &c, &|n| {
+            taken.iter().any(|t| t == n)
+        })
     };
     c.name.clone_from(&name);
     if c.kind == Kind::PrimaryKey && csts.iter().any(|x| x.kind == Kind::PrimaryKey) {
-        return Err(refuse(ADD, Refusal::SecondPrimary, &name, format!("file {} has a primary key", desc.name())));
+        return Err(refuse(
+            ADD,
+            Refusal::SecondPrimary,
+            &name,
+            format!("file {} has a primary key", desc.name()),
+        ));
     }
     for (i, col) in c.columns.iter().enumerate() {
         let Some((_, f)) = fmt.format.field(col) else {
-            return Err(refuse(ADD, Refusal::NoColumn, &name, format!("field {col} is not in file {}", desc.name())));
+            return Err(refuse(
+                ADD,
+                Refusal::NoColumn,
+                &name,
+                format!("field {col} is not in file {}", desc.name()),
+            ));
         };
         if c.kind.keyed() && f.data_type.is_lob() {
-            return Err(refuse(ADD, Refusal::LobKey, &name, format!("LOB field {col} cannot be a key of constraint {name}")));
+            return Err(refuse(
+                ADD,
+                Refusal::LobKey,
+                &name,
+                format!("LOB field {col} cannot be a key of constraint {name}"),
+            ));
         }
         if c.kind.keyed() && c.columns[..i].contains(col) {
-            return Err(refuse(ADD, Refusal::BadColumns, &name, format!("field {col} cannot be a key of constraint {name}")));
+            return Err(refuse(
+                ADD,
+                Refusal::BadColumns,
+                &name,
+                format!("field {col} cannot be a key of constraint {name}"),
+            ));
         }
     }
     if c.kind.unique() {
         if c.kind == Kind::PrimaryKey && csts.iter().any(|x| x.kind == Kind::PrimaryKey) {
-            return Err(refuse(ADD, Refusal::SecondPrimary, &name, format!("file {} has a primary key", desc.name())));
+            return Err(refuse(
+                ADD,
+                Refusal::SecondPrimary,
+                &name,
+                format!("file {} has a primary key", desc.name()),
+            ));
         }
-        if csts.iter().any(|x| x.kind.unique() && x.columns == c.columns) {
-            return Err(refuse(ADD, Refusal::SameKey, &name, format!("a unique key over the same fields exists for {}", desc.name())));
+        if csts
+            .iter()
+            .any(|x| x.kind.unique() && x.columns == c.columns)
+        {
+            return Err(refuse(
+                ADD,
+                Refusal::SameKey,
+                &name,
+                format!(
+                    "a unique key over the same fields exists for {}",
+                    desc.name()
+                ),
+            ));
         }
         if c.kind == Kind::PrimaryKey
-            && let Some(col) = c.columns.iter().find(|col| fmt.format.field(col).is_some_and(|(_, f)| f.allow_null))
+            && let Some(col) = c
+                .columns
+                .iter()
+                .find(|col| fmt.format.field(col).is_some_and(|(_, f)| f.allow_null))
         {
-            return Err(refuse(ADD, Refusal::Nullable, &name, format!("primary key field {col} allows nulls")));
+            return Err(refuse(
+                ADD,
+                Refusal::Nullable,
+                &name,
+                format!("primary key field {col} allows nulls"),
+            ));
         }
     }
     let mut report = Report::default();
@@ -186,10 +250,18 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
         crate::auth::check(txn, "file.reference", new.parent)?;
         let pdesc = file::describe(txn, new.parent)?;
         physical(&pdesc, ADD, &name)?;
-        let pcsts = if new.parent == file { csts.clone() } else { list(txn, new.parent)? };
+        let pcsts = if new.parent == file {
+            csts.clone()
+        } else {
+            list(txn, new.parent)?
+        };
         let pk = pcsts.iter().find(|p| {
             p.kind.unique()
-                && if new.parent_columns.is_empty() { p.kind == Kind::PrimaryKey } else { p.columns == new.parent_columns }
+                && if new.parent_columns.is_empty() {
+                    p.kind == Kind::PrimaryKey
+                } else {
+                    p.columns == new.parent_columns
+                }
         });
         let Some(pk) = pk else {
             // Columns named unlike the foreign key's are `SQL0538` before
@@ -198,29 +270,72 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
             let unlike = new.parent_columns.len() != c.columns.len()
                 || c.columns.iter().zip(&new.parent_columns).any(|(fc, pc)| {
                     match (fmt.format.field(fc), pfmt.format.field(pc)) {
-                        (Some((_, f)), Some((_, p))) => f.data_type != p.data_type || f.length != p.length || f.decimals != p.decimals || f.varlen != p.varlen,
+                        (Some((_, f)), Some((_, p))) => {
+                            f.data_type != p.data_type
+                                || f.length != p.length
+                                || f.decimals != p.decimals
+                                || f.varlen != p.varlen
+                        }
                         _ => false,
                     }
                 });
-            let reason = if !new.parent_columns.is_empty() && unlike { Refusal::KeyMismatch } else { Refusal::NoParentKey };
-            return Err(refuse(ADD, reason, &name, format!("file {} has no matching parent key", pdesc.name())));
+            let reason = if !new.parent_columns.is_empty() && unlike {
+                Refusal::KeyMismatch
+            } else {
+                Refusal::NoParentKey
+            };
+            return Err(refuse(
+                ADD,
+                reason,
+                &name,
+                format!("file {} has no matching parent key", pdesc.name()),
+            ));
         };
         if pk.columns.len() != c.columns.len() {
-            return Err(refuse(ADD, Refusal::KeyMismatch, &name, "the foreign key and the parent key differ in length"));
+            return Err(refuse(
+                ADD,
+                Refusal::KeyMismatch,
+                &name,
+                "the foreign key and the parent key differ in length",
+            ));
         }
         let pfmt = &pdesc.formats[0];
         for (fc, pc) in c.columns.iter().zip(&pk.columns) {
             let (_, f) = fmt.format.field(fc).expect("checked");
             let (_, p) = pfmt.format.field(pc).ok_or_else(|| no_field(pc))?;
-            if f.data_type != p.data_type || f.length != p.length || f.decimals != p.decimals || f.varlen != p.varlen {
-                return Err(refuse(ADD, Refusal::KeyMismatch, &name, format!("foreign key field {fc} is not like parent key field {pc}")));
+            if f.data_type != p.data_type
+                || f.length != p.length
+                || f.decimals != p.decimals
+                || f.varlen != p.varlen
+            {
+                return Err(refuse(
+                    ADD,
+                    Refusal::KeyMismatch,
+                    &name,
+                    format!("foreign key field {fc} is not like parent key field {pc}"),
+                ));
             }
             if new.delete_rule == Rule::SetNull && !f.allow_null {
-                return Err(refuse(ADD, Refusal::SetNullNotNull, &name, format!("field {fc} cannot be null")));
+                return Err(refuse(
+                    ADD,
+                    Refusal::SetNullNotNull,
+                    &name,
+                    format!("field {fc} cannot be null"),
+                ));
             }
         }
-        if new.delete_rule == Rule::SetNull && !c.columns.iter().any(|col| fmt.format.field(col).is_some_and(|(_, f)| f.allow_null)) {
-            return Err(refuse(ADD, Refusal::SetNullNotNull, &name, "no foreign key field can be null"));
+        if new.delete_rule == Rule::SetNull
+            && !c
+                .columns
+                .iter()
+                .any(|col| fmt.format.field(col).is_some_and(|(_, f)| f.allow_null))
+        {
+            return Err(refuse(
+                ADD,
+                Refusal::SetNullNotNull,
+                &name,
+                "no foreign key field can be null",
+            ));
         }
         c.other = new.parent;
         c.other_name.clone_from(&pk.name);
@@ -229,7 +344,10 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
         if pdesc.attr.journal.is_none() {
             report.messages.push(("CPI32B4", pdesc.name().to_string()));
         }
-        if csts.iter().any(|x| x.kind == Kind::Referential && x.other == new.parent) {
+        if csts
+            .iter()
+            .any(|x| x.kind == Kind::Referential && x.other == new.parent)
+        {
             report.messages.insert(0, ("CPI32B5", String::new()));
         }
     }
@@ -249,7 +367,16 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
         }
     }
     store(txn, file, &csts, now)?;
-    names::put(txn, lib, Space::Constraint, &name, Target { id: file, system: desc.name() })?;
+    names::put(
+        txn,
+        lib,
+        Space::Constraint,
+        &name,
+        Target {
+            id: file,
+            system: desc.name(),
+        },
+    )?;
     // The records as they are. A refusal takes the constraint out again
     // itself: a caller that committed parts (a statement that took turns)
     // keeps nothing of it.
@@ -267,7 +394,12 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
                 _ => Refusal::RefData,
             };
             drop_one(txn, file, &name, now)?;
-            return Err(refuse(ADD, reason, &name, format!("records of {} break constraint {name}", desc.name())));
+            return Err(refuse(
+                ADD,
+                reason,
+                &name,
+                format!("records of {} break constraint {name}", desc.name()),
+            ));
         }
         set_pending(txn, file, &name, true, now)?;
         report.messages.push(("CPD32C5", name.clone()));
@@ -278,7 +410,9 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
 }
 
 fn no_field(n: &Name) -> DbError {
-    DbError::Definition { what: format!("field {n} is not in the parent file") }
+    DbError::Definition {
+        what: format!("field {n} is not in the parent file"),
+    }
 }
 
 /// Rebuild every member's constraint tree; for constraint `name`, a
@@ -290,7 +424,12 @@ fn rebuild_and_validate(txn: &mut Txn<'_>, file: ObjectId, name: &str) -> Result
     for e in &desc.members {
         let mut m = Member::open(txn, &desc, e)?;
         m.rebuild_cst_tree(txn).map_err(|err| match err {
-            DbError::DuplicateKeys { key, .. } => refuse("CPF32B0", Refusal::DuplicateData, &key, format!("records repeat the key of constraint {key}")),
+            DbError::DuplicateKeys { key, .. } => refuse(
+                "CPF32B0",
+                Refusal::DuplicateData,
+                &key,
+                format!("records repeat the key of constraint {key}"),
+            ),
             e => e,
         })?;
         broken |= breaks(txn, &m, name)?;
@@ -325,21 +464,39 @@ pub fn pending_records(txn: &mut Txn<'_>, file: ObjectId, name: &str) -> Result<
 /// Up to `max` records that break check or referential constraint `name`.
 fn broken(txn: &mut Txn<'_>, m: &Member, name: &str, max: usize) -> Result<Vec<u64>> {
     let mut found = Vec::new();
-    let Some(a) = m.csts.clone() else { return Ok(found) };
-    let Some(c) = a.csts.iter().find(|c| c.name == name) else { return Ok(found) };
+    let Some(a) = m.csts.clone() else {
+        return Ok(found);
+    };
+    let Some(c) = a.csts.iter().find(|c| c.name == name) else {
+        return Ok(found);
+    };
     if !matches!(c.kind, Kind::Check | Kind::Referential) {
         return Ok(found);
     }
-    let parent = if c.kind == Kind::Referential { Some(Member::open_by(txn, c.other, MemberSpec::First)?) } else { None };
+    let parent = if c.kind == Kind::Referential {
+        Some(Member::open_by(txn, c.other, MemberSpec::First)?)
+    } else {
+        None
+    };
     let mut rrn = 1;
     loop {
         let slots = m.scan(txn, rrn, 256)?;
-        let Some(last) = slots.last() else { return Ok(found) };
+        let Some(last) = slots.last() else {
+            return Ok(found);
+        };
         rrn = last.rrn + 1;
         for s in &slots {
             if c.kind == Kind::Check {
-                let row = check::Row { format: m.format(), data: &s.record, nulls: &s.null_map };
-                if !c.check.as_ref().is_none_or(|e| e.met(&row).unwrap_or(false)) {
+                let row = check::Row {
+                    format: m.format(),
+                    data: &s.record,
+                    nulls: &s.null_map,
+                };
+                if !c
+                    .check
+                    .as_ref()
+                    .is_none_or(|e| e.met(&row).unwrap_or(false))
+                {
                     found.push(s.rrn);
                     if found.len() >= max {
                         return Ok(found);
@@ -353,8 +510,12 @@ fn broken(txn: &mut Txn<'_>, m: &Member, name: &str, max: usize) -> Result<Vec<u
             }
             let key = k.key(&s.record, &s.null_map)?;
             let p = parent.as_ref().expect("referential");
-            let pa = p.csts.clone().ok_or_else(|| DbError::Corrupt { what: "parent without keys".into() })?;
-            let pk = pa.key_of(&c.other_name).ok_or_else(|| DbError::Corrupt { what: "parent key gone".into() })?;
+            let pa = p.csts.clone().ok_or_else(|| DbError::Corrupt {
+                what: "parent without keys".into(),
+            })?;
+            let pk = pa.key_of(&c.other_name).ok_or_else(|| DbError::Corrupt {
+                what: "parent key gone".into(),
+            })?;
             let tree = p.cst_tree().expect("keyed");
             if pa.find(txn, &tree, pk, &key, 1)?.is_empty() {
                 found.push(s.rrn);
@@ -366,7 +527,13 @@ fn broken(txn: &mut Txn<'_>, m: &Member, name: &str, max: usize) -> Result<Vec<u
     }
 }
 
-fn set_pending(txn: &mut Txn<'_>, file: ObjectId, name: &str, pending: bool, now: u64) -> Result<()> {
+fn set_pending(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    name: &str,
+    pending: bool,
+    now: u64,
+) -> Result<()> {
     let mut csts = list(txn, file)?;
     for c in &mut csts {
         if c.name == name {
@@ -405,14 +572,21 @@ pub struct Removed {
 
 /// `RMVPFCST`, and SQL's `DROP CONSTRAINT`: with `cascade` a parent
 /// key's dependent referential constraints go too.
-pub fn remove(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, cascade: bool, now: u64) -> Result<Removed> {
+pub fn remove(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    pick: &Pick,
+    cascade: bool,
+    now: u64,
+) -> Result<Removed> {
     crate::auth::check(txn, "file.constraint", file)?;
     let desc = file::describe(txn, file)?;
     let csts = list(txn, file)?;
     let mut out = Removed::default();
     let chosen: Vec<Constraint> = csts.iter().filter(|c| pick.takes(c)).cloned().collect();
     if chosen.is_empty() {
-        out.refused.push(pick.name.clone().unwrap_or_else(|| "*ALL".into()));
+        out.refused
+            .push(pick.name.clone().unwrap_or_else(|| "*ALL".into()));
         return Ok(out);
     }
     for c in chosen {
@@ -435,11 +609,27 @@ pub fn remove(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, cascade: bool, now
 
 /// The referential constraints `(file, name)` whose parent key is
 /// constraint `pk` of `file`.
-pub fn dependents_of(txn: &mut Txn<'_>, file: ObjectId, pk: &str) -> Result<Vec<(ObjectId, String)>> {
+pub fn dependents_of(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    pk: &str,
+) -> Result<Vec<(ObjectId, String)>> {
     let mut out = Vec::new();
-    for d in list(txn, file)?.into_iter().filter(|c| c.kind == Kind::Dependent) {
-        let child = if d.other == file { list(txn, file)? } else { list(txn, d.other).unwrap_or_default() };
-        if child.iter().any(|c| c.kind == Kind::Referential && c.name == d.other_name && c.other_name == pk && c.other == file) {
+    for d in list(txn, file)?
+        .into_iter()
+        .filter(|c| c.kind == Kind::Dependent)
+    {
+        let child = if d.other == file {
+            list(txn, file)?
+        } else {
+            list(txn, d.other).unwrap_or_default()
+        };
+        if child.iter().any(|c| {
+            c.kind == Kind::Referential
+                && c.name == d.other_name
+                && c.other_name == pk
+                && c.other == file
+        }) {
             out.push((d.other, d.other_name.clone()));
         }
     }
@@ -451,13 +641,18 @@ pub fn dependents_of(txn: &mut Txn<'_>, file: ObjectId, pk: &str) -> Result<Vec<
 fn drop_one(txn: &mut Txn<'_>, file: ObjectId, name: &str, now: u64) -> Result<()> {
     let desc = file::describe(txn, file)?;
     let mut csts = list(txn, file)?;
-    let Some(at) = csts.iter().position(|c| c.name == name && c.kind != Kind::Dependent) else {
+    let Some(at) = csts
+        .iter()
+        .position(|c| c.name == name && c.kind != Kind::Dependent)
+    else {
         return Ok(());
     };
     let c = csts.remove(at);
     if c.kind == Kind::Referential {
         if c.other == file {
-            csts.retain(|d| !(d.kind == Kind::Dependent && d.other == file && d.other_name == name));
+            csts.retain(|d| {
+                !(d.kind == Kind::Dependent && d.other == file && d.other_name == name)
+            });
         } else if let Ok(mut p) = list(txn, c.other) {
             p.retain(|d| !(d.kind == Kind::Dependent && d.other == file && d.other_name == name));
             store(txn, c.other, &p, now)?;
@@ -484,25 +679,44 @@ pub struct Changed {
 
 /// `CHGPFCST STATE(*ENABLED|*DISABLED)`: an enabled one is checked
 /// against the records and left in check pending when they break it.
-pub fn set_state(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, enabled: bool, now: u64) -> Result<Changed> {
+pub fn set_state(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    pick: &Pick,
+    enabled: bool,
+    now: u64,
+) -> Result<Changed> {
     crate::auth::check(txn, "file.constraint", file)?;
     let mut csts = list(txn, file)?;
     let mut out = Changed::default();
     let names: Vec<String> = csts
         .iter()
-        .filter(|c| pick.takes(c) && (pick.name.is_some() || matches!(c.kind, Kind::Check | Kind::Referential)))
+        .filter(|c| {
+            pick.takes(c)
+                && (pick.name.is_some() || matches!(c.kind, Kind::Check | Kind::Referential))
+        })
         .map(|c| c.name.clone())
         .collect();
     if names.is_empty() {
         let n = pick.name.clone().unwrap_or_else(|| "*ALL".into());
-        return Err(refuse("CPF32B2", Refusal::NotFound, &n, format!("constraint {n} not found")));
+        return Err(refuse(
+            "CPF32B2",
+            Refusal::NotFound,
+            &n,
+            format!("constraint {n} not found"),
+        ));
     }
     for c in &mut csts {
         if !names.contains(&c.name) {
             continue;
         }
         if c.kind.unique() {
-            return Err(refuse("CPF32B2", Refusal::NotDisableable, &c.name, "a unique or primary key cannot change state"));
+            return Err(refuse(
+                "CPF32B2",
+                Refusal::NotDisableable,
+                &c.name,
+                "a unique or primary key cannot change state",
+            ));
         }
         c.enabled = enabled;
         c.check_pending = false;
@@ -540,7 +754,9 @@ pub fn on_delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, now: u6
         match c.kind {
             Kind::Referential if c.other != file => {
                 if let Ok(mut p) = list(txn, c.other) {
-                    p.retain(|d| !(d.kind == Kind::Dependent && d.other == file && d.other_name == c.name));
+                    p.retain(|d| {
+                        !(d.kind == Kind::Dependent && d.other == file && d.other_name == c.name)
+                    });
                     store(txn, c.other, &p, now)?;
                 }
             }

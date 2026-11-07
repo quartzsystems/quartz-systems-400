@@ -65,7 +65,9 @@ pub fn read(
     let id = wm::obj::find(txn, qsys, names, &lib_or(lib), file, types::FILE)
         .map_err(|e| format!("CPF9801 {e}"))?;
     let spec = match mbr {
-        Some(m) => MemberSpec::Name(Name::parse(m).map_err(|e| format!("CPD0078 SRCMBR({m}): {e}"))?),
+        Some(m) => {
+            MemberSpec::Name(Name::parse(m).map_err(|e| format!("CPD0078 SRCMBR({m}): {e}"))?)
+        }
         None => MemberSpec::First,
     };
     let sm = db::source::read_member(txn, id, spec).map_err(|e| format!("CPF9801 {e}"))?;
@@ -171,9 +173,11 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
 
 /// `lib/name` as a display or printer file, `None` when it is neither.
 fn device_file(system: &mut System, lib: &str, name: &str) -> Option<ExtFile> {
-    in_store(system, |txn, qsys, names| device_in(txn, qsys, names, lib, name))
-        .ok()
-        .flatten()
+    in_store(system, |txn, qsys, names| {
+        device_in(txn, qsys, names, lib, name)
+    })
+    .ok()
+    .flatten()
 }
 
 /// [`device_file`] in a transaction. A program-described printer file
@@ -196,7 +200,8 @@ pub fn device_in(
     if !is_dsp && attr != "PRTF" {
         return Ok(None);
     }
-    let found = ops::describe(txn, h.library).map_or_else(|_| lib.to_string(), |l| l.name.to_string());
+    let found =
+        ops::describe(txn, h.library).map_or_else(|_| lib.to_string(), |l| l.name.to_string());
     let payload = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
     if is_dsp {
         let df = dspf::decode(&payload).map_err(|e| e.to_string())?;
@@ -216,7 +221,11 @@ pub fn printer_desc(def: &dds::prtf::PrtfDefinition, lib: &str) -> ExtFile {
         .formats
         .iter()
         .map(|f| {
-            let inds = if def.indara { Vec::new() } else { f.indicators() };
+            let inds = if def.indara {
+                Vec::new()
+            } else {
+                f.indicators()
+            };
             let mut at = u32::try_from(inds.len()).unwrap_or(0);
             let mut fields = Vec::new();
             for x in &f.fields {
@@ -276,8 +285,12 @@ pub fn display_desc(df: &dspf::DisplayFile, lib: &str) -> ExtFile {
         .records
         .iter()
         .map(|r| {
-            let named: Vec<(usize, &dspf::Field)> =
-                r.fields.iter().enumerate().filter(|(_, f)| f.name.is_some()).collect();
+            let named: Vec<(usize, &dspf::Field)> = r
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(_, f)| f.name.is_some())
+                .collect();
             let out_of = |i: usize| r.layout.output.field(i).map(|b| b.offset);
             let in_of = |i: usize| r.layout.input.field(i).map(|b| b.offset);
             let ty = |f: &dspf::Field| {

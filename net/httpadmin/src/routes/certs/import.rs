@@ -9,7 +9,10 @@
 use qsweb::frame::Page;
 use qsweb::http::Response;
 use qsweb::msg::Kind;
-use qsweb::partials::{Button, Prop, PropGroup, buttons, checkbox, input, input_cmd, props_table, radio, select, upload_form};
+use qsweb::partials::{
+    Button, Prop, PropGroup, buttons, checkbox, input, input_cmd, props_table, radio, select,
+    upload_form,
+};
 
 use super::stores::password_field;
 use super::{Rq, failed, invalid, store_url, url_q};
@@ -22,7 +25,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     if rq.post() {
         let f = rq.form();
-        let st = f.get("store").or_else(|| q.get("store")).unwrap_or("*SYSTEM").to_string();
+        let st = f
+            .get("store")
+            .or_else(|| q.get("store"))
+            .unwrap_or("*SYSTEM")
+            .to_string();
         if f.has("cancel") {
             return Response::redirect(&store_url(&st, ""));
         }
@@ -34,8 +41,14 @@ pub fn page(rq: &Rq<'_>) -> Response {
     }
     let stores = rq.env().certs.stores();
     let names: Vec<&str> = stores.iter().map(|s| s.name.as_str()).collect();
-    let chosen = q.get("store").map_or_else(|| rq.get("certimp.store"), ToString::to_string);
-    let chosen = if names.first().is_some_and(|f| *f == chosen) { String::new() } else { chosen };
+    let chosen = q
+        .get("store")
+        .map_or_else(|| rq.get("certimp.store"), ToString::to_string);
+    let chosen = if names.first().is_some_and(|f| *f == chosen) {
+        String::new()
+    } else {
+        chosen
+    };
     let fmt = rq.get("certimp.fmt");
     let ca = rq.get("certimp.t") == "ca";
     let groups = [
@@ -98,7 +111,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
         &format!(
             "\n{}\n{}",
             props_table(&PRODUCT, &groups, true),
-            buttons(&[Button::new("import", "Import"), Button::new("cancel", "Cancel")])
+            buttons(&[
+                Button::new("import", "Import"),
+                Button::new("cancel", "Cancel")
+            ])
         ),
     );
     rq.page(Page {
@@ -140,7 +156,9 @@ fn import(rq: &Rq<'_>, st: &str) -> Response {
         (Some(d), _) => ImportSource::Data(d),
         (None, false) => ImportSource::Path(path.clone()),
         (None, true) => {
-            rq.flash(invalid("choose a file to upload or give the path of a stream file"));
+            rq.flash(invalid(
+                "choose a file to upload or give the path of a stream file",
+            ));
             return Response::redirect(&back);
         }
     };

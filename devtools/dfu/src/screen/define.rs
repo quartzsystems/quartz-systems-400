@@ -38,7 +38,15 @@ pub fn general(p: &Program, indexed: bool, message: Option<&str>) -> Screen {
     put(&mut s, 1, 17, Attr::HighIntensity, title);
     put(&mut s, 3, 2, Attr::Blue, "Type choices, press Enter.");
     entry(&mut s, 5, false, "Job title", "TITLE", 39, &p.title);
-    entry(&mut s, 6, false, "Display format", "DSPFMT", 1, p.format.code());
+    entry(
+        &mut s,
+        6,
+        false,
+        "Display format",
+        "DSPFMT",
+        1,
+        p.format.code(),
+    );
     out(&mut s, 6, LEGEND, "1=Single,  2=Multiple");
     out(&mut s, 7, LEGEND, "3=Maximum, 4=Row oriented");
     let flags = [
@@ -53,22 +61,58 @@ pub fn general(p: &Program, indexed: bool, message: Option<&str>) -> Screen {
         out(&mut s, row, LEGEND, YN);
     }
     if indexed {
-        entry(&mut s, 14, false, "Generate keys", "GENKEYS", 1, yn(p.gen_keys));
+        entry(
+            &mut s,
+            14,
+            false,
+            "Generate keys",
+            "GENKEYS",
+            1,
+            yn(p.gen_keys),
+        );
         out(&mut s, 14, LEGEND, YN);
     } else {
         out(&mut s, 14, 4, "Record numbers:");
         entry(&mut s, 15, true, "Generate", "RECNBR", 1, yn(p.recnbr));
         out(&mut s, 15, LEGEND, YN);
-        entry(&mut s, 16, true, "Store in a field", "RECNBRFLD", 1, yn(p.recnbr_field));
+        entry(
+            &mut s,
+            16,
+            true,
+            "Store in a field",
+            "RECNBRFLD",
+            1,
+            yn(p.recnbr_field),
+        );
         out(&mut s, 16, LEGEND, YN);
-        entry(&mut s, 17, true, "Heading", "RECNBRHDG", 30, &p.recnbr_heading);
-        entry(&mut s, 20, false, "Processing", "PROCESS", 1, if p.sequential { "2" } else { "1" });
+        entry(
+            &mut s,
+            17,
+            true,
+            "Heading",
+            "RECNBRHDG",
+            30,
+            &p.recnbr_heading,
+        );
+        entry(
+            &mut s,
+            20,
+            false,
+            "Processing",
+            "PROCESS",
+            1,
+            if p.sequential { "2" } else { "1" },
+        );
         out(&mut s, 20, LEGEND, "1=Direct");
         out(&mut s, 21, LEGEND, "2=Sequential");
     }
     keys(
         &mut s,
-        &[(23, 2, "F3=Exit"), (23, 15, "F12=Cancel"), (23, 33, "F14=Display definition")],
+        &[
+            (23, 2, "F3=Exit"),
+            (23, 15, "F12=Cancel"),
+            (23, 33, "F14=Display definition"),
+        ],
     );
     bottom_line(&mut s, message, false);
     s.cursor = Some((5, VAL));
@@ -140,7 +184,13 @@ mod tests {
         apply(&mut p, &v).unwrap();
         assert_eq!(p.format, Format::Single);
         assert!(!p.audit && !p.sequential);
-        let bad = |k: &str| if k == "S36" { "X".into() } else { String::new() };
+        let bad = |k: &str| {
+            if k == "S36" {
+                "X".into()
+            } else {
+                String::new()
+            }
+        };
         assert!(apply(&mut p, &bad).is_err());
     }
 }

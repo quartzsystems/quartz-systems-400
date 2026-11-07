@@ -39,7 +39,9 @@ pub struct Found {
 static FOUND: Mutex<Option<Found>> = Mutex::new(None);
 
 fn read_trim(p: &Path) -> String {
-    fs::read_to_string(p).map(|s| s.trim().to_string()).unwrap_or_default()
+    fs::read_to_string(p)
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
 }
 
 /// Block devices to try: `(node name, whole disk)`, in order.
@@ -50,7 +52,10 @@ fn candidates() -> Vec<(String, String)> {
     let mut v: Vec<(u8, String, String)> = Vec::new();
     for e in dir.flatten() {
         let name = e.file_name().to_string_lossy().into_owned();
-        if ["loop", "ram", "zram", "dm-", "md"].iter().any(|p| name.starts_with(p)) {
+        if ["loop", "ram", "zram", "dm-", "md"]
+            .iter()
+            .any(|p| name.starts_with(p))
+        {
             continue;
         }
         let sys = Path::new(SYS_BLOCK).join(&name);
@@ -106,16 +111,20 @@ fn with_mount<T>(dev: &str, fstype: &str, f: impl FnOnce(&Path) -> T) -> Result<
 
 fn try_device(dev: &str) -> Option<(&'static str, Manifest)> {
     let fstype = sniff(dev)?;
-    let text = with_mount(dev, fstype, |at| fs::read_to_string(at.join(manifest::PATH)).ok())
-        .ok()
-        .flatten()?;
+    let text = with_mount(dev, fstype, |at| {
+        fs::read_to_string(at.join(manifest::PATH)).ok()
+    })
+    .ok()
+    .flatten()?;
     Manifest::parse(&text).ok().map(|m| (fstype, m))
 }
 
 /// The installation media: the first block device whose file system
 /// holds the manifest. Remembered once found.
 pub fn locate() -> Result<Found, String> {
-    let mut g = FOUND.lock().map_err(|_| "media lock poisoned".to_string())?;
+    let mut g = FOUND
+        .lock()
+        .map_err(|_| "media lock poisoned".to_string())?;
     if let Some(f) = g.as_ref() {
         return Ok(f.clone());
     }
@@ -186,15 +195,21 @@ pub fn response(system: &mut System) -> Result<Option<(String, instmedia::Respon
     let path = match system.boot.rsp.as_deref().map(Source::of) {
         Some(src @ (Source::Url(_) | Source::Dhcp)) => {
             let rsp = system.boot.rsp.clone().unwrap_or_default();
-            return super::netrsp::text(system, &src).map_err(|e| format!("qs400.rsp={rsp}: {e}")).and_then(parse);
+            return super::netrsp::text(system, &src)
+                .map_err(|e| format!("qs400.rsp={rsp}: {e}"))
+                .and_then(parse);
         }
         Some(Source::Media(p)) => Some(p),
         None => None,
     };
     let on_media = match locate() {
         Ok(f) => {
-            let want = path.clone().unwrap_or_else(|| manifest::RESPONSE.to_string());
-            with_mount(&f.device, f.fstype, |at| fs::read_to_string(at.join(&want)).ok())?
+            let want = path
+                .clone()
+                .unwrap_or_else(|| manifest::RESPONSE.to_string());
+            with_mount(&f.device, f.fstype, |at| {
+                fs::read_to_string(at.join(&want)).ok()
+            })?
         }
         Err(_) => None,
     };
@@ -207,7 +222,9 @@ pub fn response(system: &mut System) -> Result<Option<(String, instmedia::Respon
             match super::netrsp::text(system, &Source::Dhcp) {
                 Ok(t) => parse(t),
                 Err(e) => {
-                    system.out.serial(&format!("slic: install: no response file beside the boot file: {e}\n"));
+                    system.out.serial(&format!(
+                        "slic: install: no response file beside the boot file: {e}\n"
+                    ));
                     Ok(None)
                 }
             }
@@ -219,5 +236,9 @@ pub fn response(system: &mut System) -> Result<Option<(String, instmedia::Respon
 /// On a D IPL, the disk the media is on (a raw ISO, a stick), so it is
 /// never counted or offered as a unit.
 pub fn disk_on_d_ipl(ipl_d: bool) -> Option<String> {
-    if ipl_d { locate().ok().map(|f| f.disk) } else { None }
+    if ipl_d {
+        locate().ok().map(|f| f.disk)
+    } else {
+        None
+    }
 }

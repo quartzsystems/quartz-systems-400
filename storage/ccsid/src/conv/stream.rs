@@ -120,7 +120,11 @@ impl Converter {
             at += n;
         }
         // After a flush the output owes an SO before more pairs.
-        if at > 0 && start == Shift::Double && self.output == Shift::Single && !matches!(buf[0], SO | SI) {
+        if at > 0
+            && start == Shift::Double
+            && self.output == Shift::Single
+            && !matches!(buf[0], SO | SI)
+        {
             out.push(SO);
         }
         self.output = self.input;

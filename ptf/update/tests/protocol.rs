@@ -60,7 +60,12 @@ fn catalog() -> Catalog {
         groups: vec![
             group("QS99001", GroupKind::Group, 2, &["QS00002", "QS00007"]),
             group("C26100110", GroupKind::Cumulative, 1, &["QS00001"]),
-            group("C26300110", GroupKind::Cumulative, 1, &["QS00001", "QS00007"]),
+            group(
+                "C26300110",
+                GroupKind::Cumulative,
+                1,
+                &["QS00001", "QS00007"],
+            ),
             group("QS99100", GroupKind::Hiper, 4, &["QS00007"]),
         ],
     }
@@ -78,7 +83,10 @@ fn the_catalog_round_trips_signed() {
     assert_eq!(back.ptf("QS00001").unwrap().text, "Fix \"QS00001\"");
     // Another key, or one changed byte, does not verify.
     let other = [SigningKey::from_bytes(&[6; 32]).verifying_key().to_bytes()];
-    assert_eq!(Catalog::parse(&text, &other).unwrap_err().msgid(), "CPF8C32");
+    assert_eq!(
+        Catalog::parse(&text, &other).unwrap_err().msgid(),
+        "CPF8C32"
+    );
     let tampered = text.replace("sequence = 3", "sequence = 9");
     assert!(Catalog::parse(&tampered, &trusted).is_err());
     assert!(Catalog::parse(&c.encode(), &trusted).is_err());
@@ -128,11 +136,17 @@ fn groups_cumulative_packages_and_hiper() {
     let r = order::resolve(&c, &req(&["QS99001"], OrderMode::Required, &[], false));
     assert_eq!(ids(&r), ["QS00001", "QS00002", "QS00007"]);
     assert_eq!(r.groups, [("QS99001".to_string(), 2)]);
-    let r = order::resolve(&c, &req(&["*CUMPKG", "*HIPER"], OrderMode::PtfId, &[], false));
+    let r = order::resolve(
+        &c,
+        &req(&["*CUMPKG", "*HIPER"], OrderMode::PtfId, &[], false),
+    );
     assert_eq!(ids(&r), ["QS00001", "QS00007"]);
     assert_eq!(r.groups.len(), 2);
     assert_eq!(r.groups[0].0, "C26300110");
-    let r = order::resolve(&c, &req(&["QS00999", "QS99999"], OrderMode::Required, &[], false));
+    let r = order::resolve(
+        &c,
+        &req(&["QS00999", "QS99999"], OrderMode::Required, &[], false),
+    );
     assert!(r.ptfs.is_empty());
     assert_eq!(r.missing, ["QS00999", "QS99999"]);
 }
@@ -140,20 +154,37 @@ fn groups_cumulative_packages_and_hiper() {
 #[test]
 fn reorder_leaves_out_what_the_system_has() {
     let c = catalog();
-    let r = order::resolve(&c, &req(&["QS00002"], OrderMode::Required, &["QS00001"], false));
+    let r = order::resolve(
+        &c,
+        &req(&["QS00002"], OrderMode::Required, &["QS00001"], false),
+    );
     assert_eq!(ids(&r), ["QS00002"]);
-    let r = order::resolve(&c, &req(&["QS00002"], OrderMode::Required, &["QS00001"], true));
+    let r = order::resolve(
+        &c,
+        &req(&["QS00002"], OrderMode::Required, &["QS00001"], true),
+    );
     assert_eq!(ids(&r), ["QS00001", "QS00002"]);
     // A PTF superseded by one the system has is not ordered.
-    let r = order::resolve(&c, &req(&["QS00003"], OrderMode::PtfId, &["QS00006"], false));
+    let r = order::resolve(
+        &c,
+        &req(&["QS00003"], OrderMode::PtfId, &["QS00006"], false),
+    );
     assert!(r.ptfs.is_empty());
 }
 
 #[test]
 fn requests_and_answers_round_trip() {
-    let q = req(&["QS00002", "*CUMPKG"], OrderMode::PtfId, &["QS00001"], true);
+    let q = req(
+        &["QS00002", "*CUMPKG"],
+        OrderMode::PtfId,
+        &["QS00001"],
+        true,
+    );
     assert_eq!(OrderRequest::decode(&q.encode()).unwrap(), q);
-    let mut r = order::resolve(&catalog(), &req(&["QS99001", "QS00999"], OrderMode::Required, &[], false));
+    let mut r = order::resolve(
+        &catalog(),
+        &req(&["QS99001", "QS00999"], OrderMode::Required, &[], false),
+    );
     r.order = "0000042".into();
     assert_eq!(OrderResult::decode(&r.encode()).unwrap(), r);
     assert!(OrderRequest::decode("hello\n").is_err());

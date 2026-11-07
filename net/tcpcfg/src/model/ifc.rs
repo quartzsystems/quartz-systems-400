@@ -176,9 +176,11 @@ impl Interfaces {
 
     /// The entry with this alias name.
     pub fn by_alias(&self, alias: &str) -> Option<&Interface> {
-        self.list
-            .iter()
-            .find(|i| i.alias.as_deref().is_some_and(|a| a.eq_ignore_ascii_case(alias)))
+        self.list.iter().find(|i| {
+            i.alias
+                .as_deref()
+                .is_some_and(|a| a.eq_ignore_ascii_case(alias))
+        })
     }
 
     /// `ADDTCPIFC`.
@@ -248,7 +250,10 @@ impl Interfaces {
         {
             return Err(Error::new(
                 msg::IN_USE,
-                format!("Interface {} names {addr} as its local interface.", user.addr),
+                format!(
+                    "Interface {} names {addr} as its local interface.",
+                    user.addr
+                ),
             ));
         }
         Ok(self.list.remove(at))
@@ -274,7 +279,10 @@ fn sort_key(a: &IfcAddr) -> (u8, u128) {
 }
 
 fn not_found(what: &str) -> Error {
-    Error::new(msg::NOT_FOUND, format!("Interface {what} is not configured."))
+    Error::new(
+        msg::NOT_FOUND,
+        format!("Interface {what} is not configured."),
+    )
 }
 
 #[cfg(test)]
@@ -300,7 +308,12 @@ mod tests {
         c.mtu = Some(1500);
         t.change(c).unwrap();
         assert_eq!(t.list[1].mtu, Some(1500));
-        assert_eq!(t.remove(&IfcAddr::parse("10.0.2.99").unwrap()).unwrap_err().msgid, msg::NOT_FOUND);
+        assert_eq!(
+            t.remove(&IfcAddr::parse("10.0.2.99").unwrap())
+                .unwrap_err()
+                .msgid,
+            msg::NOT_FOUND
+        );
         t.remove(&IfcAddr::parse("10.0.2.16").unwrap()).unwrap();
         assert_eq!(t.list.len(), 1);
     }
@@ -308,7 +321,10 @@ mod tests {
     #[test]
     fn validation() {
         let mut i = eth("10.0.2.0");
-        assert!(i.validate().is_err(), "a network address is not an interface");
+        assert!(
+            i.validate().is_err(),
+            "a network address is not an interface"
+        );
         i = eth("10.0.2.5");
         i.mtu = Some(100);
         assert!(i.validate().is_err());
@@ -333,7 +349,9 @@ mod tests {
         i.local_ifc = Some("10.9.9.9".parse().unwrap());
         t.add(i).unwrap();
         assert_eq!(
-            t.remove(&IfcAddr::parse("10.9.9.9").unwrap()).unwrap_err().msgid,
+            t.remove(&IfcAddr::parse("10.9.9.9").unwrap())
+                .unwrap_err()
+                .msgid,
             msg::IN_USE
         );
     }

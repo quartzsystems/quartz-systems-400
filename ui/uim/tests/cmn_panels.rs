@@ -227,5 +227,9 @@ fn wrkcfgsts_dev() {
     l.total = None;
     l.complete = false;
     d.set_list("CFGS", l);
-    compare_in(&dir(), "wrkcfgsts-dev", &render(&g, "WRKCFGSTS", &d, &opts("PUB400")).unwrap());
+    compare_in(
+        &dir(),
+        "wrkcfgsts-dev",
+        &render(&g, "WRKCFGSTS", &d, &opts("PUB400")).unwrap(),
+    );
 }

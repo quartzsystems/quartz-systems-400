@@ -162,8 +162,20 @@ impl Session {
     /// A session over a file's text. `size` is the file's length in
     /// bytes (for the record length).
     #[must_use]
-    pub fn new(mode: Mode, path: &str, text: Text, file_ccsid: u16, job_ccsid: u16, size: usize) -> Self {
-        let longest = text.lines.iter().map(|l| l.chars().count()).max().unwrap_or(0);
+    pub fn new(
+        mode: Mode,
+        path: &str,
+        text: Text,
+        file_ccsid: u16,
+        job_ccsid: u16,
+        size: usize,
+    ) -> Self {
+        let longest = text
+            .lines
+            .iter()
+            .map(|l| l.chars().count())
+            .max()
+            .unwrap_or(0);
         let (rec_by, col_by) = match mode {
             Mode::Edit => (8, 74),
             Mode::Browse => (14, 79),
@@ -254,8 +266,16 @@ impl Session {
     #[must_use]
     pub fn hex_rows(&self, i: usize) -> (String, String) {
         let bytes = ccsid::conv::from_str(self.file_ccsid, self.buf.text(i)).unwrap_or_default();
-        let digit = |n: u8| char::from_digit(u32::from(n), 16).unwrap_or('0').to_ascii_uppercase();
-        let w: Vec<u8> = bytes.into_iter().skip(self.left - 1).take(self.width()).collect();
+        let digit = |n: u8| {
+            char::from_digit(u32::from(n), 16)
+                .unwrap_or('0')
+                .to_ascii_uppercase()
+        };
+        let w: Vec<u8> = bytes
+            .into_iter()
+            .skip(self.left - 1)
+            .take(self.width())
+            .collect();
         (
             w.iter().map(|b| digit(b >> 4)).collect(),
             w.iter().map(|b| digit(b & 15)).collect(),
@@ -580,7 +600,13 @@ impl Session {
     }
 
     /// The services display's changes.
-    pub fn services(&mut self, ccsid: Option<u16>, eol: Option<Eol>, shift: Option<usize>, scroll: Option<usize>) {
+    pub fn services(
+        &mut self,
+        ccsid: Option<u16>,
+        eol: Option<Eol>,
+        shift: Option<usize>,
+        scroll: Option<usize>,
+    ) {
         if let Some(c) = ccsid.filter(|c| *c != self.file_ccsid) {
             if ccsid::conv::Codec::of(c).is_err() {
                 self.say("CPDB607", &[&c.to_string()]);
@@ -618,7 +644,14 @@ mod tests {
 
     fn probe(mode: Mode) -> Session {
         let bytes = b"Quartz IFS probe\r\nline two\r\n\tline three after a tab\r\n";
-        Session::new(mode, "/p", Text::decode(bytes, 819).unwrap(), 819, 37, bytes.len())
+        Session::new(
+            mode,
+            "/p",
+            Text::decode(bytes, 819).unwrap(),
+            819,
+            37,
+            bytes.len(),
+        )
     }
 
     #[test]
@@ -657,7 +690,11 @@ mod tests {
     fn f12_warns_once() {
         let mut s = probe(Mode::Edit);
         let typed = Input {
-            rows: vec![RowInput { row: 1, data: Some("x".into()), cmd: None }],
+            rows: vec![RowInput {
+                row: 1,
+                data: Some("x".into()),
+                cmd: None,
+            }],
             ..Input::default()
         };
         assert_eq!(s.key(Key::Enter, &typed), Action::Stay);
@@ -670,7 +707,11 @@ mod tests {
     fn insert_from_the_top_and_unused_lines_go() {
         let mut s = probe(Mode::Edit);
         let i = Input {
-            rows: vec![RowInput { row: 0, cmd: Some("i2".into()), data: None }],
+            rows: vec![RowInput {
+                row: 0,
+                cmd: Some("i2".into()),
+                data: None,
+            }],
             ..Input::default()
         };
         s.key(Key::Enter, &i);
@@ -678,7 +719,11 @@ mod tests {
         let id = s.cursor.unwrap().0;
         assert_eq!(s.row_of(id), Some(1));
         let typed = Input {
-            rows: vec![RowInput { row: 1, data: Some("new".into()), cmd: None }],
+            rows: vec![RowInput {
+                row: 1,
+                data: Some("new".into()),
+                cmd: None,
+            }],
             ..Input::default()
         };
         s.key(Key::Enter, &typed);
@@ -689,12 +734,30 @@ mod tests {
     #[test]
     fn find_change_scroll() {
         let mut s = probe(Mode::Edit);
-        s.key(Key::Enter, &Input { control: "f three".into(), ..Input::default() });
+        s.key(
+            Key::Enter,
+            &Input {
+                control: "f three".into(),
+                ..Input::default()
+            },
+        );
         assert_eq!(s.found, Some((2, 6)));
         assert_eq!(s.top, 3);
-        s.key(Key::Enter, &Input { control: "c two 2 all".into(), ..Input::default() });
+        s.key(
+            Key::Enter,
+            &Input {
+                control: "c two 2 all".into(),
+                ..Input::default()
+            },
+        );
         assert_eq!(s.buf.text(1), "line 2");
-        s.key(Key::Enter, &Input { control: "t".into(), ..Input::default() });
+        s.key(
+            Key::Enter,
+            &Input {
+                control: "t".into(),
+                ..Input::default()
+            },
+        );
         assert_eq!(s.top, 1);
         s.key(Key::F(20), &Input::default());
         assert_eq!(s.left, 59);
@@ -705,7 +768,13 @@ mod tests {
     #[test]
     fn browse_does_not_change() {
         let mut s = probe(Mode::Browse);
-        s.key(Key::Enter, &Input { control: "c a b".into(), ..Input::default() });
+        s.key(
+            Key::Enter,
+            &Input {
+                control: "c a b".into(),
+                ..Input::default()
+            },
+        );
         assert_eq!(s.message.as_ref().unwrap().id, "CPIB606");
         assert_eq!(s.key(Key::F(10), &Input::default()), Action::Stay);
         assert!(s.hex);

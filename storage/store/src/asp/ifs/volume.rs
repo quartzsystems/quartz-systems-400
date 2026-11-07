@@ -96,8 +96,14 @@ mod tests {
     #[test]
     fn volume_pages_map_through_the_extents() {
         let v = Volume::new(vec![
-            IfsExtent { start: 100, pages: 10 },
-            IfsExtent { start: 500, pages: 5 },
+            IfsExtent {
+                start: 100,
+                pages: 10,
+            },
+            IfsExtent {
+                start: 500,
+                pages: 5,
+            },
         ]);
         assert_eq!(v.pages(), 15);
         assert_eq!(v.locate(0), Some((100, 10)));

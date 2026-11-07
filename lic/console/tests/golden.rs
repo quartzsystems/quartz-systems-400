@@ -46,5 +46,9 @@ fn sign_on_matches_the_71_capture() {
     for i in 0..12 {
         assert_eq!(got[i].trim_end(), want[i].trim_end(), "row {}", i + 1);
     }
-    assert_eq!(got[23].find("(C)"), want[23].find("(C)"), "the copyright row");
+    assert_eq!(
+        got[23].find("(C)"),
+        want[23].find("(C)"),
+        "the copyright row"
+    );
 }

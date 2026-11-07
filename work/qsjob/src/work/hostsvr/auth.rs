@@ -5,9 +5,9 @@
 //! Signing on for a host server job, through the storage service: the
 //! proof checked as a sign-on, the job then run as the user.
 
+use hostserver::rmtcmd::JobMessage;
 use hostserver::session::{Auth, Proof};
 use hostserver::signon::{Change, Info, Refusal, SignonHost, stamp_of};
-use hostserver::rmtcmd::JobMessage;
 use hostsvr::common::rc;
 use sec::signon::Substitute;
 use stg::{Client, Shared};
@@ -52,7 +52,11 @@ impl Auth for JobAuth {
             .borrow_mut()
             .with(|l| l.sysval("QPWDLVL".into()))
             .and_then(|v| match v.kind {
-                sysapi::SysValKind::Bin => v.data.get(..4).and_then(|b| b.try_into().ok()).map(i32::from_be_bytes),
+                sysapi::SysValKind::Bin => v
+                    .data
+                    .get(..4)
+                    .and_then(|b| b.try_into().ok())
+                    .map(i32::from_be_bytes),
                 sysapi::SysValKind::Char => ccsid::from_ebcdic(&v.data).trim().parse().ok(),
             })
             .and_then(|n| u8::try_from(n).ok())
@@ -97,7 +101,13 @@ impl SignonHost for JobAuth {
         })
     }
 
-    fn token(&mut self, user: &str, proof: Proof<'_>, kind: u8, timeout: u32) -> Result<Vec<u8>, u32> {
+    fn token(
+        &mut self,
+        user: &str,
+        proof: Proof<'_>,
+        kind: u8,
+        timeout: u32,
+    ) -> Result<Vec<u8>, u32> {
         let (sub, token) = substitute(proof);
         self.link
             .borrow_mut()

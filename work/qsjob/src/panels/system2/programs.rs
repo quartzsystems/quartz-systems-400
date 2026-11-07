@@ -10,8 +10,8 @@ use cmd::Resolved;
 use mi::Job;
 
 use super::{
-    act, dashed, dialog, fetch, fill, list_of, parm, parm_list, qual, service_text,
-    set_vars, show, var_of,
+    act, dashed, dialog, fetch, fill, list_of, parm, parm_list, qual, service_text, set_vars, show,
+    var_of,
 };
 use crate::command::Fail;
 use crate::console::host::Host;
@@ -87,7 +87,13 @@ const SRV_DETAILS: &[Detail] = &[
         0,
         "(No procedure exports)",
     ),
-    listed("*DTAEXP", "Data Exports:", "DATAEXP", 1, "(No data exports)"),
+    listed(
+        "*DTAEXP",
+        "Data Exports:",
+        "DATAEXP",
+        1,
+        "(No data exports)",
+    ),
     listed(
         "*ACTGRPEXP",
         "Activation group exports:",
@@ -108,7 +114,10 @@ const SRV_DETAILS: &[Detail] = &[
 
 /// A heading centered over the display.
 fn centered(text: &str) -> String {
-    format!("{}{text}", " ".repeat(80usize.saturating_sub(text.len()) / 2 - 1))
+    format!(
+        "{}{text}",
+        " ".repeat(80usize.saturating_sub(text.len()) / 2 - 1)
+    )
 }
 
 /// `Display n of m`, right-aligned in 15.
@@ -126,7 +135,11 @@ fn sig_chars(hex: &str) -> String {
         .iter()
         .map(|&b| {
             let c = ccsid::char_of(b);
-            if c.is_ascii_graphic() || c == ' ' { c } else { '.' }
+            if c.is_ascii_graphic() || c == ' ' {
+                c
+            } else {
+                '.'
+            }
         })
         .collect()
 }
@@ -147,13 +160,18 @@ pub fn dsppgm(
     srvpgm: bool,
 ) -> Option<Result<String, Fail>> {
     let (name, lib) = qual(cmd, if srvpgm { "SRVPGM" } else { "PGM" });
-    let data = read!(&cmd.name, fetch(host, if srvpgm { "SRVPGM" } else { "PGM" }, &[&lib, &name]));
+    let data = read!(
+        &cmd.name,
+        fetch(host, if srvpgm { "SRVPGM" } else { "PGM" }, &[&lib, &name])
+    );
     let all = if srvpgm { SRV_DETAILS } else { PGM_DETAILS };
     let asked = parm_list(cmd, "DETAIL");
     let details: Vec<&Detail> = if asked.is_empty() || asked.iter().any(|a| a == "*ALL") {
         all.iter().collect()
     } else {
-        all.iter().filter(|d| asked.iter().any(|a| a == d.name)).collect()
+        all.iter()
+            .filter(|d| asked.iter().any(|a| a == d.name))
+            .collect()
     };
     if details.is_empty() {
         return Some(Err(Fail::later(&cmd.name)));
@@ -377,11 +395,5 @@ pub(crate) fn view_report(
 /// `DSPPGMREF`: what the program refers to, as its report shows it.
 pub fn dsppgmref(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let text = service_text(host, &r.text())?;
-    view_report(
-        host,
-        surface,
-        "Display Spooled File",
-        "QPDSPPGM",
-        &text,
-    )
+    view_report(host, surface, "Display Spooled File", "QPDSPPGM", &text)
 }

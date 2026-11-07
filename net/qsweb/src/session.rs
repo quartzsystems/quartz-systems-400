@@ -81,7 +81,13 @@ impl Sessions {
         let mut map = self.map.lock().expect("sessions");
         let idle = self.idle();
         map.retain(|_, e| e.last.elapsed() < idle);
-        map.insert(s.id.clone(), Entry { s: s.clone(), last: Instant::now() });
+        map.insert(
+            s.id.clone(),
+            Entry {
+                s: s.clone(),
+                last: Instant::now(),
+            },
+        );
         s
     }
 
@@ -134,7 +140,12 @@ impl Sessions {
     /// Sessions alive now.
     pub fn count(&self) -> usize {
         let idle = self.idle();
-        self.map.lock().expect("sessions").values().filter(|e| e.last.elapsed() < idle).count()
+        self.map
+            .lock()
+            .expect("sessions")
+            .values()
+            .filter(|e| e.last.elapsed() < idle)
+            .count()
     }
 }
 
@@ -145,7 +156,11 @@ const NAV_LAST: &str = "nav.last";
 
 /// The navigation groups open in `s`.
 pub fn nav_open(s: &Session) -> Vec<String> {
-    s.get(NAV_OPEN).split('|').filter(|l| !l.is_empty()).map(ToString::to_string).collect()
+    s.get(NAV_OPEN)
+        .split('|')
+        .filter(|l| !l.is_empty())
+        .map(ToString::to_string)
+        .collect()
 }
 
 fn set_open(s: &mut Session, open: &[String]) {

@@ -29,7 +29,12 @@ struct Select {
 }
 
 /// `WRKUSRJOB [USER()] [STATUS()]`.
-pub fn wrkusrjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkusrjob(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let user = match parm(r, "USER").as_deref() {
         None | Some("*") => Some(host.start.user.clone()),
         Some("*ALL") => None,
@@ -47,7 +52,12 @@ pub fn wrkusrjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
 }
 
 /// `WRKSBSJOB [SBS()]`.
-pub fn wrksbsjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrksbsjob(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let sbs = parm(r, "SBS").unwrap_or_else(|| "*ALL".into());
     let mut d = crate::panels::dialog(host, "QUIWRKUSRJ")?;
     d.set("SBS", &sbs);

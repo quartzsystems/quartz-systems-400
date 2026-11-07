@@ -41,13 +41,25 @@ struct Slot {
 /// Whether a module runs the cycle with a primary file.
 #[must_use]
 pub fn has_primary(g: &Gen<'_>) -> bool {
-    g.files.iter().any(|f| f.scope == 0 && f.designation == "P" && f.dev == Dev::Disk)
+    g.files
+        .iter()
+        .any(|f| f.scope == 0 && f.designation == "P" && f.dev == Dev::Disk)
 }
 
 /// The files the cycle reads: the primary, then the secondaries.
 fn cycle_files(g: &Gen<'_>) -> Vec<File> {
-    let mut v: Vec<File> = g.files.iter().filter(|f| f.scope == 0 && f.designation == "P").cloned().collect();
-    v.extend(g.files.iter().filter(|f| f.scope == 0 && f.designation == "S").cloned());
+    let mut v: Vec<File> = g
+        .files
+        .iter()
+        .filter(|f| f.scope == 0 && f.designation == "P")
+        .cloned()
+        .collect();
+    v.extend(
+        g.files
+            .iter()
+            .filter(|f| f.scope == 0 && f.designation == "S")
+            .cloned(),
+    );
     v
 }
 
@@ -57,10 +69,16 @@ fn slots(g: &Gen<'_>, f: &File, matching: bool) -> Vec<Slot> {
     let pick = |x: &rpgfront::ast::InputField| -> Option<u8> {
         let w = if matching { &x.matching } else { &x.level };
         let p = if matching { 'M' } else { 'L' };
-        w.strip_prefix(p).and_then(|d| d.parse::<u8>().ok()).filter(|d| (1..=9).contains(d))
+        w.strip_prefix(p)
+            .and_then(|d| d.parse::<u8>().ok())
+            .filter(|d| (1..=9).contains(d))
     };
     if let Some(r) = g.t.recfmts.iter().find(|r| r.file_name == f.name) {
-        for i in g.inputs.iter().filter(|i| i.external && (i.name == r.name || i.name == r.fmt.name)) {
+        for i in g
+            .inputs
+            .iter()
+            .filter(|i| i.external && (i.name == r.name || i.name == r.fmt.name))
+        {
             for x in &i.fields {
                 let Some(n) = pick(x) else { continue };
                 if let Some(k) = r.fmt.fields.iter().position(|d| d.name == x.extname) {
@@ -78,7 +96,10 @@ fn slots(g: &Gen<'_>, f: &File, matching: bool) -> Vec<Slot> {
     for (k, i) in g.records_of(f).iter().enumerate() {
         for x in &i.fields {
             let Some(n) = pick(x) else { continue };
-            let (Ok(from), Ok(to)) = (x.from.trim().parse::<u32>(), x.to.trim().parse::<u32>()) else { continue };
+            let (Ok(from), Ok(to)) = (x.from.trim().parse::<u32>(), x.to.trim().parse::<u32>())
+            else {
+                continue;
+            };
             out.push(Slot {
                 rt: i64::try_from(k).unwrap_or(0),
                 off: from - 1,
@@ -115,7 +136,10 @@ fn gather(g: &mut Gen<'_>, f: &File, slots: &[Slot], len: u32) -> String {
             g.b.place(&go);
         }
         if at + s.len <= len {
-            g.b.ins(format!("mov [{q} +{at}]:char({}), [{p} +{}]:char({})", s.len, s.off, s.len));
+            g.b.ins(format!(
+                "mov [{q} +{at}]:char({}), [{p} +{}]:char({})",
+                s.len, s.off, s.len
+            ));
         }
         g.b.place(&skip);
         at += s.len;
@@ -146,28 +170,45 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.tags.clear();
     g.scan_labels(&m.calcs);
     g.open.clear();
-    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !super::is_total(&s.level));
+    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) =
+        m.calcs.iter().partition(|s| !super::is_total(&s.level));
     // Where RETURN goes, *INZSR's too: the end, closing when LR is on.
     let finish = g.b.label();
     g.main_exit = Some(finish.clone());
     let (detail, subrs) = super::subroutine_procs(g, &detail);
     g.debug_vars(0);
     let files = cycle_files(g);
-    let lvl_slots: Vec<(File, Vec<Slot>)> = files.iter().map(|f| (f.clone(), slots(g, f, false))).collect();
-    let mt_slots: Vec<(File, Vec<Slot>)> = files.iter().map(|f| (f.clone(), slots(g, f, true))).collect();
-    let mlen = mt_slots.iter().map(|(_, s)| s.iter().map(|x| x.len).sum::<u32>()).max().unwrap_or(0);
-    let clen = lvl_slots.iter().map(|(_, s)| s.iter().map(|x| x.len).sum::<u32>()).max().unwrap_or(0);
+    let lvl_slots: Vec<(File, Vec<Slot>)> = files
+        .iter()
+        .map(|f| (f.clone(), slots(g, f, false)))
+        .collect();
+    let mt_slots: Vec<(File, Vec<Slot>)> = files
+        .iter()
+        .map(|f| (f.clone(), slots(g, f, true)))
+        .collect();
+    let mlen = mt_slots
+        .iter()
+        .map(|(_, s)| s.iter().map(|x| x.len).sum::<u32>())
+        .max()
+        .unwrap_or(0);
+    let clen = lvl_slots
+        .iter()
+        .map(|(_, s)| s.iter().map(|x| x.len).sum::<u32>())
+        .max()
+        .unwrap_or(0);
     // The cycle's own storage.
     g.b.decls.push("static $cy_first: ind".into());
     g.b.decls.push("static $cy_sel: i32".into());
     g.b.decls.push("static $cy_force: i32 inz(-1)".into());
     g.b.decls.push("static $cy_rp: i32".into());
-    g.b.decls.push(format!("static $cy_lv: char({})", clen.max(1)));
+    g.b.decls
+        .push(format!("static $cy_lv: char({})", clen.max(1)));
     for f in &files {
         let n = mangle(&f.name);
         g.b.decls.push(format!("static $cy_has_{n}: ind"));
         g.b.decls.push(format!("static $cy_end_{n}: ind"));
-        g.b.decls.push(format!("static $cy_m_{n}: char({})", mlen.max(1)));
+        g.b.decls
+            .push(format!("static $cy_m_{n}: char({})", mlen.max(1)));
         g.b.decls.push(format!("static $cy_ms_{n}: ind"));
     }
     let start = g.b.label();
@@ -177,7 +218,10 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.place(&init);
     g.b.ins("callb _qrni_init()");
     let all = g.files;
-    for f in all.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
+    for f in all
+        .iter()
+        .filter(|f| f.scope == 0 && !f.usropn && !f.template)
+    {
         g.init_open(f);
     }
     g.dtaara_auto(false);
@@ -243,12 +287,23 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     for f in &files {
         let recs = g.records_of(f);
         for r in recs {
-            if !r.rid.is_empty() && r.rid != "**" && let Some(x) = g.indicator(&r.rid) {
+            if !r.rid.is_empty()
+                && r.rid != "**"
+                && let Some(x) = g.indicator(&r.rid)
+            {
                 g.b.ins(format!("store {}, *OFF", x.op));
             }
         }
-        for i in g.inputs.clone().iter().filter(|i| i.external && !i.rid.is_empty()) {
-            if g.t.recfmts.iter().any(|r| r.file_name == f.name && (r.name == i.name || r.fmt.name == i.name))
+        for i in g
+            .inputs
+            .clone()
+            .iter()
+            .filter(|i| i.external && !i.rid.is_empty())
+        {
+            if g.t
+                .recfmts
+                .iter()
+                .any(|r| r.file_name == f.name && (r.name == i.name || r.fmt.name == i.name))
                 && let Some(x) = g.indicator(&i.rid)
             {
                 g.b.ins(format!("store {}, *OFF", x.op));
@@ -450,8 +505,16 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         g.b.place(&go);
         g.set_rid(f);
         // External record identifying indicators.
-        for i in g.inputs.clone().iter().filter(|i| i.external && !i.rid.is_empty()) {
-            if g.t.recfmts.iter().any(|r| r.file_name == f.name && (r.name == i.name || r.fmt.name == i.name))
+        for i in g
+            .inputs
+            .clone()
+            .iter()
+            .filter(|i| i.external && !i.rid.is_empty())
+        {
+            if g.t
+                .recfmts
+                .iter()
+                .any(|r| r.file_name == f.name && (r.name == i.name || r.fmt.name == i.name))
                 && let Some(x) = g.indicator(&i.rid)
             {
                 g.b.ins(format!("store {}, *ON", x.op));
@@ -462,7 +525,10 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
             let first = g.b.reg();
             g.b.ins(format!("{first} = load $cy_first"));
             // Levels from the highest down: a change sets it and those below.
-            let levels: Vec<u8> = (1..=9u8).rev().filter(|l| sl.iter().any(|s| s.n == *l)).collect();
+            let levels: Vec<u8> = (1..=9u8)
+                .rev()
+                .filter(|l| sl.iter().any(|s| s.n == *l))
+                .collect();
             let done = g.b.label();
             for l in &levels {
                 let len = level_len(sl, *l);
@@ -472,7 +538,9 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
                 let q = g.b.reg();
                 g.b.ins(format!("{q} = addr $cy_lv"));
                 let ne = g.b.reg();
-                g.b.ins(format!("{ne} = str.cmp.ne [{p} +0]:char({len}), [{q} +0]:char({len})"));
+                g.b.ins(format!(
+                    "{ne} = str.cmp.ne [{p} +0]:char({len}), [{q} +0]:char({len})"
+                ));
                 let brk = g.b.reg();
                 g.b.ins(format!("{brk} = select {first}, {first}, {ne}"));
                 let on = g.b.label();
@@ -607,7 +675,11 @@ impl Gen<'_> {
     /// `FORCE file`: the next cycle takes its record from that primary
     /// or secondary file.
     pub fn force_op(&mut self, op: &rpgfront::ast::Op) {
-        let Some(name) = op.f2.first().and_then(|e| e.name().map(str::to_ascii_uppercase)) else {
+        let Some(name) = op
+            .f2
+            .first()
+            .and_then(|e| e.name().map(str::to_ascii_uppercase))
+        else {
             self.err(crate::diag::ids::FILE_NOT_DEFINED, 30, op.code.clone());
             return;
         };

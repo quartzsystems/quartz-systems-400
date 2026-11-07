@@ -23,7 +23,12 @@ fn traces() -> Vec<(String, Trace)> {
         if p.extension().is_some_and(|x| x == "trace") {
             let text = std::fs::read_to_string(&p).unwrap();
             let t = Trace::parse(&text).unwrap_or_else(|e| panic!("{}: {e}", p.display()));
-            assert_eq!(t.write(), text.replace("\r\n", "\n"), "{} writes back", p.display());
+            assert_eq!(
+                t.write(),
+                text.replace("\r\n", "\n"),
+                "{} writes back",
+                p.display()
+            );
             out.push((p.file_name().unwrap().to_string_lossy().into_owned(), t));
         }
     }
@@ -38,7 +43,8 @@ fn every_dss_re_encodes() {
         for c in &t.connections {
             for ch in c.chunks() {
                 assert!(ch.framed, "{name} {}: raw bytes", ch.seq);
-                let (d, n) = Dss::decode(&ch.bytes).unwrap_or_else(|e| panic!("{name} {}: {e}", ch.seq));
+                let (d, n) =
+                    Dss::decode(&ch.bytes).unwrap_or_else(|e| panic!("{name} {}: {e}", ch.seq));
                 assert_eq!(n, ch.bytes.len(), "{name} {}", ch.seq);
                 assert_eq!(d.encode(), ch.bytes, "{name} {} re-encodes", ch.seq);
                 assert!(!d.objects().is_empty(), "{name} {}: objects", ch.seq);
@@ -60,21 +66,28 @@ fn sql_objects_decode() {
                     let mut r = Reader::new(o.bytes(), Repr::default());
                     match o.cp {
                         obj::SQLCARD => {
-                            let ca = sqlca::read(&mut r, 7).unwrap_or_else(|e| panic!("{name} {}: {e}", ch.seq));
+                            let ca = sqlca::read(&mut r, 7)
+                                .unwrap_or_else(|e| panic!("{name} {}: {e}", ch.seq));
                             assert!(r.done(), "{name} {}: SQLCARD read to its end", ch.seq);
                             if let Some(ca) = ca {
                                 codes.push(ca.sqlcode);
                             }
                         }
                         obj::SQLDARD => {
-                            sqlda::read(&mut r, 7).unwrap_or_else(|e| panic!("{name} {}: {e}", ch.seq));
+                            sqlda::read(&mut r, 7)
+                                .unwrap_or_else(|e| panic!("{name} {}: {e}", ch.seq));
                             assert!(r.done(), "{name} {}: SQLDARD read to its end", ch.seq);
                         }
                         obj::QRYDSC => fields = desc::fields(o.bytes()).unwrap(),
                         obj::QRYDTA => {
                             for row in rows::read_rows(&mut r, &fields, 7).unwrap() {
                                 if let Row::Values(v) = row {
-                                    rows_seen.push(v.iter().map(ddm::sql::Value::render).collect::<Vec<_>>().join("|"));
+                                    rows_seen.push(
+                                        v.iter()
+                                            .map(ddm::sql::Value::render)
+                                            .collect::<Vec<_>>()
+                                            .join("|"),
+                                    );
                                 }
                             }
                         }
@@ -86,9 +99,14 @@ fn sql_objects_decode() {
     }
     assert!(codes.contains(&-204), "the SQL error");
     assert!(codes.contains(&100), "the end of data");
-    assert!(rows_seen.iter().any(|r| r.starts_with("AJ_DMART_INFO|11|")), "{rows_seen:?}");
     assert!(
-        rows_seen.contains(&"12.50|42|7|2026-01-02|10.11.12|-|-3|1.5|2026-01-02-03.04.05.123456".to_string()),
+        rows_seen.iter().any(|r| r.starts_with("AJ_DMART_INFO|11|")),
+        "{rows_seen:?}"
+    );
+    assert!(
+        rows_seen.contains(
+            &"12.50|42|7|2026-01-02|10.11.12|-|-3|1.5|2026-01-02-03.04.05.123456".to_string()
+        ),
         "{rows_seen:?}"
     );
     assert!(rows_seen.contains(&"2|-".to_string()));
@@ -108,7 +126,12 @@ fn file_objects_decode() {
                     match o.cp {
                         ddm::cp::s38::S38OPEN => {
                             let u = Ufcb::decode(o.get(param::S38UFCB).unwrap().bytes()).unwrap();
-                            assert_eq!(u.encode(), o.get(param::S38UFCB).unwrap().bytes(), "{name} {}", ch.seq);
+                            assert_eq!(
+                                u.encode(),
+                                o.get(param::S38UFCB).unwrap().bytes(),
+                                "{name} {}",
+                                ch.seq
+                            );
                             opens.push(u);
                         }
                         param::S38OPNFB => {
@@ -138,7 +161,11 @@ fn file_objects_decode() {
             }
         }
     }
-    assert!(opens.iter().any(|u| u.library == "QIWS" && u.file == "QCUSTCDT" && u.flags == file::ufcb::INPUT));
+    assert!(
+        opens
+            .iter()
+            .any(|u| u.library == "QIWS" && u.file == "QCUSTCDT" && u.flags == file::ufcb::INPUT)
+    );
     assert!(opens.iter().any(|u| u.file == "QSDDMT" && !u.arrival));
     assert!(records > 10);
     assert!(eof >= 3);

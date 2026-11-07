@@ -148,10 +148,16 @@ fn create_package_support_delete() {
     };
     s.libs.insert("APPDTA".into());
     // A list shorter than its count, or another format, is refused.
-    let short = CrtPl { directories: &dirs[..20], ..p.clone() };
+    let short = CrtPl {
+        directories: &dirs[..20],
+        ..p.clone()
+    };
     assert_eq!(qszcrtpl(&mut s, &short).unwrap_err().id, "CPF3C1D");
     let other = e("SDIR0100", 8);
-    let fmt = CrtPl { dir_format: &other, ..p.clone() };
+    let fmt = CrtPl {
+        dir_format: &other,
+        ..p.clone()
+    };
     assert_eq!(qszcrtpl(&mut s, &fmt).unwrap_err().id, "CPF3C21");
     qszcrtpl(&mut s, &p).unwrap();
     let (lq, l) = s.loads().pop().unwrap();

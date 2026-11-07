@@ -34,7 +34,12 @@ fn db(n: i64) -> Db {
         wal_pages: 256,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -102,7 +107,11 @@ impl Db {
             Outcome::Rows(rs) => Ok(rs
                 .rows
                 .iter()
-                .map(|r| r.iter().map(|v| v.to_string().trim_end().to_string()).collect())
+                .map(|r| {
+                    r.iter()
+                        .map(|v| v.to_string().trim_end().to_string())
+                        .collect()
+                })
                 .collect()),
             o => panic!("{text}: {o:?}"),
         }
@@ -126,7 +135,9 @@ fn three_way(n: i64) {
     db.ctx.memory_limit = 8 << 20;
     let count = n.to_string();
     assert_eq!(
-        db.one("SELECT COUNT(*) FROM QSTEST.A, QSTEST.B, QSTEST.C WHERE A.BID = B.ID AND B.CID = C.ID"),
+        db.one(
+            "SELECT COUNT(*) FROM QSTEST.A, QSTEST.B, QSTEST.C WHERE A.BID = B.ID AND B.CID = C.ID"
+        ),
         count
     );
     assert_eq!(
@@ -155,7 +166,13 @@ fn three_way(n: i64) {
              JOIN QSTEST.C ON B.CID = C.ID ORDER BY A.ID DESC FETCH FIRST 2 ROWS ONLY",
         )
         .unwrap();
-    assert_eq!(rows, [[n.to_string(), expected(n, n).1], [(n - 1).to_string(), expected(n, n - 1).1]]);
+    assert_eq!(
+        rows,
+        [
+            [n.to_string(), expected(n, n).1],
+            [(n - 1).to_string(), expected(n, n - 1).1]
+        ]
+    );
     // A condition no key serves: tried row by row, the same answer.
     assert_eq!(
         db.one(
@@ -195,5 +212,8 @@ fn a_statement_past_its_limit_ends_with_sql0904() {
         assert_eq!(e.sqlcode(), -904, "{q}: {e}");
     }
     // What the failed statements held was given back.
-    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST.A, QSTEST.B WHERE A.BID = B.ID"), "400");
+    assert_eq!(
+        db.one("SELECT COUNT(*) FROM QSTEST.A, QSTEST.B WHERE A.BID = B.ID"),
+        "400"
+    );
 }

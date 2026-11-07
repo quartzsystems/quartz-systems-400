@@ -13,8 +13,9 @@ use std::time::Duration;
 use qap_proto::ops::connection::HelloReply;
 use qap_proto::ops::manage::{
     DiskUnits, EndHow, EndSubsystem, GetSystemValues, HardwareResources, IplSource, IplStatus,
-    ListHardwareResources, ListPtfs, ListSubsystems, PowerDown, Protection, PtfStatus, Ptfs, ResourceType,
-    SetSystemValue, SubsystemRef, SubsystemStatus, Subsystems, SystemValue, SystemValues, UnitStatus,
+    ListHardwareResources, ListPtfs, ListSubsystems, PowerDown, Protection, PtfStatus, Ptfs,
+    ResourceType, SetSystemValue, SubsystemRef, SubsystemStatus, Subsystems, SystemValue,
+    SystemValues, UnitStatus,
 };
 use qap_proto::types::ObjectName;
 use qap_proto::{Kind, Op, Service, Status};
@@ -58,8 +59,17 @@ fn subsystems_listed_and_paged() {
         .body_as()
         .unwrap();
     assert_eq!(all.total, 8);
-    let names: Vec<&str> = all.subsystems.iter().map(|s| s.sbsd.name.as_str()).collect();
-    assert_eq!(names, ["QBATCH", "QCTL", "QINTER", "QSPL", "QSYSWRK", "QUSRWRK", "HLSBS", "QSERVER"]);
+    let names: Vec<&str> = all
+        .subsystems
+        .iter()
+        .map(|s| s.sbsd.name.as_str())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "QBATCH", "QCTL", "QINTER", "QSPL", "QSYSWRK", "QUSRWRK", "HLSBS", "QSERVER"
+        ]
+    );
     assert!(all.subsystems[0].monitor.is_some());
     let page: Subsystems = r
         .client
@@ -81,7 +91,12 @@ fn subsystems_listed_and_paged() {
 #[test]
 fn starting_and_ending_need_jobctl() {
     let mut bob = signed_on("BOB", "SECRET1");
-    let rep = bob.client.call(Op::StartSubsystem, &SubsystemRef { sbsd: sbs("QSYS", "QSERVER") });
+    let rep = bob.client.call(
+        Op::StartSubsystem,
+        &SubsystemRef {
+            sbsd: sbs("QSYS", "QSERVER"),
+        },
+    );
     assert_eq!(rep.status, Status::NotAuthorized);
     assert_eq!(rep.message.unwrap().id, "CPF222E");
     assert!(audit(&bob).contains(&"AF K BOB".to_string()));
@@ -89,12 +104,25 @@ fn starting_and_ending_need_jobctl() {
     let mut op = common::start_with(cfg(), bob.c.clone());
     op.client.hello_range(7, 7);
     op.client.sign_on("OPER", "OPERPW1");
-    let start = |r: &mut Run, lib: &str, name: &str| r.client.call(Op::StartSubsystem, &SubsystemRef { sbsd: sbs(lib, name) });
+    let start = |r: &mut Run, lib: &str, name: &str| {
+        r.client.call(
+            Op::StartSubsystem,
+            &SubsystemRef {
+                sbsd: sbs(lib, name),
+            },
+        )
+    };
     assert_eq!(start(&mut op, "*LIBL", "QSERVER").status, Status::Ok);
     let again = start(&mut op, "QSYS", "QSERVER");
-    assert_eq!((again.status, again.message.unwrap().id.as_str()), (Status::Error, "CPF1010"));
+    assert_eq!(
+        (again.status, again.message.unwrap().id.as_str()),
+        (Status::Error, "CPF1010")
+    );
     let none = start(&mut op, "QGPL", "NOSUCH");
-    assert_eq!((none.status, none.message.unwrap().id.as_str()), (Status::NotFound, "CPF9801"));
+    assert_eq!(
+        (none.status, none.message.unwrap().id.as_str()),
+        (Status::NotFound, "CPF9801")
+    );
 
     let end = |r: &mut Run, sbsd: Option<ObjectName>| {
         r.client.call(
@@ -106,9 +134,15 @@ fn starting_and_ending_need_jobctl() {
             },
         )
     };
-    assert_eq!(end(&mut op, Some(sbs("QSYS", "QSERVER"))).status, Status::Ok);
+    assert_eq!(
+        end(&mut op, Some(sbs("QSYS", "QSERVER"))).status,
+        Status::Ok
+    );
     let inactive = end(&mut op, Some(sbs("HLINV", "HLSBS")));
-    assert_eq!((inactive.status, inactive.message.unwrap().id.as_str()), (Status::Error, "CPF1054"));
+    assert_eq!(
+        (inactive.status, inactive.message.unwrap().id.as_str()),
+        (Status::Error, "CPF1054")
+    );
     let ctl = end(&mut op, Some(sbs("QSYS", "QCTL")));
     assert_eq!(ctl.message.unwrap().id, "CPF1034");
     // *ALL: the system is restricted.
@@ -117,10 +151,21 @@ fn starting_and_ending_need_jobctl() {
     assert!(ipl.restricted);
     let list: Subsystems = op
         .client
-        .call(Op::ListSubsystems, &ListSubsystems { library: "*ALL".into(), start: 0, max: 0 })
+        .call(
+            Op::ListSubsystems,
+            &ListSubsystems {
+                library: "*ALL".into(),
+                start: 0,
+                max: 0,
+            },
+        )
         .body_as()
         .unwrap();
-    assert!(list.subsystems.iter().all(|s| s.status == SubsystemStatus::Inactive && s.monitor.is_none()));
+    assert!(
+        list.subsystems
+            .iter()
+            .all(|s| s.status == SubsystemStatus::Inactive && s.monitor.is_none())
+    );
 }
 
 #[test]
@@ -136,9 +181,23 @@ fn system_values_read_and_changed() {
         )
         .body_as()
         .unwrap();
-    let pairs: Vec<(&str, &str)> = got.values.iter().map(|v| (v.name.as_str(), v.value.as_str())).collect();
-    assert_eq!(pairs, [("QSYSLIBL", "QSYS QSYS2 QHLPSYS QUSRSYS"), ("QMAXSIGN", "3")]);
-    let all: SystemValues = r.client.call(Op::GetSystemValues, &GetSystemValues::default()).body_as().unwrap();
+    let pairs: Vec<(&str, &str)> = got
+        .values
+        .iter()
+        .map(|v| (v.name.as_str(), v.value.as_str()))
+        .collect();
+    assert_eq!(
+        pairs,
+        [
+            ("QSYSLIBL", "QSYS QSYS2 QHLPSYS QUSRSYS"),
+            ("QMAXSIGN", "3")
+        ]
+    );
+    let all: SystemValues = r
+        .client
+        .call(Op::GetSystemValues, &GetSystemValues::default())
+        .body_as()
+        .unwrap();
     assert!(all.values.windows(2).all(|w| w[0].name < w[1].name));
     let missing = r.client.call(
         Op::GetSystemValues,
@@ -146,7 +205,10 @@ fn system_values_read_and_changed() {
             names: vec!["QNOSUCH".into()],
         },
     );
-    assert_eq!((missing.status, missing.message.unwrap().id.as_str()), (Status::NotFound, "CPF1842"));
+    assert_eq!(
+        (missing.status, missing.message.unwrap().id.as_str()),
+        (Status::NotFound, "CPF1842")
+    );
     let set = |r: &mut Run, name: &str, value: &str| {
         r.client.call(
             Op::SetSystemValue,
@@ -168,7 +230,10 @@ fn system_values_read_and_changed() {
     assert_eq!(v.value, "5");
     assert!(audit(&sec).contains(&"SV A QMAXSIGN".to_string()));
     let bad = set(&mut sec, "QSECURITY", "20");
-    assert_eq!((bad.status, bad.message.unwrap().id.as_str()), (Status::Error, "TCP1A5F"));
+    assert_eq!(
+        (bad.status, bad.message.unwrap().id.as_str()),
+        (Status::Error, "TCP1A5F")
+    );
     let bad = set(&mut sec, "QMAXSIGN", "many");
     assert_eq!(bad.status, Status::Error);
     // OPER has *JOBCTL only: a security value needs *ALLOBJ and *SECADM.
@@ -176,7 +241,10 @@ fn system_values_read_and_changed() {
     op.client.hello_range(1, 7);
     op.client.sign_on("OPER", "OPERPW1");
     let no = set(&mut op, "QPWDEXPITV", "30");
-    assert_eq!((no.status, no.message.unwrap().id.as_str()), (Status::NotAuthorized, "CPF222E"));
+    assert_eq!(
+        (no.status, no.message.unwrap().id.as_str()),
+        (Status::NotAuthorized, "CPF222E")
+    );
 }
 
 #[test]
@@ -200,14 +268,25 @@ fn ptfs_disks_hardware_and_ipl() {
     assert!(p.ptfs[0].delayed);
     let other: Ptfs = r
         .client
-        .call(Op::ListPtfs, &ListPtfs { product: "QS00WDS".into(), start: 0, max: 0 })
+        .call(
+            Op::ListPtfs,
+            &ListPtfs {
+                product: "QS00WDS".into(),
+                start: 0,
+                max: 0,
+            },
+        )
         .body_as()
         .unwrap();
     assert_eq!(other.total, 0);
 
     let d: DiskUnits = r.client.call(Op::ListDiskUnits, &()).body_as().unwrap();
     assert_eq!(d.units.len(), 5);
-    assert!(d.units[..4].iter().all(|u| u.protection == Protection::Mirrored && u.asp == 1));
+    assert!(
+        d.units[..4]
+            .iter()
+            .all(|u| u.protection == Protection::Mirrored && u.asp == 1)
+    );
     assert_eq!(d.units[4].status, UnitStatus::NonConfigured);
     assert_eq!(d.asps[0].threshold, 90);
 
@@ -226,29 +305,48 @@ fn ptfs_disks_hardware_and_ipl() {
     assert_eq!(cmn.resources[4].location, "org.qemu.guest_agent.0");
     let all: HardwareResources = r
         .client
-        .call(Op::ListHardwareResources, &ListHardwareResources { kind: ResourceType::All })
+        .call(
+            Op::ListHardwareResources,
+            &ListHardwareResources {
+                kind: ResourceType::All,
+            },
+        )
         .body_as()
         .unwrap();
     assert_eq!(all.resources.len(), 14);
     let crp: HardwareResources = r
         .client
-        .call(Op::ListHardwareResources, &ListHardwareResources { kind: ResourceType::Cryptographic })
+        .call(
+            Op::ListHardwareResources,
+            &ListHardwareResources {
+                kind: ResourceType::Cryptographic,
+            },
+        )
         .body_as()
         .unwrap();
     assert!(crp.resources.is_empty());
 
     let ipl: IplStatus = r.client.call(Op::IplStatus, &()).body_as().unwrap();
-    assert_eq!((ipl.last_src.as_str(), ipl.ipl_type.as_str()), ("C9002A00", "B"));
+    assert_eq!(
+        (ipl.last_src.as_str(), ipl.ipl_type.as_str()),
+        ("C9002A00", "B")
+    );
     assert!(!ipl.restricted);
 }
 
 #[test]
 fn the_exit_point_sees_every_request() {
     let mut r = signed_on("BOB", "SECRET1");
-    r.c.manage.lock().unwrap().exit_refuses = Some(Box::new(|e: &ExitRequest| e.name == "GetSystemValues"));
+    r.c.manage.lock().unwrap().exit_refuses =
+        Some(Box::new(|e: &ExitRequest| e.name == "GetSystemValues"));
     assert_eq!(r.client.call(Op::IplStatus, &()).status, Status::Ok);
-    let no = r.client.call(Op::GetSystemValues, &GetSystemValues::default());
-    assert_eq!((no.status, no.message.unwrap().id.as_str()), (Status::NotAuthorized, "TCP1A5E"));
+    let no = r
+        .client
+        .call(Op::GetSystemValues, &GetSystemValues::default());
+    assert_eq!(
+        (no.status, no.message.unwrap().id.as_str()),
+        (Status::NotAuthorized, "TCP1A5E")
+    );
     assert!(no.body.is_empty());
     assert!(audit(&r).contains(&"GR F BOB".to_string()));
     let calls = r.c.manage.lock().unwrap().exit_calls.clone();
@@ -260,13 +358,26 @@ fn the_exit_point_sees_every_request() {
     assert_eq!(ccsid::from_ebcdic(&calls[1][52..116]).trim(), "*ALL");
     assert_eq!(EXIT_POINT, "QS400_QAP_MGMT");
     // A refused change changes nothing.
-    r.c.manage.lock().unwrap().exit_refuses = Some(Box::new(|e: &ExitRequest| e.target == "QMAXSIGN"));
+    r.c.manage.lock().unwrap().exit_refuses =
+        Some(Box::new(|e: &ExitRequest| e.target == "QMAXSIGN"));
     let mut sec = common::start_with(cfg(), r.c.clone());
     sec.client.hello_range(1, 7);
     sec.client.sign_on("SECOFR", "SECPW01");
-    let no = sec.client.call(Op::SetSystemValue, &SetSystemValue { name: "QMAXSIGN".into(), value: "9".into() });
+    let no = sec.client.call(
+        Op::SetSystemValue,
+        &SetSystemValue {
+            name: "QMAXSIGN".into(),
+            value: "9".into(),
+        },
+    );
     assert_eq!(no.status, Status::NotAuthorized);
-    let v = sec.c.manage.lock().unwrap().values(&["QMAXSIGN".into()]).unwrap();
+    let v = sec
+        .c
+        .manage
+        .lock()
+        .unwrap()
+        .values(&["QMAXSIGN".into()])
+        .unwrap();
     assert_eq!(v[0].value, "3");
 }
 
@@ -288,7 +399,10 @@ fn power_down_answers_then_the_server_ends() {
     };
     assert_eq!(op.client.call(Op::PowerDown, &req).status, Status::Ok);
     assert_eq!(op.c.manage.lock().unwrap().powered.as_ref(), Some(&req));
-    let ev = op.client.try_recv(Duration::from_secs(5)).expect("ServerEnding");
+    let ev = op
+        .client
+        .try_recv(Duration::from_secs(5))
+        .expect("ServerEnding");
     assert_eq!((ev.kind, ev.status), (Kind::Event, Status::ServerEnding));
     assert!(op.client.closed());
 }
@@ -312,8 +426,14 @@ fn version_6_sees_no_manage() {
 fn not_before_sign_on() {
     let mut r = start(cfg());
     r.client.hello_range(1, 7);
-    assert_eq!(r.client.call(Op::IplStatus, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        r.client.call(Op::IplStatus, &()).status,
+        Status::NotSignedOn
+    );
     // A body that does not decode.
     r.client.sign_on("BOB", "SECRET1");
-    assert_eq!(r.client.call(Op::ListPtfs, &()).status, Status::InvalidRequest);
+    assert_eq!(
+        r.client.call(Op::ListPtfs, &()).status,
+        Status::InvalidRequest
+    );
 }

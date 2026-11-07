@@ -113,14 +113,18 @@ fn string(s: &str, line: usize) -> Result<(Vec<u8>, &str), WscstError> {
         what: what.into(),
     };
     let s = s.trim_start();
-    let rest = s.strip_prefix('"').ok_or_else(|| err("a string in double quotes expected"))?;
+    let rest = s
+        .strip_prefix('"')
+        .ok_or_else(|| err("a string in double quotes expected"))?;
     let mut out = Vec::new();
     let mut chars = rest.char_indices();
     while let Some((i, c)) = chars.next() {
         match c {
             '"' => return Ok((out, &rest[i + 1..])),
             '\\' => {
-                let (_, e) = chars.next().ok_or_else(|| err("escape at the end of a string"))?;
+                let (_, e) = chars
+                    .next()
+                    .ok_or_else(|| err("escape at the end of a string"))?;
                 match e {
                     'e' => out.push(0x1b),
                     'r' => out.push(b'\r'),
@@ -130,7 +134,8 @@ fn string(s: &str, line: usize) -> Result<(Vec<u8>, &str), WscstError> {
                     '"' => out.push(b'"'),
                     'x' => {
                         let h: String = chars.by_ref().take(2).map(|(_, c)| c).collect();
-                        let b = u8::from_str_radix(&h, 16).map_err(|_| err("\\x needs two hex digits"))?;
+                        let b = u8::from_str_radix(&h, 16)
+                            .map_err(|_| err("\\x needs two hex digits"))?;
                         out.push(b);
                     }
                     _ => return Err(err("unknown escape")),
@@ -171,7 +176,8 @@ impl Wscst {
             let line = i + 1;
             let err = |what: String| WscstError::Syntax { line, what };
             let text = raw.trim_end();
-            if text.trim().is_empty() || text.starts_with('*') || text.trim_start().starts_with('#') {
+            if text.trim().is_empty() || text.starts_with('*') || text.trim_start().starts_with('#')
+            {
                 continue;
             }
             let (key, value) = text
@@ -180,7 +186,8 @@ impl Wscst {
             let key = key.trim().to_ascii_uppercase();
             let value = value.trim();
             let num = |s: &str| -> Result<u32, WscstError> {
-                s.parse().map_err(|_| err(format!("{s}: a number expected")))
+                s.parse()
+                    .map_err(|_| err(format!("{s}: a number expected")))
             };
             match key.as_str() {
                 "NAME" => {
@@ -302,7 +309,13 @@ impl Wscst {
     #[must_use]
     pub fn source_for(model: crate::transform::Model) -> String {
         let w = Self::parse_keys(&Self::key_source_for(model)).unwrap_or_default();
-        tags::write_pcl(&w, &format!("Workstation customizing source for {}, from the host print transform.", model.name()))
+        tags::write_pcl(
+            &w,
+            &format!(
+                "Workstation customizing source for {}, from the host print transform.",
+                model.name()
+            ),
+        )
     }
 
     /// [`Self::source_for`] in the key form.
@@ -314,7 +327,10 @@ impl Wscst {
             model.name()
         );
         s.push_str("INIT      = \"\\eE\\e&l0E\\e&a0L\\e&s1C\\e(10U\"\nEXIT      = \"\\eE\"\nNEWLINE   = \"\\r\\n\"\nFORMFEED  = \"\\f\"\n");
-        for p in crate::transform::page::SMALL.iter().chain(&crate::transform::page::LARGE) {
+        for p in crate::transform::page::SMALL
+            .iter()
+            .chain(&crate::transform::page::LARGE)
+        {
             let _ = writeln!(
                 s,
                 "PAPER     = {} {} {} \"\\e&l{}A\"",
@@ -344,7 +360,9 @@ impl Wscst {
             let _ = writeln!(s, "LPI       = {n} \"\\e&l{n}D\"");
         }
         if caps.trays {
-            s.push_str("DRAWER    = 1 \"\\e&l1H\"\nDRAWER    = 2 \"\\e&l4H\"\nDRAWER    = 3 \"\\e&l5H\"\n");
+            s.push_str(
+                "DRAWER    = 1 \"\\e&l1H\"\nDRAWER    = 2 \"\\e&l4H\"\nDRAWER    = 3 \"\\e&l5H\"\n",
+            );
         }
         if caps.duplex {
             s.push_str("DUPLEX    = *NO \"\\e&l0S\"\nDUPLEX    = *YES \"\\e&l1S\"\nDUPLEX    = *TUMBLE \"\\e&l2S\"\n");
@@ -404,7 +422,8 @@ mod tests {
     #[test]
     fn model_sources_compile() {
         for m in crate::transform::Model::all() {
-            let w = Wscst::parse(&Wscst::source_for(m)).unwrap_or_else(|e| panic!("{}: {e}", m.name()));
+            let w =
+                Wscst::parse(&Wscst::source_for(m)).unwrap_or_else(|e| panic!("{}: {e}", m.name()));
             assert_eq!(w.papers.len(), 5);
             assert_eq!(w.duplex.is_empty(), !m.capabilities().duplex);
         }
@@ -431,6 +450,9 @@ mod tests {
         );
         assert!(Wscst::parse("WIDTH = 3").is_err());
         assert!(Wscst::parse("DUPLEX = *MAYBE \"\"").is_err());
-        assert_eq!(Wscst::parse("INIT = \"\\x1b\\x45\"").unwrap().init, b"\x1bE");
+        assert_eq!(
+            Wscst::parse("INIT = \"\\x1b\\x45\"").unwrap().init,
+            b"\x1bE"
+        );
     }
 }

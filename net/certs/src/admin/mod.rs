@@ -290,7 +290,10 @@ mod tests {
         let c = Keystore::new("*LCLCA", "secret1");
         assert_eq!(c.path, LOCAL_CA_STORE);
         assert_eq!(c.password.as_deref(), Some("secret1"));
-        assert_eq!(Keystore::new("/home/x/my.kdb", " ").shown(), "/home/x/my.kdb");
+        assert_eq!(
+            Keystore::new("/home/x/my.kdb", " ").shown(),
+            "/home/x/my.kdb"
+        );
     }
 
     #[test]
@@ -306,9 +309,19 @@ mod tests {
         };
         assert!(matches!(no_key.open(&ks), Err(CertError::Invalid(_))));
         assert!(no_key.open(&Keystore::new("*SYSTEM", "system1")).is_ok());
-        let e = w.ctx().open(&Keystore::new("*SYSTEM", "wrong1")).err().unwrap();
-        assert_eq!(refusal(&e, "*SYSTEM"), Note::new(msgs::BAD_PASSWORD, &["*SYSTEM"]));
+        let e = w
+            .ctx()
+            .open(&Keystore::new("*SYSTEM", "wrong1"))
+            .err()
+            .unwrap();
+        assert_eq!(
+            refusal(&e, "*SYSTEM"),
+            Note::new(msgs::BAD_PASSWORD, &["*SYSTEM"])
+        );
         let e = World::new().ctx().open(&ks).err().unwrap();
-        assert_eq!(refusal(&e, "*SYSTEM"), Note::new(msgs::NOT_FOUND, &["*SYSTEM"]));
+        assert_eq!(
+            refusal(&e, "*SYSTEM"),
+            Note::new(msgs::NOT_FOUND, &["*SYSTEM"])
+        );
     }
 }

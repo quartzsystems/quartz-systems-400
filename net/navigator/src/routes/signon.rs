@@ -14,7 +14,10 @@ use qsweb::session;
 use crate::{Navigator, PRODUCT};
 
 fn page(nav: &Navigator, user: &str, messages: &[Message]) -> Response {
-    Response::html(200, frame::signon(&PRODUCT, &nav.env.system.name(), user, messages, None))
+    Response::html(
+        200,
+        frame::signon(&PRODUCT, &nav.env.system.name(), user, messages, None),
+    )
 }
 
 /// `GET /signon` shows the page; `POST /signon` signs on.
@@ -24,12 +27,20 @@ pub fn signon(nav: &Navigator, req: &Request, peer: &Peer) -> Response {
     }
     let form = req.form();
     let typed = form.str("user").trim().to_ascii_uppercase();
-    let user = match nav.env.system.sign_on(&typed, form.str("password"), &peer.addr.ip().to_string()) {
-        Ok(u) => u,
-        Err(m) => return page(nav, &typed, &[m]),
-    };
+    let user =
+        match nav
+            .env
+            .system
+            .sign_on(&typed, form.str("password"), &peer.addr.ip().to_string())
+        {
+            Ok(u) => u,
+            Err(m) => return page(nav, &typed, &[m]),
+        };
     let sess = nav.sessions.create(&user);
-    Response::redirect(&PRODUCT.url("/home")).with("Set-Cookie", &session::set_cookie(&sess.id, PRODUCT.prefix, peer.secure))
+    Response::redirect(&PRODUCT.url("/home")).with(
+        "Set-Cookie",
+        &session::set_cookie(&sess.id, PRODUCT.prefix, peer.secure),
+    )
 }
 
 /// `/signoff`: end the session, back to the sign-on page.
@@ -37,5 +48,6 @@ pub fn signoff(nav: &Navigator, req: &Request, _peer: &Peer) -> Response {
     if let Some(id) = req.cookie(session::COOKIE) {
         nav.sessions.remove(id);
     }
-    Response::redirect(&PRODUCT.url("/signon")).with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
+    Response::redirect(&PRODUCT.url("/signon"))
+        .with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
 }

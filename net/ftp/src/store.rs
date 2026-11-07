@@ -76,7 +76,10 @@ pub fn missing(host: &mut dyn Host, path: &str, e: Errno) -> Reply {
         if !objects::exists(host.ifs(), &objects::file_path(&l, &f)) {
             return Reply::new(550, format!("File {f} in library {l} not found."));
         }
-        return ended(426, format!("Member {m} of file {f} in library {l} not found."));
+        return ended(
+            426,
+            format!("Member {m} of file {f} in library {l} not found."),
+        );
     }
     Reply::new(550, format!("{path} cannot be used: {}.", errno_text(e)))
 }
@@ -93,24 +96,46 @@ pub fn fetch(host: &mut dyn Host, form: &Form, path: &str) -> Result<Vec<u8>, Re
             .map(|d| xlate::stream_out(form.rep, form.codes, st.ccsid, &d))
             .map_err(|e| Reply::new(550, format!("{path} cannot be read: {}.", errno_text(e)))),
         Kind::Member(l, f, m) => match objects::read_member(host, &l, &f, &m) {
-            Ok((recs, desc)) => Ok(xlate::member_out(form.rep, form.codes, desc.ccsid, &recs, form.trim)),
-            Err(e) => Err(Reply::new(550, format!("{} cannot be read: {}.", describe(path), errno_text(e)))),
+            Ok((recs, desc)) => Ok(xlate::member_out(
+                form.rep, form.codes, desc.ccsid, &recs, form.trim,
+            )),
+            Err(e) => Err(Reply::new(
+                550,
+                format!("{} cannot be read: {}.", describe(path), errno_text(e)),
+            )),
         },
-        Kind::Savf(..) if form.rep != Rep::Image => Err(Reply::new(504, "Save files go in binary: send TYPE I first.")),
-        Kind::Savf(..) | Kind::Object(..) => objects::read_bytes(host.ifs(), path)
-            .map_err(|e| Reply::new(550, format!("{} cannot be read: {}.", describe(path), errno_text(e)))),
+        Kind::Savf(..) if form.rep != Rep::Image => Err(Reply::new(
+            504,
+            "Save files go in binary: send TYPE I first.",
+        )),
+        Kind::Savf(..) | Kind::Object(..) => objects::read_bytes(host.ifs(), path).map_err(|e| {
+            Reply::new(
+                550,
+                format!("{} cannot be read: {}.", describe(path), errno_text(e)),
+            )
+        }),
         Kind::File(l, f) => {
             // A file stands for its member of the same name.
             fetch(host, form, &objects::member_path(&l, &f, &f))
         }
-        Kind::Dir | Kind::Library(_) => Err(Reply::new(550, format!("{} is a directory or library.", describe(path)))),
+        Kind::Dir | Kind::Library(_) => Err(Reply::new(
+            550,
+            format!("{} is a directory or library.", describe(path)),
+        )),
     }
 }
 
 /// Write data that came in `form` to `path`: added to the end with
 /// `append`, from byte `rest` of a stream file. Whether lines were cut
 /// to fit a member's records.
-pub fn put(host: &mut dyn Host, form: &Form, path: &str, data: &[u8], append: bool, rest: u64) -> Result<bool, String> {
+pub fn put(
+    host: &mut dyn Host,
+    form: &Form,
+    path: &str,
+    data: &[u8],
+    append: bool,
+    rest: u64,
+) -> Result<bool, String> {
     let (rep, codes) = (form.rep, form.codes);
     match objects::look(host.ifs(), path) {
         Ok((Kind::Stream, st)) => {
@@ -123,7 +148,11 @@ pub fn put(host: &mut dyn Host, form: &Form, path: &str, data: &[u8], append: bo
             } else {
                 bytes
             };
-            let h = if append && rest == 0 { How::Append(st.ccsid) } else { How::Replace(st.ccsid) };
+            let h = if append && rest == 0 {
+                How::Append(st.ccsid)
+            } else {
+                How::Replace(st.ccsid)
+            };
             objects::write_bytes(host.ifs(), path, &all, h)
                 .map(|()| false)
                 .map_err(errno_text)
@@ -140,9 +169,11 @@ pub fn put(host: &mut dyn Host, form: &Form, path: &str, data: &[u8], append: bo
                 .map(|()| false)
                 .map_err(errno_text)
         }
-        Ok((Kind::Object(..), _)) => objects::write_bytes(host.ifs(), path, data, How::Replace(xlate::BINARY_CCSID))
-            .map(|()| false)
-            .map_err(errno_text),
+        Ok((Kind::Object(..), _)) => {
+            objects::write_bytes(host.ifs(), path, data, How::Replace(xlate::BINARY_CCSID))
+                .map(|()| false)
+                .map_err(errno_text)
+        }
         Ok(_) => Err("it is a directory or library".into()),
         Err(_) => match names::qsys_node(path) {
             Some(QsysNode::Mbr(l, f, m)) => {
@@ -162,8 +193,18 @@ pub fn put(host: &mut dyn Host, form: &Form, path: &str, data: &[u8], append: bo
     }
 }
 
-fn put_member(host: &mut dyn Host, form: &Form, l: &str, f: &str, m: &str, data: &[u8], append: bool) -> Result<bool, String> {
-    let desc = host.file(l, f).ok_or_else(|| format!("file {f} in library {l} cannot be used"))?;
+fn put_member(
+    host: &mut dyn Host,
+    form: &Form,
+    l: &str,
+    f: &str,
+    m: &str,
+    data: &[u8],
+    append: bool,
+) -> Result<bool, String> {
+    let desc = host
+        .file(l, f)
+        .ok_or_else(|| format!("file {f} in library {l} cannot be used"))?;
     if desc.logical {
         return Err("a logical file cannot be written".into());
     }
@@ -171,7 +212,13 @@ fn put_member(host: &mut dyn Host, form: &Form, l: &str, f: &str, m: &str, data:
     if append && let Ok((old, _)) = objects::read_member(host, l, f, m) {
         recs = old;
     }
-    recs.extend(xlate::member_in(form.rep, form.codes, desc.ccsid, desc.rec_len, data));
+    recs.extend(xlate::member_in(
+        form.rep,
+        form.codes,
+        desc.ccsid,
+        desc.rec_len,
+        data,
+    ));
     let cut = xlate::too_long(form.rep, form.codes, desc.rec_len, data);
     objects::write_member(host, l, f, m, &recs)
         .map(|()| cut)
@@ -186,7 +233,9 @@ fn create_ccsid(host: &mut dyn Host, form: &Form) -> u16 {
             Rep::Ccsid(c) if xlate::is_ebcdic(c) => c,
             _ => job,
         },
-        CrtCcsid::User => Some(form.user_ccsid).filter(|c| *c != 0 && *c != 65535).unwrap_or(job),
+        CrtCcsid::User => Some(form.user_ccsid)
+            .filter(|c| *c != 0 && *c != 65535)
+            .unwrap_or(job),
         CrtCcsid::Sysval => host
             .sysval("QCCSID")
             .and_then(|v| v.trim().parse::<u16>().ok())
@@ -198,7 +247,14 @@ fn create_ccsid(host: &mut dyn Host, form: &Form) -> u16 {
 
 /// Make the physical file data needs: records as long as the longest
 /// line (512 bytes for binary data), in the CCSID `CRTCCSID` says.
-fn create_file(host: &mut dyn Host, form: &Form, l: &str, f: &str, m: &str, data: &[u8]) -> Result<(), String> {
+fn create_file(
+    host: &mut dyn Host,
+    form: &Form,
+    l: &str,
+    f: &str,
+    m: &str,
+    data: &[u8],
+) -> Result<(), String> {
     let len = match form.rep {
         Rep::Image => BINARY_RCDLEN,
         rep => xlate::longest_line(rep, form.codes, data).clamp(1, 32766),
@@ -212,12 +268,25 @@ fn create_file(host: &mut dyn Host, form: &Form, l: &str, f: &str, m: &str, data
 
 /// Move a member to another file of the library, making that file like
 /// the first when it is not there (`RNTO` across files).
-pub fn move_member(host: &mut dyn Host, l: &str, f: &str, m: &str, f2: &str, m2: &str) -> Result<(), String> {
-    let desc = host.file(l, f).ok_or_else(|| format!("file {f} in library {l} cannot be used"))?;
+pub fn move_member(
+    host: &mut dyn Host,
+    l: &str,
+    f: &str,
+    m: &str,
+    f2: &str,
+    m2: &str,
+) -> Result<(), String> {
+    let desc = host
+        .file(l, f)
+        .ok_or_else(|| format!("file {f} in library {l} cannot be used"))?;
     let (recs, _) = objects::read_member(host, l, f, m).map_err(errno_text)?;
     if !objects::exists(host.ifs(), &objects::file_path(l, f2)) {
         let cmd = if desc.source {
-            format!("CRTSRCPF FILE({l}/{f2}) RCDLEN({}) MBR(*NONE) CCSID({})", desc.rec_len + 12, desc.ccsid)
+            format!(
+                "CRTSRCPF FILE({l}/{f2}) RCDLEN({}) MBR(*NONE) CCSID({})",
+                desc.rec_len + 12,
+                desc.ccsid
+            )
         } else {
             format!(
                 "CRTPF FILE({l}/{f2}) RCDLEN({}) MBR(*NONE) MAXMBRS(*NOMAX) CCSID({})",
@@ -230,5 +299,7 @@ pub fn move_member(host: &mut dyn Host, l: &str, f: &str, m: &str, f2: &str, m2:
         return Err(format!("member {m2} of file {f2} exists already"));
     }
     objects::write_member(host, l, f2, m2, &recs).map_err(errno_text)?;
-    host.ifs().unlink(&objects::member_path(l, f, m)).map_err(errno_text)
+    host.ifs()
+        .unlink(&objects::member_path(l, f, m))
+        .map_err(errno_text)
 }

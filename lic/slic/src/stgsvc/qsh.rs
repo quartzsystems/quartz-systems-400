@@ -28,11 +28,19 @@ pub const MAX_VARS: usize = 4095;
 /// Answer one request for `me`.
 pub fn request(system: &mut System, me: &Principal, op: QshOp) -> QshReply {
     if matches!(op, QshOp::SysEnvSet { .. } | QshOp::SysEnvRemove { .. })
-        && me.require(SpecialAuth::ALLOBJ, "change system-level environment variables").is_err()
+        && me
+            .require(
+                SpecialAuth::ALLOBJ,
+                "change system-level environment variables",
+            )
+            .is_err()
     {
         return QshReply::failed(
             "CPFA98E",
-            format!("User {} may not change system-level environment variables.", me.user),
+            format!(
+                "User {} may not change system-level environment variables.",
+                me.user
+            ),
         );
     }
     let Some(s) = system.storage.as_mut() else {
@@ -92,11 +100,17 @@ pub fn change(vars: &mut Vec<EnvVar>, var: EnvVar, mode: u8) -> Result<(), QshRe
     match (vars.iter().position(|v| v.name == var.name), mode) {
         (Some(_), set_mode::ADD) => Err(QshReply::failed(
             "CPFA980",
-            format!("An environment variable {} is already at level *SYS.", var.name),
+            format!(
+                "An environment variable {} is already at level *SYS.",
+                var.name
+            ),
         )),
         (None, set_mode::CHANGE) => Err(QshReply::failed(
             "CPFA981",
-            format!("There is no environment variable {} at level *SYS.", var.name),
+            format!(
+                "There is no environment variable {} at level *SYS.",
+                var.name
+            ),
         )),
         (Some(i), _) => {
             vars[i] = var;

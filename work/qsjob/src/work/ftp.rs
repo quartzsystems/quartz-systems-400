@@ -52,7 +52,10 @@ fn attrs(link: &Shared) -> FtpAttrs {
 fn system_name(link: &Shared) -> String {
     link.borrow_mut()
         .with(|l| l.sysval("QSYSNAME".into()))
-        .map_or_else(|| "QS400".to_string(), |v| ccsid::from_ebcdic(&v.data).trim().to_string())
+        .map_or_else(
+            || "QS400".to_string(),
+            |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
+        )
 }
 
 /// `KWD(n)` of the request data.
@@ -80,7 +83,13 @@ impl Service for Accept {
 }
 
 /// Start a session job for a connection and hand it the socket.
-fn start_session(link: &Shared, start: &Start, seq: u32, sock: TcpStream, implicit: bool) -> Result<Spawned, String> {
+fn start_session(
+    link: &Shared,
+    start: &Start,
+    seq: u32,
+    sock: TcpStream,
+    implicit: bool,
+) -> Result<Spawned, String> {
     let number = link.borrow_mut().with(Client::job_number)?;
     let name = servers::registry::lookup("*FTP")
         .and_then(|s| s.jobs.iter().find(|j| j.kind == servers::JobKind::Worker))
@@ -96,7 +105,11 @@ fn start_session(link: &Shared, start: &Start, seq: u32, sock: TcpStream, implic
         jobd: "QSYS/QSYSJOBD".into(),
         class: "QSYS/QSYSCLS20".into(),
         pool: "*BASE".into(),
-        rqsdta: if implicit { "IMPLICIT(1)".into() } else { String::new() },
+        rqsdta: if implicit {
+            "IMPLICIT(1)".into()
+        } else {
+            String::new()
+        },
         ..Start::default()
     };
     let mut job = spawn::job(s)?;
@@ -125,7 +138,11 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         });
         match listen::bind(p).and_then(|l| listen::serve(l, None, service)) {
             Ok(r) => {
-                eprintln!("qsjob: {} listening on port {p}{}", start.name, if implicit { " (TLS)" } else { "" });
+                eprintln!(
+                    "qsjob: {} listening on port {p}{}",
+                    start.name,
+                    if implicit { " (TLS)" } else { "" }
+                );
                 running.push(r);
             }
             Err(e) if !implicit => crate::start::end(&mut ctl, &format!("port {p}: {e}")),
@@ -203,10 +220,14 @@ impl Host for JobHost {
     }
 
     fn sign_on(&mut self, user: &str, password: &str) -> Result<String, Refused> {
-        let r = self
-            .link
-            .borrow_mut()
-            .with(|l| l.sign_on(user.to_ascii_uppercase(), password.to_string(), String::new(), false));
+        let r = self.link.borrow_mut().with(|l| {
+            l.sign_on(
+                user.to_ascii_uppercase(),
+                password.to_string(),
+                String::new(),
+                false,
+            )
+        });
         r.map(|s| s.user).map_err(|e| Refused {
             msgid: e.msgid,
             text: e.text,
@@ -250,7 +271,11 @@ impl Host for JobHost {
         let o = self.console.run(line, crate::command::RunMode::Run);
         match o.escape {
             Some(f) => Err(CmdFail {
-                text: if f.text.is_empty() { f.msgid.clone() } else { f.text },
+                text: if f.text.is_empty() {
+                    f.msgid.clone()
+                } else {
+                    f.text
+                },
                 msgid: f.msgid,
             }),
             None => Ok(()),
@@ -285,14 +310,21 @@ impl Host for JobHost {
     }
 
     fn file(&mut self, lib: &str, file: &str) -> Option<DbFile> {
-        let f = self.link.borrow_mut().with(|l| l.file(lib.to_string(), file.to_string()))?;
+        let f = self
+            .link
+            .borrow_mut()
+            .with(|l| l.file(lib.to_string(), file.to_string()))?;
         let ccsid = self
             .ifs
             .stat(&ftp::objects::file_path(lib, file), true)
             .map_or(self.ccsid, |s| s.ccsid);
         let len = usize::try_from(f.rec_len).unwrap_or(0);
         Some(DbFile {
-            rec_len: if f.source { len.saturating_sub(12) } else { len },
+            rec_len: if f.source {
+                len.saturating_sub(12)
+            } else {
+                len
+            },
             source: f.source,
             ccsid,
             logical: f.attr == "LF",
@@ -300,7 +332,10 @@ impl Host for JobHost {
     }
 
     fn sysval(&mut self, name: &str) -> Option<String> {
-        let v = self.link.borrow_mut().with(|l| l.sysval(name.to_string()))?;
+        let v = self
+            .link
+            .borrow_mut()
+            .with(|l| l.sysval(name.to_string()))?;
         Some(match v.kind {
             sysapi::SysValKind::Bin if v.data.len() == 4 => {
                 i32::from_be_bytes([v.data[0], v.data[1], v.data[2], v.data[3]]).to_string()

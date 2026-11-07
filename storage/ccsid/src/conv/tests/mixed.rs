@@ -23,7 +23,12 @@ pub(super) const SAMPLES: [(&str, &str, &str, Option<&str>); 4] = [
         "D8E261F4F0F0400E449D4562456648E74446476F49AA448D44A4448E43410F",
         None,
     ),
-    ("ｶﾀｶﾅ ABC 123", "8691869640C1C2C340F1F2F3", "6676668C40C1C2C340F1F2F3", None),
+    (
+        "ｶﾀｶﾅ ABC 123",
+        "8691869640C1C2C340F1F2F3",
+        "6676668C40C1C2C340F1F2F3",
+        None,
+    ),
     (
         "東京都　千代田区",
         "0E45574575454F4040454C459A456345540F",
@@ -73,7 +78,11 @@ fn every_mapped_character_round_trips() {
         let mut n = 0;
         for (p, ch) in dbcs.pairs() {
             let [h, l] = p.to_be_bytes();
-            let bytes = if codec.is_mixed() { vec![SO, h, l, SI] } else { vec![h, l] };
+            let bytes = if codec.is_mixed() {
+                vec![SO, h, l, SI]
+            } else {
+                vec![h, l]
+            };
             let mut chars = Vec::new();
             assert_eq!(codec.decode(&bytes, &mut chars), bytes.len());
             assert_eq!(chars, vec![ch], "{c} {p:04X}");
@@ -129,9 +138,15 @@ fn codec_kinds() {
 #[test]
 fn spaces_and_controls() {
     // The double-byte space; line ends stay single-byte.
-    assert_eq!(from_str(930, "日\u{3000}\n").unwrap(), hex("0E456240400F25"));
+    assert_eq!(
+        from_str(930, "日\u{3000}\n").unwrap(),
+        hex("0E456240400F25")
+    );
     assert_eq!(DBCS_SPACE, 0x4040);
-    assert_eq!(to_string(939, &hex("0E40400F15")).unwrap(), "\u{3000}\u{85}");
+    assert_eq!(
+        to_string(939, &hex("0E40400F15")).unwrap(),
+        "\u{3000}\u{85}"
+    );
 }
 
 #[test]
@@ -147,17 +162,29 @@ fn substitution() {
     assert_eq!(from_str(300, "A日").unwrap(), hex("FEFE4562"));
     // Unmapped pairs and lone bytes decode to U+FFFD, single bytes to SUB.
     assert_eq!(to_string(930, &hex("0EFEFE0F")).unwrap(), "\u{FFFD}");
-    assert_eq!(to_string(930, &hex("0E45620E450FC1")).unwrap(), "日\u{FFFD}A");
+    assert_eq!(
+        to_string(930, &hex("0E45620E450FC1")).unwrap(),
+        "日\u{FFFD}A"
+    );
     assert_eq!(to_string(300, &hex("FEFE")).unwrap(), "\u{FFFD}");
     // Through a mixed target the width is kept.
-    assert_eq!(convert(939, 930, &hex("0EFEFE0F")).unwrap(), hex("0EFEFE0F"));
+    assert_eq!(
+        convert(939, 930, &hex("0EFEFE0F")).unwrap(),
+        hex("0EFEFE0F")
+    );
     // SO and SI themselves are not characters a mixed target can hold.
     assert_eq!(convert(37, 930, &[0x0E, 0xC1]).unwrap(), hex("3FC1"));
 }
 
 #[test]
 fn redundant_shifts_are_dropped_on_conversion() {
-    assert_eq!(convert(930, 939, &hex("0E0E45620F0F0E0FC1")).unwrap(), hex("0E45620FC1"));
+    assert_eq!(
+        convert(930, 939, &hex("0E0E45620F0F0E0FC1")).unwrap(),
+        hex("0E45620FC1")
+    );
     // A pass-through keeps them.
-    assert_eq!(convert(930, 5026, &hex("0E0E45620F0F")).unwrap(), hex("0E0E45620F0F"));
+    assert_eq!(
+        convert(930, 5026, &hex("0E0E45620F0F")).unwrap(),
+        hex("0E0E45620F0F")
+    );
 }

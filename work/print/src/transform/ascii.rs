@@ -19,7 +19,13 @@ use crate::job::PrintJob;
 pub fn ascii_line(line: &str, width: u16) -> String {
     let mut out: String = line
         .chars()
-        .map(|c| if c.is_ascii() && !c.is_ascii_control() { c } else { '?' })
+        .map(|c| {
+            if c.is_ascii() && !c.is_ascii_control() {
+                c
+            } else {
+                '?'
+            }
+        })
         .collect();
     if width > 0 {
         out.truncate(usize::from(width));
@@ -42,7 +48,11 @@ pub fn encode_line(line: &str, width: u16, chrid: &str) -> Vec<u8> {
         return ascii_line(line, width).into_bytes();
     }
     let enc = pcl::encoder(chrid);
-    let take = if width > 0 { usize::from(width) } else { usize::MAX };
+    let take = if width > 0 {
+        usize::from(width)
+    } else {
+        usize::MAX
+    };
     let mut out: Vec<u8> = line.chars().take(take).map(enc).collect();
     while out.last() == Some(&b' ') {
         out.pop();
@@ -54,7 +64,11 @@ pub fn encode_line(line: &str, width: u16, chrid: &str) -> Vec<u8> {
 #[must_use]
 pub fn render(job: &PrintJob, scs: &[u8]) -> Vec<u8> {
     let (pages, fmt) = spool::scs::decode(scs);
-    let width = if fmt.width > 0 { fmt.width } else { job.page_width };
+    let width = if fmt.width > 0 {
+        fmt.width
+    } else {
+        job.page_width
+    };
     let mut out = Vec::new();
     for page in &pages {
         for n in 1..=page.last_line() {

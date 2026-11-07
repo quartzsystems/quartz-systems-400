@@ -23,8 +23,8 @@ use medio::tapefile::{RestoreFile, SaveFile, TapeReader, TapeWriter};
 use medio::{MediaReader, MediaWriter};
 use optical::{FileImage, Volume, VolumeSet};
 use qsname::Name;
-use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use saverst::{AllowAll, RestoreOptions, SaveOptions, restore, save_library};
+use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use store::obj::{CreateParams, JobHandle, ObjectId, ops, types, usrspc};
 use store::{FormatParams, Store, StoreConfig};
 use tape::label::{Date, Expiry};
@@ -44,7 +44,12 @@ fn system(mib: u64) -> (Store, ObjectId) {
         wal_pages: 4096,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     t.commit().unwrap();
@@ -84,7 +89,14 @@ fn library(s: &mut Store, q: ObjectId, mib: u64) {
             };
         }
         let mut t = s.begin().unwrap();
-        let id = usrspc::create(&mut t, &params(lib, &format!("US{i:05}"), types::USRSPC), 1 << 20, false, 0).unwrap();
+        let id = usrspc::create(
+            &mut t,
+            &params(lib, &format!("US{i:05}"), types::USRSPC),
+            1 << 20,
+            false,
+            0,
+        )
+        .unwrap();
         usrspc::write(&mut t, id, 0, &b).unwrap();
         t.commit().unwrap();
     }
@@ -139,7 +151,10 @@ fn dir() -> PathBuf {
 #[test]
 #[ignore = "bench: run by hand with --release"]
 fn save_and_restore_to_virtual_media() {
-    let mib: u64 = std::env::var("QS400_SAVE_BENCH_MIB").ok().and_then(|v| v.parse().ok()).unwrap_or(64);
+    let mib: u64 = std::env::var("QS400_SAVE_BENCH_MIB")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(64);
     let (mut s, q) = system(mib);
     library(&mut s, q, mib);
     let m = mib as f64;
@@ -147,7 +162,11 @@ fn save_and_restore_to_virtual_media() {
 
     // Virtual tape: a volume file twice the library's size.
     let path = d.join("BENCH1");
-    let mut t = VirtualTape::create(File::create_new(&path).unwrap(), &VolumeOptions::imgsiz(mib * 2 + 16, "BENCH1")).unwrap();
+    let mut t = VirtualTape::create(
+        File::create_new(&path).unwrap(),
+        &VolumeOptions::imgsiz(mib * 2 + 16, "BENCH1"),
+    )
+    .unwrap();
     inztap(
         &mut t,
         &InzOptions {
@@ -160,7 +179,14 @@ fn save_and_restore_to_virtual_media() {
     drop(t);
     let start = Instant::now();
     let bytes = stream(&mut s, q, mib);
-    let mut t = VirtualTape::open(OpenOptions::new().read(true).write(true).open(&path).unwrap()).unwrap();
+    let mut t = VirtualTape::open(
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+            .unwrap(),
+    )
+    .unwrap();
     let file = SaveFile {
         vols: Vec::new(),
         seq: SeqNbr::End,
@@ -171,11 +197,20 @@ fn save_and_restore_to_virtual_media() {
         allow_active: true,
         job: "QPADEV0001".into(),
     };
-    TapeWriter::new(&mut t, &mut NoMoreVolumes, file).write_stream(&bytes).unwrap();
+    TapeWriter::new(&mut t, &mut NoMoreVolumes, file)
+        .write_stream(&bytes)
+        .unwrap();
     drop(t);
     let save = start.elapsed().as_secs_f64();
     let start = Instant::now();
-    let mut t = VirtualTape::open(OpenOptions::new().read(true).write(true).open(&path).unwrap()).unwrap();
+    let mut t = VirtualTape::open(
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+            .unwrap(),
+    )
+    .unwrap();
     let (back, _) = TapeReader::new(
         &mut t,
         &mut NoMoreVolumes,
@@ -189,27 +224,40 @@ fn save_and_restore_to_virtual_media() {
     let n = restore_as(&mut s, q, &back, "QSBTAP");
     let rst = start.elapsed().as_secs_f64();
     assert_eq!(n, usize::try_from(mib).unwrap());
-    println!("virtual tape: {mib} MiB; save {:.0} MiB/s, restore {:.0} MiB/s", m / save, m / rst);
+    println!(
+        "virtual tape: {mib} MiB; save {:.0} MiB/s, restore {:.0} MiB/s",
+        m / save,
+        m / rst
+    );
 
     // Virtual optical: a writable image file of twice the size.
     let img = d.join("BENCH.ISO");
     std::fs::write(&img, b"").unwrap();
     let set = VolumeSet::default();
     let store: Arc<dyn optical::ImageStore> = Arc::new(FileImage::open(&img).unwrap());
-    set.insert(Volume::create(store, "BENCHO", "", (mib * 2 + 16) << 20, NOW).unwrap()).unwrap();
+    set.insert(Volume::create(store, "BENCHO", "", (mib * 2 + 16) << 20, NOW).unwrap())
+        .unwrap();
     let start = Instant::now();
     let bytes = stream(&mut s, q, mib);
-    OpticalWriter::new(&set, "BENCHO", "/QSBENCH", true).write_stream(&bytes).unwrap();
+    OpticalWriter::new(&set, "BENCHO", "/QSBENCH", true)
+        .write_stream(&bytes)
+        .unwrap();
     let save = start.elapsed().as_secs_f64();
     drop(set);
     let start = Instant::now();
     let set = VolumeSet::default();
     let store: Arc<dyn optical::ImageStore> = Arc::new(FileImage::open(&img).unwrap());
     set.insert(Volume::open(store, false).unwrap()).unwrap();
-    let (back, _) = OpticalReader::new(&set, "BENCHO", "/QSBENCH").read_stream().unwrap();
+    let (back, _) = OpticalReader::new(&set, "BENCHO", "/QSBENCH")
+        .read_stream()
+        .unwrap();
     let n = restore_as(&mut s, q, &back, "QSBOPT");
     let rst = start.elapsed().as_secs_f64();
     assert_eq!(n, usize::try_from(mib).unwrap());
-    println!("virtual optical: {mib} MiB; save {:.0} MiB/s, restore {:.0} MiB/s", m / save, m / rst);
+    println!(
+        "virtual optical: {mib} MiB; save {:.0} MiB/s, restore {:.0} MiB/s",
+        m / save,
+        m / rst
+    );
     let _ = std::fs::remove_dir_all(d);
 }

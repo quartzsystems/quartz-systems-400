@@ -39,7 +39,10 @@ pub fn wipe(dev: &dyn BlockDev, progress: &mut dyn FnMut(u8)) -> Result<Wiped> {
     let blocks = dev.blocks();
     let parts = partitions(dev);
     let ranges = zero_ranges(blocks, &parts);
-    let zero_steps: u64 = ranges.iter().map(|r| (r.1 - r.0).div_ceil(WRITE_BLOCKS)).sum();
+    let zero_steps: u64 = ranges
+        .iter()
+        .map(|r| (r.1 - r.0).div_ceil(WRITE_BLOCKS))
+        .sum();
     let discard_steps = blocks.div_ceil(DISCARD_BLOCKS);
     let total = (zero_steps + discard_steps).max(1);
     let mut done = 0u64;

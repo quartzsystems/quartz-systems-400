@@ -75,13 +75,24 @@ pub fn parse(s: &str) -> Result<Option<Control>, &'static str> {
         return Ok(None);
     }
     if let Some(n) = t.strip_prefix('+') {
-        return n.trim().parse().map(|n: i64| Some(Control::Scroll(n))).map_err(|_| "CPDB605");
+        return n
+            .trim()
+            .parse()
+            .map(|n: i64| Some(Control::Scroll(n)))
+            .map_err(|_| "CPDB605");
     }
     if let Some(n) = t.strip_prefix('-') {
-        return n.trim().parse().map(|n: i64| Some(Control::Scroll(-n))).map_err(|_| "CPDB605");
+        return n
+            .trim()
+            .parse()
+            .map(|n: i64| Some(Control::Scroll(-n)))
+            .map_err(|_| "CPDB605");
     }
     if t.chars().all(|c| c.is_ascii_digit()) {
-        return t.parse().map(|n| Some(Control::Record(n))).map_err(|_| "CPDB605");
+        return t
+            .parse()
+            .map(|n| Some(Control::Record(n)))
+            .map_err(|_| "CPDB605");
     }
     let w = words(t);
     let verb = w[0].to_ascii_uppercase();
@@ -184,7 +195,10 @@ mod tests {
         assert_eq!(parse("t"), Ok(Some(Control::Top)));
         assert_eq!(parse("+5"), Ok(Some(Control::Scroll(5))));
         assert_eq!(parse("12"), Ok(Some(Control::Record(12))));
-        assert_eq!(parse("f 'line t'"), Ok(Some(Control::Find("line t".into()))));
+        assert_eq!(
+            parse("f 'line t'"),
+            Ok(Some(Control::Find("line t".into())))
+        );
         assert_eq!(
             parse("c two TWO all"),
             Ok(Some(Control::Change {
@@ -193,7 +207,14 @@ mod tests {
                 all: true
             }))
         );
-        assert_eq!(parse("c x ''"), Ok(Some(Control::Change { from: "x".into(), to: String::new(), all: false })));
+        assert_eq!(
+            parse("c x ''"),
+            Ok(Some(Control::Change {
+                from: "x".into(),
+                to: String::new(),
+                all: false
+            }))
+        );
         assert_eq!(parse("zap"), Err("CPFB610"));
         assert_eq!(parse("f"), Err("CPFB612"));
     }

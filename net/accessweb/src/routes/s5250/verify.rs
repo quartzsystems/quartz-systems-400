@@ -22,9 +22,18 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     let f = rq.form();
     let me = rq.env().system.name();
-    let posted = f.get("sys").map(|s| s.trim_end_matches(" (this system)").trim().to_string());
-    let system = posted.clone().or_else(|| q.get("sys").map(ToString::to_string)).unwrap_or(me.clone());
-    let system = if system.is_empty() || system == "Other..." { me } else { system.to_ascii_uppercase() };
+    let posted = f
+        .get("sys")
+        .map(|s| s.trim_end_matches(" (this system)").trim().to_string());
+    let system = posted
+        .clone()
+        .or_else(|| q.get("sys").map(ToString::to_string))
+        .unwrap_or(me.clone());
+    let system = if system.is_empty() || system == "Other..." {
+        me
+    } else {
+        system.to_ascii_uppercase()
+    };
     if rq.post() && f.has("close") {
         return rq.redirect("/5250");
     }
@@ -46,7 +55,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
         })
         .collect();
     let list = List {
-        cols: vec![Col::plain("Check"), Col::plain("Result"), Col::plain("Message")],
+        cols: vec![
+            Col::plain("Check"),
+            Col::plain("Result"),
+            Col::plain("Message"),
+        ],
         rows,
         empty: String::new(),
         keep: Vec::new(),

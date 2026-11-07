@@ -37,7 +37,12 @@ impl Job {
             wal_pages: 128,
             now: NOW,
         };
-        let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(d) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let mut t = store.begin().unwrap();
         let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
         let lib = ops::create(
@@ -56,27 +61,52 @@ impl Job {
         )
         .unwrap();
         // The job's start: its QTEMP, in the library list first.
-        let qtemp = ops::create_temporary_root(&mut t, Name::parse("QTEMP").unwrap(), "QSECOFR", NOW).unwrap();
+        let qtemp =
+            ops::create_temporary_root(&mut t, Name::parse("QTEMP").unwrap(), "QSECOFR", NOW)
+                .unwrap();
         t.commit().unwrap();
         ops::set_job_qtemp(Some(qtemp));
-        let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![qtemp, lib] });
+        let mut ctx = SqlContext::new(
+            qsys,
+            JobHandle(1),
+            NameContext {
+                curlib: Some(lib),
+                libl: vec![qtemp, lib],
+            },
+        );
         ctx.now = Some(NOW);
         ctx.user = "QSECOFR".into();
         ctx.qtemp.adopt(qtemp, NOW);
-        Self { store, qsys, qtemp, ctx }
+        Self {
+            store,
+            qsys,
+            qtemp,
+            ctx,
+        }
     }
 
     fn ok(&mut self, text: &str) -> Outcome {
         let p = prepare(text, Naming::Sql).unwrap();
         let mut t = self.store.begin().unwrap();
-        let r = p.execute(&mut t, &mut self.ctx, &[]).unwrap_or_else(|e| panic!("{text}: {e}"));
+        let r = p
+            .execute(&mut t, &mut self.ctx, &[])
+            .unwrap_or_else(|e| panic!("{text}: {e}"));
         t.commit().unwrap();
         r
     }
 
     fn rows(&mut self, text: &str) -> Vec<String> {
         match self.ok(text) {
-            Outcome::Rows(rs) => rs.rows.iter().map(|r| r.iter().map(|v| v.to_string().trim_end().to_string()).collect::<Vec<_>>().join("|")).collect(),
+            Outcome::Rows(rs) => rs
+                .rows
+                .iter()
+                .map(|r| {
+                    r.iter()
+                        .map(|v| v.to_string().trim_end().to_string())
+                        .collect::<Vec<_>>()
+                        .join("|")
+                })
+                .collect(),
             o => panic!("{text}: {o:?}"),
         }
     }
@@ -84,7 +114,15 @@ impl Job {
     /// A file as record I/O resolves it: `LIB/FILE` or `*LIBL`.
     fn resolve(&mut self, lib: LibSpec, file: &str) -> ObjectId {
         let mut t = self.store.begin().unwrap();
-        let f = ops::resolve(&mut t, self.qsys, &self.ctx.names, lib, Name::parse(file).unwrap(), types::FILE).unwrap();
+        let f = ops::resolve(
+            &mut t,
+            self.qsys,
+            &self.ctx.names,
+            lib,
+            Name::parse(file).unwrap(),
+            types::FILE,
+        )
+        .unwrap();
         t.abort();
         f.id
     }
@@ -104,7 +142,14 @@ fn cl_rla_and_sql_share_the_jobs_qtemp() {
     let mut t = job.store.begin().unwrap();
     let lib = ops::find_library(&mut t, job.qsys, qtemp_name).unwrap().id;
     assert_eq!(lib, job.qtemp);
-    let clf = db::file::create_pf_rcdlen(&mut t, lib, Name::parse("CLF").unwrap(), 8, &db::CreateFileOpts::default()).unwrap();
+    let clf = db::file::create_pf_rcdlen(
+        &mut t,
+        lib,
+        Name::parse("CLF").unwrap(),
+        8,
+        &db::CreateFileOpts::default(),
+    )
+    .unwrap();
     t.commit().unwrap();
     // SQL sees it, qualified and through the library list.
     job.ok("INSERT INTO QTEMP.CLF VALUES ('fromsql')");
@@ -117,20 +162,32 @@ fn cl_rla_and_sql_share_the_jobs_qtemp() {
     assert_eq!(job.resolve(LibSpec::Name(qtemp_name), "CLF"), clf);
     let locks = odp::new_shared();
     let mut t = job.store.begin().unwrap();
-    let opts = OpenOpts { usage: Usage::ALL, keyed: false, ..OpenOpts::input(JobHandle(1)) };
+    let opts = OpenOpts {
+        usage: Usage::ALL,
+        keyed: false,
+        ..OpenOpts::input(JobHandle(1))
+    };
     let mut o = Odp::open(&mut t, locks, by_name, opts).unwrap();
-    o.write(&mut t, &ccsid::to_ebcdic("rla1").unwrap(), &[]).unwrap();
+    o.write(&mut t, &ccsid::to_ebcdic("rla1").unwrap(), &[])
+        .unwrap();
     o.close(&mut t);
     t.commit().unwrap();
     assert_eq!(job.rows("SELECT A FROM QTEMP.SQLT"), ["rla1"]);
 
     // A view over both, in QTEMP.
     job.ok("CREATE VIEW QTEMP.BOTH AS SELECT A FROM QTEMP.SQLT UNION ALL SELECT SUBSTR(CLF, 1, 4) AS A FROM QTEMP.CLF");
-    assert_eq!(job.rows("SELECT * FROM QTEMP.BOTH ORDER BY 1"), ["from", "rla1"]);
+    assert_eq!(
+        job.rows("SELECT * FROM QTEMP.BOTH ORDER BY 1"),
+        ["from", "rla1"]
+    );
 
     // What DSPLIB QTEMP lists: every one of them.
     let mut t = job.store.begin().unwrap();
-    let names: Vec<String> = ops::list(&mut t, job.qtemp, Some(types::FILE)).unwrap().into_iter().map(|(n, _)| n.name.to_string().trim().to_string()).collect();
+    let names: Vec<String> = ops::list(&mut t, job.qtemp, Some(types::FILE))
+        .unwrap()
+        .into_iter()
+        .map(|(n, _)| n.name.to_string().trim().to_string())
+        .collect();
     t.abort();
     for n in ["BOTH", "CLF", "SQLT"] {
         assert!(names.iter().any(|x| x == n), "{n} in {names:?}");

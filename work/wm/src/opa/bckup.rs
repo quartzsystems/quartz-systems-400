@@ -217,7 +217,10 @@ impl Options {
         let mut o = Self::shipped(w);
         let g = |k: &str| kv.get(&format!("{p}.{k}"));
         let list = |v: &String| -> Vec<String> {
-            v.split(',').filter(|s| !s.is_empty()).map(str::to_string).collect()
+            v.split(',')
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect()
         };
         if let Some(v) = g("dev") {
             o.dev = list(v);
@@ -240,7 +243,11 @@ impl Options {
                 *slot = b;
             }
         }
-        for (k, slot) in [("lib", &mut o.lib), ("flr", &mut o.flr), ("dir", &mut o.dir)] {
+        for (k, slot) in [
+            ("lib", &mut o.lib),
+            ("flr", &mut o.flr),
+            ("dir", &mut o.dir),
+        ] {
             if let Some(s) = g(k).and_then(|v| Sel::parse(v)) {
                 *slot = s;
             }
@@ -313,7 +320,11 @@ impl Backup {
     /// `CHGBCKUP BCKUPOPT(w)`: `get` gives each keyword's value as
     /// typed (a list's elements space-separated); `*SAME` or nothing
     /// keeps the option. `*ALL` changes the three.
-    pub fn apply(&mut self, which: &[Which], get: impl Fn(&str) -> Option<String>) -> Result<(), Bad> {
+    pub fn apply(
+        &mut self,
+        which: &[Which],
+        get: impl Fn(&str) -> Option<String>,
+    ) -> Result<(), Bad> {
         let mut out = self.clone();
         for w in which {
             let o = out.of_mut(*w);
@@ -345,7 +356,11 @@ impl Backup {
                     *slot = yes_no(&v).ok_or(Bad(k, v))?;
                 }
             }
-            for (k, slot) in [("LIB", &mut o.lib), ("FLR", &mut o.flr), ("DIR", &mut o.dir)] {
+            for (k, slot) in [
+                ("LIB", &mut o.lib),
+                ("FLR", &mut o.flr),
+                ("DIR", &mut o.dir),
+            ] {
                 if let Some(v) = same(get(k)) {
                     *slot = Sel::parse(&v).ok_or(Bad(k, v))?;
                 }
@@ -362,7 +377,13 @@ impl Backup {
     #[must_use]
     pub fn keyword_form(&self, w: Which) -> String {
         let o = self.of(w);
-        let list = |v: &[String]| if v.is_empty() { "*NONE".to_string() } else { v.join(" ") };
+        let list = |v: &[String]| {
+            if v.is_empty() {
+                "*NONE".to_string()
+            } else {
+                v.join(" ")
+            }
+        };
         format!(
             "BCKUPOPT({}) DEV({}) TAPSET({}) CLRTAP({}) SBMJOB({}) CHGONLY({}) PRTRPT({}) \
              LIB({}) FLR({}) DIR({}) SECDTA({}) CFG({}) MAIL({}) CAL({}) EXITPGM({})",
@@ -418,7 +439,11 @@ pub fn plan(o: &Options, dev: &str, user_libs: &[String]) -> Vec<Step> {
         } else {
             user_libs.join(" ")
         };
-        let verb = if o.chgonly { "SAVCHGOBJ OBJ(*ALL)" } else { "SAVLIB" };
+        let verb = if o.chgonly {
+            "SAVCHGOBJ OBJ(*ALL)"
+        } else {
+            "SAVLIB"
+        };
         v.push(Step {
             cmd: format!("{verb} LIB({libs}) DEV({dev})"),
             restricted: o.lib == Sel::AllUsr,
@@ -426,7 +451,9 @@ pub fn plan(o: &Options, dev: &str, user_libs: &[String]) -> Vec<Step> {
     }
     if o.dir != Sel::None {
         v.push(Step {
-            cmd: format!("SAV DEV('/QSYS.LIB/{dev}.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT) ('/QDLS' *OMIT))"),
+            cmd: format!(
+                "SAV DEV('/QSYS.LIB/{dev}.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT) ('/QDLS' *OMIT))"
+            ),
             restricted: false,
         });
     }
@@ -453,7 +480,11 @@ mod tests {
     use super::*;
 
     fn get<'a>(kv: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
-        move |k| kv.iter().find(|(x, _)| *x == k).map(|(_, v)| (*v).to_string())
+        move |k| {
+            kv.iter()
+                .find(|(x, _)| *x == k)
+                .map(|(_, v)| (*v).to_string())
+        }
     }
 
     #[test]
@@ -469,8 +500,11 @@ mod tests {
     #[test]
     fn options_persist() {
         let mut b = Backup::default();
-        b.apply(&[Which::Weekly], get(&[("DEV", "tap01 TAP02"), ("LIB", "*ALLUSR"), ("CFG", "*NO")]))
-            .unwrap();
+        b.apply(
+            &[Which::Weekly],
+            get(&[("DEV", "tap01 TAP02"), ("LIB", "*ALLUSR"), ("CFG", "*NO")]),
+        )
+        .unwrap();
         b.of_mut(Which::Weekly).ipl_after = true;
         b.of_mut(Which::Weekly).last = 1_792_540_800;
         b.of_mut(Which::Weekly).last_tapset = "WEEKA".into();
@@ -481,7 +515,11 @@ mod tests {
         assert_eq!(w.lib, Sel::AllUsr);
         assert!(!w.cfg && w.ipl_after);
         assert_eq!(w.next_tapset(), "WEEKB");
-        assert_eq!(back.of(Which::Daily), &Options::shipped(Which::Daily), "daily untouched");
+        assert_eq!(
+            back.of(Which::Daily),
+            &Options::shipped(Which::Daily),
+            "daily untouched"
+        );
         assert_eq!(Backup::decode(""), Backup::default());
     }
 
@@ -501,11 +539,21 @@ mod tests {
         let cmds: Vec<&str> = p.iter().map(|s| s.cmd.as_str()).collect();
         assert_eq!(cmds[0], "SAVSECDTA DEV(TAP01) CLEAR(*ALL) ENDOPT(*LEAVE)");
         assert_eq!(cmds[1], "SAVCFG DEV(TAP01) SEQNBR(*END) ENDOPT(*LEAVE)");
-        assert_eq!(cmds[2], "SAVLIB LIB(*ALLUSR) DEV(TAP01) SEQNBR(*END) ENDOPT(*LEAVE)");
+        assert_eq!(
+            cmds[2],
+            "SAVLIB LIB(*ALLUSR) DEV(TAP01) SEQNBR(*END) ENDOPT(*LEAVE)"
+        );
         assert!(p[2].restricted, "*ALLUSR needs the restricted state");
         assert!(cmds[3].starts_with("SAV DEV('/QSYS.LIB/TAP01.DEVD')"));
-        let d = plan(&Options::shipped(Which::Daily), "TAP01", &["APP".into(), "WEB".into()]);
-        assert_eq!(d[0].cmd, "SAVCHGOBJ OBJ(*ALL) LIB(APP WEB) DEV(TAP01) CLEAR(*ALL) ENDOPT(*LEAVE)");
+        let d = plan(
+            &Options::shipped(Which::Daily),
+            "TAP01",
+            &["APP".into(), "WEB".into()],
+        );
+        assert_eq!(
+            d[0].cmd,
+            "SAVCHGOBJ OBJ(*ALL) LIB(APP WEB) DEV(TAP01) CLEAR(*ALL) ENDOPT(*LEAVE)"
+        );
         assert!(!d[0].restricted);
     }
 }

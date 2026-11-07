@@ -95,7 +95,9 @@ pub fn load(system: &mut System) {
         return;
     };
     if upgraded > 0 {
-        eprintln!("qsstg: {upgraded} spooled file(s) written before the published PP codes converted");
+        eprintln!(
+            "qsstg: {upgraded} spooled file(s) written before the published PP codes converted"
+        );
     }
     let sp = &mut system.spool;
     for e in found {
@@ -399,9 +401,12 @@ pub fn find(system: &System, file: &str, job: &str, splnbr: &str) -> Result<u32,
 /// `*NONE`); dangling queue entries always. The objects and entries
 /// removed.
 pub fn reclaim(system: &mut System, days: Option<u32>) -> (usize, usize) {
-    let known: std::collections::BTreeSet<ObjectId> = system.spool.files.values().map(|e| e.obj).collect();
+    let known: std::collections::BTreeSet<ObjectId> =
+        system.spool.files.values().map(|e| e.obj).collect();
     let ids: std::collections::BTreeSet<u32> = system.spool.files.keys().copied().collect();
-    let cutoff = days.map_or(u64::MAX, |d| now_unix().saturating_sub(u64::from(d) * 86_400));
+    let cutoff = days.map_or(u64::MAX, |d| {
+        now_unix().saturating_sub(u64::from(d) * 86_400)
+    });
     let r = sec::guard::as_system(|| {
         with_store(system, |txn, qsys| {
             let qspl = wm::obj::library(txn, qsys, "QSPL").map_err(|e| e.to_string())?;
@@ -420,7 +425,9 @@ pub fn reclaim(system: &mut System, days: Option<u32>) -> (usize, usize) {
             let libs = ops::list(txn, qsys, Some(types::LIB)).map_err(|e| e.to_string())?;
             for lib in std::iter::once(qsys).chain(libs.into_iter().map(|(_, l)| l)) {
                 for (_, q) in ops::list(txn, lib, Some(types::OUTQ)).map_err(|e| e.to_string())? {
-                    let Ok(mut oq) = OutQ::decode(&wm::obj::read(txn, q).map_err(|e| e.to_string())?) else {
+                    let Ok(mut oq) =
+                        OutQ::decode(&wm::obj::read(txn, q).map_err(|e| e.to_string())?)
+                    else {
                         continue;
                     };
                     let before = oq.files.len();
@@ -445,7 +452,9 @@ pub fn maintain(system: &mut System) -> String {
     let logs = super::joblog::serve_pending(system);
     let today = now_unix() / 86_400;
     let due = {
-        let mut last = LAST.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut last = LAST
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         std::mem::replace(&mut *last, today) != today
     };
     if due {
@@ -512,8 +521,14 @@ mod tests {
             job: (job.into(), "BOB".into(), 1),
             ..SplfAttrs::default()
         };
-        assert_eq!(published(&attrs("*SCS", "QPADEV0001"), &old), Some(vec![0x34, 0xC4, 5, 0xC1]));
-        assert_eq!(published(&attrs("", "QPADEV0001"), &old).map(|d| d[1]), Some(0xC4));
+        assert_eq!(
+            published(&attrs("*SCS", "QPADEV0001"), &old),
+            Some(vec![0x34, 0xC4, 5, 0xC1])
+        );
+        assert_eq!(
+            published(&attrs("", "QPADEV0001"), &old).map(|d| d[1]),
+            Some(0xC4)
+        );
         assert_eq!(published(&attrs("*USERASCII", "QPADEV0001"), &old), None);
         assert_eq!(published(&attrs("*SCS", "QTLPD00001"), &old), None);
     }

@@ -29,7 +29,10 @@ fn text(v: &Value) -> String {
 }
 
 fn parm(r: &Resolved, kwd: &str) -> String {
-    r.get(kwd).and_then(|b| b.value.as_ref()).map(text).unwrap_or_default()
+    r.get(kwd)
+        .and_then(|b| b.value.as_ref())
+        .map(text)
+        .unwrap_or_default()
 }
 
 /// What the socket reader hands the session.
@@ -121,7 +124,13 @@ fn config(host: &Host, r: &Resolved) -> Config {
     cfg
 }
 
-fn session(job: &mut Job, host: &Host, r: &Resolved, stream: TcpStream, wait: Duration) -> Result<String, Fail> {
+fn session(
+    job: &mut Job,
+    host: &Host,
+    r: &Resolved,
+    stream: TcpStream,
+    wait: Duration,
+) -> Result<String, Fail> {
     let mut out = stream.try_clone().map_err(|e| {
         let mut f = Fail::msg("TCP2590", &[]);
         f.data = vary(&e.raw_os_error().unwrap_or(0).to_string());
@@ -167,7 +176,11 @@ fn session(job: &mut Job, host: &Host, r: &Resolved, stream: TcpStream, wait: Du
             Err(_) => return Err(Fail::msg(if heard { "TCP2534" } else { "TCP2591" }, &[])),
         }
     }
-    let saved = host.display.borrow().as_ref().map(crate::display::Display::snapshot);
+    let saved = host
+        .display
+        .borrow()
+        .as_ref()
+        .map(crate::display::Display::snapshot);
     let show = |rec: &[u8]| {
         if let Ok(rec) = Record::decode(rec)
             && let Some(d) = host.display.borrow_mut().as_mut()
@@ -200,8 +213,17 @@ fn session(job: &mut Job, host: &Host, r: &Resolved, stream: TcpStream, wait: Du
         }
         // Then what the display sent.
         match host.inbox.recv_timeout(Duration::from_millis(50)) {
-            Ok(ToJob::Record { flags, opcode, data }) => {
-                let rec = Record { flags, opcode, data }.encode();
+            Ok(ToJob::Record {
+                flags,
+                opcode,
+                data,
+            }) => {
+                let rec = Record {
+                    flags,
+                    opcode,
+                    data,
+                }
+                .encode();
                 if out.write_all(&tn5250::telnet::record(&rec)).is_err() {
                     break;
                 }

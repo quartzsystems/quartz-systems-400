@@ -31,7 +31,12 @@ wire_enum!(EntryKind {
 
 impl EntryKind {
     /// Every kind, in value order.
-    pub const ALL: [EntryKind; 4] = [EntryKind::File, EntryKind::Directory, EntryKind::Symlink, EntryKind::Other];
+    pub const ALL: [EntryKind; 4] = [
+        EntryKind::File,
+        EntryKind::Directory,
+        EntryKind::Symlink,
+        EntryKind::Other,
+    ];
 }
 
 /// A file, directory or link as lists show it.
@@ -86,7 +91,12 @@ wire_enum!(WriteMode {
 
 impl WriteMode {
     /// Every mode, in value order.
-    pub const ALL: [WriteMode; 4] = [WriteMode::Create, WriteMode::Replace, WriteMode::Update, WriteMode::Append];
+    pub const ALL: [WriteMode; 4] = [
+        WriteMode::Create,
+        WriteMode::Replace,
+        WriteMode::Update,
+        WriteMode::Append,
+    ];
 }
 
 /// `ListDirectory`'s request.

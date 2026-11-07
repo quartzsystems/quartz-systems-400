@@ -127,7 +127,9 @@ impl ObjectSource for StoreObjects {
             if store::obj::guard::check_id(txn, "pgm.call", id).is_err() {
                 return Ok(None);
             }
-            ile::store::load_program(txn, id).map(Some).map_err(|e| e.to_string())
+            ile::store::load_program(txn, id)
+                .map(Some)
+                .map_err(|e| e.to_string())
         };
         let object = if temp {
             with_temp(&self.shared, |txn, _| load(txn))

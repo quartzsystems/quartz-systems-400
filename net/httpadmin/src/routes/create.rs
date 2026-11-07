@@ -15,7 +15,9 @@ use qsweb::frame::Page;
 use qsweb::html::esc;
 use qsweb::http::Response;
 use qsweb::msg::{Kind, Message};
-use qsweb::partials::{Button, Prop, PropGroup, checkbox, input, input_cmd, props_table, radio, wizard};
+use qsweb::partials::{
+    Button, Prop, PropGroup, checkbox, input, input_cmd, props_table, radio, wizard,
+};
 
 use super::Rq;
 use super::instance::{bad_value, pick};
@@ -60,17 +62,26 @@ struct Answers {
 }
 
 fn default_root(s: &Settings, name: &str) -> String {
-    format!("{}/{}", s.default_root.trim_end_matches('/'), name.to_ascii_lowercase())
+    format!(
+        "{}/{}",
+        s.default_root.trim_end_matches('/'),
+        name.to_ascii_lowercase()
+    )
 }
 
 impl Answers {
     fn load(rq: &Rq<'_>, s: &Settings) -> Self {
         let g = |k: &str| rq.get(&format!("create.{k}"));
         let name = g("name");
-        let root = Some(g("root")).filter(|r| !r.is_empty()).unwrap_or_else(|| default_root(s, &name));
-        let docroot = Some(g("docroot")).filter(|r| !r.is_empty()).unwrap_or_else(|| format!("{root}/htdocs"));
-        let logpath =
-            Some(g("logpath")).filter(|r| !r.is_empty()).unwrap_or_else(|| format!("{root}/logs/access_log"));
+        let root = Some(g("root"))
+            .filter(|r| !r.is_empty())
+            .unwrap_or_else(|| default_root(s, &name));
+        let docroot = Some(g("docroot"))
+            .filter(|r| !r.is_empty())
+            .unwrap_or_else(|| format!("{root}/htdocs"));
+        let logpath = Some(g("logpath"))
+            .filter(|r| !r.is_empty())
+            .unwrap_or_else(|| format!("{root}/logs/access_log"));
         Self {
             desc: g("desc"),
             copy: g("base") == "copy",
@@ -79,11 +90,17 @@ impl Answers {
             docroot,
             sample: g("sample") != "off",
             ip: (g("addr") == "ip").then(|| g("ip")),
-            port: Some(g("port")).filter(|p| !p.is_empty()).unwrap_or_else(|| "80".into()),
+            port: Some(g("port"))
+                .filter(|p| !p.is_empty())
+                .unwrap_or_else(|| "80".into()),
             log: g("log") != "no",
             logpath,
-            fmt: Some(g("fmt")).filter(|f| FORMATS.contains(&f.as_str())).unwrap_or_else(|| FORMATS[0].into()),
-            rot: Some(g("rot")).filter(|f| ROTATIONS.contains(&f.as_str())).unwrap_or_else(|| ROTATIONS[0].into()),
+            fmt: Some(g("fmt"))
+                .filter(|f| FORMATS.contains(&f.as_str()))
+                .unwrap_or_else(|| FORMATS[0].into()),
+            rot: Some(g("rot"))
+                .filter(|f| ROTATIONS.contains(&f.as_str()))
+                .unwrap_or_else(|| ROTATIONS[0].into()),
             name,
         }
     }
@@ -100,7 +117,13 @@ impl Answers {
 /// Instances a new one may copy.
 fn models(rq: &Rq<'_>) -> Vec<String> {
     Registry::load(rq.env().files.as_ref())
-        .map(|r| r.instances.into_iter().map(|e| e.name).filter(|n| !PRODUCT_INSTANCES.contains(&n.as_str())).collect())
+        .map(|r| {
+            r.instances
+                .into_iter()
+                .map(|e| e.name)
+                .filter(|n| !PRODUCT_INSTANCES.contains(&n.as_str()))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -110,7 +133,11 @@ const WITHIN: &str = "create.within";
 
 /// `/create/step/<n>`.
 pub fn step(rq: &Rq<'_>, n: &str) -> Response {
-    let Some(n) = n.parse::<usize>().ok().filter(|n| (1..=STEPS.len()).contains(n)) else {
+    let Some(n) = n
+        .parse::<usize>()
+        .ok()
+        .filter(|n| (1..=STEPS.len()).contains(n))
+    else {
         return rq.not_found(&format!("wizard step {n}"));
     };
     if rq.post() {
@@ -123,7 +150,11 @@ pub fn step(rq: &Rq<'_>, n: &str) -> Response {
     if n == 1 && !within {
         rq.clear("create.");
     }
-    let reached = rq.get("create.reached").parse::<usize>().unwrap_or(1).max(1);
+    let reached = rq
+        .get("create.reached")
+        .parse::<usize>()
+        .unwrap_or(1)
+        .max(1);
     if n > reached {
         return rq.redirect(&format!("/create/step/{reached}"));
     }
@@ -138,9 +169,21 @@ pub fn step(rq: &Rq<'_>, n: &str) -> Response {
         _ => step6(&a, &s),
     };
     let bs = match n {
-        1 => vec![Button::new("back", "< Back").disabled(), Button::new("next", "Next >"), Button::new("cancel", "Cancel")],
-        6 => vec![Button::new("back", "< Back"), Button::new("cancel", "Cancel"), Button::new("finish", "Create")],
-        _ => vec![Button::new("back", "< Back"), Button::new("next", "Next >"), Button::new("cancel", "Cancel")],
+        1 => vec![
+            Button::new("back", "< Back").disabled(),
+            Button::new("next", "Next >"),
+            Button::new("cancel", "Cancel"),
+        ],
+        6 => vec![
+            Button::new("back", "< Back"),
+            Button::new("cancel", "Cancel"),
+            Button::new("finish", "Create"),
+        ],
+        _ => vec![
+            Button::new("back", "< Back"),
+            Button::new("next", "Next >"),
+            Button::new("cancel", "Cancel"),
+        ],
     };
     rq.page(Page {
         title: "Create HTTP server".into(),
@@ -156,7 +199,11 @@ pub fn step(rq: &Rq<'_>, n: &str) -> Response {
 }
 
 fn heading(title: &str, text: &str) -> String {
-    format!("<h2>{}</h2><p class=\"small grey\">{}</p>", esc(title), esc(text))
+    format!(
+        "<h2>{}</h2><p class=\"small grey\">{}</p>",
+        esc(title),
+        esc(text)
+    )
 }
 
 fn table(rows: Vec<Prop>) -> String {
@@ -180,7 +227,9 @@ fn step1(rq: &Rq<'_>, a: &Answers, s: &Settings) -> String {
         "{}{}",
         heading("Name and description", &text),
         table(vec![
-            Prop::new("Instance name", input("name", &a.name, 10)).required().help("create-name"),
+            Prop::new("Instance name", input("name", &a.name, 10))
+                .required()
+                .help("create-name"),
             Prop::new("Description", input("desc", &a.desc, 50)),
             Prop::new("Based on", base),
         ])
@@ -213,7 +262,10 @@ fn step3(a: &Answers) -> String {
         table(vec![
             Prop::new(
                 "Document root",
-                format!("{} <input type=\"submit\" value=\"Browse...\">", input_cmd("docroot", &a.docroot, 45))
+                format!(
+                    "{} <input type=\"submit\" value=\"Browse...\">",
+                    input_cmd("docroot", &a.docroot, 45)
+                )
             )
             .help("create-docroot"),
             Prop::new("Create a sample index.html", checkbox("sample", a.sample)),
@@ -279,7 +331,11 @@ fn step6(a: &Answers, s: &Settings) -> String {
         ("Description", a.desc.clone()),
         (
             "Based on",
-            if a.copy { format!("Copy of {}", a.copyfrom) } else { "New configuration".into() },
+            if a.copy {
+                format!("Copy of {}", a.copyfrom)
+            } else {
+                "New configuration".into()
+            },
         ),
         ("Server root", a.root.clone()),
         ("Configuration file", instance::conf_path(&a.root)),
@@ -289,15 +345,30 @@ fn step6(a: &Answers, s: &Settings) -> String {
         ("Port", a.port.clone()),
         (
             "Access log",
-            if a.log { format!("{} ({}, {})", a.logpath, a.fmt, rotation_word(&a.rot)) } else { "None".into() },
+            if a.log {
+                format!("{} ({}, {})", a.logpath, a.fmt, rotation_word(&a.rot))
+            } else {
+                "None".into()
+            },
         ),
         ("Server user profile", s.default_user.clone()),
         ("Start with STRTCP", "No".into()),
     ];
-    let mut t = String::from("<table class=\"list\" style=\"width:auto\"><tr><th>Setting</th><th>Value</th></tr>");
+    let mut t = String::from(
+        "<table class=\"list\" style=\"width:auto\"><tr><th>Setting</th><th>Value</th></tr>",
+    );
     for (i, (k, v)) in rows.iter().enumerate() {
-        let tr = if i % 2 == 1 { "<tr class=\"alt\">" } else { "<tr>" };
-        let _ = write!(t, "{tr}<td>{}</td><td class=\"mono\">{}</td></tr>", esc(k), esc(v));
+        let tr = if i % 2 == 1 {
+            "<tr class=\"alt\">"
+        } else {
+            "<tr>"
+        };
+        let _ = write!(
+            t,
+            "{tr}<td>{}</td><td class=\"mono\">{}</td></tr>",
+            esc(k),
+            esc(v)
+        );
     }
     t.push_str("</table>");
     format!(
@@ -355,13 +426,22 @@ fn post(rq: &Rq<'_>, n: usize) -> Response {
         .map(|k| (format!("create.{k}"), f.str(k).trim().to_string()))
         .collect();
     if n == 3 && f.has("docroot") {
-        pairs.push(("create.sample".into(), if f.has("sample") { "on" } else { "off" }.into()));
+        pairs.push((
+            "create.sample".into(),
+            if f.has("sample") { "on" } else { "off" }.into(),
+        ));
     }
     if n == 1 && f.has("name") {
         pairs.retain(|(k, _)| k != "create.name");
-        pairs.push(("create.name".into(), f.str("name").trim().to_ascii_uppercase()));
+        pairs.push((
+            "create.name".into(),
+            f.str("name").trim().to_ascii_uppercase(),
+        ));
     }
-    let refs: Vec<(&str, &str)> = pairs.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+    let refs: Vec<(&str, &str)> = pairs
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
     rq.set(&refs);
     if f.has("back") {
         return rq.redirect(&format!("/create/step/{}", n.saturating_sub(1).max(1)));
@@ -371,7 +451,11 @@ fn post(rq: &Rq<'_>, n: usize) -> Response {
         if let Err(m) = check(rq, &s, &a, n) {
             return rq.done(&format!("/create/step/{n}"), m);
         }
-        let reached = rq.get("create.reached").parse::<usize>().unwrap_or(1).max(n + 1);
+        let reached = rq
+            .get("create.reached")
+            .parse::<usize>()
+            .unwrap_or(1)
+            .max(n + 1);
         rq.set(&[("create.reached", &reached.to_string())]);
         return rq.redirect(&format!("/create/step/{}", n + 1));
     }
@@ -394,21 +478,38 @@ fn check(rq: &Rq<'_>, s: &Settings, a: &Answers, n: usize) -> Result<(), Message
     let files = rq.env().files.as_ref();
     match n {
         1 => {
-            let name = instance::check_name(&a.name)
-                .map_err(|_| bad_value(&a.name, "Instance name", "1 to 10 letters and digits, starting with a letter"))?;
+            let name = instance::check_name(&a.name).map_err(|_| {
+                bad_value(
+                    &a.name,
+                    "Instance name",
+                    "1 to 10 letters and digits, starting with a letter",
+                )
+            })?;
             // The web products' names stay theirs, installed or not.
             if PRODUCT_INSTANCES.contains(&name.as_str()) {
-                return Err(bad_value(&a.name, "Instance name", "a name other than ADMIN, NAVIGATOR and ACCESSWEB"));
+                return Err(bad_value(
+                    &a.name,
+                    "Instance name",
+                    "a name other than ADMIN, NAVIGATOR and ACCESSWEB",
+                ));
             }
             let reg = Registry::load(files).unwrap_or_default();
             if reg.get(&name).is_some() {
                 return Err(msgs::message(Kind::Error, "HTP8122", &[&name]));
             }
             if reg.instances.len() >= s.max_instances as usize {
-                return Err(msgs::message(Kind::Error, "HTP8123", &[&reg.instances.len().to_string()]));
+                return Err(msgs::message(
+                    Kind::Error,
+                    "HTP8123",
+                    &[&reg.instances.len().to_string()],
+                ));
             }
             if a.copy && reg.get(&a.copyfrom).is_none() {
-                return Err(bad_value(&a.copyfrom, "Copy of existing instance", "an instance on this system"));
+                return Err(bad_value(
+                    &a.copyfrom,
+                    "Copy of existing instance",
+                    "an instance on this system",
+                ));
             }
         }
         2 => {
@@ -419,7 +520,11 @@ fn check(rq: &Rq<'_>, s: &Settings, a: &Answers, n: usize) -> Result<(), Message
                 .iter()
                 .any(|e| e.root.trim_end_matches('/') == a.root.trim_end_matches('/'));
             if taken || files.exists(&instance::conf_path(&a.root)) {
-                return Err(bad_value(&a.root, "Server root", "a directory no other instance uses"));
+                return Err(bad_value(
+                    &a.root,
+                    "Server root",
+                    "a directory no other instance uses",
+                ));
             }
         }
         3 => absolute(&a.docroot, "Document root")?,
@@ -454,14 +559,28 @@ fn check(rq: &Rq<'_>, s: &Settings, a: &Answers, n: usize) -> Result<(), Message
 /// Ports below 1024 need `*IOSYSCFG` on the server user profile.
 pub fn low_port(rq: &Rq<'_>, port: u16, user: &str) -> Result<(), Message> {
     let sys = &rq.env().system;
-    if port < 1024 && !sys.special(user).iter().any(|a| a == "*IOSYSCFG" || a == "*ALLOBJ") {
-        return Err(msgs::message(Kind::Error, "HTP8202", &[&port.to_string(), user]));
+    if port < 1024
+        && !sys
+            .special(user)
+            .iter()
+            .any(|a| a == "*IOSYSCFG" || a == "*ALLOBJ")
+    {
+        return Err(msgs::message(
+            Kind::Error,
+            "HTP8202",
+            &[&port.to_string(), user],
+        ));
     }
     Ok(())
 }
 
 fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
-    if let Err(r) = rq.require(Need::IoSysCfg, "Create HTTP server instance", &a.name, &["Create", "New HTTP server"]) {
+    if let Err(r) = rq.require(
+        Need::IoSysCfg,
+        "Create HTTP server instance",
+        &a.name,
+        &["Create", "New HTTP server"],
+    ) {
         return r;
     }
     if let Err(m) = check(rq, s, a, STEPS.len()) {
@@ -494,7 +613,11 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
     let (date, time) = sys.stamp(sys.now());
     let files = rq.env().files.as_ref();
     if let Err(e) = instance::create(files, &spec, &format!("{date} {time}"), sys.now()) {
-        return failed(msgs::message(Kind::Error, "HTP8106", &[&a.name, &e.to_string()]));
+        return failed(msgs::message(
+            Kind::Error,
+            "HTP8106",
+            &[&a.name, &e.to_string()],
+        ));
     }
     // What the generated file does not say: threads, size rotation, and
     // a copied file's port.
@@ -512,7 +635,10 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
             c.unset("LogMaint");
             for m in maint {
                 let p = m.args.first().cloned().unwrap_or_default();
-                c.add(conf::Directive::new("LogMaint", &[&p, &m.args.get(1).cloned().unwrap_or_default(), "10"]));
+                c.add(conf::Directive::new(
+                    "LogMaint",
+                    &[&p, &m.args.get(1).cloned().unwrap_or_default(), "10"],
+                ));
             }
         }
         let _ = files.write_atomic(&path, c.print().as_bytes());
@@ -528,7 +654,13 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
     let name = spec.name.to_ascii_uppercase();
     if let Err(e) = rq.env().certs.register_instance(&name) {
         let app = certs::apps::http_server(&name);
-        return rq.done("/instances", msgs::message(Kind::Error, "HTP8126", &[&app, &name, &e.to_string()]));
+        return rq.done(
+            "/instances",
+            msgs::message(Kind::Error, "HTP8126", &[&app, &name, &e.to_string()]),
+        );
     }
-    rq.done("/instances", msgs::message(Kind::Done, "HTP8020", &[&spec.name, &spec.root]))
+    rq.done(
+        "/instances",
+        msgs::message(Kind::Done, "HTP8020", &[&spec.name, &spec.root]),
+    )
 }

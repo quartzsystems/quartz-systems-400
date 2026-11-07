@@ -28,7 +28,11 @@ fn log_path(v: &View, which: &str) -> Option<(String, String)> {
     let c = v.conf.as_ref().unwrap_or(&empty);
     let p = if which == "error" {
         let e = c.value("ErrorLog");
-        if e.is_empty() { "logs/error_log".to_string() } else { e }
+        if e.is_empty() {
+            "logs/error_log".to_string()
+        } else {
+            e
+        }
     } else {
         c.get("CustomLog")?.args.first()?.clone()
     };
@@ -36,7 +40,9 @@ fn log_path(v: &View, which: &str) -> Option<(String, String)> {
 }
 
 fn rotation_words(c: Option<&Conf>, path: &str) -> String {
-    let Some(c) = c else { return "not rotated".into() };
+    let Some(c) = c else {
+        return "not rotated".into();
+    };
     match rotation(c, path).0 {
         Rotation::Daily(t) if t == "00:00" => "rotated daily".into(),
         Rotation::Daily(t) => format!("rotated daily at {t}"),
@@ -48,18 +54,37 @@ fn rotation_words(c: Option<&Conf>, path: &str) -> String {
 /// `GET /logs`: the tail of a log.
 pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let q = rq.query();
-    let which = if q.str("which") == "error" { "error" } else { "access" };
-    let n = if COUNTS.contains(&q.str("n")) { q.str("n") } else { "200" };
+    let which = if q.str("which") == "error" {
+        "error"
+    } else {
+        "access"
+    };
+    let n = if COUNTS.contains(&q.str("n")) {
+        q.str("n")
+    } else {
+        "200"
+    };
     let filter = q.str("q").to_string();
     let name = v.name();
     let second = tabs(
         &[
             ("Access log", instances::url(name, "logs")),
-            ("Error log", format!("{}{}", instances::url(name, "logs"), query(&[("which", "error")]))),
+            (
+                "Error log",
+                format!(
+                    "{}{}",
+                    instances::url(name, "logs"),
+                    query(&[("which", "error")])
+                ),
+            ),
         ],
         usize::from(which == "error"),
     );
-    let hidden = if which == "error" { "<input type=\"hidden\" name=\"which\" value=\"error\">" } else { "" };
+    let hidden = if which == "error" {
+        "<input type=\"hidden\" name=\"which\" value=\"error\">"
+    } else {
+        ""
+    };
     let form = format!(
         "<form method=\"get\"><table class=\"filter\" cellspacing=\"0\"><tr><td>Lines:</td><td>{}</td><td>Contains:</td><td><input type=\"text\" name=\"q\" value=\"{}\" size=\"20\"></td><td>{hidden}<input type=\"submit\" value=\"Refresh\"> </td></tr></table></form>",
         pick("n", COUNTS, n),
@@ -92,11 +117,19 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
 
 /// `GET /logs/download?which=`: the whole log.
 pub fn download(rq: &Rq<'_>, v: &View) -> Response {
-    let which = if rq.query().str("which") == "error" { "error" } else { "access" };
+    let which = if rq.query().str("which") == "error" {
+        "error"
+    } else {
+        "access"
+    };
     let Some((_, path)) = log_path(v, which) else {
         return rq.not_found(&format!("{which} log of instance {}", v.name()));
     };
-    let file = format!("{}-{}.txt", v.name(), path.rsplit('/').next().unwrap_or("log"));
+    let file = format!(
+        "{}-{}.txt",
+        v.name(),
+        path.rsplit('/').next().unwrap_or("log")
+    );
     // A log not written yet downloads empty.
     let from = rq
         .env()

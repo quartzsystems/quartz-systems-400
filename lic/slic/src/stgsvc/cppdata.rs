@@ -38,7 +38,9 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<
 }
 
 fn pairs(p: &[(&str, String)]) -> Vars {
-    p.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect()
+    p.iter()
+        .map(|(k, v)| ((*k).to_string(), v.clone()))
+        .collect()
 }
 
 /// `*ALL`, blank or a name: whether `name` is wanted.
@@ -51,7 +53,11 @@ fn wanted(which: &str, name: &str) -> bool {
 /// comma-separated list or empty.
 fn ptfs(system: &mut System, product: &str, select: &str) -> Result<Sys2Data, String> {
     let db = ptfcmd::load_db(system)?;
-    let sel: Vec<&str> = select.split(',').map(str::trim).filter(|s| !s.is_empty() && *s != "*ALL").collect();
+    let sel: Vec<&str> = select
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty() && *s != "*ALL")
+        .collect();
     let prod = if wanted(product, "") {
         release::PRODUCT_ID.to_string()
     } else {
@@ -98,10 +104,19 @@ fn ptf_detail(system: &mut System, ptf: &str) -> Result<Sys2Data, String> {
         if v.is_empty() {
             "*NONE".to_string()
         } else {
-            v.iter().map(|x| x.ptf.clone()).collect::<Vec<_>>().join(" ")
+            v.iter()
+                .map(|x| x.ptf.clone())
+                .collect::<Vec<_>>()
+                .join(" ")
         }
     };
-    let none = |s: &str| if s.is_empty() { "*NONE".to_string() } else { s.to_string() };
+    let none = |s: &str| {
+        if s.is_empty() {
+            "*NONE".to_string()
+        } else {
+            s.to_string()
+        }
+    };
     let vars = pairs(&[
         ("PTFID", r.ptf.clone()),
         ("PRODID", r.product.clone()),
@@ -150,7 +165,12 @@ fn ipla(system: &mut System) -> Sys2Data {
     let a = iplcmd::current(system);
     let vars = licpart::ipla::ATTRS
         .iter()
-        .map(|at| (at.kwd.to_string(), a.get(at.kwd).unwrap_or(at.default).to_string()))
+        .map(|at| {
+            (
+                at.kwd.to_string(),
+                a.get(at.kwd).unwrap_or(at.default).to_string(),
+            )
+        })
         .collect();
     (vars, Vec::new())
 }
@@ -167,7 +187,13 @@ fn split(s: &str) -> Vec<String> {
 /// letter, its text in `LETTER`, one line per `|`-free line.
 fn covers(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
     let arg = |i: usize| args.get(i).cloned().unwrap_or_default();
-    let all = ptfcmd::cover_letters(system, &arg(0), &split(&arg(1)), &split(&arg(2)), &arg(3).trim().to_ascii_uppercase())?;
+    let all = ptfcmd::cover_letters(
+        system,
+        &arg(0),
+        &split(&arg(1)),
+        &split(&arg(2)),
+        &arg(3).trim().to_ascii_uppercase(),
+    )?;
     let rows: Rows = all
         .iter()
         .map(|c| {
@@ -207,7 +233,14 @@ fn lickeys(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
                 ("LICKEY3", line(2)),
                 ("USGLMT", r.usage_limit.clone()),
                 ("EXPDATE", r.expiration.clone()),
-                ("VNDDTA", if r.vendor_data.trim().is_empty() { "*NONE".into() } else { r.vendor_data.clone() }),
+                (
+                    "VNDDTA",
+                    if r.vendor_data.trim().is_empty() {
+                        "*NONE".into()
+                    } else {
+                        r.vendor_data.clone()
+                    },
+                ),
             ])
         })
         .collect();
@@ -235,7 +268,15 @@ fn backup_status(system: &mut System) -> Result<Sys2Data, String> {
                 ("HDEV", r.dev),
                 ("HSET", r.tapset),
                 ("HCHG", if r.changes { "Yes" } else { "No" }.into()),
-                ("HSTS", if r.ok { "Completed" } else { "Ended with errors" }.into()),
+                (
+                    "HSTS",
+                    if r.ok {
+                        "Completed"
+                    } else {
+                        "Ended with errors"
+                    }
+                    .into(),
+                ),
                 ("HSTEPS", r.steps.join(";")),
             ])
         })

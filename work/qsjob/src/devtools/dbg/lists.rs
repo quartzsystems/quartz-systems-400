@@ -79,17 +79,22 @@ pub fn wrkmodbkp(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Sta
                             let cond = a.vars.get("COND").map(|c| c.trim().to_string());
                             let cond = cond.filter(|c| !c.is_empty());
                             msg = Some(match st.session.add_break(line, cond, None) {
-                                Ok(l) => super::say(host, &dbg::Msg::new(dbg::msgid::BKP_SET, &[&l])),
+                                Ok(l) => {
+                                    super::say(host, &dbg::Msg::new(dbg::msgid::BKP_SET, &[&l]))
+                                }
                                 Err(e) => super::say(host, &e.msg()),
                             });
                         }
                         ("4", i) => {
                             if let Some(r) = rows.get(i) {
                                 st.session.bkpts.clear(&m.program, &m.module, r.line);
-                                msg = Some(crate::display::msgline::say(host, "CPF9C17", &[&r.line]));
+                                msg =
+                                    Some(crate::display::msgline::say(host, "CPF9C17", &[&r.line]));
                             }
                         }
-                        (other, _) => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
+                        (other, _) => {
+                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                        }
                     }
                 }
                 if a.options.is_empty() {
@@ -141,7 +146,10 @@ pub fn wrkmodlst(
             ));
         }
         let shown: Vec<scr::ModRow> = rows.iter().map(|(r, _)| r.clone()).collect();
-        let a = ui::show(surface, &scr::wrkmodlst(&sys, &shown, 0, "", msg.as_deref()))?;
+        let a = ui::show(
+            surface,
+            &scr::wrkmodlst(&sys, &shown, 0, "", msg.as_deref()),
+        )?;
         msg = None;
         match a.key {
             Key::F(3 | 12) => return Some(String::new()),
@@ -155,7 +163,9 @@ pub fn wrkmodlst(
                     match (o.as_str(), row) {
                         ("1", None) => {
                             let name = a.up("PGM");
-                            let lib = Some(a.up("LIB")).filter(|l| !l.is_empty()).unwrap_or_else(|| "*LIBL".into());
+                            let lib = Some(a.up("LIB"))
+                                .filter(|l| !l.is_empty())
+                                .unwrap_or_else(|| "*LIBL".into());
                             msg = Some(add(job, host, st, &lib, &name));
                         }
                         ("4", Some((r, None))) => {
@@ -186,7 +196,9 @@ pub fn wrkmodlst(
                             st.session.show(*m);
                             wrkmodbkp(job, host, surface, st)?;
                         }
-                        (other, _) => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
+                        (other, _) => {
+                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                        }
                     }
                 }
             }
@@ -208,7 +220,10 @@ fn add(job: &mut Job, host: &Host, st: &mut State, lib: &str, name: &str) -> Str
                 updprod: st.session.updprod,
             },
         ) {
-            return crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &e));
+            return crate::display::msgline::text_of(
+                host,
+                &crate::display::msgline::of_fail(host, &e),
+            );
         }
     } else if let Err(e) = job.strdbg(name, lib) {
         return crate::display::msgline::text_of(host, &crate::panels::line(&e));
@@ -234,7 +249,10 @@ pub fn select_view(surface: &mut Surface, st: &mut State) -> Option<()> {
     let current = names.first().cloned().unwrap_or_default();
     let mut msg = None;
     loop {
-        let a = ui::show(surface, &eval::select_view(&current, &names, msg.as_deref()))?;
+        let a = ui::show(
+            surface,
+            &eval::select_view(&current, &names, msg.as_deref()),
+        )?;
         match a.key {
             Key::F(12 | 3) => return Some(()),
             Key::Enter if a.options.is_empty() => return Some(()),
@@ -288,7 +306,9 @@ pub fn wrkwatch(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Stat
                                 Err(_) => super::eval_failed(host, &w.variable),
                             });
                         }
-                        other => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
+                        other => {
+                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                        }
                     }
                 }
             }
@@ -306,7 +326,10 @@ pub fn threads(job: &mut Job, host: &Host, surface: &mut Surface, stopped: bool)
     let stop = if stopped { "00000001" } else { "*NONE" };
     let mut msg: Option<String> = None;
     loop {
-        let a = ui::show(surface, &scr::threads("00000001", stop, &rows, "", msg.as_deref()))?;
+        let a = ui::show(
+            surface,
+            &scr::threads("00000001", stop, &rows, "", msg.as_deref()),
+        )?;
         msg = None;
         match a.key {
             Key::Enter if !a.options.is_empty() => {
@@ -347,7 +370,10 @@ pub fn help(surface: &mut Surface, extended: bool) -> Option<()> {
     let pages = lines.len().div_ceil(helpscr::PAGE).max(1);
     let mut page = 0;
     loop {
-        let a = ui::show(surface, &helpscr::help("Display Module Source - Help", &lines, page, extended))?;
+        let a = ui::show(
+            surface,
+            &helpscr::help("Display Module Source - Help", &lines, page, extended),
+        )?;
         match a.key {
             Key::PageDown if page + 1 < pages => page += 1,
             Key::PageUp => page = page.saturating_sub(1),
@@ -364,7 +390,13 @@ pub fn output(surface: &mut Surface, st: &State) -> Option<()> {
     let mut s = dbg::screen::blank();
     dbg::screen::title(&mut s, "Program Output");
     if st.output.is_empty() {
-        dbg::screen::put(&mut s, 3, 2, Attr::Normal, "(The program has written nothing.)");
+        dbg::screen::put(
+            &mut s,
+            3,
+            2,
+            Attr::Normal,
+            "(The program has written nothing.)",
+        );
     }
     for (i, l) in st.output.iter().rev().take(18).rev().enumerate() {
         dbg::screen::put(&mut s, 3 + i, 2, Attr::Normal, l);
@@ -374,7 +406,12 @@ pub fn output(surface: &mut Surface, st: &State) -> Option<()> {
 }
 
 /// F21: the command window over the display `under`.
-pub fn command_entry(job: &mut Job, host: &Host, surface: &mut Surface, under: &Screen) -> Option<()> {
+pub fn command_entry(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    under: &Screen,
+) -> Option<()> {
     let mut msg: Option<String> = None;
     let mut last = String::new();
     let mut cmd = String::new();
@@ -426,7 +463,10 @@ pub fn dspbkp(job: &Job, host: &Host, st: &State) {
 
 /// A stop at an `ADDBKP` breakpoint: Display Breakpoint.
 pub fn display_breakpoint(job: &mut Job, surface: &mut Surface, at: &Stop) -> Resume {
-    let (lib, name) = at.program.split_once('/').unwrap_or(("", at.program.as_str()));
+    let (lib, name) = at
+        .program
+        .split_once('/')
+        .unwrap_or(("", at.program.as_str()));
     loop {
         let s = opm::display_breakpoint(at.stmt, name, lib, &at.procedure, at.depth, None);
         let Some(a) = ui::show(surface, &s) else {

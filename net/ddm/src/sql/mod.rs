@@ -99,7 +99,10 @@ impl ColType {
     pub fn parse(text: &str, nullable: bool) -> Option<Self> {
         let t = text.trim().to_ascii_uppercase();
         let (name, args) = match t.find('(') {
-            Some(i) => (t[..i].trim().to_string(), t[i + 1..].trim_end_matches(')').to_string()),
+            Some(i) => (
+                t[..i].trim().to_string(),
+                t[i + 1..].trim_end_matches(')').to_string(),
+            ),
             None => (t.clone(), String::new()),
         };
         let nums: Vec<u32> = args
@@ -112,7 +115,9 @@ impl ColType {
             "SMALLINT" => Self::new(Kind::SmallInt, 0, 5, 0, nullable),
             "INTEGER" | "INT" => Self::new(Kind::Integer, 0, 10, 0, nullable),
             "BIGINT" => Self::new(Kind::BigInt, 0, 19, 0, nullable),
-            "DECIMAL" | "DEC" => Self::new(Kind::Decimal, 0, small(a(0, 5)), small(a(1, 0)), nullable),
+            "DECIMAL" | "DEC" => {
+                Self::new(Kind::Decimal, 0, small(a(0, 5)), small(a(1, 0)), nullable)
+            }
             "NUMERIC" => Self::new(Kind::Numeric, 0, small(a(0, 5)), small(a(1, 0)), nullable),
             "DOUBLE" | "FLOAT" => Self::new(Kind::Double, 0, 53, 0, nullable),
             "CHAR" | "CHARACTER" => Self::new(Kind::Char, a(0, 1), 0, 0, nullable),

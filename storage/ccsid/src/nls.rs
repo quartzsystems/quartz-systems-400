@@ -30,11 +30,36 @@ impl Language {
 
 /// The versions QS/400 knows, the primary (English) first.
 pub const LANGUAGES: &[Language] = &[
-    Language { feature: 2924, langid: "ENU", cntryid: "US", ccsid: 37 },
-    Language { feature: 2928, langid: "FRA", cntryid: "FR", ccsid: 297 },
-    Language { feature: 2929, langid: "DEU", cntryid: "DE", ccsid: 273 },
-    Language { feature: 2931, langid: "ESP", cntryid: "ES", ccsid: 284 },
-    Language { feature: 2932, langid: "ITA", cntryid: "IT", ccsid: 280 },
+    Language {
+        feature: 2924,
+        langid: "ENU",
+        cntryid: "US",
+        ccsid: 37,
+    },
+    Language {
+        feature: 2928,
+        langid: "FRA",
+        cntryid: "FR",
+        ccsid: 297,
+    },
+    Language {
+        feature: 2929,
+        langid: "DEU",
+        cntryid: "DE",
+        ccsid: 273,
+    },
+    Language {
+        feature: 2931,
+        langid: "ESP",
+        cntryid: "ES",
+        ccsid: 284,
+    },
+    Language {
+        feature: 2932,
+        langid: "ITA",
+        cntryid: "IT",
+        ccsid: 280,
+    },
 ];
 
 /// The primary language's feature code.
@@ -82,7 +107,10 @@ pub fn job_ccsid_ok(ccsid: u32) -> bool {
     c == crate::conv::BINARY
         || matches!(
             crate::conv::Codec::of(c),
-            Ok(Some(crate::conv::Codec { form: crate::conv::Form::Sbcs { ebcdic: true, .. }, .. }))
+            Ok(Some(crate::conv::Codec {
+                form: crate::conv::Form::Sbcs { ebcdic: true, .. },
+                ..
+            }))
         )
 }
 
@@ -104,7 +132,12 @@ impl DateFmt {
     /// From `*MDY`, `MDY`...; anything else is `*MDY`.
     #[must_use]
     pub fn parse(s: &str) -> Self {
-        match s.trim().trim_start_matches('*').to_ascii_uppercase().as_str() {
+        match s
+            .trim()
+            .trim_start_matches('*')
+            .to_ascii_uppercase()
+            .as_str()
+        {
             "DMY" => Self::Dmy,
             "YMD" => Self::Ymd,
             "JUL" => Self::Jul,
@@ -161,7 +194,11 @@ impl Formats {
     /// A date's digits in order, a two- or four-digit year.
     #[must_use]
     pub fn date_digits(&self, y: i64, m: u32, d: u32, year4: bool) -> String {
-        let year = if year4 { format!("{y:04}") } else { format!("{:02}", y.rem_euclid(100)) };
+        let year = if year4 {
+            format!("{y:04}")
+        } else {
+            format!("{:02}", y.rem_euclid(100))
+        };
         match self.datfmt {
             DateFmt::Mdy => format!("{m:02}{d:02}{year}"),
             DateFmt::Dmy => format!("{d:02}{m:02}{year}"),
@@ -197,7 +234,10 @@ impl Formats {
         let local = unix + offset;
         let (y, m, d) = civil(local.div_euclid(86_400));
         let s = u32::try_from(local.rem_euclid(86_400)).unwrap_or(0);
-        (self.date(y, m, d, false), self.time(s / 3600, s / 60 % 60, s % 60))
+        (
+            self.date(y, m, d, false),
+            self.time(s / 3600, s / 60 % 60, s % 60),
+        )
     }
 
     /// A `CYYMMDD` date (`1261104`, century digit 0 for 19xx); blank
@@ -236,13 +276,21 @@ impl Formats {
     /// The decimal point: a comma for `DECFMT(J)` and `DECFMT(I)`.
     #[must_use]
     pub fn point(&self) -> char {
-        if matches!(self.decfmt, 'J' | 'I') { ',' } else { '.' }
+        if matches!(self.decfmt, 'J' | 'I') {
+            ','
+        } else {
+            '.'
+        }
     }
 
     /// A number written with a point (`12.5`), with the job's point.
     #[must_use]
     pub fn number(&self, text: &str) -> String {
-        if self.point() == ',' { text.replace('.', ",") } else { text.to_string() }
+        if self.point() == ',' {
+            text.replace('.', ",")
+        } else {
+            text.to_string()
+        }
     }
 }
 
@@ -281,14 +329,29 @@ mod tests {
         assert_eq!(us.stamp(t, 0), ("10/29/26".into(), "14:02:17".into()));
         let de = Formats::parse("*DMY", ".", ".", "J");
         assert_eq!(de.stamp(t, 3600), ("29.10.26".into(), "15.02.17".into()));
-        assert_eq!(Formats::parse("*YMD", "-", ":", "").date(2026, 10, 29, true), "2026-10-29");
-        assert_eq!(Formats::parse("*JUL", "/", ":", "").date(2026, 10, 29, false), "26/302");
-        assert_eq!(Formats::parse("*JUL", "/", ":", "").date_digits(2026, 10, 29, true), "2026302");
+        assert_eq!(
+            Formats::parse("*YMD", "-", ":", "").date(2026, 10, 29, true),
+            "2026-10-29"
+        );
+        assert_eq!(
+            Formats::parse("*JUL", "/", ":", "").date(2026, 10, 29, false),
+            "26/302"
+        );
+        assert_eq!(
+            Formats::parse("*JUL", "/", ":", "").date_digits(2026, 10, 29, true),
+            "2026302"
+        );
         assert_eq!(de.number("12.5"), "12,5");
         assert_eq!(us.number("12.5"), "12.5");
-        assert_eq!(Formats::parse("*MDY", "' '", ":", "").date(2026, 1, 2, false), "01 02 26");
+        assert_eq!(
+            Formats::parse("*MDY", "' '", ":", "").date(2026, 1, 2, false),
+            "01 02 26"
+        );
         assert_eq!(de.cyymmdd("1261104"), "04.11.26");
-        assert_eq!(us.cyymmddhhmmss("1261104093007"), ("11/04/26".into(), "09:30:07".into()));
+        assert_eq!(
+            us.cyymmddhhmmss("1261104093007"),
+            ("11/04/26".into(), "09:30:07".into())
+        );
         assert_eq!(us.cyymmdd("12611"), "");
         assert_eq!(de.hhmmss("093007"), "09.30.07");
         assert_eq!(civil(0), (1970, 1, 1));

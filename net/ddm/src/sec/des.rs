@@ -52,7 +52,12 @@ pub fn cbc_decrypt(key: &[u8; 8], iv: &[u8; 8], enc: &[u8]) -> Option<Vec<u8>> {
         prev = b;
     }
     let pad = usize::from(*out.last()?);
-    if pad == 0 || pad > 8 || out[out.len() - pad..].iter().any(|&x| usize::from(x) != pad) {
+    if pad == 0
+        || pad > 8
+        || out[out.len() - pad..]
+            .iter()
+            .any(|&x| usize::from(x) != pad)
+    {
         return None;
     }
     out.truncate(out.len() - pad);

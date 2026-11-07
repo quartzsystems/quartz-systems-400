@@ -10,21 +10,27 @@
 use rpgfront::ast::{BinOp, Expr, Lit, Step};
 
 use crate::codegen::Gen;
-use crate::codegen::strops::Rt;
 use crate::codegen::expr::{V, Vk, Want};
+use crate::codegen::strops::Rt;
 use crate::diag::ids;
 use crate::types::Ty;
 
 /// What each `%LOOKUP` and `%TLOOKUP` looks for (`qrpgrt::arrays`).
 fn wants(name: &str) -> Option<i32> {
-    Some(match name.trim_start_matches("%T").trim_start_matches('%').trim_start_matches("LOOKUP") {
-        "" => 4,
-        "LT" => 2,
-        "LE" => 6,
-        "GT" => 1,
-        "GE" => 5,
-        _ => return None,
-    })
+    Some(
+        match name
+            .trim_start_matches("%T")
+            .trim_start_matches('%')
+            .trim_start_matches("LOOKUP")
+        {
+            "" => 4,
+            "LT" => 2,
+            "LE" => 6,
+            "GT" => 1,
+            "GE" => 5,
+            _ => return None,
+        },
+    )
 }
 
 impl Gen<'_> {
@@ -33,8 +39,12 @@ impl Gen<'_> {
     pub fn bif_ext(&mut self, name: &str, args: &[Expr], w: Want) -> Option<Option<V>> {
         let _ = w;
         Some(match name {
-            "%LOOKUP" | "%LOOKUPLT" | "%LOOKUPLE" | "%LOOKUPGT" | "%LOOKUPGE" => self.lookup_bif(name, args),
-            "%TLOOKUP" | "%TLOOKUPLT" | "%TLOOKUPLE" | "%TLOOKUPGT" | "%TLOOKUPGE" => self.tlookup_bif(name, args),
+            "%LOOKUP" | "%LOOKUPLT" | "%LOOKUPLE" | "%LOOKUPGT" | "%LOOKUPGE" => {
+                self.lookup_bif(name, args)
+            }
+            "%TLOOKUP" | "%TLOOKUPLT" | "%TLOOKUPLE" | "%TLOOKUPGT" | "%TLOOKUPGE" => {
+                self.tlookup_bif(name, args)
+            }
             "%OCCUR" => {
                 let r = self.occur_bif(args);
                 if r.is_none() {
@@ -47,7 +57,10 @@ impl Gen<'_> {
                 let v = self.expr(args.first()?, Want::default())?;
                 let v = self.as_chars(&v);
                 if v.kind == Vk::Lit {
-                    return Some(Some(V::lit(Ty::Packed(10, 0), v.ty.str_len().unwrap_or(0).to_string())));
+                    return Some(Some(V::lit(
+                        Ty::Packed(10, 0),
+                        v.ty.str_len().unwrap_or(0).to_string(),
+                    )));
                 }
                 let r = self.b.reg();
                 self.b.ins(format!("{r} = str.len {}", v.op));
@@ -174,8 +187,13 @@ impl Gen<'_> {
             return Some(self.bit_chars(name, &vals));
         }
         // With numbers, a hexadecimal literal is an unsigned number.
-        let vals: Vec<V> = vals.into_iter().map(|v| crate::codegen::expr::hex_as_number(&v).unwrap_or(v)).collect();
-        if !vals.iter().all(|v| v.ty.is_integer() || v.kind == Vk::Lit && v.ty.shape().is_some_and(|s| s.1 == 0)) {
+        let vals: Vec<V> = vals
+            .into_iter()
+            .map(|v| crate::codegen::expr::hex_as_number(&v).unwrap_or(v))
+            .collect();
+        if !vals.iter().all(|v| {
+            v.ty.is_integer() || v.kind == Vk::Lit && v.ty.shape().is_some_and(|s| s.1 == 0)
+        }) {
             self.err(ids::BIF_ARGS, 30, name.to_string());
             return None;
         }
@@ -183,7 +201,11 @@ impl Gen<'_> {
         // the widest.
         let typed: Vec<&V> = vals.iter().filter(|v| v.kind != Vk::Lit).collect();
         let uns = !typed.is_empty() && typed.iter().all(|v| matches!(v.ty, Ty::Uns(_)));
-        let digits = typed.iter().map(|v| v.ty.shape().map_or(10, |s| s.0)).max().unwrap_or(10);
+        let digits = typed
+            .iter()
+            .map(|v| v.ty.shape().map_or(10, |s| s.0))
+            .max()
+            .unwrap_or(10);
         let mut acc = self.int_reg(&vals[0])?;
         if not {
             let r = self.b.reg();
@@ -201,7 +223,11 @@ impl Gen<'_> {
             self.b.ins(format!("{r} = {o} {acc}, {b}"));
             acc = r;
         }
-        let ty = if uns { Ty::Uns(digits) } else { Ty::Int(digits) };
+        let ty = if uns {
+            Ty::Uns(digits)
+        } else {
+            Ty::Int(digits)
+        };
         let t = self.b.temp(&self.ir_ty(&ty));
         let n = self.b.reg();
         let bits = match digits {
@@ -218,7 +244,12 @@ impl Gen<'_> {
 
     /// The bit functions on character data, byte by byte.
     fn bit_chars(&mut self, name: &str, vals: &[V]) -> V {
-        let n = vals.iter().map(|v| v.ty.str_len().unwrap_or(1)).min().unwrap_or(1).max(1);
+        let n = vals
+            .iter()
+            .map(|v| v.ty.str_len().unwrap_or(1))
+            .min()
+            .unwrap_or(1)
+            .max(1);
         let t = self.b.temp(&format!("char({n})"));
         let mut srcs = Vec::new();
         for v in vals {
@@ -282,7 +313,8 @@ impl Gen<'_> {
             b
         };
         let src = self.rt_of(&s, None);
-        self.b.ins(format!("str.subst {t}, {}, {start}, {n}", src.op));
+        self.b
+            .ins(format!("str.subst {t}, {}, {start}, {n}", src.op));
         Some(V::place(Ty::varchar(len), t))
     }
 
@@ -297,11 +329,22 @@ impl Gen<'_> {
             }
             (args[0].clone(), args[1..].to_vec())
         } else {
-            let (Some(sep), Some(Expr::Ref { name: an, steps, at: aat })) = (args.first(), args.get(1)) else {
+            let (
+                Some(sep),
+                Some(Expr::Ref {
+                    name: an,
+                    steps,
+                    at: aat,
+                }),
+            ) = (args.first(), args.get(1))
+            else {
                 self.err(ids::BIF_ARGS, 30, name.to_string());
                 return None;
             };
-            let dim = self.t.find(self.scope, an).map_or(0, |id| self.t.syms[id].dim);
+            let dim = self
+                .t
+                .find(self.scope, an)
+                .map_or(0, |id| self.t.syms[id].dim);
             if dim == 0 || !steps.is_empty() {
                 self.err(ids::BIF_ARGS, 30, name.to_string());
                 return None;
@@ -365,7 +408,10 @@ impl Gen<'_> {
             "($n: bytes(1) *VARSIZE, byval $nd: i64, $h: bytes(1) *VARSIZE, byval $hd: i64, byval $st: i64, byval $ln: i64) -> i32",
         );
         let r = self.b.reg();
-        self.b.ins(format!("{r} = callb _QRNX_SCANR({}, {}, {}, {}, {st}, {ln})", n.op, n.desc, h.op, h.desc));
+        self.b.ins(format!(
+            "{r} = callb _QRNX_SCANR({}, {}, {}, {}, {st}, {ln})",
+            n.op, n.desc, h.op, h.desc
+        ));
         Some(V::reg(Ty::Int(10), r))
     }
 
@@ -458,8 +504,12 @@ impl Gen<'_> {
         };
         let r = self.ptr_reg(&p);
         let t = self.b.temp(&format!("varchar({cap})"));
-        self.rt_proc("_QRNX_STRGET", "($d: bytes(1) *VARSIZE, byval $cap: i64, $s: bytes(1) *VARSIZE)");
-        self.b.ins(format!("callb _QRNX_STRGET({t}, {cap}, [{r}]:char({cap}))"));
+        self.rt_proc(
+            "_QRNX_STRGET",
+            "($d: bytes(1) *VARSIZE, byval $cap: i64, $s: bytes(1) *VARSIZE)",
+        );
+        self.b
+            .ins(format!("callb _QRNX_STRGET({t}, {cap}, [{r}]:char({cap}))"));
         Some(V::place(Ty::varchar(cap), t))
     }
 
@@ -515,7 +565,10 @@ impl Gen<'_> {
         let at = self.b.reg();
         self.b.ins(format!("{at} = addr {}", base.op));
         let skip = self.b.reg();
-        self.b.ins(format!("{skip} = add {start}, {}", i64::from(base.ty.var_prefix().unwrap_or(0)) - 1));
+        self.b.ins(format!(
+            "{skip} = add {start}, {}",
+            i64::from(base.ty.var_prefix().unwrap_or(0)) - 1
+        ));
         let dst = self.b.reg();
         self.b.ins(format!("{dst} = ptradd {at}, {skip}"));
         let src = self.b.reg();
@@ -555,8 +608,14 @@ impl Gen<'_> {
         };
         let (src, _) = self.str_rt(v)?;
         let r = self.ptr_reg(&p);
-        self.rt_proc("_QRNX_STRSET", "($d: bytes(1) *VARSIZE, byval $cap: i64, $s: bytes(1) *VARSIZE, byval $sd: i64)");
-        self.b.ins(format!("callb _QRNX_STRSET([{r}]:char({cap}), {cap}, {}, {})", src.op, src.desc));
+        self.rt_proc(
+            "_QRNX_STRSET",
+            "($d: bytes(1) *VARSIZE, byval $cap: i64, $s: bytes(1) *VARSIZE, byval $sd: i64)",
+        );
+        self.b.ins(format!(
+            "callb _QRNX_STRSET([{r}]:char({cap}), {cap}, {}, {})",
+            src.op, src.desc
+        ));
         Some(())
     }
 
@@ -608,7 +667,8 @@ impl Gen<'_> {
                 let c1 = self.compare(BinOp::Ge, &x, &lo)?;
                 let c2 = self.compare(BinOp::Le, &x, &hi)?;
                 let r = self.b.reg();
-                self.b.ins(format!("{r} = select {}, {}, {}", c1.op, c2.op, c1.op));
+                self.b
+                    .ins(format!("{r} = select {}, {}, {}", c1.op, c2.op, c1.op));
                 Some(V::reg(Ty::Ind, r))
             }
             _ => {

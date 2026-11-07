@@ -58,7 +58,10 @@ fn migrate(system: &mut System) {
     };
     // The shipped set is installed before the change is checked.
     sysval::tz::install(sysval::tz::shipped().to_vec());
-    let set = system.sysvals.as_mut().is_some_and(|v| v.set_text("QTIMZON", new).is_ok());
+    let set = system
+        .sysvals
+        .as_mut()
+        .is_some_and(|v| v.set_text("QTIMZON", new).is_ok());
     if set {
         match crate::ipl::sysvals::save(system) {
             Ok(()) => eprintln!("qsstg: QTIMZON {old} (V1R0M0) is now {new}"),
@@ -79,5 +82,16 @@ pub fn reload(system: &mut System) {
 
 /// Whether a command can have changed the descriptions in QSYS.
 pub fn touches(cmd: &str) -> bool {
-    matches!(cmd, "RSTOBJ" | "RSTLIB" | "RST" | "RSTLICPGM" | "RCLSTG" | "APYPTF" | "RMVPTF" | "DLTOBJ" | "RNMOBJ")
+    matches!(
+        cmd,
+        "RSTOBJ"
+            | "RSTLIB"
+            | "RST"
+            | "RSTLICPGM"
+            | "RCLSTG"
+            | "APYPTF"
+            | "RMVPTF"
+            | "DLTOBJ"
+            | "RNMOBJ"
+    )
 }

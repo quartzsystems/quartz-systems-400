@@ -10,7 +10,13 @@
 
 use super::{JobKind, JobSpec, Port, Readiness, ServerSpec};
 
-const fn job(name: &'static str, user: &'static str, subsystem: &'static str, kind: JobKind, role: &'static str) -> JobSpec {
+const fn job(
+    name: &'static str,
+    user: &'static str,
+    subsystem: &'static str,
+    kind: JobKind,
+    role: &'static str,
+) -> JobSpec {
     JobSpec {
         name,
         user,
@@ -80,7 +86,13 @@ pub static SPECS: &[ServerSpec] = &[
     ServerSpec {
         special: "*LPD",
         name: "LPD",
-        jobs: &[job("QTLPD00nnn", "QTMPLPD", "QSYSWRK", JobKind::Listener, "LPD")],
+        jobs: &[job(
+            "QTLPD00nnn",
+            "QTMPLPD",
+            "QSYSWRK",
+            JobKind::Listener,
+            "LPD",
+        )],
         ports: &[tcp(515, false)],
         attrs_cmd: Some("CHGLPDA"),
         app_id: Some("QS400_LPD_SERVER"),
@@ -93,9 +105,27 @@ pub static SPECS: &[ServerSpec] = &[
         special: "*HTTP",
         name: "HTTP",
         jobs: &[
-            job("ADMIN", "QTMHHTTP", "QHTTPSVR", JobKind::Listener, "HTTPADM"),
-            job("NAVIGATOR", "QTMHHTTP", "QHTTPSVR", JobKind::Listener, "HTTPNAV"),
-            job("ACCESSWEB", "QTMHHTTP", "QHTTPSVR", JobKind::Listener, "HTTPAFW"),
+            job(
+                "ADMIN",
+                "QTMHHTTP",
+                "QHTTPSVR",
+                JobKind::Listener,
+                "HTTPADM",
+            ),
+            job(
+                "NAVIGATOR",
+                "QTMHHTTP",
+                "QHTTPSVR",
+                JobKind::Listener,
+                "HTTPNAV",
+            ),
+            job(
+                "ACCESSWEB",
+                "QTMHHTTP",
+                "QHTTPSVR",
+                JobKind::Listener,
+                "HTTPAFW",
+            ),
         ],
         ports: &[
             tcp(2001, false),
@@ -170,14 +200,62 @@ pub static SPECS: &[ServerSpec] = &[
         special: "*HOSTSVR",
         name: "HOSTSVR",
         jobs: &[
-            job("QZSOSMAPD", "QUSER", "QSYSWRK", JobKind::Listener, "HOSTSVRD"),
-            job("QZSOSGND", "QUSER", "QSYSWRK", JobKind::Listener, "HOSTSVRD"),
-            job("QZSCSRVSD", "QUSER", "QSYSWRK", JobKind::Listener, "HOSTSVRD"),
-            job("QZDASRVSD", "QUSER", "QSERVER", JobKind::Listener, "HOSTSVRD"),
-            job("QZHQSRVD", "QUSER", "QSYSWRK", JobKind::Listener, "HOSTSVRD"),
-            job("QPWFSERVSD", "QUSER", "QSERVER", JobKind::Listener, "HOSTSVRD"),
-            job("QNPSERVD", "QUSER", "QSYSWRK", JobKind::Listener, "HOSTSVRD"),
-            job("QZRCSRVSD", "QUSER", "QSYSWRK", JobKind::Listener, "HOSTSVRD"),
+            job(
+                "QZSOSMAPD",
+                "QUSER",
+                "QSYSWRK",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
+            job(
+                "QZSOSGND",
+                "QUSER",
+                "QSYSWRK",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
+            job(
+                "QZSCSRVSD",
+                "QUSER",
+                "QSYSWRK",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
+            job(
+                "QZDASRVSD",
+                "QUSER",
+                "QSERVER",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
+            job(
+                "QZHQSRVD",
+                "QUSER",
+                "QSYSWRK",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
+            job(
+                "QPWFSERVSD",
+                "QUSER",
+                "QSERVER",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
+            job(
+                "QNPSERVD",
+                "QUSER",
+                "QSYSWRK",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
+            job(
+                "QZRCSRVSD",
+                "QUSER",
+                "QSYSWRK",
+                JobKind::Listener,
+                "HOSTSVRD",
+            ),
             job("QZSOSIGN", "QUSER", "QUSRWRK", JobKind::Prestart, ""),
             job("QZSCSRVS", "QUSER", "QUSRWRK", JobKind::Prestart, ""),
             job("QZDASOINIT", "QUSER", "QUSRWRK", JobKind::Prestart, ""),

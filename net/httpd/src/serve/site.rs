@@ -44,7 +44,11 @@ pub struct Listener {
 impl Listener {
     /// The socket address to bind.
     pub fn socket(&self) -> SocketAddr {
-        SocketAddr::new(self.addr.unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED)), self.port)
+        SocketAddr::new(
+            self.addr
+                .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED)),
+            self.port,
+        )
     }
 }
 
@@ -196,13 +200,19 @@ impl Site {
                     "servername" => self.server_name = d.args.first().cloned(),
                     "serveralias" => self.aliases.extend(d.args.iter().cloned()),
                     "documentroot" => self.doc_root = resolve(root, &d.args[0]),
-                    "alias" => self.alias.push((d.args[0].clone(), resolve(root, &d.args[1]))),
-                    "scriptalias" => self.script_alias.push((d.args[0].clone(), resolve(root, &d.args[1]))),
+                    "alias" => self
+                        .alias
+                        .push((d.args[0].clone(), resolve(root, &d.args[1]))),
+                    "scriptalias" => self
+                        .script_alias
+                        .push((d.args[0].clone(), resolve(root, &d.args[1]))),
                     "keepalive" => self.keep_alive = on(d),
                     "keepalivetimeout" => self.keep_alive_timeout = num(d),
                     "maxkeepaliverequests" => self.max_keep_alive = num(d),
                     "timeout" => self.timeout = num(d).max(1),
-                    "logformat" if d.args.len() == 2 => nicks.push((d.args[1].clone(), d.args[0].clone())),
+                    "logformat" if d.args.len() == 2 => {
+                        nicks.push((d.args[1].clone(), d.args[0].clone()))
+                    }
                     "customlog" => {
                         if !logs_named {
                             // A scope that names its own logs replaces the outer ones.
@@ -248,7 +258,9 @@ impl Site {
         match tls_on {
             Some(true) => {
                 self.tls = Some(TlsSpec {
-                    app_id: app.unwrap_or_else(|| format!("QS400_HTTP_SERVER_{}", instance.to_ascii_uppercase())),
+                    app_id: app.unwrap_or_else(|| {
+                        format!("QS400_HTTP_SERVER_{}", instance.to_ascii_uppercase())
+                    }),
                     disabled,
                     client_auth,
                 });
@@ -277,9 +289,9 @@ impl Site {
 
     /// Whether this virtual host covers a connection to `local`.
     fn covers(&self, local: SocketAddr) -> bool {
-        self.addrs
-            .iter()
-            .any(|(a, p)| *p == local.port() && a.is_none_or(|a| a == local.ip() || same_v4(a, local.ip())))
+        self.addrs.iter().any(|(a, p)| {
+            *p == local.port() && a.is_none_or(|a| a == local.ip() || same_v4(a, local.ip()))
+        })
     }
 }
 
@@ -295,8 +307,13 @@ fn same_v4(a: IpAddr, b: IpAddr) -> bool {
 fn maints(items: &[Node], root: &str, out: &mut Vec<Maint>) {
     for n in items {
         match n {
-            Node::Directive(d) if d.is("LogMaint") => out.push(Maint::parse(resolve(root, &d.args[0]), &d.args)),
-            Node::Section(s) if s.name.eq_ignore_ascii_case("VirtualHost") || s.name.eq_ignore_ascii_case("IfModule") => {
+            Node::Directive(d) if d.is("LogMaint") => {
+                out.push(Maint::parse(resolve(root, &d.args[0]), &d.args))
+            }
+            Node::Section(s)
+                if s.name.eq_ignore_ascii_case("VirtualHost")
+                    || s.name.eq_ignore_ascii_case("IfModule") =>
+            {
                 maints(&s.items, root, out);
             }
             _ => {}
@@ -327,7 +344,10 @@ impl Plan {
     /// Compile `conf` of instance `instance` whose registry root is
     /// `root` (`ServerRoot` overrides it).
     pub fn new(instance: &str, root: &str, conf: &Conf) -> Self {
-        let root = conf.get("ServerRoot").and_then(|d| d.args.first().cloned()).unwrap_or_else(|| root.to_string());
+        let root = conf
+            .get("ServerRoot")
+            .and_then(|d| d.args.first().cloned())
+            .unwrap_or_else(|| root.to_string());
         let main = Site::main(conf, &root, instance);
         let outer: Vec<(String, String)> = conf
             .all("LogFormat")
@@ -361,10 +381,16 @@ impl Plan {
             .filter_map(|d| rules::listen_addr(d.args.first()?).ok())
             .map(|(a, port)| {
                 let addr = a.and_then(|a| a.parse::<IpAddr>().ok());
-                let probe = SocketAddr::new(addr.unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED)), port);
+                let probe = SocketAddr::new(
+                    addr.unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED)),
+                    port,
+                );
                 let tls = vhosts
                     .iter()
-                    .find(|v| v.addrs.iter().any(|(_, p)| *p == port) && (addr.is_none() || v.covers(probe)))
+                    .find(|v| {
+                        v.addrs.iter().any(|(_, p)| *p == port)
+                            && (addr.is_none() || v.covers(probe))
+                    })
                     .map_or(main.tls.clone(), |v| v.tls.clone());
                 Listener { addr, port, tls }
             })
@@ -406,7 +432,12 @@ impl Plan {
     pub fn log_files(&self) -> Vec<String> {
         let mut out: Vec<String> = Vec::new();
         for s in std::iter::once(&self.main).chain(&self.vhosts) {
-            for p in s.access_logs.iter().map(|l| l.path.clone()).chain(s.error_log.clone()) {
+            for p in s
+                .access_logs
+                .iter()
+                .map(|l| l.path.clone())
+                .chain(s.error_log.clone())
+            {
                 if !out.contains(&p) {
                     out.push(p);
                 }
@@ -423,7 +454,9 @@ impl Plan {
 
 /// The redirect covering `url`, if any.
 pub fn redirect<'a>(d: &'a DirConf, url: &str) -> Option<(&'a Redirect, Option<String>)> {
-    d.redirects.iter().find_map(|r| r.target(url).map(|t| (r, t)))
+    d.redirects
+        .iter()
+        .find_map(|r| r.target(url).map(|t| (r, t)))
 }
 
 #[cfg(test)]
@@ -440,26 +473,53 @@ mod tests {
     #[test]
     fn compiles_sites_and_listeners() {
         let p = Plan::new("shop", "/www/x", &parse(CONF).unwrap());
-        assert_eq!((p.instance.as_str(), p.root.as_str(), p.user.as_str()), ("SHOP", "/www/shop", "QTMHHTTP"));
+        assert_eq!(
+            (p.instance.as_str(), p.root.as_str(), p.user.as_str()),
+            ("SHOP", "/www/shop", "QTMHHTTP")
+        );
         assert_eq!(p.listeners.len(), 2);
         assert!(p.listeners[0].tls.is_none());
         let t = p.listeners[1].tls.as_ref().unwrap();
-        assert_eq!((t.app_id.as_str(), t.disabled.clone(), t.client_auth), ("QS400_HTTP_SERVER_SHOP", vec!["TLSv1.2".to_string()], Some(1)));
+        assert_eq!(
+            (t.app_id.as_str(), t.disabled.clone(), t.client_auth),
+            (
+                "QS400_HTTP_SERVER_SHOP",
+                vec!["TLSv1.2".to_string()],
+                Some(1)
+            )
+        );
         assert_eq!(p.main.doc_root, "/www/shop/htdocs");
         assert_eq!(p.main.access_logs[0].format, "%h %u");
         assert!(!p.main.keep_alive);
         let local: SocketAddr = "127.0.0.1:8080".parse().unwrap();
-        assert_eq!(p.site(local, Some("other.example:8080")).doc_root, "/www/shop/other");
+        assert_eq!(
+            p.site(local, Some("other.example:8080")).doc_root,
+            "/www/shop/other"
+        );
         assert_eq!(p.site(local, Some("nobody")).doc_root, "/www/shop/other");
         let sec = p.site("127.0.0.1:8443".parse().unwrap(), None);
         assert_eq!(sec.doc_root, "/www/shop/secure");
-        assert_eq!(sec.alias, [("/icons/".to_string(), "/www/shop/icons/".to_string())]);
+        assert_eq!(
+            sec.alias,
+            [("/icons/".to_string(), "/www/shop/icons/".to_string())]
+        );
         assert_eq!(sec.access_logs[0].path, "/www/shop/logs/access_log");
         assert_eq!(p.vhosts[1].access_logs.len(), 1);
-        assert_eq!(p.log_files(), ["/www/shop/logs/access_log", "/www/shop/logs/error_log", "/www/shop/logs/other_log"]);
+        assert_eq!(
+            p.log_files(),
+            [
+                "/www/shop/logs/access_log",
+                "/www/shop/logs/error_log",
+                "/www/shop/logs/other_log"
+            ]
+        );
         let m = p.maint_of("/www/shop/logs/access_log").unwrap();
         assert_eq!((m.files, m.size, m.at), (7, 0, 3 * 3600 + 1800));
         let none = Plan::new("x", "/www/x", &parse("Listen 80\n").unwrap());
-        assert_eq!(none.site("10.0.0.1:80".parse().unwrap(), Some("a")).doc_root, "/www/x/htdocs");
+        assert_eq!(
+            none.site("10.0.0.1:80".parse().unwrap(), Some("a"))
+                .doc_root,
+            "/www/x/htdocs"
+        );
     }
 }

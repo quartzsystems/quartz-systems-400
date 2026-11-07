@@ -35,9 +35,18 @@ fn last(rq: &Rq<'_>, s: &Saved) -> String {
 
 /// Run and Prompt of `s`.
 fn run_links(rq: &Rq<'_>, s: &Saved) -> Vec<(String, &'static str)> {
-    let mut v = vec![(PRODUCT.url(&format!("/cmd{}", query(&[("c", &s.command), ("how", s.how.code())]))), "Run")];
+    let mut v = vec![(
+        PRODUCT.url(&format!(
+            "/cmd{}",
+            query(&[("c", &s.command), ("how", s.how.code())])
+        )),
+        "Run",
+    )];
     if rq.allowed(policy::CMD_PROMPT) {
-        v.push((PRODUCT.url(&format!("/cmd/prompt{}", query(&[("cmd", &s.command)]))), "Prompt"));
+        v.push((
+            PRODUCT.url(&format!("/cmd/prompt{}", query(&[("cmd", &s.command)]))),
+            "Prompt",
+        ));
     }
     v
 }
@@ -59,13 +68,21 @@ pub fn page(rq: &Rq<'_>) -> Response {
         if let Err(r) = rq.policy(policy::CMD_SAVE, CRUMB) {
             return r;
         }
-        let Some(s) = f.str("n").parse::<usize>().ok().and_then(|i| all.get_mut(i)) else {
+        let Some(s) = f
+            .str("n")
+            .parse::<usize>()
+            .ok()
+            .and_then(|i| all.get_mut(i))
+        else {
             return rq.redirect("/cmd/saved");
         };
         let to = f.str("to").trim();
         let to = if to == NOT_SHARED { "" } else { to };
         if !to.is_empty() && to != "*PUBLIC" && !groups.iter().any(|g| g == to) {
-            return rq.done("/cmd/saved", rq.message(Kind::Error, msgs::BAD_VALUE, &[to, "Shared with"]));
+            return rq.done(
+                "/cmd/saved",
+                rq.message(Kind::Error, msgs::BAD_VALUE, &[to, "Shared with"]),
+            );
         }
         let name = f.str("name").trim();
         if !name.is_empty() {
@@ -74,7 +91,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
         s.share = to.to_string();
         let shown = s.name.clone();
         return match cmd.put_saved(rq.user(), &all) {
-            Ok(()) => rq.done("/cmd/saved", rq.message(Kind::Done, msgs::CMD_SAVED, &[&shown])),
+            Ok(()) => rq.done(
+                "/cmd/saved",
+                rq.message(Kind::Done, msgs::CMD_SAVED, &[&shown]),
+            ),
             Err(m) => rq.done("/cmd/saved", m),
         };
     }
@@ -84,8 +104,15 @@ pub fn page(rq: &Rq<'_>) -> Response {
         && let Some(s) = all.get(i)
     {
         let mut sel = String::from("<select name=\"to\">");
-        for o in std::iter::once(NOT_SHARED).chain(groups.iter().map(String::as_str)).chain(std::iter::once("*PUBLIC")) {
-            let chosen = if o == s.share && o != NOT_SHARED { " selected" } else { "" };
+        for o in std::iter::once(NOT_SHARED)
+            .chain(groups.iter().map(String::as_str))
+            .chain(std::iter::once("*PUBLIC"))
+        {
+            let chosen = if o == s.share && o != NOT_SHARED {
+                " selected"
+            } else {
+                ""
+            };
             let _ = write!(sel, "<option{chosen}>{}</option>", esc(o));
         }
         sel.push_str("</select>");
@@ -155,7 +182,17 @@ pub fn page(rq: &Rq<'_>) -> Response {
             .collect();
         body.push_str("<h2>Shared with you</h2>");
         body.push_str(&list_table(&List {
-            cols: ["Actions", "Name", "Command", "Run as", "Owner", "Shared with"].iter().map(|c| Col::plain(c)).collect(),
+            cols: [
+                "Actions",
+                "Name",
+                "Command",
+                "Run as",
+                "Owner",
+                "Shared with",
+            ]
+            .iter()
+            .map(|c| Col::plain(c))
+            .collect(),
             rows,
             empty: String::new(),
             keep: Vec::new(),
@@ -197,12 +234,19 @@ pub fn delete(rq: &Rq<'_>, n: &str) -> Response {
         }
         let gone = all.remove(i);
         return match cmd.put_saved(rq.user(), &all) {
-            Ok(()) => rq.done("/cmd/saved", rq.message(Kind::Done, msgs::CMD_DELETED, &[&gone.name])),
+            Ok(()) => rq.done(
+                "/cmd/saved",
+                rq.message(Kind::Done, msgs::CMD_DELETED, &[&gone.name]),
+            ),
             Err(m) => rq.done("/cmd/saved", m),
         };
     }
     let s = &all[i];
-    let how = if s.how == How::Batch { "Batch" } else { "Interactive" };
+    let how = if s.how == How::Batch {
+        "Batch"
+    } else {
+        "Interactive"
+    };
     let table = format!(
         "<table class=\"list\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n<th>Name</th>\n<th>Command</th>\n<th>Run as</th>\n</tr>\n<tr>\n<td>{}</td>\n<td><span class=\"mono\">{}</span></td>\n<td>{how}</td>\n</tr>\n</table>",
         esc(&s.name),

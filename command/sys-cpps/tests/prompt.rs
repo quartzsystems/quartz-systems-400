@@ -25,7 +25,10 @@ const PROMPTED: &[(&str, &str)] = &[
     ("sbmjob", "SBMJOB CMD(CALL QGPL/HELLO) JOB(HELLO)"),
     ("chgjob", "CHGJOB"),
     ("crtusrprf", "CRTUSRPRF USRPRF(ANNE) PASSWORD(SECRET)"),
-    ("grtobjaut", "GRTOBJAUT OBJ(QGPL/CUST) OBJTYPE(*FILE) USER(ANNE) AUT(*USE)"),
+    (
+        "grtobjaut",
+        "GRTOBJAUT OBJ(QGPL/CUST) OBJTYPE(*FILE) USER(ANNE) AUT(*USE)",
+    ),
     ("cpyf", "CPYF FROMFILE(QGPL/CUST) TOFILE(QGPL/CUST2)"),
     ("wrkactjob", "WRKACTJOB"),
     ("ovrdbf", "OVRDBF FILE(CUST) TOFILE(QGPL/CUST2)"),
@@ -33,9 +36,15 @@ const PROMPTED: &[(&str, &str)] = &[
     ("sndpgmmsg", "SNDPGMMSG MSG('hello')"),
     ("monmsg", "MONMSG MSGID(CPF0000)"),
     ("crtcmd", "CRTCMD CMD(QGPL/MYCMD) PGM(QGPL/MYPGM)"),
-    ("addrtge", "ADDRTGE SBSD(QGPL/MYSBS) SEQNBR(10) CMPVAL(QCMDI) PGM(QSYS/QCMD)"),
+    (
+        "addrtge",
+        "ADDRTGE SBSD(QGPL/MYSBS) SEQNBR(10) CMPVAL(QCMDI) PGM(QSYS/QCMD)",
+    ),
     ("strjrnpf", "STRJRNPF FILE(QGPL/CUST) JRN(QGPL/CUSTJRN)"),
-    ("addjobscde", "ADDJOBSCDE JOB(NIGHTLY) CMD(CALL QGPL/NIGHT) FRQ(*WEEKLY)"),
+    (
+        "addjobscde",
+        "ADDJOBSCDE JOB(NIGHTLY) CMD(CALL QGPL/NIGHT) FRQ(*WEEKLY)",
+    ),
     ("chgsysval", "CHGSYSVAL SYSVAL(QINACTITV) VALUE('60')"),
     ("dspobjaut", "DSPOBJAUT OBJ(QGPL/CUST) OBJTYPE(*FILE)"),
     ("wrksplf", "WRKSPLF"),
@@ -45,7 +54,10 @@ const PROMPTED: &[(&str, &str)] = &[
     ("pwrdwnsys", "PWRDWNSYS"),
     ("crtlib", "CRTLIB LIB(TESTLIB)"),
     ("dltlib", "DLTLIB LIB(TESTLIB)"),
-    ("crtdtaara", "CRTDTAARA DTAARA(QGPL/FLAG) TYPE(*CHAR) LEN(10)"),
+    (
+        "crtdtaara",
+        "CRTDTAARA DTAARA(QGPL/FLAG) TYPE(*CHAR) LEN(10)",
+    ),
     ("chgdtaara", "CHGDTAARA DTAARA(QGPL/FLAG) VALUE('on')"),
     ("dspdtaara", "DSPDTAARA DTAARA(QGPL/FLAG)"),
     ("crtjobd", "CRTJOBD JOBD(QGPL/NIGHT)"),
@@ -63,19 +75,37 @@ const PROMPTED: &[(&str, &str)] = &[
     ("dspaudjrne", "DSPAUDJRNE ENTTYP(AF)"),
     ("runsqlstm", "RUNSQLSTM SRCFILE(QGPL/QSQLSRC) SRCMBR(SETUP)"),
     ("crtmsgf", "CRTMSGF MSGF(QGPL/MYMSGF)"),
-    ("addmsgd", "ADDMSGD MSGID(USR0001) MSGF(QGPL/MYMSGF) MSG('hello &1')"),
+    (
+        "addmsgd",
+        "ADDMSGD MSGID(USR0001) MSGF(QGPL/MYMSGF) MSG('hello &1')",
+    ),
     ("crtpgm", "CRTPGM PGM(QGPL/HELLO)"),
     ("strdbg", "STRDBG PGM(QGPL/HELLO)"),
     ("dspjob", "DSPJOB"),
     ("chglibl", "CHGLIBL LIBL(QGPL QTEMP)"),
     ("wrklnk", "WRKLNK OBJ('/home/*')"),
     ("md", "MD DIR('/home/qstest')"),
-    ("chgaut", "CHGAUT OBJ('/home/qstest') USER(*PUBLIC) DTAAUT(*RX)"),
-    ("chgown", "CHGOWN OBJ('/home/qstest') NEWOWN(ANNE) SUBTREE(*ALL)"),
-    ("chgpgp", "CHGPGP OBJ('/home/qstest') NEWPGP(DEV) SUBTREE(*ALL)"),
-    ("cpytostmf", "CPYTOSTMF FROMMBR('/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR') TOSTMF('/tmp/hello.txt')"),
+    (
+        "chgaut",
+        "CHGAUT OBJ('/home/qstest') USER(*PUBLIC) DTAAUT(*RX)",
+    ),
+    (
+        "chgown",
+        "CHGOWN OBJ('/home/qstest') NEWOWN(ANNE) SUBTREE(*ALL)",
+    ),
+    (
+        "chgpgp",
+        "CHGPGP OBJ('/home/qstest') NEWPGP(DEV) SUBTREE(*ALL)",
+    ),
+    (
+        "cpytostmf",
+        "CPYTOSTMF FROMMBR('/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR') TOSTMF('/tmp/hello.txt')",
+    ),
     ("edtf", "EDTF STMF('/tmp/hello.txt')"),
-    ("addrdbdire", "ADDRDBDIRE RDB(REMOTE1) RMTLOCNAME(remote.example.com *IP)"),
+    (
+        "addrdbdire",
+        "ADDRDBDIRE RDB(REMOTE1) RMTLOCNAME(remote.example.com *IP)",
+    ),
     ("chgddmtcpa", "CHGDDMTCPA"),
     ("chgdstpwd", "CHGDSTPWD"),
     ("wrkf", "WRKF FILE(QGPL/*ALL)"),
@@ -145,14 +175,18 @@ fn enter_round_trips() {
         env.setting.program = true;
         match p.key(0, &fields, &mut env) {
             Step::Done(line) => {
-                let back = analyze(&mut env, &line).unwrap_or_else(|e| panic!("{name}: {line}: {e}"));
+                let back =
+                    analyze(&mut env, &line).unwrap_or_else(|e| panic!("{name}: {line}: {e}"));
                 assert_eq!(back.text(), r.text(), "{name}: {line}");
             }
             Step::Show => {
                 // A required value the string did not give: the prompt
                 // stays up with its message.
                 let s = p.screen();
-                assert!(!s.message.is_empty(), "{name}: shown again without a message");
+                assert!(
+                    !s.message.is_empty(),
+                    "{name}: shown again without a message"
+                );
             }
             Step::Cancel => panic!("{name}: cancelled"),
             Step::Help(_) => panic!("{name}: help"),

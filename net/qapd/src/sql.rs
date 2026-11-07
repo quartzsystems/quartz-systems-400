@@ -12,8 +12,8 @@
 
 use ipc::Wire;
 use qap_proto::ops::sql::{
-    CursorRef, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepare, SetOptions, SqlFailure,
-    StatementRef,
+    CursorRef, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepare,
+    SetOptions, SqlFailure, StatementRef,
 };
 use qap_proto::{Envelope, Op, ServerMessage, Status};
 
@@ -103,13 +103,20 @@ fn refused(r: Result<(), Refusal>) -> Answer {
 
 /// Run an operation of the lane (`Sql` 1 to 8) on the job's own thread.
 /// `cancelled` says whether the client cancelled this request.
-pub(crate) fn lane<H: Host + ?Sized>(host: &mut H, op: Op, req: &Envelope, cancelled: &dyn Fn() -> bool) -> Answer {
+pub(crate) fn lane<H: Host + ?Sized>(
+    host: &mut H,
+    op: Op,
+    req: &Envelope,
+    cancelled: &dyn Fn() -> bool,
+) -> Answer {
     fn body<B: Wire>(req: &Envelope) -> Option<B> {
         req.body_as::<B>().ok()
     }
     let bad = || Answer::status(Status::InvalidRequest);
     match op {
-        Op::SetOptions => body::<SetOptions>(req).map_or_else(bad, |b| refused(host.sql_set_options(&b))),
+        Op::SetOptions => {
+            body::<SetOptions>(req).map_or_else(bad, |b| refused(host.sql_set_options(&b)))
+        }
         Op::Prepare => body::<Prepare>(req).map_or_else(bad, |b| answer(host.sql_prepare(&b.sql))),
         Op::Execute => body::<Execute>(req).map_or_else(bad, |b| {
             let r = host.sql_execute(&b, cancelled);
@@ -119,8 +126,12 @@ pub(crate) fn lane<H: Host + ?Sized>(host: &mut H, op: Op, req: &Envelope, cance
             let r = host.sql_fetch(&b, cancelled);
             answer(after_fetch(host, b.cursor, r, cancelled))
         }),
-        Op::CloseCursor => body::<CursorRef>(req).map_or_else(bad, |b| refused(host.sql_close_cursor(b.cursor))),
-        Op::Release => body::<StatementRef>(req).map_or_else(bad, |b| refused(host.sql_release(b.statement))),
+        Op::CloseCursor => {
+            body::<CursorRef>(req).map_or_else(bad, |b| refused(host.sql_close_cursor(b.cursor)))
+        }
+        Op::Release => {
+            body::<StatementRef>(req).map_or_else(bad, |b| refused(host.sql_release(b.statement)))
+        }
         Op::Commit => unit(host.sql_commit()),
         Op::Rollback => unit(host.sql_rollback()),
         _ => bad(),
@@ -129,7 +140,11 @@ pub(crate) fn lane<H: Host + ?Sized>(host: &mut H, op: Op, req: &Envelope, cance
 
 /// An `Execute` the client cancelled while the host finished it anyway:
 /// the cursor it opened is closed, the rows it changed stay counted.
-fn after_execute<H: Host + ?Sized>(host: &mut H, r: SqlResult<Executed>, cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
+fn after_execute<H: Host + ?Sized>(
+    host: &mut H,
+    r: SqlResult<Executed>,
+    cancelled: &dyn Fn() -> bool,
+) -> SqlResult<Executed> {
     match r {
         Ok(mut e) if cancelled() => {
             if let Some(c) = e.cursor.take() {
@@ -190,7 +205,11 @@ pub(crate) fn catalog(host: &mut dyn ThreadHost, op: Op, req: &Envelope) -> Answ
 pub fn page<T>(all: Vec<T>, start: u32, max: u32) -> (u32, Vec<T>) {
     let total = u32::try_from(all.len()).unwrap_or(u32::MAX);
     let from = usize::try_from(start).unwrap_or(usize::MAX);
-    let n = if max == 0 { usize::MAX } else { usize::try_from(max).unwrap_or(usize::MAX) };
+    let n = if max == 0 {
+        usize::MAX
+    } else {
+        usize::try_from(max).unwrap_or(usize::MAX)
+    };
     (total, all.into_iter().skip(from).take(n).collect())
 }
 

@@ -13,7 +13,13 @@ impl Parser {
     /// After `CREATE [OR REPLACE] SEQUENCE`.
     pub(crate) fn create_sequence(&mut self, replace: bool) -> Result<Statement> {
         let name = self.object_name()?;
-        let mut s = CreateSequence { name, system_name: None, data_type: None, options: Identity::default(), replace };
+        let mut s = CreateSequence {
+            name,
+            system_name: None,
+            data_type: None,
+            options: Identity::default(),
+            replace,
+        };
         if self.eat_words(&["FOR", "SYSTEM", "NAME"]) {
             s.system_name = Some(self.ident()?);
         }
@@ -39,7 +45,9 @@ impl Parser {
         }
         self.identity_options(&mut options, true)?;
         if options == Identity::default() {
-            return Err(self.expected("RESTART, INCREMENT BY, MINVALUE, MAXVALUE, CYCLE, CACHE or ORDER"));
+            return Err(
+                self.expected("RESTART, INCREMENT BY, MINVALUE, MAXVALUE, CYCLE, CACHE or ORDER")
+            );
         }
         Ok(Statement::AlterSequence { name, options })
     }
@@ -47,14 +55,21 @@ impl Parser {
     /// `NEXT VALUE FOR s` or `PREVIOUS VALUE FOR s` (also `NEXTVAL FOR`,
     /// `PREVVAL FOR`), when one starts here.
     pub(crate) fn sequence_reference(&mut self) -> Result<Option<Expr>> {
-        let next = if self.eat_words(&["NEXT", "VALUE", "FOR"]) || self.eat_words(&["NEXTVAL", "FOR"]) {
-            true
-        } else if self.eat_words(&["PREVIOUS", "VALUE", "FOR"]) || self.eat_words(&["PREVVAL", "FOR"]) {
-            false
-        } else {
-            return Ok(None);
-        };
+        let next =
+            if self.eat_words(&["NEXT", "VALUE", "FOR"]) || self.eat_words(&["NEXTVAL", "FOR"]) {
+                true
+            } else if self.eat_words(&["PREVIOUS", "VALUE", "FOR"])
+                || self.eat_words(&["PREVVAL", "FOR"])
+            {
+                false
+            } else {
+                return Ok(None);
+            };
         let name = self.object_name()?;
-        Ok(Some(if next { Expr::NextValue(name) } else { Expr::PrevValue(name) }))
+        Ok(Some(if next {
+            Expr::NextValue(name)
+        } else {
+            Expr::PrevValue(name)
+        }))
     }
 }

@@ -43,11 +43,17 @@ pub const CATALOG_VIEWS: &[(&str, &str)] = &[
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &Ident) -> Result<()> {
     names::check_length(name)?;
     if names::schema(txn, ctx.qsys, name)?.is_some() {
-        return Err(SqlError::Exists { name: name.value.clone(), kind: "*LIB" });
+        return Err(SqlError::Exists {
+            name: name.value.clone(),
+            kind: "*LIB",
+        });
     }
     let (sys, sql) = match names::direct(name) {
         Some(n) => (n, None),
-        None => (names::generate(txn, ctx.qsys, types::LIB, &name.value, &|_| false)?, Some(name.value.as_str())),
+        None => (
+            names::generate(txn, ctx.qsys, types::LIB, &name.value, &|_| false)?,
+            Some(name.value.as_str()),
+        ),
     };
     let now = ctx.clock();
     let lib = ops::create(
@@ -65,14 +71,34 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &Ident) -> Result<(
         },
     )
     .map_err(|e| match e {
-        store::StoreError::AlreadyExists { .. } => SqlError::Exists { name: name.value.clone(), kind: "*LIB" },
+        store::StoreError::AlreadyExists { .. } => SqlError::Exists {
+            name: name.value.clone(),
+            kind: "*LIB",
+        },
         e => e.into(),
     })?;
     let fixed = |n: &str| Name::parse(n).expect("a valid name");
-    let rcv = jrn::rcv::crtjrnrcv(txn, lib, fixed(RECEIVER), &jrn::rcv::CrtJrnRcvOpts { now, ..jrn::rcv::CrtJrnRcvOpts::default() })
-        .map_err(db::DbError::from)?;
-    jrn::journal::crtjrn(txn, lib, fixed(JOURNAL), rcv, &jrn::journal::CrtJrnOpts { now, ..jrn::journal::CrtJrnOpts::default() })
-        .map_err(db::DbError::from)?;
+    let rcv = jrn::rcv::crtjrnrcv(
+        txn,
+        lib,
+        fixed(RECEIVER),
+        &jrn::rcv::CrtJrnRcvOpts {
+            now,
+            ..jrn::rcv::CrtJrnRcvOpts::default()
+        },
+    )
+    .map_err(db::DbError::from)?;
+    jrn::journal::crtjrn(
+        txn,
+        lib,
+        fixed(JOURNAL),
+        rcv,
+        &jrn::journal::CrtJrnOpts {
+            now,
+            ..jrn::journal::CrtJrnOpts::default()
+        },
+    )
+    .map_err(db::DbError::from)?;
     if let Some(s) = sql {
         names::record_schema(txn, ctx.qsys, lib, s)?;
     }
@@ -113,8 +139,14 @@ fn made_with(txn: &mut Txn<'_>, id: ObjectId) -> bool {
 /// `DROP SCHEMA`: the library and everything in it. With `RESTRICT`
 /// only a schema holding nothing but what `CREATE SCHEMA` put there.
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &Ident, restrict: bool) -> Result<()> {
-    let lib = names::schema(txn, ctx.qsys, name)?.ok_or_else(|| SqlError::ObjectNotFound { name: name.value.clone(), kind: "schema" })?;
-    let objects: Vec<ObjectId> = ops::list(txn, lib, None)?.into_iter().map(|(_, id)| id).collect();
+    let lib = names::schema(txn, ctx.qsys, name)?.ok_or_else(|| SqlError::ObjectNotFound {
+        name: name.value.clone(),
+        kind: "schema",
+    })?;
+    let objects: Vec<ObjectId> = ops::list(txn, lib, None)?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     if restrict {
         let mut others = Vec::new();
         for &id in &objects {
@@ -123,7 +155,10 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &Ident, restrict: boo
             }
         }
         if !others.is_empty() {
-            return Err(SqlError::Restrict { name: name.value.clone(), what: others.join(", ") });
+            return Err(SqlError::Restrict {
+                name: name.value.clone(),
+                what: others.join(", "),
+            });
         }
     }
     let now = ctx.clock();
@@ -144,7 +179,10 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &Ident, restrict: boo
     for &id in objects.iter().filter(|id| id.type_code == jrn::JRNRCV) {
         jrn::rcv::dltjrnrcv(txn, ctx.job, id).map_err(db::DbError::from)?;
     }
-    for &id in objects.iter().filter(|id| ![types::FILE, jrn::JRN, jrn::JRNRCV].contains(&id.type_code)) {
+    for &id in objects
+        .iter()
+        .filter(|id| ![types::FILE, jrn::JRN, jrn::JRNRCV].contains(&id.type_code))
+    {
         if ops::read_header(txn, id).is_ok() {
             ops::delete(txn, ctx.job, id)?;
         }

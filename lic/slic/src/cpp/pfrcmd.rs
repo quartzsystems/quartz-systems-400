@@ -51,7 +51,11 @@ pub fn override_values(system: &mut System) -> String {
 fn strpfrcol(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     crate::stgsvc::security::require(SpecialAuth::JOBCTL, "start Collection Services")?;
     let prf = parms.name("COLPRF");
-    let prf = if prf.is_empty() { "*CFG".to_string() } else { prf };
+    let prf = if prf.is_empty() {
+        "*CFG".to_string()
+    } else {
+        prf
+    };
     let lib = perfcol::config(system).library;
     let name = perfcol::start(system, &prf, parms.yes("CYCCOL"))?;
     Ok(done(
@@ -74,7 +78,9 @@ fn endpfrcol(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 fn chkpfrcol(system: &System) -> Result<CmdReply, String> {
     match perfcol::check(system) {
         Some((name, lib, n)) => Ok(done(
-            format!("Collection Services is active: collection {name} in {lib}, {n} interval(s).\n"),
+            format!(
+                "Collection Services is active: collection {name} in {lib}, {n} interval(s).\n"
+            ),
             ACTIVE,
             &[(&name, 10), (&lib, 10)],
         )),
@@ -88,7 +94,9 @@ fn cfgpfrcol(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let same = |v: &str| v.is_empty() || v == "*SAME";
     let v = parms.name("INTERVAL");
     if !same(&v) {
-        c.interval = interval_secs(&v).ok_or_else(|| "CPFB94C INTERVAL must be .25, .50, 1.0, 5.0, 15.0, 30.0 or 60.0 minutes.".to_string())?;
+        c.interval = interval_secs(&v).ok_or_else(|| {
+            "CPFB94C INTERVAL must be .25, .50, 1.0, 5.0, 15.0, 30.0 or 60.0 minutes.".to_string()
+        })?;
     }
     let v = parms.name("LIB");
     if !same(&v) {
@@ -102,7 +110,10 @@ fn cfgpfrcol(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let v = parms.name("CYCTIME");
     if !same(&v) {
         let t: String = v.chars().filter(char::is_ascii_digit).collect();
-        if t.len() != 6 || t[..2].parse::<u8>().unwrap_or(99) > 23 || t[2..4].parse::<u8>().unwrap_or(99) > 59 {
+        if t.len() != 6
+            || t[..2].parse::<u8>().unwrap_or(99) > 23
+            || t[2..4].parse::<u8>().unwrap_or(99) > 59
+        {
             return Err(format!("CPD0084 CYCTIME({v})"));
         }
         c.cycle_time = t;
@@ -116,7 +127,13 @@ fn cfgpfrcol(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             .ok_or_else(|| format!("CPD0084 CYCITV({v})"))?;
     }
     let ret = parms.elems("RETPERIOD");
-    let units = ret.first().copied().flatten().map(cmd::Value::source).unwrap_or_default().to_ascii_uppercase();
+    let units = ret
+        .first()
+        .copied()
+        .flatten()
+        .map(cmd::Value::source)
+        .unwrap_or_default()
+        .to_ascii_uppercase();
     let days = ret
         .get(1)
         .copied()
@@ -142,7 +159,10 @@ fn cfgpfrcol(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     }
     perfcol::save_config(system, &c)?;
     Ok(done(
-        format!("Collection Services configuration changed: {}\n", c.keyword_form()),
+        format!(
+            "Collection Services configuration changed: {}\n",
+            c.keyword_form()
+        ),
         CONFIGURED,
         &[],
     ))
@@ -151,32 +171,55 @@ fn cfgpfrcol(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 fn crtpfrdta(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let (name, lib) = parms.qual("FROMMGTCOL");
     let (name, lib) = (name.to_ascii_uppercase(), lib.to_ascii_uppercase());
-    let lib = if lib.is_empty() { "QPFRDATA".to_string() } else { lib };
+    let lib = if lib.is_empty() {
+        "QPFRDATA".to_string()
+    } else {
+        lib
+    };
     let name = match name.as_str() {
         "*ACTIVE" => perfcol::check(system)
             .map(|(n, _, _)| n)
             .ok_or_else(|| format!("{NOT_ACTIVE} Collection Services is not active."))?,
-        "*SELECT" => return Err("CPD0084 FROMMGTCOL(*SELECT) needs a display; name the collection".into()),
+        "*SELECT" => {
+            return Err("CPD0084 FROMMGTCOL(*SELECT) needs a display; name the collection".into());
+        }
         "" => return Err("CPD0071 FROMMGTCOL is required".into()),
         n => n.to_string(),
     };
     let c = perfcol::read(system, &lib, &name)?;
     let pick = |kwd: &str| {
         let v = parms.name(kwd);
-        if v.is_empty() || v.starts_with("*FROMMGT") { None } else { Some(v) }
+        if v.is_empty() || v.starts_with("*FROMMGT") {
+            None
+        } else {
+            Some(v)
+        }
     };
     let member = pick("TOMBR").unwrap_or_else(|| name.clone());
     let tolib = pick("TOLIB").unwrap_or_else(|| {
-        if c.header.dbf_library.is_empty() { lib.clone() } else { c.header.dbf_library.clone() }
+        if c.header.dbf_library.is_empty() {
+            lib.clone()
+        } else {
+            c.header.dbf_library.clone()
+        }
     });
     let cats: Vec<Category> = parms
         .list("CGY")
         .iter()
         .filter_map(|v| Category::parse(&v.source()))
         .collect();
-    let n = perfcol::write_files(system, &c, &tolib, &member, (!cats.is_empty()).then_some(&cats[..]), true)?;
+    let n = perfcol::write_files(
+        system,
+        &c,
+        &tolib,
+        &member,
+        (!cats.is_empty()).then_some(&cats[..]),
+        true,
+    )?;
     Ok(done(
-        format!("{n} records written to the performance files of {name}, member {member} in {tolib}.\n"),
+        format!(
+            "{n} records written to the performance files of {name}, member {member} in {tolib}.\n"
+        ),
         CREATED,
         &[(&name, 10), (&tolib, 10)],
     ))

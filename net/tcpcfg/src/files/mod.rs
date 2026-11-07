@@ -57,8 +57,8 @@ impl Table {
     /// The files it is written to.
     pub fn files(self) -> &'static [&'static Layout] {
         use defs::{
-            QATOCHOST, QATOCHST6, QATOCIFC, QATOCIFC6, QATOCPN, QATOCPORT, QATOCPP, QATOCPS, QATOCRTE,
-            QATOCRTE6, QATOCSTART, QATOCSVRA, QATOCTCPIP,
+            QATOCHOST, QATOCHST6, QATOCIFC, QATOCIFC6, QATOCPN, QATOCPORT, QATOCPP, QATOCPS,
+            QATOCRTE, QATOCRTE6, QATOCSTART, QATOCSVRA, QATOCTCPIP,
         };
         match self {
             Table::Ifc => &[&QATOCIFC, &QATOCIFC6],
@@ -97,7 +97,8 @@ pub fn encode(cfg: &Config, t: Table) -> Vec<(&'static str, Vec<Vec<u8>>)> {
 /// records (none for a file that is missing). Records that do not
 /// decode are skipped.
 pub fn decode(read: &mut dyn FnMut(&str) -> Vec<Vec<u8>>) -> Config {
-    let mut recs = |l: &'static Layout| -> Vec<Rec> { read(l.file).iter().map(|b| l.rec(b)).collect() };
+    let mut recs =
+        |l: &'static Layout| -> Vec<Rec> { read(l.file).iter().map(|b| l.rec(b)).collect() };
     let v4 = recs(&defs::QATOCIFC);
     let v6 = recs(&defs::QATOCIFC6);
     let ifcs = ifc::decode(&v4, &v6);
@@ -144,7 +145,10 @@ mod tests {
     #[test]
     fn every_table_round_trips() {
         let mut cfg = Config::default();
-        let mut i = Interface::new(IfcAddr::parse("10.0.2.16").unwrap(), LineRef::Line("ETHLINE".into()));
+        let mut i = Interface::new(
+            IfcAddr::parse("10.0.2.16").unwrap(),
+            LineRef::Line("ETHLINE".into()),
+        );
         i.mask = Some("255.255.255.0".parse().unwrap());
         i.vlan = Some(12);
         i.alias = Some("A-VERY-LONG-ALIAS-NAME-25".into());
@@ -155,15 +159,27 @@ mod tests {
         let mut d = Interface::new(IfcAddr::Dhcp4, LineRef::Line("ETHLINE".into()));
         d.autostart = false;
         cfg.ifcs.add(d).unwrap();
-        let mut v6 = Interface::new(IfcAddr::parse("2001:db8::5").unwrap(), LineRef::Line("ETHLINE".into()));
+        let mut v6 = Interface::new(
+            IfcAddr::parse("2001:db8::5").unwrap(),
+            LineRef::Line("ETHLINE".into()),
+        );
         v6.prefix_len = Some(64);
         cfg.ifcs.add(v6).unwrap();
-        cfg.ifcs.add(Interface::new(IfcAddr::Slaac6, LineRef::Line("ETHLINE".into()))).unwrap();
+        cfg.ifcs
+            .add(Interface::new(
+                IfcAddr::Slaac6,
+                LineRef::Line("ETHLINE".into()),
+            ))
+            .unwrap();
         let mut r = Route::new(Dest::DftRoute, 0, "10.0.2.2".parse().unwrap());
         r.text = "the way out".into();
         r.dup_pty = 7;
         cfg.rtes.add(r).unwrap();
-        let mut r6 = Route::new(Dest::parse("*DFT6ROUTE").unwrap(), 0, "2001:db8::1".parse().unwrap());
+        let mut r6 = Route::new(
+            Dest::parse("*DFT6ROUTE").unwrap(),
+            0,
+            "2001:db8::1".parse().unwrap(),
+        );
         r6.mtu = Some(1400);
         cfg.rtes.add(r6).unwrap();
         let names: Vec<String> = (0..7).map(|n| format!("name{n}")).collect();
@@ -203,7 +219,11 @@ mod tests {
                 files.insert(f, recs);
             }
         }
-        assert_eq!(files["QATOCHOST"].len(), 3, "loopback plus two records of seven names");
+        assert_eq!(
+            files["QATOCHOST"].len(),
+            3,
+            "loopback plus two records of seven names"
+        );
         let back = decode(&mut |f| files.get(f).cloned().unwrap_or_default());
         // The IPv4 and IPv6 files read back one after the other.
         cfg.hosts.list.sort_by_key(|e| e.addr.is_ipv6());
@@ -217,6 +237,9 @@ mod tests {
         let back = decode(&mut |_| Vec::new());
         assert!(back.ifcs.list.is_empty());
         assert_eq!(back.attrs.get("TCPKEEPALV"), "120");
-        assert_eq!(back.servers.autostart(), Config::default().servers.autostart());
+        assert_eq!(
+            back.servers.autostart(),
+            Config::default().servers.autostart()
+        );
     }
 }

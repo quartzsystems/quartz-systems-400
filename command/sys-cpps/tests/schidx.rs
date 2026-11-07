@@ -95,7 +95,12 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !values.iter().all(|v| tail.contains(v)) {

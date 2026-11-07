@@ -311,7 +311,10 @@ pub fn detail(t: &Table, name: &str, w: &mut Words<'_>) -> Option<Detail> {
     if let Some(p) = &r.port {
         lines.push(w("TXT011B", &[]));
         lines.push(item(&w("TXT011C", &[]), &p.ifname));
-        lines.push(item(&w("TXT011D", &[]), &p.mac.replace(':', "").to_ascii_uppercase()));
+        lines.push(item(
+            &w("TXT011D", &[]),
+            &p.mac.replace(':', "").to_ascii_uppercase(),
+        ));
         lines.push(item(&w("TXT011E", &[]), &p.driver));
         let link = match (p.carrier, p.speed) {
             (Some(true), Some(s)) => w("TXT011F", &[&s.to_string()]),
@@ -335,7 +338,11 @@ pub fn detail(t: &Table, name: &str, w: &mut Words<'_>) -> Option<Detail> {
     if !attached.is_empty() {
         lines.push(w("TXT0126", &[]));
         for u in attached {
-            let mut v = format!("{} {}", w(kind_id(u.kind), &[]), w(status_id(u.status), &[]));
+            let mut v = format!(
+                "{} {}",
+                w(kind_id(u.kind), &[]),
+                w(status_id(u.status), &[])
+            );
             if u.kind == K::Port
                 && let Some(p) = &u.port
             {
@@ -363,16 +370,30 @@ pub fn detail(t: &Table, name: &str, w: &mut Words<'_>) -> Option<Detail> {
 #[must_use]
 pub fn print_lines(t: &Table, spec: &TypeSpec, w: &mut Words<'_>) -> Vec<String> {
     let word = w(spec.word, &[]);
-    let heads = [w("TXT0129", &[]), w("TXT012A", &[]), w("TXT012B", &[]), w("TXT012C", &[])];
+    let heads = [
+        w("TXT0129", &[]),
+        w("TXT012A", &[]),
+        w("TXT012B", &[]),
+        w("TXT012C", &[]),
+    ];
     let mut out = vec![
         w("TXT0128", &[&word]),
         String::new(),
-        format!("{:<16}{:<12}{:<22}{}", heads[0], heads[1], heads[2], heads[3]),
+        format!(
+            "{:<16}{:<12}{:<22}{}",
+            heads[0], heads[1], heads[2], heads[3]
+        ),
     ];
     for row in list(t, spec, w) {
         let r = t.get(&row.name);
         let tm = r.map(type_model).unwrap_or_default();
-        out.push(format!("{:<16}{:<12}{:<22}{}", row.indented(), tm, row.status, row.text));
+        out.push(format!(
+            "{:<16}{:<12}{:<22}{}",
+            row.indented(),
+            tm,
+            row.status,
+            row.text
+        ));
     }
     if out.len() == 3 {
         let lower = word.to_lowercase();
@@ -387,17 +408,35 @@ mod tests {
     use crate::table::{Resource, Status};
 
     fn r(name: &str, kind: Kind, devpath: &str) -> Resource {
-        Resource::new(name.into(), kind, String::new(), format!("{name} desc"), devpath.into())
+        Resource::new(
+            name.into(),
+            kind,
+            String::new(),
+            format!("{name} desc"),
+            devpath.into(),
+        )
     }
 
     fn sample() -> Table {
         let mut t = Table {
             resources: vec![
                 r("CMB01", K::Bridge, "/devices/pci0000:00/0000:00:02.0"),
-                r("LIN01", K::Lan, "/devices/pci0000:00/0000:00:02.0/0000:01:00.0"),
-                r("CMN01", K::Port, "/devices/pci0000:00/0000:00:02.0/0000:01:00.0/virtio0/net/eth0"),
+                r(
+                    "LIN01",
+                    K::Lan,
+                    "/devices/pci0000:00/0000:00:02.0/0000:01:00.0",
+                ),
+                r(
+                    "CMN01",
+                    K::Port,
+                    "/devices/pci0000:00/0000:00:02.0/0000:01:00.0/virtio0/net/eth0",
+                ),
                 r("DC01", K::Storage, "/devices/pci0000:00/0000:00:03.0"),
-                r("DD001", K::Disk, "/devices/pci0000:00/0000:00:03.0/virtio1/block/vda"),
+                r(
+                    "DD001",
+                    K::Disk,
+                    "/devices/pci0000:00/0000:00:03.0/virtio1/block/vda",
+                ),
                 r("CMB02", K::Bridge, "/devices/pci0000:00/0000:00:04.0"),
             ],
         };
@@ -413,10 +452,17 @@ mod tests {
     fn communication_lists_the_bridge_adapter_and_port() {
         let t = sample();
         let rows = list(&t, spec("*cmn").unwrap(), &mut ids);
-        let shown: Vec<(String, &str)> = rows.iter().map(|r| (r.indented(), r.type_col.as_str())).collect();
+        let shown: Vec<(String, &str)> = rows
+            .iter()
+            .map(|r| (r.indented(), r.type_col.as_str()))
+            .collect();
         assert_eq!(
             shown,
-            [("CMB01".to_string(), "QB01"), ("  LIN01".into(), "QN01"), ("    CMN01".into(), "QN01")]
+            [
+                ("CMB01".to_string(), "QB01"),
+                ("  LIN01".into(), "QN01"),
+                ("    CMN01".into(), "QN01")
+            ]
         );
         assert_eq!(rows[2].text, "TXT0146");
     }
@@ -439,9 +485,19 @@ mod tests {
         let t = sample();
         let d = detail(&t, "DC01", &mut ids).unwrap();
         assert_eq!(d.location, "PCI 0000:00:03.0");
-        assert!(d.lines.iter().any(|l| l.contains("DD001") && l.contains("TXT0151 vda")), "{:?}", d.lines);
+        assert!(
+            d.lines
+                .iter()
+                .any(|l| l.contains("DD001") && l.contains("TXT0151 vda")),
+            "{:?}",
+            d.lines
+        );
         let dd = detail(&t, "dd001", &mut ids).unwrap();
-        assert!(dd.lines.iter().any(|l| l.trim_start().starts_with("TXT0124") && l.ends_with("DC01")));
+        assert!(
+            dd.lines
+                .iter()
+                .any(|l| l.trim_start().starts_with("TXT0124") && l.ends_with("DC01"))
+        );
         assert_eq!(&dd.lines[3][..35], format!("  {:<33}", "TXT0112"));
         assert!(detail(&t, "NONE", &mut ids).is_none());
         let p = print_lines(&t, spec("*CMN").unwrap(), &mut ids);

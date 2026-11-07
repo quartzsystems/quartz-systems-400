@@ -45,7 +45,10 @@ pub(crate) fn is_text(t: &DataType) -> bool {
 }
 
 pub(crate) fn is_binary(t: &DataType) -> bool {
-    matches!(t, DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_))
+    matches!(
+        t,
+        DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_)
+    )
 }
 
 /// An integer or decimal's precision and scale in decimal arithmetic.
@@ -95,10 +98,16 @@ pub fn arith(a: &SqlType, op: BinOp, b: &SqlType) -> Option<SqlType> {
     };
     let t = if matches!(x, DataType::DecFloat(_)) || matches!(y, DataType::DecFloat(_)) {
         DataType::DecFloat(decfloat_digits(x, y))
-    } else if matches!(x, DataType::Real | DataType::Double) || matches!(y, DataType::Real | DataType::Double) {
+    } else if matches!(x, DataType::Real | DataType::Double)
+        || matches!(y, DataType::Real | DataType::Double)
+    {
         DataType::Double
     } else if let (Some(i), Some(j)) = (integer_rank(x), integer_rank(y)) {
-        if i.max(j) == 2 { DataType::BigInt } else { DataType::Integer }
+        if i.max(j) == 2 {
+            DataType::BigInt
+        } else {
+            DataType::Integer
+        }
     } else {
         let ((p1, s1), (p2, s2)) = (as_decimal(x)?, as_decimal(y)?);
         let (p, s) = match op {
@@ -107,16 +116,33 @@ pub fn arith(a: &SqlType, op: BinOp, b: &SqlType) -> Option<SqlType> {
                 ((p1 - s1).max(p2 - s2) + s + 1, s)
             }
             BinOp::Mul => (p1 + p2, s1 + s2),
-            BinOp::Div => (MAX_PRECISION, (i32::from(MAX_PRECISION) - i32::from(p1) + i32::from(s1) - i32::from(s2)).max(0).try_into().ok()?),
+            BinOp::Div => (
+                MAX_PRECISION,
+                (i32::from(MAX_PRECISION) - i32::from(p1) + i32::from(s1) - i32::from(s2))
+                    .max(0)
+                    .try_into()
+                    .ok()?,
+            ),
             BinOp::Concat => return None,
         };
-        DataType::Decimal(p.min(MAX_PRECISION), s.min(MAX_PRECISION).min(p.min(MAX_PRECISION)))
+        DataType::Decimal(
+            p.min(MAX_PRECISION),
+            s.min(MAX_PRECISION).min(p.min(MAX_PRECISION)),
+        )
     };
-    Some(SqlType { spec: plain(t), nullable })
+    Some(SqlType {
+        spec: plain(t),
+        nullable,
+    })
 }
 
 fn plain(t: DataType) -> TypeSpec {
-    TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }
+    TypeSpec {
+        data_type: t,
+        ccsid: None,
+        bit_data: false,
+        udt: None,
+    }
 }
 
 /// The type of `a || b`: a string as long as both (a number counted as
@@ -125,8 +151,18 @@ fn plain(t: DataType) -> TypeSpec {
 pub fn concat(a: &SqlType, b: &SqlType) -> Option<SqlType> {
     let (x, y) = (a.data_type(), b.data_type());
     let n = char_length(x)?.saturating_add(char_length(y)?);
-    let lob = |t: &DataType| matches!(t, DataType::Clob(_) | DataType::Dbclob(_) | DataType::Blob(_));
-    let graphic = |t: &DataType| matches!(t, DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_));
+    let lob = |t: &DataType| {
+        matches!(
+            t,
+            DataType::Clob(_) | DataType::Dbclob(_) | DataType::Blob(_)
+        )
+    };
+    let graphic = |t: &DataType| {
+        matches!(
+            t,
+            DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_)
+        )
+    };
     if matches!(x, DataType::Date | DataType::Time | DataType::Timestamp(_))
         || matches!(y, DataType::Date | DataType::Time | DataType::Timestamp(_))
     {
@@ -141,7 +177,11 @@ pub fn concat(a: &SqlType, b: &SqlType) -> Option<SqlType> {
             DataType::Varbinary(n)
         }
     } else if lob(x) || lob(y) {
-        if graphic(x) || graphic(y) { DataType::Dbclob(n) } else { DataType::Clob(n) }
+        if graphic(x) || graphic(y) {
+            DataType::Dbclob(n)
+        } else {
+            DataType::Clob(n)
+        }
     } else if graphic(x) || graphic(y) {
         if matches!((x, y), (DataType::Graphic(_), DataType::Graphic(_))) {
             DataType::Graphic(n)
@@ -154,7 +194,12 @@ pub fn concat(a: &SqlType, b: &SqlType) -> Option<SqlType> {
         DataType::Varchar(n.min(32740))
     };
     Some(SqlType {
-        spec: TypeSpec { data_type: t, ccsid: None, bit_data: a.spec.bit_data && b.spec.bit_data, udt: None },
+        spec: TypeSpec {
+            data_type: t,
+            ccsid: None,
+            bit_data: a.spec.bit_data && b.spec.bit_data,
+            udt: None,
+        },
         nullable: a.nullable || b.nullable,
     })
 }
@@ -168,14 +213,19 @@ pub fn unify(a: &SqlType, b: &SqlType) -> Option<SqlType> {
         return None;
     }
     if a.spec.udt.is_some() {
-        return Some(SqlType { spec: a.spec.clone(), nullable: a.nullable || b.nullable });
+        return Some(SqlType {
+            spec: a.spec.clone(),
+            nullable: a.nullable || b.nullable,
+        });
     }
     let (x, y) = (a.data_type(), b.data_type());
     let nullable = a.nullable || b.nullable;
     let t = if is_number(x) && is_number(y) {
         if matches!(x, DataType::DecFloat(_)) || matches!(y, DataType::DecFloat(_)) {
             DataType::DecFloat(decfloat_digits(x, y))
-        } else if matches!(x, DataType::Real | DataType::Double) || matches!(y, DataType::Real | DataType::Double) {
+        } else if matches!(x, DataType::Real | DataType::Double)
+            || matches!(y, DataType::Real | DataType::Double)
+        {
             if x == y { x.clone() } else { DataType::Double }
         } else if let (Some(i), Some(j)) = (integer_rank(x), integer_rank(y)) {
             if i >= j { x.clone() } else { y.clone() }
@@ -191,13 +241,22 @@ pub fn unify(a: &SqlType, b: &SqlType) -> Option<SqlType> {
         y.clone()
     } else if is_text(x) && is_text(y) {
         let n = char_length(x)?.max(char_length(y)?);
-        let graphic = |t: &DataType| matches!(t, DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_));
+        let graphic = |t: &DataType| {
+            matches!(
+                t,
+                DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_)
+            )
+        };
         let lob = |t: &DataType| matches!(t, DataType::Clob(_) | DataType::Dbclob(_));
         match (x, y) {
             (DataType::Char(_), DataType::Char(_)) => DataType::Char(n),
             (DataType::Graphic(_), DataType::Graphic(_)) => DataType::Graphic(n),
             _ if lob(x) || lob(y) => {
-                if graphic(x) || graphic(y) { DataType::Dbclob(n) } else { DataType::Clob(n) }
+                if graphic(x) || graphic(y) {
+                    DataType::Dbclob(n)
+                } else {
+                    DataType::Clob(n)
+                }
             }
             _ if graphic(x) || graphic(y) => DataType::Vargraphic(n),
             _ => DataType::Varchar(n),
@@ -212,7 +271,13 @@ pub fn unify(a: &SqlType, b: &SqlType) -> Option<SqlType> {
     } else if x == y {
         x.clone()
     } else if matches!(x, DataType::Timestamp(_)) && matches!(y, DataType::Timestamp(_)) {
-        let p = |t: &DataType| if let DataType::Timestamp(p) = t { *p } else { 0 };
+        let p = |t: &DataType| {
+            if let DataType::Timestamp(p) = t {
+                *p
+            } else {
+                0
+            }
+        };
         DataType::Timestamp(p(x).max(p(y)))
     } else if matches!(x, DataType::Date | DataType::Time | DataType::Timestamp(_)) && is_text(y) {
         x.clone()
@@ -222,14 +287,23 @@ pub fn unify(a: &SqlType, b: &SqlType) -> Option<SqlType> {
         return None;
     };
     Some(SqlType {
-        spec: TypeSpec { data_type: t, ccsid: a.spec.ccsid.or(b.spec.ccsid), bit_data: a.spec.bit_data && b.spec.bit_data, udt: None },
+        spec: TypeSpec {
+            data_type: t,
+            ccsid: a.spec.ccsid.or(b.spec.ccsid),
+            bit_data: a.spec.bit_data && b.spec.bit_data,
+            udt: None,
+        },
         nullable,
     })
 }
 
 /// The common type of several results; `None` when one is unknown. In a
 /// `CASE`, results with no common type are `SQL0581`.
-pub fn all<'a>(es: impl Iterator<Item = &'a Expr>, scope: &Scope<'_>, case: bool) -> Result<Option<SqlType>> {
+pub fn all<'a>(
+    es: impl Iterator<Item = &'a Expr>,
+    scope: &Scope<'_>,
+    case: bool,
+) -> Result<Option<SqlType>> {
     let mut acc: Option<SqlType> = None;
     let mut nulls = false;
     for e in es {
@@ -237,12 +311,25 @@ pub fn all<'a>(es: impl Iterator<Item = &'a Expr>, scope: &Scope<'_>, case: bool
             nulls = true;
             continue;
         }
-        let Some(t) = type_in(e, scope)? else { return Ok(None) };
+        let Some(t) = type_in(e, scope)? else {
+            return Ok(None);
+        };
         acc = match acc {
             None => Some(t),
             Some(a) => match unify(&a, &t) {
                 Some(u) => Some(u),
-                None if let Some(e) = crate::exec::udt::typing::mixed(&a, &t, if case { crate::exec::udt::typing::Mixed::Case } else { crate::exec::udt::typing::Mixed::Coalesce }) => return Err(e),
+                None if let Some(e) = crate::exec::udt::typing::mixed(
+                    &a,
+                    &t,
+                    if case {
+                        crate::exec::udt::typing::Mixed::Case
+                    } else {
+                        crate::exec::udt::typing::Mixed::Coalesce
+                    },
+                ) =>
+                {
+                    return Err(e);
+                }
                 None if case && (is_binary(a.data_type()) != is_binary(t.data_type())) => {
                     return Err(SqlError::Coded {
                         code: -171,

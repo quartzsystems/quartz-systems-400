@@ -65,7 +65,11 @@ fn compare(name: &str, got: &[String]) {
         }
     }
     let mark = "(C) COPYRIGHT";
-    assert_eq!(want[23].find(mark), got[23].find(mark), "{name}: the copyright row");
+    assert_eq!(
+        want[23].find(mark),
+        got[23].find(mark),
+        "{name}: the copyright row"
+    );
     assert!(diff.is_empty(), "{name} differs:\n{diff}");
 }
 
@@ -83,7 +87,13 @@ fn entry(name: &str, user: &str, number: &str, thread: &str, priority: u8) -> En
 /// The header and list values of a view and key set.
 const ROWS: [&str; 6] = ["ROW01", "ROW02", "ROW03", "ROW04", "ROW05", "ROW06"];
 
-fn values(view: usize, set: usize, avg: &str, overall: &str, entries: &[Entry]) -> Vec<(&'static str, String)> {
+fn values(
+    view: usize,
+    set: usize,
+    avg: &str,
+    overall: &str,
+    entries: &[Entry],
+) -> Vec<(&'static str, String)> {
     let first = view == 0 && set == 0 && avg == "104.5";
     let h = headings(view);
     let (k1, k2) = keys(view, set);
@@ -105,7 +115,14 @@ fn values(view: usize, set: usize, avg: &str, overall: &str, entries: &[Entry]) 
         ("MORE", "Bottom".into()),
         ("KEYS1", k1),
         ("KEYS2", k2),
-        ("COPYR", if first { perf::sysact::COPYRIGHT.into() } else { String::new() }),
+        (
+            "COPYR",
+            if first {
+                perf::sysact::COPYRIGHT.into()
+            } else {
+                String::new()
+            },
+        ),
     ];
     for (i, e) in entries.iter().enumerate() {
         v.push((ROWS[i], row(view, e)));
@@ -122,9 +139,18 @@ fn views_one_to_three() {
     b.cpu = 1;
     let jobs = [a, b];
     compare("wrksysact", &written(&values(0, 0, "104.5", "1.0", &jobs)));
-    compare("wrksysact-f11", &written(&values(1, 0, "104.5", "1.0", &jobs)));
-    compare("wrksysact-f11-2", &written(&values(2, 0, "104.5", "1.0", &jobs)));
-    compare("wrksysact-f24", &written(&values(2, 1, "104.5", "1.0", &jobs)));
+    compare(
+        "wrksysact-f11",
+        &written(&values(1, 0, "104.5", "1.0", &jobs)),
+    );
+    compare(
+        "wrksysact-f11-2",
+        &written(&values(2, 0, "104.5", "1.0", &jobs)),
+    );
+    compare(
+        "wrksysact-f24",
+        &written(&values(2, 1, "104.5", "1.0", &jobs)),
+    );
 }
 
 #[test]
@@ -138,7 +164,16 @@ fn view_four_and_the_last_keys() {
     c.allocated = 13;
     c.deallocated = 13;
     c.wait = 99_999;
-    compare("wrksysact-v4", &written(&values(3, 0, "104.2", "1.1", &[a.clone(), b.clone(), c.clone()])));
+    compare(
+        "wrksysact-v4",
+        &written(&values(
+            3,
+            0,
+            "104.2",
+            "1.1",
+            &[a.clone(), b.clone(), c.clone()],
+        )),
+    );
     // View 5 (the second time round) is view 1 again.
     let mut v5a = a.clone();
     v5a.cpu = 5;
@@ -149,7 +184,10 @@ fn view_four_and_the_last_keys() {
     v5c.cpu = 1;
     v5c.other_writes = 12;
     v5c.async_io = 2;
-    compare("wrksysact-v5", &written(&values(0, 0, "104.2", "1.1", &[v5a, v5b, v5c])));
+    compare(
+        "wrksysact-v5",
+        &written(&values(0, 0, "104.2", "1.1", &[v5a, v5b, v5c])),
+    );
     let mut f24c = c;
     f24c.async_io = 2;
     let f24: Vec<Entry> = [a, b, f24c]
@@ -159,5 +197,8 @@ fn view_four_and_the_last_keys() {
             e
         })
         .collect();
-    compare("wrksysact-f24-2", &written(&values(2, 2, "104.2", "1.1", &f24)));
+    compare(
+        "wrksysact-f24-2",
+        &written(&values(2, 2, "104.2", "1.1", &f24)),
+    );
 }

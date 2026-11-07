@@ -10,11 +10,12 @@
 use ipc::wire_struct;
 use mi::io::{DataAreaValue, FileInfo as IoFileInfo, IoFail, IoResult, OpenSpec, OwnedRequest};
 use msgf::MsgDesc;
-use qap_proto::ops::spool::{
-    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
-};
 use qap_proto::ops::manage::{DiskUnits, IplStatus, PowerDown, Ptf};
 use qap_proto::ops::messages::{Queue, Recipient};
+use qap_proto::ops::spool::{
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId,
+    SpooledFiles,
+};
 use qap_proto::types::ObjectName;
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
@@ -964,7 +965,9 @@ pub struct QapSession {
 
 impl std::fmt::Debug for QapSession {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("QapSession").field("profile", &self.profile).finish_non_exhaustive()
+        f.debug_struct("QapSession")
+            .field("profile", &self.profile)
+            .finish_non_exhaustive()
     }
 }
 
@@ -997,7 +1000,12 @@ pub struct QapRefused {
     pub data: Vec<String>,
 }
 
-wire_struct!(QapRefused { status, msgid, text, data });
+wire_struct!(QapRefused {
+    status,
+    msgid,
+    text,
+    data
+});
 
 /// A host server sign-on that succeeded.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -1186,7 +1194,10 @@ pub type PanelData = (Vec<(String, String)>, Vec<Vec<(String, String)>>);
 
 /// A panel's data: its variables, then each list's name and entries
 /// as `(variable, value)` pairs.
-pub type Sys2Data = (Vec<(String, String)>, Vec<(String, Vec<Vec<(String, String)>>)>);
+pub type Sys2Data = (
+    Vec<(String, String)>,
+    Vec<(String, Vec<Vec<(String, String)>>)>,
+);
 /// A source member as SEU opens it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SrcMember {

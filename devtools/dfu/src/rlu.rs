@@ -108,7 +108,10 @@ pub fn layout(f: &PrtFormat) -> Vec<Vec<Placed>> {
         let text = mask(fld);
         end = col + text.chars().count() - 1;
         let field = (!matches!(fld.kind, PrtKind::Constant(_))).then_some(i);
-        lines.last_mut().expect("a line").push(Placed { col, field, text });
+        lines
+            .last_mut()
+            .expect("a line")
+            .push(Placed { col, field, text });
     }
     lines
 }
@@ -402,11 +405,23 @@ mod tests {
             spec("", "", &format!("{:<13}  5", ""), "'Customer list'"),
             spec("", "", &format!("{:<13} 40", ""), "DATE"),
             spec("R", "LINE", "", "SPACEB(1)"),
-            spec("", "ID", &format!(" {:>5}S{:>2} {:<3}{:>3}", 5, 0, "", 5), ""),
-            spec("", "NAME", &format!(" {:>5}A{:>2} {:<3}{:>3}", 20, "", "", "+2"), ""),
+            spec(
+                "",
+                "ID",
+                &format!(" {:>5}S{:>2} {:<3}{:>3}", 5, 0, "", 5),
+                "",
+            ),
+            spec(
+                "",
+                "NAME",
+                &format!(" {:>5}A{:>2} {:<3}{:>3}", 20, "", "", "+2"),
+                "",
+            ),
         ]
-        .join("
-")
+        .join(
+            "
+",
+        )
     }
 
     fn def(text: &str) -> PrtfDefinition {
@@ -420,7 +435,10 @@ mod tests {
     fn lays_out() {
         let img = Image::new(def(&src()));
         assert_eq!(img.lines.len(), 2);
-        assert_eq!(img.lines[0].text.trim_start(), format!("Customer list{}99/99/99", " ".repeat(22)));
+        assert_eq!(
+            img.lines[0].text.trim_start(),
+            format!("Customer list{}99/99/99", " ".repeat(22))
+        );
         assert_eq!(&img.lines[1].text[4..9], "99999");
         assert_eq!(&img.lines[1].text[11..31], &"X".repeat(20));
     }

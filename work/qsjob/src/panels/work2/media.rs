@@ -24,7 +24,10 @@ use crate::display::uim::{Response, UimDialog};
 fn act(host: &Host, d: &mut UimDialog, what: &str, args: &[&str]) {
     let args: Vec<String> = args.iter().map(|a| (*a).to_string()).collect();
     // The answer first: a refusal's message borrows the link again.
-    let done = host.link.borrow_mut().with(|l| l.service_op(what.into(), args));
+    let done = host
+        .link
+        .borrow_mut()
+        .with(|l| l.service_op(what.into(), args));
     match done.map_err(|e| refused(&e)) {
         Ok(lines) => {
             if let Some(m) = lines.first().and_then(|l| crate::panels::said(l)) {
@@ -36,7 +39,12 @@ fn act(host: &Host, d: &mut UimDialog, what: &str, args: &[&str]) {
 }
 
 /// `WRKIMGCLG`.
-pub fn wrkimgclg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkimgclg(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let which = parm(r, "IMGCLG").unwrap_or_else(|| "*ALL".into());
     let ty = parm(r, "TYPE").unwrap_or_else(|| "*ALL".into());
     let mut d = dialog(host, "QSMEDIA")?;
@@ -51,7 +59,11 @@ pub fn wrkimgclg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                 load(d, "CLGS", fetch(h, "IMGCLG", &[&which, &ty])?);
                 Ok(())
             };
-            let mut keys = |job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, resp: Response| {
+            let mut keys = |job: &mut Job,
+                            host: &Host,
+                            surface: &mut Surface,
+                            d: &mut UimDialog,
+                            resp: Response| {
                 if let Response::Return(11) = resp {
                     flip = true;
                     return Ok(Step::Leave);
@@ -82,7 +94,12 @@ pub fn wrkimgclg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
 }
 
 /// `WRKIMGCLGE IMGCLG(name)`, and `WRKIMGCLG` option 12.
-pub fn wrkimgclge(job: &mut Job, host: &Host, surface: &mut Surface, name: &str) -> Result<String, Fail> {
+pub fn wrkimgclge(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    name: &str,
+) -> Result<String, Fail> {
     let mut d = dialog(host, "QSMEDIA")?;
     let name = name.to_string();
     let mut reload = |h: &Host, d: &mut UimDialog| -> Result<(), Fail> {
@@ -93,24 +110,38 @@ pub fn wrkimgclge(job: &mut Job, host: &Host, surface: &mut Surface, name: &str)
     // The add entry offers the next free index, as IBM's does.
     d.list_mut("ENTS").set_ext("IDX", "*AVAIL");
     let clg = name.clone();
-    let mut keys = |job: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
-        Ok(match resp {
-            Response::Return(6) => {
-                exec(job, host, d, &format!("?LODIMGCLG IMGCLG({clg})"));
-                Step::Reload
-            }
-            Response::Return(7) => {
-                exec(job, host, d, &format!("?VFYIMGCLG IMGCLG({clg})"));
-                Step::Reload
-            }
-            other => others(d, &other),
-        })
-    };
-    work(job, host, surface, &mut d, "WRKIMGCLGE", &mut reload, &mut keys)
+    let mut keys =
+        |job: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
+            Ok(match resp {
+                Response::Return(6) => {
+                    exec(job, host, d, &format!("?LODIMGCLG IMGCLG({clg})"));
+                    Step::Reload
+                }
+                Response::Return(7) => {
+                    exec(job, host, d, &format!("?VFYIMGCLG IMGCLG({clg})"));
+                    Step::Reload
+                }
+                other => others(d, &other),
+            })
+        };
+    work(
+        job,
+        host,
+        surface,
+        &mut d,
+        "WRKIMGCLGE",
+        &mut reload,
+        &mut keys,
+    )
 }
 
 /// `WRKTAPCTG`.
-pub fn wrktapctg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrktapctg(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let dev = parm(r, "DEV").unwrap_or_default();
     let cgy = parm(r, "CGY").unwrap_or_else(|| "*ALL".into());
     let mut d = dialog(host, "QSMEDIA")?;
@@ -120,23 +151,37 @@ pub fn wrktapctg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         Ok(())
     };
     let lib = parm(r, "DEV").unwrap_or_default();
-    let mut keys = |_: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
-        let Some(c) = choice(&resp).cloned() else {
-            return Ok(others(d, &resp));
+    let mut keys =
+        |_: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
+            let Some(c) = choice(&resp).cloned() else {
+                return Ok(others(d, &resp));
+            };
+            let ctg = cell(d, "CTGS", c.row, "CTG");
+            match c.option.trim() {
+                "6" => act(host, d, "mlb-mount", &[&lib, &ctg]),
+                "8" => act(host, d, "mlb-demount", &[&lib, &ctg]),
+                _ => return Ok(no_more(d, &resp)),
+            }
+            Ok(Step::Reload)
         };
-        let ctg = cell(d, "CTGS", c.row, "CTG");
-        match c.option.trim() {
-            "6" => act(host, d, "mlb-mount", &[&lib, &ctg]),
-            "8" => act(host, d, "mlb-demount", &[&lib, &ctg]),
-            _ => return Ok(no_more(d, &resp)),
-        }
-        Ok(Step::Reload)
-    };
-    work(job, host, surface, &mut d, "WRKTAPCTG", &mut reload, &mut keys)
+    work(
+        job,
+        host,
+        surface,
+        &mut d,
+        "WRKTAPCTG",
+        &mut reload,
+        &mut keys,
+    )
 }
 
 /// `WRKMLBSTS`.
-pub fn wrkmlbsts(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkmlbsts(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let which = parm(r, "MLB").unwrap_or_else(|| "*ALL".into());
     let mut d = dialog(host, "QSMEDIA")?;
     let mut reload = |h: &Host, d: &mut UimDialog| -> Result<(), Fail> {
@@ -144,29 +189,38 @@ pub fn wrkmlbsts(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         load(d, "RSRCS", data);
         Ok(())
     };
-    let mut keys = |_: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
-        let Some(c) = choice(&resp).cloned() else {
-            if let Response::Return(23) = resp {
-                d.info("CPI9BE9", &[]);
+    let mut keys =
+        |_: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
+            let Some(c) = choice(&resp).cloned() else {
+                if let Response::Return(23) = resp {
+                    d.info("CPI9BE9", &[]);
+                    return Ok(Step::Stay);
+                }
+                return Ok(others(d, &resp));
+            };
+            let rsrc = cell(d, "RSRCS", c.row, "RSRC");
+            let lib = cell(d, "RSRCS", c.row, "RSRCLIB");
+            let alloc = match c.option.trim() {
+                "4" => "*ALLOCATED",
+                "5" => "*UNPROTECTED",
+                "6" => "*DEALLOCATED",
+                _ => return Ok(no_more(d, &resp)),
+            };
+            // Drives are the indented rows.
+            if !rsrc.starts_with(' ') {
+                d.error("CPD9BA0", &[]);
                 return Ok(Step::Stay);
             }
-            return Ok(others(d, &resp));
+            act(host, d, "mlb-alloc", &[&lib, rsrc.trim(), alloc]);
+            Ok(Step::Reload)
         };
-        let rsrc = cell(d, "RSRCS", c.row, "RSRC");
-        let lib = cell(d, "RSRCS", c.row, "RSRCLIB");
-        let alloc = match c.option.trim() {
-            "4" => "*ALLOCATED",
-            "5" => "*UNPROTECTED",
-            "6" => "*DEALLOCATED",
-            _ => return Ok(no_more(d, &resp)),
-        };
-        // Drives are the indented rows.
-        if !rsrc.starts_with(' ') {
-            d.error("CPD9BA0", &[]);
-            return Ok(Step::Stay);
-        }
-        act(host, d, "mlb-alloc", &[&lib, rsrc.trim(), alloc]);
-        Ok(Step::Reload)
-    };
-    work(job, host, surface, &mut d, "WRKMLBSTS", &mut reload, &mut keys)
+    work(
+        job,
+        host,
+        surface,
+        &mut d,
+        "WRKMLBSTS",
+        &mut reload,
+        &mut keys,
+    )
 }

@@ -9,7 +9,12 @@ use super::*;
 use crate::value::parse_date;
 
 fn spec(t: DataType) -> TypeSpec {
-    TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }
+    TypeSpec {
+        data_type: t,
+        ccsid: None,
+        bit_data: false,
+        udt: None,
+    }
 }
 
 #[allow(clippy::needless_pass_by_value)]
@@ -32,7 +37,10 @@ fn strings_to_numbers() {
     assert_eq!(c(s("1E2"), DataType::Integer), "100");
     assert_eq!(c(s("1E2"), DataType::Decimal(5, 0)), "100");
     assert_eq!(c(s("1.239"), DataType::Decimal(5, 2)), "1.23");
-    assert_eq!(c(s(" -1.5e-1 "), DataType::Double), "-1.4999999999999999E-1");
+    assert_eq!(
+        c(s(" -1.5e-1 "), DataType::Double),
+        "-1.4999999999999999E-1"
+    );
     assert_eq!(c(s("abc"), DataType::Decimal(5, 0)), "SQL0420");
     assert_eq!(c(s(""), DataType::Integer), "SQL0420");
     assert_eq!(c(s("Infinity"), DataType::Double), "SQL0420");
@@ -50,11 +58,17 @@ fn numbers_to_numbers() {
     assert_eq!(c(Value::Double(1.5), DataType::Decimal(5, 0)), "1");
     assert_eq!(c(Value::Double(-1.5), DataType::Integer), "-1");
     assert_eq!(c(n("9223372036854775808"), DataType::BigInt), "SQL0802");
-    assert_eq!(c(n("9223372036854775807"), DataType::BigInt), "9223372036854775807");
+    assert_eq!(
+        c(n("9223372036854775807"), DataType::BigInt),
+        "9223372036854775807"
+    );
     assert_eq!(c(n("32768"), DataType::SmallInt), "SQL0802");
     let inf = Value::DecFloat(DecFloat::parse("Infinity", DfFormat::D16).unwrap());
     assert_eq!(c(inf, DataType::Integer), "SQL0802");
-    assert_eq!(c(Value::Double(0.1), DataType::DecFloat(34)), "0.1000000000000000055511151231257827");
+    assert_eq!(
+        c(Value::Double(0.1), DataType::DecFloat(34)),
+        "0.1000000000000000055511151231257827"
+    );
     assert_eq!(c(Value::Double(0.1), DataType::DecFloat(16)), "0.1");
     assert_eq!(c(Value::Double(1E10), DataType::DecFloat(34)), "1E+10");
 }
@@ -94,8 +108,17 @@ fn binary_and_datetime() {
 #[test]
 fn ccsids() {
     let with = |t: DataType, ccsid: u16| {
-        cast(&s("abc"), &TypeSpec { data_type: t, ccsid: Some(ccsid), bit_data: false, udt: None }, DfRounding::HalfEven)
-            .map_or_else(|e| e.msgid(), |v| v.as_text())
+        cast(
+            &s("abc"),
+            &TypeSpec {
+                data_type: t,
+                ccsid: Some(ccsid),
+                bit_data: false,
+                udt: None,
+            },
+            DfRounding::HalfEven,
+        )
+        .map_or_else(|e| e.msgid(), |v| v.as_text())
     };
     assert_eq!(with(DataType::Graphic(3), 13488), "abc");
     assert_eq!(with(DataType::Vargraphic(5), 1200), "abc");

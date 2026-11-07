@@ -91,7 +91,8 @@ pub fn unpack(codec: u8, stored: &[u8], raw_len: usize) -> Result<Vec<u8>> {
         STORED => stored.to_vec(),
         LZ4 => lz4_flex::block::decompress(stored, raw_len).map_err(|_| Error::Codec)?,
         ZSTD => {
-            let mut d = ruzstd::decoding::StreamingDecoder::new(stored).map_err(|_| Error::Codec)?;
+            let mut d =
+                ruzstd::decoding::StreamingDecoder::new(stored).map_err(|_| Error::Codec)?;
             let mut out = Vec::with_capacity(raw_len);
             // Read at most one byte past the length to catch an overlong frame.
             (&mut d)

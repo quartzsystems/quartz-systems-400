@@ -49,7 +49,9 @@ fn described() -> BTreeSet<String> {
 
 fn is_msgid(s: &str) -> bool {
     let b = s.as_bytes();
-    b.len() == 7 && b[..3].iter().all(u8::is_ascii_uppercase) && b[3..].iter().all(u8::is_ascii_hexdigit)
+    b.len() == 7
+        && b[..3].iter().all(u8::is_ascii_uppercase)
+        && b[3..].iter().all(u8::is_ascii_hexdigit)
 }
 
 /// The string literal right after `at` in `line`, if one starts there.
@@ -78,7 +80,13 @@ fn sends() -> Vec<(String, String)> {
             // Comments out, so a call may span lines.
             let code: String = text
                 .lines()
-                .map(|l| if l.trim_start().starts_with("//") { "" } else { l })
+                .map(|l| {
+                    if l.trim_start().starts_with("//") {
+                        ""
+                    } else {
+                        l
+                    }
+                })
                 .collect::<Vec<_>>()
                 .join("\n");
             for pat in ["Fail::new(", "msgid: ", "escape(", "refused("] {
@@ -115,7 +123,12 @@ fn sent_identifiers_are_described_messages() {
             wrong.push(format!("{at}: {lit} sent directly; use the function check"));
         }
     }
-    assert!(wrong.is_empty(), "{} sends:\n  {}", wrong.len(), wrong.join("\n  "));
+    assert!(
+        wrong.is_empty(),
+        "{} sends:\n  {}",
+        wrong.len(),
+        wrong.join("\n  ")
+    );
 }
 
 /// Where the whole system's sources are, for the identifiers any of
@@ -128,7 +141,12 @@ fn system_sources() -> Vec<PathBuf> {
     for e in rd.flatten() {
         let p = e.path();
         let name = e.file_name().to_string_lossy().to_string();
-        if p.is_dir() && !matches!(name.as_str(), "target" | "tools" | "docs" | ".git" | ".claude" | "kernel") {
+        if p.is_dir()
+            && !matches!(
+                name.as_str(),
+                "target" | "tools" | "docs" | ".git" | ".claude" | "kernel"
+            )
+        {
             sources(&p, &mut out);
         }
     }
@@ -143,7 +161,9 @@ fn system_sources() -> Vec<PathBuf> {
 /// The message identifiers a file's code names: a literal that is an
 /// identifier, alone or before its text (`"CPF9801 ..."`).
 fn ids_in(code: &str) -> Vec<String> {
-    let families = ["CPF", "CPD", "CPI", "CPC", "CPA", "CPX", "SQL", "CEE", "TCP", "QSH", "EDT"];
+    let families = [
+        "CPF", "CPD", "CPI", "CPC", "CPA", "CPX", "SQL", "CEE", "TCP", "QSH", "EDT",
+    ];
     let mut out = Vec::new();
     for (i, _) in code.match_indices('"') {
         let rest = &code[i + 1..];
@@ -170,22 +190,45 @@ fn every_sent_identifier_is_described() {
     let mut wrong = Vec::new();
     for f in system_sources() {
         let code = code_of(&std::fs::read_to_string(&f).unwrap_or_default());
-        let name = f.strip_prefix(root()).unwrap_or(&f).display().to_string().replace('\\', "/");
+        let name = f
+            .strip_prefix(root())
+            .unwrap_or(&f)
+            .display()
+            .to_string()
+            .replace('\\', "/");
         for id in ids_in(&code) {
-            if described.contains(&id) || generic_covers(&id, &described) || !seen.insert(id.clone()) {
+            if described.contains(&id)
+                || generic_covers(&id, &described)
+                || !seen.insert(id.clone())
+            {
                 continue;
             }
-            wrong.push(format!("{name}: {id} is sent but no shipped message file describes it"));
+            wrong.push(format!(
+                "{name}: {id} is sent but no shipped message file describes it"
+            ));
         }
     }
-    assert!(wrong.is_empty(), "{}:\n  {}", wrong.len(), wrong.join("\n  "));
+    assert!(
+        wrong.is_empty(),
+        "{}:\n  {}",
+        wrong.len(),
+        wrong.join("\n  ")
+    );
 }
 
 #[test]
 fn message_lines_show_no_error_text() {
     let mut files = Vec::new();
     sources(&root().join("work/qsjob/src/panels"), &mut files);
-    let raw = ["e.to_string()", "{e}", "{e:?}", "e.text,", "e.text)", "(e, true)", "(e, false)"];
+    let raw = [
+        "e.to_string()",
+        "{e}",
+        "{e:?}",
+        "e.text,",
+        "e.text)",
+        "(e, true)",
+        "(e, false)",
+    ];
     let mut wrong = Vec::new();
     for f in files {
         let text = std::fs::read_to_string(&f).unwrap_or_default();
@@ -203,7 +246,11 @@ fn message_lines_show_no_error_text() {
             }
         }
     }
-    assert!(wrong.is_empty(), "message lines with an error's text:\n  {}", wrong.join("\n  "));
+    assert!(
+        wrong.is_empty(),
+        "message lines with an error's text:\n  {}",
+        wrong.join("\n  ")
+    );
 }
 
 /// Where the message lines' words are written: the job's displays
@@ -244,9 +291,17 @@ fn raw_error_at(code: &str, i: usize) -> bool {
         return false;
     }
     let rest = &code[i..];
-    ["e.to_string()", "x.to_string()", "err.to_string()", "{e}", "{e:?}", "{x}", "{err}"]
-        .iter()
-        .any(|p| rest.starts_with(p))
+    [
+        "e.to_string()",
+        "x.to_string()",
+        "err.to_string()",
+        "{e}",
+        "{e:?}",
+        "{x}",
+        "{err}",
+    ]
+    .iter()
+    .any(|p| rest.starts_with(p))
 }
 
 /// The job's display drivers: what they show on a message line comes
@@ -268,35 +323,58 @@ fn drivers_show_no_library_text() {
         sources(&root().join(d), &mut files);
     }
     for f in &files {
-        let name = f.strip_prefix(root()).unwrap_or(f).display().to_string().replace('\\', "/");
+        let name = f
+            .strip_prefix(root())
+            .unwrap_or(f)
+            .display()
+            .to_string()
+            .replace('\\', "/");
         let code = code_of(&std::fs::read_to_string(f).unwrap_or_default());
         let at = |i: usize| format!("{name}:{}", code[..i].matches('\n').count() + 1);
         for (i, _) in code.char_indices() {
-            let passed = code[i..].starts_with("Err(e) => e,") || code[i..].starts_with("Err(m) => m,");
+            let passed =
+                code[i..].starts_with("Err(e) => e,") || code[i..].starts_with("Err(m) => m,");
             if !(passed || raw_error_at(&code, i)) {
                 continue;
             }
             let start = code[..i].rfind([';', '\n']).map_or(0, |s| s + 1);
             let stmt = &code[start..i];
-            let logged = ["Fail::", "failed(", "panels::line(", "eprintln!", "tracing::", "DETAILS"]
-                .iter()
-                .any(|l| stmt.contains(l));
+            let logged = [
+                "Fail::",
+                "failed(",
+                "panels::line(",
+                "eprintln!",
+                "tracing::",
+                "DETAILS",
+            ]
+            .iter()
+            .any(|l| stmt.contains(l));
             if !logged {
                 wrong.push(format!("{}: an error's own text", at(i)));
             }
         }
         // A sentence the driver words itself and hands back for a
         // message line: `Some(format!("Record {n} added."))`.
-        for pat in ["Some(format!(", "Some(\"", "return format!(", "Ok(format!(", "=> format!("] {
+        for pat in [
+            "Some(format!(",
+            "Some(\"",
+            "return format!(",
+            "Ok(format!(",
+            "=> format!(",
+        ] {
             for (i, _) in code.match_indices(pat) {
-                let Some(lit) = literal_at(&code, i + pat.len() - usize::from(pat.ends_with('"'))) else {
+                let Some(lit) = literal_at(&code, i + pat.len() - usize::from(pat.ends_with('"')))
+                else {
                     continue;
                 };
                 let sentence = lit.starts_with(|c: char| c.is_ascii_uppercase())
                     && lit.contains(' ')
                     && lit.trim_end().ends_with('.');
                 if sentence {
-                    wrong.push(format!("{}: sentence {lit:?} worded for a message line", at(i)));
+                    wrong.push(format!(
+                        "{}: sentence {lit:?} worded for a message line",
+                        at(i)
+                    ));
                 }
             }
         }
@@ -305,7 +383,12 @@ fn drivers_show_no_library_text() {
     let mut libs = Vec::new();
     sources(&root().join(TOOL_LIBS), &mut libs);
     for f in &libs {
-        let name = f.strip_prefix(root()).unwrap_or(f).display().to_string().replace('\\', "/");
+        let name = f
+            .strip_prefix(root())
+            .unwrap_or(f)
+            .display()
+            .to_string()
+            .replace('\\', "/");
         if name.contains("/tests/") {
             continue;
         }
@@ -344,7 +427,12 @@ fn lic_screens_show_no_error_text() {
     }
     let mut wrong = Vec::new();
     for f in files {
-        let name = f.strip_prefix(root()).unwrap_or(&f).display().to_string().replace('\\', "/");
+        let name = f
+            .strip_prefix(root())
+            .unwrap_or(&f)
+            .display()
+            .to_string()
+            .replace('\\', "/");
         if name.contains("/tests/") {
             continue;
         }
@@ -356,9 +444,16 @@ fn lic_screens_show_no_error_text() {
             // The statement around it: a log line may show the reason.
             let start = code[..i].rfind(';').map_or(0, |s| s + 1);
             let stmt = &code[start..i];
-            let logged = ["serial(", "eprintln!", "println!", "tracing::", ".both(", "Fail::"]
-                .iter()
-                .any(|l| stmt.contains(l));
+            let logged = [
+                "serial(",
+                "eprintln!",
+                "println!",
+                "tracing::",
+                ".both(",
+                "Fail::",
+            ]
+            .iter()
+            .any(|l| stmt.contains(l));
             if !logged {
                 wrong.push(format!("{name}:{}", code[..i].matches('\n').count() + 1));
             }
@@ -375,7 +470,13 @@ fn lic_screens_show_no_error_text() {
 fn code_of(text: &str) -> String {
     let text = text.find("#[cfg(test)]").map_or(text, |i| &text[..i]);
     text.lines()
-        .map(|l| if l.trim_start().starts_with("//") { "" } else { l })
+        .map(|l| {
+            if l.trim_start().starts_with("//") {
+                ""
+            } else {
+                l
+            }
+        })
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -414,7 +515,12 @@ fn message_lines() -> (Vec<String>, Vec<(String, String)>) {
         let mut files = Vec::new();
         sources(&root().join(d), &mut files);
         for f in files {
-            let name = f.strip_prefix(root()).unwrap_or(&f).display().to_string().replace('\\', "/");
+            let name = f
+                .strip_prefix(root())
+                .unwrap_or(&f)
+                .display()
+                .to_string()
+                .replace('\\', "/");
             if name.contains("/tests/") || ALLOWED.iter().any(|(a, _)| *a == name) {
                 continue;
             }
@@ -426,7 +532,9 @@ fn message_lines() -> (Vec<String>, Vec<(String, String)>) {
                 let b = code.as_bytes();
                 let prev = if i > 0 { b[i - 1] } else { b' ' };
                 let next = b.get(i + 1).copied().unwrap_or(b' ');
-                if matches!(prev, b'=' | b'!' | b'<' | b'>' | b'+' | b'-') || matches!(next, b'=' | b'>') {
+                if matches!(prev, b'=' | b'!' | b'<' | b'>' | b'+' | b'-')
+                    || matches!(next, b'=' | b'>')
+                {
                     continue;
                 }
                 let id = ident_before(&code, i).to_ascii_lowercase();
@@ -436,13 +544,29 @@ fn message_lines() -> (Vec<String>, Vec<(String, String)>) {
                 }
             }
             // Text handed straight to a message line.
-            for pat in [".set_message(\"", ".error_line(\"", "Act::Say(\"", "Refused(\""] {
+            for pat in [
+                ".set_message(\"",
+                ".error_line(\"",
+                "Act::Say(\"",
+                "Refused(\"",
+            ] {
                 for (i, _) in code.match_indices(pat) {
-                    wrong.push(format!("{}: text given to {}", at(i), pat.trim_end_matches('"')));
+                    wrong.push(format!(
+                        "{}: text given to {}",
+                        at(i),
+                        pat.trim_end_matches('"')
+                    ));
                 }
             }
             // Messages by identifier: the literal must be one.
-            for pat in [".error(\"", ".info(\"", "LineMsg::error(\"", "LineMsg::info(\"", ".msg(\"", ".message(\""] {
+            for pat in [
+                ".error(\"",
+                ".info(\"",
+                "LineMsg::error(\"",
+                "LineMsg::info(\"",
+                ".msg(\"",
+                ".message(\"",
+            ] {
                 for (i, _) in code.match_indices(pat) {
                     if let Some(lit) = literal_at(&code, i + pat.len() - 1) {
                         ids.push((at(i), lit.to_string()));
@@ -457,7 +581,9 @@ fn message_lines() -> (Vec<String>, Vec<(String, String)>) {
                     }
                 }
             }
-            let said = code.match_indices("msgline::text(").chain(code.match_indices("msgline::say("));
+            let said = code
+                .match_indices("msgline::text(")
+                .chain(code.match_indices("msgline::say("));
             for (i, _) in said {
                 // The identifier is the second argument: after the host.
                 let window = &code[i..(i + 120).min(code.len())];

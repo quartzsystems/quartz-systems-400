@@ -10,17 +10,23 @@ use std::fmt::Debug;
 use ipc::{Wire, decode, encode};
 use qap_proto::envelope::{MORE, Reassembly};
 use qap_proto::ops::command::{
-    CheckReply, CommandDefinition, CommandReply, CommandText, DescribeCommand, ParmKind, ParmNode, Range, Role, Show,
+    CheckReply, CommandDefinition, CommandReply, CommandText, DescribeCommand, ParmKind, ParmNode,
+    Range, Role, Show,
 };
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod};
-use qap_proto::ops::signon::{ChangePassword, PasswordStatus, Resume, SignOn, SignOnReply, TelnetTicketReply};
+use qap_proto::ops::signon::{
+    ChangePassword, PasswordStatus, Resume, SignOn, SignOnReply, TelnetTicketReply,
+};
 use qap_proto::ops::spool::{
-    DeviceType, HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, OutputQueue, OutputQueues,
-    ReadFormat, ReadSpooledFile, SpoolStatus, SpooledData, SpooledFile, SpooledFileId, SpooledFileRef, SpooledFiles,
+    DeviceType, HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, OutputQueue,
+    OutputQueues, ReadFormat, ReadSpooledFile, SpoolStatus, SpooledData, SpooledFile,
+    SpooledFileId, SpooledFileRef, SpooledFiles,
 };
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::{JobId, ObjectName};
-use qap_proto::{Envelope, Kind, MAX_FRAME, Op, ProtoError, Secret, ServerMessage, Service, Status, Token};
+use qap_proto::{
+    Envelope, Kind, MAX_FRAME, Op, ProtoError, Secret, ServerMessage, Service, Status, Token,
+};
 
 fn same<T: Wire + PartialEq + Debug>(v: &T) {
     assert_eq!(&decode::<T>(&encode(v)).unwrap(), v);
@@ -56,7 +62,10 @@ fn enums() {
     for k in [Kind::Request, Kind::Reply, Kind::Event, Kind::Cancel] {
         same(&k);
     }
-    for (i, k) in [Kind::Request, Kind::Reply, Kind::Event, Kind::Cancel].iter().enumerate() {
+    for (i, k) in [Kind::Request, Kind::Reply, Kind::Event, Kind::Cancel]
+        .iter()
+        .enumerate()
+    {
         assert_eq!(encode(k), [u8::try_from(i).unwrap()]);
     }
     for (i, s) in Service::ALL.iter().enumerate() {
@@ -75,11 +84,22 @@ fn enums() {
         same(s);
         assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
     }
-    for (i, d) in [DeviceType::Scs, DeviceType::Afp, DeviceType::Ascii, DeviceType::Line].iter().enumerate() {
+    for (i, d) in [
+        DeviceType::Scs,
+        DeviceType::Afp,
+        DeviceType::Ascii,
+        DeviceType::Line,
+    ]
+    .iter()
+    .enumerate()
+    {
         same(d);
         assert_eq!(encode(d), [u8::try_from(i).unwrap()]);
     }
-    for (i, f) in [ReadFormat::Scs, ReadFormat::Text, ReadFormat::Pdf].iter().enumerate() {
+    for (i, f) in [ReadFormat::Scs, ReadFormat::Text, ReadFormat::Pdf]
+        .iter()
+        .enumerate()
+    {
         same(f);
         assert_eq!(encode(f), [u8::try_from(i).unwrap()]);
     }
@@ -109,7 +129,9 @@ fn bodies() {
         time_zone: "QN0500EST".into(),
         system_ccsid: 37,
     });
-    same(&PingReply { server_time: 1_793_000_000_000 });
+    same(&PingReply {
+        server_time: 1_793_000_000_000,
+    });
     same(&SignOn {
         user: "QSECOFR".into(),
         password: Secret::from("é pass"),
@@ -119,7 +141,9 @@ fn bodies() {
         old_password: Secret::from("old"),
         new_password: Secret::from("new"),
     });
-    same(&Resume { token: Token([9; 32]) });
+    same(&Resume {
+        token: Token([9; 32]),
+    });
     same(&signon_reply());
     same(&Product {
         id: "QS00SS1".into(),
@@ -135,7 +159,13 @@ fn bodies() {
         products: vec![Product::default(), Product::default()],
     });
     // The token is exactly 32 bytes on the wire.
-    assert_eq!(encode(&Resume { token: Token([1; 32]) }).len(), 32);
+    assert_eq!(
+        encode(&Resume {
+            token: Token([1; 32])
+        })
+        .len(),
+        32
+    );
 }
 
 #[test]
@@ -194,7 +224,11 @@ fn spool_bodies() {
         immediately: true,
     });
     same(&SpooledFileRef { id: id.clone() });
-    same(&MoveSpooledFile { id, outq: q.clone(), first: true });
+    same(&MoveSpooledFile {
+        id,
+        outq: q.clone(),
+        first: true,
+    });
     same(&ListOutputQueues {
         library: "*LIBL".into(),
         start: 0,
@@ -219,18 +253,30 @@ fn spool_bodies() {
 #[test]
 fn envelopes() {
     let req = Envelope::request(7, Op::SignOn, &SignOn::default());
-    assert_eq!((req.kind, req.service, req.op), (Kind::Request, Service::SignOn, 1));
+    assert_eq!(
+        (req.kind, req.service, req.op),
+        (Kind::Request, Service::SignOn, 1)
+    );
     same(&req);
     let rep = Envelope::reply(&req, Status::SignOnFailed, Some(msg()), Vec::new());
     same(&rep);
-    same(&Envelope::event(Service::Connection, 100, Status::ServerEnding, Some(msg())));
+    same(&Envelope::event(
+        Service::Connection,
+        100,
+        Status::ServerEnding,
+        Some(msg()),
+    ));
     same(&Envelope::cancel(7));
     for op in Op::ALL {
         let (s, c) = op.code();
         assert_eq!(Op::of(s, c), Some(op));
     }
     assert_eq!(Op::of(Service::System, 9), None);
-    assert!(!Op::SignOff.before_signon() && !Op::SystemInfo.before_signon() && Op::Resume.before_signon());
+    assert!(
+        !Op::SignOff.before_signon()
+            && !Op::SystemInfo.before_signon()
+            && Op::Resume.before_signon()
+    );
 }
 
 #[test]
@@ -254,13 +300,18 @@ fn frames_over_one_mib_are_refused() {
         Envelope::read_from(&mut hostile.as_slice()),
         Err(ProtoError::TooLong { len }) if len == MAX_FRAME + 1
     ));
-    assert!(matches!(Envelope::from_frame(&vec![0; MAX_FRAME + 1]), Err(ProtoError::TooLong { .. })));
+    assert!(matches!(
+        Envelope::from_frame(&vec![0; MAX_FRAME + 1]),
+        Err(ProtoError::TooLong { .. })
+    ));
 }
 
 #[test]
 fn split_replies_join() {
     let req = Envelope::request(5, Op::SystemInfo, &());
-    let body: Vec<u8> = (0..3 * MAX_FRAME + 17).map(|i| u8::try_from(i % 251).unwrap()).collect();
+    let body: Vec<u8> = (0..3 * MAX_FRAME + 17)
+        .map(|i| u8::try_from(i % 251).unwrap())
+        .collect();
     let frames = Envelope::replies(&req, Status::Ok, Some(msg()), body.clone()).unwrap();
     assert_eq!(frames.len(), 4);
     let mut r = Reassembly::new();
@@ -280,12 +331,19 @@ fn split_replies_join() {
     assert_eq!(whole.message, Some(msg()));
     assert_eq!(r.pending(), 0);
     // Small replies stay one frame.
-    assert_eq!(Envelope::replies(&req, Status::Ok, None, vec![1, 2]).unwrap().len(), 1);
+    assert_eq!(
+        Envelope::replies(&req, Status::Ok, None, vec![1, 2])
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]
 fn version_2_bodies() {
-    same(&CommandText { command: "DSPLIB QGPL".into() });
+    same(&CommandText {
+        command: "DSPLIB QGPL".into(),
+    });
     same(&CommandReply {
         job: JobId {
             name: "QAPCNN".into(),
@@ -294,7 +352,9 @@ fn version_2_bodies() {
         },
         messages: vec![msg(), msg()],
     });
-    same(&CheckReply { messages: vec![msg()] });
+    same(&CheckReply {
+        messages: vec![msg()],
+    });
     same(&DescribeCommand {
         command: ObjectName {
             library: "*LIBL".into(),
@@ -370,7 +430,10 @@ fn version_2_bodies() {
 
 #[test]
 fn values_by_version() {
-    assert_eq!(Service::of_version(1), [Service::Connection, Service::SignOn, Service::System]);
+    assert_eq!(
+        Service::of_version(1),
+        [Service::Connection, Service::SignOn, Service::System]
+    );
     assert_eq!(Service::of_version(2), Service::ALL[..4].to_vec());
     assert_eq!(Service::of_version(3), Service::ALL[..5].to_vec());
     assert_eq!(Service::of_version(4), Service::ALL[..6].to_vec());
@@ -391,7 +454,13 @@ fn values_by_version() {
     assert_eq!(Status::InUse.for_version(1), Status::Error);
     assert_eq!(Status::InUse.for_version(2), Status::Error);
     assert_eq!(Status::InUse.for_version(3), Status::InUse);
-    for op in [Op::TelnetTicket, Op::PasswordStatus, Op::RunCommand, Op::CheckCommand, Op::DescribeCommand] {
+    for op in [
+        Op::TelnetTicket,
+        Op::PasswordStatus,
+        Op::RunCommand,
+        Op::CheckCommand,
+        Op::DescribeCommand,
+    ] {
         assert_eq!(op.since(), 2, "{op:?}");
         assert!(!op.before_signon());
     }

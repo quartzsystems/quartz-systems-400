@@ -75,7 +75,10 @@ fn no_shell_utility_crate_in_the_lockfile() {
         .filter(|n| is_utility(n))
         .collect();
     hits.sort();
-    assert!(hits.is_empty(), "shell-utility crates in Cargo.lock: {hits:?}");
+    assert!(
+        hits.is_empty(),
+        "shell-utility crates in Cargo.lock: {hits:?}"
+    );
 }
 
 #[test]
@@ -116,18 +119,35 @@ fn no_c_in_the_built_graph() {
         .as_array()
         .expect("packages")
         .iter()
-        .filter_map(|p| Some((p["name"].as_str()?.to_string(), p["links"].as_str()?.to_string())))
+        .filter_map(|p| {
+            Some((
+                p["name"].as_str()?.to_string(),
+                p["links"].as_str()?.to_string(),
+            ))
+        })
         .collect();
     let denied = denied(&root);
     for target in ["x86_64-unknown-linux-musl", "x86_64-unknown-linux-gnu"] {
         let tree = cargo(
             &root,
             &[
-                "tree", "--workspace", "--locked", "-e", "normal,build", "--prefix", "none",
-                "--format", "{p}", "--target", target,
+                "tree",
+                "--workspace",
+                "--locked",
+                "-e",
+                "normal,build",
+                "--prefix",
+                "none",
+                "--format",
+                "{p}",
+                "--target",
+                target,
             ],
         );
-        let active: HashSet<&str> = tree.lines().filter_map(|l| l.split_whitespace().next()).collect();
+        let active: HashSet<&str> = tree
+            .lines()
+            .filter_map(|l| l.split_whitespace().next())
+            .collect();
         let mut hits: Vec<String> = Vec::new();
         for name in &active {
             if denied.contains(*name) || is_utility(name) {
@@ -139,6 +159,9 @@ fn no_c_in_the_built_graph() {
         }
         hits.sort();
         assert!(hits.is_empty(), "{target}: {}", hits.join("; "));
-        assert!(active.contains("qsjob"), "{target}: the tree holds the workspace");
+        assert!(
+            active.contains("qsjob"),
+            "{target}: the tree holds the workspace"
+        );
     }
 }

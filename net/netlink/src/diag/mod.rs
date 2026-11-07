@@ -247,7 +247,8 @@ pub fn parse(payload: &[u8], proto: Proto) -> Result<Option<InetSock>> {
     let u = |off| ne_u32(payload, off).unwrap_or(0);
     let local = SocketAddr::new(get_ip(&id[4..20], family), be_u16(id, 0).unwrap_or(0));
     let remote = SocketAddr::new(get_ip(&id[20..36], family), be_u16(id, 2).unwrap_or(0));
-    let cookie = u64::from(ne_u32(id, 40).unwrap_or(0)) | (u64::from(ne_u32(id, 44).unwrap_or(0)) << 32);
+    let cookie =
+        u64::from(ne_u32(id, 40).unwrap_or(0)) | (u64::from(ne_u32(id, 44).unwrap_or(0)) << 32);
     let info = Attrs::new(&payload[MSG_LEN..])
         .get(INET_DIAG_INFO)
         .filter(|_| proto == Proto::Tcp)
@@ -292,7 +293,12 @@ impl Diag {
     }
 
     /// Sockets in the given states.
-    pub fn sockets_in(&mut self, family: Family, proto: Proto, states: u32) -> Result<Vec<InetSock>> {
+    pub fn sockets_in(
+        &mut self,
+        family: Family,
+        proto: Proto,
+        states: u32,
+    ) -> Result<Vec<InetSock>> {
         let req = dump_request(family, proto, states, proto == Proto::Tcp);
         self.sock.dump(&req, |m| {
             if m.kind == SOCK_DIAG_BY_FAMILY {

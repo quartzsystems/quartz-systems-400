@@ -8,8 +8,8 @@
 use ipc::{wire_enum, wire_struct};
 
 use crate::provider::{
-    ApiFail, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo, FieldInfo,
-    FileInfo, FormatInfo, IdxAttr, LocalNow, MemberInfo, ObjInfo, SysVal, SysValKind, UserInfo,
+    ApiFail, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo, FieldInfo, FileInfo,
+    FormatInfo, IdxAttr, LocalNow, MemberInfo, ObjInfo, SysVal, SysValKind, UserInfo,
 };
 
 wire_struct!(ApiFail { msgid, data });

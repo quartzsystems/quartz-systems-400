@@ -94,7 +94,12 @@ pub(crate) fn open_path(j: &mut Job, dirfd: Option<i32>, path: &str, args: OpenA
 fn open(j: &mut Job, argc: i64, p: u128, oflag: i64, mode: i64, conv: i64, tconv: i64) -> i64 {
     let r = (|| {
         let path = cpath(j, p)?;
-        open_path(j, None, &path, open_args(argc, 2, uint(oflag), mode, conv, tconv))
+        open_path(
+            j,
+            None,
+            &path,
+            open_args(argc, 2, uint(oflag), mode, conv, tconv),
+        )
     })();
     ret(j, r)
 }
@@ -105,14 +110,28 @@ fn open64(j: &mut Job, argc: i64, p: u128, oflag: i64, mode: i64, conv: i64, tco
 }
 
 #[allow(clippy::too_many_arguments)]
-fn openat(j: &mut Job, argc: i64, dirfd: i64, p: u128, oflag: i64, mode: i64, conv: i64, tconv: i64) -> i64 {
+fn openat(
+    j: &mut Job,
+    argc: i64,
+    dirfd: i64,
+    p: u128,
+    oflag: i64,
+    mode: i64,
+    conv: i64,
+    tconv: i64,
+) -> i64 {
     let r = (|| {
         let path = cpath(j, p)?;
         let d = match int(dirfd) {
             AT_FDCWD => None,
             n => Some(service_fd(j, n).map_err(|_| Errno::EBADF)?),
         };
-        open_path(j, d, &path, open_args(argc, 3, uint(oflag), mode, conv, tconv))
+        open_path(
+            j,
+            d,
+            &path,
+            open_args(argc, 3, uint(oflag), mode, conv, tconv),
+        )
     })();
     ret(j, r)
 }
@@ -196,13 +215,22 @@ fn pwrite64(j: &mut Job, fd: i64, buf: u128, n: i64, off: i64) -> i64 {
 }
 
 fn seek(j: &mut Job, fd: i64, off: i64, whence: i64) -> R<u64> {
-    let svc = service_fd(j, int(fd)).map_err(|e| if e == Errno::ENOTSUP { Errno::ESPIPE } else { Errno::EBADF })?;
+    let svc = service_fd(j, int(fd)).map_err(|e| {
+        if e == Errno::ENOTSUP {
+            Errno::ESPIPE
+        } else {
+            Errno::EBADF
+        }
+    })?;
     client(j).lseek(svc, off, int(whence))
 }
 
 fn lseek(j: &mut Job, fd: i64, off: i64, whence: i64) -> i64 {
-    let r = seek(j, fd, i64::from(int(off)), whence)
-        .and_then(|p| i32::try_from(p).map(i64::from).map_err(|_| Errno::EOVERFLOW));
+    let r = seek(j, fd, i64::from(int(off)), whence).and_then(|p| {
+        i32::try_from(p)
+            .map(i64::from)
+            .map_err(|_| Errno::EOVERFLOW)
+    });
     ret(j, r)
 }
 
@@ -267,12 +295,16 @@ pub(crate) fn put_stat(j: &Job, buf: u128, s: &Stat, large: bool) -> R<()> {
 }
 
 fn fstat(j: &mut Job, fd: i64, buf: u128) -> i64 {
-    let r = fd_stat(j, int(fd)).and_then(|s| put_stat(j, buf, &s, false)).map(|()| 0);
+    let r = fd_stat(j, int(fd))
+        .and_then(|s| put_stat(j, buf, &s, false))
+        .map(|()| 0);
     ret(j, r)
 }
 
 fn fstat64(j: &mut Job, fd: i64, buf: u128) -> i64 {
-    let r = fd_stat(j, int(fd)).and_then(|s| put_stat(j, buf, &s, true)).map(|()| 0);
+    let r = fd_stat(j, int(fd))
+        .and_then(|s| put_stat(j, buf, &s, true))
+        .map(|()| 0);
     ret(j, r)
 }
 
@@ -283,7 +315,9 @@ pub(crate) fn fd_path(j: &mut Job, fd: i64) -> R<String> {
 }
 
 fn fchmod(j: &mut Job, fd: i64, mode: i64) -> i64 {
-    let r = fd_path(j, fd).and_then(|p| client(j).chmod(&p, uint(mode))).map(|()| 0);
+    let r = fd_path(j, fd)
+        .and_then(|p| client(j).chmod(&p, uint(mode)))
+        .map(|()| 0);
     ret(j, r)
 }
 
@@ -303,7 +337,9 @@ fn fchdir(j: &mut Job, fd: i64) -> i64 {
 }
 
 fn fpathconf(j: &mut Job, fd: i64, name: i64) -> i64 {
-    let r = fd_path(j, fd).and_then(|p| client(j).pathconf(&p, int(name))).map(|v| v.unwrap_or(-1));
+    let r = fd_path(j, fd)
+        .and_then(|p| client(j).pathconf(&p, int(name)))
+        .map(|v| v.unwrap_or(-1));
     match r {
         Ok(v) => v,
         Err(e) => fail(j, e),
@@ -351,7 +387,9 @@ fn lock(j: &mut Job, svc: i32, cmd: i32, p: u128, large: bool) -> R<i64> {
     let got = loop {
         match c.lock_range(svc, cmd, kind, whence, start, len) {
             // The service never waits: the job does, retrying.
-            Err(Errno::EAGAIN) if blocking => std::thread::sleep(std::time::Duration::from_millis(20)),
+            Err(Errno::EAGAIN) if blocking => {
+                std::thread::sleep(std::time::Duration::from_millis(20))
+            }
             other => break other?,
         }
     };
@@ -366,7 +404,11 @@ fn lock(j: &mut Job, svc: i32, cmd: i32, p: u128, large: bool) -> R<i64> {
                 };
                 lay::put_n(b, l, "l_type", u64::from(t.cast_unsigned()));
                 lay::put_n(b, l, "l_whence", 0);
-                let n = if h.end == u64::MAX { 0 } else { h.end - h.start };
+                let n = if h.end == u64::MAX {
+                    0
+                } else {
+                    h.end - h.start
+                };
                 let bits = if large { u64::MAX } else { 0xFFFF_FFFF };
                 lay::put_n(b, l, "l_start", h.start & bits);
                 lay::put_n(b, l, "l_len", n & bits);

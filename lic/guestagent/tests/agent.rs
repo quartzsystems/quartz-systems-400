@@ -115,9 +115,15 @@ fn one(a: &mut Agent<Mem>, req: &str) -> Value {
 #[test]
 fn sync_and_ping() {
     let mut a = Agent::new(Mem::default());
-    let r = one(&mut a, r#"{"execute":"guest-sync","arguments":{"id":123456}}"#);
+    let r = one(
+        &mut a,
+        r#"{"execute":"guest-sync","arguments":{"id":123456}}"#,
+    );
     assert_eq!(r["return"], 123_456);
-    assert_eq!(one(&mut a, r#"{"execute":"guest-ping"}"#), serde_json::json!({ "return": {} }));
+    assert_eq!(
+        one(&mut a, r#"{"execute":"guest-ping"}"#),
+        serde_json::json!({ "return": {} })
+    );
     // The delimited sync answers after a 0xFF, which the host waits for.
     let out = a.feed(b"\xff{\"execute\":\"guest-sync-delimited\",\"arguments\":{\"id\":7}}");
     assert_eq!(out[0], 0xFF);
@@ -133,7 +139,14 @@ fn info_lists_every_command() {
     let r = one(&mut a, r#"{"execute":"guest-info"}"#);
     let cmds = r["return"]["supported_commands"].as_array().unwrap();
     let names: Vec<&str> = cmds.iter().map(|c| c["name"].as_str().unwrap()).collect();
-    for want in ["guest-ping", "guest-sync-delimited", "guest-shutdown", "guest-network-get-interfaces", "guest-get-fsinfo", "guest-get-osinfo"] {
+    for want in [
+        "guest-ping",
+        "guest-sync-delimited",
+        "guest-shutdown",
+        "guest-network-get-interfaces",
+        "guest-get-fsinfo",
+        "guest-get-osinfo",
+    ] {
         assert!(names.contains(&want), "{want}");
     }
     let sd = cmds.iter().find(|c| c["name"] == "guest-shutdown").unwrap();
@@ -144,9 +157,15 @@ fn info_lists_every_command() {
 #[test]
 fn facts() {
     let mut a = Agent::new(Mem::default());
-    assert_eq!(one(&mut a, r#"{"execute":"guest-get-host-name"}"#)["return"]["host-name"], "QSHQ400");
+    assert_eq!(
+        one(&mut a, r#"{"execute":"guest-get-host-name"}"#)["return"]["host-name"],
+        "QSHQ400"
+    );
     let os = one(&mut a, r#"{"execute":"guest-get-osinfo"}"#)["return"].clone();
-    assert_eq!((os["id"].as_str(), os["pretty-name"].as_str()), (Some("qs400"), Some("QS/400 V1R1M0")));
+    assert_eq!(
+        (os["id"].as_str(), os["pretty-name"].as_str()),
+        (Some("qs400"), Some("QS/400 V1R1M0"))
+    );
     assert_eq!(os["kernel-release"], "6.18.2");
     let n = one(&mut a, r#"{"execute":"guest-network-get-interfaces"}"#)["return"].clone();
     assert_eq!(n[1]["name"], "eth0");
@@ -161,54 +180,101 @@ fn facts() {
     assert_eq!(st["id"], "x1");
     assert_eq!(st["return"]["last-src"], "C9002A00");
     assert_eq!(st["return"]["ipl-state"], "complete");
-    assert_eq!(one(&mut a, r#"{"execute":"guest-get-vcpus"}"#)["return"].as_array().unwrap().len(), 2);
-    assert_eq!(one(&mut a, r#"{"execute":"guest-fsfreeze-status"}"#)["return"], "thawed");
+    assert_eq!(
+        one(&mut a, r#"{"execute":"guest-get-vcpus"}"#)["return"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+    assert_eq!(
+        one(&mut a, r#"{"execute":"guest-fsfreeze-status"}"#)["return"],
+        "thawed"
+    );
 }
 
 #[test]
 fn shutdown_is_a_controlled_power_down() {
     let mut a = Agent::new(Mem::default());
     // Success sends nothing, as the QEMU agent.
-    assert!(a.feed(br#"{"execute":"guest-shutdown","arguments":{"mode":"reboot"}}"#).is_empty());
+    assert!(
+        a.feed(br#"{"execute":"guest-shutdown","arguments":{"mode":"reboot"}}"#)
+            .is_empty()
+    );
     assert_eq!(a.guest().stopped, [Stop::Restart]);
     let again = one(&mut a, r#"{"execute":"guest-shutdown"}"#);
     assert_eq!(again["error"]["class"], "GenericError");
     let mut b = Agent::new(Mem::default());
     assert!(b.feed(br#"{"execute":"guest-shutdown"}"#).is_empty());
     assert_eq!(b.guest().stopped, [Stop::PowerDown]);
-    let bad = one(&mut b, r#"{"execute":"guest-shutdown","arguments":{"mode":"sleep"}}"#);
+    let bad = one(
+        &mut b,
+        r#"{"execute":"guest-shutdown","arguments":{"mode":"sleep"}}"#,
+    );
     assert!(bad["error"]["desc"].as_str().unwrap().contains("sleep"));
     let mut c = Agent::new(Mem {
         refuse: true,
         ..Mem::default()
     });
     let no = one(&mut c, r#"{"execute":"guest-shutdown"}"#);
-    assert!(no["error"]["desc"].as_str().unwrap().contains("cannot power down"));
+    assert!(
+        no["error"]["desc"]
+            .as_str()
+            .unwrap()
+            .contains("cannot power down")
+    );
     assert!(c.stopping.is_none());
 }
 
 #[test]
 fn errors() {
     let mut a = Agent::new(Mem::default());
-    let r = one(&mut a, r#"{"execute":"guest-exec","arguments":{"path":"/bin/sh"},"id":5}"#);
+    let r = one(
+        &mut a,
+        r#"{"execute":"guest-exec","arguments":{"path":"/bin/sh"},"id":5}"#,
+    );
     assert_eq!(r["error"]["class"], "CommandNotFound");
     assert_eq!(r["id"], 5);
-    assert_eq!(one(&mut a, r#"{"nothing":1}"#)["error"]["class"], "GenericError");
+    assert_eq!(
+        one(&mut a, r#"{"nothing":1}"#)["error"]["class"],
+        "GenericError"
+    );
     assert_eq!(one(&mut a, "[1,2]")["error"]["class"], "GenericError");
     // Requests split across reads, two in one read.
     assert!(a.feed(br#"{"execute":"guest-pi"#).is_empty());
-    assert_eq!(replies(&a.feed(b"ng\"}{\"execute\":\"guest-ping\"}")).len(), 2);
+    assert_eq!(
+        replies(&a.feed(b"ng\"}{\"execute\":\"guest-ping\"}")).len(),
+        2
+    );
 }
 
 #[test]
 fn power_source() {
     let mut a = Agent::new(Mem::default());
-    let r = one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"battery"}}"#);
+    let r = one(
+        &mut a,
+        r#"{"execute":"qs400-set-power-source","arguments":{"source":"battery"}}"#,
+    );
     assert_eq!(r["return"], serde_json::json!({}));
-    one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"battery","battery-low":true}}"#);
-    one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"utility"}}"#);
-    let e = one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"solar"}}"#);
+    one(
+        &mut a,
+        r#"{"execute":"qs400-set-power-source","arguments":{"source":"battery","battery-low":true}}"#,
+    );
+    one(
+        &mut a,
+        r#"{"execute":"qs400-set-power-source","arguments":{"source":"utility"}}"#,
+    );
+    let e = one(
+        &mut a,
+        r#"{"execute":"qs400-set-power-source","arguments":{"source":"solar"}}"#,
+    );
     assert_eq!(e["error"]["class"], "GenericError");
-    let p = |on_battery, battery_low| guestagent::ups::Power { on_battery, battery_low };
-    assert_eq!(a.guest().power, vec![p(true, false), p(true, true), p(false, false)]);
+    let p = |on_battery, battery_low| guestagent::ups::Power {
+        on_battery,
+        battery_low,
+    };
+    assert_eq!(
+        a.guest().power,
+        vec![p(true, false), p(true, true), p(false, false)]
+    );
 }

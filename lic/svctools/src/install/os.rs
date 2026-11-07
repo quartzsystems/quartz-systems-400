@@ -156,7 +156,11 @@ fn clip(s: &str, n: usize) -> String {
 #[must_use]
 pub fn confirm_os(device: InstallDevice) -> Confirm {
     let mut lines = vec![
-        format!("Install device . . . :  {}  {}", device.name, clip(&device.location, 40)),
+        format!(
+            "Install device . . . :  {}  {}",
+            device.name,
+            clip(&device.location, 40)
+        ),
         format!("Media  . . . . . . . :  {}", clip(&device.media, 50)),
         format!("Install action . . . :  {}", clip(&device.action, 50)),
         String::new(),
@@ -257,8 +261,18 @@ impl Panel for InstallOsPanel {
             "F3=Exit   F12=Cancel",
         );
         let col = ui::BODY_COL;
-        s.put(ui::BODY_ROW + 4, col + 4, "1=Take the defaults (no other prompts)", Attr::GREEN);
-        s.put(ui::BODY_ROW + 5, col + 4, "2=Change the install options", Attr::GREEN);
+        s.put(
+            ui::BODY_ROW + 4,
+            col + 4,
+            "1=Take the defaults (no other prompts)",
+            Attr::GREEN,
+        );
+        s.put(
+            ui::BODY_ROW + 5,
+            col + 4,
+            "2=Change the install options",
+            Attr::GREEN,
+        );
         s.put(
             ui::BODY_ROW + 7,
             col,
@@ -317,17 +331,41 @@ impl Panel for SpecifyOptionsPanel {
             &env.system_name(),
             &[
                 FormLine::new("Licensed programs", 1, if o.licpgm_all { "2" } else { "1" }),
-                FormLine::new("Job and output queues", 1, if o.clear_queues { "2" } else { "1" }),
+                FormLine::new(
+                    "Job and output queues",
+                    1,
+                    if o.clear_queues { "2" } else { "1" },
+                ),
             ],
             "F3=Exit   F12=Cancel",
         );
         let col = ui::BODY_COL;
         s.put(ui::BODY_ROW + 3, col + 4, "Licensed programs:", Attr::GREEN);
-        s.put(ui::BODY_ROW + 4, col + 6, "1=Install the operating system only", Attr::GREEN);
-        s.put(ui::BODY_ROW + 5, col + 6, "2=Then install every licensed program on the media", Attr::GREEN);
-        s.put(ui::BODY_ROW + 6, col + 4, "Job and output queues of a replaced system:", Attr::GREEN);
+        s.put(
+            ui::BODY_ROW + 4,
+            col + 6,
+            "1=Install the operating system only",
+            Attr::GREEN,
+        );
+        s.put(
+            ui::BODY_ROW + 5,
+            col + 6,
+            "2=Then install every licensed program on the media",
+            Attr::GREEN,
+        );
+        s.put(
+            ui::BODY_ROW + 6,
+            col + 4,
+            "Job and output queues of a replaced system:",
+            Attr::GREEN,
+        );
         s.put(ui::BODY_ROW + 7, col + 6, "1=Keep   2=Clear", Attr::GREEN);
-        s.put(ui::BODY_ROW + 9, col, "Type choices, press Enter.", Attr::GREEN);
+        s.put(
+            ui::BODY_ROW + 9,
+            col,
+            "Type choices, press Enter.",
+            Attr::GREEN,
+        );
         s
     }
 
@@ -381,7 +419,11 @@ pub fn run_install_from(
 pub fn run_install(env: &mut dyn DstEnv, language: &str) -> Result<(), String> {
     let device = [DeviceKind::Optical, DeviceKind::Virtual, DeviceKind::Tape]
         .into_iter()
-        .find_map(|k| env.install_devices(k).into_iter().find(|d| d.refused.is_none()));
+        .find_map(|k| {
+            env.install_devices(k)
+                .into_iter()
+                .find(|d| d.refused.is_none())
+        });
     if let Some(d) = device {
         let o = OsOptions::defaults(&d.name, language);
         return run_install_from(env, &d, &o);
@@ -431,16 +473,16 @@ mod tests {
         assert_eq!(r.top(), "install-language-confirm");
         assert_eq!(r.function(10, &mut e), None);
         assert_eq!(r.top(), "install-os");
-        assert_eq!(
-            r.enter(&f(&["3", "2026-10-31", "12:00:00"]), &mut e),
-            None
-        );
+        assert_eq!(r.enter(&f(&["3", "2026-10-31", "12:00:00"]), &mut e), None);
         assert!(r.screen(&mut e).dump().contains("is not 1 or 2"));
         assert_eq!(
             r.enter(&f(&["1", "2026-10-31", "12:00:00"]), &mut e),
             Some(Outcome::Continue)
         );
-        assert!(e.actions.contains(&"install-os OPT01 2924 lp=false clear=false".to_string()));
+        assert!(
+            e.actions
+                .contains(&"install-os OPT01 2924 lp=false clear=false".to_string())
+        );
         assert!(e.shown.last().unwrap().contains("X  Stage 6"));
     }
 
@@ -465,7 +507,10 @@ mod tests {
         r.enter(&f(&["2", "2026-10-31", "12:00:00"]), &mut e);
         assert_eq!(r.top(), "install-options");
         assert_eq!(r.enter(&f(&["2", "2"]), &mut e), Some(Outcome::Continue));
-        assert!(e.actions.contains(&"install-os OPTVRT01 2924 lp=true clear=true".to_string()));
+        assert!(
+            e.actions
+                .contains(&"install-os OPTVRT01 2924 lp=true clear=true".to_string())
+        );
         // Without devices the automatic install falls back on the environment.
         let mut e = MemEnv::new("QS400");
         run_install(&mut e, "2924").unwrap();

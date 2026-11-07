@@ -180,7 +180,11 @@ pub fn negotiate(client: &KexInit, server: &KexInit) -> SshResult<Negotiated> {
             .cloned()
             .collect()
     };
-    let kex = pick(&real(&client.kex), &real(&server.kex), "key exchange method")?;
+    let kex = pick(
+        &real(&client.kex),
+        &real(&server.kex),
+        "key exchange method",
+    )?;
     let host_key = pick(&client.host_key, &server.host_key, "host key algorithm")?;
     let cipher_cs = pick(&client.cipher_cs, &server.cipher_cs, "cipher")?;
     let cipher_sc = pick(&client.cipher_sc, &server.cipher_sc, "cipher")?;
@@ -207,8 +211,14 @@ mod tests {
 
     #[test]
     fn client_order_wins_and_flags() {
-        let mut c = KexInit::offer(&[CURVE25519, ECDH_P256, EXT_INFO_C, STRICT_C], &["ssh-ed25519"]);
-        let s = KexInit::offer(&[MLKEM768X25519, ECDH_P256, CURVE25519, STRICT_S], &["rsa-sha2-256", "ssh-ed25519"]);
+        let mut c = KexInit::offer(
+            &[CURVE25519, ECDH_P256, EXT_INFO_C, STRICT_C],
+            &["ssh-ed25519"],
+        );
+        let s = KexInit::offer(
+            &[MLKEM768X25519, ECDH_P256, CURVE25519, STRICT_S],
+            &["rsa-sha2-256", "ssh-ed25519"],
+        );
         let n = negotiate(&KexInit::decode(&c.encode()).unwrap(), &s).unwrap();
         assert_eq!(n.kex, CURVE25519);
         assert_eq!(n.host_key, "ssh-ed25519");

@@ -217,8 +217,11 @@ impl Packet {
     /// The kiss code of a kiss-o'-death packet (stratum 0), as text.
     #[must_use]
     pub fn kiss_code(&self) -> Option<String> {
-        (self.stratum == 0 && self.mode == Mode::Server)
-            .then(|| String::from_utf8_lossy(&self.reference_id).trim_end_matches('\0').to_string())
+        (self.stratum == 0 && self.mode == Mode::Server).then(|| {
+            String::from_utf8_lossy(&self.reference_id)
+                .trim_end_matches('\0')
+                .to_string()
+        })
     }
 }
 

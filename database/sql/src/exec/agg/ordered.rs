@@ -28,10 +28,14 @@ pub(super) fn fold(call: &Call<'_>, rows: &[Input]) -> Result<Value> {
             percentile(&Value::Str("0.5".into()), vals, true)
         }
         _ => {
-            let Some(first) = rows.first() else { return Ok(Value::Null) };
+            let Some(first) = rows.first() else {
+                return Ok(Value::Null);
+            };
             let p = first.args[0].clone();
-            let vals: Vec<Value> =
-                rows.iter().filter_map(|r| r.keys.first().filter(|v| !v.is_null()).cloned()).collect();
+            let vals: Vec<Value> = rows
+                .iter()
+                .filter_map(|r| r.keys.first().filter(|v| !v.is_null()).cloned())
+                .collect();
             percentile(&p, vals, call.name == "PERCENTILE_CONT")
         }
     }
@@ -56,13 +60,19 @@ fn percentile(p: &Value, vals: Vec<Value>, cont: bool) -> Result<Value> {
     }
     let pf = p.as_f64()?;
     if !(0.0..=1.0).contains(&pf) {
-        return Err(SqlError::Overflow { what: "a percentile must be from 0 to 1".into() });
+        return Err(SqlError::Overflow {
+            what: "a percentile must be from 0 to 1".into(),
+        });
     }
     let vals = sorted(vals)?;
     let n = vals.len();
     if !cont {
         // The first value whose cumulative distribution reaches p.
-        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
         let i = ((pf * n as f64).ceil() as usize).clamp(1, n) - 1;
         return Ok(vals[i].clone());
     }
@@ -70,12 +80,25 @@ fn percentile(p: &Value, vals: Vec<Value>, cont: bool) -> Result<Value> {
     let pd = d34(p)?;
     let span = qdecimal::DecFloat::from_i64(i64::try_from(n - 1).expect("fits"), DfFormat::D34);
     let rn = mul(&pd, &span).map_err(decfloat_error)?;
-    let lo_i = usize::try_from(rn.to_decimal().map_err(decfloat_error)?.rescale(0, qdecimal::Rounding::Truncate).map_err(decfloat_error)?.to_i128().unwrap_or(0)).unwrap_or(0).min(n - 1);
+    let lo_i = usize::try_from(
+        rn.to_decimal()
+            .map_err(decfloat_error)?
+            .rescale(0, qdecimal::Rounding::Truncate)
+            .map_err(decfloat_error)?
+            .to_i128()
+            .unwrap_or(0),
+    )
+    .unwrap_or(0)
+    .min(n - 1);
     let lo = d34(&vals[lo_i])?;
     if lo_i + 1 >= n {
         return Ok(Value::DecFloat(lo));
     }
-    let frac = sub(&rn, &qdecimal::DecFloat::from_i64(i64::try_from(lo_i).expect("fits"), DfFormat::D34)).map_err(decfloat_error)?;
+    let frac = sub(
+        &rn,
+        &qdecimal::DecFloat::from_i64(i64::try_from(lo_i).expect("fits"), DfFormat::D34),
+    )
+    .map_err(decfloat_error)?;
     if frac.is_zero() {
         return Ok(Value::DecFloat(lo));
     }
@@ -85,7 +108,12 @@ fn percentile(p: &Value, vals: Vec<Value>, cont: bool) -> Result<Value> {
 }
 
 fn listagg(call: &Call<'_>, rows: &[Input]) -> Result<Value> {
-    let sep = rows.first().and_then(|r| r.args.get(1)).filter(|v| !v.is_null()).map(Value::as_text).unwrap_or_default();
+    let sep = rows
+        .first()
+        .and_then(|r| r.args.get(1))
+        .filter(|v| !v.is_null())
+        .map(Value::as_text)
+        .unwrap_or_default();
     let mut parts: Vec<String> = Vec::new();
     for r in rows {
         if !r.args[0].is_null() {
@@ -105,9 +133,18 @@ fn listagg(call: &Call<'_>, rows: &[Input]) -> Result<Value> {
             let mut out = String::new();
             let mut used = 0;
             for (i, p) in parts.iter().enumerate() {
-                let piece = if i == 0 { p.clone() } else { format!("{sep}{p}") };
-                let tail = if *count { format!("{sep}{filler}({})", parts.len() - i) } else { format!("{sep}{filler}") };
-                if out.chars().count() + piece.chars().count() + tail.chars().count() > LISTAGG_MAX {
+                let piece = if i == 0 {
+                    p.clone()
+                } else {
+                    format!("{sep}{p}")
+                };
+                let tail = if *count {
+                    format!("{sep}{filler}({})", parts.len() - i)
+                } else {
+                    format!("{sep}{filler}")
+                };
+                if out.chars().count() + piece.chars().count() + tail.chars().count() > LISTAGG_MAX
+                {
                     out.push_str(&tail);
                     return Ok(Value::Str(out));
                 }
@@ -117,6 +154,8 @@ fn listagg(call: &Call<'_>, rows: &[Input]) -> Result<Value> {
             let _ = used;
             Ok(Value::Str(out))
         }
-        _ => Err(SqlError::TooLong { what: format!("LISTAGG result of {} characters", joined.chars().count()) }),
+        _ => Err(SqlError::TooLong {
+            what: format!("LISTAGG result of {} characters", joined.chars().count()),
+        }),
     }
 }

@@ -24,13 +24,22 @@ enum Group {
 }
 
 /// Operations whose factor 2 must be given.
-const NEED_F2: &[&str] = &["EXSR", "IF", "DOW", "DOU", "WHEN", "CAB", "CAS", "AND", "OR", "COMP", "ADD", "SUB", "MULT", "DIV", "Z-ADD", "Z-SUB", "MOVE", "MOVEL", "MOVEA", "CAT", "SCAN", "CHECK", "CHECKR", "XLATE", "SUBST", "LOOKUP", "XFOOT", "SQRT", "OCCUR"];
+const NEED_F2: &[&str] = &[
+    "EXSR", "IF", "DOW", "DOU", "WHEN", "CAB", "CAS", "AND", "OR", "COMP", "ADD", "SUB", "MULT",
+    "DIV", "Z-ADD", "Z-SUB", "MOVE", "MOVEL", "MOVEA", "CAT", "SCAN", "CHECK", "CHECKR", "XLATE",
+    "SUBST", "LOOKUP", "XFOOT", "SQRT", "OCCUR",
+];
 
 /// Operations whose result field must be given.
-const NEED_RESULT: &[&str] = &["ADD", "SUB", "MULT", "DIV", "Z-ADD", "Z-SUB", "MOVE", "MOVEL", "MOVEA", "CAT", "XLATE", "SUBST", "XFOOT", "SQRT", "MVR"];
+const NEED_RESULT: &[&str] = &[
+    "ADD", "SUB", "MULT", "DIV", "Z-ADD", "Z-SUB", "MOVE", "MOVEL", "MOVEA", "CAT", "XLATE",
+    "SUBST", "XFOOT", "SQRT", "MVR",
+];
 
 /// The return points `ENDSR` may name.
-const RETURN_POINTS: &[&str] = &["*DETL", "*GETIN", "*TOTC", "*TOTL", "*OFL", "*DETC", "*CANCL"];
+const RETURN_POINTS: &[&str] = &[
+    "*DETL", "*GETIN", "*TOTC", "*TOTL", "*OFL", "*DETC", "*CANCL",
+];
 
 /// The diagnostics for a list of calculations.
 #[must_use]
@@ -39,7 +48,11 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
     let mut open: Vec<(Group, Pos)> = Vec::new();
     let mut subr: Option<Pos> = None;
     let mut names: Vec<String> = Vec::new();
-    let defined: Vec<String> = stmts.iter().filter(|s| s.op.code == "BEGSR").filter_map(|s| s.op.f1.first().and_then(name_of)).collect();
+    let defined: Vec<String> = stmts
+        .iter()
+        .filter(|s| s.op.code == "BEGSR")
+        .filter_map(|s| s.op.f1.first().and_then(name_of))
+        .collect();
     for s in stmts {
         let at = s.at;
         let (base, sfx) = split_suffix(&s.op.code);
@@ -50,7 +63,10 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
         if NEED_F2.contains(&base) && fixed_cmp && op.f2.is_empty() && op.xf2.is_none() {
             out.push(Diag::new(ids::NO_FACTOR2, 30, at));
         }
-        if matches!(base, "IF" | "DOW" | "DOU" | "WHEN" | "ELSEIF") && sfx.is_empty() && op.xf2.is_none() {
+        if matches!(base, "IF" | "DOW" | "DOU" | "WHEN" | "ELSEIF")
+            && sfx.is_empty()
+            && op.xf2.is_none()
+        {
             out.push(Diag::new(ids::NO_EXPRESSION, 30, at));
         }
         if NEED_RESULT.contains(&base) && op.result.is_empty() && !op.f2.is_empty() {
@@ -61,7 +77,11 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
             out.push(Diag::new(ids::BAD_RESULT, 30, at));
         }
         // TEST of a date or time reports through (E) or an indicator.
-        if base == "TEST" && op.ext.contains(['D', 'T', 'Z']) && !op.ext.contains('E') && op.resind[1].is_empty() {
+        if base == "TEST"
+            && op.ext.contains(['D', 'T', 'Z'])
+            && !op.ext.contains('E')
+            && op.resind[1].is_empty()
+        {
             out.push(Diag::new(ids::TEST_NO_ERROR, 30, at));
         }
         if base == "ENDSR"
@@ -91,7 +111,11 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
             && !defined.contains(&n)
         {
             out.push(Diag::new(ids::NOT_DEFINED, 30, at).arg(n.clone()));
-            let id = if base == "CAS" { ids::CAS_NOT_SUBROUTINE } else { ids::NOT_A_SUBROUTINE };
+            let id = if base == "CAS" {
+                ids::CAS_NOT_SUBROUTINE
+            } else {
+                ids::NOT_A_SUBROUTINE
+            };
             out.push(Diag::new(id, 30, at).arg(n));
         }
         match base {
@@ -180,7 +204,13 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
 /// Checks of the whole module: a `USROPN` file that no `OPEN` names,
 /// and what the default activation group does not allow (procedures,
 /// `CALLB`).
-pub fn check_module(m: &rpgfront::ast::Module, files: &[crate::files::File], ctl: &crate::ctl::Ctl, program: bool, out: &mut Vec<Diag>) {
+pub fn check_module(
+    m: &rpgfront::ast::Module,
+    files: &[crate::files::File],
+    ctl: &crate::ctl::Ctl,
+    program: bool,
+    out: &mut Vec<Diag>,
+) {
     for p in &m.procs {
         let kw = |n: &str| p.kws.iter().any(|k| k.name == n);
         if let Some(k) = p.kws.iter().find(|k| k.name == "SERIALIZE")
@@ -192,20 +222,45 @@ pub fn check_module(m: &rpgfront::ast::Module, files: &[crate::files::File], ctl
             out.push(Diag::new(ids::PGMINFO_IGNORED, 0, p.at));
         }
     }
-    let all: Vec<&Stmt> = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter())).collect();
+    let all: Vec<&Stmt> = m
+        .calcs
+        .iter()
+        .chain(m.procs.iter().flat_map(|p| p.calcs.iter()))
+        .collect();
     // A format with null-capable fields is noted under
     // ALWNULL(*INPUTONLY), and under *NO when the file changes records.
     if ctl.alwnull != "*USRCTL" {
-        for f in files.iter().filter(|f| ctl.alwnull == "*INPUTONLY" || f.update || f.output && f.dev == crate::files::Dev::Disk) {
-            for r in f.ext.iter().flat_map(|e| e.formats.iter()).filter(|r| r.fields.iter().any(|x| x.nullable)) {
-                out.push(Diag::new(ids::NULL_CAPABLE_FORMAT, 0, Pos { line: f.def_line, col: 7 }).arg(r.name.clone()));
+        for f in files.iter().filter(|f| {
+            ctl.alwnull == "*INPUTONLY" || f.update || f.output && f.dev == crate::files::Dev::Disk
+        }) {
+            for r in f
+                .ext
+                .iter()
+                .flat_map(|e| e.formats.iter())
+                .filter(|r| r.fields.iter().any(|x| x.nullable))
+            {
+                out.push(
+                    Diag::new(
+                        ids::NULL_CAPABLE_FORMAT,
+                        0,
+                        Pos {
+                            line: f.def_line,
+                            col: 7,
+                        },
+                    )
+                    .arg(r.name.clone()),
+                );
             }
         }
     }
     // SLN needs a record format with SLNO(*VAR).
     for f in files {
         if let Some(at) = f.sln_at
-            && !f.ext.as_ref().is_some_and(|e| e.formats.iter().any(|r| r.dsp.as_ref().is_some_and(|d| d.slno_var)))
+            && !f.ext.as_ref().is_some_and(|e| {
+                e.formats
+                    .iter()
+                    .any(|r| r.dsp.as_ref().is_some_and(|d| d.slno_var))
+            })
         {
             out.push(Diag::new(ids::SLN_NO_SLNO, 30, at));
         }
@@ -217,24 +272,52 @@ pub fn check_module(m: &rpgfront::ast::Module, files: &[crate::files::File], ctl
                 || files.iter().any(|p| {
                     p.param
                         && p.name.eq_ignore_ascii_case(n)
-                        && p.likefile.as_ref().is_some_and(|l| l.eq_ignore_ascii_case(&f.name) || f.likefile.as_ref().is_some_and(|g| g.eq_ignore_ascii_case(l)))
+                        && p.likefile.as_ref().is_some_and(|l| {
+                            l.eq_ignore_ascii_case(&f.name)
+                                || f.likefile
+                                    .as_ref()
+                                    .is_some_and(|g| g.eq_ignore_ascii_case(l))
+                        })
                 })
         };
-        let opened = all.iter().any(|s| split_suffix(&s.op.code).0 == "OPEN" && s.op.f2.first().and_then(name_of).is_some_and(|n| kin(&n)));
+        let opened = all.iter().any(|s| {
+            split_suffix(&s.op.code).0 == "OPEN"
+                && s.op.f2.first().and_then(name_of).is_some_and(|n| kin(&n))
+        });
         if !opened {
-            out.push(Diag::new(ids::USROPN_NO_OPEN, 30, Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
+            out.push(
+                Diag::new(
+                    ids::USROPN_NO_OPEN,
+                    30,
+                    Pos {
+                        line: f.def_line,
+                        col: 7,
+                    },
+                )
+                .arg(f.name.clone()),
+            );
         }
     }
     // COMMIT and ROLBK with no file under commitment control.
-    let committed = m.files.iter().chain(m.procs.iter().flat_map(|p| p.files.iter())).any(|f| f.kws.iter().any(|k| k.name == "COMMIT"));
+    let committed = m
+        .files
+        .iter()
+        .chain(m.procs.iter().flat_map(|p| p.files.iter()))
+        .any(|f| f.kws.iter().any(|k| k.name == "COMMIT"));
     if !committed {
-        for s in all.iter().filter(|s| matches!(split_suffix(&s.op.code).0, "COMMIT" | "ROLBK")) {
+        for s in all
+            .iter()
+            .filter(|s| matches!(split_suffix(&s.op.code).0, "COMMIT" | "ROLBK"))
+        {
             out.push(Diag::new(ids::COMMIT_NO_FILES, 0, s.at));
         }
     }
     // DUMP without (A) is done only under DEBUG(*YES).
     if !ctl.debug {
-        for s in all.iter().filter(|s| s.op.code == "DUMP" && !s.op.ext.contains('A')) {
+        for s in all
+            .iter()
+            .filter(|s| s.op.code == "DUMP" && !s.op.ext.contains('A'))
+        {
             out.push(Diag::new(ids::DUMP_IGNORED, 0, s.at));
         }
     }

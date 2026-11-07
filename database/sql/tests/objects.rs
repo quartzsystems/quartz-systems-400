@@ -34,7 +34,12 @@ impl Db {
             wal_pages: 256,
             now: 1_767_225_600,
         };
-        let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(d) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let (qsys, lib) = {
             let mut t = store.begin().unwrap();
             let qsys = ops::bootstrap(&mut t, 1_767_225_600, "QS400").unwrap();
@@ -56,7 +61,14 @@ impl Db {
             t.commit().unwrap();
             (qsys, lib)
         };
-        let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+        let mut ctx = SqlContext::new(
+            qsys,
+            JobHandle(1),
+            NameContext {
+                curlib: Some(lib),
+                libl: vec![lib],
+            },
+        );
         ctx.now = Some(1_767_225_600);
         ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
         Self { store, ctx }
@@ -92,7 +104,17 @@ impl Db {
             Outcome::Rows(rs) => rs
                 .rows
                 .iter()
-                .map(|r| r.iter().map(|v| if v.is_null() { "-".into() } else { v.to_string().trim_end().to_string() }).collect())
+                .map(|r| {
+                    r.iter()
+                        .map(|v| {
+                            if v.is_null() {
+                                "-".into()
+                            } else {
+                                v.to_string().trim_end().to_string()
+                            }
+                        })
+                        .collect()
+                })
                 .collect(),
             o => panic!("{text}: {o:?}"),
         }
@@ -114,7 +136,11 @@ fn row(cells: &[&str]) -> Vec<String> {
 fn long_names_get_ibm_system_names() {
     let mut db = Db::new();
     let (ca, _) = db.run("CREATE TABLE QSTEST.CUSTOMER_MASTER_FILE (CUSTOMER_NUMBER INT, CUSTOMER_NAME_LONG CHAR(10), SHORT CHAR(1), \"lower\" INT, A_B_C_D_E_F INT)");
-    assert_eq!((ca.sqlcode, ca.sqlstate.as_str()), (7905, "01567"), "not a schema: not journaled");
+    assert_eq!(
+        (ca.sqlcode, ca.sqlstate.as_str()),
+        (7905, "01567"),
+        "not a schema: not journaled"
+    );
     db.ok("CREATE TABLE QSTEST.CUSTOMER_MASTER_FILE2 (X INT)");
     db.ok("CREATE TABLE QSTEST.CUSTO00001X (X INT)");
     db.ok("CREATE TABLE QSTEST.\"lowtab\" (X INT)");
@@ -143,15 +169,24 @@ fn long_names_get_ibm_system_names() {
     );
     // Either name finds the table; columns by either name.
     db.ok("INSERT INTO CUSTOMER_MASTER_FILE (CUSTOMER_NUMBER, SHORT) VALUES (1, 'A')");
-    assert_eq!(db.rows("SELECT CUSTO00001, CUSTOMER_NUMBER, SHORT FROM CUSTO00001"), [row(&["1", "1", "A"])]);
-    assert_eq!(db.rows("SELECT CUSTOMER_NUMBER FROM QSTEST.CUSTOMER_MASTER_FILE"), [row(&["1"])]);
+    assert_eq!(
+        db.rows("SELECT CUSTO00001, CUSTOMER_NUMBER, SHORT FROM CUSTO00001"),
+        [row(&["1", "1", "A"])]
+    );
+    assert_eq!(
+        db.rows("SELECT CUSTOMER_NUMBER FROM QSTEST.CUSTOMER_MASTER_FILE"),
+        [row(&["1"])]
+    );
     assert_eq!(db.code("SELECT * FROM NO_SUCH_LONG_TABLE_NAME"), -204);
     // DROP takes the index entry with it: the name is free again.
     db.ok("DROP TABLE CUSTOMER_MASTER_FILE2");
     assert_eq!(db.code("SELECT * FROM CUSTOMER_MASTER_FILE2"), -204);
     db.ok("CREATE TABLE QSTEST.CUSTOMER_MASTER_FILE3 (X INT)");
     assert_eq!(db.rows("SELECT SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_NAME = 'CUSTOMER_MASTER_FILE3'"), [row(&["CUSTO00002"])]);
-    assert_eq!(db.code("CREATE TABLE QSTEST.CUSTOMER_MASTER_FILE (X INT)"), -601);
+    assert_eq!(
+        db.code("CREATE TABLE QSTEST.CUSTOMER_MASTER_FILE (X INT)"),
+        -601
+    );
     let long = "X".repeat(129);
     assert_eq!(db.code(&format!("CREATE TABLE {long} (X INT)")), -107);
 }
@@ -160,9 +195,15 @@ fn long_names_get_ibm_system_names() {
 fn for_system_name_and_rename() {
     let mut db = Db::new();
     db.ok("CREATE TABLE QSP1_LONG_TABLE_NAME FOR SYSTEM NAME QSP1T (ID INT NOT NULL, CUSTOMER_NAME FOR COLUMN CUSNAM VARCHAR(20))");
-    assert_eq!(db.code("CREATE TABLE QSP1V FOR SYSTEM NAME QSP1VS (X INT)"), -7029);
+    assert_eq!(
+        db.code("CREATE TABLE QSP1V FOR SYSTEM NAME QSP1VS (X INT)"),
+        -7029
+    );
     db.ok("INSERT INTO QSP1T VALUES (1, 'A')");
-    assert_eq!(db.rows("SELECT CUSTOMER_NAME, CUSNAM FROM QSP1_LONG_TABLE_NAME"), [row(&["A", "A"])]);
+    assert_eq!(
+        db.rows("SELECT CUSTOMER_NAME, CUSNAM FROM QSP1_LONG_TABLE_NAME"),
+        [row(&["A", "A"])]
+    );
     db.ok("RENAME TABLE QSP1_LONG_TABLE_NAME TO SYSTEM NAME QSP1U");
     assert_eq!(db.rows("SELECT TABLE_NAME, SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'"), [row(&["QSP1_LONG_TABLE_NAME", "QSP1U"])]);
     db.ok("RENAME TABLE QSP1U TO QSP1_RENAMED FOR SYSTEM NAME QSP1W");
@@ -170,16 +211,33 @@ fn for_system_name_and_rename() {
     assert_eq!(db.code("SELECT * FROM QSP1_LONG_TABLE_NAME"), -204);
     db.ok("CREATE TABLE QSP1C (X INT)");
     db.ok("RENAME TABLE QSP1C TO QSP1C_LONGER_NAME");
-    assert_eq!(db.rows("SELECT SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_NAME = 'QSP1C_LONGER_NAME'"), [row(&["QSP1C00001"])]);
+    assert_eq!(
+        db.rows(
+            "SELECT SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_NAME = 'QSP1C_LONGER_NAME'"
+        ),
+        [row(&["QSP1C00001"])]
+    );
     db.ok("RENAME TABLE QSP1C_LONGER_NAME TO QSP1X");
-    assert_eq!(db.rows("SELECT TABLE_NAME, SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_NAME = 'QSP1X'"), [row(&["QSP1X", "QSP1X"])]);
+    assert_eq!(
+        db.rows(
+            "SELECT TABLE_NAME, SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_NAME = 'QSP1X'"
+        ),
+        [row(&["QSP1X", "QSP1X"])]
+    );
     // A long name keeps a generated system name of its prefix.
     db.ok("CREATE TABLE CUSTOMER_MASTER_FILE2 (X INT)");
     db.ok("RENAME TABLE CUSTOMER_MASTER_FILE2 TO CUSTOMER_RENAMED_TABLE");
     assert_eq!(db.rows("SELECT SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_NAME = 'CUSTOMER_RENAMED_TABLE'"), [row(&["CUSTO00001"])]);
     db.ok("CREATE INDEX CUSTOMER_INDEX_LONG ON CUSTOMER_RENAMED_TABLE (X)");
     db.ok("RENAME INDEX CUSTOMER_INDEX_LONG TO CUSTOMER_INDEX_RENAMED");
-    assert_eq!(db.rows("SELECT INDEX_NAME, SYSTEM_INDEX_NAME, TABLE_NAME FROM QSYS2.SYSINDEXES"), [row(&["CUSTOMER_INDEX_RENAMED", "CUSTO00002", "CUSTOMER_RENAMED_TABLE"])]);
+    assert_eq!(
+        db.rows("SELECT INDEX_NAME, SYSTEM_INDEX_NAME, TABLE_NAME FROM QSYS2.SYSINDEXES"),
+        [row(&[
+            "CUSTOMER_INDEX_RENAMED",
+            "CUSTO00002",
+            "CUSTOMER_RENAMED_TABLE"
+        ])]
+    );
     db.ok("DROP INDEX CUSTOMER_INDEX_RENAMED");
 }
 
@@ -196,16 +254,36 @@ fn views_run_their_queries() {
     db.ok("CREATE VIEW QSV1W AS SELECT ID, AMT * 2 AS DBL, UPPER(NAME) AS UNAME FROM QSV1T WHERE AMT < 3");
     db.ok("CREATE VIEW QSV1J AS SELECT T.ID, T.NAME, SUM(O.QTY) AS TOTAL FROM QSV1T T JOIN QSV1O O ON T.ID = O.ID GROUP BY T.ID, T.NAME");
     db.ok("CREATE VIEW QSV1X AS SELECT * FROM QSV1V WHERE I < 3");
-    db.ok("CREATE VIEW CUSTOMER_UNION_VIEW (K) AS SELECT ID FROM QSV1T UNION SELECT QTY FROM QSV1O");
-    assert_eq!(db.code("CREATE VIEW QSV1Y AS SELECT ID FROM QSV1T UNION SELECT QTY + 1 FROM QSV1O"), -153);
-    assert_eq!(db.rows("SELECT * FROM QSV1W ORDER BY ID"), [row(&["1", "3.00", "A"]), row(&["2", "5.00", "B"])]);
-    assert_eq!(db.rows("SELECT ID, TOTAL FROM QSV1J ORDER BY ID"), [row(&["1", "10"]), row(&["2", "25"])]);
+    db.ok(
+        "CREATE VIEW CUSTOMER_UNION_VIEW (K) AS SELECT ID FROM QSV1T UNION SELECT QTY FROM QSV1O",
+    );
+    assert_eq!(
+        db.code("CREATE VIEW QSV1Y AS SELECT ID FROM QSV1T UNION SELECT QTY + 1 FROM QSV1O"),
+        -153
+    );
+    assert_eq!(
+        db.rows("SELECT * FROM QSV1W ORDER BY ID"),
+        [row(&["1", "3.00", "A"]), row(&["2", "5.00", "B"])]
+    );
+    assert_eq!(
+        db.rows("SELECT ID, TOTAL FROM QSV1J ORDER BY ID"),
+        [row(&["1", "10"]), row(&["2", "25"])]
+    );
     assert_eq!(db.rows("SELECT I, N FROM QSV1X"), [row(&["2", "B"])]);
-    assert_eq!(db.rows("SELECT COUNT(*) FROM CUSTOMER_UNION_VIEW"), [row(&["6"])]);
+    assert_eq!(
+        db.rows("SELECT COUNT(*) FROM CUSTOMER_UNION_VIEW"),
+        [row(&["6"])]
+    );
     assert_eq!(db.columns("SELECT * FROM QSV1W"), ["ID", "DBL", "UNAME"]);
     // A view in a join and a subquery.
-    assert_eq!(db.rows("SELECT V.UNAME FROM QSV1W V JOIN QSV1T T ON V.ID = T.ID WHERE T.ID = 2"), [row(&["B"])]);
-    assert_eq!(db.rows("SELECT ID FROM QSV1T WHERE ID IN (SELECT ID FROM QSV1J WHERE TOTAL > 20)"), [row(&["2"])]);
+    assert_eq!(
+        db.rows("SELECT V.UNAME FROM QSV1W V JOIN QSV1T T ON V.ID = T.ID WHERE T.ID = 2"),
+        [row(&["B"])]
+    );
+    assert_eq!(
+        db.rows("SELECT ID FROM QSV1T WHERE ID IN (SELECT ID FROM QSV1J WHERE TOTAL > 20)"),
+        [row(&["2"])]
+    );
     assert_eq!(
         db.rows("SELECT TABLE_NAME, CHECK_OPTION, VIEW_DEFINITION, IS_UPDATABLE FROM QSYS2.SYSVIEWS ORDER BY TABLE_NAME"),
         [
@@ -227,11 +305,17 @@ fn views_run_their_queries() {
     db.ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
     // A read-only view refuses changes; a check option on one is refused.
     assert!(db.code("INSERT INTO QSV1W (ID) VALUES (9)") < 0);
-    assert_eq!(db.code("CREATE VIEW QSV1C AS SELECT ID, AMT * 2 AS D FROM QSV1T WITH CHECK OPTION"), -84);
+    assert_eq!(
+        db.code("CREATE VIEW QSV1C AS SELECT ID, AMT * 2 AS D FROM QSV1T WITH CHECK OPTION"),
+        -84
+    );
     // OR REPLACE of a view; of a table: SQL0601.
     db.ok("CREATE OR REPLACE VIEW QSV1W AS SELECT ID FROM QSV1T WHERE ID = 3");
     assert_eq!(db.rows("SELECT * FROM QSV1W"), [row(&["3"])]);
-    assert_eq!(db.code("CREATE OR REPLACE VIEW QSV1T AS SELECT 1 AS X FROM QSV1O"), -601);
+    assert_eq!(
+        db.code("CREATE OR REPLACE VIEW QSV1T AS SELECT 1 AS X FROM QSV1O"),
+        -601
+    );
     // RESTRICT with views over it; CASCADE takes them.
     assert_eq!(db.code("DROP TABLE QSV1T RESTRICT"), -616);
     assert_eq!(db.code("DROP VIEW QSV1V RESTRICT"), -616);
@@ -239,7 +323,10 @@ fn views_run_their_queries() {
     assert_eq!(db.code("SELECT * FROM QSV1X"), -204);
     db.ok("DROP TABLE QSV1T");
     assert_eq!(db.code("SELECT * FROM QSV1J"), -204);
-    assert_eq!(db.rows("SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST' ORDER BY 1"), [row(&["QSV1O"])]);
+    assert_eq!(
+        db.rows("SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST' ORDER BY 1"),
+        [row(&["QSV1O"])]
+    );
 }
 
 #[test]
@@ -253,7 +340,10 @@ fn check_option_on_a_logical_view() {
     assert_eq!((ca.sqlcode, ca.sqlstate.as_str()), (-161, "44000"));
     assert_eq!(db.code("UPDATE QSV2V SET ID = 0"), -161);
     assert_eq!(db.code("INSERT INTO QSV2L VALUES (7, 'C')"), -161);
-    assert_eq!(db.rows("SELECT TABLE_NAME, CHECK_OPTION FROM QSYS2.SYSVIEWS ORDER BY 1"), [row(&["QSV2L", "Y"]), row(&["QSV2V", "C"])]);
+    assert_eq!(
+        db.rows("SELECT TABLE_NAME, CHECK_OPTION FROM QSYS2.SYSVIEWS ORDER BY 1"),
+        [row(&["QSV2L", "Y"]), row(&["QSV2V", "C"])]
+    );
 }
 
 #[test]
@@ -267,10 +357,16 @@ fn create_table_as_like_and_replace() {
     db.ok("CREATE TABLE QSP1D AS (SELECT * FROM QSP1T) WITH NO DATA");
     db.ok("CREATE TABLE QSP1H AS (SELECT * FROM QSP1T) DEFINITION ONLY");
     db.ok("CREATE TABLE QSP1N (A, B) AS (SELECT ID, AMT FROM QSP1T) WITH DATA");
-    assert_eq!(db.code("CREATE TABLE QSP1E AS (SELECT ID, AMT + 1 FROM QSP1T) WITH DATA"), -153);
+    assert_eq!(
+        db.code("CREATE TABLE QSP1E AS (SELECT ID, AMT + 1 FROM QSP1T) WITH DATA"),
+        -153
+    );
     db.ok("CREATE TABLE QSP1F LIKE QSP1T");
     db.ok("CREATE TABLE QSP1G (LIKE QSP1T)");
-    assert_eq!(db.code("CREATE TABLE QSP1I LIKE QSP1T INCLUDING IDENTITY"), -84);
+    assert_eq!(
+        db.code("CREATE TABLE QSP1I LIKE QSP1T INCLUDING IDENTITY"),
+        -84
+    );
     assert_eq!(
         db.rows("SELECT TABLE_NAME, COLUMN_NAME, SYSTEM_COLUMN_NAME, IS_NULLABLE FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME IN ('QSP1C', 'QSP1D', 'QSP1G', 'QSP1N') ORDER BY TABLE_NAME, ORDINAL_POSITION"),
         [
@@ -286,7 +382,10 @@ fn create_table_as_like_and_replace() {
             row(&["QSP1N", "B", "B", "Y"]),
         ]
     );
-    assert_eq!(db.rows("SELECT * FROM QSP1C ORDER BY ID"), [row(&["1", "A"]), row(&["2", "B"])]);
+    assert_eq!(
+        db.rows("SELECT * FROM QSP1C ORDER BY ID"),
+        [row(&["1", "A"]), row(&["2", "B"])]
+    );
     assert_eq!(db.rows("SELECT COUNT(*) FROM QSP1D"), [row(&["0"])]);
     // OR REPLACE keeps the rows by column name, or drops them.
     db.ok("CREATE OR REPLACE TABLE QSP1R (X INT)");
@@ -295,7 +394,10 @@ fn create_table_as_like_and_replace() {
     assert_eq!(db.rows("SELECT * FROM QSP1R"), [row(&["1", "-"])]);
     db.ok("CREATE OR REPLACE TABLE QSP1R (X INT) ON REPLACE DELETE ROWS");
     assert_eq!(db.rows("SELECT COUNT(*) FROM QSP1R"), [row(&["0"])]);
-    assert_eq!(db.code("CREATE TABLE QSP1S (X INT) ON REPLACE DELETE ROWS"), -104);
+    assert_eq!(
+        db.code("CREATE TABLE QSP1S (X INT) ON REPLACE DELETE ROWS"),
+        -104
+    );
     assert_eq!(db.code("CREATE OR REPLACE INDEX QSP1I ON QSP1T (ID)"), -104);
 }
 
@@ -342,8 +444,14 @@ fn index_extensions() {
     db.ok("CREATE INDEX QSI1D ON QSI1T (AMT DESC, ID)");
     db.ok("CREATE ENCODED VECTOR INDEX QSI1EV ON QSI1T (NAME) INCLUDE (SUM(AMT))");
     assert_eq!(db.code("CREATE INDEX QSI1E ON QSI1T (UPPER(NAME))"), -84);
-    assert_eq!(db.code("CREATE INDEX QSI1J ON QSI1T (ID) INCLUDE (AMT)"), -104);
-    assert_eq!(db.code("CREATE INDEX QSI1W ON QSI1T (ID) WHERE AMT > ID"), -84);
+    assert_eq!(
+        db.code("CREATE INDEX QSI1J ON QSI1T (ID) INCLUDE (AMT)"),
+        -104
+    );
+    assert_eq!(
+        db.code("CREATE INDEX QSI1W ON QSI1T (ID) WHERE AMT > ID"),
+        -84
+    );
     assert_eq!(db.code("INSERT INTO QSI1T VALUES (5, 'A', 0)"), -803);
     db.ok("INSERT INTO QSI1T VALUES (5, NULL, 0)");
     assert_eq!(
@@ -359,7 +467,10 @@ fn index_extensions() {
         db.rows("SELECT COLUMN_NAME, ORDINAL_POSITION, ORDERING FROM QSYS2.SYSKEYS WHERE INDEX_NAME = 'QSI1D' ORDER BY 2"),
         [row(&["AMT", "1", "D"]), row(&["ID", "2", "A"])]
     );
-    assert_eq!(db.rows("SELECT COUNT(*) FROM QSI1T WHERE AMT > 2"), [row(&["3"])]);
+    assert_eq!(
+        db.rows("SELECT COUNT(*) FROM QSI1T WHERE AMT > 2"),
+        [row(&["3"])]
+    );
 }
 
 /// The users of the grant test, made as `CRTUSRPRF` makes them.
@@ -369,9 +480,15 @@ fn users(db: &mut Db, names: &[&str]) {
     let qsys = db.ctx.qsys;
     sec::profile::shipped::install(&mut t, qsys, 40, 3, 1_767_225_600).unwrap();
     let secofr = sec::auth::principal::Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
-    let env = sec::cmd::Env { qsys, actor: &secofr, now: 1_767_225_600, sysval: &sysval };
+    let env = sec::cmd::Env {
+        qsys,
+        actor: &secofr,
+        now: 1_767_225_600,
+        sysval: &sysval,
+    };
     for n in names {
-        sec::cmd::usrprf::crtusrprf(&mut t, &env, &sec::cmd::Keywords::new(&[("USRPRF", n)])).unwrap();
+        sec::cmd::usrprf::crtusrprf(&mut t, &env, &sec::cmd::Keywords::new(&[("USRPRF", n)]))
+            .unwrap();
     }
     t.commit().unwrap();
 }
@@ -379,10 +496,22 @@ fn users(db: &mut Db, names: &[&str]) {
 /// A user's authority bits to a table of QSTEST.
 fn bits(db: &mut Db, table: &str, user: &str) -> Option<u32> {
     let mut t = db.store.begin().unwrap();
-    let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QSTEST").unwrap()).unwrap().id;
-    let id = store::obj::library::Library::load(&mut t, lib).unwrap().lookup(&mut t, types::FILE, Name::parse(table).unwrap()).unwrap().unwrap();
+    let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QSTEST").unwrap())
+        .unwrap()
+        .id;
+    let id = store::obj::library::Library::load(&mut t, lib)
+        .unwrap()
+        .lookup(&mut t, types::FILE, Name::parse(table).unwrap())
+        .unwrap()
+        .unwrap();
     let h = sec::auth::grant::header(&mut t, id).unwrap();
-    let b = if user == "*PUBLIC" { Some(h.public_authority.0) } else { sec::auth::grant::private(&mut t, &h, user).unwrap().map(|a| a.0) };
+    let b = if user == "*PUBLIC" {
+        Some(h.public_authority.0)
+    } else {
+        sec::auth::grant::private(&mut t, &h, user)
+            .unwrap()
+            .map(|a| a.0)
+    };
     t.abort();
     b
 }
@@ -404,9 +533,18 @@ fn grant_and_revoke_map_to_object_authorities() {
     assert_eq!(bits(&mut db, "QSG1T", "GSEL"), Some(A::OBJOPR | A::READ));
     assert_eq!(bits(&mut db, "QSG1T", "GINS"), Some(A::OBJOPR | A::ADD));
     assert_eq!(bits(&mut db, "QSG1T", "GALT"), Some(A::OBJALTER));
-    assert_eq!(bits(&mut db, "QSG1T", "GALL"), Some(A::OBJOPR | A::OBJALTER | A::OBJREF | A::READ | A::ADD | A::UPD | A::DLT));
-    assert_eq!(bits(&mut db, "QSG1T", "GOPT"), Some(A::OBJOPR | A::OBJMGT | A::READ));
-    assert_eq!(bits(&mut db, "QSG1T", "*PUBLIC").map(|b| b & (A::OBJOPR | A::READ)), Some(A::OBJOPR | A::READ));
+    assert_eq!(
+        bits(&mut db, "QSG1T", "GALL"),
+        Some(A::OBJOPR | A::OBJALTER | A::OBJREF | A::READ | A::ADD | A::UPD | A::DLT)
+    );
+    assert_eq!(
+        bits(&mut db, "QSG1T", "GOPT"),
+        Some(A::OBJOPR | A::OBJMGT | A::READ)
+    );
+    assert_eq!(
+        bits(&mut db, "QSG1T", "*PUBLIC").map(|b| b & (A::OBJOPR | A::READ)),
+        Some(A::OBJOPR | A::READ)
+    );
     assert_eq!(
         db.rows("SELECT GRANTEE, PRIVILEGE_TYPE, IS_GRANTABLE FROM QSYS2.SYSTABAUTH WHERE TABLE_NAME = 'QSG1T' AND GRANTEE IN ('GSEL', 'GOPT', 'GALT') ORDER BY 1, 2"),
         [row(&["GALT", "ALTER", "NO"]), row(&["GALT", "INDEX", "NO"]), row(&["GOPT", "SELECT", "YES"]), row(&["GSEL", "SELECT", "NO"])]
@@ -414,7 +552,10 @@ fn grant_and_revoke_map_to_object_authorities() {
     // REVOKE takes the data authority, *OBJOPR with the last of them; a
     // privilege not held is a warning.
     db.ok("REVOKE INSERT ON QSG1T FROM GALL");
-    assert_eq!(bits(&mut db, "QSG1T", "GALL"), Some(A::OBJOPR | A::OBJALTER | A::OBJREF | A::READ | A::UPD | A::DLT));
+    assert_eq!(
+        bits(&mut db, "QSG1T", "GALL"),
+        Some(A::OBJOPR | A::OBJALTER | A::OBJREF | A::READ | A::UPD | A::DLT)
+    );
     db.ok("REVOKE SELECT ON QSG1T FROM GSEL");
     assert_eq!(bits(&mut db, "QSG1T", "GSEL"), None);
     let (ca, _) = db.run("REVOKE SELECT ON QSG1T FROM GINS");
@@ -423,7 +564,10 @@ fn grant_and_revoke_map_to_object_authorities() {
     db.ok("REVOKE ALL ON QSG1T FROM GALL");
     assert_eq!(bits(&mut db, "QSG1T", "GALL"), None);
     db.ok("REVOKE ALL ON QSG1T FROM PUBLIC");
-    assert_eq!(bits(&mut db, "QSG1T", "*PUBLIC").map(|b| b & 0x07FF), Some(0));
+    assert_eq!(
+        bits(&mut db, "QSG1T", "*PUBLIC").map(|b| b & 0x07FF),
+        Some(0)
+    );
     // Views, refusals.
     db.ok("GRANT SELECT, UPDATE ON QSG1V TO GSEL");
     assert_eq!(db.code("GRANT INDEX ON QSG1V TO GSEL"), -557);
@@ -432,18 +576,32 @@ fn grant_and_revoke_map_to_object_authorities() {
     assert_eq!(db.code("GRANT SELECT ON QSG1T TO NOSUCHUSR"), -204);
     assert_eq!(db.code("GRANT SELECT ON NOSUCHTBL TO GSEL"), -204);
     assert_eq!(db.code("GRANT UPDATE (NAME) ON QSG1T TO GSEL"), -84);
-    assert_eq!(db.code("GRANT EXECUTE ON PROCEDURE QSYS.QCMDEXC TO GSEL"), -84);
+    assert_eq!(
+        db.code("GRANT EXECUTE ON PROCEDURE QSYS.QCMDEXC TO GSEL"),
+        -84
+    );
     assert_eq!(db.code("GRANT USAGE ON SEQUENCE QSTEST.SEQ1 TO GSEL"), -84);
-    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SYSCOLAUTH"), [row(&["0"])]);
+    assert_eq!(
+        db.rows("SELECT COUNT(*) FROM QSYS2.SYSCOLAUTH"),
+        [row(&["0"])]
+    );
 }
 
 /// A user's authority bits to an object of QSTEST of a type.
 fn obj_bits(db: &mut Db, name: &str, ty: u16, user: &str) -> Option<u32> {
     let mut t = db.store.begin().unwrap();
-    let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QSTEST").unwrap()).unwrap().id;
-    let id = store::obj::library::Library::load(&mut t, lib).unwrap().lookup(&mut t, ty, Name::parse(name).unwrap()).unwrap().unwrap();
+    let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QSTEST").unwrap())
+        .unwrap()
+        .id;
+    let id = store::obj::library::Library::load(&mut t, lib)
+        .unwrap()
+        .lookup(&mut t, ty, Name::parse(name).unwrap())
+        .unwrap()
+        .unwrap();
     let h = sec::auth::grant::header(&mut t, id).unwrap();
-    let b = sec::auth::grant::private(&mut t, &h, user).unwrap().map(|a| a.0);
+    let b = sec::auth::grant::private(&mut t, &h, user)
+        .unwrap()
+        .map(|a| a.0);
     t.abort();
     b
 }
@@ -458,20 +616,38 @@ fn grant_on_types_and_variables_as_the_primary() {
     db.ok("CREATE VARIABLE QSTEST.GVAR2 INTEGER DEFAULT 1");
     db.ok("GRANT USAGE ON TYPE QSTEST.GTYP TO GUSE");
     db.ok("GRANT ALL ON TYPE QSTEST.GTYP TO GALL");
-    assert_eq!(obj_bits(&mut db, "GTYP", types::SQLUDT, "GUSE"), Some(A::OBJOPR | A::EXECUTE));
-    assert_eq!(obj_bits(&mut db, "GTYP", types::SQLUDT, "GALL"), Some(A::OBJOPR | A::OBJALTER | A::EXECUTE));
+    assert_eq!(
+        obj_bits(&mut db, "GTYP", types::SQLUDT, "GUSE"),
+        Some(A::OBJOPR | A::EXECUTE)
+    );
+    assert_eq!(
+        obj_bits(&mut db, "GTYP", types::SQLUDT, "GALL"),
+        Some(A::OBJOPR | A::OBJALTER | A::EXECUTE)
+    );
     assert_eq!(db.code("GRANT SELECT ON TYPE QSTEST.GTYP TO GUSE"), -104);
     db.ok("GRANT READ ON VARIABLE QSTEST.GVAR TO GUSE");
     db.ok("GRANT READ, WRITE ON VARIABLE QSTEST.GVAR TO GWRT");
     db.ok("GRANT ALL ON VARIABLE QSTEST.GVAR2 TO GALL");
     db.ok("GRANT ALTER ON VARIABLE QSTEST.GVAR2 TO GWRT WITH GRANT OPTION");
-    assert_eq!(obj_bits(&mut db, "GVAR", types::SRVPGM, "GUSE"), Some(A::OBJOPR | A::READ | A::EXECUTE));
-    assert_eq!(obj_bits(&mut db, "GVAR2", types::SRVPGM, "GALL"), Some(A::OBJOPR | A::OBJALTER | A::READ | A::UPD | A::EXECUTE));
-    assert_eq!(obj_bits(&mut db, "GVAR2", types::SRVPGM, "GWRT"), Some(A::OBJMGT | A::OBJALTER));
+    assert_eq!(
+        obj_bits(&mut db, "GVAR", types::SRVPGM, "GUSE"),
+        Some(A::OBJOPR | A::READ | A::EXECUTE)
+    );
+    assert_eq!(
+        obj_bits(&mut db, "GVAR2", types::SRVPGM, "GALL"),
+        Some(A::OBJOPR | A::OBJALTER | A::READ | A::UPD | A::EXECUTE)
+    );
+    assert_eq!(
+        obj_bits(&mut db, "GVAR2", types::SRVPGM, "GWRT"),
+        Some(A::OBJMGT | A::OBJALTER)
+    );
     assert_eq!(db.code("GRANT USAGE ON VARIABLE QSTEST.GVAR TO GUSE"), -104);
     // REVOKE: the use goes with its last privilege; one not held warns.
     db.ok("REVOKE WRITE ON VARIABLE QSTEST.GVAR FROM GWRT");
-    assert_eq!(obj_bits(&mut db, "GVAR", types::SRVPGM, "GWRT"), Some(A::OBJOPR | A::READ | A::EXECUTE));
+    assert_eq!(
+        obj_bits(&mut db, "GVAR", types::SRVPGM, "GWRT"),
+        Some(A::OBJOPR | A::READ | A::EXECUTE)
+    );
     db.ok("REVOKE USAGE ON TYPE QSTEST.GTYP FROM GUSE");
     assert_eq!(obj_bits(&mut db, "GTYP", types::SQLUDT, "GUSE"), None);
     db.ok("REVOKE ALL ON VARIABLE QSTEST.GVAR2 FROM GALL");

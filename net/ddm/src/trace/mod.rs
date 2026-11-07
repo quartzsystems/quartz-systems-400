@@ -346,7 +346,10 @@ mod tests {
 
     #[test]
     fn round_trip() {
-        let d = Dss::request(1, Object::coll(cp::cmd::EXCSAT, vec![Object::chars(cp::param::EXTNAM, "X")]));
+        let d = Dss::request(
+            1,
+            Object::coll(cp::cmd::EXCSAT, vec![Object::chars(cp::param::EXTNAM, "X")]),
+        );
         let t = Trace {
             server: "ddm".into(),
             port: 446,

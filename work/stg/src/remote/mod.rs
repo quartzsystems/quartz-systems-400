@@ -6,8 +6,8 @@
 
 mod cmds;
 mod data;
-mod ifs;
 mod exits;
+mod ifs;
 pub mod inquiry;
 mod objects;
 mod provider;
@@ -16,8 +16,8 @@ mod sql;
 
 pub use cmds::RemoteCmds;
 pub use data::{LDA_LEN, Lda, RemoteData, RemoteIo, display_wait, new_lda, status};
-pub use ifs::RemoteIfs;
 pub use exits::RemoteRegistry;
+pub use ifs::RemoteIfs;
 pub use objects::{RemoteMsgs, RemoteObjects, RemoteSpaces};
 pub use provider::RemoteProvider;
 pub use sql::RemoteSql;

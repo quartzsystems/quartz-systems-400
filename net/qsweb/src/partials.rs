@@ -74,7 +74,11 @@ pub fn link(href: &str, text: &str) -> String {
 
 /// Action links separated by ` | `.
 pub fn actions(links: &[(String, &str)]) -> String {
-    links.iter().map(|(h, t)| link(h, t)).collect::<Vec<_>>().join(" | ")
+    links
+        .iter()
+        .map(|(h, t)| link(h, t))
+        .collect::<Vec<_>>()
+        .join(" | ")
 }
 
 /// A field of the filter row.
@@ -92,7 +96,12 @@ pub fn filter(fields: &[FilterField], refresh: bool) -> String {
     for f in fields {
         match f {
             FilterField::Select(label, name, opts, chosen) => {
-                let _ = write!(s, "<td>{}:</td><td><select name=\"{}\">", esc(label), esc(name));
+                let _ = write!(
+                    s,
+                    "<td>{}:</td><td><select name=\"{}\">",
+                    esc(label),
+                    esc(name)
+                );
                 for o in opts {
                     let sel = if o == chosen { " selected" } else { "" };
                     let _ = write!(s, "<option{sel}>{}</option>", esc(o));
@@ -165,7 +174,10 @@ impl Cell {
 
     /// HTML.
     pub fn html(s: String) -> Self {
-        Self { class: None, html: s }
+        Self {
+            class: None,
+            html: s,
+        }
     }
 
     /// Text in Courier (names, numbers, paths, commands).
@@ -216,13 +228,24 @@ pub struct List {
 
 /// Render a list table.
 pub fn list_table(l: &List) -> String {
-    let mut s = String::from("<table class=\"list\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n");
+    let mut s = String::from(
+        "<table class=\"list\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n",
+    );
     for c in &l.cols {
         match &c.sort {
             Some(k) => {
-                let mut q: Vec<(&str, &str)> = l.keep.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+                let mut q: Vec<(&str, &str)> = l
+                    .keep
+                    .iter()
+                    .map(|(a, b)| (a.as_str(), b.as_str()))
+                    .collect();
                 q.push(("sort", k));
-                let _ = writeln!(s, "<th><a href=\"{}\">{}</a></th>", esc(&query(&q)), esc(&c.label));
+                let _ = writeln!(
+                    s,
+                    "<th><a href=\"{}\">{}</a></th>",
+                    esc(&query(&q)),
+                    esc(&c.label)
+                );
             }
             None => {
                 let _ = writeln!(s, "<th>{}</th>", esc(&c.label));
@@ -239,7 +262,11 @@ pub fn list_table(l: &List) -> String {
         );
     }
     for (i, row) in l.rows.iter().enumerate() {
-        s.push_str(if i % 2 == 1 { "<tr class=\"alt\">\n" } else { "<tr>\n" });
+        s.push_str(if i % 2 == 1 {
+            "<tr class=\"alt\">\n"
+        } else {
+            "<tr>\n"
+        });
         for c in row {
             match c.class {
                 Some(cls) => {
@@ -277,7 +304,11 @@ impl Paging {
 
     /// From `?page=` and `?rows=`, clamped.
     pub fn from_query(page: &str, rows: &str, total: usize, keep: Vec<(String, String)>) -> Self {
-        let rows = rows.parse().ok().filter(|r| ROW_CHOICES.contains(r)).unwrap_or(DEFAULT_ROWS);
+        let rows = rows
+            .parse()
+            .ok()
+            .filter(|r| ROW_CHOICES.contains(r))
+            .unwrap_or(DEFAULT_ROWS);
         let mut p = Self {
             page: 1,
             rows,
@@ -295,7 +326,11 @@ impl Paging {
     }
 
     fn href(&self, page: usize) -> String {
-        let mut q: Vec<(&str, &str)> = self.keep.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+        let mut q: Vec<(&str, &str)> = self
+            .keep
+            .iter()
+            .map(|(a, b)| (a.as_str(), b.as_str()))
+            .collect();
         let p = page.to_string();
         let r = self.rows.to_string();
         if self.rows != DEFAULT_ROWS {
@@ -330,7 +365,12 @@ pub fn paging(p: &Paging) -> String {
     s.push_str("</select> ");
     for (k, v) in &p.keep {
         if !v.is_empty() {
-            let _ = write!(s, "<input type=\"hidden\" name=\"{}\" value=\"{}\">", esc(k), esc(v));
+            let _ = write!(
+                s,
+                "<input type=\"hidden\" name=\"{}\" value=\"{}\">",
+                esc(k),
+                esc(v)
+            );
         }
     }
     let _ = write!(
@@ -465,7 +505,11 @@ pub fn props_table(product: &Product, groups: &[PropGroup], spaced: bool) -> Str
     let nl = if spaced { "\n" } else { "" };
     for g in groups {
         if let Some(t) = &g.title {
-            let _ = write!(s, "<tr class=\"subrow\"><td colspan=\"2\">{}</td></tr>{nl}", esc(t));
+            let _ = write!(
+                s,
+                "<tr class=\"subrow\"><td colspan=\"2\">{}</td></tr>{nl}",
+                esc(t)
+            );
         }
         for r in &g.rows {
             let mut label = esc(&r.label);
@@ -478,7 +522,11 @@ pub fn props_table(product: &Product, groups: &[PropGroup], spaced: bool) -> Str
             }
             match r.class {
                 Some(c) => {
-                    let _ = write!(s, "<tr><th>{label}</th><td class=\"{c}\">{}</td></tr>{nl}", r.value);
+                    let _ = write!(
+                        s,
+                        "<tr><th>{label}</th><td class=\"{c}\">{}</td></tr>{nl}",
+                        r.value
+                    );
                 }
                 None => {
                     let _ = write!(s, "<tr><th>{label}</th><td>{}</td></tr>{nl}", r.value);
@@ -498,7 +546,10 @@ pub fn form(ctx: &Ctx, action: &str, inner: &str) -> String {
     } else {
         format!(" action=\"{}\"", esc(action))
     };
-    format!("<form method=\"post\"{action}>{}{inner}</form>", ctx.csrf_field())
+    format!(
+        "<form method=\"post\"{action}>{}{inner}</form>",
+        ctx.csrf_field()
+    )
 }
 
 /// A multipart POST form (uploads).
@@ -519,7 +570,11 @@ pub fn props(ctx: &Ctx, groups: &[PropGroup], bs: &[Button]) -> String {
     form(
         ctx,
         "",
-        &format!("{}\n{}", props_table(ctx.product, groups, true), buttons(bs)),
+        &format!(
+            "{}\n{}",
+            props_table(ctx.product, groups, true),
+            buttons(bs)
+        ),
     )
 }
 
@@ -552,7 +607,11 @@ pub fn wizard(ctx: &Ctx, steps: &[&str], current: usize, body: &str, bs: &[Butto
         };
         let _ = write!(s, "<div class=\"wstep {cls}\">{n}. {}</div>", esc(st));
     }
-    let _ = write!(s, "</td><td class=\"wbody\">{body}{}</td></tr></table>", buttons(bs));
+    let _ = write!(
+        s,
+        "</td><td class=\"wbody\">{body}{}</td></tr></table>",
+        buttons(bs)
+    );
     form(ctx, "", &s)
 }
 
@@ -648,7 +707,10 @@ mod tests {
     fn list_and_wizard() {
         let l = List {
             cols: vec![Col::plain("A"), Col::sorted("B", "b")],
-            rows: vec![vec![Cell::text("1"), Cell::num("2")], vec![Cell::mono("x"), Cell::act("y".into())]],
+            rows: vec![
+                vec![Cell::text("1"), Cell::num("2")],
+                vec![Cell::mono("x"), Cell::act("y".into())],
+            ],
             empty: "none".into(),
             keep: vec![("status".into(), "Running".into())],
         };
@@ -669,8 +731,16 @@ mod tests {
             open: None,
             here: String::new(),
         };
-        let w = wizard(&ctx, &["One", "Two", "Three"], 2, "<p>b</p>", &[Button::new("next", "Next >")]);
-        assert!(w.starts_with("<form method=\"post\"><input type=\"hidden\" name=\"csrf\" value=\"tok\">"));
+        let w = wizard(
+            &ctx,
+            &["One", "Two", "Three"],
+            2,
+            "<p>b</p>",
+            &[Button::new("next", "Next >")],
+        );
+        assert!(w.starts_with(
+            "<form method=\"post\"><input type=\"hidden\" name=\"csrf\" value=\"tok\">"
+        ));
         assert!(w.contains("<div class=\"wstep done\">1. One</div><div class=\"wstep cur\">2. Two</div><div class=\"wstep \">3. Three</div>"));
         assert!(w.contains("<input type=\"submit\" name=\"next\" value=\"Next &gt;\">"));
     }

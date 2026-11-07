@@ -13,7 +13,9 @@ use super::text;
 
 /// Message `id` with `data` from the fixture's message texts.
 pub fn msg(kind: Kind, id: &str, data: &[&str]) -> Message {
-    let t = text::second_level(id, data).map(|s| s.text).unwrap_or_default();
+    let t = text::second_level(id, data)
+        .map(|s| s.text)
+        .unwrap_or_default();
     Message::new(kind, id, &t)
 }
 

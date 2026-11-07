@@ -84,10 +84,22 @@ impl Called {
 }
 
 /// `CALL`.
-pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value]) -> Result<Outcome> {
+pub fn call(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    c: &Call,
+    params: &[Value],
+) -> Result<Outcome> {
     // `SYSTOOLS` need not exist as a library for its procedures.
-    let engine = c.name.schema.as_ref().is_some_and(|s| matches!(s.value.as_str(), "QSYS2" | "SYSTOOLS"))
-        && crate::exec::catalog::services::procs::is_procedure(c.name.schema.as_ref().map(|s| s.value.as_str()), &c.name.name.value);
+    let engine = c
+        .name
+        .schema
+        .as_ref()
+        .is_some_and(|s| matches!(s.value.as_str(), "QSYS2" | "SYSTOOLS"))
+        && crate::exec::catalog::services::procs::is_procedure(
+            c.name.schema.as_ref().map(|s| s.value.as_str()),
+            &c.name.name.value,
+        );
     let all = match find::named(txn, ctx, &c.name, 1) {
         Err(_) if engine => Vec::new(),
         r => r?,
@@ -155,7 +167,12 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
         // BLOCKED(rel): this interface runs statements in the database
         // only; calling a program needs the job's runtime (embedded SQL
         // and SQL routines have it).
-        return Err(SqlError::Unsupported { what: format!("CALL {} from this interface: it cannot run the program", c.name) });
+        return Err(SqlError::Unsupported {
+            what: format!(
+                "CALL {} from this interface: it cannot run the program",
+                c.name
+            ),
+        });
     }
     ctx.routine.pending = Some(Box::new(plan));
     Ok(Outcome::Done)
@@ -173,7 +190,11 @@ fn bind<'a>(f: &find::Found, args: &'a [Expr]) -> Result<Option<Vec<Option<&'a E
             Expr::Function(n) if n.name.starts_with("=>") && n.args.len() == 1 => {
                 let name = &n.name[2..];
                 let Some(k) = parms.iter().position(|p| p.name == name) else {
-                    return Err(SqlError::Coded { code: -20_483, state: "4274K", what: format!("procedure {} has no parameter {name}", f.routine.def.name) });
+                    return Err(SqlError::Coded {
+                        code: -20_483,
+                        state: "4274K",
+                        what: format!("procedure {} has no parameter {name}", f.routine.def.name),
+                    });
                 };
                 if out[k].is_some() {
                     return Ok(None);
@@ -189,7 +210,10 @@ fn bind<'a>(f: &find::Found, args: &'a [Expr]) -> Result<Option<Vec<Option<&'a E
             }
         }
     }
-    let fits = parms.iter().zip(&out).all(|(p, a)| a.is_some() || p.default.is_some());
+    let fits = parms
+        .iter()
+        .zip(&out)
+        .all(|(p, a)| a.is_some() || p.default.is_some());
     Ok(fits.then_some(out))
 }
 
@@ -199,21 +223,34 @@ fn bind<'a>(f: &find::Found, args: &'a [Expr]) -> Result<Option<Vec<Option<&'a E
 /// A wrong number of arguments is found as it runs (SQL0440).
 pub fn check_prepare(txn: &mut Txn<'_>, ctx: &SqlContext, c: &Call) -> Result<()> {
     use crate::exec::catalog::services::procs;
-    if !c.args.iter().any(|a| matches!(a, Expr::Param(_))) || !find::named(txn, ctx, &c.name, 1)?.is_empty() {
+    if !c.args.iter().any(|a| matches!(a, Expr::Param(_)))
+        || !find::named(txn, ctx, &c.name, 1)?.is_empty()
+    {
         return Ok(());
     }
     let schema = c.name.schema.as_ref().map(|s| s.value.as_str());
-    if matches!(schema, None | Some("QSYS2" | "SYSTOOLS")) && procs::is_procedure(schema, &c.name.name.value) {
+    if matches!(schema, None | Some("QSYS2" | "SYSTOOLS"))
+        && procs::is_procedure(schema, &c.name.name.value)
+    {
         return Ok(());
     }
-    Err(SqlError::ObjectNotFound { name: c.name.to_string(), kind: "procedure" })
+    Err(SqlError::ObjectNotFound {
+        name: c.name.to_string(),
+        kind: "procedure",
+    })
 }
 
 /// `CALL` of one of the procedures the engine runs itself
 /// (`QSYS2.QCMDEXC`, `IFS_WRITE` ...): qualified with its schema, or
 /// unqualified when no procedure of the name is found. Their arguments
 /// may be named (`PATH_NAME => ...`).
-fn service_call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value], none_found: bool) -> Result<Option<Outcome>> {
+fn service_call(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    c: &Call,
+    params: &[Value],
+    none_found: bool,
+) -> Result<Option<Outcome>> {
     use crate::exec::catalog::services::procs;
     let schema = c.name.schema.as_ref().map(|s| s.value.as_str());
     let ours = match schema {
@@ -227,7 +264,9 @@ fn service_call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Val
     let mut args = Vec::new();
     for a in &c.args {
         let (name, e) = match a {
-            Expr::Function(f) if f.name.starts_with("=>") && f.args.len() == 1 => (Some(f.name[2..].to_string()), &f.args[0]),
+            Expr::Function(f) if f.name.starts_with("=>") && f.args.len() == 1 => {
+                (Some(f.name[2..].to_string()), &f.args[0])
+            }
             e => (None, e),
         };
         let v = Evaluator { ctx, params }.eval(txn, e, &Env::default())?;
@@ -240,8 +279,20 @@ fn service_call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Val
 }
 
 /// One argument for a parameter of `ty`.
-fn argument(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], mode: ParmMode, ty: &TypeSpec, a: &Expr) -> Result<PlanParm> {
-    let h = host_type(ty).map_err(|_| SqlError::Unsupported { what: format!("CALL with a parameter of type {}", crate::pl::types::type_text(ty)) })?;
+fn argument(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    mode: ParmMode,
+    ty: &TypeSpec,
+    a: &Expr,
+) -> Result<PlanParm> {
+    let h = host_type(ty).map_err(|_| SqlError::Unsupported {
+        what: format!(
+            "CALL with a parameter of type {}",
+            crate::pl::types::type_text(ty)
+        ),
+    })?;
     let marker = match a {
         Expr::Param(i) => Some(*i),
         _ => None,
@@ -271,9 +322,19 @@ fn argument(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], mode: Par
 /// `CALL` of a program no procedure names: found in the schema or the
 /// library list, called `GENERAL`, each argument of its own type and
 /// given back (`INOUT`).
-fn program_call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value]) -> Result<CallPlan> {
-    let not_found = || SqlError::ObjectNotFound { name: c.name.to_string(), kind: "procedure" };
-    let Ok(n) = Name::parse(&c.name.name.value) else { return Err(not_found()) };
+fn program_call(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    c: &Call,
+    params: &[Value],
+) -> Result<CallPlan> {
+    let not_found = || SqlError::ObjectNotFound {
+        name: c.name.to_string(),
+        kind: "procedure",
+    };
+    let Ok(n) = Name::parse(&c.name.name.value) else {
+        return Err(not_found());
+    };
     let libs = if let Some(s) = &c.name.schema {
         vec![ctx.schema_library(txn, s)?]
     } else {
@@ -292,12 +353,36 @@ fn program_call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Val
     let mut args = Vec::new();
     for a in &c.args {
         let v = Evaluator { ctx, params }.eval(txn, a, &Env::default())?;
-        let ty = TypeSpec { data_type: own_type(a, &v), ccsid: None, bit_data: false, udt: None };
-        let mode = if matches!(a, Expr::Param(_)) { ParmMode::InOut } else { ParmMode::In };
-        let mut p = argument(txn, ctx, params, ParmMode::In, &ty, &Expr::Literal(Literal::Null))?;
+        let ty = TypeSpec {
+            data_type: own_type(a, &v),
+            ccsid: None,
+            bit_data: false,
+            udt: None,
+        };
+        let mode = if matches!(a, Expr::Param(_)) {
+            ParmMode::InOut
+        } else {
+            ParmMode::In
+        };
+        let mut p = argument(
+            txn,
+            ctx,
+            params,
+            ParmMode::In,
+            &ty,
+            &Expr::Literal(Literal::Null),
+        )?;
         p.mode = model::mode_code(mode);
         p.value = cast(&v, &ty)?;
-        p.marker = if mode == ParmMode::InOut { if let Expr::Param(i) = a { Some(*i) } else { None } } else { None };
+        p.marker = if mode == ParmMode::InOut {
+            if let Expr::Param(i) = a {
+                Some(*i)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         args.push(p);
     }
     Ok(CallPlan {
@@ -332,6 +417,10 @@ fn own_type(arg: &Expr, v: &Value) -> DataType {
         Value::Date(_) => DataType::Date,
         Value::Time(_) => DataType::Time,
         Value::Timestamp(_) => DataType::Timestamp(6),
-        other => DataType::Char(u32::try_from(other.as_text().chars().count()).unwrap_or(1).max(1)),
+        other => DataType::Char(
+            u32::try_from(other.as_text().chars().count())
+                .unwrap_or(1)
+                .max(1),
+        ),
     }
 }

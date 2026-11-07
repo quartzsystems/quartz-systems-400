@@ -19,60 +19,142 @@ use crate::ipl::system::{System, now_unix};
 
 /// `QSCPTF`, 48 fields, 323 bytes.
 const QSCPTF: &[Fld] = &[
-    ("SCCENTRY", 'A', 1, 0), ("SCDATE", 'A', 6, 0), ("SCTIME", 'A', 6, 0),
-    ("SCSRLNBR", 'A', 8, 0), ("SCXPFID", 'A', 7, 0), ("SCXPFREL", 'A', 3, 0),
-    ("SCXPFMOD", 'A', 3, 0), ("SCXPFDAT", 'A', 6, 0), ("SCLIB", 'A', 10, 0),
-    ("SCPPID", 'A', 7, 0), ("SCPTFID", 'A', 7, 0), ("SCPPREL", 'A', 6, 0),
-    ("SCSTATUS", 'A', 37, 0), ("SCSTDATE", 'A', 8, 0), ("SCSTTIME", 'A', 8, 0),
-    ("SCTYPE", 'A', 18, 0), ("SCIPLACT", 'A', 34, 0), ("SCLANG", 'A', 8, 0),
-    ("SCOBJLIB", 'A', 10, 0), ("SCISRC", 'A', 8, 0), ("SCSYSNM", 'A', 8, 0),
-    ("SCONOR", 'A', 1, 0), ("SCSAVF", 'A', 1, 0), ("SCOPTP", 'A', 4, 0),
-    ("SCSPTF", 'A', 7, 0), ("SCENST", 'A', 1, 0), ("SCENDT", 'A', 6, 0),
-    ("SCENTP", 'A', 1, 0), ("SCENIA", 'A', 1, 0), ("SCENLG", 'A', 4, 0),
-    ("SCXPFV", 'A', 6, 0), ("SCPTFV", 'A', 6, 0), ("SCMCGG", 'A', 7, 0),
-    ("SCACTP", 'A', 8, 0), ("SCEACP", 'A', 1, 0), ("SCAACR", 'A', 15, 0),
-    ("SCEACR", 'A', 1, 0), ("SCTGTV", 'A', 6, 0), ("SCXPFCEN", 'A', 1, 0),
-    ("SCSTCEN", 'A', 1, 0), ("SCXPFLVL", 'A', 2, 0), ("SCMNLV", 'A', 2, 0),
-    ("SCMXLV", 'A', 2, 0), ("SCSSBY", 'A', 7, 0), ("SCSVIPLS", 'A', 8, 0),
-    ("SCSVIPLR", 'A', 1, 0), ("SCCRTDAT", 'A', 8, 0), ("SCCRTTIM", 'A', 6, 0),
+    ("SCCENTRY", 'A', 1, 0),
+    ("SCDATE", 'A', 6, 0),
+    ("SCTIME", 'A', 6, 0),
+    ("SCSRLNBR", 'A', 8, 0),
+    ("SCXPFID", 'A', 7, 0),
+    ("SCXPFREL", 'A', 3, 0),
+    ("SCXPFMOD", 'A', 3, 0),
+    ("SCXPFDAT", 'A', 6, 0),
+    ("SCLIB", 'A', 10, 0),
+    ("SCPPID", 'A', 7, 0),
+    ("SCPTFID", 'A', 7, 0),
+    ("SCPPREL", 'A', 6, 0),
+    ("SCSTATUS", 'A', 37, 0),
+    ("SCSTDATE", 'A', 8, 0),
+    ("SCSTTIME", 'A', 8, 0),
+    ("SCTYPE", 'A', 18, 0),
+    ("SCIPLACT", 'A', 34, 0),
+    ("SCLANG", 'A', 8, 0),
+    ("SCOBJLIB", 'A', 10, 0),
+    ("SCISRC", 'A', 8, 0),
+    ("SCSYSNM", 'A', 8, 0),
+    ("SCONOR", 'A', 1, 0),
+    ("SCSAVF", 'A', 1, 0),
+    ("SCOPTP", 'A', 4, 0),
+    ("SCSPTF", 'A', 7, 0),
+    ("SCENST", 'A', 1, 0),
+    ("SCENDT", 'A', 6, 0),
+    ("SCENTP", 'A', 1, 0),
+    ("SCENIA", 'A', 1, 0),
+    ("SCENLG", 'A', 4, 0),
+    ("SCXPFV", 'A', 6, 0),
+    ("SCPTFV", 'A', 6, 0),
+    ("SCMCGG", 'A', 7, 0),
+    ("SCACTP", 'A', 8, 0),
+    ("SCEACP", 'A', 1, 0),
+    ("SCAACR", 'A', 15, 0),
+    ("SCEACR", 'A', 1, 0),
+    ("SCTGTV", 'A', 6, 0),
+    ("SCXPFCEN", 'A', 1, 0),
+    ("SCSTCEN", 'A', 1, 0),
+    ("SCXPFLVL", 'A', 2, 0),
+    ("SCMNLV", 'A', 2, 0),
+    ("SCMXLV", 'A', 2, 0),
+    ("SCSSBY", 'A', 7, 0),
+    ("SCSVIPLS", 'A', 8, 0),
+    ("SCSVIPLR", 'A', 1, 0),
+    ("SCCRTDAT", 'A', 8, 0),
+    ("SCCRTTIM", 'A', 6, 0),
 ];
 
 /// `QARZLCGD`, 43 fields, 311 bytes.
 const QARZLCGD: &[Fld] = &[
-    ("LCCEN", 'A', 1, 0), ("LCDDAT", 'A', 6, 0), ("LCSYSN", 'A', 8, 0),
-    ("LCDBRT", 'A', 1, 0), ("LCRSV1", 'A', 7, 0), ("LCLCGN", 'A', 10, 0),
-    ("LCRSV2", 'A', 6, 0), ("LCLCGL", 'A', 10, 0), ("LCRSV3", 'A', 6, 0),
-    ("LCPRDI", 'A', 7, 0), ("LCRSV4", 'A', 2, 0), ("LCLVLI", 'A', 2, 0),
-    ("LCRSV8", 'A', 1, 0), ("LCPFGI", 'A', 4, 0), ("LCSFGI", 'A', 4, 0),
-    ("LCVRSL", 'A', 4, 0), ("LCRLSL", 'A', 2, 0), ("LCMODL", 'A', 2, 0),
-    ("LCPCID", 'A', 2, 0), ("LCCLEN", 'S', 2, 0), ("LCCPYR", 'A', 80, 0),
-    ("LCRPLU", 'S', 4, 0), ("LCRUNM", 'A', 10, 0), ("LCRSV5", 'A', 1, 0),
-    ("LCRUTY", 'A', 3, 0), ("LCOBJT", 'A', 2, 0), ("LCRULB", 'A', 10, 0),
-    ("LCRSV6", 'A', 6, 0), ("LCRUDI", 'A', 8, 0), ("LCRUDC", 'A', 8, 0),
-    ("LCRUTI", 'A', 8, 0), ("LCRUTC", 'A', 8, 0), ("LCRUCT", 'A', 4, 0),
-    ("LCRUDV", 'A', 4, 0), ("LCPCLV", 'A', 4, 0), ("LCRUSZ", 'S', 10, 0),
-    ("LCRSV7", 'A', 10, 0), ("LCDTMI", 'A', 7, 0), ("LCDTMF", 'A', 10, 0),
-    ("LCDTML", 'A', 10, 0), ("LCFTYP", 'A', 1, 0), ("LCNMUT", 'S', 10, 0),
+    ("LCCEN", 'A', 1, 0),
+    ("LCDDAT", 'A', 6, 0),
+    ("LCSYSN", 'A', 8, 0),
+    ("LCDBRT", 'A', 1, 0),
+    ("LCRSV1", 'A', 7, 0),
+    ("LCLCGN", 'A', 10, 0),
+    ("LCRSV2", 'A', 6, 0),
+    ("LCLCGL", 'A', 10, 0),
+    ("LCRSV3", 'A', 6, 0),
+    ("LCPRDI", 'A', 7, 0),
+    ("LCRSV4", 'A', 2, 0),
+    ("LCLVLI", 'A', 2, 0),
+    ("LCRSV8", 'A', 1, 0),
+    ("LCPFGI", 'A', 4, 0),
+    ("LCSFGI", 'A', 4, 0),
+    ("LCVRSL", 'A', 4, 0),
+    ("LCRLSL", 'A', 2, 0),
+    ("LCMODL", 'A', 2, 0),
+    ("LCPCID", 'A', 2, 0),
+    ("LCCLEN", 'S', 2, 0),
+    ("LCCPYR", 'A', 80, 0),
+    ("LCRPLU", 'S', 4, 0),
+    ("LCRUNM", 'A', 10, 0),
+    ("LCRSV5", 'A', 1, 0),
+    ("LCRUTY", 'A', 3, 0),
+    ("LCOBJT", 'A', 2, 0),
+    ("LCRULB", 'A', 10, 0),
+    ("LCRSV6", 'A', 6, 0),
+    ("LCRUDI", 'A', 8, 0),
+    ("LCRUDC", 'A', 8, 0),
+    ("LCRUTI", 'A', 8, 0),
+    ("LCRUTC", 'A', 8, 0),
+    ("LCRUCT", 'A', 4, 0),
+    ("LCRUDV", 'A', 4, 0),
+    ("LCPCLV", 'A', 4, 0),
+    ("LCRUSZ", 'S', 10, 0),
+    ("LCRSV7", 'A', 10, 0),
+    ("LCDTMI", 'A', 7, 0),
+    ("LCDTMF", 'A', 10, 0),
+    ("LCDTML", 'A', 10, 0),
+    ("LCFTYP", 'A', 1, 0),
+    ("LCNMUT", 'S', 10, 0),
     ("LCUTSZ", 'S', 6, 0),
 ];
 
 /// `QSYDSAUT`, 27 fields, 148 bytes.
 const QSYDSAUT: &[Fld] = &[
-    ("OADCEN", 'A', 1, 0), ("OADDAT", 'A', 6, 0), ("OADTIM", 'A', 6, 0),
-    ("OAUSR", 'A', 10, 0), ("OAOBJA", 'A', 8, 0), ("OAOPR", 'A', 1, 0),
-    ("OAOMGT", 'A', 1, 0), ("OAEXS", 'A', 1, 0), ("OAREAD", 'A', 1, 0),
-    ("OAADD", 'A', 1, 0), ("OAUPD", 'A', 1, 0), ("OADLT", 'A', 1, 0),
-    ("OAAMGT", 'A', 1, 0), ("OAANAM", 'A', 10, 0), ("OANAME", 'A', 10, 0),
-    ("OALIB", 'A', 10, 0), ("OATYPE", 'A', 8, 0), ("OAOWN", 'A', 10, 0),
-    ("OASYST", 'A', 8, 0), ("OAPGRP", 'A', 10, 0), ("OAGRPN", 'A', 10, 0),
-    ("OAEXEC", 'A', 1, 0), ("OAALT", 'A', 1, 0), ("OAREF", 'A', 1, 0),
-    ("OARES1", 'A', 10, 0), ("OAASPL", 'A', 10, 0), ("OAASPO", 'A', 10, 0),
+    ("OADCEN", 'A', 1, 0),
+    ("OADDAT", 'A', 6, 0),
+    ("OADTIM", 'A', 6, 0),
+    ("OAUSR", 'A', 10, 0),
+    ("OAOBJA", 'A', 8, 0),
+    ("OAOPR", 'A', 1, 0),
+    ("OAOMGT", 'A', 1, 0),
+    ("OAEXS", 'A', 1, 0),
+    ("OAREAD", 'A', 1, 0),
+    ("OAADD", 'A', 1, 0),
+    ("OAUPD", 'A', 1, 0),
+    ("OADLT", 'A', 1, 0),
+    ("OAAMGT", 'A', 1, 0),
+    ("OAANAM", 'A', 10, 0),
+    ("OANAME", 'A', 10, 0),
+    ("OALIB", 'A', 10, 0),
+    ("OATYPE", 'A', 8, 0),
+    ("OAOWN", 'A', 10, 0),
+    ("OASYST", 'A', 8, 0),
+    ("OAPGRP", 'A', 10, 0),
+    ("OAGRPN", 'A', 10, 0),
+    ("OAEXEC", 'A', 1, 0),
+    ("OAALT", 'A', 1, 0),
+    ("OAREF", 'A', 1, 0),
+    ("OARES1", 'A', 10, 0),
+    ("OAASPL", 'A', 10, 0),
+    ("OAASPO", 'A', 10, 0),
 ];
 
 /// The run's stamp split: century, `YYMMDD`, `HHMMSS`.
 fn now_parts() -> (String, String, String) {
     let st = stamp(now_unix());
-    (st[..1].to_string(), st[1..7].to_string(), st[7..13].to_string())
+    (
+        st[..1].to_string(),
+        st[1..7].to_string(),
+        st[7..13].to_string(),
+    )
 }
 
 /// `VxRyMz` as `(00vv, rr, mm)`, the product levels of `QARZLCGD`.
@@ -81,11 +163,19 @@ fn vrm(release: &str) -> (String, String, String) {
         release
             .split(c)
             .nth(1)
-            .map(|s| s.chars().take_while(char::is_ascii_digit).collect::<String>())
+            .map(|s| {
+                s.chars()
+                    .take_while(char::is_ascii_digit)
+                    .collect::<String>()
+            })
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(0)
     };
-    (format!("{:04}", num('V')), format!("{:02}", num('R')), format!("{:02}", num('M')))
+    (
+        format!("{:04}", num('V')),
+        format!("{:02}", num('R')),
+        format!("{:02}", num('M')),
+    )
 }
 
 /// What every `QSCPTF` record of one run shares.
@@ -136,11 +226,34 @@ fn ptf_row(run: &PtfRun, p: &PtfRecord) -> Row {
         Action::RemoveAtIpl => "R",
     };
     let opt = p.option.trim().trim_start_matches('*');
-    let opt = opt.parse::<u32>().map_or_else(|_| "0000".into(), |n| format!("{n:04}"));
-    let product = if p.product.is_empty() { run.product.clone() } else { p.product.clone() };
-    let lib = if release::product_id(&product) == release::PRODUCT_ID { "QSYS" } else { "QGPL" };
-    let ty = if p.delayed { ("Delayed", "D") } else { ("Immediate", "I") };
-    let serial: String = run.serial.trim().chars().rev().take(8).collect::<Vec<_>>().into_iter().rev().collect();
+    let opt = opt
+        .parse::<u32>()
+        .map_or_else(|_| "0000".into(), |n| format!("{n:04}"));
+    let product = if p.product.is_empty() {
+        run.product.clone()
+    } else {
+        p.product.clone()
+    };
+    let lib = if release::product_id(&product) == release::PRODUCT_ID {
+        "QSYS"
+    } else {
+        "QGPL"
+    };
+    let ty = if p.delayed {
+        ("Delayed", "D")
+    } else {
+        ("Immediate", "I")
+    };
+    let serial: String = run
+        .serial
+        .trim()
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
     vec![
         ("SCCENTRY", run.cen.clone()),
         ("SCDATE", run.date.clone()),
@@ -199,7 +312,9 @@ fn os_release_date(system: &mut System) -> String {
             .map(|(_, d)| d)
             .find(|d| {
                 d.product.as_str() == release::PRODUCT_ID
-                    || d.ibm_alias.as_ref().is_some_and(|a| a.as_str() == release::PRODUCT_ID)
+                    || d.ibm_alias
+                        .as_ref()
+                        .is_some_and(|a| a.as_str() == release::PRODUCT_ID)
             })
             .and_then(|d| d.release_date)
             .map(|d| format!("{:02}{:02}{:02}", d.year % 100, d.month, d.day))
@@ -209,7 +324,12 @@ fn os_release_date(system: &mut System) -> String {
 }
 
 /// `DSPPTF OUTPUT(*OUTFILE)`: one `QSCPTF` record per PTF listed.
-pub fn ptfs(system: &mut System, parms: &Parms, product: &str, rows: &[&PtfRecord]) -> Result<String, String> {
+pub fn ptfs(
+    system: &mut System,
+    parms: &Parms,
+    product: &str,
+    rows: &[&PtfRecord],
+) -> Result<String, String> {
     let (cen, date, time) = now_parts();
     let (v, r, m) = vrm(&release::RELEASE.to_string());
     let run = PtfRun {
@@ -237,9 +357,15 @@ fn sfwrsc_row(cen: &str, date: &str, sysname: &str, r: &[String]) -> Row {
     let product = get(0);
     let opt = get(1);
     let base = opt == "*BASE";
-    let opt = opt.parse::<u32>().map_or_else(|_| "0000".into(), |n| format!("{n:04}"));
+    let opt = opt
+        .parse::<u32>()
+        .map_or_else(|_| "0000".into(), |n| format!("{n:04}"));
     let (v, rl, m) = vrm(&get(6));
-    let pid = if product.len() == 7 { format!("{}-{}", &product[..4], &product[4..]) } else { product.clone() };
+    let pid = if product.len() == 7 {
+        format!("{}-{}", &product[..4], &product[4..])
+    } else {
+        product.clone()
+    };
     let years = match get(11) {
         y if y.is_empty() => String::new(),
         y => format!(" {y}"),
@@ -275,7 +401,10 @@ fn sfwrsc_row(cen: &str, date: &str, sysname: &str, r: &[String]) -> Row {
 pub fn sfwrsc(system: &mut System, parms: &Parms, rows: &[Vec<String>]) -> Result<String, String> {
     let (cen, date, _) = now_parts();
     let sysname = system.system_name();
-    let out: Vec<Row> = rows.iter().map(|r| sfwrsc_row(&cen, &date, &sysname, r)).collect();
+    let out: Vec<Row> = rows
+        .iter()
+        .map(|r| sfwrsc_row(&cen, &date, &sysname, r))
+        .collect();
     write(system, parms, "QARZLCGD", QARZLCGD, &out)
 }
 
@@ -322,7 +451,11 @@ fn objaut_rows(st: &str, sysname: &str, a: &ObjectAuthorities) -> Vec<Row> {
 
 /// `DSPOBJAUT OUTPUT(*OUTFILE)`: one `QSYDSAUT` record per user shown,
 /// to file `(name, lib, replace)`.
-pub fn objaut(system: &mut System, file: (&str, &str, bool), a: &ObjectAuthorities) -> Result<String, String> {
+pub fn objaut(
+    system: &mut System,
+    file: (&str, &str, bool),
+    a: &ObjectAuthorities,
+) -> Result<String, String> {
     let out = objaut_rows(&stamp(now_unix()), &system.system_name(), a);
     write_to(system, file, "QSYDSAUT", QSYDSAUT, &out)
 }
@@ -334,7 +467,13 @@ mod tests {
 
     fn len(f: &[Fld]) -> usize {
         f.iter()
-            .map(|(_, t, l, _)| if *t == 'P' { usize::from(*l) / 2 + 1 } else { usize::from(*l) })
+            .map(|(_, t, l, _)| {
+                if *t == 'P' {
+                    usize::from(*l) / 2 + 1
+                } else {
+                    usize::from(*l)
+                }
+            })
             .sum()
     }
 
@@ -371,7 +510,9 @@ mod tests {
                 at.entry(col + i).or_insert(ch);
             }
         }
-        (1..=len).map(|c| at.get(&c).copied().unwrap_or(' ')).collect()
+        (1..=len)
+            .map(|c| at.get(&c).copied().unwrap_or(' '))
+            .collect()
     }
 
     /// Our record of `row` as `DSPPFM` shows it (a null as a blank).
@@ -398,10 +539,21 @@ mod tests {
 
     /// Field `name` of record `rec`.
     fn field(fields: &[Fld], rec: &str, name: &str) -> String {
-        split(fields, rec, &[]).into_iter().find(|(n, _)| *n == name).unwrap().1
+        split(fields, rec, &[])
+            .into_iter()
+            .find(|(n, _)| *n == name)
+            .unwrap()
+            .1
     }
 
-    fn ptf(id: &str, product: &str, status: Status, delayed: bool, by: &str, changed: u64) -> PtfRecord {
+    fn ptf(
+        id: &str,
+        product: &str,
+        status: Status,
+        delayed: bool,
+        by: &str,
+        changed: u64,
+    ) -> PtfRecord {
         PtfRecord {
             ptf: id.into(),
             product: product.into(),
@@ -422,13 +574,64 @@ mod tests {
 
     #[test]
     fn qscptf_records_are_shaped_as_7_1s() {
-        let data = snaps!("outdata", "outf-ptf-1", "outf-ptf-2", "outf-ptf-3", "outf-ptf-4", "outf-ptf-5");
+        let data = snaps!(
+            "outdata",
+            "outf-ptf-1",
+            "outf-ptf-2",
+            "outf-ptf-3",
+            "outf-ptf-4",
+            "outf-ptf-5"
+        );
         let codes = snaps!("outcodes", "ptfc-1", "ptfc-2", "ptfc-3", "ptfc-4", "ptfc-5");
         let cases = [
-            (data, 0, ptf("RE16082", "5770999", Status::PermApplied, false, "", 1_458_564_024)),
-            (codes, 0, ptf("RE11195", "5770999", Status::Superseded, false, "RE11221", 1_458_564_024)),
-            (codes, 2, ptf("MF99011", "5770999", Status::PermApplied, true, "", 1_443_522_212)),
-            (codes, 4, ptf("SI42904", "5770SS1", Status::PermApplied, false, "", 1_299_742_815)),
+            (
+                data,
+                0,
+                ptf(
+                    "RE16082",
+                    "5770999",
+                    Status::PermApplied,
+                    false,
+                    "",
+                    1_458_564_024,
+                ),
+            ),
+            (
+                codes,
+                0,
+                ptf(
+                    "RE11195",
+                    "5770999",
+                    Status::Superseded,
+                    false,
+                    "RE11221",
+                    1_458_564_024,
+                ),
+            ),
+            (
+                codes,
+                2,
+                ptf(
+                    "MF99011",
+                    "5770999",
+                    Status::PermApplied,
+                    true,
+                    "",
+                    1_443_522_212,
+                ),
+            ),
+            (
+                codes,
+                4,
+                ptf(
+                    "SI42904",
+                    "5770SS1",
+                    Status::PermApplied,
+                    false,
+                    "",
+                    1_299_742_815,
+                ),
+            ),
         ];
         for (snaps, row, p) in cases {
             let theirs = oracle(snaps, row, 323);
@@ -449,27 +652,65 @@ mod tests {
             // The LIC group and the creation stamp are IBM's own; the
             // operating system's product ID is Quartz's.
             let mask = ["SCMCGG", "SCCRTDAT", "SCCRTTIM", "SCXPFID"];
-            assert_eq!(split(QSCPTF, &mine, &mask), split(QSCPTF, &theirs, &mask), "{}", p.ptf);
+            assert_eq!(
+                split(QSCPTF, &mine, &mask),
+                split(QSCPTF, &theirs, &mask),
+                "{}",
+                p.ptf
+            );
             assert_eq!(field(QSCPTF, &mine, "SCXPFID"), release::PRODUCT_ID);
         }
     }
 
     #[test]
     fn qarzlcgd_records_are_shaped_as_7_1s() {
-        let snaps = snaps!("outdata", "outf-sfw-1", "outf-sfw-2", "outf-sfw-3", "outf-sfw-4", "outf-sfw-5");
+        let snaps = snaps!(
+            "outdata",
+            "outf-sfw-1",
+            "outf-sfw-2",
+            "outf-sfw-3",
+            "outf-sfw-4",
+            "outf-sfw-5"
+        );
         let row = |v: [&str; 12]| v.iter().map(|s| (*s).to_string()).collect::<Vec<_>>();
         let cases = [
-            (1, row(["5770SS1", "*BASE", "5050", "", "*CODE", "QSYS", "V7R1M0", "QSZ0050", "CPX0C0C", "QCPFMSG", "QSYS", ""])),
-            (2, row(["5770SS1", "*BASE", "2924", "", "*LNG", "QSYS", "V7R1M0", "QSZ0029", "CPX0C0C", "QCPFMSG", "QSYS", ""])),
-            (3, row(["5770SS1", "0001", "5050", "", "*CODE", "QSYS2", "V7R1M0", "QLP0150", "CPX0C02", "QCPFMSG", "QSYS", ""])),
+            (
+                1,
+                row([
+                    "5770SS1", "*BASE", "5050", "", "*CODE", "QSYS", "V7R1M0", "QSZ0050",
+                    "CPX0C0C", "QCPFMSG", "QSYS", "",
+                ]),
+            ),
+            (
+                2,
+                row([
+                    "5770SS1", "*BASE", "2924", "", "*LNG", "QSYS", "V7R1M0", "QSZ0029", "CPX0C0C",
+                    "QCPFMSG", "QSYS", "",
+                ]),
+            ),
+            (
+                3,
+                row([
+                    "5770SS1", "0001", "5050", "", "*CODE", "QSYS2", "V7R1M0", "QLP0150",
+                    "CPX0C02", "QCPFMSG", "QSYS", "",
+                ]),
+            ),
         ];
         for (n, r) in cases {
             let theirs = oracle(snaps, n, 311);
             let f = |k: &str| field(QARZLCGD, &theirs, k);
-            let (_, mine) = ours("QARZLCGD", QARZLCGD, &sfwrsc_row(&f("LCCEN"), &f("LCDDAT"), &f("LCSYSN"), &r));
+            let (_, mine) = ours(
+                "QARZLCGD",
+                QARZLCGD,
+                &sfwrsc_row(&f("LCCEN"), &f("LCDDAT"), &f("LCSYSN"), &r),
+            );
             // The copyright line is each vendor's; sizes are the machine's.
             let mask = ["LCCLEN", "LCCPYR", "LCRUSZ", "LCNMUT"];
-            assert_eq!(split(QARZLCGD, &mine, &mask), split(QARZLCGD, &theirs, &mask), "row {n}");
+            assert_eq!(
+                split(QARZLCGD, &mine, &mask),
+                split(QARZLCGD, &theirs, &mask),
+                "row {n}"
+            );
             let cpyr = field(QARZLCGD, &mine, "LCCPYR");
             assert_eq!(&cpyr[..9], &field(QARZLCGD, &theirs, "LCCPYR")[..9]);
         }
@@ -497,7 +738,10 @@ mod tests {
             owner: "QSYS".into(),
             pgp: "*NONE".into(),
             autl: "*NONE".into(),
-            rows: vec![row("*PUBLIC", "*USE", Auth::USE), row("QSYS", "*ALL", Auth::ALL)],
+            rows: vec![
+                row("*PUBLIC", "*USE", Auth::USE),
+                row("QSYS", "*ALL", Auth::ALL),
+            ],
         };
         let rows = objaut_rows(&st, &f("OASYST"), &a);
         for (i, r) in rows.iter().enumerate() {

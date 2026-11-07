@@ -53,6 +53,9 @@ pub fn set_connector(c: Option<Connector>) {
 pub fn connect(req: &ConnectReq) -> Result<Box<dyn Runner>, Diag> {
     match CONNECTOR.with(|c| c.borrow().clone()) {
         Some(c) => c(req),
-        None => Err(Diag::cli("08001", "This job cannot start a server-mode connection.")),
+        None => Err(Diag::cli(
+            "08001",
+            "This job cannot start a server-mode connection.",
+        )),
     }
 }

@@ -84,7 +84,10 @@ impl Screen {
     /// The prompt as IBM's client words it.
     fn prompt_of(&self, prompt: &str) -> String {
         if prompt.starts_with("Enter the user name") {
-            format!("Enter login ID ({}):", self.host.start.user.to_ascii_lowercase())
+            format!(
+                "Enter login ID ({}):",
+                self.host.start.user.to_ascii_lowercase()
+            )
         } else if prompt.starts_with("Enter the password") {
             "Enter password:".into()
         } else {
@@ -92,7 +95,14 @@ impl Screen {
         }
     }
 
-    fn draw(&self, m: &mut tn5250::screen::ScreenModel, prompt: &str, hidden: bool, value: &str, message: &str) -> Option<usize> {
+    fn draw(
+        &self,
+        m: &mut tn5250::screen::ScreenModel,
+        prompt: &str,
+        hidden: bool,
+        value: &str,
+        message: &str,
+    ) -> Option<usize> {
         use tn5250::ds::{attr, field::Ffw};
         m.clear();
         let title = "File Transfer Protocol";
@@ -106,10 +116,19 @@ impl Screen {
         }
         m.put(rows::PROMPT, 2, prompt, attr::GREEN);
         m.put(rows::LINE, 2, "===>", attr::GREEN);
-        let a = if hidden { attr::NONDISPLAY } else { attr::GREEN_UL };
+        let a = if hidden {
+            attr::NONDISPLAY
+        } else {
+            attr::GREEN_UL
+        };
         m.field(rows::LINE, 7, LINE_LEN, a, value, Ffw::default(), &[]);
         m.put(22, 2, "F3=Exit     F6=Print       F9=Retrieve", attr::BLUE);
-        m.put(23, 2, "F17=Top    F18=Bottom    F21=CL command line", attr::BLUE);
+        m.put(
+            23,
+            2,
+            "F17=Top    F18=Bottom    F21=CL command line",
+            attr::BLUE,
+        );
         m.set_cursor(rows::LINE, 7);
         m.set_error_row(m.rows());
         if !message.is_empty() {
@@ -227,7 +246,11 @@ impl FtpHost for JobSide<'_> {
         let o = super::run(self.job, self.host, line);
         match o.escape {
             Some(f) => Err(CmdFail {
-                text: if f.text.is_empty() { f.msgid.clone() } else { f.text },
+                text: if f.text.is_empty() {
+                    f.msgid.clone()
+                } else {
+                    f.text
+                },
                 msgid: f.msgid,
             }),
             None => Ok(()),
@@ -262,14 +285,22 @@ impl FtpHost for JobSide<'_> {
     }
 
     fn file(&mut self, lib: &str, file: &str) -> Option<DbFile> {
-        let f = self.host.link.borrow_mut().with(|l| l.file(lib.to_string(), file.to_string()))?;
+        let f = self
+            .host
+            .link
+            .borrow_mut()
+            .with(|l| l.file(lib.to_string(), file.to_string()))?;
         let ccsid = self
             .ifs
             .stat(&ftp::objects::file_path(lib, file), true)
             .map_or(self.ccsid, |s| s.ccsid);
         let len = usize::try_from(f.rec_len).unwrap_or(0);
         Some(DbFile {
-            rec_len: if f.source { len.saturating_sub(12) } else { len },
+            rec_len: if f.source {
+                len.saturating_sub(12)
+            } else {
+                len
+            },
             source: f.source,
             ccsid,
             logical: f.attr == "LF",
@@ -277,7 +308,11 @@ impl FtpHost for JobSide<'_> {
     }
 
     fn sysval(&mut self, name: &str) -> Option<String> {
-        let v = self.host.link.borrow_mut().with(|l| l.sysval(name.to_string()))?;
+        let v = self
+            .host
+            .link
+            .borrow_mut()
+            .with(|l| l.sysval(name.to_string()))?;
         Some(ccsid::from_ebcdic(&v.data).trim().to_string())
     }
 
@@ -291,7 +326,13 @@ impl FtpHost for JobSide<'_> {
     }
 
     fn utc_offset(&self) -> i64 {
-        i64::from(self.host.link.borrow_mut().with(stg::Client::now).offset_min) * 60
+        i64::from(
+            self.host
+                .link
+                .borrow_mut()
+                .with(stg::Client::now)
+                .offset_min,
+        ) * 60
     }
 }
 
@@ -323,9 +364,14 @@ fn overridden(host: &Host, file: &str, usage: qir::FileUsage) -> Option<(String,
 }
 
 /// The text of a member's records, trailing blanks off.
-fn member_lines(side: &mut JobSide<'_>, lib: &str, file: &str, mbr: &str) -> Result<Vec<String>, String> {
-    let (recs, desc) =
-        ftp::objects::read_member(side, lib, file, mbr).map_err(|e| format!("{lib}/{file}({mbr}): {e:?}"))?;
+fn member_lines(
+    side: &mut JobSide<'_>,
+    lib: &str,
+    file: &str,
+    mbr: &str,
+) -> Result<Vec<String>, String> {
+    let (recs, desc) = ftp::objects::read_member(side, lib, file, mbr)
+        .map_err(|e| format!("{lib}/{file}({mbr}): {e:?}"))?;
     Ok(recs
         .iter()
         .map(|r| {
@@ -338,9 +384,19 @@ fn member_lines(side: &mut JobSide<'_>, lib: &str, file: &str, mbr: &str) -> Res
 }
 
 /// Add lines to a member as records.
-fn add_lines(side: &mut JobSide<'_>, lib: &str, file: &str, mbr: &str, lines: &[String]) -> Result<(), String> {
-    let desc = side.file(lib, file).ok_or_else(|| format!("{lib}/{file} cannot be used"))?;
-    let mut recs = ftp::objects::read_member(side, lib, file, mbr).map(|r| r.0).unwrap_or_default();
+fn add_lines(
+    side: &mut JobSide<'_>,
+    lib: &str,
+    file: &str,
+    mbr: &str,
+    lines: &[String],
+) -> Result<(), String> {
+    let desc = side
+        .file(lib, file)
+        .ok_or_else(|| format!("{lib}/{file} cannot be used"))?;
+    let mut recs = ftp::objects::read_member(side, lib, file, mbr)
+        .map(|r| r.0)
+        .unwrap_or_default();
     for l in lines {
         let b = ccsid::conv::from_str(desc.ccsid, l).unwrap_or_default();
         recs.push(ccsid::conv::fit(desc.ccsid, &b, desc.rec_len, 0x40).bytes);
@@ -366,7 +422,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     if rmtsys.eq_ignore_ascii_case("*INTNETADR") {
         rmtsys = parms.text("INTNETADR");
     }
-    let port = parms.int("PORT").and_then(|p| u16::try_from(p).ok()).unwrap_or(21);
+    let port = parms
+        .int("PORT")
+        .and_then(|p| u16::try_from(p).ok())
+        .unwrap_or(21);
     let security = match parms.name("SECCNN").as_str() {
         "*SSL" => Security::Explicit,
         "*IMPLICIT" => Security::Implicit,
@@ -379,7 +438,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "*SAFE" => return Err(Fail::later("FTP")),
         _ => security != Security::None,
     };
-    let ccsid = parms.int("CCSID").and_then(|c| u16::try_from(c).ok()).unwrap_or(819);
+    let ccsid = parms
+        .int("CCSID")
+        .and_then(|c| u16::try_from(c).ok())
+        .unwrap_or(819);
     let attrs = host.attrs();
     let job_ccsid = match u16::try_from(attrs.ccsid) {
         Ok(65535) | Err(_) => u16::try_from(attrs.dftccsid).unwrap_or(37),
@@ -387,7 +449,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     };
     let input = overridden(host, "INPUT", qir::FileUsage::Input);
     let output = overridden(host, "OUTPUT", qir::FileUsage::Output);
-    let curlib = attrs.libl.cur.clone().filter(|c| !c.is_empty()).unwrap_or_else(|| "QGPL".to_string());
+    let curlib = attrs
+        .libl
+        .cur
+        .clone()
+        .filter(|c| !c.is_empty())
+        .unwrap_or_else(|| "QGPL".to_string());
     let mut side = JobSide {
         job,
         host,
@@ -399,12 +466,18 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         security,
         private,
         ccsid,
-        tls: if security == Security::None { None } else { client_tls(host) },
+        tls: if security == Security::None {
+            None
+        } else {
+            client_tls(host)
+        },
         batch,
     };
     let lcwd = ftp::names::library_dir(&curlib);
     let lines = match &input {
-        Some((l, f, m)) => member_lines(&mut side, l, f, m).map_err(|e| Fail::check("", format!("INPUT: {e}")))?,
+        Some((l, f, m)) => {
+            member_lines(&mut side, l, f, m).map_err(|e| Fail::check("", format!("INPUT: {e}")))?
+        }
         None if host.display.borrow().is_some() => {
             // At a display: the client's own screen.
             let mut client = Client::new(side, Screen::new(host), opts(false), &lcwd);
@@ -421,12 +494,17 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     };
     let mut client = Client::new(side, script, opts(true), &lcwd);
     client.run(&rmtsys);
-    let Client { mut host, console, .. } = client;
+    let Client {
+        mut host, console, ..
+    } = client;
     let text = console.out;
     match &output {
         Some((l, f, m)) => {
-            add_lines(&mut host, l, f, m, &text).map_err(|e| Fail::check("", format!("OUTPUT: {e}")))?;
-            Ok(format!("FTP session with {rmtsys} ended; its log is in {l}/{f}({m}).\n"))
+            add_lines(&mut host, l, f, m, &text)
+                .map_err(|e| Fail::check("", format!("OUTPUT: {e}")))?;
+            Ok(format!(
+                "FTP session with {rmtsys} ended; its log is in {l}/{f}({m}).\n"
+            ))
         }
         None => Ok(text.join("\n") + "\n"),
     }

@@ -85,7 +85,12 @@ fn check_in(dir: &str, name: &str, text: &str) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             // IBM ends a list it cut with "..."; what it shows must be ours.
             .map(|t| t.trim_end_matches("..."))
             .collect();

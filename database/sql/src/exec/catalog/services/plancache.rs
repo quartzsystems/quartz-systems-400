@@ -39,7 +39,11 @@ fn authorized(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<()> {
 fn refuse_filters(args: &Args, names: &[&str]) -> Result<()> {
     for n in names {
         if args.text(n).is_some() {
-            return Err(SqlError::Coded { code: -84, state: "42612", what: format!("{n} on a plan cache procedure is not supported") });
+            return Err(SqlError::Coded {
+                code: -84,
+                state: "42612",
+                what: format!("{n} on a plan cache procedure is not supported"),
+            });
         }
     }
     Ok(())
@@ -48,22 +52,49 @@ fn refuse_filters(args: &Args, names: &[&str]) -> Result<()> {
 /// `DUMP_PLAN_CACHE(FILESCHEMA, FILENAME, ...)`.
 pub fn dump(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     authorized(txn, ctx)?;
-    refuse_filters(args, &["PLAN_IDENTIFIER", "SQL_STATEMENT_TEXT_FILTER", "INCLUDE_SYSTEM_QUERIES", "IASP_NAME", "QRO_HASH"])?;
+    refuse_filters(
+        args,
+        &[
+            "PLAN_IDENTIFIER",
+            "SQL_STATEMENT_TEXT_FILTER",
+            "INCLUDE_SYSTEM_QUERIES",
+            "IASP_NAME",
+            "QRO_HASH",
+        ],
+    )?;
     let lib = args.word("FILESCHEMA").unwrap_or_default();
     let file = args.word("FILENAME").unwrap_or_default();
     if lib.is_empty() || file.is_empty() {
-        return Err(SqlError::Coded { code: -443, state: "38501", what: "FILESCHEMA and FILENAME are needed".into() });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: "FILESCHEMA and FILENAME are needed".into(),
+        });
     }
     let records: Vec<crate::dbmon::Record> = cache::entries()
         .iter()
         .map(|e| {
             let at = |secs: u64| {
-                crate::value::Timestamp::new(db::record::datetime::Date::from_unix(secs), db::record::datetime::Time::from_unix(secs), 0)
+                crate::value::Timestamp::new(
+                    db::record::datetime::Date::from_unix(secs),
+                    db::record::datetime::Time::from_unix(secs),
+                    0,
+                )
             };
-            crate::dbmon::record::cached(ctx, &e.text, e.id, (at(e.first), at(e.last)), e.naming == crate::ast::Naming::Sql)
+            crate::dbmon::record::cached(
+                ctx,
+                &e.text,
+                e.id,
+                (at(e.first), at(e.last)),
+                e.naming == crate::ast::Naming::Sql,
+            )
         })
         .collect();
-    crate::dbmon::dump(txn, ctx, &lib, &file, &records).map_err(|e| SqlError::Coded { code: -443, state: "38501", what: e.to_string() })?;
+    crate::dbmon::dump(txn, ctx, &lib, &file, &records).map_err(|e| SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what: e.to_string(),
+    })?;
     Ok(Vec::new())
 }
 
@@ -78,12 +109,19 @@ pub fn clear(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec
 /// `CHANGE_PLAN_CACHE_SIZE(SIZE_IN_MEG)`.
 pub fn change_size(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     authorized(txn, ctx)?;
-    let mb = args.int("SIZE_IN_MEG").filter(|n| *n >= 0).ok_or_else(|| SqlError::Coded {
-        code: -443,
-        state: "38501",
-        what: "SIZE_IN_MEG must be 0 or more".into(),
-    })?;
+    let mb = args
+        .int("SIZE_IN_MEG")
+        .filter(|n| *n >= 0)
+        .ok_or_else(|| SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: "SIZE_IN_MEG must be 0 or more".into(),
+        })?;
     // 0 restores the size the system starts with.
-    cache::resize(if mb == 0 { cache::DEFAULT_MB } else { u64::try_from(mb).unwrap_or(u64::MAX) });
+    cache::resize(if mb == 0 {
+        cache::DEFAULT_MB
+    } else {
+        u64::try_from(mb).unwrap_or(u64::MAX)
+    });
     Ok(Vec::new())
 }

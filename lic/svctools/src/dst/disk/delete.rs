@@ -91,7 +91,11 @@ fn confirm(picked: Vec<NonConfigured>) -> Confirm {
     ];
     // Room for six rows on the display.
     let shown = if picked.len() > 6 { 5 } else { picked.len() };
-    lines.extend(picked[..shown].iter().map(|d| format!("  {}", nonconfigured_row(d))));
+    lines.extend(
+        picked[..shown]
+            .iter()
+            .map(|d| format!("  {}", nonconfigured_row(d))),
+    );
     if shown < picked.len() {
         lines.push(format!("  and {} more", picked.len() - shown));
     }
@@ -120,7 +124,9 @@ fn confirm(picked: Vec<NonConfigured>) -> Confirm {
                     }
                 })?;
             }
-            Ok(format!("Data deleted on {total} unit(s); they are non-configured and blank"))
+            Ok(format!(
+                "Data deleted on {total} unit(s); they are non-configured and blank"
+            ))
         }),
     )
     .unwinding(2)

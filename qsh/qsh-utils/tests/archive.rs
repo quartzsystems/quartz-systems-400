@@ -65,7 +65,11 @@ fn lzw_round_trips() {
             let d = r.data(len, alphabet);
             let bits = 9 + r.below(8) as u32;
             let z = lzw::compress(&d, bits);
-            assert_eq!(lzw::decompress(&z).unwrap(), d, "len {len} alphabet {alphabet} bits {bits}");
+            assert_eq!(
+                lzw::decompress(&z).unwrap(),
+                d,
+                "len {len} alphabet {alphabet} bits {bits}"
+            );
         }
     }
     // Enough distinct strings to fill a 9-bit table many times over.
@@ -90,7 +94,11 @@ fn deflate_round_trips() {
     for &len in SIZES {
         for alphabet in [1, 4, 64, 256] {
             let d = r.data(len, alphabet);
-            assert_eq!(inflate(&deflate(&d)).unwrap(), d, "len {len} alphabet {alphabet}");
+            assert_eq!(
+                inflate(&deflate(&d)).unwrap(),
+                d,
+                "len {len} alphabet {alphabet}"
+            );
         }
     }
     let d = r.data(500_000, 20);
@@ -123,7 +131,9 @@ fn name(r: &mut Rng) -> String {
         .map(|_| {
             let n = 1 + r.below(12) as usize;
             (0..n)
-                .map(|_| char::from(b"abcdefghijklmnopqrstuvwxyz0123456789._-"[r.below(39) as usize]))
+                .map(|_| {
+                    char::from(b"abcdefghijklmnopqrstuvwxyz0123456789._-"[r.below(39) as usize])
+                })
                 .collect::<String>()
         })
         .collect::<Vec<_>>()
@@ -175,8 +185,14 @@ fn formats_round_trip() {
             assert_eq!(got_f, f);
             assert_eq!(back.len(), ms.len());
             for (a, b) in ms.iter().zip(&back) {
-                assert_eq!((&a.name, a.kind, a.mode, a.mtime), (&b.name, b.kind, b.mode, b.mtime));
-                assert_eq!((&a.data, &a.link, a.uid, a.gid), (&b.data, &b.link, b.uid, b.gid));
+                assert_eq!(
+                    (&a.name, a.kind, a.mode, a.mtime),
+                    (&b.name, b.kind, b.mode, b.mtime)
+                );
+                assert_eq!(
+                    (&a.data, &a.link, a.uid, a.gid),
+                    (&b.data, &b.link, b.uid, b.gid)
+                );
             }
         }
     }
@@ -187,7 +203,11 @@ fn decoders_never_panic() {
     let mut r = Rng(0x5eed_0006);
     let mut m = Member::new("some/file", Kind::File);
     m.data = b"payload".to_vec();
-    for f in [Format::Ustar, Format::Cpio(Cpio::Odc), Format::Cpio(Cpio::Newc)] {
+    for f in [
+        Format::Ustar,
+        Format::Cpio(Cpio::Odc),
+        Format::Cpio(Cpio::Newc),
+    ] {
         let good = codec::finish(codec::encode(&m, f).unwrap(), f, 512);
         for _ in 0..2000 {
             let mut d = good.clone();
@@ -216,7 +236,13 @@ fn zip_round_trips() {
                 let (n, a) = (r.below(20_000) as usize, 1 + r.below(255));
                 let d = r.data(n, a);
                 let deflated = r.below(2) == 0;
-                Entry::new(&format!("{}{i}", name(&mut r)), &d, deflated, (0x6000, 0x5a5c), Some(0o644))
+                Entry::new(
+                    &format!("{}{i}", name(&mut r)),
+                    &d,
+                    deflated,
+                    (0x6000, 0x5a5c),
+                    Some(0o644),
+                )
             })
             .collect();
         let back = zip::read(&zip::write(&es)).unwrap();

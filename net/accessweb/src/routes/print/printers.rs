@@ -22,12 +22,21 @@ pub fn page(rq: &Rq<'_>) -> Response {
         .printers(rq.user())
         .into_iter()
         .map(|p| {
-            let to = rq.ctx.url(&format!("{OUTPUT}{}", query(&[("to", &p.outq)])));
-            let out = rq.ctx.url(&format!("{OUTPUT}{}", query(&[("u", "*ALL"), ("q", &p.outq)])));
+            let to = rq
+                .ctx
+                .url(&format!("{OUTPUT}{}", query(&[("to", &p.outq)])));
+            let out = rq.ctx.url(&format!(
+                "{OUTPUT}{}",
+                query(&[("u", "*ALL"), ("q", &p.outq)])
+            ));
             vec![
                 Cell::act(actions(&[(to, "Print to"), (out, "Output")])),
                 Cell::mono(&p.name),
-                Cell::html(if p.started { status("Started", Some(true)) } else { status("Ended", Some(false)) }),
+                Cell::html(if p.started {
+                    status("Started", Some(true))
+                } else {
+                    status("Ended", Some(false))
+                }),
                 Cell::mono(&p.outq),
                 Cell::text(&p.location),
                 Cell::text(&p.kind),
@@ -35,7 +44,17 @@ pub fn page(rq: &Rq<'_>) -> Response {
         })
         .collect();
     let list = List {
-        cols: ["Actions", "Printer", "Status", "Output queue", "Location", "Type"].iter().map(|c| Col::plain(c)).collect(),
+        cols: [
+            "Actions",
+            "Printer",
+            "Status",
+            "Output queue",
+            "Location",
+            "Type",
+        ]
+        .iter()
+        .map(|c| Col::plain(c))
+        .collect(),
         rows,
         empty: "No printers.".into(),
         keep: Vec::new(),

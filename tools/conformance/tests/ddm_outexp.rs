@@ -43,7 +43,13 @@ fn sqldta(fields: &[Field], values: &[Value]) -> Object {
     for (f, v) in fields.iter().zip(values) {
         rows::write_value(&mut w, f, v).unwrap();
     }
-    Object::coll(obj::SQLDTA, vec![Object::data(obj::FDODSC, dsc), Object::data(obj::FDODTA, w.out)])
+    Object::coll(
+        obj::SQLDTA,
+        vec![
+            Object::data(obj::FDODSC, dsc),
+            Object::data(obj::FDODTA, w.out),
+        ],
+    )
 }
 
 fn hex(b: &[u8]) -> String {
@@ -63,7 +69,9 @@ fn hex(b: &[u8]) -> String {
 #[allow(clippy::many_single_char_names)] // one short binding per remote object
 fn call_output_values_on_the_primary() {
     let e = Env::load().expect("the oracle environment");
-    let c = e.credentials(Target::Oracle, None).expect("oracle credentials");
+    let c = e
+        .credentials(Target::Oracle, None)
+        .expect("oracle credentials");
     let host = c.host.split(':').next().unwrap_or(&c.host).to_string();
     let s = TcpStream::connect((host.as_str(), 446)).expect("the primary answers 446");
     s.set_read_timeout(Some(Duration::from_secs(60))).unwrap();
@@ -90,18 +98,35 @@ fn call_output_values_on_the_primary() {
     .iter()
     .map(Field::of)
     .collect();
-    let values = [Value::Int(3), Value::Null, Value::Dec("12.25".parse().unwrap())];
+    let values = [
+        Value::Int(3),
+        Value::Null,
+        Value::Dec("12.25".parse().unwrap()),
+    ];
     let corr = sql.next_corr();
-    let command = Object::coll(cmd::EXCSQLSTT, vec![p.pkg.to_object(), Object::byte(param::OUTEXP, 0xF1)]);
+    let command = Object::coll(
+        cmd::EXCSQLSTT,
+        vec![p.pkg.to_object(), Object::byte(param::OUTEXP, 0xF1)],
+    );
     let replies = sql
-        .exchange(vec![ddm::Dss::request(corr, command), ddm::Dss::object(corr, sqldta(&fields, &values))])
+        .exchange(vec![
+            ddm::Dss::request(corr, command),
+            ddm::Dss::object(corr, sqldta(&fields, &values)),
+        ])
         .unwrap();
     for d in &replies {
         for o in d.objects() {
-            println!("reply {:04X} ({} bytes)\n{}", o.cp, o.bytes().len(), hex(o.bytes()));
+            println!(
+                "reply {:04X} ({} bytes)\n{}",
+                o.cp,
+                o.bytes().len(),
+                hex(o.bytes())
+            );
         }
     }
-    let gone = sql.execute_immediate("DROP PROCEDURE QSTEST.QSOUTP").unwrap();
+    let gone = sql
+        .execute_immediate("DROP PROCEDURE QSTEST.QSOUTP")
+        .unwrap();
     println!("drop: {}", gone.sqlcode);
     sql.commit().unwrap();
     // The package is free once the connection has gone.
@@ -113,6 +138,8 @@ fn call_output_values_on_the_primary() {
         o.access_rdb = false;
         Connection::connect(s, &o).unwrap()
     };
-    let r = rla.remote_command("DLTSQLPKG SQLPKG(QSTEST/QSDDMOUT)").unwrap();
+    let r = rla
+        .remote_command("DLTSQLPKG SQLPKG(QSTEST/QSDDMOUT)")
+        .unwrap();
     println!("dltsqlpkg: {:?}", r.messages);
 }

@@ -21,7 +21,12 @@ pub fn help(_rq: &Rq<'_>, key: &str) -> Response {
 
 /// Message `id` as a row, its first-level text from the system.
 pub fn message(rq: &Rq<'_>, kind: Kind, id: &str, data: &[&str]) -> Message {
-    let text = rq.env().system.message(id, data).map(|s| s.text).unwrap_or_default();
+    let text = rq
+        .env()
+        .system
+        .message(id, data)
+        .map(|s| s.text)
+        .unwrap_or_default();
     Message::new(kind, id, &text)
 }
 
@@ -29,7 +34,10 @@ pub fn message(rq: &Rq<'_>, kind: Kind, id: &str, data: &[&str]) -> Message {
 /// `< Back` returns; the buttons post here.
 pub fn msg(rq: &Rq<'_>, id: &str) -> Response {
     let q = rq.query();
-    let back = q.get("back").filter(|b| b.starts_with(PRODUCT.prefix)).map(ToString::to_string);
+    let back = q
+        .get("back")
+        .filter(|b| b.starts_with(PRODUCT.prefix))
+        .map(ToString::to_string);
     if rq.post() {
         let f = rq.form();
         return match back {
@@ -57,7 +65,10 @@ pub fn not_found(rq: &Rq<'_>, what: &str) -> Response {
         crumb: vec!["Not found".into()],
         h1: "Not found".into(),
         desc: Some(format!("There is no {what} on this system.")),
-        body: format!("<p><a href=\"{}\">System status</a></p>", qsweb::html::esc(&PRODUCT.url("/home"))),
+        body: format!(
+            "<p><a href=\"{}\">System status</a></p>",
+            qsweb::html::esc(&PRODUCT.url("/home"))
+        ),
         help: "contents".into(),
         ..Page::default()
     };

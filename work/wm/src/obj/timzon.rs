@@ -70,7 +70,9 @@ fn signed(v: u64) -> i16 {
 }
 
 fn unsigned(v: i32) -> u64 {
-    u64::from(u16::from_le_bytes(i16::try_from(v).unwrap_or(0).to_le_bytes()))
+    u64::from(u16::from_le_bytes(
+        i16::try_from(v).unwrap_or(0).to_le_bytes(),
+    ))
 }
 
 /// The payload of `z`.

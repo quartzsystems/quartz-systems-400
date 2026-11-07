@@ -53,7 +53,11 @@ fn subfiles(df: &mut DisplayFile, diags: &mut Diagnostics) {
     let n = df.records.len();
     for r in &df.records {
         // SFLEND is shown only while the program says the end is there.
-        for k in r.keywords.iter().filter(|k| k.name == "SFLEND" && k.cond.indicators().next().is_none()) {
+        for k in r
+            .keywords
+            .iter()
+            .filter(|k| k.name == "SFLEND" && k.cond.indicators().next().is_none())
+        {
             diags.push(ids::needs_indicator(k.line, &k.name));
         }
     }

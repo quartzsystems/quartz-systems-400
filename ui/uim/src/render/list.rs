@@ -43,7 +43,12 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
         .actions
         .iter()
         .filter(|a| a.option.is_some())
-        .map(|a| (ctx.text(&a.text), a.help.as_deref().or(area.help.as_deref())))
+        .map(|a| {
+            (
+                ctx.text(&a.text),
+                a.help.as_deref().or(area.help.as_deref()),
+            )
+        })
         .filter(|(t, _)| !t.trim().is_empty())
         .collect();
     if !legends.is_empty() {
@@ -79,7 +84,11 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
         },
         |m| usize::from(grouped) + m as usize,
     );
-    let shared = if area.maxhead.is_some() { Some(grouped) } else { None };
+    let shared = if area.maxhead.is_some() {
+        Some(grouped)
+    } else {
+        None
+    };
     headings(s, &cols, row, head_rows, shared, limit);
     let entries_end = last.saturating_sub(1);
     for c in &cols {
@@ -119,7 +128,11 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
             }
             let raw = value(&c.column.var);
             // An `ATCOL` field may reach the last column.
-            let last = if c.column.atcol.is_some() { s.cols } else { limit };
+            let last = if c.column.atcol.is_some() {
+                s.cols
+            } else {
+                limit
+            };
             let end = (c.start + c.width - 1).min(last);
             if c.option {
                 let col = c.start + (c.width - c.field) / 2;
@@ -185,9 +198,20 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
     // after the next.
     let blank = |r: &Vec<(String, String)>| r.iter().all(|(_, v)| v.trim().is_empty());
     let placeholders = state.rows.len();
-    if state.complete && state.rows.iter().all(blank) && placeholders <= 1 && entries > placeholders + 1 {
+    if state.complete
+        && state.rows.iter().all(blank)
+        && placeholders <= 1
+        && entries > placeholders + 1
+    {
         let empty = ctx.text(&area.title);
-        put_cut(s, row + placeholders + 1, 4, limit, Attr::Normal, empty.trim());
+        put_cut(
+            s,
+            row + placeholders + 1,
+            4,
+            limit,
+            Attr::Normal,
+            empty.trim(),
+        );
     }
 
     // R10: lists always say where they stand.

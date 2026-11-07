@@ -94,8 +94,14 @@ fn layouts_match_the_spec() {
 fn spooled_file_versions_match_the_spec() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/WORKMGMT.md");
     let md = std::fs::read_to_string(&path).expect("docs/WORKMGMT.md");
-    let table = md.split("### `SpooledFile`").nth(1).expect("the SpooledFile table");
-    let row = table.lines().find(|l| l.starts_with("| 8 | 2 | Version |")).expect("the Version row");
+    let table = md
+        .split("### `SpooledFile`")
+        .nth(1)
+        .expect("the SpooledFile table");
+    let row = table
+        .lines()
+        .find(|l| l.starts_with("| 8 | 2 | Version |"))
+        .expect("the Version row");
     let notes = row.split('|').nth(4).unwrap_or("").trim();
     let want = format!(
         "{} (since the published `PP` codes); {} before",

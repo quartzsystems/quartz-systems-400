@@ -10,10 +10,11 @@ use std::fmt::Debug;
 use ipc::{Wire, decode, encode};
 use qap_proto::ops::connection::choose_version;
 use qap_proto::ops::manage::{
-    Asp, DiskUnit, DiskUnits, EndHow, EndSubsystem, GetSystemValues, HardwareResource, HardwareResources, IplAction,
-    IplMode, IplSource, IplStatus, ListHardwareResources, ListPtfs, ListSubsystems, PowerDown, PreviousEnd, Protection,
-    Ptf, PtfStatus, Ptfs, ResourceStatus, ResourceType, SetSystemValue, Subsystem, SubsystemRef, SubsystemStatus,
-    Subsystems, SystemValue, SystemValues, UnitStatus, ValueKind,
+    Asp, DiskUnit, DiskUnits, EndHow, EndSubsystem, GetSystemValues, HardwareResource,
+    HardwareResources, IplAction, IplMode, IplSource, IplStatus, ListHardwareResources, ListPtfs,
+    ListSubsystems, PowerDown, PreviousEnd, Protection, Ptf, PtfStatus, Ptfs, ResourceStatus,
+    ResourceType, SetSystemValue, Subsystem, SubsystemRef, SubsystemStatus, Subsystems,
+    SystemValue, SystemValues, UnitStatus, ValueKind,
 };
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Envelope, Op, Service, Status, VERSION};
@@ -54,7 +55,12 @@ fn version_7_values() {
     assert_eq!(Op::of(Service::Manage, 11), None);
     for v in 1..=6 {
         assert!(!Service::of_version(v).contains(&Service::Manage));
-        assert!(Op::ALL.iter().filter(|o| o.since() <= v).all(|o| o.code().0 != Service::Manage));
+        assert!(
+            Op::ALL
+                .iter()
+                .filter(|o| o.since() <= v)
+                .all(|o| o.code().0 != Service::Manage)
+        );
     }
     assert_eq!(Service::of_version(7), Service::ALL.to_vec());
     // Version 7 adds no status and no event.
@@ -69,8 +75,11 @@ fn version_7_values() {
 #[test]
 fn versions_1_to_6_unchanged() {
     // Every operation of 1 to 6 keeps its service, code and version.
-    let old: Vec<(Op, (Service, u16), u16)> =
-        Op::ALL.iter().filter(|o| o.since() <= 6).map(|o| (*o, o.code(), o.since())).collect();
+    let old: Vec<(Op, (Service, u16), u16)> = Op::ALL
+        .iter()
+        .filter(|o| o.since() <= 6)
+        .map(|o| (*o, o.code(), o.since()))
+        .collect();
     assert_eq!(old.len(), 49);
     for (op, code, since) in old {
         assert_eq!(Op::of(code.0, code.1), Some(op));
@@ -150,7 +159,9 @@ fn bodies_round_trip() {
     same(&GetSystemValues {
         names: vec!["QMAXSIGN".into(), "QSYSLIBL".into()],
     });
-    same(&SystemValues { values: vec![v.clone()] });
+    same(&SystemValues {
+        values: vec![v.clone()],
+    });
     same(&SetSystemValue {
         name: "QMAXSIGN".into(),
         value: "5".into(),

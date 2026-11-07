@@ -49,13 +49,23 @@ pub fn page(rq: &Rq<'_>, id: &str) -> Response {
         ("Record length", f.record_len.to_string()),
         ("Total records", f.records.to_string()),
         ("Printer device", f.printer.clone()),
-        ("Writer", if f.writer.is_empty() { "*NONE".into() } else { f.writer.clone() }),
+        (
+            "Writer",
+            if f.writer.is_empty() {
+                "*NONE".into()
+            } else {
+                f.writer.clone()
+            },
+        ),
     ];
     let body = props(
         &rq.ctx,
         &[PropGroup {
             title: None,
-            rows: rows.into_iter().map(|(l, v)| Prop::new(l, mono(&v))).collect(),
+            rows: rows
+                .into_iter()
+                .map(|(l, v)| Prop::new(l, mono(&v)))
+                .collect(),
         }],
         &[Button::new("ok", "OK")],
     );

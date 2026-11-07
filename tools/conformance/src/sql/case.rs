@@ -63,7 +63,13 @@ impl Case {
             }
         }
         let oracle = oracle.ok_or_else(|| format!("{}: no `-- oracle:` line", path.display()))?;
-        Ok(Self { area, name, oracle, statements: statements(&text), path: path.to_path_buf() })
+        Ok(Self {
+            area,
+            name,
+            oracle,
+            statements: statements(&text),
+            path: path.to_path_buf(),
+        })
     }
 }
 
@@ -110,7 +116,11 @@ pub fn first(st: &str) -> String {
 /// Whether the statement changes rows (its count is shown).
 #[must_use]
 pub fn changes(st: &str) -> bool {
-    let w = st.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+    let w = st
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_uppercase();
     matches!(w.as_str(), "INSERT" | "UPDATE" | "DELETE" | "MERGE")
 }
 
@@ -145,7 +155,10 @@ mod tests {
     #[test]
     fn statements_split_on_the_terminator() {
         let t = "-- oracle: primary\nSELECT 1\n  FROM X;\n\n--#SET TERMINATOR @\nBEGIN\n SET A = 1;\nEND@\n--#SET TERMINATOR ;\nVALUES 2;";
-        assert_eq!(statements(t), vec!["SELECT 1\n  FROM X", "BEGIN\n SET A = 1;\nEND", "VALUES 2"]);
+        assert_eq!(
+            statements(t),
+            vec!["SELECT 1\n  FROM X", "BEGIN\n SET A = 1;\nEND", "VALUES 2"]
+        );
         assert!(changes("insert into t values 1"));
         assert!(!changes("SELECT 1"));
     }

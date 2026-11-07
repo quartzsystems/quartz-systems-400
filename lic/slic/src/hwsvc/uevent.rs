@@ -17,7 +17,11 @@ use rustix::net::{AddressFamily, RecvFlags, SocketType, bind, recv, socket};
 /// Bind the uevent socket and apply events for the life of the service.
 /// False when the socket cannot be opened.
 pub fn spawn(table: Arc<Mutex<Table>>) -> bool {
-    let Ok(sock) = socket(AddressFamily::NETLINK, SocketType::RAW, Some(KOBJECT_UEVENT)) else {
+    let Ok(sock) = socket(
+        AddressFamily::NETLINK,
+        SocketType::RAW,
+        Some(KOBJECT_UEVENT),
+    ) else {
         return false;
     };
     if bind(&sock, &SocketAddrNetlink::new(0, UEVENT_GROUP)).is_err() {
@@ -28,7 +32,9 @@ pub fn spawn(table: Arc<Mutex<Table>>) -> bool {
         loop {
             match recv(&sock, &mut buf[..], RecvFlags::empty()) {
                 Ok((n, _)) => {
-                    let Some(ev) = Uevent::parse(&buf[..n.min(buf.len())]) else { continue };
+                    let Some(ev) = Uevent::parse(&buf[..n.min(buf.len())]) else {
+                        continue;
+                    };
                     let Ok(mut t) = table.lock() else { break };
                     for line in t.apply_uevent(Path::new(super::SYS), &ev) {
                         println!("hwrsrc: {line}");

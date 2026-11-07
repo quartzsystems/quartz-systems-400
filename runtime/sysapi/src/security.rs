@@ -260,7 +260,14 @@ fn usri0300(out: &mut Out, u: &UsrPrf) {
     out.char(410, 10, &l);
     out.char(420, 10, &u.langid);
     out.char(430, 10, &u.cntryid);
-    out.bin4(440, if u.ccsid == 0 { -2 } else { i32::try_from(u.ccsid).unwrap_or(-2) });
+    out.bin4(
+        440,
+        if u.ccsid == 0 {
+            -2
+        } else {
+            i32::try_from(u.ccsid).unwrap_or(-2)
+        },
+    );
     out.char(444, 36, &flags(&u.usropt, USROPT_FLAGS, 7));
     let (n, l) = q(&u.srtseq);
     out.char(480, 10, &n);
@@ -294,7 +301,11 @@ fn usri0300(out: &mut Out, u: &UsrPrf) {
         },
     );
     // The home directory as a `Qlg_Path_Name_T`: UCS-2, then the locale.
-    let path: Vec<u8> = u.homedir.encode_utf16().flat_map(u16::to_be_bytes).collect();
+    let path: Vec<u8> = u
+        .homedir
+        .encode_utf16()
+        .flat_map(u16::to_be_bytes)
+        .collect();
     let home_at = 694;
     out.bin4(600, i32::try_from(home_at).unwrap_or(0));
     out.bin4(604, i32::try_from(32 + path.len()).unwrap_or(0));
@@ -312,7 +323,14 @@ fn usri0300(out: &mut Out, u: &UsrPrf) {
     out.bin4(628, i32::try_from(u.locale.len().max(10)).unwrap_or(10));
     out.char(locale_at, u.locale.len().max(10), &u.locale);
     let groups_at = locale_at + u.locale.len().max(10);
-    out.bin4(584, if u.supgrpprf.is_empty() { 0 } else { i32::try_from(groups_at).unwrap_or(0) });
+    out.bin4(
+        584,
+        if u.supgrpprf.is_empty() {
+            0
+        } else {
+            i32::try_from(groups_at).unwrap_or(0)
+        },
+    );
     out.bin4(588, i32::try_from(u.supgrpprf.len()).unwrap_or(0));
     for (i, g) in u.supgrpprf.iter().enumerate() {
         out.char(groups_at + i * 10, 10, g);
@@ -321,7 +339,13 @@ fn usri0300(out: &mut Out, u: &UsrPrf) {
 
 /// `USROPT` flags, in receiver order.
 const USROPT_FLAGS: &[&str] = &[
-    "*CLKWD", "*EXPERT", "*HLPFULL", "*STSMSG", "*NOSTSMSG", "*ROLLKEY", "*PRTMSG",
+    "*CLKWD",
+    "*EXPERT",
+    "*HLPFULL",
+    "*STSMSG",
+    "*NOSTSMSG",
+    "*ROLLKEY",
+    "*PRTMSG",
 ];
 
 /// `SETJOBATR` flags, in receiver order.
@@ -331,11 +355,37 @@ const SETJOBATR_FLAGS: &[&str] = &[
 
 /// `AUDLVL` flags, in receiver order.
 const AUDLVL_FLAGS: &[&str] = &[
-    "*CMD", "*CREATE", "*DELETE", "*JOBDTA", "*OBJMGT", "*OFCSRV", "*OPTICAL", "*PGMADP",
-    "*SAVRST", "*SECURITY", "*SERVICE", "*SPLFDTA", "*SYSMGT", "*AUTFAIL", "*JOBBAS",
-    "*JOBCHGUSR", "*NETBAS", "*NETCLU", "*NETCMN", "*NETFAIL", "*NETSCK", "*PGMFAIL",
-    "*PTFOBJ", "*PTFOPR", "*SECCFG", "*SECDIRSRV", "*SECIPC", "*SECNAS", "*SECRUN",
-    "*SECSCKD", "*SECVFY",
+    "*CMD",
+    "*CREATE",
+    "*DELETE",
+    "*JOBDTA",
+    "*OBJMGT",
+    "*OFCSRV",
+    "*OPTICAL",
+    "*PGMADP",
+    "*SAVRST",
+    "*SECURITY",
+    "*SERVICE",
+    "*SPLFDTA",
+    "*SYSMGT",
+    "*AUTFAIL",
+    "*JOBBAS",
+    "*JOBCHGUSR",
+    "*NETBAS",
+    "*NETCLU",
+    "*NETCMN",
+    "*NETFAIL",
+    "*NETSCK",
+    "*PGMFAIL",
+    "*PTFOBJ",
+    "*PTFOPR",
+    "*SECCFG",
+    "*SECDIRSRV",
+    "*SECIPC",
+    "*SECNAS",
+    "*SECRUN",
+    "*SECSCKD",
+    "*SECVFY",
 ];
 
 /// `Y`/`N` for each of `names` in `values`, blank padded to `n`... the
@@ -716,7 +766,11 @@ fn qsychgpw(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     }
     notify(j, p, "CHGP0200", &user);
     let (old, set) = (current.clone(), new.clone());
-    let q = Query::ChangePassword { user: user.clone(), current, new };
+    let q = Query::ChangePassword {
+        user: user.clone(),
+        current,
+        new,
+    };
     if ask(j, p, errc, q).is_some() {
         notify(j, p, "CHGP0100", &user);
         let level = pwd_level(p);
@@ -738,13 +792,19 @@ fn qsychgpw(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
 struct ProviderRegistry<'p>(&'p mut dyn Provider);
 
 impl regfac::ExitRegistry for ProviderRegistry<'_> {
-    fn programs(&mut self, point: &str, format: &str) -> regfac::RegResult<Vec<regfac::ExitProgram>> {
+    fn programs(
+        &mut self,
+        point: &str,
+        format: &str,
+    ) -> regfac::RegResult<Vec<regfac::ExitProgram>> {
         match self.0.regfac(regfac::Query::Programs {
             name: point.into(),
             format: format.into(),
         }) {
             Ok(regfac::Answer::Programs { programs }) => Ok(programs),
-            _ => Err(regfac::RegFail::unavailable("the registration facility did not answer")),
+            _ => Err(regfac::RegFail::unavailable(
+                "the registration facility did not answer",
+            )),
         }
     }
 
@@ -799,7 +859,9 @@ fn validation(
             old: Some(old.into()),
             new: new.into(),
         });
-        return Ok(regfac::call_exit(&mut ProviderRegistry(p), j, "QIBM_QSY_VLD_PASSWRD", &req).allow);
+        return Ok(
+            regfac::call_exit(&mut ProviderRegistry(p), j, "QIBM_QSY_VLD_PASSWRD", &req).allow,
+        );
     }
     if name.starts_with('*') {
         return Ok(true);
@@ -912,7 +974,18 @@ fn qwtsetpx(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         return;
     }
     let user = a.char(3, 10);
-    if ask(j, p, errc, Query::SetProfileExits { user, format, values }).is_some() {
+    if ask(
+        j,
+        p,
+        errc,
+        Query::SetProfileExits {
+            user,
+            format,
+            values,
+        },
+    )
+    .is_some()
+    {
         errc.ok();
     }
 }

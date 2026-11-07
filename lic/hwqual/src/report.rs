@@ -91,7 +91,13 @@ impl Report {
     /// Lines of each grade: passed, warnings, failed.
     #[must_use]
     pub fn counts(&self) -> (usize, usize, usize) {
-        let n = |g| self.checks.iter().flat_map(|(_, c)| c).filter(|c| c.grade == g).count();
+        let n = |g| {
+            self.checks
+                .iter()
+                .flat_map(|(_, c)| c)
+                .filter(|c| c.grade == g)
+                .count()
+        };
         (n(Grade::Pass), n(Grade::Warn), n(Grade::Fail))
     }
 
@@ -99,7 +105,10 @@ impl Report {
     #[must_use]
     pub fn summary(&self) -> String {
         let (p, w, f) = self.counts();
-        format!("{} ({p} passed, {w} warnings, {f} failed)", self.result().word())
+        format!(
+            "{} ({p} passed, {w} warnings, {f} failed)",
+            self.result().word()
+        )
     }
 
     /// The report's lines, none wider than [`WIDTH`].
@@ -111,7 +120,11 @@ impl Report {
             format!(" Machine  . . . . . . :   {}", self.machine),
             format!(
                 " Hypervisor . . . . . :   {}",
-                if self.hypervisor.is_empty() { "none (physical machine)" } else { &self.hypervisor }
+                if self.hypervisor.is_empty() {
+                    "none (physical machine)"
+                } else {
+                    &self.hypervisor
+                }
             ),
             format!(" Release  . . . . . . :   {}", release::RELEASE),
             format!(" Date and time  . . . :   {} UTC", self.when),
@@ -122,7 +135,12 @@ impl Report {
             v.push(format!(" {section}"));
             v.push(" Result  Resource    Type      Description".to_string());
             for c in checks {
-                let head = format!("  {:<6} {:<11} {:<9} ", c.grade.word(), c.resource, c.type_model);
+                let head = format!(
+                    "  {:<6} {:<11} {:<9} ",
+                    c.grade.word(),
+                    c.resource,
+                    c.type_model
+                );
                 let mut text = c.text.as_str();
                 let room = WIDTH - head.len();
                 let mut first = true;
@@ -132,7 +150,12 @@ impl Report {
                     if first {
                         v.push(format!("{head}{}", part.trim_end()));
                     } else {
-                        v.push(format!("{:width$}{}", "", part.trim_end(), width = head.len()));
+                        v.push(format!(
+                            "{:width$}{}",
+                            "",
+                            part.trim_end(),
+                            width = head.len()
+                        ));
                     }
                     text = rest.trim_start();
                     first = false;
@@ -180,7 +203,12 @@ pub fn timestamp(secs: u64) -> String {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = yoe + era * 400 + i64::from(m <= 2);
-    format!("{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}", rem / 3600, rem % 3600 / 60, rem % 60)
+    format!(
+        "{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60
+    )
 }
 
 #[cfg(test)]
@@ -212,11 +240,16 @@ mod tests {
         assert_eq!(r.result(), Grade::Warn);
         assert_eq!(r.summary(), "WARN (1 passed, 1 warnings, 0 failed)");
         let lines = r.lines();
-        assert!(lines.iter().all(|l| l.chars().count() <= WIDTH), "{lines:#?}");
+        assert!(
+            lines.iter().all(|l| l.chars().count() <= WIDTH),
+            "{lines:#?}"
+        );
         let tpm = lines.iter().position(|l| l.contains("No TPM")).unwrap();
         assert!(lines[tpm + 1].starts_with("                              "));
         assert!(r.text().ends_with(" End of report\n"));
-        r.checks[0].1.push(Check::new(Grade::Fail, "DD001", "SSD", "too small"));
+        r.checks[0]
+            .1
+            .push(Check::new(Grade::Fail, "DD001", "SSD", "too small"));
         assert_eq!(r.result(), Grade::Fail);
     }
 

@@ -502,7 +502,11 @@ mod tests {
                 product_uuid: Some(uuid.into()),
                 serial: Some(serial.into()),
             };
-            SysVals::empty(&host).unwrap().get("QSRLNBR").unwrap().text()
+            SysVals::empty(&host)
+                .unwrap()
+                .get("QSRLNBR")
+                .unwrap()
+                .text()
         };
         assert_eq!(at("BWMX6R0"), "BWMX6R0");
         assert_eq!(at("j300abcd"), "J300ABCD");

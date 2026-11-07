@@ -214,7 +214,10 @@ pub fn paper_code(v: &str) -> Option<u8> {
 /// The special value of a paper code.
 #[must_use]
 pub fn paper_name(c: u8) -> &'static str {
-    PAPER.iter().find(|(_, k)| *k == c).map_or("*MFRTYPMDL", |(n, _)| n)
+    PAPER
+        .iter()
+        .find(|(_, k)| *k == c)
+        .map_or("*MFRTYPMDL", |(n, _)| n)
 }
 
 impl LanPrinter {
@@ -317,12 +320,19 @@ impl LanPrinter {
             match k.as_str() {
                 "LANATTACH" => {
                     self.lanattach = u8::try_from(
-                        LANATTACH.iter().position(|n| *n == up).ok_or_else(|| bad(k, v))?,
+                        LANATTACH
+                            .iter()
+                            .position(|n| *n == up)
+                            .ok_or_else(|| bad(k, v))?,
                     )
                     .unwrap_or(0);
                 }
                 "PORT" => {
-                    self.port = v.parse().ok().filter(|n| *n <= 65535).ok_or_else(|| bad(k, v))?;
+                    self.port = v
+                        .parse()
+                        .ok()
+                        .filter(|n| *n <= 65535)
+                        .ok_or_else(|| bad(k, v))?;
                 }
                 "RMTLOCNAME" => {
                     self.rmtlocname = v.trim_matches('\'').trim().to_string();
@@ -381,7 +391,10 @@ impl LanPrinter {
                 }
                 "FORMFEED" => {
                     self.formfeed = u8::try_from(
-                        FORMFEED.iter().position(|n| *n == up).ok_or_else(|| bad(k, v))?,
+                        FORMFEED
+                            .iter()
+                            .position(|n| *n == up)
+                            .ok_or_else(|| bad(k, v))?,
                     )
                     .unwrap_or(0);
                 }
@@ -397,7 +410,11 @@ impl LanPrinter {
                 "ENVELOPE" => self.envelope = paper_code(&up).ok_or_else(|| bad(k, v))?,
                 "PRTERRMSG" => self.prterrmsg_info = up == "*INFO",
                 "MAXPNDRQS" => {
-                    self.maxpndrqs = v.parse().ok().filter(|n| (1..=31).contains(n)).ok_or_else(|| bad(k, v))?;
+                    self.maxpndrqs = v
+                        .parse()
+                        .ok()
+                        .filter(|n| (1..=31).contains(n))
+                        .ok_or_else(|| bad(k, v))?;
                 }
                 "PRTRQSTMR" => {
                     self.prtrqstmr = if up == "*NOMAX" {
@@ -431,7 +448,9 @@ impl LanPrinter {
         let _ = writeln!(
             out,
             "  LAN attachment . . : {}",
-            LANATTACH.get(usize::from(self.lanattach)).unwrap_or(&"*LEXLINK")
+            LANATTACH
+                .get(usize::from(self.lanattach))
+                .unwrap_or(&"*LEXLINK")
         );
         let _ = writeln!(out, "  Port number  . . . : {}", self.port);
         let _ = writeln!(out, "  Remote location  . : {}", none(&self.rmtlocname));

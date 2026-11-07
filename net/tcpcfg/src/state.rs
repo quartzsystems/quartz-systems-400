@@ -176,7 +176,13 @@ impl State {
                 IfcView {
                     addr: i.key(),
                     mask: i.mask.map_or_else(
-                        || if i.addr.is_v6() { String::new() } else { "*".into() },
+                        || {
+                            if i.addr.is_v6() {
+                                String::new()
+                            } else {
+                                "*".into()
+                            }
+                        },
                         |m| m.to_string(),
                     ),
                     prefix: i.prefix(),
@@ -185,7 +191,9 @@ impl State {
                     line_type: i.line_type().into(),
                     status: run.status.name().into(),
                     alias: i.alias.clone().unwrap_or_else(|| "*NONE".into()),
-                    local_ifc: i.local_ifc.map_or_else(|| "*NONE".into(), |l| l.to_string()),
+                    local_ifc: i
+                        .local_ifc
+                        .map_or_else(|| "*NONE".into(), |l| l.to_string()),
                     tos: i.tos.name().into(),
                     mtu: i.mtu.map_or_else(|| "*LIND".into(), |m| m.to_string()),
                     autostart: i.autostart,

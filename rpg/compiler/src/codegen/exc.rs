@@ -78,7 +78,12 @@ impl Region {
     /// when it has neither `*PSSR` nor an `INFSR`.
     pub fn of(g: &mut Gen<'_>, subrs: &[String]) -> Option<Self> {
         let known = |g: &Gen<'_>, s: &str| {
-            subrs.iter().find(|n| n.eq_ignore_ascii_case(s) && !g.bad_subrs.contains(&n.to_ascii_uppercase())).cloned()
+            subrs
+                .iter()
+                .find(|n| {
+                    n.eq_ignore_ascii_case(s) && !g.bad_subrs.contains(&n.to_ascii_uppercase())
+                })
+                .cloned()
         };
         let pssr = subrs.iter().any(|n| n == "*PSSR");
         let infsrs: Vec<(usize, String)> = g
@@ -149,7 +154,12 @@ impl Region {
             let k = g.b.reg();
             g.b.ins(format!("{k} = load $ferr"));
             let labels: Vec<String> = self.infsrs.iter().map(|_| g.b.label()).collect();
-            let arms: Vec<String> = self.infsrs.iter().zip(&labels).map(|((n, _), l)| format!("{n}: {l}")).collect();
+            let arms: Vec<String> = self
+                .infsrs
+                .iter()
+                .zip(&labels)
+                .map(|((n, _), l)| format!("{n}: {l}"))
+                .collect();
             g.b.term(format!("switch {k}, [{}], default {on}", arms.join(", ")));
             for ((_, s), l) in self.infsrs.iter().zip(&labels) {
                 g.b.place(l);
@@ -203,7 +213,10 @@ impl Gen<'_> {
         } else {
             self.b.ins(format!("{r} = load $entry_n"));
         }
-        self.b.ins(format!("callb _QRNX_PSDSINIT({p}, {len}, {}, {r})", quote(&format!("{name:<10}"))));
+        self.b.ins(format!(
+            "callb _QRNX_PSDSINIT({p}, {len}, {}, {r})",
+            quote(&format!("{name:<10}"))
+        ));
     }
 
     /// Note the cycle routine running (`*DETC`, `*TOTC`, ...) in the
@@ -215,7 +228,10 @@ impl Gen<'_> {
         }
         let a = self.b.reg();
         self.b.ins(format!("{a} = addr {p}"));
-        self.b.ins(format!("mov [{a} +28]:char(8), {}", quote(&format!("{routine:<8}"))));
+        self.b.ins(format!(
+            "mov [{a} +28]:char(8), {}",
+            quote(&format!("{routine:<8}"))
+        ));
     }
 
     /// At a handler's start: the exception just handled into the PSDS
@@ -227,7 +243,8 @@ impl Gen<'_> {
             "_QRNX_PSDSERR",
             "($ds: bytes(1) *VARSIZE, byval $len: i32, $status: zoned(5,0))",
         );
-        self.b.ins(format!("callb _QRNX_PSDSERR({p}, {len}, $status)"));
+        self.b
+            .ins(format!("callb _QRNX_PSDSERR({p}, {len}, $status)"));
     }
 
     /// Send the exception the last handler took on again, as unhandled

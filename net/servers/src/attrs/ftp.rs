@@ -51,7 +51,8 @@ impl CrtCcsid {
             "*CALC" | "0" => Ok(CrtCcsid::Calc),
             "*USER" | "-3" => Ok(CrtCcsid::User),
             "*SYSVAL" | "-2" => Ok(CrtCcsid::Sysval),
-            n => number(n, "CRTCCSID", 1, 65533).map(|n| CrtCcsid::Of(u16::try_from(n).unwrap_or(37))),
+            n => number(n, "CRTCCSID", 1, 65533)
+                .map(|n| CrtCcsid::Of(u16::try_from(n).unwrap_or(37))),
         }
     }
 }
@@ -149,13 +150,17 @@ fn qualified(v: &str, kwd: &str, specials: &[&str]) -> Result<String, String> {
     if specials.contains(&u.as_str()) {
         return Ok(u);
     }
-    let ok = |s: &str| !s.is_empty() && s.len() <= 10 && !s.starts_with(|c: char| c.is_ascii_digit());
+    let ok =
+        |s: &str| !s.is_empty() && s.len() <= 10 && !s.starts_with(|c: char| c.is_ascii_digit());
     let parts: Vec<&str> = u.split('/').collect();
     let name_ok = parts.last().is_some_and(|n| ok(n) && !n.starts_with('*'));
     if parts.len() <= 2 && name_ok && parts.iter().all(|p| ok(p)) {
         Ok(u)
     } else {
-        Err(format!("{kwd}({v}): {} or a qualified name", specials.join(", ")))
+        Err(format!(
+            "{kwd}({v}): {} or a qualified name",
+            specials.join(", ")
+        ))
     }
 }
 
@@ -170,7 +175,10 @@ fn ports(v: &str) -> Result<Option<(u16, u16)>, String> {
     if lo > hi {
         return Err(format!("DTACNNPORT({v}): the low port first"));
     }
-    Ok(Some((u16::try_from(lo).unwrap_or(1024), u16::try_from(hi).unwrap_or(65535))))
+    Ok(Some((
+        u16::try_from(lo).unwrap_or(1024),
+        u16::try_from(hi).unwrap_or(65535),
+    )))
 }
 
 impl FtpAttrs {
@@ -237,7 +245,11 @@ impl FtpAttrs {
         let u = v.trim().to_ascii_uppercase();
         match kwd.to_ascii_uppercase().as_str() {
             "NBRSVR" => {
-                self.nbrsvr = if u == "*DFT" { NBRSVR_DFT } else { number(&u, "NBRSVR", 1, 20)? };
+                self.nbrsvr = if u == "*DFT" {
+                    NBRSVR_DFT
+                } else {
+                    number(&u, "NBRSVR", 1, 20)?
+                };
             }
             "INACTTIMO" => {
                 self.inacttimo = if u == "*DFT" {
@@ -262,7 +274,9 @@ impl FtpAttrs {
             "SBSD" => self.sbsd = qualified(&u, "SBSD", &["*DFT"])?,
             "ALWSSL" => self.alwssl = one_of(&u, "ALWSSL", &["*YES", "*NO", "*ONLY"])?,
             "PORT" => self.port = u16::try_from(number(&u, "PORT", 1, 65535)?).unwrap_or(PORT),
-            "TLSPORT" => self.tls_port = u16::try_from(number(&u, "TLSPORT", 1, 65535)?).unwrap_or(TLS_PORT),
+            "TLSPORT" => {
+                self.tls_port = u16::try_from(number(&u, "TLSPORT", 1, 65535)?).unwrap_or(TLS_PORT)
+            }
             "DTACNNPORT" => self.dtacnnport = ports(&u)?,
             other => return Err(format!("{other} is not an FTP attribute")),
         }
@@ -299,7 +313,11 @@ impl FtpAttrs {
         if self.sbsd == "*DFT" {
             "QSYSWRK".into()
         } else {
-            self.sbsd.rsplit('/').next().unwrap_or("QSYSWRK").to_string()
+            self.sbsd
+                .rsplit('/')
+                .next()
+                .unwrap_or("QSYSWRK")
+                .to_string()
         }
     }
 
@@ -320,7 +338,8 @@ mod tests {
         assert_eq!(
             shown,
             [
-                "3", "300", "00819", "*CCSID", "*CCSID", "*LIB", "*CURLIB", "*DFT", "*CALC", "*DFT", "*YES"
+                "3", "300", "00819", "*CCSID", "*CCSID", "*LIB", "*CURLIB", "*DFT", "*CALC",
+                "*DFT", "*YES"
             ]
         );
         assert!(a.plain() && a.secure());

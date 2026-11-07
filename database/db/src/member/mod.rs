@@ -395,7 +395,9 @@ impl Member {
                         })?;
                 let format = base_format(txn, base_file, name)?;
                 let bdesc = file::describe(txn, base_file)?;
-                if crate::trg::Active::load(txn, &bdesc)?.is_some_and(|a| a.any(crate::trg::Event::Read)) {
+                if crate::trg::Active::load(txn, &bdesc)?
+                    .is_some_and(|a| a.any(crate::trg::Event::Read))
+                {
                     m.base_read_triggers = true;
                 }
                 m.bases.push(Base { member, format });
@@ -405,12 +407,15 @@ impl Member {
             m.csts = crate::cst::Active::load(txn, file)?;
             m.trgs = crate::trg::Active::load(txn, file)?;
             if !file.header.sql.is_none()
-                && let Some((a, be)) = crate::sqlinf::seq::columns(txn, file.id)?.into_iter().find_map(|c| match c.kind {
-                    crate::sqlinf::seq::ColumnKind::Identity(a) => Some((a, c.block_end)),
-                    _ => None,
-                }) {
-                    m.identity = Some(a);
-                    m.identity_block = be;
+                && let Some((a, be)) = crate::sqlinf::seq::columns(txn, file.id)?
+                    .into_iter()
+                    .find_map(|c| match c.kind {
+                        crate::sqlinf::seq::ColumnKind::Identity(a) => Some((a, c.block_end)),
+                        _ => None,
+                    })
+            {
+                m.identity = Some(a);
+                m.identity_block = be;
             }
         }
         if m.core.attr.path_invalid && m.file.attr.maint == Maint::Dly {
@@ -600,7 +605,13 @@ impl Member {
         else {
             return Ok(None);
         };
-        let field = self.format().format.fields.iter().find(|f| f.identity.is_some()).expect("found above");
+        let field = self
+            .format()
+            .format
+            .fields
+            .iter()
+            .find(|f| f.identity.is_some())
+            .expect("found above");
         let (lo, hi) = crate::sqlinf::seq::field_range(field);
         let attrs = self.identity.unwrap_or(crate::sqlinf::seq::SeqAttrs {
             start: i128::from(id.start),
@@ -615,15 +626,23 @@ impl Member {
         let mut v = i128::from(self.core.attr.identity_next);
         if !attrs.holds(v) {
             if !attrs.cycle {
-                return Err(DbError::IdentityExhausted { file: self.file.name().to_string() });
+                return Err(DbError::IdentityExhausted {
+                    file: self.file.name().to_string(),
+                });
             }
-            v = if attrs.increment > 0 { attrs.min } else { attrs.max };
+            v = if attrs.increment > 0 {
+                attrs.min
+            } else {
+                attrs.max
+            };
         }
         // Past the range, the next value is kept just outside it.
         if self.identity.is_some() {
             // The block of values IBM would cache, kept for an ALTER.
             let before = self.identity_block;
-            let end = *self.identity_block.get_or_insert_with(|| attrs.block_end(v));
+            let end = *self
+                .identity_block
+                .get_or_insert_with(|| attrs.block_end(v));
             if v == end {
                 self.identity_block = None;
             }
@@ -881,7 +900,16 @@ impl Member {
         self.physical_only()?;
         self.refresh_dependents(txn)?;
         Space::truncate(txn, self.core.id, 0)?;
-        let slots: &[usize] = if lobs { &[attr::PATH_ROOT, attr::FREE_ROOT, crate::cst::CST_ROOT, lob::LOB_ROOT] } else { &[attr::PATH_ROOT, attr::FREE_ROOT, crate::cst::CST_ROOT] };
+        let slots: &[usize] = if lobs {
+            &[
+                attr::PATH_ROOT,
+                attr::FREE_ROOT,
+                crate::cst::CST_ROOT,
+                lob::LOB_ROOT,
+            ]
+        } else {
+            &[attr::PATH_ROOT, attr::FREE_ROOT, crate::cst::CST_ROOT]
+        };
         for &slot in slots {
             if let Some(root) = self.core.roots[slot] {
                 btree::free_tree(txn, root)?;
@@ -1130,7 +1158,9 @@ impl Member {
         };
         let mut all = Vec::new();
         for rrn in 1..=self.core.attr.slots {
-            let Some(s) = self.core.read_slot(txn, rrn)? else { continue };
+            let Some(s) = self.core.read_slot(txn, rrn)? else {
+                continue;
+            };
             if s.deleted {
                 continue;
             }
@@ -1156,7 +1186,9 @@ impl Member {
     /// The member's constraint tree, when the file has keyed constraints.
     #[must_use]
     pub fn cst_tree(&self) -> Option<Path> {
-        self.csts.as_ref().map(|a| a.tree(self.core.id, self.core.roots[crate::cst::CST_ROOT]))
+        self.csts
+            .as_ref()
+            .map(|a| a.tree(self.core.id, self.core.roots[crate::cst::CST_ROOT]))
     }
 
     /// Remove a record from every path.
@@ -1324,7 +1356,12 @@ impl Member {
     /// pause and never finished (a crash) is rebuilt when next opened;
     /// the entries go in at the end in one step. The caller holds the
     /// based-on members against change.
-    pub fn rebuild_path_paused(&mut self, txn: &mut Txn<'_>, progress: Progress<'_>, pause: crate::Pause<'_>) -> Result<()> {
+    pub fn rebuild_path_paused(
+        &mut self,
+        txn: &mut Txn<'_>,
+        progress: Progress<'_>,
+        pause: crate::Pause<'_>,
+    ) -> Result<()> {
         let Some(mut p) = self.core.path() else {
             self.core.attr.path_invalid = false;
             return self.core.save(txn);
@@ -1399,7 +1436,11 @@ impl Member {
         // Loaded in steps, the root published before each pause: a
         // build cut short leaves a tree the next rebuild frees.
         let core = &mut self.core;
-        let built = gather.load(txn, &mut |t, root| core.set_root(t, attr::PATH_ROOT, root), pause)?;
+        let built = gather.load(
+            txn,
+            &mut |t, root| core.set_root(t, attr::PATH_ROOT, root),
+            pause,
+        )?;
         match built {
             Built::Tree { root, entries } => {
                 p.root = root;
@@ -1418,7 +1459,8 @@ impl Member {
 /// Whether a record's key counts against a `UNIQUE` path: the path is
 /// unique and, when null keys are left out, no key part is null.
 fn counts_once(fmt: &FormatDef, null_map: &[u8]) -> bool {
-    fmt.unique.is_some() && !(fmt.unique == Some(dds::NullKeys::Exclude) && path::key_has_null(fmt, null_map))
+    fmt.unique.is_some()
+        && !(fmt.unique == Some(dds::NullKeys::Exclude) && path::key_has_null(fmt, null_map))
 }
 
 fn hex(bytes: &[u8]) -> String {

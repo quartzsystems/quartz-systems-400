@@ -65,7 +65,9 @@ pub struct Cache {
 
 impl std::fmt::Debug for Cache {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Cache").field("entries", &self.entries.len()).finish_non_exhaustive()
+        f.debug_struct("Cache")
+            .field("entries", &self.entries.len())
+            .finish_non_exhaustive()
     }
 }
 
@@ -101,7 +103,12 @@ fn key(q: &Query) -> usize {
 }
 
 /// Run `q` for the outer rows `env`, noting whether it read them.
-fn run_noted(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query, env: &Env) -> Result<(Rc<Vec<Row>>, bool)> {
+fn run_noted(
+    ev: &mut Evaluator<'_>,
+    txn: &mut Txn<'_>,
+    q: &Query,
+    env: &Env,
+) -> Result<(Rc<Vec<Row>>, bool)> {
     let saved = std::mem::replace(&mut ev.ctx.plan.subq.reach, usize::MAX);
     let r = run_query(txn, ev.ctx, ev.params, q, env);
     let reach = ev.ctx.plan.subq.reach;
@@ -110,12 +117,24 @@ fn run_noted(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query, env: &Env) ->
 }
 
 /// A subquery's rows for the outer rows `env`.
-pub fn answer(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query, env: &Env) -> Result<Rc<Vec<Row>>> {
+pub fn answer(
+    ev: &mut Evaluator<'_>,
+    txn: &mut Txn<'_>,
+    q: &Query,
+    env: &Env,
+) -> Result<Rc<Vec<Row>>> {
     if !ev.ctx.ctes.is_empty() {
         return Ok(Rc::new(run_query(txn, ev.ctx, ev.params, q, env)?.rows));
     }
     let k = key(q);
-    let known = ev.ctx.plan.subq.entries.get_mut(&k).filter(|(kept, _)| kept == q).map(|(_, e)| e);
+    let known = ev
+        .ctx
+        .plan
+        .subq
+        .entries
+        .get_mut(&k)
+        .filter(|(kept, _)| kept == q)
+        .map(|(_, e)| e);
     match known {
         Some(Entry::Fixed(rows)) => return Ok(Rc::clone(rows)),
         Some(Entry::PerRow) => return Ok(run_noted(ev, txn, q, env)?.0),
@@ -133,13 +152,23 @@ pub fn answer(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query, env: &Env) -
         None => {}
     }
     let (rows, correlated) = run_noted(ev, txn, q, env)?;
-    let entry = if correlated { Entry::Runs(1) } else { Entry::Fixed(Rc::clone(&rows)) };
+    let entry = if correlated {
+        Entry::Runs(1)
+    } else {
+        Entry::Fixed(Rc::clone(&rows))
+    };
     ev.ctx.plan.subq.entries.insert(k, (q.clone(), entry));
     Ok(rows)
 }
 
 /// The rows of a decorrelated subquery for `env`'s values.
-fn keyed(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query, env: &Env, k: usize) -> Result<Rc<Vec<Row>>> {
+fn keyed(
+    ev: &mut Evaluator<'_>,
+    txn: &mut Txn<'_>,
+    q: &Query,
+    env: &Env,
+    k: usize,
+) -> Result<Rc<Vec<Row>>> {
     let outer = match ev.ctx.plan.subq.entries.get(&k) {
         Some((_, Entry::Keyed(kd))) => kd.outer.clone(),
         _ => unreachable!("keyed"),
@@ -168,7 +197,11 @@ fn keyed(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query, env: &Env, k: usi
         text.push_str(&v.key());
         text.push('\u{1}');
     }
-    let found = if usable && !absent { kd.rows.get(&text).cloned() } else { None };
+    let found = if usable && !absent {
+        kd.rows.get(&text).cloned()
+    } else {
+        None
+    };
     match found {
         Some(rows) => Ok(rows),
         None if usable && !aggregates => Ok(Rc::new(Vec::new())),
@@ -182,18 +215,35 @@ fn decorrelate(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query) -> Result<O
     if q.offset.is_some() || q.fetch_first.is_some() {
         return Ok(None);
     }
-    let QueryBody::Select(sel) = &q.body else { return Ok(None) };
-    let olap = sel.items.iter().any(|i| matches!(i, SelectItem::Expr(e, _) if super::super::olap::has_over(e)));
+    let QueryBody::Select(sel) = &q.body else {
+        return Ok(None);
+    };
+    let olap = sel
+        .items
+        .iter()
+        .any(|i| matches!(i, SelectItem::Expr(e, _) if super::super::olap::has_over(e)));
     if olap || super::super::grouping::has_sets(&sel.group_by) {
         return Ok(None);
     }
-    let Some((mut inner, pairs)) = correlation(txn, ev.ctx, sel)? else { return Ok(None) };
+    let Some((mut inner, pairs)) = correlation(txn, ev.ctx, sel)? else {
+        return Ok(None);
+    };
     let aggregates = sel.group_by.is_empty()
-        && (sel.items.iter().any(|i| matches!(i, SelectItem::Expr(e, _) if has_aggregate(e))) || sel.having.as_ref().is_some_and(has_aggregate));
+        && (sel
+            .items
+            .iter()
+            .any(|i| matches!(i, SelectItem::Expr(e, _) if has_aggregate(e)))
+            || sel.having.as_ref().is_some_and(has_aggregate));
     let grouped = !sel.group_by.is_empty() || aggregates;
     let n = pairs.len();
     for (i, (inside, _)) in pairs.iter().enumerate() {
-        inner.items.push(SelectItem::Expr(inside.clone(), Some(Ident { value: format!("*K{i}"), delimited: true })));
+        inner.items.push(SelectItem::Expr(
+            inside.clone(),
+            Some(Ident {
+                value: format!("*K{i}"),
+                delimited: true,
+            }),
+        ));
     }
     if grouped {
         let mut by: Vec<Expr> = pairs.iter().map(|(inside, _)| inside.clone()).collect();
@@ -228,7 +278,10 @@ fn decorrelate(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, q: &Query) -> Result<O
             text.push_str(&v.key());
             text.push('\u{1}');
         }
-        if charge.add(text.len() + super::super::mem::row_bytes(&r)).is_err() {
+        if charge
+            .add(text.len() + super::super::mem::row_bytes(&r))
+            .is_err()
+        {
             return Ok(None);
         }
         by.entry(text).or_default().push(r);

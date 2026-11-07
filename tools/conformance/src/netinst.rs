@@ -35,10 +35,18 @@ impl Suite {
         let name = "15 network install";
         let start = Instant::now();
         if self.skipped(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let Some(iso_path) = self.iso.clone() else {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped: no media".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped: no media".into(),
+            });
         };
         let iso = fs::read(&iso_path)?;
         let files = crate::media::iso_files(&iso).map_err(|reason| HarnessError::Failed {
@@ -71,15 +79,24 @@ impl Suite {
         let mut s = Session::spawn(&launch)?;
         let r = (|| -> Result<String, String> {
             s.expect("slic: eth0 dhcp", self.boot_timeout * 3)?;
-            s.expect("slic: install: response file from tftp://10.0.2.2/qs400/INSTALL.RSP", self.boot_timeout)?;
-            s.expect("slic: install: answers from the response file", self.boot_timeout)?;
+            s.expect(
+                "slic: install: response file from tftp://10.0.2.2/qs400/INSTALL.RSP",
+                self.boot_timeout,
+            )?;
+            s.expect(
+                "slic: install: answers from the response file",
+                self.boot_timeout,
+            )?;
             s.expect("SRC C6004090", Duration::from_mins(5))?;
             s.expect("SRC C6004100", self.boot_timeout * 2)?;
             s.expect(
                 "slic: install: ADDTCPIFC INTNETADR(*IP4DHCP) LIND(ETH0) AUTOSTART(*YES)",
                 Duration::from_mins(20),
             )?;
-            s.expect("slic: install: response file applied", Duration::from_mins(5))?;
+            s.expect(
+                "slic: install: response file applied",
+                Duration::from_mins(5),
+            )?;
             s.expect(SRC_IPL_COMPLETE, Duration::from_mins(5))?;
             s.expect(crate::PROMPT, CMD)?;
             let name = s.command("svc.sysval QSYSNAME", CMD)?;
@@ -141,12 +158,21 @@ fn leased(s: &mut Session) -> Result<String, String> {
             for c in ["svc.sysval QSTRUPPGM", "wrksbs", "dsplog"] {
                 let _ = write!(diag, "=== {c}\n{}\n", s.command(c, CMD).unwrap_or_default());
             }
-            return Err(format!("the installed system's *IP4DHCP interface has no lease:\n{ifc}\n{diag}"));
+            return Err(format!(
+                "the installed system's *IP4DHCP interface has no lease:\n{ifc}\n{diag}"
+            ));
         }
         std::thread::sleep(Duration::from_secs(1));
     };
-    if !ifc.lines().any(|l| l.starts_with("ifc *IP4DHCP ") && l.contains(" Active ")) {
+    if !ifc
+        .lines()
+        .any(|l| l.starts_with("ifc *IP4DHCP ") && l.contains(" Active "))
+    {
         return Err(format!("the *IP4DHCP interface is not active:\n{ifc}"));
     }
-    Ok(ifc.lines().find(|l| l.starts_with("lease ")).unwrap_or_default().to_string())
+    Ok(ifc
+        .lines()
+        .find(|l| l.starts_with("lease "))
+        .unwrap_or_default()
+        .to_string())
 }

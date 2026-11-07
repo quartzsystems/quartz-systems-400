@@ -146,7 +146,9 @@ fn ipp_reply(status: u16, request_id: u32, job_id: i32) -> Vec<u8> {
     }
     .encode();
     // Chunked, as many printers answer.
-    let mut out = b"HTTP/1.1 200 OK\r\nContent-Type: application/ipp\r\nTransfer-Encoding: chunked\r\n\r\n".to_vec();
+    let mut out =
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/ipp\r\nTransfer-Encoding: chunked\r\n\r\n"
+            .to_vec();
     out.extend_from_slice(format!("{:x}\r\n", m.len()).as_bytes());
     out.extend_from_slice(&m);
     out.extend_from_slice(b"\r\n0\r\n\r\n");
@@ -175,13 +177,23 @@ fn ipp_print_job() {
     assert_eq!(d.receipt.job_id.as_deref(), Some("42"));
     let (line, headers, m) = rx.recv().unwrap();
     assert_eq!(line, "POST /printers/lj HTTP/1.1");
-    assert!(headers.iter().any(|(k, v)| k == "Content-Type" && v == "application/ipp"));
+    assert!(
+        headers
+            .iter()
+            .any(|(k, v)| k == "Content-Type" && v == "application/ipp")
+    );
     assert_eq!((m.version, m.code), ((1, 1), ipp::PRINT_JOB));
     assert_eq!(m.groups[0].attrs[0].name, "attributes-charset");
     assert_eq!(m.groups[0].attrs[1].name, "attributes-natural-language");
-    assert_eq!(m.attr("printer-uri").unwrap().as_str(), format!("ipp://127.0.0.1:{port}/printers/lj"));
+    assert_eq!(
+        m.attr("printer-uri").unwrap().as_str(),
+        format!("ipp://127.0.0.1:{port}/printers/lj")
+    );
     assert_eq!(m.attr("requesting-user-name").unwrap().as_str(), "ANNE");
-    assert_eq!(m.attr("document-format").unwrap().as_str(), "application/pdf");
+    assert_eq!(
+        m.attr("document-format").unwrap().as_str(),
+        "application/pdf"
+    );
     assert_eq!(m.attr("copies").unwrap().as_int(), Some(2));
     assert_eq!(m.attr("sides").unwrap().as_str(), "two-sided-long-edge");
     assert!(m.data.starts_with(b"%PDF-1.4"));
@@ -283,7 +295,10 @@ fn lpr_to_another_lpd_with_xaix() {
     assert_eq!(cf.get(b'U'), Some("dfA113QS400A"));
     assert!(cf.get(b'L').is_none(), "SEPPAGE(*NO): no banner");
     // XAIX: both copies from one control file.
-    assert_eq!(cf.prints(), vec![(b'l', "dfA113QS400A"), (b'l', "dfA113QS400A")]);
+    assert_eq!(
+        cf.prints(),
+        vec![(b'l', "dfA113QS400A"), (b'l', "dfA113QS400A")]
+    );
     assert!(cf.extension().is_none());
 }
 

@@ -29,7 +29,13 @@ fn hlinv_compiles_unmodified() {
     for e in rd.flatten() {
         let p = e.path();
         if p.is_dir() {
-            found.extend(std::fs::read_dir(&p).into_iter().flatten().flatten().map(|e| e.path()));
+            found.extend(
+                std::fs::read_dir(&p)
+                    .into_iter()
+                    .flatten()
+                    .flatten()
+                    .map(|e| e.path()),
+            );
         } else {
             found.push(p);
         }
@@ -37,9 +43,9 @@ fn hlinv_compiles_unmodified() {
     let mut members: Vec<_> = found
         .into_iter()
         .filter(|p| {
-            p.extension()
-                .and_then(|x| x.to_str())
-                .is_some_and(|x| x.eq_ignore_ascii_case("rpgle") || x.eq_ignore_ascii_case("sqlrpgle"))
+            p.extension().and_then(|x| x.to_str()).is_some_and(|x| {
+                x.eq_ignore_ascii_case("rpgle") || x.eq_ignore_ascii_case("sqlrpgle")
+            })
         })
         .collect();
     members.sort();
@@ -51,13 +57,21 @@ fn hlinv_compiles_unmodified() {
             .flatten()
             .flatten()
             .map(|e| e.path())
-            .filter(|p| p.extension().and_then(|x| x.to_str()).is_some_and(|x| x.eq_ignore_ascii_case(kind.ext())))
+            .filter(|p| {
+                p.extension()
+                    .and_then(|x| x.to_str())
+                    .is_some_and(|x| x.eq_ignore_ascii_case(kind.ext()))
+            })
             .collect();
         names.sort();
         for p in names {
-            let text = String::from_utf8_lossy(&std::fs::read(&p).expect("DDS")).replace("\r\n", "\n");
+            let text =
+                String::from_utf8_lossy(&std::fs::read(&p).expect("DDS")).replace("\r\n", "\n");
             steps.push(DbStep::Dds {
-                name: p.file_stem().map(|s| s.to_string_lossy().to_ascii_uppercase()).unwrap_or_default(),
+                name: p
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().to_ascii_uppercase())
+                    .unwrap_or_default(),
                 kind,
                 source: text.lines().map(str::to_string).collect(),
             });
@@ -71,7 +85,10 @@ fn hlinv_compiles_unmodified() {
         match rpg::files::KitDb::build(&trial) {
             Ok(_) => kept = trial,
             Err(e) => {
-                let first = e.lines().find(|l| l.contains("DDS") && l.contains(" 20 ") || l.contains(" 30 ")).unwrap_or("");
+                let first = e
+                    .lines()
+                    .find(|l| l.contains("DDS") && l.contains(" 20 ") || l.contains(" 30 "))
+                    .unwrap_or("");
                 if let DbStep::Dds { name, .. } = &st {
                     eprintln!("hlinv: {name} left out: {}", first.trim());
                 }
@@ -81,12 +98,19 @@ fn hlinv_compiles_unmodified() {
     let db = rpg::files::KitDb::build(&kept).ok();
     // Members IBM cannot compile either for a reason outside RPG.
     let known_text = std::fs::read_to_string(dir.join("../known.txt")).unwrap_or_default();
-    let known: Vec<&str> = known_text.lines().filter(|l| !l.starts_with('#')).filter_map(|l| l.split_whitespace().next()).collect();
+    let known: Vec<&str> = known_text
+        .lines()
+        .filter(|l| !l.starts_with('#'))
+        .filter_map(|l| l.split_whitespace().next())
+        .collect();
     let mut bad = Vec::new();
     let mut skipped = 0;
     for p in &members {
         let text = String::from_utf8_lossy(&std::fs::read(p).expect("a member")).to_string();
-        let name = p.file_stem().map(|s| s.to_string_lossy().to_ascii_uppercase()).unwrap_or_default();
+        let name = p
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_ascii_uppercase())
+            .unwrap_or_default();
         if known.contains(&name.as_str()) {
             skipped += 1;
             continue;
@@ -96,33 +120,56 @@ fn hlinv_compiles_unmodified() {
         let c = rpg::compile(&case, db.as_ref());
         // Statements by sequence number: the listing's line numbers
         // follow *SRCSTMT, the sequence numbers do not change.
-        let ours: Vec<String> = rpg::diags(&c).iter().map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.seq)).collect();
+        let ours: Vec<String> = rpg::diags(&c)
+            .iter()
+            .map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.seq))
+            .collect();
         let worst = c.diags.iter().map(|d| d.severity).max().unwrap_or(0);
         let lst = p.with_extension("lst");
         if let Ok(bytes) = std::fs::read(&lst) {
             // IBM's listing beside the member: the same diagnostics, so
             // the same outcome, created or not.
-            let mut theirs: Vec<String> = listing::diags(&String::from_utf8_lossy(&bytes).lines().map(str::to_string).collect::<Vec<_>>())
-                .iter()
-                .map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.seq))
-                .collect();
+            let mut theirs: Vec<String> = listing::diags(
+                &String::from_utf8_lossy(&bytes)
+                    .lines()
+                    .map(str::to_string)
+                    .collect::<Vec<_>>(),
+            )
+            .iter()
+            .map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.seq))
+            .collect();
             let mut ours = ours.clone();
             theirs.sort();
             ours.sort();
             if theirs != ours {
-                bad.push(format!("{name}: diagnostics differ: ours {ours:?}, IBM's {theirs:?}"));
+                bad.push(format!(
+                    "{name}: diagnostics differ: ours {ours:?}, IBM's {theirs:?}"
+                ));
             }
             continue;
         }
         if !c.created || worst > 10 {
             // The compiler's own failures say what they are.
-            let why: Vec<String> = c.diags.iter().filter(|d| d.severity >= 50).map(rpgc::msgs::text).collect();
-            bad.push(format!("{name}: not created or severity {worst}: {} {}", ours.join(", "), why.join("; ")));
+            let why: Vec<String> = c
+                .diags
+                .iter()
+                .filter(|d| d.severity >= 50)
+                .map(rpgc::msgs::text)
+                .collect();
+            bad.push(format!(
+                "{name}: not created or severity {worst}: {} {}",
+                ours.join(", "),
+                why.join("; ")
+            ));
         }
     }
     if skipped > 0 {
         eprintln!("hlinv: {skipped} members left out by known.txt");
     }
-    eprintln!("hlinv: {} members, {} clean", members.len() - skipped, members.len() - skipped - bad.len());
+    eprintln!(
+        "hlinv: {} members, {} clean",
+        members.len() - skipped,
+        members.len() - skipped - bad.len()
+    );
     assert!(bad.is_empty(), "hlinv:\n  {}", bad.join("\n  "));
 }

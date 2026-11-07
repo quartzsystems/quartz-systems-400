@@ -16,7 +16,9 @@ use super::config::{ccsid_options, device, from_form, systems};
 use super::{GROUP, ITEM, Rq, select, start_policy};
 use crate::env::session5250::Saved;
 use crate::policy;
-use crate::s5250::files::qsd::{CCSIDS, ColorMap, HOTSPOT_FUNCTION_KEYS, HOTSPOT_PAGING, ScreenSize};
+use crate::s5250::files::qsd::{
+    CCSIDS, ColorMap, HOTSPOT_FUNCTION_KEYS, HOTSPOT_PAGING, ScreenSize,
+};
 
 /// `GET/POST /5250/<id>/properties`.
 pub fn page(rq: &Rq<'_>, s: Saved) -> Response {
@@ -27,7 +29,11 @@ pub fn page(rq: &Rq<'_>, s: Saved) -> Response {
     }
     if rq.post() {
         let f = rq.form();
-        let back = if s.id == 0 { "/5250/session/0".to_string() } else { "/5250".to_string() };
+        let back = if s.id == 0 {
+            "/5250/session/0".to_string()
+        } else {
+            "/5250".to_string()
+        };
         if f.has("cancel") {
             return rq.redirect(&back);
         }
@@ -46,7 +52,10 @@ pub fn page(rq: &Rq<'_>, s: Saved) -> Response {
         let new_title = file.display_title();
         let saved = Saved { file, ..s };
         return match rq.env().session5250.put(rq.user(), saved) {
-            Ok(_) => rq.done(&back, rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&new_title])),
+            Ok(_) => rq.done(
+                &back,
+                rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&new_title]),
+            ),
             Err(m) => show(rq, &s_placeholder(rq, &new_title), vec![m]),
         };
     }
@@ -74,17 +83,26 @@ fn show(rq: &Rq<'_>, s: &Saved, messages: Vec<Message>) -> Response {
     let title = f.display_title();
     let sessions = rq.env().session5250.sessions(rq.user());
     let sys = systems(rq, &sessions);
-    let chosen = sys.iter().position(|n| n.eq_ignore_ascii_case(&f.system.name)).unwrap_or(0);
+    let chosen = sys
+        .iter()
+        .position(|n| n.eq_ignore_ascii_case(&f.system.name))
+        .unwrap_or(0);
     let cp = CCSIDS.iter().position(|c| c.0 == ss.ccsid).unwrap_or(0);
     let wide = ss.screen_size == ScreenSize::S27x132;
     let bw = ss.colour_map == ColorMap::BlackOnWhite;
     let row = |label: &str, value: String| format!("<tr><th>{label}</th><td>{value}</td></tr>\n");
-    let mut t = String::from("<table class=\"props\" cellspacing=\"0\">\n<tr class=\"subrow\"><td colspan=\"2\">Session</td></tr>\n");
+    let mut t = String::from(
+        "<table class=\"props\" cellspacing=\"0\">\n<tr class=\"subrow\"><td colspan=\"2\">Session</td></tr>\n",
+    );
     t += &row("Title", input("t", &title, 30));
     t += &row("System", select("sys", &sys, chosen));
     t += &row(
         "Screen size",
-        format!("{} 24 x 80 &nbsp; {} 27 x 132", radio("sz", "24x80", !wide), radio("sz", "27x132", wide)),
+        format!(
+            "{} 24 x 80 &nbsp; {} 27 x 132",
+            radio("sz", "24x80", !wide),
+            radio("sz", "27x132", wide)
+        ),
     );
     t += &row("CCSID", select("cp", &ccsid_options(), cp));
     t += &row("Device name", input("dev", &device(f), 10));
@@ -92,7 +110,11 @@ fn show(rq: &Rq<'_>, s: &Saved, messages: Vec<Message>) -> Response {
     t += "<tr class=\"subrow\"><td colspan=\"2\">Behaviour</td></tr>\n";
     t += &row(
         "Colour map",
-        format!("{} QS/400 console &nbsp; {} Black on white", radio("col", "console", !bw), radio("col", "bw", bw)),
+        format!(
+            "{} QS/400 console &nbsp; {} Black on white",
+            radio("col", "console", !bw),
+            radio("col", "bw", bw)
+        ),
     );
     t += &row("Connect automatically", checkbox("ac", ss.auto_connect));
     let aso = if rq.allowed(policy::S5250_AUTOSIGNON) {

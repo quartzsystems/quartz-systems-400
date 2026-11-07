@@ -21,13 +21,17 @@ fn defined() -> BTreeSet<String> {
         .filter_map(Result::ok)
         .filter_map(|e| {
             let p = e.path();
-            (p.extension()? == "cmd").then(|| p.file_stem()?.to_str().map(str::to_ascii_uppercase))?
+            (p.extension()? == "cmd")
+                .then(|| p.file_stem()?.to_str().map(str::to_ascii_uppercase))?
         })
         .collect()
 }
 
 fn shipped() -> BTreeSet<String> {
-    menus::shipped::FILES.iter().map(|(n, _)| n.to_ascii_uppercase()).collect()
+    menus::shipped::FILES
+        .iter()
+        .map(|(n, _)| n.to_ascii_uppercase())
+        .collect()
 }
 
 /// Every option's target: (menu, option, action, has text).
@@ -77,7 +81,12 @@ fn every_option_leads_somewhere() {
             _ => {}
         }
     }
-    assert!(bad.is_empty(), "{} options lead nowhere:\n{}", bad.len(), bad.join("\n"));
+    assert!(
+        bad.is_empty(),
+        "{} options lead nowhere:\n{}",
+        bad.len(),
+        bad.join("\n")
+    );
 }
 
 /// The lists hold nothing a later change shipped, nothing no option
@@ -87,14 +96,18 @@ fn the_unavailable_lists_stay_true() {
     let cmds = defined();
     let menus_shipped = shipped();
     let opts = options();
-    let doc = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/MENUS.md"))
-        .expect("docs/MENUS.md");
+    let doc =
+        std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/MENUS.md"))
+            .expect("docs/MENUS.md");
     let mut bad = Vec::new();
     for m in unavailable::MENUS {
         if menus_shipped.contains(*m) {
             bad.push(format!("menu {m} is shipped now"));
         }
-        if !opts.iter().any(|(_, _, a, _)| matches!(a, Action::Menu(x) if x.eq_ignore_ascii_case(m))) {
+        if !opts
+            .iter()
+            .any(|(_, _, a, _)| matches!(a, Action::Menu(x) if x.eq_ignore_ascii_case(m)))
+        {
             bad.push(format!("no option names menu {m}"));
         }
         if !doc.contains(&format!("| `{m}` |")) {
@@ -123,23 +136,35 @@ fn the_unavailable_lists_stay_true() {
 /// menus (the rows' texts are ours or blank, as in the generated menus).
 #[test]
 fn curated_groups_follow_the_captures() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/golden/addendum/menus");
+    let dir =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/golden/addendum/menus");
     let groups = [
-        "CMDOBJMGT", "CMDFILE", "CMDSAVRST", "CMDWRKMGT", "CMDDTAMGT", "CMDSYSCTL", "CMDCMNMGT",
-        "CMDDSTSRV", "CMDPRBMGT", "CMDMSGHDL",
+        "CMDOBJMGT",
+        "CMDFILE",
+        "CMDSAVRST",
+        "CMDWRKMGT",
+        "CMDDTAMGT",
+        "CMDSYSCTL",
+        "CMDCMNMGT",
+        "CMDDSTSRV",
+        "CMDPRBMGT",
+        "CMDMSGHDL",
     ];
     let mut bad = Vec::new();
     for g in groups {
         let mut theirs = std::collections::BTreeMap::new();
         for page in ["", "-2", "-3", "-4", "-5"] {
-            let Ok(text) = std::fs::read_to_string(dir.join(format!("menu-{}{page}.txt", g.to_ascii_lowercase())))
-            else {
+            let Ok(text) = std::fs::read_to_string(
+                dir.join(format!("menu-{}{page}.txt", g.to_ascii_lowercase())),
+            ) else {
                 continue;
             };
             for row in text.lines().skip(3).take(17) {
                 let words: Vec<&str> = row.split_whitespace().collect();
-                if let (Some(n), Some(name)) = (words.first().and_then(|w| w.strip_suffix('.')), words.last())
-                    && let Ok(n) = n.parse::<u16>()
+                if let (Some(n), Some(name)) = (
+                    words.first().and_then(|w| w.strip_suffix('.')),
+                    words.last(),
+                ) && let Ok(n) = n.parse::<u16>()
                     && words.len() > 2
                 {
                     theirs.insert(n, (*name).to_string());
@@ -153,7 +178,9 @@ fn curated_groups_follow_the_captures() {
         for a in &group.panel(g).expect("panel").areas {
             let Area::Menu(m) = a else { continue };
             for i in m.all_items() {
-                let uim::model::MenuOption::Number(n) = i.option else { continue };
+                let uim::model::MenuOption::Number(n) = i.option else {
+                    continue;
+                };
                 let name = match &i.action {
                     Action::Menu(x) => x.clone(),
                     Action::Cmd(x) => unavailable::command_name(x),

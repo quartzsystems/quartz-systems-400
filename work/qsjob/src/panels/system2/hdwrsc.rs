@@ -64,7 +64,15 @@ fn rows(rows: &[view::Row], list: &str) -> Rows {
                 "RSCS" => vec![
                     v("RSCNAME", r.indented()),
                     // The type of a type-model.
-                    v("RSCTYPE", r.type_col.trim().split('-').next().unwrap_or("").to_string()),
+                    v(
+                        "RSCTYPE",
+                        r.type_col
+                            .trim()
+                            .split('-')
+                            .next()
+                            .unwrap_or("")
+                            .to_string(),
+                    ),
                     v("RSCSTS", r.status.clone()),
                     v("RSCTEXT", r.text.clone()),
                 ],
@@ -87,7 +95,11 @@ fn rows(rows: &[view::Row], list: &str) -> Rows {
 
 /// The name variable of a list.
 fn name_var(list: &str) -> &'static str {
-    if list == "RSCCSA" { "RSCNAM12" } else { "RSCNAME" }
+    if list == "RSCCSA" {
+        "RSCNAM12"
+    } else {
+        "RSCNAME"
+    }
 }
 
 /// Run the display; `None` when the command is not one for a panel
@@ -109,7 +121,13 @@ pub fn run(
     Some(list_loop(job, host, surface, spec, work))
 }
 
-fn list_loop(job: &mut Job, host: &Host, surface: &mut Surface, spec: &TypeSpec, work: bool) -> Result<String, Fail> {
+fn list_loop(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    spec: &TypeSpec,
+    work: bool,
+) -> Result<String, Fail> {
     let mut d = dialog(host, "QUIHDWRSC")?;
     d.copyright = false;
     let (panel, list) = panel_of(spec, work);
@@ -118,7 +136,11 @@ fn list_loop(job: &mut Job, host: &Host, surface: &mut Surface, spec: &TypeSpec,
         let t = table(host, refresh)?;
         refresh = false;
         d.set("RSCKIND", &words(host)(spec.word, &[]));
-        fill(&mut d, list, rows(&view::list(&t, spec, &mut words(host)), list));
+        fill(
+            &mut d,
+            list,
+            rows(&view::list(&t, spec, &mut words(host)), list),
+        );
         match show(&mut d, surface, panel)? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Return(0) if !work => return Ok(String::new()),
@@ -158,7 +180,11 @@ enum Next {
 
 /// F6: the list printed by the service.
 fn print(job: &mut Job, host: &Host, spec: &TypeSpec) -> Option<LineMsg> {
-    exec(job, host, &format!("DSPHDWRSC TYPE({}) OUTPUT(*PRINT)", spec.ty))
+    exec(
+        job,
+        host,
+        &format!("DSPHDWRSC TYPE({}) OUTPUT(*PRINT)", spec.ty),
+    )
 }
 
 /// Option 7: the resource's detail.
@@ -193,7 +219,10 @@ fn detail(host: &Host, surface: &mut Surface, t: &Table, name: &str) -> Result<N
 /// The configuration descriptions of `name`: a first row to create one,
 /// then each line and device description that names it.
 fn cfgd_rows(host: &Host, name: &str) -> (Rows, Vec<(String, String)>) {
-    let found = host.link.borrow_mut().with(|l| l.hw_cfgds(name.to_string()));
+    let found = host
+        .link
+        .borrow_mut()
+        .with(|l| l.hw_cfgds(name.to_string()));
     let mut rows: Rows = vec![vec![("CFGD".into(), String::new())]];
     for (n, _) in &found {
         rows.push(vec![("CFGD".into(), n.clone())]);
@@ -202,10 +231,19 @@ fn cfgd_rows(host: &Host, name: &str) -> (Rows, Vec<(String, String)>) {
 }
 
 /// Option 5: work with the configuration descriptions of a resource.
-fn cfgds(job: &mut Job, host: &Host, surface: &mut Surface, t: &Table, name: &str) -> Result<Next, Fail> {
+fn cfgds(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    t: &Table,
+    name: &str,
+) -> Result<Next, Fail> {
     let mut d = dialog(host, "QUIHDWRSC")?;
     d.copyright = false;
-    let text = t.get(name).map(|r| words(host)(view::kind_id(r.kind), &[])).unwrap_or_default();
+    let text = t
+        .get(name)
+        .map(|r| words(host)(view::kind_id(r.kind), &[]))
+        .unwrap_or_default();
     let kind = t.get(name).map(|r| r.kind);
     d.set("DRSC", name);
     d.set("DTEXT", &text);
@@ -220,15 +258,25 @@ fn cfgds(job: &mut Job, host: &Host, surface: &mut Surface, t: &Table, name: &st
                     let cfg = ch.row.checked_sub(1).and_then(|i| found.get(i));
                     let line = match (ch.option.as_str(), cfg) {
                         ("1", None) => match kind {
-                            Some(hwrsrc::Kind::Port) => Some(format!("?CRTLINETH RSRCNAME({name})")),
-                            Some(hwrsrc::Kind::Tape) => Some(format!("?CRTDEVTAP RSRCNAME({name})")),
-                            Some(hwrsrc::Kind::Optical) => Some(format!("?CRTDEVOPT RSRCNAME({name})")),
-                            Some(hwrsrc::Kind::TapeLibrary) => Some(format!("?CRTDEVMLB RSRCNAME({name})")),
+                            Some(hwrsrc::Kind::Port) => {
+                                Some(format!("?CRTLINETH RSRCNAME({name})"))
+                            }
+                            Some(hwrsrc::Kind::Tape) => {
+                                Some(format!("?CRTDEVTAP RSRCNAME({name})"))
+                            }
+                            Some(hwrsrc::Kind::Optical) => {
+                                Some(format!("?CRTDEVOPT RSRCNAME({name})"))
+                            }
+                            Some(hwrsrc::Kind::TapeLibrary) => {
+                                Some(format!("?CRTDEVMLB RSRCNAME({name})"))
+                            }
                             _ => None,
                         },
                         ("5", Some((n, ty))) if ty == "*LIND" => Some(format!("WRKLIND LIND({n})")),
                         ("5", Some((n, _))) => Some(format!("WRKDEVD DEVD({n})")),
-                        ("8", Some((n, ty))) if ty == "*LIND" => Some(format!("WRKCFGSTS CFGTYPE(*LIN) CFGD({n})")),
+                        ("8", Some((n, ty))) if ty == "*LIND" => {
+                            Some(format!("WRKCFGSTS CFGTYPE(*LIN) CFGD({n})"))
+                        }
                         ("8", Some((n, _))) => Some(format!("WRKCFGSTS CFGTYPE(*DEV) CFGD({n})")),
                         _ => None,
                     };
@@ -254,7 +302,9 @@ fn sub_list(job: &mut Job, host: &Host, surface: &mut Surface, name: &str) -> Re
     loop {
         let tbl = table(host, refresh)?;
         refresh = false;
-        let Some(top) = tbl.get(name) else { return Ok(Next::Back) };
+        let Some(top) = tbl.get(name) else {
+            return Ok(Next::Back);
+        };
         dlg.set("RSCKIND", &words(host)(view::kind_id(top.kind), &[]));
         let picked = tbl.tree(|x| x.name == top.name || x.logical == top.name, true, false);
         let list: Vec<view::Row> = picked
@@ -296,4 +346,3 @@ fn sub_list(job: &mut Job, host: &Host, surface: &mut Surface, name: &str) -> Re
         }
     }
 }
-

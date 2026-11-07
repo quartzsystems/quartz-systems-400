@@ -60,17 +60,26 @@ fn der_of(bytes: &[u8], label: &str) -> Result<Vec<u8>, Error> {
 impl DbKey {
     /// From a PKCS#8 key and a certificate, PEM or DER each.
     pub fn from_bytes(key: &[u8], cert: &[u8], development: bool) -> Result<Self, Error> {
-        let key = PrivateKey::from_pkcs8_der(&der_of(key, "PRIVATE KEY")?).map_err(|e| Error::Key(e.to_string()))?;
+        let key = PrivateKey::from_pkcs8_der(&der_of(key, "PRIVATE KEY")?)
+            .map_err(|e| Error::Key(e.to_string()))?;
         let cert = der_of(cert, "CERTIFICATE")?;
         let c = Certificate::from_der(&cert).map_err(|e| Error::Key(e.to_string()))?;
-        let spki = c.tbs_certificate().subject_public_key_info().to_der().map_err(|e| Error::Key(e.to_string()))?;
+        let spki = c
+            .tbs_certificate()
+            .subject_public_key_info()
+            .to_der()
+            .map_err(|e| Error::Key(e.to_string()))?;
         if spki != key.spki_der().map_err(|e| Error::Key(e.to_string()))? {
             return Err(Error::Key("the certificate is not the key's".into()));
         }
         if !key.algorithm().is_rsa() {
             return Err(Error::Key("a Secure Boot db key is RSA".into()));
         }
-        Ok(Self { key, cert, development })
+        Ok(Self {
+            key,
+            cert,
+            development,
+        })
     }
 
     /// The development pair.
@@ -80,7 +89,8 @@ impl DbKey {
 
     /// From files.
     pub fn load(key: &Path, cert: &Path) -> Result<Self, Error> {
-        let read = |p: &Path| std::fs::read(p).map_err(|e| Error::Key(format!("{}: {e}", p.display())));
+        let read =
+            |p: &Path| std::fs::read(p).map_err(|e| Error::Key(format!("{}: {e}", p.display())));
         Self::from_bytes(&read(key)?, &read(cert)?, false)
     }
 
@@ -90,7 +100,9 @@ impl DbKey {
         match (std::env::var_os(KEY_ENV), std::env::var_os(CERT_ENV)) {
             (Some(k), Some(c)) => Self::load(Path::new(&k), Path::new(&c)),
             (None, None) => Self::development(),
-            _ => Err(Error::Key(format!("set both {KEY_ENV} and {CERT_ENV}, or neither"))),
+            _ => Err(Error::Key(format!(
+                "set both {KEY_ENV} and {CERT_ENV}, or neither"
+            ))),
         }
     }
 
@@ -98,8 +110,14 @@ impl DbKey {
     pub fn issuer_and_serial(&self) -> Result<(Vec<u8>, Vec<u8>), Error> {
         let c = Certificate::from_der(&self.cert).map_err(|e| Error::Key(e.to_string()))?;
         let tbs = c.tbs_certificate();
-        let issuer = tbs.issuer().to_der().map_err(|e| Error::Key(e.to_string()))?;
-        let serial = tbs.serial_number().to_der().map_err(|e| Error::Key(e.to_string()))?;
+        let issuer = tbs
+            .issuer()
+            .to_der()
+            .map_err(|e| Error::Key(e.to_string()))?;
+        let serial = tbs
+            .serial_number()
+            .to_der()
+            .map_err(|e| Error::Key(e.to_string()))?;
         Ok((issuer, serial))
     }
 
@@ -113,5 +131,9 @@ impl DbKey {
 /// SHA-256 of a DER certificate as `AB:CD:...`.
 #[must_use]
 pub fn fingerprint(cert: &[u8]) -> String {
-    Sha256::digest(cert).iter().map(|b| format!("{b:02X}")).collect::<Vec<_>>().join(":")
+    Sha256::digest(cert)
+        .iter()
+        .map(|b| format!("{b:02X}"))
+        .collect::<Vec<_>>()
+        .join(":")
 }

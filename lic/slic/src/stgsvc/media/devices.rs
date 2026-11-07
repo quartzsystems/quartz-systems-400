@@ -16,8 +16,8 @@ use store::txn::Txn;
 use wm::obj::devd::{DevStatus, Devd};
 use wm::obj::devmed::{MediaDevice, MediaKind, virtual_rsrc};
 
-use hwrsrc::{Kind, Status};
 use crate::ipl::system::{System, now_unix};
+use hwrsrc::{Kind, Status};
 
 /// Device description not found.
 pub(crate) const NOT_FOUND: &str = "CPF2702";
@@ -50,7 +50,10 @@ pub(crate) fn all(system: &mut System) -> Result<Vec<(String, Devd)>, String> {
     with_qsys(system, |txn, qsys| {
         let mut out = Vec::new();
         for (k, id) in ops::list(txn, qsys, Some(types::DEVD)).map_err(|e| e.to_string())? {
-            if let Ok(d) = wm::obj::read(txn, id).map_err(|e| e.to_string()).and_then(|b| Devd::decode(&b).map_err(|e| e.to_string())) {
+            if let Ok(d) = wm::obj::read(txn, id)
+                .map_err(|e| e.to_string())
+                .and_then(|b| Devd::decode(&b).map_err(|e| e.to_string()))
+            {
                 out.push((k.name.to_string(), d));
             }
         }
@@ -62,12 +65,12 @@ pub(crate) fn all(system: &mut System) -> Result<Vec<(String, Devd)>, String> {
 /// is not a media device.
 pub(crate) fn read(system: &mut System, name: &str) -> Result<Devd, String> {
     let name = name.to_ascii_uppercase();
-    with_qsys(system, |txn, qsys| {
-        match find(txn, qsys, &name)? {
-            Some((_, d)) if d.media.is_some() => Ok(d),
-            Some(_) => Err(format!("{NOT_FOUND} device {name} is not a tape, optical or media library device")),
-            None => Err(format!("{NOT_FOUND} device description {name} not found")),
-        }
+    with_qsys(system, |txn, qsys| match find(txn, qsys, &name)? {
+        Some((_, d)) if d.media.is_some() => Ok(d),
+        Some(_) => Err(format!(
+            "{NOT_FOUND} device {name} is not a tape, optical or media library device"
+        )),
+        None => Err(format!("{NOT_FOUND} device description {name} not found")),
     })
 }
 
@@ -75,7 +78,8 @@ pub(crate) fn read(system: &mut System, name: &str) -> Result<Devd, String> {
 pub(crate) fn write(system: &mut System, name: &str, d: &Devd) -> Result<(), String> {
     let name = name.to_ascii_uppercase();
     with_qsys(system, |txn, qsys| {
-        let (id, _) = find(txn, qsys, &name)?.ok_or_else(|| format!("{NOT_FOUND} device description {name} not found"))?;
+        let (id, _) = find(txn, qsys, &name)?
+            .ok_or_else(|| format!("{NOT_FOUND} device description {name} not found"))?;
         wm::obj::write(txn, id, &d.encode()).map_err(|e| e.to_string())?;
         ops::change_text(txn, id, &d.text, now_unix()).map_err(|e| e.to_string())
     })
@@ -147,13 +151,18 @@ pub(crate) fn node_of(system: &mut System, rsrc: &str) -> Option<String> {
 
 /// The status a media device takes when varied on.
 fn on_status(system: &mut System, name: &str, d: &Devd) -> DevStatus {
-    let Some(m) = &d.media else { return DevStatus::VariedOn };
+    let Some(m) = &d.media else {
+        return DevStatus::VariedOn;
+    };
     if !m.is_virtual() && !present(system, m.kind, &m.rsrcname) {
         return DevStatus::Failed;
     }
     let taken = all(system).unwrap_or_default().into_iter().any(|(n, o)| {
         n != name
-            && !matches!(o.status, DevStatus::VariedOff | DevStatus::Failed | DevStatus::Unavailable)
+            && !matches!(
+                o.status,
+                DevStatus::VariedOff | DevStatus::Failed | DevStatus::Unavailable
+            )
             && o.media.as_ref().is_some_and(|x| x.rsrcname == m.rsrcname)
     });
     if taken {
@@ -167,14 +176,29 @@ fn on_status(system: &mut System, name: &str, d: &Devd) -> DevStatus {
 
 /// Vary media device `name` on or off: the completion message, or the
 /// refusal (`CPD26D4` when the resource is gone; the device is FAILED).
-pub(crate) fn vary(system: &mut System, name: &str, on: bool) -> Result<Vec<crate::stgsvc::cmn::Note>, String> {
+pub(crate) fn vary(
+    system: &mut System,
+    name: &str,
+    on: bool,
+) -> Result<Vec<crate::stgsvc::cmn::Note>, String> {
     let name = name.to_ascii_uppercase();
     let mut d = read(system, &name)?;
-    d.status = if on { on_status(system, &name, &d) } else { DevStatus::VariedOff };
+    d.status = if on {
+        on_status(system, &name, &d)
+    } else {
+        DevStatus::VariedOff
+    };
     write(system, &name, &d)?;
     if d.status == DevStatus::Failed {
-        let rsrc = d.media.as_ref().map(|m| m.rsrcname.clone()).unwrap_or_default();
-        return Err(format!("{} resource {rsrc} of device {name} not found", cmncfg::msgs::RSRC_NOT_FOUND));
+        let rsrc = d
+            .media
+            .as_ref()
+            .map(|m| m.rsrcname.clone())
+            .unwrap_or_default();
+        return Err(format!(
+            "{} resource {rsrc} of device {name} not found",
+            cmncfg::msgs::RSRC_NOT_FOUND
+        ));
     }
     Ok(vec![(
         if on {
@@ -196,7 +220,11 @@ pub(crate) fn usable(d: &Devd) -> bool {
 pub(crate) fn vary_online(system: &mut System) {
     let devs = all(system).unwrap_or_default();
     for (n, d) in devs.into_iter().filter(|(_, d)| d.media.is_some()) {
-        let r = if d.online { vary(system, &n, true) } else { vary(system, &n, false) };
+        let r = if d.online {
+            vary(system, &n, true)
+        } else {
+            vary(system, &n, false)
+        };
         if let Err(e) = r {
             eprintln!("qsstg: vary {n} at IPL: {e}");
         }
@@ -219,7 +247,9 @@ pub(crate) fn autoconfigure(system: &mut System) -> usize {
         .filter_map(|r| match r.kind {
             Kind::Tape => Some((r.name.clone(), MediaKind::Tape)),
             Kind::TapeLibrary => Some((r.name.clone(), MediaKind::TapeLibrary)),
-            Kind::Optical if r.location.starts_with("sr") => Some((r.name.clone(), MediaKind::Optical)),
+            Kind::Optical if r.location.starts_with("sr") => {
+                Some((r.name.clone(), MediaKind::Optical))
+            }
             _ => None,
         })
         .collect();
@@ -283,16 +313,38 @@ pub(crate) fn describe(name: &str, d: &Devd) -> String {
             row("Unload device at vary off  ", "UNLOAD", yn(m.unload));
         }
         MediaKind::TapeLibrary => {
-            let wait = |n: u32| if n == 0 { "*SYSGEN".to_string() } else { n.to_string() };
+            let wait = |n: u32| {
+                if n == 0 {
+                    "*SYSGEN".to_string()
+                } else {
+                    n.to_string()
+                }
+            };
             row("Unload wait time ", "UNLOADWAIT", &wait(m.unload_wait));
-            row("Maximum device wait time ", "MAXDEVTIME", &wait(m.max_dev_time));
-            row("Generate cartridge ids ", "GENCTGID", if m.gen_ctg_sysgen { "*SYSGEN" } else { "*VOLID" });
+            row(
+                "Maximum device wait time ",
+                "MAXDEVTIME",
+                &wait(m.max_dev_time),
+            );
+            row(
+                "Generate cartridge ids ",
+                "GENCTGID",
+                if m.gen_ctg_sysgen {
+                    "*SYSGEN"
+                } else {
+                    "*VOLID"
+                },
+            );
         }
         MediaKind::Optical => {}
     }
     row("Status ", "", d.status.text());
     row("Message queue  ", "MSGQ", mn);
     row("  Library  ", "", ml);
-    row("Text ", "TEXT", if d.text.is_empty() { "*BLANK" } else { &d.text });
+    row(
+        "Text ",
+        "TEXT",
+        if d.text.is_empty() { "*BLANK" } else { &d.text },
+    );
     s
 }

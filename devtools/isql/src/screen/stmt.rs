@@ -35,7 +35,11 @@ const fn n(sys: &'static str, sql: &'static str) -> Label {
 /// The text of `l` under the naming: an identifier read through `w`.
 fn say(l: &Label, sql: bool, w: &Words<'_>) -> String {
     let s = if sql { l.sql } else { l.sys };
-    if s.len() == 7 && s.starts_with("TXT") { w(s) } else { s.to_string() }
+    if s.len() == 7 && s.starts_with("TXT") {
+        w(s)
+    } else {
+        s.to_string()
+    }
 }
 
 /// One item of a prompt.
@@ -146,7 +150,12 @@ pub const FILE: Label = n(id::FILE, id::TABLE);
 const LIBRARY: Label = t(id::LIBRARY);
 
 const fn text(row: usize, s: &'static str) -> Item {
-    Item::Text { row, col: 2, attr: Attr::Blue, text: t(s) }
+    Item::Text {
+        row,
+        col: 2,
+        attr: Attr::Blue,
+        text: t(s),
+    }
 }
 
 #[allow(clippy::too_many_arguments)] // the columns of one entry
@@ -161,7 +170,18 @@ const fn entry(
     default: &'static str,
     hints: &'static [(usize, Label)],
 ) -> Item {
-    Item::Entry { row, col, label, end, field, width, lines: 1, name, default, hints }
+    Item::Entry {
+        row,
+        col,
+        label,
+        end,
+        field,
+        width,
+        lines: 1,
+        name,
+        default,
+        hints,
+    }
 }
 
 const NAMES_KEYS: &[(usize, usize, Label)] = &[
@@ -173,11 +193,19 @@ const NAMES_KEYS: &[(usize, usize, Label)] = &[
     (23, 2, t(id::F21)),
 ];
 
-const SHORT_KEYS: &[(usize, usize, Label)] =
-    &[(23, 2, t(id::F3)), (23, 12, t(id::F5)), (23, 25, t(id::F12)), (23, 38, t(id::F21))];
+const SHORT_KEYS: &[(usize, usize, Label)] = &[
+    (23, 2, t(id::F3)),
+    (23, 12, t(id::F5)),
+    (23, 25, t(id::F12)),
+    (23, 38, t(id::F21)),
+];
 
-const SHORT_KEYS_22: &[(usize, usize, Label)] =
-    &[(22, 2, t(id::F3)), (22, 12, t(id::F5)), (22, 25, t(id::F12)), (22, 38, t(id::F21))];
+const SHORT_KEYS_22: &[(usize, usize, Label)] = &[
+    (22, 2, t(id::F3)),
+    (22, 12, t(id::F5)),
+    (22, 25, t(id::F12)),
+    (22, 38, t(id::F21)),
+];
 
 const PROMPT_KEYS_23: &[(usize, usize, Label)] = &[
     (23, 2, t(id::F3)),
@@ -216,7 +244,17 @@ pub const ALTER_TABLE: Panel = Panel {
     items: &[
         text(3, id::INFO),
         entry(5, 4, FILE, 23, 27, 20, "TABLE", "", &[(52, t(id::NAME_F4))]),
-        entry(6, 6, LIBRARY, 23, 29, 12, "LIB", "", &[(52, t(id::NAME_F4))]),
+        entry(
+            6,
+            6,
+            LIBRARY,
+            23,
+            29,
+            12,
+            "LIB",
+            "",
+            &[(52, t(id::NAME_F4))],
+        ),
         entry(
             8,
             4,
@@ -244,11 +282,39 @@ pub const CALL: Panel = Panel {
     words: "CALL",
     items: &[
         text(3, id::INFO),
-        entry(5, 4, t("TXT0A17"), 36, 40, 18, "PROC", "", &[(65, t(id::NAME))]),
+        entry(
+            5,
+            4,
+            t("TXT0A17"),
+            36,
+            40,
+            18,
+            "PROC",
+            "",
+            &[(65, t(id::NAME))],
+        ),
         entry(6, 6, LIBRARY, 36, 42, 12, "LIB", "", &[(65, t(id::NAME))]),
-        Item::Text { row: 8, col: 2, attr: Attr::HighIntensity, text: t("TXT0A18") },
-        Item::Text { row: 8, col: 16, attr: Attr::HighIntensity, text: t("TXT0A19") },
-        Item::Numbered { row: 9, count: 12, total: CALL_PARMS, number: 7, field: 16, width: 53, name: "PARM" },
+        Item::Text {
+            row: 8,
+            col: 2,
+            attr: Attr::HighIntensity,
+            text: t("TXT0A18"),
+        },
+        Item::Text {
+            row: 8,
+            col: 16,
+            attr: Attr::HighIntensity,
+            text: t("TXT0A19"),
+        },
+        Item::Numbered {
+            row: 9,
+            count: 12,
+            total: CALL_PARMS,
+            number: 7,
+            field: 16,
+            width: 53,
+            name: "PARM",
+        },
     ],
     keys: &[
         (22, 2, t(id::F3)),
@@ -296,13 +362,36 @@ pub const COMMENT_ON: Panel = Panel {
     more: None,
 };
 
-const HOLD: &[Item] = &[text(3, id::CHOICE), entry(5, 4, t("TXT0A24"), 35, 39, 1, "HOLD", "N", &[(43, t(id::YES_NO))])];
+const HOLD: &[Item] = &[
+    text(3, id::CHOICE),
+    entry(
+        5,
+        4,
+        t("TXT0A24"),
+        35,
+        39,
+        1,
+        "HOLD",
+        "N",
+        &[(43, t(id::YES_NO))],
+    ),
+];
 
 /// Specify COMMIT Statement.
-pub const COMMIT: Panel = Panel { words: "COMMIT", items: HOLD, keys: SHORT_KEYS, more: None };
+pub const COMMIT: Panel = Panel {
+    words: "COMMIT",
+    items: HOLD,
+    keys: SHORT_KEYS,
+    more: None,
+};
 
 /// Specify ROLLBACK Statement.
-pub const ROLLBACK: Panel = Panel { words: "ROLLBACK", items: HOLD, keys: SHORT_KEYS, more: None };
+pub const ROLLBACK: Panel = Panel {
+    words: "ROLLBACK",
+    items: HOLD,
+    keys: SHORT_KEYS,
+    more: None,
+};
 
 /// Specify CONNECT Statement.
 pub const CONNECT: Panel = Panel {
@@ -336,26 +425,81 @@ const WHICH_CONNECTION: &[Item] = &[
         1,
         "CONN",
         "",
-        &[(62, t(id::RELATIONAL)), (64, t(id::DATABASE)), (62, t("2=CURRENT")), (62, t("3=ALL"))],
+        &[
+            (62, t(id::RELATIONAL)),
+            (64, t(id::DATABASE)),
+            (62, t("2=CURRENT")),
+            (62, t("3=ALL")),
+        ],
     ),
 ];
 
 /// Specify DISCONNECT Statement.
-pub const DISCONNECT: Panel = Panel { words: "DISCONNECT", items: WHICH_CONNECTION, keys: SHORT_KEYS, more: None };
+pub const DISCONNECT: Panel = Panel {
+    words: "DISCONNECT",
+    items: WHICH_CONNECTION,
+    keys: SHORT_KEYS,
+    more: None,
+};
 
 /// Specify RELEASE Statement.
-pub const RELEASE: Panel = Panel { words: "RELEASE", items: WHICH_CONNECTION, keys: SHORT_KEYS, more: None };
+pub const RELEASE: Panel = Panel {
+    words: "RELEASE",
+    items: WHICH_CONNECTION,
+    keys: SHORT_KEYS,
+    more: None,
+};
 
 /// Specify CREATE ALIAS Statement.
 pub const CREATE_ALIAS: Panel = Panel {
     words: "CREATE ALIAS",
     items: &[
         text(3, id::CHOICES),
-        entry(5, 4, t("TXT0A2A"), 27, 31, 20, "ALIAS", "", &[(56, t(id::NAME))]),
-        entry(6, 6, LIBRARY, 27, 33, 12, "LIB", "", &[(56, t(id::NAME_F4))]),
+        entry(
+            5,
+            4,
+            t("TXT0A2A"),
+            27,
+            31,
+            20,
+            "ALIAS",
+            "",
+            &[(56, t(id::NAME))],
+        ),
+        entry(
+            6,
+            6,
+            LIBRARY,
+            27,
+            33,
+            12,
+            "LIB",
+            "",
+            &[(56, t(id::NAME_F4))],
+        ),
         entry(8, 4, FILE, 27, 31, 20, "TABLE", "", &[(56, t(id::NAME_F4))]),
-        entry(9, 6, LIBRARY, 27, 33, 12, "TABLELIB", "", &[(56, t(id::NAME_F4))]),
-        entry(10, 4, t("TXT0A2B"), 27, 31, 12, "MEMBER", "", &[(56, t("TXT0A2C")), (56, t("TXT0A2D"))]),
+        entry(
+            9,
+            6,
+            LIBRARY,
+            27,
+            33,
+            12,
+            "TABLELIB",
+            "",
+            &[(56, t(id::NAME_F4))],
+        ),
+        entry(
+            10,
+            4,
+            t("TXT0A2B"),
+            27,
+            31,
+            12,
+            "MEMBER",
+            "",
+            &[(56, t("TXT0A2C")), (56, t("TXT0A2D"))],
+        ),
     ],
     keys: NAMES_KEYS,
     more: None,
@@ -367,8 +511,28 @@ pub const CREATE_COLLECTION: Panel = Panel {
     items: &[
         text(3, id::CHOICE),
         entry(5, 4, LIBRARY, 35, 39, 12, "LIB", "", &[(54, t(id::NAME))]),
-        entry(7, 4, t("IN ASP"), 35, 39, 12, "ASP", "", &[(54, t("TXT0A2E"))]),
-        entry(8, 4, t("WITH DATA DICTIONARY"), 35, 39, 1, "DICT", "N", &[(54, t(id::YES_NO))]),
+        entry(
+            7,
+            4,
+            t("IN ASP"),
+            35,
+            39,
+            12,
+            "ASP",
+            "",
+            &[(54, t("TXT0A2E"))],
+        ),
+        entry(
+            8,
+            4,
+            t("WITH DATA DICTIONARY"),
+            35,
+            39,
+            1,
+            "DICT",
+            "N",
+            &[(54, t(id::YES_NO))],
+        ),
     ],
     keys: SHORT_KEYS,
     more: None,
@@ -379,9 +543,39 @@ pub const CREATE_PROCEDURE: Panel = Panel {
     words: "CREATE PROCEDURE",
     items: &[
         text(3, id::CHOICES),
-        entry(5, 4, t("TXT0A17"), 25, 29, 18, "PROC", "", &[(52, t(id::NAME))]),
-        entry(6, 6, LIBRARY, 25, 31, 12, "LIB", "", &[(52, t(id::NAME_F4))]),
-        entry(8, 4, t("RESULT SETS"), 25, 29, 5, "RESULT", "", &[(52, t("TXT0A2F"))]),
+        entry(
+            5,
+            4,
+            t("TXT0A17"),
+            25,
+            29,
+            18,
+            "PROC",
+            "",
+            &[(52, t(id::NAME))],
+        ),
+        entry(
+            6,
+            6,
+            LIBRARY,
+            25,
+            31,
+            12,
+            "LIB",
+            "",
+            &[(52, t(id::NAME_F4))],
+        ),
+        entry(
+            8,
+            4,
+            t("RESULT SETS"),
+            25,
+            29,
+            5,
+            "RESULT",
+            "",
+            &[(52, t("TXT0A2F"))],
+        ),
         entry(
             10,
             4,
@@ -391,7 +585,12 @@ pub const CREATE_PROCEDURE: Panel = Panel {
             7,
             "LANG",
             "",
-            &[(52, t("C, CL, COBOL, COBOLLE,")), (52, t("C++, FORTRAN, PLI,")), (52, t("REXX, RPG, RPGLE,")), (52, t("TXT0A31"))],
+            &[
+                (52, t("C, CL, COBOL, COBOLLE,")),
+                (52, t("C++, FORTRAN, PLI,")),
+                (52, t("REXX, RPG, RPGLE,")),
+                (52, t("TXT0A31")),
+            ],
         ),
         entry(
             15,
@@ -416,7 +615,17 @@ pub const CREATE_PROCEDURE: Panel = Panel {
 };
 
 const NAME_F4_56: &[(usize, Label)] = &[(56, t(id::NAME_F4))];
-const DROP_OPTION: Item = entry(8, 4, t(id::DROP_OPTION), 27, 31, 1, "OPT", "1", &[(56, t("1=CASCADE, 2=RESTRICT"))]);
+const DROP_OPTION: Item = entry(
+    8,
+    4,
+    t(id::DROP_OPTION),
+    27,
+    31,
+    1,
+    "OPT",
+    "1",
+    &[(56, t("1=CASCADE, 2=RESTRICT"))],
+);
 
 /// Specify DROP ALIAS Statement.
 pub const DROP_ALIAS: Panel = Panel {
@@ -473,8 +682,28 @@ pub const DROP_COLLECTION: Panel = Panel {
     words: "DROP COLLECTION",
     items: &[
         text(3, id::CHOICE),
-        entry(5, 4, LIBRARY, 35, 39, 12, "LIB", "", &[(56, t(id::NAME_F4))]),
-        entry(7, 4, t(id::DROP_OPTION), 35, 39, 1, "OPT", "1", &[(56, t("1=CASCADE, 2=RESTRICT"))]),
+        entry(
+            5,
+            4,
+            LIBRARY,
+            35,
+            39,
+            12,
+            "LIB",
+            "",
+            &[(56, t(id::NAME_F4))],
+        ),
+        entry(
+            7,
+            4,
+            t(id::DROP_OPTION),
+            35,
+            39,
+            1,
+            "OPT",
+            "1",
+            &[(56, t("1=CASCADE, 2=RESTRICT"))],
+        ),
     ],
     keys: PROMPT_KEYS_23,
     more: None,
@@ -485,8 +714,28 @@ pub const DROP_PACKAGE: Panel = Panel {
     words: "DROP PACKAGE",
     items: &[
         text(3, id::CHOICES),
-        entry(5, 4, t("TXT0A36"), 35, 39, 12, "PKG", "", &[(56, t(id::NAME_F4))]),
-        entry(6, 6, LIBRARY, 35, 41, 12, "LIB", "", &[(56, t(id::NAME_F4))]),
+        entry(
+            5,
+            4,
+            t("TXT0A36"),
+            35,
+            39,
+            12,
+            "PKG",
+            "",
+            &[(56, t(id::NAME_F4))],
+        ),
+        entry(
+            6,
+            6,
+            LIBRARY,
+            35,
+            41,
+            12,
+            "LIB",
+            "",
+            &[(56, t(id::NAME_F4))],
+        ),
     ],
     keys: PROMPT_KEYS_23,
     more: None,
@@ -494,8 +743,27 @@ pub const DROP_PACKAGE: Panel = Panel {
 
 /// GRANT's and REVOKE's names: three lines of objects, three of users.
 #[allow(clippy::too_many_arguments)] // the columns of one entry
-const fn lines3(row: usize, label: Label, end: usize, field: usize, width: usize, name: &'static str, hints: &'static [(usize, Label)]) -> Item {
-    Item::Entry { row, col: 4, label, end, field, width, lines: 3, name, default: "", hints }
+const fn lines3(
+    row: usize,
+    label: Label,
+    end: usize,
+    field: usize,
+    width: usize,
+    name: &'static str,
+    hints: &'static [(usize, Label)],
+) -> Item {
+    Item::Entry {
+        row,
+        col: 4,
+        label,
+        end,
+        field,
+        width,
+        lines: 3,
+        name,
+        default: "",
+        hints,
+    }
 }
 
 const PACKAGE_NAMES: &[Item] = &[
@@ -511,20 +779,36 @@ const TABLE_NAMES: &[Item] = &[
 ];
 
 /// Specify GRANT PACKAGE Statement.
-pub const GRANT_PACKAGE: Panel =
-    Panel { words: "GRANT PACKAGE", items: PACKAGE_NAMES, keys: GRANT_KEYS, more: Some(21) };
+pub const GRANT_PACKAGE: Panel = Panel {
+    words: "GRANT PACKAGE",
+    items: PACKAGE_NAMES,
+    keys: GRANT_KEYS,
+    more: Some(21),
+};
 
 /// Specify REVOKE PACKAGE Statement.
-pub const REVOKE_PACKAGE: Panel =
-    Panel { words: "REVOKE PACKAGE", items: PACKAGE_NAMES, keys: GRANT_KEYS, more: Some(21) };
+pub const REVOKE_PACKAGE: Panel = Panel {
+    words: "REVOKE PACKAGE",
+    items: PACKAGE_NAMES,
+    keys: GRANT_KEYS,
+    more: Some(21),
+};
 
 /// Specify GRANT TABLE Statement.
-pub const GRANT_TABLE: Panel =
-    Panel { words: "GRANT TABLE", items: TABLE_NAMES, keys: GRANT_TABLE_KEYS, more: Some(21) };
+pub const GRANT_TABLE: Panel = Panel {
+    words: "GRANT TABLE",
+    items: TABLE_NAMES,
+    keys: GRANT_TABLE_KEYS,
+    more: Some(21),
+};
 
 /// Specify REVOKE TABLE Statement.
-pub const REVOKE_TABLE: Panel =
-    Panel { words: "REVOKE TABLE", items: TABLE_NAMES, keys: GRANT_TABLE_KEYS, more: Some(21) };
+pub const REVOKE_TABLE: Panel = Panel {
+    words: "REVOKE TABLE",
+    items: TABLE_NAMES,
+    keys: GRANT_TABLE_KEYS,
+    more: Some(21),
+};
 
 /// Specify LABEL ON Statement.
 pub const LABEL_ON: Panel = Panel {
@@ -540,7 +824,12 @@ pub const LABEL_ON: Panel = Panel {
             1,
             "OBJ",
             "1",
-            &[(50, n("TXT0A1B", "TXT0A1C")), (50, n("TXT0A1D", "TXT0A1E")), (50, t("TXT0A1F")), (50, t("TXT0A3B"))],
+            &[
+                (50, n("TXT0A1B", "TXT0A1C")),
+                (50, n("TXT0A1D", "TXT0A1E")),
+                (50, t("TXT0A1F")),
+                (50, t("TXT0A3B")),
+            ],
         ),
     ],
     keys: SHORT_KEYS_22,
@@ -553,8 +842,28 @@ pub const LOCK_TABLE: Panel = Panel {
     items: &[
         text(3, id::CHOICES),
         entry(5, 4, FILE, 27, 31, 20, "TABLE", "", &[(56, t(id::NAME_F4))]),
-        entry(6, 6, LIBRARY, 27, 33, 12, "LIB", "", &[(56, t(id::NAME_F4))]),
-        entry(8, 4, t("TXT0A3C"), 27, 31, 1, "MODE", "1", &[(56, t("1=SHARE")), (56, t("2=EXCLUSIVE"))]),
+        entry(
+            6,
+            6,
+            LIBRARY,
+            27,
+            33,
+            12,
+            "LIB",
+            "",
+            &[(56, t(id::NAME_F4))],
+        ),
+        entry(
+            8,
+            4,
+            t("TXT0A3C"),
+            27,
+            31,
+            1,
+            "MODE",
+            "1",
+            &[(56, t("1=SHARE")), (56, t("2=EXCLUSIVE"))],
+        ),
     ],
     keys: NAMES_KEYS,
     more: None,
@@ -565,7 +874,17 @@ pub const RENAME: Panel = Panel {
     words: "RENAME",
     items: &[
         text(3, id::CHOICES),
-        entry(5, 4, t("TXT0A3D"), 23, 27, 1, "OBJ", "1", &[(52, n("TXT0A1B", "TXT0A1C")), (52, t("TXT0A3E"))]),
+        entry(
+            5,
+            4,
+            t("TXT0A3D"),
+            23,
+            27,
+            1,
+            "OBJ",
+            "1",
+            &[(52, n("TXT0A1B", "TXT0A1C")), (52, t("TXT0A3E"))],
+        ),
     ],
     keys: SHORT_KEYS,
     more: None,
@@ -574,7 +893,20 @@ pub const RENAME: Panel = Panel {
 /// Specify SET CONNECTION Statement.
 pub const SET_CONNECTION: Panel = Panel {
     words: "SET CONNECTION",
-    items: &[text(3, id::CHOICES), entry(5, 4, t("TXT0A3F"), 35, 39, 20, "RDB", "", &[(62, t(id::NAME_F4))])],
+    items: &[
+        text(3, id::CHOICES),
+        entry(
+            5,
+            4,
+            t("TXT0A3F"),
+            35,
+            39,
+            20,
+            "RDB",
+            "",
+            &[(62, t(id::NAME_F4))],
+        ),
+    ],
     keys: PROMPT_KEYS_23,
     more: None,
 };
@@ -644,7 +976,11 @@ pub fn of(kind: Kind) -> Option<&'static Panel> {
 /// A field's name: `NAME` alone, `NAME1` .. for several.
 #[must_use]
 pub fn field_name(name: &str, lines: usize, i: usize) -> String {
-    if lines == 1 { name.to_string() } else { format!("{name}{}", i + 1) }
+    if lines == 1 {
+        name.to_string()
+    } else {
+        format!("{name}{}", i + 1)
+    }
 }
 
 /// The pages a prompt has (CALL's parameters run over several).
@@ -665,10 +1001,16 @@ pub fn names(p: &Panel, page: usize) -> Vec<String> {
     let mut out = Vec::new();
     for item in p.items {
         match item {
-            Item::Entry { lines, name, .. } => out.extend((0..*lines).map(|i| field_name(name, *lines, i))),
-            Item::Numbered { count, total, name, .. } => {
+            Item::Entry { lines, name, .. } => {
+                out.extend((0..*lines).map(|i| field_name(name, *lines, i)))
+            }
+            Item::Numbered {
+                count, total, name, ..
+            } => {
                 let first = page * count;
-                out.extend((first..(first + count).min(*total)).map(|i| format!("{name}{}", i + 1)));
+                out.extend(
+                    (first..(first + count).min(*total)).map(|i| format!("{name}{}", i + 1)),
+                );
             }
             Item::Text { .. } => {}
         }
@@ -681,7 +1023,12 @@ pub fn names(p: &Panel, page: usize) -> Vec<String> {
 pub fn defaults(p: &Panel, typed: &Values) -> Values {
     let mut v = typed.clone();
     for item in p.items {
-        if let Item::Entry { name, default, lines: 1, .. } = item
+        if let Item::Entry {
+            name,
+            default,
+            lines: 1,
+            ..
+        } = item
             && !default.is_empty()
             && v.get(*name).is_none_or(|s| s.trim().is_empty())
         {
@@ -694,18 +1041,51 @@ pub fn defaults(p: &Panel, typed: &Values) -> Values {
 /// The prompt, page `page`, with `values`.
 #[must_use]
 #[allow(clippy::many_single_char_names)] // the panel, its screen, the words
-pub fn render(p: &Panel, values: &Values, page: usize, sql: bool, msg: Option<&str>, w: &Words<'_>) -> Screen {
+pub fn render(
+    p: &Panel,
+    values: &Values,
+    page: usize,
+    sql: bool,
+    msg: Option<&str>,
+    w: &Words<'_>,
+) -> Screen {
     let get = |n: &str, d: &str| values.get(n).cloned().unwrap_or_else(|| d.to_string());
     let mut s = blank();
     let heading = w(id::TITLE).replace("&1", p.words);
-    title(&mut s, (80 - heading.chars().count().min(80)) / 2 + 1, &heading);
+    title(
+        &mut s,
+        (80 - heading.chars().count().min(80)) / 2 + 1,
+        &heading,
+    );
     let mut first = None;
     let mut last_page = true;
     for item in p.items {
         match item {
-            Item::Text { row, col, attr, text } => put(&mut s, *row, *col, *attr, &say(text, sql, w)),
-            Item::Entry { row, col, label, end, field, width, lines, name, default, hints } => {
-                put(&mut s, *row, *col, Attr::Normal, &leader(&say(label, sql, w), *col, *end));
+            Item::Text {
+                row,
+                col,
+                attr,
+                text,
+            } => put(&mut s, *row, *col, *attr, &say(text, sql, w)),
+            Item::Entry {
+                row,
+                col,
+                label,
+                end,
+                field,
+                width,
+                lines,
+                name,
+                default,
+                hints,
+            } => {
+                put(
+                    &mut s,
+                    *row,
+                    *col,
+                    Attr::Normal,
+                    &leader(&say(label, sql, w), *col, *end),
+                );
                 for i in 0..*lines {
                     let f = field_name(name, *lines, i);
                     let d = if i == 0 { *default } else { "" };
@@ -716,7 +1096,15 @@ pub fn render(p: &Panel, values: &Values, page: usize, sql: bool, msg: Option<&s
                 }
                 first.get_or_insert((*row, *field));
             }
-            Item::Numbered { row, count, total, number, field, width, name } => {
+            Item::Numbered {
+                row,
+                count,
+                total,
+                number,
+                field,
+                width,
+                name,
+            } => {
                 let start = page * count;
                 for (k, i) in (start..(start + count).min(*total)).enumerate() {
                     let num = (i + 1).to_string();
@@ -731,8 +1119,13 @@ pub fn render(p: &Panel, values: &Values, page: usize, sql: bool, msg: Option<&s
     if let Some(r) = p.more {
         more(&mut s, r, 79, last_page);
     }
-    let shown: Vec<(usize, usize, String)> = p.keys.iter().map(|(r, c, l)| (*r, *c, say(l, sql, w))).collect();
-    let refs: Vec<(usize, usize, &str)> = shown.iter().map(|(r, c, l)| (*r, *c, l.as_str())).collect();
+    let shown: Vec<(usize, usize, String)> = p
+        .keys
+        .iter()
+        .map(|(r, c, l)| (*r, *c, say(l, sql, w)))
+        .collect();
+    let refs: Vec<(usize, usize, &str)> =
+        shown.iter().map(|(r, c, l)| (*r, *c, l.as_str())).collect();
     keys(&mut s, &refs);
     message(&mut s, msg);
     s.cursor = first;

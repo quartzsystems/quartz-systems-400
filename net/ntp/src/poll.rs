@@ -102,7 +102,14 @@ mod tests {
 
     fn time_server(at: i64) -> server::Running {
         let clock: Arc<dyn Clock> = Arc::new(MemClock::at(at));
-        server::serve(UdpSocket::bind("127.0.0.1:0").unwrap(), clock, Arc::new(Mutex::new(None)), false, None).unwrap()
+        server::serve(
+            UdpSocket::bind("127.0.0.1:0").unwrap(),
+            clock,
+            Arc::new(Mutex::new(None)),
+            false,
+            None,
+        )
+        .unwrap()
     }
 
     #[test]
@@ -116,28 +123,76 @@ mod tests {
         let ts = time_server(base + 2 * S);
         let mine = MemClock::at(base);
         let up: Shared = Arc::new(Mutex::new(None));
-        let p = poll(&[quiet.clone(), ("good".into(), ts.addr())], &mine, &policy, Duration::from_millis(200), Some(&up));
-        let Polled::Sample { sample, decision, applied } = p else {
+        let p = poll(
+            &[quiet.clone(), ("good".into(), ts.addr())],
+            &mine,
+            &policy,
+            Duration::from_millis(200),
+            Some(&up),
+        );
+        let Polled::Sample {
+            sample,
+            decision,
+            applied,
+        } = p
+        else {
             panic!("{p:?}");
         };
-        assert_eq!((sample.server.as_str(), decision, applied), ("good", Decision::Slew(2 * S), Ok(())));
+        assert_eq!(
+            (sample.server.as_str(), decision, applied),
+            ("good", Decision::Slew(2 * S), Ok(()))
+        );
         assert_eq!(mine.slews(), [2 * S]);
         let u = up.lock().unwrap().unwrap();
-        assert_eq!((u.stratum, u.reference_id), (server::LOCAL_STRATUM, [127, 0, 0, 1]));
+        assert_eq!(
+            (u.stratum, u.reference_id),
+            (server::LOCAL_STRATUM, [127, 0, 0, 1])
+        );
 
         // 5 minutes off: stepped.
         let ts = time_server(base + 300 * S);
         let mine = MemClock::at(base);
-        let p = poll(&[("t".into(), ts.addr())], &mine, &policy, Duration::from_secs(2), None);
-        assert!(matches!(p, Polled::Sample { decision: Decision::Step(_), .. }), "{p:?}");
+        let p = poll(
+            &[("t".into(), ts.addr())],
+            &mine,
+            &policy,
+            Duration::from_secs(2),
+            None,
+        );
+        assert!(
+            matches!(
+                p,
+                Polled::Sample {
+                    decision: Decision::Step(_),
+                    ..
+                }
+            ),
+            "{p:?}"
+        );
         assert_eq!(mine.steps(), [300 * S]);
 
         // An hour off: left alone.
         let ts = time_server(base + 3600 * S);
         let mine = MemClock::at(base);
         let up: Shared = Arc::new(Mutex::new(None));
-        let p = poll(&[("t".into(), ts.addr())], &mine, &policy, Duration::from_secs(2), Some(&up));
-        assert!(matches!(p, Polled::Sample { decision: Decision::TooFar(_), applied: Err(_), .. }), "{p:?}");
+        let p = poll(
+            &[("t".into(), ts.addr())],
+            &mine,
+            &policy,
+            Duration::from_secs(2),
+            Some(&up),
+        );
+        assert!(
+            matches!(
+                p,
+                Polled::Sample {
+                    decision: Decision::TooFar(_),
+                    applied: Err(_),
+                    ..
+                }
+            ),
+            "{p:?}"
+        );
         assert!(mine.steps().is_empty() && mine.slews().is_empty());
         assert!(up.lock().unwrap().is_none());
 

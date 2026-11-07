@@ -33,7 +33,8 @@ impl Url {
             return Err(Error::Url(t.into()));
         };
         let (auth, path) = rest.split_at(rest.find('/').unwrap_or(rest.len()));
-        let (host, port) = host_port(auth, if tls { 443 } else { 80 }).ok_or_else(|| Error::Url(t.into()))?;
+        let (host, port) =
+            host_port(auth, if tls { 443 } else { 80 }).ok_or_else(|| Error::Url(t.into()))?;
         Ok(Self {
             tls,
             host,
@@ -104,7 +105,10 @@ mod tests {
         assert_eq!(u.port, 443);
         assert_eq!(u.path_of("/v1/catalog"), "/qs400/v1/catalog");
         let u = Url::parse("http://127.0.0.1:8080").unwrap();
-        assert_eq!((u.host.as_str(), u.port, u.path.as_str()), ("127.0.0.1", 8080, ""));
+        assert_eq!(
+            (u.host.as_str(), u.port, u.path.as_str()),
+            ("127.0.0.1", 8080, "")
+        );
         assert_eq!(u.to_string(), "http://127.0.0.1:8080");
         assert!(Url::parse("ftp://x").is_err());
         assert_eq!(host_port("[::1]:99", 1), Some(("::1".into(), 99)));

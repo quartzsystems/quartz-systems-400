@@ -110,7 +110,10 @@ impl Side for TestSide {
 
 fn put(c: &dyn IfsClient, path: &str, data: &[u8]) {
     let fd = c
-        .open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o644))
+        .open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o644),
+        )
         .unwrap_or_else(|e| panic!("{path}: {e}"));
     ifs::client::write_all(c, fd, data).expect("written");
     c.close(fd).expect("closed");
@@ -141,13 +144,19 @@ pub fn side() -> TestSide {
         let files: &[(&str, &str)] = &[
             ("fruits.txt", "apple\nbanana\ncherry\n"),
             ("nums.txt", "10\n9\n100\n-5\n2.5\n"),
-            ("words.txt", "the quick brown fox\njumps over\nthe lazy dog\n"),
+            (
+                "words.txt",
+                "the quick brown fox\njumps over\nthe lazy dog\n",
+            ),
             ("empty.txt", ""),
             ("nonl.txt", "no newline"),
             ("tabs.txt", "a\tb\tc\n1\t2\t3\n"),
             ("csv.txt", "x,1,b\ny,2,a\nz,3,c\n"),
             ("dup.txt", "a\na\nb\nc\nc\nc\nd\n"),
-            ("people.txt", "bob 25 ny\nalice 30 la\ncarol 25 sf\ndave 19 ny\n"),
+            (
+                "people.txt",
+                "bob 25 ny\nalice 30 la\ncarol 25 sf\ndave 19 ny\n",
+            ),
             ("mixed.txt", "Apple\nbanana\nCherry\napple\n"),
             ("sub/deep.txt", "deep\n"),
             ("sub/inner/leaf", "leaf\n"),

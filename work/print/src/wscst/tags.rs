@@ -119,7 +119,10 @@ pub fn tags(source: &str) -> Result<Vec<Tag>, WscstError> {
     let mut i = 0;
     let mut line = 1;
     let mut out = Vec::new();
-    let err = |line: usize, what: &str| WscstError::Syntax { line, what: what.into() };
+    let err = |line: usize, what: &str| WscstError::Syntax {
+        line,
+        what: what.into(),
+    };
     let skip = |i: &mut usize, line: &mut usize| {
         while *i < chars.len() && chars[*i].is_whitespace() {
             if chars[*i] == '\n' {
@@ -164,7 +167,10 @@ pub fn tags(source: &str) -> Result<Vec<Tag>, WscstError> {
             }
             skip(&mut i, &mut line);
             if key.is_empty() || chars.get(i) != Some(&'=') {
-                return Err(err(line, &format!(":{name}: an attribute (KEY=value) expected")));
+                return Err(err(
+                    line,
+                    &format!(":{name}: an attribute (KEY=value) expected"),
+                ));
             }
             i += 1;
             skip(&mut i, &mut line);
@@ -196,7 +202,11 @@ pub fn tags(source: &str) -> Result<Vec<Tag>, WscstError> {
             };
             attrs.push((key, value));
         }
-        out.push(Tag { name, attrs, line: start });
+        out.push(Tag {
+            name,
+            attrs,
+            line: start,
+        });
     }
     Ok(out)
 }
@@ -217,7 +227,10 @@ fn paper_name(width: u32, height: u32) -> String {
     known
         .iter()
         .find(|(_, w, h)| width.abs_diff(*w) <= 3 && height.abs_diff(*h) <= 3)
-        .map_or_else(|| format!("P{width}X{height}"), |(n, _, _)| (*n).to_string())
+        .map_or_else(
+            || format!("P{width}X{height}"),
+            |(n, _, _)| (*n).to_string(),
+        )
 }
 
 /// `data` with `n` put in at `VAROFFSET` as `VARLEN` decimal digits.
@@ -250,7 +263,10 @@ pub fn compile(source: &str) -> Result<Wscst, WscstError> {
             what: format!(":{}: the source starts with :WSCST", first.name),
         });
     }
-    if first.word("DEVCLASS").is_some_and(|d| d != "TRANSFORM" && d != "CTXFORM") {
+    if first
+        .word("DEVCLASS")
+        .is_some_and(|d| d != "TRANSFORM" && d != "CTXFORM")
+    {
         return Err(WscstError::Syntax {
             line: first.line,
             what: "DEVCLASS is TRANSFORM or CTXFORM".into(),
@@ -271,7 +287,9 @@ pub fn compile(source: &str) -> Result<Wscst, WscstError> {
             "LINEFEED" => lf = Some(t.data()),
             "FORMFEED" => w.formfeed = t.data(),
             "PAGSIZE" => {
-                let (Some(pw), Some(pl)) = (t.num("PAGWTH"), t.num("PAGLEN")) else { continue };
+                let (Some(pw), Some(pl)) = (t.num("PAGWTH"), t.num("PAGLEN")) else {
+                    continue;
+                };
                 let (width, height) = ((pw * 100 + 720) / 1440, (pl * 100 + 720) / 1440);
                 w.papers.push(PaperCmd {
                     name: paper_name(width, height),
@@ -374,7 +392,10 @@ pub fn write(w: &Wscst, title: &str) -> String {
             data_tag(
                 &mut s,
                 "PAGSIZE",
-                &[("PAGWTH", format!("{:5}", (p.width * 1440 + 50) / 100)), ("PAGLEN", format!("{:5}", (p.height * 1440 + 50) / 100))],
+                &[
+                    ("PAGWTH", format!("{:5}", (p.width * 1440 + 50) / 100)),
+                    ("PAGLEN", format!("{:5}", (p.height * 1440 + 50) / 100)),
+                ],
                 &p.cmd,
             );
         }
@@ -391,7 +412,11 @@ pub fn write(w: &Wscst, title: &str) -> String {
     for (n, d) in &w.drawer {
         data_tag(&mut s, "DWRSLT", &[("DRAWER", format!("DRAWER{n}"))], d);
     }
-    for (k, tag) in [("*NO", "SMPXPRT"), ("*YES", "DUPXPRT"), ("*TUMBLE", "TUMDUPXPRT")] {
+    for (k, tag) in [
+        ("*NO", "SMPXPRT"),
+        ("*YES", "DUPXPRT"),
+        ("*TUMBLE", "TUMDUPXPRT"),
+    ] {
         if let Some(d) = w.duplex.get(k) {
             data_tag(&mut s, tag, &[], d);
         }
@@ -404,11 +429,19 @@ pub fn write(w: &Wscst, title: &str) -> String {
 /// `ESC &l#C` in 1/48 inch and `ESC &l#X`.
 #[must_use]
 pub fn write_pcl(w: &Wscst, title: &str) -> String {
-    let mut s = write(&Wscst { lpi: BTreeMap::new(), ..w.clone() }, title);
+    let mut s = write(
+        &Wscst {
+            lpi: BTreeMap::new(),
+            ..w.clone()
+        },
+        title,
+    );
     let end = s.rfind(":EWSCST.").unwrap_or(s.len());
     let mut extra = String::new();
     let var = |tag: &str, len: usize, data: &[u8], cnv: Option<(u32, u32)>| {
-        let mut t = format!("    :{tag}\n      VAROFFSET=    3\n      VARLEN=    {len}\n      VARTYPE=CHRDEC\n");
+        let mut t = format!(
+            "    :{tag}\n      VAROFFSET=    3\n      VARLEN=    {len}\n      VARTYPE=CHRDEC\n"
+        );
         if let Some((n, d)) = cnv {
             let _ = write!(t, "      CNVNUM=    {n}\n      CNVDEN=   {d}\n");
         }
@@ -475,11 +508,21 @@ mod tests {
         assert_eq!(w.lpi[&6], b"\x1b&l008C");
         assert_eq!(w.lpi[&8], b"\x1b&l006C");
         assert_eq!(w.papers.len(), 1);
-        assert_eq!((w.papers[0].name.as_str(), w.papers[0].width, w.papers[0].height), ("LETTER", 850, 1100));
+        assert_eq!(
+            (
+                w.papers[0].name.as_str(),
+                w.papers[0].width,
+                w.papers[0].height
+            ),
+            ("LETTER", 850, 1100)
+        );
         assert_eq!(w.drawer[&2], b"\x1b&l4H");
         let t = tags(IBM_FORM).unwrap();
         let f = t.iter().find(|t| t.name == "FNTGRPE").unwrap();
-        assert_eq!(f.get("FNTWTH"), Some(&Val::Bytes(vec![0x22, 0xAD, 0xAE, 0xA7])));
+        assert_eq!(
+            f.get("FNTWTH"),
+            Some(&Val::Bytes(vec![0x22, 0xAD, 0xAE, 0xA7]))
+        );
     }
 
     #[test]

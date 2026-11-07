@@ -50,12 +50,23 @@ impl Parser {
         let data_type = match w {
             "NCLOB" => DataType::Dbclob(self.lob_length()?),
             "NCHAR" if self.eat_words(&["LARGE", "OBJECT"]) => DataType::Dbclob(self.lob_length()?),
-            "NVARCHAR" => DataType::Vargraphic(self.length_args()?.ok_or_else(|| self.expected("a length"))?.0),
-            _ if self.eat_word("VARYING") => {
-                DataType::Vargraphic(self.length_args()?.ok_or_else(|| self.expected("a length"))?.0)
-            }
+            "NVARCHAR" => DataType::Vargraphic(
+                self.length_args()?
+                    .ok_or_else(|| self.expected("a length"))?
+                    .0,
+            ),
+            _ if self.eat_word("VARYING") => DataType::Vargraphic(
+                self.length_args()?
+                    .ok_or_else(|| self.expected("a length"))?
+                    .0,
+            ),
             _ => DataType::Graphic(self.length_args()?.map_or(1, |(n, _)| n)),
         };
-        Ok(crate::ast::TypeSpec { data_type, ccsid: Some(1200), bit_data: false, udt: None })
+        Ok(crate::ast::TypeSpec {
+            data_type,
+            ccsid: Some(1200),
+            bit_data: false,
+            udt: None,
+        })
     }
 }

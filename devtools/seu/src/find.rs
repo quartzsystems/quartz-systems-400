@@ -173,7 +173,12 @@ pub fn find_all(b: &Buffer, o: &FindOptions, excluded: &HashSet<u64>) -> Vec<Hit
 /// first record). `All` gives the first.
 #[must_use]
 #[allow(clippy::implicit_hasher)]
-pub fn find(b: &Buffer, o: &FindOptions, excluded: &HashSet<u64>, from: Option<Hit>) -> Option<Hit> {
+pub fn find(
+    b: &Buffer,
+    o: &FindOptions,
+    excluded: &HashSet<u64>,
+    from: Option<Hit>,
+) -> Option<Hit> {
     let all = find_all(b, o, excluded);
     match o.dir {
         Direction::First | Direction::All => all.first().copied(),

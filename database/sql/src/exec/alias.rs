@@ -18,7 +18,12 @@ use crate::error::{Result, SqlError};
 /// `CREATE ALIAS` or `DROP ALIAS`.
 pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, st: &Statement) -> Result<()> {
     match st {
-        Statement::CreateAlias { name, table, member, replace } => create(txn, ctx, name, table, member.as_ref(), *replace),
+        Statement::CreateAlias {
+            name,
+            table,
+            member,
+            replace,
+        } => create(txn, ctx, name, table, member.as_ref(), *replace),
         Statement::DropAlias(name) => drop(txn, ctx, name),
         _ => unreachable!("an alias statement"),
     }
@@ -51,10 +56,16 @@ pub fn create(
         file: file_name,
         member: member.map(SqlContext::sys_name).transpose()?,
     };
-    let qualified = ObjectName { schema: Some(super::view::ident_of(library_name(txn, library)?)), name: name.name.clone() };
+    let qualified = ObjectName {
+        schema: Some(super::view::ident_of(library_name(txn, library)?)),
+        name: name.name.clone(),
+    };
     if let Ok(found) = ctx.resolve_file(txn, &qualified) {
         if !replace || file::alias_of(txn, found)?.is_none() {
-            return Err(SqlError::Exists { name: name.name.value.clone(), kind: "*FILE" });
+            return Err(SqlError::Exists {
+                name: name.name.value.clone(),
+                kind: "*FILE",
+            });
         }
         file::delete_file(txn, ctx.job, found)?;
     }
@@ -70,7 +81,14 @@ pub fn create(
             ..CreateFileOpts::default()
         },
     )?;
-    super::names::record(txn, library, id, db::sqlinf::Kind::Alias, sql.as_deref(), ctx.clock())?;
+    super::names::record(
+        txn,
+        library,
+        id,
+        db::sqlinf::Kind::Alias,
+        sql.as_deref(),
+        ctx.clock(),
+    )?;
     Ok(())
 }
 
@@ -82,7 +100,10 @@ fn library_name(txn: &mut Txn<'_>, lib: ObjectId) -> Result<qsname::Name> {
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Result<()> {
     let id = ctx.resolve_file(txn, name)?;
     if file::alias_of(txn, id)?.is_none() {
-        return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "alias" });
+        return Err(SqlError::ObjectNotFound {
+            name: name.to_string(),
+            kind: "alias",
+        });
     }
     file::delete_file(txn, ctx.job, id)?;
     Ok(())

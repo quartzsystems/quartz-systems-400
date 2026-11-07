@@ -43,24 +43,21 @@ pub fn install(job: &mut Job, host: &Host) {
         "QCLSWS".into(),
         Rc::new(move |job: &mut Job, args: &[u64]| clsws(job, &h, args)),
     );
-    job.natives.insert(
-        "QCLDMP".into(),
-        {
-            let h = host.clone();
-            Rc::new(move |job: &mut Job, _args: &[u64]| {
-                let text = job.dump(true);
-                // DMPCLPGM's listing is QPPGMDMP; the dump logs a problem.
-                if job.spool_text("QPPGMDMP", &text).is_ok() {
-                    let s = &h.start;
-                    let name = format!("DMPCLPGM {:06}/{}/{}", s.number, s.user, s.name);
-                    let _ = h.link.borrow_mut().with(|l| {
-                        l.service_op("prb-dump".into(), vec![name, "CL program dump".into()])
-                    });
-                }
-                job.last_dump = Some(text);
-            })
-        },
-    );
+    job.natives.insert("QCLDMP".into(), {
+        let h = host.clone();
+        Rc::new(move |job: &mut Job, _args: &[u64]| {
+            let text = job.dump(true);
+            // DMPCLPGM's listing is QPPGMDMP; the dump logs a problem.
+            if job.spool_text("QPPGMDMP", &text).is_ok() {
+                let s = &h.start;
+                let name = format!("DMPCLPGM {:06}/{}/{}", s.number, s.user, s.name);
+                let _ = h.link.borrow_mut().with(|l| {
+                    l.service_op("prb-dump".into(), vec![name, "CL program dump".into()])
+                });
+            }
+            job.last_dump = Some(text);
+        })
+    });
     // The UIM APIs, over the job's display.
     super::uiapi::install(job, host);
 }

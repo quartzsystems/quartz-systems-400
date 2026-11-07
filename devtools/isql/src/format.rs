@@ -241,8 +241,24 @@ impl Format {
 fn ordinal(y: &str, m: &str, d: &str) -> Option<u32> {
     let (y, m, d): (u32, u32, u32) = (y.parse().ok()?, m.parse().ok()?, d.parse().ok()?);
     let leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
-    let days = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let before: u32 = days.iter().take(usize::try_from(m.checked_sub(1)?).ok()?).sum();
+    let days = [
+        31,
+        if leap { 29 } else { 28 },
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ];
+    let before: u32 = days
+        .iter()
+        .take(usize::try_from(m.checked_sub(1)?).ok()?)
+        .sum();
     Some(before + d)
 }
 

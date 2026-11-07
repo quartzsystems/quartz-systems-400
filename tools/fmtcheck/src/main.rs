@@ -13,10 +13,16 @@ fn print(rows: &[Row]) {
             State::Same => "same".to_string(),
             State::New => "new (not in the lock)".to_string(),
             State::ChangedWithoutBump => "CHANGED WITHOUT A VERSION BUMP".to_string(),
-            State::Bumped { from } => format!("version {from} -> {}: update the lock", r.now.version),
+            State::Bumped { from } => {
+                format!("version {from} -> {}: update the lock", r.now.version)
+            }
         };
         let draft = if r.draft { " (draft)" } else { "" };
-        let doc = if r.doc_unmarked { "; its document lacks the frozen section" } else { "" };
+        let doc = if r.doc_unmarked {
+            "; its document lacks the frozen section"
+        } else {
+            ""
+        };
         println!("{:<22} v{:<10} {state}{draft}{doc}", r.name, r.now.version);
     }
 }

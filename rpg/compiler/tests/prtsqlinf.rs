@@ -9,7 +9,8 @@ use rpgc::{Command, Options};
 use rpgfront::source::{Member, Record};
 
 const GOLDEN: &str = include_str!("../../../tools/conformance/oracle/sql-admin/prtsqlinf-pgm.txt");
-const SOURCE: &str = include_str!("../../../tools/conformance/oracle/sql-admin/prtsqlinf-pgm.sqlrpgle");
+const SOURCE: &str =
+    include_str!("../../../tools/conformance/oracle/sql-admin/prtsqlinf-pgm.sqlrpgle");
 
 fn compiled() -> rpgsqlpre::Precompiled {
     let member = Member {
@@ -20,17 +21,29 @@ fn compiled() -> rpgsqlpre::Precompiled {
         records: SOURCE
             .lines()
             .enumerate()
-            .map(|(i, l)| Record { seq: format!("{:06}", (i + 1) * 100), date: "000000".into(), text: l.to_string() })
+            .map(|(i, l)| Record {
+                seq: format!("{:06}", (i + 1) * 100),
+                date: "000000".into(),
+                text: l.to_string(),
+            })
             .collect(),
     };
     let opts = Options {
         command: Command::CrtSqlRpgi,
         name: "QS15SQL".into(),
         lib: "QGPL".into(),
-        sql: Some(rpgsqlpre::Options { commit: "*NONE".into(), ..rpgsqlpre::Options::default() }),
+        sql: Some(rpgsqlpre::Options {
+            commit: "*NONE".into(),
+            ..rpgsqlpre::Options::default()
+        }),
         ..Options::default()
     };
-    let c = rpgc::compile(member, &mut rpgfront::NoIncludes, &mut rpgc::NoExtFiles, &opts);
+    let c = rpgc::compile(
+        member,
+        &mut rpgfront::NoIncludes,
+        &mut rpgc::NoExtFiles,
+        &opts,
+    );
     c.precompiled.expect("precompiled")
 }
 
@@ -60,15 +73,40 @@ fn statements_print_as_pub400() {
     assert_eq!(ours[0].find("Page"), Some(121));
     // The statements and their access plan lines, in pub400's order.
     let pick = |l: &&str| {
-        let first = l.get(1..).unwrap_or("").split_whitespace().next().unwrap_or("");
-        matches!(first, "DECLARE" | "SELECT" | "OPEN" | "FETCH" | "CLOSE" | "PREPARE" | "VALUES" | "TABLE_SCHEMA" | "SQL5065")
+        let first = l
+            .get(1..)
+            .unwrap_or("")
+            .split_whitespace()
+            .next()
+            .unwrap_or("");
+        matches!(
+            first,
+            "DECLARE"
+                | "SELECT"
+                | "OPEN"
+                | "FETCH"
+                | "CLOSE"
+                | "PREPARE"
+                | "VALUES"
+                | "TABLE_SCHEMA"
+                | "SQL5065"
+        )
     };
     let norm = |l: &str| {
         let b = l.get(1..).unwrap_or("").trim_end().to_string();
-        if b.trim_start().starts_with("SQL5065") { "SQL5065".to_string() } else { b }
+        if b.trim_start().starts_with("SQL5065") {
+            "SQL5065".to_string()
+        } else {
+            b
+        }
     };
     let want: Vec<String> = GOLDEN.lines().filter(pick).map(norm).collect();
-    let got: Vec<String> = ours.iter().map(String::as_str).filter(pick).map(norm).collect();
+    let got: Vec<String> = ours
+        .iter()
+        .map(String::as_str)
+        .filter(pick)
+        .map(norm)
+        .collect();
     assert_eq!(got, want);
     // The object and the option block open the report as there.
     assert_eq!(ours[1], "-Object name...............{user}1/QS15SQL");
@@ -85,14 +123,24 @@ fn options_are_the_command_and_set_option() {
         object: "QGPL/QS15SQL".into(),
         commit: pre.options.commit.clone(),
         naming: pre.options.naming.clone(),
-        dates: [pre.options.datfmt.clone(), pre.options.datsep.clone(), pre.options.timfmt.clone(), pre.options.timsep.clone()],
+        dates: [
+            pre.options.datfmt.clone(),
+            pre.options.datsep.clone(),
+            pre.options.timfmt.clone(),
+            pre.options.timsep.clone(),
+        ],
         closqlcsr: pre.options.closqlcsr.clone(),
         other: pre.options.other.clone(),
         release: "V1R1M0".into(),
         ..sql::prtsqlinf::Precompile::default()
     };
     let o = sql::prtsqlinf::options(&p);
-    for (k, v) in [("COMMIT", "*NONE"), ("DATFMT", "*ISO"), ("OPTION", "*SYS *NOEXTIND *PERIOD"), ("CLOSQLCSR", "*ENDACTGRP")] {
+    for (k, v) in [
+        ("COMMIT", "*NONE"),
+        ("DATFMT", "*ISO"),
+        ("OPTION", "*SYS *NOEXTIND *PERIOD"),
+        ("CLOSQLCSR", "*ENDACTGRP"),
+    ] {
         assert!(o.contains(&(k.into(), v.into())), "{k}({v}) not in {o:?}");
     }
     // Rendered one to a line under the command, as pub400 lays them out.

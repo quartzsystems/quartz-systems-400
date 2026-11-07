@@ -58,21 +58,29 @@ pub fn parse(range: Option<&str>, if_range: Option<&str>, validators: &[&str], l
     {
         return Range::Full;
     }
-    let Some(spec) = r.trim().strip_prefix("bytes=") else { return Range::Full };
+    let Some(spec) = r.trim().strip_prefix("bytes=") else {
+        return Range::Full;
+    };
     if spec.contains(',') {
         return Range::Full;
     }
-    let Some((a, b)) = spec.trim().split_once('-') else { return Range::Full };
+    let Some((a, b)) = spec.trim().split_once('-') else {
+        return Range::Full;
+    };
     let (a, b) = (a.trim(), b.trim());
     let part = if a.is_empty() {
         // The last `b` bytes.
-        let Ok(n) = b.parse::<u64>() else { return Range::Full };
+        let Ok(n) = b.parse::<u64>() else {
+            return Range::Full;
+        };
         if n == 0 || len == 0 {
             return Range::Unsatisfiable;
         }
         (len.saturating_sub(n), len - 1)
     } else {
-        let Ok(s) = a.parse::<u64>() else { return Range::Full };
+        let Ok(s) = a.parse::<u64>() else {
+            return Range::Full;
+        };
         let e = if b.is_empty() {
             len.saturating_sub(1)
         } else {
@@ -100,15 +108,30 @@ mod tests {
         assert_eq!(parse(Some("bytes=2-5"), None, &[], 10), Range::Part(2, 5));
         assert_eq!(parse(Some("bytes=2-50"), None, &[], 10), Range::Part(2, 9));
         assert_eq!(parse(Some("bytes=-3"), None, &[], 10), Range::Part(7, 9));
-        assert_eq!(parse(Some("bytes=10-"), None, &[], 10), Range::Unsatisfiable);
+        assert_eq!(
+            parse(Some("bytes=10-"), None, &[], 10),
+            Range::Unsatisfiable
+        );
         assert_eq!(parse(Some("bytes=1-2,4-5"), None, &[], 10), Range::Full);
         assert_eq!(parse(Some("items=1-2"), None, &[], 10), Range::Full);
         assert_eq!(parse(Some("bytes=5-2"), None, &[], 10), Range::Full);
         // If-Range: the same file resumes, a changed one starts again.
-        assert_eq!(parse(Some("bytes=4-"), Some("\"10-7\""), &["\"10-7\""], 10), Range::Part(4, 9));
-        assert_eq!(parse(Some("bytes=4-"), Some("\"10-6\""), &["\"10-7\""], 10), Range::Full);
+        assert_eq!(
+            parse(Some("bytes=4-"), Some("\"10-7\""), &["\"10-7\""], 10),
+            Range::Part(4, 9)
+        );
+        assert_eq!(
+            parse(Some("bytes=4-"), Some("\"10-6\""), &["\"10-7\""], 10),
+            Range::Full
+        );
         let p = Range::Part(4, 9);
-        assert_eq!((p.status(), p.span(10), p.content_range(10).unwrap()), (206, (4, 6), "bytes 4-9/10".into()));
-        assert_eq!(Range::Unsatisfiable.content_range(10).unwrap(), "bytes */10");
+        assert_eq!(
+            (p.status(), p.span(10), p.content_range(10).unwrap()),
+            (206, (4, 6), "bytes 4-9/10".into())
+        );
+        assert_eq!(
+            Range::Unsatisfiable.content_range(10).unwrap(),
+            "bytes */10"
+        );
     }
 }

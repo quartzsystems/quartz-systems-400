@@ -17,7 +17,10 @@ fn read(rel: &str) -> String {
 fn every_identifier_is_described() {
     let toml = read("../../runtime/msgf/msgs/qtcpmsg.toml");
     for id in tcpcfg::msg::ALL {
-        assert!(toml.contains(&format!("id = \"{id}\"")), "{id} has no description in QTCPMSG");
+        assert!(
+            toml.contains(&format!("id = \"{id}\"")),
+            "{id} has no description in QTCPMSG"
+        );
     }
 }
 
@@ -43,7 +46,10 @@ fn oracle_identifiers_keep_their_layouts() {
                 .map(|s| s.split_once(' ').unwrap().1.trim().to_string())
                 // The message file has no unsigned binary or varying
                 // quoted fields: the signed and plain forms stand in.
-                .map(|t| t.replace("*UBIN", "*BIN").replace("*QTDCHAR *VARY", "*CHAR *VARY"))
+                .map(|t| {
+                    t.replace("*UBIN", "*BIN")
+                        .replace("*QTDCHAR *VARY", "*CHAR *VARY")
+                })
                 .collect()
         };
         let ours: Vec<String> = block

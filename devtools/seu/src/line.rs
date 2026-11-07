@@ -320,7 +320,10 @@ pub fn plan(cmds: &[Placed]) -> Result<Plan, PlanError> {
                     }
                 }
                 Some(first) => {
-                    return Err(PlanError::Mismatch(first.cmd.text.clone(), c.cmd.text.clone()));
+                    return Err(PlanError::Mismatch(
+                        first.cmd.text.clone(),
+                        c.cmd.text.clone(),
+                    ));
                 }
             }
             continue;
@@ -357,7 +360,10 @@ pub fn plan(cmds: &[Placed]) -> Result<Plan, PlanError> {
             });
         }
         (Some((from, to, scmd)), None) => {
-            p.pending.push(Placed { id: from, cmd: scmd.clone() });
+            p.pending.push(Placed {
+                id: from,
+                cmd: scmd.clone(),
+            });
             if scmd.block {
                 p.pending.push(Placed { id: to, cmd: scmd });
             }
@@ -403,7 +409,10 @@ mod tests {
         assert_eq!((c.kind, c.count, c.block), (Kind::Delete, Some(5), false));
         assert!(parse("DD").unwrap().block);
         let c = parse("ipc").unwrap();
-        assert_eq!((c.kind, c.format.as_deref()), (Kind::InsertPrompt, Some("C")));
+        assert_eq!(
+            (c.kind, c.format.as_deref()),
+            (Kind::InsertPrompt, Some("C"))
+        );
         let c = parse("ipcx").unwrap();
         assert_eq!(c.format.as_deref(), Some("CX"));
         assert_eq!(parse("fa").unwrap().kind, Kind::Format);
@@ -435,7 +444,10 @@ mod tests {
     fn pairs_source_and_target() {
         let p = plan(&[at(1, "cc"), at(2, "cc"), at(5, "a")]).unwrap();
         let t = p.transfer.unwrap();
-        assert_eq!((t.from, t.to, t.target, t.target_kind), (1, 2, 5, Kind::After));
+        assert_eq!(
+            (t.from, t.to, t.target, t.target_kind),
+            (1, 2, 5, Kind::After)
+        );
         let p = plan(&[at(1, "m")]).unwrap();
         assert!(p.transfer.is_none());
         assert_eq!(p.pending[0].cmd.kind, Kind::Move);

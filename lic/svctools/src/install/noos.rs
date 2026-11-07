@@ -37,11 +37,21 @@ pub fn screen(system: &str, src: (&str, &str), disks: &[NonConfigured]) -> Scree
         Attr::GREEN,
     );
     row += 2;
-    s.put(row, col, &format!("Last SRC  . . . . . :   {}  {}", src.0, src.1), Attr::GREEN);
+    s.put(
+        row,
+        col,
+        &format!("Last SRC  . . . . . :   {}  {}", src.0, src.1),
+        Attr::GREEN,
+    );
     row += 2;
     s.put(row, col, "Disk units detected:", Attr::GREEN);
     row += 1;
-    s.put(row, col + 2, "Resource  Type Model          Size (MiB)", Attr::GREEN);
+    s.put(
+        row,
+        col + 2,
+        "Resource  Type Model          Size (MiB)",
+        Attr::GREEN,
+    );
     row += 1;
     if disks.is_empty() {
         s.put(row, col + 2, "(No disk units detected)", Attr::GREEN);

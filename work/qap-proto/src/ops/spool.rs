@@ -225,7 +225,11 @@ pub struct SpooledData {
     pub data: Vec<u8>,
 }
 
-wire_struct!(SpooledData { format, pages, data });
+wire_struct!(SpooledData {
+    format,
+    pages,
+    data
+});
 
 /// `HoldSpooledFile`'s request.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -271,7 +275,11 @@ pub struct ListOutputQueues {
     pub max: u32,
 }
 
-wire_struct!(ListOutputQueues { library, start, max });
+wire_struct!(ListOutputQueues {
+    library,
+    start,
+    max
+});
 
 /// An output queue as `ListOutputQueues` shows it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -355,7 +363,11 @@ wire_enum!(SpoolChange {
 
 impl SpoolChange {
     /// Every change, in value order.
-    pub const ALL: [SpoolChange; 3] = [SpoolChange::Added, SpoolChange::Changed, SpoolChange::Removed];
+    pub const ALL: [SpoolChange; 3] = [
+        SpoolChange::Added,
+        SpoolChange::Changed,
+        SpoolChange::Removed,
+    ];
 }
 
 /// The request of `WatchSpool` and `UnwatchSpool` (version 6).

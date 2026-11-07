@@ -416,7 +416,10 @@ pub fn generate_sql(kit: &Kit) -> Result<String, String> {
         let cols: Vec<String> = (1..=select_items(body)).map(|n| format!("C{n}")).collect();
         let cols = cols.join(", ");
         let _ = writeln!(out, "DROP TABLE {table};");
-        let _ = writeln!(out, "CREATE TABLE {table} ({cols}) AS ({body}) WITH NO DATA;");
+        let _ = writeln!(
+            out,
+            "CREATE TABLE {table} ({cols}) AS ({body}) WITH NO DATA;"
+        );
         let _ = writeln!(out, "INSERT INTO {table} {q};");
     }
     Ok(out)
@@ -456,6 +459,9 @@ mod tests {
         assert!(rpg.contains("logline("));
         let sqls = generate_sql(&kit).unwrap();
         assert!(sqls.contains("CREATE TABLE QSTEST/QRES01 (C1, C2, C3, C4, C5, C6, C7) AS ("));
-        assert_eq!(select_items("SELECT A, (SELECT B, C FROM T), SUM(D) FROM U"), 3);
+        assert_eq!(
+            select_items("SELECT A, (SELECT B, C FROM T), SUM(D) FROM U"),
+            3
+        );
     }
 }

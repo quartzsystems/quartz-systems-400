@@ -66,7 +66,13 @@ pub fn cpyfrmimpf_paused(
     result
 }
 
-fn load(txn: &mut Txn<'_>, m: &mut Member, text: &str, opts: &ImpfOpts, pause: crate::Pause<'_>) -> Result<ImpfReport> {
+fn load(
+    txn: &mut Txn<'_>,
+    m: &mut Member,
+    text: &str,
+    opts: &ImpfOpts,
+    pause: crate::Pause<'_>,
+) -> Result<ImpfReport> {
     let fmt = m.format().clone();
     let mut report = ImpfReport::default();
     let mut record = vec![0u8; usize::try_from(fmt.format.record_len).expect("fits")];
@@ -155,7 +161,11 @@ fn convert(
         };
         let value = match value {
             Value::Char(data) if f.data_type.is_lob() => {
-                let units = if f.data_type == DataType::Dbclob { data.len() / 2 } else { data.len() };
+                let units = if f.data_type == DataType::Dbclob {
+                    data.len() / 2
+                } else {
+                    data.len()
+                };
                 if units > usize::try_from(f.length).expect("fits") {
                     return Err(bad(f, text));
                 }
@@ -233,7 +243,9 @@ pub(super) fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<V
         _ => text.to_string(),
     };
     if record::is_utf16(f) || f.data_type == DataType::Dbclob {
-        return Ok(Value::Char(s.encode_utf16().flat_map(u16::to_be_bytes).collect()));
+        return Ok(Value::Char(
+            s.encode_utf16().flat_map(u16::to_be_bytes).collect(),
+        ));
     }
     ccsid::to_ebcdic(&s)
         .map(Value::Char)

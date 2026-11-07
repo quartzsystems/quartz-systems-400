@@ -80,43 +80,265 @@ const AN: (bool, bool) = (true, false);
 
 /// The functions, in the order `WRKFCNUSG` lists them.
 pub static FUNCTIONS: &[Function] = &[
-    f("QIBM_DIRSRV_ADMIN", "Directory server administrator", "Bind as a directory server administrator", (OS, "*NONE"), DN),
-    f("QIBM_ACCESS_ALLOBJ_JOBLOG", "Job log of an *ALLOBJ job", "*JOBCTL users see the logs of *ALLOBJ jobs", (OS, "QIBM_ALLOBJ"), DU),
-    f("QIBM_ALLOBJ_TRACE_ANY_USER", "Trace any user", "Trace jobs of any user", (OS, "QIBM_ALLOBJ"), DU),
-    f("QIBM_WATCH_ANY_JOB", "Watch any job", "Start watches over jobs of any user", (OS, "QIBM_ALLOBJ"), DN),
-    f("QIBM_DB_SQLADM", "Database administrator", "Plan cache, monitors and other database tasks", (OS, "QIBM_DB"), DN),
-    f("QIBM_DB_SYSMON", "Database information", "Plan cache and monitor data to look at", (OS, "QIBM_DB"), DN),
-    f("QIBM_QCST_SERVICE_CLUSTADMIN", "Cluster administration", "Administer a cluster", (OS, "QIBM_QCST_SERVICE_CLUSTMGMT"), DU),
-    f("QIBM_QCST_SERVICE_CLUSTOPER", "Cluster operation", "Operate a cluster", (OS, "QIBM_QCST_SERVICE_CLUSTMGMT"), DU),
-    f("QIBM_QYAS_SERVICE_DISKMGMT", "Disk units", "Work with disk units", (OS, "QIBM_SERVICE"), DN),
-    f("QIBM_SERVICE_DISK_WATCHER", "Disk watcher", "The disk watcher performance tool", (OS, "QIBM_SERVICE"), DN),
-    f("QIBM_SERVICE_DUMP", "Service dump", "Take service dumps", (OS, "QIBM_SERVICE"), DN),
-    f("QIBM_SERVICE_JOB_WATCHER", "Job watcher", "The job watcher performance tool", (OS, "QIBM_SERVICE"), DU),
-    f("QIBM_SERVICE_THREAD", "Thread control", "Control threads", (OS, "QIBM_SERVICE"), DN),
-    f("QIBM_SERVICE_TRACE", "Service trace", "Start and end service traces", (OS, "QIBM_SERVICE"), DN),
-    f("QIBM_SERVICE_WATCH", "Service watch", "Start and end service watches", (OS, "QIBM_SERVICE"), DN),
-    f("QIBM_QINAV_WEB_CONFIGURE", "Configure Navigator web", "Configure the web Navigator of this system", (NAV, "*NONE"), DU),
-    f("QIBM_QINAV_WEB_FUNCTIONS", "Manage through Navigator web", "Manage this system through any web Navigator", (NAV, "*NONE"), DU),
-    f("QIBM_QINAV_WEB_INTERFACE", "Use Navigator web", "Use the web Navigator of this system", (NAV, "*NONE"), DU),
-    f("QIBM_QSY_SYSTEM_CERT_STORE", "*SYSTEM certificate store", "Use the *SYSTEM certificate store", ("QIBM_QSY_DIGITAL_CERT_MGR", "*NONE"), DU),
-    f("QIBM_QTMF_CLIENT_REQ_0", "FTP client session", "FTP client sessions; every request needs it", (TCP, "QIBM_QTMF_FTP_CLIENT"), AN),
-    f("QIBM_QTMF_CLIENT_REQ_10", "FTP client CCC", "The client subcommand CCC", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
-    f("QIBM_QTMF_CLIENT_REQ_3", "FTP client LCD", "The client subcommand LCD", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
-    f("QIBM_QTMF_CLIENT_REQ_6", "FTP client sends", "The client subcommands PUT, MPUT and APPEND", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
-    f("QIBM_QTMF_CLIENT_REQ_7", "FTP client receives", "The client subcommands GET and MGET", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
-    f("QIBM_QTMF_CLIENT_REQ_9", "FTP client SYSCMD", "The client subcommand SYSCMD", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_0", "FTP server logon", "FTP server logon; every request needs it", (TCP, "QIBM_QTMF_FTP_SERVER"), AN),
-    f("QIBM_QTMF_SERVER_REQ_1", "FTP server MKD", "The server subcommand MKD", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_10", "FTP server CCC", "The server subcommand CCC", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), DN),
-    f("QIBM_QTMF_SERVER_REQ_2", "FTP server RMD", "The server subcommand RMD", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_3", "FTP server CWD", "The server subcommand CWD", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_4", "FTP server LIST", "The server subcommands LIST and NLST", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_5", "FTP server DELE", "The server subcommand DELE", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_6", "FTP server RETR", "The server subcommand RETR", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_7", "FTP server STOR", "The server subcommands STOR, STOU and APPE", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_8", "FTP server rename", "The server subcommands RNFR and RNTO", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_9", "FTP server RCMD", "The server subcommand RCMD", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QYPS_MGTCTRL_SUPER_USER", "Management Central administration", "All Management Central tasks and monitors", ("QIBM_QYPS_MGTCTRL", "*NONE"), DN),
+    f(
+        "QIBM_DIRSRV_ADMIN",
+        "Directory server administrator",
+        "Bind as a directory server administrator",
+        (OS, "*NONE"),
+        DN,
+    ),
+    f(
+        "QIBM_ACCESS_ALLOBJ_JOBLOG",
+        "Job log of an *ALLOBJ job",
+        "*JOBCTL users see the logs of *ALLOBJ jobs",
+        (OS, "QIBM_ALLOBJ"),
+        DU,
+    ),
+    f(
+        "QIBM_ALLOBJ_TRACE_ANY_USER",
+        "Trace any user",
+        "Trace jobs of any user",
+        (OS, "QIBM_ALLOBJ"),
+        DU,
+    ),
+    f(
+        "QIBM_WATCH_ANY_JOB",
+        "Watch any job",
+        "Start watches over jobs of any user",
+        (OS, "QIBM_ALLOBJ"),
+        DN,
+    ),
+    f(
+        "QIBM_DB_SQLADM",
+        "Database administrator",
+        "Plan cache, monitors and other database tasks",
+        (OS, "QIBM_DB"),
+        DN,
+    ),
+    f(
+        "QIBM_DB_SYSMON",
+        "Database information",
+        "Plan cache and monitor data to look at",
+        (OS, "QIBM_DB"),
+        DN,
+    ),
+    f(
+        "QIBM_QCST_SERVICE_CLUSTADMIN",
+        "Cluster administration",
+        "Administer a cluster",
+        (OS, "QIBM_QCST_SERVICE_CLUSTMGMT"),
+        DU,
+    ),
+    f(
+        "QIBM_QCST_SERVICE_CLUSTOPER",
+        "Cluster operation",
+        "Operate a cluster",
+        (OS, "QIBM_QCST_SERVICE_CLUSTMGMT"),
+        DU,
+    ),
+    f(
+        "QIBM_QYAS_SERVICE_DISKMGMT",
+        "Disk units",
+        "Work with disk units",
+        (OS, "QIBM_SERVICE"),
+        DN,
+    ),
+    f(
+        "QIBM_SERVICE_DISK_WATCHER",
+        "Disk watcher",
+        "The disk watcher performance tool",
+        (OS, "QIBM_SERVICE"),
+        DN,
+    ),
+    f(
+        "QIBM_SERVICE_DUMP",
+        "Service dump",
+        "Take service dumps",
+        (OS, "QIBM_SERVICE"),
+        DN,
+    ),
+    f(
+        "QIBM_SERVICE_JOB_WATCHER",
+        "Job watcher",
+        "The job watcher performance tool",
+        (OS, "QIBM_SERVICE"),
+        DU,
+    ),
+    f(
+        "QIBM_SERVICE_THREAD",
+        "Thread control",
+        "Control threads",
+        (OS, "QIBM_SERVICE"),
+        DN,
+    ),
+    f(
+        "QIBM_SERVICE_TRACE",
+        "Service trace",
+        "Start and end service traces",
+        (OS, "QIBM_SERVICE"),
+        DN,
+    ),
+    f(
+        "QIBM_SERVICE_WATCH",
+        "Service watch",
+        "Start and end service watches",
+        (OS, "QIBM_SERVICE"),
+        DN,
+    ),
+    f(
+        "QIBM_QINAV_WEB_CONFIGURE",
+        "Configure Navigator web",
+        "Configure the web Navigator of this system",
+        (NAV, "*NONE"),
+        DU,
+    ),
+    f(
+        "QIBM_QINAV_WEB_FUNCTIONS",
+        "Manage through Navigator web",
+        "Manage this system through any web Navigator",
+        (NAV, "*NONE"),
+        DU,
+    ),
+    f(
+        "QIBM_QINAV_WEB_INTERFACE",
+        "Use Navigator web",
+        "Use the web Navigator of this system",
+        (NAV, "*NONE"),
+        DU,
+    ),
+    f(
+        "QIBM_QSY_SYSTEM_CERT_STORE",
+        "*SYSTEM certificate store",
+        "Use the *SYSTEM certificate store",
+        ("QIBM_QSY_DIGITAL_CERT_MGR", "*NONE"),
+        DU,
+    ),
+    f(
+        "QIBM_QTMF_CLIENT_REQ_0",
+        "FTP client session",
+        "FTP client sessions; every request needs it",
+        (TCP, "QIBM_QTMF_FTP_CLIENT"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_CLIENT_REQ_10",
+        "FTP client CCC",
+        "The client subcommand CCC",
+        (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_CLIENT_REQ_3",
+        "FTP client LCD",
+        "The client subcommand LCD",
+        (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_CLIENT_REQ_6",
+        "FTP client sends",
+        "The client subcommands PUT, MPUT and APPEND",
+        (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_CLIENT_REQ_7",
+        "FTP client receives",
+        "The client subcommands GET and MGET",
+        (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_CLIENT_REQ_9",
+        "FTP client SYSCMD",
+        "The client subcommand SYSCMD",
+        (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_0",
+        "FTP server logon",
+        "FTP server logon; every request needs it",
+        (TCP, "QIBM_QTMF_FTP_SERVER"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_1",
+        "FTP server MKD",
+        "The server subcommand MKD",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_10",
+        "FTP server CCC",
+        "The server subcommand CCC",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        DN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_2",
+        "FTP server RMD",
+        "The server subcommand RMD",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_3",
+        "FTP server CWD",
+        "The server subcommand CWD",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_4",
+        "FTP server LIST",
+        "The server subcommands LIST and NLST",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_5",
+        "FTP server DELE",
+        "The server subcommand DELE",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_6",
+        "FTP server RETR",
+        "The server subcommand RETR",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_7",
+        "FTP server STOR",
+        "The server subcommands STOR, STOU and APPE",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_8",
+        "FTP server rename",
+        "The server subcommands RNFR and RNTO",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QTMF_SERVER_REQ_9",
+        "FTP server RCMD",
+        "The server subcommand RCMD",
+        (TCP, "QIBM_QTMF_FTP_SERVER_REQ"),
+        AN,
+    ),
+    f(
+        "QIBM_QYPS_MGTCTRL_SUPER_USER",
+        "Management Central administration",
+        "All Management Central tasks and monitors",
+        ("QIBM_QYPS_MGTCTRL", "*NONE"),
+        DN,
+    ),
 ];
 
 /// The registry: the functions with what was changed.
@@ -159,7 +381,10 @@ pub fn function(id: &str) -> Option<&'static Function> {
 }
 
 fn not_valid(id: &str) -> SecError {
-    SecError::msg("CPF228C", format!("Function ID {id} is not a function this system registers."))
+    SecError::msg(
+        "CPF228C",
+        format!("Function ID {id} is not a function this system registers."),
+    )
 }
 
 /// Whether `id` matches `pattern`: `*ALL`, a generic `QIBM_DB*`, or the
@@ -315,7 +540,14 @@ pub fn load(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Registry> {
 
 /// Write the registry back.
 pub fn save(txn: &mut Txn<'_>, qsys: ObjectId, r: &Registry) -> Result<()> {
-    crate::textspace::save(txn, qsys, SPACE, HEADER, &r.encode(), crate::textspace::now())
+    crate::textspace::save(
+        txn,
+        qsys,
+        SPACE,
+        HEADER,
+        &r.encode(),
+        crate::textspace::now(),
+    )
 }
 
 /// Whether `who` may use function `id`, from the store.
@@ -348,15 +580,41 @@ mod tests {
         let mut r = Registry::default();
         let sqladm = "QIBM_DB_SQLADM";
         assert!(!r.allowed(&who("ANNE", &[], false), sqladm).unwrap());
-        r.change(sqladm, &Change { user: Some(("DBA".into(), Some(true))), ..Change::default() }).unwrap();
+        r.change(
+            sqladm,
+            &Change {
+                user: Some(("DBA".into(), Some(true))),
+                ..Change::default()
+            },
+        )
+        .unwrap();
         assert!(r.allowed(&who("ANNE", &["DBA"], false), sqladm).unwrap());
-        r.change(sqladm, &Change { user: Some(("ANNE".into(), Some(false))), ..Change::default() }).unwrap();
+        r.change(
+            sqladm,
+            &Change {
+                user: Some(("ANNE".into(), Some(false))),
+                ..Change::default()
+            },
+        )
+        .unwrap();
         assert!(!r.allowed(&who("ANNE", &["DBA"], false), sqladm).unwrap());
         let joblog = "QIBM_ACCESS_ALLOBJ_JOBLOG";
         assert!(r.allowed(&who("SEC", &[], true), joblog).unwrap());
-        r.change(joblog, &Change { allobj_used: Some(false), ..Change::default() }).unwrap();
+        r.change(
+            joblog,
+            &Change {
+                allobj_used: Some(false),
+                ..Change::default()
+            },
+        )
+        .unwrap();
         assert!(!r.allowed(&who("SEC", &[], true), joblog).unwrap());
-        assert_eq!(r.allowed(&who("X", &[], false), "QIBM_NOPE").unwrap_err().msgid(), Some("CPF228C"));
+        assert_eq!(
+            r.allowed(&who("X", &[], false), "QIBM_NOPE")
+                .unwrap_err()
+                .msgid(),
+            Some("CPF228C")
+        );
         let back = Registry::decode(&r.encode());
         assert_eq!(back, r);
     }

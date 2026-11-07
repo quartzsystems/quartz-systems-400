@@ -116,13 +116,19 @@ impl Language {
     /// Messages with the language's text, and all messages, of its files.
     #[must_use]
     pub fn coverage(&self) -> (usize, usize) {
-        let files: Vec<MsgFile> = builtin().into_iter().filter(|f| self.files.contains_key(&f.name)).collect();
+        let files: Vec<MsgFile> = builtin()
+            .into_iter()
+            .filter(|f| self.files.contains_key(&f.name))
+            .collect();
         let total = files.iter().map(|f| f.msgs.len()).sum();
         let done = files
             .iter()
             .map(|f| {
                 let mine = self.texts.get(&f.name);
-                f.msgs.iter().filter(|m| mine.is_some_and(|x| x.contains_key(&m.id))).count()
+                f.msgs
+                    .iter()
+                    .filter(|m| mine.is_some_and(|x| x.contains_key(&m.id)))
+                    .count()
             })
             .sum();
         (done, total)
@@ -158,20 +164,29 @@ mod tests {
         let cpf = files.iter().find(|f| f.name == "QCPFMSG").unwrap();
         assert_eq!(cpf.ccsid, 284);
         assert!(cpf.text.ends_with("(SCAFFOLD)") && cpf.text.len() <= 50);
-        assert_eq!(cpf.find("CPF9810").unwrap().text, "No se ha encontrado la biblioteca &1.");
+        assert_eq!(
+            cpf.find("CPF9810").unwrap().text,
+            "No se ha encontrado la biblioteca &1."
+        );
         assert!(cpf.msgs.iter().all(|m| m.help.is_empty()));
         // Every message of the primary's file is there.
         let en = builtin().into_iter().find(|f| f.name == "QCPFMSG").unwrap();
         assert_eq!(en.msgs.len(), cpf.msgs.len());
         // Every translated identifier exists in its file.
         for (file, texts) in &l.texts {
-            let f = files.iter().find(|x| &x.name == file).unwrap_or_else(|| panic!("{file}"));
+            let f = files
+                .iter()
+                .find(|x| &x.name == file)
+                .unwrap_or_else(|| panic!("{file}"));
             for id in texts.keys() {
                 assert!(f.find(id).is_some(), "{file} {id}");
             }
         }
         let dds = l.translate_dds(SIGNON);
-        assert!(dds.contains("'Inicio de sesión'") && dds.contains("'Usuario . ."), "{dds}");
+        assert!(
+            dds.contains("'Inicio de sesión'") && dds.contains("'Usuario . ."),
+            "{dds}"
+        );
         let (done, total) = l.coverage();
         assert!(done > 50 && done < total);
     }

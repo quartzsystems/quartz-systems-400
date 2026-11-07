@@ -22,7 +22,14 @@ const KEEP: Duration = Duration::from_secs(30);
 
 /// Every special authority, for a profile read without a handle.
 const SPECIAL: &[&str] = &[
-    "*ALLOBJ", "*AUDIT", "*IOSYSCFG", "*JOBCTL", "*SAVSYS", "*SECADM", "*SERVICE", "*SPLCTL",
+    "*ALLOBJ",
+    "*AUDIT",
+    "*IOSYSCFG",
+    "*JOBCTL",
+    "*SAVSYS",
+    "*SECADM",
+    "*SERVICE",
+    "*SPLCTL",
 ];
 
 /// What the products ask of a profile.
@@ -66,7 +73,8 @@ impl Dates {
 /// The system name: `SYSNAME` of the network attributes, else
 /// `QSYSNAME`.
 pub fn system_name(m: &Main) -> String {
-    let text = |v: Option<sysapi::SysVal>| v.map(|v| ccsid::from_ebcdic(&v.data).trim().to_string());
+    let text =
+        |v: Option<sysapi::SysVal>| v.map(|v| ccsid::from_ebcdic(&v.data).trim().to_string());
     let net = text(m.link.borrow_mut().with(|l| l.netattr("SYSNAME".into())));
     net.filter(|n| !n.is_empty())
         .or_else(|| text(m.link.borrow_mut().with(|l| l.sysval("QSYSNAME".into()))))
@@ -91,7 +99,9 @@ fn sign_on(m: &mut Main, user: &str, password: &str) -> Result<String, Message> 
         write_audit(m, "PW", user, "R", "");
         return Err(error(
             "CPF22E4",
-            &format!("The password of user profile {user} has expired. Change it at a workstation, then sign on here."),
+            &format!(
+                "The password of user profile {user} has expired. Change it at a workstation, then sign on here."
+            ),
         ));
     }
     let q = Query::GetHandle {
@@ -106,7 +116,10 @@ fn sign_on(m: &mut Main, user: &str, password: &str) -> Result<String, Message> 
             Ok(s.user)
         }
         Ok(_) => Err(error("CPF22E2", "The sign-on could not be completed.")),
-        Err(id) => Err(error(&id, &format!("User profile {} could not be used by this server.", s.user))),
+        Err(id) => Err(error(
+            &id,
+            &format!("User profile {} could not be used by this server.", s.user),
+        )),
     }
 }
 
@@ -115,7 +128,9 @@ fn sign_on(m: &mut Main, user: &str, password: &str) -> Result<String, Message> 
 fn info(m: &mut Main, user: &str) -> Info {
     let read = m.as_user(user, |m| {
         let p = m.link.borrow_mut().with(Client::whoami);
-        let class = match m.sec(Query::Profile { user: user.to_string() }) {
+        let class = match m.sec(Query::Profile {
+            user: user.to_string(),
+        }) {
             Ok(Answer::Profile { data }) => sec::profile::UsrPrf::decode(&data)
                 .map(|u| u.usrcls.name().to_string())
                 .unwrap_or_default(),
@@ -149,7 +164,12 @@ fn info(m: &mut Main, user: &str) -> Info {
 
 /// An audit journal entry through `web_audit` (`PW`, `AF`, `ZC`).
 pub fn write_audit(m: &Main, kind: &str, user: &str, a: &str, b: &str) {
-    let (kind, user, a, b) = (kind.to_string(), user.to_string(), a.to_string(), b.to_string());
+    let (kind, user, a, b) = (
+        kind.to_string(),
+        user.to_string(),
+        a.to_string(),
+        b.to_string(),
+    );
     m.link.borrow_mut().with(|l| l.web_audit(kind, user, a, b));
 }
 
@@ -288,7 +308,9 @@ impl Core {
 
     /// Write an audit entry of `kind`.
     pub fn audit(&self, kind: &'static str, user: String, a: String, b: String) {
-        let _ = self.bridge.call(move |m| write_audit(m, kind, &user, &a, &b));
+        let _ = self
+            .bridge
+            .call(move |m| write_audit(m, kind, &user, &a, &b));
     }
 
     /// A message's text from its message file, `data` substituted.
@@ -298,7 +320,11 @@ impl Core {
         let ask = id.clone();
         let d = self
             .bridge
-            .call(move |m| m.link.borrow_mut().with(|l| l.describe(ask, file.into(), lib.into())))
+            .call(move |m| {
+                m.link
+                    .borrow_mut()
+                    .with(|l| l.describe(ask, file.into(), lib.into()))
+            })
             .flatten()?;
         let (cause, recovery) = httpadmin::msgs::split_help(&d.help);
         Some(SecondLevel {

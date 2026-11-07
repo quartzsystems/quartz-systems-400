@@ -58,7 +58,10 @@ pub fn cut(ccsid: u16, bytes: &[u8], max: usize) -> Fitted {
     let mut out = Vec::with_capacity(max.min(bytes.len() + 1));
     if k == Kind::Mixed && bytes.len() <= max && balanced(bytes) {
         out.extend_from_slice(bytes);
-        return Fitted { bytes: out, cut: false };
+        return Fitted {
+            bytes: out,
+            cut: false,
+        };
     }
     let used = take(k, bytes, &mut shift, max, &mut out);
     let cut = has_chars(k, &bytes[used..], shift);
@@ -101,7 +104,11 @@ pub fn wrap(ccsid: u16, bytes: &[u8], len: usize, pad: u8) -> Vec<Vec<u8>> {
 
 /// The pad of a CCSID's records: a pure double-byte one's is 0x4040.
 fn pad_of(ccsid: u16, pad: u8) -> u8 {
-    if kind(ccsid) == Kind::Pairs { 0x40 } else { pad }
+    if kind(ccsid) == Kind::Pairs {
+        0x40
+    } else {
+        pad
+    }
 }
 
 /// Whether mixed `bytes` end in single-byte state with no half pair.
@@ -159,7 +166,11 @@ fn take(k: Kind, bytes: &[u8], shift: &mut Shift, len: usize, out: &mut Vec<u8>)
         }
         Kind::Pairs => {
             // All of it when it fits (an odd last byte too), else whole pairs.
-            let n = if bytes.len() <= len { bytes.len() } else { len & !1 };
+            let n = if bytes.len() <= len {
+                bytes.len()
+            } else {
+                len & !1
+            };
             out.extend_from_slice(&bytes[..n]);
             n
         }

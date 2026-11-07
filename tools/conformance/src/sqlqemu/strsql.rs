@@ -10,15 +10,19 @@ use crate::steps::Suite;
 
 /// One statement typed on Enter SQL Statements and run.
 pub(super) fn stmt(tn: &mut Tn, text: &str) -> Result<String, String> {
-    tn.run(&format!("key eraseinput\npick \"===>\" {text}\nkey enter\nsettle 1500\nunlock\n"))
-        .map_err(|e| format!("{text}: {e}"))?;
+    tn.run(&format!(
+        "key eraseinput\npick \"===>\" {text}\nkey enter\nsettle 1500\nunlock\n"
+    ))
+    .map_err(|e| format!("{text}: {e}"))?;
     Ok(tn.screen())
 }
 
 /// A query: Display Data, the screen.
 fn query(tn: &mut Tn, text: &str) -> Result<String, String> {
-    tn.run(&format!("key eraseinput\npick \"===>\" {text}\nkey enter\nwait \"Display Data\"\nsettle 800\n"))
-        .map_err(|e| format!("{text}: {e}"))?;
+    tn.run(&format!(
+        "key eraseinput\npick \"===>\" {text}\nkey enter\nwait \"Display Data\"\nsettle 800\n"
+    ))
+    .map_err(|e| format!("{text}: {e}"))?;
     Ok(tn.screen())
 }
 
@@ -49,16 +53,22 @@ impl Suite {
         let lib = LIB.to_ascii_lowercase();
         stmt(
             &mut tn,
-            &format!("create table {lib}/strt (id int not null, name char(10), d date, note char(60) not null default 'note')"),
+            &format!(
+                "create table {lib}/strt (id int not null, name char(10), d date, note char(60) not null default 'note')"
+            ),
         )?;
         stmt(
             &mut tn,
-            &format!("insert into {lib}/strt (id, name, d) values (1, 'ANN', '2026-01-15'), (2, 'BOB', '2026-02-03'), (3, 'CID', '2026-03-04')"),
+            &format!(
+                "insert into {lib}/strt (id, name, d) values (1, 'ANN', '2026-01-15'), (2, 'BOB', '2026-02-03'), (3, 'CID', '2026-03-04')"
+            ),
         )?;
         for _ in 0..4 {
             stmt(
                 &mut tn,
-                &format!("insert into {lib}/strt (id, name, d) select id + (select count(*) from {lib}/strt), name, d from {lib}/strt"),
+                &format!(
+                    "insert into {lib}/strt (id, name, d) select id + (select count(*) from {lib}/strt), name, d from {lib}/strt"
+                ),
             )?;
         }
         sql_has(s, &format!("SELECT COUNT(*) FROM {LIB}/STRT"), &["48"])?;
@@ -66,7 +76,9 @@ impl Suite {
         // Display Data: three pages, shifted right and back.
         let select = format!("select id, name, d, note from {lib}/strt order by id");
         let p1 = query(&mut tn, &select)?;
-        let ann = row_of(&p1, "ANN").ok_or_else(|| format!("no ANN row:\n{p1}"))?.to_string();
+        let ann = row_of(&p1, "ANN")
+            .ok_or_else(|| format!("no ANN row:\n{p1}"))?
+            .to_string();
         if ann.contains("2026-01-15") {
             return Err(format!("the job's date format is already *ISO:\n{p1}"));
         }
@@ -115,10 +127,16 @@ impl Suite {
         ))?;
         let built = tn.screen();
         if !built.to_ascii_uppercase().contains("INSERT INTO") {
-            return Err(format!("the prompt left no INSERT on the input lines:\n{built}"));
+            return Err(format!(
+                "the prompt left no INSERT on the input lines:\n{built}"
+            ));
         }
         tn.run("key enter\nsettle 1500\nunlock\n")?;
-        sql_has(s, &format!("SELECT NAME, NOTE FROM {LIB}/STRT WHERE ID = 100"), &["ZED", "prompted"])?;
+        sql_has(
+            s,
+            &format!("SELECT NAME, NOTE FROM {LIB}/STRT WHERE ID = 100"),
+            &["ZED", "prompted"],
+        )?;
 
         // CONNECT to this system again, a change there, and back.
         let at = stmt(&mut tn, "connect to loop")?;
@@ -133,7 +151,11 @@ impl Suite {
         if !back.contains(&format!("relational database {local}")) {
             return Err(format!("CONNECT TO {local}:\n{back}"));
         }
-        sql_has(s, &format!("SELECT NAME FROM {LIB}/STRT WHERE ID = 200"), &["REMOTE"])?;
+        sql_has(
+            s,
+            &format!("SELECT NAME FROM {LIB}/STRT WHERE ID = 200"),
+            &["REMOTE"],
+        )?;
 
         // Exit saving the session; STRSQL resumes it. Reported, not
         // required, until it has passed on a booted system.
@@ -150,7 +172,10 @@ impl Suite {
         tn.close()?;
         Ok(format!(
             "48 rows made in STRSQL; Display Data paged to its end, F20 and F19; *ISO from F13 option 1 shown ({}); F4 on INSERT ran; CONNECT TO LOOP, a change there, back to {local}; {saved}",
-            ann_iso.split_whitespace().find(|w| w.contains("2026")).unwrap_or("")
+            ann_iso
+                .split_whitespace()
+                .find(|w| w.contains("2026"))
+                .unwrap_or("")
         ))
     }
 }
@@ -159,11 +184,16 @@ impl Suite {
 /// with option 2. What happened, for the report.
 pub(super) fn resume(tn: &mut Tn) -> String {
     let run = |tn: &mut Tn| -> Result<String, String> {
-        tn.run("key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n")?;
+        tn.run(
+            "key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n",
+        )?;
         let resumed = tn.screen();
         // SQL6102 is a line of the history: F1 on it.
         let rows = tn.d.term.text_rows();
-        let at = rows.iter().rposition(|r| r.contains("saved when STRSQL")).map(|i| (i + 1, rows[i].len() - rows[i].trim_start().len() + 1));
+        let at = rows
+            .iter()
+            .rposition(|r| r.contains("saved when STRSQL"))
+            .map(|i| (i + 1, rows[i].len() - rows[i].trim_start().len() + 1));
         let id = match at {
             Some((r, c)) => tn.msgid_at(r, c)?,
             None => "no message".into(),
@@ -173,7 +203,8 @@ pub(super) fn resume(tn: &mut Tn) -> String {
             (has, _) => format!("open: the resumed session showed {id}, statements back: {has}"),
         })
     };
-    let r = run(tn).unwrap_or_else(|e| format!("open: resuming failed: {}", e.lines().next().unwrap_or("")));
+    let r = run(tn)
+        .unwrap_or_else(|e| format!("open: resuming failed: {}", e.lines().next().unwrap_or("")));
     // Back to Enter SQL Statements whatever happened, then out unsaved.
     for _ in 0..3 {
         if tn.screen().contains("Enter SQL Statements") && !tn.screen().contains("Help") {

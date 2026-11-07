@@ -6,8 +6,8 @@
 //! `DIM`, `CTDATA` or `FROMFILE`, `TOFILE`, `PERRCD`, the sequence and
 //! an alternating array as a definition of its own with `ALT`.
 
-use super::place::{Rec, cut3};
 use super::Out;
+use super::place::{Rec, cut3};
 
 /// What the definitions know: the arrays the extension specifications
 /// declared.

@@ -172,9 +172,16 @@ impl<A: Auth, Q: DataQueues, X: Exits> DtaqServer<A, Q, X> {
         let t = &f.template;
         let name = text::from_ebcdic(reply::slice(t, 0, 10));
         let lib = text::from_ebcdic(reply::slice(t, 10, 10));
-        let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib };
+        let lib = if lib.is_empty() {
+            "*LIBL".to_string()
+        } else {
+            lib
+        };
         let key = f.param(cp::KEY).map(|p| p.data.clone()).unwrap_or_default();
-        let data = f.param(cp::ENTRY).map(|p| p.data.clone()).unwrap_or_default();
+        let data = f
+            .param(cp::ENTRY)
+            .map(|p| p.data.clone())
+            .unwrap_or_default();
         let function = i32::from(f.header.req_rep_id);
         let op = if f.header.req_rep_id == id::READ {
             order_text(reply::slice(t, 21, 2))
@@ -251,7 +258,12 @@ impl<A: Auth, Q: DataQueues, X: Exits> DtaqServer<A, Q, X> {
                     tp.extend(a.key_len.to_be_bytes());
                     tp.push(if a.force { 0xF1 } else { 0xF0 });
                     tp.extend(text::ebcdic_fixed(&a.text, 50));
-                    Outcome::one(reply::frame(&f.header, id::ATTRIBUTES_REPLY, tp, Vec::new()))
+                    Outcome::one(reply::frame(
+                        &f.header,
+                        id::ATTRIBUTES_REPLY,
+                        tp,
+                        Vec::new(),
+                    ))
                 }
                 Err(e) => common(f, rc::ERROR, Some(&e)),
             },

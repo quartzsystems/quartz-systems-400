@@ -413,7 +413,11 @@ fn locks_level_checks_and_logical_reads() {
     assert_eq!(c.fb.status_code(), "01299");
     assert_eq!(c.fb.msgid, Some("CPF5032"));
     a.unlock_op(&mut t).unwrap();
-    assert!(c.chain(&mut t, &KeyArg::one(num("7")), true).unwrap().is_some());
+    assert!(
+        c.chain(&mut t, &KeyArg::one(num("7")), true)
+            .unwrap()
+            .is_some()
+    );
     c.close(&mut t);
     a.close(&mut t);
     assert!(locks.lock().unwrap().is_empty());

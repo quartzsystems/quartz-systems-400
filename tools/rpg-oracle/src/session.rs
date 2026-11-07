@@ -146,7 +146,9 @@ impl Session {
             bail!("CRTSRCPF failed {cause}");
         }
         self.try_rcmd(&format!("DLTF FILE({lib}/RPGSPL)"));
-        let (ok, cause) = self.rcmd(&format!("CRTPF FILE({lib}/RPGSPL) RCDLEN({SPL_RCDLEN}) SIZE(*NOMAX)"))?;
+        let (ok, cause) = self.rcmd(&format!(
+            "CRTPF FILE({lib}/RPGSPL) RCDLEN({SPL_RCDLEN}) SIZE(*NOMAX)"
+        ))?;
         if !ok {
             bail!("CRTPF failed {cause}");
         }
@@ -161,7 +163,9 @@ impl Session {
         }
         let lib = self.lib.clone();
         self.try_rcmd(&format!("DLTF FILE({lib}/QRPGSRC)"));
-        let (ok, cause) = self.rcmd(&format!("CRTSRCPF FILE({lib}/QRPGSRC) RCDLEN(92) CCSID(37)"))?;
+        let (ok, cause) = self.rcmd(&format!(
+            "CRTSRCPF FILE({lib}/QRPGSRC) RCDLEN(92) CCSID(37)"
+        ))?;
         if !ok {
             bail!("CRTSRCPF QRPGSRC failed {cause}");
         }
@@ -191,7 +195,10 @@ impl Session {
         }
         let mut source = Vec::new();
         if let Ok(data) = self.ftp.get(&self.member_path("QRPGLESRC", &c.name), true) {
-            source = data.chunks(100).map(|r| ccsid::from_ebcdic(r).trim_end().to_string()).collect();
+            source = data
+                .chunks(100)
+                .map(|r| ccsid::from_ebcdic(r).trim_end().to_string())
+                .collect();
         }
         self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
         let m = Mask {
@@ -214,12 +221,17 @@ impl Session {
     }
 
     /// Upload lines as a member of a source file.
-    fn put_source(&mut self, file: &str, member: &str, lines: &[String], width: usize) -> Result<()> {
+    fn put_source(
+        &mut self,
+        file: &str,
+        member: &str,
+        lines: &[String],
+        width: usize,
+    ) -> Result<()> {
         let mut data = Vec::with_capacity(lines.len() * width);
         for (i, l) in lines.iter().enumerate() {
             let mut rec = vec![0x40u8; width];
-            ccsid::encode_fixed(l, &mut rec)
-                .map_err(|e| anyhow::anyhow!("line {}: {e}", i + 1))?;
+            ccsid::encode_fixed(l, &mut rec).map_err(|e| anyhow::anyhow!("line {}: {e}", i + 1))?;
             data.extend(rec);
         }
         let path = self.member_path(file, member);
@@ -378,7 +390,9 @@ impl Session {
             .filter(|r| r.len() == 71)
             .map(|r| Entry {
                 name: ccsid::from_ebcdic(&r[0..10]).trim().to_string(),
-                number: ccsid::from_ebcdic(&r[10..17]).trim_start_matches('0').to_string(),
+                number: ccsid::from_ebcdic(&r[10..17])
+                    .trim_start_matches('0')
+                    .to_string(),
                 job: ccsid::from_ebcdic(&r[17..45]).trim().to_string(),
                 created: ccsid::from_ebcdic(&r[45..71]),
             })
@@ -396,7 +410,10 @@ impl Session {
         ))?;
         if !ok {
             // Deleted all the same, or every later run would meet it.
-            self.try_rcmd(&format!("DLTSPLF FILE({}) JOB({}) SPLNBR({})", e.name, e.job, e.number));
+            self.try_rcmd(&format!(
+                "DLTSPLF FILE({}) JOB({}) SPLNBR({})",
+                e.name, e.job, e.number
+            ));
             bail!("CPYSPLF {} {} failed: {}", e.name, e.number, reply.trim());
         }
         let path = self.member_path("RPGSPL", "RPGSPL");
@@ -502,7 +519,10 @@ impl Session {
             self.rpg3_file()?;
             self.try_rcmd(&format!("RMVM FILE({lib}/QRPGSRC) MBR({})", c.name));
             self.put_source("QRPGSRC", &c.name, &c.lines, c.width())?;
-            self.try_rcmd(&format!("CHGPFM FILE({lib}/QRPGSRC) MBR({}) SRCTYPE(RPG)", c.name));
+            self.try_rcmd(&format!(
+                "CHGPFM FILE({lib}/QRPGSRC) MBR({}) SRCTYPE(RPG)",
+                c.name
+            ));
         } else {
             self.source_file(c.rcdlen)?;
             self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
@@ -555,7 +575,11 @@ impl Session {
         };
         // CRTSQLRPGI prints the precompile listing and then the
         // compiler's; both are kept, in that order.
-        let sql = c.cmd.trim_start().to_ascii_uppercase().starts_with("CRTSQLRPGI");
+        let sql = c
+            .cmd
+            .trim_start()
+            .to_ascii_uppercase()
+            .starts_with("CRTSQLRPGI");
         // A program called at once: its listing is read with the call's
         // spooled files, in one query (the listing is the file named
         // after the member).
@@ -611,7 +635,11 @@ impl Session {
                 .unwrap_or("")
                 .to_string();
         }
-        o.diags = if c.rpg3 { listing::diags_rpg3(&listing) } else { listing::diags(&listing) };
+        o.diags = if c.rpg3 {
+            listing::diags_rpg3(&listing)
+        } else {
+            listing::diags(&listing)
+        };
         let converted = if c.rpg3 { Some(self.convert(c)?) } else { None };
         for cmd in ["DLTPGM PGM", "DLTMOD MODULE", "DLTSRVPGM SRVPGM"] {
             self.try_rcmd(&format!("{cmd}({lib}/{})", c.name));
@@ -682,7 +710,14 @@ impl Session {
             }
         }
         let lib = self.lib.clone();
-        for f in ["QRPGLESRC", "QRPGSRC", "QDDSSRC", "RPGSPL", "RPGSPLS", "RPGJLOG"] {
+        for f in [
+            "QRPGLESRC",
+            "QRPGSRC",
+            "QDDSSRC",
+            "RPGSPL",
+            "RPGSPLS",
+            "RPGJLOG",
+        ] {
             self.try_rcmd(&format!("DLTF FILE({lib}/{f})"));
         }
     }
@@ -707,7 +742,10 @@ fn spooled(name: &str, records: &[String]) -> Spooled {
     if name == "QPPGMDMP" {
         lines = rpg_oracle::outcome::mask_dump(lines);
     }
-    Spooled { file: name.to_string(), lines }
+    Spooled {
+        file: name.to_string(),
+        lines,
+    }
 }
 
 /// The folder every `rpg-oracle` process on this machine shares, so
@@ -732,7 +770,12 @@ impl Lock {
         std::fs::create_dir_all(&dir)?;
         let path = dir.join("session.lock");
         loop {
-            if std::fs::OpenOptions::new().write(true).create_new(true).open(&path).is_ok() {
+            if std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+                .is_ok()
+            {
                 return Ok(Self(path));
             }
             let stale = std::fs::metadata(&path)

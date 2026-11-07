@@ -16,7 +16,9 @@ use accessweb::env::files::{AuthChange, Entry, Files, Kind, Props, Share};
 use accessweb::transfer::Queue;
 use ifs::client::{IfsClient, write_all};
 use ifs::errno::Errno;
-use ifs::ops::flags::{O_CCSID, O_CREAT, O_EXCL, O_RDONLY, O_TRUNC, O_WRONLY, S_IFDIR, S_IFLNK, S_IFMT, S_IFREG};
+use ifs::ops::flags::{
+    O_CCSID, O_CREAT, O_EXCL, O_RDONLY, O_TRUNC, O_WRONLY, S_IFDIR, S_IFLNK, S_IFMT, S_IFREG,
+};
 use ifs::ops::{ChgAut, CopyOpts, OpenArgs, RenameMode, Stat, WalkOpts};
 use qsweb::msg::{Kind as MsgKind, Message};
 use sec::api::{Answer, Query};
@@ -65,7 +67,11 @@ impl LiveFiles {
 /// The message of `e` for `path`.
 fn msg(e: Errno, path: &str) -> Message {
     let m = Message::new(MsgKind::Error, e.command_message(), e.text());
-    if e.command_message_names_object() { m.with_data(&[path]) } else { m }
+    if e.command_message_names_object() {
+        m.with_data(&[path])
+    } else {
+        m
+    }
 }
 
 fn secs(n: i64) -> u64 {
@@ -101,23 +107,33 @@ fn entry_of(c: &RemoteIfs, path: &str, s: &Stat) -> Entry {
 }
 
 fn join(dir: &str, name: &str) -> String {
-    if dir == "/" { format!("/{name}") } else { format!("{}/{name}", dir.trim_end_matches('/')) }
+    if dir == "/" {
+        format!("/{name}")
+    } else {
+        format!("{}/{name}", dir.trim_end_matches('/'))
+    }
 }
 
 /// Delete `path` from the inside out: the entries deleted, or where it
 /// stopped.
 fn delete_tree(c: &RemoteIfs, path: &str, done: &mut u64) -> Result<(), (String, Message)> {
-    let s = c.stat(path, false).map_err(|e| (path.to_string(), msg(e, path)))?;
+    let s = c
+        .stat(path, false)
+        .map_err(|e| (path.to_string(), msg(e, path)))?;
     if s.mode & S_IFMT == S_IFDIR {
-        let kids = c.read_dir(path).map_err(|e| (path.to_string(), msg(e, path)))?;
+        let kids = c
+            .read_dir(path)
+            .map_err(|e| (path.to_string(), msg(e, path)))?;
         for d in kids {
             if d.name != "." && d.name != ".." {
                 delete_tree(c, &join(path, &d.name), done)?;
             }
         }
-        c.rmdir(path).map_err(|e| (path.to_string(), msg(e, path)))?;
+        c.rmdir(path)
+            .map_err(|e| (path.to_string(), msg(e, path)))?;
     } else {
-        c.unlink(path).map_err(|e| (path.to_string(), msg(e, path)))?;
+        c.unlink(path)
+            .map_err(|e| (path.to_string(), msg(e, path)))?;
     }
     *done += 1;
     Ok(())
@@ -129,9 +145,11 @@ impl Files for LiveFiles {
             return h;
         }
         let u = user.to_string();
-        let found: Option<String> = self.link.read(user, move |m: &mut Main| match m.sec(Query::Profile { user: u }) {
-            Ok(Answer::Profile { data }) => UsrPrf::decode(&data).ok().map(|p| p.homedir),
-            _ => None,
+        let found: Option<String> = self.link.read(user, move |m: &mut Main| {
+            match m.sec(Query::Profile { user: u }) {
+                Ok(Answer::Profile { data }) => UsrPrf::decode(&data).ok().map(|p| p.homedir),
+                _ => None,
+            }
         });
         let h = found
             .filter(|h| h.starts_with('/'))
@@ -159,18 +177,40 @@ impl Files for LiveFiles {
 
     fn entry(&self, user: &str, path: &str) -> Result<Entry, Message> {
         let p = path.to_string();
-        self.with(user, move |c| c.stat(&p, false).map(|s| entry_of(c, &p, &s)).map_err(|e| msg(e, &p)))
+        self.with(user, move |c| {
+            c.stat(&p, false)
+                .map(|s| entry_of(c, &p, &s))
+                .map_err(|e| msg(e, &p))
+        })
     }
 
     fn props(&self, user: &str, path: &str) -> Result<Props, Message> {
         let p = path.to_string();
         self.with(user, move |c| {
             let s = c.stat(&p, false).map_err(|e| msg(e, &p))?;
-            let autl = c.dspaut(&p).ok().and_then(|a| a.autl).unwrap_or_else(|| "*NONE".into());
+            let autl = c
+                .dspaut(&p)
+                .ok()
+                .and_then(|a| a.autl)
+                .unwrap_or_else(|| "*NONE".into());
             let typ = match s.mode & S_IFMT {
-                S_IFDIR => format!("Directory ({})", if s.objtype.is_empty() { "*DIR" } else { &s.objtype }),
+                S_IFDIR => format!(
+                    "Directory ({})",
+                    if s.objtype.is_empty() {
+                        "*DIR"
+                    } else {
+                        &s.objtype
+                    }
+                ),
                 S_IFLNK => "Symbolic link (*SYMLNK)".into(),
-                S_IFREG => format!("Stream file ({})", if s.objtype.is_empty() { "*STMF" } else { &s.objtype }),
+                S_IFREG => format!(
+                    "Stream file ({})",
+                    if s.objtype.is_empty() {
+                        "*STMF"
+                    } else {
+                        &s.objtype
+                    }
+                ),
                 _ => s.objtype.clone(),
             };
             Ok(Props {
@@ -188,11 +228,15 @@ impl Files for LiveFiles {
     fn read(&self, user: &str, path: &str, offset: u64, len: u64) -> Result<Vec<u8>, Message> {
         let p = path.to_string();
         self.with(user, move |c| {
-            let fd = c.open(&p, OpenArgs::new(O_RDONLY)).map_err(|e| msg(e, &p))?;
+            let fd = c
+                .open(&p, OpenArgs::new(O_RDONLY))
+                .map_err(|e| msg(e, &p))?;
             let mut out = Vec::new();
             let mut at = offset;
             let r = loop {
-                let want = usize::try_from(len.saturating_sub(out.len() as u64)).unwrap_or(usize::MAX).min(256 * 1024);
+                let want = usize::try_from(len.saturating_sub(out.len() as u64))
+                    .unwrap_or(usize::MAX)
+                    .min(256 * 1024);
                 if want == 0 {
                     break Ok(());
                 }
@@ -235,7 +279,9 @@ impl Files for LiveFiles {
 
     fn rename(&self, user: &str, from: &str, to: &str) -> Result<(), Message> {
         let (f, t) = (from.to_string(), to.to_string());
-        self.with(user, move |c| c.rename(&f, &t, RenameMode::Keep).map_err(|e| msg(e, &t)))
+        self.with(user, move |c| {
+            c.rename(&f, &t, RenameMode::Keep).map_err(|e| msg(e, &t))
+        })
     }
 
     fn copy(&self, user: &str, from: &str, to: &str) -> Result<(), Message> {
@@ -273,8 +319,13 @@ impl Files for LiveFiles {
             if s.mode & S_IFMT != S_IFDIR {
                 return Ok(1);
             }
-            let opts = WalkOpts { follow: false, one_fs: true };
-            c.walk(&p, opts, WALK_MAX).map(|v| v.len() as u64).map_err(|e| msg(e, &p))
+            let opts = WalkOpts {
+                follow: false,
+                one_fs: true,
+            };
+            c.walk(&p, opts, WALK_MAX)
+                .map(|v| v.len() as u64)
+                .map_err(|e| msg(e, &p))
         })
     }
 
@@ -282,7 +333,11 @@ impl Files for LiveFiles {
         let (p, mode, autl) = (path.to_string(), change.mode, change.autl.clone());
         self.with(user, move |c| {
             c.chmod(&p, mode & 0o777).map_err(|e| msg(e, &p))?;
-            let now = c.dspaut(&p).ok().and_then(|a| a.autl).unwrap_or_else(|| "*NONE".into());
+            let now = c
+                .dspaut(&p)
+                .ok()
+                .and_then(|a| a.autl)
+                .unwrap_or_else(|| "*NONE".into());
             if now != autl {
                 let list = if autl == "*NONE" { None } else { Some(autl) };
                 let ca = ChgAut {
@@ -301,9 +356,18 @@ impl Files for LiveFiles {
         let h = home.clone();
         let bytes = self
             .with(user, move |c| {
-                let opts = WalkOpts { follow: false, one_fs: true };
+                let opts = WalkOpts {
+                    follow: false,
+                    one_fs: true,
+                };
                 let all = c.walk(&h, opts, WALK_MAX).map_err(|e| msg(e, &h))?;
-                Ok((all.len() < WALK_MAX).then(|| all.iter().filter_map(|w| w.stat.as_ref().ok()).filter(|s| s.mode & S_IFMT == S_IFREG).map(|s| s.size).sum::<u64>()))
+                Ok((all.len() < WALK_MAX).then(|| {
+                    all.iter()
+                        .filter_map(|w| w.stat.as_ref().ok())
+                        .filter(|s| s.mode & S_IFMT == S_IFREG)
+                        .map(|s| s.size)
+                        .sum::<u64>()
+                }))
             })
             .ok()
             .flatten();

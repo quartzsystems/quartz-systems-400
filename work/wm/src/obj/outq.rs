@@ -310,8 +310,8 @@ impl OutQ {
                     };
                 }
                 // Accepted, not kept.
-                "OUTQ" | "JOBSEP" | "DTAQ" | "AUT" | "USRDFNOBJ" | "USRDFNDTA" | "SPLFASP" | "ASPDEV"
-                | "IMGCFG" => {}
+                "OUTQ" | "JOBSEP" | "DTAQ" | "AUT" | "USRDFNOBJ" | "USRDFNDTA" | "SPLFASP"
+                | "ASPDEV" | "IMGCFG" => {}
                 k if self.remote.apply_one(k, v)? => {}
                 _ => {
                     return Err(Error::value(
@@ -370,12 +370,18 @@ impl OutQ {
             let _ = writeln!(
                 out,
                 "Remote printer queue : {}",
-                if self.rmtprtq.is_empty() { "*USER" } else { &self.rmtprtq }
+                if self.rmtprtq.is_empty() {
+                    "*USER"
+                } else {
+                    &self.rmtprtq
+                }
             );
             let _ = writeln!(
                 out,
                 "Connection type  . . : {}",
-                ["*IP", "*SNA", "*USRDFN"].get(usize::from(self.cnntype)).unwrap_or(&"*IP")
+                ["*IP", "*SNA", "*USRDFN"]
+                    .get(usize::from(self.cnntype))
+                    .unwrap_or(&"*IP")
             );
             out.push_str(&self.remote.describe());
         }

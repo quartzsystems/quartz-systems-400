@@ -46,10 +46,7 @@ pub static HEADER_LAYOUT: Layout = Layout {
 pub static EXTENT_LAYOUT: Layout = Layout {
     name: "IfsExtent",
     size: Some(EXTENT_LEN),
-    fields: &[
-        field("start", EXT_START, 8),
-        field("pages", EXT_PAGES, 8),
-    ],
+    fields: &[field("start", EXT_START, 8), field("pages", EXT_PAGES, 8)],
 };
 
 /// One run of the volume: logical pages `start .. start + pages`.
@@ -84,7 +81,9 @@ pub fn encode(at: &[PageNo], extents: &[IfsExtent], generation: u64) -> Vec<Page
     let mut volume = 0u64;
     let mut out = Vec::with_capacity(need);
     for i in 0..need {
-        let chunk = extents.get(i * PER_PAGE..((i + 1) * PER_PAGE).min(extents.len())).unwrap_or(&[]);
+        let chunk = extents
+            .get(i * PER_PAGE..((i + 1) * PER_PAGE).min(extents.len()))
+            .unwrap_or(&[]);
         let mut page = Page::zeroed();
         let body = page.body_mut();
         body[OFF_MAGIC..OFF_MAGIC + 8].copy_from_slice(MAGIC);

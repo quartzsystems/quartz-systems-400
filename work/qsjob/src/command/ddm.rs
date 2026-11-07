@@ -58,7 +58,9 @@ fn system_name(link: &Shared) -> String {
 /// The directory: the user space's text (a length, then the text), or
 /// the data area an older release kept.
 pub fn directory_of(link: &Shared) -> RdbDirectory {
-    let space = link.borrow_mut().with(|l| l.us_load(RDBDIR.1.into(), RDBDIR.0.into()));
+    let space = link
+        .borrow_mut()
+        .with(|l| l.us_load(RDBDIR.1.into(), RDBDIR.0.into()));
     let text = match space {
         Some(b) if b.len() >= 4 => {
             let n = u32::from_be_bytes([b[0], b[1], b[2], b[3]]) as usize;
@@ -80,19 +82,43 @@ pub(crate) fn directory(host: &Host) -> RdbDirectory {
 
 fn save_directory(host: &Host, d: &RdbDirectory) -> Result<(), Fail> {
     let text = d.encode();
-    let mut bytes = u32::try_from(text.len()).unwrap_or(0).to_be_bytes().to_vec();
+    let mut bytes = u32::try_from(text.len())
+        .unwrap_or(0)
+        .to_be_bytes()
+        .to_vec();
     bytes.extend(text.as_bytes());
     if bytes.len() as u64 > SPACE {
-        return Err(Fail::check("ADDRDBDIRE", "the relational database directory is full"));
+        return Err(Fail::check(
+            "ADDRDBDIRE",
+            "the relational database directory is full",
+        ));
     }
     let link = &host.link;
-    if link.borrow_mut().with(|l| l.us_load(RDBDIR.1.into(), RDBDIR.0.into())).is_none() {
+    if link
+        .borrow_mut()
+        .with(|l| l.us_load(RDBDIR.1.into(), RDBDIR.0.into()))
+        .is_none()
+    {
         link.borrow_mut()
-            .with(|l| l.us_create(RDBDIR.1.into(), RDBDIR.0.into(), SPACE, 0, "Relational database directory".into()))
+            .with(|l| {
+                l.us_create(
+                    RDBDIR.1.into(),
+                    RDBDIR.0.into(),
+                    SPACE,
+                    0,
+                    "Relational database directory".into(),
+                )
+            })
             .map_err(|e| Fail::new("CPF9870", e))?;
     }
-    if !link.borrow_mut().with(|l| l.us_store(RDBDIR.1.into(), RDBDIR.0.into(), bytes)) {
-        return Err(Fail::new("CPF9870", "The relational database directory could not be written."));
+    if !link
+        .borrow_mut()
+        .with(|l| l.us_store(RDBDIR.1.into(), RDBDIR.0.into(), bytes))
+    {
+        return Err(Fail::new(
+            "CPF9870",
+            "The relational database directory could not be written.",
+        ));
     }
     Ok(())
 }
@@ -133,7 +159,11 @@ fn qual(v: &Value) -> String {
 /// Set `f` from a keyword unless it says `*SAME`.
 fn set(f: &mut String, v: Option<String>) {
     if let Some(v) = v.filter(|v| !v.eq_ignore_ascii_case("*SAME")) {
-        *f = if v.eq_ignore_ascii_case("*BLANK") { String::new() } else { v };
+        *f = if v.eq_ignore_ascii_case("*BLANK") {
+            String::new()
+        } else {
+            v
+        };
     }
 }
 
@@ -150,11 +180,20 @@ fn apply_entry(e: &mut RdbEntry, r: &Resolved) {
     set(&mut e.text, plain(r, "TEXT"));
     if let Some(v) = value(r, "ARDPGM") {
         let a = match v {
-            Value::Elems(p) => p.first().cloned().flatten().map(|q| qual(&q)).unwrap_or_default(),
+            Value::Elems(p) => p
+                .first()
+                .cloned()
+                .flatten()
+                .map(|q| qual(&q))
+                .unwrap_or_default(),
             other => qual(other),
         };
         if !a.eq_ignore_ascii_case("*SAME") {
-            e.ardpgm = if a.eq_ignore_ascii_case("*DRDA") { String::new() } else { a };
+            e.ardpgm = if a.eq_ignore_ascii_case("*DRDA") {
+                String::new()
+            } else {
+                a
+            };
         }
     }
     for (f, k) in [
@@ -188,13 +227,16 @@ fn addrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let mut d = directory(host);
     d.add(e).map_err(|e| refused(&e))?;
     save_directory(host, &d)?;
-    Ok(format!("Entry {name} added to the relational database directory.\n"))
+    Ok(format!(
+        "Entry {name} added to the relational database directory.\n"
+    ))
 }
 
 fn chgrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let name = elem(r, "RDB", 0).unwrap_or_default().to_ascii_uppercase();
     let mut d = directory(host);
-    d.change(&name, |e| apply_entry(e, r)).map_err(|e| refused(&e))?;
+    d.change(&name, |e| apply_entry(e, r))
+        .map_err(|e| refused(&e))?;
     save_directory(host, &d)?;
     Ok(format!("Entry {name} changed.\n"))
 }
@@ -204,7 +246,9 @@ fn rmvrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let mut d = directory(host);
     let n = d.remove(&name).map_err(|e| refused(&e))?;
     save_directory(host, &d)?;
-    Ok(format!("{n} relational database directory entries removed.\n"))
+    Ok(format!(
+        "{n} relational database directory entries removed.\n"
+    ))
 }
 
 fn wrkrdbdire(host: &Host, r: &Resolved) -> String {
@@ -222,7 +266,11 @@ fn wrkrdbdire(host: &Host, r: &Resolved) -> String {
 fn file_name(r: &Resolved, dft_lib: &str) -> (String, String) {
     match value(r, "FILE") {
         Some(Value::Qual(p)) => (
-            p.get(1).map(text).filter(|l| !l.is_empty()).unwrap_or_else(|| dft_lib.into()).to_ascii_uppercase(),
+            p.get(1)
+                .map(text)
+                .filter(|l| !l.is_empty())
+                .unwrap_or_else(|| dft_lib.into())
+                .to_ascii_uppercase(),
             p.first().map(text).unwrap_or_default().to_ascii_uppercase(),
         ),
         Some(v) => (dft_lib.into(), text(v).to_ascii_uppercase()),
@@ -308,7 +356,8 @@ fn chgddmf(host: &Host, r: &Resolved) -> Result<String, Fail> {
         .borrow_mut()
         .with(|l| l.ddmf_get(lib.clone(), file.clone()))
         .map_err(|e| service_fail(&e))?;
-    let mut f = DdmFile::decode(&text).ok_or_else(|| Fail::new("CPF3204", format!("DDM file {found}/{file} is damaged.")))?;
+    let mut f = DdmFile::decode(&text)
+        .ok_or_else(|| Fail::new("CPF3204", format!("DDM file {found}/{file} is damaged.")))?;
     apply_ddmf(&mut f, r);
     let payload = f.encode();
     let t = f.text.clone();
@@ -321,11 +370,22 @@ fn chgddmf(host: &Host, r: &Resolved) -> Result<String, Fail> {
 
 /// The DDM files a `FILE(lib/name)` names (`*ALL` and generic names).
 pub fn ddm_files(link: &Shared, lib: &str, name: &str) -> Vec<(String, DdmFile)> {
-    let pattern = if name.is_empty() || name == "*ALL" { "*ALL".to_string() } else { name.to_string() };
-    let objs = link.borrow_mut().with(|l| l.list_objects(lib.into(), pattern, "*FILE".into()));
+    let pattern = if name.is_empty() || name == "*ALL" {
+        "*ALL".to_string()
+    } else {
+        name.to_string()
+    };
+    let objs = link
+        .borrow_mut()
+        .with(|l| l.list_objects(lib.into(), pattern, "*FILE".into()));
     let mut out = Vec::new();
-    for o in objs.into_iter().filter(|o| o.attr.trim() == mi::io::DDM_ATTRIBUTE) {
-        if let Ok((l, text)) = link.borrow_mut().with(|c| c.ddmf_get(o.lib.clone(), o.name.clone()))
+    for o in objs
+        .into_iter()
+        .filter(|o| o.attr.trim() == mi::io::DDM_ATTRIBUTE)
+    {
+        if let Ok((l, text)) = link
+            .borrow_mut()
+            .with(|c| c.ddmf_get(o.lib.clone(), o.name.clone()))
             && let Some(f) = DdmFile::decode(&text)
         {
             out.push((l, f));
@@ -342,8 +402,17 @@ fn wrkddmf(host: &Host, r: &Resolved) -> String {
     out.push_str(" Opt  Local File            Remote File                       Location\n");
     for (l, f) in &files {
         let local = format!("{l}/{}", f.file);
-        let location = if f.rmtloc == "*RDB" { f.rdb.clone() } else { f.rmtloc.clone() };
-        let _ = writeln!(out, "      {local:<21} {:<33} {}", f.rmtfile, location.trim_matches('\''));
+        let location = if f.rmtloc == "*RDB" {
+            f.rdb.clone()
+        } else {
+            f.rmtloc.clone()
+        };
+        let _ = writeln!(
+            out,
+            "      {local:<21} {:<33} {}",
+            f.rmtfile,
+            location.trim_matches('\'')
+        );
     }
     if files.is_empty() {
         let _ = writeln!(out, "  (No DDM files)");
@@ -373,7 +442,10 @@ fn chgddmtcpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
     match host.link.borrow_mut().with(|l| l.tcp(op)) {
         TcpReply::Done { .. } => Ok("DDM TCP/IP attributes changed.\n".into()),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
-        other => Err(Fail::check("CHGDDMTCPA", format!("unexpected answer {other:?}"))),
+        other => Err(Fail::check(
+            "CHGDDMTCPA",
+            format!("unexpected answer {other:?}"),
+        )),
     }
 }
 

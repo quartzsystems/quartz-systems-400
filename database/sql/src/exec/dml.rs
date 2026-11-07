@@ -46,9 +46,13 @@ fn default_of(f: &FieldDef) -> Result<Option<Dft>> {
             Some(Dft::Value(Value::Str(n.clone())))
         }
         // A floating-point constant.
-        Some(DefaultValue::Number(n)) if n.contains(['E', 'e']) => Some(Dft::Value(Value::Double(
-            n.parse().map_err(|_| SqlError::Conversion { what: format!("'{n}' is not a number") })?,
-        ))),
+        Some(DefaultValue::Number(n)) if n.contains(['E', 'e']) => {
+            Some(Dft::Value(Value::Double(n.parse().map_err(|_| {
+                SqlError::Conversion {
+                    what: format!("'{n}' is not a number"),
+                }
+            })?)))
+        }
         Some(DefaultValue::Number(n)) => Some(Dft::Value(Value::Num(
             qdecimal::Decimal::parse(n).map_err(|e| SqlError::Conversion {
                 what: e.to_string(),
@@ -108,7 +112,13 @@ fn fill_generated(
             per_field[fi] = default_value(txn, &mut ev, f)?;
         }
     }
-    gn.fill(ctx, &t.format.format.fields, per_field, true, overriding == Some(true))
+    gn.fill(
+        ctx,
+        &t.format.format.fields,
+        per_field,
+        true,
+        overriding == Some(true),
+    )
 }
 
 /// Write `values` (one per field, `None` for the default) into a record.
@@ -189,9 +199,17 @@ fn release_lobs(txn: &mut Txn<'_>, t: &TableInfo, old: &[u8], new: Option<&[u8]>
         return Ok(());
     }
     let mut owner = None;
-    for f in t.format.format.fields.iter().filter(|f| f.data_type.is_lob()) {
+    for f in t
+        .format
+        .format
+        .fields
+        .iter()
+        .filter(|f| f.data_type.is_lob())
+    {
         let was = LobRef::decode(record::field_bytes(f, old))?;
-        if !matches!(was, LobRef::Tree { .. }) || new.is_some_and(|n| record::field_bytes(f, n) == record::field_bytes(f, old)) {
+        if !matches!(was, LobRef::Tree { .. })
+            || new.is_some_and(|n| record::field_bytes(f, n) == record::field_bytes(f, old))
+        {
             continue;
         }
         let o = match owner {
@@ -245,7 +263,13 @@ pub fn insert(
                 for (e, &fi) in r.iter().zip(&idx) {
                     row.push(match e {
                         Expr::Default => None,
-                        e => Some(eval_for(txn, &mut ev, e, &env, &t.format.format.fields[fi])?),
+                        e => Some(eval_for(
+                            txn,
+                            &mut ev,
+                            e,
+                            &env,
+                            &t.format.format.fields[fi],
+                        )?),
                     });
                 }
                 rows.push(row);
@@ -292,12 +316,21 @@ pub(crate) fn write_rows(
         for (k, &fi) in idx.iter().enumerate() {
             per_field[fi] = r.get(k).cloned().flatten();
         }
-        let written = fill_generated(txn, ctx, params, &t, &mut o, &gn, overriding, &mut per_field)
-            .and_then(|()| build_record(txn, &t, &per_field, None))
-            .and_then(|(rec, nulls)| {
-                o.write(txn, &rec, &nulls)?;
-                Ok((rec, nulls))
-            });
+        let written = fill_generated(
+            txn,
+            ctx,
+            params,
+            &t,
+            &mut o,
+            &gn,
+            overriding,
+            &mut per_field,
+        )
+        .and_then(|()| build_record(txn, &t, &per_field, None))
+        .and_then(|(rec, nulls)| {
+            o.write(txn, &rec, &nulls)?;
+            Ok((rec, nulls))
+        });
         match written {
             Err(e) => {
                 result = Err(e);
@@ -318,8 +351,18 @@ pub(crate) fn write_rows(
 
 /// The value of `e` for field `f`: into a `DECFLOAT`, an exponent
 /// literal keeps the exponent written.
-fn eval_for(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, e: &Expr, env: &Env, f: &FieldDef) -> Result<Value> {
-    if f.data_type == dds::DataType::DecFloat { ev.eval_decfloat(txn, e, env) } else { ev.eval(txn, e, env) }
+fn eval_for(
+    txn: &mut Txn<'_>,
+    ev: &mut Evaluator<'_>,
+    e: &Expr,
+    env: &Env,
+    f: &FieldDef,
+) -> Result<Value> {
+    if f.data_type == dds::DataType::DecFloat {
+        ev.eval_decfloat(txn, e, env)
+    } else {
+        ev.eval(txn, e, env)
+    }
 }
 
 /// A change's distinct types before any row is read: its condition's
@@ -363,7 +406,11 @@ fn assignments(
         } else {
             let mut v = Vec::with_capacity(a.values.len());
             for (k, e) in a.values.iter().enumerate() {
-                let field = a.columns.get(k).and_then(|c| t.field(&c.value)).map(|(_, f)| f);
+                let field = a
+                    .columns
+                    .get(k)
+                    .and_then(|c| t.field(&c.value))
+                    .map(|(_, f)| f);
                 v.push(match (e, field) {
                     (Expr::Default, _) => None,
                     (e, Some(f)) => Some(eval_for(txn, ev, e, env, f)?),
@@ -406,7 +453,15 @@ pub fn update(
     params: &[Value],
     u: &Update,
 ) -> Result<u64> {
-    change(txn, ctx, params, &u.table, u.alias.as_ref(), &u.where_clause, Some(&u.set))
+    change(
+        txn,
+        ctx,
+        params,
+        &u.table,
+        u.alias.as_ref(),
+        &u.where_clause,
+        Some(&u.set),
+    )
 }
 
 /// `UPDATE` (with `set`) or `DELETE`: the rows that match, then each
@@ -426,8 +481,15 @@ fn change(
     let alias = alias.map_or_else(|| table.name.value.clone(), |a| a.value.clone());
     // A column set that the table lacks is refused before any row is read
     // (`SQL0206`), however many rows there are.
-    if let Some(c) = set.unwrap_or_default().iter().flat_map(|a| &a.columns).find(|c| t.field(&c.value).is_none()) {
-        return Err(SqlError::ColumnNotFound { name: c.value.clone() });
+    if let Some(c) = set
+        .unwrap_or_default()
+        .iter()
+        .flat_map(|a| &a.columns)
+        .find(|c| t.field(&c.value).is_none())
+    {
+        return Err(SqlError::ColumnNotFound {
+            name: c.value.clone(),
+        });
     }
     if super::udt::registry::any() {
         check_types(&t, &alias, w, set)?;
@@ -446,13 +508,21 @@ fn change(
     let answers = ctx.answers.take();
     let (schema, rows) = read?;
     let cond = match w {
-        Where::Cond(c) => Some(Recheck { cond: c, mark, answers }),
+        Where::Cond(c) => Some(Recheck {
+            cond: c,
+            mark,
+            answers,
+        }),
         _ => None,
     };
     let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
     o.quiet_reads();
     if let Some(set) = set {
-        let cols = set.iter().flat_map(|a| &a.columns).filter_map(|c| t.field(&c.value).map(|(_, f)| f.name)).collect();
+        let cols = set
+            .iter()
+            .flat_map(|a| &a.columns)
+            .filter_map(|c| t.field(&c.value).map(|(_, f)| f.name))
+            .collect();
         o.set_columns(cols);
     }
     ctx.hold_open();
@@ -482,7 +552,15 @@ pub fn delete(
     params: &[Value],
     d: &Delete,
 ) -> Result<u64> {
-    change(txn, ctx, params, &d.table, d.alias.as_ref(), &d.where_clause, None)
+    change(
+        txn,
+        ctx,
+        params,
+        &d.table,
+        d.alias.as_ref(),
+        &d.where_clause,
+        None,
+    )
 }
 
 /// The row a cursor stands on, for `WHERE CURRENT OF`.
@@ -530,7 +608,11 @@ fn change_rows(
     set: Option<&[Assignment]>,
     mut cond: Option<Recheck<'_>>,
 ) -> Result<u64> {
-    let gn = if set.is_some() { super::column::Generation::of(txn, t)? } else { super::column::Generation::default() };
+    let gn = if set.is_some() {
+        super::column::Generation::of(txn, t)?
+    } else {
+        super::column::Generation::default()
+    };
     let mut ev = Evaluator { ctx, params };
     let mut n = 0u64;
     for r in rows {
@@ -547,7 +629,11 @@ fn change_rows(
             deleted: false,
         };
         let stale = cond.as_ref().is_some_and(|c| ev.ctx.yields() != c.mark);
-        let now = if set.is_some() || stale { Some(row_of(txn, t, &slot)?) } else { None };
+        let now = if set.is_some() || stale {
+            Some(row_of(txn, t, &slot)?)
+        } else {
+            None
+        };
         if let (Some(c), Some(row)) = (cond.as_mut().filter(|_| stale), &now)
             && !still_holds(txn, &mut ev, c, schema, &r, row)?
         {
@@ -571,10 +657,18 @@ fn change_rows(
                 }
                 for (i, f) in t.format.format.fields.iter().enumerate() {
                     if per_field[i].is_some() && f.identity.as_ref().is_some_and(|id| id.always) {
-                        return Err(SqlError::IdentityValue { column: f.name.to_string() });
+                        return Err(SqlError::IdentityValue {
+                            column: f.name.to_string(),
+                        });
                     }
                 }
-                gn.fill(ev.ctx, &t.format.format.fields, &mut per_field, false, false)?;
+                gn.fill(
+                    ev.ctx,
+                    &t.format.format.fields,
+                    &mut per_field,
+                    false,
+                    false,
+                )?;
                 let (rec, nulls) =
                     build_record(txn, t, &per_field, Some((&current.data, &current.null_map)))?;
                 o.update(txn, &rec, &nulls)?;
@@ -590,7 +684,13 @@ fn change_rows(
 /// holds is waited for up to the file's `WAITRCD`, taking turns so the
 /// holder can end its unit of work; past it (or with no turns to take)
 /// the lock error stands (`SQL0913`).
-fn chain_waiting(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &TableInfo, o: &mut Odp, rrn: u64) -> Result<Option<db::Record>> {
+fn chain_waiting(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    t: &TableInfo,
+    o: &mut Odp,
+    rrn: u64,
+) -> Result<Option<db::Record>> {
     let limit = match t.desc.attr.wait_rcd {
         db::Wait::Immed => Some(std::time::Duration::ZERO),
         db::Wait::Seconds(s) => Some(std::time::Duration::from_secs(u64::from(s))),
@@ -731,7 +831,12 @@ fn merge_plan(
             .enumerate()
             .map(|(i, c)| super::eval::ColInfo {
                 name: c.name.clone(),
-                table: Some(src_tables.as_ref().and_then(|t| t.get(i).cloned()).unwrap_or_else(|| src_alias.clone())),
+                table: Some(
+                    src_tables
+                        .as_ref()
+                        .and_then(|t| t.get(i).cloned())
+                        .unwrap_or_else(|| src_alias.clone()),
+                ),
                 field: None,
                 nullable: c.nullable,
                 hidden: false,
@@ -749,7 +854,11 @@ fn merge_plan(
         if matches.is_empty() {
             let mut ev = Evaluator { ctx, params };
             if let Some(action) = merge_action(txn, &mut ev, m, false, &outer)? {
-                steps.push(MergeStep { source, target: None, action });
+                steps.push(MergeStep {
+                    source,
+                    target: None,
+                    action,
+                });
             }
             continue;
         }
@@ -759,7 +868,11 @@ fn merge_plan(
             let mut ev = Evaluator { ctx, params };
             if let Some(action) = merge_action(txn, &mut ev, m, true, &env)? {
                 let target = Some(env.frames[1].1.clone());
-                steps.push(MergeStep { source: source.clone(), target, action });
+                steps.push(MergeStep {
+                    source: source.clone(),
+                    target,
+                    action,
+                });
             }
         }
     }
@@ -822,7 +935,10 @@ impl MergeWrite<'_> {
             let outer = Env::default().with(self.src_schema.clone(), step.source);
             let mut ev = Evaluator { ctx, params };
             let Some(was) = step.target else {
-                let MergeAction::Insert { columns, values, .. } = &self.m.actions[step.action] else {
+                let MergeAction::Insert {
+                    columns, values, ..
+                } = &self.m.actions[step.action]
+                else {
                     continue;
                 };
                 let idx = column_indexes(t, columns)?;
@@ -835,7 +951,13 @@ impl MergeWrite<'_> {
                 for (k, &fi) in idx.iter().enumerate() {
                     per_field[fi] = match &values[k] {
                         Expr::Default => None,
-                        e => Some(eval_for(txn, &mut ev, e, &outer, &t.format.format.fields[fi])?),
+                        e => Some(eval_for(
+                            txn,
+                            &mut ev,
+                            e,
+                            &outer,
+                            &t.format.format.fields[fi],
+                        )?),
                     };
                 }
                 let (rec, nulls) = build_record(txn, t, &per_field, None)?;
@@ -863,7 +985,8 @@ impl MergeWrite<'_> {
             match action.map(|a| &self.m.actions[a]) {
                 Some(MergeAction::Update { set, .. }) => {
                     let assigned = assignments(txn, &mut ev, t, set, &env)?;
-                    let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];
+                    let mut per_field: Vec<Option<Value>> =
+                        vec![None; t.format.format.fields.len()];
                     for (i, v) in assigned {
                         per_field[i] = v;
                     }

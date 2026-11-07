@@ -63,7 +63,12 @@ impl Browser {
         }
         let r = self.nav.handle(&req, &peer());
         if let Some(sc) = r.header("Set-Cookie") {
-            let v = sc.split(';').next().unwrap_or("").trim_start_matches("QS400SID=").to_string();
+            let v = sc
+                .split(';')
+                .next()
+                .unwrap_or("")
+                .trim_start_matches("QS400SID=")
+                .to_string();
             self.cookie = (!v.is_empty()).then_some(v);
         }
         if let Some(c) = &self.cookie
@@ -76,7 +81,11 @@ impl Browser {
 
     /// `GET` a route under the prefix (or an absolute path).
     pub fn get(&mut self, route: &str) -> Response {
-        let path = if route.starts_with("/qs400/") { route.to_string() } else { PRODUCT.url(route) };
+        let path = if route.starts_with("/qs400/") {
+            route.to_string()
+        } else {
+            PRODUCT.url(route)
+        };
         self.send(Request::new("GET", &path))
     }
 
@@ -90,15 +99,28 @@ impl Browser {
 
     /// `POST` exactly these fields.
     pub fn post_raw(&mut self, route: &str, fields: &[(&str, &str)]) -> Response {
-        let path = if route.starts_with("/qs400/") { route.to_string() } else { PRODUCT.url(route) };
+        let path = if route.starts_with("/qs400/") {
+            route.to_string()
+        } else {
+            PRODUCT.url(route)
+        };
         let mut req = Request::new("POST", &path);
         req.body = fields
             .iter()
-            .map(|(k, v)| format!("{}={}", qsweb::http::form::encode(k), qsweb::http::form::encode(v)))
+            .map(|(k, v)| {
+                format!(
+                    "{}={}",
+                    qsweb::http::form::encode(k),
+                    qsweb::http::form::encode(v)
+                )
+            })
             .collect::<Vec<_>>()
             .join("&")
             .into_bytes();
-        req.headers.push(("content-type".into(), "application/x-www-form-urlencoded".into()));
+        req.headers.push((
+            "content-type".into(),
+            "application/x-www-form-urlencoded".into(),
+        ));
         self.send(req)
     }
 
@@ -170,7 +192,9 @@ pub fn proto(url: &str) -> Option<String> {
         ["msgq", _, _, _] => "message-detail".into(),
         ["qhst"] => "history-log".into(),
         // Users and groups.
-        ["users", "create", "step", n] => format!("create-user-{}", if *n == "5" { "5" } else { "1" }),
+        ["users", "create", "step", n] => {
+            format!("create-user-{}", if *n == "5" { "5" } else { "1" })
+        }
         ["users"] => "users".into(),
         ["user", _, "delete" | "confirm"] => return Some("shared/confirm.html".into()),
         ["user", ..] => "user-props".into(),
@@ -183,11 +207,15 @@ pub fn proto(url: &str) -> Option<String> {
         ["sysval"] => "system-values".into(),
         ["sysval", _] => "sysval-change".into(),
         ["disk", ..] => "disk-status".into(),
-        ["hdwrsc", ..] if segs.last() == Some(&"confirm") => return Some("shared/confirm.html".into()),
+        ["hdwrsc", ..] if segs.last() == Some(&"confirm") => {
+            return Some("shared/confirm.html".into());
+        }
         ["hdwrsc", ..] => "hardware-resources".into(),
         ["time"] => "time-management".into(),
         // Network.
-        ["tcp", ..] if segs.last() == Some(&"confirm") => return Some("shared/confirm.html".into()),
+        ["tcp", ..] if segs.last() == Some(&"confirm") => {
+            return Some("shared/confirm.html".into());
+        }
         ["tcp"] | ["tcp", "hosts"] => "tcpip".into(),
         ["tcp", "ifc", ..] => "tcpip-interfaces".into(),
         ["tcp", "rte", ..] => "tcpip-routes".into(),
@@ -199,7 +227,9 @@ pub fn proto(url: &str) -> Option<String> {
         ["db", _, _, ..] => "table-columns".into(),
         // Security, software, performance.
         ["audit", ..] => "audit-journal".into(),
-        ["licpgm", ..] if segs.last() == Some(&"confirm") => return Some("shared/confirm.html".into()),
+        ["licpgm", ..] if segs.last() == Some(&"confirm") => {
+            return Some("shared/confirm.html".into());
+        }
         ["licpgm", ..] => "licensed-programs".into(),
         // A cover letter opens in the help window.
         ["ptf" | "fixes", _, "cover"] => return Some("shared/help.html".into()),
@@ -231,7 +261,10 @@ pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
 /// `file`.
 pub fn assert_golden_text(served: &str, mut g: String, file: &str, fix: &[(&str, &str)]) {
     for (from, to) in fix {
-        assert!(g.contains(from), "golden fix not applicable to {file}: {from}");
+        assert!(
+            g.contains(from),
+            "golden fix not applicable to {file}: {from}"
+        );
         g = g.replace(from, to);
     }
     let dir = file.split('/').next().unwrap_or("");

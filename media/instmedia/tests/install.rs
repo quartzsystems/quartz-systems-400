@@ -109,7 +109,11 @@ fn the_os_installs_fresh_and_again_as_a_slip() {
     assert_eq!(r.replaced, 0);
     assert!(r.verified >= r.objects, "{}", osload::summary(&r));
     assert_eq!(r.bad_signatures, 0);
-    assert!(r.loads.iter().any(|k| k.option.is_base() && k.load_type == LoadType::Code));
+    assert!(
+        r.loads
+            .iter()
+            .any(|k| k.option.is_base() && k.load_type == LoadType::Code)
+    );
     assert!(count(&mut store, qsys, "QSYS") > before + 300);
 
     // A user library with an object, then the slip install.
@@ -194,8 +198,6 @@ fn the_os_installs_fresh_and_again_as_a_slip() {
     .unwrap();
     assert_eq!((r.verified, r.bad_signatures), (0, 0));
 }
-
-
 
 #[test]
 fn the_http_server_installs_its_library() {

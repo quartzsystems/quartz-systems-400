@@ -83,7 +83,14 @@ fn put(j: &mut Job, s: u128, ccsid: i32) -> i64 {
     if name.is_empty() {
         return set_errno(j, Errno::EINVAL);
     }
-    match super::set_job(Var { name, value: Some(value.unwrap_or_default()), ccsid }, SetMode::Put) {
+    match super::set_job(
+        Var {
+            name,
+            value: Some(value.unwrap_or_default()),
+            ccsid,
+        },
+        SetMode::Put,
+    ) {
         Ok(()) => 0,
         Err(_) => set_errno(j, Errno::ENOMEM),
     }
@@ -115,7 +122,14 @@ fn code(e: Errno) -> i64 {
 /// the variables as `NAME=value` strings back to back, each ended by a
 /// NUL, and an `int` CCSID for each; `ENOSPC` with the sizes needed
 /// when a buffer is short. Returns 0 or the `errno`.
-fn qp0zgetallsysenv(j: &mut Job, list: u128, list_size: u128, ccsids: u128, ccsid_size: u128, _r: u128) -> i64 {
+fn qp0zgetallsysenv(
+    j: &mut Job,
+    list: u128,
+    list_size: u128,
+    ccsids: u128,
+    ccsid_size: u128,
+    _r: u128,
+) -> i64 {
     let Some(sys) = system() else {
         return code(Errno::ENOSYS);
     };
@@ -169,7 +183,11 @@ fn qp0zgetsysenv(j: &mut Job, name: u128, value: u128, size: u128, ccsid: u128, 
     let Some(sys) = system() else {
         return code(Errno::ENOSYS);
     };
-    let Some(v) = sys.list().ok().and_then(|l| l.into_iter().find(|v| v.name == n)) else {
+    let Some(v) = sys
+        .list()
+        .ok()
+        .and_then(|l| l.into_iter().find(|v| v.name == n))
+    else {
         return code(Errno::ENOENT);
     };
     let mut b = ccsid::to_ebcdic(v.value.as_deref().unwrap_or("")).unwrap_or_default();
@@ -382,7 +400,16 @@ const RUNPASE_ERROR: i64 = -1;
 /// envp)`: the program's exit status, or -1 with `errno` set. The
 /// symbol is not primed (a PASE runtime would).
 #[allow(clippy::too_many_arguments)]
-fn qp2runpase(j: &mut Job, path: u128, _sym: u128, _data: u128, _len: i64, _ccsid: i64, argv: u128, envp: u128) -> i64 {
+fn qp2runpase(
+    j: &mut Job,
+    path: u128,
+    _sym: u128,
+    _data: u128,
+    _len: i64,
+    _ccsid: i64,
+    argv: u128,
+    envp: u128,
+) -> i64 {
     let Some(p) = procs() else {
         set_errno(j, Errno::ENOSYS);
         return RUNPASE_ERROR;

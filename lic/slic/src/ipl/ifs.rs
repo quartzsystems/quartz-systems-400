@@ -60,7 +60,9 @@ pub fn prepare(system: &mut System, installed: bool) {
     let made = store.ifs_volume().is_empty();
     let threshold = store.asp_threshold();
     if made && let Err(e) = store.ifs_create(threshold) {
-        system.out.serial(&format!("slic: IFS not created in ASP 1: {e}\n"));
+        system
+            .out
+            .serial(&format!("slic: IFS not created in ASP 1: {e}\n"));
         system.emit(&src::IFS_NOT_CREATED);
         return;
     }
@@ -77,7 +79,9 @@ pub fn prepare(system: &mut System, installed: bool) {
             system.emit(&src::IFS_CREATED);
         }
         Err(e) => {
-            system.out.serial(&format!("slic: IFS volume not formatted: {e}\n"));
+            system
+                .out
+                .serial(&format!("slic: IFS volume not formatted: {e}\n"));
             system.emit(&src::IFS_NOT_CREATED);
         }
     }
@@ -154,7 +158,9 @@ pub fn mount_qopensys(system: &mut System) {
         return;
     }
     if let Err(e) = plat::mount_exec(&qopensys, QOPENSYS_EXEC) {
-        system.out.serial(&format!("slic: {QOPENSYS_EXEC}: mount: {e}\n"));
+        system
+            .out
+            .serial(&format!("slic: {QOPENSYS_EXEC}: mount: {e}\n"));
     }
 }
 
@@ -224,11 +230,7 @@ pub fn lic_info(system: &System) -> Vec<(String, String)> {
         return vec![("IFS".into(), "Not created".into())];
     };
     let state = match plat::mounted(MOUNT_POINT).and(plat::capacity(MOUNT_POINT)) {
-        Some((size, free, _)) => format!(
-            "Mounted, {} MiB, {} MiB free",
-            size / MIB,
-            free / MIB
-        ),
+        Some((size, free, _)) => format!("Mounted, {} MiB, {} MiB free", size / MIB, free / MIB),
         None => "Not mounted".to_string(),
     };
     vec![("IFS".into(), what), ("IFS state".into(), state)]

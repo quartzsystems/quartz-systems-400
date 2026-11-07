@@ -77,7 +77,12 @@ pub enum PtfStatus {
 
 impl PtfStatus {
     /// Every status, as the filter offers them.
-    pub const ALL: [PtfStatus; 4] = [PtfStatus::NotApplied, PtfStatus::Temporary, PtfStatus::Permanent, PtfStatus::Superseded];
+    pub const ALL: [PtfStatus; 4] = [
+        PtfStatus::NotApplied,
+        PtfStatus::Temporary,
+        PtfStatus::Permanent,
+        PtfStatus::Superseded,
+    ];
 
     /// As shown.
     pub fn label(self) -> &'static str {

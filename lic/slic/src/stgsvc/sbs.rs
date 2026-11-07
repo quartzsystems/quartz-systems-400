@@ -69,7 +69,10 @@ pub fn save_shared_pools(system: &mut System) -> Result<(), String> {
         let v = DataAreaValue::Char(text.clone());
         if let Some(id) = lib
             .lookup(txn, store::obj::types::DTAARA, name)
-            .map_err(|e| e.to_string())? { dtaara::write(txn, id, &v).map_err(|e| e.to_string()) } else {
+            .map_err(|e| e.to_string())?
+        {
+            dtaara::write(txn, id, &v).map_err(|e| e.to_string())
+        } else {
             let params = store::obj::CreateParams {
                 library: qsys,
                 name,

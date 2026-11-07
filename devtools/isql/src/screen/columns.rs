@@ -95,18 +95,34 @@ fn pick(sql: bool, sys: &str, sqln: &str, w: &Words<'_>) -> String {
 
 /// Rows `from` on: each column's name and its value field.
 fn values(s: &mut Screen, from: usize, columns: &[String], page: usize, per: usize, v: &Values) {
-    for (k, (i, c)) in columns.iter().enumerate().skip(page * per).take(per).enumerate() {
+    for (k, (i, c)) in columns
+        .iter()
+        .enumerate()
+        .skip(page * per)
+        .take(per)
+        .enumerate()
+    {
         put(s, from + k, 2, Attr::Normal, c);
         let name = value_name(i);
-        var(s, from + k, 24, 53, &name, v.get(&name).map_or("", String::as_str));
+        var(
+            s,
+            from + k,
+            24,
+            53,
+            &name,
+            v.get(&name).map_or("", String::as_str),
+        );
     }
 }
 
 /// The function keys: row, column, identifier.
 fn show_keys(s: &mut Screen, list: &[(usize, usize, Label)], sql: bool, w: &Words<'_>) {
-    let shown: Vec<(usize, usize, String)> =
-        list.iter().map(|(r, c, l)| (*r, *c, pick(sql, l.sys, l.sql, w))).collect();
-    let refs: Vec<(usize, usize, &str)> = shown.iter().map(|(r, c, t)| (*r, *c, t.as_str())).collect();
+    let shown: Vec<(usize, usize, String)> = list
+        .iter()
+        .map(|(r, c, l)| (*r, *c, pick(sql, l.sys, l.sql, w)))
+        .collect();
+    let refs: Vec<(usize, usize, &str)> =
+        shown.iter().map(|(r, c, t)| (*r, *c, t.as_str())).collect();
     keys(s, &refs);
 }
 
@@ -143,19 +159,43 @@ const KEY_KEYS: &[(usize, usize, Label)] = &[
     k(22, 12, "TXT0A47"),
     k(22, 25, "TXT0A49"),
     k(22, 41, "TXT0A4B"),
-    (23, 2, Label { sys: "TXT0A4E", sql: "TXT0A4F" }),
+    (
+        23,
+        2,
+        Label {
+            sys: "TXT0A4E",
+            sql: "TXT0A4F",
+        },
+    ),
     k(23, 35, "TXT0A50"),
     k(23, 61, "TXT0A52"),
 ];
 
 /// Specify INSERT Statement's values, page `page`.
 #[must_use]
-pub fn insert(columns: &[String], v: &Values, page: usize, sql: bool, msg: Option<&str>, w: &Words<'_>) -> Screen {
+pub fn insert(
+    columns: &[String],
+    v: &Values,
+    page: usize,
+    sql: bool,
+    msg: Option<&str>,
+    w: &Words<'_>,
+) -> Screen {
     let mut s = blank();
     let heading = w(id::TITLE).replace("&1", "INSERT");
-    title(&mut s, (80 - heading.chars().count().min(80)) / 2 + 1, &heading);
+    title(
+        &mut s,
+        (80 - heading.chars().count().min(80)) / 2 + 1,
+        &heading,
+    );
     put(&mut s, 3, 2, Attr::Blue, &w(id::VALUES));
-    put(&mut s, 5, 2, Attr::HighIntensity, &pick(sql, id::FIELD, id::COLUMN, w));
+    put(
+        &mut s,
+        5,
+        2,
+        Attr::HighIntensity,
+        &pick(sql, id::FIELD, id::COLUMN, w),
+    );
     put(&mut s, 5, 24, Attr::HighIntensity, &w(id::VALUE));
     let per = List::Insert.per_page();
     values(&mut s, 6, columns, page, per, v);
@@ -169,11 +209,25 @@ pub fn insert(columns: &[String], v: &Values, page: usize, sql: bool, msg: Optio
 /// Specify UPDATE Statement with the values under `first` (the first
 /// display, its keys taken off), page `page`.
 #[must_use]
-pub fn update(first: Screen, columns: &[String], v: &Values, page: usize, sql: bool, msg: Option<&str>, w: &Words<'_>) -> Screen {
+pub fn update(
+    first: Screen,
+    columns: &[String],
+    v: &Values,
+    page: usize,
+    sql: bool,
+    msg: Option<&str>,
+    w: &Words<'_>,
+) -> Screen {
     let mut s = first;
     s.texts.retain(|t| t.row < 22);
     put(&mut s, 11, 2, Attr::Blue, &w(id::INFO));
-    put(&mut s, 13, 2, Attr::HighIntensity, &pick(sql, id::FIELD, id::COLUMN, w));
+    put(
+        &mut s,
+        13,
+        2,
+        Attr::HighIntensity,
+        &pick(sql, id::FIELD, id::COLUMN, w),
+    );
     put(&mut s, 13, 24, Attr::HighIntensity, &w(id::VALUE));
     let per = List::Update.per_page();
     values(&mut s, 14, columns, page, per, v);
@@ -186,10 +240,21 @@ pub fn update(first: Screen, columns: &[String], v: &Values, page: usize, sql: b
 /// Specify CREATE INDEX Statement's key columns, page `page`: rows 7
 /// to 20 down the left, then the right.
 #[must_use]
-pub fn key(columns: &[String], v: &Values, page: usize, sql: bool, msg: Option<&str>, w: &Words<'_>) -> Screen {
+pub fn key(
+    columns: &[String],
+    v: &Values,
+    page: usize,
+    sql: bool,
+    msg: Option<&str>,
+    w: &Words<'_>,
+) -> Screen {
     let mut s = blank();
     let heading = w(id::TITLE).replace("&1", "CREATE INDEX");
-    title(&mut s, (80 - heading.chars().count().min(80)) / 2 + 1, &heading);
+    title(
+        &mut s,
+        (80 - heading.chars().count().min(80)) / 2 + 1,
+        &heading,
+    );
     put(&mut s, 3, 2, Attr::Blue, &w(id::SEQUENCE));
     put(&mut s, 4, 2, Attr::Blue, &w(id::ORDER_KEY));
     let seq = pick(sql, id::SEQ_FIELD, id::SEQ_COLUMN, w);
@@ -199,12 +264,25 @@ pub fn key(columns: &[String], v: &Values, page: usize, sql: bool, msg: Option<&
         put(&mut s, 6, o, Attr::HighIntensity, &order);
     }
     let per = List::Key.per_page();
-    for (k, (i, c)) in columns.iter().enumerate().skip(page * per).take(per).enumerate() {
+    for (k, (i, c)) in columns
+        .iter()
+        .enumerate()
+        .skip(page * per)
+        .take(per)
+        .enumerate()
+    {
         let (row, left) = (7 + k % 14, if k < 14 { 2 } else { 43 });
         let get = |n: &str| v.get(n).map_or(String::new(), Clone::clone);
         var(&mut s, row, left, 3, &seq_name(i), &get(&seq_name(i)));
         put(&mut s, row, left + 5, Attr::Normal, c);
-        var(&mut s, row, left + 29, 1, &order_name(i), &get(&order_name(i)));
+        var(
+            &mut s,
+            row,
+            left + 29,
+            1,
+            &order_name(i),
+            &get(&order_name(i)),
+        );
     }
     more(&mut s, 21, 79, (page + 1) * per >= columns.len());
     show_keys(&mut s, KEY_KEYS, sql, w);
@@ -234,7 +312,9 @@ pub fn key_columns(columns: &[String], v: &Values) -> Vec<String> {
         .enumerate()
         .filter_map(|(i, c)| {
             let n: u32 = v.get(&seq_name(i))?.trim().parse().ok()?;
-            let desc = v.get(&order_name(i)).is_some_and(|o| o.trim().eq_ignore_ascii_case("D"));
+            let desc = v
+                .get(&order_name(i))
+                .is_some_and(|o| o.trim().eq_ignore_ascii_case("D"));
             Some((n, i, if desc { format!("{c} DESC") } else { c.clone() }))
         })
         .collect();

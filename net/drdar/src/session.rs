@@ -43,7 +43,11 @@ pub trait Connector {
     ///
     /// The SQLCA of the failure: `-950` for a name the directory lacks,
     /// `-30080` and `-30082` for the network and the server's refusal.
-    fn connect(&mut self, rdb: &str, user: Option<(&str, &str)>) -> Result<Box<dyn Server>, sql::Sqlca>;
+    fn connect(
+        &mut self,
+        rdb: &str,
+        user: Option<(&str, &str)>,
+    ) -> Result<Box<dyn Server>, sql::Sqlca>;
 }
 
 /// `RDBCNNMTH`.
@@ -97,7 +101,11 @@ pub struct Sessions {
 }
 
 fn reply(sqlca: sql::Sqlca) -> Routed {
-    Routed::Done(Reply { sqlca, rows: Vec::new(), call: None })
+    Routed::Done(Reply {
+        sqlca,
+        rows: Vec::new(),
+        call: None,
+    })
 }
 
 fn ok() -> Routed {
@@ -105,17 +113,24 @@ fn ok() -> Routed {
 }
 
 fn not_connected(rdb: &str) -> Routed {
-    reply(coded(-843, "08003", &format!("there is no connection to {rdb}")))
+    reply(coded(
+        -843,
+        "08003",
+        &format!("there is no connection to {rdb}"),
+    ))
 }
 
 /// The text of an operand.
 fn text_of(o: &Operand, inputs: &[sql::Value]) -> String {
     match o {
         Operand::Text(t) => t.clone(),
-        Operand::Input(i) => inputs.get(*i).map(|v| match v {
-            sql::Value::Str(s) => s.clone(),
-            v => v.to_string(),
-        }).unwrap_or_default(),
+        Operand::Input(i) => inputs
+            .get(*i)
+            .map(|v| match v {
+                sql::Value::Str(s) => s.clone(),
+                v => v.to_string(),
+            })
+            .unwrap_or_default(),
     }
 }
 
@@ -129,11 +144,21 @@ impl Sessions {
     /// The servers connected, the current one marked.
     #[must_use]
     pub fn servers(&self) -> Vec<(String, bool)> {
-        self.conns.iter().map(|c| (c.rdb.clone(), self.current == Current::Remote(c.rdb.clone()))).collect()
+        self.conns
+            .iter()
+            .map(|c| {
+                (
+                    c.rdb.clone(),
+                    self.current == Current::Remote(c.rdb.clone()),
+                )
+            })
+            .collect()
     }
 
     fn find(&mut self, rdb: &str) -> Option<&mut Conn> {
-        self.conns.iter_mut().find(|c| c.rdb.eq_ignore_ascii_case(rdb))
+        self.conns
+            .iter_mut()
+            .find(|c| c.rdb.eq_ignore_ascii_case(rdb))
     }
 
     /// Answer `req`, or leave it to the local server.
@@ -159,7 +184,9 @@ impl Sessions {
             Current::Remote(r) => r.clone(),
         };
         let scope = req.scope.clone();
-        let Some(conn) = self.find(&rdb) else { return not_connected(&rdb) };
+        let Some(conn) = self.find(&rdb) else {
+            return not_connected(&rdb);
+        };
         conn.run(&scope, req)
     }
 
@@ -183,12 +210,22 @@ impl Sessions {
                     self.conns.clear();
                 }
                 let creds = match (user, using) {
-                    (Some(u), Some(p)) => Some((text_of(u, inputs).trim().to_ascii_uppercase(), text_of(p, inputs))),
+                    (Some(u), Some(p)) => Some((
+                        text_of(u, inputs).trim().to_ascii_uppercase(),
+                        text_of(p, inputs),
+                    )),
                     _ => None,
                 };
                 match c.connect(&rdb, creds.as_ref().map(|(u, p)| (u.as_str(), p.as_str()))) {
                     Ok(server) => {
-                        self.conns.push(Conn { rdb: rdb.clone(), server, release: false, changed: false, cursors: HashMap::new(), prepared: HashMap::new() });
+                        self.conns.push(Conn {
+                            rdb: rdb.clone(),
+                            server,
+                            release: false,
+                            changed: false,
+                            cursors: HashMap::new(),
+                            prepared: HashMap::new(),
+                        });
                         self.current = Current::Remote(rdb);
                         ok()
                     }
@@ -242,9 +279,17 @@ impl Sessions {
     }
 
     /// `f` for each connection `t` names: `None` for the local one.
-    fn each(&mut self, local: &str, t: &Target, inputs: &[sql::Value], mut f: impl FnMut(&mut Self, Option<&str>) -> Result<(), sql::Sqlca>) -> Routed {
+    fn each(
+        &mut self,
+        local: &str,
+        t: &Target,
+        inputs: &[sql::Value],
+        mut f: impl FnMut(&mut Self, Option<&str>) -> Result<(), sql::Sqlca>,
+    ) -> Routed {
         let names: Vec<Option<String>> = match t {
-            Target::All => std::iter::once(None).chain(self.conns.iter().map(|c| Some(c.rdb.clone()))).collect(),
+            Target::All => std::iter::once(None)
+                .chain(self.conns.iter().map(|c| Some(c.rdb.clone())))
+                .collect(),
             Target::Current => match &self.current {
                 Current::Local => vec![None],
                 Current::Remote(r) => vec![Some(r.clone())],
@@ -285,7 +330,11 @@ impl Sessions {
     /// released connections go; the local server's ends after.
     fn end_unit(&mut self, commit: bool) -> Routed {
         for c in &mut self.conns {
-            let ca = if commit { c.server.commit() } else { c.server.rollback() };
+            let ca = if commit {
+                c.server.commit()
+            } else {
+                c.server.rollback()
+            };
             if ca.is_error() {
                 return reply(ca);
             }
@@ -293,7 +342,12 @@ impl Sessions {
             c.cursors.clear();
         }
         let current = self.current.clone();
-        let released: Vec<String> = self.conns.iter().filter(|c| c.release).map(|c| c.rdb.clone()).collect();
+        let released: Vec<String> = self
+            .conns
+            .iter()
+            .filter(|c| c.release)
+            .map(|c| c.rdb.clone())
+            .collect();
         self.conns.retain(|c| !c.release);
         if let Current::Remote(r) = &current
             && released.contains(r)
@@ -332,9 +386,21 @@ impl Conn {
                 }
                 match self.server.query(&d.text) {
                     Ok(rows) => Routed::Done(match rows.len() {
-                        0 => Reply { sqlca: sql::Sqlca::no_data(), rows: Vec::new(), call: None },
-                        1 => Reply { sqlca: sql::Sqlca::rows(1), rows, call: None },
-                        _ => Reply { sqlca: coded(-811, "21000", ""), rows: rows.into_iter().take(1).collect(), call: None },
+                        0 => Reply {
+                            sqlca: sql::Sqlca::no_data(),
+                            rows: Vec::new(),
+                            call: None,
+                        },
+                        1 => Reply {
+                            sqlca: sql::Sqlca::rows(1),
+                            rows,
+                            call: None,
+                        },
+                        _ => Reply {
+                            sqlca: coded(-811, "21000", ""),
+                            rows: rows.into_iter().take(1).collect(),
+                            call: None,
+                        },
                     }),
                     Err(e) => reply(e),
                 }
@@ -393,8 +459,18 @@ impl Conn {
                 if !(orient.is_empty() || orient == "NEXT") {
                     return refused("a scrolling FETCH from a remote server");
                 }
-                let Some(rows) = self.cursors.get_mut(&key) else { return reply(coded(-501, "24501", &d.name)) };
-                let n = if d.rows { req.inputs.last().and_then(|v| v.as_i64().ok()).and_then(|n| usize::try_from(n).ok()).unwrap_or(1) } else { 1 };
+                let Some(rows) = self.cursors.get_mut(&key) else {
+                    return reply(coded(-501, "24501", &d.name));
+                };
+                let n = if d.rows {
+                    req.inputs
+                        .last()
+                        .and_then(|v| v.as_i64().ok())
+                        .and_then(|n| usize::try_from(n).ok())
+                        .unwrap_or(1)
+                } else {
+                    1
+                };
                 let got: Vec<_> = (0..n).map_while(|_| rows.pop_front()).collect();
                 if got.is_empty() {
                     return reply(sql::Sqlca::no_data());
@@ -405,7 +481,11 @@ impl Conn {
                     // The last block: SQLERRD(5) says no more follow.
                     ca.sqlerrd[4] = 100;
                 }
-                Routed::Done(Reply { sqlca: ca, rows: got, call: None })
+                Routed::Done(Reply {
+                    sqlca: ca,
+                    rows: got,
+                    call: None,
+                })
             }
             Op::Close => {
                 if self.cursors.remove(&key).is_none() {

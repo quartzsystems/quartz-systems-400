@@ -21,10 +21,22 @@ pub fn functions(menu: &str, v: Values<'_>, msg: Option<&str>) -> Screen {
     put(&mut s, 3, 2, Attr::Normal, "Menu . . . . :");
     put(&mut s, 3, 19, Attr::HighIntensity, menu);
     put(&mut s, 5, 2, Attr::Blue, "Type choices, press Enter.");
-    put(&mut s, 7, 4, Attr::Normal, &leader("Work with menu image and commands", 4, 43));
+    put(
+        &mut s,
+        7,
+        4,
+        Attr::Normal,
+        &leader("Work with menu image and commands", 4, 43),
+    );
     var(&mut s, 7, 47, 1, "IMAGE", &v("IMAGE"));
     put(&mut s, 7, 60, Attr::Normal, "Y=Yes");
-    put(&mut s, 9, 4, Attr::Normal, &leader("Work with menu help", 4, 43));
+    put(
+        &mut s,
+        9,
+        4,
+        Attr::Normal,
+        &leader("Work with menu help", 4, 43),
+    );
     var(&mut s, 9, 47, 1, "HELP", &v("HELP"));
     put(&mut s, 9, 60, Attr::Normal, "Y=Yes");
     keys(&mut s, &[(23, 2, "F3=Exit"), (23, 12, "F12=Cancel")]);
@@ -68,7 +80,14 @@ pub fn commands(menu: &str, rows: &[(u8, String)], top: usize, msg: Option<&str>
         );
     }
     more(&mut s, 21, top + PAGE >= rows.len());
-    keys(&mut s, &[(23, 2, "F3=Exit"), (23, 12, "F4=Prompt"), (23, 24, "F12=Cancel")]);
+    keys(
+        &mut s,
+        &[
+            (23, 2, "F3=Exit"),
+            (23, 12, "F4=Prompt"),
+            (23, 24, "F12=Cancel"),
+        ],
+    );
     message(&mut s, msg);
     s.cursor = Some((8, 10));
     s

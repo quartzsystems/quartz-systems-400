@@ -126,7 +126,9 @@ pub fn substitute(text: &[u8], args: &[String]) -> Vec<u8> {
         }
         let digits = rest.iter().take_while(|b| b.is_ascii_digit()).count();
         if digits > 0 && rest.get(digits) == Some(&b'$') && rest.get(digits + 1) == Some(&b's') {
-            let n: usize = String::from_utf8_lossy(&rest[..digits]).parse().unwrap_or(0);
+            let n: usize = String::from_utf8_lossy(&rest[..digits])
+                .parse()
+                .unwrap_or(0);
             if let Some(a) = n.checked_sub(1).and_then(|k| args.get(k)) {
                 out.extend_from_slice(a.as_bytes());
             }
@@ -158,7 +160,13 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     }
     let num: u32 = match ops[1].parse() {
         Ok(n) if n > 0 => n,
-        _ => return usage(cx, NAME, &format!("{} is not a valid message number.", ops[1])),
+        _ => {
+            return usage(
+                cx,
+                NAME,
+                &format!("{} is not a valid message number.", ops[1]),
+            );
+        }
     };
     let args = if ops.len() > 3 { &ops[3..] } else { &[][..] };
     let found = find(cx, &ops[0])
@@ -191,6 +199,9 @@ mod tests {
         assert_eq!(substitute(b"%s-%s-%s", &a), b"x-y-");
         assert_eq!(substitute(b"%2$s %1$s 100%%", &a), b"y x 100%");
         assert_eq!(substitute(b"%d %", &a), b"%d %");
-        assert_eq!(fill("/x/%L/%l/%t/%c/%N", "cat", "en_US.UTF-8"), "/x/en_US.UTF-8/en/US/UTF-8/cat");
+        assert_eq!(
+            fill("/x/%L/%l/%t/%c/%N", "cat", "en_US.UTF-8"),
+            "/x/en_US.UTF-8/en/US/UTF-8/cat"
+        );
     }
 }

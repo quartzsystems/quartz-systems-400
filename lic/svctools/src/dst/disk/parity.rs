@@ -18,7 +18,8 @@ use crate::panel::Flow;
 const MAX_UNITS: usize = 18;
 
 /// The headings of the status display and the member lists.
-pub const PARITY_HEADINGS: &str = "Set  Level   Unit  Serial Number     Type Model    Resource  Status";
+pub const PARITY_HEADINGS: &str =
+    "Set  Level   Unit  Serial Number     Type Model    Resource  Status";
 
 /// The `set` of a hot spare's row in the parity displays.
 pub const SPARE_SET: u8 = 0;
@@ -136,12 +137,16 @@ pub fn menu(admin: bool) -> Submenu {
             (
                 7,
                 "Start device parity protection - RAID 5 with hot spare",
-                Some(Box::new(move |env| admin_only(admin, || start_with_spare(env, 5)))),
+                Some(Box::new(move |env| {
+                    admin_only(admin, || start_with_spare(env, 5))
+                })),
             ),
             (
                 8,
                 "Start device parity protection - RAID 6 with hot spare",
-                Some(Box::new(move |env| admin_only(admin, || start_with_spare(env, 6)))),
+                Some(Box::new(move |env| {
+                    admin_only(admin, || start_with_spare(env, 6))
+                })),
             ),
             (
                 9,
@@ -173,11 +178,7 @@ fn status(env: &mut dyn DstEnv) -> Notice {
     // Sets first, then the hot spares.
     lines.extend(units.iter().filter(|p| p.set != SPARE_SET).map(parity_row));
     lines.extend(units.iter().filter(|p| p.set == SPARE_SET).map(parity_row));
-    Notice::new(
-        "dst-parity-status",
-        "Display Device Parity Status",
-        lines,
-    )
+    Notice::new("dst-parity-status", "Display Device Parity Status", lines)
 }
 
 /// Units that can join a set: configured, attached, neither mirrored
@@ -214,13 +215,29 @@ fn spare_for(disks: &[NonConfigured], largest_mib: u64) -> Option<NonConfigured>
 /// Options 2, 3, 7 and 8: pick the units, confirm, start.
 fn start_set(env: &mut dyn DstEnv, level: u8, with_spare: bool) -> Flow {
     let units = eligible(env);
-    let disks = if with_spare { env.nonconfigured() } else { Vec::new() };
+    let disks = if with_spare {
+        env.nonconfigured()
+    } else {
+        Vec::new()
+    };
     let rows: Vec<String> = units.iter().map(disk::status_row).collect();
     let (name, title) = match (level, with_spare) {
-        (6, false) => ("dst-parity-start6", "Start Device Parity Protection - RAID 6"),
-        (6, true) => ("dst-parity-start6-spare", "Start Device Parity Protection - RAID 6 with Hot Spare"),
-        (_, false) => ("dst-parity-start5", "Start Device Parity Protection - RAID 5"),
-        (_, true) => ("dst-parity-start5-spare", "Start Device Parity Protection - RAID 5 with Hot Spare"),
+        (6, false) => (
+            "dst-parity-start6",
+            "Start Device Parity Protection - RAID 6",
+        ),
+        (6, true) => (
+            "dst-parity-start6-spare",
+            "Start Device Parity Protection - RAID 6 with Hot Spare",
+        ),
+        (_, false) => (
+            "dst-parity-start5",
+            "Start Device Parity Protection - RAID 5",
+        ),
+        (_, true) => (
+            "dst-parity-start5-spare",
+            "Start Device Parity Protection - RAID 5 with Hot Spare",
+        ),
     };
     Flow::Push(Box::new(Select::new(
         name,
@@ -231,7 +248,11 @@ fn start_set(env: &mut dyn DstEnv, level: u8, with_spare: bool) -> Flow {
         Box::new(move |chosen: &[usize], _env: &mut dyn DstEnv| {
             let least = if level == 6 { 4 } else { 3 };
             if chosen.len() < least || chosen.len() > MAX_UNITS {
-                let why = if level == 6 { reasons::RAID6_UNITS } else { reasons::RAID5_UNITS };
+                let why = if level == 6 {
+                    reasons::RAID6_UNITS
+                } else {
+                    reasons::RAID5_UNITS
+                };
                 return Flow::Error(why.into());
             }
             let numbers: Vec<u16> = chosen.iter().map(|&i| units[i].unit).collect();
@@ -264,10 +285,16 @@ fn start_set(env: &mut dyn DstEnv, level: u8, with_spare: bool) -> Flow {
             }
             lines.push(String::new());
             lines.push(format!("     {STATUS_HEADINGS}"));
-            lines.extend(chosen.iter().map(|&i| format!("     {}", disk::status_row(&units[i]))));
+            lines.extend(
+                chosen
+                    .iter()
+                    .map(|&i| format!("     {}", disk::status_row(&units[i]))),
+            );
             if let Some(d) = &hot_spare {
                 lines.push(String::new());
-                lines.push("This non-configured unit becomes the hot spare; its data is lost:".into());
+                lines.push(
+                    "This non-configured unit becomes the hot spare; its data is lost:".into(),
+                );
                 lines.push(format!("     {}", nonconfigured_row(d)));
             }
             let device = hot_spare.map(|d| d.device);
@@ -284,9 +311,7 @@ fn start_set(env: &mut dyn DstEnv, level: u8, with_spare: bool) -> Flow {
                     Box::new(move |env: &mut dyn DstEnv| {
                         let started = env.start_parity(level, &numbers)?;
                         match &device {
-                            Some(d) => env
-                                .start_hot_spare(d)
-                                .map(|m| format!("{m}; {started}")),
+                            Some(d) => env.start_hot_spare(d).map(|m| format!("{m}; {started}")),
                             None => Ok(started),
                         }
                     }),
@@ -379,7 +404,11 @@ fn stop_spare(env: &mut dyn DstEnv) -> Flow {
 
 /// One row per set: its number, level, members and their worst status.
 fn sets(env: &mut dyn DstEnv) -> Vec<(u8, String)> {
-    let units: Vec<ParityUnit> = env.parity_units().into_iter().filter(|p| p.set != SPARE_SET).collect();
+    let units: Vec<ParityUnit> = env
+        .parity_units()
+        .into_iter()
+        .filter(|p| p.set != SPARE_SET)
+        .collect();
     let mut out: Vec<(u8, String)> = Vec::new();
     for p in &units {
         if out.iter().any(|(s, _)| *s == p.set) {
@@ -394,7 +423,13 @@ fn sets(env: &mut dyn DstEnv) -> Vec<(u8, String)> {
             .unwrap_or("DPY/Active");
         out.push((
             p.set,
-            format!("{:>3}  {:<7} {:<16} {}", p.set, p.level, state, list.join(" ")),
+            format!(
+                "{:>3}  {:<7} {:<16} {}",
+                p.set,
+                p.level,
+                state,
+                list.join(" ")
+            ),
         ));
     }
     out
@@ -498,7 +533,11 @@ fn confirm_include((set, row): (u8, String), unit: &DiskUnit, unwind: usize) -> 
 }
 
 fn exclude(env: &mut dyn DstEnv) -> Flow {
-    let members: Vec<ParityUnit> = env.parity_units().into_iter().filter(|p| p.set != SPARE_SET).collect();
+    let members: Vec<ParityUnit> = env
+        .parity_units()
+        .into_iter()
+        .filter(|p| p.set != SPARE_SET)
+        .collect();
     let rows: Vec<String> = members.iter().map(parity_row).collect();
     Flow::Push(Box::new(Select::new(
         "dst-parity-exclude",
@@ -549,7 +588,9 @@ pub fn sst_menu(admin: bool) -> Submenu {
             (
                 1,
                 "Display disk configuration",
-                Some(Box::new(|_env| Flow::Push(Box::new(super::config::display_menu())))),
+                Some(Box::new(|_env| {
+                    Flow::Push(Box::new(super::config::display_menu()))
+                })),
             ),
             (
                 2,
@@ -569,14 +610,22 @@ pub fn sst_menu(admin: bool) -> Submenu {
             (
                 5,
                 "Start device parity protection - RAID 5 with hot spare",
-                Some(Box::new(move |env| admin_only(admin, || start_with_spare(env, 5)))),
+                Some(Box::new(move |env| {
+                    admin_only(admin, || start_with_spare(env, 5))
+                })),
             ),
             (
                 6,
                 "Start device parity protection - RAID 6 with hot spare",
-                Some(Box::new(move |env| admin_only(admin, || start_with_spare(env, 6)))),
+                Some(Box::new(move |env| {
+                    admin_only(admin, || start_with_spare(env, 6))
+                })),
             ),
-            (7, "Select parity optimization", crate::dst::common::says(crate::dst::answers::NO_PARITY_OPTIMIZATION)),
+            (
+                7,
+                "Select parity optimization",
+                crate::dst::common::says(crate::dst::answers::NO_PARITY_OPTIMIZATION),
+            ),
         ],
     )
     .sst(22)
@@ -594,7 +643,13 @@ pub fn open_sst(env: &mut dyn DstEnv, admin: bool) -> Flow {
 /// `Start hot spare` and `Stop hot spare` from SST's `Work with Disk
 /// Configuration`.
 pub fn hot_spare(env: &mut dyn DstEnv, admin: bool, start: bool) -> Flow {
-    admin_only(admin, || if start { start_spare(env) } else { stop_spare(env) })
+    admin_only(admin, || {
+        if start {
+            start_spare(env)
+        } else {
+            stop_spare(env)
+        }
+    })
 }
 
 #[cfg(test)]
@@ -621,4 +676,3 @@ mod tests {
         assert!(row("DPY/Rebuild", Some(42)).ends_with("  42% Rebuilt"));
     }
 }
-

@@ -37,7 +37,11 @@ pub static LAYOUT: Layout = Layout {
         field("definer_len", 58, 2),
         field("text_len", 60, 2),
         field("reserved", 62, 10),
-        Field { name: "parts", offset: Some(72), size: None },
+        Field {
+            name: "parts",
+            offset: Some(72),
+            size: None,
+        },
     ],
 };
 
@@ -247,17 +251,33 @@ pub struct SqlDef {
 
 impl SqlDef {
     fn encode(&self, b: &mut Vec<u8>) {
-        for s in [&self.old_row, &self.new_row, &self.old_table, &self.new_table, &self.condition, &self.statement, &self.comment] {
+        for s in [
+            &self.old_row,
+            &self.new_row,
+            &self.old_table,
+            &self.new_table,
+            &self.condition,
+            &self.statement,
+            &self.comment,
+        ] {
             b.extend_from_slice(&u32::try_from(s.len()).expect("short").to_le_bytes());
             b.extend_from_slice(s.as_bytes());
         }
-        b.extend_from_slice(&u16::try_from(self.columns.len()).expect("few").to_le_bytes());
+        b.extend_from_slice(
+            &u16::try_from(self.columns.len())
+                .expect("few")
+                .to_le_bytes(),
+        );
         for (l, f, c) in &self.columns {
             b.extend_from_slice(l.as_bytes());
             b.extend_from_slice(f.as_bytes());
             b.extend_from_slice(c.as_bytes());
         }
-        b.extend_from_slice(&u16::try_from(self.objects.len()).expect("few").to_le_bytes());
+        b.extend_from_slice(
+            &u16::try_from(self.objects.len())
+                .expect("few")
+                .to_le_bytes(),
+        );
         for (l, f) in &self.objects {
             b.extend_from_slice(l.as_bytes());
             b.extend_from_slice(f.as_bytes());
@@ -265,7 +285,9 @@ impl SqlDef {
     }
 
     fn decode(b: &[u8]) -> Result<Self> {
-        let bad = || DbError::Corrupt { what: "trigger entry: SQL definition".into() };
+        let bad = || DbError::Corrupt {
+            what: "trigger entry: SQL definition".into(),
+        };
         let mut at = 0;
         let mut take = |n: usize| -> Result<&[u8]> {
             let s = b.get(at..at + n).ok_or_else(bad)?;
@@ -315,7 +337,11 @@ impl Trigger {
             event,
             program,
             alwrepchg: false,
-            update_condition: if event == Event::Update { UpdateCondition::Always } else { UpdateCondition::None },
+            update_condition: if event == Event::Update {
+                UpdateCondition::Always
+            } else {
+                UpdateCondition::None
+            },
             enabled: true,
             operative: true,
             sql: false,
@@ -368,8 +394,16 @@ impl Trigger {
         b[36..46].copy_from_slice(self.library.as_bytes());
         b[46..48].copy_from_slice(&u16::try_from(self.name.len()).expect("short").to_le_bytes());
         b[48..56].copy_from_slice(&self.created.to_le_bytes());
-        b[56..58].copy_from_slice(&u16::try_from(self.columns.len()).expect("few").to_le_bytes());
-        b[58..60].copy_from_slice(&u16::try_from(self.definer.len()).expect("short").to_le_bytes());
+        b[56..58].copy_from_slice(
+            &u16::try_from(self.columns.len())
+                .expect("few")
+                .to_le_bytes(),
+        );
+        b[58..60].copy_from_slice(
+            &u16::try_from(self.definer.len())
+                .expect("short")
+                .to_le_bytes(),
+        );
         b[60..62].copy_from_slice(&u16::try_from(self.text.len()).expect("short").to_le_bytes());
         b.extend_from_slice(self.name.as_bytes());
         for c in &self.columns {
@@ -385,7 +419,9 @@ impl Trigger {
 
     /// From the body of a `TRIGGER` entry.
     pub fn decode(b: &[u8]) -> Result<Self> {
-        let bad = |what: &str| DbError::Corrupt { what: format!("trigger entry: {what}") };
+        let bad = |what: &str| DbError::Corrupt {
+            what: format!("trigger entry: {what}"),
+        };
         if b.len() < FIXED_LEN {
             return Err(bad("short"));
         }
@@ -406,7 +442,11 @@ impl Trigger {
         }
         let definer = text(take(u16_at(58))?)?;
         let label = text(take(u16_at(60))?)?;
-        let def = if at < b.len() { Some(Box::new(SqlDef::decode(&b[at..])?)) } else { None };
+        let def = if at < b.len() {
+            Some(Box::new(SqlDef::decode(&b[at..])?))
+        } else {
+            None
+        };
         Ok(Self {
             name,
             library: name10(36),
@@ -454,7 +494,13 @@ mod tests {
     #[test]
     fn round_trip() {
         let n = |s: &str| Name::parse(s).unwrap();
-        let mut t = Trigger::new("A_LONG_TRIGGER_NAME", n("QSTEST"), Time::After, Event::Update, (n("QSTEST"), n("TRGPGM")));
+        let mut t = Trigger::new(
+            "A_LONG_TRIGGER_NAME",
+            n("QSTEST"),
+            Time::After,
+            Event::Update,
+            (n("QSTEST"), n("TRGPGM")),
+        );
         t.alwrepchg = true;
         t.update_condition = UpdateCondition::Change;
         t.enabled = false;

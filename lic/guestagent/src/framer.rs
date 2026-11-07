@@ -117,7 +117,10 @@ mod tests {
         let mut f = Framer::new();
         assert!(f.push(br#"{"execute":"gue"#).is_empty());
         let got = objects(f.push(b"st-ping\"}\n{\"execute\":\"guest-info\"}"));
-        assert_eq!(got, [r#"{"execute":"guest-ping"}"#, r#"{"execute":"guest-info"}"#]);
+        assert_eq!(
+            got,
+            [r#"{"execute":"guest-ping"}"#, r#"{"execute":"guest-info"}"#]
+        );
     }
 
     #[test]

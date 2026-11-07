@@ -70,7 +70,9 @@ pub fn unesc(s: &str) -> String {
             "gt" => Some('>'),
             "quot" => Some('"'),
             "apos" => Some('\''),
-            n if n.starts_with("#x") => u32::from_str_radix(&n[2..], 16).ok().and_then(char::from_u32),
+            n if n.starts_with("#x") => u32::from_str_radix(&n[2..], 16)
+                .ok()
+                .and_then(char::from_u32),
             n if n.starts_with('#') => n[1..].parse().ok().and_then(char::from_u32),
             _ => None,
         };
@@ -158,7 +160,11 @@ mod tests {
 
     #[test]
     fn reads_what_it_writes() {
-        let doc = format!("<?xml version=\"1.0\"?><a x=\"1\" y='{}'><b/>{}</a>", esc("<&>"), esc("t & \"u\""));
+        let doc = format!(
+            "<?xml version=\"1.0\"?><a x=\"1\" y='{}'><b/>{}</a>",
+            esc("<&>"),
+            esc("t & \"u\"")
+        );
         let n = parse(&doc);
         assert_eq!(n[0].attr("y"), Some("<&>"));
         assert!(matches!(&n[1], Node::Open { name, empty: true, .. } if name == "b"));

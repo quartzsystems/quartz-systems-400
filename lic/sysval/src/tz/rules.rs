@@ -42,12 +42,18 @@ impl Edge {
     fn day(self, year: i64) -> i64 {
         let m = u32::from(self.month.clamp(1, 12));
         if self.week >= 5 {
-            let (ny, nm) = if m == 12 { (year + 1, 1) } else { (year, m + 1) };
+            let (ny, nm) = if m == 12 {
+                (year + 1, 1)
+            } else {
+                (year, m + 1)
+            };
             let last = days_from_civil(ny, nm, 1) - 1;
             last - (weekday(last) - i64::from(self.weekday)).rem_euclid(7)
         } else {
             let first = days_from_civil(year, m, 1);
-            first + (i64::from(self.weekday) - weekday(first)).rem_euclid(7) + (i64::from(self.week.max(1)) - 1) * 7
+            first
+                + (i64::from(self.weekday) - weekday(first)).rem_euclid(7)
+                + (i64::from(self.week.max(1)) - 1) * 7
         }
     }
 }
@@ -89,11 +95,26 @@ mod tests {
 
     #[test]
     fn edges() {
-        let second_sunday_march = Edge { month: 3, weekday: 0, week: 2, secs: 7200 };
+        let second_sunday_march = Edge {
+            month: 3,
+            weekday: 0,
+            week: 2,
+            secs: 7200,
+        };
         assert_eq!(second_sunday_march.day(2026), days_from_civil(2026, 3, 8));
-        let last_sunday_october = Edge { month: 10, weekday: 0, week: 5, secs: 3600 };
+        let last_sunday_october = Edge {
+            month: 10,
+            weekday: 0,
+            week: 5,
+            secs: 3600,
+        };
         assert_eq!(last_sunday_october.day(2026), days_from_civil(2026, 10, 25));
-        let last_monday_march = Edge { month: 3, weekday: 1, week: 5, secs: 0 };
+        let last_monday_march = Edge {
+            month: 3,
+            weekday: 1,
+            week: 5,
+            secs: 0,
+        };
         assert_eq!(last_monday_march.day(2026), days_from_civil(2026, 3, 30));
         assert_eq!(weekday(days_from_civil(2026, 10, 10)), 6);
     }

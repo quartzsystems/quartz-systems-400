@@ -78,11 +78,9 @@ impl PrivateKey {
             KeyKind::EcdsaP256 => Self::EcdsaP256(EcSign {
                 private_key: P256Key::new_random().map_err(|_| KeyError::Generate)?,
             }),
-            KeyKind::Rsa => {
-                Self::Rsa(Box::new(
-                    RsaSign::generate(KeySize::Rsa3072).map_err(|_| KeyError::Generate)?,
-                ))
-            }
+            KeyKind::Rsa => Self::Rsa(Box::new(
+                RsaSign::generate(KeySize::Rsa3072).map_err(|_| KeyError::Generate)?,
+            )),
         })
     }
 
@@ -101,7 +99,9 @@ impl PrivateKey {
     pub fn public(&self) -> PublicKey {
         match self {
             Self::Ed25519(k) => PublicKey::Ed25519(k.public_key().as_bytes()),
-            Self::EcdsaP256(k) => PublicKey::EcdsaP256(k.private_key.public_key_uncompressed().to_vec()),
+            Self::EcdsaP256(k) => {
+                PublicKey::EcdsaP256(k.private_key.public_key_uncompressed().to_vec())
+            }
             Self::Rsa(k) => {
                 let mut buf = vec![0u8; 2048];
                 let (n, e) = k

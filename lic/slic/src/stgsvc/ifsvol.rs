@@ -107,7 +107,11 @@ pub fn start(system: &mut System) -> Option<String> {
     let line = match plat::mount_xfs(&path, MOUNT_POINT) {
         Ok(()) => {
             system.emit(&src::IFS_MOUNTED);
-            format!("IFS {} ({} MiB in ASP 1) at {MOUNT_POINT}", path.display(), pages * 4096 / MIB)
+            format!(
+                "IFS {} ({} MiB in ASP 1) at {MOUNT_POINT}",
+                path.display(),
+                pages * 4096 / MIB
+            )
         }
         Err(e) => {
             eprintln!("qsstg: IFS {}: mount: {e}", path.display());
@@ -150,7 +154,9 @@ pub fn tick(system: &mut System) {
             total * 4096 / MIB
         ),
         Err(GrowError::NoRoom(_)) => {
-            let first = served().as_mut().is_some_and(|sv| !std::mem::replace(&mut sv.warned, true));
+            let first = served()
+                .as_mut()
+                .is_some_and(|sv| !std::mem::replace(&mut sv.warned, true));
             if first {
                 no_room(system);
             }

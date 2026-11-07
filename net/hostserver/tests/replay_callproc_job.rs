@@ -30,11 +30,23 @@ struct StoreSource {
 }
 
 impl ObjectSource for StoreSource {
-    fn program(&mut self, name: &str, _lib: &str, kind: PgmKind) -> Option<(Arc<ProgramObject>, String)> {
+    fn program(
+        &mut self,
+        name: &str,
+        _lib: &str,
+        kind: PgmKind,
+    ) -> Option<(Arc<ProgramObject>, String)> {
         let mut st = self.store.borrow_mut();
         let mut txn = st.begin().ok()?;
-        let ty = if kind == PgmKind::Pgm { types::PGM } else { types::SRVPGM };
-        let id = Library::load(&mut txn, self.lib).ok()?.lookup(&mut txn, ty, Name::parse(name).ok()?).ok()??;
+        let ty = if kind == PgmKind::Pgm {
+            types::PGM
+        } else {
+            types::SRVPGM
+        };
+        let id = Library::load(&mut txn, self.lib)
+            .ok()?
+            .lookup(&mut txn, ty, Name::parse(name).ok()?)
+            .ok()??;
         let p = ile::store::load_program(&mut txn, id).ok()?;
         txn.abort();
         Some((Arc::new(p), "QSTEST".into()))
@@ -63,7 +75,15 @@ impl Embedded for JobSql {
 fn masks() -> common::Masks {
     common::Masks {
         template: vec![(0x2800, 4..8)],
-        param: vec![(0x3807, 16..96), (0x3807, 100..104), (0x3807, 116..120), (0x3804, 0..2), (0x3804, 110..116), (0x380E, 0..4), (0x3814, 0..10)],
+        param: vec![
+            (0x3807, 16..96),
+            (0x3807, 100..104),
+            (0x3807, 116..120),
+            (0x3804, 0..2),
+            (0x3804, 110..116),
+            (0x380E, 0..4),
+            (0x3814, 0..10),
+        ],
         skip: vec![0x3802, 0x3803],
     }
 }
@@ -79,11 +99,19 @@ fn callproc_in_a_job() {
     let diffs = replay(&t, &masks(), &mut || {
         let (store, qsys, names) = common::mem::store();
         let lib = names.curlib.expect("QSTEST");
-        let session = Session::new(Box::new(store.clone()), qsys, store::obj::JobHandle(1), names);
+        let session = Session::new(
+            Box::new(store.clone()),
+            qsys,
+            store::obj::JobHandle(1),
+            names,
+        );
         let mut job = mi::Job::boxed(Box::new(StoreSource { store, lib }));
         qrpgrt::install(&mut job);
         job.sql = Some(Box::new(session));
-        let e = JobSql { job, outs: Vec::new() };
+        let e = JobSql {
+            job,
+            outs: Vec::new(),
+        };
         Box::new(Database::new(auth.clone(), e, NoExits, cfg.clone())) as Box<dyn Handler>
     });
     accept("database-callproc-job", &diffs);

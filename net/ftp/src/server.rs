@@ -26,7 +26,12 @@ pub const APP_ID: &str = "QS400_FTP_SERVER";
 
 /// The TLS configuration of `AUTH TLS` and port 990: the certificate
 /// assigned to [`APP_ID`] in `store`.
-pub fn server_tls(store: &CertStore, apps: &AppRegistry, policy: &TlsPolicy, now: u64) -> Result<Arc<ServerConfig>, String> {
+pub fn server_tls(
+    store: &CertStore,
+    apps: &AppRegistry,
+    policy: &TlsPolicy,
+    now: u64,
+) -> Result<Arc<ServerConfig>, String> {
     match for_app(store, apps, APP_ID, policy, now).map_err(|e| e.to_string())? {
         AppConfig::Server { config, .. } => Ok(config),
         AppConfig::Client { .. } => Err(format!("{APP_ID} is not a server application")),
@@ -51,8 +56,16 @@ pub fn serve<H: Host>(net: &mut TcpNet, session: &mut Session<H>) {
                 }
             }
             Ok(None) => break,
-            Err(e) if matches!(e.kind(), io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock) => {
-                let _ = net.send(&Reply::new(421, "The session was idle too long and is ending."));
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
+                ) =>
+            {
+                let _ = net.send(&Reply::new(
+                    421,
+                    "The session was idle too long and is ending.",
+                ));
                 break;
             }
             Err(e) => {

@@ -22,5 +22,8 @@ fn everything_has_help() {
 #[test]
 fn command_help_is_generated() {
     let stale = helpaudit::generate::stale(&root()).expect("the generator runs");
-    assert!(stale.is_empty(), "run `cargo run -p helpaudit -- gen`: {stale:?}");
+    assert!(
+        stale.is_empty(),
+        "run `cargo run -p helpaudit -- gen`: {stale:?}"
+    );
 }

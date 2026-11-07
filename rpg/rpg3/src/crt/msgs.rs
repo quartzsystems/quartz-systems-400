@@ -17,8 +17,18 @@ struct Map {
     place: Place,
 }
 
-const fn m(rnf: &'static str, qrg: Option<&'static str>, severity: Option<u8>, place: Place) -> Map {
-    Map { rnf, qrg, severity, place }
+const fn m(
+    rnf: &'static str,
+    qrg: Option<&'static str>,
+    severity: Option<u8>,
+    place: Place,
+) -> Map {
+    Map {
+        rnf,
+        qrg,
+        severity,
+        place,
+    }
 }
 
 /// The ones that are not `QRG` of the same number, severity and place
@@ -41,7 +51,9 @@ const TABLE: &[Map] = &[
 #[must_use]
 pub fn qrg(rnf: &str, severity: u8) -> Option<(String, u8, Place)> {
     if let Some(e) = TABLE.iter().find(|e| e.rnf == rnf) {
-        return e.qrg.map(|q| (q.to_string(), e.severity.unwrap_or(severity), e.place));
+        return e
+            .qrg
+            .map(|q| (q.to_string(), e.severity.unwrap_or(severity), e.place));
     }
     let num = rnf.strip_prefix("RNF")?;
     Some((format!("QRG{num}"), severity, Place::Source))

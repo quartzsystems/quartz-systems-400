@@ -105,7 +105,14 @@ pub fn chgaut(c: &dyn IfsClient, a: &Chgaut) -> Reply {
 }
 
 /// `CHGOWN`.
-pub fn chgown(c: &dyn IfsClient, obj: &str, newown: &str, rvkoldaut: bool, subtree: Subtree, symlnk: bool) -> Reply {
+pub fn chgown(
+    c: &dyn IfsClient,
+    obj: &str,
+    newown: &str,
+    rvkoldaut: bool,
+    subtree: Subtree,
+    symlnk: bool,
+) -> Reply {
     let newown = newown.trim().to_ascii_uppercase();
     each(
         c,

@@ -59,7 +59,12 @@ fn engine() -> Engine {
         wal_pages: 256,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(dev) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(dev) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut txn = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut txn, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -108,7 +113,8 @@ fn columns(rs: &sql::ResultSet) -> Vec<Column> {
         .iter()
         .map(|c| Column {
             name: c.name.clone(),
-            ty: ColType::parse(&c.data_type, c.nullable).unwrap_or_else(|| ColType::new(Kind::VarChar, 256, 0, 0, true)),
+            ty: ColType::parse(&c.data_type, c.nullable)
+                .unwrap_or_else(|| ColType::new(Kind::VarChar, 256, 0, 0, true)),
             label: None,
         })
         .collect()
@@ -118,7 +124,9 @@ fn to_wire(v: &sql::Value, t: &ColType) -> Value {
     match v {
         sql::Value::Null => Value::Null,
         sql::Value::Num(d) => match t.kind {
-            Kind::SmallInt | Kind::Integer | Kind::BigInt => Value::Int(d.to_string().parse().unwrap_or(0)),
+            Kind::SmallInt | Kind::Integer | Kind::BigInt => {
+                Value::Int(d.to_string().parse().unwrap_or(0))
+            }
             _ => Value::Dec(d.clone()),
         },
         other => Value::Text(other.as_text()),
@@ -138,11 +146,15 @@ fn from_wire(v: &Value) -> sql::Value {
 impl Engine {
     fn run(&mut self, p: &sql::Prepared, params: &[Value], keep: bool) -> Result<Outcome, Sqlca> {
         let vals: Vec<sql::Value> = params.iter().map(from_wire).collect();
-        let mut txn = self.store.begin().map_err(|e| Sqlca::error(-30_000, "58008", &e.to_string()))?;
+        let mut txn = self
+            .store
+            .begin()
+            .map_err(|e| Sqlca::error(-30_000, "58008", &e.to_string()))?;
         match p.execute(&mut txn, &mut self.ctx, &vals) {
             Ok(o) => {
                 if keep {
-                    txn.commit().map_err(|e| Sqlca::error(-30_000, "58008", &e.to_string()))?;
+                    txn.commit()
+                        .map_err(|e| Sqlca::error(-30_000, "58008", &e.to_string()))?;
                 } else {
                     txn.abort();
                 }
@@ -174,14 +186,26 @@ impl SqlBackend for SqlSide {
         Ok(cols)
     }
     fn describe(&mut self, s: &Section) -> SqlResult<Vec<Column>> {
-        let p = self.0.borrow().prepared.get(s).cloned().ok_or_else(|| Sqlca::error(-518, "07003", ""))?;
+        let p = self
+            .0
+            .borrow()
+            .prepared
+            .get(s)
+            .cloned()
+            .ok_or_else(|| Sqlca::error(-518, "07003", ""))?;
         match self.0.borrow_mut().run(&p, &[], false)? {
             Outcome::Rows(rs) => Ok(columns(&rs)),
             _ => Ok(Vec::new()),
         }
     }
     fn execute(&mut self, s: &Section, params: &[Value]) -> SqlResult<Sqlca> {
-        let p = self.0.borrow().prepared.get(s).cloned().ok_or_else(|| Sqlca::error(-518, "07003", ""))?;
+        let p = self
+            .0
+            .borrow()
+            .prepared
+            .get(s)
+            .cloned()
+            .ok_or_else(|| Sqlca::error(-518, "07003", ""))?;
         match self.0.borrow_mut().run(&p, params, true)? {
             Outcome::Count(n) => Ok(Sqlca::rows(n)),
             _ => Ok(Sqlca::default()),
@@ -195,7 +219,13 @@ impl SqlBackend for SqlSide {
         }
     }
     fn open(&mut self, s: &Section, params: &[Value]) -> SqlResult<Vec<Column>> {
-        let p = self.0.borrow().prepared.get(s).cloned().ok_or_else(|| Sqlca::error(-518, "07003", ""))?;
+        let p = self
+            .0
+            .borrow()
+            .prepared
+            .get(s)
+            .cloned()
+            .ok_or_else(|| Sqlca::error(-518, "07003", ""))?;
         let Outcome::Rows(rs) = self.0.borrow_mut().run(&p, params, true)? else {
             return Err(Sqlca::error(-507, "24501", ""));
         };
@@ -203,14 +233,22 @@ impl SqlBackend for SqlSide {
         let rows = rs
             .rows
             .iter()
-            .map(|r| r.iter().zip(&cols).map(|(v, c)| to_wire(v, &c.ty)).collect())
+            .map(|r| {
+                r.iter()
+                    .zip(&cols)
+                    .map(|(v, c)| to_wire(v, &c.ty))
+                    .collect()
+            })
             .collect();
         self.0.borrow_mut().cursors.insert(s.clone(), rows);
         Ok(cols)
     }
     fn fetch(&mut self, s: &Section, max: usize) -> SqlResult<Vec<Vec<Value>>> {
         let mut e = self.0.borrow_mut();
-        let q = e.cursors.get_mut(s).ok_or_else(|| Sqlca::error(-501, "24501", ""))?;
+        let q = e
+            .cursors
+            .get_mut(s)
+            .ok_or_else(|| Sqlca::error(-501, "24501", ""))?;
         Ok((0..max).map_while(|_| q.pop_front()).collect())
     }
     fn close(&mut self, s: &Section) -> SqlResult<()> {
@@ -290,7 +328,9 @@ impl FileBackend for FileSide {
                     let mut fd = f.fields[k.field].clone();
                     let n = fd.byte_len as usize;
                     fd.offset = 0;
-                    vals.push(db::record::read_field(&fd, &key[at..at + n], &[], None).map_err(ferr)?);
+                    vals.push(
+                        db::record::read_field(&fd, &key[at..at + n], &[], None).map_err(ferr)?,
+                    );
                     at += n;
                 }
                 odp.chain(&mut txn, &KeyArg::Values(vals), lock)
@@ -367,7 +407,8 @@ impl Authenticator for Passwords {
                     client: *client_seed,
                     server: *server_seed,
                 };
-                hostsvr::crypt::substitute(level, USER, PASSWORD, &seeds).is_ok_and(|s| &s == substitute)
+                hostsvr::crypt::substitute(level, USER, PASSWORD, &seeds)
+                    .is_ok_and(|s| &s == substitute)
             }
         };
         if ok { Ok(()) } else { Err(0x0F) }
@@ -388,7 +429,8 @@ impl Write for Pipe {
         Ok(b.len())
     }
     fn flush(&mut self) -> std::io::Result<()> {
-        let chain = ddm::wire::decode_chain(&std::mem::take(&mut self.inbox)).expect("a whole chain");
+        let chain =
+            ddm::wire::decode_chain(&std::mem::take(&mut self.inbox)).expect("a whole chain");
         let replies = self.session.handle(&chain);
         self.outbox.extend(ddm::wire::encode_chain(&replies));
         Ok(())
@@ -430,7 +472,12 @@ fn connect(e: &Rc<RefCell<Engine>>, mech: Mechanism) -> Connection<Pipe> {
 #[test]
 fn every_mechanism_and_a_bad_password() {
     let e = Rc::new(RefCell::new(engine()));
-    for m in [Mechanism::UsrSsbPwd, Mechanism::UsrEncPwd, Mechanism::EUsrIdPwd, Mechanism::UsrSbsPwd] {
+    for m in [
+        Mechanism::UsrSsbPwd,
+        Mechanism::UsrEncPwd,
+        Mechanism::EUsrIdPwd,
+        Mechanism::UsrSbsPwd,
+    ] {
         let c = connect(&e, m);
         assert_eq!(c.mechanism, Some(m));
         assert_eq!(c.sqlam, 7);
@@ -454,12 +501,20 @@ fn sql_and_record_access() {
         .unwrap();
     assert!(!ca.is_error(), "{ca:?}");
     let ca = c
-        .execute_immediate("INSERT INTO QSTEST.CUST VALUES (1, 'Ann', 10.50), (2, 'Bob', 21.00), (3, 'Cy', 0)")
+        .execute_immediate(
+            "INSERT INTO QSTEST.CUST VALUES (1, 'Ann', 10.50), (2, 'Bob', 21.00), (3, 'Cy', 0)",
+        )
         .unwrap();
     assert_eq!(ca.sqlerrd[2], 3);
-    assert!(!c.execute_immediate("CREATE INDEX QSTEST.CUSTX ON QSTEST.CUST (ID)").unwrap().is_error());
+    assert!(
+        !c.execute_immediate("CREATE INDEX QSTEST.CUSTX ON QSTEST.CUST (ID)")
+            .unwrap()
+            .is_error()
+    );
 
-    let p = c.prepare("SELECT ID, NAME, BAL FROM QSTEST.CUST ORDER BY ID").unwrap();
+    let p = c
+        .prepare("SELECT ID, NAME, BAL FROM QSTEST.CUST ORDER BY ID")
+        .unwrap();
     assert_eq!(p.columns.len(), 3);
     assert_eq!(p.columns[2].ty.kind, Kind::Decimal);
     let rows = c.query(&p).unwrap();
@@ -468,7 +523,14 @@ fn sql_and_record_access() {
         .iter()
         .map(|r| r.iter().map(Value::render).collect::<Vec<_>>().join("|"))
         .collect();
-    assert_eq!(text, ["1|Ann       |10.50", "2|Bob       |21.00", "3|Cy        |0.00"]);
+    assert_eq!(
+        text,
+        [
+            "1|Ann       |10.50",
+            "2|Bob       |21.00",
+            "3|Cy        |0.00"
+        ]
+    );
     assert_eq!(rows.end.as_ref().unwrap().sqlcode, 100);
     assert!(rows.closed);
     assert_eq!(c.commit().unwrap().sqlcode, 0);
@@ -516,14 +578,20 @@ fn sql_and_record_access() {
     rec.extend([0x00, 0x01, 0x23, 0x4F]);
     let w = c.put(&f, &[Rec::new(rec, 3)]).unwrap();
     assert_eq!(w.iofb.unwrap().count, 1);
-    let all = c.get(&f, ddm::cp::s38::S38GET, file::op::FIRST, 0, &[]).unwrap();
+    let all = c
+        .get(&f, ddm::cp::s38::S38GET, file::op::FIRST, 0, &[])
+        .unwrap();
     assert_eq!(all.records.len(), 4, "{all:?}");
     assert_eq!(all.records[3].rrn, 4);
-    let end = c.get(&f, ddm::cp::s38::S38GET, file::op::NEXT, 0, &[]).unwrap();
+    let end = c
+        .get(&f, ddm::cp::s38::S38GET, file::op::NEXT, 0, &[])
+        .unwrap();
     assert!(end.at_end());
     c.close_file(&f).unwrap();
 
-    let p = c.prepare("SELECT NAME, BAL FROM QSTEST.CUST WHERE ID = 4").unwrap();
+    let p = c
+        .prepare("SELECT NAME, BAL FROM QSTEST.CUST WHERE ID = 4")
+        .unwrap();
     let rows = c.query(&p).unwrap();
     assert_eq!(rows.rows[0][0], Value::Text("Dee       ".into()));
     assert_eq!(rows.rows[0][1].render(), "12.34");
@@ -566,7 +634,10 @@ impl SqlBackend for CallSide {
         Err(Sqlca::error(-507, "24501", ""))
     }
     fn fetch(&mut self, s: &Section, max: usize) -> SqlResult<Vec<Vec<Value>>> {
-        let q = self.open.get_mut(s).ok_or_else(|| Sqlca::error(-501, "24501", ""))?;
+        let q = self
+            .open
+            .get_mut(s)
+            .ok_or_else(|| Sqlca::error(-501, "24501", ""))?;
         Ok((0..max).map_while(|_| q.pop_front()).collect())
     }
     fn close(&mut self, s: &Section) -> SqlResult<()> {
@@ -582,28 +653,59 @@ impl SqlBackend for CallSide {
     fn result_sets(&mut self) -> (String, Vec<String>) {
         ("QSTEST.QSDRSP".into(), vec!["C1".into(), "C2".into()])
     }
-    fn bind(&mut self, collection: &str, package: &str, _: [u8; 8], stmts: &[(u16, String)]) -> SqlResult<()> {
-        self.bound.borrow_mut().push((collection.into(), package.into(), stmts.to_vec()));
+    fn bind(
+        &mut self,
+        collection: &str,
+        package: &str,
+        _: [u8; 8],
+        stmts: &[(u16, String)],
+    ) -> SqlResult<()> {
+        self.bound
+            .borrow_mut()
+            .push((collection.into(), package.into(), stmts.to_vec()));
         Ok(())
     }
     fn call_outputs(&mut self, _: &Section) -> SqlResult<Vec<(ColType, Value)>> {
         // QSOUTP(IN N INTEGER, OUT W VARCHAR(10), INOUT A DECIMAL(7, 2)).
         Ok(vec![
             (ColType::new(Kind::Integer, 0, 10, 0, false), Value::Null),
-            (ColType::new(Kind::VarChar, 10, 0, 0, true), Value::Text("DONE".into())),
-            (ColType::new(Kind::Decimal, 0, 7, 2, true), Value::Dec("36.75".parse().unwrap())),
+            (
+                ColType::new(Kind::VarChar, 10, 0, 0, true),
+                Value::Text("DONE".into()),
+            ),
+            (
+                ColType::new(Kind::Decimal, 0, 7, 2, true),
+                Value::Dec("36.75".parse().unwrap()),
+            ),
         ])
     }
     fn open_result_set(&mut self, s: &Section, index: usize) -> SqlResult<Vec<Column>> {
-        let col = |name: &str, ty: ColType| Column { name: name.into(), ty, label: None };
+        let col = |name: &str, ty: ColType| Column {
+            name: name.into(),
+            ty,
+            label: None,
+        };
         let (cols, rows): (Vec<Column>, Vec<Vec<Value>>) = if index == 0 {
             let names = ["ANN", "BOB", "CY"];
             (
-                vec![col("ID", ColType::new(Kind::Integer, 0, 10, 0, false)), col("NAME", ColType::new(Kind::VarChar, 3, 0, 0, false))],
-                (0..self.first).map(|i| vec![Value::Int(i64::try_from(i + 1).unwrap()), Value::Text(names[i % 3].into())]).collect(),
+                vec![
+                    col("ID", ColType::new(Kind::Integer, 0, 10, 0, false)),
+                    col("NAME", ColType::new(Kind::VarChar, 3, 0, 0, false)),
+                ],
+                (0..self.first)
+                    .map(|i| {
+                        vec![
+                            Value::Int(i64::try_from(i + 1).unwrap()),
+                            Value::Text(names[i % 3].into()),
+                        ]
+                    })
+                    .collect(),
             )
         } else {
-            (vec![col("TEN", ColType::new(Kind::Integer, 0, 10, 0, true))], vec![vec![Value::Int(20)]])
+            (
+                vec![col("TEN", ColType::new(Kind::Integer, 0, 10, 0, true))],
+                vec![vec![Value::Int(20)]],
+            )
         };
         self.open.insert(s.clone(), rows.into());
         Ok(cols)
@@ -619,7 +721,12 @@ fn call_pipe_binding(first: usize, bound: Bound) -> Pipe {
     let session = Session::new(
         Config::new("QS400", "QS400"),
         Box::new(Passwords),
-        Box::new(CallSide { first, open: HashMap::new(), outp: false, bound }),
+        Box::new(CallSide {
+            first,
+            open: HashMap::new(),
+            outp: false,
+            bound,
+        }),
         Box::new(FileSide(e)),
     );
     Pipe {
@@ -632,7 +739,8 @@ fn call_pipe_binding(first: usize, bound: Bound) -> Pipe {
 /// The reply to the `EXCSQLSTT` of `drda-call.trace` (pub400): each
 /// object's code point and bytes.
 fn oracle_call_reply() -> Vec<(u16, Vec<u8>)> {
-    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/ddm/traces/drda-call.trace");
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/conformance/ddm/traces/drda-call.trace");
     let t = ddm::trace::Trace::parse(&std::fs::read_to_string(path).unwrap()).unwrap();
     let mut out = Vec::new();
     let mut corr = None;
@@ -657,12 +765,23 @@ fn a_calls_result_sets_come_as_ibm_i_sends_them() {
     let corr = c.next_corr();
     let cmd = ddm::wire::Object::coll(
         ddm::cp::cmd::EXCSQLSTT,
-        vec![p.pkg.to_object(), ddm::wire::Object::u32(ddm::cp::param::QRYBLKSZ, 32_767), ddm::wire::Object::u16(ddm::cp::param::MAXRSLCNT, 0xFFFF)],
+        vec![
+            p.pkg.to_object(),
+            ddm::wire::Object::u32(ddm::cp::param::QRYBLKSZ, 32_767),
+            ddm::wire::Object::u16(ddm::cp::param::MAXRSLCNT, 0xFFFF),
+        ],
     );
     let replies = c.exchange(vec![ddm::Dss::request(corr, cmd)]).unwrap();
-    let ours: Vec<(u16, Vec<u8>)> = replies.iter().filter_map(|d| d.first()).map(|o| (o.cp, o.bytes().to_vec())).collect();
+    let ours: Vec<(u16, Vec<u8>)> = replies
+        .iter()
+        .filter_map(|d| d.first())
+        .map(|o| (o.cp, o.bytes().to_vec()))
+        .collect();
     let oracle = oracle_call_reply();
-    assert_eq!(ours.iter().map(|x| x.0).collect::<Vec<_>>(), oracle.iter().map(|x| x.0).collect::<Vec<_>>());
+    assert_eq!(
+        ours.iter().map(|x| x.0).collect::<Vec<_>>(),
+        oracle.iter().map(|x| x.0).collect::<Vec<_>>()
+    );
     // SQLRSLRD, each set's SQLCINRD, QRYDSC and rows, byte for byte.
     for (i, (cp, b)) in oracle.iter().enumerate() {
         if matches!(*cp, 0x240E | 0x240B | 0x241A | 0x241B) {
@@ -671,9 +790,17 @@ fn a_calls_result_sets_come_as_ibm_i_sends_them() {
     }
     // The sections name the procedure's package.
     let rsl = replies[0].first().unwrap();
-    let secs: Vec<ddm::msg::Pkgnamcsn> =
-        rsl.all(ddm::cp::param::PKGSNLST).flat_map(|l| l.all(ddm::cp::param::PKGNAMCSN)).map(|x| ddm::msg::Pkgnamcsn::decode(x.bytes()).unwrap()).collect();
-    assert_eq!(secs.iter().map(|s| (s.collection.as_str(), s.package.as_str(), s.section)).collect::<Vec<_>>(), [("QSTEST", "QSDRSP", 1), ("QSTEST", "QSDRSP", 2)]);
+    let secs: Vec<ddm::msg::Pkgnamcsn> = rsl
+        .all(ddm::cp::param::PKGSNLST)
+        .flat_map(|l| l.all(ddm::cp::param::PKGNAMCSN))
+        .map(|x| ddm::msg::Pkgnamcsn::decode(x.bytes()).unwrap())
+        .collect();
+    assert_eq!(
+        secs.iter()
+            .map(|s| (s.collection.as_str(), s.package.as_str(), s.section))
+            .collect::<Vec<_>>(),
+        [("QSTEST", "QSDRSP", 1), ("QSTEST", "QSDRSP", 2)]
+    );
 }
 
 #[test]
@@ -684,14 +811,18 @@ fn a_large_result_set_continues_at_its_section() {
     let p = c.prepare("CALL QSTEST.QSDRSP(70)").unwrap();
     let r = c.call(&p).unwrap();
     assert_eq!(r.sqlca.as_ref().map(|s| s.sqlcode), Some(466));
-    assert_eq!(r.sets.iter().map(|s| s.rows.len()).collect::<Vec<_>>(), [70, 1]);
+    assert_eq!(
+        r.sets.iter().map(|s| s.rows.len()).collect::<Vec<_>>(),
+        [70, 1]
+    );
     assert_eq!(r.sets[0].rows[69][1].render(), "ANN");
     assert_eq!(r.sets[1].rows[0][0].render(), "20");
 }
 
 /// The `SQLDTARD` of `tools/conformance/ddm/outexp-primary.txt`.
 fn oracle_outexp() -> Vec<u8> {
-    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/ddm/outexp-primary.txt");
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/conformance/ddm/outexp-primary.txt");
     let text = std::fs::read_to_string(path).unwrap();
     let mut b = Vec::new();
     for line in text.lines().filter(|l| l.starts_with("  ")) {
@@ -709,7 +840,13 @@ fn a_calls_output_values_come_as_the_primary_sends_them() {
     let mut c = Connection::connect(call_pipe(0), &o).unwrap();
     let p = c.prepare("CALL QSTEST.QSOUTP(?, ?, ?)").unwrap();
     let corr = c.next_corr();
-    let cmd = ddm::wire::Object::coll(ddm::cp::cmd::EXCSQLSTT, vec![p.pkg.to_object(), ddm::wire::Object::byte(ddm::cp::param::OUTEXP, 0xF1)]);
+    let cmd = ddm::wire::Object::coll(
+        ddm::cp::cmd::EXCSQLSTT,
+        vec![
+            p.pkg.to_object(),
+            ddm::wire::Object::byte(ddm::cp::param::OUTEXP, 0xF1),
+        ],
+    );
     let replies = c.exchange(vec![ddm::Dss::request(corr, cmd)]).unwrap();
     let objs: Vec<&ddm::wire::Object> = replies.iter().filter_map(|d| d.first()).collect();
     assert_eq!(objs.len(), 1, "{objs:?}");
@@ -733,5 +870,11 @@ fn a_bind_makes_the_package() {
     let b = bound.borrow();
     assert_eq!(b.len(), 1);
     assert_eq!((b[0].0.as_str(), b[0].1.as_str()), ("QSTEST", "QSDDMPKG"));
-    assert_eq!(b[0].2, [(1, "DECLARE C1 CURSOR FOR S1".to_string()), (2, "DECLARE C2 CURSOR FOR S2".to_string())]);
+    assert_eq!(
+        b[0].2,
+        [
+            (1, "DECLARE C1 CURSOR FOR S1".to_string()),
+            (2, "DECLARE C2 CURSOR FOR S2".to_string())
+        ]
+    );
 }

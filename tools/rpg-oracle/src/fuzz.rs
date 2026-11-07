@@ -87,11 +87,22 @@ struct Gen {
     proc_name: Option<String>,
 }
 
-const WORDS: &[&str] = &["abc", "Quartz", "x", "hello world", "  pad  ", "RPG", "0123", "zz"];
+const WORDS: &[&str] = &[
+    "abc",
+    "Quartz",
+    "x",
+    "hello world",
+    "  pad  ",
+    "RPG",
+    "0123",
+    "zz",
+];
 
 impl Gen {
     fn vars_of(&self, f: impl Fn(Kind) -> bool) -> Vec<usize> {
-        (0..self.vars.len()).filter(|&i| f(self.vars[i].kind)).collect()
+        (0..self.vars.len())
+            .filter(|&i| f(self.vars[i].kind))
+            .collect()
     }
 
     fn num_lit(&mut self) -> String {
@@ -118,12 +129,20 @@ impl Gen {
         match r {
             30..=64 => {
                 let op = *self.rng.pick(&["+", "-", "*", "+", "-"]);
-                format!("({} {op} {})", self.num_expr(depth - 1), self.num_expr(depth - 1))
+                format!(
+                    "({} {op} {})",
+                    self.num_expr(depth - 1),
+                    self.num_expr(depth - 1)
+                )
             }
             65..=69 => format!("({} / {})", self.num_expr(depth - 1), self.rng.range(1, 9)),
             70..=74 => format!("%abs({})", self.num_expr(depth - 1)),
             75..=79 => format!("%int({})", self.num_expr(depth - 1)),
-            80..=83 => format!("%rem(%int({}) : {})", self.num_expr(depth - 1), self.rng.range(1, 9)),
+            80..=83 => format!(
+                "%rem(%int({}) : {})",
+                self.num_expr(depth - 1),
+                self.rng.range(1, 9)
+            ),
             84..=87 => {
                 let texts = self.vars_of(Kind::text);
                 if texts.is_empty() {
@@ -157,7 +176,11 @@ impl Gen {
             return format!("'{}'", self.rng.pick(WORDS));
         }
         match r {
-            30..=54 => format!("{} + {}", self.str_expr(depth - 1), self.str_expr(depth - 1)),
+            30..=54 => format!(
+                "{} + {}",
+                self.str_expr(depth - 1),
+                self.str_expr(depth - 1)
+            ),
             55..=64 => format!("%trim({})", self.str_expr(depth - 1)),
             65..=69 => format!("%triml({})", self.str_expr(depth - 1)),
             70..=74 => format!("%trimr({})", self.str_expr(depth - 1)),
@@ -167,7 +190,9 @@ impl Gen {
                     return format!("'{}'", self.rng.pick(WORDS));
                 }
                 let i = *self.rng.pick(&fixed);
-                let Kind::Char(n) = self.vars[i].kind else { unreachable!() };
+                let Kind::Char(n) = self.vars[i].kind else {
+                    unreachable!()
+                };
                 let start = self.rng.range(1, i64::from(n));
                 let len = self.rng.range(1, i64::from(n) - start + 1);
                 format!("%subst({} : {start} : {len})", self.vars[i].name)
@@ -218,7 +243,9 @@ impl Gen {
     }
 
     fn assign(&mut self) {
-        let i = self.rng.range(0, i64::try_from(self.vars.len()).unwrap_or(1) - 1);
+        let i = self
+            .rng
+            .range(0, i64::try_from(self.vars.len()).unwrap_or(1) - 1);
         let i = usize::try_from(i).unwrap_or(0);
         let name = self.vars[i].name.clone();
         let kind = self.vars[i].kind;
@@ -227,7 +254,11 @@ impl Gen {
             k if k.numeric() => self.num_expr(3),
             _ => self.str_expr(2),
         };
-        let op = if kind.numeric() && self.rng.chance(25) { "eval(h) " } else { "" };
+        let op = if kind.numeric() && self.rng.chance(25) {
+            "eval(h) "
+        } else {
+            ""
+        };
         self.line("monitor;");
         self.depth += 1;
         self.line(format!("{op}{name} = {rhs};"));
@@ -370,11 +401,17 @@ pub fn program(seed: u64) -> String {
             0 | 1 => Kind::Int,
             2 | 3 => {
                 let d = u8::try_from(g.rng.range(1, 15)).unwrap_or(5);
-                Kind::Packed(d, u8::try_from(g.rng.range(0, i64::from(d.min(4)))).unwrap_or(0))
+                Kind::Packed(
+                    d,
+                    u8::try_from(g.rng.range(0, i64::from(d.min(4)))).unwrap_or(0),
+                )
             }
             4 => {
                 let d = u8::try_from(g.rng.range(1, 11)).unwrap_or(5);
-                Kind::Zoned(d, u8::try_from(g.rng.range(0, i64::from(d.min(3)))).unwrap_or(0))
+                Kind::Zoned(
+                    d,
+                    u8::try_from(g.rng.range(0, i64::from(d.min(3)))).unwrap_or(0),
+                )
             }
             5 | 6 => Kind::Char(u8::try_from(g.rng.range(1, 20)).unwrap_or(5)),
             7 | 8 => Kind::VarChar(u8::try_from(g.rng.range(1, 30)).unwrap_or(5)),
@@ -461,12 +498,18 @@ pub fn bundle(first: u64, count: u64) -> String {
             procs.push(l.replace("dcl-proc FN;", &format!("dcl-proc {fname};")));
         }
     }
-    let mut out = String::from("**FREE
+    let mut out = String::from(
+        "**FREE
 ctl-opt dftactgrp(*no);
 dcl-f QSYSPRT printer(132);
 dcl-ds line len(132) end-ds;
-");
-    for l in main.iter().chain(std::iter::once(&"*inlr = *on;".to_string())).chain(procs.iter()) {
+",
+    );
+    for l in main
+        .iter()
+        .chain(std::iter::once(&"*inlr = *on;".to_string()))
+        .chain(procs.iter())
+    {
         let _ = writeln!(out, "{l}");
     }
     out

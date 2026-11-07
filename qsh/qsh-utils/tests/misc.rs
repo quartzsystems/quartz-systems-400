@@ -27,7 +27,9 @@ impl Rng {
     }
 }
 
-const OPS: &[&str] = &["|", "&", "=", "!=", "<", "<=", ">", ">=", "+", "-", "*", "/", "%"];
+const OPS: &[&str] = &[
+    "|", "&", "=", "!=", "<", "<=", ">", ">=", "+", "-", "*", "/", "%",
+];
 
 fn prec(op: &str) -> u8 {
     match op {
@@ -133,10 +135,18 @@ fn expr_parentheses_group() {
         let a = r.below(50) as i64;
         let b = r.below(50) as i64;
         let c = r.below(50) as i64 + 1;
-        let toks: Vec<String> = ["(", &a.to_string(), "+", &b.to_string(), ")", "*", &c.to_string()]
-            .iter()
-            .map(ToString::to_string)
-            .collect();
+        let toks: Vec<String> = [
+            "(",
+            &a.to_string(),
+            "+",
+            &b.to_string(),
+            ")",
+            "*",
+            &c.to_string(),
+        ]
+        .iter()
+        .map(ToString::to_string)
+        .collect();
         assert_eq!(eval(&toks).unwrap().text(), ((a + b) * c).to_string());
     }
 }

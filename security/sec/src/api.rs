@@ -531,21 +531,33 @@ pub fn answer(
         Query::ProfileExits { user, format } | Query::SetProfileExits { user, format, .. } => {
             let u = who(user);
             if !crate::prfexit::FORMATS.contains(&format.as_str()) {
-                return Err(SecError::msg("CPF3C21", format!("Format {format} is not valid.")));
+                return Err(SecError::msg(
+                    "CPF3C21",
+                    format!("Format {format} is not valid."),
+                ));
             }
             if other(user) && !me.has(SpecialAuth::SECADM) {
-                return Err(SecError::msg("CPF2217", format!("Not authorized to user profile {u}.")));
+                return Err(SecError::msg(
+                    "CPF2217",
+                    format!("Not authorized to user profile {u}."),
+                ));
             }
             objects::read(txn, qsys, &u)?;
             let mut flags = crate::prfexit::load(txn, qsys)?;
             if let Query::SetProfileExits { values, .. } = q {
-                let v: Vec<i32> = values.iter().map(|b| i32::from(i8::from_ne_bytes([*b]))).collect();
+                let v: Vec<i32> = values
+                    .iter()
+                    .map(|b| i32::from(i8::from_ne_bytes([*b])))
+                    .collect();
                 crate::prfexit::set(&mut flags, &u, format, &v);
                 crate::prfexit::save(txn, qsys, &flags, crate::textspace::now())?;
                 Answer::Done
             } else {
                 Answer::Bytes {
-                    data: crate::prfexit::of(&flags, &u, format).iter().map(|b| u8::from(*b)).collect(),
+                    data: crate::prfexit::of(&flags, &u, format)
+                        .iter()
+                        .map(|b| u8::from(*b))
+                        .collect(),
                 }
             }
         }

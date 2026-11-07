@@ -103,7 +103,11 @@ pub fn send(system: &mut System, lib: &str, name: &str, mut m: QMsg) -> Result<u
     }
     let sent = m.clone();
     if lib == "QSYS" && name == "QSYSOPR" {
-        let text = if m.text.is_empty() { m.msgid.clone() } else { m.text.clone() };
+        let text = if m.text.is_empty() {
+            m.msgid.clone()
+        } else {
+            m.text.clone()
+        };
         super::prblog::message_sent(system, &m.msgid, m.severity, &text);
     }
     let (key, id, breaks, brkpgm) = with_queue(system, "msgq.send", lib, name, |q, id| {
@@ -168,7 +172,11 @@ pub type Break = (String, (String, String), QMsg);
 
 /// Message `msgid`'s description in `msgf` (`*LIBL` when no library),
 /// from the store or the built-in sources behind it.
-pub fn description(system: &mut System, msgid: &str, msgf: &(String, String)) -> Option<msgf::MsgDesc> {
+pub fn description(
+    system: &mut System,
+    msgid: &str,
+    msgf: &(String, String),
+) -> Option<msgf::MsgDesc> {
     let (file, lib) = (msgf.0.trim(), msgf.1.trim());
     let found = system.storage.as_mut().and_then(|s| {
         let qsys = s.qsys?;
@@ -184,7 +192,14 @@ pub fn description(system: &mut System, msgid: &str, msgf: &(String, String)) ->
         .ok()
         .flatten()
     });
-    found.or_else(|| msgf::MsgLookup::describe(&mut msgf::BuiltinMsgs::new(), msgid, file, if lib.is_empty() { "*LIBL" } else { lib }))
+    found.or_else(|| {
+        msgf::MsgLookup::describe(
+            &mut msgf::BuiltinMsgs::new(),
+            msgid,
+            file,
+            if lib.is_empty() { "*LIBL" } else { lib },
+        )
+    })
 }
 
 /// A message-queue function refused: the message and its values.
@@ -221,9 +236,18 @@ impl std::fmt::Display for Refused {
 /// against the message's valid replies (`CPF2420`); the reply's key.
 /// An empty reply is the default one. When the reply goes to another
 /// queue, the sender's copy there is answered too.
-pub fn reply(system: &mut System, lib: &str, name: &str, key: u32, reply: &str, from: (String, String, u32)) -> Result<u32, Refused> {
+pub fn reply(
+    system: &mut System,
+    lib: &str,
+    name: &str,
+    key: u32,
+    reply: &str,
+    from: (String, String, u32),
+) -> Result<u32, Refused> {
     let (inq, text) = with_queue(system, "msgq.reply", lib, name, |q, _| {
-        let i = q.inquiry(key).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
+        let i = q
+            .inquiry(key)
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
         Ok(((q.msgs[i].clone(), q.reply_text(i, reply)), false))
     })
     .map_err(|e| Refused::of(&e))?;
@@ -251,12 +275,15 @@ pub fn reply(system: &mut System, lib: &str, name: &str, key: u32, reply: &str, 
         // doing, whoever replied.
         let of = (name.to_string(), lib.to_string());
         let _ = sec::guard::as_system(|| {
-            with_queue(system, "obj.check", &to.0, &to.1, |q, _| match q.copy_of(&of, key) {
-                Some(c) => {
-                    q.answer_copy(c, &text, from, time).map_err(|e| e.to_string())?;
-                    Ok(((), true))
+            with_queue(system, "obj.check", &to.0, &to.1, |q, _| {
+                match q.copy_of(&of, key) {
+                    Some(c) => {
+                        q.answer_copy(c, &text, from, time)
+                            .map_err(|e| e.to_string())?;
+                        Ok(((), true))
+                    }
+                    None => Ok(((), false)),
                 }
-                None => Ok(((), false)),
             })
         });
     }
@@ -266,7 +293,13 @@ pub fn reply(system: &mut System, lib: &str, name: &str, key: u32, reply: &str, 
 /// Send the inquiry `m` to `lib/name`, its reply going to `reply_to`
 /// (library, name): when that is another queue, a sender's copy goes
 /// there. The key the reply will answer: the copy's, else the inquiry's.
-pub fn send_inquiry(system: &mut System, lib: &str, name: &str, mut m: QMsg, reply_to: (&str, &str)) -> Result<u32, String> {
+pub fn send_inquiry(
+    system: &mut System,
+    lib: &str,
+    name: &str,
+    mut m: QMsg,
+    reply_to: (&str, &str),
+) -> Result<u32, String> {
     m.kind = MsgKind::Inq;
     m.reply_to = (reply_to.1.to_string(), reply_to.0.to_string());
     // The copy is sent when the inquiry is.
@@ -283,15 +316,24 @@ pub fn send_inquiry(system: &mut System, lib: &str, name: &str, mut m: QMsg, rep
     if reply_to == (lib, name) {
         return Ok(key);
     }
-    let copy = QMsg { reply_key: key, ..copy };
+    let copy = QMsg {
+        reply_key: key,
+        ..copy
+    };
     match with_queue(system, "msgq.send", reply_to.0, reply_to.1, |q, _| {
-        let k = q.send(copy).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2460")))?;
+        let k = q
+            .send(copy)
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2460")))?;
         Ok((k, true))
     }) {
         Ok(k) => Ok(k),
         Err(e) => {
             // No copy, no inquiry: its reply would go nowhere.
-            let _ = sec::guard::as_system(|| with_queue(system, "obj.check", lib, name, |q, _| Ok((q.remove(key).is_ok(), true))));
+            let _ = sec::guard::as_system(|| {
+                with_queue(system, "obj.check", lib, name, |q, _| {
+                    Ok((q.remove(key).is_ok(), true))
+                })
+            });
             Err(e)
         }
     }

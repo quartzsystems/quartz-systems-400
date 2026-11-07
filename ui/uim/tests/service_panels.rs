@@ -28,7 +28,11 @@ fn list(rows: &[&[(&str, &str)]]) -> ListState {
     ListState {
         rows: rows
             .iter()
-            .map(|r| r.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect())
+            .map(|r| {
+                r.iter()
+                    .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: Some(rows.len()),
@@ -48,19 +52,30 @@ fn golden(grp: &str, panel: &str, d: &MapDialog) -> Vec<String> {
     for r in &rows {
         assert!(r.chars().count() <= 80, "{r:?}");
     }
-    let text = rows.iter().map(|r| r.trim_end()).collect::<Vec<_>>().join("\n") + "\n";
+    let text = rows
+        .iter()
+        .map(|r| r.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
     let path = dir().join(format!("{panel}.txt"));
     if std::env::var_os("QS400_UPDATE_GOLDEN").is_some() || !path.exists() {
         std::fs::create_dir_all(dir()).unwrap();
         std::fs::write(&path, &text).unwrap();
     }
-    let want = std::fs::read_to_string(&path).unwrap().replace("\r\n", "\n");
+    let want = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("\r\n", "\n");
     assert_eq!(text, want, "{panel} differs from {}", path.display());
     rows
 }
 
 fn has(rows: &[String], text: &str) {
-    assert!(rows.iter().any(|r| r.contains(text)), "no {text:?} in\n{}", rows.join("\n"));
+    assert!(
+        rows.iter().any(|r| r.contains(text)),
+        "no {text:?} in\n{}",
+        rows.join("\n")
+    );
 }
 
 fn problem(d: &mut MapDialog) {
@@ -87,8 +102,16 @@ fn wrkprb_lists_with_every_option() {
     d.set_list(
         "PRBS",
         list(&[
-            &[("PRBID", "2630300002"), ("PRBSTS", "OPENED"), ("PRBTEXT", "Damaged object found")],
-            &[("PRBID", "2630300001"), ("PRBSTS", "READY"), ("PRBTEXT", "Dump of QGPL/ORDERS *FILE requested")],
+            &[
+                ("PRBID", "2630300002"),
+                ("PRBSTS", "OPENED"),
+                ("PRBTEXT", "Damaged object found"),
+            ],
+            &[
+                ("PRBID", "2630300001"),
+                ("PRBSTS", "READY"),
+                ("PRBTEXT", "Dump of QGPL/ORDERS *FILE requested"),
+            ],
         ]),
     );
     let rows = golden("QGSXPNLS", "WRKPRB", &d);
@@ -102,7 +125,10 @@ fn wrkprb_lists_with_every_option() {
 fn problem_details_work_with_and_text() {
     let mut d = MapDialog::new();
     problem(&mut d);
-    d.set_list("NOTES", list(&[&[("NOTE", "occurred again at 1793376131")]]));
+    d.set_list(
+        "NOTES",
+        list(&[&[("NOTE", "occurred again at 1793376131")]]),
+    );
     let rows = golden("QGSXPNLS", "DSPPRB", &d);
     has(&rows, "Display Problem Details");
     has(&rows, "DUMP/QGPL/ORDERS");
@@ -130,11 +156,19 @@ fn contact_providers_and_status() {
     let mut d = MapDialog::new();
     let rows = golden("QESCNTINF", "WRKCNTINF", &d);
     has(&rows, "Work with Support Contact Information");
-    d.set("CNT01", "Quartz Systems").set("CNT02", "Cody").set("CNT11", "2924").set("CNT12", "*AUTOMATIC");
+    d.set("CNT01", "Quartz Systems")
+        .set("CNT02", "Cody")
+        .set("CNT11", "2924")
+        .set("CNT12", "*AUTOMATIC");
     golden("QESCNTINF", "DSPCNTINF", &d);
     d.set_list(
         "PVDS",
-        list(&[&[("CPNAME", "QSERVICE"), ("NETID", "*NETATR"), ("CNNTYPE", "*NONE"), ("PVDTEXT", "Quartz Systems service")]]),
+        list(&[&[
+            ("CPNAME", "QSERVICE"),
+            ("NETID", "*NETATR"),
+            ("CNNTYPE", "*NONE"),
+            ("PVDTEXT", "Quartz Systems service"),
+        ]]),
     );
     let rows = golden("QESCNTINF", "WRKSRVPVD", &d);
     has(&rows, "9=Send test request");

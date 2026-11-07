@@ -28,17 +28,30 @@ const KEY: usize = 30;
 /// `who`'s entries: key and value.
 fn read(link: &Link, index: &'static str, who: &str) -> Vec<(String, String)> {
     let w = who.to_string();
-    link.job(move |m| m.ask(|l| l.web_store(index.into(), w, None)).unwrap_or_default())
-        .unwrap_or_default()
+    link.job(move |m| {
+        m.ask(|l| l.web_store(index.into(), w, None))
+            .unwrap_or_default()
+    })
+    .unwrap_or_default()
 }
 
 /// Replace `who`'s entries with `values`.
-fn write(link: &Link, index: &'static str, who: &str, values: &[(String, String)]) -> Result<(), Message> {
+fn write(
+    link: &Link,
+    index: &'static str,
+    who: &str,
+    values: &[(String, String)],
+) -> Result<(), Message> {
     let (w, v) = (who.to_string(), values.to_vec());
     let r = link.job(move |m| m.ask(|l| l.web_store(index.into(), w, Some(v))).map(|_| ()));
-    r.unwrap_or_else(|| Err("CPF9897".into())).map_err(|id: String| {
-        Message::new(Kind::Error, &id, &format!("The Access for Web store {LIB}/{index} could not be changed."))
-    })
+    r.unwrap_or_else(|| Err("CPF9897".into()))
+        .map_err(|id: String| {
+            Message::new(
+                Kind::Error,
+                &id,
+                &format!("The Access for Web store {LIB}/{index} could not be changed."),
+            )
+        })
 }
 
 /// A store's key: up to 20 characters of ASCII.

@@ -34,7 +34,12 @@ fn submitted(out: &str) -> Result<String, String> {
         .ok_or_else(|| format!("sbmjob: {out}"))
 }
 
-fn poll(s: &mut Session, cmd: &str, tries: u32, done: impl Fn(&str) -> bool) -> Result<String, String> {
+fn poll(
+    s: &mut Session,
+    cmd: &str,
+    tries: u32,
+    done: impl Fn(&str) -> bool,
+) -> Result<String, String> {
     let mut out = String::new();
     for _ in 0..tries {
         out = s.command(cmd, CMD)?;
@@ -157,14 +162,24 @@ impl Suite {
         }
         s.command("svc.xfer rm PASEPROBE", CMD)?;
         let ran = s.command(&format!("call QSYS/QP2SHELL PARM('{PROBE}' 'one')"), CMD)?;
-        for want in ["uid=", "pid=1\n", "procs=1\n", "tmp: paseprobe", "pidfd_open: refused errno 1", "args: one"] {
+        for want in [
+            "uid=",
+            "pid=1\n",
+            "procs=1\n",
+            "tmp: paseprobe",
+            "pidfd_open: refused errno 1",
+            "args: one",
+        ] {
             if !ran.replace('\r', "").contains(want) {
                 return Err(format!("QP2SHELL: no {want:?} in:\n{ran}"));
             }
         }
         // The shell runs an ELF file as a PASE program in a child job.
         // A child job starts for the program: a wider wait than a line's.
-        let shell = s.command(&format!("qsh CMD('{PROBE} two; echo st=$?')"), Duration::from_secs(60))?;
+        let shell = s.command(
+            &format!("qsh CMD('{PROBE} two; echo st=$?')"),
+            Duration::from_secs(60),
+        )?;
         if !shell.contains("args: two") || !shell.contains("st=0") {
             return Err(format!("qsh running the probe: {shell}"));
         }

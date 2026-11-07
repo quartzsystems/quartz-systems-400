@@ -95,9 +95,9 @@ fn answers(system: &mut System) -> (String, instmedia::Response) {
         }
         Ok(None) => (String::new(), instmedia::Response::default()),
         Err(e) => {
-            system
-                .out
-                .serial(&format!("slic: install: response file: {e}; the defaults apply\n"));
+            system.out.serial(&format!(
+                "slic: install: response file: {e}; the defaults apply\n"
+            ));
             (String::new(), instmedia::Response::default())
         }
     }
@@ -232,9 +232,9 @@ fn configure_disks(env: &mut Env<'_>, rsp: &instmedia::Response) {
     let units = env.disk_units();
     for (a, b) in &rsp.mirror {
         let (Some(da), Some(db)) = (node(a), node(b)) else {
-            env.system
-                .out
-                .serial(&format!("slic: install: mirror {a} {b}: a disk is not there\n"));
+            env.system.out.serial(&format!(
+                "slic: install: mirror {a} {b}: a disk is not there\n"
+            ));
             continue;
         };
         // The half already in ASP 1, and the one that joins it.
@@ -291,7 +291,11 @@ pub fn run_options(system: &mut System, rx: &Receiver<Event>) {
 }
 
 /// One panel and whatever it pushes, to its outcome.
-pub fn drive_panel(system: &mut System, panel: Box<dyn svctools::Panel>, rx: &Receiver<Event>) -> Outcome {
+pub fn drive_panel(
+    system: &mut System,
+    panel: Box<dyn svctools::Panel>,
+    rx: &Receiver<Event>,
+) -> Outcome {
     let mut env = Env::new(system);
     drive(&mut env, svctools::Runner::new(panel), rx)
 }
@@ -309,7 +313,9 @@ pub fn apply_answers(system: &mut System) {
         let date = rsp.date.clone().unwrap_or(d);
         let time = rsp.time.clone().unwrap_or(t);
         if let Err(e) = env.set_clock(&date, &time) {
-            env.system.out.serial(&format!("slic: install: clock: {e}\n"));
+            env.system
+                .out
+                .serial(&format!("slic: install: clock: {e}\n"));
         }
     }
     let o = svctools::install::options::IplOptions {
@@ -372,8 +378,12 @@ fn apply_network(system: &mut System, rsp: &instmedia::Response) {
     let described = crate::stgsvc::cmn::line_names(system, &|_| true)
         .ok()
         .and_then(|v| v.into_iter().next());
-    let Some(line) = described.or_else(|| super::first_ethernet(system).map(|(_, n)| n.to_ascii_uppercase())) else {
-        system.out.serial("slic: install: no Ethernet line for the response file's ip\n");
+    let Some(line) =
+        described.or_else(|| super::first_ethernet(system).map(|(_, n)| n.to_ascii_uppercase()))
+    else {
+        system
+            .out
+            .serial("slic: install: no Ethernet line for the response file's ip\n");
         return;
     };
     match crate::stgsvc::tcp::store::install_answers(system, ip, rsp.gateway.as_deref(), &line) {
@@ -394,14 +404,18 @@ fn set_qsecofr(system: &mut System, pw: &str) -> Result<(), String> {
     let qsys = s.qsys.ok_or("no QSYS")?;
     let now = now_unix();
     sec::guard::as_system(|| {
-        let mut t = s.store.begin().map_err(fail("Setting the QSECOFR password"))?;
-        let (id, mut p) =
-            sec::profile::objects::read(&mut t, qsys, "QSECOFR").map_err(fail("Setting the QSECOFR password"))?;
+        let mut t = s
+            .store
+            .begin()
+            .map_err(fail("Setting the QSECOFR password"))?;
+        let (id, mut p) = sec::profile::objects::read(&mut t, qsys, "QSECOFR")
+            .map_err(fail("Setting the QSECOFR password"))?;
         p.hashes = sec::password::hashes_for(pw, pwdlvl);
         p.pwd_none = false;
         p.pwdexp = false;
         p.pwd_changed = now;
-        sec::profile::objects::write(&mut t, id, &p).map_err(fail("Setting the QSECOFR password"))?;
+        sec::profile::objects::write(&mut t, id, &p)
+            .map_err(fail("Setting the QSECOFR password"))?;
         t.commit().map_err(fail("Setting the QSECOFR password"))
     })
 }
@@ -426,7 +440,9 @@ pub fn finish(system: &mut System) {
             record.header.install_stage = 0;
             record.header.auto_install = false;
             record.remove_tlv(TAG_INSTALL_ANSWERS);
-            part.write(record).map(|_| true).map_err(fail("Writing the LIC record"))
+            part.write(record)
+                .map(|_| true)
+                .map_err(fail("Writing the LIC record"))
         }
         _ => Ok(false),
     };
@@ -469,13 +485,19 @@ fn copy_lic(system: &mut System) {
     let from = to.other();
     let r = (|| -> Result<(), String> {
         let lic = licpart::locate().ok();
-        let (node, _) = diskimg::locate::esp(lic.as_deref()).map_err(fail("Copying the Licensed Internal Code slot"))?;
-        let open = || OpenOptions::new().read(true).write(true).open(&node);
-        let image = fat::read_file_at(open().map_err(fail("Copying the Licensed Internal Code slot"))?, slot_path(from))
+        let (node, _) = diskimg::locate::esp(lic.as_deref())
             .map_err(fail("Copying the Licensed Internal Code slot"))?;
+        let open = || OpenOptions::new().read(true).write(true).open(&node);
+        let image = fat::read_file_at(
+            open().map_err(fail("Copying the Licensed Internal Code slot"))?,
+            slot_path(from),
+        )
+        .map_err(fail("Copying the Licensed Internal Code slot"))?;
         let mut f = open().map_err(fail("Copying the Licensed Internal Code slot"))?;
-        fat::write_file(&mut f, slot_path(to), &image).map_err(fail("Copying the Licensed Internal Code slot"))?;
-        f.sync_all().map_err(fail("Copying the Licensed Internal Code slot"))
+        fat::write_file(&mut f, slot_path(to), &image)
+            .map_err(fail("Copying the Licensed Internal Code slot"))?;
+        f.sync_all()
+            .map_err(fail("Copying the Licensed Internal Code slot"))
     })();
     match r {
         Ok(()) => {
@@ -536,7 +558,8 @@ impl Env<'_> {
         let now = now_unix();
         let name = device.rsplit('/').next().unwrap_or(device).to_string();
         self.system.emit(&src::INSTALL_STARTED);
-        let (uki_a, uki_b) = read_media_ukis(self.system).map_err(fail("Installing the Licensed Internal Code"))?;
+        let (uki_a, uki_b) =
+            read_media_ukis(self.system).map_err(fail("Installing the Licensed Internal Code"))?;
         let bytes = {
             let dev = LinuxBlockDev::open(std::path::Path::new(device))
                 .map_err(fail("Installing the Licensed Internal Code"))?;
@@ -570,14 +593,16 @@ impl Env<'_> {
             }
         })
         .map_err(fail("Installing the Licensed Internal Code"))?;
-        file.sync_all().map_err(fail("Installing the Licensed Internal Code"))?;
+        file.sync_all()
+            .map_err(fail("Installing the Licensed Internal Code"))?;
         crate::platform::blk::reread_partitions(&file)
             .map_err(fail("Installing the Licensed Internal Code"))?;
         drop(file);
         self.system.emit(&src::INSTALL_PARTITIONED);
         report(LicEvent::StepDone(0), self);
         for n in [2, 3] {
-            if !crate::platform::blk::wait_for_block(&part_name(&name, n), Duration::from_secs(10)) {
+            if !crate::platform::blk::wait_for_block(&part_name(&name, n), Duration::from_secs(10))
+            {
                 return Err(format!("partition {} did not appear", part_name(&name, n)));
             }
         }
@@ -587,7 +612,8 @@ impl Env<'_> {
             .write(true)
             .open(format!("/dev/{}", part_name(&name, 2)))
             .map_err(fail("Installing the Licensed Internal Code"))?;
-        let (mut part_lic, mut record) = LicPart::init(lic_dev, now).map_err(fail("Installing the Licensed Internal Code"))?;
+        let (mut part_lic, mut record) =
+            LicPart::init(lic_dev, now).map_err(fail("Installing the Licensed Internal Code"))?;
         self.system.emit(&src::INSTALL_LIC_PART);
         report(LicEvent::StepDone(1), self);
         // Both slots went onto the ESP with the image; the steps are
@@ -597,7 +623,8 @@ impl Env<'_> {
         self.system.emit(&src::INSTALL_SLOT_B);
         report(LicEvent::StepDone(3), self);
         if let Some(vals) = self.system.sysvals.as_ref() {
-            vals.store(&mut record).map_err(fail("Installing the Licensed Internal Code"))?;
+            vals.store(&mut record)
+                .map_err(fail("Installing the Licensed Internal Code"))?;
         }
         // The console mode chosen in the media's DST follows the system.
         let tag = svctools::dst::console_mode::TAG_CONSOLE_MODE;
@@ -609,7 +636,9 @@ impl Env<'_> {
         keep_answers(&mut record, auto)?;
         record.header.install_stage = stage;
         record.header.auto_install = auto && stage == 1;
-        part_lic.write(&mut record).map_err(fail("Installing the Licensed Internal Code"))?;
+        part_lic
+            .write(&mut record)
+            .map_err(fail("Installing the Licensed Internal Code"))?;
         drop(part_lic);
         self.system.emit(&src::INSTALL_LIC_RECORD);
         report(LicEvent::StepDone(4), self);
@@ -639,11 +668,12 @@ impl Env<'_> {
     ) -> Result<(), String> {
         self.system.emit(&src::INSTALL_STARTED);
         let found = media::locate().map_err(fail("Installing the Licensed Internal Code"))?;
-        let media_rel: release::Release = found
-            .manifest
-            .release
-            .parse()
-            .map_err(|_| format!("the media's release {} is not valid", found.manifest.release))?;
+        let media_rel: release::Release = found.manifest.release.parse().map_err(|_| {
+            format!(
+                "the media's release {} is not valid",
+                found.manifest.release
+            )
+        })?;
         let have = self
             .store_release()
             .ok_or("No installed system on this load source; use option 2")?;
@@ -660,7 +690,8 @@ impl Env<'_> {
             }
         ));
         report(LicEvent::StepDone(0), self);
-        let (uki_a, uki_b) = read_media_ukis(self.system).map_err(fail("Installing the Licensed Internal Code"))?;
+        let (uki_a, uki_b) =
+            read_media_ukis(self.system).map_err(fail("Installing the Licensed Internal Code"))?;
         let disk = device.rsplit('/').next().unwrap_or(device);
         let lic_node = format!("/dev/{}", part_name(disk, 2));
         let (node, _) = diskimg::locate::esp(Some(std::path::Path::new(&lic_node)))
@@ -672,9 +703,12 @@ impl Env<'_> {
             .open(&lic_node)
             .map_err(fail("Installing the Licensed Internal Code"))?;
         let mut part_lic = LicPart::open(lic_dev);
-        let mut record = part_lic.read().map_err(fail("Installing the Licensed Internal Code"))?;
+        let mut record = part_lic
+            .read()
+            .map_err(fail("Installing the Licensed Internal Code"))?;
         report(LicEvent::StepDone(1), self);
-        let slots = ptf::slot::SlotState::decode(record.tlv(ptf::slot::TAG_LIC_SLOTS).unwrap_or_default());
+        let slots =
+            ptf::slot::SlotState::decode(record.tlv(ptf::slot::TAG_LIC_SLOTS).unwrap_or_default());
         let booted = slots.default.unwrap_or(Slot::A);
         let target = booted.other();
         let image = match target {
@@ -687,8 +721,10 @@ impl Env<'_> {
                 .write(true)
                 .open(&node)
                 .map_err(fail("Installing the Licensed Internal Code"))?;
-            fat::write_file(&mut f, slot_path(target), image).map_err(fail("Installing the Licensed Internal Code"))?;
-            f.sync_all().map_err(fail("Installing the Licensed Internal Code"))?;
+            fat::write_file(&mut f, slot_path(target), image)
+                .map_err(fail("Installing the Licensed Internal Code"))?;
+            f.sync_all()
+                .map_err(fail("Installing the Licensed Internal Code"))?;
         }
         self.system.emit(&src::INSTALL_LIC_SLOT);
         report(LicEvent::StepDone(2), self);
@@ -717,9 +753,12 @@ impl Env<'_> {
                     .write(true)
                     .open(&node)
                     .map_err(fail("Installing the Licensed Internal Code"))?;
-                fat::write_file(&mut f, SLOT_A, &uki_a).map_err(fail("Installing the Licensed Internal Code"))?;
-                fat::write_file(&mut f, SLOT_B, &uki_b).map_err(fail("Installing the Licensed Internal Code"))?;
-                f.sync_all().map_err(fail("Installing the Licensed Internal Code"))?;
+                fat::write_file(&mut f, SLOT_A, &uki_a)
+                    .map_err(fail("Installing the Licensed Internal Code"))?;
+                fat::write_file(&mut f, SLOT_B, &uki_b)
+                    .map_err(fail("Installing the Licensed Internal Code"))?;
+                f.sync_all()
+                    .map_err(fail("Installing the Licensed Internal Code"))?;
                 record.remove_tlv(TAG_LIC_COPY);
             }
         }
@@ -727,7 +766,9 @@ impl Env<'_> {
         keep_answers(&mut record, auto)?;
         record.header.install_stage = 1;
         record.header.auto_install = auto;
-        part_lic.write(&mut record).map_err(fail("Installing the Licensed Internal Code"))?;
+        part_lic
+            .write(&mut record)
+            .map_err(fail("Installing the Licensed Internal Code"))?;
         drop(part_lic);
         // The copy slic holds follows.
         if let Some((part, r)) = self.system.lic.as_mut() {
@@ -750,9 +791,8 @@ impl Env<'_> {
         report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
     ) -> Result<(), String> {
         self.write_lic(device, auto, 0, report)?;
-        storage::locate_and_open(self.system).map_err(|s| {
-            format!("ASP 1 could not be opened on the other units: {}", s.text)
-        })?;
+        storage::locate_and_open(self.system)
+            .map_err(|s| format!("ASP 1 could not be opened on the other units: {}", s.text))?;
         let missing = self
             .disk_units()
             .into_iter()
@@ -787,14 +827,15 @@ impl Env<'_> {
         self.system.emit(&src::INSTALL_ASP);
         let s = self.system.storage.as_mut().expect("opened above");
         if s.qsys.is_none() {
-            let qsys = storage::bootstrap(&mut s.store, now, "QS400").map_err(fail("Installing the operating system"))?;
+            let qsys = storage::bootstrap(&mut s.store, now, "QS400")
+                .map_err(fail("Installing the operating system"))?;
             s.qsys = Some(qsys);
             s.fresh = false;
         }
         self.system.emit(&src::INSTALL_LIBRARIES);
-        self.system
-            .out
-            .serial("slic: install: no install media; the system objects are made at the first IPL\n");
+        self.system.out.serial(
+            "slic: install: no install media; the system objects are made at the first IPL\n",
+        );
         for i in 0..svctools::install::OS_STEPS.len() {
             report(i, self);
         }
@@ -821,7 +862,10 @@ impl Env<'_> {
             return Err(why.clone());
         }
         if !found.contents.has_os() {
-            return Err(format!("The media on {} holds no operating system", device.name));
+            return Err(format!(
+                "The media on {} holds no operating system",
+                device.name
+            ));
         }
         if self.system.storage.is_none() {
             storage::locate_and_open(self.system).map_err(|s| s.text.to_string())?;
@@ -832,7 +876,8 @@ impl Env<'_> {
         };
         let fresh = s.qsys.is_none();
         let kind = if fresh {
-            let qsys = storage::bootstrap(&mut s.store, now, "QS400").map_err(fail("Installing the operating system"))?;
+            let qsys = storage::bootstrap(&mut s.store, now, "QS400")
+                .map_err(fail("Installing the operating system"))?;
             s.qsys = Some(qsys);
             s.fresh = false;
             Ok(InstallKind::Slip)
@@ -847,8 +892,11 @@ impl Env<'_> {
         })?;
         self.system.emit(&src::INSTALL_LIBRARIES);
         report(stage::LIBRARIES, self);
-        let stream = instdev::read(&found, &Payload::Product(instmedia::layout::OS_PRODUCT.into()))
-            .map_err(fail("Installing the operating system"))?;
+        let stream = instdev::read(
+            &found,
+            &Payload::Product(instmedia::layout::OS_PRODUCT.into()),
+        )
+        .map_err(fail("Installing the operating system"))?;
         let mut req = Request {
             stream,
             product: instmedia::layout::OS_PRODUCT,
@@ -869,13 +917,16 @@ impl Env<'_> {
             let s = self.system.storage.as_mut().expect("opened above");
             r.retranslated = sec::guard::as_system(|| {
                 osload::retranslate_user_programs(&mut s.store, qsys, kind, &mut |t, id, all| {
-                    ile::store::retranslate(t, id, all).map_err(fail("Installing the operating system"))
+                    ile::store::retranslate(t, id, all)
+                        .map_err(fail("Installing the operating system"))
                 })
             })
             .map_err(fail("Installing the operating system"))?;
             if matches!(kind, InstallKind::Upgrade { .. }) {
                 s.store.asp_superblock_set_release();
-                s.store.checkpoint().map_err(fail("Installing the operating system"))?;
+                s.store
+                    .checkpoint()
+                    .map_err(fail("Installing the operating system"))?;
             }
             self.system.emit(&src::INSTALL_RETRANSLATED);
         }
@@ -897,7 +948,12 @@ impl Env<'_> {
                 .then(|| instdev::read(&found, &Payload::Config))
                 .transpose()?;
             let user = instdev::user_data(&found);
-            for line in crate::cpp::savsys::recover(self.system, sec.as_deref(), cfg.as_deref(), user.as_ref()) {
+            for line in crate::cpp::savsys::recover(
+                self.system,
+                sec.as_deref(),
+                cfg.as_deref(),
+                user.as_ref(),
+            ) {
                 self.system.out.serial(&format!("slic: install: {line}\n"));
             }
             self.system.emit(&src::INSTALL_RECOVERY);
@@ -908,7 +964,9 @@ impl Env<'_> {
             let stream = match instdev::read(&found, &Payload::Product(p.clone())) {
                 Ok(s) => s,
                 Err(e) => {
-                    self.system.out.serial(&format!("slic: install: {p}: {e}\n"));
+                    self.system
+                        .out
+                        .serial(&format!("slic: install: {p}: {e}\n"));
                     continue;
                 }
             };
@@ -985,7 +1043,9 @@ fn part_name(disk: &str, n: u32) -> String {
 
 /// The response file of an automatic install into a new LIC record.
 fn keep_answers(record: &mut licpart::Record, auto: bool) -> Result<(), String> {
-    let text = PENDING_ANSWERS.with(|a| a.borrow().clone()).unwrap_or_default();
+    let text = PENDING_ANSWERS
+        .with(|a| a.borrow().clone())
+        .unwrap_or_default();
     if auto && !text.is_empty() {
         record
             .set_tlv(TAG_INSTALL_ANSWERS, text.into_bytes())
@@ -1015,13 +1075,20 @@ fn secure_boot_check(system: &mut System, a: &[u8], b: &[u8]) {
             "slic: install: Secure Boot is on: the installed system boots while the QS/400 key stays enrolled in the firmware's db\n",
         );
     } else {
-        system.out.both(&format!("slic: install: {}\n", hwqual::checks::SECURE_BOOT_WARNING));
+        system.out.both(&format!(
+            "slic: install: {}\n",
+            hwqual::checks::SECURE_BOOT_WARNING
+        ));
     }
 }
 
 /// Whether a PE image carries an Authenticode certificate table.
 fn pe_signed(image: &[u8]) -> bool {
-    let u32_at = |o: usize| image.get(o..o + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]));
+    let u32_at = |o: usize| {
+        image
+            .get(o..o + 4)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    };
     let Some(pe) = u32_at(0x3c).and_then(|v| usize::try_from(v).ok()) else {
         return false;
     };
@@ -1031,7 +1098,8 @@ fn pe_signed(image: &[u8]) -> bool {
     if image.get(pe..pe + 4) != Some(b"PE\0\0") || image.get(opt..opt + 2) != Some(&[0x0b, 0x02]) {
         return false;
     }
-    u32_at(opt + 108).is_some_and(|n| n > 4) && u32_at(opt + 112 + 4 * 8 + 4).is_some_and(|size| size > 0)
+    u32_at(opt + 108).is_some_and(|n| n > 4)
+        && u32_at(opt + 112 + 4 * 8 + 4).is_some_and(|size| size > 0)
 }
 
 /// The two slot UKIs: from a `SAVSYS` medium when one is attached (the

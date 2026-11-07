@@ -36,7 +36,11 @@ pub static ATTR_LAYOUT: Layout = Layout {
 pub static ENTRY_LAYOUT: Layout = Layout {
     name: "SqlEntry",
     size: Some(ENTRY_HEADER_LEN),
-    fields: &[field("tag", 0, 2), field("reserved", 2, 2), field("len", 4, 4)],
+    fields: &[
+        field("tag", 0, 2),
+        field("reserved", 2, 2),
+        field("len", 4, 4),
+    ],
 };
 
 /// What SQL object the owner is.
@@ -158,7 +162,11 @@ pub fn encode(entries: &[Entry]) -> Vec<u8> {
     for e in entries {
         out.extend_from_slice(&e.tag.to_le_bytes());
         out.extend_from_slice(&[0, 0]);
-        out.extend_from_slice(&u32::try_from(e.body.len()).expect("entry fits").to_le_bytes());
+        out.extend_from_slice(
+            &u32::try_from(e.body.len())
+                .expect("entry fits")
+                .to_le_bytes(),
+        );
         out.extend_from_slice(&e.body);
     }
     out
@@ -166,16 +174,23 @@ pub fn encode(entries: &[Entry]) -> Vec<u8> {
 
 /// Decode `count` entries from the byte-space image.
 pub fn decode(bytes: &[u8], count: u32) -> Result<Vec<Entry>> {
-    let bad = |what: &str| DbError::Corrupt { what: format!("SQL information: {what}") };
+    let bad = |what: &str| DbError::Corrupt {
+        what: format!("SQL information: {what}"),
+    };
     let mut out = Vec::with_capacity(count as usize);
     let mut at = 0usize;
     for _ in 0..count {
-        let head = bytes.get(at..at + ENTRY_HEADER_LEN).ok_or_else(|| bad("entry header"))?;
+        let head = bytes
+            .get(at..at + ENTRY_HEADER_LEN)
+            .ok_or_else(|| bad("entry header"))?;
         let tag = u16::from_le_bytes([head[0], head[1]]);
         let len = u32::from_le_bytes(head[4..8].try_into().expect("4")) as usize;
         at += ENTRY_HEADER_LEN;
         let body = bytes.get(at..at + len).ok_or_else(|| bad("entry body"))?;
-        out.push(Entry { tag, body: body.to_vec() });
+        out.push(Entry {
+            tag,
+            body: body.to_vec(),
+        });
         at += len;
     }
     Ok(out)
@@ -195,7 +210,9 @@ pub fn encode_attr(kind: Kind, count: u32, body_len: u64) -> [u8; ATTR_LEN] {
 
 /// Decode the attribute area: kind, entry count, body bytes.
 pub fn decode_attr(b: &[u8]) -> Result<(Kind, u32, u64)> {
-    let bad = |what: &str| DbError::Corrupt { what: format!("SQL information: {what}") };
+    let bad = |what: &str| DbError::Corrupt {
+        what: format!("SQL information: {what}"),
+    };
     if b.len() < ATTR_LEN || &b[..8] != MAGIC {
         return Err(bad("magic"));
     }
@@ -215,9 +232,18 @@ mod tests {
     #[test]
     fn entries_round_trip() {
         let es = vec![
-            Entry { tag: tag::NAME, body: b"CUSTOMER_MASTER".to_vec() },
-            Entry { tag: tag::TEXT, body: Vec::new() },
-            Entry { tag: 999, body: vec![1, 2, 3] },
+            Entry {
+                tag: tag::NAME,
+                body: b"CUSTOMER_MASTER".to_vec(),
+            },
+            Entry {
+                tag: tag::TEXT,
+                body: Vec::new(),
+            },
+            Entry {
+                tag: 999,
+                body: vec![1, 2, 3],
+            },
         ];
         let b = encode(&es);
         assert_eq!(decode(&b, 3).unwrap(), es);

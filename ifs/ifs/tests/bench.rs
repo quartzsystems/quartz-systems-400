@@ -21,7 +21,10 @@ use ifs::ops::audit::NoAudit;
 use ifs::ops::{Config, Ctx, Ifs, Owner};
 
 fn files() -> usize {
-    std::env::var("QS400_IFS_BENCH_FILES").ok().and_then(|v| v.parse().ok()).unwrap_or(20_000)
+    std::env::var("QS400_IFS_BENCH_FILES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(20_000)
 }
 
 fn run<B: Backend>(what: &str, b: B) {
@@ -48,7 +51,9 @@ fn run<B: Backend>(what: &str, b: B) {
     ifs.mkdir(&cx(&bob), "/home/bob/bench", 0o755).unwrap();
     let data = vec![0x5Au8; 4096];
     let c = cx(&bob);
-    let names: Vec<String> = (0..n).map(|i| format!("/home/bob/bench/f{i:06}.dat")).collect();
+    let names: Vec<String> = (0..n)
+        .map(|i| format!("/home/bob/bench/f{i:06}.dat"))
+        .collect();
 
     let t = Instant::now();
     for p in &names {
@@ -73,9 +78,15 @@ fn run<B: Backend>(what: &str, b: B) {
 
     let rate = |s: f64| n as f64 / s;
     println!("ifs over {what}: {n} files of 4 KiB in one directory, as a user");
-    println!("  create+write+close {create:.3} s  {:.0} files/s", rate(create));
+    println!(
+        "  create+write+close {create:.3} s  {:.0} files/s",
+        rate(create)
+    );
     println!("  stat               {stat:.3} s  {:.0} ops/s", rate(stat));
-    println!("  unlink             {unlink:.3} s  {:.0} ops/s", rate(unlink));
+    println!(
+        "  unlink             {unlink:.3} s  {:.0} ops/s",
+        rate(unlink)
+    );
 }
 
 #[test]
@@ -88,6 +99,10 @@ fn ifs_ops_mem() {
 #[test]
 #[ignore = "bench: needs root and a file system with trusted xattrs"]
 fn ifs_ops_linux() {
-    let dir = std::env::var("QS400_IFS_TEST_DIR").expect("QS400_IFS_TEST_DIR names an empty directory");
-    run(&format!("LinuxBackend ({dir})"), ifs::backend::linux::LinuxBackend::open(&dir).unwrap());
+    let dir =
+        std::env::var("QS400_IFS_TEST_DIR").expect("QS400_IFS_TEST_DIR names an empty directory");
+    run(
+        &format!("LinuxBackend ({dir})"),
+        ifs::backend::linux::LinuxBackend::open(&dir).unwrap(),
+    );
 }

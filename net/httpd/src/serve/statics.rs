@@ -52,14 +52,21 @@ const TYPES: &[(&str, &str)] = &[
 /// The media type of `name`: `AddType`, then the table, then
 /// `DefaultType` (`text/plain` when unset).
 pub fn media_type(name: &str, d: &DirConf) -> String {
-    let ext = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
+    let ext = name
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_ascii_lowercase())
+        .unwrap_or_default();
     if let Some((t, _)) = d.types.iter().rev().find(|(_, e)| *e == ext) {
         return t.clone();
     }
-    let t = TYPES
-        .iter()
-        .find(|(e, _)| *e == ext)
-        .map_or_else(|| d.default_type.clone().unwrap_or_else(|| "text/plain".into()), |(_, t)| (*t).to_string());
+    let t = TYPES.iter().find(|(e, _)| *e == ext).map_or_else(
+        || {
+            d.default_type
+                .clone()
+                .unwrap_or_else(|| "text/plain".into())
+        },
+        |(_, t)| (*t).to_string(),
+    );
     if t.starts_with("text/") && !t.contains("charset") {
         format!("{t}; charset=utf-8")
     } else {
@@ -116,7 +123,11 @@ fn range(req: &Request, len: u64) -> Result<Option<(u64, u64)>, ()> {
         (len.saturating_sub(tail), last)
     } else {
         let first: u64 = from.parse().map_err(|_| ())?;
-        let end = if to.is_empty() { last } else { to.parse::<u64>().map_err(|_| ())?.min(last) };
+        let end = if to.is_empty() {
+            last
+        } else {
+            to.parse::<u64>().map_err(|_| ())?.min(last)
+        };
         (first, end)
     };
     if len == 0 || start >= len || start > end {
@@ -130,7 +141,9 @@ pub fn file(files: &dyn Files, path: &str, e: &Entry, req: &Request, d: &DirConf
     let ctype = media_type(&e.name, d);
     let modified = time::http_date(e.modified);
     if e.modified > 0
-        && let Some(since) = req.header("if-modified-since").and_then(time::parse_http_date)
+        && let Some(since) = req
+            .header("if-modified-since")
+            .and_then(time::parse_http_date)
         && e.modified <= since
     {
         let mut r = Response::new(304, &ctype, Vec::new());
@@ -162,13 +175,16 @@ pub fn file(files: &dyn Files, path: &str, e: &Entry, req: &Request, d: &DirConf
     let r = match ranged {
         Some((s, en)) => {
             let s = usize::try_from(s).unwrap_or(usize::MAX).min(data.len());
-            let en = usize::try_from(en).unwrap_or(usize::MAX).min(data.len().saturating_sub(1));
+            let en = usize::try_from(en)
+                .unwrap_or(usize::MAX)
+                .min(data.len().saturating_sub(1));
             Response::new(206, &ctype, data[s..=en].to_vec())
                 .with("Content-Range", &format!("bytes {s}-{en}/{}", data.len()))
         }
         None => Response::new(200, &ctype, data),
     };
-    r.with("Last-Modified", &modified).with("Accept-Ranges", "bytes")
+    r.with("Last-Modified", &modified)
+        .with("Accept-Ranges", "bytes")
 }
 
 /// The listing of directory `url` (ending in `/`) with `entries`.
@@ -177,17 +193,28 @@ pub fn listing(url: &str, entries: &[Entry]) -> Response {
     if url != "/" {
         rows.push_str("<tr><td><a href=\"../\">Parent directory</a></td><td></td><td></td></tr>\n");
     }
-    let mut sorted: Vec<&Entry> = entries.iter().filter(|e| !e.name.starts_with('.')).collect();
+    let mut sorted: Vec<&Entry> = entries
+        .iter()
+        .filter(|e| !e.name.starts_with('.'))
+        .collect();
     sorted.sort_by(|a, b| b.dir.cmp(&a.dir).then(a.name.cmp(&b.name)));
     for e in sorted {
         let slash = if e.dir { "/" } else { "" };
-        let size = if e.dir { "-".to_string() } else { e.size.to_string() };
+        let size = if e.dir {
+            "-".to_string()
+        } else {
+            e.size.to_string()
+        };
         let _ = writeln!(
             rows,
             "<tr><td><a href=\"{}{slash}\">{}{slash}</a></td><td>{}</td><td>{size}</td></tr>",
             href(&e.name),
             esc(&e.name),
-            if e.modified > 0 { time::http_date(e.modified) } else { String::new() },
+            if e.modified > 0 {
+                time::http_date(e.modified)
+            } else {
+                String::new()
+            },
         );
     }
     let t = esc(url);

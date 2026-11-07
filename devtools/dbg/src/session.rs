@@ -9,11 +9,11 @@
 //! the job's driver.
 
 use crate::DbgError;
-use crate::msgid::{self as m, Msg};
 use crate::bkpt::{Breakpoint, Breakpoints, StmtMap, Watch, Watches};
 use crate::command::{
     self, Amount, ClearWhat, Command, DisplayWhat, Equates, Format, Place, SetOption,
 };
+use crate::msgid::{self as m, Msg};
 use crate::view::SourceView;
 
 /// A module the session can show.

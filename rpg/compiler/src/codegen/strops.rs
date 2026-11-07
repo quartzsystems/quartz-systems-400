@@ -45,9 +45,36 @@ pub struct Rt {
 
 /// The operations this module generates.
 pub const OPS: &[&str] = &[
-    "MOVE", "MOVEL", "MOVEA", "MHHZO", "MHLZO", "MLHZO", "MLLZO", "CAT", "SCAN", "CHECK", "CHECKR",
-    "XLATE", "SUBST", "BITON", "BITOFF", "TESTB", "TESTN", "TESTZ", "COMP", "MVR", "SQRT", "EVALR",
-    "EVAL-CORR", "XFOOT", "LOOKUP", "SORTA", "OCCUR", "CLEAR", "RESET", "FOR-EACH",
+    "MOVE",
+    "MOVEL",
+    "MOVEA",
+    "MHHZO",
+    "MHLZO",
+    "MLHZO",
+    "MLLZO",
+    "CAT",
+    "SCAN",
+    "CHECK",
+    "CHECKR",
+    "XLATE",
+    "SUBST",
+    "BITON",
+    "BITOFF",
+    "TESTB",
+    "TESTN",
+    "TESTZ",
+    "COMP",
+    "MVR",
+    "SQRT",
+    "EVALR",
+    "EVAL-CORR",
+    "XFOOT",
+    "LOOKUP",
+    "SORTA",
+    "OCCUR",
+    "CLEAR",
+    "RESET",
+    "FOR-EACH",
 ];
 
 impl Gen<'_> {
@@ -111,36 +138,56 @@ impl Gen<'_> {
             let ty = like.map_or(Ty::Char(1), |l| match &l.ty {
                 Ty::VarChar(n, _) => Ty::Char((*n).max(1)),
                 Ty::Ind => Ty::Char(1),
-                t if t.is_numeric() && matches!(f, Fig::Blanks) => Ty::Char(u32::from(t.shape().map_or(1, |x| x.0))),
+                t if t.is_numeric() && matches!(f, Fig::Blanks) => {
+                    Ty::Char(u32::from(t.shape().map_or(1, |x| x.0)))
+                }
                 t => t.clone(),
             });
             let t = self.b.temp(&self.ir_ty(&ty));
             let tv = V::place(ty.clone(), t.clone());
             self.fill_fig(&tv, &f);
-            return Rt { desc: self.desc_of(&tv), op: t };
+            return Rt {
+                desc: self.desc_of(&tv),
+                op: t,
+            };
         }
         match (&v.ty, v.kind) {
-            (_, Vk::Place) => Rt { desc: self.desc_of(&v), op: v.op.clone() },
+            (_, Vk::Place) => Rt {
+                desc: self.desc_of(&v),
+                op: v.op.clone(),
+            },
             (Ty::Ind, _) => {
                 let t = self.b.temp("ind");
                 self.b.ins(format!("store {t}, {}", v.op));
-                Rt { desc: self.desc_of(&V::place(Ty::Ind, t.clone())), op: t }
+                Rt {
+                    desc: self.desc_of(&V::place(Ty::Ind, t.clone())),
+                    op: t,
+                }
             }
             (t, _) if t.is_numeric() => {
                 let p = self.num_place(&v);
-                Rt { desc: self.desc_of(&p), op: p.op }
+                Rt {
+                    desc: self.desc_of(&p),
+                    op: p.op,
+                }
             }
             (t, _) if t.str_len() == Some(0) => {
                 // An empty literal: a varying value of no characters.
                 let tmp = self.b.temp("varchar(1)");
                 self.b.ins(format!("mov {tmp}, \"\""));
-                Rt { desc: self.desc_of(&V::place(Ty::varchar(1), tmp.clone())), op: tmp }
+                Rt {
+                    desc: self.desc_of(&V::place(Ty::varchar(1), tmp.clone())),
+                    op: tmp,
+                }
             }
             (t, _) => {
                 let n = t.str_len().unwrap_or(1).max(1);
                 let tmp = self.b.temp(&format!("char({n})"));
                 self.b.ins(format!("mov {tmp}, {}", v.op));
-                Rt { desc: self.desc_of(&V::place(Ty::Char(n), tmp.clone())), op: tmp }
+                Rt {
+                    desc: self.desc_of(&V::place(Ty::Char(n), tmp.clone())),
+                    op: tmp,
+                }
             }
         }
     }
@@ -156,10 +203,17 @@ impl Gen<'_> {
             Fig::All(p) | Fig::AllG(p) => {
                 if t.ty.is_numeric() {
                     let lit: String = p.chars().cycle().take(n).collect();
-                    let digits: String = lit.chars().map(|c| if c.is_ascii_digit() { c } else { '0' }).collect();
+                    let digits: String = lit
+                        .chars()
+                        .map(|c| if c.is_ascii_digit() { c } else { '0' })
+                        .collect();
                     let s = t.ty.shape().map_or(0, |x| x.1) as usize;
                     let (i, d) = digits.split_at(digits.len() - s.min(digits.len()));
-                    let text = if s > 0 { format!("{}.{d}", if i.is_empty() { "0" } else { i }) } else { i.to_string() };
+                    let text = if s > 0 {
+                        format!("{}.{d}", if i.is_empty() { "0" } else { i })
+                    } else {
+                        i.to_string()
+                    };
                     self.b.ins(format!("dec.mov {}, {text}", t.op));
                 } else {
                     let lit: String = p.chars().cycle().take(n).collect();
@@ -167,11 +221,19 @@ impl Gen<'_> {
                 }
             }
             Fig::AllX(h) => {
-                let pairs: Vec<String> = h.as_bytes().chunks(2).map(|c| String::from_utf8_lossy(c).to_string()).collect();
+                let pairs: Vec<String> = h
+                    .as_bytes()
+                    .chunks(2)
+                    .map(|c| String::from_utf8_lossy(c).to_string())
+                    .collect();
                 let bytes: String = pairs.iter().cycle().take(n).cloned().collect();
                 self.b.ins(format!("mov {}, x\"{bytes}\"", t.op));
             }
-            _ => self.b.ins(format!("mov {}, {}", t.op, crate::codegen::expr::fig_text(f))),
+            _ => self.b.ins(format!(
+                "mov {}, {}",
+                t.op,
+                crate::codegen::expr::fig_text(f)
+            )),
         }
     }
 
@@ -246,9 +308,13 @@ impl Gen<'_> {
 
     /// `MOVE` and `MOVEL`.
     fn move_rt(&mut self, left: bool, pad: bool, op: &Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
-        let Some(v) = self.expr(&f2, Want::default()) else { return };
+        let Some(v) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         // An indicator takes only '0' or '1'.
         if t.ty == Ty::Ind
             && let Expr::Lit(Lit::Char(s), _) = &f2
@@ -291,7 +357,9 @@ impl Gen<'_> {
             Expr::Ref { name, steps, .. } if steps.is_empty() => self.t.find(self.scope, name),
             _ => None,
         };
-        let (Some(x), Some(y)) = (sym(a), sym(b)) else { return false };
+        let (Some(x), Some(y)) = (sym(a), sym(b)) else {
+            return false;
+        };
         let within = |s: SymId, ds: SymId| {
             let mut p = self.t.syms[s].parent;
             while let Some(q) = p {
@@ -350,7 +418,13 @@ impl Gen<'_> {
                     None => (format!("{base}[0]"), sym.dim.to_string()),
                     _ => return None,
                 };
-                Some((V { sym: Some(id), ..V::place(sym.ty.clone(), place) }, count))
+                Some((
+                    V {
+                        sym: Some(id),
+                        ..V::place(sym.ty.clone(), place)
+                    },
+                    count,
+                ))
             }
             _ => None,
         }
@@ -368,7 +442,9 @@ impl Gen<'_> {
 
     /// `MOVEA`: arrays, fields and literals, from the elements named.
     fn movea(&mut self, pad: bool, op: &Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
         let (dst, dcount, dst_array) = match self.array_from(&r) {
             Some((d, c)) => (d, c, true),
             None => {
@@ -390,11 +466,17 @@ impl Gen<'_> {
                 (self.rt_of(&v, None), c)
             }
             None => {
-                let Some(v) = self.expr(&f2, Want::default()) else { return };
+                let Some(v) = self.expr(&f2, Want::default()) else {
+                    return;
+                };
                 if v.fig.is_some() && !matches!(v.fig, Some(Fig::On | Fig::Off)) {
                     // A figurative constant fills the whole target.
                     let total = self.movea_len(&r).max(1);
-                    let like = if dst.ty.is_numeric() { V::place(Ty::Zoned(u8::try_from(total.min(63)).unwrap_or(63), 0), "") } else { V::place(Ty::Char(total), "") };
+                    let like = if dst.ty.is_numeric() {
+                        V::place(Ty::Zoned(u8::try_from(total.min(63)).unwrap_or(63), 0), "")
+                    } else {
+                        V::place(Ty::Char(total), "")
+                    };
                     (self.rt_of(&v, Some(&like)), "1".to_string())
                 } else {
                     (self.rt_of(&v, None), "1".to_string())
@@ -433,9 +515,13 @@ impl Gen<'_> {
 
     /// `MHHZO`, `MHLZO`, `MLHZO`, `MLLZO`.
     fn zone_op(&mut self, base: &str, op: &Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
-        let Some(v) = self.expr(&f2, Want::default()) else { return };
+        let Some(v) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         let t = self.as_chars(&t);
         let src = self.rt_of(&v, Some(&t));
         let code = match base {
@@ -449,13 +535,18 @@ impl Gen<'_> {
             "_QRNX_ZONE",
             "(byval $op: i32, $dst: bytes(1) *VARSIZE, byval $dd: i64, $src: bytes(1) *VARSIZE, byval $sd: i64)",
         );
-        self.b.ins(format!("callb _QRNX_ZONE({code}, {}, {dd}, {}, {})", t.op, src.op, src.desc));
+        self.b.ins(format!(
+            "callb _QRNX_ZONE({code}, {}, {dd}, {}, {})",
+            t.op, src.op, src.desc
+        ));
     }
 
     /// `CAT`: factor 1 (or the result) then factor 2, with `:n` blanks
     /// between them in place of factor 1's trailing blanks.
     fn cat_op(&mut self, pad: bool, op: &Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
         let t = self.as_chars(&t);
         if !t.ty.is_char() {
@@ -464,14 +555,23 @@ impl Gen<'_> {
         }
         let a = match op.f1.first() {
             Some(e) => {
-                let Some(v) = self.expr(e, Want::default()) else { return };
+                let Some(v) = self.expr(e, Want::default()) else {
+                    return;
+                };
                 self.rt_of(&v, None)
             }
-            None => Rt { desc: self.desc_of(&t), op: t.op.clone() },
+            None => Rt {
+                desc: self.desc_of(&t),
+                op: t.op.clone(),
+            },
         };
-        let Some(bv) = self.expr(&f2, Want::default()) else { return };
+        let Some(bv) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         let b = self.rt_of(&bv, None);
-        let Some(blanks) = self.int_or(op.f2.get(1), -1) else { return };
+        let Some(blanks) = self.int_or(op.f2.get(1), -1) else {
+            return;
+        };
         let dd = self.desc_of(&t);
         self.rtp(
             "_QRNX_CAT",
@@ -499,7 +599,11 @@ impl Gen<'_> {
                     return None;
                 }
                 let n = t.dim.max(1);
-                let place = if t.dim > 0 { format!("{}[0]", t.op) } else { t.op.clone() };
+                let place = if t.dim > 0 {
+                    format!("{}[0]", t.op)
+                } else {
+                    t.op.clone()
+                };
                 let d = self.desc_of(&V::place(t.ty.clone(), place.clone()));
                 Some((place, d, n.to_string()))
             }
@@ -514,14 +618,26 @@ impl Gen<'_> {
     /// `SCAN`: factor 1 the string (`:length`), factor 2 the base
     /// (`:start`); the equal indicator when found, the low on error.
     fn scan_op(&mut self, op: &Op) {
-        let (Some(f1), Some(f2)) = (op.f1.first().cloned(), op.f2.first().cloned()) else { return };
-        let Some(nv) = self.expr(&f1, Want::default()) else { return };
+        let (Some(f1), Some(f2)) = (op.f1.first().cloned(), op.f2.first().cloned()) else {
+            return;
+        };
+        let Some(nv) = self.expr(&f1, Want::default()) else {
+            return;
+        };
         let needle = self.rt_of(&nv, None);
-        let Some(nlen) = self.int_or(op.f1.get(1), -1) else { return };
-        let Some(hv) = self.expr(&f2, Want::default()) else { return };
+        let Some(nlen) = self.int_or(op.f1.get(1), -1) else {
+            return;
+        };
+        let Some(hv) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         let hay = self.rt_of(&hv, None);
-        let Some(start) = self.int_or(op.f2.get(1), 1) else { return };
-        let Some((res, rd, n)) = self.positions_result(op) else { return };
+        let Some(start) = self.int_or(op.f2.get(1), 1) else {
+            return;
+        };
+        let Some((res, rd, n)) = self.positions_result(op) else {
+            return;
+        };
         self.rtp(
             "_QRNX_SCAN",
             "($n: bytes(1) *VARSIZE, byval $nd: i64, byval $nl: i64, $h: bytes(1) *VARSIZE, byval $hd: i64, byval $st: i64, $r: bytes(1) *VARSIZE, byval $rd: i64, byval $rn: i64) -> i32",
@@ -536,13 +652,23 @@ impl Gen<'_> {
 
     /// `CHECK` and `CHECKR`.
     fn check_op(&mut self, right: bool, op: &Op) {
-        let (Some(f1), Some(f2)) = (op.f1.first().cloned(), op.f2.first().cloned()) else { return };
-        let Some(sv) = self.expr(&f1, Want::default()) else { return };
+        let (Some(f1), Some(f2)) = (op.f1.first().cloned(), op.f2.first().cloned()) else {
+            return;
+        };
+        let Some(sv) = self.expr(&f1, Want::default()) else {
+            return;
+        };
         let set = self.rt_of(&sv, None);
-        let Some(bv) = self.expr(&f2, Want::default()) else { return };
+        let Some(bv) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         let base = self.rt_of(&bv, None);
-        let Some(start) = self.int_or(op.f2.get(1), 0) else { return };
-        let Some((res, rd, n)) = self.positions_result(op) else { return };
+        let Some(start) = self.int_or(op.f2.get(1), 0) else {
+            return;
+        };
+        let Some((res, rd, n)) = self.positions_result(op) else {
+            return;
+        };
         self.rtp(
             "_QRNX_CHECK",
             "(byval $right: i32, $s: bytes(1) *VARSIZE, byval $sd: i64, $b: bytes(1) *VARSIZE, byval $bd: i64, byval $st: i64, $r: bytes(1) *VARSIZE, byval $rd: i64, byval $rn: i64) -> i32",
@@ -561,19 +687,30 @@ impl Gen<'_> {
 
     /// `XLATE from:to source:start result`.
     fn xlate_op(&mut self, pad: bool, op: &Op) {
-        let (Some(fe), Some(te), Some(f2), Some(r)) =
-            (op.f1.first().cloned(), op.f1.get(1).cloned(), op.f2.first().cloned(), op.result.first().cloned())
-        else {
+        let (Some(fe), Some(te), Some(f2), Some(r)) = (
+            op.f1.first().cloned(),
+            op.f1.get(1).cloned(),
+            op.f2.first().cloned(),
+            op.result.first().cloned(),
+        ) else {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, "XLATE");
             return;
         };
-        let Some(fv) = self.expr(&fe, Want::default()) else { return };
+        let Some(fv) = self.expr(&fe, Want::default()) else {
+            return;
+        };
         let from = self.rt_of(&fv, None);
-        let Some(tv) = self.expr(&te, Want::default()) else { return };
+        let Some(tv) = self.expr(&te, Want::default()) else {
+            return;
+        };
         let to = self.rt_of(&tv, None);
-        let Some(sv) = self.expr(&f2, Want::default()) else { return };
+        let Some(sv) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         let src = self.rt_of(&sv, None);
-        let Some(start) = self.int_or(op.f2.get(1), 1) else { return };
+        let Some(start) = self.int_or(op.f2.get(1), 1) else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
         let t = self.as_chars(&t);
         let dd = self.desc_of(&t);
@@ -598,9 +735,15 @@ impl Gen<'_> {
 
     /// `SUBST length source:start result`.
     fn subst_op(&mut self, pad: bool, op: &Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
-        let Some(len) = self.int_or(op.f1.first(), -1) else { return };
-        let Some(sv) = self.expr(&f2, Want::default()) else { return };
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
+        let Some(len) = self.int_or(op.f1.first(), -1) else {
+            return;
+        };
+        let Some(sv) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         // Constant positions past a fixed-length base.
         let lit = |e: Option<&Expr>| match e {
             Some(Expr::Lit(Lit::Num(n), _)) => n.parse::<u32>().ok(),
@@ -622,7 +765,9 @@ impl Gen<'_> {
             }
         }
         let src = self.rt_of(&sv, None);
-        let Some(start) = self.int_or(op.f2.get(1), 1) else { return };
+        let Some(start) = self.int_or(op.f2.get(1), 1) else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
         let t = self.as_chars(&t);
         let dd = self.desc_of(&t);
@@ -647,10 +792,13 @@ impl Gen<'_> {
     fn bit_mask(&mut self, e: &Expr) -> Option<String> {
         let lit = match e {
             Expr::Lit(l, _) => Some(l.clone()),
-            Expr::Ref { name, steps, .. } if steps.is_empty() => self.t.find(self.scope, name).and_then(|id| match &self.t.syms[id].kind {
-                Some(Kind::Const(ConstVal::Expr(Expr::Lit(l, _)))) => Some(l.clone()),
-                _ => None,
-            }),
+            Expr::Ref { name, steps, .. } if steps.is_empty() => self
+                .t
+                .find(self.scope, name)
+                .and_then(|id| match &self.t.syms[id].kind {
+                    Some(Kind::Const(ConstVal::Expr(Expr::Lit(l, _)))) => Some(l.clone()),
+                    _ => None,
+                }),
             _ => None,
         };
         let byte = match lit {
@@ -686,9 +834,19 @@ impl Gen<'_> {
 
     /// `BITON`, `BITOFF`, `TESTB` on a one-byte character field.
     fn bit_op(&mut self, base: &str, op: &Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
-        let Some(mask) = self.bit_mask(&f2) else { return };
-        let Some(t) = (if base == "TESTB" { self.expr(&r, Want::default()) } else { self.target(&r) }) else { return };
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
+        let Some(mask) = self.bit_mask(&f2) else {
+            return;
+        };
+        let Some(t) = (if base == "TESTB" {
+            self.expr(&r, Want::default())
+        } else {
+            self.target(&r)
+        }) else {
+            return;
+        };
         let t = self.as_chars(&t);
         if t.kind != Vk::Place || t.ty != Ty::Char(1) {
             self.err(ids::TYPE_MISMATCH, 30, op.code.clone());
@@ -699,9 +857,13 @@ impl Gen<'_> {
             "BITOFF" => 1,
             _ => 2,
         };
-        self.rtp("_QRNX_BITS", "(byval $op: i32, $d: bytes(1) *VARSIZE, $m: bytes(1) *VARSIZE) -> i32");
+        self.rtp(
+            "_QRNX_BITS",
+            "(byval $op: i32, $d: bytes(1) *VARSIZE, $m: bytes(1) *VARSIZE) -> i32",
+        );
         let c = self.b.reg();
-        self.b.ins(format!("{c} = callb _QRNX_BITS({code}, {}, {mask})", t.op));
+        self.b
+            .ins(format!("{c} = callb _QRNX_BITS({code}, {}, {mask})", t.op));
         if code == 2 {
             self.code_inds(op, &c, [1, 2, 3]);
         }
@@ -709,8 +871,12 @@ impl Gen<'_> {
 
     /// `TESTN` and `TESTZ` of a character field.
     fn testnz(&mut self, n: bool, op: &Op) {
-        let Some(r) = op.result.first().cloned() else { return };
-        let Some(v) = self.expr(&r, Want::default()) else { return };
+        let Some(r) = op.result.first().cloned() else {
+            return;
+        };
+        let Some(v) = self.expr(&r, Want::default()) else {
+            return;
+        };
         let v = self.as_chars(&v);
         if !v.ty.is_char() {
             self.err(ids::TYPE_MISMATCH, 30, op.code.clone());
@@ -720,7 +886,8 @@ impl Gen<'_> {
         let name = if n { "_QRNX_TESTN" } else { "_QRNX_TESTZ" };
         self.rtp(name, "($s: bytes(1) *VARSIZE, byval $sd: i64) -> i32");
         let c = self.b.reg();
-        self.b.ins(format!("{c} = callb {name}({}, {})", src.op, src.desc));
+        self.b
+            .ins(format!("{c} = callb {name}({}, {})", src.op, src.desc));
         self.code_inds(op, &c, [1, 2, 3]);
     }
 
@@ -733,7 +900,11 @@ impl Gen<'_> {
         let (oa, ob) = (self.dec_operand(&a), self.dec_operand(&b));
         self.b.ins(format!("dec.mov {ta}, {oa}"));
         self.b.ins(format!("dec.mov {tb}, {ob}"));
-        self.ops.div = Some((V::place(a.ty.clone(), ta), V::place(b.ty.clone(), tb), q.clone()));
+        self.ops.div = Some((
+            V::place(a.ty.clone(), ta),
+            V::place(b.ty.clone(), tb),
+            q.clone(),
+        ));
     }
 
     /// `MVR`: the dividend less the quotient times the divisor of the
@@ -743,7 +914,9 @@ impl Gen<'_> {
             self.err(ids::UNBALANCED, 30, "MVR");
             return;
         };
-        let Some(r) = op.result.first().cloned() else { return };
+        let Some(r) = op.result.first().cloned() else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
         let (_, sa) = a.ty.shape().unwrap_or((31, 0));
         let (_, sb) = b.ty.shape().unwrap_or((31, 0));
@@ -753,17 +926,26 @@ impl Gen<'_> {
         let prod = self.b.temp(&format!("packed(63,{})", sp.min(62)));
         let rem = self.b.temp(&format!("packed(63,{s})"));
         let qo = self.dec_operand(&q);
-        self.b.ins(format!("dec.mul {prod}, {qo}, {} prec(63,{})", b.op, sp.min(62)));
-        self.b.ins(format!("dec.sub {rem}, {}, {prod} prec(63,{s})", a.op));
+        self.b.ins(format!(
+            "dec.mul {prod}, {qo}, {} prec(63,{})",
+            b.op,
+            sp.min(62)
+        ));
+        self.b
+            .ins(format!("dec.sub {rem}, {}, {prod} prec(63,{s})", a.op));
         self.b.ins(format!("dec.mov {}, {rem} trunc", t.op));
         self.sign_inds(op, &t);
     }
 
     /// `SQRT value result`.
     fn sqrt_op(&mut self, op: &Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
-        let Some(v) = self.expr(&f2, Want::default()) else { return };
+        let Some(v) = self.expr(&f2, Want::default()) else {
+            return;
+        };
         let f = self.float_reg(&v);
         self.rt_proc("_QRNX_SQRT", "(byval $a: f64) -> f64");
         let s = self.b.reg();
@@ -788,11 +970,17 @@ impl Gen<'_> {
         let Some(tv) = self.target(t) else { return };
         // The target is fixed-length character or graphic.
         if tv.ty.is_varying() {
-            self.err(ids::EVALR_VARYING, 30, t.name().unwrap_or_default().to_string());
+            self.err(
+                ids::EVALR_VARYING,
+                30,
+                t.name().unwrap_or_default().to_string(),
+            );
             return;
         }
         let tv = self.as_chars(&tv);
-        let Some(val) = self.expr(v, Want::default()) else { return };
+        let Some(val) = self.expr(v, Want::default()) else {
+            return;
+        };
         if aop != AssignOp::Set || !matches!(tv.ty, Ty::Char(_)) || val.fig.is_some() {
             self.assign(&tv, &val, false);
             return;
@@ -808,13 +996,18 @@ impl Gen<'_> {
             "_QRNX_MOVE",
             "(byval $left: i32, byval $pad: i32, $dst: bytes(1) *VARSIZE, byval $dd: i64, $src: bytes(1) *VARSIZE, byval $sd: i64)",
         );
-        self.b.ins(format!("callb _QRNX_MOVE(0, 1, {}, {dd}, {}, {})", tv.op, src.op, src.desc));
+        self.b.ins(format!(
+            "callb _QRNX_MOVE(0, 1, {}, {dd}, {}, {})",
+            tv.op, src.op, src.desc
+        ));
     }
 
     /// `EVAL-CORR`: each subfield of the target with a namesake in the
     /// source gets its value; structures nested in both, recursively.
     fn eval_corr(&mut self, t: &Expr, v: &Expr, half: bool) {
-        let (Some(tv), Some(sv)) = (self.target(t), self.expr(v, Want::default())) else { return };
+        let (Some(tv), Some(sv)) = (self.target(t), self.expr(v, Want::default())) else {
+            return;
+        };
         let (Ty::Ds(td), Ty::Ds(sd)) = (tv.ty.clone(), sv.ty.clone()) else {
             self.err(ids::NOT_A_DS, 30, "EVAL-CORR");
             return;
@@ -828,7 +1021,13 @@ impl Gen<'_> {
     /// Whether every subfield of each structure has a namesake in the
     /// other.
     fn corr_complete(&self, td: usize, sd: usize) -> bool {
-        let names = |d: usize| -> Vec<String> { self.t.ds[d].subfields.iter().map(|&s| self.t.syms[s].name.clone()).collect() };
+        let names = |d: usize| -> Vec<String> {
+            self.t.ds[d]
+                .subfields
+                .iter()
+                .map(|&s| self.t.syms[s].name.clone())
+                .collect()
+        };
         let (a, b) = (names(td), names(sd));
         a.iter().all(|n| b.contains(n)) && b.iter().all(|n| a.contains(n))
     }
@@ -837,7 +1036,9 @@ impl Gen<'_> {
         let subs = self.t.ds[td].subfields.clone();
         for t in subs {
             let ts = self.t.syms[t].clone();
-            let Some(s) = self.t.subfield(sd, &ts.name) else { continue };
+            let Some(s) = self.t.subfield(sd, &ts.name) else {
+                continue;
+            };
             let ss = self.t.syms[s].clone();
             let tplace = format!("{tp}.{}", mangle(&ts.name));
             let splace = format!("{sp}.{}", mangle(&ss.name));
@@ -853,8 +1054,16 @@ impl Gen<'_> {
                 (a, b) if a.is_numeric() == b.is_numeric() && a.is_string() == b.is_string() => {
                     let n = ts.dim.max(1);
                     for i in 0..n {
-                        let (x, y) = if ts.dim > 0 { (format!("{tplace}[{i}]"), format!("{splace}[{i}]")) } else { (tplace.clone(), splace.clone()) };
-                        self.assign(&V::place(ts.ty.clone(), x), &V::place(ss.ty.clone(), y), half);
+                        let (x, y) = if ts.dim > 0 {
+                            (format!("{tplace}[{i}]"), format!("{splace}[{i}]"))
+                        } else {
+                            (tplace.clone(), splace.clone())
+                        };
+                        self.assign(
+                            &V::place(ts.ty.clone(), x),
+                            &V::place(ss.ty.clone(), y),
+                            half,
+                        );
                     }
                 }
                 _ => {}

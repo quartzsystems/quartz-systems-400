@@ -10,7 +10,9 @@
 //! again after. Elsewhere (a statement not taking turns) the host
 //! cannot reach the system and the service says so (SQL0443).
 
-use sql::exec::catalog::services::host::{self, ActiveJob, HttpRequest, HttpResponse, SysValue, SystemHost, SystemStatus};
+use sql::exec::catalog::services::host::{
+    self, ActiveJob, HttpRequest, HttpResponse, SysValue, SystemHost, SystemStatus,
+};
 
 use licpgm::ProductStore as _;
 
@@ -49,7 +51,8 @@ fn group_name(g: sysval::Group) -> String {
 
 impl SystemHost for SqlHost {
     fn library_list(&self) -> Option<wm::job::LibList> {
-        ile::current_libl().or_else(|| with_system(|s| s.attrs.get(&self.job).map(|a| a.libl.clone())).flatten())
+        ile::current_libl()
+            .or_else(|| with_system(|s| s.attrs.get(&self.job).map(|a| a.libl.clone())).flatten())
     }
 
     fn system_values(&self) -> Option<Vec<SysValue>> {
@@ -120,15 +123,33 @@ impl SystemHost for SqlHost {
             url: req.url.clone(),
             headers: req.headers.clone(),
             body: req.body.clone(),
-            timeout: if req.timeout == 0 { 30 } else { req.timeout.min(300) },
+            timeout: if req.timeout == 0 {
+                30
+            } else {
+                req.timeout.min(300)
+            },
             redirects: req.redirects,
             tolerate: req.tolerate,
         });
-        Some(r.map(|r| HttpResponse { status: r.status, headers: r.headers, body: r.body }).map_err(|e| e.to_string()))
+        Some(
+            r.map(|r| HttpResponse {
+                status: r.status,
+                headers: r.headers,
+                body: r.body,
+            })
+            .map_err(|e| e.to_string()),
+        )
     }
 
     fn spooled_files(&self) -> Option<Vec<wm::obj::splf::SplfAttrs>> {
-        with_system(|system| system.spool.files.values().map(|e| e.attrs.clone()).collect())
+        with_system(|system| {
+            system
+                .spool
+                .files
+                .values()
+                .map(|e| e.attrs.clone())
+                .collect()
+        })
     }
 
     fn spooled_data(&self, id: u32) -> Option<Result<Vec<u8>, String>> {
@@ -152,7 +173,11 @@ impl SystemHost for SqlHost {
                     .map(|r| {
                         let library = loads
                             .iter()
-                            .find(|(_, l)| l.key.product == r.product && l.key.option == r.option && l.key.load_id == r.feature)
+                            .find(|(_, l)| {
+                                l.key.product == r.product
+                                    && l.key.option == r.option
+                                    && l.key.load_id == r.feature
+                            })
                             .and_then(|(_, l)| l.principal().map(|e| e.installed.clone()))
                             .unwrap_or_default();
                         host::Product {
@@ -215,9 +240,15 @@ impl SystemHost for SqlHost {
             let start = c.stat(path, false).map_err(|e| e.to_string())?;
             let mut out = vec![(path.to_string(), Ok(object(c, path, &start)))];
             if subtree && start.objtype == "*DIR" {
-                let walk = c.walk(path, ifs::ops::WalkOpts::default(), usize::MAX).map_err(|e| e.to_string())?;
+                let walk = c
+                    .walk(path, ifs::ops::WalkOpts::default(), usize::MAX)
+                    .map_err(|e| e.to_string())?;
                 for w in walk.into_iter().filter(|w| w.path != path) {
-                    let o = w.stat.as_ref().map(|s| object(c, &w.path, s)).map_err(ToString::to_string);
+                    let o = w
+                        .stat
+                        .as_ref()
+                        .map(|s| object(c, &w.path, s))
+                        .map_err(ToString::to_string);
                     out.push((w.path, o));
                 }
             }
@@ -228,19 +259,29 @@ impl SystemHost for SqlHost {
     fn ifs_read(&self, path: &str) -> Option<Result<(Vec<u8>, u16), String>> {
         self.with_ifs(|c| {
             let st = c.stat(path, true).map_err(|e| e.to_string())?;
-            let fd = c.open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY)).map_err(|e| e.to_string())?;
+            let fd = c
+                .open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY))
+                .map_err(|e| e.to_string())?;
             let data = ifs::client::read_all(c, fd);
             let _ = c.close(fd);
             Ok((data.map_err(|e| e.to_string())?, st.ccsid))
         })
     }
 
-    fn ifs_write(&self, path: &str, data: &[u8], append: bool, ccsid: u16) -> Option<Result<(), String>> {
+    fn ifs_write(
+        &self,
+        path: &str,
+        data: &[u8],
+        append: bool,
+        ccsid: u16,
+    ) -> Option<Result<(), String>> {
         use ifs::ops::flags::{O_APPEND, O_CCSID, O_CREAT, O_TRUNC, O_WRONLY};
         self.with_ifs(|c| {
             // A new file is tagged with `ccsid`; the bytes go as given.
             let flags = O_WRONLY | O_CREAT | O_CCSID | if append { O_APPEND } else { O_TRUNC };
-            let args = ifs::ops::OpenArgs::new(flags).mode(0o644).conv(u32::from(ccsid));
+            let args = ifs::ops::OpenArgs::new(flags)
+                .mode(0o644)
+                .conv(u32::from(ccsid));
             let fd = c.open(path, args).map_err(|e| e.to_string())?;
             let w = ifs::client::write_all(c, fd, data);
             let closed = c.close(fd);
@@ -261,7 +302,13 @@ impl SystemHost for SqlHost {
             match r.escape {
                 None => Ok(()),
                 Some(e) => {
-                    let text = r.text.lines().rfind(|l| !l.trim().is_empty()).unwrap_or("").trim().to_string();
+                    let text = r
+                        .text
+                        .lines()
+                        .rfind(|l| !l.trim().is_empty())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
                     Err((e.msgid, text))
                 }
             }
@@ -292,7 +339,9 @@ impl SystemHost for SqlHost {
                     Kind::Processor | Kind::Memory => "PROCESSOR",
                     Kind::Lan | Kind::Port | Kind::Comm | Kind::Channel => "COMM",
                     Kind::Keyboard => "LWS",
-                    Kind::Storage | Kind::Disk | Kind::Optical | Kind::Tape | Kind::TapeLibrary => "STORAGE",
+                    Kind::Storage | Kind::Disk | Kind::Optical | Kind::Tape | Kind::TapeLibrary => {
+                        "STORAGE"
+                    }
                     Kind::Bridge => "PACKAGING",
                     Kind::Other => "OTHER",
                 }
@@ -303,7 +352,10 @@ impl SystemHost for SqlHost {
                 text: r.description.clone(),
                 location: r.location.clone(),
                 parent: r.parent.clone(),
-                mac: r.port.as_ref().map_or_else(String::new, |p| p.mac.replace(':', "").to_ascii_uppercase()),
+                mac: r
+                    .port
+                    .as_ref()
+                    .map_or_else(String::new, |p| p.mac.replace(':', "").to_ascii_uppercase()),
             })
             .collect()))
     }
@@ -319,7 +371,10 @@ impl SystemHost for SqlHost {
                     device: n,
                     status: d.status.text().to_ascii_uppercase(),
                     type_model: (d.devtype.clone(), d.model.clone()),
-                    resource: d.media.as_ref().map_or_else(String::new, |m| m.rsrcname.clone()),
+                    resource: d
+                        .media
+                        .as_ref()
+                        .map_or_else(String::new, |m| m.rsrcname.clone()),
                     text: d.text.clone(),
                 })
                 .collect()
@@ -330,7 +385,12 @@ impl SystemHost for SqlHost {
         with_system(|system| {
             let c = super::perfcol::config(system);
             let active = system.stats.perf.active.as_ref().map(|a| {
-                (a.library.clone(), a.name.clone(), a.header.profile.clone(), a.header.started)
+                (
+                    a.library.clone(),
+                    a.name.clone(),
+                    a.header.profile.clone(),
+                    a.header.started,
+                )
             });
             let cats = perf::profile::categories(&c.profile, &c.custom).unwrap_or_default();
             host::CollectionServices {
@@ -338,8 +398,16 @@ impl SystemHost for SqlHost {
                 library: c.library.clone(),
                 profile: c.profile.clone(),
                 interval: c.interval,
-                retention_hours: c.retention.map(|(n, days)| u32::from(n) * if days { 24 } else { 1 }),
-                cycle: (c.cycle_time.get(..2).and_then(|h| h.parse().ok()).unwrap_or(0), u32::from(c.cycle_hours)),
+                retention_hours: c
+                    .retention
+                    .map(|(n, days)| u32::from(n) * if days { 24 } else { 1 }),
+                cycle: (
+                    c.cycle_time
+                        .get(..2)
+                        .and_then(|h| h.parse().ok())
+                        .unwrap_or(0),
+                    u32::from(c.cycle_hours),
+                ),
                 create_files: c.create_files,
                 categories: cats.iter().map(|k| k.name().to_string()).collect(),
             }
@@ -350,7 +418,9 @@ impl SystemHost for SqlHost {
         with_system(|system| {
             let s = system.storage.as_mut()?;
             let qsys = s.qsys?;
-            let reg = match crate::svc::db::with_txn(&mut s.store, |txn| regfac::store::load(txn, qsys).map_err(|e| e.to_string())) {
+            let reg = match crate::svc::db::with_txn(&mut s.store, |txn| {
+                regfac::store::load(txn, qsys).map_err(|e| e.to_string())
+            }) {
                 Ok(r) => r,
                 Err(e) => return Some(Err(e)),
             };
@@ -390,14 +460,17 @@ impl SystemHost for SqlHost {
         with_system(|system| {
             Some(
                 super::qsh::system_vars(system)?
-                .into_iter()
-                .map(|v| host::EnvVar {
-                    system: true,
-                    name: v.name,
-                    value: v.value.unwrap_or_default(),
-                    ccsid: u16::try_from(v.ccsid).ok().filter(|c| *c != 0).unwrap_or(37),
-                })
-                .collect(),
+                    .into_iter()
+                    .map(|v| host::EnvVar {
+                        system: true,
+                        name: v.name,
+                        value: v.value.unwrap_or_default(),
+                        ccsid: u16::try_from(v.ccsid)
+                            .ok()
+                            .filter(|c| *c != 0)
+                            .unwrap_or(37),
+                    })
+                    .collect(),
             )
         })
         .flatten()
@@ -421,10 +494,16 @@ impl SystemHost for SqlHost {
                         .unwrap_or_default()
                         .into_iter()
                         .map(|id| {
-                            let (product, status) = db.ptfs.values().find(|p| p.ptf == id).map_or_else(
-                                || (String::new(), "NOT INSTALLED".to_string()),
-                                |p| (p.product.clone(), format!("{:?}", p.status).to_ascii_uppercase()),
-                            );
+                            let (product, status) =
+                                db.ptfs.values().find(|p| p.ptf == id).map_or_else(
+                                    || (String::new(), "NOT INSTALLED".to_string()),
+                                    |p| {
+                                        (
+                                            p.product.clone(),
+                                            format!("{:?}", p.status).to_ascii_uppercase(),
+                                        )
+                                    },
+                                );
                             (id, product, status)
                         })
                         .collect();
@@ -445,13 +524,19 @@ impl SystemHost for SqlHost {
         // The service does not know a job's socket: the addresses are
         // null.
         Some(host::Connection {
-            host_name: std::fs::read_to_string("/proc/sys/kernel/hostname").map(|h| h.trim().to_string()).unwrap_or_default(),
+            host_name: std::fs::read_to_string("/proc/sys/kernel/hostname")
+                .map(|h| h.trim().to_string())
+                .unwrap_or_default(),
             client: None,
             server: None,
         })
     }
 
-    fn dns_lookup(&self, name: &str, _server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
+    fn dns_lookup(
+        &self,
+        name: &str,
+        _server: Option<&str>,
+    ) -> Option<Result<Vec<std::net::IpAddr>, String>> {
         use std::net::ToSocketAddrs as _;
         // DOMAIN_SERVER is refused before the host is asked.
         // BLOCKED(rel): the lookup holds the service until the resolver
@@ -478,7 +563,11 @@ impl SystemHost for SqlHost {
                 owner: a.owner,
                 group: a.group.unwrap_or_default(),
                 autl: a.autl.unwrap_or_default(),
-                entries: a.entries.into_iter().map(|e| (e.who, e.data, e.auth.0)).collect(),
+                entries: a
+                    .entries
+                    .into_iter()
+                    .map(|e| (e.who, e.data, e.auth.0))
+                    .collect(),
             })
         })
     }
@@ -491,7 +580,8 @@ impl SystemHost for SqlHost {
                 .into_iter()
                 .filter_map(|l| match l.what {
                     ifs::lock::Held::Open(a, s) => Some(host::IfsOpen {
-                        job: jrn::JobInfo::from_handle(store::obj::JobHandle(l.owner.0)).qualified(),
+                        job: jrn::JobInfo::from_handle(store::obj::JobHandle(l.owner.0))
+                            .qualified(),
                         access: (a.read, a.write),
                         share: match s {
                             Share::ReadOnly => "R",
@@ -510,13 +600,23 @@ impl SystemHost for SqlHost {
 
 impl SqlHost {
     /// Run `f` against the IFS as the asking job.
-    fn with_ifs<T>(&self, f: impl FnOnce(&dyn ifs::client::IfsClient) -> Result<T, String>) -> Option<Result<T, String>> {
+    fn with_ifs<T>(
+        &self,
+        f: impl FnOnce(&dyn ifs::client::IfsClient) -> Result<T, String>,
+    ) -> Option<Result<T, String>> {
         let principal = super::turns::principal_of(self.job)?;
         let job = self.job;
         with_system(|system| {
             let handle = system.jobs.get(job).map_or(u64::from(job), |j| j.handle);
             let ccsid = super::ifs::job_ccsid(system, job);
-            super::ifs::with_client(system, handle, super::ifs::owner_of(handle), &principal, ccsid, f)
+            super::ifs::with_client(
+                system,
+                handle,
+                super::ifs::owner_of(handle),
+                &principal,
+                ccsid,
+                f,
+            )
         })
     }
 }
@@ -543,7 +643,11 @@ fn object(c: &dyn ifs::client::IfsClient, path: &str, s: &ifs::ops::Stat) -> hos
         links: s.nlink,
         file_id: s.ino,
         mode: s.mode,
-        link_target: if s.objtype == "*SYMLNK" { c.readlink(path).unwrap_or_default() } else { String::new() },
+        link_target: if s.objtype == "*SYMLNK" {
+            c.readlink(path).unwrap_or_default()
+        } else {
+            String::new()
+        },
         text: String::new(),
         autl: String::new(),
     }

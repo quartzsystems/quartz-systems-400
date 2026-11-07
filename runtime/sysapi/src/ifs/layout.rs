@@ -594,8 +594,16 @@ mod tests {
         assert_eq!(get_n(&b, &STAT, "st_size"), 5);
         assert_eq!(get_n(&b, &STAT, "st_mtime"), 3);
         assert_eq!(get_n(&b, &STAT, "st_ccsid"), 1208);
-        assert_eq!(&b[48..59], &[0x5C, 0xE2, 0xE3, 0xD4, 0xC6, 0x40, 0x40, 0x40, 0x40, 0x40, 0]);
-        let b = stat64(&Stat { size: 1 << 33, ..s.clone() });
+        assert_eq!(
+            &b[48..59],
+            &[
+                0x5C, 0xE2, 0xE3, 0xD4, 0xC6, 0x40, 0x40, 0x40, 0x40, 0x40, 0
+            ]
+        );
+        let b = stat64(&Stat {
+            size: 1 << 33,
+            ..s.clone()
+        });
         assert_eq!(get_n(&b, &STAT64, "st_size"), 1 << 33);
         assert_eq!(stat(&Stat { size: 1 << 33, ..s }), Err(Overflow));
         assert_eq!(get_i(&[0xFF, 0xFE], &UTIMBUF_PROBE, "x"), -2);

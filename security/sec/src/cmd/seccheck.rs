@@ -58,7 +58,12 @@ pub struct Finding {
     pub detail: String,
 }
 
-fn f(area: &'static str, item: impl Into<String>, status: Status, detail: impl Into<String>) -> Finding {
+fn f(
+    area: &'static str,
+    item: impl Into<String>,
+    status: Status,
+    detail: impl Into<String>,
+) -> Finding {
     Finding {
         area,
         item: item.into(),
@@ -110,12 +115,16 @@ type Judge = fn(&str) -> Status;
 /// The security values checked one by one: name, Quartz's recommended
 /// value, and the judge of a current value.
 const VALUES: &[(&str, &str, Judge)] = &[
-    ("QSECURITY", "50", |v| match v.trim().parse::<u8>().unwrap_or(0) {
-        0..=29 => Status::Fail,
-        30..=39 => Status::Warn,
-        _ => Status::Pass,
+    ("QSECURITY", "50", |v| {
+        match v.trim().parse::<u8>().unwrap_or(0) {
+            0..=29 => Status::Fail,
+            30..=39 => Status::Warn,
+            _ => Status::Pass,
+        }
     }),
-    ("QALWUSRDMN", "QTEMP", |v| warn_if(v.split_whitespace().any(|w| w == "*ALL"))),
+    ("QALWUSRDMN", "QTEMP", |v| {
+        warn_if(v.split_whitespace().any(|w| w == "*ALL"))
+    }),
     ("QCRTAUT", "*EXCLUDE", |v| match v.trim() {
         "*ALL" => Status::Fail,
         "*CHANGE" => Status::Warn,
@@ -133,11 +142,15 @@ const VALUES: &[(&str, &str, Judge)] = &[
         "*NOMAX" => Status::Warn,
         n => warn_if(n.parse::<u32>().unwrap_or(0) > 90),
     }),
-    ("QPWDLVL", "3", |v| warn_if(v.trim().parse::<u8>().unwrap_or(0) < 2)),
-    ("QPWDMINLEN", "8", |v| match v.trim().parse::<u32>().unwrap_or(0) {
-        0..=5 => Status::Fail,
-        6 | 7 => Status::Warn,
-        _ => Status::Pass,
+    ("QPWDLVL", "3", |v| {
+        warn_if(v.trim().parse::<u8>().unwrap_or(0) < 2)
+    }),
+    ("QPWDMINLEN", "8", |v| {
+        match v.trim().parse::<u32>().unwrap_or(0) {
+            0..=5 => Status::Fail,
+            6 | 7 => Status::Warn,
+            _ => Status::Pass,
+        }
     }),
     ("QPWDRQDDIF", "1", |v| warn_if(v.trim() == "0")),
     ("QPWDRQDDGT", "1", |v| warn_if(v.trim() == "0")),
@@ -206,7 +219,10 @@ fn profiles(txn: &mut Txn<'_>, env: &Env<'_>) -> Result<Vec<Finding>> {
         let (s, why) = if p.disabled {
             (Status::Warn, "default password, profile disabled")
         } else if p.pwdexp {
-            (Status::Warn, "default password, expired: the next sign-on sets it")
+            (
+                Status::Warn,
+                "default password, expired: the next sign-on sets it",
+            )
         } else {
             (Status::Fail, "default password, sign-on allowed")
         };
@@ -237,7 +253,12 @@ fn public_text(a: Authority) -> String {
 fn public(txn: &mut Txn<'_>, env: &Env<'_>, exclude_cmds: &[&str]) -> Result<Vec<Finding>> {
     let lib = store::obj::library::Library::load(txn, env.qsys)?;
     let mut ids = vec![env.qsys];
-    ids.extend(lib.list(txn, None)?.into_iter().map(|e| e.1).filter(|id| *id != env.qsys));
+    ids.extend(
+        lib.list(txn, None)?
+            .into_iter()
+            .map(|e| e.1)
+            .filter(|id| *id != env.qsys),
+    );
     let mut out = Vec::new();
     let mut extra = 0;
     let mut checked = 0;
@@ -269,14 +290,23 @@ fn public(txn: &mut Txn<'_>, env: &Env<'_>, exclude_cmds: &[&str]) -> Result<Vec
                 "PUBLIC",
                 format!("QSYS/{name} {}", type_name(id.type_code)),
                 Status::Fail,
-                format!("*PUBLIC {}, shipped {}", public_text(h.public_authority), public_text(want)),
+                format!(
+                    "*PUBLIC {}, shipped {}",
+                    public_text(h.public_authority),
+                    public_text(want)
+                ),
             ));
         } else {
             extra += 1;
         }
     }
     if extra > 0 {
-        out.push(f("PUBLIC", "...", Status::Fail, format!("{extra} more objects")));
+        out.push(f(
+            "PUBLIC",
+            "...",
+            Status::Fail,
+            format!("{extra} more objects"),
+        ));
     }
     if out.is_empty() {
         out.push(f(
@@ -330,7 +360,10 @@ fn adopting(txn: &mut Txn<'_>, env: &Env<'_>) -> Result<Vec<Finding>> {
             "ADOPT",
             format!("{lib}/{} {}", h.name, type_name(id.type_code)),
             s,
-            format!("adopts {owner}, *PUBLIC {}", public_text(h.public_authority)),
+            format!(
+                "adopts {owner}, *PUBLIC {}",
+                public_text(h.public_authority)
+            ),
         ));
     }
     if out.is_empty() {
@@ -353,7 +386,9 @@ fn exits(txn: &mut Txn<'_>, env: &Env<'_>, regs: &[ExitReg]) -> Result<Vec<Findi
         let item = format!("{} {}", r.point, r.format);
         let found = match (Name::parse(&r.lib), Name::parse(&r.pgm)) {
             (Ok(l), Ok(p)) => match ops::find_library(txn, env.qsys, l) {
-                Ok(lib) => store::obj::library::Library::load(txn, lib.id)?.lookup(txn, types::PGM, p)?,
+                Ok(lib) => {
+                    store::obj::library::Library::load(txn, lib.id)?.lookup(txn, types::PGM, p)?
+                }
                 Err(_) => None,
             },
             _ => None,
@@ -369,7 +404,9 @@ fn exits(txn: &mut Txn<'_>, env: &Env<'_>, regs: &[ExitReg]) -> Result<Vec<Findi
         };
         let h = ops::read_header(txn, id)?.1;
         let public = h.public_authority.0 & Authority::ALL.0;
-        let s = if public & !Authority::USE.0 != 0 && h.public_authority.0 & Authority::FROM_AUTL == 0 {
+        let s = if public & !Authority::USE.0 != 0
+            && h.public_authority.0 & Authority::FROM_AUTL == 0
+        {
             Status::Fail
         } else {
             Status::Pass
@@ -378,11 +415,21 @@ fn exits(txn: &mut Txn<'_>, env: &Env<'_>, regs: &[ExitReg]) -> Result<Vec<Findi
             "EXITPNT",
             item,
             s,
-            format!("{}/{}, *PUBLIC {}", r.lib, r.pgm, public_text(h.public_authority)),
+            format!(
+                "{}/{}, *PUBLIC {}",
+                r.lib,
+                r.pgm,
+                public_text(h.public_authority)
+            ),
         ));
     }
     if out.is_empty() {
-        out.push(f("EXITPNT", "*ALL", Status::Pass, "no exit programs registered"));
+        out.push(f(
+            "EXITPNT",
+            "*ALL",
+            Status::Pass,
+            "no exit programs registered",
+        ));
     }
     Ok(out)
 }
@@ -397,14 +444,24 @@ fn audit(txn: &mut Txn<'_>, env: &Env<'_>) -> Result<Vec<Finding>> {
     let journal = crate::audit::write::journal(txn, env.qsys)?.is_some();
     let mut out = Vec::new();
     if ctl_w.is_empty() || ctl_w.iter().all(|w| w == "*NONE") {
-        out.push(f("AUDIT", "QAUDCTL", Status::Warn, "*NONE: security auditing is off"));
+        out.push(f(
+            "AUDIT",
+            "QAUDCTL",
+            Status::Warn,
+            "*NONE: security auditing is off",
+        ));
         return Ok(out);
     }
     out.push(f("AUDIT", "QAUDCTL", Status::Pass, ctl.trim()));
     out.push(if journal {
         f("AUDIT", "QAUDJRN", Status::Pass, "QSYS/QAUDJRN exists")
     } else {
-        f("AUDIT", "QAUDJRN", Status::Fail, "auditing is on and QSYS/QAUDJRN does not exist")
+        f(
+            "AUDIT",
+            "QAUDJRN",
+            Status::Fail,
+            "auditing is on and QSYS/QAUDJRN does not exist",
+        )
     });
     if ctl_w.iter().any(|w| w == "*AUDLVL") {
         let missing: Vec<&str> = AUDIT_LEVELS
@@ -415,10 +472,20 @@ fn audit(txn: &mut Txn<'_>, env: &Env<'_>) -> Result<Vec<Finding>> {
         out.push(if missing.is_empty() {
             f("AUDIT", "QAUDLVL", Status::Pass, lvl.trim())
         } else {
-            f("AUDIT", "QAUDLVL", Status::Warn, format!("{}, without {}", lvl.trim(), missing.join(" ")))
+            f(
+                "AUDIT",
+                "QAUDLVL",
+                Status::Warn,
+                format!("{}, without {}", lvl.trim(), missing.join(" ")),
+            )
         });
     } else {
-        out.push(f("AUDIT", "QAUDLVL", Status::Warn, "QAUDCTL has no *AUDLVL: action auditing is off"));
+        out.push(f(
+            "AUDIT",
+            "QAUDLVL",
+            Status::Warn,
+            "QAUDCTL has no *AUDLVL: action auditing is off",
+        ));
     }
     Ok(out)
 }
@@ -427,7 +494,9 @@ fn audit(txn: &mut Txn<'_>, env: &Env<'_>) -> Result<Vec<Finding>> {
 /// or MAC.
 fn weak_suite(name: &str) -> bool {
     let n = name.to_ascii_uppercase();
-    ["RC4", "DES", "NULL", "EXPORT", "MD5"].iter().any(|w| n.contains(w))
+    ["RC4", "DES", "NULL", "EXPORT", "MD5"]
+        .iter()
+        .any(|w| n.contains(w))
         || (n.ends_with("_SHA") && !n.contains("GCM"))
 }
 
@@ -435,11 +504,26 @@ fn weak_suite(name: &str) -> bool {
 #[must_use]
 pub fn tls(t: &TlsFacts) -> Vec<Finding> {
     let mut out = Vec::new();
-    let old: Vec<&str> = t.enabled.iter().map(String::as_str).filter(|p| !matches!(*p, "*TLSV1.2" | "*TLSV1.3")).collect();
+    let old: Vec<&str> = t
+        .enabled
+        .iter()
+        .map(String::as_str)
+        .filter(|p| !matches!(*p, "*TLSV1.2" | "*TLSV1.3"))
+        .collect();
     out.push(if !old.is_empty() {
-        f("TLS", "QSSLPCL", Status::Fail, format!("enables {}", old.join(" ")))
+        f(
+            "TLS",
+            "QSSLPCL",
+            Status::Fail,
+            format!("enables {}", old.join(" ")),
+        )
     } else if t.enabled.is_empty() {
-        f("TLS", "QSSLPCL", Status::Warn, "no protocol enabled: TLS servers cannot start")
+        f(
+            "TLS",
+            "QSSLPCL",
+            Status::Warn,
+            "no protocol enabled: TLS servers cannot start",
+        )
     } else {
         f("TLS", "QSSLPCL", Status::Pass, t.enabled.join(" "))
     });
@@ -451,11 +535,26 @@ pub fn tls(t: &TlsFacts) -> Vec<Finding> {
             format!("lists {}, which are never enabled", t.refused.join(" ")),
         ));
     }
-    let weak: Vec<&str> = t.suites.iter().map(String::as_str).filter(|s| weak_suite(s)).collect();
+    let weak: Vec<&str> = t
+        .suites
+        .iter()
+        .map(String::as_str)
+        .filter(|s| weak_suite(s))
+        .collect();
     out.push(if weak.is_empty() {
-        f("TLS", "QSSLCSL", Status::Pass, format!("{} suites, all AEAD with forward secrecy", t.suites.len()))
+        f(
+            "TLS",
+            "QSSLCSL",
+            Status::Pass,
+            format!("{} suites, all AEAD with forward secrecy", t.suites.len()),
+        )
     } else {
-        f("TLS", "QSSLCSL", Status::Fail, format!("weak suites usable: {}", weak.join(" ")))
+        f(
+            "TLS",
+            "QSSLCSL",
+            Status::Fail,
+            format!("weak suites usable: {}", weak.join(" ")),
+        )
     });
     if !t.unmapped.is_empty() {
         out.push(f(
@@ -492,7 +591,14 @@ pub fn report(findings: &[Finding], system: &str, product: &str, now: u64) -> Ve
     ];
     for x in findings {
         let mut l = String::new();
-        let _ = write!(l, " {:<8} {:<34} {:<6} {}", x.area, x.item, x.status.word(), x.detail);
+        let _ = write!(
+            l,
+            " {:<8} {:<34} {:<6} {}",
+            x.area,
+            x.item,
+            x.status.word(),
+            x.detail
+        );
         out.push(l);
     }
     let (p, w, fl) = counts(findings);

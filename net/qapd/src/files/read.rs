@@ -43,7 +43,13 @@ pub(super) fn converter(from: u16, to: u16) -> Result<Converter, Stop> {
 
 /// Read `[from, to)` of `fd` in chunks, each handed to `f`; the bytes
 /// read (fewer at the end of the file).
-fn chunks(c: &dyn IfsClient, fd: i32, from: u64, to: u64, mut f: impl FnMut(&[u8])) -> IfsResult<u64> {
+fn chunks(
+    c: &dyn IfsClient,
+    fd: i32,
+    from: u64,
+    to: u64,
+    mut f: impl FnMut(&[u8]),
+) -> IfsResult<u64> {
     let mut at = from;
     while at < to {
         let want = usize::try_from(to - at).unwrap_or(usize::MAX).min(CHUNK);
@@ -75,7 +81,9 @@ pub(super) fn read(c: &dyn IfsClient, memo: &Memo, req: &ReadFile) -> Done {
         return Err(Stop::Invalid);
     }
     let path = req.path.as_str();
-    let fd = c.open(path, OpenArgs::new(O_RDONLY)).map_err(|e| Stop::errno(e, path))?;
+    let fd = c
+        .open(path, OpenArgs::new(O_RDONLY))
+        .map_err(|e| Stop::errno(e, path))?;
     let r = read_open(c, fd, memo, req);
     let _ = c.close(fd);
     r
@@ -154,7 +162,10 @@ mod tests {
         body[NEXT_AT..LEN_AT].copy_from_slice(&7u64.to_le_bytes());
         body[LEN_AT..HEAD].copy_from_slice(&3u32.to_le_bytes());
         let d: FileData = ipc::decode(&body).unwrap();
-        assert_eq!((d.size, d.next_offset, d.data.as_slice()), (9, 7, &b"abc"[..]));
+        assert_eq!(
+            (d.size, d.next_offset, d.data.as_slice()),
+            (9, 7, &b"abc"[..])
+        );
     }
 
     #[test]

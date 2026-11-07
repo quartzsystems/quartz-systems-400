@@ -69,7 +69,10 @@ impl<H: Host> Session<H> {
             return Reply::new(501, "Send REIN before signing on as another user.");
         }
         self.pending_user = Some(arg.to_string());
-        Reply::new(331, format!("Send the password for {}.", arg.to_ascii_uppercase()))
+        Reply::new(
+            331,
+            format!("Send the password for {}.", arg.to_ascii_uppercase()),
+        )
     }
 
     pub(super) fn pass_cmd(&mut self, arg: &str, net: &mut dyn Net) -> Reply {
@@ -125,7 +128,11 @@ impl<H: Host> Session<H> {
             p.curlib.clone()
         };
         self.cwd = if self.cfg.attrs.starts_home() {
-            if home_ok { names::normalize(&p.home) } else { "/".into() }
+            if home_ok {
+                names::normalize(&p.home)
+            } else {
+                "/".into()
+            }
         } else {
             names::library_dir(&lib)
         };
@@ -170,8 +177,16 @@ impl<H: Host> Session<H> {
                 }
             };
             let returned = |s: &str| (!s.trim().is_empty()).then(|| s.trim().to_string());
-            let curlib = |rc: i32| (rc >= 4).then(|| out.curlib.clone()).and_then(|c| returned(&c));
-            let home = |rc: i32| (rc >= 4).then(|| out.home.clone()).and_then(|h| returned(&h));
+            let curlib = |rc: i32| {
+                (rc >= 4)
+                    .then(|| out.curlib.clone())
+                    .and_then(|c| returned(&c))
+            };
+            let home = |rc: i32| {
+                (rc >= 4)
+                    .then(|| out.home.clone())
+                    .and_then(|h| returned(&h))
+            };
             return match out.rc {
                 1 | 4 => ExitSays::Use {
                     user: user.to_string(),
@@ -212,5 +227,8 @@ impl<H: Host> Session<H> {
 
 fn refused(user: &str, why: &str) -> Reply {
     let why = why.trim().trim_end_matches('.');
-    Reply::new(530, format!("Sign-on of {} refused: {why}.", user.to_ascii_uppercase()))
+    Reply::new(
+        530,
+        format!("Sign-on of {} refused: {why}.", user.to_ascii_uppercase()),
+    )
 }

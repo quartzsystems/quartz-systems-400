@@ -18,7 +18,8 @@ mod starter;
 pub use builtin::{Ftp, HttpAdmin, Standard, Telnet};
 pub use hostsvr::{HOST_DAEMONS, HostSvr};
 pub use httpsvr::{
-    ACCESSWEB, ACCESSWEB_PRODUCT, DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer, NAVIGATOR, NAVIGATOR_PRODUCT,
+    ACCESSWEB, ACCESSWEB_PRODUCT, DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer, NAVIGATOR,
+    NAVIGATOR_PRODUCT,
 };
 pub use small::{Lpd, Ntp};
 pub use starter::Starter;
@@ -171,7 +172,9 @@ pub trait TcpServer {
     fn jobs(&self, req: &Request, attrs: &ServerAttrs) -> Result<Vec<JobStart>, Refusal> {
         let _ = attrs;
         check_instance(self.spec(), req)?;
-        Ok(listener_job(self.spec(), String::new()).into_iter().collect())
+        Ok(listener_job(self.spec(), String::new())
+            .into_iter()
+            .collect())
     }
 
     /// Whether the server runs.
@@ -185,7 +188,11 @@ pub trait TcpServer {
         let spec = self.spec();
         check_instance(spec, req)?;
         if self.active(env, req) {
-            return Ok(format!("{} {} server already started.", msg::ALREADY, spec.name));
+            return Ok(format!(
+                "{} {} server already started.",
+                msg::ALREADY,
+                spec.name
+            ));
         }
         let attrs = env.attrs(spec.special);
         if req.instance == Instance::Autostart && !attrs.autostart {
@@ -199,8 +206,12 @@ pub trait TcpServer {
             tracing::warn!("{}: subsystem {sbs}: {e}", spec.special);
         }
         for j in &jobs {
-            env.start_job(j)
-                .map_err(|e| Refusal::new(msg::NOT_STARTED, format!("{} could not be started: {e}", spec.special)))?;
+            env.start_job(j).map_err(|e| {
+                Refusal::new(
+                    msg::NOT_STARTED,
+                    format!("{} could not be started: {e}", spec.special),
+                )
+            })?;
         }
         Ok(format!("{} {} server starting.", msg::STARTING, spec.name))
     }
@@ -210,12 +221,17 @@ pub trait TcpServer {
         let spec = self.spec();
         check_instance(spec, req)?;
         if !self.active(env, req) {
-            return Ok(format!("{} {} server not active.", msg::NOT_ACTIVE, spec.name));
+            return Ok(format!(
+                "{} {} server not active.",
+                msg::NOT_ACTIVE,
+                spec.name
+            ));
         }
         for j in spec.jobs.iter().filter(|j| j.kind == JobKind::Listener) {
             if env.active(j.name) {
-                env.end_job(j.name, immediate)
-                    .map_err(|e| Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special)))?;
+                env.end_job(j.name, immediate).map_err(|e| {
+                    Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special))
+                })?;
             }
         }
         Ok(format!("{} {} server ending.", msg::ENDING, spec.name))
@@ -237,10 +253,12 @@ pub fn listener_job(spec: &ServerSpec, rqsdta: String) -> Option<JobStart> {
 /// A named instance must be one the server has.
 pub fn check_instance(spec: &ServerSpec, req: &Request) -> Result<(), Refusal> {
     match &req.instance {
-        Instance::Named(n) if !spec.instances.iter().any(|i| i.eq_ignore_ascii_case(n)) => Err(Refusal::new(
-            msg::NO_INSTANCE,
-            format!("Server instance {n} of {} not found.", spec.special),
-        )),
+        Instance::Named(n) if !spec.instances.iter().any(|i| i.eq_ignore_ascii_case(n)) => {
+            Err(Refusal::new(
+                msg::NO_INSTANCE,
+                format!("Server instance {n} of {} not found.", spec.special),
+            ))
+        }
         _ => Ok(()),
     }
 }
@@ -292,7 +310,9 @@ impl Framework {
     /// Why `special` cannot be used: unknown or not in this release.
     fn unavailable(special: &str) -> Refusal {
         let note = match registry::lookup(special).map(|s| s.readiness) {
-            Some(Readiness::Slot(what) | Readiness::Blocked(what)) => format!(" It waits for {what}."),
+            Some(Readiness::Slot(what) | Readiness::Blocked(what)) => {
+                format!(" It waits for {what}.")
+            }
             _ => String::new(),
         };
         Refusal::new(
@@ -311,7 +331,12 @@ impl Framework {
 
     /// `ENDTCPSVR` for one server. A server this release does not run
     /// is never active.
-    pub fn end(&self, env: &mut dyn Env, req: &Request, immediate: bool) -> Result<String, Refusal> {
+    pub fn end(
+        &self,
+        env: &mut dyn Env,
+        req: &Request,
+        immediate: bool,
+    ) -> Result<String, Refusal> {
         match self.get(&req.server) {
             Some(s) => s.end(env, req, immediate),
             None if registry::lookup(&req.server).is_some() => {
@@ -384,7 +409,9 @@ impl Framework {
         immediate: bool,
         delay: Option<u32>,
     ) -> Vec<(String, Result<String, Refusal>)> {
-        let autostart = list.iter().any(|s| s.trim().eq_ignore_ascii_case("*AUTOSTART"));
+        let autostart = list
+            .iter()
+            .any(|s| s.trim().eq_ignore_ascii_case("*AUTOSTART"));
         self.expand(env, list, starting)
             .into_iter()
             .map(|server| {

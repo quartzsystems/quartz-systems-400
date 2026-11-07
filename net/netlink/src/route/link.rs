@@ -6,7 +6,9 @@
 
 #[allow(clippy::wildcard_imports)] // the numbers module
 use super::consts::*;
-use crate::codec::{Attrs, Builder, NLM_F_CREATE, NLM_F_DUMP, NLM_F_EXCL, NLM_F_REQUEST, ne_u16, ne_u32, ne_u64};
+use crate::codec::{
+    Attrs, Builder, NLM_F_CREATE, NLM_F_DUMP, NLM_F_EXCL, NLM_F_REQUEST, ne_u16, ne_u32, ne_u64,
+};
 use crate::{AF_UNSPEC, Error, Result};
 
 /// `IF_OPER_*`, RFC 2863 operational state.

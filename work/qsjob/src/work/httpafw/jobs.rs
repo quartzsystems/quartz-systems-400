@@ -27,7 +27,11 @@ pub struct LiveJobs {
 
 /// What My jobs calls a job's type.
 fn type_word(j: &JobInfo) -> String {
-    let code = j.job_type().map_or("", |t| wm::job::wrkactjob_type(t, j.sub_type())).trim().to_string();
+    let code = j
+        .job_type()
+        .map_or("", |t| wm::job::wrkactjob_type(t, j.sub_type()))
+        .trim()
+        .to_string();
     match code.as_str() {
         "INT" => "Interactive".into(),
         "BCH" | "BCI" | "EVK" => "Batch".into(),
@@ -64,14 +68,20 @@ fn queued(m: &Main, user: &str) -> Vec<UserJob> {
         let Ok(data) = m.ask(|l| l.wm_object(q, "*JOBQ".into())) else {
             continue;
         };
-        let Ok(jq) = JobQ::decode(&data) else { continue };
+        let Ok(jq) = JobQ::decode(&data) else {
+            continue;
+        };
         for j in jq.jobs.iter().filter(|j| j.user == user) {
             out.push(UserJob {
                 name: j.name.clone(),
                 user: j.user.clone(),
                 number: format!("{:06}", j.number),
                 kind: "Batch".into(),
-                status: if j.held || jq.held { "HLD".into() } else { "JOBQ".into() },
+                status: if j.held || jq.held {
+                    "HLD".into()
+                } else {
+                    "JOBQ".into()
+                },
                 stage: Stage::OnQueue,
                 entered: j.submitted / 1_000_000,
                 ..UserJob::default()
@@ -83,7 +93,11 @@ fn queued(m: &Main, user: &str) -> Vec<UserJob> {
 
 fn user_jobs(m: &Main, user: &str) -> Vec<UserJob> {
     let all = m.ask(Client::active_jobs);
-    let mut out: Vec<UserJob> = all.iter().filter(|j| j.user == user && j.kind != 'S').map(|j| active(j, type_word(j), "")).collect();
+    let mut out: Vec<UserJob> = all
+        .iter()
+        .filter(|j| j.user == user && j.kind != 'S')
+        .map(|j| active(j, type_word(j), ""))
+        .collect();
     out.extend(queued(m, user));
     // Ended jobs whose printer output is still on the system.
     let u = user.to_string();
@@ -91,12 +105,19 @@ fn user_jobs(m: &Main, user: &str) -> Vec<UserJob> {
     let mut ended: BTreeMap<u32, UserJob> = BTreeMap::new();
     for f in files {
         let (name, owner, number) = f.job.clone();
-        if owner != user || all.iter().any(|j| j.number == number) || out.iter().any(|j| j.number == format!("{number:06}")) {
+        if owner != user
+            || all.iter().any(|j| j.number == number)
+            || out.iter().any(|j| j.number == format!("{number:06}"))
+        {
             continue;
         }
         let at = f.created / 1_000_000;
         let e = ended.entry(number).or_insert_with(|| UserJob {
-            kind: if name.starts_with("QPADEV") { "Interactive".into() } else { "Batch".into() },
+            kind: if name.starts_with("QPADEV") {
+                "Interactive".into()
+            } else {
+                "Batch".into()
+            },
             name,
             user: owner,
             number: format!("{number:06}"),
@@ -121,11 +142,23 @@ impl Jobs for LiveJobs {
         self.link.read(user, |m| {
             let mut all = m.ask(Client::active_jobs);
             all.sort_by_key(|j| j.number);
-            let code = |j: &JobInfo| j.job_type().map_or("", |t| wm::job::wrkactjob_type(t, j.sub_type())).trim().to_string();
+            let code = |j: &JobInfo| {
+                j.job_type()
+                    .map_or("", |t| wm::job::wrkactjob_type(t, j.sub_type()))
+                    .trim()
+                    .to_string()
+            };
             all.iter()
                 .filter_map(|j| {
-                    let serving = if j.name == accessweb::SELF_INSTANCE && j.subsystem.trim() == "QHTTPSVR" && j.kind != 'M' {
-                        format!("Access for Web (port {}/{})", accessweb::PORT, accessweb::TLS_PORT)
+                    let serving = if j.name == accessweb::SELF_INSTANCE
+                        && j.subsystem.trim() == "QHTTPSVR"
+                        && j.kind != 'M'
+                    {
+                        format!(
+                            "Access for Web (port {}/{})",
+                            accessweb::PORT,
+                            accessweb::TLS_PORT
+                        )
                     } else if j.name == "QTVTELNET" {
                         "5250 session (telnet)".to_string()
                     } else {

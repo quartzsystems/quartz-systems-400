@@ -42,9 +42,12 @@ thread_local! {
 /// A group job name: up to ten characters, a letter first.
 fn valid_name(name: &str) -> bool {
     let mut c = name.chars();
-    c.next().is_some_and(|f| f.is_ascii_alphabetic() || "$#@".contains(f))
+    c.next()
+        .is_some_and(|f| f.is_ascii_alphabetic() || "$#@".contains(f))
         && name.len() <= 10
-        && name.chars().all(|ch| ch.is_ascii_alphanumeric() || "$#@_".contains(ch))
+        && name
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || "$#@_".contains(ch))
 }
 
 fn group_of(s: &State, number: u32) -> Option<u32> {
@@ -80,7 +83,9 @@ pub fn grp_chg(number: u32, name: &str, text: &str) -> Result<u32, String> {
         if let Some(id) = group_of(&s, number) {
             let g = s.groups.get_mut(&id).expect("group");
             if g.members.iter().any(|m| m.0 == name && m.1 != number) {
-                return Err(format!("CPF1307 Group job {name} already exists in the group."));
+                return Err(format!(
+                    "CPF1307 Group job {name} already exists in the group."
+                ));
             }
             if let Some(m) = g.members.iter_mut().find(|m| m.1 == number) {
                 m.0.clone_from(&name);
@@ -108,7 +113,8 @@ pub fn grp_info(system: &System, number: u32) -> Option<GroupInfo> {
     STATE.with(|st| {
         let mut s = st.borrow_mut();
         for g in s.groups.values_mut() {
-            g.members.retain(|m| m.1 == number || system.jobs.get(m.1).is_some());
+            g.members
+                .retain(|m| m.1 == number || system.jobs.get(m.1).is_some());
         }
         let id = group_of(&s, number)?;
         let g = &s.groups[&id];
@@ -126,7 +132,9 @@ pub fn grp_join(group: u32, name: &str, text: &str, number: u32) -> Result<(), S
             .get_mut(&group)
             .ok_or_else(|| "CPF1309 The group no longer exists.".to_string())?;
         if g.members.iter().any(|m| m.0 == name) {
-            return Err(format!("CPF1307 Group job {name} already exists in the group."));
+            return Err(format!(
+                "CPF1307 Group job {name} already exists in the group."
+            ));
         }
         g.members.push((name.to_string(), number, text.to_string()));
         Ok(())

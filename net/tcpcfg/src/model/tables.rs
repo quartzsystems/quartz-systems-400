@@ -159,7 +159,8 @@ impl ServicesTable {
     /// (any protocol when `None`).
     pub fn by_name(&self, name: &str, proto: Option<&str>) -> Option<&ServiceEntry> {
         self.sorted().into_iter().find(|e| {
-            (e.name.eq_ignore_ascii_case(name) || e.aliases.iter().any(|a| a.eq_ignore_ascii_case(name)))
+            (e.name.eq_ignore_ascii_case(name)
+                || e.aliases.iter().any(|a| a.eq_ignore_ascii_case(name)))
                 && proto.is_none_or(|p| e.proto.eq_ignore_ascii_case(p))
         })
     }
@@ -177,9 +178,14 @@ impl ServicesTable {
             return Err(bad("SERVICE", &e.name));
         }
         if self.list.iter().any(|x| {
-            x.name.eq_ignore_ascii_case(&e.name) && x.port == e.port && x.proto.eq_ignore_ascii_case(&e.proto)
+            x.name.eq_ignore_ascii_case(&e.name)
+                && x.port == e.port
+                && x.proto.eq_ignore_ascii_case(&e.proto)
         }) {
-            return Err(Error::new(msg::EXISTS, format!("Service {} {} {} already exists.", e.name, e.port, e.proto)));
+            return Err(Error::new(
+                msg::EXISTS,
+                format!("Service {} {} {} already exists.", e.name, e.port, e.proto),
+            ));
         }
         self.list.push(e);
         Ok(())
@@ -189,10 +195,15 @@ impl ServicesTable {
     pub fn remove(&mut self, name: &str, port: u16, proto: &str) -> Result<usize> {
         let before = self.list.len();
         self.list.retain(|x| {
-            !(x.name.eq_ignore_ascii_case(name) && x.port == port && x.proto.eq_ignore_ascii_case(proto))
+            !(x.name.eq_ignore_ascii_case(name)
+                && x.port == port
+                && x.proto.eq_ignore_ascii_case(proto))
         });
         match before - self.list.len() {
-            0 => Err(Error::new(msg::NOT_FOUND, format!("Service {name} {port} {proto} is not in the table."))),
+            0 => Err(Error::new(
+                msg::NOT_FOUND,
+                format!("Service {name} {port} {proto} is not in the table."),
+            )),
             n => Ok(n),
         }
     }
@@ -200,7 +211,13 @@ impl ServicesTable {
     /// The panel's order: by name (case ignored), port, protocol.
     pub fn sorted(&self) -> Vec<&ServiceEntry> {
         let mut v: Vec<&ServiceEntry> = self.list.iter().collect();
-        v.sort_by_key(|e| (e.name.to_ascii_lowercase(), e.port, e.proto.to_ascii_lowercase()));
+        v.sort_by_key(|e| {
+            (
+                e.name.to_ascii_lowercase(),
+                e.port,
+                e.proto.to_ascii_lowercase(),
+            )
+        });
         v
     }
 }
@@ -224,7 +241,10 @@ pub fn add_protocol(list: &mut Vec<ProtocolEntry>, e: ProtocolEntry) -> Result<(
         return Err(bad("PROTOCOL", &e.name));
     }
     if list.iter().any(|x| x.name.eq_ignore_ascii_case(&e.name)) {
-        return Err(Error::new(msg::EXISTS, format!("Protocol {} already exists.", e.name)));
+        return Err(Error::new(
+            msg::EXISTS,
+            format!("Protocol {} already exists.", e.name),
+        ));
     }
     list.push(e);
     Ok(())
@@ -236,18 +256,29 @@ pub fn add_network(list: &mut Vec<NetworkEntry>, e: NetworkEntry) -> Result<()> 
         return Err(bad("NETWORK", &e.name));
     }
     if list.iter().any(|x| x.name.eq_ignore_ascii_case(&e.name)) {
-        return Err(Error::new(msg::EXISTS, format!("Network {} already exists.", e.name)));
+        return Err(Error::new(
+            msg::EXISTS,
+            format!("Network {} already exists.", e.name),
+        ));
     }
     list.push(e);
     Ok(())
 }
 
 /// Remove by name from a protocol or network list.
-pub fn remove_named<T>(list: &mut Vec<T>, name: &str, of: impl Fn(&T) -> &str, what: &str) -> Result<()> {
+pub fn remove_named<T>(
+    list: &mut Vec<T>,
+    name: &str,
+    of: impl Fn(&T) -> &str,
+    what: &str,
+) -> Result<()> {
     let before = list.len();
     list.retain(|x| !of(x).eq_ignore_ascii_case(name));
     if before == list.len() {
-        return Err(Error::new(msg::NOT_FOUND, format!("{what} {name} is not in the table.")));
+        return Err(Error::new(
+            msg::NOT_FOUND,
+            format!("{what} {name} is not in the table."),
+        ));
     }
     Ok(())
 }
@@ -275,7 +306,18 @@ mod tests {
         assert_eq!(t.remove("myapp", 7777, "TCP").unwrap(), 1);
         assert!(t.remove("myapp", 7777, "tcp").is_err());
         let mut p = shipped_protocols();
-        assert!(add_protocol(&mut p, ProtocolEntry { name: "TCP".into(), number: 6, aliases: vec![], text: String::new() }).is_err());
+        assert!(
+            add_protocol(
+                &mut p,
+                ProtocolEntry {
+                    name: "TCP".into(),
+                    number: 6,
+                    aliases: vec![],
+                    text: String::new()
+                }
+            )
+            .is_err()
+        );
         remove_named(&mut p, "icmp", |e| &e.name, "Protocol").unwrap();
         assert_eq!(p.len(), 3);
     }

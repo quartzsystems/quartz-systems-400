@@ -33,21 +33,111 @@ const NONE_TO_ALL: &[&str] = &["*NONE", "*NORMAL", "*ABNORMAL", "*ALL"];
 
 /// Every attribute, in `DSPIPLA` order.
 pub const ATTRS: &[Attr] = &[
-    Attr { kwd: "RESTART", values: &["*SYS", "*FULL"], default: "*SYS", section: "System Features", label: "Restart type" },
-    Attr { kwd: "KEYLCKPOS", values: &["*NORMAL", "*AUTO", "*MANUAL", "*SECURE"], default: "*NORMAL", section: "System Features", label: "Keylock position" },
-    Attr { kwd: "HDWDIAG", values: &["*MIN", "*ALL"], default: "*MIN", section: "Hardware Functions", label: "Hardware diagnostics" },
-    Attr { kwd: "CPRJOBTBL", values: NONE_TO_ALL, default: "*NONE", section: "Operating System Functions", label: "Compress job tables" },
-    Attr { kwd: "CHKJOBTBL", values: &["*ABNORMAL", "*ALL", "*SYNC"], default: "*ABNORMAL", section: "Operating System Functions", label: "Check job tables" },
-    Attr { kwd: "RBDPRDDIR", values: NONE_TO_ALL, default: "*NORMAL", section: "Operating System Functions", label: "Rebuild product directory" },
-    Attr { kwd: "MSFRCY", values: &["*NONE", "*ALL"], default: "*NONE", section: "Operating System Functions", label: "Mail Server Framework recovery" },
-    Attr { kwd: "DSPSTS", values: &["*ALL", "*NONE", "*SYS", "*USER"], default: "*ALL", section: "Operating System Functions", label: "Display status" },
-    Attr { kwd: "STRTCP", values: YES_NO, default: "*YES", section: "Operating System Functions", label: "Start TCP/IP" },
-    Attr { kwd: "SPLFRCY", values: &["*DETACH", "*REMOVE"], default: "*DETACH", section: "Operating System Functions", label: "Spooled file recovery" },
-    Attr { kwd: "CLRJOBQ", values: YES_NO, default: "*NO", section: "Operating System Options", label: "Clear job queues" },
-    Attr { kwd: "CLROUTQ", values: YES_NO, default: "*NO", section: "Operating System Options", label: "Clear output queues" },
-    Attr { kwd: "CLRINCJOB", values: YES_NO, default: "*NO", section: "Operating System Options", label: "Clear incomplete joblogs" },
-    Attr { kwd: "STRPRTWTR", values: YES_NO, default: "*YES", section: "Operating System Options", label: "Start print writers" },
-    Attr { kwd: "STRRSTD", values: YES_NO, default: "*NO", section: "Operating System Options", label: "Start system to restricted state" },
+    Attr {
+        kwd: "RESTART",
+        values: &["*SYS", "*FULL"],
+        default: "*SYS",
+        section: "System Features",
+        label: "Restart type",
+    },
+    Attr {
+        kwd: "KEYLCKPOS",
+        values: &["*NORMAL", "*AUTO", "*MANUAL", "*SECURE"],
+        default: "*NORMAL",
+        section: "System Features",
+        label: "Keylock position",
+    },
+    Attr {
+        kwd: "HDWDIAG",
+        values: &["*MIN", "*ALL"],
+        default: "*MIN",
+        section: "Hardware Functions",
+        label: "Hardware diagnostics",
+    },
+    Attr {
+        kwd: "CPRJOBTBL",
+        values: NONE_TO_ALL,
+        default: "*NONE",
+        section: "Operating System Functions",
+        label: "Compress job tables",
+    },
+    Attr {
+        kwd: "CHKJOBTBL",
+        values: &["*ABNORMAL", "*ALL", "*SYNC"],
+        default: "*ABNORMAL",
+        section: "Operating System Functions",
+        label: "Check job tables",
+    },
+    Attr {
+        kwd: "RBDPRDDIR",
+        values: NONE_TO_ALL,
+        default: "*NORMAL",
+        section: "Operating System Functions",
+        label: "Rebuild product directory",
+    },
+    Attr {
+        kwd: "MSFRCY",
+        values: &["*NONE", "*ALL"],
+        default: "*NONE",
+        section: "Operating System Functions",
+        label: "Mail Server Framework recovery",
+    },
+    Attr {
+        kwd: "DSPSTS",
+        values: &["*ALL", "*NONE", "*SYS", "*USER"],
+        default: "*ALL",
+        section: "Operating System Functions",
+        label: "Display status",
+    },
+    Attr {
+        kwd: "STRTCP",
+        values: YES_NO,
+        default: "*YES",
+        section: "Operating System Functions",
+        label: "Start TCP/IP",
+    },
+    Attr {
+        kwd: "SPLFRCY",
+        values: &["*DETACH", "*REMOVE"],
+        default: "*DETACH",
+        section: "Operating System Functions",
+        label: "Spooled file recovery",
+    },
+    Attr {
+        kwd: "CLRJOBQ",
+        values: YES_NO,
+        default: "*NO",
+        section: "Operating System Options",
+        label: "Clear job queues",
+    },
+    Attr {
+        kwd: "CLROUTQ",
+        values: YES_NO,
+        default: "*NO",
+        section: "Operating System Options",
+        label: "Clear output queues",
+    },
+    Attr {
+        kwd: "CLRINCJOB",
+        values: YES_NO,
+        default: "*NO",
+        section: "Operating System Options",
+        label: "Clear incomplete joblogs",
+    },
+    Attr {
+        kwd: "STRPRTWTR",
+        values: YES_NO,
+        default: "*YES",
+        section: "Operating System Options",
+        label: "Start print writers",
+    },
+    Attr {
+        kwd: "STRRSTD",
+        values: YES_NO,
+        default: "*NO",
+        section: "Operating System Options",
+        label: "Start system to restricted state",
+    },
 ];
 
 /// The attributes' values, by keyword, in [`ATTRS`] order.
@@ -69,7 +159,11 @@ fn leader(label: &str) -> String {
     let mut s = format!("   {label}");
     let len = s.len();
     while s.len() < 51 {
-        s.push(if s.len() % 2 == 1 && s.len() > len { '.' } else { ' ' });
+        s.push(if s.len() % 2 == 1 && s.len() > len {
+            '.'
+        } else {
+            ' '
+        });
     }
     s.push(':');
     s
@@ -157,7 +251,10 @@ impl IplAttrs {
     /// The record's attributes.
     #[must_use]
     pub fn of(record: &Record) -> Self {
-        record.tlv(TAG_IPL_ATTRS).map(Self::decode).unwrap_or_default()
+        record
+            .tlv(TAG_IPL_ATTRS)
+            .map(Self::decode)
+            .unwrap_or_default()
     }
 
     /// Keep them in the record.

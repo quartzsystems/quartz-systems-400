@@ -53,7 +53,9 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Self { max_file: 256 << 20 }
+        Self {
+            max_file: 256 << 20,
+        }
     }
 }
 
@@ -83,7 +85,11 @@ const ACK: [u8; 1] = [0];
 const NAK: [u8; 1] = [1];
 
 /// Serve one connection.
-pub fn serve<S: Read + Write>(s: &mut S, spooler: &mut dyn Spooler, limits: Limits) -> Result<Outcome, SessionError> {
+pub fn serve<S: Read + Write>(
+    s: &mut S,
+    spooler: &mut dyn Spooler,
+    limits: Limits,
+) -> Result<Outcome, SessionError> {
     let mut out = Outcome::default();
     let Some(line) = proto::read_line(s)? else {
         return Ok(out);
@@ -186,7 +192,10 @@ fn exact(s: &mut impl Read, n: u64) -> io::Result<Vec<u8>> {
     let mut buf = Vec::new();
     s.take(n).read_to_end(&mut buf)?;
     if (buf.len() as u64) < n {
-        return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "file cut short"));
+        return Err(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            "file cut short",
+        ));
     }
     Ok(buf)
 }
@@ -229,7 +238,9 @@ fn receive<S: Read + Write>(
                 let body = exact(s, count)?;
                 exact(s, 1)?;
                 p.controls.push((name, ControlFile::parse(&body)));
-                let ok = p.complete(queue).is_none_or(|job| hand_over(spooler, job, out));
+                let ok = p
+                    .complete(queue)
+                    .is_none_or(|job| hand_over(spooler, job, out));
                 s.write_all(if ok { &ACK } else { &NAK })?;
             }
             Sub::Data { count: 0, name } => {
@@ -245,7 +256,9 @@ fn receive<S: Read + Write>(
                 let body = exact(s, count)?;
                 exact(s, 1)?;
                 p.data.push((name, body));
-                let ok = p.complete(queue).is_none_or(|job| hand_over(spooler, job, out));
+                let ok = p
+                    .complete(queue)
+                    .is_none_or(|job| hand_over(spooler, job, out));
                 s.write_all(if ok { &ACK } else { &NAK })?;
             }
         }
@@ -303,7 +316,11 @@ mod tests {
             Ok(())
         }
         fn state(&mut self, queue: &str, long: bool, _: &[String]) -> String {
-            format!("{queue} {} {}\n", if long { "long" } else { "short" }, self.jobs.len())
+            format!(
+                "{queue} {} {}\n",
+                if long { "long" } else { "short" },
+                self.jobs.len()
+            )
         }
         fn remove(&mut self, _: &str, agent: &str, list: &[String]) -> String {
             format!("{agent} removed {}\n", list.join(","))
@@ -338,8 +355,14 @@ mod tests {
         assert_eq!(acks, [0, 0, 0, 0, 0]);
         assert_eq!(o.spooled, 1);
         let j = &sp.jobs[0];
-        assert_eq!((j.queue.as_str(), j.control_name.as_str()), ("QPRINT", "cfA001host"));
-        assert_eq!(j.data, vec![("dfA001host".to_string(), b"hello\n".to_vec())]);
+        assert_eq!(
+            (j.queue.as_str(), j.control_name.as_str()),
+            ("QPRINT", "cfA001host")
+        );
+        assert_eq!(
+            j.data,
+            vec![("dfA001host".to_string(), b"hello\n".to_vec())]
+        );
         assert_eq!(j.control.get(b'P'), Some("anne"));
     }
 

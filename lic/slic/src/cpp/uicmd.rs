@@ -97,9 +97,7 @@ fn crtmnu(system: &mut System, parms: &Parms) -> Result<String, String> {
     if attrs.text == "*BLANK" {
         attrs.text.clear();
     }
-    attrs
-        .validate()
-        .map_err(|e| format!("{e}"))?;
+    attrs.validate().map_err(|e| format!("{e}"))?;
     let replace = parms.name("REPLACE") != "*NO";
     let st = stamp(system);
     in_store(system, |txn, qsys, names| {

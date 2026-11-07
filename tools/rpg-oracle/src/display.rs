@@ -86,14 +86,21 @@ impl Display {
         let rows = self.s.term.text_rows();
         let row = rows.iter().rposition(|r| r.contains(PROMPT))?;
         let cols = self.s.term.cols();
-        let f = self.s.term.fields().iter().find(|f| f.start / cols == row)?;
+        let f = self
+            .s
+            .term
+            .fields()
+            .iter()
+            .find(|f| f.start / cols == row)?;
         Some((row + 1, f.start % cols + 1))
     }
 
     /// Type a command on the command line and press Enter.
     fn enter(&mut self, cl: &str) -> Result<()> {
         self.settle()?;
-        let (r, c) = self.command_line().context("no command line on the screen")?;
+        let (r, c) = self
+            .command_line()
+            .context("no command line on the screen")?;
         self.s.term.set_cursor(r, c);
         self.s.key(Key::EraseEof)?;
         self.s.type_str(cl)?;
@@ -132,7 +139,9 @@ impl Display {
         }
         // The program ends: back at the command line, with its last
         // message, if any, on the message line.
-        let back = self.s.wait_for(WAIT, |t| t.contains(PROMPT) && !t.is_locked())?;
+        let back = self
+            .s
+            .wait_for(WAIT, |t| t.contains(PROMPT) && !t.is_locked())?;
         if !back {
             // Still in the program: end the request.
             screens.push(screen_rows(&self.s.term.text_rows()));
@@ -141,9 +150,14 @@ impl Display {
         }
         self.s.settle(Duration::from_millis(400))?;
         let rows = self.s.term.text_rows();
-        let msg = rows.last().map(|r| r.trim().to_string()).unwrap_or_default();
+        let msg = rows
+            .last()
+            .map(|r| r.trim().to_string())
+            .unwrap_or_default();
         let run = match msg.split_whitespace().next() {
-            Some(w) if w.len() == 7 && w.chars().skip(3).all(|c| c.is_ascii_digit()) => Run::Escape(w.to_string()),
+            Some(w) if w.len() == 7 && w.chars().skip(3).all(|c| c.is_ascii_digit()) => {
+                Run::Escape(w.to_string())
+            }
             _ => Run::Ok,
         };
         Ok((run, screens))

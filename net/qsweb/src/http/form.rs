@@ -20,7 +20,10 @@ impl Form {
 
     /// The first value of `name`.
     pub fn get(&self, name: &str) -> Option<&str> {
-        self.pairs.iter().find(|(k, _)| k == name).map(|(_, v)| v.as_str())
+        self.pairs
+            .iter()
+            .find(|(k, _)| k == name)
+            .map(|(_, v)| v.as_str())
     }
 
     /// The first value of `name`, or "".
@@ -30,7 +33,11 @@ impl Form {
 
     /// Every value of `name`.
     pub fn all(&self, name: &str) -> Vec<&str> {
-        self.pairs.iter().filter(|(k, _)| k == name).map(|(_, v)| v.as_str()).collect()
+        self.pairs
+            .iter()
+            .filter(|(k, _)| k == name)
+            .map(|(_, v)| v.as_str())
+            .collect()
     }
 
     /// Whether `name` was sent (a pressed button, a checked box).
@@ -63,16 +70,14 @@ pub fn decode(s: &str, plus: bool) -> String {
     let mut i = 0;
     while i < b.len() {
         match b[i] {
-            b'%' if i + 2 < b.len() => {
-                match (hex(b[i + 1]), hex(b[i + 2])) {
-                    (Some(h), Some(l)) => {
-                        out.push(h << 4 | l);
-                        i += 3;
-                        continue;
-                    }
-                    _ => out.push(b'%'),
+            b'%' if i + 2 < b.len() => match (hex(b[i + 1]), hex(b[i + 2])) {
+                (Some(h), Some(l)) => {
+                    out.push(h << 4 | l);
+                    i += 3;
+                    continue;
                 }
-            }
+                _ => out.push(b'%'),
+            },
             b'+' if plus => out.push(b' '),
             c => out.push(c),
         }
@@ -95,7 +100,9 @@ pub fn encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for b in s.bytes() {
         match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'/' | b'*' => out.push(b as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'/' | b'*' => {
+                out.push(b as char)
+            }
             _ => {
                 let _ = write!(out, "%{b:02X}");
             }

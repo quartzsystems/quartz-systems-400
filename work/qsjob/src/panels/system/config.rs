@@ -169,7 +169,10 @@ pub fn wrkcfgsts(
 /// `DSPDEVD DEVD()`.
 pub fn dspdevd(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let name = parm(r, "DEVD");
-    let vars = read!("DSPDEVD", host.link.borrow_mut().with(|l| l.devd_panel(name.clone())));
+    let vars = read!(
+        "DSPDEVD",
+        host.link.borrow_mut().with(|l| l.devd_panel(name.clone()))
+    );
     let mut d = match crate::panels::dialog(host, "QUICFG") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -178,7 +181,10 @@ pub fn dspdevd(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Resul
         d.set(k, v);
     }
     // F11 shows each value after its keyword, and back.
-    let plain: Vec<(&str, String)> = DEVD_KEYWORDS.iter().map(|(var, _)| (*var, d.get(var))).collect();
+    let plain: Vec<(&str, String)> = DEVD_KEYWORDS
+        .iter()
+        .map(|(var, _)| (*var, d.get(var)))
+        .collect();
     let mut keywords = false;
     loop {
         match d.show(surface, "DSPDEVD") {
@@ -186,7 +192,11 @@ pub fn dspdevd(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Resul
                 keywords = !keywords;
                 d.set("DVVIEW", if keywords { "2" } else { "1" });
                 for ((var, value), (_, kw)) in plain.iter().zip(DEVD_KEYWORDS) {
-                    let shown = if keywords { format!("{kw:<12}{value}") } else { value.clone() };
+                    let shown = if keywords {
+                        format!("{kw:<12}{value}")
+                    } else {
+                        value.clone()
+                    };
                     d.set(var, &shown);
                 }
             }

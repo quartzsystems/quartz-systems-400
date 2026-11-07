@@ -13,8 +13,8 @@ mod file;
 mod sql;
 
 pub use backend::{
-    Authenticator, FileBackend, FileError, FileInfo, FileOpen, FileRecord, Nothing, ReadAt, Section,
-    SqlBackend, SqlResult,
+    Authenticator, FileBackend, FileError, FileInfo, FileOpen, FileRecord, Nothing, ReadAt,
+    Section, SqlBackend, SqlResult,
 };
 
 use std::collections::HashMap;
@@ -234,7 +234,10 @@ impl Session {
             (State::Authenticated | State::Accessed, code) if code >> 8 == 0xD0 => {
                 (self.file_command(c, data), false)
             }
-            (State::Accessed, cmd::ACCRDB) => (vec![rpy(reply::message(rm::RDBACCRM, svrcod::ERROR, vec![]))], false),
+            (State::Accessed, cmd::ACCRDB) => (
+                vec![rpy(reply::message(rm::RDBACCRM, svrcod::ERROR, vec![]))],
+                false,
+            ),
             (State::Authenticated, code) if sql::handles(code) => {
                 (vec![rpy(reply::rdbnacrm(&self.cfg.rdb))], false)
             }
@@ -246,11 +249,7 @@ impl Session {
     }
 
     fn attributes(&self) -> Attributes {
-        let level = |m: u16, l: u16| {
-            self.requester
-                .level(m)
-                .map_or(l, |r| r.min(l))
-        };
+        let level = |m: u16, l: u16| self.requester.level(m).map_or(l, |r| r.min(l));
         let mut managers = vec![
             (mgr::AGENT, level(mgr::AGENT, 7)),
             (mgr::SQLAM, self.sqlam),
@@ -258,7 +257,9 @@ impl Session {
             (mgr::SECMGR, level(mgr::SECMGR, 7)),
             (mgr::CMNTCPIP, level(mgr::CMNTCPIP, 5)),
         ];
-        managers.retain(|(m, _)| self.requester.managers.is_empty() || self.requester.level(*m).is_some());
+        managers.retain(|(m, _)| {
+            self.requester.managers.is_empty() || self.requester.level(*m).is_some()
+        });
         Attributes {
             extnam: Some(self.cfg.extnam.clone()),
             srvnam: Some(self.cfg.srvnam.clone()),

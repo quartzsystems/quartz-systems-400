@@ -106,7 +106,10 @@ mod tests {
             object_of("/qsys.lib/qgpl.lib/cfg.dtaara", ".DTAARA"),
             Some(("QGPL".into(), "CFG".into()))
         );
-        assert_eq!(object_of("qgpl/x", ".DTAARA"), Some(("QGPL".into(), "X".into())));
+        assert_eq!(
+            object_of("qgpl/x", ".DTAARA"),
+            Some(("QGPL".into(), "X".into()))
+        );
         assert_eq!(object_of("/QSYS.LIB/QGPL.LIB/X.PGM", ".DTAARA"), None);
     }
 }

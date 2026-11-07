@@ -32,7 +32,10 @@ pub(crate) const IMGCLG: u16 = 0x0020;
 /// Where an IFS path is on the host.
 pub(crate) fn host_path(path: &str) -> PathBuf {
     let mut p = PathBuf::from(ROOT);
-    for c in path.split('/').filter(|c| !c.is_empty() && *c != "." && *c != "..") {
+    for c in path
+        .split('/')
+        .filter(|c| !c.is_empty() && *c != "." && *c != "..")
+    {
         p.push(c);
     }
     p
@@ -40,7 +43,10 @@ pub(crate) fn host_path(path: &str) -> PathBuf {
 
 /// An image file opened for reading and writing.
 pub(crate) fn open_image(path: &str) -> std::io::Result<File> {
-    OpenOptions::new().read(true).write(true).open(host_path(path))
+    OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(host_path(path))
 }
 
 /// Virtual tape volumes as files under the IFS root.
@@ -48,9 +54,16 @@ pub(crate) fn open_image(path: &str) -> std::io::Result<File> {
 pub(crate) struct VirtTapes;
 
 impl TapeImages for VirtTapes {
-    fn create(&self, _: &dyn CatalogFs, path: &str, volume: &str, size_mb: u64) -> Result<(), String> {
+    fn create(
+        &self,
+        _: &dyn CatalogFs,
+        path: &str,
+        volume: &str,
+        size_mb: u64,
+    ) -> Result<(), String> {
         let f = File::create_new(host_path(path)).map_err(|e| format!("{path}: {e}"))?;
-        let mut t = VirtualTape::create(f, &VolumeOptions::imgsiz(size_mb, volume)).map_err(|e| e.to_string())?;
+        let mut t = VirtualTape::create(f, &VolumeOptions::imgsiz(size_mb, volume))
+            .map_err(|e| e.to_string())?;
         // A new volume is labeled with its name, as INZTAP would.
         inztap(
             &mut t,
@@ -120,7 +133,10 @@ fn dirs(system: &mut System) -> Result<Vec<String>, String> {
 pub(crate) fn load(system: &mut System) -> Registry {
     let fs = fs();
     let dirs: Vec<String> = match dirs(system) {
-        Ok(d) => d.into_iter().filter(|d| fs.exists(&join(d, META_FILE))).collect(),
+        Ok(d) => d
+            .into_iter()
+            .filter(|d| fs.exists(&join(d, META_FILE)))
+            .collect(),
         Err(e) => {
             eprintln!("qsstg: image catalogs: {e}");
             Vec::new()
@@ -134,7 +150,13 @@ pub(crate) fn load(system: &mut System) -> Registry {
 }
 
 /// The `*IMGCLG` object of a new catalog.
-pub(crate) fn create_object(system: &mut System, name: &str, dir: &str, text: &str, owner: &str) -> Result<(), String> {
+pub(crate) fn create_object(
+    system: &mut System,
+    name: &str,
+    dir: &str,
+    text: &str,
+    owner: &str,
+) -> Result<(), String> {
     let st = wm::obj::Stamp {
         owner: owner.into(),
         system: "QS400".into(),

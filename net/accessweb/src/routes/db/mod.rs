@@ -56,7 +56,11 @@ pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
 pub fn pick(name: &str, options: &[String], chosen: &str) -> String {
     let mut s = format!("<select name=\"{}\">", esc(name));
     for (i, o) in options.iter().enumerate() {
-        let sel = if i > 0 && o == chosen { " selected" } else { "" };
+        let sel = if i > 0 && o == chosen {
+            " selected"
+        } else {
+            ""
+        };
         let _ = write!(s, "<option{sel}>{}</option>", esc(o));
     }
     s.push_str("</select>");
@@ -65,7 +69,11 @@ pub fn pick(name: &str, options: &[String], chosen: &str) -> String {
 
 /// [`pick`] of string slices.
 pub fn picks(name: &str, options: &[&str], chosen: &str) -> String {
-    pick(name, &options.iter().map(ToString::to_string).collect::<Vec<_>>(), chosen)
+    pick(
+        name,
+        &options.iter().map(ToString::to_string).collect::<Vec<_>>(),
+        chosen,
+    )
 }
 
 /// A value as a list cell: numbers right-aligned, NULL a grey `-`,
@@ -101,7 +109,11 @@ pub fn navigator(rq: &Rq<'_>, route: &str) -> String {
     } else {
         host.split(':').next().unwrap_or(host)
     };
-    let (scheme, port) = if rq.peer.secure { ("https", 2005) } else { ("http", 2002) };
+    let (scheme, port) = if rq.peer.secure {
+        ("https", 2005)
+    } else {
+        ("http", 2002)
+    };
     format!("{scheme}://{name}:{port}/qs400/navigator{route}")
 }
 
@@ -109,8 +121,16 @@ pub fn navigator(rq: &Rq<'_>, route: &str) -> String {
 pub fn options(rq: &Rq<'_>, schema: &str, naming: &str, commit: &str) -> Options {
     let p = rq.prefs();
     Options {
-        schema: if schema.is_empty() { p.get(prefs::SCHEMA) } else { schema.to_string() },
-        system_naming: if naming.is_empty() { p.get(prefs::NAMING) == "sys" } else { naming == "System" },
+        schema: if schema.is_empty() {
+            p.get(prefs::SCHEMA)
+        } else {
+            schema.to_string()
+        },
+        system_naming: if naming.is_empty() {
+            p.get(prefs::NAMING) == "sys"
+        } else {
+            naming == "System"
+        },
         commit: Commit::of(commit).unwrap_or_default(),
     }
 }
@@ -129,14 +149,21 @@ pub fn with_conn<T>(rq: &Rq<'_>, f: impl FnOnce(u32) -> T) -> Result<T, Message>
 pub fn failure(o: &Outcome) -> Option<Message> {
     o.failed.then(|| {
         o.message.clone().unwrap_or_else(|| {
-            Message::new(MsgKind::Error, "SQL0901", &format!("The statement failed with SQLSTATE {}.", o.sqlstate))
+            Message::new(
+                MsgKind::Error,
+                "SQL0901",
+                &format!("The statement failed with SQLSTATE {}.", o.sqlstate),
+            )
         })
     })
 }
 
 /// The crumb of a database page.
 pub fn crumb(parts: &[&str]) -> Vec<String> {
-    std::iter::once(GROUP).chain(parts.iter().copied()).map(ToString::to_string).collect()
+    std::iter::once(GROUP)
+        .chain(parts.iter().copied())
+        .map(ToString::to_string)
+        .collect()
 }
 
 /// A number with thousands separators (`2,207`).

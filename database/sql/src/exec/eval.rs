@@ -55,7 +55,10 @@ impl Schema {
         let mut hidden = None;
         for (i, c) in self.cols.iter().enumerate() {
             // A column by its system name or its SQL name.
-            let named = c.name == name || c.field.as_ref().is_some_and(|f| f.alias.as_deref() == Some(name) || f.name.to_string() == name);
+            let named = c.name == name
+                || c.field.as_ref().is_some_and(|f| {
+                    f.alias.as_deref() == Some(name) || f.name.to_string() == name
+                });
             if !named || table.is_some_and(|t| c.table.as_deref() != Some(t)) {
                 continue;
             }
@@ -96,7 +99,9 @@ impl Schema {
             .map(|c| ColumnDesc {
                 name: c.name.clone(),
                 // A distinct type describes as its name.
-                data_type: c.field.as_ref().map_or("VARCHAR(32767)".into(), |f| f.udt.clone().unwrap_or_else(|| sql_type(f))),
+                data_type: c.field.as_ref().map_or("VARCHAR(32767)".into(), |f| {
+                    f.udt.clone().unwrap_or_else(|| sql_type(f))
+                }),
                 nullable: c.nullable,
             })
             .collect()
@@ -329,7 +334,9 @@ impl Evaluator<'_> {
             }
             Expr::Compare(a, op, b, None) if is_row(a) || is_row(b) => {
                 if !matches!(op, CmpOp::Eq | CmpOp::Ne) {
-                    return Err(SqlError::RowComparison { op: cmp_text(*op).into() });
+                    return Err(SqlError::RowComparison {
+                        op: cmp_text(*op).into(),
+                    });
                 }
                 let x = self.row_values(txn, a, env)?;
                 let y = self.row_values(txn, b, env)?;
@@ -469,7 +476,12 @@ impl Evaluator<'_> {
 
     /// A subquery's rows: the statement's kept answer when it has one
     /// (`SqlContext::answers`), else run against the outer rows.
-    pub(crate) fn subquery(&mut self, txn: &mut Txn<'_>, q: &Query, env: &Env) -> Result<Rc<Vec<Row>>> {
+    pub(crate) fn subquery(
+        &mut self,
+        txn: &mut Txn<'_>,
+        q: &Query,
+        env: &Env,
+    ) -> Result<Rc<Vec<Row>>> {
         let Some(a) = self.ctx.answers.as_mut() else {
             // Answers kept for the statement, or found by key.
             return super::plan::subq::answer(self, txn, q, env);
@@ -693,7 +705,10 @@ impl Evaluator<'_> {
             Register::Timestamp(p) => {
                 let (secs, picos) = self.ctx.clock_picos();
                 let secs = secs.saturating_add_signed(off);
-                Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos).with_precision(p))
+                Value::Timestamp(
+                    Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos)
+                        .with_precision(p),
+                )
             }
             Register::User => Value::Str(self.ctx.user.clone()),
             Register::Server => Value::Str(self.ctx.registers.server.clone()),
@@ -703,10 +718,17 @@ impl Evaluator<'_> {
                     .current_schema
                     .map_or_else(|| "*LIBL".to_string(), |n| n.to_string()),
             ),
-            Register::Path => Value::Str(self.ctx.registers.path.clone().unwrap_or_else(|| match self.ctx.naming {
-                crate::ast::Naming::Sys => "*LIBL".into(),
-                crate::ast::Naming::Sql => format!("\"QSYS\",\"QSYS2\",\"SYSPROC\",\"SYSIBMADM\",\"{}\"", self.ctx.user),
-            })),
+            Register::Path => {
+                Value::Str(self.ctx.registers.path.clone().unwrap_or_else(
+                    || match self.ctx.naming {
+                        crate::ast::Naming::Sys => "*LIBL".into(),
+                        crate::ast::Naming::Sql => format!(
+                            "\"QSYS\",\"QSYS2\",\"SYSPROC\",\"SYSIBMADM\",\"{}\"",
+                            self.ctx.user
+                        ),
+                    },
+                ))
+            }
             Register::Timezone => {
                 // hhmmss of the offset from UTC, signed.
                 let s = off;
@@ -726,11 +748,17 @@ impl Evaluator<'_> {
         }
         // A distinct type's generated functions.
         if let [arg] = f.args.as_slice()
-            && let Some(c) = super::udt::typing::call(&f.name, || super::restype::type_in(arg, &super::restype::Scope::of_env(env)).ok().flatten())
+            && let Some(c) = super::udt::typing::call(&f.name, || {
+                super::restype::type_in(arg, &super::restype::Scope::of_env(env))
+                    .ok()
+                    .flatten()
+            })
         {
             let v = self.eval(txn, arg, env)?;
             return match c {
-                super::udt::typing::Call::To(t) => super::cast::cast(&v, &t, self.ctx.decfloat_rounding),
+                super::udt::typing::Call::To(t) => {
+                    super::cast::cast(&v, &t, self.ctx.decfloat_rounding)
+                }
                 super::udt::typing::Call::Same => Ok(v),
             };
         }
@@ -742,7 +770,9 @@ impl Evaluator<'_> {
             if !self.ctx.arrays {
                 return Err(super::array::misplaced());
             }
-            let Some(Expr::Subquery(q)) = f.args.first() else { unreachable!("ARRAY[fullselect]") };
+            let Some(Expr::Subquery(q)) = f.args.first() else {
+                unreachable!("ARRAY[fullselect]")
+            };
             let rows = self.subquery(txn, q, env)?;
             return Ok(super::array::from_rows(&rows));
         }
@@ -823,8 +853,18 @@ impl Evaluator<'_> {
                 && c.table.is_none()
                 && !c.column.delimited
                 && ((i == 0 && name == "EXTRACT")
-                    || (i == 1 && name == "STRIP" && matches!(c.column.value.as_str(), "B" | "L" | "T" | "BOTH" | "LEADING" | "TRAILING"))
-                    || (i == 3 && matches!(name, "SUBSTRING" | "SUBSTR") && matches!(c.column.value.as_str(), "OCTETS" | "CODEUNITS16" | "CODEUNITS32")))
+                    || (i == 1
+                        && name == "STRIP"
+                        && matches!(
+                            c.column.value.as_str(),
+                            "B" | "L" | "T" | "BOTH" | "LEADING" | "TRAILING"
+                        ))
+                    || (i == 3
+                        && matches!(name, "SUBSTRING" | "SUBSTR")
+                        && matches!(
+                            c.column.value.as_str(),
+                            "OCTETS" | "CODEUNITS16" | "CODEUNITS32"
+                        )))
             {
                 args.push(Value::Str(c.column.value.clone()));
                 continue;
@@ -842,7 +882,12 @@ impl Evaluator<'_> {
                 match super::routine::udf::call(txn, self.ctx, name, &args, &forms) {
                     Some(r) => r?,
                     // A schema's function that is not there.
-                    None if name.contains('.') => return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" }),
+                    None if name.contains('.') => {
+                        return Err(SqlError::ObjectNotFound {
+                            name: name.to_string(),
+                            kind: "function",
+                        });
+                    }
                     None => return Err(SqlError::Unsupported { what }),
                 }
             }
@@ -917,7 +962,14 @@ impl Evaluator<'_> {
             }
             rows.push(super::agg::Input { args, keys });
         }
-        let call = super::agg::Call { name: &f.name, distinct: f.distinct, star: f.star, order, overflow, exprs: &f.args };
+        let call = super::agg::Call {
+            name: &f.name,
+            distinct: f.distinct,
+            star: f.star,
+            order,
+            overflow,
+            exprs: &f.args,
+        };
         let mut nulls = false;
         let v = super::agg::finish(&call, rows, &mut nulls)?;
         if nulls {
@@ -950,7 +1002,9 @@ fn row_eq(x: &[Value], y: &[Value]) -> Result<Option<bool>> {
         return Ok(None);
     }
     if x.len() != y.len() {
-        return Err(SqlError::ValueCount { what: format!("a row of {} values beside one of {}", x.len(), y.len()) });
+        return Err(SqlError::ValueCount {
+            what: format!("a row of {} values beside one of {}", x.len(), y.len()),
+        });
     }
     let mut unknown = false;
     for (a, b) in x.iter().zip(y) {
@@ -1019,10 +1073,13 @@ pub fn literal(l: &Literal) -> Result<Value> {
         Literal::Bool(b) => Value::Bool(*b),
         // A literal with an exponent is a double.
         Literal::Num(n) if n.contains(['E', 'e']) => Value::Double(
-            n.parse::<f64>().ok().filter(|x| x.is_finite()).ok_or_else(|| SqlError::Literal {
-                text: n.clone(),
-                what: "out of range for a double".into(),
-            })?,
+            n.parse::<f64>()
+                .ok()
+                .filter(|x| x.is_finite())
+                .ok_or_else(|| SqlError::Literal {
+                    text: n.clone(),
+                    what: "out of range for a double".into(),
+                })?,
         ),
         Literal::Num(n) => Value::Num(Decimal::parse(n).map_err(|e| SqlError::Literal {
             text: n.clone(),
@@ -1144,7 +1201,8 @@ fn decfloat_binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
         BinOp::Div => qdecimal::decfloat::div(&lhs, &rhs),
         BinOp::Concat => unreachable!("not arithmetic"),
     };
-    out.map(Value::DecFloat).map_err(crate::value::decfloat_error)
+    out.map(Value::DecFloat)
+        .map_err(crate::value::decfloat_error)
 }
 
 /// Add a labeled duration to a date or timestamp.
@@ -1262,22 +1320,38 @@ pub fn cast(v: &Value, t: &TypeSpec) -> Result<Value> {
     super::cast::cast(v, t, qdecimal::DfRounding::HalfEven)
 }
 
-
 impl Evaluator<'_> {
     /// `date ± DECIMAL(8,0)`, `time ± DECIMAL(6,0)`, `timestamp ±
     /// DECIMAL(14+s,s)` (and the duration first for `+`); `None` when the
     /// operands are not such a pair.
     #[allow(clippy::many_single_char_names, clippy::unused_self)]
-    fn unlabeled(&self, x: &Value, op: BinOp, y: &Value, a: &Expr, b: &Expr, env: &Env) -> Option<Result<Value>> {
+    fn unlabeled(
+        &self,
+        x: &Value,
+        op: BinOp,
+        y: &Value,
+        a: &Expr,
+        b: &Expr,
+        env: &Env,
+    ) -> Option<Result<Value>> {
         use super::datetime::DurationKind as K;
         let (v, d, de, sub) = match (x, y) {
-            (Value::Date(_) | Value::Time(_) | Value::Timestamp(_), Value::Num(d)) => (x, d, b, op == BinOp::Sub),
-            (Value::Num(d), Value::Date(_) | Value::Time(_) | Value::Timestamp(_)) if op == BinOp::Add => (y, d, a, false),
+            (Value::Date(_) | Value::Time(_) | Value::Timestamp(_), Value::Num(d)) => {
+                (x, d, b, op == BinOp::Sub)
+            }
+            (Value::Num(d), Value::Date(_) | Value::Time(_) | Value::Timestamp(_))
+                if op == BinOp::Add =>
+            {
+                (y, d, a, false)
+            }
             _ => return None,
         };
         let scope = super::restype::Scope::of_env(env);
         let t = super::restype::infer(de, &scope);
-        if !matches!(t.kind(), super::restype::Kind::Decimal | super::restype::Kind::Numeric) {
+        if !matches!(
+            t.kind(),
+            super::restype::Kind::Decimal | super::restype::Kind::Numeric
+        ) {
             return None;
         }
         let kind = match (v, t.len(), t.scale()) {

@@ -53,11 +53,19 @@ pub const NAV: &[NavGroup] = &[
     },
     NavGroup {
         label: "Messages",
-        items: &[("QSYSOPR", "/msgq/QSYS/QSYSOPR"), ("My messages", "/mymsgs"), ("History log", "/qhst")],
+        items: &[
+            ("QSYSOPR", "/msgq/QSYS/QSYSOPR"),
+            ("My messages", "/mymsgs"),
+            ("History log", "/qhst"),
+        ],
     },
     NavGroup {
         label: "Users and groups",
-        items: &[("Users", "/users"), ("Groups", "/groups"), ("Authorization lists", "/autl")],
+        items: &[
+            ("Users", "/users"),
+            ("Groups", "/groups"),
+            ("Authorization lists", "/autl"),
+        ],
     },
     NavGroup {
         label: "Network",
@@ -74,15 +82,25 @@ pub const NAV: &[NavGroup] = &[
     },
     NavGroup {
         label: "Security",
-        items: &[("Audit journal", "/audit"), ("Security values", "/sysval?cat=security")],
+        items: &[
+            ("Audit journal", "/audit"),
+            ("Security values", "/sysval?cat=security"),
+        ],
     },
     NavGroup {
         label: "Software",
-        items: &[("Licensed programs", "/licpgm"), ("PTFs", "/ptf"), ("Fixes", "/fixes")],
+        items: &[
+            ("Licensed programs", "/licpgm"),
+            ("PTFs", "/ptf"),
+            ("Fixes", "/fixes"),
+        ],
     },
     NavGroup {
         label: "Performance",
-        items: &[("System activity", "/perf/sys"), ("Disk activity", "/perf/disk")],
+        items: &[
+            ("System activity", "/perf/sys"),
+            ("Disk activity", "/perf/disk"),
+        ],
     },
 ];
 

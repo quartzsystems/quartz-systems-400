@@ -12,11 +12,18 @@ fn main() -> Result<()> {
     let root = textaudit::find_root(&cwd).context("not inside the QS/400 tree")?;
     match args.first().map(String::as_str) {
         None | Some("check") => {
-            let limit = if args.iter().any(|a| a == "--all") { usize::MAX } else { 40 };
+            let limit = if args.iter().any(|a| a == "--all") {
+                usize::MAX
+            } else {
+                40
+            };
             let report = textaudit::audit(&root)?;
             print!("{}", report.details(limit));
             if !report.stale.is_empty() {
-                println!("\n{} baseline entries moved (textaudit baseline)", report.stale.len());
+                println!(
+                    "\n{} baseline entries moved (textaudit baseline)",
+                    report.stale.len()
+                );
             }
             if report.fails() {
                 bail!("new text literals on display paths");

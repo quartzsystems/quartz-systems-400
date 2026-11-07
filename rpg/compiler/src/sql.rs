@@ -95,7 +95,13 @@ pub fn declare_sqlda(t: &mut Table, diags: &mut Vec<Diag>, ctl: &crate::ctl::Ctl
 }
 
 /// Declare generated definitions in the global scope.
-fn declare_text(t: &mut Table, diags: &mut Vec<Diag>, ctl: &crate::ctl::Ctl, name: &str, text: &str) {
+fn declare_text(
+    t: &mut Table,
+    diags: &mut Vec<Diag>,
+    ctl: &crate::ctl::Ctl,
+    name: &str,
+    text: &str,
+) {
     let m = Member::from_text("QTEMP", "QSQLSRC", name, text);
     let (_, module, _) = rpgfront::front(m, &mut MemIncludes::default(), &ReadOptions::default());
     let mut quiet = Vec::new();
@@ -171,7 +177,10 @@ impl Env for HostEnv<'_> {
         };
         let id = self.t.find(scope, base)?;
         let s = &self.t.syms[id];
-        if !matches!(s.kind, Some(Kind::Field | Kind::Subfield | Kind::Param | Kind::Ds(_))) {
+        if !matches!(
+            s.kind,
+            Some(Kind::Field | Kind::Subfield | Kind::Param | Kind::Ds(_))
+        ) {
             return None;
         }
         let info = |ty: &Ty, dim: u32| HostInfo {
@@ -213,7 +222,11 @@ pub fn first_calcs(m: &Module, scopes: &[usize]) -> Vec<(usize, u32)> {
         .calcs
         .first()
         .map(|s| s.at.line)
-        .or_else(|| m.procs.iter().find_map(|p| p.calcs.first().map(|s| s.at.line)))
+        .or_else(|| {
+            m.procs
+                .iter()
+                .find_map(|p| p.calcs.first().map(|s| s.at.line))
+        })
         .unwrap_or(0);
     let mut out = vec![(0, main)];
     for (p, &scope) in m.procs.iter().zip(scopes) {
@@ -226,7 +239,13 @@ pub fn first_calcs(m: &Module, scopes: &[usize]) -> Vec<(usize, u32)> {
 
 /// Precompile a module's statements: `scopes` are the procedures'
 /// symbol scopes, in order.
-pub fn precompile(m: &Module, t: &Table, scopes: &[usize], ext: &mut dyn ExtFiles, opts: &rpgsqlpre::Options) -> Precompiled {
+pub fn precompile(
+    m: &Module,
+    t: &Table,
+    scopes: &[usize],
+    ext: &mut dyn ExtFiles,
+    opts: &rpgsqlpre::Options,
+) -> Precompiled {
     let mut srcs = Vec::new();
     collect(&m.calcs, 0, &mut srcs);
     for (p, &scope) in m.procs.iter().zip(scopes) {
@@ -243,7 +262,14 @@ pub fn diags(p: &Precompiled) -> Vec<Diag> {
     p.diags
         .iter()
         .map(|d| {
-            let mut x = Diag::new(d.msgid, d.sev, Pos { line: d.line, col: 0 });
+            let mut x = Diag::new(
+                d.msgid,
+                d.sev,
+                Pos {
+                    line: d.line,
+                    col: 0,
+                },
+            );
             for a in &d.args {
                 x = x.arg(a.clone());
             }
@@ -256,14 +282,27 @@ pub fn diags(p: &Precompiled) -> Vec<Diag> {
 /// those of the members an SQL `INCLUDE` brings (a member that is not
 /// fully free set off with `**END-FREE` and `**FREE` in one that is).
 #[must_use]
-pub fn precompile_listing(c: &crate::Compiled, p: &Precompiled, opts: &crate::Options, ext: &mut dyn ExtFiles) -> Vec<String> {
+pub fn precompile_listing(
+    c: &crate::Compiled,
+    p: &Precompiled,
+    opts: &crate::Options,
+    ext: &mut dyn ExtFiles,
+) -> Vec<String> {
     use rpgsqlpre::listing::Record;
     let mut records: Vec<Record> = Vec::new();
     let mut at: std::collections::HashMap<u32, u32> = std::collections::HashMap::new();
     let mut wrapped: Option<usize> = None;
-    let marker = |text: &str, free: bool| Record { text: text.into(), seq: "000000".into(), free };
+    let marker = |text: &str, free: bool| Record {
+        text: text.into(),
+        seq: "000000".into(),
+        free,
+    };
     for l in &c.read.lines {
-        let inc = c.read.sql_includes.iter().find(|i| i.member == Some(l.member) && l.member > 0);
+        let inc = c
+            .read
+            .sql_includes
+            .iter()
+            .find(|i| i.member == Some(l.member) && l.member > 0);
         if l.depth > 0 && inc.is_none() {
             continue;
         }
@@ -307,8 +346,17 @@ pub fn precompile_listing(c: &crate::Compiled, p: &Precompiled, opts: &crate::Op
     let h = rpgsqlpre::listing::Heading {
         product: release::PRODUCT_ID.into(),
         source_file: format!("{}/{}", opts.src.0, opts.src.1),
-        member: if opts.src.2 == opts.name { "*OBJ".into() } else { opts.src.2.clone() },
-        objtype: if opts.command == crate::Command::CrtRpgMod { "*MODULE" } else { "*PGM" }.into(),
+        member: if opts.src.2 == opts.name {
+            "*OBJ".into()
+        } else {
+            opts.src.2.clone()
+        },
+        objtype: if opts.command == crate::Command::CrtRpgMod {
+            "*MODULE"
+        } else {
+            "*PGM"
+        }
+        .into(),
         release: "V7R5M0".into(),
         options: command,
         object,
@@ -342,15 +390,28 @@ pub fn sqltype_source(name: &str, ty: &str, len: Option<&str>) -> Option<String>
         s.push_str("end-ds;\n");
         s
     };
-    let lob = |data: &str| ds(&[format!("{name}_LEN uns(10);"), format!("{name}_DATA {data};")]);
-    let file = || ds(&[format!("{name}_NL uns(10);"), format!("{name}_DL uns(10);"), format!("{name}_FO uns(10);"), format!("{name}_NAME char(255);")]);
+    let lob = |data: &str| {
+        ds(&[
+            format!("{name}_LEN uns(10);"),
+            format!("{name}_DATA {data};"),
+        ])
+    };
+    let file = || {
+        ds(&[
+            format!("{name}_NL uns(10);"),
+            format!("{name}_DL uns(10);"),
+            format!("{name}_FO uns(10);"),
+            format!("{name}_NAME char(255);"),
+        ])
+    };
     let one = |t: &str| format!("**FREE\ndcl-s {name} {t};\n");
     Some(match ty {
         "CLOB" | "XML_CLOB" if !n.is_empty() => lob(&format!("char({n})")),
         "BLOB" | "XML_BLOB" if !n.is_empty() => lob(&format!("char({n}) ccsid(*hex)")),
         "DBCLOB" | "XML_DBCLOB" if !n.is_empty() => lob(&format!("graph({n})")),
         "CLOB_LOCATOR" | "BLOB_LOCATOR" | "DBCLOB_LOCATOR" | "XML_LOCATOR" => one("uns(10)"),
-        "CLOB_FILE" | "BLOB_FILE" | "DBCLOB_FILE" | "XML_CLOB_FILE" | "XML_BLOB_FILE" | "XML_DBCLOB_FILE" => file(),
+        "CLOB_FILE" | "BLOB_FILE" | "DBCLOB_FILE" | "XML_CLOB_FILE" | "XML_BLOB_FILE"
+        | "XML_DBCLOB_FILE" => file(),
         "BINARY" if !n.is_empty() => one(&format!("char({n}) ccsid(*hex)")),
         "VARBINARY" if !n.is_empty() => one(&format!("varchar({n}) ccsid(*hex)")),
         "ROWID" => one("varchar(40) ccsid(*hex)"),
@@ -386,8 +447,20 @@ pub fn sqltype_kind(ty: &str) -> i64 {
 
 /// Declare an `SQLTYPE` definition as the definitions it stands for;
 /// its other keywords (`DIM`, `INZ`, ...) go with the first.
-pub fn declare_sqltype(cx: &mut Cx<'_>, d: &rpgfront::ast::Def, k: &rpgfront::ast::Keyword) -> Option<crate::syms::SymId> {
-    let text = |i: usize| k.arg(i).map(|a| a.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>().to_ascii_uppercase());
+pub fn declare_sqltype(
+    cx: &mut Cx<'_>,
+    d: &rpgfront::ast::Def,
+    k: &rpgfront::ast::Keyword,
+) -> Option<crate::syms::SymId> {
+    let text = |i: usize| {
+        k.arg(i).map(|a| {
+            a.toks
+                .iter()
+                .map(rpgfront::lex::Tok::text)
+                .collect::<String>()
+                .to_ascii_uppercase()
+        })
+    };
     let (ty, len) = (text(0).unwrap_or_default(), text(1));
     let name = d.name.to_ascii_uppercase();
     let Some(src) = sqltype_source(&name, ty.trim(), len.as_deref().map(str::trim)) else {
@@ -403,7 +476,8 @@ pub fn declare_sqltype(cx: &mut Cx<'_>, d: &rpgfront::ast::Def, k: &rpgfront::as
         let mut g = g.clone();
         place(&mut g, d.at);
         if i == 0 {
-            g.kws.extend(d.kws.iter().filter(|x| x.name != "SQLTYPE").cloned());
+            g.kws
+                .extend(d.kws.iter().filter(|x| x.name != "SQLTYPE").cloned());
         }
         last = decl::declare(cx, &g);
     }

@@ -123,7 +123,11 @@ impl DataType {
     /// The length of `TIMESTAMP(p)`.
     #[must_use]
     pub fn timestamp_length(precision: u8) -> u32 {
-        if precision == 0 { 19 } else { 20 + u32::from(precision) }
+        if precision == 0 {
+            19
+        } else {
+            20 + u32::from(precision)
+        }
     }
 
     /// From the letter in position 35.

@@ -75,7 +75,12 @@ impl Envelope {
 
     /// A one-frame reply to `req`.
     #[must_use]
-    pub fn reply(req: &Envelope, status: Status, message: Option<ServerMessage>, body: Vec<u8>) -> Self {
+    pub fn reply(
+        req: &Envelope,
+        status: Status,
+        message: Option<ServerMessage>,
+        body: Vec<u8>,
+    ) -> Self {
         Self {
             kind: Kind::Reply,
             request_id: req.request_id,
@@ -90,7 +95,12 @@ impl Envelope {
 
     /// An event.
     #[must_use]
-    pub fn event(service: Service, op: u16, status: Status, message: Option<ServerMessage>) -> Self {
+    pub fn event(
+        service: Service,
+        op: u16,
+        status: Status,
+        message: Option<ServerMessage>,
+    ) -> Self {
         Self {
             kind: Kind::Event,
             request_id: 0,
@@ -116,7 +126,8 @@ impl Envelope {
     /// status and, for an event, the event are all defined in `v`.
     #[must_use]
     pub fn defined_in(&self, v: u16) -> bool {
-        let event = self.kind != Kind::Event || crate::ops::event::since(self.service, self.op).is_some_and(|s| s <= v);
+        let event = self.kind != Kind::Event
+            || crate::ops::event::since(self.service, self.op).is_some_and(|s| s <= v);
         event && self.service.since() <= v && self.status.since() <= v
     }
 
@@ -189,14 +200,22 @@ impl Envelope {
     /// The reply to `req` as frames of at most [`MAX_FRAME`] bytes: the
     /// body cut in order, `More` on all but the last, the message on
     /// the last.
-    pub fn replies(req: &Envelope, status: Status, message: Option<ServerMessage>, body: Vec<u8>) -> Result<Vec<Self>, ProtoError> {
+    pub fn replies(
+        req: &Envelope,
+        status: Status,
+        message: Option<ServerMessage>,
+        body: Vec<u8>,
+    ) -> Result<Vec<Self>, ProtoError> {
         // The head without the body, so a large body is not copied twice.
         let empty = Self::reply(req, status, message, Vec::new());
         let head = encode(&empty).len();
         if head + body.len() <= MAX_FRAME {
             return Ok(vec![Self { body, ..empty }]);
         }
-        let room = MAX_FRAME.checked_sub(head).filter(|n| *n > 0).ok_or(ProtoError::TooLong { len: head })?;
+        let room = MAX_FRAME
+            .checked_sub(head)
+            .filter(|n| *n > 0)
+            .ok_or(ProtoError::TooLong { len: head })?;
         let n = body.len().div_ceil(room);
         let mut out = Vec::with_capacity(n);
         for (i, part) in body.chunks(room).enumerate() {
@@ -233,7 +252,10 @@ impl Reassembly {
             return Some(env);
         }
         if env.more() {
-            self.partial.entry(env.request_id).or_default().extend_from_slice(&env.body);
+            self.partial
+                .entry(env.request_id)
+                .or_default()
+                .extend_from_slice(&env.body);
             return None;
         }
         if let Some(mut head) = self.partial.remove(&env.request_id) {

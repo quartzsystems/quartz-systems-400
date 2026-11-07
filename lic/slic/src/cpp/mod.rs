@@ -18,22 +18,20 @@ pub(crate) mod clpgm;
 mod cmncmd;
 mod cmntrc;
 pub(crate) mod cstcmd;
-pub(crate) mod fcncmd;
-pub(crate) mod jrncmd;
-mod trgcmd;
-pub(crate) mod tzcmd;
 mod dbcmd;
 mod dbmoncmd;
-mod sqlinfcmd;
-mod hwcmd;
 mod direct;
 pub(crate) mod dspout;
+pub(crate) mod fcncmd;
+mod hwcmd;
 mod ifscmd;
-pub(crate) mod lpapi;
-pub(crate) mod lpcmd;
+mod ifsgrow;
 pub(crate) mod iplcmd;
 mod itgcmd;
+pub(crate) mod jrncmd;
 pub(crate) mod longcmd;
+pub(crate) mod lpapi;
+pub(crate) mod lpcmd;
 pub(crate) mod medcmd;
 pub(crate) mod meddsp;
 mod medout;
@@ -47,18 +45,20 @@ pub(crate) mod ptflic;
 mod ptfsvc;
 mod rpg;
 mod savcmd;
-mod splcpp;
 pub(crate) mod savout;
-pub(crate) mod svccmd;
 pub(crate) mod savsys;
+mod splcpp;
+mod sqlinfcmd;
 pub(crate) mod stmf;
 mod stmfcmd;
+pub(crate) mod svccmd;
 mod sysinfo;
 pub(crate) mod tapcpy;
 pub(crate) mod tcpcmd;
+mod trgcmd;
+pub(crate) mod tzcmd;
 mod uicmd;
 pub(crate) mod updcmd;
-mod ifsgrow;
 
 use cmd::block::Parms;
 use stg::proto::{CmdMsg, CmdReply};
@@ -66,9 +66,9 @@ use sys_cpps::{Entry, Site};
 
 use crate::ipl::system::System;
 
+pub(crate) use opacmd::run_cl;
 pub use prbcmd::{detail_data as problem_detail, rows as problem_rows};
 pub use savcmd::savf_listing;
-pub(crate) use opacmd::run_cl;
 pub(crate) use savcmd::trusted_keys;
 
 /// Run command `name` with `parms`; the text, messages and escape.
@@ -153,7 +153,10 @@ fn bridge(system: &mut System, e: &Entry, parms: &Parms, typed: &str) -> CmdRepl
     // A word only the console process answers is no processing program.
     let word = line.split_whitespace().next().unwrap_or("");
     if crate::procs::svcjob::LOCAL.contains(&word) {
-        return check(&e.name, &format!("{word} is a console word, not the storage service's"));
+        return check(
+            &e.name,
+            &format!("{word} is a console word, not the storage service's"),
+        );
     }
     let text = crate::stgsvc::exec::run(system, &line);
     if text.trim_start().starts_with("CPF9899") {

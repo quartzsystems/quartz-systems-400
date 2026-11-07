@@ -55,7 +55,8 @@ fn converse(s: &mut Session, io: &mut (impl Read + Write)) -> Result<(), String>
         };
         let out = s.handle(&chain);
         if !out.is_empty() {
-            io.write_all(&ddm::wire::encode_chain(&out)).map_err(|e| e.to_string())?;
+            io.write_all(&ddm::wire::encode_chain(&out))
+                .map_err(|e| e.to_string())?;
             io.flush().map_err(|e| e.to_string())?;
         }
     }
@@ -73,7 +74,11 @@ fn session(job: &Job, link: &Shared, start: &Start, system: &str) -> Session {
     )
 }
 
-fn serve(s: &mut Session, stream: TcpStream, tls: Option<Arc<rustls::ServerConfig>>) -> Result<(), String> {
+fn serve(
+    s: &mut Session,
+    stream: TcpStream,
+    tls: Option<Arc<rustls::ServerConfig>>,
+) -> Result<(), String> {
     let _ = stream.set_nodelay(true);
     let _ = stream.set_read_timeout(Some(Duration::from_secs(7200)));
     if let Some(config) = tls {

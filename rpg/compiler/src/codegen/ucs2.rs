@@ -80,7 +80,8 @@ impl Gen<'_> {
         if hex.is_empty() {
             self.b.ins(format!("mov {t}, *BLANKS"));
         } else {
-            self.b.ins(format!("mov {t}, x\"{}\"", hex.to_ascii_uppercase()));
+            self.b
+                .ins(format!("mov {t}, x\"{}\"", hex.to_ascii_uppercase()));
         }
         V::place(ty, t)
     }

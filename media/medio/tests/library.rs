@@ -34,7 +34,11 @@ fn rw(p: &Path) -> File {
 
 fn volume(d: &Path, vol: &str, mb: u64) -> PathBuf {
     let p = d.join(vol);
-    let mut t = VirtualTape::create(File::create_new(&p).unwrap(), &VolumeOptions::imgsiz(mb, vol)).unwrap();
+    let mut t = VirtualTape::create(
+        File::create_new(&p).unwrap(),
+        &VolumeOptions::imgsiz(mb, vol),
+    )
+    .unwrap();
     inztap(
         &mut t,
         &InzOptions {
@@ -70,7 +74,9 @@ fn save_file(label: &str, vols: &[&str], end_opt: EndOpt) -> SaveFile {
 }
 
 fn stream(n: usize) -> Vec<u8> {
-    (0..n).map(|i| u8::try_from(i * 13 % 251).unwrap()).collect()
+    (0..n)
+        .map(|i| u8::try_from(i * 13 % 251).unwrap())
+        .collect()
 }
 
 #[test]
@@ -88,7 +94,10 @@ fn cartridges_move_through_the_library() {
     for (i, id) in ["CTG001", "CTG002", "CTG003"].iter().enumerate() {
         let c = lib.model.cartridge(id).unwrap();
         assert_eq!(c.category, Category::Insert);
-        assert_eq!(c.location, Location::Slot(SLOT_BASE + u16::try_from(i).unwrap()));
+        assert_eq!(
+            c.location,
+            Location::Slot(SLOT_BASE + u16::try_from(i).unwrap())
+        );
     }
     // Not usable yet.
     assert_eq!(lib.mount("CTG001").unwrap_err().msgid(), "CPF67D2");
@@ -99,12 +108,19 @@ fn cartridges_move_through_the_library() {
     // Mount: a save with VOL(CTG001) moves it into the first drive.
     let i = lib.mount("CTG001").unwrap();
     assert_eq!(i, 0);
-    assert_eq!(lib.model.cartridge("CTG001").unwrap().location, Location::Drive(DRIVE_BASE));
+    assert_eq!(
+        lib.model.cartridge("CTG001").unwrap().location,
+        Location::Drive(DRIVE_BASE)
+    );
     let mut prov = LibraryVolumes::new(i, lib.spares(), Some("CTG001".into()), Box::new(|_| false));
     let data = stream(200_000);
-    let w = TapeWriter::new(&mut lib.changer, &mut prov, save_file("LIBA", &["CTG001"], EndOpt::Rewind))
-        .write_stream(&data)
-        .unwrap();
+    let w = TapeWriter::new(
+        &mut lib.changer,
+        &mut prov,
+        save_file("LIBA", &["CTG001"], EndOpt::Rewind),
+    )
+    .write_stream(&data)
+    .unwrap();
     assert_eq!(w.volumes, ["CTG001"]);
     // ENDOPT(*REWIND): it stays mounted.
     assert!(!lib.after(i).unwrap());
@@ -116,8 +132,14 @@ fn cartridges_move_through_the_library() {
     assert_eq!(LibraryState::parse(&text).unwrap(), state);
     drop(lib);
     let mut lib = open(&vols, &state);
-    assert_eq!(lib.model.cartridge("CTG001").unwrap().location, Location::Drive(DRIVE_BASE));
-    assert_eq!(lib.model.cartridge("CTG001").unwrap().category, Category::Share400);
+    assert_eq!(
+        lib.model.cartridge("CTG001").unwrap().location,
+        Location::Drive(DRIVE_BASE)
+    );
+    assert_eq!(
+        lib.model.cartridge("CTG001").unwrap().category,
+        Category::Share400
+    );
 
     // A second volume goes to the empty drive; reading the first back
     // with ENDOPT(*UNLOAD) demounts it home.
@@ -139,7 +161,10 @@ fn cartridges_move_through_the_library() {
     .unwrap();
     assert_eq!(back, data);
     assert!(lib.after(i).unwrap());
-    assert_eq!(lib.model.cartridge("CTG001").unwrap().location, Location::Slot(SLOT_BASE));
+    assert_eq!(
+        lib.model.cartridge("CTG001").unwrap().location,
+        Location::Slot(SLOT_BASE)
+    );
 
     // Demount by hand.
     assert!(lib.demount(1).unwrap());
@@ -155,16 +180,25 @@ fn cartridges_move_through_the_library() {
     // Eject: RMVTAPCTG to the next station; then taken out.
     let moves = lib.remove("CTG002").unwrap();
     assert_eq!(moves.len(), 1);
-    assert_eq!(lib.model.cartridge("CTG002").unwrap().location, Location::Station(STATION_BASE + 1));
+    assert_eq!(
+        lib.model.cartridge("CTG002").unwrap().location,
+        Location::Station(STATION_BASE + 1)
+    );
     assert!(lib.take_out("CTG002").is_some());
     let c = lib.model.cartridge("CTG002").unwrap();
-    assert_eq!((c.category.clone(), c.location), (Category::Eject, Location::Outside));
+    assert_eq!(
+        (c.category.clone(), c.location),
+        (Category::Eject, Location::Outside)
+    );
 
     // Back in the catalog later: it arrives in *INSERT again.
     let state = lib.state();
     drop(lib);
     let lib = open(&vols, &state);
-    assert_eq!(lib.model.cartridge("CTG002").unwrap().category, Category::Insert);
+    assert_eq!(
+        lib.model.cartridge("CTG002").unwrap().category,
+        Category::Insert
+    );
     std::fs::remove_dir_all(d).unwrap();
 }
 
@@ -178,14 +212,24 @@ fn a_save_spans_cartridges_of_the_vol_list() {
     let i = lib.mount("BIG001").unwrap();
     let mut prov = LibraryVolumes::new(i, lib.spares(), Some("BIG001".into()), Box::new(|_| false));
     let data = stream(1_500_000);
-    let w = TapeWriter::new(&mut lib.changer, &mut prov, save_file("BIG", &["BIG001", "BIG002"], EndOpt::Unload))
-        .write_stream(&data)
-        .unwrap();
+    let w = TapeWriter::new(
+        &mut lib.changer,
+        &mut prov,
+        save_file("BIG", &["BIG001", "BIG002"], EndOpt::Unload),
+    )
+    .write_stream(&data)
+    .unwrap();
     assert_eq!(w.volumes, ["BIG001", "BIG002"]);
     assert_eq!(prov.mounted(), ["BIG002"]);
     assert!(lib.after(i).unwrap());
-    assert_eq!(lib.model.cartridge("BIG001").unwrap().location, Location::Slot(SLOT_BASE));
-    assert_eq!(lib.model.cartridge("BIG002").unwrap().location, Location::Slot(SLOT_BASE + 1));
+    assert_eq!(
+        lib.model.cartridge("BIG001").unwrap().location,
+        Location::Slot(SLOT_BASE)
+    );
+    assert_eq!(
+        lib.model.cartridge("BIG002").unwrap().location,
+        Location::Slot(SLOT_BASE + 1)
+    );
 
     // VOL(*MOUNTED): no next volume without the operator; a retry reply
     // takes the next spare.
@@ -194,8 +238,13 @@ fn a_save_spans_cartridges_of_the_vol_list() {
     let mut f = save_file("BIG", &[], EndOpt::Rewind);
     f.seq = SeqNbr::Number(1);
     f.allow_active = true;
-    let e = TapeWriter::new(&mut lib.changer, &mut prov, f.clone()).write_stream(&data).unwrap_err();
-    assert!(matches!(e, medio::MediaError::Tape(TapeError::Cancelled)), "{e}");
+    let e = TapeWriter::new(&mut lib.changer, &mut prov, f.clone())
+        .write_stream(&data)
+        .unwrap_err();
+    assert!(
+        matches!(e, medio::MediaError::Tape(TapeError::Cancelled)),
+        "{e}"
+    );
     lib.sync().unwrap();
     let i = lib.mount("BIG001").unwrap();
     let mut asked = 0;
@@ -208,7 +257,9 @@ fn a_save_spans_cartridges_of_the_vol_list() {
             true
         }),
     );
-    let w = TapeWriter::new(&mut lib.changer, &mut prov, f).write_stream(&data).unwrap();
+    let w = TapeWriter::new(&mut lib.changer, &mut prov, f)
+        .write_stream(&data)
+        .unwrap();
     drop(prov);
     assert_eq!(asked, 1);
     assert_eq!(w.volumes, ["BIG001", "BIG002"]);

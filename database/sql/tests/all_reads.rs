@@ -47,7 +47,12 @@ fn fixture() -> Fixture {
         wal_pages: 256,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -146,7 +151,10 @@ fn fetch_all(s: &mut Session, name: &str) -> Vec<(i64, String)> {
             return rows;
         }
         assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-        rows.push((r.rows[0][0].as_i64().unwrap(), r.rows[0][1].as_text().trim_end().to_string()));
+        rows.push((
+            r.rows[0][0].as_i64().unwrap(),
+            r.rows[0][1].as_text().trim_end().to_string(),
+        ));
     }
 }
 
@@ -171,13 +179,28 @@ fn an_all_query_takes_turns_and_holds_what_it_read() {
         // Job 2 queries the table and the catalog undelayed, changes a
         // row the query has not read, and cannot change one it has.
         let mut s2 = job(&fx, 2);
-        assert_eq!(value(&mut s2, None, "SELECT COUNT(*) FROM ALLQ.T"), ROWS.to_string());
-        let tables = value(&mut s2, None, "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'ALLQ'");
+        assert_eq!(
+            value(&mut s2, None, "SELECT COUNT(*) FROM ALLQ.T"),
+            ROWS.to_string()
+        );
+        let tables = value(
+            &mut s2,
+            None,
+            "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'ALLQ'",
+        );
         assert!(tables.parse::<i64>().unwrap() >= 1);
         if n == 1 {
-            lg.ahead.set(Some(code(&mut s2, None, "UPDATE ALLQ.T SET NAME = 'Ahead' WHERE ID = 1000")));
+            lg.ahead.set(Some(code(
+                &mut s2,
+                None,
+                "UPDATE ALLQ.T SET NAME = 'Ahead' WHERE ID = 1000",
+            )));
         }
-        lg.behind.borrow_mut().push(code(&mut s2, None, "UPDATE ALLQ.T SET NAME = 'Behind' WHERE ID = 1"));
+        lg.behind.borrow_mut().push(code(
+            &mut s2,
+            None,
+            "UPDATE ALLQ.T SET NAME = 'Behind' WHERE ID = 1",
+        ));
         // Job 3 reads the rows read under *ALL too: read locks share.
         let mut s3 = job(&fx, 3);
         if value(&mut s3, ALL, "SELECT NAME FROM ALLQ.T WHERE ID = 1") == "Row 1" {
@@ -191,7 +214,11 @@ fn an_all_query_takes_turns_and_holds_what_it_read() {
     let yields = log.yields.get();
     assert!(yields >= 3, "{yields} yields over {ROWS} rows");
     assert_eq!(log.ahead.get(), Some(0), "a row not yet read is free");
-    assert!(log.behind.borrow().iter().all(|&c| c == IN_USE), "{:?}", log.behind.borrow());
+    assert!(
+        log.behind.borrow().iter().all(|&c| c == IN_USE),
+        "{:?}",
+        log.behind.borrow()
+    );
     assert_eq!(log.shared_reads.get(), yields);
     let rows = fetch_all(&mut s1, "C1");
     assert_eq!(rows.len(), usize::try_from(ROWS).unwrap());
@@ -201,17 +228,43 @@ fn an_all_query_takes_turns_and_holds_what_it_read() {
     s1.ctx.yielder = None;
     // The unit of work keeps the locks past the statement: reads repeat.
     let mut s2 = job(&f, 2);
-    assert_eq!(code(&mut s2, None, "UPDATE ALLQ.T SET NAME = 'Behind' WHERE ID = 1"), IN_USE);
-    assert_eq!(value(&mut s1, ALL, "SELECT NAME FROM ALLQ.T WHERE ID = 1"), "Row 1");
+    assert_eq!(
+        code(
+            &mut s2,
+            None,
+            "UPDATE ALLQ.T SET NAME = 'Behind' WHERE ID = 1"
+        ),
+        IN_USE
+    );
+    assert_eq!(
+        value(&mut s1, ALL, "SELECT NAME FROM ALLQ.T WHERE ID = 1"),
+        "Row 1"
+    );
     // Its own change takes the record it read.
-    assert_eq!(code(&mut s1, ALL, "UPDATE ALLQ.T SET NAME = 'Mine' WHERE ID = 2"), 0);
+    assert_eq!(
+        code(&mut s1, ALL, "UPDATE ALLQ.T SET NAME = 'Mine' WHERE ID = 2"),
+        0
+    );
     // Rows added meanwhile (phantoms) are allowed at this level.
-    assert_eq!(code(&mut s2, None, "INSERT INTO ALLQ.T VALUES (2000, 'New')"), 0);
+    assert_eq!(
+        code(&mut s2, None, "INSERT INTO ALLQ.T VALUES (2000, 'New')"),
+        0
+    );
     // COMMIT releases them.
     assert_eq!(code(&mut s1, ALL, "COMMIT"), 0);
     assert!(f.locks.lock().unwrap().is_empty());
-    assert_eq!(code(&mut s2, None, "UPDATE ALLQ.T SET NAME = 'Behind' WHERE ID = 1"), 0);
-    assert_eq!(value(&mut s1, ALL, "SELECT NAME FROM ALLQ.T WHERE ID = 2"), "Mine");
+    assert_eq!(
+        code(
+            &mut s2,
+            None,
+            "UPDATE ALLQ.T SET NAME = 'Behind' WHERE ID = 1"
+        ),
+        0
+    );
+    assert_eq!(
+        value(&mut s1, ALL, "SELECT NAME FROM ALLQ.T WHERE ID = 2"),
+        "Mine"
+    );
     // ROLLBACK releases them too.
     assert_eq!(code(&mut s1, ALL, "ROLLBACK"), 0);
     assert!(f.locks.lock().unwrap().is_empty());
@@ -226,20 +279,45 @@ fn two_all_readers_share_and_hold_off_each_others_changes() {
     assert_eq!(value(&mut s1, ALL, q), ROWS.to_string());
     assert_eq!(value(&mut s2, ALL, q), ROWS.to_string());
     // Neither may change a row the other read; each waits for the other.
-    assert_eq!(code(&mut s1, ALL, "UPDATE ALLQ.T SET NAME = 'One' WHERE ID = 5"), IN_USE);
-    assert_eq!(code(&mut s2, ALL, "UPDATE ALLQ.T SET NAME = 'Two' WHERE ID = 5"), IN_USE);
+    assert_eq!(
+        code(&mut s1, ALL, "UPDATE ALLQ.T SET NAME = 'One' WHERE ID = 5"),
+        IN_USE
+    );
+    assert_eq!(
+        code(&mut s2, ALL, "UPDATE ALLQ.T SET NAME = 'Two' WHERE ID = 5"),
+        IN_USE
+    );
     // A reader at a lower level is not held up.
     let mut s3 = job(&f, 3);
-    assert_eq!(value(&mut s3, Some(LckLvl::Cs), "SELECT NAME FROM ALLQ.T WHERE ID = 5"), "Row 5");
+    assert_eq!(
+        value(
+            &mut s3,
+            Some(LckLvl::Cs),
+            "SELECT NAME FROM ALLQ.T WHERE ID = 5"
+        ),
+        "Row 5"
+    );
     assert_eq!(code(&mut s3, Some(LckLvl::Cs), "COMMIT"), 0);
     // Once job 2's unit ends, job 1 changes it.
     assert_eq!(code(&mut s2, ALL, "ROLLBACK"), 0);
-    assert_eq!(code(&mut s1, ALL, "UPDATE ALLQ.T SET NAME = 'One' WHERE ID = 5"), 0);
+    assert_eq!(
+        code(&mut s1, ALL, "UPDATE ALLQ.T SET NAME = 'One' WHERE ID = 5"),
+        0
+    );
     // Now job 1 holds it for update: job 2's *ALL read of it waits.
-    let r = run(&mut s2, ALL, Op::Query, "", "SELECT NAME FROM ALLQ.T WHERE ID = 5");
+    let r = run(
+        &mut s2,
+        ALL,
+        Op::Query,
+        "",
+        "SELECT NAME FROM ALLQ.T WHERE ID = 5",
+    );
     assert_eq!(r.sqlca.sqlcode, IN_USE, "{:?}", r.sqlca);
     assert_eq!(code(&mut s1, ALL, "COMMIT"), 0);
-    assert_eq!(value(&mut s2, ALL, "SELECT NAME FROM ALLQ.T WHERE ID = 5"), "One");
+    assert_eq!(
+        value(&mut s2, ALL, "SELECT NAME FROM ALLQ.T WHERE ID = 5"),
+        "One"
+    );
     assert_eq!(code(&mut s2, ALL, "COMMIT"), 0);
     assert!(f.locks.lock().unwrap().is_empty());
 }
@@ -252,10 +330,13 @@ fn set_transaction_without_commitment_control_holds_for_the_statement() {
     ctx.naming = Naming::Sql;
     let mut st = f.store.borrow_mut();
     let mut txn = st.begin().unwrap();
-    sql::prepare("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ", Naming::Sql)
-        .unwrap()
-        .execute(&mut txn, &mut ctx, &[])
-        .unwrap();
+    sql::prepare(
+        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ",
+        Naming::Sql,
+    )
+    .unwrap()
+    .execute(&mut txn, &mut ctx, &[])
+    .unwrap();
     let p = sql::prepare("SELECT COUNT(*) FROM ALLQ.T WHERE ID <= 10", Naming::Sql).unwrap();
     p.execute(&mut txn, &mut ctx, &[]).unwrap();
     assert!(f.locks.lock().unwrap().is_empty());

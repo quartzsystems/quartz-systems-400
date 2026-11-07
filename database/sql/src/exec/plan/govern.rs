@@ -35,7 +35,14 @@ fn reads(txn: &mut Txn<'_>, ctx: &SqlContext, q: &Query) -> (u64, bool, u64) {
     (rows, keeps, width)
 }
 
-fn body(txn: &mut Txn<'_>, ctx: &SqlContext, b: &QueryBody, rows: &mut u64, keeps: &mut bool, width: &mut u64) {
+fn body(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    b: &QueryBody,
+    rows: &mut u64,
+    keeps: &mut bool,
+    width: &mut u64,
+) {
     match b {
         QueryBody::Select(s) => {
             *keeps |= s.distinct || !s.group_by.is_empty() || s.from.len() > 1;
@@ -43,7 +50,9 @@ fn body(txn: &mut Txn<'_>, ctx: &SqlContext, b: &QueryBody, rows: &mut u64, keep
                 table(txn, ctx, t, rows, keeps, width);
             }
         }
-        QueryBody::Union { left, right, all, .. } => {
+        QueryBody::Union {
+            left, right, all, ..
+        } => {
             *keeps |= !all;
             body(txn, ctx, left, rows, keeps, width);
             body(txn, ctx, right, rows, keeps, width);
@@ -56,11 +65,19 @@ fn body(txn: &mut Txn<'_>, ctx: &SqlContext, b: &QueryBody, rows: &mut u64, keep
     }
 }
 
-fn table(txn: &mut Txn<'_>, ctx: &SqlContext, t: &TableRef, rows: &mut u64, keeps: &mut bool, width: &mut u64) {
+fn table(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    t: &TableRef,
+    rows: &mut u64,
+    keeps: &mut bool,
+    width: &mut u64,
+) {
     match t {
         TableRef::Table { name, .. } => {
             if let Ok(info) = ctx.resolve_table(txn, name) {
-                let n = Member::open(txn, &info.desc, &info.member).map_or(0, |m| m.attr().record_count);
+                let n = Member::open(txn, &info.desc, &info.member)
+                    .map_or(0, |m| m.attr().record_count);
                 *rows = rows.saturating_add(n);
                 *width = (*width).max(u64::from(info.desc.attr.record_len));
             }
@@ -105,17 +122,25 @@ pub fn check(txn: &mut Txn<'_>, ctx: &SqlContext, q: &Query) -> Result<()> {
         return Err(SqlError::Coded {
             code: -666,
             state: "57005",
-            what: format!("the query's estimated run time of {seconds} seconds passes QUERY_TIME_LIMIT {t}"),
+            what: format!(
+                "the query's estimated run time of {seconds} seconds passes QUERY_TIME_LIMIT {t}"
+            ),
         });
     }
-    let mib = if keeps { rows.saturating_mul(width.max(1)) >> 20 } else { 0 };
+    let mib = if keeps {
+        rows.saturating_mul(width.max(1)) >> 20
+    } else {
+        0
+    };
     if let Some(s) = storage
         && mib > s
     {
         return Err(SqlError::Coded {
             code: -666,
             state: "57005",
-            what: format!("the query's estimated temporary storage of {mib} MiB passes QUERY_STORAGE_LIMIT {s}"),
+            what: format!(
+                "the query's estimated temporary storage of {mib} MiB passes QUERY_STORAGE_LIMIT {s}"
+            ),
         });
     }
     Ok(())

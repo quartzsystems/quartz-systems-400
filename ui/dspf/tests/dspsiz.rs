@@ -44,7 +44,15 @@ fn wide_file() -> DisplayFile {
         spec(&[(6, "A"), (45, "DSPSIZ(27 132 *DS4)")]),
         spec(&[(6, "A"), (17, "R"), (19, "WIDE")]),
         spec(&[(6, "A"), (39, "  1"), (42, "100"), (45, "'Wide title'")]),
-        spec(&[(6, "A"), (19, "NAME"), (33, "10"), (35, "A"), (38, "B"), (39, "  5"), (42, "  2")]),
+        spec(&[
+            (6, "A"),
+            (19, "NAME"),
+            (33, "10"),
+            (35, "A"),
+            (38, "B"),
+            (39, "  5"),
+            (42, "  2"),
+        ]),
         spec(&[(6, "A"), (39, " 27"), (42, "  2"), (45, "'Bottom row'")]),
     ]
     .join("\n");
@@ -54,7 +62,11 @@ fn wide_file() -> DisplayFile {
 /// The sign-on's output buffer.
 fn sign_on_out(df: &DisplayFile) -> Vec<u8> {
     let rec = df.record("SIGNON").expect("format");
-    let values = [("QSYSNAME", "SYSNAME"), ("SBSNAME", "QINTER"), ("DEVNAME", "QPADEV0001")];
+    let values = [
+        ("QSYSNAME", "SYSNAME"),
+        ("SBSNAME", "QINTER"),
+        ("DEVNAME", "QPADEV0001"),
+    ];
     let mut out = Vec::new();
     for bf in &rec.layout.output.fields {
         let f = &rec.fields[bf.field];
@@ -145,7 +157,8 @@ fn wide_file_is_27x132_on_a_27x132_device() {
     let mut m = ScreenModel::new(false);
     let mut rt = Runtime::new(wide_file(), true);
     assert!(rt.shows_wide());
-    rt.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[]).unwrap();
+    rt.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[])
+        .unwrap();
     let mut t = terminal(Model::M3477Fc);
     show(&mut m, &mut t, cmd::CLEAR_UNIT_ALT, 27);
     assert_eq!((t.rows(), t.cols()), (27, 132));
@@ -164,12 +177,14 @@ fn one_job_switches_between_the_sizes() {
     show(&mut m, &mut t, cmd::CLEAR_UNIT, 24);
     assert_eq!(t.cols(), 80);
 
-    wide.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[]).unwrap();
+    wide.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[])
+        .unwrap();
     show(&mut m, &mut t, cmd::CLEAR_UNIT_ALT, 27);
     assert_eq!(t.cols(), 132);
 
     // The same size again: only what changed, no clear.
-    wide.write(&mut m, &Env::default(), "WIDE", b"XYZ       ", &[]).unwrap();
+    wide.write(&mut m, &Env::default(), "WIDE", b"XYZ       ", &[])
+        .unwrap();
     let o = m.render(Read::MdtFields);
     assert_eq!(sent(&o.data).0, None);
     t.apply(&Record::new(o.opcode, o.data)).unwrap();
@@ -179,7 +194,8 @@ fn one_job_switches_between_the_sizes() {
     assert_eq!((t.rows(), t.cols()), (24, 80));
     assert!(t.text_rows()[23].contains("COPYRIGHT"));
 
-    wide.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[]).unwrap();
+    wide.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[])
+        .unwrap();
     show(&mut m, &mut t, cmd::CLEAR_UNIT_ALT, 27);
     assert_eq!((t.rows(), t.cols()), (27, 132));
 }
@@ -189,7 +205,8 @@ fn wide_file_on_a_24x80_device_stays_24x80() {
     let mut m = ScreenModel::new(false);
     let mut rt = Runtime::new(wide_file(), false);
     assert!(!rt.shows_wide());
-    rt.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[]).unwrap();
+    rt.write(&mut m, &Env::default(), "WIDE", b"ABC       ", &[])
+        .unwrap();
     let mut t = terminal(Model::M3179);
     show(&mut m, &mut t, cmd::CLEAR_UNIT, 24);
     assert_eq!((t.rows(), t.cols()), (24, 80));

@@ -63,17 +63,32 @@ impl Suite {
         if !matches!((es, sys), (Some(a), Some(b)) if a < b) {
             return Err(format!("DSPLIBL after CHGJOB LANGID(ESP):\n{libl}"));
         }
-        run(&mut d, &mut ctx, "key f3\nsettle 1000\ntype WRKHDWRSC TYPE(*CMN)\nkey enter\nsettle 3000\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "key f3\nsettle 1000\ntype WRKHDWRSC TYPE(*CMN)\nkey enter\nsettle 3000\n",
+        )?;
         let hw = screen(&d);
-        want(&hw, "WRKHDWRSC in Spanish", &["Operativo", "Puerto Ethernet"])?;
-        run(&mut d, &mut ctx, "key f3\nsettle 1000\ntype signoff\nkey enter\nsettle 2000\n")?;
+        want(
+            &hw,
+            "WRKHDWRSC in Spanish",
+            &["Operativo", "Puerto Ethernet"],
+        )?;
+        run(
+            &mut d,
+            &mut ctx,
+            "key f3\nsettle 1000\ntype signoff\nkey enter\nsettle 2000\n",
+        )?;
         d.disconnect();
         Ok("QSYS2931 installed; LANGID(ESP) puts it ahead of QSYS; WRKHDWRSC in Spanish".into())
     }
 
     /// Step 121: `QSYS2931` at the front of `QSYSLIBL`, a Spanish sign-on.
     pub(crate) fn spanish_sign_on(&self, s: &mut Session) -> Result<String, String> {
-        let set = s.command(&format!("CHGSYSVAL SYSVAL(QSYSLIBL) VALUE('QSYS2931 {SYSLIBL}')"), CMD)?;
+        let set = s.command(
+            &format!("CHGSYSVAL SYSVAL(QSYSLIBL) VALUE('QSYS2931 {SYSLIBL}')"),
+            CMD,
+        )?;
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
         let shown = connect(port, "QSECOFR", SECOFR_PASSWORD).and_then(|mut d| {
             let c = tn5250_driver::Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
@@ -84,9 +99,16 @@ impl Suite {
             r
         });
         // Back to the shipped list whatever the sign-on showed.
-        let back = s.command(&format!("CHGSYSVAL SYSVAL(QSYSLIBL) VALUE('{SYSLIBL}')"), CMD)?;
+        let back = s.command(
+            &format!("CHGSYSVAL SYSVAL(QSYSLIBL) VALUE('{SYSLIBL}')"),
+            CMD,
+        )?;
         let shown = shown.map_err(|e| format!("CHGSYSVAL: {set}\n{e}"))?;
-        want(&shown, "the Spanish sign-on", &["Inicio de sesi", "Usuario", "Contrase", "Biblioteca actual"])?;
+        want(
+            &shown,
+            "the Spanish sign-on",
+            &["Inicio de sesi", "Usuario", "Contrase", "Biblioteca actual"],
+        )?;
         if back.contains("CPF") {
             return Err(format!("restoring QSYSLIBL: {back}"));
         }
@@ -114,12 +136,21 @@ impl Suite {
         let words: Vec<&str> = top.split_whitespace().collect();
         let shape = |w: &str, sep: u8| {
             let b = w.as_bytes();
-            b.len() == 8 && b[2] == sep && b[5] == sep && b.iter().enumerate().all(|(i, c)| i == 2 || i == 5 || c.is_ascii_digit())
+            b.len() == 8
+                && b[2] == sep
+                && b[5] == sep
+                && b.iter()
+                    .enumerate()
+                    .all(|(i, c)| i == 2 || i == 5 || c.is_ascii_digit())
         };
         if !words.iter().any(|w| shape(w, b'-')) || !words.iter().any(|w| shape(w, b'.')) {
             return Err(format!("WRKACTJOB's date and time after CHGJOB:\n{top}"));
         }
-        run(&mut d, &mut ctx, "key f3\nsettle 1000\ntype signoff\nkey enter\nsettle 2000\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "key f3\nsettle 1000\ntype signoff\nkey enter\nsettle 2000\n",
+        )?;
         d.disconnect();
         Ok("WRKACTJOB shows YY-MM-DD and HH.MM.SS".into())
     }

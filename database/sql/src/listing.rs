@@ -92,7 +92,11 @@ pub fn listing(l: &Listing<'_>, report: &RunReport, text: &str, w: &Words<'_>) -
     }
     for (id, kwd) in OPTIONS {
         let label = w(id, &[]);
-        p1.push(if kwd.is_empty() { label } else { dotted(&label, &(l.value)(kwd)) });
+        p1.push(if kwd.is_empty() {
+            label
+        } else {
+            dotted(&label, &(l.value)(kwd))
+        });
     }
     if let Some((d, t)) = &l.changed {
         p1.push(w("TXT0962", &[d, t]));
@@ -100,13 +104,22 @@ pub fn listing(l: &Listing<'_>, report: &RunReport, text: &str, w: &Words<'_>) -
     pages.push(p1);
     // The source, numbered.
     let ruler = w("TXT0963", &[]);
-    let mut src: Vec<String> = l.records.iter().enumerate().map(|(i, r)| format!("{:>7} {r}", i + 1)).collect();
+    let mut src: Vec<String> = l
+        .records
+        .iter()
+        .enumerate()
+        .map(|(i, r)| format!("{:>7} {r}", i + 1))
+        .collect();
     src.push(format!("{:33}{}", "", w("TXT0964", &[])));
     let msgs = messages(report, text, w);
     let worst = msgs.iter().map(|m| m.1).max().unwrap_or(0);
     let end = format!("{:32}{}", "", w("TXT0903", &[]));
     if msgs.is_empty() {
-        src.push(if report.errors == 0 { w("TXT0969", &[]) } else { w("TXT0968", &[&worst.to_string()]) });
+        src.push(if report.errors == 0 {
+            w("TXT0969", &[])
+        } else {
+            w("TXT0968", &[&worst.to_string()])
+        });
         src.push(end.clone());
     }
     for chunk in src.chunks(PER_PAGE) {
@@ -139,7 +152,11 @@ pub fn listing(l: &Listing<'_>, report: &RunReport, text: &str, w: &Words<'_>) -
             count(30, 39),
             count(40, 99)
         ));
-        m.push(if worst == 0 { w("TXT0969", &[]) } else { w("TXT0968", &[&worst.to_string()]) });
+        m.push(if worst == 0 {
+            w("TXT0969", &[])
+        } else {
+            w("TXT0968", &[&worst.to_string()])
+        });
         m.push(end);
         for chunk in m.chunks(PER_PAGE) {
             let mut p = vec![ruler.clone()];
@@ -344,10 +361,32 @@ mod tests {
         assert_eq!(head.find("26-11-05"), Some(102));
         assert_eq!(head.find("PAGE"), Some(122));
         assert!(head.ends_with("PAGE   1"));
-        assert!(lines.iter().any(|x| x == " SQL7956   0       1  Position 1 1 rows inserted in T in LIB."));
-        assert!(lines.iter().any(|x| x == " SQL0204  30       2  Position 1 X in LIB type *FILE not found."));
-        assert!(lines.iter().any(|x| x == "       2        1         0          0        1         0"));
-        assert!(lines.iter().any(|x| x == " 30 level severity errors found in source"));
-        assert!(lines.iter().filter(|x| x.starts_with('1')).nth(1).is_some_and(|x| x.ends_with("PAGE     2")));
+        assert!(
+            lines
+                .iter()
+                .any(|x| x == " SQL7956   0       1  Position 1 1 rows inserted in T in LIB.")
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|x| x == " SQL0204  30       2  Position 1 X in LIB type *FILE not found.")
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|x| x == "       2        1         0          0        1         0")
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|x| x == " 30 level severity errors found in source")
+        );
+        assert!(
+            lines
+                .iter()
+                .filter(|x| x.starts_with('1'))
+                .nth(1)
+                .is_some_and(|x| x.ends_with("PAGE     2"))
+        );
     }
 }

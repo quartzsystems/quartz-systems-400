@@ -15,7 +15,11 @@ use crate::error::{Result, SqlError};
 use crate::value::Value;
 
 fn failed(what: String) -> SqlError {
-    SqlError::Coded { code: -443, state: "38501", what }
+    SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what,
+    }
 }
 
 fn ignore(args: &Args) -> bool {
@@ -56,15 +60,30 @@ pub fn statistics(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Ou
         return Ok(());
     };
     let subtree = args.word("SUBTREE_DIRECTORIES").is_none_or(|v| v == "YES");
-    let types: Vec<String> = args.word("OBJECT_TYPE_LIST").unwrap_or_default().split_whitespace().map(str::to_string).collect();
-    let omit: Vec<String> = args.text("OMIT_LIST").unwrap_or_default().split_whitespace().map(str::to_string).collect();
-    let list = match ask(txn, ctx, "the IFS", |h| h.ifs_objects(start.trim(), subtree))? {
+    let types: Vec<String> = args
+        .word("OBJECT_TYPE_LIST")
+        .unwrap_or_default()
+        .split_whitespace()
+        .map(str::to_string)
+        .collect();
+    let omit: Vec<String> = args
+        .text("OMIT_LIST")
+        .unwrap_or_default()
+        .split_whitespace()
+        .map(str::to_string)
+        .collect();
+    let list = match ask(txn, ctx, "the IFS", |h| {
+        h.ifs_objects(start.trim(), subtree)
+    })? {
         Ok(l) => l,
         Err(_) if ignore(args) => return Ok(()),
         Err(e) => return Err(failed(e)),
     };
     for (path, o) in list {
-        if omit.iter().any(|p| path == *p || path.starts_with(&format!("{p}/"))) {
+        if omit
+            .iter()
+            .any(|p| path == *p || path.starts_with(&format!("{p}/")))
+        {
             continue;
         }
         let o = match o {
@@ -72,7 +91,13 @@ pub fn statistics(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Ou
             Err(_) if ignore(args) => continue,
             Err(e) => return Err(failed(format!("{path}: {e}"))),
         };
-        if !types.is_empty() && !types.iter().any(|t| *t == o.kind || (t == "*ALLDIR" && o.kind == "*DIR") || (t == "*ALLSTMF" && o.kind == "*STMF")) {
+        if !types.is_empty()
+            && !types.iter().any(|t| {
+                *t == o.kind
+                    || (t == "*ALLDIR" && o.kind == "*DIR")
+                    || (t == "*ALLSTMF" && o.kind == "*STMF")
+            })
+        {
             continue;
         }
         object(out, &path, &o);
@@ -99,7 +124,13 @@ fn eol(args: &Args) -> Result<Eol> {
         Some("CR") => Eol::Cr,
         Some("LFCR") => Eol::Lfcr,
         Some("NONE") => Eol::None,
-        Some(o) => return Err(SqlError::Coded { code: -171, state: "42815", what: format!("END_OF_LINE {o}") }),
+        Some(o) => {
+            return Err(SqlError::Coded {
+                code: -171,
+                state: "42815",
+                what: format!("END_OF_LINE {o}"),
+            });
+        }
     })
 }
 
@@ -143,20 +174,38 @@ fn lines(data: &[u8], eol: Eol, max: usize, nl: u8) -> Vec<Vec<u8>> {
 }
 
 /// The three reads: text in the job's terms, binary, or UTF-8.
-fn read(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out, binary: bool) -> Result<()> {
+fn read(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    args: &Args,
+    out: &mut Out,
+    binary: bool,
+) -> Result<()> {
     let Some(path) = args.text("PATH_NAME") else {
         return Ok(());
     };
     let eol = eol(args)?;
-    let max = args.int("MAXIMUM_LINE_LENGTH").and_then(|n| usize::try_from(n).ok()).filter(|n| *n > 0).unwrap_or(usize::MAX);
+    let max = args
+        .int("MAXIMUM_LINE_LENGTH")
+        .and_then(|n| usize::try_from(n).ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(usize::MAX);
     let (data, ccsid) = match ask(txn, ctx, "the IFS", |h| h.ifs_read(path.trim()))? {
         Ok(d) => d,
         Err(_) if ignore(args) => return Ok(()),
         Err(e) => return Err(failed(e)),
     };
-    let codec = if binary { None } else { ccsid::conv::Codec::of(ccsid).ok().flatten() };
+    let codec = if binary {
+        None
+    } else {
+        ccsid::conv::Codec::of(ccsid).ok().flatten()
+    };
     // EBCDIC text ends lines with NL (X'15') as well.
-    let nl = if codec.as_ref().is_some_and(ccsid::conv::Codec::is_ebcdic) { 0x15 } else { b'\n' };
+    let nl = if codec.as_ref().is_some_and(ccsid::conv::Codec::is_ebcdic) {
+        0x15
+    } else {
+        b'\n'
+    };
     for (i, l) in lines(&data, eol, max, nl).into_iter().enumerate() {
         out.row();
         out.int("LINE_NUMBER", i + 1);
@@ -186,7 +235,6 @@ pub fn read_text(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out
 pub fn read_binary(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     read(txn, ctx, args, out, true)
 }
-
 
 /// `IFS_OBJECT_PRIVILEGES(PATH_NAME, IGNORE_ERRORS)`: one row for
 /// `*PUBLIC`, the owner, the primary group and each private authority,
@@ -257,19 +305,41 @@ pub fn locks(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) ->
             _ => "SHARE_RW",
         };
         for a in ["RO", "WO", "RW"] {
-            out.int(&format!("{a}_COUNT"), mine.iter().filter(|o| access(o) == a).count());
+            out.int(
+                &format!("{a}_COUNT"),
+                mine.iter().filter(|o| access(o) == a).count(),
+            );
             for s in ["SHARE_R", "SHARE_W", "SHARE_RW", "SHARE_NONE"] {
-                out.int(&format!("{a}_{s}_COUNT"), mine.iter().filter(|o| access(o) == a && share(o) == s).count());
+                out.int(
+                    &format!("{a}_{s}_COUNT"),
+                    mine.iter()
+                        .filter(|o| access(o) == a && share(o) == s)
+                        .count(),
+                );
             }
         }
         for s in ["SHARE_R", "SHARE_W", "SHARE_RW", "SHARE_NONE"] {
-            out.int(&format!("{s}_COUNT"), mine.iter().filter(|o| share(o) == s).count());
+            out.int(
+                &format!("{s}_COUNT"),
+                mine.iter().filter(|o| share(o) == s).count(),
+            );
             // QS/400 opens nothing for execution alone.
             out.int(&format!("XO_{s}_COUNT"), 0);
             out.int(&format!("XR_{s}_COUNT"), 0);
         }
         out.int("XO_COUNT", 0);
-        for col in ["ATTRIBUTE_LOCK", "SAVE_LOCK", "INTERNAL_SAVE_LOCK", "LINK_CHANGES_LOCK", "CHECKED_OUT", "CURRENT_DIRECTORY", "ROOT_DIRECTORY", "FILE_SERVER_REFERENCE", "FILE_SERVER_WORKING_DIRECTORY", "NFS_SERVER_REFERENCE"] {
+        for col in [
+            "ATTRIBUTE_LOCK",
+            "SAVE_LOCK",
+            "INTERNAL_SAVE_LOCK",
+            "LINK_CHANGES_LOCK",
+            "CHECKED_OUT",
+            "CURRENT_DIRECTORY",
+            "ROOT_DIRECTORY",
+            "FILE_SERVER_REFERENCE",
+            "FILE_SERVER_WORKING_DIRECTORY",
+            "NFS_SERVER_REFERENCE",
+        ] {
             out.yes(col, false);
         }
     }
@@ -283,9 +353,15 @@ mod tests {
     #[test]
     fn line_breaks() {
         let l = |d: &[u8], e| lines(d, e, usize::MAX, b'\n');
-        assert_eq!(l(b"a\r\nb\nc", Eol::Any), vec![b"a".to_vec(), b"b".to_vec(), b"c".to_vec()]);
+        assert_eq!(
+            l(b"a\r\nb\nc", Eol::Any),
+            vec![b"a".to_vec(), b"b".to_vec(), b"c".to_vec()]
+        );
         assert_eq!(l(b"a\r\nb", Eol::Lf), vec![b"a\r".to_vec(), b"b".to_vec()]);
         assert_eq!(l(b"ab\ncd", Eol::None), vec![b"ab\ncd".to_vec()]);
-        assert_eq!(lines(b"abcde", Eol::None, 2, b'\n'), vec![b"ab".to_vec(), b"cd".to_vec(), b"e".to_vec()]);
+        assert_eq!(
+            lines(b"abcde", Eol::None, 2, b'\n'),
+            vec![b"ab".to_vec(), b"cd".to_vec(), b"e".to_vec()]
+        );
     }
 }

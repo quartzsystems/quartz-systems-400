@@ -16,14 +16,23 @@ use crate::display::surface::Surface;
 use crate::display::uim::Response;
 
 /// `DSPLICKEY PRDID() LICTRM() FEATURE() SERIAL() OUTPUT()`.
-pub fn dsplickey(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dsplickey(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     if parm(r, "OUTPUT") == "*LICKEYFILE" {
         let mut out = Outcome::default();
         return crate::command::service(job, host, r, &mut out);
     }
     let args = ["PRDID", "LICTRM", "FEATURE", "SERIAL"].map(|k| parm(r, k));
     let (_, lists) = fetch(host, "LICKEY", &args)?;
-    let keys = lists.into_iter().find(|(n, _)| n == "KEYS").map(|(_, rows)| rows).unwrap_or_default();
+    let keys = lists
+        .into_iter()
+        .find(|(n, _)| n == "KEYS")
+        .map(|(_, rows)| rows)
+        .unwrap_or_default();
     let mut d = dialog(host, "QUILICKEY")?;
     let mut i = 0;
     while let Some(key) = keys.get(i) {

@@ -86,7 +86,12 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !values.iter().all(|v| tail.contains(v)) {
@@ -139,11 +144,22 @@ fn crtdevprt_ip_parameters_follow_lanattach() {
     assert_eq!(p.key(0, &fields, &mut env), Step::Show);
     let text = p.screen().text();
     let want = golden_rows("prompt-crtdevprt-ip-f10");
-    for label in ["LANATTACH", "PORT", "ONLINE", "FONT", "FORMFEED", "SEPDRAWER", "SEPPGM"] {
+    for label in [
+        "LANATTACH",
+        "PORT",
+        "ONLINE",
+        "FONT",
+        "FORMFEED",
+        "SEPDRAWER",
+        "SEPPGM",
+    ] {
         let row = want.iter().find(|r| r.contains(label)).unwrap();
         let prompt = row.trim_start().split(" . ").next().unwrap();
         let prompt = prompt.split("  ").next().unwrap().trim();
         assert!(text.contains(prompt), "{label}: {prompt:?} not shown");
     }
-    assert!(!text.contains("Remote location"), "RMTLOCNAME waits for PORT");
+    assert!(
+        !text.contains("Remote location"),
+        "RMTLOCNAME waits for PORT"
+    );
 }

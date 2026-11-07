@@ -40,7 +40,12 @@ mod imp {
         b.len() >= 12 && u16::from_be_bytes([b[0], b[1]]) == id && b[2] & 0x80 != 0
     }
 
-    pub(super) fn udp(server: SocketAddr, query: &[u8], id: u16, wait: Duration) -> Result<Vec<u8>, Failure> {
+    pub(super) fn udp(
+        server: SocketAddr,
+        query: &[u8],
+        id: u16,
+        wait: Duration,
+    ) -> Result<Vec<u8>, Failure> {
         let local: SocketAddr = if server.is_ipv4() {
             (Ipv4Addr::UNSPECIFIED, 0).into()
         } else {
@@ -66,7 +71,12 @@ mod imp {
         }
     }
 
-    pub(super) fn tcp(server: SocketAddr, query: &[u8], id: u16, wait: Duration) -> Result<Vec<u8>, Failure> {
+    pub(super) fn tcp(
+        server: SocketAddr,
+        query: &[u8],
+        id: u16,
+        wait: Duration,
+    ) -> Result<Vec<u8>, Failure> {
         let mut s = TcpStream::connect_timeout(&server, wait).map_err(|e| fail(&e))?;
         s.set_read_timeout(Some(wait)).map_err(|e| fail(&e))?;
         s.set_write_timeout(Some(wait)).map_err(|e| fail(&e))?;
@@ -78,14 +88,24 @@ mod imp {
         s.read_exact(&mut l).map_err(|e| fail(&e))?;
         let mut buf = vec![0u8; usize::from(u16::from_be_bytes(l))];
         s.read_exact(&mut buf).map_err(|e| fail(&e))?;
-        if answers(id, &buf) { Ok(buf) } else { Err(Failure::Unreachable) }
+        if answers(id, &buf) {
+            Ok(buf)
+        } else {
+            Err(Failure::Unreachable)
+        }
     }
 }
 
 /// Send `query` (whose identifier is `id`) and wait up to `wait` for
 /// the answer.
 #[cfg(unix)]
-pub fn exchange(server: SocketAddr, query: &[u8], id: u16, proto: DnsProtocol, wait: Duration) -> Result<Vec<u8>, Failure> {
+pub fn exchange(
+    server: SocketAddr,
+    query: &[u8],
+    id: u16,
+    proto: DnsProtocol,
+    wait: Duration,
+) -> Result<Vec<u8>, Failure> {
     if proto == DnsProtocol::Tcp {
         return imp::tcp(server, query, id, wait);
     }
@@ -99,6 +119,12 @@ pub fn exchange(server: SocketAddr, query: &[u8], id: u16, proto: DnsProtocol, w
 
 /// No network path off Unix.
 #[cfg(not(unix))]
-pub fn exchange(_server: SocketAddr, _query: &[u8], _id: u16, _proto: DnsProtocol, _wait: Duration) -> Result<Vec<u8>, Failure> {
+pub fn exchange(
+    _server: SocketAddr,
+    _query: &[u8],
+    _id: u16,
+    _proto: DnsProtocol,
+    _wait: Duration,
+) -> Result<Vec<u8>, Failure> {
     Err(Failure::Unreachable)
 }

@@ -12,8 +12,8 @@
 //! power down to `slic`. The rest runs in the job (`work/qsjob/src/work/qap/manage.rs`).
 
 use qap_proto::ops::manage::{
-    Asp, DiskUnit, DiskUnits, EndHow, IplAction, IplMode, IplSource, IplStatus, PowerDown, PreviousEnd, Protection,
-    Ptf, PtfStatus, UnitStatus,
+    Asp, DiskUnit, DiskUnits, EndHow, IplAction, IplMode, IplSource, IplStatus, PowerDown,
+    PreviousEnd, Protection, Ptf, PtfStatus, UnitStatus,
 };
 use stg::QapRefused;
 use svctools::DstEnv;
@@ -30,7 +30,11 @@ fn failed(status: u16, e: &str) -> QapRefused {
         .filter(|w| w.len() == 7 && w.chars().all(|c| c.is_ascii_alphanumeric()))
         .unwrap_or("CPF9898");
     let text = e.strip_prefix(id).unwrap_or(e).trim();
-    let status = if id == "CPF222E" { NOT_AUTHORIZED } else { status };
+    let status = if id == "CPF222E" {
+        NOT_AUTHORIZED
+    } else {
+        status
+    };
     refused(status, id, text, &[])
 }
 
@@ -186,7 +190,8 @@ pub fn disks(system: &mut System, ctx: &JobCtx) -> Result<DiskUnits, QapRefused>
 /// the IPL's start as the record has it; the job puts `SCPF`'s start.
 pub fn ipl(system: &mut System, ctx: &JobCtx) -> Result<IplStatus, QapRefused> {
     connection_job(ctx)?;
-    let next = ptf::slot::next_slot(&crate::cpp::ptflic::load(system), None).map(|s| format!("{s:?}"));
+    let next =
+        ptf::slot::next_slot(&crate::cpp::ptflic::load(system), None).map(|s| format!("{s:?}"));
     if let Some((part, record)) = system.lic.as_mut()
         && let Ok(fresh) = part.read()
     {
@@ -207,9 +212,12 @@ pub fn ipl(system: &mut System, ctx: &JobCtx) -> Result<IplStatus, QapRefused> {
         };
         st.slot = format!("{:?}", h.last_slot);
         if let Some(last) = record.history.last() {
-            st.ipl_time = i64::try_from(last.start_time).unwrap_or(0).saturating_mul(1000);
+            st.ipl_time = i64::try_from(last.start_time)
+                .unwrap_or(0)
+                .saturating_mul(1000);
             st.last_src = format!("{:<8}", last.final_src_str());
-            st.src_text = crate::src::lookup(last.final_src_str()).map_or_else(String::new, |s| s.text.to_string());
+            st.src_text = crate::src::lookup(last.final_src_str())
+                .map_or_else(String::new, |s| s.text.to_string());
         }
     }
     let abnormal = system
@@ -217,7 +225,11 @@ pub fn ipl(system: &mut System, ctx: &JobCtx) -> Result<IplStatus, QapRefused> {
         .as_ref()
         .and_then(|v| v.get("QABNORMSW").ok())
         .is_some_and(|v| v.text() == "1");
-    st.previous_end = if abnormal { PreviousEnd::Abnormal } else { PreviousEnd::Normal };
+    st.previous_end = if abnormal {
+        PreviousEnd::Abnormal
+    } else {
+        PreviousEnd::Normal
+    };
     Ok(st)
 }
 
@@ -230,7 +242,12 @@ pub fn power(system: &mut System, ctx: &JobCtx, req: &PowerDown) -> Result<(), Q
     me.require(sec::profile::SpecialAuth::JOBCTL, "power down the system")
         .map_err(|e| failed(NOT_AUTHORIZED, &e.to_string()))?;
     if std::path::Path::new(crate::ipl::power::REQUEST_FILE).exists() {
-        return Err(refused(ERROR, "CPF9898", "A power down of the system has already started.", &[]));
+        return Err(refused(
+            ERROR,
+            "CPF9898",
+            "A power down of the system has already started.",
+            &[],
+        ));
     }
     system.current_job = ctx.job.number;
     let iplsrc = match req.ipl_source {
@@ -242,7 +259,11 @@ pub fn power(system: &mut System, ctx: &JobCtx, req: &PowerDown) -> Result<(), Q
     let delay = req.delay.unwrap_or(3600);
     std::fs::write(
         crate::ipl::power::REQUEST_FILE,
-        format!("{} {delay} {} {iplsrc}\n", u8::from(immediate), u8::from(req.restart)),
+        format!(
+            "{} {delay} {} {iplsrc}\n",
+            u8::from(immediate),
+            u8::from(req.restart)
+        ),
     )
     .map_err(|e| failed(ERROR, &e.to_string()))?;
     rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1)

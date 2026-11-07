@@ -28,7 +28,11 @@ fn sftp_on_root_and_qopensys() {
     let w = world(SFTP);
     let mut c = signed_on(&w.server, "qstest");
     let mut s = Sftp::start(&mut c).unwrap();
-    assert!(s.extensions.iter().any(|(n, _)| n == "posix-rename@openssh.com"));
+    assert!(
+        s.extensions
+            .iter()
+            .any(|(n, _)| n == "posix-rename@openssh.com")
+    );
     assert_eq!(s.realpath(".").unwrap().unwrap(), "/home/QSTEST");
 
     let big: Vec<u8> = (0..200_000u32).map(|i| (i % 251) as u8).collect();
@@ -49,7 +53,13 @@ fn sftp_on_root_and_qopensys() {
         .unwrap()
         .unwrap();
     assert_eq!(s.get("dir/c.txt").unwrap().unwrap(), b"alpha");
-    let mut names: Vec<String> = s.list("dir").unwrap().unwrap().into_iter().map(|e| e.0).collect();
+    let mut names: Vec<String> = s
+        .list("dir")
+        .unwrap()
+        .unwrap()
+        .into_iter()
+        .map(|e| e.0)
+        .collect();
     names.retain(|n| n != "." && n != "..");
     assert_eq!(names, ["c.txt"]);
     let long = s.list("/home/QSTEST").unwrap().unwrap();
@@ -63,29 +73,64 @@ fn sftp_on_root_and_qopensys() {
     assert_eq!(l.permissions.map(|p| p & 0o170_000), Some(0o120_000));
     assert_eq!(s.get("link").unwrap().unwrap(), b"alpha");
 
-    s.setstat("dir/c.txt", &Attrs { permissions: Some(0o600), ..Attrs::default() })
-        .unwrap()
-        .unwrap();
-    assert_eq!(s.stat("dir/c.txt").unwrap().unwrap().permissions.map(|p| p & 0o777), Some(0o600));
-    s.setstat("dir/c.txt", &Attrs { size: Some(2), ..Attrs::default() }).unwrap().unwrap();
+    s.setstat(
+        "dir/c.txt",
+        &Attrs {
+            permissions: Some(0o600),
+            ..Attrs::default()
+        },
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(
+        s.stat("dir/c.txt")
+            .unwrap()
+            .unwrap()
+            .permissions
+            .map(|p| p & 0o777),
+        Some(0o600)
+    );
+    s.setstat(
+        "dir/c.txt",
+        &Attrs {
+            size: Some(2),
+            ..Attrs::default()
+        },
+    )
+    .unwrap()
+    .unwrap();
     assert_eq!(s.get("dir/c.txt").unwrap().unwrap(), b"al");
 
     assert_eq!(s.rmdir("dir").unwrap().unwrap_err().code, status::FAILURE);
     s.remove("dir/c.txt").unwrap().unwrap();
     s.remove("link").unwrap().unwrap();
     s.rmdir("dir").unwrap().unwrap();
-    assert_eq!(s.stat("dir").unwrap().unwrap_err().code, status::NO_SUCH_FILE);
+    assert_eq!(
+        s.stat("dir").unwrap().unwrap_err().code,
+        status::NO_SUCH_FILE
+    );
 
     // /QOpenSys: case-sensitive, the user's own directory there.
-    s.put("/QOpenSys/qstest/Data.txt", b"open").unwrap().unwrap();
-    assert_eq!(s.get("/QOpenSys/qstest/Data.txt").unwrap().unwrap(), b"open");
+    s.put("/QOpenSys/qstest/Data.txt", b"open")
+        .unwrap()
+        .unwrap();
     assert_eq!(
-        s.get("/QOpenSys/qstest/data.txt").unwrap().unwrap_err().code,
+        s.get("/QOpenSys/qstest/Data.txt").unwrap().unwrap(),
+        b"open"
+    );
+    assert_eq!(
+        s.get("/QOpenSys/qstest/data.txt")
+            .unwrap()
+            .unwrap_err()
+            .code,
         status::NO_SUCH_FILE
     );
     // Authority is the user's: another user's home is not writable.
     assert_eq!(
-        s.put("/home/QSTEST2/x.txt", b"no").unwrap().unwrap_err().code,
+        s.put("/home/QSTEST2/x.txt", b"no")
+            .unwrap()
+            .unwrap_err()
+            .code,
         status::PERMISSION_DENIED
     );
     s.finish().unwrap();
@@ -96,7 +141,13 @@ fn sftp_on_qsys_lib() {
     let w = world(SFTP);
     let mut c = signed_on(&w.server, "qstest");
     let mut s = Sftp::start(&mut c).unwrap();
-    let libs: Vec<String> = s.list("/QSYS.LIB").unwrap().unwrap().into_iter().map(|e| e.0).collect();
+    let libs: Vec<String> = s
+        .list("/QSYS.LIB")
+        .unwrap()
+        .unwrap()
+        .into_iter()
+        .map(|e| e.0)
+        .collect();
     assert!(libs.iter().any(|n| n == "QGPL.LIB"), "{libs:?}");
     let members: Vec<String> = s
         .list("/QSYS.LIB/QGPL.LIB/QCLSRC.FILE")
@@ -106,14 +157,25 @@ fn sftp_on_qsys_lib() {
         .map(|e| e.0)
         .collect();
     assert!(members.iter().any(|n| n == "HELLO.MBR"), "{members:?}");
-    let hello = s.get("/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR").unwrap().unwrap();
+    let hello = s
+        .get("/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR")
+        .unwrap()
+        .unwrap();
     assert!(!hello.is_empty());
-    let a = s.stat("/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR").unwrap().unwrap();
+    let a = s
+        .stat("/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR")
+        .unwrap()
+        .unwrap();
     // IBM's member size counts two line-end bytes per source record;
     // a binary read is the records alone.
     assert_eq!(a.size, Some(hello.len() as u64 + 4));
     // Case does not matter in /QSYS.LIB.
-    assert_eq!(s.get("/qsys.lib/qgpl.lib/qclsrc.file/hello.mbr").unwrap().unwrap(), hello);
+    assert_eq!(
+        s.get("/qsys.lib/qgpl.lib/qclsrc.file/hello.mbr")
+            .unwrap()
+            .unwrap(),
+        hello
+    );
     // A new member in the user's own source file.
     let path = "/QSYS.LIB/QSTEST.LIB/QRPGLESRC.FILE/NEW.MBR";
     match s.put(path, &hello).unwrap() {
@@ -178,7 +240,10 @@ fn legacy_scp_both_ways() {
     c.send_data(ch, &[0]).unwrap();
     // The mode is what the IFS kept for the file.
     let head = String::from_utf8(read_n(&mut c, ch, 15)).unwrap();
-    assert!(head.starts_with("C06") && head.ends_with(" 5 up.txt\n"), "{head:?}");
+    assert!(
+        head.starts_with("C06") && head.ends_with(" 5 up.txt\n"),
+        "{head:?}"
+    );
     c.send_data(ch, &[0]).unwrap();
     assert_eq!(read_n(&mut c, ch, 6), b"hello\0");
     c.send_data(ch, &[0]).unwrap();
@@ -206,7 +271,11 @@ fn direct(host: &str, port: u16) -> Vec<u8> {
 fn forwarding_refused_by_default() {
     let w = world("");
     let mut c = signed_on(&w.server, "qstest");
-    assert!(c.open("direct-tcpip", &direct("127.0.0.1", 9)).unwrap().is_err());
+    assert!(
+        c.open("direct-tcpip", &direct("127.0.0.1", 9))
+            .unwrap()
+            .is_err()
+    );
     let mut req = Writer::new();
     req.str("127.0.0.1").u32(0);
     assert!(c.global("tcpip-forward", &req.finish()).unwrap().is_none());
@@ -237,7 +306,10 @@ fn forwarding_allowed_and_port_restrictions() {
         s.read_exact(&mut b).unwrap();
         s.write_all(&b).unwrap();
     });
-    let ch = c.open("direct-tcpip", &direct("127.0.0.1", port)).unwrap().unwrap();
+    let ch = c
+        .open("direct-tcpip", &direct("127.0.0.1", port))
+        .unwrap()
+        .unwrap();
     c.send_data(ch, b"ping!").unwrap();
     assert_eq!(read_n(&mut c, ch, 5), b"ping!");
 

@@ -147,8 +147,14 @@ mod tests {
         assert_eq!(p.value('t'), Some("x"));
         assert_eq!(p.value('f'), Some("a"));
         assert_eq!(p.operands, v(&["-b"]));
-        assert_eq!(getopt(&v(&["-z"]), "a").unwrap_err(), OptError::Unknown('z'));
-        assert_eq!(getopt(&v(&["-t"]), "t:").unwrap_err(), OptError::Missing('t'));
+        assert_eq!(
+            getopt(&v(&["-z"]), "a").unwrap_err(),
+            OptError::Unknown('z')
+        );
+        assert_eq!(
+            getopt(&v(&["-t"]), "t:").unwrap_err(),
+            OptError::Missing('t')
+        );
         let p = getopt(&v(&["a", "-l"]), "l").unwrap();
         assert_eq!(p.operands, v(&["a", "-l"]));
         let p = getopt(&v(&["-"]), "l").unwrap();

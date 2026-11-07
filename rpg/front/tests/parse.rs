@@ -58,7 +58,10 @@ BETA
         other => panic!("{other:?}"),
     }
     let codes: Vec<&str> = m.calcs.iter().map(|s| s.op.code.as_str()).collect();
-    assert_eq!(codes, vec!["ADD", "IFGT", "EVAL", "ENDIF", "CHAIN", "EXCEPT"]);
+    assert_eq!(
+        codes,
+        vec!["ADD", "IFGT", "EVAL", "ENDIF", "CHAIN", "EXCEPT"]
+    );
     assert_eq!(m.calcs[0].cond.len(), 1);
     assert_eq!(m.calcs[0].cond[0].len(), 2);
     assert!(m.calcs[2].op.xf2.is_some());
@@ -69,7 +72,10 @@ BETA
     assert_eq!(m.outputs[1].except, "TOT");
     assert_eq!(m.outputs[1].fields[0].edit, "J");
     assert_eq!(m.ctdata.len(), 1);
-    assert_eq!(m.ctdata[0].records, vec!["ALPHA".to_string(), "BETA".to_string()]);
+    assert_eq!(
+        m.ctdata[0].records,
+        vec!["ALPHA".to_string(), "BETA".to_string()]
+    );
 }
 
 #[test]
@@ -111,7 +117,10 @@ end-proc;
     assert!(m.fully_free);
     assert_eq!(m.ctl.len(), 2);
     let kinds: Vec<DefKind> = m.defs.iter().map(|d| d.kind).collect();
-    assert_eq!(kinds, vec![DefKind::Ds, DefKind::Ds, DefKind::Pr, DefKind::Const]);
+    assert_eq!(
+        kinds,
+        vec![DefKind::Ds, DefKind::Ds, DefKind::Pr, DefKind::Const]
+    );
     assert_eq!(m.defs[1].children.len(), 2);
     assert_eq!(m.defs[2].children.len(), 1);
     assert_eq!(m.procs.len(), 2);
@@ -120,7 +129,9 @@ end-proc;
     let codes: Vec<&str> = main.calcs.iter().map(|s| s.op.code.as_str()).collect();
     assert_eq!(
         codes,
-        vec!["FOR", "EVAL", "WRITE", "ENDFOR", "IF", "EVAL", "ENDIF", "CHAIN", "EVAL", "RETURN"]
+        vec![
+            "FOR", "EVAL", "WRITE", "ENDFOR", "IF", "EVAL", "ENDIF", "CHAIN", "EVAL", "RETURN"
+        ]
     );
     assert_eq!(main.calcs[0].op.more.len(), 2);
     let chain = &main.calcs[7].op;

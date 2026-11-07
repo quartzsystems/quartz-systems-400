@@ -118,7 +118,10 @@ fn usrprf_vars(
     set("UPNAME", &p.name);
     set("UPPRVSGN", &mdy_hms(p.prev_signon));
     set("UPSGNINV", &p.signon_invalid.to_string());
-    set("UPSTATUS", if p.disabled { "*DISABLED" } else { "*ENABLED" });
+    set(
+        "UPSTATUS",
+        if p.disabled { "*DISABLED" } else { "*ENABLED" },
+    );
     set("UPPWDCHG", &mdy_hms(p.pwd_changed));
     set("UPPWDNONE", yes(p.pwd_none));
     set("UPPWDITV", &interval(p.pwdexpitv, "*NOMAX"));
@@ -157,17 +160,37 @@ fn usrprf_vars(
         },
     );
     set("UPEXPACN", "*NONE");
-    let spc = or_none(&p.spcaut.names().iter().map(|s| (*s).to_string()).collect::<Vec<_>>());
+    let spc = or_none(
+        &p.spcaut
+            .names()
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect::<Vec<_>>(),
+    );
     for (i, s) in spc.iter().take(8).enumerate() {
-        let k = if i == 0 { "UPSPCAUT".to_string() } else { format!("UPSPC{}", i + 1) };
+        let k = if i == 0 {
+            "UPSPCAUT".to_string()
+        } else {
+            format!("UPSPC{}", i + 1)
+        };
         set(&k, s);
     }
     set("UPGRPPRF", &p.grpprf);
-    set("UPOWNER", if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" });
+    set(
+        "UPOWNER",
+        if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" },
+    );
     set("UPGRPAUT", &p.grpaut);
-    set("UPGRPTYP", if p.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" });
+    set(
+        "UPGRPTYP",
+        if p.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" },
+    );
     for (i, g) in or_none(&p.supgrpprf).iter().take(15).enumerate() {
-        let k = if i == 0 { "UPSUPGRP".to_string() } else { format!("UPSUP{}", i + 1) };
+        let k = if i == 0 {
+            "UPSUPGRP".to_string()
+        } else {
+            format!("UPSUP{}", i + 1)
+        };
         set(&k, g);
     }
     set("UPASTLVL", &p.astlvl);
@@ -263,13 +286,22 @@ pub fn autusr(system: &mut System, by_group: bool) -> Result<Vec<Vec<String>>, S
             // The password levels a password is kept for: the short
             // form for levels 0 and 1, the long for 2 and 3.
             let has = |f: sec::profile::payload::PwdForm| {
-                if p.hashes.iter().any(|h| h.form == f) { "*YES" } else { "*NO" }.to_string()
+                if p.hashes.iter().any(|h| h.form == f) {
+                    "*YES"
+                } else {
+                    "*NO"
+                }
+                .to_string()
             };
             rows.push(vec![
                 p.name.clone(),
                 group,
                 mdy(p.pwd_changed),
-                if p.pwd_none { "X".into() } else { String::new() },
+                if p.pwd_none {
+                    "X".into()
+                } else {
+                    String::new()
+                },
                 p.text.clone(),
                 has(sec::profile::payload::PwdForm::Short),
                 has(sec::profile::payload::PwdForm::Long),

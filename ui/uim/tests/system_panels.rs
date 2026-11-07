@@ -248,7 +248,10 @@ fn main_menu_help() {
     // Row 1: `Help` at column 2, the title centered.
     assert_eq!(got[0].get(1..5), Some("Help"));
     let title = got[0][5..].trim();
-    assert_eq!(first(&got[0][5..]).map(|c| c + 5), Some(1 + (80 - title.len()) / 2));
+    assert_eq!(
+        first(&got[0][5..]).map(|c| c + 5),
+        Some(1 + (80 - title.len()) / 2)
+    );
     assert!(want[0].starts_with(" Help "));
     // Rows 3 to 20: text at column 6, headings at 2, nothing past 73.
     assert_eq!(first(&got[2]), Some(6));
@@ -256,7 +259,10 @@ fn main_menu_help() {
     for (w, o) in want[2..20].iter().zip(&got[2..20]) {
         for row in [w, o] {
             assert!(row.trim_end().len() <= 73, "row passes column 73: {row}");
-            assert!(matches!(first(row), None | Some(2 | 6)), "row starts oddly: {row}");
+            assert!(
+                matches!(first(row), None | Some(2 | 6)),
+                "row starts oddly: {row}"
+            );
         }
         headings += usize::from(first(o) == Some(2));
     }
@@ -297,7 +303,11 @@ fn wrksysval() {
         ("QACGLVL", "*MSG", "Accounting level"),
         ("QACTJOB", "*ALC", "Initial number of active jobs"),
         ("QADLACTJ", "*ALC", "Additional number of active jobs"),
-        ("QADLSPLA", "*ALC", "Spooling control block additional storage"),
+        (
+            "QADLSPLA",
+            "*ALC",
+            "Spooling control block additional storage",
+        ),
         ("QADLTOTJ", "*ALC", "Additional number of total jobs"),
         ("QALWJOBITP", "*SYSCTL", "Allow jobs to be interrupted"),
         ("QALWOBJRST", "*SEC", "Allow object restore option"),
@@ -307,7 +317,10 @@ fn wrksysval() {
     .collect();
     let mut d = MapDialog::new();
     d.set_list("SYSVALS", entries(rows, false));
-    let o = Options { show_copyright: false, ..v71(&g, "SYSNAME") };
+    let o = Options {
+        show_copyright: false,
+        ..v71(&g, "SYSNAME")
+    };
     common::compare71("wrksysval", &render(&g, "WRKSYSVAL", &d, &o).unwrap());
 }
 
@@ -330,7 +343,10 @@ fn wrkusrprf() {
     .collect();
     let mut d = MapDialog::new();
     d.set_list("USERS", entries(rows, false));
-    let o = Options { show_copyright: false, ..v71(&g, "SYSNAME") };
+    let o = Options {
+        show_copyright: false,
+        ..v71(&g, "SYSNAME")
+    };
     common::compare71("wrkusrprf", &render(&g, "WRKUSRPRF", &d, &o).unwrap());
 }
 
@@ -350,12 +366,23 @@ fn wrkcfgsts() {
         ("QPADEV0001", "ACTIVE", job("QPADEV0001", "USERNAM")),
     ]
     .iter()
-    .map(|(n, s, j)| row(&[("CFNAME", n), ("CFOBJ", n), ("CFSTS", s), ("CFJOB", j), ("CFTYPE", "*DEV")]))
+    .map(|(n, s, j)| {
+        row(&[
+            ("CFNAME", n),
+            ("CFOBJ", n),
+            ("CFSTS", s),
+            ("CFJOB", j),
+            ("CFTYPE", "*DEV"),
+        ])
+    })
     .collect();
     let mut d = MapDialog::new();
     d.set("*DATETIME", "MM/DD/YY  HH:MM:SS");
     d.set_list("CFGS", entries(rows, false));
-    let o = Options { show_copyright: false, ..v71(&g, "S062B175") };
+    let o = Options {
+        show_copyright: false,
+        ..v71(&g, "S062B175")
+    };
     common::compare71("wrkcfgsts", &render(&g, "WRKCFGSTS", &d, &o).unwrap());
 }
 
@@ -382,7 +409,10 @@ fn dspdevd() {
     ] {
         d.set(k, v);
     }
-    let o = Options { show_copyright: false, ..v71(&g, "S062B175") };
+    let o = Options {
+        show_copyright: false,
+        ..v71(&g, "S062B175")
+    };
     common::compare71("dspdevd", &render(&g, "DSPDEVD", &d, &o).unwrap());
 }
 
@@ -402,7 +432,10 @@ fn dspautl() {
     let mut d = MapDialog::new();
     d.set("ALNAME", "QPWFSERVER").set("ALOWNER", "QSYS");
     d.set_list("USERS", autl_users());
-    common::compare71("dspautl", &render(&g, "DSPAUTL", &d, &v71(&g, "SYSNAME")).unwrap());
+    common::compare71(
+        "dspautl",
+        &render(&g, "DSPAUTL", &d, &v71(&g, "SYSNAME")).unwrap(),
+    );
 }
 
 #[test]
@@ -424,7 +457,10 @@ fn wrkautl() {
     .collect();
     let mut d = MapDialog::new();
     d.set_list("LISTS", entries(rows, true));
-    let o = Options { show_copyright: false, ..v71(&g, "SYSNAME") };
+    let o = Options {
+        show_copyright: false,
+        ..v71(&g, "SYSNAME")
+    };
     common::compare71("wrkautl", &render(&g, "WRKAUTL", &d, &o).unwrap());
 }
 
@@ -437,7 +473,10 @@ fn dspsecaud() {
         .set("SACTL", "*NONE")
         .set("SALVL", "*NONE")
         .set("SALVL2", "*NONE");
-    common::compare71("dspsecaud", &render(&g, "DSPSECAUD", &d, &v71(&g, "SYSNAME")).unwrap());
+    common::compare71(
+        "dspsecaud",
+        &render(&g, "DSPSECAUD", &d, &v71(&g, "SYSNAME")).unwrap(),
+    );
 }
 
 /// DSPAUTUSR after F11: the password levels (V7R1M0).
@@ -478,7 +517,10 @@ fn dspautusr_f11() {
     let mut d = MapDialog::new();
     d.set("AUVIEW", "2");
     d.set_list("USERS", entries(rows, false));
-    let o = Options { view: 1, ..sysname() };
+    let o = Options {
+        view: 1,
+        ..sysname()
+    };
     common::compare71("dspautusr-f11", &render(&g, "DSPAUTUSR", &d, &o).unwrap());
 }
 
@@ -507,6 +549,9 @@ fn dspdevd_f11() {
     ] {
         d.set(k, &format!("{kw:<12}{v}"));
     }
-    let o = Options { show_copyright: false, ..v71(&g, "S062B175") };
+    let o = Options {
+        show_copyright: false,
+        ..v71(&g, "S062B175")
+    };
     common::compare71("dspdevd-f11", &render(&g, "DSPDEVD", &d, &o).unwrap());
 }

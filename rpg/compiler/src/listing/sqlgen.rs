@@ -23,7 +23,10 @@ const SQLCA: &[(&str, &str)] = &[
     ("       /SET CCSID(*CHAR:*JOBRUNMIX)", ""),
     ("       // SQL COMMUNICATION AREA", "//SQL"),
     ("       DCL-DS SQLCA;", "//SQL"),
-    ("         SQLCAID CHAR(8) INZ(X'0000000000000000');", "//SQL"),
+    (
+        "         SQLCAID CHAR(8) INZ(X'0000000000000000');",
+        "//SQL",
+    ),
     ("          SQLAID CHAR(8) OVERLAY(SQLCAID);", "//SQL"),
     ("         SQLCABC INT(10);", "//SQL"),
     ("          SQLABC BINDEC(9) OVERLAY(SQLCABC);", "//SQL"),
@@ -55,7 +58,10 @@ const SQLCA: &[(&str, &str)] = &[
     ("          SQLWN8 CHAR(1) OVERLAY(SQLWRN:*NEXT);", "//SQL"),
     ("          SQLWN9 CHAR(1) OVERLAY(SQLWRN:*NEXT);", "//SQL"),
     ("          SQLWNA CHAR(1) OVERLAY(SQLWRN:*NEXT);", "//SQL"),
-    ("          SQLWARN CHAR(1) DIM(11) OVERLAY(SQLWRN);", "//SQL"),
+    (
+        "          SQLWARN CHAR(1) DIM(11) OVERLAY(SQLWRN);",
+        "//SQL",
+    ),
     ("         SQLSTATE CHAR(5);", "//SQL"),
     ("          SQLSTT CHAR(5) OVERLAY(SQLSTATE);", "//SQL"),
     ("       END-DS SQLCA;", "//SQL"),
@@ -106,11 +112,20 @@ const SQLDA: &[(&str, &str)] = &[
     ("         SQLRES CHAR(12);", "//SQL"),
     ("         SQLINFO1 CHAR(16);", "//SQL"),
     ("          SQLDATA POINTER OVERLAY(SQLINFO1);", "//SQL"),
-    ("          SQL_RESULT_SET_LOCATOR INT(20) OVERLAY(SQLINFO1);", "//SQL"),
+    (
+        "          SQL_RESULT_SET_LOCATOR INT(20) OVERLAY(SQLINFO1);",
+        "//SQL",
+    ),
     ("         SQLINFO2 CHAR(16);", "//SQL"),
     ("          SQLIND POINTER OVERLAY(SQLINFO2);", "//SQL"),
-    ("          SQL_ROW_CHANGE INT(10) OVERLAY(SQLINFO2);", "//SQL"),
-    ("          SQL_RESULT_SET_ROWS INT(10) OVERLAY(SQLINFO2);", "//SQL"),
+    (
+        "          SQL_ROW_CHANGE INT(10) OVERLAY(SQLINFO2);",
+        "//SQL",
+    ),
+    (
+        "          SQL_RESULT_SET_ROWS INT(10) OVERLAY(SQLINFO2);",
+        "//SQL",
+    ),
     ("         SQLNAMELEN INT(5);", "//SQL"),
     ("         SQLNAME CHAR(30);", "//SQL"),
     ("       END-DS SQLVAR;", "//SQL"),
@@ -129,7 +144,11 @@ const SQL: &str = "//SQL";
 
 /// A line of code with its comment at column 81.
 fn code(text: &str, cmt: &str) -> String {
-    if cmt.is_empty() { text.to_string() } else { format!("{text:<80}{cmt}") }
+    if cmt.is_empty() {
+        text.to_string()
+    } else {
+        format!("{text:<80}{cmt}")
+    }
 }
 
 /// A host variable's field in a statement's structure.
@@ -149,7 +168,11 @@ fn subfield(n: u32, from: u32, to: u32, ty: &str, kws: &str, cmt: &str) -> Strin
 
 /// `PACKEVEN` for an even number of digits.
 fn even(d: u8) -> String {
-    if d.is_multiple_of(2) { "PACKEVEN".into() } else { String::new() }
+    if d.is_multiple_of(2) {
+        "PACKEVEN".into()
+    } else {
+        String::new()
+    }
 }
 
 fn int_len(d: u8) -> u32 {
@@ -171,10 +194,18 @@ fn layout(ty: &Ty, size: u32) -> (u32, String, String) {
         Ty::Uns(d) => (u32::from(*d) / 2 + 1, "P 0".into(), even(*d)),
         Ty::Packed(d, s) => (u32::from(*d) / 2 + 1, format!("P{s:>2}"), even(*d)),
         Ty::Zoned(d, s) => (u32::from(*d), format!("S{s:>2}"), String::new()),
-        Ty::Bin(d, s) => (if *d <= 4 { 2 } else { 4 }, format!("B{s:>2}"), String::new()),
+        Ty::Bin(d, s) => (
+            if *d <= 4 { 2 } else { 4 },
+            format!("B{s:>2}"),
+            String::new(),
+        ),
         Ty::Float(b) => (u32::from(*b), "F".into(), String::new()),
         Ty::Char(n) => (*n, "A".into(), jobrun.into()),
-        Ty::VarChar(n, p) => (n + u32::from(*p), "A".into(), format!("VARYING{} {jobrun}", if *p == 4 { "(4)" } else { "" })),
+        Ty::VarChar(n, p) => (
+            n + u32::from(*p),
+            "A".into(),
+            format!("VARYING{} {jobrun}", if *p == 4 { "(4)" } else { "" }),
+        ),
         // The job's date and time formats, the oracle's.
         Ty::Date(..) => (8, "D".into(), "DATFMT(*YMD-)".into()),
         Ty::Time(..) => (8, "T".into(), "TIMFMT(*HMS:)".into()),
@@ -262,12 +293,19 @@ impl Gen<'_> {
     fn expand(&self, scope: usize, name: &str) -> Vec<Field> {
         let t = &self.c.table;
         let up = name.to_ascii_uppercase();
-        let unknown = || vec![Field { name: up.clone(), ty: Ty::Char(1) }];
+        let unknown = || {
+            vec![Field {
+                name: up.clone(),
+                ty: Ty::Char(1),
+            }]
+        };
         let (base, sub) = match up.split_once('.') {
             Some((a, b)) => (a.to_string(), Some(b.to_string())),
             None => (up.clone(), None),
         };
-        let Some(id) = t.find(scope, &base) else { return unknown() };
+        let Some(id) = t.find(scope, &base) else {
+            return unknown();
+        };
         let sym = match (&sub, &t.syms[id].ty) {
             (None, _) => id,
             (Some(f), Ty::Ds(di)) => match t.subfield(*di, f) {
@@ -290,13 +328,25 @@ impl Gen<'_> {
                     .map(|&f| &t.syms[f])
                     .filter(|f| !f.name.is_empty() && f.name != "*N")
                     .map(|f| Field {
-                        name: if qualified { format!("{up}.{}", f.name) } else { f.name.clone() },
+                        name: if qualified {
+                            format!("{up}.{}", f.name)
+                        } else {
+                            f.name.clone()
+                        },
                         ty: f.ty.clone(),
                     })
                     .collect()
             }
-            _ if x.dim > 0 => (1..=x.dim).map(|k| Field { name: format!("{up}({k})"), ty: x.ty.clone() }).collect(),
-            _ => vec![Field { name: up.clone(), ty: x.ty.clone() }],
+            _ if x.dim > 0 => (1..=x.dim)
+                .map(|k| Field {
+                    name: format!("{up}({k})"),
+                    ty: x.ty.clone(),
+                })
+                .collect(),
+            _ => vec![Field {
+                name: up.clone(),
+                ty: x.ty.clone(),
+            }],
         }
     }
 
@@ -306,7 +356,14 @@ impl Gen<'_> {
 
     /// A statement's fixed-form structure: its header (the names of
     /// the length, the mark, the data flag) and each field's name.
-    fn structure(&mut self, seq: &str, verb: &str, no: u32, fields: &[Field], scope: usize) -> Header {
+    fn structure(
+        &mut self,
+        seq: &str,
+        verb: &str,
+        no: u32,
+        fields: &[Field],
+        scope: usize,
+    ) -> Header {
         // COMMIT and ROLLBACK mark the data flag.
         let flag = match verb {
             "COMMIT" => '3',
@@ -315,21 +372,56 @@ impl Gen<'_> {
         };
         let mut lines = Vec::new();
         let kw = if scope > 0 { "STATIC" } else { "" };
-        lines.push(format!("{:<80}{verb}", format!("     D                 DS                  {kw}")));
+        lines.push(format!(
+            "{:<80}{verb}",
+            format!("     D                 DS                  {kw}")
+        ));
         let len = self.name();
         lines.push(subfield(len, 1, 2, "B 0", "INZ(128)", "length of header"));
         let stmt = self.name();
-        lines.push(subfield(stmt, 3, 4, "B 0", &format!("INZ({no})"), "statement number"));
+        lines.push(subfield(
+            stmt,
+            3,
+            4,
+            "B 0",
+            &format!("INZ({no})"),
+            "statement number",
+        ));
         let mark = self.name();
         lines.push(subfield(mark, 5, 8, "U 0", "INZ(0)", "invocation mark"));
         let okay = self.name();
-        lines.push(subfield(okay, 9, 9, "A", &format!("INZ('{flag}') CCSID(*JOBRUNMIX)"), "data is okay"));
+        lines.push(subfield(
+            okay,
+            9,
+            9,
+            "A",
+            &format!("INZ('{flag}') CCSID(*JOBRUNMIX)"),
+            "data is okay",
+        ));
         let end = self.name();
-        let to = if fields.is_empty() || self.split { 127 } else { 128 };
-        lines.push(subfield(end, 10, to, "A", "CCSID(*JOBRUNMIX)", "end of header"));
+        let to = if fields.is_empty() || self.split {
+            127
+        } else {
+            128
+        };
+        lines.push(subfield(
+            end,
+            10,
+            to,
+            "A",
+            "CCSID(*JOBRUNMIX)",
+            "end of header",
+        ));
         if fields.is_empty() {
             let n = self.name();
-            lines.push(subfield(n, 128, 128, "A", "CCSID(*JOBRUNMIX)", "end of header"));
+            lines.push(subfield(
+                n,
+                128,
+                128,
+                "A",
+                "CCSID(*JOBRUNMIX)",
+                "end of header",
+            ));
             self.split = true;
         }
         let mut at = 129;
@@ -350,7 +442,12 @@ impl Gen<'_> {
         if self.free {
             self.push(seq, "**FREE".into());
         }
-        Header { len, mark, okay, fields: names }
+        Header {
+            len,
+            mark,
+            okay,
+            fields: names,
+        }
     }
 
     /// A free-form structure of the header alone and the prototype of
@@ -358,17 +455,53 @@ impl Gen<'_> {
     fn free_structure(&mut self, seq: &str, verb: &str, no: u32, extra: &[String]) -> u32 {
         self.push(seq, code("       DCL-DS *N;", &format!("//{verb}")));
         let len = self.name();
-        self.push(seq, code(&format!("         SQL_{len:05} BINDEC(4) INZ(128);"), "//length of header"));
+        self.push(
+            seq,
+            code(
+                &format!("         SQL_{len:05} BINDEC(4) INZ(128);"),
+                "//length of header",
+            ),
+        );
         let n = self.name();
-        self.push(seq, code(&format!("         SQL_{n:05} BINDEC(4) INZ({no});"), "//statement number"));
+        self.push(
+            seq,
+            code(
+                &format!("         SQL_{n:05} BINDEC(4) INZ({no});"),
+                "//statement number",
+            ),
+        );
         let n = self.name();
-        self.push(seq, code(&format!("         SQL_{n:05} UNS(10) INZ(0);"), "//invocation mark"));
+        self.push(
+            seq,
+            code(
+                &format!("         SQL_{n:05} UNS(10) INZ(0);"),
+                "//invocation mark",
+            ),
+        );
         let n = self.name();
-        self.push(seq, code(&format!("         SQL_{n:05} CHAR(1) INZ('0') CCSID(*JOBRUNMIX);"), "//data is okay"));
+        self.push(
+            seq,
+            code(
+                &format!("         SQL_{n:05} CHAR(1) INZ('0') CCSID(*JOBRUNMIX);"),
+                "//data is okay",
+            ),
+        );
         let n = self.name();
-        self.push(seq, code(&format!("         SQL_{n:05} CHAR(118) CCSID(*JOBRUNMIX);"), "//end of header"));
+        self.push(
+            seq,
+            code(
+                &format!("         SQL_{n:05} CHAR(118) CCSID(*JOBRUNMIX);"),
+                "//end of header",
+            ),
+        );
         let n = self.name();
-        self.push(seq, code(&format!("         SQL_{n:05} CHAR(1) CCSID(*JOBRUNMIX);"), "//end of header"));
+        self.push(
+            seq,
+            code(
+                &format!("         SQL_{n:05} CHAR(1) CCSID(*JOBRUNMIX);"),
+                "//end of header",
+            ),
+        );
         self.push(seq, code("       END-DS;", &format!("//{verb}")));
         let mut params = vec![format!("LIKE(SQL_{len:05})")];
         params.extend(extra.iter().cloned());
@@ -378,7 +511,13 @@ impl Gen<'_> {
 
     /// `SQCALLnnnnnn`'s prototype: the SQLCA, then the parameters.
     fn prototype(&mut self, seq: &str, no: u32, params: &[String]) {
-        self.push(seq, code(&format!("       DCL-PR SQCALL{no:06} EXTPGM(SQLROUTE);"), SQL));
+        self.push(
+            seq,
+            code(
+                &format!("       DCL-PR SQCALL{no:06} EXTPGM(SQLROUTE);"),
+                SQL,
+            ),
+        );
         self.push(seq, code("         CA LIKEDS(SQLCA);", SQL));
         for (k, p) in params.iter().enumerate() {
             self.push(seq, code(&format!("         P{:04} {p};", k + 1), SQL));
@@ -419,21 +558,42 @@ pub(crate) fn member(c: &Compiled) -> Option<Member> {
     let mut sqls: Vec<Sql> = srcs
         .iter()
         .map(|s| {
-            let verb = s.text.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+            let verb = s
+                .text
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .to_ascii_uppercase();
             let stmt = p.stmts.iter().find(|x| x.line == s.line);
             let breaks = u32::try_from(s.text.trim_end().matches('\n').count()).unwrap_or(0);
             let last = stmt.map_or(s.line + breaks, |x| x.last_line);
             // A fixed-form statement ends at its END-EXEC.
-            let last = if fixed_exec(c, s.line) { end_exec(c, s.line).unwrap_or(last) } else { last };
-            Sql { src: s, last, verb, stmt, no: 0 }
+            let last = if fixed_exec(c, s.line) {
+                end_exec(c, s.line).unwrap_or(last)
+            } else {
+                last
+            };
+            Sql {
+                src: s,
+                last,
+                verb,
+                stmt,
+                no: 0,
+            }
         })
         .collect();
     let mut no = 0;
-    for s in sqls.iter_mut().filter(|s| s.verb == "DECLARE" && is_cursor(&s.src.text)) {
+    for s in sqls
+        .iter_mut()
+        .filter(|s| s.verb == "DECLARE" && is_cursor(&s.src.text))
+    {
         no += 1;
         s.no = no;
     }
-    for s in sqls.iter_mut().filter(|s| !(s.verb == "DECLARE" && is_cursor(&s.src.text))) {
+    for s in sqls
+        .iter_mut()
+        .filter(|s| !(s.verb == "DECLARE" && is_cursor(&s.src.text)))
+    {
         if s.verb == "INCLUDE" {
             continue;
         }
@@ -488,7 +648,11 @@ pub(crate) fn member(c: &Compiled) -> Option<Member> {
         }
         // An SQL INCLUDE: its lines as comments, then the member's.
         if let Some(inc) = c.read.sql_includes.iter().find(|x| x.line == l.no) {
-            let last = if l.fully_free { l.no } else { end_exec(c, l.no).unwrap_or(l.no) };
+            let last = if l.fully_free {
+                l.no
+            } else {
+                end_exec(c, l.no).unwrap_or(l.no)
+            };
             let mut j = i;
             while j < kept.len() && kept[j].no <= last {
                 g.push(&kept[j].seq, comment(kept[j]));
@@ -544,7 +708,11 @@ pub(crate) fn sources(c: &Compiled) -> Vec<Source> {
                 Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(t), _)) => t.clone(),
                 _ => String::new(),
             };
-            out.push(Source { line: s.at.line, text, scope });
+            out.push(Source {
+                line: s.at.line,
+                text,
+                scope,
+            });
         }
     }
     out.sort_by_key(|s| s.line);
@@ -554,7 +722,11 @@ pub(crate) fn sources(c: &Compiled) -> Vec<Source> {
 /// Lines of the generated member: the main member's and those of the
 /// members an SQL `INCLUDE` brings (a `/COPY` stays a directive).
 fn keep(c: &Compiled, l: &Line) -> bool {
-    l.depth == 0 || c.read.sql_includes.iter().any(|i| i.member == Some(l.member))
+    l.depth == 0
+        || c.read
+            .sql_includes
+            .iter()
+            .any(|i| i.member == Some(l.member))
 }
 
 /// A statement's line made a comment: `//*` before free-form text (at
@@ -563,7 +735,11 @@ fn comment(l: &Line) -> String {
     let t = &l.text;
     if l.fully_free {
         format!("//*{t}")
-    } else if matches!(l.class, Class::Free) || !t.get(5..7).is_some_and(|c| c.eq_ignore_ascii_case("C/") || c.eq_ignore_ascii_case("C+")) {
+    } else if matches!(l.class, Class::Free)
+        || !t
+            .get(5..7)
+            .is_some_and(|c| c.eq_ignore_ascii_case("C/") || c.eq_ignore_ascii_case("C+"))
+    {
         let at = t.char_indices().nth(7).map_or(t.len(), |(i, _)| i);
         format!("{:<7}//*{}", &t[..at], &t[at..])
     } else {
@@ -575,11 +751,11 @@ fn comment(l: &Line) -> String {
 
 /// A statement in fixed form: `C/EXEC SQL`.
 fn fixed_exec(c: &Compiled, line: u32) -> bool {
-    c.read
-        .lines
-        .iter()
-        .find(|l| l.no == line)
-        .is_some_and(|l| l.text.get(5..).is_some_and(|t| t.to_ascii_uppercase().starts_with("C/EXEC")))
+    c.read.lines.iter().find(|l| l.no == line).is_some_and(|l| {
+        l.text
+            .get(5..)
+            .is_some_and(|t| t.to_ascii_uppercase().starts_with("C/EXEC"))
+    })
 }
 
 /// The line of a fixed-form statement's `C/END-EXEC`.
@@ -588,12 +764,19 @@ fn end_exec(c: &Compiled, from: u32) -> Option<u32> {
         .lines
         .iter()
         .filter(|l| l.no >= from)
-        .find(|l| l.text.get(5..).is_some_and(|t| t.to_ascii_uppercase().starts_with("C/END-EXEC")))
+        .find(|l| {
+            l.text
+                .get(5..)
+                .is_some_and(|t| t.to_ascii_uppercase().starts_with("C/END-EXEC"))
+        })
         .map(|l| l.no)
 }
 
 fn second_word(text: &str) -> String {
-    text.split_whitespace().nth(1).unwrap_or("").to_ascii_uppercase()
+    text.split_whitespace()
+        .nth(1)
+        .unwrap_or("")
+        .to_ascii_uppercase()
 }
 
 fn is_cursor(text: &str) -> bool {
@@ -635,7 +818,12 @@ fn stmt_seq(c: &Compiled, s: &Sql<'_>, main_at: u32, prev: &str) -> String {
         return prev.to_string();
     }
     let at = if fixed { s.src.line } else { s.last };
-    c.read.lines.iter().find(|l| l.no == at).map(|l| l.seq.clone()).unwrap_or_default()
+    c.read
+        .lines
+        .iter()
+        .find(|l| l.no == at)
+        .map(|l| l.seq.clone())
+        .unwrap_or_default()
 }
 
 /// What a statement declares and calls.
@@ -646,8 +834,14 @@ fn shape(g: &Gen<'_>, s: &Sql<'_>) -> Shape {
     let outs: Vec<Field> = st.outputs.iter().flat_map(|h| g.fields(scope, h)).collect();
     // A statement of a descriptor, and PREPARE and EXECUTE IMMEDIATE,
     // pass their host variables.
-    let text = matches!(st.desc.op, Op::Prepare | Op::ExecImm).then(|| st.inputs.first()).flatten();
-    let args: Vec<String> = text.into_iter().chain(st.da.as_ref()).map(|h| h.name.to_ascii_uppercase()).collect();
+    let text = matches!(st.desc.op, Op::Prepare | Op::ExecImm)
+        .then(|| st.inputs.first())
+        .flatten();
+    let args: Vec<String> = text
+        .into_iter()
+        .chain(st.da.as_ref())
+        .map(|h| h.name.to_ascii_uppercase())
+        .collect();
     if !args.is_empty() {
         return Shape::Call(args);
     }
@@ -655,8 +849,15 @@ fn shape(g: &Gen<'_>, s: &Sql<'_>) -> Shape {
         Op::Nothing | Op::End => Shape::None,
         Op::Prepare | Op::ExecImm | Op::Describe => Shape::Static,
         Op::Fetch if st.rows.is_some() => {
-            let arr = st.outputs.first().map(|h| h.name.to_ascii_uppercase()).unwrap_or_default();
-            let dim = g.c.table.find(scope, &arr).map_or(0, |id| g.c.table.syms[id].dim);
+            let arr = st
+                .outputs
+                .first()
+                .map(|h| h.name.to_ascii_uppercase())
+                .unwrap_or_default();
+            let dim =
+                g.c.table
+                    .find(scope, &arr)
+                    .map_or(0, |id| g.c.table.syms[id].dim);
             Shape::FreeStruct(vec![format!("LIKE({arr}) DIM({dim})")], vec![arr])
         }
         Op::Fetch if outs.is_empty() => Shape::FreeStruct(Vec::new(), Vec::new()),
@@ -664,7 +865,9 @@ fn shape(g: &Gen<'_>, s: &Sql<'_>) -> Shape {
         Op::Fetch if st.desc.orient.starts_with("RELATIVE") => Shape::Struct(Vec::new(), outs),
         Op::Open => Shape::Struct(ins, Vec::new()),
         Op::Close => Shape::Struct(Vec::new(), Vec::new()),
-        Op::Exec if matches!(st.verb.as_str(), "COMMIT" | "ROLLBACK") => Shape::Struct(Vec::new(), Vec::new()),
+        Op::Exec if matches!(st.verb.as_str(), "COMMIT" | "ROLLBACK") => {
+            Shape::Struct(Vec::new(), Vec::new())
+        }
         Op::Execute if ins.is_empty() => Shape::Static,
         Op::Execute => Shape::Execute(ins),
         Op::Exec if ins.is_empty() && outs.is_empty() => Shape::Static,
@@ -682,7 +885,10 @@ fn declare(g: &mut Gen<'_>, s: &Sql<'_>, shape: &Shape, seq: &str) -> Header {
         Shape::Execute(ins) => g.structure(seq, &s.verb, s.no, ins, s.src.scope),
         Shape::FreeStruct(params, _) => {
             let len = g.free_structure(seq, &s.verb, s.no, params);
-            Header { len, ..Header::default() }
+            Header {
+                len,
+                ..Header::default()
+            }
         }
         Shape::Call(args) => {
             let likes: Vec<String> = args.iter().map(|a| format!("LIKE({a})")).collect();
@@ -697,7 +903,12 @@ fn declare(g: &mut Gen<'_>, s: &Sql<'_>, shape: &Shape, seq: &str) -> Header {
 fn calls(g: &mut Gen<'_>, s: &Sql<'_>, shape: &Shape, h: &Header, seq: &str) {
     let Some(st) = s.stmt else { return };
     let hdr = format!("SQL_{:05}", h.len);
-    let numbered = |g: &mut Gen<'_>| g.push(seq, code("          SQLER6 = -4;", &format!("{SQL} {}", s.no)));
+    let numbered = |g: &mut Gen<'_>| {
+        g.push(
+            seq,
+            code("          SQLER6 = -4;", &format!("{SQL} {}", s.no)),
+        )
+    };
     match shape {
         Shape::None => return,
         Shape::Static => {
@@ -735,13 +946,18 @@ fn calls(g: &mut Gen<'_>, s: &Sql<'_>, shape: &Shape, h: &Header, seq: &str) {
         }
         Shape::Struct(ins, outs) => match st.desc.op {
             Op::Close => close(g, seq, s.no, h, "SQLCLSE_CALL"),
-            Op::Exec if matches!(st.verb.as_str(), "COMMIT" | "ROLLBACK") => close(g, seq, s.no, h, "SQLCMIT_CALL"),
+            Op::Exec if matches!(st.verb.as_str(), "COMMIT" | "ROLLBACK") => {
+                close(g, seq, s.no, h, "SQLCMIT_CALL")
+            }
             Op::Open => {
                 for (k, f) in ins.iter().enumerate() {
                     g.line(seq, &format!("SQL_{:05} = {};", h.fields[k], f.name));
                 }
                 g.line(seq, "SQLER6 = -4;");
-                g.push(seq, code(&format!("          IF SQL_{:05} = 0", h.mark), SQL));
+                g.push(
+                    seq,
+                    code(&format!("          IF SQL_{:05} = 0", h.mark), SQL),
+                );
                 g.line(seq, &format!("OR SQL_{:05} <> *LOVAL;", h.okay));
                 g.call(seq, "SQLROUTE_CALL", std::slice::from_ref(&hdr));
                 g.line(seq, "ELSE;");
@@ -761,7 +977,10 @@ fn calls(g: &mut Gen<'_>, s: &Sql<'_>, shape: &Shape, h: &Header, seq: &str) {
                 if !outs.is_empty() {
                     g.line(seq, &format!("IF SQL_{:05} = '1';", h.okay));
                     for (k, f) in outs.iter().enumerate() {
-                        g.line(seq, &format!("EVAL {} = SQL_{:05};", f.name, h.fields[ins.len() + k]));
+                        g.line(
+                            seq,
+                            &format!("EVAL {} = SQL_{:05};", f.name, h.fields[ins.len() + k]),
+                        );
                     }
                     g.line(seq, "ENDIF;");
                 }
@@ -807,7 +1026,16 @@ fn whenever(g: &mut Gen<'_>, st: &Stmt, seq: &str) {
     ] {
         let Some(label) = label else { continue };
         g.line(seq, test);
-        g.push(seq, format!("{:<80}SQL", format!("     C                   GOTO      {}", label.to_ascii_uppercase())));
+        g.push(
+            seq,
+            format!(
+                "{:<80}SQL",
+                format!(
+                    "     C                   GOTO      {}",
+                    label.to_ascii_uppercase()
+                )
+            ),
+        );
         g.line(seq, "ENDIF;");
     }
 }

@@ -8,7 +8,9 @@
 use std::collections::BTreeSet;
 use std::rc::Rc;
 
-use super::{CMDLINE_VAR, Choice, Engine, EngineError, OPTION_PARMS_VAR, Response, Terminal, msgid};
+use super::{
+    CMDLINE_VAR, Choice, Engine, EngineError, OPTION_PARMS_VAR, Response, Terminal, msgid,
+};
 use crate::model::{Action, Area, DataNode, Key, KeyItem, ListArea, MenuOption, Panel};
 use crate::render::{EXT_ENTRY, Field, Screen, Target};
 
@@ -102,7 +104,11 @@ impl Engine {
                         continue;
                     }
                     let choices = self.choices(panel);
-                    let parms = if choices.is_empty() || panel.cmdline().is_none() { "" } else { typed.as_str() };
+                    let parms = if choices.is_empty() || panel.cmdline().is_none() {
+                        ""
+                    } else {
+                        typed.as_str()
+                    };
                     self.set(OPTION_PARMS_VAR, parms);
                     // The add entry's option is the caller's now; its
                     // values stay for the next show.
@@ -497,7 +503,9 @@ impl Engine {
                 };
                 let rows: BTreeSet<usize> = choices
                     .iter()
-                    .filter(|c| !c.is_ext() && c.list == l.listdef && c.option.eq_ignore_ascii_case(opt))
+                    .filter(|c| {
+                        !c.is_ext() && c.list == l.listdef && c.option.eq_ignore_ascii_case(opt)
+                    })
                     .map(|c| c.row)
                     .collect();
                 if rows.is_empty() || self.group.panel(confirm).is_none() {
@@ -814,7 +822,14 @@ impl Engine {
             }
         }
         if !moved {
-            self.error(if down { msgid::AT_BOTTOM } else { msgid::AT_TOP }, &[]);
+            self.error(
+                if down {
+                    msgid::AT_BOTTOM
+                } else {
+                    msgid::AT_TOP
+                },
+                &[],
+            );
         }
         None
     }

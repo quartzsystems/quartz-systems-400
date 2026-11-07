@@ -7,9 +7,19 @@
 //! take for the db.
 
 /// `EFI_CERT_X509_GUID`, a5c059a1-94e4-4aa7-87b5-ab155c2bf072.
-pub const CERT_X509: [u8; 16] = guid(0xa5c0_59a1, 0x94e4, 0x4aa7, [0x87, 0xb5, 0xab, 0x15, 0x5c, 0x2b, 0xf0, 0x72]);
+pub const CERT_X509: [u8; 16] = guid(
+    0xa5c0_59a1,
+    0x94e4,
+    0x4aa7,
+    [0x87, 0xb5, 0xab, 0x15, 0x5c, 0x2b, 0xf0, 0x72],
+);
 /// The signature owner QS/400 writes, 51533430-3030-4442-9b51-533430304442.
-pub const OWNER: [u8; 16] = guid(0x5153_3430, 0x3030, 0x4442, [0x9b, 0x51, 0x53, 0x34, 0x30, 0x30, 0x44, 0x42]);
+pub const OWNER: [u8; 16] = guid(
+    0x5153_3430,
+    0x3030,
+    0x4442,
+    [0x9b, 0x51, 0x53, 0x34, 0x30, 0x30, 0x44, 0x42],
+);
 
 /// A GUID in its EFI byte order: the first three fields little-endian.
 #[must_use]
@@ -17,7 +27,10 @@ pub const fn guid(a: u32, b: u16, c: u16, d: [u8; 8]) -> [u8; 16] {
     let a = a.to_le_bytes();
     let b = b.to_le_bytes();
     let c = c.to_le_bytes();
-    [a[0], a[1], a[2], a[3], b[0], b[1], c[0], c[1], d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]]
+    [
+        a[0], a[1], a[2], a[3], b[0], b[1], c[0], c[1], d[0], d[1], d[2], d[3], d[4], d[5], d[6],
+        d[7],
+    ]
 }
 
 /// The signature list holding `cert` (DER).

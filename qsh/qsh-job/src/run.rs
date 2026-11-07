@@ -89,12 +89,7 @@ pub fn batch(side: &mut dyn Side, setup: Setup, cmd: &str) -> Batch {
 
 /// `qsh` with arguments (`argv[0]` first) over the given standard
 /// streams; the exit status. A bad argument is status 2.
-pub fn invoke(
-    side: &mut dyn Side,
-    setup: Setup,
-    argv: Vec<String>,
-    stdio: [Option<Fd>; 3],
-) -> i32 {
+pub fn invoke(side: &mut dyn Side, setup: Setup, argv: Vec<String>, stdio: [Option<Fd>; 3]) -> i32 {
     with_shell(side, setup, move |sys| {
         let [i, o, e] = stdio;
         match Invocation::parse(&argv) {

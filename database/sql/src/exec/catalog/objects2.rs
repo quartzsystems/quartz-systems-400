@@ -41,7 +41,8 @@ const VIEWS: &[&str] = &[
 
 /// Whether `name` is one of these views.
 pub fn has(name: &ObjectName) -> bool {
-    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2") && VIEWS.contains(&name.name.value.as_str())
+    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2")
+        && VIEWS.contains(&name.name.value.as_str())
 }
 
 /// A column: name, kind, length, scale, nullable.
@@ -69,7 +70,13 @@ fn schema(alias: &str, cols: &[Col], national: &[&str]) -> Schema {
                 if name.len() > 10 {
                     f.alias = Some(name.to_string());
                 }
-                ColInfo { name: name.into(), table: Some(alias.into()), nullable: null, field: Some(f), hidden: false }
+                ColInfo {
+                    name: name.into(),
+                    table: Some(alias.into()),
+                    nullable: null,
+                    field: Some(f),
+                    hidden: false,
+                }
             })
             .collect(),
     }
@@ -247,12 +254,19 @@ fn opt(v: Option<i64>) -> Value {
 }
 
 fn stamp(secs: u64) -> Value {
-    Value::Timestamp(Timestamp::new(db::record::datetime::Date::from_unix(secs), db::record::datetime::Time::from_unix(secs), 0))
+    Value::Timestamp(Timestamp::new(
+        db::record::datetime::Date::from_unix(secs),
+        db::record::datetime::Time::from_unix(secs),
+        0,
+    ))
 }
 
 /// Every library, with its system name.
 fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(String, ObjectId)>> {
-    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     if !libs.contains(&ctx.qsys) {
         libs.insert(0, ctx.qsys);
     }
@@ -299,13 +313,34 @@ fn shape(t: &crate::ast::TypeSpec) -> Shape {
         chars: Some(i64::from(n)),
         radix: None,
     };
-    let other = |name, length: i64| Shape { name, length, scale: None, precision: None, ccsid: None, storage: length, chars: None, radix: None };
+    let other = |name, length: i64| Shape {
+        name,
+        length,
+        scale: None,
+        precision: None,
+        ccsid: None,
+        storage: length,
+        chars: None,
+        radix: None,
+    };
     match &t.data_type {
         DataType::SmallInt => num("SMALLINT", 2, 0, 4, 2),
         DataType::Integer => num("INTEGER", 4, 0, 9, 4),
         DataType::BigInt => num("BIGINT", 8, 0, 18, 8),
-        DataType::Decimal(p, sc) => num("DECIMAL", i64::from(*p), i64::from(*sc), i64::from(*p), i64::from(*p) / 2 + 1),
-        DataType::Numeric(p, sc) => num("NUMERIC", i64::from(*p), i64::from(*sc), i64::from(*p), i64::from(*p)),
+        DataType::Decimal(p, sc) => num(
+            "DECIMAL",
+            i64::from(*p),
+            i64::from(*sc),
+            i64::from(*p),
+            i64::from(*p) / 2 + 1,
+        ),
+        DataType::Numeric(p, sc) => num(
+            "NUMERIC",
+            i64::from(*p),
+            i64::from(*sc),
+            i64::from(*p),
+            i64::from(*p),
+        ),
         DataType::Real => other("REAL", 4),
         DataType::Double => other("DOUBLE", 8),
         DataType::DecFloat(p) => other("DECFLOAT", if *p == 16 { 8 } else { 16 }),
@@ -326,16 +361,32 @@ fn shape(t: &crate::ast::TypeSpec) -> Shape {
 }
 
 /// The rows and columns, or `None` when `name` is not one of these.
-pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str) -> Result<Option<Table>> {
+pub fn virtual_table(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    alias: &str,
+) -> Result<Option<Table>> {
     if !has(name) {
         return Ok(None);
     }
-    let nat = ["VARIABLE_TEXT", "LONG_COMMENT", "TRIGGER_TEXT", "TYPE_TEXT", "DEFAULT", "ACTION_CONDITION", "ACTION_STATEMENT"];
+    let nat = [
+        "VARIABLE_TEXT",
+        "LONG_COMMENT",
+        "TRIGGER_TEXT",
+        "TYPE_TEXT",
+        "DEFAULT",
+        "ACTION_CONDITION",
+        "ACTION_STATEMENT",
+    ];
     Ok(Some(match name.name.value.as_str() {
         "SYSVARIABLES" => (schema(alias, VARIABLES, &nat), variables(txn, ctx)?),
         "SYSVARIABLEDEP" => (schema(alias, VARIABLEDEP, &nat), Vec::new()),
         "SYSTYPES" => (schema(alias, TYPES, &nat), udts(txn, ctx)?),
-        "SYSTRIGGERS" => (schema(alias, TRIGGERS, &["TRIGGER_TEXT"]), triggers(txn, ctx)?),
+        "SYSTRIGGERS" => (
+            schema(alias, TRIGGERS, &["TRIGGER_TEXT"]),
+            triggers(txn, ctx)?,
+        ),
         "SYSTRIGCOL" => (schema(alias, TRIGCOL, &nat), trigger_uses(txn, ctx, false)?),
         "SYSTRIGDEP" => (schema(alias, TRIGDEP, &nat), trigger_uses(txn, ctx, true)?),
         "SYSTRIGUPD" => (schema(alias, TRIGUPD, &nat), trigger_updates(txn, ctx)?),
@@ -349,9 +400,14 @@ fn variables(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
     for (lib, l) in libraries(txn, ctx)? {
         let sch = crate::exec::names::schema_name(txn, l);
         for (sys, _, name, def, created, owner) in super::super::var::in_library(txn, l)? {
-            let Ok(t) = crate::pl::types::parse_type(&def.data_type) else { continue };
+            let Ok(t) = crate::pl::types::parse_type(&def.data_type) else {
+                continue;
+            };
             let sh = shape(&t);
-            let datetime = matches!(t.data_type, DataType::Date | DataType::Time | DataType::Timestamp(_));
+            let datetime = matches!(
+                t.data_type,
+                DataType::Date | DataType::Time | DataType::Timestamp(_)
+            );
             rows.push(vec![
                 s(sch.clone()),
                 s(name),
@@ -392,7 +448,9 @@ fn udts(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
     for (lib, l) in libraries(txn, ctx)? {
         let sch = crate::exec::names::schema_name(txn, l);
         for (sys, name, u, created, owner) in super::super::udt::in_library(txn, l)? {
-            let Ok(t) = crate::pl::types::parse_type(&u.source) else { continue };
+            let Ok(t) = crate::pl::types::parse_type(&u.source) else {
+                continue;
+            };
             let sh = shape(&t);
             let array = u.metatype == b'A';
             rows.push(vec![
@@ -420,7 +478,11 @@ fn udts(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
                 if array { Value::Null } else { stamp(created) },
                 Value::Null,
                 Value::Null,
-                if array { Value::int(i64::try_from(u.cardinality).unwrap_or(i64::MAX)) } else { Value::Null },
+                if array {
+                    Value::int(i64::try_from(u.cardinality).unwrap_or(i64::MAX))
+                } else {
+                    Value::Null
+                },
             ]);
         }
     }
@@ -452,9 +514,13 @@ fn all_triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<OnTable>> {
     let mut out = Vec::new();
     for (lib, l) in libraries(txn, ctx)? {
         let sch = crate::exec::names::schema_name(txn, l);
-        let Ok(list) = ops::list(txn, l, Some(types::FILE)) else { continue };
+        let Ok(list) = ops::list(txn, l, Some(types::FILE)) else {
+            continue;
+        };
         for (sys, id) in list {
-            let Ok(desc) = db::file::describe(txn, id) else { continue };
+            let Ok(desc) = db::file::describe(txn, id) else {
+                continue;
+            };
             if desc.header.sql.is_none() || desc.attr.kind != db::file::FileKind::Physical {
                 continue;
             }
@@ -464,7 +530,13 @@ fn all_triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<OnTable>> {
             }
             let table = crate::exec::names::sql_name(txn, id);
             for t in trgs {
-                out.push(OnTable { schema: sch.clone(), lib: lib.clone(), table: table.clone(), sys: sys.name.to_string(), t });
+                out.push(OnTable {
+                    schema: sch.clone(),
+                    lib: lib.clone(),
+                    table: table.clone(),
+                    sys: sys.name.to_string(),
+                    t,
+                });
             }
         }
     }
@@ -476,36 +548,96 @@ fn all_triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<OnTable>> {
 type FileNames = (String, String, &'static str, Vec<(String, String)>);
 
 /// [`FileNames`] from the library's and the file's system names.
-fn file_names(txn: &mut Txn<'_>, ctx: &SqlContext, lib: qsname::Name, file: qsname::Name) -> Option<FileNames> {
+fn file_names(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    lib: qsname::Name,
+    file: qsname::Name,
+) -> Option<FileNames> {
     let l = ops::find_library(txn, ctx.qsys, lib).ok()?;
-    let id = store::obj::library::Library::load(txn, l.id).ok()?.lookup(txn, types::FILE, file).ok()??;
-    let kind = if crate::exec::view::is_view(txn, id) { "VIEW" } else { "TABLE" };
+    let id = store::obj::library::Library::load(txn, l.id)
+        .ok()?
+        .lookup(txn, types::FILE, file)
+        .ok()??;
+    let kind = if crate::exec::view::is_view(txn, id) {
+        "VIEW"
+    } else {
+        "TABLE"
+    };
     let cols = db::file::describe(txn, id)
         .ok()
         .and_then(|d| d.formats.first().cloned())
-        .map(|f| f.format.fields.iter().map(|x| (x.name.to_string(), x.alias.clone().unwrap_or_else(|| x.name.to_string()))).collect())
+        .map(|f| {
+            f.format
+                .fields
+                .iter()
+                .map(|x| {
+                    (
+                        x.name.to_string(),
+                        x.alias.clone().unwrap_or_else(|| x.name.to_string()),
+                    )
+                })
+                .collect()
+        })
         .unwrap_or_default();
-    Some((crate::exec::names::schema_name(txn, l.id), crate::exec::names::sql_name(txn, id), kind, cols))
+    Some((
+        crate::exec::names::schema_name(txn, l.id),
+        crate::exec::names::sql_name(txn, id),
+        kind,
+        cols,
+    ))
 }
 
 /// `SYSTRIGCOL` (`deps` false) or `SYSTRIGDEP` (true) rows.
 fn trigger_uses(txn: &mut Txn<'_>, ctx: &SqlContext, deps: bool) -> Result<Vec<Row>> {
     let mut rows = Vec::new();
     for o in all_triggers(txn, ctx)? {
-        let Some(def) = o.t.def.as_deref() else { continue };
+        let Some(def) = o.t.def.as_deref() else {
+            continue;
+        };
         let tlib = o.t.library.to_string();
-        let tsch = ops::find_library(txn, ctx.qsys, o.t.library).map_or_else(|_| tlib.clone(), |l| crate::exec::names::schema_name(txn, l.id));
+        let tsch = ops::find_library(txn, ctx.qsys, o.t.library).map_or_else(
+            |_| tlib.clone(),
+            |l| crate::exec::names::schema_name(txn, l.id),
+        );
         if deps {
             for (l, f) in &def.objects {
-                let Some((sch, name, kind, _)) = file_names(txn, ctx, *l, *f) else { continue };
-                rows.push(vec![s(tsch.clone()), s(o.t.name.clone()), s(sch), s(name), s(format!("{kind:<24}")), Value::Null, ten(&tlib), ten(&l.to_string()), ten(&f.to_string())]);
+                let Some((sch, name, kind, _)) = file_names(txn, ctx, *l, *f) else {
+                    continue;
+                };
+                rows.push(vec![
+                    s(tsch.clone()),
+                    s(o.t.name.clone()),
+                    s(sch),
+                    s(name),
+                    s(format!("{kind:<24}")),
+                    Value::Null,
+                    ten(&tlib),
+                    ten(&l.to_string()),
+                    ten(&f.to_string()),
+                ]);
             }
             continue;
         }
         for (l, f, c) in &def.columns {
-            let Some((sch, name, kind, cols)) = file_names(txn, ctx, *l, *f) else { continue };
-            let col = cols.iter().find(|(sys, _)| *sys == c.to_string()).map_or_else(|| c.to_string(), |(_, n)| n.clone());
-            rows.push(vec![s(tsch.clone()), s(o.t.name.clone()), s(sch), s(name), s(col), s(kind), ten(&tlib), ten(&l.to_string()), ten(&f.to_string())]);
+            let Some((sch, name, kind, cols)) = file_names(txn, ctx, *l, *f) else {
+                continue;
+            };
+            let col = cols
+                .iter()
+                .find(|(sys, _)| *sys == c.to_string())
+                .map_or_else(|| c.to_string(), |(_, n)| n.clone());
+            rows.push(vec![
+                s(tsch.clone()),
+                s(o.t.name.clone()),
+                s(sch),
+                s(name),
+                s(col),
+                s(kind),
+                ten(&tlib),
+                ten(&l.to_string()),
+                ten(&f.to_string()),
+            ]);
         }
     }
     Ok(rows)
@@ -519,7 +651,10 @@ fn trigger_updates(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
             continue;
         }
         let tlib = o.t.library.to_string();
-        let tsch = ops::find_library(txn, ctx.qsys, o.t.library).map_or_else(|_| tlib.clone(), |l| crate::exec::names::schema_name(txn, l.id));
+        let tsch = ops::find_library(txn, ctx.qsys, o.t.library).map_or_else(
+            |_| tlib.clone(),
+            |l| crate::exec::names::schema_name(txn, l.id),
+        );
         let lib = qsname::Name::parse(&o.lib).ok();
         let file = qsname::Name::parse(&o.sys).ok();
         let cols = match (lib, file) {
@@ -527,8 +662,20 @@ fn trigger_updates(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
             _ => Vec::new(),
         };
         for c in &o.t.columns {
-            let col = cols.iter().find(|(sys, _)| *sys == c.to_string()).map_or_else(|| c.to_string(), |(_, n)| n.clone());
-            rows.push(vec![s(tsch.clone()), s(o.t.name.clone()), s(o.schema.clone()), s(o.table.clone()), s(col), ten(&tlib), ten(&o.lib), ten(&o.sys)]);
+            let col = cols
+                .iter()
+                .find(|(sys, _)| *sys == c.to_string())
+                .map_or_else(|| c.to_string(), |(_, n)| n.clone());
+            rows.push(vec![
+                s(tsch.clone()),
+                s(o.t.name.clone()),
+                s(o.schema.clone()),
+                s(o.table.clone()),
+                s(col),
+                ten(&tlib),
+                ten(&o.lib),
+                ten(&o.sys),
+            ]);
         }
     }
     Ok(rows)
@@ -538,10 +685,20 @@ fn triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
     use db::trg::{MtAction, Threadsafe, UpdateCondition};
     let mut rows = Vec::new();
     for o in all_triggers(txn, ctx)? {
-        let OnTable { schema: sch, lib, table, sys, t } = o;
+        let OnTable {
+            schema: sch,
+            lib,
+            table,
+            sys,
+            t,
+        } = o;
         let tlib = t.library.to_string();
         let def = t.def.as_deref();
-        let text = |f: fn(&db::trg::SqlDef) -> &String| def.map(f).filter(|v| !v.is_empty()).map_or(Value::Null, |v| s(v.clone()));
+        let text = |f: fn(&db::trg::SqlDef) -> &String| {
+            def.map(f)
+                .filter(|v| !v.is_empty())
+                .map_or(Value::Null, |v| s(v.clone()))
+        };
         rows.push(vec![
             s(tlib.clone()),
             s(t.name.clone()),
@@ -582,7 +739,11 @@ fn triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
                 UpdateCondition::Change => eight("CHANGE"),
             },
             s(t.definer.clone()),
-            if t.text.is_empty() { Value::Null } else { s(t.text.clone()) },
+            if t.text.is_empty() {
+                Value::Null
+            } else {
+                s(t.text.clone())
+            },
             text(|d| &d.comment),
             if t.sql { s("E") } else { Value::Null },
             ten(&tlib),

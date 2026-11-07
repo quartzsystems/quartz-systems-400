@@ -38,7 +38,12 @@ impl Db {
             wal_pages: 128,
             now: 1_767_225_600,
         };
-        let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(d) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let mut t = store.begin().unwrap();
         let qsys = ops::bootstrap(&mut t, 1_767_225_600, "QS400").unwrap();
         let lib = ops::create(
@@ -57,7 +62,14 @@ impl Db {
         )
         .unwrap();
         t.commit().unwrap();
-        let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+        let mut ctx = SqlContext::new(
+            qsys,
+            JobHandle(1),
+            NameContext {
+                curlib: Some(lib),
+                libl: vec![lib],
+            },
+        );
         ctx.now = Some(1_767_225_600);
         ctx.user = "QSECOFR".into();
         Self { store, ctx }
@@ -75,12 +87,22 @@ impl Db {
     }
 
     fn ok(&mut self, text: &str) -> Outcome {
-        self.run(text).unwrap_or_else(|e| panic!("{text}: {e} ({})", e.sqlcode()))
+        self.run(text)
+            .unwrap_or_else(|e| panic!("{text}: {e} ({})", e.sqlcode()))
     }
 
     fn rows(&mut self, text: &str) -> Vec<String> {
         match self.ok(text) {
-            Outcome::Rows(rs) => rs.rows.iter().map(|r| r.iter().map(|v| v.to_string().trim_end().to_string()).collect::<Vec<_>>().join("|")).collect(),
+            Outcome::Rows(rs) => rs
+                .rows
+                .iter()
+                .map(|r| {
+                    r.iter()
+                        .map(|v| v.to_string().trim_end().to_string())
+                        .collect::<Vec<_>>()
+                        .join("|")
+                })
+                .collect(),
             o => panic!("{text}: {o:?}"),
         }
     }
@@ -94,7 +116,16 @@ impl Db {
 
     fn add(&mut self, table: &str, n: &NewTrg) {
         let mut t = self.store.begin().unwrap();
-        let f = ops::resolve(&mut t, self.ctx.qsys, &self.ctx.names, qsname::LibSpec::Libl, Name::parse(table).unwrap(), types::FILE).unwrap().id;
+        let f = ops::resolve(
+            &mut t,
+            self.ctx.qsys,
+            &self.ctx.names,
+            qsname::LibSpec::Libl,
+            Name::parse(table).unwrap(),
+            types::FILE,
+        )
+        .unwrap()
+        .id;
         db::trg::ops::add(&mut t, f, n, 1).unwrap();
         t.commit().unwrap();
     }
@@ -109,14 +140,23 @@ struct Probe {
 
 impl Caller for Probe {
     fn call(&mut self, _txn: &mut Txn<'_>, c: &mut Call) -> Result<(), Failure> {
-        self.calls.push((c.trigger.clone(), c.buffer[30], c.buffer[31]));
+        self.calls
+            .push((c.trigger.clone(), c.buffer[30], c.buffer[31]));
         if c.program.1 == Name::parse("MISSING").unwrap() {
-            return Err(Failure { msgid: "CPF4160".into(), text: "MISSING in QSTEST type *PGM not found".into(), not_found: true });
+            return Err(Failure {
+                msgid: "CPF4160".into(),
+                text: "MISSING in QSTEST type *PGM not found".into(),
+                not_found: true,
+            });
         }
         let off = u32::from_be_bytes(c.buffer[64..68].try_into().unwrap()) as usize;
         match c.buffer[off] {
             0xE7 if c.event != Event::Delete => {
-                return Err(Failure { msgid: "CPF9898".into(), text: "refused".into(), not_found: false });
+                return Err(Failure {
+                    msgid: "CPF9898".into(),
+                    text: "refused".into(),
+                    not_found: false,
+                });
             }
             0xD9 => c.buffer[off] = 0xE9,
             _ => {}
@@ -130,7 +170,11 @@ fn pgm(n: &str) -> (Name, Name) {
 }
 
 fn trg(name: &str, time: Time, event: Event, alw: bool) -> NewTrg {
-    NewTrg { name: Some(name.into()), alwrepchg: alw, ..NewTrg::new(time, event, pgm("TRGDUMP")) }
+    NewTrg {
+        name: Some(name.into()),
+        alwrepchg: alw,
+        ..NewTrg::new(time, event, pgm("TRGDUMP"))
+    }
 }
 
 #[test]
@@ -143,28 +187,49 @@ fn sql_changes_fire_external_triggers() {
     db.add("TRGC", &trg("AFTUPD", Time::After, Event::Update, false));
     db.add("TRGC", &trg("AFTDLT", Time::After, Event::Delete, false));
     // Without a caller: refused, SQL0084.
-    assert_eq!(db.code("INSERT INTO QSTEST.TRGC VALUES ('aaaaa', 1)"), (-84, "42612".to_string()));
+    assert_eq!(
+        db.code("INSERT INTO QSTEST.TRGC VALUES ('aaaaa', 1)"),
+        (-84, "42612".to_string())
+    );
     let probe = Rc::new(RefCell::new(Probe::default()));
     db.ctx.triggers = Some(probe.clone());
     db.ok("INSERT INTO QSTEST.TRGC VALUES ('Raaaa', 1)");
-    assert_eq!(probe.borrow().calls, [("BEFINS".into(), 0xF1, 0xF2), ("AFTINS".into(), 0xF1, 0xF1)]);
+    assert_eq!(
+        probe.borrow().calls,
+        [("BEFINS".into(), 0xF1, 0xF2), ("AFTINS".into(), 0xF1, 0xF1)]
+    );
     assert_eq!(db.rows("SELECT C1 FROM QSTEST.TRGC"), ["Zaaaa"]);
     // The primary: SQL0443, SQLSTATE 38501.
-    assert_eq!(db.code("INSERT INTO QSTEST.TRGC VALUES ('Xbbbb', 2)"), (-443, "38501".to_string()));
+    assert_eq!(
+        db.code("INSERT INTO QSTEST.TRGC VALUES ('Xbbbb', 2)"),
+        (-443, "38501".to_string())
+    );
     // Through a view: the table's triggers.
     probe.borrow_mut().calls.clear();
     db.ok("INSERT INTO QSTEST.TRGV VALUES ('Rcccc')");
     assert_eq!(probe.borrow().calls.len(), 2);
-    assert_eq!(db.rows("SELECT C1 FROM QSTEST.TRGC ORDER BY C1"), ["Zaaaa", "Zcccc"]);
+    assert_eq!(
+        db.rows("SELECT C1 FROM QSTEST.TRGC ORDER BY C1"),
+        ["Zaaaa", "Zcccc"]
+    );
     probe.borrow_mut().calls.clear();
     db.ok("UPDATE QSTEST.TRGC SET N = 5");
     db.ok("DELETE FROM QSTEST.TRGC WHERE C1 = 'Zcccc'");
     let names: Vec<String> = probe.borrow().calls.iter().map(|c| c.0.clone()).collect();
     assert_eq!(names, ["AFTUPD", "AFTUPD", "AFTDLT"]);
     // A program not found: SQL0204, as the primary.
-    db.add("TRGC", &NewTrg { name: Some("GONE".into()), ..NewTrg::new(Time::Before, Event::Update, pgm("MISSING")) });
+    db.add(
+        "TRGC",
+        &NewTrg {
+            name: Some("GONE".into()),
+            ..NewTrg::new(Time::Before, Event::Update, pgm("MISSING"))
+        },
+    );
     db.ctx.triggers = Some(probe.clone());
-    assert_eq!(db.code("UPDATE QSTEST.TRGC SET N = 6"), (-204, "42704".to_string()));
+    assert_eq!(
+        db.code("UPDATE QSTEST.TRGC SET N = 6"),
+        (-204, "42704".to_string())
+    );
     // Read triggers: with no caller a query is refused.
     db.add("TRGC", &trg("RD", Time::After, Event::Read, false));
     db.ctx.triggers = None;
@@ -186,7 +251,12 @@ fn read_triggers_fire_for_the_rows_a_scan_keeps() {
         probe.borrow_mut().calls.clear();
         db.ok(sql);
         let calls = probe.borrow().calls.clone();
-        assert!(calls.iter().all(|c| c.0 == "RD1" && c.1 == 0xF4 && c.2 == 0xF1), "{sql}: {calls:?}");
+        assert!(
+            calls
+                .iter()
+                .all(|c| c.0 == "RD1" && c.1 == 0xF4 && c.2 == 0xF1),
+            "{sql}: {calls:?}"
+        );
         calls.len()
     };
     assert_eq!(fired(&mut db, "SELECT K, V FROM QSTEST.RDT ORDER BY K"), 3);
@@ -194,12 +264,27 @@ fn read_triggers_fire_for_the_rows_a_scan_keeps() {
     assert_eq!(fired(&mut db, "SELECT COUNT(*) FROM QSTEST.RDT"), 3);
     // The primary fires 4: the inner table's rows only as the join reads
     // them (BLOCKED(rel) in exec::reads); every row its scan keeps here.
-    assert_eq!(fired(&mut db, "SELECT A.K FROM QSTEST.RDT A JOIN QSTEST.RDT B ON A.K = B.K WHERE A.K < 3 ORDER BY 1"), 5);
+    assert_eq!(
+        fired(
+            &mut db,
+            "SELECT A.K FROM QSTEST.RDT A JOIN QSTEST.RDT B ON A.K = B.K WHERE A.K < 3 ORDER BY 1"
+        ),
+        5
+    );
     db.ok("CREATE INDEX QSTEST.RDTIX ON QSTEST.RDT (K)");
     assert_eq!(fired(&mut db, "SELECT V FROM QSTEST.RDT WHERE K = 3"), 1);
     db.ok("CREATE VIEW QSTEST.RDTV AS SELECT K, V FROM QSTEST.RDT WHERE K > 1");
     assert_eq!(fired(&mut db, "SELECT K FROM QSTEST.RDTV ORDER BY K"), 2);
-    assert_eq!(fired(&mut db, "UPDATE QSTEST.RDT SET V = 'uuuuu' WHERE K = 1"), 0);
+    assert_eq!(
+        fired(&mut db, "UPDATE QSTEST.RDT SET V = 'uuuuu' WHERE K = 1"),
+        0
+    );
     assert_eq!(fired(&mut db, "DELETE FROM QSTEST.RDT WHERE K = 99"), 0);
-    assert_eq!(fired(&mut db, "INSERT INTO QSTEST.RDT2 SELECT K, V FROM QSTEST.RDT WHERE K > 2"), 1);
+    assert_eq!(
+        fired(
+            &mut db,
+            "INSERT INTO QSTEST.RDT2 SELECT K, V FROM QSTEST.RDT WHERE K > 2"
+        ),
+        1
+    );
 }

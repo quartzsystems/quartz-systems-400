@@ -73,7 +73,10 @@ fn parse_types(spec: &str) -> Option<Vec<Ty>> {
             Kind::Float => 8,
             _ => 4,
         };
-        if matches!(kind, Kind::Signed | Kind::Unsigned | Kind::Octal | Kind::Hex) && i < b.len()
+        if matches!(
+            kind,
+            Kind::Signed | Kind::Unsigned | Kind::Octal | Kind::Hex
+        ) && i < b.len()
         {
             match b[i] {
                 b'C' => {
@@ -160,7 +163,10 @@ fn unit(ty: Ty, bytes: &[u8]) -> String {
         },
         Kind::Float => {
             let s = if ty.size == 4 {
-                format!("{:.6e}", f32::from_be_bytes(padded[..4].try_into().unwrap_or([0; 4])))
+                format!(
+                    "{:.6e}",
+                    f32::from_be_bytes(padded[..4].try_into().unwrap_or([0; 4]))
+                )
             } else {
                 format!("{:.15e}", f64::from_be_bytes(padded))
             };
@@ -220,7 +226,10 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             Some(b'm') => (&s[..s.len() - 1], 1024 * 1024),
             _ => (s, 1),
         };
-        let n = if let Some(h) = digits.strip_prefix("0x").or_else(|| digits.strip_prefix("0X")) {
+        let n = if let Some(h) = digits
+            .strip_prefix("0x")
+            .or_else(|| digits.strip_prefix("0X"))
+        {
             u64::from_str_radix(h, 16).ok()?
         } else if digits.len() > 1 && digits.starts_with('0') {
             u64::from_str_radix(&digits[1..], 8).ok()?

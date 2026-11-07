@@ -17,7 +17,9 @@ use spki::SubjectPublicKeyInfoRef;
 use x509_cert::builder::profile::BuilderProfile;
 use x509_cert::builder::{Builder, CertificateBuilder};
 use x509_cert::certificate::TbsCertificate;
-use x509_cert::ext::pkix::{BasicConstraints, ExtendedKeyUsage, KeyUsage, KeyUsages, SubjectKeyIdentifier};
+use x509_cert::ext::pkix::{
+    BasicConstraints, ExtendedKeyUsage, KeyUsage, KeyUsages, SubjectKeyIdentifier,
+};
 use x509_cert::ext::{Extension, ToExtension};
 use x509_cert::name::Name;
 use x509_cert::serial_number::SerialNumber;
@@ -28,7 +30,8 @@ use super::DbKey;
 use crate::Error;
 
 /// `id-kp-codeSigning`.
-const CODE_SIGNING: der::asn1::ObjectIdentifier = der::asn1::ObjectIdentifier::new_unwrap("1.3.6.1.5.5.7.3.3");
+const CODE_SIGNING: der::asn1::ObjectIdentifier =
+    der::asn1::ObjectIdentifier::new_unwrap("1.3.6.1.5.5.7.3.3");
 
 /// What the certificate says.
 pub struct Spec<'a> {
@@ -60,8 +63,16 @@ impl BuilderProfile for Profile {
         let mut out = Vec::new();
         let ski = SubjectKeyIdentifier::try_from(spk)?;
         out.push((&ski).to_extension(tbs.subject(), &out)?);
-        out.push((&BasicConstraints { ca: false, path_len_constraint: None }).to_extension(tbs.subject(), &out)?);
-        out.push((&KeyUsage(KeyUsages::DigitalSignature.into())).to_extension(tbs.subject(), &out)?);
+        out.push(
+            (&BasicConstraints {
+                ca: false,
+                path_len_constraint: None,
+            })
+                .to_extension(tbs.subject(), &out)?,
+        );
+        out.push(
+            (&KeyUsage(KeyUsages::DigitalSignature.into())).to_extension(tbs.subject(), &out)?,
+        );
         out.push((&ExtendedKeyUsage(vec![CODE_SIGNING])).to_extension(tbs.subject(), &out)?);
         Ok(out)
     }
@@ -84,8 +95,13 @@ pub fn certificate(key: &PrivateKey, spec: &Spec<'_>) -> Result<Vec<u8>, Error> 
         Time::GeneralTime(GeneralizedTime::from_unix_duration(to).map_err(key_err)?),
     );
     let name = Name::from_str(spec.subject).map_err(key_err)?;
-    let builder = CertificateBuilder::new(Profile(name), SerialNumber::new(&serial).map_err(key_err)?, validity, spki)
-        .map_err(key_err)?;
+    let builder = CertificateBuilder::new(
+        Profile(name),
+        SerialNumber::new(&serial).map_err(key_err)?,
+        validity,
+        spki,
+    )
+    .map_err(key_err)?;
     let cert = builder.build::<_, Sig>(&KeySigner(key)).map_err(key_err)?;
     cert.to_der().map_err(key_err)
 }
@@ -94,7 +110,11 @@ pub fn certificate(key: &PrivateKey, spec: &Spec<'_>) -> Result<Vec<u8>, Error> 
 pub fn new_pair(spec: &Spec<'_>) -> Result<DbKey, Error> {
     let key = PrivateKey::generate(KeyAlgorithm::Rsa2048).map_err(key_err)?;
     let cert = certificate(&key, spec)?;
-    Ok(DbKey { key, cert, development: false })
+    Ok(DbKey {
+        key,
+        cert,
+        development: false,
+    })
 }
 
 /// The key as the certificate builder wants it.
@@ -126,7 +146,10 @@ impl spki::DynSignatureAlgorithmIdentifier for KeySigner<'_> {
 
 impl signature::Signer<Sig> for KeySigner<'_> {
     fn try_sign(&self, msg: &[u8]) -> Result<Sig, signature::Error> {
-        self.0.sign(msg).map(Sig).map_err(|_| signature::Error::new())
+        self.0
+            .sign(msg)
+            .map(Sig)
+            .map_err(|_| signature::Error::new())
     }
 }
 

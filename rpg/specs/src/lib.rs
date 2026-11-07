@@ -73,7 +73,8 @@ pub fn form(id: &str) -> Option<&'static Form> {
 pub fn rpg3_forms() -> &'static [Form] {
     static FORMS: OnceLock<Vec<Form>> = OnceLock::new();
     FORMS.get_or_init(|| {
-        let t: Table = toml::from_str(include_str!("../specs/rpg3.toml")).expect("the RPG III table");
+        let t: Table =
+            toml::from_str(include_str!("../specs/rpg3.toml")).expect("the RPG III table");
         t.form
     })
 }
@@ -85,7 +86,10 @@ pub fn rpg3_forms() -> &'static [Form] {
 /// When the table has no such form: identifiers are fixed.
 #[must_use]
 pub fn rpg3_form(id: &str) -> &'static Form {
-    rpg3_forms().iter().find(|f| f.id == id).unwrap_or_else(|| panic!("no RPG III form {id}"))
+    rpg3_forms()
+        .iter()
+        .find(|f| f.id == id)
+        .unwrap_or_else(|| panic!("no RPG III form {id}"))
 }
 
 impl Form {
@@ -103,10 +107,16 @@ impl Form {
     ///
     /// When the form has no such field: names are fixed.
     pub fn put(&self, record: &mut Vec<char>, name: &str, text: &str, right: bool) {
-        let f = self.field(name).unwrap_or_else(|| panic!("form {} has no field {name}", self.id));
+        let f = self
+            .field(name)
+            .unwrap_or_else(|| panic!("form {} has no field {name}", self.id));
         let width = f.to + 1 - f.from;
         let n = text.chars().count();
-        let start = if right && n < width { f.from + width - n } else { f.from };
+        let start = if right && n < width {
+            f.from + width - n
+        } else {
+            f.from
+        };
         for (i, ch) in text.chars().enumerate() {
             let at = start - 1 + i;
             if record.len() <= at {
@@ -120,7 +130,8 @@ impl Form {
     /// A field past the end of the record is blanks.
     #[must_use]
     pub fn cut(&self, record: &str, name: &str) -> String {
-        self.field(name).map_or_else(String::new, |f| cut(record, f.from, f.to))
+        self.field(name)
+            .map_or_else(String::new, |f| cut(record, f.from, f.to))
     }
 }
 
@@ -143,7 +154,12 @@ mod tests {
     fn the_rpg3_table_parses_and_places() {
         for f in rpg3_forms() {
             for x in &f.fields {
-                assert!(x.from >= 6 && x.from <= x.to && x.to <= 80, "{} {}", f.id, x.name);
+                assert!(
+                    x.from >= 6 && x.from <= x.to && x.to <= 80,
+                    "{} {}",
+                    f.id,
+                    x.name
+                );
             }
         }
         let c = rpg3_form("C");
@@ -161,12 +177,23 @@ mod tests {
         assert!(forms().len() >= 12);
         for f in forms() {
             for x in &f.fields {
-                assert!(x.from >= 6 && x.from <= x.to && x.to <= 100, "{} {}", f.id, x.name);
+                assert!(
+                    x.from >= 6 && x.from <= x.to && x.to <= 100,
+                    "{} {}",
+                    f.id,
+                    x.name
+                );
             }
         }
         let c = form("C").unwrap();
         let mut r = vec![' '; 80];
-        for (col, text) in [(6, "C"), (12, "KEY"), (26, "CHAIN"), (36, "CUSTFILE"), (73, "50")] {
+        for (col, text) in [
+            (6, "C"),
+            (12, "KEY"),
+            (26, "CHAIN"),
+            (36, "CUSTFILE"),
+            (73, "50"),
+        ] {
             for (i, ch) in text.chars().enumerate() {
                 r[col - 1 + i] = ch;
             }

@@ -310,5 +310,7 @@ pub const ALL: &[&Layout] = &[
 
 /// A file's layout by name.
 pub fn layout(file: &str) -> Option<&'static Layout> {
-    ALL.iter().copied().find(|l| l.file.eq_ignore_ascii_case(file))
+    ALL.iter()
+        .copied()
+        .find(|l| l.file.eq_ignore_ascii_case(file))
 }

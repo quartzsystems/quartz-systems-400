@@ -23,7 +23,10 @@ const LIST: &str = "AUTS";
 
 /// The bit of an authority name.
 fn bit(name: &str) -> u32 {
-    NAMES.iter().find(|(n, _)| *n == name).map_or(0, |(_, b)| *b)
+    NAMES
+        .iter()
+        .find(|(n, _)| *n == name)
+        .map_or(0, |(_, b)| *b)
 }
 
 /// An `X` in the middle of a column `width` wide, when `on`.
@@ -79,7 +82,13 @@ fn load(host: &Host, d: &mut UimDialog, path: &str) -> Result<(), Fail> {
 }
 
 /// `WRKAUT OBJ(path)` (`work`) or `DSPAUT`.
-pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: bool) -> Result<String, Fail> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    path: &str,
+    work: bool,
+) -> Result<String, Fail> {
     let mut d = crate::panels::dialog(host, "QUIWRKAUT")?;
     load(host, &mut d, path)?;
     let panel = if work { "WRKAUT" } else { "DSPAUT" };
@@ -102,7 +111,12 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: 
                     d.error("CPD9B86", &[]);
                 } else {
                     d.set(CMDLINE_VAR, "");
-                    exec(job, host, &mut d, &format!("?{}", t.trim_start_matches('?')));
+                    exec(
+                        job,
+                        host,
+                        &mut d,
+                        &format!("?{}", t.trim_start_matches('?')),
+                    );
                     reload = true;
                 }
             }
@@ -154,11 +168,8 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: 
             }
             _ => d.error("CPD9B81", &[]),
         }
-        if reload
-            && let Err(f) = load(host, &mut d, path)
-        {
+        if reload && let Err(f) = load(host, &mut d, path) {
             d.send(crate::display::msgline::of_fail(host, &f));
         }
     }
 }
-

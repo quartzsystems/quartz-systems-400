@@ -32,9 +32,7 @@ pub struct View {
 pub fn element_text(e: &Element) -> String {
     match &e.kind {
         Kind::Constant { text, .. } => text.clone(),
-        Kind::Field {
-            usage, dec, ty, ..
-        } => {
+        Kind::Field { usage, dec, ty, .. } => {
             let numeric = dec.is_some() || matches!(ty, 'S' | 'Y' | 'P' | 'B' | 'F');
             let ch = match (usage, numeric) {
                 (Usage::Input, false) => 'I',
@@ -153,7 +151,7 @@ pub fn hidden_names(record: &Record) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::source::{RecordType, Element};
+    use crate::source::{Element, RecordType};
 
     fn record() -> Record {
         let mut r = Record::new("SCREEN1", RecordType::Record);
@@ -164,8 +162,14 @@ mod tests {
             },
             Some((3, 2)),
         ));
-        r.elements
-            .push(Element::field("FLD001", Usage::Input, false, 10, 0, Some((3, 21))));
+        r.elements.push(Element::field(
+            "FLD001",
+            Usage::Input,
+            false,
+            10,
+            0,
+            Some((3, 21)),
+        ));
         r.elements.push(Element::new(
             Kind::Constant {
                 text: "Amount".into(),
@@ -180,16 +184,28 @@ mod tests {
             },
             Some((5, 9)),
         ));
-        r.elements
-            .push(Element::field("FLD002", Usage::Output, true, 7, 2, Some((5, 21))));
+        r.elements.push(Element::field(
+            "FLD002",
+            Usage::Output,
+            true,
+            7,
+            2,
+            Some((5, 21)),
+        ));
         r
     }
 
     #[test]
     fn image() {
         let rows = render(&record(), &[], &View::default());
-        assert_eq!(rows[2].trim_end(), format!(" Customer{}IIIIIIIIII", " ".repeat(11)));
-        assert_eq!(rows[4].trim_end(), format!(" Amount due{}66666.66", " ".repeat(9)));
+        assert_eq!(
+            rows[2].trim_end(),
+            format!(" Customer{}IIIIIIIIII", " ".repeat(11))
+        );
+        assert_eq!(
+            rows[4].trim_end(),
+            format!(" Amount due{}66666.66", " ".repeat(9))
+        );
     }
 
     #[test]

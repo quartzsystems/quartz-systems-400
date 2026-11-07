@@ -60,7 +60,9 @@ impl KeymapFile {
         let d: KeymapDoc = doc::parse(text, doc::KEYMAP)?;
         for (k, f) in &d.keys {
             if !keymap::is_function(f) {
-                return Err(FileError::Invalid(format!("key {k} is given an unknown function \"{f}\"")));
+                return Err(FileError::Invalid(format!(
+                    "key {k} is given an unknown function \"{f}\""
+                )));
             }
         }
         Ok(KeymapFile {
@@ -93,16 +95,27 @@ mod tests {
         map.assign("Ctrl+Enter", "FieldExit");
         map.clear_function("Clear");
         let text = KeymapFile::new(map.clone()).to_text();
-        assert!(text.starts_with("[qsaccess]\nkind = \"keymap\"\nversion = 1\n"), "{text}");
+        assert!(
+            text.starts_with("[qsaccess]\nkind = \"keymap\"\nversion = 1\n"),
+            "{text}"
+        );
         assert!(text.contains("\"Right Ctrl\" = \"FieldExit\""), "{text}");
         assert_eq!(KeymapFile::parse(&text).unwrap().map, map);
         let kept = "[qsaccess]\nkind = \"keymap\"\nversion = 1\n\n[keys]\nF1 = \"Help\"\n\n[about]\nauthor = \"ops\"\n";
-        assert!(KeymapFile::parse(kept).unwrap().to_text().contains("author = \"ops\""));
+        assert!(
+            KeymapFile::parse(kept)
+                .unwrap()
+                .to_text()
+                .contains("author = \"ops\"")
+        );
         assert!(matches!(
             KeymapFile::parse("[qsaccess]\nkind = \"keymap\"\nversion = 1\n[keys]\nF1 = \"Fly\"\n"),
             Err(FileError::Invalid(_))
         ));
-        assert!(matches!(KeymapFile::parse("[qsaccess]\nkind = \"keymap\"\nversion = 4\n"), Err(FileError::Newer(4))));
+        assert!(matches!(
+            KeymapFile::parse("[qsaccess]\nkind = \"keymap\"\nversion = 4\n"),
+            Err(FileError::Newer(4))
+        ));
     }
 
     /// The desktop's own test file reads.

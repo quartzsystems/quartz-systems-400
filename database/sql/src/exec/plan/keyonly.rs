@@ -29,8 +29,12 @@ pub fn covers(fmt: &FormatDef, fields: &[String]) -> bool {
 
 fn readable(f: &FieldDef, t: KeyTransform) -> bool {
     match f.data_type {
-        DataType::Char => f.varlen.is_none() && matches!(t, KeyTransform::Signed | KeyTransform::Unsigned),
-        DataType::Zoned | DataType::Packed | DataType::Binary => t == KeyTransform::Signed && f.digits() <= 38,
+        DataType::Char => {
+            f.varlen.is_none() && matches!(t, KeyTransform::Signed | KeyTransform::Unsigned)
+        }
+        DataType::Zoned | DataType::Packed | DataType::Binary => {
+            t == KeyTransform::Signed && f.digits() <= 38
+        }
         _ => false,
     }
 }
@@ -70,7 +74,11 @@ pub fn decode(fmt: &FormatDef, key: &[u8]) -> Option<Vec<(usize, db::record::Val
             let neg = data[0] == 0x01;
             let mut m: i128 = 0;
             for &b in &data[1..] {
-                let d = if neg { 0x39u8.checked_sub(b)? } else { b.checked_sub(0x30)? };
+                let d = if neg {
+                    0x39u8.checked_sub(b)?
+                } else {
+                    b.checked_sub(0x30)?
+                };
                 if d > 9 {
                     return None;
                 }

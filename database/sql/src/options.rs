@@ -14,18 +14,23 @@ fn values(name: &str) -> &'static [&'static str] {
         "NAMING" => &["SYS", "SQL"],
         "COMMIT" => &["NONE", "NC", "CHG", "UR", "CS", "ALL", "RS", "RR"],
         "DECMPT" => &["PERIOD", "COMMA", "SYSVAL", "JOB"],
-        "DATFMT" => &["JOB", "USA", "ISO", "EUR", "JIS", "MDY", "DMY", "YMD", "JUL"],
+        "DATFMT" => &[
+            "JOB", "USA", "ISO", "EUR", "JIS", "MDY", "DMY", "YMD", "JUL",
+        ],
         "TIMFMT" => &["HMS", "USA", "ISO", "EUR", "JIS"],
         "RDBCNNMTH" => &["DUW", "RUW"],
         "ALWBLK" => &["NONE", "READ", "ALLREAD"],
-        "DLYPRP" | "OPTLOB" | "DYNDFTCOL" | "EXTIND" | "SQLCA" | "CNULRQD" | "CNULIGN" | "SYSTIME" => &["YES", "NO"],
+        "DLYPRP" | "OPTLOB" | "DYNDFTCOL" | "EXTIND" | "SQLCA" | "CNULRQD" | "CNULIGN"
+        | "SYSTIME" => &["YES", "NO"],
         "ALWCPYDTA" => &["NO", "YES", "OPTIMIZE"],
         "CLOSQLCSR" => &["ENDACTGRP", "ENDMOD"],
         "USRPRF" => &["NAMING", "OWNER", "USER"],
         "DYNUSRPRF" => &["USER", "OWNER"],
         "SQLCURRULE" => &["DB2", "STD"],
         "MONITOR" => &["USER", "SYSTEM"],
-        "DECFLTRND" => &["HALFEVEN", "HALFUP", "DOWN", "CEILING", "FLOOR", "HALFDOWN", "UP"],
+        "DECFLTRND" => &[
+            "HALFEVEN", "HALFUP", "DOWN", "CEILING", "FLOOR", "HALFDOWN", "UP",
+        ],
         "CONACC" => &["DFT", "CURCMT", "WAIT"],
         "SAAFLAG" => &["FLAG", "NOFLAG"],
         "FLAGSTD" => &["NONE", "ANS"],
@@ -58,8 +63,13 @@ pub fn check(name: &str, value: &str) -> Check {
     let refuse = |why: &str| Check::Unsupported(format!("{name}({v}): {why}"));
     match (name, special.unwrap_or(v)) {
         // SQL dates and times are formatted ISO.
-        ("DATFMT", "JOB" | "ISO") | ("TIMFMT", "HMS" | "ISO") | ("DATSEP", "JOB" | "'-'" | "-") | ("TIMSEP", "JOB" | "'.'" | ".") => Check::Ok,
-        ("DATFMT" | "TIMFMT" | "DATSEP" | "TIMSEP", _) => refuse("SQL dates and times are kept in ISO form"),
+        ("DATFMT", "JOB" | "ISO")
+        | ("TIMFMT", "HMS" | "ISO")
+        | ("DATSEP", "JOB" | "'-'" | "-")
+        | ("TIMSEP", "JOB" | "'.'" | ".") => Check::Ok,
+        ("DATFMT" | "TIMFMT" | "DATSEP" | "TIMSEP", _) => {
+            refuse("SQL dates and times are kept in ISO form")
+        }
         ("DECMPT", "PERIOD" | "JOB" | "SYSVAL") => Check::Ok,
         ("DECMPT", _) => refuse("SQL numbers take a decimal point"),
         ("USRPRF", "NAMING" | "USER") | ("DYNUSRPRF", "USER") => Check::Ok,
@@ -70,7 +80,14 @@ pub fn check(name: &str, value: &str) -> Check {
         ("SQLPATH", _) => refuse("the path is the library list"),
         ("SQLCURRULE", "DB2") => Check::Ok,
         ("SQLCURRULE", _) => refuse("only DB2 rules are kept"),
-        ("DECRESULT", d) if d.split(|c: char| !c.is_ascii_digit()).filter(|x| !x.is_empty()).collect::<Vec<_>>() == ["31", "31", "0"] => Check::Ok,
+        ("DECRESULT", d)
+            if d.split(|c: char| !c.is_ascii_digit())
+                .filter(|x| !x.is_empty())
+                .collect::<Vec<_>>()
+                == ["31", "31", "0"] =>
+        {
+            Check::Ok
+        }
         ("DECRESULT", _) => refuse("decimal results follow the 31-digit rules"),
         ("DECFLTRND", "HALFEVEN") => Check::Ok,
         ("DECFLTRND", _) => refuse("DECFLOAT rounds half even in embedded SQL"),
@@ -81,7 +98,13 @@ pub fn check(name: &str, value: &str) -> Check {
         ("SQLCA", _) => refuse("the SQLCA is always kept"),
         ("SRTSEQ", "JOB" | "HEX" | "JOBRUN") => Check::Ok,
         ("SRTSEQ", _) => refuse("SQL compares by hexadecimal value"),
-        ("COMPILEOPT", c) if c.trim_matches('\'').trim_start_matches('*').eq_ignore_ascii_case("NONE") => Check::Ok,
+        ("COMPILEOPT", c)
+            if c.trim_matches('\'')
+                .trim_start_matches('*')
+                .eq_ignore_ascii_case("NONE") =>
+        {
+            Check::Ok
+        }
         ("COMPILEOPT", _) => refuse("no options are passed to the compiler"),
         ("EVENTF", _) => refuse("no event file is written"),
         // BLOCKED(rel): the job's connections follow the distributed unit
@@ -96,4 +119,3 @@ pub fn check(name: &str, value: &str) -> Check {
         _ => Check::Ok,
     }
 }
-

@@ -17,7 +17,9 @@ use std::sync::{Mutex, OnceLock, PoisonError};
 use certs::admin::{self, Ctx, Keystore, expiry};
 use certs::crypto::kdf::Argon2Params;
 use certs::files::{MemFiles, StoreFiles};
-use certs::paths::{APP_DEFINITIONS, EXPIRY_STATE, LOCAL_CA_CERT, LOCAL_CA_STORE, SYSTEM_STORE, stash_path};
+use certs::paths::{
+    APP_DEFINITIONS, EXPIRY_STATE, LOCAL_CA_CERT, LOCAL_CA_STORE, SYSTEM_STORE, stash_path,
+};
 use certs::stash::KeySealer;
 use ifs::Errno;
 use ifs::client::{IfsClient, read_all, write_all};
@@ -93,7 +95,10 @@ pub(crate) fn write_file(c: &dyn IfsClient, path: &str, data: &[u8]) -> Result<(
     }
     let tmp = format!("{path}.new");
     let fd = c
-        .open(&tmp, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o600))
+        .open(
+            &tmp,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o600),
+        )
         .map_err(|e| errno_text(&tmp, e))?;
     let w = write_all(c, fd, data).and_then(|()| c.fsync(fd, false));
     let _ = c.close(fd);
@@ -130,7 +135,10 @@ fn paths(extra: &[&str]) -> Vec<String> {
 
 fn stage(system: &mut System, extra: &[&str]) -> Result<Staged, String> {
     if let Some(why) = service::why_not() {
-        return Err(format!("{} the integrated file system is not available: {why}", admin::msgs::FAILED));
+        return Err(format!(
+            "{} the integrated file system is not available: {why}",
+            admin::msgs::FAILED
+        ));
     }
     let want = paths(extra);
     let files = MemFiles::new();
@@ -273,7 +281,11 @@ fn fingerprint(files: &MemFiles) -> u64 {
 }
 
 /// `cert_app`.
-pub fn cert_app(system: &mut System, principal: &Principal, app_id: &str) -> Result<CertTrust, String> {
+pub fn cert_app(
+    system: &mut System,
+    principal: &Principal,
+    app_id: &str,
+) -> Result<CertTrust, String> {
     let id = app_id.trim();
     if !id.is_empty() && !may_have_key(principal) {
         refused_audit(&principal.user, "certificate key");
@@ -286,7 +298,10 @@ pub fn cert_app(system: &mut System, principal: &Principal, app_id: &str) -> Res
     let staged = stage(system, &[])?;
     let print = fingerprint(&staged.files);
     let now = now_unix();
-    if let Some((p, at, t)) = cache().lock().unwrap_or_else(PoisonError::into_inner).get(id)
+    if let Some((p, at, t)) = cache()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(id)
         && *p == print
         && now.saturating_sub(*at) < CACHE_SECS
     {
@@ -333,7 +348,9 @@ fn to_wire(t: admin::identity::AppTrust) -> CertTrust {
 /// `cert_expiry`, and `QSCHKCRT`: scan, send the warnings to `QSYSOPR`;
 /// a line for each warning and store skipped.
 pub fn expiry_scan(system: &mut System) -> Vec<String> {
-    let r = with_stores(system, &[], true, |ctx| expiry::scan(ctx, &expiry::watched()));
+    let r = with_stores(system, &[], true, |ctx| {
+        expiry::scan(ctx, &expiry::watched())
+    });
     let scan = match r {
         Ok(Ok(s)) => s,
         Ok(Err(e)) => return vec![format!("{} {e}", admin::msgs::FAILED)],
@@ -364,30 +381,42 @@ pub fn expiry_scan(system: &mut System) -> Vec<String> {
 }
 
 /// `cert_panel`: the data of `QSWRKCRT`, its display, and `QSWRKAPPID`.
-pub fn panel(system: &mut System, principal: &Principal, what: &str, args: &[String]) -> Result<Sys2Data, String> {
+pub fn panel(
+    system: &mut System,
+    principal: &Principal,
+    what: &str,
+    args: &[String],
+) -> Result<Sys2Data, String> {
     let arg = |i: usize| args.get(i).map_or("", String::as_str);
     match what {
         "CRT" | "DSPCRT" => {
-            may_manage(Some(principal)).map_err(|u| format!("{} {u}", admin::msgs::NOT_AUTHORIZED))?;
+            may_manage(Some(principal))
+                .map_err(|u| format!("{} {u}", admin::msgs::NOT_AUTHORIZED))?;
             let ks = Keystore::new(if arg(0).is_empty() { "*SYSTEM" } else { arg(0) }, arg(1));
             let path = ks.path.clone();
-            let rows = with_stores(system, &[path.as_str()], false, |ctx| admin::entries::list(ctx, &ks))?
-                .map_err(|e| {
-                    let n = admin::refusal(&e, ks.shown());
-                    format!("{} {e}", n.msgid)
-                })?;
+            let rows = with_stores(system, &[path.as_str()], false, |ctx| {
+                admin::entries::list(ctx, &ks)
+            })?
+            .map_err(|e| {
+                let n = admin::refusal(&e, ks.shown());
+                format!("{} {e}", n.msgid)
+            })?;
             if what == "CRT" {
                 Ok(super::super::cpp::certcmd::crt_rows(ks.shown(), &rows))
             } else {
-                let r = rows
-                    .iter()
-                    .find(|r| r.label == arg(2))
-                    .ok_or_else(|| format!("{} no certificate has label {}", admin::msgs::NO_LABEL, arg(2)))?;
+                let r = rows.iter().find(|r| r.label == arg(2)).ok_or_else(|| {
+                    format!(
+                        "{} no certificate has label {}",
+                        admin::msgs::NO_LABEL,
+                        arg(2)
+                    )
+                })?;
                 Ok(super::super::cpp::certcmd::crt_detail(ks.shown(), r))
             }
         }
         "APPID" => {
-            may_manage(Some(principal)).map_err(|u| format!("{} {u}", admin::msgs::NOT_AUTHORIZED))?;
+            may_manage(Some(principal))
+                .map_err(|u| format!("{} {u}", admin::msgs::NOT_AUTHORIZED))?;
             let apps = with_stores(system, &[], false, admin::appids::list)?
                 .map_err(|e| format!("{} {e}", admin::msgs::FAILED))?;
             Ok(super::super::cpp::certcmd::app_rows(&apps))
@@ -403,7 +432,13 @@ mod tests {
     #[test]
     fn stages_the_system_files_and_the_named_store() {
         let p = paths(&["/home/a/b.kdb"]);
-        for want in [SYSTEM_STORE, "/QIBM/UserData/ICSS/Cert/Server/DEFAULT.RDB", "/home/a/b.RDB", APP_DEFINITIONS, EXPIRY_STATE] {
+        for want in [
+            SYSTEM_STORE,
+            "/QIBM/UserData/ICSS/Cert/Server/DEFAULT.RDB",
+            "/home/a/b.RDB",
+            APP_DEFINITIONS,
+            EXPIRY_STATE,
+        ] {
             assert!(p.iter().any(|x| x == want), "{want}");
         }
         assert_eq!(paths(&[SYSTEM_STORE]).len(), paths(&[]).len());
@@ -419,6 +454,9 @@ mod tests {
         assert!(may_have_key(&p("QTCP", 0)));
         assert!(may_have_key(&p("QTMHHTTP", 0)));
         assert!(!may_have_key(&p("JOE", SpecialAuth::ALLOBJ.0)));
-        assert!(may_have_key(&p("ADMIN", SpecialAuth::ALLOBJ.0 | SpecialAuth::IOSYSCFG.0)));
+        assert!(may_have_key(&p(
+            "ADMIN",
+            SpecialAuth::ALLOBJ.0 | SpecialAuth::IOSYSCFG.0
+        )));
     }
 }

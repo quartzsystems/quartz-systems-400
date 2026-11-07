@@ -58,7 +58,11 @@ fn entry_of(c: &dyn IfsClient, path: &str, name: &str, s: Stat) -> Entry {
 /// them (by name without case, then with it), from `start`.
 pub(super) fn list(c: &dyn IfsClient, req: &ListDirectory) -> Done {
     let dir = req.path.as_str();
-    let pattern = if req.pattern.is_empty() { "*" } else { req.pattern.as_str() };
+    let pattern = if req.pattern.is_empty() {
+        "*"
+    } else {
+        req.pattern.as_str()
+    };
     let fold = folds(dir);
     let mut names: Vec<String> = c
         .read_dir(dir)
@@ -67,7 +71,11 @@ pub(super) fn list(c: &dyn IfsClient, req: &ListDirectory) -> Done {
         .map(|e| e.name)
         .filter(|n| matches(pattern, n, fold))
         .collect();
-    names.sort_by(|a, b| a.to_uppercase().cmp(&b.to_uppercase()).then_with(|| a.cmp(b)));
+    names.sort_by(|a, b| {
+        a.to_uppercase()
+            .cmp(&b.to_uppercase())
+            .then_with(|| a.cmp(b))
+    });
     let total = u32::try_from(names.len()).unwrap_or(u32::MAX);
     let start = usize::try_from(req.start).unwrap_or(usize::MAX);
     let max = match req.max {

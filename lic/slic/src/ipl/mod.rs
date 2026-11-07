@@ -14,9 +14,9 @@ pub mod ifs;
 pub mod install;
 pub mod instdev;
 pub mod lic;
-pub mod media;
 pub mod link;
 pub mod log;
+pub mod media;
 pub mod menu;
 pub mod netrsp;
 pub mod power;
@@ -254,10 +254,12 @@ pub(crate) fn first_ethernet(system: &mut System) -> Option<(i32, String)> {
         .collect();
     let device = |n: &str| ports.iter().any(|p| p == n);
     let link = system.links.iter().find(|l| device(&l.name)).or_else(|| {
-        system
-            .links
-            .iter()
-            .find(|l| l.name != "lo" && !["sit", "bond", "dummy"].iter().any(|p| l.name.starts_with(p)))
+        system.links.iter().find(|l| {
+            l.name != "lo"
+                && !["sit", "bond", "dummy"]
+                    .iter()
+                    .any(|p| l.name.starts_with(p))
+        })
     })?;
     Some((link.index, link.name.clone()))
 }
@@ -284,7 +286,12 @@ pub(crate) fn net_address(system: &mut System) {
         )
     });
     let pxe = system.boot.ipl_d && netrsp::network_boot();
-    let Some(spec) = system.boot.ip.clone().or_else(|| (net_rsp || pxe).then(|| "dhcp".to_string())) else {
+    let Some(spec) = system
+        .boot
+        .ip
+        .clone()
+        .or_else(|| (net_rsp || pxe).then(|| "dhcp".to_string()))
+    else {
         return;
     };
     let Some((index, name)) = first_ethernet(system) else {
@@ -306,9 +313,7 @@ pub(crate) fn net_address(system: &mut System) {
     }
     let ip = [octets[0], octets[1], octets[2], octets[3]];
     let up = system.links.iter().any(|l| l.index == index && l.is_up());
-    if !up
-        && let Err(e) = net::set_up(index)
-    {
+    if !up && let Err(e) = net::set_up(index) {
         system.out.serial(&format!("slic: {name} up: {e}\n"));
     }
     match net::add_address(index, ip, prefix) {
@@ -322,9 +327,7 @@ pub(crate) fn net_address(system: &mut System) {
 /// install ends well inside a lease).
 fn dhcp_address(system: &mut System, index: i32, name: &str) {
     let up = system.links.iter().any(|l| l.index == index && l.is_up());
-    if !up
-        && let Err(e) = net::set_up(index)
-    {
+    if !up && let Err(e) = net::set_up(index) {
         system.out.serial(&format!("slic: {name} up: {e}\n"));
     }
     let mac = match dhcp::sys::mac_of(name) {
@@ -334,7 +337,11 @@ fn dhcp_address(system: &mut System, index: i32, name: &str) {
             return;
         }
     };
-    let lease = match dhcp::run::acquire(name, dhcp::Config::new(mac), std::time::Duration::from_secs(30)) {
+    let lease = match dhcp::run::acquire(
+        name,
+        dhcp::Config::new(mac),
+        std::time::Duration::from_secs(30),
+    ) {
         Ok(l) => l,
         Err(e) => {
             system.out.serial(&format!("slic: {name} dhcp: {e}\n"));
@@ -342,7 +349,11 @@ fn dhcp_address(system: &mut System, index: i32, name: &str) {
         }
     };
     if let Err(e) = net::add_address(index, lease.addr.octets(), lease.prefix()) {
-        system.out.serial(&format!("slic: {name} {}/{}: {e}\n", lease.addr, lease.prefix()));
+        system.out.serial(&format!(
+            "slic: {name} {}/{}: {e}\n",
+            lease.addr,
+            lease.prefix()
+        ));
         return;
     }
     if let Some(gw) = lease.router
@@ -352,7 +363,9 @@ fn dhcp_address(system: &mut System, index: i32, name: &str) {
         rt.gateway = Some(std::net::IpAddr::V4(gw));
         rt.oif = u32::try_from(index).ok();
         if let Err(e) = r.add_route(&rt) {
-            system.out.serial(&format!("slic: {name} default route via {gw}: {e}\n"));
+            system
+                .out
+                .serial(&format!("slic: {name} default route via {gw}: {e}\n"));
         }
     }
     system.out.serial(&format!(
@@ -361,7 +374,9 @@ fn dhcp_address(system: &mut System, index: i32, name: &str) {
         lease.prefix(),
         lease.server
     ));
-    *IPL_LEASE.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(lease);
+    *IPL_LEASE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(lease);
 }
 
 /// The lease the IPL got, when it asked a DHCP server.
@@ -369,7 +384,10 @@ static IPL_LEASE: std::sync::Mutex<Option<dhcp::Lease>> = std::sync::Mutex::new(
 
 /// The IPL's DHCP lease (its boot file names a network install's answers).
 pub(crate) fn ipl_lease() -> Option<dhcp::Lease> {
-    IPL_LEASE.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    IPL_LEASE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
 }
 
 /// A D IPL with a response file installs without the menu: onto a
@@ -575,10 +593,13 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
 
 /// The abnormal end offer: go on, or DST first.
 fn abnormal_offer(system: &mut System, rx: &mpsc::Receiver<Event>) {
-    let outcome = install::drive_panel(system, Box::new(svctools::install::define::AbnormalEnd), rx);
+    let outcome =
+        install::drive_panel(system, Box::new(svctools::install::define::AbnormalEnd), rx);
     if outcome == dst::Outcome::Dst {
         let o = dst::run(system, rx);
-        system.out.serial(&format!("slic: DST after an abnormal end: {o:?}\n"));
+        system
+            .out
+            .serial(&format!("slic: DST after an abnormal end: {o:?}\n"));
     }
 }
 
@@ -593,10 +614,18 @@ fn reclaim_if_required(system: &mut System) {
         return;
     }
     let name = system.system_name();
-    menu::show(system, svctools::install::define::reclaim_screen(&name, None));
+    menu::show(
+        system,
+        svctools::install::define::reclaim_screen(&name, None),
+    );
     let report = crate::svc::storage::rclstg(system, &[]);
-    system.out.serial(&format!("slic: reclaim at IPL:\n{report}"));
-    menu::show(system, svctools::install::define::reclaim_screen(&name, Some(&report)));
+    system
+        .out
+        .serial(&format!("slic: reclaim at IPL:\n{report}"));
+    menu::show(
+        system,
+        svctools::install::define::reclaim_screen(&name, Some(&report)),
+    );
     if !system.pace.is_zero() {
         std::thread::sleep(system.pace);
     }

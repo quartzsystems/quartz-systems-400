@@ -21,7 +21,9 @@ pub fn counts(r: &Read) -> (usize, usize) {
     for l in r.lines.iter().filter(|l| l.member == 0) {
         match l.class {
             Class::Comment => comments += 1,
-            Class::Spec(_) | Class::Free | Class::Sql | Class::Directive(_) | Class::FreeMarker => specs += 1,
+            Class::Spec(_) | Class::Free | Class::Sql | Class::Directive(_) | Class::FreeMarker => {
+                specs += 1
+            }
             _ => {}
         }
     }

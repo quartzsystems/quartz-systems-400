@@ -14,7 +14,10 @@ use sda::screen::{comments, entry, records};
 use sda::source::{Line, Member, Record, RecordType, write};
 
 use super::ui::{self, Key};
-use super::{Flow, Gone, Session, exec, file_library, kw, member_info, must, read_member, today, valid_name, write_member};
+use super::{
+    Flow, Gone, Session, exec, file_library, kw, member_info, must, read_member, today, valid_name,
+    write_member,
+};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
 
@@ -54,7 +57,13 @@ impl Work {
 
 /// Design Screens, then the member's records; `prefilled` goes straight
 /// to the records when the values are good.
-pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, prefilled: bool) -> Flow {
+pub fn start(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    prefilled: bool,
+) -> Flow {
     let mut message: Option<String> = None;
     let mut skip = prefilled;
     loop {
@@ -66,7 +75,10 @@ pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
             vals.insert("SRCFILE".to_string(), s.src.0.clone());
             vals.insert("SRCLIB".to_string(), s.src.1.clone());
             vals.insert("SRCMBR".to_string(), s.src.2.clone());
-            let screen = entry::design_screens(&|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+            let screen = entry::design_screens(
+                &|k| vals.get(k).cloned().unwrap_or_default(),
+                message.as_deref(),
+            );
             message = None;
             let Some(a) = ui::show(surface, &screen) else {
                 return Flow::Gone;
@@ -105,7 +117,14 @@ pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
 
 /// Open a member for design: the file found, the member read (a new
 /// one when missing), its type checked.
-pub fn open(host: &Host, file: &str, lib: &str, member: &str, want: &str, message: &mut Option<String>) -> Option<Work> {
+pub fn open(
+    host: &Host,
+    file: &str,
+    lib: &str,
+    member: &str,
+    want: &str,
+    message: &mut Option<String>,
+) -> Option<Work> {
     if file.is_empty() || !valid_name(file) {
         *message = Some(crate::display::msgline::say(host, "CPD9BF8", &[]));
         return None;
@@ -116,14 +135,22 @@ pub fn open(host: &Host, file: &str, lib: &str, member: &str, want: &str, messag
     }
     let lib = if lib.is_empty() { "*LIBL" } else { lib };
     let Some(real) = file_library(host, lib, file) else {
-        *message = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
+        *message = Some(crate::display::msgline::say(
+            host,
+            "CPF9812",
+            &[&file, &lib],
+        ));
         return None;
     };
     let existing = read_member(host, &real, file, member);
     let (srctype, text, date) = member_info(host, &real, file, member).unwrap_or_default();
     let srctype = if srctype.trim().is_empty() {
         if existing.is_some() {
-            *message = Some(crate::display::msgline::say(host, "CPD9C80", &[&member, &"*NONE", &want]));
+            *message = Some(crate::display::msgline::say(
+                host,
+                "CPD9C80",
+                &[&member, &"*NONE", &want],
+            ));
             return None;
         }
         want.to_string()
@@ -135,7 +162,11 @@ pub fn open(host: &Host, file: &str, lib: &str, member: &str, want: &str, messag
         _ => srctype == "MNUDDS",
     };
     if !ok {
-        *message = Some(crate::display::msgline::say(host, "CPD9C80", &[&member, &srctype, &want]));
+        *message = Some(crate::display::msgline::say(
+            host,
+            "CPD9C80",
+            &[&member, &srctype, &want],
+        ));
         return None;
     }
     let lines = existing.unwrap_or_default();
@@ -181,7 +212,13 @@ impl Subset {
 /// The records list until the member is left. Returns the flow and the
 /// message for the display before.
 #[allow(clippy::too_many_lines, clippy::many_single_char_names)] // one display, its options and keys
-fn records_loop(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, mut w: Work) -> (Flow, Option<String>) {
+fn records_loop(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    mut w: Work,
+) -> (Flow, Option<String>) {
     let mut view = records::View {
         file: w.file.clone(),
         lib: w.lib.clone(),
@@ -198,7 +235,9 @@ fn records_loop(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Sessi
     loop {
         let lines = w.lines(host);
         let bad = sda::source::errors(&lines);
-        let shown: Vec<usize> = (0..w.m.records.len()).filter(|i| subset.keeps(&w.m.records[*i])).collect();
+        let shown: Vec<usize> = (0..w.m.records.len())
+            .filter(|i| subset.keeps(&w.m.records[*i]))
+            .collect();
         let rows: Vec<records::Row> = shown
             .iter()
             .map(|&i| {
@@ -208,7 +247,11 @@ fn records_loop(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Sessi
                     name: r.name.clone(),
                     ty: r.ty.word().to_string(),
                     related: r.related.clone().unwrap_or_default(),
-                    date: if r.is_changed() { date_today.clone() } else { w.date.clone() },
+                    date: if r.is_changed() {
+                        date_today.clone()
+                    } else {
+                        w.date.clone()
+                    },
                     error: bad.contains(&r.name),
                     text: r
                         .keyword("TEXT")
@@ -298,7 +341,9 @@ fn records_loop(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Sessi
                     let Some(name) = w.m.records.get(ri).map(|r| r.name.clone()) else {
                         continue;
                     };
-                    let Some(ri) = w.m.record(&name) else { continue };
+                    let Some(ri) = w.m.record(&name) else {
+                        continue;
+                    };
                     let r = option(job, host, surface, s, &mut w, ri, opt);
                     match r {
                         Err(()) => return (Flow::Gone, None),
@@ -322,7 +367,9 @@ fn reorder(m: &mut Member, shown: &[usize], a: &ui::Answer) {
         let Some(v) = a.cells.get(&(row, "ORDER".to_string())) else {
             continue;
         };
-        let Ok(n) = v.trim().parse::<u32>() else { continue };
+        let Ok(n) = v.trim().parse::<u32>() else {
+            continue;
+        };
         if n != keyed[ri].0 {
             keyed[ri].0 = n;
             moved = true;
@@ -345,7 +392,15 @@ fn reorder(m: &mut Member, shown: &[usize], a: &ui::Answer) {
 #[allow(clippy::many_single_char_names)] // job, host, s, w, a
 /// The add line's option: 1 adds a record. The message; an empty one
 /// when the display is gone.
-fn add_line(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w: &mut Work, opt: &str, name: &str) -> Option<String> {
+fn add_line(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    w: &mut Work,
+    opt: &str,
+    name: &str,
+) -> Option<String> {
     if opt != "1" {
         return Some(crate::display::msgline::say(host, "CPD9CED", &[&opt]));
     }
@@ -354,8 +409,17 @@ fn add_line(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
     vals.insert("TYPE".to_string(), "RECORD".to_string());
     let mut message: Option<String> = None;
     loop {
-        let head = (w.file.as_str(), w.lib.as_str(), w.member.as_str(), w.srctype.as_str());
-        let screen = entry::add_record(head, &|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let head = (
+            w.file.as_str(),
+            w.lib.as_str(),
+            w.member.as_str(),
+            w.srctype.as_str(),
+        );
+        let screen = entry::add_record(
+            head,
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         let Some(a) = ui::show(surface, &screen) else {
             return Some(String::new());
         };
@@ -402,7 +466,15 @@ fn add_line(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
 
 /// One option on a record. `Err` when the display is gone, else the
 /// message.
-fn option(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w: &mut Work, ri: usize, opt: &str) -> Result<Option<String>, ()> {
+fn option(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    w: &mut Work,
+    ri: usize,
+    opt: &str,
+) -> Result<Option<String>, ()> {
     let name = w.m.records[ri].name.clone();
     match opt {
         "2" => {
@@ -440,17 +512,29 @@ fn option(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w:
                     }
                 }
                 w.m.records.insert(ri + 1, r);
-                Ok(Some(crate::display::msgline::say(host, "CPI9BFA", &[&name, &n])))
+                Ok(Some(crate::display::msgline::say(
+                    host,
+                    "CPI9BFA",
+                    &[&name, &n],
+                )))
             } else {
                 let r = &mut w.m.records[ri];
                 r.name.clone_from(&n);
                 r.changed = true;
-                Ok(Some(crate::display::msgline::say(host, "CPI9BFB", &[&name, &n])))
+                Ok(Some(crate::display::msgline::say(
+                    host,
+                    "CPI9BFB",
+                    &[&name, &n],
+                )))
             }
         }
         "4" => {
             w.m.records.remove(ri);
-            Ok(Some(crate::display::msgline::say(host, "CPI9BFC", &[&name])))
+            Ok(Some(crate::display::msgline::say(
+                host,
+                "CPI9BFC",
+                &[&name],
+            )))
         }
         "8" => {
             if kw::record(surface, &mut w.m.records[ri]) == Flow::Gone {
@@ -464,7 +548,11 @@ fn option(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w:
             }
             Ok(None)
         }
-        other => Ok(Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))),
+        other => Ok(Some(crate::display::msgline::say(
+            host,
+            "CPD6A7C",
+            &[&other],
+        ))),
     }
 }
 
@@ -479,12 +567,23 @@ fn r_name(taken: &[String]) -> String {
 fn ask_name(w: &Work, surface: &mut Surface, from: &str, what: &str) -> Result<Option<String>, ()> {
     let id = if what == "copy" { "CPI9BDF" } else { "CPI9BE0" };
     let mut message = Some(crate::display::msgline::say(surface.host(), id, &[&from]));
-    let ty = w.m.record(from).map_or("RECORD", |i| w.m.records[i].ty.word());
+    let ty =
+        w.m.record(from)
+            .map_or("RECORD", |i| w.m.records[i].ty.word());
     loop {
-        let head = (w.file.as_str(), w.lib.as_str(), w.member.as_str(), w.srctype.as_str());
+        let head = (
+            w.file.as_str(),
+            w.lib.as_str(),
+            w.member.as_str(),
+            w.srctype.as_str(),
+        );
         let mut vals = BTreeMap::new();
         vals.insert("TYPE".to_string(), ty.to_string());
-        let screen = entry::add_record(head, &|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let screen = entry::add_record(
+            head,
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         let Some(a) = ui::show(surface, &screen) else {
             return Err(());
         };
@@ -495,7 +594,11 @@ fn ask_name(w: &Work, surface: &mut Surface, from: &str, what: &str) -> Result<O
         if !valid_name(&n) {
             message = Some(crate::display::msgline::say(surface.host(), "CPD9C81", &[]));
         } else if w.m.record(&n).is_some() {
-            message = Some(crate::display::msgline::say(surface.host(), "CPD9C82", &[&n]));
+            message = Some(crate::display::msgline::say(
+                surface.host(),
+                "CPD9C82",
+                &[&n],
+            ));
         } else {
             return Ok(Some(n));
         }
@@ -504,7 +607,13 @@ fn ask_name(w: &Work, surface: &mut Surface, from: &str, what: &str) -> Result<O
 
 /// The comment lines of a head (the `%%` stamps aside), edited; with
 /// `file`, the head's own comments, else those after its `R` line.
-pub fn edit_comments(surface: &mut Surface, what: &str, name: &str, head: &mut Vec<Line>, file: bool) -> Flow {
+pub fn edit_comments(
+    surface: &mut Surface,
+    what: &str,
+    name: &str,
+    head: &mut Vec<Line>,
+    file: bool,
+) -> Flow {
     let is_note = |l: &Line| l.is_comment() && l.get(8, 9) != "%%";
     let current: Vec<String> = head.iter().filter(|l| is_note(l)).map(Line::text).collect();
     let Ok(lines) = comments_display(surface, what, name, &current) else {
@@ -515,9 +624,13 @@ pub fn edit_comments(surface: &mut Surface, what: &str, name: &str, head: &mut V
     };
     let new: Vec<Line> = lines.iter().map(|l| Line::new(l)).collect();
     let at = if file {
-        head.iter().position(|l| !l.is_comment()).unwrap_or(head.len())
+        head.iter()
+            .position(|l| !l.is_comment())
+            .unwrap_or(head.len())
     } else {
-        head.iter().position(|l| l.name_type() == 'R').map_or(0, |i| i + 1)
+        head.iter()
+            .position(|l| l.name_type() == 'R')
+            .map_or(0, |i| i + 1)
     };
     let mut out: Vec<Line> = Vec::new();
     for (i, l) in head.iter().enumerate() {
@@ -537,7 +650,12 @@ pub fn edit_comments(surface: &mut Surface, what: &str, name: &str, head: &mut V
 
 /// The comments editor: `Ok(Some(lines))` when saved, `Ok(None)` when
 /// left without.
-pub fn comments_display(surface: &mut Surface, what: &str, name: &str, lines: &[String]) -> Result<Option<Vec<String>>, Gone> {
+pub fn comments_display(
+    surface: &mut Surface,
+    what: &str,
+    name: &str,
+    lines: &[String],
+) -> Result<Option<Vec<String>>, Gone> {
     let mut lines: Vec<String> = lines.to_vec();
     let mut message: Option<String> = None;
     loop {
@@ -546,7 +664,12 @@ pub fn comments_display(surface: &mut Surface, what: &str, name: &str, lines: &[
         let a = ui::show(surface, &screen).ok_or(Gone)?;
         let shown = lines.len().clamp(1, comments::LINES);
         let mut typed: Vec<String> = (0..shown)
-            .map(|i| a.cells.get(&(i, "TEXT".to_string())).cloned().unwrap_or_default())
+            .map(|i| {
+                a.cells
+                    .get(&(i, "TEXT".to_string()))
+                    .cloned()
+                    .unwrap_or_default()
+            })
             .collect();
         // Every line is a comment: `A*` in columns 6-7.
         for t in &mut typed {
@@ -592,8 +715,17 @@ fn subset_display(surface: &mut Surface, w: &Work, cur: &Subset) -> Option<Subse
     vals.insert("TYPE".to_string(), cur.ty.clone());
     let mut message: Option<String> = None;
     loop {
-        let head = (w.file.as_str(), w.lib.as_str(), w.member.as_str(), w.srctype.as_str());
-        let screen = entry::subset(head, &|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let head = (
+            w.file.as_str(),
+            w.lib.as_str(),
+            w.member.as_str(),
+            w.srctype.as_str(),
+        );
+        let screen = entry::subset(
+            head,
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         let a = ui::show(surface, &screen)?;
         match a.key() {
             Key::F(3 | 12) => return Some(cur.clone()),
@@ -605,14 +737,19 @@ fn subset_display(surface: &mut Surface, w: &Work, cur: &Subset) -> Option<Subse
             }
         }
         let ty = a.up("TYPE");
-        let ok = matches!(ty.as_str(), "*ALL" | "SFL*" | "SFLCTL" | "GRDRCD") || RecordType::from_word(&ty).is_some();
+        let ok = matches!(ty.as_str(), "*ALL" | "SFL*" | "SFLCTL" | "GRDRCD")
+            || RecordType::from_word(&ty).is_some();
         if !ok {
             vals.insert("TYPE".into(), ty);
             message = Some(crate::display::msgline::say(surface.host(), "CPD9C84", &[]));
             continue;
         }
         return Some(Subset {
-            name: if a.up("NAME").is_empty() { "*ALL".into() } else { a.up("NAME") },
+            name: if a.up("NAME").is_empty() {
+                "*ALL".into()
+            } else {
+                a.up("NAME")
+            },
             ty,
         });
     }
@@ -675,19 +812,38 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Save
     .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
     .collect();
     let exists = !w.read.is_empty();
-    let mut message = exists.then(|| format!("Member {} is replaced when you press Enter.", w.member));
+    let mut message =
+        exists.then(|| format!("Member {} is replaced when you press Enter.", w.member));
     loop {
-        let screen = entry::save(&|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let screen = entry::save(
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         let Some(a) = ui::show(surface, &screen) else {
             return Saved::Gone;
         };
-        for k in ["SAVE", "SRCFILE", "SRCLIB", "SRCMBR", "CREATE", "PROMPT", "FILE", "LIB", "REPLACE", "BATCH", "MORE"] {
+        for k in [
+            "SAVE", "SRCFILE", "SRCLIB", "SRCMBR", "CREATE", "PROMPT", "FILE", "LIB", "REPLACE",
+            "BATCH", "MORE",
+        ] {
             vals.insert(k.to_string(), a.up(k));
         }
         vals.insert("TEXT".into(), a.raw("TEXT").trim().to_string());
         match a.key() {
-            Key::F(12) => return Saved::Back(Some(crate::display::msgline::say(host, "CPI9BFD", &[&w.member]))),
-            Key::F(3) => return Saved::Done(Some(crate::display::msgline::say(host, "CPI9BFD", &[&w.member]))),
+            Key::F(12) => {
+                return Saved::Back(Some(crate::display::msgline::say(
+                    host,
+                    "CPI9BFD",
+                    &[&w.member],
+                )));
+            }
+            Key::F(3) => {
+                return Saved::Done(Some(crate::display::msgline::say(
+                    host,
+                    "CPI9BFD",
+                    &[&w.member],
+                )));
+            }
             Key::Enter => {}
             _ => {
                 message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
@@ -697,15 +853,27 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Save
         let save = vals["SAVE"] == "Y";
         let create = vals["CREATE"] == "Y";
         if !save && !create {
-            return Saved::Done(Some(crate::display::msgline::say(host, "CPI9BFD", &[&w.member])));
+            return Saved::Done(Some(crate::display::msgline::say(
+                host,
+                "CPI9BFD",
+                &[&w.member],
+            )));
         }
         if create && !save {
             message = Some(crate::display::msgline::say(host, "CPD9C86", &[]));
             continue;
         }
-        let (file, lib, mbr) = (vals["SRCFILE"].clone(), vals["SRCLIB"].clone(), vals["SRCMBR"].clone());
+        let (file, lib, mbr) = (
+            vals["SRCFILE"].clone(),
+            vals["SRCLIB"].clone(),
+            vals["SRCMBR"].clone(),
+        );
         let Some(real) = file_library(host, &lib, &file) else {
-            message = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
+            message = Some(crate::display::msgline::say(
+                host,
+                "CPF9812",
+                &[&file, &lib],
+            ));
             continue;
         };
         let lines = w.lines(host);
@@ -715,12 +883,27 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Save
         }
         let text = vals["TEXT"].clone();
         if !text.is_empty() && text != w.text {
-            let _ = must(job, host, &format!("CHGPFM FILE({real}/{file}) MBR({mbr}) TEXT('{}')", text.replace('\'', "''")));
+            let _ = must(
+                job,
+                host,
+                &format!(
+                    "CHGPFM FILE({real}/{file}) MBR({mbr}) TEXT('{}')",
+                    text.replace('\'', "''")
+                ),
+            );
         }
         let mut done = format!("Member {mbr} saved in file {real}/{file}.");
         if create {
-            let obj_lib = if vals["LIB"].is_empty() { "*CURLIB".to_string() } else { vals["LIB"].clone() };
-            let replace = if vals["REPLACE"] == "Y" { "*YES" } else { "*NO" };
+            let obj_lib = if vals["LIB"].is_empty() {
+                "*CURLIB".to_string()
+            } else {
+                vals["LIB"].clone()
+            };
+            let replace = if vals["REPLACE"] == "Y" {
+                "*YES"
+            } else {
+                "*NO"
+            };
             let crt = format!(
                 "CRTDSPF FILE({obj_lib}/{}) SRCFILE({real}/{file}) SRCMBR({mbr}) REPLACE({replace})",
                 vals["FILE"]

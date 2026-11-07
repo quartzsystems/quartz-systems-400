@@ -38,7 +38,11 @@ fn written(text: &str) -> ScreenModel {
     let c = compile_dspf(&src, &NoRefs, &CompileOpts::default());
     let df = c.definition.unwrap_or_else(|| panic!("{}", c.listing));
     let rec = df.record("SIGNON").expect("format").clone();
-    let values = [("QSYSNAME", "SYSNAME"), ("SBSNAME", "QBASE"), ("DEVNAME", "QPADEV0001")];
+    let values = [
+        ("QSYSNAME", "SYSNAME"),
+        ("SBSNAME", "QBASE"),
+        ("DEVNAME", "QPADEV0001"),
+    ];
     let mut out = Vec::new();
     for bf in &rec.layout.output.fields {
         let f = &rec.fields[bf.field];
@@ -52,7 +56,8 @@ fn written(text: &str) -> ScreenModel {
     }
     let mut rt = Runtime::new(df, false);
     let mut m = ScreenModel::new(false);
-    rt.write(&mut m, &Env::default(), "SIGNON", &out, &[]).unwrap();
+    rt.write(&mut m, &Env::default(), "SIGNON", &out, &[])
+        .unwrap();
     m
 }
 

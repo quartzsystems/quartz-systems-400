@@ -43,7 +43,10 @@ fn jdbc() {
             rdb: "S062B175".into(),
             job: ("QZDASOINIT".into(), "QUSER".into(), "007839".into()),
         };
-        let diffs = replay(&t, &masks(), &mut || Box::new(Database::new(auth.clone(), session(), NoExits, cfg.clone())) as Box<dyn Handler>);
+        let diffs = replay(&t, &masks(), &mut || {
+            Box::new(Database::new(auth.clone(), session(), NoExits, cfg.clone()))
+                as Box<dyn Handler>
+        });
         accept(&format!("database-{s}"), &diffs);
     }
 }
@@ -66,10 +69,30 @@ impl sql::embed::Embedded for Calling {
         if !self.made {
             self.made = true;
             let ddl = "CREATE PROCEDURE QSTEST.HSPROC1 (IN N INTEGER, OUT WORD VARCHAR(10), INOUT AMT DECIMAL(7, 2))                 DYNAMIC RESULT SETS 2 EXTERNAL NAME QSTEST.RSPGM PARAMETER STYLE GENERAL";
-            let d = Desc { op: Op::Exec, sql_naming: true, text: ddl.into(), ..Desc::default() };
-            assert_eq!(self.s.run(&Request { scope: scope("MAKE:"), desc: d, inputs: Vec::new() }).sqlca.sqlcode, 0);
+            let d = Desc {
+                op: Op::Exec,
+                sql_naming: true,
+                text: ddl.into(),
+                ..Desc::default()
+            };
+            assert_eq!(
+                self.s
+                    .run(&Request {
+                        scope: scope("MAKE:"),
+                        desc: d,
+                        inputs: Vec::new()
+                    })
+                    .sqlca
+                    .sqlcode,
+                0
+            );
         }
-        if req.desc.op == Op::ExecImm && req.inputs.first().is_some_and(|t| t.as_text().contains("PROCEDURE QSTEST.HSPROC1 (")) {
+        if req.desc.op == Op::ExecImm
+            && req
+                .inputs
+                .first()
+                .is_some_and(|t| t.as_text().contains("PROCEDURE QSTEST.HSPROC1 ("))
+        {
             // The SQL body is the stand-in made above.
             return sql::embed::Reply::default();
         }
@@ -79,13 +102,38 @@ impl sql::embed::Embedded for Calling {
         let Some(plan) = r.call else { return r };
         let n = plan.parms[0].value.as_text();
         let amt = plan.parms[2].value.as_text().parse::<f64>().unwrap_or(0.0) * 2.0;
-        self.outs = vec![(1, Value::Str("DONE".into())), (2, Value::Num(qdecimal::Decimal::parse(&format!("{amt:.2}")).unwrap()))];
+        self.outs = vec![
+            (1, Value::Str("DONE".into())),
+            (
+                2,
+                Value::Num(qdecimal::Decimal::parse(&format!("{amt:.2}")).unwrap()),
+            ),
+        ];
         for (c, q) in [
-            ("C1", format!("SELECT ID, NAME FROM (VALUES (1, 'ANN'), (2, 'BOB'), (3, 'CY')) AS T (ID, NAME) WHERE ID <= {n} ORDER BY ID")),
-            ("C2", format!("SELECT {n} * 10 AS TEN FROM SYSIBM.SYSDUMMY1")),
+            (
+                "C1",
+                format!(
+                    "SELECT ID, NAME FROM (VALUES (1, 'ANN'), (2, 'BOB'), (3, 'CY')) AS T (ID, NAME) WHERE ID <= {n} ORDER BY ID"
+                ),
+            ),
+            (
+                "C2",
+                format!("SELECT {n} * 10 AS TEN FROM SYSIBM.SYSDUMMY1"),
+            ),
         ] {
-            let d = Desc { op: Op::Open, name: c.into(), sql_naming: true, text: q, returns: Some(sql::ast::ReturnTo::Caller), ..Desc::default() };
-            let o = self.s.run(&Request { scope: scope("9:HSPROC1"), desc: d, inputs: Vec::new() });
+            let d = Desc {
+                op: Op::Open,
+                name: c.into(),
+                sql_naming: true,
+                text: q,
+                returns: Some(sql::ast::ReturnTo::Caller),
+                ..Desc::default()
+            };
+            let o = self.s.run(&Request {
+                scope: scope("9:HSPROC1"),
+                desc: d,
+                inputs: Vec::new(),
+            });
             assert_eq!(o.sqlca.sqlcode, 0, "{:?}", o.sqlca);
         }
         let called = sql::exec::routine::Called {
@@ -95,7 +143,14 @@ impl sql::embed::Embedded for Calling {
             routine: plan.routine.clone(),
             ..Default::default()
         };
-        self.s.run(&Request { scope: req.scope, desc: Desc { op: Op::Called, ..Desc::default() }, inputs: called.inputs() })
+        self.s.run(&Request {
+            scope: req.scope,
+            desc: Desc {
+                op: Op::Called,
+                ..Desc::default()
+            },
+            inputs: called.inputs(),
+        })
     }
 
     fn take_outs(&mut self) -> Vec<(usize, sql::value::Value)> {
@@ -112,7 +167,11 @@ fn callproc() {
         job: ("QZDASOINIT".into(), "QUSER".into(), "007839".into()),
     };
     let diffs = replay(&t, &masks(), &mut || {
-        let e = Calling { s: session(), outs: Vec::new(), made: false };
+        let e = Calling {
+            s: session(),
+            outs: Vec::new(),
+            made: false,
+        };
         Box::new(Database::new(auth.clone(), e, NoExits, cfg.clone())) as Box<dyn Handler>
     });
     accept("database-callproc", &diffs);
@@ -130,18 +189,80 @@ fn probe_statements() {
         "SELECT CAST(NULL AS INTEGER), CAST(1.5 AS DOUBLE), CAST('x' AS CHAR(3)), DATE('2026-01-02'), BIGINT(9) FROM SYSIBM.SYSDUMMY1",
         "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE, TABLE_TEXT FROM QSYS2.SYSTABLES",
     ] {
-        let r = s.run(&Request { scope: "X:".into(), desc: Desc { op: Op::Prepare, name: "S1".into(), into: true, sql_naming: true, ..Desc::default() }, inputs: vec![Value::Str(q.into())] });
-        println!("{} {} {:?} rows={}", r.sqlca.sqlcode, r.sqlca.sqlstate, r.sqlca.sqlerrmc, r.rows.len());
+        let r = s.run(&Request {
+            scope: "X:".into(),
+            desc: Desc {
+                op: Op::Prepare,
+                name: "S1".into(),
+                into: true,
+                sql_naming: true,
+                ..Desc::default()
+            },
+            inputs: vec![Value::Str(q.into())],
+        });
+        println!(
+            "{} {} {:?} rows={}",
+            r.sqlca.sqlcode,
+            r.sqlca.sqlstate,
+            r.sqlca.sqlerrmc,
+            r.rows.len()
+        );
     }
-    let r = s.run(&Request { scope: "X:".into(), desc: Desc { op: Op::Open, name: "C1".into(), sql_naming: true, text: "SELECT TABLE_SCHEMA, TABLE_NAME FROM QSYS2.SYSTABLES".into(), ..Desc::default() }, inputs: vec![] });
+    let r = s.run(&Request {
+        scope: "X:".into(),
+        desc: Desc {
+            op: Op::Open,
+            name: "C1".into(),
+            sql_naming: true,
+            text: "SELECT TABLE_SCHEMA, TABLE_NAME FROM QSYS2.SYSTABLES".into(),
+            ..Desc::default()
+        },
+        inputs: vec![],
+    });
     println!("open {} {}", r.sqlca.sqlcode, r.sqlca.sqlerrmc);
-    let q = s.run(&Request { scope: "X:".into(), desc: Desc { op: Op::Query, sql_naming: true, text: "SELECT COUNT(*) FROM QSYS2.SYSTABLES".into(), ..Desc::default() }, inputs: vec![] });
-    println!("query {} {} {:?}", q.sqlca.sqlcode, q.sqlca.sqlerrmc, q.rows);
-    let q = s.run(&Request { scope: "X:".into(), desc: Desc { op: Op::Query, sql_naming: false, text: "SELECT COUNT(*) FROM QSYS2/SYSTABLES".into(), ..Desc::default() }, inputs: vec![] });
-    println!("query sys {} {} {:?}", q.sqlca.sqlcode, q.sqlca.sqlerrmc, q.rows);
-    let r = s.run(&Request { scope: "X:".into(), desc: Desc { op: Op::Fetch, name: "C1".into(), rows: true, sql_naming: true, ..Desc::default() }, inputs: vec![Value::int(1000)] });
+    let q = s.run(&Request {
+        scope: "X:".into(),
+        desc: Desc {
+            op: Op::Query,
+            sql_naming: true,
+            text: "SELECT COUNT(*) FROM QSYS2.SYSTABLES".into(),
+            ..Desc::default()
+        },
+        inputs: vec![],
+    });
+    println!(
+        "query {} {} {:?}",
+        q.sqlca.sqlcode, q.sqlca.sqlerrmc, q.rows
+    );
+    let q = s.run(&Request {
+        scope: "X:".into(),
+        desc: Desc {
+            op: Op::Query,
+            sql_naming: false,
+            text: "SELECT COUNT(*) FROM QSYS2/SYSTABLES".into(),
+            ..Desc::default()
+        },
+        inputs: vec![],
+    });
+    println!(
+        "query sys {} {} {:?}",
+        q.sqlca.sqlcode, q.sqlca.sqlerrmc, q.rows
+    );
+    let r = s.run(&Request {
+        scope: "X:".into(),
+        desc: Desc {
+            op: Op::Fetch,
+            name: "C1".into(),
+            rows: true,
+            sql_naming: true,
+            ..Desc::default()
+        },
+        inputs: vec![Value::int(1000)],
+    });
     println!("fetch {} {}", r.sqlca.sqlcode, r.rows.len());
-    for row in r.rows.iter().take(5) { println!("{row:?}"); }
+    for row in r.rows.iter().take(5) {
+        println!("{row:?}");
+    }
 }
 
 /// Extended dynamic SQL (the `sqlpkg` trace): every connection over one
@@ -161,9 +282,17 @@ fn sqlpkg() {
     let mut m = masks();
     m.param.push((0x380B, 45..63));
     let diffs = replay(&t, &m, &mut || {
-        let s = sql::embed::Session::new(Box::new(store.clone()), qsys, store::obj::JobHandle(1), names.clone());
+        let s = sql::embed::Session::new(
+            Box::new(store.clone()),
+            qsys,
+            store::obj::JobHandle(1),
+            names.clone(),
+        );
         let db = Box::new(Database::new(auth.clone(), s, NoExits, cfg.clone()));
-        Box::new(Renamer { inner: db, ours: ours.clone() }) as Box<dyn Handler>
+        Box::new(Renamer {
+            inner: db,
+            ours: ours.clone(),
+        }) as Box<dyn Handler>
     });
     accept("database-sqlpkg", &diffs);
     assert_eq!(ours.borrow().len(), 1, "one statement in the package");
@@ -190,7 +319,11 @@ impl Handler for Renamer {
         let o = self.inner.handle(&f.encode());
         for r in &o.replies {
             let f = hostsvr::frame::Frame::decode(r).unwrap();
-            if let Some(p) = f.params.iter().find(|p| p.cp == 0x380B && p.data.len() > 63) {
+            if let Some(p) = f
+                .params
+                .iter()
+                .find(|p| p.cp == 0x380B && p.data.len() > 63)
+            {
                 let name = p.data[45..63].to_vec();
                 let mut ours = self.ours.borrow_mut();
                 if !ours.contains(&name) {

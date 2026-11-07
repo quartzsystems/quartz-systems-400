@@ -155,7 +155,11 @@ impl Build {
 
     pub(super) fn separator(&mut self, el: &Element, attr: &str) -> Separator {
         match self
-            .choice(el, attr, &["SPACE", "RULE", "NONE", "SYSNAM", "SYSNAME", "DATETIME"])
+            .choice(
+                el,
+                attr,
+                &["SPACE", "RULE", "NONE", "SYSNAM", "SYSNAME", "DATETIME"],
+            )
             .as_deref()
         {
             Some("RULE") => Separator::Rule,

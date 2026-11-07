@@ -50,7 +50,11 @@ fn every_split_gives_the_same_result() {
     for (from, to, data) in cases() {
         let whole = run(from, to, &[&data]);
         for i in 0..=data.len() {
-            assert_eq!(run(from, to, &[&data[..i], &data[i..]]), whole, "{from}->{to} at {i}");
+            assert_eq!(
+                run(from, to, &[&data[..i], &data[i..]]),
+                whole,
+                "{from}->{to} at {i}"
+            );
             for j in i..=data.len() {
                 assert_eq!(
                     run(from, to, &[&data[..i], &data[i..j], &data[j..]]),
@@ -67,7 +71,11 @@ fn every_split_gives_the_same_result() {
 #[test]
 fn a_new_converter_resumes_from_the_shift_state() {
     for (from, to) in [(930, 1208), (930, 939), (930, 5026), (300, 1208)] {
-        let data = if from == 300 { hex(SAMPLES[2].3.unwrap()) } else { input(930) };
+        let data = if from == 300 {
+            hex(SAMPLES[2].3.unwrap())
+        } else {
+            input(930)
+        };
         let whole = to_string(from, &data).unwrap();
         for i in 0..=data.len() {
             let mut a = Converter::new(from, to).unwrap();
@@ -75,7 +83,9 @@ fn a_new_converter_resumes_from_the_shift_state() {
             a.feed(&data[..i], &mut out);
             a.flush_shift(&mut out);
             let rest = &data[i - a.pending()..];
-            let mut b = Converter::new(from, to).unwrap().with_shift(a.input_shift());
+            let mut b = Converter::new(from, to)
+                .unwrap()
+                .with_shift(a.input_shift());
             b.feed(rest, &mut out);
             b.finish(&mut out);
             assert_eq!(to_string(to, &out).unwrap(), whole, "{from}->{to} at {i}");
@@ -135,7 +145,10 @@ fn flush_shift_closes_the_output_run() {
 
 #[test]
 fn finish_substitutes_half_a_pair() {
-    assert_eq!(convert(930, 1208, &hex("0E45")).unwrap(), "\u{FFFD}".as_bytes());
+    assert_eq!(
+        convert(930, 1208, &hex("0E45")).unwrap(),
+        "\u{FFFD}".as_bytes()
+    );
     assert_eq!(convert(939, 930, &hex("0E45")).unwrap(), hex("0EFEFE0F"));
     assert_eq!(convert(300, 37, &hex("456245")).unwrap(), hex("3F3F"));
     // A pass-through copies it and closes the run.

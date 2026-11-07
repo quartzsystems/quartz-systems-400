@@ -158,7 +158,8 @@ pub trait Scope {
     /// Remove the directives `f` picks; how many went.
     fn remove_where(&mut self, f: impl Fn(&Directive) -> bool) -> usize {
         let before = self.items().len();
-        self.items_mut().retain(|n| !matches!(n, Node::Directive(d) if f(d)));
+        self.items_mut()
+            .retain(|n| !matches!(n, Node::Directive(d) if f(d)));
         before - self.items().len()
     }
 
@@ -166,7 +167,9 @@ pub trait Scope {
     /// last directive in this scope, else at the end.
     fn add(&mut self, d: Directive) {
         let items = self.items();
-        let same = items.iter().rposition(|n| matches!(n, Node::Directive(x) if x.is(&d.name)));
+        let same = items
+            .iter()
+            .rposition(|n| matches!(n, Node::Directive(x) if x.is(&d.name)));
         let any = items.iter().rposition(|n| matches!(n, Node::Directive(_)));
         let at = same.or(any).map_or(items.len(), |i| i + 1);
         self.items_mut().insert(at, Node::Directive(d));
@@ -185,7 +188,9 @@ pub trait Scope {
 
     /// Section `name` whose first argument is `arg`.
     fn section(&self, name: &str, arg: &str) -> Option<&Section> {
-        self.sections(name).into_iter().find(|s| s.args.first().map(String::as_str) == Some(arg))
+        self.sections(name)
+            .into_iter()
+            .find(|s| s.args.first().map(String::as_str) == Some(arg))
     }
 
     /// Section `name` `arg`, to change; created at the end if missing.
@@ -292,7 +297,9 @@ fn print_nodes(items: &[Node], depth: usize, out: &mut String) {
                 None => out.push_str(&line_of(&d.name, &d.args, depth * 3)),
             },
             Node::Section(s) => {
-                if let Some(r) = &s.raw { out.push_str(r) } else {
+                if let Some(r) = &s.raw {
+                    out.push_str(r)
+                } else {
                     let mut l = line_of(&s.name, &s.args, depth * 3);
                     l.insert(depth * 3, '<');
                     l.insert(l.len() - 1, '>');

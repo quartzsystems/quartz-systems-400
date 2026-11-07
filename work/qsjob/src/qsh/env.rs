@@ -42,7 +42,10 @@ fn fail_of(r: QshReply) -> Result<(), EnvFail> {
     match r {
         QshReply::Done => Ok(()),
         QshReply::Failed { msgid, text } => Err(EnvFail::new(&msgid, text)),
-        _ => Err(EnvFail::new("CPF9898", "The storage service answered out of turn.")),
+        _ => Err(EnvFail::new(
+            "CPF9898",
+            "The storage service answered out of turn.",
+        )),
     }
 }
 
@@ -110,7 +113,8 @@ fn fail(e: &EnvFail) -> Fail {
 }
 
 fn system() -> Result<std::rc::Rc<dyn SysEnv>, Fail> {
-    sysapi::envproc::system().ok_or_else(|| Fail::new("CPF9898", "System-level variables are not available."))
+    sysapi::envproc::system()
+        .ok_or_else(|| Fail::new("CPF9898", "System-level variables are not available."))
 }
 
 /// The variables of a level.
@@ -166,7 +170,10 @@ pub fn chgenvvar(r: &Resolved) -> Result<String, Fail> {
         .ok_or_else(|| {
             Fail::new(
                 "CPFA981",
-                format!("CPFA981 There is no environment variable {name} at level {}.", level(sys)),
+                format!(
+                    "CPFA981 There is no environment variable {name} at level {}.",
+                    level(sys)
+                ),
             )
         })?;
     let value = parm(r, "VALUE");
@@ -181,20 +188,28 @@ pub fn chgenvvar(r: &Resolved) -> Result<String, Fail> {
         ccsid: ccsid(r, "CCSID").unwrap_or(old.ccsid),
     };
     set(sys, var, SetMode::Change)?;
-    Ok(format!("CPCA981 Changed the environment variable {name}.\n"))
+    Ok(format!(
+        "CPCA981 Changed the environment variable {name}.\n"
+    ))
 }
 
 /// `RMVENVVAR ENVVAR() LEVEL()`.
 pub fn rmvenvvar(r: &Resolved) -> Result<String, Fail> {
     let name = parm(r, "ENVVAR");
-    let name = if name.eq_ignore_ascii_case("*ALL") { "*ALL".to_string() } else { name };
+    let name = if name.eq_ignore_ascii_case("*ALL") {
+        "*ALL".to_string()
+    } else {
+        name
+    };
     let res = if is_sys(r) {
         system()?.remove(&name)
     } else {
         sysapi::envproc::remove_job(&name)
     };
     res.map_err(|e| fail(&e))?;
-    Ok(format!("CPCA988 Removed the environment variable {name}.\n"))
+    Ok(format!(
+        "CPCA988 Removed the environment variable {name}.\n"
+    ))
 }
 
 /// A name cut to the list's column: 24 characters and ` >` when longer.
@@ -294,11 +309,22 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
                                 format!("?ADDENVVAR ENVVAR('{}') LEVEL({})", q(&name), level(sys))
                             })
                         }
-                        ("2", Some(v)) => Some(format!("?CHGENVVAR ENVVAR('{}') LEVEL({})", q(&v.name), level(sys))),
-                        ("4", Some(v)) => Some(format!("RMVENVVAR ENVVAR('{}') LEVEL({})", q(&v.name), level(sys))),
+                        ("2", Some(v)) => Some(format!(
+                            "?CHGENVVAR ENVVAR('{}') LEVEL({})",
+                            q(&v.name),
+                            level(sys)
+                        )),
+                        ("4", Some(v)) => Some(format!(
+                            "RMVENVVAR ENVVAR('{}') LEVEL({})",
+                            q(&v.name),
+                            level(sys)
+                        )),
                         ("5", Some(v)) => {
                             let value = v.value.as_deref().unwrap_or("*NULL");
-                            shown = Some(uim::engine::LineMsg::info("CPI9BBA", &[&v.name, value, &v.ccsid.to_string()]));
+                            shown = Some(uim::engine::LineMsg::info(
+                                "CPI9BBA",
+                                &[&v.name, value, &v.ccsid.to_string()],
+                            ));
                             None
                         }
                         ("6", Some(_)) => {
@@ -334,7 +360,11 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
             Response::Return(22) => {
                 d.error("CPD9BA3", &[]);
             }
-            Response::Exit | Response::Cancel | Response::Gone | Response::Menu(_) | Response::Panel(_) => {
+            Response::Exit
+            | Response::Cancel
+            | Response::Gone
+            | Response::Menu(_)
+            | Response::Panel(_) => {
                 return Ok(String::new());
             }
             Response::Return(_) | Response::Retrieve => {}
@@ -353,7 +383,10 @@ mod tests {
 
     #[test]
     fn cells_as_the_list_shows_them() {
-        assert_eq!(name_cell("QIBM_PASE_USE_PRESTART_JOBS"), "QIBM_PASE_USE_PRESTART_J >");
+        assert_eq!(
+            name_cell("QIBM_PASE_USE_PRESTART_JOBS"),
+            "QIBM_PASE_USE_PRESTART_J >"
+        );
         assert_eq!(name_cell("LANG"), "LANG");
         assert_eq!(
             value_cell(Some("/QopenSys/QIBM/ProdData/JavaVM/jdk17/64bit")),

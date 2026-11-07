@@ -162,24 +162,43 @@ impl Monitor {
     fn prestart(&mut self) {
         for p in self.sbsd.pjes.clone() {
             let program = format!("{}/{}", p.pgm.1, p.pgm.0);
-            let live = self.jobs.iter().filter(|s| s.start.role == "PRESTART" && s.start.program == program).count();
+            let live = self
+                .jobs
+                .iter()
+                .filter(|s| s.start.role == "PRESTART" && s.start.program == program)
+                .count();
             let live = u16::try_from(live).unwrap_or(u16::MAX);
             if !p.strjobs
                 && live == 0
-                && sockets::relay::queued(sockets::relay::SOCKET, &sockets::relay::pool(&p.pgm.0)).unwrap_or(0) == 0
+                && sockets::relay::queued(sockets::relay::SOCKET, &sockets::relay::pool(&p.pgm.0))
+                    .unwrap_or(0)
+                    == 0
             {
                 continue;
             }
-            let recent = self.prestarted.get(&program).is_some_and(|t| t.elapsed() < Duration::from_secs(3));
+            let recent = self
+                .prestarted
+                .get(&program)
+                .is_some_and(|t| t.elapsed() < Duration::from_secs(3));
             let want = if live < p.inljobs {
                 p.inljobs - live
             } else if recent {
                 0
             } else {
-                let idle = sockets::relay::idle(sockets::relay::SOCKET, &sockets::relay::pool(&p.pgm.0)).unwrap_or(u32::MAX);
-                if idle < u32::from(p.threshold) { p.adljobs } else { 0 }
+                let idle =
+                    sockets::relay::idle(sockets::relay::SOCKET, &sockets::relay::pool(&p.pgm.0))
+                        .unwrap_or(u32::MAX);
+                if idle < u32::from(p.threshold) {
+                    p.adljobs
+                } else {
+                    0
+                }
             };
-            let room = if p.maxjobs == 0 { want } else { want.min(p.maxjobs.saturating_sub(live)) };
+            let room = if p.maxjobs == 0 {
+                want
+            } else {
+                want.min(p.maxjobs.saturating_sub(live))
+            };
             if room == 0 {
                 continue;
             }
@@ -208,7 +227,11 @@ impl Monitor {
             jobd: format!("{}/{}", p.jobd.1, p.jobd.0),
             class: format!("{}/{}", p.cls.1, p.cls.0),
             program: format!("{}/{}", p.pgm.1, p.pgm.0),
-            rqsdta: if p.maxuse == 0 { String::new() } else { format!("MAXUSE({})", p.maxuse) },
+            rqsdta: if p.maxuse == 0 {
+                String::new()
+            } else {
+                format!("MAXUSE({})", p.maxuse)
+            },
             pool: pool_name(&self.name, p.pool, kind_of),
             lda: Vec::new(),
             signon: None,

@@ -329,7 +329,14 @@ impl Printer<'_> {
                             let _ = write!(s, " rec({})", pl(x));
                         }
                         if let Some(c) = ctl {
-                            let _ = write!(s, " ctl({}, {}, {}, {})", o(&c[0]), o(&c[1]), o(&c[2]), o(&c[3]));
+                            let _ = write!(
+                                s,
+                                " ctl({}, {}, {}, {})",
+                                o(&c[0]),
+                                o(&c[1]),
+                                o(&c[2]),
+                                o(&c[3])
+                            );
                         }
                         if let Some(x) = rrn {
                             let _ = write!(s, " rrn({})", o(x));

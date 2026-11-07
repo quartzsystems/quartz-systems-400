@@ -50,7 +50,10 @@ fn list(system: &mut System) -> String {
         if cmd.is_empty() {
             continue;
         }
-        let cmd: String = String::from_utf8_lossy(&cmd).replace('\0', " ").trim().to_string();
+        let cmd: String = String::from_utf8_lossy(&cmd)
+            .replace('\0', " ")
+            .trim()
+            .to_string();
         let rss = status_kb(pid, "VmRSS:");
         let fds = std::fs::read_dir(format!("{base}/fd")).map_or(0, Iterator::count);
         let job = jobs.get(&pid).map_or(String::new(), |j| format!(" {j}"));
@@ -76,16 +79,22 @@ fn status_kb(pid: u32, field: &str) -> u64 {
     std::fs::read_to_string(format!("/proc/{pid}/status"))
         .ok()
         .and_then(|s| {
-            s.lines()
-                .find(|l| l.starts_with(field))
-                .and_then(|l| l.split_whitespace().nth(1).and_then(|n| n.parse::<u64>().ok()))
+            s.lines().find(|l| l.starts_with(field)).and_then(|l| {
+                l.split_whitespace()
+                    .nth(1)
+                    .and_then(|n| n.parse::<u64>().ok())
+            })
         })
         .unwrap_or(0)
 }
 
 /// A descriptor's kind: `socket`, `pipe`, `anon:NAME`, or its path.
 fn kind(target: &str) -> String {
-    if let Some(k) = target.strip_suffix(']').and_then(|t| t.split_once(":[")).map(|p| p.0) {
+    if let Some(k) = target
+        .strip_suffix(']')
+        .and_then(|t| t.split_once(":["))
+        .map(|p| p.0)
+    {
         return k.to_string();
     }
     if let Some(a) = target.strip_prefix("anon_inode:") {
@@ -103,7 +112,8 @@ fn fds(pid: u32) -> String {
     let mut total = 0;
     for e in dir.filter_map(Result::ok) {
         total += 1;
-        let t = std::fs::read_link(e.path()).map_or_else(|_| "?".into(), |p| p.to_string_lossy().into_owned());
+        let t = std::fs::read_link(e.path())
+            .map_or_else(|_| "?".into(), |p| p.to_string_lossy().into_owned());
         *kinds.entry(kind(&t)).or_default() += 1;
     }
     let mut v: Vec<(String, u32)> = kinds.into_iter().collect();
@@ -125,11 +135,16 @@ fn maps(pid: u32) -> String {
     let mut current = String::new();
     for l in t.lines() {
         let w: Vec<&str> = l.split_whitespace().collect();
-        if w.first().is_some_and(|f| f.contains('-') && !f.ends_with(':')) {
-            current = w.get(5).map_or_else(|| "[anon]".to_string(), |n| (*n).to_string());
+        if w.first()
+            .is_some_and(|f| f.contains('-') && !f.ends_with(':'))
+        {
+            current = w
+                .get(5)
+                .map_or_else(|| "[anon]".to_string(), |n| (*n).to_string());
             by.entry(current.clone()).or_default().1 += 1;
         } else if w.first() == Some(&"Rss:") {
-            by.entry(current.clone()).or_default().0 += w.get(1).and_then(|n| n.parse().ok()).unwrap_or(0);
+            by.entry(current.clone()).or_default().0 +=
+                w.get(1).and_then(|n| n.parse().ok()).unwrap_or(0);
         }
     }
     let mut v: Vec<(String, (u64, u32))> = by.into_iter().filter(|(_, (kb, _))| *kb > 0).collect();

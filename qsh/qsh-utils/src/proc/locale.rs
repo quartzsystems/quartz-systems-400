@@ -72,7 +72,9 @@ const KEYWORDS: &[(&str, &str, V)] = &[
     (
         "LC_TIME",
         "mon",
-        V::S("January;February;March;April;May;June;July;August;September;October;November;December"),
+        V::S(
+            "January;February;March;April;May;June;July;August;September;October;November;December",
+        ),
     ),
     ("LC_TIME", "d_t_fmt", V::S("%a %b %e %H:%M:%S %Y")),
     ("LC_TIME", "d_fmt", V::S("%m/%d/%y")),

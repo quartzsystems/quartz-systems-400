@@ -101,8 +101,10 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                     }
                     Err(e) => {
                         message = Some(super::say(host, &e.msg()));
-                        st.evals
-                            .extend(dbg::screen::eval::history_entry(&a.cmdline, &super::say(host, &e.msg())));
+                        st.evals.extend(dbg::screen::eval::history_entry(
+                            &a.cmdline,
+                            &super::say(host, &e.msg()),
+                        ));
                         cmdline = failed(&a.cmdline);
                     }
                 }
@@ -141,7 +143,10 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
             }
             Key::F(6) => match cursor_line {
                 Some(l) => {
-                    message = Some(super::say(host, &st.session.toggle(l).unwrap_or_else(|e| e.msg())));
+                    message = Some(super::say(
+                        host,
+                        &st.session.toggle(l).unwrap_or_else(|e| e.msg()),
+                    ));
                     super::sync(job, host, st);
                 }
                 None => message = Some(no_source_or(host, "CPF9C28", st)),
@@ -186,7 +191,12 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                 return Exit::Leave;
             }
             Key::F(13) => {
-                if st.session.view.as_ref().is_none_or(dbg::SourceView::is_empty) {
+                if st
+                    .session
+                    .view
+                    .as_ref()
+                    .is_none_or(dbg::SourceView::is_empty)
+                {
                     message = Some(no_source_or(host, "CPF9C02", st));
                 } else if lists::wrkmodbkp(job, host, surface, st).is_none() {
                     return Exit::Gone;
@@ -220,7 +230,9 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                 (false, _) => message = Some(crate::display::msgline::say(host, "CPD9BE2", &[])),
                 (true, None) => message = Some(crate::display::msgline::say(host, "CPD9BE3", &[])),
                 (true, Some(w)) => {
-                    let r = st.session.apply(Command::Watch { expr: w, len: None }, cursor_line);
+                    let r = st
+                        .session
+                        .apply(Command::Watch { expr: w, len: None }, cursor_line);
                     message = Some(match r {
                         Ok(Effect::Message(m)) => super::say(host, &m),
                         Ok(_) => String::new(),
@@ -261,7 +273,11 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                 }
             }
             Key::PageDown => {
-                let at_bottom = st.session.view.as_ref().is_none_or(|v| v.is_empty() || v.at_bottom());
+                let at_bottom = st
+                    .session
+                    .view
+                    .as_ref()
+                    .is_none_or(|v| v.is_empty() || v.at_bottom());
                 if at_bottom {
                     message = Some(crate::display::msgline::say(host, "CPD6A69", &[]));
                 } else {
@@ -276,7 +292,9 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                     st.session.key_scroll(false);
                 }
             }
-            Key::F(_) | Key::Other => message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
+            Key::F(_) | Key::Other => {
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]))
+            }
         }
     }
 }
@@ -326,7 +344,8 @@ fn effect_of(
             match text {
                 Ok(v) if !v.contains('\n') && v.len() + expr.len() < 70 => {
                     let line = format!("{expr} = {v}");
-                    st.evals.extend(dbg::screen::eval::history_entry(typed, &line));
+                    st.evals
+                        .extend(dbg::screen::eval::history_entry(typed, &line));
                     *message = Some(line);
                 }
                 Ok(v) => {
@@ -396,7 +415,11 @@ fn failed(text: &str) -> String {
 
 /// The message a stop shows.
 fn stop_text(host: &Host, st: &State, stmt: u32, reason: dbg::session::StopReason) -> String {
-    let line = st.session.module().and_then(|m| m.map.line_of(stmt)).map_or_else(|| stmt.to_string(), |l| l.to_string());
+    let line = st
+        .session
+        .module()
+        .and_then(|m| m.map.line_of(stmt))
+        .map_or_else(|| stmt.to_string(), |l| l.to_string());
     let program = st
         .session
         .stopped
@@ -404,16 +427,27 @@ fn stop_text(host: &Host, st: &State, stmt: u32, reason: dbg::session::StopReaso
         .map(|s| s.program.clone())
         .unwrap_or_default();
     match reason {
-        dbg::session::StopReason::Breakpoint => crate::display::msgline::say(host, "CPF9C31", &[&line, &program]),
-        dbg::session::StopReason::Step => crate::display::msgline::say(host, "CPF9C34", &[&line, &program]),
-        dbg::session::StopReason::Watch(n) => crate::display::msgline::say(host, "CPF9C64", &[&n, &line, &program]),
+        dbg::session::StopReason::Breakpoint => {
+            crate::display::msgline::say(host, "CPF9C31", &[&line, &program])
+        }
+        dbg::session::StopReason::Step => {
+            crate::display::msgline::say(host, "CPF9C34", &[&line, &program])
+        }
+        dbg::session::StopReason::Watch(n) => {
+            crate::display::msgline::say(host, "CPF9C64", &[&n, &line, &program])
+        }
     }
 }
 
 /// Message `id`, or the no-source message when the module has no
 /// source.
 fn no_source_or(host: &Host, id: &str, st: &State) -> String {
-    if st.session.view.as_ref().is_none_or(dbg::SourceView::is_empty) {
+    if st
+        .session
+        .view
+        .as_ref()
+        .is_none_or(dbg::SourceView::is_empty)
+    {
         crate::display::msgline::say(host, "CPF9C02", &[])
     } else {
         crate::display::msgline::say(host, id, &[])

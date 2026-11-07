@@ -46,7 +46,12 @@ impl Subtree {
 
 /// The objects a command with `SUBTREE` acts on: the path, then with
 /// `*ALL` everything under it, parents first.
-pub fn targets(c: &dyn IfsClient, path: &str, subtree: Subtree, follow: bool) -> Result<Vec<String>, Errno> {
+pub fn targets(
+    c: &dyn IfsClient,
+    path: &str,
+    subtree: Subtree,
+    follow: bool,
+) -> Result<Vec<String>, Errno> {
     if subtree == Subtree::None {
         c.stat(path, follow)?;
         return Ok(vec![path.to_string()]);

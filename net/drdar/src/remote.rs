@@ -61,7 +61,11 @@ impl<S: Read + Write> Remote<S> {
         if let Some(ca) = rows.end.as_ref().map(sqlca).filter(sql::Sqlca::is_error) {
             return Err(ca);
         }
-        Ok(rows.rows.iter().map(|r| r.iter().map(value).collect()).collect())
+        Ok(rows
+            .rows
+            .iter()
+            .map(|r| r.iter().map(value).collect())
+            .collect())
     }
 
     fn execute_once(&mut self, text: &str) -> sql::Sqlca {
@@ -96,10 +100,14 @@ impl<S: Read + Write> Server for Remote<S> {
     }
 
     fn commit(&mut self) -> sql::Sqlca {
-        self.conn.commit().map_or_else(|e| failed(&e), |c| sqlca(&c))
+        self.conn
+            .commit()
+            .map_or_else(|e| failed(&e), |c| sqlca(&c))
     }
 
     fn rollback(&mut self) -> sql::Sqlca {
-        self.conn.rollback().map_or_else(|e| failed(&e), |c| sqlca(&c))
+        self.conn
+            .rollback()
+            .map_or_else(|e| failed(&e), |c| sqlca(&c))
     }
 }

@@ -61,7 +61,9 @@ pub(crate) fn need(system: &mut System, job: u32, p: Privilege) -> Result<String
     match have {
         None => {
             sessions().remove(&job);
-            Err(format!("Service tools user ID {user} is no longer signed on"))
+            Err(format!(
+                "Service tools user ID {user} is no longer signed on"
+            ))
         }
         Some(h) if !h.has(p) => Err(svctools::dst::NOT_AUTHORIZED.to_string()),
         Some(_) => Ok(user),
@@ -74,7 +76,11 @@ fn audit(system: &mut System) {
     let events: Vec<(String, String, String)> = std::mem::take(&mut system.audit_lic)
         .into_iter()
         .map(|(k, c, u)| {
-            let c = if k == "ST" && c == "DS" { "SS".into() } else { c };
+            let c = if k == "ST" && c == "DS" {
+                "SS".into()
+            } else {
+                c
+            };
             (k, c, u)
         })
         .collect();
@@ -126,10 +132,7 @@ pub fn sign_off(job: u32) {
 }
 
 /// The units and the disks in no ASP.
-pub fn disks(
-    system: &mut System,
-    job: u32,
-) -> Result<(Vec<DiskUnit>, Vec<NonConfigured>), String> {
+pub fn disks(system: &mut System, job: u32) -> Result<(Vec<DiskUnit>, Vec<NonConfigured>), String> {
     need(system, job, Privilege::DISK_UNITS_OPERATIONS)?;
     let mut e = env(system);
     Ok((e.disk_units(), e.nonconfigured()))
@@ -143,7 +146,10 @@ pub fn disk_change(
     unit: u16,
     device: &str,
 ) -> Result<u16, String> {
-    let admin = matches!(op, "add" | "remove" | "mirror" | "unmirror" | "threshold" | "spare-start" | "spare-stop");
+    let admin = matches!(
+        op,
+        "add" | "remove" | "mirror" | "unmirror" | "threshold" | "spare-start" | "spare-stop"
+    );
     let p = if admin {
         Privilege::DISK_UNITS_ADMIN
     } else {
@@ -161,7 +167,9 @@ pub fn disk_change(
         "replace" => e.replace(unit, device).map(|()| unit),
         "spare-start" => e.start_hot_spare(device).map(|_| unit),
         "spare-stop" => e.stop_hot_spare(device).map(|_| unit),
-        "balance" => e.balance_asp().map(|n| u16::try_from(n).unwrap_or(u16::MAX)),
+        "balance" => e
+            .balance_asp()
+            .map(|n| u16::try_from(n).unwrap_or(u16::MAX)),
         "threshold" => u8::try_from(unit)
             .map_err(|_| svctools::dst::disk::reasons::THRESHOLD_RANGE.to_string())
             .and_then(|p| e.set_asp_threshold(p))
@@ -217,8 +225,7 @@ pub fn disk_facts(system: &mut System, job: u32) -> Result<(u8, Vec<String>), St
 pub fn logs(system: &mut System, job: u32) -> Result<(Vec<LogEntry>, Vec<String>), String> {
     need(system, job, Privilege::LOGS)?;
     let pal = env(system).activity_log();
-    let mut lines =
-        vec!["Started              Type Mode    Slot Final SRC  Outcome".to_string()];
+    let mut lines = vec!["Started              Type Mode    Slot Final SRC  Outcome".to_string()];
     if let Some((_, record)) = system.lic.as_ref() {
         for h in &record.history {
             let (y, mo, d, hh, mm, ss) = crate::platform::rtc::unix_to_civil(h.start_time);
@@ -328,9 +335,9 @@ pub fn user_change(
 /// itself (`None`). Group or special authority is not enough.
 fn may_reset_secofr(user: Option<&str>) -> Result<(), String> {
     match user {
-        Some(u) if u != "QSECOFR" => {
-            Err(format!("CPF2275 User {u} may not reset service tools user ID QSECOFR"))
-        }
+        Some(u) if u != "QSECOFR" => Err(format!(
+            "CPF2275 User {u} may not reset service tools user ID QSECOFR"
+        )),
         _ => Ok(()),
     }
 }

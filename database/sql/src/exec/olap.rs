@@ -18,10 +18,10 @@ use qdecimal::{DecFloat, DfFormat};
 use store::txn::Txn;
 
 use super::agg;
-use crate::ast::visit::children;
 use super::eval::{Env, Evaluator, binary, compare};
-use super::sort::{KeySpec, cmp_keys};
 use super::restype::{Scope, SqlType, infer};
+use super::sort::{KeySpec, cmp_keys};
+use crate::ast::visit::children;
 use crate::ast::{BinOp, CmpOp, Expr, FrameBound, Function, OrderItem, Over, Overflow};
 use crate::error::{Result, SqlError};
 use crate::value::{Value, decfloat_error};
@@ -49,20 +49,26 @@ fn parts(o: &Over) -> Result<(&Function, &[OrderItem], Option<&Overflow>)> {
     match &o.func {
         Expr::Function(f) => Ok((f, &[], None)),
         Expr::WithinGroup(w) => Ok((&w.func, &w.order, w.overflow.as_ref())),
-        _ => Err(SqlError::Unsupported { what: "OVER after an expression that is not a function".into() }),
+        _ => Err(SqlError::Unsupported {
+            what: "OVER after an expression that is not a function".into(),
+        }),
     }
 }
 
 /// The result type of a specification.
 pub(crate) fn result_type(o: &Over, scope: &Scope<'_>) -> SqlType {
-    let Ok((f, _, _)) = parts(o) else { return SqlType::unknown() };
+    let Ok((f, _, _)) = parts(o) else {
+        return SqlType::unknown();
+    };
     let arg = f.args.first().map(|a| infer(a, scope));
     match f.name.as_str() {
         "ROW_NUMBER" | "RANK" | "DENSE_RANK" => SqlType::bigint(false),
         "NTILE" => SqlType::bigint(true),
         "PERCENT_RANK" | "RATIO_TO_REPORT" => SqlType::decfloat(true),
         "CUME_DIST" => SqlType::decfloat(false),
-        "LAG" | "LEAD" | "FIRST_VALUE" | "LAST_VALUE" | "NTH_VALUE" => arg.unwrap_or_else(SqlType::unknown).nullable(true),
+        "LAG" | "LEAD" | "FIRST_VALUE" | "LAST_VALUE" | "NTH_VALUE" => {
+            arg.unwrap_or_else(SqlType::unknown).nullable(true)
+        }
         _ => match infer(&o.func, scope) {
             t if f.name == "COUNT" || f.name == "COUNT_BIG" => t,
             t => t.nullable(true),
@@ -112,21 +118,41 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
     if !aggregate
         && !matches!(
             name,
-            "ROW_NUMBER" | "RANK" | "DENSE_RANK" | "NTILE" | "PERCENT_RANK" | "CUME_DIST" | "LAG" | "LEAD" | "FIRST_VALUE"
-                | "LAST_VALUE" | "NTH_VALUE" | "RATIO_TO_REPORT"
+            "ROW_NUMBER"
+                | "RANK"
+                | "DENSE_RANK"
+                | "NTILE"
+                | "PERCENT_RANK"
+                | "CUME_DIST"
+                | "LAG"
+                | "LEAD"
+                | "FIRST_VALUE"
+                | "LAST_VALUE"
+                | "NTH_VALUE"
+                | "RATIO_TO_REPORT"
         )
     {
-        return Err(SqlError::Unsupported { what: format!("{name} as an OLAP function") });
+        return Err(SqlError::Unsupported {
+            what: format!("{name} as an OLAP function"),
+        });
     }
-    if matches!(name, "ROW_NUMBER" | "RANK" | "DENSE_RANK" | "PERCENT_RANK" | "CUME_DIST" | "NTILE")
-        && o.window.frame.is_some()
+    if matches!(
+        name,
+        "ROW_NUMBER" | "RANK" | "DENSE_RANK" | "PERCENT_RANK" | "CUME_DIST" | "NTILE"
+    ) && o.window.frame.is_some()
     {
-        return Err(SqlError::Misplaced { what: format!("a window frame with {name}") });
+        return Err(SqlError::Misplaced {
+            what: format!("a window frame with {name}"),
+        });
     }
-    if matches!(name, "RANK" | "DENSE_RANK" | "PERCENT_RANK" | "CUME_DIST" | "NTILE" | "LAG" | "LEAD")
-        && o.window.order.is_empty()
+    if matches!(
+        name,
+        "RANK" | "DENSE_RANK" | "PERCENT_RANK" | "CUME_DIST" | "NTILE" | "LAG" | "LEAD"
+    ) && o.window.order.is_empty()
     {
-        return Err(SqlError::Misplaced { what: format!("{name} without ORDER BY in its window") });
+        return Err(SqlError::Misplaced {
+            what: format!("{name} without ORDER BY in its window"),
+        });
     }
     // Each row's partition, order keys and arguments.
     let mut data = Vec::with_capacity(envs.len());
@@ -150,7 +176,12 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
         for i in within_order {
             within.push(ev.eval(txn, &i.expr, env)?);
         }
-        data.push(RowData { part: row_key(&pv), keys, args, within });
+        data.push(RowData {
+            part: row_key(&pv),
+            keys,
+            args,
+            within,
+        });
     }
     // Partitions in the order they first appear, each sorted.
     let mut parts_of: Vec<Vec<usize>> = Vec::new();
@@ -162,22 +193,33 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
         });
         parts_of[p].push(i);
     }
-    let specs: Vec<KeySpec> =
-        o.window.order.iter().map(|i| KeySpec { desc: i.desc, nulls_first: i.nulls_first.unwrap_or(i.desc) }).collect();
+    let specs: Vec<KeySpec> = o
+        .window
+        .order
+        .iter()
+        .map(|i| KeySpec {
+            desc: i.desc,
+            nulls_first: i.nulls_first.unwrap_or(i.desc),
+        })
+        .collect();
     let mut failure = None;
     for p in &mut parts_of {
-        p.sort_by(|a, b| match cmp_keys(&data[*a].keys, &data[*b].keys, &specs) {
-            Ok(o) => o,
-            Err(e) => {
-                failure = Some(e);
-                std::cmp::Ordering::Equal
-            }
-        });
+        p.sort_by(
+            |a, b| match cmp_keys(&data[*a].keys, &data[*b].keys, &specs) {
+                Ok(o) => o,
+                Err(e) => {
+                    failure = Some(e);
+                    std::cmp::Ordering::Equal
+                }
+            },
+        );
     }
     if let Some(e) = failure {
         return Err(e);
     }
-    let offset = |ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, e: &Expr| -> Result<Value> { ev.eval(txn, e, &Env::default()) };
+    let offset = |ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, e: &Expr| -> Result<Value> {
+        ev.eval(txn, e, &Env::default())
+    };
     let bound_value = |b: &FrameBound| match b {
         FrameBound::Preceding(e) | FrameBound::Following(e) => Some(e.clone()),
         _ => None,
@@ -207,7 +249,10 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
         let mut groups = 0;
         while s < n {
             let mut e = s;
-            while e + 1 < n && cmp_keys(&data[p[e + 1]].keys, &data[p[s]].keys, &specs)? == std::cmp::Ordering::Equal {
+            while e + 1 < n
+                && cmp_keys(&data[p[e + 1]].keys, &data[p[s]].keys, &specs)?
+                    == std::cmp::Ordering::Equal
+            {
                 e += 1;
             }
             groups += 1;
@@ -242,7 +287,9 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
                     } else {
                         let k = a.as_i64()?;
                         if k < 1 {
-                            return Err(SqlError::Overflow { what: "NTILE needs a number of groups of 1 or more".into() });
+                            return Err(SqlError::Overflow {
+                                what: "NTILE needs a number of groups of 1 or more".into(),
+                            });
                         }
                         Value::int(ntile(jj, nn, k))
                     }
@@ -259,7 +306,11 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
                     for &r in p {
                         let x = &data[r].args[0];
                         if !x.is_null() {
-                            sum = if sum.is_null() { x.clone() } else { binary(&sum, BinOp::Add, x)? };
+                            sum = if sum.is_null() {
+                                x.clone()
+                            } else {
+                                binary(&sum, BinOp::Add, x)?
+                            };
                         }
                     }
                     let x = &data[row].args[0];
@@ -271,16 +322,33 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
                         if b.is_zero() {
                             Value::Null
                         } else {
-                            Value::DecFloat(qdecimal::decfloat::div(&a, &b).map_err(decfloat_error)?)
+                            Value::DecFloat(
+                                qdecimal::decfloat::div(&a, &b).map_err(decfloat_error)?,
+                            )
                         }
                     }
                 }
                 _ => {
-                    let (lo, hi) = frame(o, p, &data, j, &peer_start, &peer_end, start_off.as_ref(), end_off.as_ref(), &specs)?;
-                    let members: Vec<usize> = if lo <= hi { p[lo..=hi].to_vec() } else { Vec::new() };
+                    let (lo, hi) = frame(
+                        o,
+                        p,
+                        &data,
+                        j,
+                        &peer_start,
+                        &peer_end,
+                        start_off.as_ref(),
+                        end_off.as_ref(),
+                        &specs,
+                    )?;
+                    let members: Vec<usize> = if lo <= hi {
+                        p[lo..=hi].to_vec()
+                    } else {
+                        Vec::new()
+                    };
                     match name {
                         "FIRST_VALUE" | "LAST_VALUE" | "NTH_VALUE" => {
-                            let mut vals: Vec<&Value> = members.iter().map(|&r| &data[r].args[0]).collect();
+                            let mut vals: Vec<&Value> =
+                                members.iter().map(|&r| &data[r].args[0]).collect();
                             if o.ignore_nulls {
                                 vals.retain(|v| !v.is_null());
                             }
@@ -290,9 +358,12 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
                                 _ => {
                                     let k = data[row].args.get(1).map_or(Ok(1), Value::as_i64)?;
                                     if k < 1 {
-                                        return Err(SqlError::Overflow { what: "NTH_VALUE needs 1 or more".into() });
+                                        return Err(SqlError::Overflow {
+                                            what: "NTH_VALUE needs 1 or more".into(),
+                                        });
                                     }
-                                    vals.get(usize::try_from(k - 1).unwrap_or(usize::MAX)).copied()
+                                    vals.get(usize::try_from(k - 1).unwrap_or(usize::MAX))
+                                        .copied()
                                 }
                             };
                             pick.cloned().unwrap_or(Value::Null)
@@ -300,9 +371,19 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
                         _ => {
                             let inputs: Vec<agg::Input> = members
                                 .iter()
-                                .map(|&r| agg::Input { args: data[r].args.clone(), keys: data[r].within.clone() })
+                                .map(|&r| agg::Input {
+                                    args: data[r].args.clone(),
+                                    keys: data[r].within.clone(),
+                                })
                                 .collect();
-                            let call = agg::Call { name, distinct: f.distinct, star: f.star, order: within_order, overflow, exprs: &f.args };
+                            let call = agg::Call {
+                                name,
+                                distinct: f.distinct,
+                                star: f.star,
+                                order: within_order,
+                                overflow,
+                                exprs: &f.args,
+                            };
                             let mut nulls = false;
                             let v = agg::finish(&call, inputs, &mut nulls)?;
                             if nulls {
@@ -323,7 +404,9 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
 fn ratio(a: i64, b: i64) -> Result<Value> {
     let x = DecFloat::from_i64(a, DfFormat::D34);
     let y = DecFloat::from_i64(b, DfFormat::D34);
-    Ok(Value::DecFloat(qdecimal::decfloat::div(&x, &y).map_err(decfloat_error)?))
+    Ok(Value::DecFloat(
+        qdecimal::decfloat::div(&x, &y).map_err(decfloat_error)?,
+    ))
 }
 
 /// The group (from 1) of row `j` of `n` in `k` groups: the first
@@ -332,16 +415,33 @@ fn ntile(j: i64, n: i64, k: i64) -> i64 {
     let size = n / k;
     let extra = n % k;
     let big = extra * (size + 1);
-    if j < big { j / (size + 1) + 1 } else if size == 0 { j + 1 } else { extra + (j - big) / size + 1 }
+    if j < big {
+        j / (size + 1) + 1
+    } else if size == 0 {
+        j + 1
+    } else {
+        extra + (j - big) / size + 1
+    }
 }
 
 /// The argument of the row `off` rows before (or after) `j`; with
 /// `IGNORE NULLS` the rows with a null argument are not counted.
-fn shifted(p: &[usize], data: &[RowData], j: usize, off: i64, forward: bool, ignore: bool) -> Option<Value> {
+fn shifted(
+    p: &[usize],
+    data: &[RowData],
+    j: usize,
+    off: i64,
+    forward: bool,
+    ignore: bool,
+) -> Option<Value> {
     if off == 0 {
         return Some(data[p[j]].args[0].clone());
     }
-    let (forward, off) = if off < 0 { (!forward, -off) } else { (forward, off) };
+    let (forward, off) = if off < 0 {
+        (!forward, -off)
+    } else {
+        (forward, off)
+    };
     let mut left = off;
     let mut i = j;
     loop {
@@ -383,12 +483,18 @@ fn frame(
 ) -> Result<(usize, usize)> {
     let n = p.len();
     let Some(fr) = &o.window.frame else {
-        return Ok(if o.window.order.is_empty() { (0, n - 1) } else { (0, peer_end[j]) });
+        return Ok(if o.window.order.is_empty() {
+            (0, n - 1)
+        } else {
+            (0, peer_end[j])
+        });
     };
     let count = |v: Option<&Value>| -> Result<i64> {
         let x = v.map_or(Ok(0), Value::as_i64)?;
         if x < 0 {
-            return Err(SqlError::Overflow { what: "a window frame offset below 0".into() });
+            return Err(SqlError::Overflow {
+                what: "a window frame offset below 0".into(),
+            });
         }
         Ok(x)
     };
@@ -422,7 +528,11 @@ fn frame(
     // The key `off` before (`back`) or after the current one.
     let target = |off: Option<&Value>, back: bool| -> Result<Value> {
         let off = off.cloned().unwrap_or(Value::int(0));
-        binary(&me, if back == desc { BinOp::Add } else { BinOp::Sub }, &off)
+        binary(
+            &me,
+            if back == desc { BinOp::Add } else { BinOp::Sub },
+            &off,
+        )
     };
     // Whether key i is at or past `t` in the sort's direction.
     let at_or_past = |i: usize, t: &Value| -> Result<bool> {

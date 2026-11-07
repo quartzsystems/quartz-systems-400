@@ -25,19 +25,32 @@ pub fn create(ctx: &Ctx<'_>, ks: &Keystore, stash: bool, seed: bool) -> Result<V
         ));
     }
     if !ks.path.starts_with('/') {
-        return Err(CertError::Invalid(format!("{} is not an absolute path", ks.path)));
+        return Err(CertError::Invalid(format!(
+            "{} is not an absolute path",
+            ks.path
+        )));
     }
     let password = ks
         .password
         .as_deref()
         .ok_or_else(|| CertError::Invalid("a new store needs a password".into()))?;
     let sealer = if stash { Some(ctx.sealer()?) } else { None };
-    let mut store = CertStore::create_with(ctx.files, &ks.path, password, StoreKind::System, ctx.now, ctx.params)?;
+    let mut store = CertStore::create_with(
+        ctx.files,
+        &ks.path,
+        password,
+        StoreKind::System,
+        ctx.now,
+        ctx.params,
+    )?;
     let mut notes = vec![Note::new(msgs::STORE_CREATED, &[ks.shown()])];
     if seed {
         let n = roots::seed(&mut store, ctx.now)?;
         store.save(ctx.files)?;
-        notes.push(Note::new(msgs::IMPORTED, &[&format!("{n} root CAs"), ks.shown()]));
+        notes.push(Note::new(
+            msgs::IMPORTED,
+            &[&format!("{n} root CAs"), ks.shown()],
+        ));
     }
     // A local CA that opens through its stash is trusted at once.
     if let Ok(ca_store) = ctx.open(&Keystore::new(super::LOCAL_CA_NAME, "")) {
@@ -88,7 +101,13 @@ pub fn create_local_ca(
     }
     Ok(vec![
         Note::new(msgs::STORE_CREATED, &[ks.shown()]),
-        Note::new(msgs::CREATED, &[info.common_name.as_deref().unwrap_or(ca::CA_LABEL), ks.shown()]),
+        Note::new(
+            msgs::CREATED,
+            &[
+                info.common_name.as_deref().unwrap_or(ca::CA_LABEL),
+                ks.shown(),
+            ],
+        ),
     ])
 }
 
@@ -149,8 +168,19 @@ mod tests {
         assert_eq!(notes[1].msgid, msgs::IMPORTED);
         let s = w.ctx().open(&Keystore::system()).unwrap();
         assert!(s.trusted_cas().len() > 50);
-        assert!(matches!(create(&w.ctx(), &ks, true, false), Err(CertError::Exists(_))));
-        assert!(create(&w.ctx(), &Keystore::new("rel/x.kdb", "abcdef"), false, false).is_err());
+        assert!(matches!(
+            create(&w.ctx(), &ks, true, false),
+            Err(CertError::Exists(_))
+        ));
+        assert!(
+            create(
+                &w.ctx(),
+                &Keystore::new("rel/x.kdb", "abcdef"),
+                false,
+                false
+            )
+            .is_err()
+        );
         assert!(create(&w.ctx(), &Keystore::new("/x.kdb", "*STASH"), false, false).is_err());
     }
 
@@ -163,22 +193,44 @@ mod tests {
         assert!(!ensure_system(&w.ctx()).unwrap());
         // Without the LIC key nothing is made.
         let w2 = World::new();
-        assert!(ensure_system(&Ctx { sealer: None, ..w2.ctx() }).is_err());
+        assert!(
+            ensure_system(&Ctx {
+                sealer: None,
+                ..w2.ctx()
+            })
+            .is_err()
+        );
         assert!(!w2.files.exists(SYSTEM_STORE).unwrap());
     }
 
     #[test]
     fn the_local_ca_is_trusted_by_the_system_store() {
         let w = World::with_system();
-        let notes = create_local_ca(&w.ctx(), "cacert1", &Subject::cn("QS400 CA"), KeyAlgorithm::EcdsaP256, 3650, true)
-            .unwrap();
+        let notes = create_local_ca(
+            &w.ctx(),
+            "cacert1",
+            &Subject::cn("QS400 CA"),
+            KeyAlgorithm::EcdsaP256,
+            3650,
+            true,
+        )
+        .unwrap();
         assert_eq!(notes[1].data[0], "QS400 CA");
         assert!(w.files.read(LOCAL_CA_CERT).unwrap().is_some());
         let sys = w.ctx().open(&Keystore::system()).unwrap();
         assert_eq!(sys.trusted_ca_labels(), [ca::CA_LABEL]);
         // A store made later trusts it too.
-        create(&w.ctx(), &Keystore::new("/home/a.kdb", "abcdef"), false, false).unwrap();
-        let other = w.ctx().open(&Keystore::new("/home/a.kdb", "abcdef")).unwrap();
+        create(
+            &w.ctx(),
+            &Keystore::new("/home/a.kdb", "abcdef"),
+            false,
+            false,
+        )
+        .unwrap();
+        let other = w
+            .ctx()
+            .open(&Keystore::new("/home/a.kdb", "abcdef"))
+            .unwrap();
         assert_eq!(other.trusted_ca_labels().len(), 1);
     }
 
@@ -194,7 +246,10 @@ mod tests {
         assert!(w.files.read(&stash_path(SYSTEM_STORE)).unwrap().is_none());
         let reg = AppRegistry::load(&w.files).unwrap();
         assert_eq!(reg.get("QS400_HTTP_SERVER_ADMIN").unwrap().label, None);
-        assert!(matches!(delete(&w.ctx(), &Keystore::system()), Err(CertError::NotFound(_))));
+        assert!(matches!(
+            delete(&w.ctx(), &Keystore::system()),
+            Err(CertError::NotFound(_))
+        ));
     }
 
     #[test]

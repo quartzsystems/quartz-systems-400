@@ -54,7 +54,11 @@ pub struct Session {
 
 /// The user ID parameter: ten EBCDIC bytes (or a CCSID and the name).
 pub fn user_of(p: &Param) -> String {
-    let d = if p.data.len() > 10 { &p.data[4..] } else { &p.data[..] };
+    let d = if p.data.len() > 10 {
+        &p.data[4..]
+    } else {
+        &p.data[..]
+    };
     text::from_ebcdic(d).trim().to_uppercase()
 }
 

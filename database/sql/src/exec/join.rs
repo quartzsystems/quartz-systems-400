@@ -74,7 +74,9 @@ fn equalities(preds: &[&Expr], ls: &Schema, rs: &Schema) -> Vec<(usize, usize)> 
             continue;
         };
         let at = |e: &Expr| (column(ls, e), column(rs, e));
-        if let ((Some(left), None), (None, Some(col))) | ((None, Some(col)), (Some(left), None)) = (at(x), at(y)) {
+        if let ((Some(left), None), (None, Some(col))) | ((None, Some(col)), (Some(left), None)) =
+            (at(x), at(y))
+        {
             out.push((left, col));
         }
     }
@@ -140,7 +142,15 @@ impl Finder {
             },
             Method::Merge => {
                 let (lc, rc) = eqs[0];
-                match merge::Runs::build(ev.ctx.charge(), left, lc, inputs.left_sorted, right, rc, inputs.right_sorted)? {
+                match merge::Runs::build(
+                    ev.ctx.charge(),
+                    left,
+                    lc,
+                    inputs.left_sorted,
+                    right,
+                    rc,
+                    inputs.right_sorted,
+                )? {
                     Some(r) => Ok((m, Self::Merge(r))),
                     None => Ok((Method::NestedLoop, Self::All)),
                 }
@@ -277,8 +287,14 @@ pub(super) fn join(
         kind,
         JoinKind::Inner | JoinKind::Cross | JoinKind::Left | JoinKind::Right | JoinKind::Full
     );
-    let keeps_left = matches!(kind, JoinKind::Left | JoinKind::LeftException | JoinKind::Full);
-    let keeps_right = matches!(kind, JoinKind::Right | JoinKind::RightException | JoinKind::Full);
+    let keeps_left = matches!(
+        kind,
+        JoinKind::Left | JoinKind::LeftException | JoinKind::Full
+    );
+    let keeps_right = matches!(
+        kind,
+        JoinKind::Right | JoinKind::RightException | JoinKind::Full
+    );
     let mut right_matched = vec![false; right_rows.len()];
     let all: Vec<usize> = (0..right_rows.len()).collect();
     // Rows already read: nothing held from the store, a yield between
@@ -383,9 +399,19 @@ pub(super) fn product(
         let probe = if method::choose(&inputs) == Method::NestedLoop {
             None
         } else {
-            Probe::build(ev.ctx.charge(), &refs, &schemas[k - 1], &items[k].schema, &items[k].rows)?
+            Probe::build(
+                ev.ctx.charge(),
+                &refs,
+                &schemas[k - 1],
+                &items[k].schema,
+                &items[k].rows,
+            )?
         };
-        ev.ctx.plan.joined(if probe.is_some() { Method::Hash } else { Method::NestedLoop });
+        ev.ctx.plan.joined(if probe.is_some() {
+            Method::Hash
+        } else {
+            Method::NestedLoop
+        });
         probes.push(probe);
     }
     let first = std::mem::take(&mut items[0].rows);

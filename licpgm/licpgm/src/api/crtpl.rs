@@ -67,7 +67,11 @@ fn diri0100(list: &[u8], n: usize) -> Option<Vec<DirEntry>> {
             path.rsplit('/').next().unwrap_or("").to_string()
         } else {
             let skip = path.chars().count() - home;
-            path.chars().skip(skip).collect::<String>().trim_start_matches('/').to_string()
+            path.chars()
+                .skip(skip)
+                .collect::<String>()
+                .trim_start_matches('/')
+                .to_string()
         };
         out.push(DirEntry {
             primary: path.clone(),

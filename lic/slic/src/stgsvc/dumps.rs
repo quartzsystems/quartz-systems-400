@@ -8,8 +8,6 @@
 //! the formatted object dumps `DMPOBJ` and `DMPSYSOBJ` print to
 //! `QPSRVDMP`. Every dump taken logs a problem.
 
-
-
 use prb::PrbType;
 use store::Pager;
 use store::obj::{ObjectId, ops, types, usrspc};
@@ -115,9 +113,18 @@ pub fn take(system: &mut System, why: &str) -> Result<String, String> {
     let text = lines.join("\n") + "\n";
     let why50: String = why.chars().take(50).collect();
     sec::guard::as_system(|| super::prblog::store_text(system, "QSYS", &name, &text, &why50))?;
-    super::liclog::write(0x0500, 0x0001, system.current_job, &format!("{name}: {why}"));
+    super::liclog::write(
+        0x0500,
+        0x0001,
+        system.current_job,
+        &format!("{name}: {why}"),
+    );
     super::trace::internal("DMP", system.current_job, &name);
-    let _ = super::prblog::log(system, PrbType::Machine, &prb::analyze::from_dump(&name, why));
+    let _ = super::prblog::log(
+        system,
+        PrbType::Machine,
+        &prb::analyze::from_dump(&name, why),
+    );
     Ok(name)
 }
 
@@ -128,7 +135,10 @@ fn contents(system: &mut System, name: &str, why: &str) -> Vec<String> {
         format!("System dump {name}"),
         format!("System . . . . . . : {}", system.system_name()),
         format!("Taken  . . . . . . : {}", civil(now)),
-        format!("Requested by job . : {}", job_name(system, system.current_job)),
+        format!(
+            "Requested by job . : {}",
+            job_name(system, system.current_job)
+        ),
         format!("Reason . . . . . . : {why}"),
         format!("Release  . . . . . : {}", release::banner()),
         String::new(),
@@ -175,7 +185,10 @@ fn contents(system: &mut System, name: &str, why: &str) -> Vec<String> {
     out.push(String::new());
     out.push("Traces".into());
     for (n, k, active, records) in super::trace::list() {
-        out.push(format!("  {n:<10} {k:?} {} {records} records", if active { "active" } else { "ended" }));
+        out.push(format!(
+            "  {n:<10} {k:?} {} {records} records",
+            if active { "active" } else { "ended" }
+        ));
     }
     out
 }
@@ -192,11 +205,28 @@ pub fn copy(system: &mut System, name: &str, to: &str) -> Result<String, String>
         Some((lib, file)) => format!("DEV(*SAVF) SAVF({lib}/{file})"),
         None => format!("DEV({to})"),
     };
-    let r = crate::cpp::run_cl(system, &format!("SAVOBJ OBJ({name}) LIB(QSYS) OBJTYPE(*USRSPC) {target}"));
-    let last = r.text.lines().map(str::trim).rfind(|l| !l.is_empty()).unwrap_or("").to_string();
+    let r = crate::cpp::run_cl(
+        system,
+        &format!("SAVOBJ OBJ({name}) LIB(QSYS) OBJTYPE(*USRSPC) {target}"),
+    );
+    let last = r
+        .text
+        .lines()
+        .map(str::trim)
+        .rfind(|l| !l.is_empty())
+        .unwrap_or("")
+        .to_string();
     match r.escape {
-        Some(e) => Err(if last.is_empty() { format!("{} the dump was not copied", e.msgid) } else { last }),
-        None => Ok(if last.is_empty() { format!("System dump {name} copied to {to}.") } else { last }),
+        Some(e) => Err(if last.is_empty() {
+            format!("{} the dump was not copied", e.msgid)
+        } else {
+            last
+        }),
+        None => Ok(if last.is_empty() {
+            format!("System dump {name} copied to {to}.")
+        } else {
+            last
+        }),
     }
 }
 
@@ -274,26 +304,49 @@ pub fn object_lines(txn: &mut Txn<'_>, id: ObjectId, title: &str) -> Result<Vec<
 
 /// Alter `bytes` at `offset` in the body of page `page`, which must
 /// belong to object `id` (its header page or one of its extents).
-pub fn alter(system: &mut System, id: ObjectId, page: u64, offset: usize, bytes: &[u8]) -> Result<(), String> {
+pub fn alter(
+    system: &mut System,
+    id: ObjectId,
+    page: u64,
+    offset: usize,
+    bytes: &[u8],
+) -> Result<(), String> {
     let job = system.current_job;
     with_store(system, |txn, _| {
         let h = ops::describe(txn, id).map_err(|e| e.to_string())?;
         let header = store::obj::dir::header_page(txn, id).map_err(|e| e.to_string())?;
         let runs = ops::all_extents(txn, &h).map_err(|e| e.to_string())?;
-        let owned = page == header || runs.iter().any(|r| (r.start..r.start + r.len).contains(&page));
+        let owned = page == header
+            || runs
+                .iter()
+                .any(|r| (r.start..r.start + r.len).contains(&page));
         if !owned {
             return Err(format!("Page {page} does not belong to object {id}"));
         }
         let mut p = txn.read(page).map_err(|e| e.to_string())?;
         let tr = p.trailer();
-        let end = offset.checked_add(bytes.len()).filter(|e| *e <= store::BODY_SIZE);
+        let end = offset
+            .checked_add(bytes.len())
+            .filter(|e| *e <= store::BODY_SIZE);
         let Some(end) = end else {
-            return Err(format!("Offset {offset} and length {} are past the page body", bytes.len()));
+            return Err(format!(
+                "Offset {offset} and length {} are past the page body",
+                bytes.len()
+            ));
         };
         p.body_mut()[offset..end].copy_from_slice(bytes);
         let kind = store::PageType::from_u16(tr.page_type).ok_or("page type not known")?;
-        txn.write(page, &mut p, kind, tr.owner).map_err(|e| e.to_string())
+        txn.write(page, &mut p, kind, tr.owner)
+            .map_err(|e| e.to_string())
     })?;
-    super::liclog::write(0x0700, 0x0002, job, &format!("object {id} page {page} offset {offset} {} bytes", bytes.len()));
+    super::liclog::write(
+        0x0700,
+        0x0002,
+        job,
+        &format!(
+            "object {id} page {page} offset {offset} {} bytes",
+            bytes.len()
+        ),
+    );
     Ok(())
 }

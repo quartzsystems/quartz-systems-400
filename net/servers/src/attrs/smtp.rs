@@ -124,7 +124,10 @@ impl HostAuth {
 
 /// The bag without the `*HOSTAUTH` entries: what jobs are shown.
 pub fn public_bag(bag: &[(String, String)]) -> Vec<(String, String)> {
-    bag.iter().filter(|(k, _)| !k.eq_ignore_ascii_case(HOSTAUTH)).cloned().collect()
+    bag.iter()
+        .filter(|(k, _)| !k.eq_ignore_ascii_case(HOSTAUTH))
+        .cloned()
+        .collect()
 }
 
 /// How the client uses TLS with the relay.
@@ -204,14 +207,27 @@ impl SmtpAttrs {
             return Ok(false);
         }
         let v = v.trim();
-        let v = if v.starts_with('*') { v.to_ascii_uppercase() } else { v.to_string() };
+        let v = if v.starts_with('*') {
+            v.to_ascii_uppercase()
+        } else {
+            v.to_string()
+        };
         if (k == "FWDHUBSVR" || k == "MAILROUTER") && v != "*NONE" && host_port(&v).is_none() {
-            return Err(format!("{k}({v}): a host name or address, with :port if not 25"));
+            return Err(format!(
+                "{k}({v}): a host name or address, with :port if not 25"
+            ));
         }
-        if k == "SMTPTLS" && !matches!(v.as_str(), "*NONE" | "*STARTTLS" | "*IMPLICIT" | "*OFFERED") {
-            return Err(format!("SMTPTLS({v}): *NONE, *STARTTLS, *IMPLICIT or *OFFERED"));
+        if k == "SMTPTLS" && !matches!(v.as_str(), "*NONE" | "*STARTTLS" | "*IMPLICIT" | "*OFFERED")
+        {
+            return Err(format!(
+                "SMTPTLS({v}): *NONE, *STARTTLS, *IMPLICIT or *OFFERED"
+            ));
         }
-        match self.bag.iter_mut().find(|(b, _)| b.eq_ignore_ascii_case(&k)) {
+        match self
+            .bag
+            .iter_mut()
+            .find(|(b, _)| b.eq_ignore_ascii_case(&k))
+        {
             Some((_, old)) if *old == v => Ok(false),
             Some((_, old)) => {
                 *old = v;
@@ -237,7 +253,10 @@ impl SmtpAttrs {
 
     /// TLS with the relay.
     pub fn tls(&self) -> SmtpTls {
-        match get(&self.bag, "SMTPTLS").map(str::to_ascii_uppercase).as_deref() {
+        match get(&self.bag, "SMTPTLS")
+            .map(str::to_ascii_uppercase)
+            .as_deref()
+        {
             Some("*NONE") => SmtpTls::Never,
             Some("*STARTTLS") => SmtpTls::Required,
             Some("*IMPLICIT") => SmtpTls::Implicit,
@@ -262,7 +281,9 @@ impl SmtpAttrs {
     /// `CCSID` (819 by default): the code page of text the mail
     /// carries when it is not UTF-8 (`QtmmSendMail` files).
     pub fn ccsid(&self) -> u16 {
-        get(&self.bag, "CCSID").and_then(|c| c.trim().parse().ok()).unwrap_or(819)
+        get(&self.bag, "CCSID")
+            .and_then(|c| c.trim().parse().ok())
+            .unwrap_or(819)
     }
 }
 
@@ -285,10 +306,16 @@ mod tests {
         );
         assert_eq!(a.set("FWDHUBSVR", "'192.168.77.147:2525'"), Ok(true));
         let h = a.smart_host().unwrap();
-        assert_eq!((h.host.as_str(), h.port, h.from), ("192.168.77.147", 2525, "FWDHUBSVR"));
+        assert_eq!(
+            (h.host.as_str(), h.port, h.from),
+            ("192.168.77.147", 2525, "FWDHUBSVR")
+        );
         assert_eq!(a.set("FWDHUBSVR", "*none"), Ok(true));
         assert_eq!(a.smart_host().unwrap().from, "MAILROUTER");
-        assert_eq!(host_port("[2001:db8::1]:587"), Some(("2001:db8::1".into(), 587)));
+        assert_eq!(
+            host_port("[2001:db8::1]:587"),
+            Some(("2001:db8::1".into(), 587))
+        );
         assert_eq!(host_port("2001:db8::1"), Some(("2001:db8::1".into(), 25)));
         assert!(a.set("MAILROUTER", "x:notaport").is_err());
         assert!(a.set("NOSUCH", "1").is_err());
@@ -312,14 +339,24 @@ mod tests {
 
     #[test]
     fn host_auth_entries() {
-        let h = HostAuth { host: "Smtp.Example.com".into(), user: "mailer@example.com".into(), sealed: vec![0, 0xAB, 7] };
+        let h = HostAuth {
+            host: "Smtp.Example.com".into(),
+            user: "mailer@example.com".into(),
+            sealed: vec![0, 0xAB, 7],
+        };
         assert_eq!(h.encode(), "Smtp.Example.com\tmailer@example.com\t00AB07");
         assert_eq!(HostAuth::decode(&h.encode()), Some(h.clone()));
         assert_eq!(HostAuth::decode("x\ty\tABC"), None);
-        let bag = vec![("JOURNAL".to_string(), "*NO".to_string()), (HOSTAUTH.to_string(), h.encode())];
+        let bag = vec![
+            ("JOURNAL".to_string(), "*NO".to_string()),
+            (HOSTAUTH.to_string(), h.encode()),
+        ];
         let a = SmtpAttrs::from_bag(&bag);
         assert_eq!(a.host_auth("smtp.example.COM"), Some(h));
         assert_eq!(a.host_auth("other"), None);
-        assert_eq!(public_bag(&bag), vec![("JOURNAL".to_string(), "*NO".to_string())]);
+        assert_eq!(
+            public_bag(&bag),
+            vec![("JOURNAL".to_string(), "*NO".to_string())]
+        );
     }
 }

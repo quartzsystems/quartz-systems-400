@@ -34,7 +34,11 @@ use store::{FormatParams, Store, StoreConfig, StoreError};
 const NOW: u64 = 1_767_225_600;
 
 fn sysval(n: &str) -> String {
-    if n == "QSECURITY" { "40".into() } else { String::new() }
+    if n == "QSECURITY" {
+        "40".into()
+    } else {
+        String::new()
+    }
 }
 
 /// A store with `QSTEST` and `QSJRN` (a schema, so journaled), the
@@ -58,14 +62,27 @@ impl Fx {
             wal_pages: 256,
             now: NOW,
         };
-        let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(d) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let mut t = store.begin().unwrap();
         let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
         let lib = create(&mut t, qsys, "QSTEST", types::LIB);
         create(&mut t, lib, "TRGPGM", types::PGM);
         t.commit().unwrap();
-        let names = NameContext { curlib: Some(lib), libl: vec![lib] };
-        let mut fx = Self { store, qsys, names, bob: Rc::new(RefCell::new(AuthSession::new(Principal::default()))) };
+        let names = NameContext {
+            curlib: Some(lib),
+            libl: vec![lib],
+        };
+        let mut fx = Self {
+            store,
+            qsys,
+            names,
+            bob: Rc::new(RefCell::new(AuthSession::new(Principal::default()))),
+        };
         let r = fx.run(setup);
         assert_eq!(r.errors, 0, "{}", r.listing);
 
@@ -75,9 +92,16 @@ impl Fx {
         let mut t = fx.store.begin().unwrap();
         shipped::install(&mut t, qsys, 40, 3, NOW).unwrap();
         let secofr = Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
-        let env = Env { qsys, actor: &secofr, now: NOW, sysval: &sysval };
+        let env = Env {
+            qsys,
+            actor: &secofr,
+            now: NOW,
+            sysval: &sysval,
+        };
         usrprf::crtusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB")])).unwrap();
-        fx.bob = Rc::new(RefCell::new(AuthSession::new(Principal::load(&mut t, qsys, "BOB", 40).unwrap())));
+        fx.bob = Rc::new(RefCell::new(AuthSession::new(
+            Principal::load(&mut t, qsys, "BOB", 40).unwrap(),
+        )));
         t.commit().unwrap();
         fx
     }
@@ -85,7 +109,10 @@ impl Fx {
     fn run(&mut self, text: &str) -> sql::RunReport {
         let mut ctx = SqlContext::new(self.qsys, JobHandle(2), self.names.clone());
         ctx.now = Some(NOW);
-        let opts = RunOpts { naming: Naming::Sql, ..RunOpts::default() };
+        let opts = RunOpts {
+            naming: Naming::Sql,
+            ..RunOpts::default()
+        };
         runsqlstm(&mut self.store, &mut ctx, text, &opts).unwrap()
     }
 
@@ -101,7 +128,16 @@ impl Fx {
         if ty == types::LIB {
             return ops::find_library(&mut t, self.qsys, n(name)).unwrap().id;
         }
-        let id = ops::resolve(&mut t, self.qsys, &self.names, LibSpec::Name(n(lib)), n(name), ty).unwrap().id;
+        let id = ops::resolve(
+            &mut t,
+            self.qsys,
+            &self.names,
+            LibSpec::Name(n(lib)),
+            n(name),
+            ty,
+        )
+        .unwrap()
+        .id;
         t.commit().unwrap();
         id
     }
@@ -149,7 +185,9 @@ fn create(t: &mut store::txn::Txn<'_>, library: ObjectId, name: &str, type_code:
 
 fn refused<T: std::fmt::Debug>(r: db::Result<T>) {
     match r {
-        Err(DbError::Store(StoreError::NotAuthorized { msgid: "CPF2189", .. })) => {}
+        Err(DbError::Store(StoreError::NotAuthorized {
+            msgid: "CPF2189", ..
+        })) => {}
         other => panic!("not refused with CPF2189: {other:?}"),
     }
 }
@@ -177,7 +215,9 @@ fn next_value_needs_usage() {
 
 #[test]
 fn alter_table_needs_alter_before_anything_changes() {
-    let mut fx = Fx::new("CREATE TABLE QSTEST.T1 (ID INT NOT NULL, TS TIMESTAMP NOT NULL GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP);");
+    let mut fx = Fx::new(
+        "CREATE TABLE QSTEST.T1 (ID INT NOT NULL, TS TIMESTAMP NOT NULL GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP);",
+    );
     let lib = fx.id("QSYS", "QSTEST", types::LIB);
     let t1 = fx.id("QSTEST", "T1", types::FILE);
     fx.public(&[(lib, Auth::USE), (t1, Auth::CHANGE)]);
@@ -199,13 +239,18 @@ fn a_foreign_key_needs_objref_to_the_parent() {
     let par = fx.id("QSTEST", "PAR", types::FILE);
     let chd = fx.id("QSTEST", "CHD", types::FILE);
     fx.public(&[(lib, Auth::USE), (par, Auth::USE), (chd, Auth::ALL)]);
-    let fk = NewCst { parent: par, ..NewCst::new(Kind::Referential, vec![n("PID")]) };
+    let fk = NewCst {
+        parent: par,
+        ..NewCst::new(Kind::Referential, vec![n("PID")])
+    };
     refused(fx.as_bob(|t| db::cst::ops::add(t, chd, &fk, NOW)));
-    let (failed, l) = fx.run_as_bob("ALTER TABLE QSTEST.CHD ADD FOREIGN KEY (PID) REFERENCES QSTEST.PAR (ID);");
+    let (failed, l) =
+        fx.run_as_bob("ALTER TABLE QSTEST.CHD ADD FOREIGN KEY (PID) REFERENCES QSTEST.PAR (ID);");
     assert!(failed && denied(&l), "{l}");
     // *OBJREF, or *OBJMGT, is enough.
     fx.public(&[(par, with(&["*USE", "*OBJREF"]))]);
-    let (failed, l) = fx.run_as_bob("ALTER TABLE QSTEST.CHD ADD FOREIGN KEY (PID) REFERENCES QSTEST.PAR (ID);");
+    let (failed, l) =
+        fx.run_as_bob("ALTER TABLE QSTEST.CHD ADD FOREIGN KEY (PID) REFERENCES QSTEST.PAR (ID);");
     assert!(!failed, "{l}");
     // A constraint on a file needs *OBJMGT or *OBJALTER, not *OBJOPR.
     fx.public(&[(chd, Auth::CHANGE)]);
@@ -225,13 +270,49 @@ fn cpyf_replace_needs_objmgt_and_dlt() {
     let lib = fx.id("QSYS", "QSTEST", types::LIB);
     let from = fx.id("QSTEST", "FROMF", types::FILE);
     let to = fx.id("QSTEST", "TOF", types::FILE);
-    fx.public(&[(lib, Auth::USE), (from, Auth::USE), (to, with(&["*OBJOPR", "*ADD"]))]);
-    let opts = |mbropt| CpyfOpts { mbropt, now: NOW, ..CpyfOpts::default() };
-    assert!(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &Target::File(to), &opts(MbrOpt::Add))).is_ok());
-    refused(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &Target::File(to), &opts(MbrOpt::Replace))));
-    refused(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &Target::File(to), &opts(MbrOpt::UpdAdd))));
+    fx.public(&[
+        (lib, Auth::USE),
+        (from, Auth::USE),
+        (to, with(&["*OBJOPR", "*ADD"])),
+    ]);
+    let opts = |mbropt| CpyfOpts {
+        mbropt,
+        now: NOW,
+        ..CpyfOpts::default()
+    };
+    assert!(
+        fx.as_bob(|t| cpyf(t, JobHandle(5), from, &Target::File(to), &opts(MbrOpt::Add)))
+            .is_ok()
+    );
+    refused(fx.as_bob(|t| {
+        cpyf(
+            t,
+            JobHandle(5),
+            from,
+            &Target::File(to),
+            &opts(MbrOpt::Replace),
+        )
+    }));
+    refused(fx.as_bob(|t| {
+        cpyf(
+            t,
+            JobHandle(5),
+            from,
+            &Target::File(to),
+            &opts(MbrOpt::UpdAdd),
+        )
+    }));
     fx.public(&[(to, with(&["*OBJOPR", "*OBJMGT", "*ADD", "*DLT"]))]);
-    assert!(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &Target::File(to), &opts(MbrOpt::Replace))).is_ok());
+    assert!(
+        fx.as_bob(|t| cpyf(
+            t,
+            JobHandle(5),
+            from,
+            &Target::File(to),
+            &opts(MbrOpt::Replace)
+        ))
+        .is_ok()
+    );
 }
 
 #[test]
@@ -265,12 +346,29 @@ fn rmvjrnchg_needs_the_files() {
     let jrn = fx.id("QSJRN", "QSQJRN", jrn::JRN);
     fx.public(&[(lib, Auth::USE), (file, Auth::CHANGE), (jrn, Auth::USE)]);
     let range = db::journal::JrnRange::default();
-    refused(fx.as_bob(|t| db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)));
-    refused(fx.as_bob(|t| db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)));
+    refused(fx.as_bob(|t| {
+        db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)
+    }));
+    refused(fx.as_bob(|t| {
+        db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)
+    }));
     fx.public(&[(file, with(&["*CHANGE", "*OBJMGT"]))]);
-    assert!(fx.as_bob(|t| db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)).is_ok());
+    assert!(
+        fx.as_bob(|t| db::journal::rmvjrnchg(
+            t,
+            JobHandle(6),
+            jrn,
+            Some(&[file]),
+            &range,
+            false,
+            NOW
+        ))
+        .is_ok()
+    );
     // APYJRNCHG needs *OBJEXIST as well.
-    refused(fx.as_bob(|t| db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)));
+    refused(fx.as_bob(|t| {
+        db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)
+    }));
 }
 
 #[test]
@@ -278,10 +376,24 @@ fn a_package_is_found_only_in_a_usable_library() {
     let mut fx = Fx::new("");
     let lib = fx.id("QSYS", "QSTEST", types::LIB);
     fx.public(&[(lib, Auth::EXCLUDE)]);
-    let e = fx.as_bob(|t| db::sqlpkg::find(t, lib, n("PKG1"))).unwrap_err();
-    assert!(matches!(e, DbError::Store(StoreError::NotAuthorized { msgid: "CPF9820", .. })), "{e:?}");
+    let e = fx
+        .as_bob(|t| db::sqlpkg::find(t, lib, n("PKG1")))
+        .unwrap_err();
+    assert!(
+        matches!(
+            e,
+            DbError::Store(StoreError::NotAuthorized {
+                msgid: "CPF9820",
+                ..
+            })
+        ),
+        "{e:?}"
+    );
     fx.public(&[(lib, Auth::USE)]);
-    assert_eq!(fx.as_bob(|t| db::sqlpkg::find(t, lib, n("PKG1"))).unwrap(), None);
+    assert_eq!(
+        fx.as_bob(|t| db::sqlpkg::find(t, lib, n("PKG1"))).unwrap(),
+        None
+    );
 }
 
 #[test]
@@ -325,13 +437,44 @@ fn apyjrnchg_and_rmvjrnchg_need_the_receivers() {
         let j = jrn::Journal::load(&mut t, jrn).unwrap();
         j.attr.attached
     };
-    fx.public(&[(lib, Auth::USE), (file, Auth::ALL), (jrn, Auth::USE), (rcv, Auth::EXCLUDE)]);
+    fx.public(&[
+        (lib, Auth::USE),
+        (file, Auth::ALL),
+        (jrn, Auth::USE),
+        (rcv, Auth::EXCLUDE),
+    ]);
     let range = db::journal::JrnRange::default();
-    refused(fx.as_bob(|t| db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)));
-    refused(fx.as_bob(|t| db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)));
+    refused(fx.as_bob(|t| {
+        db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)
+    }));
+    refused(fx.as_bob(|t| {
+        db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)
+    }));
     fx.public(&[(rcv, Auth::USE)]);
-    assert!(fx.as_bob(|t| db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)).is_ok());
-    assert!(fx.as_bob(|t| db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)).is_ok());
+    assert!(
+        fx.as_bob(|t| db::journal::rmvjrnchg(
+            t,
+            JobHandle(6),
+            jrn,
+            Some(&[file]),
+            &range,
+            false,
+            NOW
+        ))
+        .is_ok()
+    );
+    assert!(
+        fx.as_bob(|t| db::journal::apyjrnchg(
+            t,
+            JobHandle(6),
+            jrn,
+            Some(&[file]),
+            &range,
+            false,
+            NOW
+        ))
+        .is_ok()
+    );
 }
 
 #[test]
@@ -349,9 +492,19 @@ fn cpyf_crtfile_needs_the_crtpf_command() {
     let lib = fx.id("QSYS", "QSTEST", types::LIB);
     let from = fx.id("QSTEST", "SRC", types::FILE);
     fx.public(&[(lib, Auth::ALL), (from, Auth::USE), (crtpf, Auth::EXCLUDE)]);
-    let opts = CpyfOpts { crtfile: true, now: NOW, ..CpyfOpts::default() };
-    let to = Target::Create { library: lib, name: n("DST") };
+    let opts = CpyfOpts {
+        crtfile: true,
+        now: NOW,
+        ..CpyfOpts::default()
+    };
+    let to = Target::Create {
+        library: lib,
+        name: n("DST"),
+    };
     refused(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &to, &opts)));
     fx.public(&[(crtpf, Auth::USE)]);
-    assert!(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &to, &opts)).is_ok());
+    assert!(
+        fx.as_bob(|t| cpyf(t, JobHandle(5), from, &to, &opts))
+            .is_ok()
+    );
 }

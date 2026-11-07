@@ -34,7 +34,11 @@ pub static COLUMN_LAYOUT: Layout = Layout {
         field("text_len", 80, 2),
         field("block_end", 82, 16),
         field("reserved", 98, 30),
-        Field { name: "text", offset: Some(128), size: None },
+        Field {
+            name: "text",
+            offset: Some(128),
+            size: None,
+        },
     ],
 };
 
@@ -90,7 +94,11 @@ impl SeqAttrs {
             return v;
         }
         // The steps left before the range ends.
-        let room = if self.increment > 0 { (self.max - v) / self.increment } else { (self.min - v) / self.increment };
+        let room = if self.increment > 0 {
+            (self.max - v) / self.increment
+        } else {
+            (self.min - v) / self.increment
+        };
         v + n.min(room.max(0)) * self.increment
     }
 
@@ -101,10 +109,20 @@ impl SeqAttrs {
         let n = v.checked_add(self.increment);
         // A value short of the range (a sequence's START WITH below its
         // MINVALUE) moves on towards it.
-        let within = |n: i128| if self.increment > 0 { n <= self.max && (n >= self.min || v < self.min) } else { n >= self.min && n <= self.max };
+        let within = |n: i128| {
+            if self.increment > 0 {
+                n <= self.max && (n >= self.min || v < self.min)
+            } else {
+                n >= self.min && n <= self.max
+            }
+        };
         match n {
             Some(n) if within(n) => Some(n),
-            _ if self.cycle => Some(if self.increment > 0 { self.min } else { self.max }),
+            _ if self.cycle => Some(if self.increment > 0 {
+                self.min
+            } else {
+                self.max
+            }),
             _ => None,
         }
     }
@@ -210,23 +228,36 @@ impl SqlColumn {
 
     /// From a `COLUMN` entry body.
     pub fn decode(b: &[u8]) -> Result<Self> {
-        let bad = || DbError::Corrupt { what: "column entry".into() };
+        let bad = || DbError::Corrupt {
+            what: "column entry".into(),
+        };
         if b.len() < COLUMN_LEN {
             return Err(bad());
         }
         let n = usize::from(u16::from_le_bytes([b[80], b[81]]));
-        let text = String::from_utf8(b.get(COLUMN_LEN..COLUMN_LEN + n).ok_or_else(bad)?.to_vec()).map_err(|_| bad())?;
+        let text = String::from_utf8(b.get(COLUMN_LEN..COLUMN_LEN + n).ok_or_else(bad)?.to_vec())
+            .map_err(|_| bad())?;
         let flags = b[11];
         let kind = match b[10] {
             0 => ColumnKind::Plain,
-            1 => ColumnKind::Identity(SeqAttrs::get(&b[16..80], flags, u32::from_le_bytes(b[12..16].try_into().expect("4")))),
+            1 => ColumnKind::Identity(SeqAttrs::get(
+                &b[16..80],
+                flags,
+                u32::from_le_bytes(b[12..16].try_into().expect("4")),
+            )),
             2 => ColumnKind::RowChange(flags & 1 != 0),
             3 => ColumnKind::Expr(text),
             4 => ColumnKind::Audit(flags & 1 != 0, text),
             _ => return Err(bad()),
         };
-        let block_end = (flags & 16 != 0).then(|| i128::from_le_bytes(b[82..98].try_into().expect("16")));
-        Ok(Self { field: Name::from_bytes(b[..10].try_into().expect("10")), kind, hidden: flags & 8 != 0, block_end })
+        let block_end =
+            (flags & 16 != 0).then(|| i128::from_le_bytes(b[82..98].try_into().expect("16")));
+        Ok(Self {
+            field: Name::from_bytes(b[..10].try_into().expect("10")),
+            kind,
+            hidden: flags & 8 != 0,
+            block_end,
+        })
     }
 }
 
@@ -254,7 +285,9 @@ impl Sequence {
     pub fn encode(&self) -> Vec<u8> {
         let mut b = vec![0u8; SEQUENCE_LEN];
         b[0] = self.data_type;
-        b[1] = self.attrs.flags() | u8::from(self.exhausted) << 3 | u8::from(self.block_end.is_some()) << 4;
+        b[1] = self.attrs.flags()
+            | u8::from(self.exhausted) << 3
+            | u8::from(self.block_end.is_some()) << 4;
         b[2] = self.precision;
         b[4..8].copy_from_slice(&self.attrs.cache.to_le_bytes());
         self.attrs.put(&mut b[8..72]);
@@ -266,29 +299,48 @@ impl Sequence {
     /// From a `SEQUENCE` entry body.
     pub fn decode(b: &[u8]) -> Result<Self> {
         if b.len() < SEQUENCE_LEN {
-            return Err(DbError::Corrupt { what: "sequence entry".into() });
+            return Err(DbError::Corrupt {
+                what: "sequence entry".into(),
+            });
         }
         Ok(Self {
             data_type: b[0],
             precision: b[2],
-            attrs: SeqAttrs::get(&b[8..72], b[1], u32::from_le_bytes(b[4..8].try_into().expect("4"))),
+            attrs: SeqAttrs::get(
+                &b[8..72],
+                b[1],
+                u32::from_le_bytes(b[4..8].try_into().expect("4")),
+            ),
             next: i128::from_le_bytes(b[72..88].try_into().expect("16")),
             exhausted: b[1] & 8 != 0,
-            block_end: (b[1] & 16 != 0).then(|| i128::from_le_bytes(b[88..104].try_into().expect("16"))),
+            block_end: (b[1] & 16 != 0)
+                .then(|| i128::from_le_bytes(b[88..104].try_into().expect("16"))),
         })
     }
 }
 
-
 /// The SQL attributes of `file`'s columns.
-pub fn columns(txn: &mut store::txn::Txn<'_>, file: store::obj::ObjectId) -> Result<Vec<SqlColumn>> {
-    let Some(info) = super::load(txn, file)? else { return Ok(Vec::new()) };
-    info.all(super::tag::COLUMN).map(SqlColumn::decode).collect()
+pub fn columns(
+    txn: &mut store::txn::Txn<'_>,
+    file: store::obj::ObjectId,
+) -> Result<Vec<SqlColumn>> {
+    let Some(info) = super::load(txn, file)? else {
+        return Ok(Vec::new());
+    };
+    info.all(super::tag::COLUMN)
+        .map(SqlColumn::decode)
+        .collect()
 }
 
 /// Replace the SQL attributes of `file`'s columns.
-pub fn store_columns(txn: &mut store::txn::Txn<'_>, file: store::obj::ObjectId, cols: &[SqlColumn], now: u64) -> Result<()> {
-    let mut info = super::load(txn, file)?.unwrap_or_else(|| super::SqlInfo::new(super::Kind::Table));
+pub fn store_columns(
+    txn: &mut store::txn::Txn<'_>,
+    file: store::obj::ObjectId,
+    cols: &[SqlColumn],
+    now: u64,
+) -> Result<()> {
+    let mut info =
+        super::load(txn, file)?.unwrap_or_else(|| super::SqlInfo::new(super::Kind::Table));
     info.remove(super::tag::COLUMN);
     for c in cols {
         info.push(super::tag::COLUMN, c.encode());
@@ -318,12 +370,38 @@ mod tests {
 
     #[test]
     fn bodies_round_trip() {
-        let a = SeqAttrs { start: -5, increment: -2, min: i128::from(i64::MIN), max: -1, cycle: true, cache: 20, order: false, always: true };
-        let c = SqlColumn { field: Name::parse("ID").unwrap(), kind: ColumnKind::Identity(a), hidden: true, block_end: Some(4) };
+        let a = SeqAttrs {
+            start: -5,
+            increment: -2,
+            min: i128::from(i64::MIN),
+            max: -1,
+            cycle: true,
+            cache: 20,
+            order: false,
+            always: true,
+        };
+        let c = SqlColumn {
+            field: Name::parse("ID").unwrap(),
+            kind: ColumnKind::Identity(a),
+            hidden: true,
+            block_end: Some(4),
+        };
         assert_eq!(SqlColumn::decode(&c.encode()).unwrap(), c);
-        let e = SqlColumn { field: Name::parse("TS").unwrap(), kind: ColumnKind::Audit(true, "SESSION_USER".into()), hidden: false, block_end: None };
+        let e = SqlColumn {
+            field: Name::parse("TS").unwrap(),
+            kind: ColumnKind::Audit(true, "SESSION_USER".into()),
+            hidden: false,
+            block_end: None,
+        };
         assert_eq!(SqlColumn::decode(&e.encode()).unwrap(), e);
-        let s = Sequence { data_type: 3, precision: 0, attrs: a, next: -7, exhausted: true, block_end: Some(-9) };
+        let s = Sequence {
+            data_type: 3,
+            precision: 0,
+            attrs: a,
+            next: -7,
+            exhausted: true,
+            block_end: Some(-9),
+        };
         assert_eq!(Sequence::decode(&s.encode()).unwrap(), s);
         assert_eq!(a.after(-1), Some(-3));
         assert_eq!(a.after(i128::from(i64::MIN)), Some(-1));

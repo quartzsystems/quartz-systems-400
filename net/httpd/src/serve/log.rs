@@ -54,12 +54,18 @@ const LEVELS: [(&str, Level); 8] = [
 impl Level {
     /// From its name.
     pub fn parse(s: &str) -> Option<Self> {
-        LEVELS.iter().find(|(n, _)| n.eq_ignore_ascii_case(s)).map(|(_, l)| *l)
+        LEVELS
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(s))
+            .map(|(_, l)| *l)
     }
 
     /// Its name.
     pub fn name(self) -> &'static str {
-        LEVELS.iter().find(|(_, l)| *l == self).map_or("", |(n, _)| n)
+        LEVELS
+            .iter()
+            .find(|(_, l)| *l == self)
+            .map_or("", |(n, _)| n)
     }
 }
 
@@ -102,7 +108,11 @@ pub struct Record {
 
 impl Record {
     fn request_line(&self) -> String {
-        let q = if self.query.is_empty() { String::new() } else { format!("?{}", self.query) };
+        let q = if self.query.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", self.query)
+        };
         format!("{} {}{q} {}", self.method, self.path, self.protocol)
     }
 }
@@ -228,7 +238,11 @@ fn split(path: &str) -> (&str, &str) {
 /// before `now`.
 fn boundary(now: u64, at: u64) -> u64 {
     let today = now / 86_400 * 86_400 + at;
-    if today > now { today.saturating_sub(86_400) } else { today }
+    if today > now {
+        today.saturating_sub(86_400)
+    } else {
+        today
+    }
 }
 
 impl Logs {
@@ -329,8 +343,15 @@ impl Logs {
             .map(|e| e.name)
             .collect();
         rotated.sort_by(|a, b| b.cmp(a));
-        for n in rotated.into_iter().skip(usize::try_from(m.files).unwrap_or(usize::MAX)) {
-            let p = if dir == "/" { format!("/{n}") } else { format!("{dir}/{n}") };
+        for n in rotated
+            .into_iter()
+            .skip(usize::try_from(m.files).unwrap_or(usize::MAX))
+        {
+            let p = if dir == "/" {
+                format!("/{n}")
+            } else {
+                format!("{dir}/{n}")
+            };
             let _ = self.files.remove(&p);
         }
     }
@@ -360,7 +381,10 @@ mod tests {
             ..Record::default()
         };
         assert_eq!(
-            format_line("%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D %T %p %q %%", &r),
+            format_line(
+                "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D %T %p %q %%",
+                &r
+            ),
             "10.0.0.9 - BOB [29/Oct/2026:00:00:00 +0000] \"GET /a b?x=1 HTTP/1.1\" 200 - \"-\" \"t/1\" 1500000 1 80 ?x=1 %"
         );
         assert_eq!(Level::parse("WARN"), Some(Level::Warn));
@@ -368,7 +392,12 @@ mod tests {
     }
 
     fn names(files: &MemFiles) -> Vec<String> {
-        files.list("/www/x/logs").unwrap().into_iter().map(|e| e.name).collect()
+        files
+            .list("/www/x/logs")
+            .unwrap()
+            .into_iter()
+            .map(|e| e.name)
+            .collect()
     }
 
     #[test]
@@ -378,10 +407,17 @@ mod tests {
         let files = Arc::new(MemFiles::at(base));
         files.put("/www/x/logs/access_log", b"day0\n");
         for d in [1u64, 2, 3] {
-            files.put(&format!("/www/x/logs/access_log.{}", time::stamp(base - d * DAY)), b"old\n");
+            files.put(
+                &format!("/www/x/logs/access_log.{}", time::stamp(base - d * DAY)),
+                b"old\n",
+            );
         }
         // Daily at 02:00, two rotated files kept.
-        let plan = Plan::new("X", "/www/x", &parse("LogMaint logs/access_log 2 0 02:00\n").unwrap());
+        let plan = Plan::new(
+            "X",
+            "/www/x",
+            &parse("LogMaint logs/access_log 2 0 02:00\n").unwrap(),
+        );
         let now = Arc::new(Mutex::new(base + DAY - 7200));
         let n2 = Arc::clone(&now);
         let logs = Logs::new(files.clone(), Arc::new(move || *n2.lock().unwrap()), &plan);
@@ -392,10 +428,25 @@ mod tests {
         *now.lock().unwrap() = base + DAY + 1800;
         logs.write("/www/x/logs/access_log", "b");
         let rotated = format!("access_log.{}", time::stamp(base + DAY - 7200));
-        assert_eq!(names(&files), ["access_log", &format!("access_log.{}", time::stamp(base - DAY)), &rotated]);
-        assert_eq!(files.read(&format!("/www/x/logs/{rotated}")).unwrap(), b"day0\na\n");
+        assert_eq!(
+            names(&files),
+            [
+                "access_log",
+                &format!("access_log.{}", time::stamp(base - DAY)),
+                &rotated
+            ]
+        );
+        assert_eq!(
+            files.read(&format!("/www/x/logs/{rotated}")).unwrap(),
+            b"day0\na\n"
+        );
         assert_eq!(files.read("/www/x/logs/access_log").unwrap(), b"b\n");
-        logs.error("/www/x/logs/access_log", Level::Error, Some("1.2.3.4"), "boom");
+        logs.error(
+            "/www/x/logs/access_log",
+            Level::Error,
+            Some("1.2.3.4"),
+            "boom",
+        );
         let t = String::from_utf8(files.read("/www/x/logs/access_log").unwrap()).unwrap();
         assert!(t.ends_with("] [error] [client 1.2.3.4] boom\n"), "{t}");
     }
@@ -405,10 +456,17 @@ mod tests {
         let files = Arc::new(MemFiles::at(1000));
         files.put("/www/x/logs/error_log", b"x");
         files.put_sized("/www/x/logs/error_log", b"x", 1024 * 1024);
-        let plan = Plan::new("X", "/www/x", &parse("LogMaint logs/error_log 0 1\n").unwrap());
+        let plan = Plan::new(
+            "X",
+            "/www/x",
+            &parse("LogMaint logs/error_log 0 1\n").unwrap(),
+        );
         let logs = Logs::new(files.clone(), Arc::new(|| 5000), &plan);
         logs.write("/www/x/logs/error_log", "next");
-        assert_eq!(names(&files), ["error_log", &format!("error_log.{}", time::stamp(5000))]);
+        assert_eq!(
+            names(&files),
+            ["error_log", &format!("error_log.{}", time::stamp(5000))]
+        );
         assert_eq!(files.read("/www/x/logs/error_log").unwrap(), b"next\n");
     }
 }

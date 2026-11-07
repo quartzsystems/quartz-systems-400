@@ -20,7 +20,9 @@ type Doc = BTreeMap<String, (usize, BTreeMap<String, (usize, usize)>)>;
 
 fn doc() -> Doc {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/TCPIP.md");
-    let md = std::fs::read_to_string(path).expect("docs/TCPIP.md").replace("\r\n", "\n");
+    let md = std::fs::read_to_string(path)
+        .expect("docs/TCPIP.md")
+        .replace("\r\n", "\n");
     let start = md.find("\n## Sockets").expect("a Sockets section");
     let s = &md[start + 1..];
     let s = &s[..s[3..].find("\n## ").map_or(s.len(), |i| i + 3)];
@@ -29,7 +31,12 @@ fn doc() -> Doc {
     for l in s.lines() {
         if let Some(rest) = l.strip_prefix("#### `") {
             let (name, tail) = rest.split_once('`').expect("closing backtick");
-            let size = tail.trim().trim_start_matches('(').trim_end_matches(" bytes)").parse().expect("size");
+            let size = tail
+                .trim()
+                .trim_start_matches('(')
+                .trim_end_matches(" bytes)")
+                .parse()
+                .expect("size");
             out.insert(name.to_string(), (size, BTreeMap::new()));
             cur = Some(name.to_string());
         } else if l.starts_with("### ") {
@@ -40,9 +47,17 @@ fn doc() -> Doc {
             && !l.starts_with("| ---")
             && !l.starts_with("|---")
         {
-            let c: Vec<&str> = l.trim().trim_matches('|').split('|').map(|c| c.trim().trim_matches('`')).collect();
+            let c: Vec<&str> = l
+                .trim()
+                .trim_matches('|')
+                .split('|')
+                .map(|c| c.trim().trim_matches('`'))
+                .collect();
             let entry = out.get_mut(name).expect("current");
-            entry.1.insert(c[2].to_string(), (c[0].parse().expect("offset"), c[1].parse().expect("size")));
+            entry.1.insert(
+                c[2].to_string(),
+                (c[0].parse().expect("offset"), c[1].parse().expect("size")),
+            );
         }
     }
     out
@@ -58,12 +73,16 @@ fn at(d: &Doc, s: &str, f: &str) -> (usize, usize) {
 }
 
 fn size(d: &Doc, s: &str) -> usize {
-    d.get(s).unwrap_or_else(|| panic!("docs/TCPIP.md has no {s}")).0
+    d.get(s)
+        .unwrap_or_else(|| panic!("docs/TCPIP.md has no {s}"))
+        .0
 }
 
 /// The big-endian unsigned number in a field.
 fn num(b: &[u8], (off, n): (usize, usize)) -> u64 {
-    b[off..off + n].iter().fold(0, |a, x| (a << 8) | u64::from(*x))
+    b[off..off + n]
+        .iter()
+        .fold(0, |a, x| (a << 8) | u64::from(*x))
 }
 
 fn field(b: &[u8], (off, n): (usize, usize)) -> &[u8] {
@@ -98,10 +117,17 @@ fn sockaddr_in6_both_forms() {
     let d = doc();
     let ip = Ipv6Addr::new(0xfe80, 0, 0, 0, 1, 2, 3, 4);
     let a = SockAddr::V6(SocketAddrV6::new(ip, 22, 0x0001_2345, 7));
-    for (form, t) in [(AddrForm::Bsd43, "sockaddr_in6 (BSD 4.3)"), (AddrForm::Bsd44, "sockaddr_in6 (BSD 4.4)")] {
+    for (form, t) in [
+        (AddrForm::Bsd43, "sockaddr_in6 (BSD 4.3)"),
+        (AddrForm::Bsd44, "sockaddr_in6 (BSD 4.4)"),
+    ] {
         let b = a.to_bytes(form);
         assert_eq!(b.len(), size(&d, t), "{t}");
-        let fam = if form == AddrForm::Bsd43 { "sin6_family" } else { "sin6_len" };
+        let fam = if form == AddrForm::Bsd43 {
+            "sin6_family"
+        } else {
+            "sin6_len"
+        };
         if form == AddrForm::Bsd44 {
             assert_eq!(num(&b, at(&d, t, fam)), 28, "{t}");
             assert_eq!(num(&b, at(&d, t, "sin6_family")), 24, "{t}");
@@ -120,9 +146,18 @@ fn sockaddr_in6_both_forms() {
 fn sockaddr_un_size() {
     let d = doc();
     let a = SockAddr::Unix("/tmp/s".into());
-    assert_eq!(a.to_bytes(AddrForm::Bsd43).len(), size(&d, "sockaddr_un (BSD 4.3)"));
-    assert_eq!(sockets::layout::addr::SUN_PATH_LEN, at(&d, "sockaddr_un (BSD 4.3)", "sun_path").1);
-    assert_eq!(sockets::layout::addr::SUN_PATH_LEN, at(&d, "sockaddr_un (BSD 4.4)", "sun_path").1);
+    assert_eq!(
+        a.to_bytes(AddrForm::Bsd43).len(),
+        size(&d, "sockaddr_un (BSD 4.3)")
+    );
+    assert_eq!(
+        sockets::layout::addr::SUN_PATH_LEN,
+        at(&d, "sockaddr_un (BSD 4.3)", "sun_path").1
+    );
+    assert_eq!(
+        sockets::layout::addr::SUN_PATH_LEN,
+        at(&d, "sockaddr_un (BSD 4.4)", "sun_path").1
+    );
 }
 
 #[test]
@@ -159,7 +194,12 @@ fn timeval_linger_pollfd() {
     assert_eq!(num(&b, at(&d, "linger", "l_linger")), 45);
 
     let mut b = vec![0u8; size(&d, "pollfd")];
-    PollFd { fd: 9, events: 0x11, revents: 0x22 }.write(&mut b);
+    PollFd {
+        fd: 9,
+        events: 0x11,
+        revents: 0x22,
+    }
+    .write(&mut b);
     assert_eq!(num(&b, at(&d, "pollfd", "fd")), 9);
     assert_eq!(num(&b, at(&d, "pollfd", "events")), 0x11);
     assert_eq!(num(&b, at(&d, "pollfd", "revents")), 0x22);
@@ -213,6 +253,9 @@ fn addrinfo_chain() {
         assert!(has_ptr(&im, z * i + at(&d, "addrinfo", "ai_canonname").0));
     }
     let next = at(&d, "addrinfo", "ai_next").0;
-    assert!(im.ptrs.contains(&(next, z)), "the first ai_next points at the second");
+    assert!(
+        im.ptrs.contains(&(next, z)),
+        "the first ai_next points at the second"
+    );
     assert!(!has_ptr(&im, z + next), "the last ai_next is null");
 }

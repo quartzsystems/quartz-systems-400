@@ -69,7 +69,9 @@ impl Suite {
         std::thread::sleep(Duration::from_secs(2));
         let status = s.command("tn5250 status", CMD)?;
         if !status.contains("attached") || status.contains("not attached") {
-            return Err(format!("the console is not attached to its session: {status}"));
+            return Err(format!(
+                "the console is not attached to its session: {status}"
+            ));
         }
         let r = self.console_checks(s);
         // TCP/IP again for whatever runs next, the way it was.
@@ -84,9 +86,8 @@ impl Suite {
         sign_on_main(s)?;
         // WRKHDWRSC opens its panel: no text on the menu's message line.
         enter(s, "WRKHDWRSC TYPE(*CMN)")?;
-        let rsc = screen_wait(s, "Work with Communication Resources").map_err(|e| {
-            format!("WRKHDWRSC TYPE(*CMN) did not open its panel: {e}")
-        })?;
+        let rsc = screen_wait(s, "Work with Communication Resources")
+            .map_err(|e| format!("WRKHDWRSC TYPE(*CMN) did not open its panel: {e}"))?;
         if rsc.contains("is answered by") {
             return Err(format!("WRKHDWRSC answered in text:\n{rsc}"));
         }

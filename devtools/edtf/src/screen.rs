@@ -124,7 +124,15 @@ pub fn draw(s: &Session, m: &mut ScreenModel) {
                 Item::Begin => m.put(row, 5, &format!(" {BEGIN}"), attr::WHITE),
                 Item::End => m.put(row, 5, &format!(" {END}"), attr::WHITE),
                 Item::Line(i, _) => {
-                    m.field(row, 5, width, attr::GREEN, &s.window(i), Ffw::default(), &[]);
+                    m.field(
+                        row,
+                        5,
+                        width,
+                        attr::GREEN,
+                        &s.window(i),
+                        Ffw::default(),
+                        &[],
+                    );
                 }
                 Item::Empty => m.put(row, 5, "", attr::WHITE),
             }
@@ -153,7 +161,11 @@ pub fn draw(s: &Session, m: &mut ScreenModel) {
         .and_then(|(id, col)| s.row_of(id).map(|r| (r, col)))
         .map(|(r, col)| {
             let col = col.saturating_sub(s.left - 1).min(width - 1);
-            if edit { (FIRST_ROW + r, 5 + col) } else { (FIRST_ROW + r, 1 + col) }
+            if edit {
+                (FIRST_ROW + r, 5 + col)
+            } else {
+                (FIRST_ROW + r, 1 + col)
+            }
         });
     match cursor {
         Some((r, c)) => m.set_cursor(r, c),

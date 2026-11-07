@@ -8,8 +8,8 @@
 
 use std::io::Cursor;
 
-use savfmt::Reader;
 use saverst::{AllowDiff, AllowRestore, Hooks, RestoreOptions};
+use savfmt::Reader;
 use store::Store;
 use store::obj::library::Library;
 use store::obj::{JobHandle, ObjectId, ops, types};
@@ -64,7 +64,10 @@ pub fn load(db: &mut PtfDb, pkg: &Package, savf: &str, release: &str, now: u64) 
         ));
     }
     if let Some(r) = db.ptfs.get(&h.ptf)
-        && !matches!(r.status, Status::NotLoaded | Status::OnOrder | Status::PermRemoved | Status::SaveFileOnly)
+        && !matches!(
+            r.status,
+            Status::NotLoaded | Status::OnOrder | Status::PermRemoved | Status::SaveFileOnly
+        )
     {
         return Err(Error::refused(msg::ALREADY, format!("{} is loaded", h.ptf)));
     }
@@ -130,7 +133,10 @@ pub fn check_apply(db: &PtfDb, ptf: &str, batch: &[String]) -> Result<()> {
     }
     for p in r.prereqs.iter().chain(&r.coreqs) {
         if !applied_or_superseded(db, &p.ptf, batch) {
-            return Err(Error::refused(msg::PREREQ, format!("{ptf} needs {}", p.ptf)));
+            return Err(Error::refused(
+                msg::PREREQ,
+                format!("{ptf} needs {}", p.ptf),
+            ));
         }
     }
     Ok(())
@@ -188,9 +194,19 @@ fn qrplobj(cx: &mut Ctx<'_>) -> Result<ObjectId> {
     Ok(id)
 }
 
-fn lookup(t: &mut store::Txn<'_>, qsys: ObjectId, lib: &str, name: &str, ty: u16) -> Result<Option<ObjectId>> {
-    let Ok(n) = qsname::Name::parse(lib) else { return Ok(None) };
-    let Ok(l) = ops::find_library(t, qsys, n) else { return Ok(None) };
+fn lookup(
+    t: &mut store::Txn<'_>,
+    qsys: ObjectId,
+    lib: &str,
+    name: &str,
+    ty: u16,
+) -> Result<Option<ObjectId>> {
+    let Ok(n) = qsname::Name::parse(lib) else {
+        return Ok(None);
+    };
+    let Ok(l) = ops::find_library(t, qsys, n) else {
+        return Ok(None);
+    };
     let n = qsname::Name::parse(name).map_err(|e| Error::NotPtf(e.to_string()))?;
     Ok(Library::load(t, l.id)?.lookup(t, ty, n)?)
 }
@@ -261,8 +277,18 @@ fn put_back(cx: &mut Ctx<'_>, moved: &[Replaced]) -> Result<()> {
             continue;
         }
         if let Some(id) = lookup(&mut t, cx.qsys, QRPLOBJ, &m.saved_as, m.type_code)? {
-            let lib = ops::find_library(&mut t, cx.qsys, qsname::Name::parse(&m.library).expect("name"))?.id;
-            ops::rename(&mut t, id, qsname::Name::parse(&m.name).expect("name"), cx.now)?;
+            let lib = ops::find_library(
+                &mut t,
+                cx.qsys,
+                qsname::Name::parse(&m.library).expect("name"),
+            )?
+            .id;
+            ops::rename(
+                &mut t,
+                id,
+                qsname::Name::parse(&m.name).expect("name"),
+                cx.now,
+            )?;
             ops::move_to(&mut t, id, lib, cx.now)?;
         }
     }
@@ -278,7 +304,10 @@ pub fn apply_perm(cx: &mut Ctx<'_>, db: &mut PtfDb, ptf: &str) -> Result<()> {
         .get_mut(ptf)
         .ok_or_else(|| Error::refused(msg::NOT_LOADED, ptf.to_string()))?;
     if r.status != Status::TempApplied {
-        return Err(Error::refused(msg::NOT_LOADED, format!("{ptf} is not temporarily applied")));
+        return Err(Error::refused(
+            msg::NOT_LOADED,
+            format!("{ptf} is not temporarily applied"),
+        ));
     }
     let mut t = cx.store.begin()?;
     for m in r.replaced.iter().filter(|m| !m.saved_as.is_empty()) {
@@ -298,7 +327,9 @@ pub fn apply_perm(cx: &mut Ctx<'_>, db: &mut PtfDb, ptf: &str) -> Result<()> {
 /// names it as a prerequisite.
 pub fn remove(cx: &mut Ctx<'_>, db: &mut PtfDb, ptf: &str, permanent: bool) -> Result<()> {
     let needed = db.ptfs.values().any(|o| {
-        o.ptf != ptf && o.status.applied() && o.prereqs.iter().chain(&o.coreqs).any(|p| p.ptf == ptf)
+        o.ptf != ptf
+            && o.status.applied()
+            && o.prereqs.iter().chain(&o.coreqs).any(|p| p.ptf == ptf)
     });
     if needed {
         return Err(Error::refused(msg::NEEDED, ptf.to_string()));
@@ -320,7 +351,10 @@ pub fn remove(cx: &mut Ctx<'_>, db: &mut PtfDb, ptf: &str, permanent: bool) -> R
         }
         Status::Loaded | Status::TempRemoved if permanent => {}
         Status::PermApplied => {
-            return Err(Error::refused(msg::ALREADY, format!("{ptf} is permanently applied")));
+            return Err(Error::refused(
+                msg::ALREADY,
+                format!("{ptf} is permanently applied"),
+            ));
         }
         _ => return Err(Error::refused(msg::NOT_LOADED, ptf.to_string())),
     }

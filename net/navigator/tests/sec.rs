@@ -32,7 +32,10 @@ fn audit_journal() {
         "nav/audit-journal.html",
         &[
             (tail, with_more.as_str()),
-            ("<a href=\"#\">Download as CSV</a>", "<a href=\"audit-journal.html\">Download as CSV</a>"),
+            (
+                "<a href=\"#\">Download as CSV</a>",
+                "<a href=\"audit-journal.html\">Download as CSV</a>",
+            ),
         ],
     );
 }
@@ -42,7 +45,10 @@ fn filters_and_csv() {
     let mut b = Browser::signed_on();
     // The home page's failed sign-ons link.
     let t = ok(&mut b, "/audit?t=PW");
-    assert!(t.contains("<option selected>PW - Password</option>") && t.contains("5 entries"), "{t}");
+    assert!(
+        t.contains("<option selected>PW - Password</option>") && t.contains("5 entries"),
+        "{t}"
+    );
     assert!(!t.contains("  AF  "));
     let t = ok(&mut b, "/audit?t=PW%20-%20Password&u=guest");
     assert!(t.contains("3 entries"));
@@ -59,5 +65,12 @@ fn needs_audit_authority() {
     let r = b.get("/audit");
     assert_eq!(r.status, 403);
     assert!(r.text().contains("*AUDIT"));
-    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Refused { need, .. } if need == "*AUDIT")));
+    assert!(
+        b.fx.system
+            .audit
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|a| matches!(a, Audit::Refused { need, .. } if need == "*AUDIT"))
+    );
 }

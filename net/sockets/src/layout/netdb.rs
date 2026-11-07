@@ -96,7 +96,14 @@ pub fn hostent(name: &str, aliases: &[String], family: i32, addrs: &[Vec<u8>]) -
     im.bytes.resize(64, 0);
     let aliases = &aliases[..aliases.len().min(NETDB_MAX_ARRAY_SIZE)];
     let addrs = &addrs[..addrs.len().min(NETDB_MAX_HOST_ADDR_ARRAY_SIZE)];
-    let h_length = addrs.first().map_or(if family == crate::consts::AF_INET6 { 16 } else { 4 }, Vec::len);
+    let h_length = addrs.first().map_or(
+        if family == crate::consts::AF_INET6 {
+            16
+        } else {
+            4
+        },
+        Vec::len,
+    );
     put_i32(&mut im.bytes, 32, family);
     put_i32(&mut im.bytes, 36, i32::try_from(h_length).expect("small"));
     let name_at = im.cstr(name);
@@ -163,7 +170,11 @@ pub fn addrinfo(list: &[AddrInfo], form: AddrForm) -> Image {
         put_i32(&mut im.bytes, at + 4, e.addr.family());
         put_i32(&mut im.bytes, at + 8, e.socktype);
         put_i32(&mut im.bytes, at + 12, e.protocol);
-        put_u32(&mut im.bytes, at + 16, u32::try_from(e.addr.size()).expect("small"));
+        put_u32(
+            &mut im.bytes,
+            at + 16,
+            u32::try_from(e.addr.size()).expect("small"),
+        );
         if i + 1 < list.len() {
             im.ptrs.push((at + 64, at + 96));
         }
@@ -218,7 +229,11 @@ mod tests {
         assert_eq!(s.head.len(), 64);
         assert_eq!(s.head_ptrs.len(), 3);
         assert_eq!(s.head_ptrs[0], (0, name - 64));
-        assert!(s.data_ptrs.iter().all(|(slot, t)| *slot < s.data.len() && *t < s.data.len()));
+        assert!(
+            s.data_ptrs
+                .iter()
+                .all(|(slot, t)| *slot < s.data.len() && *t < s.data.len())
+        );
     }
 
     #[test]
@@ -245,8 +260,14 @@ mod tests {
         ];
         let im = addrinfo(&entries, AddrForm::Bsd43);
         assert_eq!(target(&im, 64), 96, "ai_next");
-        assert!(im.ptrs.iter().all(|(s, _)| *s != 96 + 64), "last ai_next null");
-        assert_eq!(&im.bytes[96 + 4..96 + 20], &[0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 17, 0, 0, 0, 16]);
+        assert!(
+            im.ptrs.iter().all(|(s, _)| *s != 96 + 64),
+            "last ai_next null"
+        );
+        assert_eq!(
+            &im.bytes[96 + 4..96 + 20],
+            &[0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 17, 0, 0, 0, 16]
+        );
         let sa = target(&im, 48);
         assert_eq!(&im.bytes[sa..sa + 8], &[0, 2, 0, 80, 127, 0, 0, 1]);
         assert!(im.ptrs.iter().any(|(s, _)| *s == 32));

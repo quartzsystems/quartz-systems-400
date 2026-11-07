@@ -47,7 +47,12 @@ pub fn entries(ctx: &JobCtx) -> Vec<joblog::Entry> {
     all.extend(ctx.joblog.entries().cloned());
     if !all.iter().any(|e| e.msgid == "CPF1124") {
         let j = &ctx.job;
-        let data = joblog::started_data((&j.name, &j.user, j.number), &j.subsystem, j.started, j.started);
+        let data = joblog::started_data(
+            (&j.name, &j.user, j.number),
+            &j.subsystem,
+            j.started,
+            j.started,
+        );
         let e = joblog::Entry {
             msgid: "CPF1124".into(),
             kind: "Information".into(),

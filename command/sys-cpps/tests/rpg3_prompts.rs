@@ -94,7 +94,12 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !values.iter().all(|v| tail.contains(v)) {
@@ -114,7 +119,9 @@ fn check_pages(names: &[&str], text: &str, keys: &[&[u8]]) {
             .take(20)
             .skip(4)
             .map(|r| r.trim_end().to_string())
-            .filter(|r| !r.is_empty() && !r.trim().starts_with('+') && r.trim() != "Additional Parameters")
+            .filter(|r| {
+                !r.is_empty() && !r.trim().starts_with('+') && r.trim() != "Additional Parameters"
+            })
             .collect()
     };
     let mut ours: Vec<String> = Vec::new();
@@ -145,7 +152,14 @@ fn check_pages(names: &[&str], text: &str, keys: &[&[u8]]) {
             }
         }
     }
-    let label = |r: &str| r.chars().take(34).collect::<String>().trim_end_matches(['.', ' ', ':']).trim_start().to_string();
+    let label = |r: &str| {
+        r.chars()
+            .take(34)
+            .collect::<String>()
+            .trim_end_matches(['.', ' ', ':'])
+            .trim_start()
+            .to_string()
+    };
     let mut diffs = Vec::new();
     for (i, w) in want.iter().enumerate() {
         let got = ours.get(i).map_or("", String::as_str);
@@ -153,25 +167,41 @@ fn check_pages(names: &[&str], text: &str, keys: &[&[u8]]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                !t.chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !values.iter().all(|v| tail.contains(v)) {
-            diffs.push(format!("row {}:
+            diffs.push(format!(
+                "row {}:
   want {w:?}
-  got  {got:?}", i + 1));
+  got  {got:?}",
+                i + 1
+            ));
         }
     }
-    assert!(diffs.is_empty(), "{text}:
-{}", diffs.join("
-"));
+    assert!(
+        diffs.is_empty(),
+        "{text}:
+{}",
+        diffs.join(
+            "
+"
+        )
+    );
 }
 
 #[test]
 fn crtrpgpgm() {
     check("prompt-crtrpgpgm", "?CRTRPGPGM", &[]);
     check_pages(
-        &["prompt-crtrpgpgm-f10", "prompt-crtrpgpgm-f10-2", "prompt-crtrpgpgm-f10-3"],
+        &[
+            "prompt-crtrpgpgm-f10",
+            "prompt-crtrpgpgm-f10-2",
+            "prompt-crtrpgpgm-f10-3",
+        ],
         "?CRTRPGPGM",
         &[&[10], &[10, 8], &[10, 8, 8]],
     );

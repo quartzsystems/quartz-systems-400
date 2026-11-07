@@ -160,8 +160,7 @@ fn local_ca_issues_and_apps_assign() {
 
     // Application IDs.
     let mut apps = AppRegistry::load(&files).unwrap();
-    apps.assign("QS400_TELNET_SERVER", Some("TELNET"))
-        .unwrap();
+    apps.assign("QS400_TELNET_SERVER", Some("TELNET")).unwrap();
     apps.assign("QS400_FTP_SERVER", Some("FTP")).unwrap();
     apps.set_client_auth("QS400_FTP_SERVER", ClientAuth::Required)
         .unwrap();

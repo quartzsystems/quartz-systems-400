@@ -78,7 +78,13 @@ impl Report {
 /// set come first, ties by ID.
 #[must_use]
 pub fn order(db: &PtfDb, ids: &BTreeSet<String>) -> Vec<String> {
-    fn visit(db: &PtfDb, id: &str, ids: &BTreeSet<String>, state: &mut BTreeMap<String, bool>, out: &mut Vec<String>) {
+    fn visit(
+        db: &PtfDb,
+        id: &str,
+        ids: &BTreeSet<String>,
+        state: &mut BTreeMap<String, bool>,
+        out: &mut Vec<String>,
+    ) {
         if state.contains_key(id) {
             return;
         }
@@ -132,9 +138,16 @@ pub fn install(
         if omit.contains(&id) {
             continue;
         }
-        let loaded = db
-            .get(&id)
-            .is_some_and(|r| !matches!(r.status, Status::NotLoaded | Status::OnOrder | Status::PermRemoved | Status::SaveFileOnly | Status::CoverLetterOnly));
+        let loaded = db.get(&id).is_some_and(|r| {
+            !matches!(
+                r.status,
+                Status::NotLoaded
+                    | Status::OnOrder
+                    | Status::PermRemoved
+                    | Status::SaveFileOnly
+                    | Status::CoverLetterOnly
+            )
+        });
         if !loaded {
             match apply::load(db, &pkg, &it.savf, release, cx.now) {
                 Ok(()) => rep.loaded.push(id.clone()),
@@ -150,17 +163,20 @@ pub fn install(
     let candidates: BTreeSet<String> = pkgs
         .keys()
         .filter(|p| {
-            db.get(p)
-                .is_some_and(|r| matches!(r.status, Status::Loaded | Status::TempRemoved) && r.action == Action::None)
+            db.get(p).is_some_and(|r| {
+                matches!(r.status, Status::Loaded | Status::TempRemoved) && r.action == Action::None
+            })
         })
         .cloned()
         .collect();
     let later = |db: &PtfDb, p: &str| db.get(p).is_some_and(|r| r.delayed || r.lic);
     let now_set: BTreeSet<String> = match ins {
         InsType::DelayAll | InsType::DelayIpl => BTreeSet::new(),
-        InsType::ImmediateDelayed | InsType::ImmediateOnly => {
-            candidates.iter().filter(|p| !later(db, p)).cloned().collect()
-        }
+        InsType::ImmediateDelayed | InsType::ImmediateOnly => candidates
+            .iter()
+            .filter(|p| !later(db, p))
+            .cloned()
+            .collect(),
     };
     let batch: Vec<String> = if ins == InsType::ImmediateOnly {
         now_set.iter().cloned().collect()
@@ -197,7 +213,11 @@ pub fn install(
             Err(e) => rep.failed.push((p, e.msgid(), e.to_string())),
         }
     }
-    if rep.loaded.is_empty() && rep.applied.is_empty() && rep.at_ipl.is_empty() && !rep.failed.is_empty() {
+    if rep.loaded.is_empty()
+        && rep.applied.is_empty()
+        && rep.at_ipl.is_empty()
+        && !rep.failed.is_empty()
+    {
         let (p, id, text) = &rep.failed[0];
         return Err(Error::refused(id, format!("{p}: {text}")));
     }

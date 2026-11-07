@@ -10,7 +10,10 @@ use httpd::conf::{self, Conf, Directive, Node, Scope as _, Section};
 use httpd::instance;
 use qsweb::http::Response;
 use qsweb::msg::{Kind, Message};
-use qsweb::partials::{Button, Cell, Col, List, Prop, PropGroup, buttons, checkbox, form, input, list_table, props_table};
+use qsweb::partials::{
+    Button, Cell, Col, List, Prop, PropGroup, buttons, checkbox, form, input, list_table,
+    props_table,
+};
 
 use super::{Rq, bad_value, edit, tab_page};
 use crate::routes::create::low_port;
@@ -31,7 +34,8 @@ struct Row {
 fn vhost_for(c: &Conf, addr: Option<&str>, port: u16) -> bool {
     c.sections("VirtualHost").iter().any(|v| {
         v.args.iter().any(|a| {
-            conf::rules::listen_addr(a).is_ok_and(|(va, vp)| vp == port && (va.is_none() || va.as_deref() == addr))
+            conf::rules::listen_addr(a)
+                .is_ok_and(|(va, vp)| vp == port && (va.is_none() || va.as_deref() == addr))
         })
     })
 }
@@ -102,7 +106,10 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
             rows: vec![
                 Prop::new("Address", input("addr", "*ALL", 16)),
                 Prop::new("Port", input("port", "", 6)),
-                Prop::new("TLS", format!("{} Use TLS on this port", checkbox("tls", false))),
+                Prop::new(
+                    "TLS",
+                    format!("{} Use TLS on this port", checkbox("tls", false)),
+                ),
             ],
         }],
         false,
@@ -116,7 +123,12 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
             buttons(&[Button::new("add", "Add")])
         ),
     );
-    rq.page(tab_page(v, "ports", Some("Listen directives in the configuration file."), &body))
+    rq.page(tab_page(
+        v,
+        "ports",
+        Some("Listen directives in the configuration file."),
+        &body,
+    ))
 }
 
 fn post(rq: &Rq<'_>, v: &View) -> Response {
@@ -127,7 +139,12 @@ fn post(rq: &Rq<'_>, v: &View) -> Response {
     if let Err(r) = super::may_change(rq, v, "Change HTTP server ports") {
         return r;
     }
-    let m = if f.has("add") { add(rq, v) } else { remove(rq, v) }.unwrap_or_else(|e| e);
+    let m = if f.has("add") {
+        add(rq, v)
+    } else {
+        remove(rq, v)
+    }
+    .unwrap_or_else(|e| e);
     rq.done(&format!("/instance/{}/ports", v.name()), m)
 }
 
@@ -137,19 +154,45 @@ fn add(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
     let addr = if a.is_empty() || a.eq_ignore_ascii_case("*ALL") || a == "*" {
         None
     } else {
-        let ip: std::net::IpAddr = a.parse().map_err(|_| bad_value(a, "Address", "*ALL or an IP address of this system"))?;
-        if !rq.env().system.interfaces().iter().any(|i| i.parse::<std::net::IpAddr>() == Ok(ip)) {
-            return Err(bad_value(a, "Address", "*ALL or an IP address of this system"));
+        let ip: std::net::IpAddr = a
+            .parse()
+            .map_err(|_| bad_value(a, "Address", "*ALL or an IP address of this system"))?;
+        if !rq
+            .env()
+            .system
+            .interfaces()
+            .iter()
+            .any(|i| i.parse::<std::net::IpAddr>() == Ok(ip))
+        {
+            return Err(bad_value(
+                a,
+                "Address",
+                "*ALL or an IP address of this system",
+            ));
         }
         Some(ip.to_string())
     };
     let ps = f.str("port").trim();
-    let port = ps.parse::<u16>().ok().filter(|p| *p > 0).ok_or_else(|| bad_value(ps, "Port", "a number from 1 to 65535"))?;
-    let taken = rows(v).iter().any(|r| r.port == port && (r.addr.is_none() || addr.is_none() || r.addr == addr));
+    let port = ps
+        .parse::<u16>()
+        .ok()
+        .filter(|p| *p > 0)
+        .ok_or_else(|| bad_value(ps, "Port", "a number from 1 to 65535"))?;
+    let taken = rows(v)
+        .iter()
+        .any(|r| r.port == port && (r.addr.is_none() || addr.is_none() || r.addr == addr));
     if taken {
-        return Err(msgs::message(Kind::Error, "HTP8105", &[&port.to_string(), v.name()]));
+        return Err(msgs::message(
+            Kind::Error,
+            "HTP8105",
+            &[&port.to_string(), v.name()],
+        ));
     }
-    let user = v.conf.as_ref().map(|c| c.value("ServerUserID")).unwrap_or_default();
+    let user = v
+        .conf
+        .as_ref()
+        .map(|c| c.value("ServerUserID"))
+        .unwrap_or_default();
     low_port(rq, port, &user)?;
     let listen = match &addr {
         Some(a) if a.contains(':') => format!("[{a}]:{port}"),
@@ -182,24 +225,42 @@ fn add(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
 fn remove(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
     let f = rq.form();
     let all = rows(v);
-    let gone: Vec<&Row> = all.iter().filter(|r| f.has(&format!("l{}", r.index))).collect();
+    let gone: Vec<&Row> = all
+        .iter()
+        .filter(|r| f.has(&format!("l{}", r.index)))
+        .collect();
     if gone.is_empty() {
-        return Err(bad_value("", "Select", "at least one Listen entry to remove"));
+        return Err(bad_value(
+            "",
+            "Select",
+            "at least one Listen entry to remove",
+        ));
     }
     if gone.len() == all.len() {
-        return Err(bad_value("", "Listen entries", "at least one entry left; an instance must listen somewhere"));
+        return Err(bad_value(
+            "",
+            "Listen entries",
+            "at least one entry left; an instance must listen somewhere",
+        ));
     }
     let gone: Vec<(Option<String>, u16)> = gone.iter().map(|r| (r.addr.clone(), r.port)).collect();
-    let kept: Vec<u16> = all.iter().filter(|r| !gone.contains(&(r.addr.clone(), r.port))).map(|r| r.port).collect();
+    let kept: Vec<u16> = all
+        .iter()
+        .filter(|r| !gone.contains(&(r.addr.clone(), r.port)))
+        .map(|r| r.port)
+        .collect();
     edit(rq, v, |c| {
         c.items.retain(|n| match n {
-            Node::Directive(d) if d.is("Listen") => {
-                d.args.first().and_then(|a| conf::rules::listen_addr(a).ok()).is_none_or(|p| !gone.contains(&p))
-            }
+            Node::Directive(d) if d.is("Listen") => d
+                .args
+                .first()
+                .and_then(|a| conf::rules::listen_addr(a).ok())
+                .is_none_or(|p| !gone.contains(&p)),
             // A virtual host for a port no longer listened on goes too.
-            Node::Section(s) if s.name.eq_ignore_ascii_case("VirtualHost") => s.args.iter().any(|a| {
-                conf::rules::listen_addr(a).is_ok_and(|(_, p)| kept.contains(&p))
-            }),
+            Node::Section(s) if s.name.eq_ignore_ascii_case("VirtualHost") => s
+                .args
+                .iter()
+                .any(|a| conf::rules::listen_addr(a).is_ok_and(|(_, p)| kept.contains(&p))),
             _ => true,
         });
         Ok(())

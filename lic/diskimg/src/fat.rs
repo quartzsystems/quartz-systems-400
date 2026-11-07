@@ -131,7 +131,8 @@ pub fn read_file(image: &[u8], path: &str) -> Result<Vec<u8>, Error> {
 
 /// A file's bytes on a mounted volume (`dev` is the partition).
 pub fn read_file_at<T: ReadWriteSeek>(mut dev: T, path: &str) -> Result<Vec<u8>, Error> {
-    dev.seek(std::io::SeekFrom::Start(0)).map_err(Error::io("seek"))?;
+    dev.seek(std::io::SeekFrom::Start(0))
+        .map_err(Error::io("seek"))?;
     let fs = FileSystem::new(dev, FsOptions::new()).map_err(fat_err("mount"))?;
     let mut f = fs.root_dir().open_file(path).map_err(fat_err("open"))?;
     let mut out = Vec::new();
@@ -145,7 +146,8 @@ pub fn read_file_at<T: ReadWriteSeek>(mut dev: T, path: &str) -> Result<Vec<u8>,
 /// first, which is then renamed over the old one, so a torn write
 /// leaves the old file whole. Directories are created as needed.
 pub fn write_file<T: ReadWriteSeek>(mut dev: T, path: &str, data: &[u8]) -> Result<(), Error> {
-    dev.seek(std::io::SeekFrom::Start(0)).map_err(Error::io("seek"))?;
+    dev.seek(std::io::SeekFrom::Start(0))
+        .map_err(Error::io("seek"))?;
     let fs = FileSystem::new(dev, FsOptions::new()).map_err(fat_err("mount"))?;
     {
         let (dirs, name) = path.rsplit_once('/').unwrap_or(("", path));
@@ -221,7 +223,11 @@ mod tests {
         assert_eq!(&img[54..59], b"FAT16");
         let big = media_esp(40 * 1024 * 1024);
         assert_eq!(big.bytes, 42 * 1024 * 1024);
-        let img = build(&big, &[("EFI/BOOT/BOOTX64.EFI", &vec![7u8; 40 * 1024 * 1024])]).unwrap();
+        let img = build(
+            &big,
+            &[("EFI/BOOT/BOOTX64.EFI", &vec![7u8; 40 * 1024 * 1024])],
+        )
+        .unwrap();
         assert_eq!(&img[54..59], b"FAT16");
         assert_eq!(media_esp(1).bytes, MEDIA_ESP.bytes);
         assert_eq!(
@@ -232,16 +238,40 @@ mod tests {
 
     #[test]
     fn slot_files_are_replaced_in_place() {
-        let img = build(&MEDIA_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"slot a"), ("EFI/QS400/B.EFI", b"slot b")]).unwrap();
+        let img = build(
+            &MEDIA_ESP,
+            &[
+                ("EFI/BOOT/BOOTX64.EFI", b"slot a"),
+                ("EFI/QS400/B.EFI", b"slot b"),
+            ],
+        )
+        .unwrap();
         let mut cur = Cursor::new(img);
-        write_file(&mut cur, "EFI/QS400/B.EFI", b"new slot b, longer than before").unwrap();
-        assert_eq!(read_file_at(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"new slot b, longer than before");
-        assert_eq!(read_file_at(&mut cur, "EFI/BOOT/BOOTX64.EFI").unwrap(), b"slot a");
+        write_file(
+            &mut cur,
+            "EFI/QS400/B.EFI",
+            b"new slot b, longer than before",
+        )
+        .unwrap();
+        assert_eq!(
+            read_file_at(&mut cur, "EFI/QS400/B.EFI").unwrap(),
+            b"new slot b, longer than before"
+        );
+        assert_eq!(
+            read_file_at(&mut cur, "EFI/BOOT/BOOTX64.EFI").unwrap(),
+            b"slot a"
+        );
         write_file(&mut cur, "EFI/QS400/B.EFI", b"short").unwrap();
         assert_eq!(read_file_at(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"short");
         assert_eq!(
             list(cur.get_ref()).unwrap(),
-            vec!["EFI/", "EFI/BOOT/", "EFI/BOOT/BOOTX64.EFI", "EFI/QS400/", "EFI/QS400/B.EFI"]
+            vec![
+                "EFI/",
+                "EFI/BOOT/",
+                "EFI/BOOT/BOOTX64.EFI",
+                "EFI/QS400/",
+                "EFI/QS400/B.EFI"
+            ]
         );
     }
 }

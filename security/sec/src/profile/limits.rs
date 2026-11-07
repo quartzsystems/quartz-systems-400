@@ -54,7 +54,11 @@ pub fn sign_on_fields(p: &UsrPrf) -> SignOnFields {
 /// (`CPF1337`) rather than clamping.
 #[must_use]
 pub fn priority_allowed(p: &UsrPrf, kw: &str, value: u8) -> bool {
-    let limit = if kw == "RUNPTY" { p.ptylmt * 10 } else { p.ptylmt };
+    let limit = if kw == "RUNPTY" {
+        p.ptylmt * 10
+    } else {
+        p.ptylmt
+    };
     value >= limit
 }
 

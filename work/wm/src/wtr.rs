@@ -264,7 +264,9 @@ mod tests {
             let b = ipc::encode(&s);
             assert_eq!(ipc::decode::<WtrStep>(&b).unwrap(), s);
         }
-        let d = WtrDest::Session { device: "QS01P01".into() };
+        let d = WtrDest::Session {
+            device: "QS01P01".into(),
+        };
         assert_eq!(ipc::decode::<WtrDest>(&ipc::encode(&d)).unwrap(), d);
     }
 }

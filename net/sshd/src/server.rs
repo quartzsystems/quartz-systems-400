@@ -107,8 +107,13 @@ impl Server {
             {
                 files::mkdir_p(&*ifs, dir, 0o755).map_err(err)?;
             }
-            files::write(&*ifs, config_path, paths::default_config().as_bytes(), 0o644)
-                .map_err(err)?;
+            files::write(
+                &*ifs,
+                config_path,
+                paths::default_config().as_bytes(),
+                0o644,
+            )
+            .map_err(err)?;
             tracing::info!(path = config_path, "default sshd configuration written");
         }
         let config = Config::parse(&files::read_text(&*ifs, config_path).map_err(err)?);

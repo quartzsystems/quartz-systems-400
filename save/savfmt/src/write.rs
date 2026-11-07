@@ -171,7 +171,10 @@ impl<W: Write> Writer<W> {
             let (_, len, done, buf) = open.part.as_mut().ok_or(Error::Misuse("no part"))?;
             let left = *len - *done - buf.len() as u64;
             let room = MAX_RAW - buf.len();
-            let take = usize::try_from(left).unwrap_or(usize::MAX).min(room).min(bytes.len());
+            let take = usize::try_from(left)
+                .unwrap_or(usize::MAX)
+                .min(room)
+                .min(bytes.len());
             if take == 0 {
                 return Err(Error::Misuse("part longer than declared"));
             }
@@ -209,7 +212,12 @@ impl<W: Write> Writer<W> {
         let (codec, body) = self.compression.pack(&raw);
         let mut stored = ch.encode().to_vec();
         stored.extend_from_slice(&body);
-        self.record(RecordKind::Data, codec, object::CHUNK_LEN + raw.len(), &stored)
+        self.record(
+            RecordKind::Data,
+            codec,
+            object::CHUNK_LEN + raw.len(),
+            &stored,
+        )
     }
 
     /// End the open object: checks its parts and writes the end record.
@@ -229,7 +237,12 @@ impl<W: Write> Writer<W> {
             bytes: open.bytes,
             digest,
         };
-        self.record(RecordKind::ObjectEnd, STORED, object::END_LEN, &end.encode())?;
+        self.record(
+            RecordKind::ObjectEnd,
+            STORED,
+            object::END_LEN,
+            &end.encode(),
+        )?;
         if open.desc.has(flags::SIGNED) {
             self.signable = Some((open.desc.index, digest));
         }
@@ -239,7 +252,10 @@ impl<W: Write> Writer<W> {
     /// The signature of the object just ended (its descriptor said
     /// `SIGNED`).
     pub fn signature(&mut self, key_id: [u8; 8], signature: [u8; 64]) -> Result<()> {
-        let (index, digest) = self.signable.take().ok_or(Error::Misuse("nothing to sign"))?;
+        let (index, digest) = self
+            .signable
+            .take()
+            .ok_or(Error::Misuse("nothing to sign"))?;
         let s = SignatureRecord {
             index,
             algorithm: 1,
@@ -247,7 +263,12 @@ impl<W: Write> Writer<W> {
             signature,
             digest,
         };
-        self.record(RecordKind::Signature, STORED, object::SIGNATURE_LEN, &s.encode())
+        self.record(
+            RecordKind::Signature,
+            STORED,
+            object::SIGNATURE_LEN,
+            &s.encode(),
+        )
     }
 
     /// Finish: index and trailer. Returns the summary and the medium.
@@ -255,7 +276,11 @@ impl<W: Write> Writer<W> {
         if self.open.is_some() {
             return Err(Error::Misuse("object not ended"));
         }
-        let index_offset = if self.index.is_empty() { 0 } else { self.offset };
+        let index_offset = if self.index.is_empty() {
+            0
+        } else {
+            self.offset
+        };
         let per = MAX_RAW / object::INDEX_LEN;
         let entries = std::mem::take(&mut self.index);
         let mut index_records = 0u32;
@@ -277,7 +302,12 @@ impl<W: Write> Writer<W> {
             bytes: self.offset,
             stream_id: self.stream_id,
         };
-        self.record(RecordKind::Trailer, STORED, object::TRAILER_LEN, &t.encode())?;
+        self.record(
+            RecordKind::Trailer,
+            STORED,
+            object::TRAILER_LEN,
+            &t.encode(),
+        )?;
         self.w.flush()?;
         Ok((
             Summary {

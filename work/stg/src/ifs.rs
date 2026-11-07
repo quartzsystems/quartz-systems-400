@@ -28,72 +28,260 @@ use ipc::wire_enum;
 #[derive(Debug, Clone, PartialEq)]
 #[allow(missing_docs)]
 pub enum IfsOp {
-    Open { path: String, args: OpenArgs },
-    OpenAt { dirfd: Option<i32>, path: String, args: OpenArgs },
-    Close { fd: i32 },
-    Read { fd: i32, max: u32 },
-    PRead { fd: i32, max: u32, off: u64 },
-    Write { fd: i32, data: Vec<u8> },
-    PWrite { fd: i32, data: Vec<u8>, off: u64 },
-    Seek { fd: i32, off: i64, whence: i32 },
-    Fsync { fd: i32, data_only: bool },
-    Ftruncate { fd: i32, len: u64 },
-    Fstat { fd: i32 },
-    Stat { path: String, follow: bool },
-    Access { path: String, amode: i32 },
-    Chmod { path: String, mode: u32 },
-    Chown { path: String, uid: u32, gid: u32 },
-    Lchown { path: String, uid: u32, gid: u32 },
-    Link { existing: String, new: String },
-    Unlink { path: String },
-    Rename { old: String, new: String, mode: RenameMode },
-    Symlink { target: String, path: String },
-    Readlink { path: String },
-    Mkdir { path: String, mode: u32 },
-    Mkfifo { path: String, mode: u32 },
-    Rmdir { path: String },
-    Opendir { path: String },
-    Readdir { handle: u64, max: u32 },
-    Rewinddir { handle: u64 },
-    Closedir { handle: u64 },
-    ReadDir { path: String },
-    Chdir { path: String },
-    Fchdir { fd: i32 },
+    Open {
+        path: String,
+        args: OpenArgs,
+    },
+    OpenAt {
+        dirfd: Option<i32>,
+        path: String,
+        args: OpenArgs,
+    },
+    Close {
+        fd: i32,
+    },
+    Read {
+        fd: i32,
+        max: u32,
+    },
+    PRead {
+        fd: i32,
+        max: u32,
+        off: u64,
+    },
+    Write {
+        fd: i32,
+        data: Vec<u8>,
+    },
+    PWrite {
+        fd: i32,
+        data: Vec<u8>,
+        off: u64,
+    },
+    Seek {
+        fd: i32,
+        off: i64,
+        whence: i32,
+    },
+    Fsync {
+        fd: i32,
+        data_only: bool,
+    },
+    Ftruncate {
+        fd: i32,
+        len: u64,
+    },
+    Fstat {
+        fd: i32,
+    },
+    Stat {
+        path: String,
+        follow: bool,
+    },
+    Access {
+        path: String,
+        amode: i32,
+    },
+    Chmod {
+        path: String,
+        mode: u32,
+    },
+    Chown {
+        path: String,
+        uid: u32,
+        gid: u32,
+    },
+    Lchown {
+        path: String,
+        uid: u32,
+        gid: u32,
+    },
+    Link {
+        existing: String,
+        new: String,
+    },
+    Unlink {
+        path: String,
+    },
+    Rename {
+        old: String,
+        new: String,
+        mode: RenameMode,
+    },
+    Symlink {
+        target: String,
+        path: String,
+    },
+    Readlink {
+        path: String,
+    },
+    Mkdir {
+        path: String,
+        mode: u32,
+    },
+    Mkfifo {
+        path: String,
+        mode: u32,
+    },
+    Rmdir {
+        path: String,
+    },
+    Opendir {
+        path: String,
+    },
+    Readdir {
+        handle: u64,
+        max: u32,
+    },
+    Rewinddir {
+        handle: u64,
+    },
+    Closedir {
+        handle: u64,
+    },
+    ReadDir {
+        path: String,
+    },
+    Chdir {
+        path: String,
+    },
+    Fchdir {
+        fd: i32,
+    },
     Getcwd,
-    Dup { fd: i32 },
-    Dup2 { fd: i32, new: i32 },
-    Fcntl { fd: i32, cmd: i32, arg: i32 },
-    LockRange { fd: i32, cmd: i32, kind: RangeKind, whence: i32, start: i64, len: i64 },
-    FdPath { fd: i32 },
-    Utime { path: String, times: Option<(Nanos, Nanos)> },
-    Umask { mask: u32 },
-    Pathconf { path: String, name: i32 },
-    Statvfs { path: String },
-    GetAttrs { path: String, ids: Vec<AttrId>, follow: bool },
-    SetAttr { path: String, attr: Attr, follow: bool },
-    Dspaut { path: String },
-    Chgaut { path: String, c: ChgAut },
-    Rvkaut { path: String, user: String },
-    Chgown { path: String, new_owner: String, revoke_old: bool },
-    Chgpgp { path: String, new_group: Option<String>, revoke_old: bool },
-    CheckOut { path: String },
-    CheckIn { path: String },
-    StartJournal { path: String, j: Journal },
-    EndJournal { path: String },
-    Copy { from: String, to: String, opts: CopyOpts },
-    Mov { from: String, to: String, replace: bool },
-    RemoveTree { path: String },
-    Walk { path: String, opts: WalkOpts, max: u32 },
-    PathFromFileId { id: FileId },
-    Crtudfs { udfs: String, case_sensitive: bool, crtobjaud: CrtObjAud, text: String },
-    Dltudfs { udfs: String },
-    Mount { udfs: String, over: String, read_only: bool },
-    Unmount { path: String },
-    Dspudfs { udfs: String },
-    Rcllnk { check_only: bool },
-    ObjectLocks { path: String },
+    Dup {
+        fd: i32,
+    },
+    Dup2 {
+        fd: i32,
+        new: i32,
+    },
+    Fcntl {
+        fd: i32,
+        cmd: i32,
+        arg: i32,
+    },
+    LockRange {
+        fd: i32,
+        cmd: i32,
+        kind: RangeKind,
+        whence: i32,
+        start: i64,
+        len: i64,
+    },
+    FdPath {
+        fd: i32,
+    },
+    Utime {
+        path: String,
+        times: Option<(Nanos, Nanos)>,
+    },
+    Umask {
+        mask: u32,
+    },
+    Pathconf {
+        path: String,
+        name: i32,
+    },
+    Statvfs {
+        path: String,
+    },
+    GetAttrs {
+        path: String,
+        ids: Vec<AttrId>,
+        follow: bool,
+    },
+    SetAttr {
+        path: String,
+        attr: Attr,
+        follow: bool,
+    },
+    Dspaut {
+        path: String,
+    },
+    Chgaut {
+        path: String,
+        c: ChgAut,
+    },
+    Rvkaut {
+        path: String,
+        user: String,
+    },
+    Chgown {
+        path: String,
+        new_owner: String,
+        revoke_old: bool,
+    },
+    Chgpgp {
+        path: String,
+        new_group: Option<String>,
+        revoke_old: bool,
+    },
+    CheckOut {
+        path: String,
+    },
+    CheckIn {
+        path: String,
+    },
+    StartJournal {
+        path: String,
+        j: Journal,
+    },
+    EndJournal {
+        path: String,
+    },
+    Copy {
+        from: String,
+        to: String,
+        opts: CopyOpts,
+    },
+    Mov {
+        from: String,
+        to: String,
+        replace: bool,
+    },
+    RemoveTree {
+        path: String,
+    },
+    Walk {
+        path: String,
+        opts: WalkOpts,
+        max: u32,
+    },
+    PathFromFileId {
+        id: FileId,
+    },
+    Crtudfs {
+        udfs: String,
+        case_sensitive: bool,
+        crtobjaud: CrtObjAud,
+        text: String,
+    },
+    Dltudfs {
+        udfs: String,
+    },
+    Mount {
+        udfs: String,
+        over: String,
+        read_only: bool,
+    },
+    Unmount {
+        path: String,
+    },
+    Dspudfs {
+        udfs: String,
+    },
+    Rcllnk {
+        check_only: bool,
+    },
+    ObjectLocks {
+        path: String,
+    },
     OwnerLocks,
-    JobLocks { job: u32, user: String },
+    JobLocks {
+        job: u32,
+        user: String,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -242,7 +430,8 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
             r: c.pread(fd, n(max), off),
         },
         IfsOp::Write { fd, data } => R::Size {
-            r: c.write(fd, &data[..data.len().min(CHUNK)]).map(|n| n as u64),
+            r: c.write(fd, &data[..data.len().min(CHUNK)])
+                .map(|n| n as u64),
         },
         IfsOp::PWrite { fd, data, off } => R::Size {
             r: c.pwrite(fd, &data[..data.len().min(CHUNK)], off)
@@ -399,7 +588,9 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         } => R::Unit {
             r: c.crtudfs(&udfs, case_sensitive, crtobjaud, &text),
         },
-        IfsOp::Dltudfs { udfs } => R::Unit { r: c.dltudfs(&udfs) },
+        IfsOp::Dltudfs { udfs } => R::Unit {
+            r: c.dltudfs(&udfs),
+        },
         IfsOp::Mount {
             udfs,
             over,
@@ -407,8 +598,12 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         } => R::Mask {
             r: c.mount(&udfs, &over, read_only),
         },
-        IfsOp::Unmount { path } => R::Unit { r: c.unmount(&path) },
-        IfsOp::Dspudfs { udfs } => R::Udfs { r: c.dspudfs(&udfs) },
+        IfsOp::Unmount { path } => R::Unit {
+            r: c.unmount(&path),
+        },
+        IfsOp::Dspudfs { udfs } => R::Udfs {
+            r: c.dspudfs(&udfs),
+        },
         IfsOp::Rcllnk { check_only } => R::Report {
             r: c.rcllnk(check_only),
         },
@@ -416,7 +611,9 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
             r: c.object_locks(&path),
         },
         IfsOp::OwnerLocks => R::OwnerLocks { r: c.owner_locks() },
-        IfsOp::JobLocks { job, user } => R::OwnerLocks { r: c.job_locks(job, &user) },
+        IfsOp::JobLocks { job, user } => R::OwnerLocks {
+            r: c.job_locks(job, &user),
+        },
     }
 }
 

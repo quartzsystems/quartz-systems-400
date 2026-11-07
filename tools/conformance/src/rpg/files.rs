@@ -79,7 +79,11 @@ impl KitDb {
         let mut printers = Vec::new();
         for step in steps {
             match step {
-                DbStep::Dds { name: n, kind, source } => {
+                DbStep::Dds {
+                    name: n,
+                    kind,
+                    source,
+                } => {
                     let (src, _) = Source::from_text(&source.join("\n"));
                     match kind {
                         DdsKind::Dspf => {
@@ -103,20 +107,28 @@ impl KitDb {
                     let mut t = store.begin().map_err(s)?;
                     if *kind == DdsKind::Lf {
                         let c = compile_lf(&src, &refs, &compile);
-                        let def = c.definition.ok_or_else(|| format!("{n}.lf:\n{}", c.listing))?;
+                        let def = c
+                            .definition
+                            .ok_or_else(|| format!("{n}.lf:\n{}", c.listing))?;
                         let mut resolve = |fr: &FileRef| -> db::Result<ObjectId> {
-                            made.iter().find(|(m, _)| *m == fr.file.to_string()).map(|(_, id)| *id).ok_or_else(|| {
-                                db::DbError::Definition {
+                            made.iter()
+                                .find(|(m, _)| *m == fr.file.to_string())
+                                .map(|(_, id)| *id)
+                                .ok_or_else(|| db::DbError::Definition {
                                     what: format!("based-on file {fr} not found"),
-                                }
-                            })
+                                })
                         };
-                        let id = db::file::create_lf(&mut t, lib, name(n)?, &def, &mut resolve, &opts).map_err(s)?;
+                        let id =
+                            db::file::create_lf(&mut t, lib, name(n)?, &def, &mut resolve, &opts)
+                                .map_err(s)?;
                         made.push((n.clone(), id));
                     } else {
                         let c = compile_pf(&src, &refs, &compile);
-                        let def = c.definition.ok_or_else(|| format!("{n}.pf:\n{}", c.listing))?;
-                        let id = db::file::create_pf(&mut t, lib, name(n)?, &def, &opts).map_err(s)?;
+                        let def = c
+                            .definition
+                            .ok_or_else(|| format!("{n}.pf:\n{}", c.listing))?;
+                        let id =
+                            db::file::create_pf(&mut t, lib, name(n)?, &def, &opts).map_err(s)?;
                         made.push((n.clone(), id));
                         refs.insert_pf(LIB, n, &def);
                     }
@@ -163,9 +175,16 @@ impl KitDb {
                     curlib: Some(self.lib),
                     libl: vec![self.lib],
                 };
-                ops::resolve(t, self.qsys, &ctx, LibSpec::Libl, Name::parse(n).map_err(|_| format!("{n}: not a name"))?, ty)
-                    .map(|f| f.id)
-                    .map_err(s)
+                ops::resolve(
+                    t,
+                    self.qsys,
+                    &ctx,
+                    LibSpec::Libl,
+                    Name::parse(n).map_err(|_| format!("{n}: not a name"))?,
+                    ty,
+                )
+                .map(|f| f.id)
+                .map_err(s)
             };
             match verb {
                 "CRTJRNRCV" => {
@@ -173,7 +192,13 @@ impl KitDb {
                         now: CLOCK,
                         ..CrtJrnRcvOpts::default()
                     };
-                    crtjrnrcv(&mut t, self.lib, name(&obj(&super::build::kwd(cmd, "JRNRCV")))?, &o).map_err(s)?;
+                    crtjrnrcv(
+                        &mut t,
+                        self.lib,
+                        name(&obj(&super::build::kwd(cmd, "JRNRCV")))?,
+                        &o,
+                    )
+                    .map_err(s)?;
                 }
                 "CRTJRN" => {
                     let rcv = found(&mut t, &obj(&super::build::kwd(cmd, "JRNRCV")), jrn::JRNRCV)?;
@@ -181,12 +206,20 @@ impl KitDb {
                         now: CLOCK,
                         ..CrtJrnOpts::default()
                     };
-                    crtjrn(&mut t, self.lib, name(&obj(&super::build::kwd(cmd, "JRN")))?, rcv, &o).map_err(s)?;
+                    crtjrn(
+                        &mut t,
+                        self.lib,
+                        name(&obj(&super::build::kwd(cmd, "JRN")))?,
+                        rcv,
+                        &o,
+                    )
+                    .map_err(s)?;
                 }
                 "STRJRNPF" => {
                     let file = found(&mut t, &obj(&super::build::kwd(cmd, "FILE")), types::FILE)?;
                     let j = found(&mut t, &obj(&super::build::kwd(cmd, "JRN")), jrn::JRN)?;
-                    db::journal::strjrnpf(&mut t, JobHandle(1), file, j, true, true, CLOCK).map_err(s)?;
+                    db::journal::strjrnpf(&mut t, JobHandle(1), file, j, true, true, CLOCK)
+                        .map_err(s)?;
                 }
                 _ => {}
             }
@@ -270,7 +303,12 @@ fn empty_store() -> Result<(Store, ObjectId, ObjectId), String> {
         wal_pages: 256,
         now: CLOCK,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).map_err(s)?;
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .map_err(s)?;
     let mut t = store.begin().map_err(s)?;
     let qsys = ops::bootstrap(&mut t, CLOCK, "QS400").map_err(s)?;
     let lib = ops::create(
@@ -299,17 +337,23 @@ fn display_file(src: &Source, refs: &MapRefs, n: &str) -> Result<dspf::DisplayFi
         ..CompileOpts::default()
     };
     let c = dspf::compile_dspf(src, refs, &opts);
-    c.definition.ok_or_else(|| format!("{n}.dspf:\n{}", c.listing))
+    c.definition
+        .ok_or_else(|| format!("{n}.dspf:\n{}", c.listing))
 }
 
 /// A printer file from DDS, or its listing.
-fn printer_file(src: &Source, refs: &MapRefs, n: &str) -> Result<dds::prtf::PrtfDefinition, String> {
+fn printer_file(
+    src: &Source,
+    refs: &MapRefs,
+    n: &str,
+) -> Result<dds::prtf::PrtfDefinition, String> {
     let opts = CompileOpts {
         file: Some(n.to_string()),
         ..CompileOpts::default()
     };
     let c = dds::compile_prtf(src, refs, &opts);
-    c.definition.ok_or_else(|| format!("{n}.prtf:\n{}", c.listing))
+    c.definition
+        .ok_or_else(|| format!("{n}.prtf:\n{}", c.listing))
 }
 
 /// External descriptions from the store's `*FILE` objects.
@@ -318,10 +362,18 @@ pub struct KitExt(KitDb);
 impl ExtFiles for KitExt {
     fn describe(&mut self, file: &str, lib: &str) -> Option<ExtFile> {
         let db = &self.0;
-        if let Some((_, df)) = db.displays.iter().find(|(n, _)| n.eq_ignore_ascii_case(file)) {
+        if let Some((_, df)) = db
+            .displays
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(file))
+        {
             return Some(display_desc(df, LIB));
         }
-        if let Some((_, def)) = db.printers.iter().find(|(n, _)| n.eq_ignore_ascii_case(file)) {
+        if let Some((_, def)) = db
+            .printers
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(file))
+        {
             return Some(printer_desc(def, LIB));
         }
         let mut store = db.store.borrow_mut();
@@ -334,7 +386,15 @@ impl ExtFiles for KitExt {
             curlib: Some(db.lib),
             libl: vec![db.lib],
         };
-        let found = ops::resolve(&mut t, db.qsys, &ctx, libspec, Name::parse(file).ok()?, types::FILE).ok();
+        let found = ops::resolve(
+            &mut t,
+            db.qsys,
+            &ctx,
+            libspec,
+            Name::parse(file).ok()?,
+            types::FILE,
+        )
+        .ok();
         let desc = found.and_then(|f| db::file::describe(&mut t, f.id).ok());
         t.abort();
         let desc = desc?;
@@ -352,10 +412,12 @@ fn dft_literal(v: &dds::DefaultValue) -> Option<String> {
     match v {
         dds::DefaultValue::Quoted(q) => Some(format!("'{}'", q.replace('\'', "''"))),
         dds::DefaultValue::Number(n) => Some(n.clone()),
-        dds::DefaultValue::Hex(h) => Some(h.iter().fold("X'".to_string(), |mut s, b| {
-            let _ = write!(s, "{b:02X}");
-            s
-        }) + "'"),
+        dds::DefaultValue::Hex(h) => Some(
+            h.iter().fold("X'".to_string(), |mut s, b| {
+                let _ = write!(s, "{b:02X}");
+                s
+            }) + "'",
+        ),
         dds::DefaultValue::Null | dds::DefaultValue::Expr(_) => None,
     }
 }
@@ -399,7 +461,12 @@ pub fn display_desc(df: &dspf::DisplayFile, lib: &str) -> ExtFile {
         .records
         .iter()
         .map(|r| {
-            let named: Vec<(usize, &dspf::Field)> = r.fields.iter().enumerate().filter(|(_, f)| f.name.is_some()).collect();
+            let named: Vec<(usize, &dspf::Field)> = r
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(_, f)| f.name.is_some())
+                .collect();
             let out_of = |i: usize| r.layout.output.field(i).map(|b| b.offset);
             let in_of = |i: usize| r.layout.input.field(i).map(|b| b.offset);
             ExtFormat {
@@ -450,7 +517,11 @@ pub fn printer_desc(def: &dds::prtf::PrtfDefinition, lib: &str) -> ExtFile {
         .formats
         .iter()
         .map(|f| {
-            let inds = if def.indara { Vec::new() } else { f.indicators() };
+            let inds = if def.indara {
+                Vec::new()
+            } else {
+                f.indicators()
+            };
             let mut at = u32::try_from(inds.len()).unwrap_or(0);
             let mut fields = Vec::new();
             for x in &f.fields {
@@ -531,7 +602,12 @@ fn rpg_type(d: &dds::FieldDef) -> Ty {
         }
         DataType::Graphic => Ty::Graph(d.length),
         // SQL-only types: their record bytes.
-        DataType::DecFloat | DataType::Bytes | DataType::Boolean | DataType::Blob | DataType::Clob | DataType::Dbclob => {
+        DataType::DecFloat
+        | DataType::Bytes
+        | DataType::Boolean
+        | DataType::Blob
+        | DataType::Clob
+        | DataType::Dbclob => {
             if d.varlen.is_some() {
                 Ty::VarChar(d.length, 2)
             } else {

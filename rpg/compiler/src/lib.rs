@@ -30,14 +30,14 @@
 )]
 
 pub mod blocks;
+pub mod codegen;
 pub mod compile;
 pub mod ctl;
 pub mod decl;
-pub mod extfiles;
 pub mod diag;
 pub mod dtfmt;
+pub mod extfiles;
 pub mod files;
-pub mod codegen;
 pub mod listing;
 pub mod msgs;
 pub mod names;
@@ -56,6 +56,6 @@ pub use rpgsqlpre as sqlpre;
 /// The IBM releases QS/400 V1R0M0 answers for in conditional
 /// compilation: every release up to the one it targets, V7R5M0.
 pub const RELEASES: &[&str] = &[
-    "V4R4M0", "V5R1M0", "V5R2M0", "V5R3M0", "V5R4M0", "V6R1M0", "V7R1M0", "V7R2M0", "V7R3M0", "V7R4M0",
-    "V7R5M0",
+    "V4R4M0", "V5R1M0", "V5R2M0", "V5R3M0", "V5R4M0", "V6R1M0", "V7R1M0", "V7R2M0", "V7R3M0",
+    "V7R4M0", "V7R5M0",
 ];

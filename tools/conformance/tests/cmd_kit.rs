@@ -12,7 +12,11 @@ use conformance::cmdkit::{root, run, strings};
 #[test]
 fn every_string_matches() {
     let strings = strings().expect("the kit's strings");
-    assert!(strings.len() >= 300, "the kit holds {} strings", strings.len());
+    assert!(
+        strings.len() >= 300,
+        "the kit holds {} strings",
+        strings.len()
+    );
     let got = run(&strings);
     let path = root().join("expected.txt");
     let mut rendered = String::new();

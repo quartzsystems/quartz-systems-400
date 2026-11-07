@@ -100,7 +100,11 @@ impl Gate {
 
     fn pass(&self) {
         let g = lock(&self.open);
-        drop(self.cv.wait_while(g, |o| !*o).unwrap_or_else(PoisonError::into_inner));
+        drop(
+            self.cv
+                .wait_while(g, |o| !*o)
+                .unwrap_or_else(PoisonError::into_inner),
+        );
     }
 }
 
@@ -257,7 +261,9 @@ impl System {
         s.edit("OPER", |u| u.special = vec!["*JOBCTL".into()]);
         s.user("SECOFR", "SECPW01");
         s.edit("SECOFR", |u| {
-            u.special = ["*ALLOBJ", "*SECADM", "*JOBCTL", "*AUDIT", "*IOSYSCFG"].map(String::from).to_vec();
+            u.special = ["*ALLOBJ", "*SECADM", "*JOBCTL", "*AUDIT", "*IOSYSCFG"]
+                .map(String::from)
+                .to_vec();
         });
         fixtures::install(&mut lock(&s.spool));
         messages::install(&mut lock(&s.messages));
@@ -417,7 +423,15 @@ impl System {
             let u = self.get(u);
             !u.disabled && !u.none && !u.expired
         };
-        let r = tickets::check(&mut lock(&self.tickets), &t, &user, self.now(), tls, allowed, profile_ok);
+        let r = tickets::check(
+            &mut lock(&self.tickets),
+            &t,
+            &user,
+            self.now(),
+            tls,
+            allowed,
+            profile_ok,
+        );
         lock(&self.audit).push(format!("PS V {user}"));
         r.is_ok()
     }
@@ -431,7 +445,12 @@ impl System {
     /// Put `m` on queue `lib/name` from outside, as another job sends
     /// it (its key filled in): for event tests. `None` when there is
     /// no such queue.
-    pub fn inject_message(&self, lib: &str, name: &str, m: messages::Msg) -> Option<qap_proto::ops::messages::Key> {
+    pub fn inject_message(
+        &self,
+        lib: &str,
+        name: &str,
+        m: messages::Msg,
+    ) -> Option<qap_proto::ops::messages::Key> {
         let mut qs = lock(&self.messages);
         let i = qs.find(lib, name)?;
         Some(messages::key(qs.queues[i].put(m)))
@@ -454,7 +473,11 @@ impl System {
 
     /// Change spooled file `id` from outside (its status, attributes or
     /// queue): for event tests. False when there is no such file.
-    pub fn spool_change(&self, id: &qap_proto::ops::spool::SpooledFileId, f: impl FnOnce(&mut spool::File)) -> bool {
+    pub fn spool_change(
+        &self,
+        id: &qap_proto::ops::spool::SpooledFileId,
+        f: impl FnOnce(&mut spool::File),
+    ) -> bool {
         lock(&self.spool).change(id, f)
     }
 
@@ -526,7 +549,11 @@ pub fn serve_loopback(cfg: Config, system: &Arc<System>) -> (TcpStream, JoinHand
 /// # Panics
 /// As [`serve_loopback`].
 #[must_use]
-pub fn serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> (TcpStream, JoinHandle<Closed>) {
+pub fn serve_loopback_as(
+    cfg: Config,
+    system: &Arc<System>,
+    job: u32,
+) -> (TcpStream, JoinHandle<Closed>) {
     try_serve_loopback_as(cfg, system, job).expect("loopback")
 }
 
@@ -535,9 +562,16 @@ pub fn serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> (TcpStr
 /// # Errors
 /// `ConnectionRefused` while the server is ended, as a connect to the
 /// real system's port is; loopback failures.
-pub fn try_serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> io::Result<(TcpStream, JoinHandle<Closed>)> {
+pub fn try_serve_loopback_as(
+    cfg: Config,
+    system: &Arc<System>,
+    job: u32,
+) -> io::Result<(TcpStream, JoinHandle<Closed>)> {
     if system.server_ending.load(Ordering::SeqCst) {
-        return Err(io::Error::new(io::ErrorKind::ConnectionRefused, "the QAP server is ended"));
+        return Err(io::Error::new(
+            io::ErrorKind::ConnectionRefused,
+            "the QAP server is ended",
+        ));
     }
     let l = TcpListener::bind("127.0.0.1:0")?;
     let addr = l.local_addr()?;
@@ -551,7 +585,13 @@ pub fn try_serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> io:
 }
 
 /// Serve one accepted connection as job `job` until it closes.
-fn serve_socket(cfg: Config, sys: &Arc<System>, job: u32, s: TcpStream, peer: SocketAddr) -> Closed {
+fn serve_socket(
+    cfg: Config,
+    sys: &Arc<System>,
+    job: u32,
+    s: TcpStream,
+    peer: SocketAddr,
+) -> Closed {
     if let Ok(c) = s.try_clone() {
         lock(&sys.sockets).insert(job, c);
     }

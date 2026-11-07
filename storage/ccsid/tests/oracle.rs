@@ -19,20 +19,21 @@ fn sweep() -> BTreeMap<u16, Vec<(u16, u8)>> {
     .expect("sweep.txt");
     let mut out = BTreeMap::new();
     let (mut cur, mut per, mut u, mut b) = (0u16, false, String::new(), String::new());
-    let flush = |cur: u16, u: &mut String, b: &mut String, out: &mut BTreeMap<u16, Vec<(u16, u8)>>| {
-        if u.len() == 1024 && b.len() == 512 {
-            let v = (0..256)
-                .map(|i| {
-                    let unit = u16::from_str_radix(&u[i * 4..i * 4 + 4], 16).expect("unit");
-                    let back = u8::from_str_radix(&b[i * 2..i * 2 + 2], 16).expect("byte");
-                    (unit, back)
-                })
-                .collect();
-            out.insert(cur, v);
-        }
-        u.clear();
-        b.clear();
-    };
+    let flush =
+        |cur: u16, u: &mut String, b: &mut String, out: &mut BTreeMap<u16, Vec<(u16, u8)>>| {
+            if u.len() == 1024 && b.len() == 512 {
+                let v = (0..256)
+                    .map(|i| {
+                        let unit = u16::from_str_radix(&u[i * 4..i * 4 + 4], 16).expect("unit");
+                        let back = u8::from_str_radix(&b[i * 2..i * 2 + 2], 16).expect("byte");
+                        (unit, back)
+                    })
+                    .collect();
+                out.insert(cur, v);
+            }
+            u.clear();
+            b.clear();
+        };
     for line in text.lines() {
         let t = line.trim();
         if let Some(rest) = line.strip_prefix("ccsid ") {
@@ -63,8 +64,8 @@ fn sweep() -> BTreeMap<u16, Vec<(u16, u8)>> {
 fn every_swept_table_matches_the_oracle() {
     let s = sweep();
     let want = [
-        37u16, 273, 277, 278, 280, 284, 285, 297, 420, 424, 500, 870, 871, 875, 1025, 1026, 1140, 1141, 1142,
-        1143, 1144, 1145, 1146, 1147, 1148, 1149,
+        37u16, 273, 277, 278, 280, 284, 285, 297, 420, 424, 500, 870, 871, 875, 1025, 1026, 1140,
+        1141, 1142, 1143, 1144, 1145, 1146, 1147, 1148, 1149,
     ];
     for c in want {
         let rows = s.get(&c).unwrap_or_else(|| panic!("{c} not in the sweep"));

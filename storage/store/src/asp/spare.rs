@@ -104,7 +104,10 @@ impl Asp {
             dev: Some(dev),
         });
         self.sb.spares.push(unit_uuid);
-        info!("asp {}: hot spare of {pages} pages added", self.sb.asp_number);
+        info!(
+            "asp {}: hot spare of {pages} pages added",
+            self.sb.asp_number
+        );
         Ok(())
     }
 
@@ -192,9 +195,7 @@ impl Asp {
             .map(|uuid| {
                 let at = found
                     .iter()
-                    .position(|(h, d)| {
-                        h.unit_uuid == *uuid && d.blocks() == h.pages
-                    });
+                    .position(|(h, d)| h.unit_uuid == *uuid && d.blocks() == h.pages);
                 SpareDev {
                     uuid: *uuid,
                     dev: at.map(|i| found.remove(i).1),

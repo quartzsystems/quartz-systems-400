@@ -156,11 +156,44 @@ pub fn orphans() -> Vec<String> {
 /// program and service commands pub400 refuses an ordinary profile
 /// (`tools/conformance/golden/phase11/prompts/*-refused.txt`).
 pub const PUBLIC_EXCLUDE: &[&str] = &[
-    "ADDLICKEY", "ANZPRB", "APYPTF", "CHGIPLA", "CHGLICINF", "CHGPRB", "CPYPTF", "DLTLICPGM",
-    "DLTPRB", "DMPJOB", "DMPOBJ", "DMPSYSOBJ", "DSPPTF", "DSPPTFCVR", "ENDTRC", "INSLNG", "INSPTF",
-    "LODPTF", "PRTSYSINF", "PRTTRC", "RCLDBXREF", "RMVPTF", "RST", "RSTAUT", "RSTCFG", "RSTLIB",
-    "RSTLICPGM", "RSTOBJ", "RSTUSRPRF", "SAVLICPGM", "SNDPTFORD", "SNDSRVRQS", "STRTRC", "TRCJOB",
-    "WRKCNTINF", "WRKLICINF", "WRKPRB", "WRKPTFGRP",
+    "ADDLICKEY",
+    "ANZPRB",
+    "APYPTF",
+    "CHGIPLA",
+    "CHGLICINF",
+    "CHGPRB",
+    "CPYPTF",
+    "DLTLICPGM",
+    "DLTPRB",
+    "DMPJOB",
+    "DMPOBJ",
+    "DMPSYSOBJ",
+    "DSPPTF",
+    "DSPPTFCVR",
+    "ENDTRC",
+    "INSLNG",
+    "INSPTF",
+    "LODPTF",
+    "PRTSYSINF",
+    "PRTTRC",
+    "RCLDBXREF",
+    "RMVPTF",
+    "RST",
+    "RSTAUT",
+    "RSTCFG",
+    "RSTLIB",
+    "RSTLICPGM",
+    "RSTOBJ",
+    "RSTUSRPRF",
+    "SAVLICPGM",
+    "SNDPTFORD",
+    "SNDSRVRQS",
+    "STRTRC",
+    "TRCJOB",
+    "WRKCNTINF",
+    "WRKLICINF",
+    "WRKPRB",
+    "WRKPTFGRP",
 ];
 
 /// The commands `lic/slic/src/cpp/direct.rs` implements on the library
@@ -1076,11 +1109,7 @@ pub const BRIDGE_WORDS: &[&str] = &[
 /// Defined commands with no processing program in this release: the
 /// analyzer accepts them and the service answers `CPF0006`
 /// (`docs/PHASE7.md` lists them under Blocked).
-pub const UNSUPPORTED: &[&str] = &[
-    "CPYLIB",
-    "POSDBF",
-    "TFRJOB",
-];
+pub const UNSUPPORTED: &[&str] = &["CPYLIB", "POSDBF", "TFRJOB"];
 
 /// The `STR*` commands that open a tool's display.
 pub const TOOLS: &[&str] = &[
@@ -1092,7 +1121,9 @@ pub const TOOLS: &[&str] = &[
 /// display it shows a panel, never text.
 #[must_use]
 pub fn is_display(name: &str) -> bool {
-    ["WRK", "DSP", "EDT", "QSWRK"].iter().any(|p| name.starts_with(p))
+    ["WRK", "DSP", "EDT", "QSWRK"]
+        .iter()
+        .any(|p| name.starts_with(p))
         || name == "GO"
         || TOOLS.contains(&name)
 }

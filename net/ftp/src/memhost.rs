@@ -102,7 +102,13 @@ impl QsysView for Shared {
     fn read_member(&self, lib: &str, file: &str, mbr: &str) -> IfsResult<MemberData> {
         self.qsys.read_member(lib, file, mbr)
     }
-    fn write_member(&self, lib: &str, file: &str, mbr: &str, records: Vec<Vec<u8>>) -> IfsResult<()> {
+    fn write_member(
+        &self,
+        lib: &str,
+        file: &str,
+        mbr: &str,
+        records: Vec<Vec<u8>>,
+    ) -> IfsResult<()> {
         self.qsys.write_member(lib, file, mbr, records)?;
         stamp(&self.times, format!("{lib}/{file}/{mbr}"));
         Ok(())
@@ -226,7 +232,10 @@ impl MemHost {
         qsys.add_lib("QGPL");
         let files: Files = Arc::default();
         let times: Times = Arc::default();
-        let mut env = MemEnv::default().user("QSYS", 0).user("QSECOFR", 1).user("QDFTOWN", 3);
+        let mut env = MemEnv::default()
+            .user("QSYS", 0)
+            .user("QSECOFR", 1)
+            .user("QDFTOWN", 3);
         for (i, (u, _)) in users.iter().enumerate() {
             env = env.user(u, 100 + u32::try_from(i).unwrap_or(0));
         }
@@ -293,12 +302,22 @@ impl MemHost {
     }
 
     fn files(&self) -> std::sync::MutexGuard<'_, FileTable> {
-        self.files.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.files
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Add a physical file and its description; `rec_len` is the data
     /// part for a source file.
-    pub fn add_file(&mut self, lib: &str, file: &str, rec_len: usize, source: bool, ccsid: u16, owner: &str) {
+    pub fn add_file(
+        &mut self,
+        lib: &str,
+        file: &str,
+        rec_len: usize,
+        source: bool,
+        ccsid: u16,
+        owner: &str,
+    ) {
         self.add_file_max(lib, file, rec_len, source, ccsid, owner, None);
     }
 
@@ -332,7 +351,11 @@ impl MemHost {
 
     /// Add a member with text lines (padded to the record length).
     pub fn add_member(&mut self, lib: &str, file: &str, mbr: &str, lines: &[&str]) {
-        let Some((d, _)) = self.files().get(&(lib.to_string(), file.to_string())).cloned() else {
+        let Some((d, _)) = self
+            .files()
+            .get(&(lib.to_string(), file.to_string()))
+            .cloned()
+        else {
             return;
         };
         let records = lines
@@ -362,7 +385,12 @@ impl MemHost {
         Some(
             m.records
                 .iter()
-                .map(|r| ccsid::conv::to_string(m.ccsid, r).unwrap_or_default().trim_end().to_string())
+                .map(|r| {
+                    ccsid::conv::to_string(m.ccsid, r)
+                        .unwrap_or_default()
+                        .trim_end()
+                        .to_string()
+                })
                 .collect(),
         )
     }
@@ -371,11 +399,16 @@ impl MemHost {
     /// then the library list).
     fn find(&self, v: &str, objtype: &str) -> (String, String) {
         let (l, n) = qual(v, &self.cur());
-        let libl = v.split_once('/').is_none_or(|(l, _)| l.eq_ignore_ascii_case("*LIBL"));
+        let libl = v
+            .split_once('/')
+            .is_none_or(|(l, _)| l.eq_ignore_ascii_case("*LIBL"));
         if libl {
             let mut search = vec![self.cur()];
             search.extend(self.libl.iter().cloned());
-            if let Some(found) = search.into_iter().find(|lib| self.qsys.object(lib, &n, objtype).is_ok()) {
+            if let Some(found) = search
+                .into_iter()
+                .find(|lib| self.qsys.object(lib, &n, objtype).is_ok())
+            {
                 return (found, n);
             }
             return ("*LIBL".into(), n);
@@ -392,7 +425,11 @@ impl MemHost {
     }
 
     fn lib_exists(&self, lib: &str) -> bool {
-        lib == "QSYS" || self.qsys.libraries().is_ok_and(|l| l.iter().any(|e| e.name == lib))
+        lib == "QSYS"
+            || self
+                .qsys
+                .libraries()
+                .is_ok_and(|l| l.iter().any(|e| e.name == lib))
     }
 
     fn file_exists(&self, lib: &str, file: &str) -> bool {
@@ -400,14 +437,28 @@ impl MemHost {
     }
 
     fn create_file(&mut self, cmd: &str, source: bool) -> Result<(), CmdFail> {
-        let (lib, file) = qual(&kwd(cmd, "FILE").ok_or_else(|| fail("CPD0071", "FILE is needed."))?, &self.cur());
+        let (lib, file) = qual(
+            &kwd(cmd, "FILE").ok_or_else(|| fail("CPD0071", "FILE is needed."))?,
+            &self.cur(),
+        );
         if !self.lib_exists(&lib) || self.file_exists(&lib, &file) {
-            return Err(fail("CPF7302", format!("File {file} not created in library {lib}.")));
+            return Err(fail(
+                "CPF7302",
+                format!("File {file} not created in library {lib}."),
+            ));
         }
         let dft = if source { 92 } else { 80 };
-        let len: usize = kwd(cmd, "RCDLEN").and_then(|v| v.parse().ok()).unwrap_or(dft);
-        let len = if source { len.saturating_sub(12).max(1) } else { len };
-        let ccsid = kwd(cmd, "CCSID").and_then(|v| v.parse().ok()).unwrap_or(self.ccsid);
+        let len: usize = kwd(cmd, "RCDLEN")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(dft);
+        let len = if source {
+            len.saturating_sub(12).max(1)
+        } else {
+            len
+        };
+        let ccsid = kwd(cmd, "CCSID")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(self.ccsid);
         let max = match kwd(cmd, "MAXMBRS").as_deref() {
             Some("*NOMAX") => None,
             Some(n) => n.parse().ok(),
@@ -428,7 +479,11 @@ impl MemHost {
     /// The few commands sessions use.
     #[allow(clippy::too_many_lines, clippy::many_single_char_names)]
     fn run(&mut self, cmd: &str) -> Result<(), CmdFail> {
-        let name = cmd.split([' ', '(']).next().unwrap_or("").to_ascii_uppercase();
+        let name = cmd
+            .split([' ', '('])
+            .next()
+            .unwrap_or("")
+            .to_ascii_uppercase();
         let cur = self.cur();
         match name.as_str() {
             "CRTPF" => self.create_file(cmd, false),
@@ -437,24 +492,40 @@ impl MemHost {
                 let (l, f) = qual(&kwd(cmd, "FILE").unwrap_or_default(), &cur);
                 let m = kwd(cmd, "MBR").unwrap_or_default().to_ascii_uppercase();
                 if !self.file_exists(&l, &f) {
-                    return Err(fail("CPF7306", format!("Member {m} not added to file {f} in {l}.")));
+                    return Err(fail(
+                        "CPF7306",
+                        format!("Member {m} not added to file {f} in {l}."),
+                    ));
                 }
                 let count = self.qsys.members(&l, &f).map_or(0, |v| v.len());
-                let max = self.files().get(&(l.clone(), f.clone())).and_then(|(_, m)| *m);
+                let max = self
+                    .files()
+                    .get(&(l.clone(), f.clone()))
+                    .and_then(|(_, m)| *m);
                 if self.qsys.read_member(&l, &f, &m).is_ok() || max.is_some_and(|x| count >= x) {
-                    return Err(fail("CPF7306", format!("Member {m} not added to file {f} in {l}.")));
+                    return Err(fail(
+                        "CPF7306",
+                        format!("Member {m} not added to file {f} in {l}."),
+                    ));
                 }
                 self.add_member(&l, &f, &m, &[]);
                 Ok(())
             }
             "RMVM" | "CLRPFM" => {
                 let (l, f) = qual(&kwd(cmd, "FILE").unwrap_or_default(), &cur);
-                let m = kwd(cmd, "MBR").unwrap_or_else(|| f.clone()).to_ascii_uppercase();
+                let m = kwd(cmd, "MBR")
+                    .unwrap_or_else(|| f.clone())
+                    .to_ascii_uppercase();
                 if self.qsys.read_member(&l, &f, &m).is_err() {
-                    return Err(fail("CPF3141", format!("Member {m} not found in file {f} in {l}.")));
+                    return Err(fail(
+                        "CPF3141",
+                        format!("Member {m} not found in file {f} in {l}."),
+                    ));
                 }
                 if name == "RMVM" {
-                    let _ = self.qsys.delete(&QsysNode::Mbr(l, f, m), &principal("QSECOFR"));
+                    let _ = self
+                        .qsys
+                        .delete(&QsysNode::Mbr(l, f, m), &principal("QSECOFR"));
                 } else {
                     let _ = self.qsys.write_member(&l, &f, &m, Vec::new());
                 }
@@ -463,13 +534,22 @@ impl MemHost {
             "DLTF" => {
                 let (l, f) = qual(&kwd(cmd, "FILE").unwrap_or_default(), &cur);
                 let p = principal("QSECOFR");
-                let gone = self.qsys.delete(&QsysNode::Obj(l.clone(), f.clone(), "*FILE".into()), &p).is_ok()
-                    || self.qsys.delete(&QsysNode::Obj(l.clone(), f.clone(), "*SAVF".into()), &p).is_ok();
+                let gone = self
+                    .qsys
+                    .delete(&QsysNode::Obj(l.clone(), f.clone(), "*FILE".into()), &p)
+                    .is_ok()
+                    || self
+                        .qsys
+                        .delete(&QsysNode::Obj(l.clone(), f.clone(), "*SAVF".into()), &p)
+                        .is_ok();
                 self.files().remove(&(l.clone(), f.clone()));
                 if gone {
                     Ok(())
                 } else {
-                    Err(fail("CPF2105", format!("Object {f} in {l} type *FILE not found.")))
+                    Err(fail(
+                        "CPF2105",
+                        format!("Object {f} in {l} type *FILE not found."),
+                    ))
                 }
             }
             "RNMM" => {
@@ -483,7 +563,10 @@ impl MemHost {
                 if self.qsys.read_member(&l, &f, &n).is_ok() {
                     return Err(fail("CPF3C27", format!("Member {m} not renamed.")));
                 }
-                let _ = self.qsys.delete(&QsysNode::Mbr(l.clone(), f.clone(), m), &principal("QSECOFR"));
+                let _ = self.qsys.delete(
+                    &QsysNode::Mbr(l.clone(), f.clone(), m),
+                    &principal("QSECOFR"),
+                );
                 self.qsys.add_member(&l, &f, &n, data);
                 Ok(())
             }
@@ -492,14 +575,22 @@ impl MemHost {
                 let t = kwd(cmd, "OBJTYPE").unwrap_or_default().to_ascii_uppercase();
                 let n = kwd(cmd, "NEWOBJ").unwrap_or_default().to_ascii_uppercase();
                 if t != "*FILE" || !self.file_exists(&l, &o) || self.file_exists(&l, &n) {
-                    return Err(fail("CPF2105", format!("Object {o} in {l} type {t} not renamed.")));
+                    return Err(fail(
+                        "CPF2105",
+                        format!("Object {o} in {l} type {t} not renamed."),
+                    ));
                 }
                 let members: Vec<(String, MemberData)> = self
                     .qsys
                     .members(&l, &o)
                     .unwrap_or_default()
                     .into_iter()
-                    .filter_map(|e| self.qsys.read_member(&l, &o, &e.name).ok().map(|d| (e.name, d)))
+                    .filter_map(|e| {
+                        self.qsys
+                            .read_member(&l, &o, &e.name)
+                            .ok()
+                            .map(|d| (e.name, d))
+                    })
                     .collect();
                 let (d, max) = self.files().remove(&(l.clone(), o.clone())).unwrap_or((
                     DbFile {
@@ -510,7 +601,10 @@ impl MemHost {
                     },
                     None,
                 ));
-                let _ = self.qsys.delete(&QsysNode::Obj(l.clone(), o, "*FILE".into()), &principal("QSECOFR"));
+                let _ = self.qsys.delete(
+                    &QsysNode::Obj(l.clone(), o, "*FILE".into()),
+                    &principal("QSECOFR"),
+                );
                 let owner = self.current.clone();
                 self.add_file_max(&l, &n, d.rec_len, d.source, d.ccsid, &owner, max);
                 for (m, data) in members {
@@ -520,7 +614,8 @@ impl MemHost {
             }
             "CRTSAVF" => {
                 let (l, f) = qual(&kwd(cmd, "FILE").unwrap_or_default(), &cur);
-                self.qsys.add_obj(&l, &f, "*SAVF", "SAVF", &self.current.clone());
+                self.qsys
+                    .add_obj(&l, &f, "*SAVF", "SAVF", &self.current.clone());
                 stamp(&self.times, format!("{l}/{f}.*SAVF"));
                 Ok(())
             }
@@ -529,7 +624,8 @@ impl MemHost {
                 if self.qsys.object(&l, &d, "*DTAARA").is_ok() {
                     return Err(fail("CPF1023", format!("Data area {d} exists in {l}.")));
                 }
-                self.qsys.add_obj(&l, &d, "*DTAARA", "", &self.current.clone());
+                self.qsys
+                    .add_obj(&l, &d, "*DTAARA", "", &self.current.clone());
                 stamp(&self.times, format!("{l}/{d}.*DTAARA"));
                 Ok(())
             }
@@ -540,7 +636,10 @@ impl MemHost {
                     return Err(fail("CPF1015", format!("Data area {d} in {l} not found.")));
                 }
                 if name == "DLTDTAARA" {
-                    let _ = self.qsys.delete(&QsysNode::Obj(l, d, "*DTAARA".into()), &principal("QSECOFR"));
+                    let _ = self.qsys.delete(
+                        &QsysNode::Obj(l, d, "*DTAARA".into()),
+                        &principal("QSECOFR"),
+                    );
                 }
                 Ok(())
             }
@@ -570,12 +669,21 @@ impl MemHost {
                     self.qsys.object(&l, &n, &t).is_ok()
                 };
                 if !found {
-                    return Err(fail("CPF9801", format!("Object {n} in library {l} not found.")));
+                    return Err(fail(
+                        "CPF9801",
+                        format!("Object {n} in library {l} not found."),
+                    ));
                 }
                 if let Some(m) = kwd(cmd, "MBR")
-                    && self.qsys.read_member(&l, &n, &m.to_ascii_uppercase()).is_err()
+                    && self
+                        .qsys
+                        .read_member(&l, &n, &m.to_ascii_uppercase())
+                        .is_err()
                 {
-                    return Err(fail("CPF9815", format!("Member {m} of file {n} in library {l} not found.")));
+                    return Err(fail(
+                        "CPF9815",
+                        format!("Member {m} of file {n} in library {l} not found."),
+                    ));
                 }
                 Ok(())
             }
@@ -595,7 +703,10 @@ impl MemHost {
                     return Err(fail("CPF2110", format!("Library {l} not found.")));
                 }
                 if self.libl.contains(&l) {
-                    return Err(fail("CPF2103", format!("Library {l} is in the library list already.")));
+                    return Err(fail(
+                        "CPF2103",
+                        format!("Library {l} is in the library list already."),
+                    ));
                 }
                 self.libl.insert(0, l);
                 Ok(())
@@ -607,11 +718,15 @@ impl MemHost {
                         self.libl.remove(i);
                         Ok(())
                     }
-                    None => Err(fail("CPF2104", format!("Library {l} was not removed from the library list."))),
+                    None => Err(fail(
+                        "CPF2104",
+                        format!("Library {l} was not removed from the library list."),
+                    )),
                 }
             }
             "OVRDBF" => {
-                self.overrides.push(kwd(cmd, "FILE").unwrap_or_default().to_ascii_uppercase());
+                self.overrides
+                    .push(kwd(cmd, "FILE").unwrap_or_default().to_ascii_uppercase());
                 Ok(())
             }
             "DLTOVR" => {
@@ -630,7 +745,10 @@ impl MemHost {
             "DLYJOB" | "CHGJOB" | "DSPLIBL" | "WRKACTJOB" => Ok(()),
             // A comment alone does nothing.
             "/*" if cmd.trim_end().ends_with("*/") => Ok(()),
-            _ => Err(fail("CPD0030", format!("Command {name} in library *LIBL not found."))),
+            _ => Err(fail(
+                "CPD0030",
+                format!("Command {name} in library *LIBL not found."),
+            )),
         }
     }
 }
@@ -652,7 +770,9 @@ impl Host for MemHost {
     }
 
     fn profile(&mut self, user: &str) -> Option<Profile> {
-        self.users.get(&user.to_ascii_uppercase()).map(|(_, p)| p.clone())
+        self.users
+            .get(&user.to_ascii_uppercase())
+            .map(|(_, p)| p.clone())
     }
 
     fn become_user(&mut self, user: &str, _password: Option<&str>) -> Result<(), String> {
@@ -682,7 +802,9 @@ impl Host for MemHost {
         if !self.file_exists(lib, file) {
             return None;
         }
-        self.files().get(&(lib.to_string(), file.to_string())).map(|(d, _)| d.clone())
+        self.files()
+            .get(&(lib.to_string(), file.to_string()))
+            .map(|(d, _)| d.clone())
     }
 
     fn sysval(&mut self, name: &str) -> Option<String> {

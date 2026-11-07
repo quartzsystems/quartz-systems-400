@@ -19,7 +19,11 @@ fn list(rows: Vec<Vec<(&str, &str)>>) -> ListState {
     ListState {
         rows: rows
             .into_iter()
-            .map(|r| r.into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect())
+            .map(|r| {
+                r.into_iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: Some(n),
@@ -91,7 +95,11 @@ fn dsplibl() {
         ("QSYS2", "SYS", "System Library for CPI's"),
         ("QUSRSYS", "SYS", "System Library for Users"),
         ("QHLPSYS", "SYS", ""),
-        ("USERNAME1", "CUR", "USERNAME (*CURLIB your current library)"),
+        (
+            "USERNAME1",
+            "CUR",
+            "USERNAME (*CURLIB your current library)",
+        ),
         ("QGPL", "USR", "General Purpose Library"),
         ("QTEMP", "USR", ""),
         ("GAMES400", "USR", "$ fun library"),
@@ -128,7 +136,13 @@ fn wrkobj() {
     let mut l = list(
         objs.iter()
             .map(|(n, t, a, x)| {
-                vec![("OBJ", *n), ("OBJTYPE", *t), ("OBJLIB", "QGPL"), ("OBJATR", *a), ("OBJTEXT", *x)]
+                vec![
+                    ("OBJ", *n),
+                    ("OBJTYPE", *t),
+                    ("OBJLIB", "QGPL"),
+                    ("OBJATR", *a),
+                    ("OBJTEXT", *x),
+                ]
             })
             .collect(),
     );
@@ -165,7 +179,10 @@ fn wrkf() {
     l.total = None;
     l.complete = false;
     d.set_list("FILES", l);
-    compare("../../addendum/menus/wrkf", &render(&g, "WRKF", &d, &opts()).unwrap());
+    compare(
+        "../../addendum/menus/wrkf",
+        &render(&g, "WRKF", &d, &opts()).unwrap(),
+    );
 }
 
 /// `WRKMSGQ MSGQ(*LIBL/*ALL)` (the addendum's capture).
@@ -174,19 +191,37 @@ fn wrkmsgq() {
     let g = shipped("QUIWRKMSGQ");
     let mut d = MapDialog::new();
     let queues = [
-        "$#ANDROID_", "#", "##DD", "#ACUAPTD", "#AFC91EEF1", "#ARTRG1", "#A6BA9", "#C#23#69#B", "#C#23#69#D",
-        "#C#23#69#F", "#C#23#69#1",
+        "$#ANDROID_",
+        "#",
+        "##DD",
+        "#ACUAPTD",
+        "#AFC91EEF1",
+        "#ARTRG1",
+        "#A6BA9",
+        "#C#23#69#B",
+        "#C#23#69#D",
+        "#C#23#69#F",
+        "#C#23#69#1",
     ];
     let mut l = list(
         queues
             .iter()
-            .map(|n| vec![("MSGQ", *n), ("LIB", "QSYS"), ("TEXT", "Work Station Message Queue")])
+            .map(|n| {
+                vec![
+                    ("MSGQ", *n),
+                    ("LIB", "QSYS"),
+                    ("TEXT", "Work Station Message Queue"),
+                ]
+            })
             .collect(),
     );
     l.total = None;
     l.complete = false;
     d.set_list("QUEUES", l);
-    compare("../../addendum/menus/wrkmsgq", &render(&g, "WRKMSGQ", &d, &opts()).unwrap());
+    compare(
+        "../../addendum/menus/wrkmsgq",
+        &render(&g, "WRKMSGQ", &d, &opts()).unwrap(),
+    );
 }
 
 fn objd_header(d: &mut MapDialog) {
@@ -244,10 +279,7 @@ fn dspobjd_full_2() {
     let g = shipped("QUIDSPOBJD");
     let mut d = MapDialog::new();
     objd_full(&mut d);
-    let o = Options {
-        page: 1,
-        ..opts()
-    };
+    let o = Options { page: 1, ..opts() };
     compare("dspobjd-full-2", &render(&g, "FULL", &d, &o).unwrap());
 }
 
@@ -277,9 +309,7 @@ fn dsplib() {
     ];
     let rows: Vec<(String, String)> = objs
         .iter()
-        .map(|(_, _, a, digits)| {
-            (format!("{a:<10}{:>18}", "9".repeat(*digits)), String::new())
-        })
+        .map(|(_, _, a, digits)| (format!("{a:<10}{:>18}", "9".repeat(*digits)), String::new()))
         .collect();
     let mut l = list(
         objs.iter()
@@ -387,7 +417,13 @@ fn wrkrpyle() {
     let mut l = list(
         rows.iter()
             .map(|(s, m, r, c, st)| {
-                vec![("SEQ", *s), ("MSGID", *m), ("RPY", *r), ("CMPDTA", *c), ("START", *st)]
+                vec![
+                    ("SEQ", *s),
+                    ("MSGID", *m),
+                    ("RPY", *r),
+                    ("CMPDTA", *c),
+                    ("START", *st),
+                ]
             })
             .collect(),
     );
@@ -443,7 +479,10 @@ fn dspdtaara() {
         .set("DTATEXT", "Section 1 probe");
     d.set_list(
         "VALUES",
-        list(vec![vec![("OFFSET", "0"), ("VALUE", "'QS/400 probe                  '")]]),
+        list(vec![vec![
+            ("OFFSET", "0"),
+            ("VALUE", "'QS/400 probe                  '"),
+        ]]),
     );
     wmcommon::compare71("dspdtaara", &render(&g, "DSPDTAARA", &d, &opts()).unwrap());
 }
@@ -454,10 +493,19 @@ fn wrkobjown() {
     let mut d = MapDialog::new();
     d.set("USRPRF", "USERNAME");
     let names = ["qst", "qst", "qst", "qst", "qs4", "qs4", "qs4", "qst"];
-    let objs: Vec<String> = names.iter().map(|n| format!("/home/USERNAME/{n} >")).collect();
+    let objs: Vec<String> = names
+        .iter()
+        .map(|n| format!("/home/USERNAME/{n} >"))
+        .collect();
     let rows = objs
         .iter()
-        .map(|o| vec![("OBJ", o.as_str()), ("OBJTYPE", "*STMF"), ("ASPDEV", "*SYSBAS")])
+        .map(|o| {
+            vec![
+                ("OBJ", o.as_str()),
+                ("OBJTYPE", "*STMF"),
+                ("ASPDEV", "*SYSBAS"),
+            ]
+        })
         .collect();
     let mut l = list(rows);
     l.total = None;
@@ -480,7 +528,13 @@ fn dsplog() {
         .lines()
         .skip(2)
         .take(19)
-        .map(|l| l.trim_end_matches('\r').get(1..).unwrap_or("").trim_end().to_string())
+        .map(|l| {
+            l.trim_end_matches('\r')
+                .get(1..)
+                .unwrap_or("")
+                .trim_end()
+                .to_string()
+        })
         .collect();
     let mut l = list(rows.iter().map(|r| vec![("LINE", r.as_str())]).collect());
     l.total = None;

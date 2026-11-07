@@ -64,7 +64,10 @@ fn sign_on_matches_the_console() {
 /// for the password rules the row of keys leaves out.
 #[test]
 fn change_password_matches_ibm() {
-    let cases = [("oracle71", "USERNAM", false, 23), ("pub400", "USERNAME", true, 22)];
+    let cases = [
+        ("oracle71", "USERNAM", false, 23),
+        ("pub400", "USERNAME", true, 22),
+    ];
     for (source, user, long, rows) in cases {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../tools/conformance/golden/verified")
@@ -77,7 +80,12 @@ fn change_password_matches_ibm() {
         let mut got = panels::change_password(user, 1_792_540_800, long, "").lines();
         got[4].replace_range(46..54, "MM/DD/YY");
         for i in 0..rows {
-            assert_eq!(got[i].trim_end(), want[i].trim_end(), "{source}: row {}", i + 1);
+            assert_eq!(
+                got[i].trim_end(),
+                want[i].trim_end(),
+                "{source}: row {}",
+                i + 1
+            );
         }
     }
 }

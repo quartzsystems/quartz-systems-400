@@ -169,7 +169,11 @@ struct FrameT<'a> {
 
 /// The URL of `req` (path and query), as [`Ctx::here`].
 pub fn here(req: &Request) -> String {
-    if req.query.is_empty() { req.path.clone() } else { format!("{}?{}", req.path, req.query) }
+    if req.query.is_empty() {
+        req.path.clone()
+    } else {
+        format!("{}?{}", req.path, req.query)
+    }
 }
 
 /// `/nav?open=G` or `?close=G`: open or close a group of the tree for
@@ -177,7 +181,10 @@ pub fn here(req: &Request) -> String {
 pub fn nav_toggle(product: &Product, sessions: &Sessions, id: &str, req: &Request) -> Response {
     let q = req.query();
     session::nav_toggle(sessions, id, q.get("open"), q.get("close"));
-    match q.get("back").filter(|b| b.starts_with(product.prefix) && !b.contains("//")) {
+    match q
+        .get("back")
+        .filter(|b| b.starts_with(product.prefix) && !b.contains("//"))
+    {
         Some(b) => Response::redirect(b),
         None => Response::redirect(&product.url("/")),
     }
@@ -211,7 +218,9 @@ pub fn render_with(ctx: &Ctx, page: &Page, note: Option<&str>) -> String {
                     leaf: Some(NavLink {
                         label: g.label,
                         href: p.url(route),
-                        current: page.nav.is_some_and(|(l, r)| l == g.label && r == Some(route)),
+                        current: page
+                            .nav
+                            .is_some_and(|(l, r)| l == g.label && r == Some(route)),
                     }),
                 };
             }
@@ -219,7 +228,13 @@ pub fn render_with(ctx: &Ctx, page: &Page, note: Option<&str>) -> String {
                 Some(set) => {
                     let open = set.iter().any(|l| l == g.label);
                     let verb = if open { "close" } else { "open" };
-                    (open, p.url(&format!("/nav{}", crate::html::query(&[(verb, g.label), ("back", &ctx.here)]))))
+                    (
+                        open,
+                        p.url(&format!(
+                            "/nav{}",
+                            crate::html::query(&[(verb, g.label), ("back", &ctx.here)])
+                        )),
+                    )
                 }
                 None => (
                     page.nav.is_some_and(|(l, _)| l == g.label),
@@ -290,7 +305,13 @@ struct SignonT<'a> {
 /// The product's sign-on page: User and Password, nothing else.
 /// `user` refills the field after a refusal; `notice` is the one line
 /// some products show above the form.
-pub fn signon(product: &Product, system: &str, user: &str, messages: &[Message], notice: Option<&str>) -> String {
+pub fn signon(
+    product: &Product,
+    system: &str,
+    user: &str,
+    messages: &[Message],
+    notice: Option<&str>,
+) -> String {
     SignonT {
         title: format!("Sign on - {0} - {0}", product.wordmark),
         css: CSS_PATH,

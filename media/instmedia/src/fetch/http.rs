@@ -41,7 +41,9 @@ pub fn get(url: &Url, connect: Connect<'_>) -> Result<Vec<u8>, String> {
         match r.status {
             200 => return Ok(r.body),
             301 | 302 | 303 | 307 | 308 => {
-                let loc = r.location.ok_or_else(|| format!("HTTP {} without a Location", r.status))?;
+                let loc = r
+                    .location
+                    .ok_or_else(|| format!("HTTP {} without a Location", r.status))?;
                 at = at.join(&loc)?;
             }
             s => return Err(format!("HTTP {s} for {}", at.path)),
@@ -79,7 +81,9 @@ pub fn parse(raw: &[u8]) -> Result<Response, String> {
     let mut chunked = false;
     let mut location = None;
     for l in lines {
-        let Some((k, v)) = l.split_once(':') else { continue };
+        let Some((k, v)) = l.split_once(':') else {
+            continue;
+        };
         let v = v.trim();
         match k.trim().to_ascii_lowercase().as_str() {
             "content-length" => length = v.parse::<usize>().ok(),
@@ -102,13 +106,20 @@ pub fn parse(raw: &[u8]) -> Result<Response, String> {
     if body.len() > MAX_BYTES {
         return Err("the response file is larger than 1 MiB".into());
     }
-    Ok(Response { status, location, body })
+    Ok(Response {
+        status,
+        location,
+        body,
+    })
 }
 
 fn dechunk(mut b: &[u8]) -> Result<Vec<u8>, String> {
     let mut out = Vec::new();
     loop {
-        let eol = b.windows(2).position(|w| w == b"\r\n").ok_or("a chunk without a size line")?;
+        let eol = b
+            .windows(2)
+            .position(|w| w == b"\r\n")
+            .ok_or("a chunk without a size line")?;
         let size_text = String::from_utf8_lossy(&b[..eol]);
         let size = usize::from_str_radix(size_text.split(';').next().unwrap_or("").trim(), 16)
             .map_err(|_| format!("chunk size '{size_text}'"))?;
@@ -148,7 +159,8 @@ mod tests {
         let t = std::thread::spawn(move || {
             let mut paths = Vec::new();
             for answer in [
-                "HTTP/1.1 302 Found\r\nLocation: /qs400/INSTALL.RSP\r\nContent-Length: 0\r\n\r\n".to_string(),
+                "HTTP/1.1 302 Found\r\nLocation: /qs400/INSTALL.RSP\r\nContent-Length: 0\r\n\r\n"
+                    .to_string(),
                 "HTTP/1.1 200 OK\r\nContent-Length: 14\r\n\r\nlic-option = 2".to_string(),
             ] {
                 let (mut s, _) = l.accept().unwrap();
@@ -162,9 +174,14 @@ mod tests {
             paths
         });
         let url = Url::parse(&format!("http://127.0.0.1:{port}/rsp")).unwrap();
-        let tcp = |u: &Url| -> io::Result<Box<dyn Conn>> { Ok(Box::new(TcpStream::connect((u.host.as_str(), u.port))?)) };
+        let tcp = |u: &Url| -> io::Result<Box<dyn Conn>> {
+            Ok(Box::new(TcpStream::connect((u.host.as_str(), u.port))?))
+        };
         let body = get(&url, &tcp).unwrap();
         assert_eq!(body, b"lic-option = 2");
-        assert_eq!(t.join().unwrap(), ["GET /rsp HTTP/1.1", "GET /qs400/INSTALL.RSP HTTP/1.1"]);
+        assert_eq!(
+            t.join().unwrap(),
+            ["GET /rsp HTTP/1.1", "GET /qs400/INSTALL.RSP HTTP/1.1"]
+        );
     }
 }

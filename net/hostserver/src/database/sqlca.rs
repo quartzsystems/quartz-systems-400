@@ -25,15 +25,30 @@ fn u(i: i32) -> u32 {
 /// The wire SQLCA. The message tokens are not sent (`SQLERRML` 0): the
 /// text travels in the message parameters.
 pub fn encode(c: &Sqlca) -> Vec<u8> {
-    let warn: String = c.sqlwarn.iter().map(|w| if *w == '\0' { ' ' } else { *w }).collect();
-    let state = if c.sqlstate.is_empty() { "00000" } else { c.sqlstate.as_str() };
+    let warn: String = c
+        .sqlwarn
+        .iter()
+        .map(|w| if *w == '\0' { ' ' } else { *w })
+        .collect();
+    let state = if c.sqlstate.is_empty() {
+        "00000"
+    } else {
+        c.sqlstate.as_str()
+    };
     Wire {
         sqlcaid: fixed("SQLCA", 0x40),
         sqlcabc: 136,
         sqlcode: u(c.sqlcode),
         sqlerrml: 0,
         sqlerrmc: [0; 70],
-        sqlerrp: fixed(if c.sqlerrp.is_empty() { "QSQ00000" } else { c.sqlerrp.as_str() }, 0x40),
+        sqlerrp: fixed(
+            if c.sqlerrp.is_empty() {
+                "QSQ00000"
+            } else {
+                c.sqlerrp.as_str()
+            },
+            0x40,
+        ),
         sqlerrd1: u(c.sqlerrd[0]),
         sqlerrd2: u(c.sqlerrd[1]),
         sqlerrd3: u(c.sqlerrd[2]),

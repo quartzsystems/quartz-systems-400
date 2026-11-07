@@ -75,9 +75,16 @@ fn program(s: &mut Session, name: &str, src: &str) -> Result<(), String> {
     let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
     let buf = format!("{name}SRC");
     crate::qir::qemu::push(s, &buf, src)?;
-    expect(s, &format!("svc.srcput QGPL/QCLSRC {name} SRCTYPE(CLLE) FROMSTMF({buf})"), &["written"])?;
+    expect(
+        s,
+        &format!("svc.srcput QGPL/QCLSRC {name} SRCTYPE(CLLE) FROMSTMF({buf})"),
+        &["written"],
+    )?;
     let _ = s.command(&format!("DLTPGM PGM(QGPL/{name})"), CMD);
-    let out = s.command(&format!("CRTBNDCL PGM(QGPL/{name}) SRCFILE(QGPL/QCLSRC) SRCMBR({name})"), LONG)?;
+    let out = s.command(
+        &format!("CRTBNDCL PGM(QGPL/{name}) SRCFILE(QGPL/QCLSRC) SRCMBR({name})"),
+        LONG,
+    )?;
     if out.contains("CPF0C") || out.contains("not created") {
         return Err(format!("{name} did not compile:\n{out}"));
     }
@@ -85,7 +92,10 @@ fn program(s: &mut Session, name: &str, src: &str) -> Result<(), String> {
 }
 
 fn add(s: &mut Session, point: &str, format: &str, pgm: &str) -> Result<(), String> {
-    let _ = s.command(&format!("RMVEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1)"), CMD);
+    let _ = s.command(
+        &format!("RMVEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1)"),
+        CMD,
+    );
     expect(
         s,
         &format!("ADDEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1) PGM(QGPL/{pgm})"),
@@ -95,7 +105,10 @@ fn add(s: &mut Session, point: &str, format: &str, pgm: &str) -> Result<(), Stri
 }
 
 fn remove(s: &mut Session, point: &str, format: &str) {
-    let _ = s.command(&format!("RMVEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1)"), CMD);
+    let _ = s.command(
+        &format!("RMVEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1)"),
+        CMD,
+    );
 }
 
 #[allow(clippy::unused_self)] // the steps share one signature
@@ -103,7 +116,12 @@ impl Suite {
     /// Step 146: the security and work management exit points.
     pub(crate) fn exit_points(&self, s: &mut Session) -> Result<String, String> {
         let points = s.command("WRKREGINF EXITPNT(QIBM_QSY*)", CMD)?;
-        for p in ["QIBM_QSY_VLD_PASSWRD", "QIBM_QSY_CRT_PROFILE", "QIBM_QSY_DLT_PROFILE", "QIBM_QSY_CHK_PASSWRD"] {
+        for p in [
+            "QIBM_QSY_VLD_PASSWRD",
+            "QIBM_QSY_CRT_PROFILE",
+            "QIBM_QSY_DLT_PROFILE",
+            "QIBM_QSY_CHK_PASSWRD",
+        ] {
             if !points.contains(p) {
                 return Err(format!("WRKREGINF has no {p}:\n{points}"));
             }
@@ -122,12 +140,20 @@ impl Suite {
             &["PRFEXIT saw CRTP0100BYHAND"],
         )?;
         let r = (|| -> Result<String, String> {
-            expect(s, "CRTUSRPRF USRPRF(EXITUSR1) PASSWORD(Exit146pw) PWDEXP(*NO)", &["EXITUSR1"])?;
+            expect(
+                s,
+                "CRTUSRPRF USRPRF(EXITUSR1) PASSWORD(Exit146pw) PWDEXP(*NO)",
+                &["EXITUSR1"],
+            )?;
             expect(s, "DLTUSRPRF USRPRF(EXITUSR1)", &["EXITUSR1"])?;
             expect(
                 s,
                 "dspjoblog",
-                &["PRFEXIT saw CRTP0100EXITUSR1", "CHKEXIT saw EXITUSR1", "PRFEXIT saw DLTP0100EXITUSR1"],
+                &[
+                    "PRFEXIT saw CRTP0100EXITUSR1",
+                    "CHKEXIT saw EXITUSR1",
+                    "PRFEXIT saw DLTP0100EXITUSR1",
+                ],
             )
         })();
         remove(s, "QIBM_QSY_CRT_PROFILE", "CRTP0100");
@@ -145,7 +171,9 @@ impl Suite {
         remove(s, "QIBM_QWC_PRERESTRICT", "PRER0100");
         let ended = ended?;
         if !ended.contains("CPF18C3") {
-            return Err(format!("ENDSBS *ALL went on past a PRER0100 program that said no:\n{ended}"));
+            return Err(format!(
+                "ENDSBS *ALL went on past a PRER0100 program that said no:\n{ended}"
+            ));
         }
         let sbs = s.command("WRKSBS", CMD)?;
         if !sbs.contains("QINTER") && !sbs.contains("QBASE") && !sbs.contains("QCTL") {
@@ -156,18 +184,40 @@ impl Suite {
 
     /// Step 147: function usage, security attributes, pass-through.
     pub(crate) fn function_usage(&self, s: &mut Session) -> Result<String, String> {
-        expect(s, "WRKFCNUSG", &["QIBM_DB_SQLADM", "QIBM_ACCESS_ALLOBJ_JOBLOG", "QIBM_QTMF_SERVER_REQ_10"])?;
+        expect(
+            s,
+            "WRKFCNUSG",
+            &[
+                "QIBM_DB_SQLADM",
+                "QIBM_ACCESS_ALLOBJ_JOBLOG",
+                "QIBM_QTMF_SERVER_REQ_10",
+            ],
+        )?;
         let _ = s.command("DLTUSRPRF USRPRF(FCNUSR1)", CMD);
         expect(s, "CRTUSRPRF USRPRF(FCNUSR1) PASSWORD(*NONE)", &["FCNUSR1"])?;
         let r = (|| -> Result<(), String> {
-            s.command("CHGFCNUSG FCNID(QIBM_DB_SQLADM) USER(FCNUSR1) USAGE(*ALLOWED)", CMD)?;
-            expect(s, "DSPFCNUSG FCNID(QIBM_DB_SQLADM)", &["FCNUSR1", "*ALLOWED", "*DENIED", "*NOTUSED"])?;
-            s.command("CHGFCNUSG FCNID(QIBM_DB_SQLADM) USER(FCNUSR1) USAGE(*NONE)", CMD)?;
+            s.command(
+                "CHGFCNUSG FCNID(QIBM_DB_SQLADM) USER(FCNUSR1) USAGE(*ALLOWED)",
+                CMD,
+            )?;
+            expect(
+                s,
+                "DSPFCNUSG FCNID(QIBM_DB_SQLADM)",
+                &["FCNUSR1", "*ALLOWED", "*DENIED", "*NOTUSED"],
+            )?;
+            s.command(
+                "CHGFCNUSG FCNID(QIBM_DB_SQLADM) USER(FCNUSR1) USAGE(*NONE)",
+                CMD,
+            )?;
             let after = s.command("DSPFCNUSG FCNID(QIBM_DB_SQLADM)", CMD)?;
             if after.contains("FCNUSR1") {
                 return Err(format!("USAGE(*NONE) left FCNUSR1:\n{after}"));
             }
-            expect(s, "CHGFCNUSG FCNID(QIBM_NOSUCH_FUNCTION) DEFAULT(*ALLOWED)", &["CPF228C"])?;
+            expect(
+                s,
+                "CHGFCNUSG FCNID(QIBM_NOSUCH_FUNCTION) DEFAULT(*ALLOWED)",
+                &["CPF228C"],
+            )?;
             Ok(())
         })();
         let _ = s.command("DLTUSRPRF USRPRF(FCNUSR1)", CMD);
@@ -189,10 +239,22 @@ impl Suite {
             ("CRTLIB LIB(RELJRN)", "RELJRN"),
             ("CRTJRNRCV JRNRCV(RELJRN/RCV0001)", "RCV0001"),
             ("CRTJRN JRN(RELJRN/JRN) JRNRCV(RELJRN/RCV0001)", "JRN"),
-            ("RUNSQL SQL('CREATE TABLE RELJRN.ITEMS (NAME CHAR(10))') COMMIT(*NONE)", ""),
-            ("STRJRNPF FILE(RELJRN/ITEMS) JRN(RELJRN/JRN) IMAGES(*BOTH)", ""),
-            ("RUNSQL SQL('INSERT INTO RELJRN.ITEMS VALUES(''APPLE'')') COMMIT(*NONE)", ""),
-            ("RUNSQL SQL('UPDATE RELJRN.ITEMS SET NAME = ''APRICOT''') COMMIT(*NONE)", ""),
+            (
+                "RUNSQL SQL('CREATE TABLE RELJRN.ITEMS (NAME CHAR(10))') COMMIT(*NONE)",
+                "",
+            ),
+            (
+                "STRJRNPF FILE(RELJRN/ITEMS) JRN(RELJRN/JRN) IMAGES(*BOTH)",
+                "",
+            ),
+            (
+                "RUNSQL SQL('INSERT INTO RELJRN.ITEMS VALUES(''APPLE'')') COMMIT(*NONE)",
+                "",
+            ),
+            (
+                "RUNSQL SQL('UPDATE RELJRN.ITEMS SET NAME = ''APRICOT''') COMMIT(*NONE)",
+                "",
+            ),
         ] {
             let out = s.command(line, LONG)?;
             if !want.is_empty() && !out.contains(want) {
@@ -202,11 +264,16 @@ impl Suite {
         expect(s, "CMPJRNIMG FILE(RELJRN/ITEMS)", &["QPCMPIMG"])?;
         expect(s, "WRKJRNRCV JRNRCV(RELJRN/*ALL)", &[])?;
         program(s, "RCVEXIT", RCV_SRC)?;
-        let rcv = s.command("RCVJRNE JRN(RELJRN/JRN) EXITPGM(QGPL/RCVEXIT) TOENT(*LAST)", LONG)?;
+        let rcv = s.command(
+            "RCVJRNE JRN(RELJRN/JRN) EXITPGM(QGPL/RCVEXIT) TOENT(*LAST)",
+            LONG,
+        )?;
         let log = s.command("dspjoblog", CMD)?;
         let got = log.matches("RCVEXIT got").count();
         if got == 0 || !log.contains("RCVEXIT got RUP") {
-            return Err(format!("RCVJRNE handed the program no update entry:\n{rcv}\n{log}"));
+            return Err(format!(
+                "RCVJRNE handed the program no update entry:\n{rcv}\n{log}"
+            ));
         }
         // SAVSAVFDTA to a virtual tape; DSPTAP shows the library.
         for (line, want) in [
@@ -214,7 +281,10 @@ impl Suite {
             ("SAVLIB LIB(RELJRN) DEV(*SAVF) SAVF(RELJRN/SAVED)", "RELJRN"),
             ("CRTDEVTAP DEVD(Q148TAP) RSRCNAME(*VRT)", ""),
             ("CRTIMGCLG IMGCLG(Q148TAP) DIR('/q148/tap') TYPE(*TAP)", ""),
-            ("ADDIMGCLGE IMGCLG(Q148TAP) FROMFILE(*NEW) TOFILE(VOL1) VOLNAM(Q148V1) IMGSIZ(8)", ""),
+            (
+                "ADDIMGCLGE IMGCLG(Q148TAP) FROMFILE(*NEW) TOFILE(VOL1) VOLNAM(Q148V1) IMGSIZ(8)",
+                "",
+            ),
             ("LODIMGCLG IMGCLG(Q148TAP) DEV(Q148TAP)", ""),
             ("VRYCFG CFGOBJ(Q148TAP) CFGTYPE(*DEV) STATUS(*ON)", ""),
             ("INZTAP DEV(Q148TAP) NEWVOL(Q148V1) CHECK(*NO)", ""),
@@ -228,7 +298,11 @@ impl Suite {
         expect(s, "DSPTAP DEV(Q148TAP) DATA(*LABELS)", &["RELJRN"])?;
         let _ = s.command("DLTLIB LIB(RELJRN)", LONG);
         expect(s, "RSTLIB SAVLIB(RELJRN) DEV(Q148TAP)", &["RELJRN"])?;
-        expect(s, "RUNSQL SQL('SELECT * FROM RELJRN.ITEMS') COMMIT(*NONE)", &[])?;
+        expect(
+            s,
+            "RUNSQL SQL('SELECT * FROM RELJRN.ITEMS') COMMIT(*NONE)",
+            &[],
+        )?;
         Ok(format!(
             "CMPJRNIMG printed QPCMPIMG; RCVJRNE fed a CL program {got} entries; SAVSAVFDTA wrote RELJRN to Q148TAP, DSPTAP showed it, RSTLIB restored it"
         ))

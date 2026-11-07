@@ -10,8 +10,8 @@ use dds::{DataType, FieldDef};
 use qdecimal::{Rounding, Shape};
 
 use super::{Timestamp, Value, conversion, decfloat_error};
-use crate::exec::cast::{coded, number};
 use crate::error::{Result, SqlError};
+use crate::exec::cast::{coded, number};
 
 /// A LOB's bytes as its column's value: a `BLOB` binary, a `CLOB`
 /// CP037 text, a `DBCLOB` UTF-16BE text.
@@ -25,7 +25,14 @@ pub fn lob_value(f: &FieldDef, bytes: &[u8]) -> Value {
 
 /// `SQL0404`: a string longer than its column.
 fn too_long(f: &FieldDef, n: usize) -> SqlError {
-    coded(-404, "22001", format!("a value of length {n} is longer than column {} ({})", f.name, f.length))
+    coded(
+        -404,
+        "22001",
+        format!(
+            "a value of length {n} is longer than column {} ({})",
+            f.name, f.length
+        ),
+    )
 }
 
 /// `SQL0406`: a number past its column.
@@ -35,7 +42,15 @@ fn misfit(f: &FieldDef, v: impl std::fmt::Display) -> SqlError {
 
 /// `SQL0408`: a value of a type the column cannot take.
 fn incompatible(f: &FieldDef, v: &Value) -> SqlError {
-    coded(-408, "42821", format!("a {} value cannot be assigned to column {}", v.type_name(), f.name))
+    coded(
+        -408,
+        "42821",
+        format!(
+            "a {} value cannot be assigned to column {}",
+            v.type_name(),
+            f.name
+        ),
+    )
 }
 
 impl Value {
@@ -67,7 +82,9 @@ impl Value {
                 number::parse(s)?;
                 s.trim_matches(' ').parse().map_err(|_| misfit(f, s))
             }
-            Self::Bool(_) | Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_) => self.as_f64(),
+            Self::Bool(_) | Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_) => {
+                self.as_f64()
+            }
             v => Err(incompatible(f, v)),
         }
     }
@@ -81,7 +98,9 @@ impl Value {
             db::record::Value::Null => Self::Null,
             db::record::Value::Num(d) => Self::Num(d.clone()),
             #[allow(clippy::cast_possible_truncation)] // a single, widened when read
-            db::record::Value::Float(x) if f.precision == dds::FloatPrecision::Single => Self::Real(*x as f32),
+            db::record::Value::Float(x) if f.precision == dds::FloatPrecision::Single => {
+                Self::Real(*x as f32)
+            }
             db::record::Value::Float(x) => Self::Double(*x),
             db::record::Value::DecFloat(d) => Self::DecFloat(*d),
             db::record::Value::Char(b) => match f.data_type {
@@ -92,17 +111,24 @@ impl Value {
                 _ => {
                     let s = ccsid::from_ebcdic(b);
                     match f.data_type {
-                        DataType::Date => Self::Date(
-                            Date::parse(&s, f.date_fmt.unwrap_or_default())
-                                .ok_or_else(|| conversion(format!("field {} holds '{s}', not a date", f.name)))?,
-                        ),
-                        DataType::Time => Self::Time(
-                            Time::parse(&s, f.time_fmt.unwrap_or_default())
-                                .ok_or_else(|| conversion(format!("field {} holds '{s}', not a time", f.name)))?,
-                        ),
+                        DataType::Date => {
+                            Self::Date(Date::parse(&s, f.date_fmt.unwrap_or_default()).ok_or_else(
+                                || conversion(format!("field {} holds '{s}', not a date", f.name)),
+                            )?)
+                        }
+                        DataType::Time => {
+                            Self::Time(Time::parse(&s, f.time_fmt.unwrap_or_default()).ok_or_else(
+                                || conversion(format!("field {} holds '{s}', not a time", f.name)),
+                            )?)
+                        }
                         DataType::Timestamp => Self::Timestamp(
                             Timestamp::parse(&s)
-                                .ok_or_else(|| conversion(format!("field {} holds '{s}', not a timestamp", f.name)))?
+                                .ok_or_else(|| {
+                                    conversion(format!(
+                                        "field {} holds '{s}', not a timestamp",
+                                        f.name
+                                    ))
+                                })?
                                 .with_precision(DataType::timestamp_precision(f.length)),
                         ),
                         _ => Self::Str(s),
@@ -154,7 +180,10 @@ impl Value {
             DataType::Float => {
                 let x = self.assign_f64(f)?;
                 #[allow(clippy::cast_possible_truncation)] // the single it rounds to
-                if f.precision == dds::FloatPrecision::Single && x.is_finite() && (x as f32).is_infinite() {
+                if f.precision == dds::FloatPrecision::Single
+                    && x.is_finite()
+                    && (x as f32).is_infinite()
+                {
                     return Err(misfit(f, self.as_text()));
                 }
                 Ok(db::record::Value::Float(x))
@@ -168,17 +197,21 @@ impl Value {
             DataType::Binary if f.int_range => {
                 let d = self.assign_decimal(f)?;
                 let bits = f.data_len() * 8;
-                let whole = d.rescale(0, Rounding::Truncate).ok().and_then(|w| w.to_i128());
+                let whole = d
+                    .rescale(0, Rounding::Truncate)
+                    .ok()
+                    .and_then(|w| w.to_i128());
                 match whole {
-                    Some(n) if n >= -(1i128 << (bits - 1)) && n < (1i128 << (bits - 1)) => {
-                        Ok(db::record::Value::Num(qdecimal::Decimal::new(n, 0).map_err(conversion)?))
-                    }
+                    Some(n) if n >= -(1i128 << (bits - 1)) && n < (1i128 << (bits - 1)) => Ok(
+                        db::record::Value::Num(qdecimal::Decimal::new(n, 0).map_err(conversion)?),
+                    ),
                     _ => Err(misfit(f, &d)),
                 }
             }
             DataType::Zoned | DataType::Packed | DataType::Binary => {
                 let d = self.assign_decimal(f)?;
-                let shape = Shape::new(u8::try_from(f.length).unwrap_or(63), f.decimals).map_err(conversion)?;
+                let shape = Shape::new(u8::try_from(f.length).unwrap_or(63), f.decimals)
+                    .map_err(conversion)?;
                 let fitted = d
                     .fit(shape, Rounding::Truncate)
                     .map_err(|_| misfit(f, &d))?;
@@ -193,8 +226,13 @@ impl Value {
             }
             DataType::Boolean => {
                 let b = match self {
-                    Self::Str(s) => crate::value::parse_bool(s).ok_or_else(|| crate::exec::cast::bad_boolean(s))?,
-                    Self::Bool(_) | Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_) => self.as_bool()?,
+                    Self::Str(s) => crate::value::parse_bool(s)
+                        .ok_or_else(|| crate::exec::cast::bad_boolean(s))?,
+                    Self::Bool(_)
+                    | Self::Num(_)
+                    | Self::Double(_)
+                    | Self::Real(_)
+                    | Self::DecFloat(_) => self.as_bool()?,
                     v => return Err(incompatible(f, v)),
                 };
                 Ok(db::record::Value::Char(vec![if b { 0xF1 } else { 0xF0 }]))
@@ -203,10 +241,24 @@ impl Value {
                 what: format!("LOB field {} is written through its reference", f.name),
                 msgid: None,
             }),
-            DataType::Date => text(&self.as_date().map_err(|_| self.datetime_misfit(f, "date"))?.render(f.date_fmt.unwrap_or_default(), f.date_sep)),
-            DataType::Time => text(&self.as_time().map_err(|_| self.datetime_misfit(f, "time"))?.stored(f.time_fmt.unwrap_or_default(), f.time_sep)),
+            DataType::Date => text(
+                &self
+                    .as_date()
+                    .map_err(|_| self.datetime_misfit(f, "date"))?
+                    .render(f.date_fmt.unwrap_or_default(), f.date_sep),
+            ),
+            DataType::Time => text(
+                &self
+                    .as_time()
+                    .map_err(|_| self.datetime_misfit(f, "time"))?
+                    .stored(f.time_fmt.unwrap_or_default(), f.time_sep),
+            ),
             DataType::Timestamp => text(
-                &self.as_timestamp().map_err(|_| self.datetime_misfit(f, "timestamp"))?.with_precision(DataType::timestamp_precision(f.length)).render_field(),
+                &self
+                    .as_timestamp()
+                    .map_err(|_| self.datetime_misfit(f, "timestamp"))?
+                    .with_precision(DataType::timestamp_precision(f.length))
+                    .render_field(),
             ),
             _ => {
                 let s = match self {
@@ -223,7 +275,13 @@ impl Value {
                     if units.len() > max && trimmed > max {
                         return Err(too_long(f, s.chars().count()));
                     }
-                    return Ok(db::record::Value::Char(units.iter().take(max).flat_map(|u| u.to_be_bytes()).collect()));
+                    return Ok(db::record::Value::Char(
+                        units
+                            .iter()
+                            .take(max)
+                            .flat_map(|u| u.to_be_bytes())
+                            .collect(),
+                    ));
                 }
                 if s.chars().count() > max {
                     // Trailing blanks past the length are dropped.

@@ -18,13 +18,24 @@ pub const JOBD_NO_VALUE: &[&str] = &["JOB_SWITCHES"];
 
 /// Every object of `type_code` the user can list: library name, object
 /// name, object.
-pub(super) fn all_of(txn: &mut Txn<'_>, ctx: &SqlContext, type_code: u16) -> Result<Vec<(String, String, ObjectId)>> {
-    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+pub(super) fn all_of(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    type_code: u16,
+) -> Result<Vec<(String, String, ObjectId)>> {
+    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     libs.insert(0, ctx.qsys);
     let mut out = Vec::new();
     for lib in libs {
-        let Ok((_, lh)) = ops::read_header(txn, lib) else { continue };
-        let Ok(list) = ops::list(txn, lib, Some(type_code)) else { continue };
+        let Ok((_, lh)) = ops::read_header(txn, lib) else {
+            continue;
+        };
+        let Ok(list) = ops::list(txn, lib, Some(type_code)) else {
+            continue;
+        };
         for (k, id) in list {
             out.push((lh.name.to_string(), k.name.to_string(), id));
         }
@@ -35,8 +46,12 @@ pub(super) fn all_of(txn: &mut Txn<'_>, ctx: &SqlContext, type_code: u16) -> Res
 /// `JOB_DESCRIPTION_INFO`.
 pub fn jobds(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     for (lib, name, id) in all_of(txn, ctx, types::JOBD)? {
-        let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-        let Ok(d) = wm::obj::jobd::JobD::decode(&bytes) else { continue };
+        let Ok(bytes) = wm::obj::read(txn, id) else {
+            continue;
+        };
+        let Ok(d) = wm::obj::jobd::JobD::decode(&bytes) else {
+            continue;
+        };
         out.row();
         out.text("JOB_DESCRIPTION_LIBRARY", lib);
         out.text("JOB_DESCRIPTION", name);
@@ -46,7 +61,15 @@ pub fn jobds(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         out.text_or_null("REQUEST_DATA", &d.rqsdta);
         if let Some(l) = &d.inllibl {
             out.int("LIBRARY_LIST_COUNT", l.len());
-            out.text("LIBRARY_LIST", l.iter().map(|n| format!("{n:<10}")).collect::<Vec<_>>().concat().trim_end().to_string());
+            out.text(
+                "LIBRARY_LIST",
+                l.iter()
+                    .map(|n| format!("{n:<10}"))
+                    .collect::<Vec<_>>()
+                    .concat()
+                    .trim_end()
+                    .to_string(),
+            );
         } else {
             out.int("LIBRARY_LIST_COUNT", 0);
             out.text("LIBRARY_LIST", "*SYSVAL");
@@ -78,7 +101,10 @@ pub fn jobds(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         out.text("LOG_CL_PROGRAM_COMMANDS", d.logclpgm.trim());
         out.text("DEVICE_RECOVERY_ACTION", d.devrcyacn.trim());
         out.text("TIME_SLICE_END_POOL", d.tsepool.trim());
-        out.text("ALLOW_MULTIPLE_THREADS", if d.alwmltthd { "*YES" } else { "*NO" });
+        out.text(
+            "ALLOW_MULTIPLE_THREADS",
+            if d.alwmltthd { "*YES" } else { "*NO" },
+        );
         out.text_or_null("ASPGRP", &d.inlaspgrp);
         out.text("DDM_CONVERSATION", d.ddmcnv.trim());
     }
@@ -94,18 +120,36 @@ pub const SBS_NO_VALUE: &[&str] = &["SIGNON_DEVICE_FILE_LIBRARY"];
 pub fn jobqs(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     let mut entries: Vec<(String, String, String, String, wm::obj::sbsd::Jobqe)> = Vec::new();
     for (lib, name, id) in all_of(txn, ctx, types::SBSD)? {
-        let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-        let Ok(s) = wm::obj::sbsd::Sbsd::decode(&bytes) else { continue };
+        let Ok(bytes) = wm::obj::read(txn, id) else {
+            continue;
+        };
+        let Ok(s) = wm::obj::sbsd::Sbsd::decode(&bytes) else {
+            continue;
+        };
         for e in s.jobqes {
             // The entry names the queue as name and library.
-            entries.push((e.jobq.1.clone(), e.jobq.0.clone(), lib.clone(), name.clone(), e));
+            entries.push((
+                e.jobq.1.clone(),
+                e.jobq.0.clone(),
+                lib.clone(),
+                name.clone(),
+                e,
+            ));
         }
     }
-    let active = ctx.host.as_deref().and_then(super::host::SystemHost::active_jobs).unwrap_or_default();
+    let active = ctx
+        .host
+        .as_deref()
+        .and_then(super::host::SystemHost::active_jobs)
+        .unwrap_or_default();
     let now = ctx.clock();
     for (lib, name, id) in all_of(txn, ctx, types::JOBQ)? {
-        let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-        let Ok(q) = wm::obj::jobq::JobQ::decode(&bytes) else { continue };
+        let Ok(bytes) = wm::obj::read(txn, id) else {
+            continue;
+        };
+        let Ok(q) = wm::obj::jobq::JobQ::decode(&bytes) else {
+            continue;
+        };
         out.row();
         out.text("JOB_QUEUE_NAME", name.as_str());
         out.text("JOB_QUEUE_LIBRARY", lib.as_str());
@@ -132,7 +176,9 @@ pub fn jobqs(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
             out.int(&format!("SCHEDULED_JOBS_PRIORITY_{p}"), scheduled[p]);
             out.int(&format!("HELD_JOBS_PRIORITY_{p}"), held[p]);
         }
-        if let Some((_, _, slib, sname, e)) = entries.iter().find(|(l, n, ..)| *l == lib && *n == name) {
+        if let Some((_, _, slib, sname, e)) =
+            entries.iter().find(|(l, n, ..)| *l == lib && *n == name)
+        {
             out.text("SUBSYSTEM_NAME", sname.as_str());
             out.text("SUBSYSTEM_LIBRARY_NAME", slib.as_str());
             out.int("SEQUENCE_NUMBER", e.seq);
@@ -145,7 +191,10 @@ pub fn jobqs(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
                 }
             }
             let qual = format!("{lib}/{name}");
-            let running = active.iter().filter(|a| a.attrs.as_ref().is_some_and(|at| at.jobq == qual)).count();
+            let running = active
+                .iter()
+                .filter(|a| a.attrs.as_ref().is_some_and(|at| at.jobq == qual))
+                .count();
             out.int("ACTIVE_JOBS", running);
         }
         out.text_or_null("TEXT_DESCRIPTION", &q.text);
@@ -158,11 +207,18 @@ pub fn jobqs(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
 /// The active subsystems' monitor jobs: subsystem, qualified job,
 /// jobs running in it.
 fn monitors(ctx: &SqlContext) -> Vec<(String, String, usize)> {
-    let jobs = ctx.host.as_deref().and_then(super::host::SystemHost::active_jobs).unwrap_or_default();
+    let jobs = ctx
+        .host
+        .as_deref()
+        .and_then(super::host::SystemHost::active_jobs)
+        .unwrap_or_default();
     jobs.iter()
         .filter(|a| a.job.kind == 'M')
         .map(|m| {
-            let n = jobs.iter().filter(|a| a.job.kind != 'M' && a.job.subsystem.trim() == m.job.name.trim()).count();
+            let n = jobs
+                .iter()
+                .filter(|a| a.job.kind != 'M' && a.job.subsystem.trim() == m.job.name.trim())
+                .count();
             (m.job.name.trim().to_string(), m.job.qualified(), n)
         })
         .collect()
@@ -173,8 +229,12 @@ fn monitors(ctx: &SqlContext) -> Vec<(String, String, usize)> {
 pub fn subsystems(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     let mons = monitors(ctx);
     for (lib, name, id) in all_of(txn, ctx, types::SBSD)? {
-        let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-        let Ok(s) = wm::obj::sbsd::Sbsd::decode(&bytes) else { continue };
+        let Ok(bytes) = wm::obj::read(txn, id) else {
+            continue;
+        };
+        let Ok(s) = wm::obj::sbsd::Sbsd::decode(&bytes) else {
+            continue;
+        };
         let mon = mons.iter().find(|(n, ..)| *n == name);
         out.row();
         out.text("SUBSYSTEM_DESCRIPTION_LIBRARY", lib.as_str());
@@ -191,7 +251,10 @@ pub fn subsystems(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<
         out.yes("CONTROLLING_SUBSYSTEM", false);
         out.text_or_null("SIGNON_DEVICE_FILE_LIBRARY", &s.sgndspf.1);
         out.text("SIGNON_DEVICE_FILE", s.sgndspf.0.as_str());
-        out.text_or_null("SECONDARY_LANGUAGE_LIBRARY", s.syslible.trim_start_matches("*NONE"));
+        out.text_or_null(
+            "SECONDARY_LANGUAGE_LIBRARY",
+            s.syslible.trim_start_matches("*NONE"),
+        );
     }
     Ok(())
 }
@@ -199,8 +262,12 @@ pub fn subsystems(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<
 /// `SUBSYSTEM_POOL_INFO`: each subsystem description's pools.
 pub fn subsystem_pools(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     for (lib, name, id) in all_of(txn, ctx, types::SBSD)? {
-        let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-        let Ok(s) = wm::obj::sbsd::Sbsd::decode(&bytes) else { continue };
+        let Ok(bytes) = wm::obj::read(txn, id) else {
+            continue;
+        };
+        let Ok(s) = wm::obj::sbsd::Sbsd::decode(&bytes) else {
+            continue;
+        };
         for p in &s.pools {
             out.row();
             out.text("SUBSYSTEM_DESCRIPTION_LIBRARY", lib.as_str());
@@ -211,7 +278,14 @@ pub fn subsystem_pools(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Re
                 out.int("MAXIMUM_ACTIVE_JOBS", p.actlvl);
             }
             if p.size_kb != 0 {
-                out.dec("POOL_SIZE", &format!("{}.{:02}", p.size_kb / 1024, (p.size_kb % 1024) * 100 / 1024));
+                out.dec(
+                    "POOL_SIZE",
+                    &format!(
+                        "{}.{:02}",
+                        p.size_kb / 1024,
+                        (p.size_kb % 1024) * 100 / 1024
+                    ),
+                );
             }
         }
     }
@@ -221,7 +295,9 @@ pub fn subsystem_pools(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Re
 /// `REPLY_LIST_INFO`: the system reply list.
 #[allow(clippy::unnecessary_wraps)] // a view's rows may fail
 pub fn reply_list(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
-    let Ok(l) = wm::obj::rpyl::load(txn, ctx.qsys) else { return Ok(()) };
+    let Ok(l) = wm::obj::rpyl::load(txn, ctx.qsys) else {
+        return Ok(());
+    };
     for e in &l.entries {
         out.row();
         out.int("SEQUENCE_NUMBER", e.seq);
@@ -240,8 +316,12 @@ pub fn reply_list(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<
 /// can read.
 pub fn messages(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     for (lib, name, id) in all_of(txn, ctx, types::MSGQ)? {
-        let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-        let Ok(q) = wm::obj::msgq::MsgQ::decode(&bytes) else { continue };
+        let Ok(bytes) = wm::obj::read(txn, id) else {
+            continue;
+        };
+        let Ok(q) = wm::obj::msgq::MsgQ::decode(&bytes) else {
+            continue;
+        };
         for m in &q.msgs {
             out.row();
             out.text("MESSAGE_QUEUE_LIBRARY", lib.as_str());
@@ -261,12 +341,21 @@ pub fn messages(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()
             out.text("MESSAGE_TEXT", m.text.as_str());
             out.int("SEVERITY", m.severity);
             out.stamp("MESSAGE_TIMESTAMP", m.time);
-            out.set("MESSAGE_KEY", crate::value::Value::Bin(m.key.to_be_bytes().to_vec()));
+            out.set(
+                "MESSAGE_KEY",
+                crate::value::Value::Bin(m.key.to_be_bytes().to_vec()),
+            );
             if m.reply_key != 0 {
-                out.set("ASSOCIATED_MESSAGE_KEY", crate::value::Value::Bin(m.reply_key.to_be_bytes().to_vec()));
+                out.set(
+                    "ASSOCIATED_MESSAGE_KEY",
+                    crate::value::Value::Bin(m.reply_key.to_be_bytes().to_vec()),
+                );
             }
             out.text("FROM_USER", m.job.1.as_str());
-            out.text("FROM_JOB", format!("{:06}/{}/{}", m.job.2, m.job.1, m.job.0));
+            out.text(
+                "FROM_JOB",
+                format!("{:06}/{}/{}", m.job.2, m.job.1, m.job.0),
+            );
             out.text("FROM_PROGRAM", m.from_pgm.as_str());
             out.text_or_null("MESSAGE_FILE_LIBRARY", &m.msgf.1);
             out.text_or_null("MESSAGE_FILE_NAME", &m.msgf.0);
@@ -288,12 +377,19 @@ fn date_of(yyyymmdd: u32) -> Option<db::record::datetime::Date> {
 pub fn schedule(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     use wm::obj::jobscd::{DateKind, Frequency, RcyAcn};
     for (_, _, id) in all_of(txn, ctx, types::JOBSCD)? {
-        let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-        let Ok(s) = wm::obj::jobscd::JobScd::decode(&bytes) else { continue };
+        let Ok(bytes) = wm::obj::read(txn, id) else {
+            continue;
+        };
+        let Ok(s) = wm::obj::jobscd::JobScd::decode(&bytes) else {
+            continue;
+        };
         for e in &s.entries {
             out.row();
             out.int("SCHEDULED_JOB_ENTRY_NUMBER", e.number);
-            out.text("SCHEDULED_JOB_ENTRY_NUMBER_CHAR", format!("{:06}", e.number));
+            out.text(
+                "SCHEDULED_JOB_ENTRY_NUMBER_CHAR",
+                format!("{:06}", e.number),
+            );
             out.text("SCHEDULED_JOB_NAME", e.job.as_str());
             out.text(
                 "SCHEDULED_DATE_VALUE",
@@ -334,7 +430,10 @@ pub fn schedule(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()
                 },
             );
             if e.next != 0 {
-                out.set("NEXT_SUBMISSION_DATE", crate::value::Value::Date(db::record::datetime::Date::from_unix(e.next)));
+                out.set(
+                    "NEXT_SUBMISSION_DATE",
+                    crate::value::Value::Date(db::record::datetime::Date::from_unix(e.next)),
+                );
             }
             out.text("STATUS", if e.held { "HELD" } else { "SCHEDULED" });
             let (ql, qn) = e.jobq.split_once('/').unwrap_or(("", e.jobq.as_str()));

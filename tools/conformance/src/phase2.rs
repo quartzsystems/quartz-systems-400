@@ -475,7 +475,10 @@ impl Suite {
                 .command("svc.rclstg *CHECK", Duration::from_secs(300))
                 .map_err(|e| fail(&s, e))?;
             if !rcl.contains("0 problem(s)") {
-                return Err(fail(&s, format!("svc.rclstg *CHECK after the pull:\n{rcl}")));
+                return Err(fail(
+                    &s,
+                    format!("svc.rclstg *CHECK after the pull:\n{rcl}"),
+                ));
             }
             let listing = s.command("svc.lib ls", CMD).map_err(|e| fail(&s, e))?;
             let counts = bench_counts(&listing);

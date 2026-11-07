@@ -103,9 +103,9 @@ pub fn for_app(ctx: &Ctx<'_>, id: &str) -> Result<AppTrust> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::appids;
     use super::super::entries::{self, Signer};
     use super::super::testing::*;
-    use super::super::appids;
     use super::*;
     use crate::crypto::keys::KeyAlgorithm;
     use crate::x509::build::CertSpec;
@@ -128,7 +128,10 @@ mod tests {
     fn nothing_without_a_system_store() {
         let w = World::new();
         assert_eq!(for_app(&w.ctx(), ADMIN).unwrap(), AppTrust::default());
-        assert!(matches!(for_app(&w.ctx(), "NOPE"), Err(CertError::NotRegistered(_))));
+        assert!(matches!(
+            for_app(&w.ctx(), "NOPE"),
+            Err(CertError::NotRegistered(_))
+        ));
     }
 
     #[test]
@@ -149,7 +152,10 @@ mod tests {
         let key = crate::crypto::keys::PrivateKey::from_pkcs8_der(&id.key).unwrap();
         assert_eq!(key.algorithm(), KeyAlgorithm::EcdsaP256);
         // A client ID gets no default certificate.
-        assert_eq!(for_app(&w.ctx(), "QS400_FTP_CLIENT").unwrap().identity, None);
+        assert_eq!(
+            for_app(&w.ctx(), "QS400_FTP_CLIENT").unwrap().identity,
+            None
+        );
         // Expired: refused, so the server says why and keeps its own.
         assert!(for_app(&w.at(NOW + 31 * DAY), ADMIN).is_err());
     }

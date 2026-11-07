@@ -48,7 +48,13 @@ pub fn editor(what: &str, name: &str, lines: &[String], msg: Option<&str>) -> Sc
     for i in 0..shown {
         let row = 5 + i;
         let seq = (i + 1) * 10;
-        put(&mut s, row, 1, Attr::Normal, &format!("{:04}.{:02}", seq / 100, seq % 100));
+        put(
+            &mut s,
+            row,
+            1,
+            Attr::Normal,
+            &format!("{:04}.{:02}", seq / 100, seq % 100),
+        );
         let text = lines.get(i).map_or_else(
             || format!("{:5}A*", ""),
             |l| l.chars().take(71).collect::<String>(),

@@ -129,7 +129,10 @@ impl Desc {
     /// Whether it is a number.
     #[must_use]
     pub fn numeric(&self) -> bool {
-        matches!(self.kind, Kind::Packed | Kind::Zoned | Kind::Bin | Kind::Int | Kind::Uns | Kind::Float)
+        matches!(
+            self.kind,
+            Kind::Packed | Kind::Zoned | Kind::Bin | Kind::Int | Kind::Uns | Kind::Float
+        )
     }
 
     /// The decimal shape of a number.
@@ -157,8 +160,16 @@ pub fn read_num(addr: u64, d: &Desc) -> Result<Decimal, mi::Cond> {
         Kind::Packed => Packed::new(digits, d.dec).and_then(|p| p.decode(b)),
         Kind::Zoned => Zoned::new(digits, d.dec).and_then(|z| z.decode(b)),
         Kind::Bin => Binary::new(digits, d.dec).and_then(|x| x.decode(b)),
-        Kind::Int | Kind::Uns => Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int).and_then(|i| i.decode(b)),
-        Kind::Float => if d.len == 4 { Float::SINGLE } else { Float::DOUBLE }.decode(b),
+        Kind::Int | Kind::Uns => {
+            Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int)
+                .and_then(|i| i.decode(b))
+        }
+        Kind::Float => if d.len == 4 {
+            Float::SINGLE
+        } else {
+            Float::DOUBLE
+        }
+        .decode(b),
         _ => return Err(mi::Cond::Mch1202),
     };
     r.map_err(|_| mi::Cond::Mch1202)
@@ -185,7 +196,11 @@ pub fn write_varchar(addr: u64, text: &[u8]) {
 
 /// Text into a varying field with a `prefix`-byte length.
 pub fn write_var(addr: u64, prefix: usize, text: &[u8]) {
-    let n = if prefix == 4 { text.len().min(u32::MAX as usize) } else { text.len().min(usize::from(u16::MAX)) };
+    let n = if prefix == 4 {
+        text.len().min(u32::MAX as usize)
+    } else {
+        text.len().min(usize::from(u16::MAX))
+    };
     let b = bytes(addr, prefix + n);
     set_var_len(b, prefix, n);
     b[prefix..].copy_from_slice(&text[..n]);
@@ -219,7 +234,9 @@ pub fn set_var_len(b: &mut [u8], prefix: usize, n: usize) {
 /// UTF-8 text as CP037, unmappable characters as blanks.
 #[must_use]
 pub fn ebcdic(s: &str) -> Vec<u8> {
-    s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0x40)).collect()
+    s.chars()
+        .map(|c| ccsid::byte_of(c).unwrap_or(0x40))
+        .collect()
 }
 
 /// A number into storage, high-order digits dropped as fixed-form
@@ -233,11 +250,23 @@ pub fn write_num(addr: u64, d: &Desc, v: &Decimal) -> Result<(), mi::Cond> {
             .unwrap_or_else(Decimal::zero)
     };
     let enc = match d.kind {
-        Kind::Packed => Packed::new(digits, d.dec).and_then(|p| p.encode(&fit(v), qdecimal::Rounding::Truncate)),
-        Kind::Zoned => Zoned::new(digits, d.dec).and_then(|z| z.encode(&fit(v), qdecimal::Rounding::Truncate)),
-        Kind::Bin => Binary::new(digits, d.dec).and_then(|b| b.encode(&fit(v), qdecimal::Rounding::Truncate)),
-        Kind::Int | Kind::Uns => Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int)
-            .and_then(|i| i.encode(&v.rescale(0, qdecimal::Rounding::Truncate).unwrap_or_else(|_| Decimal::zero()))),
+        Kind::Packed => {
+            Packed::new(digits, d.dec).and_then(|p| p.encode(&fit(v), qdecimal::Rounding::Truncate))
+        }
+        Kind::Zoned => {
+            Zoned::new(digits, d.dec).and_then(|z| z.encode(&fit(v), qdecimal::Rounding::Truncate))
+        }
+        Kind::Bin => {
+            Binary::new(digits, d.dec).and_then(|b| b.encode(&fit(v), qdecimal::Rounding::Truncate))
+        }
+        Kind::Int | Kind::Uns => {
+            Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int).and_then(|i| {
+                i.encode(
+                    &v.rescale(0, qdecimal::Rounding::Truncate)
+                        .unwrap_or_else(|_| Decimal::zero()),
+                )
+            })
+        }
         Kind::Float => {
             let f: f64 = v.to_string().parse().unwrap_or(0.0);
             let b = bytes(addr, d.size());

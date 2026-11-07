@@ -154,7 +154,13 @@ struct Plan {
 impl Engine {
     /// A set over its members. Nothing is read until [`recover`](Self::recover).
     #[must_use]
-    pub fn new(asp_uuid: [u8; 16], set: u8, geo: Geometry, members: Vec<Member>, sync: Option<u64>) -> Self {
+    pub fn new(
+        asp_uuid: [u8; 16],
+        set: u8,
+        geo: Geometry,
+        members: Vec<Member>,
+        sync: Option<u64>,
+    ) -> Self {
         let n = members.len();
         Self {
             asp_uuid,
@@ -211,7 +217,10 @@ impl Engine {
 
     /// Members not in step anywhere or not yet rebuilt.
     fn unknown_count(&self) -> usize {
-        self.members.iter().filter(|m| m.health != Health::Ok).count()
+        self.members
+            .iter()
+            .filter(|m| m.health != Health::Ok)
+            .count()
     }
 
     /// Whether the set can go on without one more member.
@@ -369,7 +378,10 @@ impl Engine {
                         Ok(fixed) if !suspicious(&fixed) => {
                             if self.dev(member).write(lba, &fixed).is_ok() {
                                 self.dirty = true;
-                                warn!("parity set {}: member {member} page {lba} rewritten from parity", self.set);
+                                warn!(
+                                    "parity set {}: member {member} page {lba} rewritten from parity",
+                                    self.set
+                                );
                                 self.events.push(EngineEvent::Healed { member, lba });
                             }
                             return Ok(fixed);
@@ -478,7 +490,11 @@ impl Engine {
         let mut written = 0u32;
         let mut new: Vec<Vec<u8>> = st.data.iter().map(|d| d.clone().expect("filled")).collect();
         for (m, _, page) in writes {
-            let i = st.data_members.iter().position(|x| x == m).expect("a data member");
+            let i = st
+                .data_members
+                .iter()
+                .position(|x| x == m)
+                .expect("a data member");
             written |= 1 << m;
             new[i].clone_from(page);
         }
@@ -670,7 +686,11 @@ impl Engine {
                 d.get_or_insert_with(|| vec![0u8; PAGE_SIZE]);
             }
         }
-        let refs: Vec<&[u8]> = st.data.iter().map(|d| d.as_deref().expect("filled")).collect();
+        let refs: Vec<&[u8]> = st
+            .data
+            .iter()
+            .map(|d| d.as_deref().expect("filled"))
+            .collect();
         let (p, q) = gf::compute(&refs, &coefs, PAGE_SIZE, self.geo.k() == 2);
         self.write_parity(s, &p, q.as_deref())
     }
@@ -765,7 +785,11 @@ impl Engine {
             self.zero_state()?;
         }
         let end = (done + budget.max(1)).min(self.geo.blocks);
-        if self.members.iter().all(|m| m.dev.is_some() && m.health == Health::Ok) {
+        if self
+            .members
+            .iter()
+            .all(|m| m.dev.is_some() && m.health == Health::Ok)
+        {
             self.sync_bulk(done, end)?;
         } else {
             self.sync_stripes(done, end)?;
@@ -810,7 +834,8 @@ impl Engine {
                 let pages: Vec<&[u8]> = dm
                     .iter()
                     .map(|&m| {
-                        let at = usize::try_from(self.geo.row_of(s, m) - row0).expect("in the run") * PAGE_SIZE;
+                        let at = usize::try_from(self.geo.row_of(s, m) - row0).expect("in the run")
+                            * PAGE_SIZE;
                         &runs[m][at..at + PAGE_SIZE]
                     })
                     .collect();
@@ -840,7 +865,11 @@ impl Engine {
                     self.set
                 )));
             }
-            let refs: Vec<&[u8]> = st.data.iter().map(|d| d.as_deref().expect("read")).collect();
+            let refs: Vec<&[u8]> = st
+                .data
+                .iter()
+                .map(|d| d.as_deref().expect("read"))
+                .collect();
             let (p, q) = gf::compute(&refs, &st.coefs(), PAGE_SIZE, self.geo.k() == 2);
             self.write_parity(s, &p, q.as_deref())?;
         }
@@ -906,28 +935,44 @@ impl Engine {
             for j in 0..count {
                 let s = (from + b as u64) * count as u64 + j as u64;
                 let dm = self.geo.data_members(s);
-                let row_at = |m: usize| usize::try_from(self.geo.row_of(s, m) - row0).expect("in the run") * PAGE_SIZE;
+                let row_at = |m: usize| {
+                    usize::try_from(self.geo.row_of(s, m) - row0).expect("in the run") * PAGE_SIZE
+                };
                 let (pm, qm) = self.geo.parity_members(s);
                 let at = b * kp * PAGE_SIZE;
                 let mut st = Stripe {
-                    data: dm.iter().map(|&m| (m != member).then(|| page(&runs[m], row_at(m)))).collect(),
+                    data: dm
+                        .iter()
+                        .map(|&m| (m != member).then(|| page(&runs[m], row_at(m))))
+                        .collect(),
                     p: (pm != member).then(|| page(&parity[pm], at)),
-                    q: qm.filter(|&q| q != member).map(|q| page(&parity[q], at + PAGE_SIZE)),
+                    q: qm
+                        .filter(|&q| q != member)
+                        .map(|q| page(&parity[q], at + PAGE_SIZE)),
                     data_members: dm,
                 };
                 if let Some(i) = st.data_members.iter().position(|&m| m == member) {
                     if !st.fill() {
-                        return Err(err(format!("parity set {}: stripe {s} cannot be rebuilt", self.set)));
+                        return Err(err(format!(
+                            "parity set {}: stripe {s} cannot be rebuilt",
+                            self.set
+                        )));
                     }
                     let to = row_at(member);
-                    my_rows[to..to + PAGE_SIZE].copy_from_slice(st.data[i].as_deref().expect("filled"));
+                    my_rows[to..to + PAGE_SIZE]
+                        .copy_from_slice(st.data[i].as_deref().expect("filled"));
                 } else {
-                    let refs: Vec<&[u8]> = st.data.iter().map(|d| d.as_deref().expect("known")).collect();
+                    let refs: Vec<&[u8]> = st
+                        .data
+                        .iter()
+                        .map(|d| d.as_deref().expect("known"))
+                        .collect();
                     let (p, q) = gf::compute(&refs, &st.coefs(), PAGE_SIZE, kp == 2);
                     if pm == member {
                         my_par[at..at + PAGE_SIZE].copy_from_slice(&p);
                     } else {
-                        my_par[at + PAGE_SIZE..at + 2 * PAGE_SIZE].copy_from_slice(&q.expect("RAID 6"));
+                        my_par[at + PAGE_SIZE..at + 2 * PAGE_SIZE]
+                            .copy_from_slice(&q.expect("RAID 6"));
                     }
                 }
             }
@@ -953,7 +998,11 @@ impl Engine {
                 let page = st.data[i].take().expect("filled");
                 self.dev(member).write(lba, &page)?;
             } else {
-                let refs: Vec<&[u8]> = st.data.iter().map(|d| d.as_deref().expect("filled")).collect();
+                let refs: Vec<&[u8]> = st
+                    .data
+                    .iter()
+                    .map(|d| d.as_deref().expect("filled"))
+                    .collect();
                 let (p, q) = gf::compute(&refs, &coefs, PAGE_SIZE, k6);
                 let (pm, qm) = self.geo.parity_members(s);
                 if pm == member {
@@ -981,7 +1030,11 @@ impl Engine {
             if st.data.iter().any(Option::is_none) || st.p.is_none() {
                 continue;
             }
-            let refs: Vec<&[u8]> = st.data.iter().map(|d| d.as_deref().expect("read")).collect();
+            let refs: Vec<&[u8]> = st
+                .data
+                .iter()
+                .map(|d| d.as_deref().expect("read"))
+                .collect();
             let (p, q) = gf::compute(&refs, &st.coefs(), PAGE_SIZE, self.geo.k() == 2);
             if st.p.as_deref() != Some(&p[..]) || (q.is_some() && st.q.is_some() && st.q != q) {
                 bad.push(s);

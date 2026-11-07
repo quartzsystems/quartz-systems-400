@@ -33,7 +33,11 @@ pub fn base(s: &str, suffix: Option<&str>) -> String {
 /// The POSIX `dirname`.
 pub fn dir(s: &str) -> String {
     if s.bytes().all(|b| b == b'/') {
-        return if s.is_empty() { ".".to_string() } else { "/".to_string() };
+        return if s.is_empty() {
+            ".".to_string()
+        } else {
+            "/".to_string()
+        };
     }
     let t = s.trim_end_matches('/');
     match t.rfind('/') {
@@ -52,9 +56,17 @@ pub fn dir(s: &str) -> String {
 /// Run `basename`.
 pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     let args: Vec<&str> = cx.argv[1..].iter().map(String::as_str).collect();
-    let args = if args.first() == Some(&"--") { &args[1..] } else { &args[..] };
+    let args = if args.first() == Some(&"--") {
+        &args[1..]
+    } else {
+        &args[..]
+    };
     if args.is_empty() || args.len() > 2 {
-        return usage(cx, "basename", "A string and an optional suffix are needed.");
+        return usage(
+            cx,
+            "basename",
+            "A string and an optional suffix are needed.",
+        );
     }
     let mut out = Out::stdout(cx);
     out.text(&base(args[0], args.get(1).copied()));
@@ -65,7 +77,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
 /// Run `dirname`.
 pub fn run_dirname(cx: &mut UtilCtx<'_>) -> i32 {
     let args: Vec<&str> = cx.argv[1..].iter().map(String::as_str).collect();
-    let args = if args.first() == Some(&"--") { &args[1..] } else { &args[..] };
+    let args = if args.first() == Some(&"--") {
+        &args[1..]
+    } else {
+        &args[..]
+    };
     if args.len() != 1 {
         return usage(cx, "dirname", "One string is needed.");
     }

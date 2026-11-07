@@ -56,7 +56,10 @@ impl Gen<'_> {
                     }
                     if ss.dim > 0 && ss.dim <= MAX_ELEMENTS {
                         for i in 0..ss.dim {
-                            self.var(&format!("{}.{}({})", s.name, ss.name, i + 1), &format!("{sp}[{i}]"));
+                            self.var(
+                                &format!("{}.{}({})", s.name, ss.name, i + 1),
+                                &format!("{sp}[{i}]"),
+                            );
                         }
                     }
                 }

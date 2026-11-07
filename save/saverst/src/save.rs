@@ -9,10 +9,10 @@ use std::io::Write;
 
 use savfmt::object::{NO_OWNER, flags};
 use savfmt::{AuthorityEntry, ObjectDescriptor, Writer};
+use store::Store;
 use store::obj::header::{Domain, ObjectHeader};
 use store::obj::library::Library;
 use store::obj::{JobHandle, LockState, ObjectId, SaveInfo, ops, types};
-use store::Store;
 use store::txn::Txn;
 use tracing::debug;
 
@@ -289,7 +289,9 @@ pub fn save_library<W: Write>(
             &mut saved,
         );
         for id in &locked {
-            txn.store().locks_mut().unlock(job, *id, LockState::SharedNoUpdate);
+            txn.store()
+                .locks_mut()
+                .unlock(job, *id, LockState::SharedNoUpdate);
         }
         txn.abort();
         r
@@ -325,7 +327,12 @@ fn save_in<W: Write>(
         .map_err(|_| crate::Error::refused(msg::NO_LIBRARY, lib_name.to_string()))?
         .id;
     let lib_text = lib_name.to_string();
-    if txn.store().locks_mut().lock(job, lib, LockState::SharedNoUpdate).is_err() {
+    if txn
+        .store()
+        .locks_mut()
+        .lock(job, lib, LockState::SharedNoUpdate)
+        .is_err()
+    {
         return Err(crate::Error::refused(msg::NOT_SAVED_IN_USE, lib_text));
     }
     locked.push(lib);
@@ -371,7 +378,9 @@ fn save_in<W: Write>(
         pos.insert(c.id.to_bytes(), p);
         if c.id.type_code == types::FILE {
             // Display and printer files are files without members.
-            let members = db::file::describe(txn, c.id).map(|d| d.members).unwrap_or_default();
+            let members = db::file::describe(txn, c.id)
+                .map(|d| d.members)
+                .unwrap_or_default();
             for m in &members {
                 pos.insert(m.object.to_bytes(), p + 1);
             }
@@ -404,7 +413,12 @@ fn save_in<W: Write>(
             report.objects.push(result);
             continue;
         }
-        if txn.store().locks_mut().lock(job, c.id, LockState::SharedNoUpdate).is_err() {
+        if txn
+            .store()
+            .locks_mut()
+            .lock(job, c.id, LockState::SharedNoUpdate)
+            .is_err()
+        {
             debug!("save: {} in use", c.name);
             result.msgid = Some(msg::NOT_SAVED_IN_USE);
             report.objects.push(result);
@@ -419,7 +433,8 @@ fn save_in<W: Write>(
         let me = pos[&c.id.to_bytes()];
         let mut e = image::export(txn, c.id, data)?;
         image::mark_refs(&mut e, &pos, me);
-        if opts.spool && c.id.type_code == types::OUTQ
+        if opts.spool
+            && c.id.type_code == types::OUTQ
             && let Some(b) = hooks.spool_part(&lib_text, &c.name)
             && !b.is_empty()
         {

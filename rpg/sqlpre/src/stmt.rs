@@ -38,7 +38,9 @@ impl Cx<'_> {
     }
 
     fn tok_line(&self, i: usize) -> u32 {
-        self.toks.get(i).map_or(self.src.line, |t| self.line_at(t.start))
+        self.toks
+            .get(i)
+            .map_or(self.src.line, |t| self.line_at(t.start))
     }
 
     fn host_ref(&self, h: &HostTok) -> HostRef {
@@ -101,15 +103,26 @@ fn rewrite(
 impl State<'_> {
     /// The fields a host variable stands for: a structure's subfields.
     fn fields(&self, cx: &Cx<'_>, name: &str) -> u32 {
-        self.env.host(cx.src.scope, name).map_or(1, |i| i.fields.max(1))
+        self.env
+            .host(cx.src.scope, name)
+            .map_or(1, |i| i.fields.max(1))
     }
 
     fn diag(&mut self, line: u32, msgid: &'static str, sev: u8, args: Vec<String>) {
-        self.diags.push(Diag { line, msgid, sev, args });
+        self.diags.push(Diag {
+            line,
+            msgid,
+            sev,
+            args,
+        });
     }
 
     fn naming(&self) -> Naming {
-        if self.opts.sql_naming() { Naming::Sql } else { Naming::Sys }
+        if self.opts.sql_naming() {
+            Naming::Sql
+        } else {
+            Naming::Sys
+        }
     }
 
     /// Host variables must be ones the compiler knows.
@@ -128,31 +141,58 @@ impl State<'_> {
     fn check_text(&mut self, cx: &Cx<'_>, text: &str) {
         match sql::parse(text, self.naming()) {
             Ok(st) => {
-                if let sql::Statement::Update(sql::ast::Update { where_clause: sql::ast::Where::All, .. }) = &st {
+                if let sql::Statement::Update(sql::ast::Update {
+                    where_clause: sql::ast::Where::All,
+                    ..
+                }) = &st
+                {
                     self.diag(cx.src.line, "SQL0088", 0, vec!["UPDATE".into()]);
                 }
-                if let sql::Statement::Delete(sql::ast::Delete { where_clause: sql::ast::Where::All, .. }) = &st {
+                if let sql::Statement::Delete(sql::ast::Delete {
+                    where_clause: sql::ast::Where::All,
+                    ..
+                }) = &st
+                {
                     self.diag(cx.src.line, "SQL0088", 0, vec!["DELETE".into()]);
                 }
                 for t in sql::embed::tables(&st) {
                     let schema = t.schema.as_ref().map(|s| s.value.clone());
-                    if schema.as_deref().is_some_and(|s| SYSTEM_SCHEMAS.contains(&s)) {
+                    if schema
+                        .as_deref()
+                        .is_some_and(|s| SYSTEM_SCHEMAS.contains(&s))
+                    {
                         continue;
                     }
                     if !self.env.table(schema.as_deref(), &t.name.value) {
-                        let at = cx.toks.iter().position(|k| k.is(&t.name.value)).unwrap_or(0);
+                        let at = cx
+                            .toks
+                            .iter()
+                            .position(|k| k.is(&t.name.value))
+                            .unwrap_or(0);
                         let line = cx.tok_line(at);
                         let lib = schema.unwrap_or_else(|| "*LIBL".into());
                         self.diag(line, "SQL1103", 10, vec![t.name.value.clone(), lib]);
                     }
                 }
             }
-            Err(SqlError::Syntax { line, col, found, .. }) => {
+            Err(SqlError::Syntax {
+                line, col, found, ..
+            }) => {
                 let at = cx.src.line + line.saturating_sub(1);
-                self.diag(at, "SQL0104", 30, vec![at.to_string(), col.to_string(), found]);
+                self.diag(
+                    at,
+                    "SQL0104",
+                    30,
+                    vec![at.to_string(), col.to_string(), found],
+                );
             }
             Err(SqlError::ThreePartName { name }) => {
-                self.diag(cx.src.line, "SQL0104", 30, vec![cx.src.line.to_string(), "1".into(), name]);
+                self.diag(
+                    cx.src.line,
+                    "SQL0104",
+                    30,
+                    vec![cx.src.line.to_string(), "1".into(), name],
+                );
             }
             Err(_) => {}
         }
@@ -160,11 +200,19 @@ impl State<'_> {
 
     /// A syntax error at token `i`.
     fn bad(&mut self, cx: &Cx<'_>, i: usize) {
-        let found = cx.toks.get(i).map_or_else(|| "end of statement".to_string(), |t| cx.src.text[t.start..t.end].to_string());
+        let found = cx.toks.get(i).map_or_else(
+            || "end of statement".to_string(),
+            |t| cx.src.text[t.start..t.end].to_string(),
+        );
         let at = cx.toks.get(i).map_or(cx.src.text.len(), |t| t.start);
         let col = at - cx.src.text[..at].rfind('\n').map_or(0, |p| p + 1) + 1;
         let line = cx.tok_line(i);
-        self.diag(line, "SQL0104", 30, vec![line.to_string(), col.to_string(), found]);
+        self.diag(
+            line,
+            "SQL0104",
+            30,
+            vec![line.to_string(), col.to_string(), found],
+        );
     }
 
     fn base(&self, cx: &Cx<'_>, verb: &str, op: Op) -> Stmt {
@@ -206,7 +254,14 @@ impl State<'_> {
                 self.set_option(&cx);
                 None
             }
-            "SET" if cx.toks.get(1).is_some_and(|t| matches!(t.kind, Kind::Host(_)) || t.sym('(')) => Some(self.set_hosts(&cx)),
+            "SET"
+                if cx
+                    .toks
+                    .get(1)
+                    .is_some_and(|t| matches!(t.kind, Kind::Host(_)) || t.sym('(')) =>
+            {
+                Some(self.set_hosts(&cx))
+            }
             "DECLARE" => {
                 self.declare(&cx);
                 None
@@ -222,7 +277,9 @@ impl State<'_> {
                 Some(s)
             }
             "PREPARE" => Some(self.prepare(&cx)),
-            "EXECUTE" if w1 == "IMMEDIATE" => Some(self.dynamic(&cx, 2, Op::ExecImm, "EXECUTE IMMEDIATE")),
+            "EXECUTE" if w1 == "IMMEDIATE" => {
+                Some(self.dynamic(&cx, 2, Op::ExecImm, "EXECUTE IMMEDIATE"))
+            }
             "EXECUTE" => Some(self.execute(&cx)),
             "GET" if w1 == "DIAGNOSTICS" => Some(self.diagnostics(&cx)),
             "WHENEVER" => {
@@ -272,8 +329,19 @@ impl State<'_> {
             return s;
         };
         let from = find_top(&cx.toks, into, |t| t.is("FROM")).unwrap_or(n);
-        s.outputs = self.host_into(cx, into + 1, from).iter().map(|h| cx.host_ref(h)).collect();
-        let (text, ins) = rewrite(cx, &|h| self.fields(cx, h), 0, n, &[(into, from)], &mut Edits::default());
+        s.outputs = self
+            .host_into(cx, into + 1, from)
+            .iter()
+            .map(|h| cx.host_ref(h))
+            .collect();
+        let (text, ins) = rewrite(
+            cx,
+            &|h| self.fields(cx, h),
+            0,
+            n,
+            &[(into, from)],
+            &mut Edits::default(),
+        );
         s.inputs = ins.iter().map(|h| cx.host_ref(h)).collect();
         self.check_hosts(cx.src.scope, &s.outputs);
         self.check_hosts(cx.src.scope, &s.inputs);
@@ -294,7 +362,11 @@ impl State<'_> {
             self.diag(cx.tok_line(into), "SQL0199", 30, vec!["INTO".into()]);
             return s;
         }
-        s.outputs = self.host_into(cx, into + 1, n).iter().map(|h| cx.host_ref(h)).collect();
+        s.outputs = self
+            .host_into(cx, into + 1, n)
+            .iter()
+            .map(|h| cx.host_ref(h))
+            .collect();
         let mut e = Edits::default();
         if !cx.toks.get(1).is_some_and(|t| t.sym('(')) {
             let a = cx.toks[1].start;
@@ -392,7 +464,9 @@ impl State<'_> {
                 })
                 .collect();
             // An option of SQL routines only, or one that is not an option.
-            if crate::setopt::routine_only(&name) || !crate::setopt::OPTIONS.contains(&name.as_str()) {
+            if crate::setopt::routine_only(&name)
+                || !crate::setopt::OPTIONS.contains(&name.as_str())
+            {
                 self.bad(cx, i);
                 i = end + 1;
                 continue;
@@ -400,7 +474,11 @@ impl State<'_> {
             match crate::setopt::check(&name, &value) {
                 crate::setopt::Check::Ok => {}
                 crate::setopt::Check::Invalid => {
-                    let at = if cx.toks.get(i + 2).is_some_and(|t| t.sym('*')) { i + 3 } else { i + 2 };
+                    let at = if cx.toks.get(i + 2).is_some_and(|t| t.sym('*')) {
+                        i + 3
+                    } else {
+                        i + 2
+                    };
                     self.bad(cx, at);
                     i = end + 1;
                     continue;
@@ -462,7 +540,11 @@ impl State<'_> {
             }
             if cx.toks[i].is("RETURN") && cx.toks[i - 1].is("WITH") {
                 let client = i + 2 < n && cx.toks[i + 1].is("TO") && cx.toks[i + 2].is("CLIENT");
-                c.returns = Some(if client { sql::ast::ReturnTo::Client } else { sql::ast::ReturnTo::Caller });
+                c.returns = Some(if client {
+                    sql::ast::ReturnTo::Client
+                } else {
+                    sql::ast::ReturnTo::Caller
+                });
             }
             i += 1;
         }
@@ -474,12 +556,20 @@ impl State<'_> {
         let w = cx.word(q);
         // An INSENSITIVE cursor is read-only.
         if insensitive
-            && let Some(f) = find_top(&cx.toks, q, |t| t.is("FOR")).filter(|&f| cx.word(f + 1) == "UPDATE")
+            && let Some(f) =
+                find_top(&cx.toks, q, |t| t.is("FOR")).filter(|&f| cx.word(f + 1) == "UPDATE")
         {
             self.diag(cx.tok_line(f), "SQL0511", 30, Vec::new());
         }
         if matches!(w, "SELECT" | "WITH" | "VALUES") || cx.toks[q].sym('(') {
-            let (text, ins) = rewrite(cx, &|h| self.fields(cx, h), q, n, &[], &mut Edits::default());
+            let (text, ins) = rewrite(
+                cx,
+                &|h| self.fields(cx, h),
+                q,
+                n,
+                &[],
+                &mut Edits::default(),
+            );
             c.inputs = ins.iter().map(|h| cx.host_ref(h)).collect();
             self.check_hosts(cx.src.scope, &c.inputs);
             self.check_text(cx, &text);
@@ -511,7 +601,10 @@ impl State<'_> {
                 s.da = self.sqlda(cx, u + 2);
                 return s;
             }
-            let us: Vec<HostRef> = host_list(&cx.toks, u + 1, cx.toks.len()).iter().map(|h| cx.host_ref(h)).collect();
+            let us: Vec<HostRef> = host_list(&cx.toks, u + 1, cx.toks.len())
+                .iter()
+                .map(|h| cx.host_ref(h))
+                .collect();
             self.check_hosts(cx.src.scope, &us);
             s.inputs.extend(us);
         }
@@ -587,7 +680,11 @@ impl State<'_> {
             s.desc.rows = true;
         }
         if cx.word(i) == "INTO" {
-            s.outputs = self.host_into(cx, i + 1, n).iter().map(|h| cx.host_ref(h)).collect();
+            s.outputs = self
+                .host_into(cx, i + 1, n)
+                .iter()
+                .map(|h| cx.host_ref(h))
+                .collect();
         } else if cx.word(i) == "USING" && cx.word(i + 1) == "DESCRIPTOR" {
             s.da = self.sqlda(cx, i + 2);
         } else if i < n {
@@ -613,7 +710,9 @@ impl State<'_> {
             s.desc.into = true;
             let after = host_at(&cx.toks, 3).map_or(4, |h| h.next);
             s.desc.orient = match (cx.word(after), cx.word(after + 1)) {
-                ("USING", w @ ("NAMES" | "LABELS" | "ANY" | "BOTH" | "ALL")) => format!("OUTPUT {w}"),
+                ("USING", w @ ("NAMES" | "LABELS" | "ANY" | "BOTH" | "ALL")) => {
+                    format!("OUTPUT {w}")
+                }
                 ("USING", "SYSTEM") => "OUTPUT SYSTEM".into(),
                 _ => "OUTPUT NAMES".into(),
             };
@@ -641,7 +740,11 @@ impl State<'_> {
         let mut form = "OUTPUT";
         match cx.word(i) {
             "INPUT" | "OUTPUT" => {
-                form = if cx.word(i) == "INPUT" { "INPUT" } else { "OUTPUT" };
+                form = if cx.word(i) == "INPUT" {
+                    "INPUT"
+                } else {
+                    "OUTPUT"
+                };
                 i += 1;
             }
             // BLOCKED(rel): a procedure's result sets (ALLOCATE CURSOR,
@@ -714,7 +817,10 @@ impl State<'_> {
                 s.da = self.sqlda(cx, u + 2);
                 return s;
             }
-            s.inputs = host_list(&cx.toks, u + 1, cx.toks.len()).iter().map(|h| cx.host_ref(h)).collect();
+            s.inputs = host_list(&cx.toks, u + 1, cx.toks.len())
+                .iter()
+                .map(|h| cx.host_ref(h))
+                .collect();
             self.check_hosts(cx.src.scope, &s.inputs);
         }
         s
@@ -786,11 +892,18 @@ impl State<'_> {
     /// runs as it is.
     fn insert(&mut self, cx: &Cx<'_>) -> Stmt {
         let n = cx.toks.len();
-        let Some(r) = find_top(&cx.toks, 1, |t| t.is("ROWS")).filter(|&r| cx.word(r + 1) == "VALUES" && r > 0) else {
+        let Some(r) = find_top(&cx.toks, 1, |t| t.is("ROWS"))
+            .filter(|&r| cx.word(r + 1) == "VALUES" && r > 0)
+        else {
             return self.exec(cx, "INSERT");
         };
         let mut s = self.base(cx, "INSERT", Op::Exec);
-        let count = if let Some(h) = cx.toks.get(r - 1).filter(|t| matches!(t.kind, Kind::Host(_))).and_then(|_| host_at(&cx.toks, r - 1)) {
+        let count = if let Some(h) = cx
+            .toks
+            .get(r - 1)
+            .filter(|t| matches!(t.kind, Kind::Host(_)))
+            .and_then(|_| host_at(&cx.toks, r - 1))
+        {
             Rows::Host(cx.host_ref(&h))
         } else if let Ok(k) = cx.word(r - 1).parse() {
             Rows::Lit(k)
@@ -798,7 +911,14 @@ impl State<'_> {
             self.bad(cx, r - 1);
             return s;
         };
-        let (text, ins) = rewrite(cx, &|h| self.fields(cx, h), 0, n, &[(r - 1, r + 1)], &mut Edits::default());
+        let (text, ins) = rewrite(
+            cx,
+            &|h| self.fields(cx, h),
+            0,
+            n,
+            &[(r - 1, r + 1)],
+            &mut Edits::default(),
+        );
         s.inputs = ins.iter().map(|h| cx.host_ref(h)).collect();
         self.check_hosts(cx.src.scope, &s.inputs);
         if let Rows::Host(h) = &count {
@@ -828,7 +948,14 @@ impl State<'_> {
     /// Any other statement: run as it is, host variables as inputs.
     fn exec(&mut self, cx: &Cx<'_>, verb: &str) -> Stmt {
         let mut s = self.base(cx, verb, Op::Exec);
-        let (text, ins) = rewrite(cx, &|h| self.fields(cx, h), 0, cx.toks.len(), &[], &mut Edits::default());
+        let (text, ins) = rewrite(
+            cx,
+            &|h| self.fields(cx, h),
+            0,
+            cx.toks.len(),
+            &[],
+            &mut Edits::default(),
+        );
         s.inputs = ins.iter().map(|h| cx.host_ref(h)).collect();
         self.check_hosts(cx.src.scope, &s.inputs);
         self.check_text(cx, &text);

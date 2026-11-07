@@ -34,7 +34,18 @@ pub fn fuzz(ctx: &Ctx, target: Option<&str>, secs: u64, jobs: usize) -> Result<(
     c.cwd(&ctx.paths.repo)
         .env("RUSTFLAGS", SANCOV)
         .env("CARGO_TARGET_DIR", &dir)
-        .args(["run", "--profile", "fuzz", "--target", HOST, "-p", "fuzz", "--bin", "qsfuzz", "--"]);
+        .args([
+            "run",
+            "--profile",
+            "fuzz",
+            "--target",
+            HOST,
+            "-p",
+            "fuzz",
+            "--bin",
+            "qsfuzz",
+            "--",
+        ]);
     match target {
         Some(t) => c.args(["run", t]),
         None => c.arg("all"),
@@ -43,6 +54,9 @@ pub fn fuzz(ctx: &Ctx, target: Option<&str>, secs: u64, jobs: usize) -> Result<(
     if target.is_none() {
         c.arg(jobs.to_string());
     }
-    info!("fuzz: {} for {secs} s each", target.unwrap_or("every target"));
+    info!(
+        "fuzz: {} for {secs} s each",
+        target.unwrap_or("every target")
+    );
     c.run(ctx)
 }

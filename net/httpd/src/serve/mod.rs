@@ -116,9 +116,19 @@ impl Read for Patient<'_> {
                     }
                     return Ok(n);
                 }
-                Err(e) if matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut | io::ErrorKind::Interrupted) => {
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        io::ErrorKind::WouldBlock
+                            | io::ErrorKind::TimedOut
+                            | io::ErrorKind::Interrupted
+                    ) =>
+                {
                     let late = match self.started {
-                        None => self.state.stopping.load(Ordering::SeqCst) || Instant::now() >= self.idle_until,
+                        None => {
+                            self.state.stopping.load(Ordering::SeqCst)
+                                || Instant::now() >= self.idle_until
+                        }
                         Some(t) => t.elapsed() >= self.timeout,
                     };
                     if late {
@@ -262,7 +272,11 @@ impl Server {
                 state: &self.state,
                 idle_until: Instant::now() + idle,
                 timeout: secs(main.timeout),
-                started: if pending.is_empty() { None } else { Some(Instant::now()) },
+                started: if pending.is_empty() {
+                    None
+                } else {
+                    Some(Instant::now())
+                },
             };
             let req = match request::read_request(&mut r, &mut pending) {
                 Ok(q) => q,
@@ -279,7 +293,8 @@ impl Server {
             };
             n += 1;
             if req.version != "HTTP/1.1" && req.version != "HTTP/1.0" {
-                let _ = plain(505, "This server speaks HTTP/1.1 and HTTP/1.0.").write(conn, false, false);
+                let _ = plain(505, "This server speaks HTTP/1.1 and HTTP/1.0.")
+                    .write(conn, false, false);
                 return;
             }
             self.state.busy.fetch_add(1, Ordering::SeqCst);

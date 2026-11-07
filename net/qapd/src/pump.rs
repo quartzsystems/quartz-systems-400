@@ -53,7 +53,9 @@ pub struct Running {
 
 /// Whether request `id` was cancelled.
 pub fn cancelled(c: &Cancels, id: u32) -> bool {
-    c.lock().unwrap_or_else(PoisonError::into_inner).contains(&id)
+    c.lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .contains(&id)
 }
 
 /// What the pump runs with.
@@ -168,7 +170,14 @@ impl<T: Transport> Pump<T> {
                 }
                 Ok(())
             }
-            Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut | ErrorKind::Interrupted) => Ok(()),
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    ErrorKind::WouldBlock | ErrorKind::TimedOut | ErrorKind::Interrupted
+                ) =>
+            {
+                Ok(())
+            }
             Err(e) => Err(Closed::Broken(format!("read: {e}"))),
         }
     }

@@ -14,25 +14,157 @@ use crate::util::secs;
 
 /// A sample job: name, user, number, type, status, stage, subsystem,
 /// function, entered (UTC month, day, hour, minute of 2026), serving.
-type Sample = (&'static str, &'static str, &'static str, &'static str, &'static str, Stage, &'static str, &'static str, [u32; 4], &'static str);
+type Sample = (
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    &'static str,
+    Stage,
+    &'static str,
+    &'static str,
+    [u32; 4],
+    &'static str,
+);
 
 /// `CWELLMAN`'s jobs, as `WRKUSRJOB` lists them.
 const MINE: &[Sample] = &[
-    ("QPADEV0003", "CWELLMAN", "123488", "Interactive", "RUN", Stage::Active, "QINTER", "CMD-WRKACTJOB", [10, 29, 17, 4], ""),
-    ("INVBATCH", "CWELLMAN", "123503", "Batch", "MSGW", Stage::Active, "QBATCH", "PGM-HLINV/INVLOAD", [10, 29, 17, 58], ""),
-    ("QZDASOINIT", "QUSER", "123411", "Prestart (database server)", "RUN", Stage::Active, "QUSRWRK", "", [10, 29, 17, 30], ""),
-    ("INVBATCH", "CWELLMAN", "123402", "Batch", "OUTQ", Stage::Completed, "", "", [10, 29, 10, 14], ""),
-    ("QPADEV0003", "CWELLMAN", "123311", "Interactive", "OUTQ", Stage::Completed, "", "", [10, 28, 21, 40], ""),
+    (
+        "QPADEV0003",
+        "CWELLMAN",
+        "123488",
+        "Interactive",
+        "RUN",
+        Stage::Active,
+        "QINTER",
+        "CMD-WRKACTJOB",
+        [10, 29, 17, 4],
+        "",
+    ),
+    (
+        "INVBATCH",
+        "CWELLMAN",
+        "123503",
+        "Batch",
+        "MSGW",
+        Stage::Active,
+        "QBATCH",
+        "PGM-HLINV/INVLOAD",
+        [10, 29, 17, 58],
+        "",
+    ),
+    (
+        "QZDASOINIT",
+        "QUSER",
+        "123411",
+        "Prestart (database server)",
+        "RUN",
+        Stage::Active,
+        "QUSRWRK",
+        "",
+        [10, 29, 17, 30],
+        "",
+    ),
+    (
+        "INVBATCH",
+        "CWELLMAN",
+        "123402",
+        "Batch",
+        "OUTQ",
+        Stage::Completed,
+        "",
+        "",
+        [10, 29, 10, 14],
+        "",
+    ),
+    (
+        "QPADEV0003",
+        "CWELLMAN",
+        "123311",
+        "Interactive",
+        "OUTQ",
+        Stage::Completed,
+        "",
+        "",
+        [10, 28, 21, 40],
+        "",
+    ),
 ];
 
 /// The jobs serving Access for Web.
 const SERVER: &[Sample] = &[
-    ("ACCESSWEB", "QTMHHTTP", "123463", "BCH", "RUN", Stage::Active, "QHTTPSVR", "PGM-QZHBMAIN", [10, 29, 10, 0], "Access for Web (port 2003/2006)"),
-    ("ACCESSWEB", "QTMHHTTP", "123464", "BCI", "TIMW", Stage::Active, "QHTTPSVR", "PGM-QZSRHTTP", [10, 29, 10, 0], "Worker thread pool"),
-    ("QZDASOINIT", "QUSER", "123411", "PJ", "RUN", Stage::Active, "QUSRWRK", "PGM-QZDASOINIT", [10, 29, 17, 30], "Database (this session)"),
-    ("QZRCSRVS", "QUSER", "123420", "PJ", "PSRW", Stage::Active, "QUSRWRK", "", [10, 29, 17, 30], "Remote command"),
-    ("QZSOSIGN", "QUSER", "123421", "PJ", "PSRW", Stage::Active, "QUSRWRK", "", [10, 29, 17, 30], "Sign-on"),
-    ("QTVTELNET", "QTCP", "123381", "BCH", "SELW", Stage::Active, "QSYSWRK", "PGM-QTVTELNT", [10, 29, 10, 0], "5250 session (telnet)"),
+    (
+        "ACCESSWEB",
+        "QTMHHTTP",
+        "123463",
+        "BCH",
+        "RUN",
+        Stage::Active,
+        "QHTTPSVR",
+        "PGM-QZHBMAIN",
+        [10, 29, 10, 0],
+        "Access for Web (port 2003/2006)",
+    ),
+    (
+        "ACCESSWEB",
+        "QTMHHTTP",
+        "123464",
+        "BCI",
+        "TIMW",
+        Stage::Active,
+        "QHTTPSVR",
+        "PGM-QZSRHTTP",
+        [10, 29, 10, 0],
+        "Worker thread pool",
+    ),
+    (
+        "QZDASOINIT",
+        "QUSER",
+        "123411",
+        "PJ",
+        "RUN",
+        Stage::Active,
+        "QUSRWRK",
+        "PGM-QZDASOINIT",
+        [10, 29, 17, 30],
+        "Database (this session)",
+    ),
+    (
+        "QZRCSRVS",
+        "QUSER",
+        "123420",
+        "PJ",
+        "PSRW",
+        Stage::Active,
+        "QUSRWRK",
+        "",
+        [10, 29, 17, 30],
+        "Remote command",
+    ),
+    (
+        "QZSOSIGN",
+        "QUSER",
+        "123421",
+        "PJ",
+        "PSRW",
+        Stage::Active,
+        "QUSRWRK",
+        "",
+        [10, 29, 17, 30],
+        "Sign-on",
+    ),
+    (
+        "QTVTELNET",
+        "QTCP",
+        "123381",
+        "BCH",
+        "SELW",
+        Stage::Active,
+        "QSYSWRK",
+        "PGM-QTVTELNT",
+        [10, 29, 10, 0],
+        "5250 session (telnet)",
+    ),
 ];
 
 fn job(s: &Sample) -> UserJob {
@@ -59,7 +191,11 @@ pub struct FixtureJobs {
 
 impl Jobs for FixtureJobs {
     fn user_jobs(&self, user: &str) -> Vec<UserJob> {
-        if user == super::USER { MINE.iter().map(job).collect() } else { Vec::new() }
+        if user == super::USER {
+            MINE.iter().map(job).collect()
+        } else {
+            Vec::new()
+        }
     }
 
     fn server_jobs(&self, _user: &str) -> Vec<UserJob> {
@@ -67,7 +203,10 @@ impl Jobs for FixtureJobs {
     }
 
     fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
-        self.ran.lock().expect("ran").push(format!("{user}: {command}"));
+        self.ran
+            .lock()
+            .expect("ran")
+            .push(format!("{user}: {command}"));
         Ok(Message::new(Kind::Done, "", ""))
     }
 }

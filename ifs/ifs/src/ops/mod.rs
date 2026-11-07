@@ -420,7 +420,13 @@ impl<B: Backend> Ifs<B> {
     /// Make the directory `path` owned by `owner` with `*PUBLIC`
     /// `public` (as `*RX`) where it is missing; its parent must exist.
     /// For a product's directories, as `/www` for the HTTP server.
-    pub fn ensure_dir(&self, env: &dyn AuthEnv, path: &str, owner: &str, public: &str) -> Result<()> {
+    pub fn ensure_dir(
+        &self,
+        env: &dyn AuthEnv,
+        path: &str,
+        owner: &str,
+        public: &str,
+    ) -> Result<()> {
         let mut m = Meta::new(owner, ccsid::conv::UTF8, now());
         m.public = crate::auth::data::DataAuth::parse(public)
             .ok_or(Errno::EINVAL)?

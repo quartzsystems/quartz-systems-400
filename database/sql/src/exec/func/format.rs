@@ -18,15 +18,36 @@ use super::day_of_week;
 use crate::error::{Result, SqlError};
 use crate::value::{PICOS, Timestamp, Value};
 
-const MONTHS: [&str; 12] =
-    ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-const DAYS: [&str; 7] = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+const MONTHS: [&str; 12] = [
+    "JANUARY",
+    "FEBRUARY",
+    "MARCH",
+    "APRIL",
+    "MAY",
+    "JUNE",
+    "JULY",
+    "AUGUST",
+    "SEPTEMBER",
+    "OCTOBER",
+    "NOVEMBER",
+    "DECEMBER",
+];
+const DAYS: [&str; 7] = [
+    "SUNDAY",
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+];
 
 /// Elements, longest first so the longest matches.
 const ELEMENTS: &[&str] = &[
-    "NNNNNN", "SSSSS", "MONTH", "SYYYY", "A.M.", "P.M.", "HH24", "HH12", "IYYY", "RRRR", "YYYY", "FF10", "FF11", "FF12", "DDD",
-    "IYY", "MON", "DAY", "YYY", "FF1", "FF2", "FF3", "FF4", "FF5", "FF6", "FF7", "FF8", "FF9", "YY", "RR", "IY", "CC", "MM",
-    "RM", "WW", "IW", "DD", "DY", "HH", "MI", "SS", "AM", "PM", "FF", "Q", "W", "D", "J", "I",
+    "NNNNNN", "SSSSS", "MONTH", "SYYYY", "A.M.", "P.M.", "HH24", "HH12", "IYYY", "RRRR", "YYYY",
+    "FF10", "FF11", "FF12", "DDD", "IYY", "MON", "DAY", "YYY", "FF1", "FF2", "FF3", "FF4", "FF5",
+    "FF6", "FF7", "FF8", "FF9", "YY", "RR", "IY", "CC", "MM", "RM", "WW", "IW", "DD", "DY", "HH",
+    "MI", "SS", "AM", "PM", "FF", "Q", "W", "D", "J", "I",
 ];
 
 /// A piece of a format: an element (upper case, with the case it was
@@ -77,7 +98,9 @@ fn cased(name: &str, written: &str) -> String {
 }
 
 fn not_valid(what: &str) -> SqlError {
-    SqlError::Conversion { what: format!("{what} does not match the format string") }
+    SqlError::Conversion {
+        what: format!("{what} does not match the format string"),
+    }
 }
 
 /// A timestamp as `VARCHAR_FORMAT` shows it.
@@ -103,11 +126,17 @@ pub(crate) fn timestamp_text(t: &Timestamp, fmt: &str) -> Result<String> {
                     "I" => format!("{}", super::datetime::iso_week(d).0 % 10),
                     "Q" => format!("{}", (d.month - 1) / 3 + 1),
                     "MM" => format!("{:02}", d.month),
-                    "RM" => ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"][usize::from(d.month - 1)].to_string(),
+                    "RM" => [
+                        "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII",
+                    ][usize::from(d.month - 1)]
+                    .to_string(),
                     "MONTH" => cased(MONTHS[usize::from(d.month - 1)], &w),
                     "MON" => cased(&MONTHS[usize::from(d.month - 1)][..3], &w),
                     "DAY" => cased(DAYS[usize::try_from(day_of_week(d) - 1).expect("0..7")], &w),
-                    "DY" => cased(&DAYS[usize::try_from(day_of_week(d) - 1).expect("0..7")][..3], &w),
+                    "DY" => cased(
+                        &DAYS[usize::try_from(day_of_week(d) - 1).expect("0..7")][..3],
+                        &w,
+                    ),
                     "D" => format!("{}", day_of_week(d)),
                     "DD" => format!("{:02}", d.day),
                     "DDD" => format!("{:03}", d.day_of_year()),
@@ -119,7 +148,12 @@ pub(crate) fn timestamp_text(t: &Timestamp, fmt: &str) -> Result<String> {
                     "HH24" => format!("{:02}", t.time.hour),
                     "MI" => format!("{:02}", t.time.minute),
                     "SS" => format!("{:02}", t.time.second),
-                    "SSSSS" => format!("{:05}", u32::from(t.time.hour) * 3600 + u32::from(t.time.minute) * 60 + u32::from(t.time.second)),
+                    "SSSSS" => format!(
+                        "{:05}",
+                        u32::from(t.time.hour) * 3600
+                            + u32::from(t.time.minute) * 60
+                            + u32::from(t.time.second)
+                    ),
                     "NNNNNN" => format!("{:06}", t.micros()),
                     "AM" | "PM" => (if t.time.hour < 12 { "AM" } else { "PM" }).to_string(),
                     "A.M." | "P.M." => (if t.time.hour < 12 { "A.M." } else { "P.M." }).to_string(),
@@ -133,7 +167,9 @@ pub(crate) fn timestamp_text(t: &Timestamp, fmt: &str) -> Result<String> {
         }
     }
     if out.chars().count() > 255 {
-        return Err(SqlError::TooLong { what: "the VARCHAR_FORMAT result".into() });
+        return Err(SqlError::TooLong {
+            what: "the VARCHAR_FORMAT result".into(),
+        });
     }
     Ok(out)
 }
@@ -174,8 +210,13 @@ pub(crate) fn parse_timestamp(text: &str, fmt: &str, ctx: &SqlContext) -> Result
                 }
             }
             Piece::Elem(e, _) => match e {
-                "YYYY" | "SYYYY" | "RRRR" | "IYYY" => year = digits(&s, &mut pos, 4).ok_or_else(bad)?,
-                "YY" | "IY" => year = u32::from(now.year) / 100 * 100 + digits(&s, &mut pos, 2).ok_or_else(bad)?,
+                "YYYY" | "SYYYY" | "RRRR" | "IYYY" => {
+                    year = digits(&s, &mut pos, 4).ok_or_else(bad)?
+                }
+                "YY" | "IY" => {
+                    year =
+                        u32::from(now.year) / 100 * 100 + digits(&s, &mut pos, 2).ok_or_else(bad)?
+                }
                 "RR" => {
                     let y = digits(&s, &mut pos, 2).ok_or_else(bad)?;
                     year = if y < 50 { 2000 + y } else { 1900 + y };
@@ -194,8 +235,13 @@ pub(crate) fn parse_timestamp(text: &str, fmt: &str, ctx: &SqlContext) -> Result
                     let n = digits(&s, &mut pos, 5).ok_or_else(bad)?;
                     (hour, minute, second) = (n / 3600, n % 3600 / 60, n % 60);
                 }
-                "NNNNNN" | "FF" | "FF1" | "FF2" | "FF3" | "FF4" | "FF5" | "FF6" | "FF7" | "FF8" | "FF9" | "FF10" | "FF11" | "FF12" => {
-                    let max = if e == "NNNNNN" { 6 } else { e.trim_start_matches("FF").parse().unwrap_or(12) };
+                "NNNNNN" | "FF" | "FF1" | "FF2" | "FF3" | "FF4" | "FF5" | "FF6" | "FF7" | "FF8"
+                | "FF9" | "FF10" | "FF11" | "FF12" => {
+                    let max = if e == "NNNNNN" {
+                        6
+                    } else {
+                        e.trim_start_matches("FF").parse().unwrap_or(12)
+                    };
                     let start = pos;
                     let n = digits(&s, &mut pos, max).ok_or_else(bad)?;
                     let got = u32::try_from(pos - start).expect("small");
@@ -239,11 +285,23 @@ pub(crate) fn parse_timestamp(text: &str, fmt: &str, ctx: &SqlContext) -> Result
                     let rest: String = s[pos..].iter().collect::<String>().to_ascii_uppercase();
                     let n = DAYS
                         .iter()
-                        .find_map(|d| if rest.starts_with(d) { Some(d.len()) } else if rest.starts_with(&d[..3]) { Some(3) } else { None })
+                        .find_map(|d| {
+                            if rest.starts_with(d) {
+                                Some(d.len())
+                            } else if rest.starts_with(&d[..3]) {
+                                Some(3)
+                            } else {
+                                None
+                            }
+                        })
                         .ok_or_else(bad)?;
                     pos += n;
                 }
-                _ => return Err(SqlError::Unsupported { what: format!("TIMESTAMP_FORMAT element {e}") }),
+                _ => {
+                    return Err(SqlError::Unsupported {
+                        what: format!("TIMESTAMP_FORMAT element {e}"),
+                    });
+                }
             },
         }
     }
@@ -258,30 +316,45 @@ pub(crate) fn parse_timestamp(text: &str, fmt: &str, ctx: &SqlContext) -> Result
     }
     let y = u16::try_from(year).map_err(|_| bad())?;
     let date = if let Some(n) = doy {
-            let jan1 = Date::new(y, 1, 1).ok_or_else(bad)?;
-            let max = if db::record::datetime::is_leap(y) { 366 } else { 365 };
-            if !(1..=max).contains(&n) {
-                return Err(bad());
-            }
-            date_from_days(days_of(jan1) + i64::from(n) - 1).ok_or_else(bad)?
+        let jan1 = Date::new(y, 1, 1).ok_or_else(bad)?;
+        let max = if db::record::datetime::is_leap(y) {
+            366
+        } else {
+            365
+        };
+        if !(1..=max).contains(&n) {
+            return Err(bad());
+        }
+        date_from_days(days_of(jan1) + i64::from(n) - 1).ok_or_else(bad)?
     } else {
-            let m = u8::try_from(month).map_err(|_| bad())?;
-            let d = u8::try_from(day).map_err(|_| bad())?;
-            if !(1..=12).contains(&m) || d == 0 || d > days_in_month(y, m) {
-                return Err(bad());
-            }
-            Date::new(y, m, d).ok_or_else(bad)?
+        let m = u8::try_from(month).map_err(|_| bad())?;
+        let d = u8::try_from(day).map_err(|_| bad())?;
+        if !(1..=12).contains(&m) || d == 0 || d > days_in_month(y, m) {
+            return Err(bad());
+        }
+        Date::new(y, m, d).ok_or_else(bad)?
     };
-    let time = Time::new(u8::try_from(hour).map_err(|_| bad())?, u8::try_from(minute).map_err(|_| bad())?, u8::try_from(second).map_err(|_| bad())?)
-        .ok_or_else(bad)?;
+    let time = Time::new(
+        u8::try_from(hour).map_err(|_| bad())?,
+        u8::try_from(minute).map_err(|_| bad())?,
+        u8::try_from(second).map_err(|_| bad())?,
+    )
+    .ok_or_else(bad)?;
     debug_assert!(picos < PICOS);
-    Ok(Timestamp { date, time, picos, precision: 12 })
+    Ok(Timestamp {
+        date,
+        time,
+        picos,
+        precision: 12,
+    })
 }
 
 /// A number as `VARCHAR_FORMAT` shows it with a number format; without
 /// one, its plain text.
 pub(crate) fn number_text(v: &Value, fmt: Option<&str>) -> Result<String> {
-    let Some(fmt) = fmt else { return Ok(v.as_text()) };
+    let Some(fmt) = fmt else {
+        return Ok(v.as_text());
+    };
     let f = fmt.trim().to_ascii_uppercase();
     let (mut body, mut lead_sign, mut trail) = (f.as_str(), false, "");
     let mut currency = "";
@@ -306,14 +379,27 @@ pub(crate) fn number_text(v: &Value, fmt: Option<&str>) -> Result<String> {
         Some(i) => (&body[..i], &body[i + 1..]),
         None => (body, ""),
     };
-    if !int_part.chars().all(|c| matches!(c, '9' | '0' | ',' | 'G')) || !frac_part.chars().all(|c| matches!(c, '9' | '0')) {
-        return Err(SqlError::Conversion { what: format!("'{fmt}' is not a number format") });
+    if !int_part.chars().all(|c| matches!(c, '9' | '0' | ',' | 'G'))
+        || !frac_part.chars().all(|c| matches!(c, '9' | '0'))
+    {
+        return Err(SqlError::Conversion {
+            what: format!("'{fmt}' is not a number format"),
+        });
     }
-    let scale = u8::try_from(frac_part.len()).map_err(|_| SqlError::Conversion { what: "too many decimal places".into() })?;
-    let d = v.as_decimal()?.rescale(scale, Rounding::HalfAdjust).map_err(|e| SqlError::Overflow { what: e.to_string() })?;
+    let scale = u8::try_from(frac_part.len()).map_err(|_| SqlError::Conversion {
+        what: "too many decimal places".into(),
+    })?;
+    let d = v
+        .as_decimal()?
+        .rescale(scale, Rounding::HalfAdjust)
+        .map_err(|e| SqlError::Overflow {
+            what: e.to_string(),
+        })?;
     let neg = d.is_negative();
     let text = d.abs().to_string();
-    let (int_digits, frac_digits) = text.split_once('.').map_or((text.as_str(), ""), |(a, b)| (a, b));
+    let (int_digits, frac_digits) = text
+        .split_once('.')
+        .map_or((text.as_str(), ""), |(a, b)| (a, b));
     let int_digits = int_digits.trim_start_matches('0');
     let slots = int_part.chars().filter(|c| matches!(c, '9' | '0')).count();
     if int_digits.len() > slots {
@@ -323,7 +409,10 @@ pub(crate) fn number_text(v: &Value, fmt: Option<&str>) -> Result<String> {
     // Digits right-aligned into the slots; before the first digit a 9
     // is a blank and a 0 (and every slot after it) a zero.
     let digs: Vec<char> = int_digits.chars().collect();
-    let first_zero = int_part.chars().filter(|c| matches!(c, '9' | '0')).position(|c| c == '0');
+    let first_zero = int_part
+        .chars()
+        .filter(|c| matches!(c, '9' | '0'))
+        .position(|c| c == '0');
     let mut slot = 0;
     let mut shown = false;
     let mut int_text = String::new();

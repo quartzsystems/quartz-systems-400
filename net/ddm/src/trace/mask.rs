@@ -83,7 +83,10 @@ pub fn user_forms(user: &str) -> Vec<(Vec<u8>, Vec<u8>)> {
     if let (Ok(a), Ok(b)) = (ccsid::to_ebcdic(&u), ccsid::to_ebcdic(&place)) {
         out.push((a, b));
     }
-    for (a, b) in [(u.clone(), place.clone()), (user.trim().to_string(), place.to_ascii_lowercase())] {
+    for (a, b) in [
+        (u.clone(), place.clone()),
+        (user.trim().to_string(), place.to_ascii_lowercase()),
+    ] {
         out.push((a.as_bytes().to_vec(), b.as_bytes().to_vec()));
         let a16 = a.encode_utf16().flat_map(u16::to_be_bytes).collect();
         let b16 = b.encode_utf16().flat_map(u16::to_be_bytes).collect();

@@ -85,7 +85,9 @@ fn qp0lror(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         }
         let path = qlg_path_at(j, a.addr(3)).map_err(|e| ApiFail::id(&e.message_id()))?;
         let c = client(j);
-        let refs = c.object_locks(&path).map_err(|e| ApiFail::id(&e.message_id()))?;
+        let refs = c
+            .object_locks(&path)
+            .map_err(|e| ApiFail::id(&e.message_id()))?;
         let who = match c.get_attrs(&path, &[AttrId::CheckedOut], true) {
             Ok(v) => v.into_iter().find_map(|x| match x {
                 Attr::CheckedOut(Some(co)) => Some(co.user),
@@ -98,9 +100,17 @@ fn qp0lror(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         let mut out = vec![0u8; l.size];
         lay::put_n(&mut out, l, "SimTypesOffset", l.size as u64);
         lay::put_n(&mut out, l, "SimTypesLength", sim.len() as u64);
-        let opens = refs.iter().filter(|r| matches!(r.what, Held::Open(..))).count();
+        let opens = refs
+            .iter()
+            .filter(|r| matches!(r.what, Held::Open(..)))
+            .count();
         lay::put_n(&mut out, l, "Count", opens as u64);
-        lay::put_n(&mut out, l, "InUse", u64::from(!refs.is_empty() || who.is_some()));
+        lay::put_n(
+            &mut out,
+            l,
+            "InUse",
+            u64::from(!refs.is_empty() || who.is_some()),
+        );
         out.extend_from_slice(&sim);
         deliver(a.addr(0), room, out);
         Ok(())
@@ -136,7 +146,9 @@ fn qp0lrro(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         } else {
             let id = a.bytes(3, 26);
             let user = ccsid::decode_trimmed(&id[10..20]);
-            let number: u32 = ccsid::decode_trimmed(&id[20..26]).parse().map_err(|_| ApiFail::id("CPF3C58"))?;
+            let number: u32 = ccsid::decode_trimmed(&id[20..26])
+                .parse()
+                .map_err(|_| ApiFail::id("CPF3C58"))?;
             client(j).job_locks(number, user.trim())
         }
         .map_err(|e| match e {
@@ -156,7 +168,12 @@ fn qp0lrro(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         let mut out = vec![0u8; h.size];
         lay::put_n(&mut out, h, "ObjectsReturned", objs.len() as u64);
         lay::put_n(&mut out, h, "ObjectsAvailable", objs.len() as u64);
-        lay::put_n(&mut out, h, "ObjListOffset", if objs.is_empty() { 0 } else { h.size as u64 });
+        lay::put_n(
+            &mut out,
+            h,
+            "ObjListOffset",
+            if objs.is_empty() { 0 } else { h.size as u64 },
+        );
         let n = objs.len();
         for (i, (k, refs)) in objs.into_iter().enumerate() {
             let path = refs.first().map(|r| r.path.clone()).unwrap_or_default();
@@ -166,7 +183,14 @@ fn qp0lrro(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
             let mut e = vec![0u8; l.size];
             lay::put_n(&mut e, l, "RefDisp", l.size as u64);
             lay::put_n(&mut e, l, "RefLength", sim.len() as u64);
-            lay::put_n(&mut e, l, "RefCount", refs.iter().filter(|r| matches!(r.what, Held::Open(..))).count() as u64);
+            lay::put_n(
+                &mut e,
+                l,
+                "RefCount",
+                refs.iter()
+                    .filter(|r| matches!(r.what, Held::Open(..)))
+                    .count() as u64,
+            );
             lay::put_n(&mut e, l, "PathDisp", (l.size + sim.len()) as u64);
             lay::put_n(&mut e, l, "PathLength", q.len() as u64);
             let fid = ifs::ops::audit::FileId {
@@ -210,7 +234,10 @@ mod tests {
             owner: Owner(1),
             what: Held::Open(Access { read, write }, s),
         };
-        let b = sim_types(&[r(true, false, Share::ReadWrite), r(true, true, Share::None)], Some("BOB"));
+        let b = sim_types(
+            &[r(true, false, Share::ReadWrite), r(true, true, Share::None)],
+            Some("BOB"),
+        );
         let l = &SIM_REF_TYPES;
         assert_eq!(lay::get_n(&b, l, "Read"), 1);
         assert_eq!(lay::get_n(&b, l, "RdWr"), 1);

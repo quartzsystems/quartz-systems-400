@@ -86,7 +86,10 @@ impl Stmt {
     #[must_use]
     pub fn table(&self) -> &TableRef {
         match self {
-            Stmt::Select { table, .. } | Stmt::Insert { table, .. } | Stmt::Update { table, .. } | Stmt::Delete { table, .. } => table,
+            Stmt::Select { table, .. }
+            | Stmt::Insert { table, .. }
+            | Stmt::Update { table, .. }
+            | Stmt::Delete { table, .. } => table,
         }
     }
 
@@ -95,9 +98,13 @@ impl Stmt {
     pub fn markers(&self) -> usize {
         let count = |e: &Expr| usize::from(matches!(e, Expr::Param(_)));
         match self {
-            Stmt::Select { filter, .. } | Stmt::Delete { filter, .. } => filter.iter().map(|(_, e)| count(e)).sum(),
+            Stmt::Select { filter, .. } | Stmt::Delete { filter, .. } => {
+                filter.iter().map(|(_, e)| count(e)).sum()
+            }
             Stmt::Insert { values, .. } => values.iter().map(count).sum(),
-            Stmt::Update { sets, filter, .. } => sets.iter().chain(filter).map(|(_, e)| count(e)).sum(),
+            Stmt::Update { sets, filter, .. } => {
+                sets.iter().chain(filter).map(|(_, e)| count(e)).sum()
+            }
         }
     }
 }
@@ -123,11 +130,17 @@ fn tokens(text: &str) -> Result<Vec<Tok>, Syntax> {
             i += 1;
         } else if ch.is_ascii_alphabetic() || matches!(ch, '_' | '$' | '#' | '@') {
             let s = i;
-            while i < c.len() && (c[i].is_ascii_alphanumeric() || matches!(c[i], '_' | '$' | '#' | '@')) {
+            while i < c.len()
+                && (c[i].is_ascii_alphanumeric() || matches!(c[i], '_' | '$' | '#' | '@'))
+            {
                 i += 1;
             }
-            out.push(Tok::Word(c[s..i].iter().collect::<String>().to_ascii_uppercase()));
-        } else if ch.is_ascii_digit() || (ch == '-' && c.get(i + 1).is_some_and(char::is_ascii_digit)) {
+            out.push(Tok::Word(
+                c[s..i].iter().collect::<String>().to_ascii_uppercase(),
+            ));
+        } else if ch.is_ascii_digit()
+            || (ch == '-' && c.get(i + 1).is_some_and(char::is_ascii_digit))
+        {
             let s = i;
             i += 1;
             while i < c.len() && (c[i].is_ascii_digit() || c[i] == '.') {
@@ -167,7 +180,11 @@ fn tokens(text: &str) -> Result<Vec<Tok>, Syntax> {
             out.push(Tok::Str(s));
         } else if ch == '"' {
             let s = i + 1;
-            let e = c[s..].iter().position(|x| *x == '"').ok_or_else(|| "\"".to_string())? + s;
+            let e = c[s..]
+                .iter()
+                .position(|x| *x == '"')
+                .ok_or_else(|| "\"".to_string())?
+                + s;
             out.push(Tok::Word(c[s..e].iter().collect()));
             i = e + 1;
         } else if "(),*=?./;".contains(ch) {
@@ -222,11 +239,19 @@ impl P {
     }
 
     fn need_word(&mut self, w: &str) -> Result<(), Syntax> {
-        if self.word(w) { Ok(()) } else { Err(self.here()) }
+        if self.word(w) {
+            Ok(())
+        } else {
+            Err(self.here())
+        }
     }
 
     fn need_sym(&mut self, c: char) -> Result<(), Syntax> {
-        if self.sym(c) { Ok(()) } else { Err(self.here()) }
+        if self.sym(c) {
+            Ok(())
+        } else {
+            Err(self.here())
+        }
     }
 
     fn ident(&mut self) -> Result<String, Syntax> {
@@ -304,7 +329,11 @@ impl P {
 
     fn statement(&mut self) -> Result<Stmt, Syntax> {
         let s = if self.word("SELECT") {
-            let cols = if self.sym('*') { None } else { Some(self.names()?) };
+            let cols = if self.sym('*') {
+                None
+            } else {
+                Some(self.names()?)
+            };
             self.need_word("FROM")?;
             let table = self.table()?;
             Stmt::Select {
@@ -329,7 +358,11 @@ impl P {
                 values.push(self.expr()?);
             }
             self.need_sym(')')?;
-            Stmt::Insert { table, cols, values }
+            Stmt::Insert {
+                table,
+                cols,
+                values,
+            }
         } else if self.word("UPDATE") {
             let table = self.table()?;
             self.need_word("SET")?;
@@ -370,7 +403,12 @@ impl P {
 /// The token found where the statement went wrong.
 pub fn parse(text: &str) -> Result<Stmt, Syntax> {
     let t = tokens(text)?;
-    P { t, i: 0, markers: 0 }.statement()
+    P {
+        t,
+        i: 0,
+        markers: 0,
+    }
+    .statement()
 }
 
 #[cfg(test)]
@@ -379,14 +417,23 @@ mod tests {
 
     #[test]
     fn statements() {
-        let s = parse("select * from hlinv.assets where asset_tag = ? and status = 'ACTIVE';").unwrap();
+        let s =
+            parse("select * from hlinv.assets where asset_tag = ? and status = 'ACTIVE';").unwrap();
         assert_eq!(s.markers(), 1);
         assert_eq!(s.table().name, "ASSETS");
         let s = parse("INSERT INTO HLTEST/JRN (ID, NAME) VALUES (?, 'x')").unwrap();
         assert!(s.table().slash);
         assert_eq!(s.markers(), 1);
-        assert_eq!(parse("UPDATE T SET A = ?, B = NULL WHERE C = -1.5").unwrap().markers(), 1);
+        assert_eq!(
+            parse("UPDATE T SET A = ?, B = NULL WHERE C = -1.5")
+                .unwrap()
+                .markers(),
+            1
+        );
         assert_eq!(parse("CREATE TABLE X (A INT)"), Err("CREATE".into()));
-        assert_eq!(parse("SELECT * FROM"), Err("the end of the statement".into()));
+        assert_eq!(
+            parse("SELECT * FROM"),
+            Err("the end of the statement".into())
+        );
     }
 }

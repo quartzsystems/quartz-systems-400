@@ -37,7 +37,11 @@ pub static COLSTATS_LAYOUT: Layout = Layout {
         field("slots", 72, 8),
         field("created", 80, 8),
         field("updated", 88, 8),
-        Field { name: "column", offset: Some(96), size: None },
+        Field {
+            name: "column",
+            offset: Some(96),
+            size: None,
+        },
     ],
 };
 
@@ -49,7 +53,11 @@ pub static VALUE_LAYOUT: Layout = Layout {
         field("kind", 0, 1),
         field("reserved", 1, 3),
         field("len", 4, 4),
-        Field { name: "bytes", offset: Some(8), size: None },
+        Field {
+            name: "bytes",
+            offset: Some(8),
+            size: None,
+        },
     ],
 };
 
@@ -90,13 +98,19 @@ pub struct ColStats {
 }
 
 fn bad() -> DbError {
-    DbError::Corrupt { what: "SQL information: column statistics entry".into() }
+    DbError::Corrupt {
+        what: "SQL information: column statistics entry".into(),
+    }
 }
 
 fn put_value(b: &mut Vec<u8>, (kind, bytes): &StatValue) {
     b.push(*kind);
     b.extend_from_slice(&[0, 0, 0]);
-    b.extend_from_slice(&u32::try_from(bytes.len()).expect("a value fits").to_le_bytes());
+    b.extend_from_slice(
+        &u32::try_from(bytes.len())
+            .expect("a value fits")
+            .to_le_bytes(),
+    );
     b.extend_from_slice(bytes);
 }
 
@@ -125,7 +139,15 @@ impl ColStats {
         b[26..28].copy_from_slice(&n16(self.column.len()));
         b[28..30].copy_from_slice(&n16(self.bounds.len()));
         b[30..32].copy_from_slice(&n16(self.frequent.len()));
-        for (at, v) in [(32, self.distinct), (40, self.nulls), (56, self.rows), (64, self.deleted), (72, self.slots), (80, self.created), (88, self.updated)] {
+        for (at, v) in [
+            (32, self.distinct),
+            (40, self.nulls),
+            (56, self.rows),
+            (64, self.deleted),
+            (72, self.slots),
+            (80, self.created),
+            (88, self.updated),
+        ] {
             b[at..at + 8].copy_from_slice(&v.to_le_bytes());
         }
         b[48..52].copy_from_slice(&self.avg_len.to_le_bytes());
@@ -152,14 +174,18 @@ impl ColStats {
         }
         let n16 = |at: usize| usize::from(u16::from_le_bytes([b[at], b[at + 1]]));
         let mut at = COLSTATS_FIXED + n16(26);
-        let column = b.get(COLSTATS_FIXED..at).and_then(|s| String::from_utf8(s.to_vec()).ok()).ok_or_else(bad)?;
+        let column = b
+            .get(COLSTATS_FIXED..at)
+            .and_then(|s| String::from_utf8(s.to_vec()).ok())
+            .ok_or_else(bad)?;
         let mut bounds = Vec::with_capacity(n16(28));
         for _ in 0..n16(28) {
             bounds.push(get_value(b, &mut at)?);
         }
         let mut frequent = Vec::with_capacity(n16(30));
         for _ in 0..n16(30) {
-            let share = f64::from_le_bytes(b.get(at..at + 8).ok_or_else(bad)?.try_into().expect("8"));
+            let share =
+                f64::from_le_bytes(b.get(at..at + 8).ok_or_else(bad)?.try_into().expect("8"));
             at += 8;
             frequent.push((share, get_value(b, &mut at)?));
         }
@@ -188,8 +214,12 @@ impl ColStats {
 ///
 /// The file's SQL information cannot be read.
 pub fn load(txn: &mut Txn<'_>, file: ObjectId) -> Result<Vec<ColStats>> {
-    let Some(info) = super::load(txn, file)? else { return Ok(Vec::new()) };
-    info.all(super::tag::COLSTATS).map(ColStats::decode).collect()
+    let Some(info) = super::load(txn, file)? else {
+        return Ok(Vec::new());
+    };
+    info.all(super::tag::COLSTATS)
+        .map(ColStats::decode)
+        .collect()
 }
 
 /// Keep `stats` on `file`, each in place of the entry of its member and
@@ -199,11 +229,23 @@ pub fn load(txn: &mut Txn<'_>, file: ObjectId) -> Result<Vec<ColStats>> {
 /// # Errors
 ///
 /// The file's SQL information cannot be read or written.
-pub fn store(txn: &mut Txn<'_>, file: ObjectId, members: &[ObjectId], stats: &[ColStats], now: u64) -> Result<()> {
-    let mut info = super::load(txn, file)?.unwrap_or_else(|| super::SqlInfo::new(super::Kind::Table));
+pub fn store(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    members: &[ObjectId],
+    stats: &[ColStats],
+    now: u64,
+) -> Result<()> {
+    let mut info =
+        super::load(txn, file)?.unwrap_or_else(|| super::SqlInfo::new(super::Kind::Table));
     info.entries.retain(|e| {
         e.tag != super::tag::COLSTATS
-            || ColStats::decode(&e.body).is_ok_and(|old| members.contains(&old.member) && !stats.iter().any(|s| s.member == old.member && s.field == old.field))
+            || ColStats::decode(&e.body).is_ok_and(|old| {
+                members.contains(&old.member)
+                    && !stats
+                        .iter()
+                        .any(|s| s.member == old.member && s.field == old.field)
+            })
     });
     for s in stats {
         info.push(super::tag::COLSTATS, s.encode());
@@ -234,7 +276,10 @@ mod tests {
             frequent: vec![(0.25, (2, "ab".into()))],
         };
         let b = s.encode();
-        assert_eq!(b.len(), COLSTATS_FIXED + 15 + (VALUE_FIXED + 2) + VALUE_FIXED + 8 + VALUE_FIXED + 2);
+        assert_eq!(
+            b.len(),
+            COLSTATS_FIXED + 15 + (VALUE_FIXED + 2) + VALUE_FIXED + 8 + VALUE_FIXED + 2
+        );
         assert_eq!(ColStats::decode(&b).unwrap(), s);
         assert!(ColStats::decode(&b[..b.len() - 1]).is_err());
     }

@@ -87,7 +87,11 @@ pub struct Change {
 /// least 256 KB.
 const STEP_MIN_KB: u64 = 256;
 
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)] // sizes far below 2^52
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)] // sizes far below 2^52
 fn kb_of(pct: f64, main_kb: u64) -> u64 {
     (main_kb as f64 * pct / 100.0).max(0.0) as u64
 }
@@ -191,7 +195,11 @@ mod tests {
         let base = c.iter().find(|c| c.name == "*BASE").unwrap();
         let int = c.iter().find(|c| c.name == "*INTERACT").unwrap();
         assert!(base.size_kb < 600_000);
-        assert_eq!(600_000 - base.size_kb, int.size_kb - 200_000, "storage moves, none lost");
+        assert_eq!(
+            600_000 - base.size_kb,
+            int.size_kb - 200_000,
+            "storage moves, none lost"
+        );
         assert!(c.iter().all(|c| c.name != "*MACHINE"));
     }
 
@@ -207,7 +215,11 @@ mod tests {
         p.defined_actlvl = 20;
         assert_eq!(adjust(&[p.clone()], 1_048_576)[0].actlvl, 90);
         p.actlvl = 21;
-        assert_eq!(adjust(&[p.clone()], 1_048_576)[0].actlvl, 20, "not below the defined level");
+        assert_eq!(
+            adjust(&[p.clone()], 1_048_576)[0].actlvl,
+            20,
+            "not below the defined level"
+        );
         p.actlvl = 20;
         assert!(adjust(&[p], 1_048_576).is_empty(), "at the defined level");
     }

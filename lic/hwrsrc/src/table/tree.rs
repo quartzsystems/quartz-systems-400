@@ -53,7 +53,12 @@ impl Table {
     /// the nearest chosen resource above it. With `bridges`, the bridges
     /// above a chosen resource are shown too (a bridge alone is not).
     #[must_use]
-    pub fn tree(&self, pick: impl Fn(&Resource) -> bool, logical: bool, bridges: bool) -> Vec<TreeRow> {
+    pub fn tree(
+        &self,
+        pick: impl Fn(&Resource) -> bool,
+        logical: bool,
+        bridges: bool,
+    ) -> Vec<TreeRow> {
         let n = self.resources.len();
         let mut chosen: Vec<bool> = self.resources.iter().map(&pick).collect();
         if bridges {
@@ -63,7 +68,9 @@ impl Table {
                 }
                 let mut at = i;
                 for _ in 0..n {
-                    let Some(p) = self.up(&self.resources[at], false) else { break };
+                    let Some(p) = self.up(&self.resources[at], false) else {
+                        break;
+                    };
                     if self.resources[p].kind == Kind::Bridge {
                         chosen[p] = true;
                     }
@@ -93,7 +100,9 @@ impl Table {
             for _ in 0..n {
                 // A unit or port without a logical parent falls back to
                 // the packaging one.
-                let Some(p) = self.up(&self.resources[at], logical) else { break };
+                let Some(p) = self.up(&self.resources[at], logical) else {
+                    break;
+                };
                 if chosen[p] {
                     top = Some(p);
                     break;

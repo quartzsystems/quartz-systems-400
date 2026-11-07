@@ -27,7 +27,11 @@ fn list(rows: &[&[(&str, &str)]]) -> ListState {
     ListState {
         rows: rows
             .iter()
-            .map(|r| r.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect())
+            .map(|r| {
+                r.iter()
+                    .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: Some(rows.len()),
@@ -47,27 +51,56 @@ fn golden(panel: &str, d: &MapDialog) -> Vec<String> {
     for r in &rows {
         assert!(r.chars().count() <= 80, "{r:?}");
     }
-    let text = rows.iter().map(|r| r.trim_end()).collect::<Vec<_>>().join("\n") + "\n";
+    let text = rows
+        .iter()
+        .map(|r| r.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
     let path = dir().join(format!("{panel}.txt"));
     if std::env::var_os("QS400_UPDATE_GOLDEN").is_some() || !path.exists() {
         std::fs::create_dir_all(dir()).unwrap();
         std::fs::write(&path, &text).unwrap();
     }
-    let want = std::fs::read_to_string(&path).unwrap().replace("\r\n", "\n");
+    let want = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("\r\n", "\n");
     assert_eq!(text, want, "{panel} differs from {}", path.display());
     rows
 }
 
 fn installed() -> ListState {
     list(&[
-        &[("LPID", "QS00SS1"), ("LPOPT", "*BASE"), ("STATUS", "*COMPATIBLE"), ("LPTEXT", "Quartz Systems/400 Operating System"), ("LPRLS", "V1R0M0")],
-        &[("LPID", "QS00SS1"), ("LPOPT", "30"), ("STATUS", "*COMPATIBLE"), ("LPTEXT", "Qshell"), ("LPRLS", "V1R0M0")],
-        &[("LPID", "QS00WDS"), ("LPOPT", "31"), ("STATUS", "*ERROR"), ("LPTEXT", "ILE RPG compiler"), ("LPRLS", "V1R0M0")],
+        &[
+            ("LPID", "QS00SS1"),
+            ("LPOPT", "*BASE"),
+            ("STATUS", "*COMPATIBLE"),
+            ("LPTEXT", "Quartz Systems/400 Operating System"),
+            ("LPRLS", "V1R0M0"),
+        ],
+        &[
+            ("LPID", "QS00SS1"),
+            ("LPOPT", "30"),
+            ("STATUS", "*COMPATIBLE"),
+            ("LPTEXT", "Qshell"),
+            ("LPRLS", "V1R0M0"),
+        ],
+        &[
+            ("LPID", "QS00WDS"),
+            ("LPOPT", "31"),
+            ("STATUS", "*ERROR"),
+            ("LPTEXT", "ILE RPG compiler"),
+            ("LPRLS", "V1R0M0"),
+        ],
     ])
 }
 
 fn has(rows: &[String], text: &str) {
-    assert!(rows.iter().any(|r| r.contains(text)), "no {text:?} in\n{}", rows.join("\n"));
+    assert!(
+        rows.iter().any(|r| r.contains(text)),
+        "no {text:?} in\n{}",
+        rows.join("\n")
+    );
 }
 
 #[test]
@@ -105,7 +138,10 @@ fn install_options_and_the_agreement() {
     d.set("LPRLS", "V1R0M0");
     d.set("LPTEXT", "Quartz Systems/400 Application Development");
     let text = licpgm_text();
-    let lines: Vec<Vec<(String, String)>> = text.lines().map(|l| vec![("AGRLINE".to_string(), l.to_string())]).collect();
+    let lines: Vec<Vec<(String, String)>> = text
+        .lines()
+        .map(|l| vec![("AGRLINE".to_string(), l.to_string())])
+        .collect();
     d.set_list(
         "AGRTEXT",
         ListState {
@@ -131,13 +167,21 @@ fn languages_agreements_and_licenses() {
     d.set("PRILNG", "2924");
     d.set("PRILNGT", "English");
     d.set_list("LANGS", list(&[]));
-    has(&golden("LICLNG20", &d), "No secondary languages are installed");
+    has(
+        &golden("LICLNG20", &d),
+        "No secondary languages are installed",
+    );
     golden("LICLNG21", &d);
     golden("LICLNG22", &d);
     let mut d = MapDialog::new();
     d.set_list(
         "AGRS",
-        list(&[&[("LPID", "QS00SS1"), ("LPRLS", "V1R0M0"), ("AGRSTS", "*ACCEPTED"), ("LPTEXT", "Quartz Systems/400 Operating System")]]),
+        list(&[&[
+            ("LPID", "QS00SS1"),
+            ("LPRLS", "V1R0M0"),
+            ("AGRSTS", "*ACCEPTED"),
+            ("LPTEXT", "Quartz Systems/400 Operating System"),
+        ]]),
     );
     has(&golden("WRKSFWAGR", &d), "5=Display");
     let mut d = MapDialog::new();

@@ -158,7 +158,11 @@ fn shown(host: &Host, bit: u8, f: fn(&Host) -> Act) -> After {
         put_back(host, None, None);
         return After::Resume;
     }
-    let saved = host.display.borrow().as_ref().map(crate::display::Display::snapshot);
+    let saved = host
+        .display
+        .borrow()
+        .as_ref()
+        .map(crate::display::Display::snapshot);
     BUSY.set(BUSY.get() | bit);
     let act = f(host);
     BUSY.set(BUSY.get() & !bit);

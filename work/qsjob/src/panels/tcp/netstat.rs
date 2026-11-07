@@ -38,7 +38,12 @@ pub fn option(r: &Resolved) -> u32 {
 }
 
 /// The driver: `None` for another command.
-pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<Left, Fail>> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Option<Result<Left, Fail>> {
     if r.name != "NETSTAT" && r.name != "WRKTCPSTS" {
         return None;
     }
@@ -50,14 +55,17 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> O
 
 /// The data of a view.
 fn fetch(host: &Host, what: &str, args: &[String]) -> Result<PanelData, LineMsg> {
-    match host
-        .link
-        .borrow_mut()
-        .with(|l| l.tcp(TcpOp::Netstat { what: what.into(), args: args.to_vec() }))
-    {
+    match host.link.borrow_mut().with(|l| {
+        l.tcp(TcpOp::Netstat {
+            what: what.into(),
+            args: args.to_vec(),
+        })
+    }) {
         TcpReply::Panel { data } => Ok(data),
         TcpReply::Failed { note } => Err(super::note_msg(&note)),
-        other => Err(crate::panels::line(&format!("NETSTAT {what}: no network status: {other:?}"))),
+        other => Err(crate::panels::line(&format!(
+            "NETSTAT {what}: no network status: {other:?}"
+        ))),
     }
 }
 
@@ -94,7 +102,11 @@ fn menu(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, Fail>
                     d.error("CPD9B86", &[]);
                 } else {
                     last.clone_from(&typed);
-                    d.set_message(exec(job, host, &format!("?{}", typed.trim_start_matches('?'))));
+                    d.set_message(exec(
+                        job,
+                        host,
+                        &format!("?{}", typed.trim_start_matches('?')),
+                    ));
                     d.set(CMDLINE_VAR, "");
                 }
             }
@@ -193,7 +205,13 @@ impl Kind {
 }
 
 /// Show a list until it is left; `of` narrows routes to an interface.
-fn list(job: &mut Job, host: &Host, surface: &mut Surface, start: Kind, of: Option<&str>) -> Result<Left, Fail> {
+fn list(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    start: Kind,
+    of: Option<&str>,
+) -> Result<Left, Fail> {
     let mut kind = start;
     let full = may_change(host);
     let mut d = dialog(host, GROUP, false)?;
@@ -220,9 +238,16 @@ fn list(job: &mut Job, host: &Host, surface: &mut Surface, start: Kind, of: Opti
                     let key = cell(&d, &c.list, c.row, kind.key());
                     let left = match (kind, c.option.as_str()) {
                         (_, "5") => detail(job, host, surface, kind, &key)?,
-                        (Kind::Ifc(_), "8") => Some(list(job, host, surface, Kind::Rte(kind.v6()), Some(&key))?),
+                        (Kind::Ifc(_), "8") => {
+                            Some(list(job, host, surface, Kind::Rte(kind.v6()), Some(&key))?)
+                        }
                         (Kind::Ifc(_), "12") => {
-                            let line = cell(&d, &c.list, c.row, if kind.v6() { "XLIND" } else { "ILIND" });
+                            let line = cell(
+                                &d,
+                                &c.list,
+                                c.row,
+                                if kind.v6() { "XLIND" } else { "ILIND" },
+                            );
                             d.set_message(if line.starts_with('*') {
                                 Some(LineMsg::error("CPD9B88", &["12", &line]))
                             } else {
@@ -297,15 +322,27 @@ fn command_line(job: &mut Job, host: &Host) -> Option<LineMsg> {
 /// `NETSTAT` option 4 on a connection.
 fn end_cnn(host: &Host, key: &str) -> Option<LineMsg> {
     let note = super::note_msg;
-    match host.link.borrow_mut().with(|l| l.tcp(TcpOp::EndCnn { key: key.into() })) {
+    match host
+        .link
+        .borrow_mut()
+        .with(|l| l.tcp(TcpOp::EndCnn { key: key.into() }))
+    {
         TcpReply::Done { notes, .. } => notes.last().map(note),
         TcpReply::Failed { note: n } => Some(note(&n)),
-        other => Some(crate::panels::line(&format!("ENDTCPCNN: unexpected reply {other:?}"))),
+        other => Some(crate::panels::line(&format!(
+            "ENDTCPCNN: unexpected reply {other:?}"
+        ))),
     }
 }
 
 /// What a display does with a `RETURN n` key of its own.
-type OnKey<'a> = &'a mut dyn FnMut(&mut Job, &Host, &mut Surface, &mut UimDialog, u32) -> Result<Option<Left>, Fail>;
+type OnKey<'a> = &'a mut dyn FnMut(
+    &mut Job,
+    &Host,
+    &mut Surface,
+    &mut UimDialog,
+    u32,
+) -> Result<Option<Left>, Fail>;
 
 /// A display panel until it is left; `on` handles its other keys.
 fn display(
@@ -343,29 +380,68 @@ fn display(
 }
 
 /// Option 5 on an entry.
-fn detail(job: &mut Job, host: &Host, surface: &mut Surface, kind: Kind, key: &str) -> Result<Option<Left>, Fail> {
+fn detail(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    kind: Kind,
+    key: &str,
+) -> Result<Option<Left>, Fail> {
     match kind {
-        Kind::Ifc(_) => display(job, host, surface, "DSPIFC", "IFC5", key, &mut |_, _, _, _, _| Ok(None)),
+        Kind::Ifc(_) => display(
+            job,
+            host,
+            surface,
+            "DSPIFC",
+            "IFC5",
+            key,
+            &mut |_, _, _, _, _| Ok(None),
+        ),
         Kind::Rte(_) => {
-            let panel = if key.starts_with("*DFTROUTE") { "DSPDFT" } else { "DSPRTE" };
-            display(job, host, surface, panel, "RTE5", key, &mut |_, _, _, _, _| Ok(None))
+            let panel = if key.starts_with("*DFTROUTE") {
+                "DSPDFT"
+            } else {
+                "DSPRTE"
+            };
+            display(
+                job,
+                host,
+                surface,
+                panel,
+                "RTE5",
+                key,
+                &mut |_, _, _, _, _| Ok(None),
+            )
         }
         Kind::Cnn(_) => {
             let k = key.to_string();
-            display(job, host, surface, "DSPCNN", "CNN5", key, &mut |job, host, surface, d, n| {
-                match n {
-                    8 => return jobs(job, host, surface, &k),
-                    14 => d.info("CPI9B81", &[]),
-                    _ => {}
-                }
-                Ok(None)
-            })
+            display(
+                job,
+                host,
+                surface,
+                "DSPCNN",
+                "CNN5",
+                key,
+                &mut |job, host, surface, d, n| {
+                    match n {
+                        8 => return jobs(job, host, surface, &k),
+                        14 => d.info("CPI9B81", &[]),
+                        _ => {}
+                    }
+                    Ok(None)
+                },
+            )
         }
     }
 }
 
 /// Option 8 on a connection: the jobs holding it.
-fn jobs(job: &mut Job, host: &Host, surface: &mut Surface, key: &str) -> Result<Option<Left>, Fail> {
+fn jobs(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    key: &str,
+) -> Result<Option<Left>, Fail> {
     let mut d = dialog(host, GROUP, false)?;
     let args = vec![key.to_string()];
     loop {
@@ -394,5 +470,14 @@ fn jobs(job: &mut Job, host: &Host, surface: &mut Surface, key: &str) -> Result<
 
 /// Option 10.
 fn status(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, Fail> {
-    Ok(display(job, host, surface, "DSPSTS", "STS", "", &mut |_, _, _, _, _| Ok(None))?.unwrap_or(Left::Cancel))
+    Ok(display(
+        job,
+        host,
+        surface,
+        "DSPSTS",
+        "STS",
+        "",
+        &mut |_, _, _, _, _| Ok(None),
+    )?
+    .unwrap_or(Left::Cancel))
 }

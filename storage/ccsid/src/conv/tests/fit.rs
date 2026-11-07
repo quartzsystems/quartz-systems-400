@@ -59,7 +59,10 @@ fn every_cut_of_mixed_text() {
             let (want, cut_) = longest(c, TEXT, len);
             assert_eq!(f.cut, cut_, "{c} {len}");
             assert_eq!(&f.bytes[..want.len()], &want[..], "{c} {len}");
-            assert!(f.bytes[want.len()..].iter().all(|&b| b == 0x40), "{c} {len}");
+            assert!(
+                f.bytes[want.len()..].iter().all(|&b| b == 0x40),
+                "{c} {len}"
+            );
             let u = cut(c, &all, len);
             assert_eq!((u.bytes, u.cut), (want, cut_));
         }
@@ -93,7 +96,10 @@ fn every_wrap_of_mixed_text() {
 #[test]
 fn tiny_records_drop_what_cannot_fit() {
     let all = from_str(939, "aあb").unwrap();
-    assert_eq!(wrap(939, &all, 3, 0x40), [vec![0x81, 0x40, 0x40], vec![0x82, 0x40, 0x40]]);
+    assert_eq!(
+        wrap(939, &all, 3, 0x40),
+        [vec![0x81, 0x40, 0x40], vec![0x82, 0x40, 0x40]]
+    );
     assert_eq!(fit(939, &all, 3, 0x40).bytes, [0x81, 0x40, 0x40]);
 }
 
@@ -101,11 +107,23 @@ fn tiny_records_drop_what_cannot_fit() {
 fn balanced_input_that_fits_is_kept() {
     // An empty SO SI pair stays as written.
     let r = [0xC1, SO, SI, 0xC2];
-    assert_eq!(fit(939, &r, 6, 0x40).bytes, [0xC1, SO, SI, 0xC2, 0x40, 0x40]);
+    assert_eq!(
+        fit(939, &r, 6, 0x40).bytes,
+        [0xC1, SO, SI, 0xC2, 0x40, 0x40]
+    );
     // An unclosed run gets its SI.
     let open = [SO, 0x44, 0x81];
-    assert_eq!(fit(939, &open, 6, 0x40).bytes, [SO, 0x44, 0x81, SI, 0x40, 0x40]);
-    assert_eq!(fit(939, &open, 3, 0x40), Fitted { bytes: vec![0x40; 3], cut: true });
+    assert_eq!(
+        fit(939, &open, 6, 0x40).bytes,
+        [SO, 0x44, 0x81, SI, 0x40, 0x40]
+    );
+    assert_eq!(
+        fit(939, &open, 3, 0x40),
+        Fitted {
+            bytes: vec![0x40; 3],
+            cut: true
+        }
+    );
 }
 
 #[test]
@@ -116,7 +134,10 @@ fn double_byte_cuts_between_pairs() {
         assert_eq!(f.bytes.len(), len);
         let n = len.min(all.len()) & !1;
         assert_eq!(&f.bytes[..n], &all[..n]);
-        assert!(f.bytes[n..].iter().all(|&b| b == 0x40), "double-byte spaces");
+        assert!(
+            f.bytes[n..].iter().all(|&b| b == 0x40),
+            "double-byte spaces"
+        );
         assert_eq!(f.cut, len < all.len());
     }
     let recs = wrap(300, &all, 5, 0);
@@ -144,5 +165,8 @@ fn single_byte_is_unchanged() {
             .collect();
         assert_eq!(wrap(37, &all, len.max(1), 0), w);
     }
-    assert_eq!(wrap(819, b"abcdef", 4, 0x20), [b"abcd".to_vec(), b"ef  ".to_vec()]);
+    assert_eq!(
+        wrap(819, b"abcdef", 4, 0x20),
+        [b"abcd".to_vec(), b"ef  ".to_vec()]
+    );
 }

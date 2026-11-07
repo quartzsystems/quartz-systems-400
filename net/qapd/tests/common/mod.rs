@@ -125,7 +125,10 @@ impl Client {
         let mut got = std::collections::HashMap::new();
         while got.len() < ids.len() {
             let r = self.recv().expect("a reply");
-            assert!(r.kind == Kind::Reply && ids.contains(&r.request_id), "{r:?}");
+            assert!(
+                r.kind == Kind::Reply && ids.contains(&r.request_id),
+                "{r:?}"
+            );
             assert!(got.insert(r.request_id, r).is_none(), "one reply each");
         }
         got

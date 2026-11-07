@@ -83,7 +83,9 @@ impl<'a> Ftp<'a> {
             match (first, code) {
                 (None, Some(c)) if line.as_bytes().get(3) == Some(&b'-') => first = Some(c),
                 (None, Some(c)) => return Ok((c, text)),
-                (Some(f), Some(c)) if c == f && line.as_bytes().get(3) != Some(&b'-') => return Ok((c, text)),
+                (Some(f), Some(c)) if c == f && line.as_bytes().get(3) != Some(&b'-') => {
+                    return Ok((c, text));
+                }
                 _ => {}
             }
         }
@@ -97,7 +99,10 @@ impl<'a> Ftp<'a> {
             .map_err(|e| e.to_string())?;
         let (code, text) = self.reply()?;
         if code != want {
-            return Err(format!("{line}: {code}, not {want}:\n{}", self.log.join("\n")));
+            return Err(format!(
+                "{line}: {code}, not {want}:\n{}",
+                self.log.join("\n")
+            ));
         }
         Ok(text)
     }
@@ -105,8 +110,15 @@ impl<'a> Ftp<'a> {
     /// A data connection: `PASV`, the guest's port forwarded.
     fn data(&mut self) -> Result<TcpStream, String> {
         let r = self.cmd("PASV", 227)?;
-        let inner = r.split('(').nth(1).and_then(|x| x.split(')').next()).ok_or("no PASV address")?;
-        let n: Vec<u16> = inner.split(',').filter_map(|p| p.trim().parse().ok()).collect();
+        let inner = r
+            .split('(')
+            .nth(1)
+            .and_then(|x| x.split(')').next())
+            .ok_or("no PASV address")?;
+        let n: Vec<u16> = inner
+            .split(',')
+            .filter_map(|p| p.trim().parse().ok())
+            .collect();
         if n.len() != 6 {
             return Err(format!("PASV address {inner}"));
         }
@@ -119,7 +131,11 @@ impl<'a> Ftp<'a> {
     fn retr(&mut self, line: &str) -> Result<Vec<u8>, String> {
         let mut d = self.data()?;
         // 150 for a transfer, 125 for a listing.
-        let want = if line.starts_with("LIST") || line.starts_with("NLST") { 125 } else { 150 };
+        let want = if line.starts_with("LIST") || line.starts_with("NLST") {
+            125
+        } else {
+            150
+        };
         self.cmd(line, want)?;
         let mut out = Vec::new();
         d.read_to_end(&mut out).map_err(|e| e.to_string())?;
@@ -149,12 +165,21 @@ fn job_shown(s: &mut Session, name: &str, present: bool) -> Result<(), String> {
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let out = s.command("wrkactjob", CMD)?;
-        let shown = out.lines().any(|l| l.split_whitespace().next() == Some(name));
+        let shown = out
+            .lines()
+            .any(|l| l.split_whitespace().next() == Some(name));
         if shown == present {
             return Ok(());
         }
         if Instant::now() > end {
-            return Err(format!("{name} {} in:\n{out}", if present { "never shown" } else { "still shown" }));
+            return Err(format!(
+                "{name} {} in:\n{out}",
+                if present {
+                    "never shown"
+                } else {
+                    "still shown"
+                }
+            ));
         }
         std::thread::sleep(Duration::from_millis(500));
     }
@@ -198,7 +223,10 @@ impl Suite {
         f.stor("STOR QFTPDATA.MBR1", TEXT.as_bytes())?;
         let back = f.retr("RETR QFTPDATA.MBR1")?;
         if back != TEXT.as_bytes() {
-            return Err(format!("the member came back as {:?}", String::from_utf8_lossy(&back)));
+            return Err(format!(
+                "the member came back as {:?}",
+                String::from_utf8_lossy(&back)
+            ));
         }
         let list = String::from_utf8_lossy(&f.retr("LIST QFTPDATA.*")?).to_string();
         if !list.contains("QFTPDATA.MBR1") {
@@ -224,12 +252,18 @@ impl Suite {
         f.cmd("CWD /QSYS.LIB/FTPLIB.LIB", 250)?;
         f.cmd("SITE NAMEFMT 0", 250)?;
         f.cmd("RCMD CRTSRCPF FILE(FTPLIB/QFTPSRC) RCDLEN(112)", 250)?;
-        let script = format!("{USER} {PASSWORD}\r\nget QFTPDATA.MBR1 QFTPDATA.MBR2\r\nquote rcmd CHKOBJ OBJ(FTPLIB/QFTPDATA) OBJTYPE(*FILE) MBR(MBR2)\r\nquit\r\n");
+        let script = format!(
+            "{USER} {PASSWORD}\r\nget QFTPDATA.MBR1 QFTPDATA.MBR2\r\nquote rcmd CHKOBJ OBJ(FTPLIB/QFTPDATA) OBJTYPE(*FILE) MBR(MBR2)\r\nquit\r\n"
+        );
         f.stor("STOR QFTPSRC.SCRIPT", script.as_bytes())?;
         f.cmd("RCMD ADDPFM FILE(FTPLIB/QFTPSRC) MBR(LOG)", 250)?;
         // A session job of its own shows while the session lasts.
         let jobs = s.command("wrkactjob", CMD)?;
-        if !jobs.lines().any(|l| l.split_whitespace().next().is_some_and(|n| n.starts_with("QTFTP00") && n != "QTFTP00001")) {
+        if !jobs.lines().any(|l| {
+            l.split_whitespace()
+                .next()
+                .is_some_and(|n| n.starts_with("QTFTP00") && n != "QTFTP00001")
+        }) {
             return Err(format!("no session job:\n{jobs}"));
         }
         f.cmd("QUIT", 221)?;
@@ -241,15 +275,19 @@ impl Suite {
         let log = s.command("dsppfm FILE(FTPLIB/QFTPSRC) MBR(LOG)", CMD)?;
         for want in ["230", "226", "250", "221"] {
             if !log.contains(want) {
-                return Err(format!("the FTP command's log has no {want}:\n{ran}\n{log}"));
+                return Err(format!(
+                    "the FTP command's log has no {want}:\n{ran}\n{log}"
+                ));
             }
         }
         // The member the client fetched is there.
         let chk = s.command("CHKOBJ OBJ(FTPLIB/QFTPDATA) OBJTYPE(*FILE) MBR(MBR2)", CMD)?;
         if chk.contains("CPF") {
-            return Err(format!("the member the FTP command fetched is not there:
+            return Err(format!(
+                "the member the FTP command fetched is not there:
 {chk}
-{log}"));
+{log}"
+            ));
         }
         expect(s, "ENDTCPSVR SERVER(*FTP)", "TCP1A0A")?;
         job_shown(s, "QTFTP00001", false)?;

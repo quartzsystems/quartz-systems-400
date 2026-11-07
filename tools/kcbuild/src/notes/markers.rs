@@ -49,7 +49,10 @@ pub fn on_line(file: &str, line: usize, text: &str) -> Vec<Marker> {
         let mut from = 0;
         while let Some(i) = text[from..].find(p).map(|i| i + from) {
             let rest = &text[i + p.len()..];
-            let n = rest.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-').count();
+            let n = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+                .count();
             if n > 0 && rest[n..].starts_with(')') {
                 found.push((i, i + p.len() + n + 1));
             }
@@ -67,7 +70,12 @@ pub fn on_line(file: &str, line: usize, text: &str) -> Vec<Marker> {
             continue;
         }
         let next = found.get(k + 1).map_or(text.len(), |n| n.0);
-        out.push(Marker { form: text[s..e].to_string(), file: file.to_string(), line, reason: reason(text, s, e, next) });
+        out.push(Marker {
+            form: text[s..e].to_string(),
+            file: file.to_string(),
+            line,
+            reason: reason(text, s, e, next),
+        });
     }
     out
 }
@@ -75,12 +83,26 @@ pub fn on_line(file: &str, line: usize, text: &str) -> Vec<Marker> {
 /// The text after the marker up to the next one, else the text before it.
 fn reason(text: &str, start: usize, end: usize, next: usize) -> String {
     let tidy = |s: &str| {
-        let s = s.trim().trim_start_matches([':', '-', ',', ';', ')', '.']).trim();
-        let s = s.trim_end_matches("*/").trim_end_matches("-->").trim_end_matches('|').trim();
-        s.trim_start_matches("//").trim_start_matches(['#', '-', '|', '*', '!', '/']).trim().to_string()
+        let s = s
+            .trim()
+            .trim_start_matches([':', '-', ',', ';', ')', '.'])
+            .trim();
+        let s = s
+            .trim_end_matches("*/")
+            .trim_end_matches("-->")
+            .trim_end_matches('|')
+            .trim();
+        s.trim_start_matches("//")
+            .trim_start_matches(['#', '-', '|', '*', '!', '/'])
+            .trim()
+            .to_string()
     };
     let after = tidy(&text[end..next.max(end)]);
-    let r = if after.chars().filter(char::is_ascii_alphanumeric).count() >= 3 { after } else { tidy(&text[..start]) };
+    let r = if after.chars().filter(char::is_ascii_alphanumeric).count() >= 3 {
+        after
+    } else {
+        tidy(&text[..start])
+    };
     let r: String = r.chars().take(200).collect();
     r.replace('|', "\\|")
 }
@@ -89,11 +111,19 @@ fn reason(text: &str, start: usize, end: usize, next: usize) -> String {
 /// that leaves out `.git` and `target` (a worktree whose `.git` names a
 /// Windows path, read from WSL, has no working `git`).
 fn files(repo: &Path) -> Vec<String> {
-    if let Ok(o) = Command::new("git").arg("-C").arg(repo).args(["ls-files", "-z"]).output()
+    if let Ok(o) = Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(["ls-files", "-z"])
+        .output()
         && o.status.success()
     {
-        let mut v: Vec<String> =
-            o.stdout.split(|b| *b == 0).filter(|s| !s.is_empty()).map(|s| String::from_utf8_lossy(s).into_owned()).collect();
+        let mut v: Vec<String> = o
+            .stdout
+            .split(|b| *b == 0)
+            .filter(|s| !s.is_empty())
+            .map(|s| String::from_utf8_lossy(s).into_owned())
+            .collect();
         v.sort();
         return v;
     }
@@ -124,11 +154,18 @@ fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) {
 pub fn scan(repo: &Path) -> Vec<Marker> {
     let mut out = Vec::new();
     for f in files(repo) {
-        if SKIP.iter().any(|s| f == *s || (s.ends_with('/') && f.starts_with(s))) {
+        if SKIP
+            .iter()
+            .any(|s| f == *s || (s.ends_with('/') && f.starts_with(s)))
+        {
             continue;
         }
-        let Ok(bytes) = fs::read(repo.join(&f)) else { continue };
-        let Ok(text) = String::from_utf8(bytes) else { continue };
+        let Ok(bytes) = fs::read(repo.join(&f)) else {
+            continue;
+        };
+        let Ok(text) = String::from_utf8(bytes) else {
+            continue;
+        };
         for (i, l) in text.lines().enumerate() {
             out.extend(on_line(&f, i + 1, l));
         }
@@ -142,16 +179,26 @@ mod tests {
 
     #[test]
     fn markers_and_mentions() {
-        let m = on_line("a.rs", 3, "    // BLOCKED(sql): no column descriptions come back");
+        let m = on_line(
+            "a.rs",
+            3,
+            "    // BLOCKED(sql): no column descriptions come back",
+        );
         assert_eq!(m.len(), 1);
-        assert_eq!((m[0].form.as_str(), m[0].reason.as_str()), ("BLOCKED(sql)", "no column descriptions come back"));
+        assert_eq!(
+            (m[0].form.as_str(), m[0].reason.as_str()),
+            ("BLOCKED(sql)", "no column descriptions come back")
+        );
         assert!(!m[0].released());
         assert!(on_line("CLAUDE.md", 1, "marked `BLOCKED(phaseN)` (with the reason)").is_empty());
         let m = on_line("t.md", 9, "| Hyper-V Gen 2 | UEFI | NEEDS-CODY |");
         assert_eq!(m[0].reason, "Hyper-V Gen 2 \\| UEFI");
         assert!(m[0].released());
         let m = on_line("x.rs", 1, "// TODO(perf) and BLOCKED(rel): two here");
-        assert_eq!(m.iter().map(|m| m.form.as_str()).collect::<Vec<_>>(), ["TODO(perf)", "BLOCKED(rel)"]);
+        assert_eq!(
+            m.iter().map(|m| m.form.as_str()).collect::<Vec<_>>(),
+            ["TODO(perf)", "BLOCKED(rel)"]
+        );
         assert_eq!(m[0].reason, "and");
         assert!(on_line("x.rs", 1, "BLOCKED() and TODO(x y)").is_empty());
     }

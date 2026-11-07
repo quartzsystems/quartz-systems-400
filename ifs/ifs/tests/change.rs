@@ -47,7 +47,10 @@ fn data_changes_raise_it() {
     });
     rises(&s, &cx, "/home/f", || s.ifs.ftruncate(&cx, fd, 1).unwrap());
     // The descriptor sees what the path sees.
-    assert_eq!(s.ifs.fstat(&cx, fd).unwrap().change, chg(&s, &cx, "/home/f"));
+    assert_eq!(
+        s.ifs.fstat(&cx, fd).unwrap().change,
+        chg(&s, &cx, "/home/f")
+    );
     s.ifs.close(&cx, fd).unwrap();
     rises(&s, &cx, "/home/f", || {
         let fd = s
@@ -85,7 +88,9 @@ fn attribute_changes_raise_it() {
     s.put(&cx, "/home/f", b"one");
     let f = "/home/f";
     rises(&s, &cx, f, || s.ifs.chgown(&cx, f, "BOB", false).unwrap());
-    rises(&s, &cx, f, || s.ifs.chgpgp(&cx, f, Some("DEV"), false).unwrap());
+    rises(&s, &cx, f, || {
+        s.ifs.chgpgp(&cx, f, Some("DEV"), false).unwrap()
+    });
     rises(&s, &cx, f, || s.ifs.chown(&cx, f, 101, u32::MAX).unwrap());
     rises(&s, &cx, f, || s.ifs.chmod(&cx, f, 0o600).unwrap());
     rises(&s, &cx, f, || {
@@ -106,7 +111,9 @@ fn attribute_changes_raise_it() {
         s.ifs.set_attr(&cx, f, &Attr::Ccsid(37), false).unwrap();
     });
     rises(&s, &cx, f, || {
-        s.ifs.set_attr(&cx, f, &Attr::Text("t".into()), false).unwrap();
+        s.ifs
+            .set_attr(&cx, f, &Attr::Text("t".into()), false)
+            .unwrap();
     });
 }
 
@@ -133,12 +140,24 @@ fn names_raise_the_object_and_its_directories() {
             .rename(&cx, "/home/b/g", "/home/b/h", RenameMode::Keep)
             .unwrap();
     });
-    rises(&s, &cx, "/home/b", || s.ifs.link(&cx, "/home/b/h", "/home/b/i").unwrap());
-    rises(&s, &cx, "/home/b", || s.ifs.unlink(&cx, "/home/b/i").unwrap());
-    rises(&s, &cx, "/home/b", || s.ifs.symlink(&cx, "h", "/home/b/l").unwrap());
-    rises(&s, &cx, "/home/b", || s.ifs.mkdir(&cx, "/home/b/d", 0o755).unwrap());
-    rises(&s, &cx, "/home/b", || s.ifs.rmdir(&cx, "/home/b/d").unwrap());
-    rises(&s, &cx, "/home", || s.ifs.mkdir(&cx, "/home/c", 0o755).unwrap());
+    rises(&s, &cx, "/home/b", || {
+        s.ifs.link(&cx, "/home/b/h", "/home/b/i").unwrap()
+    });
+    rises(&s, &cx, "/home/b", || {
+        s.ifs.unlink(&cx, "/home/b/i").unwrap()
+    });
+    rises(&s, &cx, "/home/b", || {
+        s.ifs.symlink(&cx, "h", "/home/b/l").unwrap()
+    });
+    rises(&s, &cx, "/home/b", || {
+        s.ifs.mkdir(&cx, "/home/b/d", 0o755).unwrap()
+    });
+    rises(&s, &cx, "/home/b", || {
+        s.ifs.rmdir(&cx, "/home/b/d").unwrap()
+    });
+    rises(&s, &cx, "/home", || {
+        s.ifs.mkdir(&cx, "/home/c", 0o755).unwrap()
+    });
     // A move moves the counter up too.
     let l = chg(&s, &cx, "/home/b/l");
     s.ifs.mov(&cx, "/home/b/l", "/home/c/l", false).unwrap();
@@ -159,7 +178,9 @@ fn values_are_never_reused() {
     assert!(seen.windows(2).all(|w| w[1] > w[0]), "{seen:?}");
     // A copy is a new object with a value of its own.
     s.put(&cx, "/home/f", b"same");
-    s.ifs.copy(&cx, "/home/f", "/home/g", ifs::ops::CopyOpts::default()).unwrap();
+    s.ifs
+        .copy(&cx, "/home/f", "/home/g", ifs::ops::CopyOpts::default())
+        .unwrap();
     assert!(chg(&s, &cx, "/home/g") > chg(&s, &cx, "/home/f"));
 }
 
@@ -176,7 +197,13 @@ fn a_restart_continues_above() {
         audit: &audit,
         job_ccsid: 37,
     };
-    let make = || Ifs::new(b.clone(), Box::new(MemQsys::new(Auth::USE)), Config::default());
+    let make = || {
+        Ifs::new(
+            b.clone(),
+            Box::new(MemQsys::new(Auth::USE)),
+            Config::default(),
+        )
+    };
     let one = make();
     one.ensure_layout(&env).unwrap();
     one.mkdir(&cx(1), "/home/a", 0o755).unwrap();
@@ -185,7 +212,10 @@ fn a_restart_continues_above() {
     let two = make();
     two.chmod(&cx(1), "/home/a", 0o700).unwrap();
     let second = two.lstat(&cx(1), "/home/a").unwrap().change;
-    assert!(second > first + ifs::meta::change::BLOCK - 1, "{first} {second}");
+    assert!(
+        second > first + ifs::meta::change::BLOCK - 1,
+        "{first} {second}"
+    );
 }
 
 #[test]
@@ -201,8 +231,13 @@ fn a_record_without_a_counter_reads_zero_and_counts_on() {
         .unwrap();
     let mut m = ifs::meta::codec::decode(&raw).unwrap();
     m.change = 0;
-    ifs::backend::Backend::xattr_set(b, "root/home/f", ifs::meta::XATTR, &ifs::meta::codec::encode(&m))
-        .unwrap();
+    ifs::backend::Backend::xattr_set(
+        b,
+        "root/home/f",
+        ifs::meta::XATTR,
+        &ifs::meta::codec::encode(&m),
+    )
+    .unwrap();
     assert_eq!(chg(&s, &cx, "/home/f"), 0);
     rises(&s, &cx, "/home/f", || {
         let fd = s.ifs.open(&cx, "/home/f", OpenArgs::new(O_WRONLY)).unwrap();
@@ -234,7 +269,10 @@ fn objects_without_a_record_count_their_first_change() {
     assert!(none("root/home/raw/f") && none("root/home/raw"));
     // A data change.
     rises(&s, &cx, "/home/raw/f", || {
-        let fd = s.ifs.open(&cx, "/home/raw/f", OpenArgs::new(O_WRONLY)).unwrap();
+        let fd = s
+            .ifs
+            .open(&cx, "/home/raw/f", OpenArgs::new(O_WRONLY))
+            .unwrap();
         s.ifs.write(&cx, fd, b"data").unwrap();
         s.ifs.close(&cx, fd).unwrap();
     });
@@ -281,11 +319,17 @@ fn qsys_lib_counts_every_change() {
     rises(&s, &cx, m, || s.put(&cx, m, b"two"));
     assert!(m1 > m0);
     // A library gains an entry.
-    rises(&s, &cx, "/QSYS.LIB", || s.ifs.mkdir(&cx, "/QSYS.LIB/NEW.LIB", 0o755).unwrap());
+    rises(&s, &cx, "/QSYS.LIB", || {
+        s.ifs.mkdir(&cx, "/QSYS.LIB/NEW.LIB", 0o755).unwrap()
+    });
     // Created with O_CREAT on a new name: a new file with a value.
     let fd = s
         .ifs
-        .open(&cx, "/home/n", OpenArgs::new(O_WRONLY | O_CREAT).mode(0o600))
+        .open(
+            &cx,
+            "/home/n",
+            OpenArgs::new(O_WRONLY | O_CREAT).mode(0o600),
+        )
         .unwrap();
     s.ifs.close(&cx, fd).unwrap();
     assert!(chg(&s, &cx, "/home/n") > 0);

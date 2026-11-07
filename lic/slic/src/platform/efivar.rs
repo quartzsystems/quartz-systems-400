@@ -51,7 +51,13 @@ fn var(dir: &Path, name: &str) -> PathBuf {
 /// The mount failed.
 pub fn mount_vars() -> Result<(), String> {
     if !fs::read_dir(EFIVARS).is_ok_and(|mut d| d.next().is_some()) {
-        match mount("efivarfs", EFIVARS, "efivarfs", MountFlags::NOSUID | MountFlags::NOEXEC | MountFlags::NODEV, None) {
+        match mount(
+            "efivarfs",
+            EFIVARS,
+            "efivarfs",
+            MountFlags::NOSUID | MountFlags::NOEXEC | MountFlags::NODEV,
+            None,
+        ) {
             Ok(()) | Err(rustix::io::Errno::BUSY) => {}
             Err(e) => return Err(format!("efivarfs: {e}")),
         }
@@ -105,7 +111,11 @@ impl EfiFirmware {
         for s in [Slot::A, Slot::B] {
             let (n, path) = entry(s);
             let name = efi::boot_name(n);
-            let want = efi::load_option(&format!("QS/400 slot {}", if s == Slot::A { 'A' } else { 'B' }), &self.esp, path);
+            let want = efi::load_option(
+                &format!("QS/400 slot {}", if s == Slot::A { 'A' } else { 'B' }),
+                &self.esp,
+                path,
+            );
             let have = fs::read(var(&self.dir, &name)).ok();
             if have.as_deref().and_then(|h| h.get(4..)) != Some(want.as_slice()) {
                 self.write(&name, &want)?;
@@ -128,7 +138,10 @@ impl ptf::slot::Firmware for EfiFirmware {
             .unwrap_or_default();
         let other = if s == Slot::A { Slot::B } else { Slot::A };
         let front = [entry(s).0, entry(other).0];
-        self.write("BootOrder", &efi::numbers(&efi::order_with_front(&order, &front)))
+        self.write(
+            "BootOrder",
+            &efi::numbers(&efi::order_with_front(&order, &front)),
+        )
     }
 }
 
@@ -139,7 +152,13 @@ pub fn current_boot_path() -> Option<Vec<u8>> {
         return None;
     }
     if !fs::read_dir(EFIVARS).is_ok_and(|mut d| d.next().is_some()) {
-        let _ = mount("efivarfs", EFIVARS, "efivarfs", MountFlags::NOSUID | MountFlags::NOEXEC | MountFlags::NODEV, None);
+        let _ = mount(
+            "efivarfs",
+            EFIVARS,
+            "efivarfs",
+            MountFlags::NOSUID | MountFlags::NOEXEC | MountFlags::NODEV,
+            None,
+        );
     }
     let dir = Path::new(EFIVARS);
     let cur = fs::read(var(dir, "BootCurrent")).ok()?;

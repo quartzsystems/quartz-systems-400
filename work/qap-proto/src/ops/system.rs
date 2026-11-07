@@ -17,7 +17,11 @@ pub struct Product {
     pub release: String,
 }
 
-wire_struct!(Product { id, option, release });
+wire_struct!(Product {
+    id,
+    option,
+    release
+});
 
 /// `SystemInfo`'s reply.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

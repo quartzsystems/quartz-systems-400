@@ -43,7 +43,10 @@ fn encode4(i: &Interface) -> Rec {
         .set_bin("MTU", i64::from(i.mtu.unwrap_or(0)))
         .set("AUTOSTART", if i.autostart { "Y" } else { "N" })
         .set("LINETYPE", i.line_type())
-        .set("LOCALIFC", &i.local_ifc.map_or("*NONE".into(), |l| l.to_string()))
+        .set(
+            "LOCALIFC",
+            &i.local_ifc.map_or("*NONE".into(), |l| l.to_string()),
+        )
         .set_bin("BINLOCAL", i.local_ifc.map_or(0, v4_bits))
         .set("IFCNAME", i.alias.as_deref().unwrap_or("*NONE"))
         .set_g("TEXT", &i.text)
@@ -51,11 +54,20 @@ fn encode4(i: &Interface) -> Rec {
         .set("DHCPDYNDNS", yes(i.dhcp_dyndns))
         .set("DHCPCLTID", &i.dhcp_client_id)
         .set_bin("VRTLANID", i64::from(i.vlan.unwrap_or(0)))
-        .set_at("RESERVED2", ALIAS_AT.0, ALIAS_AT.1, i.alias.as_deref().unwrap_or(""));
+        .set_at(
+            "RESERVED2",
+            ALIAS_AT.0,
+            ALIAS_AT.1,
+            i.alias.as_deref().unwrap_or(""),
+        );
     if let Some(m) = i.mask {
-        r.set("SUBNETMASK", &m.to_string()).set_bin("BINSUBNET", v4_bits(m));
+        r.set("SUBNETMASK", &m.to_string())
+            .set_bin("BINSUBNET", v4_bits(m));
         if let Some(ip) = ip {
-            r.set_bin("NETWORKID", v4_bits(Ipv4Addr::from(u32::from(ip) & u32::from(m))));
+            r.set_bin(
+                "NETWORKID",
+                v4_bits(Ipv4Addr::from(u32::from(ip) & u32::from(m))),
+            );
         }
     } else {
         r.set("SUBNETMASK", "*");

@@ -23,21 +23,120 @@ pub type Sample = [&'static str; 10];
 
 /// The user's spooled files, newest first.
 pub const SPOOLED: &[Sample] = &[
-    ["INVRPT", "CWELLMAN", "INVBATCH", "RDY", "12", "1", "*STD", "QGPL/QPRINT", "10/29/26 06:14", "123402/CWELLMAN/INVBATCH"],
-    ["QPJOBLOG", "CWELLMAN", "INVLOAD", "RDY", "3", "1", "*STD", "QUSRSYS/QEZJOBLOG", "10/29/26 06:15", "123402/CWELLMAN/INVBATCH"],
-    ["QPRINT", "CWELLMAN", "", "HLD", "1", "1", "*STD", "QGPL/QPRINT", "10/28/26 18:00", "123311/CWELLMAN/QPADEV0003"],
-    ["QSYSPRT", "CWELLMAN", "DSPJOB", "RDY", "7", "1", "*STD", "QGPL/QPRINT", "10/28/26 17:02", "123311/CWELLMAN/QPADEV0003"],
-    ["INVLABEL", "CWELLMAN", "LABELS", "RDY", "118", "2", "*LABEL", "QGPL/PRT02", "10/27/26 09:40", "123290/CWELLMAN/INVBATCH"],
-    ["QPDSPJOB", "CWELLMAN", "", "SAV", "2", "1", "*STD", "QGPL/QPRINT", "10/24/26 11:11", "123101/CWELLMAN/QPADEV0003"],
-    ["QPJOBLOG", "CWELLMAN", "QPADEV0003", "MSGW", "1", "1", "*STD", "QUSRSYS/QEZJOBLOG", "10/22/26 09:50", "123050/CWELLMAN/QPADEV0003"],
-    ["ASSETEXP", "CWELLMAN", "EXPORT", "WTR", "44", "1", "*STD", "HLINV/INVRPT", "10/20/26 15:00", "122990/CWELLMAN/INVBATCH"],
+    [
+        "INVRPT",
+        "CWELLMAN",
+        "INVBATCH",
+        "RDY",
+        "12",
+        "1",
+        "*STD",
+        "QGPL/QPRINT",
+        "10/29/26 06:14",
+        "123402/CWELLMAN/INVBATCH",
+    ],
+    [
+        "QPJOBLOG",
+        "CWELLMAN",
+        "INVLOAD",
+        "RDY",
+        "3",
+        "1",
+        "*STD",
+        "QUSRSYS/QEZJOBLOG",
+        "10/29/26 06:15",
+        "123402/CWELLMAN/INVBATCH",
+    ],
+    [
+        "QPRINT",
+        "CWELLMAN",
+        "",
+        "HLD",
+        "1",
+        "1",
+        "*STD",
+        "QGPL/QPRINT",
+        "10/28/26 18:00",
+        "123311/CWELLMAN/QPADEV0003",
+    ],
+    [
+        "QSYSPRT",
+        "CWELLMAN",
+        "DSPJOB",
+        "RDY",
+        "7",
+        "1",
+        "*STD",
+        "QGPL/QPRINT",
+        "10/28/26 17:02",
+        "123311/CWELLMAN/QPADEV0003",
+    ],
+    [
+        "INVLABEL",
+        "CWELLMAN",
+        "LABELS",
+        "RDY",
+        "118",
+        "2",
+        "*LABEL",
+        "QGPL/PRT02",
+        "10/27/26 09:40",
+        "123290/CWELLMAN/INVBATCH",
+    ],
+    [
+        "QPDSPJOB",
+        "CWELLMAN",
+        "",
+        "SAV",
+        "2",
+        "1",
+        "*STD",
+        "QGPL/QPRINT",
+        "10/24/26 11:11",
+        "123101/CWELLMAN/QPADEV0003",
+    ],
+    [
+        "QPJOBLOG",
+        "CWELLMAN",
+        "QPADEV0003",
+        "MSGW",
+        "1",
+        "1",
+        "*STD",
+        "QUSRSYS/QEZJOBLOG",
+        "10/22/26 09:50",
+        "123050/CWELLMAN/QPADEV0003",
+    ],
+    [
+        "ASSETEXP",
+        "CWELLMAN",
+        "EXPORT",
+        "WTR",
+        "44",
+        "1",
+        "*STD",
+        "HLINV/INVRPT",
+        "10/20/26 15:00",
+        "122990/CWELLMAN/INVBATCH",
+    ],
 ];
 
 /// Their file numbers in their jobs.
 const NUMBERS: [u32; 8] = [402, 403, 1, 2, 1, 1, 1, 1];
 
 /// Another user's file, for `*ALL`.
-pub const OTHER: Sample = ["QSYSPRT", "QPGMR", "MONTHEND", "RDY", "4", "1", "*STD", "QGPL/QPRINT", "10/26/26 23:30", "123200/QPGMR/MONTHEND"];
+pub const OTHER: Sample = [
+    "QSYSPRT",
+    "QPGMR",
+    "MONTHEND",
+    "RDY",
+    "4",
+    "1",
+    "*STD",
+    "QGPL/QPRINT",
+    "10/26/26 23:30",
+    "123200/QPGMR/MONTHEND",
+];
 
 /// Page 1 of `INVRPT`.
 pub const INVRPT_PAGE1: &str = r"QPRINT    INVRPT      INVENTORY REPORT BY LOCATION                       QSHQ400   10/29/26  06:14:02   PAGE    1
@@ -63,8 +162,20 @@ QS-BR1-R1 QS000402    WATCHGUARD        M370                  80BA0F2B1C33      
 
 /// A local time on the sample system, from `MM/DD/YY HH:MM` and seconds.
 fn local(stamp: &str, s: u32) -> u64 {
-    let n = |r: std::ops::Range<usize>| stamp.get(r).and_then(|x| x.parse::<u32>().ok()).unwrap_or(0);
-    secs(2000 + i64::from(n(6..8)), n(0..2), n(3..5), n(9..11), n(12..14), s) + 4 * 3600
+    let n = |r: std::ops::Range<usize>| {
+        stamp
+            .get(r)
+            .and_then(|x| x.parse::<u32>().ok())
+            .unwrap_or(0)
+    };
+    secs(
+        2000 + i64::from(n(6..8)),
+        n(0..2),
+        n(3..5),
+        n(9..11),
+        n(12..14),
+        s,
+    ) + 4 * 3600
 }
 
 fn splf(s: &Sample, number: u32) -> Splf {
@@ -106,9 +217,16 @@ pub fn page_text(f: &Splf, n: u32) -> String {
     }
     let q = f.outq.rsplit('/').next().unwrap_or("QPRINT");
     let title = format!("{} OUTPUT", f.file);
-    let mut s = format!("{q:<10}{:<12}{title:<55}QSHQ400   10/29/26  06:14:02   PAGE {n:>4}\n\n", f.file);
+    let mut s = format!(
+        "{q:<10}{:<12}{title:<55}QSHQ400   10/29/26  06:14:02   PAGE {n:>4}\n\n",
+        f.file
+    );
     for l in 1..=20 {
-        let _ = writeln!(s, "  {:<8}  LINE {l:>3} OF PAGE {n:>3}  JOB {}", f.file, f.job);
+        let _ = writeln!(
+            s,
+            "  {:<8}  LINE {l:>3} OF PAGE {n:>3}  JOB {}",
+            f.file, f.job
+        );
     }
     s
 }
@@ -123,7 +241,11 @@ pub struct FixturePrint {
 
 impl Default for FixturePrint {
     fn default() -> Self {
-        let mut v: Vec<Splf> = SPOOLED.iter().zip(NUMBERS).map(|(s, n)| splf(s, n)).collect();
+        let mut v: Vec<Splf> = SPOOLED
+            .iter()
+            .zip(NUMBERS)
+            .map(|(s, n)| splf(s, n))
+            .collect();
         v.push(splf(&OTHER, 1));
         Self {
             files: Mutex::new(v),
@@ -133,16 +255,21 @@ impl Default for FixturePrint {
 }
 
 fn msg(id: &str, data: &[&str]) -> Message {
-    let t = text::second_level(id, data).map(|s| s.text).unwrap_or_default();
+    let t = text::second_level(id, data)
+        .map(|s| s.text)
+        .unwrap_or_default();
     Message::new(Kind::Error, id, &t).with_data(data)
 }
 
 /// Whether `user` may work with `owner`'s files.
 fn may(user: &str, owner: &str) -> bool {
     user == owner
-        || PROFILES
-            .iter()
-            .any(|p| p.name == user && p.special.iter().any(|s| *s == "*SPLCTL" || *s == "*JOBCTL" || *s == "*ALLOBJ"))
+        || PROFILES.iter().any(|p| {
+            p.name == user
+                && p.special
+                    .iter()
+                    .any(|s| *s == "*SPLCTL" || *s == "*JOBCTL" || *s == "*ALLOBJ")
+        })
 }
 
 impl Print for FixturePrint {
@@ -167,7 +294,11 @@ impl Print for FixturePrint {
     }
 
     fn queues(&self, _user: &str) -> Vec<String> {
-        vec!["QGPL/QPRINT".into(), "QGPL/PRT02".into(), "QGPL/QPDF".into()]
+        vec![
+            "QGPL/QPRINT".into(),
+            "QGPL/PRT02".into(),
+            "QGPL/QPDF".into(),
+        ]
     }
 
     fn find(&self, user: &str, id: &str) -> Result<Splf, Message> {
@@ -197,21 +328,33 @@ impl Print for FixturePrint {
             .map(|t| {
                 let mut p = spool::scs::Page::default();
                 for (i, l) in t.lines().enumerate() {
-                    p.lines.insert(u16::try_from(i + 1).unwrap_or(u16::MAX), l.to_string());
+                    p.lines
+                        .insert(u16::try_from(i + 1).unwrap_or(u16::MAX), l.to_string());
                 }
                 p
             })
             .collect();
-        Ok(spool::pdf::render(&pages, spool::scs::decode::Format::default()))
+        Ok(spool::pdf::render(
+            &pages,
+            spool::scs::decode::Format::default(),
+        ))
     }
 
     fn act(&self, user: &str, f: &Splf, act: &Act) -> Result<(), Message> {
         let f = self.find(user, &f.id())?;
         let cmd = match act {
-            Act::Hold { page_end } => format!("HLDSPLF {} OPTION({})", f.parms(), if *page_end { "*PAGEEND" } else { "*IMMED" }),
+            Act::Hold { page_end } => format!(
+                "HLDSPLF {} OPTION({})",
+                f.parms(),
+                if *page_end { "*PAGEEND" } else { "*IMMED" }
+            ),
             Act::Release => format!("RLSSPLF {}", f.parms()),
             Act::Delete => format!("DLTSPLF {}", f.parms()),
-            Act::Move { outq, top } => format!("CHGSPLFA {} OUTQ({outq}){}", f.parms(), if *top { " top" } else { "" }),
+            Act::Move { outq, top } => format!(
+                "CHGSPLFA {} OUTQ({outq}){}",
+                f.parms(),
+                if *top { " top" } else { "" }
+            ),
         };
         self.ran.lock().expect("ran").push(cmd);
         let mut all = self.files.lock().expect("splf");
@@ -254,10 +397,28 @@ impl Print for FixturePrint {
             kind: kind.into(),
         };
         vec![
-            p("PRT01", true, "QGPL/QPRINT", "HQ server room", "Laser, 3812 emulation"),
+            p(
+                "PRT01",
+                true,
+                "QGPL/QPRINT",
+                "HQ server room",
+                "Laser, 3812 emulation",
+            ),
             p("PRT02", false, "QGPL/PRT02", "Warehouse", "Label printer"),
-            p("QPDFWTR", true, "QGPL/QPDF", "(PDF to /home/<user>/pdf)", "PDF"),
-            p("RMTLASER", true, "QGPL/RMTLASER", "Branch QS-BR1", "Remote LPR"),
+            p(
+                "QPDFWTR",
+                true,
+                "QGPL/QPDF",
+                "(PDF to /home/<user>/pdf)",
+                "PDF",
+            ),
+            p(
+                "RMTLASER",
+                true,
+                "QGPL/RMTLASER",
+                "Branch QS-BR1",
+                "Remote LPR",
+            ),
         ]
     }
 }

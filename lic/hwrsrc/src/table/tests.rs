@@ -11,7 +11,13 @@ use super::*;
 fn function(root: &Path, parent: &str, addr: &str, ids: [&str; 5]) -> PathBuf {
     let dir = root.join(parent).join(addr);
     fs::create_dir_all(&dir).unwrap();
-    let attrs = ["vendor", "device", "class", "subsystem_vendor", "subsystem_device"];
+    let attrs = [
+        "vendor",
+        "device",
+        "class",
+        "subsystem_vendor",
+        "subsystem_device",
+    ];
     for (attr, v) in attrs.iter().zip(ids) {
         fs::write(dir.join(attr), format!("0x{v}\n")).unwrap();
     }
@@ -48,8 +54,18 @@ fn names(t: &Table) -> Vec<(&str, &str)> {
 fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
     let root = fresh_root("perc");
     let top = "devices/pci0000:00";
-    function(&root, top, "0000:00:01.0", ["8086", "6f02", "060400", "8086", "0000"]);
-    let ahci = function(&root, top, "0000:00:1f.2", ["8086", "2922", "010601", "1af4", "1100"]);
+    function(
+        &root,
+        top,
+        "0000:00:01.0",
+        ["8086", "6f02", "060400", "8086", "0000"],
+    );
+    let ahci = function(
+        &root,
+        top,
+        "0000:00:1f.2",
+        ["8086", "2922", "010601", "1af4", "1100"],
+    );
     let perc = function(
         &root,
         &format!("{top}/0000:00:01.0"),
@@ -58,7 +74,13 @@ fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
     );
     // The kernel's names in another order than the SCSI addresses.
     for (t, name) in [(3, "sda"), (1, "sdb"), (0, "sdc"), (2, "sdd")] {
-        disk(&root, &perc, &format!("host0/target0:0:{t}/0:0:{t}:0"), name, 953_869);
+        disk(
+            &root,
+            &perc,
+            &format!("host0/target0:0:{t}/0:0:{t}:0"),
+            name,
+            953_869,
+        );
     }
     let sda = fs::canonicalize(root.join("class/block/sda")).unwrap();
     fs::create_dir_all(sda.join("sda1")).unwrap();
@@ -92,9 +114,18 @@ fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
     assert_eq!(perc.description, "1000:005f PERC H330 Mini");
     assert_eq!(perc.parent, "CMB01");
     assert_eq!(t.resources[1].type_model(), ("QD03".into(), "001".into()));
-    assert_eq!(t.controller_of("sdc").map(|r| r.name.as_str()), Some("DC02"));
-    assert_eq!(t.controller_of("sde").map(|r| r.name.as_str()), Some("DC01"));
-    assert_eq!(t.resources[4].description, "sdc 953869 MiB at 0:0:0:0 on DC02");
+    assert_eq!(
+        t.controller_of("sdc").map(|r| r.name.as_str()),
+        Some("DC02")
+    );
+    assert_eq!(
+        t.controller_of("sde").map(|r| r.name.as_str()),
+        Some("DC01")
+    );
+    assert_eq!(
+        t.resources[4].description,
+        "sdc 953869 MiB at 0:0:0:0 on DC02"
+    );
     assert_eq!(t.resources[4].type_model(), ("SSD".into(), String::new()));
     assert_eq!(crate::view::type_model(&t.resources[4]), "SSD");
     assert_eq!(t.get("DD005").unwrap().type_model().0, "DISK");
@@ -129,28 +160,48 @@ fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
 fn a_hot_added_disk_takes_the_next_name_and_a_removed_one_is_not_detected() {
     let root = fresh_root("hotplug");
     let top = "devices/pci0000:00";
-    let a = function(&root, top, "0000:00:03.0", ["1af4", "1001", "010000", "1af4", "0002"]);
+    let a = function(
+        &root,
+        top,
+        "0000:00:03.0",
+        ["1af4", "1001", "010000", "1af4", "0002"],
+    );
     disk(&root, &a, "virtio1", "vda", 2048);
     let mut t = Table::scan(&root);
     assert_eq!(names(&t), [("DC01", "0000:00:03.0"), ("DD001", "vda")]);
 
     // A second controller at a lower address with its disk: the old
     // names stay, the new ones come next.
-    let b = function(&root, top, "0000:00:02.0", ["1af4", "1001", "010000", "1af4", "0002"]);
+    let b = function(
+        &root,
+        top,
+        "0000:00:02.0",
+        ["1af4", "1001", "010000", "1af4", "0002"],
+    );
     disk(&root, &b, "virtio2", "vdb", 1024);
-    let ev = Uevent::parse(b"add@/devices/pci0000:00/0000:00:02.0/virtio2/block/vdb\0SUBSYSTEM=block\0").unwrap();
+    let ev =
+        Uevent::parse(b"add@/devices/pci0000:00/0000:00:02.0/virtio2/block/vdb\0SUBSYSTEM=block\0")
+            .unwrap();
     let changes = t.apply_uevent(&root, &ev);
     assert_eq!(changes.len(), 2, "{changes:?}");
     assert_eq!(
         names(&t),
-        [("DC01", "0000:00:03.0"), ("DD001", "vda"), ("DC02", "0000:00:02.0"), ("DD002", "vdb")]
+        [
+            ("DC01", "0000:00:03.0"),
+            ("DD001", "vda"),
+            ("DC02", "0000:00:02.0"),
+            ("DD002", "vdb")
+        ]
     );
     assert_eq!(t.get("DD002").unwrap().logical, "DC02");
     assert!(t.get("DD002").unwrap().description.ends_with("on DC02"));
 
     // Removed: still listed, not detected; back: the same name.
     fs::remove_file(root.join("class/block/vdb")).unwrap();
-    let ev = Uevent::parse(b"remove@/devices/pci0000:00/0000:00:02.0/virtio2/block/vdb\0SUBSYSTEM=block\0").unwrap();
+    let ev = Uevent::parse(
+        b"remove@/devices/pci0000:00/0000:00:02.0/virtio2/block/vdb\0SUBSYSTEM=block\0",
+    )
+    .unwrap();
     t.apply_uevent(&root, &ev);
     assert_eq!(t.get("DD002").unwrap().status, Status::NotDetected);
     symlink(b.join("virtio2/block/vdb"), root.join("class/block/vdb")).unwrap();
@@ -196,8 +247,14 @@ fn ports_are_cmn_in_pci_order_before_serial_ports() {
             ("CMN03", "ttyS0"),
         ]
     );
-    assert_eq!(t.resources[0].type_model, Some(("QN01".into(), "001".into())));
-    assert_eq!(t.resources[2].type_model, Some(("QN03".into(), "001".into())));
+    assert_eq!(
+        t.resources[0].type_model,
+        Some(("QN01".into(), "001".into()))
+    );
+    assert_eq!(
+        t.resources[2].type_model,
+        Some(("QN03".into(), "001".into()))
+    );
     assert_eq!(t.resources[1].kind, Kind::Port);
     assert_eq!(t.resources[1].logical, "LIN01");
     assert_eq!(t.resources[1].parent, "LIN01");
@@ -226,7 +283,10 @@ fn processors_and_main_storage() {
     }
     fs::write(mem.join("block_size_bytes"), "8000000\n").unwrap();
     let t = Table::scan(&root);
-    assert_eq!(names(&t), [("PN01", "cpu0"), ("PN02", "cpu1"), ("MS01", "memory")]);
+    assert_eq!(
+        names(&t),
+        [("PN01", "cpu0"), ("PN02", "cpu1"), ("MS01", "memory")]
+    );
     assert_eq!(t.resources[2].description, "main storage 256 MiB");
     fs::remove_dir_all(root).unwrap();
 }
@@ -248,15 +308,41 @@ fn the_guest_agent_channel_is_a_communications_resource() {
     fs::create_dir_all(&drv).unwrap();
     symlink(&vsock, drv.join("virtio4")).unwrap();
     let mut t = Table::default();
-    t.add(Kind::Comm, "ttyS0".into(), "serial port ttyS0".into(), "/devices/platform/serial8250/tty/ttyS0".into());
+    t.add(
+        Kind::Comm,
+        "ttyS0".into(),
+        "serial port ttyS0".into(),
+        "/devices/platform/serial8250/tty/ttyS0".into(),
+    );
     t.add_channels(&root);
     // An unnamed port is not one; the names follow the serial port's.
-    assert_eq!(names(&t), [("CMN01", "ttyS0"), ("CMN02", "org.qemu.guest_agent.0"), ("CMN03", "vsock")]);
+    assert_eq!(
+        names(&t),
+        [
+            ("CMN01", "ttyS0"),
+            ("CMN02", "org.qemu.guest_agent.0"),
+            ("CMN03", "vsock")
+        ]
+    );
     assert_eq!(t.resources[1].kind, Kind::Channel);
-    assert_eq!(t.resources[1].type_model(), ("QV01".to_string(), "001".to_string()));
-    let rows = crate::view::list(&t, crate::view::spec("*CMN").unwrap(), &mut crate::view::ids);
+    assert_eq!(
+        t.resources[1].type_model(),
+        ("QV01".to_string(), "001".to_string())
+    );
+    let rows = crate::view::list(
+        &t,
+        crate::view::spec("*CMN").unwrap(),
+        &mut crate::view::ids,
+    );
     let row = rows.iter().find(|r| r.name == "CMN02").unwrap();
-    assert_eq!((row.type_col.as_str(), row.status.as_str(), row.text.as_str()), ("QV01", "TXT0150", "TXT014D"));
+    assert_eq!(
+        (
+            row.type_col.as_str(),
+            row.status.as_str(),
+            row.text.as_str()
+        ),
+        ("QV01", "TXT0150", "TXT014D")
+    );
     // A port that goes away is not detected; one that comes keeps the next name.
     fs::remove_file(root.join("class/virtio-ports/vport3p1")).unwrap();
     t.rescan(&root);

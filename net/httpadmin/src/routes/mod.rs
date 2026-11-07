@@ -7,10 +7,10 @@
 //! URLs mirror the prototype's file names (`instance-ports.html` is
 //! `GET /instance/<name>/ports`).
 
-pub mod create;
-pub mod instance;
 pub mod certs;
+pub mod create;
 pub mod global;
+pub mod instance;
 pub mod instances;
 pub mod shared;
 pub mod signon;
@@ -73,7 +73,11 @@ impl Rq<'_> {
         }
         let mut ctx = self.ctx.clone();
         if let Some((group, _)) = page.nav {
-            ctx.open = Some(session::nav_visit(&self.admin.sessions, &self.session.id, group));
+            ctx.open = Some(session::nav_visit(
+                &self.admin.sessions,
+                &self.session.id,
+                group,
+            ));
         }
         Response::html(200, render(&ctx, &page))
     }
@@ -96,7 +100,11 @@ impl Rq<'_> {
 
     /// A session value.
     pub fn get(&self, key: &str) -> String {
-        self.admin.sessions.get(&self.session.id).map(|s| s.get(key).to_string()).unwrap_or_default()
+        self.admin
+            .sessions
+            .get(&self.session.id)
+            .map(|s| s.get(key).to_string())
+            .unwrap_or_default()
     }
 
     /// Set session values.
@@ -110,7 +118,9 @@ impl Rq<'_> {
 
     /// Remove the session values starting with `prefix`.
     pub fn clear(&self, prefix: &str) {
-        self.admin.sessions.update(&self.session.id, |s| s.data.retain(|k, _| !k.starts_with(prefix)));
+        self.admin.sessions.update(&self.session.id, |s| {
+            s.data.retain(|k, _| !k.starts_with(prefix))
+        });
     }
 
     /// Whether the user has special authority `need` (`*ALLOBJ` has
@@ -122,7 +132,13 @@ impl Rq<'_> {
 
     /// Check `need` for `function` on `object`: on failure the Not
     /// authorized page, and an `AF` audit entry.
-    pub fn require(&self, need: Need, function: &str, object: &str, crumb: &[&str]) -> Result<(), Response> {
+    pub fn require(
+        &self,
+        need: Need,
+        function: &str,
+        object: &str,
+        crumb: &[&str],
+    ) -> Result<(), Response> {
         if self.has(need) {
             return Ok(());
         }
@@ -131,7 +147,13 @@ impl Rq<'_> {
 
     /// Check that the user holds every one of `needs` itself (`*ALLOBJ`
     /// stands in for none of them), as the certificate commands do.
-    pub fn require_each(&self, needs: &[Need], function: &str, object: &str, crumb: &[&str]) -> Result<(), Response> {
+    pub fn require_each(
+        &self,
+        needs: &[Need],
+        function: &str,
+        object: &str,
+        crumb: &[&str],
+    ) -> Result<(), Response> {
         let sp = self.env().system.special(self.user());
         match needs.iter().find(|n| !sp.iter().any(|s| s == n.name())) {
             Some(n) => Err(self.refuse(*n, function, object, crumb)),
@@ -199,7 +221,11 @@ impl Rq<'_> {
 /// The route of `path` under the prefix, if it is under it.
 fn route(path: &str) -> Option<&str> {
     let r = path.strip_prefix(PRODUCT.prefix)?;
-    if r.is_empty() || r.starts_with('/') { Some(r) } else { None }
+    if r.is_empty() || r.starts_with('/') {
+        Some(r)
+    } else {
+        None
+    }
 }
 
 /// Answer a request.
@@ -221,9 +247,20 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         return qsweb::http::plain(403, "Administration is not allowed from this address.");
     }
     if settings.admin_tls && !peer.secure && admin.tls_up() {
-        let host = req.header("host").unwrap_or("").rsplit_once(':').map_or(req.header("host").unwrap_or(""), |(h, _)| h);
-        let q = if req.query.is_empty() { String::new() } else { format!("?{}", req.query) };
-        return Response::redirect(&format!("https://{host}:{}{}{q}", settings.admin_tls_port, req.path));
+        let host = req
+            .header("host")
+            .unwrap_or("")
+            .rsplit_once(':')
+            .map_or(req.header("host").unwrap_or(""), |(h, _)| h);
+        let q = if req.query.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", req.query)
+        };
+        return Response::redirect(&format!(
+            "https://{host}:{}{}{q}",
+            settings.admin_tls_port, req.path
+        ));
     }
     match r {
         "" | "/" => return Response::redirect(&PRODUCT.url("/signon")),
@@ -231,14 +268,19 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         "/signoff" => return signon::signoff(admin, req, peer),
         _ => {}
     }
-    let session = req.cookie(session::COOKIE).and_then(|id| admin.sessions.get(id));
+    let session = req
+        .cookie(session::COOKIE)
+        .and_then(|id| admin.sessions.get(id));
     let Some(session) = session else {
         return Response::redirect(&PRODUCT.url("/signon"));
     };
     if req.method == "POST" {
         let form = req.form();
         if !session::csrf_ok(&session, form.str(session::CSRF_FIELD)) {
-            return qsweb::http::plain(403, "The form is out of date. Go back, reload the page and try again.");
+            return qsweb::http::plain(
+                403,
+                "The form is out of date. Go back, reload the page and try again.",
+            );
         }
     }
     let ctx = Ctx {

@@ -23,7 +23,12 @@ const EXIT_PGM: &str = "\
 ";
 
 /// Poll a service console command until `done`, `secs` at most.
-fn poll(s: &mut Session, cmd: &str, secs: u64, done: impl Fn(&str) -> bool) -> Result<String, String> {
+fn poll(
+    s: &mut Session,
+    cmd: &str,
+    secs: u64,
+    done: impl Fn(&str) -> bool,
+) -> Result<String, String> {
     let until = Instant::now() + Duration::from_secs(secs);
     loop {
         let out = s.command(cmd, CMD)?;
@@ -37,7 +42,10 @@ fn poll(s: &mut Session, cmd: &str, secs: u64, done: impl Fn(&str) -> bool) -> R
 /// ASP 1's pages and free pages, from `svc.asp`'s first line.
 fn asp_pages(s: &mut Session) -> Result<(u64, u64), String> {
     let out = s.command("svc.asp", CMD)?;
-    let line = out.lines().find(|l| l.starts_with("ASP 1:")).ok_or_else(|| format!("svc.asp:\n{out}"))?;
+    let line = out
+        .lines()
+        .find(|l| l.starts_with("ASP 1:"))
+        .ok_or_else(|| format!("svc.asp:\n{out}"))?;
     let num_before = |word: &str| -> Option<u64> {
         let i = line.find(word)?;
         line[..i].split_whitespace().last()?.parse().ok()
@@ -66,11 +74,16 @@ impl Suite {
         let kib = want.saturating_sub(used) * 4;
         let _ = s.command("CRTLIB LIB(STGFILL)", CMD);
         let each = kib / 8 + 1;
-        let filled = s.command(&format!("svc.obj fill STGFILL 8 {each}"), Duration::from_mins(5))?;
+        let filled = s.command(
+            &format!("svc.obj fill STGFILL 8 {each}"),
+            Duration::from_mins(5),
+        )?;
         let hist = poll(s, "dsplog MSGID(CPF0907)", 60, |o| o.contains("CPF0907"))?;
         if !hist.contains("CPF0907") {
             let asp = s.command("svc.asp", CMD)?;
-            return Err(format!("no CPF0907 at {threshold}%:\n{hist}\n--- fill\n{filled}\n--- asp\n{asp}"));
+            return Err(format!(
+                "no CPF0907 at {threshold}%:\n{hist}\n--- fill\n{filled}\n--- asp\n{asp}"
+            ));
         }
         let opr = s.command("DSPMSG MSGQ(QSYSOPR)", CMD)?;
         if !opr.contains("storage threshold") {
@@ -86,7 +99,9 @@ impl Suite {
         }
         // *CRITMSG: CPI099B to QSECOFR's queue at once (the value changed).
         s.command("CHGSYSVAL SYSVAL(QSTGLOWACN) VALUE(*CRITMSG)", CMD)?;
-        let crit = poll(s, "DSPMSG MSGQ(QSECOFR)", 60, |o| o.contains("critical storage lower limit"))?;
+        let crit = poll(s, "DSPMSG MSGQ(QSECOFR)", 60, |o| {
+            o.contains("critical storage lower limit")
+        })?;
         if !crit.contains("critical storage lower limit") {
             return Err(format!("no CPI099B for *CRITMSG:\n{crit}"));
         }
@@ -94,11 +109,17 @@ impl Suite {
         let _ = s.command("DLTDTAARA DTAARA(QGPL/STGLOWRAN)", CMD);
         let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
         crate::qir::qemu::push(s, "STGLOWSRC", EXIT_PGM)?;
-        let put = s.command("svc.srcput QGPL/QCLSRC STGLOWX SRCTYPE(CLLE) FROMSTMF(STGLOWSRC)", CMD)?;
+        let put = s.command(
+            "svc.srcput QGPL/QCLSRC STGLOWX SRCTYPE(CLLE) FROMSTMF(STGLOWSRC)",
+            CMD,
+        )?;
         if !put.contains("written") {
             return Err(format!("srcput: {put}"));
         }
-        let made = s.command("CRTBNDCL PGM(QGPL/STGLOWX) SRCFILE(QGPL/QCLSRC)", Duration::from_secs(60))?;
+        let made = s.command(
+            "CRTBNDCL PGM(QGPL/STGLOWX) SRCFILE(QGPL/QCLSRC)",
+            Duration::from_secs(60),
+        )?;
         if !made.contains("created") {
             return Err(format!("CRTBNDCL: {made}"));
         }
@@ -110,11 +131,15 @@ impl Suite {
             return Err(format!("ADDEXITPGM: {add}"));
         }
         s.command("CHGSYSVAL SYSVAL(QSTGLOWACN) VALUE(*REGFAC)", CMD)?;
-        let ran = poll(s, "DSPDTAARA DTAARA(QGPL/STGLOWRAN)", 90, |o| o.contains("RAN"))?;
+        let ran = poll(s, "DSPDTAARA DTAARA(QGPL/STGLOWRAN)", 90, |o| {
+            o.contains("RAN")
+        })?;
         if !ran.contains("RAN") {
             let jobs = s.command("wrkactjob", CMD)?;
             let log = s.command("dsplog", CMD)?;
-            return Err(format!("the exit program did not run:\n{ran}\n--- wrkactjob\n{jobs}\n--- dsplog\n{log}"));
+            return Err(format!(
+                "the exit program did not run:\n{ran}\n--- wrkactjob\n{jobs}\n--- dsplog\n{log}"
+            ));
         }
         // No subsystem starts while *REGFAC holds below the limit.
         let _ = s.command("CRTSBSD SBSD(QGPL/STGTEST) POOLS((1 *BASE))", CMD);
@@ -123,7 +148,10 @@ impl Suite {
         // Everything back.
         s.command("CHGSYSVAL SYSVAL(QSTGLOWACN) VALUE(*MSG)", CMD)?;
         s.command("CHGSYSVAL SYSVAL(QSTGLOWLMT) VALUE(5)", CMD)?;
-        let _ = s.command("RMVEXITPGM EXITPNT(QIBM_QWC_QSTGLOWACN) FORMAT(STGL0100) PGMNBR(1)", CMD);
+        let _ = s.command(
+            "RMVEXITPGM EXITPNT(QIBM_QWC_QSTGLOWACN) FORMAT(STGL0100) PGMNBR(1)",
+            CMD,
+        );
         let _ = s.command("ENDSBS SBS(STGTEST) OPTION(*IMMED)", CMD);
         let _ = s.command("DLTSBSD SBSD(QGPL/STGTEST)", CMD);
         let _ = s.command("DLTDTAARA DTAARA(QGPL/STGLOWRAN)", CMD);

@@ -17,7 +17,11 @@ impl Allocator {
         if len == 0 {
             return;
         }
-        let e = Extent { unit: span, lba, len };
+        let e = Extent {
+            unit: span,
+            lba,
+            len,
+        };
         self.held.remove(e);
         self.held.insert(e);
         let bm = &mut self.bitmaps[usize::from(span)];
@@ -35,7 +39,11 @@ impl Allocator {
         if len == 0 {
             return;
         }
-        let e = Extent { unit: span, lba, len };
+        let e = Extent {
+            unit: span,
+            lba,
+            len,
+        };
         let held = self.held.clone();
         self.held.remove(e);
         let meta = self.metadata_extents();
@@ -43,8 +51,15 @@ impl Allocator {
             let lo = h.lba.max(lba);
             let hi = h.end().min(lba + len);
             for p in lo..hi {
-                let one = Extent { unit: span, lba: p, len: 1 };
-                if !meta.overlaps(one) && !self.pending.overlaps(one) && !self.bitmaps[usize::from(span)].is_free(p) {
+                let one = Extent {
+                    unit: span,
+                    lba: p,
+                    len: 1,
+                };
+                if !meta.overlaps(one)
+                    && !self.pending.overlaps(one)
+                    && !self.bitmaps[usize::from(span)].is_free(p)
+                {
                     self.pending.insert(one);
                 }
             }
@@ -60,7 +75,11 @@ impl Allocator {
         let meta = self.metadata_extents();
         (lba..(lba + len).min(bm.pages().saturating_sub(1)))
             .filter(|&p| {
-                let one = Extent { unit: span, lba: p, len: 1 };
+                let one = Extent {
+                    unit: span,
+                    lba: p,
+                    len: 1,
+                };
                 !bm.is_free(p)
                     && !self.held.overlaps(one)
                     && !meta.overlaps(one)
@@ -80,7 +99,11 @@ impl Allocator {
     /// Pages held on a span.
     #[must_use]
     pub fn held_pages(&self, span: u16) -> u64 {
-        self.held.iter().filter(|e| e.unit == span).map(|e| e.len).sum()
+        self.held
+            .iter()
+            .filter(|e| e.unit == span)
+            .map(|e| e.len)
+            .sum()
     }
 
     /// Free runs of a span as `(lba, len)`, ascending.

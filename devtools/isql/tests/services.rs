@@ -23,7 +23,10 @@ fn every_row_but(skip: &[usize]) -> Vec<usize> {
 
 #[test]
 fn printer_file() {
-    compare("sql/strsql-print", &services::printer_file("QSYSPRT", None, &words));
+    compare(
+        "sql/strsql-print",
+        &services::printer_file("QSYSPRT", None, &words),
+    );
 }
 
 #[test]
@@ -37,7 +40,11 @@ fn source_file() {
 #[test]
 fn confirm_remove() {
     // Rows 3 to 5 are what removing does, in Quartz's words.
-    compare_rows("sql/strsql-removed", &services::confirm_remove(&words), &every_row_but(&[3, 4, 5]));
+    compare_rows(
+        "sql/strsql-removed",
+        &services::confirm_remove(&words),
+        &every_row_but(&[3, 4, 5]),
+    );
 }
 
 /// The attributes as pub400's session had them.
@@ -63,17 +70,38 @@ fn session(changes: &[(&str, &str)]) -> Attrs {
 #[test]
 fn attributes_reshape() {
     let printer = session(&[("OUTPUT", "2")]);
-    compare("sql/strsql-out-printer", &menus::attributes(0, &printer, None, &words));
+    compare(
+        "sql/strsql-out-printer",
+        &menus::attributes(0, &printer, None, &words),
+    );
     let file = session(&[("OUTPUT", "3")]);
-    compare("sql/strsql-out-file", &menus::attributes(0, &file, None, &words));
-    compare("sql/strsql-out-file-2", &menus::attributes(1, &file, None, &words));
+    compare(
+        "sql/strsql-out-file",
+        &menus::attributes(0, &file, None, &words),
+    );
+    compare(
+        "sql/strsql-out-file-2",
+        &menus::attributes(1, &file, None, &words),
+    );
     assert_eq!(menus::attr_pages(&file, &words), 3);
     let iso = session(&[("DATFMT", "*ISO"), ("TIMFMT", "*ISO")]);
-    compare("sql/strsql-attrs-iso", &menus::attributes(0, &iso, None, &words));
+    compare(
+        "sql/strsql-attrs-iso",
+        &menus::attributes(0, &iso, None, &words),
+    );
     let resumed = session(&[("DATFMT", "*ISO")]);
-    compare("sql/strsql-resume-attrs", &menus::attributes(0, &resumed, None, &words));
-    compare("sql/strsql-fresh-attrs", &menus::attributes(0, &session(&[]), None, &words));
-    compare("sql/strsql-attrs-now-2", &menus::attributes(1, &session(&[]), None, &words));
+    compare(
+        "sql/strsql-resume-attrs",
+        &menus::attributes(0, &resumed, None, &words),
+    );
+    compare(
+        "sql/strsql-fresh-attrs",
+        &menus::attributes(0, &session(&[]), None, &words),
+    );
+    compare(
+        "sql/strsql-attrs-now-2",
+        &menus::attributes(1, &session(&[]), None, &words),
+    );
 }
 
 fn col(name: &str, ty: &str) -> Column {

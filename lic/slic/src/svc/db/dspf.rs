@@ -69,8 +69,15 @@ pub fn crtdspf(system: &mut System, p: &Params) -> Result<String, String> {
             system: "QS400".into(),
             now: now(),
         };
-        wm::obj::create_attr(txn, lib, (fname, types::FILE, ATTR), &text, &stamp, &payload)
-            .map_err(|e| err(&e))?;
+        wm::obj::create_attr(
+            txn,
+            lib,
+            (fname, types::FILE, ATTR),
+            &text,
+            &stamp,
+            &payload,
+        )
+        .map_err(|e| err(&e))?;
         Ok(format!(
             "Display file {qual} created: {records} record format(s)."
         ))
@@ -181,11 +188,7 @@ pub fn end_level(system: &mut System, level: u32) -> usize {
 
 /// Find a display file through the names in force: its object and
 /// its real `lib/name`.
-fn find(
-    txn: &mut Txn<'_>,
-    qsys: ObjectId,
-    qual: &str,
-) -> Result<(ObjectId, String), String> {
+fn find(txn: &mut Txn<'_>, qsys: ObjectId, qual: &str) -> Result<(ObjectId, String), String> {
     let (lib, name) = wm::obj::params::qualified(qual);
     let names = crate::svc::ile::name_context(txn, qsys);
     let id = wm::obj::find(txn, qsys, &names, &lib, &name, types::FILE)
@@ -228,4 +231,3 @@ pub fn open(
         Ok((b, real))
     })
 }
-

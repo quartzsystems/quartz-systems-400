@@ -63,9 +63,19 @@ pub fn sign_on(system: &str, subsystem: &str, display: &str, long_password: bool
     };
     s.put(row, 17, "Program/procedure . . . . . . . .", Attr::GREEN);
     s.field(row, 53, 10, false);
-    s.put(row + 1, 17, "Menu  . . . . . . . . . . . . . .", Attr::GREEN);
+    s.put(
+        row + 1,
+        17,
+        "Menu  . . . . . . . . . . . . . .",
+        Attr::GREEN,
+    );
     s.field(row + 1, 53, 10, false);
-    s.put(row + 2, 17, "Current library . . . . . . . . .", Attr::GREEN);
+    s.put(
+        row + 2,
+        17,
+        "Current library . . . . . . . . .",
+        Attr::GREEN,
+    );
     s.field(row + 2, 53, 10, false);
     s.put(24, SIGN_ON_COPYRIGHT_COL, COPYRIGHT, Attr::WHITE);
     s.cursor = (5, 52);

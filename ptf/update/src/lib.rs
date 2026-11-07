@@ -18,7 +18,7 @@ pub mod publish;
 pub mod server;
 pub mod url;
 
-pub use catalog::{Catalog, CatalogGroup, CatalogPtf, GroupKind, PtfKind, Product};
+pub use catalog::{Catalog, CatalogGroup, CatalogPtf, GroupKind, Product, PtfKind};
 pub use client::{Client, Ident};
 pub use error::{Error, Result};
 pub use order::{OrderMode, OrderRequest, OrderResult, Why};

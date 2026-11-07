@@ -495,7 +495,10 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         for i in big {
             let v = &self.p.vars[i];
             let bytes = init_bytes(v);
-            let fill = bytes.first().copied().filter(|b| bytes.iter().all(|x| x == b));
+            let fill = bytes
+                .first()
+                .copied()
+                .filter(|b| bytes.iter().all(|x| x == b));
             let size = self.i64(i64::try_from(v.ty.size()).expect("frame fits"));
             let f = self.i64(i64::from(fill.unwrap_or(0)));
             let addr = self.rt_call_ret(RtFn::AutoAlloc, &[size, f]);
@@ -528,7 +531,9 @@ impl<'a, 'b> Lowerer<'a, 'b> {
                 i64::try_from(k).expect("few parameters"),
             )
         } else {
-            self.b.ins().icmp_imm_s(cranelift_codegen::ir::condcodes::IntCC::NotEqual, raw, 0)
+            self.b
+                .ins()
+                .icmp_imm_s(cranelift_codegen::ir::condcodes::IntCC::NotEqual, raw, 0)
         };
         let set_blk = self.b.create_block();
         let next = self.b.create_block();

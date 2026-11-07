@@ -53,7 +53,11 @@ fn object_candidate(sql: &str, n: u32) -> Option<Name> {
     if (first.is_ascii_uppercase() || "$#@".contains(first)) && five.chars().all(name_char) {
         return Name::parse(&format!("{five}{n:05}")).ok();
     }
-    let four: String = sql.chars().take(4).map(|c| if c == ' ' { '_' } else { c }).collect();
+    let four: String = sql
+        .chars()
+        .take(4)
+        .map(|c| if c == ' ' { '_' } else { c })
+        .collect();
     // Quoted only when the name could not stand unquoted (`"D4 M"` is `D4_M0001`).
     let first = four.chars().next()?;
     if (first.is_ascii_uppercase() || "$#@".contains(first)) && four.chars().all(name_char) {
@@ -65,7 +69,11 @@ fn object_candidate(sql: &str, n: u32) -> Option<Name> {
 /// Whether `sql` takes the four-character form of a generated name.
 fn four_form(sql: &str) -> bool {
     let five: String = sql.chars().take(5).collect();
-    !five.chars().next().is_some_and(|c| c.is_ascii_uppercase() || "$#@".contains(c)) || !five.chars().all(name_char)
+    !five
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_uppercase() || "$#@".contains(c))
+        || !five.chars().all(name_char)
 }
 
 /// A system name for a long SQL name: the lowest number whose name no
@@ -87,7 +95,9 @@ pub fn generate(
             return Ok(cand);
         }
     }
-    Err(SqlError::Unsupported { what: format!("a system name for {sql}: the names it could have are taken") })
+    Err(SqlError::Unsupported {
+        what: format!("a system name for {sql}: the names it could have are taken"),
+    })
 }
 
 /// A column's generated system name: the SQL name upper cased, its
@@ -97,7 +107,10 @@ pub fn generate(
 #[must_use]
 pub fn generate_column(sql: &str, taken: &dyn Fn(&Name) -> bool) -> Name {
     let upper: String = sql.to_uppercase().chars().take(5).collect();
-    let mut five: String = upper.chars().map(|c| if name_char(c) { c } else { '_' }).collect();
+    let mut five: String = upper
+        .chars()
+        .map(|c| if name_char(c) { c } else { '_' })
+        .collect();
     if !five.starts_with(|c: char| c.is_ascii_uppercase() || "$#@".contains(c)) {
         five.replace_range(..five.chars().next().map_or(0, char::len_utf8), "Q");
     }
@@ -113,7 +126,10 @@ pub fn generate_column(sql: &str, taken: &dyn Fn(&Name) -> bool) -> Name {
 /// Refuse an SQL name over 128 characters (`SQL0107`).
 pub fn check_length(id: &Ident) -> Result<()> {
     if id.value.chars().count() > SQL_NAME_MAX {
-        return Err(SqlError::NameTooLong { name: id.value.clone(), max: SQL_NAME_MAX });
+        return Err(SqlError::NameTooLong {
+            name: id.value.clone(),
+            max: SQL_NAME_MAX,
+        });
     }
     Ok(())
 }
@@ -124,7 +140,9 @@ pub fn check_for_system(id: &Ident, system: Option<&Ident>) -> Result<()> {
     if let Some(s) = system
         && direct(id).is_some()
     {
-        return Err(SqlError::SystemName { name: s.value.clone() });
+        return Err(SqlError::SystemName {
+            name: s.value.clone(),
+        });
     }
     Ok(())
 }
@@ -141,7 +159,9 @@ pub fn new_object(
     check_length(id)?;
     check_for_system(id, system)?;
     if let Some(s) = system {
-        let n = direct(s).ok_or_else(|| SqlError::SystemName { name: s.value.clone() })?;
+        let n = direct(s).ok_or_else(|| SqlError::SystemName {
+            name: s.value.clone(),
+        })?;
         return Ok((n, Some(id.value.clone())));
     }
     if let Some(n) = direct(id) {
@@ -150,9 +170,15 @@ pub fn new_object(
     if names::find(txn, lib, Space::Table, &id.value)?.is_some_and(|t| alive(txn, t))
         || names::find(txn, lib, Space::Index, &id.value)?.is_some_and(|t| alive(txn, t))
     {
-        return Err(SqlError::Exists { name: id.value.clone(), kind: "*FILE" });
+        return Err(SqlError::Exists {
+            name: id.value.clone(),
+            kind: "*FILE",
+        });
     }
-    Ok((generate(txn, lib, types::FILE, &id.value, &|_| false)?, Some(id.value.clone())))
+    Ok((
+        generate(txn, lib, types::FILE, &id.value, &|_| false)?,
+        Some(id.value.clone()),
+    ))
 }
 
 /// Whether an index entry still names an object of that name: an object
@@ -197,7 +223,9 @@ pub fn sql_name(txn: &mut Txn<'_>, id: ObjectId) -> String {
     {
         return n;
     }
-    ops::read_header(txn, id).map(|(_, h)| unquoted(h.name)).unwrap_or_default()
+    ops::read_header(txn, id)
+        .map(|(_, h)| unquoted(h.name))
+        .unwrap_or_default()
 }
 
 /// A system name as an SQL name: a quoted one without its quotes.
@@ -260,7 +288,16 @@ pub fn schema_name(txn: &mut Txn<'_>, lib: ObjectId) -> String {
 /// Keep a schema's SQL name in QSYS's index.
 pub fn record_schema(txn: &mut Txn<'_>, qsys: ObjectId, lib: ObjectId, sql: &str) -> Result<()> {
     let (_, h) = ops::read_header(txn, lib)?;
-    names::put(txn, qsys, Space::Schema, sql, Target { id: lib, system: h.name })?;
+    names::put(
+        txn,
+        qsys,
+        Space::Schema,
+        sql,
+        Target {
+            id: lib,
+            system: h.name,
+        },
+    )?;
     Ok(())
 }
 
@@ -272,7 +309,11 @@ pub fn format_name(name: Name) -> Name {
     if !name.is_quoted() {
         return name;
     }
-    let inner = name.to_string().trim_matches('"').to_uppercase().replace(' ', "_");
+    let inner = name
+        .to_string()
+        .trim_matches('"')
+        .to_uppercase()
+        .replace(' ', "_");
     Name::parse(&inner).unwrap_or_else(|_| Name::parse("QSQFMT").expect("valid"))
 }
 
@@ -281,29 +322,65 @@ mod tests {
     use super::*;
 
     fn id(s: &str, delimited: bool) -> Ident {
-        Ident { value: s.into(), delimited }
+        Ident {
+            value: s.into(),
+            delimited,
+        }
     }
 
     #[test]
     fn direct_names() {
-        assert_eq!(direct(&id("CUSTOMER", false)).unwrap().to_string(), "CUSTOMER");
+        assert_eq!(
+            direct(&id("CUSTOMER", false)).unwrap().to_string(),
+            "CUSTOMER"
+        );
         assert!(direct(&id("CUSTOMER_MASTER", false)).is_none());
-        assert_eq!(direct(&id("lowtab", true)).unwrap().to_string(), "\"lowtab\"");
+        assert_eq!(
+            direct(&id("lowtab", true)).unwrap().to_string(),
+            "\"lowtab\""
+        );
         assert_eq!(direct(&id("ABC", true)).unwrap().to_string(), "ABC");
         assert!(direct(&id("a long lower name", true)).is_none());
     }
 
     #[test]
     fn generated_names_follow_the_oracle() {
-        assert_eq!(object_candidate("CUSTOMER_MASTER_FILE", 1).unwrap().to_string(), "CUSTO00001");
-        assert_eq!(object_candidate("A_LONGER_NAME_X", 1).unwrap().to_string(), "A_LON00001");
-        assert_eq!(object_candidate("a long lower name", 1).unwrap().to_string(), "\"a_lo0001\"");
-        assert_eq!(object_candidate("D4 Monthly Totals", 1).unwrap().to_string(), "D4_M0001");
+        assert_eq!(
+            object_candidate("CUSTOMER_MASTER_FILE", 1)
+                .unwrap()
+                .to_string(),
+            "CUSTO00001"
+        );
+        assert_eq!(
+            object_candidate("A_LONGER_NAME_X", 1).unwrap().to_string(),
+            "A_LON00001"
+        );
+        assert_eq!(
+            object_candidate("a long lower name", 1)
+                .unwrap()
+                .to_string(),
+            "\"a_lo0001\""
+        );
+        assert_eq!(
+            object_candidate("D4 Monthly Totals", 1)
+                .unwrap()
+                .to_string(),
+            "D4_M0001"
+        );
         let none = |_: &Name| false;
         assert_eq!(generate_column("lower", &none).to_string(), "LOWER00001");
-        assert_eq!(generate_column("Mixed Case Column", &none).to_string(), "MIXED00001");
-        assert_eq!(generate_column("A_B_C_D_E_F", &none).to_string(), "A_B_C00001");
+        assert_eq!(
+            generate_column("Mixed Case Column", &none).to_string(),
+            "MIXED00001"
+        );
+        assert_eq!(
+            generate_column("A_B_C_D_E_F", &none).to_string(),
+            "A_B_C00001"
+        );
         let one = |n: &Name| n.to_string() == "CUSTO00001";
-        assert_eq!(generate_column("CUSTOMER_NAME_LONG", &one).to_string(), "CUSTO00002");
+        assert_eq!(
+            generate_column("CUSTOMER_NAME_LONG", &one).to_string(),
+            "CUSTO00002"
+        );
     }
 }

@@ -44,11 +44,17 @@ end-proc;
 #[ignore = "a benchmark; run with --release --ignored --nocapture"]
 fn rpg_bench() {
     // The compiler: 500 fuzzed programs.
-    let cases: Vec<Case> = (0..500).map(|s| Case::parse(&format!("FUZ{s:04}"), &fuzz::program(s))).collect();
+    let cases: Vec<Case> = (0..500)
+        .map(|s| Case::parse(&format!("FUZ{s:04}"), &fuzz::program(s)))
+        .collect();
     let lines: usize = cases.iter().map(|c| c.lines.len()).sum();
     let t = Instant::now();
     for c in &cases {
-        let _ = rpgfront::front(rpg::member(c), &mut rpgfront::NoIncludes, &rpgfront::reader::Options::default());
+        let _ = rpgfront::front(
+            rpg::member(c),
+            &mut rpgfront::NoIncludes,
+            &rpgfront::reader::Options::default(),
+        );
     }
     let front = t.elapsed();
     let t = Instant::now();
@@ -75,7 +81,11 @@ fn rpg_bench() {
     let (o, _, notes) = rpg::run(&case).expect("the bench runs");
     let ran = t.elapsed();
     assert!(o.created, "{notes}");
-    let shown: Vec<String> = o.spool.iter().flat_map(|s| s.lines.iter().cloned()).collect();
+    let shown: Vec<String> = o
+        .spool
+        .iter()
+        .flat_map(|s| s.lines.iter().cloned())
+        .collect();
     println!(
         "run: 1000000 EVAL pairs and 100000 calls in {:.1} ms (compile and bind included): {}",
         ran.as_secs_f64() * 1e3,
@@ -85,10 +95,17 @@ fn rpg_bench() {
     // The timed members the oracle runs too (`rpg/perf/`): what each
     // program measured of itself.
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("rpg/perf");
-    let mut members: Vec<_> = std::fs::read_dir(&dir).expect("rpg/perf").filter_map(|e| e.ok().map(|e| e.path())).collect();
+    let mut members: Vec<_> = std::fs::read_dir(&dir)
+        .expect("rpg/perf")
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .collect();
     members.sort();
     for p in members {
-        let name = p.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+        let name = p
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
         // The machine-model query is for the oracle's catalog only.
         if p.extension().is_some_and(|e| e == "sqlrpgle") {
             continue;
@@ -98,8 +115,29 @@ fn rpg_bench() {
         let (o, _, notes) = rpg::run(&case).expect("a timed member runs");
         let ran = t.elapsed();
         assert!(o.created, "{name}: {notes}");
-        let shown: Vec<String> = o.spool.iter().flat_map(|s| s.lines.iter().cloned()).filter(|l| l.contains(" ms ") || l.contains("cycle")).collect();
-        let shown = if shown.is_empty() { vec![format!("{:?} {}", o.run, o.spool.iter().flat_map(|s| s.lines.iter().rev().take(3).cloned()).collect::<Vec<_>>().join(" | "))] } else { shown };
-        println!("{name}: {:.1} ms in all: {}", ran.as_secs_f64() * 1e3, shown.join(" | ").trim());
+        let shown: Vec<String> = o
+            .spool
+            .iter()
+            .flat_map(|s| s.lines.iter().cloned())
+            .filter(|l| l.contains(" ms ") || l.contains("cycle"))
+            .collect();
+        let shown = if shown.is_empty() {
+            vec![format!(
+                "{:?} {}",
+                o.run,
+                o.spool
+                    .iter()
+                    .flat_map(|s| s.lines.iter().rev().take(3).cloned())
+                    .collect::<Vec<_>>()
+                    .join(" | ")
+            )]
+        } else {
+            shown
+        };
+        println!(
+            "{name}: {:.1} ms in all: {}",
+            ran.as_secs_f64() * 1e3,
+            shown.join(" | ").trim()
+        );
     }
 }

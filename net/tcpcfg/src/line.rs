@@ -69,7 +69,10 @@ impl LineState for KernelNames {
     }
 
     fn interface(&self, lind: &str) -> Option<String> {
-        self.links.iter().find(|l| l.eq_ignore_ascii_case(lind)).cloned()
+        self.links
+            .iter()
+            .find(|l| l.eq_ignore_ascii_case(lind))
+            .cloned()
     }
 
     fn varied_on(&self, lind: &str) -> bool {
@@ -159,7 +162,10 @@ mod tests {
 
     #[test]
     fn a_description_decides_its_line() {
-        let lines = RefCell::new(BTreeMap::from([("ETHLINE".to_string(), LineInfo::default())]));
+        let lines = RefCell::new(BTreeMap::from([(
+            "ETHLINE".to_string(),
+            LineInfo::default(),
+        )]));
         let mut d = Described::new(
             Box::new(|n| lines.borrow().get(n).cloned()),
             Box::new(|n| {
@@ -185,7 +191,11 @@ mod tests {
 
     #[test]
     fn kernel_names_without_a_description() {
-        let mut d = Described::new(Box::new(|_| None), Box::new(|_| Err("not called".into())), kernel());
+        let mut d = Described::new(
+            Box::new(|_| None),
+            Box::new(|_| Err("not called".into())),
+            kernel(),
+        );
         assert!(d.exists("ETH1"));
         assert!(d.varied_on("ETH1"));
         assert_eq!(d.interface("ETH1").as_deref(), Some("eth1"));

@@ -510,7 +510,9 @@ pub mod ids {
         err(
             "DDS6520",
             line,
-            format!("Record {name} has fields above and below its subfile's lines {first}-{last}; its lines overlap them"),
+            format!(
+                "Record {name} has fields above and below its subfile's lines {first}-{last}; its lines overlap them"
+            ),
         )
     }
 

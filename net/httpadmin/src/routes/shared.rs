@@ -23,14 +23,20 @@ pub fn help(_rq: &Rq<'_>, key: &str) -> Response {
 
 /// The text of `id` from the system, else this product's table.
 pub fn text(rq: &Rq<'_>, id: &str, data: &[&str]) -> Option<SecondLevel> {
-    rq.env().system.message(id, data).or_else(|| msgs::second_level(id, data))
+    rq.env()
+        .system
+        .message(id, data)
+        .or_else(|| msgs::second_level(id, data))
 }
 
 /// `/msg/<ID>`: a message's second-level text. `?back=` is where
 /// `< Back` returns; the buttons post here.
 pub fn msg(rq: &Rq<'_>, id: &str) -> Response {
     let q = rq.query();
-    let back = q.get("back").filter(|b| b.starts_with(PRODUCT.prefix)).map(ToString::to_string);
+    let back = q
+        .get("back")
+        .filter(|b| b.starts_with(PRODUCT.prefix))
+        .map(ToString::to_string);
     if rq.post() {
         let f = rq.form();
         return match back {
@@ -51,8 +57,16 @@ pub fn msg(rq: &Rq<'_>, id: &str) -> Response {
     page.generic = false;
     // The shared page's buttons have no names: name them, so the post
     // says which was pressed.
-    let bare = buttons(&[Button::bare("< Back"), Button::bare("Job log"), Button::bare("Close")]);
-    let named = buttons(&[Button::new("back", "< Back"), Button::new("joblog", "Job log"), Button::new("close", "Close")]);
+    let bare = buttons(&[
+        Button::bare("< Back"),
+        Button::bare("Job log"),
+        Button::bare("Close"),
+    ]);
+    let named = buttons(&[
+        Button::new("back", "< Back"),
+        Button::new("joblog", "Job log"),
+        Button::new("close", "Close"),
+    ]);
     page.body = page.body.replace(&bare, &named);
     rq.page(page)
 }

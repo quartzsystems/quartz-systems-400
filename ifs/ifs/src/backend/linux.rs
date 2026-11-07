@@ -108,10 +108,10 @@ impl LinuxBackend {
         let fd = self.with_top(|top| {
             rfs::openat2(
                 top,
-            if dir.is_empty() { "." } else { dir },
-            OFlags::PATH | OFlags::DIRECTORY | OFlags::CLOEXEC,
-            Mode::empty(),
-            ResolveFlags::BENEATH | ResolveFlags::NO_SYMLINKS | ResolveFlags::NO_MAGICLINKS,
+                if dir.is_empty() { "." } else { dir },
+                OFlags::PATH | OFlags::DIRECTORY | OFlags::CLOEXEC,
+                Mode::empty(),
+                ResolveFlags::BENEATH | ResolveFlags::NO_SYMLINKS | ResolveFlags::NO_MAGICLINKS,
             )
             .map_err(e)
         })?;

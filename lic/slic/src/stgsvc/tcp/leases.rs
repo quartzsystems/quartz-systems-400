@@ -38,7 +38,11 @@ pub fn from_text(t: &str) -> BTreeMap<String, dhcp::Lease> {
         }
     };
     for line in t.lines() {
-        if let Some(n) = line.trim().strip_prefix('[').and_then(|r| r.strip_suffix(']')) {
+        if let Some(n) = line
+            .trim()
+            .strip_prefix('[')
+            .and_then(|r| r.strip_suffix(']'))
+        {
             flush(name.as_ref(), &body, &mut out);
             name = Some(n.trim().to_string());
             body.clear();
@@ -90,7 +94,13 @@ mod tests {
         };
         let mut m = BTreeMap::new();
         m.insert("ETHLINE".to_string(), l.clone());
-        m.insert("ETH2".to_string(), dhcp::Lease { addr: Ipv4Addr::new(10, 1, 1, 9), ..l });
+        m.insert(
+            "ETH2".to_string(),
+            dhcp::Lease {
+                addr: Ipv4Addr::new(10, 1, 1, 9),
+                ..l
+            },
+        );
         assert_eq!(from_text(&to_text(&m)), m);
         assert!(from_text("[X]\naddr=nonsense\n").is_empty());
     }

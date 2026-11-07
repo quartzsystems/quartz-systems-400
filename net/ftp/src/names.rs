@@ -61,7 +61,11 @@ pub fn qsys_node(path: &str) -> Option<QsysNode> {
         return None;
     }
     let rest = &path[QSYS_LIB.len()..];
-    let comps: Vec<String> = rest.split('/').filter(|c| !c.is_empty()).map(str::to_string).collect();
+    let comps: Vec<String> = rest
+        .split('/')
+        .filter(|c| !c.is_empty())
+        .map(str::to_string)
+        .collect();
     node_of(&comps).ok()
 }
 
@@ -110,8 +114,7 @@ fn part(s: &str) -> Option<String> {
         return (!q.is_empty() && q.chars().count() <= 10).then(|| q.to_string());
     }
     let ok = s.chars().count() <= 10
-        && s
-            .chars()
+        && s.chars()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '$' | '#' | '@' | '_' | '*'));
     ok.then(|| s.to_ascii_uppercase())
 }

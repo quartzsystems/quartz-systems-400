@@ -220,8 +220,15 @@ impl Desc {
             Some(LckLvl::Cs) => "T",
             Some(LckLvl::All) => "A",
         });
-        let locs = if self.locs.is_empty() { String::new() } else { format!(";{}", self.locs) };
-        format!("{flags};{};{};{}{locs}|{}", self.name, self.stmt, self.orient, self.text)
+        let locs = if self.locs.is_empty() {
+            String::new()
+        } else {
+            format!(";{}", self.locs)
+        };
+        format!(
+            "{flags};{};{};{}{locs}|{}",
+            self.name, self.stmt, self.orient, self.text
+        )
     }
 
     /// From the text form.
@@ -272,7 +279,11 @@ impl Desc {
     /// The naming mode.
     #[must_use]
     pub fn naming(&self) -> Naming {
-        if self.sql_naming { Naming::Sql } else { Naming::Sys }
+        if self.sql_naming {
+            Naming::Sql
+        } else {
+            Naming::Sys
+        }
     }
 }
 
@@ -301,7 +312,11 @@ pub struct Reply {
 
 impl Reply {
     fn of(sqlca: Sqlca) -> Self {
-        Self { sqlca, rows: Vec::new(), call: None }
+        Self {
+            sqlca,
+            rows: Vec::new(),
+            call: None,
+        }
     }
 }
 
@@ -314,7 +329,14 @@ pub type WireValue = (u8, String);
 /// A reply between processes: SQLCODE, SQLSTATE, SQLERRD, SQLWARN,
 /// SQLERRMC, and the rows with the call plan (`CallPlan::encode`, empty
 /// for none).
-pub type WireReply = (i32, String, Vec<i32>, String, String, (Vec<Vec<WireValue>>, String));
+pub type WireReply = (
+    i32,
+    String,
+    Vec<i32>,
+    String,
+    String,
+    (Vec<Vec<WireValue>>, String),
+);
 
 /// A value as it crosses to another process.
 #[must_use]
@@ -329,7 +351,14 @@ pub fn to_wire(v: &Value) -> WireValue {
         Value::Bin(b) => (7, crate::value::hex(b)),
         Value::Bool(b) => (8, if *b { "1" } else { "0" }.into()),
         Value::Double(x) => (9, db::record::float_text(*x)),
-        Value::Real(x) => (10, if x.is_finite() { format!("{x:E}") } else { db::record::float_text(f64::from(*x)) }),
+        Value::Real(x) => (
+            10,
+            if x.is_finite() {
+                format!("{x:E}")
+            } else {
+                db::record::float_text(f64::from(*x))
+            },
+        ),
         Value::Date(_) => (3, v.to_string()),
         Value::Time(_) => (4, v.to_string()),
         Value::Timestamp(t) => (5, t.to_string()),
@@ -344,7 +373,9 @@ pub fn from_wire(w: &WireValue) -> Value {
         1 => qdecimal::Decimal::parse(t).map_or(Value::Null, Value::Num),
         2 => Value::Str(t.clone()),
         3 => crate::value::parse_date(t).map_or(Value::Null, Value::Date),
-        4 => db::record::datetime::Time::parse(t, dds::TimeFmt::Iso).map_or(Value::Null, Value::Time),
+        4 => {
+            db::record::datetime::Time::parse(t, dds::TimeFmt::Iso).map_or(Value::Null, Value::Time)
+        }
         5 => crate::value::Timestamp::parse_exact(t).map_or(Value::Null, Value::Timestamp),
         6 => match t.strip_prefix("16:") {
             Some(d) => qdecimal::DecFloat::parse(d, qdecimal::DfFormat::D16),
@@ -372,7 +403,10 @@ impl Reply {
             c.sqlwarn.iter().collect(),
             c.sqlerrmc.clone(),
             (
-                self.rows.iter().map(|r| r.iter().map(to_wire).collect()).collect(),
+                self.rows
+                    .iter()
+                    .map(|r| r.iter().map(to_wire).collect())
+                    .collect(),
                 self.call.as_ref().map_or_else(String::new, |p| p.encode()),
             ),
         )
@@ -396,7 +430,10 @@ impl Reply {
         }
         Self {
             sqlca,
-            rows: rows.iter().map(|r| r.iter().map(from_wire).collect()).collect(),
+            rows: rows
+                .iter()
+                .map(|r| r.iter().map(from_wire).collect())
+                .collect(),
             call: crate::exec::routine::CallPlan::decode(plan).map(Box::new),
         }
     }
@@ -515,7 +552,12 @@ pub fn tables(st: &Statement) -> Vec<ObjectName> {
 impl Session {
     /// A session for `job` over `store`, resolving names in `names`.
     #[must_use]
-    pub fn new(store: Box<dyn StoreLend>, qsys: ObjectId, job: JobHandle, names: NameContext) -> Self {
+    pub fn new(
+        store: Box<dyn StoreLend>,
+        qsys: ObjectId,
+        job: JobHandle,
+        names: NameContext,
+    ) -> Self {
         Self::with_ctx(store, SqlContext::new(qsys, job, names))
     }
 
@@ -534,7 +576,11 @@ impl Session {
 
     /// Run a statement inside one store transaction, with the scope's
     /// cursors in the context.
-    fn with_txn(&mut self, scope: &str, f: impl FnOnce(&mut store::txn::Txn<'_>, &mut SqlContext, &mut Scope) -> Reply) -> Reply {
+    fn with_txn(
+        &mut self,
+        scope: &str,
+        f: impl FnOnce(&mut store::txn::Txn<'_>, &mut SqlContext, &mut Scope) -> Reply,
+    ) -> Reply {
         let mut sc = self.scopes.remove(scope).unwrap_or_default();
         std::mem::swap(&mut self.ctx.cursors, &mut sc.cursors);
         let lender = &self.store;
@@ -590,10 +636,17 @@ impl Session {
             None => req.desc.commit,
         };
         let own = req.desc.atomic && req.desc.commit.is_none();
-        let level = if own { Some(level.unwrap_or(LckLvl::Chg)) } else { level };
+        let level = if own {
+            Some(level.unwrap_or(LckLvl::Chg))
+        } else {
+            level
+        };
         self.ctx.no_commit = level.is_none();
         let lcklvl = level?;
-        if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag | Op::Deallocate | Op::Package) {
+        if matches!(
+            req.desc.op,
+            Op::End | Op::Nothing | Op::Diag | Op::Deallocate | Op::Package
+        ) {
             return None;
         }
         if own {
@@ -607,7 +660,10 @@ impl Session {
         let store = &self.store;
         let mut st = store.store();
         let r = st.begin().map_err(SqlError::from).and_then(|mut txn| {
-            self.ctx.session.strcmtctl_in(&mut txn, lcklvl, None, now, CmtScope::ActGrp(group)).map_err(SqlError::from)?;
+            self.ctx
+                .session
+                .strcmtctl_in(&mut txn, lcklvl, None, now, CmtScope::ActGrp(group))
+                .map_err(SqlError::from)?;
             txn.commit().map_err(SqlError::from)
         });
         r.err().map(|e| Reply::of(Sqlca::from_error(&e)))
@@ -673,13 +729,21 @@ impl Session {
                 ca.sqlerrd[2] = done;
                 Reply::of(ca)
             }),
-            Op::Exec => self.with_txn(&req.scope, |txn, ctx, _| exec_text(txn, ctx, &d.text, naming, &req.inputs)),
+            Op::Exec => self.with_txn(&req.scope, |txn, ctx, _| {
+                exec_text(txn, ctx, &d.text, naming, &req.inputs)
+            }),
             Op::ExecImm => {
                 let text = Self::dynamic_text(req);
-                let inputs: &[Value] = if req.inputs.is_empty() { &[] } else { &req.inputs[1..] };
+                let inputs: &[Value] = if req.inputs.is_empty() {
+                    &[]
+                } else {
+                    &req.inputs[1..]
+                };
                 self.with_txn(&req.scope, |txn, ctx, _| {
                     match crate::exec::dynamic::prepare_dynamic(&text, naming) {
-                        Ok(p) if matches!(p.statement, Statement::Select(_)) => return Reply::of(code(-84, "42612")),
+                        Ok(p) if matches!(p.statement, Statement::Select(_)) => {
+                            return Reply::of(code(-84, "42612"));
+                        }
                         Err(e) => return Reply::of(Sqlca::from_error(&e)),
                         Ok(_) => {}
                     }
@@ -701,11 +765,16 @@ impl Session {
                         }
                     }
                     // A query's tables are read: checked as they are prepared.
-                    let query = matches!(p.statement, Statement::Select(_) | Statement::DeclareCursor(_));
+                    let query = matches!(
+                        p.statement,
+                        Statement::Select(_) | Statement::DeclareCursor(_)
+                    );
                     for t in tables(&p.statement) {
                         ctx.naming = naming;
                         match ctx.resolve_file(txn, &t) {
-                            Err(e) if !crate::exec::catalog::is_view(&t) => return Reply::of(Sqlca::from_error(&e)),
+                            Err(e) if !crate::exec::catalog::is_view(&t) => {
+                                return Reply::of(Sqlca::from_error(&e));
+                            }
                             Ok(id) if query => {
                                 if let Err(e) = db::auth::check_open(txn, id, db::Usage::INPUT) {
                                     return Reply::of(Sqlca::from_error(&SqlError::from(e)));
@@ -754,7 +823,11 @@ impl Session {
                 if let Some(c) = ctx.cursors.get_mut(&d.name) {
                     c.returns = d.returns;
                 }
-                if r.sqlca.sqlcode == 100 { Reply::default() } else { r }
+                if r.sqlca.sqlcode == 100 {
+                    Reply::default()
+                } else {
+                    r
+                }
             }),
             Op::Fetch => self.with_txn(&req.scope, |txn, ctx, _| fetch(txn, ctx, d, &req.inputs)),
             Op::Close => self.with_txn(&req.scope, |txn, ctx, _| {
@@ -762,7 +835,11 @@ impl Session {
                     return Reply::of(code(-501, "24501"));
                 }
                 let r = exec_text(txn, ctx, &format!("CLOSE {}", d.name), naming, &[]);
-                if r.sqlca.sqlcode == 100 { Reply::default() } else { r }
+                if r.sqlca.sqlcode == 100 {
+                    Reply::default()
+                } else {
+                    r
+                }
             }),
         }
     }
@@ -775,13 +852,26 @@ impl Session {
         let form = d.orient.split_whitespace().next().unwrap_or("");
         if form == "CURSOR" {
             // The columns of an open cursor: a procedure's result set.
-            return match self.scopes.get(&req.scope).and_then(|sc| sc.cursors.get(&d.name)).filter(|c| c.open) {
-                Some(c) => Reply { sqlca: code(0, "00000"), rows: describe::cursor_rows(&c.columns), call: None },
+            return match self
+                .scopes
+                .get(&req.scope)
+                .and_then(|sc| sc.cursors.get(&d.name))
+                .filter(|c| c.open)
+            {
+                Some(c) => Reply {
+                    sqlca: code(0, "00000"),
+                    rows: describe::cursor_rows(&c.columns),
+                    call: None,
+                },
                 None => Reply::of(code(-501, "24501")),
             };
         }
         if form == "TABLE" {
-            let text = req.inputs.first().map(|v| v.as_text().trim().to_string()).unwrap_or_default();
+            let text = req
+                .inputs
+                .first()
+                .map(|v| v.as_text().trim().to_string())
+                .unwrap_or_default();
             return self.with_txn(&req.scope, |txn, ctx, _| {
                 ctx.naming = d.naming();
                 let name = match crate::parse::parse_object_name(&text, d.naming()) {
@@ -789,7 +879,11 @@ impl Session {
                     Err(e) => return Reply::of(Sqlca::from_error(&e)),
                 };
                 match describe::table_entries(txn, ctx, &name) {
-                    Ok(es) => Reply { sqlca: code(0, "00000"), rows: describe::rows(es), call: None },
+                    Ok(es) => Reply {
+                        sqlca: code(0, "00000"),
+                        rows: describe::rows(es),
+                        call: None,
+                    },
                     Err(e) => Reply::of(Sqlca::from_error(&e)),
                 }
             });
@@ -839,7 +933,9 @@ impl Session {
                 .map(|(n, _)| n.clone())
                 .collect();
             for n in names {
-                let Some(mut k) = sc.cursors.remove(&n) else { continue };
+                let Some(mut k) = sc.cursors.remove(&n) else {
+                    continue;
+                };
                 if c.sqlcode < 0 {
                     // A failed procedure returns no result sets.
                     continue;
@@ -876,9 +972,19 @@ impl Session {
             target.cursors.insert(name, k);
         }
         if c.sqlcode < 0 {
-            sqlca = Sqlca { sqlcode: c.sqlcode, sqlstate: c.sqlstate, sqlerrmc: c.message, ..Sqlca::default() };
+            sqlca = Sqlca {
+                sqlcode: c.sqlcode,
+                sqlstate: c.sqlstate,
+                sqlerrmc: c.message,
+                ..Sqlca::default()
+            };
         } else if c.sqlcode > 0 && c.sqlcode != 100 {
-            sqlca = Sqlca { sqlcode: c.sqlcode, sqlstate: c.sqlstate, sqlerrmc: c.message, ..Sqlca::default() };
+            sqlca = Sqlca {
+                sqlcode: c.sqlcode,
+                sqlstate: c.sqlstate,
+                sqlerrmc: c.message,
+                ..Sqlca::default()
+            };
             sqlca.sqlwarn[0] = 'W';
         } else if !rows.is_empty() && sqlca.sqlcode == 0 {
             sqlca = code(466, "0100C");
@@ -886,7 +992,11 @@ impl Session {
         }
         sqlca.sqlerrd[0] = c.status;
         sqlca.sqlerrd[1] = i32::try_from(rows.len()).unwrap_or(0);
-        Reply { sqlca, rows, call: None }
+        Reply {
+            sqlca,
+            rows,
+            call: None,
+        }
     }
 
     /// A result set a `CALL` left in `scope` (`RS#1`, ...), taken whole:
@@ -896,13 +1006,20 @@ impl Session {
     pub fn take_result_set(&mut self, scope: &str, name: &str) -> Option<crate::exec::ResultSet> {
         let c = self.scopes.get_mut(scope)?.cursors.remove(name)?;
         let rows = c.rows.into_iter().skip(c.pos).collect();
-        Some(crate::exec::ResultSet { columns: c.columns, rows })
+        Some(crate::exec::ResultSet {
+            columns: c.columns,
+            rows,
+        })
     }
 
     /// A prepared statement goes: -514 when the scope has none of
     /// that name.
     fn deallocate(&mut self, scope: &str, name: &str) -> Reply {
-        match self.scopes.get_mut(scope).and_then(|sc| sc.prepared.remove(name)) {
+        match self
+            .scopes
+            .get_mut(scope)
+            .and_then(|sc| sc.prepared.remove(name))
+        {
             Some(_) => Reply::default(),
             None => Reply::of(code(-514, "26501")),
         }
@@ -931,13 +1048,20 @@ impl Session {
                 "NUMBER" => Value::int(1),
                 "DB2_RETURNED_SQLCODE" => Value::int(i64::from(ca.sqlcode)),
                 "RETURNED_SQLSTATE" => Value::Str(ca.sqlstate.clone()),
-                "DB2_MESSAGE_ID" => Value::Str(if ca.sqlcode == 0 { String::new() } else { ca.msgid() }),
+                "DB2_MESSAGE_ID" => Value::Str(if ca.sqlcode == 0 {
+                    String::new()
+                } else {
+                    ca.msgid()
+                }),
                 "MESSAGE_TEXT" => Value::Str(ca.sqlerrmc.clone()),
                 "MESSAGE_LENGTH" => Value::int(i64::try_from(ca.sqlerrmc.len()).unwrap_or(0)),
                 "MORE" => Value::Str("N".into()),
                 "RETURN_STATUS" | "DB2_RETURN_STATUS" => Value::int(i64::from(ca.sqlerrd[0])),
-                "DB2_NUMBER_RESULT_SETS" => Value::int(i64::from(if ca.sqlcode == 466 { ca.sqlerrd[1] } else { 0 })),
-                "DB2_SQLERRD1" | "DB2_SQLERRD2" | "DB2_SQLERRD3" | "DB2_SQLERRD4" | "DB2_SQLERRD5" | "DB2_SQLERRD6" => {
+                "DB2_NUMBER_RESULT_SETS" => {
+                    Value::int(i64::from(if ca.sqlcode == 466 { ca.sqlerrd[1] } else { 0 }))
+                }
+                "DB2_SQLERRD1" | "DB2_SQLERRD2" | "DB2_SQLERRD3" | "DB2_SQLERRD4"
+                | "DB2_SQLERRD5" | "DB2_SQLERRD6" => {
                     let i = usize::from(i.trim().as_bytes()[11] - b'1');
                     Value::int(i64::from(ca.sqlerrd[i]))
                 }
@@ -961,13 +1085,19 @@ impl Session {
 /// read, so its view holds across the turns.
 #[must_use]
 pub fn may_yield(desc: &Desc) -> bool {
-    matches!(desc.op, Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute)
+    matches!(
+        desc.op,
+        Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute
+    )
 }
 
 impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
         let watched = crate::dbmon::begin(&mut self.ctx);
-        let started = (crate::dbmon::record::now(&self.ctx), std::time::Instant::now());
+        let started = (
+            crate::dbmon::record::now(&self.ctx),
+            std::time::Instant::now(),
+        );
         // A remote server's statement: only the monitor hears of it.
         if req.desc.op == Op::Routed {
             let r = Reply::of(routed_sqlca(&req.inputs));
@@ -986,7 +1116,11 @@ impl Embedded for Session {
 
 impl Session {
     fn run_watched(&mut self, req: &Request) -> Reply {
-        let kept = if may_yield(&req.desc) { None } else { self.ctx.yielder.take() };
+        let kept = if may_yield(&req.desc) {
+            None
+        } else {
+            self.ctx.yielder.take()
+        };
         self.ctx.routine.can_call = req.desc.calls;
         self.ctx.routine.pending = None;
         self.ctx.arrays = req.desc.arrays;
@@ -1021,21 +1155,55 @@ impl Session {
 
     /// Report a watched statement to the database monitor; write its
     /// records when one holds enough.
-    fn monitored(&mut self, req: &Request, r: &Reply, (start, clock): (crate::value::Timestamp, std::time::Instant)) {
+    fn monitored(
+        &mut self,
+        req: &Request,
+        r: &Reply,
+        (start, clock): (crate::value::Timestamp, std::time::Instant),
+    ) {
         let d = &req.desc;
-        let prepared = |name: &str| self.scopes.get(&req.scope).and_then(|s| s.prepared.get(name)).cloned().unwrap_or_default();
-        let dyn_inputs = if req.inputs.is_empty() { &[][..] } else { &req.inputs[1..] };
+        let prepared = |name: &str| {
+            self.scopes
+                .get(&req.scope)
+                .and_then(|s| s.prepared.get(name))
+                .cloned()
+                .unwrap_or_default()
+        };
+        let dyn_inputs = if req.inputs.is_empty() {
+            &[][..]
+        } else {
+            &req.inputs[1..]
+        };
         let (op, text, inputs, dynamic): (&'static str, String, &[Value], bool) = match d.op {
-            Op::Query | Op::Exec => (crate::dbmon::record::operation(&d.text), d.text.clone(), &req.inputs, false),
-            Op::Routed => (crate::dbmon::record::operation(&d.text), d.text.clone(), &[], false),
+            Op::Query | Op::Exec => (
+                crate::dbmon::record::operation(&d.text),
+                d.text.clone(),
+                &req.inputs,
+                false,
+            ),
+            Op::Routed => (
+                crate::dbmon::record::operation(&d.text),
+                d.text.clone(),
+                &[],
+                false,
+            ),
             Op::ExecImm => ("EI", Self::dynamic_text(req), dyn_inputs, true),
-            Op::Prepare => (if d.into { "PD" } else { "PR" }, Self::dynamic_text(req), &[], true),
+            Op::Prepare => (
+                if d.into { "PD" } else { "PR" },
+                Self::dynamic_text(req),
+                &[],
+                true,
+            ),
             Op::Execute => {
                 let t = prepared(&d.name);
                 (crate::dbmon::record::operation(&t), t, &req.inputs, true)
             }
             Op::Open => {
-                let t = if d.stmt.is_empty() { d.text.clone() } else { prepared(&d.stmt) };
+                let t = if d.stmt.is_empty() {
+                    d.text.clone()
+                } else {
+                    prepared(&d.stmt)
+                };
                 ("OP", t, &req.inputs, !d.stmt.is_empty())
             }
             Op::Fetch => ("FE", format!("FETCH {}", d.name), &[], false),
@@ -1052,8 +1220,16 @@ impl Session {
         let o = crate::dbmon::Observed {
             op,
             text: &text,
-            cursor: if matches!(d.op, Op::Open | Op::Fetch | Op::Close) { &d.name } else { "" },
-            statement: if matches!(d.op, Op::Prepare | Op::Execute) { &d.name } else { &d.stmt },
+            cursor: if matches!(d.op, Op::Open | Op::Fetch | Op::Close) {
+                &d.name
+            } else {
+                ""
+            },
+            statement: if matches!(d.op, Op::Prepare | Op::Execute) {
+                &d.name
+            } else {
+                &d.stmt
+            },
             start,
             end,
             micros,
@@ -1088,16 +1264,25 @@ fn routed_sqlca(inputs: &[Value]) -> Sqlca {
     let code = inputs.first().and_then(|v| v.as_i64().ok()).unwrap_or(0);
     let mut ca = Sqlca {
         sqlcode: i32::try_from(code).unwrap_or(-1),
-        sqlstate: inputs.get(1).map_or_else(|| "00000".into(), |v| v.as_text().trim().to_string()),
+        sqlstate: inputs
+            .get(1)
+            .map_or_else(|| "00000".into(), |v| v.as_text().trim().to_string()),
         ..Sqlca::default()
     };
-    ca.sqlerrd[2] = inputs.get(2).and_then(|v| v.as_i64().ok()).and_then(|n| i32::try_from(n).ok()).unwrap_or(0);
+    ca.sqlerrd[2] = inputs
+        .get(2)
+        .and_then(|v| v.as_i64().ok())
+        .and_then(|n| i32::try_from(n).ok())
+        .unwrap_or(0);
     ca
 }
 
 /// The positions `locs` marks with `kind` (`I` inputs, `O` outputs).
 fn loc_positions(locs: &str, kind: char) -> Vec<usize> {
-    locs.split(',').filter_map(|p| p.strip_prefix(kind)).filter_map(|n| n.parse().ok()).collect()
+    locs.split(',')
+        .filter_map(|p| p.strip_prefix(kind))
+        .filter_map(|n| n.parse().ok())
+        .collect()
 }
 
 impl Session {
@@ -1109,12 +1294,28 @@ impl Session {
     fn with_locators(&mut self, req: &Request) -> Reply {
         let d = &req.desc;
         if d.op == Op::Exec {
-            let words: Vec<String> = d.text.split_whitespace().take(2).map(str::to_ascii_uppercase).collect();
-            if words.len() == 2 && words[1] == "LOCATOR" && matches!(words[0].as_str(), "FREE" | "HOLD") {
+            let words: Vec<String> = d
+                .text
+                .split_whitespace()
+                .take(2)
+                .map(str::to_ascii_uppercase)
+                .collect();
+            if words.len() == 2
+                && words[1] == "LOCATOR"
+                && matches!(words[0].as_str(), "FREE" | "HOLD")
+            {
                 let free = words[0] == "FREE";
                 for v in &req.inputs {
-                    let h = v.as_i64().ok().and_then(|h| u32::try_from(h).ok()).unwrap_or(0);
-                    let r = if free { self.ctx.locators.free(h) } else { self.ctx.locators.hold(h) };
+                    let h = v
+                        .as_i64()
+                        .ok()
+                        .and_then(|h| u32::try_from(h).ok())
+                        .unwrap_or(0);
+                    let r = if free {
+                        self.ctx.locators.free(h)
+                    } else {
+                        self.ctx.locators.hold(h)
+                    };
                     if let Err(e) = r {
                         return Reply::of(Sqlca::from_error(&e));
                     }
@@ -1130,7 +1331,11 @@ impl Session {
         let mut inputs = req.inputs.clone();
         for &k in &ins {
             let Some(v) = inputs.get_mut(k) else { continue };
-            let h = v.as_i64().ok().and_then(|h| u32::try_from(h).ok()).unwrap_or(0);
+            let h = v
+                .as_i64()
+                .ok()
+                .and_then(|h| u32::try_from(h).ok())
+                .unwrap_or(0);
             match self.ctx.locators.get(h) {
                 Ok(x) => *v = x.clone(),
                 Err(e) => return Reply::of(Sqlca::from_error(&e)),
@@ -1151,7 +1356,9 @@ impl Session {
                     if let Some(v) = row.get_mut(k)
                         && !v.is_null()
                     {
-                        *v = Value::int(i64::from(self.ctx.locators.assign(std::mem::replace(v, Value::Null))));
+                        *v = Value::int(i64::from(
+                            self.ctx.locators.assign(std::mem::replace(v, Value::Null)),
+                        ));
                     }
                 }
             }
@@ -1161,7 +1368,13 @@ impl Session {
 }
 
 /// Parse and run a statement without a result.
-fn exec_text(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming, inputs: &[Value]) -> Reply {
+fn exec_text(
+    txn: &mut store::txn::Txn<'_>,
+    ctx: &mut SqlContext,
+    text: &str,
+    naming: Naming,
+    inputs: &[Value],
+) -> Reply {
     let p = match prepare(text, naming) {
         Ok(p) => p,
         Err(e) => return Reply::of(Sqlca::from_error(&e)),
@@ -1175,9 +1388,13 @@ fn exec_text(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, text: &str, na
         | Statement::Delete(crate::ast::Delete {
             where_clause: Where::CurrentOf(c),
             ..
-        }) if !ctx.cursors.get(&c.value).is_some_and(|k| k.open) => return Reply::of(code(-507, "24501")),
+        }) if !ctx.cursors.get(&c.value).is_some_and(|k| k.open) => {
+            return Reply::of(code(-507, "24501"));
+        }
         // COMMIT and ROLLBACK need commitment control.
-        Statement::Commit { .. } | Statement::Rollback { .. } if ctx.session.commit_def().is_none() => {
+        Statement::Commit { .. } | Statement::Rollback { .. }
+            if ctx.session.commit_def().is_none() =>
+        {
             return Reply::of(code(-7007, "51009"));
         }
         _ => {}
@@ -1185,7 +1402,11 @@ fn exec_text(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, text: &str, na
     match p.execute(txn, ctx, inputs) {
         Ok(o) => {
             let ca = Sqlca::from_outcome(&o);
-            Reply::of(ctx.warning.as_ref().map_or_else(|| ca.clone(), |w| w.apply(ca.clone())))
+            Reply::of(
+                ctx.warning
+                    .as_ref()
+                    .map_or_else(|| ca.clone(), |w| w.apply(ca.clone())),
+            )
         }
         Err(e) => Reply::of(Sqlca::from_error(&e)),
     }
@@ -1209,7 +1430,11 @@ fn fetch(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, d: &Desc, inputs: 
     } else {
         (inputs, None)
     };
-    let orient = if d.orient.is_empty() { "NEXT" } else { d.orient.as_str() };
+    let orient = if d.orient.is_empty() {
+        "NEXT"
+    } else {
+        d.orient.as_str()
+    };
     let text = format!("FETCH {orient} FROM {}", d.name);
     let p = match prepare(&text, naming) {
         Ok(p) => p,
@@ -1249,13 +1474,22 @@ fn fetch(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, d: &Desc, inputs: 
     {
         ca.sqlerrd[4] = 100;
     }
-    Reply { sqlca: ca, rows, call: None }
+    Reply {
+        sqlca: ca,
+        rows,
+        call: None,
+    }
 }
 
 /// A statement's kind as `GET DIAGNOSTICS` names it.
 fn command_function(d: &Desc) -> String {
     match d.op {
-        Op::Query | Op::Exec => d.text.split_whitespace().next().unwrap_or("").to_ascii_uppercase(),
+        Op::Query | Op::Exec => d
+            .text
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_ascii_uppercase(),
         Op::Open => "OPEN".into(),
         Op::Fetch => "FETCH".into(),
         Op::Close => "CLOSE".into(),
@@ -1281,7 +1515,13 @@ mod tests {
             call: Some(Box::new(crate::exec::routine::CallPlan {
                 program: "P".into(),
                 library: "L".into(),
-                parms: vec![crate::exec::routine::PlanParm { mode: 3, desc: 7, extra: 0, value: Value::int(3), marker: Some(1) }],
+                parms: vec![crate::exec::routine::PlanParm {
+                    mode: 3,
+                    desc: 7,
+                    extra: 0,
+                    value: Value::int(3),
+                    marker: Some(1),
+                }],
                 ..Default::default()
             })),
         };
@@ -1303,4 +1543,3 @@ mod tests {
         assert_eq!(Desc::decode(&d.encode()), Some(d));
     }
 }
-

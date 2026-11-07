@@ -8,13 +8,17 @@
 
 use super::Parser;
 use crate::ast::{ChangeRows, Expr, Ident, Statement, TableRef};
-use crate::lex::Tok;
 use crate::error::Result;
+use crate::lex::Tok;
 
 impl Parser {
     pub(crate) fn correlation(&mut self) -> Result<(Option<Ident>, Vec<Ident>)> {
         let alias = self.alias()?;
-        let columns = if alias.is_some() && self.is_sym("(") { self.ident_list()? } else { Vec::new() };
+        let columns = if alias.is_some() && self.is_sym("(") {
+            self.ident_list()?
+        } else {
+            Vec::new()
+        };
         Ok((alias, columns))
     }
 
@@ -38,7 +42,12 @@ impl Parser {
                     (None, Statement::Insert(i)) => i.table.name.clone(),
                     (None, _) => Ident::new("INSERT"),
                 };
-                return Ok(Some(TableRef::DataChange { kind, statement: Box::new(statement), alias, columns }));
+                return Ok(Some(TableRef::DataChange {
+                    kind,
+                    statement: Box::new(statement),
+                    alias,
+                    columns,
+                }));
             }
         }
         if self.is_word("UNNEST") && self.is_sym_at(1, "(") {
@@ -60,7 +69,11 @@ impl Parser {
             self.expect_sym(")")?;
             let (alias, columns) = self.correlation()?;
             let alias = alias.ok_or_else(|| self.expected("a correlation name"))?;
-            return Ok(Some(TableRef::Lateral(Box::new(TableRef::Subquery { query: Box::new(q), alias, columns }))));
+            return Ok(Some(TableRef::Lateral(Box::new(TableRef::Subquery {
+                query: Box::new(q),
+                alias,
+                columns,
+            }))));
         }
         if lateral {
             return Err(self.expected("a fullselect"));
@@ -79,7 +92,12 @@ impl Parser {
         self.expect_sym(")")?;
         let (alias, columns) = self.correlation()?;
         let alias = alias.ok_or_else(|| self.expected("a correlation name"))?;
-        Ok(Some(TableRef::Lateral(Box::new(TableRef::Function { name, args, alias, columns }))))
+        Ok(Some(TableRef::Lateral(Box::new(TableRef::Function {
+            name,
+            args,
+            alias,
+            columns,
+        }))))
     }
 
     /// A table function's argument: an expression, or `name => expr`,
@@ -92,7 +110,12 @@ impl Parser {
             self.advance();
             self.advance();
             let e = self.expr()?;
-            return Ok(Expr::Function(crate::ast::Function { name: format!("=>{w}"), distinct: false, star: false, args: vec![e] }));
+            return Ok(Expr::Function(crate::ast::Function {
+                name: format!("=>{w}"),
+                distinct: false,
+                star: false,
+                args: vec![e],
+            }));
         }
         self.expr()
     }

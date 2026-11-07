@@ -233,7 +233,8 @@ impl LprSink {
         last: bool,
     ) -> Result<(), SinkError> {
         let head = format!("{}{} {name}\n", char::from(code), data.len());
-        s.write_all(head.as_bytes()).map_err(|e| SinkError::io(&e))?;
+        s.write_all(head.as_bytes())
+            .map_err(|e| SinkError::io(&e))?;
         Self::ack(s, name)?;
         s.write_all(data).map_err(|e| SinkError::io(&e))?;
         s.write_all(&[0]).map_err(|e| SinkError::io(&e))?;
@@ -250,7 +251,13 @@ impl LprSink {
         s.write_all(format!("\x02{}\n", self.queue).as_bytes())
             .map_err(|e| SinkError::io(&e))?;
         Self::ack(&mut s, &format!("queue {}", self.queue))?;
-        Self::file(&mut s, 3, &control::data_name(&self.local_host, n), data, false)?;
+        Self::file(
+            &mut s,
+            3,
+            &control::data_name(&self.local_host, n),
+            data,
+            false,
+        )?;
         Self::file(
             &mut s,
             2,

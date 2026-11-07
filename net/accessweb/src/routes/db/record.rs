@@ -64,7 +64,11 @@ pub fn from_iso(iso: &str, fmt: &str) -> String {
 pub fn to_iso(s: &str, fmt: &str) -> String {
     let s = s.trim();
     let parts: Vec<&str> = s.split(['/', '.', '-']).collect();
-    if parts.len() != 3 || parts.iter().any(|p| p.is_empty() || !p.chars().all(|c| c.is_ascii_digit())) {
+    if parts.len() != 3
+        || parts
+            .iter()
+            .any(|p| p.is_empty() || !p.chars().all(|c| c.is_ascii_digit()))
+    {
         return s.to_string();
     }
     let year = |y: &str| -> String {
@@ -97,10 +101,23 @@ fn fields(cols: &[Column], values: &[(String, bool)], edit: bool) -> String {
     let mut s = String::from("<table class=\"props\" cellspacing=\"0\">\n");
     for (i, (c, (v, null))) in cols.iter().zip(values).enumerate() {
         let n = i + 1;
-        let req = if c.required() { " <span class=\"req\">*</span>" } else { "" };
-        let _ = write!(s, "<tr><th>{}{req} <span class=\"grey\">{}</span></th><td>", esc(&c.name), esc(&c.type_label()));
+        let req = if c.required() {
+            " <span class=\"req\">*</span>"
+        } else {
+            ""
+        };
+        let _ = write!(
+            s,
+            "<tr><th>{}{req} <span class=\"grey\">{}</span></th><td>",
+            esc(&c.name),
+            esc(&c.type_label())
+        );
         if c.generated() {
-            let _ = write!(s, "<span class=\"grey\">default: {}</span>", esc(&c.default));
+            let _ = write!(
+                s,
+                "<span class=\"grey\">default: {}</span>",
+                esc(&c.default)
+            );
         } else if edit && c.key {
             let _ = write!(s, "<span class=\"mono\">{}</span>", esc(v));
         } else if !c.choices.is_empty() {
@@ -110,12 +127,25 @@ fn fields(cols: &[Column], values: &[(String, bool)], edit: bool) -> String {
             }
             s.push_str(&pick(&format!("c{n}"), &opts, v));
         } else if long(c) {
-            let _ = write!(s, "<textarea name=\"c{n}\" rows=\"3\" cols=\"60\">{}</textarea>", esc(v));
+            let _ = write!(
+                s,
+                "<textarea name=\"c{n}\" rows=\"3\" cols=\"60\">{}</textarea>",
+                esc(v)
+            );
         } else {
             let class = if c.key { " class=\"cmd\"" } else { "" };
-            let _ = write!(s, "<input type=\"text\" name=\"c{n}\" value=\"{}\" size=\"{}\"{class}>", esc(v), size(c));
+            let _ = write!(
+                s,
+                "<input type=\"text\" name=\"c{n}\" value=\"{}\" size=\"{}\"{class}>",
+                esc(v),
+                size(c)
+            );
             if c.nullable {
-                let _ = write!(s, " <input type=\"checkbox\" name=\"n{n}\"{}> NULL", if *null { " checked" } else { "" });
+                let _ = write!(
+                    s,
+                    " <input type=\"checkbox\" name=\"n{n}\"{}> NULL",
+                    if *null { " checked" } else { "" }
+                );
             }
         }
         s.push_str("</td></tr>\n");
@@ -150,8 +180,14 @@ fn fresh(rq: &Rq<'_>, s: &str, t: &str, cols: &[Column]) -> Vec<(String, bool)> 
     let key: Vec<&Column> = cols.iter().filter(|c| c.key).collect();
     let suggest = match key.as_slice() {
         [k] if matches!(k.typ.as_str(), "CHAR" | "VARCHAR") => with_conn(rq, |c| {
-            let o = rq.env().db.run(rq.user(), c, &sqltext::max(s, t, &k.name), &[], 1);
-            o.rows.first().and_then(|r| r.first()).and_then(|v| next_key(&v.text()))
+            let o = rq
+                .env()
+                .db
+                .run(rq.user(), c, &sqltext::max(s, t, &k.name), &[], 1);
+            o.rows
+                .first()
+                .and_then(|r| r.first())
+                .and_then(|v| next_key(&v.text()))
         })
         .ok()
         .flatten(),
@@ -159,13 +195,18 @@ fn fresh(rq: &Rq<'_>, s: &str, t: &str, cols: &[Column]) -> Vec<(String, bool)> 
     };
     cols.iter()
         .map(|c| {
-            if c.key && let Some(k) = &suggest {
+            if c.key
+                && let Some(k) = &suggest
+            {
                 return (k.clone(), false);
             }
             if c.typ == "DATE" {
                 return (today.clone(), false);
             }
-            let text = matches!(c.typ.as_str(), "CHAR" | "VARCHAR" | "GRAPHIC" | "VARGRAPHIC" | "CLOB");
+            let text = matches!(
+                c.typ.as_str(),
+                "CHAR" | "VARCHAR" | "GRAPHIC" | "VARGRAPHIC" | "CLOB"
+            );
             (String::new(), c.nullable && !text)
         })
         .collect()
@@ -173,7 +214,9 @@ fn fresh(rq: &Rq<'_>, s: &str, t: &str, cols: &[Column]) -> Vec<(String, bool)> 
 
 /// The posted fields as the form shows them again.
 fn posted(f: &Form, cols: &[Column]) -> Vec<(String, bool)> {
-    (1..=cols.len()).map(|n| (f.str(&format!("c{n}")).to_string(), f.has(&format!("n{n}")))).collect()
+    (1..=cols.len())
+        .map(|n| (f.str(&format!("c{n}")).to_string(), f.has(&format!("n{n}"))))
+        .collect()
 }
 
 /// The values to write: the columns the form asks for and theirs.
@@ -186,7 +229,11 @@ fn values(f: &Form, cols: &[Column], date_fmt: &str, skip_keys: bool) -> (Vec<St
             continue;
         }
         let v = f.str(&format!("c{n}"));
-        let val = if c.nullable && (f.has(&format!("n{n}")) || (long(c) && v.is_empty()) || (v.is_empty() && !matches!(c.typ.as_str(), "CHAR" | "VARCHAR" | "CLOB"))) {
+        let val = if c.nullable
+            && (f.has(&format!("n{n}"))
+                || (long(c) && v.is_empty())
+                || (v.is_empty() && !matches!(c.typ.as_str(), "CHAR" | "VARCHAR" | "CLOB")))
+        {
             Val::Null
         } else if c.typ == "DATE" {
             Val::Text(to_iso(v, date_fmt))
@@ -201,11 +248,22 @@ fn values(f: &Form, cols: &[Column], date_fmt: &str, skip_keys: bool) -> (Vec<St
     (names, vals)
 }
 
-fn show(rq: &Rq<'_>, s: &str, t: &str, cols: &[Column], v: &[(String, bool)], edit: bool, messages: Vec<Message>) -> Response {
+fn show(
+    rq: &Rq<'_>,
+    s: &str,
+    t: &str,
+    cols: &[Column],
+    v: &[(String, bool)],
+    edit: bool,
+    messages: Vec<Message>,
+) -> Response {
     let fmt = rq.prefs().get(prefs::DATE);
     let what = if edit { "Edit record" } else { "Insert record" };
     let bs = if edit {
-        vec![Button::new("update", "Update"), Button::new("cancel", "Cancel")]
+        vec![
+            Button::new("update", "Update"),
+            Button::new("cancel", "Cancel"),
+        ]
     } else {
         vec![
             Button::new("insert", "Insert"),
@@ -216,7 +274,11 @@ fn show(rq: &Rq<'_>, s: &str, t: &str, cols: &[Column], v: &[(String, bool)], ed
     let body = format!(
         "<p class=\"small grey\">One field per column. Required columns are marked. Dates are entered in the format set in your preferences ({}).</p>{}",
         esc(&fmt),
-        form(&rq.ctx, "", &format!("{}{}", fields(cols, v, edit), buttons(&bs)))
+        form(
+            &rq.ctx,
+            "",
+            &format!("{}{}", fields(cols, v, edit), buttons(&bs))
+        )
     );
     rq.page(Page {
         title: format!("{what}: {s}.{t}"),
@@ -249,7 +311,11 @@ pub fn insert(rq: &Rq<'_>, s: &str, t: &str) -> Response {
         return rq.redirect(&back);
     }
     let (names, vals) = values(&f, &cols, &rq.prefs().get(prefs::DATE), false);
-    let r = with_conn(rq, |c| rq.env().db.run(rq.user(), c, &sqltext::insert(&s, &t, &names), &[vals], 0));
+    let r = with_conn(rq, |c| {
+        rq.env()
+            .db
+            .run(rq.user(), c, &sqltext::insert(&s, &t, &names), &[vals], 0)
+    });
     match r.map(|o| failure(&o).map_or(Ok(o.changed), Err)) {
         Ok(Ok(n)) => {
             let m = rq.message(MsgKind::Done, "SQL7956", &[&t, &s, &n.to_string()]);
@@ -286,10 +352,21 @@ pub fn edit(rq: &Rq<'_>, s: &str, t: &str) -> Response {
         }
         let (names, mut vals) = values(&f, &cols, &fmt, true);
         vals.extend(kv.iter().cloned());
-        let r = with_conn(rq, |c| rq.env().db.run(rq.user(), c, &sqltext::update(&s, &t, &names, &keys), &[vals], 0));
+        let r = with_conn(rq, |c| {
+            rq.env().db.run(
+                rq.user(),
+                c,
+                &sqltext::update(&s, &t, &names, &keys),
+                &[vals],
+                0,
+            )
+        });
         return match r.map(|o| failure(&o).map_or(Ok(o.changed), Err)) {
             Ok(Ok(0)) => rq.done(&back, rq.message(MsgKind::Info, "SQL0100", &["UPDATE"])),
-            Ok(Ok(n)) => rq.done(&back, rq.message(MsgKind::Done, "SQL7957", &[&t, &s, &n.to_string()])),
+            Ok(Ok(n)) => rq.done(
+                &back,
+                rq.message(MsgKind::Done, "SQL7957", &[&t, &s, &n.to_string()]),
+            ),
             Ok(Err(m)) | Err(m) => {
                 let mut v = posted(&f, &cols);
                 for (i, c) in cols.iter().enumerate() {
@@ -302,12 +379,24 @@ pub fn edit(rq: &Rq<'_>, s: &str, t: &str) -> Response {
         };
     }
     let names: Vec<String> = cols.iter().map(|c| c.name.clone()).collect();
-    let found = with_conn(rq, |c| rq.env().db.run(rq.user(), c, &sqltext::one(&s, &t, &names, &keys), std::slice::from_ref(&kv), 1));
+    let found = with_conn(rq, |c| {
+        rq.env().db.run(
+            rq.user(),
+            c,
+            &sqltext::one(&s, &t, &names, &keys),
+            std::slice::from_ref(&kv),
+            1,
+        )
+    });
     let row = match found {
         Ok(o) if !o.failed && !o.rows.is_empty() => o.rows[0].clone(),
         _ => return rq.not_found(&format!("record of {s}.{t} with that key")),
     };
-    let v: Vec<(String, bool)> = cols.iter().zip(&row).map(|(c, v)| (shown(c, v, &fmt), v.is_null())).collect();
+    let v: Vec<(String, bool)> = cols
+        .iter()
+        .zip(&row)
+        .map(|(c, v)| (shown(c, v, &fmt), v.is_null()))
+        .collect();
     show(rq, &s, &t, &cols, &v, true, Vec::new())
 }
 

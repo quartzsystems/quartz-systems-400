@@ -45,8 +45,12 @@ pub fn run(c: &Case) -> Result<String, String> {
         wal_pages: 512,
         now: NOW,
     };
-    let mut store =
-        Store::format(vec![Box::new(dev) as Box<dyn BlockDev>], &params, StoreConfig::default()).map_err(s)?;
+    let mut store = Store::format(
+        vec![Box::new(dev) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .map_err(s)?;
     let mut txn = store.begin().map_err(s)?;
     let qsys = ops::bootstrap(&mut txn, NOW, SERVER).map_err(s)?;
     // The shipped profiles (QUSER, QPGMR, QSYSOPR, ...) GRANT names.
@@ -68,7 +72,14 @@ pub fn run(c: &Case) -> Result<String, String> {
     )
     .map_err(s)?;
     txn.commit().map_err(s)?;
-    let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+    let mut ctx = SqlContext::new(
+        qsys,
+        JobHandle(1),
+        NameContext {
+            curlib: Some(lib),
+            libl: vec![lib],
+        },
+    );
     ctx.now = Some(NOW);
     ctx.current_schema = Some(Name::parse(LIBRARY).expect("valid"));
     ctx.user = "QSECOFR".into();
@@ -80,10 +91,18 @@ pub fn run(c: &Case) -> Result<String, String> {
     tctx.now = Some(NOW);
     tctx.current_schema = ctx.current_schema;
     tctx.user = "QSECOFR".into();
-    let tsession = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&store)), tctx)));
+    let tsession = Rc::new(RefCell::new(Session::with_ctx(
+        Box::new(Rc::clone(&store)),
+        tctx,
+    )));
     let tjob = Rc::new(RefCell::new(new_job(&store, &tsession, lib)));
-    ctx.midcall = Some(Rc::new(move |plan| Some(mi::io::trigger::answer_mid(&mut tjob.borrow_mut(), &plan))));
-    let session = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&store)), ctx)));
+    ctx.midcall = Some(Rc::new(move |plan| {
+        Some(mi::io::trigger::answer_mid(&mut tjob.borrow_mut(), &plan))
+    }));
+    let session = Rc::new(RefCell::new(Session::with_ctx(
+        Box::new(Rc::clone(&store)),
+        ctx,
+    )));
     let mut job: Option<Box<mi::Job>> = None;
 
     let mut out = String::from("-- captured from qs400\n");
@@ -93,7 +112,8 @@ pub fn run(c: &Case) -> Result<String, String> {
         let prepared = prepare_dynamic(&text, Naming::Sql);
         let mut described: Vec<Col> = Vec::new();
         let mut nulls = false;
-        let (sqlca, outcome) = if matches!(&prepared, Ok(p) if matches!(p.statement, Statement::Call(_))) {
+        let (sqlca, outcome) = if matches!(&prepared, Ok(p) if matches!(p.statement, Statement::Call(_)))
+        {
             // A CALL runs the procedure's program in a job, as on the system.
             let j = job.get_or_insert_with(|| new_job(&store, &session, lib));
             call(j, &session, &text)
@@ -106,7 +126,10 @@ pub fn run(c: &Case) -> Result<String, String> {
                     // What a requester's PREPARE describes: the CCSIDs JTOpen
                     // names the column types by.
                     if matches!(p.statement, Statement::Select(_)) {
-                        described = describe::entries(&mut txn, ctx, &p.statement, false).into_iter().map(|e| e.col).collect();
+                        described = describe::entries(&mut txn, ctx, &p.statement, false)
+                            .into_iter()
+                            .map(|e| e.col)
+                            .collect();
                     }
                     ctx.nulls_eliminated = false;
                     let r = p.run(&mut txn, ctx, &[]);
@@ -134,10 +157,19 @@ pub fn run(c: &Case) -> Result<String, String> {
 
 /// A statement's status, warning, column and row lines, as JDBC shows
 /// them; `nulls` when a column function left out a null.
-fn outcome_lines(out: &mut String, st: &str, sqlca: &sql::Sqlca, outcome: Option<&Outcome>, described: &[Col], nulls: bool) {
+fn outcome_lines(
+    out: &mut String,
+    st: &str,
+    sqlca: &sql::Sqlca,
+    outcome: Option<&Outcome>,
+    described: &[Col],
+    nulls: bool,
+) {
     let count = match outcome {
         Some(Outcome::Count(n)) if case::changes(st) => Some(*n),
-        _ if case::changes(st) && sqlca.sqlcode >= 0 => Some(u64::try_from(sqlca.sqlerrd[2]).unwrap_or(0)),
+        _ if case::changes(st) && sqlca.sqlcode >= 0 => {
+            Some(u64::try_from(sqlca.sqlerrd[2]).unwrap_or(0))
+        }
         _ => None,
     };
     let rows = matches!(outcome, Some(Outcome::Rows(_)));
@@ -149,12 +181,26 @@ fn outcome_lines(out: &mut String, st: &str, sqlca: &sql::Sqlca, outcome: Option
     } else if sqlca.sqlcode > 0 {
         out.push_str(&render::status(0, "00000", "-", count));
         out.push('\n');
-        let _ = writeln!(out, "warning {} {} {}", sqlca.sqlcode, sqlca.sqlstate, sqlca.msgid());
+        let _ = writeln!(
+            out,
+            "warning {} {} {}",
+            sqlca.sqlcode,
+            sqlca.sqlstate,
+            sqlca.msgid()
+        );
     } else {
         // A warning with SQLCODE 0 (01506, 01004) is JDBC's SQLWarning.
         let warned = sqlca.sqlcode == 0 && sqlca.sqlstate.starts_with("01");
-        let msgid = if sqlca.sqlcode == 0 { "-".to_string() } else { sqlca.msgid() };
-        let state = if warned { "00000" } else { sqlca.sqlstate.as_str() };
+        let msgid = if sqlca.sqlcode == 0 {
+            "-".to_string()
+        } else {
+            sqlca.msgid()
+        };
+        let state = if warned {
+            "00000"
+        } else {
+            sqlca.sqlstate.as_str()
+        };
         out.push_str(&render::status(sqlca.sqlcode, state, &msgid, count));
         out.push('\n');
         // A column function left out a null: JDBC's SQLWarning with
@@ -186,10 +232,19 @@ struct StoreSource {
 }
 
 impl mi::act::ObjectSource for StoreSource {
-    fn program(&mut self, name: &str, _lib: &str, kind: ile::PgmKind) -> Option<(Arc<ile::ProgramObject>, String)> {
+    fn program(
+        &mut self,
+        name: &str,
+        _lib: &str,
+        kind: ile::PgmKind,
+    ) -> Option<(Arc<ile::ProgramObject>, String)> {
         let mut st = self.store.borrow_mut();
         let mut txn = st.begin().ok()?;
-        let ty = if kind == ile::PgmKind::Pgm { types::PGM } else { types::SRVPGM };
+        let ty = if kind == ile::PgmKind::Pgm {
+            types::PGM
+        } else {
+            types::SRVPGM
+        };
         let l = store::obj::library::Library::load(&mut txn, self.lib).ok()?;
         let id = l.lookup(&mut txn, ty, Name::parse(name).ok()?).ok()??;
         let p = ile::store::load_program(&mut txn, id).ok()?;
@@ -198,8 +253,15 @@ impl mi::act::ObjectSource for StoreSource {
     }
 }
 
-fn new_job(store: &Rc<RefCell<store::Store>>, session: &Rc<RefCell<Session>>, lib: store::obj::ObjectId) -> Box<mi::Job> {
-    let mut job = mi::Job::boxed(Box::new(StoreSource { store: Rc::clone(store), lib }));
+fn new_job(
+    store: &Rc<RefCell<store::Store>>,
+    session: &Rc<RefCell<Session>>,
+    lib: store::obj::ObjectId,
+) -> Box<mi::Job> {
+    let mut job = mi::Job::boxed(Box::new(StoreSource {
+        store: Rc::clone(store),
+        lib,
+    }));
     qrpgrt::install(&mut job);
     job.sql = Some(Box::new(Shared(Rc::clone(session))));
     job
@@ -207,11 +269,20 @@ fn new_job(store: &Rc<RefCell<store::Store>>, session: &Rc<RefCell<Session>>, li
 
 /// A `CALL` through the job: its outcome, and its first result set as
 /// the statement's rows (what JDBC's `execute` shows).
-fn call(job: &mut mi::Job, session: &Rc<RefCell<Session>>, text: &str) -> (sql::Sqlca, Option<Outcome>) {
+fn call(
+    job: &mut mi::Job,
+    session: &Rc<RefCell<Session>>,
+    text: &str,
+) -> (sql::Sqlca, Option<Outcome>) {
     const SCOPE: &str = "1:SQLKIT";
     let req = Request {
         scope: SCOPE.into(),
-        desc: Desc { op: Op::Exec, sql_naming: true, text: text.into(), ..Desc::default() },
+        desc: Desc {
+            op: Op::Exec,
+            sql_naming: true,
+            text: text.into(),
+            ..Desc::default()
+        },
         inputs: Vec::new(),
     };
     let (reply, _) = qrpgrt::sqlcall::run_request(job, req);

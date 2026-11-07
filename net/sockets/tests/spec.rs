@@ -33,7 +33,11 @@ fn constants_match_the_spec() {
     let s = section();
     let at = s.find("### Constants").expect("constants table");
     let mut doc = BTreeMap::new();
-    for row in s[at..].lines().skip_while(|l| !l.starts_with("| Name")).skip(2) {
+    for row in s[at..]
+        .lines()
+        .skip_while(|l| !l.starts_with("| Name"))
+        .skip(2)
+    {
         if !row.starts_with('|') {
             break;
         }
@@ -41,8 +45,15 @@ fn constants_match_the_spec() {
         let v: i64 = c[1].parse().unwrap_or_else(|_| panic!("value of {}", c[0]));
         assert!(doc.insert(c[0].clone(), v).is_none(), "{} twice", c[0]);
     }
-    let code: BTreeMap<String, i64> = sockets::consts::ALL.iter().map(|(n, v)| ((*n).to_string(), *v)).collect();
-    assert_eq!(code.len(), sockets::consts::ALL.len(), "names unique in the code");
+    let code: BTreeMap<String, i64> = sockets::consts::ALL
+        .iter()
+        .map(|(n, v)| ((*n).to_string(), *v))
+        .collect();
+    assert_eq!(
+        code.len(),
+        sockets::consts::ALL.len(),
+        "names unique in the code"
+    );
     assert_eq!(doc, code);
 }
 
@@ -52,7 +63,9 @@ fn layouts_match_the_spec() {
     let mut doc: BTreeMap<String, (usize, Vec<Row>)> = BTreeMap::new();
     let mut lines = s.lines().peekable();
     while let Some(l) = lines.next() {
-        let Some(rest) = l.strip_prefix("#### `") else { continue };
+        let Some(rest) = l.strip_prefix("#### `") else {
+            continue;
+        };
         let (name, tail) = rest.split_once('`').expect("closing backtick");
         let size: usize = tail
             .trim()
@@ -70,16 +83,26 @@ fn layouts_match_the_spec() {
                 continue;
             }
             let c = cells(n);
-            fields.push((c[0].parse().expect("offset"), c[1].parse().expect("size"), c[2].clone()));
+            fields.push((
+                c[0].parse().expect("offset"),
+                c[1].parse().expect("size"),
+                c[2].clone(),
+            ));
         }
         doc.insert(name.to_string(), (size, fields));
     }
     let code = sockets::layout::layouts();
     assert_eq!(doc.len(), code.len(), "one table per layout");
     for l in code {
-        let (size, fields) = doc.get(l.name).unwrap_or_else(|| panic!("no table for {}", l.name));
+        let (size, fields) = doc
+            .get(l.name)
+            .unwrap_or_else(|| panic!("no table for {}", l.name));
         assert_eq!(*size, l.size, "{}", l.name);
-        let want: Vec<Row> = l.fields.iter().map(|f| (f.offset, f.size, f.name.to_string())).collect();
+        let want: Vec<Row> = l
+            .fields
+            .iter()
+            .map(|f| (f.offset, f.size, f.name.to_string()))
+            .collect();
         assert_eq!(fields, &want, "{}", l.name);
     }
 }

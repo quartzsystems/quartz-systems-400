@@ -15,7 +15,14 @@ const HEAD_MAX: usize = 64 * 1024;
 const BODY_MAX: u64 = 2_147_483_647;
 
 /// Write a request.
-pub fn write_request(w: &mut impl Write, method: &str, target: &str, host: &str, headers: &[(String, String)], body: &[u8]) -> Result<()> {
+pub fn write_request(
+    w: &mut impl Write,
+    method: &str,
+    target: &str,
+    host: &str,
+    headers: &[(String, String)],
+    body: &[u8],
+) -> Result<()> {
     let mut head = format!("{method} {target} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n");
     let has = |n: &str| headers.iter().any(|(k, _)| k.eq_ignore_ascii_case(n));
     if !has("User-Agent") {
@@ -50,7 +57,9 @@ fn line(r: &mut impl BufRead, total: &mut usize) -> Result<String> {
     if n == 0 {
         return Err(Error::Protocol("the connection closed".into()));
     }
-    Ok(String::from_utf8_lossy(&buf).trim_end_matches(['\r', '\n']).to_string())
+    Ok(String::from_utf8_lossy(&buf)
+        .trim_end_matches(['\r', '\n'])
+        .to_string())
 }
 
 fn too_long() -> Error {
@@ -87,7 +96,12 @@ pub fn read_response(r: impl Read, method: &str) -> Result<Answer> {
             break (status, headers);
         }
     };
-    let get = |n: &str| headers.iter().find(|(k, _)| k.eq_ignore_ascii_case(n)).map(|(_, v)| v.clone());
+    let get = |n: &str| {
+        headers
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(n))
+            .map(|(_, v)| v.clone())
+    };
     let mut body = Vec::new();
     if method == "HEAD" || status == 204 || status == 304 {
         return Ok((status, headers, body));
@@ -111,7 +125,9 @@ pub fn read_response(r: impl Read, method: &str) -> Result<Answer> {
             line(&mut r, &mut 0)?;
         }
     } else if let Some(len) = get("Content-Length") {
-        let n: u64 = len.parse().map_err(|_| Error::Protocol(format!("Content-Length {len:?}")))?;
+        let n: u64 = len
+            .parse()
+            .map_err(|_| Error::Protocol(format!("Content-Length {len:?}")))?;
         if n > BODY_MAX {
             return Err(too_long());
         }

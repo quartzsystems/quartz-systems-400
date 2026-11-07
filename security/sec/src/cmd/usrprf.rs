@@ -286,9 +286,12 @@ fn cp_event(cmd: &str, p: &UsrPrf, password: bool) -> crate::audit::Event {
 /// `*SECADM` for the profile commands: `CPF2292`, as the machine
 /// refuses `CRTUSRPRF`.
 fn require_secadm(env: &Env<'_>, what: &str) -> Result<()> {
-    env.actor
-        .require(SpecialAuth::SECADM, what)
-        .map_err(|_| SecError::msg("CPF2292", format!("*SECADM special authority is needed to {what}.")))
+    env.actor.require(SpecialAuth::SECADM, what).map_err(|_| {
+        SecError::msg(
+            "CPF2292",
+            format!("*SECADM special authority is needed to {what}."),
+        )
+    })
 }
 
 /// `CRTUSRPRF`.
@@ -636,12 +639,19 @@ pub fn list(txn: &mut Txn<'_>, env: &Env<'_>) -> Result<Vec<(String, UserClass, 
 /// `PRTUSRPRF TYPE(*AUTINFO|*ENVINFO|*PWDINFO)`: one line per profile
 /// for the spooled report; `*ALLOBJ` is needed.
 pub fn prtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, kind: &str) -> Result<Vec<String>> {
-    env.actor.require(SpecialAuth::ALLOBJ, "print user profiles")?;
+    env.actor
+        .require(SpecialAuth::ALLOBJ, "print user profiles")?;
     let mut lines = vec![match kind {
         "*ENVINFO" => format!(
             "{:<10} {:<10} {:<21} {:<21} {:<21} {:<21} {:<21} {}",
-            "Profile", "Curlib", "Initial program", "Initial menu", "Job description",
-            "Message queue", "Output queue", "Printer"
+            "Profile",
+            "Curlib",
+            "Initial program",
+            "Initial menu",
+            "Job description",
+            "Message queue",
+            "Output queue",
+            "Printer"
         ),
         "*PWDINFO" => format!(
             "{:<10} {:<8} {:<10} {:>7} {:<10} {}",
@@ -678,16 +688,32 @@ pub fn prtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, kind: &str) -> Result<Vec<Str
                 "{:<10} {:<8} {:<10} {:>7} {:<10} {}",
                 p.name,
                 if p.pwd_none { "*NONE" } else { "*YES" },
-                if p.pwd_changed == 0 { "*NONE".to_string() } else { civil(p.pwd_changed) },
-                if p.pwdexpitv == 0 { "*SYSVAL".to_string() } else { p.pwdexpitv.to_string() },
+                if p.pwd_changed == 0 {
+                    "*NONE".to_string()
+                } else {
+                    civil(p.pwd_changed)
+                },
+                if p.pwdexpitv == 0 {
+                    "*SYSVAL".to_string()
+                } else {
+                    p.pwdexpitv.to_string()
+                },
                 status,
-                if p.last_signon == 0 { "*NONE".to_string() } else { civil(p.last_signon) }
+                if p.last_signon == 0 {
+                    "*NONE".to_string()
+                } else {
+                    civil(p.last_signon)
+                }
             ),
             _ => format!(
                 "{:<10} {:<8} {:<10} {:<8} {:<10} {}",
                 p.name,
                 p.usrcls.name(),
-                if p.grpprf.is_empty() { "*NONE" } else { &p.grpprf },
+                if p.grpprf.is_empty() {
+                    "*NONE"
+                } else {
+                    &p.grpprf
+                },
                 if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" },
                 status,
                 p.spcaut.names().join(" ")
@@ -701,7 +727,8 @@ pub fn prtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, kind: &str) -> Result<Vec<Str
 /// for `days` (never signed on: since it was created), except the
 /// system's `Q*` profiles and the caller; `*SECADM` is needed.
 pub fn anzprfact(txn: &mut Txn<'_>, env: &Env<'_>, days: u32) -> Result<String> {
-    env.actor.require(SpecialAuth::SECADM, "analyze profile activity")?;
+    env.actor
+        .require(SpecialAuth::SECADM, "analyze profile activity")?;
     let limit = u64::from(days) * 86_400;
     let mut disabled = Vec::new();
     for name in objects::list(txn, env.qsys)? {
@@ -709,7 +736,11 @@ pub fn anzprfact(txn: &mut Txn<'_>, env: &Env<'_>, days: u32) -> Result<String> 
             continue;
         }
         let (id, mut p) = objects::read(txn, env.qsys, &name)?;
-        let last = if p.last_signon == 0 { p.created } else { p.last_signon };
+        let last = if p.last_signon == 0 {
+            p.created
+        } else {
+            p.last_signon
+        };
         if p.disabled || env.now < last.saturating_add(limit) {
             continue;
         }

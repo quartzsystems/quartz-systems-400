@@ -101,7 +101,12 @@ impl<B: Read + Write + Seek> VirtualLibrary<B> {
 
     /// Put a volume back at element `addr` as a library kept it: in a
     /// slot, a station or a drive (loaded), `source` its home slot.
-    pub fn put(&mut self, addr: u16, mut tape: VirtualTape<B>, source: u16) -> Result<(), ChangerError> {
+    pub fn put(
+        &mut self,
+        addr: u16,
+        mut tape: VirtualTape<B>,
+        source: u16,
+    ) -> Result<(), ChangerError> {
         let p = self.place(addr)?;
         if self.cell(p).is_some() {
             return Err(ChangerError::DestinationFull(addr));

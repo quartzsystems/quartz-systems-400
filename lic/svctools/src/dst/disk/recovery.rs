@@ -27,8 +27,16 @@ pub fn work_with_disk_unit_recovery(ops: bool, admin: bool) -> Submenu {
         "dst-disk-recovery",
         "Work with Disk Unit Recovery",
         vec![
-            (1, "Save disk unit data", crate::dst::common::says(crate::dst::answers::UNIT_DATA)),
-            (2, "Restore disk unit data", crate::dst::common::says(crate::dst::answers::UNIT_DATA)),
+            (
+                1,
+                "Save disk unit data",
+                crate::dst::common::says(crate::dst::answers::UNIT_DATA),
+            ),
+            (
+                2,
+                "Restore disk unit data",
+                crate::dst::common::says(crate::dst::answers::UNIT_DATA),
+            ),
             (
                 3,
                 "Replace configured unit",
@@ -36,8 +44,16 @@ pub fn work_with_disk_unit_recovery(ops: bool, admin: bool) -> Submenu {
                     guard(admin, Flow::Push(Box::new(replace(env))))
                 })),
             ),
-            (4, "Assign missing unit", crate::dst::common::says(crate::dst::answers::ASSIGN_MISSING)),
-            (5, "Recover configuration", crate::dst::common::says(crate::dst::answers::RECOVER_CONFIG)),
+            (
+                4,
+                "Assign missing unit",
+                crate::dst::common::says(crate::dst::answers::ASSIGN_MISSING),
+            ),
+            (
+                5,
+                "Recover configuration",
+                crate::dst::common::says(crate::dst::answers::RECOVER_CONFIG),
+            ),
             (
                 6,
                 "Disk unit problem recovery procedures",
@@ -57,7 +73,11 @@ pub fn work_with_disk_unit_recovery(ops: bool, admin: bool) -> Submenu {
                     guard(ops, Flow::Push(Box::new(resume(env))))
                 })),
             ),
-            (9, "Copy disk unit data", crate::dst::common::says(crate::dst::answers::UNIT_DATA)),
+            (
+                9,
+                "Copy disk unit data",
+                crate::dst::common::says(crate::dst::answers::UNIT_DATA),
+            ),
             (
                 10,
                 "Delete disk unit data",
@@ -149,7 +169,10 @@ fn replace(env: &mut dyn DstEnv) -> Select {
                             Box::new(move |env: &mut dyn DstEnv| {
                                 env.replace(number, &device)?;
                                 if !mirrored {
-                                    return Ok(format!("Unit {} replaced and rebuilding", number + 1));
+                                    return Ok(format!(
+                                        "Unit {} replaced and rebuilding",
+                                        number + 1
+                                    ));
                                 }
                                 env.resume(number)?;
                                 Ok(format!("Unit {} replaced and resuming", number + 1))

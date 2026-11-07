@@ -119,7 +119,11 @@ pub(crate) fn entry(s: &mut Session, line: &str) -> Result<(), String> {
 
 /// Type a line at Command Entry; the screen once one of its lines
 /// satisfies `done`.
-pub(crate) fn entry_wait(s: &mut Session, line: &str, done: impl Fn(&str) -> bool) -> Result<String, String> {
+pub(crate) fn entry_wait(
+    s: &mut Session,
+    line: &str,
+    done: impl Fn(&str) -> bool,
+) -> Result<String, String> {
     entry(s, line)?;
     let mut last = String::new();
     for _ in 0..80 {

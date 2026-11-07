@@ -25,7 +25,11 @@ pub fn encode(w: usize, h: usize, px: &[u8]) -> Vec<u8> {
     let mut tries: [Vec<u8>; 5] = std::array::from_fn(|_| vec![0u8; stride]);
     for y in 0..h {
         let line = &px[y * stride..(y + 1) * stride];
-        let prev = if y == 0 { &zero[..] } else { &px[(y - 1) * stride..y * stride] };
+        let prev = if y == 0 {
+            &zero[..]
+        } else {
+            &px[(y - 1) * stride..y * stride]
+        };
         let mut best = (u64::MAX, 0usize);
         for (f, out) in tries.iter_mut().enumerate() {
             let sum = filter(f, line, prev, out);
@@ -71,7 +75,11 @@ fn filter(f: usize, line: &[u8], prev: &[u8], out: &mut [u8]) -> u64 {
 
 fn paeth(a: u8, b: u8, c: u8) -> u8 {
     let p = i16::from(a) + i16::from(b) - i16::from(c);
-    let (pa, pb, pc) = ((p - i16::from(a)).abs(), (p - i16::from(b)).abs(), (p - i16::from(c)).abs());
+    let (pa, pb, pc) = (
+        (p - i16::from(a)).abs(),
+        (p - i16::from(b)).abs(),
+        (p - i16::from(c)).abs(),
+    );
     if pa <= pb && pa <= pc {
         a
     } else if pb <= pc {
@@ -95,7 +103,11 @@ fn crc32(data: &[u8]) -> u32 {
     for &b in data {
         crc ^= u32::from(b);
         for _ in 0..8 {
-            crc = if crc & 1 != 0 { (crc >> 1) ^ 0xEDB8_8320 } else { crc >> 1 };
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ 0xEDB8_8320
+            } else {
+                crc >> 1
+            };
         }
     }
     !crc
@@ -107,6 +119,9 @@ mod tests {
     fn crc_of_iend() {
         // Every PNG ends with the same IEND chunk.
         let p = super::encode(1, 1, &[1, 2, 3]);
-        assert_eq!(&p[p.len() - 12..], &[0, 0, 0, 0, b'I', b'E', b'N', b'D', 0xAE, 0x42, 0x60, 0x82]);
+        assert_eq!(
+            &p[p.len() - 12..],
+            &[0, 0, 0, 0, b'I', b'E', b'N', b'D', 0xAE, 0x42, 0x60, 0x82]
+        );
     }
 }

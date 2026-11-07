@@ -11,7 +11,9 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{Step, cell, choice, dialog, display, exec, fetch, fill, load, no_more, others, qual, show, work};
+use super::{
+    Step, cell, choice, dialog, display, exec, fetch, fill, load, no_more, others, qual, show, work,
+};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -110,15 +112,31 @@ fn libraries(host: &Host, lib: &str) -> Vec<String> {
 
 /// `WRKJRNRCV JRNRCV(lib/name)`: the receivers a name selects; option 1
 /// on the blank first line creates one.
-pub fn wrkjrnrcv(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkjrnrcv(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let q = qual(r, "JRNRCV", "*LIBL");
     let (lib, name) = q.split_once('/').unwrap_or(("*LIBL", &q));
-    let (lib, name) = (lib.to_string(), if name.is_empty() { "*ALL".to_string() } else { name.to_string() });
+    let (lib, name) = (
+        lib.to_string(),
+        if name.is_empty() {
+            "*ALL".to_string()
+        } else {
+            name.to_string()
+        },
+    );
     let mut d = dialog(host, "QUIJRNRCV")?;
     let mut reload = |host: &Host, d: &mut UimDialog| -> Result<(), Fail> {
         let found: Vec<Vec<(String, String)>> = libraries(host, &lib)
             .into_iter()
-            .flat_map(|l| host.link.borrow_mut().with(|c| c.list_objects(l, name.clone(), "*JRNRCV".into())))
+            .flat_map(|l| {
+                host.link
+                    .borrow_mut()
+                    .with(|c| c.list_objects(l, name.clone(), "*JRNRCV".into()))
+            })
             .map(|o| {
                 vec![
                     ("RCV".to_string(), o.name),
@@ -136,25 +154,41 @@ pub fn wrkjrnrcv(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         fill(d, "RCVS", rows);
         Ok(())
     };
-    let mut keys = |job: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
-        if let Some(c) = choice(&resp).filter(|c| c.option == "1") {
-            let typed = d.get(crate::display::uim::CMDLINE_VAR).trim().to_ascii_uppercase();
-            d.set(crate::display::uim::CMDLINE_VAR, "");
-            let rcv = cell(d, &c.list, c.row, "RCV");
-            let rcv = if rcv.is_empty() { typed } else { rcv };
-            let cmd = if rcv.is_empty() { "?CRTJRNRCV".to_string() } else { format!("?CRTJRNRCV JRNRCV({rcv})") };
-            exec(job, host, d, &cmd);
-            return Ok(Step::Reload);
-        }
-        Ok(match resp {
-            Response::Return(11) => {
-                d.view = 1 - d.view.min(1);
-                Step::Stay
+    let mut keys =
+        |job: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
+            if let Some(c) = choice(&resp).filter(|c| c.option == "1") {
+                let typed = d
+                    .get(crate::display::uim::CMDLINE_VAR)
+                    .trim()
+                    .to_ascii_uppercase();
+                d.set(crate::display::uim::CMDLINE_VAR, "");
+                let rcv = cell(d, &c.list, c.row, "RCV");
+                let rcv = if rcv.is_empty() { typed } else { rcv };
+                let cmd = if rcv.is_empty() {
+                    "?CRTJRNRCV".to_string()
+                } else {
+                    format!("?CRTJRNRCV JRNRCV({rcv})")
+                };
+                exec(job, host, d, &cmd);
+                return Ok(Step::Reload);
             }
-            other => others(d, &other),
-        })
-    };
-    work(job, host, surface, &mut d, "WRKJRNRCV", &mut reload, &mut keys)
+            Ok(match resp {
+                Response::Return(11) => {
+                    d.view = 1 - d.view.min(1);
+                    Step::Stay
+                }
+                other => others(d, &other),
+            })
+        };
+    work(
+        job,
+        host,
+        surface,
+        &mut d,
+        "WRKJRNRCV",
+        &mut reload,
+        &mut keys,
+    )
 }
 
 /// `WRKJRNA JRN(lib/name)`: the attributes; F15 the receiver directory,

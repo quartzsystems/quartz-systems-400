@@ -67,10 +67,18 @@ fn against_pub400(golden: &str, panel: &str, page: usize) {
     for (i, our) in ours.iter().enumerate().take(23) {
         let their = theirs.get(i).copied().unwrap_or("").trim_end();
         if our.trim_end() != their {
-            bad.push(format!("row {:>2}\n  ours:   |{}|\n  golden: |{their}|", i + 1, our.trim_end()));
+            bad.push(format!(
+                "row {:>2}\n  ours:   |{}|\n  golden: |{their}|",
+                i + 1,
+                our.trim_end()
+            ));
         }
     }
-    assert!(bad.is_empty(), "{panel} against {golden}:\n{}", bad.join("\n"));
+    assert!(
+        bad.is_empty(),
+        "{panel} against {golden}:\n{}",
+        bad.join("\n")
+    );
 }
 
 #[test]
@@ -91,13 +99,20 @@ fn dir() -> PathBuf {
 
 fn golden(panel: &str, d: &MapDialog) -> Vec<String> {
     let r = rows(panel, d, 0);
-    let text = r.iter().map(|r| r.trim_end()).collect::<Vec<_>>().join("\n") + "\n";
+    let text = r
+        .iter()
+        .map(|r| r.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
     let path = dir().join(format!("{panel}.txt"));
     if std::env::var_os("QS400_UPDATE_GOLDEN").is_some() || !path.exists() {
         std::fs::create_dir_all(dir()).unwrap();
         std::fs::write(&path, &text).unwrap();
     }
-    let want = std::fs::read_to_string(&path).unwrap().replace("\r\n", "\n");
+    let want = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("\r\n", "\n");
     assert_eq!(text, want, "{panel} differs from {}", path.display());
     r
 }
@@ -121,7 +136,11 @@ fn save_command_defaults() {
         "Use system reply list",
         "Spooled file data",
     ] {
-        assert!(r.iter().any(|x| x.contains(label)), "no {label:?}:\n{}", r.join("\n"));
+        assert!(
+            r.iter().any(|x| x.contains(label)),
+            "no {label:?}:\n{}",
+            r.join("\n")
+        );
     }
     assert!(r[0].contains("Specify Command Defaults"));
 }
@@ -154,7 +173,10 @@ fn the_commands_an_option_runs() {
     d.set_list(
         "CMDS",
         ListState {
-            rows: cmds.iter().map(|c| vec![("CMDLINE".to_string(), (*c).to_string())]).collect(),
+            rows: cmds
+                .iter()
+                .map(|c| vec![("CMDLINE".to_string(), (*c).to_string())])
+                .collect(),
             top: 0,
             total: Some(cmds.len()),
             complete: true,

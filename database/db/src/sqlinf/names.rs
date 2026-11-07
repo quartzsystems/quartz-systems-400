@@ -63,7 +63,9 @@ pub struct Target {
 
 fn key(space: Space, name: &str) -> Result<DynKey> {
     if name.is_empty() || name.len() > NAME_BYTES || name.chars().count() > 128 {
-        return Err(DbError::Corrupt { what: format!("SQL name {name:?} too long") });
+        return Err(DbError::Corrupt {
+            what: format!("SQL name {name:?} too long"),
+        });
     }
     let mut k = vec![0u8; KEY_LEN];
     k[0] = space as u8;
@@ -79,7 +81,9 @@ fn value(t: Target) -> Vec<u8> {
 
 fn target(v: &[u8]) -> Result<Target> {
     if v.len() < 26 {
-        return Err(DbError::Corrupt { what: "SQL name index value".into() });
+        return Err(DbError::Corrupt {
+            what: "SQL name index value".into(),
+        });
     }
     Ok(Target {
         id: ObjectId::from_bytes(&v[..16]),
@@ -98,7 +102,9 @@ pub fn find(txn: &mut Txn<'_>, lib: ObjectId, space: Space, name: &str) -> Resul
     if t.is_empty() {
         return Ok(None);
     }
-    t.get(txn, &key(space, name)?)?.map(|v| target(&v)).transpose()
+    t.get(txn, &key(space, name)?)?
+        .map(|v| target(&v))
+        .transpose()
 }
 
 /// Record `name` in `lib`'s `space`; returns what it replaced.
@@ -146,7 +152,10 @@ pub fn list(txn: &mut Txn<'_>, lib: ObjectId, space: Space) -> Result<Vec<(Strin
         }
         let name = &k.0[1..];
         let end = name.iter().position(|&b| b == 0).unwrap_or(NAME_BYTES);
-        out.push((String::from_utf8_lossy(&name[..end]).into_owned(), target(&v)?));
+        out.push((
+            String::from_utf8_lossy(&name[..end]).into_owned(),
+            target(&v)?,
+        ));
     }
     Ok(out)
 }

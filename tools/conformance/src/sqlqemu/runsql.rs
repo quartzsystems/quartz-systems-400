@@ -47,20 +47,45 @@ impl Suite {
             &["RUNTTRG"],
         )?;
         let listing = spooled(s, "RUNT")?;
-        for want in ["CREATE PROCEDURE SQLQ/ADDROW", "CREATE TRIGGER SQLQ/RUNTTRG"] {
+        for want in [
+            "CREATE PROCEDURE SQLQ/ADDROW",
+            "CREATE TRIGGER SQLQ/RUNTTRG",
+        ] {
             if !listing.contains(want) {
                 return Err(format!("the listing lacks {want:?}:\n{listing}"));
             }
         }
-        tn.cmd(&format!("RUNSQL SQL('CALL {LIB}/ADDROW(5)') COMMIT(*NONE)"), "")?;
-        tn.cmd(&format!("RUNSQL SQL('INSERT INTO {LIB}/RUNT VALUES(7, ''DIRECT'')') COMMIT(*NONE)"), "")?;
-        sql_has(s, &format!("SELECT N, NOTE FROM {LIB}/RUNT ORDER BY N"), &["CALLED", "DIRECT"])?;
-        let log = sql_has(s, &format!("SELECT N, WHAT FROM {LIB}/RUNLOG ORDER BY N"), &["TRIGGER", "2 row(s)"])?;
-        let shown = tn.cmd(&format!("RUNSQL SQL('SELECT * FROM {LIB}/RUNT') COMMIT(*NONE)"), "SQL9010")?;
+        tn.cmd(
+            &format!("RUNSQL SQL('CALL {LIB}/ADDROW(5)') COMMIT(*NONE)"),
+            "",
+        )?;
+        tn.cmd(
+            &format!("RUNSQL SQL('INSERT INTO {LIB}/RUNT VALUES(7, ''DIRECT'')') COMMIT(*NONE)"),
+            "",
+        )?;
+        sql_has(
+            s,
+            &format!("SELECT N, NOTE FROM {LIB}/RUNT ORDER BY N"),
+            &["CALLED", "DIRECT"],
+        )?;
+        let log = sql_has(
+            s,
+            &format!("SELECT N, WHAT FROM {LIB}/RUNLOG ORDER BY N"),
+            &["TRIGGER", "2 row(s)"],
+        )?;
+        let shown = tn.cmd(
+            &format!("RUNSQL SQL('SELECT * FROM {LIB}/RUNT') COMMIT(*NONE)"),
+            "SQL9010",
+        )?;
         let after = shown.rsplit("RUNSQL SQL('SELECT").next().unwrap_or("");
-        let ids: Vec<&str> = ["SQL0084", "SQL9010"].into_iter().filter(|i| after.contains(i)).collect();
+        let ids: Vec<&str> = ["SQL0084", "SQL9010"]
+            .into_iter()
+            .filter(|i| after.contains(i))
+            .collect();
         if ids.len() != 2 {
-            return Err(format!("the SELECT was not refused with SQL0084 and SQL9010:\n{shown}"));
+            return Err(format!(
+                "the SELECT was not refused with SQL0084 and SQL9010:\n{shown}"
+            ));
         }
         tn.close()?;
         let _ = log;

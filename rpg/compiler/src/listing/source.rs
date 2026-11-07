@@ -39,7 +39,8 @@ fn stmt_rulers((a, b): (String, String)) -> (String, String) {
         return (a, b);
     }
     (
-        a.replacen("Line   <", "Seq    <", 1).replace("Change Src Seq", "Change Statement"),
+        a.replacen("Line   <", "Seq    <", 1)
+            .replace("Change Src Seq", "Change Statement"),
         b.replace("Date   Id  Number", "Date   Number"),
     )
 }
@@ -87,17 +88,35 @@ fn indent_marks(c: &Compiled) -> Option<String> {
 
 /// A fixed-form calculation under `INDENT`: the operation in a wider
 /// field after one mark per enclosing level, no nesting column or date.
-fn indented(l: &Line, no: Option<u32>, mark: char, info: &Info, srcid: &str, marks: &str) -> String {
+fn indented(
+    l: &Line,
+    no: Option<u32>,
+    mark: char,
+    info: &Info,
+    srcid: &str,
+    marks: &str,
+) -> String {
     let no = no.map_or_else(|| "------".to_string(), |n| n.to_string());
     let chars: Vec<char> = l.text.chars().collect();
-    let cols = |from: usize, to: usize| -> String { (from..=to).map(|k| chars.get(k - 1).copied().unwrap_or(' ')).collect() };
+    let cols = |from: usize, to: usize| -> String {
+        (from..=to)
+            .map(|k| chars.get(k - 1).copied().unwrap_or(' '))
+            .collect()
+    };
     let depth = match info.level.as_bytes() {
-        [b'B' | b'X' | b'E', ..] => info.level[1..].parse::<usize>().unwrap_or(1).saturating_sub(1),
+        [b'B' | b'X' | b'E', ..] => info.level[1..]
+            .parse::<usize>()
+            .unwrap_or(1)
+            .saturating_sub(1),
         [] => 0,
         _ => info.level.parse::<usize>().unwrap_or(0),
     };
     let op = cols(26, 35).trim_end().to_string();
-    let field = if op.trim().is_empty() { String::new() } else { format!("{}{}", marks.repeat(depth), op.trim_start()) };
+    let field = if op.trim().is_empty() {
+        String::new()
+    } else {
+        format!("{}{}", marks.repeat(depth), op.trim_start())
+    };
     let mut rest = cols(36, 100);
     if !xf2_op(&l.text) {
         let mut all: String = cols(6, 100);
@@ -138,22 +157,47 @@ pub(crate) enum Place {
 pub(crate) fn place_in(c: &Compiled, d: &Diag) -> Place {
     // A structure or prototype left open: at the end.
     if d.msgid == "RNF3556" {
-        let closed = c.read.lines.iter().find(|l| l.no == d.at.line).is_some_and(|l| l.text.to_ascii_lowercase().contains("end-"));
+        let closed = c
+            .read
+            .lines
+            .iter()
+            .find(|l| l.no == d.at.line)
+            .is_some_and(|l| l.text.to_ascii_lowercase().contains("end-"));
         return if closed { Place::Group } else { Place::End };
     }
     // DEALLOC's operand is checked with the statement.
     if d.msgid == "RNF7261"
-        && c.read.lines.iter().find(|l| l.no == d.at.line).is_some_and(|l| l.text.trim_start().to_ascii_uppercase().starts_with("DEALLOC"))
+        && c.read
+            .lines
+            .iter()
+            .find(|l| l.no == d.at.line)
+            .is_some_and(|l| {
+                l.text
+                    .trim_start()
+                    .to_ascii_uppercase()
+                    .starts_with("DEALLOC")
+            })
     {
         return Place::Stmt;
     }
     // A name a declaration names that is not defined: at the end.
     if d.msgid == "RNF7030" {
-        let decl = c.read.lines.iter().position(|l| l.no == d.at.line).is_some_and(|i| {
-            matches!(stmts::analyze(&c.read.lines)[i].ty, Ty::Spec('D' | 'H' | 'F'))
-        });
+        let decl = c
+            .read
+            .lines
+            .iter()
+            .position(|l| l.no == d.at.line)
+            .is_some_and(|i| {
+                matches!(
+                    stmts::analyze(&c.read.lines)[i].ty,
+                    Ty::Spec('D' | 'H' | 'F')
+                )
+            });
         // When the keyword that holds it was dropped.
-        let dropped = c.diags.iter().any(|e| e.msgid == "RNF3308" && e.at.line == d.at.line);
+        let dropped = c
+            .diags
+            .iter()
+            .any(|e| e.msgid == "RNF3308" && e.at.line == d.at.line);
         if decl && dropped {
             return Place::End;
         }
@@ -162,11 +206,29 @@ pub(crate) fn place_in(c: &Compiled, d: &Diag) -> Place {
         if let Some(l) = c.read.lines.iter().find(|l| l.no == d.at.line)
             && decl
             && !l.fully_free
-            && l.text.chars().nth(5).is_some_and(|ch| ch.eq_ignore_ascii_case(&'D'))
+            && l.text
+                .chars()
+                .nth(5)
+                .is_some_and(|ch| ch.eq_ignore_ascii_case(&'D'))
         {
-            let own: String = l.text.chars().skip(6).take(15).collect::<String>().trim().to_ascii_uppercase();
-            let other = c.diags.iter().any(|e| e.msgid == "RNF7030" && e.at.line == d.at.line && e.args.first().is_some_and(|a| a.eq_ignore_ascii_case(&own)));
-            if other && d.args.first().is_some_and(|a| !a.eq_ignore_ascii_case(&own)) {
+            let own: String = l
+                .text
+                .chars()
+                .skip(6)
+                .take(15)
+                .collect::<String>()
+                .trim()
+                .to_ascii_uppercase();
+            let other = c.diags.iter().any(|e| {
+                e.msgid == "RNF7030"
+                    && e.at.line == d.at.line
+                    && e.args.first().is_some_and(|a| a.eq_ignore_ascii_case(&own))
+            });
+            if other
+                && d.args
+                    .first()
+                    .is_some_and(|a| !a.eq_ignore_ascii_case(&own))
+            {
                 return Place::End;
             }
         }
@@ -185,11 +247,12 @@ pub(crate) fn place(d: &Diag) -> Place {
         "RNF5415" => Place::ProcEnd,
         "RNF3530" | "RNF7301" => Place::Group,
         // Checks of expressions and operations made after the source.
-        "RNF0328" | "RNF0329" | "RNF0331" | "RNF0334" | "RNF0336" | "RNF0345" | "RNF0362" | "RNF0365" | "RNF0371"
-        | "RNF0381" | "RNF0528" | "RNF0530" | "RNF0571" | "RNF0580" | "RNF0581" | "RNF0599" | "RNF0655" | "RNF0752"
-        | "RNF5159" | "RNF5191" | "RNF5202" | "RNF5276" | "RNF5343" | "RNF5403" | "RNF6029" | "RNF0203" | "RNF0224"
-        | "RNF0574" | "RNF5352" | "RNF0337" | "RNF0342" | "RNF0507" | "RNF0556" | "RNF0565" | "RNF0587" | "RNF5123"
-        | "RNF0579" | "RNF5184" | "RNF0592" | "RNF0386" | "RNF0364" => {
+        "RNF0328" | "RNF0329" | "RNF0331" | "RNF0334" | "RNF0336" | "RNF0345" | "RNF0362"
+        | "RNF0365" | "RNF0371" | "RNF0381" | "RNF0528" | "RNF0530" | "RNF0571" | "RNF0580"
+        | "RNF0581" | "RNF0599" | "RNF0655" | "RNF0752" | "RNF5159" | "RNF5191" | "RNF5202"
+        | "RNF5276" | "RNF5343" | "RNF5403" | "RNF6029" | "RNF0203" | "RNF0224" | "RNF0574"
+        | "RNF5352" | "RNF0337" | "RNF0342" | "RNF0507" | "RNF0556" | "RNF0565" | "RNF0587"
+        | "RNF5123" | "RNF0579" | "RNF5184" | "RNF0592" | "RNF0386" | "RNF0364" => {
             Place::Additional
         }
         id if id.starts_with("RNF7") => Place::Additional,
@@ -214,7 +277,13 @@ pub(crate) fn numbers(c: &Compiled, plan: &[genlines::Block]) -> Numbers {
     for l in &c.read.lines {
         for b in plan.iter().filter(|b| b.at == l.no) {
             blocks.push(n + 1);
-            n += u32::try_from(b.rows.iter().filter(|r| matches!(r, genlines::Row::Line(..))).count()).unwrap_or(0);
+            n += u32::try_from(
+                b.rows
+                    .iter()
+                    .filter(|r| matches!(r, genlines::Row::Line(..)))
+                    .count(),
+            )
+            .unwrap_or(0);
         }
         if l.class == Class::Skipped || super::unnumbered(l) {
             of.push(None);
@@ -226,15 +295,31 @@ pub(crate) fn numbers(c: &Compiled, plan: &[genlines::Block]) -> Numbers {
     let last_no = c.read.lines.last().map_or(0, |l| l.no);
     for b in plan.iter().filter(|b| b.at > last_no) {
         blocks.push(n + 1);
-        n += u32::try_from(b.rows.iter().filter(|r| matches!(r, genlines::Row::Line(..))).count()).unwrap_or(0);
+        n += u32::try_from(
+            b.rows
+                .iter()
+                .filter(|r| matches!(r, genlines::Row::Line(..)))
+                .count(),
+        )
+        .unwrap_or(0);
     }
     Numbers { of, blocks }
 }
 
 /// One diagnostic record and its text's continuation lines.
 pub(crate) fn diag_lines(out: &mut Out, d: &Diag, field: &str, seq: &str) {
-    let text = super::lines::wrap_to(&msgs::text(d), TEXT_WIDTH, super::lines::lines(d.msgid, false));
-    out.line(' ', format!("*{} {:02} {field:<6} {seq:<6}  {}", d.msgid, d.severity, text[0]));
+    let text = super::lines::wrap_to(
+        &msgs::text(d),
+        TEXT_WIDTH,
+        super::lines::lines(d.msgid, false),
+    );
+    out.line(
+        ' ',
+        format!(
+            "*{} {:02} {field:<6} {seq:<6}  {}",
+            d.msgid, d.severity, text[0]
+        ),
+    );
     for t in &text[1..] {
         out.line(' ', format!("{:TEXT_AT$}{t}", ""));
     }
@@ -247,7 +332,13 @@ pub(crate) fn seq_of(c: &Compiled, d: &Diag) -> String {
         .lines
         .iter()
         .find(|l| l.no == d.at.line && d.at.line > 0)
-        .map(|l| if l.member > 0 { format!("{}+", l.seq) } else { l.seq.clone() })
+        .map(|l| {
+            if l.member > 0 {
+                format!("{}+", l.seq)
+            } else {
+                l.seq.clone()
+            }
+        })
         .unwrap_or_default()
 }
 
@@ -255,8 +346,21 @@ pub(crate) fn seq_of(c: &Compiled, d: &Diag) -> String {
 fn unmarked(id: &str) -> bool {
     matches!(
         id,
-        "RNF5005" | "RNF0256" | "RNF3504" | "RNF5418" | "RNF5177" | "RNF5178" | "RNF7301" | "RNF5501" | "RNF1502" | "RNF5415" | "RNF5094"
-            | "RNF0706" | "RNF0702" | "RNF0272" | "RNF0701"
+        "RNF5005"
+            | "RNF0256"
+            | "RNF3504"
+            | "RNF5418"
+            | "RNF5177"
+            | "RNF5178"
+            | "RNF7301"
+            | "RNF5501"
+            | "RNF1502"
+            | "RNF5415"
+            | "RNF5094"
+            | "RNF0706"
+            | "RNF0702"
+            | "RNF0272"
+            | "RNF0701"
     )
 }
 
@@ -310,7 +414,11 @@ fn marker_col(d: &Diag, l: &Line) -> usize {
             let after = at + a.len() >= b.len() || !name(b[at + a.len()]);
             if before && after {
                 // A name in quotes: the literal.
-                return if at > 0 && b[at - 1] == b'\'' { at } else { at + 1 };
+                return if at > 0 && b[at - 1] == b'\'' {
+                    at
+                } else {
+                    at + 1
+                };
             }
             from = at + 1;
         }
@@ -348,10 +456,14 @@ fn marks<'a>(c: &Compiled, ds: &[&'a Diag], last: Option<(&Line, u32)>) -> Marks
     let mut next = b'a';
     for d in &ds {
         let on_last = last.is_some_and(|(l, _)| {
-            l.no == d.at.line && (marker_col(d, l) > 0 || super::markers::place(d, l, 0, 0).is_some())
+            l.no == d.at.line
+                && (marker_col(d, l) > 0 || super::markers::place(d, l, 0, 0).is_some())
         }) && (!unmarked(d.msgid)
             || (d.msgid == "RNF0256" && super::procs_lost(c))
-            || (d.msgid == "RNF5005" && last.is_some_and(|(l, _)| l.text.trim_start().to_ascii_uppercase().starts_with("EXSR"))));
+            || (d.msgid == "RNF5005"
+                && last.is_some_and(|(l, _)| {
+                    l.text.trim_start().to_ascii_uppercase().starts_with("EXSR")
+                })));
         if !on_last {
             letters.push(None);
             continue;
@@ -371,13 +483,17 @@ fn marks<'a>(c: &Compiled, ds: &[&'a Diag], last: Option<(&Line, u32)>) -> Marks
             (Some((_, n)), _) => n,
             (_, "RNF5508" | "RNF0305" | "RNF0306") => 1,
             (_, "RNF6011") if !l.fully_free => 12,
-            (_, "RNF3431" | "RNF3430" | "RNF3481") => l.text[col - 1..].find(')').unwrap_or(1).max(1),
+            (_, "RNF3431" | "RNF3430" | "RNF3481") => {
+                l.text[col - 1..].find(')').unwrap_or(1).max(1)
+            }
             _ => super::markers::token(&chars, col - 1),
         };
         let ch = char::from(next);
         next = next.saturating_add(1);
         letters.push(Some(ch));
-        let row = rows.iter_mut().find(|r| r.len() <= at || r[at..(at + len).min(r.len())].iter().all(|c| *c == ' '));
+        let row = rows
+            .iter_mut()
+            .find(|r| r.len() <= at || r[at..(at + len).min(r.len())].iter().all(|c| *c == ' '));
         let row = match row {
             Some(r) => r,
             None => {
@@ -419,10 +535,17 @@ fn release(out: &mut Out, c: &Compiled, ds: &[&Diag], last: Option<(&Line, u32)>
 /// A source record.
 fn record(l: &Line, no: Option<u32>, mark: char, info: &Info, srcid: &str) -> String {
     // A skipped line shown has dashes for its number.
-    let no = if srcstmt() && no.is_some() { l.seq.clone() } else { no.map_or_else(|| "------".to_string(), |n| n.to_string()) };
+    let no = if srcstmt() && no.is_some() {
+        l.seq.clone()
+    } else {
+        no.map_or_else(|| "------".to_string(), |n| n.to_string())
+    };
     if l.fully_free {
         let text: String = l.text.chars().take(100).collect();
-        format!("{no:>6}{mark}{text:<100}{:>4}  {:<6}{srcid:>5}{}", info.level, l.date, l.seq)
+        format!(
+            "{no:>6}{mark}{text:<100}{:>4}  {:<6}{srcid:>5}{}",
+            info.level, l.date, l.seq
+        )
     } else {
         let mut text: String = l.text.chars().skip(5).take(95).collect();
         if matches!(l.class, Class::Spec('C' | 'c')) && !xf2_op(&l.text) {
@@ -430,19 +553,46 @@ fn record(l: &Line, no: Option<u32>, mark: char, info: &Info, srcid: &str) -> St
         }
         // Columns 1-5 print in the page and line column.
         let area: String = l.text.chars().take(5).collect();
-        format!("{no:>6}{mark}{text:<95}{:>4} {area:<5} {:<6}{srcid:>5}{}", info.level, l.date, l.seq)
+        format!(
+            "{no:>6}{mark}{text:<95}{:>4} {area:<5} {:<6}{srcid:>5}{}",
+            info.level, l.date, l.seq
+        )
     }
 }
 
 /// Whether a fixed calculation's operation takes the extended factor 2
 /// (or none: a continuation line).
 fn xf2_op(t: &str) -> bool {
-    let op: String = t.chars().skip(25).take(10).collect::<String>().trim().to_ascii_uppercase();
+    let op: String = t
+        .chars()
+        .skip(25)
+        .take(10)
+        .collect::<String>()
+        .trim()
+        .to_ascii_uppercase();
     let op = op.split('(').next().unwrap_or("").to_string();
     op.is_empty()
         || matches!(
             op.as_str(),
-            "EVAL" | "EVALR" | "EVAL-CORR" | "IF" | "ELSEIF" | "DOW" | "DOU" | "WHEN" | "FOR" | "CALLP" | "RETURN" | "ON-ERROR" | "SORTA" | "DSPLY" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN" | "SND-MSG"
+            "EVAL"
+                | "EVALR"
+                | "EVAL-CORR"
+                | "IF"
+                | "ELSEIF"
+                | "DOW"
+                | "DOU"
+                | "WHEN"
+                | "FOR"
+                | "CALLP"
+                | "RETURN"
+                | "ON-ERROR"
+                | "SORTA"
+                | "DSPLY"
+                | "XML-INTO"
+                | "XML-SAX"
+                | "DATA-INTO"
+                | "DATA-GEN"
+                | "SND-MSG"
         )
 }
 
@@ -480,7 +630,11 @@ fn shown(l: &Line, c: &Compiled) -> bool {
 pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
     let lines = &c.read.lines;
     let main_free = lines.first().is_some_and(|l| l.fully_free);
-    out.new_page(Some(if main_free { free_rulers() } else { fixed_rulers() }));
+    out.new_page(Some(if main_free {
+        free_rulers()
+    } else {
+        fixed_rulers()
+    }));
     out.line('0', format!("{:26}{}", "", spaced("Source Listing")));
     let index_of = |line: u32| lines.iter().position(|l| l.no == line);
     let info = stmts::analyze(lines);
@@ -507,9 +661,17 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         .map(|i| info[i].stmt_end);
     // The boxes after externally described files' declarations.
     let mut file_boxes: BTreeMap<usize, Vec<&crate::files::File>> = BTreeMap::new();
-    let expdds = !c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*NOEXPDDS"));
+    let expdds = !c
+        .ctl
+        .option
+        .iter()
+        .any(|x| x.eq_ignore_ascii_case("*NOEXPDDS"));
     // A file parameter has none.
-    for f in c.files.iter().filter(|f| f.ext.is_some() && expdds && !f.param) {
+    for f in c
+        .files
+        .iter()
+        .filter(|f| f.ext.is_some() && expdds && !f.param)
+    {
         if let Some(i) = index_of(f.def_line) {
             file_boxes.entry(info[i].stmt_end).or_default().push(f);
         }
@@ -545,7 +707,11 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
             // Text past column 80 prints after its own line.
             Some(i) if d.msgid == "RNF5501" => after.entry(i).or_default().push(d),
             Some(i) => {
-                let r = if p == Place::Group { info[i].group_end } else { info[i].stmt_end };
+                let r = if p == Place::Group {
+                    info[i].group_end
+                } else {
+                    info[i].stmt_end
+                };
                 after.entry(r).or_default().push(d);
             }
             None => at_end.push(d),
@@ -554,14 +720,30 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
     // The first statement that is not a control specification, and
     // the first that is not a declaration.
     let first_not = |pred: &dyn Fn(Ty) -> bool| {
-        (0..lines.len()).find(|&i| info[i].starts && lines[i].member == 0 && !matches!(info[i].ty, Ty::None) && pred(info[i].ty))
+        (0..lines.len()).find(|&i| {
+            info[i].starts
+                && lines[i].member == 0
+                && !matches!(info[i].ty, Ty::None)
+                && pred(info[i].ty)
+        })
     };
     // The box shows when a control keyword sets a compile option.
-    let has_h = c.module.ctl.iter().any(|k| !matches!(k.name.to_ascii_uppercase().as_str(), "NOMAIN" | "MAIN"));
+    let has_h = c
+        .module
+        .ctl
+        .iter()
+        .any(|k| !matches!(k.name.to_ascii_uppercase().as_str(), "NOMAIN" | "MAIN"));
     let first_not_h = first_not(&|t| t != Ty::Spec('H'));
-    let gen_before: Vec<u32> = plan.iter().filter(|b| b.kind != 'D').map(|b| b.at).collect();
+    let gen_before: Vec<u32> = plan
+        .iter()
+        .filter(|b| b.kind != 'D')
+        .map(|b| b.at)
+        .collect();
     let first_body = first_not(&|t| matches!(t, Ty::Spec('C' | 'I' | 'O' | 'P') | Ty::EndProc));
-    let first_body = match (first_body, gen_before.iter().filter_map(|at| index_of(*at)).min()) {
+    let first_body = match (
+        first_body,
+        gen_before.iter().filter_map(|at| index_of(*at)).min(),
+    ) {
         (Some(a), Some(b)) => Some(a.min(b)),
         (a, b) => a.or(b),
     };
@@ -587,7 +769,12 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         // member it is in.
         // A copied member's box prints under the fixed-form rulers, its
         // lines under their own.
-        if l.member != cur_member && !matches!(l.class, Class::Skipped | Class::CtHeader(..) | Class::CtData) {
+        if l.member != cur_member
+            && !matches!(
+                l.class,
+                Class::Skipped | Class::CtHeader(..) | Class::CtData
+            )
+        {
             let entering = l.depth > lines.get(i.wrapping_sub(1)).map_or(0, |p| p.depth);
             if entering && !out.rulers_are(&fixed_rulers()) {
                 out.change_rulers(fixed_rulers());
@@ -604,7 +791,11 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
                 release(out, c, &std::mem::take(&mut deferred), prev_printed, &nums);
             }
             if shown(l, c) {
-                let r = if l.fully_free { free_rulers() } else { fixed_rulers() };
+                let r = if l.fully_free {
+                    free_rulers()
+                } else {
+                    fixed_rulers()
+                };
                 if !out.rulers_are(&r) {
                     out.change_rulers(r);
                 }
@@ -616,8 +807,16 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         }
         // `**END-FREE` and `**FREE` in a fully free member switch the
         // rulers.
-        if i > 0 && l.member == lines[i - 1].member && l.fully_free != lines[i - 1].fully_free && shown(l, c) {
-            out.change_rulers(if l.fully_free { free_rulers() } else { fixed_rulers() });
+        if i > 0
+            && l.member == lines[i - 1].member
+            && l.fully_free != lines[i - 1].fully_free
+            && shown(l, c)
+        {
+            out.change_rulers(if l.fully_free {
+                free_rulers()
+            } else {
+                fixed_rulers()
+            });
         }
         if Some(i) == first_not_h && !box_done {
             prologue::options_box(out, c, o);
@@ -626,7 +825,11 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         // A structure's generated subfields come before what is due
         // after the declarations.
         if shown(l, c) {
-            for (bi, b) in plan.iter().enumerate().filter(|(_, b)| b.at == l.no && b.kind == 'D') {
+            for (bi, b) in plan
+                .iter()
+                .enumerate()
+                .filter(|(_, b)| b.at == l.no && b.kind == 'D')
+            {
                 let rulers = l.fully_free.then(|| (fixed_rulers(), free_rulers()));
                 prev = 'D';
                 genlines::print(out, b, nums.blocks[bi], &mut next_id, ' ', rulers);
@@ -636,9 +839,19 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
             release(out, c, &decls, prev_printed, &nums);
             decls_done = true;
         }
-        if l.class == Class::Skipped && !c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*SHOWSKP")) {
+        if l.class == Class::Skipped
+            && !c
+                .ctl
+                .option
+                .iter()
+                .any(|x| x.eq_ignore_ascii_case("*SHOWSKP"))
+        {
             if lines.get(i + 1).is_none_or(|n| n.class != Class::Skipped) {
-                let n = lines[..=i].iter().rev().take_while(|x| x.class == Class::Skipped).count();
+                let n = lines[..=i]
+                    .iter()
+                    .rev()
+                    .take_while(|x| x.class == Class::Skipped)
+                    .count();
                 out.line(' ', format!("{:12}LINES EXCLUDED: {n}", ""));
             }
             continue;
@@ -655,9 +868,17 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
             }
             continue;
         }
-        for (bi, b) in plan.iter().enumerate().filter(|(_, b)| b.at == l.no && b.kind != 'D') {
+        for (bi, b) in plan
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| b.at == l.no && b.kind != 'D')
+        {
             let t = b.kind;
-            let cc = if t == prev || t == 'O' || t == 'D' { ' ' } else { '-' };
+            let cc = if t == prev || t == 'O' || t == 'D' {
+                ' '
+            } else {
+                '-'
+            };
             if t != 'O' {
                 prev = t;
             }
@@ -667,7 +888,10 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         let inf = &info[i];
         let mut cc = ' ';
         // A declaration out of sequence is ignored: it takes no type.
-        let ignored = c.diags.iter().any(|d| d.msgid == "RNF0724" && d.at.line == l.no);
+        let ignored = c
+            .diags
+            .iter()
+            .any(|d| d.msgid == "RNF0724" && d.at.line == l.no);
         if inf.starts && !ignored {
             match inf.ty {
                 // Calculations between procedures are ignored: no space.
@@ -716,18 +940,32 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
             // The calculations print under their own rulers.
             // INDENT from the control keywords: IBM's rulers for the
             // calculations are blank.
-            if calc && inf.starts && !in_calcs && (l.fully_free || matches!(l.class, Class::Spec(_))) {
+            if calc
+                && inf.starts
+                && !in_calcs
+                && (l.fully_free || matches!(l.class, Class::Spec(_)))
+            {
                 let blank = o.indent.eq_ignore_ascii_case("*NONE");
-                out.change_rulers_before(if blank { (String::new(), String::new()) } else { indent_rulers() }, 1);
+                out.change_rulers_before(
+                    if blank {
+                        (String::new(), String::new())
+                    } else {
+                        indent_rulers()
+                    },
+                    1,
+                );
                 in_calcs = true;
                 switched = true;
-            } else if in_calcs && inf.starts && matches!(inf.ty, Ty::Spec('O' | 'P') | Ty::EndProc) {
+            } else if in_calcs && inf.starts && matches!(inf.ty, Ty::Spec('O' | 'P') | Ty::EndProc)
+            {
                 out.change_rulers(fixed_rulers());
                 in_calcs = false;
             }
         }
         let text = match &indent {
-            Some(m) if calc && !l.fully_free && matches!(l.class, Class::Spec(_)) => indented(l, nums.of[i], mark, inf, &srcid, m),
+            Some(m) if calc && !l.fully_free && matches!(l.class, Class::Spec(_)) => {
+                indented(l, nums.of[i], mark, inf, &srcid, m)
+            }
             _ => record(l, nums.of[i], mark, inf, &srcid),
         };
         // The rulers took the spacing.
@@ -751,7 +989,9 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         // The declarations' diagnostics due before the next line print
         // with this line's.
         let mut ds: Vec<&Diag> = after.get(&i).cloned().unwrap_or_default();
-        let d_next = lines.get(i + 1).is_some_and(|n| plan.iter().any(|b| b.at == n.no && b.kind == 'D'));
+        let d_next = lines
+            .get(i + 1)
+            .is_some_and(|n| plan.iter().any(|b| b.at == n.no && b.kind == 'D'));
         if first_body == Some(i + 1) && !decls_done && !ds.is_empty() && !d_next {
             ds.extend(decls.iter().copied());
             decls_done = true;
@@ -766,7 +1006,11 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         // A group left out with no lines in it.
         if c.read.excluded.contains(&l.no)
             && lines.get(i + 1).is_some_and(|n| n.class != Class::Skipped)
-            && !c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*SHOWSKP"))
+            && !c
+                .ctl
+                .option
+                .iter()
+                .any(|x| x.eq_ignore_ascii_case("*SHOWSKP"))
         {
             out.line(' ', format!("{:12}LINES EXCLUDED: 0", ""));
         }
@@ -789,21 +1033,41 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
     release(out, c, &at_end, prev_printed, &nums);
     let last_no = lines.last().map_or(0, |l| l.no);
     for (bi, b) in plan.iter().enumerate().filter(|(_, b)| b.at > last_no) {
-        let cc = if b.kind == prev || b.kind == 'O' || b.kind == 'D' { ' ' } else { '-' };
+        let cc = if b.kind == prev || b.kind == 'O' || b.kind == 'D' {
+            ' '
+        } else {
+            '-'
+        };
         genlines::print(out, b, nums.blocks[bi], &mut next_id, cc, None);
     }
     // After indented calculations the fixed-form rulers come back.
-    let r = if main_free && indent.is_none() { free_rulers() } else { fixed_rulers() };
+    let r = if main_free && indent.is_none() {
+        free_rulers()
+    } else {
+        fixed_rulers()
+    };
     if !out.rulers_are(&r) {
         out.change_rulers(r);
     }
-    out.end_line('0', format!("{:7}{}", "", "* * * * *   E N D   O F   S O U R C E   * * * * *"));
+    out.end_line(
+        '0',
+        format!(
+            "{:7}{}",
+            "", "* * * * *   E N D   O F   S O U R C E   * * * * *"
+        ),
+    );
 }
 
 /// The match levels and their field lengths.
 fn match_table(out: &mut Out, c: &Compiled) {
     let mut levels: Vec<(String, u32)> = Vec::new();
-    for f in c.module.inputs.iter().filter(|r| !r.external).flat_map(|r| r.fields.iter()) {
+    for f in c
+        .module
+        .inputs
+        .iter()
+        .filter(|r| !r.external)
+        .flat_map(|r| r.fields.iter())
+    {
         if f.matching.is_empty() || levels.iter().any(|(l, _)| *l == f.matching) {
             continue;
         }
@@ -814,16 +1078,24 @@ fn match_table(out: &mut Out, c: &Compiled) {
     levels.sort();
     out.line(' ', prologue::rule(8, 101));
     out.line(' ', prologue::framed(8, " Match Field Table:", 101));
-    out.line(' ', prologue::framed(8, &format!("   Match level{:19}Field length", ""), 101));
+    out.line(
+        ' ',
+        prologue::framed(8, &format!("   Match level{:19}Field length", ""), 101),
+    );
     for (l, n) in levels {
-        out.line(' ', prologue::framed(8, &format!("     {l:<2}{n:>34}"), 101));
+        out.line(
+            ' ',
+            prologue::framed(8, &format!("     {l:<2}{n:>34}"), 101),
+        );
     }
     out.line(' ', prologue::rule(8, 101));
 }
 
 /// The box before a copied member's first line.
 fn copy_box(out: &mut Out, c: &Compiled, l: &Line, id: u32) {
-    let Some(m) = c.read.members.get(l.member) else { return };
+    let Some(m) = c.read.members.get(l.member) else {
+        return;
+    };
     out.line(' ', prologue::rule(8, 101));
     for (label, value) in [
         ("RPG member name", m.name.clone()),
@@ -831,7 +1103,10 @@ fn copy_box(out: &mut Out, c: &Compiled, l: &Line, id: u32) {
         ("Last change", "dd-dd-dd  tt:tt:tt".to_string()),
     ] {
         let inner = format!("{}  {value}", super::leader(1, label, 28));
-        out.line(' ', format!("{}{:>22}", prologue::framed(8, &inner, 101), id));
+        out.line(
+            ' ',
+            format!("{}{:>22}", prologue::framed(8, &inner, 101), id),
+        );
     }
     out.line(' ', prologue::rule(8, 101));
 }
@@ -862,7 +1137,13 @@ pub(crate) fn ctdata(out: &mut Out, c: &Compiled) {
                 // An unnamed `**` takes the next compile-time array.
                 let name = if name.is_empty() {
                     unnamed += 1;
-                    c.table.syms.iter().filter(|s| s.scope == 0 && s.ctdata).nth(unnamed - 1).map(|s| s.name.clone()).unwrap_or_default()
+                    c.table
+                        .syms
+                        .iter()
+                        .filter(|s| s.scope == 0 && s.ctdata)
+                        .nth(unnamed - 1)
+                        .map(|s| s.name.clone())
+                        .unwrap_or_default()
                 } else {
                     name.clone()
                 };
@@ -872,7 +1153,13 @@ pub(crate) fn ctdata(out: &mut Out, c: &Compiled) {
             out.line(' ', row);
         }
     }
-    out.end_line('0', format!("{:4}{}", "", "* * * * *   E N D   O F   C O M P I L E   T I M E   D A T A   * * * * *"));
+    out.end_line(
+        '0',
+        format!(
+            "{:4}{}",
+            "", "* * * * *   E N D   O F   C O M P I L E   T I M E   D A T A   * * * * *"
+        ),
+    );
 }
 
 /// The box naming a compile-time table or array.
@@ -880,11 +1167,24 @@ fn ct_box(out: &mut Out, c: &Compiled, name: &str) {
     let name = name.to_ascii_uppercase();
     let sym = c.table.syms.iter().find(|s| s.name == name && s.scope == 0);
     let table = sym.is_some_and(|s| s.table || s.name.starts_with("TAB"));
-    let alt = c.table.syms.iter().find(|s| s.scope == 0 && !name.is_empty() && s.alt.eq_ignore_ascii_case(&name)).map(|s| s.name.clone());
-    let label = if table { "Table . . . :" } else { "Array . . . :" };
+    let alt = c
+        .table
+        .syms
+        .iter()
+        .find(|s| s.scope == 0 && !name.is_empty() && s.alt.eq_ignore_ascii_case(&name))
+        .map(|s| s.name.clone());
+    let label = if table {
+        "Table . . . :"
+    } else {
+        "Array . . . :"
+    };
     let mut inner = format!(" {label} {name:<10}");
     if let Some(a) = alt {
-        let l2 = if table { "Alternating Table  . . . . :" } else { "Alternating Array  . . . . :" };
+        let l2 = if table {
+            "Alternating Table  . . . . :"
+        } else {
+            "Alternating Array  . . . . :"
+        };
         inner = format!("{inner}   {l2} {a}");
     }
     out.line(' ', prologue::rule(8, 77));

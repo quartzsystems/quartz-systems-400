@@ -37,12 +37,21 @@ pub(super) fn listing(main: &Member, c: &Compiled, o: &Options) -> Vec<String> {
         ("Source listing options", o.option.join(" ")),
         ("Generation options", o.genopt.join(" ")),
         ("Generation severity level", o.genlvl.to_string()),
-        ("Replace program", if o.replace { "*YES" } else { "*NO" }.to_string()),
+        (
+            "Replace program",
+            if o.replace { "*YES" } else { "*NO" }.to_string(),
+        ),
         ("Target release", o.tgtrls.clone()),
         ("User profile", o.usrprf.clone()),
         ("Text", o.text.clone()),
-        ("Ignore decimal data error", if o.igndecerr { "*YES" } else { "*NO" }.to_string()),
-        ("Allow null values", if o.alwnull { "*YES" } else { "*NO" }.to_string()),
+        (
+            "Ignore decimal data error",
+            if o.igndecerr { "*YES" } else { "*NO" }.to_string(),
+        ),
+        (
+            "Allow null values",
+            if o.alwnull { "*YES" } else { "*NO" }.to_string(),
+        ),
     ] {
         out.push(format!("    {:<33}:   {value}", dots(label)));
     }
@@ -61,16 +70,29 @@ pub(super) fn listing(main: &Member, c: &Compiled, o: &Options) -> Vec<String> {
             continue;
         }
         out.push(format!(" {stmt:>9}  {body}"));
-        for d in c.diags.iter().filter(|d| d.place == Place::Source && d.stmt == stmt) {
+        for d in c
+            .diags
+            .iter()
+            .filter(|d| d.place == Place::Source && d.stmt == stmt)
+        {
             out.push(format!(" * {}", &d.msgid[3..]));
         }
     }
     out.push("-           * * * * *   E N D   O F   S O U R C E   * * * * *".into());
-    let additional: Vec<_> = c.diags.iter().filter(|d| d.place == Place::Additional).collect();
+    let additional: Vec<_> = c
+        .diags
+        .iter()
+        .filter(|d| d.place == Place::Additional)
+        .collect();
     if !additional.is_empty() {
         out.push("-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s".into());
         for d in additional {
-            out.push(format!("0* {}  {:>8}   {}", &d.msgid[3..], d.stmt, text(&d.msgid)));
+            out.push(format!(
+                "0* {}  {:>8}   {}",
+                &d.msgid[3..],
+                d.stmt,
+                text(&d.msgid)
+            ));
         }
     }
     page += 1;
@@ -100,14 +122,20 @@ pub(super) fn listing(main: &Member, c: &Compiled, o: &Options) -> Vec<String> {
     page += 1;
     out.push(heading(o, page));
     out.push("0                           F i n a l   S u m m a r y".into());
-    out.push(format!("0 Program Source Totals: records {}, specifications {}, comments {}", c.conversion.counts.records, c.conversion.counts.specs, c.conversion.counts.comments));
+    out.push(format!(
+        "0 Program Source Totals: records {}, specifications {}, comments {}",
+        c.conversion.counts.records, c.conversion.counts.specs, c.conversion.counts.comments
+    ));
     if c.created {
         out.push(format!(
             "0 Program {} is placed in library {}. {:02} highest severity.",
             o.pgm.0, o.pgm.1, c.max_severity
         ));
     } else {
-        out.push(format!("0 Program {} was not created: {:02} highest severity.", o.pgm.0, c.max_severity));
+        out.push(format!(
+            "0 Program {} was not created: {:02} highest severity.",
+            o.pgm.0, c.max_severity
+        ));
     }
     out.push("0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *".into());
     out

@@ -24,11 +24,11 @@ mod window;
 pub use dialog::{Dialog, ListState, MapDialog};
 pub use doc::link_target;
 pub use help::{FULL_KEYS, HelpPart, HelpView, HelpWindow, help_lines, help_title, render_view};
-pub use print::render_print;
-pub use window::{frame, is_window, place, place_popup, render_window};
 pub use layout::options_prompt;
 pub use list::{position_columns, position_var};
+pub use print::render_print;
 pub use screen::{Attr, EXT_ENTRY, Field, HelpArea, More, Screen, Target, Text};
+pub use window::{frame, is_window, place, place_popup, render_window};
 
 use ctx::Ctx;
 
@@ -210,7 +210,8 @@ pub fn render_help(
 fn bottom_block(ctx: &Ctx, p: &Panel, keyl: &KeyList, s: &mut Screen) -> usize {
     // R6: a key row ends by column W-2 (dspsfwrsc wraps a row that would reach W-1).
     let key_rows = keys::rows(ctx, keyl, s.limit() - 1);
-    let key_top = s.rows - keys::reserved(keyl, s.limit() - 1, key_rows.len(), p.cmdline().is_some());
+    let key_top =
+        s.rows - keys::reserved(keyl, s.limit() - 1, key_rows.len(), p.cmdline().is_some());
     for (i, row) in key_rows.iter().enumerate() {
         for (col, text) in row {
             s.put(key_top + i, *col, Attr::Blue, text);

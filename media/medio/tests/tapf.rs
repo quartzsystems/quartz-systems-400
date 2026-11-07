@@ -7,13 +7,16 @@
 
 use std::io::Cursor;
 
-use medio::tapf::{CopyIn, CopyOut, TapeFileDef, copy_from_tape, copy_to_tape, lengths, record_format};
+use medio::tapf::{
+    CopyIn, CopyOut, TapeFileDef, copy_from_tape, copy_to_tape, lengths, record_format,
+};
 use tape::label::{Date, Expiry, FileLabel, RecordFormat};
 use tape::volume::{Check, InzOptions, NoMoreVolumes, inztap, labels};
 use tape::{EndOpt, SeqNbr, VirtualTape, VolumeOptions};
 
 fn tape(labeled: bool) -> VirtualTape<Cursor<Vec<u8>>> {
-    let mut t = VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(2, "TAPF01")).unwrap();
+    let mut t =
+        VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(2, "TAPF01")).unwrap();
     inztap(
         &mut t,
         &InzOptions {
@@ -27,7 +30,11 @@ fn tape(labeled: bool) -> VirtualTape<Cursor<Vec<u8>>> {
 }
 
 fn records() -> Vec<Vec<u8>> {
-    vec![b"FIRST RECORD".to_vec(), b"2".to_vec(), b"THE THIRD ONE IS LONGEST".to_vec()]
+    vec![
+        b"FIRST RECORD".to_vec(),
+        b"2".to_vec(),
+        b"THE THIRD ONE IS LONGEST".to_vec(),
+    ]
 }
 
 fn out(rcdblk: &str, label: &str, unlabeled: bool) -> CopyOut {
@@ -39,7 +46,10 @@ fn out(rcdblk: &str, label: &str, unlabeled: bool) -> CopyOut {
         seq: SeqNbr::End,
         label: FileLabel {
             file_id: label.into(),
-            created: Some(Date { year: 2026, day: 304 }),
+            created: Some(Date {
+                year: 2026,
+                day: 304,
+            }),
             expires: Expiry::None,
             record_format: format,
             block_length: blklen,
@@ -47,7 +57,10 @@ fn out(rcdblk: &str, label: &str, unlabeled: bool) -> CopyOut {
             ..FileLabel::default()
         },
         unlabeled,
-        today: Some(Date { year: 2026, day: 304 }),
+        today: Some(Date {
+            year: 2026,
+            day: 304,
+        }),
         allow_active: false,
         end_opt: EndOpt::Rewind,
         records: records(),
@@ -80,7 +93,13 @@ fn the_payload_round_trips() {
 
 #[test]
 fn records_go_to_tape_and_back() {
-    for (rcdblk, label) in [("*FB", "FIXEDB"), ("*F", "FIXED"), ("*VB", "VARB"), ("*V", "VAR"), ("*U", "UNDEF")] {
+    for (rcdblk, label) in [
+        ("*FB", "FIXEDB"),
+        ("*F", "FIXED"),
+        ("*VB", "VARB"),
+        ("*V", "VAR"),
+        ("*U", "UNDEF"),
+    ] {
         let mut t = tape(true);
         let s = copy_to_tape(&mut t, &mut NoMoreVolumes, &out(rcdblk, label, false)).unwrap();
         assert_eq!(s.file_seq, 1, "{rcdblk}");

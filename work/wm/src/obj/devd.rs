@@ -422,7 +422,9 @@ impl Devd {
             let n = usize::try_from(r.uint("PrtLen")).unwrap_or(0);
             if n > 0 {
                 let tail = r.tail();
-                let sec = tail.get(..n).ok_or_else(|| Error::Corrupt("printer section truncated".into()))?;
+                let sec = tail
+                    .get(..n)
+                    .ok_or_else(|| Error::Corrupt("printer section truncated".into()))?;
                 d.printer = Some(LanPrinter::decode(sec)?);
             }
             let med_len = usize::try_from(r.uint("MedLen")).unwrap_or(0);
@@ -443,7 +445,17 @@ impl Devd {
 pub fn is_printer_type(devtype: &str) -> bool {
     matches!(
         devtype,
-        "QSCP" | "3812" | "5553" | "5224" | "5225" | "5256" | "5262" | "4214" | "4234" | "4245" | "6262"
+        "QSCP"
+            | "3812"
+            | "5553"
+            | "5224"
+            | "5225"
+            | "5256"
+            | "5262"
+            | "4214"
+            | "4234"
+            | "4245"
+            | "6262"
     )
 }
 

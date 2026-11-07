@@ -136,7 +136,11 @@ fn check_authority() -> Result<(), Note> {
 /// The store a command names, with its password.
 fn keystore(p: &Parms) -> Keystore {
     let name = p.text("KEYSTORE");
-    let name = if name.is_empty() { "*SYSTEM".to_string() } else { name };
+    let name = if name.is_empty() {
+        "*SYSTEM".to_string()
+    } else {
+        name
+    };
     Keystore::new(&name, &p.text("PASSWORD"))
 }
 
@@ -158,7 +162,8 @@ fn on<T>(
 fn opt(p: &Parms, kwd: &str) -> Option<String> {
     let t = p.text(kwd);
     let u = t.to_ascii_uppercase();
-    (!t.is_empty() && !matches!(u.as_str(), "*NONE" | "*SAME" | "*STASH" | "*GEN" | "*CN")).then_some(t)
+    (!t.is_empty() && !matches!(u.as_str(), "*NONE" | "*SAME" | "*STASH" | "*GEN" | "*CN"))
+        .then_some(t)
 }
 
 fn algorithm(p: &Parms) -> Result<KeyAlgorithm, Note> {
@@ -166,7 +171,12 @@ fn algorithm(p: &Parms) -> Result<KeyAlgorithm, Note> {
     if a.is_empty() {
         return Ok(KeyAlgorithm::EcdsaP256);
     }
-    KeyAlgorithm::from_name(&a).ok_or_else(|| Note::new(msgs::FAILED, &[&format!("key algorithm {a} is not one this system makes")]))
+    KeyAlgorithm::from_name(&a).ok_or_else(|| {
+        Note::new(
+            msgs::FAILED,
+            &[&format!("key algorithm {a} is not one this system makes")],
+        )
+    })
 }
 
 fn days(p: &Parms, dft: u32) -> u32 {
@@ -193,14 +203,19 @@ fn crtcrts(system: &mut System, p: &Parms) -> Out {
     let stash = p.name("STASH") != "*NO";
     let password = ks.password.clone().unwrap_or_default();
     let notes = if ks.path == certs::paths::LOCAL_CA_STORE {
-        let cn = opt(p, "CN").unwrap_or_else(|| format!("{} Local Certificate Authority", system.system_name()));
+        let cn = opt(p, "CN")
+            .unwrap_or_else(|| format!("{} Local Certificate Authority", system.system_name()));
         let subj = subject(p, &cn);
         let alg = algorithm(p)?;
         let d = days(p, 3650);
-        on(system, &ks, true, |ctx| keystores::create_local_ca(ctx, &password, &subj, alg, d, stash))?
+        on(system, &ks, true, |ctx| {
+            keystores::create_local_ca(ctx, &password, &subj, alg, d, stash)
+        })?
     } else {
         let seed = p.name("ROOTS") != "*NO";
-        on(system, &ks, true, |ctx| keystores::create(ctx, &ks, stash, seed))?
+        on(system, &ks, true, |ctx| {
+            keystores::create(ctx, &ks, stash, seed)
+        })?
     };
     Ok(reply(&notes, None))
 }
@@ -227,7 +242,12 @@ fn read_stmf(system: &mut System, path: &str) -> Result<Vec<u8>, Note> {
 fn write_stmf(system: &mut System, path: &str, bytes: &[u8], replace: bool) -> Result<(), Note> {
     let excl = if replace { O_TRUNC } else { O_EXCL };
     super::stmf::with_job(system, |c: &dyn IfsClient| {
-        let fd = c.open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID | excl).mode(0o600).conv(1208))?;
+        let fd = c.open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID | excl)
+                .mode(0o600)
+                .conv(1208),
+        )?;
         let w = write_all(c, fd, bytes);
         let _ = c.close(fd);
         w
@@ -248,7 +268,9 @@ fn crtcrt(system: &mut System, p: &Parms) -> Out {
         .list("ALTNAME")
         .iter()
         .filter_map(|v| v.text().map(|s| s.trim().to_string()))
-        .filter(|s| !s.is_empty() && !s.eq_ignore_ascii_case("*CN") && !s.eq_ignore_ascii_case("*NONE"))
+        .filter(|s| {
+            !s.is_empty() && !s.eq_ignore_ascii_case("*CN") && !s.eq_ignore_ascii_case("*NONE")
+        })
         .collect();
     let altname = p.name("ALTNAME");
     if san.is_empty() && altname != "*NONE" && kind == CertKind::Server {
@@ -261,7 +283,10 @@ fn crtcrt(system: &mut System, p: &Parms) -> Out {
     };
     let csr_path = opt(p, "CSR");
     if signer == Signer::Request && csr_path.is_none() {
-        return Err(Note::new(msgs::FAILED, &["SIGNER(*CSR) needs CSR, the stream file for the request"]));
+        return Err(Note::new(
+            msgs::FAILED,
+            &["SIGNER(*CSR) needs CSR, the stream file for the request"],
+        ));
     }
     let spec = CertSpec {
         subject: subject(p, &cn),
@@ -275,7 +300,15 @@ fn crtcrt(system: &mut System, p: &Parms) -> Out {
     let made = on(system, &ks, true, |ctx| {
         let m = entries::create(ctx, &ks, &label, &spec, alg, &signer)?;
         if let Some(t) = &text {
-            entries::change(ctx, &ks, &label, &Change { text: Some(t.clone()), ..Change::default() })?;
+            entries::change(
+                ctx,
+                &ks,
+                &label,
+                &Change {
+                    text: Some(t.clone()),
+                    ..Change::default()
+                },
+            )?;
         }
         Ok(m)
     })?;
@@ -298,7 +331,9 @@ fn impcrt(system: &mut System, p: &Parms) -> Out {
     };
     let pw = opt(p, "IMPPWD");
     let trust = p.name("TRUST") != "*NO";
-    let notes = on(system, &ks, true, |ctx| entries::import(ctx, &ks, &label, &bytes, format, pw.as_deref(), trust))?;
+    let notes = on(system, &ks, true, |ctx| {
+        entries::import(ctx, &ks, &label, &bytes, format, pw.as_deref(), trust)
+    })?;
     Ok(reply(&notes, None))
 }
 
@@ -314,7 +349,9 @@ fn expcrt(system: &mut System, p: &Parms) -> Out {
             with_key: p.yes("INCKEY"),
         },
     };
-    let bytes = on(system, &ks, false, |ctx| entries::export(ctx, &ks, &label, &format))?;
+    let bytes = on(system, &ks, false, |ctx| {
+        entries::export(ctx, &ks, &label, &format)
+    })?;
     write_stmf(system, &path, &bytes, p.yes("REPLACE"))?;
     Ok(reply(&[Note::new(msgs::EXPORTED, &[&label, &path])], None))
 }
@@ -337,7 +374,9 @@ fn chgcrt(system: &mut System, p: &Parms) -> Out {
             t => Some(t.to_string()),
         },
     };
-    let notes = on(system, &ks, true, |ctx| entries::change(ctx, &ks, &label, &c))?;
+    let notes = on(system, &ks, true, |ctx| {
+        entries::change(ctx, &ks, &label, &c)
+    })?;
     Ok(reply(&notes, None))
 }
 
@@ -355,9 +394,16 @@ fn wrkcrt(system: &mut System, p: &Parms) -> Out {
     let ks = keystore(p);
     let rows = on(system, &ks, false, |ctx| entries::list(ctx, &ks))?;
     let mut out = format!("Certificates in {}\n", ks.shown());
-    let _ = writeln!(out, "{:<32} {:<8} {:<10} {:<9} Applications", "Label", "Type", "Expires", "Status");
+    let _ = writeln!(
+        out,
+        "{:<32} {:<8} {:<10} {:<9} Applications",
+        "Label", "Type", "Expires", "Status"
+    );
     for r in &rows {
-        let exp = r.info.as_ref().map_or_else(String::new, |i| iso_date(i.not_after)[..10].to_string());
+        let exp = r
+            .info
+            .as_ref()
+            .map_or_else(String::new, |i| iso_date(i.not_after)[..10].to_string());
         let _ = writeln!(
             out,
             "{:<32} {:<8} {:<10} {:<9} {}{}",
@@ -380,24 +426,38 @@ fn asncrt(system: &mut System, p: &Parms) -> Out {
     let id = p.text("APPID");
     let label = opt(p, "LABEL");
     let ks = Keystore::system();
-    let notes = on(system, &ks, true, |ctx| appids::assign(ctx, &id, label.as_deref()))?;
+    let notes = on(system, &ks, true, |ctx| {
+        appids::assign(ctx, &id, label.as_deref())
+    })?;
     Ok(reply(&notes, None))
 }
 
 fn addappid(system: &mut System, p: &Parms) -> Out {
     check_authority()?;
     let id = p.text("APPID");
-    let kind = if p.name("TYPE") == "*CLIENT" { AppKind::Client } else { AppKind::Server };
+    let kind = if p.name("TYPE") == "*CLIENT" {
+        AppKind::Client
+    } else {
+        AppKind::Server
+    };
     let text = p.text("TEXT");
-    let text = if text.eq_ignore_ascii_case("*BLANK") { String::new() } else { text };
-    let notes = on(system, &Keystore::system(), true, |ctx| appids::add(ctx, &id, kind, &text))?;
+    let text = if text.eq_ignore_ascii_case("*BLANK") {
+        String::new()
+    } else {
+        text
+    };
+    let notes = on(system, &Keystore::system(), true, |ctx| {
+        appids::add(ctx, &id, kind, &text)
+    })?;
     Ok(reply(&notes, None))
 }
 
 fn rmvappid(system: &mut System, p: &Parms) -> Out {
     check_authority()?;
     let id = p.text("APPID");
-    let notes = on(system, &Keystore::system(), true, |ctx| appids::remove(ctx, &id))?;
+    let notes = on(system, &Keystore::system(), true, |ctx| {
+        appids::remove(ctx, &id)
+    })?;
     Ok(reply(&notes, None))
 }
 
@@ -428,7 +488,9 @@ fn chgappid(system: &mut System, p: &Parms) -> Out {
             t => Some(t.to_string()),
         },
     };
-    let notes = on(system, &Keystore::system(), true, |ctx| appids::change(ctx, &id, &c))?;
+    let notes = on(system, &Keystore::system(), true, |ctx| {
+        appids::change(ctx, &id, &c)
+    })?;
     Ok(reply(&notes, None))
 }
 
@@ -438,7 +500,11 @@ fn wrkappid(system: &mut System, p: &Parms) -> Out {
     let want = p.text("APPID");
     let apps = on(system, &Keystore::system(), false, appids::list)?;
     let mut out = String::from("Application IDs\n");
-    let _ = writeln!(out, "{:<40} {:<8} {:<10} Certificate", "Application ID", "Type", "Client auth");
+    let _ = writeln!(
+        out,
+        "{:<40} {:<8} {:<10} Certificate",
+        "Application ID", "Type", "Client auth"
+    );
     for a in apps.iter().filter(|a| generic_match(&want, &a.id)) {
         let _ = writeln!(
             out,
@@ -461,7 +527,9 @@ fn generic_match(pattern: &str, id: &str) -> bool {
         return true;
     }
     match p.strip_suffix('*') {
-        Some(prefix) => id.to_ascii_uppercase().starts_with(&prefix.to_ascii_uppercase()),
+        Some(prefix) => id
+            .to_ascii_uppercase()
+            .starts_with(&prefix.to_ascii_uppercase()),
         None => id.eq_ignore_ascii_case(p),
     }
 }
@@ -476,9 +544,18 @@ fn kind_name(k: AppKind) -> &'static str {
 fn chkcrt(system: &mut System) -> Out {
     check_authority()?;
     let lines = expiry_scan(system);
-    let warned = lines.iter().filter(|l| l.starts_with(msgs::EXPIRES) || l.starts_with(msgs::EXPIRED)).count();
+    let warned = lines
+        .iter()
+        .filter(|l| l.starts_with(msgs::EXPIRES) || l.starts_with(msgs::EXPIRED))
+        .count();
     let skipped = lines.len() - warned;
-    let mut r = reply(&[Note::new(msgs::CHECKED, &[&warned.to_string(), &skipped.to_string()])], None);
+    let mut r = reply(
+        &[Note::new(
+            msgs::CHECKED,
+            &[&warned.to_string(), &skipped.to_string()],
+        )],
+        None,
+    );
     let mut text = lines.join("\n");
     if !text.is_empty() {
         text.push('\n');
@@ -497,14 +574,26 @@ pub fn crt_rows(store: &str, rows: &[Row]) -> Sys2Data {
                 ("CRTTYPE".to_string(), r.kind.name().to_string()),
                 (
                     "CRTEXP".to_string(),
-                    r.info.as_ref().map_or_else(String::new, |i| iso_date(i.not_after)[..10].to_string()),
+                    r.info
+                        .as_ref()
+                        .map_or_else(String::new, |i| iso_date(i.not_after)[..10].to_string()),
                 ),
                 ("CRTSTS".to_string(), r.status().to_string()),
-                ("CRTDFT".to_string(), if r.is_default { "Yes".into() } else { String::new() }),
+                (
+                    "CRTDFT".to_string(),
+                    if r.is_default {
+                        "Yes".into()
+                    } else {
+                        String::new()
+                    },
+                ),
             ]
         })
         .collect();
-    (vec![("KEYSTORE".into(), store.into())], vec![("CERTS".into(), list)])
+    (
+        vec![("KEYSTORE".into(), store.into())],
+        vec![("CERTS".into(), list)],
+    )
 }
 
 /// One certificate for its display.
@@ -517,7 +606,14 @@ pub fn crt_detail(store: &str, r: &Row) -> Sys2Data {
         ("DSTATUS".to_string(), r.status().to_string()),
         ("DDEFAULT".to_string(), yes(r.is_default)),
         ("DTEXT".to_string(), r.text.clone()),
-        ("DAPPS".to_string(), if r.apps.is_empty() { "*NONE".into() } else { r.apps.join(" ") }),
+        (
+            "DAPPS".to_string(),
+            if r.apps.is_empty() {
+                "*NONE".into()
+            } else {
+                r.apps.join(" ")
+            },
+        ),
     ];
     if let Some(i) = &r.info {
         let fp = i.sha256_colons();
@@ -528,7 +624,10 @@ pub fn crt_detail(store: &str, r: &Row) -> Sys2Data {
             ("DSERIAL".to_string(), i.serial.clone()),
             ("DFROM".to_string(), iso_date(i.not_before)),
             ("DTO".to_string(), iso_date(i.not_after)),
-            ("DDAYS".to_string(), r.days_left.unwrap_or_default().to_string()),
+            (
+                "DDAYS".to_string(),
+                r.days_left.unwrap_or_default().to_string(),
+            ),
             (
                 "DKEY".to_string(),
                 i.key_algorithm
@@ -552,8 +651,14 @@ pub fn app_rows(apps: &[AppDef]) -> Sys2Data {
             vec![
                 ("APPID".to_string(), a.id.clone()),
                 ("APPTYPE".to_string(), kind_name(a.kind).to_string()),
-                ("APPCRT".to_string(), a.label.clone().unwrap_or_else(|| "*NONE".into())),
-                ("APPAUTH".to_string(), client_auth_name(a.client_auth).to_string()),
+                (
+                    "APPCRT".to_string(),
+                    a.label.clone().unwrap_or_else(|| "*NONE".into()),
+                ),
+                (
+                    "APPAUTH".to_string(),
+                    client_auth_name(a.client_auth).to_string(),
+                ),
             ]
         })
         .collect();
@@ -566,11 +671,23 @@ mod tests {
 
     #[test]
     fn message_data_fits_the_variables() {
-        let d = data("TCP1C08", &["ADMIN".into(), "QS400_HTTP_SERVER_ADMIN".into()]);
+        let d = data(
+            "TCP1C08",
+            &["ADMIN".into(), "QS400_HTTP_SERVER_ADMIN".into()],
+        );
         assert_eq!(d.len(), 164);
         let t = text("TCP1C08", &d);
-        assert!(t.contains("ADMIN") && t.contains("QS400_HTTP_SERVER_ADMIN"), "{t}");
-        assert!(text("TCP1C20", &data("TCP1C20", &["W".into(), "*SYSTEM".into(), "7".into()])).contains('7'));
+        assert!(
+            t.contains("ADMIN") && t.contains("QS400_HTTP_SERVER_ADMIN"),
+            "{t}"
+        );
+        assert!(
+            text(
+                "TCP1C20",
+                &data("TCP1C20", &["W".into(), "*SYSTEM".into(), "7".into()])
+            )
+            .contains('7')
+        );
     }
 
     #[test]

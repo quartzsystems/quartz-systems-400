@@ -166,7 +166,10 @@ impl Proxy {
             server: "ddm".into(),
             port: self.port,
             scenario: scenario.to_string(),
-            connections: conns.iter().map(|l| l.lock().unwrap().conn.clone()).collect(),
+            connections: conns
+                .iter()
+                .map(|l| l.lock().unwrap().conn.clone())
+                .collect(),
         })
     }
 }
@@ -187,14 +190,17 @@ fn serve(
     let server = match addr.map(|a| TcpStream::connect_timeout(&a, Duration::from_secs(5))) {
         Some(Ok(s)) => s,
         Some(Err(e)) => {
-            live.lock()
-                .unwrap()
-                .note(format!("upstream connect to port {port} failed: {}", e.kind()));
+            live.lock().unwrap().note(format!(
+                "upstream connect to port {port} failed: {}",
+                e.kind()
+            ));
             let _ = client.shutdown(Shutdown::Both);
             return;
         }
         None => {
-            live.lock().unwrap().note("upstream does not resolve".into());
+            live.lock()
+                .unwrap()
+                .note("upstream does not resolve".into());
             return;
         }
     };
@@ -210,7 +216,10 @@ fn serve(
         }
     }
     let up = {
-        let (from, to) = (client.try_clone().expect("clone"), server.try_clone().expect("clone"));
+        let (from, to) = (
+            client.try_clone().expect("clone"),
+            server.try_clone().expect("clone"),
+        );
         let (live, leak, cfg) = (live.clone(), leak.clone(), cfg.clone());
         thread::spawn(move || pump(from, to, Dir::Request, recorded, &live, &leak, &cfg))
     };

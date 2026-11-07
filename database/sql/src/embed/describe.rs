@@ -13,10 +13,11 @@ use store::txn::Txn;
 
 use super::{Reply, code};
 use crate::ast::{
-    BinOp, DataType, Expr, InsertSource, Literal, Naming, QueryBody, SelectItem, Statement, TableRef, Where,
+    BinOp, DataType, Expr, InsertSource, Literal, Naming, QueryBody, SelectItem, Statement,
+    TableRef, Where,
 };
-use crate::exec::{SqlContext, prepare};
 use crate::error::SqlError;
+use crate::exec::{SqlContext, prepare};
 use crate::sqlca::Sqlca;
 use crate::value::Value;
 
@@ -38,7 +39,13 @@ pub struct Col {
 
 impl Col {
     fn new(base: i16, len: i32, null: bool) -> Self {
-        Self { base, len, null, ccsid: 0, column: false }
+        Self {
+            base,
+            len,
+            null,
+            ccsid: 0,
+            column: false,
+        }
     }
 
     fn int() -> Self {
@@ -83,7 +90,15 @@ fn of_field(f: &dds::FieldDef) -> Col {
             5..=9 => Col::new(496, 4, n),
             _ => Col::new(492, 8, n),
         },
-        D::Float => Col::new(480, if f.precision == dds::FloatPrecision::Single { 4 } else { 8 }, n),
+        D::Float => Col::new(
+            480,
+            if f.precision == dds::FloatPrecision::Single {
+                4
+            } else {
+                8
+            },
+            n,
+        ),
         D::Date => Col::new(384, DATE_LEN, n),
         D::Time => Col::new(388, 8, n),
         D::Timestamp => Col::new(392, len, n),
@@ -137,7 +152,10 @@ fn of_type(t: &DataType) -> Col {
         DataType::Boolean => Col::new(BOOLEAN, 1, true),
         DataType::Blob(n) => bits(Col::new(404, len(*n), true)),
         DataType::Clob(n) => Col::new(408, len(*n), true),
-        DataType::Dbclob(n) => Col { ccsid: 1200, ..Col::new(412, len(*n), true) },
+        DataType::Dbclob(n) => Col {
+            ccsid: 1200,
+            ..Col::new(412, len(*n), true)
+        },
     }
 }
 
@@ -150,7 +168,11 @@ fn bits(c: Col) -> Col {
 /// name.
 #[must_use]
 pub fn sql_name(f: &dds::FieldDef) -> String {
-    f.alias.as_deref().map(str::trim).filter(|a| !a.is_empty()).map_or_else(|| f.name.to_string(), str::to_string)
+    f.alias
+        .as_deref()
+        .map(str::trim)
+        .filter(|a| !a.is_empty())
+        .map_or_else(|| f.name.to_string(), str::to_string)
 }
 
 /// A field's label as an SQLDA gives it: the heading's lines, each
@@ -160,7 +182,10 @@ pub fn label(f: &dds::FieldDef) -> String {
     let mut joined = String::new();
     for l in &f.colhdg {
         joined.push_str(l);
-        joined.extend(std::iter::repeat_n(' ', 20usize.saturating_sub(l.chars().count())));
+        joined.extend(std::iter::repeat_n(
+            ' ',
+            20usize.saturating_sub(l.chars().count()),
+        ));
     }
     joined.trim_end().to_string()
 }
@@ -170,19 +195,31 @@ struct Tables(Vec<(String, Vec<dds::FieldDef>)>);
 
 impl Tables {
     fn load(txn: &mut Txn<'_>, ctx: &SqlContext, from: &[TableRef]) -> Self {
-        fn walk(txn: &mut Txn<'_>, ctx: &SqlContext, r: &TableRef, out: &mut Vec<(String, Vec<dds::FieldDef>)>) {
+        fn walk(
+            txn: &mut Txn<'_>,
+            ctx: &SqlContext,
+            r: &TableRef,
+            out: &mut Vec<(String, Vec<dds::FieldDef>)>,
+        ) {
             match r {
                 TableRef::Table { name, alias, .. } => {
-                    let a = alias.as_ref().map_or_else(|| name.name.value.clone(), |a| a.value.clone());
+                    let a = alias
+                        .as_ref()
+                        .map_or_else(|| name.name.value.clone(), |a| a.value.clone());
                     let fields = ctx.resolve_table(txn, name).map_or_else(
                         // A catalog view: its columns' fields.
                         |_| {
                             // A service view's columns without its rows.
                             crate::exec::catalog::services::columns(name, &a)
                                 .map(Ok)
-                                .or_else(|| crate::exec::catalog::virtual_table(txn, ctx, name, &a).transpose())
+                                .or_else(|| {
+                                    crate::exec::catalog::virtual_table(txn, ctx, name, &a)
+                                        .transpose()
+                                })
                                 .and_then(std::result::Result::ok)
-                                .map(|(sch, _)| sch.cols.iter().filter_map(|c| c.field.clone()).collect())
+                                .map(|(sch, _)| {
+                                    sch.cols.iter().filter_map(|c| c.field.clone()).collect()
+                                })
                                 .unwrap_or_default()
                         },
                         |t| t.format.format.fields.clone(),
@@ -211,7 +248,10 @@ impl Tables {
         self.0
             .iter()
             .filter(|(a, _)| table.is_none_or(|t| t == a))
-            .find_map(|(_, fs)| fs.iter().find(|f| f.name.to_string() == name || f.alias.as_deref() == Some(name)))
+            .find_map(|(_, fs)| {
+                fs.iter()
+                    .find(|f| f.name.to_string() == name || f.alias.as_deref() == Some(name))
+            })
     }
 
     /// The tables' columns as a query's schema.
@@ -257,15 +297,27 @@ impl Tables {
                 .field(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)
                 .map_or_else(|| Col::new(448, 32740, true), of_field),
             Expr::Literal(Literal::Num(n)) => num_literal(n),
-            Expr::Literal(Literal::Str(s)) => Col::new(452, i32::try_from(s.len()).unwrap_or(i32::MAX).max(1), false),
-            Expr::Literal(Literal::Date(_)) | Expr::Register(crate::ast::Register::Date) => Col::new(384, DATE_LEN, false),
-            Expr::Literal(Literal::Time(_)) | Expr::Register(crate::ast::Register::Time) => Col::new(388, 8, false),
+            Expr::Literal(Literal::Str(s)) => Col::new(
+                452,
+                i32::try_from(s.len()).unwrap_or(i32::MAX).max(1),
+                false,
+            ),
+            Expr::Literal(Literal::Date(_)) | Expr::Register(crate::ast::Register::Date) => {
+                Col::new(384, DATE_LEN, false)
+            }
+            Expr::Literal(Literal::Time(_)) | Expr::Register(crate::ast::Register::Time) => {
+                Col::new(388, 8, false)
+            }
             Expr::Literal(Literal::Timestamp(s)) => Col::new(
                 392,
                 crate::value::Timestamp::parse(s).map_or(26, |t| timestamp_len(t.precision)),
                 false,
             ),
-            Expr::Literal(Literal::Bin(b)) => bits(Col::new(908, i32::try_from(b.len()).unwrap_or(i32::MAX), false)),
+            Expr::Literal(Literal::Bin(b)) => bits(Col::new(
+                908,
+                i32::try_from(b.len()).unwrap_or(i32::MAX),
+                false,
+            )),
             Expr::Literal(Literal::Bool(_)) => Col::new(BOOLEAN, 1, false),
             Expr::And(..)
             | Expr::Or(..)
@@ -277,7 +329,9 @@ impl Tables {
             | Expr::InSubquery(..)
             | Expr::Like(..)
             | Expr::Exists(..) => Col::new(BOOLEAN, 1, true),
-            Expr::Register(crate::ast::Register::Timestamp(p)) => Col::new(392, timestamp_len(*p), false),
+            Expr::Register(crate::ast::Register::Timestamp(p)) => {
+                Col::new(392, timestamp_len(*p), false)
+            }
             Expr::Neg(x) => self.type_of(x),
             Expr::Binary(a, op, b) => arith(&self.type_of(a), *op, &self.type_of(b)),
             Expr::Cast(_, t) => of_type(&t.data_type),
@@ -307,10 +361,9 @@ impl Tables {
                     "TIME" => Col::new(388, 8, true),
                     "TIMESTAMP" | "NOW" => Col::new(392, 26, true),
                     "BIGINT" => Col::new(492, 8, true),
-                    "INTEGER" | "INT" | "LENGTH" | "CHAR_LENGTH" | "YEAR" | "MONTH" | "DAY" | "DAYOFMONTH" | "HOUR"
-                    | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS" | "POSSTR" | "LOCATE" | "OCTET_LENGTH" => {
-                        Col::new(496, 4, true)
-                    }
+                    "INTEGER" | "INT" | "LENGTH" | "CHAR_LENGTH" | "YEAR" | "MONTH" | "DAY"
+                    | "DAYOFMONTH" | "HOUR" | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS"
+                    | "POSSTR" | "LOCATE" | "OCTET_LENGTH" => Col::new(496, 4, true),
                     "SMALLINT" => Col::new(500, 2, true),
                     "DOUBLE" | "DOUBLE_PRECISION" | "FLOAT" => Col::new(480, 8, true),
                     "REAL" => Col::new(480, 4, true),
@@ -338,10 +391,16 @@ fn num_literal(n: &str) -> Col {
         return Col::new(480, 8, false);
     }
     if !n.contains('.') {
-        return if n.trim_start_matches(['-', '+']).len() > 9 { Col::new(492, 8, false) } else { Col::int() };
+        return if n.trim_start_matches(['-', '+']).len() > 9 {
+            Col::new(492, 8, false)
+        } else {
+            Col::int()
+        };
     }
     let digits = n.chars().filter(char::is_ascii_digit).count();
-    let scale = n.split_once('.').map_or(0, |(_, f)| f.chars().filter(char::is_ascii_digit).count());
+    let scale = n
+        .split_once('.')
+        .map_or(0, |(_, f)| f.chars().filter(char::is_ascii_digit).count());
     let p = i32::try_from(digits).unwrap_or(31);
     let s = i32::try_from(scale).unwrap_or(0);
     Col::new(484, p * 256 + s, false)
@@ -355,7 +414,9 @@ fn arith(a: &Col, op: BinOp, b: &Col) -> Col {
         return Col::new(448, len, null);
     }
     if a.base == 996 || b.base == 996 {
-        let wide = [a, b].iter().any(|c| (c.base == 996 && c.len == 16) || c.digits().is_some_and(|(p, _)| p > 16));
+        let wide = [a, b]
+            .iter()
+            .any(|c| (c.base == 996 && c.len == 16) || c.digits().is_some_and(|(p, _)| p > 16));
         return Col::new(996, if wide { 16 } else { 8 }, null);
     }
     let ints = [500, 496, 492];
@@ -438,7 +499,10 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col, Option<String>)> {
         }
     }
     let mut out = Vec::new();
-    let column = |name: &str| t.field(None, name).map_or_else(|| Col::new(448, 32740, true), of_field);
+    let column = |name: &str| {
+        t.field(None, name)
+            .map_or_else(|| Col::new(448, 32740, true), of_field)
+    };
     match st {
         Statement::Select(q) => {
             if let QueryBody::Select(s) = &q.body {
@@ -482,7 +546,9 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col, Option<String>)> {
         Statement::Insert(ins) => {
             if let InsertSource::Values(rows) = &ins.source {
                 let names: Vec<String> = if ins.columns.is_empty() {
-                    t.0.first().map(|(_, fs)| fs.iter().map(|f| f.name.to_string()).collect()).unwrap_or_default()
+                    t.0.first()
+                        .map(|(_, fs)| fs.iter().map(|f| f.name.to_string()).collect())
+                        .unwrap_or_default()
                 } else {
                     ins.columns.iter().map(|c| c.value.clone()).collect()
                 };
@@ -567,8 +633,17 @@ impl Entry {
 
 /// A column's heading lines joined by one blank, or its name.
 fn label_name(f: &dds::FieldDef) -> String {
-    let words: Vec<&str> = f.colhdg.iter().map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
-    if words.is_empty() { sql_name(f) } else { words.join(" ") }
+    let words: Vec<&str> = f
+        .colhdg
+        .iter()
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty())
+        .collect();
+    if words.is_empty() {
+        sql_name(f)
+    } else {
+        words.join(" ")
+    }
 }
 
 /// The CCSID of the job: what dates, times and markers of character
@@ -581,7 +656,9 @@ impl Col {
     #[must_use]
     pub fn sqlda_ccsid(&self) -> u16 {
         match self.base {
-            384 | 388 | 392 | 448 | 452 | 456 | 408 | 464 | 468 | 412 if self.ccsid == 0 => JOB_CCSID,
+            384 | 388 | 392 | 448 | 452 | 456 | 408 | 464 | 468 | 412 if self.ccsid == 0 => {
+                JOB_CCSID
+            }
             404 | 908 | 912 => 65535,
             384 | 388 | 392 | 448 | 452 | 456 | 408 | 464 | 468 | 412 => self.ccsid,
             _ => 0,
@@ -617,11 +694,17 @@ pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool)
         return markers(&tabs, st)
             .into_iter()
             .enumerate()
-            .map(|(k, (_, c, name))| Entry::expr(c, name.unwrap_or_else(|| format!("{:05}", k + 1))))
+            .map(|(k, (_, c, name))| {
+                Entry::expr(c, name.unwrap_or_else(|| format!("{:05}", k + 1)))
+            })
             .collect();
     }
-    let Statement::Select(query) = st else { return Vec::new() };
-    let QueryBody::Select(sel) = &query.body else { return Vec::new() };
+    let Statement::Select(query) = st else {
+        return Vec::new();
+    };
+    let QueryBody::Select(sel) = &query.body else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for item in &sel.items {
         match item {
@@ -638,11 +721,16 @@ pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool)
             SelectItem::Expr(e, alias) => {
                 // A column keeps its labels under a new name.
                 let field = match e {
-                    Expr::Column(c) => tabs.field(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value),
+                    Expr::Column(c) => {
+                        tabs.field(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)
+                    }
                     _ => None,
                 };
                 let mut entry = if let Some(f) = field {
-                    Entry { col: tabs.type_of(e), ..Entry::of_field(f) }
+                    Entry {
+                        col: tabs.type_of(e),
+                        ..Entry::of_field(f)
+                    }
                 } else {
                     let name = match e {
                         Expr::Column(c) => c.column.value.clone(),
@@ -662,7 +750,11 @@ pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool)
 
 /// The columns of a table (`DESCRIBE TABLE`): every field, none of them
 /// marked as a result column.
-pub fn table_entries(txn: &mut Txn<'_>, ctx: &SqlContext, name: &crate::ast::ObjectName) -> Result<Vec<Entry>, SqlError> {
+pub fn table_entries(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &crate::ast::ObjectName,
+) -> Result<Vec<Entry>, SqlError> {
     let fields = match ctx.resolve_table(txn, name) {
         Ok(t) => t.format.format.fields.clone(),
         Err(e) => match crate::exec::catalog::virtual_table(txn, ctx, name, &name.name.value) {
@@ -705,14 +797,24 @@ pub fn rows(entries: Vec<Entry>) -> Vec<Vec<Value>> {
 }
 
 /// `DESCRIBE` of prepared `text` as a reply: [`rows`].
-pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming, input: bool) -> Reply {
+pub fn reply(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    text: &str,
+    naming: Naming,
+    input: bool,
+) -> Reply {
     let p = match prepare(text, naming) {
         Ok(p) => p,
         Err(e) => return Reply::of(Sqlca::from_error(&e)),
     };
     ctx.naming = naming;
     let rows = rows(entries(txn, ctx, &p.statement, input));
-    Reply { sqlca: code(0, "00000"), rows, call: None }
+    Reply {
+        sqlca: code(0, "00000"),
+        rows,
+        call: None,
+    }
 }
 
 /// `DESCRIBE CURSOR`: the entries of an open cursor's columns, a
@@ -748,20 +850,32 @@ pub fn cursor_rows(columns: &[crate::exec::ColumnDesc]) -> Vec<Vec<Value>> {
 /// character data (`VARCHAR`), each argument `INOUT`.
 fn call_markers(txn: &mut Txn<'_>, ctx: &SqlContext, c: &crate::ast::Call) -> Vec<Entry> {
     let found = crate::exec::routine::find::named(txn, ctx, &c.name, 1).unwrap_or_default();
-    let routine = found.iter().find(|f| usize::from(f.routine.def.parm_count) == c.args.len());
-    let parms: Vec<_> = routine.map(|f| f.routine.parms.iter().filter(|p| p.role == 0).collect()).unwrap_or_default();
+    let routine = found
+        .iter()
+        .find(|f| usize::from(f.routine.def.parm_count) == c.args.len());
+    let parms: Vec<_> = routine
+        .map(|f| f.routine.parms.iter().filter(|p| p.role == 0).collect())
+        .unwrap_or_default();
     let mut out = Vec::new();
     for (k, a) in c.args.iter().enumerate() {
         let Expr::Param(_) = a else { continue };
         let (col, mode, name) = match parms.get(k) {
             Some(p) => {
-                let col = crate::pl::types::parse_type(&p.ty).map_or_else(|_| Col::new(448, 32_740, true), |t| of_type(&t.data_type));
+                let col = crate::pl::types::parse_type(&p.ty)
+                    .map_or_else(|_| Col::new(448, 32_740, true), |t| of_type(&t.data_type));
                 (col, p.mode, p.name.clone())
             }
             None => (Col::new(448, 32_740, true), 3, String::new()),
         };
-        let name = if name.is_empty() { format!("{:05}", out.len() + 1) } else { name };
-        out.push(Entry { mode, ..Entry::expr(col, name) });
+        let name = if name.is_empty() {
+            format!("{:05}", out.len() + 1)
+        } else {
+            name
+        };
+        out.push(Entry {
+            mode,
+            ..Entry::expr(col, name)
+        });
     }
     out
 }

@@ -10,7 +10,9 @@
 //! Patterns are matched and pages cut here, names in order.
 
 use qap_proto::Status;
-use qap_proto::ops::sql::{Columns, ListColumns, ListSchemas, ListTables, Schema, Schemas, Table, TableKind, Tables};
+use qap_proto::ops::sql::{
+    Columns, ListColumns, ListSchemas, ListTables, Schema, Schemas, Table, TableKind, Tables,
+};
 use qapd::Refusal;
 use qapd::sql::{like, page};
 use sql::embed::{Desc, Op, Request};
@@ -23,12 +25,22 @@ const SCOPE: &str = "QAPCAT:LIST";
 
 fn refused(e: &mut dyn Engine, ca: &sql::Sqlca) -> Refusal {
     Refusal {
-        status: if ca.sqlcode == -551 { Status::NotAuthorized } else { Status::Error },
+        status: if ca.sqlcode == -551 {
+            Status::NotAuthorized
+        } else {
+            Status::Error
+        },
         message: sql_message(e, ca),
     }
 }
 
-fn run(e: &mut dyn Engine, op: Op, name: &str, text: &str, inputs: Vec<Value>) -> sql::embed::Reply {
+fn run(
+    e: &mut dyn Engine,
+    op: Op,
+    name: &str,
+    text: &str,
+    inputs: Vec<Value>,
+) -> sql::embed::Reply {
     e.run(&Request {
         scope: SCOPE.into(),
         desc: Desc {
@@ -50,7 +62,13 @@ fn rows(e: &mut dyn Engine, text: &str) -> Result<Vec<Vec<Value>>, Refusal> {
     if r.sqlca.is_error() {
         return Err(refused(e, &r.sqlca));
     }
-    let f = run(e, Op::Fetch, "QAPCAT", "", vec![Value::int(i64::from(i32::MAX))]);
+    let f = run(
+        e,
+        Op::Fetch,
+        "QAPCAT",
+        "",
+        vec![Value::int(i64::from(i32::MAX))],
+    );
     let _ = run(e, Op::Close, "QAPCAT", "", Vec::new());
     if f.sqlca.is_error() {
         return Err(refused(e, &f.sqlca));
@@ -97,10 +115,20 @@ pub fn list_schemas(e: &mut dyn Engine, req: &ListSchemas) -> Result<Schemas, Re
 pub fn list_tables(e: &mut dyn Engine, req: &ListTables) -> Result<Tables, Refusal> {
     let schema = req.schema.trim();
     let q = quote(schema);
-    if rows(e, &format!("SELECT SCHEMA_NAME FROM QSYS2.SYSSCHEMAS WHERE SCHEMA_NAME = {q}"))?.is_empty() {
+    if rows(
+        e,
+        &format!("SELECT SCHEMA_NAME FROM QSYS2.SYSSCHEMAS WHERE SCHEMA_NAME = {q}"),
+    )?
+    .is_empty()
+    {
         return Err(not_found(e, schema, "*LIB"));
     }
-    let found = rows(e, &format!("SELECT TABLE_NAME, TABLE_TYPE, TABLE_TEXT FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = {q}"))?;
+    let found = rows(
+        e,
+        &format!(
+            "SELECT TABLE_NAME, TABLE_TYPE, TABLE_TEXT FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = {q}"
+        ),
+    )?;
     let mut all: Vec<Table> = found
         .iter()
         .filter_map(|r| {
@@ -120,7 +148,9 @@ pub fn list_tables(e: &mut dyn Engine, req: &ListTables) -> Result<Tables, Refus
                 text: text(r, 2),
             })
         })
-        .filter(|t| like(&t.name, &req.pattern) && (req.kinds.is_empty() || req.kinds.contains(&t.kind)))
+        .filter(|t| {
+            like(&t.name, &req.pattern) && (req.kinds.is_empty() || req.kinds.contains(&t.kind))
+        })
         .collect();
     all.sort_by(|a, b| a.name.cmp(&b.name));
     let (total, tables) = page(all, req.start, req.max);
@@ -132,7 +162,12 @@ pub fn list_tables(e: &mut dyn Engine, req: &ListTables) -> Result<Tables, Refus
 pub fn list_columns(e: &mut dyn Engine, req: &ListColumns) -> Result<Columns, Refusal> {
     let (schema, table) = (req.schema.trim(), req.table.trim());
     let (qs, qt) = (quote(schema), quote(table));
-    let there = rows(e, &format!("SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = {qs} AND TABLE_NAME = {qt}"))?;
+    let there = rows(
+        e,
+        &format!(
+            "SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = {qs} AND TABLE_NAME = {qt}"
+        ),
+    )?;
     if there.is_empty() {
         return Err(not_found(e, table, schema));
     }
@@ -142,6 +177,10 @@ pub fn list_columns(e: &mut dyn Engine, req: &ListColumns) -> Result<Columns, Re
     if p.sqlca.is_error() {
         return Err(refused(e, &p.sqlca));
     }
-    let columns = p.rows.iter().map(|row| values::described(row).column).collect();
+    let columns = p
+        .rows
+        .iter()
+        .map(|row| values::described(row).column)
+        .collect();
     Ok(Columns { columns })
 }

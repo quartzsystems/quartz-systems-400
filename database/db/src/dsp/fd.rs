@@ -147,18 +147,24 @@ pub struct SqlAttrs {
 /// The SQL attributes `file` keeps, if SQL made it.
 fn sql_attrs(txn: &mut Txn<'_>, file: ObjectId, name: Name) -> Result<Option<SqlAttrs>> {
     use crate::sqlinf::{Kind, tag};
-    let Some(info) = crate::sqlinf::load(txn, file)? else { return Ok(None) };
+    let Some(info) = crate::sqlinf::load(txn, file)? else {
+        return Ok(None);
+    };
     let file_type = match info.kind {
         Kind::Table | Kind::Mqt => "TABLE",
         Kind::View => "VIEW",
         Kind::Index => "INDEX",
         _ => return Ok(None),
     };
-    let def = info.first(tag::VIEW).and_then(|b| crate::sqlinf::body::ViewDef::decode(b).ok());
+    let def = info
+        .first(tag::VIEW)
+        .and_then(|b| crate::sqlinf::body::ViewDef::decode(b).ok());
     let sql_name = info.name().unwrap_or_else(|| name.to_string());
     Ok(Some(SqlAttrs {
         file_type,
-        view_text: def.as_ref().map(|d| format!("CREATE VIEW {sql_name} AS {}", d.query.trim_end())),
+        view_text: def
+            .as_ref()
+            .map(|d| format!("CREATE VIEW {sql_name} AS {}", d.query.trim_end())),
         check: def.as_ref().map(|d| match d.check {
             crate::sqlinf::body::CheckOption::None => "NONE",
             crate::sqlinf::body::CheckOption::Cascaded => "CASCADED",
@@ -214,15 +220,25 @@ pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
         }
     }
     let mut constraints = Vec::new();
-    for c in crate::cst::list(txn, file)?.into_iter().filter(|c| c.kind != crate::cst::Kind::Dependent) {
+    for c in crate::cst::list(txn, file)?
+        .into_iter()
+        .filter(|c| c.kind != crate::cst::Kind::Dependent)
+    {
         let parent = if c.kind == crate::cst::Kind::Referential {
-            ops::read_header(txn, c.other).map_or_else(|_| String::new(), |(_, h)| format!("{}/{}", library_name(txn, h.library), h.name))
+            ops::read_header(txn, c.other).map_or_else(
+                |_| String::new(),
+                |(_, h)| format!("{}/{}", library_name(txn, h.library), h.name),
+            )
         } else {
             String::new()
         };
         constraints.push((c, parent));
     }
-    let triggers = if desc.attr.kind == FileKind::Logical { Vec::new() } else { crate::trg::list(txn, file)? };
+    let triggers = if desc.attr.kind == FileKind::Logical {
+        Vec::new()
+    } else {
+        crate::trg::list(txn, file)?
+    };
     let sql = sql_attrs(txn, file, desc.name())?;
     Ok(FileDescription {
         name: desc.name(),
@@ -296,10 +312,14 @@ impl FileDescription {
         if want(FdType::MbrList) || want(FdType::Mbr) {
             self.members(&mut out, ty != FdType::MbrList);
         }
-        if (ty == FdType::Cst || (ty == FdType::All && !self.constraints.is_empty())) && self.kind != FileKind::Logical {
+        if (ty == FdType::Cst || (ty == FdType::All && !self.constraints.is_empty()))
+            && self.kind != FileKind::Logical
+        {
             self.cst(&mut out, words);
         }
-        if (ty == FdType::Trg || (ty == FdType::All && !self.triggers.is_empty())) && self.kind != FileKind::Logical {
+        if (ty == FdType::Trg || (ty == FdType::All && !self.triggers.is_empty()))
+            && self.kind != FileKind::Logical
+        {
             self.trg(&mut out, words);
         }
         out
@@ -348,19 +368,51 @@ impl FileDescription {
             kv(out, &w("TXT0283"), t.library);
             kv(out, &w("TXT0284"), t.program.1);
             kv(out, &w("TXT0285"), t.program.0);
-            kv(out, &w("TXT0286"), if t.time == Time::Before { "*BEFORE" } else { "*AFTER" });
-            kv(out, &w("TXT0287"), match t.event {
-                Event::Insert => "*INSERT",
-                Event::Delete => "*DELETE",
-                Event::Update => "*UPDATE",
-                Event::Read => "*READ",
-            });
+            kv(
+                out,
+                &w("TXT0286"),
+                if t.time == Time::Before {
+                    "*BEFORE"
+                } else {
+                    "*AFTER"
+                },
+            );
+            kv(
+                out,
+                &w("TXT0287"),
+                match t.event {
+                    Event::Insert => "*INSERT",
+                    Event::Delete => "*DELETE",
+                    Event::Update => "*UPDATE",
+                    Event::Read => "*READ",
+                },
+            );
             if t.update_condition != UpdateCondition::None {
-                kv(out, &w("TXT0288"), if t.update_condition == UpdateCondition::Change { "*CHANGE" } else { "*ALWAYS" });
+                kv(
+                    out,
+                    &w("TXT0288"),
+                    if t.update_condition == UpdateCondition::Change {
+                        "*CHANGE"
+                    } else {
+                        "*ALWAYS"
+                    },
+                );
             }
             kv(out, &w("TXT0289"), if t.alwrepchg { "*YES" } else { "*NO" });
-            kv(out, &w("TXT028A"), if t.enabled { "*ENABLED" } else { "*DISABLED" });
-            kv(out, &w("TXT028B"), if t.operative { "*OPERATIVE" } else { "*INOPERATIVE" });
+            kv(
+                out,
+                &w("TXT028A"),
+                if t.enabled { "*ENABLED" } else { "*DISABLED" },
+            );
+            kv(
+                out,
+                &w("TXT028B"),
+                if t.operative {
+                    "*OPERATIVE"
+                } else {
+                    "*INOPERATIVE"
+                },
+            );
             kv(out, &w("TXT028C"), if t.sql { "*SQL" } else { "*SYS" });
             kv(out, &w("TXT028D"), timestamp(t.created));
         }

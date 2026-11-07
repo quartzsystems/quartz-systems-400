@@ -9,10 +9,10 @@
 
 use std::fmt::Write as _;
 
+use ifs::Errno;
 use ifs::client::{IfsClient, read_all};
 use ifs::ops::OpenArgs;
 use ifs::ops::flags::{O_CCSID, O_RDONLY, O_TEXTDATA};
-use ifs::Errno;
 use sec::auth::bits::Auth;
 
 use crate::display::{LABELS, attributes, links, shown_name};
@@ -61,7 +61,12 @@ pub fn attributes_text(c: &dyn IfsClient, path: &str, have_audit: bool) -> Reply
 
 /// The four object authority columns as `X` marks.
 fn marks(a: Auth) -> String {
-    let bit = |n: &str| sec::auth::bits::NAMES.iter().find(|(k, _)| *k == n).map_or(0, |(_, b)| *b);
+    let bit = |n: &str| {
+        sec::auth::bits::NAMES
+            .iter()
+            .find(|(k, _)| *k == n)
+            .map_or(0, |(_, b)| *b)
+    };
     let x = |n: &str| if a.0 & bit(n) != 0 { "X" } else { " " };
     format!(
         "{:^6}{:^5}{:^7}{:^5}",
@@ -80,7 +85,11 @@ pub fn authority_text(c: &dyn IfsClient, path: &str) -> Reply {
     };
     let mut t = String::new();
     let _ = writeln!(t, " Object . . . . . . . . . . . . :   {}", a.path);
-    let _ = writeln!(t, " Type . . . . . . . . . . . . . :   {}", a.objtype.trim_start_matches('*'));
+    let _ = writeln!(
+        t,
+        " Type . . . . . . . . . . . . . :   {}",
+        a.objtype.trim_start_matches('*')
+    );
     let _ = writeln!(t, " Owner  . . . . . . . . . . . . :   {}", a.owner);
     let _ = writeln!(
         t,

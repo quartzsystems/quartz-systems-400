@@ -59,13 +59,21 @@ impl<F> State<F> {
     /// Queue `fd` for `target`.
     pub fn give(&self, target: JobId, source: JobId, note: Vec<u8>, fd: F) {
         let mut g = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
-        g.queues.entry(target).or_default().push_back((source, note, fd));
+        g.queues
+            .entry(target)
+            .or_default()
+            .push_back((source, note, fd));
         self.cv.notify_all();
     }
 
     /// Wait up to `wait` (forever with `None`) for a descriptor for
     /// `me`, from `source` when given.
-    pub fn take(&self, me: JobId, source: Option<JobId>, wait: Option<Duration>) -> Option<Entry<F>> {
+    pub fn take(
+        &self,
+        me: JobId,
+        source: Option<JobId>,
+        wait: Option<Duration>,
+    ) -> Option<Entry<F>> {
         self.take_as(me, None, source, wait)
     }
 
@@ -90,7 +98,9 @@ impl<F> State<F> {
         }
         let got = loop {
             if let Some(q) = g.queues.get_mut(&me)
-                && let Some(at) = q.iter().position(|(from, _, _)| source.is_none_or(|s| s == *from))
+                && let Some(at) = q
+                    .iter()
+                    .position(|(from, _, _)| source.is_none_or(|s| s == *from))
             {
                 break q.remove(at);
             }
@@ -100,7 +110,11 @@ impl<F> State<F> {
                     if now >= t {
                         break None;
                     }
-                    g = self.cv.wait_timeout(g, t - now).unwrap_or_else(PoisonError::into_inner).0;
+                    g = self
+                        .cv
+                        .wait_timeout(g, t - now)
+                        .unwrap_or_else(PoisonError::into_inner)
+                        .0;
                 }
                 None => g = self.cv.wait(g).unwrap_or_else(PoisonError::into_inner),
             }
@@ -133,7 +147,10 @@ impl<F> State<F> {
             ms.retain(|_, at| at.elapsed() < MEMBER_TTL);
             u32::try_from(ms.len()).unwrap_or(u32::MAX)
         });
-        let queued = g.queues.get(me).map_or(0, |q| u32::try_from(q.len()).unwrap_or(u32::MAX));
+        let queued = g
+            .queues
+            .get(me)
+            .map_or(0, |q| u32::try_from(q.len()).unwrap_or(u32::MAX));
         (waiting + members).saturating_sub(queued)
     }
 
@@ -176,15 +193,28 @@ mod tests {
         let pool = crate::relay::pool("QZDASOINIT");
         let (a, b) = ([0xA1; 16], [0xB2; 16]);
         // Two members whose waits ended with nothing: both still idle.
-        assert_eq!(s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))), None);
-        assert_eq!(s.take_as(pool, Some(b), None, Some(Duration::from_millis(5))), None);
+        assert_eq!(
+            s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))),
+            None
+        );
+        assert_eq!(
+            s.take_as(pool, Some(b), None, Some(Duration::from_millis(5))),
+            None
+        );
         assert_eq!(s.idle(&pool), 2);
         // One takes work: it is busy until it asks again.
         s.give(pool, [1; 16], Vec::new(), 7);
         assert_eq!(s.idle(&pool), 1);
-        assert_eq!(s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))).map(|e| e.2), Some(7));
+        assert_eq!(
+            s.take_as(pool, Some(a), None, Some(Duration::from_millis(5)))
+                .map(|e| e.2),
+            Some(7)
+        );
         assert_eq!(s.idle(&pool), 1);
-        assert_eq!(s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))), None);
+        assert_eq!(
+            s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))),
+            None
+        );
         assert_eq!(s.idle(&pool), 2);
     }
 }

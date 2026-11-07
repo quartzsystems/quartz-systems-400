@@ -54,11 +54,19 @@ fn commands() -> &'static cmd::analyze::MemSource {
 struct Shipped;
 
 impl cmd::analyze::CmdSource for Shipped {
-    fn lookup(&mut self, name: &str, lib: Option<&str>) -> cmd::error::Result<Option<(cmd::payload::CmdObject, String)>> {
+    fn lookup(
+        &mut self,
+        name: &str,
+        lib: Option<&str>,
+    ) -> cmd::error::Result<Option<(cmd::payload::CmdObject, String)>> {
         if lib.is_some_and(|l| l != "QSYS" && l != "*LIBL") {
             return Ok(None);
         }
-        Ok(commands().cmds.iter().find(|(n, _)| n == name).map(|(_, o)| (o.clone(), "QSYS".to_string())))
+        Ok(commands()
+            .cmds
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, o)| (o.clone(), "QSYS".to_string())))
     }
 }
 
@@ -87,7 +95,6 @@ fn rpg(data: &[u8]) {
     };
     let _ = rpgfront::front(member, &mut rpgfront::NoIncludes, &opts);
 }
-
 
 fn tn5250(data: &[u8]) {
     let _ = tn5250::ds::parse::parse(data);
@@ -156,7 +163,9 @@ fn journal(data: &[u8]) {
     // A receiver's entries one after another, as replay reads them.
     let mut rest = data;
     for _ in 0..64 {
-        let Ok(len) = jrn::Entry::announced_len(rest) else { break };
+        let Ok(len) = jrn::Entry::announced_len(rest) else {
+            break;
+        };
         if len == 0 || len > rest.len() {
             break;
         }
@@ -185,10 +194,12 @@ fn smtp(data: &[u8]) {
 }
 
 fn ftp(data: &[u8]) {
-
     let mut host = ftp::memhost::MemHost::new(&[("BOB", "SECRET")]);
     host.add_library("BOBLIB");
-    let mut s = ftp::Session::new(host, ftp::Config::new(servers::attrs::ftp::FtpAttrs::default(), "QS400T"));
+    let mut s = ftp::Session::new(
+        host,
+        ftp::Config::new(servers::attrs::ftp::FtpAttrs::default(), "QS400T"),
+    );
     let mut net = ftp::net::mem::MemNet::default();
     let _ = s.greet(&mut net);
     for line in text(data).lines().take(64) {
@@ -229,7 +240,9 @@ fn tls_client() -> &'static std::sync::Arc<tls::rustls::ClientConfig> {
 
 fn tls_records(data: &[u8]) {
     let name = tls::config::server_name("fuzz.example").expect("name");
-    let Ok(mut e) = tls::engine::Engine::client(tls_client().clone(), name) else { return };
+    let Ok(mut e) = tls::engine::Engine::client(tls_client().clone(), name) else {
+        return;
+    };
     let mut out = Vec::new();
     let _ = e.take_output(&mut out);
     for chunk in data.chunks(512) {

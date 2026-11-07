@@ -404,7 +404,13 @@ mod tests {
             assert!(ccsid.validate(&Value::Dec(n)).is_ok(), "{n}");
         }
         for n in [1208, 930, 1234] {
-            assert!(matches!(ccsid.validate(&Value::Dec(n)), Err(SysValError::NotAllowed { .. })), "{n}");
+            assert!(
+                matches!(
+                    ccsid.validate(&Value::Dec(n)),
+                    Err(SysValError::NotAllowed { .. })
+                ),
+                "{n}"
+            );
         }
         let libl = c.get("QSYSLIBL").unwrap();
         let too_many = Value::List((0..16).map(|i| format!("L{i}")).collect());

@@ -110,10 +110,16 @@ fn resolve(hc: &HostConfig, name: &str, v6: Option<bool>) -> Vec<IpAddr> {
         hosts: hc
             .hosts
             .iter()
-            .map(|(a, n)| sockets::resolver::HostEntry { addr: *a, names: n.clone() })
+            .map(|(a, n)| sockets::resolver::HostEntry {
+                addr: *a,
+                names: n.clone(),
+            })
             .collect(),
     };
-    let mut r = sockets::resolver::Resolver::new(Box::new(cfg), Box::new(sockets::resolver::DefaultServices));
+    let mut r = sockets::resolver::Resolver::new(
+        Box::new(cfg),
+        Box::new(sockets::resolver::DefaultServices),
+    );
     let family = match v6 {
         Some(true) => sockets::consts::AF_INET6,
         _ => sockets::consts::AF_INET,
@@ -133,7 +139,10 @@ fn target(host: &Host, p: &Parms) -> Result<ping::Target, Msg> {
     let rmtsys = unquote(&p.text("RMTSYS"));
     let v6 = version(p);
     if rmtsys.len() > 255 {
-        return Err(escape(tmsg::NAME_TOO_LONG, "The remote system name is longer than 255 characters."));
+        return Err(escape(
+            tmsg::NAME_TOO_LONG,
+            "The remote system name is longer than 255 characters.",
+        ));
     }
     let typed = if rmtsys.eq_ignore_ascii_case("*INTNETADR") {
         unquote(&p.text("INTNETADR"))
@@ -144,17 +153,35 @@ fn target(host: &Host, p: &Parms) -> Result<ping::Target, Msg> {
         if v6.is_some_and(|six| addr.is_ipv6() != six) {
             return Err(escape(
                 tmsg::BAD_VERSION,
-                format!("{addr} is not an address of the version {} asks for.", p.name("ADRVERFMT")),
+                format!(
+                    "{addr} is not an address of the version {} asks for.",
+                    p.name("ADRVERFMT")
+                ),
             ));
         }
-        let shown = if rmtsys.eq_ignore_ascii_case("*INTNETADR") { "*INTNETADR".to_string() } else { typed };
-        return Ok(ping::Target { rmtsys: shown, name: None, addr });
+        let shown = if rmtsys.eq_ignore_ascii_case("*INTNETADR") {
+            "*INTNETADR".to_string()
+        } else {
+            typed
+        };
+        return Ok(ping::Target {
+            rmtsys: shown,
+            name: None,
+            addr,
+        });
     }
     let hc = host_config(host);
     let found = resolve(&hc, &typed, v6);
     match found.first() {
-        Some(addr) => Ok(ping::Target { rmtsys: typed.clone(), name: Some(typed.to_ascii_uppercase()), addr: *addr }),
-        None => Err(escape(tmsg::UNKNOWN_HOST, format!("No address is known for host {typed}."))),
+        Some(addr) => Ok(ping::Target {
+            rmtsys: typed.clone(),
+            name: Some(typed.to_ascii_uppercase()),
+            addr: *addr,
+        }),
+        None => Err(escape(
+            tmsg::UNKNOWN_HOST,
+            format!("No address is known for host {typed}."),
+        )),
     }
 }
 
@@ -164,9 +191,12 @@ fn local(p: &Parms) -> Result<Option<IpAddr>, Msg> {
     if t.is_empty() || t.eq_ignore_ascii_case("*ANY") {
         return Ok(None);
     }
-    t.parse()
-        .map(Some)
-        .map_err(|_| escape(tmsg::BAD_LOCAL, format!("{t} is not a local internet address.")))
+    t.parse().map(Some).map_err(|_| {
+        escape(
+            tmsg::BAD_LOCAL,
+            format!("{t} is not a local internet address."),
+        )
+    })
 }
 
 /// `TOS` as the IP header's byte.
@@ -195,8 +225,17 @@ fn ping_cmd(job: &mut Job, host: &Host, p: &Parms) -> Result<String, Fail> {
         Err(m) => return finish(job, &[m]),
     };
     let modes = p.elems("MSGMODE");
-    let mode = |i: usize| modes.get(i).copied().flatten().map(|v| v.source().to_ascii_uppercase()).unwrap_or_default();
-    let len = usize::try_from(int(p, "PKTLEN", 256, 8, 65_500)).unwrap_or(256).min(ping::max_len(t.addr.is_ipv6()));
+    let mode = |i: usize| {
+        modes
+            .get(i)
+            .copied()
+            .flatten()
+            .map(|v| v.source().to_ascii_uppercase())
+            .unwrap_or_default()
+    };
+    let len = usize::try_from(int(p, "PKTLEN", 256, 8, 65_500))
+        .unwrap_or(256)
+        .min(ping::max_len(t.addr.is_ipv6()));
     let o = ping::Options {
         count: u32::try_from(int(p, "NBRPKT", 5, 1, 999)).unwrap_or(5),
         len,
@@ -204,13 +243,19 @@ fn ping_cmd(job: &mut Job, host: &Host, p: &Parms) -> Result<String, Fail> {
         verbose: mode(0) != "*QUIET",
         escape: mode(1) == "*ESCAPE",
     };
-    let ttl = p.int("IPTTL").filter(|n| *n > 0).and_then(|n| u32::try_from(n.min(255)).ok());
+    let ttl = p
+        .int("IPTTL")
+        .filter(|n| *n > 0)
+        .and_then(|n| u32::try_from(n.min(255)).ok());
     let mut pinger = match nettools::sys::Pinger::open(t.addr, local, ttl, tos(p)) {
         Ok(x) => x,
         Err(e) => {
             return finish(
                 job,
-                &[escape(tmsg::SOCKET_FAILED, format!("The echo socket could not be opened: {e}."))],
+                &[escape(
+                    tmsg::SOCKET_FAILED,
+                    format!("The echo socket could not be opened: {e}."),
+                )],
             );
         }
     };
@@ -247,7 +292,9 @@ fn trace_cmd(job: &mut Job, host: &Host, p: &Parms) -> Result<String, Fail> {
     };
     // PKTLEN counts the IP and transport headers.
     let headers = if t.addr.is_ipv6() { 48 } else { 28 };
-    let data = usize::try_from(int(p, "PKTLEN", 40, 40, 65_535)).unwrap_or(40).saturating_sub(headers);
+    let data = usize::try_from(int(p, "PKTLEN", 40, 40, 65_535))
+        .unwrap_or(40)
+        .saturating_sub(headers);
     let kind = match p.name("PROBEPCL").as_str() {
         "*UDP" | "0" => nettools::sys::ProbeKind::Udp {
             port: u16::try_from(int(p, "RMTPORT", 33_434, 1, 65_535)).unwrap_or(33_434),
@@ -258,22 +305,28 @@ fn trace_cmd(job: &mut Job, host: &Host, p: &Parms) -> Result<String, Fail> {
     let mut prober = match nettools::sys::RouteProber::open(t.addr, local, kind, data) {
         Ok(x) => x,
         Err(e) => {
-            msgs.push(escape(tmsg::SOCKET_FAILED, format!("The probe socket could not be opened: {e}.")));
+            msgs.push(escape(
+                tmsg::SOCKET_FAILED,
+                format!("The probe socket could not be opened: {e}."),
+            ));
             return finish(job, &msgs);
         }
     };
     let hc = host_config(host);
-    msgs.extend(route::run(&o, &mut prober, &mut |a| hc.name_of(a).map(str::to_string)));
+    msgs.extend(route::run(&o, &mut prober, &mut |a| {
+        hc.name_of(a).map(str::to_string)
+    }));
     finish(job, &msgs)
 }
 
 /// One view of the service's data.
 fn view(host: &Host, what: &str) -> Result<stg::tcp::PanelData, Fail> {
-    match host
-        .link
-        .borrow_mut()
-        .with(|l| l.tcp(TcpOp::Netstat { what: what.into(), args: Vec::new() }))
-    {
+    match host.link.borrow_mut().with(|l| {
+        l.tcp(TcpOp::Netstat {
+            what: what.into(),
+            args: Vec::new(),
+        })
+    }) {
         TcpReply::Panel { data } => Ok(data),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
         other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
@@ -289,18 +342,58 @@ fn netstat_text(host: &Host, option: u32) -> Result<String, Fail> {
         let rows = data.1.first().map(|(_, r)| r.clone()).unwrap_or_default();
         let rows: Vec<netstat::Row> = rows
             .into_iter()
-            .map(|r| r.into_iter().map(|(k, v)| (k, v.trim().to_string())).collect())
+            .map(|r| {
+                r.into_iter()
+                    .map(|(k, v)| (k, v.trim().to_string()))
+                    .collect()
+            })
             .collect();
         lines.extend(netstat::text(title, &rows, cols));
         lines.push(String::new());
         Ok(())
     };
-    let ifc: &[(&str, &str, usize)] = &[("IADR", "Internet address", 15), ("INET", "Network address", 15), ("ILIND", "Line", 10), ("ISTS", "Status", 10)];
-    let ifc6: &[(&str, &str, usize)] = &[("XADR", "Internet address", 39), ("XPFX", "Prefix", 6), ("XLIND", "Line", 10), ("XSTS", "Status", 10)];
-    let rte: &[(&str, &str, usize)] = &[("RDEST", "Route destination", 17), ("RMASK", "Subnet mask", 15), ("RHOP", "Next hop", 15), ("RAVAIL", "Available", 9), ("RTYPE", "Type", 9)];
-    let rte6: &[(&str, &str, usize)] = &[("YDEST", "Route destination", 39), ("YMASK", "Prefix", 6), ("YHOP", "Next hop", 39), ("YSTS", "Status", 9)];
-    let cnn: &[(&str, &str, usize)] = &[("CRADR", "Remote address", 15), ("CRPORTN", "Port", 5), ("CLADR", "Local address", 15), ("CLPORTN", "Port", 5), ("CTYPE", "Type", 4), ("CSTATE", "State", 12), ("CUSER", "User", 10)];
-    let cnn6: &[(&str, &str, usize)] = &[("ZRADR", "Remote address", 39), ("ZRPORTN", "Port", 5), ("ZLADR", "Local address", 39), ("ZLPORTN", "Port", 5), ("ZTYPE", "Type", 4), ("ZSTATE", "State", 12)];
+    let ifc: &[(&str, &str, usize)] = &[
+        ("IADR", "Internet address", 15),
+        ("INET", "Network address", 15),
+        ("ILIND", "Line", 10),
+        ("ISTS", "Status", 10),
+    ];
+    let ifc6: &[(&str, &str, usize)] = &[
+        ("XADR", "Internet address", 39),
+        ("XPFX", "Prefix", 6),
+        ("XLIND", "Line", 10),
+        ("XSTS", "Status", 10),
+    ];
+    let rte: &[(&str, &str, usize)] = &[
+        ("RDEST", "Route destination", 17),
+        ("RMASK", "Subnet mask", 15),
+        ("RHOP", "Next hop", 15),
+        ("RAVAIL", "Available", 9),
+        ("RTYPE", "Type", 9),
+    ];
+    let rte6: &[(&str, &str, usize)] = &[
+        ("YDEST", "Route destination", 39),
+        ("YMASK", "Prefix", 6),
+        ("YHOP", "Next hop", 39),
+        ("YSTS", "Status", 9),
+    ];
+    let cnn: &[(&str, &str, usize)] = &[
+        ("CRADR", "Remote address", 15),
+        ("CRPORTN", "Port", 5),
+        ("CLADR", "Local address", 15),
+        ("CLPORTN", "Port", 5),
+        ("CTYPE", "Type", 4),
+        ("CSTATE", "State", 12),
+        ("CUSER", "User", 10),
+    ];
+    let cnn6: &[(&str, &str, usize)] = &[
+        ("ZRADR", "Remote address", 39),
+        ("ZRPORTN", "Port", 5),
+        ("ZLADR", "Local address", 39),
+        ("ZLPORTN", "Port", 5),
+        ("ZTYPE", "Type", 4),
+        ("ZSTATE", "State", 12),
+    ];
     match option {
         1 => section("IFC", "IPv4 interfaces", ifc)?,
         2 => section("RTE", "IPv4 routes", rte)?,

@@ -68,11 +68,7 @@ pub fn ruler(from: usize, n: usize) -> String {
 pub fn banner(text: &str) -> String {
     let dashes = IMAGE_COLS - text.chars().count() - 2;
     let left = (dashes / 2).saturating_sub(1);
-    format!(
-        "{} {text} {}",
-        "-".repeat(left),
-        "-".repeat(dashes - left)
-    )
+    format!("{} {text} {}", "-".repeat(left), "-".repeat(dashes - left))
 }
 
 /// The key sets `F24` steps through.
@@ -154,18 +150,39 @@ pub fn exit(value: &dyn Fn(&str) -> String, message: Option<&str>) -> Screen {
         (9, true, "File", "FILE", 10, "Name"),
         (10, true, "Library", "LIB", 10, "Name"),
         (11, true, "Text", "TEXT", 50, ""),
-        (13, false, "Create printer file", "CRTPRTF", 1, "Y=Yes, N=No"),
+        (
+            13,
+            false,
+            "Create printer file",
+            "CRTPRTF",
+            1,
+            "Y=Yes, N=No",
+        ),
         (14, true, "Change defaults", "CRTDFT", 1, "Y=Yes, N=No"),
         (15, false, "Prototype report", "PROTO", 1, "Y=Yes, N=No"),
         (16, true, "Change defaults", "PROTODFT", 1, "Y=Yes, N=No"),
         (17, false, "Submit to batch", "BATCH", 1, "Y=Yes, N=No"),
-        (18, true, "Job description", "JOBD", 10, "Name, *USRPRF, *RLU"),
+        (
+            18,
+            true,
+            "Job description",
+            "JOBD",
+            10,
+            "Name, *USRPRF, *RLU",
+        ),
         (19, true, "Library", "JOBDLIB", 10, "Name, *LIBL, *CURLIB"),
     ];
     for (row, sub, label, key, len, legend) in rows {
         let col = if sub { 6 } else { 4 };
         out(&mut s, row, col, &leader(label, col, 38));
-        var(&mut s, row, if sub { 44 } else { 42 }, len, key, &value(key));
+        var(
+            &mut s,
+            row,
+            if sub { 44 } else { 42 },
+            len,
+            key,
+            &value(key),
+        );
         out(&mut s, row, 57, legend);
     }
     out(&mut s, 6, 57, "2=Exit without saving");

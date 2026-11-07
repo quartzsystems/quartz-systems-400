@@ -10,18 +10,128 @@ use crate::ast::{Expr, Op};
 
 /// Operations written without a condition suffix.
 const PLAIN: &[&str] = &[
-    "ACQ", "ADD", "ADDDUR", "ALLOC", "BEGSR", "BITOFF", "BITON", "CALL", "CALLB", "CALLP", "CAT",
-    "CHAIN", "CHECK", "CHECKR", "CLEAR", "CLOSE", "COMMIT", "COMP", "DEALLOC", "DEFINE", "DELETE",
-    "DIV", "DO", "DOU", "DOW", "DSPLY", "DUMP", "ELSE", "ELSEIF", "END", "ENDCS", "ENDDO", "ENDFOR",
-    "ENDIF", "ENDMON", "ENDSL", "ENDSR", "EVAL", "EVAL-CORR", "EVALR", "EXCEPT", "EXFMT", "EXSR",
-    "EXTRCT", "FEOD", "FOR", "FORCE", "GOTO", "IF", "IN", "ITER", "KFLD", "KLIST", "LEAVE",
-    "LEAVESR", "LOOKUP", "MHHZO", "MHLZO", "MLHZO", "MLLZO", "MONITOR", "MOVE", "MOVEA", "MOVEL",
-    "MULT", "MVR", "NEXT", "OCCUR", "ON-ERROR", "ON-EXCP", "OPEN", "OTHER", "OUT", "PARM", "PLIST",
-    "POST", "READ", "READC", "READE", "READP", "READPE", "REALLOC", "REL", "RESET", "RETURN",
-    "ROLBK", "SCAN", "SELECT", "SETGT", "SETLL", "SETOFF", "SETON", "SHTDN", "SORTA", "SQRT", "SUB",
-    "SUBDUR", "SUBST", "TAG", "TEST", "TESTB", "TESTN", "TESTZ", "TIME", "UNLOCK", "UPDATE", "WHEN",
-    "WRITE", "XFOOT", "XLATE", "XML-INTO", "XML-SAX", "Z-ADD", "Z-SUB", "DATA-INTO", "DATA-GEN",
-    "SND-MSG", "FOR-EACH", "ON-EXIT", "WHEN-IS", "WHEN-IN", "CAS",
+    "ACQ",
+    "ADD",
+    "ADDDUR",
+    "ALLOC",
+    "BEGSR",
+    "BITOFF",
+    "BITON",
+    "CALL",
+    "CALLB",
+    "CALLP",
+    "CAT",
+    "CHAIN",
+    "CHECK",
+    "CHECKR",
+    "CLEAR",
+    "CLOSE",
+    "COMMIT",
+    "COMP",
+    "DEALLOC",
+    "DEFINE",
+    "DELETE",
+    "DIV",
+    "DO",
+    "DOU",
+    "DOW",
+    "DSPLY",
+    "DUMP",
+    "ELSE",
+    "ELSEIF",
+    "END",
+    "ENDCS",
+    "ENDDO",
+    "ENDFOR",
+    "ENDIF",
+    "ENDMON",
+    "ENDSL",
+    "ENDSR",
+    "EVAL",
+    "EVAL-CORR",
+    "EVALR",
+    "EXCEPT",
+    "EXFMT",
+    "EXSR",
+    "EXTRCT",
+    "FEOD",
+    "FOR",
+    "FORCE",
+    "GOTO",
+    "IF",
+    "IN",
+    "ITER",
+    "KFLD",
+    "KLIST",
+    "LEAVE",
+    "LEAVESR",
+    "LOOKUP",
+    "MHHZO",
+    "MHLZO",
+    "MLHZO",
+    "MLLZO",
+    "MONITOR",
+    "MOVE",
+    "MOVEA",
+    "MOVEL",
+    "MULT",
+    "MVR",
+    "NEXT",
+    "OCCUR",
+    "ON-ERROR",
+    "ON-EXCP",
+    "OPEN",
+    "OTHER",
+    "OUT",
+    "PARM",
+    "PLIST",
+    "POST",
+    "READ",
+    "READC",
+    "READE",
+    "READP",
+    "READPE",
+    "REALLOC",
+    "REL",
+    "RESET",
+    "RETURN",
+    "ROLBK",
+    "SCAN",
+    "SELECT",
+    "SETGT",
+    "SETLL",
+    "SETOFF",
+    "SETON",
+    "SHTDN",
+    "SORTA",
+    "SQRT",
+    "SUB",
+    "SUBDUR",
+    "SUBST",
+    "TAG",
+    "TEST",
+    "TESTB",
+    "TESTN",
+    "TESTZ",
+    "TIME",
+    "UNLOCK",
+    "UPDATE",
+    "WHEN",
+    "WRITE",
+    "XFOOT",
+    "XLATE",
+    "XML-INTO",
+    "XML-SAX",
+    "Z-ADD",
+    "Z-SUB",
+    "DATA-INTO",
+    "DATA-GEN",
+    "SND-MSG",
+    "FOR-EACH",
+    "ON-EXIT",
+    "WHEN-IS",
+    "WHEN-IN",
+    "CAS",
 ];
 
 /// Prefixes that take a condition suffix (`IFEQ`, `CABLT`, ...).
@@ -32,9 +142,29 @@ pub const SUFFIXES: &[&str] = &["EQ", "NE", "GT", "LT", "GE", "LE"];
 
 /// Operations whose fixed-form factor 2 is extended (columns 36-80).
 const EXTENDED: &[&str] = &[
-    "CALLP", "DOU", "DOW", "EVAL", "EVAL-CORR", "EVALR", "FOR", "IF", "ELSEIF", "ON-ERROR",
-    "ON-EXCP", "RETURN", "SORTA", "WHEN", "XML-INTO", "XML-SAX", "DATA-INTO", "DATA-GEN", "SND-MSG",
-    "FOR-EACH", "WHEN-IS", "WHEN-IN", "ON-EXIT",
+    "CALLP",
+    "DOU",
+    "DOW",
+    "EVAL",
+    "EVAL-CORR",
+    "EVALR",
+    "FOR",
+    "IF",
+    "ELSEIF",
+    "ON-ERROR",
+    "ON-EXCP",
+    "RETURN",
+    "SORTA",
+    "WHEN",
+    "XML-INTO",
+    "XML-SAX",
+    "DATA-INTO",
+    "DATA-GEN",
+    "SND-MSG",
+    "FOR-EACH",
+    "WHEN-IS",
+    "WHEN-IN",
+    "ON-EXIT",
 ];
 
 /// Operations free form does not allow.
@@ -42,12 +172,14 @@ const FIXED_ONLY: &[&str] = &[
     "ADD", "ADDDUR", "ALLOC", "BITOFF", "BITON", "CALL", "CALLB", "CAT", "CHECK", "CHECKR", "COMP",
     "DEFINE", "DIV", "DO", "END", "ENDCS", "EXTRCT", "GOTO", "KFLD", "KLIST", "LOOKUP", "MHHZO",
     "MHLZO", "MLHZO", "MLLZO", "MOVE", "MOVEA", "MOVEL", "MULT", "MVR", "OCCUR", "PARM", "PLIST",
-    "REALLOC", "SCAN", "SETOFF", "SETON", "SHTDN", "SQRT", "SUB", "SUBDUR", "SUBST", "TAG", "TESTB",
-    "TESTN", "TESTZ", "TIME", "XFOOT", "XLATE", "Z-ADD", "Z-SUB", "CAS",
+    "REALLOC", "SCAN", "SETOFF", "SETON", "SHTDN", "SQRT", "SUB", "SUBDUR", "SUBST", "TAG",
+    "TESTB", "TESTN", "TESTZ", "TIME", "XFOOT", "XLATE", "Z-ADD", "Z-SUB", "CAS",
 ];
 
 /// Operations fixed form does not allow.
-const FREE_ONLY: &[&str] = &["FOR-EACH", "SND-MSG", "WHEN-IS", "WHEN-IN", "ON-EXIT", "DATA-GEN"];
+const FREE_ONLY: &[&str] = &[
+    "FOR-EACH", "SND-MSG", "WHEN-IS", "WHEN-IN", "ON-EXIT", "DATA-GEN",
+];
 
 /// Split a written operation into its code and condition suffix:
 /// `IFEQ` is (`IF`, `EQ`); `EVAL` is (`EVAL`, empty).
@@ -102,9 +234,10 @@ pub fn extenders_allowed(code: &str, ext: &str) -> bool {
         "SUBST" | "XLATE" => "EP",
         "SORTA" => "AD",
         "DUMP" => "A",
-        "ACQ" | "ADDDUR" | "ALLOC" | "CALL" | "CHECK" | "CHECKR" | "CLOSE" | "COMMIT" | "DELETE"
-        | "DSPLY" | "EXFMT" | "EXTRCT" | "FEOD" | "IN" | "NEXT" | "OCCUR" | "OPEN" | "OUT" | "POST" | "READC"
-        | "REALLOC" | "REL" | "ROLBK" | "SCAN" | "SETGT" | "SETLL" | "SUBDUR" | "UNLOCK" | "UPDATE" | "WRITE" => "E",
+        "ACQ" | "ADDDUR" | "ALLOC" | "CALL" | "CHECK" | "CHECKR" | "CLOSE" | "COMMIT"
+        | "DELETE" | "DSPLY" | "EXFMT" | "EXTRCT" | "FEOD" | "IN" | "NEXT" | "OCCUR" | "OPEN"
+        | "OUT" | "POST" | "READC" | "REALLOC" | "REL" | "ROLBK" | "SCAN" | "SETGT" | "SETLL"
+        | "SUBDUR" | "UNLOCK" | "UPDATE" | "WRITE" => "E",
         _ => return true,
     };
     ext.chars().all(|c| allowed.contains(c))
@@ -117,8 +250,19 @@ pub fn needs_factor1(code: &str) -> bool {
     !sfx.is_empty()
         || matches!(
             base,
-            "BEGSR" | "CHAIN" | "CHECK" | "CHECKR" | "COMP" | "DEFINE" | "KLIST" | "LOOKUP" | "PLIST" | "SCAN"
-                | "SETGT" | "SETLL" | "TAG"
+            "BEGSR"
+                | "CHAIN"
+                | "CHECK"
+                | "CHECKR"
+                | "COMP"
+                | "DEFINE"
+                | "KLIST"
+                | "LOOKUP"
+                | "PLIST"
+                | "SCAN"
+                | "SETGT"
+                | "SETLL"
+                | "TAG"
         )
 }
 
@@ -127,12 +271,59 @@ pub fn needs_factor1(code: &str) -> bool {
 pub fn no_factor1(code: &str) -> bool {
     matches!(
         code,
-        "BITOFF" | "BITON" | "CALLP" | "CLOSE" | "DEALLOC" | "DOU" | "DOW" | "ELSE" | "ELSEIF" | "END" | "ENDCS"
-            | "ENDDO" | "ENDFOR" | "ENDIF" | "ENDMON" | "ENDSL" | "EVAL" | "EVALR" | "EXCEPT" | "EXFMT" | "EXSR"
-            | "FEOD" | "FOR" | "GOTO" | "IF" | "ITER" | "LEAVE" | "LEAVESR" | "MONITOR" | "MOVEA" | "MVR"
-            | "OPEN" | "OTHER" | "READ" | "READC" | "READP" | "RETURN" | "SELECT" | "SETOFF" | "SETON" | "SORTA"
-            | "SQRT" | "TESTB" | "TESTN" | "TESTZ" | "TIME" | "UNLOCK" | "UPDATE" | "WHEN" | "WRITE" | "XFOOT"
-            | "Z-ADD" | "Z-SUB"
+        "BITOFF"
+            | "BITON"
+            | "CALLP"
+            | "CLOSE"
+            | "DEALLOC"
+            | "DOU"
+            | "DOW"
+            | "ELSE"
+            | "ELSEIF"
+            | "END"
+            | "ENDCS"
+            | "ENDDO"
+            | "ENDFOR"
+            | "ENDIF"
+            | "ENDMON"
+            | "ENDSL"
+            | "EVAL"
+            | "EVALR"
+            | "EXCEPT"
+            | "EXFMT"
+            | "EXSR"
+            | "FEOD"
+            | "FOR"
+            | "GOTO"
+            | "IF"
+            | "ITER"
+            | "LEAVE"
+            | "LEAVESR"
+            | "MONITOR"
+            | "MOVEA"
+            | "MVR"
+            | "OPEN"
+            | "OTHER"
+            | "READ"
+            | "READC"
+            | "READP"
+            | "RETURN"
+            | "SELECT"
+            | "SETOFF"
+            | "SETON"
+            | "SORTA"
+            | "SQRT"
+            | "TESTB"
+            | "TESTN"
+            | "TESTZ"
+            | "TIME"
+            | "UNLOCK"
+            | "UPDATE"
+            | "WHEN"
+            | "WRITE"
+            | "XFOOT"
+            | "Z-ADD"
+            | "Z-SUB"
     )
 }
 
@@ -155,9 +346,24 @@ pub fn free_only(code: &str) -> bool {
 pub fn free_takes_expression(code: &str) -> bool {
     matches!(
         code,
-        "IF" | "ELSEIF" | "DOU" | "DOW" | "WHEN" | "SELECT" | "RETURN" | "CALLP" | "SORTA" | "ON-ERROR"
-            | "ON-EXCP" | "WHEN-IS" | "WHEN-IN" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN"
-            | "SND-MSG" | "ON-EXIT"
+        "IF" | "ELSEIF"
+            | "DOU"
+            | "DOW"
+            | "WHEN"
+            | "SELECT"
+            | "RETURN"
+            | "CALLP"
+            | "SORTA"
+            | "ON-ERROR"
+            | "ON-EXCP"
+            | "WHEN-IS"
+            | "WHEN-IN"
+            | "XML-INTO"
+            | "XML-SAX"
+            | "DATA-INTO"
+            | "DATA-GEN"
+            | "SND-MSG"
+            | "ON-EXIT"
     )
 }
 

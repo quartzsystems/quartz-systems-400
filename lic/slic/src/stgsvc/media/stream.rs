@@ -80,8 +80,12 @@ fn expiry(s: &str) -> Expiry {
     };
     let (c, yy, mm, dd) = (n / 1_000_000, n / 10_000 % 100, n / 100 % 100, n % 100);
     let year = u16::try_from(1900 + c * 100 + yy).unwrap_or(2099);
-    Date::from_ymd(year, u8::try_from(mm).unwrap_or(1), u8::try_from(dd).unwrap_or(1))
-        .map_or(Expiry::Perm, Expiry::Date)
+    Date::from_ymd(
+        year,
+        u8::try_from(mm).unwrap_or(1),
+        u8::try_from(dd).unwrap_or(1),
+    )
+    .map_or(Expiry::Perm, Expiry::Date)
 }
 
 /// A volume list's values, without `*MOUNTED`.
@@ -102,7 +106,11 @@ pub(crate) fn of(parms: &Parms, dev: &str) -> Media {
         dev: dev.to_ascii_uppercase(),
         vols: volumes(parms),
         seq: parms.int("SEQNBR").unwrap_or(0),
-        label: if label.starts_with('*') { String::new() } else { label.to_ascii_uppercase() },
+        label: if label.starts_with('*') {
+            String::new()
+        } else {
+            label.to_ascii_uppercase()
+        },
         expires: expiry(&parms.text("EXPDATE")),
         end_opt: end_opt(&parms.name("ENDOPT")),
         optfile: {
@@ -125,7 +133,11 @@ struct SaveJob<'b> {
 
 impl TapeJob for SaveJob<'_> {
     type Out = Written;
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, p: &mut dyn VolumeProvider<D>) -> Result<Written, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        p: &mut dyn VolumeProvider<D>,
+    ) -> Result<Written, MediaError> {
         TapeWriter::new(d, p, self.file.clone()).write_stream(self.bytes)
     }
 }
@@ -136,7 +148,11 @@ struct RestoreJob {
 
 impl TapeJob for RestoreJob {
     type Out = (Vec<u8>, Vec<String>);
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, p: &mut dyn VolumeProvider<D>) -> Result<Self::Out, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        p: &mut dyn VolumeProvider<D>,
+    ) -> Result<Self::Out, MediaError> {
         TapeReader::new(d, p, self.file.clone()).read_stream()
     }
 }
@@ -162,7 +178,11 @@ struct CatalogOptical<'a> {
 impl<'a> CatalogOptical<'a> {
     fn new(system: &'a mut System, dev: &str, vols: &[String], first: &str) -> Self {
         Self {
-            pick: medio::NextVolume::new(drive::optical_volumes(dev), Some(first.to_string()), true),
+            pick: medio::NextVolume::new(
+                drive::optical_volumes(dev),
+                Some(first.to_string()),
+                true,
+            ),
             system,
             dev: dev.to_string(),
             vols: vols.to_vec(),
@@ -172,8 +192,14 @@ impl<'a> CatalogOptical<'a> {
 
 impl medio::optfile::OpticalVolumes for CatalogOptical<'_> {
     fn next_volume(&mut self, req: &tape::VolumeRequest) -> Option<String> {
-        let expected = usize::try_from(req.volume_seq).ok().and_then(|n| self.vols.get(n - 1)).cloned();
-        let req = tape::VolumeRequest { expected, ..req.clone() };
+        let expected = usize::try_from(req.volume_seq)
+            .ok()
+            .and_then(|n| self.vols.get(n - 1))
+            .cloned();
+        let req = tape::VolumeRequest {
+            expected,
+            ..req.clone()
+        };
         let (sys, dev) = (&mut *self.system, self.dev.clone());
         let mut ask: medio::catalog::Asker<'_> = Box::new(|r| drive::ask_volume(sys, &dev, r));
         let v = self.pick.next(&req, &mut ask)?;
@@ -187,7 +213,12 @@ impl medio::optfile::OpticalVolumes for CatalogOptical<'_> {
 /// Write a save to the mounted optical volume of `m.dev`, on to further
 /// volumes when it does not fit. An existing file is asked about
 /// (`OPT1260`): the reply I replaces it.
-fn save_optical(system: &mut System, m: &Media, target: SaveTarget<'_>, bytes: &[u8]) -> Result<Written, String> {
+fn save_optical(
+    system: &mut System,
+    m: &Media,
+    target: SaveTarget<'_>,
+    bytes: &[u8],
+) -> Result<Written, String> {
     let (t, vol) = drive::optical(system, &m.dev, m.vols.first().map(String::as_str))?;
     let path = save_path(&m.optfile, target);
     let set = super::volume_set();
@@ -195,7 +226,9 @@ fn save_optical(system: &mut System, m: &Media, target: SaveTarget<'_>, bytes: &
     loop {
         let wrote = {
             let mut next = CatalogOptical::new(system, &m.dev, &m.vols, &vol);
-            OpticalWriter::new(&set, &vol, &path, replace).spanning(&mut next).write_stream(bytes)
+            OpticalWriter::new(&set, &vol, &path, replace)
+                .spanning(&mut next)
+                .write_stream(bytes)
         };
         match wrote {
             Ok(w) => return Ok(w),
@@ -207,7 +240,10 @@ fn save_optical(system: &mut System, m: &Media, target: SaveTarget<'_>, bytes: &
                     drive::mount_optical(&m.dev, &vol)?;
                     continue;
                 }
-                return Err(format!("{SAVE_ENDED} {p} is already on volume {vol}; {}", a.shown()));
+                return Err(format!(
+                    "{SAVE_ENDED} {p} is already on volume {vol}; {}",
+                    a.shown()
+                ));
             }
             Err(e) => return Err(drive::optical_failed(system, &t, &e)),
         }
@@ -216,15 +252,28 @@ fn save_optical(system: &mut System, m: &Media, target: SaveTarget<'_>, bytes: &
 
 /// Write a save's stream to `m.dev`; `label` is the file label when
 /// `LABEL` is a special value, `target` names an optical file.
-pub(crate) fn save(system: &mut System, m: &Media, label: &str, target: SaveTarget<'_>, bytes: &[u8]) -> Result<Written, String> {
+pub(crate) fn save(
+    system: &mut System,
+    m: &Media,
+    label: &str,
+    target: SaveTarget<'_>,
+    bytes: &[u8],
+) -> Result<Written, String> {
     let t = drive::target(system, &m.dev)?;
     if t.kind == MediaKind::Optical {
         return save_optical(system, m, target, bytes);
     }
     let mut file = SaveFile {
         vols: m.vols.clone(),
-        seq: u32::try_from(m.seq).ok().filter(|n| *n > 0).map_or(SeqNbr::End, SeqNbr::Number),
-        label: if m.label.is_empty() { label.to_string() } else { m.label.clone() },
+        seq: u32::try_from(m.seq)
+            .ok()
+            .filter(|n| *n > 0)
+            .map_or(SeqNbr::End, SeqNbr::Number),
+        label: if m.label.is_empty() {
+            label.to_string()
+        } else {
+            m.label.clone()
+        },
         expires: m.expires,
         end_opt: m.end_opt,
         today: today(),
@@ -232,7 +281,10 @@ pub(crate) fn save(system: &mut System, m: &Media, label: &str, target: SaveTarg
         job: job_name(system),
     };
     loop {
-        let mut job = SaveJob { file: file.clone(), bytes };
+        let mut job = SaveJob {
+            file: file.clone(),
+            bytes,
+        };
         match drive::with_tape(system, &m.dev, &m.vols, true, &mut job) {
             Err(e) if e.starts_with(operator::ACTIVE_FILE) && !file.allow_active => {
                 let a = operator::inquiry(system, operator::ACTIVE_FILE, &[(&m.dev, 10)], "C");
@@ -250,7 +302,12 @@ pub(crate) fn save(system: &mut System, m: &Media, label: &str, target: SaveTarg
 /// Read a save's stream from `m.dev`: the tape file with `label` when
 /// `LABEL` is a special value (`None` for any), or the optical file
 /// `target` names.
-pub(crate) fn restore(system: &mut System, m: &Media, label: Option<&str>, target: SaveTarget<'_>) -> Result<Vec<u8>, String> {
+pub(crate) fn restore(
+    system: &mut System,
+    m: &Media,
+    label: Option<&str>,
+    target: SaveTarget<'_>,
+) -> Result<Vec<u8>, String> {
     let t = drive::target(system, &m.dev)?;
     if t.kind == MediaKind::Optical {
         let (t, vol) = drive::optical(system, &m.dev, m.vols.first().map(String::as_str))?;
@@ -258,14 +315,22 @@ pub(crate) fn restore(system: &mut System, m: &Media, label: Option<&str>, targe
         let set = super::volume_set();
         let r = {
             let mut next = CatalogOptical::new(system, &m.dev, &m.vols, &vol);
-            OpticalReader::new(&set, &vol, &path).spanning(&mut next).read_stream()
+            OpticalReader::new(&set, &vol, &path)
+                .spanning(&mut next)
+                .read_stream()
         };
-        return r.map(|(b, _)| b).map_err(|e| drive::optical_failed(system, &t, &e));
+        return r
+            .map(|(b, _)| b)
+            .map_err(|e| drive::optical_failed(system, &t, &e));
     }
     let file = RestoreFile {
         vols: m.vols.clone(),
         seq: u32::try_from(m.seq).ok().filter(|n| *n > 0),
-        label: if m.label.is_empty() { label.map(str::to_string) } else { Some(m.label.clone()) },
+        label: if m.label.is_empty() {
+            label.map(str::to_string)
+        } else {
+            Some(m.label.clone())
+        },
         end_opt: m.end_opt,
     };
     let mut job = RestoreJob { file };
@@ -276,7 +341,11 @@ struct Labels;
 
 impl TapeJob for Labels {
     type Out = Vec<String>;
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, _: &mut dyn VolumeProvider<D>) -> Result<Vec<String>, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        _: &mut dyn VolumeProvider<D>,
+    ) -> Result<Vec<String>, MediaError> {
         let l = tape::volume::labels(d, None, EndOpt::Rewind)?;
         Ok(l.files.into_iter().map(|f| f.label.file_id).collect())
     }

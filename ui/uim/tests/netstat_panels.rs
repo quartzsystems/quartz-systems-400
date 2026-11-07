@@ -16,7 +16,11 @@ fn list(rows: &[&[(&str, &str)]]) -> ListState {
     ListState {
         rows: rows
             .iter()
-            .map(|r| r.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect())
+            .map(|r| {
+                r.iter()
+                    .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+                    .collect()
+            })
             .collect(),
         top: 0,
         total: Some(rows.len()),
@@ -58,9 +62,27 @@ fn netstat_menu() {
 
 fn ifcs() -> ListState {
     list(&[
-        &[("IADR", "*IP4DHCP"), ("INET", "*"), ("ILIND", "LINETH"), ("ISTS", "Inactive"), ("IVLAN", "*NONE")],
-        &[("IADR", "127.0.0.1"), ("INET", "127.0.0.0"), ("ILIND", "*LOOPBACK"), ("ISTS", "Active"), ("IVLAN", "*NONE")],
-        &[("IADR", "185.113.5.134"), ("INET", "185.113.5.0"), ("ILIND", "LINETH"), ("ISTS", "Active"), ("IVLAN", "*NONE")],
+        &[
+            ("IADR", "*IP4DHCP"),
+            ("INET", "*"),
+            ("ILIND", "LINETH"),
+            ("ISTS", "Inactive"),
+            ("IVLAN", "*NONE"),
+        ],
+        &[
+            ("IADR", "127.0.0.1"),
+            ("INET", "127.0.0.0"),
+            ("ILIND", "*LOOPBACK"),
+            ("ISTS", "Active"),
+            ("IVLAN", "*NONE"),
+        ],
+        &[
+            ("IADR", "185.113.5.134"),
+            ("INET", "185.113.5.0"),
+            ("ILIND", "LINETH"),
+            ("ISTS", "Active"),
+            ("IVLAN", "*NONE"),
+        ],
     ])
 }
 
@@ -119,7 +141,12 @@ fn netstat_1_ifc_5() {
 }
 
 fn routes() -> ListState {
-    let r = |dest: &'static str, mask: &'static str, hop: &'static str, mtu: &'static str, ty: &'static str| -> Vec<(&'static str, &'static str)> {
+    let r = |dest: &'static str,
+             mask: &'static str,
+             hop: &'static str,
+             mtu: &'static str,
+             ty: &'static str|
+     -> Vec<(&'static str, &'static str)> {
         vec![
             ("RDEST", dest),
             ("RMASK", mask),
@@ -185,19 +212,136 @@ fn netstat_2_rte_5() {
 /// pub400's listening sockets as option 3 lists them, every view's values.
 fn conns() -> ListState {
     let rows: Vec<Vec<(&str, &str)>> = [
-        ("ftp-con >", "000:HH:MM", "Listen", "QTCP", "0", "0", "21", "*TCP"),
-        ("telnet", "000:HH:MM", "Listen", "QTCP", "0", "0", "23", "*TCP"),
-        ("www-http", "000:HH:MM", "Listen", "QTMHHTTP", "0", "0", "80", "*TCP"),
-        ("ntp", "000:HH:MM", "*UDP", "QNTP", "15312", "27565", "123", "*UDP"),
-        ("https", "000:HH:MM", "Listen", "QTMHHTTP", "0", "0", "443", "*TCP"),
-        ("drda", "000:HH:MM", "Listen", "QUSER", "0", "0", "446", "*TCP"),
-        ("ddm", "002:HH:MM", "Listen", "QUSER", "0", "0", "447", "*TCP"),
-        ("ddm-ssl", "000:HH:MM", "Listen", "QUSER", "0", "0", "448", "*TCP"),
-        ("as-svrmap", "000:HH:MM", "Listen", "QUSER", "0", "0", "449", "*TCP"),
-        ("rmc", "005:HH:MM", "Listen", "QSYS", "0", "0", "657", "*TCP"),
-        ("ftps-co >", "000:HH:MM", "Listen", "QTCP", "0", "0", "990", "*TCP"),
-        ("telnet- >", "000:HH:MM", "Listen", "QTCP", "0", "0", "992", "*TCP"),
-        ("ssh", "025:HH:MM", "Listen", "QSYS", "0", "0", "2222", "*TCP"),
+        (
+            "ftp-con >",
+            "000:HH:MM",
+            "Listen",
+            "QTCP",
+            "0",
+            "0",
+            "21",
+            "*TCP",
+        ),
+        (
+            "telnet",
+            "000:HH:MM",
+            "Listen",
+            "QTCP",
+            "0",
+            "0",
+            "23",
+            "*TCP",
+        ),
+        (
+            "www-http",
+            "000:HH:MM",
+            "Listen",
+            "QTMHHTTP",
+            "0",
+            "0",
+            "80",
+            "*TCP",
+        ),
+        (
+            "ntp",
+            "000:HH:MM",
+            "*UDP",
+            "QNTP",
+            "15312",
+            "27565",
+            "123",
+            "*UDP",
+        ),
+        (
+            "https",
+            "000:HH:MM",
+            "Listen",
+            "QTMHHTTP",
+            "0",
+            "0",
+            "443",
+            "*TCP",
+        ),
+        (
+            "drda",
+            "000:HH:MM",
+            "Listen",
+            "QUSER",
+            "0",
+            "0",
+            "446",
+            "*TCP",
+        ),
+        (
+            "ddm",
+            "002:HH:MM",
+            "Listen",
+            "QUSER",
+            "0",
+            "0",
+            "447",
+            "*TCP",
+        ),
+        (
+            "ddm-ssl",
+            "000:HH:MM",
+            "Listen",
+            "QUSER",
+            "0",
+            "0",
+            "448",
+            "*TCP",
+        ),
+        (
+            "as-svrmap",
+            "000:HH:MM",
+            "Listen",
+            "QUSER",
+            "0",
+            "0",
+            "449",
+            "*TCP",
+        ),
+        (
+            "rmc",
+            "005:HH:MM",
+            "Listen",
+            "QSYS",
+            "0",
+            "0",
+            "657",
+            "*TCP",
+        ),
+        (
+            "ftps-co >",
+            "000:HH:MM",
+            "Listen",
+            "QTCP",
+            "0",
+            "0",
+            "990",
+            "*TCP",
+        ),
+        (
+            "telnet- >",
+            "000:HH:MM",
+            "Listen",
+            "QTCP",
+            "0",
+            "0",
+            "992",
+            "*TCP",
+        ),
+        (
+            "ssh",
+            "025:HH:MM",
+            "Listen",
+            "QSYS",
+            "0",
+            "0",
+            "2222",
+            "*TCP",
+        ),
     ]
     .iter()
     .map(|(port, idle, state, user, out, inb, num, ty)| {
@@ -251,7 +395,11 @@ fn netstat_3_cnn_f14() {
 }
 
 fn cnn_detail(d: &mut MapDialog, listen: bool) {
-    let (host, adr, port) = if listen { ("", "*", "*") } else { ("LOOPBACK", "N  .N.N.N", "N") };
+    let (host, adr, port) = if listen {
+        ("", "*", "*")
+    } else {
+        ("LOOPBACK", "N  .N.N.N", "N")
+    };
     data(
         d,
         &[
@@ -271,9 +419,9 @@ fn cnn_detail(d: &mut MapDialog, listen: bool) {
         ],
     );
     for k in [
-        "DBOUT", "DOBUF", "DUSNDNXT", "DSNDNXT", "DSNDUNA", "DOPUSH", "DOURG", "DOWIN", "DBIN", "DIBUF", "DRCVNXT", "DURCVNXT",
-        "DIPUSH", "DIURG", "DIWIN", "DRETR", "DCRETR", "DSWMAX", "DSWCUR", "DSWUPD", "DSWACK", "DCWND", "DSSTH", "DMSS",
-        "DPREC", "DISS", "DIRS",
+        "DBOUT", "DOBUF", "DUSNDNXT", "DSNDNXT", "DSNDUNA", "DOPUSH", "DOURG", "DOWIN", "DBIN",
+        "DIBUF", "DRCVNXT", "DURCVNXT", "DIPUSH", "DIURG", "DIWIN", "DRETR", "DCRETR", "DSWMAX",
+        "DSWCUR", "DSWUPD", "DSWACK", "DCWND", "DSSTH", "DMSS", "DPREC", "DISS", "DIRS",
     ] {
         d.set(k, "N");
     }
@@ -283,7 +431,11 @@ fn cnn_detail(d: &mut MapDialog, listen: bool) {
 fn netstat_3_cnn_5() {
     let mut d = MapDialog::new();
     cnn_detail(&mut d, false);
-    for (page, name) in [(0, "netstat-3-cnn-5"), (1, "netstat-3-cnn-5-2"), (2, "netstat-3-cnn-5-3")] {
+    for (page, name) in [
+        (0, "netstat-3-cnn-5"),
+        (1, "netstat-3-cnn-5-2"),
+        (2, "netstat-3-cnn-5-3"),
+    ] {
         let s = render(&netstat(), "DSPCNN", &d, &Options { page, ..opts() }).unwrap();
         compare(&golden(name), &s);
     }
@@ -293,7 +445,11 @@ fn netstat_3_cnn_5() {
 fn netstat_3_listen_5() {
     let mut d = MapDialog::new();
     cnn_detail(&mut d, true);
-    for (page, name) in [(0, "netstat-3-listen-5"), (1, "netstat-3-listen-5-2"), (2, "netstat-3-listen-5-3")] {
+    for (page, name) in [
+        (0, "netstat-3-listen-5"),
+        (1, "netstat-3-listen-5-2"),
+        (2, "netstat-3-listen-5-3"),
+    ] {
         let s = render(&netstat(), "DSPCNN", &d, &Options { page, ..opts() }).unwrap();
         compare(&golden(name), &s);
     }
@@ -304,11 +460,23 @@ fn netstat_3_listen_8() {
     let mut d = MapDialog::new();
     data(
         &mut d,
-        &[("JCTYPE", "*TCP"), ("JLADR", "*"), ("JLPORT", "23"), ("JRADR", "*"), ("JRPORT", "*")],
+        &[
+            ("JCTYPE", "*TCP"),
+            ("JLADR", "*"),
+            ("JLPORT", "23"),
+            ("JRADR", "*"),
+            ("JRPORT", "*"),
+        ],
     );
     d.set_list(
         "JOBS",
-        list(&[&[("JNAME", "QTVTELNET"), ("JUSER", "QTCP"), ("JNBR", "NNNNNN"), ("JTYPE", "*BCH"), ("JCUR", "QTCP")]]),
+        list(&[&[
+            ("JNAME", "QTVTELNET"),
+            ("JUSER", "QTCP"),
+            ("JNBR", "NNNNNN"),
+            ("JTYPE", "*BCH"),
+            ("JCUR", "QTCP"),
+        ]]),
     );
     let s = render(&netstat(), "DSPJOBS", &d, &opts()).unwrap();
     compare(&golden("netstat-3-listen-8"), &s);
@@ -319,7 +487,13 @@ fn netstat_4_ifc6() {
     let mut d = MapDialog::new();
     d.set_list(
         "IFC6S",
-        list(&[&[("XADR", "::1"), ("XPFX", "128"), ("XLIND", "*LOOPBACK"), ("XSTS", "Active"), ("XVLAN", "*NONE")]]),
+        list(&[&[
+            ("XADR", "::1"),
+            ("XPFX", "128"),
+            ("XLIND", "*LOOPBACK"),
+            ("XSTS", "Active"),
+            ("XVLAN", "*NONE"),
+        ]]),
     );
     let s = render(&netstat(), "IFC6STSD", &d, &opts()).unwrap();
     compare(&golden("netstat-4-ifc6"), &s);
@@ -330,7 +504,12 @@ fn netstat_5_rte6() {
     let mut d = MapDialog::new();
     d.set_list(
         "RTE6S",
-        list(&[&[("YDEST", "::1"), ("YMASK", "128"), ("YHOP", "*DIRECT"), ("YSTS", "*ACTIVE")]]),
+        list(&[&[
+            ("YDEST", "::1"),
+            ("YMASK", "128"),
+            ("YHOP", "*DIRECT"),
+            ("YSTS", "*ACTIVE"),
+        ]]),
     );
     let s = render(&netstat(), "RTE6INF", &d, &opts()).unwrap();
     compare(&golden("netstat-5-rte6"), &s);
@@ -400,6 +579,7 @@ fn netstat_10_status() {
 fn every_panel_renders() {
     let g = netstat();
     for p in &g.panels {
-        render(&g, &p.name, &MapDialog::new(), &opts()).unwrap_or_else(|e| panic!("{}: {e}", p.name));
+        render(&g, &p.name, &MapDialog::new(), &opts())
+            .unwrap_or_else(|e| panic!("{}: {e}", p.name));
     }
 }

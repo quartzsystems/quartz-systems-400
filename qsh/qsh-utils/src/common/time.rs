@@ -172,9 +172,7 @@ impl Zone {
 
     /// The zone of a utility: `TZ` in its environment, else UTC.
     pub fn of(cx: &UtilCtx<'_>) -> Self {
-        cx.getenv("TZ")
-            .and_then(parse_tz)
-            .unwrap_or_else(Self::utc)
+        cx.getenv("TZ").and_then(parse_tz).unwrap_or_else(Self::utc)
     }
 
     /// Break an epoch time down in this zone.
@@ -444,7 +442,10 @@ mod tests {
         assert_eq!(civil_from_days(0), (1970, 1, 1));
         let t = utc(1_790_000_000);
         assert_eq!((t.year, t.mon, t.mday), (2026, 9, 21));
-        assert_eq!(strftime("%a %b %e %H:%M:%S %Z %Y", &t), "Mon Sep 21 14:13:20 UTC 2026");
+        assert_eq!(
+            strftime("%a %b %e %H:%M:%S %Z %Y", &t),
+            "Mon Sep 21 14:13:20 UTC 2026"
+        );
         assert_eq!(strftime("%j %U %W %u %w", &t), "264 38 38 1 1");
     }
 

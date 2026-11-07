@@ -26,25 +26,28 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use ifs::client::IfsClient;
-use stg::remote::RemoteIfs;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use stg::remote::RemoteIfs;
 
 use ipc::WireError;
 use ipc::chan::Chan;
 use qap_proto::ops::command::CommandDefinition;
 use qap_proto::ops::manage::{
-    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType, SetSystemValue, Subsystem,
-    SystemValue, SystemValues,
+    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType,
+    SetSystemValue, Subsystem, SystemValue, SystemValues,
 };
-use qap_proto::ops::messages::{ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent};
+use qap_proto::ops::messages::{
+    ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent,
+};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
-    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId,
+    SpooledFiles,
 };
 use qap_proto::ops::sql::{
-    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared, Schemas, SetOptions,
-    Tables,
+    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared,
+    Schemas, SetOptions, Tables,
 };
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::ObjectName;
@@ -176,7 +179,10 @@ impl JobHost {
         while let Ok(m) = h.inbox.try_recv() {
             h.pending.borrow_mut().push_back(m);
         }
-        h.pending.borrow().iter().any(|m| matches!(m, ToJob::End { .. }))
+        h.pending
+            .borrow()
+            .iter()
+            .any(|m| matches!(m, ToJob::End { .. }))
     }
 }
 
@@ -200,22 +206,34 @@ impl Host for JobHost {
             Some(Ending::Operator)
         } else {
             let ended = self.link.borrow_mut().with(Client::qap_ended);
-            ended.map(|op| Ending::Session(if op { EndedBy::Operator } else { EndedBy::SignOff }))
+            ended.map(|op| {
+                Ending::Session(if op {
+                    EndedBy::Operator
+                } else {
+                    EndedBy::SignOff
+                })
+            })
         }
     }
 
     fn sign_off(&mut self, token: &Token) {
-        self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec(), false));
+        self.link
+            .borrow_mut()
+            .with(|l| l.qap_signoff(token.0.to_vec(), false));
         self.console.swapped();
     }
 
     fn end_session(&mut self, token: &Token) {
-        self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec(), true));
+        self.link
+            .borrow_mut()
+            .with(|l| l.qap_signoff(token.0.to_vec(), true));
         self.console.swapped();
     }
 
     fn detach(&mut self, token: &Token) {
-        self.link.borrow_mut().with(|l| l.qap_detach(token.0.to_vec()));
+        self.link
+            .borrow_mut()
+            .with(|l| l.qap_detach(token.0.to_vec()));
     }
 
     /// A secondary thread swapped the job's profile: the runtime
@@ -259,37 +277,47 @@ impl Host for JobHost {
     }
 
     fn sql_set_options(&mut self, options: &SetOptions) -> Result<(), Refusal> {
-        self.sql.set_options(&mut LaneDb(&self.link, &mut self.console), options)
+        self.sql
+            .set_options(&mut LaneDb(&self.link, &mut self.console), options)
     }
 
     fn sql_prepare(&mut self, sql: &str) -> SqlResult<Prepared> {
-        self.sql.prepare(&mut LaneDb(&self.link, &mut self.console), sql)
+        self.sql
+            .prepare(&mut LaneDb(&self.link, &mut self.console), sql)
     }
 
     fn sql_execute(&mut self, req: &Execute, cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
         let (lane, link, console) = (&mut self.sql, &self.link, &mut self.console);
-        super::sql::running(&self.running, self.me, || lane.execute(&mut LaneDb(link, console), req, cancelled))
+        super::sql::running(&self.running, self.me, || {
+            lane.execute(&mut LaneDb(link, console), req, cancelled)
+        })
     }
 
     fn sql_fetch(&mut self, req: &Fetch, cancelled: &dyn Fn() -> bool) -> SqlResult<Fetched> {
         let (lane, link, console) = (&mut self.sql, &self.link, &mut self.console);
-        super::sql::running(&self.running, self.me, || lane.fetch(&mut LaneDb(link, console), req, cancelled))
+        super::sql::running(&self.running, self.me, || {
+            lane.fetch(&mut LaneDb(link, console), req, cancelled)
+        })
     }
 
     fn sql_close_cursor(&mut self, cursor: u32) -> Result<(), Refusal> {
-        self.sql.close_cursor(&mut LaneDb(&self.link, &mut self.console), cursor)
+        self.sql
+            .close_cursor(&mut LaneDb(&self.link, &mut self.console), cursor)
     }
 
     fn sql_release(&mut self, statement: u32) -> Result<(), Refusal> {
-        self.sql.release(&mut LaneDb(&self.link, &mut self.console), statement)
+        self.sql
+            .release(&mut LaneDb(&self.link, &mut self.console), statement)
     }
 
     fn sql_commit(&mut self) -> SqlResult<()> {
-        self.sql.end_unit(&mut LaneDb(&self.link, &mut self.console), true)
+        self.sql
+            .end_unit(&mut LaneDb(&self.link, &mut self.console), true)
     }
 
     fn sql_rollback(&mut self) -> SqlResult<()> {
-        self.sql.end_unit(&mut LaneDb(&self.link, &mut self.console), false)
+        self.sql
+            .end_unit(&mut LaneDb(&self.link, &mut self.console), false)
     }
 
     fn sql_end(&mut self) {
@@ -336,7 +364,9 @@ impl JobThread {
 
     /// What the `Manage` operations reach.
     fn cx(&self) -> manage::Ctx<'_> {
-        manage::Ctx { shared: &self.shared }
+        manage::Ctx {
+            shared: &self.shared,
+        }
     }
 
     /// A refusal from the service: its status, and the message as a 5250
@@ -377,7 +407,9 @@ impl ThreadHost for JobThread {
     fn system_id(&mut self) -> SystemId {
         let system_name = sysval_text(&mut self.link(), "QSYSNAME");
         let time_zone = sysval_text(&mut self.link(), "QTIMZON");
-        let ccsid = sysval_text(&mut self.link(), "QCCSID").parse().unwrap_or(65535);
+        let ccsid = sysval_text(&mut self.link(), "QCCSID")
+            .parse()
+            .unwrap_or(65535);
         SystemId {
             system_name,
             release: release::RELEASE.to_string(),
@@ -411,7 +443,8 @@ impl ThreadHost for JobThread {
     /// start the IPL, the firmware the serial (`QSRLNBR`) and model.
     fn system_info(&mut self) -> SystemInfo {
         let rows = self.link().with(Client::sfwrsc_panel);
-        let col = |r: &[String], i: usize| r.get(i).map_or_else(String::new, |v| v.trim().to_string());
+        let col =
+            |r: &[String], i: usize| r.get(i).map_or_else(String::new, |v| v.trim().to_string());
         let release = rows
             .iter()
             .find(|r| r.first().is_some_and(|id| id == release::PRODUCT_ID))
@@ -428,7 +461,10 @@ impl ThreadHost for JobThread {
                 option: col(r, 1),
                 release: col(r, 6),
             };
-            if !products.iter().any(|q| q.id == p.id && q.option == p.option) {
+            if !products
+                .iter()
+                .any(|q| q.id == p.id && q.option == p.option)
+            {
                 products.push(p);
             }
         }
@@ -457,9 +493,18 @@ impl ThreadHost for JobThread {
         self.session(r)
     }
 
-    fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal> {
+    fn change_password(
+        &mut self,
+        user: &str,
+        old: &Secret,
+        new: &Secret,
+    ) -> Result<SignOnReply, Refusal> {
         let r = self.link().with(|l| {
-            l.qap_chgpwd(user.to_string(), old.expose().to_string(), new.expose().to_string())
+            l.qap_chgpwd(
+                user.to_string(),
+                old.expose().to_string(),
+                new.expose().to_string(),
+            )
         });
         self.session(r)
     }
@@ -480,7 +525,10 @@ impl ThreadHost for JobThread {
 
     fn password_status(&mut self) -> PasswordStatus {
         let (expires, warning_days) = self.link().with(Client::qap_pwd_status);
-        PasswordStatus { expires, warning_days }
+        PasswordStatus {
+            expires,
+            warning_days,
+        }
     }
 
     fn telnet_ticket(&mut self) -> Result<TelnetTicketReply, Refusal> {
@@ -505,7 +553,9 @@ impl ThreadHost for JobThread {
     }
 
     fn hold_spooled_file(&mut self, id: &SpooledFileId, immediately: bool) -> Result<(), Refusal> {
-        let r = self.link().with(|l| l.qap_splf_hold(id.clone(), immediately));
+        let r = self
+            .link()
+            .with(|l| l.qap_splf_hold(id.clone(), immediately));
         r.map_err(|e| self.refusal(&e))
     }
 
@@ -519,8 +569,15 @@ impl ThreadHost for JobThread {
         r.map_err(|e| self.refusal(&e))
     }
 
-    fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal> {
-        let r = self.link().with(|l| l.qap_splf_move(id.clone(), outq.clone(), first));
+    fn move_spooled_file(
+        &mut self,
+        id: &SpooledFileId,
+        outq: &ObjectName,
+        first: bool,
+    ) -> Result<(), Refusal> {
+        let r = self
+            .link()
+            .with(|l| l.qap_splf_move(id.clone(), outq.clone(), first));
         r.map_err(|e| self.refusal(&e))
     }
 
@@ -548,19 +605,26 @@ impl ThreadHost for JobThread {
         let (total, msgs) = r.map_err(|e| self.refusal(&e))?;
         let mut texts = super::messages::Texts::default();
         let mut link = self.link();
-        let messages = msgs.iter().map(|m| super::messages::queued(&mut link, &mut texts, m)).collect();
+        let messages = msgs
+            .iter()
+            .map(|m| super::messages::queued(&mut link, &mut texts, m))
+            .collect();
         Ok(Messages { total, messages })
     }
 
     fn reply_message(&mut self, req: &ReplyMessage) -> Result<(), Refusal> {
         let key = u32::from_be_bytes(req.key);
-        let r = self.link().with(|l| l.qap_msg_reply(req.queue.clone(), key, req.reply.clone()));
+        let r = self
+            .link()
+            .with(|l| l.qap_msg_reply(req.queue.clone(), key, req.reply.clone()));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn remove_messages(&mut self, req: &RemoveMessages) -> Result<(), Refusal> {
         let keys = req.keys.iter().map(|k| u32::from_be_bytes(*k)).collect();
-        let r = self.link().with(|l| l.qap_msg_remove(req.queue.clone(), keys));
+        let r = self
+            .link()
+            .with(|l| l.qap_msg_remove(req.queue.clone(), keys));
         r.map_err(|e| self.refusal(&e))
     }
 
@@ -568,7 +632,10 @@ impl ThreadHost for JobThread {
         let r = self
             .link()
             .with(|l| l.qap_msg_send(req.to.clone(), req.text.clone(), req.inquiry));
-        r.map(|k| Sent { key: k.map(u32::to_be_bytes) }).map_err(|e| self.refusal(&e))
+        r.map(|k| Sent {
+            key: k.map(u32::to_be_bytes),
+        })
+        .map_err(|e| self.refusal(&e))
     }
 
     // `Manage` (version 7): `manage.rs`, and the service's parts.

@@ -18,18 +18,21 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV
 use std::time::{Duration, Instant};
 
 use codec::{Message, Rdata, rcode};
-pub use config::{DnsProtocol, DomainConfig, HostConfig, HostEntry, SearchPriority, StaticHostConfig};
+pub use config::{
+    DnsProtocol, DomainConfig, HostConfig, HostEntry, SearchPriority, StaticHostConfig,
+};
 pub use services::{DefaultServices, Service, ServicesTable};
 
+use crate::SockAddr;
 use crate::consts::{
-    AF_INET, AF_INET6, AF_UNSPEC, AI_ALL, AI_CANONNAME, AI_MASK, AI_NUMERICHOST,
-    AI_NUMERICSERV, AI_PASSIVE, AI_V4MAPPED, C_IN, EAI_AGAIN, EAI_BADEXTFLAGS, EAI_BADFLAGS, EAI_FAIL,
-    EAI_FAMILY, EAI_MEMORY, EAI_NONAME, EAI_OVERFLOW, EAI_SERVICE, EAI_SOCKTYPE, EAI_SYSTEM, IPPROTO_TCP,
-    IPPROTO_UDP, NI_DGRAM, NI_MASK, NI_NAMEREQD, NI_NOFQDN, NI_NUMERICHOST, NI_NUMERICSERV, RES_DEFAULT,
-    RES_DEFNAMES, RES_DNSRCH, RES_RECURSE, RES_USEVC, SOCK_DGRAM, SOCK_RAW, SOCK_STREAM, T_A, T_AAAA, T_PTR,
+    AF_INET, AF_INET6, AF_UNSPEC, AI_ALL, AI_CANONNAME, AI_MASK, AI_NUMERICHOST, AI_NUMERICSERV,
+    AI_PASSIVE, AI_V4MAPPED, C_IN, EAI_AGAIN, EAI_BADEXTFLAGS, EAI_BADFLAGS, EAI_FAIL, EAI_FAMILY,
+    EAI_MEMORY, EAI_NONAME, EAI_OVERFLOW, EAI_SERVICE, EAI_SOCKTYPE, EAI_SYSTEM, IPPROTO_TCP,
+    IPPROTO_UDP, NI_DGRAM, NI_MASK, NI_NAMEREQD, NI_NOFQDN, NI_NUMERICHOST, NI_NUMERICSERV,
+    RES_DEFAULT, RES_DEFNAMES, RES_DNSRCH, RES_RECURSE, RES_USEVC, SOCK_DGRAM, SOCK_RAW,
+    SOCK_STREAM, T_A, T_AAAA, T_PTR,
 };
 use crate::layout::netdb::AddrInfo;
-use crate::SockAddr;
 
 /// `h_errno`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -167,7 +170,10 @@ impl std::fmt::Debug for Resolver {
 
 impl Default for Resolver {
     fn default() -> Self {
-        Self::new(Box::new(StaticHostConfig::default()), Box::new(DefaultServices))
+        Self::new(
+            Box::new(StaticHostConfig::default()),
+            Box::new(DefaultServices),
+        )
     }
 }
 
@@ -193,7 +199,8 @@ fn reverse_name(ip: IpAddr) -> String {
 }
 
 fn same(a: &str, b: &str) -> bool {
-    a.trim_end_matches('.').eq_ignore_ascii_case(b.trim_end_matches('.'))
+    a.trim_end_matches('.')
+        .eq_ignore_ascii_case(b.trim_end_matches('.'))
 }
 
 impl Resolver {
@@ -265,7 +272,11 @@ impl Resolver {
         Some(Host {
             name: first.names[0].clone(),
             aliases: first.names[1..].to_vec(),
-            family: if first.addr.is_ipv4() { AF_INET } else { AF_INET6 },
+            family: if first.addr.is_ipv4() {
+                AF_INET
+            } else {
+                AF_INET6
+            },
             addrs: hits
                 .iter()
                 .filter(|e| e.addr.is_ipv4() == first.addr.is_ipv4())
@@ -300,7 +311,9 @@ impl Resolver {
         if name.contains('.') {
             std::iter::once(name.to_string()).chain(with).collect()
         } else {
-            with.into_iter().chain(std::iter::once(name.to_string())).collect()
+            with.into_iter()
+                .chain(std::iter::once(name.to_string()))
+                .collect()
         }
     }
 
@@ -334,7 +347,13 @@ impl Resolver {
                     return Err(HostError::TryAgain);
                 }
                 let to = SocketAddr::new(server, self.domain.port);
-                match net::exchange(to, &query, id, proto, wait.min(left).max(Duration::from_millis(1))) {
+                match net::exchange(
+                    to,
+                    &query,
+                    id,
+                    proto,
+                    wait.min(left).max(Duration::from_millis(1)),
+                ) {
                     Ok(bytes) => {
                         let Ok(m) = Message::decode(&bytes) else {
                             continue;
@@ -351,12 +370,20 @@ impl Resolver {
                 }
             }
         }
-        Err(if timed_out { HostError::TryAgain } else { HostError::NoRecovery })
+        Err(if timed_out {
+            HostError::TryAgain
+        } else {
+            HostError::NoRecovery
+        })
     }
 
     /// Addresses of one fully qualified name: (canonical name, aliases,
     /// addresses).
-    fn dns_one(&mut self, name: &str, qtype: u16) -> Result<(String, Vec<String>, Vec<IpAddr>), HostError> {
+    fn dns_one(
+        &mut self,
+        name: &str,
+        qtype: u16,
+    ) -> Result<(String, Vec<String>, Vec<IpAddr>), HostError> {
         let (m, _) = self.ask(name, C_IN, qtype)?;
         let mut current = name.to_string();
         let mut aliases = Vec::new();
@@ -398,7 +425,11 @@ impl Resolver {
                     return Ok(Host {
                         name: canon,
                         aliases,
-                        family: if family == AF_INET6 { AF_INET6 } else { AF_INET },
+                        family: if family == AF_INET6 {
+                            AF_INET6
+                        } else {
+                            AF_INET
+                        },
                         addrs,
                     });
                 }
@@ -524,14 +555,25 @@ impl Resolver {
             .into_iter()
             .filter_map(|(t, p)| {
                 let proto = if p == IPPROTO_UDP { "udp" } else { "tcp" };
-                self.services.by_name(service, Some(proto)).map(|s| (t, p, s.port))
+                self.services
+                    .by_name(service, Some(proto))
+                    .map(|s| (t, p, s.port))
             })
             .collect();
-        if out.is_empty() { Err(EAI_SERVICE) } else { Ok(out) }
+        if out.is_empty() {
+            Err(EAI_SERVICE)
+        } else {
+            Ok(out)
+        }
     }
 
     /// `getaddrinfo()`: the list, or an `EAI_*` number.
-    pub fn getaddrinfo(&mut self, node: Option<&str>, service: Option<&str>, hints: &Hints) -> Result<Vec<AddrInfo>, i32> {
+    pub fn getaddrinfo(
+        &mut self,
+        node: Option<&str>,
+        service: Option<&str>,
+        hints: &Hints,
+    ) -> Result<Vec<AddrInfo>, i32> {
         if hints.flags & !(AI_MASK) != 0 {
             return Err(EAI_BADFLAGS);
         }
@@ -551,8 +593,16 @@ impl Resolver {
         let addrs: Vec<IpAddr> = match node {
             None => {
                 let passive = hints.flags & AI_PASSIVE != 0;
-                let v4 = if passive { Ipv4Addr::UNSPECIFIED } else { Ipv4Addr::LOCALHOST };
-                let v6 = if passive { Ipv6Addr::UNSPECIFIED } else { Ipv6Addr::LOCALHOST };
+                let v4 = if passive {
+                    Ipv4Addr::UNSPECIFIED
+                } else {
+                    Ipv4Addr::LOCALHOST
+                };
+                let v6 = if passive {
+                    Ipv6Addr::UNSPECIFIED
+                } else {
+                    Ipv6Addr::LOCALHOST
+                };
                 match hints.family {
                     AF_INET => vec![v4.into()],
                     AF_INET6 => vec![v6.into()],
@@ -610,7 +660,10 @@ impl Resolver {
     fn addrs_for(&mut self, n: &str, hints: &Hints) -> Result<(Vec<IpAddr>, String), i32> {
         let mapped = hints.flags & AI_V4MAPPED != 0;
         match hints.family {
-            AF_INET => self.by_name(n, AF_INET).map(|h| (h.addrs, h.name)).map_err(HostError::eai),
+            AF_INET => self
+                .by_name(n, AF_INET)
+                .map(|h| (h.addrs, h.name))
+                .map_err(HostError::eai),
             AF_INET6 => {
                 let v6 = self.by_name(n, AF_INET6);
                 let all = mapped && hints.flags & AI_ALL != 0;
@@ -739,11 +792,21 @@ mod tests {
         assert_eq!(h.aliases, vec!["AS400".to_string()]);
         assert_eq!(h.addrs.len(), 2, "every entry of the name");
         assert_eq!(h.addr_bytes()[0], vec![10, 0, 0, 5]);
-        assert_eq!(r.by_name("as400.example.com", AF_INET6).unwrap().addrs, vec!["fd00::5".parse::<IpAddr>().unwrap()]);
-        assert_eq!(r.by_name("nosuch", AF_INET), Err(HostError::NotFound), "no servers");
+        assert_eq!(
+            r.by_name("as400.example.com", AF_INET6).unwrap().addrs,
+            vec!["fd00::5".parse::<IpAddr>().unwrap()]
+        );
+        assert_eq!(
+            r.by_name("nosuch", AF_INET),
+            Err(HostError::NotFound),
+            "no servers"
+        );
         let h = r.by_name("10.1.2.3", AF_INET).unwrap();
         assert_eq!(h.addrs, vec![IpAddr::V4(Ipv4Addr::new(10, 1, 2, 3))]);
-        assert_eq!(r.by_addr("10.0.0.6".parse().unwrap()).unwrap().name, "AS400.EXAMPLE.COM");
+        assert_eq!(
+            r.by_addr("10.0.0.6".parse().unwrap()).unwrap().name,
+            "AS400.EXAMPLE.COM"
+        );
         let d = Resolver::default().by_name("localhost", AF_INET).unwrap();
         assert_eq!(d.addrs, vec![IpAddr::V4(Ipv4Addr::LOCALHOST)]);
     }
@@ -756,7 +819,10 @@ mod tests {
         assert_eq!(r.candidates("abs."), vec!["abs"]);
         r.set_options(RES_RECURSE);
         assert_eq!(r.candidates("host"), vec!["host"]);
-        assert_eq!(reverse_name("192.0.2.1".parse().unwrap()), "1.2.0.192.in-addr.arpa");
+        assert_eq!(
+            reverse_name("192.0.2.1".parse().unwrap()),
+            "1.2.0.192.in-addr.arpa"
+        );
         assert!(reverse_name("::1".parse().unwrap()).starts_with("1.0.0.0."));
         assert!(reverse_name("::1".parse().unwrap()).ends_with(".0.ip6.arpa"));
     }
@@ -772,22 +838,102 @@ mod tests {
         };
         let l = r.getaddrinfo(Some("localhost"), Some("http"), &h).unwrap();
         assert_eq!(l.len(), 1);
-        assert_eq!(l[0].addr, SockAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 80)));
+        assert_eq!(
+            l[0].addr,
+            SockAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 80))
+        );
         assert_eq!(l[0].protocol, IPPROTO_TCP);
         assert_eq!(l[0].canonname.as_deref(), Some("LOOPBACK"));
-        let any = r.getaddrinfo(None, Some("53"), &Hints { flags: AI_PASSIVE, ..Hints::default() }).unwrap();
+        let any = r
+            .getaddrinfo(
+                None,
+                Some("53"),
+                &Hints {
+                    flags: AI_PASSIVE,
+                    ..Hints::default()
+                },
+            )
+            .unwrap();
         assert_eq!(any.len(), 4, "two families, two socket types");
         assert_eq!(any[0].addr.ip(), Some(IpAddr::V4(Ipv4Addr::UNSPECIFIED)));
-        assert_eq!(r.getaddrinfo(None, None, &Hints::default()), Err(EAI_NONAME));
-        assert_eq!(r.getaddrinfo(Some("x"), None, &Hints { family: 7, ..Hints::default() }), Err(EAI_FAMILY));
-        assert_eq!(r.getaddrinfo(Some("x"), None, &Hints { socktype: 9, ..Hints::default() }), Err(EAI_SOCKTYPE));
-        assert_eq!(r.getaddrinfo(Some("x"), None, &Hints { flags: 0x100, ..Hints::default() }), Err(EAI_BADFLAGS));
-        assert_eq!(r.getaddrinfo(Some("x"), Some("nosuchsvc"), &Hints::default()), Err(EAI_SERVICE));
-        assert_eq!(r.getaddrinfo(Some("x"), Some("http"), &Hints { flags: AI_NUMERICSERV, ..Hints::default() }), Err(EAI_NONAME));
-        assert_eq!(r.getaddrinfo(Some("nosuch"), None, &Hints::default()), Err(EAI_NONAME));
-        assert_eq!(r.getaddrinfo(Some("nosuch"), None, &Hints { flags: AI_NUMERICHOST, ..Hints::default() }), Err(EAI_NONAME));
+        assert_eq!(
+            r.getaddrinfo(None, None, &Hints::default()),
+            Err(EAI_NONAME)
+        );
+        assert_eq!(
+            r.getaddrinfo(
+                Some("x"),
+                None,
+                &Hints {
+                    family: 7,
+                    ..Hints::default()
+                }
+            ),
+            Err(EAI_FAMILY)
+        );
+        assert_eq!(
+            r.getaddrinfo(
+                Some("x"),
+                None,
+                &Hints {
+                    socktype: 9,
+                    ..Hints::default()
+                }
+            ),
+            Err(EAI_SOCKTYPE)
+        );
+        assert_eq!(
+            r.getaddrinfo(
+                Some("x"),
+                None,
+                &Hints {
+                    flags: 0x100,
+                    ..Hints::default()
+                }
+            ),
+            Err(EAI_BADFLAGS)
+        );
+        assert_eq!(
+            r.getaddrinfo(Some("x"), Some("nosuchsvc"), &Hints::default()),
+            Err(EAI_SERVICE)
+        );
+        assert_eq!(
+            r.getaddrinfo(
+                Some("x"),
+                Some("http"),
+                &Hints {
+                    flags: AI_NUMERICSERV,
+                    ..Hints::default()
+                }
+            ),
+            Err(EAI_NONAME)
+        );
+        assert_eq!(
+            r.getaddrinfo(Some("nosuch"), None, &Hints::default()),
+            Err(EAI_NONAME)
+        );
+        assert_eq!(
+            r.getaddrinfo(
+                Some("nosuch"),
+                None,
+                &Hints {
+                    flags: AI_NUMERICHOST,
+                    ..Hints::default()
+                }
+            ),
+            Err(EAI_NONAME)
+        );
         let m = r
-            .getaddrinfo(Some("127.0.0.1"), Some("7"), &Hints { family: AF_INET6, flags: AI_V4MAPPED, socktype: SOCK_DGRAM, ..Hints::default() })
+            .getaddrinfo(
+                Some("127.0.0.1"),
+                Some("7"),
+                &Hints {
+                    family: AF_INET6,
+                    flags: AI_V4MAPPED,
+                    socktype: SOCK_DGRAM,
+                    ..Hints::default()
+                },
+            )
             .unwrap();
         assert_eq!(m[0].addr.ip(), Some("::ffff:127.0.0.1".parse().unwrap()));
         assert!(gai_strerror(EAI_NONAME).contains("not known"));
@@ -797,12 +943,24 @@ mod tests {
     fn getnameinfo_rules() {
         let mut r = Resolver::default();
         let a = SockAddr::V4(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 23));
-        assert_eq!(r.getnameinfo(&a, 0).unwrap(), ("LOOPBACK".into(), "telnet".into()));
-        assert_eq!(r.getnameinfo(&a, NI_NUMERICHOST | NI_NUMERICSERV).unwrap(), ("127.0.0.1".into(), "23".into()));
+        assert_eq!(
+            r.getnameinfo(&a, 0).unwrap(),
+            ("LOOPBACK".into(), "telnet".into())
+        );
+        assert_eq!(
+            r.getnameinfo(&a, NI_NUMERICHOST | NI_NUMERICSERV).unwrap(),
+            ("127.0.0.1".into(), "23".into())
+        );
         let b = SockAddr::V4(SocketAddrV4::new(Ipv4Addr::new(192, 0, 2, 9), 7));
-        assert_eq!(r.getnameinfo(&b, NI_DGRAM).unwrap(), ("192.0.2.9".into(), "echo".into()));
+        assert_eq!(
+            r.getnameinfo(&b, NI_DGRAM).unwrap(),
+            ("192.0.2.9".into(), "echo".into())
+        );
         assert_eq!(r.getnameinfo(&b, NI_NAMEREQD), Err(EAI_NONAME));
-        assert_eq!(r.getnameinfo(&SockAddr::Unix("/x".into()), 0), Err(EAI_FAMILY));
+        assert_eq!(
+            r.getnameinfo(&SockAddr::Unix("/x".into()), 0),
+            Err(EAI_FAMILY)
+        );
         assert_eq!(HostError::TryAgain.code(), 20);
         assert!(!hstrerror(5).is_empty());
     }

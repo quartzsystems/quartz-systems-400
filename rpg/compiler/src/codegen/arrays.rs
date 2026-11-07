@@ -56,7 +56,9 @@ pub struct Range {
 impl Gen<'_> {
     /// A static of the module, declared once.
     fn ops_static(&mut self, name: &str, ty: &str) -> String {
-        self.externs.entry(name.to_string()).or_insert_with(|| format!("static {name}: {ty}"));
+        self.externs
+            .entry(name.to_string())
+            .or_insert_with(|| format!("static {name}: {ty}"));
         name.to_string()
     }
 
@@ -77,7 +79,9 @@ impl Gen<'_> {
 
     /// The symbol an array operand names.
     fn array_sym(&mut self, e: &Expr) -> Option<SymId> {
-        let Expr::Ref { name, .. } = e else { return None };
+        let Expr::Ref { name, .. } = e else {
+            return None;
+        };
         let id = self.t.find(self.scope, name)?;
         (self.t.syms[id].dim > 0).then_some(id)
     }
@@ -156,7 +160,11 @@ impl Gen<'_> {
             return None;
         }
         let base = place_of(self.t, id);
-        let stride = if sym.stride > 0 { sym.stride } else { self.t.size(&sym.ty) };
+        let stride = if sym.stride > 0 {
+            sym.stride
+        } else {
+            self.t.size(&sym.ty)
+        };
         let mut r = Range {
             base,
             sym: id,
@@ -181,7 +189,8 @@ impl Gen<'_> {
                 r.start = z;
                 r.count = c;
             }
-            [Step::Args(a), Step::Field(f)] if matches!(a.as_slice(), [Expr::Special { word, .. }] if word == "*") => {
+            [Step::Args(a), Step::Field(f)] if matches!(a.as_slice(), [Expr::Special { word, .. }] if word == "*") =>
+            {
                 let Ty::Ds(di) = sym.ty else {
                     self.err(ids::NOT_A_DS, 30, name.clone());
                     return None;
@@ -224,8 +233,12 @@ impl Gen<'_> {
     /// index) or table, the result an alternate table; the high, low and
     /// equal indicators say what to look for and what was found.
     pub fn lookup_op(&mut self, op: &Op) {
-        let (Some(f1), Some(f2)) = (op.f1.first().cloned(), op.f2.first().cloned()) else { return };
-        let Some(arg) = self.expr(&f1, Want::default()) else { return };
+        let (Some(f1), Some(f2)) = (op.f1.first().cloned(), op.f2.first().cloned()) else {
+            return;
+        };
+        let Some(arg) = self.expr(&f1, Want::default()) else {
+            return;
+        };
         // Factor 2 is an array or a table.
         if let Expr::Ref { name, .. } = &f2
             && let Some(id) = self.t.find(self.scope, name)
@@ -247,7 +260,9 @@ impl Gen<'_> {
                 want |= w;
             }
         }
-        let Some(res) = self.search(&arg, &r, want) else { return };
+        let Some(res) = self.search(&arg, &r, want) else {
+            return;
+        };
         let kind = self.b.reg();
         self.b.ins(format!("{kind} = shr {res}, 32"));
         let idx = self.b.reg();
@@ -306,8 +321,11 @@ impl Gen<'_> {
 
     /// `XFOOT array result`: the sum of the elements.
     pub fn xfoot_op(&mut self, op: &Op) {
-        let (Some(f2), Some(res)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
-        let undefined = |g: &Self, e: &Expr| e.name().is_some_and(|n| g.t.find(g.scope, n).is_none());
+        let (Some(f2), Some(res)) = (op.f2.first().cloned(), op.result.first().cloned()) else {
+            return;
+        };
+        let undefined =
+            |g: &Self, e: &Expr| e.name().is_some_and(|n| g.t.find(g.scope, n).is_none());
         let v = self.expr(&f2, Want::default());
         // Factor 2 is a numeric array; the result a number.
         match &v {
@@ -321,10 +339,16 @@ impl Gen<'_> {
         }
         if undefined(self, &res) {
             let _ = self.target(&res);
-            self.err(ids::NOT_NUMERIC_RESULT, 30, res.name().unwrap_or_default().to_string());
+            self.err(
+                ids::NOT_NUMERIC_RESULT,
+                30,
+                res.name().unwrap_or_default().to_string(),
+            );
             return;
         }
-        let Some(v) = v.filter(|x| x.dim > 0) else { return };
+        let Some(v) = v.filter(|x| x.dim > 0) else {
+            return;
+        };
         let Some(sum) = self.sum_of(&v) else { return };
         let Some(t) = self.target(&res) else { return };
         self.assign_trunc(&t, &sum, op.ext.contains('H'));
@@ -342,7 +366,8 @@ impl Gen<'_> {
         for i in 0..v.dim {
             let e = V::place(v.ty.clone(), format!("{}[{i}]", v.op));
             let o = self.dec_operand(&e);
-            self.b.ins(format!("dec.add {acc}, {acc}, {o} prec(63,{s})"));
+            self.b
+                .ins(format!("dec.add {acc}, {acc}, {o} prec(63,{s})"));
         }
         Some(V::place(Ty::Packed(63, s), acc))
     }
@@ -350,11 +375,17 @@ impl Gen<'_> {
     /// `SORTA`: an array, a `%SUBARR` range or a structure array by a
     /// subfield; descending for `(D)` or a `DESCEND` array.
     pub fn sorta_op(&mut self, op: &Op) {
-        let Some(e) = op.xf2.clone().or_else(|| op.f2.first().cloned()) else { return };
+        let Some(e) = op.xf2.clone().or_else(|| op.f2.first().cloned()) else {
+            return;
+        };
         if let Some(id) = e.name().and_then(|n| self.t.find(self.scope, n))
             && self.t.syms[id].dim == 0
         {
-            self.err(ids::SORTA_ARRAY, 30, e.name().unwrap_or_default().to_string());
+            self.err(
+                ids::SORTA_ARRAY,
+                30,
+                e.name().unwrap_or_default().to_string(),
+            );
             return;
         }
         let Some(mut r) = self.range(&e) else { return };
@@ -387,7 +418,9 @@ impl Gen<'_> {
     fn occ_vars(&mut self, id: SymId) -> (String, String, u32) {
         self.ops.occurs.insert(id);
         let s = self.t.syms[id].clone();
-        let Some(Kind::Ds(di)) = s.kind else { return (String::new(), String::new(), 0) };
+        let Some(Kind::Ds(di)) = s.kind else {
+            return (String::new(), String::new(), 0);
+        };
         let n = self.t.ds[di].occurs.max(1);
         let ty = self.t.ds[di].ir_type.clone();
         let occ = self.ops_static(&format!("{}__occ", s.ir), &format!("array[{n}] of {ty}"));
@@ -397,7 +430,9 @@ impl Gen<'_> {
 
     /// The multiple-occurrence structure an operand names.
     fn mods(&mut self, e: &Expr) -> Option<SymId> {
-        let Expr::Ref { name, steps, .. } = e else { return None };
+        let Expr::Ref { name, steps, .. } = e else {
+            return None;
+        };
         if !steps.is_empty() {
             return None;
         }
@@ -443,7 +478,9 @@ impl Gen<'_> {
     /// `OCCUR`: factor 1 the occurrence to make current, factor 2 the
     /// structure, the result the current occurrence's number.
     pub fn occur_op(&mut self, op: &Op) {
-        let Some(f2) = op.f2.first().cloned() else { return };
+        let Some(f2) = op.f2.first().cloned() else {
+            return;
+        };
         let Some(id) = self.mods(&f2) else {
             self.err(ids::NOT_A_DS, 30, "OCCUR");
             return;
@@ -458,7 +495,9 @@ impl Gen<'_> {
                 self.b.ins(format!("{one} = add {r}, 1"));
                 one
             } else {
-                let Some(v) = self.expr(&f1, Want::default()) else { return };
+                let Some(v) = self.expr(&f1, Want::default()) else {
+                    return;
+                };
                 let Some(r) = self.int_reg(&v) else { return };
                 r
             };
@@ -494,9 +533,16 @@ impl Gen<'_> {
 
     /// `CLEAR` and `RESET`.
     pub fn clear_reset(&mut self, reset: bool, op: &Op) {
-        let Some(e) = op.result.first().cloned() else { return };
-        let all = op.f2.iter().any(|x| matches!(x, Expr::Special { word, .. } if word == "*ALL"));
-        if let Expr::Special { word, index: None, .. } = &e
+        let Some(e) = op.result.first().cloned() else {
+            return;
+        };
+        let all = op
+            .f2
+            .iter()
+            .any(|x| matches!(x, Expr::Special { word, .. } if word == "*ALL"));
+        if let Expr::Special {
+            word, index: None, ..
+        } = &e
             && word == "*IN"
         {
             self.b.ins("mov $in.all_, *ZEROS");
@@ -508,9 +554,16 @@ impl Gen<'_> {
         let global = id.is_some_and(|i| {
             let s = &self.t.syms[i];
             let root = s.parent.unwrap_or(i);
-            self.t.syms[root].scope == 0 && matches!(self.t.syms[root].storage, Storage::Static | Storage::Export)
+            self.t.syms[root].scope == 0
+                && matches!(self.t.syms[root].storage, Storage::Static | Storage::Export)
         });
-        let mods = if whole { id.filter(|&i| matches!(self.t.syms[i].kind, Some(Kind::Ds(di)) if self.t.ds[di].occurs > 0)) } else { None };
+        let mods = if whole {
+            id.filter(
+                |&i| matches!(self.t.syms[i].kind, Some(Kind::Ds(di)) if self.t.ds[di].occurs > 0),
+            )
+        } else {
+            None
+        };
         if reset {
             let Some(i) = id else { return };
             if !global {
@@ -564,7 +617,11 @@ impl Gen<'_> {
     /// Every element or subfield of a place to its default.
     fn clear_place(&mut self, t: &V) {
         let n = t.dim;
-        let places: Vec<String> = if n > 0 { (0..n).map(|i| format!("{}[{i}]", t.op)).collect() } else { vec![t.op.clone()] };
+        let places: Vec<String> = if n > 0 {
+            (0..n).map(|i| format!("{}[{i}]", t.op)).collect()
+        } else {
+            vec![t.op.clone()]
+        };
         for p in places {
             match &t.ty {
                 Ty::Ds(di) => {
@@ -575,12 +632,19 @@ impl Gen<'_> {
                             continue;
                         }
                         let sp = format!("{p}.{}", mangle(&sym.name));
-                        self.clear_place(&V { dim: sym.dim, ..V::place(sym.ty.clone(), sp) });
+                        self.clear_place(&V {
+                            dim: sym.dim,
+                            ..V::place(sym.ty.clone(), sp)
+                        });
                     }
                 }
                 Ty::Ptr | Ty::ProcPtr | Ty::Object => {
                     let r = self.b.reg();
-                    let k = if t.ty == Ty::ProcPtr { "procptr" } else { "ptr" };
+                    let k = if t.ty == Ty::ProcPtr {
+                        "procptr"
+                    } else {
+                        "ptr"
+                    };
                     self.b.ins(format!("{r} = const.{k} *NULL"));
                     self.b.ins(format!("store {p}, {r}"));
                 }
@@ -609,7 +673,9 @@ impl Gen<'_> {
                 return true;
             }
             // Positions known only at run time.
-            let lit = |e: Option<&Expr>| matches!(e, None | Some(Expr::Lit(rpgfront::ast::Lit::Num(_), _)));
+            let lit = |e: Option<&Expr>| {
+                matches!(e, None | Some(Expr::Lit(rpgfront::ast::Lit::Num(_), _)))
+            };
             if matches!(name.as_str(), "%SUBST" | "%SUBSTR")
                 && aop == AssignOp::Set
                 && (2..=3).contains(&args.len())
@@ -619,9 +685,15 @@ impl Gen<'_> {
                 return true;
             }
             if name == "%OCCUR" {
-                let Some(id) = args.first().and_then(|a| self.mods(a)) else { return false };
-                let Some(n) = self.expr(v, Want::default()) else { return true };
-                let Some(r) = self.int_reg(&n) else { return true };
+                let Some(id) = args.first().and_then(|a| self.mods(a)) else {
+                    return false;
+                };
+                let Some(n) = self.expr(v, Want::default()) else {
+                    return true;
+                };
+                let Some(r) = self.int_reg(&n) else {
+                    return true;
+                };
                 let z = self.b.reg();
                 self.b.ins(format!("{z} = sub {r}, 1"));
                 self.set_occurrence(id, &z, "");
@@ -646,14 +718,24 @@ impl Gen<'_> {
             self.err(ids::UNSUPPORTED, 30, "array");
             return true;
         }
-        let Some(dst) = self.range(t) else { return true };
+        let Some(dst) = self.range(t) else {
+            return true;
+        };
         if let Some(id) = self.array_sym(t).or(Some(dst.sym)) {
             self.t.refer(id, self.at.line, true);
         }
         let src = match v {
             Expr::Bif { name, .. } if name == "%SUBARR" => self.range(v),
             Expr::Bif { name, args, .. } if name == "%SPLIT" => self.split_range(args),
-            Expr::Ref { name, steps, .. } if steps.is_empty() && self.t.find(self.scope, name).is_some_and(|id| self.t.syms[id].dim > 0) => self.range(v),
+            Expr::Ref { name, steps, .. }
+                if steps.is_empty()
+                    && self
+                        .t
+                        .find(self.scope, name)
+                        .is_some_and(|id| self.t.syms[id].dim > 0) =>
+            {
+                self.range(v)
+            }
             _ => None,
         };
         let w = Want {
@@ -667,14 +749,17 @@ impl Gen<'_> {
         // The element count: the shorter range for an array source.
         let n = match &src {
             Some(s) if s.count.parse::<u32>().is_ok() && dst.count.parse::<u32>().is_ok() => {
-                let (a, b): (u32, u32) = (s.count.parse().unwrap_or(0), dst.count.parse().unwrap_or(0));
+                let (a, b): (u32, u32) =
+                    (s.count.parse().unwrap_or(0), dst.count.parse().unwrap_or(0));
                 a.min(b).to_string()
             }
             Some(s) => {
                 let c = self.b.reg();
-                self.b.ins(format!("{c} = cmp.lt {}, {}", s.count, dst.count));
+                self.b
+                    .ins(format!("{c} = cmp.lt {}, {}", s.count, dst.count));
                 let m = self.b.reg();
-                self.b.ins(format!("{m} = select {c}, {}, {}", s.count, dst.count));
+                self.b
+                    .ins(format!("{m} = select {c}, {}, {}", s.count, dst.count));
                 m
             }
             None => dst.count.clone(),
@@ -687,7 +772,9 @@ impl Gen<'_> {
             return true;
         }
         let value = if src.is_none() {
-            let Some(val) = self.expr(v, w) else { return true };
+            let Some(val) = self.expr(v, w) else {
+                return true;
+            };
             // Evaluated once, into a temporary of the element type.
             if val.fig.is_some() {
                 Some(val)
@@ -752,7 +839,12 @@ impl Gen<'_> {
                 self.whole_arrays(a, out);
                 self.whole_arrays(b, out);
             }
-            Expr::Bif { name, args, .. } if !matches!(name.as_str(), "%ELEM" | "%SIZE" | "%ADDR" | "%XFOOT" | "%LOOKUP" | "%SUBARR") => {
+            Expr::Bif { name, args, .. }
+                if !matches!(
+                    name.as_str(),
+                    "%ELEM" | "%SIZE" | "%ADDR" | "%XFOOT" | "%LOOKUP" | "%SUBARR"
+                ) =>
+            {
                 for a in args {
                     self.whole_arrays(a, out);
                 }
@@ -777,7 +869,10 @@ impl Gen<'_> {
             storage: crate::syms::Storage::Auto,
             ..crate::syms::Sym::default()
         });
-        let names: Vec<String> = arrays.iter().map(|&id| self.t.syms[id].name.clone()).collect();
+        let names: Vec<String> = arrays
+            .iter()
+            .map(|&id| self.t.syms[id].name.clone())
+            .collect();
         let e = index_arrays(v, &names, &name);
         let mut n = dst.count.clone();
         for &id in arrays {
@@ -837,13 +932,19 @@ impl Gen<'_> {
             }
         };
         let cap = (len / 2 + 1).min(4096);
-        let arr = self.b.temp(&format!("array[{cap}] of {}", self.ir_ty(&Ty::varchar(len))));
+        let arr = self.b.temp(&format!(
+            "array[{cap}] of {}",
+            self.ir_ty(&Ty::varchar(len))
+        ));
         self.rt_proc(
             "_QRNX_SPLIT",
             "($d: bytes(1) *VARSIZE, byval $el: i64, byval $cap: i64, $s: bytes(1) *VARSIZE, byval $sd: i64, $p: bytes(1) *VARSIZE, byval $pd: i64) -> i64",
         );
         let n = self.b.reg();
-        self.b.ins(format!("{n} = callb _QRNX_SPLIT({arr}, {len}, {cap}, {}, {}, {}, {})", src.op, src.desc, seps.op, seps.desc));
+        self.b.ins(format!(
+            "{n} = callb _QRNX_SPLIT({arr}, {len}, {cap}, {}, {}, {}, {})",
+            src.op, src.desc, seps.op, seps.desc
+        ));
         let cnt = self.b.temp("i64");
         self.b.ins(format!("store {cnt}, {n}"));
         let c = self.b.reg();
@@ -862,7 +963,8 @@ impl Gen<'_> {
 
     /// `FOR-EACH item IN array | %SUBARR | %SPLIT`, ended by `ENDFOR`.
     pub fn for_each(&mut self, op: &Op) {
-        let Some(Expr::Binary(rpgfront::ast::BinOp::In, item, coll, _)) = op.f2.first().cloned() else {
+        let Some(Expr::Binary(rpgfront::ast::BinOp::In, item, coll, _)) = op.f2.first().cloned()
+        else {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, "FOR-EACH");
             return;
         };
@@ -950,7 +1052,9 @@ impl Gen<'_> {
     /// `%ELEM` of a varying-dimension array: its current count, or with
     /// `*MAX` or `*ALLOC` its dimension. `None` for other arrays.
     pub fn elem_bif(&mut self, args: &[Expr]) -> Option<Option<V>> {
-        let Some(Expr::Ref { name, steps, .. }) = args.first() else { return None };
+        let Some(Expr::Ref { name, steps, .. }) = args.first() else {
+            return None;
+        };
         if !steps.is_empty() {
             return None;
         }
@@ -960,7 +1064,8 @@ impl Gen<'_> {
             return None;
         }
         self.t.refer(id, self.at.line, false);
-        if matches!(args.get(1), Some(Expr::Special { word, .. }) if word == "*MAX" || word == "*ALLOC") {
+        if matches!(args.get(1), Some(Expr::Special { word, .. }) if word == "*MAX" || word == "*ALLOC")
+        {
             return Some(Some(V::lit(Ty::Packed(10, 0), s.dim.to_string())));
         }
         let cv = self.elem_var(id);
@@ -974,7 +1079,9 @@ impl Gen<'_> {
     /// `%ELEM(array) = n`: the new count; elements it adds take their
     /// default value.
     fn elem_assign(&mut self, args: &[Expr], v: &Expr) -> Option<()> {
-        let Some(Expr::Ref { name, .. }) = args.first() else { return None };
+        let Some(Expr::Ref { name, .. }) = args.first() else {
+            return None;
+        };
         let id = self.t.find(self.scope, name)?;
         let s = self.t.syms[id].clone();
         if s.vardim == 0 {
@@ -1016,13 +1123,21 @@ impl Gen<'_> {
         let a = args.first()?;
         let ranged = match a {
             Expr::Bif { name, .. } => name == "%SUBARR",
-            Expr::Ref { name, steps, .. } => steps.is_empty() && self.t.find(self.scope, name).is_some_and(|id| self.t.syms[id].vardim > 0),
+            Expr::Ref { name, steps, .. } => {
+                steps.is_empty()
+                    && self
+                        .t
+                        .find(self.scope, name)
+                        .is_some_and(|id| self.t.syms[id].vardim > 0)
+            }
             _ => false,
         };
         if !ranged {
             return None;
         }
-        let Some(r) = self.range(a) else { return Some(None) };
+        let Some(r) = self.range(a) else {
+            return Some(None);
+        };
         let s = match &r.ty {
             Ty::Float(_) => 15,
             t => t.shape().map_or(0, |x| x.1),
@@ -1045,7 +1160,8 @@ impl Gen<'_> {
         self.b.ins(format!("{e} = add {}, {k}", r.start));
         let ev = V::place(r.ty.clone(), format!("{}[{e}]", r.base));
         let o = self.dec_operand(&ev);
-        self.b.ins(format!("dec.add {acc}, {acc}, {o} prec(63,{s})"));
+        self.b
+            .ins(format!("dec.add {acc}, {acc}, {o} prec(63,{s})"));
         let k1 = self.b.reg();
         self.b.ins(format!("{k1} = add {k}, 1"));
         self.b.ins(format!("store {i}, {k1}"));
@@ -1062,7 +1178,9 @@ impl Gen<'_> {
             let ix = self.tix(id);
             self.b.ins(format!("store {ix}, 0"));
         }
-        let vardims: Vec<SymId> = (0..self.t.syms.len()).filter(|&i| self.t.syms[i].vardim > 0 && self.t.syms[i].scope == 0).collect();
+        let vardims: Vec<SymId> = (0..self.t.syms.len())
+            .filter(|&i| self.t.syms[i].vardim > 0 && self.t.syms[i].scope == 0)
+            .collect();
         for id in vardims {
             let cv = self.elem_var(id);
             self.b.ins(format!("store {cv}, 0"));
@@ -1119,7 +1237,11 @@ impl Gen<'_> {
                     return;
                 }
                 let from = e * (wm + wa);
-                let take = |at: usize, w: usize| -> String { (at..at + w).map(|i| chars.get(i).copied().unwrap_or(' ')).collect() };
+                let take = |at: usize, w: usize| -> String {
+                    (at..at + w)
+                        .map(|i| chars.get(i).copied().unwrap_or(' '))
+                        .collect()
+                };
                 let tm = take(from, wm);
                 let ta = take(from + wm, wa);
                 self.ctdata_elem(&m.ty, &format!("{pm}[{k}]"), &tm);
@@ -1155,17 +1277,31 @@ impl Gen<'_> {
         let sc = usize::from(ty.shape().map_or(0, |x| x.1));
         let (i, f) = digits.split_at(digits.len().saturating_sub(sc));
         let i = if i.is_empty() { "0" } else { i };
-        let lit = if sc > 0 { format!("{i}.{f}") } else { i.to_string() };
-        self.b.ins(format!("dec.mov {place}, {}{lit}", if neg { "-" } else { "" }));
+        let lit = if sc > 0 {
+            format!("{i}.{f}")
+        } else {
+            i.to_string()
+        };
+        self.b.ins(format!(
+            "dec.mov {place}, {}{lit}",
+            if neg { "-" } else { "" }
+        ));
     }
 
     /// Pre-run-time arrays (`FROMFILE`): their elements read from the
     /// file's records, `PERRCD` to a record, before the first cycle.
     fn prerun_arrays(&mut self) {
-        let arrays: Vec<SymId> = (0..self.t.syms.len()).filter(|&i| !self.t.syms[i].fromfile.is_empty()).collect();
+        let arrays: Vec<SymId> = (0..self.t.syms.len())
+            .filter(|&i| !self.t.syms[i].fromfile.is_empty())
+            .collect();
         for id in arrays {
             let s = self.t.syms[id].clone();
-            let Some(f) = self.files.iter().find(|f| f.name.eq_ignore_ascii_case(&s.fromfile)).cloned() else {
+            let Some(f) = self
+                .files
+                .iter()
+                .find(|f| f.name.eq_ignore_ascii_case(&s.fromfile))
+                .cloned()
+            else {
                 self.err(ids::FILE_NOT_DEFINED, 30, s.fromfile.clone());
                 continue;
             };
@@ -1189,7 +1325,11 @@ impl Gen<'_> {
                     if k >= s.dim {
                         break;
                     }
-                    self.b.ins(format!("mov {place}[{k}], [{a} +{}]:{}", j * elen, self.ir_ty(&s.ty)));
+                    self.b.ins(format!(
+                        "mov {place}[{k}], [{a} +{}]:{}",
+                        j * elen,
+                        self.ir_ty(&s.ty)
+                    ));
                 }
             }
             self.b.term(format!("br {done}"));
@@ -1200,10 +1340,19 @@ impl Gen<'_> {
     /// `TOFILE` arrays written when the program ends, `PERRCD` elements
     /// to a record.
     pub fn tofile_arrays(&mut self) {
-        let arrays: Vec<SymId> = (0..self.t.syms.len()).filter(|&i| !self.t.syms[i].tofile.is_empty()).collect();
+        let arrays: Vec<SymId> = (0..self.t.syms.len())
+            .filter(|&i| !self.t.syms[i].tofile.is_empty())
+            .collect();
         for id in arrays {
             let s = self.t.syms[id].clone();
-            let Some(f) = self.files.iter().find(|f| f.name.eq_ignore_ascii_case(&s.tofile)).cloned() else { continue };
+            let Some(f) = self
+                .files
+                .iter()
+                .find(|f| f.name.eq_ignore_ascii_case(&s.tofile))
+                .cloned()
+            else {
+                continue;
+            };
             let n = mangle(&f.name);
             let elen = self.t.size(&s.ty);
             let per = s.perrcd.max(1);
@@ -1219,11 +1368,17 @@ impl Gen<'_> {
                     if k >= s.dim || (j + 1) * elen > len {
                         break;
                     }
-                    self.b.ins(format!("mov [{a} +{}]:{}, {place}[{k}]", j * elen, self.ir_ty(&s.ty)));
+                    self.b.ins(format!(
+                        "mov [{a} +{}]:{}, {place}[{k}]",
+                        j * elen,
+                        self.ir_ty(&s.ty)
+                    ));
                 }
                 let st = self.b.reg();
                 if f.dev == crate::files::Dev::Printer {
-                    self.b.ins(format!("{st} = prtio {n} WRITE fmt({n}) rec({line}) ctl(0, 1, 0, 0)"));
+                    self.b.ins(format!(
+                        "{st} = prtio {n} WRITE fmt({n}) rec({line}) ctl(0, 1, 0, 0)"
+                    ));
                 } else {
                     self.b.ins(format!("{st} = dbio {n} WRITE rec({line})"));
                 }
@@ -1236,7 +1391,8 @@ impl Gen<'_> {
     pub fn init_tail(&mut self, m: &Module) {
         self.prerun_arrays();
         let inzsr = m.calcs.iter().any(|s| {
-            s.op.code == "BEGSR" && matches!(s.op.f1.first(), Some(Expr::Special { word, .. }) if word == "*INZSR")
+            s.op.code == "BEGSR"
+                && matches!(s.op.f1.first(), Some(Expr::Special { word, .. }) if word == "*INZSR")
         });
         if inzsr {
             if self.subr_procs {
@@ -1286,10 +1442,18 @@ fn index_arrays(e: &Expr, arrays: &[String], idx: &str) -> Expr {
             at,
         },
         Expr::Unary(op, a, p) => Expr::Unary(*op, Box::new(index_arrays(a, arrays, idx)), *p),
-        Expr::Binary(op, a, b, p) => {
-            Expr::Binary(*op, Box::new(index_arrays(a, arrays, idx)), Box::new(index_arrays(b, arrays, idx)), *p)
-        }
-        Expr::Bif { name, args, at } if !matches!(name.as_str(), "%ELEM" | "%SIZE" | "%ADDR" | "%XFOOT" | "%LOOKUP" | "%SUBARR") => {
+        Expr::Binary(op, a, b, p) => Expr::Binary(
+            *op,
+            Box::new(index_arrays(a, arrays, idx)),
+            Box::new(index_arrays(b, arrays, idx)),
+            *p,
+        ),
+        Expr::Bif { name, args, at }
+            if !matches!(
+                name.as_str(),
+                "%ELEM" | "%SIZE" | "%ADDR" | "%XFOOT" | "%LOOKUP" | "%SUBARR"
+            ) =>
+        {
             Expr::Bif {
                 name: name.clone(),
                 args: args.iter().map(|a| index_arrays(a, arrays, idx)).collect(),

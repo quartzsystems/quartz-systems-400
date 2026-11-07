@@ -62,7 +62,12 @@ pub fn write(m: &Member, stamp: &Stamp) -> Vec<String> {
         }
     } else if m.orig_keywords.as_ref() != Some(&m.keywords) {
         let mut head = m.head.clone();
-        edit_keywords(&mut head, 0, m.orig_keywords.as_deref().unwrap_or_default(), &m.keywords);
+        edit_keywords(
+            &mut head,
+            0,
+            m.orig_keywords.as_deref().unwrap_or_default(),
+            &m.keywords,
+        );
         for l in head {
             out.push(if is_stamp(&l) { stamp.line() } else { l });
         }
@@ -189,7 +194,13 @@ pub fn element_lines(e: &Element) -> Vec<Line> {
         (Kind::Field { .. }, Kind::Field { .. }) if orig.kind != e.kind => {
             shape(&mut lines[f], e);
         }
-        (Kind::Constant { text: a, .. }, Kind::Constant { text: b, keyword: None }) if a != b => {
+        (
+            Kind::Constant { text: a, .. },
+            Kind::Constant {
+                text: b,
+                keyword: None,
+            },
+        ) if a != b => {
             replace_constant(&mut lines, f, b);
         }
         (a, b) if std::mem::discriminant(a) != std::mem::discriminant(b) || a != b => {
@@ -256,7 +267,11 @@ pub fn edit_keywords(lines: &mut Vec<Line>, base: usize, before: &[Keyword], aft
     let text = |k: &Keyword| k.to_string();
     let kept: Vec<String> = after.iter().map(text).collect();
     let had: Vec<String> = before.iter().map(text).collect();
-    let starts = |i: usize| before.iter().filter(move |k| k.line.checked_sub(base) == Some(i));
+    let starts = |i: usize| {
+        before
+            .iter()
+            .filter(move |k| k.line.checked_sub(base) == Some(i))
+    };
     let mut drop = vec![false; lines.len()];
     let mut clear = vec![false; lines.len()];
     for i in 0..lines.len() {
@@ -361,7 +376,10 @@ fn edit_list(lines: &mut Vec<Line>, kw: &str, before: &[String], after: &[String
             lines.remove(i);
         } else {
             // The value shares a line: take it out of the parameters.
-            for l in lines.iter_mut().filter(|l| !l.is_comment() && l.blank(8, 16)) {
+            for l in lines
+                .iter_mut()
+                .filter(|l| !l.is_comment() && l.blank(8, 16))
+            {
                 let f = l.functions();
                 if let Some(s) = strip_value(&f, kw, gone) {
                     l.set(45, 80, &s);
@@ -390,7 +408,11 @@ fn strip_value(area: &str, kw: &str, value: &str) -> Option<String> {
     } else {
         format!("{kw}({})", left.join(" "))
     };
-    Some(format!("{}{}{}", &area[..start], mid, &area[close + 1..]).trim().to_string())
+    Some(
+        format!("{}{}{}", &area[..start], mid, &area[close + 1..])
+            .trim()
+            .to_string(),
+    )
 }
 
 /// A new element's lines as SDA writes them.
@@ -416,7 +438,11 @@ pub fn generate(e: &Element) -> Vec<Line> {
             out.push(l);
             // The first keyword shares the line when it fits, as SDA writes.
             let mut first = true;
-            for k in e.keywords.iter().filter(|k| !matches!(k.name.as_str(), "DSPATR" | "COLOR")) {
+            for k in e
+                .keywords
+                .iter()
+                .filter(|k| !matches!(k.name.as_str(), "DSPATR" | "COLOR"))
+            {
                 let text = k.to_string();
                 if first && text.chars().count() <= 36 {
                     if let Some(l) = out.last_mut() {
@@ -551,10 +577,22 @@ mod tests {
             },
             Some((3, 2)),
         ));
-        r.elements
-            .push(Element::field("FLD001", Usage::Input, false, 10, 0, Some((3, 21))));
-        r.elements
-            .push(Element::field("FLD002", Usage::Output, true, 7, 2, Some((5, 21))));
+        r.elements.push(Element::field(
+            "FLD001",
+            Usage::Input,
+            false,
+            10,
+            0,
+            Some((3, 21)),
+        ));
+        r.elements.push(Element::field(
+            "FLD002",
+            Usage::Output,
+            true,
+            7,
+            2,
+            Some((5, 21)),
+        ));
         m.records.push(r);
         let out = write(&m, &stamp());
         let want = [

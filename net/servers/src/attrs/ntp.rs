@@ -100,7 +100,8 @@ fn host(v: &str) -> Result<String, String> {
     let h = v.trim().trim_matches('\'');
     let ok = !h.is_empty()
         && h.len() <= 255
-        && h.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':' | '_'));
+        && h.chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':' | '_'));
     if ok {
         Ok(h.to_string())
     } else {
@@ -125,7 +126,10 @@ impl NtpAttrs {
 
     /// Every attribute as the bag keeps it.
     pub fn to_bag(&self) -> Vec<(String, String)> {
-        let mut out: Vec<(String, String)> = KEYWORDS.iter().map(|k| ((*k).to_string(), self.value(k))).collect();
+        let mut out: Vec<(String, String)> = KEYWORDS
+            .iter()
+            .map(|k| ((*k).to_string(), self.value(k)))
+            .collect();
         if self.port != 123 {
             out.push(("PORT".into(), self.port.to_string()));
         }
@@ -144,9 +148,13 @@ impl NtpAttrs {
             "RMTSYS" => self.rmtsys.join(" "),
             "AUTOSTART" => yn(self.autostart),
             "POLLITV" => self.pollitv.to_string(),
-            "MINADJ" => self.minadj.map_or_else(|| "*NONE".into(), |m| m.to_string()),
+            "MINADJ" => self
+                .minadj
+                .map_or_else(|| "*NONE".into(), |m| m.to_string()),
             "MAXADJ" => self.maxadj.to_string(),
-            "ADJTHLD" => self.adjthld.map_or_else(|| "*MAXADJ".into(), |s| s.to_string()),
+            "ADJTHLD" => self
+                .adjthld
+                .map_or_else(|| "*MAXADJ".into(), |s| s.to_string()),
             "ACTLOG" => self.actlog.clone(),
             "SVRAUTOSTR" => yn(self.svrautostr),
             "SVRACTLOG" => self.svractlog.clone(),
@@ -170,7 +178,8 @@ impl NtpAttrs {
                 if up == "*NONE" {
                     self.rmtsys.clear();
                 } else {
-                    let list: Vec<String> = v.split_whitespace().map(host).collect::<Result<_, _>>()?;
+                    let list: Vec<String> =
+                        v.split_whitespace().map(host).collect::<Result<_, _>>()?;
                     if list.len() > MAX_RMTSYS {
                         return Err(format!("RMTSYS: at most {MAX_RMTSYS} systems"));
                     }
@@ -234,7 +243,9 @@ mod tests {
         let shown: Vec<String> = KEYWORDS.iter().map(|k| a.value(k)).collect();
         assert_eq!(
             shown,
-            ["*NONE", "*NO", "60", "20", "20", "*MAXADJ", "*NONE", "*NO", "*NONE", "*YES"]
+            [
+                "*NONE", "*NO", "60", "20", "20", "*MAXADJ", "*NONE", "*NO", "*NONE", "*YES"
+            ]
         );
         assert!(!a.autostarts());
     }
@@ -264,7 +275,10 @@ mod tests {
 
     #[test]
     fn parts() {
-        assert_eq!(NtpAttrs::parts(&NtpAttrs::rqsdta(true, false)), (true, false));
+        assert_eq!(
+            NtpAttrs::parts(&NtpAttrs::rqsdta(true, false)),
+            (true, false)
+        );
         assert_eq!(NtpAttrs::parts(""), (true, true));
     }
 }

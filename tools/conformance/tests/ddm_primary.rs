@@ -37,7 +37,9 @@ fn connect(host: &str, user: &str, password: &str, access: bool) -> Connection<T
 #[allow(clippy::many_single_char_names)] // one short binding per remote object
 fn requester_against_the_primary() {
     let e = Env::load().expect("the oracle environment");
-    let c = e.credentials(Target::Oracle, None).expect("oracle credentials");
+    let c = e
+        .credentials(Target::Oracle, None)
+        .expect("oracle credentials");
     let host = c.host.split(':').next().unwrap_or(&c.host).to_string();
 
     // SQL: the table, two rows, the query.
@@ -74,10 +76,14 @@ fn requester_against_the_primary() {
     let w = rla.put(&f, &[Rec::new(rec, 2)]).expect("S38PUTM");
     assert!(w.error().is_none(), "{w:?}");
     let mut names = Vec::new();
-    let mut r = rla.get(&f, ddm::cp::s38::S38GET, ddm::file::op::FIRST, 0, &[]).expect("S38GET");
+    let mut r = rla
+        .get(&f, ddm::cp::s38::S38GET, ddm::file::op::FIRST, 0, &[])
+        .expect("S38GET");
     while let Some(one) = r.records.first() {
         names.push(ddm::wire::text(&one.data[..10]).trim().to_string());
-        r = rla.get(&f, ddm::cp::s38::S38GET, ddm::file::op::NEXT, 0, &[]).expect("S38GET next");
+        r = rla
+            .get(&f, ddm::cp::s38::S38GET, ddm::file::op::NEXT, 0, &[])
+            .expect("S38GET next");
     }
     assert!(r.at_end(), "{r:?}");
     assert_eq!(names, ["Ann", "Bob", "Cy"]);
@@ -92,12 +98,21 @@ fn requester_against_the_primary() {
         ..u
     };
     let fx = rla.open_file("F2", &k, 2).expect("S38OPEN keyed");
-    let got = rla.get_key(&fx, &ddm::wire::ebcdic_fixed("Bob", 10), 1, false).expect("S38GETK");
-    let city = got.records.first().map(|r| ddm::wire::text(&r.data[10..]).trim().to_string());
+    let got = rla
+        .get_key(&fx, &ddm::wire::ebcdic_fixed("Bob", 10), 1, false)
+        .expect("S38GETK");
+    let city = got
+        .records
+        .first()
+        .map(|r| ddm::wire::text(&r.data[10..]).trim().to_string());
     rla.close_file(&fx).expect("S38CLOSE");
 
     // Leave QSTEST as it was.
-    for cmd in ["DLTF FILE(QSTEST/QSDDMRX)", "DLTF FILE(QSTEST/QSDDMR)", "DLTSQLPKG SQLPKG(QSTEST/QSDDMPKG)"] {
+    for cmd in [
+        "DLTF FILE(QSTEST/QSDDMRX)",
+        "DLTF FILE(QSTEST/QSDDMR)",
+        "DLTSQLPKG SQLPKG(QSTEST/QSDDMPKG)",
+    ] {
         let r = rla.remote_command(cmd).expect("S38CMD");
         assert!(r.error().is_none(), "{cmd}: {:?}", r.messages);
     }

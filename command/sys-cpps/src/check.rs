@@ -59,7 +59,8 @@ pub fn is_internal(text: &str) -> bool {
     let id = b.len() >= 7
         && b[..3].iter().all(u8::is_ascii_uppercase)
         && b[3..7].iter().all(u8::is_ascii_hexdigit)
-        && b.get(7).is_none_or(|c| *c == b' ' || *c == b':' || *c == b'\n');
+        && b.get(7)
+            .is_none_or(|c| *c == b' ' || *c == b':' || *c == b'\n');
     !id || t.starts_with("CPF9899") || t.starts_with(ESCAPE)
 }
 

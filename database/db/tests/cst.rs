@@ -29,9 +29,20 @@ fn int(n: i64) -> Vec<u8> {
 /// PAR (ID integer, AMT packed 7,2) and CHD (CID integer, PID integer
 /// null-capable).
 fn files(t: &mut Txn<'_>, lib: ObjectId) -> (ObjectId, ObjectId) {
-    let p = pf(&[rec("PARREC", ""), fld("ID", "9", "B", "0", ""), fld("AMT", "7", "P", "2", "")]);
-    let c = pf(&[rec("CHDREC", ""), fld("CID", "9", "B", "0", ""), fld("PID", "9", "B", "0", "ALWNULL DFT(0)")]);
-    let opts = CreateFileOpts { now: 1, ..CreateFileOpts::default() };
+    let p = pf(&[
+        rec("PARREC", ""),
+        fld("ID", "9", "B", "0", ""),
+        fld("AMT", "7", "P", "2", ""),
+    ]);
+    let c = pf(&[
+        rec("CHDREC", ""),
+        fld("CID", "9", "B", "0", ""),
+        fld("PID", "9", "B", "0", "ALWNULL DFT(0)"),
+    ]);
+    let opts = CreateFileOpts {
+        now: 1,
+        ..CreateFileOpts::default()
+    };
     let par = file::create_pf(t, lib, name("PAR"), &p, &opts).unwrap();
     let chd = file::create_pf(t, lib, name("CHD"), &c, &opts).unwrap();
     (par, chd)
@@ -55,12 +66,19 @@ fn chd_rec(cid: i64, pid: Option<i64>) -> (Vec<u8>, Vec<u8>) {
 }
 
 fn open(t: &mut Txn<'_>, locks: &odp::SharedLocks, file: ObjectId) -> Odp {
-    let opts = OpenOpts { usage: Usage::ALL, keyed: false, ..OpenOpts::input(JobHandle(1)) };
+    let opts = OpenOpts {
+        usage: Usage::ALL,
+        keyed: false,
+        ..OpenOpts::input(JobHandle(1))
+    };
     Odp::open(t, locks.clone(), file, opts).unwrap()
 }
 
 fn rows(t: &mut Txn<'_>, file: ObjectId) -> u64 {
-    db::Member::open_by(t, file, MemberSpec::First).unwrap().attr().record_count
+    db::Member::open_by(t, file, MemberSpec::First)
+        .unwrap()
+        .attr()
+        .record_count
 }
 
 #[test]
@@ -70,18 +88,69 @@ fn keys_checks_and_referential_rules() {
     let mut t = store.begin().unwrap();
     let (par, chd) = files(&mut t, lib);
     // PRIMARY KEY (ID), CHECK (AMT >= 0).
-    let r = ops::add(&mut t, par, &NewCst { name: Some("PAR_PK".into()), ..NewCst::new(Kind::PrimaryKey, vec![name("ID")]) }, 2).unwrap();
+    let r = ops::add(
+        &mut t,
+        par,
+        &NewCst {
+            name: Some("PAR_PK".into()),
+            ..NewCst::new(Kind::PrimaryKey, vec![name("ID")])
+        },
+        2,
+    )
+    .unwrap();
     assert_eq!(r.names, ["PAR_PK"]);
-    let chk = Expr::Cmp(Cmp::Ge, Box::new(Expr::Col(name("AMT"))), Box::new(Expr::Num(Decimal::zero())));
-    let r = ops::add(&mut t, par, &NewCst { check: Some(("AMT >= 0 ".into(), chk)), ..NewCst::new(Kind::Check, vec![]) }, 2).unwrap();
+    let chk = Expr::Cmp(
+        Cmp::Ge,
+        Box::new(Expr::Col(name("AMT"))),
+        Box::new(Expr::Num(Decimal::zero())),
+    );
+    let r = ops::add(
+        &mut t,
+        par,
+        &NewCst {
+            check: Some(("AMT >= 0 ".into(), chk)),
+            ..NewCst::new(Kind::Check, vec![])
+        },
+        2,
+    )
+    .unwrap();
     assert_eq!(r.names, ["Q_QSTEST_PAR_00001"]);
     // A second primary key, the same key again: refused.
-    let e = ops::add(&mut t, par, &NewCst::new(Kind::PrimaryKey, vec![name("AMT")]), 2).unwrap_err();
-    assert!(matches!(e, DbError::Constraint { reason: Refusal::SecondPrimary, .. }), "{e:?}");
+    let e = ops::add(
+        &mut t,
+        par,
+        &NewCst::new(Kind::PrimaryKey, vec![name("AMT")]),
+        2,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            e,
+            DbError::Constraint {
+                reason: Refusal::SecondPrimary,
+                ..
+            }
+        ),
+        "{e:?}"
+    );
     let e = ops::add(&mut t, par, &NewCst::new(Kind::Unique, vec![name("ID")]), 2).unwrap_err();
-    assert!(matches!(e, DbError::Constraint { reason: Refusal::SameKey, .. }), "{e:?}");
+    assert!(
+        matches!(
+            e,
+            DbError::Constraint {
+                reason: Refusal::SameKey,
+                ..
+            }
+        ),
+        "{e:?}"
+    );
     // FOREIGN KEY (PID) REFERENCES PAR ON DELETE CASCADE.
-    let fk = NewCst { parent: par, delete_rule: Rule::Cascade, update_rule: Rule::Restrict, ..NewCst::new(Kind::Referential, vec![name("PID")]) };
+    let fk = NewCst {
+        parent: par,
+        delete_rule: Rule::Cascade,
+        update_rule: Rule::Restrict,
+        ..NewCst::new(Kind::Referential, vec![name("PID")])
+    };
     let r = ops::add(&mut t, chd, &fk, 2).unwrap();
     assert_eq!(r.names, ["Q_QSTEST_CHD_PID_00001"]);
     assert_eq!(r.messages, [("CPI32B4", "PAR".to_string())]);
@@ -114,14 +183,34 @@ fn keys_checks_and_referential_rules() {
     c.close(&mut t);
     // A parent whose dependents cascade is changed only while journaled:
     // CPF4328 whatever the rows, as the primary refuses.
-    let mut q = Odp::open(&mut t, locks.clone(), par, OpenOpts { usage: Usage::ALL, keyed: false, ..OpenOpts::input(JobHandle(1)) }).unwrap();
+    let mut q = Odp::open(
+        &mut t,
+        locks.clone(),
+        par,
+        OpenOpts {
+            usage: Usage::ALL,
+            keyed: false,
+            ..OpenOpts::input(JobHandle(1))
+        },
+    )
+    .unwrap();
     let got = q.read(&mut t, true).unwrap().unwrap();
     assert_eq!(got.rrn, 1);
     let e = q.update(&mut t, &par_rec(5, "1.00"), &[]).unwrap_err();
     assert_eq!(e.msgid(), Some("CPF4328"));
     // Delete with CASCADE needs both files journaled.
     q.read(&mut t, true).unwrap();
-    let mut q2 = Odp::open(&mut t, locks.clone(), par, OpenOpts { usage: Usage::ALL, keyed: false, ..OpenOpts::input(JobHandle(1)) }).unwrap();
+    let mut q2 = Odp::open(
+        &mut t,
+        locks.clone(),
+        par,
+        OpenOpts {
+            usage: Usage::ALL,
+            keyed: false,
+            ..OpenOpts::input(JobHandle(1))
+        },
+    )
+    .unwrap();
     q2.read(&mut t, true).unwrap().unwrap();
     let e = q2.delete(&mut t).unwrap_err();
     assert_eq!(e.msgid(), Some("CPF4328"));
@@ -145,7 +234,12 @@ fn keys_checks_and_referential_rules() {
     // A parent key changed under dependents: CPF503A (RESTRICT).
     let mut u = open(&mut t, &locks, par);
     u.read(&mut t, true).unwrap().unwrap();
-    assert_eq!(u.update(&mut t, &par_rec(5, "1.00"), &[]).unwrap_err().msgid(), Some("CPF503A"));
+    assert_eq!(
+        u.update(&mut t, &par_rec(5, "1.00"), &[])
+            .unwrap_err()
+            .msgid(),
+        Some("CPF503A")
+    );
     u.close(&mut t);
     let mut q = open(&mut t, &locks, par);
     q.read(&mut t, true).unwrap().unwrap();
@@ -158,9 +252,19 @@ fn keys_checks_and_referential_rules() {
     // Removing the primary key others depend on is refused; with cascade
     // the referential constraint goes too.
     let mut t = store.begin().unwrap();
-    let fd = db::dsp::fd::dspfd(&mut t, chd).unwrap().render(db::dsp::fd::FdType::Cst);
-    assert!(fd.contains("Q_QSTEST_CHD_PID_00001") && fd.contains("*CASCADE") && fd.contains("QSTEST/PAR"), "{fd}");
-    let pick = Pick { name: None, kinds: vec![Kind::PrimaryKey] };
+    let fd = db::dsp::fd::dspfd(&mut t, chd)
+        .unwrap()
+        .render(db::dsp::fd::FdType::Cst);
+    assert!(
+        fd.contains("Q_QSTEST_CHD_PID_00001")
+            && fd.contains("*CASCADE")
+            && fd.contains("QSTEST/PAR"),
+        "{fd}"
+    );
+    let pick = Pick {
+        name: None,
+        kinds: vec![Kind::PrimaryKey],
+    };
     let r = ops::remove(&mut t, par, &pick, false, 3).unwrap();
     assert!(r.removed.is_empty() && r.refused == ["PAR_PK"]);
     let r = ops::remove(&mut t, par, &pick, true, 3).unwrap();
@@ -170,8 +274,27 @@ fn keys_checks_and_referential_rules() {
 }
 
 fn journal(t: &mut Txn<'_>, lib: ObjectId, files: &[ObjectId]) {
-    let rcv = jrn::rcv::crtjrnrcv(t, lib, name("RCV1"), &jrn::rcv::CrtJrnRcvOpts { now: 1, ..Default::default() }).unwrap();
-    let j = jrn::journal::crtjrn(t, lib, name("JRN"), rcv, &jrn::journal::CrtJrnOpts { now: 1, ..Default::default() }).unwrap();
+    let rcv = jrn::rcv::crtjrnrcv(
+        t,
+        lib,
+        name("RCV1"),
+        &jrn::rcv::CrtJrnRcvOpts {
+            now: 1,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let j = jrn::journal::crtjrn(
+        t,
+        lib,
+        name("JRN"),
+        rcv,
+        &jrn::journal::CrtJrnOpts {
+            now: 1,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     for f in files {
         db::journal::strjrnpf(t, JobHandle(1), *f, j, true, false, 1).unwrap();
     }
@@ -183,7 +306,13 @@ fn set_null_set_default_and_check_pending() {
     let locks = odp::new_shared();
     let mut t = store.begin().unwrap();
     let (par, chd) = files(&mut t, lib);
-    ops::add(&mut t, par, &NewCst::new(Kind::PrimaryKey, vec![name("ID")]), 2).unwrap();
+    ops::add(
+        &mut t,
+        par,
+        &NewCst::new(Kind::PrimaryKey, vec![name("ID")]),
+        2,
+    )
+    .unwrap();
     journal(&mut t, lib, &[par, chd]);
     let mut p = open(&mut t, &locks, par);
     for id in [0, 1, 2] {
@@ -200,22 +329,48 @@ fn set_null_set_default_and_check_pending() {
     let mut t = store.begin().unwrap();
     // A foreign key the records break: SQL refuses it, ADDPFCST leaves it
     // in check pending.
-    let fk = NewCst { parent: par, delete_rule: Rule::SetNull, ..NewCst::new(Kind::Referential, vec![name("PID")]) };
+    let fk = NewCst {
+        parent: par,
+        delete_rule: Rule::SetNull,
+        ..NewCst::new(Kind::Referential, vec![name("PID")])
+    };
     let e = ops::add(&mut t, chd, &fk, 2).unwrap_err();
-    assert!(matches!(e, DbError::Constraint { reason: Refusal::RefData, .. }), "{e:?}");
+    assert!(
+        matches!(
+            e,
+            DbError::Constraint {
+                reason: Refusal::RefData,
+                ..
+            }
+        ),
+        "{e:?}"
+    );
     t.abort();
     let mut t = store.begin().unwrap();
-    let fk = NewCst { pending_ok: true, ..fk };
+    let fk = NewCst {
+        pending_ok: true,
+        ..fk
+    };
     let r = ops::add(&mut t, chd, &fk, 2).unwrap();
-    assert_eq!(r.messages.iter().map(|m| m.0).collect::<Vec<_>>(), ["CPD32C5", "CPD32B7"]);
-    let opts = OpenOpts { usage: Usage::ALL, keyed: false, ..OpenOpts::input(JobHandle(1)) };
+    assert_eq!(
+        r.messages.iter().map(|m| m.0).collect::<Vec<_>>(),
+        ["CPD32C5", "CPD32B7"]
+    );
+    let opts = OpenOpts {
+        usage: Usage::ALL,
+        keyed: false,
+        ..OpenOpts::input(JobHandle(1))
+    };
     let e = Odp::open(&mut t, locks.clone(), chd, opts.clone()).unwrap_err();
     assert_eq!(e.msgid(), Some("CPF523B"));
     // The record fixed, the constraint enabled again: no longer pending.
     let mut m = db::Member::open_by(&mut t, chd, MemberSpec::First).unwrap();
     m.delete(&mut t, 3).unwrap();
     let name0 = r.names[0].clone();
-    let one = Pick { name: Some(name0.clone()), kinds: vec![] };
+    let one = Pick {
+        name: Some(name0.clone()),
+        kinds: vec![],
+    };
     let ch = ops::set_state(&mut t, chd, &one, true, 3).unwrap();
     assert!(ch.pending.is_empty());
     // SET NULL: ID 1's dependent keeps its row with PID null.
@@ -239,14 +394,28 @@ fn set_null_set_default_and_check_pending() {
 
     // SET DEFAULT: the default 0 is a parent.
     let mut t = store.begin().unwrap();
-    ops::remove(&mut t, chd, &Pick { name: None, kinds: vec![] }, false, 4).unwrap();
+    ops::remove(
+        &mut t,
+        chd,
+        &Pick {
+            name: None,
+            kinds: vec![],
+        },
+        false,
+        4,
+    )
+    .unwrap();
     let mut m = db::Member::open_by(&mut t, chd, MemberSpec::First).unwrap();
     m.clear(&mut t).unwrap();
     let mut c = Odp::open(&mut t, locks.clone(), chd, opts.clone()).unwrap();
     let (r, n) = chd_rec(30, Some(2));
     c.write(&mut t, &r, &n).unwrap();
     c.close(&mut t);
-    let fk = NewCst { parent: par, delete_rule: Rule::SetDefault, ..NewCst::new(Kind::Referential, vec![name("PID")]) };
+    let fk = NewCst {
+        parent: par,
+        delete_rule: Rule::SetDefault,
+        ..NewCst::new(Kind::Referential, vec![name("PID")])
+    };
     ops::add(&mut t, chd, &fk, 4).unwrap();
     let mut q = open(&mut t, &locks, par);
     while let Some(r) = q.read(&mut t, true).unwrap() {
@@ -266,7 +435,12 @@ fn set_null_set_default_and_check_pending() {
 fn check_program_round_trips() {
     use db::cst::check::{Arith, Func};
     let e = Expr::And(
-        Box::new(Expr::Between(Box::new(Expr::Col(name("A"))), Box::new(Expr::Neg(Box::new(Expr::Num(Decimal::parse("5").unwrap())))), Box::new(Expr::Float(9.5)), false)),
+        Box::new(Expr::Between(
+            Box::new(Expr::Col(name("A"))),
+            Box::new(Expr::Neg(Box::new(Expr::Num(Decimal::parse("5").unwrap())))),
+            Box::new(Expr::Float(9.5)),
+            false,
+        )),
         Box::new(Expr::Like(
             Box::new(Expr::Call(Func::Upper, vec![Expr::Col(name("B"))])),
             Box::new(Expr::Str("A%".into())),
@@ -274,7 +448,18 @@ fn check_program_round_trips() {
             true,
         )),
     );
-    let e = Expr::Or(Box::new(e), Box::new(Expr::In(Box::new(Expr::Arith(Arith::Add, Box::new(Expr::Col(name("A"))), Box::new(Expr::Null))), vec![Expr::Num(Decimal::zero())], false)));
+    let e = Expr::Or(
+        Box::new(e),
+        Box::new(Expr::In(
+            Box::new(Expr::Arith(
+                Arith::Add,
+                Box::new(Expr::Col(name("A"))),
+                Box::new(Expr::Null),
+            )),
+            vec![Expr::Num(Decimal::zero())],
+            false,
+        )),
+    );
     assert_eq!(Expr::decode(&e.encode()).unwrap(), e);
     assert_eq!(e.columns(), [name("A"), name("B")]);
 }

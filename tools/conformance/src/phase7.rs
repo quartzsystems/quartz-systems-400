@@ -65,7 +65,11 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn command_entry(&self, s: &mut Session) -> Result<String, String> {
         secofr_command_entry(s)?;
-        entry_wait(s, "crtlib CLTEST TEXT('Phase 7')", has(&["CLTEST", "created"]))?;
+        entry_wait(
+            s,
+            "crtlib CLTEST TEXT('Phase 7')",
+            has(&["CLTEST", "created"]),
+        )?;
         // `?CMD` prompts; F12 leaves the prompt.
         entry(s, "?crtpf")?;
         let prompt = screen_wait(s, "Create Physical File (CRTPF)")?;
@@ -80,7 +84,9 @@ impl Suite {
         key(s, "f4")?;
         let prompt = screen_wait(s, "Create Physical File (CRTPF)")?;
         if !prompt.contains("> F1") || !prompt.contains("> 80") {
-            return Err(format!("the prompt does not show the typed values:\n{prompt}"));
+            return Err(format!(
+                "the prompt does not show the typed values:\n{prompt}"
+            ));
         }
         key(s, "enter")?;
         let after = screen_wait(s, "Command Entry")?;
@@ -94,7 +100,9 @@ impl Suite {
             return Err(format!("the job log lacks the requests:\n{log}"));
         }
         if !log.contains("crtpf FILE(CLTEST/F1)") && !log.contains("CRTPF FILE(CLTEST/F1)") {
-            return Err(format!("the prompted CRTPF is not a request in the job log:\n{log}"));
+            return Err(format!(
+                "the prompted CRTPF is not a request in the job log:\n{log}"
+            ));
         }
         key(s, "enter")?;
         screen_wait(s, "Command Entry")?;
@@ -109,12 +117,18 @@ impl Suite {
         entry(s, "dspjoblog JOB(QSYS/QSYSARB)")?;
         let other = screen_wait(s, "Display Job Log")?;
         if !other.contains("QSYSARB") || !other.contains("started") || other.contains("CLTEST") {
-            return Err(format!("DSPJOBLOG JOB(QSYS/QSYSARB) did not show that job's log:\n{other}"));
+            return Err(format!(
+                "DSPJOBLOG JOB(QSYS/QSYSARB) did not show that job's log:\n{other}"
+            ));
         }
         key(s, "enter")?;
         screen_wait(s, "Command Entry")?;
         // A job that is not there: a message, not silence.
-        entry_wait(s, "dspjoblog JOB(000001/NOBODY/NOJOB)", has(&["NOJOB", "not found"]))?;
+        entry_wait(
+            s,
+            "dspjoblog JOB(000001/NOBODY/NOJOB)",
+            has(&["NOJOB", "not found"]),
+        )?;
         // A command the analyzer refuses: the diagnostic and CPF0006.
         entry_wait(s, "crtlib LIB(CLTEST) NOPE(1)", has(&["CPD0043"]))?;
         sign_off(s)?;
@@ -147,7 +161,10 @@ impl Suite {
             "call CLTEST/HELLO PARM('Quartz')",
             has(&["Hello from CL, Quartz"]),
         )?;
-        if !called.contains("count 3") || !called.contains("NOSUCHOBJ is missing") || !called.contains("Queue said via the queue, 04") {
+        if !called.contains("count 3")
+            || !called.contains("NOSUCHOBJ is missing")
+            || !called.contains("Queue said via the queue, 04")
+        {
             return Err(format!("the program's messages are incomplete:\n{called}"));
         }
         entry_wait(
@@ -182,7 +199,9 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn limited_user(&self, s: &mut Session) -> Result<String, String> {
         let made = s.command(
-            &format!("crtusrprf USRPRF(LIMITED) PASSWORD({PASSWORD}) LMTCPB(*YES) TEXT('Limited user')"),
+            &format!(
+                "crtusrprf USRPRF(LIMITED) PASSWORD({PASSWORD}) LMTCPB(*YES) TEXT('Limited user')"
+            ),
             CMD,
         )?;
         if !made.contains("LIMITED") {
@@ -226,15 +245,21 @@ impl Suite {
     pub(crate) fn analyzer_console(&self, s: &mut Session) -> Result<String, String> {
         let bad = s.command("crtlib", CMD)?;
         if !bad.contains("CPD0071") || !bad.contains("CPF0006") {
-            return Err(format!("a missing LIB was not refused with CPD0071:\n{bad}"));
+            return Err(format!(
+                "a missing LIB was not refused with CPD0071:\n{bad}"
+            ));
         }
         let unknown = s.command("nosuchcmd", CMD)?;
         if !unknown.contains("CPD0030") {
-            return Err(format!("an unknown command was not refused with CPD0030:\n{unknown}"));
+            return Err(format!(
+                "an unknown command was not refused with CPD0030:\n{unknown}"
+            ));
         }
         let too_many = s.command("dltlib LIB(CLTEST) EXTRA(1)", CMD)?;
         if !too_many.contains("CPD0043") {
-            return Err(format!("a bad keyword was not refused with CPD0043:\n{too_many}"));
+            return Err(format!(
+                "a bad keyword was not refused with CPD0043:\n{too_many}"
+            ));
         }
         let dev = s.command("svc.obj ls CLTEST", CMD)?;
         if !dev.contains("F1") {

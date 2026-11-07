@@ -36,16 +36,24 @@ fn compile(pattern: &str, flags: &str) -> Result<Regex> {
                 b.ignore_whitespace(true);
             }
             ' ' => {}
-            other => return Err(SqlError::Overflow { what: format!("regular expression flag {other} is not valid") }),
+            other => {
+                return Err(SqlError::Overflow {
+                    what: format!("regular expression flag {other} is not valid"),
+                });
+            }
         }
     }
-    b.build().map_err(|e| SqlError::Conversion { what: format!("the regular expression is not valid: {e}") })
+    b.build().map_err(|e| SqlError::Conversion {
+        what: format!("the regular expression is not valid: {e}"),
+    })
 }
 
 /// The byte offset of character `n` (from 1) of `s`; `None` past the end.
 fn byte_at(s: &str, n: i64) -> Result<Option<usize>> {
     if n < 1 {
-        return Err(SqlError::Overflow { what: format!("start {n} is below 1") });
+        return Err(SqlError::Overflow {
+            what: format!("start {n} is below 1"),
+        });
     }
     let n = usize::try_from(n - 1).expect("positive");
     if n == s.chars().count() {
@@ -104,14 +112,20 @@ pub(super) fn call(name: &str, args: &[Value]) -> Result<Value> {
                 None => (1, String::new()),
             };
             let re = compile(&args[1].as_text(), &flags)?;
-            let Some(b) = byte_at(src, start)? else { return Ok(Value::Bool(false)) };
+            let Some(b) = byte_at(src, start)? else {
+                return Ok(Value::Bool(false));
+            };
             Ok(Value::Bool(re.is_match(&src[b..])))
         }
         "REGEXP_COUNT" => {
             arity(name, args, 2, 4)?;
             let re = compile(&args[1].as_text(), &opt_text(args, 3))?;
-            let Some(b) = byte_at(src, opt_i64(args, 2, 1)?)? else { return Ok(int(0)) };
-            Ok(int(i64::try_from(re.find_iter(&src[b..]).count()).expect("fits")))
+            let Some(b) = byte_at(src, opt_i64(args, 2, 1)?)? else {
+                return Ok(int(0));
+            };
+            Ok(int(
+                i64::try_from(re.find_iter(&src[b..]).count()).expect("fits")
+            ))
         }
         "REGEXP_INSTR" => {
             arity(name, args, 2, 7)?;
@@ -120,13 +134,24 @@ pub(super) fn call(name: &str, args: &[Value]) -> Result<Value> {
             let after = opt_i64(args, 4, 0)?;
             let group = usize::try_from(opt_i64(args, 6, 0)?).unwrap_or(0);
             if occurrence < 1 || !(0..=1).contains(&after) {
-                return Err(SqlError::Overflow { what: "REGEXP_INSTR occurrence or return option not valid".into() });
+                return Err(SqlError::Overflow {
+                    what: "REGEXP_INSTR occurrence or return option not valid".into(),
+                });
             }
-            let Some(b) = byte_at(src, opt_i64(args, 2, 1)?)? else { return Ok(int(0)) };
+            let Some(b) = byte_at(src, opt_i64(args, 2, 1)?)? else {
+                return Ok(int(0));
+            };
             let n = usize::try_from(occurrence - 1).expect("positive");
-            let Some(caps) = re.captures_iter(&src[b..]).nth(n) else { return Ok(int(0)) };
-            let Some(m) = caps.get(group) else { return Ok(int(0)) };
-            Ok(int(char_pos(src, b + if after == 1 { m.end() } else { m.start() })))
+            let Some(caps) = re.captures_iter(&src[b..]).nth(n) else {
+                return Ok(int(0));
+            };
+            let Some(m) = caps.get(group) else {
+                return Ok(int(0));
+            };
+            Ok(int(char_pos(
+                src,
+                b + if after == 1 { m.end() } else { m.start() },
+            )))
         }
         "REGEXP_SUBSTR" => {
             arity(name, args, 2, 6)?;
@@ -134,9 +159,13 @@ pub(super) fn call(name: &str, args: &[Value]) -> Result<Value> {
             let occurrence = opt_i64(args, 3, 1)?;
             let group = usize::try_from(opt_i64(args, 5, 0)?).unwrap_or(0);
             if occurrence < 1 {
-                return Err(SqlError::Overflow { what: "REGEXP_SUBSTR occurrence below 1".into() });
+                return Err(SqlError::Overflow {
+                    what: "REGEXP_SUBSTR occurrence below 1".into(),
+                });
             }
-            let Some(b) = byte_at(src, opt_i64(args, 2, 1)?)? else { return Ok(Value::Null) };
+            let Some(b) = byte_at(src, opt_i64(args, 2, 1)?)? else {
+                return Ok(Value::Null);
+            };
             let n = usize::try_from(occurrence - 1).expect("positive");
             Ok(re
                 .captures_iter(&src[b..])
@@ -150,9 +179,13 @@ pub(super) fn call(name: &str, args: &[Value]) -> Result<Value> {
             let rep = replacement(&opt_text(args, 2));
             let occurrence = opt_i64(args, 4, 0)?;
             if occurrence < 0 {
-                return Err(SqlError::Overflow { what: "REGEXP_REPLACE occurrence below 0".into() });
+                return Err(SqlError::Overflow {
+                    what: "REGEXP_REPLACE occurrence below 0".into(),
+                });
             }
-            let Some(b) = byte_at(src, opt_i64(args, 3, 1)?)? else { return Ok(text(src)) };
+            let Some(b) = byte_at(src, opt_i64(args, 3, 1)?)? else {
+                return Ok(text(src));
+            };
             let (head, tail) = src.split_at(b);
             let replaced = if occurrence == 0 {
                 re.replace_all(tail, rep.as_str()).into_owned()

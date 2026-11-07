@@ -223,7 +223,10 @@ pub fn run(
         "STRDBG" => strdbg(job, host, r, &mut st, display),
         "DSPMODSRC" => {
             if st.session.modules.is_empty() {
-                Err(Fail::new("CPF1999", "No program is under debug; use STRDBG first."))
+                Err(Fail::new(
+                    "CPF1999",
+                    "No program is under debug; use STRDBG first.",
+                ))
             } else {
                 show_source(job, host, &mut st);
                 Ok(String::new())
@@ -293,7 +296,9 @@ fn strdbg(
         let _ = writeln!(said, "{lib}/{name} is under debug.");
     }
     if pgms.is_empty() && st.session.modules.is_empty() {
-        job.debug.get_or_insert_with(mi::debug::Debugger::default).updprod = updprod;
+        job.debug
+            .get_or_insert_with(mi::debug::Debugger::default)
+            .updprod = updprod;
         return Ok("The job is in debug mode.\n".into());
     }
     sync(job, host, st);
@@ -348,18 +353,20 @@ fn stmt_breakpoints(
     let program = programs(r, "PGM")
         .first()
         .map(|(_, n)| n.clone())
-        .or_else(|| {
-            job.debug
-                .as_ref()
-                .and_then(|d| d.programs.last().cloned())
-        })
+        .or_else(|| job.debug.as_ref().and_then(|d| d.programs.last().cloned()))
         .unwrap_or_default();
     if program.is_empty() {
         keep(st);
-        return Err(Fail::new("CPF1999", "No program is under debug; use STRDBG first."));
+        return Err(Fail::new(
+            "CPF1999",
+            "No program is under debug; use STRDBG first.",
+        ));
     }
     let stmts: Vec<String> = match r.get("STMT").and_then(|b| b.value.as_ref()) {
-        Some(Value::List(items)) => items.iter().map(|v| v.source().trim().to_string()).collect(),
+        Some(Value::List(items)) => items
+            .iter()
+            .map(|v| v.source().trim().to_string())
+            .collect(),
         Some(v) => vec![v.source().trim().to_string()],
         None => vec!["*ALL".into()],
     };
@@ -384,7 +391,10 @@ fn stmt_breakpoints(
             }
             _ => {
                 keep(st);
-                return Err(Fail::new("CPD0084", format!("{s} is not a statement number.")));
+                return Err(Fail::new(
+                    "CPD0084",
+                    format!("{s} is not a statement number."),
+                ));
             }
         }
     }
@@ -423,10 +433,9 @@ fn local_stop(job: &mut Job, at: &Stop, host: &Host, st: &mut State) -> Resume {
         .iter()
         .find(|b| b.program == at.program && b.stmt == at.stmt)
         .cloned();
-    let stmt_bkpt = st
-        .stmts
-        .iter()
-        .any(|(p, s)| *s == at.stmt && (at.program == *p || at.program.ends_with(&format!("/{p}"))));
+    let stmt_bkpt = st.stmts.iter().any(|(p, s)| {
+        *s == at.stmt && (at.program == *p || at.program.ends_with(&format!("/{p}")))
+    });
     // A condition that does not hold: on without a word.
     if let Some(b) = &on_bkpt
         && let Some(c) = b.when.as_deref().and_then(dbg::cond::parse)

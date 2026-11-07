@@ -17,7 +17,9 @@ pub fn char_of(v: &Decimal, shape: Shape, point: char) -> String {
 /// `%CHAR` of a number with `DECEDIT`'s point; `zero` puts a `0`
 /// before the point of a fraction (`DECEDIT('0.')`).
 pub fn char_of_dec(v: &Decimal, shape: Shape, point: char, zero: bool) -> String {
-    let v = v.rescale(shape.scale, Rounding::Truncate).unwrap_or_else(|_| v.clone());
+    let v = v
+        .rescale(shape.scale, Rounding::Truncate)
+        .unwrap_or_else(|_| v.clone());
     let s = v.to_string();
     let (neg, body) = match s.strip_prefix('-') {
         Some(b) => (true, b.to_string()),

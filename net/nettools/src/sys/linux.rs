@@ -32,7 +32,11 @@ fn ms_until(deadline: Instant) -> i32 {
 }
 
 fn level(v6: bool) -> i32 {
-    if v6 { libc::IPPROTO_IPV6 } else { libc::IPPROTO_IP }
+    if v6 {
+        libc::IPPROTO_IPV6
+    } else {
+        libc::IPPROTO_IP
+    }
 }
 
 /// Set the TTL (hop limit) of what `fd` sends.
@@ -67,10 +71,19 @@ pub struct Pinger {
 impl Pinger {
     /// A socket to `dest` from `local`, with a TTL and type of service
     /// when given.
-    pub fn open(dest: IpAddr, local: Option<IpAddr>, ttl: Option<u32>, tos: u8) -> io::Result<Self> {
+    pub fn open(
+        dest: IpAddr,
+        local: Option<IpAddr>,
+        ttl: Option<u32>,
+        tos: u8,
+    ) -> io::Result<Self> {
         let v6 = dest.is_ipv6();
         let fd = icmp_socket(dest, local)?;
-        let recv_ttl = if v6 { IPV6_RECVHOPLIMIT } else { libc::IP_RECVTTL };
+        let recv_ttl = if v6 {
+            IPV6_RECVHOPLIMIT
+        } else {
+            libc::IP_RECVTTL
+        };
         raw::set_int(&fd, level(v6), recv_ttl, 1)?;
         if let Some(t) = ttl {
             set_ttl(&fd, v6, t)?;
@@ -86,14 +99,17 @@ impl Pinger {
 impl Echoer for Pinger {
     fn send(&mut self, seq: u16, len: usize) -> Result<(), String> {
         let p = Echo::request(self.v6, 0, seq, len).encode();
-        raw::send(&self.fd, &p).map(|_| ()).map_err(|e| e.to_string())
+        raw::send(&self.fd, &p)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     fn recv(&mut self, deadline: Instant) -> Result<Option<Reply>, String> {
         let mut buf = vec![0u8; 65_536];
         let mut ctrl = [0u8; 128];
         loop {
-            let ev = raw::poll(&self.fd, libc::POLLIN, ms_until(deadline)).map_err(|e| e.to_string())?;
+            let ev =
+                raw::poll(&self.fd, libc::POLLIN, ms_until(deadline)).map_err(|e| e.to_string())?;
             if ev == 0 {
                 return Ok(None);
             }
@@ -101,7 +117,10 @@ impl Echoer for Pinger {
                 Ok(r) => r,
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => continue,
                 // An ICMP error for an earlier packet: no reply to it.
-                Err(e) if e.raw_os_error().is_some_and(|n| n == libc::EHOSTUNREACH || n == libc::ENETUNREACH) => {
+                Err(e)
+                    if e.raw_os_error()
+                        .is_some_and(|n| n == libc::EHOSTUNREACH || n == libc::ENETUNREACH) =>
+                {
                     continue;
                 }
                 Err(e) => return Err(e.to_string()),
@@ -145,10 +164,22 @@ pub struct RouteProber {
 
 impl RouteProber {
     /// Probes to `dest` with `len` bytes of data each.
-    pub fn open(dest: IpAddr, local: Option<IpAddr>, kind: ProbeKind, len: usize) -> io::Result<Self> {
+    pub fn open(
+        dest: IpAddr,
+        local: Option<IpAddr>,
+        kind: ProbeKind,
+        len: usize,
+    ) -> io::Result<Self> {
         let v6 = dest.is_ipv6();
         let fd = Self::socket(dest, local, kind, 0)?;
-        Ok(Self { fd, v6, dest, local, kind, len })
+        Ok(Self {
+            fd,
+            v6,
+            dest,
+            local,
+            kind,
+            len,
+        })
     }
 
     fn socket(dest: IpAddr, local: Option<IpAddr>, kind: ProbeKind, n: u32) -> io::Result<OwnedFd> {
@@ -166,7 +197,11 @@ impl RouteProber {
                 fd
             }
         };
-        let recverr = if v6 { cmsg::IPV6_RECVERR } else { cmsg::IP_RECVERR };
+        let recverr = if v6 {
+            cmsg::IPV6_RECVERR
+        } else {
+            cmsg::IP_RECVERR
+        };
         raw::set_int(&fd, level(v6), recverr, 1)?;
         Ok(fd)
     }
@@ -178,9 +213,24 @@ impl RouteProber {
         }
         let addr = e.offender.unwrap_or(self.dest);
         Some(match icmp::error_of(self.v6, e.kind, e.code) {
-            icmp::Error::TimeExceeded => Answer::From { addr, rtt, done: false, mark: None },
-            icmp::Error::PortUnreachable => Answer::From { addr, rtt, done: true, mark: None },
-            icmp::Error::Unreachable(c) => Answer::From { addr, rtt, done: false, mark: Some(c) },
+            icmp::Error::TimeExceeded => Answer::From {
+                addr,
+                rtt,
+                done: false,
+                mark: None,
+            },
+            icmp::Error::PortUnreachable => Answer::From {
+                addr,
+                rtt,
+                done: true,
+                mark: None,
+            },
+            icmp::Error::Unreachable(c) => Answer::From {
+                addr,
+                rtt,
+                done: false,
+                mark: Some(c),
+            },
             icmp::Error::Other => return None,
         })
     }
@@ -190,7 +240,8 @@ impl Prober for RouteProber {
     fn probe(&mut self, ttl: u8, n: u32, wait: Duration) -> Result<Answer, String> {
         if let ProbeKind::Udp { .. } = self.kind {
             // A port per probe, as traceroute does, so answers match.
-            self.fd = Self::socket(self.dest, self.local, self.kind, n).map_err(|e| e.to_string())?;
+            self.fd =
+                Self::socket(self.dest, self.local, self.kind, n).map_err(|e| e.to_string())?;
         }
         set_ttl(&self.fd, self.v6, u32::from(ttl)).map_err(|e| e.to_string())?;
         let seq = u16::try_from(n % 65_536).unwrap_or(0);
@@ -204,13 +255,18 @@ impl Prober for RouteProber {
         let mut buf = vec![0u8; 65_536];
         let mut ctrl = [0u8; 512];
         loop {
-            let ev = raw::poll(&self.fd, libc::POLLIN | libc::POLLERR, ms_until(deadline)).map_err(|e| e.to_string())?;
+            let ev = raw::poll(&self.fd, libc::POLLIN | libc::POLLERR, ms_until(deadline))
+                .map_err(|e| e.to_string())?;
             if ev == 0 {
                 return Ok(Answer::Timeout);
             }
             if ev & libc::POLLERR != 0 {
-                if let Ok(r) = raw::recvmsg(&self.fd, &mut buf, &mut ctrl, libc::MSG_ERRQUEUE | libc::MSG_DONTWAIT)
-                    && let Some(a) = self.answer(&ctrl[..r.ctrl_len], start.elapsed())
+                if let Ok(r) = raw::recvmsg(
+                    &self.fd,
+                    &mut buf,
+                    &mut ctrl,
+                    libc::MSG_ERRQUEUE | libc::MSG_DONTWAIT,
+                ) && let Some(a) = self.answer(&ctrl[..r.ctrl_len], start.elapsed())
                 {
                     return Ok(a);
                 }
@@ -223,7 +279,12 @@ impl Prober for RouteProber {
                         && e.reply
                         && e.seq == seq
                     {
-                        return Ok(Answer::From { addr: r.from.unwrap_or(self.dest), rtt: start.elapsed(), done: true, mark: None });
+                        return Ok(Answer::From {
+                            addr: r.from.unwrap_or(self.dest),
+                            rtt: start.elapsed(),
+                            done: true,
+                            mark: None,
+                        });
                     }
                 }
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => {}
@@ -240,9 +301,12 @@ impl Prober for RouteProber {
 /// The index of a kernel link.
 pub fn ifindex(name: &str) -> io::Result<i32> {
     let s = std::fs::read_to_string(format!("/sys/class/net/{name}/ifindex"))?;
-    s.trim()
-        .parse()
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, format!("ifindex of {name}: {s:?}")))
+    s.trim().parse().map_err(|_| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("ifindex of {name}: {s:?}"),
+        )
+    })
 }
 
 /// Frames of one link.
@@ -253,7 +317,9 @@ pub struct Capture {
 impl Capture {
     /// Open link `ifname` for capture (needs `CAP_NET_RAW`).
     pub fn open(ifname: &str) -> io::Result<Self> {
-        Ok(Self { fd: raw::packet_socket(ifindex(ifname)?)? })
+        Ok(Self {
+            fd: raw::packet_socket(ifindex(ifname)?)?,
+        })
     }
 
     /// The next frame within `wait`: its length on the wire and whether

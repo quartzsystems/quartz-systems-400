@@ -12,8 +12,8 @@ use httpadmin::PRODUCT;
 use qsweb::frame::{Ctx, NavGroup, Page, Product, render};
 use qsweb::msg::{Kind, Message};
 use qsweb::partials::{
-    Button, Cell, Col, FilterField, List, Paging, Prop, PropGroup, buttons, filter, form, list_table, paging, props,
-    props_table, tabs, wizard,
+    Button, Cell, Col, FilterField, List, Paging, Prop, PropGroup, buttons, filter, form,
+    list_table, paging, props, props_table, tabs, wizard,
 };
 
 #[test]
@@ -22,7 +22,11 @@ fn signon() {
     let r = b.get("/signon");
     assert_eq!(r.status, 200);
     // The form posts back to the sign-on route, not to the list.
-    assert_golden(&r.text(), "http/signon.html", &[("action=\"instances.html\"", "action=\"signon.html\"")]);
+    assert_golden(
+        &r.text(),
+        "http/signon.html",
+        &[("action=\"instances.html\"", "action=\"signon.html\"")],
+    );
 }
 
 #[test]
@@ -93,7 +97,10 @@ fn components() {
         keep: Vec::new(),
     };
     let empty = List {
-        cols: ["Job name", "User", "Number", "Status"].iter().map(|c| Col::plain(c)).collect(),
+        cols: ["Job name", "User", "Number", "Status"]
+            .iter()
+            .map(|c| Col::plain(c))
+            .collect(),
         rows: Vec::new(),
         empty: "No active jobs match the filter.".into(),
         keep: Vec::new(),
@@ -105,19 +112,36 @@ fn components() {
             PropGroup {
                 title: Some("Identification".into()),
                 rows: vec![
-                    Prop::new("Instance name", "<span class=\"mono\">WEBSTORE</span>".into()),
-                    Prop::new("Description", qsweb::partials::input("desc", "Web store front end", 40)).help("desc"),
+                    Prop::new(
+                        "Instance name",
+                        "<span class=\"mono\">WEBSTORE</span>".into(),
+                    ),
+                    Prop::new(
+                        "Description",
+                        qsweb::partials::input("desc", "Web store front end", 40),
+                    )
+                    .help("desc"),
                 ],
             },
             PropGroup {
                 title: Some("Startup".into()),
                 rows: vec![
-                    Prop::new("Start with STRTCP", qsweb::partials::checkbox("autostart", true)),
-                    Prop::new("Server user profile", qsweb::partials::input("usrprf", "QTMHHTTP", 10)),
+                    Prop::new(
+                        "Start with STRTCP",
+                        qsweb::partials::checkbox("autostart", true),
+                    ),
+                    Prop::new(
+                        "Server user profile",
+                        qsweb::partials::input("usrprf", "QTMHHTTP", 10),
+                    ),
                 ],
             },
         ],
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     let wiz_body = format!(
         "<h2>Server root</h2><p class=\"small grey\">The directory that holds the configuration, logs and content of the instance.</p>{}",
@@ -125,7 +149,10 @@ fn components() {
             &P,
             &[PropGroup {
                 title: None,
-                rows: vec![Prop::new("Server root", qsweb::partials::input_cmd("root", "/www/webstore", 40))],
+                rows: vec![Prop::new(
+                    "Server root",
+                    qsweb::partials::input_cmd("root", "/www/webstore", 40)
+                )],
             }],
             false
         )
@@ -146,8 +173,16 @@ fn components() {
             &P,
             &[
                 Message::new(Kind::Info, "CPF1321", "Job 123456/QUSER/QPADEV0001 ended."),
-                Message::new(Kind::Done, "HTP8001", "HTTP server instance WEBSTORE started."),
-                Message::new(Kind::Error, "SQL0204", "TABLE CUSTMAST in QGPL type *FILE not found."),
+                Message::new(
+                    Kind::Done,
+                    "HTP8001",
+                    "HTTP server instance WEBSTORE started."
+                ),
+                Message::new(
+                    Kind::Error,
+                    "SQL0204",
+                    "TABLE CUSTMAST in QGPL type *FILE not found."
+                ),
             ]
         ),
         filter(
@@ -155,7 +190,9 @@ fn components() {
                 FilterField::Select(
                     "Subsystem".into(),
                     "sbs".into(),
-                    ["*ALL", "QINTER", "QBATCH", "QHTTPSVR"].map(String::from).to_vec(),
+                    ["*ALL", "QINTER", "QBATCH", "QHTTPSVR"]
+                        .map(String::from)
+                        .to_vec(),
                     String::new()
                 ),
                 FilterField::Text("User".into(), "user".into(), String::new(), 10),
@@ -171,14 +208,28 @@ fn components() {
         list_table(&jobs),
         paging(&Paging::from_query("1", "25", 288, Vec::new())),
         list_table(&empty),
-        tabs(&[tab("General"), tab("Options"), tab("Security"), tab("Logs")], 0),
+        tabs(
+            &[tab("General"), tab("Options"), tab("Security"), tab("Logs")],
+            0
+        ),
         props_body,
         wizard(
             &ctx,
-            &["Name and description", "Server root", "Document root", "IP address and port", "Access log", "Create"],
+            &[
+                "Name and description",
+                "Server root",
+                "Document root",
+                "IP address and port",
+                "Access log",
+                "Create"
+            ],
             2,
             &wiz_body,
-            &[Button::new("back", "< Back"), Button::new("next", "Next >"), Button::new("cancel", "Cancel")]
+            &[
+                Button::new("back", "< Back"),
+                Button::new("next", "Next >"),
+                Button::new("cancel", "Cancel")
+            ]
         ),
         PRODUCT.url("/instance/WEBSTORE/confirm?op=delete"),
         PRODUCT.url("/msg/CPF2204"),
@@ -200,9 +251,14 @@ fn components() {
         &render(&ctx, &page),
         "shared/components.html",
         &[
-            ("<a href=\"components.html\">Options</a> | <a href=\"components.html\">Security</a> | <a href=\"components.html\">Logs</a>",
-             "<a href=\"help.html\">Options</a> | <a href=\"help.html\">Security</a> | <a href=\"help.html\">Logs</a>"),
-            ("<a href=\"error.html\">Error page</a>", "<a href=\"help.html\">Error page</a>"),
+            (
+                "<a href=\"components.html\">Options</a> | <a href=\"components.html\">Security</a> | <a href=\"components.html\">Logs</a>",
+                "<a href=\"help.html\">Options</a> | <a href=\"help.html\">Security</a> | <a href=\"help.html\">Logs</a>",
+            ),
+            (
+                "<a href=\"error.html\">Error page</a>",
+                "<a href=\"help.html\">Error page</a>",
+            ),
         ],
     );
 }
@@ -218,7 +274,10 @@ fn confirm_stop() {
         &r.text(),
         "http/confirm-stop.html",
         &[
-            ("</table><p class=\"small grey\">How to end:", "</table><form method=\"post\"><p class=\"small grey\">How to end:"),
+            (
+                "</table><p class=\"small grey\">How to end:",
+                "</table><form method=\"post\"><p class=\"small grey\">How to end:",
+            ),
             ("Immediate</p><form method=\"post\">", "Immediate</p>"),
         ],
     );
@@ -233,9 +292,18 @@ fn confirm_delete() {
         &r.text(),
         "shared/confirm.html",
         &[
-            ("Confirm Delete Instance - QS/400<", "Confirm Delete Instance - QS/400 HTTP Server Administration<"),
-            ("<td class=\"wordmark\">QS/400</td>", "<td class=\"wordmark\">QS/400 HTTP Server Administration</td>"),
-            ("configuration directory and all log files.", "configuration directory, all log files and its certificate application ID."),
+            (
+                "Confirm Delete Instance - QS/400<",
+                "Confirm Delete Instance - QS/400 HTTP Server Administration<",
+            ),
+            (
+                "<td class=\"wordmark\">QS/400</td>",
+                "<td class=\"wordmark\">QS/400 HTTP Server Administration</td>",
+            ),
+            (
+                "configuration directory and all log files.",
+                "configuration directory, all log files and its certificate application ID.",
+            ),
         ],
     );
 }
@@ -249,19 +317,39 @@ fn create_wizard() {
         httpd::instance::delete(b.fx.files.as_ref(), n).unwrap();
     }
     let steps: [&[(&str, &str)]; 5] = [
-        &[("name", "webstore"), ("desc", "Web store front end"), ("base", "new"), ("copyfrom", "APACHEDFT")],
+        &[
+            ("name", "webstore"),
+            ("desc", "Web store front end"),
+            ("base", "new"),
+            ("copyfrom", "APACHEDFT"),
+        ],
         &[("root", "/www/webstore")],
         &[("docroot", "/www/webstore/htdocs"), ("sample", "on")],
         &[("addr", "*ALL"), ("ip", "10.0.10.20"), ("port", "80")],
-        &[("log", "yes"), ("logpath", "/www/webstore/logs/access_log"), ("fmt", "Combined"), ("rot", "Daily")],
+        &[
+            ("log", "yes"),
+            ("logpath", "/www/webstore/logs/access_log"),
+            ("fmt", "Combined"),
+            ("rot", "Daily"),
+        ],
     ];
-    assert_eq!(b.post("/create/step/1", &[("create_new_instance", "Create new instance...")]).status, 303);
+    assert_eq!(
+        b.post(
+            "/create/step/1",
+            &[("create_new_instance", "Create new instance...")]
+        )
+        .status,
+        303
+    );
     for (i, fields) in steps.iter().enumerate() {
         let n = i + 1;
         let mut f = fields.to_vec();
         f.push(("next", "Next >"));
         let r = b.post(&format!("/create/step/{n}"), &f);
-        assert_eq!(r.header("Location").map(ToString::to_string), Some(PRODUCT.url(&format!("/create/step/{}", n + 1))));
+        assert_eq!(
+            r.header("Location").map(ToString::to_string),
+            Some(PRODUCT.url(&format!("/create/step/{}", n + 1)))
+        );
         if n == 2 {
             // The prototype draws the tree closed after step 1; served,
             // the group stays open until the user closes it.
@@ -287,7 +375,10 @@ fn instance_general() {
 #[test]
 fn instance_ports() {
     let mut b = Browser::signed_on();
-    let r = b.post("/instance/WEBSTORE/ports", &[("addr", "10.0.10.21"), ("port", "8081"), ("add", "Add")]);
+    let r = b.post(
+        "/instance/WEBSTORE/ports",
+        &[("addr", "10.0.10.21"), ("port", "8081"), ("add", "Add")],
+    );
     assert_eq!(r.status, 303);
     assert!(b.get("/instance/WEBSTORE/ports").text().contains("HTP8022"));
     let r = b.get("/instance/WEBSTORE/ports");
@@ -297,8 +388,14 @@ fn instance_ports() {
         &r.text(),
         "http/instance-ports.html",
         &[
-            ("</div><table class=\"list\"", "</div><form method=\"post\"><table class=\"list\""),
-            ("</table><form method=\"post\"><div class=\"buttons\"><input type=\"submit\" name=\"remove\"", "</table><div class=\"buttons\"><input type=\"submit\" name=\"remove\""),
+            (
+                "</div><table class=\"list\"",
+                "</div><form method=\"post\"><table class=\"list\"",
+            ),
+            (
+                "</table><form method=\"post\"><div class=\"buttons\"><input type=\"submit\" name=\"remove\"",
+                "</table><div class=\"buttons\"><input type=\"submit\" name=\"remove\"",
+            ),
         ],
     );
 }
@@ -348,7 +445,8 @@ Alias /downloads/ /home/WEBSTORE/downloads/
 #[test]
 fn instance_directories() {
     let mut b = Browser::signed_on();
-    b.fx.files.put("/www/webstore/conf/httpd.conf", WEBSTORE_DIRS.as_bytes());
+    b.fx.files
+        .put("/www/webstore/conf/httpd.conf", WEBSTORE_DIRS.as_bytes());
     let r = b.get("/instance/WEBSTORE/directories");
     assert_eq!(r.status, 200);
     assert_golden(&r.text(), "http/instance-directories.html", &[]);
@@ -366,8 +464,14 @@ fn instance_tls() {
         &r.text(),
         "http/instance-tls.html",
         &[
-            ("The certificate is chosen from the certificates assigned to the instance's certificate application.", "The certificate chosen is assigned to the instance's certificate application."),
-            ("<br><input type=\"checkbox\" name=\"t11\"> TLS 1.1 (not recommended)", "<br><span class=\"small grey\">TLS 1.1 and older are not offered.</span>"),
+            (
+                "The certificate is chosen from the certificates assigned to the instance's certificate application.",
+                "The certificate chosen is assigned to the instance's certificate application.",
+            ),
+            (
+                "<br><input type=\"checkbox\" name=\"t11\"> TLS 1.1 (not recommended)",
+                "<br><span class=\"small grey\">TLS 1.1 and older are not offered.</span>",
+            ),
         ],
     );
 }
@@ -386,7 +490,11 @@ fn instance_config() {
     let r = b.get("/instance/WEBSTORE/config");
     assert_eq!(r.status, 200);
     // The prototype's file in the text area has 45 lines, not 47.
-    assert_golden(&r.text(), "http/instance-config.html", &[("47 lines", "45 lines")]);
+    assert_golden(
+        &r.text(),
+        "http/instance-config.html",
+        &[("47 lines", "45 lines")],
+    );
 }
 
 #[test]
@@ -399,16 +507,31 @@ fn instance_logs() {
     assert_golden(
         &r.text(),
         "http/instance-logs.html",
-        &[("<a href=\"#\">Download complete file</a>", "<a href=\"instance-logs.html\">Download complete file</a>")],
+        &[(
+            "<a href=\"#\">Download complete file</a>",
+            "<a href=\"instance-logs.html\">Download complete file</a>",
+        )],
     );
 }
 /// Data differences: the store paths are IBM-compatible
 /// (docs/HTTPADMIN.md, "Decisions").
 const STORE_PATHS: &[(&str, &str)] = &[
-    ("/QS400/USERDATA/ICSS/CERT/SERVER/DEFAULT.KDB", "/QIBM/UserData/ICSS/Cert/Server/DEFAULT.KDB"),
-    ("/QS400/USERDATA/ICSS/CERT/SIGNING/SGNOBJ.KDB", "/QIBM/UserData/ICSS/Cert/Signing/SIGNING.KDB"),
-    ("/QS400/USERDATA/ICSS/CERT/SIGNING/VFYOBJ.KDB", "/QIBM/UserData/ICSS/Cert/Signing/SIGNVER.KDB"),
-    ("value=\"/QS400/USERDATA/ICSS/CERT/\"", "value=\"/QIBM/UserData/ICSS/Cert/\""),
+    (
+        "/QS400/USERDATA/ICSS/CERT/SERVER/DEFAULT.KDB",
+        "/QIBM/UserData/ICSS/Cert/Server/DEFAULT.KDB",
+    ),
+    (
+        "/QS400/USERDATA/ICSS/CERT/SIGNING/SGNOBJ.KDB",
+        "/QIBM/UserData/ICSS/Cert/Signing/SIGNING.KDB",
+    ),
+    (
+        "/QS400/USERDATA/ICSS/CERT/SIGNING/VFYOBJ.KDB",
+        "/QIBM/UserData/ICSS/Cert/Signing/SIGNVER.KDB",
+    ),
+    (
+        "value=\"/QS400/USERDATA/ICSS/CERT/\"",
+        "value=\"/QIBM/UserData/ICSS/Cert/\"",
+    ),
 ];
 
 #[test]
@@ -450,14 +573,28 @@ fn between<'a>(s: &'a str, from: &str, to: &str) -> &'a str {
 fn cert_wizard(b: &mut Browser) {
     let r = b.post(
         "/certs/create/step/1",
-        &[("label", "webstore-2027"), ("kt", "rsa"), ("ks", "2048"), ("curve", "P-256"), ("sig", "SHA-256"), ("days", "365"), ("next", "Next >")],
+        &[
+            ("label", "webstore-2027"),
+            ("kt", "rsa"),
+            ("ks", "2048"),
+            ("curve", "P-256"),
+            ("sig", "SHA-256"),
+            ("days", "365"),
+            ("next", "Next >"),
+        ],
     );
-    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/2"));
+    assert_eq!(
+        r.header("Location"),
+        Some("/qs400/httpadmin/certs/create/step/2")
+    );
     let r = b.post(
         "/certs/create/step/2",
         &[
             ("cn", "webstore.quartz.example"),
-            ("san", "webstore.quartz.example, www.webstore.quartz.example"),
+            (
+                "san",
+                "webstore.quartz.example, www.webstore.quartz.example",
+            ),
             ("ou", "Web"),
             ("o", "Quartz Systems"),
             ("l", ""),
@@ -466,7 +603,10 @@ fn cert_wizard(b: &mut Browser) {
             ("next", "Next >"),
         ],
     );
-    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/3"));
+    assert_eq!(
+        r.header("Location"),
+        Some("/qs400/httpadmin/certs/create/step/3")
+    );
 }
 
 #[test]
@@ -484,14 +624,33 @@ fn cert_create_steps() {
 fn cert_create_result() {
     let mut b = Browser::signed_on();
     cert_wizard(&mut b);
-    let r = b.post("/certs/create/step/3", &[("s", "local"), ("ca", "Quartz Internal CA"), ("ku1", "on"), ("finish", "Create")]);
-    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/result"));
+    let r = b.post(
+        "/certs/create/step/3",
+        &[
+            ("s", "local"),
+            ("ca", "Quartz Internal CA"),
+            ("ku1", "on"),
+            ("finish", "Create"),
+        ],
+    );
+    assert_eq!(
+        r.header("Location"),
+        Some("/qs400/httpadmin/certs/create/result")
+    );
     let t = b.get("/certs/create/result").text();
     let g = common::golden("http/cert-create-result.html");
-    let cell = |s: &str, th: &str| between(s, &format!("<th>{th}</th>"), "</td>").rsplit('>').next().unwrap().to_string();
+    let cell = |s: &str, th: &str| {
+        between(s, &format!("<th>{th}</th>"), "</td>")
+            .rsplit('>')
+            .next()
+            .unwrap()
+            .to_string()
+    };
     let pem = |s: &str| between(s, "<pre class=\"out\">", "</pre>").to_string();
     let (gp, sp) = (pem(&g), pem(&t));
-    assert!(sp.starts_with("-----BEGIN CERTIFICATE-----") && sp.ends_with("-----END CERTIFICATE-----"));
+    assert!(
+        sp.starts_with("-----BEGIN CERTIFICATE-----") && sp.ends_with("-----END CERTIFICATE-----")
+    );
     let data: Vec<(String, String)> = ["Serial", "Valid", "Fingerprint (SHA-256)"]
         .iter()
         .map(|th| (cell(&g, th), cell(&t, th)))
@@ -500,7 +659,10 @@ fn cert_create_result() {
     let mut fix: Vec<(&str, &str)> = data.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
     // The download buttons carry names so the page can tell them apart.
     fix.extend([
-        ("<input type=\"submit\" value=\"Download\">", "<input type=\"submit\" name=\"download\" value=\"Download\">"),
+        (
+            "<input type=\"submit\" value=\"Download\">",
+            "<input type=\"submit\" name=\"download\" value=\"Download\">",
+        ),
         (
             "<input type=\"submit\" value=\"Download with chain\">",
             "<input type=\"submit\" name=\"chain\" value=\"Download with chain\">",
@@ -519,7 +681,10 @@ fn cert_import() {
     let id = b.cookie.clone().unwrap();
     // The path typed last time.
     b.admin.sessions.update(&id, |s| {
-        s.data.insert("certimp.path".into(), "/home/TESTUSER/certs/webstore.p12".into());
+        s.data.insert(
+            "certimp.path".into(),
+            "/home/TESTUSER/certs/webstore.p12".into(),
+        );
     });
     let r = b.get("/certs/import");
     assert_eq!(r.status, 200);
@@ -547,7 +712,10 @@ fn global_settings() {
     // With TLS required the page is reached on the TLS port.
     assert_eq!(b.get("/global").status, 303);
     let mut req = Request::new("GET", &PRODUCT.url("/global"));
-    req.headers.push(("cookie".into(), format!("QS400SID={}", b.cookie.clone().unwrap())));
+    req.headers.push((
+        "cookie".into(),
+        format!("QS400SID={}", b.cookie.clone().unwrap()),
+    ));
     let peer = Peer {
         addr: "10.0.10.55:50000".parse().unwrap(),
         secure: true,

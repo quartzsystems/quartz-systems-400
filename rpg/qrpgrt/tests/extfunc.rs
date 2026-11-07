@@ -34,11 +34,23 @@ struct StoreSource {
 }
 
 impl ObjectSource for StoreSource {
-    fn program(&mut self, name: &str, _lib: &str, kind: PgmKind) -> Option<(Arc<ProgramObject>, String)> {
+    fn program(
+        &mut self,
+        name: &str,
+        _lib: &str,
+        kind: PgmKind,
+    ) -> Option<(Arc<ProgramObject>, String)> {
         let mut st = self.store.borrow_mut();
         let mut txn = st.begin().ok()?;
-        let ty = if kind == PgmKind::Pgm { types::PGM } else { types::SRVPGM };
-        let id = Library::load(&mut txn, self.lib).ok()?.lookup(&mut txn, ty, Name::parse(name).ok()?).ok()??;
+        let ty = if kind == PgmKind::Pgm {
+            types::PGM
+        } else {
+            types::SRVPGM
+        };
+        let id = Library::load(&mut txn, self.lib)
+            .ok()?
+            .lookup(&mut txn, ty, Name::parse(name).ok()?)
+            .ok()??;
         let p = ile::store::load_program(&mut txn, id).ok()?;
         txn.abort();
         Some((Arc::new(p), "QSTEST".into()))
@@ -54,7 +66,15 @@ struct Env {
 }
 
 fn context(qsys: ObjectId, lib: ObjectId, locks: &db::odp::SharedLocks) -> SqlContext {
-    let mut ctx = SqlContext::with_locks(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] }, locks.clone());
+    let mut ctx = SqlContext::with_locks(
+        qsys,
+        JobHandle(1),
+        NameContext {
+            curlib: Some(lib),
+            libl: vec![lib],
+        },
+        locks.clone(),
+    );
     ctx.now = Some(NOW);
     ctx.user = "QSECOFR".into();
     ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
@@ -71,7 +91,12 @@ fn env() -> Env {
         wal_pages: 512,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -92,9 +117,15 @@ fn env() -> Env {
     t.commit().unwrap();
     let store = Rc::new(RefCell::new(store));
     let locks = db::odp::new_shared();
-    let mut job = mi::Job::boxed(Box::new(StoreSource { store: Rc::clone(&store), lib }));
+    let mut job = mi::Job::boxed(Box::new(StoreSource {
+        store: Rc::clone(&store),
+        lib,
+    }));
     qrpgrt::install(&mut job);
-    job.sql = Some(Box::new(Session::with_ctx(Box::new(Rc::clone(&store)), context(qsys, lib, &locks))));
+    job.sql = Some(Box::new(Session::with_ctx(
+        Box::new(Rc::clone(&store)),
+        context(qsys, lib, &locks),
+    )));
     let job = Rc::new(RefCell::new(job));
     // The job's side of a call in the middle of a statement.
     let j = Rc::clone(&job);
@@ -104,7 +135,12 @@ fn env() -> Env {
     });
     let mut ctx = context(qsys, lib, &locks);
     ctx.midcall = Some(mid);
-    Env { sql: Session::with_ctx(Box::new(Rc::clone(&store)), ctx), store, lib, qsys }
+    Env {
+        sql: Session::with_ctx(Box::new(Rc::clone(&store)), ctx),
+        store,
+        lib,
+        qsys,
+    }
 }
 
 fn text(v: &Value) -> String {
@@ -115,7 +151,12 @@ impl Env {
     fn run(&mut self, text: &str) -> Reply {
         self.sql.run(&Request {
             scope: "1:TEST".into(),
-            desc: Desc { op: Op::Exec, sql_naming: true, text: text.into(), ..Desc::default() },
+            desc: Desc {
+                op: Op::Exec,
+                sql_naming: true,
+                text: text.into(),
+                ..Desc::default()
+            },
             inputs: Vec::new(),
         })
     }
@@ -135,7 +176,13 @@ impl Env {
         let s = &mut self.sql;
         let req = |op, text: &str| Request {
             scope: "1:TEST".into(),
-            desc: Desc { op, name: "Q".into(), sql_naming: true, text: text.into(), ..Desc::default() },
+            desc: Desc {
+                op,
+                name: "Q".into(),
+                sql_naming: true,
+                text: text.into(),
+                ..Desc::default()
+            },
             inputs: Vec::new(),
         };
         let r = s.run(&req(Op::Open, q));
@@ -146,7 +193,11 @@ impl Env {
             if f.sqlca.sqlcode != 0 {
                 break;
             }
-            out.extend(f.rows.iter().map(|r| r.iter().map(text).collect::<Vec<_>>().join("|")));
+            out.extend(
+                f.rows
+                    .iter()
+                    .map(|r| r.iter().map(text).collect::<Vec<_>>().join("|")),
+            );
         }
         s.run(&req(Op::Close, ""));
         out
@@ -161,15 +212,30 @@ impl Env {
         let mut txn = st.begin().unwrap();
         let c = ile::store::Ctx {
             qsys: self.qsys,
-            names: NameContext { curlib: Some(self.lib), libl: vec![self.lib] },
+            names: NameContext {
+                curlib: Some(self.lib),
+                libl: vec![self.lib],
+            },
             now: NOW,
             owner: "QSECOFR".into(),
             system: "QS400".into(),
         };
         let n = Name::parse(name).unwrap();
         let m = ile::store::crtmod(&mut txn, &c, self.lib, n, &object, "").unwrap();
-        let spec = ile::store::ObjSpec { lib: qsname::LibSpec::Name(Name::parse("QSTEST").unwrap()), name: n };
-        ile::store::crtpgm(&mut txn, &c, self.lib, &[spec], &[], ile::BindOptions::new(name, PgmKind::SrvPgm), "").unwrap();
+        let spec = ile::store::ObjSpec {
+            lib: qsname::LibSpec::Name(Name::parse("QSTEST").unwrap()),
+            name: n,
+        };
+        ile::store::crtpgm(
+            &mut txn,
+            &c,
+            self.lib,
+            &[spec],
+            &[],
+            ile::BindOptions::new(name, PgmKind::SrvPgm),
+            "",
+        )
+        .unwrap();
         store::obj::ops::delete(&mut txn, JobHandle(0), m).unwrap();
         txn.commit().unwrap();
     }
@@ -223,7 +289,10 @@ fn an_external_function_runs_in_the_middle_of_a_query() {
     e.ok("CREATE FUNCTION QSTEST.TWICE (A INTEGER) RETURNS INTEGER LANGUAGE RPGLE EXTERNAL NAME 'QSTEST/QFX(TWICE)' PARAMETER STYLE SQL CALLED ON NULL INPUT");
     e.ok("CREATE TABLE QSTEST.FX (N INTEGER)");
     e.ok("INSERT INTO QSTEST.FX VALUES (1), (2), (NULL)");
-    assert_eq!(e.rows("SELECT TWICE(N) FROM QSTEST.FX ORDER BY N"), ["2", "4", "NULL"]);
+    assert_eq!(
+        e.rows("SELECT TWICE(N) FROM QSTEST.FX ORDER BY N"),
+        ["2", "4", "NULL"]
+    );
     assert_eq!(e.rows("VALUES QSTEST.TWICE(21)"), ["42"]);
     let (code, state) = e.code("VALUES QSTEST.TWICE(-1)");
     assert_eq!((code, state.as_str()), (-443, "38001"));

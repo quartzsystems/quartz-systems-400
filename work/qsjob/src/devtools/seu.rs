@@ -82,7 +82,10 @@ pub(crate) struct Ctx<'a> {
 
 impl Ctx<'_> {
     /// Draw with `f` and wait for a key: the key and the cursor.
-    pub fn exchange(&mut self, f: impl FnOnce(&mut Screens, &mut ScreenModel, &Env)) -> Option<(u8, (usize, usize))> {
+    pub fn exchange(
+        &mut self,
+        f: impl FnOnce(&mut Screens, &mut ScreenModel, &Env),
+    ) -> Option<(u8, (usize, usize))> {
         let env = self.env.clone();
         let screens = &mut self.screens;
         self.surface.with_model(|m| f(screens, m, &env));
@@ -121,19 +124,16 @@ impl Ctx<'_> {
         let records = s.records();
         let srctype = s.member_type.clone();
         let text = s.text.clone();
-        self.host
-            .link
-            .borrow_mut()
-            .with(|l| {
-                l.seu_save(
-                    lib.into(),
-                    file.into(),
-                    member.into(),
-                    records,
-                    srctype,
-                    text,
-                )
-            })?;
+        self.host.link.borrow_mut().with(|l| {
+            l.seu_save(
+                lib.into(),
+                file.into(),
+                member.into(),
+                records,
+                srctype,
+                text,
+            )
+        })?;
         if (lib, file, member) == (self.at.0.as_str(), self.at.1.as_str(), self.at.2.as_str()) {
             s.buf.saved();
             self.exists = true;
@@ -145,11 +145,17 @@ impl Ctx<'_> {
 /// `STRSEU SRCFILE SRCMBR TYPE OPTION TEXT`.
 pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     if !crate::panels::shows_panels(host, r) {
-        return Err(Fail::new("CPF9871", "SEU needs a display: run STRSEU from an interactive job."));
+        return Err(Fail::new(
+            "CPF9871",
+            "SEU needs a display: run STRSEU from an interactive job.",
+        ));
     }
     let (lib, file, member) = target(r)?;
     if member == "*SELECT" {
-        return Err(Fail::new("CPF9871", "The member list comes with PDM: name the member."));
+        return Err(Fail::new(
+            "CPF9871",
+            "The member list comes with PDM: name the member.",
+        ));
     }
     let option = parm(r, "OPTION");
     let mode = match option.as_str() {
@@ -159,9 +165,22 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     let opened: SrcMember = host
         .link
         .borrow_mut()
-        .with(|l| l.seu_open(lib.clone(), file.clone(), member.clone(), mode == Mode::Edit))
+        .with(|l| {
+            l.seu_open(
+                lib.clone(),
+                file.clone(),
+                member.clone(),
+                mode == Mode::Edit,
+            )
+        })
         .map_err(|e| fail_of(&e))?;
-    PREVIOUS.with(|p| *p.borrow_mut() = Some((opened.lib.clone(), opened.file.clone(), opened.member.clone())));
+    PREVIOUS.with(|p| {
+        *p.borrow_mut() = Some((
+            opened.lib.clone(),
+            opened.file.clone(),
+            opened.member.clone(),
+        ))
+    });
     let sysname = crate::display::dds::system_name(host);
     let env = crate::display::dds::env_of(host, &sysname);
     let mut surface = Surface::new(host.clone());
@@ -172,7 +191,11 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
         surface,
         screens: Screens::new(wide),
         env,
-        at: (opened.lib.clone(), opened.file.clone(), opened.member.clone()),
+        at: (
+            opened.lib.clone(),
+            opened.file.clone(),
+            opened.member.clone(),
+        ),
         exists: opened.exists,
     };
     if option == "6" {
@@ -188,7 +211,13 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     };
     let buf = Buffer::new(opened.width as usize, opened.records.clone());
     let day = today(&ctx.env);
-    let mut s = Session::new(mode, buf, &srctype, (&opened.lib, &opened.file, &opened.member), day);
+    let mut s = Session::new(
+        mode,
+        buf,
+        &srctype,
+        (&opened.lib, &opened.file, &opened.member),
+        day,
+    );
     s.member_type = srctype;
     s.text = match parm(r, "TEXT").as_str() {
         "" | "*BLANK" | "*SAME" => opened.text.clone(),
@@ -208,7 +237,10 @@ fn target(r: &Resolved) -> Result<(String, String, String), Fail> {
     let srcfile = parm(r, "SRCFILE");
     let (lib, file) = if srcfile.is_empty() || srcfile.eq_ignore_ascii_case("*PRV") {
         let Some((l, f, _)) = prv.clone() else {
-            return Err(Fail::new("CPF9871", "No member was edited before: name the source file."));
+            return Err(Fail::new(
+                "CPF9871",
+                "No member was edited before: name the source file.",
+            ));
         };
         (l, f)
     } else {
@@ -219,7 +251,12 @@ fn target(r: &Resolved) -> Result<(String, String, String), Fail> {
     let member = if mbr.is_empty() || mbr == "*PRV" {
         match prv {
             Some((_, f, m)) if f == file => m,
-            _ => return Err(Fail::new("CPF9871", "No member of this file was edited before: name the member.")),
+            _ => {
+                return Err(Fail::new(
+                    "CPF9871",
+                    "No member of this file was edited before: name the member.",
+                ));
+            }
         }
     } else {
         mbr
@@ -257,9 +294,21 @@ fn edit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<String, Fail> {
                 }
             }
             Action::Save(to) | Action::File(to) => {
-                let lib = if to.lib.is_empty() { ctx.at.0.clone() } else { to.lib };
-                let file = if to.file.is_empty() { ctx.at.1.clone() } else { to.file };
-                let member = if to.member.is_empty() { ctx.at.2.clone() } else { to.member };
+                let lib = if to.lib.is_empty() {
+                    ctx.at.0.clone()
+                } else {
+                    to.lib
+                };
+                let file = if to.file.is_empty() {
+                    ctx.at.1.clone()
+                } else {
+                    to.file
+                };
+                let member = if to.member.is_empty() {
+                    ctx.at.2.clone()
+                } else {
+                    to.member
+                };
                 match ctx.save(s, (&lib, &file, &member)) {
                     Ok(()) if file_too => return Ok(String::new()),
                     Ok(()) => s.message = Some(LineMsg::info("CPI9BC6", &[&member])),
@@ -284,7 +333,8 @@ pub(crate) fn check(ctx: &mut Ctx<'_>, s: &mut Session) {
     }
     let st = s.srctype();
     let in_range = |seq: u32| {
-        s.defaults.syntax_from.is_none_or(|f| seq >= f) && s.defaults.syntax_to.is_none_or(|t| seq <= t)
+        s.defaults.syntax_from.is_none_or(|f| seq >= f)
+            && s.defaults.syntax_to.is_none_or(|t| seq <= t)
     };
     let touched: Vec<(u64, usize)> = s
         .touched

@@ -50,7 +50,13 @@ pub fn profile(job: &mut Job, host: &Host, point: &str, format: &str, user: &str
 fn failures(job: &mut Job, answer: &regfac::ExitAnswer) {
     for c in answer.called.iter().filter(|c| c.failed.is_some()) {
         let data = cmd::error::data(&[(&c.pgm, 10), (&c.lib, 10)]);
-        super::log(job, "CPF0A26", &data, qir::MsgType::Diag, c.failed.as_deref());
+        super::log(
+            job,
+            "CPF0A26",
+            &data,
+            qir::MsgType::Diag,
+            c.failed.as_deref(),
+        );
     }
 }
 
@@ -112,7 +118,13 @@ fn delay(r: &Resolved) -> i32 {
 
 /// `PRER0100` or `PWRD0200`: `Err` with IBM's refusal when a program
 /// said the state cannot be reached.
-fn prepare(job: &mut Job, host: &Host, point: &str, format: &str, r: &Resolved) -> Result<(), Fail> {
+fn prepare(
+    job: &mut Job,
+    host: &Host,
+    point: &str,
+    format: &str,
+    r: &Resolved,
+) -> Result<(), Fail> {
     if !calls(host) {
         return Ok(());
     }
@@ -133,7 +145,13 @@ fn prepare(job: &mut Job, host: &Host, point: &str, format: &str, r: &Resolved) 
 
 /// `CHGPWD`'s change of the job's own password, with the profile
 /// notifications around it and the password check after.
-pub fn chgpwd(job: &mut Job, host: &Host, user: &str, current: String, new: String) -> Result<(), String> {
+pub fn chgpwd(
+    job: &mut Job,
+    host: &Host,
+    user: &str,
+    current: String,
+    new: String,
+) -> Result<(), String> {
     profile(job, host, "QIBM_QSY_CHG_PROFILE", "CHGP0200", user);
     let (old, set) = (current.clone(), new.clone());
     let changed = host
@@ -169,7 +187,10 @@ pub(crate) fn service_with_exits(
                 vec![host.link.borrow_mut().with(stg::Client::whoami).user]
             } else if r.name == "CHGUSRAUD" {
                 match r.get("USRPRF").and_then(|b| b.value.as_ref()) {
-                    Some(Value::List(items)) => items.iter().map(|v| v.source().to_ascii_uppercase()).collect(),
+                    Some(Value::List(items)) => items
+                        .iter()
+                        .map(|v| v.source().to_ascii_uppercase())
+                        .collect(),
                     Some(v) => vec![v.source().to_ascii_uppercase()],
                     None => Vec::new(),
                 }

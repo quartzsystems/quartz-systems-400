@@ -316,7 +316,8 @@ fn import_takes_over_a_catalog_file_and_fromdev_reads_a_medium() {
     let fs: Arc<dyn CatalogFs> = Arc::new(MemFs::new());
     fs.create_dir_all("/d").unwrap();
     for (f, v) in [("a.iso", "AVOL"), ("b.iso", "BVOL")] {
-        fs.write(&join("/d", f), &plain_iso(v, None, false)).unwrap();
+        fs.write(&join("/d", f), &plain_iso(v, None, false))
+            .unwrap();
     }
     let mut here = Registry::new(fs.clone(), Arc::new(NoTape));
     here.crtimgclg(&CrtImgClg {
@@ -328,16 +329,29 @@ fn import_takes_over_a_catalog_file_and_fromdev_reads_a_medium() {
     // without the file, the catalog with it; a missing image is dropped.
     let mut there = Registry::new(fs.clone(), Arc::new(NoTape));
     fs.create_dir_all("/e").unwrap();
-    let none = there.crtimgclg(&CrtImgClg { import: true, ..crt("NONE", "/e", ImgType::Opt) });
+    let none = there.crtimgclg(&CrtImgClg {
+        import: true,
+        ..crt("NONE", "/e", ImgType::Opt)
+    });
     assert!(matches!(none, Err(Error::NoImage(_))), "{none:?}");
     fs.remove_file("/d/b.iso").unwrap();
     there
-        .crtimgclg(&CrtImgClg { import: true, text: String::new(), ..crt("SECOND", "/d", ImgType::Opt) })
+        .crtimgclg(&CrtImgClg {
+            import: true,
+            text: String::new(),
+            ..crt("SECOND", "/d", ImgType::Opt)
+        })
         .unwrap();
     let c = there.catalog("SECOND").unwrap();
     assert_eq!(c.dir, "/d");
     assert_eq!(c.text, "FIRST images");
-    assert_eq!(c.entries.iter().map(|e| e.volume.as_str()).collect::<Vec<_>>(), ["AVOL"]);
+    assert_eq!(
+        c.entries
+            .iter()
+            .map(|e| e.volume.as_str())
+            .collect::<Vec<_>>(),
+        ["AVOL"]
+    );
     // FROMDEV from a drive: the medium streamed into a generated image.
     let mut medium = std::io::Cursor::new(plain_iso("DRIVEVOL", None, false));
     let i = there

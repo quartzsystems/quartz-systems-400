@@ -124,12 +124,18 @@ impl Db {
 }
 
 fn ids(db: &mut Db) -> Vec<String> {
-    db.rows("SELECT id FROM spsch/t ORDER BY id").into_iter().map(|r| r[0].clone()).collect()
+    db.rows("SELECT id FROM spsch/t ORDER BY id")
+        .into_iter()
+        .map(|r| r[0].clone())
+        .collect()
 }
 
 fn under_commit(db: &mut Db) {
     let mut t = db.store.begin().unwrap();
-    db.ctx.session.strcmtctl(&mut t, LckLvl::Chg, None, 1_767_225_600).unwrap();
+    db.ctx
+        .session
+        .strcmtctl(&mut t, LckLvl::Chg, None, 1_767_225_600)
+        .unwrap();
     t.commit().unwrap();
 }
 
@@ -156,7 +162,10 @@ fn savepoints_as_the_primary() {
     db.ok("INSERT INTO spsch/t VALUES 1");
     db.ok("SAVEPOINT b UNIQUE ON ROLLBACK RETAIN CURSORS ON ROLLBACK RETAIN LOCKS");
     db.ok("INSERT INTO spsch/t VALUES 2");
-    assert_eq!(db.run("SAVEPOINT b ON ROLLBACK RETAIN CURSORS").0.sqlstate, "3B501");
+    assert_eq!(
+        db.run("SAVEPOINT b ON ROLLBACK RETAIN CURSORS").0.sqlstate,
+        "3B501"
+    );
     db.ok("SAVEPOINT a ON ROLLBACK RETAIN CURSORS");
     db.ok("INSERT INTO spsch/t VALUES 3");
     assert_eq!(ids(&mut db), ["1", "2", "3"]);
@@ -193,7 +202,10 @@ fn savepoint_syntax() {
     for (text, code) in [
         ("SAVEPOINT a", -104),
         ("SAVEPOINT e ON ROLLBACK RETAIN LOCKS", -104),
-        ("SAVEPOINT f ON ROLLBACK RETAIN CURSORS ON ROLLBACK RETAIN CURSORS", -104),
+        (
+            "SAVEPOINT f ON ROLLBACK RETAIN CURSORS ON ROLLBACK RETAIN CURSORS",
+            -104,
+        ),
         ("SAVEPOINT g UNIQUE UNIQUE ON ROLLBACK RETAIN CURSORS", -199),
     ] {
         let e = prepare(text, Naming::Sys).unwrap_err();

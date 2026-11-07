@@ -23,7 +23,16 @@ fn setup() -> common::Sys {
     s.ifs.ensure_dir(&s.env, "/www", "BOB", "*RX").unwrap();
     let bob = user("BOB");
     let bx = s.cx(&bob, 2);
-    replace(&Direct { ifs: &s.ifs, cx: &bx }, REG, b"1", 0o644).unwrap();
+    replace(
+        &Direct {
+            ifs: &s.ifs,
+            cx: &bx,
+        },
+        REG,
+        b"1",
+        0o644,
+    )
+    .unwrap();
     s
 }
 
@@ -34,12 +43,17 @@ fn a_rename_by_another_profile_takes_the_file() {
     let sec = user("QSECOFR");
     let cx = s.cx(&sec, 1);
     s.put(&cx, "/www/x.tmp", b"2");
-    s.ifs.rename(&cx, "/www/x.tmp", REG, RenameMode::Unlink).unwrap();
+    s.ifs
+        .rename(&cx, "/www/x.tmp", REG, RenameMode::Unlink)
+        .unwrap();
     assert_eq!(s.ifs.dspaut(&cx, REG).unwrap().owner, "QSECOFR");
     let bob = user("BOB");
     let bx = s.cx(&bob, 2);
     s.put(&bx, "/www/y.tmp", b"3");
-    assert_eq!(s.ifs.rename(&bx, "/www/y.tmp", REG, RenameMode::Unlink), Err(Errno::EACCES));
+    assert_eq!(
+        s.ifs.rename(&bx, "/www/y.tmp", REG, RenameMode::Unlink),
+        Err(Errno::EACCES)
+    );
 }
 
 #[test]
@@ -47,7 +61,16 @@ fn another_profile_rewrites_in_place() {
     let s = setup();
     let sec = user("QSECOFR");
     let cx = s.cx(&sec, 1);
-    replace(&Direct { ifs: &s.ifs, cx: &cx }, REG, b"two", 0o644).unwrap();
+    replace(
+        &Direct {
+            ifs: &s.ifs,
+            cx: &cx,
+        },
+        REG,
+        b"two",
+        0o644,
+    )
+    .unwrap();
     let a = s.ifs.dspaut(&cx, REG).unwrap();
     assert_eq!(a.owner, "BOB");
     assert!(a.entries.iter().all(|e| e.role != Role::Private), "{a:?}");
@@ -56,7 +79,16 @@ fn another_profile_rewrites_in_place() {
     // The owner still replaces it, through a rename.
     let bob = user("BOB");
     let bx = s.cx(&bob, 2);
-    replace(&Direct { ifs: &s.ifs, cx: &bx }, REG, b"three", 0o644).unwrap();
+    replace(
+        &Direct {
+            ifs: &s.ifs,
+            cx: &bx,
+        },
+        REG,
+        b"three",
+        0o644,
+    )
+    .unwrap();
     assert_eq!(s.get(&bx, REG), b"three");
     assert_eq!(s.ifs.dspaut(&cx, REG).unwrap().owner, "BOB");
 }
@@ -72,17 +104,40 @@ fn private_authorities_survive_the_owner_too() {
         ..ChgAut::default()
     };
     s.ifs.chgaut(&bx, REG, &grant).unwrap();
-    let d = Direct { ifs: &s.ifs, cx: &bx };
+    let d = Direct {
+        ifs: &s.ifs,
+        cx: &bx,
+    };
     replace(&d, REG, b"four", 0o644).unwrap();
     let a = d.dspaut(REG).unwrap();
-    assert!(a.entries.iter().any(|e| e.who == "ZED" && e.data == "*RW"), "{a:?}");
+    assert!(
+        a.entries.iter().any(|e| e.who == "ZED" && e.data == "*RW"),
+        "{a:?}"
+    );
     // ZED, with *RW only, rewrites it in place.
     let zed = user("ZED");
     let zx = s.cx(&zed, 3);
     s.ifs
-        .chgaut(&bx, "/www", &ChgAut { who: vec![Who::User("ZED".into())], data: Some(DataAuth::of(ifs::auth::data::RWX)), ..ChgAut::default() })
+        .chgaut(
+            &bx,
+            "/www",
+            &ChgAut {
+                who: vec![Who::User("ZED".into())],
+                data: Some(DataAuth::of(ifs::auth::data::RWX)),
+                ..ChgAut::default()
+            },
+        )
         .unwrap();
-    replace(&Direct { ifs: &s.ifs, cx: &zx }, REG, b"five", 0o644).unwrap();
+    replace(
+        &Direct {
+            ifs: &s.ifs,
+            cx: &zx,
+        },
+        REG,
+        b"five",
+        0o644,
+    )
+    .unwrap();
     assert_eq!(s.get(&bx, REG), b"five");
     assert_eq!(d.dspaut(REG).unwrap().owner, "BOB");
 }

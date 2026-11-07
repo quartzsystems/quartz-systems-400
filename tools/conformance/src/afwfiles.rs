@@ -28,7 +28,13 @@ const PASSWORD: &str = "AFW156PW";
 const HOME: &str = "/home/AFW156";
 const CONTENT: &str = "Hello from step 156.\nSecond line.\n";
 
-fn afw(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
+fn afw(
+    port: u16,
+    method: &str,
+    path: &str,
+    cookie: Option<&str>,
+    form: Option<&str>,
+) -> Result<Reply, String> {
     http_at(PREFIX, port, method, path, cookie, form)
 }
 
@@ -52,16 +58,18 @@ fn sign_on(port: u16, user: &str, password: &str) -> Result<String, String> {
 fn raw(port: u16, req: &[u8]) -> Result<(u16, String, Vec<u8>), String> {
     let end = Instant::now() + Duration::from_secs(30);
     loop {
-        let got = TcpStream::connect(("127.0.0.1", port)).ok().and_then(|mut c| {
-            let _ = c.set_read_timeout(Some(Duration::from_secs(20)));
-            c.write_all(req).ok()?;
-            let mut out = Vec::new();
-            let _ = c.read_to_end(&mut out);
-            let at = out.windows(4).position(|w| w == b"\r\n\r\n")?;
-            let head = String::from_utf8_lossy(&out[..at]).into_owned();
-            let status = head.split_whitespace().nth(1)?.parse().ok()?;
-            Some((status, head, out[at + 4..].to_vec()))
-        });
+        let got = TcpStream::connect(("127.0.0.1", port))
+            .ok()
+            .and_then(|mut c| {
+                let _ = c.set_read_timeout(Some(Duration::from_secs(20)));
+                c.write_all(req).ok()?;
+                let mut out = Vec::new();
+                let _ = c.read_to_end(&mut out);
+                let at = out.windows(4).position(|w| w == b"\r\n\r\n")?;
+                let head = String::from_utf8_lossy(&out[..at]).into_owned();
+                let status = head.split_whitespace().nth(1)?.parse().ok()?;
+                Some((status, head, out[at + 4..].to_vec()))
+            });
         match got {
             Some(r) => return Ok(r),
             None if Instant::now() > end => return Err(format!("no answer on host port {port}")),
@@ -71,11 +79,26 @@ fn raw(port: u16, req: &[u8]) -> Result<(u16, String, Vec<u8>), String> {
 }
 
 /// A multipart upload of one file.
-fn upload(port: u16, sid: &str, csrf: &str, name: &str, data: &str) -> Result<(u16, String), String> {
+fn upload(
+    port: u16,
+    sid: &str,
+    csrf: &str,
+    name: &str,
+    data: &str,
+) -> Result<(u16, String), String> {
     let b = "QS400step156boundary";
     let mut body = String::new();
-    for (k, v) in [("csrf", csrf), ("mode", "bin"), ("ex", "Replace"), ("dm", "bin"), ("dle", "LF")] {
-        let _ = write!(body, "--{b}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n");
+    for (k, v) in [
+        ("csrf", csrf),
+        ("mode", "bin"),
+        ("ex", "Replace"),
+        ("dm", "bin"),
+        ("dle", "LF"),
+    ] {
+        let _ = write!(
+            body,
+            "--{b}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n"
+        );
     }
     let _ = write!(
         body,
@@ -90,8 +113,15 @@ fn upload(port: u16, sid: &str, csrf: &str, name: &str, data: &str) -> Result<(u
 }
 
 /// A GET with a `Range` header.
-fn ranged(port: u16, sid: &str, path: &str, range: Option<&str>) -> Result<(u16, String, Vec<u8>), String> {
-    let mut req = format!("GET {PREFIX}{path} HTTP/1.1\r\nHost: qs400:2003\r\nConnection: close\r\nCookie: QS400SID={sid}\r\n");
+fn ranged(
+    port: u16,
+    sid: &str,
+    path: &str,
+    range: Option<&str>,
+) -> Result<(u16, String, Vec<u8>), String> {
+    let mut req = format!(
+        "GET {PREFIX}{path} HTTP/1.1\r\nHost: qs400:2003\r\nConnection: close\r\nCookie: QS400SID={sid}\r\n"
+    );
     if let Some(r) = range {
         let _ = write!(req, "Range: {r}\r\n");
     }
@@ -110,14 +140,28 @@ fn first_splf(body: &str) -> Option<String> {
 fn files(s: &mut Session, port: u16) -> Result<String, String> {
     let sid = sign_on(port, USER, PASSWORD)?;
     let page = afw(port, "GET", "/files", Some(&sid), None)?;
-    want(&page, 200, &["<h1>Browse files</h1>", &format!("value=\"{HOME}\""), "Transfer queue"], "Browse files")?;
+    want(
+        &page,
+        200,
+        &[
+            "<h1>Browse files</h1>",
+            &format!("value=\"{HOME}\""),
+            "Transfer queue",
+        ],
+        "Browse files",
+    )?;
     let csrf = csrf_in(&page.body).ok_or_else(|| format!("no form field:\n{}", page.brief()))?;
     let (status, head) = upload(port, &sid, &csrf, "hello156.txt", CONTENT)?;
     if status != 303 {
         return Err(format!("the upload: status {status}\n{head}"));
     }
     let after = afw(port, "GET", "/files", Some(&sid), None)?;
-    want(&after, 200, &["XWA0040", "hello156.txt"], "the upload's message and entry")?;
+    want(
+        &after,
+        200,
+        &["XWA0040", "hello156.txt"],
+        "the upload's message and entry",
+    )?;
     // The system's view: the user owns it.
     let aut = s.command(&format!("DSPAUT OBJ('{HOME}/hello156.txt')"), CMD)?;
     if !aut.contains(USER) || aut.contains("QTMHHTTP") {
@@ -126,17 +170,34 @@ fn files(s: &mut Session, port: u16) -> Result<String, String> {
     let path = format!("/files/download?path={HOME}/hello156.txt");
     let (st, h, body) = ranged(port, &sid, &path, None)?;
     if st != 200 || body != CONTENT.as_bytes() || !h.contains("Accept-Ranges: bytes") {
-        return Err(format!("the download: {st}\n{h}\n{}", String::from_utf8_lossy(&body)));
+        return Err(format!(
+            "the download: {st}\n{h}\n{}",
+            String::from_utf8_lossy(&body)
+        ));
     }
     let (st, h, body) = ranged(port, &sid, &path, Some("bytes=6-"))?;
     let want_part = &CONTENT.as_bytes()[6..];
     let total = CONTENT.len();
-    if st != 206 || body != want_part || !h.contains(&format!("Content-Range: bytes 6-{}/{total}", total - 1)) {
-        return Err(format!("the ranged download: {st}\n{h}\n{}", String::from_utf8_lossy(&body)));
+    if st != 206
+        || body != want_part
+        || !h.contains(&format!("Content-Range: bytes 6-{}/{total}", total - 1))
+    {
+        return Err(format!(
+            "the ranged download: {st}\n{h}\n{}",
+            String::from_utf8_lossy(&body)
+        ));
     }
-    let edit = afw(port, "GET", &format!("/files/edit?path={HOME}/hello156.txt"), Some(&sid), None)?;
+    let edit = afw(
+        port,
+        "GET",
+        &format!("/files/edit?path={HOME}/hello156.txt"),
+        Some(&sid),
+        None,
+    )?;
     want(&edit, 200, &["Second line.", "name=\"save\""], "the editor")?;
-    Ok(format!("{USER} uploaded hello156.txt (DSPAUT: owner {USER}), downloaded it whole and from byte 6 (206)"))
+    Ok(format!(
+        "{USER} uploaded hello156.txt (DSPAUT: owner {USER}), downloaded it whole and from byte 6 (206)"
+    ))
 }
 
 /// Printer output as QSECOFR: a spooled file listed, viewed, held,
@@ -145,30 +206,69 @@ fn print(s: &mut Session, port: u16) -> Result<String, String> {
     s.command("DSPLIBL OUTPUT(*PRINT)", CMD)?;
     let sid = sign_on(port, "QSECOFR", SECOFR_PASSWORD)?;
     let list = afw(port, "GET", "/print?u=*ALL", Some(&sid), None)?;
-    want(&list, 200, &["<h1>Printer output</h1>", "name=\"hold\""], "Printer output")?;
-    let id = first_splf(&list.body).ok_or_else(|| format!("no spooled file listed:\n{}", list.brief()))?;
+    want(
+        &list,
+        200,
+        &["<h1>Printer output</h1>", "name=\"hold\""],
+        "Printer output",
+    )?;
+    let id = first_splf(&list.body)
+        .ok_or_else(|| format!("no spooled file listed:\n{}", list.brief()))?;
     let file = id.split('-').nth(3).unwrap_or("").to_string();
     let view = afw(port, "GET", &format!("/print/view/{id}"), Some(&sid), None)?;
-    want(&view, 200, &["<pre class=\"out out132\">", &format!("Spooled file: {file}")], "the viewer")?;
+    want(
+        &view,
+        200,
+        &[
+            "<pre class=\"out out132\">",
+            &format!("Spooled file: {file}"),
+        ],
+        "the viewer",
+    )?;
     let csrf = csrf_in(&list.body).ok_or_else(|| format!("no form field:\n{}", list.brief()))?;
     let form = format!("csrf={}&s0={}&hold=Hold&hw=now", enc(&csrf), enc(&id));
     let r = afw(port, "POST", "/print?u=*ALL", Some(&sid), Some(&form))?;
     want(&r, 303, &[], "Hold")?;
     let held = afw(port, "GET", "/print?u=*ALL", Some(&sid), None)?;
-    want(&held, 200, &["QAD6002", &format!("Spooled file {file} held.")], "the hold's message")?;
+    want(
+        &held,
+        200,
+        &["QAD6002", &format!("Spooled file {file} held.")],
+        "the hold's message",
+    )?;
     let wrk = s.command("WRKSPLF SELECT(*ALL)", CMD)?;
     if !wrk.lines().any(|l| l.contains(&file) && l.contains("HLD")) {
         return Err(format!("WRKSPLF after the hold:\n{wrk}"));
     }
-    let confirm = afw(port, "GET", &format!("/print/confirm?s={}", enc(&id)), Some(&sid), None)?;
-    want(&confirm, 200, &["Confirm Delete", &file], "Delete's confirmation")?;
-    let csrf = csrf_in(&confirm.body).ok_or_else(|| format!("no form field:\n{}", confirm.brief()))?;
+    let confirm = afw(
+        port,
+        "GET",
+        &format!("/print/confirm?s={}", enc(&id)),
+        Some(&sid),
+        None,
+    )?;
+    want(
+        &confirm,
+        200,
+        &["Confirm Delete", &file],
+        "Delete's confirmation",
+    )?;
+    let csrf =
+        csrf_in(&confirm.body).ok_or_else(|| format!("no form field:\n{}", confirm.brief()))?;
     let form = format!("csrf={}&ok=OK", enc(&csrf));
-    let r = afw(port, "POST", &format!("/print/confirm?s={}", enc(&id)), Some(&sid), Some(&form))?;
+    let r = afw(
+        port,
+        "POST",
+        &format!("/print/confirm?s={}", enc(&id)),
+        Some(&sid),
+        Some(&form),
+    )?;
     want(&r, 303, &[], "Delete")?;
     let gone = afw(port, "GET", "/print?u=*ALL", Some(&sid), None)?;
     want(&gone, 200, &["QAD6004"], "the delete's message")?;
-    Ok(format!("QSECOFR viewed, held (WRKSPLF HLD) and deleted {file}"))
+    Ok(format!(
+        "QSECOFR viewed, held (WRKSPLF HLD) and deleted {file}"
+    ))
 }
 
 impl Suite {
@@ -190,7 +290,10 @@ impl Suite {
         let end = Instant::now() + Duration::from_secs(60);
         loop {
             let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(ACCESSWEB)", CMD)?;
-            if started.contains("TCP1A07") || started.contains("TCP1A0B") || (started.contains("TCP1A08") && Instant::now() > end) {
+            if started.contains("TCP1A07")
+                || started.contains("TCP1A0B")
+                || (started.contains("TCP1A08") && Instant::now() > end)
+            {
                 break;
             }
             if !started.contains("TCP1A08") {
@@ -216,7 +319,11 @@ mod tests {
 
     #[test]
     fn page_fields() {
-        assert_eq!(first_splf("<input type=\"checkbox\" name=\"s0\" value=\"1-A-B-QPRTLIBL-1\">").as_deref(), Some("1-A-B-QPRTLIBL-1"));
+        assert_eq!(
+            first_splf("<input type=\"checkbox\" name=\"s0\" value=\"1-A-B-QPRTLIBL-1\">")
+                .as_deref(),
+            Some("1-A-B-QPRTLIBL-1")
+        );
         assert_eq!(csrf_in("name=\"csrf\" value=\"x\"").as_deref(), Some("x"));
     }
 }

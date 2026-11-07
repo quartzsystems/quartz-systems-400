@@ -46,9 +46,7 @@ impl Broker {
         let task: Task = Box::new(move |side| {
             let _ = back.send(f(side));
         });
-        self.tx
-            .send(task)
-            .map_err(|_| SysError::new(Errno::EIO))?;
+        self.tx.send(task).map_err(|_| SysError::new(Errno::EIO))?;
         answer.recv().map_err(|_| SysError::new(Errno::EIO))
     }
 

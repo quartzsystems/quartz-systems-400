@@ -71,7 +71,10 @@ fn date_fmt(extra: i64) -> (DateFmt, Option<char>) {
         8 => DateFmt::Jul,
         _ => DateFmt::Iso,
     };
-    (f, char::from_u32(u32::try_from(extra >> 8).unwrap_or(0)).filter(|c| *c != '\0'))
+    (
+        f,
+        char::from_u32(u32::try_from(extra >> 8).unwrap_or(0)).filter(|c| *c != '\0'),
+    )
 }
 
 fn time_fmt(extra: i64) -> (TimeFmt, Option<char>) {
@@ -82,7 +85,10 @@ fn time_fmt(extra: i64) -> (TimeFmt, Option<char>) {
         5 => TimeFmt::Jis,
         _ => TimeFmt::Iso,
     };
-    (f, char::from_u32(u32::try_from(extra >> 8).unwrap_or(0)).filter(|c| *c != '\0'))
+    (
+        f,
+        char::from_u32(u32::try_from(extra >> 8).unwrap_or(0)).filter(|c| *c != '\0'),
+    )
 }
 
 /// The mark the compiler puts on an `SQLTYPE` host variable's extra
@@ -110,7 +116,12 @@ fn read_lob(addr: u64, d: &Desc, kind: i64) -> Value {
     let data = bytes(addr + 4, n);
     match kind >> 4 {
         2 => Value::Bin(data.to_vec()),
-        3 => Value::Str(String::from_utf16_lossy(&data.chunks(2).map(|c| u16::from_be_bytes([c[0], c.get(1).copied().unwrap_or(0)])).collect::<Vec<_>>())),
+        3 => Value::Str(String::from_utf16_lossy(
+            &data
+                .chunks(2)
+                .map(|c| u16::from_be_bytes([c[0], c.get(1).copied().unwrap_or(0)]))
+                .collect::<Vec<_>>(),
+        )),
         _ => Value::Str(ccsid::from_ebcdic(data)),
     }
 }
@@ -120,12 +131,23 @@ fn lob_image(v: &Value, d: &Desc, kind: i64) -> (Vec<u8>, Put) {
     let cap = d.size().saturating_sub(4);
     let data: Vec<u8> = match (v, kind >> 4) {
         (Value::Bin(b), _) => b.clone(),
-        (v, 3) => v.as_text().encode_utf16().flat_map(u16::to_be_bytes).collect(),
+        (v, 3) => v
+            .as_text()
+            .encode_utf16()
+            .flat_map(u16::to_be_bytes)
+            .collect(),
         (v, _) => ebcdic(&v.as_text()),
     };
-    let put = if data.len() > cap { Put::Truncated(data.len()) } else { Put::Ok };
+    let put = if data.len() > cap {
+        Put::Truncated(data.len())
+    } else {
+        Put::Ok
+    };
     let unit = if kind >> 4 == 3 { 2 } else { 1 };
-    let mut out = u32::try_from(data.len().min(cap) / unit).unwrap_or(0).to_be_bytes().to_vec();
+    let mut out = u32::try_from(data.len().min(cap) / unit)
+        .unwrap_or(0)
+        .to_be_bytes()
+        .to_vec();
     out.extend_from_slice(&data[..data.len().min(cap)]);
     (out, put)
 }
@@ -148,7 +170,9 @@ fn read_value(addr: u64, d: &Desc, extra: i64) -> Value {
             let (f, _) = time_fmt(extra);
             Time::parse(&text_of(addr, d.size()), f).map_or(Value::Null, Value::Time)
         }
-        Kind::Timestamp => Timestamp::parse(&text_of(addr, d.size())).map_or(Value::Null, Value::Timestamp),
+        Kind::Timestamp => {
+            Timestamp::parse(&text_of(addr, d.size())).map_or(Value::Null, Value::Timestamp)
+        }
         _ => read_num(addr, d).map_or(Value::Null, Value::Num),
     }
 }
@@ -164,7 +188,16 @@ fn write_ind(addr: u64, v: i16) {
 }
 
 /// `_QRNX_SQLIN(var, desc, extra, ind, has_ind)`: an input host variable.
-pub extern "sysv64" fn sql_in(_env: *mut Env, _argc: i64, _od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64) {
+pub extern "sysv64" fn sql_in(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    var: i64,
+    desc: i64,
+    extra: i64,
+    ind: i64,
+    has: i64,
+) {
     if sqltype(extra).is_some_and(|k| k & 0xF == 3) {
         PENDING.with(|p| p.borrow_mut().file_ref = true);
     }
@@ -174,7 +207,14 @@ pub extern "sysv64" fn sql_in(_env: *mut Env, _argc: i64, _od: i64, var: i64, de
     } else {
         read_value(var.cast_unsigned(), &d, extra)
     };
-    let o = Out { addr: var.cast_unsigned(), desc: d, extra, ind: (has != 0).then_some(ind.cast_unsigned()), stride: 0, istride: 0 };
+    let o = Out {
+        addr: var.cast_unsigned(),
+        desc: d,
+        extra,
+        ind: (has != 0).then_some(ind.cast_unsigned()),
+        stride: 0,
+        istride: 0,
+    };
     PENDING.with(|p| {
         let mut p = p.borrow_mut();
         p.inputs.push(v);
@@ -184,7 +224,17 @@ pub extern "sysv64" fn sql_in(_env: *mut Env, _argc: i64, _od: i64, var: i64, de
 
 /// `_QRNX_SQLOUT(var, desc, extra, ind, has_ind, stride)`: an output
 /// host variable; `stride` is a structure array's element size.
-pub extern "sysv64" fn sql_out(_env: *mut Env, _argc: i64, _od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64, stride: i64) {
+pub extern "sysv64" fn sql_out(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    var: i64,
+    desc: i64,
+    extra: i64,
+    ind: i64,
+    has: i64,
+    stride: i64,
+) {
     if sqltype(extra).is_some_and(|k| k & 0xF == 3) {
         PENDING.with(|p| p.borrow_mut().file_ref = true);
     }
@@ -204,7 +254,18 @@ pub extern "sysv64" fn sql_out(_env: *mut Env, _argc: i64, _od: i64, var: i64, d
 /// array; `stride` and `istride` the array's and its indicators'
 /// element sizes.
 #[allow(clippy::too_many_arguments)] // the call's parameters
-pub extern "sysv64" fn sql_in_a(env: *mut Env, argc: i64, od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64, stride: i64, istride: i64) {
+pub extern "sysv64" fn sql_in_a(
+    env: *mut Env,
+    argc: i64,
+    od: i64,
+    var: i64,
+    desc: i64,
+    extra: i64,
+    ind: i64,
+    has: i64,
+    stride: i64,
+    istride: i64,
+) {
     sql_in(env, argc, od, var, desc, extra, ind, has);
     let o = Out {
         addr: var.cast_unsigned(),
@@ -221,7 +282,18 @@ pub extern "sysv64" fn sql_in_a(env: *mut Env, argc: i64, od: i64, var: i64, des
 /// output host variable of a multiple-row `FETCH` whose indicators are an
 /// array of their own.
 #[allow(clippy::too_many_arguments)] // the call's parameters
-pub extern "sysv64" fn sql_out_a(_env: *mut Env, _argc: i64, _od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64, stride: i64, istride: i64) {
+pub extern "sysv64" fn sql_out_a(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    var: i64,
+    desc: i64,
+    extra: i64,
+    ind: i64,
+    has: i64,
+    stride: i64,
+    istride: i64,
+) {
     let o = Out {
         addr: var.cast_unsigned(),
         desc: Desc::of(desc),
@@ -238,8 +310,14 @@ fn row_inputs(ins: &[Out], r: u64) -> Vec<Value> {
     ins.iter()
         .map(|o| {
             let at = o.addr + u64::try_from(o.stride.max(0)).unwrap_or(0) * r;
-            let ind = o.ind.map(|i| i + u64::try_from(o.istride.max(0)).unwrap_or(0) * r);
-            if ind.is_some_and(|i| read_ind(i) < 0) { Value::Null } else { read_value(at, &o.desc, o.extra) }
+            let ind = o
+                .ind
+                .map(|i| i + u64::try_from(o.istride.max(0)).unwrap_or(0) * r);
+            if ind.is_some_and(|i| read_ind(i) < 0) {
+                Value::Null
+            } else {
+                read_value(at, &o.desc, o.extra)
+            }
         })
         .collect()
 }
@@ -267,7 +345,11 @@ fn da_desc(sqltype: i16, sqllen: i16) -> Desc {
     let len = u32::from(sqllen.cast_unsigned());
     let (kind, len, dec) = match sqltype & !1 {
         448 | 456 => (Kind::VarChar, len, 0),
-        484 => (Kind::Packed, len >> 8, u8::try_from(len & 0xFF).unwrap_or(0)),
+        484 => (
+            Kind::Packed,
+            len >> 8,
+            u8::try_from(len & 0xFF).unwrap_or(0),
+        ),
         488 => (Kind::Zoned, len >> 8, u8::try_from(len & 0xFF).unwrap_or(0)),
         496 => (Kind::Int, 10, 0),
         500 => (Kind::Int, 5, 0),
@@ -296,14 +378,31 @@ pub extern "sysv64" fn sql_da(env: *mut Env, _argc: i64, _od: i64, da: i64, mode
         let at = da + (DA_HEAD + k * DA_VAR) as u64;
         let ty = be16(at);
         let desc = da_desc(ty, be16(at + 2));
-        let Some(data) = da_ptr(job, at + 16) else { continue };
-        let ind = if ty & 1 == 1 { da_ptr(job, at + 32) } else { None };
+        let Some(data) = da_ptr(job, at + 16) else {
+            continue;
+        };
+        let ind = if ty & 1 == 1 {
+            da_ptr(job, at + 32)
+        } else {
+            None
+        };
         if mode == 1 {
-            let v = if ind.is_some_and(|i| read_ind(i) < 0) { Value::Null } else { read_value(data, &desc, 0) };
+            let v = if ind.is_some_and(|i| read_ind(i) < 0) {
+                Value::Null
+            } else {
+                read_value(data, &desc, 0)
+            };
             PENDING.with(|p| {
                 let mut p = p.borrow_mut();
                 p.inputs.push(v);
-                p.in_vars.push(Out { addr: data, desc, extra: 0, ind, stride: 0, istride: 0 });
+                p.in_vars.push(Out {
+                    addr: data,
+                    desc,
+                    extra: 0,
+                    ind,
+                    stride: 0,
+                    istride: 0,
+                });
             });
         } else {
             let o = Out {
@@ -336,7 +435,11 @@ fn row_num(r: &[Value], i: usize) -> i64 {
 
 /// A row's text at `i`.
 fn row_text(r: &[Value], i: usize) -> String {
-    r.get(i).map(Value::as_text).unwrap_or_default().trim_end().to_string()
+    r.get(i)
+        .map(Value::as_text)
+        .unwrap_or_default()
+        .trim_end()
+        .to_string()
 }
 
 /// SQLNAMELEN and SQLNAME at offset 48 of an entry.
@@ -356,7 +459,9 @@ fn put_name(v: &mut [u8], name: &str) {
 /// the SQLCODE and SQLSTATE.
 fn write_da(da: u64, rows: &[Vec<Value>], using: &str) -> Option<(i32, &'static str)> {
     let sqln = usize::try_from(be16(da + 12)).unwrap_or(0);
-    let lobs = rows.iter().any(|r| matches!(row_num(r, 0) & !1, 404 | 408 | 412));
+    let lobs = rows
+        .iter()
+        .any(|r| matches!(row_num(r, 0) & !1, 404 | 408 | 412));
     let sets = name_sets(using).max(if lobs { 2 } else { 1 });
     let head = bytes(da, DA_HEAD);
     let mut id = ebcdic("SQLDA   ");
@@ -446,8 +551,16 @@ fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'stat
                 Value::Array(_) => return Err((-20_441, "428H2")),
             };
             let e = ebcdic(&text);
-            let cap = if d.kind == Kind::VarChar { d.len as usize } else { n };
-            let put = if e.len() > cap && e[cap..].iter().any(|b| *b != BLANK) { Put::Truncated(e.len()) } else { Put::Ok };
+            let cap = if d.kind == Kind::VarChar {
+                d.len as usize
+            } else {
+                n
+            };
+            let put = if e.len() > cap && e[cap..].iter().any(|b| *b != BLANK) {
+                Put::Truncated(e.len())
+            } else {
+                Put::Ok
+            };
             let mut body: Vec<u8> = e.into_iter().take(cap).collect();
             if d.kind == Kind::VarChar {
                 let mut out = vec![0; d.prefix()];
@@ -478,11 +591,20 @@ fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'stat
         Kind::Float => {
             let f = v.as_f64().map_err(|_| (-420, "22018"))?;
             #[allow(clippy::cast_possible_truncation)]
-            Ok((if d.len == 4 { (f as f32).to_be_bytes().to_vec() } else { f.to_be_bytes().to_vec() }, Put::Ok))
+            Ok((
+                if d.len == 4 {
+                    (f as f32).to_be_bytes().to_vec()
+                } else {
+                    f.to_be_bytes().to_vec()
+                },
+                Put::Ok,
+            ))
         }
         _ => {
             let x = v.as_decimal().map_err(|_| (-420, "22018"))?;
-            num_image(&x, d).map(|b| (b, Put::Ok)).ok_or((-304, "22003"))
+            num_image(&x, d)
+                .map(|b| (b, Put::Ok))
+                .ok_or((-304, "22003"))
         }
     }
 }
@@ -523,19 +645,31 @@ fn num_image(v: &Decimal, d: &Desc) -> Option<Vec<u8>> {
         Kind::Float => {
             let f: f64 = v.to_string().parse().ok()?;
             #[allow(clippy::cast_possible_truncation)]
-            return Some(if d.len == 4 { (f as f32).to_be_bytes().to_vec() } else { f.to_be_bytes().to_vec() });
+            return Some(if d.len == 4 {
+                (f as f32).to_be_bytes().to_vec()
+            } else {
+                f.to_be_bytes().to_vec()
+            });
         }
         _ => {}
     }
     let digits = u8::try_from(d.len.clamp(1, 63)).ok()?;
     let shape = Shape::new(digits, d.dec).ok()?;
-    let fitted = v.rescale(d.dec, Rounding::Truncate).ok()?.fit(shape, Rounding::Truncate).ok()?;
-    let enc = match d.kind {
-        Kind::Packed => qdecimal::Packed::new(digits, d.dec).and_then(|p| p.encode(&fitted, Rounding::Truncate)),
-        Kind::Zoned => qdecimal::Zoned::new(digits, d.dec).and_then(|z| z.encode(&fitted, Rounding::Truncate)),
-        Kind::Bin => qdecimal::Binary::new(digits, d.dec).and_then(|b| b.encode(&fitted, Rounding::Truncate)),
-        _ => return None,
-    };
+    let fitted = v
+        .rescale(d.dec, Rounding::Truncate)
+        .ok()?
+        .fit(shape, Rounding::Truncate)
+        .ok()?;
+    let enc =
+        match d.kind {
+            Kind::Packed => qdecimal::Packed::new(digits, d.dec)
+                .and_then(|p| p.encode(&fitted, Rounding::Truncate)),
+            Kind::Zoned => qdecimal::Zoned::new(digits, d.dec)
+                .and_then(|z| z.encode(&fitted, Rounding::Truncate)),
+            Kind::Bin => qdecimal::Binary::new(digits, d.dec)
+                .and_then(|b| b.encode(&fitted, Rounding::Truncate)),
+            _ => return None,
+        };
     enc.ok()
 }
 
@@ -547,7 +681,9 @@ fn empty(d: &Desc, extra: i64) -> Vec<u8> {
     match d.kind {
         Kind::Char | Kind::Ind => vec![BLANK; d.size()],
         Kind::VarChar => vec![0; d.prefix()],
-        Kind::Date => ebcdic(&Date::new(1, 1, 1).map_or(String::new(), |x| x.render(date_fmt(extra).0, date_fmt(extra).1))),
+        Kind::Date => ebcdic(&Date::new(1, 1, 1).map_or(String::new(), |x| {
+            x.render(date_fmt(extra).0, date_fmt(extra).1)
+        })),
         Kind::Time => ebcdic("00.00.00"),
         Kind::Timestamp => {
             let mut t = ebcdic("0001-01-01-00.00.00.000000");
@@ -593,7 +729,9 @@ fn assign(outs: &[Out], row: &[Value], r: usize, ca: &mut Sqlca) {
     for (k, o) in outs.iter().enumerate() {
         let Some(v) = row.get(k) else { break };
         let off = u64::try_from(o.stride.max(0)).unwrap_or(0) * r as u64;
-        let ind = o.ind.map(|i| i + u64::try_from(o.istride.max(0)).unwrap_or(0) * r as u64);
+        let ind = o
+            .ind
+            .map(|i| i + u64::try_from(o.istride.max(0)).unwrap_or(0) * r as u64);
         if v.is_null() {
             let Some(i) = ind else {
                 *ca = Sqlca {
@@ -644,25 +782,48 @@ fn assign(outs: &[Out], row: &[Value], r: usize, ca: &mut Sqlca) {
 
 /// `_QRNX_SQLRUN(sqlca, text, tlen, scope, slen)`: run the statement
 /// the calls before named.
-pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, text: i64, tlen: i64, scope: i64, slen: i64) {
+pub extern "sysv64" fn sql_run(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    ca: i64,
+    text: i64,
+    tlen: i64,
+    scope: i64,
+    slen: i64,
+) {
     let pending = PENDING.with(|p| std::mem::take(&mut *p.borrow_mut()));
     let desc_text = text_of(text.cast_unsigned(), usize::try_from(tlen).unwrap_or(0));
-    let scope = text_of(scope.cast_unsigned(), usize::try_from(slen).unwrap_or(0)).trim().to_string();
+    let scope = text_of(scope.cast_unsigned(), usize::try_from(slen).unwrap_or(0))
+        .trim()
+        .to_string();
     let Some(mut desc) = SqlDesc::decode(&desc_text) else {
-        write_sqlca(ca.cast_unsigned(), &Sqlca::from_error(&sql::SqlError::Unsupported { what: "statement".into() }));
+        write_sqlca(
+            ca.cast_unsigned(),
+            &Sqlca::from_error(&sql::SqlError::Unsupported {
+                what: "statement".into(),
+            }),
+        );
         return;
     };
     // This runtime makes the calls a CALL plans.
     desc.calls = true;
     if pending.file_ref {
-        let e = sql::SqlError::Unsupported { what: "LOB file reference variables".into() };
+        let e = sql::SqlError::Unsupported {
+            what: "LOB file reference variables".into(),
+        };
         write_sqlca(ca.cast_unsigned(), &Sqlca::from_error(&e));
         return;
     }
     let job = mi::storage::job_of(env);
     // A module's statements belong to it in its activation group.
     let end = desc.op == sql::embed::Op::End;
-    let using = desc.orient.split_whitespace().nth(1).unwrap_or("NAMES").to_string();
+    let using = desc
+        .orient
+        .split_whitespace()
+        .nth(1)
+        .unwrap_or("NAMES")
+        .to_string();
     let blocked = desc.op == sql::embed::Op::Exec && desc.rows && !pending.rows_in.is_empty();
     let mut req = Request {
         scope: format!("{}:{scope}", job.act.current),
@@ -681,8 +842,15 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
     }
     // A blocked INSERT: every row's values, then the count.
     if blocked {
-        let n = req.inputs.last().and_then(|v| v.as_i64().ok()).unwrap_or(0).max(0);
-        let mut all: Vec<Value> = (0..n.cast_unsigned()).flat_map(|r| row_inputs(&pending.rows_in, r)).collect();
+        let n = req
+            .inputs
+            .last()
+            .and_then(|v| v.as_i64().ok())
+            .unwrap_or(0)
+            .max(0);
+        let mut all: Vec<Value> = (0..n.cast_unsigned())
+            .flat_map(|r| row_inputs(&pending.rows_in, r))
+            .collect();
         all.push(Value::int(n));
         req.inputs = all;
     }
@@ -724,7 +892,12 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
 
 /// A `CALL`'s plan carried out: the call, its outputs into the
 /// statement's variables, then the database told.
-fn call(job: &mut mi::Job, scope: &str, plan: &sql::exec::routine::CallPlan, vars: &[Out]) -> sql::embed::Reply {
+fn call(
+    job: &mut mi::Job,
+    scope: &str,
+    plan: &sql::exec::routine::CallPlan,
+    vars: &[Out],
+) -> sql::embed::Reply {
     let out = crate::sqlcall::perform(job, plan);
     let mut ca = Sqlca::default();
     for (m, v) in &out.outs {
@@ -739,13 +912,26 @@ fn call(job: &mut mi::Job, scope: &str, plan: &sql::exec::routine::CallPlan, var
     }
     let req = Request {
         scope: scope.to_string(),
-        desc: SqlDesc { op: sql::embed::Op::Called, ..SqlDesc::default() },
+        desc: SqlDesc {
+            op: sql::embed::Op::Called,
+            ..SqlDesc::default()
+        },
         inputs: called.inputs(),
     };
     let ok = called.sqlcode >= 0;
-    let Some(r) = mi::io::trigger::sql_run(job, &req) else { return sql::embed::Reply::default() };
+    let Some(r) = mi::io::trigger::sql_run(job, &req) else {
+        return sql::embed::Reply::default();
+    };
     if ok && plan.commit_on_return {
-        let commit = Request { scope: scope.to_string(), desc: SqlDesc { op: sql::embed::Op::Exec, text: "COMMIT".into(), ..SqlDesc::default() }, inputs: Vec::new() };
+        let commit = Request {
+            scope: scope.to_string(),
+            desc: SqlDesc {
+                op: sql::embed::Op::Exec,
+                text: "COMMIT".into(),
+                ..SqlDesc::default()
+            },
+            inputs: Vec::new(),
+        };
         let c = mi::io::trigger::sql_run(job, &commit).unwrap_or_default();
         if c.sqlca.is_error() && c.sqlca.sqlcode != -7007 {
             return c;
@@ -809,7 +995,11 @@ mod tests {
     /// an `OUT VARCHAR(10)` procedure writes up to 12 bytes.
     #[test]
     fn varying_arguments_take_their_storage() {
-        let d = Desc { kind: Kind::VarChar, len: 10, dec: 0 };
+        let d = Desc {
+            kind: Kind::VarChar,
+            len: 10,
+            dec: 0,
+        };
         assert_eq!(empty_image(&d, 0).len(), 12);
         let b = value_image(&Value::Str("AB".into()), &d, 0).unwrap();
         assert_eq!(b.len(), 12);

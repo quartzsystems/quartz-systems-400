@@ -93,7 +93,13 @@ impl<'a> Txn<'a> {
         }
         held.check()?;
         let id = held.next_txn_id();
-        Ok(Self::on(Host::Cell { get, held: Some(held) }, id))
+        Ok(Self::on(
+            Host::Cell {
+                get,
+                held: Some(held),
+            },
+            id,
+        ))
     }
 
     fn on(store: Host<'a>, id: u64) -> Self {

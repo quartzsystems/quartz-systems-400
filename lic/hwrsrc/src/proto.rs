@@ -88,7 +88,13 @@ mod tests {
 
     #[test]
     fn a_port_round_trips() {
-        let mut r = Resource::new("CMN01".into(), Kind::Port, "0000:01:00.0".into(), "port".into(), "/x".into());
+        let mut r = Resource::new(
+            "CMN01".into(),
+            Kind::Port,
+            "0000:01:00.0".into(),
+            "port".into(),
+            "/x".into(),
+        );
         r.port = Some(NetPort {
             ifname: "eth0".into(),
             family: family("virtio_net"),
@@ -105,6 +111,9 @@ mod tests {
         let t = Table { resources: vec![r] };
         let back: Table = ipc::decode(&ipc::encode(&t)).unwrap();
         assert_eq!(back, t);
-        assert_eq!(back.resources[0].port.as_ref().unwrap().family.type_code, "QN01");
+        assert_eq!(
+            back.resources[0].port.as_ref().unwrap().family.type_code,
+            "QN01"
+        );
     }
 }

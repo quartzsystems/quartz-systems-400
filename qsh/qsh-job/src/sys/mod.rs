@@ -24,9 +24,9 @@ use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use qsh::sys::{
-    Access, Child, ClRunner, Credentials, DataArea, DtaqOp, DtaqReply, Errno, Fd, FileType,
-    FsInfo, LibEntry, LiblChange, Limit, OpenFlags, ProcInfo, Registry, Resolver, SigAction,
-    SpawnRequest, SplfInfo, SplfNumber, Spooled, SqlRunner, Stat, Sys, SysError, Times,
+    Access, Child, ClRunner, Credentials, DataArea, DtaqOp, DtaqReply, Errno, Fd, FileType, FsInfo,
+    LibEntry, LiblChange, Limit, OpenFlags, ProcInfo, Registry, Resolver, SigAction, SpawnRequest,
+    SplfInfo, SplfNumber, Spooled, SqlRunner, Stat, Sys, SysError, Times,
 };
 
 use crate::broker::Broker;
@@ -199,7 +199,11 @@ impl JobSys {
     fn canonical_case(&self, path: &str) -> String {
         let mut out = String::new();
         for part in path.split('/').filter(|p| !p.is_empty()) {
-            let dir = if out.is_empty() { "/".to_string() } else { out.clone() };
+            let dir = if out.is_empty() {
+                "/".to_string()
+            } else {
+                out.clone()
+            };
             let name = if self.case_insensitive(&dir) {
                 self.read_dir(&dir)
                     .ok()
@@ -514,12 +518,7 @@ impl Sys for JobSys {
         self.core.broker.call(move |s| s.spooled_files(&j))?
     }
 
-    fn spooled_file(
-        &self,
-        job: &str,
-        name: &str,
-        number: SplfNumber,
-    ) -> Result<Spooled, SysError> {
+    fn spooled_file(&self, job: &str, name: &str, number: SplfNumber) -> Result<Spooled, SysError> {
         let (j, n) = (job.to_string(), name.to_string());
         self.core
             .broker
@@ -536,7 +535,9 @@ impl Sys for JobSys {
         body: Box<dyn FnOnce() -> i32 + Send>,
     ) -> Result<Box<dyn Child>, SysError> {
         let pid = self.alloc_pid();
-        Ok(Box::new(qsh::sys::mem::ThreadChild::start(pid, name, body)?))
+        Ok(Box::new(qsh::sys::mem::ThreadChild::start(
+            pid, name, body,
+        )?))
     }
 
     fn kill(&self, pid: i32, sig: i32) -> Result<(), SysError> {

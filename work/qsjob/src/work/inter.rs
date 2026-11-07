@@ -290,7 +290,6 @@ fn main_menu(s: &mut Session<'_>) {
     }
 }
 
-
 /// Keep a command for F9: the last 25, the newest last.
 pub(super) fn remember(s: &mut Session<'_>, cmd: &str) {
     if s.commands.last().is_none_or(|l| l != cmd) {
@@ -469,7 +468,10 @@ fn run_command(s: &mut Session<'_>, cmd: &str, mode: RunMode) {
     // The command as typed, in the user's case; after a prompt, the
     // command the prompter built.
     let prompted = mode != RunMode::Run || cmd.trim_start().starts_with('?');
-    let shown = if !prompted || o.changed.is_empty() || o.escape.as_ref().is_some_and(|f| f.msgid == "CPF6801") {
+    let shown = if !prompted
+        || o.changed.is_empty()
+        || o.escape.as_ref().is_some_and(|f| f.msgid == "CPF6801")
+    {
         cmd.to_string()
     } else {
         o.changed.clone()

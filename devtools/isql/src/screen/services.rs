@@ -71,7 +71,13 @@ pub fn printer_file(file: &str, msg: Option<&str>, w: &Words<'_>) -> Screen {
     let mut s = blank();
     title(&mut s, 31, &w(txt::PRINTER_TITLE));
     put(&mut s, 3, 2, Attr::Blue, &w(txt::TYPE_CHOICE));
-    put(&mut s, 5, 4, Attr::Normal, &leader(&w(txt::PRINTER_FILE), 4, 35));
+    put(
+        &mut s,
+        5,
+        4,
+        Attr::Normal,
+        &leader(&w(txt::PRINTER_FILE), 4, 35),
+    );
     var(&mut s, 5, 39, 10, "PRTF", file);
     put(&mut s, 5, 54, Attr::Normal, &w(txt::NAME));
     std_keys(&mut s, w);
@@ -164,5 +170,12 @@ pub fn confirm_remove(w: &Words<'_>) -> Screen {
 /// F3, F5 and F12 on row 23.
 fn std_keys(s: &mut Screen, w: &Words<'_>) {
     let (f3, f5, f12) = (w(txt::F3), w(txt::F5), w(txt::F12));
-    keys(s, &[(23, 2, f3.as_str()), (23, 14, f5.as_str()), (23, 29, f12.as_str())]);
+    keys(
+        s,
+        &[
+            (23, 2, f3.as_str()),
+            (23, 14, f5.as_str()),
+            (23, 29, f12.as_str()),
+        ],
+    );
 }

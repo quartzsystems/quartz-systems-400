@@ -22,7 +22,11 @@ pub fn encode(cols: &[ColType], result: bool) -> Vec<u8> {
     let size: u32 = cols.iter().map(|c| c.len).sum();
     let mut v = 0u32.to_be_bytes().to_vec();
     v.extend(reply::len32(n).to_be_bytes());
-    v.extend(if result { [1, 0, 0xFF, 0] } else { [0, 0, 0, 0] });
+    v.extend(if result {
+        [1, 0, 0xFF, 0]
+    } else {
+        [0, 0, 0, 0]
+    });
     v.extend(size.to_be_bytes());
     let names: Vec<Vec<u8>> = cols
         .iter()
@@ -54,7 +58,11 @@ pub fn encode(cols: &[ColType], result: bool) -> Vec<u8> {
         r.extend(u16::from(c.column).to_be_bytes());
         r.extend([0u8; 4 + 1 + 4]);
         // A locator's LOB size in bytes: the primary's DBCLOB(1M).
-        let lob_max: u32 = if c.base == super::types::sqltype::DBCLOB_LOCATOR { 0x0020_0000 } else { 0 };
+        let lob_max: u32 = if c.base == super::types::sqltype::DBCLOB_LOCATOR {
+            0x0020_0000
+        } else {
+            0
+        };
         r.extend(lob_max.to_be_bytes());
         r.extend([0u8; 2]);
         // From this record's start to its name.

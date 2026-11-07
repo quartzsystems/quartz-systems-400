@@ -42,7 +42,10 @@ pub fn audit(root: &Path) -> Result<Category> {
             let lower = read(&p)?.to_ascii_lowercase();
             let hits: Vec<&String> = denied.iter().filter(|d| has_phrase(&lower, d)).collect();
             c.check(hits.is_empty(), || {
-                format!("{dir}/{}: {hits:?}", p.file_name().unwrap_or_default().to_string_lossy())
+                format!(
+                    "{dir}/{}: {hits:?}",
+                    p.file_name().unwrap_or_default().to_string_lossy()
+                )
             });
         }
     }

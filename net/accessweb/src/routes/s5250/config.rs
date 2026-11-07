@@ -16,7 +16,9 @@ use qsweb::partials::{Cell, Col, List, checkbox, input, list_table, radio};
 use super::{GROUP, ITEM, Rq, select, start_policy, when_short, yes};
 use crate::env::session5250::Saved;
 use crate::policy;
-use crate::s5250::files::qsd::{CCSIDS, ColorMap, HOTSPOT_FUNCTION_KEYS, HOTSPOT_PAGING, ScreenSize, SessionFile, check_device};
+use crate::s5250::files::qsd::{
+    CCSIDS, ColorMap, HOTSPOT_FUNCTION_KEYS, HOTSPOT_PAGING, ScreenSize, SessionFile, check_device,
+};
 
 /// The web session's key for a session started without saving.
 const UNSAVED: &str = "5250.new";
@@ -35,7 +37,11 @@ pub fn unsaved(rq: &Rq<'_>) -> Option<Saved> {
 
 /// The device name as the lists show it.
 pub fn device(f: &SessionFile) -> String {
-    if f.session.device_name.is_empty() { "*DFT".into() } else { f.session.device_name.clone() }
+    if f.session.device_name.is_empty() {
+        "*DFT".into()
+    } else {
+        f.session.device_name.clone()
+    }
 }
 
 /// `GET /5250`; `?close=N` ends live session N first.
@@ -66,12 +72,24 @@ fn show(rq: &Rq<'_>, messages: Vec<Message>) -> Response {
         .map(|s| {
             let id = s.id;
             let mut acts = vec![
-                format!("<a href=\"{}\">Start</a>", esc(&rq.ctx.url(&format!("/5250/session/{id}")))),
-                format!("<a href=\"{}\">Properties</a>", esc(&rq.ctx.url(&format!("/5250/{id}/properties")))),
-                format!("<a href=\"{}\">Download .qsd</a>", esc(&rq.ctx.url(&format!("/5250/{id}/download")))),
+                format!(
+                    "<a href=\"{}\">Start</a>",
+                    esc(&rq.ctx.url(&format!("/5250/session/{id}")))
+                ),
+                format!(
+                    "<a href=\"{}\">Properties</a>",
+                    esc(&rq.ctx.url(&format!("/5250/{id}/properties")))
+                ),
+                format!(
+                    "<a href=\"{}\">Download .qsd</a>",
+                    esc(&rq.ctx.url(&format!("/5250/{id}/download")))
+                ),
             ];
             if save {
-                acts.push(format!("<a href=\"{}\">Delete</a>", esc(&rq.ctx.url(&format!("/5250/{id}/delete/confirm")))));
+                acts.push(format!(
+                    "<a href=\"{}\">Delete</a>",
+                    esc(&rq.ctx.url(&format!("/5250/{id}/delete/confirm")))
+                ));
             }
             let f = &s.file;
             vec![
@@ -111,7 +129,11 @@ fn show(rq: &Rq<'_>, messages: Vec<Message>) -> Response {
     };
     // The form starts from the session used last.
     let recent = sessions.iter().max_by_key(|s| s.last_used).cloned();
-    let body = format!("<h2>Saved sessions</h2>{}{}", list_table(&list), start_form(rq, recent.as_ref(), &sessions));
+    let body = format!(
+        "<h2>Saved sessions</h2>{}{}",
+        list_table(&list),
+        start_form(rq, recent.as_ref(), &sessions)
+    );
     let page = Page {
         title: "5250 session".into(),
         crumb: vec!["5250 session".into()],
@@ -150,36 +172,73 @@ fn start_form(rq: &Rq<'_>, from: Option<&Saved>, sessions: &[Saved]) -> String {
     let f = from.map_or_else(|| SessionFile::new(&me), |s| s.file.clone());
     let s = &f.session;
     let mut sys: Vec<String> = systems(rq, sessions);
-    let chosen = sys.iter().position(|n| n.eq_ignore_ascii_case(&f.system.name)).unwrap_or(0);
+    let chosen = sys
+        .iter()
+        .position(|n| n.eq_ignore_ascii_case(&f.system.name))
+        .unwrap_or(0);
     sys[0] = format!("{me} (this system)");
     sys.push("Other...".into());
     let cp = CCSIDS.iter().position(|c| c.0 == s.ccsid).unwrap_or(0);
     let mut km = vec!["Default".to_string()];
-    km.extend(rq.env().session5250.keymaps(rq.user()).into_iter().map(|(n, _)| format!("{n} (.qkm)")));
+    km.extend(
+        rq.env()
+            .session5250
+            .keymaps(rq.user())
+            .into_iter()
+            .map(|(n, _)| format!("{n} (.qkm)")),
+    );
     km.push("Upload...".into());
     let wide = s.screen_size == ScreenSize::S27x132;
     let bw = s.colour_map == ColorMap::BlackOnWhite;
     let aso = rq.allowed(policy::S5250_AUTOSIGNON);
     let row = |label: &str, value: String| format!("<tr><th>{label}</th><td>{value}</td></tr>\n");
-    let mut t = String::from("<table class=\"props\" cellspacing=\"0\">\n<tr class=\"subrow\"><td colspan=\"2\">Start 5250 display</td></tr>\n");
+    let mut t = String::from(
+        "<table class=\"props\" cellspacing=\"0\">\n<tr class=\"subrow\"><td colspan=\"2\">Start 5250 display</td></tr>\n",
+    );
     t += &row("Session name", input("n", &f.display_title(), 30));
     t += &row("System", select("sys", &sys, chosen));
     t += &row(
         "Screen size",
-        format!("{} 24 x 80 &nbsp; {} 27 x 132", radio("sz", "24x80", !wide), radio("sz", "27x132", wide)),
+        format!(
+            "{} 24 x 80 &nbsp; {} 27 x 132",
+            radio("sz", "24x80", !wide),
+            radio("sz", "27x132", wide)
+        ),
     );
     t += &row("Code page (CCSID)", select("cp", &ccsid_options(), cp));
     t += &row(
         "Device name",
-        format!("{} <span class=\"small grey\">*DFT lets the system name it</span>", input("dev", &device(&f), 10)),
+        format!(
+            "{} <span class=\"small grey\">*DFT lets the system name it</span>",
+            input("dev", &device(&f), 10)
+        ),
     );
-    t += &row("Use TLS", format!("{} Telnet TLS, port 992", checkbox("tls", f.system.tls)));
+    t += &row(
+        "Use TLS",
+        format!("{} Telnet TLS, port 992", checkbox("tls", f.system.tls)),
+    );
     t += &row(
         "Colour map",
-        format!("{} QS/400 console &nbsp; {} Black on white", radio("col", "console", !bw), radio("col", "bw", bw)),
+        format!(
+            "{} QS/400 console &nbsp; {} Black on white",
+            radio("col", "console", !bw),
+            radio("col", "bw", bw)
+        ),
     );
-    t += &row("Keypad", format!("{} Show the keypad at the right of the screen", checkbox("kp", s.keypad_visible)));
-    t += &row("Connect automatically", format!("{} Connect when the session opens", checkbox("ac", s.auto_connect)));
+    t += &row(
+        "Keypad",
+        format!(
+            "{} Show the keypad at the right of the screen",
+            checkbox("kp", s.keypad_visible)
+        ),
+    );
+    t += &row(
+        "Connect automatically",
+        format!(
+            "{} Connect when the session opens",
+            checkbox("ac", s.auto_connect)
+        ),
+    );
     let aso_box = if aso {
         checkbox("aso", s.auto_sign_on)
     } else {
@@ -197,7 +256,13 @@ fn start_form(rq: &Rq<'_>, from: Option<&Saved>, sessions: &[Saved]) -> String {
             checkbox("h2", f.hotspots.on(HOTSPOT_PAGING))
         ),
     );
-    t += &row("Keyboard map", format!("{} <input type=\"file\" name=\"qkm\" size=\"20\">", select("km", &km, 0)));
+    t += &row(
+        "Keyboard map",
+        format!(
+            "{} <input type=\"file\" name=\"qkm\" size=\"20\">",
+            select("km", &km, 0)
+        ),
+    );
     t += "<tr class=\"subrow\"><td colspan=\"2\">Session file</td></tr>\n";
     t += &row(
         "Open a session file",
@@ -243,7 +308,11 @@ pub fn from_form(rq: &Rq<'_>, mut file: SessionFile) -> Result<SessionFile, Mess
         Some(v) => return Err(bad("Screen size", v)),
     }
     if let Some(cp) = f.get("cp") {
-        let n = cp.split(' ').next().and_then(|c| c.parse::<u16>().ok()).filter(|c| CCSIDS.iter().any(|x| x.0 == *c));
+        let n = cp
+            .split(' ')
+            .next()
+            .and_then(|c| c.parse::<u16>().ok())
+            .filter(|c| CCSIDS.iter().any(|x| x.0 == *c));
         file.session.ccsid = n.ok_or_else(|| bad("Code page (CCSID)", cp))?;
     }
     if let Some(d) = f.get("dev") {
@@ -251,7 +320,11 @@ pub fn from_form(rq: &Rq<'_>, mut file: SessionFile) -> Result<SessionFile, Mess
     }
     file.system.tls = f.has("tls");
     file.system.telnet_port = if file.system.tls { 992 } else { 23 };
-    file.session.colour_map = if f.get("col") == Some("bw") { ColorMap::BlackOnWhite } else { ColorMap::Console };
+    file.session.colour_map = if f.get("col") == Some("bw") {
+        ColorMap::BlackOnWhite
+    } else {
+        ColorMap::Console
+    };
     file.session.keypad_visible = f.has("kp");
     file.session.auto_connect = f.has("ac");
     file.session.auto_sign_on = f.has("aso") && rq.allowed(policy::S5250_AUTOSIGNON);
@@ -273,7 +346,11 @@ pub fn start(rq: &Rq<'_>) -> Response {
     }
     let env = rq.env();
     let parts = rq.req.multipart().unwrap_or_default();
-    let upload = |name: &str| parts.iter().find(|p| p.name == name && p.filename.as_deref().is_some_and(|n| !n.is_empty()));
+    let upload = |name: &str| {
+        parts
+            .iter()
+            .find(|p| p.name == name && p.filename.as_deref().is_some_and(|n| !n.is_empty()))
+    };
     let f = rq.form();
     // An uploaded session file is kept as it is.
     if let Some(p) = upload("qsd") {
@@ -285,8 +362,19 @@ pub fn start(rq: &Rq<'_>) -> Response {
                     return r;
                 }
                 let title = file.display_title();
-                match env.session5250.put(rq.user(), Saved { id: 0, file, last_used: 0, macros: Vec::new() }) {
-                    Ok(_) => rq.done("/5250", rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title])),
+                match env.session5250.put(
+                    rq.user(),
+                    Saved {
+                        id: 0,
+                        file,
+                        last_used: 0,
+                        macros: Vec::new(),
+                    },
+                ) {
+                    Ok(_) => rq.done(
+                        "/5250",
+                        rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title]),
+                    ),
                     Err(m) => show(rq, vec![m]),
                 }
             }
@@ -299,8 +387,13 @@ pub fn start(rq: &Rq<'_>) -> Response {
     }
     let sessions = env.session5250.sessions(rq.user());
     let title = f.str("n").trim().to_string();
-    let existing = sessions.iter().find(|s| s.file.display_title().eq_ignore_ascii_case(&title)).cloned();
-    let base = existing.as_ref().map_or_else(|| SessionFile::new(&env.system.name()), |s| s.file.clone());
+    let existing = sessions
+        .iter()
+        .find(|s| s.file.display_title().eq_ignore_ascii_case(&title))
+        .cloned();
+    let base = existing
+        .as_ref()
+        .map_or_else(|| SessionFile::new(&env.system.name()), |s| s.file.clone());
     let mut file = match from_form(rq, base) {
         Ok(file) => file,
         Err(m) => return show(rq, vec![m]),
@@ -316,7 +409,11 @@ pub fn start(rq: &Rq<'_>) -> Response {
             }
         }
     } else if let Some(name) = f.get("km").and_then(|k| k.strip_suffix(" (.qkm)"))
-        && let Some((_, map)) = env.session5250.keymaps(rq.user()).into_iter().find(|(n, _)| n == name)
+        && let Some((_, map)) = env
+            .session5250
+            .keymaps(rq.user())
+            .into_iter()
+            .find(|(n, _)| n == name)
     {
         file.set_keymap(&map);
     }
@@ -329,11 +426,19 @@ pub fn start(rq: &Rq<'_>) -> Response {
         if let Err(r) = rq.policy(policy::S5250_SAVE, &crumb) {
             return r;
         }
-        let mut s = existing.unwrap_or(Saved { id: 0, file: file.clone(), last_used: 0, macros: Vec::new() });
+        let mut s = existing.unwrap_or(Saved {
+            id: 0,
+            file: file.clone(),
+            last_used: 0,
+            macros: Vec::new(),
+        });
         s.file = file;
         let title = s.file.display_title();
         return match env.session5250.put(rq.user(), s) {
-            Ok(_) => rq.done("/5250", rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title])),
+            Ok(_) => rq.done(
+                "/5250",
+                rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title]),
+            ),
             Err(m) => show(rq, vec![m]),
         };
     }
@@ -355,8 +460,23 @@ pub fn download(rq: &Rq<'_>, s: Saved) -> Response {
     if let Err(r) = start_policy(rq, &["5250 session"]) {
         return r;
     }
-    let name: String = s.file.display_title().chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' }).collect();
-    Response::download(&format!("{name}.qsd"), "application/toml; charset=utf-8", s.file.to_text().into_bytes())
+    let name: String = s
+        .file
+        .display_title()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    Response::download(
+        &format!("{name}.qsd"),
+        "application/toml; charset=utf-8",
+        s.file.to_text().into_bytes(),
+    )
 }
 
 /// `/5250/<id>/delete/confirm`: delete a saved session after asking.
@@ -373,7 +493,10 @@ pub fn delete(rq: &Rq<'_>, s: Saved) -> Response {
         }
         rq.env().session5250.disconnect(rq.user(), s.id);
         return match rq.env().session5250.delete(rq.user(), s.id) {
-            Ok(()) => rq.done("/5250", rq.message(Kind::Info, crate::msgs::SESSION_DELETED, &[&title])),
+            Ok(()) => rq.done(
+                "/5250",
+                rq.message(Kind::Info, crate::msgs::SESSION_DELETED, &[&title]),
+            ),
             Err(m) => show(rq, vec![m]),
         };
     }

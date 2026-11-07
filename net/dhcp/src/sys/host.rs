@@ -16,16 +16,25 @@ pub struct Socket;
 impl Socket {
     /// Always unsupported off Linux.
     pub fn open(_link: &str) -> io::Result<Self> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "DHCP needs Linux"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "DHCP needs Linux",
+        ))
     }
 
     /// Never reached.
     pub fn send(&self, _to: Dest, _bytes: &[u8]) -> io::Result<()> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "DHCP needs Linux"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "DHCP needs Linux",
+        ))
     }
 
     /// Never reached.
     pub fn recv(&self, _wait: Duration) -> io::Result<Option<Vec<u8>>> {
-        Err(io::Error::new(io::ErrorKind::Unsupported, "DHCP needs Linux"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "DHCP needs Linux",
+        ))
     }
 }

@@ -96,7 +96,9 @@ pub enum StoreError {
     },
 
     /// The store cannot be quiesced: jobs hold object locks.
-    #[error("{objects} object(s) are locked by jobs; reclaim storage needs the system otherwise idle")]
+    #[error(
+        "{objects} object(s) are locked by jobs; reclaim storage needs the system otherwise idle"
+    )]
     Busy {
         /// Objects with a lock held.
         objects: usize,
@@ -305,7 +307,9 @@ pub enum Refusal {
     NoParitySet(u8),
     /// A member has failed or is being rebuilt, or the set is being
     /// synchronized.
-    #[error("parity set {0} is not active: a unit is failed or being rebuilt, or the set is being synchronized")]
+    #[error(
+        "parity set {0} is not active: a unit is failed or being rebuilt, or the set is being synchronized"
+    )]
     ParitySetNotActive(u8),
     /// The unit to replace has not failed.
     #[error("the unit has not failed")]

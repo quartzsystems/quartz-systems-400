@@ -8,11 +8,11 @@
 use std::any::Any;
 use std::io;
 
+use ifs::ops::OpenArgs;
 use ifs::ops::flags::{
     O_APPEND, O_CREAT, O_EXCL, O_RDONLY, O_RDWR, O_TRUNC, O_WRONLY, S_IFBLK, S_IFCHR, S_IFDIR,
     S_IFIFO, S_IFLNK, S_IFMT, S_IFREG, S_IFSOCK,
 };
-use ifs::ops::OpenArgs;
 use qsh::sys::{Errno, FileType, FsInfo, OpenFlags, Stat, Stream, SysError};
 
 use crate::broker::Broker;
@@ -73,7 +73,11 @@ pub fn stat_of(s: &ifs::ops::Stat) -> Stat {
 
 /// `df`'s view of a file system.
 pub fn fsinfo_of(v: &ifs::ops::StatVfs, path: &str) -> FsInfo {
-    let bs = if v.frsize == 0 { v.bsize.max(512) } else { v.frsize };
+    let bs = if v.frsize == 0 {
+        v.bsize.max(512)
+    } else {
+        v.frsize
+    };
     FsInfo {
         name: if v.name.is_empty() {
             "/dev/QASP01".to_string()

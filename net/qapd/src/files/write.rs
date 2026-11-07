@@ -63,7 +63,11 @@ pub(super) fn write(c: &dyn IfsClient, req: &WriteFile) -> Done {
         && shift::is_mixed(file_ccsid)
         && data.first() == Some(&SO)
         && matches!(req.mode, WriteMode::Update | WriteMode::Append);
-    let args = |access: u32| OpenArgs::new(access | flags(req.mode)).mode(0o777).conv(u32::from(new_ccsid));
+    let args = |access: u32| {
+        OpenArgs::new(access | flags(req.mode))
+            .mode(0o777)
+            .conv(u32::from(new_ccsid))
+    };
     let (fd, readable) = if join {
         match c.open(path, args(O_RDWR)) {
             Ok(fd) => (fd, true),
@@ -80,7 +84,13 @@ pub(super) fn write(c: &dyn IfsClient, req: &WriteFile) -> Done {
     Ok(ipc::encode(&Written { size }))
 }
 
-fn write_open(c: &dyn IfsClient, fd: i32, req: &WriteFile, data: &[u8], join: bool) -> Result<u64, Stop> {
+fn write_open(
+    c: &dyn IfsClient,
+    fd: i32,
+    req: &WriteFile,
+    data: &[u8],
+    join: bool,
+) -> Result<u64, Stop> {
     let fail = |e: Errno| Stop::errno(e, &req.path);
     let size = c.fstat(fd).map_err(fail)?.size;
     let mut at = match req.mode {
@@ -95,7 +105,9 @@ fn write_open(c: &dyn IfsClient, fd: i32, req: &WriteFile, data: &[u8], join: bo
         data = &data[1..];
     }
     while !data.is_empty() {
-        let n = c.pwrite(fd, &data[..data.len().min(CHUNK)], at).map_err(fail)?;
+        let n = c
+            .pwrite(fd, &data[..data.len().min(CHUNK)], at)
+            .map_err(fail)?;
         if n == 0 {
             return Err(fail(Errno::ENOSPC));
         }

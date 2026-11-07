@@ -25,14 +25,26 @@ impl Diag {
     /// A condition the CLI found.
     #[must_use]
     pub fn cli(state: &str, text: &str) -> Self {
-        Self { state: state.into(), native: CLI_NATIVE, text: text.into() }
+        Self {
+            state: state.into(),
+            native: CLI_NATIVE,
+            text: text.into(),
+        }
     }
 
     /// The record a statement's SQLCA makes.
     #[must_use]
     pub fn of(ca: &Sqlca) -> Self {
-        let text = if ca.sqlerrmc.is_empty() { format!("{} occurred.", ca.msgid()) } else { ca.sqlerrmc.clone() };
-        Self { state: ca.sqlstate.clone(), native: ca.sqlcode, text }
+        let text = if ca.sqlerrmc.is_empty() {
+            format!("{} occurred.", ca.msgid())
+        } else {
+            ca.sqlerrmc.clone()
+        };
+        Self {
+            state: ca.sqlstate.clone(),
+            native: ca.sqlcode,
+            text,
+        }
     }
 }
 
@@ -62,7 +74,11 @@ impl Diags {
 
     /// `SQLError`: the first record, taken.
     pub fn take(&mut self) -> Option<Diag> {
-        if self.recs.is_empty() { None } else { Some(self.recs.remove(0)) }
+        if self.recs.is_empty() {
+            None
+        } else {
+            Some(self.recs.remove(0))
+        }
     }
 }
 

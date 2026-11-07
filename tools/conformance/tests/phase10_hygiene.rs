@@ -50,7 +50,13 @@ fn repo_root() -> PathBuf {
 /// Every file git tracks, plus untracked files it does not ignore.
 fn tracked_files(root: &Path) -> Vec<PathBuf> {
     let out = std::process::Command::new("git")
-        .args(["ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+        .args([
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ])
         .current_dir(root)
         .output()
         .expect("git ls-files");
@@ -101,7 +107,9 @@ fn ftp_replies(root: &Path, out: &mut BTreeSet<String>) {
     };
     for e in rd.flatten() {
         for l in read(&e.path()).lines() {
-            let Some(r) = l.strip_prefix("S: ") else { continue };
+            let Some(r) = l.strip_prefix("S: ") else {
+                continue;
+            };
             if r.len() > 4 && r.as_bytes()[..3].iter().all(u8::is_ascii_digit) {
                 out.insert(r[4..].trim().to_string());
             }
@@ -150,17 +158,13 @@ fn is_sentence(t: &str) -> bool {
 
 /// Known hits in crates other agents are still changing; each is to be
 /// rewritten in Quartz words and dropped from here.
-const PENDING: &[(&str, &str)] = &[
-];
+const PENDING: &[(&str, &str)] = &[];
 
 /// The first bytes of each text, to find candidates in one pass.
 const KEY: usize = 12;
 
 /// Every text of `texts` in `hay`.
-fn found<'a>(
-    hay: &str,
-    index: &std::collections::HashMap<&[u8], Vec<&'a str>>,
-) -> Vec<&'a str> {
+fn found<'a>(hay: &str, index: &std::collections::HashMap<&[u8], Vec<&'a str>>) -> Vec<&'a str> {
     let b = hay.as_bytes();
     let mut out = Vec::new();
     if b.len() < KEY {
@@ -189,10 +193,17 @@ fn found<'a>(
 fn captured_ibm_text_stays_in_conformance() {
     let root = repo_root();
     let texts = ibm_texts(&root);
-    assert!(texts.len() > 100, "the captures hold IBM texts ({} found)", texts.len());
+    assert!(
+        texts.len() > 100,
+        "the captures hold IBM texts ({} found)",
+        texts.len()
+    );
     let mut index: std::collections::HashMap<&[u8], Vec<&str>> = std::collections::HashMap::new();
     for t in &texts {
-        index.entry(&t.as_bytes()[..KEY]).or_default().push(t.as_str());
+        index
+            .entry(&t.as_bytes()[..KEY])
+            .or_default()
+            .push(t.as_str());
     }
     let conformance = root.join("tools/conformance");
     let mut hits = Vec::new();
@@ -200,14 +211,22 @@ fn captured_ibm_text_stays_in_conformance() {
         if f.starts_with(&conformance) {
             continue;
         }
-        let rel = f.strip_prefix(&root).unwrap_or(&f).to_string_lossy().replace('\\', "/");
+        let rel = f
+            .strip_prefix(&root)
+            .unwrap_or(&f)
+            .to_string_lossy()
+            .replace('\\', "/");
         for t in found(&read(&f), &index) {
             if !PENDING.contains(&(rel.as_str(), t)) {
                 hits.push(format!("{rel}: {t}"));
             }
         }
     }
-    assert!(hits.is_empty(), "IBM text outside tools/conformance:\n  {}", hits.join("\n  "));
+    assert!(
+        hits.is_empty(),
+        "IBM text outside tools/conformance:\n  {}",
+        hits.join("\n  ")
+    );
 }
 
 /// The string literals of a Rust source: comments are not shipped.
@@ -302,7 +321,12 @@ fn has_phrase(text: &str, phrase: &str) -> bool {
 /// literals, a data file whole; `None` for what ships no text (tests,
 /// docs, scripts).
 fn shipped_text(f: &Path) -> Option<String> {
-    if f.components().any(|c| matches!(c.as_os_str().to_str(), Some("tests" | "benches" | "examples"))) {
+    if f.components().any(|c| {
+        matches!(
+            c.as_os_str().to_str(),
+            Some("tests" | "benches" | "examples")
+        )
+    }) {
         return None;
     }
     let ext = f.extension().and_then(|e| e.to_str()).unwrap_or("");
@@ -343,14 +367,20 @@ fn no_ibm_phrasing_in_phase10_crates() {
         if !dirs.iter().any(|d| f.starts_with(d)) {
             continue;
         }
-        let Some(text) = shipped_text(&f) else { continue };
+        let Some(text) = shipped_text(&f) else {
+            continue;
+        };
         for d in &denied {
             if has_phrase(&text, d) {
                 hits.push(format!("{}: {d:?}", f.display()));
             }
         }
     }
-    assert!(hits.is_empty(), "IBM phrasings in Phase 10 sources:\n  {}", hits.join("\n  "));
+    assert!(
+        hits.is_empty(),
+        "IBM phrasings in Phase 10 sources:\n  {}",
+        hits.join("\n  ")
+    );
 }
 
 #[test]
@@ -363,12 +393,17 @@ fn interface_lines_are_used_where_documented() {
     }
     let text = rust_strings(&read(&db2));
     for line in &INTERFACE[..3] {
-        assert!(text.contains(line), "db2.rs no longer prints {line:?}: update INTERFACE");
+        assert!(
+            text.contains(line),
+            "db2.rs no longer prints {line:?}: update INTERFACE"
+        );
     }
 }
 
 #[test]
 fn string_literals_are_found() {
-    let s = rust_strings("let a = \"one\"; // \"not\"\nlet b = r#\"two \"q\"\"#; let c = '\"'; /* \"no\" */ f(\"a\\\n    b\");");
+    let s = rust_strings(
+        "let a = \"one\"; // \"not\"\nlet b = r#\"two \"q\"\"#; let c = '\"'; /* \"no\" */ f(\"a\\\n    b\");",
+    );
     assert_eq!(s, "one\ntwo \"q\"\na b\n");
 }

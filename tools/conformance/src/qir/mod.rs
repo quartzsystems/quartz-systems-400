@@ -433,12 +433,20 @@ pub fn job_for(case: &Case, src: MemSource, programs: &[String]) -> Result<Box<J
         dst: false,
     });
     provider.add_dtaq("QGPL", "TESTQ", 100, 0, 'F');
-    provider.msgqs.insert(("QGPL".into(), "KITMSGQ".into()), Vec::new());
+    provider
+        .msgqs
+        .insert(("QGPL".into(), "KITMSGQ".into()), Vec::new());
     // SNDPGMMSG TOUSR: the operator's queue and two profiles' queues,
     // ANNE signed on.
-    provider.msgqs.insert(("QSYS".into(), "QSYSOPR".into()), Vec::new());
-    provider.msgqs.insert(("QUSRSYS".into(), "ANNE".into()), Vec::new());
-    provider.msgqs.insert(("QUSRSYS".into(), "BOB".into()), Vec::new());
+    provider
+        .msgqs
+        .insert(("QSYS".into(), "QSYSOPR".into()), Vec::new());
+    provider
+        .msgqs
+        .insert(("QUSRSYS".into(), "ANNE".into()), Vec::new());
+    provider
+        .msgqs
+        .insert(("QUSRSYS".into(), "BOB".into()), Vec::new());
     provider.signed_on = vec!["ANNE".into()];
     // QSYRUSRI: every profile as CRTUSRPRF would make it.
     provider.sec = Some(Box::new(|q| match q {

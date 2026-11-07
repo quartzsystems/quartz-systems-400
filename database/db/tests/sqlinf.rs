@@ -35,7 +35,10 @@ fn info_survives_reopen_and_goes_with_its_owner() {
     info.set(tag::NAME, b"ORDER_NUMBER_SEQUENCE".to_vec());
     info.set(tag::TEXT, vec![b'x'; 9000]);
     sqlinf::save(&mut t, area, &info, 2).unwrap();
-    let to = Target { id: area, system: name("ORDER_SEQ") };
+    let to = Target {
+        id: area,
+        system: name("ORDER_SEQ"),
+    };
     names::put(&mut t, lib, Space::Sequence, "ORDER_NUMBER_SEQUENCE", to).unwrap();
     t.commit().unwrap();
     drop(store);
@@ -45,9 +48,18 @@ fn info_survives_reopen_and_goes_with_its_owner() {
     let got = sqlinf::load(&mut t, area).unwrap().unwrap();
     assert_eq!(got, info);
     assert_eq!(got.name().as_deref(), Some("ORDER_NUMBER_SEQUENCE"));
-    assert_eq!(names::find(&mut t, lib, Space::Sequence, "ORDER_NUMBER_SEQUENCE").unwrap(), Some(to));
-    assert_eq!(names::find(&mut t, lib, Space::Table, "ORDER_NUMBER_SEQUENCE").unwrap(), None);
-    assert_eq!(names::list(&mut t, lib, Space::Sequence).unwrap(), vec![("ORDER_NUMBER_SEQUENCE".into(), to)]);
+    assert_eq!(
+        names::find(&mut t, lib, Space::Sequence, "ORDER_NUMBER_SEQUENCE").unwrap(),
+        Some(to)
+    );
+    assert_eq!(
+        names::find(&mut t, lib, Space::Table, "ORDER_NUMBER_SEQUENCE").unwrap(),
+        None
+    );
+    assert_eq!(
+        names::list(&mut t, lib, Space::Sequence).unwrap(),
+        vec![("ORDER_NUMBER_SEQUENCE".into(), to)]
+    );
 
     let mut shorter = got.clone();
     shorter.set(tag::TEXT, b"short".to_vec());
@@ -57,8 +69,15 @@ fn info_survives_reopen_and_goes_with_its_owner() {
     let sql = ops::read_header(&mut t, area).unwrap().1.sql;
     assert!(!sql.is_none());
     ops::delete(&mut t, JobHandle(1), area).unwrap();
-    assert!(ops::read_header(&mut t, sql).is_err(), "the *SQLINF went with its owner");
+    assert!(
+        ops::read_header(&mut t, sql).is_err(),
+        "the *SQLINF went with its owner"
+    );
     names::remove(&mut t, lib, Space::Sequence, "ORDER_NUMBER_SEQUENCE").unwrap();
-    assert!(names::list(&mut t, lib, Space::Sequence).unwrap().is_empty());
+    assert!(
+        names::list(&mut t, lib, Space::Sequence)
+            .unwrap()
+            .is_empty()
+    );
     t.commit().unwrap();
 }

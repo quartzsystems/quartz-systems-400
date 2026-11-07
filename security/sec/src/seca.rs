@@ -48,10 +48,18 @@ pub fn load(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Starts> {
 }
 
 /// `CHGSECA UID() GID()`: `None` keeps a value (`*SAME`).
-pub fn change(txn: &mut Txn<'_>, qsys: ObjectId, uid: Option<u32>, gid: Option<u32>) -> Result<Starts> {
+pub fn change(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    uid: Option<u32>,
+    gid: Option<u32>,
+) -> Result<Starts> {
     for n in [uid, gid].into_iter().flatten() {
         if !(RANGE.0..=RANGE.1).contains(&n) {
-            return Err(SecError::msg("CPF3C3C", format!("{n} is not from 101 to 4294967294.")));
+            return Err(SecError::msg(
+                "CPF3C3C",
+                format!("{n} is not from 101 to 4294967294."),
+            ));
         }
     }
     let mut s = load(txn, qsys)?;
@@ -83,7 +91,11 @@ pub fn next(used: &[u32], start: Option<u32>, first: u32) -> u32 {
             }
             n
         }
-        None => used.iter().copied().max().map_or(first, |m| (m + 1).max(first)),
+        None => used
+            .iter()
+            .copied()
+            .max()
+            .map_or(first, |m| (m + 1).max(first)),
     }
 }
 

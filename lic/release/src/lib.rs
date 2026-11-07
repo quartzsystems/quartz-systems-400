@@ -31,10 +31,7 @@ pub const RELEASE: Release = Release {
 
 /// Every release Quartz has defined, ascending: what `*PRV` and the
 /// upgrade rule look in.
-pub const KNOWN: &[Release] = &[
-    Release { v: 1, r: 0, m: 0 },
-    Release { v: 1, r: 1, m: 0 },
-];
+pub const KNOWN: &[Release] = &[Release { v: 1, r: 0, m: 0 }, Release { v: 1, r: 1, m: 0 }];
 
 /// A decimal number of at most three digits, at compile time.
 const fn num(s: &str) -> u8 {

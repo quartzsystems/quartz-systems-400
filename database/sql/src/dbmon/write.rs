@@ -51,7 +51,9 @@ fn name_of(lib: &str, file: &str) -> ObjectName {
 fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, params: &[Value]) -> crate::Result<()> {
     let (naming, nc, warning) = (ctx.naming, ctx.no_commit, ctx.warning.take());
     ctx.no_commit = true;
-    let r = crate::exec::prepare(text, Naming::Sys).and_then(|p| p.execute(txn, ctx, params)).map(|_| ());
+    let r = crate::exec::prepare(text, Naming::Sys)
+        .and_then(|p| p.execute(txn, ctx, params))
+        .map(|_| ());
     ctx.naming = naming;
     ctx.no_commit = nc;
     ctx.warning = warning;
@@ -60,7 +62,11 @@ fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, params: &[Value]) ->
 
 /// Make or check the monitor file of `spec`, its member ready. The
 /// library it is in.
-pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &StartSpec) -> Result<String, MonError> {
+pub(super) fn prepare_file(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    spec: &StartSpec,
+) -> Result<String, MonError> {
     let name = name_of(&spec.lib, &spec.file);
     let saved = ctx.naming;
     ctx.naming = Naming::Sys;
@@ -74,19 +80,36 @@ pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &Start
     #[allow(clippy::single_match_else)] // the file found, or made
     let t = match found {
         Ok(t) => {
-            let ok = t.format.format.name.to_string() == FORMAT && t.format.format.fields.len() == COLUMNS.len();
+            let ok = t.format.format.name.to_string() == FORMAT
+                && t.format.format.fields.len() == COLUMNS.len();
             if !ok {
-                return Err(err("CPF3061", format!("Record format {FORMAT} not found for outfile {}.", spec.file)));
+                return Err(err(
+                    "CPF3061",
+                    format!(
+                        "Record format {FORMAT} not found for outfile {}.",
+                        spec.file
+                    ),
+                ));
             }
             if let Some(m) = &member
-                && t.desc.members.first().is_some_and(|e| e.name.to_string() != *m)
+                && t.desc
+                    .members
+                    .first()
+                    .is_some_and(|e| e.name.to_string() != *m)
             {
                 // BLOCKED(rel): records are written with INSERT, which
                 // reaches the file's first member only.
-                return Err(err("CPF9898", format!("Member {m} is not the first member of {}: records go to the first member.", spec.file)));
+                return Err(err(
+                    "CPF9898",
+                    format!(
+                        "Member {m} is not the first member of {}: records go to the first member.",
+                        spec.file
+                    ),
+                ));
             }
             if !spec.add {
-                db::util::clrpfm(txn, ctx.job, t.id, qsname::MemberSpec::First).map_err(|e| err("CPF9898", e.to_string()))?;
+                db::util::clrpfm(txn, ctx.job, t.id, qsname::MemberSpec::First)
+                    .map_err(|e| err("CPF9898", e.to_string()))?;
             }
             t
         }
@@ -95,7 +118,12 @@ pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &Start
                 "" | "*LIBL" | "*CURLIB" => None,
                 l => Some(l),
             };
-            run(txn, ctx, &create_text(lib, &spec.file), &[]).map_err(|e| err("CPF9898", format!("The monitor file {} was not made: {e}", spec.file)))?;
+            run(txn, ctx, &create_text(lib, &spec.file), &[]).map_err(|e| {
+                err(
+                    "CPF9898",
+                    format!("The monitor file {} was not made: {e}", spec.file),
+                )
+            })?;
             let saved = ctx.naming;
             ctx.naming = Naming::Sys;
             let t = ctx.resolve_table(txn, &name);
@@ -105,7 +133,8 @@ pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &Start
                 && *m != spec.file
             {
                 let to = Name::parse(m).map_err(|e| err("CPD0078", format!("OUTMBR({m}): {e}")))?;
-                db::file::rename_member(txn, t.id, t.member.name, to, ctx.clock()).map_err(|e| err("CPF9898", e.to_string()))?;
+                db::file::rename_member(txn, t.id, t.member.name, to, ctx.clock())
+                    .map_err(|e| err("CPF9898", e.to_string()))?;
             }
             t
         }
@@ -114,13 +143,27 @@ pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &Start
 }
 
 /// Write `records` to `lib/file`.
-pub(super) fn write(txn: &mut Txn<'_>, ctx: &mut SqlContext, lib: &str, file: &str, records: &[Record]) -> Result<(), MonError> {
+pub(super) fn write(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    lib: &str,
+    file: &str,
+    records: &[Record],
+) -> Result<(), MonError> {
     for r in records {
         let cols: Vec<&str> = r.0.iter().map(|(c, _)| *c).collect();
         let marks = vec!["?"; cols.len()].join(", ");
-        let text = format!("INSERT INTO {lib}/{file} ({}) VALUES ({marks})", cols.join(", "));
+        let text = format!(
+            "INSERT INTO {lib}/{file} ({}) VALUES ({marks})",
+            cols.join(", ")
+        );
         let vals: Vec<Value> = r.0.iter().map(|(_, v)| v.clone()).collect();
-        run(txn, ctx, &text, &vals).map_err(|e| err("CPF9898", format!("A monitor record was not written to {lib}/{file}: {e}")))?;
+        run(txn, ctx, &text, &vals).map_err(|e| {
+            err(
+                "CPF9898",
+                format!("A monitor record was not written to {lib}/{file}: {e}"),
+            )
+        })?;
     }
     Ok(())
 }

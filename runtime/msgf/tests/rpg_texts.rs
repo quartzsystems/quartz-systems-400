@@ -27,9 +27,7 @@ fn listing_texts_match_the_message_file() {
 #[test]
 fn rpg_files_hold_what_is_sent() {
     let c = parse(QRPGLEMSG).unwrap();
-    for id in [
-        "RNS9304", "RNS9305", "RNS9309", "RNS9310", "RNS9311",
-    ] {
+    for id in ["RNS9304", "RNS9305", "RNS9309", "RNS9310", "RNS9311"] {
         assert!(c.find(id).is_some(), "{id}");
     }
     assert!(

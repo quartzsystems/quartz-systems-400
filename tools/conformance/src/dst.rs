@@ -223,7 +223,10 @@ impl Suite {
         // The next IPL synchronizes before DST comes back.
         s.expect("SRC C1001075", self.boot_timeout)?;
         s.expect("slic: synchronizing unit 1: 20%", Duration::from_secs(120))?;
-        Ok("DD002 data deleted, added and paired in DST; synchronization running at the re-IPL".into())
+        Ok(
+            "DD002 data deleted, added and paired in DST; synchronization running at the re-IPL"
+                .into(),
+        )
     }
 
     /// Step 5: the power pulled at 20% of the synchronization; the next

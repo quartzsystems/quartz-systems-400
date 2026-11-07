@@ -36,7 +36,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
         })
         .collect();
     let list = List {
-        cols: ["Actions", "Name", "Path", "Type", "Size used"].iter().map(|c| Col::plain(c)).collect(),
+        cols: ["Actions", "Name", "Path", "Type", "Size used"]
+            .iter()
+            .map(|c| Col::plain(c))
+            .collect(),
         rows,
         empty: "No shares.".into(),
         keep: Vec::new(),

@@ -60,7 +60,9 @@ impl Status {
     pub fn parse(text: &str) -> Self {
         let mut s = Self::default();
         for l in text.lines() {
-            let Some((k, v)) = l.split_once('=') else { continue };
+            let Some((k, v)) = l.split_once('=') else {
+                continue;
+            };
             let v = v.to_string();
             match k {
                 "system" => s.system = v,
@@ -98,7 +100,19 @@ mod tests {
         };
         let back = Status::parse(&s.render());
         assert_eq!(back.src_text, "IPL complete next");
-        assert_eq!(Status { src_text: "IPL complete next".into(), ..s }, back);
-        assert_eq!(Status::parse("x\nsrc=A1\nzz=1"), Status { src: "A1".into(), ..Status::default() });
+        assert_eq!(
+            Status {
+                src_text: "IPL complete next".into(),
+                ..s
+            },
+            back
+        );
+        assert_eq!(
+            Status::parse("x\nsrc=A1\nzz=1"),
+            Status {
+                src: "A1".into(),
+                ..Status::default()
+            }
+        );
     }
 }

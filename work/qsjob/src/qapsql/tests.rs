@@ -13,7 +13,8 @@ use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
 use qap_proto::ops::sql::{
-    CommitLevel, Execute, Fetch, ListColumns, ListSchemas, ListTables, Naming, SetOptions, SqlValue, TableKind,
+    CommitLevel, Execute, Fetch, ListColumns, ListSchemas, ListTables, Naming, SetOptions,
+    SqlValue, TableKind,
 };
 use qap_proto::{ServerMessage, Status};
 use qapd::sql::SqlStop;
@@ -56,7 +57,12 @@ fn engine() -> Mem {
         wal_pages: 128,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -105,7 +111,12 @@ fn engine() -> Mem {
     };
     let r = runsqlstm(&mut store, &mut ctx, text, &opts).unwrap();
     assert_eq!(r.errors, 0, "{}", r.listing);
-    Mem(Session::new(Box::new(Rc::new(RefCell::new(store))), qsys, JobHandle(1), names))
+    Mem(Session::new(
+        Box::new(Rc::new(RefCell::new(store))),
+        qsys,
+        JobHandle(1),
+        names,
+    ))
 }
 
 fn never() -> bool {
@@ -123,33 +134,119 @@ fn failed<T: std::fmt::Debug>(r: Result<T, SqlStop<T>>) -> (String, i32, Option<
 fn a_query_in_batches_with_its_types() {
     let mut e = engine();
     let mut lane = Lane::default();
-    let ins = lane.prepare(&mut e, "INSERT INTO QSTEST.T (ID, NAME) VALUES (?, ?)").unwrap();
+    let ins = lane
+        .prepare(&mut e, "INSERT INTO QSTEST.T (ID, NAME) VALUES (?, ?)")
+        .unwrap();
     assert_eq!(ins.parameters.len(), 2);
-    let rows: Vec<Vec<SqlValue>> = (3..=252).map(|i| vec![SqlValue::Integer { value: i }, SqlValue::Text { text: format!("n{i}") }]).collect();
-    let x = lane.execute(&mut e, &Execute { statement: ins.statement, rows }, &never).unwrap();
+    let rows: Vec<Vec<SqlValue>> = (3..=252)
+        .map(|i| {
+            vec![
+                SqlValue::Integer { value: i },
+                SqlValue::Text {
+                    text: format!("n{i}"),
+                },
+            ]
+        })
+        .collect();
+    let x = lane
+        .execute(
+            &mut e,
+            &Execute {
+                statement: ins.statement,
+                rows,
+            },
+            &never,
+        )
+        .unwrap();
     assert_eq!((x.updated, x.cursor), (250, None));
     let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.T").unwrap();
     let types: Vec<&str> = q.columns.iter().map(|c| c.sql_type.as_str()).collect();
-    assert_eq!(types, ["INTEGER", "VARCHAR", "DATE", "TIMESTAMP", "DECIMAL", "DOUBLE"]);
-    assert_eq!((q.columns[4].length, q.columns[4].scale, q.columns[3].scale), (9, 2, 6));
-    let cursor = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
-    let first = lane.fetch(&mut e, &Fetch { cursor, max_rows: 1 }, &never).unwrap();
+    assert_eq!(
+        types,
+        [
+            "INTEGER",
+            "VARCHAR",
+            "DATE",
+            "TIMESTAMP",
+            "DECIMAL",
+            "DOUBLE"
+        ]
+    );
+    assert_eq!(
+        (q.columns[4].length, q.columns[4].scale, q.columns[3].scale),
+        (9, 2, 6)
+    );
+    let cursor = lane
+        .execute(
+            &mut e,
+            &Execute {
+                statement: q.statement,
+                rows: Vec::new(),
+            },
+            &never,
+        )
+        .unwrap()
+        .cursor
+        .unwrap();
+    let first = lane
+        .fetch(
+            &mut e,
+            &Fetch {
+                cursor,
+                max_rows: 1,
+            },
+            &never,
+        )
+        .unwrap();
     assert!(!first.end);
     let r = &first.rows[0];
     assert_eq!(r[0], SqlValue::Integer { value: 1 });
     assert_eq!(r[1], SqlValue::Text { text: "Ann".into() });
-    assert_eq!(r[2], SqlValue::Date { ms: 1_793_577_600_000 });
-    assert_eq!(r[3], SqlValue::Timestamp { ms: 1_793_610_843_123, picos: 456_000_000 });
-    assert_eq!(r[4], SqlValue::Decimal { text: "10.50".into() });
+    assert_eq!(
+        r[2],
+        SqlValue::Date {
+            ms: 1_793_577_600_000
+        }
+    );
+    assert_eq!(
+        r[3],
+        SqlValue::Timestamp {
+            ms: 1_793_610_843_123,
+            picos: 456_000_000
+        }
+    );
+    assert_eq!(
+        r[4],
+        SqlValue::Decimal {
+            text: "10.50".into()
+        }
+    );
     assert_eq!(r[5], SqlValue::Float { text: "4.5".into() });
-    let rest = lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never).unwrap();
+    let rest = lane
+        .fetch(
+            &mut e,
+            &Fetch {
+                cursor,
+                max_rows: 0,
+            },
+            &never,
+        )
+        .unwrap();
     assert_eq!((rest.rows.len(), rest.end), (251, true));
     assert!(rest.rows[0][1..].iter().all(|v| *v == SqlValue::Null));
     lane.close_cursor(&mut e, cursor).unwrap();
-    assert_eq!(lane.close_cursor(&mut e, cursor).unwrap_err().status, Status::NotFound);
-    assert!(matches!(lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never), Err(SqlStop::Refused(r)) if r.status == Status::NotFound));
+    assert_eq!(
+        lane.close_cursor(&mut e, cursor).unwrap_err().status,
+        Status::NotFound
+    );
+    assert!(
+        matches!(lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never), Err(SqlStop::Refused(r)) if r.status == Status::NotFound)
+    );
     lane.release(&mut e, q.statement).unwrap();
-    assert_eq!(lane.release(&mut e, q.statement).unwrap_err().status, Status::NotFound);
+    assert_eq!(
+        lane.release(&mut e, q.statement).unwrap_err().status,
+        Status::NotFound
+    );
     // The engine's statement went with it.
     let open = sql::embed::Desc {
         op: sql::embed::Op::Open,
@@ -157,7 +254,11 @@ fn a_query_in_batches_with_its_types() {
         stmt: format!("QAPS{}", q.statement),
         ..sql::embed::Desc::default()
     };
-    let r = e.run(&Request { scope: super::SCOPE.into(), desc: open, inputs: Vec::new() });
+    let r = e.run(&Request {
+        scope: super::SCOPE.into(),
+        desc: open,
+        inputs: Vec::new(),
+    });
     assert_eq!(r.sqlca.sqlcode, -514);
 }
 
@@ -166,19 +267,76 @@ fn failures_are_the_engines() {
     let mut e = engine();
     let mut lane = Lane::default();
     assert_eq!(failed(lane.prepare(&mut e, "SELEC 1")).1, -104);
-    assert_eq!(failed(lane.prepare(&mut e, "SELECT * FROM QSTEST.NOSUCH")).0, "42704");
+    assert_eq!(
+        failed(lane.prepare(&mut e, "SELECT * FROM QSTEST.NOSUCH")).0,
+        "42704"
+    );
     // A duplicate key at the third row; the two before it stay.
-    let ins = lane.prepare(&mut e, "INSERT INTO QSTEST.T (ID) VALUES (?)").unwrap();
-    let rows = [10, 11, 1, 12].iter().map(|i| vec![SqlValue::Integer { value: *i }]).collect();
-    let r = lane.execute(&mut e, &Execute { statement: ins.statement, rows }, &never);
+    let ins = lane
+        .prepare(&mut e, "INSERT INTO QSTEST.T (ID) VALUES (?)")
+        .unwrap();
+    let rows = [10, 11, 1, 12]
+        .iter()
+        .map(|i| vec![SqlValue::Integer { value: *i }])
+        .collect();
+    let r = lane.execute(
+        &mut e,
+        &Execute {
+            statement: ins.statement,
+            rows,
+        },
+        &never,
+    );
     assert_eq!(failed(r), ("23505".into(), -803, Some(2)));
-    let n = lane.prepare(&mut e, "SELECT ID FROM QSTEST.T WHERE ID >= 10").unwrap();
-    let c = lane.execute(&mut e, &Execute { statement: n.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
-    assert_eq!(lane.fetch(&mut e, &Fetch { cursor: c, max_rows: 0 }, &never).unwrap().rows.len(), 2);
+    let n = lane
+        .prepare(&mut e, "SELECT ID FROM QSTEST.T WHERE ID >= 10")
+        .unwrap();
+    let c = lane
+        .execute(
+            &mut e,
+            &Execute {
+                statement: n.statement,
+                rows: Vec::new(),
+            },
+            &never,
+        )
+        .unwrap()
+        .cursor
+        .unwrap();
+    assert_eq!(
+        lane.fetch(
+            &mut e,
+            &Fetch {
+                cursor: c,
+                max_rows: 0
+            },
+            &never
+        )
+        .unwrap()
+        .rows
+        .len(),
+        2
+    );
     // Too few parameters, and one the engine cannot take.
-    let r = lane.execute(&mut e, &Execute { statement: ins.statement, rows: vec![Vec::new()] }, &never);
+    let r = lane.execute(
+        &mut e,
+        &Execute {
+            statement: ins.statement,
+            rows: vec![Vec::new()],
+        },
+        &never,
+    );
     assert_eq!(failed(r).0, "07001");
-    let r = lane.execute(&mut e, &Execute { statement: ins.statement, rows: vec![vec![SqlValue::Decimal { text: "sNaN".into() }]] }, &never);
+    let r = lane.execute(
+        &mut e,
+        &Execute {
+            statement: ins.statement,
+            rows: vec![vec![SqlValue::Decimal {
+                text: "sNaN".into(),
+            }]],
+        },
+        &never,
+    );
     assert_eq!(failed(r), ("22018".into(), -302, Some(0)));
 }
 
@@ -192,12 +350,26 @@ fn an_unjournaled_table_under_commitment_control() {
         default_schema: Some("QSTEST".into()),
     };
     lane.set_options(&mut e, &o).unwrap();
-    let ins = lane.prepare(&mut e, "INSERT INTO T (ID) VALUES (?)").unwrap();
-    let r = lane.execute(&mut e, &Execute { statement: ins.statement, rows: vec![vec![SqlValue::Integer { value: 5 }]] }, &never);
+    let ins = lane
+        .prepare(&mut e, "INSERT INTO T (ID) VALUES (?)")
+        .unwrap();
+    let r = lane.execute(
+        &mut e,
+        &Execute {
+            statement: ins.statement,
+            rows: vec![vec![SqlValue::Integer { value: 5 }]],
+        },
+        &never,
+    );
     let (state, code, row) = failed(r);
     assert_eq!((state.as_str(), code, row), ("55019", -7008, Some(0)));
     // The statement opened a unit of work: options wait for its end.
-    assert_eq!(lane.set_options(&mut e, &SetOptions::default()).unwrap_err().status, Status::InUse);
+    assert_eq!(
+        lane.set_options(&mut e, &SetOptions::default())
+            .unwrap_err()
+            .status,
+        Status::InUse
+    );
     lane.end_unit(&mut e, false).unwrap();
     lane.set_options(&mut e, &SetOptions::default()).unwrap();
     lane.end_unit(&mut e, true).unwrap();
@@ -207,17 +379,43 @@ fn an_unjournaled_table_under_commitment_control() {
 fn set_options_changes_the_level_between_units() {
     let mut e = engine();
     let mut lane = Lane::default();
-    let level = |e: &Mem| e.0.ctx.session.commit_def().map(|d| d.borrow().lcklvl().name());
+    let level = |e: &Mem| {
+        e.0.ctx
+            .session
+            .commit_def()
+            .map(|d| d.borrow().lcklvl().name())
+    };
     let at = |commit| SetOptions {
         commit,
         ..SetOptions::default()
     };
-    lane.set_options(&mut e, &at(CommitLevel::ReadUncommitted)).unwrap();
+    lane.set_options(&mut e, &at(CommitLevel::ReadUncommitted))
+        .unwrap();
     let q = lane.prepare(&mut e, "SELECT ID FROM QSTEST.T").unwrap();
-    let c = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
+    let c = lane
+        .execute(
+            &mut e,
+            &Execute {
+                statement: q.statement,
+                rows: Vec::new(),
+            },
+            &never,
+        )
+        .unwrap()
+        .cursor
+        .unwrap();
     assert_eq!(level(&e), Some("*CHG"));
-    lane.set_options(&mut e, &at(CommitLevel::RepeatableRead)).unwrap();
-    lane.fetch(&mut e, &Fetch { cursor: c, max_rows: 1 }, &never).unwrap();
+    lane.set_options(&mut e, &at(CommitLevel::RepeatableRead))
+        .unwrap();
+    lane.fetch(
+        &mut e,
+        &Fetch {
+            cursor: c,
+            max_rows: 1,
+        },
+        &never,
+    )
+    .unwrap();
     assert_eq!(level(&e), Some("*ALL"));
 }
 
@@ -252,11 +450,26 @@ fn columns_have_sql_names_and_headings() {
         "LABEL ON COLUMN QSTEST.L.CUSTOMER_NAME IS 'Customer            Name'",
     ] {
         let p = lane.prepare(&mut e, text).unwrap();
-        lane.execute(&mut e, &Execute { statement: p.statement, rows: Vec::new() }, &never).unwrap();
+        lane.execute(
+            &mut e,
+            &Execute {
+                statement: p.statement,
+                rows: Vec::new(),
+            },
+            &never,
+        )
+        .unwrap();
     }
     let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.L").unwrap();
-    let got: Vec<(&str, &str)> = q.columns.iter().map(|c| (c.name.as_str(), c.label.as_str())).collect();
-    assert_eq!(got, [("CUSTOMER_NAME", "Customer            Name"), ("ID", "ID")]);
+    let got: Vec<(&str, &str)> = q
+        .columns
+        .iter()
+        .map(|c| (c.name.as_str(), c.label.as_str()))
+        .collect();
+    assert_eq!(
+        got,
+        [("CUSTOMER_NAME", "Customer            Name"), ("ID", "ID")]
+    );
     let c = catalog::list_columns(
         &mut e,
         &ListColumns {
@@ -274,7 +487,14 @@ fn a_cancel_ends_the_running_statement() {
     let mut lane = Lane::default();
     let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.T").unwrap();
     e.0.ctx.interrupt = Some(Rc::new(|| true));
-    let r = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never);
+    let r = lane.execute(
+        &mut e,
+        &Execute {
+            statement: q.statement,
+            rows: Vec::new(),
+        },
+        &never,
+    );
     match r {
         Err(SqlStop::Cancelled(x, m)) => {
             assert_eq!((x.updated, x.cursor), (0, None));
@@ -284,14 +504,25 @@ fn a_cancel_ends_the_running_statement() {
     }
     e.0.ctx.interrupt = None;
     // Between parameter rows and between batches, the lane looks too.
-    let ins = lane.prepare(&mut e, "INSERT INTO QSTEST.T (ID) VALUES (?)").unwrap();
-    let rows = (20..30).map(|i| vec![SqlValue::Integer { value: i }]).collect();
+    let ins = lane
+        .prepare(&mut e, "INSERT INTO QSTEST.T (ID) VALUES (?)")
+        .unwrap();
+    let rows = (20..30)
+        .map(|i| vec![SqlValue::Integer { value: i }])
+        .collect();
     let calls = std::cell::Cell::new(0);
     let after_three = || {
         calls.set(calls.get() + 1);
         calls.get() > 3
     };
-    match lane.execute(&mut e, &Execute { statement: ins.statement, rows }, &after_three) {
+    match lane.execute(
+        &mut e,
+        &Execute {
+            statement: ins.statement,
+            rows,
+        },
+        &after_three,
+    ) {
         Err(SqlStop::Cancelled(x, _)) => assert_eq!(x.updated, 3),
         other => panic!("{other:?}"),
     }
@@ -302,16 +533,55 @@ fn the_end_rolls_back_and_forgets() {
     let mut e = engine();
     let mut lane = Lane::default();
     let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.T").unwrap();
-    let c = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
+    let c = lane
+        .execute(
+            &mut e,
+            &Execute {
+                statement: q.statement,
+                rows: Vec::new(),
+            },
+            &never,
+        )
+        .unwrap()
+        .cursor
+        .unwrap();
     lane.end(&mut e);
-    assert!(lane.fetch(&mut e, &Fetch { cursor: c, max_rows: 1 }, &never).is_err());
-    assert!(lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).is_err());
+    assert!(
+        lane.fetch(
+            &mut e,
+            &Fetch {
+                cursor: c,
+                max_rows: 1
+            },
+            &never
+        )
+        .is_err()
+    );
+    assert!(
+        lane.execute(
+            &mut e,
+            &Execute {
+                statement: q.statement,
+                rows: Vec::new()
+            },
+            &never
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn the_catalog() {
     let mut e = engine();
-    let s = catalog::list_schemas(&mut e, &ListSchemas { pattern: "QS%".into(), start: 0, max: 0 }).unwrap();
+    let s = catalog::list_schemas(
+        &mut e,
+        &ListSchemas {
+            pattern: "QS%".into(),
+            start: 0,
+            max: 0,
+        },
+    )
+    .unwrap();
     let names: Vec<&str> = s.schemas.iter().map(|s| s.name.as_str()).collect();
     assert!(names.contains(&"QSTEST"), "{names:?}");
     let t = catalog::list_tables(
@@ -326,12 +596,18 @@ fn the_catalog() {
     )
     .unwrap();
     assert_eq!(t.total, 1);
-    assert_eq!((t.tables[0].name.as_str(), t.tables[0].kind), ("T", TableKind::Table));
+    assert_eq!(
+        (t.tables[0].name.as_str(), t.tables[0].kind),
+        ("T", TableKind::Table)
+    );
     let missing = ListTables {
         schema: "NOSUCH".into(),
         ..ListTables::default()
     };
-    assert_eq!(catalog::list_tables(&mut e, &missing).unwrap_err().status, Status::NotFound);
+    assert_eq!(
+        catalog::list_tables(&mut e, &missing).unwrap_err().status,
+        Status::NotFound
+    );
     let c = catalog::list_columns(
         &mut e,
         &ListColumns {
@@ -347,7 +623,10 @@ fn the_catalog() {
         schema: "QSTEST".into(),
         table: "NOSUCH".into(),
     };
-    assert_eq!(catalog::list_columns(&mut e, &none).unwrap_err().status, Status::NotFound);
+    assert_eq!(
+        catalog::list_columns(&mut e, &none).unwrap_err().status,
+        Status::NotFound
+    );
 }
 
 #[test]
@@ -361,35 +640,108 @@ fn the_newer_types_both_ways() {
              L BLOB(1M), C CLOB(1K))",
         )
         .unwrap();
-    lane.execute(&mut e, &Execute { statement: ddl.statement, rows: Vec::new() }, &never).unwrap();
-    let ins = lane.prepare(&mut e, "INSERT INTO QSTEST.N VALUES (?, ?, ?, ?, ?, ?, ?)").unwrap();
+    lane.execute(
+        &mut e,
+        &Execute {
+            statement: ddl.statement,
+            rows: Vec::new(),
+        },
+        &never,
+    )
+    .unwrap();
+    let ins = lane
+        .prepare(&mut e, "INSERT INTO QSTEST.N VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .unwrap();
     let kinds: Vec<&str> = ins.parameters.iter().map(|c| c.sql_type.as_str()).collect();
-    assert_eq!(kinds, ["INTEGER", "DECFLOAT", "VARBINARY", "BOOLEAN", "TIMESTAMP", "BLOB", "CLOB"]);
-    let blob: Vec<u8> = (0..5000u32).map(|i| u8::try_from(i % 256).unwrap()).collect();
+    assert_eq!(
+        kinds,
+        [
+            "INTEGER",
+            "DECFLOAT",
+            "VARBINARY",
+            "BOOLEAN",
+            "TIMESTAMP",
+            "BLOB",
+            "CLOB"
+        ]
+    );
+    let blob: Vec<u8> = (0..5000u32)
+        .map(|i| u8::try_from(i % 256).unwrap())
+        .collect();
     let row = |k: i64, df: &str| {
         vec![
             SqlValue::Integer { value: k },
             SqlValue::Decimal { text: df.into() },
-            SqlValue::Binary { data: vec![0, 0xFF, 7] },
+            SqlValue::Binary {
+                data: vec![0, 0xFF, 7],
+            },
             SqlValue::Boolean { value: k == 1 },
-            SqlValue::Timestamp { ms: 1_793_610_843_123, picos: 456_789_012 },
+            SqlValue::Timestamp {
+                ms: 1_793_610_843_123,
+                picos: 456_789_012,
+            },
             SqlValue::Binary { data: blob.clone() },
-            SqlValue::Text { text: "a character LOB".into() },
+            SqlValue::Text {
+                text: "a character LOB".into(),
+            },
         ]
     };
     let rows = vec![row(1, "1.5E-30"), row(2, "-Infinity"), row(3, "sNaN")];
-    lane.execute(&mut e, &Execute { statement: ins.statement, rows }, &never).unwrap();
-    let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.N ORDER BY K").unwrap();
+    lane.execute(
+        &mut e,
+        &Execute {
+            statement: ins.statement,
+            rows,
+        },
+        &never,
+    )
+    .unwrap();
+    let q = lane
+        .prepare(&mut e, "SELECT * FROM QSTEST.N ORDER BY K")
+        .unwrap();
     let t = &q.columns[4];
     assert_eq!((t.sql_type.as_str(), t.scale), ("TIMESTAMP", 12));
-    assert_eq!((q.columns[1].sql_type.as_str(), q.columns[1].length), ("DECFLOAT", 16));
+    assert_eq!(
+        (q.columns[1].sql_type.as_str(), q.columns[1].length),
+        ("DECFLOAT", 16)
+    );
     assert_eq!(q.columns[2].ccsid, 65535);
-    let cursor = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
-    let got = lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never).unwrap();
+    let cursor = lane
+        .execute(
+            &mut e,
+            &Execute {
+                statement: q.statement,
+                rows: Vec::new(),
+            },
+            &never,
+        )
+        .unwrap()
+        .cursor
+        .unwrap();
+    let got = lane
+        .fetch(
+            &mut e,
+            &Fetch {
+                cursor,
+                max_rows: 0,
+            },
+            &never,
+        )
+        .unwrap();
     assert_eq!(got.rows.len(), 3);
     assert_eq!(got.rows[0], row(1, "1.5E-30"));
-    assert_eq!(got.rows[1][1], SqlValue::Decimal { text: "-Infinity".into() });
-    assert_eq!(got.rows[2][1], SqlValue::Decimal { text: "sNaN".into() });
+    assert_eq!(
+        got.rows[1][1],
+        SqlValue::Decimal {
+            text: "-Infinity".into()
+        }
+    );
+    assert_eq!(
+        got.rows[2][1],
+        SqlValue::Decimal {
+            text: "sNaN".into()
+        }
+    );
     assert_eq!(got.rows[1][3], SqlValue::Boolean { value: false });
 }
 
@@ -404,10 +756,38 @@ impl Engine for Calling {
         req.desc.calls = true;
         let r = self.0.run(&req);
         let Some(plan) = r.call else { return r };
-        let open = Desc { op: Op::Open, name: "C1".into(), text: "SELECT ID, NAME FROM QSTEST.T ORDER BY ID".into(), returns: Some(sql::ast::ReturnTo::Client), ..Desc::default() };
-        assert_eq!(self.0.run(&Request { scope: "9:PROC".into(), desc: open, inputs: Vec::new() }).sqlca.sqlcode, 0);
-        let called = sql::exec::routine::Called { seq: plan.seq, max: plan.max_results, sqlstate: "00000".into(), ..Default::default() };
-        self.0.run(&Request { scope: req.scope, desc: Desc { op: Op::Called, ..Desc::default() }, inputs: called.inputs() })
+        let open = Desc {
+            op: Op::Open,
+            name: "C1".into(),
+            text: "SELECT ID, NAME FROM QSTEST.T ORDER BY ID".into(),
+            returns: Some(sql::ast::ReturnTo::Client),
+            ..Desc::default()
+        };
+        assert_eq!(
+            self.0
+                .run(&Request {
+                    scope: "9:PROC".into(),
+                    desc: open,
+                    inputs: Vec::new()
+                })
+                .sqlca
+                .sqlcode,
+            0
+        );
+        let called = sql::exec::routine::Called {
+            seq: plan.seq,
+            max: plan.max_results,
+            sqlstate: "00000".into(),
+            ..Default::default()
+        };
+        self.0.run(&Request {
+            scope: req.scope,
+            desc: Desc {
+                op: Op::Called,
+                ..Desc::default()
+            },
+            inputs: called.inputs(),
+        })
     }
 
     fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage {
@@ -421,18 +801,59 @@ fn a_calls_first_result_set_is_its_cursor() {
     let mut lane = Lane::default();
     let ddl = "CREATE PROCEDURE QSTEST.RSP (IN A INT) DYNAMIC RESULT SETS 1 EXTERNAL NAME QSTEST.RSPGM PARAMETER STYLE GENERAL";
     let c = lane.prepare(&mut e, ddl).unwrap();
-    lane.execute(&mut e, &Execute { statement: c.statement, rows: Vec::new() }, &never).unwrap();
+    lane.execute(
+        &mut e,
+        &Execute {
+            statement: c.statement,
+            rows: Vec::new(),
+        },
+        &never,
+    )
+    .unwrap();
     let call = lane.prepare(&mut e, "CALL QSTEST.RSP(?)").unwrap();
-    let x = lane.execute(&mut e, &Execute { statement: call.statement, rows: vec![vec![SqlValue::Integer { value: 1 }]] }, &never).unwrap();
+    let x = lane
+        .execute(
+            &mut e,
+            &Execute {
+                statement: call.statement,
+                rows: vec![vec![SqlValue::Integer { value: 1 }]],
+            },
+            &never,
+        )
+        .unwrap();
     let cursor = x.cursor.expect("the result set");
-    let f = lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never).unwrap();
+    let f = lane
+        .fetch(
+            &mut e,
+            &Fetch {
+                cursor,
+                max_rows: 0,
+            },
+            &never,
+        )
+        .unwrap();
     assert_eq!((f.rows.len(), f.end), (2, true));
     assert_eq!(f.rows[0][1], SqlValue::Text { text: "Ann".into() });
     // OUT parameters have nowhere to go: refused before the call.
     let ddl = "CREATE PROCEDURE QSTEST.OUTP (OUT A INT) EXTERNAL NAME QSTEST.RSPGM PARAMETER STYLE GENERAL";
     let c = lane.prepare(&mut e, ddl).unwrap();
-    lane.execute(&mut e, &Execute { statement: c.statement, rows: Vec::new() }, &never).unwrap();
+    lane.execute(
+        &mut e,
+        &Execute {
+            statement: c.statement,
+            rows: Vec::new(),
+        },
+        &never,
+    )
+    .unwrap();
     let call = lane.prepare(&mut e, "CALL QSTEST.OUTP(?)").unwrap();
-    let r = lane.execute(&mut e, &Execute { statement: call.statement, rows: vec![vec![SqlValue::Null]] }, &never);
+    let r = lane.execute(
+        &mut e,
+        &Execute {
+            statement: call.statement,
+            rows: vec![vec![SqlValue::Null]],
+        },
+        &never,
+    );
     assert_eq!(failed(r).1, -84);
 }

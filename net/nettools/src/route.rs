@@ -99,7 +99,11 @@ pub fn probing(dest: IpAddr, name: Option<&str>, local: Option<IpAddr>, max: u8)
 
 /// Trace the route: the hop messages, the run ending at the destination,
 /// an unreachable mark or the last TTL. `names` looks a node's name up.
-pub fn run(o: &Options, p: &mut dyn Prober, names: &mut dyn FnMut(IpAddr) -> Option<String>) -> Vec<Msg> {
+pub fn run(
+    o: &Options,
+    p: &mut dyn Prober,
+    names: &mut dyn FnMut(IpAddr) -> Option<String>,
+) -> Vec<Msg> {
     if o.first > o.max {
         return vec![Msg::new(
             msg::BAD_RANGE,
@@ -117,7 +121,12 @@ pub fn run(o: &Options, p: &mut dyn Prober, names: &mut dyn FnMut(IpAddr) -> Opt
             n += 1;
             match p.probe(ttl, n, o.wait) {
                 Ok(Answer::Timeout) => line.push_str(" *"),
-                Ok(Answer::From { addr, rtt, done, mark }) => {
+                Ok(Answer::From {
+                    addr,
+                    rtt,
+                    done,
+                    mark,
+                }) => {
                     if last != Some(addr) {
                         let name = if o.lookup { names(addr) } else { None };
                         match name {
@@ -183,7 +192,9 @@ mod tests {
     #[test]
     fn loopback_in_one_hop() {
         let mut p = Path(vec![Some("127.0.0.1")]);
-        let m = run(&Options::default(), &mut p, &mut |_| Some("LOOPBACK".into()));
+        let m = run(&Options::default(), &mut p, &mut |_| {
+            Some("LOOPBACK".into())
+        });
         assert_eq!(m.len(), 1);
         assert_eq!(m[0].id, "TCP3261");
         assert_eq!(m[0].text, "1 LOOPBACK (127.0.0.1) 0.439 0.439 0.439");
@@ -191,16 +202,33 @@ mod tests {
 
     #[test]
     fn silent_hops_and_the_last_ttl() {
-        let mut p = Path(vec![Some("10.0.2.2"), None, Some("192.0.2.9"), Some("192.0.2.1")]);
-        let o = Options { max: 3, probes: 2, lookup: false, ..Options::default() };
+        let mut p = Path(vec![
+            Some("10.0.2.2"),
+            None,
+            Some("192.0.2.9"),
+            Some("192.0.2.1"),
+        ]);
+        let o = Options {
+            max: 3,
+            probes: 2,
+            lookup: false,
+            ..Options::default()
+        };
         let m = run(&o, &mut p, &mut |_| None);
         let texts: Vec<&str> = m.iter().map(|x| x.text.as_str()).collect();
-        assert_eq!(texts, ["1 10.0.2.2 0.439 0.439", "2 * *", "3 192.0.2.9 0.439 0.439"]);
+        assert_eq!(
+            texts,
+            ["1 10.0.2.2 0.439 0.439", "2 * *", "3 192.0.2.9 0.439 0.439"]
+        );
     }
 
     #[test]
     fn range_checked() {
-        let o = Options { first: 5, max: 2, ..Options::default() };
+        let o = Options {
+            first: 5,
+            max: 2,
+            ..Options::default()
+        };
         let m = run(&o, &mut Path(vec![]), &mut |_| None);
         assert_eq!(m[0].id, "TCP3252");
         assert_eq!(m[0].kind, Kind::Escape);

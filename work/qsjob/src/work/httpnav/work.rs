@@ -18,8 +18,9 @@ use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, Mutex};
 
 use navigator::env::work::{
-    ActiveJobs, Autostart, Choices, Job, JobPerf, JobProps, JobQueue, LibEntry, Lock, LogEntry, OutQueue, Prestart,
-    Routing, SbsPool, ScheduleEntry, Splf, Subsystem, SubsystemDesc, Thread, Work, Workstation, Writer,
+    ActiveJobs, Autostart, Choices, Job, JobPerf, JobProps, JobQueue, LibEntry, Lock, LogEntry,
+    OutQueue, Prestart, Routing, SbsPool, ScheduleEntry, Splf, Subsystem, SubsystemDesc, Thread,
+    Work, Workstation, Writer,
 };
 use qsweb::msg::{Kind, Message};
 use stg::{Client, JobInfo};
@@ -70,14 +71,22 @@ fn notes(m: &Main, ended: &Ended, user: &str, jobs: &[Job]) -> Vec<Message> {
     let Some(mine) = all.get_mut(user) else {
         return Vec::new();
     };
-    let number = |q: &str| q.split('/').next().and_then(|n| n.trim().parse::<u32>().ok());
-    if mine.iter().all(|q| jobs.iter().any(|j| j.number.parse::<u32>().ok() == number(q))) {
+    let number = |q: &str| {
+        q.split('/')
+            .next()
+            .and_then(|n| n.trim().parse::<u32>().ok())
+    };
+    if mine.iter().all(|q| {
+        jobs.iter()
+            .any(|j| j.number.parse::<u32>().ok() == number(q))
+    }) {
         return Vec::new();
     }
     let rows = m.ask(Client::hst_entries).unwrap_or_default();
     let logged = |n: u32| {
         rows.iter().rev().find(|r| {
-            r.get(2).is_some_and(|id| id.trim() == "CPF1164") && r.get(7).and_then(|v| v.trim().parse::<u32>().ok()) == Some(n)
+            r.get(2).is_some_and(|id| id.trim() == "CPF1164")
+                && r.get(7).and_then(|v| v.trim().parse::<u32>().ok()) == Some(n)
         })
     };
     let mut out = Vec::new();
@@ -88,7 +97,11 @@ fn notes(m: &Main, ended: &Ended, user: &str, jobs: &[Job]) -> Vec<Message> {
         }
         match logged(n) {
             Some(r) => {
-                out.push(Message::new(Kind::Info, "CPF1164", r.get(8).map_or("", |t| t.trim())));
+                out.push(Message::new(
+                    Kind::Info,
+                    "CPF1164",
+                    r.get(8).map_or("", |t| t.trim()),
+                ));
                 false
             }
             None => true,
@@ -138,7 +151,11 @@ fn nomax32(v: u32) -> Option<u32> {
 }
 
 fn qual((name, lib): &(String, String)) -> String {
-    if lib.is_empty() { name.clone() } else { format!("{lib}/{name}") }
+    if lib.is_empty() {
+        name.clone()
+    } else {
+        format!("{lib}/{name}")
+    }
 }
 
 fn splf(f: SplfAttrs) -> Splf {
@@ -159,7 +176,12 @@ fn splf(f: SplfAttrs) -> Splf {
 
 /// The subsystem's list entry from its description and, while active,
 /// the service's figures.
-fn subsystem_of(m: &Main, lib: &str, name: &str, active: &[wm::sbs::SbsInfo]) -> Option<(Subsystem, Sbsd)> {
+fn subsystem_of(
+    m: &Main,
+    lib: &str,
+    name: &str,
+    active: &[wm::sbs::SbsInfo],
+) -> Option<(Subsystem, Sbsd)> {
     let d = Sbsd::decode(&payload(m, lib, name, "*SBSD")?).ok()?;
     let a = active.iter().find(|s| s.name == name);
     let s = Subsystem {
@@ -191,9 +213,15 @@ fn desc(m: &Main, lib: &str, name: &str) -> Option<SubsystemDesc> {
         .as_ref()
         .and_then(|a| jobs.iter().find(|j| j.number == a.monitor))
         .map(JobInfo::qualified);
-    let since = a.as_ref().and_then(|a| jobs.iter().find(|j| j.number == a.monitor)).map(|j| j.started);
+    let since = a
+        .as_ref()
+        .and_then(|a| jobs.iter().find(|j| j.number == a.monitor))
+        .map(|j| j.started);
     let sys_pool = |id: u8| {
-        let pname = a.as_ref().and_then(|a| a.pools.iter().find(|(n, _)| *n == id)).map(|(_, p)| p.clone());
+        let pname = a
+            .as_ref()
+            .and_then(|a| a.pools.iter().find(|(n, _)| *n == id))
+            .map(|(_, p)| p.clone());
         pname.and_then(|p| pools.iter().find(|x| x.name == p).cloned())
     };
     Some(SubsystemDesc {
@@ -283,9 +311,7 @@ fn props(m: &Main, job: &str) -> Option<JobProps> {
     let j = &d.job;
     let a = &d.attrs;
     let now = m.ask(Client::now).unix;
-    let pool = m.ask(Client::pools)
-        .into_iter()
-        .find(|p| p.name == j.pool);
+    let pool = m.ask(Client::pools).into_iter().find(|p| p.name == j.pool);
     Some(JobProps {
         job: job_of(j, 0),
         entered: j.started,
@@ -350,7 +376,11 @@ fn writers(m: &Main) -> Vec<Writer> {
 
 /// Days since 1970 at the start of `YYYYMMDD`.
 fn date_secs(ymd: u32) -> Option<u64> {
-    let (y, mo, d) = (i64::from(ymd / 10_000), i64::from(ymd / 100 % 100), i64::from(ymd % 100));
+    let (y, mo, d) = (
+        i64::from(ymd / 10_000),
+        i64::from(ymd / 100 % 100),
+        i64::from(ymd % 100),
+    );
     if ymd == 0 || mo == 0 || d == 0 {
         return None;
     }
@@ -380,7 +410,11 @@ fn schedule(m: &Main) -> Vec<ScheduleEntry> {
                 Frequency::Monthly => "*MONTHLY",
             }
             .into(),
-            date: if e.date_kind == DateKind::Date { date_secs(e.date) } else { None },
+            date: if e.date_kind == DateKind::Date {
+                date_secs(e.date)
+            } else {
+                None
+            },
             days: if e.days == 0x7F {
                 vec!["*ALL".into()]
             } else {
@@ -443,13 +477,16 @@ impl Work for LiveWork {
     fn library_list(&self, user: &str, job: &str) -> Vec<LibEntry> {
         let j = job.to_string();
         self.link.read(user, move |m| {
-            let Some(d) = detail(m, &j) else { return Vec::new() };
+            let Some(d) = detail(m, &j) else {
+                return Vec::new();
+            };
             let l = &d.attrs.libl;
             let mut out = Vec::new();
             let mut seq = 0;
             let mut add = |lib: &str, kind: &str, current: bool| {
                 let name = lib.to_string();
-                let text = m.ask(|c| c.object("QSYS".into(), name, "*LIB".into()))
+                let text = m
+                    .ask(|c| c.object("QSYS".into(), name, "*LIB".into()))
                     .map(|o| o.text)
                     .unwrap_or_default();
                 let s = if current {
@@ -466,7 +503,10 @@ impl Work for LiveWork {
                 });
             };
             l.sys.iter().for_each(|x| add(x, "SYS", false));
-            l.prd.iter().filter(|x| !x.is_empty()).for_each(|x| add(x, "PRD", false));
+            l.prd
+                .iter()
+                .filter(|x| !x.is_empty())
+                .for_each(|x| add(x, "PRD", false));
             l.cur.iter().for_each(|x| add(x, "CUR", true));
             l.usr.iter().for_each(|x| add(x, "USR", false));
             out
@@ -481,7 +521,12 @@ impl Work for LiveWork {
             };
             rows.into_iter()
                 .map(|r| {
-                    let v = |k: &str| r.iter().find(|(n, _)| n == k).map(|(_, x)| x.clone()).unwrap_or_default();
+                    let v = |k: &str| {
+                        r.iter()
+                            .find(|(n, _)| n == k)
+                            .map(|(_, x)| x.clone())
+                            .unwrap_or_default()
+                    };
                     Lock {
                         object: v("OBJ"),
                         lib: v("OBJLIB"),
@@ -514,7 +559,11 @@ impl Work for LiveWork {
                     };
                     Some(JobQueue {
                         held: q.held,
-                        subsystem: attach.iter().find(|(k, _)| *k == qual).map(|(_, s)| s.clone()).unwrap_or_default(),
+                        subsystem: attach
+                            .iter()
+                            .find(|(k, _)| *k == qual)
+                            .map(|(_, s)| s.clone())
+                            .unwrap_or_default(),
                         waiting: count(&|_| true),
                         held_jobs: count(&|j| j.held),
                         scheduled: count(&|j| j.scheduled > now),
@@ -584,7 +633,13 @@ impl Work for LiveWork {
         })
     }
 
-    fn spooled_text(&self, user: &str, job: &str, file: &str, number: u32) -> Option<(Splf, Vec<String>)> {
+    fn spooled_text(
+        &self,
+        user: &str,
+        job: &str,
+        file: &str,
+        number: u32,
+    ) -> Option<(Splf, Vec<String>)> {
         let (j, f) = (job.to_string(), file.to_string());
         self.link.read(user, move |m| {
             let (a, data) = m
@@ -592,7 +647,10 @@ impl Work for LiveWork {
                 .map_err(|e| eprintln!("qsjob: navigator: spooled file: {e}"))
                 .ok()?;
             let (pages, _) = spool::scs::decode(&data);
-            let text = pages.iter().map(|p| spool::view::text(std::slice::from_ref(p))).collect();
+            let text = pages
+                .iter()
+                .map(|p| spool::view::text(std::slice::from_ref(p)))
+                .collect();
             Some((splf(a), text))
         })
     }
@@ -637,7 +695,10 @@ mod tests {
         assert_eq!(nomax16(0), None);
         assert_eq!(nomax16(5), Some(5));
         assert_eq!(nomax32(u32::MAX), None);
-        assert_eq!(ended_job("ENDJOB JOB(123456/QPGMR/X) OPTION(*IMMED)").as_deref(), Some("123456/QPGMR/X"));
+        assert_eq!(
+            ended_job("ENDJOB JOB(123456/QPGMR/X) OPTION(*IMMED)").as_deref(),
+            Some("123456/QPGMR/X")
+        );
         assert_eq!(ended_job("HLDJOB JOB(1/A/B)"), None);
     }
 }

@@ -74,7 +74,9 @@ impl Page {
     }
 
     fn cell(grid: &[String], i: usize) -> char {
-        grid.get(i / 80).and_then(|r| r.chars().nth(i % 80)).unwrap_or(' ')
+        grid.get(i / 80)
+            .and_then(|r| r.chars().nth(i % 80))
+            .unwrap_or(' ')
     }
 
     /// The input fields starting on `row` from column `from` (both
@@ -85,7 +87,9 @@ impl Page {
         // `0`.. is attribute 0x20..: underlined (0x04) and not
         // nondisplay (0x07).
         let input = |c: char| {
-            let a = u32::from(c).checked_sub(u32::from('0')).map_or(0, |d| d + 0x20);
+            let a = u32::from(c)
+                .checked_sub(u32::from('0'))
+                .map_or(0, |d| d + 0x20);
             (0x20..=0x3f).contains(&a) && a & 0x04 != 0 && a & 0x07 != 0x07
         };
         let mut out = Vec::new();
@@ -122,15 +126,31 @@ impl Page {
                 continue;
             }
             let label = t.get(1..33).unwrap_or("").trim();
-            let kwd: String = t.get(34..48).unwrap_or("").split_whitespace().next().unwrap_or("").to_string();
+            let kwd: String = t
+                .get(34..48)
+                .unwrap_or("")
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .to_string();
             let is_kwd = t.get(33..34) == Some(" ")
                 && !kwd.is_empty()
-                && kwd.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit());
+                && kwd
+                    .chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit());
             // Value fields start in column 50 (qualifiers 52); the
             // one-position field in column 48 is a group list's `+`.
-            let field = self.fields(r, 44).into_iter().find(|f| f.0 >= 49).map(|(_, n, v)| (n, v));
+            let field = self
+                .fields(r, 44)
+                .into_iter()
+                .find(|f| f.0 >= 49)
+                .map(|(_, n, v)| (n, v));
             if is_kwd {
-                out.push(Entry::Parm { kwd, field, subs: Vec::new() });
+                out.push(Entry::Parm {
+                    kwd,
+                    field,
+                    subs: Vec::new(),
+                });
             } else if !label.is_empty()
                 && let Some(f) = field
                 && let Some(Entry::Parm { subs, .. }) = out.last_mut()
@@ -153,10 +173,12 @@ fn our_entries(p: &Prompter, s: &Screen, state: &mut (bool, Option<usize>), out:
             *current = None;
             continue;
         }
-        let f = s
-            .fields
-            .iter()
-            .find(|f| f.row == r && f.path.as_ref().is_some_and(|p| p.steps.last() != Some(&usize::MAX)));
+        let f = s.fields.iter().find(|f| {
+            f.row == r
+                && f.path
+                    .as_ref()
+                    .is_some_and(|p| p.steps.last() != Some(&usize::MAX))
+        });
         let Some(f) = f else {
             if t.trim_start().starts_with("+ for more values") {
                 continue;
@@ -181,9 +203,17 @@ fn our_entries(p: &Prompter, s: &Screen, state: &mut (bool, Option<usize>), out:
         let kwd = p.def.parms[path.parm].kwd.clone();
         *current = Some(path.parm);
         if *pending_head {
-            out.push(Entry::Parm { kwd, field: None, subs: vec![fv] });
+            out.push(Entry::Parm {
+                kwd,
+                field: None,
+                subs: vec![fv],
+            });
         } else {
-            out.push(Entry::Parm { kwd, field: Some(fv), subs: Vec::new() });
+            out.push(Entry::Parm {
+                kwd,
+                field: Some(fv),
+                subs: Vec::new(),
+            });
         }
         *pending_head = false;
     }
@@ -215,7 +245,14 @@ fn pages(dir: &str, base: &str) -> Vec<Page> {
 fn merged(v: Vec<Entry>) -> Vec<Entry> {
     let mut out: Vec<Entry> = Vec::new();
     for e in v {
-        if let (Some(Entry::Parm { kwd: a, subs, .. }), Entry::Parm { kwd: b, field, subs: more }) = (out.last_mut(), &e)
+        if let (
+            Some(Entry::Parm { kwd: a, subs, .. }),
+            Entry::Parm {
+                kwd: b,
+                field,
+                subs: more,
+            },
+        ) = (out.last_mut(), &e)
             && a == b
         {
             subs.extend(field.clone());
@@ -231,7 +268,6 @@ fn same_field(want: &(usize, String), got: &(usize, String)) -> bool {
     let len = want.0 == got.0 || (want.0 >= LONG && got.0 >= LONG);
     len && want.1.eq_ignore_ascii_case(&got.1)
 }
-
 
 /// One golden (with its following pages) against our prompt.
 struct Case {
@@ -253,7 +289,15 @@ struct Case {
 }
 
 const fn case(golden: &'static str, text: &'static str, keys: &'static [u8]) -> Case {
-    Case { golden, dir: "prompts", text, keys, ibm_only: &[], ours_only: &[], known: &[] }
+    Case {
+        golden,
+        dir: "prompts",
+        text,
+        keys,
+        ibm_only: &[],
+        ours_only: &[],
+        known: &[],
+    }
 }
 
 /// The differences of one case, as text.
@@ -284,7 +328,11 @@ fn differences(c: &Case) -> Vec<String> {
     // The title's command name and the keys of the first page.
     let name = format!("({})", p.name);
     if !gold[0].text[0].contains(&name) || !first.rows[0].contains(&name) {
-        diffs.push(format!("title: want {:?} got {:?}", gold[0].text[0].trim(), first.rows[0].trim()));
+        diffs.push(format!(
+            "title: want {:?} got {:?}",
+            gold[0].text[0].trim(),
+            first.rows[0].trim()
+        ));
     }
     let want_keys = keys(&gold[0].text[21..23]);
     let got_keys = keys(&first.rows[21..24]);
@@ -337,9 +385,17 @@ fn differences(c: &Case) -> Vec<String> {
             v.pop();
         }
     }
-    let gk_cmp: &[String] = if complete { &gk } else { &gk[..gk.len().min(wk.len())] };
+    let gk_cmp: &[String] = if complete {
+        &gk
+    } else {
+        &gk[..gk.len().min(wk.len())]
+    };
     if wk != gk_cmp {
-        diffs.push(format!("order:\n    want {}\n    got  {}", wk.join(" "), gk.join(" ")));
+        diffs.push(format!(
+            "order:\n    want {}\n    got  {}",
+            wk.join(" "),
+            gk.join(" ")
+        ));
     }
     for w in &want {
         let Entry::Parm { kwd, field, subs } = w else {
@@ -348,13 +404,20 @@ fn differences(c: &Case) -> Vec<String> {
         if c.known.contains(&kwd.as_str()) {
             continue;
         }
-        let Some(Entry::Parm { field: gf, subs: gs, .. }) =
-            got.iter().find(|g| matches!(g, Entry::Parm { kwd: k, .. } if k == kwd))
+        let Some(Entry::Parm {
+            field: gf,
+            subs: gs,
+            ..
+        }) = got
+            .iter()
+            .find(|g| matches!(g, Entry::Parm { kwd: k, .. } if k == kwd))
         else {
             continue;
         };
         match (field, gf) {
-            (Some(a), Some(b)) if !same_field(a, b) => diffs.push(format!("{kwd}: want {a:?} got {b:?}")),
+            (Some(a), Some(b)) if !same_field(a, b) => {
+                diffs.push(format!("{kwd}: want {a:?} got {b:?}"))
+            }
             (Some(a), None) => diffs.push(format!("{kwd}: want {a:?} got a heading")),
             (None, Some(b)) => diffs.push(format!("{kwd}: want a heading got {b:?}")),
             _ => {}
@@ -389,7 +452,11 @@ const SAV_KNOWN: &[&str] = &["SAVACTMSGQ", "OMITOBJ", "FILEMBR"];
 fn save_prompts() {
     check(&[
         case("prompt-savlib", "?SAVLIB", &[]),
-        Case { ibm_only: SAV_IBM_ONLY, known: SAV_KNOWN, ..case("prompt-savlib-f10", "?SAVLIB", &[10]) },
+        Case {
+            ibm_only: SAV_IBM_ONLY,
+            known: SAV_KNOWN,
+            ..case("prompt-savlib-f10", "?SAVLIB", &[10])
+        },
         case("prompt-savobj", "?SAVOBJ", &[]),
         Case {
             ibm_only: &["SYNCID", "STG", "SELECT", "CMDUSRSPC"],
@@ -397,7 +464,10 @@ fn save_prompts() {
             ..case("prompt-savobj-f10", "?SAVOBJ", &[10])
         },
         // pub400 shows no default for OBJ.
-        Case { known: &["OBJ"], ..case("prompt-savchgobj", "?SAVCHGOBJ", &[]) },
+        Case {
+            known: &["OBJ"],
+            ..case("prompt-savchgobj", "?SAVCHGOBJ", &[])
+        },
         Case {
             ibm_only: &["SYNCID", "SELECT", "CMDUSRSPC", "STRLIB"],
             ours_only: &["FILEMBR"],
@@ -405,7 +475,10 @@ fn save_prompts() {
             ..case("prompt-savchgobj-f10", "?SAVCHGOBJ", &[10])
         },
         // The pattern's default: pub400 shows '*', we show *.
-        Case { known: &["PATTERN"], ..case("prompt-sav", "?SAV", &[]) },
+        Case {
+            known: &["PATTERN"],
+            ..case("prompt-sav", "?SAV", &[])
+        },
         Case {
             ibm_only: &["EXPDATE", "USEOPTBLK"],
             // pub400 shows these only on conditions it alone knows.
@@ -434,7 +507,10 @@ fn save_file_prompts() {
         case("prompt-crtsavf", "?CRTSAVF", &[]),
         case("prompt-crtsavf-f10", "?CRTSAVF", &[10]),
         // pub400's CHGSAVF opens on its key parameter alone.
-        Case { ours_only: &["MAXRCDS", "TEXT"], ..case("prompt-chgsavf", "?CHGSAVF", &[]) },
+        Case {
+            ours_only: &["MAXRCDS", "TEXT"],
+            ..case("prompt-chgsavf", "?CHGSAVF", &[])
+        },
         case("prompt-chgsavf-f10", "?CHGSAVF", &[10]),
         case("prompt-clrsavf", "?CLRSAVF", &[]),
         case("prompt-dspsavf", "?DSPSAVF", &[]),
@@ -447,21 +523,42 @@ fn save_file_prompts() {
 fn media_prompts() {
     check(&[
         // OUTPUT(*OUTFILE) is not offered; pub400's field fits it.
-        Case { known: &["OUTPUT"], ..case("prompt-dsptap", "?DSPTAP", &[]) },
-        Case { known: &["OUTPUT"], ..case("prompt-dspopt", "?DSPOPT", &[]) },
+        Case {
+            known: &["OUTPUT"],
+            ..case("prompt-dsptap", "?DSPTAP", &[])
+        },
+        Case {
+            known: &["OUTPUT"],
+            ..case("prompt-dspopt", "?DSPOPT", &[])
+        },
         case("prompt-chktap", "?CHKTAP", &[]),
         // NEWOWNID holds the label's 14 characters; pub400's field is 17.
-        Case { known: &["NEWOWNID"], ..case("prompt-inztap", "?INZTAP", &[]) },
+        Case {
+            known: &["NEWOWNID"],
+            ..case("prompt-inztap", "?INZTAP", &[])
+        },
         case("prompt-inzopt", "?INZOPT", &[]),
         // The 7.1 oracle's (pub400 has no optical device).
         case("prompt-addoptctg-f11", "?ADDOPTCTG", &[]),
-        Case { known: &["TYPE", "CCSID"], ..case("prompt-inzopt-f10", "?INZOPT", &[0, 10]) },
+        Case {
+            known: &["TYPE", "CCSID"],
+            ..case("prompt-inzopt-f10", "?INZOPT", &[0, 10])
+        },
         case("prompt-duptap", "?DUPTAP", &[]),
         case("prompt-duptap-f10", "?DUPTAP", &[10]),
-        Case { known: &["ALWMEDERR"], ..case("prompt-dupopt", "?DUPOPT", &[]) },
-        Case { known: &["ALWMEDERR"], ..case("prompt-dupopt-f10", "?DUPOPT", &[10]) },
+        Case {
+            known: &["ALWMEDERR"],
+            ..case("prompt-dupopt", "?DUPOPT", &[])
+        },
+        Case {
+            known: &["ALWMEDERR"],
+            ..case("prompt-dupopt-f10", "?DUPOPT", &[10])
+        },
         // REFIMGCLG shows before F10 here.
-        Case { ours_only: &["REFIMGCLG"], ..case("prompt-crtimgclg", "?CRTIMGCLG", &[]) },
+        Case {
+            ours_only: &["REFIMGCLG"],
+            ..case("prompt-crtimgclg", "?CRTIMGCLG", &[])
+        },
         case("prompt-crtimgclg-f10", "?CRTIMGCLG", &[10]),
         case("prompt-addimgclge", "?ADDIMGCLGE", &[]),
         // The new-image parameters show after F10 here, not on pub400.
@@ -471,10 +568,16 @@ fn media_prompts() {
             ..case("prompt-addimgclge-f10", "?ADDIMGCLGE", &[0, 10])
         },
         case("prompt-lodimgclg", "?LODIMGCLG", &[]),
-        Case { known: &["LNG"], ..case("prompt-vfyimgclg", "?VFYIMGCLG", &[]) },
+        Case {
+            known: &["LNG"],
+            ..case("prompt-vfyimgclg", "?VFYIMGCLG", &[])
+        },
         case("prompt-wrkimgclg", "?WRKIMGCLG", &[]),
         case("prompt-crtdevtap", "?CRTDEVTAP", &[]),
-        Case { known: &["SWTSET"], ..case("prompt-crtdevtap-f10", "?CRTDEVTAP", &[0, 10]) },
+        Case {
+            known: &["SWTSET"],
+            ..case("prompt-crtdevtap-f10", "?CRTDEVTAP", &[0, 10])
+        },
         case("prompt-crtdevopt", "?CRTDEVOPT", &[]),
         Case {
             ours_only: &["ONLINE", "MSGQ", "TEXT", "AUT"],
@@ -483,7 +586,15 @@ fn media_prompts() {
         },
         case("prompt-crtdevmlb", "?CRTDEVMLB", &[]),
         Case {
-            known: &["UNLOADWAIT", "MAXDEVTIME", "RSCALCPTY", "INLMNTWAIT", "EOVMNTWAIT", "ROBOTHOST", "LCLINTNETA"],
+            known: &[
+                "UNLOADWAIT",
+                "MAXDEVTIME",
+                "RSCALCPTY",
+                "INLMNTWAIT",
+                "EOVMNTWAIT",
+                "ROBOTHOST",
+                "LCLINTNETA",
+            ],
             ..case("prompt-crtdevmlb-f10", "?CRTDEVMLB", &[0, 10])
         },
     ]);
@@ -493,11 +604,17 @@ fn media_prompts() {
 fn licpgm_and_system_prompts() {
     check(&[
         case("prompt-dspsfwrsc", "?DSPSFWRSC", &[]),
-        Case { dir: "licpgm", ..case("prompt-dspsfwrsc", "?DSPSFWRSC OUTPUT(*PRINT)", &[]) },
+        Case {
+            dir: "licpgm",
+            ..case("prompt-dspsfwrsc", "?DSPSFWRSC OUTPUT(*PRINT)", &[])
+        },
         case("prompt-dspipla", "?DSPIPLA", &[]),
         case("prompt-chgdstpwd", "?CHGDSTPWD", &[]),
         // A command with nothing to prompt: pub400 drops F4.
-        Case { known: &["keys"], ..case("prompt-wrksfwagr", "?WRKSFWAGR", &[]) },
+        Case {
+            known: &["keys"],
+            ..case("prompt-wrksfwagr", "?WRKSFWAGR", &[])
+        },
     ]);
 }
 
@@ -505,8 +622,14 @@ fn licpgm_and_system_prompts() {
 #[test]
 fn menu_option_prompts() {
     check(&[
-        Case { dir: "../addendum/menus", ..case("prompt-wrkf", "?WRKF", &[]) },
-        Case { dir: "../addendum/menus", ..case("prompt-wrkmsgq", "?WRKMSGQ", &[]) },
+        Case {
+            dir: "../addendum/menus",
+            ..case("prompt-wrkf", "?WRKF", &[])
+        },
+        Case {
+            dir: "../addendum/menus",
+            ..case("prompt-wrkmsgq", "?WRKMSGQ", &[])
+        },
     ]);
 }
 

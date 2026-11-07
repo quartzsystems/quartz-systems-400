@@ -47,17 +47,30 @@ fn range_of(cands: &[Candidate], e: &Expr) -> Option<Vec<Range>> {
         }
         Expr::InList(col, list, false) => {
             let Expr::Column(c) = &**col else { return None };
-            if list.iter().any(|x| !columns_of(x).is_empty() || super::has_subquery(x)) {
+            if list
+                .iter()
+                .any(|x| !columns_of(x).is_empty() || super::has_subquery(x))
+            {
                 return None;
             }
-            list.iter().map(|v| one(&c.column.value, Some(v.clone()), Some(v.clone()))).collect()
+            list.iter()
+                .map(|v| one(&c.column.value, Some(v.clone()), Some(v.clone())))
+                .collect()
         }
         Expr::Between(col, low, high, false) => {
             let Expr::Column(c) = &**col else { return None };
-            if !columns_of(low).is_empty() || !columns_of(high).is_empty() || super::has_subquery(low) || super::has_subquery(high) {
+            if !columns_of(low).is_empty()
+                || !columns_of(high).is_empty()
+                || super::has_subquery(low)
+                || super::has_subquery(high)
+            {
                 return None;
             }
-            Some(vec![one(&c.column.value, Some((**low).clone()), Some((**high).clone()))?])
+            Some(vec![one(
+                &c.column.value,
+                Some((**low).clone()),
+                Some((**high).clone()),
+            )?])
         }
         e => {
             let (name, op, v) = simple_predicate(e)?;
@@ -88,7 +101,14 @@ fn plan(cands: &[Candidate], preds: &[Expr]) -> Option<Vec<Vec<Range>>> {
 }
 
 /// The path entries' record numbers within one range.
-fn rrns_of(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, c: &Candidate, r: &Range, outer: &Env, out: &mut BTreeSet<u64>) -> Result<()> {
+fn rrns_of(
+    txn: &mut Txn<'_>,
+    ev: &mut Evaluator<'_>,
+    c: &Candidate,
+    r: &Range,
+    outer: &Env,
+    out: &mut BTreeSet<u64>,
+) -> Result<()> {
     let key = |ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, e: &Expr| -> Result<Option<Vec<u8>>> {
         let v = ev.eval(txn, e, outer)?;
         if v.is_null() {
@@ -96,7 +116,9 @@ fn rrns_of(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, c: &Candidate, r: &Range, 
         }
         let k = &c.fmt.format.keys[0];
         let dbv = v.to_field(&c.fmt.format.fields[k.field])?;
-        let mut enc = db::path::values_key(&c.fmt, &[dbv]).map_err(|e| SqlError::Conversion { what: e.to_string() })?;
+        let mut enc = db::path::values_key(&c.fmt, &[dbv]).map_err(|e| SqlError::Conversion {
+            what: e.to_string(),
+        })?;
         if let Some((number, _)) = c.cst {
             enc.splice(0..0, number.to_be_bytes());
         }
@@ -107,7 +129,10 @@ fn rrns_of(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, c: &Candidate, r: &Range, 
             Some(k) => k,
             None => return Ok(()),
         },
-        None => c.cst.map(|(n, _)| n.to_be_bytes().to_vec()).unwrap_or_default(),
+        None => c
+            .cst
+            .map(|(n, _)| n.to_be_bytes().to_vec())
+            .unwrap_or_default(),
     };
     let len = c.cst.map_or(usize::from(c.fmt.key_len), |(_, l)| l);
     let mut hi = match &r.hi {
@@ -115,15 +140,30 @@ fn rrns_of(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, c: &Candidate, r: &Range, 
             Some(k) => k,
             None => return Ok(()),
         },
-        None => c.cst.map(|(n, _)| n.to_be_bytes().to_vec()).unwrap_or_default(),
+        None => c
+            .cst
+            .map(|(n, _)| n.to_be_bytes().to_vec())
+            .unwrap_or_default(),
     };
     hi.resize(len, 0xFF);
     let desc = file::describe(txn, c.file)?;
     let mut pm = Member::open(txn, &desc, &c.member)?;
     pm.ensure_path(txn, &mut |_, _| {})?;
-    let path = if c.cst.is_some() { pm.cst_tree() } else { pm.path() }
-        .ok_or_else(|| SqlError::Database { what: format!("{} has no access path", c.label), msgid: None })?;
-    let mut batch = path.scan(txn, Bound::Included(lo.as_slice()), Bound::Included(hi.as_slice()), KEY_BATCH)?;
+    let path = if c.cst.is_some() {
+        pm.cst_tree()
+    } else {
+        pm.path()
+    }
+    .ok_or_else(|| SqlError::Database {
+        what: format!("{} has no access path", c.label),
+        msgid: None,
+    })?;
+    let mut batch = path.scan(
+        txn,
+        Bound::Included(lo.as_slice()),
+        Bound::Included(hi.as_slice()),
+        KEY_BATCH,
+    )?;
     while let Some(last) = batch.last().cloned() {
         for k in &batch {
             if k.key.as_slice() > hi.as_slice() {
@@ -138,8 +178,16 @@ fn rrns_of(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, c: &Candidate, r: &Range, 
 
 /// The record numbers to read for `preds` in arrival order, with the
 /// paths used; `None` when several paths do not serve them.
-pub(super) fn rrns(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, cands: &[Candidate], preds: &[Expr], outer: &Env) -> Result<Option<(Vec<u64>, Vec<usize>)>> {
-    let Some(sets) = plan(cands, preds) else { return Ok(None) };
+pub(super) fn rrns(
+    txn: &mut Txn<'_>,
+    ev: &mut Evaluator<'_>,
+    cands: &[Candidate],
+    preds: &[Expr],
+    outer: &Env,
+) -> Result<Option<(Vec<u64>, Vec<usize>)>> {
+    let Some(sets) = plan(cands, preds) else {
+        return Ok(None);
+    };
     let mut used: Vec<usize> = Vec::new();
     let mut acc: Option<BTreeSet<u64>> = None;
     for set in &sets {
@@ -168,5 +216,9 @@ pub(super) fn describe(cands: &[Candidate], preds: &[Expr]) -> Option<String> {
             names.push(n);
         }
     }
-    Some(format!("bitmap over {} ranges of {}", sets.iter().map(Vec::len).sum::<usize>(), names.join(", ")))
+    Some(format!(
+        "bitmap over {} ranges of {}",
+        sets.iter().map(Vec::len).sum::<usize>(),
+        names.join(", ")
+    ))
 }

@@ -9,8 +9,8 @@
 //! and fills the outputs; then the `WHENEVER` branches.
 
 use rpgfront::ast::{BinOp, Expr, Lit, Pos, Step, Stmt};
-use rpgsqlpre::{HostRef, Rows};
 use rpgsqlpre::{Desc, Op};
+use rpgsqlpre::{HostRef, Rows};
 
 use crate::codegen::Gen;
 use crate::codegen::emit::quote;
@@ -77,10 +77,19 @@ impl Gen<'_> {
     /// indicator (an array's elements or a structure's subfields, in
     /// step with the fields).
     fn hosts(&mut self, h: &HostRef, modify: bool) -> Vec<Host> {
-        let at = Pos { line: h.line, col: 0 };
-        let Some(v) = self.host_ref(&h.name, modify, at) else { return Vec::new() };
+        let at = Pos {
+            line: h.line,
+            col: 0,
+        };
+        let Some(v) = self.host_ref(&h.name, modify, at) else {
+            return Vec::new();
+        };
         let mut out = Vec::new();
-        let base = if v.dim > 0 { format!("{}[0]", v.op) } else { v.op.clone() };
+        let base = if v.dim > 0 {
+            format!("{}[0]", v.op)
+        } else {
+            v.op.clone()
+        };
         // A LOB or file reference structure is one value: the runtime
         // reads and writes its length and data (or the file's name).
         let sqltype = self
@@ -165,10 +174,17 @@ impl Gen<'_> {
     /// The element size of an array of structures named by a host
     /// variable, for a multiple-row `FETCH`.
     fn stride_of(&mut self, h: &HostRef) -> i64 {
-        let Some(id) = self.t.find(self.scope, h.name.split('.').next().unwrap_or("")) else { return 0 };
+        let Some(id) = self
+            .t
+            .find(self.scope, h.name.split('.').next().unwrap_or(""))
+        else {
+            return 0;
+        };
         let s = &self.t.syms[id];
         match (&s.kind, &s.ty) {
-            (Some(Kind::Ds(_) | Kind::Field | Kind::Param), Ty::Ds(di)) if s.dim > 0 => i64::from(self.t.ds_len(*di)),
+            (Some(Kind::Ds(_) | Kind::Field | Kind::Param), Ty::Ds(di)) if s.dim > 0 => {
+                i64::from(self.t.ds_len(*di))
+            }
             (_, t) if s.dim > 0 => i64::from(self.t.size(t)),
             _ => 0,
         }
@@ -183,7 +199,10 @@ impl Gen<'_> {
             Some(i) => (i.clone(), 1),
             None => (x.place.clone(), 0),
         };
-        self.b.ins(format!("callb _QRNX_SQLIN({}, {}, {}, {ind}, {has})", x.place, x.desc, x.extra));
+        self.b.ins(format!(
+            "callb _QRNX_SQLIN({}, {}, {}, {ind}, {has})",
+            x.place, x.desc, x.extra
+        ));
     }
 
     fn sql_out(&mut self, x: &Host, stride: i64) {
@@ -195,7 +214,10 @@ impl Gen<'_> {
             Some(i) => (i.clone(), 1),
             None => (x.place.clone(), 0),
         };
-        self.b.ins(format!("callb _QRNX_SQLOUT({}, {}, {}, {ind}, {has}, {stride})", x.place, x.desc, x.extra));
+        self.b.ins(format!(
+            "callb _QRNX_SQLOUT({}, {}, {}, {ind}, {has}, {stride})",
+            x.place, x.desc, x.extra
+        ));
     }
 
     /// The element size of the indicator array of a host variable.
@@ -218,7 +240,10 @@ impl Gen<'_> {
             Some(i) => (i.clone(), 1),
             None => (x.place.clone(), 0),
         };
-        self.b.ins(format!("callb _QRNX_SQLINA({}, {}, {}, {ind}, {has}, {stride}, {istride})", x.place, x.desc, x.extra));
+        self.b.ins(format!(
+            "callb _QRNX_SQLINA({}, {}, {}, {ind}, {has}, {stride}, {istride})",
+            x.place, x.desc, x.extra
+        ));
     }
 
     fn sql_out_a(&mut self, x: &Host, stride: i64, istride: i64) {
@@ -230,15 +255,24 @@ impl Gen<'_> {
             Some(i) => (i.clone(), 1),
             None => (x.place.clone(), 0),
         };
-        self.b.ins(format!("callb _QRNX_SQLOUTA({}, {}, {}, {ind}, {has}, {stride}, {istride})", x.place, x.desc, x.extra));
+        self.b.ins(format!(
+            "callb _QRNX_SQLOUTA({}, {}, {}, {ind}, {has}, {stride}, {istride})",
+            x.place, x.desc, x.extra
+        ));
     }
 
     /// One embedded statement.
     pub fn exec_sql(&mut self, s: &Stmt) {
-        let Some(st) = self.sql.get(&s.at.line).cloned() else { return };
+        let Some(st) = self.sql.get(&s.at.line).cloned() else {
+            return;
+        };
         let blocked = st.rows.is_some() && st.desc.op == Op::Exec;
         for h in &st.inputs {
-            let (stride, istride) = if blocked { (self.stride_of(h), self.ind_stride(h)) } else { (0, 0) };
+            let (stride, istride) = if blocked {
+                (self.stride_of(h), self.ind_stride(h))
+            } else {
+                (0, 0)
+            };
             for x in self.hosts(h, false) {
                 if blocked {
                     self.sql_in_a(&x, stride, istride);
@@ -280,7 +314,14 @@ impl Gen<'_> {
             }
         }
         if let Some(h) = &st.da
-            && let Some(da) = self.host_ref(&h.name, true, Pos { line: h.line, col: 0 })
+            && let Some(da) = self.host_ref(
+                &h.name,
+                true,
+                Pos {
+                    line: h.line,
+                    col: 0,
+                },
+            )
         {
             let mode = match st.desc.op {
                 Op::Describe | Op::Prepare => 3,
@@ -291,7 +332,9 @@ impl Gen<'_> {
             self.rt_proc("_QRNX_SQLDA", "($da: bytes(1) *VARSIZE, byval $m: i64)");
             self.b.ins(format!("callb _QRNX_SQLDA({}, {mode})", da.op));
         }
-        let Some(ca) = self.host_ref("SQLCA", true, s.at) else { return };
+        let Some(ca) = self.host_ref("SQLCA", true, s.at) else {
+            return;
+        };
         let ca = self.as_chars(&ca);
         self.sql_run(&ca.op, &st.desc);
         self.whenever(&st.whenever, s.at);
@@ -300,17 +343,33 @@ impl Gen<'_> {
     /// `_QRNX_SQLRUN` of a statement with the SQLCA at `ca`.
     fn sql_run(&mut self, ca: &str, desc: &Desc) {
         let text = desc.encode();
-        let lit = V::lit(Ty::Char(u32::try_from(text.len()).unwrap_or(1).max(1)), quote(&text));
+        let lit = V::lit(
+            Ty::Char(u32::try_from(text.len()).unwrap_or(1).max(1)),
+            quote(&text),
+        );
         let t = self.rt_of(&lit, None);
         let scope = self.opts.name.to_ascii_uppercase();
-        let sl = V::lit(Ty::Char(u32::try_from(scope.len()).unwrap_or(1).max(1)), quote(&scope));
+        let sl = V::lit(
+            Ty::Char(u32::try_from(scope.len()).unwrap_or(1).max(1)),
+            quote(&scope),
+        );
         let sr = self.rt_of(&sl, None);
         self.rt_proc(
             "_QRNX_SQLRUN",
             "($ca: bytes(1) *VARSIZE, $t: bytes(1) *VARSIZE, byval $tl: i64, $s: bytes(1) *VARSIZE, byval $sl: i64)",
         );
-        let ca = if ca.is_empty() { t.op.clone() } else { ca.to_string() };
-        self.b.ins(format!("callb _QRNX_SQLRUN({ca}, {}, {}, {}, {})", t.op, text.len(), sr.op, scope.len()));
+        let ca = if ca.is_empty() {
+            t.op.clone()
+        } else {
+            ca.to_string()
+        };
+        self.b.ins(format!(
+            "callb _QRNX_SQLRUN({ca}, {}, {}, {}, {})",
+            t.op,
+            text.len(),
+            sr.op,
+            scope.len()
+        ));
     }
 
     /// `_qrni_sqlend`, which the program entry calls as it returns under
@@ -340,15 +399,24 @@ impl Gen<'_> {
         let num = |n: &str| Box::new(Expr::Lit(Lit::Num(n.into()), at));
         let mut tests: Vec<(Expr, String)> = Vec::new();
         if let Some(l) = &w.error {
-            tests.push((Expr::Binary(BinOp::Lt, Box::new(code()), num("0"), at), l.clone()));
+            tests.push((
+                Expr::Binary(BinOp::Lt, Box::new(code()), num("0"), at),
+                l.clone(),
+            ));
         }
         if let Some(l) = &w.not_found {
-            tests.push((Expr::Binary(BinOp::Eq, Box::new(code()), num("100"), at), l.clone()));
+            tests.push((
+                Expr::Binary(BinOp::Eq, Box::new(code()), num("100"), at),
+                l.clone(),
+            ));
         }
         if let Some(l) = &w.warning {
             let pos = Expr::Binary(BinOp::Gt, Box::new(code()), num("0"), at);
             let not100 = Expr::Binary(BinOp::Ne, Box::new(code()), num("100"), at);
-            tests.push((Expr::Binary(BinOp::And, Box::new(pos), Box::new(not100), at), l.clone()));
+            tests.push((
+                Expr::Binary(BinOp::And, Box::new(pos), Box::new(not100), at),
+                l.clone(),
+            ));
         }
         for (e, label) in tests {
             if let Some(r) = self.cond(&e) {

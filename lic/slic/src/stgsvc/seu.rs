@@ -7,14 +7,19 @@
 //! another job holds it the other way), written back, released.
 
 use qsname::{MemberSpec, Name};
+use stg::proto::SrcMember;
 use store::obj::{JobHandle, LockState, ObjectId, types};
 use store::txn::Txn;
-use stg::proto::SrcMember;
 
 use crate::ipl::system::System;
 
 /// The source file and its real library.
-fn source_file(txn: &mut Txn<'_>, qsys: ObjectId, lib: &str, file: &str) -> Result<(ObjectId, String), String> {
+fn source_file(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    lib: &str,
+    file: &str,
+) -> Result<(ObjectId, String), String> {
     let names = crate::svc::ile::name_context(txn, qsys);
     let id = wm::obj::find(txn, qsys, &names, lib, file, types::FILE)
         .map_err(|_| format!("CPF9812 File {file} in library {lib} not found."))?;
@@ -66,7 +71,12 @@ pub fn open(
         } else {
             LockState::SharedRead
         };
-        if txn.store().locks_mut().lock(job, found.object, state).is_err() {
+        if txn
+            .store()
+            .locks_mut()
+            .lock(job, found.object, state)
+            .is_err()
+        {
             return Err(format!(
                 "CPF3330 Member {m} in {real}/{} is held by another job.",
                 file.to_ascii_uppercase()
@@ -103,7 +113,8 @@ pub fn save(
     let now = crate::stgsvc::msgs::now_micros() / 1_000_000;
     crate::stgsvc::spool::with_store(system, |txn, qsys| {
         let (fid, _) = source_file(txn, qsys, lib, file)?;
-        db::source::write_member(txn, job, fid, m, records, st, text, now).map_err(|e| db_err(&e))?;
+        db::source::write_member(txn, job, fid, m, records, st, text, now)
+            .map_err(|e| db_err(&e))?;
         Ok(())
     })
 }

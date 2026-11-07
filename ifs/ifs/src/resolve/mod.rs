@@ -382,7 +382,10 @@ impl<B: Backend> Sys<'_, B> {
                 name: "QSYS".into(),
                 objtype: "*LIB".into(),
                 owner: "QSYS".into(),
-                change: self.qsys.object("QSYS", "QSYS", "*LIB").map_or(0, |e| e.change),
+                change: self
+                    .qsys
+                    .object("QSYS", "QSYS", "*LIB")
+                    .map_or(0, |e| e.change),
                 ..QsysEntry::default()
             }),
             QsysNode::Lib(l) => self.qsys.object("QSYS", l, "*LIB"),

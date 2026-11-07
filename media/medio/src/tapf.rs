@@ -10,7 +10,10 @@
 use std::fmt::Write as _;
 
 use tape::label::{Date, Expiry, FileLabel, RecordFormat};
-use tape::volume::{FileReader, FileWriter, ReadOptions, WriteOptions, WriteSummary, blocks_to_records, records_to_blocks};
+use tape::volume::{
+    FileReader, FileWriter, ReadOptions, WriteOptions, WriteSummary, blocks_to_records,
+    records_to_blocks,
+};
 use tape::{EndOpt, MAX_BLOCK, SeqNbr, TapeTransport, VolumeProvider};
 
 use crate::{MediaError, Result};
@@ -81,7 +84,12 @@ fn parse_expiry(s: &str) -> Expiry {
         "*PERM" => Expiry::Perm,
         _ => s
             .split_once('.')
-            .and_then(|(y, d)| Some(Date { year: y.parse().ok()?, day: d.parse().ok()? }))
+            .and_then(|(y, d)| {
+                Some(Date {
+                    year: y.parse().ok()?,
+                    day: d.parse().ok()?,
+                })
+            })
             .map_or(Expiry::None, Expiry::Date),
     }
 }
@@ -114,7 +122,12 @@ impl TapeFileDef {
         let _ = writeln!(s, "dev\t{}", self.devs.join(" "));
         let _ = writeln!(s, "vol\t{}", self.vols.join(" "));
         let _ = writeln!(s, "reels\t{}", if self.unlabeled { "*NL" } else { "*SL" });
-        let _ = writeln!(s, "seqnbr\t{}", self.seq.map_or_else(|| "*END".to_string(), |n| n.to_string()));
+        let _ = writeln!(
+            s,
+            "seqnbr\t{}",
+            self.seq
+                .map_or_else(|| "*END".to_string(), |n| n.to_string())
+        );
         let _ = writeln!(s, "label\t{}", self.label);
         let _ = writeln!(s, "rcdlen\t{}", self.rcdlen);
         let _ = writeln!(s, "blklen\t{}", self.blklen);
@@ -136,7 +149,9 @@ impl TapeFileDef {
         let mut d = Self::default();
         let words = |v: &str| v.split_whitespace().map(str::to_string).collect::<Vec<_>>();
         for l in lines {
-            let Some((k, v)) = l.split_once('\t') else { continue };
+            let Some((k, v)) = l.split_once('\t') else {
+                continue;
+            };
             match k {
                 "dev" => d.devs = words(v),
                 "vol" => d.vols = words(v),
@@ -159,19 +174,48 @@ impl TapeFileDef {
     /// The `DSPFD` lines.
     #[must_use]
     pub fn describe(&self) -> String {
-        let none = |v: &[String]| if v.is_empty() { "*NONE".to_string() } else { v.join(" ") };
-        let calc = |n: u32| if n == 0 { "*CALC".to_string() } else { n.to_string() };
+        let none = |v: &[String]| {
+            if v.is_empty() {
+                "*NONE".to_string()
+            } else {
+                v.join(" ")
+            }
+        };
+        let calc = |n: u32| {
+            if n == 0 {
+                "*CALC".to_string()
+            } else {
+                n.to_string()
+            }
+        };
         let rows = [
             ("File attribute", "TAPF".to_string()),
             ("Tape device", none(&self.devs)),
             ("Volume identifier", none(&self.vols)),
-            ("Tape reels", if self.unlabeled { "*NL" } else { "*SL" }.to_string()),
-            ("Sequence number", self.seq.map_or_else(|| "*END".to_string(), |n| n.to_string())),
-            ("Tape label", if self.label.is_empty() { "*NONE".to_string() } else { self.label.clone() }),
+            (
+                "Tape reels",
+                if self.unlabeled { "*NL" } else { "*SL" }.to_string(),
+            ),
+            (
+                "Sequence number",
+                self.seq
+                    .map_or_else(|| "*END".to_string(), |n| n.to_string()),
+            ),
+            (
+                "Tape label",
+                if self.label.is_empty() {
+                    "*NONE".to_string()
+                } else {
+                    self.label.clone()
+                },
+            ),
             ("Record length", calc(self.rcdlen)),
             ("Block length", calc(self.blklen)),
             ("Record block type", self.rcdblk.clone()),
-            ("Code", if self.ascii { "*ASCII" } else { "*EBCDIC" }.to_string()),
+            (
+                "Code",
+                if self.ascii { "*ASCII" } else { "*EBCDIC" }.to_string(),
+            ),
             ("File expiration date", expiry_text(self.expires)),
             ("End of tape option", end_opt_name(self.end_opt).to_string()),
             ("Text", self.text.clone()),
@@ -199,7 +243,13 @@ pub fn record_format(rcdblk: &str) -> (RecordFormat, bool) {
 /// The record length `RCDLEN(*CALC)` means for records up to `longest`,
 /// and the block length `BLKLEN(*CALC)` means for it.
 #[must_use]
-pub fn lengths(format: RecordFormat, blocked: bool, rcdlen: u32, blklen: u32, longest: u32) -> (u32, u32) {
+pub fn lengths(
+    format: RecordFormat,
+    blocked: bool,
+    rcdlen: u32,
+    blklen: u32,
+    longest: u32,
+) -> (u32, u32) {
     let rcdlen = match (rcdlen, format) {
         (0, RecordFormat::Variable) => longest + 4,
         (0, _) => longest.max(1),
@@ -309,7 +359,11 @@ pub fn copy_from_tape<D: TapeTransport + ?Sized>(
         blocks.push(buf[..n].to_vec());
     }
     r.finish()?;
-    let format = c.format.unwrap_or(if c.unlabeled { RecordFormat::Undefined } else { label.record_format });
+    let format = c.format.unwrap_or(if c.unlabeled {
+        RecordFormat::Undefined
+    } else {
+        label.record_format
+    });
     let rcdlen = match c.rcdlen {
         0 if c.unlabeled => blocks.first().map_or(1, Vec::len),
         0 => label.record_length as usize,

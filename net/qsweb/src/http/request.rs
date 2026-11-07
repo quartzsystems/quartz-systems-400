@@ -65,7 +65,10 @@ impl Request {
 
     /// The first value of header `name` (lower case).
     pub fn header(&self, name: &str) -> Option<&str> {
-        self.headers.iter().find(|(k, _)| k == name).map(|(_, v)| v.as_str())
+        self.headers
+            .iter()
+            .find(|(k, _)| k == name)
+            .map(|(_, v)| v.as_str())
     }
 
     /// The value of cookie `name`.
@@ -142,7 +145,10 @@ pub fn read_request(r: &mut dyn Read, pending: &mut Vec<u8>) -> Result<Request, 
     let (head_len, sep) = end;
     let mut req = parse_head(&pending[..head_len])?;
     pending.drain(..head_len + sep);
-    if req.header("transfer-encoding").is_some_and(|t| t.to_ascii_lowercase().contains("chunked")) {
+    if req
+        .header("transfer-encoding")
+        .is_some_and(|t| t.to_ascii_lowercase().contains("chunked"))
+    {
         req.body = read_chunked(r, pending)?;
     } else if let Some(len) = req.header("content-length") {
         let len: usize = len.trim().parse().map_err(|_| ReadError::Malformed)?;
@@ -205,7 +211,10 @@ fn read_chunked(r: &mut dyn Read, pending: &mut Vec<u8>) -> Result<Vec<u8>, Read
 
 /// Where the head ends: its length and the separator's.
 fn find_end(b: &[u8]) -> Option<(usize, usize)> {
-    let crlf = b.windows(4).position(|w| w == b"\r\n\r\n").map(|at| (at, 4));
+    let crlf = b
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .map(|at| (at, 4));
     let lf = b.windows(2).position(|w| w == b"\n\n").map(|at| (at, 2));
     match (crlf, lf) {
         (Some(a), Some(b)) => Some(if a.0 <= b.0 { a } else { b }),
@@ -219,11 +228,15 @@ pub fn parse_head(b: &[u8]) -> Result<Request, ReadError> {
     let mut lines = text.split('\n').map(|l| l.trim_end_matches('\r'));
     let first = lines.next().ok_or(ReadError::Malformed)?;
     let mut parts = first.split(' ');
-    let (Some(method), Some(target), Some(version), None) = (parts.next(), parts.next(), parts.next(), parts.next())
+    let (Some(method), Some(target), Some(version), None) =
+        (parts.next(), parts.next(), parts.next(), parts.next())
     else {
         return Err(ReadError::Malformed);
     };
-    if method.is_empty() || !method.bytes().all(|c| c.is_ascii_uppercase()) || !version.starts_with("HTTP/") {
+    if method.is_empty()
+        || !method.bytes().all(|c| c.is_ascii_uppercase())
+        || !version.starts_with("HTTP/")
+    {
         return Err(ReadError::Malformed);
     }
     let mut headers = Vec::new();
@@ -258,7 +271,10 @@ mod tests {
         let mut r = &wire[..];
         let mut pending = Vec::new();
         let one = read_request(&mut r, &mut pending).unwrap();
-        assert_eq!((one.method.as_str(), one.path.as_str(), one.query.as_str()), ("POST", "/a", "x=1"));
+        assert_eq!(
+            (one.method.as_str(), one.path.as_str(), one.query.as_str()),
+            ("POST", "/a", "x=1")
+        );
         assert_eq!(one.body, b"k=v");
         assert_eq!(one.cookie("QS400SID"), Some("abc"));
         assert_eq!(one.form().get("k"), Some("v"));
@@ -271,16 +287,28 @@ mod tests {
     fn chunked_body() {
         let wire = b"POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n2;x\r\nde\r\n0\r\n\r\n";
         let mut pending = Vec::new();
-        assert_eq!(read_request(&mut &wire[..], &mut pending).unwrap().body, b"abcde");
+        assert_eq!(
+            read_request(&mut &wire[..], &mut pending).unwrap().body,
+            b"abcde"
+        );
     }
 
     #[test]
     fn limits_and_keep_alive() {
         let mut big = b"GET / HTTP/1.1\r\nX: ".to_vec();
         big.extend(std::iter::repeat_n(b'a', HEAD_MAX + 10));
-        assert_eq!(read_request(&mut &big[..], &mut Vec::new()), Err(ReadError::HeadTooLarge));
-        let huge = format!("POST / HTTP/1.1\r\nContent-Length: {}\r\n\r\n", BODY_MAX + 1);
-        assert_eq!(read_request(&mut huge.as_bytes(), &mut Vec::new()), Err(ReadError::BodyTooLarge));
+        assert_eq!(
+            read_request(&mut &big[..], &mut Vec::new()),
+            Err(ReadError::HeadTooLarge)
+        );
+        let huge = format!(
+            "POST / HTTP/1.1\r\nContent-Length: {}\r\n\r\n",
+            BODY_MAX + 1
+        );
+        assert_eq!(
+            read_request(&mut huge.as_bytes(), &mut Vec::new()),
+            Err(ReadError::BodyTooLarge)
+        );
         assert_eq!(parse_head(b"get / HTTP/1.1"), Err(ReadError::Malformed));
         let mut r = Request::new("GET", "/x%20y?q=1#frag");
         assert_eq!((r.path.as_str(), r.query.as_str()), ("/x y", "q=1"));

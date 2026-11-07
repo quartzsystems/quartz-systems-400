@@ -57,12 +57,19 @@ fn every_sqlcode_has_a_message() {
     let mut found = BTreeSet::new();
     codes(&root.join("src"), &mut found);
     found.retain(|c| *c != 0 && (*c < 0 || *c >= 100));
-    let msgs = fs::read_to_string(root.join("../../runtime/msgf/msgs/qsqlmsg.toml")).expect("QSQLMSG");
+    let msgs =
+        fs::read_to_string(root.join("../../runtime/msgf/msgs/qsqlmsg.toml")).expect("QSQLMSG");
     let missing: Vec<String> = found
         .iter()
         .map(|c| format!("SQL{:04}", c.unsigned_abs()))
         .filter(|id| !msgs.contains(&format!("id = \"{id}\"")))
         .collect();
-    assert!(found.contains(&-204) && found.contains(&-84), "the scan finds the error table");
-    assert!(missing.is_empty(), "SQLCODEs without a QSQLMSG message: {missing:?}");
+    assert!(
+        found.contains(&-204) && found.contains(&-84),
+        "the scan finds the error table"
+    );
+    assert!(
+        missing.is_empty(),
+        "SQLCODEs without a QSQLMSG message: {missing:?}"
+    );
 }

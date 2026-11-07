@@ -100,7 +100,10 @@ impl SoakReport {
         for (k, n) in &self.op_errors {
             let _ = writeln!(o, "  unexpected answers: {k} x{n}");
         }
-        if let (Some(first), Some(last)) = (self.samples.get(WARMUP.min(self.samples.len() - 1)), self.samples.last()) {
+        if let (Some(first), Some(last)) = (
+            self.samples.get(WARMUP.min(self.samples.len() - 1)),
+            self.samples.last(),
+        ) {
             let _ = writeln!(
                 o,
                 "  ASP used pages: {} at {}s, {} at {}s ({:+} MiB); active jobs {} -> {}",
@@ -117,7 +120,10 @@ impl SoakReport {
                 "  storage service RSS is less its page cache: {} -> {} kB held (bound {} kB)",
                 first.cache_kb.0, last.cache_kb.0, last.cache_kb.1
             );
-            let _ = writeln!(o, "  long-lived processes (RSS kB and descriptors, after warm-up -> end, peak):");
+            let _ = writeln!(
+                o,
+                "  long-lived processes (RSS kB and descriptors, after warm-up -> end, peak):"
+            );
             for (pid, (cmd, rss, fds)) in &last.procs {
                 let Some((_, r0, f0)) = first.procs.get(pid) else {
                     continue;
@@ -128,7 +134,10 @@ impl SoakReport {
                     .filter_map(|s| s.procs.get(pid).map(|p| p.1))
                     .max()
                     .unwrap_or(0);
-                let _ = writeln!(o, "    {pid:>5} rss {r0:>7} -> {rss:>7} (peak {peak:>7})  fds {f0:>4} -> {fds:>4}  {cmd}");
+                let _ = writeln!(
+                    o,
+                    "    {pid:>5} rss {r0:>7} -> {rss:>7} (peak {peak:>7})  fds {f0:>4} -> {fds:>4}  {cmd}"
+                );
             }
         }
         for n in &self.notes {
@@ -184,7 +193,11 @@ fn sample(s: &mut Session, at: u64) -> Sample {
             *rss = rss.saturating_sub(out.cache_kb.0);
         }
     }
-    let _ = writeln!(out.detail, "active jobs: {}", jobs.into_iter().collect::<Vec<_>>().join(" "));
+    let _ = writeln!(
+        out.detail,
+        "active jobs: {}",
+        jobs.into_iter().collect::<Vec<_>>().join(" ")
+    );
     out
 }
 
@@ -242,11 +255,15 @@ fn write_details(samples: &[Sample]) {
 
 /// The active jobs as `number/user/name`.
 fn active_jobs(s: &mut Session) -> BTreeSet<String> {
-    let t = s.command("svc.wrkactjob VIEW(3)", Duration::from_secs(30)).unwrap_or_default();
+    let t = s
+        .command("svc.wrkactjob VIEW(3)", Duration::from_secs(30))
+        .unwrap_or_default();
     t.lines()
         .filter_map(|l| {
             let w: Vec<&str> = l.split_whitespace().collect();
-            let i = w.iter().position(|x| x.len() == 6 && x.chars().all(|c| c.is_ascii_digit()))?;
+            let i = w
+                .iter()
+                .position(|x| x.len() == 6 && x.chars().all(|c| c.is_ascii_digit()))?;
             if i < 2 {
                 return None;
             }
@@ -274,11 +291,23 @@ fn round(port: u16, user: &str) -> Result<(), String> {
     };
     let mut ctx = Context::new(&c, &options);
     let mut d = connect(port, user, SOAK_PASSWORD)?;
-    run(&mut d, &mut ctx, "wait \"Sign On\"\nsignon\nwait \"Main Menu\"\ntype call qcmd\nkey enter\nwait \"Command Entry\"\n")?;
+    run(
+        &mut d,
+        &mut ctx,
+        "wait \"Sign On\"\nsignon\nwait \"Main Menu\"\ntype call qcmd\nkey enter\nwait \"Command Entry\"\n",
+    )?;
     for cmd in ["WRKACTJOB", "DSPLIBL", "WRKSPLF", "DSPJOB"] {
-        run(&mut d, &mut ctx, &format!("type {cmd}\nkey enter\nsettle 1500\nkey f3\nsettle 800\nkey eraseinput\n"))?;
+        run(
+            &mut d,
+            &mut ctx,
+            &format!("type {cmd}\nkey enter\nsettle 1500\nkey f3\nsettle 800\nkey eraseinput\n"),
+        )?;
     }
-    run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
+    run(
+        &mut d,
+        &mut ctx,
+        "type signoff\nkey enter\nwait \"Sign On\"\n",
+    )?;
     d.disconnect();
     Ok(())
 }
@@ -307,7 +336,10 @@ fn grew(series: &[u64], bound: u64) -> bool {
 /// The batch load's job accounting: its `JB` entries through
 /// `QAJBACG`'s format, counted, with their CPU and the `SP` entries.
 fn accounting(s: &mut Session) -> String {
-    let _ = s.command("CPYF FROMFILE(QSYS/QAJBACG) TOFILE(QGPL/SOAKJB) CRTFILE(*YES)", LONG);
+    let _ = s.command(
+        "CPYF FROMFILE(QSYS/QAJBACG) TOFILE(QGPL/SOAKJB) CRTFILE(*YES)",
+        LONG,
+    );
     let w = s
         .command(
             "DSPJRN JRN(QSYS/QACGJRN) JRNCDE(A) ENTTYP(JB) OUTPUT(*OUTFILE) OUTFILE(QGPL/SOAKJB)",
@@ -324,14 +356,21 @@ fn accounting(s: &mut Session) -> String {
         .lines()
         .map(str::trim)
         .take_while(|l| !l.ends_with("row(s)"))
-        .filter(|l| l.split_whitespace().next().is_some_and(|w| w.parse::<u64>().is_ok()))
+        .filter(|l| {
+            l.split_whitespace()
+                .next()
+                .is_some_and(|w| w.parse::<u64>().is_ok())
+        })
         .last()
         .unwrap_or("none")
         .to_string();
     let _ = s.command("svc.sql DROP TABLE QGPL.SOAKJB;", LONG);
     format!(
         "job accounting: {}; SOAKB under SOAKACG (count, CPU ms, highest end code): {figures}",
-        w.lines().find(|l| l.contains("entries")).unwrap_or("no DSPJRN outfile").trim()
+        w.lines()
+            .find(|l| l.contains("entries"))
+            .unwrap_or("no DSPJRN outfile")
+            .trim()
     )
 }
 
@@ -350,7 +389,8 @@ impl Suite {
             reason: e,
             log: String::new(),
         };
-        s.expect(crate::steps::SRC_IPL_COMPLETE, Duration::from_secs(300)).map_err(fail)?;
+        s.expect(crate::steps::SRC_IPL_COMPLETE, Duration::from_secs(300))
+            .map_err(fail)?;
         // The console's banner may come before the last SRC or after it.
         let _ = s.expect("Service console ready", Duration::from_secs(60));
         s.discard();
@@ -365,7 +405,9 @@ impl Suite {
             s.discard();
         }
         tcp.map_err(fail)?;
-        let port = launch.telnet_port.ok_or_else(|| fail("no telnet port".into()))?;
+        let port = launch
+            .telnet_port
+            .ok_or_else(|| fail("no telnet port".into()))?;
         {
             let c = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
             let options = ScriptOptions::default();
@@ -373,14 +415,22 @@ impl Suite {
             let mut d = connect(port, "QSECOFR", SECOFR_PASSWORD).map_err(fail)?;
             run(&mut d, &mut ctx, "wait \"Sign On\"\n").map_err(fail)?;
             secofr(&mut d, &mut ctx).map_err(fail)?;
-            run(&mut d, &mut ctx, "wait \"Main Menu\"\ntype signoff\nkey enter\nwait \"Sign On\"\n").map_err(fail)?;
+            run(
+                &mut d,
+                &mut ctx,
+                "wait \"Main Menu\"\ntype signoff\nkey enter\nwait \"Sign On\"\n",
+            )
+            .map_err(fail)?;
             d.disconnect();
         }
         s.discard();
         let _ = s.command("svc.release", CMD);
         for i in 1..=SESSIONS {
             let out = s
-                .command(&format!("crtusrprf USRPRF(SOAK{i:02}) PASSWORD({SOAK_PASSWORD}) PWDEXP(*NO)"), CMD)
+                .command(
+                    &format!("crtusrprf USRPRF(SOAK{i:02}) PASSWORD({SOAK_PASSWORD}) PWDEXP(*NO)"),
+                    CMD,
+                )
                 .map_err(fail)?;
             if !out.contains("created") {
                 return Err(fail(format!("crtusrprf SOAK{i:02}: {out}")));
@@ -406,11 +456,24 @@ impl Suite {
         }
         // The fresh system as QSSECCHK sees it.
         let sec = s.command("QSSECCHK OUTPUT(*)", LONG).unwrap_or_default();
-        let total = sec.lines().find(|l| l.contains("checks:")).unwrap_or("no QSSECCHK report").trim().to_string();
-        let fails: Vec<&str> = sec.lines().filter(|l| l.contains(" FAIL ")).map(str::trim).collect();
+        let total = sec
+            .lines()
+            .find(|l| l.contains("checks:"))
+            .unwrap_or("no QSSECCHK report")
+            .trim()
+            .to_string();
+        let fails: Vec<&str> = sec
+            .lines()
+            .filter(|l| l.contains(" FAIL "))
+            .map(str::trim)
+            .collect();
         let mut notes = vec![format!("QSSECCHK at the start: {total}")];
         notes.extend(fails.iter().map(|l| format!("QSSECCHK: {l}")));
-        let mapper_port = launch.host_ports.iter().find(|(_, g)| *g == 449).map(|(h, _)| *h);
+        let mapper_port = launch
+            .host_ports
+            .iter()
+            .find(|(_, g)| *g == 449)
+            .map(|(h, _)| *h);
         let base_srcs: BTreeSet<String> = srcs(&mut s).into_iter().collect();
         let base_jobs = active_jobs(&mut s);
         let mut report = SoakReport {
@@ -427,8 +490,12 @@ impl Suite {
         let first_err = Arc::new(Mutex::new(None::<String>));
         let mut threads = Vec::new();
         for i in 1..=SESSIONS {
-            let (stop, done, failed, first_err) =
-                (Arc::clone(&stop), Arc::clone(&done), Arc::clone(&failed), Arc::clone(&first_err));
+            let (stop, done, failed, first_err) = (
+                Arc::clone(&stop),
+                Arc::clone(&done),
+                Arc::clone(&failed),
+                Arc::clone(&first_err),
+            );
             let user = format!("SOAK{i:02}");
             threads.push(
                 std::thread::Builder::new()
@@ -475,36 +542,68 @@ impl Suite {
             );
             check(
                 "batch delay",
-                s.command("SBMJOB CMD(DLYJOB DLY(2)) JOB(SOAKD) JOBQ(QGPL/QBATCH)", CMD),
+                s.command(
+                    "SBMJOB CMD(DLYJOB DLY(2)) JOB(SOAKD) JOBQ(QGPL/QBATCH)",
+                    CMD,
+                ),
                 "submitted",
             );
             report.batch += 2;
             check(
                 "sql insert",
-                s.command(&format!("svc.sql INSERT INTO SOAKLIB.T VALUES({i}, 'console');"), LONG),
+                s.command(
+                    &format!("svc.sql INSERT INTO SOAKLIB.T VALUES({i}, 'console');"),
+                    LONG,
+                ),
                 "row",
             );
-            check("sql count", s.command("svc.sql SELECT COUNT(*) FROM SOAKLIB.T;", LONG), "row(s)");
+            check(
+                "sql count",
+                s.command("svc.sql SELECT COUNT(*) FROM SOAKLIB.T;", LONG),
+                "row(s)",
+            );
             if i.is_multiple_of(10) {
-                check("sql delete", s.command("svc.sql DELETE FROM SOAKLIB.T;", LONG), "row");
-                check("receiver change", s.command("CHGJRN JRN(SOAKLIB/SOAKJRN) JRNRCV(*GEN)", LONG), "SOAKJRN");
+                check(
+                    "sql delete",
+                    s.command("svc.sql DELETE FROM SOAKLIB.T;", LONG),
+                    "row",
+                );
+                check(
+                    "receiver change",
+                    s.command("CHGJRN JRN(SOAKLIB/SOAKJRN) JRNRCV(*GEN)", LONG),
+                    "SOAKJRN",
+                );
             }
             if i.is_multiple_of(5) {
                 check(
                     "save",
-                    s.command("savlib LIB(SOAKSAV) DEV(*SAVF) SAVF(QGPL/SOAKSAVF) CLEAR(*ALL)", LONG),
+                    s.command(
+                        "savlib LIB(SOAKSAV) DEV(*SAVF) SAVF(QGPL/SOAKSAVF) CLEAR(*ALL)",
+                        LONG,
+                    ),
                     "CPC3722",
                 );
                 check(
                     "restore",
-                    s.command("rstlib SAVLIB(SOAKSAV) DEV(*SAVF) SAVF(QGPL/SOAKSAVF) RSTLIB(SOAKRST)", LONG),
+                    s.command(
+                        "rstlib SAVLIB(SOAKSAV) DEV(*SAVF) SAVF(QGPL/SOAKSAVF) RSTLIB(SOAKRST)",
+                        LONG,
+                    ),
                     "CPC3703",
                 );
-                check("library delete", s.command("DLTLIB LIB(SOAKRST)", LONG), "SOAKRST");
+                check(
+                    "library delete",
+                    s.command("DLTLIB LIB(SOAKRST)", LONG),
+                    "SOAKRST",
+                );
                 report.saves += 1;
             }
             if let Some(p) = mapper_port {
-                let ok = if mapper(p) { Ok("ok".to_string()) } else { Err(String::new()) };
+                let ok = if mapper(p) {
+                    Ok("ok".to_string())
+                } else {
+                    Err(String::new())
+                };
                 check("port mapper", ok, "ok");
             }
             if Instant::now() >= next_sample {
@@ -542,11 +641,18 @@ impl Suite {
         report.samples.push(sample(&mut s, at));
         write_details(&report.samples);
         if !left.is_empty() {
-            report.failures.push(format!("jobs of the load still active: {}", left.join(" ")));
+            report
+                .failures
+                .push(format!("jobs of the load still active: {}", left.join(" ")));
         }
-        let new_srcs: Vec<String> = srcs(&mut s).into_iter().filter(|l| !base_srcs.contains(l)).collect();
+        let new_srcs: Vec<String> = srcs(&mut s)
+            .into_iter()
+            .filter(|l| !base_srcs.contains(l))
+            .collect();
         if !new_srcs.is_empty() {
-            report.failures.push(format!("new SRCs: {}", new_srcs.join(" | ")));
+            report
+                .failures
+                .push(format!("new SRCs: {}", new_srcs.join(" | ")));
         }
         if let Some(e) = first_err.lock().expect("err").clone()
             && report.sessions.1 * 10 > report.sessions.0
@@ -563,21 +669,39 @@ impl Suite {
         if warm.len() >= 3 {
             let last = warm.last().expect("some");
             for (pid, (cmd, ..)) in &last.procs {
-                let rss: Vec<u64> = warm.iter().filter_map(|x| x.procs.get(pid).map(|p| p.1)).collect();
-                let fds: Vec<u64> = warm.iter().filter_map(|x| x.procs.get(pid).map(|p| p.2)).collect();
+                let rss: Vec<u64> = warm
+                    .iter()
+                    .filter_map(|x| x.procs.get(pid).map(|p| p.1))
+                    .collect();
+                let fds: Vec<u64> = warm
+                    .iter()
+                    .filter_map(|x| x.procs.get(pid).map(|p| p.2))
+                    .collect();
                 if rss.len() != warm.len() {
                     continue;
                 }
                 if grew(&rss, RSS_BOUND_KB) {
-                    report.failures.push(format!("pid {pid} ({cmd}) memory grew {} -> {} kB", rss[0], rss[rss.len() - 1]));
+                    report.failures.push(format!(
+                        "pid {pid} ({cmd}) memory grew {} -> {} kB",
+                        rss[0],
+                        rss[rss.len() - 1]
+                    ));
                 }
                 if grew(&fds, FD_BOUND) {
-                    report.failures.push(format!("pid {pid} ({cmd}) descriptors grew {} -> {}", fds[0], fds[fds.len() - 1]));
+                    report.failures.push(format!(
+                        "pid {pid} ({cmd}) descriptors grew {} -> {}",
+                        fds[0],
+                        fds[fds.len() - 1]
+                    ));
                 }
             }
             let asp: Vec<u64> = warm.iter().map(|x| x.asp_used).collect();
             if grew(&asp, ASP_BOUND_PAGES) {
-                report.failures.push(format!("ASP use grew {} -> {} pages", asp[0], asp[asp.len() - 1]));
+                report.failures.push(format!(
+                    "ASP use grew {} -> {} pages",
+                    asp[0],
+                    asp[asp.len() - 1]
+                ));
             }
         }
         report.notes.push(accounting(&mut s));

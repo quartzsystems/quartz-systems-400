@@ -12,7 +12,9 @@ use std::fmt::Write as _;
 use qsweb::frame::Page;
 use qsweb::http::Response;
 use qsweb::msg::Kind;
-use qsweb::partials::{Button, Prop, PropGroup, checkbox, input, message_row, props_table, radio, select, wizard};
+use qsweb::partials::{
+    Button, Prop, PropGroup, checkbox, input, message_row, props_table, radio, select, wizard,
+};
 
 use super::cert::{download_buttons, download_target, facts};
 use super::{Rq, failed, invalid, rdns, store_url};
@@ -44,7 +46,15 @@ fn store(rq: &Rq<'_>) -> String {
 
 /// A select whose first option is the browser's choice anyway.
 fn sel(name: &str, opts: &[&str], chosen: &str) -> String {
-    select(name, opts, if opts.first() == Some(&chosen) { "" } else { chosen })
+    select(
+        name,
+        opts,
+        if opts.first() == Some(&chosen) {
+            ""
+        } else {
+            chosen
+        },
+    )
 }
 
 /// Start over for `store`, prefilled from certificate `renew` if given.
@@ -56,7 +66,9 @@ fn start(rq: &Rq<'_>, store: &str, renew: &str) {
     if renew.is_empty() {
         return;
     }
-    let Ok(d) = rq.env().certs.detail(store, renew) else { return };
+    let Ok(d) = rq.env().certs.detail(store, renew) else {
+        return;
+    };
     let (kt, ks, curve) = match d.row.key.as_str() {
         "ECDSA P-256" => ("ec", "2048", "P-256"),
         "ECDSA P-384" => ("ec", "2048", "P-384"),
@@ -64,7 +76,11 @@ fn start(rq: &Rq<'_>, store: &str, renew: &str) {
         "RSA 4096" => ("rsa", "4096", "P-256"),
         _ => ("rsa", "2048", "P-256"),
     };
-    let sig = if curve == "P-384" { "SHA-384" } else { "SHA-256" };
+    let sig = if curve == "P-384" {
+        "SHA-384"
+    } else {
+        "SHA-256"
+    };
     let label = format!("{renew}-new");
     let mut pairs: Vec<(String, String)> = vec![
         (k("label"), label),
@@ -88,7 +104,10 @@ fn start(rq: &Rq<'_>, store: &str, renew: &str) {
             pairs.push((k(f), v.replace('\\', "")));
         }
     }
-    let refs: Vec<(&str, &str)> = pairs.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+    let refs: Vec<(&str, &str)> = pairs
+        .iter()
+        .map(|(a, b)| (a.as_str(), b.as_str()))
+        .collect();
     rq.set(&refs);
 }
 
@@ -104,13 +123,20 @@ fn keep(rq: &Rq<'_>, n: usize) {
         };
         pairs.push((format!("{P}{name}"), v));
     }
-    let refs: Vec<(&str, &str)> = pairs.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+    let refs: Vec<(&str, &str)> = pairs
+        .iter()
+        .map(|(a, b)| (a.as_str(), b.as_str()))
+        .collect();
     rq.set(&refs);
 }
 
 fn key_spec(rq: &Rq<'_>) -> KeySpec {
     if get(rq, "kt") == "ec" {
-        if get(rq, "curve") == "P-384" { KeySpec::P384 } else { KeySpec::P256 }
+        if get(rq, "curve") == "P-384" {
+            KeySpec::P384
+        } else {
+            KeySpec::P256
+        }
     } else {
         match get(rq, "ks").as_str() {
             "3072" => KeySpec::Rsa3072,
@@ -129,8 +155,15 @@ fn check(rq: &Rq<'_>, n: usize) -> Option<String> {
                 return Some("a certificate label is 1 to 64 characters".into());
             }
             let st = store(rq);
-            if rq.env().certs.entries(&st).is_ok_and(|rows| rows.iter().any(|r| r.label == label)) {
-                return Some(format!("store {st} already has a certificate labeled {label}"));
+            if rq
+                .env()
+                .certs
+                .entries(&st)
+                .is_ok_and(|rows| rows.iter().any(|r| r.label == label))
+            {
+                return Some(format!(
+                    "store {st} already has a certificate labeled {label}"
+                ));
             }
             let days: u32 = get(rq, "days").parse().unwrap_or(0);
             if !(1..=9999).contains(&days) {
@@ -210,7 +243,11 @@ fn step1(rq: &Rq<'_>) -> String {
         Prop::new("Certificate label", input("label", &get(rq, "label"), 30)).required(),
         Prop::new(
             "Key type",
-            format!("{} RSA<br>{} ECDSA", radio("kt", "rsa", !ec), radio("kt", "ec", ec)),
+            format!(
+                "{} RSA<br>{} ECDSA",
+                radio("kt", "rsa", !ec),
+                radio("kt", "ec", ec)
+            ),
         ),
         Prop::new(
             "Key size",
@@ -220,8 +257,14 @@ fn step1(rq: &Rq<'_>) -> String {
                 sel("curve", &["P-256", "P-384"], &or("curve", "P-256"))
             ),
         ),
-        Prop::new("Signature algorithm", sel("sig", &["SHA-256", "SHA-384"], &or("sig", "SHA-256"))),
-        Prop::new("Validity", format!("{} days", input("days", &or("days", "365"), 5))),
+        Prop::new(
+            "Signature algorithm",
+            sel("sig", &["SHA-256", "SHA-384"], &or("sig", "SHA-256")),
+        ),
+        Prop::new(
+            "Validity",
+            format!("{} days", input("days", &or("days", "365"), 5)),
+        ),
     ];
     format!(
         "<h2>Key type and size</h2>{}",
@@ -234,7 +277,10 @@ fn step2(rq: &Rq<'_>) -> String {
         Prop::new("Common name (CN)", input("cn", &get(rq, "cn"), 40)).required(),
         Prop::new(
             "Subject alternative names",
-            format!("{} <span class=\"small grey\">comma separated</span>", input("san", &get(rq, "san"), 50)),
+            format!(
+                "{} <span class=\"small grey\">comma separated</span>",
+                input("san", &get(rq, "san"), 50)
+            ),
         ),
         Prop::new("Organizational unit (OU)", input("ou", &get(rq, "ou"), 30)),
         Prop::new("Organization (O)", input("o", &get(rq, "o"), 30)),
@@ -251,8 +297,19 @@ fn step2(rq: &Rq<'_>) -> String {
 fn step3(rq: &Rq<'_>) -> String {
     let signers = rq.env().certs.signers();
     let s = get(rq, "s");
-    let s = if s.is_empty() { if signers.is_empty() { "self".into() } else { "local".into() } } else { s };
-    let mut sign = format!("{} Self-signed certificate<br>", radio("s", "self", s == "self"));
+    let s = if s.is_empty() {
+        if signers.is_empty() {
+            "self".into()
+        } else {
+            "local".into()
+        }
+    } else {
+        s
+    };
+    let mut sign = format!(
+        "{} Self-signed certificate<br>",
+        radio("s", "self", s == "self")
+    );
     if !signers.is_empty() {
         let opts: Vec<&str> = signers.iter().map(String::as_str).collect();
         let _ = write!(
@@ -284,10 +341,16 @@ fn step3(rq: &Rq<'_>) -> String {
         ),
         Prop::new(
             "After creation",
-            format!("{} Make this the default certificate for the store", checkbox("dft", on("dft", false))),
+            format!(
+                "{} Make this the default certificate for the store",
+                checkbox("dft", on("dft", false))
+            ),
         ),
     ];
-    format!("<h2>Signing</h2>{}", props_table(&PRODUCT, &[PropGroup { title: None, rows }], false))
+    format!(
+        "<h2>Signing</h2>{}",
+        props_table(&PRODUCT, &[PropGroup { title: None, rows }], false)
+    )
 }
 
 /// The certificate the wizard describes.
@@ -306,7 +369,12 @@ fn new_cert(rq: &Rq<'_>) -> NewCert {
             st: get(rq, "st"),
             c: get(rq, "c").to_ascii_uppercase(),
         },
-        san: get(rq, "san").split(',').map(str::trim).filter(|x| !x.is_empty()).map(String::from).collect(),
+        san: get(rq, "san")
+            .split(',')
+            .map(str::trim)
+            .filter(|x| !x.is_empty())
+            .map(String::from)
+            .collect(),
         server: get(rq, "ku1") != "off",
         signing: match s.as_str() {
             "self" => Signing::SelfSigned,
@@ -359,13 +427,18 @@ pub fn step(rq: &Rq<'_>, n: &str) -> Response {
         }
         if !(f.has("next") || f.has("back") || f.has("finish")) {
             // Create certificate... on a store page: start for that store.
-            let st = q.get("store").map_or_else(|| "*SYSTEM".to_string(), ToString::to_string);
+            let st = q
+                .get("store")
+                .map_or_else(|| "*SYSTEM".to_string(), ToString::to_string);
             start(rq, &st, "");
             return rq.redirect("/certs/create/step/1");
         }
         keep(rq, n);
         if f.has("back") {
-            return rq.redirect(&format!("/certs/create/step/{}", n.saturating_sub(1).max(1)));
+            return rq.redirect(&format!(
+                "/certs/create/step/{}",
+                n.saturating_sub(1).max(1)
+            ));
         }
         if f.has("finish") && n == 3 {
             return finish(rq);

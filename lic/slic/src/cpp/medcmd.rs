@@ -13,20 +13,23 @@
 use std::fmt::Write as _;
 
 use cmd::block::Parms;
-use imgclg::ops::{AddImgClgE, AddVrtVol, ChgImgClgE, CrtImgClg, EntryOption, FromFile, LoadOption, ToFile, VfyImgClg, VfyType};
 use imgclg::ImgType;
+use imgclg::ops::{
+    AddImgClgE, AddVrtVol, ChgImgClgE, CrtImgClg, EntryOption, FromFile, LoadOption, ToFile,
+    VfyImgClg, VfyType,
+};
 use medio::MediaError;
 use stg::proto::CmdReply;
-use tape::volume::{Check, ChkOptions, DupOptions, DupSeq, InzOptions, ToSeq};
 use tape::device::Category;
+use tape::volume::{Check, ChkOptions, DupOptions, DupSeq, InzOptions, ToSeq};
 use tape::{SeqNbr, TapeTransport, VolumeProvider};
 use wm::obj::devd::Devd;
 use wm::obj::devmed::{MediaDevice, MediaKind};
 
 use super::direct::failed;
 use super::done;
-use crate::ipl::system::{System, now_unix};
 use super::meddsp;
+use crate::ipl::system::{System, now_unix};
 use crate::stgsvc::media::drive::{self, TapeJob};
 use crate::stgsvc::media::{self, catalogs, devices, stream};
 
@@ -43,7 +46,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "LODIMGCLG" => lodimgclg(system, parms),
         "LODIMGCLGE" => lodimgclge(parms),
         "VFYIMGCLG" => vfyimgclg(parms),
-        "WRKIMGCLG" => Ok(plain(wrkimgclg_text(&parms.name("IMGCLG"), &parms.name("TYPE")))),
+        "WRKIMGCLG" => Ok(plain(wrkimgclg_text(
+            &parms.name("IMGCLG"),
+            &parms.name("TYPE"),
+        ))),
         "WRKIMGCLGE" => wrkimgclge_text(&parms.name("IMGCLG")).map(plain),
         "INZTAP" => inztap(system, parms),
         "DSPTAP" => dsptap(system, parms),
@@ -98,7 +104,13 @@ const OPT_NOT_LIBRARY: &str = "OPT1652";
 fn addoptctg(system: &mut System, parms: &Parms) -> CmdReply {
     let dev = parms.name("MLB").to_ascii_uppercase();
     let id = match devices::read(system, &dev) {
-        Ok(d) if d.media.as_ref().is_some_and(|m| m.kind == MediaKind::Optical) => OPT_NOT_LIBRARY,
+        Ok(d)
+            if d.media
+                .as_ref()
+                .is_some_and(|m| m.kind == MediaKind::Optical) =>
+        {
+            OPT_NOT_LIBRARY
+        }
         Ok(_) => OPT_NOT_DEVICE,
         Err(e) if e.starts_with(devices::NOT_FOUND) => OPT_NOT_DEVICE,
         Err(e) => return failed("ADDOPTCTG", &e),
@@ -149,7 +161,14 @@ fn msgq(parms: &Parms) -> Option<String> {
     match n.to_ascii_uppercase().as_str() {
         "*SAME" => None,
         "" | "*SYSOPR" => Some("QSYS/QSYSOPR".into()),
-        n => Some(format!("{}/{n}", if l.is_empty() || l.starts_with('*') { "QSYS".into() } else { l.to_ascii_uppercase() })),
+        n => Some(format!(
+            "{}/{n}",
+            if l.is_empty() || l.starts_with('*') {
+                "QSYS".into()
+            } else {
+                l.to_ascii_uppercase()
+            }
+        )),
     }
 }
 
@@ -164,7 +183,10 @@ fn kind_of(cmd: &str) -> MediaKind {
 fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, String> {
     let kind = kind_of(cmd);
     if kind == MediaKind::TapeLibrary && parms.name("DEVCLS") == "*OPT" {
-        return Err("CPF9B70 DEVCLS(*OPT): optical media libraries are not available in this release".into());
+        return Err(
+            "CPF9B70 DEVCLS(*OPT): optical media libraries are not available in this release"
+                .into(),
+        );
     }
     let name = parms.name("DEVD");
     let rsrc_in = parms.name("RSRCNAME");
@@ -176,10 +198,18 @@ fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
     } else {
         rsrc_in
     };
-    let (dt, dm) = if virt { kind.virtual_type() } else { devices::real_type(kind) };
+    let (dt, dm) = if virt {
+        kind.virtual_type()
+    } else {
+        devices::real_type(kind)
+    };
     let pick = |kwd: &str, dft: &str| {
         let v = parms.name(kwd);
-        if v.is_empty() || v.starts_with('*') { dft.to_string() } else { v }
+        if v.is_empty() || v.starts_with('*') {
+            dft.to_string()
+        } else {
+            v
+        }
     };
     let positive = |kwd: &str| u32::try_from(parms.int(kwd).unwrap_or(0)).unwrap_or(0);
     let med = MediaDevice {
@@ -200,23 +230,40 @@ fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
     }
     let who = owner(system);
     devices::create(system, &name, &d, &who)?;
-    Ok(ok(&format!("Description for device {name} created.\n"), DEV_CREATED, &[(&name, 10)]))
+    Ok(ok(
+        &format!("Description for device {name} created.\n"),
+        DEV_CREATED,
+        &[(&name, 10)],
+    ))
 }
 
 fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, String> {
     let name = parms.name("DEVD");
     let mut d = devices::read(system, &name)?;
     let kind = kind_of(cmd);
-    let Some(m) = d.media.as_mut() else { unreachable!("read checks") };
+    let Some(m) = d.media.as_mut() else {
+        unreachable!("read checks")
+    };
     if m.kind != kind {
-        return Err(format!("{} device {name} is a {} device", devices::NOT_FOUND, m.kind.devcls()));
+        return Err(format!(
+            "{} device {name} is a {} device",
+            devices::NOT_FOUND,
+            m.kind.devcls()
+        ));
     }
     let rsrc = parms.name("RSRCNAME");
     if !rsrc.is_empty() && rsrc != "*SAME" {
         if devices::usable(&d) {
-            return Err(format!("{} device {name} is varied on", cmncfg::msgs::MUST_VARY_OFF));
+            return Err(format!(
+                "{} device {name} is varied on",
+                cmncfg::msgs::MUST_VARY_OFF
+            ));
         }
-        let new = if rsrc == "*VRT" { devices::next_virtual(system, kind)? } else { rsrc };
+        let new = if rsrc == "*VRT" {
+            devices::next_virtual(system, kind)?
+        } else {
+            rsrc
+        };
         if let Some(m) = d.media.as_mut() {
             m.rsrcname = new;
         }
@@ -233,7 +280,10 @@ fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
     if let Some(v) = yes("UNLOAD") {
         m.unload = v;
     }
-    for (kwd, slot) in [("UNLOADWAIT", &mut m.unload_wait), ("MAXDEVTIME", &mut m.max_dev_time)] {
+    for (kwd, slot) in [
+        ("UNLOADWAIT", &mut m.unload_wait),
+        ("MAXDEVTIME", &mut m.max_dev_time),
+    ] {
         if let Some(n) = parms.int(kwd).filter(|n| *n != -3) {
             *slot = u32::try_from(n).unwrap_or(0);
         }
@@ -253,14 +303,22 @@ fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
         d.msgq = q;
     }
     devices::write(system, &name, &d)?;
-    Ok(ok(&format!("Description for device {name} changed.\n"), DEV_CHANGED, &[(&name, 10)]))
+    Ok(ok(
+        &format!("Description for device {name} changed.\n"),
+        DEV_CHANGED,
+        &[(&name, 10)],
+    ))
 }
 
 // ----------------------------------------------------------------- catalogs
 
 fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let name = parms.name("IMGCLG");
-    let kind = if parms.name("TYPE") == "*TAP" { ImgType::Tap } else { ImgType::Opt };
+    let kind = if parms.name("TYPE") == "*TAP" {
+        ImgType::Tap
+    } else {
+        ImgType::Opt
+    };
     let add = match parms.int("ADDVRTVOL").unwrap_or(0) {
         0 => AddVrtVol::None,
         -1 => AddVrtVol::Dir,
@@ -282,11 +340,21 @@ fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     media::with_catalogs(|r| r.crtimgclg(&p))?;
     let who = owner(system);
-    if let Err(e) = catalogs::create_object(system, &name, &format!("/{}", p.dir.trim_matches('/')), &text, &who) {
+    if let Err(e) = catalogs::create_object(
+        system,
+        &name,
+        &format!("/{}", p.dir.trim_matches('/')),
+        &text,
+        &who,
+    ) {
         let _ = media::with_catalogs(|r| r.dltimgclg(&name, true));
         return Err(e);
     }
-    Ok(ok(&format!("Image catalog {name} created.\n"), CLG_CREATED, &[(&name, 10)]))
+    Ok(ok(
+        &format!("Image catalog {name} created.\n"),
+        CLG_CREATED,
+        &[(&name, 10)],
+    ))
 }
 
 fn dltimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -309,7 +377,10 @@ fn dltimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 }
 
 fn index_of(parms: &Parms) -> Option<u16> {
-    parms.int("IMGCLGIDX").and_then(|i| u16::try_from(i).ok()).filter(|i| *i > 0)
+    parms
+        .int("IMGCLGIDX")
+        .and_then(|i| u16::try_from(i).ok())
+        .filter(|i| *i > 0)
 }
 
 /// `ADDIMGCLGE FROMDEV(dev)`: the volume in an optical device. A virtual
@@ -326,12 +397,19 @@ fn from_dev(system: &mut System, dev: &str) -> Result<FromDev, String> {
         return Err(format!("OPT1203 device {} is not an optical device", t.dev));
     }
     if t.virtual_ {
-        let c = media::catalog_on(&t.dev).ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
-        let e = c.mounted().ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
+        let c = media::catalog_on(&t.dev)
+            .ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
+        let e = c
+            .mounted()
+            .ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
         return Ok(FromDev::Image(c.path_of(e)));
     }
-    let node = devices::node_of(system, &t.rsrc)
-        .ok_or_else(|| format!("CPF6760 device {} not ready: resource {} not found", t.dev, t.rsrc))?;
+    let node = devices::node_of(system, &t.rsrc).ok_or_else(|| {
+        format!(
+            "CPF6760 device {} not ready: resource {} not found",
+            t.dev, t.rsrc
+        )
+    })?;
     Ok(FromDev::Drive(format!("/dev/{node}")))
 }
 
@@ -361,26 +439,34 @@ fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let vol = parms.text("VOLNAM");
     let vol = vol.trim().trim_matches('\'');
     let p = AddImgClgE {
-        from: if from.eq_ignore_ascii_case("*NEW") { FromFile::New } else { FromFile::Path(from.to_string()) },
+        from: if from.eq_ignore_ascii_case("*NEW") {
+            FromFile::New
+        } else {
+            FromFile::Path(from.to_string())
+        },
         to_file: match to.to_ascii_uppercase().as_str() {
             "" | "*GEN" => ToFile::Gen,
             "*FROMFILE" => ToFile::FromFile,
             _ => ToFile::Name(to.to_string()),
         },
         index: index_of(parms),
-        size_mb: parms.int("IMGSIZ").and_then(|n| u64::try_from(n).ok()).or(Some(4700)),
+        size_mb: parms
+            .int("IMGSIZ")
+            .and_then(|n| u64::try_from(n).ok())
+            .or(Some(4700)),
         volume: (!vol.is_empty() && !vol.starts_with('*')).then(|| vol.to_ascii_uppercase()),
         write_protect: parms.specified("WRTPTC").then(|| parms.yes("WRTPTC")),
         text: text(parms).unwrap_or_default(),
         epoch: now_unix(),
     };
     let replace = parms.yes("REPLACE");
-    let mut drive = match &from_dev {
-        Some(FromDev::Drive(node)) => {
-            Some(std::fs::File::open(node).map_err(|e| format!("CPF6760 {} not ready: {e}", dev.clone().unwrap_or_default()))?)
-        }
-        _ => None,
-    };
+    let mut drive =
+        match &from_dev {
+            Some(FromDev::Drive(node)) => Some(std::fs::File::open(node).map_err(|e| {
+                format!("CPF6760 {} not ready: {e}", dev.clone().unwrap_or_default())
+            })?),
+            _ => None,
+        };
     let i = media::with_catalogs(|r| {
         if replace && let Some(i) = p.index {
             let _ = r.rmvimgclge(&name, i, true);
@@ -390,7 +476,11 @@ fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             None => r.addimgclge(&name, &p),
         }
     })?;
-    Ok(ok(&format!("Entry {i} added to image catalog {name}.\n"), CLGE_ADDED, &[(&name, 10), (&i.to_string(), 3)]))
+    Ok(ok(
+        &format!("Entry {i} added to image catalog {name}.\n"),
+        CLGE_ADDED,
+        &[(&name, 10), (&i.to_string(), 3)],
+    ))
 }
 
 fn rmvimgclge(parms: &Parms) -> Result<CmdReply, String> {
@@ -406,11 +496,17 @@ fn rmvimgclge(parms: &Parms) -> Result<CmdReply, String> {
                 .iter()
                 .find(|e| e.volume.eq_ignore_ascii_case(&vol))
                 .map(|e| e.index)
-                .ok_or_else(|| imgclg::Error::Invalid(format!("volume {vol} is not in image catalog {name}")))?,
+                .ok_or_else(|| {
+                    imgclg::Error::Invalid(format!("volume {vol} is not in image catalog {name}"))
+                })?,
         };
         r.rmvimgclge(&name, i, keep).map(|()| i)
     })?;
-    Ok(ok(&format!("Entry {i} removed from image catalog {name}.\n"), CLGE_REMOVED, &[(&name, 10), (&i.to_string(), 3)]))
+    Ok(ok(
+        &format!("Entry {i} removed from image catalog {name}.\n"),
+        CLGE_REMOVED,
+        &[(&name, 10), (&i.to_string(), 3)],
+    ))
 }
 
 fn chgimgclge(parms: &Parms) -> Result<CmdReply, String> {
@@ -425,7 +521,11 @@ fn chgimgclge(parms: &Parms) -> Result<CmdReply, String> {
         text: text(parms),
     };
     media::with_catalogs(|r| r.chgimgclge(&name, i, &p))?;
-    Ok(ok(&format!("Entry {i} of image catalog {name} changed.\n"), CLGE_CHANGED, &[(&name, 10), (&i.to_string(), 3)]))
+    Ok(ok(
+        &format!("Entry {i} of image catalog {name} changed.\n"),
+        CLGE_CHANGED,
+        &[(&name, 10), (&i.to_string(), 3)],
+    ))
 }
 
 fn lodimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -434,7 +534,11 @@ fn lodimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let dev = parms.name("DEV");
     if unload {
         media::with_catalogs(|r| r.lodimgclg(&name, LoadOption::Unload, ""))?;
-        return Ok(ok(&format!("Image catalog {name} unloaded.\n"), CLG_UNLOADED, &[(&name, 10)]));
+        return Ok(ok(
+            &format!("Image catalog {name} unloaded.\n"),
+            CLG_UNLOADED,
+            &[(&name, 10)],
+        ));
     }
     if dev.is_empty() {
         return Err("CPD0084 DEV is needed for OPTION(*LOAD)".into());
@@ -449,11 +553,19 @@ fn lodimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     if !m.is_virtual() || !fits {
         return Err(format!(
             "CPFBC0B device {dev} is not a virtual {} device",
-            if kind == ImgType::Opt { "optical" } else { "tape" }
+            if kind == ImgType::Opt {
+                "optical"
+            } else {
+                "tape"
+            }
         ));
     }
     media::with_catalogs(|r| r.lodimgclg(&name, LoadOption::Load, &dev))?;
-    Ok(ok(&format!("Image catalog {name} loaded on device {dev}.\n"), CLG_LOADED, &[(&name, 10), (&dev, 10)]))
+    Ok(ok(
+        &format!("Image catalog {name} loaded on device {dev}.\n"),
+        CLG_LOADED,
+        &[(&name, 10), (&dev, 10)],
+    ))
 }
 
 fn lodimgclge(parms: &Parms) -> Result<CmdReply, String> {
@@ -465,7 +577,11 @@ fn lodimgclge(parms: &Parms) -> Result<CmdReply, String> {
         _ => EntryOption::Load,
     };
     media::with_catalogs(|r| r.lodimgclge(&name, i, opt))?;
-    Ok(ok(&format!("Entry {i} of image catalog {name} changed.\n"), CLGE_LOADED, &[(&name, 10), (&i.to_string(), 3)]))
+    Ok(ok(
+        &format!("Entry {i} of image catalog {name} changed.\n"),
+        CLGE_LOADED,
+        &[(&name, 10), (&i.to_string(), 3)],
+    ))
 }
 
 fn vfyimgclg(parms: &Parms) -> Result<CmdReply, String> {
@@ -485,9 +601,17 @@ fn vfyimgclg(parms: &Parms) -> Result<CmdReply, String> {
         let _ = writeln!(text, "CPFBC0D {prob:?}");
     }
     if !r.ok() {
-        return Err(format!("CPFBC0D image catalog {name} did not verify: {} problem(s)\n{text}", r.problems.len()));
+        return Err(format!(
+            "CPFBC0D image catalog {name} did not verify: {} problem(s)\n{text}",
+            r.problems.len()
+        ));
     }
-    let _ = writeln!(text, "Image catalog {name} verified: {} entries{}.", r.checked, if r.sorted { ", sorted" } else { "" });
+    let _ = writeln!(
+        text,
+        "Image catalog {name} verified: {} entries{}.",
+        r.checked,
+        if r.sorted { ", sorted" } else { "" }
+    );
     Ok(ok(&text, CLG_VERIFIED, &[(&name, 10)]))
 }
 
@@ -496,10 +620,19 @@ pub(crate) fn wrkimgclg_text(which: &str, ty: &str) -> String {
     let rows = media::with_catalogs(|r| Ok(r.wrkimgclg())).unwrap_or_default();
     let mut s = String::from("Catalog     Status      Type  Text\n");
     for c in rows {
-        let pass = (which.is_empty() || which == "*ALL" || c.name == which || which.strip_suffix('*').is_some_and(|p| c.name.starts_with(p)))
+        let pass = (which.is_empty()
+            || which == "*ALL"
+            || c.name == which
+            || which
+                .strip_suffix('*')
+                .is_some_and(|p| c.name.starts_with(p)))
             && (ty.is_empty() || ty == "*ALL" || ty == c.kind);
         if pass {
-            let _ = writeln!(s, "{:<10}  {:<10}  {:<4}  {}", c.name, c.status, c.kind, c.text);
+            let _ = writeln!(
+                s,
+                "{:<10}  {:<10}  {:<4}  {}",
+                c.name, c.status, c.kind, c.text
+            );
         }
     }
     s
@@ -514,9 +647,16 @@ pub(crate) fn wrkimgclge_text(name: &str) -> Result<String, String> {
     let _ = writeln!(s, "Type  . . . . . . . : {}", d.kind);
     let _ = writeln!(s, "Device  . . . . . . : {}", d.device);
     let _ = writeln!(s, "Directory . . . . . : {}", d.dir);
-    let _ = writeln!(s, "Index  Status      WrtPtc  Volume                            File");
+    let _ = writeln!(
+        s,
+        "Index  Status      WrtPtc  Volume                            File"
+    );
     for e in &d.entries {
-        let _ = writeln!(s, "{:>5}  {:<10}  {:<6}  {:<32}  {}", e.index, e.status, e.write_protect, e.volume, e.file);
+        let _ = writeln!(
+            s,
+            "{:>5}  {:<10}  {:<6}  {:<32}  {}",
+            e.index, e.status, e.write_protect, e.volume, e.file
+        );
     }
     Ok(s)
 }
@@ -525,7 +665,11 @@ pub(crate) fn wrkimgclge_text(name: &str) -> Result<String, String> {
 
 /// A `VOL` value, `None` for `*MOUNTED`.
 fn vol(parms: &Parms, kwd: &str) -> Option<String> {
-    let v = parms.text(kwd).trim().trim_matches('\'').to_ascii_uppercase();
+    let v = parms
+        .text(kwd)
+        .trim()
+        .trim_matches('\'')
+        .to_ascii_uppercase();
     (!v.is_empty() && !v.starts_with('*')).then_some(v)
 }
 
@@ -543,7 +687,11 @@ struct Inz(InzOptions);
 
 impl TapeJob for Inz {
     type Out = ();
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, _: &mut dyn VolumeProvider<D>) -> Result<(), MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        _: &mut dyn VolumeProvider<D>,
+    ) -> Result<(), MediaError> {
         Ok(tape::volume::inztap(d, &self.0)?)
     }
 }
@@ -560,7 +708,11 @@ fn inztap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let owner = parms.text("NEWOWNID");
     let opts = InzOptions {
         new_vol: new_vol.clone(),
-        new_owner: if owner.trim() == "*BLANK" { String::new() } else { owner.trim().to_string() },
+        new_owner: if owner.trim() == "*BLANK" {
+            String::new()
+        } else {
+            owner.trim().to_string()
+        },
         vol: v.clone(),
         check: match parms.name("CHECK").as_str() {
             "*NO" => Check::No,
@@ -568,7 +720,11 @@ fn inztap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             _ => Check::Yes,
         },
         density: Some(parms.name("DENSITY")).filter(|d| !d.is_empty() && !d.starts_with('*')),
-        code: if parms.name("CODE") == "*ASCII" { tape::label::Code::Ascii } else { tape::label::Code::Ebcdic },
+        code: if parms.name("CODE") == "*ASCII" {
+            tape::label::Code::Ascii
+        } else {
+            tape::label::Code::Ebcdic
+        },
         end_opt: stream::end_opt(&parms.name("ENDOPT")),
         clear: parms.yes("CLEAR"),
         today: Some(stream::today()),
@@ -576,7 +732,11 @@ fn inztap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let vl: Vec<String> = v.into_iter().collect();
     drive::with_tape(system, &dev, &vl, true, &mut Inz(opts))?;
     let id = new_vol.unwrap_or_else(|| "*NL".into());
-    Ok(ok(&format!("Volume {id} initialized on device {dev}.\n"), VOL_INITIALIZED, &[(&id, 6), (&dev, 10)]))
+    Ok(ok(
+        &format!("Volume {id} initialized on device {dev}.\n"),
+        VOL_INITIALIZED,
+        &[(&id, 6), (&dev, 10)],
+    ))
 }
 
 /// The sequence range `SEQNBR` names.
@@ -599,7 +759,13 @@ fn seq_range(parms: &Parms) -> (u32, u32) {
 
 /// `DSPTAP`'s view of the volume its parameters name.
 pub(crate) fn tape_view_of(system: &mut System, parms: &Parms) -> Result<meddsp::TapView, String> {
-    let (dev, vol, label, data, endopt) = (parms.name("DEV"), parms.text("VOL"), parms.text("LABEL"), parms.name("DATA"), parms.name("ENDOPT"));
+    let (dev, vol, label, data, endopt) = (
+        parms.name("DEV"),
+        parms.text("VOL"),
+        parms.text("LABEL"),
+        parms.name("DATA"),
+        parms.name("ENDOPT"),
+    );
     meddsp::tape_view(
         system,
         &meddsp::TapAsk {
@@ -635,11 +801,23 @@ fn tape_lines(v: &meddsp::TapView, data: &str) -> Vec<String> {
             s.push(format!("Release . . . . . . . . . . : {}", h.release));
         }
         s.push(String::new());
-        s.push(format!("{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Seq", "Object", "Type", "Library", "Attribute", "Size"));
+        s.push(format!(
+            "{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  Text",
+            "Seq", "Object", "Type", "Library", "Attribute", "Size"
+        ));
         for o in &v.objects {
             let r = &o.row;
             let c = |i: usize| r.get(i).map_or("", String::as_str);
-            s.push(format!("{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  {}", o.seq, c(0), c(1), c(2), c(3), c(4), c(5)));
+            s.push(format!(
+                "{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  {}",
+                o.seq,
+                c(0),
+                c(1),
+                c(2),
+                c(3),
+                c(4),
+                c(5)
+            ));
         }
         return s;
     }
@@ -663,7 +841,14 @@ fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let v = tape_view_of(system, parms)?;
     match parms.name("OUTPUT").as_str() {
         "*OUTFILE" => super::medout::tape(system, parms, &v).map(plain),
-        "*PRINT" => crate::svc::security::print_as(system, "QSYSPRT", "DSPTAP", &tape_lines(&v, &parms.name("DATA")), false).map(plain),
+        "*PRINT" => crate::svc::security::print_as(
+            system,
+            "QSYSPRT",
+            "DSPTAP",
+            &tape_lines(&v, &parms.name("DATA")),
+            false,
+        )
+        .map(plain),
         _ => Ok(plain(tape_lines(&v, &parms.name("DATA")).join("\n") + "\n")),
     }
 }
@@ -672,7 +857,11 @@ struct Chk(ChkOptions);
 
 impl TapeJob for Chk {
     type Out = (tape::volume::ChkResult, Option<instmedia::layout::Contents>);
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, _: &mut dyn VolumeProvider<D>) -> Result<Self::Out, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        _: &mut dyn VolumeProvider<D>,
+    ) -> Result<Self::Out, MediaError> {
         // Install media or a system save says so; the check follows.
         let media = instmedia::savsys::recognize_tape(d).ok().flatten();
         Ok((tape::volume::chktap(d, &self.0)?, media))
@@ -697,7 +886,11 @@ fn chktap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let id = r.kind.id();
     let mut text = format!("Volume {id} on device {dev} checked.\n");
     if let Some(f) = &r.file {
-        let _ = writeln!(text, "File sequence {}, label {} found.", f.label.file_seq, f.label.file_id);
+        let _ = writeln!(
+            text,
+            "File sequence {}, label {} found.",
+            f.label.file_seq, f.label.file_id
+        );
     }
     if let Some(c) = &media {
         text.push_str(&install_media_text(c));
@@ -709,10 +902,22 @@ fn chktap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 /// show it: the kind and release, then the payload files.
 pub(crate) fn install_media_text(c: &instmedia::layout::Contents) -> String {
     let mut s = String::new();
-    let kind = if c.savsys { "system save (SAVSYS)" } else { "distribution media" };
-    let _ = writeln!(s, "Install media . . . . . . . : {kind}, release {}", c.release);
+    let kind = if c.savsys {
+        "system save (SAVSYS)"
+    } else {
+        "distribution media"
+    };
+    let _ = writeln!(
+        s,
+        "Install media . . . . . . . : {kind}, release {}",
+        c.release
+    );
     let _ = writeln!(s, "Volume in the manifest  . . : {}", c.manifest.volume);
-    let _ = writeln!(s, "Products  . . . . . . . . . : {}", c.products().join(" "));
+    let _ = writeln!(
+        s,
+        "Products  . . . . . . . . . : {}",
+        c.products().join(" ")
+    );
     for f in &c.manifest.files {
         let _ = writeln!(s, "  {:<32} {:>12} bytes", f.path, f.size);
     }
@@ -736,7 +941,10 @@ fn duptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let from_seq = match (num(0, 1), num(1, 16_777_215)) {
         (0, _) => DupSeq::All,
         (a, -1) => DupSeq::Range(u32::try_from(a).unwrap_or(1), u32::try_from(a).unwrap_or(1)),
-        (a, b) => DupSeq::Range(u32::try_from(a).unwrap_or(1), u32::try_from(b).unwrap_or(u32::MAX)),
+        (a, b) => DupSeq::Range(
+            u32::try_from(a).unwrap_or(1),
+            u32::try_from(b).unwrap_or(u32::MAX),
+        ),
     };
     let to_seq = match parms.int("TOSEQNBR").unwrap_or(0) {
         0 => ToSeq::FromSeq,
@@ -754,14 +962,23 @@ fn duptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         to_end_opt: stream::end_opt(&parms.name("TOENDOPT")),
     };
     let n = drive::dup_tape(system, &from, &to, &opts)?;
-    Ok(ok(&format!("{n} file(s) duplicated from device {from} to device {to}.\n"), VOL_DUPLICATED, &[(&from, 10), (&to, 10)]))
+    Ok(ok(
+        &format!("{n} file(s) duplicated from device {from} to device {to}.\n"),
+        VOL_DUPLICATED,
+        &[(&from, 10), (&to, 10)],
+    ))
 }
 
 // ------------------------------------------------------------------ optical
 
 /// The optical volume a command names: `DEV` and `VOL`, or the volume
 /// wherever it is loaded.
-fn optical(system: &mut System, parms: &Parms, vol_kwd: &str, dev_kwd: &str) -> Result<(drive::Target, String), String> {
+fn optical(
+    system: &mut System,
+    parms: &Parms,
+    vol_kwd: &str,
+    dev_kwd: &str,
+) -> Result<(drive::Target, String), String> {
     let v = vol(parms, vol_kwd);
     let dev = parms.name(dev_kwd);
     if !dev.is_empty() && !dev.starts_with('*') {
@@ -769,14 +986,17 @@ fn optical(system: &mut System, parms: &Parms, vol_kwd: &str, dev_kwd: &str) -> 
     }
     match v {
         Some(v) => drive::optical_by_volume(system, &v),
-        None => Err(format!("CPD0084 {dev_kwd} is needed with {vol_kwd}(*MOUNTED)")),
+        None => Err(format!(
+            "CPD0084 {dev_kwd} is needed with {vol_kwd}(*MOUNTED)"
+        )),
     }
 }
 
 /// The catalog entry holding volume `vol` on device `dev`: catalog,
 /// index, image path.
 fn entry_of(dev: &str, vol: &str) -> Result<(String, u16, String), String> {
-    let c = media::catalog_on(dev).ok_or_else(|| format!("{} optical device {dev} is empty", drive::OPT_EMPTY))?;
+    let c = media::catalog_on(dev)
+        .ok_or_else(|| format!("{} optical device {dev} is empty", drive::OPT_EMPTY))?;
     let e = c
         .entries
         .iter()
@@ -810,11 +1030,16 @@ fn reenter(clg: &str, index: u16, path: &str, dev: &str) -> Result<(), String> {
 fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let (t, volid) = optical(system, parms, "VOL", "DEV")?;
     let new = parms.text("NEWVOL").trim().to_ascii_uppercase();
-    let new = if new.is_empty() || new == "*VOL" { volid.clone() } else { new };
+    let new = if new.is_empty() || new == "*VOL" {
+        volid.clone()
+    } else {
+        new
+    };
     let (clg, index, path) = entry_of(&t.dev, &volid)?;
     release(&clg)?;
     let store = imgclg::StdFs::new(crate::stgsvc::ifs::ROOT);
-    let img = imgclg::CatalogFs::image(&store, &path).map_err(|e| format!("OPT1605 {path}: {e}"))?;
+    let img =
+        imgclg::CatalogFs::image(&store, &path).map_err(|e| format!("OPT1605 {path}: {e}"))?;
     let p = optical::volume::ops::InzOpt {
         new_volume: new.clone(),
         check: parms.name("CHECK") != "*NO",
@@ -827,13 +1052,26 @@ fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     // Back into the catalog and /QOPT whatever happened.
     reenter(&clg, index, &path, &t.dev)?;
     r.map_err(|e| drive::optical_failed(system, &t, &MediaError::Optical(e)))?;
-    Ok(ok(&format!("Volume {new} initialized on device {}.\n", t.dev), VOL_INITIALIZED, &[(&new, 32), (&t.dev, 10)]))
+    Ok(ok(
+        &format!("Volume {new} initialized on device {}.\n", t.dev),
+        VOL_INITIALIZED,
+        &[(&new, 32), (&t.dev, 10)],
+    ))
 }
 
 /// `DSPOPT`'s view of the volume its parameters name.
-pub(crate) fn optical_view_of(system: &mut System, parms: &Parms) -> Result<meddsp::OptView, String> {
+pub(crate) fn optical_view_of(
+    system: &mut System,
+    parms: &Parms,
+) -> Result<meddsp::OptView, String> {
     let path = parms.text("PATH");
-    meddsp::optical_view(system, &parms.text("VOL"), &parms.name("DEV"), &parms.name("DATA"), &path)
+    meddsp::optical_view(
+        system,
+        &parms.text("VOL"),
+        &parms.name("DEV"),
+        &parms.name("DATA"),
+        &path,
+    )
 }
 
 /// The text form, and the printed report, of `DSPOPT`.
@@ -864,7 +1102,10 @@ fn optical_lines(v: &meddsp::OptView) -> Vec<String> {
         }
         meddsp::OptView::Dirs(_, _, dirs) => {
             for d in dirs {
-                s.push(format!("{:<40} files {:>6}  directories {:>6}  bytes {:>12}", d.path, d.files, d.dirs, d.bytes));
+                s.push(format!(
+                    "{:<40} files {:>6}  directories {:>6}  bytes {:>12}",
+                    d.path, d.files, d.dirs, d.bytes
+                ));
             }
         }
         meddsp::OptView::Files(_, _, files) => {
@@ -878,10 +1119,21 @@ fn optical_lines(v: &meddsp::OptView) -> Vec<String> {
                 for (k, v) in desc {
                     s.push(format!("  {k:<24} {v}"));
                 }
-                s.push(format!("  {:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Object", "Type", "Library", "Attribute", "Size"));
+                s.push(format!(
+                    "  {:<10} {:<10} {:<10} {:<10} {:>12}  Text",
+                    "Object", "Type", "Library", "Attribute", "Size"
+                ));
                 for r in rows {
                     let c = |i: usize| r.get(i).map_or("", String::as_str);
-                    s.push(format!("  {:<10} {:<10} {:<10} {:<10} {:>12}  {}", c(0), c(1), c(2), c(3), c(4), c(5)));
+                    s.push(format!(
+                        "  {:<10} {:<10} {:<10} {:<10} {:>12}  {}",
+                        c(0),
+                        c(1),
+                        c(2),
+                        c(3),
+                        c(4),
+                        c(5)
+                    ));
                 }
             }
         }
@@ -893,7 +1145,10 @@ fn dspopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let v = optical_view_of(system, parms)?;
     match parms.name("OUTPUT").as_str() {
         "*OUTFILE" => super::medout::optical(system, parms, &v).map(plain),
-        "*PRINT" => crate::svc::security::print_as(system, "QSYSPRT", "DSPOPT", &optical_lines(&v), false).map(plain),
+        "*PRINT" => {
+            crate::svc::security::print_as(system, "QSYSPRT", "DSPOPT", &optical_lines(&v), false)
+                .map(plain)
+        }
         _ => Ok(plain(optical_lines(&v).join("\n") + "\n")),
     }
 }
@@ -908,10 +1163,17 @@ fn chkopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         let _ = writeln!(text, "{p}: {why}");
     }
     if !r.errors.is_empty() {
-        let e = MediaError::Optical(optical::Error::Malformed(format!("{} file(s) do not read", r.errors.len())));
+        let e = MediaError::Optical(optical::Error::Malformed(format!(
+            "{} file(s) do not read",
+            r.errors.len()
+        )));
         return Err(format!("{}\n{text}", drive::optical_failed(system, &t, &e)));
     }
-    let _ = writeln!(text, "Volume {volid} checked: {} files, {} bytes.", r.files, r.bytes);
+    let _ = writeln!(
+        text,
+        "Volume {volid} checked: {} files, {} bytes.",
+        r.files, r.bytes
+    );
     Ok(ok(&text, VOL_CHECKED, &[(&volid, 32), (&t.dev, 10)]))
 }
 
@@ -932,22 +1194,31 @@ fn dupopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     set.sync(&from).map_err(|e| format!("{} {e}", e.msgid()))?;
     release(&clg)?;
     let store = imgclg::StdFs::new(crate::stgsvc::ifs::ROOT);
-    let img = imgclg::CatalogFs::image(&store, &path).map_err(|e| format!("OPT1605 {path}: {e}"))?;
+    let img =
+        imgclg::CatalogFs::image(&store, &path).map_err(|e| format!("OPT1605 {path}: {e}"))?;
     let p = optical::volume::ops::DupOpt {
         new_volume,
         text: None,
         capacity: None,
         epoch: now_unix(),
     };
-    let r = set.with(&from, |v| optical::volume::ops::dupopt(v, img, &p).map(|_| ()));
+    let r = set.with(&from, |v| {
+        optical::volume::ops::dupopt(v, img, &p).map(|_| ())
+    });
     reenter(&clg, index, &path, &t.dev)?;
     r.map_err(|e| drive::optical_failed(system, &t, &MediaError::Optical(e)))?;
-    Ok(ok(&format!("Volume {from} duplicated onto device {}.\n", t.dev), VOL_DUPLICATED, &[(&from, 32), (&t.dev, 10)]))
+    Ok(ok(
+        &format!("Volume {from} duplicated onto device {}.\n", t.dev),
+        VOL_DUPLICATED,
+        &[(&from, 32), (&t.dev, 10)],
+    ))
 }
 
 fn wrkoptvol(system: &mut System, parms: &Parms) -> Result<String, String> {
     let rows = meddsp::optical_volumes(system, &parms.name("DEV"), &parms.text("VOL"))?;
-    let mut s = String::from("Volume                            Device      Volume Type  Media Type  Catalog     Protected\n");
+    let mut s = String::from(
+        "Volume                            Device      Volume Type  Media Type  Catalog     Protected\n",
+    );
     for r in &rows {
         let _ = writeln!(
             s,
@@ -974,8 +1245,15 @@ const CTG_EJECTED: &str = "CPC6777";
 pub(crate) fn wrkmlbsts_text(system: &mut System, which: &str) -> String {
     let mut s = String::from("Device/Resource   Status        Allocation     Cartridge\n");
     let devs = devices::all(system).unwrap_or_default();
-    for (n, d) in devs.iter().filter(|(_, d)| d.media_kind() == Some(MediaKind::TapeLibrary)) {
-        if !(which.is_empty() || which == "*ALL" || *n == which || which.strip_suffix('*').is_some_and(|p| n.starts_with(p))) {
+    for (n, d) in devs
+        .iter()
+        .filter(|(_, d)| d.media_kind() == Some(MediaKind::TapeLibrary))
+    {
+        if !(which.is_empty()
+            || which == "*ALL"
+            || *n == which
+            || which.strip_suffix('*').is_some_and(|p| n.starts_with(p)))
+        {
             continue;
         }
         let _ = writeln!(s, "{n:<16}  {:<12}", d.status.text());
@@ -983,11 +1261,20 @@ pub(crate) fn wrkmlbsts_text(system: &mut System, which: &str) -> String {
         match media::library::drives(system, n) {
             Ok(rows) => {
                 for r in rows {
-                    let _ = writeln!(s, "  {:<14}  {:<12}  {:<13}  {}", r.name, "OPERATIONAL", r.allocation, r.cartridge);
+                    let _ = writeln!(
+                        s,
+                        "  {:<14}  {:<12}  {:<13}  {}",
+                        r.name, "OPERATIONAL", r.allocation, r.cartridge
+                    );
                 }
             }
             Err(_) => {
-                let _ = writeln!(s, "  {:<14}  {:<12}  *ALLOCATED", m.rsrcname, d.status.text());
+                let _ = writeln!(
+                    s,
+                    "  {:<14}  {:<12}  *ALLOCATED",
+                    m.rsrcname,
+                    d.status.text()
+                );
             }
         }
     }
@@ -1016,7 +1303,12 @@ fn cgy(parms: &Parms) -> String {
 }
 
 /// `WRKTAPCTG` and `DSPTAPCTG`'s rows of library `dev`.
-pub(crate) fn tapctg_rows(system: &mut System, dev: &str, ids: &[String], cgy: &str) -> Result<Vec<media::library::CtgRow>, String> {
+pub(crate) fn tapctg_rows(
+    system: &mut System,
+    dev: &str,
+    ids: &[String],
+    cgy: &str,
+) -> Result<Vec<media::library::CtgRow>, String> {
     media::library::rows(system, dev, ids, cgy)
 }
 
@@ -1039,7 +1331,8 @@ fn dsptapctg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         s.push(String::new());
     }
     if parms.name("OUTPUT") == "*PRINT" {
-        return crate::svc::security::print_as(system, "QSYSPRT", "DSPTAPCTG", &s, false).map(plain);
+        return crate::svc::security::print_as(system, "QSYSPRT", "DSPTAPCTG", &s, false)
+            .map(plain);
     }
     Ok(plain(s.join("\n") + "\n"))
 }
@@ -1058,19 +1351,30 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
             let mut s = format!("Library device  . . . : {dev}\n");
             let _ = writeln!(s, "Cartridge  Volume  Category    Status      Location");
             for r in &rows {
-                let _ = writeln!(s, "{:<9}  {:<6}  {:<10}  {:<10}  {}", r.id, r.volume, r.category, r.status, r.location);
+                let _ = writeln!(
+                    s,
+                    "{:<9}  {:<6}  {:<10}  {:<10}  {}",
+                    r.id, r.volume, r.category, r.status, r.location
+                );
             }
             Ok(plain(s))
         }
         "ADDTAPCTG" | "CHGTAPCTG" => {
-            let to = if cgy.is_empty() || cgy == "*SAME" { None } else { Category::parse(&cgy) };
+            let to = if cgy.is_empty() || cgy == "*SAME" {
+                None
+            } else {
+                Category::parse(&cgy)
+            };
             if name == "ADDTAPCTG" && to.is_none() {
                 return Err(format!("CPD0084 CGY({cgy}) is not a category"));
             }
             let check = name == "ADDTAPCTG" && parms.name("CHECK") != "*NO";
             let all_inserted = ids.iter().any(|i| i == "*INSERT");
             let ids = if all_inserted {
-                tapctg_rows(system, &dev, &[], "*INSERT")?.into_iter().map(|r| r.id).collect()
+                tapctg_rows(system, &dev, &[], "*INSERT")?
+                    .into_iter()
+                    .map(|r| r.id)
+                    .collect()
             } else {
                 ids
             };
@@ -1080,7 +1384,9 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
                         && v != *id
                         && !matches!(v.as_str(), "*NL" | "*BLANK" | "*UNKNOWN")
                     {
-                        return Err(format!("CPF6720 cartridge {id} on {dev} carries volume {v}"));
+                        return Err(format!(
+                            "CPF6720 cartridge {id} on {dev} carries volume {v}"
+                        ));
                     }
                 }
             }
@@ -1089,17 +1395,29 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
             };
             media::library::with_library(system, &dev, |_, _, lib| {
                 for id in &ids {
-                    let r = if name == "ADDTAPCTG" { lib.add(id, to.clone()) } else { lib.change(id, to.clone()) };
+                    let r = if name == "ADDTAPCTG" {
+                        lib.add(id, to.clone())
+                    } else {
+                        lib.change(id, to.clone())
+                    };
                     r.map_err(|e| media::library::refused(&e))?;
                 }
                 Ok(())
             })?;
             let mut text = String::new();
             for id in &ids {
-                let _ = writeln!(text, "Cartridge {id} is now in category {} of {dev}.", to.name());
+                let _ = writeln!(
+                    text,
+                    "Cartridge {id} is now in category {} of {dev}.",
+                    to.name()
+                );
             }
             let first = ids.first().cloned().unwrap_or_default();
-            Ok(ok(&text, CTG_CATEGORY, &[(&first, 6), (to.name(), 10), (&dev, 10)]))
+            Ok(ok(
+                &text,
+                CTG_CATEGORY,
+                &[(&first, 6), (to.name(), 10), (&dev, 10)],
+            ))
         }
         "RMVTAPCTG" => {
             let moved = media::library::with_library(system, &dev, |_, _, lib| {
@@ -1115,7 +1433,11 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
                 let _ = writeln!(
                     text,
                     "Cartridge {id} is ejected from {dev}{}.",
-                    if *moved { " to an import/export station" } else { "; it stays in its slot" }
+                    if *moved {
+                        " to an import/export station"
+                    } else {
+                        "; it stays in its slot"
+                    }
                 );
             }
             let first = ids.first().cloned().unwrap_or_default();
@@ -1154,17 +1476,26 @@ pub(crate) fn imgclg_panel(system: &mut System, which: &str, ty: &str) -> stg::p
     let rows = media::with_catalogs(|r| Ok(r.wrkimgclg())).unwrap_or_default();
     let mut out = Vec::new();
     for c in rows {
-        let pass = (which.is_empty() || which == "*ALL" || c.name == which || which.strip_suffix('*').is_some_and(|p| c.name.starts_with(p)))
+        let pass = (which.is_empty()
+            || which == "*ALL"
+            || c.name == which
+            || which
+                .strip_suffix('*')
+                .is_some_and(|p| c.name.starts_with(p)))
             && (ty.is_empty() || ty == "*ALL" || ty == c.kind);
         if !pass {
             continue;
         }
-        let dev = media::with_catalogs(|r| r.wrkimgclge(&c.name)).map(|d| d.device).unwrap_or_default();
+        let dev = media::with_catalogs(|r| r.wrkimgclge(&c.name))
+            .map(|d| d.device)
+            .unwrap_or_default();
         let dev = if dev == "*NONE" { String::new() } else { dev };
         let sts = if dev.is_empty() {
             String::new()
         } else {
-            devices::read(system, &dev).map(|d| d.status.text().to_string()).unwrap_or_default()
+            devices::read(system, &dev)
+                .map(|d| d.status.text().to_string())
+                .unwrap_or_default()
         };
         out.push(vec![
             var("CLG", &c.name),
@@ -1211,7 +1542,12 @@ pub(crate) fn imgclge_panel(name: &str) -> Result<stg::proto::PanelData, String>
 }
 
 /// `WRKTAPCTG`'s panel data.
-pub(crate) fn tapctg_panel(system: &mut System, dev: &str, ids: &[String], cgy: &str) -> Result<stg::proto::PanelData, String> {
+pub(crate) fn tapctg_panel(
+    system: &mut System,
+    dev: &str,
+    ids: &[String],
+    cgy: &str,
+) -> Result<stg::proto::PanelData, String> {
     let rows = tapctg_rows(system, dev, ids, cgy)?
         .into_iter()
         .map(|r| {
@@ -1231,11 +1567,22 @@ pub(crate) fn tapctg_panel(system: &mut System, dev: &str, ids: &[String], cgy: 
 pub(crate) fn mlbsts_panel(system: &mut System, which: &str) -> stg::proto::PanelData {
     let mut out = Vec::new();
     let devs = devices::all(system).unwrap_or_default();
-    for (n, d) in devs.iter().filter(|(_, d)| d.media_kind() == Some(MediaKind::TapeLibrary)) {
-        if !(which.is_empty() || which == "*ALL" || *n == which || which.strip_suffix('*').is_some_and(|p| n.starts_with(p))) {
+    for (n, d) in devs
+        .iter()
+        .filter(|(_, d)| d.media_kind() == Some(MediaKind::TapeLibrary))
+    {
+        if !(which.is_empty()
+            || which == "*ALL"
+            || *n == which
+            || which.strip_suffix('*').is_some_and(|p| n.starts_with(p)))
+        {
             continue;
         }
-        out.push(vec![var("RSRC", n), var("RSRCSTS", d.status.text()), var("RSRCLIB", n)]);
+        out.push(vec![
+            var("RSRC", n),
+            var("RSRCSTS", d.status.text()),
+            var("RSRCLIB", n),
+        ]);
         let drives = media::library::drives(system, n).unwrap_or_default();
         for r in drives {
             out.push(vec![
@@ -1253,7 +1600,11 @@ pub(crate) fn mlbsts_panel(system: &mut System, which: &str) -> stg::proto::Pane
 /// The panels' library actions (`service_op`): `mlb-mount DEV CTG`,
 /// `mlb-demount DEV CTG`, `mlb-alloc DEV DRIVE ALLOCATION`. The message
 /// for the message line: its identifier, then each value after a tab.
-pub(crate) fn mlb_op(system: &mut System, op: &str, args: &[String]) -> Result<Vec<String>, String> {
+pub(crate) fn mlb_op(
+    system: &mut System,
+    op: &str,
+    args: &[String],
+) -> Result<Vec<String>, String> {
     let arg = |i: usize| args.get(i).map_or("", |s| s.trim()).to_ascii_uppercase();
     let (dev, what) = (arg(0), arg(1));
     media::library::with_library(system, &dev, |_, _, lib| {
@@ -1278,7 +1629,8 @@ pub(crate) fn mlb_op(system: &mut System, op: &str, args: &[String]) -> Result<V
                     "*DEALLOCATED" => tape::device::Allocation::Deallocated,
                     _ => tape::device::Allocation::Allocated,
                 };
-                lib.allocate(&what, a).map_err(|e| media::library::refused(&e))?;
+                lib.allocate(&what, a)
+                    .map_err(|e| media::library::refused(&e))?;
                 format!("CPI9BB7\t{what}\t{}", a.name())
             }
             _ => return Err(format!("CPF9899 no library action {op}")),

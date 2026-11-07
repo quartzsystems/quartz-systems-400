@@ -6,7 +6,11 @@
 //! numbers of a few hundred bits, multiplied and reduced by shifting.
 
 // Limb arithmetic: the casts keep the low 32 bits on purpose.
-#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::many_single_char_names)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::many_single_char_names
+)]
 
 /// An unsigned number, 32-bit limbs, least significant first.
 #[derive(Clone, Debug, PartialEq, Eq)]

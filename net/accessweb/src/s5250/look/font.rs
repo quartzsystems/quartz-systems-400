@@ -21,7 +21,8 @@ pub const COLUMN_SEPARATOR: char = '\u{e000}';
 
 /// The hollow box.
 static REPLACEMENT: [u16; GLYPH_H] = [
-    0x000, 0x000, 0x1fc, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x1fc, 0x000, 0x000, 0x000,
+    0x000, 0x000, 0x1fc, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x104, 0x1fc,
+    0x000, 0x000, 0x000,
 ];
 
 /// Glyph rows, the leftmost pixel in bit 8, sorted by character.
@@ -50,7 +51,9 @@ pub fn parse(text: &str) -> Result<Glyphs, String> {
             .ok_or_else(|| format!("line {}: bad code point", n + 1))?;
         let mut rows = [0u16; GLYPH_H];
         for row in &mut rows {
-            let (m, px) = lines.next().ok_or_else(|| format!("U+{:04X}: rows missing", cp as u32))?;
+            let (m, px) = lines
+                .next()
+                .ok_or_else(|| format!("U+{:04X}: rows missing", cp as u32))?;
             if px.chars().count() != GLYPH_W {
                 return Err(format!("line {}: a row is {GLYPH_W} wide", m + 1));
             }

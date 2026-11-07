@@ -314,7 +314,10 @@ pub fn apyjrnchg(
 
 /// `rcv.read` on each receiver holding one of `entries`.
 fn check_receivers(txn: &mut Txn<'_>, j: &Journal, entries: &[Entry]) -> Result<()> {
-    let (Some(lo), Some(hi)) = (entries.iter().map(|e| e.seq).min(), entries.iter().map(|e| e.seq).max()) else {
+    let (Some(lo), Some(hi)) = (
+        entries.iter().map(|e| e.seq).min(),
+        entries.iter().map(|e| e.seq).max(),
+    ) else {
         return Ok(());
     };
     for r in j.chain(txn).map_err(DbError::from)? {
@@ -326,12 +329,19 @@ fn check_receivers(txn: &mut Txn<'_>, j: &Journal, entries: &[Entry]) -> Result<
 }
 
 /// `op` on each file whose changes `entries` hold.
-fn check_files(txn: &mut Txn<'_>, map: &MemberMap, entries: &[Entry], op: &'static str) -> Result<()> {
+fn check_files(
+    txn: &mut Txn<'_>,
+    map: &MemberMap,
+    entries: &[Entry],
+    op: &'static str,
+) -> Result<()> {
     let mut done: Vec<ObjectId> = Vec::new();
     for e in entries {
         let Some(o) = &e.object else { continue };
         let Some(m) = o.member else { continue };
-        let Some((d, _)) = map.get(&(o.library, o.object, m)) else { continue };
+        let Some((d, _)) = map.get(&(o.library, o.object, m)) else {
+            continue;
+        };
         if !done.contains(&d.id) {
             crate::auth::check(txn, op, d.id)?;
             done.push(d.id);

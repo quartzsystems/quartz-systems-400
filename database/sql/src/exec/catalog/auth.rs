@@ -23,11 +23,18 @@ const VIEWS: &[&str] = &["SYSTABAUTH", "SYSCOLAUTH"];
 
 /// Whether `name` is one of these views.
 pub fn has(name: &ObjectName) -> bool {
-    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2") && VIEWS.contains(&name.name.value.as_str())
+    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2")
+        && VIEWS.contains(&name.name.value.as_str())
 }
 
 fn col(alias: &str, name: &str, len: u32, varying: bool, nullable: bool) -> ColInfo {
-    let mut f = FieldDef::new(Name::parse(&name[..name.len().min(10)]).unwrap_or_else(|_| Name::parse("COL").expect("valid")), DataType::Char, len, 0);
+    let mut f = FieldDef::new(
+        Name::parse(&name[..name.len().min(10)])
+            .unwrap_or_else(|_| Name::parse("COL").expect("valid")),
+        DataType::Char,
+        len,
+        0,
+    );
     f.allow_null = nullable;
     if varying {
         f.varlen = Some(dds::VarLen { allocated: None });
@@ -35,7 +42,13 @@ fn col(alias: &str, name: &str, len: u32, varying: bool, nullable: bool) -> ColI
     if name.len() > 10 {
         f.alias = Some(name.to_string());
     }
-    ColInfo { name: name.to_string(), table: Some(alias.to_string()), field: Some(f), nullable, hidden: false }
+    ColInfo {
+        name: name.to_string(),
+        table: Some(alias.to_string()),
+        field: Some(f),
+        nullable,
+        hidden: false,
+    }
 }
 
 fn s(v: impl Into<String>) -> Value {
@@ -48,7 +61,12 @@ fn sys(n: &str) -> Value {
 }
 
 /// The rows and columns, or `None` when `name` is not one of these.
-pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str) -> Result<Option<Table>> {
+pub fn virtual_table(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    alias: &str,
+) -> Result<Option<Table>> {
     if !has(name) {
         return Ok(None);
     }
@@ -74,14 +92,23 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
         return Ok(Some((Schema { cols }, Vec::new())));
     }
     let mut rows: Vec<Row> = Vec::new();
-    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     libs.insert(0, ctx.qsys);
     for lib in libs {
-        let Ok((_, lh)) = ops::read_header(txn, lib) else { continue };
-        let Ok(files) = ops::list(txn, lib, Some(types::FILE)) else { continue };
+        let Ok((_, lh)) = ops::read_header(txn, lib) else {
+            continue;
+        };
+        let Ok(files) = ops::list(txn, lib, Some(types::FILE)) else {
+            continue;
+        };
         let schema = crate::exec::names::schema_name(txn, lib);
         for (_, id) in files {
-            let Ok(d) = db::file::describe(txn, id) else { continue };
+            let Ok(d) = db::file::describe(txn, id) else {
+                continue;
+            };
             let is_view = crate::exec::view::is_view(txn, id);
             let is_index = crate::exec::names::kind_of(txn, id) == Some(db::sqlinf::Kind::Index);
             if is_index {
@@ -98,7 +125,11 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                         s(table.clone()),
                         s(p),
                         s(if grantable { "YES" } else { "NO" }),
-                        if autl.is_empty() { Value::Null } else { s(autl.clone()) },
+                        if autl.is_empty() {
+                            Value::Null
+                        } else {
+                            s(autl.clone())
+                        },
                         sys(&lh.name.to_string()),
                         sys(&d.name().to_string()),
                     ]);

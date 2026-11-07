@@ -62,7 +62,10 @@ fn first_host(text: &str) -> Option<String> {
                 }
                 i += 1;
             }
-            ':' if b.get(i + 1).is_some_and(|c| c.is_alphabetic() || matches!(c, '_' | '$' | '#' | '@')) => {
+            ':' if b
+                .get(i + 1)
+                .is_some_and(|c| c.is_alphabetic() || matches!(c, '_' | '$' | '#' | '@')) =>
+            {
                 let name: String = b[i + 1..]
                     .iter()
                     .take_while(|c| c.is_alphanumeric() || matches!(c, '_' | '$' | '#' | '@' | '.'))
@@ -113,7 +116,11 @@ pub fn check(text: &str) -> Result<()> {
             what: "DEALLOCATE is not a statement a dynamic interface runs".into(),
         }),
         ("DECLARE", "GLOBAL") => Ok(()),
-        ("EXECUTE" | "DESCRIBE" | "DECLARE" | "OPEN" | "FETCH" | "CLOSE" | "WHENEVER" | "INCLUDE" | "ALLOCATE" | "ASSOCIATE", _)
+        (
+            "EXECUTE" | "DESCRIBE" | "DECLARE" | "OPEN" | "FETCH" | "CLOSE" | "WHENEVER"
+            | "INCLUDE" | "ALLOCATE" | "ASSOCIATE",
+            _,
+        )
         | ("BEGIN" | "END", "DECLARE")
         | ("FREE" | "HOLD", "LOCATOR")
         | ("GET", "DIAGNOSTICS") => Err(cannot_prepare(format!("{w0} {w1}").trim_end())),
@@ -168,6 +175,9 @@ mod tests {
         assert_eq!(code("SET :X = 1"), -312);
         assert_eq!(code("DECLARE GLOBAL TEMPORARY TABLE T (A INT)"), 0);
         assert_eq!(code("SELECT ':X', \"A:B\" FROM T -- :Y"), 0);
-        assert_eq!(code("CREATE PROCEDURE P () BEGIN L1:LOOP LEAVE L1; END LOOP; END"), 0);
+        assert_eq!(
+            code("CREATE PROCEDURE P () BEGIN L1:LOOP LEAVE L1; END LOOP; END"),
+            0
+        );
     }
 }

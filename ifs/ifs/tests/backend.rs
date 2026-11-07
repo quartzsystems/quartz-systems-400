@@ -31,8 +31,14 @@ fn exercise<B: Backend>(b: &B) {
     // Extended attributes through the open file.
     assert_eq!(f.xattr_get("trusted.qs400.t").unwrap(), None);
     f.xattr_set("trusted.qs400.t", b"fd").unwrap();
-    assert_eq!(f.xattr_get("trusted.qs400.t").unwrap(), Some(b"fd".to_vec()));
-    assert_eq!(b.xattr_get("t/a", "trusted.qs400.t").unwrap(), Some(b"fd".to_vec()));
+    assert_eq!(
+        f.xattr_get("trusted.qs400.t").unwrap(),
+        Some(b"fd".to_vec())
+    );
+    assert_eq!(
+        b.xattr_get("t/a", "trusted.qs400.t").unwrap(),
+        Some(b"fd".to_vec())
+    );
     b.xattr_remove("t/a", "trusted.qs400.t").unwrap();
     drop(f);
     let st = b.stat("t/a").unwrap();

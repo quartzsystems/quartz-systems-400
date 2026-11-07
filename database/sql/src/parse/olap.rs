@@ -54,10 +54,18 @@ impl Parser {
             let order = self.order_list()?;
             self.expect_sym(")")?;
             let Expr::Function(f) = e else { unreachable!() };
-            e = Expr::WithinGroup(Box::new(WithinGroup { func: f, order, overflow }));
+            e = Expr::WithinGroup(Box::new(WithinGroup {
+                func: f,
+                order,
+                overflow,
+            }));
         } else if overflow.is_some() {
             let Expr::Function(f) = e else { unreachable!() };
-            e = Expr::WithinGroup(Box::new(WithinGroup { func: f, order: Vec::new(), overflow }));
+            e = Expr::WithinGroup(Box::new(WithinGroup {
+                func: f,
+                order: Vec::new(),
+                overflow,
+            }));
         }
         // NTH_VALUE(x, n) FROM FIRST: the only order there is.
         if self.is_words(&["FROM", "FIRST"]) && self.is_word_at(2, "IGNORE")
@@ -108,14 +116,23 @@ impl Parser {
                 let end = self.frame_bound()?;
                 Frame { rows, start, end }
             } else {
-                Frame { rows, start: self.frame_bound()?, end: FrameBound::CurrentRow }
+                Frame {
+                    rows,
+                    start: self.frame_bound()?,
+                    end: FrameBound::CurrentRow,
+                }
             };
             window.frame = Some(frame);
         }
         self.expect_sym(")")?;
         let slot = self.windows;
         self.windows += 1;
-        Ok(Expr::Over(Box::new(Over { func: e, ignore_nulls, window, slot })))
+        Ok(Expr::Over(Box::new(Over {
+            func: e,
+            ignore_nulls,
+            window,
+            slot,
+        })))
     }
 
     fn frame_bound(&mut self) -> Result<FrameBound> {
@@ -159,7 +176,12 @@ impl Parser {
         for w in ["ROLLUP", "CUBE"] {
             if self.is_word(w) && self.is_sym_at(1, "(") {
                 self.advance();
-                return Ok(Expr::Function(Function { name: w.into(), distinct: false, star: false, args: self.grouping_list()? }));
+                return Ok(Expr::Function(Function {
+                    name: w.into(),
+                    distinct: false,
+                    star: false,
+                    args: self.grouping_list()?,
+                }));
             }
         }
         if self.is_sym("(") && self.is_sym_at(1, ")") {

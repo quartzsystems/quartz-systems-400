@@ -65,7 +65,10 @@ fn wrksbmjob() {
     d.set("*DATETIME", "MM/DD/YY  HH:MM:SS UTC")
         .set("SBMFROM", "*USER")
         .set_list("JOBS", list(&[]));
-    compare(&golden("wrksbmjob"), &screen("QGWCSBSJ", "WRKSBMJOB", &d, &opts()));
+    compare(
+        &golden("wrksbmjob"),
+        &screen("QGWCSBSJ", "WRKSBMJOB", &d, &opts()),
+    );
 }
 
 fn wrkoutqd_dialog() -> MapDialog {
@@ -93,14 +96,20 @@ fn wrkoutqd_dialog() -> MapDialog {
 #[test]
 fn wrkoutqd() {
     let d = wrkoutqd_dialog();
-    compare(&golden("wrkoutqd"), &screen("QGSPDSPQD", "WRKOUTQD", &d, &opts()));
+    compare(
+        &golden("wrkoutqd"),
+        &screen("QGSPDSPQD", "WRKOUTQD", &d, &opts()),
+    );
 }
 
 #[test]
 fn wrkoutqd_2() {
     let d = wrkoutqd_dialog();
     let o = Options { page: 1, ..opts() };
-    compare(&golden("wrkoutqd-2"), &screen("QGSPDSPQD", "WRKOUTQD", &d, &o));
+    compare(
+        &golden("wrkoutqd-2"),
+        &screen("QGSPDSPQD", "WRKOUTQD", &d, &o),
+    );
 }
 
 #[test]
@@ -128,7 +137,10 @@ fn wrkdsksts() {
     d.set("*DATETIME", "MM/DD/YY  HH:MM:SS UTC")
         .set("ELAPSED", "HH:MM:SS")
         .set_list("UNITS", list(&rows));
-    compare(&golden("wrkdsksts"), &screen("QGWCDSKS", "WRKDSKSTS", &d, &opts()));
+    compare(
+        &golden("wrkdsksts"),
+        &screen("QGWCDSKS", "WRKDSKSTS", &d, &opts()),
+    );
 }
 
 #[test]
@@ -146,7 +158,10 @@ fn wrklib() {
             ],
         ]),
     );
-    compare(&golden("wrklib"), &screen("QUIWRKLIB", "WRKLIB", &d, &opts()));
+    compare(
+        &golden("wrklib"),
+        &screen("QUIWRKLIB", "WRKLIB", &d, &opts()),
+    );
 }
 
 #[test]
@@ -188,14 +203,20 @@ fn wrkobjlck() {
         system: "SYSNAME".into(),
         ..opts()
     };
-    compare(&golden("wrkobjlck"), &screen("QGWCOLCK", "WRKOBJLCK", &d, &o));
+    compare(
+        &golden("wrkobjlck"),
+        &screen("QGWCOLCK", "WRKOBJLCK", &d, &o),
+    );
 }
 
 #[test]
 fn wrkjrn() {
     let mut d = MapDialog::new();
     d.set_list("JRNS", list(&[]));
-    compare(&golden("wrkjrn"), &screen("QGJOWKMN", "WRKJRN", &d, &opts()));
+    compare(
+        &golden("wrkjrn"),
+        &screen("QGJOWKMN", "WRKJRN", &d, &opts()),
+    );
 }
 
 #[test]
@@ -210,7 +231,10 @@ fn dspovr() {
             ("KWDS", "TOFILE(QIWS/QCUSTCDT)"),
         ]]),
     );
-    compare(&golden("dspovr"), &screen("QUIDSPOVR", "DSPOVR", &d, &opts()));
+    compare(
+        &golden("dspovr"),
+        &screen("QUIDSPOVR", "DSPOVR", &d, &opts()),
+    );
 }
 
 #[test]
@@ -236,7 +260,10 @@ fn wrksbsd() {
     );
     let mut d = MapDialog::new();
     d.set_list("SBSDS", partial(&rows));
-    compare(&golden("wrksbsd"), &screen("QUIWRKSBSD", "WRKSBSD", &d, &opts()));
+    compare(
+        &golden("wrksbsd"),
+        &screen("QUIWRKSBSD", "WRKSBSD", &d, &opts()),
+    );
 }
 
 /// The golden's rows `from..=to` (1-based) from column 2, as the data
@@ -250,7 +277,15 @@ fn data_rows(name: &str, from: usize, to: usize) -> Vec<String> {
         .collect()
 }
 
-fn viewer(group: &str, panel: &str, golden_name: &str, vars: &[(&str, &str)], first: usize, last: usize, ruler: usize) -> uim::Screen {
+fn viewer(
+    group: &str,
+    panel: &str,
+    golden_name: &str,
+    vars: &[(&str, &str)],
+    first: usize,
+    last: usize,
+    ruler: usize,
+) -> uim::Screen {
     let lines = data_rows(golden_name, first, last);
     let rows: Vec<Vec<(&str, &str)>> = lines.iter().map(|l| vec![("LINE", l.as_str())]).collect();
     let ruler = data_rows(golden_name, ruler, ruler).remove(0);
@@ -278,7 +313,17 @@ fn dspsplf() {
 fn dspsplf_keys() {
     let vars = [("FILE", "QDFUZZIN")];
     let s = viewer("QGSPDSPF", "DSPSPLF", "dspsplf", &vars, 6, 21, 5);
-    title_and_keys(&s, "Display Spooled File", &["F3=Exit", "F12=Cancel", "F19=Left", "F20=Right", "F24=More keys"]);
+    title_and_keys(
+        &s,
+        "Display Spooled File",
+        &[
+            "F3=Exit",
+            "F12=Cancel",
+            "F19=Left",
+            "F20=Right",
+            "F24=More keys",
+        ],
+    );
     let rows = s.text_rows();
     let want = golden("dspsplf");
     let want: Vec<&str> = want.lines().collect();
@@ -291,10 +336,16 @@ fn dspsplf_keys() {
 #[test]
 fn dspsplf_f24() {
     let d = MapDialog::new();
-    let o = Options { more_keys: true, ..opts() };
+    let o = Options {
+        more_keys: true,
+        ..opts()
+    };
     let s = screen("QGSPDSPF", "DSPSPLF", &d, &o);
     let want = golden("dspsplf-f24");
-    assert_eq!(s.text_rows()[22].trim_end(), want.lines().nth(22).unwrap().trim_end());
+    assert_eq!(
+        s.text_rows()[22].trim_end(),
+        want.lines().nth(22).unwrap().trim_end()
+    );
 }
 
 #[test]
@@ -320,13 +371,22 @@ fn dsppfm_frame() {
         ("RECORD", "1"),
         ("COLUMN", "1"),
     ];
-    for (name, first, last) in [("dsppfm", 7, 19), ("dsppfm-f10", 7, 19), ("dsppfm-f11", 7, 21)] {
+    for (name, first, last) in [
+        ("dsppfm", 7, 19),
+        ("dsppfm-f10", 7, 19),
+        ("dsppfm-f11", 7, 21),
+    ] {
         let s = viewer("QUIDSPPFM", "DSPPFM", name, &vars, first, last, 6);
         let rows = s.text_rows();
         let want = golden(name);
         let want: Vec<&str> = want.lines().collect();
         for i in [0, 1, 2, 5, 6, 21, 22] {
-            assert_eq!(rows[i].trim_end(), want[i].trim_end(), "{name} row {}", i + 1);
+            assert_eq!(
+                rows[i].trim_end(),
+                want[i].trim_end(),
+                "{name} row {}",
+                i + 1
+            );
         }
     }
 }
@@ -335,10 +395,16 @@ fn dsppfm_frame() {
 fn dsppfm_f24() {
     let mut d = MapDialog::new();
     d.set("MODE", "V");
-    let o = Options { more_keys: true, ..opts() };
+    let o = Options {
+        more_keys: true,
+        ..opts()
+    };
     let s = screen("QUIDSPPFM", "DSPPFM", &d, &o);
     let want = golden("dsppfm-f24");
-    assert_eq!(s.text_rows()[22].trim_end(), want.lines().nth(22).unwrap().trim_end());
+    assert_eq!(
+        s.text_rows()[22].trim_end(),
+        want.lines().nth(22).unwrap().trim_end()
+    );
 }
 
 /// WRKACTJOB's key rows for a view and the times F24 was pressed.
@@ -370,25 +436,42 @@ fn wrkactjob_keys_cycle() {
     // The fourth press comes back to the first set.
     assert_eq!(wrkactjob_keys("1", 3, false), wrkactjob_keys("1", 0, false));
     let wide = wrkactjob_keys("1", 0, true).join("\n");
-    assert!(wide.contains("F3=Exit") && wide.contains("F24=More keys"), "{wide}");
+    assert!(
+        wide.contains("F3=Exit") && wide.contains("F24=More keys"),
+        "{wide}"
+    );
 }
 
 #[test]
 fn wrkactjob_wide() {
     let mut d = MapDialog::new();
-    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS UTC")
-        .set_list(
-            "JOBS",
-            list(&[vec![("JOB", "QBATCH"), ("CURUSER", "QSYS"), ("TYPE", "SBS"), ("STATUS", " DEQW")]]),
-        );
-    let o = Options { wide: true, ..opts() };
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS UTC").set_list(
+        "JOBS",
+        list(&[vec![
+            ("JOB", "QBATCH"),
+            ("CURUSER", "QSYS"),
+            ("TYPE", "SBS"),
+            ("STATUS", " DEQW"),
+        ]]),
+    );
+    let o = Options {
+        wide: true,
+        ..opts()
+    };
     let s = screen("QWCWRKAJ", "WRKACTJW", &d, &o);
     let rows = s.text_rows();
     assert_eq!(rows.len(), 27);
     assert!(rows.iter().all(|r| r.chars().count() <= 132));
-    title_and_keys(&s, "Work with Active Jobs", &["F3=Exit", "F5=Refresh", "F24=More keys"]);
+    title_and_keys(
+        &s,
+        "Work with Active Jobs",
+        &["F3=Exit", "F5=Refresh", "F24=More keys"],
+    );
     let heads = rows.join("\n");
-    assert!(heads.contains("Temporary") && heads.contains("Function"), "one wide view");
+    assert!(
+        heads.contains("Temporary") && heads.contains("Function"),
+        "one wide view"
+    );
     // An 80-column display may not show it.
     assert!(render(&shipped("QWCWRKAJ"), "WRKACTJW", &d, &opts()).is_err());
 }
@@ -399,7 +482,11 @@ fn wrkactjob_include_subset() {
     for (panel, title) in [("WRKACTJI", "Include"), ("WRKACTJS", "Subset")] {
         let s = screen("QWCWRKAJ", panel, &d, &opts());
         title_and_keys(&s, title, &["F3=Exit", "F5=Refresh", "F12=Cancel"]);
-        assert!(s.text_rows().iter().any(|r| r.contains("Subsystem") && r.contains("*ALL")));
+        assert!(
+            s.text_rows()
+                .iter()
+                .any(|r| r.contains("Subsystem") && r.contains("*ALL"))
+        );
     }
 }
 
@@ -415,7 +502,16 @@ fn wrksyssts_title_and_keys() {
         "QGWCSSTS",
         "WRKSYSSTS",
         "Work with System Status",
-        &["F3=Exit", "F4=Prompt", "F5=Refresh", "F9=Retrieve", "F10=Restart", "F11=Transition data", "F12=Cancel", "F24=More keys"],
+        &[
+            "F3=Exit",
+            "F4=Prompt",
+            "F5=Refresh",
+            "F9=Retrieve",
+            "F10=Restart",
+            "F11=Transition data",
+            "F12=Cancel",
+            "F24=More keys",
+        ],
     );
 }
 
@@ -425,7 +521,14 @@ fn wrkshrpool_title_and_keys() {
         "QGWCPOOL",
         "WRKSHRPOOL",
         "Work with Shared Pools",
-        &["F3=Exit", "F4=Prompt", "F5=Refresh", "F9=Retrieve", "F11=Display text", "F12=Cancel"],
+        &[
+            "F3=Exit",
+            "F4=Prompt",
+            "F5=Refresh",
+            "F9=Retrieve",
+            "F11=Display text",
+            "F12=Cancel",
+        ],
     );
 }
 
@@ -445,16 +548,42 @@ fn wrkjrna_title_and_keys() {
         "QGJOJRNA",
         "WRKJRNA",
         "Work with Journal Attributes",
-        &["F3=Exit", "F5=Refresh", "F12=Cancel", "F14=Display journaled objects", "F15=Work with receiver directory"],
+        &[
+            "F3=Exit",
+            "F5=Refresh",
+            "F12=Cancel",
+            "F14=Display journaled objects",
+            "F15=Work with receiver directory",
+        ],
     );
-    bare("QGJOJRNA", "WRKJRNRD", "Work with Receiver Directory", &["F3=Exit", "F12=Cancel"]);
-    bare("QGJOJRNA", "DSPJRNOBJ", "Display Journaled Objects", &["F3=Exit", "F12=Cancel"]);
+    bare(
+        "QGJOJRNA",
+        "WRKJRNRD",
+        "Work with Receiver Directory",
+        &["F3=Exit", "F12=Cancel"],
+    );
+    bare(
+        "QGJOJRNA",
+        "DSPJRNOBJ",
+        "Display Journaled Objects",
+        &["F3=Exit", "F12=Cancel"],
+    );
 }
 
 #[test]
 fn dspjrn_title_and_keys() {
-    bare("QGJOJRNE", "DSPJRN", "Display Journal Entries", &["F3=Exit", "F12=Cancel"]);
-    bare("QGJOJRNE", "DSPJRNE", "Display Journal Entry", &["F3=Exit", "F12=Cancel"]);
+    bare(
+        "QGJOJRNE",
+        "DSPJRN",
+        "Display Journal Entries",
+        &["F3=Exit", "F12=Cancel"],
+    );
+    bare(
+        "QGJOJRNE",
+        "DSPJRNE",
+        "Display Journal Entry",
+        &["F3=Exit", "F12=Cancel"],
+    );
 }
 
 #[test]
@@ -469,12 +598,22 @@ fn dspjrnrcva_title_and_keys() {
 
 #[test]
 fn dspsavf_title_and_keys() {
-    bare("QUIDSPSAVF", "DSPSAVF", "Display Saved Objects - Save File", &["F3=Exit", "F12=Cancel"]);
+    bare(
+        "QUIDSPSAVF",
+        "DSPSAVF",
+        "Display Saved Objects - Save File",
+        &["F3=Exit", "F12=Cancel"],
+    );
 }
 
 #[test]
 fn wrkprb_title_and_keys() {
-    bare("QGSXPNLS", "WRKPRB", "Work with Problems", &["F3=Exit", "F5=Refresh", "F12=Cancel"]);
+    bare(
+        "QGSXPNLS",
+        "WRKPRB",
+        "Work with Problems",
+        &["F3=Exit", "F5=Refresh", "F12=Cancel"],
+    );
 }
 
 #[test]
@@ -483,11 +622,23 @@ fn wrkobjpgp_title_and_keys() {
         "QUIWRKOPGP",
         "WRKOBJPGP",
         "Work with Objects by Primary Group",
-        &["F3=Exit", "F4=Prompt", "F5=Refresh", "F9=Retrieve", "F11=Display names only", "F12=Cancel"],
+        &[
+            "F3=Exit",
+            "F4=Prompt",
+            "F5=Refresh",
+            "F9=Retrieve",
+            "F11=Display names only",
+            "F12=Cancel",
+        ],
     );
 }
 
 #[test]
 fn dspovr_details_title_and_keys() {
-    bare("QUIDSPOVR", "DSPOVRD", "Display Override Details", &["F3=Exit", "F12=Cancel"]);
+    bare(
+        "QUIDSPOVR",
+        "DSPOVRD",
+        "Display Override Details",
+        &["F3=Exit", "F12=Cancel"],
+    );
 }

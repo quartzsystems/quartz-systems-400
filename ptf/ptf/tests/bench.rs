@@ -40,7 +40,12 @@ fn system(n: usize, seed: u8) -> (Store, ObjectId) {
         wal_pages: 4096,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let p = |lib, name: &str, ty| CreateParams {
@@ -58,7 +63,14 @@ fn system(n: usize, seed: u8) -> (Store, ObjectId) {
     t.commit().unwrap();
     for i in 0..n {
         let mut t = s.begin().unwrap();
-        let id = usrspc::create(&mut t, &p(lib, &format!("OBJ{i:05}"), types::USRSPC), SIZE as u64, false, 0).unwrap();
+        let id = usrspc::create(
+            &mut t,
+            &p(lib, &format!("OBJ{i:05}"), types::USRSPC),
+            SIZE as u64,
+            false,
+            0,
+        )
+        .unwrap();
         // Half text-like, half noise, as a program's pages might be.
         let mut x = 0x9E37_79B9_7F4A_7C15_u64 ^ (i as u64) ^ u64::from(seed);
         let fill: Vec<u8> = (0..SIZE)
@@ -111,7 +123,9 @@ fn ptf_times() {
     let b = Build {
         header,
         cover: "Bench PTF.".into(),
-        objects: (0..n).map(|i| ("QSVCLIB".into(), format!("OBJ{i:05}"), types::USRSPC)).collect(),
+        objects: (0..n)
+            .map(|i| ("QSVCLIB".into(), format!("OBJ{i:05}"), types::USRSPC))
+            .collect(),
         lic: None,
         lic_b: None,
         key: &key,

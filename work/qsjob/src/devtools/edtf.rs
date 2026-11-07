@@ -104,7 +104,10 @@ fn target(host: &Host, c: &dyn IfsClient, r: &Resolved) -> Result<Target, Fail> 
             }
             let member = {
                 let up = stmf.to_ascii_uppercase();
-                up.contains("/QSYS.LIB/") && std::path::Path::new(&up).extension().is_some_and(|e| e.eq_ignore_ascii_case("mbr"))
+                up.contains("/QSYS.LIB/")
+                    && std::path::Path::new(&up)
+                        .extension()
+                        .is_some_and(|e| e.eq_ignore_ascii_case("mbr"))
             };
             Ok(Target { path: stmf, member })
         }
@@ -176,8 +179,17 @@ fn key_of(a: u8) -> Option<Key> {
 
 /// `EDTF` or `DSPF`. `None` for `DSPF` in a job without a display: the
 /// service's text form answers it.
-pub fn run(_job: &mut Job, host: &Host, r: &Resolved, _out: &mut Outcome) -> Option<Result<String, Fail>> {
-    let mode = if r.name == "EDTF" { Mode::Edit } else { Mode::Browse };
+pub fn run(
+    _job: &mut Job,
+    host: &Host,
+    r: &Resolved,
+    _out: &mut Outcome,
+) -> Option<Result<String, Fail>> {
+    let mode = if r.name == "EDTF" {
+        Mode::Edit
+    } else {
+        Mode::Browse
+    };
     if !crate::panels::shows_panels(host, r) {
         return match mode {
             Mode::Browse => None,
@@ -214,7 +226,10 @@ fn session(host: &Host, c: &dyn IfsClient, r: &Resolved, mode: Mode) -> Result<S
             let size = usize::try_from(st.size).unwrap_or(data.len());
             let text = Text::decode(&data, ccsid).ok_or_else(|| {
                 let m = Msg::new("CPFB618", &[&ccsid.to_string()]);
-                fail(&m, ccsid::conv::from_str(37, &format!("{ccsid:<5}")).unwrap_or_default())
+                fail(
+                    &m,
+                    ccsid::conv::from_str(37, &format!("{ccsid:<5}")).unwrap_or_default(),
+                )
             })?;
             (text, if t.member { st.ccsid } else { ccsid }, size, true)
         }
@@ -302,8 +317,14 @@ impl State<'_> {
     fn save(&mut self, s: &mut Session) -> bool {
         let path = self.t.path.clone();
         let r = if self.t.member {
-            let text = Text::encode(&s.buf.texts(), edtf::text::Eol::Lf, true, MEMBER_CCSID).unwrap_or_default();
-            self.write(&path, &text, OpenArgs::new(O_WRONLY | O_TRUNC | O_TEXTDATA | O_CCSID).conv(u32::from(MEMBER_CCSID)))
+            let text = Text::encode(&s.buf.texts(), edtf::text::Eol::Lf, true, MEMBER_CCSID)
+                .unwrap_or_default();
+            self.write(
+                &path,
+                &text,
+                OpenArgs::new(O_WRONLY | O_TRUNC | O_TEXTDATA | O_CCSID)
+                    .conv(u32::from(MEMBER_CCSID)),
+            )
         } else {
             let Some(bytes) = s.bytes() else {
                 let ccsid = s.new_ccsid.unwrap_or(s.file_ccsid);
@@ -318,10 +339,11 @@ impl State<'_> {
                     .mode(0o644)
                     .conv(u32::from(ccsid))
             };
-            self.write(&path, &bytes, args).and_then(|()| match s.new_ccsid {
-                Some(n) if self.exists => self.c.set_attr(&path, &Attr::Ccsid(n), true),
-                _ => Ok(()),
-            })
+            self.write(&path, &bytes, args)
+                .and_then(|()| match s.new_ccsid {
+                    Some(n) if self.exists => self.c.set_attr(&path, &Attr::Ccsid(n), true),
+                    _ => Ok(()),
+                })
         };
         match r {
             Ok(()) => {

@@ -141,7 +141,11 @@ fn links_bonds_vlans_addresses_routes() {
     let g6 = routes.iter().find(|x| x.dst == rt6.dst).unwrap();
     assert_eq!(g6.table, netlink::route::consts::RT_TABLE_MAIN);
     assert_eq!(g6.gateway, rt6.gateway);
-    assert!(routes.iter().any(|x| x.is_default() && x.gateway == def.gateway));
+    assert!(
+        routes
+            .iter()
+            .any(|x| x.is_default() && x.gateway == def.gateway)
+    );
 
     r.delete_route(&rt4).unwrap();
     r.delete_route(&rt6).unwrap();
@@ -155,7 +159,12 @@ fn links_bonds_vlans_addresses_routes() {
 
     r.delete_address(&v4).unwrap();
     r.delete_address(&v6).unwrap();
-    assert!(!r.addresses(Some(Family::V4)).unwrap().iter().any(|a| a.addr == v4.addr));
+    assert!(
+        !r.addresses(Some(Family::V4))
+            .unwrap()
+            .iter()
+            .any(|a| a.addr == v4.addr)
+    );
     r.release(d1.index).unwrap();
     assert_eq!(r.link_by_index(d1.index).unwrap().master, None);
     r.delete_link(vlan.index).unwrap();
@@ -195,7 +204,11 @@ fn diag_finds_sockets_with_inode_and_owner() {
     let owners = procnet::socket_owners();
     assert_eq!(owners.get(&u64::from(l.inode)), Some(&std::process::id()));
     let table = procnet::read(procnet::Table::Tcp).unwrap();
-    assert!(table.iter().any(|p| p.inode == u64::from(l.inode) && p.state == 10));
+    assert!(
+        table
+            .iter()
+            .any(|p| p.inode == u64::from(l.inode) && p.state == 10)
+    );
 
     let est = tcp
         .iter()
@@ -215,7 +228,10 @@ fn diag_finds_sockets_with_inode_and_owner() {
     assert!(u.iter().any(|s| s.id.local.port() == up && s.inode != 0));
     let t6 = d.sockets(Family::V6, Proto::Tcp).unwrap();
     let p6 = v6.local_addr().unwrap().port();
-    assert!(t6.iter().any(|s| s.id.local.port() == p6 && s.state == TcpState::Listen));
+    assert!(
+        t6.iter()
+            .any(|s| s.id.local.port() == p6 && s.state == TcpState::Listen)
+    );
 
     // End the connection under its owner, if the kernel allows it.
     match d.destroy(est) {
@@ -275,7 +291,10 @@ fn nft_backstop_drops_unmarked_sockets() {
     assert_eq!(rules.len(), 1);
     assert_eq!(rules[0].comment.as_deref(), Some(rule.tag().as_str()));
 
-    assert!(!connects(port), "an unmarked listener in the range must not be reached");
+    assert!(
+        !connects(port),
+        "an unmarked listener in the range must not be reached"
+    );
 
     // A socket bound through the API (marked) in the same range is reachable.
     let marked_port = port + 5;
@@ -285,7 +304,8 @@ fn nft_backstop_drops_unmarked_sockets() {
 
     assert_eq!(nft.remove_port_drop(&rule).unwrap(), 1);
     assert!(connects(port));
-    nft.add_port_drop(&PortRule::new(L4::Udp, 53, 53).unwrap()).unwrap();
+    nft.add_port_drop(&PortRule::new(L4::Udp, 53, 53).unwrap())
+        .unwrap();
     nft.remove_all().unwrap();
     nft.remove_all().unwrap();
     assert!(nft.rules().unwrap().is_empty());

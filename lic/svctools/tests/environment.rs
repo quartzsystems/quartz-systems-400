@@ -78,7 +78,10 @@ fn env() -> MemEnv {
         ("IPLs".into(), "3 (1 abnormal)".into()),
         ("Installed".into(), "2026-01-01 00:00:00".into()),
         ("IFS".into(), "In ASP 1, 1024 MiB, xfs".into()),
-        ("IFS state".into(), "Mounted, 1024 MiB, 1001 MiB free".into()),
+        (
+            "IFS state".into(),
+            "Mounted, 1024 MiB, 1001 MiB free".into(),
+        ),
     ];
     e
 }
@@ -147,7 +150,10 @@ fn console_mode_is_chosen_and_kept() {
     let mut r = walk(&mut e, &["6"], "console-mode");
     assert_eq!(r.enter(&f(&["2"]), &mut e), None);
     let d = r.screen(&mut e).dump();
-    assert!(d.contains("Use Dedicated Service Tools"), "back on the menu");
+    assert!(
+        d.contains("Use Dedicated Service Tools"),
+        "back on the menu"
+    );
     assert!(d.contains("takes effect at the next IPL"));
     assert_eq!(e.console_mode, ConsoleMode::Serial);
     assert_eq!(e.actions, vec!["console Serial"]);
@@ -259,7 +265,11 @@ fn dumps_traces_alter_and_the_lic_log() {
     // Take a dump on F10 and see it listed; display and delete it.
     let mut r = walk(&mut e, &["7", "6", "1"], "msd-take");
     r.function(10, &mut e);
-    assert!(r.screen(&mut e).dump().contains("Main storage dump QSD0000001 taken"));
+    assert!(
+        r.screen(&mut e)
+            .dump()
+            .contains("Main storage dump QSD0000001 taken")
+    );
     let mut r = walk(&mut e, &["7", "6", "2"], "msd-list-one");
     r.enter(&f(&["5"]), &mut e);
     assert!(r.screen(&mut e).dump().contains("System dump QSD0000001"));
@@ -268,7 +278,11 @@ fn dumps_traces_alter_and_the_lic_log() {
     r.enter(&f(&["6"]), &mut e);
     check("msd-copy", &r.screen(&mut e).dump());
     r.enter(&f(&["", ""]), &mut e);
-    assert!(r.screen(&mut e).dump().contains("Type a device or a save file"));
+    assert!(
+        r.screen(&mut e)
+            .dump()
+            .contains("Type a device or a save file")
+    );
     r.enter(&f(&["TAP01", ""]), &mut e);
     assert!(r.screen(&mut e).dump().contains("copied to TAP01"));
     assert!(e.actions.iter().any(|a| a == "copy dump QSD0000001 TAP01"));
@@ -286,7 +300,10 @@ fn dumps_traces_alter_and_the_lic_log() {
     assert_eq!(e.traces[0].0.status, "Stopped");
     // Alter asks first.
     let mut r = walk(&mut e, &["7", "4", "3"], "dad-alter");
-    r.enter(&f(&["0001-0010-0000000000000005-00000001", "12", "10", "C1C2"]), &mut e);
+    r.enter(
+        &f(&["0001-0010-0000000000000005-00000001", "12", "10", "C1C2"]),
+        &mut e,
+    );
     check("dad-alter-confirm", &r.screen(&mut e).dump());
     r.function(10, &mut e);
     assert!(e.actions.iter().any(|a| a.starts_with("alter 0001-0010")));
@@ -340,10 +357,20 @@ fn every_option_has_a_panel_or_an_answer() {
     says(&mut e, &["4", "1", "7"], a::NO_COMPRESSION);
     // Add units and balance: option 2's path (this system has no load
     // source to add to), then the balance.
-    says(&mut e, &["4", "1", "3", "3"], svctools::dst::disk::config::NO_LOAD_SOURCE);
+    says(
+        &mut e,
+        &["4", "1", "3", "3"],
+        svctools::dst::disk::config::NO_LOAD_SOURCE,
+    );
     says(&mut e, &["4", "1", "3", "6"], a::ONE_ASP);
     says(&mut e, &["4", "1", "4", "4"], a::NO_REMOTE_BUS);
-    for (opt, text) in [("1", a::UNIT_DATA), ("2", a::UNIT_DATA), ("4", a::ASSIGN_MISSING), ("5", a::RECOVER_CONFIG), ("9", a::UNIT_DATA)] {
+    for (opt, text) in [
+        ("1", a::UNIT_DATA),
+        ("2", a::UNIT_DATA),
+        ("4", a::ASSIGN_MISSING),
+        ("5", a::RECOVER_CONFIG),
+        ("9", a::UNIT_DATA),
+    ] {
         says(&mut e, &["4", "2", opt], text);
     }
     says(&mut e, &["7", "7", "8"], a::CONCURRENT);

@@ -10,8 +10,8 @@
 //! anything but 0 counts as yes, as IBM treats it.
 
 use crate::call::{ExitRegistry, ProgramCaller};
-use crate::formats::wm::{self, Prepare, action};
 use crate::formats::ExitRequest;
+use crate::formats::wm::{self, Prepare, action};
 
 /// How the rounds went.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -78,7 +78,11 @@ pub fn prepare(
             break;
         }
     }
-    let round = if out.allowed { action::EXECUTE } else { action::CANCEL };
+    let round = if out.allowed {
+        action::EXECUTE
+    } else {
+        action::CANCEL
+    };
     for (i, p) in programs.iter().take(asked).enumerate() {
         // The one that refused is not called again.
         if !out.allowed && i + 1 == asked {

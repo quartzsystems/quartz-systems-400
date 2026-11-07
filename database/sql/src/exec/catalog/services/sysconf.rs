@@ -17,12 +17,20 @@ use crate::error::{Result, SqlError};
 use crate::value::Value;
 
 fn failed(e: String) -> SqlError {
-    SqlError::Coded { code: -443, state: "38501", what: e }
+    SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what: e,
+    }
 }
 
 /// `MEDIA_LIBRARY_INFO`'s `NOT NULL` columns with no value here: the
 /// virtual libraries keep no allocation priority or mount waits.
-pub const MLB_NO_VALUE: &[&str] = &["RESOURCE_ALLOCATION_PRIORITY", "INITIAL_MOUNT_WAIT_TIME", "END_OF_VOLUME_MOUNT_WAIT_TIME"];
+pub const MLB_NO_VALUE: &[&str] = &[
+    "RESOURCE_ALLOCATION_PRIORITY",
+    "INITIAL_MOUNT_WAIT_TIME",
+    "END_OF_VOLUME_MOUNT_WAIT_TIME",
+];
 
 /// `MEDIA_LIBRARY_INFO`.
 pub fn media_libraries(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
@@ -77,7 +85,12 @@ pub fn collection_services(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -
 }
 
 /// `COLLECTION_SERVICES_INFO()` as a table function.
-pub fn collection_services_function(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &mut Out) -> Result<()> {
+pub fn collection_services_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    _args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     collection_services(txn, ctx, out)
 }
 
@@ -128,11 +141,16 @@ pub fn exit_programs(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Resu
 
 /// `ENVIRONMENT_VARIABLE_INFO`: the job's variables, then the system's.
 pub fn environment(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
-    let mut vars = ask(txn, ctx, "the environment variables", |h| h.environment_variables())?;
+    let mut vars = ask(txn, ctx, "the environment variables", |h| {
+        h.environment_variables()
+    })?;
     vars.sort_by_key(|v| v.system);
     for v in vars {
         out.row();
-        out.text("ENVIRONMENT_VARIABLE_TYPE", if v.system { "SYSTEM" } else { "JOB" });
+        out.text(
+            "ENVIRONMENT_VARIABLE_TYPE",
+            if v.system { "SYSTEM" } else { "JOB" },
+        );
         out.text("ENVIRONMENT_VARIABLE_NAME", v.name.as_str());
         out.text("ENVIRONMENT_VARIABLE_VALUE", v.value.as_str());
         let encode = |s: &str| match ccsid::conv::Codec::of(v.ccsid).ok().flatten() {
@@ -145,8 +163,14 @@ pub fn environment(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result
             }
             _ => s.as_bytes().to_vec(),
         };
-        out.set("ENVIRONMENT_VARIABLE_BINARY_NAME", Value::Bin(encode(&v.name)));
-        out.set("ENVIRONMENT_VARIABLE_BINARY_VALUE", Value::Bin(encode(&v.value)));
+        out.set(
+            "ENVIRONMENT_VARIABLE_BINARY_NAME",
+            Value::Bin(encode(&v.name)),
+        );
+        out.set(
+            "ENVIRONMENT_VARIABLE_BINARY_VALUE",
+            Value::Bin(encode(&v.value)),
+        );
         out.int("ENVIRONMENT_VARIABLE_CCSID", v.ccsid);
     }
     Ok(())
@@ -170,13 +194,23 @@ pub fn ptf_groups(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<
 }
 
 /// `GROUP_PTF_INFO()` as a table function.
-pub fn ptf_groups_function(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &mut Out) -> Result<()> {
+pub fn ptf_groups_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    _args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     ptf_groups(txn, ctx, out)
 }
 
 /// `GROUP_PTF_DETAILS`' `NOT NULL` columns with no value here: QS/400
 /// groups name no APARs or cumulative packages.
-pub const DETAIL_NO_VALUE: &[&str] = &["APAR_NAME", "INCLUDED_IN_GROUP", "PTF_CUM_PACKAGE", "PTF_INCLUDED_IN_GROUP_DATE"];
+pub const DETAIL_NO_VALUE: &[&str] = &[
+    "APAR_NAME",
+    "INCLUDED_IN_GROUP",
+    "PTF_CUM_PACKAGE",
+    "PTF_INCLUDED_IN_GROUP_DATE",
+];
 
 /// `SYSTOOLS.GROUP_PTF_DETAILS`: the PTFs of the system's groups, from
 /// the local group definitions (IBM's reads its service web site).
@@ -185,12 +219,22 @@ pub fn ptf_details(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result
 }
 
 /// `SYSTOOLS.GROUP_PTF_DETAILS(P_GROUP_PTF_ID)`.
-pub fn ptf_details_function(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+pub fn ptf_details_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     let g = args.word("P_GROUP_PTF_ID");
     details_of(txn, ctx, g.as_deref(), out)
 }
 
-fn details_of(txn: &mut Txn<'_>, ctx: &SqlContext, group: Option<&str>, out: &mut Out) -> Result<()> {
+fn details_of(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    group: Option<&str>,
+    out: &mut Out,
+) -> Result<()> {
     for g in ask(txn, ctx, "the PTF groups", |h| h.ptf_groups())?.map_err(failed)? {
         if group.is_some_and(|n| n != g.name) {
             continue;
@@ -217,7 +261,10 @@ pub fn tcpip(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     out.text("LOCAL_HOST_NAME", c.host_name.as_str());
     for (side, addr) in [("CLIENT", c.client), ("SERVER", c.server)] {
         if let Some(a) = addr {
-            out.text(&format!("{side}_IP_ADDRESS_TYPE"), if a.is_ipv4() { "IPV4" } else { "IPV6" });
+            out.text(
+                &format!("{side}_IP_ADDRESS_TYPE"),
+                if a.is_ipv4() { "IPV4" } else { "IPV6" },
+            );
             out.text(&format!("{side}_IP_ADDRESS"), a.ip().to_string());
             out.int(&format!("{side}_PORT_NUMBER"), a.port());
         }
@@ -226,7 +273,12 @@ pub fn tcpip(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
 }
 
 /// `TCPIP_INFO()` as a table function.
-pub fn tcpip_function(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &mut Out) -> Result<()> {
+pub fn tcpip_function(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    _args: &Args,
+    out: &mut Out,
+) -> Result<()> {
     tcpip(txn, ctx, out)
 }
 
@@ -238,12 +290,22 @@ pub fn dns(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> R
     if server.is_some() {
         // BLOCKED(rel): the system's resolver answers; asking one server
         // needs a DNS client of our own.
-        return Err(SqlError::Coded { code: -84, state: "42612", what: "DNS_LOOKUP DOMAIN_SERVER is not supported".into() });
+        return Err(SqlError::Coded {
+            code: -84,
+            state: "42612",
+            what: "DNS_LOOKUP DOMAIN_SERVER is not supported".into(),
+        });
     }
-    let addrs = ask(txn, ctx, "the resolver", |h| h.dns_lookup(name.trim(), server.as_deref().map(str::trim)))?.map_err(failed)?;
+    let addrs = ask(txn, ctx, "the resolver", |h| {
+        h.dns_lookup(name.trim(), server.as_deref().map(str::trim))
+    })?
+    .map_err(failed)?;
     for a in addrs {
         out.row();
-        out.text("ADDRESS_SPACE_TYPE", if a.is_ipv4() { "IPV4" } else { "IPV6" });
+        out.text(
+            "ADDRESS_SPACE_TYPE",
+            if a.is_ipv4() { "IPV4" } else { "IPV6" },
+        );
         out.text("IP_ADDRESS", a.to_string());
     }
     Ok(())

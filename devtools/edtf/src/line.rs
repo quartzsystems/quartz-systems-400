@@ -65,7 +65,10 @@ impl Cmd {
     }
 
     fn needs_target(self) -> bool {
-        matches!(self, Self::Copy(_) | Self::Move(_) | Self::CopyBlock | Self::MoveBlock)
+        matches!(
+            self,
+            Self::Copy(_) | Self::Move(_) | Self::CopyBlock | Self::MoveBlock
+        )
     }
 }
 
@@ -189,7 +192,8 @@ pub fn apply(buf: &mut Buffer, pending: Vec<Placed>, new: Vec<Placed>) -> Applie
     if wants_target && target.is_none() {
         // Everything waits for the target.
         out.pending = open;
-        out.pending.extend(singles.iter().copied().filter(|p| p.cmd.needs_target()));
+        out.pending
+            .extend(singles.iter().copied().filter(|p| p.cmd.needs_target()));
         for (c, a, b) in &blocks {
             out.pending.push(Placed { id: *a, cmd: *c });
             out.pending.push(Placed { id: *b, cmd: *c });
@@ -199,19 +203,19 @@ pub fn apply(buf: &mut Buffer, pending: Vec<Placed>, new: Vec<Placed>) -> Applie
         return out;
     }
     out.pending = open;
-    if !wants_target
-        && let Some(t) = target {
-            // A target with nothing to copy waits for its copy.
-            out.pending.push(t);
-        }
+    if !wants_target && let Some(t) = target {
+        // A target with nothing to copy waits for its copy.
+        out.pending.push(t);
+    }
     // Copies and moves first, by their source lines.
     if let Some(t) = target.filter(|_| wants_target) {
         let mut src: Option<(Cmd, usize, usize)> = None;
         for (c, a, b) in &blocks {
             if c.needs_target()
-                && let Some((x, y)) = span(buf, *a, *b) {
-                    src = Some((*c, x, y + 1));
-                }
+                && let Some((x, y)) = span(buf, *a, *b)
+            {
+                src = Some((*c, x, y + 1));
+            }
         }
         for p in &singles {
             if let (Cmd::Copy(n) | Cmd::Move(n), Some(i)) = (p.cmd, buf.index_of(p.id)) {
@@ -219,7 +223,10 @@ pub fn apply(buf: &mut Buffer, pending: Vec<Placed>, new: Vec<Placed>) -> Applie
             }
         }
         if let Some((c, from, to)) = src {
-            let texts: Vec<String> = buf.lines()[from..to].iter().map(|l| l.text.clone()).collect();
+            let texts: Vec<String> = buf.lines()[from..to]
+                .iter()
+                .map(|l| l.text.clone())
+                .collect();
             let moving = matches!(c, Cmd::Move(_) | Cmd::MoveBlock);
             if moving {
                 buf.remove(from, to);
@@ -246,7 +253,8 @@ pub fn apply(buf: &mut Buffer, pending: Vec<Placed>, new: Vec<Placed>) -> Applie
                 buf.remove(x, y + 1);
             }
             Cmd::RepeatBlock => {
-                let texts: Vec<String> = buf.lines()[x..=y].iter().map(|l| l.text.clone()).collect();
+                let texts: Vec<String> =
+                    buf.lines()[x..=y].iter().map(|l| l.text.clone()).collect();
                 buf.insert(y + 1, texts);
             }
             Cmd::LeftBlock(n) | Cmd::RightBlock(n) => {
@@ -302,7 +310,12 @@ mod tests {
     use super::*;
 
     fn buf() -> Buffer {
-        Buffer::new(["a", "b", "c", "d"].iter().map(|s| (*s).to_string()).collect())
+        Buffer::new(
+            ["a", "b", "c", "d"]
+                .iter()
+                .map(|s| (*s).to_string())
+                .collect(),
+        )
     }
 
     fn at(b: &Buffer, i: usize, cmd: &str) -> Placed {
@@ -360,7 +373,14 @@ mod tests {
         assert!(r.pending.is_empty());
         assert_eq!(b.texts(), vec!["a", "b", "c", "d", "a"]);
         let mut b = buf();
-        let p = vec![at(&b, 2, "MM"), at(&b, 3, "MM"), Placed { id: 0, cmd: Cmd::After }];
+        let p = vec![
+            at(&b, 2, "MM"),
+            at(&b, 3, "MM"),
+            Placed {
+                id: 0,
+                cmd: Cmd::After,
+            },
+        ];
         apply(&mut b, Vec::new(), p);
         assert_eq!(b.texts(), vec!["c", "d", "a", "b"]);
         let mut b = buf();

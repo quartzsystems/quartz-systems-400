@@ -14,5 +14,7 @@ pub use describe::{ColDesc, ParamDesc};
 /// (`X'3F'`).
 #[must_use]
 pub fn ebcdic(s: &str) -> Vec<u8> {
-    s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0x3F)).collect()
+    s.chars()
+        .map(|c| ccsid::byte_of(c).unwrap_or(0x3F))
+        .collect()
 }

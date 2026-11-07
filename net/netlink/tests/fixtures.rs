@@ -109,7 +109,11 @@ fn parses_addresses() {
     assert_eq!(v6.prefix, 64);
     assert_ne!(v6.flags & consts::IFA_F_NODAD, 0);
     assert_eq!(v6.valid, Some(route::addr::INFINITY_LIFE_TIME));
-    assert!(addrs.iter().any(|a| a.addr == "127.0.0.1".parse::<IpAddr>().unwrap()));
+    assert!(
+        addrs
+            .iter()
+            .any(|a| a.addr == "127.0.0.1".parse::<IpAddr>().unwrap())
+    );
 }
 
 #[test]
@@ -132,15 +136,21 @@ fn parses_routes() {
     assert_eq!(r.table, consts::RT_TABLE_MAIN);
     assert_eq!(r.protocol, consts::RTPROT_QS400);
     // The kernel's connected route for the VLAN subnet.
-    assert!(routes.iter().any(|r| r.dst == Some("192.0.2.0".parse().unwrap())
-        && r.protocol == consts::RTPROT_KERNEL
-        && r.scope == consts::RT_SCOPE_LINK));
+    assert!(
+        routes
+            .iter()
+            .any(|r| r.dst == Some("192.0.2.0".parse().unwrap())
+                && r.protocol == consts::RTPROT_KERNEL
+                && r.scope == consts::RT_SCOPE_LINK)
+    );
 }
 
 #[test]
 fn parses_an_error_reply() {
     let mut errs = Vec::new();
-    each(include_str!("fixtures/error_eexist.hex"), |m| errs.push(m.error()));
+    each(include_str!("fixtures/error_eexist.hex"), |m| {
+        errs.push(m.error())
+    });
     assert_eq!(errs, vec![Some(17)]);
 }
 
@@ -180,7 +190,9 @@ fn parses_inet_diag_with_tcp_info() {
 #[test]
 fn parses_nft_rules() {
     let mut rules = Vec::new();
-    each(include_str!("fixtures/nft_rules.hex"), |m| rules.extend(nft::parse_rule(m.payload)));
+    each(include_str!("fixtures/nft_rules.hex"), |m| {
+        rules.extend(nft::parse_rule(m.payload))
+    });
     assert_eq!(rules.len(), 1);
     assert_eq!(rules[0].comment.as_deref(), Some("qs400 tcp 8470-8476"));
     assert!(rules[0].handle > 0);
@@ -194,7 +206,13 @@ fn parses_proc_net_tables() {
         .find(|s| s.local == "127.0.0.1:8470".parse().unwrap() && s.state == 10)
         .unwrap();
     assert_ne!(l.inode, 0);
-    assert!(t4.iter().any(|s| s.remote == "127.0.0.1:8470".parse().unwrap() && s.state == 1));
+    assert!(
+        t4.iter()
+            .any(|s| s.remote == "127.0.0.1:8470".parse().unwrap() && s.state == 1)
+    );
     let t6 = procnet::parse(include_str!("fixtures/proc_net_tcp6.txt"), true);
-    assert!(t6.iter().any(|s| s.local == "[::1]:8471".parse().unwrap() && s.state == 10));
+    assert!(
+        t6.iter()
+            .any(|s| s.local == "[::1]:8471".parse().unwrap() && s.state == 10)
+    );
 }

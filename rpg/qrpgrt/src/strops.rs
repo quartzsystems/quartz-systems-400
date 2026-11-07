@@ -38,13 +38,25 @@ pub fn put_text(dst: u64, dd: &Desc, text: &[u8], pad: bool) {
 
 /// `CAT`: `a` (its trailing blanks dropped and `blanks` blanks added
 /// when `blanks` is not negative), then `b`.
-pub fn cat(pad: bool, blanks: i64, dst: u64, dd: &Desc, a: u64, ad: &Desc, b: u64, bd: &Desc) -> Result<(), mi::Cond> {
+pub fn cat(
+    pad: bool,
+    blanks: i64,
+    dst: u64,
+    dd: &Desc,
+    a: u64,
+    ad: &Desc,
+    b: u64,
+    bd: &Desc,
+) -> Result<(), mi::Cond> {
     let mut text = image(a, ad)?;
     if blanks >= 0 {
         while text.last() == Some(&BLANK) {
             text.pop();
         }
-        text.extend(std::iter::repeat_n(BLANK, usize::try_from(blanks).unwrap_or(0)));
+        text.extend(std::iter::repeat_n(
+            BLANK,
+            usize::try_from(blanks).unwrap_or(0),
+        ));
     }
     text.extend(image(b, bd)?);
     put_text(dst, dd, &text, pad);
@@ -57,7 +69,11 @@ fn put_positions(res: u64, rd: &Desc, count: usize, found: &[usize]) -> Result<(
     let size = rd.size() as u64;
     for i in 0..count {
         let v = found.get(i).copied().unwrap_or(0);
-        write_num(res + i as u64 * size, rd, &Decimal::new(v as i128, 0).unwrap_or_else(|_| Decimal::zero()))?;
+        write_num(
+            res + i as u64 * size,
+            rd,
+            &Decimal::new(v as i128, 0).unwrap_or_else(|_| Decimal::zero()),
+        )?;
     }
     Ok(())
 }
@@ -65,7 +81,14 @@ fn put_positions(res: u64, rd: &Desc, count: usize, found: &[usize]) -> Result<(
 /// `SCAN`: where `needle` (its first `nlen` bytes, all when negative)
 /// is in `hay` from `start`; every position into an array result.
 /// Whether it was found.
-pub fn scan(needle: &[u8], hay: &[u8], start: usize, res: u64, rd: &Desc, count: usize) -> Result<bool, mi::Cond> {
+pub fn scan(
+    needle: &[u8],
+    hay: &[u8],
+    start: usize,
+    res: u64,
+    rd: &Desc,
+    count: usize,
+) -> Result<bool, mi::Cond> {
     let mut found = Vec::new();
     if !needle.is_empty() && start >= 1 {
         let mut i = start - 1;
@@ -87,7 +110,15 @@ pub fn scan(needle: &[u8], hay: &[u8], start: usize, res: u64, rd: &Desc, count:
 
 /// `CHECK` and `CHECKR`: the positions of the bytes of `src` not in
 /// `set`, from `start` rightwards (`CHECK`) or leftwards (`CHECKR`).
-pub fn check(right: bool, set: &[u8], src: &[u8], start: usize, res: u64, rd: &Desc, count: usize) -> Result<bool, mi::Cond> {
+pub fn check(
+    right: bool,
+    set: &[u8],
+    src: &[u8],
+    start: usize,
+    res: u64,
+    rd: &Desc,
+    count: usize,
+) -> Result<bool, mi::Cond> {
     let mut found = Vec::new();
     let want = count.max(1);
     if right {
@@ -202,7 +233,11 @@ fn window(src: &[u8], start: i64, len: i64) -> Option<(usize, usize)> {
     if from > src.len() {
         return None;
     }
-    let to = if len < 0 { src.len() } else { from + usize::try_from(len).ok()? };
+    let to = if len < 0 {
+        src.len()
+    } else {
+        from + usize::try_from(len).ok()?
+    };
     (to <= src.len()).then_some((from, to))
 }
 
@@ -214,7 +249,12 @@ pub fn scanr(needle: &[u8], hay: &[u8], start: i64, len: i64) -> Option<usize> {
     if needle.is_empty() || to - from < needle.len() {
         return Some(0);
     }
-    Some((from..=to - needle.len()).rev().find(|&i| &hay[i..i + needle.len()] == needle).map_or(0, |i| i + 1))
+    Some(
+        (from..=to - needle.len())
+            .rev()
+            .find(|&i| &hay[i..i + needle.len()] == needle)
+            .map_or(0, |i| i + 1),
+    )
 }
 
 /// `%SCANRPL`: every `scan` in the window replaced by `repl`.
@@ -240,5 +280,8 @@ pub fn scanrpl(scan: &[u8], repl: &[u8], src: &[u8], start: i64, len: i64) -> Op
 /// left out.
 #[must_use]
 pub fn split(src: &[u8], seps: &[u8]) -> Vec<Vec<u8>> {
-    src.split(|b| seps.contains(b)).filter(|p| !p.is_empty()).map(<[u8]>::to_vec).collect()
+    src.split(|b| seps.contains(b))
+        .filter(|p| !p.is_empty())
+        .map(<[u8]>::to_vec)
+        .collect()
 }

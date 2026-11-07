@@ -31,11 +31,23 @@ struct StoreSource {
 }
 
 impl ObjectSource for StoreSource {
-    fn program(&mut self, name: &str, _lib: &str, kind: PgmKind) -> Option<(Arc<ProgramObject>, String)> {
+    fn program(
+        &mut self,
+        name: &str,
+        _lib: &str,
+        kind: PgmKind,
+    ) -> Option<(Arc<ProgramObject>, String)> {
         let mut st = self.store.borrow_mut();
         let mut txn = st.begin().ok()?;
-        let ty = if kind == PgmKind::Pgm { types::PGM } else { types::SRVPGM };
-        let id = Library::load(&mut txn, self.lib).ok()?.lookup(&mut txn, ty, Name::parse(name).ok()?).ok()??;
+        let ty = if kind == PgmKind::Pgm {
+            types::PGM
+        } else {
+            types::SRVPGM
+        };
+        let id = Library::load(&mut txn, self.lib)
+            .ok()?
+            .lookup(&mut txn, ty, Name::parse(name).ok()?)
+            .ok()??;
         let p = ile::store::load_program(&mut txn, id).ok()?;
         txn.abort();
         Some((Arc::new(p), "QSTEST".into()))
@@ -43,7 +55,15 @@ impl ObjectSource for StoreSource {
 }
 
 fn context(qsys: ObjectId, lib: ObjectId, locks: &db::odp::SharedLocks) -> SqlContext {
-    let mut ctx = SqlContext::with_locks(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] }, locks.clone());
+    let mut ctx = SqlContext::with_locks(
+        qsys,
+        JobHandle(1),
+        NameContext {
+            curlib: Some(lib),
+            libl: vec![lib],
+        },
+        locks.clone(),
+    );
     ctx.now = Some(NOW);
     ctx.user = "QSECOFR".into();
     ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
@@ -60,8 +80,20 @@ struct Env {
 
 fn env(calls: bool) -> Env {
     let d = Arc::new(MemBlockDev::with_seed(65536, 9));
-    let params = FormatParams { asp_number: 1, asp_uuid: [4; 16], unit_uuids: vec![[5; 16]], unit_serials: Vec::new(), wal_pages: 512, now: NOW };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let params = FormatParams {
+        asp_number: 1,
+        asp_uuid: [4; 16],
+        unit_uuids: vec![[5; 16]],
+        unit_serials: Vec::new(),
+        wal_pages: 512,
+        now: NOW,
+    };
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -82,9 +114,15 @@ fn env(calls: bool) -> Env {
     t.commit().unwrap();
     let store = Rc::new(RefCell::new(store));
     let locks = db::odp::new_shared();
-    let mut job = mi::Job::boxed(Box::new(StoreSource { store: Rc::clone(&store), lib }));
+    let mut job = mi::Job::boxed(Box::new(StoreSource {
+        store: Rc::clone(&store),
+        lib,
+    }));
     qrpgrt::install(&mut job);
-    job.sql = Some(Box::new(Session::with_ctx(Box::new(Rc::clone(&store)), context(qsys, lib, &locks))));
+    job.sql = Some(Box::new(Session::with_ctx(
+        Box::new(Rc::clone(&store)),
+        context(qsys, lib, &locks),
+    )));
     let job = Rc::new(RefCell::new(job));
     let mut ctx = context(qsys, lib, &locks);
     if calls {
@@ -103,21 +141,39 @@ fn env(calls: bool) -> Env {
 
 impl Env {
     fn ok(&mut self, text: &str) {
-        let r = self.sql.run(&Request { scope: "1:T".into(), desc: Desc { op: Op::Exec, sql_naming: true, text: text.into(), ..Desc::default() }, inputs: Vec::new() });
+        let r = self.sql.run(&Request {
+            scope: "1:T".into(),
+            desc: Desc {
+                op: Op::Exec,
+                sql_naming: true,
+                text: text.into(),
+                ..Desc::default()
+            },
+            inputs: Vec::new(),
+        });
         assert!(r.sqlca.sqlcode >= 0, "{text}: {:?}", r.sqlca);
     }
 
     fn count(&mut self, table: &str) -> String {
         let r = self.sql.run(&Request {
             scope: "1:T".into(),
-            desc: Desc { op: Op::Query, sql_naming: true, text: format!("SELECT COUNT(*) FROM {table}"), ..Desc::default() },
+            desc: Desc {
+                op: Op::Query,
+                sql_naming: true,
+                text: format!("SELECT COUNT(*) FROM {table}"),
+                ..Desc::default()
+            },
             inputs: Vec::new(),
         });
         r.rows[0][0].as_text()
     }
 
     fn runsqlstm(&mut self, text: &str) -> sql::RunReport {
-        let opts = RunOpts { naming: sql::Naming::Sql, errlvl: 10, ..RunOpts::default() };
+        let opts = RunOpts {
+            naming: sql::Naming::Sql,
+            errlvl: 10,
+            ..RunOpts::default()
+        };
         sql::runsqlstm_lent(&self.store, &mut self.ctx, text, &opts).unwrap()
     }
 }

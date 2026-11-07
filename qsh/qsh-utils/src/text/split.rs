@@ -5,8 +5,8 @@
 //! `split [-l n | -b n[k|m]] [-a n] [file [name]]`: pieces of a file
 //! named `xaa`, `xab`, ... (or `name` plus the suffix).
 
-use qsh::sys::stream::write_all;
 use qsh::sys::UtilCtx;
+use qsh::sys::stream::write_all;
 
 use crate::common::args::getopt_from;
 use crate::common::io::{Lines, input, open_write};

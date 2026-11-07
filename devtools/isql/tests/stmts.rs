@@ -15,7 +15,10 @@ use isql::screen::stmt::{self, Panel};
 use isql::screen::{columns, prompt};
 
 fn panel(name: &str, p: &Panel) {
-    compare(&format!("sql/strsql-prompt-{name}"), &stmt::render(p, &Values::new(), 0, false, None, &words));
+    compare(
+        &format!("sql/strsql-prompt-{name}"),
+        &stmt::render(p, &Values::new(), 0, false, None, &words),
+    );
 }
 
 #[test]
@@ -59,29 +62,53 @@ fn cols() -> Vec<String> {
 
 #[test]
 fn insert_values() {
-    compare("sql/strsql-prompt-insert-2", &columns::insert(&cols(), &Values::new(), 0, false, None, &words));
+    compare(
+        "sql/strsql-prompt-insert-2",
+        &columns::insert(&cols(), &Values::new(), 0, false, None, &words),
+    );
 }
 
 #[test]
 fn update_values() {
-    let v: Values = [("TABLE", "QSQPTABL"), ("LIB", "QSYS2")].iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect();
+    let v: Values = [("TABLE", "QSQPTABL"), ("LIB", "QSYS2")]
+        .iter()
+        .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+        .collect();
     let first = prompt::render(&prompt::UPDATE, &v, false, None);
-    compare("sql/strsql-prompt-update-2", &columns::update(first, &cols(), &Values::new(), 0, false, None, &words));
+    compare(
+        "sql/strsql-prompt-update-2",
+        &columns::update(first, &cols(), &Values::new(), 0, false, None, &words),
+    );
 }
 
 #[test]
 fn index_key() {
-    compare("sql/strsql-prompt-crtidx-2", &columns::key(&cols(), &Values::new(), 0, false, None, &words));
+    compare(
+        "sql/strsql-prompt-crtidx-2",
+        &columns::key(&cols(), &Values::new(), 0, false, None, &words),
+    );
 }
 
 #[test]
 fn values_and_key_read_back() {
     let c: Vec<String> = ["A", "B", "C"].iter().map(|s| (*s).to_string()).collect();
-    let v: Values = [("VAL1", "1"), ("VAL3", "'x'"), ("SEQ2", "1"), ("SEQ3", "2"), ("ORD3", "d")]
-        .iter()
-        .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
-        .collect();
-    assert_eq!(columns::insert_values(&c, &v), (vec!["A".to_string(), "C".to_string()], vec!["1".to_string(), "'x'".to_string()]));
+    let v: Values = [
+        ("VAL1", "1"),
+        ("VAL3", "'x'"),
+        ("SEQ2", "1"),
+        ("SEQ3", "2"),
+        ("ORD3", "d"),
+    ]
+    .iter()
+    .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+    .collect();
+    assert_eq!(
+        columns::insert_values(&c, &v),
+        (
+            vec!["A".to_string(), "C".to_string()],
+            vec!["1".to_string(), "'x'".to_string()]
+        )
+    );
     assert_eq!(columns::key_columns(&c, &v), ["B", "C DESC"]);
     // CALL's second page of parameters.
     let s = stmt::render(&stmt::CALL, &Values::new(), 1, false, None, &words);

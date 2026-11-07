@@ -52,13 +52,21 @@ fn scratch(name: &str, src: &str, version: u16) -> PathBuf {
     )
     .unwrap();
     fs::write(dir.join("X.md"), "# X\n\n## Frozen at V1R1M0\n").unwrap();
-    fs::write(dir.join("src/x.rs"), format!("pub const VERSION: u16 = {version};\n{src}")).unwrap();
+    fs::write(
+        dir.join("src/x.rs"),
+        format!("pub const VERSION: u16 = {version};\n{src}"),
+    )
+    .unwrap();
     dir
 }
 
 #[test]
 fn a_change_needs_a_bump() {
-    let dir = scratch("bump", "pub struct H { a: u32 }\n#[cfg(test)] mod tests {}", 1);
+    let dir = scratch(
+        "bump",
+        "pub struct H { a: u32 }\n#[cfg(test)] mod tests {}",
+        1,
+    );
     assert_eq!(fmtcheck::check(&dir).unwrap()[0].state, State::New);
     fmtcheck::update(&dir, false).unwrap();
     assert_eq!(fmtcheck::check(&dir).unwrap()[0].state, State::Same);
@@ -72,15 +80,26 @@ fn a_change_needs_a_bump() {
     assert_eq!(fmtcheck::check(&dir).unwrap()[0].state, State::Same);
 
     // A layout change without a bump fails, and update refuses it.
-    fs::write(dir.join("src/x.rs"), "pub const VERSION: u16 = 1;\npub struct H { a: u64 }").unwrap();
+    fs::write(
+        dir.join("src/x.rs"),
+        "pub const VERSION: u16 = 1;\npub struct H { a: u64 }",
+    )
+    .unwrap();
     let rows = fmtcheck::check(&dir).unwrap();
     assert_eq!(rows[0].state, State::ChangedWithoutBump);
     assert!(rows[0].fails());
     fmtcheck::update(&dir, false).unwrap();
-    assert_eq!(fmtcheck::check(&dir).unwrap()[0].state, State::ChangedWithoutBump);
+    assert_eq!(
+        fmtcheck::check(&dir).unwrap()[0].state,
+        State::ChangedWithoutBump
+    );
 
     // With the bump it is reported until the lock follows.
-    fs::write(dir.join("src/x.rs"), "pub const VERSION: u16 = 2;\npub struct H { a: u64 }").unwrap();
+    fs::write(
+        dir.join("src/x.rs"),
+        "pub const VERSION: u16 = 2;\npub struct H { a: u64 }",
+    )
+    .unwrap();
     assert_eq!(
         fmtcheck::check(&dir).unwrap()[0].state,
         State::Bumped { from: "1".into() }

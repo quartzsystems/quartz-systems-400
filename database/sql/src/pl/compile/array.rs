@@ -19,7 +19,10 @@ use crate::pl::types::type_text;
 
 /// A type's text for a `locs` entry: no blanks, `/` for commas.
 fn locs_type(t: &crate::ast::TypeSpec) -> String {
-    type_text(t).replace(", ", "/").replace(',', "/").replace(' ', "")
+    type_text(t)
+        .replace(", ", "/")
+        .replace(',', "/")
+        .replace(' ', "")
 }
 
 impl Gen<'_> {
@@ -55,8 +58,12 @@ impl Gen<'_> {
         let mut out = String::new();
         let mut i = 0;
         while i < toks.len() {
-            if let (Tok::Word(f), Some(Tok::Sym("(")), Some(Tok::Word(v) | Tok::Delimited(v)), Some(Tok::Sym(")"))) =
-                (&toks[i], toks.get(i + 1), toks.get(i + 2), toks.get(i + 3))
+            if let (
+                Tok::Word(f),
+                Some(Tok::Sym("(")),
+                Some(Tok::Word(v) | Tok::Delimited(v)),
+                Some(Tok::Sym(")")),
+            ) = (&toks[i], toks.get(i + 1), toks.get(i + 2), toks.get(i + 3))
                 && f == "MAX_CARDINALITY"
                 && let Some(k) = rewrite::Names::variable(self, v)
                 && let Some((_, max)) = &self.vars[k].array
@@ -88,37 +95,87 @@ impl Gen<'_> {
             return Err(SqlError::Coded {
                 code: -20_440,
                 state: "2202F",
-                what: format!("an array of {} elements for an array of at most {max}", f.args.len()),
+                what: format!(
+                    "an array of {} elements for an array of at most {max}",
+                    f.args.len()
+                ),
             });
         }
         let r = self.rewrite(&format!("VALUES ({})", e.text), &HashSet::new())?;
-        self.run_vars(Op::Query, &r.text, &r.vars, &[k], Flags { quiet: true, ..Flags::default() })
+        self.run_vars(
+            Op::Query,
+            &r.text,
+            &r.vars,
+            &[k],
+            Flags {
+                quiet: true,
+                ..Flags::default()
+            },
+        )
     }
 
     /// `SET a[i] = e`: the index into a temporary, then the element.
-    pub(super) fn assign_element(&mut self, k: usize, index: &PlExpr, value: &PlExpr) -> Result<()> {
+    pub(super) fn assign_element(
+        &mut self,
+        k: usize,
+        index: &PlExpr,
+        value: &PlExpr,
+    ) -> Result<()> {
         let Some((elem, max)) = self.vars[k].array.clone() else {
-            return Err(SqlError::Coded { code: -20_441, state: "428H2", what: "an element of a variable that is not an array".into() });
+            return Err(SqlError::Coded {
+                code: -20_441,
+                state: "428H2",
+                what: "an element of a variable that is not an array".into(),
+            });
         };
         // A constant index outside the type: SQ20439 as the routine is made.
         if let Expr::Literal(Literal::Num(n)) = &index.expr
-            && n.parse::<i64>().is_ok_and(|i| i < 1 || u64::try_from(i).is_ok_and(|i| i > max))
+            && n.parse::<i64>()
+                .is_ok_and(|i| i < 1 || u64::try_from(i).is_ok_and(|i| i > max))
         {
-            return Err(SqlError::Coded { code: -20_439, state: "2202E", what: format!("array index {n} is out of range") });
+            return Err(SqlError::Coded {
+                code: -20_439,
+                state: "2202E",
+                what: format!("array index {n} is out of range"),
+            });
         }
         let slot = self.auto("i32");
         let slot_ind = self.auto("i16");
         let ix = self.temp_var(&slot, &slot_ind, "INTEGER")?;
-        let rw = self.rewrite(&format!("VALUES (CAST(({}) AS INTEGER))", index.text), &HashSet::new())?;
-        self.run_vars(Op::Query, &rw.text, &rw.vars, &[ix], Flags { quiet: true, ..Flags::default() })?;
-        let rw = self.rewrite(&format!("VALUES (CAST(({}) AS {}))", value.text, type_text(&elem)), &HashSet::new())?;
-        let d = Desc { op: Op::Query, text: rw.text.clone(), quiet: true, ..self.desc() };
+        let rw = self.rewrite(
+            &format!("VALUES (CAST(({}) AS INTEGER))", index.text),
+            &HashSet::new(),
+        )?;
+        self.run_vars(
+            Op::Query,
+            &rw.text,
+            &rw.vars,
+            &[ix],
+            Flags {
+                quiet: true,
+                ..Flags::default()
+            },
+        )?;
+        let rw = self.rewrite(
+            &format!("VALUES (CAST(({}) AS {}))", value.text, type_text(&elem)),
+            &HashSet::new(),
+        )?;
+        let d = Desc {
+            op: Op::Query,
+            text: rw.text.clone(),
+            quiet: true,
+            ..self.desc()
+        };
         let (mut ins, mut d) = self.array_io(&d, &rw.vars, &[]);
         let at = ins.len();
         ins.push(ix);
         ins.push(k);
         let entry = format!("E0~{at}~{}~{max}~{}", at + 1, locs_type(&elem));
-        d.locs = if d.locs.is_empty() { entry } else { format!("{},{entry}", d.locs) };
+        d.locs = if d.locs.is_empty() {
+            entry
+        } else {
+            format!("{},{entry}", d.locs)
+        };
         // The element's value lands in `k`'s storage as its new handle.
         self.emit(&d, &ins, &[k])
     }
@@ -132,7 +189,12 @@ impl Gen<'_> {
             }
             let (place, ind) = (self.vars[k].place.clone(), self.vars[k].ind.clone());
             let ty = self.vars[k].ty.clone();
-            let d = Desc { op: Op::Exec, text: "FREE LOCATOR ?".into(), quiet: true, ..self.desc() };
+            let d = Desc {
+                op: Op::Exec,
+                text: "FREE LOCATOR ?".into(),
+                quiet: true,
+                ..self.desc()
+            };
             let (t, len) = self.text_const(&d.encode()).expect("CCSID 37 text");
             let (go, skip) = (self.label(), self.label());
             self.ins(format!("%fh = load {place}"));
@@ -140,8 +202,14 @@ impl Gen<'_> {
             self.term(format!("brif %fz, {skip}, {go}"));
             self.place(&go);
             self.ins("mov $uca, $sqlca");
-            self.ins(format!("callb _QRNX_SQLIN({place}, {}, {}, {ind}, 1)", ty.desc, ty.extra));
-            self.ins(format!("callb _QRNX_SQLRUN($sqlca, {t}, {len}, $scope, {})", self.sig.program.len()));
+            self.ins(format!(
+                "callb _QRNX_SQLIN({place}, {}, {}, {ind}, 1)",
+                ty.desc, ty.extra
+            ));
+            self.ins(format!(
+                "callb _QRNX_SQLRUN($sqlca, {t}, {len}, $scope, {})",
+                self.sig.program.len()
+            ));
             self.ins("mov $sqlca, $uca");
             self.ins(format!("store {place}, 0"));
             self.ins(format!("store {ind}, -1"));

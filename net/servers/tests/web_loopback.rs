@@ -35,7 +35,10 @@ struct Echo;
 
 impl Handler for Echo {
     fn handle(&self, req: &Request, peer: &Peer) -> Response {
-        Response::html(200, format!("{} {} secure={}", req.method, req.path, peer.secure))
+        Response::html(
+            200,
+            format!("{} {} secure={}", req.method, req.path, peer.secure),
+        )
     }
 }
 
@@ -68,7 +71,12 @@ fn keep_alive_on_plain_http() {
     assert!(two.contains("GET /a secure=false") && two.contains("GET /b secure=false"));
     assert!(exchange(&mut connect(addr), "nonsense\r\n\r\n").starts_with("HTTP/1.1 400 "));
     // An idle connection is closed.
-    let quick = serve(loopback(), None, Web::with_idle(Arc::new(Echo), Duration::from_millis(200))).unwrap();
+    let quick = serve(
+        loopback(),
+        None,
+        Web::with_idle(Arc::new(Echo), Duration::from_millis(200)),
+    )
+    .unwrap();
     let mut idle = connect(quick.addr());
     let mut b = [0u8; 16];
     assert_eq!(idle.read(&mut b).unwrap_or(0), 0);
@@ -95,10 +103,34 @@ fn https_with_the_application_ids_certificate() {
     };
     let files = MemFiles::new();
     let now = now();
-    ca::create(&files, "capass1", &Subject::cn("Test CA"), KeyAlgorithm::EcdsaP256, now, 3650, fast).unwrap();
+    ca::create(
+        &files,
+        "capass1",
+        &Subject::cn("Test CA"),
+        KeyAlgorithm::EcdsaP256,
+        now,
+        3650,
+        fast,
+    )
+    .unwrap();
     let ca_store = CertStore::open(&files, LOCAL_CA_STORE, "capass1").unwrap();
-    let mut system = CertStore::create_with(&files, SYSTEM_STORE, "system1", StoreKind::System, now, fast).unwrap();
-    ca::issue(&ca_store, &mut system, "ADMIN", &CertSpec::server(HOST, now, 30), KeyAlgorithm::EcdsaP256).unwrap();
+    let mut system = CertStore::create_with(
+        &files,
+        SYSTEM_STORE,
+        "system1",
+        StoreKind::System,
+        now,
+        fast,
+    )
+    .unwrap();
+    ca::issue(
+        &ca_store,
+        &mut system,
+        "ADMIN",
+        &CertSpec::server(HOST, now, 30),
+        KeyAlgorithm::EcdsaP256,
+    )
+    .unwrap();
     system.save(&files).unwrap();
     let mut apps = AppRegistry::load(&files).unwrap();
     apps.assign(APP_ID, Some("ADMIN")).unwrap();
@@ -108,8 +140,12 @@ fn https_with_the_application_ids_certificate() {
     let running = serve(loopback(), Some(cfg), Web::new(Arc::new(Echo))).unwrap();
     let roots = trusted_roots(&system, &CaTrust::All).unwrap();
     let client = client_config(&policy, roots, None, ServerAuthMode::Full).unwrap();
-    let mut tls = TlsStream::connect(client, server_name(HOST).unwrap(), connect(running.addr())).unwrap();
-    let page = exchange(&mut tls, "GET /s HTTP/1.1\r\nHost: qs400.test:2010\r\nConnection: close\r\n\r\n");
+    let mut tls =
+        TlsStream::connect(client, server_name(HOST).unwrap(), connect(running.addr())).unwrap();
+    let page = exchange(
+        &mut tls,
+        "GET /s HTTP/1.1\r\nHost: qs400.test:2010\r\nConnection: close\r\n\r\n",
+    );
     assert!(page.starts_with("HTTP/1.1 200 OK\r\n"), "{page}");
     assert!(page.contains("GET /s secure=true"));
     // A plain client on the TLS port gets nothing.

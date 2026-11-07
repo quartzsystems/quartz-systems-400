@@ -7,7 +7,9 @@
 use codegen::Cond;
 use codegen::abi::Env;
 use codegen::rt::dec_flags;
-use qdecimal::{Binary, Decimal, DecimalError, Float, Integer, Packed, Rounding, Shape, Typed, Zoned};
+use qdecimal::{
+    Binary, Decimal, DecimalError, Float, Integer, Packed, Rounding, Shape, Typed, Zoned,
+};
 use qir::Type;
 
 use super::core::raise_on;
@@ -43,7 +45,9 @@ fn integer(t: &Type) -> Option<Integer> {
 /// floats).
 fn f64_to_decimal_exact(f: f64) -> qdecimal::Result<Decimal> {
     if !f.is_finite() {
-        return Err(qdecimal::DecimalError::NotFinite { what: "infinity or NaN" });
+        return Err(qdecimal::DecimalError::NotFinite {
+            what: "infinity or NaN",
+        });
     }
     if f == 0.0 {
         return Ok(Decimal::zero());
@@ -66,7 +70,11 @@ fn truncated_f64(v: &Decimal) -> f64 {
     let near: f64 = v.to_string().parse().unwrap_or(0.0);
     match f64_to_decimal_exact(near) {
         Ok(back) if back.abs() > v.abs() => {
-            let toward_zero = if near > 0.0 { f64::from_bits(near.to_bits() - 1) } else { -f64::from_bits((-near).to_bits() - 1) };
+            let toward_zero = if near > 0.0 {
+                f64::from_bits(near.to_bits() - 1)
+            } else {
+                -f64::from_bits((-near).to_bits() - 1)
+            };
             if near == 0.0 { near } else { toward_zero }
         }
         _ => near,
@@ -167,7 +175,18 @@ fn bin(op: i64, a: &Decimal, b: &Decimal, prec: Shape) -> Result<Decimal, Cond> 
 
 /// `dec_bin` on the fast path, when it applies (`fastdec`).
 #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
-fn fast_bin(op: i64, dst: i64, dty: i64, a: i64, aty: i64, b: i64, bty: i64, digits: u8, scale: u8, halfadj: bool) -> Option<Result<(), Cond>> {
+fn fast_bin(
+    op: i64,
+    dst: i64,
+    dty: i64,
+    a: i64,
+    aty: i64,
+    b: i64,
+    bty: i64,
+    digits: u8,
+    scale: u8,
+    halfadj: bool,
+) -> Option<Result<(), Cond>> {
     let (ab, at) = typed(a, aty);
     let x = fastdec::read(ab, &at)?;
     let (bb, bt) = typed(b, bty);
@@ -177,7 +196,14 @@ fn fast_bin(op: i64, dst: i64, dty: i64, a: i64, aty: i64, b: i64, bty: i64, dig
         Err(c) => return Some(Err(c)),
     };
     let (db, dt) = typed(dst, dty);
-    fastdec::write(db, &dt, v, scale, halfadj, dty.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0)
+    fastdec::write(
+        db,
+        &dt,
+        v,
+        scale,
+        halfadj,
+        dty.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0,
+    )
 }
 
 /// `dec_bin(env, op, dst, dty, a, aty, b, bty, prec, flags)`.
@@ -197,7 +223,18 @@ pub extern "sysv64" fn dec_bin(
     let r = (|| {
         let digits = u8::try_from(prec & 0xFF).map_err(|_| Cond::Mch1210)?;
         let scale = u8::try_from((prec >> 8) & 0xFF).map_err(|_| Cond::Mch1210)?;
-        if let Some(done) = fast_bin(op, dst, dty, a, aty, b, bty, digits, scale, flags & dec_flags::HALFADJ != 0) {
+        if let Some(done) = fast_bin(
+            op,
+            dst,
+            dty,
+            a,
+            aty,
+            b,
+            bty,
+            digits,
+            scale,
+            flags & dec_flags::HALFADJ != 0,
+        ) {
             return done;
         }
         let av = read_num(a, aty)?;
@@ -236,7 +273,11 @@ pub extern "sysv64" fn dec_un(
             _ => v,
         };
         // Bit 1: drop the high-order digits that do not fit.
-        let v = if halfadj & 2 != 0 { fit_target(dst, dty, &v, rounding(halfadj & 1 != 0))? } else { v };
+        let v = if halfadj & 2 != 0 {
+            fit_target(dst, dty, &v, rounding(halfadj & 1 != 0))?
+        } else {
+            v
+        };
         write_num(dst, dty, &v, rounding(halfadj & 1 != 0))
     })();
     if let Err(c) = r {
@@ -245,7 +286,14 @@ pub extern "sysv64" fn dec_un(
 }
 
 /// `dec_un` on the fast path, when it applies.
-fn fast_un(op: i64, dst: i64, dty: i64, src: i64, sty: i64, halfadj: bool) -> Option<Result<(), Cond>> {
+fn fast_un(
+    op: i64,
+    dst: i64,
+    dty: i64,
+    src: i64,
+    sty: i64,
+    halfadj: bool,
+) -> Option<Result<(), Cond>> {
     let (sb, st) = typed(src, sty);
     let (v, s) = fastdec::read(sb, &st)?;
     let v = match op {
@@ -254,7 +302,14 @@ fn fast_un(op: i64, dst: i64, dty: i64, src: i64, sty: i64, halfadj: bool) -> Op
         _ => v,
     };
     let (db, dt) = typed(dst, dty);
-    fastdec::write(db, &dt, v, s, halfadj, dty.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0)
+    fastdec::write(
+        db,
+        &dt,
+        v,
+        s,
+        halfadj,
+        dty.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0,
+    )
 }
 
 /// `dec_cmp(env, a, aty, b, bty) -> -1|0|1`.

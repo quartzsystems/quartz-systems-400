@@ -5,12 +5,12 @@
 //! What the keys do: the typed changes, the line commands, the command
 //! line, the function keys.
 
-use uim::engine::LineMsg;
 use super::{Action, BEGIN_ID, DATA_COL, END_ID, Input, Item, Mode, PromptState, Session, Target};
 use crate::cmdline::{self, Command, SetOpt};
 use crate::defaults::Roll;
 use crate::find::{self, Direction, FindOptions, Hit};
 use crate::line::{self, Kind, LineCmd, Placed};
+use uim::engine::LineMsg;
 
 /// The function keys the session knows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -328,7 +328,10 @@ impl Session {
         let Some((a, b)) = self.span(t.from, to, t.count) else {
             return;
         };
-        let lines: Vec<String> = self.buf.records()[a..=b].iter().map(|r| r.data.clone()).collect();
+        let lines: Vec<String> = self.buf.records()[a..=b]
+            .iter()
+            .map(|r| r.data.clone())
+            .collect();
         let src_ids: Vec<u64> = self.buf.records()[a..=b].iter().map(|r| r.id).collect();
         match t.target_kind {
             Kind::Overlay => {
@@ -336,7 +339,10 @@ impl Session {
                     return;
                 };
                 let n = match (t.target_to, t.target_count) {
-                    (Some(e), _) => self.buf.index_of(e).map_or(1, |e| e.saturating_sub(start) + 1),
+                    (Some(e), _) => self
+                        .buf
+                        .index_of(e)
+                        .map_or(1, |e| e.saturating_sub(start) + 1),
                     (None, Some(c)) => c as usize,
                     (None, None) => lines.len(),
                 };
@@ -367,7 +373,11 @@ impl Session {
                     let Some(i) = self.buf.index_of(t.target) else {
                         return;
                     };
-                    if kind == Kind::Before { i.checked_sub(1) } else { Some(i) }
+                    if kind == Kind::Before {
+                        i.checked_sub(1)
+                    } else {
+                        Some(i)
+                    }
                 };
                 if t.kind == Kind::Move
                     && let Some(at) = after
@@ -429,9 +439,15 @@ impl Session {
                 }
             }
             Kind::Repeat => {
-                let lines: Vec<String> = self.buf.records()[a..=b].iter().map(|r| r.data.clone()).collect();
+                let lines: Vec<String> = self.buf.records()[a..=b]
+                    .iter()
+                    .map(|r| r.data.clone())
+                    .collect();
                 for _ in 0..cmd.count.unwrap_or(1) {
-                    if let Ok(new) = self.buf.insert(Some(b), &lines, self.defaults.increment, self.today) {
+                    if let Ok(new) =
+                        self.buf
+                            .insert(Some(b), &lines, self.defaults.increment, self.today)
+                    {
                         self.touched.extend(new);
                     }
                 }
@@ -444,7 +460,10 @@ impl Session {
             Kind::Prompt => {
                 self.prompt = Some(PromptState {
                     target: Target::Rec(from),
-                    format: self.srctype().format_of(&self.target_data(Target::Rec(from))).into(),
+                    format: self
+                        .srctype()
+                        .format_of(&self.target_data(Target::Rec(from)))
+                        .into(),
                 });
             }
             _ => {}
@@ -497,7 +516,11 @@ impl Session {
                 }
             }
             Kind::Insert | Kind::InsertPrompt | Kind::InsertFormat => {
-                let k = if c.kind == Kind::Insert { n.unwrap_or(1) } else { 1 };
+                let k = if c.kind == Kind::Insert {
+                    n.unwrap_or(1)
+                } else {
+                    1
+                };
                 let after = if p.id == END_ID {
                     self.buf.records().last().map_or(BEGIN_ID, |r| r.id)
                 } else {
@@ -529,7 +552,10 @@ impl Session {
                 if let Some(i) = self.buf.index_of(p.id) {
                     let line = self.buf.records()[i].data.clone();
                     let lines = vec![line; n.unwrap_or(1).max(1) as usize];
-                    if let Ok(ids) = self.buf.insert(Some(i), &lines, self.defaults.increment, self.today) {
+                    if let Ok(ids) =
+                        self.buf
+                            .insert(Some(i), &lines, self.defaults.increment, self.today)
+                    {
                         self.touched.extend(ids);
                     }
                 }
@@ -548,13 +574,19 @@ impl Session {
             Kind::Show | Kind::ShowFirst | Kind::ShowLast => self.show(p.id, c),
             Kind::Format => {
                 let f = c.format.clone().unwrap_or_else(|| {
-                    self.srctype().format_of(&self.target_data(Target::Rec(p.id))).to_string()
+                    self.srctype()
+                        .format_of(&self.target_data(Target::Rec(p.id)))
+                        .to_string()
                 });
                 self.formats.retain(|x| x.0 != p.id);
                 self.formats.push((p.id, f));
             }
             Kind::Prompt => {
-                let t = if is_ins { Target::Ins(p.id) } else { Target::Rec(p.id) };
+                let t = if is_ins {
+                    Target::Ins(p.id)
+                } else {
+                    Target::Rec(p.id)
+                };
                 let _ = self.start_prompt(t, c.format.as_deref());
             }
             Kind::Window => {
@@ -567,7 +599,10 @@ impl Session {
                 }
             }
             Kind::Forward | Kind::Back => {
-                let k = n.map_or_else(|| self.defaults.roll.lines(self.body_rows(), None), |v| v as usize);
+                let k = n.map_or_else(
+                    || self.defaults.roll.lines(self.body_rows(), None),
+                    |v| v as usize,
+                );
                 let k = i64::try_from(k).unwrap_or(1);
                 self.roll(if c.kind == Kind::Forward { k } else { -k });
             }
@@ -725,7 +760,10 @@ impl Session {
         if let Some(r) = self.row_of(&Item::Rec(id)) {
             self.cursor = Some((r, DATA_COL + h.col - self.left));
         }
-        self.message = Some(LineMsg::info(if change { "EDT1626" } else { "EDT1619" }, &[&what.to_ascii_uppercase()]));
+        self.message = Some(LineMsg::info(
+            if change { "EDT1626" } else { "EDT1619" },
+            &[&what.to_ascii_uppercase()],
+        ));
         Action::Show
     }
 
@@ -779,7 +817,11 @@ impl Session {
             Key::F(14) => Action::FindOptions,
             Key::F(15) => Action::BrowseOptions,
             Key::Enter | Key::F(4) => {
-                let pr = crate::prompt::Prompt::new(&p.format, &self.target_data(p.target), self.buf.width);
+                let pr = crate::prompt::Prompt::new(
+                    &p.format,
+                    &self.target_data(p.target),
+                    self.buf.width,
+                );
                 let original = self.target_data(p.target);
                 let text = pr.record(&original, &input.prompt);
                 let blank = text.trim().is_empty();

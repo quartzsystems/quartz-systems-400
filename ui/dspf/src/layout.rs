@@ -75,7 +75,12 @@ fn first_seen(v: &mut Vec<u8>) {
 /// A subfile record's field in its input buffer: every one with bytes
 /// in either buffer.
 fn in_subfile_input(f: &Field) -> bool {
-    f.in_input() || f.in_output() && !matches!(f.usage, crate::model::Usage::Message | crate::model::Usage::Program)
+    f.in_input()
+        || f.in_output()
+            && !matches!(
+                f.usage,
+                crate::model::Usage::Message | crate::model::Usage::Program
+            )
 }
 
 fn buffer(fields: &[Field], indicators: &[u8], keep: fn(&Field) -> bool) -> Buffer {

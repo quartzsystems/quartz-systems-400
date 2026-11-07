@@ -96,7 +96,12 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !values.iter().all(|v| tail.contains(v)) {
@@ -158,9 +163,19 @@ fn add_optical_cartridge() {
 fn wrkoptvol_option_1_prompts_addoptctg() {
     let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../ui/uim/pnlgrp/QSMEDIA.pnlgrp");
     let src = std::fs::read_to_string(&p).unwrap();
-    let panel = src.split(":PANEL NAME=WRKOPTVOL ").nth(1).expect("WRKOPTVOL panel");
-    let line = panel.lines().find(|l| l.starts_with(":LISTACT OPTION=1 ")).expect("option 1");
-    let cmd = line.split("ENTER='CMD ").nth(1).and_then(|s| s.split('\'').next()).expect("its command");
+    let panel = src
+        .split(":PANEL NAME=WRKOPTVOL ")
+        .nth(1)
+        .expect("WRKOPTVOL panel");
+    let line = panel
+        .lines()
+        .find(|l| l.starts_with(":LISTACT OPTION=1 "))
+        .expect("option 1");
+    let cmd = line
+        .split("ENTER='CMD ")
+        .nth(1)
+        .and_then(|s| s.split('\'').next())
+        .expect("its command");
     assert_eq!(cmd, "?ADDOPTCTG");
     let mut s = source();
     let r = {
@@ -171,7 +186,9 @@ fn wrkoptvol_option_1_prompts_addoptctg() {
     let got = Prompter::new(&r).screen().rows;
     let want = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../tools/conformance/golden/audit/displays/wrkoptvol-add-prompt71.txt");
-    let want = std::fs::read_to_string(&want).unwrap().replace("\r\n", "\n");
+    let want = std::fs::read_to_string(&want)
+        .unwrap()
+        .replace("\r\n", "\n");
     let want: Vec<&str> = want.lines().collect();
     assert_eq!(got[0].trim(), want[0].trim(), "the title");
     check("prompt-addoptctg", cmd, &[]);

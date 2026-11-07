@@ -47,16 +47,32 @@ const CLS: Kind = Kind {
 };
 
 /// `WRKJOBD [JOBD(lib/name)]`.
-pub fn wrkjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkjobd(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     work(job, host, surface, r, &JOBD)
 }
 
 /// `WRKCLS [CLS(lib/name)]`.
-pub fn wrkcls(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkcls(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     work(job, host, surface, r, &CLS)
 }
 
-fn work(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, k: &Kind) -> Result<String, Fail> {
+fn work(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    k: &Kind,
+) -> Result<String, Fail> {
     let (lib, name) = qualified(r, k.kwd).unwrap_or_else(|| ("*LIBL".into(), "*ALL".into()));
     let mut d = crate::panels::dialog(host, k.group)?;
     let mut history = Vec::new();
@@ -89,7 +105,12 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, k: &Kin
 }
 
 /// A work management object's payload and its real library.
-fn fetch(host: &Host, r: &Resolved, kwd: &str, ty: &str) -> Result<(Vec<u8>, String, String), Fail> {
+fn fetch(
+    host: &Host,
+    r: &Resolved,
+    kwd: &str,
+    ty: &str,
+) -> Result<(Vec<u8>, String, String), Fail> {
     let (lib, name) = qualified(r, kwd).ok_or_else(|| Fail::new("CPD0071", kwd))?;
     let payload = host
         .link
@@ -116,7 +137,12 @@ fn nomax(v: Option<u32>) -> String {
 }
 
 /// `DSPJOBD JOBD(lib/name)`.
-pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dspjobd(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let (payload, lib, name) = fetch(host, r, "JOBD", "*JOBD")?;
     let j = JobD::decode(&payload).map_err(|e| crate::panels::failed(e.to_string()))?;
     let mut d = crate::panels::dialog(host, "QUIWRKJOBD")?;
@@ -124,7 +150,10 @@ pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
         ("JOBD", name),
         ("LIB", lib),
         ("USER", j.user.clone()),
-        ("SYNTAX", j.syntax.map_or_else(|| "*NOCHK".into(), |s| s.to_string())),
+        (
+            "SYNTAX",
+            j.syntax.map_or_else(|| "*NOCHK".into(), |s| s.to_string()),
+        ),
         ("HOLD", yes(j.hold).into()),
         ("ENDSEV", j.endsev.to_string()),
         ("JOBDATE", "*SYSVAL".into()),
@@ -148,7 +177,11 @@ pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
         ("RQSDTA", j.rqsdta.clone()),
         ("DEVRCY", j.devrcyacn.clone()),
         ("TSEPOOL", j.tsepool.clone()),
-        ("MSGQMX", j.jobmsgqmx.map_or_else(|| "*SYSVAL".into(), |m| m.to_string())),
+        (
+            "MSGQMX",
+            j.jobmsgqmx
+                .map_or_else(|| "*SYSVAL".into(), |m| m.to_string()),
+        ),
         ("MSGQFL", j.jobmsgqfl.clone()),
         ("ALWMLT", yes(j.alwmltthd).into()),
         ("ASPGRP", j.inlaspgrp.clone()),
@@ -157,7 +190,9 @@ pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
         ("TEXT", j.text.clone()),
         (
             "INLLIBL",
-            j.inllibl.as_ref().map_or_else(|| "*SYSVAL".into(), |l| l.join(" ")),
+            j.inllibl
+                .as_ref()
+                .map_or_else(|| "*SYSVAL".into(), |l| l.join(" ")),
         ),
     ];
     for (k, v) in values {
@@ -167,7 +202,12 @@ pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
 }
 
 /// `DSPCLS CLS(lib/name)`.
-pub fn dspcls(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dspcls(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let (payload, lib, name) = fetch(host, r, "CLS", "*CLS")?;
     let c = Cls::decode(&payload).map_err(|e| crate::panels::failed(e.to_string()))?;
     let mut d = crate::panels::dialog(host, "QUIWRKCLS")?;
@@ -190,7 +230,13 @@ pub fn dspcls(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
 }
 
 /// A display panel until it is left.
-fn display(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, panel: &str) -> Result<String, Fail> {
+fn display(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    panel: &str,
+) -> Result<String, Fail> {
     show_display(job, host, surface, d, panel, &mut |_| {})?;
     Ok(String::new())
 }

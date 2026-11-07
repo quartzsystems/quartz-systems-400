@@ -93,7 +93,11 @@ impl Rq<'_> {
         }
         let mut ctx = self.ctx.clone();
         if let Some((group, _)) = page.nav {
-            ctx.open = Some(session::nav_visit(&self.app.sessions, &self.session.id, group));
+            ctx.open = Some(session::nav_visit(
+                &self.app.sessions,
+                &self.session.id,
+                group,
+            ));
         }
         let note = msgs::watch::note(self);
         Response::html(status, render_with(&ctx, &page, note.as_deref()))
@@ -117,7 +121,11 @@ impl Rq<'_> {
 
     /// A session value.
     pub fn get(&self, key: &str) -> String {
-        self.app.sessions.get(&self.session.id).map(|s| s.get(key).to_string()).unwrap_or_default()
+        self.app
+            .sessions
+            .get(&self.session.id)
+            .map(|s| s.get(key).to_string())
+            .unwrap_or_default()
     }
 
     /// Set session values.
@@ -158,7 +166,10 @@ impl Rq<'_> {
             SetBy::User(u) => format!("for user profile <span class=\"mono\">{}</span>", esc(u)),
             SetBy::Group(g) => format!("for group <span class=\"mono\">{}</span>", esc(g)),
             SetBy::Public => "for <span class=\"mono\">*PUBLIC</span>".into(),
-            SetBy::System => "by the system: it needs special authority <span class=\"mono\">*SECADM</span>".into(),
+            SetBy::System => {
+                "by the system: it needs special authority <span class=\"mono\">*SECADM</span>"
+                    .into()
+            }
             SetBy::Default => String::new(),
         };
         let r = Refusal {
@@ -185,7 +196,13 @@ impl Rq<'_> {
     /// Check special authority `need` for `function` on `object`: on
     /// failure the Not authorized page with `CPF2207`, and an `AF`
     /// entry.
-    pub fn require(&self, need: Need, function: &str, object: (&str, &str, &str), crumb: &[&str]) -> Result<(), Response> {
+    pub fn require(
+        &self,
+        need: Need,
+        function: &str,
+        object: (&str, &str, &str),
+        crumb: &[&str],
+    ) -> Result<(), Response> {
         if self.has(need) {
             return Ok(());
         }
@@ -243,7 +260,11 @@ impl Rq<'_> {
 /// The route of `path` under the prefix, if it is under it.
 fn route(path: &str) -> Option<&str> {
     let r = path.strip_prefix(PRODUCT.prefix)?;
-    if r.is_empty() || r.starts_with('/') { Some(r) } else { None }
+    if r.is_empty() || r.starts_with('/') {
+        Some(r)
+    } else {
+        None
+    }
 }
 
 /// Answer a request.
@@ -266,14 +287,19 @@ pub fn dispatch(app: &AccessWeb, req: &Request, peer: &Peer) -> Response {
         "/signoff" => return signon::signoff(app, req, peer),
         _ => {}
     }
-    let session = req.cookie(session::COOKIE).and_then(|id| app.sessions.get(id));
+    let session = req
+        .cookie(session::COOKIE)
+        .and_then(|id| app.sessions.get(id));
     let Some(session) = session else {
         return Response::redirect(&PRODUCT.url("/signon"));
     };
     if req.method == "POST" {
         let form = req.form();
         if !session::csrf_ok(&session, form.str(session::CSRF_FIELD)) {
-            return qsweb::http::plain(403, "The form is out of date. Go back, reload the page and try again.");
+            return qsweb::http::plain(
+                403,
+                "The form is out of date. Go back, reload the page and try again.",
+            );
         }
     }
     let ctx = Ctx {

@@ -78,7 +78,9 @@ fn read_marker(store: &mut Store, qsys: ObjectId, i: usize) -> String {
         .unwrap();
     let bytes = usrspc::read(&mut txn, id, 10, 8).unwrap();
     txn.abort();
-    String::from_utf8_lossy(&bytes).trim_end_matches('\0').to_string()
+    String::from_utf8_lossy(&bytes)
+        .trim_end_matches('\0')
+        .to_string()
 }
 
 fn assert_spaces(store: &mut Store, qsys: ObjectId, count: usize) {
@@ -104,7 +106,11 @@ fn format(devs: &[&Arc<MemBlockDev>], spaces: usize) -> (Store, ObjectId) {
 fn resume_all(store: &mut Store, unit: u16) {
     let mut journal = MemJournal::default();
     let mut res = store.resume_unit(unit, &mut journal).unwrap();
-    while !store.resume_step(&mut res, &mut journal, 100).unwrap().complete {}
+    while !store
+        .resume_step(&mut res, &mut journal, 100)
+        .unwrap()
+        .complete
+    {}
 }
 
 fn finish_parity(store: &mut Store) {
@@ -128,7 +134,9 @@ fn serial(uuid: &[u8; 16]) -> String {
 /// A mirrored pair on `a` and `b` with spaces, resumed.
 fn pair(a: &Arc<MemBlockDev>, b: &Arc<MemBlockDev>) -> (Store, ObjectId) {
     let (mut store, qsys) = format(&[a], 4);
-    store.start_mirror(0, Box::new(b.clone()), [2; 16], "UNIT1").unwrap();
+    store
+        .start_mirror(0, Box::new(b.clone()), [2; 16], "UNIT1")
+        .unwrap();
     resume_all(&mut store, 1);
     (store, qsys)
 }
@@ -139,16 +147,25 @@ fn spares_start_stop_and_survive_an_open() {
     let s1 = dev(1024, 2);
     let s2 = dev(1100, 3);
     let (mut store, _) = format(&[&a], 1);
-    store.start_hot_spare(Box::new(s1.clone()), [0x51; 16]).unwrap();
-    store.start_hot_spare(Box::new(s2.clone()), [0x52; 16]).unwrap();
+    store
+        .start_hot_spare(Box::new(s1.clone()), [0x51; 16])
+        .unwrap();
+    store
+        .start_hot_spare(Box::new(s2.clone()), [0x52; 16])
+        .unwrap();
     assert!(matches!(
         store.start_hot_spare(Box::new(dev(8, 6)), [0x55; 16]),
         Err(StoreError::UnitTooSmall { .. })
     ));
-    store.start_hot_spare(Box::new(dev(1024, 4)), [0x53; 16]).unwrap();
+    store
+        .start_hot_spare(Box::new(dev(1024, 4)), [0x53; 16])
+        .unwrap();
     assert!(matches!(
         store.start_hot_spare(Box::new(dev(1024, 5)), [0x54; 16]),
-        Err(StoreError::Refused { reason: Refusal::SparesFull, .. })
+        Err(StoreError::Refused {
+            reason: Refusal::SparesFull,
+            ..
+        })
     ));
     store.close().unwrap();
     // The third spare is not attached at the next open.
@@ -156,7 +173,10 @@ fn spares_start_stop_and_survive_an_open() {
     assert!(rec.events.is_empty());
     let spares = store.hot_spares();
     assert_eq!(spares.len(), 3);
-    assert_eq!((spares[0].unit_uuid, spares[0].pages, spares[0].attached), ([0x51; 16], 1024, true));
+    assert_eq!(
+        (spares[0].unit_uuid, spares[0].pages, spares[0].attached),
+        ([0x51; 16], 1024, true)
+    );
     assert_eq!((spares[1].pages, spares[1].attached), (1100, true));
     assert!(!spares[2].attached);
     assert_eq!(store.units().len(), 1, "spares are in no span");
@@ -184,22 +204,31 @@ fn a_half_that_fails_while_running_is_replaced_by_the_spare() {
     let small = dev(600, 12);
     let spare = dev(1100, 13);
     let (mut store, qsys) = pair(&a, &b);
-    store.start_hot_spare(Box::new(small.clone()), [0x60; 16]).unwrap();
-    store.start_hot_spare(Box::new(spare.clone()), [0x61; 16]).unwrap();
+    store
+        .start_hot_spare(Box::new(small.clone()), [0x60; 16])
+        .unwrap();
+    store
+        .start_hot_spare(Box::new(spare.clone()), [0x61; 16])
+        .unwrap();
     // Half B dies.
     b.fail_reads(true);
     b.fail_after(Some(b.stats().writes));
     add_spaces(&mut store, qsys, 4, 8);
     let events = store.drain_io_events();
     assert!(
-        events.iter().any(|e| matches!(e, IoEvent::UnitFailed { unit: 1, .. })),
+        events
+            .iter()
+            .any(|e| matches!(e, IoEvent::UnitFailed { unit: 1, .. })),
         "{events:?}"
     );
     assert_eq!(store.unit_state(1), UnitState::NotOperational);
     // The spare large enough takes its place; the small one stays.
     let used = store.use_hot_spares(&serial).unwrap();
     assert_eq!(used.len(), 1);
-    assert_eq!((used[0].unit, used[0].unit_uuid, used[0].parity), (1, [0x61; 16], false));
+    assert_eq!(
+        (used[0].unit, used[0].unit_uuid, used[0].parity),
+        (1, [0x61; 16], false)
+    );
     assert_eq!(store.unit_state(1), UnitState::Resuming);
     assert_eq!(store.units()[1].entry.serial_text(), "SPARE61");
     assert_eq!(store.hot_spares().len(), 1);
@@ -222,7 +251,9 @@ fn a_half_missing_at_open_is_replaced_by_the_spare() {
     let b = dev(1024, 21);
     let spare = dev(1024, 22);
     let (mut store, qsys) = pair(&a, &b);
-    store.start_hot_spare(Box::new(spare.clone()), [0x70; 16]).unwrap();
+    store
+        .start_hot_spare(Box::new(spare.clone()), [0x70; 16])
+        .unwrap();
     store.close().unwrap();
     let (mut store, rec) = Store::open(boxed(&[&a, &spare]), config()).unwrap();
     assert_eq!(rec.events, vec![UnitEvent::Missing { unit: 1 }]);
@@ -246,14 +277,18 @@ fn a_parity_member_that_fails_is_rebuilt_onto_the_spare() {
     let (mut store, qsys) = format(&refs, 6);
     store.start_parity(Level::Raid5, &[0, 1, 2, 3]).unwrap();
     finish_parity(&mut store);
-    store.start_hot_spare(Box::new(spare.clone()), [0x80; 16]).unwrap();
+    store
+        .start_hot_spare(Box::new(spare.clone()), [0x80; 16])
+        .unwrap();
     d[2].fail_reads(true);
     d[2].fail_after(Some(0));
     assert_spaces(&mut store, qsys, 6);
     add_spaces(&mut store, qsys, 6, 8);
     let events = store.drain_io_events();
     assert!(
-        events.iter().any(|e| matches!(e, IoEvent::UnitFailed { unit: 2, .. })),
+        events
+            .iter()
+            .any(|e| matches!(e, IoEvent::UnitFailed { unit: 2, .. })),
         "{events:?}"
     );
     let used = store.use_hot_spares(&serial).unwrap();
@@ -266,8 +301,7 @@ fn a_parity_member_that_fails_is_rebuilt_onto_the_spare() {
     assert_spaces(&mut store, qsys, 8);
     store.close().unwrap();
     // The spare stands in for the dead unit.
-    let (mut s, rec) =
-        Store::open(boxed(&[&d[0], &d[1], &spare, &d[3]]), config()).unwrap();
+    let (mut s, rec) = Store::open(boxed(&[&d[0], &d[1], &spare, &d[3]]), config()).unwrap();
     assert!(rec.events.is_empty(), "{:?}", rec.events);
     assert_spaces(&mut s, qsys, 8);
 }
@@ -280,7 +314,9 @@ fn a_parity_member_missing_at_open_is_rebuilt_onto_the_spare() {
     let (mut store, qsys) = format(&refs, 6);
     store.start_parity(Level::Raid5, &[0, 1, 2, 3]).unwrap();
     finish_parity(&mut store);
-    store.start_hot_spare(Box::new(spare.clone()), [0x90; 16]).unwrap();
+    store
+        .start_hot_spare(Box::new(spare.clone()), [0x90; 16])
+        .unwrap();
     store.close().unwrap();
     let (mut store, rec) = Store::open(boxed(&[&d[0], &spare, &d[1], &d[2]]), config()).unwrap();
     assert_eq!(rec.events, vec![UnitEvent::ParityExposed { unit: 3 }]);

@@ -25,8 +25,16 @@ fn tree(tag: &str) -> PathBuf {
          <!-- inventory:end -->\n",
     )
     .unwrap();
-    fs::write(dir.join("docs/SQL.md"), "# SQL\n\n## 10. Refused\n\n- `LOCK TABLE`: refused SQL0084\n\n## 11. Benchmarks\n").unwrap();
-    fs::write(dir.join("src/a.rs"), "// BLOCKED(sql): the old form\nfn a() {}\n// NEEDS-CODY: hardware\n").unwrap();
+    fs::write(
+        dir.join("docs/SQL.md"),
+        "# SQL\n\n## 10. Refused\n\n- `LOCK TABLE`: refused SQL0084\n\n## 11. Benchmarks\n",
+    )
+    .unwrap();
+    fs::write(
+        dir.join("src/a.rs"),
+        "// BLOCKED(sql): the old form\nfn a() {}\n// NEEDS-CODY: hardware\n",
+    )
+    .unwrap();
     dir
 }
 
@@ -44,9 +52,16 @@ fn stale_then_current_then_strict() {
     assert!(text.contains("| `NEEDS-CODY` | `src/a.rs:3` | hardware |"));
     // Strict: the old form fails.
     let strict = notes::problems(&dir, false).unwrap();
-    assert_eq!(strict, ["src/a.rs:1: BLOCKED(sql) (only BLOCKED(rel) and NEEDS-CODY survive the release)"]);
+    assert_eq!(
+        strict,
+        ["src/a.rs:1: BLOCKED(sql) (only BLOCKED(rel) and NEEDS-CODY survive the release)"]
+    );
     // The rename makes the inventory stale until it is regenerated.
-    fs::write(dir.join("src/a.rs"), "// BLOCKED(rel): the old form\nfn a() {}\n// NEEDS-CODY: hardware\n").unwrap();
+    fs::write(
+        dir.join("src/a.rs"),
+        "// BLOCKED(rel): the old form\nfn a() {}\n// NEEDS-CODY: hardware\n",
+    )
+    .unwrap();
     assert_eq!(notes::problems(&dir, false).unwrap().len(), 1);
     notes::update(&dir).unwrap();
     assert!(notes::problems(&dir, false).unwrap().is_empty());

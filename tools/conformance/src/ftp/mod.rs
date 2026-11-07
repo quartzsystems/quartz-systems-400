@@ -102,7 +102,10 @@ fn mask(s: &str) -> String {
 
 /// The last line of a reply set, the one clients parse.
 fn last(lines: &[String]) -> String {
-    lines.last().map(|l| l.get(4..).unwrap_or("").trim().to_string()).unwrap_or_default()
+    lines
+        .last()
+        .map(|l| l.get(4..).unwrap_or("").trim().to_string())
+        .unwrap_or_default()
 }
 
 /// Whether `gaps` names this session's command: one the fixture cannot
@@ -141,23 +144,36 @@ pub fn replay(t: &Transcript, fixture_text: &str, gaps: &str) -> Outcome {
             step.cmd.replace("{user}", fixture::USER)
         };
         if let Some((n, p)) = &step.sent {
-            net.uploads.push_back(p.clone().unwrap_or_else(|| legacy_payload(*n)));
+            net.uploads
+                .push_back(p.clone().unwrap_or_else(|| legacy_payload(*n)));
         }
         let flow = s.handle(&line, &mut net);
         let replies = net.take_replies();
         let sent = net.take_sent();
         net.uploads.clear();
-        let verb = step.cmd.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+        let verb = step
+            .cmd
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_ascii_uppercase();
         if verb == "TYPE" && replies.first().is_some_and(|r| r.code == 200) {
-            let t = step.cmd.split_whitespace().nth(1).unwrap_or("").to_ascii_uppercase();
+            let t = step
+                .cmd
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("")
+                .to_ascii_uppercase();
             ebcdic = t == "E" || t == "F";
         }
         if gap(gaps, &t.name, &step.cmd) {
             out.deviations += 1;
             continue;
         }
-        let deviating = DEVIATING.contains(&verb.as_str()) || (rest_pending && matches!(verb.as_str(), "RETR" | "STOR"));
-        rest_pending = verb == "REST" || (rest_pending && !matches!(verb.as_str(), "RETR" | "STOR" | "APPE"));
+        let deviating = DEVIATING.contains(&verb.as_str())
+            || (rest_pending && matches!(verb.as_str(), "RETR" | "STOR"));
+        rest_pending =
+            verb == "REST" || (rest_pending && !matches!(verb.as_str(), "RETR" | "STOR" | "APPE"));
         if deviating {
             out.deviations += 1;
             if flow == Flow::Close {
@@ -167,12 +183,22 @@ pub fn replay(t: &Transcript, fixture_text: &str, gaps: &str) -> Outcome {
         }
         out.compared += 1;
         let mut diffs = Vec::new();
-        let ours_lines: Vec<String> = replies.iter().flat_map(|r| r.render().lines().map(str::to_string).collect::<Vec<_>>()).collect();
+        let ours_lines: Vec<String> = replies
+            .iter()
+            .flat_map(|r| r.render().lines().map(str::to_string).collect::<Vec<_>>())
+            .collect();
         let theirs_codes = codes(&step.replies);
         let ours_codes: Vec<u16> = replies.iter().map(|r| r.code).collect();
         if theirs_codes == ours_codes {
-            let parsed = matches!(verb.as_str(), "PWD" | "XPWD" | "CWD" | "XCWD" | "CDUP" | "XCUP" | "SYST");
-            if parsed && theirs_codes.last().is_some_and(|c| *c == 257 || *c == 250 || *c == 215) {
+            let parsed = matches!(
+                verb.as_str(),
+                "PWD" | "XPWD" | "CWD" | "XCWD" | "CDUP" | "XCUP" | "SYST"
+            );
+            if parsed
+                && theirs_codes
+                    .last()
+                    .is_some_and(|c| *c == 257 || *c == 250 || *c == 215)
+            {
                 let mut theirs = last(&step.replies);
                 let mut ours = mask(&last(&ours_lines));
                 if verb == "SYST" {
@@ -189,19 +215,24 @@ pub fn replay(t: &Transcript, fixture_text: &str, gaps: &str) -> Outcome {
                 if let Some(bytes) = sent.first() {
                     diffs.extend(compare::data(d, bytes, listing, nlst, ebcdic, &mask));
                 } else {
-                    let empty = matches!(d, DataIn::Text { len: 0, .. }) || matches!(d, DataIn::Hex(b) if b.is_empty());
+                    let empty = matches!(d, DataIn::Text { len: 0, .. })
+                        || matches!(d, DataIn::Hex(b) if b.is_empty());
                     if !empty {
                         diffs.push("no data sent".into());
                     }
                 }
             }
         } else {
-            diffs.push(format!("codes {ours_codes:?} against {theirs_codes:?} ({})", last(&ours_lines)));
+            diffs.push(format!(
+                "codes {ours_codes:?} against {theirs_codes:?} ({})",
+                last(&ours_lines)
+            ));
         }
         if diffs.is_empty() {
             out.matched += 1;
         } else {
-            out.diffs.push(format!("{}: {}", step.cmd, diffs.join("; ")));
+            out.diffs
+                .push(format!("{}: {}", step.cmd, diffs.join("; ")));
         }
         if flow == Flow::Close {
             break;
@@ -215,7 +246,9 @@ pub fn load(dir: &Path) -> Vec<Transcript> {
     let mut out = Vec::new();
     let mut stack = vec![dir.to_path_buf()];
     while let Some(d) = stack.pop() {
-        let Ok(rd) = std::fs::read_dir(&d) else { continue };
+        let Ok(rd) = std::fs::read_dir(&d) else {
+            continue;
+        };
         for e in rd.flatten() {
             let p = e.path();
             if p.is_dir() {
@@ -244,7 +277,9 @@ pub fn report(outcomes: &[Outcome]) -> String {
         e.3 += o.matched;
         e.4 += o.deviations;
     }
-    let mut s = String::from("| Category | Sessions | Passed | Commands | Matched | Deviations |\n|---|---|---|---|---|---|\n");
+    let mut s = String::from(
+        "| Category | Sessions | Passed | Commands | Matched | Deviations |\n|---|---|---|---|---|---|\n",
+    );
     let mut tot = (0, 0, 0, 0, 0);
     for (c, (n, p, cm, m, d)) in &cats {
         let _ = writeln!(s, "| {c} | {n} | {p} | {cm} | {m} | {d} |");

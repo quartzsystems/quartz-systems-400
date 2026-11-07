@@ -40,8 +40,16 @@ pub fn work_with_disk_units(privileges: Privilege) -> Submenu {
                     Flow::Push(Box::new(recovery::work_with_disk_unit_recovery(ops, admin)))
                 })),
             ),
-            (3, "Work with disk unit problem recovery", crate::dst::common::says(crate::dst::answers::NO_IOA)),
-            (4, "Work with disk unit tracing", crate::dst::common::says(crate::dst::answers::NO_IOA)),
+            (
+                3,
+                "Work with disk unit problem recovery",
+                crate::dst::common::says(crate::dst::answers::NO_IOA),
+            ),
+            (
+                4,
+                "Work with disk unit tracing",
+                crate::dst::common::says(crate::dst::answers::NO_IOA),
+            ),
         ],
     )
 }
@@ -133,16 +141,26 @@ pub fn sst_work_with_disk_units(privileges: Privilege) -> Submenu {
         "sst-disk",
         "Work with Disk Units",
         vec![
-            (1, "Display disk configuration", Some(Box::new(|_env| Flow::Push(Box::new(config::display_menu()))))),
+            (
+                1,
+                "Display disk configuration",
+                Some(Box::new(|_env| {
+                    Flow::Push(Box::new(config::display_menu()))
+                })),
+            ),
             (
                 2,
                 "Work with disk configuration",
-                Some(Box::new(move |_env| Flow::Push(Box::new(config::sst_disk_configuration(admin))))),
+                Some(Box::new(move |_env| {
+                    Flow::Push(Box::new(config::sst_disk_configuration(admin)))
+                })),
             ),
             (
                 3,
                 "Work with disk unit recovery",
-                Some(Box::new(move |_env| Flow::Push(Box::new(recovery::work_with_disk_unit_recovery(ops, admin))))),
+                Some(Box::new(move |_env| {
+                    Flow::Push(Box::new(recovery::work_with_disk_unit_recovery(ops, admin)))
+                })),
             ),
         ],
     )

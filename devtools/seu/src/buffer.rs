@@ -203,7 +203,15 @@ impl Buffer {
             let id = self.new_id();
             let seq = prev + step * (u32::try_from(k).unwrap_or(0) + 1);
             let text = self.fit(line);
-            self.recs.insert(at + k, Record { id, seq, date, data: text });
+            self.recs.insert(
+                at + k,
+                Record {
+                    id,
+                    seq,
+                    date,
+                    data: text,
+                },
+            );
             ids.push(id);
         }
         self.changed = true;
@@ -261,9 +269,7 @@ mod tests {
     fn buf(seqs: &[u32]) -> Buffer {
         Buffer::new(
             80,
-            seqs.iter()
-                .map(|s| (*s, 260101, format!("L{s}")))
-                .collect(),
+            seqs.iter().map(|s| (*s, 260101, format!("L{s}"))).collect(),
         )
     }
 
@@ -274,7 +280,8 @@ mod tests {
     #[test]
     fn inserts_by_the_increment() {
         let mut b = buf(&[100, 200, 300]);
-        b.insert(Some(0), &["a".into(), "b".into()], 1, 261023).unwrap();
+        b.insert(Some(0), &["a".into(), "b".into()], 1, 261023)
+            .unwrap();
         assert_eq!(seqs(&b), [100, 101, 102, 200, 300]);
         assert_eq!(b.get(1).unwrap().date, 261023);
         assert!(b.changed());
@@ -292,7 +299,8 @@ mod tests {
     #[test]
     fn narrows_the_step_then_pushes() {
         let mut b = buf(&[100, 104, 105]);
-        b.insert(Some(0), &["a".into(), "b".into()], 100, 0).unwrap();
+        b.insert(Some(0), &["a".into(), "b".into()], 100, 0)
+            .unwrap();
         assert_eq!(seqs(&b), [100, 101, 102, 104, 105]);
         b.insert(Some(3), &["c".into(), "d".into()], 1, 0).unwrap();
         assert_eq!(seqs(&b), [100, 101, 102, 104, 105, 106, 107]);

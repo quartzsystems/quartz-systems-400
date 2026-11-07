@@ -10,7 +10,9 @@
 //! objects a list secures from `QSYLATLO` (`ListObjects`, what
 //! `DSPAUTLOBJ` shows); changes are commands (`run`).
 
-use navigator::env::users::{AuthEntry, AuthList, ObjectAuthority, Profile, SPECIAL, SecuredObject, Users};
+use navigator::env::users::{
+    AuthEntry, AuthList, ObjectAuthority, Profile, SPECIAL, SecuredObject, Users,
+};
 use qsweb::msg::Message;
 use sec::api::{Answer, Query};
 use sec::auth::bits::Auth;
@@ -45,14 +47,27 @@ fn when(secs: u64) -> Option<u64> {
 /// One profile as the pages show it; `is_group` decided by the caller.
 fn profile(p: UsrPrf, is_group: bool) -> Profile {
     let have = p.spcaut.names();
-    let special = SPECIAL.iter().filter(|s| have.contains(s)).map(|s| (*s).to_string()).collect();
+    let special = SPECIAL
+        .iter()
+        .filter(|s| have.contains(s))
+        .map(|s| (*s).to_string())
+        .collect();
     Profile {
         text: p.text.trim_end().to_string(),
         enabled: !p.disabled,
         class: p.usrcls.name().to_string(),
         last_signon: when(p.last_signon),
-        group: if p.grpprf.starts_with('*') { String::new() } else { p.grpprf.clone() },
-        supplemental: p.supgrpprf.iter().filter(|g| !g.starts_with('*')).cloned().collect(),
+        group: if p.grpprf.starts_with('*') {
+            String::new()
+        } else {
+            p.grpprf.clone()
+        },
+        supplemental: p
+            .supgrpprf
+            .iter()
+            .filter(|g| !g.starts_with('*'))
+            .cloned()
+            .collect(),
         gid: (p.gid != 0).then_some(p.gid),
         is_group,
         pwd_changed: p.pwd_changed,
@@ -91,15 +106,25 @@ fn profiles(m: &mut Main) -> Vec<Profile> {
     let all: Vec<UsrPrf> = rows
         .iter()
         .filter(|r| r.name != "*PUBLIC")
-        .filter_map(|r| match m.sec(Query::Profile { user: r.name.clone() }) {
-            Ok(Answer::Profile { data }) => UsrPrf::decode(&data).ok(),
-            _ => None,
+        .filter_map(|r| {
+            match m.sec(Query::Profile {
+                user: r.name.clone(),
+            }) {
+                Ok(Answer::Profile { data }) => UsrPrf::decode(&data).ok(),
+                _ => None,
+            }
         })
         .collect();
     // A group: another profile names it, or it has a GID.
-    let named = |n: &str| all.iter().any(|p| p.grpprf == n || p.supgrpprf.iter().any(|g| g == n));
+    let named = |n: &str| {
+        all.iter()
+            .any(|p| p.grpprf == n || p.supgrpprf.iter().any(|g| g == n))
+    };
     let groups: Vec<bool> = all.iter().map(|p| p.gid != 0 || named(&p.name)).collect();
-    all.into_iter().zip(groups).map(|(p, g)| profile(p, g)).collect()
+    all.into_iter()
+        .zip(groups)
+        .map(|(p, g)| profile(p, g))
+        .collect()
 }
 
 /// `autl_panel`'s rows as a list: the owner and text, then its users.
@@ -124,7 +149,9 @@ fn list(name: String, rows: &[Vec<String>], objects: u32) -> AuthList {
 }
 
 fn secured(m: &Main, name: &str) -> Vec<SecuredObject> {
-    match m.sec(Query::ListObjects { list: name.to_string() }) {
+    match m.sec(Query::ListObjects {
+        list: name.to_string(),
+    }) {
         Ok(Answer::Objects { rows }) => rows
             .into_iter()
             .map(|r| SecuredObject {
@@ -145,18 +172,20 @@ impl Users for LiveUsers {
 
     fn authorities(&self, user: &str, name: &str) -> Vec<ObjectAuthority> {
         let n = name.trim().to_ascii_uppercase();
-        self.link.read(user, move |m| match m.sec(Query::Objects { user: n, kind: 0 }) {
-            Ok(Answer::Objects { rows }) => rows
-                .into_iter()
-                .map(|r| ObjectAuthority {
-                    authority: Auth(r.bits).display(r.ty == "*AUTL").to_string(),
-                    object: r.name,
-                    lib: r.lib,
-                    typ: r.ty,
-                    owner: r.owned,
-                })
-                .collect(),
-            _ => Vec::new(),
+        self.link.read(user, move |m| {
+            match m.sec(Query::Objects { user: n, kind: 0 }) {
+                Ok(Answer::Objects { rows }) => rows
+                    .into_iter()
+                    .map(|r| ObjectAuthority {
+                        authority: Auth(r.bits).display(r.ty == "*AUTL").to_string(),
+                        object: r.name,
+                        lib: r.lib,
+                        typ: r.ty,
+                        owner: r.owned,
+                    })
+                    .collect(),
+                _ => Vec::new(),
+            }
         })
     }
 
@@ -197,7 +226,10 @@ mod tests {
             vec!["*PUBLIC".into(), "*EXCLUDE".into(), String::new()],
         ];
         let l = list("PAYROLL".into(), &rows, 2);
-        assert_eq!((l.owner.as_str(), l.text.as_str(), l.objects), ("QSECOFR", "Payroll", 2));
+        assert_eq!(
+            (l.owner.as_str(), l.text.as_str(), l.objects),
+            ("QSECOFR", "Payroll", 2)
+        );
         assert!(l.entries[0].list_mgt && !l.entries[1].list_mgt);
         assert_eq!(qual(&("QCMD".into(), "QSYS".into())), "QSYS/QCMD");
         assert_eq!(qual(&("*NONE".into(), String::new())), "*NONE");

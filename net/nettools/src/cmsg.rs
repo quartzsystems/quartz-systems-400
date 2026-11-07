@@ -69,7 +69,8 @@ pub fn messages(ctrl: &[u8]) -> Vec<(i32, i32, &[u8])> {
 /// for it.
 pub fn ttl(ctrl: &[u8]) -> Option<u8> {
     messages(ctrl).into_iter().find_map(|(level, kind, data)| {
-        let ok = (level == SOL_IP && kind == IP_TTL) || (level == SOL_IPV6 && kind == IPV6_HOPLIMIT);
+        let ok =
+            (level == SOL_IP && kind == IP_TTL) || (level == SOL_IPV6 && kind == IPV6_HOPLIMIT);
         if !ok {
             return None;
         }
@@ -113,7 +114,8 @@ pub fn sockaddr_ip(b: &[u8]) -> Option<IpAddr> {
 /// The extended error of an error-queue read.
 pub fn extended_err(ctrl: &[u8]) -> Option<ExtendedErr> {
     messages(ctrl).into_iter().find_map(|(level, kind, d)| {
-        let ok = (level == SOL_IP && kind == IP_RECVERR) || (level == SOL_IPV6 && kind == IPV6_RECVERR);
+        let ok =
+            (level == SOL_IP && kind == IP_RECVERR) || (level == SOL_IPV6 && kind == IPV6_RECVERR);
         if !ok || d.len() < ERR_LEN {
             return None;
         }
@@ -177,7 +179,10 @@ mod tests {
         assert_eq!(ttl(&b), Some(64));
         b.extend(build(SOL_IPV6, IPV6_HOPLIMIT, &255u32.to_ne_bytes()));
         assert_eq!(messages(&b).len(), 2);
-        assert_eq!(ttl(&build(SOL_IPV6, IPV6_HOPLIMIT, &255u32.to_ne_bytes())), Some(255));
+        assert_eq!(
+            ttl(&build(SOL_IPV6, IPV6_HOPLIMIT, &255u32.to_ne_bytes())),
+            Some(255)
+        );
         assert_eq!(ttl(&build(SOL_IP, 99, &[1, 0, 0, 0])), None);
     }
 

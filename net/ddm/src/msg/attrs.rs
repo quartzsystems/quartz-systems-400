@@ -87,7 +87,12 @@ impl Attributes {
                     .as_chunks::<4>()
                     .0
                     .iter()
-                    .map(|c| (u16::from_be_bytes([c[0], c[1]]), u16::from_be_bytes([c[2], c[3]])))
+                    .map(|c| {
+                        (
+                            u16::from_be_bytes([c[0], c[1]]),
+                            u16::from_be_bytes([c[2], c[3]]),
+                        )
+                    })
                     .collect()
             })
             .unwrap_or_default();

@@ -97,10 +97,15 @@ mod tests {
         let k = keywords(&toks, Pos::default(), &mut d);
         assert!(d.is_empty(), "{d:?}");
         let names: Vec<&str> = k.iter().map(|k| k.name.as_str()).collect();
-        assert_eq!(names, vec!["DIM", "INZ", "DATFMT", "OVERLAY", "CONST", "EXTNAME"]);
+        assert_eq!(
+            names,
+            vec!["DIM", "INZ", "DATFMT", "OVERLAY", "CONST", "EXTNAME"]
+        );
         // A format keeps its separator: `*ISO-` is one special word.
         assert_eq!(k[2].args[0].toks.len(), 1);
-        assert!(matches!(&k[2].args[0].expr, Some(crate::ast::Expr::Special { word, .. }) if word == "*ISO-"));
+        assert!(
+            matches!(&k[2].args[0].expr, Some(crate::ast::Expr::Special { word, .. }) if word == "*ISO-")
+        );
         assert_eq!(k[3].args.len(), 2);
         assert!(!k[4].parens);
         assert_eq!(k[5].args.len(), 2);

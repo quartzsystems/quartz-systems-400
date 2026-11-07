@@ -63,7 +63,10 @@ struct Svc<'a>(&'a Arc<Mutex<Table>>);
 
 impl Svc<'_> {
     fn with<T>(&self, f: impl FnOnce(&mut Table) -> T) -> T {
-        let mut t = self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut t = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         f(&mut t)
     }
 }

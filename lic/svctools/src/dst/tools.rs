@@ -54,7 +54,12 @@ impl Panel for Form {
     }
 
     fn render(&self, env: &mut dyn DstEnv) -> Screen {
-        let mut s = ui::form(self.title, &env.system_name(), &self.lines, "F3=Exit   F12=Cancel");
+        let mut s = ui::form(
+            self.title,
+            &env.system_name(),
+            &self.lines,
+            "F3=Exit   F12=Cancel",
+        );
         for (i, n) in self.note.iter().enumerate() {
             s.put(
                 ui::BODY_ROW + self.lines.len() + 1 + i,
@@ -103,12 +108,16 @@ pub fn start_a_service_tool(privileges: Privilege) -> Submenu {
             (
                 2,
                 "Trace Licensed Internal Code",
-                Some(Box::new(move |env| guard(dt, Flow::Push(Box::new(work_with_traces(env)))))),
+                Some(Box::new(move |env| {
+                    guard(dt, Flow::Push(Box::new(work_with_traces(env))))
+                })),
             ),
             (
                 3,
                 "Work with communications trace",
-                Some(Box::new(move |env| guard(dt, Flow::Push(Box::new(communications_traces(env)))))),
+                Some(Box::new(move |env| {
+                    guard(dt, Flow::Push(Box::new(communications_traces(env))))
+                })),
             ),
             (
                 4,
@@ -120,12 +129,16 @@ pub fn start_a_service_tool(privileges: Privilege) -> Submenu {
             (
                 5,
                 "Licensed Internal Code log",
-                Some(Box::new(move |_env| guard(logs, Flow::Push(Box::new(lic_log_menu()))))),
+                Some(Box::new(move |_env| {
+                    guard(logs, Flow::Push(Box::new(lic_log_menu())))
+                })),
             ),
             (
                 6,
                 "Main storage dump manager",
-                Some(Box::new(move |_env| guard(dt, Flow::Push(Box::new(dump_manager()))))),
+                Some(Box::new(move |_env| {
+                    guard(dt, Flow::Push(Box::new(dump_manager())))
+                })),
             ),
             (
                 7,
@@ -157,7 +170,10 @@ fn communications_traces(env: &mut dyn DstEnv) -> Notice {
     match env.cmn_traces() {
         Ok(rows) if rows.is_empty() => lines.push("  (No communications traces)".into()),
         Ok(rows) => lines.extend(rows.iter().map(|(o, t, s)| format!("{o:<20}  {t:<7} {s}"))),
-        Err(_) => lines.push(format!("  {}", crate::dst::failed("Reading the communications traces"))),
+        Err(_) => lines.push(format!(
+            "  {}",
+            crate::dst::failed("Reading the communications traces")
+        )),
     }
     lines.push(String::new());
     lines.push("STRCMNTRC starts a trace, ENDCMNTRC ends it, PRTCMNTRC prints it".into());
@@ -245,13 +261,18 @@ fn lic_log_selection() -> Form {
                     Err(_) => return Flow::Error(format!("Major code {m} is not four hex digits")),
                 }
             };
-            let mut lines = vec!["   Seq Date       Time     Major Minor Job    Description".to_string()];
+            let mut lines =
+                vec!["   Seq Date       Time     Major Minor Job    Description".to_string()];
             let events = env.lic_events(major);
             if events.is_empty() {
                 lines.push("  (No entries)".into());
             }
             lines.extend(events);
-            Flow::Push(Box::new(Notice::new("dst-lic-log-entries", "Licensed Internal Code Log", lines)))
+            Flow::Push(Box::new(Notice::new(
+                "dst-lic-log-entries",
+                "Licensed Internal Code Log",
+                lines,
+            )))
         }),
     )
 }
@@ -272,9 +293,20 @@ pub fn work_with_traces(env: &mut dyn DstEnv) -> Panel2 {
     let rows = match env.traces() {
         Ok(t) => t
             .into_iter()
-            .map(|t| format!("{:<10}  {:<4}  {:<8}  {:>8}", t.name, t.kind, t.status, t.records))
+            .map(|t| {
+                format!(
+                    "{:<10}  {:<4}  {:<8}  {:>8}",
+                    t.name, t.kind, t.status, t.records
+                )
+            })
             .collect(),
-        Err(e) => return Panel2::Notice(Notice::new("dst-trace-none", "Trace Licensed Internal Code", vec![e])),
+        Err(e) => {
+            return Panel2::Notice(Notice::new(
+                "dst-trace-none",
+                "Trace Licensed Internal Code",
+                vec![e],
+            ));
+        }
     };
     Panel2::Options(Options::new(
         "dst-trace",
@@ -285,7 +317,12 @@ pub fn work_with_traces(env: &mut dyn DstEnv) -> Panel2 {
         &[2, 4, 5],
         "F3=Exit   F6=Start trace   F12=Cancel",
         Box::new(|chosen, env| {
-            let names: Vec<String> = env.traces().unwrap_or_default().into_iter().map(|t| t.name).collect();
+            let names: Vec<String> = env
+                .traces()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|t| t.name)
+                .collect();
             for &(row, opt) in chosen {
                 let Some(name) = names.get(row) else {
                     continue;
@@ -295,7 +332,11 @@ pub fn work_with_traces(env: &mut dyn DstEnv) -> Panel2 {
                     4 => env.delete_trace(name),
                     _ => match env.trace_lines(name) {
                         Ok(lines) => {
-                            return Flow::Push(Box::new(Notice::new("dst-trace-display", "Display Trace", lines)));
+                            return Flow::Push(Box::new(Notice::new(
+                                "dst-trace-display",
+                                "Display Trace",
+                                lines,
+                            )));
                         }
                         Err(e) => Err(e),
                     },
@@ -389,9 +430,21 @@ pub fn display_alter_dump() -> Submenu {
         "dst-dad-menu",
         "Display/Alter/Dump Output Device",
         vec![
-            (1, "Display/Alter storage", Some(Box::new(|_env| Flow::Push(Box::new(DisplayAlterDump))))),
-            (2, "Dump to printer", Some(Box::new(|_env| Flow::Push(Box::new(dump_to_printer()))))),
-            (3, "Alter object storage", Some(Box::new(|_env| Flow::Push(Box::new(alter_form()))))),
+            (
+                1,
+                "Display/Alter storage",
+                Some(Box::new(|_env| Flow::Push(Box::new(DisplayAlterDump)))),
+            ),
+            (
+                2,
+                "Dump to printer",
+                Some(Box::new(|_env| Flow::Push(Box::new(dump_to_printer())))),
+            ),
+            (
+                3,
+                "Alter object storage",
+                Some(Box::new(|_env| Flow::Push(Box::new(alter_form())))),
+            ),
         ],
     )
 }
@@ -492,9 +545,11 @@ fn dump_to_printer() -> Form {
             FormLine::new("Or object identifier", 40, ""),
         ],
         vec!["The storage is printed in hex to spooled file QPCSMPRT."],
-        Box::new(|fields, env| match env.print_storage(&field(fields, 0), &field(fields, 1), &field(fields, 2)) {
-            Ok(m) => Flow::Message(m),
-            Err(e) => Flow::Error(e),
+        Box::new(|fields, env| {
+            match env.print_storage(&field(fields, 0), &field(fields, 1), &field(fields, 2)) {
+                Ok(m) => Flow::Message(m),
+                Err(e) => Flow::Error(e),
+            }
         }),
     )
 }
@@ -514,7 +569,12 @@ fn alter_form() -> Form {
             "The change is written at once and recorded in the LIC log.",
         ],
         Box::new(|fields, _env| {
-            let (id, page, off, hex) = (field(fields, 0), field(fields, 1), field(fields, 2), field(fields, 3));
+            let (id, page, off, hex) = (
+                field(fields, 0),
+                field(fields, 1),
+                field(fields, 2),
+                field(fields, 3),
+            );
             let Ok(p) = page.parse::<u64>() else {
                 return Flow::Error("Type the page number".into());
             };
@@ -608,10 +668,19 @@ pub fn work_with_dumps(env: &mut dyn DstEnv) -> Panel2 {
             .into_iter()
             .map(|d| {
                 let (y, mo, day, hh, mm, _) = civil(d.taken);
-                format!("{:<10}  {y:04}-{mo:02}-{day:02} {hh:02}:{mm:02}  {:>8}  {}", d.name, d.size, d.text)
+                format!(
+                    "{:<10}  {y:04}-{mo:02}-{day:02} {hh:02}:{mm:02}  {:>8}  {}",
+                    d.name, d.size, d.text
+                )
             })
             .collect(),
-        Err(e) => return Panel2::Notice(Notice::new("dst-msd-none", "Work with Main Storage Dumps", vec![e])),
+        Err(e) => {
+            return Panel2::Notice(Notice::new(
+                "dst-msd-none",
+                "Work with Main Storage Dumps",
+                vec![e],
+            ));
+        }
     };
     Panel2::Options(Options::new(
         "dst-msd-list",
@@ -622,7 +691,12 @@ pub fn work_with_dumps(env: &mut dyn DstEnv) -> Panel2 {
         &[4, 5, 6],
         "F3=Exit   F12=Cancel",
         Box::new(|chosen, env| {
-            let names: Vec<String> = env.dumps().unwrap_or_default().into_iter().map(|d| d.name).collect();
+            let names: Vec<String> = env
+                .dumps()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|d| d.name)
+                .collect();
             for &(row, opt) in chosen {
                 let Some(name) = names.get(row) else {
                     continue;
@@ -632,7 +706,11 @@ pub fn work_with_dumps(env: &mut dyn DstEnv) -> Panel2 {
                     6 => return Flow::Push(Box::new(copy_dump_form(name.clone()))),
                     _ => match env.dump_lines(name) {
                         Ok(lines) => {
-                            return Flow::Push(Box::new(Notice::new("dst-msd-display", "Display Main Storage Dump", lines)));
+                            return Flow::Push(Box::new(Notice::new(
+                                "dst-msd-display",
+                                "Display Main Storage Dump",
+                                lines,
+                            )));
                         }
                         Err(e) => Err(e),
                     },
@@ -713,14 +791,20 @@ pub fn hardware_service_manager() -> Submenu {
             (
                 6,
                 "Work with service action log",
-                Some(Box::new(|env| Flow::Push(Box::new(service_action_log(env))))),
+                Some(Box::new(|env| {
+                    Flow::Push(Box::new(service_action_log(env)))
+                })),
             ),
             (
                 7,
                 "Display label location work sheet",
                 Some(Box::new(|env| Flow::Push(Box::new(label_work_sheet(env))))),
             ),
-            (8, "Device Concurrent Maintenance", crate::dst::common::says(crate::dst::answers::CONCURRENT)),
+            (
+                8,
+                "Device Concurrent Maintenance",
+                crate::dst::common::says(crate::dst::answers::CONCURRENT),
+            ),
         ],
     )
     .with_key(
@@ -746,9 +830,16 @@ pub fn class_of(kind: &str) -> &'static str {
 }
 
 fn logical_menu() -> Submenu {
-    let by = |name: &'static str, title: &'static str, class: &'static str| -> crate::dst::common::Action {
+    let by = |name: &'static str,
+              title: &'static str,
+              class: &'static str|
+     -> crate::dst::common::Action {
         Box::new(move |env| {
-            let rows: Vec<ResourceRow> = env.resources().into_iter().filter(|r| class.is_empty() || class_of(&r.kind) == class).collect();
+            let rows: Vec<ResourceRow> = env
+                .resources()
+                .into_iter()
+                .filter(|r| class.is_empty() || class_of(&r.kind) == class)
+                .collect();
             Flow::Push(Box::new(resource_notice(rows, name, title, false)))
         })
     };
@@ -756,10 +847,26 @@ fn logical_menu() -> Submenu {
         "dst-hsm-logical-menu",
         "Logical Hardware Resources",
         vec![
-            (1, "All logical hardware resources", Some(by("dst-hsm-logical", "Logical Hardware Resources", ""))),
-            (2, "Communications resources (*CMN)", Some(by("dst-hsm-cmn", "Communications Resources", "*CMN"))),
-            (3, "Storage resources (*STG)", Some(by("dst-hsm-stg", "Storage Resources", "*STG"))),
-            (4, "Tape and optical resources (*TAP)", Some(by("dst-hsm-tap", "Tape and Optical Resources", "*TAP"))),
+            (
+                1,
+                "All logical hardware resources",
+                Some(by("dst-hsm-logical", "Logical Hardware Resources", "")),
+            ),
+            (
+                2,
+                "Communications resources (*CMN)",
+                Some(by("dst-hsm-cmn", "Communications Resources", "*CMN")),
+            ),
+            (
+                3,
+                "Storage resources (*STG)",
+                Some(by("dst-hsm-stg", "Storage Resources", "*STG")),
+            ),
+            (
+                4,
+                "Tape and optical resources (*TAP)",
+                Some(by("dst-hsm-tap", "Tape and Optical Resources", "*TAP")),
+            ),
         ],
     )
 }
@@ -786,7 +893,12 @@ fn locate() -> Form {
             if rows.is_empty() {
                 return Flow::Error(format!("No resource is called {want}"));
             }
-            Flow::Push(Box::new(resource_notice(rows, "dst-hsm-located", "Resources Located", true)))
+            Flow::Push(Box::new(resource_notice(
+                rows,
+                "dst-hsm-located",
+                "Resources Located",
+                true,
+            )))
         }),
     )
 }
@@ -802,7 +914,12 @@ fn resources(
     resource_notice(rows, name, title, with_location)
 }
 
-fn resource_notice(rows: Vec<ResourceRow>, name: &'static str, title: &'static str, with_location: bool) -> Notice {
+fn resource_notice(
+    rows: Vec<ResourceRow>,
+    name: &'static str,
+    title: &'static str,
+    with_location: bool,
+) -> Notice {
     let mut lines = vec![if with_location {
         "Resource  Type      Status        Location          Description".to_string()
     } else {

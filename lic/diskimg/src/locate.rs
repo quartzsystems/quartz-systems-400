@@ -64,10 +64,15 @@ pub fn identity(node: &Path) -> (String, String) {
         .ok()
         .and_then(|b| vpd_serial(&b))
         .unwrap_or_default();
-    let serial = [read("device/serial"), read("serial"), vpd, read("device/wwid")]
-        .into_iter()
-        .find(|s| !s.is_empty())
-        .unwrap_or_default();
+    let serial = [
+        read("device/serial"),
+        read("serial"),
+        vpd,
+        read("device/wwid"),
+    ]
+    .into_iter()
+    .find(|s| !s.is_empty())
+    .unwrap_or_default();
     (model, serial)
 }
 
@@ -307,8 +312,14 @@ mod tests {
 
     #[test]
     fn the_model_drops_the_ata_vendor() {
-        assert_eq!(model_text("sda", "ATA     ", "Samsung SSD 870\n"), "Samsung SSD 870");
-        assert_eq!(model_text("sdb", "SEAGATE", "ST2000NM0045"), "SEAGATE ST2000NM0045");
+        assert_eq!(
+            model_text("sda", "ATA     ", "Samsung SSD 870\n"),
+            "Samsung SSD 870"
+        );
+        assert_eq!(
+            model_text("sdb", "SEAGATE", "ST2000NM0045"),
+            "SEAGATE ST2000NM0045"
+        );
         assert_eq!(model_text("sdc", "QEMU", "QEMU HARDDISK"), "QEMU HARDDISK");
         assert_eq!(
             model_text("nvme0n1", "", "Samsung SSD 980 PRO 1TB"),
@@ -326,6 +337,9 @@ mod tests {
         assert_eq!(vpd_serial(&[0, 0x83, 0, 0]), None);
         assert_eq!(vpd_serial(&[0, 0x80, 0, 4, b' ', b' ', 0, 0]), None);
         // A length past the end reads what is there.
-        assert_eq!(vpd_serial(&[0, 0x80, 0, 9, b'A', b'B']).as_deref(), Some("AB"));
+        assert_eq!(
+            vpd_serial(&[0, 0x80, 0, 9, b'A', b'B']).as_deref(),
+            Some("AB")
+        );
     }
 }

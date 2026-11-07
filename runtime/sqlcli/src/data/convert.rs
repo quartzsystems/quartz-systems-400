@@ -78,11 +78,19 @@ pub fn buffer_len(ctype: i16, max: i32) -> usize {
 }
 
 fn out_of_range() -> Diag {
-    Diag { state: "22003".into(), native: -302, text: "A value does not fit its buffer.".into() }
+    Diag {
+        state: "22003".into(),
+        native: -302,
+        text: "A value does not fit its buffer.".into(),
+    }
 }
 
 fn not_convertible() -> Diag {
-    Diag { state: "22018".into(), native: -420, text: "A value cannot be converted to the buffer's type.".into() }
+    Diag {
+        state: "22018".into(),
+        native: -420,
+        text: "A value cannot be converted to the buffer's type.".into(),
+    }
 }
 
 /// A decimal precision and scale from a binding's word.
@@ -90,7 +98,10 @@ fn shape(word: i32) -> Result<(u8, u8), Diag> {
     let p = u8::try_from(word >> 8).map_err(|_| out_of_range())?;
     let s = u8::try_from(word & 0xFF).map_err(|_| out_of_range())?;
     if p == 0 || p > 63 || s > p {
-        return Err(Diag::cli("HY104", "The precision or scale of a decimal buffer is not valid."));
+        return Err(Diag::cli(
+            "HY104",
+            "The precision or scale of a decimal buffer is not valid.",
+        ));
     }
     Ok((p, s))
 }
@@ -105,19 +116,32 @@ fn text_of(v: &Value) -> String {
 
 fn int_image(v: &Value, bytes: usize) -> Result<Vec<u8>, Diag> {
     let d = v.as_decimal().map_err(|_| not_convertible())?;
-    let d = d.rescale(0, Rounding::Truncate).map_err(|_| out_of_range())?;
+    let d = d
+        .rescale(0, Rounding::Truncate)
+        .map_err(|_| out_of_range())?;
     let n = d.to_i128().ok_or_else(out_of_range)?;
     Ok(match bytes {
-        2 => i16::try_from(n).map_err(|_| out_of_range())?.to_be_bytes().to_vec(),
-        4 => i32::try_from(n).map_err(|_| out_of_range())?.to_be_bytes().to_vec(),
-        _ => i64::try_from(n).map_err(|_| out_of_range())?.to_be_bytes().to_vec(),
+        2 => i16::try_from(n)
+            .map_err(|_| out_of_range())?
+            .to_be_bytes()
+            .to_vec(),
+        4 => i32::try_from(n)
+            .map_err(|_| out_of_range())?
+            .to_be_bytes()
+            .to_vec(),
+        _ => i64::try_from(n)
+            .map_err(|_| out_of_range())?
+            .to_be_bytes()
+            .to_vec(),
     })
 }
 
 fn dec_image(v: &Value, word: i32, zoned: bool) -> Result<Vec<u8>, Diag> {
     let (p, s) = shape(word)?;
     let d = v.as_decimal().map_err(|_| not_convertible())?;
-    let d = d.rescale(s, Rounding::Truncate).map_err(|_| out_of_range())?;
+    let d = d
+        .rescale(s, Rounding::Truncate)
+        .map_err(|_| out_of_range())?;
     let r = if zoned {
         Zoned::new(p, s).and_then(|z| z.encode(&d, Rounding::Truncate))
     } else {
@@ -136,7 +160,10 @@ pub fn image(v: &Value, ctype: i16, max: i32, nts: bool) -> Result<Image, Diag> 
             if b.len() < cap {
                 if nts {
                     b.push(0);
-                    Image { bytes: b, ind: len::NTS }
+                    Image {
+                        bytes: b,
+                        ind: len::NTS,
+                    }
                 } else {
                     // Without the NUL the buffer is filled with blanks.
                     b.resize(cap, 0x40);
@@ -145,17 +172,25 @@ pub fn image(v: &Value, ctype: i16, max: i32, nts: bool) -> Result<Image, Diag> 
             } else {
                 let whole = i32::try_from(b.len()).unwrap_or(i32::MAX);
                 b.truncate(cap);
-                Image { bytes: b, ind: if nts { max } else { whole } }
+                Image {
+                    bytes: b,
+                    ind: if nts { max } else { whole },
+                }
             }
         }
         ty::VARCHAR | ty::VARBINARY => {
             let mut data = match v {
                 Value::Bin(b) => b.clone(),
-                other if ctype == ty::VARBINARY => other.as_bytes().map_err(|_| not_convertible())?,
+                other if ctype == ty::VARBINARY => {
+                    other.as_bytes().map_err(|_| not_convertible())?
+                }
                 other => super::ebcdic(&text_of(other)),
             };
             data.truncate(cap.saturating_sub(2));
-            let mut b = u16::try_from(data.len()).unwrap_or(0).to_be_bytes().to_vec();
+            let mut b = u16::try_from(data.len())
+                .unwrap_or(0)
+                .to_be_bytes()
+                .to_vec();
             b.extend(data);
             fixed(b)
         }
@@ -163,14 +198,26 @@ pub fn image(v: &Value, ctype: i16, max: i32, nts: bool) -> Result<Image, Diag> 
             let mut data = v.as_bytes().map_err(|_| not_convertible())?;
             let n = data.len();
             data.truncate(cap);
-            Image { bytes: data, ind: i32::try_from(n.min(cap)).unwrap_or(0) }
+            Image {
+                bytes: data,
+                ind: i32::try_from(n.min(cap)).unwrap_or(0),
+            }
         }
         ty::INTEGER => fixed(int_image(v, 4)?),
         ty::SMALLINT => fixed(int_image(v, 2)?),
         ty::BIGINT => fixed(int_image(v, 8)?),
-        ty::DOUBLE | ty::FLOAT => fixed(v.as_f64().map_err(|_| not_convertible())?.to_be_bytes().to_vec()),
+        ty::DOUBLE | ty::FLOAT => fixed(
+            v.as_f64()
+                .map_err(|_| not_convertible())?
+                .to_be_bytes()
+                .to_vec(),
+        ),
         #[allow(clippy::cast_possible_truncation)] // a REAL buffer
-        ty::REAL => fixed((v.as_f64().map_err(|_| not_convertible())? as f32).to_be_bytes().to_vec()),
+        ty::REAL => fixed(
+            (v.as_f64().map_err(|_| not_convertible())? as f32)
+                .to_be_bytes()
+                .to_vec(),
+        ),
         ty::DECIMAL => fixed(dec_image(v, max, false)?),
         ty::NUMERIC => fixed(dec_image(v, max, true)?),
         _ => return Err(unsupported(ctype)),
@@ -199,25 +246,40 @@ pub fn null_image(ctype: i16, max: i32, col_type: i16, nts: bool) -> Vec<u8> {
             let zero = Value::Num(Decimal::zero());
             dec_image(&zero, max, ctype == ty::NUMERIC).unwrap_or_else(|_| vec![0; n])
         }
-        _ => vec![0; n.min(8).max(usize::from(matches!(ctype, ty::VARCHAR | ty::VARBINARY)) * 2)],
+        _ => vec![
+            0;
+            n.min(8)
+                .max(usize::from(matches!(ctype, ty::VARCHAR | ty::VARBINARY)) * 2)
+        ],
     }
 }
 
 /// The refusal of a C type this implementation does not take.
 #[must_use]
 pub fn unsupported(ctype: i16) -> Diag {
-    Diag::cli("HY003", &format!("Buffers of C type {ctype} are not supported."))
+    Diag::cli(
+        "HY003",
+        &format!("Buffers of C type {ctype} are not supported."),
+    )
 }
 
 /// A parameter's value from its buffer: `bytes` are the buffer (as many
 /// as the binding says it has), `ind` the length word (`None` without
 /// one), `plen` and `pscale` the binding's length or precision and scale.
-pub fn value_of(ctype: i16, bytes: &[u8], ind: Option<i32>, plen: i32, pscale: i16) -> Result<Value, Diag> {
+pub fn value_of(
+    ctype: i16,
+    bytes: &[u8],
+    ind: Option<i32>,
+    plen: i32,
+    pscale: i16,
+) -> Result<Value, Diag> {
     if ind == Some(len::NULL_DATA) {
         return Ok(Value::Null);
     }
     let be = |n: usize| -> Result<&[u8], Diag> {
-        bytes.get(..n).ok_or_else(|| Diag::cli("HY090", "A parameter's buffer is too short for its type."))
+        bytes
+            .get(..n)
+            .ok_or_else(|| Diag::cli("HY090", "A parameter's buffer is too short for its type."))
     };
     // A character length: the word, else up to the first NUL.
     let text_len = || -> usize {
@@ -227,17 +289,25 @@ pub fn value_of(ctype: i16, bytes: &[u8], ind: Option<i32>, plen: i32, pscale: i
         }
     };
     Ok(match ctype {
-        ty::CHAR | ty::DATE | ty::TIME | ty::TIMESTAMP => Value::Str(ccsid::from_ebcdic(&bytes[..text_len()])),
+        ty::CHAR | ty::DATE | ty::TIME | ty::TIMESTAMP => {
+            Value::Str(ccsid::from_ebcdic(&bytes[..text_len()]))
+        }
         ty::VARCHAR | ty::VARBINARY => {
             let h = be(2)?;
             let n = usize::from(u16::from_be_bytes([h[0], h[1]])).min(bytes.len() - 2);
             let data = &bytes[2..2 + n];
-            if ctype == ty::VARBINARY { Value::Bin(data.to_vec()) } else { Value::Str(ccsid::from_ebcdic(data)) }
+            if ctype == ty::VARBINARY {
+                Value::Bin(data.to_vec())
+            } else {
+                Value::Str(ccsid::from_ebcdic(data))
+            }
         }
         ty::BINARY => {
             let n = match ind {
                 Some(n) if n >= 0 => usize::try_from(n).unwrap_or(0).min(bytes.len()),
-                _ => usize::try_from(plen).unwrap_or(bytes.len()).min(bytes.len()),
+                _ => usize::try_from(plen)
+                    .unwrap_or(bytes.len())
+                    .min(bytes.len()),
             };
             Value::Bin(bytes[..n].to_vec())
         }
@@ -253,7 +323,9 @@ pub fn value_of(ctype: i16, bytes: &[u8], ind: Option<i32>, plen: i32, pscale: i
             let b = be(8)?;
             Value::int(i64::from_be_bytes(b.try_into().expect("8 bytes")))
         }
-        ty::DOUBLE | ty::FLOAT => Value::Double(f64::from_be_bytes(be(8)?.try_into().expect("8 bytes"))),
+        ty::DOUBLE | ty::FLOAT => {
+            Value::Double(f64::from_be_bytes(be(8)?.try_into().expect("8 bytes")))
+        }
         ty::REAL => Value::Real(f32::from_be_bytes(be(4)?.try_into().expect("4 bytes"))),
         ty::DECIMAL | ty::NUMERIC => {
             let p = u8::try_from(plen).map_err(|_| out_of_range())?;
@@ -265,7 +337,11 @@ pub fn value_of(ctype: i16, bytes: &[u8], ind: Option<i32>, plen: i32, pscale: i
                 let c = Zoned::new(p, s).map_err(|_| shape(0).unwrap_err())?;
                 c.decode(be(c.byte_len())?)
             };
-            Value::Num(d.map_err(|_| Diag { state: "22023".into(), native: -302, text: "A decimal parameter holds data that is not valid.".into() })?)
+            Value::Num(d.map_err(|_| Diag {
+                state: "22023".into(),
+                native: -302,
+                text: "A decimal parameter holds data that is not valid.".into(),
+            })?)
         }
         _ => return Err(unsupported(ctype)),
     })
@@ -298,18 +374,39 @@ mod tests {
         let i = image(&num("10.50"), ty::NUMERIC, 7 * 256 + 3, true).unwrap();
         assert_eq!(i.bytes, [0xF0, 0xF0, 0xF1, 0xF0, 0xF5, 0xF0, 0xC0]);
         assert!(image(&num("123456"), ty::DECIMAL, 5 * 256 + 1, true).is_err());
-        assert_eq!(null_image(ty::DECIMAL, 9 * 256 + 2, ty::DECIMAL, true), vec![0, 0, 0, 0, 0x0C]);
+        assert_eq!(
+            null_image(ty::DECIMAL, 9 * 256 + 2, ty::DECIMAL, true),
+            vec![0, 0, 0, 0, 0x0C]
+        );
         assert_eq!(null_image(ty::CHAR, 3, ty::VARCHAR, true), vec![0x40; 3]);
-        assert_eq!(null_image(ty::CHAR, 10, ty::DATE, false), ccsid::to_ebcdic("0001-01-01").unwrap());
+        assert_eq!(
+            null_image(ty::CHAR, 10, ty::DATE, false),
+            ccsid::to_ebcdic("0001-01-01").unwrap()
+        );
     }
 
     #[test]
     fn parameters_from_their_buffers() {
-        assert_eq!(value_of(ty::INTEGER, &7i32.to_be_bytes(), None, 0, 0).unwrap(), Value::int(7));
-        assert_eq!(value_of(ty::DECIMAL, &[0x01, 0x10, 0x0F], None, 5, 2).unwrap(), num("11.00"));
-        assert_eq!(value_of(ty::CHAR, &[0xC1, 0xC2, 0, 0x40], Some(len::NTS), 4, 0).unwrap(), Value::Str("AB".into()));
-        assert_eq!(value_of(ty::CHAR, &[0xC1, 0xC2, 0x40], Some(2), 3, 0).unwrap(), Value::Str("AB".into()));
-        assert_eq!(value_of(ty::INTEGER, &[0; 4], Some(len::NULL_DATA), 0, 0).unwrap(), Value::Null);
+        assert_eq!(
+            value_of(ty::INTEGER, &7i32.to_be_bytes(), None, 0, 0).unwrap(),
+            Value::int(7)
+        );
+        assert_eq!(
+            value_of(ty::DECIMAL, &[0x01, 0x10, 0x0F], None, 5, 2).unwrap(),
+            num("11.00")
+        );
+        assert_eq!(
+            value_of(ty::CHAR, &[0xC1, 0xC2, 0, 0x40], Some(len::NTS), 4, 0).unwrap(),
+            Value::Str("AB".into())
+        );
+        assert_eq!(
+            value_of(ty::CHAR, &[0xC1, 0xC2, 0x40], Some(2), 3, 0).unwrap(),
+            Value::Str("AB".into())
+        );
+        assert_eq!(
+            value_of(ty::INTEGER, &[0; 4], Some(len::NULL_DATA), 0, 0).unwrap(),
+            Value::Null
+        );
         assert!(value_of(ty::WCHAR, &[0; 4], None, 0, 0).is_err());
     }
 }

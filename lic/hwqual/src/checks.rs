@@ -31,7 +31,9 @@ pub const SECURE_BOOT_WARNING: &str =
 /// when it cannot be read.
 #[must_use]
 pub fn secure_boot(sys: &Path) -> Option<bool> {
-    fs::read(sys.join(SECURE_BOOT)).ok().and_then(|b| b.get(4).map(|v| *v == 1))
+    fs::read(sys.join(SECURE_BOOT))
+        .ok()
+        .and_then(|b| b.get(4).map(|v| *v == 1))
 }
 
 /// Storage controller types with a driver QS/400 names (`QD00` is a
@@ -41,7 +43,9 @@ const UNKNOWN_CONTROLLER: &str = "QD00";
 const AGENT_PORT: &str = "org.qemu.guest_agent.0";
 
 fn read(p: &Path) -> String {
-    fs::read_to_string(p).map(|s| s.trim().to_string()).unwrap_or_default()
+    fs::read_to_string(p)
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
 }
 
 fn tm(r: &Resource) -> String {
@@ -49,7 +53,9 @@ fn tm(r: &Resource) -> String {
 }
 
 fn of(t: &Table, k: Kind) -> impl Iterator<Item = &Resource> {
-    t.resources.iter().filter(move |r| r.kind == k && r.operational())
+    t.resources
+        .iter()
+        .filter(move |r| r.kind == k && r.operational())
 }
 
 /// Every check, in sections.
@@ -64,12 +70,19 @@ pub fn all(t: &Table, roots: &Roots, now: u64) -> Report {
         .collect::<Vec<_>>()
         .join(" ");
     Report {
-        machine: if machine.is_empty() { "not reported by the firmware".into() } else { machine },
+        machine: if machine.is_empty() {
+            "not reported by the firmware".into()
+        } else {
+            machine
+        },
         when: timestamp(now),
         checks: vec![
             ("Firmware and security".into(), firmware(roots)),
             ("Processors and main storage".into(), processors(t, roots)),
-            ("Storage controllers and disk units".into(), storage(t, roots)),
+            (
+                "Storage controllers and disk units".into(),
+                storage(t, roots),
+            ),
             ("Communications".into(), network(t, &hypervisor)),
             ("Console".into(), console(t, roots)),
         ],
@@ -81,7 +94,9 @@ pub fn all(t: &Table, roots: &Roots, now: u64) -> Report {
 #[must_use]
 pub fn hypervisor(dmi: &Dmi, roots: &Roots) -> String {
     let cpuinfo = read(&roots.proc.join("cpuinfo"));
-    let flagged = cpuinfo.lines().any(|l| l.starts_with("flags") && l.split_whitespace().any(|f| f == "hypervisor"));
+    let flagged = cpuinfo
+        .lines()
+        .any(|l| l.starts_with("flags") && l.split_whitespace().any(|f| f == "hypervisor"));
     let xen = read(&roots.sys.join("hypervisor/type"));
     let v = dmi.vendor.to_ascii_lowercase();
     let p = dmi.product.to_ascii_lowercase();
@@ -108,11 +123,26 @@ fn firmware(roots: &Roots) -> Vec<Check> {
     let mut v = Vec::new();
     let efi = roots.sys.join("firmware/efi");
     if efi.is_dir() {
-        v.push(Check::new(Grade::Pass, "UEFI", "", "UEFI firmware: QS/400 boots its UKI from the EFI system partition."));
+        v.push(Check::new(
+            Grade::Pass,
+            "UEFI",
+            "",
+            "UEFI firmware: QS/400 boots its UKI from the EFI system partition.",
+        ));
         v.push(match secure_boot(&roots.sys) {
             Some(true) => Check::new(Grade::Warn, "SECBOOT", "", SECURE_BOOT_WARNING),
-            Some(false) => Check::new(Grade::Pass, "SECBOOT", "", "Secure Boot is disabled, as QS/400 V1R1M0 boots."),
-            None => Check::new(Grade::Warn, "SECBOOT", "", "The Secure Boot state cannot be read from the firmware."),
+            Some(false) => Check::new(
+                Grade::Pass,
+                "SECBOOT",
+                "",
+                "Secure Boot is disabled, as QS/400 V1R1M0 boots.",
+            ),
+            None => Check::new(
+                Grade::Warn,
+                "SECBOOT",
+                "",
+                "The Secure Boot state cannot be read from the firmware.",
+            ),
         });
     } else {
         v.push(Check::new(
@@ -125,10 +155,27 @@ fn firmware(roots: &Roots) -> Vec<Check> {
     let tpm = roots.sys.join("class/tpm/tpm0");
     if tpm.exists() {
         let major = read(&tpm.join("tpm_version_major"));
-        let ver = if major.is_empty() { "TPM".to_string() } else { format!("TPM {major}.0") };
-        let grade = if major == "1" { Grade::Warn } else { Grade::Pass };
-        let note = if major == "1" { ": QS/400 uses TPM 2.0 features; a 1.2 part is only reported" } else { "" };
-        v.push(Check::new(grade, "TPM", "", format!("{ver} present{note}.")));
+        let ver = if major.is_empty() {
+            "TPM".to_string()
+        } else {
+            format!("TPM {major}.0")
+        };
+        let grade = if major == "1" {
+            Grade::Warn
+        } else {
+            Grade::Pass
+        };
+        let note = if major == "1" {
+            ": QS/400 uses TPM 2.0 features; a 1.2 part is only reported"
+        } else {
+            ""
+        };
+        v.push(Check::new(
+            grade,
+            "TPM",
+            "",
+            format!("{ver} present{note}."),
+        ));
     } else {
         v.push(Check::new(
             Grade::Warn,
@@ -144,12 +191,20 @@ fn processors(t: &Table, roots: &Roots) -> Vec<Check> {
     let cpuinfo = read(&roots.proc.join("cpuinfo"));
     let model = cpuinfo
         .lines()
-        .find_map(|l| l.strip_prefix("model name").and_then(|r| r.split_once(':')).map(|(_, m)| m.trim().to_string()))
+        .find_map(|l| {
+            l.strip_prefix("model name")
+                .and_then(|r| r.split_once(':'))
+                .map(|(_, m)| m.trim().to_string())
+        })
         .unwrap_or_default();
     let mut v = Vec::new();
     let cpus: Vec<&Resource> = of(t, Kind::Processor).collect();
     for r in &cpus {
-        let text = if model.is_empty() { r.description.clone() } else { format!("{}: {model}", r.description) };
+        let text = if model.is_empty() {
+            r.description.clone()
+        } else {
+            format!("{}: {model}", r.description)
+        };
         v.push(Check::new(Grade::Pass, &r.name, &tm(r), text));
     }
     match cpus.len() {
@@ -169,7 +224,11 @@ fn processors(t: &Table, roots: &Roots) -> Vec<Check> {
         .and_then(|n| n.parse().ok())
         .unwrap_or(0);
     let mib = mem_kib / 1024;
-    let ms = of(t, Kind::Memory).next().map_or(("MS01".to_string(), "QM01-001".to_string()), |r| (r.name.clone(), tm(r)));
+    let ms = of(t, Kind::Memory)
+        .next()
+        .map_or(("MS01".to_string(), "QM01-001".to_string()), |r| {
+            (r.name.clone(), tm(r))
+        });
     v.push(if mib == 0 {
         Check::new(Grade::Warn, &ms.0, &ms.1, "The size of main storage cannot be read.")
     } else if mib < MIN_MEMORY_MIB {
@@ -198,7 +257,9 @@ fn driver(sys: &Path, addr: &str) -> String {
 /// Whether a disk is a RAID controller's logical volume, not a disk.
 fn raid_volume(r: &Resource) -> bool {
     let d = r.description.to_ascii_uppercase();
-    ["PERC", "VIRTUAL DISK", "LOGICAL VOLUME", "MR9", "RAID"].iter().any(|w| d.contains(w))
+    ["PERC", "VIRTUAL DISK", "LOGICAL VOLUME", "MR9", "RAID"]
+        .iter()
+        .any(|w| d.contains(w))
 }
 
 fn storage(t: &Table, roots: &Roots) -> Vec<Check> {
@@ -206,20 +267,43 @@ fn storage(t: &Table, roots: &Roots) -> Vec<Check> {
     for c in of(t, Kind::Storage) {
         let (ty, _) = c.type_model();
         let drv = driver(&roots.sys, &c.location);
-        let disks = t.resources.iter().filter(|d| d.kind == Kind::Disk && d.logical == c.name).count();
-        let bound = if drv.is_empty() { String::new() } else { format!(", driver {drv}") };
-        let text = format!("{}{bound}, {disks} disk units", c.description);
-        v.push(if drv.is_empty() && roots.sys.join("bus/pci/devices").join(&c.location).exists() {
-            Check::new(Grade::Fail, &c.name, &tm(c), format!("{text}: no driver took it; its disks are out of reach."))
-        } else if ty == UNKNOWN_CONTROLLER {
-            Check::new(Grade::Warn, &c.name, &tm(c), format!("{text}: a controller QS/400 has not been qualified with."))
+        let disks = t
+            .resources
+            .iter()
+            .filter(|d| d.kind == Kind::Disk && d.logical == c.name)
+            .count();
+        let bound = if drv.is_empty() {
+            String::new()
         } else {
-            Check::new(Grade::Pass, &c.name, &tm(c), text)
-        });
+            format!(", driver {drv}")
+        };
+        let text = format!("{}{bound}, {disks} disk units", c.description);
+        v.push(
+            if drv.is_empty() && roots.sys.join("bus/pci/devices").join(&c.location).exists() {
+                Check::new(
+                    Grade::Fail,
+                    &c.name,
+                    &tm(c),
+                    format!("{text}: no driver took it; its disks are out of reach."),
+                )
+            } else if ty == UNKNOWN_CONTROLLER {
+                Check::new(
+                    Grade::Warn,
+                    &c.name,
+                    &tm(c),
+                    format!("{text}: a controller QS/400 has not been qualified with."),
+                )
+            } else {
+                Check::new(Grade::Pass, &c.name, &tm(c), text)
+            },
+        );
     }
     let disks: Vec<&Resource> = of(t, Kind::Disk).collect();
     for d in &disks {
-        let bytes = read(&roots.sys.join("class/block").join(&d.location).join("size")).parse::<u64>().unwrap_or(0) * 512;
+        let bytes = read(&roots.sys.join("class/block").join(&d.location).join("size"))
+            .parse::<u64>()
+            .unwrap_or(0)
+            * 512;
         v.push(if raid_volume(d) {
             // The controller is the disk's logical parent.
             let ctl = t
@@ -243,7 +327,12 @@ fn storage(t: &Table, roots: &Roots) -> Vec<Check> {
         });
     }
     match disks.len() {
-        0 => v.push(Check::new(Grade::Fail, "DD", "", "No disk unit: QS/400 needs one for its load source.")),
+        0 => v.push(Check::new(
+            Grade::Fail,
+            "DD",
+            "",
+            "No disk unit: QS/400 needs one for its load source.",
+        )),
         1 => v.push(Check::new(
             Grade::Warn,
             &disks[0].name,
@@ -252,8 +341,16 @@ fn storage(t: &Table, roots: &Roots) -> Vec<Check> {
         )),
         _ => {}
     }
-    for o in of(t, Kind::Optical).chain(of(t, Kind::Tape)).chain(of(t, Kind::TapeLibrary)) {
-        v.push(Check::new(Grade::Info, &o.name, &tm(o), o.description.clone()));
+    for o in of(t, Kind::Optical)
+        .chain(of(t, Kind::Tape))
+        .chain(of(t, Kind::TapeLibrary))
+    {
+        v.push(Check::new(
+            Grade::Info,
+            &o.name,
+            &tm(o),
+            o.description.clone(),
+        ));
     }
     v
 }
@@ -266,16 +363,38 @@ fn network(t: &Table, hypervisor: &str) -> Vec<Check> {
         v.push(if up {
             Check::new(Grade::Pass, &p.name, &tm(p), p.description.clone())
         } else {
-            Check::new(Grade::Warn, &p.name, &tm(p), format!("{}: connect the port before configuring TCP/IP on it.", p.description))
+            Check::new(
+                Grade::Warn,
+                &p.name,
+                &tm(p),
+                format!(
+                    "{}: connect the port before configuring TCP/IP on it.",
+                    p.description
+                ),
+            )
         });
     }
     if ports.is_empty() {
-        v.push(Check::new(Grade::Warn, "CMN", "", "No Ethernet port: the system works only from its console."));
+        v.push(Check::new(
+            Grade::Warn,
+            "CMN",
+            "",
+            "No Ethernet port: the system works only from its console.",
+        ));
     }
     let channels: Vec<&Resource> = of(t, Kind::Channel).collect();
     for c in &channels {
-        let what = if c.location == AGENT_PORT { "the guest agent's channel" } else { "a hypervisor channel" };
-        v.push(Check::new(Grade::Pass, &c.name, &tm(c), format!("{}: {what}.", c.description)));
+        let what = if c.location == AGENT_PORT {
+            "the guest agent's channel"
+        } else {
+            "a hypervisor channel"
+        };
+        v.push(Check::new(
+            Grade::Pass,
+            &c.name,
+            &tm(c),
+            format!("{}: {what}.", c.description),
+        ));
     }
     if !hypervisor.is_empty() && !channels.iter().any(|c| c.location == AGENT_PORT) {
         v.push(Check::new(
@@ -290,9 +409,16 @@ fn network(t: &Table, hypervisor: &str) -> Vec<Check> {
 
 fn console(t: &Table, roots: &Roots) -> Vec<Check> {
     let mut v = Vec::new();
-    let serial: Vec<&Resource> = of(t, Kind::Comm).filter(|r| r.location.starts_with("ttyS")).collect();
+    let serial: Vec<&Resource> = of(t, Kind::Comm)
+        .filter(|r| r.location.starts_with("ttyS"))
+        .collect();
     for s in &serial {
-        v.push(Check::new(Grade::Pass, &s.name, &tm(s), format!("{}: the service console runs here.", s.description)));
+        v.push(Check::new(
+            Grade::Pass,
+            &s.name,
+            &tm(s),
+            format!("{}: the service console runs here.", s.description),
+        ));
     }
     let fb = roots.sys.join("class/graphics/fb0");
     if fb.exists() {
@@ -314,10 +440,20 @@ fn console(t: &Table, roots: &Roots) -> Vec<Check> {
         ));
     }
     if serial.is_empty() && !fb.exists() {
-        v.push(Check::new(Grade::Fail, "CONSOLE", "", "Neither a serial port nor a display: there is no console."));
+        v.push(Check::new(
+            Grade::Fail,
+            "CONSOLE",
+            "",
+            "Neither a serial port nor a display: there is no console.",
+        ));
     }
     for k in of(t, Kind::Keyboard) {
-        v.push(Check::new(Grade::Info, &k.name, &tm(k), k.description.clone()));
+        v.push(Check::new(
+            Grade::Info,
+            &k.name,
+            &tm(k),
+            k.description.clone(),
+        ));
     }
     v
 }

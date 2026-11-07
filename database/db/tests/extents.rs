@@ -44,7 +44,12 @@ fn a_keyed_member_takes_a_million_records() {
         wal_pages: 1024,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -64,9 +69,29 @@ fn a_keyed_member_takes_a_million_records() {
     .unwrap();
     // Keyed on K, descending, so each record's key lands at the tree's
     // front and the tree takes pages between every growth of the space.
-    let def = pf(&[rec("BIGREC", ""), fld("K", "9", "B", "0", ""), fld("N", "30", "A", "", ""), key("K", "DESCEND")]);
-    let size = Size { initial: 0, increment: 0, max_increments: 0 };
-    let id = file::create_pf(&mut t, lib, name("BIG"), &def, &CreateFileOpts { now: NOW, size, ..CreateFileOpts::default() }).unwrap();
+    let def = pf(&[
+        rec("BIGREC", ""),
+        fld("K", "9", "B", "0", ""),
+        fld("N", "30", "A", "", ""),
+        key("K", "DESCEND"),
+    ]);
+    let size = Size {
+        initial: 0,
+        increment: 0,
+        max_increments: 0,
+    };
+    let id = file::create_pf(
+        &mut t,
+        lib,
+        name("BIG"),
+        &def,
+        &CreateFileOpts {
+            now: NOW,
+            size,
+            ..CreateFileOpts::default()
+        },
+    )
+    .unwrap();
     t.commit().unwrap();
 
     let mut k = 0;
@@ -75,7 +100,8 @@ fn a_keyed_member_takes_a_million_records() {
         let mut m = Member::open_by(&mut t, id, MemberSpec::First).unwrap();
         for _ in 0..BATCH {
             k += 1;
-            m.write_new(&mut t, &record(k), &[]).unwrap_or_else(|e| panic!("record {k}: {e}"));
+            m.write_new(&mut t, &record(k), &[])
+                .unwrap_or_else(|e| panic!("record {k}: {e}"));
         }
         drop(m);
         t.commit().unwrap();
@@ -85,9 +111,16 @@ fn a_keyed_member_takes_a_million_records() {
     let m = Member::open_by(&mut t, id, MemberSpec::First).unwrap();
     assert_eq!(m.core.attr.record_count, u64::from(ROWS));
     let (space, _) = Space::load(&mut t, m.core.id).unwrap();
-    assert!(space.extents.len() < MAX_EXTENTS / 4, "{} extents", space.extents.len());
+    assert!(
+        space.extents.len() < MAX_EXTENTS / 4,
+        "{} extents",
+        space.extents.len()
+    );
     // The first and last records read back by RRN.
     assert_eq!(m.read(&mut t, 1).unwrap().unwrap().record, record(1));
-    assert_eq!(m.read(&mut t, u64::from(ROWS)).unwrap().unwrap().record, record(ROWS));
+    assert_eq!(
+        m.read(&mut t, u64::from(ROWS)).unwrap().unwrap().record,
+        record(ROWS)
+    );
     t.abort();
 }

@@ -97,7 +97,13 @@ impl Suite {
         r
     }
 
-    fn two_guests(&self, a: &mut Session, b: &mut Session, b_telnet: u16, limit: Duration) -> Result<String, String> {
+    fn two_guests(
+        &self,
+        a: &mut Session,
+        b: &mut Session,
+        b_telnet: u16,
+        limit: Duration,
+    ) -> Result<String, String> {
         // A: its address, the DDM server, the table.
         crate::tcp::guest_address(a)?;
         setup(a)?;
@@ -111,8 +117,16 @@ impl Suite {
             .map(|(h, _)| *h)
             .ok_or("guest A's port 446 is not forwarded")?;
         let _ = sql(a, &format!("DROP TABLE {LIB}/TWOT"))?;
-        sql_has(a, &format!("CREATE TABLE {LIB}/TWOT (N INT, W CHAR(10))"), &["OK"])?;
-        sql_has(a, &format!("INSERT INTO {LIB}/TWOT VALUES (1, 'ON A'), (2, 'ON A')"), &["2 row(s)"])?;
+        sql_has(
+            a,
+            &format!("CREATE TABLE {LIB}/TWOT (N INT, W CHAR(10))"),
+            &["OK"],
+        )?;
+        sql_has(
+            a,
+            &format!("INSERT INTO {LIB}/TWOT VALUES (1, 'ON A'), (2, 'ON A')"),
+            &["2 row(s)"],
+        )?;
 
         // B: booted, its address, the directory entry for A.
         booted(b, limit).map_err(|e| format!("guest B: {e}"))?;
@@ -136,7 +150,13 @@ impl Suite {
             return Err(format!("guest B: ADDSVRAUTE: {aute}"));
         }
         let _ = sql(b, &format!("DROP TABLE {LIB}/TWORES"))?;
-        sql_has(b, &format!("CREATE TABLE {LIB}/TWORES (C1 INT, C2 INT, C3 INT, N INT, W CHAR(10), C4 INT)"), &["OK"])?;
+        sql_has(
+            b,
+            &format!(
+                "CREATE TABLE {LIB}/TWORES (C1 INT, C2 INT, C3 INT, N INT, W CHAR(10), C4 INT)"
+            ),
+            &["OK"],
+        )?;
         put(b, "QRPGLESRC", "TWOCLI", "SQLRPGLE", TWOCLI)?;
         let mut tn = Tn::open_at(b_telnet).map_err(|e| format!("guest B: {e}"))?;
         tn.cmd(
@@ -149,13 +169,21 @@ impl Suite {
         // B kept what A answered; A holds B's row.
         let good = sql(
             b,
-            &format!("SELECT 'ALLGOOD' FROM {LIB}/TWORES WHERE C1 = 0 AND C2 = 0 AND C3 = 0 AND N = 3 AND W = 'ON A' AND C4 = 0"),
+            &format!(
+                "SELECT 'ALLGOOD' FROM {LIB}/TWORES WHERE C1 = 0 AND C2 = 0 AND C3 = 0 AND N = 3 AND W = 'ON A' AND C4 = 0"
+            ),
         )?;
         if !good.contains("ALLGOOD") {
             let res = sql(b, &format!("SELECT C1, C2, C3, N, W, C4 FROM {LIB}/TWORES"))?;
-            return Err(format!("guest B's results (connect, insert, query SQLCODEs, the count 3 and max 'ON A', reset) are not as wanted:\n{res}\nthe call showed:\n{shown}"));
+            return Err(format!(
+                "guest B's results (connect, insert, query SQLCODEs, the count 3 and max 'ON A', reset) are not as wanted:\n{res}\nthe call showed:\n{shown}"
+            ));
         }
-        sql_has(a, &format!("SELECT N, W FROM {LIB}/TWOT WHERE N = 139"), &["FROM B", "1 row(s)"])?;
+        sql_has(
+            a,
+            &format!("SELECT N, W FROM {LIB}/TWOT WHERE N = 139"),
+            &["FROM B", "1 row(s)"],
+        )?;
         let jobs = a.command("WRKACTJOB", CMD)?;
         let served = jobs.lines().filter(|l| l.contains("QRWTSRVR")).count();
         Ok(format!(

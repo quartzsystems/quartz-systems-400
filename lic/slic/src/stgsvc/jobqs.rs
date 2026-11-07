@@ -132,7 +132,12 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
 /// swapped to its signed-on user): `USER(*CURRENT)` is that profile,
 /// as IBM's current user profile, not the job's own.
 #[allow(clippy::too_many_lines)] // one request, start to queue
-pub fn sbmjob_as(system: &mut System, me: u32, r: &SbmJob, current: Option<&str>) -> Result<(u32, String), String> {
+pub fn sbmjob_as(
+    system: &mut System,
+    me: u32,
+    r: &SbmJob,
+    current: Option<&str>,
+) -> Result<(u32, String), String> {
     let mine = system.attrs.get(&me).cloned().unwrap_or_default();
     let mut me_info = system.jobs.get(me).cloned().unwrap_or_default();
     let job_user = me_info.user.clone();
@@ -148,13 +153,8 @@ pub fn sbmjob_as(system: &mut System, me: u32, r: &SbmJob, current: Option<&str>
     let d = JobD::decode(&b).map_err(|e| e.to_string())?;
     let user = sbm_user(r, &me_info.user);
     let prf = super::jobs::user_dft(system, &user);
-    let mut attrs = JobAttrs::resolve_for(
-        &jobd,
-        &d,
-        &wm::obj::cls::Cls::default(),
-        &sv(system),
-        &prf,
-    );
+    let mut attrs =
+        JobAttrs::resolve_for(&jobd, &d, &wm::obj::cls::Cls::default(), &sv(system), &prf);
     match &r.inllibl {
         None => attrs.libl.usr.clone_from(&mine.libl.usr),
         Some(l) if l.is_empty() => {}
@@ -264,7 +264,10 @@ pub fn take(system: &mut System, monitor: u32, q: &str, allowed: &[bool]) -> Opt
     .ok()??;
     system.queued.remove(&j.number);
     system.pending.insert(j.number, j.clone());
-    system.stats.taken.insert(j.number, std::time::Instant::now());
+    system
+        .stats
+        .taken
+        .insert(j.number, std::time::Instant::now());
     Some(j)
 }
 
@@ -286,7 +289,12 @@ fn find_active(system: &System, job: &str) -> Option<u32> {
     }
     // A name alone: the one active job of that name.
     let name = job.trim().to_ascii_uppercase();
-    let mut found = system.jobs.all().into_iter().filter(|j| j.name == name).map(|j| j.number);
+    let mut found = system
+        .jobs
+        .all()
+        .into_iter()
+        .filter(|j| j.name == name)
+        .map(|j| j.number);
     let first = found.next()?;
     found.next().is_none().then_some(first)
 }
@@ -420,7 +428,12 @@ pub fn take_end_requests(system: &mut System, monitor: u32) -> Vec<(u32, bool)> 
         .iter()
         .filter(|(n, _)| !system.self_ending.contains(*n))
         // A display session holds its interactive jobs, not the monitor.
-        .filter(|(n, _)| system.jobs.get(**n).is_some_and(|j| j.subsystem == sbs && j.kind != 'I'))
+        .filter(|(n, _)| {
+            system
+                .jobs
+                .get(**n)
+                .is_some_and(|j| j.subsystem == sbs && j.kind != 'I')
+        })
         .map(|(n, i)| (*n, *i))
         .collect();
     for (n, _) in &mine {

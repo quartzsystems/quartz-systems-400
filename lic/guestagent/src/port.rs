@@ -36,8 +36,10 @@ pub fn node(dev: &Path, node: &str) -> PathBuf {
 /// its transport.
 #[must_use]
 pub fn vsock(sys: &Path) -> bool {
-    fs::read_dir(sys.join("bus/virtio/drivers/vmw_vsock_virtio_transport"))
-        .is_ok_and(|rd| rd.filter_map(Result::ok).any(|e| e.file_name().to_string_lossy().starts_with("virtio")))
+    fs::read_dir(sys.join("bus/virtio/drivers/vmw_vsock_virtio_transport")).is_ok_and(|rd| {
+        rd.filter_map(Result::ok)
+            .any(|e| e.file_name().to_string_lossy().starts_with("virtio"))
+    })
 }
 
 #[cfg(test)]
@@ -48,7 +50,10 @@ mod tests {
     fn found_by_name() {
         let root = std::env::temp_dir().join(format!("qsga-port-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
-        for (p, n) in [("vport1p1", "com.redhat.spice.0"), ("vport1p2", "org.qemu.guest_agent.0")] {
+        for (p, n) in [
+            ("vport1p1", "com.redhat.spice.0"),
+            ("vport1p2", "org.qemu.guest_agent.0"),
+        ] {
             let d = root.join("class/virtio-ports").join(p);
             fs::create_dir_all(&d).unwrap();
             fs::write(d.join("name"), format!("{n}\n")).unwrap();
@@ -57,7 +62,10 @@ mod tests {
         assert_eq!(find(&root, "nothing"), None);
         assert_eq!(find(&root.join("none"), crate::PORT_NAME), None);
         assert!(!vsock(&root));
-        assert_eq!(node(Path::new("/dev"), "vport1p2"), PathBuf::from("/dev/vport1p2"));
+        assert_eq!(
+            node(Path::new("/dev"), "vport1p2"),
+            PathBuf::from("/dev/vport1p2")
+        );
         let _ = fs::remove_dir_all(&root);
     }
 }

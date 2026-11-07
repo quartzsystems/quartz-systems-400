@@ -15,7 +15,11 @@ use qsh_job::run::batch;
 #[test]
 fn the_shell_is_a_program() {
     let mut s = side();
-    let r = run_script(&mut s, "/usr/bin/qsh -c 'echo inner $0'; sh -c 'exit 5'; echo $?", "");
+    let r = run_script(
+        &mut s,
+        "/usr/bin/qsh -c 'echo inner $0'; sh -c 'exit 5'; echo $?",
+        "",
+    );
     assert_eq!(r.out, "inner /usr/bin/qsh\n5\n");
     assert_eq!(r.status, 0);
 }
@@ -23,7 +27,11 @@ fn the_shell_is_a_program() {
 #[test]
 fn usr_bin_lists_the_utilities() {
     let mut s = side();
-    let r = run_script(&mut s, "ls /usr/bin | grep -c .; test -x /usr/bin/sed && echo x", "");
+    let r = run_script(
+        &mut s,
+        "ls /usr/bin | grep -c .; test -x /usr/bin/sed && echo x",
+        "",
+    );
     let n: usize = r.out.lines().next().unwrap().parse().unwrap();
     assert!(n > 80, "{}", r.out);
     assert!(r.out.ends_with("x\n"));
@@ -38,14 +46,22 @@ fn a_program_is_called_in_the_job() {
     assert_eq!(r.out, "QGPL/HELLO a b c\n0\n");
     assert_eq!(
         s.calls,
-        vec![("QGPL".to_string(), "HELLO".to_string(), vec!["a".to_string(), "b c".to_string()])]
+        vec![(
+            "QGPL".to_string(),
+            "HELLO".to_string(),
+            vec!["a".to_string(), "b c".to_string()]
+        )]
     );
 }
 
 #[test]
 fn system_runs_cl_in_the_job() {
     let mut s = side();
-    let r = run_script(&mut s, "system 'CRTLIB X'; echo $?; system 'BAD'; echo $?", "");
+    let r = run_script(
+        &mut s,
+        "system 'CRTLIB X'; echo $?; system 'BAD'; echo $?",
+        "",
+    );
     assert_eq!(s.cl, vec!["CRTLIB X".to_string(), "BAD".to_string()]);
     let lines: Vec<&str> = r.out.lines().collect();
     assert!(lines.contains(&"0"), "{}", r.out);

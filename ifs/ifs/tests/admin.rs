@@ -572,7 +572,14 @@ fn restore_links() {
         let hard = d.hard_link_of.as_deref().map(to);
         let r = s
             .ifs
-            .restore(&cx, d, mine, &to(&d.path), hard.as_deref(), RestoreOpts::default())
+            .restore(
+                &cx,
+                d,
+                mine,
+                &to(&d.path),
+                hard.as_deref(),
+                RestoreOpts::default(),
+            )
             .unwrap();
         assert_eq!(r, Restored::New, "{}", d.path);
     }
@@ -586,7 +593,9 @@ fn restore_links() {
         ..RestoreOpts::default()
     };
     assert_eq!(
-        s.ifs.restore(&cx, &sink.0[1], b"aaa", "/home/r/a", None, new).unwrap(),
+        s.ifs
+            .restore(&cx, &sink.0[1], b"aaa", "/home/r/a", None, new)
+            .unwrap(),
         Restored::Skipped
     );
     let old = RestoreOpts {
@@ -594,7 +603,9 @@ fn restore_links() {
         ..RestoreOpts::default()
     };
     assert_eq!(
-        s.ifs.restore(&cx, &sink.0[1], b"aaa", "/home/r/a", None, old).unwrap(),
+        s.ifs
+            .restore(&cx, &sink.0[1], b"aaa", "/home/r/a", None, old)
+            .unwrap(),
         Restored::Replaced
     );
     assert_eq!(s.get(&cx, "/home/r/a"), b"aaa");
@@ -603,7 +614,9 @@ fn restore_links() {
     let mut m = ifs::meta::codec::decode(&d.meta).unwrap();
     m.owner = "GONE".into();
     d.meta = ifs::meta::codec::encode(&m);
-    s.ifs.restore(&cx, &d, b"x", "/home/r/x", None, RestoreOpts::default()).unwrap();
+    s.ifs
+        .restore(&cx, &d, b"x", "/home/r/x", None, RestoreOpts::default())
+        .unwrap();
     let st = s.ifs.stat(&cx, "/home/r/x").unwrap();
     assert_eq!(st.owner, "QDFTOWN");
 }

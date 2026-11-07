@@ -15,11 +15,11 @@ use std::sync::{Arc, Mutex, PoisonError};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use crate::Error;
 use crate::client::{Client, Config, Dest, Out, State};
 use crate::lease::Lease;
 use crate::packet::Message;
 use crate::sys::Socket;
-use crate::Error;
 
 /// Milliseconds since the epoch.
 pub fn now_ms() -> u64 {
@@ -54,12 +54,20 @@ pub trait Sink: Send {
 }
 
 fn seed() -> u64 {
-    let t = SystemTime::now().duration_since(UNIX_EPOCH).map_or(1, |d| d.as_nanos());
-    u64::try_from(t & u128::from(u64::MAX)).unwrap_or(1) ^ u64::from(std::process::id()).rotate_left(32)
+    let t = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(1, |d| d.as_nanos());
+    u64::try_from(t & u128::from(u64::MAX)).unwrap_or(1)
+        ^ u64::from(std::process::id()).rotate_left(32)
 }
 
 /// Get one lease on `wire` within `timeout`, nothing applied.
-pub fn acquire_on(wire: &dyn Wire, cfg: Config, timeout: Duration, link: &str) -> Result<Lease, Error> {
+pub fn acquire_on(
+    wire: &dyn Wire,
+    cfg: Config,
+    timeout: Duration,
+    link: &str,
+) -> Result<Lease, Error> {
     let end = Instant::now() + timeout;
     let mut c = Client::new(cfg, now_ms(), seed());
     let mut outs = c.start(now_ms());
@@ -118,7 +126,9 @@ pub struct Agent {
 
 impl fmt::Debug for Agent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Agent").field("status", &self.status()).finish_non_exhaustive()
+        f.debug_struct("Agent")
+            .field("status", &self.status())
+            .finish_non_exhaustive()
     }
 }
 
@@ -138,7 +148,13 @@ fn apply(outs: Vec<Out>, wire: &dyn Wire, sink: &mut dyn Sink, st: &Mutex<Status
     }
 }
 
-fn serve(wire: &dyn Wire, mut c: Client, mut sink: Box<dyn Sink>, st: &Mutex<Status>, stop: &Receiver<Stop>) {
+fn serve(
+    wire: &dyn Wire,
+    mut c: Client,
+    mut sink: Box<dyn Sink>,
+    st: &Mutex<Status>,
+    stop: &Receiver<Stop>,
+) {
     let show = |c: &Client, st: &Mutex<Status>| {
         let mut s = st.lock().unwrap_or_else(PoisonError::into_inner);
         s.state = c.state().name().to_string();
@@ -212,14 +228,19 @@ impl Agent {
 
     /// What it holds now.
     pub fn status(&self) -> Status {
-        self.status.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.status
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     /// End it: `release` gives the address back to the server (an
     /// interface ended), otherwise the lease is kept for the next start.
     /// The address comes off the link either way; waits for the thread.
     pub fn stop(mut self, release: bool) {
-        let _ = self.stop.send(if release { Stop::Release } else { Stop::Keep });
+        let _ = self
+            .stop
+            .send(if release { Stop::Release } else { Stop::Keep });
         if let Some(t) = self.thread.take() {
             let _ = t.join();
         }
@@ -334,7 +355,10 @@ mod tests {
 
     impl Sink for Rec {
         fn bind(&mut self, l: &Lease) -> Result<(), String> {
-            self.0.lock().unwrap().push(format!("bind {}/{}", l.addr, l.prefix()));
+            self.0
+                .lock()
+                .unwrap()
+                .push(format!("bind {}/{}", l.addr, l.prefix()));
             Ok(())
         }
         fn unbind(&mut self, l: &Lease) {
@@ -362,7 +386,10 @@ mod tests {
         assert_eq!(l.addr, Ipv4Addr::new(10, 0, 2, 16));
         assert_eq!(a.status().state, "BOUND");
         a.stop(true);
-        assert_eq!(*rec.0.lock().unwrap(), ["bind 10.0.2.16/24", "unbind 10.0.2.16"]);
+        assert_eq!(
+            *rec.0.lock().unwrap(),
+            ["bind 10.0.2.16/24", "unbind 10.0.2.16"]
+        );
         assert_eq!(log.lock().unwrap().seen.last(), Some(&Kind::Release));
     }
 
@@ -374,7 +401,10 @@ mod tests {
         let a = Agent::spawn_on(Box::new(s), Config::new(MAC), Box::new(rec.clone()));
         a.wait_bound(Duration::from_secs(5)).expect("bound");
         a.stop(false);
-        assert_eq!(rec.0.lock().unwrap().last().map(String::as_str), Some("unbind 10.0.2.17"));
+        assert_eq!(
+            rec.0.lock().unwrap().last().map(String::as_str),
+            Some("unbind 10.0.2.17")
+        );
         assert_ne!(log.lock().unwrap().seen.last(), Some(&Kind::Release));
     }
 
@@ -390,7 +420,13 @@ mod tests {
                 Ok(None)
             }
         }
-        let e = acquire_on(&Silent, Config::new(MAC), Duration::from_millis(200), "eth9").unwrap_err();
+        let e = acquire_on(
+            &Silent,
+            Config::new(MAC),
+            Duration::from_millis(200),
+            "eth9",
+        )
+        .unwrap_err();
         assert!(e.to_string().contains("eth9"));
     }
 }

@@ -50,7 +50,11 @@ impl Reply {
     }
 
     pub(crate) fn brief(&self) -> String {
-        format!("{}\n{}", self.head, self.body.chars().take(2000).collect::<String>())
+        format!(
+            "{}\n{}",
+            self.head,
+            self.body.chars().take(2000).collect::<String>()
+        )
     }
 }
 
@@ -87,7 +91,13 @@ fn connect(port: u16) -> Result<TcpStream, String> {
 }
 
 /// One request to the administration server over plain HTTP.
-fn http(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
+fn http(
+    port: u16,
+    method: &str,
+    path: &str,
+    cookie: Option<&str>,
+    form: Option<&str>,
+) -> Result<Reply, String> {
     http_at(PREFIX, port, method, path, cookie, form)
 }
 
@@ -107,7 +117,9 @@ pub(crate) fn http_at(
         let r = connect(port).ok().and_then(|mut c| exchange(&mut c, &req));
         match r {
             Some(r) => return Ok(r),
-            None if Instant::now() > end => return Err(format!("{method} {path}: no answer on host port {port}")),
+            None if Instant::now() > end => {
+                return Err(format!("{method} {path}: no answer on host port {port}"));
+            }
             None => std::thread::sleep(Duration::from_millis(500)),
         }
     }
@@ -119,7 +131,13 @@ pub(crate) fn tls_get(port: u16, path: &str) -> Result<Reply, String> {
 }
 
 /// One request over TLS, the certificate taken as it is.
-pub(crate) fn tls_at(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
+pub(crate) fn tls_at(
+    port: u16,
+    method: &str,
+    path: &str,
+    cookie: Option<&str>,
+    form: Option<&str>,
+) -> Result<Reply, String> {
     let policy = tls::policy::TlsPolicy::opsys();
     let cfg = tls::config::client_config(
         &policy,
@@ -133,12 +151,15 @@ pub(crate) fn tls_at(port: u16, method: &str, path: &str, cookie: Option<&str>, 
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let r = connect(port).and_then(|c| {
-            let mut t = tls::stream::TlsStream::connect(cfg.clone(), name.clone(), c).map_err(|e| e.to_string())?;
+            let mut t = tls::stream::TlsStream::connect(cfg.clone(), name.clone(), c)
+                .map_err(|e| e.to_string())?;
             exchange(&mut t, &req).ok_or_else(|| "no answer".to_string())
         });
         match r {
             Ok(a) => return Ok(a),
-            Err(e) if Instant::now() > end => return Err(format!("HTTPS on host port {port}: {e}")),
+            Err(e) if Instant::now() > end => {
+                return Err(format!("HTTPS on host port {port}: {e}"));
+            }
             Err(_) => std::thread::sleep(Duration::from_millis(500)),
         }
     }
@@ -146,7 +167,11 @@ pub(crate) fn tls_at(port: u16, method: &str, path: &str, cookie: Option<&str>, 
 
 pub(crate) fn want(r: &Reply, status: u16, needles: &[&str], what: &str) -> Result<(), String> {
     if r.status != status {
-        return Err(format!("{what}: status {} rather than {status}:\n{}", r.status, r.brief()));
+        return Err(format!(
+            "{what}: status {} rather than {status}:\n{}",
+            r.status,
+            r.brief()
+        ));
     }
     for n in needles {
         if !r.body.contains(n) && !r.head.contains(n) {
@@ -177,7 +202,10 @@ fn admin_job(body: &str) -> Option<String> {
 
 /// Set `QSECOFR`'s password, so a step needs no earlier one.
 pub(crate) fn secofr_password(s: &mut Session) -> Result<(), String> {
-    let set = s.command(&format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"), CMD)?;
+    let set = s.command(
+        &format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"),
+        CMD,
+    )?;
     if set.trim_start().starts_with("CPF") {
         return Err(format!("CHGUSRPRF QSECOFR: {set}"));
     }
@@ -188,7 +216,9 @@ pub(crate) fn secofr_password(s: &mut Session) -> Result<(), String> {
 pub(crate) fn enc(v: &str) -> String {
     v.bytes()
         .map(|b| match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'*' => char::from(b).to_string(),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'*' => {
+                char::from(b).to_string()
+            }
             b' ' => "+".into(),
             _ => format!("%{b:02X}"),
         })
@@ -210,39 +240,80 @@ impl Suite {
         }
         let plain = forward_port(self, GUEST, 2001)?;
         let page = http(plain, "GET", "/signon", None, None)?;
-        want(&page, 200, &["QS/400 HTTP Server Administration", "name=\"password\""], "the sign-on page")?;
+        want(
+            &page,
+            200,
+            &["QS/400 HTTP Server Administration", "name=\"password\""],
+            "the sign-on page",
+        )?;
         // A wrong password: the page again with the system's refusal.
-        let bad = http(plain, "POST", "/signon", None, Some("user=QSECOFR&password=NOT1RIGHT"))?;
+        let bad = http(
+            plain,
+            "POST",
+            "/signon",
+            None,
+            Some("user=QSECOFR&password=NOT1RIGHT"),
+        )?;
         want(&bad, 200, &["user"], "a wrong password")?;
         if !bad.body.contains("CPF1107") && !bad.body.contains("CPF1392") {
-            return Err(format!("a wrong password was not refused:
-{}", bad.brief()));
+            return Err(format!(
+                "a wrong password was not refused:
+{}",
+                bad.brief()
+            ));
         }
         let form = format!("user=QSECOFR&password={}", enc(SECOFR_PASSWORD));
         let ok = http(plain, "POST", "/signon", None, Some(&form))?;
-        if ok.status != 303 || !ok.header("Location").is_some_and(|l| l.ends_with("/instances")) {
+        if ok.status != 303
+            || !ok
+                .header("Location")
+                .is_some_and(|l| l.ends_with("/instances"))
+        {
             return Err(format!("signing on as QSECOFR:\n{}", ok.brief()));
         }
-        let sid = session_cookie(&ok).ok_or_else(|| format!("no session cookie:\n{}", ok.brief()))?;
+        let sid =
+            session_cookie(&ok).ok_or_else(|| format!("no session cookie:\n{}", ok.brief()))?;
         // Server instances: ADMIN running, in a job the system knows.
         let list = http(plain, "GET", "/instances", Some(&sid), None)?;
         want(&list, 200, &["ADMIN", "Running"], "Server instances")?;
-        let job = admin_job(&list.body).ok_or_else(|| format!("no ADMIN job on Server instances:\n{}", list.brief()))?;
+        let job = admin_job(&list.body)
+            .ok_or_else(|| format!("no ADMIN job on Server instances:\n{}", list.brief()))?;
         let shown = s.command(&format!("dspjob JOB({job})"), CMD)?;
         if !shown.contains("ADMIN") || shown.contains("CPF1070") {
             return Err(format!("dspjob of the page's job {job}:\n{shown}"));
         }
         // A message's second-level text, from the message file.
-        let msg = http(plain, "GET", "/msg/HTP8001?d=WEB1&d=%2A%3A80", Some(&sid), None)?;
+        let msg = http(
+            plain,
+            "GET",
+            "/msg/HTP8001?d=WEB1&d=%2A%3A80",
+            Some(&sid),
+            None,
+        )?;
         want(&msg, 200, &["HTP8001", "WEB1", "*:80"], "message HTP8001")?;
         // A POST without the form's field is refused.
-        let forged = http(plain, "POST", "/msg/HTP8001", Some(&sid), Some("Close=Close"))?;
-        want(&forged, 403, &["out of date"], "a POST without the form field")?;
+        let forged = http(
+            plain,
+            "POST",
+            "/msg/HTP8001",
+            Some(&sid),
+            Some("Close=Close"),
+        )?;
+        want(
+            &forged,
+            403,
+            &["out of date"],
+            "a POST without the form field",
+        )?;
         // Sign off: the session is gone.
         let off = http(plain, "GET", "/signoff", Some(&sid), None)?;
         want(&off, 303, &["Max-Age=0"], "sign-off")?;
         let after = http(plain, "GET", "/instances", Some(&sid), None)?;
-        if after.status != 303 || !after.header("Location").is_some_and(|l| l.ends_with("/signon")) {
+        if after.status != 303
+            || !after
+                .header("Location")
+                .is_some_and(|l| l.ends_with("/signon"))
+        {
             return Err(format!("the session outlived sign-off:\n{}", after.brief()));
         }
         // TLS on 2010.

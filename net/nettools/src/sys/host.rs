@@ -12,7 +12,10 @@ use crate::ping::{Echoer, Reply};
 use crate::route::{Answer, Prober};
 
 fn unsupported<T>() -> io::Result<T> {
-    Err(io::Error::new(io::ErrorKind::Unsupported, "network tools need Linux"))
+    Err(io::Error::new(
+        io::ErrorKind::Unsupported,
+        "network tools need Linux",
+    ))
 }
 
 /// Echo requests to one address.
@@ -20,7 +23,12 @@ pub struct Pinger;
 
 impl Pinger {
     /// Fails off Linux.
-    pub fn open(_dest: IpAddr, _local: Option<IpAddr>, _ttl: Option<u32>, _tos: u8) -> io::Result<Self> {
+    pub fn open(
+        _dest: IpAddr,
+        _local: Option<IpAddr>,
+        _ttl: Option<u32>,
+        _tos: u8,
+    ) -> io::Result<Self> {
         unsupported()
     }
 }
@@ -52,7 +60,12 @@ pub struct RouteProber;
 
 impl RouteProber {
     /// Fails off Linux.
-    pub fn open(_dest: IpAddr, _local: Option<IpAddr>, _kind: ProbeKind, _len: usize) -> io::Result<Self> {
+    pub fn open(
+        _dest: IpAddr,
+        _local: Option<IpAddr>,
+        _kind: ProbeKind,
+        _len: usize,
+    ) -> io::Result<Self> {
         unsupported()
     }
 }

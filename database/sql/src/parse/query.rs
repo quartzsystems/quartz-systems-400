@@ -7,7 +7,8 @@
 
 use super::Parser;
 use crate::ast::{
-    Expr, Ident, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem, SetOp, TableRef,
+    Expr, Ident, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem, SetOp,
+    TableRef,
 };
 use crate::error::{Result, SqlError};
 use crate::lex::Tok;
@@ -85,7 +86,13 @@ impl Parser {
                     if let Expr::Literal(Literal::Num(t)) = &n {
                         match t.parse::<u64>() {
                             Ok(0) | Err(_) => {
-                                return Err(SqlError::Coded { code: -405, state: "42820", what: format!("OPTIMIZE FOR {t} ROWS: the number of rows must be 1 or more") });
+                                return Err(SqlError::Coded {
+                                    code: -405,
+                                    state: "42820",
+                                    what: format!(
+                                        "OPTIMIZE FOR {t} ROWS: the number of rows must be 1 or more"
+                                    ),
+                                });
                             }
                             Ok(v) => q.optimize_for = Some(v),
                         }
@@ -134,7 +141,10 @@ impl Parser {
             return Ok(OrderItem {
                 expr: Expr::Column(crate::ast::ColumnRef {
                     table: Some(t),
-                    column: Ident { value: crate::exec::ORDER_COLUMN.into(), delimited: true },
+                    column: Ident {
+                        value: crate::exec::ORDER_COLUMN.into(),
+                        delimited: true,
+                    },
                 }),
                 desc: false,
                 nulls_first: None,
@@ -173,7 +183,12 @@ impl Parser {
             };
             let all = self.set_quantifier(op)?;
             let right = self.intersect_body()?;
-            left = QueryBody::Union { left: Box::new(left), right: Box::new(right), all, op };
+            left = QueryBody::Union {
+                left: Box::new(left),
+                right: Box::new(right),
+                all,
+                op,
+            };
         }
     }
 
@@ -182,7 +197,12 @@ impl Parser {
         while self.eat_word("INTERSECT") {
             let all = self.set_quantifier(SetOp::Intersect)?;
             let right = self.simple_body()?;
-            left = QueryBody::Union { left: Box::new(left), right: Box::new(right), all, op: SetOp::Intersect };
+            left = QueryBody::Union {
+                left: Box::new(left),
+                right: Box::new(right),
+                all,
+                op: SetOp::Intersect,
+            };
         }
         Ok(left)
     }
@@ -192,7 +212,12 @@ impl Parser {
     fn set_quantifier(&mut self, op: SetOp) -> Result<bool> {
         if self.is_word("ALL") && op != SetOp::Union {
             let t = &self.toks[self.at.min(self.toks.len() - 1)];
-            return Err(SqlError::Syntax { line: t.line, col: t.col, found: t.tok.describe(), expected: "DISTINCT or a query".into() });
+            return Err(SqlError::Syntax {
+                line: t.line,
+                col: t.col,
+                found: t.tok.describe(),
+                expected: "DISTINCT or a query".into(),
+            });
         }
         let all = self.eat_word("ALL");
         if !all {
@@ -333,7 +358,12 @@ impl Parser {
             let right = self.table_primary()?;
             if kind != JoinKind::Cross && self.eat_word("USING") {
                 let columns = self.ident_list()?;
-                left = TableRef::JoinUsing { left: Box::new(left), right: Box::new(right), kind, columns };
+                left = TableRef::JoinUsing {
+                    left: Box::new(left),
+                    right: Box::new(right),
+                    kind,
+                    columns,
+                };
                 continue;
             }
             let on = if kind == JoinKind::Cross {
@@ -397,4 +427,3 @@ impl Parser {
         }
     }
 }
-

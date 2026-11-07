@@ -52,7 +52,8 @@ impl Main {
 
     /// A security API's answer, its failure as the message ID.
     pub fn sec(&self, q: Query) -> Result<Answer, String> {
-        self.ask(|l| stg::Client::sec_api(l, q)).map_err(|e| e.msgid)
+        self.ask(|l| stg::Client::sec_api(l, q))
+            .map_err(|e| e.msgid)
     }
 
     /// One request to the service. The link's borrow ends before the
@@ -104,7 +105,10 @@ impl Bridge {
 
     /// Run `f` on the job's thread; `None` when the job is ending or
     /// does not answer in time.
-    pub fn call<T: Send + 'static>(&self, f: impl FnOnce(&mut Main) -> T + Send + 'static) -> Option<T> {
+    pub fn call<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&mut Main) -> T + Send + 'static,
+    ) -> Option<T> {
         let (tx, rx) = mpsc::sync_channel(1);
         let task: Task = Box::new(move |m| {
             let _ = tx.send(f(m));

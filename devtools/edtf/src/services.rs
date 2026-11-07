@@ -76,7 +76,13 @@ pub fn draw(s: &Session, m: &mut ScreenModel, message: Option<&Msg>) {
         m.field(at.0, at.1, len, a, v, ffw, &[]);
     };
     label(m, CCSID.0, "Save with CCSID");
-    ul(m, CCSID, 5, &s.new_ccsid.unwrap_or(s.file_ccsid).to_string(), edit);
+    ul(
+        m,
+        CCSID,
+        5,
+        &s.new_ccsid.unwrap_or(s.file_ccsid).to_string(),
+        edit,
+    );
     m.put(CCSID.0, 51, "1-65533", attr::GREEN);
     label(m, EOL.0, "Line end written");
     ul(m, EOL, 5, s.eol.name(), edit);

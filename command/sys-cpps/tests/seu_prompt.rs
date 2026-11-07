@@ -46,10 +46,21 @@ fn label_and_comment_around_the_parameters() {
     let s = p.screen();
     let want = golden_rows("seu-prompt-cl");
     for row in [1usize, 3, 5] {
-        assert_eq!(s.rows[row - 1].trim_end(), want[row - 1].trim_end(), "row {row}");
+        assert_eq!(
+            s.rows[row - 1].trim_end(),
+            want[row - 1].trim_end(),
+            "row {row}"
+        );
     }
-    let comment_row = want.iter().position(|l| l.trim_start().starts_with("Comment")).unwrap();
-    let ours = s.rows.iter().position(|l| l.trim_start().starts_with("Comment")).unwrap();
+    let comment_row = want
+        .iter()
+        .position(|l| l.trim_start().starts_with("Comment"))
+        .unwrap();
+    let ours = s
+        .rows
+        .iter()
+        .position(|l| l.trim_start().starts_with("Comment"))
+        .unwrap();
     assert_eq!(s.rows[ours].trim_end(), want[comment_row].trim_end());
     // Typed into: the label and comment come back apart.
     let mut fields: Vec<String> = s.fields.iter().map(|f| f.value.clone()).collect();
@@ -59,6 +70,12 @@ fn label_and_comment_around_the_parameters() {
     let mut env = Env::new(&mut src);
     env.setting.program = true;
     let step = p.key(0, &fields, &mut env);
-    assert!(matches!(step, Step::Done(ref t) if t.starts_with("DSPLIB")), "{step:?}");
-    assert_eq!(p.source_parts(), Some(("AGAIN".into(), "look at it".into())));
+    assert!(
+        matches!(step, Step::Done(ref t) if t.starts_with("DSPLIB")),
+        "{step:?}"
+    );
+    assert_eq!(
+        p.source_parts(),
+        Some(("AGAIN".into(), "look at it".into()))
+    );
 }

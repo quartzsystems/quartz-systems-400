@@ -20,7 +20,13 @@ use crate::console::host::Host;
 use crate::display::surface::Surface;
 
 /// Design Menus, then the menu's functions.
-pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, prefilled: bool) -> Flow {
+pub fn start(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    prefilled: bool,
+) -> Flow {
     let mut message: Option<String> = None;
     let mut skip = prefilled;
     loop {
@@ -31,7 +37,10 @@ pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
             vals.insert("SRCFILE".to_string(), s.menu.0.clone());
             vals.insert("SRCLIB".to_string(), s.menu.1.clone());
             vals.insert("SRCMBR".to_string(), s.menu.2.clone());
-            let screen = entry::design_menus(&|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+            let screen = entry::design_menus(
+                &|k| vals.get(k).cloned().unwrap_or_default(),
+                message.as_deref(),
+            );
             message = None;
             let Some(a) = ui::show(surface, &screen) else {
                 return Flow::Gone;
@@ -67,14 +76,25 @@ pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
 }
 
 /// Specify Menu Functions until the menu is left.
-fn functions(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w: &mut Work, commands: &mut BTreeMap<u8, String>) -> Flow {
+fn functions(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    w: &mut Work,
+    commands: &mut BTreeMap<u8, String>,
+) -> Flow {
     let mut message: Option<String> = None;
     loop {
         let vals: BTreeMap<String, String> = [("IMAGE", "Y"), ("HELP", "")]
             .iter()
             .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
             .collect();
-        let screen = mscreen::functions(&w.member, &|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let screen = mscreen::functions(
+            &w.member,
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         message = None;
         let Some(a) = ui::show(surface, &screen) else {
             return Flow::Gone;
@@ -112,7 +132,12 @@ fn functions(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
 }
 
 /// Define Menu Commands for the options on the image.
-fn define_commands(surface: &mut Surface, name: &str, options: &[u8], commands: &mut BTreeMap<u8, String>) -> Flow {
+fn define_commands(
+    surface: &mut Surface,
+    name: &str,
+    options: &[u8],
+    commands: &mut BTreeMap<u8, String>,
+) -> Flow {
     let mut top = 0;
     let mut message: Option<String> = None;
     loop {
@@ -138,14 +163,22 @@ fn define_commands(surface: &mut Surface, name: &str, options: &[u8], commands: 
             Key::F(3 | 12) | Key::Enter => return Flow::Back,
             Key::PageDown if top + mscreen::PAGE < rows.len() => top += mscreen::PAGE,
             Key::PageUp => top = top.saturating_sub(mscreen::PAGE),
-            Key::F(4) => message = Some(crate::display::msgline::say(surface.host(), "CPD9C8D", &[])),
+            Key::F(4) => {
+                message = Some(crate::display::msgline::say(surface.host(), "CPD9C8D", &[]))
+            }
             _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
 
 /// Save Menu - Create Menu.
-fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work, commands: &BTreeMap<u8, String>) -> Flow {
+fn save(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    w: &mut Work,
+    commands: &BTreeMap<u8, String>,
+) -> Flow {
     let mut vals: BTreeMap<String, String> = [
         ("SAVE", "Y"),
         ("SRCFILE", w.file.as_str()),
@@ -159,7 +192,10 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work, command
     .collect();
     let mut message: Option<String> = None;
     loop {
-        let screen = mscreen::save(&|k| vals.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let screen = mscreen::save(
+            &|k| vals.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         let Some(a) = ui::show(surface, &screen) else {
             return Flow::Gone;
         };
@@ -186,19 +222,35 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work, command
         }
         let (file, lib) = (vals["SRCFILE"].clone(), vals["SRCLIB"].clone());
         let Some(real) = file_library(host, &lib, &file) else {
-            message = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
+            message = Some(crate::display::msgline::say(
+                host,
+                "CPF9812",
+                &[&file, &lib],
+            ));
             continue;
         };
         let lines = w.lines(host);
         let qq = menu::commands_member(&w.member);
-        let r = write_member(host, &real, &file, &w.member, lines, "MNUDDS")
-            .and_then(|()| write_member(host, &real, &file, &qq, menu::commands_source(commands), "MNUCMD"));
+        let r = write_member(host, &real, &file, &w.member, lines, "MNUDDS").and_then(|()| {
+            write_member(
+                host,
+                &real,
+                &file,
+                &qq,
+                menu::commands_source(commands),
+                "MNUCMD",
+            )
+        });
         if let Err(e) = r {
             message = Some(e);
             continue;
         }
         if create {
-            let objlib = if vals["LIB"].is_empty() { real.clone() } else { vals["LIB"].clone() };
+            let objlib = if vals["LIB"].is_empty() {
+                real.clone()
+            } else {
+                vals["LIB"].clone()
+            };
             if vals["REPLACE"] == "Y" {
                 let _ = must(job, host, &format!("DLTMNU MENU({objlib}/{})", w.member));
                 let _ = must(job, host, &format!("DLTMSGF MSGF({objlib}/{qq})"));

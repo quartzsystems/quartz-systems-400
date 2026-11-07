@@ -70,13 +70,20 @@ impl Splf {
     /// (system names hold no `-`).
     pub fn id(&self) -> String {
         let mut j = self.job.split('/');
-        let (n, u, name) = (j.next().unwrap_or(""), j.next().unwrap_or(""), j.next().unwrap_or(""));
+        let (n, u, name) = (
+            j.next().unwrap_or(""),
+            j.next().unwrap_or(""),
+            j.next().unwrap_or(""),
+        );
         format!("{n}-{u}-{name}-{}-{}", self.file, self.number)
     }
 
     /// The command parameters naming it.
     pub fn parms(&self) -> String {
-        format!("FILE({}) JOB({}) SPLNBR({})", self.file, self.job, self.number)
+        format!(
+            "FILE({}) JOB({}) SPLNBR({})",
+            self.file, self.job, self.number
+        )
     }
 }
 

@@ -145,7 +145,10 @@ fn one_of(v: &str, kwd: &str, allowed: &[&str]) -> Result<String, String> {
 
 fn ccsid(v: &str) -> Result<String, String> {
     let u = v.trim().to_ascii_uppercase();
-    if let Some((name, _)) = CCSID_NAMES.iter().find(|(n, m)| *n == u || m.to_string() == u) {
+    if let Some((name, _)) = CCSID_NAMES
+        .iter()
+        .find(|(n, m)| *n == u || m.to_string() == u)
+    {
         return Ok((*name).to_string());
     }
     number(&u, "CCSID", 1, 65533).map(|n| n.to_string())
@@ -158,7 +161,9 @@ fn table(v: &str, kwd: &str) -> Result<String, String> {
     }
     // LIB/TABLE or TABLE; a table name is a system name.
     let name = u.rsplit('/').next().unwrap_or("");
-    let ok = |s: &str| !s.is_empty() && s.len() <= 10 && !s.starts_with(|c: char| c.is_ascii_digit() || c == '*');
+    let ok = |s: &str| {
+        !s.is_empty() && s.len() <= 10 && !s.starts_with(|c: char| c.is_ascii_digit() || c == '*')
+    };
     if ok(name) && u.split('/').count() <= 2 {
         Ok(u)
     } else {
@@ -274,7 +279,18 @@ mod tests {
         let shown: Vec<String> = KEYWORDS.iter().map(|k| a.value(k)).collect();
         assert_eq!(
             shown,
-            ["*CALC", "*CALC", "300", "*YES", "*DFT", "*VT100", "*MULTINAT", "*CCSID", "*CCSID", "*YES"]
+            [
+                "*CALC",
+                "*CALC",
+                "300",
+                "*YES",
+                "*DFT",
+                "*VT100",
+                "*MULTINAT",
+                "*CCSID",
+                "*CCSID",
+                "*YES"
+            ]
         );
         assert!(a.plain() && a.secure());
     }

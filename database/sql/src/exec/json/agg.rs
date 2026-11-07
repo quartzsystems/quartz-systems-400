@@ -40,7 +40,11 @@ fn over(call: &Call<'_>, rows: &[Input], nulls: &mut bool) -> Result<Value> {
         Some(Expr::Cast(_, t)) => Some(t),
         _ => None,
     };
-    let fmt = if opts.or("fmt", "") == "J" { "json" } else { "" };
+    let fmt = if opts.or("fmt", "") == "J" {
+        "json"
+    } else {
+        ""
+    };
     let width = if call.name == "JSON_OBJECTAGG" { 2 } else { 1 };
     let mut rows: Vec<(&[Value], &[Value])> = rows
         .iter()
@@ -69,7 +73,11 @@ fn over(call: &Call<'_>, rows: &[Input], nulls: &mut bool) -> Result<Value> {
                     })
                     .unwrap_or(Ordering::Equal),
             };
-            let o = if desc.get(i).copied().unwrap_or(false) { o.reverse() } else { o };
+            let o = if desc.get(i).copied().unwrap_or(false) {
+                o.reverse()
+            } else {
+                o
+            };
             if o != Ordering::Equal {
                 return o;
             }
@@ -97,7 +105,11 @@ fn over(call: &Call<'_>, rows: &[Input], nulls: &mut bool) -> Result<Value> {
         if opts.get("unique") == Some("1") {
             let mut seen = std::collections::HashSet::new();
             if let Some((k, _)) = members.iter().find(|(k, _)| !seen.insert(k.clone())) {
-                return Err(coded(-16400, "22030", format!("the key \"{k}\" is repeated")));
+                return Err(coded(
+                    -16400,
+                    "22030",
+                    format!("the key \"{k}\" is repeated"),
+                ));
             }
         }
         Json::Object(members)

@@ -85,7 +85,12 @@ pub fn evaluate(server: &str, t1: Timestamp, reply: &Packet, t4: i64) -> Result<
 }
 
 /// One exchange with `addr` (named `server` in the sample).
-pub fn query(server: &str, addr: SocketAddr, clock: &dyn Clock, timeout: Duration) -> Result<Sample, SntpError> {
+pub fn query(
+    server: &str,
+    addr: SocketAddr,
+    clock: &dyn Clock,
+    timeout: Duration,
+) -> Result<Sample, SntpError> {
     let bind: SocketAddr = if addr.is_ipv4() {
         ([0, 0, 0, 0], 0).into()
     } else {
@@ -101,7 +106,12 @@ pub fn query(server: &str, addr: SocketAddr, clock: &dyn Clock, timeout: Duratio
     loop {
         let n = match sock.recv(&mut buf) {
             Ok(n) => n,
-            Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => {
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
                 return Err(SntpError::Timeout(server.to_string()));
             }
             Err(e) => return Err(io(e)),
@@ -186,7 +196,10 @@ mod tests {
         let mut p = answer(t1, S, S);
         p.stratum = 0;
         p.reference_id = *b"DENY";
-        assert_eq!(evaluate("h", t1, &p, S), Err(SntpError::Kiss("DENY".into())));
+        assert_eq!(
+            evaluate("h", t1, &p, S),
+            Err(SntpError::Kiss("DENY".into()))
+        );
         let mut p = answer(t1, S, S);
         p.mode = Mode::Client;
         assert!(evaluate("h", t1, &p, S).is_err());

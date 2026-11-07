@@ -48,7 +48,11 @@ impl Suite {
             "savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) CLEAR(*ALL) OUTPUT(*OUTFILE) OUTFILE(QGPL/S71OUT)",
             CMD,
         )?;
-        want(&out, "SAVLIB OUTPUT(*OUTFILE)", &["records written to QGPL/S71OUT"])?;
+        want(
+            &out,
+            "SAVLIB OUTPUT(*OUTFILE)",
+            &["records written to QGPL/S71OUT"],
+        )?;
         let ffd = s.command("dspffd FILE(QGPL/S71OUT)", CMD)?;
         want(&ffd, "the QSRSAV outfile", &["SROCMD", "SROPSN"])?;
         let one = s.command(

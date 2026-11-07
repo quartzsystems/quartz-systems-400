@@ -75,7 +75,8 @@ pub(crate) fn in_store<T>(
     f: impl FnOnce(&mut Txn<'_>, &Ctx, ObjectId) -> Result<T, String>,
 ) -> Result<T, String> {
     if lib.eq_ignore_ascii_case("QTEMP") {
-        let (st, qtemp) = crate::ipl::storage::qtemp_store(system.storage.as_mut(), system.temp.as_mut())?;
+        let (st, qtemp) =
+            crate::ipl::storage::qtemp_store(system.storage.as_mut(), system.temp.as_mut())?;
         return with_txn(st, |txn| {
             let c = Ctx {
                 qsys: qtemp,
@@ -233,7 +234,10 @@ fn diag_text(diags: &[ile::Diag]) -> String {
 /// programs as binding directory entries.
 fn bndsrvpgm(p: &Params) -> Result<Vec<ile::object::BndDirEntry>, String> {
     let mut out: Vec<ile::object::BndDirEntry> = Vec::new();
-    let srv = p.kw("BNDSRVPGM").unwrap_or_default().replace(['(', ')'], " ");
+    let srv = p
+        .kw("BNDSRVPGM")
+        .unwrap_or_default()
+        .replace(['(', ')'], " ");
     for w in srv.split_whitespace() {
         let w = w.to_ascii_uppercase();
         if w == "*DEFER" {
@@ -245,7 +249,9 @@ fn bndsrvpgm(p: &Params) -> Result<Vec<ile::object::BndDirEntry>, String> {
         if w.starts_with('*') {
             continue;
         }
-        let (lib, name) = w.split_once('/').map_or(("*LIBL", w.as_str()), |(l, n)| (l, n));
+        let (lib, name) = w
+            .split_once('/')
+            .map_or(("*LIBL", w.as_str()), |(l, n)| (l, n));
         Name::parse(name).map_err(|e| format!("CPD0078 BNDSRVPGM({w}): {e}"))?;
         out.push(ile::object::BndDirEntry {
             name: name.into(),
@@ -259,7 +265,11 @@ fn bndsrvpgm(p: &Params) -> Result<Vec<ile::object::BndDirEntry>, String> {
 
 /// `crtpgm` and `crtsrvpgm`.
 fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, String> {
-    let kw = if kind == PgmKind::SrvPgm { "SRVPGM" } else { "PGM" };
+    let kw = if kind == PgmKind::SrvPgm {
+        "SRVPGM"
+    } else {
+        "PGM"
+    };
     let qual = p.pos_or(0, kw)?;
     let (lib, name) = qualified(&qual)?;
     let modules = spec_list(p, "MODULE")?;
@@ -331,7 +341,11 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
     })?;
     if adopts {
         let owner = crate::stgsvc::security::actor().map_or_else(|| "QSYS".to_string(), |p| p.user);
-        let ty = if kind == PgmKind::Pgm { "*PGM" } else { "*SRVPGM" };
+        let ty = if kind == PgmKind::Pgm {
+            "*PGM"
+        } else {
+            "*SRVPGM"
+        };
         sec::audit::record(
             sec::audit::Event::new(sec::audit::Kind::Pa)
                 .set("ETYP", "A")

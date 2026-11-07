@@ -66,18 +66,21 @@ impl Authenticator for JobAuth {
         if !source.eq_ignore_ascii_case(SYSTEM) {
             // BLOCKED(rel): validation lists (*VLDL) do not exist; a PasswdFile
             // naming one refuses every user, the reason in the error log.
-            return Err(Refused::Unavailable(format!("Validation list {source} cannot be checked yet.")));
+            return Err(Refused::Unavailable(format!(
+                "Validation list {source} cannot be checked yet."
+            )));
         }
         let (tx, rx) = mpsc::channel();
-        let sent = self
-            .tx
-            .lock()
-            .map_err(|_| Refused::Bad)?
-            .send((user.to_string(), password.to_string(), tx));
+        let sent = self.tx.lock().map_err(|_| Refused::Bad)?.send((
+            user.to_string(),
+            password.to_string(),
+            tx,
+        ));
         if sent.is_err() {
             return Err(Refused::Unavailable("The server is ending.".into()));
         }
-        rx.recv().unwrap_or(Err(Refused::Unavailable("The server is ending.".into())))
+        rx.recv()
+            .unwrap_or(Err(Refused::Unavailable("The server is ending.".into())))
     }
 }
 
@@ -151,7 +154,12 @@ impl Job<'_> {
         self.pump.serve(&self.local, wait);
         while let Ok((user, password, back)) = self.auth_rx.try_recv() {
             let r = self.link.borrow_mut().with(|l| {
-                l.sign_on(user.trim().to_ascii_uppercase(), password.clone(), String::new(), false)
+                l.sign_on(
+                    user.trim().to_ascii_uppercase(),
+                    password.clone(),
+                    String::new(),
+                    false,
+                )
             });
             let _ = back.send(r.map(|s| s.user).map_err(|_| Refused::Bad));
         }
@@ -174,7 +182,9 @@ impl Job<'_> {
             e.end_delay = None;
         });
         self.log(ENDED, &format!("HTTP server instance {} ended.", self.name));
-        let _ = ctl.send(&FromJob::Ending { reason: how.to_string() });
+        let _ = ctl.send(&FromJob::Ending {
+            reason: how.to_string(),
+        });
         std::process::exit(code)
     }
 }
@@ -192,7 +202,10 @@ fn tls_config(link: &Shared, spec: &TlsSpec) -> Result<Arc<rustls::ServerConfig>
         .with(|l| l.cert_app(spec.app_id.clone()))
         .map_err(|e| format!("application {}: {e}", spec.app_id))?;
     if t.label.is_empty() || t.chain.is_empty() {
-        return Err(format!("no certificate is assigned to application {}", spec.app_id));
+        return Err(format!(
+            "no certificate is assigned to application {}",
+            spec.app_id
+        ));
     }
     let info = certs::x509::CertInfo::from_der(&t.chain[0]).map_err(|e| e.to_string())?;
     let identity = tls::config::Identity {
@@ -216,7 +229,11 @@ fn tls_config(link: &Shared, spec: &TlsSpec) -> Result<Arc<rustls::ServerConfig>
 
 fn shown(l: &Listener) -> String {
     let addr = l.addr.map_or_else(|| "*".to_string(), |a| a.to_string());
-    format!("{addr}:{}{}", l.port, if l.tls.is_some() { " (TLS)" } else { "" })
+    format!(
+        "{addr}:{}{}",
+        l.port,
+        if l.tls.is_some() { " (TLS)" } else { "" }
+    )
 }
 
 /// How the job is told to end.
@@ -245,7 +262,10 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     let n2 = name.clone();
     let loaded = job.files(move |files| {
         let reg = Registry::load(files)?;
-        let e = reg.get(&n2).cloned().ok_or_else(|| httpd::Error::NotFound(n2.clone()))?;
+        let e = reg
+            .get(&n2)
+            .cloned()
+            .ok_or_else(|| httpd::Error::NotFound(n2.clone()))?;
         let conf = instance::load_conf(files, &e.root)?;
         Ok::<_, httpd::Error>((e, conf))
     });
@@ -253,11 +273,20 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         Ok(v) => v,
         Err(httpd::Error::Conf(c)) => {
             let path = format!("/www/{}/{}", name.to_ascii_lowercase(), instance::CONF);
-            job.log(CONF_ERROR, &format!("Configuration error at line {} column {}: {} ({path})", c.line, c.col, c.text));
+            job.log(
+                CONF_ERROR,
+                &format!(
+                    "Configuration error at line {} column {}: {} ({path})",
+                    c.line, c.col, c.text
+                ),
+            );
             job.finish(&mut ctl, "configuration error", 1)
         }
         Err(e) => {
-            job.log(servers::msg::NOT_STARTED, &format!("HTTP server instance {name} could not be started: {e}."));
+            job.log(
+                servers::msg::NOT_STARTED,
+                &format!("HTTP server instance {name} could not be started: {e}."),
+            );
             job.finish(&mut ctl, &format!("not started: {e}"), 1)
         }
     };
@@ -277,7 +306,9 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         plan.clone(),
         Deps {
             files: job.remote.clone(),
-            auth: Arc::new(JobAuth { tx: Mutex::new(auth_tx) }),
+            auth: Arc::new(JobAuth {
+                tx: Mutex::new(auth_tx),
+            }),
             clock: system_clock(),
         },
     ));
@@ -325,7 +356,13 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         e.ended_how = String::new();
         e.end_delay = None;
     });
-    job.log(STARTED, &format!("HTTP server instance {name} started, listening on {}.", ports.join(", ")));
+    job.log(
+        STARTED,
+        &format!(
+            "HTTP server instance {name} started, listening on {}.",
+            ports.join(", ")
+        ),
+    );
 
     // Only an explicit End from the parent counts; ENDJOB and ENDSBS
     // come through the service's state.
@@ -374,7 +411,11 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         job.finish(&mut ctl, &format!("{how}, immediate"), 0)
     }
     let n3 = name.clone();
-    let asked = job.files(move |files| Registry::load(files).ok().and_then(|r| r.get(&n3).and_then(|e| e.end_delay)));
+    let asked = job.files(move |files| {
+        Registry::load(files)
+            .ok()
+            .and_then(|r| r.get(&n3).and_then(|e| e.end_delay))
+    });
     let delay = match end {
         EndBy::System(_, Some(d), _) => d,
         _ => asked.unwrap_or(servers::framework::DEFAULT_DELAY),

@@ -35,7 +35,12 @@ fn first_start_writes_config_and_keys_once() {
     }
     // A second start finds them and does not make new ones.
     let again = common::start(&w.fs, &w.accounts, |d| d);
-    let fps2: Vec<String> = again.keys.0.iter().map(|k| k.public().fingerprint()).collect();
+    let fps2: Vec<String> = again
+        .keys
+        .0
+        .iter()
+        .map(|k| k.public().fingerprint())
+        .collect();
     assert_eq!(fps, fps2);
 
     // No configuration at all: the default one is written.
@@ -45,15 +50,30 @@ fn first_start_writes_config_and_keys_once() {
     c.release();
     let s = common::start(&w.fs, &w.accounts, |d| d);
     let text = String::from_utf8(w.fs.get(CONFIG_FILE).unwrap()).unwrap();
-    assert!(text.contains("Subsystem sftp /QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/sftp-server"));
-    assert_eq!(s.config.subsystem("sftp"), Some(sshd::config::paths::SFTP_SERVER));
+    assert!(
+        text.contains("Subsystem sftp /QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/sftp-server")
+    );
+    assert_eq!(
+        s.config.subsystem("sftp"),
+        Some(sshd::config::paths::SFTP_SERVER)
+    );
 }
 
 #[test]
 fn every_kex_method_and_host_key() {
     let w = world("");
-    for kex in [algo::MLKEM768X25519, algo::CURVE25519, algo::CURVE25519_LIBSSH, algo::ECDH_P256] {
-        for hk in ["ssh-ed25519", "ecdsa-sha2-nistp256", "rsa-sha2-512", "rsa-sha2-256"] {
+    for kex in [
+        algo::MLKEM768X25519,
+        algo::CURVE25519,
+        algo::CURVE25519_LIBSSH,
+        algo::ECDH_P256,
+    ] {
+        for hk in [
+            "ssh-ed25519",
+            "ecdsa-sha2-nistp256",
+            "rsa-sha2-512",
+            "rsa-sha2-256",
+        ] {
             let opts = Options {
                 kex: vec![kex.into()],
                 host_key: vec![hk.into()],
@@ -81,8 +101,13 @@ fn password_sign_on_and_exec() {
     assert_eq!(out.stdout, b"hello\n");
     assert_eq!(out.stderr, b"oops\n");
     assert_eq!(out.status, Some(3));
-    let out = c.run("read x; echo got $x; echo $USER $HOME", b"abc\n").unwrap();
-    assert_eq!(String::from_utf8(out.stdout).unwrap(), "got abc\nQSTEST /home/QSTEST\n");
+    let out = c
+        .run("read x; echo got $x; echo $USER $HOME", b"abc\n")
+        .unwrap();
+    assert_eq!(
+        String::from_utf8(out.stdout).unwrap(),
+        "got abc\nQSTEST /home/QSTEST\n"
+    );
     let out = c.run("echo $SSH_CONNECTION", b"").unwrap();
     assert_eq!(out.stdout, b"10.1.2.3 50000 10.0.0.1 22\n");
     // A shell without a terminal reads its commands from the input.
@@ -95,7 +120,11 @@ fn password_sign_on_and_exec() {
     assert_eq!(out.status, Some(4));
     // Audit: one failed and one good password.
     let events = w.accounts.audit.lock().unwrap();
-    assert!(events.iter().any(|e| e.kind == sec::audit::Kind::Pw && e.get("ETYP") == "P"));
+    assert!(
+        events
+            .iter()
+            .any(|e| e.kind == sec::audit::Kind::Pw && e.get("ETYP") == "P")
+    );
 }
 
 #[test]
@@ -121,7 +150,11 @@ fn terminal_shell_echoes_and_edits() {
 }
 
 fn authorize(w: &common::World, user: &str, lines: &str) {
-    w.fs.put(&format!("/home/{user}/.ssh/authorized_keys"), lines.as_bytes(), user);
+    w.fs.put(
+        &format!("/home/{user}/.ssh/authorized_keys"),
+        lines.as_bytes(),
+        user,
+    );
 }
 
 #[test]
@@ -131,7 +164,10 @@ fn public_key_sign_on() {
         .iter()
         .map(|k| PrivateKey::generate(*k).unwrap())
         .collect();
-    let text: String = keys.iter().map(|k| k.public().openssh() + " me@pc\n").collect();
+    let text: String = keys
+        .iter()
+        .map(|k| k.public().openssh() + " me@pc\n")
+        .collect();
     authorize(&w, "QSTEST", &text);
     for k in &keys {
         let mut c = connect(&w.server);
@@ -160,7 +196,10 @@ fn public_key_sign_on() {
     );
     let mut c = connect(&w.server);
     assert!(c.auth_key("qstest2", &forced).unwrap());
-    assert_eq!(c.run("echo mine", b"").unwrap().stdout, b"forced echo mine\n");
+    assert_eq!(
+        c.run("echo mine", b"").unwrap().stdout,
+        b"forced echo mine\n"
+    );
     let mut c = connect(&w.server);
     assert!(!c.auth_key("qstest2", &far).unwrap());
     let _ = PublicKey::from_blob(&far.public().blob()).unwrap();
@@ -192,7 +231,10 @@ fn qmaxsign_disables_the_profile() {
     let mut c = connect(&w.server);
     assert!(!c.auth_password("qstest3", PASSWORD).unwrap());
     let events = w.accounts.audit.lock().unwrap();
-    let pw = events.iter().filter(|e| e.kind == sec::audit::Kind::Pw).count();
+    let pw = events
+        .iter()
+        .filter(|e| e.kind == sec::audit::Kind::Pw)
+        .count();
     assert!(pw >= 3, "{pw}");
 }
 

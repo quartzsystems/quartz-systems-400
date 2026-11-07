@@ -116,7 +116,9 @@ pub const DAEMONS: &[Daemon] = &[
 
 /// The daemon for a `STRHOSTSVR` keyword.
 pub fn daemon(keyword: &str) -> Option<&'static Daemon> {
-    DAEMONS.iter().find(|d| d.keyword.eq_ignore_ascii_case(keyword))
+    DAEMONS
+        .iter()
+        .find(|d| d.keyword.eq_ignore_ascii_case(keyword))
 }
 
 /// The server a prestart job program serves.

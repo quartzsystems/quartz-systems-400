@@ -20,7 +20,11 @@ pub struct Part {
 /// The boundary from a `Content-Type` header, if it is multipart.
 pub fn boundary(content_type: &str) -> Option<String> {
     let mut it = content_type.split(';');
-    if !it.next()?.trim().eq_ignore_ascii_case("multipart/form-data") {
+    if !it
+        .next()?
+        .trim()
+        .eq_ignore_ascii_case("multipart/form-data")
+    {
         return None;
     }
     it.filter_map(|p| p.trim().split_once('='))
@@ -56,7 +60,9 @@ fn part(head: &str, data: Vec<u8>) -> Option<Part> {
     let mut filename = None;
     let mut content_type = None;
     for l in head.split("\r\n") {
-        let Some((k, v)) = l.split_once(':') else { continue };
+        let Some((k, v)) = l.split_once(':') else {
+            continue;
+        };
         if k.trim().eq_ignore_ascii_case("content-disposition") {
             for p in v.split(';').skip(1) {
                 if let Some((pk, pv)) = p.trim().split_once('=') {
@@ -81,14 +87,21 @@ fn part(head: &str, data: Vec<u8>) -> Option<Part> {
 }
 
 fn skip_eol(b: &[u8], at: usize) -> Option<usize> {
-    if b[at..].starts_with(b"\r\n") { Some(at + 2) } else { None }
+    if b[at..].starts_with(b"\r\n") {
+        Some(at + 2)
+    } else {
+        None
+    }
 }
 
 fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
     if from > hay.len() {
         return None;
     }
-    hay[from..].windows(needle.len()).position(|w| w == needle).map(|p| p + from)
+    hay[from..]
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .map(|p| p + from)
 }
 
 #[cfg(test)]
@@ -104,7 +117,10 @@ mod tests {
 -----BEGIN\r\n\x00\xff\r\n--XyZ--\r\n";
         let parts = parse(body, &b).unwrap();
         assert_eq!(parts.len(), 2);
-        assert_eq!((parts[0].name.as_str(), parts[0].data.as_slice()), ("label", &b"web"[..]));
+        assert_eq!(
+            (parts[0].name.as_str(), parts[0].data.as_slice()),
+            ("label", &b"web"[..])
+        );
         assert_eq!(parts[1].filename.as_deref(), Some("a.pem"));
         assert_eq!(parts[1].data, b"-----BEGIN\r\n\x00\xff");
         assert_eq!(boundary("text/plain"), None);

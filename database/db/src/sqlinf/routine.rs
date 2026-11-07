@@ -37,7 +37,11 @@ pub static ROUTINE_LAYOUT: Layout = Layout {
         field("text_len", 52, 4),
         field("body_len", 56, 4),
         field("reserved", 60, 4),
-        Field { name: "strings", offset: Some(64), size: None },
+        Field {
+            name: "strings",
+            offset: Some(64),
+            size: None,
+        },
     ],
 };
 
@@ -51,10 +55,26 @@ pub static PARM_LAYOUT: Layout = Layout {
         field("role", 3, 1),
         field("name_len", 4, 2),
         field("type_len", 6, 2),
-        Field { name: "name", offset: Some(8), size: None },
-        Field { name: "type", offset: None, size: None },
-        Field { name: "default_len", offset: None, size: Some(2) },
-        Field { name: "default", offset: None, size: None },
+        Field {
+            name: "name",
+            offset: Some(8),
+            size: None,
+        },
+        Field {
+            name: "type",
+            offset: None,
+            size: None,
+        },
+        Field {
+            name: "default_len",
+            offset: None,
+            size: Some(2),
+        },
+        Field {
+            name: "default",
+            offset: None,
+            size: None,
+        },
     ],
 };
 
@@ -65,7 +85,11 @@ pub static OPTIONS_LAYOUT: Layout = Layout {
     fields: &[
         field("count", 0, 2),
         field("reserved", 2, 2),
-        Field { name: "options", offset: Some(4), size: None },
+        Field {
+            name: "options",
+            offset: Some(4),
+            size: None,
+        },
     ],
 };
 
@@ -99,7 +123,9 @@ pub mod flag {
 }
 
 fn bad(what: &str) -> DbError {
-    DbError::Corrupt { what: format!("SQL information: {what}") }
+    DbError::Corrupt {
+        what: format!("SQL information: {what}"),
+    }
 }
 
 fn take<'a>(b: &'a [u8], at: &mut usize, n: usize, what: &str) -> Result<&'a [u8]> {
@@ -209,7 +235,14 @@ impl RoutineDef {
         out[50..52].copy_from_slice(&short(&self.sourced).to_le_bytes());
         out[52..56].copy_from_slice(&long(&self.text).to_le_bytes());
         out[56..60].copy_from_slice(&long(&self.body_text).to_le_bytes());
-        for s in [&self.entry, &self.specific, &self.name, &self.sourced, &self.text, &self.body_text] {
+        for s in [
+            &self.entry,
+            &self.specific,
+            &self.name,
+            &self.sourced,
+            &self.text,
+            &self.body_text,
+        ] {
             out.extend_from_slice(s.as_bytes());
         }
         out
@@ -310,7 +343,14 @@ impl ParmDef {
         } else {
             None
         };
-        Ok(Self { ordinal: u16_of(b, 0), mode: b[2], role: b[3], name, ty, default })
+        Ok(Self {
+            ordinal: u16_of(b, 0),
+            mode: b[2],
+            role: b[3],
+            name,
+            ty,
+            default,
+        })
     }
 }
 
@@ -363,12 +403,21 @@ impl Routine {
     /// The entries, in the order they are kept.
     #[must_use]
     pub fn entries(&self) -> Vec<super::Entry> {
-        let mut out = vec![super::Entry { tag: super::tag::ROUTINE, body: self.def.encode() }];
+        let mut out = vec![super::Entry {
+            tag: super::tag::ROUTINE,
+            body: self.def.encode(),
+        }];
         for p in &self.parms {
-            out.push(super::Entry { tag: super::tag::PARM, body: p.encode() });
+            out.push(super::Entry {
+                tag: super::tag::PARM,
+                body: p.encode(),
+            });
         }
         if !self.options.is_empty() {
-            out.push(super::Entry { tag: super::tag::OPTIONS, body: encode_options(&self.options) });
+            out.push(super::Entry {
+                tag: super::tag::OPTIONS,
+                body: encode_options(&self.options),
+            });
         }
         out
     }
@@ -378,9 +427,15 @@ impl Routine {
         let mut out: Vec<Self> = Vec::new();
         for e in &info.entries {
             match e.tag {
-                super::tag::ROUTINE => out.push(Self { def: RoutineDef::decode(&e.body)?, ..Self::default() }),
+                super::tag::ROUTINE => out.push(Self {
+                    def: RoutineDef::decode(&e.body)?,
+                    ..Self::default()
+                }),
                 super::tag::PARM => {
-                    out.last_mut().ok_or_else(|| bad("parameter before its routine"))?.parms.push(ParmDef::decode(&e.body)?);
+                    out.last_mut()
+                        .ok_or_else(|| bad("parameter before its routine"))?
+                        .parms
+                        .push(ParmDef::decode(&e.body)?);
                 }
                 super::tag::OPTIONS => {
                     if let Some(r) = out.last_mut() {
@@ -447,8 +502,22 @@ mod tests {
                 ..RoutineDef::default()
             },
             parms: vec![
-                ParmDef { ordinal: 1, mode: 3, role: 0, name: "ID".into(), ty: "INTEGER".into(), default: None },
-                ParmDef { ordinal: 2, mode: 1, role: 0, name: "D".into(), ty: "DATE".into(), default: Some("CURRENT DATE".into()) },
+                ParmDef {
+                    ordinal: 1,
+                    mode: 3,
+                    role: 0,
+                    name: "ID".into(),
+                    ty: "INTEGER".into(),
+                    default: None,
+                },
+                ParmDef {
+                    ordinal: 2,
+                    mode: 1,
+                    role: 0,
+                    name: "D".into(),
+                    ty: "DATE".into(),
+                    default: Some("CURRENT DATE".into()),
+                },
             ],
             options: vec![("COMMIT".into(), "*NONE".into())],
         };

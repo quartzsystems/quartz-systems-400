@@ -81,10 +81,7 @@ fn value(cx: &UtilCtx<'_>, key: &str, p: &ProcInfo) -> String {
         "pid" => p.pid.to_string(),
         "ppid" => p.ppid.to_string(),
         "pgid" => p.pgid.to_string(),
-        "user" => cx
-            .sys
-            .user_name(p.uid)
-            .unwrap_or_else(|| p.uid.to_string()),
+        "user" => cx.sys.user_name(p.uid).unwrap_or_else(|| p.uid.to_string()),
         "uid" => p.uid.to_string(),
         "group" | "gid" => "0".to_string(),
         "device" => p.device.clone(),

@@ -49,29 +49,57 @@ pub const MAX_CHAR: u32 = 16_773_104;
 ///
 /// `SQL0084` for the types a compiled routine does not hold yet.
 pub fn host_type(t: &TypeSpec) -> Result<HostType> {
-    let unsupported = |what: &str| SqlError::Unsupported { what: format!("SQL PL variables and parameters of type {what}") };
+    let unsupported = |what: &str| SqlError::Unsupported {
+        what: format!("SQL PL variables and parameters of type {what}"),
+    };
     if t.bit_data {
         return Err(unsupported("FOR BIT DATA"));
     }
-    let graphic = matches!(t.data_type, DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_));
-    if t.ccsid.is_some_and(|c| c != 37 && !(graphic && matches!(c, 1200 | 13488))) {
+    let graphic = matches!(
+        t.data_type,
+        DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_)
+    );
+    if t.ccsid
+        .is_some_and(|c| c != 37 && !(graphic && matches!(c, 1200 | 13488)))
+    {
         return Err(unsupported("a CCSID other than 37"));
     }
-    let h = |qir: String, desc: i64, extra: i64, size: u32| HostType { qir, desc, extra, size };
+    let h = |qir: String, desc: i64, extra: i64, size: u32| HostType {
+        qir,
+        desc,
+        extra,
+        size,
+    };
     Ok(match &t.data_type {
         DataType::SmallInt => h("i16".into(), word(6, 5, 0), 0, 2),
         DataType::Integer => h("i32".into(), word(6, 10, 0), 0, 4),
         DataType::BigInt => h("i64".into(), word(6, 20, 0), 0, 8),
-        DataType::Decimal(p, s) => h(format!("packed({p},{s})"), word(3, (*p).into(), (*s).into()), 0, u32::from(*p) / 2 + 1),
-        DataType::Numeric(p, s) => h(format!("zoned({p},{s})"), word(4, (*p).into(), (*s).into()), 0, u32::from(*p)),
+        DataType::Decimal(p, s) => h(
+            format!("packed({p},{s})"),
+            word(3, (*p).into(), (*s).into()),
+            0,
+            u32::from(*p) / 2 + 1,
+        ),
+        DataType::Numeric(p, s) => h(
+            format!("zoned({p},{s})"),
+            word(4, (*p).into(), (*s).into()),
+            0,
+            u32::from(*p),
+        ),
         DataType::Real => h("f32".into(), word(12, 4, 0), 0, 4),
         DataType::Double => h("f64".into(), word(12, 8, 0), 0, 8),
         DataType::Char(n) => h(format!("char({n})"), word(1, (*n).into(), 0), 0, *n),
-        DataType::Varchar(n) | DataType::Clob(n) if *n <= 65_535 && matches!(t.data_type, DataType::Varchar(_)) => {
+        DataType::Varchar(n) | DataType::Clob(n)
+            if *n <= 65_535 && matches!(t.data_type, DataType::Varchar(_)) =>
+        {
             h(format!("varchar({n})"), word(2, (*n).into(), 0), 0, n + 2)
         }
-        DataType::Varchar(n) | DataType::Clob(n) if *n <= MAX_CHAR => h(format!("varchar({n}:4)"), word(2, (*n).into(), 4), 0, n + 4),
-        DataType::Varchar(_) | DataType::Clob(_) => return Err(unsupported("a character string longer than 16773104")),
+        DataType::Varchar(n) | DataType::Clob(n) if *n <= MAX_CHAR => {
+            h(format!("varchar({n}:4)"), word(2, (*n).into(), 4), 0, n + 4)
+        }
+        DataType::Varchar(_) | DataType::Clob(_) => {
+            return Err(unsupported("a character string longer than 16773104"));
+        }
         DataType::Date => h("date(*ISO)".into(), word(9, 10, 0), 1, 10),
         DataType::Time => h("time(*ISO)".into(), word(10, 8, 0), 1, 8),
         DataType::Timestamp(p) => {
@@ -80,15 +108,32 @@ pub fn host_type(t: &TypeSpec) -> Result<HostType> {
         }
         // Double-byte and binary strings as the runtime's LOB host
         // variables: a 4-byte length, then UTF-16 or the bytes.
-        DataType::Graphic(n) | DataType::Vargraphic(n) | DataType::Dbclob(n) if *n <= MAX_CHAR / 2 => {
+        DataType::Graphic(n) | DataType::Vargraphic(n) | DataType::Dbclob(n)
+            if *n <= MAX_CHAR / 2 =>
+        {
             let size = 4 + 2 * n;
-            h(format!("bytes({size})"), word(1, size.into(), 0), SQLTYPE | (3 << 4) | 1, size)
+            h(
+                format!("bytes({size})"),
+                word(1, size.into(), 0),
+                SQLTYPE | (3 << 4) | 1,
+                size,
+            )
         }
         DataType::Binary(n) | DataType::Varbinary(n) | DataType::Blob(n) if *n <= MAX_CHAR => {
             let size = 4 + n;
-            h(format!("bytes({size})"), word(1, size.into(), 0), SQLTYPE | (2 << 4) | 1, size)
+            h(
+                format!("bytes({size})"),
+                word(1, size.into(), 0),
+                SQLTYPE | (2 << 4) | 1,
+                size,
+            )
         }
-        DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_) | DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_) => {
+        DataType::Graphic(_)
+        | DataType::Vargraphic(_)
+        | DataType::Dbclob(_)
+        | DataType::Binary(_)
+        | DataType::Varbinary(_)
+        | DataType::Blob(_) => {
             return Err(unsupported("a string longer than 16773104 bytes"));
         }
         // DECFLOAT and BOOLEAN as their text; the statements read them
@@ -154,7 +199,12 @@ pub fn catalog_type(t: &DataType) -> (&'static str, i64, Option<i64>, bool) {
         DataType::Double => ("DOUBLE", 53, None, true),
         DataType::Date => ("DATE", 10, None, false),
         DataType::Time => ("TIME", 8, None, false),
-        DataType::Timestamp(p) => ("TIMESTAMP", if *p == 0 { 19 } else { 20 + i64::from(*p) }, None, false),
+        DataType::Timestamp(p) => (
+            "TIMESTAMP",
+            if *p == 0 { 19 } else { 20 + i64::from(*p) },
+            None,
+            false,
+        ),
         DataType::DecFloat(p) => ("DECFLOAT", (*p).into(), None, true),
         DataType::Binary(n) => ("BINARY", (*n).into(), None, false),
         DataType::Varbinary(n) => ("VARBINARY", (*n).into(), None, false),
@@ -181,13 +231,29 @@ mod tests {
 
     #[test]
     fn types_round_trip_as_text() {
-        for t in ["INTEGER", "DECIMAL(9, 2)", "CHARACTER(10)", "VARCHAR(100)", "TIMESTAMP(6)", "NUMERIC(5, 0)"] {
+        for t in [
+            "INTEGER",
+            "DECIMAL(9, 2)",
+            "CHARACTER(10)",
+            "VARCHAR(100)",
+            "TIMESTAMP(6)",
+            "NUMERIC(5, 0)",
+        ] {
             assert_eq!(type_text(&parse_type(t).unwrap()), t);
         }
         let h = host_type(&parse_type("DECIMAL(9, 2)").unwrap()).unwrap();
         assert_eq!((h.qir.as_str(), h.size), ("packed(9,2)", 5));
-        assert_eq!(host_type(&parse_type("BLOB(1K)").unwrap()).unwrap().size, 1028);
-        assert_eq!(host_type(&parse_type("GRAPHIC(3)").unwrap()).unwrap().qir, "bytes(10)");
-        assert_eq!(marker_type(&parse_type("DECFLOAT(16)").unwrap()).as_deref(), Some("DECFLOAT(16)"));
+        assert_eq!(
+            host_type(&parse_type("BLOB(1K)").unwrap()).unwrap().size,
+            1028
+        );
+        assert_eq!(
+            host_type(&parse_type("GRAPHIC(3)").unwrap()).unwrap().qir,
+            "bytes(10)"
+        );
+        assert_eq!(
+            marker_type(&parse_type("DECFLOAT(16)").unwrap()).as_deref(),
+            Some("DECFLOAT(16)")
+        );
     }
 }

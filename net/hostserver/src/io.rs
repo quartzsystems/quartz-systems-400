@@ -29,7 +29,10 @@ pub fn read_frame(r: &mut impl Read) -> io::Result<Option<Vec<u8>>> {
     }
     let len = u32::from_be_bytes([head[0], head[1], head[2], head[3]]) as usize;
     if !(HEADER_LEN..=MAX_FRAME).contains(&len) {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "frame length out of range"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "frame length out of range",
+        ));
     }
     let mut f = head.to_vec();
     f.resize(len, 0);

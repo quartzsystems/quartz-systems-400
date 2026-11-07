@@ -326,7 +326,9 @@ pub fn resolve(env: &mut Env<'_>, name: &str, lib: Option<&str>) -> Result<(CmdO
             }
         }
     }
-    Err(CmdError::analysis(vec![Diag::new("CPD0035").data(&[(&name, 10)])]))
+    Err(CmdError::analysis(vec![
+        Diag::new("CPD0035").data(&[(&name, 10)]),
+    ]))
 }
 
 /// Whether a parameter may be given positionally at index `i`.

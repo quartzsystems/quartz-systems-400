@@ -126,22 +126,29 @@ fn parm(addr: u64) -> String {
 fn qp2shell(job: &mut Job, host: &Host, args: &[u64]) {
     let words: Vec<String> = args.iter().map(|a| parm(*a)).collect();
     let Some(path) = words.first().filter(|p| !p.is_empty()).cloned() else {
-        job.console.push("QP2SHELL: no PASE program was named.".into());
+        job.console
+            .push("QP2SHELL: no PASE program was named.".into());
         return;
     };
     let mut env = super::setup(host, "PIPELINE").env;
     env.retain(|(k, _)| k != "PATH");
-    env.push(("PATH".into(), "/QOpenSys/usr/bin:/usr/ccs/bin:/QOpenSys/usr/bin/X11:/usr/sbin:.:/usr/bin".into()));
+    env.push((
+        "PATH".into(),
+        "/QOpenSys/usr/bin:/usr/ccs/bin:/QOpenSys/usr/bin/X11:/usr/sbin:.:/usr/bin".into(),
+    ));
     match run_to_end(host, &path, words, env, None) {
         Ok((code, text)) => {
             for l in text.lines() {
                 job.console.push(l.to_string());
             }
             if code != 0 {
-                job.console.push(format!("PASE program {path} ended with status {code}."));
+                job.console
+                    .push(format!("PASE program {path} ended with status {code}."));
             }
         }
-        Err(e) => job.console.push(format!("PASE program {path} did not start: {e}")),
+        Err(e) => job
+            .console
+            .push(format!("PASE program {path} did not start: {e}")),
     }
 }
 

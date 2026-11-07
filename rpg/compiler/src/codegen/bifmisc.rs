@@ -34,7 +34,8 @@ impl Gen<'_> {
                 }
                 for (n, at) in names {
                     if self.t.find(self.scope, &n).is_none() && self.undefined.insert(n.clone()) {
-                        self.diags.push(rpgfront::Diag::new(ids::NOT_DEFINED, 30, at).arg(n));
+                        self.diags
+                            .push(rpgfront::Diag::new(ids::NOT_DEFINED, 30, at).arg(n));
                     }
                 }
                 None
@@ -71,7 +72,8 @@ impl Gen<'_> {
             if name == "%PARMNUM" {
                 // At the operand.
                 let at = args.first().map_or(self.at, Expr::pos);
-                self.diags.push(rpgfront::Diag::new(ids::PARMNUM_NOT_PARM, 20, at).arg(name.to_string()));
+                self.diags
+                    .push(rpgfront::Diag::new(ids::PARMNUM_NOT_PARM, 20, at).arg(name.to_string()));
             } else {
                 self.err(ids::BIF_NOT_VALID, 30, name.to_string());
             }
@@ -93,11 +95,20 @@ impl Gen<'_> {
         if name == "%PARMNUM" {
             return self.literal(&rpgfront::ast::Lit::Num(k.to_string()));
         }
-        let Some(Expr::Ref { name: n, .. }) = args.first() else { return None };
-        let p = self.t.find(self.scope, n).map(|id| self.t.syms[id].ir.clone())?;
+        let Some(Expr::Ref { name: n, .. }) = args.first() else {
+            return None;
+        };
+        let p = self
+            .t
+            .find(self.scope, n)
+            .map(|id| self.t.syms[id].ir.clone())?;
         let _ = k;
         let r = self.b.reg();
-        let op = if name == "%PASSED" { "passed" } else { "omitted" };
+        let op = if name == "%PASSED" {
+            "passed"
+        } else {
+            "omitted"
+        };
         self.b.ins(format!("{r} = {op} {p}"));
         Some(V::reg(Ty::Ind, r))
     }
@@ -121,7 +132,9 @@ impl Gen<'_> {
     /// A null-capable field's null indicator, declared once.
     pub fn null_place(&mut self, s: crate::syms::SymId) -> String {
         let place = format!("{}__null", self.t.syms[s].ir.replace('.', "_"));
-        self.externs.entry(place.clone()).or_insert_with(|| format!("static {place}: ind inz(*OFF)"));
+        self.externs
+            .entry(place.clone())
+            .or_insert_with(|| format!("static {place}: ind inz(*OFF)"));
         place
     }
 
@@ -165,7 +178,11 @@ impl Gen<'_> {
                     10 => 32,
                     _ => 64,
                 };
-                if hi { ((1i128 << (bits - 1)) - 1).to_string() } else { (-(1i128 << (bits - 1))).to_string() }
+                if hi {
+                    ((1i128 << (bits - 1)) - 1).to_string()
+                } else {
+                    (-(1i128 << (bits - 1))).to_string()
+                }
             }
             Ty::Uns(d) => {
                 let bits = match d {
@@ -174,7 +191,11 @@ impl Gen<'_> {
                     10 => 32,
                     _ => 64,
                 };
-                if hi { ((1u128 << bits) - 1).to_string() } else { "0".into() }
+                if hi {
+                    ((1u128 << bits) - 1).to_string()
+                } else {
+                    "0".into()
+                }
             }
             _ => {
                 return Some(V {
@@ -199,8 +220,15 @@ impl Gen<'_> {
         let f = self.float_reg(&v);
         let n = if single { 14 } else { 23 };
         let t = self.tmp(&Ty::varchar(n));
-        self.rt_proc("_QRNX_EDITFLT", "($dst: varchar(23) *VARSIZE, byval $f: f64, byval $single: i32)");
-        self.b.ins(format!("callb _QRNX_EDITFLT({}, {f}, {})", t.op, i32::from(single)));
+        self.rt_proc(
+            "_QRNX_EDITFLT",
+            "($dst: varchar(23) *VARSIZE, byval $f: f64, byval $single: i32)",
+        );
+        self.b.ins(format!(
+            "callb _QRNX_EDITFLT({}, {f}, {})",
+            t.op,
+            i32::from(single)
+        ));
         Some(t)
     }
 

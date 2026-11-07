@@ -22,7 +22,9 @@ use tcpcfg::model::ifc::Interface;
 use tcpcfg::model::port::PortRestriction;
 use tcpcfg::model::rte::{Dest, Route, RouteKey};
 use tcpcfg::model::svr::UserServer;
-use tcpcfg::model::tables::{NetworkEntry, ProtocolEntry, ServiceEntry, add_network, add_protocol, remove_named};
+use tcpcfg::model::tables::{
+    NetworkEntry, ProtocolEntry, ServiceEntry, add_network, add_protocol, remove_named,
+};
 use tcpcfg::model::{LineRef, Proto, Tos, is_same, text_of, yes_no};
 use tcpcfg::msg::{self, Note};
 use tcpcfg::{Config, Error};
@@ -127,7 +129,12 @@ fn changed(
         msg::CHANGED => "changed",
         _ => "removed",
     };
-    Ok(completed(msgid, what, &format!("{what} entry {verb}."), &notes))
+    Ok(completed(
+        msgid,
+        what,
+        &format!("{what} entry {verb}."),
+        &notes,
+    ))
 }
 
 // --- values
@@ -206,7 +213,9 @@ fn ip_or_none(s: &str, kwd: &str) -> Result<Option<Ipv4Addr>, Error> {
 }
 
 fn text_param(parms: &Parms) -> Option<String> {
-    opt_text(parms, "TEXT").filter(|t| !is_same(t)).map(|t| text_of(&t))
+    opt_text(parms, "TEXT")
+        .filter(|t| !is_same(t))
+        .map(|t| text_of(&t))
 }
 
 /// A list parameter's items as text.
@@ -215,7 +224,11 @@ fn items(parms: &Parms, kwd: &str) -> Vec<String> {
         .list(kwd)
         .into_iter()
         .map(|v| match v {
-            Value::Elems(e) => e.first().and_then(Option::as_ref).map(raw).unwrap_or_default(),
+            Value::Elems(e) => e
+                .first()
+                .and_then(Option::as_ref)
+                .map(raw)
+                .unwrap_or_default(),
             other => raw(other),
         })
         .collect()
@@ -230,7 +243,10 @@ fn lines_check(system: &mut System, line: &LineRef) -> Result<(), Error> {
     if tcp::line_exists(system, n) {
         Ok(())
     } else {
-        Err(Error::new(msg::LINE_NOT_FOUND, format!("Line {n} does not exist.")))
+        Err(Error::new(
+            msg::LINE_NOT_FOUND,
+            format!("Line {n} does not exist."),
+        ))
     }
 }
 
@@ -249,18 +265,24 @@ fn add_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     if let Some(t) = tos_of(parms)? {
         i.tos = t;
     }
-    i.mtu = num(parms, "MTU", &[0, -1]).map(|m| u_in(m, "MTU")).transpose()?;
+    i.mtu = num(parms, "MTU", &[0, -1])
+        .map(|m| u_in(m, "MTU"))
+        .transpose()?;
     if let Some(a) = opt_text(parms, "AUTOSTART") {
         i.autostart = yes_no(&a, "AUTOSTART")?;
     }
     if let Some(l) = opt_text(parms, "LCLIFC") {
         i.local_ifc = ip_or_none(&l, "LCLIFC")?;
     }
-    if let Some(a) = opt_text(parms, "ALIASNAME").filter(|a| !a.eq_ignore_ascii_case("*NONE") && !a.is_empty()) {
+    if let Some(a) =
+        opt_text(parms, "ALIASNAME").filter(|a| !a.eq_ignore_ascii_case("*NONE") && !a.is_empty())
+    {
         i.alias = Some(a.to_ascii_uppercase());
     }
     if addr.is_v6() {
-        i.prefix_len = num(parms, "ADRPFXLEN", &[]).map(|p| u_in(p, "ADRPFXLEN")).transpose()?;
+        i.prefix_len = num(parms, "ADRPFXLEN", &[])
+            .map(|p| u_in(p, "ADRPFXLEN"))
+            .transpose()?;
         if let Some(d) = num(parms, "DADMAXTRN", &[]) {
             i.dad_max = u_in(d, "DADMAXTRN")?;
         }
@@ -271,7 +293,10 @@ fn add_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
             i.gen_global = yes_no(&g, "IP6GENGLBA")?;
         }
     }
-    i.pref_ifc = items(parms, "PREFIFC").into_iter().filter(|p| !p.starts_with('*')).collect();
+    i.pref_ifc = items(parms, "PREFIFC")
+        .into_iter()
+        .filter(|p| !p.starts_with('*'))
+        .collect();
     if let Some(d) = opt_text(parms, "DHCPDYNDNS") {
         i.dhcp_dyndns = yes_no(&d, "DHCPDYNDNS")?;
     }
@@ -279,7 +304,9 @@ fn add_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         i.dhcp_client_id = c;
     }
     i.text = text_param(parms).unwrap_or_default();
-    changed(system, Table::Ifc, msg::ADDED, "TCP/IP interface", |cfg| cfg.ifcs.add(i))
+    changed(system, Table::Ifc, msg::ADDED, "TCP/IP interface", |cfg| {
+        cfg.ifcs.add(i)
+    })
 }
 
 fn active(system: &mut System, key: &str) -> bool {
@@ -289,18 +316,21 @@ fn active(system: &mut System, key: &str) -> bool {
 fn chg_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let addr = IfcAddr::parse(&parms.text("INTNETADR"))?;
     let cfg = tcp::config(system).map_err(|e| Error::new("CPF9898", e))?;
-    let mut i = cfg
-        .ifcs
-        .get(&addr)
-        .cloned()
-        .ok_or_else(|| Error::new(msg::NOT_FOUND, format!("Interface {addr} is not configured.")))?;
+    let mut i = cfg.ifcs.get(&addr).cloned().ok_or_else(|| {
+        Error::new(
+            msg::NOT_FOUND,
+            format!("Interface {addr} is not configured."),
+        )
+    })?;
     let running = active(system, &i.key());
     let line = line_of(parms, "LIND")?;
     let mask = opt_text(parms, "SUBNETMASK").filter(|m| !is_same(m));
     if running && (line.is_some() || mask.is_some()) {
         return Err(Error::new(
             msg::IN_USE,
-            format!("The entry is in use: interface {addr} is active; end it to change its line or mask."),
+            format!(
+                "The entry is in use: interface {addr} is active; end it to change its line or mask."
+            ),
         ));
     }
     if let Some((l, v)) = line {
@@ -326,7 +356,8 @@ fn chg_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         i.local_ifc = ip_or_none(&l, "LCLIFC")?;
     }
     if let Some(a) = opt_text(parms, "ALIASNAME").filter(|a| !is_same(a)) {
-        i.alias = (!a.eq_ignore_ascii_case("*NONE") && !a.is_empty()).then(|| a.to_ascii_uppercase());
+        i.alias =
+            (!a.eq_ignore_ascii_case("*NONE") && !a.is_empty()).then(|| a.to_ascii_uppercase());
     }
     if let Some(p) = num(parms, "ADRPFXLEN", &[-1]) {
         i.prefix_len = Some(u_in(p, "ADRPFXLEN")?);
@@ -353,7 +384,13 @@ fn chg_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     if let Some(t) = text_param(parms) {
         i.text = t;
     }
-    changed(system, Table::Ifc, msg::CHANGED, "TCP/IP interface", |cfg| cfg.ifcs.change(i))
+    changed(
+        system,
+        Table::Ifc,
+        msg::CHANGED,
+        "TCP/IP interface",
+        |cfg| cfg.ifcs.change(i),
+    )
 }
 
 fn rmv_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
@@ -362,10 +399,12 @@ fn rmv_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         IfcAddr::parse(&a)?
     } else {
         let alias = parms.text("ALIASNAME");
-        cfg.ifcs
-            .by_alias(&alias)
-            .map(|i| i.addr)
-            .ok_or_else(|| Error::new(msg::NOT_FOUND, format!("No interface has the alias name {alias}.")))?
+        cfg.ifcs.by_alias(&alias).map(|i| i.addr).ok_or_else(|| {
+            Error::new(
+                msg::NOT_FOUND,
+                format!("No interface has the alias name {alias}."),
+            )
+        })?
     };
     if active(system, &addr.to_string()) {
         return Err(Error::new(
@@ -373,7 +412,13 @@ fn rmv_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
             format!("The entry is in use: interface {addr} is active; end it first."),
         ));
     }
-    changed(system, Table::Ifc, msg::REMOVED, "TCP/IP interface", |cfg| cfg.ifcs.remove(&addr).map(|_| ()))
+    changed(
+        system,
+        Table::Ifc,
+        msg::REMOVED,
+        "TCP/IP interface",
+        |cfg| cfg.ifcs.remove(&addr).map(|_| ()),
+    )
 }
 
 fn str_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
@@ -449,10 +494,15 @@ fn route_key(parms: &Parms) -> Result<(Dest, u8, Tos, IpAddr), Error> {
             None => 0,
         }
     };
-    let prefix = if dest == Dest::DftRoute || dest.ip().is_unspecified() { 0 } else { prefix };
+    let prefix = if dest == Dest::DftRoute || dest.ip().is_unspecified() {
+        0
+    } else {
+        prefix
+    };
     let prefix = if dest == Dest::DftMcast { 4 } else { prefix };
     let tos = tos_of(parms)?.unwrap_or_default();
-    let hop = parse_ip(&parms.text("NEXTHOP")).map_err(|_| tcpcfg::addr::bad("NEXTHOP", &parms.text("NEXTHOP")))?;
+    let hop = parse_ip(&parms.text("NEXTHOP"))
+        .map_err(|_| tcpcfg::addr::bad("NEXTHOP", &parms.text("NEXTHOP")))?;
     Ok((dest, prefix, tos, hop))
 }
 
@@ -466,7 +516,9 @@ fn add_rte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     if let Some(l) = line_of(parms, "BINDLIND")? {
         r.bind_line = Some((l.0.name().to_string(), l.1));
     }
-    r.mtu = num(parms, "MTU", &[0, -1]).map(|m| u_in(m, "MTU")).transpose()?;
+    r.mtu = num(parms, "MTU", &[0, -1])
+        .map(|m| u_in(m, "MTU"))
+        .transpose()?;
     if let Some(m) = num(parms, "METRIC", &[-1]) {
         r.metric = u_in(m, "METRIC")?;
     }
@@ -477,7 +529,9 @@ fn add_rte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         r.dup_pty = u_in(d, "DUPRTEPTY")?;
     }
     r.text = text_param(parms).unwrap_or_default();
-    changed(system, Table::Rte, msg::ADDED, "TCP/IP route", |cfg| cfg.rtes.add(r))
+    changed(system, Table::Rte, msg::ADDED, "TCP/IP route", |cfg| {
+        cfg.rtes.add(r)
+    })
 }
 
 fn chg_rte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
@@ -489,11 +543,12 @@ fn chg_rte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         next_hop: hop,
     };
     let cfg = tcp::config(system).map_err(|e| Error::new("CPF9898", e))?;
-    let mut r = cfg
-        .rtes
-        .get(&key)
-        .cloned()
-        .ok_or_else(|| Error::new(msg::NOT_FOUND, format!("No route to {dest} through {hop} is configured.")))?;
+    let mut r = cfg.rtes.get(&key).cloned().ok_or_else(|| {
+        Error::new(
+            msg::NOT_FOUND,
+            format!("No route to {dest} through {hop} is configured."),
+        )
+    })?;
     if parms.specified("BINDIFC")
         && let Some(b) = opt_text(parms, "BINDIFC")
     {
@@ -516,7 +571,9 @@ fn chg_rte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     if let Some(t) = text_param(parms) {
         r.text = t;
     }
-    changed(system, Table::Rte, msg::CHANGED, "TCP/IP route", |cfg| cfg.rtes.change(r))
+    changed(system, Table::Rte, msg::CHANGED, "TCP/IP route", |cfg| {
+        cfg.rtes.change(r)
+    })
 }
 
 fn rmv_rte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
@@ -527,7 +584,9 @@ fn rmv_rte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         tos,
         next_hop: hop,
     };
-    changed(system, Table::Rte, msg::REMOVED, "TCP/IP route", |cfg| cfg.rtes.remove(&key).map(|_| ()))
+    changed(system, Table::Rte, msg::REMOVED, "TCP/IP route", |cfg| {
+        cfg.rtes.remove(&key).map(|_| ())
+    })
 }
 
 // --- host table
@@ -541,22 +600,25 @@ fn add_hte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let names = items(parms, "HOSTNAME");
     let text = text_param(parms).unwrap_or_default();
     let e = HostEntry::new(addr, &names, &text)?;
-    changed(system, Table::Host, msg::ADDED, "Host table", |cfg| cfg.hosts.add(e))
+    changed(system, Table::Host, msg::ADDED, "Host table", |cfg| {
+        cfg.hosts.add(e)
+    })
 }
 
 fn chg_hte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let addr = host_addr(parms, "INTNETADR")?;
     let given = items(parms, "HOSTNAME");
-    let names: Option<Vec<NameChange>> = (parms.specified("HOSTNAME") && !given.iter().all(|n| is_same(n))).then(|| {
-        given
-            .iter()
-            .map(|n| match n.to_ascii_uppercase().as_str() {
-                "*SAME" | "" => NameChange::Same,
-                "*BLANK" => NameChange::Blank,
-                _ => NameChange::Name(n.clone()),
-            })
-            .collect()
-    });
+    let names: Option<Vec<NameChange>> =
+        (parms.specified("HOSTNAME") && !given.iter().all(|n| is_same(n))).then(|| {
+            given
+                .iter()
+                .map(|n| match n.to_ascii_uppercase().as_str() {
+                    "*SAME" | "" => NameChange::Same,
+                    "*BLANK" => NameChange::Blank,
+                    _ => NameChange::Name(n.clone()),
+                })
+                .collect()
+        });
     let text = text_param(parms);
     changed(system, Table::Host, msg::CHANGED, "Host table", |cfg| {
         cfg.hosts.change(addr, names.as_deref(), text.as_deref())
@@ -565,15 +627,24 @@ fn chg_hte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
 
 fn rmv_hte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let addr = host_addr(parms, "INTNETADR")?;
-    changed(system, Table::Host, msg::REMOVED, "Host table", |cfg| cfg.hosts.remove(addr).map(|_| ()))
+    changed(system, Table::Host, msg::REMOVED, "Host table", |cfg| {
+        cfg.hosts.remove(addr).map(|_| ())
+    })
 }
 
 fn rnm_hte(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let from = host_addr(parms, "INTNETADR")?;
     let to = host_addr(parms, "NEWINTNETA")?;
     need_iosyscfg("rename a host table entry")?;
-    let (_, notes) = tcp::change(system, Table::Host, |cfg| cfg.hosts.rename(from, to).map(|()| String::new()))?;
-    let mut r = completed(msg::RENAMED, "Host table", &format!("Host table entry {from} renamed to {to}."), &notes);
+    let (_, notes) = tcp::change(system, Table::Host, |cfg| {
+        cfg.hosts.rename(from, to).map(|()| String::new())
+    })?;
+    let mut r = completed(
+        msg::RENAMED,
+        "Host table",
+        &format!("Host table entry {from} renamed to {to}."),
+        &notes,
+    );
     r.messages[0].data = cmd::error::data(&[(&from.to_string(), 45), (&to.to_string(), 45)]);
     Ok(r)
 }
@@ -621,7 +692,10 @@ fn job_ifs<T>(system: &mut System, f: impl FnOnce(&dyn ifs::client::IfsClient) -
 fn read_stmf(system: &mut System, path: &str) -> Result<String, Error> {
     use ifs::ops::flags::{O_CCSID, O_RDONLY, O_TEXTDATA};
     let bytes = job_ifs(system, |c| {
-        let fd = c.open(path, ifs::ops::OpenArgs::new(O_RDONLY | O_TEXTDATA | O_CCSID).conv(1208))?;
+        let fd = c.open(
+            path,
+            ifs::ops::OpenArgs::new(O_RDONLY | O_TEXTDATA | O_CCSID).conv(1208),
+        )?;
         let data = ifs::client::read_all(c, fd);
         let _ = c.close(fd);
         data
@@ -655,7 +729,12 @@ fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     } else {
         let (file, lib) = parms.qual("FROMFILE");
         let mbr = parms.name("FROMMBR");
-        records(system, &lib.to_ascii_uppercase(), &file.to_ascii_uppercase(), &mbr)?
+        records(
+            system,
+            &lib.to_ascii_uppercase(),
+            &file.to_ascii_uppercase(),
+            &mbr,
+        )?
     };
     let from = match fmt.as_str() {
         // A stream file is a host file in its own form: *AIX unless *NIC.
@@ -683,7 +762,13 @@ fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
             let l = &tcpcfg::files::defs::QATOCHOST;
             let mut t = Config::default();
             t.hosts.list.clear();
-            let decoded = tcpcfg::files::decode(&mut |f| if f == l.file { recs.clone() } else { Vec::new() });
+            let decoded = tcpcfg::files::decode(&mut |f| {
+                if f == l.file {
+                    recs.clone()
+                } else {
+                    Vec::new()
+                }
+            });
             decoded.hosts.list
         }
     };
@@ -693,7 +778,10 @@ fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         merged = cfg.hosts.merge(from, replace)?;
         Ok(String::new())
     })?;
-    let text = format!("Host table merged: {} entries added, {} changed.", merged.added, merged.changed);
+    let text = format!(
+        "Host table merged: {} entries added, {} changed.",
+        merged.added, merged.changed
+    );
     let mut r = completed(msg::MERGED, "Host table", &text, &notes);
     let bin = |n: usize| i32::try_from(n).unwrap_or(i32::MAX).to_be_bytes();
     r.messages[0].data = [bin(merged.added), bin(merged.changed)].concat();
@@ -702,10 +790,18 @@ fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
 
 fn cpy_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     if parms.specified("TOOBJ") {
-        return cpy_ht_stmf(system, &parms.text("TOOBJ"), parms.text("REPLACE").contains("YES") || parms.text("REPLACE") == "1");
+        return cpy_ht_stmf(
+            system,
+            &parms.text("TOOBJ"),
+            parms.text("REPLACE").contains("YES") || parms.text("REPLACE") == "1",
+        );
     }
     let (file, lib) = parms.qual("TOFILE");
-    let file = if file.is_empty() { "QTCPHT".to_string() } else { file.to_ascii_uppercase() };
+    let file = if file.is_empty() {
+        "QTCPHT".to_string()
+    } else {
+        file.to_ascii_uppercase()
+    };
     let lib = match lib.to_ascii_uppercase().as_str() {
         "" | "*LIBL" | "*CURLIB" => "QGPL".to_string(),
         l => l.to_string(),
@@ -718,7 +814,8 @@ fn cpy_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         .map(|(_, r)| r)
         .unwrap_or_default();
     let n = recs.len();
-    crate::stgsvc::tcp::store::copy_to(system, &lib, &file, &recs, add).map_err(|e| Error::new("CPF9898", e))?;
+    crate::stgsvc::tcp::store::copy_to(system, &lib, &file, &recs, add)
+        .map_err(|e| Error::new("CPF9898", e))?;
     Ok(completed(
         msg::ADDED,
         "Host table",
@@ -748,10 +845,21 @@ fn cpy_ht_stmf(system: &mut System, path: &str, replace: bool) -> Result<CmdRepl
         w
     })
     .map_err(|e| match e {
-        ifs::Errno::EEXIST => Error::new("CPFA0A0", format!("Object {path} already exists; REPLACE(*YES) replaces it.")),
-        e => Error::new("CPFA0A9", format!("Object {path} not written: {}.", e.text())),
+        ifs::Errno::EEXIST => Error::new(
+            "CPFA0A0",
+            format!("Object {path} already exists; REPLACE(*YES) replaces it."),
+        ),
+        e => Error::new(
+            "CPFA0A9",
+            format!("Object {path} not written: {}.", e.text()),
+        ),
     })?;
-    Ok(completed(msg::ADDED, "Host table", &format!("{n} host table entries copied to {path}."), &[]))
+    Ok(completed(
+        msg::ADDED,
+        "Host table",
+        &format!("{n} host table entries copied to {path}."),
+        &[],
+    ))
 }
 
 // --- domain and attributes
@@ -901,7 +1009,12 @@ fn chg_attrs(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         }
         Ok(String::new())
     })?;
-    let mut r = completed(msg::ATTRS_CHANGED, "TCP/IP attributes", "TCP/IP attributes changed.", &notes);
+    let mut r = completed(
+        msg::ATTRS_CHANGED,
+        "TCP/IP attributes",
+        "TCP/IP attributes changed.",
+        &notes,
+    );
     r.messages[0].data = Vec::new();
     Ok(r)
 }
@@ -909,10 +1022,18 @@ fn chg_attrs(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
 // --- port restrictions
 
 fn port_parms(parms: &Parms) -> Result<(Option<u16>, Option<u16>, Proto, String), Error> {
-    let lower = elem(parms, "PORT", 0).and_then(|v| v.parse::<i64>().ok()).unwrap_or(-1);
-    let upper = elem(parms, "PORT", 1).and_then(|v| v.parse::<i64>().ok()).unwrap_or(-1);
-    let lower = (lower >= 0).then(|| u_in::<u16>(lower, "PORT")).transpose()?;
-    let upper = (upper >= 0).then(|| u_in::<u16>(upper, "PORT")).transpose()?;
+    let lower = elem(parms, "PORT", 0)
+        .and_then(|v| v.parse::<i64>().ok())
+        .unwrap_or(-1);
+    let upper = elem(parms, "PORT", 1)
+        .and_then(|v| v.parse::<i64>().ok())
+        .unwrap_or(-1);
+    let lower = (lower >= 0)
+        .then(|| u_in::<u16>(lower, "PORT"))
+        .transpose()?;
+    let upper = (upper >= 0)
+        .then(|| u_in::<u16>(upper, "PORT"))
+        .transpose()?;
     let proto = Proto::parse(&parms.text("PROTOCOL"))?;
     Ok((lower, upper, proto, parms.name("USRPRF")))
 }
@@ -925,14 +1046,20 @@ fn add_port(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         proto,
         user,
     };
-    changed(system, Table::Port, msg::ADDED, "Port restriction", |cfg| cfg.ports.add(r))
+    changed(system, Table::Port, msg::ADDED, "Port restriction", |cfg| {
+        cfg.ports.add(r)
+    })
 }
 
 fn rmv_port(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let (lower, upper, proto, user) = port_parms(parms)?;
-    changed(system, Table::Port, msg::REMOVED, "Port restriction", |cfg| {
-        cfg.ports.remove(lower, upper, proto, &user).map(|_| ())
-    })
+    changed(
+        system,
+        Table::Port,
+        msg::REMOVED,
+        "Port restriction",
+        |cfg| cfg.ports.remove(lower, upper, proto, &user).map(|_| ()),
+    )
 }
 
 // --- servers
@@ -947,7 +1074,9 @@ fn add_svr(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         autostart: yes_no(&parms.text("AUTOSTART"), "AUTOSTART")?,
         text: text_param(parms).unwrap_or_default(),
     };
-    changed(system, Table::Servers, msg::ADDED, "TCP/IP server", |cfg| cfg.servers.add_user(s))
+    changed(system, Table::Servers, msg::ADDED, "TCP/IP server", |cfg| {
+        cfg.servers.add_user(s)
+    })
 }
 
 fn chg_svr(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
@@ -958,38 +1087,51 @@ fn chg_svr(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let auto = opt_text(parms, "AUTOSTART").filter(|v| !is_same(v));
     let auto = auto.map(|a| yes_no(&a, "AUTOSTART")).transpose()?;
     let text = text_param(parms);
-    changed(system, Table::Servers, msg::CHANGED, "TCP/IP server", |cfg| {
-        cfg.servers.change_user(&special, |u| {
-            if !pgm.is_empty() && !is_same(&pgm) {
-                u.pgm = (pgm.to_ascii_uppercase(), lib.to_ascii_uppercase());
-            }
-            if let Some(n) = name {
-                u.name = n;
-            }
-            if let Some(k) = kind {
-                u.kind = k;
-            }
-            if let Some(a) = auto {
-                u.autostart = a;
-            }
-            if let Some(t) = text {
-                u.text = t;
-            }
-        })
-    })
+    changed(
+        system,
+        Table::Servers,
+        msg::CHANGED,
+        "TCP/IP server",
+        |cfg| {
+            cfg.servers.change_user(&special, |u| {
+                if !pgm.is_empty() && !is_same(&pgm) {
+                    u.pgm = (pgm.to_ascii_uppercase(), lib.to_ascii_uppercase());
+                }
+                if let Some(n) = name {
+                    u.name = n;
+                }
+                if let Some(k) = kind {
+                    u.kind = k;
+                }
+                if let Some(a) = auto {
+                    u.autostart = a;
+                }
+                if let Some(t) = text {
+                    u.text = t;
+                }
+            })
+        },
+    )
 }
 
 fn rmv_svr(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let special = parms.name("SVRSPCVAL");
-    changed(system, Table::Servers, msg::REMOVED, "TCP/IP server", |cfg| {
-        cfg.servers.remove_user(&special).map(|_| ())
-    })
+    changed(
+        system,
+        Table::Servers,
+        msg::REMOVED,
+        "TCP/IP server",
+        |cfg| cfg.servers.remove_user(&special).map(|_| ()),
+    )
 }
 
 // --- the related tables
 
 fn tables(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Error> {
-    let aliases: Vec<String> = items(parms, "ALIASES").into_iter().filter(|a| !a.starts_with('*')).collect();
+    let aliases: Vec<String> = items(parms, "ALIASES")
+        .into_iter()
+        .filter(|a| !a.starts_with('*'))
+        .collect();
     let text = text_param(parms).unwrap_or_default();
     match name {
         "ADDSRVTBLE" => {
@@ -1000,14 +1142,28 @@ fn tables(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Er
                 aliases,
                 text,
             };
-            changed(system, Table::Services, msg::ADDED, "Service table", |cfg| cfg.services.add(e))
+            changed(
+                system,
+                Table::Services,
+                msg::ADDED,
+                "Service table",
+                |cfg| cfg.services.add(e),
+            )
         }
         "RMVSRVTBLE" => {
-            let (n, p, pr) = (parms.text("SERVICE"), parms.int("PORT").unwrap_or(0), parms.text("PROTOCOL"));
+            let (n, p, pr) = (
+                parms.text("SERVICE"),
+                parms.int("PORT").unwrap_or(0),
+                parms.text("PROTOCOL"),
+            );
             let p: u16 = u_in(p, "PORT")?;
-            changed(system, Table::Services, msg::REMOVED, "Service table", |cfg| {
-                cfg.services.remove(&n, p, &pr).map(|_| ())
-            })
+            changed(
+                system,
+                Table::Services,
+                msg::REMOVED,
+                "Service table",
+                |cfg| cfg.services.remove(&n, p, &pr).map(|_| ()),
+            )
         }
         "ADDPCLTBLE" => {
             let e = ProtocolEntry {
@@ -1016,13 +1172,23 @@ fn tables(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Er
                 aliases,
                 text,
             };
-            changed(system, Table::Protocols, msg::ADDED, "Protocol table", |cfg| add_protocol(&mut cfg.protocols, e))
+            changed(
+                system,
+                Table::Protocols,
+                msg::ADDED,
+                "Protocol table",
+                |cfg| add_protocol(&mut cfg.protocols, e),
+            )
         }
         "RMVPCLTBLE" => {
             let n = parms.text("PROTOCOL");
-            changed(system, Table::Protocols, msg::REMOVED, "Protocol table", |cfg| {
-                remove_named(&mut cfg.protocols, &n, |e| &e.name, "Protocol")
-            })
+            changed(
+                system,
+                Table::Protocols,
+                msg::REMOVED,
+                "Protocol table",
+                |cfg| remove_named(&mut cfg.protocols, &n, |e| &e.name, "Protocol"),
+            )
         }
         "ADDNETTBLE" => {
             let e = NetworkEntry {
@@ -1031,13 +1197,23 @@ fn tables(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Er
                 aliases,
                 text,
             };
-            changed(system, Table::Networks, msg::ADDED, "Network table", |cfg| add_network(&mut cfg.networks, e))
+            changed(
+                system,
+                Table::Networks,
+                msg::ADDED,
+                "Network table",
+                |cfg| add_network(&mut cfg.networks, e),
+            )
         }
         _ => {
             let n = parms.text("NETWORK");
-            changed(system, Table::Networks, msg::REMOVED, "Network table", |cfg| {
-                remove_named(&mut cfg.networks, &n, |e| &e.name, "Network")
-            })
+            changed(
+                system,
+                Table::Networks,
+                msg::REMOVED,
+                "Network table",
+                |cfg| remove_named(&mut cfg.networks, &n, |e| &e.name, "Network"),
+            )
         }
     }
 }
@@ -1059,21 +1235,37 @@ fn smtp_le(system: &mut System, parms: &Parms, add: bool) -> Result<CmdReply, Er
     }
     let host = parms.text("HOSTNAME").trim().to_string();
     if host.is_empty() {
-        return Err(Error::new(msg::BAD_VALUE, "HOSTNAME is required for TYPE(*HOSTAUTH)."));
+        return Err(Error::new(
+            msg::BAD_VALUE,
+            "HOSTNAME is required for TYPE(*HOSTAUTH).",
+        ));
     }
     let entry = if add {
         let user = parms.text("USERNAME").trim().to_string();
         if user.is_empty() {
-            return Err(Error::new(msg::BAD_VALUE, "USERNAME is required for TYPE(*HOSTAUTH)."));
+            return Err(Error::new(
+                msg::BAD_VALUE,
+                "USERNAME is required for TYPE(*HOSTAUTH).",
+            ));
         }
         let password = parms.text("PASSWORD").trim_end().to_string();
         need_iosyscfg(what)?;
-        let key = crate::stgsvc::certs::sealer(system)
-            .ok_or_else(|| Error::new("CPF9898", "The LIC partition holds no key to keep the password with."))?;
+        let key = crate::stgsvc::certs::sealer(system).ok_or_else(|| {
+            Error::new(
+                "CPF9898",
+                "The LIC partition holds no key to keep the password with.",
+            )
+        })?;
         let sealed = key
             .seal(&HostAuth::aad(&host), password.as_bytes())
-            .map_err(|e| Error::new("CPF9898", format!("The password could not be sealed: {e}.")))?;
-        Some(HostAuth { host: host.clone(), user, sealed })
+            .map_err(|e| {
+                Error::new("CPF9898", format!("The password could not be sealed: {e}."))
+            })?;
+        Some(HostAuth {
+            host: host.clone(),
+            user,
+            sealed,
+        })
     } else {
         None
     };
@@ -1082,10 +1274,15 @@ fn smtp_le(system: &mut System, parms: &Parms, add: bool) -> Result<CmdReply, Er
         let a = cfg.servers.get_mut("*SMTP");
         let had = SmtpAttrs::from_bag(&a.bag).host_auth(&host).is_some();
         if !add && !had {
-            return Err(Error::new(msg::NOT_FOUND, format!("No *HOSTAUTH entry for {host}.")));
+            return Err(Error::new(
+                msg::NOT_FOUND,
+                format!("No *HOSTAUTH entry for {host}."),
+            ));
         }
-        a.bag
-            .retain(|(k, v)| !(k.eq_ignore_ascii_case(HOSTAUTH) && HostAuth::decode(v).is_some_and(|h| h.is_for(&host))));
+        a.bag.retain(|(k, v)| {
+            !(k.eq_ignore_ascii_case(HOSTAUTH)
+                && HostAuth::decode(v).is_some_and(|h| h.is_for(&host)))
+        });
         if let Some(e) = &entry {
             a.bag.push((HOSTAUTH.to_string(), e.encode()));
         }

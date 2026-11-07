@@ -16,13 +16,41 @@
 //! conjunct and the expressions it takes have no subquery, sequence
 //! reference or function outside a fixed set of deterministic built-ins.
 
-use crate::ast::{ColumnRef, Expr, Query, QueryBody, Select, SelectItem, TableRef, columns_of, visit};
+use crate::ast::{
+    ColumnRef, Expr, Query, QueryBody, Select, SelectItem, TableRef, columns_of, visit,
+};
 
 /// Built-in functions a pushed condition may call.
 const PURE: &[&str] = &[
-    "ABS", "CHAR", "COALESCE", "DATE", "DAY", "DEC", "DECIMAL", "DIGITS", "IFNULL", "INT", "INTEGER", "LCASE", "LEFT",
-    "LENGTH", "LOWER", "LTRIM", "MOD", "MONTH", "RIGHT", "RTRIM", "STRIP", "SUBSTR", "SUBSTRING", "TRIM", "UCASE",
-    "UPPER", "VALUE", "VARCHAR", "YEAR",
+    "ABS",
+    "CHAR",
+    "COALESCE",
+    "DATE",
+    "DAY",
+    "DEC",
+    "DECIMAL",
+    "DIGITS",
+    "IFNULL",
+    "INT",
+    "INTEGER",
+    "LCASE",
+    "LEFT",
+    "LENGTH",
+    "LOWER",
+    "LTRIM",
+    "MOD",
+    "MONTH",
+    "RIGHT",
+    "RTRIM",
+    "STRIP",
+    "SUBSTR",
+    "SUBSTRING",
+    "TRIM",
+    "UCASE",
+    "UPPER",
+    "VALUE",
+    "VARCHAR",
+    "YEAR",
 ];
 
 /// Whether `e` gives the same answer evaluated in either place.
@@ -54,7 +82,9 @@ fn conjuncts(e: &Expr, out: &mut Vec<Expr>) {
 }
 
 fn and_all(parts: Vec<Expr>) -> Option<Expr> {
-    parts.into_iter().reduce(|a, b| Expr::And(Box::new(a), Box::new(b)))
+    parts
+        .into_iter()
+        .reduce(|a, b| Expr::And(Box::new(a), Box::new(b)))
 }
 
 /// The derived table's columns: name and the expression it stands for
@@ -89,11 +119,20 @@ fn derived_columns(sel: &Select, names: &[crate::ast::Ident]) -> Option<Vec<(Str
 
 /// Whether the derived query may take conditions.
 fn takes(q: &Query) -> Option<&Select> {
-    if !q.order_by.is_empty() || q.offset.is_some() || q.fetch_first.is_some() || q.for_update.is_some() {
+    if !q.order_by.is_empty()
+        || q.offset.is_some()
+        || q.fetch_first.is_some()
+        || q.for_update.is_some()
+    {
         return None;
     }
-    let QueryBody::Select(sel) = &q.body else { return None };
-    let olap = sel.items.iter().any(|i| matches!(i, SelectItem::Expr(e, _) if super::super::olap::has_over(e)));
+    let QueryBody::Select(sel) = &q.body else {
+        return None;
+    };
+    let olap = sel
+        .items
+        .iter()
+        .any(|i| matches!(i, SelectItem::Expr(e, _) if super::super::olap::has_over(e)));
     (!olap).then_some(&**sel)
 }
 
@@ -107,7 +146,11 @@ fn substitute(e: &Expr, alias: &str, cols: &[(String, Expr)], grouped: &[Expr]) 
                 return;
             }
             match cols.iter().find(|(n, _)| *n == column.value) {
-                Some((_, x)) if movable(x) && (grouped.is_empty() || grouped.contains(x)) && !super::super::eval::has_aggregate(x) => {
+                Some((_, x))
+                    if movable(x)
+                        && (grouped.is_empty() || grouped.contains(x))
+                        && !super::super::eval::has_aggregate(x) =>
+                {
                     *e = x.clone();
                 }
                 _ => *ok = false,
@@ -129,7 +172,11 @@ fn substitute(e: &Expr, alias: &str, cols: &[(String, Expr)], grouped: &[Expr]) 
 /// whether an unqualified name is a column of another `FROM` item.
 pub fn push(sel: &Select, elsewhere: &dyn Fn(&str) -> bool) -> Option<Select> {
     let w = sel.where_clause.as_ref()?;
-    if !sel.from.iter().any(|t| matches!(t, TableRef::Subquery { .. })) {
+    if !sel
+        .from
+        .iter()
+        .any(|t| matches!(t, TableRef::Subquery { .. }))
+    {
         return None;
     }
     let mut parts = Vec::new();
@@ -152,11 +199,17 @@ pub fn push(sel: &Select, elsewhere: &dyn Fn(&str) -> bool) -> Option<Select> {
                 .iter()
                 .enumerate()
                 .filter(|(_, t)| match t {
-                    TableRef::Subquery { alias, query, columns } => match &c.table {
+                    TableRef::Subquery {
+                        alias,
+                        query,
+                        columns,
+                    } => match &c.table {
                         Some(t) => t.value == alias.value,
                         None => {
                             !elsewhere(&c.column.value)
-                                && takes(query).and_then(|s| derived_columns(s, columns)).is_some_and(|d| d.iter().any(|(n, _)| *n == c.column.value))
+                                && takes(query)
+                                    .and_then(|s| derived_columns(s, columns))
+                                    .is_some_and(|d| d.iter().any(|(n, _)| *n == c.column.value))
                         }
                     },
                     _ => false,
@@ -175,7 +228,14 @@ pub fn push(sel: &Select, elsewhere: &dyn Fn(&str) -> bool) -> Option<Select> {
             kept.push(p);
             continue;
         };
-        let TableRef::Subquery { alias, query, columns } = &mut out.from[ti] else { unreachable!("a derived table") };
+        let TableRef::Subquery {
+            alias,
+            query,
+            columns,
+        } = &mut out.from[ti]
+        else {
+            unreachable!("a derived table")
+        };
         let Some(inner) = takes(query) else {
             kept.push(p);
             continue;
@@ -187,7 +247,10 @@ pub fn push(sel: &Select, elsewhere: &dyn Fn(&str) -> bool) -> Option<Select> {
         let grouped = inner.group_by.clone();
         // A query that aggregates without grouping gives one row whatever
         // it reads: nothing moves into it.
-        let aggregates = grouped.is_empty() && inner.items.iter().any(|i| matches!(i, SelectItem::Expr(e, _) if super::super::eval::has_aggregate(e)));
+        let aggregates = grouped.is_empty()
+            && inner.items.iter().any(
+                |i| matches!(i, SelectItem::Expr(e, _) if super::super::eval::has_aggregate(e)),
+            );
         if aggregates || super::super::grouping::has_sets(&grouped) {
             kept.push(p);
             continue;
@@ -196,7 +259,9 @@ pub fn push(sel: &Select, elsewhere: &dyn Fn(&str) -> bool) -> Option<Select> {
             kept.push(p);
             continue;
         };
-        let QueryBody::Select(s) = &mut query.body else { unreachable!("checked") };
+        let QueryBody::Select(s) = &mut query.body else {
+            unreachable!("checked")
+        };
         s.where_clause = Some(match s.where_clause.take() {
             Some(w) => Expr::And(Box::new(w), Box::new(cond)),
             None => cond,

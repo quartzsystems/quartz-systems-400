@@ -79,7 +79,9 @@ impl StoreIo {
         let mut store = self.store.store();
         let mut txn = store.begin().ok()?;
         let (_, h) = store::obj::ops::read_header(&mut txn, id).ok()?;
-        if h.id.type_code != store::obj::types::FILE || ccsid::decode_trimmed(&h.attribute) != super::DDM_ATTRIBUTE {
+        if h.id.type_code != store::obj::types::FILE
+            || ccsid::decode_trimmed(&h.attribute) != super::DDM_ATTRIBUTE
+        {
             txn.abort();
             return None;
         }
@@ -87,14 +89,17 @@ impl StoreIo {
         let library = store::obj::ops::read_header(&mut txn, h.library)
             .map(|(_, l)| l.name.to_string().trim().to_string())
             .unwrap_or_default();
-        let local = original.filter(|o| *o != id).and_then(|o| db::file::describe(&mut txn, o).ok()).and_then(|d| {
-            d.formats.first().map(|f| super::DdmFormat {
-                name: f.format.name.to_string(),
-                rec_len: f.format.record_len,
-                fields: u32::try_from(f.format.fields.len()).unwrap_or(0),
-                keys: u32::try_from(f.format.keys.len()).unwrap_or(0),
-            })
-        });
+        let local = original
+            .filter(|o| *o != id)
+            .and_then(|o| db::file::describe(&mut txn, o).ok())
+            .and_then(|d| {
+                d.formats.first().map(|f| super::DdmFormat {
+                    name: f.format.name.to_string(),
+                    rec_len: f.format.record_len,
+                    fields: u32::try_from(f.format.fields.len()).unwrap_or(0),
+                    keys: u32::try_from(f.format.keys.len()).unwrap_or(0),
+                })
+            });
         txn.abort();
         let r = super::DdmRedirect {
             file: h.name.to_string().trim().to_string(),
@@ -111,10 +116,17 @@ impl StoreIo {
     }
 
     /// `STRCMTCTL` for the job, in a transaction of its own.
-    pub fn strcmtctl(&mut self, lcklvl: db::cmt::LckLvl, scope: db::cmt::CmtScope, now: u64) -> db::Result<()> {
+    pub fn strcmtctl(
+        &mut self,
+        lcklvl: db::cmt::LckLvl,
+        scope: db::cmt::CmtScope,
+        now: u64,
+    ) -> db::Result<()> {
         let mut store = self.store.store();
         let mut txn = store.begin().map_err(DbError::Store)?;
-        let r = self.session.strcmtctl_in(&mut txn, lcklvl, None, now, scope);
+        let r = self
+            .session
+            .strcmtctl_in(&mut txn, lcklvl, None, now, scope);
         txn.commit().map_err(DbError::Store)?;
         r
     }
@@ -170,11 +182,21 @@ impl StoreIo {
         }
     }
 
-    fn result_of(odp: &OdpRef, record: Option<db::odp::Record>, fmt: &db::format::FormatDef) -> IoResult {
+    fn result_of(
+        odp: &OdpRef,
+        record: Option<db::odp::Record>,
+        fmt: &db::format::FormatDef,
+    ) -> IoResult {
         // The null map as a byte per field.
         let nulls = record.as_ref().map(|r| {
             (0..fmt.format.fields.len())
-                .map(|i| if db::record::is_null(&r.null_map, fmt.null_index(i)) { 0xF1 } else { 0xF0 })
+                .map(|i| {
+                    if db::record::is_null(&r.null_map, fmt.null_index(i)) {
+                        0xF1
+                    } else {
+                        0xF0
+                    }
+                })
                 .collect()
         });
         let o = odp.borrow();
@@ -249,7 +271,11 @@ impl IoSource for StoreIo {
         // Resolve the file and its override's TOFILE before the store is
         // taken: a resolver may need the store itself.
         let mut wanted = vec![fr.clone()];
-        if let Some(to) = self.session.override_for(fr.file).and_then(|o| o.tofile.clone()) {
+        if let Some(to) = self
+            .session
+            .override_for(fr.file)
+            .and_then(|o| o.tofile.clone())
+        {
             wanted.push(to);
         }
         let mut known: Vec<(dds::FileRef, Option<db::Result<ObjectId>>)> = Vec::new();
@@ -263,7 +289,9 @@ impl IoSource for StoreIo {
             .iter()
             .rev()
             .find_map(|(_, r)| r.as_ref().and_then(|r| r.as_ref().ok()).copied());
-        let original = known.first().and_then(|(_, r)| r.as_ref().and_then(|r| r.as_ref().ok()).copied());
+        let original = known
+            .first()
+            .and_then(|(_, r)| r.as_ref().and_then(|r| r.as_ref().ok()).copied());
         if let Some(id) = target
             && let Some(d) = self.ddm_redirect(id, original)
         {
@@ -392,12 +420,20 @@ impl IoSource for StoreIo {
         let due = o.take_due();
         drop(o);
         let before = match &result {
-            Err(DbError::TriggersDue { calls }) => Some(calls.iter().map(super::trigger::TriggerCall::of).collect::<Vec<_>>()),
+            Err(DbError::TriggersDue { calls }) => Some(
+                calls
+                    .iter()
+                    .map(super::trigger::TriggerCall::of)
+                    .collect::<Vec<_>>(),
+            ),
             _ => None,
         };
         // A read refused its record lock names no format (blank in the
         // INFDS on the machine).
-        let refused = matches!(result, Err(DbError::RecordLocked { .. } | DbError::RecordLockedInJob { .. }));
+        let refused = matches!(
+            result,
+            Err(DbError::RecordLocked { .. } | DbError::RecordLockedInJob { .. })
+        );
         let record = result.unwrap_or(None);
         let mut out = Self::result_of(&odp, record, fmt);
         if refused {
@@ -432,7 +468,11 @@ impl IoSource for StoreIo {
     }
 
     fn commit(&mut self, rollback: bool, actgrp: &str) -> Option<Result<(), IoFail>> {
-        self.session.set_opener(if actgrp.is_empty() { db::odp::ovrdbf::DFTACTGRP } else { actgrp });
+        self.session.set_opener(if actgrp.is_empty() {
+            db::odp::ovrdbf::DFTACTGRP
+        } else {
+            actgrp
+        });
         // Without commitment control the operation is status 00802.
         if self.session.commit_def().is_none() {
             return Some(Err(IoFail::new(802, "CPF8350", &[])));
@@ -448,6 +488,9 @@ impl IoSource for StoreIo {
             self.session.commit(&mut txn, None).map(|_| ())
         };
         let done = txn.commit().map_err(|e| fail_of(&DbError::Store(e)));
-        Some(r.map_err(|e| IoFail::new(802, e.msgid().unwrap_or("CPF8350"), &[])).and(done))
+        Some(
+            r.map_err(|e| IoFail::new(802, e.msgid().unwrap_or("CPF8350"), &[]))
+                .and(done),
+        )
     }
 }

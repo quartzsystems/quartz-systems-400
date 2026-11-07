@@ -32,9 +32,23 @@ pub enum Format {
 
 impl Format {
     /// Transfer formats, both ways.
-    pub const TRANSFER: [Format; 5] = [Format::Csv, Format::Tsv, Format::Xlsx, Format::Ods, Format::Fixed];
+    pub const TRANSFER: [Format; 5] = [
+        Format::Csv,
+        Format::Tsv,
+        Format::Xlsx,
+        Format::Ods,
+        Format::Fixed,
+    ];
     /// Run SQL's download formats.
-    pub const DOWNLOAD: [Format; 7] = [Format::Csv, Format::Tsv, Format::Xlsx, Format::Ods, Format::Fixed, Format::Html, Format::Pdf];
+    pub const DOWNLOAD: [Format; 7] = [
+        Format::Csv,
+        Format::Tsv,
+        Format::Xlsx,
+        Format::Ods,
+        Format::Fixed,
+        Format::Html,
+        Format::Pdf,
+    ];
 
     /// Its name in the selects.
     pub fn label(self) -> &'static str {
@@ -55,9 +69,18 @@ impl Format {
     pub fn of(label: &str) -> Option<Format> {
         let l = label.trim();
         let l = l.split(" (").next().unwrap_or(l);
-        [Format::Csv, Format::Tsv, Format::Xlsx, Format::Ods, Format::Fixed, Format::Html, Format::Pdf, Format::Xls]
-            .into_iter()
-            .find(|f| f.label().eq_ignore_ascii_case(l))
+        [
+            Format::Csv,
+            Format::Tsv,
+            Format::Xlsx,
+            Format::Ods,
+            Format::Fixed,
+            Format::Html,
+            Format::Pdf,
+            Format::Xls,
+        ]
+        .into_iter()
+        .find(|f| f.label().eq_ignore_ascii_case(l))
     }
 
     /// The desktop's `.qdx` name (`csv`, `fixed`).
@@ -187,7 +210,9 @@ pub fn write(fmt: Format, cols: &[ResultColumn], rows: &[Vec<Val>], o: &Write) -
                 r.iter()
                     .zip(cols)
                     .map(|(v, c)| match v {
-                        Val::Text(t) if c.typ == "DATE" => Val::Text(job_date(t).unwrap_or_else(|| t.clone())),
+                        Val::Text(t) if c.typ == "DATE" => {
+                            Val::Text(job_date(t).unwrap_or_else(|| t.clone()))
+                        }
                         v => v.clone(),
                     })
                     .collect()
@@ -197,7 +222,11 @@ pub fn write(fmt: Format, cols: &[ResultColumn], rows: &[Vec<Val>], o: &Write) -
     };
     let header = o.header.then_some(names.as_slice());
     let eol = if o.crlf { "\r\n" } else { "\n" };
-    let sheet = if o.title.is_empty() { "Sheet1" } else { o.title.as_str() };
+    let sheet = if o.title.is_empty() {
+        "Sheet1"
+    } else {
+        o.title.as_str()
+    };
     match fmt {
         Format::Csv => text::encode(&text::delimited(header, rows, ',', eol), o.encoding),
         Format::Tsv => text::encode(&text::delimited(header, rows, '\t', eol), o.encoding),
@@ -234,12 +263,26 @@ pub fn read(fmt: Format, b: &[u8], header: bool, enc: Encoding) -> Result<Sheet,
             let (names, rows) = text::parse_fixed(&text::decode(b, enc)?)?;
             return Ok(Sheet { names, rows });
         }
-        other => return Err(format!("{} files cannot be copied to a table", other.label())),
+        other => {
+            return Err(format!(
+                "{} files cannot be copied to a table",
+                other.label()
+            ));
+        }
     };
     let width = rows.iter().map(Vec::len).max().unwrap_or(0);
     let names = if header && !rows.is_empty() {
         let first = rows.remove(0);
-        (0..width).map(|i| first.get(i).map(Val::text).unwrap_or_default().trim().to_string()).collect()
+        (0..width)
+            .map(|i| {
+                first
+                    .get(i)
+                    .map(Val::text)
+                    .unwrap_or_default()
+                    .trim()
+                    .to_string()
+            })
+            .collect()
     } else {
         (1..=width).map(|i| format!("COL{i}")).collect()
     };
@@ -253,11 +296,24 @@ mod tests {
     #[test]
     fn every_transfer_format_both_ways() {
         let cols = vec![
-            ResultColumn { name: "ASSET_TAG".into(), typ: "CHAR".into() },
-            ResultColumn { name: "COST".into(), typ: "DECIMAL".into() },
-            ResultColumn { name: "ACQUIRED".into(), typ: "DATE".into() },
+            ResultColumn {
+                name: "ASSET_TAG".into(),
+                typ: "CHAR".into(),
+            },
+            ResultColumn {
+                name: "COST".into(),
+                typ: "DECIMAL".into(),
+            },
+            ResultColumn {
+                name: "ACQUIRED".into(),
+                typ: "DATE".into(),
+            },
         ];
-        let rows = vec![vec![Val::Text("QS000404".into()), Val::Num("1200.00".into()), Val::Text("2023-05-02".into())]];
+        let rows = vec![vec![
+            Val::Text("QS000404".into()),
+            Val::Num("1200.00".into()),
+            Val::Text("2023-05-02".into()),
+        ]];
         for f in Format::TRANSFER {
             let b = write(f, &cols, &rows, &Write::default());
             let s = read(f, &b, true, Encoding::Utf8).unwrap();
@@ -265,11 +321,26 @@ mod tests {
             assert_eq!(s.rows[0][1].text(), "1200.00", "{f:?}");
             assert_eq!(s.rows[0][2].text(), "2023-05-02", "{f:?}");
         }
-        let job = write(Format::Csv, &cols, &rows, &Write { iso_dates: false, header: false, crlf: false, ..Write::default() });
+        let job = write(
+            Format::Csv,
+            &cols,
+            &rows,
+            &Write {
+                iso_dates: false,
+                header: false,
+                crlf: false,
+                ..Write::default()
+            },
+        );
         assert_eq!(job, b"QS000404,1200.00,05/02/23\n");
         assert_eq!(Format::of("XLSX (first sheet)"), Some(Format::Xlsx));
         assert_eq!(Format::of("Excel-compatible (.xls)"), Some(Format::Xls));
         assert_eq!(Encoding::of("1208 (UTF-8)"), Some(Encoding::Utf8));
-        assert_eq!(read(Format::Csv, b"a,b\n1,2\n", false, Encoding::Utf8).unwrap().names, ["COL1", "COL2"]);
+        assert_eq!(
+            read(Format::Csv, b"a,b\n1,2\n", false, Encoding::Utf8)
+                .unwrap()
+                .names,
+            ["COL1", "COL2"]
+        );
     }
 }

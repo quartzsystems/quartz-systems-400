@@ -87,7 +87,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             [n, num] => match number(num) {
                 Some(k) => vec![(n.to_ascii_uppercase(), k)],
                 None => {
-                    return usage(cx, NAME, &format!("The spooled file number {num} is not valid."));
+                    return usage(
+                        cx,
+                        NAME,
+                        &format!("The spooled file number {num} is not valid."),
+                    );
                 }
             },
             _ => return usage(cx, NAME, "A spooled file name and number are taken."),

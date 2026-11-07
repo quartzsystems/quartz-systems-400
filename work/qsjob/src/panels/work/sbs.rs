@@ -47,7 +47,8 @@ fn fill_wrksbs(host: &Host, d: &mut UimDialog) {
     let rows = subsystems
         .iter()
         .map(|s| {
-            let mut cols: Vec<(String, String)> = (1..=10).map(|i| (format!("P{i}"), String::new())).collect();
+            let mut cols: Vec<(String, String)> =
+                (1..=10).map(|i| (format!("P{i}"), String::new())).collect();
             let mut kb = 0;
             for (id, name) in &s.pools {
                 if let Some(p) = pools.iter().find(|p| p.name == *name) {
@@ -70,7 +71,12 @@ fn fill_wrksbs(host: &Host, d: &mut UimDialog) {
 }
 
 /// `DSPSBSD SBSD(lib/name) [OPTION()]`.
-pub fn dspsbsd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn dspsbsd(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let (lib, name) = qualified(r, "SBSD").ok_or_else(|| Fail::new("CPD0071", "SBSD"))?;
     let payload = host
         .link
@@ -135,7 +141,11 @@ pub fn dspsbsd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
 
 /// `*NOMAX` for 0.
 fn nomax(n: u32) -> String {
-    if n == 0 { "*NOMAX".into() } else { n.to_string() }
+    if n == 0 {
+        "*NOMAX".into()
+    } else {
+        n.to_string()
+    }
 }
 
 /// `LIB/NAME` parts shown as name and library.
@@ -159,7 +169,14 @@ fn fill_sbsd(d: &mut UimDialog, s: &Sbsd) {
     let (dspf, dspf_lib) = pair(&s.sgndspf);
     d.set("SGNDSPF", &dspf);
     d.set("SGNLIB", &dspf_lib);
-    d.set("SYSLIBLE", if s.syslible.is_empty() { "*NONE" } else { &s.syslible });
+    d.set(
+        "SYSLIBLE",
+        if s.syslible.is_empty() {
+            "*NONE"
+        } else {
+            &s.syslible
+        },
+    );
     d.set("ASPGRP", "*NONE");
     d.set("WLGRP", "*NONE");
     let pools = s
@@ -170,7 +187,14 @@ fn fill_sbsd(d: &mut UimDialog, s: &Sbsd) {
             entry(&[
                 ("POOLID", p.id.to_string()),
                 ("POOLSIZE", pool_text(p.kind, p.size_kb)),
-                ("ACTLVL", if private { p.actlvl.to_string() } else { String::new() }),
+                (
+                    "ACTLVL",
+                    if private {
+                        p.actlvl.to_string()
+                    } else {
+                        String::new()
+                    },
+                ),
             ])
         })
         .collect();
@@ -198,7 +222,11 @@ fn fill_sbsd(d: &mut UimDialog, s: &Sbsd) {
                 ("MAXACT", nomax(u32::from(q.maxact))),
             ]);
             for (i, m) in q.maxpty.iter().enumerate() {
-                let v = if *m == 0 { "*".to_string() } else { m.to_string() };
+                let v = if *m == 0 {
+                    "*".to_string()
+                } else {
+                    m.to_string()
+                };
                 row.push((format!("M{}", i + 1), v));
             }
             row
@@ -214,8 +242,22 @@ fn fill_sbsd(d: &mut UimDialog, s: &Sbsd) {
                 ("RTSEQ", r.seq.to_string()),
                 ("PGM", r.pgm.0.clone()),
                 ("PGMLIB", r.pgm.1.clone()),
-                ("CMPVAL", if any { r.cmpval.clone() } else { format!("'{}'", r.cmpval) }),
-                ("STARTPOS", if any { String::new() } else { r.start.to_string() }),
+                (
+                    "CMPVAL",
+                    if any {
+                        r.cmpval.clone()
+                    } else {
+                        format!("'{}'", r.cmpval)
+                    },
+                ),
+                (
+                    "STARTPOS",
+                    if any {
+                        String::new()
+                    } else {
+                        r.start.to_string()
+                    },
+                ),
             ])
         })
         .collect();
@@ -267,9 +309,22 @@ fn ws_rows(list: &[wm::obj::sbsd::Wse]) -> Vec<Vec<(String, String)>> {
 }
 
 /// One option of the menu: its display, or each in turn for 20.
-fn entries(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, n: u32, name: &str) -> Result<Left, Fail> {
+fn entries(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    d: &mut UimDialog,
+    n: u32,
+    name: &str,
+) -> Result<Left, Fail> {
     if n == 21 {
-        super::run_command(job, host, d, &mut Vec::new(), &format!("WRKSBSJOB SBS({name})"));
+        super::run_command(
+            job,
+            host,
+            d,
+            &mut Vec::new(),
+            &format!("WRKSBSJOB SBS({name})"),
+        );
         return Ok(Left::Back);
     }
     if n == 20 {

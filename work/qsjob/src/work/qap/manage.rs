@@ -22,12 +22,12 @@ use cmd::Resolved;
 use cmd::analyze::Env;
 use cmd::def::Mode;
 use mi::Job;
+use qap_proto::Status;
 use qap_proto::ops::manage::{
-    EndHow, EndSubsystem, HardwareResource, HardwareResources, PowerDown, ResourceStatus, ResourceType,
-    SetSystemValue, Subsystem, SubsystemStatus, SystemValue, SystemValues, ValueKind,
+    EndHow, EndSubsystem, HardwareResource, HardwareResources, PowerDown, ResourceStatus,
+    ResourceType, SetSystemValue, Subsystem, SubsystemStatus, SystemValue, SystemValues, ValueKind,
 };
 use qap_proto::types::{JobId, ObjectName};
-use qap_proto::Status;
 use qapd::Refusal;
 use qapd::manage::ExitRequest;
 use regfac::ProgramCaller;
@@ -88,7 +88,8 @@ impl Ctx<'_> {
 /// The status a command's message stands for.
 fn status_of(id: &str) -> Status {
     match id {
-        "CPF222E" | "CPF18B4" | "CPF9802" | "CPF2189" | "CPF2182" | "CPF2207" | "CPD0032" | "CPD0171" | "MCH1001" => Status::NotAuthorized,
+        "CPF222E" | "CPF18B4" | "CPF9802" | "CPF2189" | "CPF2182" | "CPF2207" | "CPD0032"
+        | "CPD0171" | "MCH1001" => Status::NotAuthorized,
         "CPF9801" | "CPF1003" | "CPF2110" | "CPF1842" | "CPD0030" => Status::NotFound,
         _ => Status::Error,
     }
@@ -128,7 +129,8 @@ pub(super) fn may_use(cx: &Ctx<'_>, command: &str) -> Result<(), Refusal> {
 
 /// Run a service-site command as `crate::command::service` does.
 fn service(cx: &Ctx<'_>, r: &Resolved) -> Result<CmdReply, Refusal> {
-    let built = cmd::block::build(&r.def, &r.parms).map_err(|e| cx.refuse_text(&format!("{} {e}", e.msgid())))?;
+    let built = cmd::block::build(&r.def, &r.parms)
+        .map_err(|e| cx.refuse_text(&format!("{} {e}", e.msgid())))?;
     let specified: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
     let typed = sys_cpps::entry(&r.name)
         .map(|e| sys_cpps::bridge::specified_line(&e.word, &crate::command::parms_of(r)))
@@ -139,7 +141,10 @@ fn service(cx: &Ctx<'_>, r: &Resolved) -> Result<CmdReply, Refusal> {
     match &reply.escape {
         Some(e) => {
             let first = reply.text.lines().next().unwrap_or("").trim();
-            let text = first.strip_prefix(e.msgid.as_str()).unwrap_or(first).to_string();
+            let text = first
+                .strip_prefix(e.msgid.as_str())
+                .unwrap_or(first)
+                .to_string();
             Err(cx.refuse_data(status_of(&e.msgid), &e.msgid, &e.data, &text))
         }
         None => Ok(reply),
@@ -184,7 +189,12 @@ impl ProgramCaller for ExitJob<'_> {
 
 /// `QS400_QAP_MGMT`: every registered program allows `req`, or none is
 /// registered. A refusal is audited `GR` by the registry.
-pub(super) fn exit_allows(cx: &Ctx<'_>, point: &str, format: &str, req: &ExitRequest) -> Result<(), Refusal> {
+pub(super) fn exit_allows(
+    cx: &Ctx<'_>,
+    point: &str,
+    format: &str,
+    req: &ExitRequest,
+) -> Result<(), Refusal> {
     let mut reg = RemoteRegistry::new(cx.shared.clone());
     let mut caller = ExitJob {
         shared: cx.shared,
@@ -199,10 +209,10 @@ pub(super) fn exit_allows(cx: &Ctx<'_>, point: &str, format: &str, req: &ExitReq
     if r.allow {
         return Ok(());
     }
-    let (pgm, lib) = r
-        .called
-        .last()
-        .map_or_else(|| ("*N".to_string(), "*N".to_string()), |c| (c.pgm.clone(), c.lib.clone()));
+    let (pgm, lib) = r.called.last().map_or_else(
+        || ("*N".to_string(), "*N".to_string()),
+        |c| (c.pgm.clone(), c.lib.clone()),
+    );
     Err(cx.refuse(Status::NotAuthorized, EXIT_REFUSED, &[&pgm, &lib]))
 }
 
@@ -219,20 +229,32 @@ pub(super) fn subsystems(cx: &Ctx<'_>, library: &str) -> Result<Vec<Subsystem>, 
     let lib = library.trim().to_ascii_uppercase();
     let descs: Vec<ObjInfo> = match lib.as_str() {
         "*ALL" => {
-            let libs = cx.link().with(|l| l.list_objects("QSYS".into(), "*ALL".into(), "*LIB".into()));
-            let mut all = cx.link().with(|l| l.list_objects("QSYS".into(), "*ALL".into(), "*SBSD".into()));
+            let libs = cx
+                .link()
+                .with(|l| l.list_objects("QSYS".into(), "*ALL".into(), "*LIB".into()));
+            let mut all = cx
+                .link()
+                .with(|l| l.list_objects("QSYS".into(), "*ALL".into(), "*SBSD".into()));
             for l in libs.iter().filter(|l| l.name != "QSYS") {
-                all.extend(cx.link().with(|k| k.list_objects(l.name.clone(), "*ALL".into(), "*SBSD".into())));
+                all.extend(
+                    cx.link()
+                        .with(|k| k.list_objects(l.name.clone(), "*ALL".into(), "*SBSD".into())),
+                );
             }
             all
         }
-        "*LIBL" | "" => cx.link().with(|l| l.list_objects("*LIBL".into(), "*ALL".into(), "*SBSD".into())),
+        "*LIBL" | "" => cx
+            .link()
+            .with(|l| l.list_objects("*LIBL".into(), "*ALL".into(), "*SBSD".into())),
         l => {
-            let found = cx.link().with(|k| k.object("QSYS".into(), l.into(), "*LIB".into()));
+            let found = cx
+                .link()
+                .with(|k| k.object("QSYS".into(), l.into(), "*LIB".into()));
             if found.is_none() {
                 return Err(cx.refuse(Status::NotFound, "CPF2110", &[l]));
             }
-            cx.link().with(|k| k.list_objects(l.into(), "*ALL".into(), "*SBSD".into()))
+            cx.link()
+                .with(|k| k.list_objects(l.into(), "*ALL".into(), "*SBSD".into()))
         }
     };
     let active = cx.link().with(Client::sbs_list);
@@ -244,7 +266,11 @@ pub(super) fn subsystems(cx: &Ctx<'_>, library: &str) -> Result<Vec<Subsystem>, 
     };
     let mut out: Vec<Subsystem> = active
         .iter()
-        .filter(|a| matches!(lib.as_str(), "*ALL" | "*LIBL" | "") || a.lib == lib || text_of(&a.lib, &a.name).is_some())
+        .filter(|a| {
+            matches!(lib.as_str(), "*ALL" | "*LIBL" | "")
+                || a.lib == lib
+                || text_of(&a.lib, &a.name).is_some()
+        })
         .map(|a| Subsystem {
             sbsd: object(&a.lib, &a.name),
             status: if a.status.eq_ignore_ascii_case("ENDING") {
@@ -284,7 +310,11 @@ fn qualified(o: &ObjectName) -> String {
     if lib.is_empty() {
         o.name.trim().to_ascii_uppercase()
     } else {
-        format!("{}/{}", lib.to_ascii_uppercase(), o.name.trim().to_ascii_uppercase())
+        format!(
+            "{}/{}",
+            lib.to_ascii_uppercase(),
+            o.name.trim().to_ascii_uppercase()
+        )
     }
 }
 
@@ -343,11 +373,18 @@ fn delay(d: Option<u32>) -> String {
 
 /// `ENDSBS`, through its processing program.
 pub(super) fn end_subsystem(cx: &Ctx<'_>, req: &EndSubsystem) -> Result<(), Refusal> {
-    let sbs = req
-        .sbsd
-        .as_ref()
-        .map_or_else(|| "*ALL".to_string(), |o| o.name.trim().to_ascii_uppercase());
-    let r = analyze(cx, &format!("ENDSBS SBS({sbs}) OPTION({}) DELAY({})", how(req.how), delay(req.delay)))?;
+    let sbs = req.sbsd.as_ref().map_or_else(
+        || "*ALL".to_string(),
+        |o| o.name.trim().to_ascii_uppercase(),
+    );
+    let r = analyze(
+        cx,
+        &format!(
+            "ENDSBS SBS({sbs}) OPTION({}) DELAY({})",
+            how(req.how),
+            delay(req.delay)
+        ),
+    )?;
     service(cx, &r).map(|_| ())
 }
 
@@ -387,9 +424,16 @@ fn value(link: &mut Link, cat: Option<&sysval::Catalog>, name: &str) -> Option<S
 pub(super) fn system_values(cx: &Ctx<'_>, names: &[String]) -> Result<SystemValues, Refusal> {
     let cat = catalog();
     let names: Vec<String> = if names.is_empty() {
-        cx.link().with(Client::sysval_panel_list).into_iter().map(|(n, _, _)| n).collect()
+        cx.link()
+            .with(Client::sysval_panel_list)
+            .into_iter()
+            .map(|(n, _, _)| n)
+            .collect()
     } else {
-        names.iter().map(|n| n.trim().to_ascii_uppercase()).collect()
+        names
+            .iter()
+            .map(|n| n.trim().to_ascii_uppercase())
+            .collect()
     };
     let mut values = Vec::with_capacity(names.len());
     for n in &names {
@@ -405,7 +449,11 @@ pub(super) fn system_values(cx: &Ctx<'_>, names: &[String]) -> Result<SystemValu
 /// Whether two values say the same: blanks between words, case, and
 /// leading zeros of a number aside.
 fn same(kind: ValueKind, a: &str, b: &str) -> bool {
-    let norm = |s: &str| s.split_whitespace().map(str::to_ascii_uppercase).collect::<Vec<_>>();
+    let norm = |s: &str| {
+        s.split_whitespace()
+            .map(str::to_ascii_uppercase)
+            .collect::<Vec<_>>()
+    };
     if kind == ValueKind::Decimal
         && let (Ok(x), Ok(y)) = (a.trim().parse::<f64>(), b.trim().parse::<f64>())
     {
@@ -424,7 +472,10 @@ pub(super) fn set_system_value(cx: &Ctx<'_>, req: &SetSystemValue) -> Result<Sys
         return Err(cx.refuse(Status::NotFound, "CPF1842", &[&name]));
     };
     let bad = |cx: &Ctx<'_>| cx.refuse(Status::Error, BAD_VALUE, &[&name, &req.value]);
-    let fits = !entry.readonly && entry.parse_value(&req.value).is_ok_and(|v| entry.validate(&v).is_ok());
+    let fits = !entry.readonly
+        && entry
+            .parse_value(&req.value)
+            .is_ok_and(|v| entry.validate(&v).is_ok());
     if !fits {
         return Err(bad(cx));
     }
@@ -440,7 +491,10 @@ pub(super) fn set_system_value(cx: &Ctx<'_>, req: &SetSystemValue) -> Result<Sys
 }
 
 /// `ListHardwareResources`: what `WRKHDWRSC TYPE()` lists, in its order.
-pub(super) fn hardware_resources(cx: &Ctx<'_>, kind: ResourceType) -> Result<HardwareResources, Refusal> {
+pub(super) fn hardware_resources(
+    cx: &Ctx<'_>,
+    kind: ResourceType,
+) -> Result<HardwareResources, Refusal> {
     let table = cx.link().with(|l| l.hw_table(false));
     let table = table.map_err(|e| cx.refuse_text(&e))?;
     let Some(spec) = hwrsrc::view::spec(kind.special()) else {
@@ -458,7 +512,8 @@ pub(super) fn hardware_resources(cx: &Ctx<'_>, kind: ResourceType) -> Result<Har
             let r = table.get(&row.name);
             HardwareResource {
                 depth: u8::try_from(row.depth).unwrap_or(u8::MAX),
-                type_model: r.map_or_else(|| row.type_col.trim().to_string(), hwrsrc::view::type_model),
+                type_model: r
+                    .map_or_else(|| row.type_col.trim().to_string(), hwrsrc::view::type_model),
                 status: if row.status == "Operational" {
                     ResourceStatus::Operational
                 } else {

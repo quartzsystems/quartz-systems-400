@@ -155,7 +155,10 @@ impl Session {
             rows,
             prompt,
             keyset: (!self.defaults.full || self.prompt.is_some()).then_some(self.keyset),
-            message: self.message.as_ref().map(|m| m.text.clone().unwrap_or_else(|| m.fallback())),
+            message: self
+                .message
+                .as_ref()
+                .map(|m| m.text.clone().unwrap_or_else(|| m.fallback())),
             copyright: self.copyright,
             cursor,
         }
@@ -172,7 +175,10 @@ impl Session {
         let (fmt_label, fmt_ruler) = format_line(&fmt, self.left, right_col);
         let (right, member) = match self.pending_text() {
             Some(t) => (format!("Pending . . . . . :   {t}"), String::new()),
-            None => (format!("{:>26}", format!("{}/{}", self.lib, self.file)), format!("{:>10}", self.member)),
+            None => (
+                format!("{:>26}", format!("{}/{}", self.lib, self.file)),
+                format!("{:>10}", self.member),
+            ),
         };
         Header {
             columns: format!("{:>5}{:>4}", self.left, right_col),
@@ -193,10 +199,13 @@ impl Session {
     fn header_format(&self, items: &[Item]) -> String {
         let st = self.srctype();
         let rec_on = |row: usize| {
-            self.shown.iter().find(|s| s.0 == row).and_then(|s| match &s.1 {
-                Item::Rec(id) => Some(*id),
-                _ => None,
-            })
+            self.shown
+                .iter()
+                .find(|s| s.0 == row)
+                .and_then(|s| match &s.1 {
+                    Item::Rec(id) => Some(*id),
+                    _ => None,
+                })
         };
         if let Some((r, _)) = self.cursor
             && let Some(id) = rec_on(r)
@@ -218,7 +227,10 @@ impl Session {
             Item::Rec(id) => Some(*id),
             _ => None,
         });
-        first.map_or_else(|| "**".into(), |id| st.format_of(&self.target_data(Target::Rec(id))).to_string())
+        first.map_or_else(
+            || "**".into(),
+            |id| st.format_of(&self.target_data(Target::Rec(id))).to_string(),
+        )
     }
 
     fn row_for(&self, row: usize, item: &Item, w: usize) -> Row {
@@ -230,11 +242,26 @@ impl Session {
             kind,
         };
         match item {
-            Item::Begin => mk(String::new(), marker('*', 15, "Beginning of data", super::WINDOW), None, RowKind::Marker),
-            Item::End => mk(String::new(), marker('*', 18, "End of data", super::WINDOW), None, RowKind::Marker),
+            Item::Begin => mk(
+                String::new(),
+                marker('*', 15, "Beginning of data", super::WINDOW),
+                None,
+                RowKind::Marker,
+            ),
+            Item::End => mk(
+                String::new(),
+                marker('*', 18, "End of data", super::WINDOW),
+                None,
+                RowKind::Marker,
+            ),
             Item::Excl(ids) => mk(
                 "- - - -".into(),
-                marker('-', 13, &format!("{} data records excluded", ids.len()), super::WINDOW),
+                marker(
+                    '-',
+                    13,
+                    &format!("{} data records excluded", ids.len()),
+                    super::WINDOW,
+                ),
                 None,
                 RowKind::Marker,
             ),
@@ -284,7 +311,13 @@ impl Session {
             .collect();
         let ruler = (pr.layout == FREE).then(|| {
             let text: String = (1..=79)
-                .map(|c| if c == 1 { '.' } else { crate::srctype::ruler_char(c) })
+                .map(|c| {
+                    if c == 1 {
+                        '.'
+                    } else {
+                        crate::srctype::ruler_char(c)
+                    }
+                })
                 .collect();
             (top + 3, 2, text)
         });

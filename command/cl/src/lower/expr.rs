@@ -477,9 +477,7 @@ impl Gen<'_, '_> {
                 // The job switches, as `QCLSWS` reads them: a mask of
                 // 0, 1 and X against the eight switches.
                 let mask = match &args[0] {
-                    Expr::Lit(Lit::Str(s) | Lit::Num(s)) | Expr::Word(s) => {
-                        s.to_ascii_uppercase()
-                    }
+                    Expr::Lit(Lit::Str(s) | Lit::Num(s)) | Expr::Word(s) => s.to_ascii_uppercase(),
                     _ => return Err("%SWITCH takes a mask of 0, 1 and X".into()),
                 };
                 if mask.len() != 8 || !mask.chars().all(|c| matches!(c, '0' | '1' | 'X')) {
@@ -535,7 +533,10 @@ impl Gen<'_, '_> {
             let l = self.reg("i");
             self.ins(&format!("{l} = str.len {t}"));
             let over = self.reg("b");
-            self.ins(&format!("{over} = cmp.gt {l}, {}", len.saturating_sub(sign)));
+            self.ins(&format!(
+                "{over} = cmp.gt {l}, {}",
+                len.saturating_sub(sign)
+            ));
             let (fits, big) = (self.fresh("CF"), self.fresh("CO"));
             self.term(&format!("brif {over}, {big}, {fits}"));
             self.label(&big);
@@ -633,11 +634,16 @@ impl Gen<'_, '_> {
         let Expr::Lit(Lit::Num(n)) = len else {
             return Err("%SST as a target needs a constant length".into());
         };
-        let width: usize = n.parse().map_err(|_| "%SST needs a whole length".to_string())?;
+        let width: usize = n
+            .parse()
+            .map_err(|_| "%SST needs a whole length".to_string())?;
         // A constant is cut or padded here; a value goes through a
         // field of the target's length, as CHGVAR pads or truncates.
         let t = if let Expr::Lit(Lit::Str(text)) = e {
-            qstr(&format!("{:<width$}", text.chars().take(width).collect::<String>()))
+            qstr(&format!(
+                "{:<width$}",
+                text.chars().take(width).collect::<String>()
+            ))
         } else {
             let s = self.chr(e)?;
             let t = self.temp(&Ty::Char(u32::try_from(width).unwrap_or(1).max(1)));

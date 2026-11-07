@@ -36,9 +36,17 @@ impl Suite {
     /// changed, saved, restored and deleted.
     pub(crate) fn time_zones(&self, s: &mut Session) -> Result<String, String> {
         let shipped = s.command("WRKTIMZON TIMZON(QN0500EST*)", CMD)?;
-        want(&shipped, "WRKTIMZON of the shipped Eastern zones", &["QN0500EST3", "QN0500EST2", "-05:00", "EST"])?;
+        want(
+            &shipped,
+            "WRKTIMZON of the shipped Eastern zones",
+            &["QN0500EST3", "QN0500EST2", "-05:00", "EST"],
+        )?;
         let objd = s.command("DSPOBJD OBJ(QSYS/Q0000UTC) OBJTYPE(*TIMZON)", CMD)?;
-        want(&objd, "DSPOBJD of a shipped *TIMZON", &["Q0000UTC", "*TIMZON"])?;
+        want(
+            &objd,
+            "DSPOBJD of a shipped *TIMZON",
+            &["Q0000UTC", "*TIMZON"],
+        )?;
         s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD).ok();
         let made = s.command("CRTTIMZON TIMZON(QSTZTEST) OFFSET(330) STDNAME(QST 'Quartz test time') TEXT('Step 143')", CMD)?;
         want(&made, "CRTTIMZON", &["QSTZTEST"])?;
@@ -49,7 +57,11 @@ impl Suite {
             return Err(format!("CHGSYSVAL QTIMZON: {set}"));
         }
         want(&utc_offset(s)?, "QUTCOFFSET after CHGSYSVAL", &["+0530"])?;
-        want(&sql(s, "VALUES CURRENT TIMEZONE")?, "CURRENT TIMEZONE", &["53000"])?;
+        want(
+            &sql(s, "VALUES CURRENT TIMEZONE")?,
+            "CURRENT TIMEZONE",
+            &["53000"],
+        )?;
         let refused = s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD)?;
         want(&refused, "DLTTIMZON of QTIMZON's zone", &["CPF2117"])?;
         // Daylight saving time all year but the last days of December.
@@ -60,13 +72,20 @@ impl Suite {
         )?;
         want(&chg, "CHGTIMZON", &["QSTZTEST"])?;
         want(&utc_offset(s)?, "QUTCOFFSET after CHGTIMZON", &["-0400"])?;
-        want(&sql(s, "VALUES CURRENT TIMEZONE")?, "CURRENT TIMEZONE after CHGTIMZON", &["-40000"])?;
+        want(
+            &sql(s, "VALUES CURRENT TIMEZONE")?,
+            "CURRENT TIMEZONE after CHGTIMZON",
+            &["-40000"],
+        )?;
         s.command("CHGSYSVAL SYSVAL(QTIMZON) VALUE(Q0000UTC)", CMD)?;
         want(&utc_offset(s)?, "QUTCOFFSET back on UTC", &["+0000"])?;
         // Save, delete, restore.
         s.command("DLTF FILE(QGPL/TZSAVF)", CMD).ok();
         s.command("CRTSAVF FILE(QGPL/TZSAVF)", CMD)?;
-        let saved = s.command("SAVOBJ OBJ(QSTZTEST) LIB(QSYS) DEV(*SAVF) OBJTYPE(*TIMZON) SAVF(QGPL/TZSAVF)", CMD)?;
+        let saved = s.command(
+            "SAVOBJ OBJ(QSTZTEST) LIB(QSYS) DEV(*SAVF) OBJTYPE(*TIMZON) SAVF(QGPL/TZSAVF)",
+            CMD,
+        )?;
         want(&saved, "SAVOBJ of a *TIMZON", &["CPC3722", "QSYS"])?;
         let gone = s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD)?;
         want(&gone, "DLTTIMZON", &["QSTZTEST"])?;
@@ -74,10 +93,17 @@ impl Suite {
         if none.contains("QSTZTEST") {
             return Err(format!("WRKTIMZON after DLTTIMZON:\n{none}"));
         }
-        let restored = s.command("RSTOBJ OBJ(QSTZTEST) SAVLIB(QSYS) DEV(*SAVF) OBJTYPE(*TIMZON) SAVF(QGPL/TZSAVF)", CMD)?;
+        let restored = s.command(
+            "RSTOBJ OBJ(QSTZTEST) SAVLIB(QSYS) DEV(*SAVF) OBJTYPE(*TIMZON) SAVF(QGPL/TZSAVF)",
+            CMD,
+        )?;
         want(&restored, "RSTOBJ of a *TIMZON", &["restored"])?;
         let back = s.command("WRKTIMZON TIMZON(QSTZTEST)", CMD)?;
-        want(&back, "WRKTIMZON after RSTOBJ", &["QSTZTEST", "-05:00", "QST"])?;
+        want(
+            &back,
+            "WRKTIMZON after RSTOBJ",
+            &["QSTZTEST", "-05:00", "QST"],
+        )?;
         s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD)?;
         s.command("DLTF FILE(QGPL/TZSAVF)", CMD).ok();
         Ok("CRTTIMZON, QTIMZON +0530 then -0400 with no IPL (QUTCOFFSET, CURRENT TIMEZONE), DLTTIMZON refused, SAVOBJ/RSTOBJ".into())
@@ -88,7 +114,16 @@ impl Suite {
         setup(s)?;
         let mut tn = Tn::open(self)?;
         let list = tn.cmd("WRKTIMZON", "Work with Time Zone Descriptions")?;
-        want(&list, "WRKTIMZON", &["Q0000GMT", "Standard Time", "8=Update system value", "F11=Display DST name"])?;
+        want(
+            &list,
+            "WRKTIMZON",
+            &[
+                "Q0000GMT",
+                "Standard Time",
+                "8=Update system value",
+                "F11=Display DST name",
+            ],
+        )?;
         if !list.lines().any(|l| l.contains("> Q0000UTC")) {
             return Err(format!("QTIMZON's zone is not marked:\n{list}"));
         }
@@ -98,16 +133,29 @@ impl Suite {
         want(&tn.screen(), "F11 twice", &["Alternate", "Europe/London"])?;
         tn.run("key f3\nsettle 1000\nunlock\n")?;
         tn.cmd("WRKTIMZON TIMZON(QN0500EST3)", "QN0500EST3")?;
-        tn.run("pick \"QN0500EST3\" 5\nkey enter\nwait \"Display Time Zone Description Details\"\n")?;
-        want(&tn.screen(), "option 5", &["QN0500EST3", "-05:00", "CPX091E", "EDT"])?;
+        tn.run(
+            "pick \"QN0500EST3\" 5\nkey enter\nwait \"Display Time Zone Description Details\"\n",
+        )?;
+        want(
+            &tn.screen(),
+            "option 5",
+            &["QN0500EST3", "-05:00", "CPX091E", "EDT"],
+        )?;
         tn.run("key pgdn\nsettle 800\n")?;
-        want(&tn.screen(), "option 5, page 2", &["March", "Second", "November", "First", "60"])?;
+        want(
+            &tn.screen(),
+            "option 5, page 2",
+            &["March", "Second", "November", "First", "60"],
+        )?;
         tn.run("key pgdn\nsettle 800\n")?;
         want(&tn.screen(), "option 5, page 3", &["America/New_York"])?;
         tn.run("key f12\nsettle 800\nkey f3\nsettle 800\nunlock\n")?;
         // The prompter shows the key parameter alone first (IBM shows the
         // values at once); Enter brings the current values.
-        tn.cmd("?CHGTIMZON TIMZON(QN0500EST3)", "Change Time Zone Description")?;
+        tn.cmd(
+            "?CHGTIMZON TIMZON(QN0500EST3)",
+            "Change Time Zone Description",
+        )?;
         tn.run("key enter\nsettle 1500\nunlock\n")?;
         want(&tn.screen(), "CHGTIMZON's prompt", &["-300", "*MSG"])?;
         tn.run("key f3\nsettle 800\nunlock\n")?;
@@ -128,8 +176,15 @@ impl Suite {
             &list,
             "iconv -l",
             &[
-                "IBMCCSID00420", "IBMCCSID00424", "IBMCCSID00870", "IBMCCSID00875", "IBMCCSID01025", "IBMCCSID01026",
-                "IBMCCSID01142", "IBMCCSID01149", "IBMCCSID61952",
+                "IBMCCSID00420",
+                "IBMCCSID00424",
+                "IBMCCSID00870",
+                "IBMCCSID00875",
+                "IBMCCSID01025",
+                "IBMCCSID01026",
+                "IBMCCSID01142",
+                "IBMCCSID01149",
+                "IBMCCSID61952",
             ],
         )?;
         // The euro sign into 1148 and 1142, alpha into 875, alef into
@@ -148,12 +203,16 @@ impl Suite {
             crate::qsh::push_hex(s, "CCSIDIN", bytes)?;
             let put = s.command(&format!("svc.ifs putx {path} CCSIDIN 644"), CMD)?;
             want(&put, "svc.ifs putx", &[&format!("{} bytes", bytes.len())])?;
-            let r = s.command(&format!("qsh CMD('iconv -f {from} -t {to} {path} | od -An -tx1')"), wait)?;
+            let r = s.command(
+                &format!("qsh CMD('iconv -f {from} -t {to} {path} | od -An -tx1')"),
+                wait,
+            )?;
             want(&r, &format!("{from} to {to}"), &[hex])?;
             seen.push(format!("{to} {hex}"));
         }
         s.command("svc.xfer rm CCSIDIN", CMD).ok();
-        s.command("rmvenvvar ENVVAR(QIBM_QSH_CMD_OUTPUT) LEVEL(*SYS)", CMD).ok();
+        s.command("rmvenvvar ENVVAR(QIBM_QSH_CMD_OUTPUT) LEVEL(*SYS)", CMD)
+            .ok();
         Ok(format!("iconv lists the new CCSIDs; {}", seen.join(", ")))
     }
 }

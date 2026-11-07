@@ -48,7 +48,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
                     Err(_) => {}
                 }
                 // Intermediate directories get search permission too.
-                let m = if last { mode } else { (0o777 & !cx.umask) | 0o300 };
+                let m = if last {
+                    mode
+                } else {
+                    (0o777 & !cx.umask) | 0o300
+                };
                 if let Err(e) = cx.sys.mkdir(&cur, m) {
                     if e.errno == Errno::EEXIST && !last {
                         continue;

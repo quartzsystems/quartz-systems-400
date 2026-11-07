@@ -55,10 +55,13 @@ pub fn signature(image: &[u8]) -> Result<&[u8], Error> {
         return Err(Error::Signature("the image is not signed".into()));
     }
     let entry = &image[off..off + size];
-    let length = usize::try_from(u32::from_le_bytes([entry[0], entry[1], entry[2], entry[3]])).unwrap_or(0);
+    let length =
+        usize::try_from(u32::from_le_bytes([entry[0], entry[1], entry[2], entry[3]])).unwrap_or(0);
     let kind = u16::from_le_bytes([entry[6], entry[7]]);
     if kind != PKCS_SIGNED_DATA || length < 8 || length > size {
-        return Err(Error::Signature("the certificate table holds no PKCS#7 signature".into()));
+        return Err(Error::Signature(
+            "the certificate table holds no PKCS#7 signature".into(),
+        ));
     }
     Ok(&entry[8..length])
 }
@@ -77,5 +80,7 @@ fn checksum(image: &[u8], field: usize) -> u32 {
         sum = (sum & 0xFFFF) + (sum >> 16);
     }
     sum = (sum & 0xFFFF) + (sum >> 16);
-    u32::try_from(sum).unwrap_or(0).wrapping_add(u32::try_from(image.len()).unwrap_or(0))
+    u32::try_from(sum)
+        .unwrap_or(0)
+        .wrapping_add(u32::try_from(image.len()).unwrap_or(0))
 }

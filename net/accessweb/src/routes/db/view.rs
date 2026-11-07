@@ -40,7 +40,10 @@ pub fn columns(rq: &Rq<'_>, s: &str, t: &str) -> Result<Vec<Column>, Response> {
             crumb: crumb(&["Tables", t]),
             h1: format!("Table: {s}.{t}"),
             messages: vec![m],
-            body: format!("<p><a href=\"{}\">Tables</a></p>", esc(&PRODUCT.url("/db/tables"))),
+            body: format!(
+                "<p><a href=\"{}\">Tables</a></p>",
+                esc(&PRODUCT.url("/db/tables"))
+            ),
             help: "db-view".into(),
             nav: Some((GROUP, Some("/db/tables"))),
             ..Page::default()
@@ -51,7 +54,10 @@ pub fn columns(rq: &Rq<'_>, s: &str, t: &str) -> Result<Vec<Column>, Response> {
 
 /// The key columns' names.
 pub fn keys(cols: &[Column]) -> Vec<String> {
-    cols.iter().filter(|c| c.key).map(|c| c.name.clone()).collect()
+    cols.iter()
+        .filter(|c| c.key)
+        .map(|c| c.name.clone())
+        .collect()
 }
 
 /// `?key=` values for a row.
@@ -69,12 +75,21 @@ fn key_query(cols: &[Column], row: &[Val]) -> String {
 /// The `?key=` values, as parameters, one for each key column.
 pub fn key_values(rq: &Rq<'_>, keys: &[String]) -> Option<Vec<Val>> {
     let q = rq.query();
-    let v: Vec<Val> = q.all("key").into_iter().map(|k| Val::Text(k.to_string())).collect();
+    let v: Vec<Val> = q
+        .all("key")
+        .into_iter()
+        .map(|k| Val::Text(k.to_string()))
+        .collect();
     (v.len() == keys.len() && !keys.is_empty()).then_some(v)
 }
 
 fn result_columns(cols: &[Column]) -> Vec<ResultColumn> {
-    cols.iter().map(|c| ResultColumn { name: c.name.clone(), typ: c.typ.clone() }).collect()
+    cols.iter()
+        .map(|c| ResultColumn {
+            name: c.name.clone(),
+            typ: c.typ.clone(),
+        })
+        .collect()
 }
 
 /// `GET /db/<schema>/<table>`.
@@ -91,27 +106,51 @@ pub fn page(rq: &Rq<'_>, s: &str, t: &str) -> Response {
     let names: Vec<String> = cols.iter().map(|c| c.name.clone()).collect();
     let q = rq.query();
     let find = q.str("q").trim().to_string();
-    let col = q.get("col").map(name_of).filter(|c| names.contains(c)).unwrap_or_else(|| names[0].clone());
+    let col = q
+        .get("col")
+        .map(name_of)
+        .filter(|c| names.contains(c))
+        .unwrap_or_else(|| names[0].clone());
     let sort = q.get("sort").map(name_of).filter(|c| names.contains(c));
     let keys = keys(&cols);
     let mut order: Vec<String> = sort.iter().cloned().collect();
     order.extend(keys.iter().filter(|k| Some(*k) != sort.as_ref()).cloned());
     let find_col = (!find.is_empty()).then_some(col.as_str());
-    let params: Vec<Vec<Val>> = if find.is_empty() { Vec::new() } else { vec![vec![Val::Text(sqltext::find_pattern(&find))]] };
+    let params: Vec<Vec<Val>> = if find.is_empty() {
+        Vec::new()
+    } else {
+        vec![vec![Val::Text(sqltext::find_pattern(&find))]]
+    };
     let max = rq.prefs().max_rows();
     // Another format: every row selected, as a file.
     let fmt = q.str("fmt");
     if let Some(f) = Format::of(fmt).filter(|f| *f != Format::Html) {
         let sql = sqltext::all(&s, &t, &names, &order, find_col);
-        let r = with_conn(rq, |c| rq.env().db.run(rq.user(), c, &sql, &params, usize::MAX));
+        let r = with_conn(rq, |c| {
+            rq.env().db.run(rq.user(), c, &sql, &params, usize::MAX)
+        });
         return match r {
             Ok(o) if !o.failed => {
-                let opts = files::Write { title: t.clone(), ..files::Write::default() };
+                let opts = files::Write {
+                    title: t.clone(),
+                    ..files::Write::default()
+                };
                 let data = files::write(f, &result_columns(&cols), &o.rows, &opts);
-                let ext = if f == Format::Xls { "xls" } else { f.extension() };
-                Response::download(&format!("{}.{ext}", t.to_ascii_lowercase()), f.content_type(), data)
+                let ext = if f == Format::Xls {
+                    "xls"
+                } else {
+                    f.extension()
+                };
+                Response::download(
+                    &format!("{}.{ext}", t.to_ascii_lowercase()),
+                    f.content_type(),
+                    data,
+                )
             }
-            Ok(o) => rq.done(&format!("/db/{s}/{t}"), failure(&o).unwrap_or_else(|| Message::new(MsgKind::Error, "SQL0901", ""))),
+            Ok(o) => rq.done(
+                &format!("/db/{s}/{t}"),
+                failure(&o).unwrap_or_else(|| Message::new(MsgKind::Error, "SQL0901", "")),
+            ),
             Err(m) => rq.done(&format!("/db/{s}/{t}"), m),
         };
     }
@@ -122,15 +161,35 @@ pub fn page(rq: &Rq<'_>, s: &str, t: &str) -> Response {
         if let Some(m) = failure(&n) {
             return Err(m);
         }
-        let total: usize = n.rows.first().and_then(|r| r.first()).and_then(|v| v.text().parse().ok()).unwrap_or(0);
+        let total: usize = n
+            .rows
+            .first()
+            .and_then(|r| r.first())
+            .and_then(|v| v.text().parse().ok())
+            .unwrap_or(0);
         let shown = total.min(max);
-        let rows = q.get("rows").map_or_else(|| rq.prefs().get(prefs::ROWS), ToString::to_string);
-        let p = Paging::from_query(q.str("page"), &rows, shown, vec![("q".into(), find.clone())]);
+        let rows = q
+            .get("rows")
+            .map_or_else(|| rq.prefs().get(prefs::ROWS), ToString::to_string);
+        let p = Paging::from_query(
+            q.str("page"),
+            &rows,
+            shown,
+            vec![("q".into(), find.clone())],
+        );
         let range = p.range();
         let o = db.run(
             rq.user(),
             c,
-            &sqltext::page(&s, &t, &names, find_col, &order, range.start, range.len().max(1)),
+            &sqltext::page(
+                &s,
+                &t,
+                &names,
+                find_col,
+                &order,
+                range.start,
+                range.len().max(1),
+            ),
             &params,
             range.len().max(1),
         );
@@ -168,12 +227,30 @@ pub fn page(rq: &Rq<'_>, s: &str, t: &str) -> Response {
     if write {
         lcols.push(Col::plain("Actions"));
     }
-    lcols.extend(names.iter().map(|n| Col::sorted(n, &n.to_ascii_lowercase())));
+    lcols.extend(
+        names
+            .iter()
+            .map(|n| Col::sorted(n, &n.to_ascii_lowercase())),
+    );
     let list = List {
         cols: lcols,
         rows: list_rows,
-        empty: if find.is_empty() { "The table has no rows.".into() } else { "No rows match.".into() },
-        keep: vec![("q".into(), find.clone()), ("col".into(), if find.is_empty() { String::new() } else { col.clone() })],
+        empty: if find.is_empty() {
+            "The table has no rows.".into()
+        } else {
+            "No rows match.".into()
+        },
+        keep: vec![
+            ("q".into(), find.clone()),
+            (
+                "col".into(),
+                if find.is_empty() {
+                    String::new()
+                } else {
+                    col.clone()
+                },
+            ),
+        ],
     };
     if total > max {
         messages.push(rq.message(MsgKind::Info, crate::msgs::INCOMPLETE, &[&format!(
@@ -186,13 +263,22 @@ pub fn page(rq: &Rq<'_>, s: &str, t: &str) -> Response {
     let st = query(&[("s", &s), ("t", &t)]);
     let mut links = vec![format!("<a href=\"{}\">Tables</a>", url("/db/tables"))];
     if write || rq.allowed(policy::DB_WRITE) {
-        links.push(format!("<a href=\"{}\">Insert record</a>", url(&format!("{base}/insert"))));
+        links.push(format!(
+            "<a href=\"{}\">Insert record</a>",
+            url(&format!("{base}/insert"))
+        ));
     }
     if rq.allowed(policy::DB_COPY_TO) {
-        links.push(format!("<a href=\"{}\">Copy data to table</a>", url(&format!("/db/copy/to{st}"))));
+        links.push(format!(
+            "<a href=\"{}\">Copy data to table</a>",
+            url(&format!("/db/copy/to{st}"))
+        ));
     }
     if rq.allowed(policy::DB_SELECT) || rq.allowed(policy::DB_SQL) {
-        links.push(format!("<a href=\"{}\">Run SQL</a>", url(&format!("/sql{}", query(&[("table", &format!("{s}.{t}"))])))));
+        links.push(format!(
+            "<a href=\"{}\">Run SQL</a>",
+            url(&format!("/sql{}", query(&[("table", &format!("{s}.{t}"))])))
+        ));
     }
     let outputs: Vec<String> = OUTPUTS.iter().map(|o| o.0.to_string()).collect();
     let mut body = format!(
@@ -241,7 +327,15 @@ pub fn delete(rq: &Rq<'_>, s: &str, t: &str) -> Response {
         if rq.form().has("cancel") {
             return rq.redirect(&back);
         }
-        let r = with_conn(rq, |c| rq.env().db.run(rq.user(), c, &sqltext::delete(&s, &t, &keys), std::slice::from_ref(&kv), 0));
+        let r = with_conn(rq, |c| {
+            rq.env().db.run(
+                rq.user(),
+                c,
+                &sqltext::delete(&s, &t, &keys),
+                std::slice::from_ref(&kv),
+                0,
+            )
+        });
         let m = match r {
             Ok(o) => failure(&o).unwrap_or_else(|| {
                 if o.changed == 0 {
@@ -256,7 +350,13 @@ pub fn delete(rq: &Rq<'_>, s: &str, t: &str) -> Response {
     }
     let found = with_conn(rq, |c| {
         let names: Vec<String> = cols.iter().map(|c| c.name.clone()).collect();
-        rq.env().db.run(rq.user(), c, &sqltext::one(&s, &t, &names, &keys), std::slice::from_ref(&kv), 1)
+        rq.env().db.run(
+            rq.user(),
+            c,
+            &sqltext::one(&s, &t, &names, &keys),
+            std::slice::from_ref(&kv),
+            1,
+        )
     });
     let row = match found {
         Ok(o) if !o.failed && !o.rows.is_empty() => o.rows[0].clone(),
@@ -264,13 +364,20 @@ pub fn delete(rq: &Rq<'_>, s: &str, t: &str) -> Response {
     };
     let list = List {
         cols: cols.iter().map(|c| Col::plain(&c.name)).collect(),
-        rows: vec![row.iter().zip(&cols).map(|(v, c)| cell(v, c.numeric())).collect()],
+        rows: vec![
+            row.iter()
+                .zip(&cols)
+                .map(|(v, c)| cell(v, c.numeric()))
+                .collect(),
+        ],
         empty: String::new(),
         keep: Vec::new(),
     };
     let body = confirm_body(
         &rq.ctx,
-        &format!("Deleting a record removes it from table {t} in {s}, as the signed-on user. Press OK to delete the record below, or Cancel to return without deleting."),
+        &format!(
+            "Deleting a record removes it from table {t} in {s}, as the signed-on user. Press OK to delete the record below, or Cancel to return without deleting."
+        ),
         &list_table(&list),
         "",
     );

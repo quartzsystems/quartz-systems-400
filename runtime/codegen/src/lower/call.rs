@@ -232,7 +232,8 @@ impl Lowerer<'_, '_> {
             let words = match (args.get(k as usize), params.get(k as usize)) {
                 (Some(Arg::Value(op)), Some(param)) => abi::describe(&self.arg_type(op, param)?),
                 (Some(Arg::Value(op)), None) => {
-                    let ty = operand_type(self.m, self.p, op, None).map_err(|e| self.unsupported(e))?;
+                    let ty =
+                        operand_type(self.m, self.p, op, None).map_err(|e| self.unsupported(e))?;
                     abi::describe(&ty)
                 }
                 _ => [abi::opdesc::NONE; 5],
@@ -243,7 +244,9 @@ impl Lowerer<'_, '_> {
                 let at = off32(base + 4 * u64::try_from(i).expect("five words"));
                 self.b.ins().store(super::le(), v, list, at);
             }
-            self.b.ins().store(super::le(), zero, list, off32(base + 20));
+            self.b
+                .ins()
+                .store(super::le(), zero, list, off32(base + 20));
         }
         Ok(list)
     }
@@ -253,7 +256,9 @@ impl Lowerer<'_, '_> {
     fn arg_type(&self, op: &Operand, param: &Param) -> Result<Type> {
         match op {
             Operand::Const(Const::Str(s)) if param.varsize && matches!(param.ty, Type::Char(_)) => {
-                Ok(Type::Char(u32::try_from(s.len().max(1)).expect("literal fits")))
+                Ok(Type::Char(
+                    u32::try_from(s.len().max(1)).expect("literal fits"),
+                ))
             }
             Operand::Const(_) => Ok(param.ty.clone()),
             _ => operand_type(self.m, self.p, op, Some(&param.ty)).map_err(|e| self.unsupported(e)),

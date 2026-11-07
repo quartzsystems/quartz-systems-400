@@ -177,10 +177,20 @@ impl DbStep {
             Self::Dds { name, .. } => Some(name.clone()),
             Self::SqlFile(_) => None,
             Self::Sql(s) => {
-                let w: Vec<String> = s.split_whitespace().take(3).map(str::to_ascii_uppercase).collect();
-                if w.len() == 3 && w[0] == "CREATE" && matches!(w[1].as_str(), "TABLE" | "VIEW" | "INDEX") {
+                let w: Vec<String> = s
+                    .split_whitespace()
+                    .take(3)
+                    .map(str::to_ascii_uppercase)
+                    .collect();
+                if w.len() == 3
+                    && w[0] == "CREATE"
+                    && matches!(w[1].as_str(), "TABLE" | "VIEW" | "INDEX")
+                {
                     let n = w[2].rsplit(['.', '/']).next().unwrap_or("");
-                    let n: String = n.chars().take_while(|c| c.is_ascii_alphanumeric() || "$#@_".contains(*c)).collect();
+                    let n: String = n
+                        .chars()
+                        .take_while(|c| c.is_ascii_alphanumeric() || "$#@_".contains(*c))
+                        .collect();
                     (!n.is_empty()).then_some(n)
                 } else {
                     None
@@ -191,11 +201,11 @@ impl DbStep {
 }
 
 /// The default compile command.
-pub const DEFAULT_CMD: &str =
-    "CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT)";
+pub const DEFAULT_CMD: &str = "CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT)";
 
 /// The default compile command of an RPG III member.
-pub const DEFAULT_CMD_RPG3: &str = "CRTRPGPGM PGM({lib}/{name}) SRCFILE({lib}/QRPGSRC) SRCMBR({name})";
+pub const DEFAULT_CMD_RPG3: &str =
+    "CRTRPGPGM PGM({lib}/{name}) SRCFILE({lib}/QRPGSRC) SRCMBR({name})";
 
 /// The default call command.
 pub const DEFAULT_CALL: &str = "CALL PGM({lib}/{name})";
@@ -216,7 +226,11 @@ impl Case {
     fn parse_as(name: &str, text: &str, rpg3: bool) -> Self {
         let mut c = Self {
             name: name.to_ascii_uppercase(),
-            lines: text.replace("\r\n", "\n").lines().map(str::to_string).collect(),
+            lines: text
+                .replace("\r\n", "\n")
+                .lines()
+                .map(str::to_string)
+                .collect(),
             cmd: if rpg3 { DEFAULT_CMD_RPG3 } else { DEFAULT_CMD }.into(),
             call: DEFAULT_CALL.into(),
             rcdlen: if rpg3 { 92 } else { 112 },
@@ -246,9 +260,12 @@ impl Case {
                 "setup" => c.setup.push(value),
                 "post" => c.post.push(value),
                 "cleanup" => c.cleanup.push(value),
-                "with" => c
-                    .with_names
-                    .extend(value.split([',', ' ']).filter(|s| !s.is_empty()).map(str::to_ascii_uppercase)),
+                "with" => c.with_names.extend(
+                    value
+                        .split([',', ' '])
+                        .filter(|s| !s.is_empty())
+                        .map(str::to_ascii_uppercase),
+                ),
                 "dds" => c.db.push(DbStep::Dds {
                     name: value.to_ascii_uppercase(),
                     kind: DdsKind::Pf,
@@ -278,14 +295,26 @@ impl Case {
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_default();
-        let rpg3 = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("rpg"));
+        let rpg3 = path
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("rpg"));
         let mut c = Self::parse_as(&name, &text, rpg3);
         let dir = path.parent().unwrap_or_else(|| Path::new("."));
         for w in c.with_names.clone() {
             let p = dir.join(format!("{w}.rpginc"));
-            let p = if p.exists() { p } else { dir.join(format!("{}.rpginc", w.to_ascii_lowercase())) };
+            let p = if p.exists() {
+                p
+            } else {
+                dir.join(format!("{}.rpginc", w.to_ascii_lowercase()))
+            };
             let t = std::fs::read_to_string(&p)?;
-            c.with.push((w, t.replace("\r\n", "\n").lines().map(str::to_string).collect()));
+            c.with.push((
+                w,
+                t.replace("\r\n", "\n")
+                    .lines()
+                    .map(str::to_string)
+                    .collect(),
+            ));
         }
         let dir = path
             .parent()
@@ -293,7 +322,8 @@ impl Case {
             .unwrap_or_else(|| Path::new("."))
             .join("dds");
         let read = |p: &Path| {
-            std::fs::read_to_string(p).map_err(|e| std::io::Error::new(e.kind(), format!("{}: {e}", p.display())))
+            std::fs::read_to_string(p)
+                .map_err(|e| std::io::Error::new(e.kind(), format!("{}: {e}", p.display())))
         };
         let mut steps = Vec::new();
         for step in std::mem::take(&mut c.db) {
@@ -304,7 +334,10 @@ impl Case {
                         .find(|k| dir.join(format!("{name}.{}", k.ext())).exists())
                         .unwrap_or(DdsKind::Lf);
                     let t = read(&dir.join(format!("{name}.{}", kind.ext())))?;
-                    let source = t.lines().map(|l| l.trim_end_matches('\r').to_string()).collect();
+                    let source = t
+                        .lines()
+                        .map(|l| l.trim_end_matches('\r').to_string())
+                        .collect();
                     steps.push(DbStep::Dds { name, kind, source });
                 }
                 DbStep::SqlFile(name) => {
@@ -368,11 +401,17 @@ mod tests {
         assert_eq!(c.name, "HELLO");
         assert_eq!(c.fill(&c.cmd, "L"), "CRTRPGMOD MODULE(L/HELLO)");
         assert!(c.call.is_empty());
-        let f = Case::parse("x", "      *; rcdlen: 252\n      *; setup: DLTF A\n      *; post: STRJRNPF A\n");
+        let f = Case::parse(
+            "x",
+            "      *; rcdlen: 252\n      *; setup: DLTF A\n      *; post: STRJRNPF A\n",
+        );
         assert_eq!(f.post, vec!["STRJRNPF A".to_string()]);
         assert_eq!(f.rcdlen, 252);
         assert_eq!(f.setup, vec!["DLTF A".to_string()]);
-        let d = Case::parse("x", "//; dds: CUST\n//; sql: CREATE TABLE {lib}.T2 (A CHAR(1))\n");
+        let d = Case::parse(
+            "x",
+            "//; dds: CUST\n//; sql: CREATE TABLE {lib}.T2 (A CHAR(1))\n",
+        );
         assert_eq!(d.db.len(), 2);
         assert_eq!(d.db[0].creates().as_deref(), Some("CUST"));
         assert_eq!(d.db[1].creates().as_deref(), Some("T2"));

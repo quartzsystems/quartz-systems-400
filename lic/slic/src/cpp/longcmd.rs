@@ -25,7 +25,15 @@ use crate::ipl::system::System;
 use crate::svc::db::{Params, files};
 
 /// The commands that take turns.
-pub const NAMES: &[&str] = &["CPYF", "RGZPFM", "CPYTOIMPF", "CPYFRMIMPF", "CRTLF", "RUNSQL", "RUNSQLSTM"];
+pub const NAMES: &[&str] = &[
+    "CPYF",
+    "RGZPFM",
+    "CPYTOIMPF",
+    "CPYFRMIMPF",
+    "CRTLF",
+    "RUNSQL",
+    "RUNSQLSTM",
+];
 
 /// A command's end, run with the system as one of the job's commands.
 pub type Finish = Box<dyn FnOnce(&mut System) -> CmdReply>;
@@ -122,7 +130,10 @@ impl<'a> Work<'a> {
     /// unless parts were committed at pauses: then the rest is
     /// committed too (what a failure undid with them included), as a
     /// change ended part way keeps what it did.
-    pub fn txn<T>(&self, f: impl FnOnce(&mut Txn<'_>, db::Pause<'_>) -> Result<T, String>) -> Result<T, String> {
+    pub fn txn<T>(
+        &self,
+        f: impl FnOnce(&mut Txn<'_>, db::Pause<'_>) -> Result<T, String>,
+    ) -> Result<T, String> {
         let mut txn = Txn::lent(Box::new(|| self.lender.store())).map_err(|e| e.to_string())?;
         let before = self.turns.borrow().yields;
         let r = f(&mut txn, &mut |t: &mut Txn<'_>| self.pause(t));
@@ -154,14 +165,21 @@ pub fn context(system: &mut System, job: JobHandle) -> Result<SqlContext, String
     ctx.naming = console.naming;
     ctx.current_schema = console.current_schema;
     ctx.qtemp = console.qtemp.clone();
-    ctx.session.set_overrides(console.session.overrides().to_vec());
+    ctx.session
+        .set_overrides(console.session.overrides().to_vec());
     Ok(ctx)
 }
 
 /// Prepare command `name` to take turns: its work, or the reply when it
 /// ended at once. One that cannot take turns now (the job's console is
 /// capturing lines) runs to its end here, as any command.
-pub fn prepare(system: &mut System, name: &str, parms: &Parms, typed: &str, job: JobHandle) -> Result<Long, Box<CmdReply>> {
+pub fn prepare(
+    system: &mut System,
+    name: &str,
+    parms: &Parms,
+    typed: &str,
+    job: JobHandle,
+) -> Result<Long, Box<CmdReply>> {
     if !crate::svc::db::idle(system) {
         return Err(Box::new(super::run(system, name, parms, typed)));
     }
@@ -173,7 +191,13 @@ pub fn prepare(system: &mut System, name: &str, parms: &Parms, typed: &str, job:
 
 /// A command the bridge hands to the database's console word, its work
 /// that word's on a lent transaction.
-fn bridged(system: &mut System, name: &str, parms: &Parms, typed: &str, job: JobHandle) -> Result<Long, Box<CmdReply>> {
+fn bridged(
+    system: &mut System,
+    name: &str,
+    parms: &Parms,
+    typed: &str,
+    job: JobHandle,
+) -> Result<Long, Box<CmdReply>> {
     let Some(e) = sys_cpps::entry(name).filter(|e| matches!(e.site, Site::Service)) else {
         return Err(Box::new(super::run(system, name, parms, typed)));
     };
@@ -182,11 +206,17 @@ fn bridged(system: &mut System, name: &str, parms: &Parms, typed: &str, job: Job
     } else {
         typed.to_string()
     };
-    let word = line.split_whitespace().next().unwrap_or("").to_ascii_lowercase();
+    let word = line
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
     let p = Params::parse(&line);
     let ctx = context(system, job).map_err(|m| Box::new(super::check(name, &m)))?;
     let owned = parms.clone();
-    let reply = move |r: Result<String, String>| -> Finish { Box::new(move |_: &mut System| bridged_reply(e, &owned, r)) };
+    let reply = move |r: Result<String, String>| -> Finish {
+        Box::new(move |_: &mut System| bridged_reply(e, &owned, r))
+    };
     let parms_at_end = parms.clone();
     Ok(match word.as_str() {
         "cpyf" => {
@@ -197,14 +227,20 @@ fn bridged(system: &mut System, name: &str, parms: &Parms, typed: &str, job: Job
                 reply(w.txn(|t, pause| files::cpyf_in(t, &ctx, job, &p, pause)))
             })
         }
-        "rgzpfm" => Box::new(move |w: &Work<'_>| reply(w.txn(|t, pause| files::rgzpfm_in(t, &ctx, job, &p, pause)))),
-        "crtlf" => Box::new(move |w: &Work<'_>| reply(w.txn(|t, pause| files::crtlf_in(t, &ctx, job, &p, pause)))),
+        "rgzpfm" => Box::new(move |w: &Work<'_>| {
+            reply(w.txn(|t, pause| files::rgzpfm_in(t, &ctx, job, &p, pause)))
+        }),
+        "crtlf" => Box::new(move |w: &Work<'_>| {
+            reply(w.txn(|t, pause| files::crtlf_in(t, &ctx, job, &p, pause)))
+        }),
         "cpyfrmimpf" => {
             let text = match files::cpyfrmimpf_text(system, &p) {
                 Ok(t) => t,
                 Err(m) => return Err(Box::new(bridged_reply(e, parms, Err(m)))),
             };
-            Box::new(move |w: &Work<'_>| reply(w.txn(|t, pause| files::cpyfrmimpf_in(t, &ctx, job, &p, &text, pause))))
+            Box::new(move |w: &Work<'_>| {
+                reply(w.txn(|t, pause| files::cpyfrmimpf_in(t, &ctx, job, &p, &text, pause)))
+            })
         }
         "cpytoimpf" => Box::new(move |w: &Work<'_>| {
             let text = w.txn(|t, pause| files::cpytoimpf_in(t, &ctx, job, &p, pause));
@@ -219,7 +255,11 @@ fn bridged(system: &mut System, name: &str, parms: &Parms, typed: &str, job: Job
 }
 
 /// The reply the bridge gives a console word's output.
-fn bridged_reply(e: &'static sys_cpps::Entry, parms: &Parms, r: Result<String, String>) -> CmdReply {
+fn bridged_reply(
+    e: &'static sys_cpps::Entry,
+    parms: &Parms,
+    r: Result<String, String>,
+) -> CmdReply {
     let text = match r {
         Ok(s) if s.ends_with('\n') || s.is_empty() => s,
         Ok(s) => format!("{s}\n"),

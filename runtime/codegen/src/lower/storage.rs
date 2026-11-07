@@ -399,7 +399,11 @@ impl Lowerer<'_, '_> {
             } => {
                 let f = self.i64(i64::from(*file));
                 let opv = self.i64(dev_op_code(*op));
-                let display = self.m.files.get(*file as usize).is_some_and(|x| x.dev == qir::FileDev::Display);
+                let display = self
+                    .m
+                    .files
+                    .get(*file as usize)
+                    .is_some_and(|x| x.dev == qir::FileDev::Display);
                 let (fa, _) = self.sop(
                     &Operand::Const(Const::Str(fmt.clone())),
                     Some(&Type::Char(10)),
@@ -418,7 +422,8 @@ impl Lowerer<'_, '_> {
                         let shifted = self.b.ins().ishl_imm_u(word, 16);
                         word = self.b.ins().bor(shifted, x);
                     }
-                    self.rt_call(RtFn::PrtCtl, &[f, fa, ra, rd, word]).expect("result")
+                    self.rt_call(RtFn::PrtCtl, &[f, fa, ra, rd, word])
+                        .expect("result")
                 } else if display {
                     let n = match rrn {
                         Some(o) => self.int_op(o)?,
@@ -428,9 +433,11 @@ impl Lowerer<'_, '_> {
                         Some(p) => self.place_pair(p)?,
                         None => (self.i64(0), self.i64(0)),
                     };
-                    self.rt_call(RtFn::DspIo, &[f, opv, fa, ra, rd, n, ia, id]).expect("result")
+                    self.rt_call(RtFn::DspIo, &[f, opv, fa, ra, rd, n, ia, id])
+                        .expect("result")
                 } else {
-                    self.rt_call(RtFn::DevIo, &[f, opv, fa, ra, rd]).expect("result")
+                    self.rt_call(RtFn::DevIo, &[f, opv, fa, ra, rd])
+                        .expect("result")
                 };
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }

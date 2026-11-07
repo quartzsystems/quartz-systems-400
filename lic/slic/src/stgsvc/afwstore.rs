@@ -37,7 +37,10 @@ pub fn store(
     if job != JOB {
         return Err("CPF2207".into());
     }
-    if !osobjects::products::AFW_STORES.iter().any(|(n, _)| *n == index) {
+    if !osobjects::products::AFW_STORES
+        .iter()
+        .any(|(n, _)| *n == index)
+    {
         return Err("CPF9801".into());
     }
     let who = who.trim().to_ascii_uppercase();
@@ -77,7 +80,10 @@ pub fn store(
                 usridx::remove(txn, id, KeyOp::Eq, &e[..KEY], 1).map_err(|e| e.to_string())?;
             }
             for (k, v) in &values {
-                if k.len() > KEY - WHO || !k.is_ascii() || usize::from(osobjects::products::AFW_ENTRY) < KEY + v.len() {
+                if k.len() > KEY - WHO
+                    || !k.is_ascii()
+                    || usize::from(osobjects::products::AFW_ENTRY) < KEY + v.len()
+                {
                     continue;
                 }
                 let mut e = key(&who, k);

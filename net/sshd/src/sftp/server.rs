@@ -144,7 +144,11 @@ impl<'a> Server<'a> {
 
     fn status(id: u32, code: u32, text: &str) -> Vec<u8> {
         let mut w = Writer::msg(proto::STATUS);
-        let text = if text.is_empty() { status_text(code) } else { text };
+        let text = if text.is_empty() {
+            status_text(code)
+        } else {
+            text
+        };
         w.u32(id).u32(code).str(text).str("en");
         w.finish()
     }
@@ -211,10 +215,13 @@ impl<'a> Server<'a> {
             proto::CLOSE => {
                 let h = Self::handle_id(r.bytes()?);
                 match h.and_then(|h| self.handles.remove(&h)) {
-                    Some(Handle::File { fd, .. }) => ifs.close(fd).map_err(errno).and_then(|()| self.ok(id)),
-                    Some(Handle::Dir { stream, .. }) => {
-                        ifs.closedir(stream).map_err(errno).and_then(|()| self.ok(id))
+                    Some(Handle::File { fd, .. }) => {
+                        ifs.close(fd).map_err(errno).and_then(|()| self.ok(id))
                     }
+                    Some(Handle::Dir { stream, .. }) => ifs
+                        .closedir(stream)
+                        .map_err(errno)
+                        .and_then(|()| self.ok(id)),
                     None => Err((status::FAILURE, "The handle is not valid.".into())),
                 }
             }
@@ -355,7 +362,9 @@ impl<'a> Server<'a> {
                 let path = self.path(r.str()?);
                 let a = Attrs::decode(r)?;
                 let mode = a.permissions.map_or(0o755, |p| p & 0o7777);
-                ifs.mkdir(&path, mode).map_err(errno).and_then(|()| self.ok(id))
+                ifs.mkdir(&path, mode)
+                    .map_err(errno)
+                    .and_then(|()| self.ok(id))
             }
             proto::RMDIR => {
                 let path = self.path(r.str()?);
@@ -363,7 +372,10 @@ impl<'a> Server<'a> {
             }
             proto::REALPATH => {
                 let path = self.path(r.str()?);
-                Ok(Self::name_reply(id, &[(path.clone(), path, Attrs::default())]))
+                Ok(Self::name_reply(
+                    id,
+                    &[(path.clone(), path, Attrs::default())],
+                ))
             }
             proto::RENAME => {
                 let from = self.path(r.str()?);

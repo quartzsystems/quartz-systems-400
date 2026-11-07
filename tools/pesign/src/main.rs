@@ -24,12 +24,22 @@ fn main() -> Result<()> {
     let a: Vec<&str> = args.iter().map(String::as_str).collect();
     match a.as_slice() {
         ["keygen", dir, rest @ ..] => {
-            let subject = rest.first().copied().unwrap_or("CN=QS/400 Secure Boot db,O=Quartz Systems");
-            let k = generate::new_pair(&generate::Spec { subject, not_before: NOT_BEFORE, years: 30 })?;
+            let subject = rest
+                .first()
+                .copied()
+                .unwrap_or("CN=QS/400 Secure Boot db,O=Quartz Systems");
+            let k = generate::new_pair(&generate::Spec {
+                subject,
+                not_before: NOT_BEFORE,
+                years: 30,
+            })?;
             let dir = Path::new(dir);
             fs::create_dir_all(dir)?;
             let pk = k.key.to_pkcs8_der().map_err(|e| anyhow::anyhow!("{e}"))?;
-            fs::write(dir.join("qs400-db.key"), certs::pem::encode("PRIVATE KEY", &pk))?;
+            fs::write(
+                dir.join("qs400-db.key"),
+                certs::pem::encode("PRIVATE KEY", &pk),
+            )?;
             fs::write(dir.join("qs400-db.cer"), &k.cert)?;
             fs::write(dir.join("qs400-db.esl"), esl::list(&k.cert))?;
             println!("db key in {}: SHA-256 {}", dir.display(), k.fingerprint());
@@ -38,12 +48,23 @@ fn main() -> Result<()> {
             let k = DbKey::from_env()?;
             let image = fs::read(input).with_context(|| input.to_string())?;
             fs::write(output, pesign::sign(&image, &k)?)?;
-            println!("{output} signed with {}{}", k.fingerprint(), if k.development { " (DEVELOPMENT key)" } else { "" });
+            println!(
+                "{output} signed with {}{}",
+                k.fingerprint(),
+                if k.development {
+                    " (DEVELOPMENT key)"
+                } else {
+                    ""
+                }
+            );
         }
         ["verify", file, cert] => {
             let cert = fs::read(cert)?;
             pesign::verify(&fs::read(file)?, &cert)?;
-            println!("{file}: signature good, signer {}", pesign::keys::fingerprint(&cert));
+            println!(
+                "{file}: signature good, signer {}",
+                pesign::keys::fingerprint(&cert)
+            );
         }
         ["esl", cert, out] => {
             fs::write(out, esl::list(&fs::read(cert)?))?;
@@ -51,13 +72,26 @@ fn main() -> Result<()> {
         ["ovmf-db", vars, cert, out] => {
             let list = esl::list(&fs::read(cert)?);
             fs::write(out, pesign::keys::ovmf::add_db(&fs::read(vars)?, &list)?)?;
-            println!("{out}: db holds {} as well", pesign::keys::fingerprint(&fs::read(cert)?));
+            println!(
+                "{out}: db holds {} as well",
+                pesign::keys::fingerprint(&fs::read(cert)?)
+            );
         }
         ["show"] => {
             let k = DbKey::from_env()?;
-            println!("{}{}", k.fingerprint(), if k.development { " (DEVELOPMENT key)" } else { "" });
+            println!(
+                "{}{}",
+                k.fingerprint(),
+                if k.development {
+                    " (DEVELOPMENT key)"
+                } else {
+                    ""
+                }
+            );
         }
-        _ => bail!("usage: pesign keygen DIR [SUBJECT] | sign IN OUT | verify FILE CERT | esl CERT OUT | ovmf-db VARS CERT OUT | show"),
+        _ => bail!(
+            "usage: pesign keygen DIR [SUBJECT] | sign IN OUT | verify FILE CERT | esl CERT OUT | ovmf-db VARS CERT OUT | show"
+        ),
     }
     Ok(())
 }

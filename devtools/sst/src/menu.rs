@@ -90,7 +90,9 @@ impl Panel for SstMenu {
             3 => self.needs(Privilege::DISK_UNITS_OPERATIONS, || {
                 Flow::Push(Box::new(svctools::dst::disk::sst_work_with_disk_units(p)))
             }),
-            6 => Flow::Push(Box::new(svctools::dst::capacity::work_with_system_capacity("sst-capacity"))),
+            6 => Flow::Push(Box::new(
+                svctools::dst::capacity::work_with_system_capacity("sst-capacity"),
+            )),
             7 => self.needs(Privilege::SECURITY, || {
                 Flow::Push(Box::new(svctools::dst::security::Security))
             }),
@@ -146,7 +148,10 @@ fn user_ids_and_devices(privileges: Privilege) -> Submenu {
                     if !can {
                         return Flow::Error(NOT_AUTHORIZED.into());
                     }
-                    Flow::Push(Box::new(svctools::dst::environment::device_ids(env, "sst-device-ids")))
+                    Flow::Push(Box::new(svctools::dst::environment::device_ids(
+                        env,
+                        "sst-device-ids",
+                    )))
                 })),
             ),
         ],

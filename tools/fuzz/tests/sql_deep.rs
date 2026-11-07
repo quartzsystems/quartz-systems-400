@@ -28,7 +28,11 @@ fn deep_nesting_is_refused() {
     ];
     // A release build (the fuzz profile) within the 1 MiB main thread of
     // Windows; a debug build, its frames far larger, within Linux's 8 MiB.
-    let stack = if cfg!(debug_assertions) { 8 << 20 } else { 1 << 20 };
+    let stack = if cfg!(debug_assertions) {
+        8 << 20
+    } else {
+        1 << 20
+    };
     for data in cases {
         std::thread::Builder::new()
             .stack_size(stack)

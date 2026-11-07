@@ -71,8 +71,9 @@ struct State {
 
 fn load(ctx: &Ctx<'_>) -> Result<State> {
     match ctx.files.read(EXPIRY_STATE)? {
-        Some(b) => serde_json::from_slice(&b)
-            .map_err(|e| CertError::Corrupt(format!("expiry state: {e}"))),
+        Some(b) => {
+            serde_json::from_slice(&b).map_err(|e| CertError::Corrupt(format!("expiry state: {e}")))
+        }
         None => Ok(State::default()),
     }
 }
@@ -109,12 +110,16 @@ pub fn scan(ctx: &Ctx<'_>, stores: &[Keystore]) -> Result<Scan> {
         for x in store.expiry(ctx.now)? {
             let e = store.get(&x.label)?;
             let Some(info) = e.info()? else { continue };
-            if e.kind == EntryKind::Ca && roots::roots().iter().any(|r| r.info.sha256 == info.sha256) {
+            if e.kind == EntryKind::Ca
+                && roots::roots().iter().any(|r| r.info.sha256 == info.sha256)
+            {
                 continue;
             }
             out.checked += 1;
             let key = format!("{}|{}", ks.path, info.sha256);
-            let Some(t) = Expiry::crossed(&x) else { continue };
+            let Some(t) = Expiry::crossed(&x) else {
+                continue;
+            };
             let before = old.sent.get(&key).copied();
             state.sent.insert(key, before.map_or(t, |b| b.min(t)));
             if before.is_none_or(|b| t < b) {
@@ -195,9 +200,15 @@ mod tests {
         assert_eq!(first.warnings.len(), 1);
         let x = &first.warnings[0];
         assert_eq!((x.threshold, x.days_left), (7, 5));
-        assert_eq!(x.note(), Note::new(msgs::EXPIRES, &["SHORT", "*SYSTEM", "5"]));
+        assert_eq!(
+            x.note(),
+            Note::new(msgs::EXPIRES, &["SHORT", "*SYSTEM", "5"])
+        );
         let gone = scan(&w.at(NOW + 6 * DAY), &watched()).unwrap();
-        assert_eq!(gone.warnings[0].note(), Note::new(msgs::EXPIRED, &["SHORT", "*SYSTEM"]));
+        assert_eq!(
+            gone.warnings[0].note(),
+            Note::new(msgs::EXPIRED, &["SHORT", "*SYSTEM"])
+        );
     }
 
     #[test]
@@ -219,7 +230,10 @@ mod tests {
         let w = World::with_system();
         cert(&w, "X", 3);
         assert_eq!(sent(&w, 0).len(), 1);
-        let no_key = Ctx { sealer: None, ..w.ctx() };
+        let no_key = Ctx {
+            sealer: None,
+            ..w.ctx()
+        };
         let s = scan(&no_key, &watched()).unwrap();
         assert_eq!(s.skipped.len(), 1);
         // What was sent survives the failed scan.

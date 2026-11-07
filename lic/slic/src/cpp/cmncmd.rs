@@ -376,7 +376,10 @@ mod tests {
             Some(Value::Char("*SRCDESTP".into())),
         ]);
         assert_eq!(text_of(&elems), "*LNKAGG *SRCDESTP");
-        let list = Value::List(vec![Value::Char("CMN01".into()), Value::Char("CMN02".into())]);
+        let list = Value::List(vec![
+            Value::Char("CMN01".into()),
+            Value::Char("CMN02".into()),
+        ]);
         assert_eq!(text_of(&list), "CMN01 CMN02");
         let ssap = Value::List(vec![Value::Elems(vec![
             Some(Value::Char("04".into())),

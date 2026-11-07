@@ -39,7 +39,10 @@ fn lc_first(s: &str) -> String {
 /// wrote it after `NAME:`.
 fn comment_sentence(source: &str, name: &str) -> Option<String> {
     let mut text = String::new();
-    for line in source.lines().skip_while(|l| !l.contains(&format!("{name}:"))) {
+    for line in source
+        .lines()
+        .skip_while(|l| !l.contains(&format!("{name}:")))
+    {
         let l = line.trim();
         let Some(inner) = l.strip_prefix("/*") else {
             break;
@@ -120,7 +123,10 @@ fn opening(def: &CmdDef, p: &Parm, dict: &Dict) -> String {
             .map(|w| w.split(" (").next().unwrap_or(w).trim().to_string());
         let l = p.length();
         let kind = match p.ty {
-            ParmType::Dec => format!("a decimal variable of {} digits, {} after the point", l.len, l.dec),
+            ParmType::Dec => format!(
+                "a decimal variable of {} digits, {} after the point",
+                l.len, l.dec
+            ),
             ParmType::Int2 | ParmType::Int4 | ParmType::Uint2 | ParmType::Uint4 => {
                 "an integer variable".to_string()
             }
@@ -128,10 +134,11 @@ fn opening(def: &CmdDef, p: &Parm, dict: &Dict) -> String {
             _ => format!("a character variable of at least {} characters", l.len),
         };
         return match what {
-            Some(w) => format!(
-                "The CL variable that receives the value of {w}. Give {kind}."
+            Some(w) => format!("The CL variable that receives the value of {w}. Give {kind}."),
+            None => format!(
+                "The CL variable that receives the {}. Give {kind}.",
+                lc_first(prompt)
             ),
-            None => format!("The CL variable that receives the {}. Give {kind}.", lc_first(prompt)),
         };
     }
     if yes_no(p) {
@@ -161,15 +168,27 @@ fn type_sentence(p: &Parm) -> Option<(String, String)> {
         ),
         ParmType::Dec if l.dec > 0 => (
             "number".into(),
-            format!("Type a number of up to {n} digits, {} of them after the decimal point.", l.dec),
+            format!(
+                "Type a number of up to {n} digits, {} of them after the decimal point.",
+                l.dec
+            ),
         ),
-        ParmType::Dec => ("number".into(), format!("Type a number of up to {n} digits.")),
+        ParmType::Dec => (
+            "number".into(),
+            format!("Type a number of up to {n} digits."),
+        ),
         ParmType::Int2 | ParmType::Int4 | ParmType::Uint2 | ParmType::Uint4 => {
             ("number".into(), "Type a whole number.".into())
         }
         ParmType::Lgl => ("logical-value".into(), "Type 1 for on or 0 for off.".into()),
-        ParmType::Date => ("date".into(), "Type a date in the date format of the job.".into()),
-        ParmType::Time => ("time".into(), "Type a time of day: hours, minutes and seconds.".into()),
+        ParmType::Date => (
+            "date".into(),
+            "Type a date in the date format of the job.".into(),
+        ),
+        ParmType::Time => (
+            "time".into(),
+            "Type a time of day: hours, minutes and seconds.".into(),
+        ),
         ParmType::VarName => (
             "variable-name".into(),
             "Type the name of a CL variable, starting with &.".into(),
@@ -241,7 +260,11 @@ fn choices(def: &CmdDef, kwd: &str, p: &Parm, dict: &Dict, b: &mut String) {
     if !entries.is_empty() || kind.is_some() {
         b.push_str(":PARML.\n");
         for (v, t) in &entries {
-            let def_attr = if p.dft.as_deref() == Some(v.as_str()) { " DEF" } else { "" };
+            let def_attr = if p.dft.as_deref() == Some(v.as_str()) {
+                " DEF"
+            } else {
+                ""
+            };
             let _ = writeln!(b, ":PT.:PK{def_attr}.{}:EPK.", esc(v));
             b.push_str(&tagged(":PD.", t));
         }
@@ -270,16 +293,27 @@ fn choices(def: &CmdDef, kwd: &str, p: &Parm, dict: &Dict, b: &mut String) {
         let shown = if plain.len() > 16 {
             "one of the values F4 lists".to_string()
         } else {
-            plain.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+            plain
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
         };
-        let lead = if p.rstd { "The value must be" } else { "Values often used:" };
+        let lead = if p.rstd {
+            "The value must be"
+        } else {
+            "Values often used:"
+        };
         b.push_str(&tagged(":P.", &format!("{lead} {shown}.")));
     }
     if let Some(d) = &p.dft
         && !seen.contains(d)
         && !d.trim().is_empty()
     {
-        b.push_str(&tagged(":P.", &format!("When no value is given, {d} is used.")));
+        b.push_str(&tagged(
+            ":P.",
+            &format!("When no value is given, {d} is used."),
+        ));
     }
 }
 
@@ -334,7 +368,10 @@ fn parm_module(def: &CmdDef, id: &str, p: &Parm, dict: &Dict) -> String {
         b.push_str(":P.A value is required.\n");
     }
     if p.is_list() {
-        b.push_str(&tagged(":P.", &format!("Up to {} values can be given.", p.max)));
+        b.push_str(&tagged(
+            ":P.",
+            &format!("Up to {} values can be given.", p.max),
+        ));
     }
     if matches!(p.pmtctl, Some(PmtCtlRef::PmtRqs)) {
         b.push_str(&tagged(
@@ -346,14 +383,21 @@ fn parm_module(def: &CmdDef, id: &str, p: &Parm, dict: &Dict) -> String {
         .sngval
         .iter()
         .map(|s| s.from.clone())
-        .filter_map(|v| dict.value(&def.name, &p.kwd, &v, false).map(|t| (v, t.to_string())))
+        .filter_map(|v| {
+            dict.value(&def.name, &p.kwd, &v, false)
+                .map(|t| (v, t.to_string()))
+        })
         .collect();
     let mut p2 = p.clone();
     if matches!(p.ty, ParmType::Elem { .. } | ParmType::Qual { .. }) && !p.sngval.is_empty() {
         // Single values replace the whole list or name.
         b.push_str(":PARML.\n");
         for (v, t) in &single {
-            let def_attr = if p.dft.as_deref() == Some(v.as_str()) { " DEF" } else { "" };
+            let def_attr = if p.dft.as_deref() == Some(v.as_str()) {
+                " DEF"
+            } else {
+                ""
+            };
             let _ = writeln!(b, ":PT.:PK{def_attr}.{}:EPK.", esc(v));
             b.push_str(&tagged(":PD.", t));
         }
@@ -365,7 +409,10 @@ fn parm_module(def: &CmdDef, id: &str, p: &Parm, dict: &Dict) -> String {
             .filter(|v| !single.iter().any(|(s, _)| s == v))
             .collect();
         if !rest.is_empty() {
-            b.push_str(&tagged(":P.", &format!("Also accepted: {}.", rest.join(", "))));
+            b.push_str(&tagged(
+                ":P.",
+                &format!("Also accepted: {}.", rest.join(", ")),
+            ));
         }
         p2.sngval.clear();
     }
@@ -377,7 +424,13 @@ fn parm_module(def: &CmdDef, id: &str, p: &Parm, dict: &Dict) -> String {
 /// The command's module.
 fn command_module(def: &CmdDef, id: &str, source: &str, dict: &Dict) -> String {
     let mut b = String::new();
-    let _ = writeln!(b, ":HELP NAME={}.{} ({})", name_attr(id), esc(&def.prompt), def.name);
+    let _ = writeln!(
+        b,
+        ":HELP NAME={}.{} ({})",
+        name_attr(id),
+        esc(&def.prompt),
+        def.name
+    );
     b.push_str(&paras(&about(def, source, dict)));
     if let Some(t) = dict.command(&def.name, "notes") {
         b.push_str(&paras(t));
@@ -392,9 +445,10 @@ fn command_module(def: &CmdDef, id: &str, source: &str, dict: &Dict) -> String {
 /// The help group of a definition.
 #[must_use]
 pub fn group_of(def: &CmdDef) -> String {
-    def.hlppnlgrp
-        .as_ref()
-        .map_or_else(|| FALLBACK_GROUP.to_string(), |q| q.name.to_ascii_uppercase())
+    def.hlppnlgrp.as_ref().map_or_else(
+        || FALLBACK_GROUP.to_string(),
+        |q| q.name.to_ascii_uppercase(),
+    )
 }
 
 /// Every command help group: name and UIM source.

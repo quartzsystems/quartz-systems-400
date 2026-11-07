@@ -78,7 +78,11 @@ impl Rq<'_> {
         }
         let mut ctx = self.ctx.clone();
         if let Some((group, _)) = page.nav {
-            ctx.open = Some(session::nav_visit(&self.nav.sessions, &self.session.id, group));
+            ctx.open = Some(session::nav_visit(
+                &self.nav.sessions,
+                &self.session.id,
+                group,
+            ));
         }
         Response::html(200, render(&ctx, &page))
     }
@@ -101,7 +105,11 @@ impl Rq<'_> {
 
     /// A session value.
     pub fn get(&self, key: &str) -> String {
-        self.nav.sessions.get(&self.session.id).map(|s| s.get(key).to_string()).unwrap_or_default()
+        self.nav
+            .sessions
+            .get(&self.session.id)
+            .map(|s| s.get(key).to_string())
+            .unwrap_or_default()
     }
 
     /// Set session values.
@@ -115,7 +123,9 @@ impl Rq<'_> {
 
     /// Remove the session values starting with `prefix`.
     pub fn clear(&self, prefix: &str) {
-        self.nav.sessions.update(&self.session.id, |s| s.data.retain(|k, _| !k.starts_with(prefix)));
+        self.nav.sessions.update(&self.session.id, |s| {
+            s.data.retain(|k, _| !k.starts_with(prefix))
+        });
     }
 
     /// Whether the user has special authority `need` (`*ALLOBJ` has
@@ -127,17 +137,34 @@ impl Rq<'_> {
 
     /// Check `need` for `function` on `target`: on failure the Not
     /// authorized page with `CPF2207`, and an `AF` audit entry.
-    pub fn require(&self, need: Need, function: &str, target: &Target, crumb: &[&str]) -> Result<(), Response> {
+    pub fn require(
+        &self,
+        need: Need,
+        function: &str,
+        target: &Target,
+        crumb: &[&str],
+    ) -> Result<(), Response> {
         if self.has(need) {
             return Ok(());
         }
-        let m = self.message(Kind::Error, "CPF2207", &[&target.name, &target.lib, &target.typ]);
+        let m = self.message(
+            Kind::Error,
+            "CPF2207",
+            &[&target.name, &target.lib, &target.typ],
+        );
         Err(self.refuse(m, need, function, target, crumb))
     }
 
     /// The Not authorized page for a command's refusal `m` (the command
     /// checked the authority itself), and its `AF` entry.
-    pub fn refuse(&self, m: Message, need: Need, function: &str, target: &Target, crumb: &[&str]) -> Response {
+    pub fn refuse(
+        &self,
+        m: Message,
+        need: Need,
+        function: &str,
+        target: &Target,
+        crumb: &[&str],
+    ) -> Response {
         let sys = &self.env().system;
         sys.audit(Audit::Refused {
             user: self.user().to_string(),
@@ -190,7 +217,11 @@ impl Rq<'_> {
 /// The route of `path` under the prefix, if it is under it.
 fn route(path: &str) -> Option<&str> {
     let r = path.strip_prefix(PRODUCT.prefix)?;
-    if r.is_empty() || r.starts_with('/') { Some(r) } else { None }
+    if r.is_empty() || r.starts_with('/') {
+        Some(r)
+    } else {
+        None
+    }
 }
 
 /// Answer a request.
@@ -213,14 +244,19 @@ pub fn dispatch(nav: &Navigator, req: &Request, peer: &Peer) -> Response {
         "/signoff" => return signon::signoff(nav, req, peer),
         _ => {}
     }
-    let session = req.cookie(session::COOKIE).and_then(|id| nav.sessions.get(id));
+    let session = req
+        .cookie(session::COOKIE)
+        .and_then(|id| nav.sessions.get(id));
     let Some(session) = session else {
         return Response::redirect(&PRODUCT.url("/signon"));
     };
     if req.method == "POST" {
         let form = req.form();
         if !session::csrf_ok(&session, form.str(session::CSRF_FIELD)) {
-            return qsweb::http::plain(403, "The form is out of date. Go back, reload the page and try again.");
+            return qsweb::http::plain(
+                403,
+                "The form is out of date. Go back, reload the page and try again.",
+            );
         }
     }
     let ctx = Ctx {
@@ -241,7 +277,10 @@ pub fn dispatch(nav: &Navigator, req: &Request, peer: &Peer) -> Response {
     let segs: Vec<&str> = r.trim_matches('/').split('/').collect();
     match segs.as_slice() {
         ["home"] => home::page(&rq),
-        ["jobs" | "job" | "jobq" | "sbs" | "outq" | "splf" | "writers" | "jobscde", ..] => work::route(&rq, &segs),
+        [
+            "jobs" | "job" | "jobq" | "sbs" | "outq" | "splf" | "writers" | "jobscde",
+            ..,
+        ] => work::route(&rq, &segs),
         ["msgq" | "mymsgs" | "qhst", ..] => msgs::route(&rq, &segs),
         ["users" | "user" | "groups" | "group" | "autl", ..] => users::route(&rq, &segs),
         ["sysval" | "disk" | "hdwrsc" | "time", ..] => config::route(&rq, &segs),

@@ -21,8 +21,18 @@ use crate::ui::FormLine;
 
 /// The system values `Date and time system values` shows.
 pub const DATE_TIME: [&str; 12] = [
-    "QCENTURY", "QDATE", "QDAY", "QDAYOFWEEK", "QHOUR", "QMINUTE", "QMONTH", "QSECOND", "QTIME", "QTIMZON",
-    "QUTCOFFSET", "QYEAR",
+    "QCENTURY",
+    "QDATE",
+    "QDAY",
+    "QDAYOFWEEK",
+    "QHOUR",
+    "QMINUTE",
+    "QMONTH",
+    "QSECOND",
+    "QTIME",
+    "QTIMZON",
+    "QUTCOFFSET",
+    "QYEAR",
 ];
 
 /// The options, numbered as the functional interface has them.
@@ -128,8 +138,16 @@ fn sysvals(env: &mut dyn DstEnv, date_time: bool) -> Options {
         .collect();
     let names: Vec<String> = vals.into_iter().map(|(n, _, _)| n).collect();
     Options::new(
-        if date_time { "ipl-define-datetime" } else { "ipl-define-sysvals" },
-        if date_time { "Date and Time System Values" } else { "Work with System Values" },
+        if date_time {
+            "ipl-define-datetime"
+        } else {
+            "ipl-define-sysvals"
+        },
+        if date_time {
+            "Date and Time System Values"
+        } else {
+            "Work with System Values"
+        },
         "Type options, press Enter.  2=Change",
         "Opt  System Value  Current Value         Description",
         rows,
@@ -151,7 +169,9 @@ fn change_sysval(name: String) -> Form {
         "ipl-define-chgsysval",
         "Change System Value",
         vec![FormLine::new("New value", 40, "")],
-        vec![format!("System value {name}: the value is checked as CHGSYSVAL checks it.")],
+        vec![format!(
+            "System value {name}: the value is checked as CHGSYSVAL checks it."
+        )],
         Box::new(move |fields, env| {
             let v = fields.first().map_or("", |s| s.trim());
             match env.set_sysval(&name, v) {
@@ -202,7 +222,11 @@ fn constraints(env: &mut dyn DstEnv) -> Notice {
         lines.push("  (No constraints are check pending)".into());
     }
     lines.extend(rows);
-    Notice::new("ipl-define-edtcpcst", "Edit Check Pending Constraints", lines)
+    Notice::new(
+        "ipl-define-edtcpcst",
+        "Edit Check Pending Constraints",
+        lines,
+    )
 }
 
 fn profiles(env: &mut dyn DstEnv) -> Notice {
@@ -258,7 +282,10 @@ impl Panel for AbnormalEnd {
         let mut s = crate::ui::menu(
             "Previous System End Was Abnormal",
             &env.system_name(),
-            &[(1, "Continue the IPL"), (2, "Use Dedicated Service Tools (DST)")],
+            &[
+                (1, "Continue the IPL"),
+                (2, "Use Dedicated Service Tools (DST)"),
+            ],
             "F3=Exit   F12=Cancel",
         );
         s.put(

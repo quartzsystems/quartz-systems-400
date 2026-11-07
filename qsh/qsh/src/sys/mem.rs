@@ -1060,12 +1060,7 @@ impl Sys for MemSys {
         self.svc_splfs(job)
     }
 
-    fn spooled_file(
-        &self,
-        job: &str,
-        name: &str,
-        number: SplfNumber,
-    ) -> Result<Spooled, SysError> {
+    fn spooled_file(&self, job: &str, name: &str, number: SplfNumber) -> Result<Spooled, SysError> {
         self.svc_splf(job, name, number)
     }
 

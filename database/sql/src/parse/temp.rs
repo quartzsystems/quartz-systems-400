@@ -16,7 +16,13 @@ impl Parser {
         let Statement::CreateTable(table) = self.create_table(false)? else {
             unreachable!("create_table makes a CREATE TABLE");
         };
-        let mut d = DeclareTemp { table, delete_rows: true, not_logged: false, rollback_preserve: false, replace: false };
+        let mut d = DeclareTemp {
+            table,
+            delete_rows: true,
+            not_logged: false,
+            rollback_preserve: false,
+            replace: false,
+        };
         let mut on_commit = false;
         loop {
             if self.is_words(&["ON", "COMMIT"]) {
@@ -43,7 +49,10 @@ impl Parser {
                 d.replace = true;
             } else if self.eat_word("RCDFMT") {
                 d.table.rcdfmt = Some(self.ident()?);
-            } else if self.is_word("LOGGED") || self.is_word("CCSID") || self.is_words(&["ON", "ROLLBACK"]) {
+            } else if self.is_word("LOGGED")
+                || self.is_word("CCSID")
+                || self.is_words(&["ON", "ROLLBACK"])
+            {
                 // Db2 for i has no such clause here (`SQL0199` on the primary).
                 return Err(self.keyword());
             } else {

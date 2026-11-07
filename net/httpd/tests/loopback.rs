@@ -34,7 +34,12 @@ use tls::stream::TlsStream;
 const HOST: &str = "shop.test";
 
 /// Accept on `l` until `stop`, serving each connection on a thread.
-fn accept(l: TcpListener, tls: Option<Arc<ServerConfig>>, server: Arc<Server>, stop: Arc<AtomicBool>) {
+fn accept(
+    l: TcpListener,
+    tls: Option<Arc<ServerConfig>>,
+    server: Arc<Server>,
+    stop: Arc<AtomicBool>,
+) {
     l.set_nonblocking(true).unwrap();
     std::thread::spawn(move || {
         while !stop.load(Ordering::SeqCst) {
@@ -46,7 +51,11 @@ fn accept(l: TcpListener, tls: Option<Arc<ServerConfig>>, server: Arc<Server>, s
             let tls = tls.clone();
             std::thread::spawn(move || {
                 s.set_nonblocking(false).unwrap();
-                let ctx = Ctx { local: s.local_addr().unwrap(), peer, secure: tls.is_some() };
+                let ctx = Ctx {
+                    local: s.local_addr().unwrap(),
+                    peer,
+                    secure: tls.is_some(),
+                };
                 let mut conn: Box<dyn Transport> = match tls {
                     Some(c) => match TlsStream::accept(c, s) {
                         Ok(t) => Box::new(t),
@@ -106,22 +115,50 @@ fn plain_and_tls_virtual_host_then_controlled_end() {
     files.put("/www/shop/secure/index.html", b"secure");
 
     // The certificate the store assigns to the instance's application ID.
-    let fast = Argon2Params { m_cost: 64, t_cost: 1, p_cost: 1 };
+    let fast = Argon2Params {
+        m_cost: 64,
+        t_cost: 1,
+        p_cost: 1,
+    };
     let cf = CertFiles::new();
     let t = now();
-    ca::create(&cf, "capass1", &Subject::cn("Test CA"), KeyAlgorithm::EcdsaP256, t, 3650, fast).unwrap();
+    ca::create(
+        &cf,
+        "capass1",
+        &Subject::cn("Test CA"),
+        KeyAlgorithm::EcdsaP256,
+        t,
+        3650,
+        fast,
+    )
+    .unwrap();
     let ca_store = CertStore::open(&cf, LOCAL_CA_STORE, "capass1").unwrap();
-    let mut system = CertStore::create_with(&cf, SYSTEM_STORE, "system1", StoreKind::System, t, fast).unwrap();
-    ca::issue(&ca_store, &mut system, "SHOP", &CertSpec::server(HOST, t, 30), KeyAlgorithm::EcdsaP256).unwrap();
+    let mut system =
+        CertStore::create_with(&cf, SYSTEM_STORE, "system1", StoreKind::System, t, fast).unwrap();
+    ca::issue(
+        &ca_store,
+        &mut system,
+        "SHOP",
+        &CertSpec::server(HOST, t, 30),
+        KeyAlgorithm::EcdsaP256,
+    )
+    .unwrap();
     let mut apps = AppRegistry::load(&cf).unwrap();
-    apps.register(&spec.app_id, AppKind::Server, "Shop").unwrap();
+    apps.register(&spec.app_id, AppKind::Server, "Shop")
+        .unwrap();
     apps.assign(&spec.app_id, Some("SHOP")).unwrap();
     let policy = TlsPolicy::opsys();
-    let AppConfig::Server { identity, client_auth, .. } = for_app(&system, &apps, &spec.app_id, &policy, t).unwrap() else {
+    let AppConfig::Server {
+        identity,
+        client_auth,
+        ..
+    } = for_app(&system, &apps, &spec.app_id, &policy, t).unwrap()
+    else {
         panic!("not a server application");
     };
     let roots = trusted_roots(&system, &CaTrust::All).unwrap();
-    let cfg = httpd::serve::tls::config(&spec, &identity, &policy, roots.clone(), client_auth).unwrap();
+    let cfg =
+        httpd::serve::tls::config(&spec, &identity, &policy, roots.clone(), client_auth).unwrap();
 
     let stop = Arc::new(AtomicBool::new(false));
     let (plain_l, tls_l) = (loopback(), loopback());
@@ -132,7 +169,14 @@ fn plain_and_tls_virtual_host_then_controlled_end() {
     plan.listeners[0].port = plain_a.port();
     plan.listeners[1].port = tls_a.port();
     plan.vhosts[0].addrs = vec![(None, tls_a.port())];
-    let server = Arc::new(Server::new(plan, Deps { files: files.clone(), auth: Arc::new(NoAuth), clock: Arc::new(now) }));
+    let server = Arc::new(Server::new(
+        plan,
+        Deps {
+            files: files.clone(),
+            auth: Arc::new(NoAuth),
+            clock: Arc::new(now),
+        },
+    ));
     accept(plain_l, None, Arc::clone(&server), Arc::clone(&stop));
     accept(tls_l, Some(cfg), Arc::clone(&server), Arc::clone(&stop));
 
@@ -143,8 +187,14 @@ fn plain_and_tls_virtual_host_then_controlled_end() {
     let mut r = BufReader::new(s);
     w.write_all(b"GET / HTTP/1.1\r\nHost: x\r\n\r\n").unwrap();
     let one = response(&mut r);
-    assert!(one.starts_with("HTTP/1.1 200 OK\r\n") && one.ends_with("plain") && one.contains("Connection: keep-alive"), "{one}");
-    w.write_all(b"GET /index.html HTTP/1.1\r\nHost: x\r\n\r\n").unwrap();
+    assert!(
+        one.starts_with("HTTP/1.1 200 OK\r\n")
+            && one.ends_with("plain")
+            && one.contains("Connection: keep-alive"),
+        "{one}"
+    );
+    w.write_all(b"GET /index.html HTTP/1.1\r\nHost: x\r\n\r\n")
+        .unwrap();
     assert!(response(&mut r).ends_with("plain"));
 
     // TLS 1.2 only: the virtual host disabled 1.3.
@@ -155,11 +205,15 @@ fn plain_and_tls_virtual_host_then_controlled_end() {
         s
     })
     .unwrap();
-    t.write_all(b"GET / HTTP/1.1\r\nHost: shop.test\r\nConnection: close\r\n\r\n").unwrap();
+    t.write_all(b"GET / HTTP/1.1\r\nHost: shop.test\r\nConnection: close\r\n\r\n")
+        .unwrap();
     let mut out = Vec::new();
     let _ = t.read_to_end(&mut out);
     let page = String::from_utf8(out).unwrap();
-    assert!(page.starts_with("HTTP/1.1 200 OK\r\n") && page.ends_with("secure"), "{page}");
+    assert!(
+        page.starts_with("HTTP/1.1 200 OK\r\n") && page.ends_with("secure"),
+        "{page}"
+    );
     assert_eq!(t.session().unwrap().protocol, Protocol::Tls12);
 
     // A controlled end: the idle kept-alive connection closes; the

@@ -11,8 +11,8 @@ use std::sync::Arc;
 use blockdev::{BlockDev, MemBlockDev};
 use db::sqlpkg::{self, Package, PkgAttr, PkgKind, PkgStmt};
 use qsname::Name;
-use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use saverst::{AllowAll, RestoreOptions, SaveOptions, restore, save_library};
+use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use store::obj::{CreateParams, JobHandle, ops, types};
 use store::{FormatParams, Store, StoreConfig};
 
@@ -30,7 +30,12 @@ fn a_package_round_trips() {
         wal_pages: 256,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -49,7 +54,13 @@ fn a_package_round_trips() {
     )
     .unwrap();
     let name = Name::parse("QSPKG9899").unwrap();
-    let attr = PkgAttr { kind: PkgKind::Extended, sql_naming: true, token: 42, default_collection: "PKGLIB".into(), ..PkgAttr::default() };
+    let attr = PkgAttr {
+        kind: PkgKind::Extended,
+        sql_naming: true,
+        token: 42,
+        default_collection: "PKGLIB".into(),
+        ..PkgAttr::default()
+    };
     let id = sqlpkg::create(&mut t, lib, name, &attr, "QSECOFR", "", NOW).unwrap();
     let pkg = Package {
         attr,
@@ -78,8 +89,20 @@ fn a_package_round_trips() {
         user: "QSYS".into(),
     };
     let mut w = Writer::new(Vec::new(), &h).unwrap();
-    let opts = SaveOptions { update_history: false, ..SaveOptions::default() };
-    save_library(&mut s, JobHandle(1), &AllowAll, qsys, "PKGLIB", &opts, &mut w).unwrap();
+    let opts = SaveOptions {
+        update_history: false,
+        ..SaveOptions::default()
+    };
+    save_library(
+        &mut s,
+        JobHandle(1),
+        &AllowAll,
+        qsys,
+        "PKGLIB",
+        &opts,
+        &mut w,
+    )
+    .unwrap();
     let bytes = w.finish(0).unwrap().1;
 
     let mut t = s.begin().unwrap();
@@ -87,7 +110,15 @@ fn a_package_round_trips() {
     assert!(sqlpkg::find(&mut t, lib, name).unwrap().is_none());
     t.commit().unwrap();
     let mut r = Reader::new(Cursor::new(&bytes[..])).unwrap();
-    let rep = restore(&mut s, JobHandle(1), &AllowAll, qsys, &mut r, &RestoreOptions::default()).unwrap();
+    let rep = restore(
+        &mut s,
+        JobHandle(1),
+        &AllowAll,
+        qsys,
+        &mut r,
+        &RestoreOptions::default(),
+    )
+    .unwrap();
     assert!(rep.restored() >= 1, "{rep:?}");
     let mut t = s.begin().unwrap();
     let back = sqlpkg::find(&mut t, lib, name).unwrap().expect("restored");

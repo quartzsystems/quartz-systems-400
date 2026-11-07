@@ -8,7 +8,10 @@
 use accessweb::fixture::session5250 as fx;
 
 fn golden(name: &str) -> Vec<u8> {
-    let p = format!("{}/tests/golden/shared/img/{name}", env!("CARGO_MANIFEST_DIR"));
+    let p = format!(
+        "{}/tests/golden/shared/img/{name}",
+        env!("CARGO_MANIFEST_DIR")
+    );
     std::fs::read(&p).unwrap_or_else(|e| panic!("{p}: {e}"))
 }
 

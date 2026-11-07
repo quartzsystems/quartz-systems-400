@@ -16,7 +16,9 @@ pub fn compare(a: u64, b: u64, d: &Desc) -> Ordering {
     if d.numeric() {
         return match (read_num(a, d), read_num(b, d)) {
             (Ok(x), Ok(y)) => x.cmp(&y),
-            _ => bytes(a, d.size()).to_vec().cmp(&bytes(b, d.size()).to_vec()),
+            _ => bytes(a, d.size())
+                .to_vec()
+                .cmp(&bytes(b, d.size()).to_vec()),
         };
     }
     let x = image(a, d).unwrap_or_default();
@@ -41,7 +43,15 @@ pub const EQ: i32 = 4;
 /// `total`: the 1-based index found and what matched (`HI`, `LO`,
 /// `EQ`), or `None`. A higher or lower match is the nearest such
 /// element, the first of equals.
-pub fn lookup(arg: u64, arr: u64, d: &Desc, start: usize, count: usize, want: i32, stride: u64) -> Option<(usize, i32)> {
+pub fn lookup(
+    arg: u64,
+    arr: u64,
+    d: &Desc,
+    start: usize,
+    count: usize,
+    want: i32,
+    stride: u64,
+) -> Option<(usize, i32)> {
     let size = stride;
     let end = start.saturating_add(count);
     let mut best: Option<(usize, i32)> = None;
@@ -103,7 +113,11 @@ pub fn extreme(arr: u64, d: &Desc, start: usize, count: usize, stride: u64, max:
             None => true,
             Some(j) => {
                 let o = compare(arr + i as u64 * stride, arr + j as u64 * stride, d);
-                if max { o == Ordering::Greater } else { o == Ordering::Less }
+                if max {
+                    o == Ordering::Greater
+                } else {
+                    o == Ordering::Less
+                }
             }
         };
         if better {

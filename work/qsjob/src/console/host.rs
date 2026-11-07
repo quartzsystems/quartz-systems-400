@@ -120,7 +120,10 @@ impl Host {
     /// Where the cursor was in the last record the display sent.
     #[must_use]
     pub fn cursor(&self) -> Option<(u8, u8)> {
-        self.display.borrow().as_ref().and_then(crate::display::Display::cursor)
+        self.display
+            .borrow()
+            .as_ref()
+            .and_then(crate::display::Display::cursor)
     }
 
     /// Wait for the display to answer: the key (0 for Enter) and the

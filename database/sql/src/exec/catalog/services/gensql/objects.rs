@@ -31,7 +31,12 @@ pub struct Object {
 
 /// The rows of a catalog query run inside the call; the call's own
 /// warning and naming kept.
-pub fn query(txn: &mut Txn<'_>, ctx: &mut SqlContext, sql: &str, params: &[Value]) -> Result<Vec<Vec<Value>>> {
+pub fn query(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    sql: &str,
+    params: &[Value],
+) -> Result<Vec<Vec<Value>>> {
     let p = crate::prepare(sql, Naming::Sql)?;
     let (warning, naming) = (ctx.warning.take(), ctx.naming);
     let r = p.execute(txn, ctx, params);
@@ -56,7 +61,13 @@ fn num(v: Option<&Value>) -> i64 {
 
 /// The objects named `name` (a `LIKE` pattern) of `kind` in `lib` (an
 /// SQL or a system schema name), in name order.
-pub fn find(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, lib: &str, kind: &str) -> Result<Vec<Object>> {
+pub fn find(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    name: &str,
+    lib: &str,
+    kind: &str,
+) -> Result<Vec<Object>> {
     let p = [Value::Str(lib.to_string()), Value::Str(name.to_string())];
     let (sql, kind): (&str, &'static str) = match kind {
         "TABLE" => (
@@ -107,11 +118,20 @@ pub fn find(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, lib: &str, kind
 
 /// `lib.name`, or `name` when names are left unqualified.
 fn qual(opts: &Options, schema: &str, name: &str) -> String {
-    if opts.unqualified { ident(name) } else { format!("{}.{}", ident(schema), ident(name)) }
+    if opts.unqualified {
+        ident(name)
+    } else {
+        format!("{}.{}", ident(schema), ident(name))
+    }
 }
 
 /// The SQL of one object.
-pub fn generate(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options) -> Result<Vec<Line>> {
+pub fn generate(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    o: &Object,
+    opts: &Options,
+) -> Result<Vec<Line>> {
     let mut out = Vec::new();
     let me = qual(opts, &o.schema, &o.name);
     if opts.drop {
@@ -129,7 +149,10 @@ pub fn generate(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Opti
 }
 
 fn object_name(o: &Object) -> ObjectName {
-    ObjectName { schema: Some(Ident::new(&o.system_schema)), name: Ident::new(&o.system_name) }
+    ObjectName {
+        schema: Some(Ident::new(&o.system_schema)),
+        name: Ident::new(&o.system_name),
+    }
 }
 
 /// The file's description.
@@ -140,7 +163,11 @@ fn describe(txn: &mut Txn<'_>, ctx: &SqlContext, o: &Object) -> Result<db::file:
 
 /// `CREATE ... name (` with `FOR SYSTEM NAME` when the names differ.
 fn create_line(what: &str, o: &Object, opts: &Options, me: &str) -> String {
-    let verb = if opts.or_replace { "CREATE OR REPLACE" } else { "CREATE" };
+    let verb = if opts.or_replace {
+        "CREATE OR REPLACE"
+    } else {
+        "CREATE"
+    };
     if opts.system_names && o.system_name != o.name {
         format!("{verb} {what} {me} FOR SYSTEM NAME {}", o.system_name)
     } else {
@@ -156,7 +183,10 @@ fn column(f: &dds::FieldDef, file_ccsid: u16, opts: &Options) -> Vec<String> {
         let _ = write!(head, " FOR COLUMN {}", f.name);
     }
     let mut def = format!("{head} {}", crate::exec::eval::sql_type(f));
-    let character = matches!(f.data_type, DataType::Char | DataType::Graphic | DataType::DbcsOpen | DataType::Clob | DataType::Dbclob);
+    let character = matches!(
+        f.data_type,
+        DataType::Char | DataType::Graphic | DataType::DbcsOpen | DataType::Clob | DataType::Dbclob
+    );
     match f.ccsid.unwrap_or(file_ccsid) {
         65535 if f.data_type == DataType::Char => def.push_str(" FOR BIT DATA"),
         c if opts.ccsids && character && c != 0 => {
@@ -166,7 +196,10 @@ fn column(f: &dds::FieldDef, file_ccsid: u16, opts: &Options) -> Vec<String> {
     }
     if let Some(id) = &f.identity {
         return vec![
-            format!("{def} GENERATED {} AS IDENTITY (", if id.always { "ALWAYS" } else { "BY DEFAULT" }),
+            format!(
+                "{def} GENERATED {} AS IDENTITY (",
+                if id.always { "ALWAYS" } else { "BY DEFAULT" }
+            ),
             format!("START WITH {} INCREMENT BY {}", id.start, id.increment),
             "NO MINVALUE NO MAXVALUE".into(),
             format!("{} NO ORDER", if id.cycle { "CYCLE" } else { "NO CYCLE" }),
@@ -178,7 +211,11 @@ fn column(f: &dds::FieldDef, file_ccsid: u16, opts: &Options) -> Vec<String> {
     }
     match &f.default {
         Some(d) => {
-            let _ = write!(def, " DEFAULT {}", crate::exec::catalog::sys::default_text(d));
+            let _ = write!(
+                def,
+                " DEFAULT {}",
+                crate::exec::catalog::sys::default_text(d)
+            );
         }
         None if f.allow_null => def.push_str(" DEFAULT NULL"),
         None => {}
@@ -187,21 +224,40 @@ fn column(f: &dds::FieldDef, file_ccsid: u16, opts: &Options) -> Vec<String> {
 }
 
 /// The columns of a constraint, by name.
-fn key_columns(txn: &mut Txn<'_>, ctx: &mut SqlContext, schema: &str, name: &str) -> Result<String> {
+fn key_columns(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    schema: &str,
+    name: &str,
+) -> Result<String> {
     let rows = query(
         txn,
         ctx,
         "SELECT COLUMN_NAME FROM QSYS2.SYSKEYCST WHERE CONSTRAINT_SCHEMA = ? AND CONSTRAINT_NAME = ? ORDER BY ORDINAL_POSITION",
         &[Value::Str(schema.into()), Value::Str(name.into())],
     )?;
-    Ok(rows.iter().map(|r| ident(&text(r.first()))).collect::<Vec<_>>().join(" , "))
+    Ok(rows
+        .iter()
+        .map(|r| ident(&text(r.first())))
+        .collect::<Vec<_>>()
+        .join(" , "))
 }
 
 #[allow(clippy::too_many_lines)] // the table, its constraints, labels and privileges in IBM's order
-fn table(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me: &str, out: &mut Vec<Line>) -> Result<()> {
+fn table(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    o: &Object,
+    opts: &Options,
+    me: &str,
+    out: &mut Vec<Line>,
+) -> Result<()> {
     let desc = describe(txn, ctx, o)?;
     let Some(fmt) = desc.formats.first() else {
-        return Err(SqlError::Database { what: format!("{} has no record format", o.name), msgid: None });
+        return Err(SqlError::Database {
+            what: format!("{} has no record format", o.name),
+            msgid: None,
+        });
     };
     let fields = fmt.format.fields.clone();
     let csts = query(
@@ -210,9 +266,18 @@ fn table(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me
         "SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, CONSTRAINT_TYPE FROM QSYS2.SYSCST WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY CONSTRAINT_NAME",
         &[Value::Str(o.schema.clone()), Value::Str(o.name.clone())],
     )?;
-    let csts: Vec<(String, String, String)> = csts.iter().map(|r| (text(r.first()), text(r.get(1)), text(r.get(2)))).collect();
-    let pk = csts.iter().find(|c| c.2 == "PRIMARY KEY").filter(|_| opts.constraints);
-    out.push(Line::top(format!("{} (", create_line("TABLE", o, opts, me))));
+    let csts: Vec<(String, String, String)> = csts
+        .iter()
+        .map(|r| (text(r.first()), text(r.get(1)), text(r.get(2))))
+        .collect();
+    let pk = csts
+        .iter()
+        .find(|c| c.2 == "PRIMARY KEY")
+        .filter(|_| opts.constraints);
+    out.push(Line::top(format!(
+        "{} (",
+        create_line("TABLE", o, opts, me)
+    )));
     for (i, f) in fields.iter().enumerate() {
         let last = i + 1 == fields.len() && pk.is_none();
         let lines = column(f, desc.attr.ccsid, opts);
@@ -231,23 +296,42 @@ fn table(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me
     }
     if let Some((s, n, _)) = pk {
         let cols = key_columns(txn, ctx, s, n)?;
-        out.push(Line::tab(format!("CONSTRAINT {} PRIMARY KEY( {cols} ) )  ", qual(opts, s, n))));
+        out.push(Line::tab(format!(
+            "CONSTRAINT {} PRIMARY KEY( {cols} ) )  ",
+            qual(opts, s, n)
+        )));
     }
     out.push(Line::Empty);
-    out.push(Line::tab(if opts.system_names { format!("RCDFMT {:<10} ;", fmt.format.name.to_string()) } else { ";".into() }));
+    out.push(Line::tab(if opts.system_names {
+        format!("RCDFMT {:<10} ;", fmt.format.name.to_string())
+    } else {
+        ";".into()
+    }));
     out.push(Line::blank());
     if opts.constraints {
-        let order = |t: &str| ["UNIQUE", "FOREIGN KEY", "CHECK"].iter().position(|x| *x == t).unwrap_or(9);
-        let mut rest: Vec<&(String, String, String)> = csts.iter().filter(|c| c.2 != "PRIMARY KEY").collect();
+        let order = |t: &str| {
+            ["UNIQUE", "FOREIGN KEY", "CHECK"]
+                .iter()
+                .position(|x| *x == t)
+                .unwrap_or(9)
+        };
+        let mut rest: Vec<&(String, String, String)> =
+            csts.iter().filter(|c| c.2 != "PRIMARY KEY").collect();
         rest.sort_by_key(|c| (order(&c.2), c.1.clone()));
         for (s, n, t) in rest {
             out.push(Line::top(format!("ALTER TABLE {me}")));
             out.push(Line::tab(format!("ADD CONSTRAINT {}", qual(opts, s, n))));
             let p = [Value::Str(s.clone()), Value::Str(n.clone())];
             match t.as_str() {
-                "UNIQUE" => out.push(Line::tab(format!("UNIQUE( {} ) ;", key_columns(txn, ctx, s, n)?))),
+                "UNIQUE" => out.push(Line::tab(format!(
+                    "UNIQUE( {} ) ;",
+                    key_columns(txn, ctx, s, n)?
+                ))),
                 "FOREIGN KEY" => {
-                    out.push(Line::tab(format!("FOREIGN KEY( {} )", key_columns(txn, ctx, s, n)?)));
+                    out.push(Line::tab(format!(
+                        "FOREIGN KEY( {} )",
+                        key_columns(txn, ctx, s, n)?
+                    )));
                     let r = query(
                         txn,
                         ctx,
@@ -272,8 +356,16 @@ fn table(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me
                     out.push(Line::tab(format!("ON UPDATE {} ;", text(r.get(2)))));
                 }
                 _ => {
-                    let r = query(txn, ctx, "SELECT CHECK_CLAUSE FROM QSYS2.SYSCHKCST WHERE CONSTRAINT_SCHEMA = ? AND CONSTRAINT_NAME = ?", &p)?;
-                    out.push(Line::tab(format!("CHECK( {} ) ;", text(r.first().and_then(|r| r.first())))));
+                    let r = query(
+                        txn,
+                        ctx,
+                        "SELECT CHECK_CLAUSE FROM QSYS2.SYSCHKCST WHERE CONSTRAINT_SCHEMA = ? AND CONSTRAINT_NAME = ?",
+                        &p,
+                    )?;
+                    out.push(Line::tab(format!(
+                        "CHECK( {} ) ;",
+                        text(r.first().and_then(|r| r.first()))
+                    )));
                 }
             }
             out.push(Line::blank());
@@ -300,7 +392,13 @@ fn column_labels(fields: &[dds::FieldDef], me: &str, out: &mut Vec<Line>) {
     let headings: Vec<String> = fields
         .iter()
         // The heading SQL gives a column (its name) is not written.
-        .filter(|f| !f.colhdg.is_empty() && f.colhdg != crate::exec::ddl::default_heading(&f.alias.clone().unwrap_or_else(|| f.name.to_string())))
+        .filter(|f| {
+            !f.colhdg.is_empty()
+                && f.colhdg
+                    != crate::exec::ddl::default_heading(
+                        &f.alias.clone().unwrap_or_else(|| f.name.to_string()),
+                    )
+        })
         .map(|f| {
             let parts: Vec<String> = f.colhdg.iter().map(|p| format!("{p:<20}")).collect();
             format!("{} IS {}", name(f), literal(parts.concat().trim_end()))
@@ -308,7 +406,12 @@ fn column_labels(fields: &[dds::FieldDef], me: &str, out: &mut Vec<Line>) {
         .collect();
     let texts: Vec<String> = fields
         .iter()
-        .filter_map(|f| f.text.as_ref().filter(|t| !t.trim().is_empty()).map(|t| format!("{} TEXT IS {}", name(f), literal(t.trim_end()))))
+        .filter_map(|f| {
+            f.text
+                .as_ref()
+                .filter(|t| !t.trim().is_empty())
+                .map(|t| format!("{} TEXT IS {}", name(f), literal(t.trim_end())))
+        })
         .collect();
     for list in [headings, texts] {
         if list.is_empty() {
@@ -327,7 +430,14 @@ fn column_labels(fields: &[dds::FieldDef], me: &str, out: &mut Vec<Line>) {
 
 /// The `GRANT`s of a table or view from `SYSTABAUTH`, one per
 /// grantee.
-fn grants(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, me: &str, view: bool, out: &mut Vec<Line>) -> Result<()> {
+fn grants(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    o: &Object,
+    me: &str,
+    view: bool,
+    out: &mut Vec<Line>,
+) -> Result<()> {
     let rows = query(
         txn,
         ctx,
@@ -352,16 +462,34 @@ fn grants(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, me: &str, view: b
         ps.sort();
         ps.dedup();
         out.push(Line::top(format!("GRANT {}  ", ps.join(" , "))));
-        let to = if g == "PUBLIC" || g == "*PUBLIC" { "PUBLIC".to_string() } else { g };
-        out.push(Line::top(format!("ON {me} TO {to}{} ;", if grantable { " WITH GRANT OPTION" } else { "" })));
+        let to = if g == "PUBLIC" || g == "*PUBLIC" {
+            "PUBLIC".to_string()
+        } else {
+            g
+        };
+        out.push(Line::top(format!(
+            "ON {me} TO {to}{} ;",
+            if grantable { " WITH GRANT OPTION" } else { "" }
+        )));
         out.push(Line::blank());
     }
     Ok(())
 }
 
-fn view(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me: &str, out: &mut Vec<Line>) -> Result<()> {
+fn view(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    o: &Object,
+    opts: &Options,
+    me: &str,
+    out: &mut Vec<Line>,
+) -> Result<()> {
     let desc = describe(txn, ctx, o)?;
-    let fields = desc.formats.first().map(|f| f.format.fields.clone()).unwrap_or_default();
+    let fields = desc
+        .formats
+        .first()
+        .map(|f| f.format.fields.clone())
+        .unwrap_or_default();
     let rows = query(
         txn,
         ctx,
@@ -372,7 +500,10 @@ fn view(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me:
     out.push(Line::top(format!("{} (", create_line("VIEW", o, opts, me))));
     for (i, f) in fields.iter().enumerate() {
         let n = ident(&f.alias.clone().unwrap_or_else(|| f.name.to_string()));
-        out.push(Line::tab(format!("{n} {}", if i + 1 == fields.len() { ")" } else { "," })));
+        out.push(Line::tab(format!(
+            "{n} {}",
+            if i + 1 == fields.len() { ")" } else { "," }
+        )));
     }
     out.push(Line::tab("AS"));
     out.push(Line::tab(format!("{}  ", text(r.first()))));
@@ -381,8 +512,16 @@ fn view(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me:
         "L" | "LOCAL" => out.push(Line::tab("WITH LOCAL CHECK OPTION")),
         _ => {}
     }
-    let fmt = desc.formats.first().map(|f| f.format.name.to_string()).unwrap_or_default();
-    out.push(Line::tab(if opts.system_names { format!("RCDFMT {fmt:<10} ;") } else { ";".into() }));
+    let fmt = desc
+        .formats
+        .first()
+        .map(|f| f.format.name.to_string())
+        .unwrap_or_default();
+    out.push(Line::tab(if opts.system_names {
+        format!("RCDFMT {fmt:<10} ;")
+    } else {
+        ";".into()
+    }));
     out.push(Line::blank());
     if opts.labels {
         let label = ccsid::decode_trimmed(&desc.header.text);
@@ -399,7 +538,14 @@ fn view(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me:
     Ok(())
 }
 
-fn index(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me: &str, out: &mut Vec<Line>) -> Result<()> {
+fn index(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    o: &Object,
+    opts: &Options,
+    me: &str,
+    out: &mut Vec<Line>,
+) -> Result<()> {
     let p = [Value::Str(o.schema.clone()), Value::Str(o.name.clone())];
     let rows = query(
         txn,
@@ -417,8 +563,15 @@ fn index(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me
     let keys: Vec<String> = keys
         .iter()
         .map(|k| {
-            let col = if text(k.get(2)) == "Y" { text(k.get(3)) } else { ident(&text(k.first())) };
-            format!("{col} {}", if text(k.get(1)) == "D" { "DESC" } else { "ASC" })
+            let col = if text(k.get(2)) == "Y" {
+                text(k.get(3))
+            } else {
+                ident(&text(k.first()))
+            };
+            format!(
+                "{col} {}",
+                if text(k.get(1)) == "D" { "DESC" } else { "ASC" }
+            )
         })
         .collect();
     let unique = match text(r.get(2)).as_str() {
@@ -426,9 +579,17 @@ fn index(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me
         "V" => "UNIQUE WHERE NOT NULL ",
         _ => "",
     };
-    let verb = if opts.or_replace { "CREATE OR REPLACE" } else { "CREATE" };
+    let verb = if opts.or_replace {
+        "CREATE OR REPLACE"
+    } else {
+        "CREATE"
+    };
     out.push(Line::top(format!("{verb} {unique}INDEX {me}")));
-    out.push(Line::tab(format!("ON {} ( {} )  ", qual(opts, &text(r.first()), &text(r.get(1))), keys.join(" , "))));
+    out.push(Line::tab(format!(
+        "ON {} ( {} )  ",
+        qual(opts, &text(r.first()), &text(r.get(1))),
+        keys.join(" , ")
+    )));
     let cond = text(r.get(3));
     if !cond.is_empty() {
         out.push(Line::tab(format!("WHERE {cond}")));
@@ -444,7 +605,14 @@ fn index(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me
     Ok(())
 }
 
-fn sequence(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me: &str, out: &mut Vec<Line>) -> Result<()> {
+fn sequence(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    o: &Object,
+    opts: &Options,
+    me: &str,
+    out: &mut Vec<Line>,
+) -> Result<()> {
     let rows = query(
         txn,
         ctx,
@@ -457,19 +625,31 @@ fn sequence(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options,
         t @ ("DECIMAL" | "NUMERIC") => format!("{t}({}, 0)", num(r.get(10))),
         t => t.to_string(),
     };
-    let verb = if opts.or_replace { "CREATE OR REPLACE" } else { "CREATE" };
+    let verb = if opts.or_replace {
+        "CREATE OR REPLACE"
+    } else {
+        "CREATE"
+    };
     out.push(Line::top(format!("{verb} SEQUENCE {me}")));
     out.push(Line::tab(format!("AS {ty}")));
     out.push(Line::tab(format!("START WITH {}", text(r.get(1)))));
     out.push(Line::tab(format!("INCREMENT BY {}", text(r.get(2)))));
     out.push(Line::tab(format!("MINVALUE {}", text(r.get(3)))));
     out.push(Line::tab(format!("MAXVALUE {}", text(r.get(4)))));
-    let cycle = if text(r.get(5)) == "YES" { "CYCLE" } else { "NO CYCLE" };
+    let cycle = if text(r.get(5)) == "YES" {
+        "CYCLE"
+    } else {
+        "NO CYCLE"
+    };
     let cache = match num(r.get(6)) {
         0 => "NO CACHE".to_string(),
         n => format!("CACHE {n}"),
     };
-    let order = if text(r.get(7)) == "YES" { "ORDER" } else { "NO ORDER" };
+    let order = if text(r.get(7)) == "YES" {
+        "ORDER"
+    } else {
+        "NO ORDER"
+    };
     out.push(Line::tab(format!("{cycle} {cache} {order} ;")));
     out.push(Line::blank());
     let label = text(r.get(9));
@@ -483,24 +663,45 @@ fn sequence(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options,
         // the catalog.
         out.push(Line::top("GRANT ALTER , USAGE  "));
         out.push(Line::top(format!("ON SEQUENCE {me}")));
-        out.push(Line::top(format!("TO {} WITH GRANT OPTION ;", text(r.get(8)))));
+        out.push(Line::top(format!(
+            "TO {} WITH GRANT OPTION ;",
+            text(r.get(8))
+        )));
         out.push(Line::blank());
     }
     Ok(())
 }
 
-fn alias(txn: &mut Txn<'_>, ctx: &mut SqlContext, o: &Object, opts: &Options, me: &str, out: &mut Vec<Line>) -> Result<()> {
+fn alias(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    o: &Object,
+    opts: &Options,
+    me: &str,
+    out: &mut Vec<Line>,
+) -> Result<()> {
     let id = ctx.resolve_file(txn, &object_name(o))?;
     let Some(def) = db::file::alias_of(txn, id)? else {
-        return Err(SqlError::Database { what: format!("{} is not an alias", o.name), msgid: None });
+        return Err(SqlError::Database {
+            what: format!("{} is not an alias", o.name),
+            msgid: None,
+        });
     };
     let target = crate::exec::alias::target(&def);
-    let schema = target.schema.as_ref().map(|s| s.value.clone()).unwrap_or_default();
+    let schema = target
+        .schema
+        .as_ref()
+        .map(|s| s.value.clone())
+        .unwrap_or_default();
     let mut to = qual(opts, &schema, &target.name.value);
     if let Some(m) = def.member {
         let _ = write!(to, " ( {m} )");
     }
-    let verb = if opts.or_replace { "CREATE OR REPLACE" } else { "CREATE" };
+    let verb = if opts.or_replace {
+        "CREATE OR REPLACE"
+    } else {
+        "CREATE"
+    };
     out.push(Line::top(format!("{verb} ALIAS {me}")));
     out.push(Line::tab(format!("FOR {to} ;")));
     out.push(Line::blank());

@@ -88,7 +88,12 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || !values.iter().all(|v| tail.contains(v)) {
@@ -136,7 +141,9 @@ fn captured(name: &str) -> Vec<(String, String, String)> {
         }
         if inside {
             let t = l.trim();
-            let Some(rest) = t.strip_prefix("PARM ") else { break };
+            let Some(rest) = t.strip_prefix("PARM ") else {
+                break;
+            };
             let kwd = rest.split_whitespace().next().unwrap_or("").to_string();
             let get = |k: &str| {
                 rest.split_whitespace()
@@ -152,10 +159,18 @@ fn captured(name: &str) -> Vec<(String, String, String)> {
 
 #[test]
 fn definitions_match_the_oracle() {
-    for name in ["QSH", "STRQSH", "ADDENVVAR", "CHGENVVAR", "RMVENVVAR", "WRKENVVAR"] {
+    for name in [
+        "QSH",
+        "STRQSH",
+        "ADDENVVAR",
+        "CHGENVVAR",
+        "RMVENVVAR",
+        "WRKENVVAR",
+    ] {
         let cap = captured(name);
         assert!(!cap.is_empty(), "{name} captured");
-        let d = cmd::source::compile(name, sys_cpps::defs::source(name).expect("shipped")).expect("compiles");
+        let d = cmd::source::compile(name, sys_cpps::defs::source(name).expect("shipped"))
+            .expect("compiles");
         let ours: Vec<String> = d.parms.iter().map(|p| p.kwd.clone()).collect();
         let theirs: Vec<String> = cap.iter().map(|c| c.0.clone()).collect();
         assert_eq!(ours, theirs, "{name} keywords");
@@ -167,4 +182,3 @@ fn definitions_match_the_oracle() {
         assert_eq!(e.site, sys_cpps::Site::Job, "{name} runs in the job");
     }
 }
-

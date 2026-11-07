@@ -11,8 +11,8 @@
 #![deny(missing_docs)]
 
 pub mod conv;
-pub mod nls;
 mod cp037;
+pub mod nls;
 mod tables;
 
 use std::cmp::Ordering;

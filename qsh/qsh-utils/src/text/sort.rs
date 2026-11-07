@@ -121,10 +121,7 @@ fn parse_key(spec: &str, global: Flags) -> Option<Key> {
     }
     let (b1, b2) = if global.b { (true, true) } else { (b1, b2) };
     if !flags.any() {
-        flags = Flags {
-            b: false,
-            ..global
-        };
+        flags = Flags { b: false, ..global };
     }
     Some(Key {
         f1,
@@ -297,10 +294,7 @@ impl Sorter {
     fn key_cmp(&self, a: &[u8], b: &[u8]) -> Ordering {
         if self.keys.is_empty() {
             let (ka, kb) = if self.global.b {
-                (
-                    a.trim_ascii_start(),
-                    b.trim_ascii_start(),
-                )
+                (a.trim_ascii_start(), b.trim_ascii_start())
             } else {
                 (a, b)
             };

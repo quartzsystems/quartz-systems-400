@@ -13,8 +13,8 @@ use qsweb::html::esc;
 use qsweb::http::Response;
 use qsweb::msg::Kind;
 use qsweb::partials::{
-    Button, Cell, Col, List, Prop, PropGroup, buttons, checkbox, form, input, input_cmd, list_table, props,
-    props_table, radio, select, tabs,
+    Button, Cell, Col, List, Prop, PropGroup, buttons, checkbox, form, input, input_cmd,
+    list_table, props, props_table, radio, select, tabs,
 };
 
 use super::list::{CLASSES, in_group, status};
@@ -43,7 +43,11 @@ pub fn route(rq: &Rq<'_>, p: &Profile, rest: &[&str]) -> Response {
         ["personal"] => personal(rq, p),
         ["password"] => password(rq, p),
         ["delete"] => delete(rq, p),
-        _ => rq.not_found(&format!("page {} of user profile {}", rest.join("/"), p.name)),
+        _ => rq.not_found(&format!(
+            "page {} of user profile {}",
+            rest.join("/"),
+            p.name
+        )),
     }
 }
 
@@ -52,7 +56,11 @@ fn tab_line(rq: &Rq<'_>, p: &Profile, current: usize) -> String {
     let t: Vec<(&str, String)> = TABS
         .iter()
         .map(|(l, r)| {
-            let u = if r.is_empty() { format!("/jobs?user={}", p.name) } else { format!("/user/{}/{r}", p.name) };
+            let u = if r.is_empty() {
+                format!("/jobs?user={}", p.name)
+            } else {
+                format!("/user/{}/{r}", p.name)
+            };
             (*l, rq.ctx.url(&u))
         })
         .collect();
@@ -67,27 +75,49 @@ fn tab_page(rq: &Rq<'_>, p: &Profile, body: String) -> Response {
 
 /// The group profiles' names.
 fn group_names(rq: &Rq<'_>) -> Vec<String> {
-    rq.env().users.profiles(rq.user()).into_iter().filter(|g| g.is_group).map(|g| g.name).collect()
+    rq.env()
+        .users
+        .profiles(rq.user())
+        .into_iter()
+        .filter(|g| g.is_group)
+        .map(|g| g.name)
+        .collect()
 }
 
 /// `*NONE` for empty.
 fn or_none(v: &str) -> String {
-    if v.is_empty() { "*NONE".into() } else { v.to_string() }
+    if v.is_empty() {
+        "*NONE".into()
+    } else {
+        v.to_string()
+    }
 }
 
 /// The supplemental groups as typed (`*NONE` for none).
 fn supplemental(p: &Profile) -> String {
-    if p.supplemental.is_empty() { "*NONE".into() } else { p.supplemental.join(" ") }
+    if p.supplemental.is_empty() {
+        "*NONE".into()
+    } else {
+        p.supplemental.join(" ")
+    }
 }
 
 /// `SPCAUT`'s value of a list.
 fn spcaut(list: &[String]) -> String {
-    if list.is_empty() { "*NONE".into() } else { list.join(" ") }
+    if list.is_empty() {
+        "*NONE".into()
+    } else {
+        list.join(" ")
+    }
 }
 
 /// After Apply or OK: back to the tab, or to Users.
 fn after(rq: &Rq<'_>, p: &Profile, tab: &str) -> String {
-    if rq.form().has("ok") { "/users".into() } else { format!("/user/{}/{tab}", p.name) }
+    if rq.form().has("ok") {
+        "/users".into()
+    } else {
+        format!("/user/{}/{tab}", p.name)
+    }
 }
 
 /// Run `CHGUSRPRF` with `changes`, or go back when there are none.
@@ -95,7 +125,12 @@ fn change(rq: &Rq<'_>, p: &Profile, changes: &str, back: &str) -> Response {
     if changes.is_empty() {
         return rq.redirect(back);
     }
-    if let Err(r) = secadm(rq, "Change user profile", &p.name, &[GROUP, "Users", &p.name]) {
+    if let Err(r) = secadm(
+        rq,
+        "Change user profile",
+        &p.name,
+        &[GROUP, "Users", &p.name],
+    ) {
         return r;
     }
     run(rq, &format!("CHGUSRPRF USRPRF({}){changes}", p.name), back)
@@ -133,7 +168,15 @@ fn general_post(rq: &Rq<'_>, p: &Profile) -> Response {
             if let Err(r) = secadm(rq, "Reset password", &p.name, &[GROUP, "Users", &p.name]) {
                 return r;
             }
-            return run(rq, &format!("CHGUSRPRF USRPRF({}) PASSWORD({}) PWDEXP({exp})", p.name, quote(pw)), &here);
+            return run(
+                rq,
+                &format!(
+                    "CHGUSRPRF USRPRF({}) PASSWORD({}) PWDEXP({exp})",
+                    p.name,
+                    quote(pw)
+                ),
+                &here,
+            );
         }
         let mut c = String::new();
         let text = f.str("t").trim();
@@ -144,11 +187,36 @@ fn general_post(rq: &Rq<'_>, p: &Profile) -> Response {
         differ(&mut c, "STATUS", st, f.str("s"));
         differ(&mut c, "USRCLS", &p.class, f.str("c"));
         differ(&mut c, "GRPPRF", &or_none(&p.group), f.str("g"));
-        differ(&mut c, "SUPGRPPRF", &supplemental(p), &f.str("sg").to_ascii_uppercase());
-        differ(&mut c, "PWDEXPITV", &p.pwd_interval, &f.str("pi").to_ascii_uppercase());
-        differ(&mut c, "INLPGM", &p.initial_program, &f.str("ip").to_ascii_uppercase());
-        differ(&mut c, "INLMNU", &p.initial_menu, &f.str("im").to_ascii_uppercase());
-        differ(&mut c, "CURLIB", &p.current_library, &f.str("cl").to_ascii_uppercase());
+        differ(
+            &mut c,
+            "SUPGRPPRF",
+            &supplemental(p),
+            &f.str("sg").to_ascii_uppercase(),
+        );
+        differ(
+            &mut c,
+            "PWDEXPITV",
+            &p.pwd_interval,
+            &f.str("pi").to_ascii_uppercase(),
+        );
+        differ(
+            &mut c,
+            "INLPGM",
+            &p.initial_program,
+            &f.str("ip").to_ascii_uppercase(),
+        );
+        differ(
+            &mut c,
+            "INLMNU",
+            &p.initial_menu,
+            &f.str("im").to_ascii_uppercase(),
+        );
+        differ(
+            &mut c,
+            "CURLIB",
+            &p.current_library,
+            &f.str("cl").to_ascii_uppercase(),
+        );
         differ(&mut c, "LMTCPB", &p.limit_capabilities, f.str("lc"));
         differ(&mut c, "JOBD", &p.jobd, &f.str("jd").to_ascii_uppercase());
         differ(&mut c, "OUTQ", &p.outq, &f.str("oq").to_ascii_uppercase());
@@ -163,7 +231,11 @@ fn general_post(rq: &Rq<'_>, p: &Profile) -> Response {
             .filter(|(i, _)| f.has(&format!("a{}", i + 1)))
             .map(|(_, s)| (*s).to_string())
             .collect();
-        let had: Vec<String> = SPECIAL.iter().filter(|s| p.special.iter().any(|h| h == *s)).map(|s| (*s).to_string()).collect();
+        let had: Vec<String> = SPECIAL
+            .iter()
+            .filter(|s| p.special.iter().any(|h| h == *s))
+            .map(|s| (*s).to_string())
+            .collect();
         if chosen != had {
             let _ = write!(c, " SPCAUT({})", spcaut(&chosen));
         }
@@ -186,7 +258,11 @@ fn general_page(rq: &Rq<'_>, p: &Profile) -> Response {
         if i > 0 {
             spc.push(' ');
         }
-        let _ = write!(spc, "{} {s}", checkbox(&format!("a{}", i + 1), p.special.iter().any(|h| h == s)));
+        let _ = write!(
+            spc,
+            "{} {s}",
+            checkbox(&format!("a{}", i + 1), p.special.iter().any(|h| h == s))
+        );
     }
     let pw = format!(
         "<input type=\"password\" name=\"pw\" size=\"12\"> &nbsp; <input type=\"submit\" name=\"reset\" value=\"Reset password...\"> &nbsp; Set to expired: {}",
@@ -198,7 +274,10 @@ fn general_page(rq: &Rq<'_>, p: &Profile) -> Response {
             rows: vec![
                 Prop::new("User profile", mono(&p.name)),
                 Prop::new("Text description", input("t", &p.text, 40)),
-                Prop::new("Status", pick("s", &strings(&["*ENABLED", "*DISABLED"]), st)),
+                Prop::new(
+                    "Status",
+                    pick("s", &strings(&["*ENABLED", "*DISABLED"]), st),
+                ),
                 Prop::new("User class", pick("c", &strings(CLASSES), &p.class)),
                 Prop::new("Group profile", pick("g", &groups, "")),
                 Prop::new("Supplemental groups", input("sg", &supplemental(p), 30)),
@@ -208,7 +287,10 @@ fn general_page(rq: &Rq<'_>, p: &Profile) -> Response {
             title: Some("Password".into()),
             rows: vec![
                 Prop::new("Password", pw),
-                Prop::new("Password expiration interval", format!("{} days", input("pi", &p.pwd_interval, 8))),
+                Prop::new(
+                    "Password expiration interval",
+                    format!("{} days", input("pi", &p.pwd_interval, 8)),
+                ),
                 Prop::new("Last changed", changed),
                 Prop::new("Sign-on attempts not valid", p.invalid_signons.to_string()),
                 Prop::new("Last sign-on", last),
@@ -220,7 +302,10 @@ fn general_page(rq: &Rq<'_>, p: &Profile) -> Response {
                 Prop::new("Initial program", input_cmd("ip", &p.initial_program, 20)),
                 Prop::new("Initial menu", input_cmd("im", &p.initial_menu, 20)),
                 Prop::new("Current library", input_cmd("cl", &p.current_library, 10)),
-                Prop::new("Limit capabilities", select("lc", &["*YES", "*PARTIAL", "*NO"], &p.limit_capabilities)),
+                Prop::new(
+                    "Limit capabilities",
+                    select("lc", &["*YES", "*PARTIAL", "*NO"], &p.limit_capabilities),
+                ),
                 Prop::new("Job description", input_cmd("jd", &p.jobd, 20)),
                 Prop::new("Output queue", input_cmd("oq", &p.outq, 20)),
                 Prop::new("Message queue", input_cmd("mq", &p.msgq, 20)),
@@ -235,24 +320,51 @@ fn general_page(rq: &Rq<'_>, p: &Profile) -> Response {
     let body = props(
         &rq.ctx,
         &gs,
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     tab_page(rq, p, format!("{}{body}", tab_line(rq, p, 0)))
 }
 
 fn groups(rq: &Rq<'_>, p: &Profile) -> Response {
     let all = rq.env().users.profiles(rq.user());
-    let text = |g: &str| all.iter().find(|q| q.name == g).map(|q| q.text.clone()).unwrap_or_default();
-    let link = |n: &str| format!("<a href=\"{}\">{}</a>", esc(&rq.ctx.url(&format!("/user/{n}/general"))), esc(n));
+    let text = |g: &str| {
+        all.iter()
+            .find(|q| q.name == g)
+            .map(|q| q.text.clone())
+            .unwrap_or_default()
+    };
+    let link = |n: &str| {
+        format!(
+            "<a href=\"{}\">{}</a>",
+            esc(&rq.ctx.url(&format!("/user/{n}/general"))),
+            esc(n)
+        )
+    };
     let mut rows: Vec<Vec<Cell>> = Vec::new();
     if !p.group.is_empty() {
-        rows.push(vec![Cell::mono_html(link(&p.group)), Cell::text("Primary"), Cell::text(&text(&p.group))]);
+        rows.push(vec![
+            Cell::mono_html(link(&p.group)),
+            Cell::text("Primary"),
+            Cell::text(&text(&p.group)),
+        ]);
     }
     for s in &p.supplemental {
-        rows.push(vec![Cell::mono_html(link(s)), Cell::text("Supplemental"), Cell::text(&text(s))]);
+        rows.push(vec![
+            Cell::mono_html(link(s)),
+            Cell::text("Supplemental"),
+            Cell::text(&text(s)),
+        ]);
     }
     let list = List {
-        cols: vec![Col::plain("Group profile"), Col::plain("Membership"), Col::plain("Text description")],
+        cols: vec![
+            Col::plain("Group profile"),
+            Col::plain("Membership"),
+            Col::plain("Text description"),
+        ],
         rows,
         empty: "The profile is in no group.".into(),
         keep: Vec::new(),
@@ -260,20 +372,37 @@ fn groups(rq: &Rq<'_>, p: &Profile) -> Response {
     let mut body = format!("{}{}", tab_line(rq, p, 1), list_table(&list));
     if p.is_group {
         let members = List {
-            cols: vec![Col::plain("Member"), Col::plain("Membership"), Col::plain("Text description")],
+            cols: vec![
+                Col::plain("Member"),
+                Col::plain("Membership"),
+                Col::plain("Text description"),
+            ],
             rows: all
                 .iter()
                 .filter(|m| in_group(m, &p.name))
                 .map(|m| {
-                    let how = if m.group == p.name { "Primary" } else { "Supplemental" };
-                    vec![Cell::mono_html(link(&m.name)), Cell::text(how), Cell::text(&m.text)]
+                    let how = if m.group == p.name {
+                        "Primary"
+                    } else {
+                        "Supplemental"
+                    };
+                    vec![
+                        Cell::mono_html(link(&m.name)),
+                        Cell::text(how),
+                        Cell::text(&m.text),
+                    ]
                 })
                 .collect(),
             empty: "The group has no members.".into(),
             keep: Vec::new(),
         };
         let gid = p.gid.map_or("*NONE".into(), |g| g.to_string());
-        let _ = write!(body, "<h3>Members</h3><p class=\"small\">Group ID: {}</p>{}", mono(&gid), list_table(&members));
+        let _ = write!(
+            body,
+            "<h3>Members</h3><p class=\"small\">Group ID: {}</p>{}",
+            mono(&gid),
+            list_table(&members)
+        );
     }
     let _ = write!(
         body,
@@ -284,7 +413,11 @@ fn groups(rq: &Rq<'_>, p: &Profile) -> Response {
 }
 
 fn authorities(rq: &Rq<'_>, p: &Profile) -> Response {
-    let spc = if p.special.is_empty() { "*NONE".to_string() } else { p.special.join(" ") };
+    let spc = if p.special.is_empty() {
+        "*NONE".to_string()
+    } else {
+        p.special.join(" ")
+    };
     let rows = rq
         .env()
         .users
@@ -301,7 +434,13 @@ fn authorities(rq: &Rq<'_>, p: &Profile) -> Response {
         })
         .collect();
     let list = List {
-        cols: vec![Col::plain("Object"), Col::plain("Library"), Col::plain("Type"), Col::plain("Authority"), Col::plain("Owner")],
+        cols: vec![
+            Col::plain("Object"),
+            Col::plain("Library"),
+            Col::plain("Type"),
+            Col::plain("Authority"),
+            Col::plain("Owner"),
+        ],
         rows,
         empty: "The profile owns no objects and has no private authorities.".into(),
         keep: Vec::new(),
@@ -327,8 +466,18 @@ fn personal(rq: &Rq<'_>, p: &Profile) -> Response {
         if f.has("t") && text != p.text {
             let _ = write!(c, " TEXT({})", quote(text));
         }
-        differ(&mut c, "LANGID", &p.language, &f.str("lang").to_ascii_uppercase());
-        differ(&mut c, "CNTRYID", &p.country, &f.str("cntry").to_ascii_uppercase());
+        differ(
+            &mut c,
+            "LANGID",
+            &p.language,
+            &f.str("lang").to_ascii_uppercase(),
+        );
+        differ(
+            &mut c,
+            "CNTRYID",
+            &p.country,
+            &f.str("cntry").to_ascii_uppercase(),
+        );
         differ(&mut c, "CCSID", &p.ccsid, f.str("ccsid"));
         return change(rq, p, &c, &after(rq, p, "personal"));
     }
@@ -344,7 +493,11 @@ fn personal(rq: &Rq<'_>, p: &Profile) -> Response {
     let body = props(
         &rq.ctx,
         &gs,
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     tab_page(rq, p, format!("{}{body}", tab_line(rq, p, 4)))
 }
@@ -368,14 +521,28 @@ fn password(rq: &Rq<'_>, p: &Profile) -> Response {
             return r;
         }
         let exp = if f.has("exp") { "*YES" } else { "*NO" };
-        return run(rq, &format!("CHGUSRPRF USRPRF({}) PASSWORD({}) PWDEXP({exp})", p.name, quote(pw)), "/users");
+        return run(
+            rq,
+            &format!(
+                "CHGUSRPRF USRPRF({}) PASSWORD({}) PWDEXP({exp})",
+                p.name,
+                quote(pw)
+            ),
+            "/users",
+        );
     }
     let gs = [PropGroup {
         title: None,
         rows: vec![
             Prop::new("User profile", mono(&p.name)),
-            Prop::new("New password", "<input type=\"password\" name=\"pw\" size=\"12\">".into()),
-            Prop::new("Confirm password", "<input type=\"password\" name=\"pw2\" size=\"12\">".into()),
+            Prop::new(
+                "New password",
+                "<input type=\"password\" name=\"pw\" size=\"12\">".into(),
+            ),
+            Prop::new(
+                "Confirm password",
+                "<input type=\"password\" name=\"pw2\" size=\"12\">".into(),
+            ),
             Prop::new("Set to expired", checkbox("exp", true)),
         ],
     }];
@@ -383,14 +550,19 @@ fn password(rq: &Rq<'_>, p: &Profile) -> Response {
         "{}<p class=\"small grey\">Equivalent command: <span class=\"mono\">CHGUSRPRF USRPRF({}) PASSWORD() PWDEXP(*YES)</span></p>{}",
         props_table(rq.ctx.product, &gs, true),
         esc(&p.name),
-        buttons(&[Button::new("ok", "Reset password"), Button::new("cancel", "Cancel")])
+        buttons(&[
+            Button::new("ok", "Reset password"),
+            Button::new("cancel", "Cancel")
+        ])
     );
     let title = format!("Reset password: {}", p.name);
     page(
         rq,
         &["Users", &p.name, "Reset password"],
         &title,
-        Some("Give the profile a new password (CHGUSRPRF). Set to expired makes the user change it at the next sign-on."),
+        Some(
+            "Give the profile a new password (CHGUSRPRF). Set to expired makes the user change it at the next sign-on.",
+        ),
         form(&rq.ctx, "", &inner),
         "user",
         None,
@@ -414,7 +586,11 @@ fn delete(rq: &Rq<'_>, p: &Profile) -> Response {
             return r;
         }
         let back = if p.is_group { "/groups" } else { "/users" };
-        return run(rq, &format!("DLTUSRPRF USRPRF({}) OWNOBJOPT({opt})", p.name), back);
+        return run(
+            rq,
+            &format!("DLTUSRPRF USRPRF({}) OWNOBJOPT({opt})", p.name),
+            back,
+        );
     }
     let options = format!(
         "<table class=\"props\"><tr><th>Objects the profile owns</th><td>{} Do not delete the profile if it owns objects<br>{} Delete the objects<br>{} Give them to user profile {}</td></tr></table>",
@@ -423,7 +599,11 @@ fn delete(rq: &Rq<'_>, p: &Profile) -> Response {
         radio("own", "*CHGOWN", false),
         input("to", "QSECOFR", 10)
     );
-    let what = if p.is_group { "Delete Group Profile" } else { "Delete User Profile" };
+    let what = if p.is_group {
+        "Delete Group Profile"
+    } else {
+        "Delete User Profile"
+    };
     confirm_page(
         rq,
         &Confirm {

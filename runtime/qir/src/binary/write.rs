@@ -225,12 +225,20 @@ impl W {
                     w.ty(&f.ty);
                 });
             }
-            Type::Array { len, elem, stride: None } => {
+            Type::Array {
+                len,
+                elem,
+                stride: None,
+            } => {
                 self.u8(24);
                 self.u32(*len);
                 self.ty(elem);
             }
-            Type::Array { len, elem, stride: Some(s) } => {
+            Type::Array {
+                len,
+                elem,
+                stride: Some(s),
+            } => {
                 self.u8(30);
                 self.u32(*len);
                 self.u32(*s);

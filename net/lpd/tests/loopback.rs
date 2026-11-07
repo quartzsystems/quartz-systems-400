@@ -9,11 +9,11 @@ use std::net::TcpListener;
 use std::sync::{Arc, Mutex};
 
 use lpd::session::{Job, Limits, Spooler};
+use print::Target;
 use print::job::PrintJob;
 use print::sink::PlainConnector;
 use print::sink::lpr::DestType;
 use print::transform::Transform;
-use print::Target;
 
 /// An output queue in memory.
 #[derive(Clone, Default)]
@@ -85,14 +85,23 @@ fn lpr_into_an_output_queue() {
     let got = q.0.lock().unwrap().clone();
     assert_eq!(got.len(), 3);
     for s in &got[..2] {
-        assert_eq!((s.attrs.file.as_str(), s.attrs.devtype.as_str()), ("INVOICE", "*SCS"));
+        assert_eq!(
+            (s.attrs.file.as_str(), s.attrs.devtype.as_str()),
+            ("INVOICE", "*SCS")
+        );
         assert_eq!((s.user.as_str(), s.host.as_str()), ("ANNE", "QS400A"));
         let (pages, _) = spool::scs::decode(&s.data);
         let text = spool::view::text(&pages);
-        assert!(text.contains("Invoice 42") && text.contains("Total 17.00"), "{text}");
+        assert!(
+            text.contains("Invoice 42") && text.contains("Total 17.00"),
+            "{text}"
+        );
     }
     let s = &got[2];
-    assert_eq!((s.attrs.file.as_str(), s.attrs.copies, s.attrs.page_len), ("INVOICE", 2, 60));
+    assert_eq!(
+        (s.attrs.file.as_str(), s.attrs.copies, s.attrs.page_len),
+        ("INVOICE", 2, 60)
+    );
     assert_eq!(s.data, data, "SCS kept as sent");
 }
 
@@ -110,7 +119,13 @@ fn an_unknown_queue_is_refused() {
         transform: Transform::Raw,
         local_host: "h".into(),
     };
-    let e = print::deliver(&t, &PrintJob::default(), &scs("x"), Arc::new(PlainConnector)).unwrap_err();
+    let e = print::deliver(
+        &t,
+        &PrintJob::default(),
+        &scs("x"),
+        Arc::new(PlainConnector),
+    )
+    .unwrap_err();
     assert!(e.detail.contains("refused"), "{}", e.detail);
     assert!(q.0.lock().unwrap().is_empty());
 }

@@ -11,10 +11,10 @@
 //! connection's scope (`CLI:n`), the statement prepared as `Sn`, its
 //! cursor `CLICURn`.
 
-use sql::Value;
-use sql::embed::{Desc, Reply, Request};
 use db::cmt::LckLvl;
 use sql::Sqlca;
+use sql::Value;
+use sql::embed::{Desc, Reply, Request};
 
 use crate::consts::{rc, txn};
 use crate::model::diag::Diag;
@@ -86,14 +86,37 @@ impl Cli {
     /// A statement's description for connection `dbc`: its naming and
     /// commitment control.
     pub(crate) fn desc(&mut self, dbc: i32, op: sql::embed::Op) -> Desc {
-        let Some(d) = self.handles.dbc(dbc) else { return Desc { op, ..Desc::default() } };
-        Desc { op, sql_naming: !d.sys_naming, commit: level(d.commit), calls: true, ..Desc::default() }
+        let Some(d) = self.handles.dbc(dbc) else {
+            return Desc {
+                op,
+                ..Desc::default()
+            };
+        };
+        Desc {
+            op,
+            sql_naming: !d.sys_naming,
+            commit: level(d.commit),
+            calls: true,
+            ..Desc::default()
+        }
     }
 
     /// Run a statement on connection `dbc`.
-    pub(crate) fn run(&mut self, host: &mut dyn Host, dbc: i32, desc: Desc, inputs: Vec<Value>) -> (Reply, Vec<(usize, Value)>) {
-        let Some(d) = self.handles.dbc(dbc) else { return (Reply::default(), Vec::new()) };
-        let req = Request { scope: d.scope.clone(), desc, inputs };
+    pub(crate) fn run(
+        &mut self,
+        host: &mut dyn Host,
+        dbc: i32,
+        desc: Desc,
+        inputs: Vec<Value>,
+    ) -> (Reply, Vec<(usize, Value)>) {
+        let Some(d) = self.handles.dbc(dbc) else {
+            return (Reply::default(), Vec::new());
+        };
+        let req = Request {
+            scope: d.scope.clone(),
+            desc,
+            inputs,
+        };
         match d.server.as_mut() {
             Some(r) => r.run(&req),
             None => host.run(&req),

@@ -74,7 +74,11 @@ impl Parser {
             "array" => {
                 self.expect_sym("[")?;
                 let len = self.u32()?;
-                let stride = if self.eat_sym(":") { Some(self.u32()?) } else { None };
+                let stride = if self.eat_sym(":") {
+                    Some(self.u32()?)
+                } else {
+                    None
+                };
                 self.expect_sym("]")?;
                 self.expect_word("of")?;
                 let elem = self.ty()?;

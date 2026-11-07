@@ -29,7 +29,11 @@ use store::{FormatParams, Store, StoreConfig};
 const NOW: u64 = 1_767_225_600;
 
 fn sysval(n: &str) -> String {
-    if n == "QSECURITY" { "40".into() } else { String::new() }
+    if n == "QSECURITY" {
+        "40".into()
+    } else {
+        String::new()
+    }
 }
 
 fn query(s: &mut Session) -> i32 {
@@ -50,7 +54,13 @@ fn query(s: &mut Session) -> i32 {
 
 /// The store, `QSYS`, the names, `BOB`'s session and `QSTEST/SECRET`,
 /// which `*PUBLIC` (so `BOB`) may not use.
-type Excluded = (Rc<RefCell<Store>>, ObjectId, NameContext, Rc<RefCell<AuthSession>>, ObjectId);
+type Excluded = (
+    Rc<RefCell<Store>>,
+    ObjectId,
+    NameContext,
+    Rc<RefCell<AuthSession>>,
+    ObjectId,
+);
 
 fn excluded() -> Excluded {
     let d = Arc::new(MemBlockDev::with_seed(32768, 41));
@@ -62,7 +72,12 @@ fn excluded() -> Excluded {
         wal_pages: 256,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -116,12 +131,21 @@ fn excluded() -> Excluded {
         sysval: &sysval,
     };
     usrprf::crtusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB")])).unwrap();
-    let table = ops::resolve(&mut t, qsys, &names, LibSpec::Name(Name::parse("QSTEST").unwrap()), Name::parse("SECRET").unwrap(), types::FILE)
-        .unwrap()
-        .id;
+    let table = ops::resolve(
+        &mut t,
+        qsys,
+        &names,
+        LibSpec::Name(Name::parse("QSTEST").unwrap()),
+        Name::parse("SECRET").unwrap(),
+        types::FILE,
+    )
+    .unwrap()
+    .id;
     grant::set_public(&mut t, lib, Some(Auth::USE)).unwrap();
     grant::set_public(&mut t, table, Some(Auth::EXCLUDE)).unwrap();
-    let bob = Rc::new(RefCell::new(AuthSession::new(Principal::load(&mut t, qsys, "BOB", 40).unwrap())));
+    let bob = Rc::new(RefCell::new(AuthSession::new(
+        Principal::load(&mut t, qsys, "BOB", 40).unwrap(),
+    )));
     t.commit().unwrap();
     (Rc::new(RefCell::new(store)), qsys, names, bob, table)
 }
@@ -129,7 +153,12 @@ fn excluded() -> Excluded {
 #[test]
 fn a_query_needs_read_authority() {
     let (store, qsys, names, bob, table) = excluded();
-    let mut s = Session::new(Box::new(Rc::clone(&store)), qsys, JobHandle(1), names.clone());
+    let mut s = Session::new(
+        Box::new(Rc::clone(&store)),
+        qsys,
+        JobHandle(1),
+        names.clone(),
+    );
     s.ctx.now = Some(NOW);
     assert_eq!(as_job(&bob, || query(&mut s)), -551);
 

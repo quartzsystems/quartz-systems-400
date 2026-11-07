@@ -208,4 +208,9 @@ pub struct CommandDefinition {
     pub nodes: Vec<ParmNode>,
 }
 
-wire_struct!(CommandDefinition { name, text, help, nodes });
+wire_struct!(CommandDefinition {
+    name,
+    text,
+    help,
+    nodes
+});

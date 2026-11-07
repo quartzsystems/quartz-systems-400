@@ -69,7 +69,10 @@ impl PortRestrictions {
         }
         r.validate()?;
         if self.list.contains(&r) {
-            return Err(Error::new(msg::DUP_PORT, "The same port restriction already exists."));
+            return Err(Error::new(
+                msg::DUP_PORT,
+                "The same port restriction already exists.",
+            ));
         }
         if let Some(o) = self.list.iter().find(|o| {
             o.proto == r.proto
@@ -90,7 +93,10 @@ impl PortRestrictions {
             ));
         }
         if self.list.len() >= MAX {
-            return Err(Error::new(msg::FULL, format!("At most {MAX} port restrictions can be added.")));
+            return Err(Error::new(
+                msg::FULL,
+                format!("At most {MAX} port restrictions can be added."),
+            ));
         }
         self.list.push(r);
         Ok(())
@@ -98,7 +104,13 @@ impl PortRestrictions {
 
     /// `RMVTCPPORT`: `lower` `None` is `*ALL` (every entry of the
     /// protocol and user); the entries removed.
-    pub fn remove(&mut self, lower: Option<u16>, upper: Option<u16>, proto: Proto, user: &str) -> Result<usize> {
+    pub fn remove(
+        &mut self,
+        lower: Option<u16>,
+        upper: Option<u16>,
+        proto: Proto,
+        user: &str,
+    ) -> Result<usize> {
         let user = user.to_ascii_uppercase();
         let upper = match (lower, upper) {
             (Some(l), Some(u)) if u == l => None,
@@ -131,7 +143,11 @@ impl PortRestrictions {
 
     /// The distinct restricted ranges: what the backstop drops.
     pub fn ranges(&self) -> Vec<(Proto, u16, u16)> {
-        let mut v: Vec<(Proto, u16, u16)> = self.list.iter().map(|r| (r.proto, r.lower, r.last())).collect();
+        let mut v: Vec<(Proto, u16, u16)> = self
+            .list
+            .iter()
+            .map(|r| (r.proto, r.lower, r.last()))
+            .collect();
         v.sort();
         v.dedup();
         v
@@ -163,18 +179,32 @@ mod tests {
         let mut t = PortRestrictions::default();
         t.add(r(8000, Some(8100), Proto::Tcp, "web")).unwrap();
         t.add(r(8000, Some(8100), Proto::Tcp, "QTMHHTTP")).unwrap();
-        assert_eq!(t.add(r(8000, Some(8100), Proto::Tcp, "WEB")).unwrap_err().msgid, msg::DUP_PORT);
-        assert!(t.add(r(8050, None, Proto::Tcp, "X")).is_err(), "partial overlap");
+        assert_eq!(
+            t.add(r(8000, Some(8100), Proto::Tcp, "WEB"))
+                .unwrap_err()
+                .msgid,
+            msg::DUP_PORT
+        );
+        assert!(
+            t.add(r(8050, None, Proto::Tcp, "X")).is_err(),
+            "partial overlap"
+        );
         t.add(r(8050, None, Proto::Udp, "X")).unwrap();
         assert!(t.allows(8050, Proto::Tcp, "WEB"));
         assert!(t.allows(8050, Proto::Tcp, "qtmhhttp"));
         assert!(!t.allows(8050, Proto::Tcp, "ANNE"));
         assert!(t.allows(8101, Proto::Tcp, "ANNE"));
         assert!(!t.allows(8050, Proto::Udp, "WEB"));
-        assert_eq!(t.ranges(), vec![(Proto::Tcp, 8000, 8100), (Proto::Udp, 8050, 8050)]);
+        assert_eq!(
+            t.ranges(),
+            vec![(Proto::Tcp, 8000, 8100), (Proto::Udp, 8050, 8050)]
+        );
         assert_eq!(t.remove(None, None, Proto::Tcp, "web").unwrap(), 1);
         assert!(!t.allows(8050, Proto::Tcp, "WEB"));
         assert!(t.remove(Some(1), None, Proto::Tcp, "WEB").is_err());
-        assert_eq!(t.remove(Some(8050), Some(8050), Proto::Udp, "X").unwrap(), 1);
+        assert_eq!(
+            t.remove(Some(8050), Some(8050), Proto::Udp, "X").unwrap(),
+            1
+        );
     }
 }

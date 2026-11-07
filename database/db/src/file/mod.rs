@@ -663,7 +663,12 @@ pub fn add_lf_member_paused(
 /// Write the member table back, growing it when full.
 /// Name `object` as member `name` of `file` (a member rebuilt beside
 /// the old one takes its place).
-pub(crate) fn set_member_object(txn: &mut Txn<'_>, file: ObjectId, name: Name, object: ObjectId) -> Result<()> {
+pub(crate) fn set_member_object(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    name: Name,
+    object: ObjectId,
+) -> Result<()> {
     let mut desc = describe(txn, file)?;
     for m in &mut desc.members {
         if m.name == name {

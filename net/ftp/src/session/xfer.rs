@@ -132,17 +132,31 @@ fn blocks_done(raw: &[u8]) -> bool {
 impl<H: Host> Session<H> {
     /// Send `data` on the data connection: `prelim` first (a client may
     /// wait for it before it connects), `done` (returned) once all went.
-    pub(super) fn send_data(&mut self, net: &mut dyn Net, prelim: &Reply, data: &[u8], done: Reply) -> Reply {
+    pub(super) fn send_data(
+        &mut self,
+        net: &mut dyn Net,
+        prelim: &Reply,
+        data: &[u8],
+        done: Reply,
+    ) -> Reply {
         self.say(net, prelim);
         let mut conn = match net.data() {
             Ok(c) => c,
-            Err(e) => return Reply::new(425, format!("The data connection could not be opened: {e}.")),
+            Err(e) => {
+                return Reply::new(
+                    425,
+                    format!("The data connection could not be opened: {e}."),
+                );
+            }
         };
         let moved = write_out(conn.as_mut(), data, self.block, net);
         let fin = conn.finish();
         match moved {
             Moved::Aborted => {
-                self.say(net, &Reply::new(426, "Transfer aborted; the data connection is closed."));
+                self.say(
+                    net,
+                    &Reply::new(426, "Transfer aborted; the data connection is closed."),
+                );
                 Reply::new(226, "ABOR done.")
             }
             Moved::Failed(e) => Reply::new(426, format!("The data connection failed: {e}.")),
@@ -158,14 +172,22 @@ impl<H: Host> Session<H> {
         self.say(net, prelim);
         let mut conn = match net.data() {
             Ok(c) => c,
-            Err(e) => return Err(Reply::new(425, format!("The data connection could not be opened: {e}."))),
+            Err(e) => {
+                return Err(Reply::new(
+                    425,
+                    format!("The data connection could not be opened: {e}."),
+                ));
+            }
         };
         let moved = read_in(conn.as_mut(), self.block, net);
         let _ = conn.finish();
         match moved {
             Moved::Done(d) => Ok(d),
             Moved::Aborted => {
-                self.say(net, &Reply::new(426, "Transfer aborted; nothing was stored."));
+                self.say(
+                    net,
+                    &Reply::new(426, "Transfer aborted; nothing was stored."),
+                );
                 Err(Reply::new(226, "ABOR done."))
             }
             Moved::Failed(e) => Err(Reply::new(426, format!("The data connection failed: {e}."))),
@@ -192,10 +214,16 @@ impl<H: Host> Session<H> {
     fn mode_refused(&self, kind: &Kind) -> Option<Reply> {
         let stream = matches!(kind, Kind::Stream);
         if stream && self.block {
-            return Some(Reply::new(504, "Block mode is for database members; use MODE S for stream files."));
+            return Some(Reply::new(
+                504,
+                "Block mode is for database members; use MODE S for stream files.",
+            ));
         }
         if stream && self.record {
-            return Some(Reply::new(504, "Record structure is for database members; use STRU F for stream files."));
+            return Some(Reply::new(
+                504,
+                "Record structure is for database members; use STRU F for stream files.",
+            ));
         }
         None
     }
@@ -222,7 +250,10 @@ impl<H: Host> Session<H> {
             Err(r) => return r,
         };
         if !self.allowed(net, op::SEND_FILE, &path) {
-            return Reply::new(550, format!("An exit program refused to send {}.", describe(&path)));
+            return Reply::new(
+                550,
+                format!("An exit program refused to send {}.", describe(&path)),
+            );
         }
         let data = match self.fetch(&path) {
             Ok(d) => d,
@@ -264,9 +295,10 @@ impl<H: Host> Session<H> {
     /// Check that `STOR` can write `path` before data moves.
     fn can_store(&mut self, path: &str) -> Result<(), Reply> {
         match objects::look(self.host.ifs(), path) {
-            Ok((k, _)) if k.is_dir() && !matches!(k, Kind::File(..)) => {
-                Err(Reply::new(550, format!("{} is a directory or library.", describe(path))))
-            }
+            Ok((k, _)) if k.is_dir() && !matches!(k, Kind::File(..)) => Err(Reply::new(
+                550,
+                format!("{} is a directory or library.", describe(path)),
+            )),
             Ok((k, _)) => self.mode_refused(&k).map_or(Ok(()), Err),
             Err(_) => match names::qsys_node(path) {
                 Some(QsysNode::Mbr(l, ..) | QsysNode::Obj(l, ..)) => {
@@ -276,7 +308,10 @@ impl<H: Host> Session<H> {
                         Err(Reply::new(550, format!("Library {l} not found.")))
                     }
                 }
-                Some(_) => Err(Reply::new(550, format!("{} cannot be stored into.", describe(path)))),
+                Some(_) => Err(Reply::new(
+                    550,
+                    format!("{} cannot be stored into.", describe(path)),
+                )),
                 None => {
                     if let Some(r) = self.mode_refused(&Kind::Stream) {
                         return Err(r);
@@ -284,7 +319,10 @@ impl<H: Host> Session<H> {
                     let parent = names::normalize(&format!("{path}/.."));
                     match objects::look(self.host.ifs(), &parent) {
                         Ok((Kind::Dir, _)) => Ok(()),
-                        _ => Err(ended(426, format!("{parent} cannot hold the file to be received."))),
+                        _ => Err(ended(
+                            426,
+                            format!("{parent} cannot hold the file to be received."),
+                        )),
                     }
                 }
             },
@@ -292,7 +330,11 @@ impl<H: Host> Session<H> {
     }
 
     pub(super) fn stor(&mut self, arg: &str, rest: u64, how: Store, net: &mut dyn Net) -> Reply {
-        let arg = if how == Store::Unique && arg.trim().is_empty() { "QSFTPFILE" } else { arg };
+        let arg = if how == Store::Unique && arg.trim().is_empty() {
+            "QSFTPFILE"
+        } else {
+            arg
+        };
         let mut path = match self.object_path(arg) {
             Ok(p) => p,
             Err(r) => return r,
@@ -306,7 +348,10 @@ impl<H: Host> Session<H> {
             path = self.unique(&path);
         }
         if !self.allowed(net, op::RECEIVE_FILE, &path) {
-            return Reply::new(550, format!("An exit program refused to store {}.", describe(&path)));
+            return Reply::new(
+                550,
+                format!("An exit program refused to store {}.", describe(&path)),
+            );
         }
         if let Err(r) = self.can_store(&path) {
             return r;
@@ -318,7 +363,10 @@ impl<H: Host> Session<H> {
         };
         match self.put(&path, &data, how == Store::Append, rest) {
             Ok(false) => Reply::new(226, "Transfer complete."),
-            Ok(true) => ended(426, format!("Lines longer than the records of {what} were cut to fit.")),
+            Ok(true) => ended(
+                426,
+                format!("Lines longer than the records of {what} were cut to fit."),
+            ),
             Err(e) => ended(426, format!("{what} not stored: {e}.")),
         }
     }
@@ -331,7 +379,14 @@ impl<H: Host> Session<H> {
     }
 
     /// Move a member to another file of the library (`RNTO`).
-    pub(super) fn move_member(&mut self, l: &str, f: &str, m: &str, f2: &str, m2: &str) -> Result<(), String> {
+    pub(super) fn move_member(
+        &mut self,
+        l: &str,
+        f: &str,
+        m: &str,
+        f2: &str,
+        m2: &str,
+    ) -> Result<(), String> {
         store::move_member(&mut self.host, l, f, m, f2, m2)
     }
 }
@@ -346,8 +401,13 @@ mod tests {
         let mut net = MemNet::default();
         net.passive(false).unwrap();
         let mut c = net.data().unwrap();
-        let data: Vec<u8> = (0..70_000u32).map(|i| u8::try_from(i % 251).unwrap()).collect();
-        assert!(matches!(write_out(c.as_mut(), &data, true, &mut net), Moved::Done(_)));
+        let data: Vec<u8> = (0..70_000u32)
+            .map(|i| u8::try_from(i % 251).unwrap())
+            .collect();
+        assert!(matches!(
+            write_out(c.as_mut(), &data, true, &mut net),
+            Moved::Done(_)
+        ));
         c.finish().unwrap();
         drop(c);
         let framed = net.take_sent().remove(0);

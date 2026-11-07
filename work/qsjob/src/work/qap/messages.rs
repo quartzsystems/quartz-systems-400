@@ -40,7 +40,11 @@ impl Texts {
         if m.msgid.is_empty() {
             return (m.text.clone(), m.help.clone());
         }
-        let lib = if m.msgf.1.trim().is_empty() { "*LIBL".to_string() } else { m.msgf.1.trim().to_string() };
+        let lib = if m.msgf.1.trim().is_empty() {
+            "*LIBL".to_string()
+        } else {
+            m.msgf.1.trim().to_string()
+        };
         let file = if m.msgf.0.trim().is_empty() {
             sysapi::param::file_of(&m.msgid).to_string()
         } else {
@@ -76,7 +80,8 @@ pub fn queued(link: &mut Link, texts: &mut Texts, m: &QMsg) -> QueuedMessage {
             number: format!("{:06}", m.job.2),
         },
         needs_reply: m.kind == MsgKind::Inq && m.status == Status::Unanswered,
-        reply: (matches!(m.kind, MsgKind::Inq | MsgKind::Copy) && m.status == Status::Answered).then(|| m.reply.clone()),
+        reply: (matches!(m.kind, MsgKind::Inq | MsgKind::Copy) && m.status == Status::Answered)
+            .then(|| m.reply.clone()),
         answers: (m.kind == MsgKind::Rpy).then(|| m.reply_key.to_be_bytes()),
     }
 }

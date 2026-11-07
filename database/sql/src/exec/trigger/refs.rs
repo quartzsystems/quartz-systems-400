@@ -21,7 +21,10 @@ fn each<'a>(s: &'a PlStmt, out: &mut Vec<&'a PlStmt>) {
                 each(&h.body, out);
             }
         }
-        PlKind::If { branches, otherwise } => {
+        PlKind::If {
+            branches,
+            otherwise,
+        } => {
             for (_, b) in branches {
                 all(b, out);
             }
@@ -29,7 +32,9 @@ fn each<'a>(s: &'a PlStmt, out: &mut Vec<&'a PlStmt>) {
                 all(o, out);
             }
         }
-        PlKind::Case { whens, otherwise, .. } => {
+        PlKind::Case {
+            whens, otherwise, ..
+        } => {
             for (_, b) in whens {
                 all(b, out);
             }
@@ -37,7 +42,10 @@ fn each<'a>(s: &'a PlStmt, out: &mut Vec<&'a PlStmt>) {
                 all(o, out);
             }
         }
-        PlKind::Loop(b) | PlKind::While(_, b) | PlKind::Repeat(b, _) | PlKind::For { body: b, .. } => all(b, out),
+        PlKind::Loop(b)
+        | PlKind::While(_, b)
+        | PlKind::Repeat(b, _)
+        | PlKind::For { body: b, .. } => all(b, out),
         _ => {}
     }
 }
@@ -58,7 +66,10 @@ pub(super) fn not_atomic(s: &mut PlStmt) {
                 not_atomic(&mut h.body);
             }
         }
-        PlKind::If { branches, otherwise } => {
+        PlKind::If {
+            branches,
+            otherwise,
+        } => {
             for (_, b) in branches {
                 all(b);
             }
@@ -66,7 +77,9 @@ pub(super) fn not_atomic(s: &mut PlStmt) {
                 all(o);
             }
         }
-        PlKind::Case { whens, otherwise, .. } => {
+        PlKind::Case {
+            whens, otherwise, ..
+        } => {
             for (_, b) in whens {
                 all(b);
             }
@@ -74,13 +87,20 @@ pub(super) fn not_atomic(s: &mut PlStmt) {
                 all(o);
             }
         }
-        PlKind::Loop(b) | PlKind::While(_, b) | PlKind::Repeat(b, _) | PlKind::For { body: b, .. } => all(b),
+        PlKind::Loop(b)
+        | PlKind::While(_, b)
+        | PlKind::Repeat(b, _)
+        | PlKind::For { body: b, .. } => all(b),
         _ => {}
     }
 }
 
 fn not_allowed(what: &str) -> SqlError {
-    SqlError::Coded { code: -751, state: "0W000", what: format!("{what} is not allowed in this trigger") }
+    SqlError::Coded {
+        code: -751,
+        state: "0W000",
+        what: format!("{what} is not allowed in this trigger"),
+    }
 }
 
 /// Refuse what the body may not run: `COMMIT` and `ROLLBACK` in any
@@ -91,8 +111,15 @@ pub(super) fn check(body: &PlStmt, before: bool) -> Result<()> {
     for s in all {
         let PlKind::Sql(q) = &s.kind else { continue };
         match &q.stmt {
-            Statement::Commit { .. } | Statement::Rollback { .. } => return Err(not_allowed("COMMIT or ROLLBACK")),
-            Statement::Insert(_) | Statement::Update(_) | Statement::Delete(_) | Statement::Merge(_) if before => {
+            Statement::Commit { .. } | Statement::Rollback { .. } => {
+                return Err(not_allowed("COMMIT or ROLLBACK"));
+            }
+            Statement::Insert(_)
+            | Statement::Update(_)
+            | Statement::Delete(_)
+            | Statement::Merge(_)
+                if before =>
+            {
                 return Err(not_allowed("a change of data in a BEFORE trigger"));
             }
             _ => {}
@@ -104,7 +131,9 @@ pub(super) fn check(body: &PlStmt, before: bool) -> Result<()> {
 /// Reads of `corr.COLUMN` in `text`: the column names, upper case for
 /// regular ones, in order, once per read. A `SET` target is no read.
 pub(super) fn qualified_uses(text: &str, corrs: &[&str]) -> Vec<String> {
-    let Ok(toks) = tokenize(text) else { return Vec::new() };
+    let Ok(toks) = tokenize(text) else {
+        return Vec::new();
+    };
     let t: Vec<&Tok> = toks.iter().map(|t| &t.tok).collect();
     let name = |t: &Tok| match t {
         Tok::Word(s) | Tok::Delimited(s) => Some(s.clone()),
@@ -112,7 +141,9 @@ pub(super) fn qualified_uses(text: &str, corrs: &[&str]) -> Vec<String> {
     };
     let mut out = Vec::new();
     for i in 0..t.len().saturating_sub(2) {
-        let (Some(q), Tok::Sym("."), Some(c)) = (name(t[i]), t[i + 1], name(t[i + 2])) else { continue };
+        let (Some(q), Tok::Sym("."), Some(c)) = (name(t[i]), t[i + 1], name(t[i + 2])) else {
+            continue;
+        };
         if !corrs.contains(&q.as_str()) {
             continue;
         }
@@ -131,10 +162,19 @@ pub(super) fn qualified_uses(text: &str, corrs: &[&str]) -> Vec<String> {
 /// blank apart, its lines as written, a blank at the end, and the
 /// columns of a table it inserts into without listing them listed
 /// (`cols_of` gives them from the schema, when named, and the table).
-pub(super) fn statement_text(text: &str, cols_of: &mut dyn FnMut(Option<&str>, &str) -> Vec<String>) -> String {
-    let Ok(toks) = tokenize(text) else { return text.to_string() };
-    let toks: Vec<_> = toks.into_iter().filter(|t| !matches!(t.tok, Tok::End)).collect();
-    let word = |i: usize, w: &str| matches!(toks.get(i).map(|t| &t.tok), Some(Tok::Word(x)) if x == w);
+pub(super) fn statement_text(
+    text: &str,
+    cols_of: &mut dyn FnMut(Option<&str>, &str) -> Vec<String>,
+) -> String {
+    let Ok(toks) = tokenize(text) else {
+        return text.to_string();
+    };
+    let toks: Vec<_> = toks
+        .into_iter()
+        .filter(|t| !matches!(t.tok, Tok::End))
+        .collect();
+    let word =
+        |i: usize, w: &str| matches!(toks.get(i).map(|t| &t.tok), Some(Tok::Word(x)) if x == w);
     let ident = |i: usize| match toks.get(i).map(|t| &t.tok) {
         Some(Tok::Word(s) | Tok::Delimited(s)) => Some(s.clone()),
         _ => None,
@@ -151,7 +191,8 @@ pub(super) fn statement_text(text: &str, cols_of: &mut dyn FnMut(Option<&str>, &
             (true, Some(n)) => (Some(first), n, i + 4),
             _ => (None, first, i + 2),
         };
-        let listed = matches!(toks.get(last + 1).map(|t| &t.tok), Some(Tok::Sym("("))) && !(word(last + 2, "SELECT") || word(last + 2, "VALUES") || word(last + 2, "WITH"));
+        let listed = matches!(toks.get(last + 1).map(|t| &t.tok), Some(Tok::Sym("(")))
+            && !(word(last + 2, "SELECT") || word(last + 2, "VALUES") || word(last + 2, "WITH"));
         if listed {
             continue;
         }
@@ -197,7 +238,9 @@ pub(super) struct Named {
 /// The tables `text` names after `FROM`, `JOIN`, `INTO`, `UPDATE` and
 /// `TABLE`, `FROM` lists included.
 pub(super) fn tables(text: &str) -> Vec<Named> {
-    let Ok(toks) = tokenize(text) else { return Vec::new() };
+    let Ok(toks) = tokenize(text) else {
+        return Vec::new();
+    };
     let t: Vec<&Tok> = toks.iter().map(|t| &t.tok).collect();
     let ident = |i: usize| match t.get(i) {
         Some(Tok::Word(s) | Tok::Delimited(s)) => Some(s.clone()),
@@ -210,14 +253,20 @@ pub(super) fn tables(text: &str) -> Vec<Named> {
             i += 1;
             continue;
         };
-        let into = w == "INTO" && i > 0 && matches!(t[i - 1], Tok::Word(p) if p == "INSERT" || p == "MERGE");
+        let into = w == "INTO"
+            && i > 0
+            && matches!(t[i - 1], Tok::Word(p) if p == "INSERT" || p == "MERGE");
         let starts = matches!(w.as_str(), "FROM" | "JOIN" | "UPDATE") || into;
         i += 1;
         if !starts {
             continue;
         }
         while let Some(first) = ident(i) {
-            if matches!(first.as_str(), "SELECT" | "VALUES" | "TABLE" | "LATERAL" | "FINAL" | "NEW" | "OLD") && matches!(t.get(i), Some(Tok::Word(_))) {
+            if matches!(
+                first.as_str(),
+                "SELECT" | "VALUES" | "TABLE" | "LATERAL" | "FINAL" | "NEW" | "OLD"
+            ) && matches!(t.get(i), Some(Tok::Word(_)))
+            {
                 break;
             }
             let (schema, name) = if matches!(t.get(i + 1), Some(Tok::Sym("." | "/"))) {
@@ -231,7 +280,9 @@ pub(super) fn tables(text: &str) -> Vec<Named> {
             let mut insert = None;
             if into {
                 let mut cols = Vec::new();
-                if matches!(t.get(i), Some(Tok::Sym("("))) && ident(i + 1).is_some_and(|w| w != "SELECT" && w != "VALUES") {
+                if matches!(t.get(i), Some(Tok::Sym("(")))
+                    && ident(i + 1).is_some_and(|w| w != "SELECT" && w != "VALUES")
+                {
                     i += 1;
                     while let Some(c) = ident(i) {
                         cols.push(c);
@@ -244,7 +295,11 @@ pub(super) fn tables(text: &str) -> Vec<Named> {
                 }
                 insert = Some(cols);
             }
-            out.push(Named { schema, name, insert });
+            out.push(Named {
+                schema,
+                name,
+                insert,
+            });
             // `FROM a, b`: the next table; a correlation name is skipped.
             if matches!(t.get(i), Some(Tok::Word(w)) if w == "AS") {
                 i += 1;
@@ -266,8 +321,30 @@ pub(super) fn tables(text: &str) -> Vec<Named> {
 fn is_clause(w: &str) -> bool {
     matches!(
         w,
-        "WHERE" | "GROUP" | "HAVING" | "ORDER" | "FETCH" | "LIMIT" | "OFFSET" | "UNION" | "EXCEPT" | "INTERSECT" | "JOIN" | "INNER"
-            | "LEFT" | "RIGHT" | "FULL" | "CROSS" | "ON" | "SET" | "VALUES" | "SELECT" | "WITH" | "FOR" | "USING" | "OVERRIDING"
+        "WHERE"
+            | "GROUP"
+            | "HAVING"
+            | "ORDER"
+            | "FETCH"
+            | "LIMIT"
+            | "OFFSET"
+            | "UNION"
+            | "EXCEPT"
+            | "INTERSECT"
+            | "JOIN"
+            | "INNER"
+            | "LEFT"
+            | "RIGHT"
+            | "FULL"
+            | "CROSS"
+            | "ON"
+            | "SET"
+            | "VALUES"
+            | "SELECT"
+            | "WITH"
+            | "FOR"
+            | "USING"
+            | "OVERRIDING"
     )
 }
 
@@ -279,12 +356,27 @@ mod tests {
     fn uses_and_tables() {
         let text = "INSERT INTO QSTEST.STRGLOG VALUES ('ROW ' CONCAT N.NAME, (SELECT COUNT(*) FROM QSTEST.STRG1 S WHERE S.ID = N.ID))";
         assert_eq!(qualified_uses(text, &["N"]), ["NAME", "ID"]);
-        assert_eq!(qualified_uses("BEGIN SET N.A = UPPER(N.A); SET N.B = 1, N.C = N.B; END", &["N"]), ["A", "B"]);
+        assert_eq!(
+            qualified_uses(
+                "BEGIN SET N.A = UPPER(N.A); SET N.B = 1, N.C = N.B; END",
+                &["N"]
+            ),
+            ["A", "B"]
+        );
         let t = tables(text);
-        assert_eq!(t.iter().map(|n| n.name.as_str()).collect::<Vec<_>>(), ["STRGLOG", "STRG1"]);
+        assert_eq!(
+            t.iter().map(|n| n.name.as_str()).collect::<Vec<_>>(),
+            ["STRGLOG", "STRG1"]
+        );
         assert_eq!(t[0].insert.as_deref(), Some(&[][..]));
         let t = tables("INSERT INTO LOG (TXT, N) SELECT A, B FROM X, Y AS Z JOIN W ON 1 = 1");
-        assert_eq!(t.iter().map(|n| n.name.as_str()).collect::<Vec<_>>(), ["LOG", "X", "Y", "W"]);
-        assert_eq!(t[0].insert.as_deref(), Some(&["TXT".to_string(), "N".to_string()][..]));
+        assert_eq!(
+            t.iter().map(|n| n.name.as_str()).collect::<Vec<_>>(),
+            ["LOG", "X", "Y", "W"]
+        );
+        assert_eq!(
+            t[0].insert.as_deref(),
+            Some(&["TXT".to_string(), "N".to_string()][..])
+        );
     }
 }

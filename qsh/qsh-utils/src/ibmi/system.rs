@@ -41,7 +41,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     let req = ClRequest {
         command,
         same_job: p.has('i'),
-        env: if p.has('e') { cx.env.clone() } else { Vec::new() },
+        env: if p.has('e') {
+            cx.env.clone()
+        } else {
+            Vec::new()
+        },
         keep_spool: p.has('k'),
         keep_joblog: p.has('K'),
     };

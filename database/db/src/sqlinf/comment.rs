@@ -18,7 +18,11 @@ pub static COMMENT_LAYOUT: Layout = Layout {
     fields: &[
         field("column", 0, 10),
         field("reserved", 10, 2),
-        Field { name: "text", offset: Some(12), size: None },
+        Field {
+            name: "text",
+            offset: Some(12),
+            size: None,
+        },
     ],
 };
 
@@ -50,10 +54,12 @@ impl Comment {
 
     /// Decode an entry body.
     pub fn decode(b: &[u8]) -> Result<Self> {
-        let head: &[u8; 10] = b
-            .get(..10)
-            .and_then(|h| h.try_into().ok())
-            .ok_or_else(|| DbError::Corrupt { what: "SQL information: comment".into() })?;
+        let head: &[u8; 10] =
+            b.get(..10)
+                .and_then(|h| h.try_into().ok())
+                .ok_or_else(|| DbError::Corrupt {
+                    what: "SQL information: comment".into(),
+                })?;
         let column = (*head != BLANKS).then(|| Name::from_bytes(*head));
         let text = String::from_utf8_lossy(b.get(HEAD..).unwrap_or_default()).into_owned();
         Ok(Self { column, text })
@@ -71,7 +77,9 @@ pub fn get(info: &SqlInfo, column: Option<Name>) -> Option<String> {
 
 /// Set or, with `text` `None`, drop the comment of `column`.
 pub fn set(info: &mut SqlInfo, column: Option<Name>, text: Option<String>) {
-    info.entries.retain(|e| e.tag != tag::COMMENT || Comment::decode(&e.body).is_ok_and(|c| c.column != column));
+    info.entries.retain(|e| {
+        e.tag != tag::COMMENT || Comment::decode(&e.body).is_ok_and(|c| c.column != column)
+    });
     if let Some(text) = text {
         info.push(tag::COMMENT, Comment { column, text }.encode());
     }

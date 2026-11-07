@@ -20,5 +20,8 @@ pub const ROLE: &str = "DDM";
 pub fn system_name(link: &Shared) -> String {
     link.borrow_mut()
         .with(|l| l.sysval("QSYSNAME".into()))
-        .map_or_else(|| "QS400".to_string(), |v| ccsid::from_ebcdic(&v.data).trim().to_string())
+        .map_or_else(
+            || "QS400".to_string(),
+            |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
+        )
 }

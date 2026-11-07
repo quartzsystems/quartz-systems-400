@@ -48,7 +48,9 @@ pub fn instrumented() -> bool {
 
 /// The number of edges the build counts.
 pub fn edges() -> usize {
-    REGIONS.lock().map_or(0, |r| r.iter().map(|&(_, l)| l).sum())
+    REGIONS
+        .lock()
+        .map_or(0, |r| r.iter().map(|&(_, l)| l).sum())
 }
 
 /// A hit count folded into one of eight buckets, as one bit.

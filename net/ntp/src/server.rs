@@ -41,7 +41,13 @@ pub type Shared = Arc<Mutex<Option<Upstream>>>;
 /// The answer to `req`, received at `t2` and sent at `t3` (Unix
 /// nanoseconds); `None` when there is none to give.
 #[must_use]
-pub fn answer(req: &Packet, t2: i64, t3: i64, up: Option<Upstream>, sync_required: bool) -> Option<Packet> {
+pub fn answer(
+    req: &Packet,
+    t2: i64,
+    t3: i64,
+    up: Option<Upstream>,
+    sync_required: bool,
+) -> Option<Packet> {
     if req.mode != Mode::Client {
         return None;
     }
@@ -49,7 +55,12 @@ pub fn answer(req: &Packet, t2: i64, t3: i64, up: Option<Upstream>, sync_require
         return None;
     }
     let (stratum, reference_id, reference, delay) = match up {
-        Some(u) => (u.stratum.saturating_add(1).min(15), u.reference_id, u.when, u.delay),
+        Some(u) => (
+            u.stratum.saturating_add(1).min(15),
+            u.reference_id,
+            u.when,
+            u.delay,
+        ),
         None => (LOCAL_STRATUM, *b"LOCL", t2, 0),
     };
     Some(Packet {
@@ -153,7 +164,10 @@ mod tests {
     fn answers_a_request() {
         let req = Packet::request(Timestamp::from_unix_nanos(100 * S));
         let p = answer(&req, 105 * S, 105 * S + 1000, None, false).unwrap();
-        assert_eq!((p.mode, p.stratum, &p.reference_id), (Mode::Server, LOCAL_STRATUM, b"LOCL"));
+        assert_eq!(
+            (p.mode, p.stratum, &p.reference_id),
+            (Mode::Server, LOCAL_STRATUM, b"LOCL")
+        );
         assert_eq!(p.origin, req.transmit);
         let up = Upstream {
             stratum: 2,

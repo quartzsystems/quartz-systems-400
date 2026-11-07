@@ -23,7 +23,10 @@ pub fn golden_dir() -> PathBuf {
 pub fn golden_rows(name: &str) -> Vec<String> {
     let path = golden_dir().join(format!("{name}.txt"));
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    text.replace("\r\n", "\n").lines().map(str::to_string).collect()
+    text.replace("\r\n", "\n")
+        .lines()
+        .map(str::to_string)
+        .collect()
 }
 
 /// A shipped panel group, compiled.
@@ -38,7 +41,10 @@ pub fn shipped(name: &str) -> PanelGroup {
 /// columns; a vendor copyright line counts by where it starts.
 fn masked(golden: &str, ours: &str) -> String {
     let mark = "(C) COPYRIGHT";
-    if golden.find(mark).is_some_and(|i| ours.find(mark) == Some(i)) {
+    if golden
+        .find(mark)
+        .is_some_and(|i| ours.find(mark) == Some(i))
+    {
         return golden.to_string();
     }
     let mut out: Vec<char> = ours.chars().collect();
@@ -67,7 +73,13 @@ pub fn compare(name: &str, screen: &Screen) {
     for (i, w) in want.iter().enumerate() {
         let ours = masked(w, got.get(i).map_or("", String::as_str));
         if w.trim_end() != ours.trim_end() {
-            let _ = writeln!(diff, "row {}:\n  want |{}|\n  got  |{}|", i + 1, w.trim_end(), ours.trim_end());
+            let _ = writeln!(
+                diff,
+                "row {}:\n  want |{}|\n  got  |{}|",
+                i + 1,
+                w.trim_end(),
+                ours.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{name} differs:\n{diff}");

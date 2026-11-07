@@ -72,7 +72,14 @@ fn bin(a: &Args<'_>, i: usize) -> Vec<u8> {
 }
 
 /// Call, then the error code at `errc`; the answer when it worked.
-fn run(j: &mut Job, p: &mut dyn Provider, a: &Args<'_>, errc: usize, api: &str, parms: Vec<Vec<u8>>) -> Option<Vec<u8>> {
+fn run(
+    j: &mut Job,
+    p: &mut dyn Provider,
+    a: &Args<'_>,
+    errc: usize,
+    api: &str,
+    parms: Vec<Vec<u8>>,
+) -> Option<Vec<u8>> {
     let e = ErrCode::at(a, errc);
     match p.licpgm(api, parms) {
         Ok(b) => {
@@ -90,16 +97,27 @@ fn run(j: &mut Job, p: &mut dyn Provider, a: &Args<'_>, errc: usize, api: &str, 
 /// [, product information format])`.
 fn qszrtvpr(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
-    let fmt = if a.present(5) { a.char(5, 8) } else { String::new() };
+    let fmt = if a.present(5) {
+        a.char(5, 8)
+    } else {
+        String::new()
+    };
     let info = if fmt == "PRDI0200" {
         let head = bytes(&a, 3, 36);
-        let n = usize::try_from(crate::param::bin4_at(&head, 28)).unwrap_or(36).clamp(36, 4096);
+        let n = usize::try_from(crate::param::bin4_at(&head, 28))
+            .unwrap_or(36)
+            .clamp(36, 4096);
         bytes(&a, 3, n)
     } else {
         bytes(&a, 3, 27)
     };
     let len = a.bin4(1);
-    let parms = vec![len.to_be_bytes().to_vec(), bytes(&a, 2, 8), info, crate::param::fixed(&fmt, 8)];
+    let parms = vec![
+        len.to_be_bytes().to_vec(),
+        bytes(&a, 2, 8),
+        info,
+        crate::param::fixed(&fmt, 8),
+    ];
     if let Some(out) = run(j, p, &a, 4, "QSZRTVPR", parms) {
         a.put_bytes(0, &out[..out.len().min(usize::try_from(len).unwrap_or(0))]);
     }
@@ -154,8 +172,16 @@ fn qszcrtpl(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
                 len += 8 + usize::try_from(full).unwrap_or(0).min(10_000);
             }
         }
-        parms.push(if len > 0 { bytes(&a, 13, len) } else { Vec::new() });
-        parms.push(if a.present(15) { bytes(&a, 15, 8) } else { Vec::new() });
+        parms.push(if len > 0 {
+            bytes(&a, 13, len)
+        } else {
+            Vec::new()
+        });
+        parms.push(if a.present(15) {
+            bytes(&a, 15, 8)
+        } else {
+            Vec::new()
+        });
     }
     run(j, p, &a, 12, "QSZCRTPL", parms);
 }
@@ -219,7 +245,12 @@ fn lic_user(a: &Args<'_>, fmt: &str) -> Vec<u8> {
 fn qlzareq(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
     let ufmt = a.char(3, 8);
-    let parms = vec![bytes(&a, 0, 17), bytes(&a, 1, 8), lic_user(&a, &ufmt), bytes(&a, 3, 8)];
+    let parms = vec![
+        bytes(&a, 0, 17),
+        bytes(&a, 1, 8),
+        lic_user(&a, &ufmt),
+        bytes(&a, 3, 8),
+    ];
     run(j, p, &a, 4, "QLZAREQ", parms);
 }
 
@@ -227,6 +258,11 @@ fn qlzareq(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
 fn qlzarls(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
     let ufmt = a.char(3, 8);
-    let parms = vec![bytes(&a, 0, 17), bytes(&a, 1, 8), lic_user(&a, &ufmt), bytes(&a, 3, 8)];
+    let parms = vec![
+        bytes(&a, 0, 17),
+        bytes(&a, 1, 8),
+        lic_user(&a, &ufmt),
+        bytes(&a, 3, 8),
+    ];
     run(j, p, &a, 4, "QLZARLS", parms);
 }

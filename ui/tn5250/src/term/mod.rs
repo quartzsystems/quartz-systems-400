@@ -831,7 +831,10 @@ mod tests {
         let short = "CRTLINETH LIND(ETHLINE) RSRCNAME(CMN01) ONLINE(*YES) TEXT('Primary Ethernet')";
         assert_eq!(typed_back(20, 153, short), short);
         // Command Entry's (313 over rows 18 to 21), past three row ends.
-        let long = format!("CRTDTAARA DTAARA(QTEMP/WRAP) TYPE(*CHAR) LEN(300) VALUE('{}')", "x".repeat(230));
+        let long = format!(
+            "CRTDTAARA DTAARA(QTEMP/WRAP) TYPE(*CHAR) LEN(300) VALUE('{}')",
+            "x".repeat(230)
+        );
         assert_eq!(typed_back(18, 313, &long), long);
     }
 

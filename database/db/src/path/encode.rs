@@ -59,13 +59,17 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
         Value::Char(bytes) => out.extend(datetime(f, bytes)?),
         Value::DecFloat(v) => out.extend(decfloat(v)),
         Value::Num(d) if f.data_type == DataType::DecFloat => {
-            let v = qdecimal::DecFloat::from_decimal(d, qdecimal::DfFormat::D34).map_err(|e| mapping(f, e))?;
+            let v = qdecimal::DecFloat::from_decimal(d, qdecimal::DfFormat::D34)
+                .map_err(|e| mapping(f, e))?;
             out.extend(decfloat(&v));
         }
-        Value::Num(d) if f.data_type == DataType::Float => out.extend(float(crate::record::decimal_f64(d))),
+        Value::Num(d) if f.data_type == DataType::Float => {
+            out.extend(float(crate::record::decimal_f64(d)))
+        }
         Value::Float(x) if f.data_type == DataType::Float => out.extend(float(*x)),
         Value::Float(x) => {
-            let d = crate::record::float_decimal(*x).ok_or_else(|| mapping(f, "float out of range"))?;
+            let d =
+                crate::record::float_decimal(*x).ok_or_else(|| mapping(f, "float out of range"))?;
             out.extend(decimal(f, k.transform, &d));
         }
         Value::Num(d) => out.extend(decimal(f, k.transform, d)),
@@ -87,7 +91,11 @@ fn is_varbinary(f: &FieldDef) -> bool {
 fn float(x: f64) -> [u8; 8] {
     let x = if x == 0.0 { 0.0 } else { x };
     let bits = x.to_bits();
-    let ordered = if x.is_sign_negative() { !bits } else { bits ^ (1 << 63) };
+    let ordered = if x.is_sign_negative() {
+        !bits
+    } else {
+        bits ^ (1 << 63)
+    };
     ordered.to_be_bytes()
 }
 
@@ -264,17 +272,44 @@ mod tests {
         use qdecimal::{DecFloat, DfFormat};
         let f = fld(DataType::DecFloat, 34, 0);
         let vals = [
-            "-NaN", "-sNaN", "-Infinity", "-1E+10", "-2.5", "-2", "-1E-10", "0", "1E-10", "2", "2.5", "1E+10", "Infinity",
-            "sNaN", "NaN",
+            "-NaN",
+            "-sNaN",
+            "-Infinity",
+            "-1E+10",
+            "-2.5",
+            "-2",
+            "-1E-10",
+            "0",
+            "1E-10",
+            "2",
+            "2.5",
+            "1E+10",
+            "Infinity",
+            "sNaN",
+            "NaN",
         ];
         let keys: Vec<Vec<u8>> = vals
             .iter()
-            .map(|v| key(&f, KeyTransform::Signed, false, &Value::DecFloat(DecFloat::parse(v, DfFormat::D34).unwrap())))
+            .map(|v| {
+                key(
+                    &f,
+                    KeyTransform::Signed,
+                    false,
+                    &Value::DecFloat(DecFloat::parse(v, DfFormat::D34).unwrap()),
+                )
+            })
             .collect();
         for (w, v) in keys.windows(2).zip(vals) {
             assert!(w[0] < w[1], "{v}");
         }
-        let one = |s: &str| key(&f, KeyTransform::Signed, false, &Value::DecFloat(DecFloat::parse(s, DfFormat::D34).unwrap()));
+        let one = |s: &str| {
+            key(
+                &f,
+                KeyTransform::Signed,
+                false,
+                &Value::DecFloat(DecFloat::parse(s, DfFormat::D34).unwrap()),
+            )
+        };
         assert_eq!(one("1.0"), one("1.00"));
         assert_eq!(one("1.0"), key(&f, KeyTransform::Signed, false, &n("1")));
     }

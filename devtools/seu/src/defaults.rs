@@ -202,8 +202,16 @@ fn increment(field: usize, s: &str) -> Result<u32, Invalid> {
     if w.len() > 3 || f.len() > 2 || !w.chars().chain(f.chars()).all(|c| c.is_ascii_digit()) {
         return Err(bad());
     }
-    let whole: u32 = if w.is_empty() { 0 } else { w.parse().map_err(|_| bad())? };
-    let mut frac: u32 = if f.is_empty() { 0 } else { f.parse().map_err(|_| bad())? };
+    let whole: u32 = if w.is_empty() {
+        0
+    } else {
+        w.parse().map_err(|_| bad())?
+    };
+    let mut frac: u32 = if f.is_empty() {
+        0
+    } else {
+        f.parse().map_err(|_| bad())?
+    };
     if f.len() == 1 {
         frac *= 10;
     }
@@ -219,7 +227,9 @@ fn increment(field: usize, s: &str) -> Result<u32, Invalid> {
 #[must_use]
 pub fn parse_date(s: &str) -> Option<Option<u32>> {
     let digits: String = s.chars().filter(char::is_ascii_digit).collect();
-    let rest = s.chars().all(|c| c.is_ascii_digit() || c == '/' || c == ' ');
+    let rest = s
+        .chars()
+        .all(|c| c.is_ascii_digit() || c == '/' || c == ' ');
     if !rest {
         return None;
     }
@@ -359,7 +369,11 @@ impl Defaults {
         self.reseq = reseq;
         self.upper_unknown = upper_unknown;
         self.exit_pgm = exit_pgm;
-        self.filter = if filter.is_empty() { "*ALL".into() } else { filter };
+        self.filter = if filter.is_empty() {
+            "*ALL".into()
+        } else {
+            filter
+        };
         Ok(())
     }
 }
@@ -396,7 +410,10 @@ mod tests {
         p.srctype = "clle".into();
         p.date = "26/10/23".into();
         d.set_page1(&p).unwrap();
-        assert_eq!((d.roll, d.increment, d.srctype.as_str()), (Roll::Full, 100, "CLLE"));
+        assert_eq!(
+            (d.roll, d.increment, d.srctype.as_str()),
+            (Roll::Full, 100, "CLLE")
+        );
         assert_eq!(d.set_date, Some(261_023));
         assert_eq!(d.page1().date, "26/10/23");
     }

@@ -26,10 +26,8 @@ pub const TAIL_SECTORS: u64 = 2048;
 /// Default image size: 4 GiB.
 pub const DEFAULT_DISK_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 /// Smallest disk the layout fits.
-pub const MIN_DISK_BYTES: u64 = (ESP_FIRST_LBA + TAIL_SECTORS) * SECTOR
-    + ESP_BYTES
-    + LIC_BYTES
-    + MIN_ASP1_BYTES;
+pub const MIN_DISK_BYTES: u64 =
+    (ESP_FIRST_LBA + TAIL_SECTORS) * SECTOR + ESP_BYTES + LIC_BYTES + MIN_ASP1_BYTES;
 
 /// GPT partition type of the LIC partition. Generated once for Quartz
 /// Systems; never reuse it for another partition kind.

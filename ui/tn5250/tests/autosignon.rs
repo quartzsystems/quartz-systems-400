@@ -28,8 +28,18 @@ fn the_server_gets_the_user_seed_and_substitute() {
     assert!(s.done, "negotiation: {:?} / {:?}", c.trace, s.trace);
     let n = &s.negotiated;
     assert_eq!(n.var("USER").as_deref(), Some("AUTOUSR"), "{:?}", n.vars);
-    assert_eq!(n.var_bytes("IBMRSEED").map(<[u8]>::len), Some(8), "{:?}", n.vars);
-    let want = pwdsub_sha("AUTOUSR", "Auto2026", [9, 8, 7, 6, 5, 4, 3, 2], Config::default().client_seed);
+    assert_eq!(
+        n.var_bytes("IBMRSEED").map(<[u8]>::len),
+        Some(8),
+        "{:?}",
+        n.vars
+    );
+    let want = pwdsub_sha(
+        "AUTOUSR",
+        "Auto2026",
+        [9, 8, 7, 6, 5, 4, 3, 2],
+        Config::default().client_seed,
+    );
     assert_eq!(n.var_bytes("IBMSUBSPW"), Some(&want[..]));
 }
 

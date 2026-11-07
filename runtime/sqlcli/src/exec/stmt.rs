@@ -41,16 +41,30 @@ impl Cli {
 
     /// `SQLPrepare`.
     pub fn prepare(&mut self, host: &mut dyn Host, h: i32, text: Ptr, tlen: i32) -> i32 {
-        let Some(dbc) = self.stmt_dbc(h) else { return rc::INVALID_HANDLE };
-        if self.handles.stmt(h).is_some_and(|s| s.state == StmtState::Open) {
+        let Some(dbc) = self.stmt_dbc(h) else {
+            return rc::INVALID_HANDLE;
+        };
+        if self
+            .handles
+            .stmt(h)
+            .is_some_and(|s| s.state == StmtState::Open)
+        {
             return self.fail(h, "HY010", "The statement has a cursor open.");
         }
-        let Some(text) = get_str(host, text, tlen) else { return self.fail(h, "HY009", "No statement text was given.") };
+        let Some(text) = get_str(host, text, tlen) else {
+            return self.fail(h, "HY009", "No statement text was given.");
+        };
         self.prepare_text(host, h, dbc, &text)
     }
 
     /// Prepare `text` as statement `h` and describe it.
-    pub(crate) fn prepare_text(&mut self, host: &mut dyn Host, h: i32, dbc: i32, text: &str) -> i32 {
+    pub(crate) fn prepare_text(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        dbc: i32,
+        text: &str,
+    ) -> i32 {
         if let Some(s) = self.handles.stmt(h) {
             s.state = StmtState::Allocated;
             s.cols.clear();
@@ -82,7 +96,11 @@ impl Cli {
             s.params = describe::params(&inp.rows);
             s.state = StmtState::Prepared;
         }
-        if r.sqlca.sqlcode > 0 { self.answer(h, &r.sqlca) } else { rc::SUCCESS }
+        if r.sqlca.sqlcode > 0 {
+            self.answer(h, &r.sqlca)
+        } else {
+            rc::SUCCESS
+        }
     }
 
     /// `SQLExecDirect`: prepared, then run.
@@ -96,23 +114,46 @@ impl Cli {
 
     /// The input values from the bound parameters.
     fn inputs(&mut self, host: &dyn Host, h: i32) -> Result<Vec<Value>, Diag> {
-        let Some(s) = self.handles.stmt(h) else { return Ok(Vec::new()) };
+        let Some(s) = self.handles.stmt(h) else {
+            return Ok(Vec::new());
+        };
         let mut out = Vec::with_capacity(s.params.len());
         for (i, p) in s.params.iter().enumerate() {
-            let Some(b) = u16::try_from(i + 1).ok().and_then(|k| s.param_binds.get(&k)).copied() else {
-                return Err(Diag { state: "07001".into(), native: -313, text: format!("Parameter marker {} is not bound.", i + 1) });
+            let Some(b) = u16::try_from(i + 1)
+                .ok()
+                .and_then(|k| s.param_binds.get(&k))
+                .copied()
+            else {
+                return Err(Diag {
+                    state: "07001".into(),
+                    native: -313,
+                    text: format!("Parameter marker {} is not bound.", i + 1),
+                });
             };
             if b.io == param::OUTPUT {
                 out.push(Value::Null);
                 continue;
             }
-            let ind = if b.ind.is_some() { get_i32(host, b.ind) } else { None };
+            let ind = if b.ind.is_some() {
+                get_i32(host, b.ind)
+            } else {
+                None
+            };
             if ind == Some(len::NULL_DATA) {
                 out.push(Value::Null);
                 continue;
             }
-            let ctype = if b.ctype == ty::DEFAULT { default_ctype(if b.stype == 0 { p.sql_type } else { b.stype }) } else { b.ctype };
-            let Some(at) = b.data else { return Err(Diag::cli("HY009", &format!("Parameter {} has no buffer.", i + 1))) };
+            let ctype = if b.ctype == ty::DEFAULT {
+                default_ctype(if b.stype == 0 { p.sql_type } else { b.stype })
+            } else {
+                b.ctype
+            };
+            let Some(at) = b.data else {
+                return Err(Diag::cli(
+                    "HY009",
+                    &format!("Parameter {} has no buffer.", i + 1),
+                ));
+            };
             let avail = host.avail(at);
             let want = match ctype {
                 ty::CHAR | ty::DATE | ty::TIME | ty::TIMESTAMP | ty::BINARY => {
@@ -129,7 +170,9 @@ impl Cli {
                 }
                 ty::VARCHAR | ty::VARBINARY => {
                     let head = host.read(at, 2).unwrap_or_default();
-                    2 + head.get(..2).map_or(0, |x| usize::from(u16::from_be_bytes([x[0], x[1]])))
+                    2 + head
+                        .get(..2)
+                        .map_or(0, |x| usize::from(u16::from_be_bytes([x[0], x[1]])))
                 }
                 ty::DECIMAL => usize::try_from(b.len).unwrap_or(0) / 2 + 1,
                 ty::NUMERIC => usize::try_from(b.len).unwrap_or(0),
@@ -143,17 +186,25 @@ impl Cli {
 
     /// `SQLExecute`.
     pub fn execute(&mut self, host: &mut dyn Host, h: i32) -> i32 {
-        let Some(dbc) = self.stmt_dbc(h) else { return rc::INVALID_HANDLE };
+        let Some(dbc) = self.stmt_dbc(h) else {
+            return rc::INVALID_HANDLE;
+        };
         match self.handles.stmt(h).map(|s| s.state) {
-            Some(StmtState::Allocated) => return self.fail(h, "HY010", "No statement is prepared."),
-            Some(StmtState::Open) => return self.fail(h, "HY010", "The statement has a cursor open."),
+            Some(StmtState::Allocated) => {
+                return self.fail(h, "HY010", "No statement is prepared.");
+            }
+            Some(StmtState::Open) => {
+                return self.fail(h, "HY010", "The statement has a cursor open.");
+            }
             _ => {}
         }
         let inputs = match self.inputs(host, h) {
             Ok(v) => v,
             Err(d) => return self.note(h, rc::ERROR, d),
         };
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         let query = s.query;
         let (scroll, hold) = (s.scrollable, s.hold);
         if query {
@@ -183,7 +234,11 @@ impl Cli {
                 s.row = None;
                 s.row_count = -1;
             }
-            return if r.sqlca.sqlcode > 0 && r.sqlca.sqlcode != 100 { self.answer(h, &r.sqlca) } else { rc::SUCCESS };
+            return if r.sqlca.sqlcode > 0 && r.sqlca.sqlcode != 100 {
+                self.answer(h, &r.sqlca)
+            } else {
+                rc::SUCCESS
+            };
         }
         let mut d = self.desc(dbc, Op::Execute);
         d.name = stmt_name(h);
@@ -192,7 +247,11 @@ impl Cli {
         if code == rc::ERROR {
             return self.answer(h, &r.sqlca);
         }
-        let count = if r.sqlca.sqlcode == 100 { 0 } else { r.sqlca.sqlerrd[2] };
+        let count = if r.sqlca.sqlcode == 100 {
+            0
+        } else {
+            r.sqlca.sqlerrd[2]
+        };
         if let Some(s) = self.handles.stmt(h) {
             s.row_count = count;
             s.diags.row_count = count;
@@ -202,7 +261,11 @@ impl Cli {
         }
         // A procedure's first result set is the statement's cursor.
         if r.sqlca.sqlcode == 466
-            && let Some(name) = r.rows.first().and_then(|row| row.first()).map(Value::as_text)
+            && let Some(name) = r
+                .rows
+                .first()
+                .and_then(|row| row.first())
+                .map(Value::as_text)
         {
             let mut d = self.desc(dbc, Op::Describe);
             d.name.clone_from(&name);
@@ -225,36 +288,78 @@ impl Cli {
     }
 
     /// A `CALL`'s output values into the bound output parameters.
-    fn write_outs(&mut self, host: &mut dyn Host, h: i32, outs: &[(usize, Value)]) -> Result<(), Diag> {
+    fn write_outs(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        outs: &[(usize, Value)],
+    ) -> Result<(), Diag> {
         let nts = self.nts();
-        let Some(s) = self.handles.stmt(h) else { return Ok(()) };
+        let Some(s) = self.handles.stmt(h) else {
+            return Ok(());
+        };
         let binds = s.param_binds.clone();
         let types: Vec<i16> = s.params.iter().map(|p| p.sql_type).collect();
         for (m, v) in outs {
-            let Some(b) = u16::try_from(m + 1).ok().and_then(|k| binds.get(&k)) else { continue };
+            let Some(b) = u16::try_from(m + 1).ok().and_then(|k| binds.get(&k)) else {
+                continue;
+            };
             if b.io == param::INPUT {
                 continue;
             }
-            let ctype = if b.ctype == ty::DEFAULT { default_ctype(types.get(*m).copied().unwrap_or(ty::CHAR)) } else { b.ctype };
+            let ctype = if b.ctype == ty::DEFAULT {
+                default_ctype(types.get(*m).copied().unwrap_or(ty::CHAR))
+            } else {
+                b.ctype
+            };
             let max = if b.max > 0 { b.max } else { b.len };
-            let max = if matches!(ctype, ty::DECIMAL | ty::NUMERIC) { b.len * 256 + i32::from(b.scale) } else { max };
-            put_value(host, v, (ctype, types.get(*m).copied().unwrap_or(0)), max, b.data, b.ind, nts)?;
+            let max = if matches!(ctype, ty::DECIMAL | ty::NUMERIC) {
+                b.len * 256 + i32::from(b.scale)
+            } else {
+                max
+            };
+            put_value(
+                host,
+                v,
+                (ctype, types.get(*m).copied().unwrap_or(0)),
+                max,
+                b.data,
+                b.ind,
+                nts,
+            )?;
         }
         Ok(())
     }
 
     /// Whether character output ends with a NUL.
     fn nts(&mut self) -> bool {
-        self.handles.env_number().and_then(|e| self.handles.env(e)).is_none_or(|e| e.output_nts)
+        self.handles
+            .env_number()
+            .and_then(|e| self.handles.env(e))
+            .is_none_or(|e| e.output_nts)
     }
 
     /// `SQLBindParam` and `SQLBindParameter`; a null buffer unbinds.
     #[allow(clippy::too_many_arguments)]
-    pub fn bind_param(&mut self, h: i32, ipar: i16, io: i16, ctype: i16, stype: i16, plen: i32, scale: i16, data: Ptr, max: i32, ind: Ptr) -> i32 {
+    pub fn bind_param(
+        &mut self,
+        h: i32,
+        ipar: i16,
+        io: i16,
+        ctype: i16,
+        stype: i16,
+        plen: i32,
+        scale: i16,
+        data: Ptr,
+        max: i32,
+        ind: Ptr,
+    ) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        let Ok(k) = u16::try_from(ipar) else { return self.fail(h, "07009", "The parameter number is not valid.") };
+        let Ok(k) = u16::try_from(ipar) else {
+            return self.fail(h, "07009", "The parameter number is not valid.");
+        };
         if k == 0 {
             return self.fail(h, "07009", "The parameter number is not valid.");
         }
@@ -264,11 +369,25 @@ impl Cli {
         if ctype != ty::DEFAULT && !convert::supported(ctype) {
             return self.note(h, rc::ERROR, convert::unsupported(ctype));
         }
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         if data.is_none() && ind.is_none() {
             s.param_binds.remove(&k);
         } else {
-            s.param_binds.insert(k, ParamBind { io, ctype, stype, len: plen, scale, data, max, ind });
+            s.param_binds.insert(
+                k,
+                ParamBind {
+                    io,
+                    ctype,
+                    stype,
+                    len: plen,
+                    scale,
+                    data,
+                    max,
+                    ind,
+                },
+            );
         }
         rc::SUCCESS
     }
@@ -284,11 +403,19 @@ impl Cli {
     }
 
     /// A count of a prepared statement's.
-    fn count(&mut self, host: &mut dyn Host, h: i32, out: Ptr, of: impl Fn(&crate::model::handles::Stmt) -> usize) -> i32 {
+    fn count(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        out: Ptr,
+        of: impl Fn(&crate::model::handles::Stmt) -> usize,
+    ) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         if s.state == StmtState::Allocated {
             return self.fail(h, "HY010", "No statement is prepared.");
         }
@@ -298,12 +425,27 @@ impl Cli {
     }
 
     /// `SQLDescribeParam`: a marker is always nullable.
-    pub fn describe_param(&mut self, host: &mut dyn Host, h: i32, ipar: i16, t: Ptr, def: Ptr, scale: Ptr, nullable: Ptr) -> i32 {
+    pub fn describe_param(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        ipar: i16,
+        t: Ptr,
+        def: Ptr,
+        scale: Ptr,
+        nullable: Ptr,
+    ) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        let p = usize::try_from(ipar).ok().filter(|i| *i > 0).and_then(|i| self.handles.stmt(h).and_then(|s| s.params.get(i - 1).cloned()));
-        let Some(p) = p else { return self.fail(h, "07009", "The parameter number is not valid.") };
+        let p = usize::try_from(ipar).ok().filter(|i| *i > 0).and_then(|i| {
+            self.handles
+                .stmt(h)
+                .and_then(|s| s.params.get(i - 1).cloned())
+        });
+        let Some(p) = p else {
+            return self.fail(h, "07009", "The parameter number is not valid.");
+        };
         put_i16(host, t, p.sql_type);
         put_i32(host, def, p.size);
         put_i16(host, scale, p.scale);
@@ -313,30 +455,78 @@ impl Cli {
 
     /// `SQLDescribeCol`.
     #[allow(clippy::too_many_arguments)]
-    pub fn describe_col(&mut self, host: &mut dyn Host, h: i32, icol: i16, name: Ptr, namemax: i16, namelen: Ptr, t: Ptr, def: Ptr, scale: Ptr, nullable: Ptr) -> i32 {
+    pub fn describe_col(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        icol: i16,
+        name: Ptr,
+        namemax: i16,
+        namelen: Ptr,
+        t: Ptr,
+        def: Ptr,
+        scale: Ptr,
+        nullable: Ptr,
+    ) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        if self.handles.stmt(h).is_some_and(|s| s.state == StmtState::Allocated) {
+        if self
+            .handles
+            .stmt(h)
+            .is_some_and(|s| s.state == StmtState::Allocated)
+        {
             return self.fail(h, "HY010", "No statement is prepared.");
         }
-        let c = usize::try_from(icol).ok().filter(|i| *i > 0).and_then(|i| self.handles.stmt(h).and_then(|s| s.cols.get(i - 1).cloned()));
-        let Some(c) = c else { return self.fail(h, "07009", "The column number is not valid.") };
+        let c = usize::try_from(icol).ok().filter(|i| *i > 0).and_then(|i| {
+            self.handles
+                .stmt(h)
+                .and_then(|s| s.cols.get(i - 1).cloned())
+        });
+        let Some(c) = c else {
+            return self.fail(h, "07009", "The column number is not valid.");
+        };
         let (n, cut) = put_str(host, name, i32::from(namemax), &c.name);
         put_i16(host, namelen, i16::try_from(n).unwrap_or(i16::MAX));
         put_i16(host, t, c.sql_type);
         put_i32(host, def, c.size);
         put_i16(host, scale, c.scale);
-        put_i16(host, nullable, if c.nullable { null::NULLABLE } else { null::NO_NULLS });
-        if cut { self.note(h, rc::SUCCESS_WITH_INFO, Diag::cli("01004", "The column name was cut short.")) } else { rc::SUCCESS }
+        put_i16(
+            host,
+            nullable,
+            if c.nullable {
+                null::NULLABLE
+            } else {
+                null::NO_NULLS
+            },
+        );
+        if cut {
+            self.note(
+                h,
+                rc::SUCCESS_WITH_INFO,
+                Diag::cli("01004", "The column name was cut short."),
+            )
+        } else {
+            rc::SUCCESS
+        }
     }
 
     /// `SQLBindCol`; a null buffer unbinds the column.
-    pub fn bind_col(&mut self, h: i32, icol: i16, ctype: i16, data: Ptr, max: i32, ind: Ptr) -> i32 {
+    pub fn bind_col(
+        &mut self,
+        h: i32,
+        icol: i16,
+        ctype: i16,
+        data: Ptr,
+        max: i32,
+        ind: Ptr,
+    ) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        let Ok(k) = u16::try_from(icol) else { return self.fail(h, "07009", "The column number is not valid.") };
+        let Ok(k) = u16::try_from(icol) else {
+            return self.fail(h, "07009", "The column number is not valid.");
+        };
         if k == 0 {
             return self.fail(h, "07009", "Bookmark columns are not supported.");
         }
@@ -346,11 +536,21 @@ impl Cli {
         if max < 0 {
             return self.fail(h, "HY090", "The buffer length is not valid.");
         }
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         if data.is_none() {
             s.col_binds.remove(&k);
         } else {
-            s.col_binds.insert(k, ColBind { ctype, data, max, ind });
+            s.col_binds.insert(
+                k,
+                ColBind {
+                    ctype,
+                    data,
+                    max,
+                    ind,
+                },
+            );
         }
         rc::SUCCESS
     }
@@ -362,8 +562,12 @@ impl Cli {
 
     /// `SQLFetchScroll`: other than `SQL_FETCH_NEXT` needs a scrollable cursor.
     pub fn fetch_scroll(&mut self, host: &mut dyn Host, h: i32, orient: i16, offset: i32) -> i32 {
-        let Some(dbc) = self.stmt_dbc(h) else { return rc::INVALID_HANDLE };
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(dbc) = self.stmt_dbc(h) else {
+            return rc::INVALID_HANDLE;
+        };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         if s.state != StmtState::Open {
             return self.fail(h, "HY010", "The statement has no cursor open.");
         }
@@ -377,7 +581,15 @@ impl Cli {
             _ => return self.fail(h, "HY009", "The fetch orientation is not valid."),
         };
         if orient != fetch::NEXT && !s.scrollable {
-            return self.note(h, rc::ERROR, Diag { state: "42872".into(), native: -225, text: "The cursor is not scrollable.".into() });
+            return self.note(
+                h,
+                rc::ERROR,
+                Diag {
+                    state: "42872".into(),
+                    native: -225,
+                    text: "The cursor is not scrollable.".into(),
+                },
+            );
         }
         let cursor = s.cursor.clone();
         let scroll = s.scrollable;
@@ -397,30 +609,66 @@ impl Cli {
         }
         let row = r.rows.into_iter().next().unwrap_or_default();
         let nts = self.nts();
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         s.got.clear();
         let binds: Vec<(u16, ColBind)> = s.col_binds.iter().map(|(k, b)| (*k, *b)).collect();
         let types: Vec<i16> = s.cols.iter().map(|c| c.sql_type).collect();
         s.row = Some(row.clone());
         for (k, b) in binds {
-            let Some(v) = row.get(usize::from(k) - 1) else { continue };
-            let ctype = if b.ctype == ty::DEFAULT { default_ctype(types[usize::from(k) - 1]) } else { b.ctype };
-            if let Err(d) = put_value(host, v, (ctype, types[usize::from(k) - 1]), b.max, b.data, b.ind, nts) {
+            let Some(v) = row.get(usize::from(k) - 1) else {
+                continue;
+            };
+            let ctype = if b.ctype == ty::DEFAULT {
+                default_ctype(types[usize::from(k) - 1])
+            } else {
+                b.ctype
+            };
+            if let Err(d) = put_value(
+                host,
+                v,
+                (ctype, types[usize::from(k) - 1]),
+                b.max,
+                b.data,
+                b.ind,
+                nts,
+            ) {
                 return self.note(h, rc::ERROR, d);
             }
         }
-        if r.sqlca.sqlcode > 0 { self.answer(h, &r.sqlca) } else { rc::SUCCESS }
+        if r.sqlca.sqlcode > 0 {
+            self.answer(h, &r.sqlca)
+        } else {
+            rc::SUCCESS
+        }
     }
 
     /// `SQLGetData`: a column of the current row, each once, in order.
-    pub fn get_data(&mut self, host: &mut dyn Host, h: i32, icol: i16, ctype: i16, data: Ptr, max: i32, ind: Ptr) -> i32 {
+    pub fn get_data(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        icol: i16,
+        ctype: i16,
+        data: Ptr,
+        max: i32,
+        ind: Ptr,
+    ) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
         let nts = self.nts();
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
-        let Some(row) = s.row.clone() else { return self.fail(h, "HY010", "No row is current.") };
-        let Some(k) = u16::try_from(icol).ok().filter(|k| *k > 0 && usize::from(*k) <= row.len()) else {
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
+        let Some(row) = s.row.clone() else {
+            return self.fail(h, "HY010", "No row is current.");
+        };
+        let Some(k) = u16::try_from(icol)
+            .ok()
+            .filter(|k| *k > 0 && usize::from(*k) <= row.len())
+        else {
             return self.fail(h, "07009", "The column number is not valid.");
         };
         if s.got.contains(&k) {
@@ -431,11 +679,23 @@ impl Cli {
         }
         s.got.push(k);
         let col_type = s.cols.get(usize::from(k) - 1).map_or(0, |c| c.sql_type);
-        let ctype = if ctype == ty::DEFAULT { default_ctype(col_type) } else { ctype };
+        let ctype = if ctype == ty::DEFAULT {
+            default_ctype(col_type)
+        } else {
+            ctype
+        };
         if !convert::supported(ctype) {
             return self.note(h, rc::ERROR, convert::unsupported(ctype));
         }
-        match put_value(host, &row[usize::from(k) - 1], (ctype, col_type), max, data, ind, nts) {
+        match put_value(
+            host,
+            &row[usize::from(k) - 1],
+            (ctype, col_type),
+            max,
+            data,
+            ind,
+            nts,
+        ) {
             Ok(()) => rc::SUCCESS,
             Err(d) => self.note(h, rc::ERROR, d),
         }
@@ -453,12 +713,16 @@ impl Cli {
 
     /// `SQLCloseCursor`: nothing to do when none is open.
     pub fn close_cursor(&mut self, host: &mut dyn Host, h: i32) -> i32 {
-        let Some(dbc) = self.stmt_dbc(h) else { return rc::INVALID_HANDLE };
+        let Some(dbc) = self.stmt_dbc(h) else {
+            return rc::INVALID_HANDLE;
+        };
         self.close(host, h, dbc)
     }
 
     fn close(&mut self, host: &mut dyn Host, h: i32, dbc: i32) -> i32 {
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         if s.state != StmtState::Open {
             return rc::SUCCESS;
         }
@@ -479,18 +743,28 @@ impl Cli {
 
     /// `SQLFreeStmt`.
     pub fn free_stmt(&mut self, host: &mut dyn Host, h: i32, opt: i16) -> i32 {
-        let Some(dbc) = self.stmt_dbc(h) else { return rc::INVALID_HANDLE };
+        let Some(dbc) = self.stmt_dbc(h) else {
+            return rc::INVALID_HANDLE;
+        };
         match opt {
             free::CLOSE => self.close(host, h, dbc),
             free::DROP => {
                 let code = self.close(host, h, dbc);
-                if self.handles.stmt(h).is_some_and(|s| s.state != StmtState::Allocated) {
+                if self
+                    .handles
+                    .stmt(h)
+                    .is_some_and(|s| s.state != StmtState::Allocated)
+                {
                     let mut d = self.desc(dbc, Op::Deallocate);
                     d.name = stmt_name(h);
                     let _ = self.run(host, dbc, d, Vec::new());
                 }
                 self.handles.remove(h);
-                if code == rc::ERROR { rc::SUCCESS_WITH_INFO } else { rc::SUCCESS }
+                if code == rc::ERROR {
+                    rc::SUCCESS_WITH_INFO
+                } else {
+                    rc::SUCCESS
+                }
             }
             free::UNBIND => {
                 if let Some(s) = self.handles.stmt(h) {
@@ -513,13 +787,21 @@ impl Cli {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        if self.handles.stmt(h).is_some_and(|s| s.state == StmtState::Open) {
+        if self
+            .handles
+            .stmt(h)
+            .is_some_and(|s| s.state == StmtState::Open)
+        {
             return self.fail(h, "HY010", "The statement has a cursor open.");
         }
-        let Some(v) = get_i32(host, val) else { return self.fail(h, "HY009", "The attribute's value is missing.") };
+        let Some(v) = get_i32(host, val) else {
+            return self.fail(h, "HY009", "The attribute's value is missing.");
+        };
         let flag = v == TRUE;
         let ok_flag = v == 0 || v == TRUE;
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         match attr {
             stmt_attr::CURSOR_SCROLLABLE if ok_flag => s.scrollable = flag,
             stmt_attr::CURSOR_HOLD if ok_flag => s.hold = flag,
@@ -527,28 +809,58 @@ impl Cli {
             // Forward only (0) or static (1).
             stmt_attr::CURSOR_TYPE if ok_flag => s.scrollable = flag,
             stmt_attr::ROWSET_SIZE if v == 1 => {}
-            stmt_attr::ROWSET_SIZE => return self.fail(h, "HYC00", "Fetching more than one row at a time is not supported."),
-            stmt_attr::CURSOR_SCROLLABLE | stmt_attr::CURSOR_HOLD | stmt_attr::FOR_FETCH_ONLY | stmt_attr::CURSOR_TYPE => {
+            stmt_attr::ROWSET_SIZE => {
+                return self.fail(
+                    h,
+                    "HYC00",
+                    "Fetching more than one row at a time is not supported.",
+                );
+            }
+            stmt_attr::CURSOR_SCROLLABLE
+            | stmt_attr::CURSOR_HOLD
+            | stmt_attr::FOR_FETCH_ONLY
+            | stmt_attr::CURSOR_TYPE => {
                 return self.fail(h, "HY024", "The attribute's value is not valid.");
             }
-            _ => return self.fail(h, "HYC00", &format!("Statement attribute {attr} is not supported.")),
+            _ => {
+                return self.fail(
+                    h,
+                    "HYC00",
+                    &format!("Statement attribute {attr} is not supported."),
+                );
+            }
         }
         rc::SUCCESS
     }
 
     /// `SQLGetStmtAttr`.
-    pub fn get_stmt_attr(&mut self, host: &mut dyn Host, h: i32, attr: i32, val: Ptr, olen: Ptr) -> i32 {
+    pub fn get_stmt_attr(
+        &mut self,
+        host: &mut dyn Host,
+        h: i32,
+        attr: i32,
+        val: Ptr,
+        olen: Ptr,
+    ) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        let Some(s) = self.handles.stmt(h) else {
+            return rc::INVALID_HANDLE;
+        };
         let flag = |b: bool| if b { TRUE } else { 0 };
         let v = match attr {
             stmt_attr::CURSOR_SCROLLABLE | stmt_attr::CURSOR_TYPE => flag(s.scrollable),
             stmt_attr::CURSOR_HOLD => flag(s.hold),
             stmt_attr::FOR_FETCH_ONLY => flag(s.fetch_only),
             stmt_attr::ROWSET_SIZE => 1,
-            _ => return self.fail(h, "HYC00", &format!("Statement attribute {attr} is not supported.")),
+            _ => {
+                return self.fail(
+                    h,
+                    "HYC00",
+                    &format!("Statement attribute {attr} is not supported."),
+                );
+            }
         };
         put_i32(host, val, v);
         put_i32(host, olen, 4);
@@ -557,12 +869,27 @@ impl Cli {
 }
 
 /// A value into a buffer and its length word: a null value needs the word.
-fn put_value(host: &mut dyn Host, v: &Value, (ctype, col_type): (i16, i16), max: i32, data: Ptr, ind: Ptr, nts: bool) -> Result<(), Diag> {
+fn put_value(
+    host: &mut dyn Host,
+    v: &Value,
+    (ctype, col_type): (i16, i16),
+    max: i32,
+    data: Ptr,
+    ind: Ptr,
+    nts: bool,
+) -> Result<(), Diag> {
     let Image { bytes, ind: word } = if v.is_null() {
         if ind.is_none() {
-            return Err(Diag { state: "22002".into(), native: -305, text: "A null value has no indicator to go to.".into() });
+            return Err(Diag {
+                state: "22002".into(),
+                native: -305,
+                text: "A null value has no indicator to go to.".into(),
+            });
         }
-        Image { bytes: convert::null_image(ctype, max, col_type, nts), ind: len::NULL_DATA }
+        Image {
+            bytes: convert::null_image(ctype, max, col_type, nts),
+            ind: len::NULL_DATA,
+        }
     } else {
         convert::image(v, ctype, max, nts)?
     };
@@ -578,6 +905,10 @@ fn put_value(host: &mut dyn Host, v: &Value, (ctype, col_type): (i16, i16), max:
 /// Whether statement text is a query by its first word.
 fn is_query(text: &str) -> bool {
     let t = text.trim_start().trim_start_matches('(').trim_start();
-    let word: String = t.chars().take_while(char::is_ascii_alphabetic).collect::<String>().to_ascii_uppercase();
+    let word: String = t
+        .chars()
+        .take_while(char::is_ascii_alphabetic)
+        .collect::<String>()
+        .to_ascii_uppercase();
     matches!(word.as_str(), "SELECT" | "WITH" | "VALUES")
 }

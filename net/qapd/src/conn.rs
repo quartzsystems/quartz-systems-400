@@ -213,7 +213,9 @@ impl<H: Host> Main<'_, H> {
             return Answer::status(Status::InvalidRequest);
         };
         let (cancels, id) = (&self.shared.cancels, req.request_id);
-        let ran = self.host.run_command(&b.command, &|| cancelled(cancels, id));
+        let ran = self
+            .host
+            .run_command(&b.command, &|| cancelled(cancels, id));
         Answer {
             status: ran.status,
             message: ran.escape,
@@ -289,7 +291,9 @@ impl<H: Host> Main<'_, H> {
                 Ok(ToMain::Closed(why)) => return why,
                 Err(RecvTimeoutError::Timeout) => {}
                 // Every sender reports before it goes.
-                Err(RecvTimeoutError::Disconnected) => return Closed::Broken("the dispatcher ended".into()),
+                Err(RecvTimeoutError::Disconnected) => {
+                    return Closed::Broken("the dispatcher ended".into());
+                }
             }
             if let Some(e) = self.host.ending() {
                 return self.end(e);

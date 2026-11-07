@@ -43,7 +43,11 @@ pub fn have(db: &PtfDb) -> Vec<String> {
         .filter(|r| {
             matches!(
                 r.status,
-                Status::Loaded | Status::TempApplied | Status::PermApplied | Status::Superseded | Status::SaveFileOnly
+                Status::Loaded
+                    | Status::TempApplied
+                    | Status::PermApplied
+                    | Status::Superseded
+                    | Status::SaveFileOnly
             )
         })
         .map(|r| r.ptf.clone())
@@ -88,8 +92,15 @@ pub fn send_order(
 /// `PTFPART(*CVRLTR)`), unless the system has it in a later state.
 pub fn record(db: &mut PtfDb, e: &CatalogPtf, savf: &str, cover_only: bool, now: u64) {
     if let Some(r) = db.ptfs.get_mut(&e.id) {
-        if matches!(r.status, Status::NotLoaded | Status::OnOrder | Status::PermRemoved | Status::CoverLetterOnly) {
-            r.status = if cover_only { Status::CoverLetterOnly } else { Status::SaveFileOnly };
+        if matches!(
+            r.status,
+            Status::NotLoaded | Status::OnOrder | Status::PermRemoved | Status::CoverLetterOnly
+        ) {
+            r.status = if cover_only {
+                Status::CoverLetterOnly
+            } else {
+                Status::SaveFileOnly
+            };
             r.savf = savf.into();
             r.changed = now;
         }
@@ -110,7 +121,11 @@ pub fn record(db: &mut PtfDb, e: &CatalogPtf, savf: &str, cover_only: bool, now:
             product: e.product.clone(),
             option: e.option.clone(),
             release: e.release.clone(),
-            status: if cover_only { Status::CoverLetterOnly } else { Status::SaveFileOnly },
+            status: if cover_only {
+                Status::CoverLetterOnly
+            } else {
+                Status::SaveFileOnly
+            },
             action: Action::None,
             delayed: e.kind != crate::catalog::PtfKind::Immediate,
             lic: e.kind == crate::catalog::PtfKind::Lic,
@@ -144,12 +159,20 @@ impl Findings {
 }
 
 /// Compare `cat` with the system and note the newest levels in `groups`.
-pub fn compare(cat: &Catalog, db: &PtfDb, groups: &mut GroupDb, release: &str, trusted: &[[u8; 32]]) -> Findings {
+pub fn compare(
+    cat: &Catalog,
+    db: &PtfDb,
+    groups: &mut GroupDb,
+    release: &str,
+    trusted: &[[u8; 32]],
+) -> Findings {
     let mut f = Findings::default();
     let mut known_cum: Vec<release::Cumulative> = Vec::new();
     let names: Vec<String> = groups.groups.keys().cloned().collect();
     for name in names {
-        let level = groups.groups[&name].group(trusted).map_or(0, |(g, _)| g.level);
+        let level = groups.groups[&name]
+            .group(trusted)
+            .map_or(0, |(g, _)| g.level);
         if let Ok(c) = name.parse::<release::Cumulative>() {
             known_cum.push(c);
         }
@@ -161,15 +184,23 @@ pub fn compare(cat: &Catalog, db: &PtfDb, groups: &mut GroupDb, release: &str, t
         }
     }
     let has = |p: &str| {
-        db.get(p)
-            .is_some_and(|r| !matches!(r.status, Status::NotLoaded | Status::OnOrder | Status::PermRemoved))
+        db.get(p).is_some_and(|r| {
+            !matches!(
+                r.status,
+                Status::NotLoaded | Status::OnOrder | Status::PermRemoved
+            )
+        })
     };
     let mut hiper: Vec<String> = cat
         .ptfs
         .iter()
         .filter(|p| p.release == release && p.hiper)
         .map(|p| p.id.clone())
-        .chain(cat.hiper(release).into_iter().flat_map(|g| g.ptfs.iter().cloned()))
+        .chain(
+            cat.hiper(release)
+                .into_iter()
+                .flat_map(|g| g.ptfs.iter().cloned()),
+        )
         .filter(|p| !has(p))
         .collect();
     hiper.sort();
@@ -177,7 +208,9 @@ pub fn compare(cat: &Catalog, db: &PtfDb, groups: &mut GroupDb, release: &str, t
     f.hiper = hiper;
     if let Some(c) = cat.cumulative(release)
         && let Ok(cc) = c.name.parse::<release::Cumulative>()
-        && known_cum.iter().all(|k| (k.year, k.day) < (cc.year, cc.day))
+        && known_cum
+            .iter()
+            .all(|k| (k.year, k.day) < (cc.year, cc.day))
     {
         f.cumulative = Some(c.name.clone());
     }

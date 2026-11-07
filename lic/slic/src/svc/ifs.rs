@@ -78,7 +78,9 @@ pub fn command(system: &mut System, args: &[&str], line: &str) -> String {
         _ => None,
     };
     let out = service::with_client(system, handle, owner, &p, ccsid, |c| match (word, rest) {
-        ("putx", [path, name, mode @ ..]) => putx(c, path, name, hex.as_deref(), mode.first().copied()),
+        ("putx", [path, name, mode @ ..]) => {
+            putx(c, path, name, hex.as_deref(), mode.first().copied())
+        }
         ("ls", []) => ls(c, "."),
         ("ls", [path]) => ls(c, path),
         ("cat", [path]) => cat(c, path),
@@ -196,7 +198,13 @@ fn put(c: &dyn IfsClient, path: &str, text: &str) -> String {
 }
 
 /// `putx PATH BUFFER [MODE]`: the buffer's hex digits as the file's bytes.
-fn putx(c: &dyn IfsClient, path: &str, name: &str, hex: Option<&str>, mode: Option<&str>) -> String {
+fn putx(
+    c: &dyn IfsClient,
+    path: &str,
+    name: &str,
+    hex: Option<&str>,
+    mode: Option<&str>,
+) -> String {
     let Some(hex) = hex else {
         return format!("{name}: no such buffer\n");
     };

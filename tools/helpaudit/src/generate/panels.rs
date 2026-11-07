@@ -45,7 +45,12 @@ fn norm(label: &str) -> String {
 /// The first paragraph of a module, as plain text.
 fn first_para(h: &uim::model::HelpModule) -> Option<String> {
     h.body.iter().find_map(|b| match b {
-        uim::model::Block::Para(s) => Some(Span::plain(s).split_whitespace().collect::<Vec<_>>().join(" ")),
+        uim::model::Block::Para(s) => Some(
+            Span::plain(s)
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" "),
+        ),
         _ => None,
     })
 }
@@ -58,7 +63,10 @@ impl Openings {
         for (def, _) in crate::commands::definitions(root)? {
             let group = super::cmdhelp::group_of(&def);
             let id = def.hlpid.clone().unwrap_or_else(|| def.name.clone());
-            commands.insert(def.name.clone(), (group.clone(), id.clone(), def.prompt.clone()));
+            commands.insert(
+                def.name.clone(),
+                (group.clone(), id.clone(), def.prompt.clone()),
+            );
             let Some(g) = groups.get(&group) else {
                 continue;
             };
@@ -87,7 +95,10 @@ impl Openings {
             .into_iter()
             .filter_map(|(k, m)| m.into_iter().max_by_key(|(_, n)| *n).map(|(t, _)| (k, t)))
             .collect();
-        Ok(Self { by_prompt, commands })
+        Ok(Self {
+            by_prompt,
+            commands,
+        })
     }
 
     fn text_for(&self, label: &str) -> Option<&str> {
@@ -107,11 +118,14 @@ struct Plan {
 impl Plan {
     fn module(&mut self, name: &str, title: &str, body: &str) {
         if self.defined.insert(name.to_string()) {
-            self.modules.push((name.to_string(), format!(
-                ":HELP NAME={}.{}\n{body}:EHELP.\n",
-                name_attr(name),
-                esc(title)
-            )));
+            self.modules.push((
+                name.to_string(),
+                format!(
+                    ":HELP NAME={}.{}\n{body}:EHELP.\n",
+                    name_attr(name),
+                    esc(title)
+                ),
+            ));
         }
     }
 }
@@ -132,7 +146,10 @@ fn lc(s: &str) -> String {
 fn label_of(spans: &[Span]) -> String {
     let t = plain(spans);
     let t = t.trim_end_matches([':', '.', ' ']);
-    let t = t.strip_suffix(" .").unwrap_or(t).trim_end_matches([' ', '.']);
+    let t = t
+        .strip_suffix(" .")
+        .unwrap_or(t)
+        .trim_end_matches([' ', '.']);
     t.trim().to_string()
 }
 
@@ -156,7 +173,10 @@ fn command_of(action: &Action) -> Option<(String, bool)> {
     };
     let s = s.trim();
     let (prompt, rest) = s.strip_prefix('?').map_or((false, s), |r| (true, r));
-    let name = rest.split(|c: char| c.is_whitespace() || c == '(').next()?.to_ascii_uppercase();
+    let name = rest
+        .split(|c: char| c.is_whitespace() || c == '(')
+        .next()?
+        .to_ascii_uppercase();
     Some((name.rsplit('/').next().unwrap_or(&name).to_string(), prompt))
 }
 
@@ -182,8 +202,12 @@ fn key_text(text: &str, action: &Action) -> String {
         "exit" => Some("Ends the display and returns to where it was started from."),
         "cancel" => Some("Returns to the previous display without acting on what was typed."),
         "refresh" => Some("Shows the display again with the current information."),
-        "retrieve" => Some("Puts the last command run back on the command line; press it again for the one before."),
-        "prompt" => Some("Prompts the command on the command line, or the command of the option typed."),
+        "retrieve" => Some(
+            "Puts the last command run back on the command line; press it again for the one before.",
+        ),
+        "prompt" => {
+            Some("Prompts the command on the command line, or the command of the option typed.")
+        }
         "more keys" => Some("Shows the other function keys of the display."),
         "help" => Some("Shows help for where the cursor is."),
         "print" => Some("Prints the display."),
@@ -261,7 +285,11 @@ fn data_items(o: &Openings, plan: &mut Plan, nodes: &[DataNode], area: bool) {
             DataNode::Field(f) if f.help.is_none() && !area && f.display != Display::No => {
                 let label = label_of(&f.prompt);
                 let name = format!("FLD/{}", f.var);
-                let title = if label.is_empty() { f.var.clone() } else { label.clone() };
+                let title = if label.is_empty() {
+                    f.var.clone()
+                } else {
+                    label.clone()
+                };
                 let body = tagged(":P.", &field_text(o, &title, f.usage.is_input(), false));
                 plan.module(&name, &title, &body);
                 plan.tags.insert(f.line as usize, name);
@@ -293,7 +321,10 @@ fn plan_group(o: &Openings, groups: &Groups, g: &PanelGroup) -> Plan {
         imports: BTreeSet::new(),
     };
     for p in &g.panels {
-        if let Some(k) = g.key_lists.iter().find(|k| k.name.eq_ignore_ascii_case(&p.keyl))
+        if let Some(k) = g
+            .key_lists
+            .iter()
+            .find(|k| k.name.eq_ignore_ascii_case(&p.keyl))
             && k.keys.iter().any(|i| !i.text.trim().is_empty())
             && !groups.has_text(g, k.help.as_deref())
             && !plan.tags.values().any(|v| *v == format!("KEYS/{}", k.name))
@@ -314,42 +345,81 @@ fn plan_group(o: &Openings, groups: &Groups, g: &PanelGroup) -> Plan {
                     }
                     for (col, grp) in l.columns.iter().flat_map(|n| match n {
                         ListColNode::Column(c) => vec![(c, None)],
-                        ListColNode::Group(gr) => gr.columns.iter().map(|c| (c, Some(gr))).collect(),
+                        ListColNode::Group(gr) => {
+                            gr.columns.iter().map(|c| (c, Some(gr))).collect()
+                        }
                     }) {
                         if col.help.is_some() || col.display == Display::No {
                             continue;
                         }
                         let mut label = label_of(&col.heading);
                         if let Some(gr) = grp {
-                            label = format!("{} {}", label_of(&gr.heading), lc(&label)).trim().to_string();
+                            label = format!("{} {}", label_of(&gr.heading), lc(&label))
+                                .trim()
+                                .to_string();
                         }
-                        let (name, body) = if col.usage.is_input() && l.actions.iter().any(|a| a.option.is_some()) && plan_is_option(col, l) {
+                        let (name, body) = if col.usage.is_input()
+                            && l.actions.iter().any(|a| a.option.is_some())
+                            && plan_is_option(col, l)
+                        {
                             (
                                 format!("{}/OPT", p.name),
-                                tagged(":P.", "Type the number of an option next to an entry and press Enter. The options the list allows are shown above it; F1 on one of them explains it."),
+                                tagged(
+                                    ":P.",
+                                    "Type the number of an option next to an entry and press Enter. The options the list allows are shown above it; F1 on one of them explains it.",
+                                ),
                             )
                         } else {
-                            (format!("FLD/{}", col.var), tagged(":P.", &field_text(o, if label.is_empty() { &col.var } else { &label }, col.usage.is_input(), true)))
+                            (
+                                format!("FLD/{}", col.var),
+                                tagged(
+                                    ":P.",
+                                    &field_text(
+                                        o,
+                                        if label.is_empty() { &col.var } else { &label },
+                                        col.usage.is_input(),
+                                        true,
+                                    ),
+                                ),
+                            )
                         };
-                        let title = if name.ends_with("/OPT") { "Option".to_string() } else if label.is_empty() { col.var.clone() } else { label };
+                        let title = if name.ends_with("/OPT") {
+                            "Option".to_string()
+                        } else if label.is_empty() {
+                            col.var.clone()
+                        } else {
+                            label
+                        };
                         plan.module(&name, &title, &body);
                         plan.tags.insert(col.line as usize, name);
                     }
                     let opts: Vec<_> = l
                         .actions
                         .iter()
-                        .filter(|a| a.option.is_some() && a.help.is_none() && !plain(&a.text).is_empty())
+                        .filter(|a| {
+                            a.option.is_some() && a.help.is_none() && !plain(&a.text).is_empty()
+                        })
                         .collect();
                     if !opts.is_empty() {
                         let name = format!("{}/OPTIONS", p.name);
-                        let mut body = tagged(":P.", "Type an option number next to one or more entries and press Enter. The option runs for each entry it is typed next to, in order.");
+                        let mut body = tagged(
+                            ":P.",
+                            "Type an option number next to one or more entries and press Enter. The option runs for each entry it is typed next to, in order.",
+                        );
                         body.push_str(":PARML.\n");
                         for a in &opts {
                             let t = plain(&a.text);
                             let (n, what) = t.split_once('=').unwrap_or(("", t.as_str()));
-                            let n = if n.is_empty() { a.option.clone().unwrap_or_default() } else { n.to_string() };
+                            let n = if n.is_empty() {
+                                a.option.clone().unwrap_or_default()
+                            } else {
+                                n.to_string()
+                            };
                             let _ = writeln!(body, ":PT.{}", esc(&t));
-                            body.push_str(&tagged(":PD.", &option_text(o, &n, what, a.enter.as_ref())));
+                            body.push_str(&tagged(
+                                ":PD.",
+                                &option_text(o, &n, what, a.enter.as_ref()),
+                            ));
                         }
                         body.push_str(":EPARML.\n");
                         plan.module(&name, "Options", &body);
@@ -365,7 +435,9 @@ fn plan_group(o: &Openings, groups: &Groups, g: &PanelGroup) -> Plan {
                     for n in &m.items {
                         let (items, gh) = match n {
                             MenuNode::Item(i) => (std::slice::from_ref(i), None),
-                            MenuNode::Group { items, help, .. } => (items.as_slice(), help.as_deref()),
+                            MenuNode::Group { items, help, .. } => {
+                                (items.as_slice(), help.as_deref())
+                            }
                         };
                         if groups.has_text(g, gh) {
                             continue;
@@ -438,7 +510,10 @@ pub fn write(root: &Path) -> Result<Vec<String>> {
     for dir in DIRS {
         for p in files(&root.join(dir), "pnlgrp")? {
             let name = stem(&p);
-            if name.starts_with("QH") && name.ends_with("CMD") || name == "QTOCMD" || name.starts_with("QHDC") {
+            if name.starts_with("QH") && name.ends_with("CMD")
+                || name == "QTOCMD"
+                || name.starts_with("QHDC")
+            {
                 continue;
             }
             let Some(g) = groups.get(&name) else {

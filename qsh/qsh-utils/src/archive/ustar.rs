@@ -76,7 +76,12 @@ pub fn encode(m: &Member, old: bool) -> Result<Vec<u8>, String> {
         Kind::Dir => b'5',
         Kind::Fifo => b'6',
     };
-    if old && !matches!(m.kind, Kind::File | Kind::Hardlink | Kind::Symlink | Kind::Dir) {
+    if old
+        && !matches!(
+            m.kind,
+            Kind::File | Kind::Hardlink | Kind::Symlink | Kind::Dir
+        )
+    {
         return Err("The format cannot hold a special file.".to_string());
     }
     if matches!(m.kind, Kind::Hardlink | Kind::Symlink) {
@@ -160,7 +165,8 @@ pub fn decode(data: &[u8]) -> Result<Vec<Member>, String> {
                 name = format!("{prefix}/{name}");
             }
         }
-        let num = |r: std::ops::Range<usize>| field_num(&h[r]).ok_or("The archive has a damaged header.");
+        let num =
+            |r: std::ops::Range<usize>| field_num(&h[r]).ok_or("The archive has a damaged header.");
         let size = num(124..136)? as usize;
         let mut kind = match h[156] {
             b'0' | 0 | b'7' => Kind::File,

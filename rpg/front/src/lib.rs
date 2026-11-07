@@ -33,7 +33,11 @@ pub use source::{Includes, MemIncludes, Member, NoIncludes};
 
 /// Read and parse a member: the expanded lines, the tree and every
 /// diagnostic, in source order.
-pub fn front(main: Member, includes: &mut dyn Includes, opts: &reader::Options) -> (reader::Read, Module, Vec<Diag>) {
+pub fn front(
+    main: Member,
+    includes: &mut dyn Includes,
+    opts: &reader::Options,
+) -> (reader::Read, Module, Vec<Diag>) {
     let read = reader::read(main, includes, opts);
     let (module, mut diags) = parse::parse(&read);
     diags.extend(read.diags.iter().cloned());

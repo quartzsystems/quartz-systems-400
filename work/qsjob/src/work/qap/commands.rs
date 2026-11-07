@@ -11,7 +11,9 @@
 
 use cmd::analyze::CmdSource;
 use cmd::prompt::flat;
-use qap_proto::ops::command::{CommandDefinition, CommandReply, ParmKind, ParmNode, Range, Role, Show};
+use qap_proto::ops::command::{
+    CommandDefinition, CommandReply, ParmKind, ParmNode, Range, Role, Show,
+};
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{ServerMessage, Status};
 use qapd::Ran;
@@ -27,7 +29,10 @@ const PGM: (&str, &str) = ("QAPCNN", "QSYS");
 /// not there.
 const NOT_FOUND: &[&str] = &["CPD0030", "CPF9801", "CPF2105", "CPF2110"];
 /// ... and that the profile may not use it.
-const NOT_AUTHORIZED: &[&str] = &["CPF9802", "CPF2189", "CPF2207", "CPD0032", "CPD0033", "CPD0171", "MCH1001", "CPF22E9", "CPF2217"];
+const NOT_AUTHORIZED: &[&str] = &[
+    "CPF9802", "CPF2189", "CPF2207", "CPD0032", "CPD0033", "CPD0171", "MCH1001", "CPF22E9",
+    "CPF2217",
+];
 
 /// A job log entry as the client sees it.
 fn message_of(e: &wm::joblog::Entry) -> ServerMessage {
@@ -188,11 +193,18 @@ fn node_of(n: flat::Node) -> ParmNode {
 
 /// `command`'s definition from its `*CMD` object, `CHGCMDDFT`'s
 /// defaults applied; why not as a status, message and its data.
-pub fn describe(console: &mut Console, command: &ObjectName) -> Result<CommandDefinition, (Status, String, Vec<String>)> {
+pub fn describe(
+    console: &mut Console,
+    command: &ObjectName,
+) -> Result<CommandDefinition, (Status, String, Vec<String>)> {
     let name = command.name.trim().to_ascii_uppercase();
     let lib = command.library.trim().to_ascii_uppercase();
     let lib_arg = (!lib.is_empty() && lib != "*LIBL").then_some(lib.as_str());
-    let shown_lib = if lib.is_empty() { "*LIBL".to_string() } else { lib.clone() };
+    let shown_lib = if lib.is_empty() {
+        "*LIBL".to_string()
+    } else {
+        lib.clone()
+    };
     let found = console.host.cmds.borrow_mut().lookup(&name, lib_arg);
     match found {
         Ok(Some((obj, found_lib))) => {

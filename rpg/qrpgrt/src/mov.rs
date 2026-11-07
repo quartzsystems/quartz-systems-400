@@ -19,8 +19,14 @@ use crate::value::{Desc, Kind, bytes, read_num};
 #[must_use]
 pub fn num_image(v: &Decimal, d: &Desc) -> Vec<u8> {
     let n = usize::try_from(d.digits()).unwrap_or(1).max(1);
-    let le: Vec<u8> = v.rescale(d.dec, Rounding::Truncate).map(|x| x.digits_le().to_vec()).unwrap_or_default();
-    let mut out: Vec<u8> = (0..n).rev().map(|i| 0xF0 | le.get(i).copied().unwrap_or(0)).collect();
+    let le: Vec<u8> = v
+        .rescale(d.dec, Rounding::Truncate)
+        .map(|x| x.digits_le().to_vec())
+        .unwrap_or_default();
+    let mut out: Vec<u8> = (0..n)
+        .rev()
+        .map(|i| 0xF0 | le.get(i).copied().unwrap_or(0))
+        .collect();
     if v.is_negative()
         && let Some(last) = out.last_mut()
     {
@@ -49,7 +55,11 @@ pub fn image(addr: u64, d: &Desc) -> Result<Vec<u8>, mi::Cond> {
 /// from the last zone (`B` and `D` are minus).
 #[must_use]
 pub fn from_image(img: &[u8], dec: u8) -> Decimal {
-    let le: Vec<u8> = img.iter().rev().map(|b| if b & 0x0F > 9 { 0 } else { b & 0x0F }).collect();
+    let le: Vec<u8> = img
+        .iter()
+        .rev()
+        .map(|b| if b & 0x0F > 9 { 0 } else { b & 0x0F })
+        .collect();
     let neg = img.last().is_some_and(|b| matches!(b >> 4, 0xB | 0xD));
     Decimal::from_digits(neg, le, dec).unwrap_or_else(|_| Decimal::zero())
 }
@@ -80,7 +90,9 @@ pub fn store_image(addr: u64, d: &Desc, img: &[u8]) -> Result<(), mi::Cond> {
     let out = bytes(addr, d.size());
     if d.kind == Kind::VarChar {
         let p = d.prefix();
-        let n = crate::value::var_len(out, p).min(img.len()).min(out.len() - p);
+        let n = crate::value::var_len(out, p)
+            .min(img.len())
+            .min(out.len() - p);
         out[p..p + n].copy_from_slice(&img[..n]);
     } else {
         let n = out.len().min(img.len());
@@ -92,11 +104,22 @@ pub fn store_image(addr: u64, d: &Desc, img: &[u8]) -> Result<(), mi::Cond> {
 /// The padding byte of a target.
 fn fill(d: &Desc) -> u8 {
     // Indicators pad with '0'.
-    if d.numeric() || d.kind == Kind::Ind { 0xF0 } else { 0x40 }
+    if d.numeric() || d.kind == Kind::Ind {
+        0xF0
+    } else {
+        0x40
+    }
 }
 
 /// Move `src` into `dst`.
-pub fn mov(left: bool, pad: bool, dst: u64, dd: &Desc, src: u64, sd: &Desc) -> Result<(), mi::Cond> {
+pub fn mov(
+    left: bool,
+    pad: bool,
+    dst: u64,
+    dd: &Desc,
+    src: u64,
+    sd: &Desc,
+) -> Result<(), mi::Cond> {
     let from = image(src, sd)?;
     let mut to = image(dst, dd).unwrap_or_else(|_| vec![0xF0; dd.size()]);
     let n = to.len();
@@ -131,7 +154,15 @@ fn elements(addr: u64, d: &Desc, count: usize) -> Result<Vec<u8>, mi::Cond> {
 
 /// `MOVEA`: the bytes of the source elements from the first one
 /// named to the end, into the target's from its first one named.
-pub fn movea(pad: bool, dst: u64, dd: &Desc, dcount: usize, src: u64, sd: &Desc, scount: usize) -> Result<(), mi::Cond> {
+pub fn movea(
+    pad: bool,
+    dst: u64,
+    dd: &Desc,
+    dcount: usize,
+    src: u64,
+    sd: &Desc,
+    scount: usize,
+) -> Result<(), mi::Cond> {
     let from = elements(src, sd, scount)?;
     let mut to = elements(dst, dd, dcount).unwrap_or_else(|_| vec![0xF0; dd.size() * dcount]);
     let k = to.len().min(from.len());
@@ -157,7 +188,11 @@ pub fn zone(op: i32, dst: u64, dd: &Desc, src: u64, sd: &Desc) -> Result<(), mi:
     if from.is_empty() || to.is_empty() {
         return Ok(());
     }
-    let z = if op == 0 || op == 1 { from[0] } else { from[from.len() - 1] } & 0xF0;
+    let z = if op == 0 || op == 1 {
+        from[0]
+    } else {
+        from[from.len() - 1]
+    } & 0xF0;
     let at = if op == 0 || op == 2 { 0 } else { to.len() - 1 };
     to[at] = z | (to[at] & 0x0F);
     store_image(dst, dd, &to)

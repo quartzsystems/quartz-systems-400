@@ -51,11 +51,17 @@ impl Type {
             }
             Self::Ptr | Self::ProcPtr => PTR_SIZE,
             Self::Struct(s) => u64::from(s.size),
-            Self::Array { len, elem, stride: None } => u64::from(*len) * elem.size(),
+            Self::Array {
+                len,
+                elem,
+                stride: None,
+            } => u64::from(*len) * elem.size(),
             // The last element ends the array.
-            Self::Array { len, elem, stride: Some(s) } => {
-                u64::from(len.saturating_sub(1)) * u64::from(*s) + elem.size()
-            }
+            Self::Array {
+                len,
+                elem,
+                stride: Some(s),
+            } => u64::from(len.saturating_sub(1)) * u64::from(*s) + elem.size(),
         }
     }
 

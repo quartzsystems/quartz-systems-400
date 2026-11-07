@@ -49,7 +49,11 @@ pub fn opnqryrm_result_set(qryinsid: &[u8; 8]) -> Object {
 /// `RSLSETRM`: a `CALL` returned result sets, one package section each
 /// (`PKGSNLST`).
 pub fn rslsetrm(sections: &[Object]) -> Object {
-    message(rm::RSLSETRM, svrcod::INFO, vec![Object::coll(param::PKGSNLST, sections.to_vec())])
+    message(
+        rm::RSLSETRM,
+        svrcod::INFO,
+        vec![Object::coll(param::PKGSNLST, sections.to_vec())],
+    )
 }
 
 /// `OPNQRYRM`: the query is open with fixed row protocol (`0x2418`)

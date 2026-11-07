@@ -74,7 +74,9 @@ fn is_admin(name: &str) -> bool {
 
 /// The product instance `name` means.
 fn product_instance(name: &str) -> Option<&'static ProductInstance> {
-    PRODUCT_INSTANCES.iter().find(|p| name.trim().eq_ignore_ascii_case(p.name))
+    PRODUCT_INSTANCES
+        .iter()
+        .find(|p| name.trim().eq_ignore_ascii_case(p.name))
 }
 
 /// A product instance's job, its ports from `CHGHTTPA`'s bag
@@ -104,16 +106,25 @@ fn start_product(env: &mut dyn Env, p: &ProductInstance) -> Result<String, Refus
         ));
     }
     if env.active(name) {
-        return Err(Refusal::new(msg::ALREADY, format!("HTTP server instance {name} already started.")));
+        return Err(Refusal::new(
+            msg::ALREADY,
+            format!("HTTP server instance {name} already started."),
+        ));
     }
     if let Err(e) = env.start_subsystem(HTTP_SUBSYSTEM) {
         tracing::warn!("*HTTP: subsystem {HTTP_SUBSYSTEM}: {e}");
     }
     let job = product_job(env, p);
     env.start_job(&job).map_err(|e| {
-        Refusal::new(msg::NOT_STARTED, format!("HTTP server instance {name} could not be started: {e}"))
+        Refusal::new(
+            msg::NOT_STARTED,
+            format!("HTTP server instance {name} could not be started: {e}"),
+        )
     })?;
-    Ok(format!("{} HTTP server starting: instance {name}.", msg::STARTING))
+    Ok(format!(
+        "{} HTTP server starting: instance {name}.",
+        msg::STARTING
+    ))
 }
 
 fn admin_req(req: &Request) -> Request {
@@ -130,7 +141,11 @@ fn admin_req(req: &Request) -> Request {
 pub fn instance_job(i: &HttpInstance) -> JobStart {
     JobStart {
         name: i.name.clone(),
-        user: if i.user.is_empty() { "QTMHHTTP".into() } else { i.user.clone() },
+        user: if i.user.is_empty() {
+            "QTMHHTTP".into()
+        } else {
+            i.user.clone()
+        },
         subsystem: HTTP_SUBSYSTEM.into(),
         role: HTTP_ROLE.into(),
         rqsdta: format!("INSTANCE({})", i.name),
@@ -146,7 +161,10 @@ impl HttpServer {
             .ok_or_else(|| {
                 Refusal::new(
                     msg::NO_INSTANCE,
-                    format!("Server instance {} of *HTTP not found.", name.trim().to_ascii_uppercase()),
+                    format!(
+                        "Server instance {} of *HTTP not found.",
+                        name.trim().to_ascii_uppercase()
+                    ),
                 )
             })
     }
@@ -156,16 +174,35 @@ impl HttpServer {
             tracing::warn!("*HTTP: subsystem {HTTP_SUBSYSTEM}: {e}");
         }
         env.start_job(&instance_job(i)).map_err(|e| {
-            Refusal::new(msg::NOT_STARTED, format!("HTTP server instance {} could not be started: {e}", i.name))
+            Refusal::new(
+                msg::NOT_STARTED,
+                format!("HTTP server instance {} could not be started: {e}", i.name),
+            )
         })?;
-        Ok(format!("{} HTTP server starting: instance {}.", msg::STARTING, i.name))
+        Ok(format!(
+            "{} HTTP server starting: instance {}.",
+            msg::STARTING,
+            i.name
+        ))
     }
 
-    fn end_one(env: &mut dyn Env, name: &str, immediate: bool, delay: u32) -> Result<String, Refusal> {
+    fn end_one(
+        env: &mut dyn Env,
+        name: &str,
+        immediate: bool,
+        delay: u32,
+    ) -> Result<String, Refusal> {
         env.http_ending(name, immediate, delay);
-        env.end_job(name, immediate)
-            .map_err(|e| Refusal::new(msg::NOT_ACTIVE, format!("HTTP server instance {name} not ended: {e}")))?;
-        Ok(format!("{} HTTP server ending: instance {name}.", msg::ENDING))
+        env.end_job(name, immediate).map_err(|e| {
+            Refusal::new(
+                msg::NOT_ACTIVE,
+                format!("HTTP server instance {name} not ended: {e}"),
+            )
+        })?;
+        Ok(format!(
+            "{} HTTP server ending: instance {name}.",
+            msg::ENDING
+        ))
     }
 
     /// Every registry instance (not the administration one or a
@@ -180,12 +217,18 @@ impl HttpServer {
     /// Whether a product instance's registry entry is marked autostart
     /// (it is not when made).
     fn product_autostart(env: &mut dyn Env, p: &ProductInstance) -> bool {
-        env.http_instances().iter().any(|i| i.name.trim().eq_ignore_ascii_case(p.name) && i.autostart)
+        env.http_instances()
+            .iter()
+            .any(|i| i.name.trim().eq_ignore_ascii_case(p.name) && i.autostart)
     }
 }
 
 fn join(lines: Vec<String>) -> String {
-    lines.into_iter().filter(|l| !l.is_empty()).collect::<Vec<_>>().join("\n")
+    lines
+        .into_iter()
+        .filter(|l| !l.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 impl TcpServer for HttpServer {
@@ -233,7 +276,10 @@ impl TcpServer for HttpServer {
                 }
                 let mut started = 0;
                 for p in PRODUCT_INSTANCES {
-                    if Self::product_autostart(env, p) && !env.active(p.name) && env.product_installed(p.product) {
+                    if Self::product_autostart(env, p)
+                        && !env.active(p.name)
+                        && env.product_installed(p.product)
+                    {
                         match start_product(env, p) {
                             Ok(t) => {
                                 started += 1;
@@ -274,7 +320,10 @@ impl TcpServer for HttpServer {
             Instance::Named(n) if product_instance(n).is_some() => {
                 let name = product_instance(n).expect("a product's").name;
                 if !env.active(name) {
-                    return Err(Refusal::new(msg::NOT_ACTIVE, format!("HTTP server instance {name} not active.")));
+                    return Err(Refusal::new(
+                        msg::NOT_ACTIVE,
+                        format!("HTTP server instance {name} not active."),
+                    ));
                 }
                 Self::end_one(env, name, immediate, delay)
             }
@@ -291,16 +340,26 @@ impl TcpServer for HttpServer {
             Instance::Default | Instance::All | Instance::Autostart => {
                 let mut lines = Vec::new();
                 if HttpAdmin.active(env, req) {
-                    lines.push(HttpAdmin.end(env, req, immediate).unwrap_or_else(|e| e.line()));
+                    lines.push(
+                        HttpAdmin
+                            .end(env, req, immediate)
+                            .unwrap_or_else(|e| e.line()),
+                    );
                 }
                 for p in PRODUCT_INSTANCES {
                     if env.active(p.name) {
-                        lines.push(Self::end_one(env, p.name, immediate, delay).unwrap_or_else(|e| e.line()));
+                        lines.push(
+                            Self::end_one(env, p.name, immediate, delay)
+                                .unwrap_or_else(|e| e.line()),
+                        );
                     }
                 }
                 for i in Self::instances(env) {
                     if env.active(&i.name) {
-                        lines.push(Self::end_one(env, &i.name, immediate, delay).unwrap_or_else(|e| e.line()));
+                        lines.push(
+                            Self::end_one(env, &i.name, immediate, delay)
+                                .unwrap_or_else(|e| e.line()),
+                        );
                     }
                 }
                 if lines.is_empty() {

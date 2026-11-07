@@ -75,7 +75,10 @@ impl Engine {
                 return None;
             }
             let module = rest.join("/");
-            match term.group("*LIBL", g).filter(|gr| gr.help(&module).is_some()) {
+            match term
+                .group("*LIBL", g)
+                .filter(|gr| gr.help(&module).is_some())
+            {
                 Some(gr) => (gr, module),
                 None if rest.len() >= 2 => (term.group(g, rest[0])?, rest[1..].join("/")),
                 None => return None,
@@ -271,12 +274,10 @@ impl Engine {
                 })
                 .collect();
             let mut opts = self.options(wide);
-            opts.message = message
-                .take()
-                .map(|m| {
-                    let text = m.text.clone().or_else(|| term.message_text(&m));
-                    (text.unwrap_or_else(|| m.fallback()), m.error)
-                });
+            opts.message = message.take().map(|m| {
+                let text = m.text.clone().or_else(|| term.message_text(&m));
+                (text.unwrap_or_else(|| m.fallback()), m.error)
+            });
             let screen = render_view(&parts, &view, &opts, rows, cols, Some(under));
             let input = term.exchange(&screen)?;
             let Some(key) = input.key else {
@@ -528,8 +529,16 @@ fn keys(frame: &Frame, search: bool) -> Vec<String> {
 /// help 76 columns from column 2, its top border on row 2. Either is
 /// as tall as its text needs and ends by row `rows - 3`.
 fn help_window(rows: usize, cols: usize, cursor: (usize, usize), extended: bool) -> HelpWindow {
-    let (left, inner) = if extended { (2, cols - 4) } else { (cols - 64, 62) };
-    let top = if extended { 2 } else { (cursor.0 + 1).min(rows - 9) };
+    let (left, inner) = if extended {
+        (2, cols - 4)
+    } else {
+        (cols - 64, 62)
+    };
+    let top = if extended {
+        2
+    } else {
+        (cursor.0 + 1).min(rows - 9)
+    };
     HelpWindow {
         top,
         left,

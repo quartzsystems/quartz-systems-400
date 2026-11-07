@@ -119,7 +119,10 @@ fn one(g: &mut Lcg, seeds: &[Vec<u8>], asm: &mut Reassembly) {
 }
 
 fn run(time: Duration) -> u64 {
-    let seed = std::env::var("QAP_FUZZ_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or(400);
+    let seed = std::env::var("QAP_FUZZ_SEED")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(400);
     let mut g = Lcg(seed);
     let seeds = seeds();
     let mut asm = Reassembly::new();

@@ -23,7 +23,12 @@ use std::io;
 /// A link's Ethernet address from `/sys/class/net/<link>/address`.
 pub fn mac_of(link: &str) -> io::Result<[u8; 6]> {
     let text = std::fs::read_to_string(format!("/sys/class/net/{link}/address"))?;
-    parse_mac(&text).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, format!("{link}: no Ethernet address")))
+    parse_mac(&text).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("{link}: no Ethernet address"),
+        )
+    })
 }
 
 /// `52:54:00:12:34:56`.
@@ -40,7 +45,10 @@ pub fn parse_mac(text: &str) -> Option<[u8; 6]> {
 mod tests {
     #[test]
     fn macs() {
-        assert_eq!(super::parse_mac("52:54:00:12:34:56\n"), Some([0x52, 0x54, 0, 0x12, 0x34, 0x56]));
+        assert_eq!(
+            super::parse_mac("52:54:00:12:34:56\n"),
+            Some([0x52, 0x54, 0, 0x12, 0x34, 0x56])
+        );
         assert_eq!(super::parse_mac("00:00"), None);
         assert_eq!(super::parse_mac("zz:54:00:12:34:56"), None);
     }

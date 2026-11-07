@@ -54,7 +54,13 @@ pub fn quantize(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat
         return Ok(nan);
     }
     let coeff = digits::to_u128(&mag).expect("at most 34 digits");
-    Ok(DecFloat { neg: a.neg, kind: DfKind::Finite, coeff, exp: e, format })
+    Ok(DecFloat {
+        neg: a.neg,
+        kind: DfKind::Finite,
+        coeff,
+        exp: e,
+        format,
+    })
 }
 
 /// `COMPARE_DECFLOAT`: 0 equal in value and exponent, 1 `a` less, 2

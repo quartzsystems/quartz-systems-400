@@ -7,23 +7,23 @@
 
 use std::sync::mpsc::Receiver;
 
+use store::asp::parity::Level;
+use store::{Refusal, StoreError};
 pub use svctools::Outcome;
 use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
-use store::asp::parity::Level;
-use store::{Refusal, StoreError};
 use svctools::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags};
 use svctools::install::lic::{LicEvent, LicKind};
-use svctools::install::os::{DeviceKind, InstallDevice, OsOptions};
 use svctools::install::options::{IplOptions, MajorOptions, TAG_IPL_OPTIONS};
+use svctools::install::os::{DeviceKind, InstallDevice, OsOptions};
 use svctools::{DstEnv, UserDb};
 use sysval::{IPL_NAMES, SysVals};
 
-use hwrsrc::{Kind, ParityCapable};
 use crate::ipl::menu::{self, Answer};
 use crate::ipl::system::{System, now_unix};
 use crate::ipl::{Event, storage};
 use crate::src;
+use hwrsrc::{Kind, ParityCapable};
 
 /// A failure the service tools show: what was being done; the reason
 /// goes to the console log, never to the screen.
@@ -147,11 +147,17 @@ impl<'a> Env<'a> {
             let mut out = Vec::new();
             for &code in codes {
                 let ty = store::obj::types::type_by_code(code).map_or("", |t| t.name);
-                for (key, id) in store::obj::ops::list(txn, qsys, Some(code)).map_err(fail("Listing the objects"))? {
+                for (key, id) in store::obj::ops::list(txn, qsys, Some(code))
+                    .map_err(fail("Listing the objects"))?
+                {
                     let text = store::obj::ops::describe(txn, id)
                         .map(|h| ccsid::from_ebcdic(&h.text).trim_end().to_string())
                         .unwrap_or_default();
-                    out.push((key.name.to_string().trim().to_string(), ty.to_string(), text));
+                    out.push((
+                        key.name.to_string().trim().to_string(),
+                        ty.to_string(),
+                        text,
+                    ));
                 }
             }
             Ok(out)
@@ -174,8 +180,12 @@ impl<'a> Env<'a> {
 
     /// The device node of a hot spare, by the UUID in its header.
     fn spare_device(&self, uuid: [u8; 16]) -> Option<String> {
-        self.device_index(uuid)
-            .and_then(|i| self.system.storage.as_ref().map(|s| s.devices[i].display().to_string()))
+        self.device_index(uuid).and_then(|i| {
+            self.system
+                .storage
+                .as_ref()
+                .map(|s| s.devices[i].display().to_string())
+        })
     }
 
     /// Drop a removed unit's device from the configured devices.
@@ -191,8 +201,7 @@ fn resource_for(_system: &System, device: &str) -> String {
     let name = device.rsplit('/').next().unwrap_or(device);
     let disk =
         diskimg::locate::disk_of(std::path::Path::new(device)).unwrap_or_else(|| name.to_string());
-    hw()
-        .resources
+    hw().resources
         .iter()
         .find(|r| r.kind == Kind::Disk && r.location == disk)
         .map_or_else(|| "-----".to_string(), |r| r.name.clone())
@@ -314,8 +323,12 @@ impl DstEnv for Env<'_> {
         let Some((part, record)) = self.system.lic.as_mut() else {
             return Ok(()); // no partition: the defaults live for this IPL only
         };
-        self.users.store(record).map_err(fail("Saving the service tools user IDs"))?;
-        part.write(record).map(|_| ()).map_err(fail("Saving the service tools user IDs"))
+        self.users
+            .store(record)
+            .map_err(fail("Saving the service tools user IDs"))?;
+        part.write(record)
+            .map(|_| ())
+            .map_err(fail("Saving the service tools user IDs"))
     }
 
     fn disk_units(&mut self) -> Vec<DiskUnit> {
@@ -442,7 +455,9 @@ impl DstEnv for Env<'_> {
             .get(usize::from(unit))
             .map(|u| u.entry.unit_uuid);
         let at = uuid.and_then(|u| self.device_index(u));
-        self.store()?.remove_unit(unit).map_err(refused("Removing the disk unit"))?;
+        self.store()?
+            .remove_unit(unit)
+            .map_err(refused("Removing the disk unit"))?;
         self.forget_device(at);
         Ok(())
     }
@@ -468,7 +483,9 @@ impl DstEnv for Env<'_> {
             });
         if let Some((n, uuid)) = configured {
             let at = self.device_index(uuid);
-            self.store()?.remove_unit(n).map_err(refused("Starting mirrored protection"))?;
+            self.store()?
+                .remove_unit(n)
+                .map_err(refused("Starting mirrored protection"))?;
             self.forget_device(at);
         }
         let (dev, serial) = open_unit(device)?;
@@ -490,16 +507,24 @@ impl DstEnv for Env<'_> {
     }
 
     fn suspend(&mut self, unit: u16) -> Result<(), String> {
-        self.store()?.suspend_unit(unit).map_err(refused("Suspending the mirrored unit"))
+        self.store()?
+            .suspend_unit(unit)
+            .map_err(refused("Suspending the mirrored unit"))
     }
 
     fn resume(&mut self, unit: u16) -> Result<(), String> {
         self.store()?;
-        storage::start_resume(self.system, unit).map(|_| ()).map_err(|e| match e {
-            storage::ResumeRefused::Running => svctools::dst::disk::reasons::RESUME_RUNNING.to_string(),
-            storage::ResumeRefused::Store(e) => refused("Resuming mirrored protection")(e),
-            storage::ResumeRefused::NotOpen => fail("Resuming mirrored protection")("object store not open"),
-        })
+        storage::start_resume(self.system, unit)
+            .map(|_| ())
+            .map_err(|e| match e {
+                storage::ResumeRefused::Running => {
+                    svctools::dst::disk::reasons::RESUME_RUNNING.to_string()
+                }
+                storage::ResumeRefused::Store(e) => refused("Resuming mirrored protection")(e),
+                storage::ResumeRefused::NotOpen => {
+                    fail("Resuming mirrored protection")("object store not open")
+                }
+            })
     }
 
     fn replace(&mut self, unit: u16, device: &str) -> Result<(), String> {
@@ -552,7 +577,11 @@ impl DstEnv for Env<'_> {
                 unit: u16::MAX,
                 serial,
                 type_model,
-                resource: if spare.attached { self.resource_for(&device) } else { "-----".into() },
+                resource: if spare.attached {
+                    self.resource_for(&device)
+                } else {
+                    "-----".into()
+                },
                 controller: controller.clone(),
                 status: svctools::dst::disk::parity::HOT_SPARE.into(),
                 percent: None,
@@ -595,7 +624,11 @@ impl DstEnv for Env<'_> {
     }
 
     fn start_parity(&mut self, level: u8, units: &[u16]) -> Result<String, String> {
-        let level = if level == 6 { Level::Raid6 } else { Level::Raid5 };
+        let level = if level == 6 {
+            Level::Raid6
+        } else {
+            Level::Raid5
+        };
         let set = self
             .store()?
             .start_parity(level, units)
@@ -626,7 +659,10 @@ impl DstEnv for Env<'_> {
         self.store()?
             .exclude_parity(unit)
             .map_err(refused("Excluding the unit from device parity protection"))?;
-        Ok(format!("Unit {} excluded from device parity protection", unit + 1))
+        Ok(format!(
+            "Unit {} excluded from device parity protection",
+            unit + 1
+        ))
     }
 
     fn parity_capable(&mut self) -> Vec<String> {
@@ -652,7 +688,9 @@ impl DstEnv for Env<'_> {
         self.system
             .storage
             .as_ref()
-            .map_or(store::asp::superblock::DEFAULT_THRESHOLD, |s| s.store.asp_threshold())
+            .map_or(store::asp::superblock::DEFAULT_THRESHOLD, |s| {
+                s.store.asp_threshold()
+            })
     }
 
     fn set_asp_threshold(&mut self, percent: u8) -> Result<(), String> {
@@ -717,7 +755,8 @@ impl DstEnv for Env<'_> {
         if !offered {
             return Err(svctools::dst::failed(WHAT));
         }
-        let dev = blockdev::LinuxBlockDev::open(std::path::Path::new(device)).map_err(fail(WHAT))?;
+        let dev =
+            blockdev::LinuxBlockDev::open(std::path::Path::new(device)).map_err(fail(WHAT))?;
         let mut last = None;
         let wiped = diskimg::wipe::wipe(&dev, &mut |p| {
             if last != Some(p) {
@@ -847,7 +886,8 @@ impl DstEnv for Env<'_> {
         record
             .set_tlv(TAG_CONSOLE_MODE, mode.encode())
             .map_err(fail("Changing the console mode"))?;
-        part.write(record).map_err(fail("Changing the console mode"))?;
+        part.write(record)
+            .map_err(fail("Changing the console mode"))?;
         self.system
             .out
             .serial(&format!("slic: console mode {mode:?} from the next IPL\n"));
@@ -869,7 +909,10 @@ impl DstEnv for Env<'_> {
         if let Some((_, r)) = self.system.lic.as_ref() {
             let h = &r.header;
             let (y, mo, d, hh, mm, ss) = crate::platform::rtc::unix_to_civil(h.install_time);
-            info.push(("Slot of this IPL".into(), format!("{:?}", self.system.boot.slot)));
+            info.push((
+                "Slot of this IPL".into(),
+                format!("{:?}", self.system.boot.slot),
+            ));
             info.push(("Last good slot".into(), format!("{:?}", h.last_good_slot)));
             info.push((
                 "IPLs".into(),
@@ -889,7 +932,8 @@ impl DstEnv for Env<'_> {
             record
                 .set_tlv(TAG_IPL_OPTIONS, options.encode())
                 .map_err(fail("Changing the IPL options"))?;
-            part.write(record).map_err(fail("Changing the IPL options"))?;
+            part.write(record)
+                .map_err(fail("Changing the IPL options"))?;
         }
         if let Some(vals) = self.system.sysvals.as_mut() {
             let writers = if options.start_print_writers {
@@ -921,7 +965,8 @@ impl DstEnv for Env<'_> {
             return Err("System values are not loaded yet".into());
         };
         let auto = if options.auto_configure { "1" } else { "0" };
-        vals.set_text("QAUTOCFG", auto).map_err(fail("Changing the major system options"))?;
+        vals.set_text("QAUTOCFG", auto)
+            .map_err(fail("Changing the major system options"))?;
         vals.set_text("QDEVNAMING", &options.device_naming)
             .map_err(fail("Changing the major system options"))?;
         vals.set_text("QSPCENV", &options.special_environment)
@@ -956,10 +1001,15 @@ impl DstEnv for Env<'_> {
         if !IPL_NAMES.contains(&name) {
             return Err(format!("{name} is not a system value the LIC keeps"));
         }
-        let mut vals = SysVals::from_record(record, &host).map_err(fail("Changing the system value"))?;
-        vals.set_text(name, value).map_err(|_| svctools::dst::value_not_valid(name, value))?;
-        vals.store_ipl(record).map_err(fail("Changing the system value"))?;
-        part.write(record).map(|_| ()).map_err(fail("Changing the system value"))
+        let mut vals =
+            SysVals::from_record(record, &host).map_err(fail("Changing the system value"))?;
+        vals.set_text(name, value)
+            .map_err(|_| svctools::dst::value_not_valid(name, value))?;
+        vals.store_ipl(record)
+            .map_err(fail("Changing the system value"))?;
+        part.write(record)
+            .map(|_| ())
+            .map_err(fail("Changing the system value"))
     }
 
     fn read_page(&mut self, unit: u16, lba: u64) -> Result<Vec<u8>, String> {
@@ -992,7 +1042,9 @@ impl DstEnv for Env<'_> {
         record
             .set_tlv(TAG_SECURITY, vec![encode_flags(flags)])
             .map_err(fail("Changing the security options"))?;
-        part.write(record).map(|_| ()).map_err(fail("Changing the security options"))
+        part.write(record)
+            .map(|_| ())
+            .map_err(fail("Changing the security options"))
     }
 
     fn activity_log(&mut self) -> Vec<LogEntry> {
@@ -1043,7 +1095,8 @@ impl DstEnv for Env<'_> {
 
     fn dumps(&mut self) -> Result<Vec<svctools::env::DumpRow>, String> {
         self.store()?;
-        Ok(crate::stgsvc::dumps::list(self.system).map_err(kept_or_fail("Listing the system dumps"))?
+        Ok(crate::stgsvc::dumps::list(self.system)
+            .map_err(kept_or_fail("Listing the system dumps"))?
             .into_iter()
             .map(|d| svctools::env::DumpRow {
                 name: d.name,
@@ -1061,12 +1114,14 @@ impl DstEnv for Env<'_> {
 
     fn dump_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
         self.store()?;
-        crate::stgsvc::dumps::show(self.system, name).map_err(kept_or_fail("Showing the system dump"))
+        crate::stgsvc::dumps::show(self.system, name)
+            .map_err(kept_or_fail("Showing the system dump"))
     }
 
     fn delete_dump(&mut self, name: &str) -> Result<(), String> {
         self.store()?;
-        crate::stgsvc::dumps::delete(self.system, name).map_err(kept_or_fail("Deleting the system dump"))
+        crate::stgsvc::dumps::delete(self.system, name)
+            .map_err(kept_or_fail("Deleting the system dump"))
     }
 
     fn all_sysvals(&mut self) -> Vec<(String, String, String)> {
@@ -1084,8 +1139,13 @@ impl DstEnv for Env<'_> {
 
     fn set_sysval(&mut self, name: &str, value: &str) -> Result<String, String> {
         let name = name.trim().to_ascii_uppercase();
-        let vals = self.system.sysvals.as_mut().ok_or_else(|| svctools::dst::NOT_LOADED.to_string())?;
-        vals.set_text(&name, value).map_err(|_| svctools::dst::value_not_valid(&name, value))?;
+        let vals = self
+            .system
+            .sysvals
+            .as_mut()
+            .ok_or_else(|| svctools::dst::NOT_LOADED.to_string())?;
+        vals.set_text(&name, value)
+            .map_err(|_| svctools::dst::value_not_valid(&name, value))?;
         crate::ipl::sysvals::save(self.system).map_err(fail("Changing the system value"))?;
         Ok(format!("System value {name} changed"))
     }

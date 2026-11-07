@@ -42,7 +42,9 @@ pub fn rcllnk(c: &dyn IfsClient, check_only: bool) -> Reply {
             Problem::LinkCount { nlink, found } => {
                 format!("link count {nlink}, {found} links found")
             }
-            Problem::FoldCollision(other) => format!("name folds like {other}; only one is reachable"),
+            Problem::FoldCollision(other) => {
+                format!("name folds like {other}; only one is reachable")
+            }
         };
         let _ = writeln!(t, "{p}: {what}");
     }

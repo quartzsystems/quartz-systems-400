@@ -54,7 +54,10 @@ pub struct Entry {
 impl Entry {
     /// Bytes it is reckoned to take.
     fn bytes(&self) -> u64 {
-        u64::try_from(self.text.len()).unwrap_or(u64::MAX).saturating_mul(16).saturating_add(512)
+        u64::try_from(self.text.len())
+            .unwrap_or(u64::MAX)
+            .saturating_mul(16)
+            .saturating_add(512)
     }
 }
 
@@ -69,7 +72,13 @@ struct Cache {
 
 impl Default for Cache {
     fn default() -> Self {
-        Self { entries: HashMap::new(), bytes: 0, limit_mb: DEFAULT_MB, tick: 0, next_id: 0 }
+        Self {
+            entries: HashMap::new(),
+            bytes: 0,
+            limit_mb: DEFAULT_MB,
+            tick: 0,
+            next_id: 0,
+        }
     }
 }
 
@@ -80,8 +89,15 @@ impl Cache {
 
     /// Room for `need` more bytes: the least recently used leave.
     fn make_room(&mut self, need: u64) {
-        while !self.entries.is_empty() && (self.bytes.saturating_add(need) > self.limit() || self.entries.len() >= MAX_ENTRIES) {
-            let oldest = self.entries.iter().min_by_key(|(_, e)| e.tick).map(|(k, _)| k.clone()).expect("not empty");
+        while !self.entries.is_empty()
+            && (self.bytes.saturating_add(need) > self.limit() || self.entries.len() >= MAX_ENTRIES)
+        {
+            let oldest = self
+                .entries
+                .iter()
+                .min_by_key(|(_, e)| e.tick)
+                .map(|(k, _)| k.clone())
+                .expect("not empty");
             if let Some(e) = self.entries.remove(&oldest) {
                 self.bytes = self.bytes.saturating_sub(e.bytes());
             }
@@ -119,7 +135,16 @@ pub fn keep(text: &str, naming: Naming, statement: &Statement, now: u64) {
         let mut c = c.borrow_mut();
         c.tick += 1;
         c.next_id += 1;
-        let e = Entry { text: text.to_string(), naming, statement: statement.clone(), id: c.next_id, uses: 1, first: now, last: now, tick: c.tick };
+        let e = Entry {
+            text: text.to_string(),
+            naming,
+            statement: statement.clone(),
+            id: c.next_id,
+            uses: 1,
+            first: now,
+            last: now,
+            tick: c.tick,
+        };
         let need = e.bytes();
         if need > c.limit() {
             return;

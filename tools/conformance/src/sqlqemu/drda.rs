@@ -38,7 +38,11 @@ impl Suite {
         loop_rdb(s)?;
         let _ = sql(s, &format!("DROP TABLE {LIB}/DRDAT"))?;
         let _ = sql(s, &format!("DROP TABLE {LIB}/DBMON"))?;
-        sql_has(s, &format!("CREATE TABLE {LIB}/DRDAT (N INT, W CHAR(10))"), &["OK"])?;
+        sql_has(
+            s,
+            &format!("CREATE TABLE {LIB}/DRDAT (N INT, W CHAR(10))"),
+            &["OK"],
+        )?;
         sql_has(
             s,
             &format!("INSERT INTO {LIB}/DRDAT VALUES (1, 'ONE'), (2, 'TWO'), (3, 'THREE')"),
@@ -66,10 +70,18 @@ impl Suite {
             &format!("SELECT QQRID, COUNT(*) FROM {LIB}/DBMON GROUP BY QQRID ORDER BY QQRID"),
             &["row(s)"],
         )?;
-        let texts = sql(s, &format!("SELECT QQ1000 FROM {LIB}/DBMON WHERE QQRID = 1000"))?;
-        let n = texts.lines().filter(|l| l.to_ascii_uppercase().contains("CONNECT")).count();
+        let texts = sql(
+            s,
+            &format!("SELECT QQ1000 FROM {LIB}/DBMON WHERE QQRID = 1000"),
+        )?;
+        let n = texts
+            .lines()
+            .filter(|l| l.to_ascii_uppercase().contains("CONNECT"))
+            .count();
         if n < 2 || !texts.to_ascii_uppercase().contains("DRDAT") {
-            return Err(format!("the monitor lacks the routed statements (CONNECT TO, CONNECT RESET, the query at LOOP):\n{texts}"));
+            return Err(format!(
+                "the monitor lacks the routed statements (CONNECT TO, CONNECT RESET, the query at LOOP):\n{texts}"
+            ));
         }
         let ids: Vec<&str> = kinds
             .lines()

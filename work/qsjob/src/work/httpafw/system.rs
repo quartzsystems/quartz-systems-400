@@ -73,13 +73,18 @@ fn sign_on(m: &mut Main, user: &str, password: &str) -> Result<SignOn, Message> 
             Ok(out)
         }
         Ok(_) => Err(error("CPF22E2", "The sign-on could not be completed.")),
-        Err(id) => Err(error(&id, &format!("User profile {} could not be used by this server.", s.user))),
+        Err(id) => Err(error(
+            &id,
+            &format!("User profile {} could not be used by this server.", s.user),
+        )),
     }
 }
 
 /// A profile's record, read as `as_user`.
 fn profile(m: &Main, user: &str) -> Option<UsrPrf> {
-    match m.sec(Query::Profile { user: user.to_string() }) {
+    match m.sec(Query::Profile {
+        user: user.to_string(),
+    }) {
         Ok(Answer::Profile { data }) => UsrPrf::decode(&data).ok(),
         _ => None,
     }
@@ -95,8 +100,15 @@ fn profiles(m: &Main) -> Vec<Profile> {
     let Ok(Answer::Users { rows }) = m.sec(q) else {
         return Vec::new();
     };
-    let all: Vec<UsrPrf> = rows.iter().filter(|r| r.name != "*PUBLIC").filter_map(|r| profile(m, &r.name)).collect();
-    let named = |n: &str| all.iter().any(|p| p.grpprf == n || p.supgrpprf.iter().any(|g| g == n));
+    let all: Vec<UsrPrf> = rows
+        .iter()
+        .filter(|r| r.name != "*PUBLIC")
+        .filter_map(|r| profile(m, &r.name))
+        .collect();
+    let named = |n: &str| {
+        all.iter()
+            .any(|p| p.grpprf == n || p.supgrpprf.iter().any(|g| g == n))
+    };
     let mut out: Vec<Profile> = all
         .iter()
         .map(|p| Profile {
@@ -117,7 +129,11 @@ fn counts(m: &Main, user: &str) -> Counts {
         .map_or(0, |v| v.iter().filter(|x| x.kind != MsgKind::Rpy).count());
     let u = user.to_string();
     let spooled = m.ask(|l| l.splf_list(u, String::new())).len();
-    let active = m.ask(Client::active_jobs).iter().filter(|j| j.user == user).count();
+    let active = m
+        .ask(Client::active_jobs)
+        .iter()
+        .filter(|j| j.user == user)
+        .count();
     let n = |x: usize| u32::try_from(x).unwrap_or(u32::MAX);
     Counts {
         messages: n(messages),
@@ -169,30 +185,44 @@ impl System for LiveSystem {
             .call(move |m| {
                 // BLOCKED(rel): the password approval program (QPWDVLDPGM) is not called from a web job; refused with CPF22D3 while one is set.
                 let pgm = sysval(m, "QPWDVLDPGM");
-                if !pgm.split_whitespace().next().unwrap_or("*NONE").starts_with('*') {
+                if !pgm
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or("*NONE")
+                    .starts_with('*')
+                {
                     return Err("CPF22D3".to_string());
                 }
-                match m.sec(Query::ChangePassword { user: u, current: c, new: n }) {
+                match m.sec(Query::ChangePassword {
+                    user: u,
+                    current: c,
+                    new: n,
+                }) {
                     Ok(_) => Ok(()),
                     Err(id) => Err(id),
                 }
             })
             .unwrap_or_else(|| Err("CPF9897".into()));
         r.map_err(|id| {
-            let text = self.core.message(&id, &[user]).map(|s| s.text).unwrap_or_default();
+            let text = self
+                .core
+                .message(&id, &[user])
+                .map(|s| s.text)
+                .unwrap_or_default();
             error(&id, &text)
         })
     }
 
     fn password_rules(&self) -> String {
-        self.link.job(|m| {
-            ["QPWDMINLEN", "QPWDMAXLEN", "QPWDRQDDIF", "QPWDLVL"]
-                .iter()
-                .map(|n| format!("{n} {}", sysval(m, n)))
-                .collect::<Vec<_>>()
-                .join(", ")
-        })
-        .unwrap_or_default()
+        self.link
+            .job(|m| {
+                ["QPWDMINLEN", "QPWDMAXLEN", "QPWDRQDDIF", "QPWDLVL"]
+                    .iter()
+                    .map(|n| format!("{n} {}", sysval(m, n)))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
+            .unwrap_or_default()
     }
 
     fn special(&self, user: &str) -> Vec<String> {
@@ -209,7 +239,9 @@ impl System for LiveSystem {
 
     fn text(&self, user: &str) -> String {
         let u = user.to_string();
-        self.link.read(user, move |m| profile(m, &u).map(|p| p.text).unwrap_or_default())
+        self.link.read(user, move |m| {
+            profile(m, &u).map(|p| p.text).unwrap_or_default()
+        })
     }
 
     fn profiles(&self, user: &str) -> Vec<Profile> {
@@ -223,7 +255,9 @@ impl System for LiveSystem {
 
     fn audit(&self, entry: Audit) {
         match entry {
-            Audit::Password { user, code } => self.core.audit("PW", user, code.to_string(), String::new()),
+            Audit::Password { user, code } => {
+                self.core.audit("PW", user, code.to_string(), String::new())
+            }
             Audit::Refused { user, object, need } => self.core.audit("AF", user, object, need),
         }
     }

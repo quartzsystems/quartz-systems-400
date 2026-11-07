@@ -62,7 +62,12 @@ pub fn literals(src: &str) -> Option<Vec<Literal>> {
 
 /// Whether an attribute's tokens mark a test item.
 fn is_test_attr(g: &proc_macro2::Group) -> bool {
-    let s: String = g.stream().to_string().chars().filter(|c| !c.is_whitespace()).collect();
+    let s: String = g
+        .stream()
+        .to_string()
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect();
     s == "test" || s.starts_with("cfg(test") || s.contains("cfg(all(test") || s.ends_with("::test")
 }
 
@@ -116,7 +121,8 @@ fn walk(ts: TokenStream, calls: &mut Vec<String>, out: &mut Vec<Literal>) {
                 if let Some(TokenTree::Group(g)) = toks.get(i + 1)
                     && g.delimiter() == Delimiter::Parenthesis
                 {
-                    let method = i > 0 && matches!(&toks[i - 1], TokenTree::Punct(q) if q.as_char() == '.');
+                    let method =
+                        i > 0 && matches!(&toks[i - 1], TokenTree::Punct(q) if q.as_char() == '.');
                     if !(method && SKIP_METHODS.contains(&name.as_str())) {
                         // `Type::f` when a path names it.
                         let path = i >= 3

@@ -15,7 +15,13 @@ use crate::display;
 use crate::msg::{Msg, Reply};
 
 /// `CRTUDFS UDFS CASE CRTOBJAUD TEXT`.
-pub fn crtudfs(c: &dyn IfsClient, udfs: &str, case_mixed: bool, crtobjaud: &str, text: &str) -> Reply {
+pub fn crtudfs(
+    c: &dyn IfsClient,
+    udfs: &str,
+    case_mixed: bool,
+    crtobjaud: &str,
+    text: &str,
+) -> Reply {
     let aud = match crtobjaud.trim().to_ascii_uppercase().as_str() {
         "" | "*SYSVAL" => CrtObjAud::SysVal,
         "*NONE" => CrtObjAud::Value(ObjAudit::None),
@@ -24,7 +30,11 @@ pub fn crtudfs(c: &dyn IfsClient, udfs: &str, case_mixed: bool, crtobjaud: &str,
         "*ALL" => CrtObjAud::Value(ObjAudit::All),
         w => return Reply::fail(Msg::new("CPFA0CB").chars(w, 10)),
     };
-    let text = if text.eq_ignore_ascii_case("*BLANK") { "" } else { text };
+    let text = if text.eq_ignore_ascii_case("*BLANK") {
+        ""
+    } else {
+        text
+    };
     match c.crtudfs(udfs, case_mixed, aud, text) {
         Ok(()) => Reply::done(Msg::path("CPCA1C0", udfs)),
         Err(e) => Reply::errno(e, udfs),
@@ -62,7 +72,10 @@ pub fn mount(c: &dyn IfsClient, ty: &str, mfs: &str, over: &str, options: &str) 
 /// `UNMOUNT TYPE(*UDFS) MFS|MNTOVRDIR`.
 pub fn unmount(c: &dyn IfsClient, ty: &str, mfs: &str, over: &str) -> Reply {
     if !udfs_type(ty) {
-        return Reply::fail(Msg::path("CPFA0AD", if mfs.is_empty() { over } else { mfs }));
+        return Reply::fail(Msg::path(
+            "CPFA0AD",
+            if mfs.is_empty() { over } else { mfs },
+        ));
     }
     let which = if over.is_empty() || over.eq_ignore_ascii_case("*MFS") {
         mfs
@@ -93,7 +106,10 @@ pub fn dspudfs(c: &dyn IfsClient, udfs: &str) -> Reply {
     };
     let _ = writeln!(t, "{:^80}", "User-defined file system");
     for (k, val) in &v.vars {
-        let label = display::UDFS_LABELS.iter().find(|(n, _)| n == k).map_or("", |(_, l)| *l);
+        let label = display::UDFS_LABELS
+            .iter()
+            .find(|(n, _)| n == k)
+            .map_or("", |(_, l)| *l);
         line(&mut t, label, val);
         if *k == "MOUNTED" {
             for m in &v.mounts {

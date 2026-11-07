@@ -11,9 +11,9 @@ use store::obj::{JobHandle, LockState, ObjectId, ops};
 use store::txn::Txn;
 
 use crate::error::{DbError, Result};
+use crate::file::MemberEntry;
 use crate::file::{self, FileDesc, FileKind, Maint, Recover, Size, Wait};
 use crate::format::FormatDef;
-use crate::file::MemberEntry;
 use crate::member::{Member, rebuild};
 use crate::util::Hold;
 use crate::util::cpyf::{FmtOpt, copy_lobs, map};
@@ -350,10 +350,19 @@ fn copy_converted(
             let mut rec = vec![0u8; usize::try_from(new.format.record_len).expect("fits")];
             let mut nulls = vec![0u8; usize::from(new.null_map_len)];
             plan.apply(old, new, s, 0, &mut rec, &mut nulls)?;
-            copy_lobs(txn, &lobs, new, &mut rec, (from_e.object, to_e.object), &mut copies)?;
+            copy_lobs(
+                txn,
+                &lobs,
+                new,
+                &mut rec,
+                (from_e.object, to_e.object),
+                &mut copies,
+            )?;
             to.write_new(txn, &rec, &nulls).map_err(|e| match e {
                 // A unique key the old records repeat.
-                DbError::DuplicateKey { file, member, key } => DbError::DuplicateKeys { file, member, key },
+                DbError::DuplicateKey { file, member, key } => {
+                    DbError::DuplicateKeys { file, member, key }
+                }
                 e => e,
             })?;
         }

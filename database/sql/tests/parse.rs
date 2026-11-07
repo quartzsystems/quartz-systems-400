@@ -262,7 +262,10 @@ fn ddl_and_dml_shapes() {
     };
     assert_eq!(t.columns.len(), 5);
     assert_eq!(t.columns[0].type_spec.data_type, DataType::Decimal(7, 0));
-    assert!(t.columns[0].not_null && matches!(t.columns[0].constraints[0], Constraint::PrimaryKey { .. }));
+    assert!(
+        t.columns[0].not_null
+            && matches!(t.columns[0].constraints[0], Constraint::PrimaryKey { .. })
+    );
     assert_eq!(t.columns[1].default, Some(ColumnDefault::System));
     assert_eq!(t.columns[2].type_spec.data_type, DataType::Numeric(9, 2));
     assert_eq!(
@@ -271,7 +274,10 @@ fn ddl_and_dml_shapes() {
     );
     assert_eq!(t.columns[3].type_spec.ccsid, Some(37));
     let id = t.columns[4].identity.as_ref().unwrap();
-    assert_eq!((id.always, id.start, id.increment), (true, Some(100), Some(10)));
+    assert_eq!(
+        (id.always, id.start, id.increment),
+        (true, Some(100), Some(10))
+    );
     assert!(
         matches!(&t.constraints[0], Constraint::Unique { name: Some(n), columns } if n.value == "UQ" && columns.len() == 1)
     );
@@ -396,7 +402,9 @@ fn naming_modes() {
 fn errors() {
     // A reserved word out of place is SQL0199, as on DB2 for i.
     let e = parse("SELECT FROM", Naming::Sys).unwrap_err();
-    let SqlError::Keyword { line, col, word } = &e else { panic!("{e}") };
+    let SqlError::Keyword { line, col, word } = &e else {
+        panic!("{e}")
+    };
     assert_eq!((*line, *col, word.as_str()), (1, 8, "FROM"));
     assert_eq!(e.sqlcode(), -199);
     let e = parse("SELECT * FROM t WHERE a = 1 extra", Naming::Sys).unwrap_err();
@@ -446,10 +454,22 @@ fn errors() {
 fn set_transaction_levels() {
     for (text, iso) in [
         ("SET TRANSACTION ISOLATION LEVEL NO COMMIT", Isolation::Nc),
-        ("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED", Isolation::Ur),
-        ("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Isolation::Cs),
-        ("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ", Isolation::Rs),
-        ("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE", Isolation::Rr),
+        (
+            "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED",
+            Isolation::Ur,
+        ),
+        (
+            "SET TRANSACTION ISOLATION LEVEL READ COMMITTED",
+            Isolation::Cs,
+        ),
+        (
+            "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ",
+            Isolation::Rs,
+        ),
+        (
+            "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE",
+            Isolation::Rr,
+        ),
         ("SET TRANSACTION ISOLATION LEVEL CHG", Isolation::Ur),
         ("SET TRANSACTION ISOLATION LEVEL RR", Isolation::Rr),
     ] {
@@ -461,15 +481,41 @@ fn set_transaction_levels() {
 #[test]
 fn intersect_binds_tighter_than_union_and_except() {
     use sql::ast::SetOp;
-    let Statement::Select(q) = sqln("SELECT A FROM T UNION SELECT A FROM U INTERSECT SELECT A FROM V EXCEPT SELECT A FROM W") else {
+    let Statement::Select(q) = sqln(
+        "SELECT A FROM T UNION SELECT A FROM U INTERSECT SELECT A FROM V EXCEPT SELECT A FROM W",
+    ) else {
         panic!()
     };
     // ((T UNION (U INTERSECT V)) EXCEPT W)
-    let QueryBody::Union { left, op: SetOp::Except, .. } = &q.body else { panic!("{:?}", q.body) };
-    let QueryBody::Union { right, op: SetOp::Union, .. } = left.as_ref() else { panic!("{left:?}") };
-    assert!(matches!(right.as_ref(), QueryBody::Union { op: SetOp::Intersect, all: false, .. }));
+    let QueryBody::Union {
+        left,
+        op: SetOp::Except,
+        ..
+    } = &q.body
+    else {
+        panic!("{:?}", q.body)
+    };
+    let QueryBody::Union {
+        right,
+        op: SetOp::Union,
+        ..
+    } = left.as_ref()
+    else {
+        panic!("{left:?}")
+    };
+    assert!(matches!(
+        right.as_ref(),
+        QueryBody::Union {
+            op: SetOp::Intersect,
+            all: false,
+            ..
+        }
+    ));
     // ALL is UNION's only: SQL0104, as DB2 for i 7.1.
-    for text in ["SELECT A FROM T EXCEPT ALL SELECT A FROM U", "SELECT A FROM T INTERSECT ALL SELECT A FROM U"] {
+    for text in [
+        "SELECT A FROM T EXCEPT ALL SELECT A FROM U",
+        "SELECT A FROM T INTERSECT ALL SELECT A FROM U",
+    ] {
         let e = parse(text, Naming::Sql).unwrap_err();
         assert_eq!(e.sqlcode(), -104, "{text}: {e}");
     }

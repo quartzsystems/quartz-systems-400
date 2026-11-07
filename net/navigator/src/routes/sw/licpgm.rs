@@ -10,8 +10,8 @@
 use qsweb::html::{esc, query};
 use qsweb::http::Response;
 use qsweb::partials::{
-    Button, Cell, Col, FilterField, List, Prop, PropGroup, actions, buttons, filter, form, grey, list_table, mono,
-    props_table,
+    Button, Cell, Col, FilterField, List, Prop, PropGroup, actions, buttons, filter, form, grey,
+    list_table, mono, props_table,
 };
 
 use super::{GROUP, need, page, run_all};
@@ -22,10 +22,18 @@ use crate::routes::Rq;
 use crate::routes::common::{Confirm, confirm_in};
 
 /// The Show choices.
-const SHOW: [&str; 3] = ["Installed", "All available on image catalog", "Not installed"];
+const SHOW: [&str; 3] = [
+    "Installed",
+    "All available on image catalog",
+    "Not installed",
+];
 
 fn status(p: &Product) -> String {
-    if p.installed { esc(&p.status) } else { grey("Not installed") }
+    if p.installed {
+        esc(&p.status)
+    } else {
+        grey("Not installed")
+    }
 }
 
 /// The product option's route: `/licpgm/<id>/<option>`.
@@ -42,7 +50,11 @@ pub fn list(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     if rq.post() {
         let f = rq.form();
-        let c = q.get("c").or(catalogs.first().map(|c| c.name.as_str())).unwrap_or("").to_string();
+        let c = q
+            .get("c")
+            .or(catalogs.first().map(|c| c.name.as_str()))
+            .unwrap_or("")
+            .to_string();
         if f.has("install") {
             return rq.redirect(&format!("/licpgm{}", query(&[("s", SHOW[1]), ("c", &c)])));
         }
@@ -51,7 +63,11 @@ pub fn list(rq: &Rq<'_>) -> Response {
         }
         return run_all(rq, &["CHKPRDOPT PRDID(*ALL)".to_string()], "/licpgm");
     }
-    let show = SHOW.iter().find(|s| **s == q.str("s")).copied().unwrap_or(SHOW[0]);
+    let show = SHOW
+        .iter()
+        .find(|s| **s == q.str("s"))
+        .copied()
+        .unwrap_or(SHOW[0]);
     let cat = catalogs
         .iter()
         .find(|c| c.name == q.str("c"))
@@ -100,11 +116,22 @@ pub fn list(rq: &Rq<'_>) -> Response {
         "s" => ps.sort_by_key(|p| !p.installed),
         _ => {}
     }
-    let chosen = |v: &str, first: &str| if v == first { String::new() } else { v.to_string() };
+    let chosen = |v: &str, first: &str| {
+        if v == first {
+            String::new()
+        } else {
+            v.to_string()
+        }
+    };
     let first_cat = catalogs.first().map(|c| c.name.clone()).unwrap_or_default();
     let f = filter(
         &[
-            FilterField::Select("Show".into(), "s".into(), SHOW.iter().map(ToString::to_string).collect(), chosen(show, SHOW[0])),
+            FilterField::Select(
+                "Show".into(),
+                "s".into(),
+                SHOW.iter().map(ToString::to_string).collect(),
+                chosen(show, SHOW[0]),
+            ),
             FilterField::Select(
                 "Image catalog".into(),
                 "c".into(),
@@ -131,7 +158,13 @@ pub fn list(rq: &Rq<'_>) -> Response {
                     (rq.ctx.url(&b), "Properties"),
                 ])
             } else {
-                actions(&[(rq.ctx.url(&format!("{b}/confirm{}", query(&[("op", "install"), ("c", &cat)]))), "Install")])
+                actions(&[(
+                    rq.ctx.url(&format!(
+                        "{b}/confirm{}",
+                        query(&[("op", "install"), ("c", &cat)])
+                    )),
+                    "Install",
+                )])
             };
             vec![
                 Cell::act(act),
@@ -183,13 +216,16 @@ pub fn list(rq: &Rq<'_>) -> Response {
 fn find(rq: &Rq<'_>, id: &str, opt: &str) -> Option<Product> {
     let sw = &rq.env().sw;
     let user = rq.user();
-    sw.products(user).into_iter().find(|p| p.id == id && p.option == opt).or_else(|| {
-        sw.catalogs(user)
-            .iter()
-            .filter_map(|c| sw.catalog_products(user, &c.name).ok())
-            .flatten()
-            .find(|p| p.id == id && p.option == opt)
-    })
+    sw.products(user)
+        .into_iter()
+        .find(|p| p.id == id && p.option == opt)
+        .or_else(|| {
+            sw.catalogs(user)
+                .iter()
+                .filter_map(|c| sw.catalog_products(user, &c.name).ok())
+                .flatten()
+                .find(|p| p.id == id && p.option == opt)
+        })
 }
 
 /// `/licpgm/<id>/<option>`: one product option.
@@ -197,7 +233,11 @@ pub fn props(rq: &Rq<'_>, id: &str, opt: &str) -> Response {
     let Some(p) = find(rq, id, opt) else {
         return rq.not_found(&format!("product {id} option {opt}"));
     };
-    let installed = if p.installed_at == 0 { String::new() } else { esc(&rq.when(p.installed_at)) };
+    let installed = if p.installed_at == 0 {
+        String::new()
+    } else {
+        esc(&rq.when(p.installed_at))
+    };
     let rows = vec![
         Prop::new("Product", mono(&p.id)),
         Prop::new("Option", mono(&p.option)),
@@ -214,7 +254,16 @@ pub fn props(rq: &Rq<'_>, id: &str, opt: &str) -> Response {
         esc(&rq.ctx.url("/licpgm"))
     );
     let h1 = format!("Product {} option {}", p.id, p.option);
-    page(rq, &["Licensed programs", &h1], &h1, None, Vec::new(), body, "licpgm", None)
+    page(
+        rq,
+        &["Licensed programs", &h1],
+        &h1,
+        None,
+        Vec::new(),
+        body,
+        "licpgm",
+        None,
+    )
 }
 
 /// `/licpgm/keys`: the license keys (`DSPLICKEY`).
@@ -274,7 +323,10 @@ pub fn confirm(rq: &Rq<'_>, id: &str, opt: &str) -> Response {
         };
         (
             "Install Licensed Program",
-            format!("RSTLICPGM LICPGM({}) OPTION({}) DEV({})", p.id, p.option, c.device),
+            format!(
+                "RSTLICPGM LICPGM({}) OPTION({}) DEV({})",
+                p.id, p.option, c.device
+            ),
             format!(
                 "Press OK to install the product option listed below from image catalog {} on device {}.",
                 c.name, c.device
@@ -304,8 +356,20 @@ pub fn confirm(rq: &Rq<'_>, id: &str, opt: &str) -> Response {
             what,
             crumb: &["Licensed programs"],
             sentence,
-            cols: &["Product", "Option", "Release", "Description", "Installed status"],
-            rows: vec![vec![mono(&p.id), mono(&p.option), mono(&p.release), esc(&p.text), status(&p)]],
+            cols: &[
+                "Product",
+                "Option",
+                "Release",
+                "Description",
+                "Installed status",
+            ],
+            rows: vec![vec![
+                mono(&p.id),
+                mono(&p.option),
+                mono(&p.release),
+                esc(&p.text),
+                status(&p),
+            ]],
             options: String::new(),
             command,
         },

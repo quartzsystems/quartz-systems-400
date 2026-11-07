@@ -284,9 +284,11 @@ mod tests {
         assert_eq!(back.get("ONAM"), "PAYROLL");
         assert_eq!(back.get("VIOL"), "A");
         assert_eq!(back.path(), "");
-        let moved = Event::new(Kind::Om)
-            .object("a.txt", "", "*STMF")
-            .ifs([1; 16], "/home/bob/a.txt", Some("/tmp/a.txt"));
+        let moved = Event::new(Kind::Om).object("a.txt", "", "*STMF").ifs(
+            [1; 16],
+            "/home/bob/a.txt",
+            Some("/tmp/a.txt"),
+        );
         let bytes = moved.encode();
         assert!(bytes.len() > layout::OM.size.unwrap());
         let back = Event::decode(Kind::Om, &bytes).unwrap();

@@ -232,7 +232,12 @@ fn units_holding_data_pair_with_each_other() {
 /// unprotected units, with the virtual parity controller.
 fn parity_env() -> MemEnv {
     let mut e = MemEnv::new("QS400");
-    let status = ["DPY/Unprotected", "DPY/Unprotected", "DPY/Unprotected", "DPY/Failed"];
+    let status = [
+        "DPY/Unprotected",
+        "DPY/Unprotected",
+        "DPY/Unprotected",
+        "DPY/Failed",
+    ];
     e.units = (0..4)
         .map(|n| unit(n, false, None, status[usize::from(n)], n != 3))
         .chain((4..6).map(|n| unit(n, false, None, "Unprotected", true)))
@@ -364,7 +369,10 @@ fn delete_data_lists_only_disks_outside_the_configuration() {
         .into_iter()
         .map(|d| d.device)
         .collect();
-    assert_eq!(shown, vec!["/dev/vdb", "/dev/vdc", "/dev/vdd", "/dev/vde", "/dev/vdg"]);
+    assert_eq!(
+        shown,
+        vec!["/dev/vdb", "/dev/vdc", "/dev/vdd", "/dev/vde", "/dev/vdg"]
+    );
     // A parity set member is never offered, even by serial alone.
     e.parity = vec![svctools::env::ParityUnit {
         set: 1,
@@ -398,7 +406,11 @@ fn delete_data_confirms_then_reaches_the_environment() {
     r.function(10, &mut e);
     assert_eq!(e.actions, vec!["delete /dev/vdg"]);
     assert_eq!(r.top(), "dst-disk-recovery");
-    assert!(r.screen(&mut e).dump().contains("Data deleted on 1 unit(s)"));
+    assert!(
+        r.screen(&mut e)
+            .dump()
+            .contains("Data deleted on 1 unit(s)")
+    );
     check("delete-data-status", e.shown.last().unwrap());
     assert!(!e.whole.iter().any(|d| d.has_data));
     // Operators may not delete data.
@@ -455,13 +467,20 @@ fn hot_spare_screens_and_actions() {
     r.enter(&f(&["1", "1", "1"]), &mut e);
     check("parity-start-spare-confirm", &r.screen(&mut e).dump());
     r.function(10, &mut e);
-    assert_eq!(e.actions, vec!["parity start 5 [4, 5, 6]", "spare start /dev/vdg"]);
+    assert_eq!(
+        e.actions,
+        vec!["parity start 5 [4, 5, 6]", "spare start /dev/vdg"]
+    );
     // No disk large enough: refused before the confirmation.
     e.spare = vec![spare("vdg", 1024)];
     walk(&mut e, &["4", "1", "5", "8"], "parity-start6-spare");
     let mut r = walk(&mut e, &["4", "1", "5", "7"], "parity-start5-spare");
     r.enter(&f(&["1", "1", "1"]), &mut e);
-    assert!(r.screen(&mut e).dump().contains("large enough to be the hot spare"));
+    assert!(
+        r.screen(&mut e)
+            .dump()
+            .contains("large enough to be the hot spare")
+    );
     // Without spares, stop says so; the sets ignore the spare rows.
     e.parity.retain(|p| p.set != 0);
     let mut r = walk(&mut e, &["4", "1", "5"], "parity");

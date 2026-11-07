@@ -10,10 +10,10 @@ use rpgfront::ast::{Def, DefKind, Module};
 use rpgfront::reader::{Options as ReadOptions, Read};
 use rpgfront::{Diag, Includes, Member};
 
+use crate::codegen;
 use crate::ctl::{self, Command, Ctl, Options};
 use crate::decl::{self, Cx};
 use crate::files::{self, ExtFiles, File};
-use crate::codegen;
 use crate::listing;
 use crate::names::mangle;
 use crate::syms::{Kind, Proto, Storage, Sym, Table};
@@ -56,13 +56,21 @@ impl Compiled {
     /// numbers.
     #[must_use]
     pub fn srcstmt(&self) -> bool {
-        self.ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*SRCSTMT"))
+        self.ctl
+            .option
+            .iter()
+            .any(|o| o.eq_ignore_ascii_case("*SRCSTMT"))
     }
 
     /// The sequence number of a source line, as a statement number.
     #[must_use]
     pub fn stmt_seq(&self, line: u32) -> String {
-        self.read.lines.iter().find(|l| l.no == line).map(|l| l.seq.clone()).unwrap_or_default()
+        self.read
+            .lines
+            .iter()
+            .find(|l| l.no == line)
+            .map(|l| l.seq.clone())
+            .unwrap_or_default()
     }
 
     /// The listing's number of a source line: generated lines (`=D`,
@@ -74,9 +82,18 @@ impl Compiled {
             .read
             .lines
             .iter()
-            .filter(|l| l.no < line && (l.class == rpgfront::reader::Class::Skipped || crate::listing::unnumbered(l)))
+            .filter(|l| {
+                l.no < line
+                    && (l.class == rpgfront::reader::Class::Skipped
+                        || crate::listing::unnumbered(l))
+            })
             .count();
-        line + self.generated.iter().filter(|(at, _)| *at <= line).map(|(_, n)| n).sum::<u32>()
+        line + self
+            .generated
+            .iter()
+            .filter(|(at, _)| *at <= line)
+            .map(|(_, n)| n)
+            .sum::<u32>()
             - u32::try_from(skipped).unwrap_or(0)
     }
 }
@@ -112,21 +129,37 @@ fn declare_scope(
 ) {
     let first = files.len();
     for f in files_in {
-        if let Some(n) = f.kws.iter().find(|k| k.name == "INFDS").and_then(|k| decl::word_arg(k, 0)) {
+        if let Some(n) = f
+            .kws
+            .iter()
+            .find(|k| k.name == "INFDS")
+            .and_then(|k| decl::word_arg(k, 0))
+        {
             t.infds.push(n.to_ascii_uppercase());
         }
         let mut fi = files::file(f, scope, ext, diags);
         fi.ir_index = u32::try_from(files.len()).unwrap_or(0);
         // Every format ignored: the file is dropped.
-        if fi.ext.as_ref().is_some_and(|e| !e.formats.is_empty() && e.formats.iter().all(|r| !crate::extfiles::kept(&fi, &r.name))) {
-            diags.push(Diag::new(crate::diag::ids::ALL_FORMATS_IGNORED, 40, f.at).arg(fi.name.clone()));
+        if fi.ext.as_ref().is_some_and(|e| {
+            !e.formats.is_empty()
+                && e.formats
+                    .iter()
+                    .all(|r| !crate::extfiles::kept(&fi, &r.name))
+        }) {
+            diags.push(
+                Diag::new(crate::diag::ids::ALL_FORMATS_IGNORED, 40, f.at).arg(fi.name.clone()),
+            );
             t.dropped_files.push(fi.name.clone());
             continue;
         }
         // LIKEFILE: the parent's device, description and use; the new
         // file is qualified.
         if let Some(parent) = fi.likefile.clone() {
-            match files.iter().find(|p| p.name == parent.to_ascii_uppercase()).cloned() {
+            match files
+                .iter()
+                .find(|p| p.name == parent.to_ascii_uppercase())
+                .cloned()
+            {
                 Some(p) => {
                     fi.dev = p.dev;
                     fi.ext = p.ext;
@@ -175,8 +208,12 @@ fn declare_scope(
     }
     // IMPORT('name') and EXPORT('name'): the external name is the IR's.
     for d in defs.iter().filter(|_| scope == 0) {
-        let Some(k) = d.kw("IMPORT").or_else(|| d.kw("EXPORT")) else { continue };
-        let Some(n) = decl::str_arg(k, 0) else { continue };
+        let Some(k) = d.kw("IMPORT").or_else(|| d.kw("EXPORT")) else {
+            continue;
+        };
+        let Some(n) = decl::str_arg(k, 0) else {
+            continue;
+        };
         if n.is_empty() || !n.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
             continue;
         }
@@ -186,9 +223,20 @@ fn declare_scope(
     }
     // A basing pointer nothing declares is declared by BASED.
     for d in defs {
-        let Some(p) = d.kw("BASED").and_then(|k| decl::word_arg(k, 0)).map(|p| p.to_ascii_uppercase()) else { continue };
-        let Some(id) = cx.t.find(scope, &d.name.to_ascii_uppercase()) else { continue };
-        if p.contains('.') || p.starts_with('*') || matches!(cx.t.syms[id].storage, Storage::Based(_)) {
+        let Some(p) = d
+            .kw("BASED")
+            .and_then(|k| decl::word_arg(k, 0))
+            .map(|p| p.to_ascii_uppercase())
+        else {
+            continue;
+        };
+        let Some(id) = cx.t.find(scope, &d.name.to_ascii_uppercase()) else {
+            continue;
+        };
+        if p.contains('.')
+            || p.starts_with('*')
+            || matches!(cx.t.syms[id].storage, Storage::Based(_))
+        {
             continue;
         }
         // A pointer an earlier BASED declared bases this one too.
@@ -204,7 +252,11 @@ fn declare_scope(
             ty: crate::types::Ty::Ptr,
             ir: format!("${prefix}{}", mangle(&p)),
             scope,
-            storage: if scope == 0 { Storage::Static } else { Storage::Auto },
+            storage: if scope == 0 {
+                Storage::Static
+            } else {
+                Storage::Auto
+            },
             implicit: true,
             ..Sym::default()
         };
@@ -247,7 +299,14 @@ fn in_dependency_order(defs: &[Def]) -> Vec<&Def> {
 
 /// Depth first from a definition: what it needs, then it. A cycle is
 /// left to the declarations' own errors.
-fn visit<'a>(i: usize, defs: &'a [Def], deps: &[Vec<usize>], done: &mut [bool], on: &mut [bool], out: &mut Vec<&'a Def>) {
+fn visit<'a>(
+    i: usize,
+    defs: &'a [Def],
+    deps: &[Vec<usize>],
+    done: &mut [bool],
+    on: &mut [bool],
+    out: &mut Vec<&'a Def>,
+) {
     if done[i] || on[i] {
         return;
     }
@@ -277,33 +336,62 @@ fn written_name(read: &rpgfront::reader::Read, line: u32, name: &str) -> String 
 }
 
 /// Compile a member.
-pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles, opts: &Options) -> Compiled {
+pub fn compile(
+    main: Member,
+    includes: &mut dyn Includes,
+    ext: &mut dyn ExtFiles,
+    opts: &Options,
+) -> Compiled {
     let ropts = ReadOptions {
-        defines: predefined(opts).into_iter().chain(opts.define.iter().cloned()).collect(),
+        defines: predefined(opts)
+            .into_iter()
+            .chain(opts.define.iter().cloned())
+            .collect(),
         ..ReadOptions::default()
     };
-    let (read, mut module, mut diags) = rpgfront::front(main, &mut crate::qoar::WithQoar(includes), &ropts);
+    let (read, mut module, mut diags) =
+        rpgfront::front(main, &mut crate::qoar::WithQoar(includes), &ropts);
     // A free-form declaration after the main calculations is out of
     // sequence: ignored, and so is the rest of its line.
     if let Some(first) = module.calcs.first().map(|s| s.at.line) {
-        let late: Vec<rpgfront::ast::Pos> =
-            module.defs.iter().filter(|d| d.fixed.is_none() && d.at.line > first).map(|d| d.at).collect();
-        module.defs.retain(|d| d.fixed.is_some() || d.at.line <= first);
+        let late: Vec<rpgfront::ast::Pos> = module
+            .defs
+            .iter()
+            .filter(|d| d.fixed.is_none() && d.at.line > first)
+            .map(|d| d.at)
+            .collect();
+        module
+            .defs
+            .retain(|d| d.fixed.is_some() || d.at.line <= first);
         let mut lines: Vec<u32> = Vec::new();
         for at in late {
             if !lines.contains(&at.line) {
                 lines.push(at.line);
                 diags.retain(|d| d.at.line != at.line);
-                diags.push(Diag::new(crate::diag::ids::OUT_OF_SEQUENCE, 30, rpgfront::ast::Pos { line: at.line, col: 1 }));
+                diags.push(Diag::new(
+                    crate::diag::ids::OUT_OF_SEQUENCE,
+                    30,
+                    rpgfront::ast::Pos {
+                        line: at.line,
+                        col: 1,
+                    },
+                ));
             }
         }
     }
     // So is a group end with no group after a procedure's calculations
     // (a child read as an operation ended its group).
     let first_main = module.calcs.first().map(|s| s.at.line);
-    for d in diags.iter_mut().filter(|d| d.msgid == rpgfront::diag::ids::END_NOT_EXPECTED) {
+    for d in diags
+        .iter_mut()
+        .filter(|d| d.msgid == rpgfront::diag::ids::END_NOT_EXPECTED)
+    {
         let line = d.at.line;
-        match module.procs.iter().find(|p| p.at.line <= line && line <= p.end.line) {
+        match module
+            .procs
+            .iter()
+            .find(|p| p.at.line <= line && line <= p.end.line)
+        {
             Some(p) if p.calcs.first().is_some_and(|s| s.at.line < line) => {
                 d.msgid = crate::diag::ids::OUT_OF_SEQUENCE_PROC;
                 d.severity = 30;
@@ -326,20 +414,39 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     if let Some(m) = &ctl.main
         && !module.procs.iter().any(|p| p.name.eq_ignore_ascii_case(m))
     {
-        let at = module.ctl.iter().find(|k| k.name == "MAIN").map_or_else(rpgfront::ast::Pos::default, |k| k.at);
+        let at = module
+            .ctl
+            .iter()
+            .find(|k| k.name == "MAIN")
+            .map_or_else(rpgfront::ast::Pos::default, |k| k.at);
         diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, at).arg(m.clone()));
     }
     if !ctl.nomain && ctl.main.is_none() && !can_end(&module) {
-        diags.push(Diag::new(crate::diag::ids::NO_END, 40, rpgfront::ast::Pos::default()));
+        diags.push(Diag::new(
+            crate::diag::ids::NO_END,
+            40,
+            rpgfront::ast::Pos::default(),
+        ));
     }
     check_levels(&module, &mut diags);
     // An EXCEPT name no EXCEPT operation names.
-    for o in module.outputs.iter().filter(|o| o.kind == "E" && !o.except.is_empty()) {
+    for o in module
+        .outputs
+        .iter()
+        .filter(|o| o.kind == "E" && !o.except.is_empty())
+    {
         let used = module
             .calcs
             .iter()
             .chain(module.procs.iter().flat_map(|p| p.calcs.iter()))
-            .any(|s| s.op.code == "EXCEPT" && s.op.f2.first().and_then(|e| e.name()).is_some_and(|n| n.eq_ignore_ascii_case(&o.except)));
+            .any(|s| {
+                s.op.code == "EXCEPT"
+                    && s.op
+                        .f2
+                        .first()
+                        .and_then(|e| e.name())
+                        .is_some_and(|n| n.eq_ignore_ascii_case(&o.except))
+            });
         if !used {
             diags.push(Diag::new(crate::diag::ids::EXCEPT_UNUSED, 0, o.at).arg(o.except.clone()));
         }
@@ -348,11 +455,25 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     t.extbinint = ctl.extbinint;
     t.alwnull_usrctl = ctl.alwnull == "*USRCTL";
     let mut files = Vec::new();
-    declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, &module.inputs, ext, &mut files);
+    declare_scope(
+        &mut t,
+        &mut diags,
+        &ctl,
+        0,
+        "",
+        &module.files,
+        &module.defs,
+        &module.inputs,
+        ext,
+        &mut files,
+    );
     crate::extfiles::declare_calc_fields(&mut t, &mut diags, 0, "", &module.calcs);
     bind_entry(&mut t, &mut diags, &module);
     check_main_protos(&module, &ctl, opts, &mut diags);
-    let sql_opts = opts.sql.clone().or_else(|| (opts.command == Command::CrtSqlRpgi).then(rpgsqlpre::Options::default));
+    let sql_opts = opts
+        .sql
+        .clone()
+        .or_else(|| (opts.command == Command::CrtSqlRpgi).then(rpgsqlpre::Options::default));
     if sql_opts.is_some() {
         crate::sql::declare_sqlca(&mut t, &mut diags, &ctl);
         if read.sqlda {
@@ -362,14 +483,29 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     // A program-described printer without an overflow indicator gets
     // the first of OA to OG no other file uses.
     let used: Vec<String> = files.iter().filter_map(|f| f.oflind.clone()).collect();
-    for f in files.iter_mut().filter(|f| f.dev == crate::files::Dev::Printer && !f.external && f.oflind.is_none()) {
-        let pick = ["*INOA", "*INOB", "*INOC", "*INOD", "*INOE", "*INOF", "*INOG"]
-            .into_iter()
-            .find(|i| !used.iter().any(|u| u == i));
+    for f in files
+        .iter_mut()
+        .filter(|f| f.dev == crate::files::Dev::Printer && !f.external && f.oflind.is_none())
+    {
+        let pick = [
+            "*INOA", "*INOB", "*INOC", "*INOD", "*INOE", "*INOF", "*INOG",
+        ]
+        .into_iter()
+        .find(|i| !used.iter().any(|u| u == i));
         if let Some(p) = pick {
             f.oflind = Some(p.to_string());
             f.auto_overflow = true;
-            diags.push(Diag::new(crate::diag::ids::OFLIND_ASSIGNED, 0, rpgfront::ast::Pos { line: f.def_line, col: 7 }).arg(p));
+            diags.push(
+                Diag::new(
+                    crate::diag::ids::OFLIND_ASSIGNED,
+                    0,
+                    rpgfront::ast::Pos {
+                        line: f.def_line,
+                        col: 7,
+                    },
+                )
+                .arg(p),
+            );
         }
     }
     // Each procedure: its interface as parameters, then its own files
@@ -381,7 +517,10 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         scopes.push(scope);
         let prefix = format!("L{}_", i + 1);
         let pname = p.name.to_ascii_uppercase();
-        if module.procs[..i].iter().any(|q| q.name.eq_ignore_ascii_case(&pname)) {
+        if module.procs[..i]
+            .iter()
+            .any(|q| q.name.eq_ignore_ascii_case(&pname))
+        {
             diags.push(Diag::new(crate::diag::ids::PROC_TWICE, 30, p.at).arg(pname.clone()));
         }
         check_proc(p, &ctl, &mut diags);
@@ -411,13 +550,22 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             pr.name.clone_from(&pname);
             // EXTPROC(*DCLCASE) on an unnamed interface: the procedure's
             // name as written.
-            if pr.extproc.as_deref().is_some_and(|e| e.eq_ignore_ascii_case("*N")) {
+            if pr
+                .extproc
+                .as_deref()
+                .is_some_and(|e| e.eq_ignore_ascii_case("*N"))
+            {
                 pr.extproc = Some(written_name(&read, p.at.line, &p.name));
             }
             pr
         };
         // A procedure that returns a value needs a RETURN with one.
-        if proto.ret.is_some() && !p.calcs.iter().any(|s| s.op.code == "RETURN" && s.op.xf2.is_some()) {
+        if proto.ret.is_some()
+            && !p
+                .calcs
+                .iter()
+                .any(|s| s.op.code == "RETURN" && s.op.xf2.is_some())
+        {
             diags.push(Diag::new(crate::diag::ids::NO_RETURN, 30, p.at).arg(pname.clone()));
         }
         for (k, prm) in proto.parms.iter().enumerate() {
@@ -425,7 +573,11 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             // its control block the caller's.
             if let Some(parent) = &prm.likefile {
                 let at = iface.children.get(k).map_or(iface.at, |c| c.at);
-                match files.iter().find(|f| f.name == *parent && !f.param).cloned() {
+                match files
+                    .iter()
+                    .find(|f| f.name == *parent && !f.param)
+                    .cloned()
+                {
                     Some(mut f) => {
                         f.name.clone_from(&prm.name);
                         f.scope = scope;
@@ -446,7 +598,10 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                             ..Sym::default()
                         };
                         if t.add(s).is_err() {
-                            diags.push(Diag::new(crate::diag::ids::DUPLICATE, 30, at).arg(prm.name.clone()));
+                            diags.push(
+                                Diag::new(crate::diag::ids::DUPLICATE, 30, at)
+                                    .arg(prm.name.clone()),
+                            );
                         }
                         // Its own record formats, the parent's, qualified.
                         let mut copies: Vec<_> = t
@@ -470,17 +625,28 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                                 .map(|fm| crate::extfiles::RecFmt {
                                     file: files.len(),
                                     file_name: prm.name.clone(),
-                                    name: f.renames.iter().find(|(e, _)| *e == fm.name).map_or_else(|| fm.name.clone(), |(_, n)| n.clone()),
+                                    name: f
+                                        .renames
+                                        .iter()
+                                        .find(|(e, _)| *e == fm.name)
+                                        .map_or_else(|| fm.name.clone(), |(_, n)| n.clone()),
                                     fmt: fm.clone(),
                                     qualified: true,
-                                    names: fm.fields.iter().map(|x| crate::extfiles::prefixed(&x.name, f.prefix.as_ref())).collect(),
+                                    names: fm
+                                        .fields
+                                        .iter()
+                                        .map(|x| {
+                                            crate::extfiles::prefixed(&x.name, f.prefix.as_ref())
+                                        })
+                                        .collect(),
                                 })
                                 .collect();
                         }
                         t.recfmts.extend(copies);
                         files.push(f);
                     }
-                    None => diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, at).arg(parent.clone())),
+                    None => diags
+                        .push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, at).arg(parent.clone())),
                 }
                 continue;
             }
@@ -508,10 +674,14 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                     let declared = t.protos[pi].clone();
                     // Each interface parameter is its prototype's.
                     for (k, (d, i)) in declared.parms.iter().zip(&proto.parms).enumerate() {
-                        let known = d.ty != crate::types::Ty::Unknown && i.ty != crate::types::Ty::Unknown;
+                        let known =
+                            d.ty != crate::types::Ty::Unknown && i.ty != crate::types::Ty::Unknown;
                         if known && (d.ty != i.ty || d.dim != i.dim) {
                             let at = iface.children.get(k).map_or(iface.at, |c| c.at);
-                            diags.push(Diag::new(crate::diag::ids::PI_PARM_DIFFERS, 30, at).arg(i.name.clone()));
+                            diags.push(
+                                Diag::new(crate::diag::ids::PI_PARM_DIFFERS, 30, at)
+                                    .arg(i.name.clone()),
+                            );
                         }
                     }
                     t.protos[pi] = merge_proto(declared, &proto);
@@ -532,14 +702,31 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                 });
             }
         }
-        declare_scope(&mut t, &mut diags, &ctl, scope, &prefix, &p.files, &p.defs, &[], ext, &mut files);
+        declare_scope(
+            &mut t,
+            &mut diags,
+            &ctl,
+            scope,
+            &prefix,
+            &p.files,
+            &p.defs,
+            &[],
+            ext,
+            &mut files,
+        );
         crate::extfiles::declare_calc_fields(&mut t, &mut diags, scope, &prefix, &p.calcs);
     }
     diags.extend(crate::blocks::check(&module.calcs));
     for p in &module.procs {
         diags.extend(crate::blocks::check(&p.calcs));
     }
-    crate::blocks::check_module(&module, &files, &ctl, opts.command == Command::CrtBndRpg, &mut diags);
+    crate::blocks::check_module(
+        &module,
+        &files,
+        &ctl,
+        opts.command == Command::CrtBndRpg,
+        &mut diags,
+    );
     // CRTSQLRPGI: the statements precompiled; errors above the
     // generation level end the command before the compile.
     let precompiled = sql_opts.map(|o| crate::sql::precompile(&module, &t, &scopes, ext, &o));
@@ -560,16 +747,26 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         c.precompiled = precompiled;
         return c;
     }
-    let sql_stmts: Vec<rpgsqlpre::Stmt> = precompiled.as_ref().map(|p| p.stmts.clone()).unwrap_or_default();
+    let sql_stmts: Vec<rpgsqlpre::Stmt> = precompiled
+        .as_ref()
+        .map(|p| p.stmts.clone())
+        .unwrap_or_default();
     if let Some(p) = &precompiled {
         diags.extend(crate::sql::diags(p));
     }
-    let endmod = precompiled.as_ref().is_some_and(|p| p.options.closqlcsr == "*ENDMOD");
+    let endmod = precompiled
+        .as_ref()
+        .is_some_and(|p| p.options.closqlcsr == "*ENDMOD");
     crate::codegen::datagen::spellings(&module, &read.lines, &mut t.spellings);
-    let (qir, mut gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts, endmod);
+    let (qir, mut gen_diags) = codegen::module(
+        &module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts, endmod,
+    );
     // A group the generator finds unbalanced follows from another
     // error (a group whose start was in error, or one IBM reports).
-    let other = diags.iter().chain(&gen_diags).any(|d| d.severity >= 20 && d.msgid != crate::diag::ids::UNBALANCED);
+    let other = diags
+        .iter()
+        .chain(&gen_diags)
+        .any(|d| d.severity >= 20 && d.msgid != crate::diag::ids::UNBALANCED);
     if other {
         gen_diags.retain(|d| d.msgid != crate::diag::ids::UNBALANCED);
     }
@@ -584,7 +781,13 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         ..Compiled::default()
     };
     diags.extend(crate::listing::unset_indicators(&c));
-    let Compiled { read, module, table: t, files, .. } = std::mem::take(&mut c);
+    let Compiled {
+        read,
+        module,
+        table: t,
+        files,
+        ..
+    } = std::mem::take(&mut c);
     diags.sort();
     diags.dedup();
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);
@@ -596,12 +799,16 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         match qir::parse(&qir) {
             Ok(m) => {
                 if let Err(e) = qir::verify(&m) {
-                    diags.push(Diag::new("RNF0001", 50, rpgfront::ast::Pos::default()).arg(e.to_string()));
+                    diags.push(
+                        Diag::new("RNF0001", 50, rpgfront::ast::Pos::default()).arg(e.to_string()),
+                    );
                     created = false;
                 }
             }
             Err(e) => {
-                diags.push(Diag::new("RNF0001", 50, rpgfront::ast::Pos::default()).arg(e.to_string()));
+                diags.push(
+                    Diag::new("RNF0001", 50, rpgfront::ast::Pos::default()).arg(e.to_string()),
+                );
                 created = false;
             }
         }
@@ -622,13 +829,28 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         {
             main.1 = inc.line;
         }
-        let first = |scope: usize| firsts.iter().find(|(s, _)| *s == scope).map_or(0, |(_, l)| *l);
+        let first = |scope: usize| {
+            firsts
+                .iter()
+                .find(|(s, _)| *s == scope)
+                .map_or(0, |(_, l)| *l)
+        };
         generated.extend(rpgsqlpre::lines::generated(p, &first, module.fully_free));
         // A member that is not fully free, included in one that is, is
         // set off with `**END-FREE` and `**FREE`.
-        for inc in read.sql_includes.iter().filter(|i| module.fully_free && !i.fully_free) {
+        for inc in read
+            .sql_includes
+            .iter()
+            .filter(|i| module.fully_free && !i.fully_free)
+        {
             let Some(m) = inc.member else { continue };
-            let last = read.lines.iter().filter(|l| l.member == m).map(|l| l.no).max().unwrap_or(inc.line);
+            let last = read
+                .lines
+                .iter()
+                .filter(|l| l.member == m)
+                .map(|l| l.no)
+                .max()
+                .unwrap_or(inc.line);
             generated.push((inc.line + 1, 1));
             generated.push((last + 1, 1));
         }
@@ -665,11 +887,15 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
 /// Whether a cycle main procedure can end: a primary file, `RETURN`
 /// in its calculations, or `LR` (or `*IN`) set anywhere.
 fn can_end(m: &Module) -> bool {
-    use rpgfront::ast::{Expr, Stmt, Step};
+    use rpgfront::ast::{Expr, Step, Stmt};
     fn ind(e: &Expr) -> bool {
         match e {
-            Expr::Special { word, index, .. } => word == "*INLR" || word == "*IN" || index.as_deref().is_some_and(ind),
-            Expr::Ref { steps, .. } => steps.iter().any(|s| matches!(s, Step::Args(a) if a.iter().any(ind))),
+            Expr::Special { word, index, .. } => {
+                word == "*INLR" || word == "*IN" || index.as_deref().is_some_and(ind)
+            }
+            Expr::Ref { steps, .. } => steps
+                .iter()
+                .any(|s| matches!(s, Step::Args(a) if a.iter().any(ind))),
             Expr::Bif { args, .. } | Expr::List(args, _) => args.iter().any(ind),
             Expr::Unary(_, a, _) => ind(a),
             Expr::Binary(_, a, b, _) | Expr::Assign(_, a, b, _) => ind(a) || ind(b),
@@ -680,9 +906,18 @@ fn can_end(m: &Module) -> bool {
         let o = &s.op;
         s.level == "LR"
             || o.resind.iter().any(|r| r == "LR")
-            || o.f1.iter().chain(&o.f2).chain(&o.result).chain(o.xf2.iter()).chain(o.more.iter().map(|(_, e)| e)).any(ind)
+            || o.f1
+                .iter()
+                .chain(&o.f2)
+                .chain(&o.result)
+                .chain(o.xf2.iter())
+                .chain(o.more.iter().map(|(_, e)| e))
+                .any(ind)
     }
-    let primary = m.files.iter().any(|f| f.fixed.as_ref().is_some_and(|c| c.designation == "P"));
+    let primary = m
+        .files
+        .iter()
+        .any(|f| f.fixed.as_ref().is_some_and(|c| c.designation == "P"));
     primary
         || m.calcs.iter().any(|s| s.op.code == "RETURN" || sets_lr(s))
         || m.procs.iter().flat_map(|p| p.calcs.iter()).any(sets_lr)
@@ -722,7 +957,8 @@ fn check_proc(p: &rpgfront::ast::Proc, ctl: &Ctl, diags: &mut Vec<Diag>) {
     }
     // *INZSR belongs to the main procedure.
     for s in p.calcs.iter().filter(|s| s.op.code == "BEGSR") {
-        if matches!(s.op.f1.first(), Some(rpgfront::ast::Expr::Special { word, .. }) if word == "*INZSR") {
+        if matches!(s.op.f1.first(), Some(rpgfront::ast::Expr::Special { word, .. }) if word == "*INZSR")
+        {
             diags.push(Diag::new(ids::INZSR_IN_PROC, 30, s.at));
         }
     }
@@ -739,8 +975,15 @@ fn check_levels(module: &Module, diags: &mut Vec<Diag>) {
             continue;
         }
         seen.push(l);
-        let by_input = module.inputs.iter().flat_map(|i| &i.fields).any(|f| f.level.eq_ignore_ascii_case(l));
-        let by_calc = module.calcs.iter().any(|c| c.op.resind.iter().any(|r| r == l));
+        let by_input = module
+            .inputs
+            .iter()
+            .flat_map(|i| &i.fields)
+            .any(|f| f.level.eq_ignore_ascii_case(l));
+        let by_calc = module
+            .calcs
+            .iter()
+            .any(|c| c.op.resind.iter().any(|r| r == l));
         if !by_input && !by_calc {
             diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, s.at).arg(format!("*IN{l}")));
         }
@@ -754,13 +997,17 @@ fn check_main_protos(module: &Module, ctl: &Ctl, opts: &Options, diags: &mut Vec
     use crate::diag::ids;
     for d in module.defs.iter().filter(|d| d.kind == DefKind::Pr) {
         if ctl.dftactgrp && d.kw("EXTPGM").is_none() {
-            diags.push(Diag::new(ids::NEEDS_NO_DFTACTGRP, 30, d.at).arg(d.name.to_ascii_uppercase()));
+            diags.push(
+                Diag::new(ids::NEEDS_NO_DFTACTGRP, 30, d.at).arg(d.name.to_ascii_uppercase()),
+            );
         }
     }
     if opts.command != Command::CrtBndRpg {
         return;
     }
-    let Some(pi) = module.defs.iter().find(|d| d.kind == DefKind::Pi && !d.name.is_empty() && !d.name.eq_ignore_ascii_case("*N")) else {
+    let Some(pi) = module.defs.iter().find(|d| {
+        d.kind == DefKind::Pi && !d.name.is_empty() && !d.name.eq_ignore_ascii_case("*N")
+    }) else {
         return;
     };
     let ext = module
@@ -782,7 +1029,14 @@ fn bind_entry(t: &mut Table, diags: &mut Vec<Diag>, module: &rpgfront::Module) {
     names.extend(crate::codegen::calls::entry_names(module));
     for (i, n) in names.iter().enumerate() {
         let Some(id) = t.find(0, n) else {
-            diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, rpgfront::ast::Pos::default()).arg(n.clone()));
+            diags.push(
+                Diag::new(
+                    crate::diag::ids::NOT_DEFINED,
+                    30,
+                    rpgfront::ast::Pos::default(),
+                )
+                .arg(n.clone()),
+            );
             continue;
         };
         let ptr = t.add_hidden(crate::syms::Sym {

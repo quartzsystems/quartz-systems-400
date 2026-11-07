@@ -25,13 +25,18 @@ fn names(dir: &str) -> String {
 
 #[cfg(target_os = "linux")]
 fn main() {
-    use rustix::process::{getgid, getpid, getuid, pidfd_open, PidfdFlags};
+    use rustix::process::{PidfdFlags, getgid, getpid, getuid, pidfd_open};
 
     println!("uid={} gid={}", getuid().as_raw(), getgid().as_raw());
     println!("pid={}", getpid().as_raw_nonzero());
     let procs = std::fs::read_dir("/proc").map_or(0, |d| {
         d.filter_map(Result::ok)
-            .filter(|e| e.file_name().to_string_lossy().bytes().all(|b| b.is_ascii_digit()))
+            .filter(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .bytes()
+                    .all(|b| b.is_ascii_digit())
+            })
             .count()
     });
     println!("procs={procs}");

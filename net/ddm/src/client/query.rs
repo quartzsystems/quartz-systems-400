@@ -10,6 +10,7 @@
 use std::io::{Read, Write};
 
 use super::{Connection, reply_error};
+use crate::Error;
 use crate::cp::{obj, param, rm};
 use crate::fdoca::desc::{self, Field};
 use crate::fdoca::rows::{self, Row};
@@ -17,7 +18,6 @@ use crate::fdoca::{Reader, sqlca, sqlda};
 use crate::msg::sqlcmd::{self, QRYBLKSZ};
 use crate::sql::{Column, Sqlca, Value};
 use crate::wire::Dss;
-use crate::Error;
 
 /// A prepared statement.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -276,9 +276,14 @@ impl<S: Read + Write> Connection<S> {
             let mut ended = false;
             self.absorb(g, &mut rows, &mut qryinsid, &mut ended)?;
             while !ended {
-                let Some(pkg) = out.sections.get(i).cloned() else { break };
+                let Some(pkg) = out.sections.get(i).cloned() else {
+                    break;
+                };
                 let corr = self.next_corr();
-                let r = self.exchange(vec![Dss::request(corr, sqlcmd::cntqry(&pkg, QRYBLKSZ, qryinsid.as_deref()))])?;
+                let r = self.exchange(vec![Dss::request(
+                    corr,
+                    sqlcmd::cntqry(&pkg, QRYBLKSZ, qryinsid.as_deref()),
+                )])?;
                 let before = rows.rows.len();
                 self.absorb(&r, &mut rows, &mut qryinsid, &mut ended)?;
                 if !ended && rows.rows.len() == before {

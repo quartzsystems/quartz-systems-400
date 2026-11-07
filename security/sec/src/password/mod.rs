@@ -124,7 +124,13 @@ pub fn verify_substitute(
                 return false;
             };
             let token = pwdsub::sha512::token(user, pw.trim_end());
-            pwdsub::sha512::substitute(&token, user, &s.server_seed, &s.client_seed, [0, 0, 0, 0, 0, 0, 0, 1])[..]
+            pwdsub::sha512::substitute(
+                &token,
+                user,
+                &s.server_seed,
+                &s.client_seed,
+                [0, 0, 0, 0, 0, 0, 0, 1],
+            )[..]
                 == s.substitute[..]
         }
         8 if pwdlvl <= 1 => {
@@ -308,7 +314,10 @@ mod tests {
             substitute: pwdsub::sha512::substitute(&token, "BOB", &server, &client, seq).to_vec(),
         };
         assert!(verify_substitute(&p, "BOB", &sub, 4));
-        assert!(!verify_substitute(&p, "BOB", &sub, 3), "SHA-512 is level 4's");
+        assert!(
+            !verify_substitute(&p, "BOB", &sub, 3),
+            "SHA-512 is level 4's"
+        );
         let bad = pwdsub::sha512::token("BOB", "Long Secret 5");
         let wrong = crate::signon::Substitute {
             substitute: pwdsub::sha512::substitute(&bad, "BOB", &server, &client, seq).to_vec(),

@@ -105,14 +105,22 @@ fn chgcntinf(system: &mut System, parms: &Parms) -> R {
         }
     }
     prblog::set_contact(system, &c)?;
-    Ok(done("Contact information changed.\n".into(), "CPC39D4", &[]))
+    Ok(done(
+        "Contact information changed.\n".into(),
+        "CPC39D4",
+        &[],
+    ))
 }
 
 fn providers_text(system: &mut System) -> R {
     let c = prblog::contact(system)?;
     let mut out = String::from("Control point  Network ID  Connection  Description\n");
     for p in &c.providers {
-        let _ = writeln!(out, "{:<14} {:<11} {:<11} {}", p.cpname, p.netid, p.connection, p.text);
+        let _ = writeln!(
+            out,
+            "{:<14} {:<11} {:<11} {}",
+            p.cpname, p.netid, p.connection, p.text
+        );
     }
     Ok(text(out))
 }
@@ -126,7 +134,10 @@ pub fn job_number(system: &System, parms: &Parms, kwd: &str) -> Result<Option<u3
 pub fn job_number_of(system: &System, job: Option<&Value>) -> Result<Option<u32>, String> {
     let me = system.current_job;
     let quals: Vec<String> = match job {
-        Some(Value::Qual(p)) => p.iter().map(|v| v.source().trim().to_ascii_uppercase()).collect(),
+        Some(Value::Qual(p)) => p
+            .iter()
+            .map(|v| v.source().trim().to_ascii_uppercase())
+            .collect(),
         Some(v) => vec![v.source().trim().to_ascii_uppercase()],
         None => vec!["*".into()],
     };
@@ -156,11 +167,19 @@ pub fn service_status(system: &System, number: u32) -> Vec<(String, String)> {
         ("Serviced by job".into(), "*NONE".into()),
         (
             "Trace active".into(),
-            if traces.is_empty() { "*NO".into() } else { "*YES".into() },
+            if traces.is_empty() {
+                "*NO".into()
+            } else {
+                "*YES".into()
+            },
         ),
         (
             "Trace sessions".into(),
-            if traces.is_empty() { "*NONE".into() } else { traces.join(" ") },
+            if traces.is_empty() {
+                "*NONE".into()
+            } else {
+                traces.join(" ")
+            },
         ),
     ]
 }
@@ -168,7 +187,11 @@ pub fn service_status(system: &System, number: u32) -> Vec<(String, String)> {
 fn dspsrvsts(system: &mut System, parms: &Parms) -> R {
     let n = job_number(system, parms, "JOB")?.unwrap_or(system.current_job);
     let lines: Vec<String> = std::iter::once("Display Service Status".to_string())
-        .chain(service_status(system, n).into_iter().map(|(k, v)| format!("  {:<18} {v}", format!("{k}:"))))
+        .chain(
+            service_status(system, n)
+                .into_iter()
+                .map(|(k, v)| format!("  {:<18} {v}", format!("{k}:"))),
+        )
         .collect();
     if parms.name("OUTPUT") == "*PRINT" {
         return crate::svc::security::print(system, "QPSRVSTS", &lines).map(text);
@@ -225,13 +248,23 @@ fn dmpsysobj(system: &mut System, parms: &Parms) -> R {
             qsys
         } else {
             let n = qsname::Name::parse(&ctx).map_err(|e| e.to_string())?;
-            ops::find_library(txn, qsys, n).map_err(|e| format!("CPF2110 Library {ctx} not found: {e}"))?.id
+            ops::find_library(txn, qsys, n)
+                .map_err(|e| format!("CPF2110 Library {ctx} not found: {e}"))?
+                .id
         };
-        let only = if t.is_empty() || t == "*ALL" { None } else { Some(type_code(&t)?) };
+        let only = if t.is_empty() || t == "*ALL" {
+            None
+        } else {
+            Some(type_code(&t)?)
+        };
         let mut out = Vec::new();
         for (key, id) in ops::list(txn, lib, only).map_err(|e| e.to_string())? {
             if key.name.to_string().trim() == obj {
-                out.extend(dumps::object_lines(txn, id, &format!("Dump System Object  {ctx}/{obj}"))?);
+                out.extend(dumps::object_lines(
+                    txn,
+                    id,
+                    &format!("Dump System Object  {ctx}/{obj}"),
+                )?);
                 out.push(String::new());
             }
         }
@@ -257,7 +290,11 @@ fn rcldbxref(system: &mut System, parms: &Parms) -> R {
                 .collect(),
             l => {
                 let n = qsname::Name::parse(l).map_err(|e| e.to_string())?;
-                vec![ops::find_library(txn, qsys, n).map_err(|e| format!("CPF2110 Library {l} not found: {e}"))?.id]
+                vec![
+                    ops::find_library(txn, qsys, n)
+                        .map_err(|e| format!("CPF2110 Library {l} not found: {e}"))?
+                        .id,
+                ]
             }
         };
         let mut n = 0u64;
@@ -278,7 +315,10 @@ fn rcldbxref(system: &mut System, parms: &Parms) -> R {
 }
 
 fn kib(parms: &Parms, kwd: &str, dft: u64) -> u64 {
-    parms.int(kwd).and_then(|n| u64::try_from(n).ok()).unwrap_or(dft)
+    parms
+        .int(kwd)
+        .and_then(|n| u64::try_from(n).ok())
+        .unwrap_or(dft)
 }
 
 fn strtrc(system: &mut System, parms: &Parms) -> R {
@@ -293,7 +333,11 @@ fn strtrc(system: &mut System, parms: &Parms) -> R {
         parms.name("TRCFULL") != "*STOPTRC",
     );
     trace::start(t)?;
-    Ok(done(format!("Trace {ssnid} started.\n"), "CPC39D5", &[(&ssnid, 10)]))
+    Ok(done(
+        format!("Trace {ssnid} started.\n"),
+        "CPC39D5",
+        &[(&ssnid, 10)],
+    ))
 }
 
 /// The trace report as `QPSRVTRCJ`.
@@ -313,9 +357,15 @@ fn endtrc(system: &mut System, parms: &Parms) -> R {
         trace::delete(&ssnid);
     } else {
         let lib = parms.name("DTALIB");
-        let lib = if lib.is_empty() { "QGPL".to_string() } else { lib };
+        let lib = if lib.is_empty() {
+            "QGPL".to_string()
+        } else {
+            lib
+        };
         if parms.name("REPLACE") == "*NO" && prblog::load_text(system, &lib, &ssnid)?.is_some() {
-            return Err(format!("CPF39D0 Trace data {ssnid} already exists in {lib}."));
+            return Err(format!(
+                "CPF39D0 Trace data {ssnid} already exists in {lib}."
+            ));
         }
         prblog::store_text(system, &lib, &ssnid, &t.encode(), "Trace data")?;
         trace::delete(&ssnid);
@@ -330,7 +380,11 @@ fn endtrc(system: &mut System, parms: &Parms) -> R {
 fn prttrc(system: &mut System, parms: &Parms) -> R {
     let mbr = parms.name("DTAMBR");
     let lib = parms.name("DTALIB");
-    let lib = if lib.is_empty() { "QGPL".to_string() } else { lib };
+    let lib = if lib.is_empty() {
+        "QGPL".to_string()
+    } else {
+        lib
+    };
     let t = match prblog::load_text(system, &lib, &mbr)?.and_then(|s| trace::Trace::decode(&s)) {
         Some(t) => t,
         None => trace::get(&mbr)
@@ -340,7 +394,11 @@ fn prttrc(system: &mut System, parms: &Parms) -> R {
     if parms.name("DLTTRC") == "*YES" {
         trace::delete(&mbr);
     }
-    Ok(done(format!("Trace data {mbr} printed.\n"), "CPC39D7", &[(&mbr, 10)]))
+    Ok(done(
+        format!("Trace data {mbr} printed.\n"),
+        "CPC39D7",
+        &[(&mbr, 10)],
+    ))
 }
 
 fn trcjob(system: &mut System, parms: &Parms) -> R {
@@ -369,13 +427,25 @@ fn trcjob(system: &mut System, parms: &Parms) -> R {
             trace::start(t)?;
         }
     }
-    let shown = if set.is_empty() { "*ON".to_string() } else { set };
-    Ok(done(format!("Job trace set {shown}.\n"), "CPC39DD", &[(&shown, 4)]))
+    let shown = if set.is_empty() {
+        "*ON".to_string()
+    } else {
+        set
+    };
+    Ok(done(
+        format!("Job trace set {shown}.\n"),
+        "CPC39DD",
+        &[(&shown, 4)],
+    ))
 }
 
 fn trcint(system: &mut System, parms: &Parms) -> R {
     let tbl = parms.name("TRCTBL");
-    let tbl = if tbl.is_empty() { "QSTRCTBL".to_string() } else { tbl };
+    let tbl = if tbl.is_empty() {
+        "QSTRCTBL".to_string()
+    } else {
+        tbl
+    };
     match parms.name("SET").as_str() {
         "*OFF" => {
             trace::end(&tbl)?;
@@ -387,7 +457,9 @@ fn trcint(system: &mut System, parms: &Parms) -> R {
         }
         "*HOLD" => {
             let n = trace::end(&tbl)?;
-            Ok(text(format!("Internal trace {tbl} held with {n} records.\n")))
+            Ok(text(format!(
+                "Internal trace {tbl} held with {n} records.\n"
+            )))
         }
         "*END" => {
             trace::delete(&tbl).ok_or_else(|| format!("CPF39D1 Trace {tbl} not found."))?;
@@ -397,7 +469,10 @@ fn trcint(system: &mut System, parms: &Parms) -> R {
             let job = parms.text("JOBNBR");
             let jobs = match job.trim() {
                 "" | "*ALL" => Vec::new(),
-                n => vec![n.parse().map_err(|_| format!("CPD0084 Job number {n} is not valid."))?],
+                n => vec![
+                    n.parse()
+                        .map_err(|_| format!("CPD0084 Job number {n} is not valid."))?,
+                ],
             };
             let mut t = trace::Trace::new(
                 &tbl,
@@ -408,14 +483,22 @@ fn trcint(system: &mut System, parms: &Parms) -> R {
                 parms.name("TRCFULL") != "*STOPTRC",
             );
             for v in parms.list("TRCTYPE") {
-                let c = v.source().trim().trim_start_matches('*').to_ascii_uppercase();
+                let c = v
+                    .source()
+                    .trim()
+                    .trim_start_matches('*')
+                    .to_ascii_uppercase();
                 if c != "ALL" && !c.is_empty() {
                     t.categories.push(c);
                 }
             }
             trace::start(t)?;
             let _ = system;
-            Ok(done(format!("Trace {tbl} started.\n"), "CPC39D5", &[(&tbl, 10)]))
+            Ok(done(
+                format!("Trace {tbl} started.\n"),
+                "CPC39D5",
+                &[(&tbl, 10)],
+            ))
         }
     }
 }

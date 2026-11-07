@@ -91,7 +91,9 @@ fn qclsndm(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let ty = a.char(4, 10);
     let kind = type_named(&ty).map_or("*INFO", kind_name);
     let (text, help, severity) = j.describe_message(&msgid, &msgf, &msgf_lib, &data);
-    let count = usize::try_from(a.packed(6, 15, 0)).unwrap_or(0).clamp(1, 50);
+    let count = usize::try_from(a.packed(6, 15, 0))
+        .unwrap_or(0)
+        .clamp(1, 50);
     let queues = a.bytes(5, 20 * count);
     let (rpy, _) = a.qual(7);
     let mut last = 0;
@@ -121,7 +123,14 @@ fn qclsndm(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
                     return;
                 }
             },
-            _ => targets.push((if lib.is_empty() { "*LIBL".to_string() } else { lib }, name)),
+            _ => targets.push((
+                if lib.is_empty() {
+                    "*LIBL".to_string()
+                } else {
+                    lib
+                },
+                name,
+            )),
         }
     }
     for (lib, name) in targets {
@@ -208,7 +217,11 @@ impl Got {
     /// message from a message file `*NO`, 65535 and 65535 (QS/400 keeps
     /// no alert options); an immediate one blank, the job's 37 and 0.
     fn ccsids(&self) -> (&'static str, i64, i64) {
-        if self.msgid.is_empty() { ("", 37, 0) } else { ("*NO", 65535, 65535) }
+        if self.msgid.is_empty() {
+            ("", 37, 0)
+        } else {
+            ("*NO", 65535, 65535)
+        }
     }
 
     /// `SENDER` as the primary fills it for a program message
@@ -228,7 +241,8 @@ impl Got {
             None => s.push_str(&" ".repeat(26)),
         }
         let secs = self.sent_us / 1_000_000;
-        let local = u64::try_from(i64::try_from(secs).unwrap_or(0) + i64::from(offset_min) * 60).unwrap_or(0);
+        let local = u64::try_from(i64::try_from(secs).unwrap_or(0) + i64::from(offset_min) * 60)
+            .unwrap_or(0);
         let (y, mo, d, h, mi, se) = crate::job::civil(local);
         let c = i32::from(y >= 2000);
         let from_user = self.job.as_ref().map_or(user, |j| j.1.as_str());
@@ -248,7 +262,13 @@ impl Got {
 
 /// One look at a call stack entry's queue: `MSGTYPE` and `MSGKEY` as
 /// `RCVMSG` takes them.
-fn look_job(j: &mut Job, q: QueueRef, ty: &str, key: Option<u32>, rmv: bool) -> Result<Option<Got>, ApiFail> {
+fn look_job(
+    j: &mut Job,
+    q: QueueRef,
+    ty: &str,
+    key: Option<u32>,
+    rmv: bool,
+) -> Result<Option<Got>, ApiFail> {
     let sel = match (ty, key) {
         ("*NEXT" | "*PRV", _) => {
             let Some(queue) = j.queue(q) else {
@@ -271,16 +291,25 @@ fn look_job(j: &mut Job, q: QueueRef, ty: &str, key: Option<u32>, rmv: bool) -> 
             let Some(queue) = j.queue(q) else {
                 return Ok(None);
             };
-            let m = if ty == "*FIRST" { queue.msgs.first() } else { queue.msgs.last() };
+            let m = if ty == "*FIRST" {
+                queue.msgs.first()
+            } else {
+                queue.msgs.last()
+            };
             match m {
                 Some(m) => (None, Some(m.key)),
                 None => return Ok(None),
             }
         }
         ("*EXCP", _) => (Some(MsgType::Escape), key),
-        _ => (Some(type_named(ty).ok_or_else(|| ApiFail::id("CPF24B3").text(ty, 10))?), key),
+        _ => (
+            Some(type_named(ty).ok_or_else(|| ApiFail::id("CPF24B3").text(ty, 10))?),
+            key,
+        ),
     };
-    Ok(j.receive_message(q, sel.0, sel.1, rmv).as_ref().map(Got::of_job))
+    Ok(j.receive_message(q, sel.0, sel.1, rmv)
+        .as_ref()
+        .map(Got::of_job))
 }
 
 /// The reply to an inquiry sent to a named queue, once it has one.
@@ -306,7 +335,14 @@ fn look_reply(p: &mut dyn Provider, key: u32, rmv: bool) -> Result<Option<Got>, 
 }
 
 /// One look at a named queue.
-fn look_queue(p: &mut dyn Provider, lib: &str, name: &str, ty: &str, key: Option<u32>, rmv: bool) -> Result<Option<Got>, ApiFail> {
+fn look_queue(
+    p: &mut dyn Provider,
+    lib: &str,
+    name: &str,
+    ty: &str,
+    key: Option<u32>,
+    rmv: bool,
+) -> Result<Option<Got>, ApiFail> {
     let kind = match ty {
         "*ANY" | "*NEXT" | "*FIRST" | "*LAST" | "*PRV" => None,
         "*EXCP" => Some("*ESCAPE"),
@@ -330,7 +366,9 @@ fn look_queue(p: &mut dyn Provider, lib: &str, name: &str, ty: &str, key: Option
         }
         (_, k) => k,
     };
-    Ok(p.msgq_receive(lib, name, kind, key, rmv)?.as_ref().map(Got::of_queue))
+    Ok(p.msgq_receive(lib, name, kind, key, rmv)?
+        .as_ref()
+        .map(Got::of_queue))
 }
 
 /// Store a character field, blank padded.
@@ -353,17 +391,31 @@ fn qclrcvm(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
     let rel = a.char(0, 10);
     let (qname, qlib) = a.qual(1);
-    let qlib = if qlib.is_empty() { "*LIBL".to_string() } else { qlib };
+    let qlib = if qlib.is_empty() {
+        "*LIBL".to_string()
+    } else {
+        qlib
+    };
     let ty = a.char(2, 10);
-    let ty = if ty.is_empty() { "*ANY".to_string() } else { ty };
-    let key = a.raw(3, 4).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+    let ty = if ty.is_empty() {
+        "*ANY".to_string()
+    } else {
+        ty
+    };
+    let key = a
+        .raw(3, 4)
+        .map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
     let key = key.filter(|k| *k != 0x4040_4040);
     let wait = a.packed(4, 15, 0);
     let rmv = a.char(5, 10);
     let rmv = rmv != "*NO";
     // PGMQ's call stack entry: name, module, bound program.
     let spec = a.bytes(23, 30);
-    let part = |i: usize| spec.get(i * 10..i * 10 + 10).map(ccsid::decode_trimmed).unwrap_or_default();
+    let part = |i: usize| {
+        spec.get(i * 10..i * 10 + 10)
+            .map(ccsid::decode_trimmed)
+            .unwrap_or_default()
+    };
     let (e, module, bndpgm) = (part(0), part(1), part(2));
     let entry = (!e.is_empty() && e != "*").then_some(e);
     let started = Instant::now();
@@ -409,11 +461,27 @@ fn qclrcvm(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let text = ccsid::to_ebcdic(&g.text).unwrap_or_default();
     let help = ccsid::to_ebcdic(&g.help).unwrap_or_default();
     let len = |n: usize| i64::try_from(n).unwrap_or(0);
-    put_text(&a, 6, 1, if g.rtntype.is_empty() { b"\xF0" } else { b"\xF1" });
+    put_text(
+        &a,
+        6,
+        1,
+        if g.rtntype.is_empty() {
+            b"\xF0"
+        } else {
+            b"\xF1"
+        },
+    );
     a.put_char(7, 2, &g.rtntype);
     a.put_char(8, 7, &g.msgid);
     a.put_packed(9, 15, 0, g.severity);
-    a.put_bytes(10, &if g.rtntype.is_empty() { [ccsid::SPACE; 4] } else { g.key.to_be_bytes() });
+    a.put_bytes(
+        10,
+        &if g.rtntype.is_empty() {
+            [ccsid::SPACE; 4]
+        } else {
+            g.key.to_be_bytes()
+        },
+    );
     a.put_char(11, 10, &g.msgf.0);
     a.put_char(12, 10, &g.msgf.1);
     a.put_packed(13, 15, 0, len(text.len()));
@@ -463,7 +531,9 @@ fn entry_of(j: &Job, name: &str, module: &str, bndpgm: &str, prv: bool) -> Optio
                 || p.proc_of(f.code)
                     .and_then(|(m, _)| p.object.modules.get(usize::try_from(m).ok()?))
                     .is_some_and(|m| m.module.name == module);
-            let named = name == "*PGMNAME" || p.proc_name(f.code).as_deref() == Some(name) || p.object.name == name;
+            let named = name == "*PGMNAME"
+                || p.proc_name(f.code).as_deref() == Some(name)
+                || p.object.name == name;
             in_pgm && in_mod && named
         })
     })?;

@@ -16,8 +16,8 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 use svctools::env::{
-    DiskUnit, DumpRow, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags, TraceRow, TraceSpec,
-    UserChange,
+    DiskUnit, DumpRow, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags, TraceRow,
+    TraceSpec, UserChange,
 };
 use svctools::users::SignOnError;
 use svctools::{DstEnv, Privilege, UserDb};
@@ -37,8 +37,11 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         return Err(Fail::no_display("STRSST"));
     }
     let me = host.link.borrow_mut().with(Client::whoami);
-    me.require(sec::profile::SpecialAuth::SERVICE, "use the system service tools")
-        .map_err(|e| Fail::read("STRSST", &e.to_string()))?;
+    me.require(
+        sec::profile::SpecialAuth::SERVICE,
+        "use the system service tools",
+    )
+    .map_err(|e| Fail::read("STRSST", &e.to_string()))?;
     let mut surface = Surface::new(host.clone());
     let mut env = SstEnv::new(host);
     let mut runner = sst::start();
@@ -131,7 +134,13 @@ impl SstEnv {
             .with(|l| l.sst_disk_change(op, unit, device))
     }
 
-    fn parity_change(&mut self, op: &str, level: u8, set: u8, units: &[u16]) -> Result<String, String> {
+    fn parity_change(
+        &mut self,
+        op: &str,
+        level: u8,
+        set: u8,
+        units: &[u16],
+    ) -> Result<String, String> {
         let (op, units) = (op.to_string(), units.to_vec());
         self.host
             .link
@@ -193,10 +202,7 @@ impl DstEnv for SstEnv {
 
     fn sign_on(&mut self, user: &str, password: &str) -> Result<Privilege, SignOnError> {
         let (u, p) = (user.to_string(), password.to_string());
-        self.host
-            .link
-            .borrow_mut()
-            .with(|l| l.sst_sign_on(u, p))
+        self.host.link.borrow_mut().with(|l| l.sst_sign_on(u, p))
     }
 
     fn change_password(&mut self, user: &str, old: &str, new: &str) -> Result<Privilege, String> {
@@ -213,10 +219,20 @@ impl DstEnv for SstEnv {
                 name,
                 password,
                 text,
-            } => ("create", name, password.clone(), text.clone(), Privilege::NONE),
-            UserChange::Delete { name } => {
-                ("delete", name, String::new(), String::new(), Privilege::NONE)
-            }
+            } => (
+                "create",
+                name,
+                password.clone(),
+                text.clone(),
+                Privilege::NONE,
+            ),
+            UserChange::Delete { name } => (
+                "delete",
+                name,
+                String::new(),
+                String::new(),
+                Privilege::NONE,
+            ),
             UserChange::Enable { name, enable } => (
                 if *enable { "enable" } else { "disable" },
                 name,
@@ -231,9 +247,13 @@ impl DstEnv for SstEnv {
                 String::new(),
                 *privileges,
             ),
-            UserChange::Reset { name, password } => {
-                ("reset", name, password.clone(), String::new(), Privilege::NONE)
-            }
+            UserChange::Reset { name, password } => (
+                "reset",
+                name,
+                password.clone(),
+                String::new(),
+                Privilege::NONE,
+            ),
         };
         let (op, name) = (op.to_string(), name.clone());
         self.host
@@ -364,7 +384,10 @@ impl DstEnv for SstEnv {
             .borrow_mut()
             .with(Client::sst_resources)
             .map_or(1, |(_, n)| n);
-        vec![(svctools::dst::capacity::PROCESSORS.to_string(), cpus.to_string())]
+        vec![(
+            svctools::dst::capacity::PROCESSORS.to_string(),
+            cpus.to_string(),
+        )]
     }
 
     fn activity_log(&mut self) -> Vec<LogEntry> {
@@ -412,7 +435,10 @@ impl DstEnv for SstEnv {
         self.op("capacity", &[])
             .unwrap_or_default()
             .into_iter()
-            .filter_map(|l| l.split_once('\t').map(|(k, v)| (k.to_string(), v.to_string())))
+            .filter_map(|l| {
+                l.split_once('\t')
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+            })
             .collect()
     }
 
@@ -433,7 +459,11 @@ impl DstEnv for SstEnv {
     }
 
     fn take_dump(&mut self, why: &str) -> Result<String, String> {
-        Ok(self.op("dump-take", &[why])?.into_iter().next().unwrap_or_default())
+        Ok(self
+            .op("dump-take", &[why])?
+            .into_iter()
+            .next()
+            .unwrap_or_default())
     }
 
     fn dump_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
@@ -467,8 +497,11 @@ impl DstEnv for SstEnv {
     fn start_trace(&mut self, spec: &TraceSpec) -> Result<(), String> {
         let (job, size) = (spec.job.to_string(), spec.size_kib.to_string());
         let wrap = if spec.wrap { "Y" } else { "N" };
-        self.op("trace-start", &[&spec.name, &spec.categories, &job, &size, wrap])
-            .map(|_| ())
+        self.op(
+            "trace-start",
+            &[&spec.name, &spec.categories, &job, &size, wrap],
+        )
+        .map(|_| ())
     }
 
     fn stop_trace(&mut self, name: &str) -> Result<(), String> {
@@ -484,11 +517,21 @@ impl DstEnv for SstEnv {
     }
 
     fn lic_events(&mut self, major: u16) -> Vec<String> {
-        let m = if major == 0 { String::new() } else { format!("{major:04X}") };
+        let m = if major == 0 {
+            String::new()
+        } else {
+            format!("{major:04X}")
+        };
         self.op("liclog", &[&m]).unwrap_or_else(|e| vec![e])
     }
 
-    fn alter_storage(&mut self, id: &str, page: u64, offset: &str, hex: &str) -> Result<String, String> {
+    fn alter_storage(
+        &mut self,
+        id: &str,
+        page: u64,
+        offset: &str,
+        hex: &str,
+    ) -> Result<String, String> {
         let p = page.to_string();
         Ok(self.op("dad-alter", &[id, &p, offset, hex])?.join(" "))
     }
@@ -523,9 +566,6 @@ impl DstEnv for SstEnv {
 
     fn set_security_flags(&mut self, flags: SecurityFlags) -> Result<(), String> {
         let b = svctools::dst::security::encode(flags);
-        self.host
-            .link
-            .borrow_mut()
-            .with(|l| l.sst_set_security(b))
+        self.host.link.borrow_mut().with(|l| l.sst_set_security(b))
     }
 }

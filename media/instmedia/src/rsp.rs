@@ -223,7 +223,15 @@ fn check_ip(line: usize, v: &str, prefix: bool) -> Result<String> {
     let (addr, pfx) = match v.split_once('/') {
         Some((a, p)) if prefix => (a, Some(p)),
         None if !prefix => (v, None),
-        _ => return Err(bad(line, format!("'{v}' is not an address{}", if prefix { "/prefix" } else { "" }))),
+        _ => {
+            return Err(bad(
+                line,
+                format!(
+                    "'{v}' is not an address{}",
+                    if prefix { "/prefix" } else { "" }
+                ),
+            ));
+        }
     };
     let ok = addr.split('.').count() == 4 && addr.split('.').all(|o| o.parse::<u8>().is_ok());
     let ok = ok && pfx.is_none_or(|p| p.parse::<u8>().is_ok_and(|n| n <= 32));
@@ -278,10 +286,15 @@ impl Response {
                     }
                     r.mirror.push(((*a).to_string(), (*b).to_string()));
                 }
-                "unit" => r.units.extend(v.split_whitespace().map(ToString::to_string)),
+                "unit" => r
+                    .units
+                    .extend(v.split_whitespace().map(ToString::to_string)),
                 "device" => {
                     if !["*OPT", "*TAP", "*VRT", "*MEDIA"].contains(&up.as_str()) {
-                        return Err(bad(n, format!("device '{v}' is not *OPT, *TAP, *VRT or *MEDIA")));
+                        return Err(bad(
+                            n,
+                            format!("device '{v}' is not *OPT, *TAP, *VRT or *MEDIA"),
+                        ));
                     }
                     r.device = up;
                 }
@@ -296,15 +309,30 @@ impl Response {
                         && v.bytes().next().is_some_and(|b| b.is_ascii_alphabetic())
                         && v.bytes().all(|b| b.is_ascii_alphanumeric());
                     if !ok {
-                        return Err(bad(n, format!("system name '{v}' is not 1 to 8 letters and digits")));
+                        return Err(bad(
+                            n,
+                            format!("system name '{v}' is not 1 to 8 letters and digits"),
+                        ));
                     }
                     r.system_name = Some(up);
                 }
                 "ip" if v.eq_ignore_ascii_case("*IP4DHCP") => r.ip = Some("*IP4DHCP".into()),
                 "ip" => r.ip = Some(check_ip(n, v, true)?),
                 "gateway" => r.gateway = Some(check_ip(n, v, false)?),
-                "date" => r.date = if special(v) { None } else { Some(check_date(n, v)?) },
-                "time" => r.time = if special(v) { None } else { Some(check_time(n, v)?) },
+                "date" => {
+                    r.date = if special(v) {
+                        None
+                    } else {
+                        Some(check_date(n, v)?)
+                    }
+                }
+                "time" => {
+                    r.time = if special(v) {
+                        None
+                    } else {
+                        Some(check_time(n, v)?)
+                    }
+                }
                 "qsecofr-password" => {
                     r.qsecofr = if up == "*EXPIRED" || v.is_empty() {
                         QsecofrPolicy::Expired
@@ -346,13 +374,19 @@ impl Response {
                 "auto-configure" => r.auto_configure = yn(n, v)?,
                 "device-naming" => {
                     if !["*NORMAL", "*S36", "*DEVADR"].contains(&up.as_str()) {
-                        return Err(bad(n, format!("device-naming '{v}' is not *NORMAL, *S36 or *DEVADR")));
+                        return Err(bad(
+                            n,
+                            format!("device-naming '{v}' is not *NORMAL, *S36 or *DEVADR"),
+                        ));
                     }
                     r.device_naming = up;
                 }
                 "special-environment" => {
                     if !["*NONE", "*S36"].contains(&up.as_str()) {
-                        return Err(bad(n, format!("special-environment '{v}' is not *NONE or *S36")));
+                        return Err(bad(
+                            n,
+                            format!("special-environment '{v}' is not *NONE or *S36"),
+                        ));
                     }
                     r.special_environment = up;
                 }
@@ -546,8 +580,14 @@ special-environment = *S36
                 other => panic!("{text}: {other:?}"),
             }
         }
-        assert_eq!(Response::parse("licpgm = *ALL").unwrap().licpgm, Licpgms::All);
-        assert_eq!(Response::parse("ip = *ip4dhcp").unwrap().ip.as_deref(), Some("*IP4DHCP"));
+        assert_eq!(
+            Response::parse("licpgm = *ALL").unwrap().licpgm,
+            Licpgms::All
+        );
+        assert_eq!(
+            Response::parse("ip = *ip4dhcp").unwrap().ip.as_deref(),
+            Some("*IP4DHCP")
+        );
         assert_eq!(Response::parse("date = *CURRENT").unwrap().date, None);
         let r = Response::parse("lic-option = 1").unwrap();
         assert_eq!(r.lic_option, LicOption::Restore);
@@ -556,9 +596,18 @@ special-environment = *S36
 
     #[test]
     fn sources_and_names() {
-        assert_eq!(Source::of("QS400/INSTALL.RSP"), Source::Media("QS400/INSTALL.RSP".into()));
-        assert_eq!(Source::of("file:/QS400/X.RSP"), Source::Media("QS400/X.RSP".into()));
-        assert!(matches!(Source::of("http://10.0.2.2/x.rsp"), Source::Url(_)));
+        assert_eq!(
+            Source::of("QS400/INSTALL.RSP"),
+            Source::Media("QS400/INSTALL.RSP".into())
+        );
+        assert_eq!(
+            Source::of("file:/QS400/X.RSP"),
+            Source::Media("QS400/X.RSP".into())
+        );
+        assert!(matches!(
+            Source::of("http://10.0.2.2/x.rsp"),
+            Source::Url(_)
+        ));
         assert_eq!(Source::of("DHCP"), Source::Dhcp);
         assert!(Response::names("dd001", "DD001", "/dev/vda"));
         assert!(Response::names("vda", "DD001", "/dev/vda"));

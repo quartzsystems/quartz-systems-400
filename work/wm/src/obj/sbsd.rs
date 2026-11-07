@@ -970,13 +970,48 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                 rtges: vec![rt(9999, "*ANY", q("QBATCH", "QGPL"), 1)],
                 jobqes: vec![jq("QUSRNOMAX", "QSYS", 10, 0)],
                 pjes: vec![
-                    host_pje("QZSOSIGN", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
-                    host_pje("QZSCSRVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
-                    host_pje("QNPSERVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
-                    host_pje("QRWTSRVR", q("QDFTSVR", "QGPL"), q("QSYSCLS20", "QSYS"), 200),
-                    host_pje("QZHQSSRV", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
-                    host_pje("QZDASOINIT", q("QDFTSVR", "QGPL"), q("QPWFSERVER", "QSYS"), 200),
-                    host_pje("QZDASSINIT", q("QDFTSVR", "QGPL"), q("QPWFSERVER", "QSYS"), 200),
+                    host_pje(
+                        "QZSOSIGN",
+                        q("QZBSJOBD", "QSYS"),
+                        q("QCASERVR", "QGPL"),
+                        200,
+                    ),
+                    host_pje(
+                        "QZSCSRVS",
+                        q("QZBSJOBD", "QSYS"),
+                        q("QCASERVR", "QGPL"),
+                        200,
+                    ),
+                    host_pje(
+                        "QNPSERVS",
+                        q("QZBSJOBD", "QSYS"),
+                        q("QCASERVR", "QGPL"),
+                        200,
+                    ),
+                    host_pje(
+                        "QRWTSRVR",
+                        q("QDFTSVR", "QGPL"),
+                        q("QSYSCLS20", "QSYS"),
+                        200,
+                    ),
+                    host_pje(
+                        "QZHQSSRV",
+                        q("QZBSJOBD", "QSYS"),
+                        q("QCASERVR", "QGPL"),
+                        200,
+                    ),
+                    host_pje(
+                        "QZDASOINIT",
+                        q("QDFTSVR", "QGPL"),
+                        q("QPWFSERVER", "QSYS"),
+                        200,
+                    ),
+                    host_pje(
+                        "QZDASSINIT",
+                        q("QDFTSVR", "QGPL"),
+                        q("QPWFSERVER", "QSYS"),
+                        200,
+                    ),
                     host_pje("QZRCSRVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 2),
                 ],
                 ..Sbsd::default()
@@ -987,8 +1022,18 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
             Sbsd {
                 text: "File server subsystem".into(),
                 pjes: vec![
-                    host_pje("QPWFSERVSO", q("QPWFSPJ", "QSYS"), q("QPWFSERVER", "QSYS"), 0),
-                    host_pje("QPWFSERVSS", q("QPWFSPJ", "QSYS"), q("QPWFSERVER", "QSYS"), 0),
+                    host_pje(
+                        "QPWFSERVSO",
+                        q("QPWFSPJ", "QSYS"),
+                        q("QPWFSERVER", "QSYS"),
+                        0,
+                    ),
+                    host_pje(
+                        "QPWFSERVSS",
+                        q("QPWFSPJ", "QSYS"),
+                        q("QPWFSERVER", "QSYS"),
+                        0,
+                    ),
                 ],
                 ..Sbsd::default()
             },

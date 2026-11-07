@@ -12,10 +12,18 @@ use dspf::{CompileOpts, Diagnostic, NoRefs, Severity, Source};
 /// The first error of a DDS member on one of the positions `touched`:
 /// the position and the message.
 #[must_use]
-pub fn dds(srctype: &str, records: &[(u32, u32, String)], touched: &[usize]) -> Option<(usize, String)> {
+pub fn dds(
+    srctype: &str,
+    records: &[(u32, u32, String)],
+    touched: &[usize],
+) -> Option<(usize, String)> {
     let bytes: Vec<Vec<u8>> = records
         .iter()
-        .map(|(_, _, d)| d.chars().map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE)).collect())
+        .map(|(_, _, d)| {
+            d.chars()
+                .map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE))
+                .collect()
+        })
         .collect();
     let src = Source::from_records(
         records

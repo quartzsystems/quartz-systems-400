@@ -25,7 +25,11 @@ impl Power {
     /// The state file's text.
     #[must_use]
     pub fn encode(self) -> String {
-        let mut s = String::from(if self.on_battery { "battery\n" } else { "utility\n" });
+        let mut s = String::from(if self.on_battery {
+            "battery\n"
+        } else {
+            "utility\n"
+        });
         if self.battery_low {
             s.push_str("low\n");
         }
@@ -57,8 +61,14 @@ mod tests {
     fn round_trip() {
         for p in [
             Power::default(),
-            Power { on_battery: true, battery_low: false },
-            Power { on_battery: true, battery_low: true },
+            Power {
+                on_battery: true,
+                battery_low: false,
+            },
+            Power {
+                on_battery: true,
+                battery_low: true,
+            },
         ] {
             assert_eq!(Power::decode(&p.encode()), p);
         }

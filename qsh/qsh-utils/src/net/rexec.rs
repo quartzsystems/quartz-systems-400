@@ -37,7 +37,9 @@ pub fn netrc(text: &str, host: &str) -> (Option<String>, Option<String>) {
                     break;
                 }
                 in_default = false;
-                mine = words.get(i + 1).is_some_and(|h| h.eq_ignore_ascii_case(host));
+                mine = words
+                    .get(i + 1)
+                    .is_some_and(|h| h.eq_ignore_ascii_case(host));
                 i += 2;
             }
             "default" => {
@@ -53,7 +55,11 @@ pub fn netrc(text: &str, host: &str) -> (Option<String>, Option<String>) {
                 if mine {
                     if is_login { login = v } else { pass = v }
                 } else if in_default {
-                    if is_login { default.0 = v } else { default.1 = v }
+                    if is_login {
+                        default.0 = v
+                    } else {
+                        default.1 = v
+                    }
                 }
                 i += 2;
             }
@@ -122,7 +128,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     field(&mut req, &pass);
     field(&mut req, &cmd.join(" "));
     if let Err(e) = write_all(&*conn, &req) {
-        complain(cx, NAME, &format!("{host}: {}", crate::common::io::errno_text(&e)));
+        complain(
+            cx,
+            NAME,
+            &format!("{host}: {}", crate::common::io::errno_text(&e)),
+        );
         return 1;
     }
     let mut first = [0u8; 1];
@@ -135,7 +145,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             return 1;
         }
         _ => {
-            complain(cx, NAME, &format!("{host}: The server ended the connection."));
+            complain(
+                cx,
+                NAME,
+                &format!("{host}: The server ended the connection."),
+            );
             return 1;
         }
     }
@@ -157,7 +171,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             Ok(_) => 0,
             Err(e) => {
                 if e.kind() != std::io::ErrorKind::BrokenPipe {
-                    complain(cx, NAME, &format!("standard output: {}", crate::common::io::errno_text(&e)));
+                    complain(
+                        cx,
+                        NAME,
+                        &format!("standard output: {}", crate::common::io::errno_text(&e)),
+                    );
                 }
                 1
             }

@@ -20,8 +20,15 @@ fn conversions_match_the_oracle() {
     for (_, case) in kit.cases().unwrap().iter().filter(|(_, c)| c.rpg3) {
         let conv = rpg3::convert(&case.lines);
         let text = conv.text();
-        fs::write(ours.join(format!("{}.cvt", case.name)), text.join("\n") + "\n").unwrap();
-        let Ok(e) = fs::read_to_string(kit.expected_dir().join(format!("{}.cvt", case.name))) else { continue };
+        fs::write(
+            ours.join(format!("{}.cvt", case.name)),
+            text.join("\n") + "\n",
+        )
+        .unwrap();
+        let Ok(e) = fs::read_to_string(kit.expected_dir().join(format!("{}.cvt", case.name)))
+        else {
+            continue;
+        };
         compared += 1;
         let ibm: Vec<&str> = e.lines().filter(|l| !l.starts_with("# ")).collect();
         let first = (0..ibm.len().max(text.len()))
@@ -36,11 +43,17 @@ fn conversions_match_the_oracle() {
             ));
         }
     }
-    eprintln!("CVTRPGSRC: {} of {compared} conversions match", compared - failures.len());
+    eprintln!(
+        "CVTRPGSRC: {} of {compared} conversions match",
+        compared - failures.len()
+    );
     // The reports, blank lines aside, with the oracle's masks.
     let mut reports = 0;
     for (_, case) in kit.cases().unwrap().iter().filter(|(_, c)| c.rpg3) {
-        let Ok(ibm) = fs::read_to_string(kit.expected_dir().join(format!("{}.rpt", case.name))) else { continue };
+        let Ok(ibm) = fs::read_to_string(kit.expected_dir().join(format!("{}.rpt", case.name)))
+        else {
+            continue;
+        };
         if !ibm.contains("CVTRPGSRC") {
             continue;
         }
@@ -52,25 +65,51 @@ fn conversions_match_the_oracle() {
             to: ("{lib}".into(), "QRPGLESRC".into(), "*FROMMBR".into()),
             ..rpg3::report::Params::default()
         };
-        let ours = rpg_oracle::listing::mask(&rpg3::report::report(&conv, &params), &rpg_oracle::listing::Mask::default());
-        fs::write(Kit::ours_dir().join(format!("{}.rpt", case.name)), ours.join("\n") + "\n").unwrap();
+        let ours = rpg_oracle::listing::mask(
+            &rpg3::report::report(&conv, &params),
+            &rpg_oracle::listing::Mask::default(),
+        );
+        fs::write(
+            Kit::ours_dir().join(format!("{}.rpt", case.name)),
+            ours.join("\n") + "\n",
+        )
+        .unwrap();
         // A message's text is each side's own: its identifier, severity
         // and count compare.
         let norm = |l: &str| -> String {
             match l.find("*RNM") {
                 Some(at) => {
                     let w: Vec<&str> = l[at..].split_whitespace().collect();
-                    let n = if w.get(2).is_some_and(|x| x.chars().all(|c| c.is_ascii_digit())) { 3 } else { 2 };
+                    let n = if w
+                        .get(2)
+                        .is_some_and(|x| x.chars().all(|c| c.is_ascii_digit()))
+                    {
+                        3
+                    } else {
+                        2
+                    };
                     format!("{}{}", &l[..at], w[..n.min(w.len())].join(" "))
                 }
                 None => l.to_string(),
             }
         };
         let a: Vec<String> = ibm.lines().filter(|l| l.len() > 1).map(norm).collect();
-        let b: Vec<String> = ours.iter().filter(|l| l.len() > 1).map(|l| norm(l)).collect();
+        let b: Vec<String> = ours
+            .iter()
+            .filter(|l| l.len() > 1)
+            .map(|l| norm(l))
+            .collect();
         if a != b {
-            let i = (0..a.len().max(b.len())).find(|&i| a.get(i) != b.get(i)).unwrap_or(0);
-            failures.push(format!("{} report line {}:\n  ibm:  {:?}\n  ours: {:?}", case.name, i + 1, a.get(i), b.get(i)));
+            let i = (0..a.len().max(b.len()))
+                .find(|&i| a.get(i) != b.get(i))
+                .unwrap_or(0);
+            failures.push(format!(
+                "{} report line {}:\n  ibm:  {:?}\n  ours: {:?}",
+                case.name,
+                i + 1,
+                a.get(i),
+                b.get(i)
+            ));
         }
     }
     eprintln!("CVTRPGSRC: {reports} reports compared");

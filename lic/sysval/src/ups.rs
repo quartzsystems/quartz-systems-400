@@ -35,7 +35,11 @@ pub fn delay(value: &str) -> Result<Option<u32>, SysValError> {
 /// The two elements for a value as typed: the value, then its seconds
 /// (`*NOMAX` keeps `*NOMAX`).
 pub fn elements(typed: &[String]) -> Result<Vec<String>, SysValError> {
-    let first = typed.first().map_or("*CALC", String::as_str).trim().to_ascii_uppercase();
+    let first = typed
+        .first()
+        .map_or("*CALC", String::as_str)
+        .trim()
+        .to_ascii_uppercase();
     let first = first.parse::<u32>().map_or(first, |n| n.to_string());
     let secs = delay(&first)?.map_or_else(|| "*NOMAX".to_string(), |s| s.to_string());
     Ok(vec![first, secs])

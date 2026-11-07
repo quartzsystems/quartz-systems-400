@@ -200,7 +200,12 @@ impl Message {
             b.extend_from_slice(&q.qtype.to_be_bytes());
             b.extend_from_slice(&q.qclass.to_be_bytes());
         }
-        for r in self.answers.iter().chain(&self.authority).chain(&self.additional) {
+        for r in self
+            .answers
+            .iter()
+            .chain(&self.authority)
+            .chain(&self.additional)
+        {
             put_name(&mut b, &r.name)?;
             b.extend_from_slice(&r.rtype.to_be_bytes());
             b.extend_from_slice(&r.class.to_be_bytes());
@@ -342,7 +347,9 @@ fn get_record(b: &[u8], at: &mut usize) -> R<Record> {
     let raw = b.get(start..start + rdlen).ok_or(CodecError::Truncated)?;
     let data = match rtype {
         T_A if rdlen == 4 => Rdata::A(Ipv4Addr::new(raw[0], raw[1], raw[2], raw[3])),
-        T_AAAA if rdlen == 16 => Rdata::Aaaa(Ipv6Addr::from(<[u8; 16]>::try_from(raw).expect("16"))),
+        T_AAAA if rdlen == 16 => {
+            Rdata::Aaaa(Ipv6Addr::from(<[u8; 16]>::try_from(raw).expect("16")))
+        }
         T_CNAME | T_PTR => {
             let mut p = start;
             let n = get_name(b, &mut p)?;
@@ -386,7 +393,24 @@ mod tests {
         b.extend_from_slice(&[0xc0, 12, 0, 5, 0, 1, 0, 0, 0, 60, 0, 6]);
         b.extend_from_slice(&[3, b'w', b'e', b'b', 0xc0, 16]);
         let web = 12 + 17 + 4 + 12;
-        b.extend_from_slice(&[0xc0, u8::try_from(web).unwrap(), 0, 1, 0, 1, 0, 0, 1, 0, 0, 4, 192, 0, 2, 7]);
+        b.extend_from_slice(&[
+            0xc0,
+            u8::try_from(web).unwrap(),
+            0,
+            1,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            4,
+            192,
+            0,
+            2,
+            7,
+        ]);
         let m = Message::decode(&b).unwrap();
         assert!(m.header.qr && m.header.rd && m.header.ra);
         assert_eq!(m.header.rcode, rcode::NOERROR);
@@ -404,8 +428,13 @@ mod tests {
         b.extend_from_slice(&[0xc0, 12]);
         assert_eq!(Message::decode(&b), Err(CodecError::PointerLoop));
         let long = "a".repeat(64);
-        assert_eq!(Message::query(1, &long, T_A, C_IN, true).encode(), Err(CodecError::NameTooLong));
-        let mut q = Message::query(1, "x", T_AAAA, C_IN, false).encode().unwrap();
+        assert_eq!(
+            Message::query(1, &long, T_A, C_IN, true).encode(),
+            Err(CodecError::NameTooLong)
+        );
+        let mut q = Message::query(1, "x", T_AAAA, C_IN, false)
+            .encode()
+            .unwrap();
         q.truncate(q.len() - 1);
         assert_eq!(Message::decode(&q), Err(CodecError::Truncated));
     }
@@ -417,8 +446,16 @@ mod tests {
         m.header.aa = true;
         m.header.tc = true;
         m.header.rcode = rcode::NXDOMAIN;
-        m.answers.push(Record::new("1.2.0.192.in-addr.arpa", 5, Rdata::Ptr("h.example".into())));
-        m.answers.push(Record::new("h.example", 5, Rdata::Aaaa(Ipv6Addr::LOCALHOST)));
+        m.answers.push(Record::new(
+            "1.2.0.192.in-addr.arpa",
+            5,
+            Rdata::Ptr("h.example".into()),
+        ));
+        m.answers.push(Record::new(
+            "h.example",
+            5,
+            Rdata::Aaaa(Ipv6Addr::LOCALHOST),
+        ));
         m.additional.push(Record {
             rtype: 16,
             ..Record::new("h.example", 5, Rdata::Other(b"\x02hi".to_vec()))

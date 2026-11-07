@@ -48,7 +48,9 @@ impl HttpAttrs {
     pub fn from_bag(bag: &[(String, String)]) -> Self {
         let d = Self::default();
         Self {
-            port: get(bag, "PORT").and_then(|p| p.trim().parse().ok()).unwrap_or(d.port),
+            port: get(bag, "PORT")
+                .and_then(|p| p.trim().parse().ok())
+                .unwrap_or(d.port),
             tls_port: get(bag, "TLSPORT")
                 .and_then(|p| p.trim().parse().ok())
                 .unwrap_or(d.tls_port),
@@ -63,7 +65,11 @@ impl HttpAttrs {
         let port = |k, d| get(bag, k).and_then(|p| p.trim().parse().ok()).unwrap_or(d);
         Self {
             port: port("NAVPORT", NAV_PORT),
-            tls_port: if admin.tls_port == 0 { 0 } else { port("NAVTLSPORT", NAV_TLS_PORT) },
+            tls_port: if admin.tls_port == 0 {
+                0
+            } else {
+                port("NAVTLSPORT", NAV_TLS_PORT)
+            },
         }
     }
 
@@ -75,7 +81,11 @@ impl HttpAttrs {
         let port = |k, d| get(bag, k).and_then(|p| p.trim().parse().ok()).unwrap_or(d);
         Self {
             port: port("AFWPORT", AFW_PORT),
-            tls_port: if admin.tls_port == 0 { 0 } else { port("AFWTLSPORT", AFW_TLS_PORT) },
+            tls_port: if admin.tls_port == 0 {
+                0
+            } else {
+                port("AFWTLSPORT", AFW_TLS_PORT)
+            },
         }
     }
 
@@ -88,7 +98,9 @@ impl HttpAttrs {
     pub fn from_rqsdta(text: &str) -> Self {
         let d = Self::default();
         Self {
-            port: keyword(text, "PORT").and_then(|p| p.parse().ok()).unwrap_or(d.port),
+            port: keyword(text, "PORT")
+                .and_then(|p| p.parse().ok())
+                .unwrap_or(d.port),
             tls_port: keyword(text, "TLSPORT")
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(d.tls_port),
@@ -104,13 +116,28 @@ mod tests {
     fn ports() {
         let d = HttpAttrs::from_bag(&[]);
         assert_eq!((d.port, d.tls_port), (2001, 2010));
-        let moved = HttpAttrs::from_bag(&[("PORT".into(), "8001".into()), ("tlsport".into(), "0".into())]);
+        let moved = HttpAttrs::from_bag(&[
+            ("PORT".into(), "8001".into()),
+            ("tlsport".into(), "0".into()),
+        ]);
         assert_eq!(moved.rqsdta(), "PORT(8001) TLSPORT(0)");
         assert_eq!(HttpAttrs::from_rqsdta(&moved.rqsdta()), moved);
         assert_eq!(HttpAttrs::from_rqsdta(""), d);
-        assert_eq!(HttpAttrs::navigator(&[]).rqsdta(), "PORT(2002) TLSPORT(2005)");
-        assert_eq!(HttpAttrs::navigator(&[("TLSPORT".into(), "0".into())]).tls_port, 0);
-        assert_eq!(HttpAttrs::accessweb(&[]).rqsdta(), "PORT(2003) TLSPORT(2006)");
-        assert_eq!(HttpAttrs::accessweb(&[("AFWPORT".into(), "8003".into())]).port, 8003);
+        assert_eq!(
+            HttpAttrs::navigator(&[]).rqsdta(),
+            "PORT(2002) TLSPORT(2005)"
+        );
+        assert_eq!(
+            HttpAttrs::navigator(&[("TLSPORT".into(), "0".into())]).tls_port,
+            0
+        );
+        assert_eq!(
+            HttpAttrs::accessweb(&[]).rqsdta(),
+            "PORT(2003) TLSPORT(2006)"
+        );
+        assert_eq!(
+            HttpAttrs::accessweb(&[("AFWPORT".into(), "8003".into())]).port,
+            8003
+        );
     }
 }

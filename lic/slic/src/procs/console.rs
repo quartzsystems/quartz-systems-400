@@ -114,9 +114,9 @@ pub fn gone(system: &mut System, pid: u32, tx: &Sender<Event>) {
         return;
     }
     system.procs.console = None;
-    system
-        .out
-        .serial(&format!("slic: {CONSOLE_JOB} ({pid}) ended; starting it again\n"));
+    system.out.serial(&format!(
+        "slic: {CONSOLE_JOB} ({pid}) ended; starting it again\n"
+    ));
     if let Err(e) = start(system, tx.clone()) {
         system.out.serial(&format!("slic: {e}\n"));
     }

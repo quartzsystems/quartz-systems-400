@@ -28,7 +28,10 @@ use sysapi::ifs::memory::MemIfs;
 /// Where the fetched projects are: `QS400_OSS_DIR` or `oss/src`.
 #[must_use]
 pub fn oss_root() -> PathBuf {
-    std::env::var("QS400_OSS_DIR").map_or_else(|_| Path::new(env!("CARGO_MANIFEST_DIR")).join("oss/src"), PathBuf::from)
+    std::env::var("QS400_OSS_DIR").map_or_else(
+        |_| Path::new(env!("CARGO_MANIFEST_DIR")).join("oss/src"),
+        PathBuf::from,
+    )
 }
 
 /// HTTPAPI's members, by name, as `INSTALL` would copy them to
@@ -65,7 +68,11 @@ impl Httpapi {
         let mut members = BTreeMap::new();
         for e in std::fs::read_dir(&dir).ok()?.flatten() {
             let p = e.path();
-            let ext = p.extension().and_then(|x| x.to_str()).unwrap_or("").to_ascii_lowercase();
+            let ext = p
+                .extension()
+                .and_then(|x| x.to_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
             if !matches!(ext.as_str(), "rpgle" | "rpgleinc" | "sqlrpgle") {
                 continue;
             }
@@ -83,7 +90,11 @@ impl Httpapi {
                 for d in UNDEFINED {
                     let pat = format!("/define {d}");
                     if l.to_ascii_lowercase().contains(&pat.to_ascii_lowercase()) {
-                        *l = l.replacen("/define", "/undefine", 1).replacen("/DEFINE", "/undefine", 1);
+                        *l = l.replacen("/define", "/undefine", 1).replacen(
+                            "/DEFINE",
+                            "/undefine",
+                            1,
+                        );
                     }
                 }
             }
@@ -97,9 +108,13 @@ impl Httpapi {
     pub fn setup() -> Vec<String> {
         let mut s = vec!["CRTBNDDIR BNDDIR(QGPL/HTTPAPIR4)".to_string()];
         for m in MODULES {
-            s.push(format!("CRTRPGMOD MODULE(QGPL/{m}) SRCFILE(QGPL/QRPGLESRC) DBGVIEW(*LIST)"));
+            s.push(format!(
+                "CRTRPGMOD MODULE(QGPL/{m}) SRCFILE(QGPL/QRPGLESRC) DBGVIEW(*LIST)"
+            ));
             if *m != "HTTPAPIR4" {
-                s.push(format!("ADDBNDDIRE BNDDIR(QGPL/HTTPAPIR4) OBJ((QGPL/{m} *MODULE))"));
+                s.push(format!(
+                    "ADDBNDDIRE BNDDIR(QGPL/HTTPAPIR4) OBJ((QGPL/{m} *MODULE))"
+                ));
             }
         }
         s.push("CRTSRVPGM SRVPGM(QGPL/HTTPAPIR4) MODULE(QGPL/HTTPAPIR4) EXPORT(*SRCFILE) BNDDIR(QGPL/HTTPAPIR4 QC2LE) ACTGRP(*CALLER)".into());
@@ -119,17 +134,29 @@ impl Httpapi {
             .iter()
             .map(|l| {
                 HOSTS.iter().fold(l.clone(), |l, h| {
-                    let path = h.splitn(4, '/').nth(3).map_or(String::new(), |p| format!("/{p}"));
+                    let path = h
+                        .splitn(4, '/')
+                        .nth(3)
+                        .map_or(String::new(), |p| format!("/{p}"));
                     l.replace(h, &format!("{here}{path}"))
                 })
             })
             .collect();
-        let with = self.members.iter().filter(|(n, _)| *n != name).map(|(n, l)| (n.clone(), l.clone())).collect();
+        let with = self
+            .members
+            .iter()
+            .filter(|(n, _)| *n != name)
+            .map(|(n, l)| (n.clone(), l.clone()))
+            .collect();
         Some(Case {
             name: name.to_string(),
             lines,
             cmd: format!("CRTBNDRPG PGM(QGPL/{name}) SRCFILE(QGPL/QRPGLESRC) DBGVIEW(*LIST)"),
-            call: if parms.is_empty() { format!("CALL {name}") } else { format!("CALL {name} PARM({parms})") },
+            call: if parms.is_empty() {
+                format!("CALL {name}")
+            } else {
+                format!("CALL {name} PARM({parms})")
+            },
             rcdlen: 112,
             setup: Self::setup(),
             with,
@@ -140,7 +167,10 @@ impl Httpapi {
 
 /// The URL prefixes the examples call, as written; each becomes the
 /// server's address with the rest kept.
-const HOSTS: &[&str] = &["http://www.scottklement.com", "http://www.restfulwebservices.net/wcf"];
+const HOSTS: &[&str] = &[
+    "http://www.scottklement.com",
+    "http://www.restfulwebservices.net/wcf",
+];
 
 /// One example program and what it is called with.
 pub struct Example {
@@ -175,7 +205,9 @@ pub const EXAMPLES: &[Example] = &[
 /// The handout `EXAMPLE1` fetches: 5000 bytes of a fixed pattern.
 #[must_use]
 pub fn handout() -> Vec<u8> {
-    (0..5000u32).map(|i| u8::try_from((i * 7 + i / 251) % 256).unwrap_or(0)).collect()
+    (0..5000u32)
+        .map(|i| u8::try_from((i * 7 + i / 251) % 256).unwrap_or(0))
+        .collect()
 }
 
 /// The server's answers to the examples' requests.
@@ -187,11 +219,19 @@ pub fn answer(r: &Request, port: u16) -> Answer {
         ("POST", "/cgi-bin/email_comment.cgi") => Answer {
             status: 302,
             reason: "Found",
-            headers: vec![("Location".into(), format!("http://127.0.0.1:{port}/comment/thanks.html"))],
+            headers: vec![(
+                "Location".into(),
+                format!("http://127.0.0.1:{port}/comment/thanks.html"),
+            )],
             body: Vec::new(),
         },
-        ("GET", "/comment/thanks.html") => Answer::ok("text/html", b"<html><body>Thank you</body></html>\n".to_vec()),
-        ("POST", "/wcf/CurrencyService.svc") => Answer::ok("text/xml; charset=utf-8", SOAP_RATE.as_bytes().to_vec()),
+        ("GET", "/comment/thanks.html") => Answer::ok(
+            "text/html",
+            b"<html><body>Thank you</body></html>\n".to_vec(),
+        ),
+        ("POST", "/wcf/CurrencyService.svc") => {
+            Answer::ok("text/xml; charset=utf-8", SOAP_RATE.as_bytes().to_vec())
+        }
         _ => Answer {
             status: 404,
             reason: "Not Found",
@@ -216,7 +256,9 @@ const SOAP_RATE: &str = concat!(
 /// A file's bytes from the IFS, `None` when it is not there.
 fn file_of(sys: &MemIfs, path: &str) -> Option<Vec<u8>> {
     let c = sys.client("QSECOFR", 9, 37);
-    let fd = c.open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY)).ok()?;
+    let fd = c
+        .open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY))
+        .ok()?;
     let mut out = Vec::new();
     while let Ok(b) = c.read(fd, 65536) {
         if b.is_empty() {
@@ -233,12 +275,19 @@ fn file_of(sys: &MemIfs, path: &str) -> Option<Vec<u8>> {
 #[must_use]
 pub fn build_report(h: &Httpapi) -> String {
     let inc = || rpgfront::MemIncludes {
-        members: h.members.iter().map(|(n, l)| rpgfront::Member::from_text("QGPL", "QRPGLESRC", n, &l.join("\n"))).collect(),
+        members: h
+            .members
+            .iter()
+            .map(|(n, l)| rpgfront::Member::from_text("QGPL", "QRPGLESRC", n, &l.join("\n")))
+            .collect(),
     };
     let mut objs = crate::rpg::build::Objects::default();
     let mut out = String::new();
     let compile = |mbr: &str, module: &str, cmd: &str| -> Result<String, String> {
-        let lines = h.members.get(mbr).ok_or_else(|| format!("{mbr}: no such member"))?;
+        let lines = h
+            .members
+            .get(mbr)
+            .ok_or_else(|| format!("{mbr}: no such member"))?;
         let case = Case {
             name: module.to_string(),
             lines: lines.clone(),
@@ -246,10 +295,20 @@ pub fn build_report(h: &Httpapi) -> String {
             rcdlen: 112,
             ..Case::default()
         };
-        let c = rpgc::compile(crate::rpg::member(&case), &mut inc(), &mut rpgc::NoExtFiles, &crate::rpg::options(&case));
+        let c = rpgc::compile(
+            crate::rpg::member(&case),
+            &mut inc(),
+            &mut rpgc::NoExtFiles,
+            &crate::rpg::options(&case),
+        );
         if let Some(d) = std::env::var_os("QS400_OSS_LISTINGS") {
-            let _ = std::fs::write(Path::new(&d).join(format!("{module}.lst")), c.listing.join("
-"));
+            let _ = std::fs::write(
+                Path::new(&d).join(format!("{module}.lst")),
+                c.listing.join(
+                    "
+",
+                ),
+            );
             let _ = std::fs::write(Path::new(&d).join(format!("{module}.qir")), &c.ir);
         }
         if c.created {
@@ -259,7 +318,13 @@ pub fn build_report(h: &Httpapi) -> String {
                 .diags
                 .iter()
                 .filter(|d| d.severity > 10)
-                .map(|d| if d.msgid == "RNF0001" { format!("RNF0001 ({})", d.args.join(" ")) } else { d.msgid.to_string() })
+                .map(|d| {
+                    if d.msgid == "RNF0001" {
+                        format!("RNF0001 ({})", d.args.join(" "))
+                    } else {
+                        d.msgid.to_string()
+                    }
+                })
                 .collect();
             Err(format!("{mbr} not created: {}", ids.join(" ")))
         }
@@ -270,14 +335,26 @@ pub fn build_report(h: &Httpapi) -> String {
             let _ = objs.setup(&cmd, &compile);
             continue;
         }
-        let what = crate::rpg::build::kwd(&cmd, if verb == "CRTSRVPGM" { "SRVPGM" } else { "MODULE" });
+        let what = crate::rpg::build::kwd(
+            &cmd,
+            if verb == "CRTSRVPGM" {
+                "SRVPGM"
+            } else {
+                "MODULE"
+            },
+        );
         // A module the binding names that was not made.
-        let missing: Vec<String> = crate::rpg::build::names_of(&crate::rpg::build::kwd(&cmd, "MODULE"))
-            .into_iter()
-            .filter(|m| verb == "CRTSRVPGM" && !objs.modules.contains_key(m))
-            .collect();
+        let missing: Vec<String> =
+            crate::rpg::build::names_of(&crate::rpg::build::kwd(&cmd, "MODULE"))
+                .into_iter()
+                .filter(|m| verb == "CRTSRVPGM" && !objs.modules.contains_key(m))
+                .collect();
         if !missing.is_empty() {
-            let _ = writeln!(out, "{verb} {what}: not created, no module {}", missing.join(" "));
+            let _ = writeln!(
+                out,
+                "{verb} {what}: not created, no module {}",
+                missing.join(" ")
+            );
             continue;
         }
         match objs.setup(&cmd, &compile) {
@@ -290,7 +367,9 @@ pub fn build_report(h: &Httpapi) -> String {
         }
     }
     for ex in EXAMPLES {
-        let Some(lines) = h.members.get(ex.name) else { continue };
+        let Some(lines) = h.members.get(ex.name) else {
+            continue;
+        };
         let case = Case {
             name: ex.name.to_string(),
             lines: lines.clone(),
@@ -298,8 +377,18 @@ pub fn build_report(h: &Httpapi) -> String {
             rcdlen: 112,
             ..Case::default()
         };
-        let c = rpgc::compile(crate::rpg::member(&case), &mut inc(), &mut rpgc::NoExtFiles, &crate::rpg::options(&case));
-        let _ = writeln!(out, "CRTBNDRPG {}: {}", ex.name, if c.created { "created" } else { "not created" });
+        let c = rpgc::compile(
+            crate::rpg::member(&case),
+            &mut inc(),
+            &mut rpgc::NoExtFiles,
+            &crate::rpg::options(&case),
+        );
+        let _ = writeln!(
+            out,
+            "CRTBNDRPG {}: {}",
+            ex.name,
+            if c.created { "created" } else { "not created" }
+        );
     }
     out
 }
@@ -323,9 +412,16 @@ fn show_debug_log(sys: &MemIfs) {
     for f in ["/tmp/httpapi_debug.txt", "/tmp/httpapi_debug.log"] {
         if let Some(bytes) = file_of(sys, f) {
             // Lines in either code: the reading with more letters.
-            let (ascii, ebcdic) = (String::from_utf8_lossy(&bytes).to_string(), ccsid::from_ebcdic(&bytes));
+            let (ascii, ebcdic) = (
+                String::from_utf8_lossy(&bytes).to_string(),
+                ccsid::from_ebcdic(&bytes),
+            );
             let letters = |s: &str| s.chars().filter(char::is_ascii_alphabetic).count();
-            let text = if letters(&ascii) >= letters(&ebcdic) { ascii } else { ebcdic };
+            let text = if letters(&ascii) >= letters(&ebcdic) {
+                ascii
+            } else {
+                ebcdic
+            };
             eprintln!("--- {f}\n{text}");
         }
     }
@@ -337,7 +433,9 @@ fn show_debug_log(sys: &MemIfs) {
 ///
 /// The case cannot be made or the harness fails (not the program).
 pub fn run_example(api: &Httpapi, ex: &Example, srv: &Server) -> Result<String, String> {
-    let case = api.case(ex.name, srv.port, ex.parms).ok_or_else(|| format!("{}: no such member", ex.name))?;
+    let case = api
+        .case(ex.name, srv.port, ex.parms)
+        .ok_or_else(|| format!("{}: no such member", ex.name))?;
     let sys = Rc::new(MemIfs::new());
     let held = sys.clone();
     crate::rpg::set_job_setup(Some(Rc::new(move |job: &mut mi::Job| {
@@ -380,7 +478,9 @@ pub fn run_example(api: &Httpapi, ex: &Example, srv: &Server) -> Result<String, 
             }
         }
         if !req.body.is_empty() {
-            let body = String::from_utf8_lossy(&req.body).replace('\r', "\\r").replace('\n', "\\n");
+            let body = String::from_utf8_lossy(&req.body)
+                .replace('\r', "\\r")
+                .replace('\n', "\\n");
             let _ = writeln!(out, "  body: {body}");
         }
     }
@@ -389,7 +489,12 @@ pub fn run_example(api: &Httpapi, ex: &Example, srv: &Server) -> Result<String, 
             Some(bytes) => {
                 let served = [handout(), THANKS.to_vec()].contains(&bytes);
                 let first = hex(&bytes[..bytes.len().min(12)]);
-                let _ = writeln!(out, "file {f}: {}, {first}{}", digest(&bytes), if served { ", the bytes served" } else { "" });
+                let _ = writeln!(
+                    out,
+                    "file {f}: {}, {first}{}",
+                    digest(&bytes),
+                    if served { ", the bytes served" } else { "" }
+                );
             }
             None => {
                 let _ = writeln!(out, "file {f}: missing");
@@ -404,4 +509,3 @@ pub fn run_example(api: &Httpapi, ex: &Example, srv: &Server) -> Result<String, 
     }
     Ok(out)
 }
-

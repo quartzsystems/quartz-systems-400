@@ -27,7 +27,10 @@ pub const PREV_FROM: &str = "prev.from";
 pub const PWD_WARN: &str = "pwd.warn";
 
 fn page(app: &AccessWeb, user: &str, messages: &[Message]) -> Response {
-    Response::html(200, frame::signon(&PRODUCT, &app.env.system.name(), user, messages, None))
+    Response::html(
+        200,
+        frame::signon(&PRODUCT, &app.env.system.name(), user, messages, None),
+    )
 }
 
 /// `GET /signon` shows the page (`?changed=USER` after an expired
@@ -39,8 +42,20 @@ pub fn signon(app: &AccessWeb, req: &Request, peer: &Peer) -> Response {
         let shown: Vec<Message> = q
             .get("changed")
             .map(|u| u.trim().to_ascii_uppercase())
-            .filter(|u| !u.is_empty() && u.len() <= 10 && u.chars().all(|c| c.is_ascii_alphanumeric() || "#$@_".contains(c)))
-            .map(|u| shared::message(env, Kind::Done, msgs::PASSWORD_CHANGED, &[&u, &env.system.name()]))
+            .filter(|u| {
+                !u.is_empty()
+                    && u.len() <= 10
+                    && u.chars()
+                        .all(|c| c.is_ascii_alphanumeric() || "#$@_".contains(c))
+            })
+            .map(|u| {
+                shared::message(
+                    env,
+                    Kind::Done,
+                    msgs::PASSWORD_CHANGED,
+                    &[&u, &env.system.name()],
+                )
+            })
             .into_iter()
             .collect();
         return page(app, "", &shown);
@@ -68,7 +83,10 @@ pub fn signon(app: &AccessWeb, req: &Request, peer: &Peer) -> Response {
     let mut prefs = Prefs::load(env, &user);
     let prev_from = prefs.get(SIGNON_FROM);
     let at = s.previous.to_string();
-    let warn = s.expires_in.map(|d| d.max(0).to_string()).unwrap_or_default();
+    let warn = s
+        .expires_in
+        .map(|d| d.max(0).to_string())
+        .unwrap_or_default();
     app.sessions.update(&sess.id, |x| {
         x.data.insert(PREV_AT.into(), at);
         x.data.insert(PREV_FROM.into(), prev_from);
@@ -79,19 +97,31 @@ pub fn signon(app: &AccessWeb, req: &Request, peer: &Peer) -> Response {
     });
     let system = env.system.name();
     let target = if s.expired {
-        app.sessions
-            .flash(&sess.id, shared::message(env, Kind::Error, msgs::PASSWORD_EXPIRED, &[&user, &system]));
+        app.sessions.flash(
+            &sess.id,
+            shared::message(env, Kind::Error, msgs::PASSWORD_EXPIRED, &[&user, &system]),
+        );
         "/password"
     } else {
         prefs.stored.insert(SIGNON_FROM.into(), from);
         let _ = env.prefs.put(&user, &prefs.to_store());
         if !warn.is_empty() {
-            app.sessions
-                .flash(&sess.id, shared::message(env, Kind::Info, msgs::PASSWORD_EXPIRES, &[&user, &system, &warn]));
+            app.sessions.flash(
+                &sess.id,
+                shared::message(
+                    env,
+                    Kind::Info,
+                    msgs::PASSWORD_EXPIRES,
+                    &[&user, &system, &warn],
+                ),
+            );
         }
         "/home"
     };
-    Response::redirect(&PRODUCT.url(target)).with("Set-Cookie", &session::set_cookie(&sess.id, PRODUCT.prefix, peer.secure))
+    Response::redirect(&PRODUCT.url(target)).with(
+        "Set-Cookie",
+        &session::set_cookie(&sess.id, PRODUCT.prefix, peer.secure),
+    )
 }
 
 /// `/signoff`: end the session, back to the sign-on page.
@@ -102,5 +132,6 @@ pub fn signoff(app: &AccessWeb, req: &Request, _peer: &Peer) -> Response {
         }
         app.sessions.remove(id);
     }
-    Response::redirect(&PRODUCT.url("/signon")).with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
+    Response::redirect(&PRODUCT.url("/signon"))
+        .with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
 }

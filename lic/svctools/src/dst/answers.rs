@@ -24,7 +24,8 @@ pub const ONE_ASP: &str = "This system has only ASP 1; units cannot move between
 
 /// Remote load source mirroring enables a pair across buses; there are
 /// none, and the pairing already prefers another controller.
-pub const NO_REMOTE_BUS: &str = "No remote bus to enable; load source pairs prefer another controller";
+pub const NO_REMOTE_BUS: &str =
+    "No remote bus to enable; load source pairs prefer another controller";
 
 /// A missing unit is assigned by replacing it.
 pub const ASSIGN_MISSING: &str = "Replace a missing mirrored or parity unit with option 3";
@@ -56,7 +57,8 @@ pub const NOT_RESTRICTED: &str = "The system is not in batch restricted state";
 
 /// Device concurrent maintenance: disks come and go while the system
 /// runs and the hardware resources are rescanned.
-pub const CONCURRENT: &str = "Devices are added and removed with the system up; no action is needed";
+pub const CONCURRENT: &str =
+    "Devices are added and removed with the system up; no action is needed";
 
 /// `BLOCKED(rel)`: save and restore storage (every disk page to tape
 /// from DST) are not built; SAVSYS and the install media recover the
@@ -76,7 +78,8 @@ pub const NEEDS_MEDIA: &str = "Installing needs an IPL from the installation med
 
 /// SST's `Select parity optimization`: the parity sets are the
 /// system's own, kept by no IOA, so there is nothing to optimize.
-pub const NO_PARITY_OPTIMIZATION: &str = "Parity sets here are kept by the system, not an IOA; nothing to optimize";
+pub const NO_PARITY_OPTIMIZATION: &str =
+    "Parity sets here are kept by the system, not an IOA; nothing to optimize";
 
 /// `Work with encryption`: ASP data is not encrypted in this release.
 pub const NO_ENCRYPTION: &str = "Disk encryption is not in this release; ASP data is not encrypted";
@@ -111,4 +114,3 @@ mod tests {
         }
     }
 }
-

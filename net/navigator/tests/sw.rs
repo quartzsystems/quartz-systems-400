@@ -60,12 +60,24 @@ fn licensed_programs() {
 #[test]
 fn install_and_delete() {
     let mut b = Browser::signed_on();
-    let t = ok(&mut b, "/licpgm/QS00HA1/*BASE/confirm?op=install&c=QS400V1R0");
-    assert!(t.contains("RSTLICPGM LICPGM(QS00HA1) OPTION(*BASE) DEV(OPTVRT01)"), "{t}");
-    b.post("/licpgm/QS00HA1/*BASE/confirm?op=install&c=QS400V1R0", &[("ok", "OK")]);
+    let t = ok(
+        &mut b,
+        "/licpgm/QS00HA1/*BASE/confirm?op=install&c=QS400V1R0",
+    );
+    assert!(
+        t.contains("RSTLICPGM LICPGM(QS00HA1) OPTION(*BASE) DEV(OPTVRT01)"),
+        "{t}"
+    );
+    b.post(
+        "/licpgm/QS00HA1/*BASE/confirm?op=install&c=QS400V1R0",
+        &[("ok", "OK")],
+    );
     let t = ok(&mut b, "/licpgm/QS00WDS/51/confirm?op=delete");
     assert!(t.contains("DLTLICPGM LICPGM(QS00WDS) OPTION(51)"));
-    b.post("/licpgm/QS00WDS/51/confirm?op=delete", &[("cancel", "Cancel")]);
+    b.post(
+        "/licpgm/QS00WDS/51/confirm?op=delete",
+        &[("cancel", "Cancel")],
+    );
     b.post("/licpgm/QS00WDS/51/confirm?op=delete", &[("ok", "OK")]);
     assert_eq!(
         ran(&b),
@@ -77,8 +89,19 @@ fn install_and_delete() {
     assert!(ok(&mut b, "/licpgm").contains("CPC3D82"));
     // Changing software needs *ALLOBJ.
     let mut w = Browser::as_user("QSYSOPR");
-    assert_eq!(w.post("/licpgm/QS00SS1/*BASE/confirm?op=delete", &[("ok", "OK")]).status, 403);
-    assert!(w.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Refused { .. })));
+    assert_eq!(
+        w.post("/licpgm/QS00SS1/*BASE/confirm?op=delete", &[("ok", "OK")])
+            .status,
+        403
+    );
+    assert!(
+        w.fx.system
+            .audit
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|a| matches!(a, Audit::Refused { .. }))
+    );
     assert!(ran(&w).is_empty());
 }
 
@@ -115,15 +138,36 @@ fn ptf_confirm() {
         &[
             IDS,
             // The second PTF's description is the list's.
-            ("<td>Security fix for TLS handshake</td>", "<td>Kernel: IPL time with large ASP</td>"),
+            (
+                "<td>Security fix for TLS handshake</td>",
+                "<td>Kernel: IPL time with large ASP</td>",
+            ),
             // The options sat outside the form, so OK never sent them.
-            ("</table><p class=\"small grey\">Apply type:", "</table><form method=\"post\"><p class=\"small grey\">Apply type:"),
-            ("</span></p><form method=\"post\"><div class=\"buttons\">", "</span></p><div class=\"buttons\">"),
+            (
+                "</table><p class=\"small grey\">Apply type:",
+                "</table><form method=\"post\"><p class=\"small grey\">Apply type:",
+            ),
+            (
+                "</span></p><form method=\"post\"><div class=\"buttons\">",
+                "</span></p><div class=\"buttons\">",
+            ),
         ],
     );
     b.post(url, &[("t", "*PERM"), ("d", "*NO"), ("ok", "OK")]);
-    assert_eq!(ran(&b), ["APYPTF LICPGM(QS00SS1) SELECT(QS10432 QS10447) APY(*PERM) DELAYED(*YES)"]);
-    let st = b.fx.sw.state.lock().unwrap().ptfs.iter().find(|p| p.id == "QS10447").unwrap().status;
+    assert_eq!(
+        ran(&b),
+        ["APYPTF LICPGM(QS00SS1) SELECT(QS10432 QS10447) APY(*PERM) DELAYED(*YES)"]
+    );
+    let st =
+        b.fx.sw
+            .state
+            .lock()
+            .unwrap()
+            .ptfs
+            .iter()
+            .find(|p| p.id == "QS10447")
+            .unwrap()
+            .status;
     assert_eq!(st, PtfStatus::Permanent);
     assert!(ok(&mut b, "/ptf").contains("CPC3606"));
     // Remove, load, and the catalog.
@@ -142,7 +186,10 @@ fn ptf_confirm() {
     let mut b = Browser::signed_on();
     let r = b.post("/ptf", &[("apply", "Apply all loaded at next IPL")]);
     let to = r.header("Location").unwrap_or_default().to_string();
-    assert!(to.starts_with("/qs400/navigator/ptf/confirm?op=apply&id="), "{to}");
+    assert!(
+        to.starts_with("/qs400/navigator/ptf/confirm?op=apply&id="),
+        "{to}"
+    );
     // Apply is only by POST, and needs *ALLOBJ.
     let mut w = Browser::as_user("QSYSOPR");
     assert_eq!(w.post(url, &[("ok", "OK")]).status, 403);
@@ -155,8 +202,24 @@ fn fixes_page() {
     let t = ok(&mut b, "/ptf/confirm?op=order&id=QS10491");
     assert!(t.contains("SNDPTFORD PTFID((QS10491))"));
     b.post("/ptf/confirm?op=order&id=QS10491", &[("ok", "OK")]);
-    b.post("/fixes", &[("s", "mirror.example.com"), ("a", "Daily"), ("p", ""), ("apply", "Apply")]);
-    let r = b.post("/fixes", &[("s", "mirror.example.com"), ("a", "Daily"), ("p", ""), ("ok", "OK")]);
+    b.post(
+        "/fixes",
+        &[
+            ("s", "mirror.example.com"),
+            ("a", "Daily"),
+            ("p", ""),
+            ("apply", "Apply"),
+        ],
+    );
+    let r = b.post(
+        "/fixes",
+        &[
+            ("s", "mirror.example.com"),
+            ("a", "Daily"),
+            ("p", ""),
+            ("ok", "OK"),
+        ],
+    );
     assert_eq!(r.header("Location"), Some("/qs400/navigator/ptf"));
     assert_eq!(
         ran(&b),
@@ -167,5 +230,7 @@ fn fixes_page() {
         ]
     );
     let t = ok(&mut b, "/fixes");
-    assert!(t.contains("value=\"mirror.example.com\"") && t.contains("<option selected>Daily</option>"));
+    assert!(
+        t.contains("value=\"mirror.example.com\"") && t.contains("<option selected>Daily</option>")
+    );
 }

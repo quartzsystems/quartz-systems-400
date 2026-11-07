@@ -22,7 +22,11 @@ const JRNRCV: u16 = 0x0019;
 
 /// `JOURNAL_INFO`'s `NOT NULL` columns with no value here: QS/400
 /// journals send no messages and redirect no receivers.
-pub const JOURNAL_NO_VALUE: &[&str] = &["MESSAGE_QUEUE", "MESSAGE_QUEUE_LIBRARY", "REDIRECTED_RECEIVER_LIBRARY"];
+pub const JOURNAL_NO_VALUE: &[&str] = &[
+    "MESSAGE_QUEUE",
+    "MESSAGE_QUEUE_LIBRARY",
+    "REDIRECTED_RECEIVER_LIBRARY",
+];
 
 /// Library and name of an object.
 fn qualified(txn: &mut Txn<'_>, id: ObjectId) -> Option<(String, String)> {
@@ -34,7 +38,9 @@ fn qualified(txn: &mut Txn<'_>, id: ObjectId) -> Option<(String, String)> {
 /// `JOURNAL_INFO`.
 pub fn journals(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     for (lib, name, id) in all_of(txn, ctx, JRN)? {
-        let Ok(j) = jrn::journal::Journal::load(txn, id) else { continue };
+        let Ok(j) = jrn::journal::Journal::load(txn, id) else {
+            continue;
+        };
         let receivers = j.receivers(txn).unwrap_or_default();
         let objects = j.objects(txn).unwrap_or_default();
         let mut size = 0u64;
@@ -52,16 +58,32 @@ pub fn journals(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()
             out.text("ATTACHED_JOURNAL_RECEIVER_NAME", n);
             out.text("ATTACHED_JOURNAL_RECEIVER_LIBRARY", l);
         }
-        out.text("DELETE_RECEIVER_OPTION", if j.attr.dltrcv { "YES" } else { "NO" });
+        out.text(
+            "DELETE_RECEIVER_OPTION",
+            if j.attr.dltrcv { "YES" } else { "NO" },
+        );
         out.text("JOURNAL_TYPE", "LOCAL");
         out.text("JOURNAL_STATE", "ACTIVE");
         out.int("NUMBER_JOURNAL_RECEIVERS", receivers.len());
         out.int("TOTAL_SIZE_JOURNAL_RECEIVERS", size.div_ceil(1024));
         out.int("NUMBER_REMOTE_JOURNALS", 0);
         out.text_or_null("JOURNAL_TEXT", &ccsid::decode_trimmed(&j.header.text));
-        out.text("MANAGE_RECEIVER_OPTION", if j.attr.mngrcv_system { "SYSTEM" } else { "USER" });
+        out.text(
+            "MANAGE_RECEIVER_OPTION",
+            if j.attr.mngrcv_system {
+                "SYSTEM"
+            } else {
+                "USER"
+            },
+        );
         out.int("JOURNALED_OBJECTS", objects.len());
-        out.int("JOURNALED_FILES", objects.iter().filter(|o| o.object_type == types::FILE).count());
+        out.int(
+            "JOURNALED_FILES",
+            objects
+                .iter()
+                .filter(|o| o.object_type == types::FILE)
+                .count(),
+        );
     }
     Ok(())
 }
@@ -69,7 +91,9 @@ pub fn journals(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()
 /// `JOURNAL_RECEIVER_INFO`.
 pub fn receivers(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     for (lib, name, id) in all_of(txn, ctx, JRNRCV)? {
-        let Ok(r) = jrn::rcv::Receiver::load(txn, id) else { continue };
+        let Ok(r) = jrn::rcv::Receiver::load(txn, id) else {
+            continue;
+        };
         out.row();
         out.text("JOURNAL_RECEIVER_LIBRARY", lib.as_str());
         out.text("JOURNAL_RECEIVER_NAME", name.as_str());
@@ -106,14 +130,19 @@ pub fn receivers(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<(
 /// `JOURNALED_OBJECTS`.
 pub fn objects(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     for (lib, name, id) in all_of(txn, ctx, JRN)? {
-        let Ok(j) = jrn::journal::Journal::load(txn, id) else { continue };
+        let Ok(j) = jrn::journal::Journal::load(txn, id) else {
+            continue;
+        };
         for o in j.objects(txn).unwrap_or_default() {
             out.row();
             out.text("JOURNAL_LIBRARY", lib.as_str());
             out.text("JOURNAL_NAME", name.as_str());
             out.int("IASP_NUMBER", 0);
             out.text("IASP_NAME", "*SYSBAS");
-            out.text("OBJECT_TYPE", types::type_by_code(o.object_type).map_or("*N", |t| t.name));
+            out.text(
+                "OBJECT_TYPE",
+                types::type_by_code(o.object_type).map_or("*N", |t| t.name),
+            );
             if let Some((l, n)) = qualified(txn, o.object) {
                 out.text("OBJECT_LIBRARY", l);
                 out.text("OBJECT_NAME", n);
@@ -121,8 +150,18 @@ pub fn objects(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()>
             if o.object_type == types::FILE {
                 out.text("FILE_TYPE", "PHYSICAL");
             }
-            out.text("JOURNAL_IMAGES", if o.both_images { "*BOTH" } else { "*AFTER" });
-            out.text("OMIT_JOURNAL_ENTRY", if o.omit_open_close { "*OPNCLO" } else { "*NONE" });
+            out.text(
+                "JOURNAL_IMAGES",
+                if o.both_images { "*BOTH" } else { "*AFTER" },
+            );
+            out.text(
+                "OMIT_JOURNAL_ENTRY",
+                if o.omit_open_close {
+                    "*OPNCLO"
+                } else {
+                    "*NONE"
+                },
+            );
         }
     }
     Ok(())

@@ -44,11 +44,19 @@ pub fn route(rq: &Rq<'_>, id: &str, rest: &[&str]) -> Response {
         return rq.done(OUTPUT, rq.message(Kind::Error, msgs::SPLF_OPEN, &[&f.file]));
     }
     if !readable(&f) {
-        return rq.done(OUTPUT, rq.message(Kind::Error, msgs::SPLF_FORMAT, &[&f.file, what]));
+        return rq.done(
+            OUTPUT,
+            rq.message(Kind::Error, msgs::SPLF_FORMAT, &[&f.file, what]),
+        );
     }
     let save = rq.query().str("save") == "1";
     let name = format!("{}-{}", f.file, f.number);
-    let disposition = |ext: &str| format!("{}; filename=\"{name}.{ext}\"", if save { "attachment" } else { "inline" });
+    let disposition = |ext: &str| {
+        format!(
+            "{}; filename=\"{name}.{ext}\"",
+            if save { "attachment" } else { "inline" }
+        )
+    };
     let failed = |m: &qsweb::msg::Message| rq.done(OUTPUT, crate::routes::files::error(rq, m));
     match rest {
         [] => match rq.env().print.text(rq.user(), &f) {
@@ -63,12 +71,20 @@ pub fn route(rq: &Rq<'_>, id: &str, rest: &[&str]) -> Response {
         },
         ["text"] => match rq.env().print.text(rq.user(), &f) {
             // Pages apart by a form feed, as a text printer takes them.
-            Ok(pages) => Response::new(200, "text/plain; charset=utf-8", pages.join("\u{c}").into_bytes())
-                .with("Content-Disposition", &disposition("txt"))
-                .with("X-Content-Type-Options", "nosniff"),
+            Ok(pages) => Response::new(
+                200,
+                "text/plain; charset=utf-8",
+                pages.join("\u{c}").into_bytes(),
+            )
+            .with("Content-Disposition", &disposition("txt"))
+            .with("X-Content-Type-Options", "nosniff"),
             Err(m) => failed(&m),
         },
-        _ => rq.not_found(&format!("page {} of spooled file {}", rest.join("/"), f.file)),
+        _ => rq.not_found(&format!(
+            "page {} of spooled file {}",
+            rest.join("/"),
+            f.file
+        )),
     }
 }
 
@@ -82,7 +98,10 @@ fn view(rq: &Rq<'_>, f: &Splf, pages: &[String]) -> Response {
     if !find_text.is_empty() {
         // From the page shown on, the first page holding the text.
         let needle = find_text.to_ascii_uppercase();
-        match (at..=total).chain(1..at).find(|p| pages[p - 1].to_ascii_uppercase().contains(&needle)) {
+        match (at..=total)
+            .chain(1..at)
+            .find(|p| pages[p - 1].to_ascii_uppercase().contains(&needle))
+        {
             Some(p) => at = p,
             None => messages.push(rq.message(Kind::Info, "CPI9801", &[&find_text])),
         }
@@ -106,16 +125,26 @@ fn view(rq: &Rq<'_>, f: &Splf, pages: &[String]) -> Response {
     );
     let mut tools = Vec::new();
     if rq.allowed(policy::PRINT_PDF) {
-        tools.push(format!("<a href=\"{}\">View as PDF</a>", esc(&format!("{base}/pdf"))));
+        tools.push(format!(
+            "<a href=\"{}\">View as PDF</a>",
+            esc(&format!("{base}/pdf"))
+        ));
     }
-    tools.push(format!("<a href=\"{}\">Download text</a>", esc(&format!("{base}/text?save=1"))));
+    tools.push(format!(
+        "<a href=\"{}\">Download text</a>",
+        esc(&format!("{base}/text?save=1"))
+    ));
     if rq.allowed(policy::PRINT_OWN) {
         let id = f.id();
         for (op, label) in [("hold", "Hold"), ("release", "Release")] {
-            let u = rq.ctx.url(&tokened(rq, "/print/act", &[("op", op), ("s", &id)]));
+            let u = rq
+                .ctx
+                .url(&tokened(rq, "/print/act", &[("op", op), ("s", &id)]));
             tools.push(format!("<a href=\"{}\">{label}</a>", esc(&u)));
         }
-        let u = rq.ctx.url(&format!("/print/confirm{}", query(&[("s", &id)])));
+        let u = rq
+            .ctx
+            .url(&format!("/print/confirm{}", query(&[("s", &id)])));
         tools.push(format!("<a href=\"{}\">Delete</a>", esc(&u)));
     }
     let toolbar = format!(
@@ -126,7 +155,10 @@ fn view(rq: &Rq<'_>, f: &Splf, pages: &[String]) -> Response {
         tools.join(" &nbsp; "),
     );
     let text = pages.get(at - 1).map_or("", String::as_str);
-    let body = format!("{head}{toolbar}<pre class=\"out out132\">{}</pre>", esc(text));
+    let body = format!(
+        "{head}{toolbar}<pre class=\"out out132\">{}</pre>",
+        esc(text)
+    );
     let h1 = format!("Spooled file: {}", f.file);
     rq.page(Page {
         title: h1.clone(),

@@ -21,14 +21,20 @@ use qsweb::html::{esc, query};
 use qsweb::http::Response;
 use qsweb::msg::Message;
 use qsweb::partials::{
-    Button, Cell, Col, List, Prop, PropGroup, actions, checkbox, form, input, input_cmd, list_table, props,
+    Button, Cell, Col, List, Prop, PropGroup, actions, checkbox, form, input, input_cmd,
+    list_table, props,
 };
 
 use super::{Rq, bad_value, edit, pick, tab_page};
 use crate::routes::instances::{self, View};
 
 /// The options the page offers.
-const OPTIONS: &[(&str, &str)] = &[("idx", "Indexes"), ("fsl", "FollowSymLinks"), ("cgi", "ExecCGI"), ("inc", "Includes")];
+const OPTIONS: &[(&str, &str)] = &[
+    ("idx", "Indexes"),
+    ("fsl", "FollowSymLinks"),
+    ("cgi", "ExecCGI"),
+    ("inc", "Includes"),
+];
 
 /// What a row is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -86,13 +92,17 @@ fn under_docroot(c: &Conf, fs: &str) -> Option<String> {
     if fs == doc {
         return Some("/".into());
     }
-    fs.strip_prefix(doc).and_then(|r| r.strip_prefix('/')).map(|r| format!("/{r}/"))
+    fs.strip_prefix(doc)
+        .and_then(|r| r.strip_prefix('/'))
+        .map(|r| format!("/{r}/"))
 }
 
 /// The alias naming directory `fs`.
 fn alias_of<'a>(c: &'a Conf, fs: &str) -> Option<&'a Directive> {
     c.items.iter().find_map(|n| match n {
-        Node::Directive(d) if is_alias(d) && d.args.get(1).is_some_and(|t| trim(t) == trim(fs)) => Some(d),
+        Node::Directive(d) if is_alias(d) && d.args.get(1).is_some_and(|t| trim(t) == trim(fs)) => {
+            Some(d)
+        }
         _ => None,
     })
 }
@@ -129,9 +139,15 @@ fn entries(c: &Conf) -> Vec<Entry> {
                     container: Some(s.clone()),
                 });
             }
-            Node::Directive(d) if is_alias(d) && d.args.len() == 2 && !merged.contains(&d.args[0]) => {
+            Node::Directive(d)
+                if is_alias(d) && d.args.len() == 2 && !merged.contains(&d.args[0]) =>
+            {
                 out.push(Entry {
-                    kind: if d.is("ScriptAlias") { Kind2::ScriptAlias } else { Kind2::Alias },
+                    kind: if d.is("ScriptAlias") {
+                        Kind2::ScriptAlias
+                    } else {
+                        Kind2::Alias
+                    },
                     key: d.args[0].clone(),
                     url: d.args[0].clone(),
                     fs: d.args[1].clone(),
@@ -150,7 +166,11 @@ fn find(c: &Conf, key: &str) -> Option<Entry> {
 
 /// The options an entry's container states, else what it inherits.
 fn options_text(c: &Conf, e: &Entry) -> String {
-    let own = e.container.as_ref().map(|s| s.value("Options")).unwrap_or_default();
+    let own = e
+        .container
+        .as_ref()
+        .map(|s| s.value("Options"))
+        .unwrap_or_default();
     match e.kind {
         _ if !own.is_empty() => own,
         Kind2::Directory => c.value("Options"),
@@ -171,7 +191,11 @@ fn apply_options(set: &mut BTreeSet<String>, value: &str) {
             (_, n) => (true, n),
         };
         let names: Vec<&str> = match name {
-            "All" => OPTIONS.iter().map(|o| o.1).filter(|o| *o != "Includes").collect(),
+            "All" => OPTIONS
+                .iter()
+                .map(|o| o.1)
+                .filter(|o| *o != "Includes")
+                .collect(),
             "None" => {
                 set.clear();
                 continue;
@@ -215,21 +239,35 @@ fn access(e: &Entry) -> String {
         .iter()
         .flat_map(|s| s.items.iter())
         .filter_map(|n| match n {
-            Node::Directive(d) if d.is("Allow") || d.is("Deny") => {
-                Some(format!("{} from {}", if d.is("Allow") { "Allow" } else { "Deny" }, d.args[1..].join(" ")))
-            }
+            Node::Directive(d) if d.is("Allow") || d.is("Deny") => Some(format!(
+                "{} from {}",
+                if d.is("Allow") { "Allow" } else { "Deny" },
+                d.args[1..].join(" ")
+            )),
             _ => None,
         })
         .collect();
-    if rules.is_empty() { "Allow from all".into() } else { rules.join("; ") }
+    if rules.is_empty() {
+        "Allow from all".into()
+    } else {
+        rules.join("; ")
+    }
 }
 
 fn props_url(name: &str, key: &str) -> String {
-    format!("{}{}", instances::url(name, "directory"), query(&[("path", key)]))
+    format!(
+        "{}{}",
+        instances::url(name, "directory"),
+        query(&[("path", key)])
+    )
 }
 
 fn remove_url(name: &str, key: &str) -> String {
-    format!("{}{}", instances::url(name, "remove"), query(&[("path", key)]))
+    format!(
+        "{}{}",
+        instances::url(name, "remove"),
+        query(&[("path", key)])
+    )
 }
 
 /// `GET /directories` lists; `POST` (Add...) opens a new entry's page.
@@ -242,7 +280,11 @@ pub fn list(rq: &Rq<'_>, v: &View) -> Response {
             Kind2::Alias => "Alias",
             Kind2::ScriptAlias => "ScriptAlias",
         };
-        return Response::redirect(&format!("{}{}", instances::url(n, "directory"), query(&[("new", t)])));
+        return Response::redirect(&format!(
+            "{}{}",
+            instances::url(n, "directory"),
+            query(&[("new", t)])
+        ));
     }
     let empty = Conf::default();
     let c = v.conf.as_ref().unwrap_or(&empty);
@@ -257,7 +299,10 @@ pub fn list(rq: &Rq<'_>, v: &View) -> Response {
         .iter()
         .map(|e| {
             vec![
-                Cell::act(actions(&[(props_url(n, &e.key), "Properties"), (remove_url(n, &e.key), "Remove")])),
+                Cell::act(actions(&[
+                    (props_url(n, &e.key), "Properties"),
+                    (remove_url(n, &e.key), "Remove"),
+                ])),
                 Cell::text(e.kind.label()),
                 Cell::mono(&e.url),
                 Cell::mono(&e.fs),
@@ -312,8 +357,14 @@ struct Fields {
 }
 
 fn hosts(s: Option<&Section>, name: &str) -> String {
-    s.map(|s| s.all(name).iter().map(|d| d.args[1..].join(" ")).collect::<Vec<_>>().join(" "))
-        .unwrap_or_default()
+    s.map(|s| {
+        s.all(name)
+            .iter()
+            .map(|d| d.args[1..].join(" "))
+            .collect::<Vec<_>>()
+            .join(" ")
+    })
+    .unwrap_or_default()
 }
 
 fn fields(c: &Conf, e: &Entry) -> Fields {
@@ -353,15 +404,26 @@ pub fn props_page(rq: &Rq<'_>, v: &View) -> Response {
     } else {
         let key = q.str("path").to_string();
         let Some(e) = find(c, &key) else {
-            return rq.not_found(&format!("directory or alias {key} in instance {}", v.name()));
+            return rq.not_found(&format!(
+                "directory or alias {key} in instance {}",
+                v.name()
+            ));
         };
         (fields(c, &e), Some(key))
     };
     if rq.post() {
         return post(rq, v, key.as_deref(), f.kind);
     }
-    let shown = if f.url.is_empty() { f.fs.clone() } else { f.url.clone() };
-    let shown = if key.is_none() { format!("New {}", f.kind.label()) } else { shown };
+    let shown = if f.url.is_empty() {
+        f.fs.clone()
+    } else {
+        f.url.clone()
+    };
+    let shown = if key.is_none() {
+        format!("New {}", f.kind.label())
+    } else {
+        shown
+    };
     let opts = OPTIONS
         .iter()
         .map(|(n, l)| format!("{} {l}", checkbox(n, f.opts.contains(*l))))
@@ -392,13 +454,19 @@ pub fn props_page(rq: &Rq<'_>, v: &View) -> Response {
             rows: vec![
                 Prop::new("Options", opts),
                 Prop::new("Directory index", input_cmd("di", &f.index, 30)),
-                Prop::new("AllowOverride", pick("ao", &["None", "All", "AuthConfig", "Limit"], &f.over)),
+                Prop::new(
+                    "AllowOverride",
+                    pick("ao", &["None", "All", "AuthConfig", "Limit"], &f.over),
+                ),
             ],
         },
         PropGroup {
             title: Some("Access".into()),
             rows: vec![
-                Prop::new("Order", pick("order", &["Deny,Allow", "Allow,Deny"], &f.order)),
+                Prop::new(
+                    "Order",
+                    pick("order", &["Deny,Allow", "Allow,Deny"], &f.order),
+                ),
                 Prop::new("Allow from", input_cmd("allow", &f.allow, 30)),
                 Prop::new("Deny from", input_cmd("deny", &f.deny, 30)),
                 Prop::new("Require authentication", auth),
@@ -408,7 +476,11 @@ pub fn props_page(rq: &Rq<'_>, v: &View) -> Response {
     let body = props(
         &rq.ctx,
         &groups,
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     let title = format!("Directory: {shown}");
     rq.page(Page {
@@ -430,7 +502,10 @@ pub fn props_page(rq: &Rq<'_>, v: &View) -> Response {
 /// The section `name` `arg` at top level, to change.
 fn section_mut<'a>(c: &'a mut Conf, name: &str, arg: &str) -> Option<&'a mut Section> {
     c.items.iter_mut().find_map(|n| match n {
-        Node::Section(s) if s.name.eq_ignore_ascii_case(name) && s.args.first().is_some_and(|a| trim(a) == trim(arg)) => {
+        Node::Section(s)
+            if s.name.eq_ignore_ascii_case(name)
+                && s.args.first().is_some_and(|a| trim(a) == trim(arg)) =>
+        {
             Some(s)
         }
         _ => None,
@@ -440,7 +515,9 @@ fn section_mut<'a>(c: &'a mut Conf, name: &str, arg: &str) -> Option<&'a mut Sec
 /// The alias directive for URL `url`, to change.
 fn alias_mut<'a>(c: &'a mut Conf, url: &str) -> Option<&'a mut Directive> {
     c.items.iter_mut().find_map(|n| match n {
-        Node::Directive(d) if is_alias(d) && d.args.first().map(String::as_str) == Some(url) => Some(d),
+        Node::Directive(d) if is_alias(d) && d.args.first().map(String::as_str) == Some(url) => {
+            Some(d)
+        }
         _ => None,
     })
 }
@@ -462,36 +539,70 @@ fn wanted(rq: &Rq<'_>, kind: Kind2) -> Result<Wanted, Message> {
     let f = rq.form();
     let fs = f.str("fs").trim().to_string();
     if !fs.starts_with('/') {
-        return Err(bad_value(&fs, "File system path", "an absolute path name starting with /"));
+        return Err(bad_value(
+            &fs,
+            "File system path",
+            "an absolute path name starting with /",
+        ));
     }
     let url = f.str("url").trim().to_string();
     if (!url.is_empty() || kind != Kind2::Directory) && !url.starts_with('/') {
         return Err(bad_value(&url, "URL path", "a path starting with /"));
     }
     let over = f.str("ao");
-    let over = if ["None", "All", "AuthConfig", "Limit"].contains(&over) { over } else { "None" };
-    let order = if f.str("order") == "Allow,Deny" { "Allow,Deny" } else { "Deny,Allow" };
+    let over = if ["None", "All", "AuthConfig", "Limit"].contains(&over) {
+        over
+    } else {
+        "None"
+    };
+    let order = if f.str("order") == "Allow,Deny" {
+        "Allow,Deny"
+    } else {
+        "Deny,Allow"
+    };
     let auth = if f.has("auth") {
         let realm = f.str("realm").trim().to_string();
         let vldl = f.str("vldl").trim().to_ascii_uppercase();
         if realm.is_empty() {
-            return Err(bad_value("", "Realm", "the name shown when the browser asks for a password"));
+            return Err(bad_value(
+                "",
+                "Realm",
+                "the name shown when the browser asks for a password",
+            ));
         }
         let ok = vldl.split_once('/').is_some_and(|(l, n)| {
-            [l, n].iter().all(|p| !p.is_empty() && p.len() <= 10 && p.chars().all(|c| c.is_ascii_alphanumeric() || "$#@_".contains(c)))
+            [l, n].iter().all(|p| {
+                !p.is_empty()
+                    && p.len() <= 10
+                    && p.chars()
+                        .all(|c| c.is_ascii_alphanumeric() || "$#@_".contains(c))
+            })
         });
         if !ok {
-            return Err(bad_value(&vldl, "Validation list", "a qualified object name, LIBRARY/NAME"));
+            return Err(bad_value(
+                &vldl,
+                "Validation list",
+                "a qualified object name, LIBRARY/NAME",
+            ));
         }
         Some((realm, vldl))
     } else {
         None
     };
-    let words = |n: &str| f.str(n).split_whitespace().map(ToString::to_string).collect::<Vec<_>>();
+    let words = |n: &str| {
+        f.str(n)
+            .split_whitespace()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+    };
     Ok(Wanted {
         fs,
         url,
-        opts: OPTIONS.iter().filter(|(n, _)| f.has(n)).map(|(_, l)| (*l).to_string()).collect(),
+        opts: OPTIONS
+            .iter()
+            .filter(|(n, _)| f.has(n))
+            .map(|(_, l)| (*l).to_string())
+            .collect(),
         index: f.str("di").split_whitespace().collect::<Vec<_>>().join(" "),
         over: over.into(),
         order: order.into(),
@@ -515,7 +626,10 @@ fn settle(s: &mut Section, w: &Wanted, inherit: &BTreeSet<String>, index: &str) 
     if opts.is_empty() {
         s.unset("Options");
     } else {
-        s.set("Options", &opts.iter().map(String::as_str).collect::<Vec<_>>());
+        s.set(
+            "Options",
+            &opts.iter().map(String::as_str).collect::<Vec<_>>(),
+        );
     }
     if w.index.is_empty() || w.index == index {
         s.unset("DirectoryIndex");
@@ -567,7 +681,9 @@ fn settle(s: &mut Section, w: &Wanted, inherit: &BTreeSet<String>, index: &str) 
 }
 
 fn has_directives(s: &Section) -> bool {
-    s.items.iter().any(|n| !matches!(n, Node::Blank(_) | Node::Comment(_)))
+    s.items
+        .iter()
+        .any(|n| !matches!(n, Node::Blank(_) | Node::Comment(_)))
 }
 
 fn post(rq: &Rq<'_>, v: &View, key: Option<&str>, kind: Kind2) -> Response {
@@ -586,7 +702,11 @@ fn post(rq: &Rq<'_>, v: &View, key: Option<&str>, kind: Kind2) -> Response {
             return Response::redirect(&here);
         }
     };
-    let new_key = if kind == Kind2::Directory { want.fs.clone() } else { want.url.clone() };
+    let new_key = if kind == Kind2::Directory {
+        want.fs.clone()
+    } else {
+        want.url.clone()
+    };
     match edit(rq, v, |c| change(c, key, kind, &want)) {
         Ok(msg) if form.has("ok") => rq.done(&format!("/instance/{}/directories", v.name()), msg),
         Ok(msg) => {
@@ -608,22 +728,38 @@ fn exists(c: &Conf, kind: Kind2, key: &str) -> bool {
 }
 
 fn section_has(c: &Conf, fs: &str) -> bool {
-    c.sections("Directory").iter().any(|s| s.args.first().is_some_and(|a| trim(a) == trim(fs)))
+    c.sections("Directory")
+        .iter()
+        .any(|s| s.args.first().is_some_and(|a| trim(a) == trim(fs)))
 }
 
 /// Make the change to the configuration.
 fn change(c: &mut Conf, key: Option<&str>, kind: Kind2, w: &Wanted) -> Result<(), Message> {
-    let new_key = if kind == Kind2::Directory { w.fs.as_str() } else { w.url.as_str() };
+    let new_key = if kind == Kind2::Directory {
+        w.fs.as_str()
+    } else {
+        w.url.as_str()
+    };
     if key.is_none_or(|k| trim(k) != trim(new_key)) && exists(c, kind, new_key) {
-        return Err(bad_value(new_key, "File system path or URL path", "a path no other entry of the instance uses"));
+        return Err(bad_value(
+            new_key,
+            "File system path or URL path",
+            "a path no other entry of the instance uses",
+        ));
     }
     let server_index = c.value("DirectoryIndex");
     let inherit = inherited(c, kind);
     match kind {
         Kind2::Directory => {
             let old_fs = key.map(ToString::to_string);
-            let old_alias = old_fs.as_deref().and_then(|fs| alias_of(c, fs)).map(|a| a.args[0].clone());
-            match old_fs.as_deref().and_then(|fs| section_mut(c, "Directory", fs)) {
+            let old_alias = old_fs
+                .as_deref()
+                .and_then(|fs| alias_of(c, fs))
+                .map(|a| a.args[0].clone());
+            match old_fs
+                .as_deref()
+                .and_then(|fs| section_mut(c, "Directory", fs))
+            {
                 Some(s) => {
                     if trim(&s.args[0]) != trim(&w.fs) {
                         s.args = vec![w.fs.clone()];
@@ -631,7 +767,8 @@ fn change(c: &mut Conf, key: Option<&str>, kind: Kind2, w: &Wanted) -> Result<()
                     }
                 }
                 None => {
-                    c.items.push(Node::Section(Section::new("Directory", &[&w.fs])));
+                    c.items
+                        .push(Node::Section(Section::new("Directory", &[&w.fs])));
                 }
             }
             if let Some(s) = section_mut(c, "Directory", &w.fs) {
@@ -660,11 +797,17 @@ fn change(c: &mut Conf, key: Option<&str>, kind: Kind2, w: &Wanted) -> Result<()
                 d.args = vec![w.url.clone(), w.fs.clone()];
                 d.raw = None;
             } else {
-                let name = if kind == Kind2::Alias { "Alias" } else { "ScriptAlias" };
+                let name = if kind == Kind2::Alias {
+                    "Alias"
+                } else {
+                    "ScriptAlias"
+                };
                 c.add(Directive::new(name, &[&w.url, &w.fs]));
             }
             let old = key.unwrap_or(&w.url).to_string();
-            let mut loc = section_mut(c, "Location", &old).cloned().unwrap_or_else(|| Section::new("Location", &[&w.url]));
+            let mut loc = section_mut(c, "Location", &old)
+                .cloned()
+                .unwrap_or_else(|| Section::new("Location", &[&w.url]));
             if loc.args[0] != w.url {
                 loc.args = vec![w.url.clone()];
                 loc.raw = None;
@@ -685,7 +828,10 @@ pub fn remove(rq: &Rq<'_>, v: &View) -> Response {
     let empty = Conf::default();
     let c = v.conf.as_ref().unwrap_or(&empty);
     let Some(e) = find(c, &key) else {
-        return rq.not_found(&format!("directory or alias {key} in instance {}", v.name()));
+        return rq.not_found(&format!(
+            "directory or alias {key} in instance {}",
+            v.name()
+        ));
     };
     let back = format!("/instance/{}/directories", v.name());
     if rq.post() {
@@ -702,7 +848,11 @@ pub fn remove(rq: &Rq<'_>, v: &View) -> Response {
                 if trim(&e.key) != e.key {
                     c.remove_section("Directory", trim(&e.key));
                 }
-                c.remove_where(|d| is_alias(d) && d.args.first() == Some(&url) && d.args.get(1).is_some_and(|t| trim(t) == trim(&e.fs)));
+                c.remove_where(|d| {
+                    is_alias(d)
+                        && d.args.first() == Some(&url)
+                        && d.args.get(1).is_some_and(|t| trim(t) == trim(&e.fs))
+                });
             } else {
                 c.remove_where(|d| is_alias(d) && d.args.first() == Some(&url));
                 c.remove_section("Location", &url);
@@ -713,14 +863,27 @@ pub fn remove(rq: &Rq<'_>, v: &View) -> Response {
         return rq.done(&back, m);
     }
     let table = list_table(&List {
-        cols: ["Type", "URL path / name", "File system path"].into_iter().map(Col::plain).collect(),
-        rows: vec![vec![Cell::text(e.kind.label()), Cell::mono(&e.url), Cell::mono(&e.fs)]],
+        cols: ["Type", "URL path / name", "File system path"]
+            .into_iter()
+            .map(Col::plain)
+            .collect(),
+        rows: vec![vec![
+            Cell::text(e.kind.label()),
+            Cell::mono(&e.url),
+            Cell::mono(&e.fs),
+        ]],
         ..List::default()
     });
     let body = format!(
         "<p>{}</p>{table}{}",
-        esc("Removing an entry deletes its directives from the configuration file. Press OK to remove the entry listed below, or Cancel to return without removing it."),
-        form(&rq.ctx, "", &qsweb::partials::buttons(&[Button::new("ok", "OK"), Button::new("cancel", "Cancel")]))
+        esc(
+            "Removing an entry deletes its directives from the configuration file. Press OK to remove the entry listed below, or Cancel to return without removing it."
+        ),
+        form(
+            &rq.ctx,
+            "",
+            &qsweb::partials::buttons(&[Button::new("ok", "OK"), Button::new("cancel", "Cancel")])
+        )
     );
     rq.page(Page {
         title: "Confirm Remove".into(),

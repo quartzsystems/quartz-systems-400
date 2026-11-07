@@ -55,7 +55,14 @@ fn table(schema: &str, name: &str, text: &str, columns: Vec<Col>) -> Table {
     }
 }
 
-fn over(schema: &str, name: &str, kind: TableKind, text: &str, base: &Table, filter: Option<(usize, SqlValue)>) -> Table {
+fn over(
+    schema: &str,
+    name: &str,
+    kind: TableKind,
+    text: &str,
+    base: &Table,
+    filter: Option<(usize, SqlValue)>,
+) -> Table {
     Table {
         kind,
         columns: base.columns.clone(),
@@ -86,7 +93,9 @@ fn b(v: &[u8]) -> SqlValue {
 }
 
 fn day(y: i64, m: u32, dd: u32) -> SqlValue {
-    SqlValue::Date { ms: date_ms(y, m, dd) }
+    SqlValue::Date {
+        ms: date_ms(y, m, dd),
+    }
 }
 
 fn ts(s: &str) -> SqlValue {
@@ -100,18 +109,126 @@ fn pad(s: &str, n: usize) -> SqlValue {
 
 /// The twelve assets in service, as Navigator's sample shows them.
 const ASSETS: &[[&str; 8]] = &[
-    ["QS000101", "QS-HQ-R1", "QUANTA", "T4048-IX8", "QTFCEV2340021", "SWITCH", "ACTIVE", "2025-03-11"],
-    ["QS000102", "QS-HQ-R1", "QUANTA", "T4048-IX8", "QTFCEV2340022", "SWITCH", "ACTIVE", "2025-03-11"],
-    ["QS000110", "QS-HQ-R1", "EDGECORE", "AS5712-54X", "571254X2041B0019", "SWITCH", "ACTIVE", "2024-11-02"],
-    ["QS000111", "QS-HQ-R1", "EDGECORE", "AS5712-54X", "571254X2041B0020", "SWITCH", "ACTIVE", "2024-11-02"],
-    ["QS000201", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q33", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000202", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q34", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000203", "QS-HQ-R2", "DELL", "R740XD", "7XK2Q35", "SERVER", "ACTIVE", "2024-06-20"],
-    ["QS000210", "QS-HQ-R2", "DELL", "QLE2562", "BFE1234567", "ADAPTER", "ACTIVE", "2026-09-20"],
-    ["QS000302", "QS-HQ-R3", "WEIDMULLER", "UR20-FBC-EIP", "2024-11-00341", "IO-COUPLER", "ACTIVE", "2026-10-01"],
-    ["QS000401", "QS-BR1-R1", "DELL", "S4048-ON", "8H3K2P2", "SWITCH", "ACTIVE", "2024-09-08"],
-    ["QS000402", "QS-BR1-R1", "WATCHGUARD", "M370", "80BA0F2B1C33", "FIREWALL", "ACTIVE", "2024-09-08"],
-    ["QS000403", "QS-BR1-R1", "ARISTA", "7050SX-64", "JPE14210033", "SWITCH", "SPARE", "2023-05-02"],
+    [
+        "QS000101",
+        "QS-HQ-R1",
+        "QUANTA",
+        "T4048-IX8",
+        "QTFCEV2340021",
+        "SWITCH",
+        "ACTIVE",
+        "2025-03-11",
+    ],
+    [
+        "QS000102",
+        "QS-HQ-R1",
+        "QUANTA",
+        "T4048-IX8",
+        "QTFCEV2340022",
+        "SWITCH",
+        "ACTIVE",
+        "2025-03-11",
+    ],
+    [
+        "QS000110",
+        "QS-HQ-R1",
+        "EDGECORE",
+        "AS5712-54X",
+        "571254X2041B0019",
+        "SWITCH",
+        "ACTIVE",
+        "2024-11-02",
+    ],
+    [
+        "QS000111",
+        "QS-HQ-R1",
+        "EDGECORE",
+        "AS5712-54X",
+        "571254X2041B0020",
+        "SWITCH",
+        "ACTIVE",
+        "2024-11-02",
+    ],
+    [
+        "QS000201",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q33",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000202",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q34",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000203",
+        "QS-HQ-R2",
+        "DELL",
+        "R740XD",
+        "7XK2Q35",
+        "SERVER",
+        "ACTIVE",
+        "2024-06-20",
+    ],
+    [
+        "QS000210",
+        "QS-HQ-R2",
+        "DELL",
+        "QLE2562",
+        "BFE1234567",
+        "ADAPTER",
+        "ACTIVE",
+        "2026-09-20",
+    ],
+    [
+        "QS000302",
+        "QS-HQ-R3",
+        "WEIDMULLER",
+        "UR20-FBC-EIP",
+        "2024-11-00341",
+        "IO-COUPLER",
+        "ACTIVE",
+        "2026-10-01",
+    ],
+    [
+        "QS000401",
+        "QS-BR1-R1",
+        "DELL",
+        "S4048-ON",
+        "8H3K2P2",
+        "SWITCH",
+        "ACTIVE",
+        "2024-09-08",
+    ],
+    [
+        "QS000402",
+        "QS-BR1-R1",
+        "WATCHGUARD",
+        "M370",
+        "80BA0F2B1C33",
+        "FIREWALL",
+        "ACTIVE",
+        "2024-09-08",
+    ],
+    [
+        "QS000403",
+        "QS-BR1-R1",
+        "ARISTA",
+        "7050SX-64",
+        "JPE14210033",
+        "SWITCH",
+        "SPARE",
+        "2023-05-02",
+    ],
 ];
 
 /// `HLINV.ASSETS`: Navigator's columns and its twelve assets in
@@ -148,7 +265,11 @@ fn assets() -> Table {
             t(r[4]),
             pad(r[5], 12),
             pad(r[6], 8),
-            day(y.parse().unwrap_or(2026), m.parse().unwrap_or(1), dd.parse().unwrap_or(1)),
+            day(
+                y.parse().unwrap_or(2026),
+                m.parse().unwrap_or(1),
+                dd.parse().unwrap_or(1),
+            ),
             d(&format!("{}.00", 1200 + 150 * n64)),
             i(10 + n64),
             SqlValue::Null,
@@ -193,7 +314,14 @@ fn all_types() -> Table {
         ],
     );
     a.key = Some(0);
-    let decfloats = ["1234.5678", "1.5E-30", "Infinity", "-Infinity", "NaN", "sNaN"];
+    let decfloats = [
+        "1234.5678",
+        "1.5E-30",
+        "Infinity",
+        "-Infinity",
+        "NaN",
+        "sNaN",
+    ];
     for (m, df) in decfloats.iter().enumerate() {
         let k = i64::try_from(m).unwrap_or(0) + 1;
         // Five sets of the other values, the first again in row 6.
@@ -213,16 +341,44 @@ fn all_types() -> Table {
             pad(["ＡＢ", "漢字", "", "Ω", "x"][n], 5),
             t(["全角テキスト", "", "ω", "a", "b"][n]),
             t(["A long text", "", "line\nbreak", "€", "z"][n]),
-            b(&[[0x00, 0x01, 0xFE, 0xFF, 0x40, 0x40, 0x40, 0x40], [0xC1, 0xC2, 0xC3, 0x40, 0x40, 0x40, 0x40, 0x40], [0x40; 8], [0xFF; 8], [0x10; 8]][n]),
-            b(&[[1, 2, 3, 4], [0, 0, 0, 0], [0xFF; 4], [0xDE, 0xAD, 0xBE, 0xEF], [9, 9, 9, 9]][n]),
+            b(&[
+                [0x00, 0x01, 0xFE, 0xFF, 0x40, 0x40, 0x40, 0x40],
+                [0xC1, 0xC2, 0xC3, 0x40, 0x40, 0x40, 0x40, 0x40],
+                [0x40; 8],
+                [0xFF; 8],
+                [0x10; 8],
+            ][n]),
+            b(&[
+                [1, 2, 3, 4],
+                [0, 0, 0, 0],
+                [0xFF; 4],
+                [0xDE, 0xAD, 0xBE, 0xEF],
+                [9, 9, 9, 9],
+            ][n]),
             b([&[0x01, 0x02][..], &[], &[0xFF; 16], &[0x7F], &[0x80, 0x81]][n]),
             b([&b"%PDF-1.4"[..], &[], &[0; 300], &[1], &[2, 3]][n]),
-            day([2026, 1970, 1, 9999, 2000][n], [11, 1, 1, 12, 2][n], [2, 1, 1, 31, 29][n]),
+            day(
+                [2026, 1970, 1, 9999, 2000][n],
+                [11, 1, 1, 12, 2][n],
+                [2, 1, 1, 31, 29][n],
+            ),
             SqlValue::Time {
                 ms: [34_445_000, 0, 86_399_000, 43_200_000, 1_000][n],
             },
-            ts(["2026-11-02-09.14.03.123456", "1970-01-01-00.00.00.000000", "0001-01-01-00.00.00.000000", "9999-12-31-23.59.59.999999", "2000-02-29-12.00.00.000001"][n]),
-            ts(["2026-11-02-09.14.03.123456789012", "1970-01-01-00.00.00.000000000001", "0001-01-01-00.00.00.000000000000", "9999-12-31-23.59.59.999999999999", "2000-02-29-12.00.00.500000000000"][n]),
+            ts([
+                "2026-11-02-09.14.03.123456",
+                "1970-01-01-00.00.00.000000",
+                "0001-01-01-00.00.00.000000",
+                "9999-12-31-23.59.59.999999",
+                "2000-02-29-12.00.00.000001",
+            ][n]),
+            ts([
+                "2026-11-02-09.14.03.123456789012",
+                "1970-01-01-00.00.00.000000000001",
+                "0001-01-01-00.00.00.000000000000",
+                "9999-12-31-23.59.59.999999999999",
+                "2000-02-29-12.00.00.500000000000",
+            ][n]),
             SqlValue::Boolean { value: n % 2 == 0 },
         ]);
     }
@@ -237,7 +393,10 @@ fn id_name(schema: &str, name: &str, text: &str, journaled: bool) -> Table {
         schema,
         name,
         text,
-        vec![col("ID", "Identifier", "INTEGER", false), col("NAME", "Name", "VARCHAR(20)", true)],
+        vec![
+            col("ID", "Identifier", "INTEGER", false),
+            col("NAME", "Name", "VARCHAR(20)", true),
+        ],
     );
     x.key = Some(0);
     x.journaled = journaled;
@@ -270,38 +429,78 @@ pub fn tables() -> (Vec<(String, String)>, Vec<Table>) {
         &assets,
         Some((6, t("ACTIVE"))),
     );
-    let alias = over("HLINV", "HW", TableKind::Alias, "Hardware assets", &assets, None);
-    let logical = over("HLINV", "ASSETSL1", TableKind::LogicalFile, "Assets by location", &assets, None);
+    let alias = over(
+        "HLINV",
+        "HW",
+        TableKind::Alias,
+        "Hardware assets",
+        &assets,
+        None,
+    );
+    let logical = over(
+        "HLINV",
+        "ASSETSL1",
+        TableKind::LogicalFile,
+        "Assets by location",
+        &assets,
+        None,
+    );
     let mut locations = table(
         "HLINV",
         "LOCATIONS",
         "Racks and sites",
-        vec![col("LOCATION", "Rack / site code", "CHAR(10)", false), col("SITE", "Site", "VARCHAR(40)", false)],
+        vec![
+            col("LOCATION", "Rack / site code", "CHAR(10)", false),
+            col("SITE", "Site", "VARCHAR(40)", false),
+        ],
     );
     locations.key = Some(0);
-    for (l, s) in [("QS-HQ-R1", "Headquarters"), ("QS-HQ-R2", "Headquarters"), ("QS-HQ-R3", "Headquarters"), ("QS-BR1-R1", "Branch 1")] {
+    for (l, s) in [
+        ("QS-HQ-R1", "Headquarters"),
+        ("QS-HQ-R2", "Headquarters"),
+        ("QS-HQ-R3", "Headquarters"),
+        ("QS-BR1-R1", "Branch 1"),
+    ] {
         locations.rows.push(vec![pad(l, 10), t(s)]);
     }
     let mut slow = id_name("HLTEST", "SLOW", "Rows that take 10 ms each to fetch", true);
     slow.slow = Some(Duration::from_millis(10));
-    slow.rows = (1..=300).map(|n| vec![i(n), t(&format!("Row {n}"))]).collect();
-    let mut slowlog = id_name("HLTEST", "SLOWLOG", "Rows that take 10 ms each to insert", true);
+    slow.rows = (1..=300)
+        .map(|n| vec![i(n), t(&format!("Row {n}"))])
+        .collect();
+    let mut slowlog = id_name(
+        "HLTEST",
+        "SLOWLOG",
+        "Rows that take 10 ms each to insert",
+        true,
+    );
     slowlog.slow = Some(Duration::from_millis(10));
     let mut big = table(
         "HLTEST",
         "BIG",
         "Over a megabyte of rows",
-        vec![col("ID", "Identifier", "INTEGER", false), col("DATA", "Data", "VARCHAR(1000)", false)],
+        vec![
+            col("ID", "Identifier", "INTEGER", false),
+            col("DATA", "Data", "VARCHAR(1000)", false),
+        ],
     );
-    big.rows = (1..=3000).map(|n| vec![i(n), t(&format!("{n:0>1000}"))]).collect();
+    big.rows = (1..=3000)
+        .map(|n| vec![i(n), t(&format!("{n:0>1000}"))])
+        .collect();
     let mut salaries = table(
         "HLPAY",
         "SALARIES",
         "Salaries",
-        vec![col("EMPNO", "Employee", "CHAR(6)", false), col("SALARY", "Salary", "DECIMAL(9,2)", false)],
+        vec![
+            col("EMPNO", "Employee", "CHAR(6)", false),
+            col("SALARY", "Salary", "DECIMAL(9,2)", false),
+        ],
     );
     salaries.only = Some("ANN");
-    salaries.rows = vec![vec![pad("000010", 6), d("152750.00")], vec![pad("000020", 6), d("94250.00")]];
+    salaries.rows = vec![
+        vec![pad("000010", 6), d("152750.00")],
+        vec![pad("000020", 6), d("94250.00")],
+    ];
     let mut qclsrc = table(
         "QGPL",
         "QCLSRC",
@@ -330,7 +529,12 @@ pub fn tables() -> (Vec<(String, String)>, Vec<Table>) {
         qclsrc,
     ];
     for n in 1..=150 {
-        all.push(table("HLMANY", &format!("T{n:03}"), &format!("Table {n}"), vec![col("ID", "Identifier", "INTEGER", false)]));
+        all.push(table(
+            "HLMANY",
+            &format!("T{n:03}"),
+            &format!("Table {n}"),
+            vec![col("ID", "Identifier", "INTEGER", false)],
+        ));
     }
     (schemas, all)
 }

@@ -38,11 +38,21 @@ fn signed_on(c: &std::sync::Arc<Controls>, user: &str, password: &str) -> Run {
 }
 
 fn run(r: &mut Run, command: &str) -> Envelope {
-    r.client.call(Op::RunCommand, &CommandText { command: command.into() })
+    r.client.call(
+        Op::RunCommand,
+        &CommandText {
+            command: command.into(),
+        },
+    )
 }
 
 fn ids(e: &Envelope) -> Vec<String> {
-    e.body_as::<CommandReply>().unwrap().messages.into_iter().map(|m| m.id).collect()
+    e.body_as::<CommandReply>()
+        .unwrap()
+        .messages
+        .into_iter()
+        .map(|m| m.id)
+        .collect()
 }
 
 fn describe(r: &mut Run, lib: &str, name: &str) -> Envelope {
@@ -74,24 +84,44 @@ fn run_command_statuses() {
     assert_eq!(again.message.as_ref().unwrap().id, "CPF2111");
     assert_eq!(ids(&again), ["CPF2111"]);
     let missing = run(&mut r, "CRTLIB");
-    assert_eq!((missing.status, ids(&missing)), (Status::Error, vec!["CPD0071".into(), "CPF0006".into()]));
+    assert_eq!(
+        (missing.status, ids(&missing)),
+        (Status::Error, vec!["CPD0071".into(), "CPF0006".into()])
+    );
     // Interactive only: Error with its escape.
     let seu = run(&mut r, "STRSEU");
-    assert_eq!((seu.status, seu.message.unwrap().id.as_str()), (Status::Error, "CPF0006"));
+    assert_eq!(
+        (seu.status, seu.message.unwrap().id.as_str()),
+        (Status::Error, "CPF0006")
+    );
     assert_eq!(ids(&run(&mut r, "STRSEU"))[0], "CPD0031");
     // NotFound, NotAuthorized (to the command, and to what it names).
     assert_eq!(run(&mut r, "NOSUCH X(1)").status, Status::NotFound);
-    assert_eq!(run(&mut r, "DLTUSRPRF USRPRF(ANN)").status, Status::NotAuthorized);
-    assert_eq!(run(&mut r, "DSPOBJD OBJ(QSYS/SECRET) OBJTYPE(*FILE)").status, Status::NotAuthorized);
+    assert_eq!(
+        run(&mut r, "DLTUSRPRF USRPRF(ANN)").status,
+        Status::NotAuthorized
+    );
+    assert_eq!(
+        run(&mut r, "DSPOBJD OBJ(QSYS/SECRET) OBJTYPE(*FILE)").status,
+        Status::NotAuthorized
+    );
 }
 
 #[test]
 fn cancel_ends_a_running_command() {
     let c = Controls::new();
     let mut r = signed_on(&c, "BOB", "SECRET1");
-    let id = r.client.request(Op::RunCommand, &CommandText { command: "DLYJOB DLY(30)".into() });
+    let id = r.client.request(
+        Op::RunCommand,
+        &CommandText {
+            command: "DLYJOB DLY(30)".into(),
+        },
+    );
     // Cancelled once it runs, not before.
-    assert_eq!(c.wait_running(r.job, Duration::from_secs(10)).as_deref(), Some("DLYJOB"));
+    assert_eq!(
+        c.wait_running(r.job, Duration::from_secs(10)).as_deref(),
+        Some("DLYJOB")
+    );
     let at = Instant::now();
     r.client.send(&Envelope::cancel(id));
     let e = r.client.reply(id);
@@ -112,14 +142,24 @@ fn cancel_ends_a_running_command() {
 fn check_command_statuses() {
     let c = Controls::new();
     let mut r = signed_on(&c, "BOB", "SECRET1");
-    let check = |r: &mut Run, cmd: &str| r.client.call(Op::CheckCommand, &CommandText { command: cmd.into() });
+    let check = |r: &mut Run, cmd: &str| {
+        r.client.call(
+            Op::CheckCommand,
+            &CommandText {
+                command: cmd.into(),
+            },
+        )
+    };
     let ok = check(&mut r, "CRTLIB LIB(X)");
     assert_eq!(ok.status, Status::Ok);
     assert!(ok.body_as::<CheckReply>().unwrap().messages.is_empty());
     assert!(c.libraries.lock().unwrap().is_empty(), "nothing ran");
     let bad = check(&mut r, "CRTLIB");
     assert_eq!(bad.status, Status::Error);
-    assert_eq!(bad.body_as::<CheckReply>().unwrap().messages[0].id, "CPD0071");
+    assert_eq!(
+        bad.body_as::<CheckReply>().unwrap().messages[0].id,
+        "CPD0071"
+    );
     assert_eq!(check(&mut r, "NOSUCH").status, Status::NotFound);
 }
 
@@ -129,24 +169,41 @@ fn describe_command_statuses() {
     let mut r = signed_on(&c, "BOB", "SECRET1");
     // Listed values.
     let d: CommandDefinition = describe(&mut r, "*LIBL", "crtlib").body_as().unwrap();
-    assert_eq!((d.name.library.as_str(), d.name.name.as_str()), ("QSYS", "CRTLIB"));
+    assert_eq!(
+        (d.name.library.as_str(), d.name.name.as_str()),
+        ("QSYS", "CRTLIB")
+    );
     assert_eq!(d.nodes[1].values, ["*PROD", "*TEST"]);
     // Qualifiers under their owner, a list of listed values.
     let d: CommandDefinition = describe(&mut r, "QSYS", "DSPOBJD").body_as().unwrap();
-    assert_eq!((d.nodes[1].role, d.nodes[1].parent), (Role::Qualifier, Some(0)));
+    assert_eq!(
+        (d.nodes[1].role, d.nodes[1].parent),
+        (Role::Qualifier, Some(0))
+    );
     assert_eq!(d.nodes[2].default.as_deref(), Some("*LIBL"));
     assert!(d.nodes[3].max_values > 1 && !d.nodes[3].values.is_empty());
     // An element list, under Additional Parameters.
     let d: CommandDefinition = describe(&mut r, "*LIBL", "CRTPF").body_as().unwrap();
     let elems: Vec<_> = d.nodes.iter().filter(|n| n.parent == Some(3)).collect();
     assert_eq!(elems.len(), 3);
-    assert!(elems.iter().all(|n| n.role == Role::Element && n.kind == ParmKind::Integer && n.show == Show::Additional));
+    assert!(elems.iter().all(|n| n.role == Role::Element
+        && n.kind == ParmKind::Integer
+        && n.show == Show::Additional));
     assert!(d.nodes.iter().all(|n| n.parent.is_none_or(|p| p < n.index)));
     // NotFound, NotAuthorized.
     let nf = describe(&mut r, "*LIBL", "NOSUCH");
-    assert_eq!((nf.status, nf.message.unwrap().id.as_str()), (Status::NotFound, "CPD0030"));
-    assert_eq!(describe(&mut r, "OTHERLIB", "CRTLIB").status, Status::NotFound);
-    assert_eq!(describe(&mut r, "*LIBL", "DLTUSRPRF").status, Status::NotAuthorized);
+    assert_eq!(
+        (nf.status, nf.message.unwrap().id.as_str()),
+        (Status::NotFound, "CPD0030")
+    );
+    assert_eq!(
+        describe(&mut r, "OTHERLIB", "CRTLIB").status,
+        Status::NotFound
+    );
+    assert_eq!(
+        describe(&mut r, "*LIBL", "DLTUSRPRF").status,
+        Status::NotAuthorized
+    );
 }
 
 #[test]
@@ -156,7 +213,11 @@ fn password_status() {
     let s: PasswordStatus = r.client.call(Op::PasswordStatus, &()).body_as().unwrap();
     let now_ms = i64::try_from(c.now()).unwrap() * 1000;
     let left_days = (s.expires.unwrap() - now_ms) / 86_400_000;
-    assert!(left_days > 0 && left_days <= i64::from(s.warning_days), "{left_days} of {}", s.warning_days);
+    assert!(
+        left_days > 0 && left_days <= i64::from(s.warning_days),
+        "{left_days} of {}",
+        s.warning_days
+    );
     let mut b = signed_on(&c, "BOB", "SECRET1");
     let s: PasswordStatus = b.client.call(Op::PasswordStatus, &()).body_as().unwrap();
     assert_eq!((s.expires, s.warning_days), (None, 7));
@@ -211,10 +272,16 @@ fn telnet_ticket_not_authorized() {
     let mut r = signed_on(&c, "BOB", "SECRET1");
     c.auto_signon.store(false, Ordering::SeqCst);
     let e = r.client.call(Op::TelnetTicket, &());
-    assert_eq!((e.status, e.message.unwrap().id.as_str()), (Status::NotAuthorized, "TCP1A55"));
+    assert_eq!(
+        (e.status, e.message.unwrap().id.as_str()),
+        (Status::NotAuthorized, "TCP1A55")
+    );
     c.auto_signon.store(true, Ordering::SeqCst);
     c.edit("BOB", |u| u.disabled = true);
-    assert_eq!(r.client.call(Op::TelnetTicket, &()).status, Status::NotAuthorized);
+    assert_eq!(
+        r.client.call(Op::TelnetTicket, &()).status,
+        Status::NotAuthorized
+    );
 }
 
 #[test]
@@ -222,7 +289,13 @@ fn version_2_operations_need_sign_on() {
     let c = Controls::new();
     let mut r = start_with(cfg(), c);
     r.client.hello_range(1, 2);
-    for op in [Op::RunCommand, Op::CheckCommand, Op::DescribeCommand, Op::TelnetTicket, Op::PasswordStatus] {
+    for op in [
+        Op::RunCommand,
+        Op::CheckCommand,
+        Op::DescribeCommand,
+        Op::TelnetTicket,
+        Op::PasswordStatus,
+    ] {
         let id = r.client.request(op, &CommandText::default());
         assert_eq!(r.client.reply(id).status, Status::NotSignedOn, "{op:?}");
     }
@@ -247,7 +320,10 @@ fn cancels_are_per_connection_and_request() {
     let queued = a.client.request(Op::RunCommand, &text("CRTLIB LIB(NEVER)"));
     a.client.send(&Envelope::cancel(queued));
     let got = a.client.replies(&[first, queued]);
-    assert_eq!((got[&first].status, got[&queued].status), (Status::Ok, Status::Cancelled));
+    assert_eq!(
+        (got[&first].status, got[&queued].status),
+        (Status::Ok, Status::Cancelled)
+    );
     assert!(got[&queued].body.is_empty());
     assert!(c.libraries.lock().unwrap().is_empty());
     assert_eq!(run(&mut a, "CRTLIB LIB(AFTER)").status, Status::Ok);
@@ -258,14 +334,37 @@ fn messages_carry_real_severities() {
     let c = Controls::new();
     let mut r = signed_on(&c, "BOB", "SECRET1");
     let sev = |e: &Envelope| -> Vec<(String, u8)> {
-        e.body_as::<CommandReply>().unwrap().messages.into_iter().map(|m| (m.id, m.severity)).collect()
+        e.body_as::<CommandReply>()
+            .unwrap()
+            .messages
+            .into_iter()
+            .map(|m| (m.id, m.severity))
+            .collect()
     };
-    assert_eq!(sev(&run(&mut r, "CRTLIB LIB(SEV)")), [("CPC2102".to_string(), 0)]);
-    assert_eq!(sev(&run(&mut r, "CHGAUT OBJ('/a') USER(BOB) DTAAUT(*BAD)")), [("CPDA091".to_string(), 10)]);
-    let cut = run(&mut r, "CPYFRMSTMF FROMSTMF('/long.txt') TOMBR('/QSYS.LIB/X.LIB/F.FILE/M.MBR')");
-    assert_eq!((cut.status, cut.message.as_ref().unwrap().severity), (Status::Error, 20));
-    assert_eq!(sev(&run(&mut r, "CRTLIB")), [("CPD0071".to_string(), 30), ("CPF0006".to_string(), 30)]);
-    assert_eq!(sev(&run(&mut r, "CRTLIB LIB(SEV)")), [("CPF2111".to_string(), 40)]);
+    assert_eq!(
+        sev(&run(&mut r, "CRTLIB LIB(SEV)")),
+        [("CPC2102".to_string(), 0)]
+    );
+    assert_eq!(
+        sev(&run(&mut r, "CHGAUT OBJ('/a') USER(BOB) DTAAUT(*BAD)")),
+        [("CPDA091".to_string(), 10)]
+    );
+    let cut = run(
+        &mut r,
+        "CPYFRMSTMF FROMSTMF('/long.txt') TOMBR('/QSYS.LIB/X.LIB/F.FILE/M.MBR')",
+    );
+    assert_eq!(
+        (cut.status, cut.message.as_ref().unwrap().severity),
+        (Status::Error, 20)
+    );
+    assert_eq!(
+        sev(&run(&mut r, "CRTLIB")),
+        [("CPD0071".to_string(), 30), ("CPF0006".to_string(), 30)]
+    );
+    assert_eq!(
+        sev(&run(&mut r, "CRTLIB LIB(SEV)")),
+        [("CPF2111".to_string(), 40)]
+    );
 }
 
 #[test]
@@ -276,13 +375,19 @@ fn a_ticket_for_an_expired_password_signs_nothing_on() {
     c.edit("BOB", |u| u.expired = true);
     assert!(!c.redeem_ticket("BOB", hex(&t.ticket).as_bytes(), true));
     c.edit("BOB", |u| u.expired = false);
-    assert!(!c.redeem_ticket("BOB", hex(&t.ticket).as_bytes(), true), "used up");
+    assert!(
+        !c.redeem_ticket("BOB", hex(&t.ticket).as_bytes(), true),
+        "used up"
+    );
 }
 
 /// The `SUBTREE` node of `name`'s definition.
 fn subtree_node(r: &mut Run, name: &str) -> qap_proto::ops::command::ParmNode {
     let d: CommandDefinition = describe(r, "*LIBL", name).body_as().unwrap();
-    d.nodes.into_iter().find(|n| n.keyword == "SUBTREE").unwrap_or_else(|| panic!("{name}: no SUBTREE"))
+    d.nodes
+        .into_iter()
+        .find(|n| n.keyword == "SUBTREE")
+        .unwrap_or_else(|| panic!("{name}: no SUBTREE"))
 }
 
 #[test]
@@ -292,35 +397,76 @@ fn chgown_and_chgpgp_take_subtree() {
     let mut r = signed_on(&c, "BOB", "SECRET1");
     for name in ["CHGOWN", "CHGPGP"] {
         let n = subtree_node(&mut r, name);
-        assert_eq!((n.default.as_deref(), n.values.as_slice()), (Some("*NONE"), ["*NONE".to_string(), "*ALL".into()].as_slice()));
-        assert_eq!((n.role, n.show, n.parent), (Role::Parameter, Show::Always, None), "{name}");
+        assert_eq!(
+            (n.default.as_deref(), n.values.as_slice()),
+            (
+                Some("*NONE"),
+                ["*NONE".to_string(), "*ALL".into()].as_slice()
+            )
+        );
+        assert_eq!(
+            (n.role, n.show, n.parent),
+            (Role::Parameter, Show::Always, None),
+            "{name}"
+        );
     }
     // One file in BOB's tree is WARN's: BOB may not change it.
     let theirs = TREE_FILES[0];
-    let given = c.files.as_user("QSECOFR", 50, |cl| cl.chgown(theirs, "WARN", false));
+    let given = c
+        .files
+        .as_user("QSECOFR", 50, |cl| cl.chgown(theirs, "WARN", false));
     assert!(given.is_ok());
-    let all: Vec<&str> = std::iter::once(TREE).chain(TREE_DIRS).chain(TREE_FILES).chain([TREE_HELD]).collect();
-    let stat = |p: &str| c.files.as_user("QSECOFR", 50, |cl| cl.stat(p, true)).unwrap();
+    let all: Vec<&str> = std::iter::once(TREE)
+        .chain(TREE_DIRS)
+        .chain(TREE_FILES)
+        .chain([TREE_HELD])
+        .collect();
+    let stat = |p: &str| {
+        c.files
+            .as_user("QSECOFR", 50, |cl| cl.stat(p, true))
+            .unwrap()
+    };
     let expect_partial = |e: &Envelope| {
         assert_eq!(e.status, Status::Error, "{e:?}");
         let escape = e.message.as_ref().unwrap();
         assert_eq!(escape.id, "CPFA0AB");
         assert_eq!(escape.data, ifscmd::Msg::path("CPFA0AB", theirs).data);
         let reply: CommandReply = e.body_as().unwrap();
-        let got: Vec<(&str, &[u8])> = reply.messages.iter().map(|m| (m.id.as_str(), m.data.as_slice())).collect();
+        let got: Vec<(&str, &[u8])> = reply
+            .messages
+            .iter()
+            .map(|m| (m.id.as_str(), m.data.as_slice()))
+            .collect();
         let diag = ifscmd::Msg::path("CPFA09C", theirs);
-        assert_eq!(got, [("CPFA09C", diag.data.as_slice()), ("CPFA0AB", escape.data.as_slice())]);
+        assert_eq!(
+            got,
+            [
+                ("CPFA09C", diag.data.as_slice()),
+                ("CPFA0AB", escape.data.as_slice())
+            ]
+        );
     };
     // CHGPGP first, while BOB still owns the rest.
-    let e = run(&mut r, &format!("CHGPGP OBJ('{TREE}') NEWPGP({GROUP}) SUBTREE(*ALL)"));
+    let e = run(
+        &mut r,
+        &format!("CHGPGP OBJ('{TREE}') NEWPGP({GROUP}) SUBTREE(*ALL)"),
+    );
     expect_partial(&e);
-    let group = |p: &str| c.files.as_user("QSECOFR", 50, |cl| cl.dspaut(p)).unwrap().group;
+    let group = |p: &str| {
+        c.files
+            .as_user("QSECOFR", 50, |cl| cl.dspaut(p))
+            .unwrap()
+            .group
+    };
     for p in all.iter().filter(|p| **p != theirs) {
         assert_eq!(group(p).as_deref(), Some(GROUP), "{p}");
     }
     assert_eq!(group(theirs), None);
     // CHGOWN the same way.
-    let e = run(&mut r, &format!("CHGOWN OBJ('{TREE}') NEWOWN(ANN) RVKOLDAUT(*NO) SUBTREE(*ALL)"));
+    let e = run(
+        &mut r,
+        &format!("CHGOWN OBJ('{TREE}') NEWOWN(ANN) RVKOLDAUT(*NO) SUBTREE(*ALL)"),
+    );
     expect_partial(&e);
     for p in all.iter().filter(|p| **p != theirs) {
         assert_eq!(stat(p).owner, "ANN", "{p}");
@@ -328,9 +474,15 @@ fn chgown_and_chgpgp_take_subtree() {
     assert_eq!(stat(theirs).owner, "WARN");
     // SUBTREE(*NONE): the one object; refused alone, its own escape.
     let one = run(&mut r, &format!("CHGOWN OBJ('{theirs}') NEWOWN(BOB)"));
-    assert_eq!((one.status, ids(&one)), (Status::Error, vec!["CPFA09C".to_string()]));
+    assert_eq!(
+        (one.status, ids(&one)),
+        (Status::Error, vec!["CPFA09C".to_string()])
+    );
     let mine = "/home/BOB/text";
-    let ok = run(&mut r, &format!("CHGOWN OBJ('{mine}') NEWOWN(ANN) SUBTREE(*NONE)"));
+    let ok = run(
+        &mut r,
+        &format!("CHGOWN OBJ('{mine}') NEWOWN(ANN) SUBTREE(*NONE)"),
+    );
     assert_eq!(ok.status, Status::Ok, "{ok:?}");
     assert_eq!(stat(mine).owner, "ANN");
     assert_eq!(stat(&format!("{mine}/text37.txt")).owner, "BOB");

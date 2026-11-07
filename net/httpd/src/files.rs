@@ -96,7 +96,10 @@ impl MemFiles {
     /// An empty tree.
     pub fn new() -> Self {
         let m = Self::default();
-        m.nodes.lock().expect("files").insert("/".into(), MemNode::Dir);
+        m.nodes
+            .lock()
+            .expect("files")
+            .insert("/".into(), MemNode::Dir);
         m
     }
 
@@ -108,7 +111,10 @@ impl MemFiles {
     /// Put a file, creating its directories.
     pub fn put(&self, path: &str, data: &[u8]) {
         let _ = self.mkdir_all(parent(path));
-        self.nodes.lock().expect("files").insert(norm(path), MemNode::File(data.to_vec(), self.now));
+        self.nodes
+            .lock()
+            .expect("files")
+            .insert(norm(path), MemNode::File(data.to_vec(), self.now));
     }
 
     /// Put a file that reports `size` bytes whatever its data (a large
@@ -141,10 +147,16 @@ impl Files for MemFiles {
     }
 
     fn write_atomic(&self, path: &str, data: &[u8]) -> io::Result<()> {
-        if !matches!(self.nodes.lock().expect("files").get(parent(path)), Some(MemNode::Dir)) {
+        if !matches!(
+            self.nodes.lock().expect("files").get(parent(path)),
+            Some(MemNode::Dir)
+        ) {
             return Err(not_found(parent(path)));
         }
-        self.nodes.lock().expect("files").insert(norm(path), MemNode::File(data.to_vec(), self.now));
+        self.nodes
+            .lock()
+            .expect("files")
+            .insert(norm(path), MemNode::File(data.to_vec(), self.now));
         Ok(())
     }
 
@@ -180,7 +192,9 @@ impl Files for MemFiles {
             cur.push('/');
             cur.push_str(part);
             match m.get(&cur) {
-                Some(MemNode::File(..)) => return Err(io::Error::other(format!("{cur} is a file"))),
+                Some(MemNode::File(..)) => {
+                    return Err(io::Error::other(format!("{cur} is a file")));
+                }
                 Some(MemNode::Dir) => {}
                 None => {
                     m.insert(cur.clone(), MemNode::Dir);
@@ -219,9 +233,15 @@ impl Files for MemFiles {
         if !matches!(m.get(&d), Some(MemNode::Dir)) {
             return Err(not_found(dir));
         }
-        let pre = if d == "/" { "/".to_string() } else { format!("{d}/") };
+        let pre = if d == "/" {
+            "/".to_string()
+        } else {
+            format!("{d}/")
+        };
         Ok(m.iter()
-            .filter(|(k, _)| k.starts_with(&pre) && k.len() > pre.len() && !k[pre.len()..].contains('/'))
+            .filter(|(k, _)| {
+                k.starts_with(&pre) && k.len() > pre.len() && !k[pre.len()..].contains('/')
+            })
             .map(|(k, v)| self.sized(k, entry(&k[pre.len()..], v)))
             .collect())
     }
@@ -230,7 +250,9 @@ impl Files for MemFiles {
         let p = norm(path);
         let m = self.nodes.lock().expect("files");
         let name = p.rsplit('/').next().unwrap_or("");
-        m.get(&p).map(|v| self.sized(&p, entry(name, v))).ok_or_else(|| not_found(path))
+        m.get(&p)
+            .map(|v| self.sized(&p, entry(name, v)))
+            .ok_or_else(|| not_found(path))
     }
 }
 
@@ -267,7 +289,10 @@ impl DirFiles {
         let mut out = self.root.clone();
         for part in p.split('/').filter(|s| !s.is_empty()) {
             if part == ".." || part == "." {
-                return Err(io::Error::new(io::ErrorKind::InvalidInput, format!("{p} is not a plain path")));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("{p} is not a plain path"),
+                ));
             }
             out.push(part);
         }
@@ -304,7 +329,11 @@ impl Files for DirFiles {
 
     fn append(&self, path: &str, data: &[u8]) -> io::Result<()> {
         use std::io::Write;
-        std::fs::OpenOptions::new().create(true).append(true).open(self.host(path)?)?.write_all(data)
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(self.host(path)?)?
+            .write_all(data)
     }
 
     fn rename(&self, from: &str, to: &str) -> io::Result<()> {
@@ -343,7 +372,12 @@ impl Files for DirFiles {
         let h = self.host(path)?;
         let m = std::fs::metadata(&h)?;
         Ok(Entry {
-            name: path.trim_end_matches('/').rsplit('/').next().unwrap_or("").into(),
+            name: path
+                .trim_end_matches('/')
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .into(),
             dir: m.is_dir(),
             size: if m.is_dir() { 0 } else { m.len() },
             modified: mtime(&m),
@@ -364,15 +398,24 @@ mod tests {
         f.write_atomic("/www/a/conf/httpd.conf", b"one").unwrap();
         f.append("/www/a/conf/httpd.conf", b"+two").unwrap();
         assert_eq!(f.read("/www/a/conf/httpd.conf").unwrap(), b"one+two");
-        f.copy("/www/a/conf/httpd.conf", "/www/a/conf/httpd.conf.bak").unwrap();
-        let names: Vec<String> = f.list("/www/a/conf").unwrap().into_iter().map(|e| e.name).collect();
+        f.copy("/www/a/conf/httpd.conf", "/www/a/conf/httpd.conf.bak")
+            .unwrap();
+        let names: Vec<String> = f
+            .list("/www/a/conf")
+            .unwrap()
+            .into_iter()
+            .map(|e| e.name)
+            .collect();
         assert_eq!(names, vec!["httpd.conf", "httpd.conf.bak"]);
         assert!(f.stat("/www/a").unwrap().dir);
         assert!(f.write_atomic("/www/missing/x", b"").is_err());
         f.rename("/www/a", "/www/b").unwrap();
         assert!(f.exists("/www/b/conf/httpd.conf") && !f.exists("/www/a"));
         let mut s = String::new();
-        f.open("/www/b/conf/httpd.conf.bak").unwrap().read_to_string(&mut s).unwrap();
+        f.open("/www/b/conf/httpd.conf.bak")
+            .unwrap()
+            .read_to_string(&mut s)
+            .unwrap();
         assert_eq!(s, "one+two");
         f.remove("/www/b/conf/httpd.conf.bak").unwrap();
         f.remove_tree("/www/b").unwrap();

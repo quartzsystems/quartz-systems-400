@@ -26,7 +26,8 @@ pub fn write_out(cx: &UtilCtx<'_>, file: Option<&str>, bytes: &[u8]) -> Result<(
             .map_err(|e| format!("standard output: {}", crate::common::io::errno_text(&e))),
         Some(f) => {
             let fd = open_write(cx, f, false).map_err(|e| format!("{f}: {}", e.errno.text()))?;
-            write_all(&*fd, bytes).map_err(|e| format!("{f}: {}", crate::common::io::errno_text(&e)))
+            write_all(&*fd, bytes)
+                .map_err(|e| format!("{f}: {}", crate::common::io::errno_text(&e)))
         }
     }
 }

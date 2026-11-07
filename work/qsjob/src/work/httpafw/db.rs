@@ -22,9 +22,11 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use accessweb::env::db::{Column, Commit, Db, Entry, Kind, Options, Outcome, ReqType, Request, ResultColumn, Val};
-use qap_proto::ops::sql::{CommitLevel, Execute, Fetch, Naming, SetOptions, SqlValue};
+use accessweb::env::db::{
+    Column, Commit, Db, Entry, Kind, Options, Outcome, ReqType, Request, ResultColumn, Val,
+};
 use qap_proto::ServerMessage;
+use qap_proto::ops::sql::{CommitLevel, Execute, Fetch, Naming, SetOptions, SqlValue};
 use qapd::sql::SqlStop;
 use qsweb::msg::{Kind as MsgKind, Message};
 use sql::embed::{Reply, Request as SqlRequest};
@@ -113,11 +115,23 @@ impl Engine for Scoped<'_> {
 }
 
 fn gone() -> Message {
-    Message::new(MsgKind::Error, "CPF9897", "Access for Web is ending; the statement was not run.")
+    Message::new(
+        MsgKind::Error,
+        "CPF9897",
+        "Access for Web is ending; the statement was not run.",
+    )
 }
 
 fn message(m: &ServerMessage) -> Message {
-    Message::new(if m.severity >= 30 { MsgKind::Error } else { MsgKind::Info }, &m.id, &m.text)
+    Message::new(
+        if m.severity >= 30 {
+            MsgKind::Error
+        } else {
+            MsgKind::Info
+        },
+        &m.id,
+        &m.text,
+    )
 }
 
 /// A failed outcome from the lane's stop.
@@ -133,8 +147,16 @@ fn stopped<T>(s: SqlStop<T>) -> Outcome {
         },
         SqlStop::Refused(r) => Outcome {
             message: Some(message(&r.message)),
-            sqlstate: if r.message.id == "SQL0551" { "42501".into() } else { "58004".into() },
-            sqlcode: if r.message.id == "SQL0551" { -551 } else { -901 },
+            sqlstate: if r.message.id == "SQL0551" {
+                "42501".into()
+            } else {
+                "58004".into()
+            },
+            sqlcode: if r.message.id == "SQL0551" {
+                -551
+            } else {
+                -901
+            },
             failed: true,
             ..Outcome::default()
         },
@@ -170,13 +192,22 @@ fn val(v: &SqlValue, scale: u16) -> Val {
         SqlValue::Date { ms } => Val::Text(date(*ms)),
         SqlValue::Time { ms } => Val::Text(clock(*ms, '.')),
         SqlValue::Timestamp { ms, picos } => {
-            let frac = u64::try_from(ms.rem_euclid(1000)).unwrap_or(0) * 1_000_000_000 + u64::from(*picos);
+            let frac =
+                u64::try_from(ms.rem_euclid(1000)).unwrap_or(0) * 1_000_000_000 + u64::from(*picos);
             let digits = format!("{frac:012}");
             let n = usize::from(scale.min(12));
-            let f = if n == 0 { String::new() } else { format!(".{}", &digits[..n]) };
+            let f = if n == 0 {
+                String::new()
+            } else {
+                format!(".{}", &digits[..n])
+            };
             Val::Text(format!("{}-{}{f}", date(*ms), clock(*ms, '.')))
         }
-        SqlValue::Boolean { value } => Val::Text(if *value { "TRUE".into() } else { "FALSE".into() }),
+        SqlValue::Boolean { value } => Val::Text(if *value {
+            "TRUE".into()
+        } else {
+            "FALSE".into()
+        }),
     }
 }
 
@@ -185,7 +216,9 @@ fn param(v: &Val, typ: &str) -> SqlValue {
     match v {
         Val::Null => SqlValue::Null,
         Val::Bin(b) => SqlValue::Binary { data: b.clone() },
-        v if accessweb::env::db::is_numeric(typ) => SqlValue::Decimal { text: v.text().trim().to_string() },
+        v if accessweb::env::db::is_numeric(typ) => SqlValue::Decimal {
+            text: v.text().trim().to_string(),
+        },
         v => SqlValue::Text { text: v.text() },
     }
 }
@@ -219,10 +252,22 @@ fn statement(
     };
     let rows: Vec<Vec<SqlValue>> = params
         .iter()
-        .map(|r| r.iter().zip(&p.parameters).map(|(v, c)| param(v, &c.sql_type)).collect())
+        .map(|r| {
+            r.iter()
+                .zip(&p.parameters)
+                .map(|(v, c)| param(v, &c.sql_type))
+                .collect()
+        })
         .collect();
     let cancelled = || cancel.load(Ordering::SeqCst);
-    let ex = match lane.execute(e, &Execute { statement: p.statement, rows }, &cancelled) {
+    let ex = match lane.execute(
+        e,
+        &Execute {
+            statement: p.statement,
+            rows,
+        },
+        &cancelled,
+    ) {
         Ok(x) => x,
         Err(s) => {
             let _ = lane.release(e, p.statement);
@@ -230,26 +275,48 @@ fn statement(
         }
     };
     let mut o = Outcome {
-        columns: p.columns.iter().map(|c| ResultColumn { name: c.name.clone(), typ: c.sql_type.clone() }).collect(),
+        columns: p
+            .columns
+            .iter()
+            .map(|c| ResultColumn {
+                name: c.name.clone(),
+                typ: c.sql_type.clone(),
+            })
+            .collect(),
         changed: ex.updated,
         sqlstate: "00000".into(),
         ..Outcome::default()
     };
     if let Some(cur) = ex.cursor {
         let max = u32::try_from(max_rows).unwrap_or(0);
-        match lane.fetch(e, &Fetch { cursor: cur, max_rows: max }, &cancelled) {
+        match lane.fetch(
+            e,
+            &Fetch {
+                cursor: cur,
+                max_rows: max,
+            },
+            &cancelled,
+        ) {
             Ok(f) => {
                 o.rows = f
                     .rows
                     .iter()
-                    .map(|r| r.iter().zip(&p.columns).map(|(v, c)| val(v, c.scale)).collect())
+                    .map(|r| {
+                        r.iter()
+                            .zip(&p.columns)
+                            .map(|(v, c)| val(v, c.scale))
+                            .collect()
+                    })
                     .collect();
                 if f.end {
                     let _ = lane.close_cursor(e, cur);
                     let _ = lane.release(e, p.statement);
                 } else {
                     o.cursor = Some(cur);
-                    cursors.insert(cur, (p.statement, p.columns.iter().map(|c| c.scale).collect()));
+                    cursors.insert(
+                        cur,
+                        (p.statement, p.columns.iter().map(|c| c.scale).collect()),
+                    );
                 }
             }
             Err(s) => {
@@ -270,7 +337,10 @@ fn statement(
 fn catalog(m: &mut Main, sql: &str, params: &[Val]) -> Result<Vec<Vec<Val>>, Message> {
     let mut lane = Lane::default();
     let (link, console) = (&m.link, &mut m.console);
-    let mut e = Scoped { inner: LaneDb(link, console), prefix: "AFWCAT".into() };
+    let mut e = Scoped {
+        inner: LaneDb(link, console),
+        prefix: "AFWCAT".into(),
+    };
     let mut cursors = HashMap::new();
     // The values as literals, as the catalog views take them anywhere.
     let mut text = String::new();
@@ -284,28 +354,56 @@ fn catalog(m: &mut Main, sql: &str, params: &[Val]) -> Result<Vec<Vec<Val>>, Mes
             _ => text.push(c),
         }
     }
-    let o = statement(&mut e, &mut lane, &mut cursors, &text, &[], 100_000, &AtomicBool::new(false));
+    let o = statement(
+        &mut e,
+        &mut lane,
+        &mut cursors,
+        &text,
+        &[],
+        100_000,
+        &AtomicBool::new(false),
+    );
     lane.end(&mut e);
     if o.failed {
-        return Err(o.message.unwrap_or_else(|| Message::new(MsgKind::Error, "SQL0901", sql)));
+        return Err(o
+            .message
+            .unwrap_or_else(|| Message::new(MsgKind::Error, "SQL0901", sql)));
     }
     Ok(o.rows)
 }
 
 fn text(r: &[Val], i: usize) -> String {
-    r.get(i).map(Val::text).unwrap_or_default().trim_end().to_string()
+    r.get(i)
+        .map(Val::text)
+        .unwrap_or_default()
+        .trim_end()
+        .to_string()
 }
 
 fn num(r: &[Val], i: usize) -> u64 {
-    text(r, i).split('.').next().and_then(|n| n.trim().parse().ok()).unwrap_or(0)
+    text(r, i)
+        .split('.')
+        .next()
+        .and_then(|n| n.trim().parse().ok())
+        .unwrap_or(0)
 }
 
 /// `2026-10-29-13.58.02.000000` (or with blanks and colons) as seconds
 /// since 1970; the catalog's stamps are the system's local time.
 fn stamp(t: &str, offset: i64) -> u64 {
-    let p: Vec<i64> = t.split(|c: char| !c.is_ascii_digit()).filter(|x| !x.is_empty()).filter_map(|x| x.parse().ok()).collect();
-    let [y, mo, d, h, mi, s, ..] = p[..] else { return 0 };
-    let days = accessweb::util::days(y, u32::try_from(mo).unwrap_or(1), u32::try_from(d).unwrap_or(1));
+    let p: Vec<i64> = t
+        .split(|c: char| !c.is_ascii_digit())
+        .filter(|x| !x.is_empty())
+        .filter_map(|x| x.parse().ok())
+        .collect();
+    let [y, mo, d, h, mi, s, ..] = p[..] else {
+        return 0;
+    };
+    let days = accessweb::util::days(
+        y,
+        u32::try_from(mo).unwrap_or(1),
+        u32::try_from(d).unwrap_or(1),
+    );
     u64::try_from(days * 86_400 + h * 3600 + mi * 60 + s - offset).unwrap_or(0)
 }
 
@@ -330,11 +428,15 @@ fn type_name(t: &str) -> String {
 
 fn tables(m: &mut Main, schema: &str, offset: i64) -> Result<Vec<Entry>, Message> {
     let s = Val::Text(schema.to_string());
-    let stats: HashMap<String, u64> = catalog(m, "SELECT TABLE_NAME, NUMBER_ROWS FROM QSYS2.SYSTABLESTAT WHERE TABLE_SCHEMA = ?", std::slice::from_ref(&s))
-        .unwrap_or_default()
-        .iter()
-        .map(|r| (text(r, 0), num(r, 1)))
-        .collect();
+    let stats: HashMap<String, u64> = catalog(
+        m,
+        "SELECT TABLE_NAME, NUMBER_ROWS FROM QSYS2.SYSTABLESTAT WHERE TABLE_SCHEMA = ?",
+        std::slice::from_ref(&s),
+    )
+    .unwrap_or_default()
+    .iter()
+    .map(|r| (text(r, 0), num(r, 1)))
+    .collect();
     let rows = catalog(
         m,
         "SELECT TABLE_NAME, TABLE_TYPE, TABLE_TEXT, LAST_ALTERED_TIMESTAMP FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = ? AND FILE_TYPE = 'D' ORDER BY TABLE_NAME",
@@ -347,7 +449,11 @@ fn tables(m: &mut Main, schema: &str, offset: i64) -> Result<Vec<Entry>, Message
             let kind = kind_of(&text(r, 1));
             Entry {
                 rows: stats.get(&name).copied().unwrap_or(0),
-                changed: if kind == Kind::View { 0 } else { stamp(&text(r, 3), offset) },
+                changed: if kind == Kind::View {
+                    0
+                } else {
+                    stamp(&text(r, 3), offset)
+                },
                 name,
                 kind,
                 text: text(r, 2),
@@ -364,7 +470,11 @@ fn columns(m: &mut Main, schema: &str, table: &str) -> Result<Vec<Column>, Messa
         &[s.clone(), t.clone()],
     )?;
     if rows.is_empty() {
-        return Err(Message::new(MsgKind::Error, "SQL0204", &format!("{table} in {schema} not found.")));
+        return Err(Message::new(
+            MsgKind::Error,
+            "SQL0204",
+            &format!("{table} in {schema} not found."),
+        ));
     }
     let keys: Vec<String> = catalog(
         m,
@@ -392,7 +502,8 @@ fn columns(m: &mut Main, schema: &str, table: &str) -> Result<Vec<Column>, Messa
                 key: keys.contains(&name),
                 name,
                 length: u32::try_from(num(r, 2)).unwrap_or(0),
-                scale: (decimal && !text(r, 3).is_empty()).then(|| u32::try_from(num(r, 3)).unwrap_or(0)),
+                scale: (decimal && !text(r, 3).is_empty())
+                    .then(|| u32::try_from(num(r, 3)).unwrap_or(0)),
                 nullable: text(r, 4) == "Y",
                 default,
                 choices: Vec::new(),
@@ -409,7 +520,8 @@ const SHARED: &str = "*SHARED";
 /// `who`'s entries in the store: key and value.
 fn entries(m: &Main, who: &str) -> Vec<(String, String)> {
     let w = who.to_string();
-    m.ask(|l| l.web_store(INDEX.into(), w, None)).unwrap_or_default()
+    m.ask(|l| l.web_store(INDEX.into(), w, None))
+        .unwrap_or_default()
 }
 
 /// Replace `who`'s entries whose keys start with `what.` by `value` in
@@ -419,10 +531,16 @@ fn put(m: &Main, who: &str, what: &str, value: Option<&str>) -> Result<(), Strin
     let head = format!("{what}.");
     all.retain(|(k, _)| !k.starts_with(&head));
     if let Some(v) = value {
-        all.extend(parts(v).into_iter().enumerate().map(|(i, p)| (format!("{what}.{i:03}"), p)));
+        all.extend(
+            parts(v)
+                .into_iter()
+                .enumerate()
+                .map(|(i, p)| (format!("{what}.{i:03}"), p)),
+        );
     }
     let w = who.to_string();
-    m.ask(|l| l.web_store(INDEX.into(), w, Some(all))).map(|_| ())
+    m.ask(|l| l.web_store(INDEX.into(), w, Some(all)))
+        .map(|_| ())
 }
 
 /// `who`'s entries whose keys start with `what`, as (owner, key, value).
@@ -453,7 +571,10 @@ fn parts(s: &str) -> Vec<String> {
 /// `owner`'s request `id`, if it has one.
 fn request_of(m: &Main, owner: &str, id: u32) -> Option<Request> {
     let name = format!("_q{id:04}");
-    blobs(find(m, owner, &format!("{name}."))).into_iter().find(|(_, n, _)| *n == name).and_then(|(_, _, b)| of_blob(owner, id, &b))
+    blobs(find(m, owner, &format!("{name}.")))
+        .into_iter()
+        .find(|(_, n, _)| *n == name)
+        .and_then(|(_, _, b)| of_blob(owner, id, &b))
 }
 
 /// List (or stop listing) `owner`'s request `id` as shared with `with`.
@@ -464,15 +585,19 @@ fn share(m: &Main, owner: &str, id: u32, with: &str) -> Result<(), String> {
     if !with.is_empty() {
         all.push((k, with.to_string()));
     }
-    m.ask(|l| l.web_store(INDEX.into(), SHARED.into(), Some(all))).map(|_| ())
+    m.ask(|l| l.web_store(INDEX.into(), SHARED.into(), Some(all)))
+        .map(|_| ())
 }
 
 /// Blobs by owner and name, their parts in order.
 fn blobs(rows: Vec<(String, String, String)>) -> Vec<(String, String, String)> {
-    let mut by: std::collections::BTreeMap<(String, String), Vec<(String, String)>> = std::collections::BTreeMap::new();
+    let mut by: std::collections::BTreeMap<(String, String), Vec<(String, String)>> =
+        std::collections::BTreeMap::new();
     for (who, k, v) in rows {
         let (name, part) = k.rsplit_once('.').unwrap_or((&k, "000"));
-        by.entry((who, name.to_string())).or_default().push((part.to_string(), v));
+        by.entry((who, name.to_string()))
+            .or_default()
+            .push((part.to_string(), v));
     }
     by.into_iter()
         .map(|((who, name), mut ps)| {
@@ -506,7 +631,9 @@ fn to_blob(r: &Request) -> String {
 fn of_blob(owner: &str, id: u32, b: &str) -> Option<Request> {
     let (head, body) = b.split_once('\n').unwrap_or((b, ""));
     let f: Vec<&str> = head.split('&').collect();
-    let [name, typ, format, last, shared] = f[..] else { return None };
+    let [name, typ, format, last, shared] = f[..] else {
+        return None;
+    };
     Some(Request {
         id,
         owner: owner.to_string(),
@@ -543,9 +670,14 @@ impl LiveDb {
                 let mut c = conns.lock().expect("conns").remove(&conn)?;
                 let r = m.as_user(&u, |m| {
                     let (link, console) = (&m.link, &mut m.console);
-                    let mut e = Scoped { inner: LaneDb(link, console), prefix: format!("AFW{conn}") };
+                    let mut e = Scoped {
+                        inner: LaneDb(link, console),
+                        prefix: format!("AFW{conn}"),
+                    };
                     busy.store(conn, Ordering::SeqCst);
-                    let r = running(&flag, number, || f(&mut e, &mut c.lane, &mut c.cursors, &cancel));
+                    let r = running(&flag, number, || {
+                        f(&mut e, &mut c.lane, &mut c.cursors, &cancel)
+                    });
                     busy.store(0, Ordering::SeqCst);
                     r
                 });
@@ -622,36 +754,67 @@ impl Db for LiveDb {
     fn options(&self, user: &str, conn: u32, opts: &Options) -> Result<(), Message> {
         let o = SetOptions {
             commit: commit_level(opts.commit),
-            naming: if opts.system_naming { Naming::System } else { Naming::Sql },
-            default_schema: (!opts.schema.trim().is_empty()).then(|| opts.schema.trim().to_string()),
+            naming: if opts.system_naming {
+                Naming::System
+            } else {
+                Naming::Sql
+            },
+            default_schema: (!opts.schema.trim().is_empty())
+                .then(|| opts.schema.trim().to_string()),
         };
-        self.with_conn(user, conn, move |e, lane, _, _| lane.set_options(e, &o).map_err(|r| message(&r.message)))
-            .unwrap_or_else(|| Err(gone()))
+        self.with_conn(user, conn, move |e, lane, _, _| {
+            lane.set_options(e, &o).map_err(|r| message(&r.message))
+        })
+        .unwrap_or_else(|| Err(gone()))
     }
 
-    fn run(&self, user: &str, conn: u32, sql: &str, params: &[Vec<Val>], max_rows: usize) -> Outcome {
+    fn run(
+        &self,
+        user: &str,
+        conn: u32,
+        sql: &str,
+        params: &[Vec<Val>],
+        max_rows: usize,
+    ) -> Outcome {
         let (s, p) = (sql.to_string(), params.to_vec());
-        self.with_conn(user, conn, move |e, lane, cursors, cancel| statement(e, lane, cursors, &s, &p, max_rows, cancel))
-            .unwrap_or_else(|| Outcome {
-                message: Some(gone()),
-                sqlstate: "08003".into(),
-                sqlcode: -901,
-                failed: true,
-                ..Outcome::default()
-            })
+        self.with_conn(user, conn, move |e, lane, cursors, cancel| {
+            statement(e, lane, cursors, &s, &p, max_rows, cancel)
+        })
+        .unwrap_or_else(|| Outcome {
+            message: Some(gone()),
+            sqlstate: "08003".into(),
+            sqlcode: -901,
+            failed: true,
+            ..Outcome::default()
+        })
     }
 
     fn fetch(&self, user: &str, conn: u32, cursor: u32, max_rows: usize) -> Outcome {
         self.with_conn(user, conn, move |e, lane, cursors, cancel| {
             let max = u32::try_from(max_rows).unwrap_or(0);
             let cancelled = || cancel.load(Ordering::SeqCst);
-            match lane.fetch(e, &Fetch { cursor, max_rows: max }, &cancelled) {
+            match lane.fetch(
+                e,
+                &Fetch {
+                    cursor,
+                    max_rows: max,
+                },
+                &cancelled,
+            ) {
                 Ok(f) => {
-                    let scales = cursors.get(&cursor).map(|c| c.1.clone()).unwrap_or_default();
+                    let scales = cursors
+                        .get(&cursor)
+                        .map(|c| c.1.clone())
+                        .unwrap_or_default();
                     let rows: Vec<Vec<Val>> = f
                         .rows
                         .iter()
-                        .map(|r| r.iter().enumerate().map(|(i, v)| val(v, scales.get(i).copied().unwrap_or(6))).collect())
+                        .map(|r| {
+                            r.iter()
+                                .enumerate()
+                                .map(|(i, v)| val(v, scales.get(i).copied().unwrap_or(6)))
+                                .collect()
+                        })
                         .collect();
                     let more = !f.end;
                     if f.end {
@@ -682,12 +845,14 @@ impl Db for LiveDb {
     }
 
     fn end_unit(&self, user: &str, conn: u32, commit: bool) -> Outcome {
-        self.with_conn(user, conn, move |e, lane, _, _| match lane.end_unit(e, commit) {
-            Ok(()) => Outcome {
-                sqlstate: "00000".into(),
-                ..Outcome::default()
-            },
-            Err(s) => stopped(s),
+        self.with_conn(user, conn, move |e, lane, _, _| {
+            match lane.end_unit(e, commit) {
+                Ok(()) => Outcome {
+                    sqlstate: "00000".into(),
+                    ..Outcome::default()
+                },
+                Err(s) => stopped(s),
+            }
         })
         .unwrap_or_else(|| Outcome {
             message: Some(gone()),
@@ -713,10 +878,15 @@ impl Db for LiveDb {
             .job(move |m| {
                 let mut out: Vec<Request> = blobs(find(m, &u, "_q"))
                     .into_iter()
-                    .filter_map(|(who, name, b)| of_blob(&who, name.strip_prefix("_q")?.parse().ok()?, &b))
+                    .filter_map(|(who, name, b)| {
+                        of_blob(&who, name.strip_prefix("_q")?.parse().ok()?, &b)
+                    })
                     .collect();
                 for (k, with) in entries(m, SHARED) {
-                    let Some((owner, id)) = k.strip_prefix("_s").and_then(|r| r.split_once('.')) else { continue };
+                    let Some((owner, id)) = k.strip_prefix("_s").and_then(|r| r.split_once('.'))
+                    else {
+                        continue;
+                    };
                     if owner == u || !(with == "*PUBLIC" || g.contains(&with)) {
                         continue;
                     }
@@ -735,7 +905,11 @@ impl Db for LiveDb {
         let res = self.link.job(move |m| {
             let mine = blobs(find(m, &u, "_q"));
             let id = if r.id == 0 {
-                mine.iter().filter_map(|(_, n, _)| n.strip_prefix("_q")?.parse::<u32>().ok()).max().unwrap_or(0) + 1
+                mine.iter()
+                    .filter_map(|(_, n, _)| n.strip_prefix("_q")?.parse::<u32>().ok())
+                    .max()
+                    .unwrap_or(0)
+                    + 1
             } else if mine.iter().any(|(_, n, _)| *n == format!("_q{:04}", r.id)) {
                 r.id
             } else {
@@ -745,8 +919,13 @@ impl Db for LiveDb {
             put(m, &u, &format!("_q{id:04}"), Some(&to_blob(&r)))?;
             share(m, &u, id, &r.shared).map(|()| id)
         });
-        res.unwrap_or_else(|| Err("CPF9897".into()))
-            .map_err(|id| Message::new(MsgKind::Error, &id, &format!("The request could not be kept in {LIB}/{INDEX}.")))
+        res.unwrap_or_else(|| Err("CPF9897".into())).map_err(|id| {
+            Message::new(
+                MsgKind::Error,
+                &id,
+                &format!("The request could not be kept in {LIB}/{INDEX}."),
+            )
+        })
     }
 
     fn delete_request(&self, user: &str, id: u32) -> Result<(), Message> {
@@ -755,7 +934,11 @@ impl Db for LiveDb {
             let had = request_of(m, &u, id).is_some();
             put(m, &u, &format!("_q{id:04}"), None)?;
             share(m, &u, id, "")?;
-            if had { Ok(()) } else { Err("CPF9801".to_string()) }
+            if had {
+                Ok(())
+            } else {
+                Err("CPF9801".to_string())
+            }
         });
         r.unwrap_or_else(|| Err("CPF9897".into()))
             .map_err(|e| Message::new(MsgKind::Error, &e, &format!("Request {id} not found.")))
@@ -782,7 +965,10 @@ impl Db for LiveDb {
             h.insert(0, one);
         }
         h.truncate(100);
-        let (u, blob) = (user.to_string(), h.iter().map(|s| enc(s)).collect::<Vec<_>>().join("\n"));
+        let (u, blob) = (
+            user.to_string(),
+            h.iter().map(|s| enc(s)).collect::<Vec<_>>().join("\n"),
+        );
         let _ = self.link.job(move |m| put(m, &u, "_h", Some(&blob)));
     }
 }
@@ -793,13 +979,38 @@ mod tests {
 
     #[test]
     fn values_blobs_and_stamps() {
-        assert_eq!(val(&SqlValue::Decimal { text: "1200.05".into() }, 2), Val::Num("1200.05".into()));
-        assert_eq!(val(&SqlValue::Date { ms: 1_793_491_200_000 }, 0), Val::Text("2026-11-01".into()));
         assert_eq!(
-            val(&SqlValue::Timestamp { ms: 1_793_491_200_123, picos: 456_000_000 }, 6),
+            val(
+                &SqlValue::Decimal {
+                    text: "1200.05".into()
+                },
+                2
+            ),
+            Val::Num("1200.05".into())
+        );
+        assert_eq!(
+            val(
+                &SqlValue::Date {
+                    ms: 1_793_491_200_000
+                },
+                0
+            ),
+            Val::Text("2026-11-01".into())
+        );
+        assert_eq!(
+            val(
+                &SqlValue::Timestamp {
+                    ms: 1_793_491_200_123,
+                    picos: 456_000_000
+                },
+                6
+            ),
             Val::Text("2026-11-01-00.00.00.123456".into())
         );
-        assert_eq!(param(&Val::Text(" 12 ".into()), "DECIMAL"), SqlValue::Decimal { text: "12".into() });
+        assert_eq!(
+            param(&Val::Text(" 12 ".into()), "DECIMAL"),
+            SqlValue::Decimal { text: "12".into() }
+        );
         let r = Request {
             id: 3,
             owner: "BOB".into(),

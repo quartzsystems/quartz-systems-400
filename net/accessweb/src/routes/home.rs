@@ -20,15 +20,69 @@ use crate::{PRODUCT, policy};
 /// A section: glyph letter, label, route, description, the function
 /// that must be allowed for it to show (`None`: always).
 const SECTIONS: &[(&str, &str, &str, &str, Option<&str>)] = &[
-    ("5", "5250 session", "/5250", "Start a 5250 display session to {system} in your browser.", Some(policy::S5250_START)),
-    ("D", "Database", "/db/tables", "Browse tables, run SQL statements, copy data to and from tables.", Some(policy::DB_BROWSE)),
-    ("F", "Files", "/files", "Browse, upload, download and edit files in the integrated file system.", Some(policy::FILES_BROWSE)),
-    ("P", "Print", "/print", "View your printer output as text or PDF, and manage printers.", Some(policy::PRINT_TEXT)),
-    ("M", "Messages", "/messages", "Display your messages, send messages, reply to inquiry messages.", Some(policy::MSGS_DISPLAY)),
-    ("J", "Jobs", "/jobs", "Work with your jobs and the Access for Web server jobs.", Some(policy::JOBS_DISPLAY)),
-    ("C", "Commands", "/cmd", "Run CL commands, prompt for parameters, save commands you use often.", Some(policy::CMD_RUN)),
-    ("C", "Customize", "/preferences", "Preferences for this user; policies for administrators.", None),
-    ("D", "Download", "/download", "Printer drivers, the terminal font and other client pieces.", None),
+    (
+        "5",
+        "5250 session",
+        "/5250",
+        "Start a 5250 display session to {system} in your browser.",
+        Some(policy::S5250_START),
+    ),
+    (
+        "D",
+        "Database",
+        "/db/tables",
+        "Browse tables, run SQL statements, copy data to and from tables.",
+        Some(policy::DB_BROWSE),
+    ),
+    (
+        "F",
+        "Files",
+        "/files",
+        "Browse, upload, download and edit files in the integrated file system.",
+        Some(policy::FILES_BROWSE),
+    ),
+    (
+        "P",
+        "Print",
+        "/print",
+        "View your printer output as text or PDF, and manage printers.",
+        Some(policy::PRINT_TEXT),
+    ),
+    (
+        "M",
+        "Messages",
+        "/messages",
+        "Display your messages, send messages, reply to inquiry messages.",
+        Some(policy::MSGS_DISPLAY),
+    ),
+    (
+        "J",
+        "Jobs",
+        "/jobs",
+        "Work with your jobs and the Access for Web server jobs.",
+        Some(policy::JOBS_DISPLAY),
+    ),
+    (
+        "C",
+        "Commands",
+        "/cmd",
+        "Run CL commands, prompt for parameters, save commands you use often.",
+        Some(policy::CMD_RUN),
+    ),
+    (
+        "C",
+        "Customize",
+        "/preferences",
+        "Preferences for this user; policies for administrators.",
+        None,
+    ),
+    (
+        "D",
+        "Download",
+        "/download",
+        "Printer drivers, the terminal font and other client pieces.",
+        None,
+    ),
 ];
 
 /// `1 message` or `3 messages`.
@@ -44,8 +98,17 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let prefs = rq.prefs();
     let mut body = String::new();
     let text = env.system.text(user);
-    let name = if text.trim().is_empty() { user.to_string() } else { text };
-    let _ = write!(body, "<p>Welcome, <b>{}</b> (<span class=\"mono\">{}</span>).", esc(&name), esc(user));
+    let name = if text.trim().is_empty() {
+        user.to_string()
+    } else {
+        text
+    };
+    let _ = write!(
+        body,
+        "<p>Welcome, <b>{}</b> (<span class=\"mono\">{}</span>).",
+        esc(&name),
+        esc(user)
+    );
     let at: u64 = rq.get(PREV_AT).parse().unwrap_or(0);
     if at == 0 {
         body.push_str(" This is your first sign-on.");
@@ -71,11 +134,20 @@ pub fn page(rq: &Rq<'_>) -> Response {
         );
     }
     body.push_str("</p>");
-    let shown: Vec<_> = SECTIONS.iter().filter(|s| s.4.is_none_or(|f| rq.allowed(f))).collect();
+    let shown: Vec<_> = SECTIONS
+        .iter()
+        .filter(|s| s.4.is_none_or(|f| rq.allowed(f)))
+        .collect();
     if prefs.get(LAYOUT) == "compact" {
         let links: Vec<String> = shown
             .iter()
-            .map(|(_, label, route, _, _)| format!("<a href=\"{}\">{}</a>", esc(&PRODUCT.url(route)), esc(label)))
+            .map(|(_, label, route, _, _)| {
+                format!(
+                    "<a href=\"{}\">{}</a>",
+                    esc(&PRODUCT.url(route)),
+                    esc(label)
+                )
+            })
             .collect();
         let _ = write!(body, "<p>{}</p>", links.join(" | "));
     } else {

@@ -83,7 +83,11 @@ fn catalog(m: &Main, query: &str) -> Vec<Vec<String>> {
     let r = run(m, query, "*SQL", CATALOG_ROWS);
     r.rows
         .into_iter()
-        .map(|row| row.into_iter().map(|v| v.unwrap_or_default().trim().to_string()).collect())
+        .map(|row| {
+            row.into_iter()
+                .map(|v| v.unwrap_or_default().trim().to_string())
+                .collect()
+        })
         .collect()
 }
 
@@ -92,7 +96,9 @@ fn cell(r: &[String], i: usize) -> String {
 }
 
 fn num(r: &[String], i: usize) -> u64 {
-    r.get(i).and_then(|v| v.split('.').next()?.trim().parse().ok()).unwrap_or(0)
+    r.get(i)
+        .and_then(|v| v.split('.').next()?.trim().parse().ok())
+        .unwrap_or(0)
 }
 
 /// `CYYMMDDHHMMSS`, local time `offset_min` from UTC, as seconds.
@@ -101,7 +107,14 @@ pub fn cyy_secs(t: &str, offset_min: i32) -> u64 {
     if t.len() < 13 {
         return 0;
     }
-    let local = utc_secs(1900 + n(0, 1) * 100 + n(1, 3), n(3, 5), n(5, 7), n(7, 9), n(9, 11), n(11, 13));
+    let local = utc_secs(
+        1900 + n(0, 1) * 100 + n(1, 3),
+        n(3, 5),
+        n(5, 7),
+        n(7, 9),
+        n(9, 11),
+        n(11, 13),
+    );
     u64::try_from(i64::try_from(local).unwrap_or(0) - i64::from(offset_min) * 60).unwrap_or(0)
 }
 
@@ -126,7 +139,9 @@ fn stats(m: &Main, schema: &str) -> HashMap<String, (u64, u64, u64)> {
 }
 
 fn schemas(m: &Main) -> Vec<Schema> {
-    let q = "SELECT SCHEMA_NAME, SCHEMA_TEXT, SCHEMA_OWNER FROM QSYS2.SYSSCHEMAS ORDER BY SCHEMA_NAME".to_string();
+    let q =
+        "SELECT SCHEMA_NAME, SCHEMA_TEXT, SCHEMA_OWNER FROM QSYS2.SYSSCHEMAS ORDER BY SCHEMA_NAME"
+            .to_string();
     catalog(m, &q)
         .into_iter()
         .map(|r| Schema {
@@ -174,7 +189,10 @@ fn objects(m: &Main, schema: &str, kind: ObjKind) -> Vec<DbObject> {
                 "SELECT VIEW_NAME, OBJECT_NAME FROM QSYS2.SYSVIEWDEP WHERE VIEW_SCHEMA = {}",
                 lit(schema)
             );
-            let over: HashMap<String, String> = catalog(m, &q).into_iter().map(|r| (cell(&r, 0), cell(&r, 1))).collect();
+            let over: HashMap<String, String> = catalog(m, &q)
+                .into_iter()
+                .map(|r| (cell(&r, 0), cell(&r, 1)))
+                .collect();
             let mut out = files(m, schema, "'V'");
             for o in &mut out {
                 o.over = over.get(&o.name).cloned().unwrap_or_default();
@@ -216,7 +234,8 @@ fn columns(m: &Main, schema: &str, table: &str) -> Vec<Column> {
                 name: cell(&r, 0),
                 system_name: cell(&r, 1),
                 length: u32::try_from(num(&r, 3)).unwrap_or(0),
-                scale: (decimal(&typ) && !cell(&r, 4).is_empty()).then(|| u32::try_from(num(&r, 4)).unwrap_or(0)),
+                scale: (decimal(&typ) && !cell(&r, 4).is_empty())
+                    .then(|| u32::try_from(num(&r, 4)).unwrap_or(0)),
                 nullable: cell(&r, 5) == "Y",
                 default: cell(&r, 6),
                 text: cell(&r, 7),
@@ -233,7 +252,11 @@ fn keys(m: &Main, view: &str, kind: &str, schema: &str, name: &str) -> String {
         lit(schema),
         lit(name)
     );
-    catalog(m, &q).iter().map(|r| cell(r, 0)).collect::<Vec<_>>().join(", ")
+    catalog(m, &q)
+        .iter()
+        .map(|r| cell(r, 0))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn describe(m: &Main, schema: &str, name: &str) -> Option<TableDesc> {
@@ -244,7 +267,10 @@ fn describe(m: &Main, schema: &str, name: &str) -> Option<TableDesc> {
         lit(name)
     );
     let row = catalog(m, &q).into_iter().next()?;
-    let (rows, deleted, size) = stats(m, schema).get(&cell(&row, 0)).copied().unwrap_or_default();
+    let (rows, deleted, size) = stats(m, schema)
+        .get(&cell(&row, 0))
+        .copied()
+        .unwrap_or_default();
     let q = format!(
         "SELECT CONSTRAINT_NAME, CONSTRAINT_SCHEMA, CONSTRAINT_TYPE FROM QSYS2.SYSCST \
          WHERE TABLE_SCHEMA = {} AND TABLE_NAME = {}",
@@ -304,7 +330,9 @@ fn completion(m: &Main, r: &IsqlReply) -> Option<Message> {
     let (tbl, lib) = (r.table.0.as_str(), r.table.1.as_str());
     let (kind, id, data): (Kind, &str, Vec<&str>) = match r.statement.as_str() {
         "SELECT" | "EXPLAIN" => return None,
-        "UPDATE" | "DELETE" | "MERGE" if r.count == 0 => (Kind::Info, "SQL0100", vec![r.statement.as_str()]),
+        "UPDATE" | "DELETE" | "MERGE" if r.count == 0 => {
+            (Kind::Info, "SQL0100", vec![r.statement.as_str()])
+        }
         "INSERT" => (Kind::Done, "SQL7956", vec![tbl, lib, &count]),
         "UPDATE" => (Kind::Done, "SQL7957", vec![tbl, lib, &count]),
         "DELETE" => (Kind::Done, "SQL7955", vec![tbl, lib, &count]),
@@ -322,9 +350,21 @@ fn outcome(m: &Main, r: IsqlReply, elapsed_ms: u64) -> SqlOutcome {
         ..SqlOutcome::default()
     };
     if r.sqlcode < 0 || (r.sqlcode > 0 && r.sqlcode != 100 && !r.msgid.is_empty()) {
-        let id = if r.msgid.is_empty() { "SQL0901" } else { r.msgid.as_str() };
-        let text = if r.text.is_empty() { text_of(m, id, &[]) } else { r.text.clone() };
-        let kind = if r.sqlcode < 0 { Kind::Error } else { Kind::Info };
+        let id = if r.msgid.is_empty() {
+            "SQL0901"
+        } else {
+            r.msgid.as_str()
+        };
+        let text = if r.text.is_empty() {
+            text_of(m, id, &[])
+        } else {
+            r.text.clone()
+        };
+        let kind = if r.sqlcode < 0 {
+            Kind::Error
+        } else {
+            Kind::Info
+        };
         o.messages.push(Message::new(kind, id, &text));
         if r.sqlcode < 0 {
             return o;
@@ -343,8 +383,18 @@ fn outcome(m: &Main, r: IsqlReply, elapsed_ms: u64) -> SqlOutcome {
 /// One statement as the user: the session started with the naming and
 /// isolation, the schema set, the statement run, then the session's
 /// pending changes committed.
-fn run_sql(m: &Main, user: &str, statement: &str, opts: &SqlOptions, max_rows: Option<usize>) -> SqlOutcome {
-    let naming = if opts.naming.eq_ignore_ascii_case("*SYS") { "*SYS" } else { "*SQL" };
+fn run_sql(
+    m: &Main,
+    user: &str,
+    statement: &str,
+    opts: &SqlOptions,
+    max_rows: Option<usize>,
+) -> SqlOutcome {
+    let naming = if opts.naming.eq_ignore_ascii_case("*SYS") {
+        "*SYS"
+    } else {
+        "*SQL"
+    };
     let iso = opts.isolation.trim().to_ascii_uppercase();
     let started = match m.ask(|l| l.isql_start(naming.into(), iso)) {
         Ok(s) => s,
@@ -356,8 +406,17 @@ fn run_sql(m: &Main, user: &str, statement: &str, opts: &SqlOptions, max_rows: O
             };
         }
     };
-    let schema = if opts.schema.trim().is_empty() { user } else { opts.schema.as_str() };
-    let _ = run(m, &format!("SET SCHEMA {}", schema.trim().to_ascii_uppercase()), naming, 0);
+    let schema = if opts.schema.trim().is_empty() {
+        user
+    } else {
+        opts.schema.as_str()
+    };
+    let _ = run(
+        m,
+        &format!("SET SCHEMA {}", schema.trim().to_ascii_uppercase()),
+        naming,
+        0,
+    );
     let max = max_rows.map_or(u32::MAX, |n| u32::try_from(n).unwrap_or(u32::MAX));
     let t0 = Instant::now();
     let r = run(m, statement.trim().trim_end_matches(';'), naming, max);
@@ -377,7 +436,11 @@ impl Db for LiveDb {
         let u = user.trim().to_ascii_uppercase();
         let mut names: Vec<String> = self.schemas(user).into_iter().map(|s| s.name).collect();
         // The user's own schema first, else QGPL.
-        let first = if names.contains(&u) { u } else { "QGPL".to_string() };
+        let first = if names.contains(&u) {
+            u
+        } else {
+            "QGPL".to_string()
+        };
         if let Some(i) = names.iter().position(|n| *n == first) {
             let n = names.remove(i);
             names.insert(0, n);
@@ -407,17 +470,42 @@ impl Db for LiveDb {
         ))
     }
 
-    fn run_sql(&self, user: &str, statement: &str, opts: &SqlOptions, max_rows: Option<usize>) -> SqlOutcome {
-        let (u, s, o) = (user.trim().to_ascii_uppercase(), statement.to_string(), opts.clone());
-        let r = self.link.read(user, move |m| Some(run_sql(m, &u, &s, &o, max_rows)));
+    fn run_sql(
+        &self,
+        user: &str,
+        statement: &str,
+        opts: &SqlOptions,
+        max_rows: Option<usize>,
+    ) -> SqlOutcome {
+        let (u, s, o) = (
+            user.trim().to_ascii_uppercase(),
+            statement.to_string(),
+            opts.clone(),
+        );
+        let r = self
+            .link
+            .read(user, move |m| Some(run_sql(m, &u, &s, &o, max_rows)));
         r.unwrap_or_else(|| SqlOutcome {
-            messages: vec![Message::new(Kind::Error, "CPF9897", "Navigator could not run the statement.")],
+            messages: vec![Message::new(
+                Kind::Error,
+                "CPF9897",
+                "Navigator could not run the statement.",
+            )],
             ..SqlOutcome::default()
         })
     }
 
-    fn explain(&self, _user: &str, _statement: &str, _opts: &SqlOptions) -> Result<Vec<String>, Message> {
-        Err(Message::new(Kind::Error, "SQL0084", "EXPLAIN is not supported on this system."))
+    fn explain(
+        &self,
+        _user: &str,
+        _statement: &str,
+        _opts: &SqlOptions,
+    ) -> Result<Vec<String>, Message> {
+        Err(Message::new(
+            Kind::Error,
+            "SQL0084",
+            "EXPLAIN is not supported on this system.",
+        ))
     }
 }
 
@@ -428,7 +516,10 @@ mod tests {
     #[test]
     fn stamps() {
         assert_eq!(stamp_secs("2026-11-01 00:00:00.000000"), 1_793_491_200);
-        assert_eq!(stamp_secs("2026-11-01-01.00.00.000000"), 1_793_491_200 + 3600);
+        assert_eq!(
+            stamp_secs("2026-11-01-01.00.00.000000"),
+            1_793_491_200 + 3600
+        );
         assert_eq!(stamp_secs(""), 0);
         assert_eq!(cyy_secs("1261101120000", -240), 1_793_491_200 + 16 * 3600);
         assert_eq!(lit("o'k"), "'O''K'");

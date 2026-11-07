@@ -32,12 +32,16 @@ impl<'a> Lister<'a> {
     /// in the archive (cpio) are named by the system when it can.
     pub fn line(&self, m: &Member, name: &str) -> String {
         let owner = if m.uname.is_empty() {
-            self.sys.user_name(m.uid).unwrap_or_else(|| m.uid.to_string())
+            self.sys
+                .user_name(m.uid)
+                .unwrap_or_else(|| m.uid.to_string())
         } else {
             m.uname.clone()
         };
         let group = if m.gname.is_empty() {
-            self.sys.group_name(m.gid).unwrap_or_else(|| m.gid.to_string())
+            self.sys
+                .group_name(m.gid)
+                .unwrap_or_else(|| m.gid.to_string())
         } else {
             m.gname.clone()
         };

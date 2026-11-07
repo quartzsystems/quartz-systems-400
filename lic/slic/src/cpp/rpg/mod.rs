@@ -32,7 +32,11 @@ use source::Source;
 /// Run one of the RPG commands.
 pub fn run(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
     // The compiler is QS00WDS option 31, the precompiler option 61.
-    let needs: &[u8] = if cmdname == "CRTSQLRPGI" { &[31, 61] } else { &[31] };
+    let needs: &[u8] = if cmdname == "CRTSQLRPGI" {
+        &[31, 61]
+    } else {
+        &[31]
+    };
     for o in needs {
         if !crate::stgsvc::licpgm::installed(system, "QS00WDS", licpgm::OptionNo(*o)) {
             return super::clpgm::failed(
@@ -84,9 +88,13 @@ fn pcml(
 ) -> String {
     let source = match &req.srcstmf {
         Some(p) => p.clone(),
-        None => format!("{}/{}({})", src.member.lib, src.member.file, src.member.name),
+        None => format!(
+            "{}/{}({})",
+            src.member.lib, src.member.file, src.member.name
+        ),
     };
-    let (year, month, day, hour, min, sec) = crate::platform::rtc::unix_to_civil(crate::ipl::system::now_unix());
+    let (year, month, day, hour, min, sec) =
+        crate::platform::rtc::unix_to_civil(crate::ipl::system::now_unix());
     let created = format!("{year:04}-{month:02}-{day:02}-{hour:02}.{min:02}.{sec:02}");
     let subject = rpgc::pcml::Subject {
         name,
@@ -96,10 +104,12 @@ fn pcml(
         created: &created,
     };
     match rpgc::pcml::document(compiled, &subject) {
-        Ok(doc) => match super::stmf::with_job(system, |c| super::stmf::write_text(c, path, &doc)) {
-            Ok(()) => format!("PCML for {name} written to {path}."),
-            Err(e) => format!("RNS9380 the PCML was not written: {e}"),
-        },
+        Ok(doc) => {
+            match super::stmf::with_job(system, |c| super::stmf::write_text(c, path, &doc)) {
+                Ok(()) => format!("PCML for {name} written to {path}."),
+                Err(e) => format!("RNS9380 the PCML was not written: {e}"),
+            }
+        }
         Err(p) => format!("RNS9381 no PCML: parameter {p} has a type PCML does not describe."),
     }
 }
@@ -121,7 +131,11 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     }
     if req.print {
         let listing = &compiled.listing;
-        let mbr = if req.srcstmf.is_some() { &name } else { &src.member.name };
+        let mbr = if req.srcstmf.is_some() {
+            &name
+        } else {
+            &src.member.name
+        };
         let _ = match crate::svc::security::print_as(system, mbr, &name, listing, true) {
             Ok(w) => writeln!(out, "Listing: {w}"),
             Err(e) => writeln!(out, "The listing was not spooled: {e}"),
@@ -130,12 +144,20 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     if let Some(path) = &req.infostmf
         && compiled.created
     {
-        let _ = writeln!(out, "{}", pcml(system, req, src, &compiled, (&name, lib_name), shape, path));
+        let _ = writeln!(
+            out,
+            "{}",
+            pcml(system, req, src, &compiled, (&name, lib_name), shape, path)
+        );
     }
     let sev = format!("{:02}", compiled.max_severity);
     let refused = Refused {
         // A precompile that failed ends the command before the compile.
-        id: if compiled.sql_failed { "SQL9001" } else { shape.not_created() },
+        id: if compiled.sql_failed {
+            "SQL9001"
+        } else {
+            shape.not_created()
+        },
         shape,
         name: &name,
         lib: lib_name,
@@ -158,9 +180,21 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     let create = CreateData {
         compiler: "RPGLE".into(),
         options: req.option.join(" "),
-        src_file: if stmf { String::new() } else { src.member.file.clone() },
-        src_lib: if stmf { String::new() } else { src.member.lib.clone() },
-        src_mbr: if stmf { String::new() } else { src.member.name.clone() },
+        src_file: if stmf {
+            String::new()
+        } else {
+            src.member.file.clone()
+        },
+        src_lib: if stmf {
+            String::new()
+        } else {
+            src.member.lib.clone()
+        },
+        src_mbr: if stmf {
+            String::new()
+        } else {
+            src.member.name.clone()
+        },
     };
     let stored = crate::svc::ile::commands::in_store(system, lib_name, |txn, c, lib_id| {
         object::make(txn, c, lib_id, &made, &compiled.qir, create, now_unix())
@@ -168,7 +202,15 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     if let Err(e) = stored {
         return refused.reply(&format!("{out}{e}\n"));
     }
-    if let Err(e) = keep_sql(system, &compiled, shape, (lib_name, &name), src, stmf, &options.text) {
+    if let Err(e) = keep_sql(
+        system,
+        &compiled,
+        shape,
+        (lib_name, &name),
+        src,
+        stmf,
+        &options.text,
+    ) {
         let _ = writeln!(out, "{e}");
     }
     let (date, time) = stamp(now_unix());
@@ -263,8 +305,18 @@ impl Refused<'_> {
 /// A time as `yy/mm/dd` and `hh:mm:ss` (UTC).
 /// A program made with embedded SQL keeps its statements and options
 /// for `PRTSQLINF`.
-fn keep_sql(system: &mut System, compiled: &rpgc::Compiled, shape: Shape, (lib_name, name): (&str, &str), src: &Source, stmf: bool, text: &str) -> Result<(), String> {
-    let Some(pre) = &compiled.precompiled else { return Ok(()) };
+fn keep_sql(
+    system: &mut System,
+    compiled: &rpgc::Compiled,
+    shape: Shape,
+    (lib_name, name): (&str, &str),
+    src: &Source,
+    stmf: bool,
+    text: &str,
+) -> Result<(), String> {
+    let Some(pre) = &compiled.precompiled else {
+        return Ok(());
+    };
     if shape == Shape::Module {
         // BLOCKED(rel): CRTPGM does not carry a module's statements.
         return Ok(());
@@ -272,17 +324,34 @@ fn keep_sql(system: &mut System, compiled: &rpgc::Compiled, shape: Shape, (lib_n
     let p = sql::prtsqlinf::Precompile {
         command: "CRTSQLRPGI".into(),
         object: format!("{lib_name}/{name}"),
-        srcfile: if stmf { String::new() } else { format!("{}/{}", src.member.lib, src.member.file) },
-        srcmbr: if stmf { String::new() } else { src.member.name.clone() },
+        srcfile: if stmf {
+            String::new()
+        } else {
+            format!("{}/{}", src.member.lib, src.member.file)
+        },
+        srcmbr: if stmf {
+            String::new()
+        } else {
+            src.member.name.clone()
+        },
         commit: pre.options.commit.clone(),
         naming: pre.options.naming.clone(),
-        dates: [pre.options.datfmt.clone(), pre.options.datsep.clone(), pre.options.timfmt.clone(), pre.options.timsep.clone()],
+        dates: [
+            pre.options.datfmt.clone(),
+            pre.options.datsep.clone(),
+            pre.options.timfmt.clone(),
+            pre.options.timsep.clone(),
+        ],
         closqlcsr: pre.options.closqlcsr.clone(),
         text: text.to_string(),
         other: pre.options.other.clone(),
         release: release::RELEASE.to_string(),
     };
-    let ty = if shape == Shape::SrvPgm { store::obj::types::SRVPGM } else { store::obj::types::PGM };
+    let ty = if shape == Shape::SrvPgm {
+        store::obj::types::SRVPGM
+    } else {
+        store::obj::types::PGM
+    };
     super::sqlinfcmd::keep(system, lib_name, name, ty, pre, &p)
 }
 
@@ -343,7 +412,14 @@ impl Shape {
 /// the compile listing (`*LIST`).
 fn source_view(dbgview: &str, c: &rpgc::Compiled) -> Option<Vec<String>> {
     match dbgview {
-        "*SOURCE" => Some(c.read.lines.iter().filter(|l| l.member == 0).map(|l| l.text.clone()).collect()),
+        "*SOURCE" => Some(
+            c.read
+                .lines
+                .iter()
+                .filter(|l| l.member == 0)
+                .map(|l| l.text.clone())
+                .collect(),
+        ),
         "*COPY" | "*ALL" => Some(c.read.lines.iter().map(|l| l.text.clone()).collect()),
         "*LIST" => Some(c.listing.clone()),
         _ => None,

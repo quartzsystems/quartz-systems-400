@@ -30,7 +30,11 @@ fn text(ctx: &Ctx) -> Result<()> {
 /// a version bump fails the run before anything boots.
 fn freeze(ctx: &Ctx) -> Result<()> {
     let rows = fmtcheck::check(&ctx.paths.repo)?;
-    let bad: Vec<&str> = rows.iter().filter(|r| r.fails()).map(|r| r.name.as_str()).collect();
+    let bad: Vec<&str> = rows
+        .iter()
+        .filter(|r| r.fails())
+        .map(|r| r.name.as_str())
+        .collect();
     if !bad.is_empty() {
         anyhow::bail!(
             "frozen formats changed without a version bump: {} (cargo run -p fmtcheck)",
@@ -46,7 +50,10 @@ fn freeze(ctx: &Ctx) -> Result<()> {
 fn help(ctx: &Ctx) -> Result<()> {
     let report = helpaudit::audit(&ctx.paths.repo)?;
     if report.fails() {
-        anyhow::bail!("help is missing (cargo run -p helpaudit):\n{}", report.summary());
+        anyhow::bail!(
+            "help is missing (cargo run -p helpaudit):\n{}",
+            report.summary()
+        );
     }
     let stale = helpaudit::generate::stale(&ctx.paths.repo)?;
     if !stale.is_empty() {

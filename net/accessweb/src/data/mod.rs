@@ -14,7 +14,7 @@
 pub mod files;
 pub mod qdx;
 pub mod script;
-pub mod sqltext;
 mod sheets;
+pub mod sqltext;
 mod text;
 mod xml;

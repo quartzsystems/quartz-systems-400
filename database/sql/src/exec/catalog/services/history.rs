@@ -38,7 +38,14 @@ fn when(date: &str, time: &str) -> Option<u64> {
     let d: u32 = date.trim().parse().ok()?;
     let t: u32 = time.trim().parse().ok()?;
     let year = 1900 + (d / 1_000_000) * 100 + d / 10_000 % 100;
-    Some(secs(i64::from(year), d / 100 % 100, d % 100, t / 10_000, t / 100 % 100, t % 100))
+    Some(secs(
+        i64::from(year),
+        d / 100 % 100,
+        d % 100,
+        t / 10_000,
+        t / 100 % 100,
+        t % 100,
+    ))
 }
 
 /// Unix seconds of a UTC date and time (days from the civil calendar).
@@ -50,7 +57,8 @@ fn secs(y: i64, m: u32, d: u32, hh: u32, mm: u32, ss: u32) -> u64 {
     let doy = (153 * mp + 2) / 5 + i64::from(d) - 1;
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     let days = era * 146_097 + doe - 719_468;
-    u64::try_from(days * 86_400 + i64::from(hh) * 3600 + i64::from(mm) * 60 + i64::from(ss)).unwrap_or(0)
+    u64::try_from(days * 86_400 + i64::from(hh) * 3600 + i64::from(mm) * 60 + i64::from(ss))
+        .unwrap_or(0)
 }
 
 fn limit(v: &Value) -> Option<u64> {
@@ -70,34 +78,51 @@ fn limit(v: &Value) -> Option<u64> {
 /// The rows.
 pub fn rows(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     if !args.get("GENERATE_SYSLOG").is_null() || !args.get("EOF_DELAY").is_null() {
-        return Err(SqlError::Coded { code: -443, state: "38501", what: "GENERATE_SYSLOG and EOF_DELAY are not supported".into() });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: "GENERATE_SYSLOG and EOF_DELAY are not supported".into(),
+        });
     }
     // The default start, CURRENT DATE - 1 DAY, when none is given.
-    let start = limit(args.get("START_TIME")).unwrap_or_else(|| (ctx.clock() / 86_400).saturating_sub(1) * 86_400);
+    let start = limit(args.get("START_TIME"))
+        .unwrap_or_else(|| (ctx.clock() / 86_400).saturating_sub(1) * 86_400);
     let end = limit(args.get("END_TIME")).unwrap_or(u64::MAX);
-    let mut files: Vec<(String, store::obj::ObjectId)> = ops::list(txn, ctx.qsys, Some(types::FILE))?
-        .into_iter()
-        .filter_map(|(k, id)| {
-            let n = k.name.to_string();
-            (n.len() == 10 && n.starts_with("QHST") && n[4..].bytes().all(|b| b.is_ascii_digit())).then_some((n, id))
-        })
-        .collect();
+    let mut files: Vec<(String, store::obj::ObjectId)> =
+        ops::list(txn, ctx.qsys, Some(types::FILE))?
+            .into_iter()
+            .filter_map(|(k, id)| {
+                let n = k.name.to_string();
+                (n.len() == 10
+                    && n.starts_with("QHST")
+                    && n[4..].bytes().all(|b| b.is_ascii_digit()))
+                .then_some((n, id))
+            })
+            .collect();
     files.sort();
     let mut n = 0;
     for (_, id) in files {
-        let mut o = Odp::open(txn, ctx.locks.clone(), id, OpenOpts::input(ctx.job)).map_err(|e| match e {
-            db::DbError::Store(store::StoreError::NotAuthorized { .. }) => {
-                SqlError::Coded { code: -443, state: "42501", what: "not authorized to the history log".into() }
-            }
-            e => e.into(),
-        })?;
+        let mut o = Odp::open(txn, ctx.locks.clone(), id, OpenOpts::input(ctx.job)).map_err(
+            |e| match e {
+                db::DbError::Store(store::StoreError::NotAuthorized { .. }) => SqlError::Coded {
+                    code: -443,
+                    state: "42501",
+                    what: "not authorized to the history log".into(),
+                },
+                e => e.into(),
+            },
+        )?;
         while let Some(r) = o.read(txn, false)? {
             let text = |f: &str| match o.field(&r, f) {
-                Ok(Field::Char(b)) => ccsid::from_ebcdic(&b).trim_end_matches([' ', '\0']).to_string(),
+                Ok(Field::Char(b)) => ccsid::from_ebcdic(&b)
+                    .trim_end_matches([' ', '\0'])
+                    .to_string(),
                 Ok(Field::Num(d)) => d.to_string(),
                 _ => String::new(),
             };
-            let Some(at) = when(&text("QHDATE"), &text("QHTIME")) else { continue };
+            let Some(at) = when(&text("QHDATE"), &text("QHTIME")) else {
+                continue;
+            };
             if at < start || at > end {
                 continue;
             }

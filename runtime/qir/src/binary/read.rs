@@ -366,7 +366,11 @@ impl R<'_> {
                     level: r.opt(Self::str)?,
                 })
             })?,
-            form: if self.version >= 4 { (self.u16()?, self.u16()?) } else { (0, 0) },
+            form: if self.version >= 4 {
+                (self.u16()?, self.u16()?)
+            } else {
+                (0, 0)
+            },
         })
     }
 
@@ -875,7 +879,11 @@ impl R<'_> {
                 rrn: self.opt_operand()?,
                 fmt: self.opt(Self::str)?,
                 nolock: self.bool()?,
-                nulls: if self.version >= 5 { self.opt_place()? } else { None },
+                nulls: if self.version >= 5 {
+                    self.opt_place()?
+                } else {
+                    None
+                },
             },
             3 => IoInst::DevIo {
                 dst: self.reg()?,
@@ -884,12 +892,27 @@ impl R<'_> {
                 fmt: self.str()?,
                 rec: self.opt_place()?,
                 ctl: if self.version >= 2 {
-                    self.opt(|r| Ok(Box::new([r.operand()?, r.operand()?, r.operand()?, r.operand()?])))?
+                    self.opt(|r| {
+                        Ok(Box::new([
+                            r.operand()?,
+                            r.operand()?,
+                            r.operand()?,
+                            r.operand()?,
+                        ]))
+                    })?
                 } else {
                     None
                 },
-                rrn: if self.version >= 3 { self.opt_operand()? } else { None },
-                inds: if self.version >= 3 { self.opt_place()? } else { None },
+                rrn: if self.version >= 3 {
+                    self.opt_operand()?
+                } else {
+                    None
+                },
+                inds: if self.version >= 3 {
+                    self.opt_place()?
+                } else {
+                    None
+                },
             },
             5 => IoInst::FileRef {
                 dst: self.reg()?,

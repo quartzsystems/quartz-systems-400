@@ -22,14 +22,21 @@ use crate::transfer::grouped;
 const PUBLIC: &[(&str, u32)] = &[("*EXCLUDE", 0), ("*R", 4), ("*RW", 6), ("*RWX", 7)];
 
 fn public_of(mode: u32) -> &'static str {
-    PUBLIC.iter().find(|p| p.1 == mode & 7).map_or("*EXCLUDE", |p| p.0)
+    PUBLIC
+        .iter()
+        .find(|p| p.1 == mode & 7)
+        .map_or("*EXCLUDE", |p| p.0)
 }
 
 /// `GET` and `POST /files/props`.
 #[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>) -> Response {
     let path = path_arg(rq);
-    let name = if path == "/" { "/".to_string() } else { name_of(&path).to_string() };
+    let name = if path == "/" {
+        "/".to_string()
+    } else {
+        name_of(&path).to_string()
+    };
     let crumb = [GROUP, "Browse files", name.as_str()];
     if let Err(r) = super::may_reach(rq, &path, &crumb) {
         return r;
@@ -47,26 +54,42 @@ pub fn page(rq: &Rq<'_>) -> Response {
         }
         let data_auth = f.str("auth");
         let autl = f.str("autl").trim().to_ascii_uppercase();
-        match (mode_of(data_auth), PUBLIC.iter().find(|x| x.0 == f.str("pub"))) {
+        match (
+            mode_of(data_auth),
+            PUBLIC.iter().find(|x| x.0 == f.str("pub")),
+        ) {
             (Some(mut mode), Some(pb)) if !autl.is_empty() => {
                 // `*PUBLIC` decides the public bits when it changed.
                 if pb.0 != public_of(p.entry.mode) {
                     mode = (mode & !7) | pb.1;
                 }
-                let change = AuthChange { mode, autl: autl.clone() };
+                let change = AuthChange {
+                    mode,
+                    autl: autl.clone(),
+                };
                 let unchanged = mode == p.entry.mode & 0o777 && autl == p.autl;
                 if unchanged {
                     return rq.redirect(&super::browse_route(&parent(&path)));
                 }
                 match files.set_auth(rq.user(), &path, &change) {
                     Ok(()) => {
-                        return back(rq, &parent(&path), rq.message(Kind::Done, msgs::AUTH_CHANGED, &[&path]));
+                        return back(
+                            rq,
+                            &parent(&path),
+                            rq.message(Kind::Done, msgs::AUTH_CHANGED, &[&path]),
+                        );
                     }
                     Err(m) => messages.push(error(rq, &m)),
                 }
             }
-            (None, _) => messages.push(rq.message(Kind::Error, msgs::BAD_VALUE, &[data_auth, "Data authority"])),
-            _ => messages.push(rq.message(Kind::Error, msgs::BAD_VALUE, &[f.str("pub"), "*PUBLIC"])),
+            (None, _) => messages.push(rq.message(
+                Kind::Error,
+                msgs::BAD_VALUE,
+                &[data_auth, "Data authority"],
+            )),
+            _ => {
+                messages.push(rq.message(Kind::Error, msgs::BAD_VALUE, &[f.str("pub"), "*PUBLIC"]))
+            }
         }
     }
     let e = &p.entry;
@@ -83,7 +106,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
             let t = qsweb::html::esc(target);
             file.push(Prop::new(
                 "Link to",
-                if *broken { format!("<span class=\"err\">{t} (broken)</span>") } else { format!("<span class=\"mono\">{t}</span>") },
+                if *broken {
+                    format!("<span class=\"err\">{t} (broken)</span>")
+                } else {
+                    format!("<span class=\"mono\">{t}</span>")
+                },
             ));
         }
         EntryKind::Dir | EntryKind::Other(_) => {}
@@ -101,7 +128,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
             format!(
                 "{} &nbsp; *PUBLIC: {}",
                 input_cmd("auth", &rwx(e.mode), 10),
-                select("pub", &PUBLIC.iter().map(|x| x.0).collect::<Vec<_>>(), public)
+                select(
+                    "pub",
+                    &PUBLIC.iter().map(|x| x.0).collect::<Vec<_>>(),
+                    public
+                )
             ),
         ),
         Prop::new("Authorization list", input("autl", &p.autl, 10)),

@@ -22,8 +22,8 @@ use qir::Type;
 
 use super::core::raise_on;
 use super::mem::{bytes, env as env_of, job, ty};
-use crate::io::spool::PrinterState;
 use crate::io::display::DisplayInput;
+use crate::io::spool::PrinterState;
 use crate::io::{
     DataAreaKind, DataAreaValue, FileInfo, IoFail, IoOp, IoRequest, IoResult, KeyRef, OpenSpec,
 };
@@ -47,7 +47,11 @@ fn file_key_of(env: *mut Env, file: i64) -> Option<FileKey> {
 }
 
 /// The running entry's file (or, for a file parameter, the caller's), given to `f`.
-fn with_file<T>(env: *mut Env, file: i64, f: impl FnOnce(FileKey, &qir::FileRef) -> T) -> Option<T> {
+fn with_file<T>(
+    env: *mut Env,
+    file: i64,
+    f: impl FnOnce(FileKey, &qir::FileRef) -> T,
+) -> Option<T> {
     let j = job(env);
     let statics = env_of(env).statics as u64;
     let fr = j.act.frames.last()?;
@@ -91,19 +95,30 @@ pub extern "sysv64" fn file_ref(env: *mut Env, file: i64) -> i32 {
 /// `file_bind(env, file, handle)`.
 pub extern "sysv64" fn file_bind(env: *mut Env, file: i64, handle: i64) {
     let j = job(env);
-    let h = usize::try_from(handle).ok().filter(|h| *h < j.file_handles.len());
+    let h = usize::try_from(handle)
+        .ok()
+        .filter(|h| *h < j.file_handles.len());
     let statics = env_of(env).statics as u64;
-    let module = j
-        .act
-        .frames
-        .last()
-        .and_then(|f| f.program.as_ref().and_then(|p| p.proc_of(f.code)).map(|(m, _)| m));
+    let module = j.act.frames.last().and_then(|f| {
+        f.program
+            .as_ref()
+            .and_then(|p| p.proc_of(f.code))
+            .map(|(m, _)| m)
+    });
     let (Some(h), Some(module), Ok(file)) = (h, module, u32::try_from(file)) else {
         raise_on(j, Cond::Mch3601);
         return;
     };
     let depth = j.depth;
-    j.file_binds.push((depth, FileKey { statics, module, file }, h));
+    j.file_binds.push((
+        depth,
+        FileKey {
+            statics,
+            module,
+            file,
+        },
+        h,
+    ));
 }
 
 /// Send an I/O failure as an escape to the running entry.
@@ -163,15 +178,33 @@ fn write_infds(
     text(buf, at::OPCODE, opcode);
     text(buf, at::ROUTINE, "*INIT");
     text(buf, at::STMT, &stmt.to_string());
-    let format = if r.format.is_empty() { &info.format } else { &r.format };
+    let format = if r.format.is_empty() {
+        &info.format
+    } else {
+        &r.format
+    };
     text(buf, at::RECORD, format);
     text(buf, at::MSGID, r.msgid.as_deref().unwrap_or(""));
     text(buf, at::ODP_FILE, &info.file);
     text(buf, at::ODP_LIB, &info.lib);
-    put(buf, at::RECLEN.0, &u16::try_from(info.rec_len).unwrap_or(u16::MAX).to_be_bytes());
-    let member = if r.member.is_empty() { &info.member } else { &r.member };
+    put(
+        buf,
+        at::RECLEN.0,
+        &u16::try_from(info.rec_len)
+            .unwrap_or(u16::MAX)
+            .to_be_bytes(),
+    );
+    let member = if r.member.is_empty() {
+        &info.member
+    } else {
+        &r.member
+    };
     text(buf, at::MEMBER, member);
-    put(buf, at::RRN.0, &u32::try_from(r.rrn).unwrap_or(u32::MAX).to_be_bytes());
+    put(
+        buf,
+        at::RRN.0,
+        &u32::try_from(r.rrn).unwrap_or(u32::MAX).to_be_bytes(),
+    );
     put(buf, at::KEY.0, &r.key);
 }
 
@@ -243,11 +276,26 @@ fn open_printer(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
 }
 
 /// Open a file through its Open Access handler.
-fn open_handler(j: &mut Job, key: FileKey, fr: &qir::FileRef, oa: crate::io::oa::OaFile, infds: u64, infds_len: usize) -> i32 {
+fn open_handler(
+    j: &mut Job,
+    key: FileKey,
+    fr: &qir::FileRef,
+    oa: crate::io::oa::OaFile,
+    infds: u64,
+    infds_len: usize,
+) -> i32 {
     let opened = oa.borrow_mut().open(j, fr);
     match opened {
         Ok(info) => {
-            write_infds(infds, infds_len, &info, &IoResult::default(), true, "OPEN", j.abi.cur_stmt);
+            write_infds(
+                infds,
+                infds_len,
+                &info,
+                &IoResult::default(),
+                true,
+                "OPEN",
+                j.abi.cur_stmt,
+            );
             j.files.insert(
                 key,
                 FileState {
@@ -282,7 +330,13 @@ fn open_handler(j: &mut Job, key: FileKey, fr: &qir::FileRef, oa: crate::io::oa:
 
 /// A device operation of a handler file: its status (with the overflow
 /// as 1 for a printer), the record read copied back.
-fn handler_dev(j: &mut Job, oa: &crate::io::oa::OaFile, req: &crate::io::oa::DevRequest, rec: i64, rec_len: usize) -> i32 {
+fn handler_dev(
+    j: &mut Job,
+    oa: &crate::io::oa::OaFile,
+    req: &crate::io::oa::DevRequest,
+    rec: i64,
+    rec_len: usize,
+) -> i32 {
     let r = oa.borrow_mut().dev(j, req);
     if let Some(input) = &r.input
         && rec != 0
@@ -298,7 +352,14 @@ fn handler_dev(j: &mut Job, oa: &crate::io::oa::OaFile, req: &crate::io::oa::Dev
 }
 
 /// Open a display file through the job's display source.
-fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_len: usize, rpg: bool) -> i32 {
+fn open_display(
+    j: &mut Job,
+    key: FileKey,
+    fr: &qir::FileRef,
+    infds: u64,
+    infds_len: usize,
+    rpg: bool,
+) -> i32 {
     let mut info = FileInfo {
         file: fr.file.clone(),
         lib: fr.lib.clone(),
@@ -603,7 +664,10 @@ pub extern "sysv64" fn db_io(
         // Trigger programs run here, in the job.
         crate::io::trigger::run(j, &req, &mut |j, rq| match j.io.as_mut() {
             Some(io) => io.io(handle, rq),
-            None => crate::io::IoResult { status: db::odp::status::CLOSED, ..crate::io::IoResult::default() },
+            None => crate::io::IoResult {
+                status: db::odp::status::CLOSED,
+                ..crate::io::IoResult::default()
+            },
         })
     };
     if let Some(data) = &r.record
@@ -677,7 +741,11 @@ pub extern "sysv64" fn dev_io(
     };
     if let Some(oa) = j.oa_files.get(&key).cloned() {
         let req = crate::io::oa::DevRequest {
-            op: if fr.dev == qir::FileDev::Display { op } else { 0 },
+            op: if fr.dev == qir::FileDev::Display {
+                op
+            } else {
+                0
+            },
             format,
             record,
             control: None,
@@ -940,12 +1008,18 @@ pub extern "sysv64" fn dsp_io(
     // read that found nothing.
     let read = |o: Option<DisplayInput>| o.map_or(Got::None, Got::Record);
     let r: Result<Got, IoFail> = match op {
-        1 if n > 0 => d.sfl_write(handle, &format, n, &record, &area).map(|()| Got::Output),
-        1 => d.write(handle, &format, &record, &area).map(|()| Got::Output),
+        1 if n > 0 => d
+            .sfl_write(handle, &format, n, &record, &area)
+            .map(|()| Got::Output),
+        1 => d
+            .write(handle, &format, &record, &area)
+            .map(|()| Got::Output),
         2 => d.read(handle, &format).map(Got::Record),
         3 => d.exfmt(handle, &format, &record, &area).map(Got::Record),
         4 => d.sfl_chain(handle, &format, n).map(read),
-        5 => d.sfl_update(handle, &format, &record, &area).map(|()| Got::Output),
+        5 => d
+            .sfl_update(handle, &format, &record, &area)
+            .map(|()| Got::Output),
         _ => d.sfl_readc(handle, &format).map(read),
     };
     let opname = match op {
@@ -1052,7 +1126,8 @@ fn dsp_result(
             let mut word = bits;
             if let Some(i) = &input {
                 write_dsp_infds(infds, infds_len, i);
-                word |= i32::from(i.aid) << 8 | i32::try_from(i.sfl_rrn.min(0x7FFF)).unwrap_or(0) << 16;
+                word |=
+                    i32::from(i.aid) << 8 | i32::try_from(i.sfl_rrn.min(0x7FFF)).unwrap_or(0) << 16;
             } else if let Some(st) = j.files.get(&key) {
                 // An output keeps the last input's identifier and number.
                 word |= st.fb & !0xFF;

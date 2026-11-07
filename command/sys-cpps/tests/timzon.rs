@@ -56,10 +56,20 @@ fn check(name: &str, text: &str, keys: &[u8]) {
         if r.trim() == "Additional Parameters" {
             return r.trim().to_string();
         }
-        r.chars().take(34).collect::<String>().trim_end_matches(['.', ' ']).trim_start().to_string()
+        r.chars()
+            .take(34)
+            .collect::<String>()
+            .trim_end_matches(['.', ' '])
+            .trim_start()
+            .to_string()
     };
     let rows = |v: &[String]| -> Vec<String> {
-        v.iter().take(20).skip(4).map(|r| r.trim_end().to_string()).filter(|r| !r.is_empty()).collect()
+        v.iter()
+            .take(20)
+            .skip(4)
+            .map(|r| r.trim_end().to_string())
+            .filter(|r| !r.is_empty())
+            .collect()
     };
     let ours = rows(&s.rows);
     let mut diffs = Vec::new();
@@ -69,7 +79,12 @@ fn check(name: &str, text: &str, keys: &[u8]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .map(|t| t.trim_end_matches("..."))
             .collect();
         let tail = got.get(34..).unwrap_or("");
@@ -84,8 +99,16 @@ fn check(name: &str, text: &str, keys: &[u8]) {
 fn time_zone_prompts() {
     check("prompt-crttimzon", "?CRTTIMZON", &[]);
     check("prompt-crttimzon-f10", "?CRTTIMZON", &[10]);
-    check("prompt-crttimzon-dst", "?CRTTIMZON TIMZON(QSPROBE) OFFSET(-300) DSTNAME(QDT)", &[]);
-    check("prompt-crttimzon-dst-f10", "?CRTTIMZON TIMZON(QSPROBE) OFFSET(-300) DSTNAME(QDT)", &[10]);
+    check(
+        "prompt-crttimzon-dst",
+        "?CRTTIMZON TIMZON(QSPROBE) OFFSET(-300) DSTNAME(QDT)",
+        &[],
+    );
+    check(
+        "prompt-crttimzon-dst-f10",
+        "?CRTTIMZON TIMZON(QSPROBE) OFFSET(-300) DSTNAME(QDT)",
+        &[10],
+    );
     check("prompt-dlttimzon", "?DLTTIMZON", &[]);
     check("prompt-wrktimzon", "?WRKTIMZON", &[]);
 }

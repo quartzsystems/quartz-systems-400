@@ -14,7 +14,9 @@ use qsweb::html::{esc, query};
 use qsweb::http::Response;
 use qsweb::partials::{Cell, Col, List, Paging, ROW_CHOICES, list_table, paging};
 
-use super::{BROWSE, CLIP, GROUP, browse_route, join, matches, name_of, parent, path_arg, rwx, tokened};
+use super::{
+    BROWSE, CLIP, GROUP, browse_route, join, matches, name_of, parent, path_arg, rwx, tokened,
+};
 use crate::PRODUCT;
 use crate::env::files::{Entry, Kind};
 use crate::policy;
@@ -38,7 +40,11 @@ pub const EXISTING: &[&str] = &["Ask", "Skip", "Replace", "Replace if newer"];
 pub fn select(name: &str, options: &[&str], chosen: &str) -> String {
     let mut s = format!("<select name=\"{}\">", esc(name));
     for (i, o) in options.iter().enumerate() {
-        let sel = if i > 0 && *o == chosen { " selected" } else { "" };
+        let sel = if i > 0 && *o == chosen {
+            " selected"
+        } else {
+            ""
+        };
         let _ = write!(s, "<option{sel}>{}</option>", esc(o));
     }
     s.push_str("</select>");
@@ -85,10 +91,20 @@ pub fn page(rq: &Rq<'_>) -> Response {
 
 /// The page over `entries` of `dir`.
 #[allow(clippy::too_many_lines)]
-fn show(rq: &Rq<'_>, dir: &str, mut entries: Vec<Entry>, messages: Vec<qsweb::msg::Message>) -> Response {
+fn show(
+    rq: &Rq<'_>,
+    dir: &str,
+    mut entries: Vec<Entry>,
+    messages: Vec<qsweb::msg::Message>,
+) -> Response {
     let q = rq.query();
     let home = rq.env().files.home(rq.user());
-    let pat = q.get("pat").map(str::trim).filter(|p| !p.is_empty()).unwrap_or("*").to_string();
+    let pat = q
+        .get("pat")
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .unwrap_or("*")
+        .to_string();
     let sort = q.str("sort").to_string();
     entries.retain(|e| matches(&pat, &e.name));
     sort_entries(&mut entries, &sort);
@@ -102,7 +118,12 @@ fn show(rq: &Rq<'_>, dir: &str, mut entries: Vec<Entry>, messages: Vec<qsweb::ms
     }
     let up = dir != "/";
     let total = entries.len() + usize::from(up);
-    let rows = q.str("rows").parse().ok().filter(|r| ROW_CHOICES.contains(r)).unwrap_or(PAGE);
+    let rows = q
+        .str("rows")
+        .parse()
+        .ok()
+        .filter(|r| ROW_CHOICES.contains(r))
+        .unwrap_or(PAGE);
     let mut pg_keep = keep.clone();
     if !sort.is_empty() {
         pg_keep.push(("sort".into(), sort.clone()));
@@ -135,7 +156,11 @@ fn show(rq: &Rq<'_>, dir: &str, mut entries: Vec<Entry>, messages: Vec<qsweb::ms
             let p = parent(dir);
             let acts = vec![
                 (rq.ctx.url(&browse_route(&p)), "Open"),
-                (rq.ctx.url(&format!("/files/props{}", query(&[("path", &p)]))), "Properties"),
+                (
+                    rq.ctx
+                        .url(&format!("/files/props{}", query(&[("path", &p)]))),
+                    "Properties",
+                ),
             ];
             list_rows.push(vec![
                 Cell::html(String::new()),
@@ -181,8 +206,13 @@ fn show(rq: &Rq<'_>, dir: &str, mut entries: Vec<Entry>, messages: Vec<qsweb::ms
     if can.delete {
         buttons.push_str("<input type=\"submit\" name=\"delete\" value=\"Delete...\">");
     }
-    buttons.push_str(" &nbsp; <input type=\"submit\" name=\"mkdir\" value=\"New folder...\"></div>");
-    body.push_str(&qsweb::partials::form(&rq.ctx, "", &format!("{}{buttons}", list_table(&list))));
+    buttons
+        .push_str(" &nbsp; <input type=\"submit\" name=\"mkdir\" value=\"New folder...\"></div>");
+    body.push_str(&qsweb::partials::form(
+        &rq.ctx,
+        "",
+        &format!("{}{buttons}", list_table(&list)),
+    ));
     body.push_str(&paging(&pg));
     body.push_str("<h3>Transfer queue</h3>");
     body.push_str(&queue(rq, dir));
@@ -208,11 +238,23 @@ fn sort_entries(v: &mut [Entry], sort: &str) {
     let key = |e: &Entry| e.name.to_lowercase();
     match sort {
         "n" => v.sort_by_key(key),
-        "t" => v.sort_by(|a, b| type_of(a).cmp(&type_of(b)).then_with(|| key(a).cmp(&key(b)))),
+        "t" => v.sort_by(|a, b| {
+            type_of(a)
+                .cmp(&type_of(b))
+                .then_with(|| key(a).cmp(&key(b)))
+        }),
         "s" => v.sort_by(|a, b| a.size.cmp(&b.size).then_with(|| key(a).cmp(&key(b)))),
-        "m" => v.sort_by(|a, b| a.modified.cmp(&b.modified).then_with(|| key(a).cmp(&key(b)))),
+        "m" => v.sort_by(|a, b| {
+            a.modified
+                .cmp(&b.modified)
+                .then_with(|| key(a).cmp(&key(b)))
+        }),
         "o" => v.sort_by(|a, b| a.owner.cmp(&b.owner).then_with(|| key(a).cmp(&key(b)))),
-        _ => v.sort_by(|a, b| (a.kind != Kind::Dir).cmp(&(b.kind != Kind::Dir)).then_with(|| key(a).cmp(&key(b)))),
+        _ => v.sort_by(|a, b| {
+            (a.kind != Kind::Dir)
+                .cmp(&(b.kind != Kind::Dir))
+                .then_with(|| key(a).cmp(&key(b)))
+        }),
     }
 }
 
@@ -222,7 +264,10 @@ fn type_of(e: &Entry) -> String {
         Kind::Dir => "Directory".into(),
         Kind::File => "File".into(),
         Kind::Link { target, broken, .. } => {
-            format!("Link \u{2192} {target}{}", if *broken { " (broken)" } else { "" })
+            format!(
+                "Link \u{2192} {target}{}",
+                if *broken { " (broken)" } else { "" }
+            )
         }
         Kind::Other(t) => t.clone(),
     }
@@ -255,10 +300,22 @@ fn row(rq: &Rq<'_>, dir: &str, e: &Entry, can: &Can) -> Vec<Cell> {
         acts.push((u("/files/edit"), "Edit"));
     }
     acts.push((u("/files/rename"), "Rename"));
-    acts.push((rq.ctx.url(&tokened(rq, "/files/cut", &[("path", &p)])), "Cut"));
-    acts.push((rq.ctx.url(&tokened(rq, "/files/copy", &[("path", &p)])), "Copy"));
+    acts.push((
+        rq.ctx.url(&tokened(rq, "/files/cut", &[("path", &p)])),
+        "Cut",
+    ));
+    acts.push((
+        rq.ctx.url(&tokened(rq, "/files/copy", &[("path", &p)])),
+        "Copy",
+    ));
     if can.delete {
-        acts.push((rq.ctx.url(&format!("/files/confirm{}", query(&[("path", dir), ("s", &e.name)]))), "Delete"));
+        acts.push((
+            rq.ctx.url(&format!(
+                "/files/confirm{}",
+                query(&[("path", dir), ("s", &e.name)])
+            )),
+            "Delete",
+        ));
     }
     acts.push((u("/files/props"), "Properties"));
     let name_href = if open_dir {
@@ -275,21 +332,34 @@ fn row(rq: &Rq<'_>, dir: &str, e: &Entry, can: &Can) -> Vec<Cell> {
         None => esc(&e.name),
     };
     let typ = match &e.kind {
-        Kind::Link { broken: true, .. } => format!("<span class=\"err\">{}</span>", esc(&type_of(e))),
+        Kind::Link { broken: true, .. } => {
+            format!("<span class=\"err\">{}</span>", esc(&type_of(e)))
+        }
         _ => esc(&type_of(e)),
     };
     let is_file = e.kind == Kind::File;
     let (d, t) = rq.stamp(e.modified);
     vec![
-        Cell::html(format!("<input type=\"checkbox\" name=\"s\" value=\"{}\">", esc(&e.name))),
+        Cell::html(format!(
+            "<input type=\"checkbox\" name=\"s\" value=\"{}\">",
+            esc(&e.name)
+        )),
         Cell::act(qsweb::partials::actions(&acts)),
         Cell::mono_html(name),
         Cell::html(typ),
-        Cell::num(&if is_file { grouped(e.size) } else { String::new() }),
+        Cell::num(&if is_file {
+            grouped(e.size)
+        } else {
+            String::new()
+        }),
         Cell::text(&format!("{d} {}", short_time(&t))),
         Cell::mono(&e.owner),
         Cell::mono(&rwx(e.mode)),
-        Cell::num(&if is_file && e.ccsid != 0 { e.ccsid.to_string() } else { String::new() }),
+        Cell::num(&if is_file && e.ccsid != 0 {
+            e.ccsid.to_string()
+        } else {
+            String::new()
+        }),
     ]
 }
 
@@ -321,9 +391,15 @@ impl Tree<'_, '_> {
             0 => "<div>".to_string(),
             1 => "<div class=\"navitem\">".into(),
             2 => "<div class=\"navitem2\">".into(),
-            n => format!("<div class=\"navitem2\" style=\"margin-left:{}px\">", 14 * n),
+            n => format!(
+                "<div class=\"navitem2\" style=\"margin-left:{}px\">",
+                14 * n
+            ),
         };
-        let _ = write!(out, "{open}<span class=\"glyph\">{glyph}</span> {label}</div>");
+        let _ = write!(
+            out,
+            "{open}<span class=\"glyph\">{glyph}</span> {label}</div>"
+        );
     }
 
     fn label(&self, path: &str, text: &str, here: bool) -> String {
@@ -431,7 +507,10 @@ fn queue(rq: &Rq<'_>, dir: &str) -> String {
         .map(|t| queue_row(rq, dir, t))
         .collect();
     list_table(&List {
-        cols: ["File", "Direction", "Mode", "Size", "Done", "Status", ""].iter().map(|c| Col::plain(c)).collect(),
+        cols: ["File", "Direction", "Mode", "Size", "Done", "Status", ""]
+            .iter()
+            .map(|c| Col::plain(c))
+            .collect(),
         rows,
         empty: "No transfers in this session.".into(),
         keep: Vec::new(),
@@ -441,13 +520,23 @@ fn queue(rq: &Rq<'_>, dir: &str) -> String {
 fn queue_row(rq: &Rq<'_>, dir: &str, t: &Transfer) -> Vec<Cell> {
     let n = t.id.to_string();
     let op = |o: &str, label: &str| {
-        qsweb::partials::link(&rq.ctx.url(&tokened(rq, "/files/queue", &[("n", &n), ("op", o)])), label)
+        qsweb::partials::link(
+            &rq.ctx
+                .url(&tokened(rq, "/files/queue", &[("n", &n), ("op", o)])),
+            label,
+        )
     };
     let (status, action) = match &t.state {
         State::Ready => ("Ready".to_string(), op("fetch", "Download")),
-        State::Running(Some(part)) => (format!("In progress (written as {})", esc(part)), op("cancel", "Cancel")),
+        State::Running(Some(part)) => (
+            format!("In progress (written as {})", esc(part)),
+            op("cancel", "Cancel"),
+        ),
         State::Running(None) => ("In progress".to_string(), op("cancel", "Cancel")),
-        State::Complete => ("<span class=\"ok\">Complete</span>".to_string(), String::new()),
+        State::Complete => (
+            "<span class=\"ok\">Complete</span>".to_string(),
+            String::new(),
+        ),
         State::Failed(id, why) => (
             format!(
                 "<span class=\"err\">Failed - {} {}</span>",

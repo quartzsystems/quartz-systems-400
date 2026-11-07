@@ -36,7 +36,13 @@ pub enum Left {
 }
 
 /// The driver of a command, if it is one of these.
-pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out: &mut Outcome) -> Option<Result<String, Fail>> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    _out: &mut Outcome,
+) -> Option<Result<String, Fail>> {
     let left = match r.name.as_str() {
         "CFGTCP" => menus::cfgtcp(job, host, surface),
         "CFGTCPAPP" => menus::app(job, host, surface, "CFGTCPAPP"),
@@ -75,14 +81,17 @@ fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Respons
 
 /// A panel's data from the service.
 fn fetch(host: &Host, what: &str, args: &[String]) -> Result<PanelData, LineMsg> {
-    match host
-        .link
-        .borrow_mut()
-        .with(|l| l.tcp(TcpOp::Panel { what: what.into(), args: args.to_vec() }))
-    {
+    match host.link.borrow_mut().with(|l| {
+        l.tcp(TcpOp::Panel {
+            what: what.into(),
+            args: args.to_vec(),
+        })
+    }) {
         TcpReply::Panel { data } => Ok(data),
         TcpReply::Failed { note } => Err(note_msg(&note)),
-        other => Err(crate::panels::line(&format!("{what}: no panel data: {other:?}"))),
+        other => Err(crate::panels::line(&format!(
+            "{what}: no panel data: {other:?}"
+        ))),
     }
 }
 
@@ -142,7 +151,13 @@ fn exists(host: &Host, text: &str) -> bool {
 /// when it failed or does not exist here. A leading `?` prompts.
 fn exec(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
     if !exists(host, text) {
-        let name = text.trim().trim_start_matches('?').split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+        let name = text
+            .trim()
+            .trim_start_matches('?')
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_ascii_uppercase();
         return Some(LineMsg::error("CPD0030", &[&name, "*LIBL"]));
     }
     crate::panels::exec(job, host, text)
@@ -163,4 +178,3 @@ fn may_change(host: &Host) -> bool {
     let p = host.link.borrow_mut().with(Client::whoami);
     p.has(sec::profile::SpecialAuth::IOSYSCFG)
 }
-

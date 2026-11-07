@@ -18,12 +18,27 @@ fn declet(d: u16) -> u16 {
     match (d2 >= 8, d1 >= 8, d0 >= 8) {
         (false, false, false) => (d2 << 7) | (d1 << 4) | d0,
         (false, false, true) => (d2 << 7) | (d1 << 4) | 0b1000 | bit(d0, 0),
-        (false, true, false) => (d2 << 7) | ((d0 & 6) << 4) | (bit(d1, 0) << 4) | 0b1010 | bit(d0, 0),
-        (true, false, false) => ((d0 & 6) << 7) | (bit(d2, 0) << 7) | (low(d1) << 4) | 0b1100 | bit(d0, 0),
-        (true, true, false) => ((d0 & 6) << 7) | (bit(d2, 0) << 7) | (bit(d1, 0) << 4) | 0b1110 | bit(d0, 0),
-        (true, false, true) => ((d1 & 6) << 7) | (bit(d2, 0) << 7) | (0b01 << 5) | (bit(d1, 0) << 4) | 0b1110 | bit(d0, 0),
+        (false, true, false) => {
+            (d2 << 7) | ((d0 & 6) << 4) | (bit(d1, 0) << 4) | 0b1010 | bit(d0, 0)
+        }
+        (true, false, false) => {
+            ((d0 & 6) << 7) | (bit(d2, 0) << 7) | (low(d1) << 4) | 0b1100 | bit(d0, 0)
+        }
+        (true, true, false) => {
+            ((d0 & 6) << 7) | (bit(d2, 0) << 7) | (bit(d1, 0) << 4) | 0b1110 | bit(d0, 0)
+        }
+        (true, false, true) => {
+            ((d1 & 6) << 7)
+                | (bit(d2, 0) << 7)
+                | (0b01 << 5)
+                | (bit(d1, 0) << 4)
+                | 0b1110
+                | bit(d0, 0)
+        }
         (false, true, true) => (d2 << 7) | (0b10 << 5) | (bit(d1, 0) << 4) | 0b1110 | bit(d0, 0),
-        (true, true, true) => (bit(d2, 0) << 7) | (0b11 << 5) | (bit(d1, 0) << 4) | 0b1110 | bit(d0, 0),
+        (true, true, true) => {
+            (bit(d2, 0) << 7) | (0b11 << 5) | (bit(d1, 0) << 4) | 0b1110 | bit(d0, 0)
+        }
     }
 }
 
@@ -78,7 +93,11 @@ pub fn encode(v: &DecFloat) -> Vec<u8> {
             let msd = u32::try_from(c).expect("one digit");
             let e = u32::try_from(v.exp + format.bias()).expect("biased exponent");
             let top2 = e >> econt;
-            let comb = if msd < 8 { (top2 << 3) | msd } else { 0b11000 | (top2 << 1) | (msd & 1) };
+            let comb = if msd < 8 {
+                (top2 << 3) | msd
+            } else {
+                0b11000 | (top2 << 1) | (msd & 1)
+            };
             let rest = u128::from(e & ((1 << econt) - 1));
             sign | (u128::from(comb) << comb_shift) | (rest << (declets * 10)) | tail
         }
@@ -101,10 +120,18 @@ pub fn decode(bytes: &[u8], format: DfFormat) -> DecFloat {
         return DecFloat::special(DfKind::Infinity, neg, format);
     }
     if comb == 0b11111 {
-        let kind = if (bits >> (comb_shift - 1)) & 1 == 1 { DfKind::SNaN } else { DfKind::NaN };
+        let kind = if (bits >> (comb_shift - 1)) & 1 == 1 {
+            DfKind::SNaN
+        } else {
+            DfKind::NaN
+        };
         return DecFloat::special(kind, neg, format);
     }
-    let (top2, msd) = if comb >> 3 == 0b11 { ((comb >> 1) & 3, 8 + (comb & 1)) } else { (comb >> 3, comb & 7) };
+    let (top2, msd) = if comb >> 3 == 0b11 {
+        ((comb >> 1) & 3, 8 + (comb & 1))
+    } else {
+        (comb >> 3, comb & 7)
+    };
     let rest = u32::try_from((bits >> (declets * 10)) & ((1 << econt) - 1)).expect("exponent bits");
     let e = (top2 << econt) | rest;
     let mut c = u128::from(msd);
@@ -113,7 +140,13 @@ pub fn decode(bytes: &[u8], format: DfFormat) -> DecFloat {
         c = c * 1000 + u128::from(digits_of(d));
     }
     let exp = i32::try_from(e).expect("small") - format.bias();
-    DecFloat { neg, kind: DfKind::Finite, coeff: c, exp, format }
+    DecFloat {
+        neg,
+        kind: DfKind::Finite,
+        coeff: c,
+        exp,
+        format,
+    }
 }
 
 #[cfg(test)]

@@ -31,12 +31,20 @@ pub struct Plists {
 #[must_use]
 pub fn plists(m: &Module) -> Plists {
     let mut out = Plists::default();
-    let all: Vec<&Stmt> = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter())).collect();
+    let all: Vec<&Stmt> = m
+        .calcs
+        .iter()
+        .chain(m.procs.iter().flat_map(|p| p.calcs.iter()))
+        .collect();
     let mut i = 0;
     while i < all.len() {
         let s = all[i];
         let collect = |from: usize| -> Vec<Op> {
-            all[from..].iter().take_while(|x| x.op.code == "PARM").map(|x| x.op.clone()).collect()
+            all[from..]
+                .iter()
+                .take_while(|x| x.op.code == "PARM")
+                .map(|x| x.op.clone())
+                .collect()
         };
         match s.op.code.as_str() {
             "CALL" | "CALLB" => {
@@ -60,7 +68,11 @@ pub fn entry_names(m: &Module) -> Vec<String> {
     let p = plists(m);
     p.named
         .get("*ENTRY")
-        .map(|ops| ops.iter().filter_map(|o| o.result.first().and_then(name_of)).collect())
+        .map(|ops| {
+            ops.iter()
+                .filter_map(|o| o.result.first().and_then(name_of))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -77,7 +89,12 @@ impl Gen<'_> {
     /// then the result fields into the factor 1s.
     pub fn call_op(&mut self, s: &Stmt) {
         let op = &s.op;
-        let mut parms = self.plists.after.get(&s.at.line).cloned().unwrap_or_default();
+        let mut parms = self
+            .plists
+            .after
+            .get(&s.at.line)
+            .cloned()
+            .unwrap_or_default();
         if parms.is_empty()
             && let Some(n) = op.result.first().and_then(name_of)
         {
@@ -94,12 +111,18 @@ impl Gen<'_> {
             let Some(r) = p.result.first() else { continue };
             let Some(t) = self.target(r) else { return };
             if let Some(src) = p.f2.first() {
-                let Some(v) = self.expr(src, Want::default()) else { return };
+                let Some(v) = self.expr(src, Want::default()) else {
+                    return;
+                };
                 self.assign(&t, &v, false);
             }
             args.push(t);
         }
-        let list = args.iter().map(|a| a.op.clone()).collect::<Vec<_>>().join(", ");
+        let list = args
+            .iter()
+            .map(|a| a.op.clone())
+            .collect::<Vec<_>>()
+            .join(", ");
         if op.code.starts_with("CALLB") {
             if !self.callb(op, &args, &list) {
                 return;
@@ -115,7 +138,9 @@ impl Gen<'_> {
                     self.b.ins(format!("call {target}({list})"));
                 }
                 Some(e) => {
-                    let Some(v) = self.expr(e, Want::default()) else { return };
+                    let Some(v) = self.expr(e, Want::default()) else {
+                        return;
+                    };
                     if v.kind != Vk::Place || !v.ty.is_char() {
                         self.err(ids::TYPE_MISMATCH, 30, String::new());
                         return;
@@ -158,20 +183,27 @@ impl Gen<'_> {
                     mangle(&up)
                 };
                 if !self.local_procs.contains(&up) || !self.exported_procs.contains(&up) {
-                    self.externs.entry(ir.clone()).or_insert_with(|| format!("extern proc {ir}({})", params.join(", ")));
+                    self.externs
+                        .entry(ir.clone())
+                        .or_insert_with(|| format!("extern proc {ir}({})", params.join(", ")));
                 }
                 self.b.ins(format!("callb {ir}({list})"));
                 true
             }
             Some(e) => {
-                let Some(v) = self.expr(e, Want::default()) else { return false };
+                let Some(v) = self.expr(e, Want::default()) else {
+                    return false;
+                };
                 if v.ty != crate::types::Ty::ProcPtr {
                     self.err(ids::TYPE_MISMATCH, 30, String::new());
                     return false;
                 }
                 self.callbs += 1;
                 let proto = format!("_QRNCB_{}", self.callbs);
-                self.externs.insert(proto.clone(), format!("proto {proto}({})", params.join(", ")));
+                self.externs.insert(
+                    proto.clone(),
+                    format!("proto {proto}({})", params.join(", ")),
+                );
                 let r = self.b.reg();
                 self.b.ins(format!("{r} = load {}", v.op));
                 self.b.ins(format!("callpp {r} as {proto}({list})"));
@@ -222,6 +254,11 @@ pub fn pep(g: &mut Gen<'_>, main: &str) -> String {
         b.ins("callb _qrni_sqlend()");
     }
     let mut head = String::new();
-    let _ = write!(head, "proc _QRNP_PEP_{}({}) entry", mangle(&g.opts.name), sig.join(", "));
+    let _ = write!(
+        head,
+        "proc _QRNP_PEP_{}({}) entry",
+        mangle(&g.opts.name),
+        sig.join(", ")
+    );
     b.finish(&head, "ret")
 }

@@ -27,7 +27,10 @@ fn next_rand(seed: Option<i64>) -> f64 {
         if let Some(n) = seed {
             s.set(u64::from_ne_bytes(n.to_ne_bytes()) ^ 0x0005_DEEC_E66D);
         }
-        let x = s.get().wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+        let x = s
+            .get()
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
         s.set(x);
         #[allow(clippy::cast_precision_loss)]
         let f = (x >> 11) as f64 / (1u64 << 53) as f64;
@@ -39,12 +42,16 @@ fn double(x: f64) -> Result<Value> {
     if x.is_finite() {
         Ok(Value::Double(x))
     } else {
-        Err(SqlError::Overflow { what: "the result is not a finite number".into() })
+        Err(SqlError::Overflow {
+            what: "the result is not a finite number".into(),
+        })
     }
 }
 
 fn domain(name: &str) -> SqlError {
-    SqlError::Overflow { what: format!("the argument of {name} is outside its domain") }
+    SqlError::Overflow {
+        what: format!("the argument of {name} is outside its domain"),
+    }
 }
 
 /// Calls `name` when this family has it.
@@ -103,8 +110,19 @@ pub(crate) fn call(name: &str, args: &[Value], _ctx: &SqlContext) -> Option<Resu
             Ok(match &args[0] {
                 Value::Null => Value::Null,
                 Value::Num(d) => {
-                    let s = if d.is_zero() { 0 } else if d.is_negative() { -1 } else { 1 };
-                    Value::Num(Decimal::new(s, 0).expect("small").rescale(d.scale(), Rounding::Truncate).map_err(overflow)?)
+                    let s = if d.is_zero() {
+                        0
+                    } else if d.is_negative() {
+                        -1
+                    } else {
+                        1
+                    };
+                    Value::Num(
+                        Decimal::new(s, 0)
+                            .expect("small")
+                            .rescale(d.scale(), Rounding::Truncate)
+                            .map_err(overflow)?,
+                    )
                 }
                 v => {
                     let x = v.as_f64()?;
@@ -133,20 +151,30 @@ pub(crate) fn call(name: &str, args: &[Value], _ctx: &SqlContext) -> Option<Resu
             if args.iter().any(Value::is_null) {
                 return Ok(Value::Null);
             }
-            Ok(Value::Num(args[0].as_decimal()?.mul_exact(&args[1].as_decimal()?).map_err(overflow)?))
+            Ok(Value::Num(
+                args[0]
+                    .as_decimal()?
+                    .mul_exact(&args[1].as_decimal()?)
+                    .map_err(overflow)?,
+            ))
         })(),
         _ => return None,
     })
 }
 
 /// The result type of `name` when this family has it.
-pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], _exprs: &[crate::ast::Expr]) -> Option<SqlType> {
+pub(crate) fn result_type(
+    name: &str,
+    given: &[Option<SqlType>],
+    _exprs: &[crate::ast::Expr],
+) -> Option<SqlType> {
     let args = &super::super::restype::rules::known(given)[..];
     let null = args.iter().any(|a| a.nullable);
     let first = args.first().cloned().unwrap_or_else(|| SqlType::int(null));
     Some(match name {
-        "EXP" | "LN" | "LOG" | "LOG10" | "SIN" | "COS" | "TAN" | "COT" | "ASIN" | "ACOS" | "ATAN" | "ATAN2" | "SINH"
-        | "COSH" | "TANH" | "ATANH" | "RADIANS" | "DEGREES" | "POWER" | "POW" | "SQRT" => SqlType::double(null),
+        "EXP" | "LN" | "LOG" | "LOG10" | "SIN" | "COS" | "TAN" | "COT" | "ASIN" | "ACOS"
+        | "ATAN" | "ATAN2" | "SINH" | "COSH" | "TANH" | "ATANH" | "RADIANS" | "DEGREES"
+        | "POWER" | "POW" | "SQRT" => SqlType::double(null),
         "PI" | "RAND" | "RANDOM" => SqlType::double(false),
         "SIGN" => first.nullable(null),
         "BITAND" | "BITOR" | "BITXOR" | "BITANDNOT" | "BITNOT" => {
@@ -168,7 +196,11 @@ pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], _exprs: &[crate
             let p = (p1 + p2).min(63);
             let s = u32::from(s1) + u32::from(s2);
             // Past 63 digits the scale gives way, keeping at least 3.
-            let s = if p1 + p2 > 63 { s.saturating_sub(p1 + p2 - 63).max(3.min(s)) } else { s };
+            let s = if p1 + p2 > 63 {
+                s.saturating_sub(p1 + p2 - 63).max(3.min(s))
+            } else {
+                s
+            };
             SqlType::decimal(p, u8::try_from(s.min(p)).unwrap_or(0), null)
         }
         "MOD" if args.len() == 2 && !(first.is_integer() && args[1].is_integer()) => {
@@ -181,8 +213,15 @@ pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], _exprs: &[crate
         "ROUND" if first.kind() == Kind::Decimal || first.kind() == Kind::Numeric => {
             SqlType::new(first.kind(), (first.len() + 1).min(63), first.scale(), null)
         }
-        "CEILING" | "CEIL" | "FLOOR" if first.kind() == Kind::Decimal || first.kind() == Kind::Numeric => {
-            SqlType::new(first.kind(), (first.len() - u32::from(first.scale()) + 1).clamp(1, 63), 0, null)
+        "CEILING" | "CEIL" | "FLOOR"
+            if first.kind() == Kind::Decimal || first.kind() == Kind::Numeric =>
+        {
+            SqlType::new(
+                first.kind(),
+                (first.len() - u32::from(first.scale()) + 1).clamp(1, 63),
+                0,
+                null,
+            )
         }
         _ => return None,
     })

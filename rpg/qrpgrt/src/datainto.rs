@@ -14,7 +14,14 @@
 //! 357 an error the parser reported, 358 a parser that called the
 //! procedures out of order.
 
-#![allow(clippy::match_same_arms, clippy::similar_names, clippy::too_many_lines, clippy::struct_excessive_bools, clippy::unnecessary_wraps, clippy::unused_self)]
+#![allow(
+    clippy::match_same_arms,
+    clippy::similar_names,
+    clippy::too_many_lines,
+    clippy::struct_excessive_bools,
+    clippy::unnecessary_wraps,
+    clippy::unused_self
+)]
 
 use std::cell::RefCell;
 
@@ -232,9 +239,14 @@ pub struct Options {
 
 /// Read `%DATA`'s options: the first one not valid fails with 352.
 pub fn options(text: &str) -> Result<Options, Fail> {
-    let mut o = Options { case: "lower".into(), ..Options::default() };
+    let mut o = Options {
+        case: "lower".into(),
+        ..Options::default()
+    };
     for w in text.split_whitespace() {
-        let Some((k, v)) = w.split_once('=') else { return Err(fail(352, 1)) };
+        let Some((k, v)) = w.split_once('=') else {
+            return Err(fail(352, 1));
+        };
         let lv = v.to_ascii_lowercase();
         let yes_no = |s: &str| matches!(s, "yes" | "no");
         match k.to_ascii_lowercase().as_str() {
@@ -242,7 +254,13 @@ pub fn options(text: &str) -> Result<Options, Fail> {
             // Documents in stream files are not read (docs/RPG.md).
             "doc" if lv == "file" => return Err(fail(352, 2)),
             "doc" => return Err(fail(352, 3)),
-            "path" => o.path = v.split('/').filter(|s| !s.is_empty()).map(str::to_string).collect(),
+            "path" => {
+                o.path = v
+                    .split('/')
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+                    .collect()
+            }
             "case" if matches!(lv.as_str(), "lower" | "upper" | "any" | "convert") => o.case = lv,
             "allowmissing" if yes_no(&lv) => o.allow_missing = lv == "yes",
             "allowextra" if yes_no(&lv) => o.allow_extra = lv == "yes",
@@ -259,7 +277,10 @@ pub fn options(text: &str) -> Result<Options, Fail> {
 /// Whether a document's name matches an RPG name under `case=`.
 fn matches(doc: &str, rpg: &str, o: &Options) -> bool {
     if o.case == "convert" {
-        let conv: String = doc.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
+        let conv: String = doc
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+            .collect();
         return conv.eq_ignore_ascii_case(rpg);
     }
     name_matches(doc, rpg, &o.case)
@@ -276,15 +297,27 @@ fn select<'a>(root: &'a (String, Node), s: &Shape, o: &Options) -> Result<&'a No
         }
         return Err(fail(356, 1));
     }
-    let eq = |x: &str, p: &str| if o.case == "any" || o.case == "convert" { x.eq_ignore_ascii_case(p) } else { x == p };
+    let eq = |x: &str, p: &str| {
+        if o.case == "any" || o.case == "convert" {
+            x.eq_ignore_ascii_case(p)
+        } else {
+            x == p
+        }
+    };
     // A path starts at a root that has a name.
     if name.is_empty() || !eq(name, &o.path[0]) {
         return Err(fail(356, 1));
     }
     let mut at = node;
     for p in &o.path[1..] {
-        let Node::Struct(items) = at else { return Err(fail(356, 1)) };
-        at = items.iter().find(|(n, _)| eq(n, p)).map(|(_, n)| n).ok_or(fail(356, 1))?;
+        let Node::Struct(items) = at else {
+            return Err(fail(356, 1));
+        };
+        at = items
+            .iter()
+            .find(|(n, _)| eq(n, p))
+            .map(|(_, n)| n)
+            .ok_or(fail(356, 1))?;
     }
     Ok(at)
 }
@@ -292,9 +325,17 @@ fn select<'a>(root: &'a (String, Node), s: &Shape, o: &Options) -> Result<&'a No
 /// A scalar's text under `trim=`.
 fn scalar_text(v: &str, s: &Shape, o: &Options) -> String {
     let d = crate::value::Desc::of(s.desc);
-    if o.trim_none && matches!(d.kind, crate::value::Kind::Char | crate::value::Kind::VarChar) {
+    if o.trim_none
+        && matches!(
+            d.kind,
+            crate::value::Kind::Char | crate::value::Kind::VarChar
+        )
+    {
         v.to_string()
-    } else if matches!(d.kind, crate::value::Kind::Char | crate::value::Kind::VarChar) {
+    } else if matches!(
+        d.kind,
+        crate::value::Kind::Char | crate::value::Kind::VarChar
+    ) {
         trim_all(v)
     } else {
         v.trim().to_string()
@@ -304,19 +345,39 @@ fn scalar_text(v: &str, s: &Shape, o: &Options) -> String {
 /// Fill one element of a shape from a node.
 fn fill(addr: u64, s: &Shape, node: &Node, o: &Options) -> Result<(), Fail> {
     if s.children.is_empty() {
-        let Node::Value(v) = node else { return Err(fail(356, 7)) };
+        let Node::Value(v) = node else {
+            return Err(fail(356, 7));
+        };
         let d = crate::value::Desc::of(s.desc);
         return store_scalar(addr, &d, &scalar_text(v, s, o)).map_err(|_| fail(356, 8));
     }
-    let Node::Struct(items) = node else { return Err(fail(356, 14)) };
-    let counter = |c: &Shape| -> Option<&Shape> {
-        (!o.countprefix.is_empty()).then(|| s.children.iter().find(|x| x.name == format!("{}{}", o.countprefix, c.name))).flatten()
+    let Node::Struct(items) = node else {
+        return Err(fail(356, 14));
     };
-    let is_counter = |c: &Shape| !o.countprefix.is_empty() && c.name.starts_with(&o.countprefix) && s.children.iter().any(|x| x.name == c.name[o.countprefix.len()..]);
+    let counter = |c: &Shape| -> Option<&Shape> {
+        (!o.countprefix.is_empty())
+            .then(|| {
+                s.children
+                    .iter()
+                    .find(|x| x.name == format!("{}{}", o.countprefix, c.name))
+            })
+            .flatten()
+    };
+    let is_counter = |c: &Shape| {
+        !o.countprefix.is_empty()
+            && c.name.starts_with(&o.countprefix)
+            && s.children
+                .iter()
+                .any(|x| x.name == c.name[o.countprefix.len()..])
+    };
     // Every item names a subfield, unless extra ones are allowed.
     if !o.allow_extra {
         for (n, _) in items {
-            if !s.children.iter().any(|c| matches(n, &c.name, o) && !is_counter(c)) {
+            if !s
+                .children
+                .iter()
+                .any(|c| matches(n, &c.name, o) && !is_counter(c))
+            {
                 return Err(fail(356, 5));
             }
         }
@@ -326,7 +387,11 @@ fn fill(addr: u64, s: &Shape, node: &Node, o: &Options) -> Result<(), Fail> {
             continue;
         }
         let base = addr + c.off;
-        let found: Vec<&Node> = items.iter().filter(|(n, _)| matches(n, &c.name, o)).map(|(_, n)| n).collect();
+        let found: Vec<&Node> = items
+            .iter()
+            .filter(|(n, _)| matches(n, &c.name, o))
+            .map(|(_, n)| n)
+            .collect();
         if c.dim > 0 {
             // An array subfield: the items of the array reported, or the
             // items repeated under its name.
@@ -340,7 +405,10 @@ fn fill(addr: u64, s: &Shape, node: &Node, o: &Options) -> Result<(), Fail> {
             if elems.len() < c.dim as usize && !o.allow_missing && counter(c).is_none() {
                 return Err(fail(356, 2));
             }
-            let one = Shape { dim: 0, ..c.clone() };
+            let one = Shape {
+                dim: 0,
+                ..c.clone()
+            };
             for (k, e) in elems.iter().enumerate() {
                 fill(base + c.stride * k as u64, &one, e, o)?;
             }
@@ -371,8 +439,13 @@ fn store_count(addr: u64, s: &Shape, n: usize) -> Result<(), Fail> {
 pub fn into(addr: u64, s: &Shape, root: &(String, Node), o: &Options) -> Result<i64, Fail> {
     let node = select(root, s, o)?;
     if s.dim > 0 {
-        let Node::Array(items) = node else { return Err(fail(356, 15)) };
-        let one = Shape { dim: 0, ..s.clone() };
+        let Node::Array(items) = node else {
+            return Err(fail(356, 15));
+        };
+        let one = Shape {
+            dim: 0,
+            ..s.clone()
+        };
         // Elements past the array's end are not taken.
         let n = items.len().min(s.dim as usize);
         for (k, e) in items.iter().take(n).enumerate() {
@@ -385,10 +458,32 @@ pub fn into(addr: u64, s: &Shape, root: &(String, Node), o: &Options) -> Result<
 }
 
 /// The items a `%HANDLER` gets: those of the array selected.
-fn handler_items<'a>(root: &'a (String, Node), s: &Shape, o: &Options) -> Result<Vec<&'a Node>, Fail> {
-    let named = Shape { name: o.path.last().map(|p| p.to_ascii_uppercase()).unwrap_or_default(), ..s.clone() };
-    let o2 = Options { case: if o.path.is_empty() { "any".into() } else { o.case.clone() }, ..o.clone() };
-    let node = if o.path.is_empty() { &root.1 } else { select(root, &named, &o2)? };
+fn handler_items<'a>(
+    root: &'a (String, Node),
+    s: &Shape,
+    o: &Options,
+) -> Result<Vec<&'a Node>, Fail> {
+    let named = Shape {
+        name: o
+            .path
+            .last()
+            .map(|p| p.to_ascii_uppercase())
+            .unwrap_or_default(),
+        ..s.clone()
+    };
+    let o2 = Options {
+        case: if o.path.is_empty() {
+            "any".into()
+        } else {
+            o.case.clone()
+        },
+        ..o.clone()
+    };
+    let node = if o.path.is_empty() {
+        &root.1
+    } else {
+        select(root, &named, &o2)?
+    };
     match node {
         Node::Array(v) => Ok(v.iter().collect()),
         other => Ok(vec![other]),
@@ -417,7 +512,10 @@ pub(crate) fn decode(ccsid: u32, b: &[u8]) -> String {
     match ccsid {
         0 | 37 => ccsid::from_ebcdic(b),
         1200 | 13488 => {
-            let u: Vec<u16> = b.chunks(2).map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)])).collect();
+            let u: Vec<u16> = b
+                .chunks(2)
+                .map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)]))
+                .collect();
             String::from_utf16_lossy(&u)
         }
         1208 => String::from_utf8_lossy(b).into_owned(),
@@ -432,7 +530,9 @@ pub(crate) fn decode(ccsid: u32, b: &[u8]) -> String {
 fn at(j: &mi::Job, lo: u64, hi: u64, len: u64) -> Vec<u8> {
     let p = mi::FatPtr::from_halves(lo, hi);
     match j.spaces.deref(p) {
-        Ok(a) if a != 0 && len > 0 => crate::value::bytes(a, usize::try_from(len).unwrap_or(0)).to_vec(),
+        Ok(a) if a != 0 && len > 0 => {
+            crate::value::bytes(a, usize::try_from(len).unwrap_or(0)).to_vec()
+        }
         _ => Vec::new(),
     }
 }
@@ -460,11 +560,24 @@ fn event(env: *mut Env, f: impl FnOnce(&mut Builder, u32) -> Result<(), Fail>) {
     if let Some((e, frames, perr)) = failed {
         let up = u32::try_from(j.act.frames.len().saturating_sub(frames)).unwrap_or(0);
         let data = match (e.status, perr) {
-            (357, Some((rc, off))) => [rc.to_be_bytes().to_vec(), vec![0, 2], ccsid::to_ebcdic("*N").unwrap_or_default(), off.to_be_bytes().to_vec()].concat(),
+            (357, Some((rc, off))) => [
+                rc.to_be_bytes().to_vec(),
+                vec![0, 2],
+                ccsid::to_ebcdic("*N").unwrap_or_default(),
+                off.to_be_bytes().to_vec(),
+            ]
+            .concat(),
             _ => e.reason.to_be_bytes().to_vec(),
         };
         let id = format!("RNX{:04}", e.status);
-        let _ = j.send_message(&id, "QRNXMSG", "*LIBL", data, qir::MsgType::Escape, mi::QueueRef::Up(up));
+        let _ = j.send_message(
+            &id,
+            "QRNXMSG",
+            "*LIBL",
+            data,
+            qir::MsgType::Escape,
+            mi::QueueRef::Up(up),
+        );
     }
 }
 
@@ -487,7 +600,14 @@ pub(crate) fn with_builder(j: &mut mi::Job, f: impl FnOnce(&mut Builder) -> Resu
     });
     if let Some(e) = failed {
         let id = format!("RNX{:04}", e.status);
-        let _ = j.send_message(&id, "QRNXMSG", "*LIBL", e.reason.to_be_bytes().to_vec(), qir::MsgType::Escape, mi::QueueRef::Same);
+        let _ = j.send_message(
+            &id,
+            "QRNXMSG",
+            "*LIBL",
+            e.reason.to_be_bytes().to_vec(),
+            qir::MsgType::Escape,
+            mi::QueueRef::Same,
+        );
     }
 }
 
@@ -498,7 +618,9 @@ pub(crate) fn parser_options(j: &mi::Job, parm: u64) -> String {
         return String::new();
     }
     let p = mi::FatPtr::from_bytes(&b[48..64].try_into().unwrap_or([0; 16]));
-    let Ok((a, room)) = j.spaces.extent(p) else { return String::new() };
+    let Ok((a, room)) = j.spaces.extent(p) else {
+        return String::new();
+    };
     let t = crate::value::bytes(a, usize::try_from(room).unwrap_or(0));
     let n = t.iter().position(|x| *x == 0).unwrap_or(t.len());
     ccsid::from_ebcdic(&t[..n])
@@ -519,7 +641,15 @@ extern "sysv64" fn cb_finish(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1:
 }
 
 /// `QrnDiReportError(handle, code, bytes)`.
-extern "sysv64" fn cb_error(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, rc: u64, bytes: u64) {
+extern "sysv64" fn cb_error(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    rc: u64,
+    bytes: u64,
+) {
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     let rc = rc as u32 as i32;
     event(env, |b, _| b.report_error(rc, halves_len(bytes)));
@@ -527,14 +657,35 @@ extern "sysv64" fn cb_error(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: 
 
 /// `QrnDiReportName(handle, name, length)`: the pointer's halves on the
 /// stack after an unused register.
-extern "sysv64" fn cb_name(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, n0: u64, n1: u64, len: u64) {
+extern "sysv64" fn cb_name(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    n0: u64,
+    n1: u64,
+    len: u64,
+) {
     let j = mi::storage::job_of(env);
     let raw = at(j, n0, n1, u64::from(halves_len(len)));
     event(env, |b, c| b.name(&decode(c, &raw)));
 }
 
 /// `QrnDiReportNameCcsid(handle, name, length, ccsid)`.
-extern "sysv64" fn cb_name_ccsid(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, n0: u64, n1: u64, len: u64, ccsid: u64) {
+extern "sysv64" fn cb_name_ccsid(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    n0: u64,
+    n1: u64,
+    len: u64,
+    ccsid: u64,
+) {
     let j = mi::storage::job_of(env);
     let raw = at(j, n0, n1, u64::from(halves_len(len)));
     let c = halves_len(ccsid);
@@ -542,7 +693,17 @@ extern "sysv64" fn cb_name_ccsid(env: *mut Env, _argc: i64, _od: i64, _h0: u64, 
 }
 
 /// `QrnDiReportValue(handle, value, length)`.
-extern "sysv64" fn cb_value(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, v0: u64, v1: u64, len: u64) {
+extern "sysv64" fn cb_value(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    v0: u64,
+    v1: u64,
+    len: u64,
+) {
     let j = mi::storage::job_of(env);
     let raw = at(j, v0, v1, u64::from(halves_len(len)));
     event(env, |b, c| {
@@ -554,7 +715,18 @@ extern "sysv64" fn cb_value(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: 
 }
 
 /// `QrnDiReportValueCcsid(handle, value, length, ccsid)`.
-extern "sysv64" fn cb_value_ccsid(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, v0: u64, v1: u64, len: u64, ccsid: u64) {
+extern "sysv64" fn cb_value_ccsid(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    v0: u64,
+    v1: u64,
+    len: u64,
+    ccsid: u64,
+) {
     let j = mi::storage::job_of(env);
     let raw = at(j, v0, v1, u64::from(halves_len(len)));
     let c = halves_len(ccsid);
@@ -583,7 +755,18 @@ extern "sysv64" fn cb_end_array(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _
 }
 
 /// `QrnDiTrace(handle, text, nested)`: nothing is traced.
-extern "sysv64" fn cb_trace(_env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, _m0: u64, _m1: u64, _nested: u64) {}
+extern "sysv64" fn cb_trace(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    _m0: u64,
+    _m1: u64,
+    _nested: u64,
+) {
+}
 
 /// `QrnDiReportAttr(handle, name, length, value, length)`: the second
 /// pointer is aligned to 16 on the stack.
@@ -689,8 +872,15 @@ pub(crate) fn call_callee(j: &mut mi::Job, c: &Callee, parm: u64) -> bool {
         Callee::Pgm(lib, name) => j.call_program(name, lib, &[parm]).is_ok(),
         Callee::Proc(lib, srv, proc) => {
             let table = j.table.clone();
-            let Ok(p) = j.act.load_program(srv, lib, ile::PgmKind::SrvPgm, &table) else { return false };
-            let Some(addr) = p.export_addr(proc).or_else(|| p.export_addr(&proc.to_ascii_uppercase())) else { return false };
+            let Ok(p) = j.act.load_program(srv, lib, ile::PgmKind::SrvPgm, &table) else {
+                return false;
+            };
+            let Some(addr) = p
+                .export_addr(proc)
+                .or_else(|| p.export_addr(&proc.to_ascii_uppercase()))
+            else {
+                return false;
+            };
             mi::act::call_by_ref(j, addr, &[parm]);
             true
         }
@@ -759,16 +949,34 @@ pub(crate) fn user_parm(addr: i64, desc: i64, kind: i32) -> UserParm {
 /// Send the runtime's escape for an RPG status.
 pub(crate) fn escape(j: &mut mi::Job, status: u16, reason: u32) {
     let id = format!("RNX{status:04}");
-    let _ = j.send_message(&id, "QRNXMSG", "*LIBL", reason.to_be_bytes().to_vec(), qir::MsgType::Escape, mi::QueueRef::Same);
+    let _ = j.send_message(
+        &id,
+        "QRNXMSG",
+        "*LIBL",
+        reason.to_be_bytes().to_vec(),
+        qir::MsgType::Escape,
+        mi::QueueRef::Same,
+    );
 }
 
 /// Run a parser over a document: the tree, or the failure (already
 /// sent when it came from a procedure the parser called).
-fn parse(j: &mut mi::Job, c: &Callee, doc: &str, o: &Options, up: &UserParm) -> Result<Builder, Option<Fail>> {
+fn parse(
+    j: &mut mi::Job,
+    c: &Callee,
+    doc: &str,
+    o: &Options,
+    up: &UserParm,
+) -> Result<Builder, Option<Fail>> {
     let (data, ccsid) = if o.job_ccsid {
         (crate::value::ebcdic(doc), 0u32)
     } else {
-        (doc.encode_utf16().flat_map(u16::to_be_bytes).collect::<Vec<u8>>(), 13488)
+        (
+            doc.encode_utf16()
+                .flat_map(u16::to_be_bytes)
+                .collect::<Vec<u8>>(),
+            13488,
+        )
     };
     let data_len = u32::try_from(data.len()).unwrap_or(0);
     // A parser bases a large field on the document: room for one.
@@ -814,7 +1022,10 @@ fn parse(j: &mut mi::Job, c: &Callee, doc: &str, o: &Options, up: &UserParm) -> 
     });
     let called = call_callee(j, c, parm_r.base);
     let run = RUNS.with(|r| r.borrow_mut().pop());
-    for r in [Some(doc_r), Some(env_r), Some(h_r), Some(parm_r), up_r].into_iter().flatten() {
+    for r in [Some(doc_r), Some(env_r), Some(h_r), Some(parm_r), up_r]
+        .into_iter()
+        .flatten()
+    {
         r.drop_in(j);
     }
     let run = run.ok_or(None)?;
@@ -857,7 +1068,9 @@ pub extern "sysv64" fn data_into(
     comm: i64,
 ) -> i64 {
     let j = mi::storage::job_of(env);
-    let Some(s) = crate::xml::shape(&crate::xml::varchar_at(shp)) else { return 0 };
+    let Some(s) = crate::xml::shape(&crate::xml::varchar_at(shp)) else {
+        return 0;
+    };
     let o = match options(&crate::xml::text_of(opts, od)) {
         Ok(o) => o,
         Err(e) => {
@@ -897,9 +1110,19 @@ pub extern "sysv64" fn data_into(
 }
 
 /// `DATA-INTO %HANDLER`: the items in groups of the handler's array.
-fn to_handler(j: &mut mi::Job, addr: usize, comm: i64, s: &Shape, root: &(String, Node), o: &Options) -> Result<i64, Fail> {
+fn to_handler(
+    j: &mut mi::Job,
+    addr: usize,
+    comm: i64,
+    s: &Shape,
+    root: &(String, Node),
+    o: &Options,
+) -> Result<i64, Fail> {
     let items = handler_items(root, s, o)?;
-    let one = Shape { dim: 0, ..s.clone() };
+    let one = Shape {
+        dim: 0,
+        ..s.clone()
+    };
     let group = usize::try_from(s.dim.max(1)).unwrap_or(1);
     let mut buf = vec![0u8; usize::try_from(s.stride).unwrap_or(0) * group];
     let mut total = 0i64;
@@ -911,7 +1134,8 @@ fn to_handler(j: &mut mi::Job, addr: usize, comm: i64, s: &Shape, root: &(String
         let n = i64::try_from(chunk.len()).unwrap_or(0);
         total += n;
         let mark = j.raised.len();
-        let rc = mi::act::call_into_handler(j, addr, comm.cast_unsigned(), buf.as_mut_ptr() as u64, n);
+        let rc =
+            mi::act::call_into_handler(j, addr, comm.cast_unsigned(), buf.as_mut_ptr() as u64, n);
         if j.pending() {
             crate::xml::handler_failed(j, mark);
             return Err(fail(0, 0));
@@ -947,7 +1171,10 @@ mod tests {
             node,
             Node::Struct(vec![
                 ("id".into(), Node::Value("1".into())),
-                ("tags".into(), Node::Array(vec![Node::Value("x".into()), Node::Value("y".into())])),
+                (
+                    "tags".into(),
+                    Node::Array(vec![Node::Value("x".into()), Node::Value("y".into())])
+                ),
             ])
         );
     }
@@ -969,7 +1196,10 @@ mod tests {
         assert_eq!(options("case=sideways"), Err(fail(352, 3)));
         assert_eq!(options("ccsid=any"), Err(fail(352, 3)));
         assert!(options("case=any countprefix=num_ allowmissing=yes").is_ok());
-        assert_eq!(callee("MYLIB/SRV(proc)"), Callee::Proc("MYLIB".into(), "SRV".into(), "proc".into()));
+        assert_eq!(
+            callee("MYLIB/SRV(proc)"),
+            Callee::Proc("MYLIB".into(), "SRV".into(), "proc".into())
+        );
         assert_eq!(callee("pgm"), Callee::Pgm("*LIBL".into(), "PGM".into()));
     }
 }

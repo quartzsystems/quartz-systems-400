@@ -60,19 +60,53 @@ pub(crate) struct AggFamily {
 }
 
 /// The families, asked before the built-in aggregates.
-pub(crate) const FAMILIES: &[AggFamily] =
-    &[AggFamily { is: super::json::agg::is, ty: super::json::types, fold: super::json::agg::fold }];
+pub(crate) const FAMILIES: &[AggFamily] = &[AggFamily {
+    is: super::json::agg::is,
+    ty: super::json::types,
+    fold: super::json::agg::fold,
+}];
 
 /// Built-in aggregates of one argument (or `*`).
 const ONE: &[&str] = &[
-    "COUNT", "COUNT_BIG", "SUM", "AVG", "MIN", "MAX", "STDDEV", "STDDEV_POP", "STDDEV_SAMP", "VARIANCE", "VAR",
-    "VAR_POP", "VAR_SAMP", "VARIANCE_SAMP", "MEDIAN", "ARRAY_AGG", "XMLAGG", "PERCENTILE_CONT", "PERCENTILE_DISC",
+    "COUNT",
+    "COUNT_BIG",
+    "SUM",
+    "AVG",
+    "MIN",
+    "MAX",
+    "STDDEV",
+    "STDDEV_POP",
+    "STDDEV_SAMP",
+    "VARIANCE",
+    "VAR",
+    "VAR_POP",
+    "VAR_SAMP",
+    "VARIANCE_SAMP",
+    "MEDIAN",
+    "ARRAY_AGG",
+    "XMLAGG",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
 ];
 
 /// Built-in aggregates of two arguments.
 const TWO: &[&str] = &[
-    "COVARIANCE", "COVARIANCE_SAMP", "COVAR_POP", "COVAR_SAMP", "COVAR", "CORRELATION", "CORR", "REGR_AVGX",
-    "REGR_AVGY", "REGR_COUNT", "REGR_INTERCEPT", "REGR_ICPT", "REGR_R2", "REGR_SLOPE", "REGR_SXX", "REGR_SXY",
+    "COVARIANCE",
+    "COVARIANCE_SAMP",
+    "COVAR_POP",
+    "COVAR_SAMP",
+    "COVAR",
+    "CORRELATION",
+    "CORR",
+    "REGR_AVGX",
+    "REGR_AVGY",
+    "REGR_COUNT",
+    "REGR_INTERCEPT",
+    "REGR_ICPT",
+    "REGR_R2",
+    "REGR_SLOPE",
+    "REGR_SXX",
+    "REGR_SXY",
     "REGR_SYY",
 ];
 
@@ -85,7 +119,9 @@ pub fn is_name(name: &str, n: usize, star: bool) -> bool {
     if star {
         return matches!(name, "COUNT" | "COUNT_BIG");
     }
-    (n == 1 && ONE.contains(&name)) || (n == 2 && TWO.contains(&name)) || (name == "LISTAGG" && (1..=2).contains(&n))
+    (n == 1 && ONE.contains(&name))
+        || (n == 2 && TWO.contains(&name))
+        || (name == "LISTAGG" && (1..=2).contains(&n))
 }
 
 /// Whether a call is an aggregate.
@@ -142,36 +178,47 @@ fn sum_type(a: &SqlType) -> SqlType {
     match a.kind() {
         Kind::SmallInt | Kind::Integer => SqlType::int(true),
         Kind::BigInt => SqlType::bigint(true),
-        Kind::Decimal | Kind::Numeric => SqlType::decimal(if a.len() > 31 { 63 } else { 31 }, a.scale(), true),
+        Kind::Decimal | Kind::Numeric => {
+            SqlType::decimal(if a.len() > 31 { 63 } else { 31 }, a.scale(), true)
+        }
         Kind::DecFloat => SqlType::decfloat(true),
         _ => SqlType::double(true),
     }
 }
 
 fn overflow(e: impl std::fmt::Display) -> SqlError {
-    SqlError::Overflow { what: e.to_string() }
+    SqlError::Overflow {
+        what: e.to_string(),
+    }
 }
 
 /// Fold the rows of a group or frame. `nulls` is set when a null value
 /// was left out (SQLSTATE `01003`).
 pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result<Value> {
     if call.name == "XMLAGG" {
-        return Err(SqlError::Unsupported { what: "XMLAGG: the XML type".into() });
+        return Err(SqlError::Unsupported {
+            what: "XMLAGG: the XML type".into(),
+        });
     }
     if !call.order.is_empty() {
         let specs: Vec<super::sort::KeySpec> = call
             .order
             .iter()
-            .map(|o| super::sort::KeySpec { desc: o.desc, nulls_first: o.nulls_first.unwrap_or(o.desc) })
+            .map(|o| super::sort::KeySpec {
+                desc: o.desc,
+                nulls_first: o.nulls_first.unwrap_or(o.desc),
+            })
             .collect();
         let mut failure = None;
-        rows.sort_by(|a, b| match super::sort::cmp_keys(&a.keys, &b.keys, &specs) {
-            Ok(o) => o,
-            Err(e) => {
-                failure = Some(e);
-                Ordering::Equal
-            }
-        });
+        rows.sort_by(
+            |a, b| match super::sort::cmp_keys(&a.keys, &b.keys, &specs) {
+                Ok(o) => o,
+                Err(e) => {
+                    failure = Some(e);
+                    Ordering::Equal
+                }
+            },
+        );
         if let Some(e) = failure {
             return Err(e);
         }
@@ -179,7 +226,11 @@ pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result
     // ARRAY_AGG keeps the nulls, in order (arrays are checked for where
     // the call is evaluated).
     if call.name == "ARRAY_AGG" {
-        return Ok(Value::Array(rows.into_iter().map(|r| r.args.into_iter().next().unwrap_or(Value::Null)).collect()));
+        return Ok(Value::Array(
+            rows.into_iter()
+                .map(|r| r.args.into_iter().next().unwrap_or(Value::Null))
+                .collect(),
+        ));
     }
     for fam in FAMILIES {
         if (fam.is)(call.name, rows.first().map_or(1, |r| r.args.len()))
@@ -196,7 +247,12 @@ pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result
         return ordered::fold(call, &rows);
     }
     let before = rows.len();
-    rows.retain(|r| r.args.iter().take(if TWO.contains(&call.name) { 2 } else { 1 }).all(|v| !v.is_null()));
+    rows.retain(|r| {
+        r.args
+            .iter()
+            .take(if TWO.contains(&call.name) { 2 } else { 1 })
+            .all(|v| !v.is_null())
+    });
     if rows.len() != before {
         *nulls = true;
     }
@@ -212,7 +268,11 @@ pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result
         "COUNT" | "COUNT_BIG" => Ok(Value::int(i64::try_from(values.len()).expect("fits"))),
         "SUM" | "AVG" => sum_avg(call.name == "AVG", &values),
         "MIN" | "MAX" => {
-            let want = if call.name == "MIN" { Ordering::Less } else { Ordering::Greater };
+            let want = if call.name == "MIN" {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            };
             let mut best: Option<Value> = None;
             for v in values {
                 best = Some(match best {
@@ -228,11 +288,12 @@ pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result
             }
             Ok(best.unwrap_or(Value::Null))
         }
-        "STDDEV" | "STDDEV_POP" | "STDDEV_SAMP" | "VARIANCE" | "VAR" | "VAR_POP" | "VAR_SAMP" | "VARIANCE_SAMP" => {
-            stats::spread(call.name, &values)
-        }
+        "STDDEV" | "STDDEV_POP" | "STDDEV_SAMP" | "VARIANCE" | "VAR" | "VAR_POP" | "VAR_SAMP"
+        | "VARIANCE_SAMP" => stats::spread(call.name, &values),
         "MEDIAN" | "PERCENTILE_CONT" | "PERCENTILE_DISC" | "LISTAGG" => ordered::fold(call, &rows),
-        other => Err(SqlError::Unsupported { what: format!("aggregate {other}") }),
+        other => Err(SqlError::Unsupported {
+            what: format!("aggregate {other}"),
+        }),
     }
 }
 
@@ -243,7 +304,10 @@ fn sum_avg(avg: bool, values: &[Value]) -> Result<Value> {
     if values.is_empty() {
         return Ok(Value::Null);
     }
-    if values.iter().any(|v| matches!(v, Value::DecFloat(_)) || v.is_float()) {
+    if values
+        .iter()
+        .any(|v| matches!(v, Value::DecFloat(_)) || v.is_float())
+    {
         let mut sum = values[0].clone();
         for v in &values[1..] {
             sum = binary(&sum, BinOp::Add, v)?;

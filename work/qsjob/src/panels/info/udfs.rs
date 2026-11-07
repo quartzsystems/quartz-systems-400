@@ -26,12 +26,18 @@ pub fn dspudfs(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
     for (k, val) in &v.vars {
         d.set(k, val);
     }
-    let rows = v.mounts.into_iter().map(|m| vec![("MNTDIR".to_string(), m)]).collect();
+    let rows = v
+        .mounts
+        .into_iter()
+        .map(|m| vec![("MNTDIR".to_string(), m)])
+        .collect();
     fill(&mut d, "MOUNTS", rows);
     loop {
         match show(&mut d, surface, "DSPUDFS")? {
             Response::Print => d.error("CPD9B84", &[]),
-            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(String::new()),
+            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => {
+                return Ok(String::new());
+            }
             _ => {}
         }
     }

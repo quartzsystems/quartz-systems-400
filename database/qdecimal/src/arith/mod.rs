@@ -225,7 +225,11 @@ mod tests {
                 Op::Div => div(&ta, &tb, m),
             }
             .unwrap();
-            assert_eq!(intermediate(op, a, b, m).unwrap(), r.shape, "{op:?} {a:?} {b:?}");
+            assert_eq!(
+                intermediate(op, a, b, m).unwrap(),
+                r.shape,
+                "{op:?} {a:?} {b:?}"
+            );
         }
     }
 

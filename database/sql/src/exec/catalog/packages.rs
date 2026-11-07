@@ -7,8 +7,8 @@
 //! the primary's (V7R1M0); the precompile options and use counts a
 //! package does not keep are null.
 
-use dds::{DataType, FieldDef};
 use db::sqlpkg::{self, Package, PkgKind};
+use dds::{DataType, FieldDef};
 use qsname::Name;
 use store::obj::{ObjectId, ops, types};
 use store::txn::Txn;
@@ -24,7 +24,8 @@ const VIEWS: &[&str] = &["SYSPACKAGE", "SYSPACKAGESTAT"];
 
 /// Whether `name` is one of these views.
 pub fn has(name: &ObjectName) -> bool {
-    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2") && VIEWS.contains(&name.name.value.as_str())
+    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2")
+        && VIEWS.contains(&name.name.value.as_str())
 }
 
 /// The types the columns have.
@@ -52,7 +53,8 @@ fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
         T::Stamp => (DataType::Timestamp, 26),
         T::Varbin(n) => (DataType::Bytes, n),
     };
-    let fname = Name::parse(&name[..name.len().min(10)]).unwrap_or_else(|_| Name::parse("COL").expect("valid"));
+    let fname = Name::parse(&name[..name.len().min(10)])
+        .unwrap_or_else(|_| Name::parse("COL").expect("valid"));
     let mut f = FieldDef::new(fname, ty, len, 0);
     f.int_range = ty == DataType::Binary;
     if matches!(t, T::Varchar(_) | T::Varbin(_)) {
@@ -62,7 +64,13 @@ fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
     if name.len() > 10 {
         f.alias = Some(name.to_string());
     }
-    ColInfo { name: name.to_string(), table: Some(alias.to_string()), field: Some(f), nullable, hidden: false }
+    ColInfo {
+        name: name.to_string(),
+        table: Some(alias.to_string()),
+        field: Some(f),
+        nullable,
+        hidden: false,
+    }
 }
 
 /// `SYSPACKAGE`'s columns.
@@ -167,11 +175,24 @@ fn created(token: u64) -> String {
     let secs = token / 1_000_000;
     let d = db::record::datetime::Date::from_unix(secs);
     let t = db::record::datetime::Time::from_unix(secs);
-    format!("{:04}-{:02}-{:02}-{:02}.{:02}.{:02}.{:06}", d.year, d.month, d.day, t.hour, t.minute, t.second, token % 1_000_000)
+    format!(
+        "{:04}-{:02}-{:02}-{:02}.{:02}.{:02}.{:06}",
+        d.year,
+        d.month,
+        d.day,
+        t.hour,
+        t.minute,
+        t.second,
+        token % 1_000_000
+    )
 }
 
 fn stamp(secs: u64) -> Value {
-    Value::Timestamp(Timestamp::new(db::record::datetime::Date::from_unix(secs), db::record::datetime::Time::from_unix(secs), 0))
+    Value::Timestamp(Timestamp::new(
+        db::record::datetime::Date::from_unix(secs),
+        db::record::datetime::Time::from_unix(secs),
+        0,
+    ))
 }
 
 /// The isolation of a package's commit code, as each view spells it.
@@ -187,11 +208,19 @@ fn isolation(commit: u8, stat: bool) -> &'static str {
 }
 
 fn date_format(code: u8) -> &'static str {
-    ["*JUL", "*MDY", "*DMY", "*YMD", "*USA", "*ISO", "*EUR", "*JIS"].get(usize::from(code)).copied().unwrap_or("*ISO")
+    [
+        "*JUL", "*MDY", "*DMY", "*YMD", "*USA", "*ISO", "*EUR", "*JIS",
+    ]
+    .get(usize::from(code))
+    .copied()
+    .unwrap_or("*ISO")
 }
 
 fn time_format(code: u8) -> &'static str {
-    ["*HMS", "*USA", "*ISO", "*EUR", "*JIS"].get(usize::from(code)).copied().unwrap_or("*HMS")
+    ["*HMS", "*USA", "*ISO", "*EUR", "*JIS"]
+        .get(usize::from(code))
+        .copied()
+        .unwrap_or("*HMS")
 }
 
 fn sep(b: u8) -> Value {
@@ -214,19 +243,30 @@ struct Pkg {
 
 /// Every package of every library.
 fn packages(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Pkg>> {
-    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     libs.insert(0, ctx.qsys);
     let mut out = Vec::new();
     for lib in libs {
-        let Ok(objs) = ops::list(txn, lib, Some(sqlpkg::SQLPKG)) else { continue };
+        let Ok(objs) = ops::list(txn, lib, Some(sqlpkg::SQLPKG)) else {
+            continue;
+        };
         if objs.is_empty() {
             continue;
         }
         let schema = crate::exec::names::schema_name(txn, lib);
-        let lname = ops::read_header(txn, lib).map(|(_, h)| h.name.to_string()).unwrap_or_default();
+        let lname = ops::read_header(txn, lib)
+            .map(|(_, h)| h.name.to_string())
+            .unwrap_or_default();
         for (_, id) in objs {
-            let Ok((_, h)) = ops::read_header(txn, id) else { continue };
-            let Ok(pkg) = sqlpkg::load(txn, id) else { continue };
+            let Ok((_, h)) = ops::read_header(txn, id) else {
+                continue;
+            };
+            let Ok(pkg) = sqlpkg::load(txn, id) else {
+                continue;
+            };
             out.push(Pkg {
                 schema: schema.clone(),
                 lib: lname.clone(),
@@ -251,7 +291,11 @@ fn or_null(v: &str) -> Value {
 fn package_row(p: &Pkg) -> Row {
     let a = &p.package.attr;
     let extended = a.kind == PkgKind::Extended;
-    let creator = if p.creator.is_empty() { p.owner.clone() } else { p.creator.clone() };
+    let creator = if p.creator.is_empty() {
+        p.owner.clone()
+    } else {
+        p.creator.clone()
+    };
     vec![
         // The program that made it: the host server's for extended dynamic.
         if extended { s("QSQPRCED") } else { Value::Null },
@@ -272,7 +316,11 @@ fn package_row(p: &Pkg) -> Row {
         Value::Bin(a.token.to_be_bytes().to_vec()),
         ten(&p.name),
         ten(&p.lib),
-        if a.default_collection.is_empty() { Value::Null } else { ten(&a.default_collection) },
+        if a.default_collection.is_empty() {
+            Value::Null
+        } else {
+            ten(&a.default_collection)
+        },
         Value::Null,
         Value::Null,
         int(0),
@@ -283,8 +331,17 @@ fn package_row(p: &Pkg) -> Row {
 
 fn stat_row(p: &Pkg) -> Row {
     let a = &p.package.attr;
-    let size: usize = 64 + p.package.stmts.iter().map(|x| x.encode().len()).sum::<usize>();
-    let creator = if p.creator.is_empty() { p.owner.clone() } else { p.creator.clone() };
+    let size: usize = 64
+        + p.package
+            .stmts
+            .iter()
+            .map(|x| x.encode().len())
+            .sum::<usize>();
+    let creator = if p.creator.is_empty() {
+        p.owner.clone()
+    } else {
+        p.creator.clone()
+    };
     let mut r = vec![
         s(p.schema.clone()),
         s(p.name.clone()),
@@ -296,7 +353,11 @@ fn stat_row(p: &Pkg) -> Row {
         Value::Null,
         Value::Null,
         s("NO"),
-        s(if a.kind == PkgKind::Extended { "EXTENDED DYNAMIC" } else { "DISTRIBUTED" }),
+        s(if a.kind == PkgKind::Extended {
+            "EXTENDED DYNAMIC"
+        } else {
+            "DISTRIBUTED"
+        }),
         int(i64::try_from(p.package.stmts.len()).unwrap_or(i64::MAX)),
         int(i64::try_from(size).unwrap_or(i64::MAX)),
         int(0),
@@ -318,9 +379,21 @@ fn stat_row(p: &Pkg) -> Row {
     // DYNAMIC_DEFAULT_SCHEMA to SQLPATH: options a package does not keep.
     r.extend(std::iter::repeat_n(Value::Null, 17));
     r.extend([
-        if p.last_used == 0 { Value::Null } else { stamp(p.last_used) },
-        if p.last_used == 0 { Value::Null } else { int(p.days_used) },
-        if p.reset == 0 { Value::Null } else { stamp(p.reset) },
+        if p.last_used == 0 {
+            Value::Null
+        } else {
+            stamp(p.last_used)
+        },
+        if p.last_used == 0 {
+            Value::Null
+        } else {
+            int(p.days_used)
+        },
+        if p.reset == 0 {
+            Value::Null
+        } else {
+            stamp(p.reset)
+        },
         ten(&p.name),
         ten(&p.lib),
         int(0),
@@ -329,14 +402,25 @@ fn stat_row(p: &Pkg) -> Row {
 }
 
 /// The rows and columns, or `None` when `name` is not one of these.
-pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str) -> Result<Option<Table>> {
+pub fn virtual_table(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    alias: &str,
+) -> Result<Option<Table>> {
     if !has(name) {
         return Ok(None);
     }
     let stat = name.name.value == "SYSPACKAGESTAT";
     let defs = if stat { STAT_COLS } else { PACKAGE_COLS };
-    let cols = defs.iter().map(|(n, t, null)| col(alias, n, *t, *null)).collect();
-    let rows = packages(txn, ctx)?.iter().map(|p| if stat { stat_row(p) } else { package_row(p) }).collect();
+    let cols = defs
+        .iter()
+        .map(|(n, t, null)| col(alias, n, *t, *null))
+        .collect();
+    let rows = packages(txn, ctx)?
+        .iter()
+        .map(|p| if stat { stat_row(p) } else { package_row(p) })
+        .collect();
     Ok(Some((Schema { cols }, rows)))
 }
 

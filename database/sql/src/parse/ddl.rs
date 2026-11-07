@@ -6,8 +6,8 @@
 
 use super::Parser;
 use crate::ast::{
-    ColumnDef, ColumnDefault, CreateIndex, CreateTable, CreateView, Ident, Label, LabelTarget, Rename,
-    Statement,
+    ColumnDef, ColumnDefault, CreateIndex, CreateTable, CreateView, Ident, Label, LabelTarget,
+    Rename, Statement,
 };
 use crate::error::{Result, SqlError};
 use crate::lex::Tok;
@@ -277,7 +277,12 @@ impl Parser {
         }
     }
 
-    fn create_index(&mut self, unique: bool, where_not_null: bool, encoded_vector: bool) -> Result<Statement> {
+    fn create_index(
+        &mut self,
+        unique: bool,
+        where_not_null: bool,
+        encoded_vector: bool,
+    ) -> Result<Statement> {
         let name = self.object_name()?;
         self.expect_word("ON")?;
         let table = self.object_name()?;
@@ -285,10 +290,14 @@ impl Parser {
         let mut columns = Vec::new();
         loop {
             // A key is a column; an expression key is a derived-key index.
-            if !matches!(self.tok_at(1), Tok::Sym("," | ")") | Tok::Word(_)) || self.is_word_at(1, "AS") {
+            if !matches!(self.tok_at(1), Tok::Sym("," | ")") | Tok::Word(_))
+                || self.is_word_at(1, "AS")
+            {
                 // BLOCKED(rel): derived keys need key expressions in the
                 // database's access paths.
-                return Err(Self::unsupported("an expression as an index key (derived-key indexes)"));
+                return Err(Self::unsupported(
+                    "an expression as an index key (derived-key indexes)",
+                ));
             }
             let c = self.ident()?;
             let desc = if self.eat_word("DESC") {
@@ -298,7 +307,9 @@ impl Parser {
                 false
             };
             if !self.is_sym(",") && !self.is_sym(")") {
-                return Err(Self::unsupported("an expression as an index key (derived-key indexes)"));
+                return Err(Self::unsupported(
+                    "an expression as an index key (derived-key indexes)",
+                ));
             }
             columns.push((c, desc));
             if !self.eat_sym(",") {
@@ -320,7 +331,11 @@ impl Parser {
                 // a size Db2 for i does not take is `SQL1583`.
                 let n = self.integer()?;
                 if ![8, 16, 32, 64, 128, 256, 512].contains(&n) {
-                    return Err(SqlError::Coded { code: -1583, state: "428DE", what: format!("PAGESIZE {n} is not a page size an index can have") });
+                    return Err(SqlError::Coded {
+                        code: -1583,
+                        state: "428DE",
+                        what: format!("PAGESIZE {n} is not a page size an index can have"),
+                    });
                 }
             } else if encoded_vector && self.eat_word("INCLUDE") {
                 self.expect_sym("(")?;
@@ -358,7 +373,11 @@ impl Parser {
 
     fn create_view(&mut self, replace: bool) -> Result<Statement> {
         let name = self.object_name()?;
-        let system_name = if self.eat_words(&["FOR", "SYSTEM", "NAME"]) { Some(self.ident()?) } else { None };
+        let system_name = if self.eat_words(&["FOR", "SYSTEM", "NAME"]) {
+            Some(self.ident()?)
+        } else {
+            None
+        };
         let columns = if self.is_sym("(") {
             self.ident_list()?
         } else {
@@ -377,7 +396,11 @@ impl Parser {
             self.expect_words(&["CHECK", "OPTION"])?;
             check_option = true;
         }
-        let rcdfmt = if self.eat_word("RCDFMT") { Some(self.ident()?) } else { None };
+        let rcdfmt = if self.eat_word("RCDFMT") {
+            Some(self.ident()?)
+        } else {
+            None
+        };
         Ok(Statement::CreateView(CreateView {
             name,
             columns,
@@ -393,7 +416,11 @@ impl Parser {
 
     pub(crate) fn drop(&mut self) -> Result<Statement> {
         self.expect_word("DROP")?;
-        if self.is_word("PROCEDURE") || self.is_word("FUNCTION") || self.is_word("SPECIFIC") || self.is_word("ROUTINE") {
+        if self.is_word("PROCEDURE")
+            || self.is_word("FUNCTION")
+            || self.is_word("SPECIFIC")
+            || self.is_word("ROUTINE")
+        {
             return self.drop_routine();
         }
         let Tok::Word(kind) = self.tok().clone() else {
@@ -404,7 +431,11 @@ impl Parser {
             let name = self.ident()?;
             let cascade = self.eat_word("CASCADE");
             let restrict = !cascade && self.eat_word("RESTRICT");
-            return Ok(Statement::DropSchema { name, cascade, restrict });
+            return Ok(Statement::DropSchema {
+                name,
+                cascade,
+                restrict,
+            });
         }
         let name = self.object_name()?;
         let behaviour = |p: &mut Self| {
@@ -415,11 +446,19 @@ impl Parser {
         match kind.as_str() {
             "TABLE" => {
                 let (cascade, restrict) = behaviour(self);
-                Ok(Statement::DropTable { name, cascade, restrict })
+                Ok(Statement::DropTable {
+                    name,
+                    cascade,
+                    restrict,
+                })
             }
             "VIEW" => {
                 let (cascade, restrict) = behaviour(self);
-                Ok(Statement::DropView { name, cascade, restrict })
+                Ok(Statement::DropView {
+                    name,
+                    cascade,
+                    restrict,
+                })
             }
             "INDEX" => Ok(Statement::DropIndex(name)),
             "ALIAS" => Ok(Statement::DropAlias(name)),
@@ -470,13 +509,21 @@ impl Parser {
             l.target = LabelTarget::Trigger(self.object_name()?);
             self.expect_word("IS")?;
             l.text = Some(self.string()?);
-            return Ok(if comment { Statement::CommentOn(l) } else { Statement::LabelOn(l) });
+            return Ok(if comment {
+                Statement::CommentOn(l)
+            } else {
+                Statement::LabelOn(l)
+            });
         }
         if !list && self.eat_word("SEQUENCE") {
             l.target = LabelTarget::Sequence(self.object_name()?);
             self.expect_word("IS")?;
             l.text = Some(self.string()?);
-            return Ok(if comment { Statement::CommentOn(l) } else { Statement::LabelOn(l) });
+            return Ok(if comment {
+                Statement::CommentOn(l)
+            } else {
+                Statement::LabelOn(l)
+            });
         }
         let is_table = list || self.eat_word("TABLE") || self.eat_word("VIEW");
         let is_index = !is_table && self.eat_word("INDEX");

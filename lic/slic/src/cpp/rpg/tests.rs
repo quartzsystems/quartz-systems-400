@@ -129,15 +129,25 @@ fn crtrpgmod_and_crtsqlrpgi_shapes() {
 fn crtsqlrpgi_precompile_options() {
     let r = request("CRTSQLRPGI", &parms("CRTSQLRPGI OBJ(QGPL/S1)")).unwrap();
     let o = r.sqlopts.clone().expect("SQL options");
-    assert_eq!((o.commit.as_str(), o.naming.as_str(), o.closqlcsr.as_str()), ("*CHG", "*SYS", "*ENDACTGRP"));
+    assert_eq!(
+        (o.commit.as_str(), o.naming.as_str(), o.closqlcsr.as_str()),
+        ("*CHG", "*SYS", "*ENDACTGRP")
+    );
     let r = request(
         "CRTSQLRPGI",
-        &parms("CRTSQLRPGI OBJ(QGPL/S1) COMMIT(*NONE) OPTION(*SQL) CLOSQLCSR(*ENDMOD) DATFMT(*ISO)"),
+        &parms(
+            "CRTSQLRPGI OBJ(QGPL/S1) COMMIT(*NONE) OPTION(*SQL) CLOSQLCSR(*ENDMOD) DATFMT(*ISO)",
+        ),
     )
     .unwrap();
     let o = r.sqlopts.clone().expect("SQL options");
     assert_eq!(
-        (o.commit.as_str(), o.naming.as_str(), o.closqlcsr.as_str(), o.datfmt.as_str()),
+        (
+            o.commit.as_str(),
+            o.naming.as_str(),
+            o.closqlcsr.as_str(),
+            o.datfmt.as_str()
+        ),
         ("*NONE", "*SQL", "*ENDMOD", "*ISO")
     );
     assert!(r.options("S1", "QGPL", &source(&[])).sql.is_some());
@@ -153,15 +163,32 @@ fn embedded_sql_precompiles_and_fails_as_sql9001() {
         "exec sql values 6 * 7 into :n;",
         "*inlr = *on;",
     ]);
-    let req = request("CRTSQLRPGI", &parms("CRTSQLRPGI OBJ(QGPL/HELLO) COMMIT(*NONE)")).unwrap();
+    let req = request(
+        "CRTSQLRPGI",
+        &parms("CRTSQLRPGI OBJ(QGPL/HELLO) COMMIT(*NONE)"),
+    )
+    .unwrap();
     let opts = req.options("HELLO", "QGPL", &ok);
-    let c = rpgc::compile(ok.member.clone(), &mut rpgfront::NoIncludes, &mut rpgc::NoExtFiles, &opts);
+    let c = rpgc::compile(
+        ok.member.clone(),
+        &mut rpgfront::NoIncludes,
+        &mut rpgc::NoExtFiles,
+        &opts,
+    );
     assert!(c.created && !c.sql_failed, "{:?}", c.diags);
     assert!(c.qir.contains("_QRNX_SQLRUN"));
     let bad = source(&["**FREE", "exec sql values 1 into :nosuch;", "*inlr = *on;"]);
-    let c = rpgc::compile(bad.member.clone(), &mut rpgfront::NoIncludes, &mut rpgc::NoExtFiles, &opts);
+    let c = rpgc::compile(
+        bad.member.clone(),
+        &mut rpgfront::NoIncludes,
+        &mut rpgc::NoExtFiles,
+        &opts,
+    );
     assert!(!c.created && c.sql_failed);
-    assert_eq!(c.diags.iter().map(|d| d.msgid).collect::<Vec<_>>(), vec!["SQL0312"]);
+    assert_eq!(
+        c.diags.iter().map(|d| d.msgid).collect::<Vec<_>>(),
+        vec!["SQL0312"]
+    );
 }
 
 #[test]
@@ -235,7 +262,11 @@ fn a_compiled_member_becomes_a_module_and_a_program() {
         "  return n * n;",
         "end-proc;",
     ]);
-    let req = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(QGPL/HELLO) SRCFILE(QGPL/QRPGLESRC)")).unwrap();
+    let req = request(
+        "CRTBNDRPG",
+        &parms("CRTBNDRPG PGM(QGPL/HELLO) SRCFILE(QGPL/QRPGLESRC)"),
+    )
+    .unwrap();
     let opts = req.options("HELLO", "QGPL", &src);
     let compiled = rpgc::compile(
         src.member.clone(),
@@ -365,13 +396,27 @@ fn a_dds_printer_file_describes_its_formats() {
         now: NOW,
     };
     let rpt = Name::parse("RPT").unwrap();
-    wm::obj::create_attr(&mut txn, lib, (rpt, types::FILE, "PRTF"), "", &stamp, &prtf.encode())
-        .unwrap();
+    wm::obj::create_attr(
+        &mut txn,
+        lib,
+        (rpt, types::FILE, "PRTF"),
+        "",
+        &stamp,
+        &prtf.encode(),
+    )
+    .unwrap();
     // A program-described one has no formats.
     let plain = Name::parse("PLAIN").unwrap();
     let encoded = wm::obj::prtf::Prtf::default().encode();
-    wm::obj::create_attr(&mut txn, lib, (plain, types::FILE, "PRTF"), "", &stamp, &encoded)
-        .unwrap();
+    wm::obj::create_attr(
+        &mut txn,
+        lib,
+        (plain, types::FILE, "PRTF"),
+        "",
+        &stamp,
+        &encoded,
+    )
+    .unwrap();
     let names = NameContext {
         curlib: Some(lib),
         libl: vec![qsys, lib],
@@ -381,12 +426,19 @@ fn a_dds_printer_file_describes_its_formats() {
     let ext = super::source::device_in(&mut txn, qsys, &names, "*LIBL", "RPT")
         .unwrap()
         .expect("a printer file");
-    assert_eq!((ext.dev, ext.lib.as_str()), (rpgc::files::Dev::Printer, "QGPL"));
+    assert_eq!(
+        (ext.dev, ext.lib.as_str()),
+        (rpgc::files::Dev::Printer, "QGPL")
+    );
     let names: Vec<&str> = ext.formats.iter().map(|f| f.name.as_str()).collect();
     assert_eq!(names, ["HDR", "DTL"]);
     // DTL's buffer: indicator 50, then DNUM and DNAME.
     let dtl = &ext.formats[1];
-    let fields: Vec<(&str, u32)> = dtl.fields.iter().map(|f| (f.name.as_str(), f.offset)).collect();
+    let fields: Vec<(&str, u32)> = dtl
+        .fields
+        .iter()
+        .map(|f| (f.name.as_str(), f.offset))
+        .collect();
     assert_eq!(fields, [("DNUM", 1), ("DNAME", 6)]);
     assert_eq!(dtl.len, 26);
     assert_eq!(dtl.dsp.as_ref().unwrap().option_inds, [50]);
@@ -405,9 +457,18 @@ fn a_dds_printer_file_describes_its_formats() {
     ]);
     let req = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(QGPL/HELLO)")).unwrap();
     let opts = req.options("HELLO", "QGPL", &rpg);
-    let c = rpgc::compile(rpg.member.clone(), &mut rpgfront::NoIncludes, &mut OneFile(ext), &opts);
+    let c = rpgc::compile(
+        rpg.member.clone(),
+        &mut rpgfront::NoIncludes,
+        &mut OneFile(ext),
+        &opts,
+    );
     assert!(c.created, "{:?}", c.diags);
-    assert!(c.qir.contains("prtio") && c.qir.contains("fmt(DTL)"), "{}", c.qir);
+    assert!(
+        c.qir.contains("prtio") && c.qir.contains("fmt(DTL)"),
+        "{}",
+        c.qir
+    );
 }
 
 /// `/COPY` of stream files through an IFS client, as the service's
@@ -445,7 +506,11 @@ fn srcstmf_incdir_and_infostmf_are_parameters() {
         member: crate::cpp::stmf::member_of("/home/QSTEST/x.rpgle", "**FREE"),
         text: String::new(),
     };
-    assert_eq!(r.object_name(&src), "X", "the stream file names the program");
+    assert_eq!(
+        r.object_name(&src),
+        "X",
+        "the stream file names the program"
+    );
     let e = request(
         "CRTBNDRPG",
         &parms("CRTBNDRPG PGM(QGPL/X) SRCFILE(QGPL/QRPGLESRC) SRCSTMF('/a.rpgle')"),
@@ -462,18 +527,38 @@ fn an_rpg_program_from_a_stream_file_with_copy_and_incdir() {
     c.mkdir("/home/QSTEST/inc", 0o755).unwrap();
     c.mkdir("/home/QSTEST/src", 0o755).unwrap();
     // The same name in INCDIR and in the source's directory: INCDIR first.
-    put(&c, "/home/QSTEST/inc/protos.rpgleinc", "**FREE
-dcl-s fromInc int(10) inz(1);");
-    put(&c, "/home/QSTEST/src/protos.rpgleinc", "**FREE
-dcl-s fromSrc int(10) inz(2);");
+    put(
+        &c,
+        "/home/QSTEST/inc/protos.rpgleinc",
+        "**FREE
+dcl-s fromInc int(10) inz(1);",
+    );
+    put(
+        &c,
+        "/home/QSTEST/src/protos.rpgleinc",
+        "**FREE
+dcl-s fromSrc int(10) inz(2);",
+    );
     // Only in the source's directory.
-    put(&c, "/home/QSTEST/src/more.rpgleinc", "**FREE
-dcl-s more int(10) inz(3);");
+    put(
+        &c,
+        "/home/QSTEST/src/more.rpgleinc",
+        "**FREE
+dcl-s more int(10) inz(3);",
+    );
     // In the current directory: before INCDIR.
-    put(&c, "/home/QSTEST/cwd.rpgleinc", "**FREE
-dcl-s fromCwd int(10) inz(4);");
-    put(&c, "/home/QSTEST/inc/cwd.rpgleinc", "**FREE
-dcl-s wrong int(10);");
+    put(
+        &c,
+        "/home/QSTEST/cwd.rpgleinc",
+        "**FREE
+dcl-s fromCwd int(10) inz(4);",
+    );
+    put(
+        &c,
+        "/home/QSTEST/inc/cwd.rpgleinc",
+        "**FREE
+dcl-s wrong int(10);",
+    );
     put(
         &c,
         "/home/QSTEST/src/x.rpgle",
@@ -498,7 +583,12 @@ dcl-s wrong int(10);");
     };
     let compiled = rpgc::compile(src.member.clone(), &mut inc, &mut rpgc::NoExtFiles, &opts);
     assert!(compiled.created, "{:?}", compiled.diags);
-    let names: Vec<&str> = compiled.read.members.iter().map(|m| m.name.as_str()).collect();
+    let names: Vec<&str> = compiled
+        .read
+        .members
+        .iter()
+        .map(|m| m.name.as_str())
+        .collect();
     assert_eq!(
         names,
         [
@@ -509,18 +599,31 @@ dcl-s wrong int(10);");
         ]
     );
     // A name no directory has is RNF0264-style: not found.
-    put(&c, "/home/QSTEST/src/y.rpgle", "**FREE\n/copy nowhere.rpgleinc\n*inlr = *on;\n");
+    put(
+        &c,
+        "/home/QSTEST/src/y.rpgle",
+        "**FREE\n/copy nowhere.rpgleinc\n*inlr = *on;\n",
+    );
     let text = crate::cpp::stmf::read_text(&c, "/home/QSTEST/src/y.rpgle").unwrap();
     let y = crate::cpp::stmf::member_of("/home/QSTEST/src/y.rpgle", &text);
     let compiled = rpgc::compile(y, &mut inc, &mut rpgc::NoExtFiles, &opts);
     assert!(!compiled.created);
     // A member-form name in a stream file is still a member.
-    put(&c, "/home/QSTEST/src/z.rpgle", "**FREE\n/copy QRPGLESRC,PROTOS\n*inlr = *on;\n");
+    put(
+        &c,
+        "/home/QSTEST/src/z.rpgle",
+        "**FREE\n/copy QRPGLESRC,PROTOS\n*inlr = *on;\n",
+    );
     let text = crate::cpp::stmf::read_text(&c, "/home/QSTEST/src/z.rpgle").unwrap();
     let z = crate::cpp::stmf::member_of("/home/QSTEST/src/z.rpgle", &text);
     let mut mem = rpgfront::MemIncludes {
-        members: vec![rpgfront::Member::from_text("QSTEST", "QRPGLESRC", "PROTOS", "**FREE
-dcl-s m int(10);")],
+        members: vec![rpgfront::Member::from_text(
+            "QSTEST",
+            "QRPGLESRC",
+            "PROTOS",
+            "**FREE
+dcl-s m int(10);",
+        )],
     };
     let compiled = rpgc::compile(z, &mut mem, &mut rpgc::NoExtFiles, &opts);
     assert!(compiled.created, "{:?}", compiled.diags);
@@ -532,7 +635,11 @@ fn a_cl_program_from_a_stream_file() {
     use ifs::client::IfsClient as _;
     let sys = sysapi::ifs::memory::MemIfs::new();
     let c = sys.client("QSTEST", 6, 37);
-    put(&c, "/home/QSTEST/hello.clle", "PGM\r\n  DCL VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(1)\r\nENDPGM\r\n");
+    put(
+        &c,
+        "/home/QSTEST/hello.clle",
+        "PGM\r\n  DCL VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(1)\r\nENDPGM\r\n",
+    );
     let source = crate::cpp::stmf::read_text(&c, "/home/QSTEST/hello.clle").unwrap();
     let mut mem = cmd::analyze::MemSource::default();
     for n in ["PGM", "DCL", "ENDPGM"] {
@@ -546,7 +653,12 @@ fn a_cl_program_from_a_stream_file() {
         name: "HELLO".into(),
         ..cl::Options::default()
     };
-    let compiled = cl::compile(&source.replace("\r\n", "\n"), &opts, &mut env, &mut cl::NoFiles);
+    let compiled = cl::compile(
+        &source.replace("\r\n", "\n"),
+        &opts,
+        &mut env,
+        &mut cl::NoFiles,
+    );
     assert!(compiled.created, "{:?}", compiled.diags);
     let st = c.stat("/home/QSTEST/hello.clle", true).unwrap();
     assert_eq!(st.ccsid, 1208, "write_text tags 1208");
@@ -561,8 +673,16 @@ fn an_rpg3_member_becomes_a_program() {
             "OLD",
             &[
                 (100, 0, "     H".into()),
-                (200, 0, "     C                     Z-ADD5         N       30".into()),
-                (300, 0, "     C                     SETON                     LR".into()),
+                (
+                    200,
+                    0,
+                    "     C                     Z-ADD5         N       30".into(),
+                ),
+                (
+                    300,
+                    0,
+                    "     C                     SETON                     LR".into(),
+                ),
             ],
         ),
         text: String::new(),
@@ -572,10 +692,21 @@ fn an_rpg3_member_becomes_a_program() {
         src: ("QGPL".into(), "QRPGSRC".into(), "OLD".into()),
         ..rpg3::Options::default()
     };
-    let c = rpg3::compile(&src.member, &mut rpgfront::NoIncludes, &mut rpgc::NoExtFiles, &o);
+    let c = rpg3::compile(
+        &src.member,
+        &mut rpgfront::NoIncludes,
+        &mut rpgc::NoExtFiles,
+        &o,
+    );
     assert!(c.created, "{:?}", c.diags);
     // N is set and never used: RPG/400's unreferenced name.
-    assert!(c.diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == 200), "{:?}", c.diags);
+    assert!(
+        c.diags
+            .iter()
+            .any(|d| d.msgid == "QRG7031" && d.stmt == 200),
+        "{:?}",
+        c.diags
+    );
     let (mut store, qsys, lib) = open_new();
     let ctx = Ctx {
         qsys,
@@ -597,7 +728,20 @@ fn an_rpg3_member_becomes_a_program() {
         source: None,
     };
     let mut txn = store.begin().unwrap();
-    make(&mut txn, &ctx, lib, &made, &c.inner.qir, CreateData::default(), NOW).unwrap();
+    make(
+        &mut txn,
+        &ctx,
+        lib,
+        &made,
+        &c.inner.qir,
+        CreateData::default(),
+        NOW,
+    )
+    .unwrap();
     let qgpl = Library::load(&mut txn, lib).unwrap();
-    assert!(qgpl.lookup(&mut txn, types::PGM, Name::parse("OLD").unwrap()).unwrap().is_some());
+    assert!(
+        qgpl.lookup(&mut txn, types::PGM, Name::parse("OLD").unwrap())
+            .unwrap()
+            .is_some()
+    );
 }

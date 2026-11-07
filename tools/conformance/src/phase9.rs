@@ -82,19 +82,35 @@ impl Suite {
     pub(crate) fn rpg_program(&self, s: &mut Session) -> Result<String, String> {
         secofr_command_entry(s)?;
         entry_wait(s, "crtlib LIB(RPGTEST)", has(&["RPGTEST", "created"]))?;
-        entry_wait(s, "crtsrcpf FILE(RPGTEST/QRPGLESRC) RCDLEN(112)", has(&["QRPGLESRC", "created"]))?;
+        entry_wait(
+            s,
+            "crtsrcpf FILE(RPGTEST/QRPGLESRC) RCDLEN(112)",
+            has(&["QRPGLESRC", "created"]),
+        )?;
         put(s, "RPGHELLO", RPGHELLO)?;
         entry_wait(
             s,
             "crtbndrpg PGM(RPGTEST/RPGHELLO) SRCFILE(RPGTEST/QRPGLESRC)",
             has(&["Program RPGHELLO created"]),
         )?;
-        let called = entry_wait(s, "call RPGTEST/RPGHELLO", has(&["Hello from RPG, total 55 of 10"]))?;
+        let called = entry_wait(
+            s,
+            "call RPGTEST/RPGHELLO",
+            has(&["Hello from RPG, total 55 of 10"]),
+        )?;
         if !called.contains("squared 144") {
             return Err(format!("the subprocedure's line is missing:\n{called}"));
         }
-        put(s, "RPGBAD", "**FREE\ndcl-s a int(10);\na = nosuch;\n*inlr = *on;\n")?;
-        entry_wait(s, "crtbndrpg PGM(RPGTEST/RPGBAD) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Program RPGBAD was not created"]))?;
+        put(
+            s,
+            "RPGBAD",
+            "**FREE\ndcl-s a int(10);\na = nosuch;\n*inlr = *on;\n",
+        )?;
+        entry_wait(
+            s,
+            "crtbndrpg PGM(RPGTEST/RPGBAD) SRCFILE(RPGTEST/QRPGLESRC)",
+            has(&["Program RPGBAD was not created"]),
+        )?;
         sign_off(s)?;
         Ok("CRTBNDRPG compiled RPGHELLO; CALL displayed the loop's total and the subprocedure's result; a member in error was not created".into())
     }
@@ -110,7 +126,11 @@ impl Suite {
             "crtsqlrpgi OBJ(RPGTEST/RPGSQL) SRCFILE(RPGTEST/QRPGLESRC) COMMIT(*NONE)",
             has(&["Program RPGSQL created"]),
         )?;
-        entry_wait(s, "call RPGTEST/RPGSQL", has(&["SQL rows 3 total 19.75 code 0"]))?;
+        entry_wait(
+            s,
+            "call RPGTEST/RPGSQL",
+            has(&["SQL rows 3 total 19.75 code 0"]),
+        )?;
         sign_off(s)?;
         Ok("CRTSQLRPGI built RPGSQL; it made RPGTEST/PARTS, inserted three rows and read the count and sum back with SQLCODE 0".into())
     }
@@ -121,9 +141,21 @@ impl Suite {
         secofr_command_entry(s)?;
         put(s, "RPGSRV", RPGSRV)?;
         put(s, "RPGUSE", RPGUSE)?;
-        entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGSRV) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Module RPGSRV created"]))?;
-        entry_wait(s, "crtsrvpgm SRVPGM(RPGTEST/RPGSRV) MODULE(RPGTEST/RPGSRV) EXPORT(*ALL)", has(&["RPGTEST/RPGSRV created"]))?;
-        entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGUSE) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Module RPGUSE created"]))?;
+        entry_wait(
+            s,
+            "crtrpgmod MODULE(RPGTEST/RPGSRV) SRCFILE(RPGTEST/QRPGLESRC)",
+            has(&["Module RPGSRV created"]),
+        )?;
+        entry_wait(
+            s,
+            "crtsrvpgm SRVPGM(RPGTEST/RPGSRV) MODULE(RPGTEST/RPGSRV) EXPORT(*ALL)",
+            has(&["RPGTEST/RPGSRV created"]),
+        )?;
+        entry_wait(
+            s,
+            "crtrpgmod MODULE(RPGTEST/RPGUSE) SRCFILE(RPGTEST/QRPGLESRC)",
+            has(&["Module RPGUSE created"]),
+        )?;
         entry_wait(
             s,
             "crtpgm RPGTEST/RPGUSE MODULE(RPGTEST/RPGUSE) BNDSRVPGM(RPGTEST/RPGSRV)",
@@ -139,7 +171,10 @@ impl Suite {
 fn put(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
     let buf = format!("{name}SRC");
     crate::qir::qemu::push(s, &buf, text)?;
-    let r = s.command(&format!("svc.srcput RPGTEST/QRPGLESRC {name} SRCTYPE(RPGLE) FROMSTMF({buf})"), CMD)?;
+    let r = s.command(
+        &format!("svc.srcput RPGTEST/QRPGLESRC {name} SRCTYPE(RPGLE) FROMSTMF({buf})"),
+        CMD,
+    )?;
     if !r.contains("written") {
         return Err(format!("srcput {name}: {r}"));
     }

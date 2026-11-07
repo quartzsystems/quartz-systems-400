@@ -103,7 +103,11 @@ impl Writer {
 
 fn len_code(len: u16) -> (usize, u32, u32) {
     let i = LEN_BASE.iter().rposition(|&b| b <= len).expect("length");
-    (257 + i, u32::from(LEN_EXTRA[i]), u32::from(len - LEN_BASE[i]))
+    (
+        257 + i,
+        u32::from(LEN_EXTRA[i]),
+        u32::from(len - LEN_BASE[i]),
+    )
 }
 
 fn dist_code(d: u16) -> (usize, u32, u32) {
@@ -302,7 +306,10 @@ fn block(w: &mut Writer, data: &[u8], toks: &[(Tok, usize)], span: (usize, usize
     }
     let ll = lengths(&lf, 15);
     let dl = lengths(&df, 15);
-    let nlen = ll.iter().rposition(|&x| x > 0).map_or(257, |p| (p + 1).max(257));
+    let nlen = ll
+        .iter()
+        .rposition(|&x| x > 0)
+        .map_or(257, |p| (p + 1).max(257));
     let ndist = dl.iter().rposition(|&x| x > 0).map_or(1, |p| p + 1);
     let mut all = ll[..nlen].to_vec();
     all.extend_from_slice(&dl[..ndist]);
@@ -312,7 +319,10 @@ fn block(w: &mut Writer, data: &[u8], toks: &[(Tok, usize)], span: (usize, usize
         cf[*s as usize] += 1;
     }
     let cl = lengths(&cf, 7);
-    let ncode = CL_ORDER.iter().rposition(|&i| cl[i] > 0).map_or(4, |p| (p + 1).max(4));
+    let ncode = CL_ORDER
+        .iter()
+        .rposition(|&i| cl[i] > 0)
+        .map_or(4, |p| (p + 1).max(4));
     let header: u64 = 14
         + 3 * ncode as u64
         + runs
@@ -390,7 +400,9 @@ pub fn deflate(data: &[u8]) -> Vec<u8> {
     let n = toks.len().div_ceil(BLOCK_TOKENS);
     for (bi, chunk) in toks.chunks(BLOCK_TOKENS).enumerate() {
         let start = chunk[0].1;
-        let end = toks.get((bi + 1) * BLOCK_TOKENS).map_or(data.len(), |t| t.1);
+        let end = toks
+            .get((bi + 1) * BLOCK_TOKENS)
+            .map_or(data.len(), |t| t.1);
         block(&mut w, data, chunk, (start, end), bi + 1 == n);
     }
     w.align();

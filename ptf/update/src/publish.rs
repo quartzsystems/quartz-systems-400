@@ -13,8 +13,8 @@ use ptf::group::Group;
 use ptf::header::PtfKind as HeaderKind;
 use sha2::{Digest, Sha256};
 
-use crate::catalog::{Catalog, CatalogGroup, CatalogPtf, FORMAT, GroupKind, Product, PtfKind};
 use crate::Result;
+use crate::catalog::{Catalog, CatalogGroup, CatalogPtf, FORMAT, GroupKind, Product, PtfKind};
 
 /// A group to publish.
 #[derive(Debug, Clone, PartialEq, Eq)]

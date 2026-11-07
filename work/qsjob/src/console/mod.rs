@@ -9,12 +9,12 @@
 //! produced goes back with the prompt to show next. `svc.` lines reach
 //! the service's own console table; in SQL mode every line does.
 
+pub mod clisrv;
 mod debug;
 pub mod drda;
 pub mod host;
 pub mod jobcmd;
 pub mod log;
-pub mod clisrv;
 pub mod sqlcall;
 
 use std::cell::RefCell;
@@ -327,8 +327,14 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     job.ident.user.clone_from(&host.start.user);
     job.ident.number = format!("{:06}", host.start.number);
     job.data = Some(Box::new(s.data));
-    job.io = Some(Box::new(crate::work::ddm::requester::DdmIo::new(s.io, link.clone())));
-    job.sql = Some(Box::new(drda::Routing::new(stg::remote::RemoteSql::new(link.clone()), link.clone())));
+    job.io = Some(Box::new(crate::work::ddm::requester::DdmIo::new(
+        s.io,
+        link.clone(),
+    )));
+    job.sql = Some(Box::new(drda::Routing::new(
+        stg::remote::RemoteSql::new(link.clone()),
+        link.clone(),
+    )));
     // Programs run on this process's main thread; its guard page
     // (`platform::stack`) catches a runaway recursion, so the runtime's
     // own budget never fires first.
@@ -364,12 +370,17 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     sysapi::ifs::configure(&mut job, Rc::new(s.ifs), ccsid);
     // QtmmSendMail hands its file to the mail router from here.
     let mail_link = link.clone();
-    sysapi::mail::set_mailer(Some(Rc::new(move |req| crate::command::netcmd::qtmm(&mail_link, req))));
+    sysapi::mail::set_mailer(Some(Rc::new(move |req| {
+        crate::command::netcmd::qtmm(&mail_link, req)
+    })));
     // Programs compiled from RPG call its runtime library.
     qrpgrt::install(&mut job);
     // The SQL CLI; its server-mode connections go to QSQSRVR jobs.
     sqlcli::install(&mut job);
-    sqlcli::server::set_connector(Some(clisrv::connector(link, crate::work::hostsvr::daemon::internal_id(&host.start))));
+    sqlcli::server::set_connector(Some(clisrv::connector(
+        link,
+        crate::work::hostsvr::daemon::internal_id(&host.start),
+    )));
     // Domain and state are enforced at the level of this IPL.
     job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
     let ctl = host.ctl.clone();

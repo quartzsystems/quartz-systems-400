@@ -7,8 +7,8 @@
 //! position to, `+n`/`-n` to roll. Each command has its short form
 //! (`F`, `C`, `T`, `B`, `CAN`).
 
-use uim::engine::LineMsg;
 use crate::find::{Direction, Scope};
+use uim::engine::LineMsg;
 
 /// One `SET` option.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -228,7 +228,11 @@ pub fn parse(line: &str) -> Result<Option<Command>, CmdError> {
         } else {
             n.parse().map_err(|_| CmdError::Unknown(verb.clone()))?
         };
-        return Ok(Some(Command::Roll(if verb.starts_with('-') { -v } else { v })));
+        return Ok(Some(Command::Roll(if verb.starts_with('-') {
+            -v
+        } else {
+            v
+        })));
     }
     if verb.chars().all(|c| c.is_ascii_digit() || c == '.') {
         let seq = crate::parse_seq(&verb).ok_or_else(|| CmdError::Unknown(verb.clone()))?;
@@ -306,7 +310,10 @@ mod tests {
             panic!()
         };
         assert_eq!(s.what, "two words");
-        assert_eq!((s.dir, s.from, s.to), (Direction::Previous, Some(10), Some(20)));
+        assert_eq!(
+            (s.dir, s.from, s.to),
+            (Direction::Previous, Some(10), Some(20))
+        );
         let Some(Command::Find(s)) = parse("F 'it''s' all nx").unwrap() else {
             panic!()
         };
@@ -320,7 +327,10 @@ mod tests {
         let Some(Command::Change(s, new)) = parse("c old new all").unwrap() else {
             panic!()
         };
-        assert_eq!((s.what.as_str(), new.as_str(), s.dir), ("old", "new", Direction::All));
+        assert_eq!(
+            (s.what.as_str(), new.as_str(), s.dir),
+            ("old", "new", Direction::All)
+        );
         assert!(parse("change old").is_err());
     }
 
@@ -334,15 +344,27 @@ mod tests {
         assert_eq!(parse("12.5").unwrap(), Some(Command::Position(1250)));
         assert_eq!(parse("+5").unwrap(), Some(Command::Roll(5)));
         assert_eq!(parse("-").unwrap(), Some(Command::Roll(-1)));
-        assert_eq!(parse("set caps off").unwrap(), Some(Command::Set(SetOpt::Caps(false))));
-        assert_eq!(parse("set roll 5").unwrap(), Some(Command::Set(SetOpt::Roll("5".into()))));
+        assert_eq!(
+            parse("set caps off").unwrap(),
+            Some(Command::Set(SetOpt::Caps(false)))
+        );
+        assert_eq!(
+            parse("set roll 5").unwrap(),
+            Some(Command::Set(SetOpt::Roll("5".into())))
+        );
         assert!(parse("set roll x").is_err());
         assert!(parse("xyz").is_err());
         assert!(parse("top 3").is_err());
         let Some(Command::Save(t)) = parse("save mylib/qclsrc new").unwrap() else {
             panic!()
         };
-        assert_eq!((t.lib.as_str(), t.file.as_str(), t.member.as_str()), ("MYLIB", "QCLSRC", "NEW"));
-        assert_eq!(parse("file").unwrap(), Some(Command::File(SaveTo::default())));
+        assert_eq!(
+            (t.lib.as_str(), t.file.as_str(), t.member.as_str()),
+            ("MYLIB", "QCLSRC", "NEW")
+        );
+        assert_eq!(
+            parse("file").unwrap(),
+            Some(Command::File(SaveTo::default()))
+        );
     }
 }

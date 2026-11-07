@@ -25,12 +25,23 @@ use crate::error::{Result, SqlError};
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Result<()> {
     let table = ctx.resolve_table(txn, &i.table)?;
     if table.desc.attr.kind == FileKind::Logical {
-        return Err(SqlError::Unsupported { what: "an index over a view or another index".into() });
+        return Err(SqlError::Unsupported {
+            what: "an index over a view or another index".into(),
+        });
     }
     let library = ctx.library_for(txn, &i.name)?;
     // An index over a table in `QTEMP` is in `QTEMP` (`SQL0156`).
-    if table.desc.header.library != library && ctx.qtemp_library(txn) == Some(table.desc.header.library) {
-        return Err(SqlError::Coded { code: -156, state: "42809", what: format!("{} is in QTEMP; an index over it must be too", i.table.name.value) });
+    if table.desc.header.library != library
+        && ctx.qtemp_library(txn) == Some(table.desc.header.library)
+    {
+        return Err(SqlError::Coded {
+            code: -156,
+            state: "42809",
+            what: format!(
+                "{} is in QTEMP; an index over it must be too",
+                i.table.name.value
+            ),
+        });
     }
     let (name, sql) = names::new_object(txn, library, &i.name.name, None)?;
     let rcdfmt = match &i.rcdfmt {
@@ -41,37 +52,78 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Resul
     let file_name = table.desc.name();
     let mut lines = Vec::new();
     if i.unique {
-        lines.push(kw(if i.where_not_null { "UNIQUE(*EXCNULL)" } else { "UNIQUE" }));
+        lines.push(kw(if i.where_not_null {
+            "UNIQUE(*EXCNULL)"
+        } else {
+            "UNIQUE"
+        }));
     }
-    lines.push(dds("R", &rcdfmt.to_string(), "", "", "", &format!("PFILE({lib_name}/{file_name})")));
+    lines.push(dds(
+        "R",
+        &rcdfmt.to_string(),
+        "",
+        "",
+        "",
+        &format!("PFILE({lib_name}/{file_name})"),
+    ));
     if rcdfmt != table.format.format.name {
         lines.push(kw(&format!("FORMAT({lib_name}/{file_name})")));
     }
     let mut keys = Vec::with_capacity(i.columns.len());
     for (c, desc) in &i.columns {
         let Some((_, f)) = table.field(&c.value) else {
-            return Err(SqlError::ColumnNotFound { name: c.value.clone() });
+            return Err(SqlError::ColumnNotFound {
+                name: c.value.clone(),
+            });
         };
         if f.data_type.is_lob() {
-            return Err(SqlError::Coded { code: -350, state: "42962", what: format!("the LOB column {} cannot be a key", f.name) });
+            return Err(SqlError::Coded {
+                code: -350,
+                state: "42962",
+                what: format!("the LOB column {} cannot be a key", f.name),
+            });
         }
-        lines.push(dds("K", &f.name.to_string(), "", "", "", if *desc { "DESCEND" } else { "" }));
-        keys.push(IndexKey { expression: false, descend: *desc, text: c.value.clone() });
+        lines.push(dds(
+            "K",
+            &f.name.to_string(),
+            "",
+            "",
+            "",
+            if *desc { "DESCEND" } else { "" },
+        ));
+        keys.push(IndexKey {
+            expression: false,
+            descend: *desc,
+            text: c.value.clone(),
+        });
     }
     if let Some((cond, _)) = &i.sparse {
         // The condition's columns by their system names, as DDS has them.
         let renames = std::collections::HashMap::new();
         let cond = system_columns(cond, &table);
         select_lines(&cond, &mut lines, &renames).map_err(|_| SqlError::Unsupported {
-            what: "a sparse index condition that is not comparisons of columns with constants".into(),
+            what: "a sparse index condition that is not comparisons of columns with constants"
+                .into(),
         })?;
     }
     let mut refs = MapRefs::default();
-    refs.insert(lib_name, file_name, table.desc.formats.iter().map(|f| f.format.clone()).collect());
+    refs.insert(
+        lib_name,
+        file_name,
+        table
+            .desc
+            .formats
+            .iter()
+            .map(|f| f.format.clone())
+            .collect(),
+    );
     let (source, _) = Source::from_text(&lines.join("\n"));
     let comp = compile_lf(&source, &refs, &CompileOpts::default());
     let Some(def) = comp.definition else {
-        return Err(SqlError::Database { what: format!("the index definition does not compile:\n{}", comp.listing), msgid: None });
+        return Err(SqlError::Database {
+            what: format!("the index definition does not compile:\n{}", comp.listing),
+            msgid: None,
+        });
     };
     let id = super::ddl::build_index(txn, ctx, &table, library, name, &def, "")?;
     let mut info = names::record(txn, library, id, Kind::Index, sql.as_deref(), ctx.clock())?;
@@ -79,7 +131,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Resul
         where_not_null: i.where_not_null,
         encoded_vector: i.encoded_vector,
         // IBM keeps the condition with one blank after it.
-        where_text: i.sparse.as_ref().map(|(_, t)| format!("{t} ")).unwrap_or_default(),
+        where_text: i
+            .sparse
+            .as_ref()
+            .map(|(_, t)| format!("{t} "))
+            .unwrap_or_default(),
         keys,
         includes: i.includes.clone(),
     };
@@ -87,7 +143,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Resul
     sqlinf::save(txn, id, &info, ctx.clock())?;
     // The key columns' statistics: now for a table of modest size, else
     // by the collection job.
-    let columns: Vec<String> = i.columns.iter().filter_map(|(c, _)| table.field(&c.value).map(|(_, f)| f.name.to_string())).collect();
+    let columns: Vec<String> = i
+        .columns
+        .iter()
+        .filter_map(|(c, _)| table.field(&c.value).map(|(_, f)| f.name.to_string()))
+        .collect();
     super::plan::stats::on_index(txn, &table, &columns, ctx.clock())?;
     Ok(())
 }
@@ -104,10 +164,25 @@ fn system_columns(e: &crate::ast::Expr, table: &super::TableInfo) -> crate::ast:
     };
     match e {
         Expr::Column(c) => col(c),
-        Expr::And(a, b) => Expr::And(Box::new(system_columns(a, table)), Box::new(system_columns(b, table))),
-        Expr::Compare(a, op, b, q) => Expr::Compare(Box::new(system_columns(a, table)), *op, Box::new(system_columns(b, table)), *q),
-        Expr::Between(a, lo, hi, not) => Expr::Between(Box::new(system_columns(a, table)), lo.clone(), hi.clone(), *not),
-        Expr::InList(a, l, not) => Expr::InList(Box::new(system_columns(a, table)), l.clone(), *not),
+        Expr::And(a, b) => Expr::And(
+            Box::new(system_columns(a, table)),
+            Box::new(system_columns(b, table)),
+        ),
+        Expr::Compare(a, op, b, q) => Expr::Compare(
+            Box::new(system_columns(a, table)),
+            *op,
+            Box::new(system_columns(b, table)),
+            *q,
+        ),
+        Expr::Between(a, lo, hi, not) => Expr::Between(
+            Box::new(system_columns(a, table)),
+            lo.clone(),
+            hi.clone(),
+            *not,
+        ),
+        Expr::InList(a, l, not) => {
+            Expr::InList(Box::new(system_columns(a, table)), l.clone(), *not)
+        }
         other => other.clone(),
     }
 }

@@ -158,7 +158,14 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
             return self.list_handle(f, handle);
         }
         let path = Self::name(f, cp::NAME);
-        if !self.allowed(func::FILE_LIST_ATTR, Access { read: true, ..Access::default() }, &path) {
+        if !self.allowed(
+            func::FILE_LIST_ATTR,
+            Access {
+                read: true,
+                ..Access::default()
+            },
+            &path,
+        ) {
             return Outcome::one(Self::code(f, rc::ACCESS_DENIED_TO_REQUEST));
         }
         let mut out = Vec::new();
@@ -166,7 +173,8 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
             let (dir, pat) = split(&path);
             match self.ifs.read_dir(&dir) {
                 Ok(ents) => {
-                    for (restart, e) in (3u32..).zip(ents.iter().filter(|e| matches(&pat, &e.name))) {
+                    for (restart, e) in (3u32..).zip(ents.iter().filter(|e| matches(&pat, &e.name)))
+                    {
                         if let Ok(st) = self.ifs.stat(&join(&dir, &e.name), false) {
                             out.push(attrs::entry_frame(f, &e.name, &st, restart, true));
                         }
@@ -224,7 +232,11 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
             read_write: access == 3,
             delete: false,
         };
-        let function = if existed { func::FILE_OPEN } else { func::FILE_CREATE };
+        let function = if existed {
+            func::FILE_OPEN
+        } else {
+            func::FILE_CREATE
+        };
         if !self.allowed(function, acc, &path) {
             return Outcome::one(Self::code(f, rc::ACCESS_DENIED_TO_REQUEST));
         }
@@ -240,7 +252,9 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
         match self.ifs.open(&path, args) {
             Ok(fd) => {
                 let st = self.ifs.fstat(fd).unwrap_or_default();
-                let h = (1..=u32::MAX).find(|h| !self.handles.contains_key(h)).unwrap_or(1);
+                let h = (1..=u32::MAX)
+                    .find(|h| !self.handles.contains_key(h))
+                    .unwrap_or(1);
                 self.handles.insert(h, Handle { fd });
                 let action = if existed { 1 } else { 4 };
                 Outcome::one(attrs::open_frame(f, h, &st, action))
@@ -253,7 +267,8 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
     /// offsets at frame offset `long` when the template has them, else
     /// the 32-bit ones at 26.
     fn offset(t: &[u8], long: usize) -> u64 {
-        let be64 = |at: usize| u64::from(reply::be32(t, at)) << 32 | u64::from(reply::be32(t, at + 4));
+        let be64 =
+            |at: usize| u64::from(reply::be32(t, at)) << 32 | u64::from(reply::be32(t, at + 4));
         let l = long - 20;
         if t.len() >= l + 16 {
             be64(l).wrapping_add(be64(l + 8))
@@ -289,7 +304,10 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
         let t = &f.template;
         let h = reply::be32(t, 2);
         let off = Self::offset(t, 38);
-        let data = f.param(cp::WRITE_DATA).map(|p| p.data.clone()).unwrap_or_default();
+        let data = f
+            .param(cp::WRITE_DATA)
+            .map(|p| p.data.clone())
+            .unwrap_or_default();
         let Some(hd) = self.handles.get(&h) else {
             return Outcome::one(Self::code(f, rc::INVALID_HANDLE));
         };
@@ -335,7 +353,9 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
             id::CREATE_DIR => {
                 let p = Self::name(f, cp::NAME1);
                 if self.allowed(func::FILE_CREATE, write, &p) {
-                    self.ifs.mkdir(&p, 0o777).map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
+                    self.ifs
+                        .mkdir(&p, 0o777)
+                        .map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
                 } else {
                     rc::ACCESS_DENIED_TO_REQUEST
                 }
@@ -343,7 +363,9 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
             id::DELETE_DIR => {
                 let p = Self::name(f, cp::NAME1);
                 if self.allowed(func::FILE_DELETE, del, &p) {
-                    self.ifs.rmdir(&p).map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
+                    self.ifs
+                        .rmdir(&p)
+                        .map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
                 } else {
                     rc::ACCESS_DENIED_TO_REQUEST
                 }
@@ -351,7 +373,9 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
             id::DELETE_FILE => {
                 let p = Self::name(f, cp::NAME);
                 if self.allowed(func::FILE_DELETE, del, &p) {
-                    self.ifs.unlink(&p).map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
+                    self.ifs
+                        .unlink(&p)
+                        .map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
                 } else {
                     rc::ACCESS_DENIED_TO_REQUEST
                 }
@@ -365,8 +389,14 @@ impl<A: Auth, I: IfsClient, X: Exits> FileServer<A, I, X> {
                     pwfs0200(&who(&self.user(), func::FILE_RENAME), write, "", &s, &d),
                 );
                 if self.exits.allow(EXIT_POINT, &req) {
-                    let mode = if replace { RenameMode::Unlink } else { RenameMode::Keep };
-                    self.ifs.rename(&s, &d, mode).map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
+                    let mode = if replace {
+                        RenameMode::Unlink
+                    } else {
+                        RenameMode::Keep
+                    };
+                    self.ifs
+                        .rename(&s, &d, mode)
+                        .map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS)
                 } else {
                     rc::ACCESS_DENIED_TO_REQUEST
                 }
@@ -403,7 +433,10 @@ impl<A: Auth, I: IfsClient, X: Exits> Handler for FileServer<A, I, X> {
             id::COMMIT => {
                 let h = reply::be32(&f.template, 2);
                 let code = match self.handles.get(&h) {
-                    Some(hd) => self.ifs.fsync(hd.fd, false).map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS),
+                    Some(hd) => self
+                        .ifs
+                        .fsync(hd.fd, false)
+                        .map_or_else(|e| rc::of(e, false), |()| rc::SUCCESS),
                     None => rc::INVALID_HANDLE,
                 };
                 Outcome::one(Self::code(&f, code))

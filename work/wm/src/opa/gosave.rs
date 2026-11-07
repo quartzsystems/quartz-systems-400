@@ -76,7 +76,11 @@ impl Defaults {
         let kv = decode_kv(text);
         let mut d = Self::default();
         if let Some(v) = kv.get("devices") {
-            d.devices = v.split(',').filter(|s| !s.is_empty()).map(str::to_string).collect();
+            d.devices = v
+                .split(',')
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect();
         }
         for (k, slot) in [
             ("prompt", &mut d.prompt),
@@ -167,7 +171,10 @@ impl Defaults {
             return Err(Bad("STRTIM", start));
         }
         let vary_off = up("VRYOFF");
-        if !matches!(vary_off.as_str(), "*NONE" | "*ALL" | "*WINDOWSNT" | "*GUEST") {
+        if !matches!(
+            vary_off.as_str(),
+            "*NONE" | "*ALL" | "*WINDOWSNT" | "*GUEST"
+        ) {
             return Err(Bad("VRYOFF", vary_off));
         }
         let splfdta = up("SPLDTA");
@@ -203,21 +210,29 @@ const PROD: &str = "('/QIBM/ProdData') ('/QOpenSys/QIBM/ProdData')";
 /// Every directory but the libraries and the folders.
 const ALL_DIRS: &str = "('/*') ('/QSYS.LIB' *OMIT) ('/QDLS' *OMIT)";
 /// Every user directory.
-const USR_DIRS: &str =
-    "('/*') ('/QSYS.LIB' *OMIT) ('/QDLS' *OMIT) ('/QIBM/ProdData' *OMIT) ('/QOpenSys/QIBM/ProdData' *OMIT)";
+const USR_DIRS: &str = "('/*') ('/QSYS.LIB' *OMIT) ('/QDLS' *OMIT) ('/QIBM/ProdData' *OMIT) ('/QOpenSys/QIBM/ProdData' *OMIT)";
 
 /// The commands option `option` of `menu` runs with `d`. `ctl` is the
 /// controlling subsystem (`QCTLSBSD`); `have(name)` says whether a
 /// command exists on this system (a missing one is left out).
 #[must_use]
-pub fn sequence(menu: Menu, option: u8, d: &Defaults, ctl: &str, have: &dyn Fn(&str) -> bool) -> Vec<String> {
+pub fn sequence(
+    menu: Menu,
+    option: u8,
+    d: &Defaults,
+    ctl: &str,
+    have: &dyn Fn(&str) -> bool,
+) -> Vec<String> {
     let dev = d.devices.first().cloned().unwrap_or_else(|| "TAP01".into());
     let mut v: Vec<String> = Vec::new();
     if d.start != "*CURRENT" {
         v.push(format!("DLYJOB RSMTIME({}00)", d.start));
     }
     v.push("ENDSBS SBS(*ALL) OPTION(*IMMED)".into());
-    v.push(format!("CHGMSGQ MSGQ(QSYSOPR) DLVRY({}) SEV(60)", d.delivery));
+    v.push(format!(
+        "CHGMSGQ MSGQ(QSYSOPR) DLVRY({}) SEV(60)",
+        d.delivery
+    ));
     if d.reply_list {
         v.push("CHGJOB INQMSGRPY(*SYSRPYL)".into());
     }
@@ -225,7 +240,10 @@ pub fn sequence(menu: Menu, option: u8, d: &Defaults, ctl: &str, have: &dyn Fn(&
         v.push("UNMOUNT TYPE(*ALL) MNTOVRDIR(*ALL)".into());
     }
     if d.vary_off != "*NONE" && have("VRYCFG") {
-        v.push(format!("VRYCFG CFGOBJ({}) CFGTYPE(*NWS) STATUS(*OFF)", d.vary_off));
+        v.push(format!(
+            "VRYCFG CFGOBJ({}) CFGTYPE(*NWS) STATUS(*OFF)",
+            d.vary_off
+        ));
     }
     let saves: Vec<String> = match (menu, option) {
         (Menu::Save, 21 | 22) => {
@@ -239,11 +257,18 @@ pub fn sequence(menu: Menu, option: u8, d: &Defaults, ctl: &str, have: &dyn Fn(&
                 s.push(format!("SAVSYS DEV({dev})"));
             }
             if option == 21 {
-                s.push(format!("SAVLIB LIB(*NONSYS) DEV({dev}) ACCPTH(*YES) SPLFDTA({})", d.splfdta));
-                s.push(format!("SAV DEV('/QSYS.LIB/{dev}.DEVD') OBJ({ALL_DIRS}) UPDHST(*YES)"));
+                s.push(format!(
+                    "SAVLIB LIB(*NONSYS) DEV({dev}) ACCPTH(*YES) SPLFDTA({})",
+                    d.splfdta
+                ));
+                s.push(format!(
+                    "SAV DEV('/QSYS.LIB/{dev}.DEVD') OBJ({ALL_DIRS}) UPDHST(*YES)"
+                ));
             } else {
                 s.push(format!("SAVLIB LIB(*IBM) DEV({dev}) ACCPTH(*YES)"));
-                s.push(format!("SAV DEV('/QSYS.LIB/{dev}.DEVD') OBJ({PROD}) UPDHST(*YES)"));
+                s.push(format!(
+                    "SAV DEV('/QSYS.LIB/{dev}.DEVD') OBJ({PROD}) UPDHST(*YES)"
+                ));
             }
             s
         }
@@ -254,7 +279,10 @@ pub fn sequence(menu: Menu, option: u8, d: &Defaults, ctl: &str, have: &dyn Fn(&
             vec![
                 format!("SAVSECDTA DEV({dev})"),
                 format!("SAVCFG DEV({dev})"),
-                format!("SAVLIB LIB(*ALLUSR) DEV({dev}) ACCPTH(*YES) SPLFDTA({})", d.splfdta),
+                format!(
+                    "SAVLIB LIB(*ALLUSR) DEV({dev}) ACCPTH(*YES) SPLFDTA({})",
+                    d.splfdta
+                ),
                 format!("SAV DEV('/QSYS.LIB/{dev}.DEVD') OBJ({USR_DIRS}) UPDHST(*YES)"),
             ]
         }
@@ -320,7 +348,9 @@ mod tests {
         assert_eq!(s[1], "CHGMSGQ MSGQ(QSYSOPR) DLVRY(*BREAK) SEV(60)");
         assert_eq!(s[2], "PRTSYSINF");
         assert_eq!(s[3], "SAVSYS DEV(TAP01) ENDOPT(*LEAVE)");
-        assert!(s[4].starts_with("SAVLIB LIB(*NONSYS) DEV(TAP01) ACCPTH(*YES) SPLFDTA(*NONE) SEQNBR(*END)"));
+        assert!(s[4].starts_with(
+            "SAVLIB LIB(*NONSYS) DEV(TAP01) ACCPTH(*YES) SPLFDTA(*NONE) SEQNBR(*END)"
+        ));
         assert!(s[5].starts_with("SAV DEV('/QSYS.LIB/TAP01.DEVD')"));
         assert_eq!(s.last().unwrap(), "STRSBS SBSD(QSYS/QCTL)");
         let without = sequence(Menu::Save, 21, &d, "QSYS/QCTL", &none);
@@ -349,10 +379,22 @@ mod tests {
             ..Defaults::default()
         };
         let s = sequence(Menu::Restore, 21, &d, "QSYS/QBASE", &none);
-        let verbs: Vec<&str> = s.iter().map(|c| c.split_whitespace().next().unwrap()).collect();
+        let verbs: Vec<&str> = s
+            .iter()
+            .map(|c| c.split_whitespace().next().unwrap())
+            .collect();
         assert_eq!(
             verbs,
-            ["ENDSBS", "CHGMSGQ", "RSTUSRPRF", "RSTCFG", "RSTLIB", "RST", "RSTAUT", "STRSBS"]
+            [
+                "ENDSBS",
+                "CHGMSGQ",
+                "RSTUSRPRF",
+                "RSTCFG",
+                "RSTLIB",
+                "RST",
+                "RSTAUT",
+                "STRSBS"
+            ]
         );
         assert!(s[4].contains("SAVLIB(*NONSYS)"));
     }

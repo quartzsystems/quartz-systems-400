@@ -29,14 +29,27 @@ struct Engine {
 
 fn describe_row(t: i64, len: i64, name: &str, mode: i64) -> Vec<Value> {
     let mut r = vec![Value::int(t), Value::int(len), Value::Str(name.into())];
-    r.extend([Value::int(37), Value::Str(String::new()), Value::int(0), Value::int(0), Value::Str(name.into()), Value::Str(name.into())]);
+    r.extend([
+        Value::int(37),
+        Value::Str(String::new()),
+        Value::int(0),
+        Value::int(0),
+        Value::Str(name.into()),
+        Value::Str(name.into()),
+    ]);
     r.push(Value::int(mode));
     r
 }
 
 impl Embedded for Engine {
     fn run(&mut self, req: &Request) -> Reply {
-        assert!(req.desc.calls || matches!(req.desc.op, Op::Describe | Op::Fetch | Op::Close | Op::Prepare | Op::Execute));
+        assert!(
+            req.desc.calls
+                || matches!(
+                    req.desc.op,
+                    Op::Describe | Op::Fetch | Op::Close | Op::Prepare | Op::Execute
+                )
+        );
         let d = &req.desc;
         let mut r = Reply::default();
         match (d.op, d.orient.as_str()) {
@@ -50,8 +63,23 @@ impl Embedded for Engine {
                 assert_eq!(req.inputs.first(), Some(&Value::int(7)));
                 self.outs = vec![(1, Value::Str("HELLO".into()))];
                 self.sets = vec!["RS#1".into(), "RS#2".into()];
-                r.sqlca = Sqlca { sqlcode: 466, sqlstate: "0100C".into(), sqlerrd: [0, 2, 0, 0, 0, 0], ..Sqlca::default() };
-                r.rows = self.sets.iter().map(|n| vec![Value::Str(n.clone()), Value::Str("C1".into()), Value::int(1)]).collect();
+                r.sqlca = Sqlca {
+                    sqlcode: 466,
+                    sqlstate: "0100C".into(),
+                    sqlerrd: [0, 2, 0, 0, 0, 0],
+                    ..Sqlca::default()
+                };
+                r.rows = self
+                    .sets
+                    .iter()
+                    .map(|n| {
+                        vec![
+                            Value::Str(n.clone()),
+                            Value::Str("C1".into()),
+                            Value::int(1),
+                        ]
+                    })
+                    .collect();
             }
             (Op::Fetch, _) => {
                 let n = if d.name == "RS#1" { 3 } else { 1 };
@@ -78,7 +106,11 @@ fn request(function: u16, params: Vec<Param>) -> Vec<u8> {
     Frame::new(0xE004, function, t, params).encode()
 }
 
-fn reply(db: &mut Database<TraceAuth, Engine, NoExits>, function: u16, params: Vec<Param>) -> Frame {
+fn reply(
+    db: &mut Database<TraceAuth, Engine, NoExits>,
+    function: u16,
+    params: Vec<Param>,
+) -> Frame {
     let out = db.handle(&request(function, params));
     Frame::decode(out.replies.last().expect("a reply")).expect("a frame")
 }
@@ -89,12 +121,29 @@ fn sqlcode(f: &Frame) -> i32 {
 
 #[test]
 fn a_call_gives_back_its_outputs_and_its_result_sets() {
-    let mut db = Database::new(TraceAuth::default(), Engine::default(), NoExits, DbConfig::default());
+    let mut db = Database::new(
+        TraceAuth::default(),
+        Engine::default(),
+        NoExits,
+        DbConfig::default(),
+    );
     db.session.user = Some("QSECOFR".into());
-    let text = DbString { ccsid: 37, long: false, text: hostserver::text::ebcdic("CALL QSTEST.P(?, ?)") }.encode();
-    let f = reply(&mut db, 0x1803, vec![Param::new(db_request::STATEMENT_TEXT, text)]);
+    let text = DbString {
+        ccsid: 37,
+        long: false,
+        text: hostserver::text::ebcdic("CALL QSTEST.P(?, ?)"),
+    }
+    .encode();
+    let f = reply(
+        &mut db,
+        0x1803,
+        vec![Param::new(db_request::STATEMENT_TEXT, text)],
+    );
     // The marker format: B is an output.
-    let fmt = &f.param(db_reply::SUPER_MARKER_FORMAT).expect("marker format").data;
+    let fmt = &f
+        .param(db_reply::SUPER_MARKER_FORMAT)
+        .expect("marker format")
+        .data;
     assert_eq!((fmt[16 + 14], fmt[16 + 48 + 14]), (0xF0, 0xF1));
     let mut a = ColType::integer("", true);
     a.mode = 1;
@@ -102,15 +151,25 @@ fn a_call_gives_back_its_outputs_and_its_result_sets() {
     b.mode = 2;
     let markers = vec![a, b.clone()];
     let values = data::encode_rows(&markers, &[vec![Value::int(7), Value::Null]], 1);
-    let f = reply(&mut db, 0x1805, vec![Param::new(db_request::EXTENDED_MARKER_DATA, values)]);
+    let f = reply(
+        &mut db,
+        0x1805,
+        vec![Param::new(db_request::EXTENDED_MARKER_DATA, values)],
+    );
     assert_eq!(sqlcode(&f), 466);
-    let out = &f.param(db_reply::EXTENDED_RESULT_DATA).expect("output values").data;
+    let out = &f
+        .param(db_reply::EXTENDED_RESULT_DATA)
+        .expect("output values")
+        .data;
     let row = data::decode_rows(out, &markers);
     assert_eq!(row[0][1].as_text().trim(), "HELLO");
     // The first result set, then the second.
     for want in [3, 1] {
         let f = reply(&mut db, 0x180E, Vec::new());
-        let rows = data::decode_rows(&f.param(db_reply::EXTENDED_RESULT_DATA).expect("rows").data, &[ColType::integer("ID", true)]);
+        let rows = data::decode_rows(
+            &f.param(db_reply::EXTENDED_RESULT_DATA).expect("rows").data,
+            &[ColType::integer("ID", true)],
+        );
         assert_eq!(rows.len(), want);
         reply(&mut db, 0x180A, Vec::new());
     }

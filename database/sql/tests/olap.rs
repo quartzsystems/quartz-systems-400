@@ -36,7 +36,12 @@ impl Db {
             wal_pages: 128,
             now: 1_767_225_600,
         };
-        let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(d) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let (qsys, lib) = {
             let mut t = store.begin().unwrap();
             let qsys = ops::bootstrap(&mut t, 1_767_225_600, "QS400").unwrap();
@@ -58,7 +63,14 @@ impl Db {
             t.commit().unwrap();
             (qsys, lib)
         };
-        let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+        let mut ctx = SqlContext::new(
+            qsys,
+            JobHandle(1),
+            NameContext {
+                curlib: Some(lib),
+                libl: vec![lib],
+            },
+        );
         ctx.now = Some(1_767_225_600);
         ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
         let mut db = Self { store, ctx };
@@ -99,7 +111,13 @@ impl Db {
                 .iter()
                 .map(|r| {
                     r.iter()
-                        .map(|v| if v.is_null() { "-".into() } else { v.to_string().trim_end().to_string() })
+                        .map(|v| {
+                            if v.is_null() {
+                                "-".into()
+                            } else {
+                                v.to_string().trim_end().to_string()
+                            }
+                        })
                         .collect::<Vec<_>>()
                         .join("|")
                 })
@@ -114,7 +132,13 @@ impl Db {
             Outcome::Rows(rs) => rs
                 .columns
                 .iter()
-                .map(|c| format!("{}{}", c.data_type.replace(' ', ""), if c.nullable { "" } else { " NN" }))
+                .map(|c| {
+                    format!(
+                        "{}{}",
+                        c.data_type.replace(' ', ""),
+                        if c.nullable { "" } else { " NN" }
+                    )
+                })
                 .collect(),
             o => panic!("{text}: {o:?}"),
         }
@@ -171,10 +195,19 @@ fn joins_and_derived_tables() {
     );
     assert_eq!(
         db.rows("select * from q3t a join q3u b using (id)"),
-        v(&["1|A|10.50|2024-01-15|apple|100", "3|B|-|2023-12-31|cherry|300"])
+        v(&[
+            "1|A|10.50|2024-01-15|apple|100",
+            "3|B|-|2023-12-31|cherry|300"
+        ])
     );
-    assert_eq!(db.rows("select id, grp, w from q3t join q3u using (id)"), v(&["1|A|100", "3|B|300"]));
-    assert_eq!(db.rows("select a.id, b.id from q3t a join q3u b using (id) where a.id = 3"), v(&["3|3"]));
+    assert_eq!(
+        db.rows("select id, grp, w from q3t join q3u using (id)"),
+        v(&["1|A|100", "3|B|300"])
+    );
+    assert_eq!(
+        db.rows("select a.id, b.id from q3t a join q3u b using (id) where a.id = 3"),
+        v(&["3|3"])
+    );
     assert_eq!(
         db.rows("select a.id, x.c from q3t a, lateral (select count(*) c from q3u b where b.id <= a.id) x order by a.id"),
         v(&["1|1", "2|1", "3|2", "4|2", "5|2", "6|2"])
@@ -191,18 +224,35 @@ fn joins_and_derived_tables() {
         db.rows("select a.id, x.c from q3t a left join lateral (select w c from q3u b where b.id = a.id) x on 1=1 order by a.id"),
         v(&["1|100", "2|-", "3|300", "4|-", "5|-", "6|-"])
     );
-    assert_eq!(db.rows("select * from (select id from q3t order by id desc fetch first 2 rows only) x"), v(&["6", "5"]));
-    assert_eq!(db.rows("select id from q3t where id in (select id from q3u order by w fetch first 2 rows only)"), v(&["1"]));
+    assert_eq!(
+        db.rows("select * from (select id from q3t order by id desc fetch first 2 rows only) x"),
+        v(&["6", "5"])
+    );
+    assert_eq!(
+        db.rows(
+            "select id from q3t where id in (select id from q3u order by w fetch first 2 rows only)"
+        ),
+        v(&["1"])
+    );
     assert_eq!(
         db.rows("select id from (select id, v from q3t order by v) x order by order of x"),
         v(&["6", "4", "5", "1", "2", "3"])
     );
-    assert_eq!(db.rows("select x.* from table(systools.split('a,b,c', ',')) x"), v(&["1|a", "2|b", "3|c"]));
+    assert_eq!(
+        db.rows("select x.* from table(systools.split('a,b,c', ',')) x"),
+        v(&["1|a", "2|b", "3|c"])
+    );
     // A view runs as a derived table: its order column stays hidden.
     db.ok("create view q3v as select id, grp from q3t");
-    assert_eq!(db.rows("select * from q3v where id < 3"), v(&["1|A", "2|A"]));
+    assert_eq!(
+        db.rows("select * from q3v where id < 3"),
+        v(&["1|A", "2|A"])
+    );
     assert_eq!(db.rows("select id from (select id from q3v order by id desc) x order by order of x fetch first 1 rows only"), v(&["6"]));
-    assert_eq!(db.rows("select v.id, u.w from q3v v join q3u u using (id) order by 1"), v(&["1|100", "3|300"]));
+    assert_eq!(
+        db.rows("select v.id, u.w from q3v v join q3u u using (id) order by 1"),
+        v(&["1|100", "3|300"])
+    );
     // JSON_TABLE is a table function (JSON1 on pub400).
     assert_eq!(
         db.rows(r#"select t.* from json_table('{"r":[{"a":1,"b":"x"},{"a":2}]}', '$.r[*]' columns(a integer path '$.a', b varchar(5) path '$.b', n for ordinality)) as t"#),
@@ -218,12 +268,30 @@ fn joins_and_derived_tables() {
 #[test]
 fn row_limits_and_order() {
     let mut db = Db::new();
-    assert_eq!(db.rows("select id from q3t order by id offset 2 rows"), v(&["3", "4", "5", "6"]));
-    assert_eq!(db.rows("select id from q3t order by id offset 2 rows fetch next 2 rows only"), v(&["3", "4"]));
-    assert_eq!(db.rows("select id from q3t order by id limit 2 offset 3"), v(&["4", "5"]));
-    assert_eq!(db.rows("select id from q3t order by id limit 3,2"), v(&["4", "5"]));
-    assert_eq!(db.code("select id from q3t order by id fetch first 50 percent rows only"), -104);
-    assert_eq!(db.code("select id, v from q3t order by v nulls first"), -199);
+    assert_eq!(
+        db.rows("select id from q3t order by id offset 2 rows"),
+        v(&["3", "4", "5", "6"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t order by id offset 2 rows fetch next 2 rows only"),
+        v(&["3", "4"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t order by id limit 2 offset 3"),
+        v(&["4", "5"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t order by id limit 3,2"),
+        v(&["4", "5"])
+    );
+    assert_eq!(
+        db.code("select id from q3t order by id fetch first 50 percent rows only"),
+        -104
+    );
+    assert_eq!(
+        db.code("select id, v from q3t order by v nulls first"),
+        -199
+    );
     assert_eq!(
         db.rows("select id, v from q3t order by 2, 1"),
         v(&["6|1.00", "4|5.25", "5|7.00", "1|10.50", "2|20.00", "3|-"])
@@ -284,8 +352,14 @@ fn olap_specifications() {
         db.rows("select id, sum(id) over (order by id) cum, max(id) over (order by id rows 2 preceding) m from q3t order by id"),
         v(&["1|1|1", "2|3|2", "3|6|3", "4|10|4", "5|15|5", "6|21|6"])
     );
-    assert_eq!(db.rows("select first_value(v) ignore nulls over (order by id) from q3t")[0], "10.50");
-    assert_eq!(db.rows("select ratio_to_report(id) over () from q3t")[0], "0.04761904761904761904761904761904762");
+    assert_eq!(
+        db.rows("select first_value(v) ignore nulls over (order by id) from q3t")[0],
+        "10.50"
+    );
+    assert_eq!(
+        db.rows("select ratio_to_report(id) over () from q3t")[0],
+        "0.04761904761904761904761904761904762"
+    );
     assert_eq!(
         db.rows("select id from q3t order by row_number() over (order by id desc) fetch first 2 rows only"),
         v(&["6", "5"])
@@ -294,7 +368,10 @@ fn olap_specifications() {
         db.rows("select grp, sum(id), rank() over (order by sum(id) desc) from q3t group by grp order by 3"),
         v(&["B|7|1", "-|6|2", "C|5|3", "A|3|4"])
     );
-    assert_eq!(db.code("select id from q3t where row_number() over (order by id) = 1"), -120);
+    assert_eq!(
+        db.code("select id from q3t where row_number() over (order by id) = 1"),
+        -120
+    );
     assert_eq!(
         db.types("select row_number() over (order by id), rank() over (order by id), ntile(2) over (order by id), cume_dist() over (order by id), percent_rank() over (order by id), lag(v) over (order by id) from q3t"),
         v(&["BIGINT NN", "BIGINT NN", "BIGINT", "DECFLOAT(34) NN", "DECFLOAT(34)", "DECIMAL(7,2)"])
@@ -305,7 +382,9 @@ fn olap_specifications() {
 fn grouping_sets() {
     let mut db = Db::new();
     assert_eq!(
-        db.rows("select grp, count(*) c from q3t group by grouping sets ((grp), ()) order by grp, c"),
+        db.rows(
+            "select grp, count(*) c from q3t group by grouping sets ((grp), ()) order by grp, c"
+        ),
         v(&["A|2", "B|2", "C|1", "-|1", "-|6"])
     );
     assert_eq!(
@@ -323,8 +402,16 @@ fn grouping_sets() {
             "-|-|21|1|1",
         ])
     );
-    assert_eq!(db.rows("select grp, year(d) y, count(*) c from q3t group by cube (grp, year(d))").len(), 13);
-    assert_eq!(db.rows("select grp, s, count(*) from q3t group by grouping sets (grp, s, ())").len(), 11);
+    assert_eq!(
+        db.rows("select grp, year(d) y, count(*) c from q3t group by cube (grp, year(d))")
+            .len(),
+        13
+    );
+    assert_eq!(
+        db.rows("select grp, s, count(*) from q3t group by grouping sets (grp, s, ())")
+            .len(),
+        11
+    );
     assert_eq!(
         db.types("select grp, grouping(grp), count(*) from q3t group by rollup(grp)"),
         v(&["CHAR(1)", "SMALLINT", "INTEGER NN"])
@@ -338,7 +425,10 @@ fn aggregates() {
         db.rows("select stddev(v), stddev_samp(v), stddev_pop(v), variance(v), var(v), var_samp(v), var_pop(v), variance_samp(v) from q3t"),
         v(&["6.4031242374328485|7.158910531638177|6.4031242374328485|41|41|51.25|41|51.25"])
     );
-    assert_eq!(db.rows("select stddev(id), variance(id), var_samp(id) from q3t"), v(&["1.707825127659933|2.916666666666666|3.5"]));
+    assert_eq!(
+        db.rows("select stddev(id), variance(id), var_samp(id) from q3t"),
+        v(&["1.707825127659933|2.916666666666666|3.5"])
+    );
     assert_eq!(
         db.rows("select median(v), median(id), percentile_cont(0.5) within group (order by v), percentile_disc(0.5) within group (order by v), percentile_cont(0.25) within group (order by id desc) from q3t"),
         v(&["7.00|3.5|7.00|7.00|2.25"])
@@ -347,8 +437,14 @@ fn aggregates() {
         db.rows("select grp, listagg(s, ',') within group (order by s desc) from q3t group by grp order by grp"),
         v(&["A|banana,apple", "B|cherry", "C|date", "-|fig"])
     );
-    assert_eq!(db.rows("select listagg(s) from q3t"), v(&["applebananacherrydatefig"]));
-    assert_eq!(db.rows("select listagg(distinct grp, '-') within group (order by grp) from q3t"), v(&["A-B-C"]));
+    assert_eq!(
+        db.rows("select listagg(s) from q3t"),
+        v(&["applebananacherrydatefig"])
+    );
+    assert_eq!(
+        db.rows("select listagg(distinct grp, '-') within group (order by grp) from q3t"),
+        v(&["A-B-C"])
+    );
     assert_eq!(
         db.rows("select listagg(s, ',' on overflow truncate '...' with count) from q3t"),
         v(&["apple,banana,cherry,date,fig"])
@@ -376,23 +472,62 @@ fn aggregates() {
 #[test]
 fn predicates() {
     let mut db = Db::new();
-    assert_eq!(db.rows("select id from q3t where (id, grp) in (values (1,'A'),(3,'B'))"), v(&["1", "3"]));
-    assert_eq!(db.rows("select id from q3t where (id, grp) in (select id, 'B' from q3u)"), v(&["3"]));
-    assert_eq!(db.rows("select id from q3t where (id, grp) = (3, 'B')"), v(&["3"]));
-    assert_eq!(db.code("select id from q3t where (id, grp) > (3, 'B')"), -115);
-    assert_eq!(db.rows("select id from q3t where (id, grp) <> (3, 'B')"), v(&["1", "2", "4", "5", "6"]));
-    assert_eq!(db.rows("select id from q3t where grp is distinct from 'A'"), v(&["3", "4", "5", "6"]));
-    assert_eq!(db.rows("select id from q3t where grp is not distinct from 'A'"), v(&["1", "2"]));
-    assert_eq!(db.code("select id from q3t where grp is not distinct from null"), -206);
-    assert_eq!(db.rows("select id from q3t where s like 'a%' escape '\\'"), v(&["1"]));
-    assert_eq!(db.rows("select id from q3t where s like '%\\_%' escape '\\'"), v(NONE));
-    assert_eq!(db.rows("select id from q3t where id between 1+1 and 2*2"), v(&["2", "3", "4"]));
-    assert_eq!(db.rows("select id from q3t where 3 between id and id+1"), v(&["2", "3"]));
+    assert_eq!(
+        db.rows("select id from q3t where (id, grp) in (values (1,'A'),(3,'B'))"),
+        v(&["1", "3"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t where (id, grp) in (select id, 'B' from q3u)"),
+        v(&["3"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t where (id, grp) = (3, 'B')"),
+        v(&["3"])
+    );
+    assert_eq!(
+        db.code("select id from q3t where (id, grp) > (3, 'B')"),
+        -115
+    );
+    assert_eq!(
+        db.rows("select id from q3t where (id, grp) <> (3, 'B')"),
+        v(&["1", "2", "4", "5", "6"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t where grp is distinct from 'A'"),
+        v(&["3", "4", "5", "6"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t where grp is not distinct from 'A'"),
+        v(&["1", "2"])
+    );
+    assert_eq!(
+        db.code("select id from q3t where grp is not distinct from null"),
+        -206
+    );
+    assert_eq!(
+        db.rows("select id from q3t where s like 'a%' escape '\\'"),
+        v(&["1"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t where s like '%\\_%' escape '\\'"),
+        v(NONE)
+    );
+    assert_eq!(
+        db.rows("select id from q3t where id between 1+1 and 2*2"),
+        v(&["2", "3", "4"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t where 3 between id and id+1"),
+        v(&["2", "3"])
+    );
     assert_eq!(
         db.rows("select id from q3t a where exists (select 1 from q3u b where b.id = a.id and exists (select 1 from q3t c where c.id = b.id and exists (select 1 from q3u d where d.w = b.w and a.id < 5)))"),
         v(&["1", "3"])
     );
-    assert_eq!(db.rows("select id from q3t where id not in (select id from q3u)"), v(NONE));
+    assert_eq!(
+        db.rows("select id from q3t where id not in (select id from q3u)"),
+        v(NONE)
+    );
     assert_eq!(
         db.rows("select id from q3t where id not in (select id from q3u where id is not null)"),
         v(&["2", "4", "5", "6"])
@@ -407,7 +542,9 @@ fn date_arithmetic() {
         v(&["10101|-101"])
     );
     assert_eq!(
-        db.rows("values (time('10:30:15') - time('08:45:50'), time('08:00:00') - time('09:30:01'))"),
+        db.rows(
+            "values (time('10:30:15') - time('08:45:50'), time('08:00:00') - time('09:30:01'))"
+        ),
         v(&["14425|-13001"])
     );
     assert_eq!(
@@ -437,8 +574,14 @@ fn date_arithmetic() {
         db.rows("values timestamp('2024-01-01-10.00.00') - 1 day - 0.5 seconds"),
         v(&["2023-12-31 09:59:59.500000"])
     );
-    assert_eq!(db.rows("select d + 2.7 days from q3t where id = 1"), v(&["2024-01-17"]));
-    assert_eq!(db.rows("values timestamp('2024-01-01-10.00.00') + 1.5 hours"), v(&["2024-01-01 11:00:00.000000"]));
+    assert_eq!(
+        db.rows("select d + 2.7 days from q3t where id = 1"),
+        v(&["2024-01-17"])
+    );
+    assert_eq!(
+        db.rows("values timestamp('2024-01-01-10.00.00') + 1.5 hours"),
+        v(&["2024-01-01 11:00:00.000000"])
+    );
     assert_eq!(
         db.rows("values timestamp('2024-01-01-10.00.00.123456789012', 12) + 1 microsecond"),
         v(&["2024-01-01 10:00:00.123457789012"])
@@ -452,17 +595,38 @@ fn data_changes_as_tables() {
         db.rows("select id, w from final table (insert into q3u values (8, 800), (9, 900))"),
         v(&["8|800", "9|900"])
     );
-    assert_eq!(db.rows("select id from new table (insert into q3u values (10, 1000))"), v(&["10"]));
+    assert_eq!(
+        db.rows("select id from new table (insert into q3u values (10, 1000))"),
+        v(&["10"])
+    );
     // DB2 for i 7.5: FINAL and NEW TABLE of an INSERT only (pub400).
-    assert_eq!(db.code("select id, w from final table (update q3u set w = w + 1 where id >= 8)"), -199);
-    assert_eq!(db.code("select id from final table (delete from q3u where id = 1)"), -199);
-    assert_eq!(db.code("select id from old table (delete from q3u where id >= 8)"), -199);
+    assert_eq!(
+        db.code("select id, w from final table (update q3u set w = w + 1 where id >= 8)"),
+        -199
+    );
+    assert_eq!(
+        db.code("select id from final table (delete from q3u where id = 1)"),
+        -199
+    );
+    assert_eq!(
+        db.code("select id from old table (delete from q3u where id >= 8)"),
+        -199
+    );
     // MERGE from a joined source.
     db.ok("merge into q3u u using q3t t join q3u x on t.id = x.id on u.id = t.id when matched then update set w = 1");
-    assert_eq!(db.rows("select id, w from q3u where id in (1, 3) order by id"), v(&["1|1", "3|1"]));
+    assert_eq!(
+        db.rows("select id, w from q3u where id in (1, 3) order by id"),
+        v(&["1|1", "3|1"])
+    );
     assert_eq!(db.code("with t(n) as (select 1 from sysibm.sysdummy1 union select n+1 from t where n < 3) select * from t"), -342);
-    assert_eq!(db.code("with t(n) as (select n+1 from t where n < 3) select * from t"), -346);
-    assert_eq!(db.code("update q3u set w = q3t.id from q3t where q3u.id = q3t.id"), -199);
+    assert_eq!(
+        db.code("with t(n) as (select n+1 from t where n < 3) select * from t"),
+        -346
+    );
+    assert_eq!(
+        db.code("update q3u set w = q3t.id from q3t where q3u.id = q3t.id"),
+        -199
+    );
     db.ok("truncate table q3u");
     assert_eq!(db.rows("select count(*) from q3u"), v(&["0"]));
     db.ok("truncate q3u reuse storage ignore delete triggers continue identity immediate");
@@ -474,9 +638,15 @@ fn registers_and_clauses() {
     assert_eq!(db.rows("values current degree"), v(&["NONE"]));
     db.ok("set current degree = 'ANY'");
     assert_eq!(db.rows("values current degree"), v(&["ANY"]));
-    assert_eq!(db.rows("values current decfloat rounding mode"), v(&["ROUND_HALF_EVEN"]));
+    assert_eq!(
+        db.rows("values current decfloat rounding mode"),
+        v(&["ROUND_HALF_EVEN"])
+    );
     db.ok("set current decfloat rounding mode = round_half_up");
-    assert_eq!(db.rows("values current decfloat rounding mode"), v(&["ROUND_HALF_UP"]));
+    assert_eq!(
+        db.rows("values current decfloat rounding mode"),
+        v(&["ROUND_HALF_UP"])
+    );
     assert_eq!(db.rows("values current client_applname"), v(&[""]));
     assert_eq!(db.rows("values qsys2.job_name"), v(&["-"]));
     db.ok("set path = system path, myschema");
@@ -484,8 +654,17 @@ fn registers_and_clauses() {
         db.rows("values current path"),
         v(&["\"QSYS\",\"QSYS2\",\"SYSPROC\",\"SYSIBMADM\",\"MYSCHEMA\""])
     );
-    assert_eq!(db.code("select * from q3t with rs use and keep exclusive locks"), -84);
+    assert_eq!(
+        db.code("select * from q3t with rs use and keep exclusive locks"),
+        -84
+    );
     assert_eq!(db.code("select * from q3t wait for outcome"), -84);
-    assert_eq!(db.rows("select id from q3t where id = 1 skip locked data"), v(&["1"]));
-    assert_eq!(db.rows("select id from q3t where id = 1 optimize for 1 row"), v(&["1"]));
+    assert_eq!(
+        db.rows("select id from q3t where id = 1 skip locked data"),
+        v(&["1"])
+    );
+    assert_eq!(
+        db.rows("select id from q3t where id = 1 optimize for 1 row"),
+        v(&["1"])
+    );
 }

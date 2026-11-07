@@ -50,7 +50,12 @@ fn percents(store: &Store) -> Vec<f64> {
 #[test]
 fn a_new_unit_takes_its_share() {
     let dev = Arc::new(MemBlockDev::with_seed(2048, 4));
-    let mut store = Store::format(vec![Box::new(dev) as Box<dyn BlockDev>], &params(), StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(dev) as Box<dyn BlockDev>],
+        &params(),
+        StoreConfig::default(),
+    )
+    .unwrap();
     let qsys = {
         let mut t = store.begin().unwrap();
         let q = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
@@ -59,7 +64,8 @@ fn a_new_unit_takes_its_share() {
     };
     for i in 0..20u8 {
         let mut t = store.begin().unwrap();
-        let id = usrspc::create(&mut t, &create(qsys, &format!("S{i}")), 40 * 4064, false, 0).unwrap();
+        let id =
+            usrspc::create(&mut t, &create(qsys, &format!("S{i}")), 40 * 4064, false, 0).unwrap();
         usrspc::write(&mut t, id, 0, &[i; 300]).unwrap();
         t.commit().unwrap();
     }
@@ -75,18 +81,30 @@ fn a_new_unit_takes_its_share() {
     }
     let after = percents(&store);
     let avg = f64::midpoint(after[0], after[1]);
-    assert!(after.iter().all(|p| p - avg <= BALANCE_TOLERANCE + 2.5), "{after:?}");
+    assert!(
+        after.iter().all(|p| p - avg <= BALANCE_TOLERANCE + 2.5),
+        "{after:?}"
+    );
     // The objects read back.
     let mut t = store.begin().unwrap();
     for i in 0..20u8 {
         let lib = store::obj::library::Library::load(&mut t, qsys).unwrap();
         let id = lib
-            .lookup(&mut t, types::USRSPC, qsname::Name::parse(&format!("S{i}")).unwrap())
+            .lookup(
+                &mut t,
+                types::USRSPC,
+                qsname::Name::parse(&format!("S{i}")).unwrap(),
+            )
             .unwrap()
             .unwrap();
         assert_eq!(usrspc::read(&mut t, id, 0, 300).unwrap(), vec![i; 300]);
     }
     t.abort();
     // Balanced: another step has nothing to do.
-    assert!(store.balance_step(&mut BalanceCursor::default(), 3).unwrap().done);
+    assert!(
+        store
+            .balance_step(&mut BalanceCursor::default(), 3)
+            .unwrap()
+            .done
+    );
 }

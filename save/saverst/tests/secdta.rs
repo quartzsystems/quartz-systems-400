@@ -12,9 +12,9 @@ use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
 use qsname::Name;
-use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use saverst::secdta::{ProfileOptions, restore_profiles, rstaut, save_security};
 use saverst::{AllowAll, RestoreOptions, SaveOptions, restore, save_library};
+use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use store::btree::BTree;
 use store::obj::dtaara::{self, DataAreaType, DataAreaValue};
 use store::obj::{CreateParams, JobHandle, ObjectId, auth, ops, types};
@@ -89,8 +89,14 @@ fn authorities_follow_the_profile() {
     // it: on the object and in the profile's index (tree slot 1).
     let bob = ops::create(&mut t, &params(qa, "BOB", types::USRPRF)).unwrap();
     let (page, mut h) = auth::load(&mut t, da).unwrap();
-    auth::private_set(&mut t, page, &mut h, savfmt::name10("BOB"), Some(store::obj::Authority(0x21)))
-        .unwrap();
+    auth::private_set(
+        &mut t,
+        page,
+        &mut h,
+        savfmt::name10("BOB"),
+        Some(store::obj::Authority(0x21)),
+    )
+    .unwrap();
     let mut ix: BTree<ObjectId, u64> = BTree::new(bob);
     ix.insert(&mut t, da, &0x21).unwrap();
     let (bpage, _) = ops::read_header(&mut t, bob).unwrap();
@@ -102,22 +108,47 @@ fn authorities_follow_the_profile() {
     assert_eq!(rep.saved(), 1);
     let (_, sec) = w.finish(0).unwrap();
     let mut w = Writer::new(Vec::new(), &header(SaveKind::Library)).unwrap();
-    save_library(&mut a, JobHandle(1), &AllowAll, qa, "QSTEST", &SaveOptions::default(), &mut w)
-        .unwrap();
+    save_library(
+        &mut a,
+        JobHandle(1),
+        &AllowAll,
+        qa,
+        "QSTEST",
+        &SaveOptions::default(),
+        &mut w,
+    )
+    .unwrap();
     let (_, libsave) = w.finish(0).unwrap();
 
     // The other system: the library first, as a recovery does.
     let (mut b, qb) = system(2);
     let mut r = Reader::new(Cursor::new(libsave.as_slice())).unwrap();
-    let rr = restore(&mut b, JobHandle(1), &AllowAll, qb, &mut r, &RestoreOptions::default()).unwrap();
+    let rr = restore(
+        &mut b,
+        JobHandle(1),
+        &AllowAll,
+        qb,
+        &mut r,
+        &RestoreOptions::default(),
+    )
+    .unwrap();
     assert_eq!(rr.restored(), 1, "{:?}", rr.objects);
     let mut r = Reader::new(Cursor::new(sec.as_slice())).unwrap();
-    let pr = restore_profiles(&mut b, JobHandle(1), &AllowAll, qb, &mut r, &ProfileOptions::default())
-        .unwrap();
+    let pr = restore_profiles(
+        &mut b,
+        JobHandle(1),
+        &AllowAll,
+        qb,
+        &mut r,
+        &ProfileOptions::default(),
+    )
+    .unwrap();
     assert_eq!(pr.profiles(), 1);
     // Nothing granted until RSTAUT.
     let mut t = b.begin().unwrap();
-    let qstest = ops::find_library(&mut t, qb, Name::parse("QSTEST").unwrap()).unwrap().id;
+    let qstest = ops::find_library(&mut t, qb, Name::parse("QSTEST").unwrap())
+        .unwrap()
+        .id;
     let da_b = store::obj::library::Library::load(&mut t, qstest)
         .unwrap()
         .lookup(&mut t, types::DTAARA, Name::parse("DA1").unwrap())

@@ -393,40 +393,55 @@ fn run(
         stale.set(stale.get() || p);
         Ok(p)
     };
-    each_record_paused(txn, from_m, &order, &mut |txn, slot| {
-        if stale.replace(false) {
-            to_m.reopen(txn)?;
-        }
-        if !select::passes(&from_fmt, &slot, opts.incchar.as_ref(), &opts.increl)? {
-            excluded += 1;
-            return Ok(true);
-        }
-        seq += 1;
-        let mut lob_copies = Vec::new();
-        let outcome = plan
-            .apply(&from_fmt, &to_fmt, &slot, seq, &mut record, &mut nulls)
-            .and_then(|()| copy_lobs(txn, &lobs, &to_fmt, &mut record, (from_owner, to_owner), &mut lob_copies))
-            .and_then(|()| put(txn, to_m, &to_fmt, (&record, &nulls), updadd, trg));
-        // A record not copied leaves no LOB copies behind.
-        if outcome.is_err() {
-            for r in &lob_copies {
-                lob::free(txn, to_owner, r)?;
+    each_record_paused(
+        txn,
+        from_m,
+        &order,
+        &mut |txn, slot| {
+            if stale.replace(false) {
+                to_m.reopen(txn)?;
             }
-        }
-        match outcome {
-            Ok(()) => copied += 1,
-            Err(e) if recoverable(&e) => {
-                errors += 1;
-                if !opts.errlvl.allows(errors) {
-                    return Err(DbError::Copy {
-                        what: format!("record {} of {}: {e}", slot.rrn, from_m_name(&from_fmt)),
-                    });
+            if !select::passes(&from_fmt, &slot, opts.incchar.as_ref(), &opts.increl)? {
+                excluded += 1;
+                return Ok(true);
+            }
+            seq += 1;
+            let mut lob_copies = Vec::new();
+            let outcome = plan
+                .apply(&from_fmt, &to_fmt, &slot, seq, &mut record, &mut nulls)
+                .and_then(|()| {
+                    copy_lobs(
+                        txn,
+                        &lobs,
+                        &to_fmt,
+                        &mut record,
+                        (from_owner, to_owner),
+                        &mut lob_copies,
+                    )
+                })
+                .and_then(|()| put(txn, to_m, &to_fmt, (&record, &nulls), updadd, trg));
+            // A record not copied leaves no LOB copies behind.
+            if outcome.is_err() {
+                for r in &lob_copies {
+                    lob::free(txn, to_owner, r)?;
                 }
             }
-            Err(e) => return Err(e),
-        }
-        Ok(opts.nbrrcds.is_none_or(|n| copied < n))
-    }, &mut paused)?;
+            match outcome {
+                Ok(()) => copied += 1,
+                Err(e) if recoverable(&e) => {
+                    errors += 1;
+                    if !opts.errlvl.allows(errors) {
+                        return Err(DbError::Copy {
+                            what: format!("record {} of {}: {e}", slot.rrn, from_m_name(&from_fmt)),
+                        });
+                    }
+                }
+                Err(e) => return Err(e),
+            }
+            Ok(opts.nbrrcds.is_none_or(|n| copied < n))
+        },
+        &mut paused,
+    )?;
     Ok((copied, excluded, errors))
 }
 
@@ -435,8 +450,17 @@ fn run(
 /// or to or from a field that is not a LOB is refused.
 fn lob_steps(plan: &map::Plan, from: &FormatDef, to: &FormatDef) -> Result<Vec<usize>> {
     let is_lob = |f: &dds::FieldDef| f.data_type.is_lob();
-    let refuse = |name: &Name| DbError::Copy { what: format!("CPYF: the LOB field {name} copies only to a LOB field") };
-    let lobs: Vec<usize> = to.format.fields.iter().enumerate().filter(|(_, f)| is_lob(f)).map(|(i, _)| i).collect();
+    let refuse = |name: &Name| DbError::Copy {
+        what: format!("CPYF: the LOB field {name} copies only to a LOB field"),
+    };
+    let lobs: Vec<usize> = to
+        .format
+        .fields
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| is_lob(f))
+        .map(|(i, _)| i)
+        .collect();
     let from_lobs = from.format.fields.iter().find(|f| is_lob(f));
     match plan {
         map::Plan::Same => {}
@@ -513,17 +537,33 @@ fn put(
             if to_m.trgs.as_ref().is_some_and(|a| a.any(Event::Update)) {
                 // BLOCKED(rel): an update by *UPDADD does not fire update
                 // triggers yet; refused rather than not fired.
-                return Err(DbError::TriggerNotCallable { file: to_m.file.name().to_string() });
+                return Err(DbError::TriggerNotCallable {
+                    file: to_m.file.name().to_string(),
+                });
             }
             return to_m.update(txn, k.rrn, record, nulls);
         }
     }
     // The insert triggers, as a record write fires them.
-    let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((record, nulls)), set: None };
+    let row = Row {
+        event: Event::Insert,
+        rrn: 0,
+        old: None,
+        new: Some((record, nulls)),
+        set: None,
+    };
     let replaced = trg.before(txn, to_m, &row, 0)?;
-    let (record, nulls) = replaced.as_ref().map_or((record, nulls), |(r, n)| (r.as_slice(), n.as_slice()));
+    let (record, nulls) = replaced
+        .as_ref()
+        .map_or((record, nulls), |(r, n)| (r.as_slice(), n.as_slice()));
     let rrn = to_m.write_new(txn, record, nulls)?;
-    let row = Row { event: Event::Insert, rrn, old: None, new: Some((record, nulls)), set: None };
+    let row = Row {
+        event: Event::Insert,
+        rrn,
+        old: None,
+        new: Some((record, nulls)),
+        set: None,
+    };
     trg.after(txn, to_m, &row, 0)
 }
 

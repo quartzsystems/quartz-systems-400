@@ -76,7 +76,12 @@ impl Panel for SignOn {
         // fields at column 33, the case note on row 20, F9 on row 23.
         let mut s = Screen::new();
         s.put(1, 18, self.tool.title, Attr::WHITE);
-        s.put(3, 45, &format!("SYSTEM: {}", env.system_name()), Attr::GREEN);
+        s.put(
+            3,
+            45,
+            &format!("SYSTEM: {}", env.system_name()),
+            Attr::GREEN,
+        );
         s.put(5, 2, "Type choice, press Enter.", Attr::GREEN);
         s.put(7, 4, "Service tools user ID. . . .", Attr::GREEN);
         s.field(7, 33, 10, false);
@@ -150,13 +155,21 @@ impl ChangePassword {
     /// For `user`, going on to `tool`'s menu.
     #[must_use]
     pub fn for_tool(user: String, tool: Tool) -> Self {
-        Self { user, tool, forced: true }
+        Self {
+            user,
+            tool,
+            forced: true,
+        }
     }
 
     /// F9 on the sign-on: the user is typed here.
     #[must_use]
     pub fn asked(tool: Tool) -> Self {
-        Self { user: String::new(), tool, forced: false }
+        Self {
+            user: String::new(),
+            tool,
+            forced: false,
+        }
     }
 }
 
@@ -271,7 +284,9 @@ mod tests {
     #[test]
     fn chgdstpwd_makes_a_deleted_secofr_again() {
         let mut env = MemEnv::new("QS400");
-        env.users.create("ADMIN", "pw", crate::Privilege::ALL, "", 0, [1; 16]).unwrap();
+        env.users
+            .create("ADMIN", "pw", crate::Privilege::ALL, "", 0, [1; 16])
+            .unwrap();
         env.users.delete("QSECOFR").unwrap();
         env.reset_secofr().unwrap();
         let u = env.users.get("QSECOFR").unwrap();

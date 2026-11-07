@@ -18,7 +18,13 @@ use crate::display::surface::Surface;
 use crate::display::uim::{Choice, Response, UimDialog};
 
 /// The driver of a command, if it is one of these.
-pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out: &mut Outcome) -> Option<Result<String, Fail>> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    _out: &mut Outcome,
+) -> Option<Result<String, Fail>> {
     let res = match r.name.as_str() {
         "QSLICPGM" => match parm(r, "OPTION").as_str() {
             "1" => install(job, host, surface, true),
@@ -74,13 +80,26 @@ pub const NOTICES: &str = "/QQS/ProdData/Notices/NOTICES.txt";
 /// Option 10.
 fn installed(host: &Host, surface: &mut Surface) -> Result<(), Fail> {
     let mut d = dialog(host)?;
-    fill(&mut d, "INSTALLED", &rows(host, "INSTALLED", &[])?, INSTALLED);
+    fill(
+        &mut d,
+        "INSTALLED",
+        &rows(host, "INSTALLED", &[])?,
+        INSTALLED,
+    );
     let mut panel = "LICPGM10";
     loop {
         match show(&mut d, surface, panel)? {
-            Response::Return(11) => panel = if panel == "LICPGM10" { "LICPGM10R" } else { "LICPGM10" },
+            Response::Return(11) => {
+                panel = if panel == "LICPGM10" {
+                    "LICPGM10R"
+                } else {
+                    "LICPGM10"
+                }
+            }
             Response::Return(19) => d.info("CPI9B83", &[NOTICES]),
-            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(()),
+            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => {
+                return Ok(());
+            }
             _ => {}
         }
     }
@@ -90,7 +109,12 @@ fn installed(host: &Host, surface: &mut Surface) -> Result<(), Fail> {
 fn select(job: &mut Job, host: &Host, surface: &mut Surface, panel: &str) -> Result<(), Fail> {
     let mut d = dialog(host)?;
     loop {
-        fill(&mut d, "PROGRAMS", &rows(host, "INSTALLED", &[])?, &["LPID", "LPOPT", "STATUS", "LPTEXT", "LPRLS"]);
+        fill(
+            &mut d,
+            "PROGRAMS",
+            &rows(host, "INSTALLED", &[])?,
+            &["LPID", "LPOPT", "STATUS", "LPTEXT", "LPRLS"],
+        );
         match show(&mut d, surface, panel)? {
             Response::Options(choices) => {
                 let mut none = |_: &mut Job, d: &mut UimDialog, _: &Choice| -> Result<(), Fail> {
@@ -107,7 +131,10 @@ fn select(job: &mut Job, host: &Host, surface: &mut Surface, panel: &str) -> Res
 
 /// The install options: the save file, what to restore. `None` when
 /// the operator left.
-fn install_options(host: &Host, surface: &mut Surface) -> Result<Option<(String, &'static str)>, Fail> {
+fn install_options(
+    host: &Host,
+    surface: &mut Surface,
+) -> Result<Option<(String, &'static str)>, Fail> {
     let mut d = dialog(host)?;
     d.set("INSOBJ", "1");
     d.set("INSIPL", "N");
@@ -141,7 +168,13 @@ fn install_options(host: &Host, surface: &mut Surface) -> Result<Option<(String,
 }
 
 /// The software agreement of a product: whether it was accepted.
-fn agreement(host: &Host, surface: &mut Surface, product: &str, rls: &str, text: &str) -> Result<bool, Fail> {
+fn agreement(
+    host: &Host,
+    surface: &mut Surface,
+    product: &str,
+    rls: &str,
+    text: &str,
+) -> Result<bool, Fail> {
     let mut d = dialog(host)?;
     d.set("LPID", product);
     d.set("LPRLS", rls);
@@ -191,9 +224,22 @@ fn install(job: &mut Job, host: &Host, surface: &mut Surface, all: bool) -> Resu
         let mut d = dialog(host)?;
         let list: Vec<Vec<String>> = media
             .iter()
-            .map(|r| vec![r[0].clone(), r[1].clone(), status(&r[0], &r[1]), r[5].clone(), r[4].clone()])
+            .map(|r| {
+                vec![
+                    r[0].clone(),
+                    r[1].clone(),
+                    status(&r[0], &r[1]),
+                    r[5].clone(),
+                    r[4].clone(),
+                ]
+            })
             .collect();
-        fill(&mut d, "PROGRAMS", &list, &["LPID", "LPOPT", "STATUS", "LPTEXT", "LPRLS"]);
+        fill(
+            &mut d,
+            "PROGRAMS",
+            &list,
+            &["LPID", "LPOPT", "STATUS", "LPTEXT", "LPRLS"],
+        );
         loop {
             match show(&mut d, surface, "LICPGM11")? {
                 Response::Options(choices) => {
@@ -257,7 +303,9 @@ fn languages(host: &Host, surface: &mut Surface, option: &str) -> Result<(), Fai
     loop {
         match show(&mut d, surface, panel)? {
             Response::Options(_) => d.error("CPD9B9A", &[]),
-            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(()),
+            Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => {
+                return Ok(());
+            }
             _ => {}
         }
     }
@@ -273,7 +321,12 @@ fn agreements(host: &Host, surface: &mut Surface) -> Result<(), Fail> {
             .iter()
             .map(|r| vec![r[0].clone(), r[1].clone(), r[3].clone(), r[2].clone()])
             .collect();
-        fill(&mut d, "AGRS", &list, &["LPID", "LPRLS", "AGRSTS", "LPTEXT"]);
+        fill(
+            &mut d,
+            "AGRS",
+            &list,
+            &["LPID", "LPRLS", "AGRSTS", "LPTEXT"],
+        );
         match show(&mut d, surface, "WRKSFWAGR")? {
             Response::Options(choices) => {
                 for c in &choices {
@@ -297,7 +350,12 @@ fn licenses(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<(), Fai
     loop {
         // Rows: product, term, feature, compliance, limit, count, ...
         let data = rows(host, "LICINF", &[])?;
-        fill(&mut d, "LICS", &data, &["LPID", "LICTRM", "LICFTR", "LICCMP", "LICLMT", "LICCNT"]);
+        fill(
+            &mut d,
+            "LICS",
+            &data,
+            &["LPID", "LICTRM", "LICFTR", "LICCMP", "LICLMT", "LICCNT"],
+        );
         match show(&mut d, surface, "WRKLICINF")? {
             Response::Options(choices) => {
                 let mut none = |_: &mut Job, d: &mut UimDialog, _: &Choice| -> Result<(), Fail> {

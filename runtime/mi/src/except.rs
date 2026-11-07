@@ -385,14 +385,7 @@ fn cancel_with(j: &mut Job, msgid: &str, msgf: &str, data: Vec<u8>, boundary: Op
         // The first entry's caller is the job: the escape to the
         // external queue leaves the exception pending.
         _ => {
-            j.send_message_to(
-                QueueTarget::Ext,
-                msgid,
-                msgf,
-                "QSYS",
-                data,
-                MsgType::Escape,
-            );
+            j.send_message_to(QueueTarget::Ext, msgid, msgf, "QSYS", data, MsgType::Escape);
         }
     }
 }

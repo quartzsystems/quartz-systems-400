@@ -8,8 +8,8 @@
 //! columns are the primary's (V7R1M0). IBM's internal `PARSE_TREE` and
 //! `PARM_ARRAY` are empty here.
 
-use dds::{DataType, FieldDef};
 use db::sqlinf::routine::flag;
+use dds::{DataType, FieldDef};
 use qsname::Name;
 use store::obj::{ObjectId, ops, types};
 use store::txn::Txn;
@@ -23,11 +23,18 @@ use crate::ast::ObjectName;
 use crate::error::Result;
 use crate::value::{Timestamp, Value};
 
-const VIEWS: &[&str] = &["SYSROUTINES", "SYSPROCS", "SYSFUNCS", "SYSPARMS", "SYSROUTINEDEP"];
+const VIEWS: &[&str] = &[
+    "SYSROUTINES",
+    "SYSPROCS",
+    "SYSFUNCS",
+    "SYSPARMS",
+    "SYSROUTINEDEP",
+];
 
 /// Whether `name` is one of these views.
 pub fn has(name: &ObjectName) -> bool {
-    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2") && VIEWS.contains(&name.name.value.as_str())
+    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2")
+        && VIEWS.contains(&name.name.value.as_str())
 }
 
 /// The types the columns have.
@@ -54,7 +61,8 @@ fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
         T::Bits => (DataType::Hex, 32_700),
         T::Dbclob(n, _) => (DataType::Dbclob, n),
     };
-    let fname = Name::parse(&name[..name.len().min(10)]).unwrap_or_else(|_| Name::parse("COL").expect("valid"));
+    let fname = Name::parse(&name[..name.len().min(10)])
+        .unwrap_or_else(|_| Name::parse("COL").expect("valid"));
     let mut f = FieldDef::new(fname, ty, len, 0);
     f.int_range = ty == DataType::Binary;
     if matches!(t, T::Varchar(_) | T::Bits) {
@@ -67,7 +75,13 @@ fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
     if name.len() > 10 {
         f.alias = Some(name.to_string());
     }
-    ColInfo { name: name.to_string(), table: Some(alias.to_string()), field: Some(f), nullable, hidden: false }
+    ColInfo {
+        name: name.to_string(),
+        table: Some(alias.to_string()),
+        field: Some(f),
+        nullable,
+        hidden: false,
+    }
 }
 
 fn s(v: impl Into<String>) -> Value {
@@ -79,12 +93,19 @@ fn yes(b: bool) -> Value {
 }
 
 fn stamp(secs: u64) -> Value {
-    Value::Timestamp(Timestamp::new(db::record::datetime::Date::from_unix(secs), db::record::datetime::Time::from_unix(secs), 0))
+    Value::Timestamp(Timestamp::new(
+        db::record::datetime::Date::from_unix(secs),
+        db::record::datetime::Time::from_unix(secs),
+        0,
+    ))
 }
 
 /// Every routine of every library.
 fn routines(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Found>> {
-    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     libs.insert(0, ctx.qsys);
     let mut out = Vec::new();
     for lib in libs {
@@ -94,7 +115,12 @@ fn routines(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Found>> {
 }
 
 /// The rows and columns, or `None` when `name` is not one of these.
-pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str) -> Result<Option<Table>> {
+pub fn virtual_table(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    alias: &str,
+) -> Result<Option<Table>> {
     if !has(name) {
         return Ok(None);
     }
@@ -164,7 +190,11 @@ fn parm_types(f: &Found) -> Vec<(u8, crate::ast::TypeSpec)> {
         .parms
         .iter()
         .filter(|p| p.role == 0)
-        .filter_map(|p| crate::pl::types::parse_type(&p.ty).ok().map(|t| (p.mode, t)))
+        .filter_map(|p| {
+            crate::pl::types::parse_type(&p.ty)
+                .ok()
+                .map(|t| (p.mode, t))
+        })
         .collect()
 }
 
@@ -175,14 +205,18 @@ fn value(txn: &mut Txn<'_>, f: &Found, col: &str) -> Value {
     let sql = d.body == 1;
     let func = d.routine_type == 2;
     let ps = parm_types(f);
-    let count = |m: u8| Value::int(i64::try_from(ps.iter().filter(|(pm, _)| *pm == m).count()).unwrap_or(0));
+    let count = |m: u8| {
+        Value::int(i64::try_from(ps.iter().filter(|(pm, _)| *pm == m).count()).unwrap_or(0))
+    };
     match col {
         "SPECIFIC_SCHEMA" | "ROUTINE_SCHEMA" => s(f.schema.clone()),
         "SPECIFIC_NAME" => s(d.specific.clone()),
         "ROUTINE_NAME" => s(d.name.clone()),
         "ROUTINE_TYPE" => s(if func { "FUNCTION" } else { "PROCEDURE" }),
         "ROUTINE_CREATED" => stamp(d.created),
-        "ROUTINE_DEFINER" => s(ops::read_header(txn, f.owner).map(|(_, h)| store::obj::header::text_of(&h.owner)).unwrap_or_default()),
+        "ROUTINE_DEFINER" => s(ops::read_header(txn, f.owner)
+            .map(|(_, h)| store::obj::header::text_of(&h.owner))
+            .unwrap_or_default()),
         "ROUTINE_BODY" => s(if sql { "SQL" } else { "EXTERNAL" }),
         "EXTERNAL_NAME" => {
             if d.entry.is_empty() {
@@ -197,12 +231,21 @@ fn value(txn: &mut Txn<'_>, f: &Found, col: &str) -> Value {
         "IS_DETERMINISTIC" => yes(d.has(flag::DETERMINISTIC) || d.body == 3),
         "SQL_DATA_ACCESS" => s(model::access_word(d.access)),
         "SQL_PATH" => {
-            let mut p: Vec<String> = ["QSYS", "QSYS2", "SYSPROC", "SYSIBMADM"].iter().map(|x| format!("\"{x}\"")).collect();
+            let mut p: Vec<String> = ["QSYS", "QSYS2", "SYSPROC", "SYSIBMADM"]
+                .iter()
+                .map(|x| format!("\"{x}\""))
+                .collect();
             p.push(format!("\"{}\"", f.schema));
             s(p.join(","))
         }
-        "PARM_SIGNATURE" => Value::Bin(ps.iter().flat_map(|(_, t)| model::sqltype(&t.data_type).to_be_bytes()).collect()),
-        "NUMBER_OF_RESULTS" if d.function_type == 2 => Value::int(i64::try_from(f.routine.parms.iter().filter(|p| p.role == 1).count()).unwrap_or(0)),
+        "PARM_SIGNATURE" => Value::Bin(
+            ps.iter()
+                .flat_map(|(_, t)| model::sqltype(&t.data_type).to_be_bytes())
+                .collect(),
+        ),
+        "NUMBER_OF_RESULTS" if d.function_type == 2 => Value::int(
+            i64::try_from(f.routine.parms.iter().filter(|p| p.role == 1).count()).unwrap_or(0),
+        ),
         "NUMBER_OF_RESULTS" => Value::int(i64::from(func)),
         "MAX_DYNAMIC_RESULT_SETS" | "RESULT_SETS" => Value::int(d.result_sets.into()),
         "IN_PARMS" => count(1),
@@ -214,13 +257,23 @@ fn value(txn: &mut Txn<'_>, f: &Found, col: &str) -> Value {
         // 7.1 shows its SQL functions as external (C service programs).
         "FUNCTION_ORIGIN" => s(if d.body == 3 { "U" } else { "E" }),
         "FUNCTION_TYPE" => s(if d.function_type == 2 { "T" } else { "S" }),
-        "EXTERNAL_ACTION" if func => s(if d.has(flag::NO_EXTERNAL_ACTION) { "N" } else { "E" }),
+        "EXTERNAL_ACTION" if func => s(if d.has(flag::NO_EXTERNAL_ACTION) {
+            "N"
+        } else {
+            "E"
+        }),
         "IS_NULL_CALL" if func => yes(!d.has(flag::NULL_INPUT)),
         "SCRATCH_PAD" if func => Value::int(d.scratchpad.into()),
         "FINAL_CALL" if func => yes(d.has(flag::FINAL_CALL)),
         "PARALLELIZABLE" if func => yes(d.has(flag::PARALLEL)),
-        "SOURCE_SPECIFIC_SCHEMA" if d.body == 3 => s(d.sourced.rsplit_once('.').map_or(String::new(), |(a, _)| a.to_string())),
-        "SOURCE_SPECIFIC_NAME" if d.body == 3 => s(d.sourced.rsplit_once('.').map_or(d.sourced.clone(), |(_, b)| b.to_string())),
+        "SOURCE_SPECIFIC_SCHEMA" if d.body == 3 => s(d
+            .sourced
+            .rsplit_once('.')
+            .map_or(String::new(), |(a, _)| a.to_string())),
+        "SOURCE_SPECIFIC_NAME" if d.body == 3 => s(d
+            .sourced
+            .rsplit_once('.')
+            .map_or(d.sourced.clone(), |(_, b)| b.to_string())),
         "IS_USER_DEFINED_CAST" if func => s("NO"),
         "FENCED" if func => yes(!d.has(flag::NOT_FENCED)),
         "INLINE" if func => yes(d.body_text.starts_with("RETURN")),
@@ -240,8 +293,12 @@ fn routine_rows(txn: &mut Txn<'_>, all: &[Found], alias: &str, view: &str) -> Ta
         "SYSFUNCS" => 4,
         _ => 1,
     };
-    let chosen: Vec<&(&str, T, bool, u8)> = ROUTINE_COLS.iter().filter(|c| c.3 & bit != 0).collect();
-    let cols = chosen.iter().map(|(n, t, null, _)| col(alias, n, *t, *null)).collect();
+    let chosen: Vec<&(&str, T, bool, u8)> =
+        ROUTINE_COLS.iter().filter(|c| c.3 & bit != 0).collect();
+    let cols = chosen
+        .iter()
+        .map(|(n, t, null, _)| col(alias, n, *t, *null))
+        .collect();
     let mut rows = Vec::new();
     for f in all {
         let func = f.routine.def.routine_type == 2;
@@ -282,12 +339,22 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
     let mut rows: Vec<Row> = Vec::new();
     for f in all {
         for p in &f.routine.parms {
-            let Ok(t) = crate::pl::types::parse_type(&p.ty) else { continue };
+            let Ok(t) = crate::pl::types::parse_type(&p.ty) else {
+                continue;
+            };
             let (_, len, scale, numeric) = crate::pl::types::catalog_type(&t.data_type);
             let int = |v: i64| Value::int(v);
-            let char_like = !numeric && !matches!(t.data_type, crate::ast::DataType::Date | crate::ast::DataType::Time | crate::ast::DataType::Timestamp(_));
+            let char_like = !numeric
+                && !matches!(
+                    t.data_type,
+                    crate::ast::DataType::Date
+                        | crate::ast::DataType::Time
+                        | crate::ast::DataType::Timestamp(_)
+                );
             let octets = match t.data_type {
-                crate::ast::DataType::Graphic(n) | crate::ast::DataType::Vargraphic(n) | crate::ast::DataType::Dbclob(n) => i64::from(n) * 2,
+                crate::ast::DataType::Graphic(n)
+                | crate::ast::DataType::Vargraphic(n)
+                | crate::ast::DataType::Dbclob(n) => i64::from(n) * 2,
                 _ => len,
             };
             let datetime = match t.data_type {
@@ -295,7 +362,12 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
                 crate::ast::DataType::Timestamp(p) => Some(i64::from(p)),
                 _ => None,
             };
-            let binary = matches!(t.data_type, crate::ast::DataType::Binary(_) | crate::ast::DataType::Varbinary(_) | crate::ast::DataType::Blob(_));
+            let binary = matches!(
+                t.data_type,
+                crate::ast::DataType::Binary(_)
+                    | crate::ast::DataType::Varbinary(_)
+                    | crate::ast::DataType::Blob(_)
+            );
             rows.push(vec![
                 s(f.schema.clone()),
                 s(f.routine.def.specific.clone()),
@@ -306,11 +378,19 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
                     (0, _) => "IN",
                     _ => "OUT",
                 }),
-                if p.name.is_empty() { Value::Null } else { s(p.name.clone()) },
+                if p.name.is_empty() {
+                    Value::Null
+                } else {
+                    s(p.name.clone())
+                },
                 s(model::parm_type_word(&t.data_type)),
                 scale.map_or(Value::Null, int),
                 if numeric { int(len) } else { Value::Null },
-                if char_like && !binary { int(t.ccsid.map_or(37, i64::from)) } else { Value::Null },
+                if char_like && !binary {
+                    int(t.ccsid.map_or(37, i64::from))
+                } else {
+                    Value::Null
+                },
                 // A date's and time's maximum length is its characters, as IBM's.
                 match t.data_type {
                     _ if char_like => int(len),
@@ -320,7 +400,20 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
                     _ => Value::Null,
                 },
                 if char_like { int(octets) } else { Value::Null },
-                if numeric { int(if matches!(t.data_type, crate::ast::DataType::Real | crate::ast::DataType::Double) { 2 } else { 10 }) } else { Value::Null },
+                if numeric {
+                    int(
+                        if matches!(
+                            t.data_type,
+                            crate::ast::DataType::Real | crate::ast::DataType::Double
+                        ) {
+                            2
+                        } else {
+                            10
+                        },
+                    )
+                } else {
+                    Value::Null
+                },
                 datetime.map_or(Value::Null, int),
                 s("YES"),
                 Value::Null,
@@ -356,9 +449,13 @@ fn deps(txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Result<Table> {
     ];
     let mut rows: Vec<Row> = Vec::new();
     for f in all.iter().filter(|f| f.routine.def.body == 1) {
-        let Some(info) = db::sqlinf::load(txn, f.owner)? else { continue };
+        let Some(info) = db::sqlinf::load(txn, f.owner)? else {
+            continue;
+        };
         for b in info.all(db::sqlinf::tag::DEPENDENCY) {
-            let Ok(d) = db::sqlinf::body::Dependency::decode(b) else { continue };
+            let Ok(d) = db::sqlinf::body::Dependency::decode(b) else {
+                continue;
+            };
             rows.push(vec![
                 s(f.schema.clone()),
                 s(f.routine.def.specific.clone()),

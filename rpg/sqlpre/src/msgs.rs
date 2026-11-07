@@ -9,26 +9,44 @@
 use crate::Diag;
 
 const TEXTS: &[(&str, &str)] = &[
-    ("SQL0004", "At column &1: member &2 named by INCLUDE was not found."),
+    (
+        "SQL0004",
+        "At column &1: member &2 named by INCLUDE was not found.",
+    ),
     ("SQL0053", "The source holds no SQL statements."),
     ("SQL0084", "The statement is not supported: &1."),
     ("SQL0088", "&1 changes every row of the table."),
     ("SQL0104", "Syntax error at line &1 column &2: &3."),
     ("SQL0199", "Keyword &1 is not expected here."),
-    ("SQL0225", "FETCH of cursor &1 is not valid: the cursor is not scrollable."),
+    (
+        "SQL0225",
+        "FETCH of cursor &1 is not valid: the cursor is not scrollable.",
+    ),
     ("SQL0511", "FOR UPDATE is not valid for this cursor."),
     ("SQL5043", "The SQL statement has no effect on the program."),
-    ("SQL0312", "Host variable &1 is not defined or cannot be used here."),
+    (
+        "SQL0312",
+        "Host variable &1 is not defined or cannot be used here.",
+    ),
     ("SQL0504", "Cursor &1 is not declared before it is used."),
-    ("SQL1103", "The columns of table &1 in &2 could not be found."),
+    (
+        "SQL1103",
+        "The columns of table &1 in &2 could not be found.",
+    ),
     ("SQL5066", "Precompile option &1 is set by SET OPTION."),
-    ("SQL9001", "The SQL precompile of &1 failed; the object was not created."),
+    (
+        "SQL9001",
+        "The SQL precompile of &1 failed; the object was not created.",
+    ),
 ];
 
 /// A diagnostic's text with its values.
 #[must_use]
 pub fn text(d: &Diag) -> String {
-    let t = TEXTS.iter().find(|(id, _)| *id == d.msgid).map_or("Diagnostic &1.", |(_, t)| *t);
+    let t = TEXTS
+        .iter()
+        .find(|(id, _)| *id == d.msgid)
+        .map_or("Diagnostic &1.", |(_, t)| *t);
     let mut s = t.to_string();
     for (i, a) in d.args.iter().enumerate().rev() {
         s = s.replace(&format!("&{}", i + 1), a);
@@ -49,7 +67,9 @@ mod tests {
         let files = msgf::source::builtin();
         let f = files.iter().find(|f| f.name == "QSQLMSG").expect("QSQLMSG");
         for (id, t) in super::texts() {
-            let d = f.find(id).unwrap_or_else(|| panic!("{id} is not in QSQLMSG"));
+            let d = f
+                .find(id)
+                .unwrap_or_else(|| panic!("{id} is not in QSQLMSG"));
             assert_eq!(&d.text, t, "{id}");
         }
     }

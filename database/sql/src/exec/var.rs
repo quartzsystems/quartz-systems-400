@@ -41,7 +41,11 @@ pub struct Found {
 }
 
 fn err(code: i32, state: &'static str, what: impl Into<String>) -> SqlError {
-    SqlError::Coded { code, state, what: what.into() }
+    SqlError::Coded {
+        code,
+        state,
+        what: what.into(),
+    }
 }
 
 /// The variable `name` names, if there is one: qualified, in its
@@ -103,10 +107,22 @@ fn default_of(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Found) -> Result<Valu
 
 /// A reference `table.name` or `name` that is no column: the variable's
 /// value, `None` when no variable has the name.
-pub fn reference(txn: &mut Txn<'_>, ctx: &mut SqlContext, table: Option<&str>, name: &str, delimited: bool) -> Result<Option<Value>> {
+pub fn reference(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    table: Option<&str>,
+    name: &str,
+    delimited: bool,
+) -> Result<Option<Value>> {
     let on = ObjectName {
-        schema: table.map(|t| Ident { value: t.to_string(), delimited: false }),
-        name: Ident { value: name.to_string(), delimited },
+        schema: table.map(|t| Ident {
+            value: t.to_string(),
+            delimited: false,
+        }),
+        name: Ident {
+            value: name.to_string(),
+            delimited,
+        },
     };
     match find(txn, ctx, &on)? {
         Some(f) => value(txn, ctx, &f).map(Some),
@@ -121,7 +137,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateVariable) -> Re
     let lib = ctx.library_for(txn, &c.name)?;
     if let Some(old) = find(txn, ctx, &c.name)? {
         if !c.replace {
-            return Err(err(-601, "42710", format!("variable {} exists", c.name.name.value)));
+            return Err(err(
+                -601,
+                "42710",
+                format!("variable {} exists", c.name.name.value),
+            ));
         }
         remove(txn, ctx, lib, &c.name, old.id)?;
     }
@@ -157,11 +177,23 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateVariable) -> Re
     }
     info.set(tag::VARIABLE, def.encode());
     sqlinf::save(txn, id, &info, now)?;
-    names::put(txn, lib, Space::Variable, &c.name.name.value, Target { id, system: sys })?;
+    names::put(
+        txn,
+        lib,
+        Space::Variable,
+        &c.name.name.value,
+        Target { id, system: sys },
+    )?;
     Ok(())
 }
 
-fn remove(txn: &mut Txn<'_>, ctx: &mut SqlContext, lib: ObjectId, name: &ObjectName, id: ObjectId) -> Result<()> {
+fn remove(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    lib: ObjectId,
+    name: &ObjectName,
+    id: ObjectId,
+) -> Result<()> {
     db::auth::check(txn, "obj.delete", id).map_err(SqlError::from)?;
     names::remove(txn, lib, Space::Variable, &name.name.value)?;
     ops::delete(txn, ctx.job, id)?;
@@ -171,7 +203,10 @@ fn remove(txn: &mut Txn<'_>, ctx: &mut SqlContext, lib: ObjectId, name: &ObjectN
 
 /// `DROP VARIABLE`.
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Result<()> {
-    let f = find(txn, ctx, name)?.ok_or_else(|| SqlError::ObjectNotFound { kind: "variable", name: name.name.value.clone() })?;
+    let f = find(txn, ctx, name)?.ok_or_else(|| SqlError::ObjectNotFound {
+        kind: "variable",
+        name: name.name.value.clone(),
+    })?;
     let lib = ctx.library_for(txn, name)?;
     remove(txn, ctx, lib, name, f.id)
 }
@@ -179,12 +214,22 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Resul
 /// `SET v = e, ...`: every value is computed before any is assigned. A
 /// string that is no number gives a numeric variable the null value and
 /// warning `SQL0420`, as the primary does.
-pub fn set(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], targets: &[ObjectName], values: &[Option<Expr>]) -> Result<()> {
+pub fn set(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    targets: &[ObjectName],
+    values: &[Option<Expr>],
+) -> Result<()> {
     let mut found = Vec::with_capacity(targets.len());
     for t in targets {
         let f = find(txn, ctx, t)?.ok_or_else(|| not_found(t))?;
         if f.def.constant {
-            return Err(err(-151, "42808", format!("variable {} is a constant", t.name.value)));
+            return Err(err(
+                -151,
+                "42808",
+                format!("variable {} is a constant", t.name.value),
+            ));
         }
         found.push(f);
     }
@@ -219,14 +264,25 @@ pub type Listed = (Name, ObjectId, String, Variable, u64, String);
 pub fn in_library(txn: &mut Txn<'_>, lib: ObjectId) -> Result<Vec<Listed>> {
     let mut out = Vec::new();
     for (sys, id) in ops::list(txn, lib, Some(types::SRVPGM))? {
-        let Ok(Some(info)) = sqlinf::load(txn, id) else { continue };
+        let Ok(Some(info)) = sqlinf::load(txn, id) else {
+            continue;
+        };
         if info.kind != Kind::Variable {
             continue;
         }
-        let Some(Ok(def)) = info.first(tag::VARIABLE).map(Variable::decode) else { continue };
+        let Some(Ok(def)) = info.first(tag::VARIABLE).map(Variable::decode) else {
+            continue;
+        };
         let (_, h) = ops::read_header(txn, id)?;
         let name = info.name().unwrap_or_else(|| sys.name.to_string());
-        out.push((sys.name, id, name, def, h.created, ccsid::decode_trimmed(&h.owner)));
+        out.push((
+            sys.name,
+            id,
+            name,
+            def,
+            h.created,
+            ccsid::decode_trimmed(&h.owner),
+        ));
     }
     Ok(out)
 }

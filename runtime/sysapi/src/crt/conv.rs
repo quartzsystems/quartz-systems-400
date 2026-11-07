@@ -32,7 +32,9 @@ fn ccsid_of(j: &mut Job, c: u32) -> u16 {
 /// Write a descriptor into the caller's return buffer; `None`, or
 /// CCSIDs that cannot be converted, is the failed one.
 fn put_cd(retbuf: i64, pair: Option<(u16, u16)>) {
-    let Ok(addr) = u64::try_from(retbuf) else { return };
+    let Ok(addr) = u64::try_from(retbuf) else {
+        return;
+    };
     if addr == 0 {
         return;
     }
@@ -50,9 +52,17 @@ fn put_cd(retbuf: i64, pair: Option<(u16, u16)>) {
 
 /// `QtqIconvOpen(to, from)`: two `QtqCode_T`, the CCSID first.
 #[allow(clippy::too_many_arguments)]
-extern "sysv64" fn b_qtqiconvopen(env: *mut Env, _argc: i64, _od: i64, retbuf: i64, to: u128, from: u128) {
+extern "sysv64" fn b_qtqiconvopen(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    retbuf: i64,
+    to: u128,
+    from: u128,
+) {
     let j = mi::storage::job_of(env);
-    let word = |j: &Job, p: u128| mem(j, p, 4).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
+    let word =
+        |j: &Job, p: u128| mem(j, p, 4).map(|b| u32::from_be_bytes([b[0], b[1], b[2], b[3]]));
     match (word(j, to), word(j, from)) {
         (Ok(t), Ok(f)) => {
             let (t, f) = (ccsid_of(j, t), ccsid_of(j, f));
@@ -76,7 +86,14 @@ fn code_ccsid(j: &mut Job, p: u128) -> Option<u16> {
 
 /// `iconv_open(tocode, fromcode)`.
 #[allow(clippy::too_many_arguments)]
-extern "sysv64" fn b_iconv_open(env: *mut Env, _argc: i64, _od: i64, retbuf: i64, to: u128, from: u128) {
+extern "sysv64" fn b_iconv_open(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    retbuf: i64,
+    to: u128,
+    from: u128,
+) {
     let j = mi::storage::job_of(env);
     match (code_ccsid(j, to), code_ccsid(j, from)) {
         (Some(t), Some(f)) => put_cd(retbuf, Some((f, t))),
@@ -132,8 +149,14 @@ fn iconv(j: &mut Job, cd: i64, inp: u128, inleft: u128, outp: u128, outleft: u12
             }
         }
         mem(j, out_ptr, out_done)?.copy_from_slice(&out[..out_done]);
-        let new_in = j.spaces.add(fat(in_ptr), i64::try_from(done).unwrap_or(0)).map_err(|_| Errno::EFAULT)?;
-        let new_out = j.spaces.add(fat(out_ptr), i64::try_from(out_done).unwrap_or(0)).map_err(|_| Errno::EFAULT)?;
+        let new_in = j
+            .spaces
+            .add(fat(in_ptr), i64::try_from(done).unwrap_or(0))
+            .map_err(|_| Errno::EFAULT)?;
+        let new_out = j
+            .spaces
+            .add(fat(out_ptr), i64::try_from(out_done).unwrap_or(0))
+            .map_err(|_| Errno::EFAULT)?;
         put_ptr(mem(j, inp, 16)?, 0, new_in);
         put_ptr(mem(j, outp, 16)?, 0, new_out);
         let left_in = u32::try_from(n_in - done).unwrap_or(0);
@@ -156,7 +179,11 @@ fn iconv(j: &mut Job, cd: i64, inp: u128, inleft: u128, outp: u128, outleft: u12
 
 /// `iconv_close(cd)`.
 fn iconv_close(j: &mut Job, cd: i64) -> i64 {
-    if cd_of(cd).is_some() { 0 } else { fail(j, Errno::EBADF) }
+    if cd_of(cd).is_some() {
+        0
+    } else {
+        fail(j, Errno::EBADF)
+    }
 }
 
 /// `_C_IFS_tmpnam(buf)`: a name in `/tmp` no other call gave, in `buf`
@@ -166,7 +193,10 @@ fn tmpnam(j: &mut Job, buf: u128) -> u128 {
         s.tmpcount += 1;
         s.tmpcount
     });
-    let name = format!("/tmp/QACXTMP{:06}{n:06}", j.ident.number.parse::<u32>().unwrap_or(0) % 1_000_000);
+    let name = format!(
+        "/tmp/QACXTMP{:06}{n:06}",
+        j.ident.number.parse::<u32>().unwrap_or(0) % 1_000_000
+    );
     let mut bytes = ccsid::to_ebcdic(&name).unwrap_or_default();
     bytes.push(0);
     if !is_null(buf) {

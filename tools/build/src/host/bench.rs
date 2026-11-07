@@ -24,12 +24,25 @@ pub fn bench(ctx: &Ctx, rows: Option<u64>) -> Result<()> {
     for (test, what) in BENCHES {
         info!("bench: {what} ({test})");
         let mut c = Cmd::new(&cargo, *test);
-        c.cwd(&ctx.paths.repo).args(["test", "--release", "-p", "conformance", "--test", test, "--", "--ignored", "--nocapture"]);
+        c.cwd(&ctx.paths.repo).args([
+            "test",
+            "--release",
+            "-p",
+            "conformance",
+            "--test",
+            test,
+            "--",
+            "--ignored",
+            "--nocapture",
+        ]);
         if let Some(n) = rows {
             c.env("QS400_SQL_BENCH_ROWS", n.to_string());
         }
         let (ok, out) = c.capture_all()?;
-        for line in out.lines().filter(|l| l.starts_with("bench ") || l.contains(" ms") || l.contains("/s")) {
+        for line in out
+            .lines()
+            .filter(|l| l.starts_with("bench ") || l.contains(" ms") || l.contains("/s"))
+        {
             println!("{line}");
         }
         anyhow::ensure!(ok, "bench: {test} failed:\n{out}");

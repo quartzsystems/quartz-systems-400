@@ -31,28 +31,57 @@ fn locks(txn: &mut Txn<'_>) -> Vec<Lock> {
     let mut out: Vec<Lock> = Vec::new();
     for id in ids {
         let holders = txn.store().locks().holders(id);
-        let Ok((_, h)) = ops::read_header(txn, id) else { continue };
+        let Ok((_, h)) = ops::read_header(txn, id) else {
+            continue;
+        };
         let (lib, name, member, code) = if id.type_code == types::MBR {
-            let Ok((_, f)) = ops::read_header(txn, h.library) else { continue };
-            let Ok((_, l)) = ops::read_header(txn, f.library) else { continue };
-            (l.name.to_string(), f.name.to_string(), Some(h.name.to_string()), types::FILE)
+            let Ok((_, f)) = ops::read_header(txn, h.library) else {
+                continue;
+            };
+            let Ok((_, l)) = ops::read_header(txn, f.library) else {
+                continue;
+            };
+            (
+                l.name.to_string(),
+                f.name.to_string(),
+                Some(h.name.to_string()),
+                types::FILE,
+            )
         } else if id.type_code == types::LIB {
             ("QSYS".to_string(), h.name.to_string(), None, types::LIB)
         } else {
-            let Ok((_, l)) = ops::read_header(txn, h.library) else { continue };
+            let Ok((_, l)) = ops::read_header(txn, h.library) else {
+                continue;
+            };
             (l.name.to_string(), h.name.to_string(), None, id.type_code)
         };
         let type_name = types::type_by_code(code).map_or("", |t| t.name);
         for held in holders {
             let state = held.state.name();
-            if let Some(l) = out.iter_mut().find(|l| l.job == held.job && l.state == state && l.lib == lib && l.name == name && l.member == member) {
+            if let Some(l) = out.iter_mut().find(|l| {
+                l.job == held.job
+                    && l.state == state
+                    && l.lib == lib
+                    && l.name == name
+                    && l.member == member
+            }) {
                 l.count += 1;
                 continue;
             }
-            out.push(Lock { lib: lib.clone(), name: name.clone(), member: member.clone(), type_name, state, job: held.job, count: 1 });
+            out.push(Lock {
+                lib: lib.clone(),
+                name: name.clone(),
+                member: member.clone(),
+                type_name,
+                state,
+                job: held.job,
+                count: 1,
+            });
         }
     }
-    out.sort_by(|a, b| (&a.lib, &a.name, &a.member, a.job).cmp(&(&b.lib, &b.name, &b.member, b.job)));
+    out.sort_by(|a, b| {
+        (&a.lib, &a.name, &a.member, a.job).cmp(&(&b.lib, &b.name, &b.member, b.job))
+    });
     out
 }
 

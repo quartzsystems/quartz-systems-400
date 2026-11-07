@@ -48,11 +48,16 @@ fn status_text(s: Status) -> &'static str {
 }
 
 fn split(q: &str) -> (&str, &str) {
-    q.split_once('/').map_or(("", q), |(l, n)| (l.trim(), n.trim()))
+    q.split_once('/')
+        .map_or(("", q), |(l, n)| (l.trim(), n.trim()))
 }
 
 fn star(v: &str, none: &str) -> String {
-    if v.trim().is_empty() { none.to_string() } else { v.trim().to_string() }
+    if v.trim().is_empty() {
+        none.to_string()
+    } else {
+        v.trim().to_string()
+    }
 }
 
 /// `OUTPUT_QUEUE_ENTRIES` and `OUTPUT_QUEUE_ENTRIES_BASIC`.
@@ -70,7 +75,11 @@ fn entry(out: &mut Out, f: &SplfAttrs) {
     let (lib, q) = split(&f.outq);
     out.text("OUTPUT_QUEUE_NAME", q);
     out.text("OUTPUT_QUEUE_LIBRARY_NAME", lib);
-    out.stamp_micros("CREATE_TIMESTAMP", f.created / 1_000_000, u32::try_from(f.created % 1_000_000).unwrap_or(0));
+    out.stamp_micros(
+        "CREATE_TIMESTAMP",
+        f.created / 1_000_000,
+        u32::try_from(f.created % 1_000_000).unwrap_or(0),
+    );
     out.text("SPOOLED_FILE_NAME", f.name.as_str());
     out.text("USER_NAME", f.job.1.as_str());
     out.text_or_null("USER_DATA", &f.usrdta);
@@ -85,7 +94,11 @@ fn entry(out: &mut Out, f: &SplfAttrs) {
     out.int("FILE_NUMBER", f.number);
     if f.expires != 0 {
         let e = f.expires;
-        if let Some(d) = db::record::datetime::Date::new(u16::try_from(e / 10_000).unwrap_or(0), u8::try_from(e / 100 % 100).unwrap_or(0), u8::try_from(e % 100).unwrap_or(0)) {
+        if let Some(d) = db::record::datetime::Date::new(
+            u16::try_from(e / 10_000).unwrap_or(0),
+            u8::try_from(e / 100 % 100).unwrap_or(0),
+            u8::try_from(e % 100).unwrap_or(0),
+        ) {
             out.set("EXPIRATION_DATE", crate::value::Value::Date(d));
         }
     }
@@ -109,28 +122,52 @@ fn entry(out: &mut Out, f: &SplfAttrs) {
     out.text("DEVICE_FILE_LIBRARY", pl);
     out.text("DEVICE_FILE_NAME", pn);
     if !f.usrdfndta.trim().is_empty() {
-        out.set("USER_DEFINED_DATA", crate::value::Value::Bin(ccsid::to_ebcdic(&f.usrdfndta).unwrap_or_default()));
+        out.set(
+            "USER_DEFINED_DATA",
+            crate::value::Value::Bin(ccsid::to_ebcdic(&f.usrdfndta).unwrap_or_default()),
+        );
     }
 }
 
 /// `OUTPUT_QUEUE_INFO`: every output queue object, its files counted
 /// from the spool.
 pub fn queues(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
-    let mut libs: Vec<_> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    let mut libs: Vec<_> = ops::list(txn, ctx.qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
     libs.insert(0, ctx.qsys);
     for lib in libs {
-        let Ok((_, lh)) = ops::read_header(txn, lib) else { continue };
-        let Ok(list) = ops::list(txn, lib, Some(types::OUTQ)) else { continue };
+        let Ok((_, lh)) = ops::read_header(txn, lib) else {
+            continue;
+        };
+        let Ok(list) = ops::list(txn, lib, Some(types::OUTQ)) else {
+            continue;
+        };
         for (key, id) in list {
-            let Ok(bytes) = wm::obj::read(txn, id) else { continue };
-            let Ok(q) = wm::obj::outq::OutQ::decode(&bytes) else { continue };
+            let Ok(bytes) = wm::obj::read(txn, id) else {
+                continue;
+            };
+            let Ok(q) = wm::obj::outq::OutQ::decode(&bytes) else {
+                continue;
+            };
             out.row();
             out.text("OUTPUT_QUEUE_NAME", key.name.to_string());
             out.text("OUTPUT_QUEUE_LIBRARY_NAME", lh.name.to_string());
             out.int("NUMBER_OF_FILES", q.files.len());
-            out.int("NUMBER_OF_WRITERS", usize::from(!q.writer.trim().is_empty()));
+            out.int(
+                "NUMBER_OF_WRITERS",
+                usize::from(!q.writer.trim().is_empty()),
+            );
             out.int("WRITERS_TO_AUTOSTART", q.autostrwtr);
-            out.text("ORDER_OF_FILES", if q.seq == wm::obj::outq::Seq::Fifo { "*FIFO" } else { "*JOBNBR" });
+            out.text(
+                "ORDER_OF_FILES",
+                if q.seq == wm::obj::outq::Seq::Fifo {
+                    "*FIFO"
+                } else {
+                    "*JOBNBR"
+                },
+            );
             out.text("DISPLAY_ANY_FILE", star(&q.dspdta, "*NO"));
             out.text("JOB_SEPARATORS", "0");
             if q.maxpages != 0 {
@@ -138,7 +175,10 @@ pub fn queues(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> 
             }
             out.text("OPERATOR_CONTROLLED", if q.oprctl { "*YES" } else { "*NO" });
             out.text("AUTHORITY_TO_CHECK", star(&q.autchk, "*OWNER"));
-            out.text("OUTPUT_QUEUE_STATUS", if q.held { "HELD" } else { "RELEASED" });
+            out.text(
+                "OUTPUT_QUEUE_STATUS",
+                if q.held { "HELD" } else { "RELEASED" },
+            );
             out.text_or_null("WRITER_JOB_NAME", &q.writer);
             out.int("SPOOLED_FILE_ASP_NUMBER", 1);
             out.text_or_null("TEXT_DESCRIPTION", &q.text);
@@ -153,27 +193,47 @@ pub fn queues(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> 
 /// SPOOLED_FILE_NUMBER, IGNORE_ERRORS)`: the file's lines.
 pub fn data(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     let job = args.word("JOB_NAME").unwrap_or_default();
-    let name = args.word("SPOOLED_FILE_NAME").unwrap_or_else(|| "QPJOBLOG".into());
-    let number = args.word("SPOOLED_FILE_NUMBER").unwrap_or_else(|| "*LAST".into());
+    let name = args
+        .word("SPOOLED_FILE_NAME")
+        .unwrap_or_else(|| "QPJOBLOG".into());
+    let number = args
+        .word("SPOOLED_FILE_NUMBER")
+        .unwrap_or_else(|| "*LAST".into());
     let ignore = args.word("IGNORE_ERRORS").is_none_or(|v| v == "YES");
     let files = ask(txn, ctx, "the spooled files", |h| h.spooled_files())?;
-    let mut hits: Vec<&SplfAttrs> = files.iter().filter(|f| f.job_text() == job && f.name == name).collect();
+    let mut hits: Vec<&SplfAttrs> = files
+        .iter()
+        .filter(|f| f.job_text() == job && f.name == name)
+        .collect();
     hits.sort_by_key(|f| f.number);
     let hit = match number.as_str() {
         "*LAST" => hits.last().copied(),
-        n => n.parse::<u32>().ok().and_then(|n| hits.iter().find(|f| f.number == n).copied()),
+        n => n
+            .parse::<u32>()
+            .ok()
+            .and_then(|n| hits.iter().find(|f| f.number == n).copied()),
     };
     let Some(f) = hit else {
         if ignore {
             return Ok(());
         }
-        return Err(SqlError::Coded { code: -443, state: "38501", what: format!("spooled file {name} of job {job} not found") });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: format!("spooled file {name} of job {job} not found"),
+        });
     };
     let id = f.id;
     let bytes = match ask(txn, ctx, "the spooled file's data", |h| h.spooled_data(id))? {
         Ok(b) => b,
         Err(_) if ignore => return Ok(()),
-        Err(e) => return Err(SqlError::Coded { code: -443, state: "38501", what: e }),
+        Err(e) => {
+            return Err(SqlError::Coded {
+                code: -443,
+                state: "38501",
+                what: e,
+            });
+        }
     };
     let (pages, _) = spool::scs::decode(&bytes);
     let text = spool::view::text(&pages);
@@ -193,12 +253,26 @@ pub fn data(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> 
 /// filter is refused (SQL0443) until it is needed.
 pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     if !args.get("STARTING_TIMESTAMP").is_null() || !args.get("ENDING_TIMESTAMP").is_null() {
-        return Err(SqlError::Coded { code: -443, state: "38501", what: "the timestamp filters of SPOOLED_FILE_INFO are not supported".into() });
+        return Err(SqlError::Coded {
+            code: -443,
+            state: "38501",
+            what: "the timestamp filters of SPOOLED_FILE_INFO are not supported".into(),
+        });
     }
     let user = args.word("USER_NAME").unwrap_or_else(|| "*CURRENT".into());
-    let user = if user == "*CURRENT" { ctx.user.trim().to_ascii_uppercase() } else { user };
+    let user = if user == "*CURRENT" {
+        ctx.user.trim().to_ascii_uppercase()
+    } else {
+        user
+    };
     let all = |k: &str| args.word(k).filter(|v| v != "*ALL");
-    let (status, job, outq, usrdta, form) = (all("STATUS"), all("JOB_NAME"), all("OUTPUT_QUEUE"), all("USER_DATA"), all("FORM_TYPE"));
+    let (status, job, outq, usrdta, form) = (
+        all("STATUS"),
+        all("JOB_NAME"),
+        all("OUTPUT_QUEUE"),
+        all("USER_DATA"),
+        all("FORM_TYPE"),
+    );
     let mut files = ask(txn, ctx, "the spooled files", |h| h.spooled_files())?;
     files.sort_by_key(|f| f.created);
     for f in &files {
@@ -206,14 +280,23 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> 
             continue;
         }
         let st = status_text(f.status);
-        if status.as_ref().is_some_and(|s| s.trim_start_matches('*') != st && s != f.status.code()) {
+        if status
+            .as_ref()
+            .is_some_and(|s| s.trim_start_matches('*') != st && s != f.status.code())
+        {
             continue;
         }
-        if job.as_ref().is_some_and(|j| *j != f.job_text()) || usrdta.as_ref().is_some_and(|u| u != f.usrdta.trim()) {
+        if job.as_ref().is_some_and(|j| *j != f.job_text())
+            || usrdta.as_ref().is_some_and(|u| u != f.usrdta.trim())
+        {
             continue;
         }
         let (ql, qn) = split(&f.outq);
-        if outq.as_ref().is_some_and(|q| q != qn && *q != format!("{ql}/{qn}")) || form.as_ref().is_some_and(|t| t != f.formtype.trim()) {
+        if outq
+            .as_ref()
+            .is_some_and(|q| q != qn && *q != format!("{ql}/{qn}"))
+            || form.as_ref().is_some_and(|t| t != f.formtype.trim())
+        {
             continue;
         }
         out.row();
@@ -221,7 +304,11 @@ pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> 
         out.int("SPOOLED_FILE_NUMBER", f.number);
         out.text("STATUS", st);
         out.int("OUTPUT_PRIORITY", f.outpty);
-        out.stamp_micros("CREATION_TIMESTAMP", f.created / 1_000_000, u32::try_from(f.created % 1_000_000).unwrap_or(0));
+        out.stamp_micros(
+            "CREATION_TIMESTAMP",
+            f.created / 1_000_000,
+            u32::try_from(f.created % 1_000_000).unwrap_or(0),
+        );
         out.text_or_null("USER_DATA", &f.usrdta);
         out.int("SIZE", f.data_len.div_ceil(1024));
         out.int("TOTAL_PAGES", f.pages);

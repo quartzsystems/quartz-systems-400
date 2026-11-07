@@ -43,7 +43,10 @@ pub fn fat_stick(iso: &[u8]) -> Result<Vec<u8>, String> {
 pub fn fat_stick_of(files: &[(String, Vec<u8>)]) -> Result<Vec<u8>, String> {
     let payload: u64 = files.iter().map(|(_, d)| d.len() as u64).sum();
     let spec = diskimg::fat::fat32_for(payload);
-    let refs: Vec<(&str, &[u8])> = files.iter().map(|(p, d)| (p.as_str(), d.as_slice())).collect();
+    let refs: Vec<(&str, &[u8])> = files
+        .iter()
+        .map(|(p, d)| (p.as_str(), d.as_slice()))
+        .collect();
     let vol = diskimg::fat::build(&spec, &refs).map_err(|e| e.to_string())?;
     let start = usize::try_from(FAT_START * 512).expect("1 MiB");
     let mut disk = vec![0u8; start];
@@ -69,9 +72,11 @@ impl Suite {
     /// it, which boots on its own.
     pub(crate) fn run_media_disk(&self, fat: bool) -> Result<Vec<StepReport>, HarnessError> {
         let iso = self.iso.clone().expect("checked in new");
-        let medium = self
-            .out_dir
-            .join(if fat { "media-fat.img" } else { "media-raw.img" });
+        let medium = self.out_dir.join(if fat {
+            "media-fat.img"
+        } else {
+            "media-raw.img"
+        });
         if fat {
             let bytes = fs::read(&iso)?;
             let disk = fat_stick(&bytes).map_err(|reason| HarnessError::Failed {

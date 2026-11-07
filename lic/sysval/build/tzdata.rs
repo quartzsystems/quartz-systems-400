@@ -92,17 +92,21 @@ fn hms(s: &str) -> i64 {
 }
 
 fn month(s: &str) -> u32 {
-    const M: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    M.iter()
-        .position(|m| s.starts_with(m))
-        .map_or_else(|| panic!("tzdata: month {s}"), |i| u32::try_from(i).expect("month") + 1)
+    const M: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    M.iter().position(|m| s.starts_with(m)).map_or_else(
+        || panic!("tzdata: month {s}"),
+        |i| u32::try_from(i).expect("month") + 1,
+    )
 }
 
 fn weekday(s: &str) -> u32 {
     const D: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    D.iter()
-        .position(|d| s.starts_with(d))
-        .map_or_else(|| panic!("tzdata: weekday {s}"), |i| u32::try_from(i).expect("day"))
+    D.iter().position(|d| s.starts_with(d)).map_or_else(
+        || panic!("tzdata: weekday {s}"),
+        |i| u32::try_from(i).expect("day"),
+    )
 }
 
 fn on(s: &str) -> On {
@@ -124,7 +128,10 @@ fn at(s: &str) -> At {
         Some('w') => (&s[..s.len() - 1], Clock::Wall),
         _ => (s, Clock::Wall),
     };
-    At { secs: hms(body), clock }
+    At {
+        secs: hms(body),
+        clock,
+    }
 }
 
 fn year(s: &str, from: i64) -> i64 {
@@ -158,14 +165,18 @@ impl TzData {
                 continue;
             }
             match f[0] {
-                "Rule" => self.rules.entry(f[1].to_string()).or_default().push(RuleLine {
-                    from: f[2].parse().expect("from"),
-                    to: year(f[3], f[2].parse().expect("from")),
-                    month: month(f[5]),
-                    on: on(f[6]),
-                    at: at(f[7]),
-                    save: hms(f[8]),
-                }),
+                "Rule" => self
+                    .rules
+                    .entry(f[1].to_string())
+                    .or_default()
+                    .push(RuleLine {
+                        from: f[2].parse().expect("from"),
+                        to: year(f[3], f[2].parse().expect("from")),
+                        month: month(f[5]),
+                        on: on(f[6]),
+                        at: at(f[7]),
+                        save: hms(f[8]),
+                    }),
                 "Zone" => {
                     let zl = Self::zone_line(&f[2..]);
                     let done = zl.until_year.is_none();
@@ -181,7 +192,11 @@ impl TzData {
     }
 
     fn zone_line(f: &[&str]) -> ZoneLine {
-        ZoneLine { stdoff: hms(f[0]), rules: f[1].to_string(), until_year: f.get(3).map(|y| y.parse().expect("until")) }
+        ZoneLine {
+            stdoff: hms(f[0]),
+            rules: f[1].to_string(),
+            until_year: f.get(3).map(|y| y.parse().expect("until")),
+        }
     }
 
     /// The zone or the zone a link names.
@@ -204,23 +219,34 @@ impl TzData {
     /// The rule `name` follows in `y`: the zone line in force at the
     /// middle of the year and its rules' start and end in that year.
     pub fn rule(&self, name: &str, y: i64) -> Result<YearRule, String> {
-        let lines = self.zone(name).ok_or_else(|| format!("{name} is not in tzdata"))?;
+        let lines = self
+            .zone(name)
+            .ok_or_else(|| format!("{name} is not in tzdata"))?;
         let zl = lines
             .iter()
             .find(|l| l.until_year.is_none_or(|u| u > y))
             .ok_or_else(|| format!("{name} has no line for {y}"))?;
         if zl.rules == "-" {
-            return Ok(YearRule { stdoff: zl.stdoff, dst: None });
+            return Ok(YearRule {
+                stdoff: zl.stdoff,
+                dst: None,
+            });
         }
         if zl.rules.starts_with(|c: char| c.is_ascii_digit()) {
             return Err(format!("{name} keeps fixed saving {} in {y}", zl.rules));
         }
-        let rules = self.rules.get(&zl.rules).ok_or_else(|| format!("rule {} missing", zl.rules))?;
+        let rules = self
+            .rules
+            .get(&zl.rules)
+            .ok_or_else(|| format!("rule {} missing", zl.rules))?;
         let live: Vec<&RuleLine> = rules.iter().filter(|r| r.from <= y && y <= r.to).collect();
         let start: Vec<&&RuleLine> = live.iter().filter(|r| r.save > 0).collect();
         let end: Vec<&&RuleLine> = live.iter().filter(|r| r.save == 0).collect();
         match (start.as_slice(), end.as_slice()) {
-            ([], _) => Ok(YearRule { stdoff: zl.stdoff, dst: None }),
+            ([], _) => Ok(YearRule {
+                stdoff: zl.stdoff,
+                dst: None,
+            }),
             ([s], [e]) => {
                 let save = s.save;
                 Ok(YearRule {
@@ -228,7 +254,11 @@ impl TzData {
                     dst: Some((edge(s, y, zl.stdoff, 0), edge(e, y, zl.stdoff, save), save)),
                 })
             }
-            _ => Err(format!("{name} has {} starts and {} ends in {y}", start.len(), end.len())),
+            _ => Err(format!(
+                "{name} has {} starts and {} ends in {y}",
+                start.len(),
+                end.len()
+            )),
         }
     }
 }
@@ -247,22 +277,34 @@ fn edge(r: &RuleLine, y: i64, stdoff: i64, save: i64) -> Edge {
         _ => {
             // A date: its weekday and which of them in the month it is.
             let day = day_of(r, y);
-            let wd = u32::try_from((crate_days(y, r.month, day) + 4).rem_euclid(7)).expect("weekday");
+            let wd =
+                u32::try_from((crate_days(y, r.month, day) + 4).rem_euclid(7)).expect("weekday");
             (wd, (day - 1) / 7 + 1)
         }
     };
-    Edge { month: r.month, weekday, week, secs }
+    Edge {
+        month: r.month,
+        weekday,
+        week,
+        secs,
+    }
 }
 
 /// The day of the month a rule falls on in `y`.
 fn day_of(r: &RuleLine, y: i64) -> u32 {
-    let wd = |d: u32| u32::try_from((crate_days(y, r.month, d) + 4).rem_euclid(7)).expect("weekday");
+    let wd =
+        |d: u32| u32::try_from((crate_days(y, r.month, d) + 4).rem_euclid(7)).expect("weekday");
     match r.on {
         On::Day(d) => d,
         On::AtLeast(w, n) => (n..n + 7).find(|&d| wd(d) == w).expect("day"),
         On::AtMost(w, n) => (n - 6..=n).rev().find(|&d| wd(d) == w).expect("day"),
         On::Last(w) => {
-            let last = (28..=31).rev().find(|&d| crate_days(y, r.month, d) < crate_days(y, r.month + 1, 1) || r.month == 12).unwrap_or(28);
+            let last = (28..=31)
+                .rev()
+                .find(|&d| {
+                    crate_days(y, r.month, d) < crate_days(y, r.month + 1, 1) || r.month == 12
+                })
+                .unwrap_or(28);
             (last - 6..=last).rev().find(|&d| wd(d) == w).expect("day")
         }
     }

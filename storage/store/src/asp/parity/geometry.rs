@@ -200,9 +200,18 @@ mod tests {
             assert!(!data.contains(&p));
             if let Some(q) = q {
                 assert!(!data.contains(&q) && q != p);
-                assert_eq!(g.page_of(q, g.parity_lba(s, true)), Some(PageRole::Parity { stripe: s, q: true }));
+                assert_eq!(
+                    g.page_of(q, g.parity_lba(s, true)),
+                    Some(PageRole::Parity { stripe: s, q: true })
+                );
             }
-            assert_eq!(g.page_of(p, g.parity_lba(s, false)), Some(PageRole::Parity { stripe: s, q: false }));
+            assert_eq!(
+                g.page_of(p, g.parity_lba(s, false)),
+                Some(PageRole::Parity {
+                    stripe: s,
+                    q: false
+                })
+            );
             for m in data {
                 let lba = g.row_of(s, m);
                 assert!(g.is_row(lba));
@@ -211,7 +220,10 @@ mod tests {
             }
         }
         // Every row of every member is in exactly one stripe.
-        assert_eq!(seen.len() as u64, g.n as u64 * (g.rows_end() - RESERVED_HEAD));
+        assert_eq!(
+            seen.len() as u64,
+            g.n as u64 * (g.rows_end() - RESERVED_HEAD)
+        );
         assert!(g.end() < 1001 + 2 * SLOT_PAGES);
     }
 

@@ -149,7 +149,12 @@ impl Runtime {
 
     /// Help with help specifications and no `HELP` keyword: the system
     /// shows the module; the program does not see the key.
-    fn system_help(&self, rec: &Record, key: KeyPressed, cursor: (u8, u8)) -> Option<crate::help::HelpSpec> {
+    fn system_help(
+        &self,
+        rec: &Record,
+        key: KeyPressed,
+        cursor: (u8, u8),
+    ) -> Option<crate::help::HelpSpec> {
         let help_key = key == KeyPressed::Help
             || matches!(key, KeyPressed::F(n) if self.df.file.alt_help.and_then(KeyName::number) == Some(n));
         let returned = rec
@@ -180,7 +185,13 @@ impl Runtime {
     /// device; a 27x132 file on a 24x80 device stays 24x80.
     #[must_use]
     pub fn shows_wide(&self) -> bool {
-        self.wide && self.df.file.sizes.get(self.size).is_some_and(|s| s.cols == 132)
+        self.wide
+            && self
+                .df
+                .file
+                .sizes
+                .get(self.size)
+                .is_some_and(|s| s.cols == 132)
     }
 
     fn size_name(&self) -> String {
@@ -261,7 +272,8 @@ impl Runtime {
             self.show_errmsg(m, env, &rec, &inds);
             return Ok(());
         }
-        let takes_input = rec.fields.iter().any(|f| f.usage.is_input()) || rec.kind == RecordKind::SubfileControl;
+        let takes_input =
+            rec.fields.iter().any(|f| f.usage.is_input()) || rec.kind == RecordKind::SubfileControl;
         if takes_input || self.last_written.is_none() {
             self.last_written = Some(rec.name.clone());
         }
@@ -371,7 +383,11 @@ impl Runtime {
             .keywords
             .iter()
             .filter(|k| k.name == "ERASE" && cond_on(&k.cond, inds, &self.size_name()))
-            .flat_map(|k| k.parms.iter().filter_map(|p| p.as_word().map(str::to_string)))
+            .flat_map(|k| {
+                k.parms
+                    .iter()
+                    .filter_map(|p| p.as_word().map(str::to_string))
+            })
             .collect();
         for name in erased {
             self.remove_shown(m, &name);
@@ -524,7 +540,10 @@ impl Runtime {
                 let text = e
                     .text
                     .clone()
-                    .or_else(|| e.id.as_ref().and_then(|(id, _)| env.messages.get(id).cloned()))
+                    .or_else(|| {
+                        e.id.as_ref()
+                            .and_then(|(id, _)| env.messages.get(id).cloned())
+                    })
                     .unwrap_or_default();
                 m.error_line(&text, attr::WHITE);
                 if let Some(ix) = m.field_index_at(row, col) {
@@ -539,9 +558,9 @@ impl Runtime {
     /// Whether an `ERRMSG` or `ERRMSGID` of the record is in effect.
     fn errmsg_on(&self, rec: &Record, inds: &Inds) -> bool {
         let size = self.size_name();
-        rec.fields
-            .iter()
-            .any(|f| cond_on(&f.cond, inds, &size) && f.errmsg.iter().any(|e| cond_on(&e.cond, inds, &size)))
+        rec.fields.iter().any(|f| {
+            cond_on(&f.cond, inds, &size) && f.errmsg.iter().any(|e| cond_on(&e.cond, inds, &size))
+        })
     }
 
     /// The first error message in effect on the error line, its field
@@ -569,7 +588,10 @@ impl Runtime {
                 let text = e
                     .text
                     .clone()
-                    .or_else(|| e.id.as_ref().and_then(|(id, _)| env.messages.get(id).cloned()))
+                    .or_else(|| {
+                        e.id.as_ref()
+                            .and_then(|(id, _)| env.messages.get(id).cloned())
+                    })
                     .unwrap_or_default();
                 m.error_line(&text, attr::WHITE);
                 if let Some(p) = f.position(self.size) {
@@ -641,7 +663,13 @@ impl Runtime {
     }
 
     /// A program's `WRITE` of a subfile record at `rrn` (1-based).
-    pub fn sfl_write(&mut self, format: &str, rrn: usize, out: &[u8], indara: &[u8]) -> Result<(), RtError> {
+    pub fn sfl_write(
+        &mut self,
+        format: &str,
+        rrn: usize,
+        out: &[u8],
+        indara: &[u8],
+    ) -> Result<(), RtError> {
         let rec = self.sfl_record(format)?;
         self.store_sfl(&rec, rrn.max(1), out, indara);
         Ok(())
@@ -669,7 +697,9 @@ impl Runtime {
             return Ok(None);
         };
         let from = st.readc_from;
-        let Some(i) = (from..st.records.len()).find(|&i| st.changed.get(i).copied().unwrap_or(false) && st.records[i].is_some()) else {
+        let Some(i) = (from..st.records.len())
+            .find(|&i| st.changed.get(i).copied().unwrap_or(false) && st.records[i].is_some())
+        else {
             st.readc_from = st.records.len();
             return Ok(None);
         };
@@ -762,11 +792,19 @@ impl Runtime {
         }
         let page = usize::from(sfl.size(self.size).page).max(1);
         let rec_lines = usize::from(sfl.record_lines.max(1));
-        let first_line = usize::from(sfl.first_line.get(self.size).or(sfl.first_line.first()).copied().unwrap_or(0));
+        let first_line = usize::from(
+            sfl.first_line
+                .get(self.size)
+                .or(sfl.first_line.first())
+                .copied()
+                .unwrap_or(0),
+        );
         if first_line == 0 {
             return Ok(());
         }
-        let sfl_first = sfl_rec.extent(self.size).map_or(first_line, |(lo, _)| usize::from(lo));
+        let sfl_first = sfl_rec
+            .extent(self.size)
+            .map_or(first_line, |(lo, _)| usize::from(lo));
         let top = st.top;
         let count = st.records.len();
         for slot in 0..page {
@@ -787,10 +825,14 @@ impl Runtime {
                 if !field.usage.is_input() {
                     continue;
                 }
-                let Some(pos) = field.position(self.size) else { continue };
+                let Some(pos) = field.position(self.size) else {
+                    continue;
+                };
                 let row = shifted(usize::from(pos.row), shift);
                 let col = usize::from(pos.col);
-                let Some(ix) = m.field_index_at(row, col) else { continue };
+                let Some(ix) = m.field_index_at(row, col) else {
+                    continue;
+                };
                 let fld = &m.fields()[ix];
                 if !fld.modified {
                     continue;
@@ -798,7 +840,11 @@ impl Runtime {
                 typed = true;
                 let text = fld.text();
                 if let Some(msg) = input::validate(field, &text) {
-                    return Err(Problem::Field { row, col, text: msg });
+                    return Err(Problem::Field {
+                        row,
+                        col,
+                        text: msg,
+                    });
                 }
                 let bytes = input::typed_bytes(field, &text).map_err(|e| Problem::Field {
                     row,
@@ -826,11 +872,22 @@ impl Runtime {
     /// The lowest record number displayed and the record count of a
     /// control record's subfile.
     fn sfl_state(&self, ctl: &Record) -> (u32, u32) {
-        let Some(st) = ctl.subfile.as_ref().and_then(|s| self.subfiles.get(&s.record)) else {
+        let Some(st) = ctl
+            .subfile
+            .as_ref()
+            .and_then(|s| self.subfiles.get(&s.record))
+        else {
             return (0, 0);
         };
-        let top = if st.displayed && !st.records.is_empty() { st.top + 1 } else { 0 };
-        (u32::try_from(top).unwrap_or(0), u32::try_from(st.records.len()).unwrap_or(0))
+        let top = if st.displayed && !st.records.is_empty() {
+            st.top + 1
+        } else {
+            0
+        };
+        (
+            u32::try_from(top).unwrap_or(0),
+            u32::try_from(st.records.len()).unwrap_or(0),
+        )
     }
 
     /// Position the next subfile record write at `rrn` (1-based): a
@@ -897,13 +954,17 @@ impl Runtime {
         let inz = self.kw_on(rec, "SFLINZ", inds);
         let dsp = self.kw_on(rec, "SFLDSP", inds);
         let dspctl = self.kw_on(rec, "SFLDSPCTL", inds);
-        let rcdnbr = rec.fields.iter().enumerate().find_map(|(i, f)| match f.sfl_role {
-            Some(SflRole::RcdNbr { cursor, top }) => field_bytes(rec, i, out)
-                .and_then(|b| edit::decode_number(f, &b))
-                .and_then(|d| d.to_i128())
-                .map(|n| (usize::try_from(n).unwrap_or(0), cursor, top)),
-            _ => None,
-        });
+        let rcdnbr = rec
+            .fields
+            .iter()
+            .enumerate()
+            .find_map(|(i, f)| match f.sfl_role {
+                Some(SflRole::RcdNbr { cursor, top }) => field_bytes(rec, i, out)
+                    .and_then(|b| edit::decode_number(f, &b))
+                    .and_then(|d| d.to_i128())
+                    .map(|n| (usize::try_from(n).unwrap_or(0), cursor, top)),
+                _ => None,
+            });
         {
             let st = self.subfiles.entry(sfl.record.clone()).or_default();
             if clr {
@@ -938,12 +999,18 @@ impl Runtime {
             self.place(m, env, rec, inds, Some(out), 0, 0);
         }
         if dsp && first_line > 0 {
-            self.draw_page(m, env, rec, inds, &sfl_rec, first_line, page, rec_lines, sfl.end);
+            self.draw_page(
+                m, env, rec, inds, &sfl_rec, first_line, page, rec_lines, sfl.end,
+            );
             if let Some((n, true, _)) = rcdnbr {
                 let st = &self.subfiles[&sfl.record];
                 if n >= 1 && n > st.top && n - 1 - st.top < page {
                     let line = first_line + (n - 1 - st.top) * rec_lines;
-                    if let Some(f) = m.fields().iter().find(|f| f.row >= line && f.row < line + rec_lines) {
+                    if let Some(f) = m
+                        .fields()
+                        .iter()
+                        .find(|f| f.row >= line && f.row < line + rec_lines)
+                    {
                         m.set_cursor(f.row, f.col);
                     }
                 }
@@ -1016,9 +1083,18 @@ impl Runtime {
         let sfl = rec.subfile.as_ref()?;
         let sfl_rec = self.df.record(&sfl.record).cloned()?;
         let page = usize::from(sfl.size(self.size).page).max(1);
-        let first_line = usize::from(sfl.first_line.get(self.size).or(sfl.first_line.first()).copied()?);
+        let first_line = usize::from(
+            sfl.first_line
+                .get(self.size)
+                .or(sfl.first_line.first())
+                .copied()?,
+        );
         let rec_lines = usize::from(sfl.record_lines.max(1));
-        let inds = self.last_inds.get(&rec.name).copied().unwrap_or([false; 100]);
+        let inds = self
+            .last_inds
+            .get(&rec.name)
+            .copied()
+            .unwrap_or([false; 100]);
         let _ = self.capture_page(m, rec);
         {
             let st = self.subfiles.get_mut(&sfl.record)?;
@@ -1037,13 +1113,20 @@ impl Runtime {
                 st.top = st.top.saturating_sub(page);
             }
         }
-        self.draw_page(m, env, rec, &inds, &sfl_rec, first_line, page, rec_lines, sfl.end);
+        self.draw_page(
+            m, env, rec, &inds, &sfl_rec, first_line, page, rec_lines, sfl.end,
+        );
         Some(())
     }
 
     /// Whether `key` is enabled for the record: the response indicator
     /// it sets and whether field data comes with it.
-    fn key_check(&self, rec: &Record, key: KeyPressed, inds: &Inds) -> Result<(Option<u8>, bool), Problem> {
+    fn key_check(
+        &self,
+        rec: &Record,
+        key: KeyPressed,
+        inds: &Inds,
+    ) -> Result<(Option<u8>, bool), Problem> {
         let size = self.size_name();
         let enabled: Vec<&crate::model::CmdKey> = rec
             .keys
@@ -1105,7 +1188,11 @@ impl Runtime {
             .record(format)
             .cloned()
             .ok_or_else(|| Problem::NotShown(format.to_string()))?;
-        let inds = self.last_inds.get(&rec.name).copied().unwrap_or([false; 100]);
+        let inds = self
+            .last_inds
+            .get(&rec.name)
+            .copied()
+            .unwrap_or([false; 100]);
         let key = KeyPressed::from_aid(aid);
         if let Some(h) = self.system_help(&rec, key, cursor) {
             return Err(Problem::Help(h));
@@ -1123,7 +1210,11 @@ impl Runtime {
         if rec.kind == RecordKind::SubfileControl && data {
             self.capture_page(m, &rec)?;
         }
-        if let Some(st) = rec.subfile.as_ref().and_then(|s| self.subfiles.get_mut(&s.record)) {
+        if let Some(st) = rec
+            .subfile
+            .as_ref()
+            .and_then(|s| self.subfiles.get_mut(&s.record))
+        {
             st.readc_from = 0;
         }
         let size = self.size_name();
@@ -1255,7 +1346,11 @@ impl Runtime {
         }
         let text = m.fields()[ix].text();
         if let Some(msg) = input::validate(f, &text) {
-            return Err(Problem::Field { row, col, text: msg });
+            return Err(Problem::Field {
+                row,
+                col,
+                text: msg,
+            });
         }
         for k in &f.keywords {
             let ind = k
@@ -1293,7 +1388,13 @@ impl Runtime {
         }
         let page = usize::from(sfl.size(self.size).page).max(1);
         let rec_lines = usize::from(sfl.record_lines.max(1));
-        let first = usize::from(sfl.first_line.get(self.size).or(sfl.first_line.first()).copied().unwrap_or(0));
+        let first = usize::from(
+            sfl.first_line
+                .get(self.size)
+                .or(sfl.first_line.first())
+                .copied()
+                .unwrap_or(0),
+        );
         if first == 0 || row < first || row >= first + page * rec_lines {
             return 0;
         }
@@ -1350,9 +1451,19 @@ fn draw_border(m: &mut ScreenModel, w: &crate::model::Window, row_shift: i32, co
     let cols = usize::from(w.cols);
     // Dots across the top, colons at the bottom corners.
     m.put(top, left, &".".repeat(cols + 4), attr::GREEN);
-    m.put(top + lines + 1, left, &format!(":{}:", ".".repeat(cols + 2)), attr::GREEN);
+    m.put(
+        top + lines + 1,
+        left,
+        &format!(":{}:", ".".repeat(cols + 2)),
+        attr::GREEN,
+    );
     for r in 1..=lines {
-        m.put(top + r, left, &format!(":{}:", " ".repeat(cols + 2)), attr::GREEN);
+        m.put(
+            top + r,
+            left,
+            &format!(":{}:", " ".repeat(cols + 2)),
+            attr::GREEN,
+        );
     }
 }
 
@@ -1423,7 +1534,12 @@ mod tests {
     }
 
     /// Send the model to a terminal and bring the terminal's reply back.
-    fn round_trip(m: &mut ScreenModel, t: &mut Terminal, keys: &[Key], typed: &[&str]) -> (u8, (u8, u8)) {
+    fn round_trip(
+        m: &mut ScreenModel,
+        t: &mut Terminal,
+        keys: &[Key],
+        typed: &[&str],
+    ) -> (u8, (u8, u8)) {
         let out = m.render(Read::MdtFields);
         t.apply(&Rec::new(out.opcode, out.data)).unwrap();
         for s in typed {
@@ -1447,7 +1563,13 @@ mod tests {
         // Output buffer: indicator 50 off, QSYSNAME, AMOUNT, HID.
         let mut out = vec![0xF0u8];
         out.extend(input::padded("QS400", 8));
-        out.extend(edit::encode_number(&rec.fields[rec.field("AMOUNT").unwrap().0], &qdecimal::Decimal::parse("12.5").unwrap()).unwrap());
+        out.extend(
+            edit::encode_number(
+                &rec.fields[rec.field("AMOUNT").unwrap().0],
+                &qdecimal::Decimal::parse("12.5").unwrap(),
+            )
+            .unwrap(),
+        );
         out.extend(input::padded("HIDE!", 5));
         assert_eq!(out.len(), rec.layout.output.len as usize);
         rt.write(&mut m, &env(), "SIGNON", &out, &[]).unwrap();
@@ -1464,10 +1586,15 @@ mod tests {
         assert_eq!(rec.layout.input.indicators, vec![3, 12, 50]);
         assert_eq!(&input.record[..3], &[0xF0, 0xF0, 0xF0]);
         assert_eq!(ccsid::from_ebcdic(&input.record[3..13]).trim_end(), "CODY");
-        assert_eq!(ccsid::from_ebcdic(&input.record[13..23]).trim_end(), "SECRET");
+        assert_eq!(
+            ccsid::from_ebcdic(&input.record[13..23]).trim_end(),
+            "SECRET"
+        );
         let amount = &rec.fields[rec.field("AMOUNT").unwrap().0];
         assert_eq!(
-            edit::decode_number(amount, &input.record[23..30]).unwrap().char_text(2),
+            edit::decode_number(amount, &input.record[23..30])
+                .unwrap()
+                .char_text(2),
             "20.00"
         );
         assert_eq!(ccsid::from_ebcdic(&input.record[30..35]), "HIDE!");
@@ -1485,10 +1612,19 @@ mod tests {
         let rec = rt.file().record("SIGNON").cloned().unwrap();
         let out = vec![0x40u8; rec.layout.output.len as usize];
         rt.write(&mut m, &env(), "SIGNON", &out, &[]).unwrap();
-        assert_eq!(rt.help_at(6, 55).map(|h| h.module), Some("SIGNON/USER".to_string()));
-        assert_eq!(rt.help_at(1, 2).map(|h| h.module), Some("SIGNON".to_string()));
+        assert_eq!(
+            rt.help_at(6, 55).map(|h| h.module),
+            Some("SIGNON/USER".to_string())
+        );
+        assert_eq!(
+            rt.help_at(1, 2).map(|h| h.module),
+            Some("SIGNON".to_string())
+        );
         match rt.input(&mut m, &env(), "SIGNON", tn5250::ds::aid::HELP, (7, 53)) {
-            Err(Problem::Help(h)) => assert_eq!((h.module.as_str(), h.group.as_str()), ("SIGNON/PWD", "QDSIGNON")),
+            Err(Problem::Help(h)) => assert_eq!(
+                (h.module.as_str(), h.group.as_str()),
+                ("SIGNON/PWD", "QDSIGNON")
+            ),
             other => panic!("{other:?}"),
         }
     }
@@ -1498,7 +1634,13 @@ mod tests {
         let df = compile(SIGNON);
         let mut rt = Runtime::new(df, false);
         let mut m = ScreenModel::new(false);
-        let out = [vec![0xF0u8], input::padded("QS400", 8), vec![0xF0; 7], input::padded("", 5)].concat();
+        let out = [
+            vec![0xF0u8],
+            input::padded("QS400", 8),
+            vec![0xF0; 7],
+            input::padded("", 5),
+        ]
+        .concat();
         rt.write(&mut m, &env(), "SIGNON", &out, &[]).unwrap();
         let mut t = terminal();
         let (aid, cursor) = round_trip(&mut m, &mut t, &[Key::F(3)], &["x"]);
@@ -1514,12 +1656,25 @@ mod tests {
         // F5 is not enabled.
         rt.write(&mut m, &env(), "SIGNON", &out, &[]).unwrap();
         let (aid, cursor) = round_trip(&mut m, &mut t, &[Key::F(5)], &[]);
-        assert_eq!(rt.input(&mut m, &env(), "SIGNON", aid, cursor), Err(Problem::KeyNotAllowed));
+        assert_eq!(
+            rt.input(&mut m, &env(), "SIGNON", aid, cursor),
+            Err(Problem::KeyNotAllowed)
+        );
         // An amount beyond RANGE is a field problem at the field.
         rt.write(&mut m, &env(), "SIGNON", &out, &[]).unwrap();
         let (aid, cursor) = round_trip(&mut m, &mut t, &[Key::Enter], &["", "", "123456"]);
         let p = rt.input(&mut m, &env(), "SIGNON", aid, cursor).unwrap_err();
-        assert!(matches!(p, Problem::Field { row: 9, col: 53, .. }), "{p:?}");
+        assert!(
+            matches!(
+                p,
+                Problem::Field {
+                    row: 9,
+                    col: 53,
+                    ..
+                }
+            ),
+            "{p:?}"
+        );
         rt.show_problem(&mut m, &p);
         assert!(m.text_rows()[23].contains("range"));
         // ERRMSG at write: the message shows, the field is reversed, what
@@ -1560,13 +1715,19 @@ mod tests {
         let mut m = ScreenModel::new(false);
         let e = env();
         // Clear, then five records, then display.
-        rt.write(&mut m, &e, "CTL1", &[0xF0, 0xF0, 0xF1], &[]).unwrap();
+        rt.write(&mut m, &e, "CTL1", &[0xF0, 0xF0, 0xF1], &[])
+            .unwrap();
         for i in 1..=5 {
-            let rec = [input::padded(" ", 1), input::padded(&format!("Thing {i}"), 20)].concat();
+            let rec = [
+                input::padded(" ", 1),
+                input::padded(&format!("Thing {i}"), 20),
+            ]
+            .concat();
             assert_eq!(rec.len(), sfl.layout.output.len as usize);
             rt.write(&mut m, &e, "SFL1", &rec, &[]).unwrap();
         }
-        rt.write(&mut m, &e, "CTL1", &[0xF1, 0xF1, 0xF0], &[]).unwrap();
+        rt.write(&mut m, &e, "CTL1", &[0xF1, 0xF1, 0xF0], &[])
+            .unwrap();
         rt.write(&mut m, &e, "FOOTER", &[], &[]).unwrap();
         let rows = m.text_rows();
         assert!(rows[0].contains("Work with things"));
@@ -1578,7 +1739,10 @@ mod tests {
         assert_eq!(m.fields().len(), 3);
         let mut t = terminal();
         let (aid, cursor) = round_trip(&mut m, &mut t, &[Key::PageDown], &[]);
-        assert_eq!(rt.input(&mut m, &e, "CTL1", aid, cursor), Err(Problem::Rolled));
+        assert_eq!(
+            rt.input(&mut m, &e, "CTL1", aid, cursor),
+            Err(Problem::Rolled)
+        );
         let rows = m.text_rows();
         assert!(rows[8].contains("Thing 4"));
         assert!(rows[9].contains("Thing 5"));
@@ -1587,7 +1751,10 @@ mod tests {
         // have more to come.
         assert!(rows[11].contains("More..."));
         let (aid, cursor) = round_trip(&mut m, &mut t, &[Key::PageDown], &[]);
-        assert_eq!(rt.input(&mut m, &e, "CTL1", aid, cursor), Err(Problem::KeyNotAllowed));
+        assert_eq!(
+            rt.input(&mut m, &e, "CTL1", aid, cursor),
+            Err(Problem::KeyNotAllowed)
+        );
         // Enter with the cursor on the second line of the page: RRN 5.
         let out = m.render(Read::MdtFields);
         t.apply(&Rec::new(out.opcode, out.data)).unwrap();
@@ -1607,7 +1774,8 @@ mod tests {
         let e = env();
         rt.write(&mut m, &e, "FOOTER", &[], &[]).unwrap();
         assert!(rt.is_shown("FOOTER"));
-        rt.write(&mut m, &e, "CTL1", &[0xF0, 0xF1, 0xF1], &[]).unwrap();
+        rt.write(&mut m, &e, "CTL1", &[0xF0, 0xF1, 0xF1], &[])
+            .unwrap();
         // OVERLAY kept the footer.
         assert!(rt.is_shown("FOOTER"));
         assert!(m.text_rows()[22].contains("F3=Exit"));

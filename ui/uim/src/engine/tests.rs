@@ -289,12 +289,12 @@ fn menu_choice_and_help_action() {
 fn a_tall_menu_pages_without_page_keys() {
     let mut items = String::new();
     for n in 1..=30 {
-        let _ = writeln!(items, ":MENUI OPTION={n} ACTION='CMD DSPJOB'.Option number {n}");
+        let _ = writeln!(
+            items,
+            ":MENUI OPTION={n} ACTION='CMD DSPJOB'.Option number {n}"
+        );
     }
-    let src = MENU.replace(
-        ":MENUI OPTION=1 ACTION='MENU USER'.User tasks\n",
-        &items,
-    );
+    let src = MENU.replace(":MENUI OPTION=1 ACTION='MENU USER'.User tasks\n", &items);
     let g = compile(&src);
     let mut d = Engine::new(Rc::clone(&g), "QS400");
     let mut t = Script::default();
@@ -303,8 +303,16 @@ fn a_tall_menu_pages_without_page_keys() {
         .step(Key::F(3), (1, 1), &[]);
     assert_eq!(d.show(&mut t, "TEST").unwrap(), Response::Exit);
     let has = |n: usize, s: &str| t.rows(n).iter().any(|r| r.contains(s));
-    assert!(has(0, "Option number 1 ") && has(0, "More..."), "{:?}", t.rows(0));
-    assert!(has(1, "Option number 15") && !has(1, "Option number 1 "), "{:?}", t.rows(1));
+    assert!(
+        has(0, "Option number 1 ") && has(0, "More..."),
+        "{:?}",
+        t.rows(0)
+    );
+    assert!(
+        has(1, "Option number 15") && !has(1, "Option number 1 "),
+        "{:?}",
+        t.rows(1)
+    );
     assert!(has(2, "Option number 1 "), "{:?}", t.rows(2));
 }
 
@@ -662,15 +670,30 @@ const EXT: &str = "\
 fn extended_action_entry() {
     let g = compile(EXT);
     let mut d = Engine::new(g, "QS400");
-    d.add_row("OBJS", vec![("OBJ".into(), "ONE".into()), ("TYPE".into(), "*FILE".into())]);
+    d.add_row(
+        "OBJS",
+        vec![
+            ("OBJ".into(), "ONE".into()),
+            ("TYPE".into(), "*FILE".into()),
+        ],
+    );
     d.list_mut("OBJS").complete = true;
     let first = crate::render(&d.group, "WRK", &d, &Options::default()).unwrap();
     // R27: the entry under the headings, an option and the object field;
     // the list's entries follow it and the cursor starts on it.
-    let ext: Vec<_> = first.fields.iter().filter(|f| f.row == 7).map(|f| (f.col, f.len)).collect();
+    let ext: Vec<_> = first
+        .fields
+        .iter()
+        .filter(|f| f.row == 7)
+        .map(|f| (f.col, f.len))
+        .collect();
     assert_eq!(ext, vec![(2, 2), (7, 10)]);
     assert_eq!(first.cursor, Some((7, 2)));
-    assert!(first.text_rows()[7].contains("ONE"), "{:?}", first.text_rows());
+    assert!(
+        first.text_rows()[7].contains("ONE"),
+        "{:?}",
+        first.text_rows()
+    );
     let entry = option_at(&first, 1);
     assert_eq!(entry.0, 8);
 
@@ -684,7 +707,10 @@ fn extended_action_entry() {
     assert_eq!(c.len(), 1);
     assert!(c[0].is_ext());
     assert_eq!(c[0].action, Some(Action::Cmd("CRTTHING OBJ(&OBJ.)".into())));
-    assert_eq!(d.substitute("CRTTHING OBJ(&OBJ.)", Some(("OBJS", c[0].row))), "CRTTHING OBJ(NEW)");
+    assert_eq!(
+        d.substitute("CRTTHING OBJ(&OBJ.)", Some(("OBJS", c[0].row))),
+        "CRTTHING OBJ(NEW)"
+    );
     assert_eq!(d.list_ref("OBJS").unwrap().ext_value("OBJ"), "NEW");
 
     // `EXTENTER` is the entry's action; an entry option keeps `ENTER`.
@@ -721,6 +747,12 @@ fn option_parameters_run_without_the_prompt() {
         with_option_parms(cmd, " OUTQ(QS01P01) "),
         "CHGSPLFA FILE(QSYSPRT) JOB(000225/QSECOFR/QPADEV0001) SPLNBR(1) OUTQ(QS01P01)"
     );
-    assert_eq!(with_option_parms("HLDSPLF FILE(X)", "OPTION(*IMMED)"), "HLDSPLF FILE(X) OPTION(*IMMED)");
-    assert_eq!(with_option_parms("?CRTX ??A(1) ?*B(2) TEXT('a ?b')", "C(3)"), "CRTX A(1) B(2) TEXT('a ?b') C(3)");
+    assert_eq!(
+        with_option_parms("HLDSPLF FILE(X)", "OPTION(*IMMED)"),
+        "HLDSPLF FILE(X) OPTION(*IMMED)"
+    );
+    assert_eq!(
+        with_option_parms("?CRTX ??A(1) ?*B(2) TEXT('a ?b')", "C(3)"),
+        "CRTX A(1) B(2) TEXT('a ?b') C(3)"
+    );
 }

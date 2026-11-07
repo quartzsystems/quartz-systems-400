@@ -145,7 +145,8 @@ pub struct RustlsConnector(pub Arc<tls::rustls::ClientConfig>);
 impl Connector for RustlsConnector {
     fn connect(&self, host: &str, tcp: TcpStream) -> io::Result<Box<dyn Stream>> {
         let name = tls::config::server_name(host).map_err(io::Error::other)?;
-        let s = tls::stream::TlsStream::connect(self.0.clone(), name, tcp).map_err(io::Error::other)?;
+        let s =
+            tls::stream::TlsStream::connect(self.0.clone(), name, tcp).map_err(io::Error::other)?;
         Ok(Box::new(s))
     }
 }
@@ -172,7 +173,10 @@ fn read_reply(s: &mut dyn Stream) -> io::Result<(u16, Vec<String>)> {
         let mut b = [0u8; 1];
         loop {
             if s.read(&mut b)? == 0 {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "the mail router closed the connection"));
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "the mail router closed the connection",
+                ));
             }
             if b[0] == b'\n' {
                 break;
@@ -181,9 +185,14 @@ fn read_reply(s: &mut dyn Stream) -> io::Result<(u16, Vec<String>)> {
                 line.push(b[0]);
             }
         }
-        let text = String::from_utf8_lossy(&line).trim_end_matches('\r').to_string();
+        let text = String::from_utf8_lossy(&line)
+            .trim_end_matches('\r')
+            .to_string();
         let code: u16 = text.get(..3).and_then(|c| c.parse().ok()).ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, format!("not an SMTP reply: {text}"))
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("not an SMTP reply: {text}"),
+            )
         })?;
         let more = text.as_bytes().get(3) == Some(&b'-');
         lines.push(text.get(4..).unwrap_or("").to_string());
@@ -249,7 +258,9 @@ impl Session {
 
     fn write(&mut self, b: &[u8]) -> Result<(), SmtpError> {
         let s = self.stream()?;
-        s.write_all(b).and_then(|()| s.flush()).map_err(|e| Self::io(&e))
+        s.write_all(b)
+            .and_then(|()| s.flush())
+            .map_err(|e| Self::io(&e))
     }
 
     fn reply(&mut self) -> Result<(u16, Vec<String>), SmtpError> {
@@ -261,7 +272,9 @@ impl Session {
         let Conn::Plain(tcp) = std::mem::replace(&mut self.conn, Conn::Gone) else {
             return Err(SmtpError::Tls("TLS is already on".into()));
         };
-        let s = tls.connect(host, tcp).map_err(|e| SmtpError::Tls(e.to_string()))?;
+        let s = tls
+            .connect(host, tcp)
+            .map_err(|e| SmtpError::Tls(e.to_string()))?;
         self.conn = Conn::Secure(s);
         Ok(())
     }
@@ -284,7 +297,11 @@ impl Session {
     /// `EHLO`, then `HELO` when refused: the extensions offered.
     fn hello(&mut self, name: &str) -> Result<Vec<String>, SmtpError> {
         match self.step(&format!("EHLO {name}"), "EHLO", 2) {
-            Ok((_, lines)) => Ok(lines.into_iter().skip(1).map(|l| l.to_ascii_uppercase()).collect()),
+            Ok((_, lines)) => Ok(lines
+                .into_iter()
+                .skip(1)
+                .map(|l| l.to_ascii_uppercase())
+                .collect()),
             Err(SmtpError::Reply { code, .. }) if code / 100 == 5 => {
                 self.step(&format!("HELO {name}"), "HELO", 2)?;
                 Ok(Vec::new())
@@ -295,14 +312,20 @@ impl Session {
 }
 
 fn offers(ext: &[String], word: &str) -> bool {
-    ext.iter().any(|l| l.split_whitespace().next() == Some(word))
+    ext.iter()
+        .any(|l| l.split_whitespace().next() == Some(word))
 }
 
 /// The `AUTH` mechanisms offered.
 fn mechanisms(ext: &[String]) -> Vec<String> {
     ext.iter()
         .filter_map(|l| l.strip_prefix("AUTH").map(str::to_string))
-        .flat_map(|rest| rest.split([' ', '=']).filter(|w| !w.is_empty()).map(str::to_string).collect::<Vec<_>>())
+        .flat_map(|rest| {
+            rest.split([' ', '='])
+                .filter(|w| !w.is_empty())
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
         .collect()
 }
 
@@ -331,7 +354,11 @@ fn open(relay: &Relay) -> Result<TcpStream, SmtpError> {
             .map_err(|e| SmtpError::Connect(format!("{}: {e}", relay.host)))?
             .collect()
     } else {
-        relay.addrs.iter().map(|a| SocketAddr::new(a.ip(), relay.port)).collect()
+        relay
+            .addrs
+            .iter()
+            .map(|a| SocketAddr::new(a.ip(), relay.port))
+            .collect()
     };
     let mut last = String::from("no address");
     for a in addrs {
@@ -344,13 +371,23 @@ fn open(relay: &Relay) -> Result<TcpStream, SmtpError> {
             Err(e) => last = e.to_string(),
         }
     }
-    Err(SmtpError::Connect(format!("{}:{}: {last}", relay.host, relay.port)))
+    Err(SmtpError::Connect(format!(
+        "{}:{}: {last}",
+        relay.host, relay.port
+    )))
 }
 
 /// Hand `message` to the relay for the envelope's recipients.
-pub fn send(relay: &Relay, env: &Envelope, message: &[u8], tls: &dyn Connector) -> Result<Receipt, SmtpError> {
+pub fn send(
+    relay: &Relay,
+    env: &Envelope,
+    message: &[u8],
+    tls: &dyn Connector,
+) -> Result<Receipt, SmtpError> {
     let tcp = open(relay)?;
-    let mut sess = Session { conn: Conn::Plain(tcp) };
+    let mut sess = Session {
+        conn: Conn::Plain(tcp),
+    };
     if relay.tls == TlsMode::Implicit {
         sess.upgrade(&relay.host, tls)?;
     }
@@ -369,7 +406,9 @@ pub fn send(relay: &Relay, env: &Envelope, message: &[u8], tls: &dyn Connector) 
             sess.upgrade(&relay.host, tls)?;
             ext = sess.hello(&relay.helo)?;
         } else if relay.tls == TlsMode::Required {
-            return Err(SmtpError::Tls("the mail router does not offer STARTTLS".into()));
+            return Err(SmtpError::Tls(
+                "the mail router does not offer STARTTLS".into(),
+            ));
         }
     }
     if let Some((user, pass)) = &relay.auth {
@@ -397,7 +436,9 @@ pub fn send(relay: &Relay, env: &Envelope, message: &[u8], tls: &dyn Connector) 
     for r in &env.to {
         match sess.step(&format!("RCPT TO:<{r}>"), "RCPT TO", 2) {
             Ok(_) => receipt.accepted.push(r.clone()),
-            Err(SmtpError::Reply { code, text, .. }) => receipt.refused.push((r.clone(), code, text)),
+            Err(SmtpError::Reply { code, text, .. }) => {
+                receipt.refused.push((r.clone(), code, text))
+            }
             Err(e) => return Err(e),
         }
     }

@@ -132,8 +132,11 @@ pub fn check_device(name: &str) -> Result<String, String> {
         return Ok(String::new());
     }
     let ok = n.len() <= 10
-        && n.chars().all(|c| c.is_ascii_alphanumeric() || "#$@_".contains(c))
-        && n.chars().next().is_some_and(|c| c.is_ascii_alphabetic() || "#$@".contains(c));
+        && n.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "#$@_".contains(c))
+        && n.chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphabetic() || "#$@".contains(c));
     if ok {
         Ok(n)
     } else {
@@ -150,7 +153,11 @@ pub fn check_name(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= 253
         && name.split('.').all(|l| {
-            !l.is_empty() && l.len() <= 63 && !l.starts_with('-') && !l.ends_with('-') && l.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+            !l.is_empty()
+                && l.len() <= 63
+                && !l.starts_with('-')
+                && !l.ends_with('-')
+                && l.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
         })
 }
 
@@ -405,7 +412,10 @@ impl SessionFile {
 
     /// The keyboard map the session uses.
     pub fn keymap(&self) -> KeyMap {
-        self.keymap.as_ref().and_then(|k| k.to_map().ok()).unwrap_or_default()
+        self.keymap
+            .as_ref()
+            .and_then(|k| k.to_map().ok())
+            .unwrap_or_default()
     }
 
     /// Keep `map` as the session's keyboard map.
@@ -420,7 +430,11 @@ impl SessionFile {
     /// The title to show: the session's, else the system's name.
     pub fn display_title(&self) -> String {
         let t = self.session.title.trim();
-        if t.is_empty() { self.system.name.clone() } else { t.to_owned() }
+        if t.is_empty() {
+            self.system.name.clone()
+        } else {
+            t.to_owned()
+        }
     }
 
     /// Check every value a session needs.
@@ -430,7 +444,10 @@ impl SessionFile {
             return bad("[system] has no name".into());
         }
         if !check_name(&self.system.name) {
-            return bad(format!("system name {} is not a host name or address", self.system.name));
+            return bad(format!(
+                "system name {} is not a host name or address",
+                self.system.name
+            ));
         }
         if self.system.telnet_port == 0 {
             return bad("Telnet port 0 is not valid".into());
@@ -497,8 +514,14 @@ mod tests {
         f.hotspots.set(HOTSPOT_PAGING, false);
         f.macros.files.push("signon.qsm".into());
         let text = f.to_text();
-        assert!(text.starts_with("[qsaccess]\nkind = \"display\"\nversion = 1\n"), "{text}");
-        assert!(text.contains("colour_map = \"black-on-white\"") && text.contains("Pause = \"\""), "{text}");
+        assert!(
+            text.starts_with("[qsaccess]\nkind = \"display\"\nversion = 1\n"),
+            "{text}"
+        );
+        assert!(
+            text.contains("colour_map = \"black-on-white\"") && text.contains("Pause = \"\""),
+            "{text}"
+        );
         let back = SessionFile::parse(&text).unwrap();
         assert_eq!(back, f);
         assert_eq!(back.keymap().function("Pause"), None);
@@ -509,13 +532,26 @@ mod tests {
         let text = "future = 1\n[qsaccess]\nkind = \"display\"\nversion = 1\nbuild = \"x\"\n[system]\nname = \"sys1\"\nsite = \"Leeds\"\n[session]\nzoom = 2\n[printer]\nname = \"LPT1\"\n";
         let f = SessionFile::parse(text).unwrap();
         let out = f.to_text();
-        for want in ["future = 1", "build = \"x\"", "site = \"Leeds\"", "zoom = 2", "[printer]"] {
+        for want in [
+            "future = 1",
+            "build = \"x\"",
+            "site = \"Leeds\"",
+            "zoom = 2",
+            "[printer]",
+        ] {
             assert!(out.contains(want), "{want}: {out}");
         }
-        let with = |b: &str| SessionFile::parse(&format!("[qsaccess]\nkind = \"display\"\nversion = 1\n{b}"));
+        let with = |b: &str| {
+            SessionFile::parse(&format!("[qsaccess]\nkind = \"display\"\nversion = 1\n{b}"))
+        };
         assert!(matches!(with(""), Err(FileError::Invalid(_))));
-        assert!(matches!(with("[system]\nname = \"a\"\n[session]\nccsid = 9\n"), Err(FileError::Invalid(s)) if s.contains("CCSID 9")));
-        assert!(matches!(with("[system]\nname = \"a\"\n[session]\nscreen_size = \"25x80\"\n"), Err(FileError::Parse(_))));
+        assert!(
+            matches!(with("[system]\nname = \"a\"\n[session]\nccsid = 9\n"), Err(FileError::Invalid(s)) if s.contains("CCSID 9"))
+        );
+        assert!(matches!(
+            with("[system]\nname = \"a\"\n[session]\nscreen_size = \"25x80\"\n"),
+            Err(FileError::Parse(_))
+        ));
         assert!(matches!(
             SessionFile::parse("[qsaccess]\nkind = \"display\"\nversion = 2\n[system]\nname = 5\n"),
             Err(FileError::Newer(2))

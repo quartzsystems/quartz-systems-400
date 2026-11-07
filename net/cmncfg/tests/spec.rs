@@ -34,7 +34,13 @@ fn line_description_matches_the_spec() {
     let code: Vec<(usize, usize, String)> = cmncfg::lind::LAYOUT
         .fields
         .iter()
-        .map(|f| (f.offset.expect("fixed"), f.size.expect("fixed"), f.name.to_string()))
+        .map(|f| {
+            (
+                f.offset.expect("fixed"),
+                f.size.expect("fixed"),
+                f.name.to_string(),
+            )
+        })
         .collect();
     assert_eq!(spec, code);
     assert_eq!(cmncfg::lind::LAYOUT.size, Some(272));

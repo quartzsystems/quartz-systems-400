@@ -26,10 +26,16 @@ pub fn text() -> &'static str {
             let r: Vec<String> = rows.iter().map(ToString::to_string).collect();
             let _ = write!(s, "{}:[{}],", *c as u32, r.join(","));
         }
-        let boxed: Vec<String> = font::glyph('\u{10FFFF}').iter().map(ToString::to_string).collect();
+        let boxed: Vec<String> = font::glyph('\u{10FFFF}')
+            .iter()
+            .map(ToString::to_string)
+            .collect();
         let _ = writeln!(s, "box:[{}]}};", boxed.join(","));
         s.push_str("var KEYPAD = {");
-        let pairs: Vec<String> = KEYPAD.iter().map(|(l, f)| format!("\"{l}\":\"{f}\"")).collect();
+        let pairs: Vec<String> = KEYPAD
+            .iter()
+            .map(|(l, f)| format!("\"{l}\":\"{f}\""))
+            .collect();
         s.push_str(&pairs.join(","));
         s.push_str("};\n");
         s.push_str(SOURCE);
@@ -39,5 +45,10 @@ pub fn text() -> &'static str {
 
 /// `GET /5250/script.js`.
 pub fn js() -> Response {
-    Response::new(200, "text/javascript; charset=utf-8", text().as_bytes().to_vec()).with("Cache-Control", "max-age=3600")
+    Response::new(
+        200,
+        "text/javascript; charset=utf-8",
+        text().as_bytes().to_vec(),
+    )
+    .with("Cache-Control", "max-age=3600")
 }

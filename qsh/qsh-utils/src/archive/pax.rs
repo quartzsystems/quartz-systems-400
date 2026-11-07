@@ -69,7 +69,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         Err(e) => return usage(cx, NAME, &e.to_string()),
     };
     if p.has('i') {
-        return usage(cx, NAME, "Option -i is not supported: there is no terminal to ask.");
+        return usage(
+            cx,
+            NAME,
+            "Option -i is not supported: there is no terminal to ask.",
+        );
     }
     let mut o = Opts {
         read: p.has('r'),
@@ -353,7 +357,8 @@ fn copy(cx: &UtilCtx<'_>, o: &Opts, ops: &[String]) -> i32 {
                     Err(_) => true,
                 };
                 let parent = target.rsplit_once('/').map_or("/", |(a, _)| a).to_string();
-                if fresh && mkdirs(cx, &parent).is_ok() && cx.sys.link(&found.abs, &target).is_ok() {
+                if fresh && mkdirs(cx, &parent).is_ok() && cx.sys.link(&found.abs, &target).is_ok()
+                {
                     if o.verbose {
                         let _ = cx.err(&format!("{name}\n"));
                     }

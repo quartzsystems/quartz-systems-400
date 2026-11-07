@@ -202,7 +202,9 @@ impl Client {
 
     /// A PTF's save stream, checked against its catalog entry.
     pub fn ptf(&self, entry: &CatalogPtf) -> Result<Vec<u8>> {
-        let body = self.call("GET", &format!("/v1/ptf/{}", entry.id), Vec::new())?.body;
+        let body = self
+            .call("GET", &format!("/v1/ptf/{}", entry.id), Vec::new())?
+            .body;
         check(entry, &body)?;
         Ok(body)
     }
@@ -228,7 +230,10 @@ impl Client {
             "QS400SERVICE 1\naction *PRB\nsystem {}\ncontact {contact}\nproblem {id}\n\n{report}",
             self.ident.system
         );
-        Ok(self.text("POST", "/v1/service", body.into_bytes())?.trim().to_string())
+        Ok(self
+            .text("POST", "/v1/service", body.into_bytes())?
+            .trim()
+            .to_string())
     }
 
     /// A service request; the service's one line.
@@ -237,7 +242,10 @@ impl Client {
             "QS400SERVICE 1\naction {action}\nsystem {}\ncontact {contact}\n",
             self.ident.system
         );
-        Ok(self.text("POST", "/v1/service", body.into_bytes())?.trim().to_string())
+        Ok(self
+            .text("POST", "/v1/service", body.into_bytes())?
+            .trim()
+            .to_string())
     }
 }
 

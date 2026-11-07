@@ -47,7 +47,9 @@ impl Target<'_> {
         match self {
             Target::File(_) => "the file".into(),
             Target::Record(r) => r.name.clone(),
-            Target::Element(e) => e.name().map_or_else(|| sda::image::element_text(e), str::to_string),
+            Target::Element(e) => e
+                .name()
+                .map_or_else(|| sda::image::element_text(e), str::to_string),
         }
     }
 }
@@ -127,9 +129,20 @@ fn choose(surface: &mut Surface, t: &mut Target<'_>, g: &Group) -> Flow {
     } else {
         ("Select Colors", fscreen::COLORS, e.colors.clone())
     };
-    let what = e.name().map_or_else(|| sda::image::element_text(e), str::to_string);
-    let vals: BTreeMap<String, String> = current.iter().map(|v| (v.clone(), "Y".to_string())).collect();
-    let screen = fscreen::choose(title, &what, items, &|k| vals.get(k).cloned().unwrap_or_default(), None);
+    let what = e
+        .name()
+        .map_or_else(|| sda::image::element_text(e), str::to_string);
+    let vals: BTreeMap<String, String> = current
+        .iter()
+        .map(|v| (v.clone(), "Y".to_string()))
+        .collect();
+    let screen = fscreen::choose(
+        title,
+        &what,
+        items,
+        &|k| vals.get(k).cloned().unwrap_or_default(),
+        None,
+    );
     let Some(a) = ui::show(surface, &screen) else {
         return Flow::Gone;
     };

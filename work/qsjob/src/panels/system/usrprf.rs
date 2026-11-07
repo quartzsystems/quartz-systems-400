@@ -22,7 +22,12 @@ pub fn dspusrprf(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
         return None;
     }
     let name = parm(r, "USRPRF");
-    let vars = read!(&r.name, host.link.borrow_mut().with(|l| l.usrprf_panel(name.clone())));
+    let vars = read!(
+        &r.name,
+        host.link
+            .borrow_mut()
+            .with(|l| l.usrprf_panel(name.clone()))
+    );
     let mut d = match crate::panels::dialog(host, "QUIUSRPRF") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -57,7 +62,10 @@ pub fn wrkusrprf(
         Err(e) => return Some(Err(e)),
     };
     loop {
-        let users = read!(&r.name, host.link.borrow_mut().with(Client::usrprf_panel_list));
+        let users = read!(
+            &r.name,
+            host.link.borrow_mut().with(Client::usrprf_panel_list)
+        );
         let top = d.list_mut("USERS").top;
         d.clear_list("USERS");
         for (name, class, text) in users {
@@ -93,7 +101,10 @@ pub fn wrkusrprf(
 /// `DSPAUTUSR SEQ()`.
 pub fn dspautusr(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let by_group = parm(r, "SEQ") == "*GRPPRF";
-    let rows = read!(&r.name, host.link.borrow_mut().with(|l| l.autusr_panel(by_group)));
+    let rows = read!(
+        &r.name,
+        host.link.borrow_mut().with(|l| l.autusr_panel(by_group))
+    );
     let mut d = match crate::panels::dialog(host, "QUIAUTUSR") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),

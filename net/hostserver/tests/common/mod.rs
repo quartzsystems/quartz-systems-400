@@ -52,7 +52,9 @@ impl TraceAuth {
                 if ch.dir != Dir::Reply || !ch.framed {
                     continue;
                 }
-                let Ok(f) = Frame::decode(&ch.bytes) else { continue };
+                let Ok(f) = Frame::decode(&ch.bytes) else {
+                    continue;
+                };
                 match f.header.req_rep_id {
                     0xF001 => {
                         let mut s = [0u8; 8];
@@ -123,7 +125,11 @@ fn ranges_of(a: &[u8], b: &[u8]) -> String {
         match (differ, start) {
             (true, None) => start = Some(i),
             (false, Some(s)) => {
-                out.push(if i - s == 1 { format!("{s}") } else { format!("{s}-{}", i - 1) });
+                out.push(if i - s == 1 {
+                    format!("{s}")
+                } else {
+                    format!("{s}-{}", i - 1)
+                });
                 start = None;
             }
             _ => {}
@@ -156,26 +162,57 @@ pub fn compare(at: &str, ours: &[u8], theirs: &[u8], m: &Masks, out: &mut Vec<St
     }
     let id = b.header.req_rep_id;
     if a.header.req_rep_id != id {
-        out.push(format!("{at}: reply {:04x}, oracle {:04x}", a.header.req_rep_id, id));
+        out.push(format!(
+            "{at}: reply {:04x}, oracle {:04x}",
+            a.header.req_rep_id, id
+        ));
         return;
     }
-    if a.header.header_id != b.header.header_id || a.header.correlation != b.header.correlation || a.header.server_id != b.header.server_id {
+    if a.header.header_id != b.header.header_id
+        || a.header.correlation != b.header.correlation
+        || a.header.server_id != b.header.server_id
+    {
         out.push(format!("{at}: header fields differ"));
     }
-    let tr = || m.template.iter().filter(move |(i, _)| *i == id).map(|(_, r)| r.clone());
+    let tr = || {
+        m.template
+            .iter()
+            .filter(move |(i, _)| *i == id)
+            .map(|(_, r)| r.clone())
+    };
     let (ta, tb) = (masked(&a.template, tr()), masked(&b.template, tr()));
     if ta != tb {
-        out.push(format!("{at}: template {} bytes, oracle {}, differ at {}", ta.len(), tb.len(), ranges_of(&ta, &tb)));
+        out.push(format!(
+            "{at}: template {} bytes, oracle {}, differ at {}",
+            ta.len(),
+            tb.len(),
+            ranges_of(&ta, &tb)
+        ));
     }
-    let cps = |f: &Frame| f.params.iter().map(|p| format!("{:04x}", p.cp)).collect::<Vec<_>>().join(" ");
+    let cps = |f: &Frame| {
+        f.params
+            .iter()
+            .map(|p| format!("{:04x}", p.cp))
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
     if cps(&a) != cps(&b) {
-        out.push(format!("{at}: parameters [{}], oracle [{}]", cps(&a), cps(&b)));
+        out.push(format!(
+            "{at}: parameters [{}], oracle [{}]",
+            cps(&a),
+            cps(&b)
+        ));
     }
     for (pa, pb) in a.params.iter().zip(&b.params) {
         if pa.cp != pb.cp || m.skip.contains(&pa.cp) {
             continue;
         }
-        let pr = || m.param.iter().filter(|(c, _)| *c == pa.cp).map(|(_, r)| r.clone());
+        let pr = || {
+            m.param
+                .iter()
+                .filter(|(c, _)| *c == pa.cp)
+                .map(|(_, r)| r.clone())
+        };
         let (da, db) = (masked(&pa.data, pr()), masked(&pb.data, pr()));
         if da != db {
             out.push(format!(
@@ -228,9 +265,16 @@ pub fn replay(t: &Trace, masks: &Masks, make: &mut dyn FnMut() -> Box<dyn Handle
                 && c.events.iter().any(|e| matches!(e, Event::Chunk(_)))
                 && !o.replies.is_empty();
             if oracle_closed {
-                out.push(format!("{at}: the oracle closed without a reply; we answer {}", o.replies.len()));
+                out.push(format!(
+                    "{at}: the oracle closed without a reply; we answer {}",
+                    o.replies.len()
+                ));
             } else if o.replies.len() != theirs.len() {
-                out.push(format!("{at}: {} replies, oracle {}", o.replies.len(), theirs.len()));
+                out.push(format!(
+                    "{at}: {} replies, oracle {}",
+                    o.replies.len(),
+                    theirs.len()
+                ));
             }
             for (k, (a, b)) in o.replies.iter().zip(&theirs).enumerate() {
                 compared += 1;
@@ -245,13 +289,22 @@ pub fn replay(t: &Trace, masks: &Masks, make: &mut dyn FnMut() -> Box<dyn Handle
 
 /// Check the difference lines against the accepted ones.
 pub fn accept(name: &str, diffs: &[String]) {
-    let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/replay").join(format!("{name}.txt"));
+    let p = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/replay")
+        .join(format!("{name}.txt"));
     let text = diffs.join("\n") + if diffs.is_empty() { "" } else { "\n" };
     if std::env::var_os("QS400_UPDATE_REPLAY").is_some() {
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
         std::fs::write(&p, &text).unwrap();
         return;
     }
-    let want = std::fs::read_to_string(&p).unwrap_or_default().replace("\r\n", "\n");
-    assert_eq!(text, want, "replay differences of {name} changed (QS400_UPDATE_REPLAY=1 rewrites {})", p.display());
+    let want = std::fs::read_to_string(&p)
+        .unwrap_or_default()
+        .replace("\r\n", "\n");
+    assert_eq!(
+        text,
+        want,
+        "replay differences of {name} changed (QS400_UPDATE_REPLAY=1 rewrites {})",
+        p.display()
+    );
 }

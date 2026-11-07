@@ -222,7 +222,12 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
     let user = super::security::as_user(&req);
     let session = Rc::clone(&ctx.session);
     // Dates and times in the asking job's formats.
-    let _formats = super::fmt::enter(system.attrs.get(&ctx.job.number).map(wm::job::JobAttrs::formats));
+    let _formats = super::fmt::enter(
+        system
+            .attrs
+            .get(&ctx.job.number)
+            .map(wm::job::JobAttrs::formats),
+    );
     super::security::freshen(system, &session);
     let mut served = Served { system, ctx };
     if user {
@@ -250,7 +255,11 @@ fn joblog_of(
     sec::guard::as_job(session, || super::security::may_display(&ctx.job.user, &q))?;
     // The log of a job with *ALLOBJ takes QIBM_ACCESS_ALLOBJ_JOBLOG
     // from a *JOBCTL user who is not its own.
-    let target_allobj = ctx.session.borrow().principal.has(sec::profile::SpecialAuth::ALLOBJ);
+    let target_allobj = ctx
+        .session
+        .borrow()
+        .principal
+        .has(sec::profile::SpecialAuth::ALLOBJ);
     let other = sec::guard::as_job(session, || {
         super::security::actor().is_some_and(|p| p.user != ctx.job.user)
     });
@@ -316,7 +325,12 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     super::acg::job_started(system, &job, entered);
     let jobq = system.queued.get(&job.number).cloned().unwrap_or_default();
     super::jobntfy::started(system, &job, entered, &jobq);
-    super::liclog::write(0x0300, 0x0001, job.number, &format!("{}/{}", job.user, job.name));
+    super::liclog::write(
+        0x0300,
+        0x0001,
+        job.number,
+        &format!("{}/{}", job.user, job.name),
+    );
     super::security::js("S", (&job.name, &job.user, job.number), job.kind, &job.jobd);
     let who = (job.name.clone(), job.user.clone(), job.number);
     let data = wm::joblog::started_data(
@@ -384,7 +398,12 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     );
     let who = (j.name.clone(), j.user.clone(), j.number);
     let minor = if abnormal { 0x0003 } else { 0x0002 };
-    super::liclog::write(0x0300, minor, j.number, &format!("{}/{} end code {code}", j.user, j.name));
+    super::liclog::write(
+        0x0300,
+        minor,
+        j.number,
+        &format!("{}/{} end code {code}", j.user, j.name),
+    );
     super::trace::job(j.number, "JOB", "ended");
     super::hist::system_message(system, "CPF1164", &data, "04", who.clone());
     for id in std::mem::take(&mut ctx.splfs) {
@@ -621,7 +640,8 @@ fn command_parms(
             )));
         }
     };
-    cmd::block::read(&def, segments, specified).map_err(|e| Box::new(crate::cpp::escape(e.msgid(), name, &e.to_string())))
+    cmd::block::read(&def, segments, specified)
+        .map_err(|e| Box::new(crate::cpp::escape(e.msgid(), name, &e.to_string())))
 }
 
 /// A long command started (`stgsvc::turns`): its work, prepared as one
@@ -635,7 +655,8 @@ pub fn long_command(
     let parms = command_parms(name, &segments, specified)?;
     let job = JobHandle(ctx.job.handle);
     let mut served = Served { system, ctx };
-    let (r, prompt) = served.as_command(|s| crate::cpp::longcmd::prepare(s, name, &parms, typed, job));
+    let (r, prompt) =
+        served.as_command(|s| crate::cpp::longcmd::prepare(s, name, &parms, typed, job));
     match r {
         Ok(long) => Ok((long, segments)),
         Err(mut reply) => {
@@ -691,9 +712,20 @@ pub fn sql_session<'c>(
     c: &'c mut JobCtx,
 ) -> Result<&'c mut sql::embed::Session, Box<sql::embed::WireReply>> {
     use sql::embed::{Reply, Session};
-    let Ok((names, qsys)) = with_main(shared, |txn, qsys| Ok((ile::name_context(txn, qsys), qsys))) else {
-        let e = sql::SqlError::Database { what: "the object store is not available".into(), msgid: None };
-        return Err(Box::new(Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new(), call: None }.to_wire()));
+    let Ok((names, qsys)) = with_main(shared, |txn, qsys| Ok((ile::name_context(txn, qsys), qsys)))
+    else {
+        let e = sql::SqlError::Database {
+            what: "the object store is not available".into(),
+            msgid: None,
+        };
+        return Err(Box::new(
+            Reply {
+                sqlca: sql::Sqlca::from_error(&e),
+                rows: Vec::new(),
+                call: None,
+            }
+            .to_wire(),
+        ));
     };
     let handle = JobHandle(c.job.handle);
     let s = c.sql.get_or_insert_with(|| {
@@ -703,11 +735,18 @@ pub fn sql_session<'c>(
     });
     s.ctx.names = names;
     if s.ctx.dbmon.ident.is_none() {
-        s.ctx.dbmon.ident = Some(sql::dbmon::JobIdent { name: c.job.name.clone(), user: c.job.user.clone(), number: c.job.number });
+        s.ctx.dbmon.ident = Some(sql::dbmon::JobIdent {
+            name: c.job.name.clone(),
+            user: c.job.user.clone(),
+            number: c.job.number,
+        });
     }
     s.ctx.qtemp = c.svc.qtemp.clone();
     s.ctx.registers.job_name = Some(super::sqlsrv::qualified(&c.job));
-    s.ctx.registers.server_mode_job_name.clone_from(&c.sql_client);
+    s.ctx
+        .registers
+        .server_mode_job_name
+        .clone_from(&c.sql_client);
     // The job's own thread can be asked to end a statement.
     if !c.thread {
         let flag = stg::sql_cancel_path(c.job.number);
@@ -828,11 +867,21 @@ impl Service for Served<'_> {
         super::devices::set_status(self.system, &device, status)
     }
 
-    fn power_down(&mut self, immediate: bool, delay: u32, restart: bool, iplsrc: u8) -> Result<(), String> {
+    fn power_down(
+        &mut self,
+        immediate: bool,
+        delay: u32,
+        restart: bool,
+        iplsrc: u8,
+    ) -> Result<(), String> {
         // slic reads the options and powers down on SIGUSR1.
         std::fs::write(
             crate::ipl::power::REQUEST_FILE,
-            format!("{} {delay} {} {iplsrc}\n", u8::from(immediate), u8::from(restart)),
+            format!(
+                "{} {delay} {} {iplsrc}\n",
+                u8::from(immediate),
+                u8::from(restart)
+            ),
         )
         .map_err(|e| e.to_string())?;
         rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1)
@@ -873,11 +922,20 @@ impl Service for Served<'_> {
         super::hostsvr::signon(self.system, self.ctx, &user, &proof, &token, swap)
     }
 
-    fn qap_signon(&mut self, user: String, password: String) -> Result<stg::QapSession, stg::QapRefused> {
+    fn qap_signon(
+        &mut self,
+        user: String,
+        password: String,
+    ) -> Result<stg::QapSession, stg::QapRefused> {
         super::qap::signon(self.system, self.ctx, &user, &password)
     }
 
-    fn qap_chgpwd(&mut self, user: String, old: String, new: String) -> Result<stg::QapSession, stg::QapRefused> {
+    fn qap_chgpwd(
+        &mut self,
+        user: String,
+        old: String,
+        new: String,
+    ) -> Result<stg::QapSession, stg::QapRefused> {
         super::qap::chgpwd(self.system, self.ctx, &user, &old, &new)
     }
 
@@ -927,15 +985,25 @@ impl Service for Served<'_> {
         super::qap::spool::read(self.system, self.ctx, &req)
     }
 
-    fn qap_splf_hold(&mut self, id: qap_proto::ops::spool::SpooledFileId, immediately: bool) -> Result<(), stg::QapRefused> {
+    fn qap_splf_hold(
+        &mut self,
+        id: qap_proto::ops::spool::SpooledFileId,
+        immediately: bool,
+    ) -> Result<(), stg::QapRefused> {
         super::qap::spool::hold(self.system, self.ctx, &id, immediately)
     }
 
-    fn qap_splf_release(&mut self, id: qap_proto::ops::spool::SpooledFileId) -> Result<(), stg::QapRefused> {
+    fn qap_splf_release(
+        &mut self,
+        id: qap_proto::ops::spool::SpooledFileId,
+    ) -> Result<(), stg::QapRefused> {
         super::qap::spool::release(self.system, self.ctx, &id)
     }
 
-    fn qap_splf_delete(&mut self, id: qap_proto::ops::spool::SpooledFileId) -> Result<(), stg::QapRefused> {
+    fn qap_splf_delete(
+        &mut self,
+        id: qap_proto::ops::spool::SpooledFileId,
+    ) -> Result<(), stg::QapRefused> {
         super::qap::spool::delete(self.system, self.ctx, &id)
     }
 
@@ -968,14 +1036,23 @@ impl Service for Served<'_> {
         r
     }
 
-    fn qap_msg_reply(&mut self, queue: qap_proto::ops::messages::Queue, key: u32, reply: String) -> Result<(), stg::QapRefused> {
+    fn qap_msg_reply(
+        &mut self,
+        queue: qap_proto::ops::messages::Queue,
+        key: u32,
+        reply: String,
+    ) -> Result<(), stg::QapRefused> {
         self.own_libl();
         let r = super::qap::messages::reply(self.system, self.ctx, &queue, key, &reply);
         ile::set_libl(None);
         r
     }
 
-    fn qap_msg_remove(&mut self, queue: qap_proto::ops::messages::Queue, keys: Vec<u32>) -> Result<(), stg::QapRefused> {
+    fn qap_msg_remove(
+        &mut self,
+        queue: qap_proto::ops::messages::Queue,
+        keys: Vec<u32>,
+    ) -> Result<(), stg::QapRefused> {
         self.own_libl();
         let r = super::qap::messages::remove(self.system, self.ctx, &queue, &keys);
         ile::set_libl(None);
@@ -994,7 +1071,10 @@ impl Service for Served<'_> {
         r
     }
 
-    fn qap_mgmt_ptfs(&mut self, product: String) -> Result<Vec<qap_proto::ops::manage::Ptf>, stg::QapRefused> {
+    fn qap_mgmt_ptfs(
+        &mut self,
+        product: String,
+    ) -> Result<Vec<qap_proto::ops::manage::Ptf>, stg::QapRefused> {
         super::qap::manage::ptfs(self.system, self.ctx, &product)
     }
 
@@ -1006,7 +1086,10 @@ impl Service for Served<'_> {
         super::qap::manage::ipl(self.system, self.ctx)
     }
 
-    fn qap_mgmt_power(&mut self, req: qap_proto::ops::manage::PowerDown) -> Result<(), stg::QapRefused> {
+    fn qap_mgmt_power(
+        &mut self,
+        req: qap_proto::ops::manage::PowerDown,
+    ) -> Result<(), stg::QapRefused> {
         super::qap::manage::power(self.system, self.ctx, &req)
     }
 
@@ -1076,7 +1159,9 @@ impl Service for Served<'_> {
         let granted = self.system.pools.status(&self.ctx.job.pool, me, runnable);
         let dspw = wm::job::Status::Dspw.byte();
         let was = self.system.jobs.get(me).is_some_and(|j| j.status == dspw);
-        self.system.stats.status(me, was, status == dspw, runnable, granted);
+        self.system
+            .stats
+            .status(me, was, status == dspw, runnable, granted);
         if let Some(j) = self.system.jobs.get_mut(me) {
             j.status = if granted {
                 status
@@ -1386,8 +1471,12 @@ impl Service for Served<'_> {
         if super::security::sysval_text(self.system, "QDBFSTCCOL").trim() == "*NONE" {
             return Vec::new();
         }
-        let Some(st) = self.system.storage.as_mut() else { return Vec::new() };
-        let Ok(mut txn) = st.store.begin() else { return Vec::new() };
+        let Some(st) = self.system.storage.as_mut() else {
+            return Vec::new();
+        };
+        let Ok(mut txn) = st.store.begin() else {
+            return Vec::new();
+        };
         let lines = sql::collect_statistics(&mut txn, crate::ipl::system::now_unix());
         txn.abort();
         lines
@@ -1607,11 +1696,23 @@ impl Service for Served<'_> {
         self.lent(|c| c.io.commit(rollback, &actgrp))
     }
 
-    fn sql_run(&mut self, scope: String, desc: String, inputs: Vec<(u8, String)>) -> sql::embed::WireReply {
+    fn sql_run(
+        &mut self,
+        scope: String,
+        desc: String,
+        inputs: Vec<(u8, String)>,
+    ) -> sql::embed::WireReply {
         use sql::embed::{Desc, Embedded, Reply, Request, from_wire};
         let Some(desc) = Desc::decode(&desc) else {
-            let e = sql::SqlError::Unsupported { what: "statement".into() };
-            return Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new(), call: None }.to_wire();
+            let e = sql::SqlError::Unsupported {
+                what: "statement".into(),
+            };
+            return Reply {
+                sqlca: sql::Sqlca::from_error(&e),
+                rows: Vec::new(),
+                call: None,
+            }
+            .to_wire();
         };
         let shared = Rc::clone(&self.system.lent);
         let locks = self.system.locks.clone();
@@ -1621,7 +1722,11 @@ impl Service for Served<'_> {
                 if let Some(n) = sysname {
                     s.ctx.dbmon.system = n;
                 }
-                let req = Request { scope, desc, inputs: inputs.iter().map(from_wire).collect() };
+                let req = Request {
+                    scope,
+                    desc,
+                    inputs: inputs.iter().map(from_wire).collect(),
+                };
                 s.run(&req).to_wire()
             }
             Err(w) => *w,
@@ -1901,14 +2006,24 @@ impl Service for Served<'_> {
 
     // --- panel data: messages and objects (160-179)
 
-    fn obj_detail(&mut self, lib: String, name: String, ty: String) -> Option<Vec<(String, String)>> {
+    fn obj_detail(
+        &mut self,
+        lib: String,
+        name: String,
+        ty: String,
+    ) -> Option<Vec<(String, String)>> {
         self.own_libl();
         let r = panel_objects::detail(self.system, &lib, &name, &ty);
         ile::set_libl(None);
         r
     }
 
-    fn obj_sizes(&mut self, lib: String, name: String, ty: String) -> Vec<(String, String, String, u64)> {
+    fn obj_sizes(
+        &mut self,
+        lib: String,
+        name: String,
+        ty: String,
+    ) -> Vec<(String, String, String, u64)> {
         self.own_libl();
         let r = panel_objects::sizes(self.system, &lib, &name, &ty);
         ile::set_libl(None);
@@ -1916,7 +2031,11 @@ impl Service for Served<'_> {
     }
 
     fn rpyl_entries(&mut self) -> Result<Vec<stg::proto::RpyRow>, String> {
-        let s = self.system.storage.as_mut().ok_or("object store not open")?;
+        let s = self
+            .system
+            .storage
+            .as_mut()
+            .ok_or("object store not open")?;
         let qsys = s.qsys.ok_or("object store not initialized")?;
         let mut txn = s.store.begin().map_err(|e| e.to_string())?;
         let list = wm::obj::rpyl::load(&mut txn, qsys).map_err(|e| e.to_string());
@@ -1956,7 +2075,13 @@ impl Service for Served<'_> {
         super::sysdsp::grp_info(self.system, self.ctx.job.number)
     }
 
-    fn grp_join(&mut self, group: u32, name: String, text: String, number: u32) -> Result<(), String> {
+    fn grp_join(
+        &mut self,
+        group: u32,
+        name: String,
+        text: String,
+        number: u32,
+    ) -> Result<(), String> {
         super::sysdsp::grp_join(group, &name, &text, number)
     }
 
@@ -1982,14 +2107,24 @@ impl Service for Served<'_> {
 
     // --- UIM APIs (220-239)
 
-    fn schidx_entries(&mut self, name: String, lib: String) -> Result<Vec<stg::proto::SchidxEntry>, String> {
+    fn schidx_entries(
+        &mut self,
+        name: String,
+        lib: String,
+    ) -> Result<Vec<stg::proto::SchidxEntry>, String> {
         self.own_libl();
         let r = super::uiapi::schidx_entries(self.system, &name, &lib);
         ile::set_libl(None);
         r
     }
 
-    fn schidx_create(&mut self, name: String, lib: String, text: String, replace: bool) -> Result<String, String> {
+    fn schidx_create(
+        &mut self,
+        name: String,
+        lib: String,
+        text: String,
+        replace: bool,
+    ) -> Result<String, String> {
         self.own_libl();
         let owner = self.ctx.job.user.clone();
         let r = super::uiapi::schidx_create(self.system, (&name, &lib), &text, replace, &owner);
@@ -1997,14 +2132,25 @@ impl Service for Served<'_> {
         r
     }
 
-    fn schidx_add(&mut self, name: String, lib: String, pnlgrp: String, pnlgrp_lib: String) -> Result<String, String> {
+    fn schidx_add(
+        &mut self,
+        name: String,
+        lib: String,
+        pnlgrp: String,
+        pnlgrp_lib: String,
+    ) -> Result<String, String> {
         self.own_libl();
         let r = super::uiapi::schidx_add(self.system, (&name, &lib), (&pnlgrp, &pnlgrp_lib));
         ile::set_libl(None);
         r
     }
 
-    fn schidx_remove(&mut self, name: String, lib: String, pnlgrp: String) -> Result<String, String> {
+    fn schidx_remove(
+        &mut self,
+        name: String,
+        lib: String,
+        pnlgrp: String,
+    ) -> Result<String, String> {
         self.own_libl();
         let r = super::uiapi::schidx_remove(self.system, (&name, &lib), &pnlgrp);
         ile::set_libl(None);
@@ -2013,7 +2159,11 @@ impl Service for Served<'_> {
 
     // --- panels batch 2: work, spool, journals (240-269)
 
-    fn panel2_data(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::PanelData, String> {
+    fn panel2_data(
+        &mut self,
+        what: String,
+        args: Vec<String>,
+    ) -> Result<stg::proto::PanelData, String> {
         let root = self.own_qtemp();
         self.system.current_job = self.ctx.job.number;
         self.own_libl();
@@ -2026,7 +2176,11 @@ impl Service for Served<'_> {
     }
 
     // --- panels batch 2: programs, config, security, editors (270-299)
-    fn sys2_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {
+    fn sys2_panel(
+        &mut self,
+        what: String,
+        args: Vec<String>,
+    ) -> Result<stg::proto::Sys2Data, String> {
         self.own_libl();
         let r = super::system2::panel(self.system, &what, &args);
         svc::ile::set_libl(None);
@@ -2035,7 +2189,13 @@ impl Service for Served<'_> {
 
     // --- SEU (300-319)
 
-    fn seu_open(&mut self, lib: String, file: String, member: String, edit: bool) -> Result<stg::proto::SrcMember, String> {
+    fn seu_open(
+        &mut self,
+        lib: String,
+        file: String,
+        member: String,
+        edit: bool,
+    ) -> Result<stg::proto::SrcMember, String> {
         self.own_libl();
         let job = JobHandle(self.ctx.job.handle);
         let r = super::seu::open(self.system, job, (&lib, &file, &member), edit);
@@ -2054,7 +2214,14 @@ impl Service for Served<'_> {
     ) -> Result<(), String> {
         self.own_libl();
         let job = JobHandle(self.ctx.job.handle);
-        let r = super::seu::save(self.system, job, (&lib, &file, &member), &records, &srctype, &text);
+        let r = super::seu::save(
+            self.system,
+            job,
+            (&lib, &file, &member),
+            &records,
+            &srctype,
+            &text,
+        );
         ile::set_libl(None);
         r
     }
@@ -2067,28 +2234,51 @@ impl Service for Served<'_> {
     }
 
     // --- PDM (320-339)
-    fn pdm_read(&mut self, lib: String, file: String, member: String) -> Result<Option<Vec<String>>, String> {
+    fn pdm_read(
+        &mut self,
+        lib: String,
+        file: String,
+        member: String,
+    ) -> Result<Option<Vec<String>>, String> {
         self.own_libl();
         let r = super::pdm::read(self.system, &lib, &file, &member);
         ile::set_libl(None);
         r
     }
 
-    fn pdm_write(&mut self, lib: String, file: String, member: String, lines: Vec<String>, srctype: String) -> Result<(), String> {
+    fn pdm_write(
+        &mut self,
+        lib: String,
+        file: String,
+        member: String,
+        lines: Vec<String>,
+        srctype: String,
+    ) -> Result<(), String> {
         self.own_libl();
         let r = super::pdm::write(self.system, &lib, &file, &member, &lines, &srctype);
         ile::set_libl(None);
         r
     }
 
-    fn pdm_options(&mut self, lib: String, file: String, member: String) -> Result<Option<Vec<String>>, String> {
+    fn pdm_options(
+        &mut self,
+        lib: String,
+        file: String,
+        member: String,
+    ) -> Result<Option<Vec<String>>, String> {
         self.own_libl();
         let r = super::pdm::read_options(self.system, &lib, &file, &member);
         ile::set_libl(None);
         r
     }
 
-    fn pdm_options_put(&mut self, lib: String, file: String, member: String, lines: Vec<String>) -> Result<(), String> {
+    fn pdm_options_put(
+        &mut self,
+        lib: String,
+        file: String,
+        member: String,
+        lines: Vec<String>,
+    ) -> Result<(), String> {
         self.own_libl();
         let r = super::pdm::write_options(self.system, &lib, &file, &member, &lines);
         ile::set_libl(None);
@@ -2107,7 +2297,11 @@ impl Service for Served<'_> {
 
     // --- DFU and RLU (360-379)
 
-    fn dfu_keys(&mut self, lib: String, file: String) -> Result<Vec<(String, Vec<String>)>, String> {
+    fn dfu_keys(
+        &mut self,
+        lib: String,
+        file: String,
+    ) -> Result<Vec<(String, Vec<String>)>, String> {
         super::dfu::keys(self.system, &lib, &file)
     }
 
@@ -2179,7 +2373,13 @@ impl Service for Served<'_> {
         r
     }
 
-    fn isql_run(&mut self, text: String, naming: String, check: bool, max_rows: u32) -> stg::proto::IsqlReply {
+    fn isql_run(
+        &mut self,
+        text: String,
+        naming: String,
+        check: bool,
+        max_rows: u32,
+    ) -> stg::proto::IsqlReply {
         let root = self.own_qtemp();
         self.system.current_job = self.ctx.job.number;
         self.own_libl();
@@ -2194,7 +2394,9 @@ impl Service for Served<'_> {
     fn isql_end(&mut self, commit: bool) -> Result<u64, String> {
         let root = self.own_qtemp();
         self.own_libl();
-        let r = super::isql::in_job(self.system, &mut self.ctx.svc, |s| super::isql::end(s, commit));
+        let r = super::isql::in_job(self.system, &mut self.ctx.svc, |s| {
+            super::isql::end(s, commit)
+        });
         ile::set_libl(None);
         self.root_qtemp(root);
         r
@@ -2209,7 +2411,6 @@ impl Service for Served<'_> {
         let user = self.ctx.session.borrow().principal.user.clone();
         super::isql::session_put(self.system, &user, text.as_deref())
     }
-
 
     // --- STRSST (420-439)
 
@@ -2236,7 +2437,13 @@ impl Service for Served<'_> {
 
     fn sst_disks(
         &mut self,
-    ) -> Result<(Vec<svctools::env::DiskUnit>, Vec<svctools::env::NonConfigured>), String> {
+    ) -> Result<
+        (
+            Vec<svctools::env::DiskUnit>,
+            Vec<svctools::env::NonConfigured>,
+        ),
+        String,
+    > {
         super::sst::disks(self.system, self.ctx.job.number)
     }
 
@@ -2309,11 +2516,19 @@ impl Service for Served<'_> {
         super::qsh::request(self.system, &me, op)
     }
 
-    fn licpgm_panel(&mut self, what: String, args: Vec<String>) -> Result<Vec<Vec<String>>, String> {
+    fn licpgm_panel(
+        &mut self,
+        what: String,
+        args: Vec<String>,
+    ) -> Result<Vec<Vec<String>>, String> {
         crate::cpp::lpapi::panel(self.system, &what, &args)
     }
 
-    fn licpgm_api(&mut self, api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)> {
+    fn licpgm_api(
+        &mut self,
+        api: String,
+        parms: Vec<Vec<u8>>,
+    ) -> Result<Vec<u8>, (String, Vec<u8>)> {
         crate::cpp::lpapi::call(self.system, &api, &parms)
     }
 
@@ -2324,7 +2539,8 @@ impl Service for Served<'_> {
 
     // --- hardware resources (1420-1429)
     fn hw_table(&mut self, refresh: bool) -> Result<hwrsrc::Table, String> {
-        hwrsrc::client::table(refresh).map_err(|e| format!("CPF9898 hardware resource service: {e}"))
+        hwrsrc::client::table(refresh)
+            .map_err(|e| format!("CPF9898 hardware resource service: {e}"))
     }
 
     fn hw_cfgds(&mut self, name: String) -> Vec<(String, String)> {
@@ -2332,20 +2548,49 @@ impl Service for Served<'_> {
         super::system2::cfg_descriptions(self.system, &name)
     }
 
-    fn ddm_signon(&mut self, user: String, password: String, swap: bool) -> Result<stg::HostSignedOn, stg::HostRefused> {
+    fn ddm_signon(
+        &mut self,
+        user: String,
+        password: String,
+        swap: bool,
+    ) -> Result<stg::HostSignedOn, stg::HostRefused> {
         super::ddm::signon(self.system, self.ctx, &user, &password, swap)
     }
 
-    fn ddmf_put(&mut self, lib: String, name: String, payload: String, text: String, create: bool, replace: bool) -> Result<String, String> {
+    fn ddmf_put(
+        &mut self,
+        lib: String,
+        name: String,
+        payload: String,
+        text: String,
+        create: bool,
+        replace: bool,
+    ) -> Result<String, String> {
         let me = self.ctx.job.number;
-        super::ddm::put(self.system, me, &lib, &name, &payload, &text, create, replace)
+        super::ddm::put(
+            self.system,
+            me,
+            &lib,
+            &name,
+            &payload,
+            &text,
+            create,
+            replace,
+        )
     }
 
     fn ddmf_get(&mut self, lib: String, name: String) -> Result<(String, String), String> {
         super::ddm::get(self.system, &lib, &name)
     }
 
-    fn svraute(&mut self, op: String, user: String, server: String, usrid: Option<String>, password: Option<String>) -> Result<String, String> {
+    fn svraute(
+        &mut self,
+        op: String,
+        user: String,
+        server: String,
+        usrid: Option<String>,
+        password: Option<String>,
+    ) -> Result<String, String> {
         super::ddm::svraute(self.system, self.ctx, &op, &user, &server, usrid, password)
     }
 
@@ -2361,7 +2606,12 @@ impl Service for Served<'_> {
         super::sqlsrv::ticket(self.ctx)
     }
 
-    fn sqlsrv_assume(&mut self, ticket: Vec<u8>, user: String, password: String) -> Result<String, stg::HostRefused> {
+    fn sqlsrv_assume(
+        &mut self,
+        ticket: Vec<u8>,
+        user: String,
+        password: String,
+    ) -> Result<String, stg::HostRefused> {
         super::sqlsrv::assume(self.system, self.ctx, &ticket, &user, &password)
     }
 
@@ -2372,8 +2622,12 @@ impl Service for Served<'_> {
     fn machine(&mut self) -> stg::proto::MachineInfo {
         let dmi = machine_dmi();
         stg::proto::MachineInfo {
-            serial: super::security::sysval_text(self.system, "QSRLNBR").trim().to_string(),
-            model: super::security::sysval_text(self.system, "QMODEL").trim().to_string(),
+            serial: super::security::sysval_text(self.system, "QSRLNBR")
+                .trim()
+                .to_string(),
+            model: super::security::sysval_text(self.system, "QMODEL")
+                .trim()
+                .to_string(),
             hw_serial: dmi.serial().unwrap_or_default().to_string(),
             hw_model: dmi.model(),
         }
@@ -2405,7 +2659,11 @@ impl Service for Served<'_> {
         super::certs::cert_app(self.system, &principal, &app_id)
     }
 
-    fn cert_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {
+    fn cert_panel(
+        &mut self,
+        what: String,
+        args: Vec<String>,
+    ) -> Result<stg::proto::Sys2Data, String> {
         let principal = self.ctx.session.borrow().principal.clone();
         super::certs::panel(self.system, &principal, &what, &args)
     }
@@ -2425,7 +2683,10 @@ impl Service for Served<'_> {
     fn web_joblog(&mut self) -> Vec<String> {
         let mut all: Vec<&wm::joblog::Entry> = self.ctx.joblog_wrapped.iter().collect();
         all.extend(self.ctx.joblog.entries());
-        wm::joblog::display(&all).lines().map(str::to_string).collect()
+        wm::joblog::display(&all)
+            .lines()
+            .map(str::to_string)
+            .collect()
     }
 
     fn web_store(
@@ -2445,7 +2706,11 @@ impl Service for Served<'_> {
 
     // --- communications objects (1180-1189)
 
-    fn cmn_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {
+    fn cmn_panel(
+        &mut self,
+        what: String,
+        args: Vec<String>,
+    ) -> Result<stg::proto::Sys2Data, String> {
         super::cmn::panel(self.system, &what, &args)
     }
 
@@ -2477,7 +2742,10 @@ mod panel_objects {
     }
 
     /// Run `f` in a read-only transaction over the main store.
-    fn read<T>(system: &mut System, f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Option<T>) -> Option<T> {
+    fn read<T>(
+        system: &mut System,
+        f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Option<T>,
+    ) -> Option<T> {
         let s = system.storage.as_mut()?;
         let qsys = s.qsys?;
         let mut txn = s.store.begin().ok()?;
@@ -2492,7 +2760,11 @@ mod panel_objects {
             "*LIBL" | "*ALL" | "" => name_context(txn, qsys)
                 .libl
                 .iter()
-                .filter_map(|id| ops::describe(txn, *id).ok().map(|h| (h.name.to_string(), *id)))
+                .filter_map(|id| {
+                    ops::describe(txn, *id)
+                        .ok()
+                        .map(|h| (h.name.to_string(), *id))
+                })
                 .collect(),
             l => qsname::Name::parse(l)
                 .ok()
@@ -2511,7 +2783,12 @@ mod panel_objects {
     }
 
     /// `obj_detail`.
-    pub fn detail(system: &mut System, lib: &str, name: &str, ty: &str) -> Option<Vec<(String, String)>> {
+    pub fn detail(
+        system: &mut System,
+        lib: &str,
+        name: &str,
+        ty: &str,
+    ) -> Option<Vec<(String, String)>> {
         let code = types::type_by_name(ty)?.code;
         read(system, |txn, qsys| {
             let names = name_context(txn, qsys);
@@ -2533,31 +2810,51 @@ mod panel_objects {
                     ("OBJECTS".to_string(), l.attr.object_count.to_string()),
                 ];
             }
-            Some(lib_attrs.into_iter().chain([
-                ("CREATOR".into(), text_of(&h.creator)),
-                ("SYSTEM".into(), text_of(&h.system)),
-                ("RELEASE".into(), h.release.to_string()),
-                ("SIZE".into(), (h.size_pages * store::page::PAGE_SIZE as u64).to_string()),
-                (
-                    "DOMAIN".into(),
-                    match h.domain {
-                        Domain::System => "*SYSTEM".into(),
-                        Domain::User => "*USER".into(),
-                    },
-                ),
-                ("DAMAGED".into(), if h.damaged { "YES" } else { "NO" }.into()),
-                ("PGP".into(), none(text_of(&h.primary_group))),
-                ("AUDIT".into(), none(text_of(&h.audit))),
-                ("LASTUSED".into(), stamp(h.last_used)),
-                ("DAYSUSED".into(), h.days_used.to_string()),
-                ("RESET".into(), stamp(h.reset_date)),
-            ]).collect())
+            Some(
+                lib_attrs
+                    .into_iter()
+                    .chain([
+                        ("CREATOR".into(), text_of(&h.creator)),
+                        ("SYSTEM".into(), text_of(&h.system)),
+                        ("RELEASE".into(), h.release.to_string()),
+                        (
+                            "SIZE".into(),
+                            (h.size_pages * store::page::PAGE_SIZE as u64).to_string(),
+                        ),
+                        (
+                            "DOMAIN".into(),
+                            match h.domain {
+                                Domain::System => "*SYSTEM".into(),
+                                Domain::User => "*USER".into(),
+                            },
+                        ),
+                        (
+                            "DAMAGED".into(),
+                            if h.damaged { "YES" } else { "NO" }.into(),
+                        ),
+                        ("PGP".into(), none(text_of(&h.primary_group))),
+                        ("AUDIT".into(), none(text_of(&h.audit))),
+                        ("LASTUSED".into(), stamp(h.last_used)),
+                        ("DAYSUSED".into(), h.days_used.to_string()),
+                        ("RESET".into(), stamp(h.reset_date)),
+                    ])
+                    .collect(),
+            )
         })
     }
 
     /// `obj_sizes`.
-    pub fn sizes(system: &mut System, lib: &str, name: &str, ty: &str) -> Vec<(String, String, String, u64)> {
-        let wanted = if ty == "*ALL" { None } else { types::type_by_name(ty).map(|t| t.code) };
+    pub fn sizes(
+        system: &mut System,
+        lib: &str,
+        name: &str,
+        ty: &str,
+    ) -> Vec<(String, String, String, u64)> {
+        let wanted = if ty == "*ALL" {
+            None
+        } else {
+            types::type_by_name(ty).map(|t| t.code)
+        };
         read(system, |txn, qsys| {
             let mut out = Vec::new();
             for (lname, lid) in libraries(txn, qsys, lib) {
@@ -2566,8 +2863,10 @@ mod panel_objects {
                     if !matches(&n, name) {
                         continue;
                     }
-                    let size = ops::describe(txn, id).map_or(0, |h| h.size_pages * store::page::PAGE_SIZE as u64);
-                    let t = types::type_by_code(key.type_code).map_or_else(String::new, |t| t.name.to_string());
+                    let size = ops::describe(txn, id)
+                        .map_or(0, |h| h.size_pages * store::page::PAGE_SIZE as u64);
+                    let t = types::type_by_code(key.type_code)
+                        .map_or_else(String::new, |t| t.name.to_string());
                     out.push((lname.clone(), n, t, size));
                 }
             }
@@ -2577,7 +2876,11 @@ mod panel_objects {
     }
 
     /// `msgf_list`.
-    pub fn messages(system: &mut System, msgf: &str, lib: &str) -> Result<Vec<(String, String)>, String> {
+    pub fn messages(
+        system: &mut System,
+        msgf: &str,
+        lib: &str,
+    ) -> Result<Vec<(String, String)>, String> {
         read(system, |txn, qsys| {
             let names = name_context(txn, qsys);
             let id = wm::obj::find(txn, qsys, &names, lib, msgf, types::MSGF).ok()?;

@@ -103,14 +103,7 @@ fn copy_file(
 }
 
 /// Copy a path (file, link or tree) to `dst`.
-pub fn copy_path(
-    cx: &UtilCtx<'_>,
-    name: &str,
-    src: &str,
-    dst: &str,
-    o: Opts,
-    root: bool,
-) -> bool {
+pub fn copy_path(cx: &UtilCtx<'_>, name: &str, src: &str, dst: &str, o: Opts, root: bool) -> bool {
     let sys: &dyn Sys = cx.sys;
     let src_abs = cx.path(src);
     let dst_abs = cx.path(dst);

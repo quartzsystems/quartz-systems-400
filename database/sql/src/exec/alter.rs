@@ -19,7 +19,11 @@ use crate::ast::{AlterAction, AlterTable, ColumnDef, DataType, DropKind, Ident, 
 use crate::error::{Result, SqlError};
 
 fn err(sqlcode: i32, sqlstate: &'static str, what: impl Into<String>) -> SqlError {
-    SqlError::Integrity { sqlcode, sqlstate, what: what.into() }
+    SqlError::Integrity {
+        sqlcode,
+        sqlstate,
+        what: what.into(),
+    }
 }
 
 /// `ALTER TABLE`.
@@ -35,16 +39,36 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
     // 1. Constraints dropped, by the statement or with the columns it drops.
     for act in &stmt.actions {
         match act {
-            AlterAction::DropPrimaryKey { cascade } => super::cst::drop(txn, ctx, id, None, DropKind::Unique, *cascade)?,
-            AlterAction::DropConstraint { name, kind, cascade } => super::cst::drop(txn, ctx, id, Some(name), *kind, *cascade)?,
+            AlterAction::DropPrimaryKey { cascade } => {
+                super::cst::drop(txn, ctx, id, None, DropKind::Unique, *cascade)?
+            }
+            AlterAction::DropConstraint {
+                name,
+                kind,
+                cascade,
+            } => super::cst::drop(txn, ctx, id, Some(name), *kind, *cascade)?,
             AlterAction::DropColumn { name, cascade } => {
                 let col = super::cst::field_name(&table.format.format, name)?;
                 let using = db::cst::ops::using_column(txn, id, col)?;
                 if !using.is_empty() && !cascade {
-                    return Err(err(-478, "42893", format!("column {} is used by constraint {}", name.value, using[0])));
+                    return Err(err(
+                        -478,
+                        "42893",
+                        format!("column {} is used by constraint {}", name.value, using[0]),
+                    ));
                 }
                 for n in using {
-                    super::cst::drop(txn, ctx, id, Some(&Ident { value: n, delimited: true }), DropKind::Any, true)?;
+                    super::cst::drop(
+                        txn,
+                        ctx,
+                        id,
+                        Some(&Ident {
+                            value: n,
+                            delimited: true,
+                        }),
+                        DropKind::Any,
+                        true,
+                    )?;
                 }
             }
             _ => {}
@@ -66,13 +90,30 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
             AlterAction::AddColumn(c) => {
                 super::column::check_generated(c)?;
                 let f = field_of(c)?;
-                if rf.field(&f.name).is_some() || rf.fields.iter().any(|x| x.alias.as_deref() == Some(c.name.value.as_str())) {
-                    return Err(err(-612, "42711", format!("column {} is already in table {}", c.name.value, stmt.name)));
+                if rf.field(&f.name).is_some()
+                    || rf
+                        .fields
+                        .iter()
+                        .any(|x| x.alias.as_deref() == Some(c.name.value.as_str()))
+                {
+                    return Err(err(
+                        -612,
+                        "42711",
+                        format!("column {} is already in table {}", c.name.value, stmt.name),
+                    ));
                 }
                 if let Some(e) = super::column::entry_of(c, &f)? {
                     if matches!(e.kind, ColumnKind::Identity(_)) {
-                        if cols.iter().any(|x| matches!(x.kind, ColumnKind::Identity(_))) || rf.fields.iter().any(|x| x.identity.is_some()) {
-                            return Err(err(-372, "428C1", "a table has one identity column at most"));
+                        if cols
+                            .iter()
+                            .any(|x| matches!(x.kind, ColumnKind::Identity(_)))
+                            || rf.fields.iter().any(|x| x.identity.is_some())
+                        {
+                            return Err(err(
+                                -372,
+                                "428C1",
+                                "a table has one identity column at most",
+                            ));
                         }
                         number = Some(f.name);
                         if let ColumnKind::Identity(a) = e.kind {
@@ -87,7 +128,11 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
             AlterAction::DropColumn { name, .. } => {
                 let i = find(&rf, name)?;
                 if rf.fields.len() == 1 {
-                    return Err(err(-195, "42814", format!("column {} is the table's last", name.value)));
+                    return Err(err(
+                        -195,
+                        "42814",
+                        format!("column {} is the table's last", name.value),
+                    ));
                 }
                 let gone = rf.fields.remove(i);
                 cols.retain(|c| c.field != gone.name);
@@ -96,9 +141,14 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
             AlterAction::SetDataType(name, ts) => {
                 let i = find(&rf, name)?;
                 let old = rf.fields[i].clone();
-                if !db::cst::ops::using_column(txn, id, old.name)?.is_empty() && is_key_column(txn, id, old.name)? {
+                if !db::cst::ops::using_column(txn, id, old.name)?.is_empty()
+                    && is_key_column(txn, id, old.name)?
+                {
                     return Err(SqlError::Unsupported {
-                        what: format!("changing the type of {}, a key of a constraint; drop the constraint first", name.value),
+                        what: format!(
+                            "changing the type of {}, a key of a constraint; drop the constraint first",
+                            name.value
+                        ),
                     });
                 }
                 let c = ColumnDef {
@@ -114,7 +164,14 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                 };
                 let mut f = field_of(&c)?;
                 if old.identity.is_some() && super::column::type_range(&ts.data_type).is_none() {
-                    return Err(err(-846, "42815", format!("identity column {} must stay an integer or DECIMAL(n, 0)", name.value)));
+                    return Err(err(
+                        -846,
+                        "42815",
+                        format!(
+                            "identity column {} must stay an integer or DECIMAL(n, 0)",
+                            name.value
+                        ),
+                    ));
                 }
                 f.name = old.name;
                 f.text = old.text;
@@ -127,16 +184,32 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
             }
             AlterAction::SetNotNull(name, yes) => {
                 let i = find(&rf, name)?;
-                if !yes && db::cst::list(txn, id)?.iter().any(|c| c.kind == Kind::PrimaryKey && c.columns.contains(&rf.fields[i].name)) {
-                    return Err(err(-542, "42831", format!("column {} is in the primary key", name.value)));
+                if !yes
+                    && db::cst::list(txn, id)?.iter().any(|c| {
+                        c.kind == Kind::PrimaryKey && c.columns.contains(&rf.fields[i].name)
+                    })
+                {
+                    return Err(err(
+                        -542,
+                        "42831",
+                        format!("column {} is in the primary key", name.value),
+                    ));
                 }
                 rf.fields[i].allow_null = !yes;
                 touched = true;
             }
             AlterAction::SetDefault(name, d) => {
                 let i = find(&rf, name)?;
-                if cols.iter().any(|c| c.field == rf.fields[i].name && !matches!(c.kind, ColumnKind::Plain)) || rf.fields[i].identity.is_some() {
-                    return Err(err(-574, "42894", format!("column {} is generated: it has no default", name.value)));
+                if cols
+                    .iter()
+                    .any(|c| c.field == rf.fields[i].name && !matches!(c.kind, ColumnKind::Plain))
+                    || rf.fields[i].identity.is_some()
+                {
+                    return Err(err(
+                        -574,
+                        "42894",
+                        format!("column {} is generated: it has no default", name.value),
+                    ));
                 }
                 let data_type = rf.fields[i].data_type;
                 rf.fields[i].default = match d {
@@ -145,29 +218,49 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                 };
                 touched = true;
             }
-            AlterAction::AlterIdentity { column, always, options } => {
+            AlterAction::AlterIdentity {
+                column,
+                always,
+                options,
+            } => {
                 let i = find(&rf, column)?;
                 let f = &mut rf.fields[i];
                 let Some(ident) = f.identity.as_mut() else {
-                    return Err(err(-190, "42837", format!("column {} is not an identity column", column.value)));
+                    return Err(err(
+                        -190,
+                        "42837",
+                        format!("column {} is not an identity column", column.value),
+                    ));
                 };
                 if let Some(a) = always {
                     ident.always = *a;
                 }
                 let range = seq::field_range(f);
                 let fname = f.name;
-                let at = cols.iter().position(|c| c.field == fname && matches!(c.kind, ColumnKind::Identity(_)));
+                let at = cols
+                    .iter()
+                    .position(|c| c.field == fname && matches!(c.kind, ColumnKind::Identity(_)));
                 let base = if let Some(ColumnKind::Identity(a)) = at.map(|k| &cols[k].kind) {
                     *a
                 } else {
                     let def = f.identity.clone().expect("identity");
                     super::column::attrs(
-                        &Identity { start: Some(def.start.into()), increment: Some(def.increment.into()), cycle: Some(def.cycle), ..Identity::default() },
+                        &Identity {
+                            start: Some(def.start.into()),
+                            increment: Some(def.increment.into()),
+                            cycle: Some(def.cycle),
+                            ..Identity::default()
+                        },
                         range,
                         &column.value,
                     )?
                 };
-                let mut attrs = super::seq::merge(&base, options, range, &format!("identity column {}", column.value))?;
+                let mut attrs = super::seq::merge(
+                    &base,
+                    options,
+                    range,
+                    &format!("identity column {}", column.value),
+                )?;
                 attrs.always = f.identity.as_ref().is_some_and(|x| x.always);
                 let block = at.and_then(|k| cols[k].block_end);
                 if let Some(r) = options.restart {
@@ -176,7 +269,12 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                     // Values IBM had cached are passed over.
                     restart = attrs.after(be).or(Some(be));
                 }
-                let entry = seq::SqlColumn { field: fname, kind: ColumnKind::Identity(attrs), hidden: false, block_end: None };
+                let entry = seq::SqlColumn {
+                    field: fname,
+                    kind: ColumnKind::Identity(attrs),
+                    hidden: false,
+                    block_end: None,
+                };
                 match at {
                     Some(k) => cols[k] = entry,
                     None => cols.push(entry),
@@ -191,7 +289,11 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
             AlterAction::DropIdentity(column) => {
                 let i = find(&rf, column)?;
                 if rf.fields[i].identity.take().is_none() {
-                    return Err(err(-190, "42837", format!("column {} is not an identity column", column.value)));
+                    return Err(err(
+                        -190,
+                        "42837",
+                        format!("column {} is not an identity column", column.value),
+                    ));
                 }
                 let n = rf.fields[i].name;
                 cols.retain(|c| c.field != n);
@@ -201,9 +303,19 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                 let i = find(&rf, column)?;
                 let n = rf.fields[i].name;
                 let before = cols.len();
-                cols.retain(|c| !(c.field == n && matches!(c.kind, ColumnKind::RowChange(_) | ColumnKind::Audit(..) | ColumnKind::Expr(_))));
+                cols.retain(|c| {
+                    !(c.field == n
+                        && matches!(
+                            c.kind,
+                            ColumnKind::RowChange(_) | ColumnKind::Audit(..) | ColumnKind::Expr(_)
+                        ))
+                });
                 if cols.len() == before {
-                    return Err(err(-190, "42837", format!("column {} is not generated", column.value)));
+                    return Err(err(
+                        -190,
+                        "42837",
+                        format!("column {} is not generated", column.value),
+                    ));
                 }
             }
             _ => {}
@@ -247,7 +359,12 @@ fn number_rows(txn: &mut Txn<'_>, id: store::obj::ObjectId, field: Name) -> Resu
     let desc = file::describe(txn, id)?;
     for e in &desc.members {
         let mut m = db::member::Member::open(txn, &desc, e)?;
-        let (fi, f) = m.format().format.field(&field).map(|(i, f)| (i, f.clone())).expect("added");
+        let (fi, f) = m
+            .format()
+            .format
+            .field(&field)
+            .map(|(i, f)| (i, f.clone()))
+            .expect("added");
         let _ = fi;
         let mut rrn = 1;
         loop {
@@ -267,13 +384,20 @@ fn number_rows(txn: &mut Txn<'_>, id: store::obj::ObjectId, field: Name) -> Resu
 }
 
 fn is_key_column(txn: &mut Txn<'_>, id: store::obj::ObjectId, col: Name) -> Result<bool> {
-    Ok(db::cst::list(txn, id)?.iter().any(|c| c.kind.keyed() && c.columns.contains(&col)))
+    Ok(db::cst::list(txn, id)?
+        .iter()
+        .any(|c| c.kind.keyed() && c.columns.contains(&col)))
 }
 
 /// The table takes format `rf`: the records converted when the level
 /// changed (`CHGPF SRCFILE`'s rebuild beside the member), else the
 /// format replaced.
-fn reformat(txn: &mut Txn<'_>, ctx: &mut SqlContext, table: &TableInfo, mut rf: dds::RecordFormat) -> Result<()> {
+fn reformat(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    table: &TableInfo,
+    mut rf: dds::RecordFormat,
+) -> Result<()> {
     rf.lay_out();
     let def = dds::PfDefinition {
         format: rf,
@@ -287,12 +411,14 @@ fn reformat(txn: &mut Txn<'_>, ctx: &mut SqlContext, table: &TableInfo, mut rf: 
     };
     let job = ctx.job;
     match db::chg::chgpf_srcfile_paused(txn, job, table.id, &def, &mut |t| ctx.pause(t)) {
-        Err(db::DbError::Definition { what }) if what.contains("dependent logical files") => Err(SqlError::Unsupported {
-            what: format!(
-                "an ALTER TABLE that changes the columns of {}, which has indexes or views over it; BLOCKED(rel): dependent files are not rebuilt",
-                table.desc.name()
-            ),
-        }),
+        Err(db::DbError::Definition { what }) if what.contains("dependent logical files") => {
+            Err(SqlError::Unsupported {
+                what: format!(
+                    "an ALTER TABLE that changes the columns of {}, which has indexes or views over it; BLOCKED(rel): dependent files are not rebuilt",
+                    table.desc.name()
+                ),
+            })
+        }
         r => Ok(r?),
     }
 }
@@ -302,7 +428,9 @@ fn data_type_of(f: &dds::FieldDef, t: dds::DataType) -> DataType {
     match t {
         dds::DataType::Date => DataType::Date,
         dds::DataType::Time => DataType::Time,
-        dds::DataType::Timestamp => DataType::Timestamp(dds::DataType::timestamp_precision(f.length)),
+        dds::DataType::Timestamp => {
+            DataType::Timestamp(dds::DataType::timestamp_precision(f.length))
+        }
         dds::DataType::DecFloat => DataType::DecFloat(if f.length <= 16 { 16 } else { 34 }),
         dds::DataType::Bytes => DataType::Varbinary(f.length),
         dds::DataType::Boolean => DataType::Boolean,

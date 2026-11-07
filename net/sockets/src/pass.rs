@@ -41,7 +41,9 @@ pub struct InProcess {
 
 impl std::fmt::Debug for InProcess {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("InProcess").field("me", &self.me).finish_non_exhaustive()
+        f.debug_struct("InProcess")
+            .field("me", &self.me)
+            .finish_non_exhaustive()
     }
 }
 
@@ -67,7 +69,11 @@ impl InProcess {
     /// Descriptors waiting for this job.
     #[must_use]
     pub fn waiting(&self) -> usize {
-        let q = self.relay.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let q = self
+            .relay
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         q.get(&self.me).map_or(0, VecDeque::len)
     }
 }
@@ -75,7 +81,9 @@ impl InProcess {
 impl DescriptorPassing for InProcess {
     fn give(&mut self, fd: Fd, target: &JobId) -> Result<(), Errno> {
         let (lock, cv) = &*self.relay;
-        let mut q = lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut q = lock
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         q.entry(*target).or_default().push_back((self.me, fd));
         cv.notify_all();
         Ok(())
@@ -85,7 +93,9 @@ impl DescriptorPassing for InProcess {
     #[cfg_attr(not(target_os = "linux"), allow(unreachable_code))]
     fn take(&mut self, source: Option<&JobId>) -> Result<Fd, Errno> {
         let (lock, cv) = &*self.relay;
-        let mut q = lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut q = lock
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         loop {
             if let Some(mine) = q.get_mut(&self.me) {
                 let at = mine
@@ -96,7 +106,9 @@ impl DescriptorPassing for InProcess {
                     return Ok(fd);
                 }
             }
-            q = cv.wait(q).unwrap_or_else(std::sync::PoisonError::into_inner);
+            q = cv
+                .wait(q)
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
         }
     }
 }

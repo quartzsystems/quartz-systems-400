@@ -112,7 +112,13 @@ impl Out {
         for c in std::mem::take(&mut self.pending) {
             self.lines.push((sect, c));
         }
-        self.lines.push((sect, Line { text: text.trim_end().to_string(), from }));
+        self.lines.push((
+            sect,
+            Line {
+                text: text.trim_end().to_string(),
+                from,
+            },
+        ));
     }
 
     fn msg(&mut self, id: &'static str, severity: u8, at: usize) {
@@ -164,7 +170,10 @@ pub fn convert(records: &[String]) -> Conversion {
         }
         if is_comment(r) {
             counts.comments += 1;
-            out.pending.push(Line { text: r.trim_end().to_string(), from: i });
+            out.pending.push(Line {
+                text: r.trim_end().to_string(),
+                from: i,
+            });
             i += 1;
             continue;
         }
@@ -174,7 +183,11 @@ pub fn convert(records: &[String]) -> Conversion {
             'F' => {
                 // The continuation lines after it are its keywords.
                 let mut k = i + 1;
-                while k < records.len() && letter(&records[k]) == 'F' && !is_comment(&records[k]) && file::is_continuation(&records[k]) {
+                while k < records.len()
+                    && letter(&records[k]) == 'F'
+                    && !is_comment(&records[k])
+                    && file::is_continuation(&records[k])
+                {
                     k += 1;
                 }
                 counts.specs += k - i - 1;
@@ -212,7 +225,13 @@ pub fn convert(records: &[String]) -> Conversion {
     }
     for (k, r) in records.iter().enumerate().skip(data_from) {
         counts.data += 1;
-        out.lines.push((Sect::Data, Line { text: r.trim_end().to_string(), from: k }));
+        out.lines.push((
+            Sect::Data,
+            Line {
+                text: r.trim_end().to_string(),
+                from: k,
+            },
+        ));
     }
     // A stable sort keeps each section's order.
     let mut lines = out.lines;

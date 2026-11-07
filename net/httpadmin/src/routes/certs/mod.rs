@@ -25,7 +25,10 @@ use crate::msgs;
 
 /// `/certs/...`.
 pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
-    let segs: Vec<String> = segs.iter().map(|s| qsweb::http::form::decode(s, false)).collect();
+    let segs: Vec<String> = segs
+        .iter()
+        .map(|s| qsweb::http::form::decode(s, false))
+        .collect();
     let segs: Vec<&str> = segs.iter().map(String::as_str).collect();
     if let Err(r) = rq.require_each(
         &[Need::AllObj, Need::SecAdm],
@@ -118,7 +121,8 @@ pub fn cn(s: &str) -> String {
 
 /// Whole days left at `now`; negative once expired.
 pub fn days_left(row: &CertRow, now: u64) -> i64 {
-    (i64::try_from(row.not_after).unwrap_or(i64::MAX) - i64::try_from(now).unwrap_or(0)).div_euclid(86_400)
+    (i64::try_from(row.not_after).unwrap_or(i64::MAX) - i64::try_from(now).unwrap_or(0))
+        .div_euclid(86_400)
 }
 
 /// Days within which an expiry shows in red.
@@ -134,7 +138,11 @@ pub fn expiry_status(row: &CertRow, now: u64) -> Option<String> {
     Some(if row.not_after < now {
         qsweb::partials::status("Expired", Some(false))
     } else if d <= WARN_DAYS {
-        let n = if d == 1 { "1 day".to_string() } else { format!("{d} days") };
+        let n = if d == 1 {
+            "1 day".to_string()
+        } else {
+            format!("{d} days")
+        };
         qsweb::partials::status(&format!("Expires in {n}"), Some(false))
     } else {
         qsweb::partials::status("Active", Some(true))
@@ -148,7 +156,9 @@ pub fn issuer_name(row: &CertRow, all: &[CertRow]) -> String {
         return "(self-signed)".into();
     }
     all.iter()
-        .find(|r| r.subject == row.issuer && r.label != row.label && r.kind == crate::env::EntryType::Ca)
+        .find(|r| {
+            r.subject == row.issuer && r.label != row.label && r.kind == crate::env::EntryType::Ca
+        })
         .map_or_else(|| cn(&row.issuer), |r| r.label.clone())
 }
 
@@ -158,7 +168,10 @@ mod tests {
 
     #[test]
     fn names() {
-        assert_eq!(dn("CN=a\\, b,O=Quartz Systems,C=US"), "CN=a\\, b, O=Quartz Systems, C=US");
+        assert_eq!(
+            dn("CN=a\\, b,O=Quartz Systems,C=US"),
+            "CN=a\\, b, O=Quartz Systems, C=US"
+        );
         assert_eq!(cn("CN=a\\, b,O=x"), "a, b");
         assert_eq!(cn("O=x"), "O=x");
     }

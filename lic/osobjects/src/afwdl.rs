@@ -19,5 +19,8 @@ Terminal\tqs400-9x16.txt\tQS/400 terminal font (9x16 bitmap source of the 5250 d
 /// The files: name and bytes.
 pub const FILES: &[(&str, &[u8])] = &[
     ("INDEX.txt", INDEX.as_bytes()),
-    ("qs400-9x16.txt", include_bytes!("../../console/font/qs400-9x16.txt")),
+    (
+        "qs400-9x16.txt",
+        include_bytes!("../../console/font/qs400-9x16.txt"),
+    ),
 ];

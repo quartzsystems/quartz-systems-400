@@ -52,7 +52,12 @@ fn signs_and_checks() {
         assert!(pesign::verify(&bad, &key.cert).is_err(), "byte {at:#x}");
     }
     // Another key's certificate does not verify it.
-    let other = generate::new_pair(&generate::Spec { subject: "CN=other", not_before: 1_767_225_600, years: 1 }).unwrap();
+    let other = generate::new_pair(&generate::Spec {
+        subject: "CN=other",
+        not_before: 1_767_225_600,
+        years: 1,
+    })
+    .unwrap();
     assert!(pesign::verify(&signed, &other.cert).is_err());
     let by_other = pesign::sign(&image(), &other).unwrap();
     pesign::verify(&by_other, &other.cert).unwrap();

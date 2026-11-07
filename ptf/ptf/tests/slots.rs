@@ -143,15 +143,38 @@ fn permanent_apply_writes_both_slots() {
     let mut fw = Fw::default();
     let mut st = SlotState::default();
     let mut db = db();
-    slot::stage(&mut st, &mut esp, Slot::A, "QS00050", b"new", Some(b"new-b")).unwrap();
+    slot::stage(
+        &mut st,
+        &mut esp,
+        Slot::A,
+        "QS00050",
+        b"new",
+        Some(b"new-b"),
+    )
+    .unwrap();
     let (ev, _) = slot::at_ipl(&mut st, &mut db, Slot::B, &mut fw, 1);
     assert_eq!(ev, [IplEvent::Applied("QS00050".into())]);
-    slot::make_permanent(&mut st, &mut esp, &mut db, "QS00050", b"new", Some(b"new-b"), 2).unwrap();
-    assert_eq!((esp.a.as_slice(), esp.b.as_slice()), (&b"new"[..], &b"new-b"[..]));
+    slot::make_permanent(
+        &mut st,
+        &mut esp,
+        &mut db,
+        "QS00050",
+        b"new",
+        Some(b"new-b"),
+        2,
+    )
+    .unwrap();
+    assert_eq!(
+        (esp.a.as_slice(), esp.b.as_slice()),
+        (&b"new"[..], &b"new-b"[..])
+    );
     assert_eq!(db.get("QS00050").unwrap().status, Status::PermApplied);
     // Now a further LIC PTF may use the other slot again.
     assert!(st.temp.is_empty());
-    assert_eq!(slot::stage(&mut st, &mut esp, Slot::B, "QS00051", b"x", None).unwrap(), Slot::A);
+    assert_eq!(
+        slot::stage(&mut st, &mut esp, Slot::B, "QS00051", b"x", None).unwrap(),
+        Slot::A
+    );
 }
 
 #[test]

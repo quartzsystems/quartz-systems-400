@@ -35,7 +35,13 @@ pub enum Step<'a> {
 
 /// Whether conditioning names an overflow indicator.
 fn on_overflow(c: &rpgfront::ast::Conditioning) -> bool {
-    c.iter().flatten().any(|i| !i.not && matches!(i.ind.as_str(), "OA" | "OB" | "OC" | "OD" | "OE" | "OF" | "OG" | "OV"))
+    c.iter().flatten().any(|i| {
+        !i.not
+            && matches!(
+                i.ind.as_str(),
+                "OA" | "OB" | "OC" | "OD" | "OE" | "OF" | "OG" | "OV"
+            )
+    })
 }
 
 impl Gen<'_> {
@@ -116,7 +122,8 @@ impl Gen<'_> {
         }
         self.at = o.at;
         if o.space.iter().all(|s| s.trim().is_empty()) && f.prtctl.is_none() {
-            self.diags.push(rpgfront::Diag::new(ids::SPACE_DEFAULT, 0, o.at));
+            self.diags
+                .push(rpgfront::Diag::new(ids::SPACE_DEFAULT, 0, o.at));
         }
         let skip = self.b.label();
         if !o.cond.is_empty() {
@@ -142,8 +149,17 @@ impl Gen<'_> {
             }
         }
         let n = |s: &str| s.trim().parse::<u16>().unwrap_or(0);
-        let (sb, sa, kb, ka) = (n(&o.space[0]), n(&o.space[1]), n(&o.space[2]), n(&o.space[3]));
-        let sa = if o.space.iter().all(|s| s.trim().is_empty()) { 1 } else { sa };
+        let (sb, sa, kb, ka) = (
+            n(&o.space[0]),
+            n(&o.space[1]),
+            n(&o.space[2]),
+            n(&o.space[3]),
+        );
+        let sa = if o.space.iter().all(|s| s.trim().is_empty()) {
+            1
+        } else {
+            sa
+        };
         let ctl = match self.prtctl_place(&f) {
             Some(p) => self.prtctl_read(&f, &p),
             None => [sb, sa, kb, ka].map(|v| v.to_string()),
@@ -175,7 +191,13 @@ impl Gen<'_> {
     }
 
     /// One field into the line; its end position.
-    fn output_field(&mut self, fld: &OutputField, line: &str, len: u32, prev_end: u32) -> Option<u32> {
+    fn output_field(
+        &mut self,
+        fld: &OutputField,
+        line: &str,
+        len: u32,
+        prev_end: u32,
+    ) -> Option<u32> {
         self.at = fld.at;
         let skip = if fld.cond.is_empty() {
             None
@@ -199,7 +221,9 @@ impl Gen<'_> {
         let mut blank = None;
         let (text, width): (String, u32) = if fld.field.is_empty() {
             match &fld.constant {
-                Some(Expr::Lit(Lit::Char(s), _)) => (quote(s), u32::try_from(s.chars().count()).unwrap_or(0)),
+                Some(Expr::Lit(Lit::Char(s), _)) => {
+                    (quote(s), u32::try_from(s.chars().count()).unwrap_or(0))
+                }
                 _ => {
                     self.err(ids::BAD_KEYWORD_VALUE, 30, "constant");
                     return None;
@@ -229,9 +253,24 @@ impl Gen<'_> {
             } {
                 // The job date as a number.
                 let at = fld.at;
-                let date = Expr::Bif { name: "%DATE".into(), args: Vec::new(), at };
-                let f = Expr::Special { word: fmt.into(), index: None, at };
-                self.expr(&Expr::Bif { name: "%DEC".into(), args: vec![date, f], at }, Want::default())?
+                let date = Expr::Bif {
+                    name: "%DATE".into(),
+                    args: Vec::new(),
+                    at,
+                };
+                let f = Expr::Special {
+                    word: fmt.into(),
+                    index: None,
+                    at,
+                };
+                self.expr(
+                    &Expr::Bif {
+                        name: "%DEC".into(),
+                        args: vec![date, f],
+                        at,
+                    },
+                    Want::default(),
+                )?
             } else {
                 self.expr(&e, Want::default())?
             };
@@ -255,7 +294,8 @@ impl Gen<'_> {
         if width > 0 {
             let p = self.b.reg();
             self.b.ins(format!("{p} = addr {line}"));
-            self.b.ins(format!("mov [{p} +{start}]:char({width}), {text}"));
+            self.b
+                .ins(format!("mov [{p} +{start}]:char({width}), {text}"));
         }
         if let Some(v) = blank {
             self.blank_after(&v);
@@ -278,14 +318,25 @@ impl Gen<'_> {
 
     /// An array's elements into the line, ending at the end position:
     /// edited elements with two blanks before each but the first.
-    fn output_array(&mut self, fld: &OutputField, line: &str, len: u32, prev_end: u32, n: u32) -> Option<u32> {
-        let edited_codes = !fld.edit.is_empty() || matches!(fld.constant, Some(Expr::Lit(Lit::Char(_), _)));
+    fn output_array(
+        &mut self,
+        fld: &OutputField,
+        line: &str,
+        len: u32,
+        prev_end: u32,
+        n: u32,
+    ) -> Option<u32> {
+        let edited_codes =
+            !fld.edit.is_empty() || matches!(fld.constant, Some(Expr::Lit(Lit::Char(_), _)));
         let gap = if edited_codes { 2 } else { 0 };
         let mut pieces = Vec::new();
         for i in 1..=n {
             let e = Expr::Ref {
                 name: fld.field.clone(),
-                steps: vec![rpgfront::ast::Step::Args(vec![Expr::Lit(Lit::Num(i.to_string()), fld.at)])],
+                steps: vec![rpgfront::ast::Step::Args(vec![Expr::Lit(
+                    Lit::Num(i.to_string()),
+                    fld.at,
+                )])],
                 at: fld.at,
             };
             let v = self.expr(&e, Want::default())?;
@@ -308,7 +359,8 @@ impl Gen<'_> {
             if k > 0 && gap > 0 {
                 let p = self.b.reg();
                 self.b.ins(format!("{p} = addr {line}"));
-                self.b.ins(format!("mov [{p} +{at}]:char({gap}), {}", quote("  ")));
+                self.b
+                    .ins(format!("mov [{p} +{at}]:char({gap}), {}", quote("  ")));
                 at += gap;
             }
             if w > 0 {
@@ -364,7 +416,10 @@ impl Gen<'_> {
             );
             let wl = V::lit(Ty::Char(n), quote(word));
             let w = self.lit_storage(&wl);
-            self.b.ins(format!("callb _QRNX_EDITW({t}, {n}, {}, {desc}, {w}, {n})", src.op));
+            self.b.ins(format!(
+                "callb _QRNX_EDITW({t}, {n}, {}, {desc}, {w}, {n})",
+                src.op
+            ));
             return Some((t, n));
         }
         if !fld.edit.is_empty() {
@@ -392,11 +447,12 @@ impl Gen<'_> {
                 "callb _QRNX_EDITC({t}, {}, {desc}, {}, {}, {})",
                 src.op,
                 u32::from(code),
-                self.ctl.edit_flags() | match fill {
-                    Some('*') => 1,
-                    Some(_) => 2,
-                    None => 0,
-                },
+                self.ctl.edit_flags()
+                    | match fill {
+                        Some('*') => 1,
+                        Some(_) => 2,
+                        None => 0,
+                    },
                 quote(&fill.filter(|c| *c != '*').unwrap_or(' ').to_string())
             ));
             let c = self.b.temp(&format!("char({})", width.max(1)));
@@ -409,7 +465,9 @@ impl Gen<'_> {
             Ty::Float(_) => (15, 0),
             t => t.shape()?,
         };
-        let z = self.b.temp(&format!("struct({d}) {{ all_: char({d}) @0, z: zoned({d},{s}) @0 }}"));
+        let z = self.b.temp(&format!(
+            "struct({d}) {{ all_: char({d}) @0, z: zoned({d},{s}) @0 }}"
+        ));
         let opnd = self.dec_operand(v);
         self.b.ins(format!("dec.mov {z}.z, {opnd}"));
         let _ = Vk::Place;
@@ -421,7 +479,11 @@ impl Gen<'_> {
         if v.kind != Vk::Place {
             return;
         }
-        let lit = if v.ty.is_numeric() { "*ZEROS" } else { "*BLANKS" };
+        let lit = if v.ty.is_numeric() {
+            "*ZEROS"
+        } else {
+            "*BLANKS"
+        };
         self.b.ins(format!("mov {}, {lit}", v.op));
     }
 
@@ -467,13 +529,16 @@ impl Gen<'_> {
     /// adding to it.
     fn prtctl_line(&mut self, f: &crate::files::File, p: &str, ctl: &[String; 4]) {
         let pl = format!("$pl_{}", mangle(&f.name));
-        self.externs.entry(pl.clone()).or_insert_with(|| format!("static {pl}: i64 inz(1)"));
+        self.externs
+            .entry(pl.clone())
+            .or_insert_with(|| format!("static {pl}: i64 inz(1)"));
         let cur = self.b.reg();
         self.b.ins(format!("{cur} = load {pl}"));
         let has_skip = self.b.reg();
         self.b.ins(format!("{has_skip} = cmp.gt {}, 0", ctl[2]));
         let at = self.b.reg();
-        self.b.ins(format!("{at} = select {has_skip}, {}, {cur}", ctl[2]));
+        self.b
+            .ins(format!("{at} = select {has_skip}, {}, {cur}", ctl[2]));
         let a1 = self.b.reg();
         self.b.ins(format!("{a1} = add {at}, {}", ctl[0]));
         let a2 = self.b.reg();
@@ -481,6 +546,7 @@ impl Gen<'_> {
         self.b.ins(format!("store {pl}, {a2}"));
         let w = self.tmp(&Ty::Int(20));
         self.b.ins(format!("store {}, {a2}", w.op));
-        self.b.ins(format!("dec.mov [{p} +12]:zoned(3,0), {} trunc", w.op));
+        self.b
+            .ins(format!("dec.mov [{p} +12]:zoned(3,0), {} trunc", w.op));
     }
 }

@@ -34,9 +34,11 @@ impl Screens {
     /// of SEU's display files shows there.
     #[must_use]
     pub fn help_at(&self, row: u8, col: u8) -> Option<dspf::help::HelpSpec> {
-        [&self.sel, &self.sys, &self.exit, &self.brw, &self.fnd, &self.dft, &self.seu]
-            .iter()
-            .find_map(|rt| rt.help_at(row, col))
+        [
+            &self.sel, &self.sys, &self.exit, &self.brw, &self.fnd, &self.dft, &self.seu,
+        ]
+        .iter()
+        .find_map(|rt| rt.help_at(row, col))
     }
 }
 
@@ -131,7 +133,14 @@ impl Screens {
 
     /// The session defaults: page 0 or 1 in edit mode, the one page in
     /// browse mode.
-    pub fn show_defaults(&mut self, m: &mut ScreenModel, env: &Env, mode: Mode, page: usize, d: &Defaults) {
+    pub fn show_defaults(
+        &mut self,
+        m: &mut ScreenModel,
+        env: &Env,
+        mode: Mode,
+        page: usize,
+        d: &Defaults,
+    ) {
         let k = keys::defaults(mode);
         let p1 = d.page1();
         let p2 = d.page2();
@@ -228,7 +237,14 @@ impl Screens {
     }
 
     /// Find (and change) options.
-    pub fn show_find(&mut self, m: &mut ScreenModel, env: &Env, mode: Mode, o: &FindOptions, width: usize) {
+    pub fn show_find(
+        &mut self,
+        m: &mut ScreenModel,
+        env: &Env,
+        mode: Mode,
+        o: &FindOptions,
+        width: usize,
+    ) {
         let occ = match o.dir {
             Direction::Next => "1",
             Direction::All => "2",
@@ -274,7 +290,11 @@ impl Screens {
     }
 
     /// The find options as typed; the message of a refused value.
-    pub fn read_find(m: &ScreenModel, mode: Mode, old: &FindOptions) -> Result<FindOptions, LineMsg> {
+    pub fn read_find(
+        m: &ScreenModel,
+        mode: Mode,
+        old: &FindOptions,
+    ) -> Result<FindOptions, LineMsg> {
         let f = |r, c| field_text(m, r, c);
         let rows: [usize; 7] = if mode == Mode::Edit {
             [7, 8, 9, 11, 13, 17, 18]
@@ -292,11 +312,17 @@ impl Screens {
             };
         }
         let num = |s: String, _what: &str| -> Result<usize, LineMsg> {
-            s.trim().parse::<usize>().map_err(|_| LineMsg::error("CPD9BDD", &[]))
+            s.trim()
+                .parse::<usize>()
+                .map_err(|_| LineMsg::error("CPD9BDD", &[]))
         };
         o.from = num(f(rows[0], 38), "first column")?.max(1);
         let to = f(rows[1], 38);
-        o.to = if to.trim().is_empty() { None } else { Some(num(to, "last column")?) };
+        o.to = if to.trim().is_empty() {
+            None
+        } else {
+            Some(num(to, "last column")?)
+        };
         o.dir = match f(rows[2], 38).trim() {
             "1" => Direction::Next,
             "2" => Direction::All,
@@ -359,7 +385,11 @@ impl Screens {
         let f = |r, c| field_text(m, r, c);
         BrowseForm {
             selection: f(5, 38),
-            copy_all: if mode == Mode::Edit { f(8, 38) } else { "N".into() },
+            copy_all: if mode == Mode::Edit {
+                f(8, 38)
+            } else {
+                "N".into()
+            },
             member: f(9, 38),
             file: f(10, 40),
             lib: f(11, 42),
@@ -419,10 +449,23 @@ impl Screens {
 
     /// The system command window over the edit display, with a
     /// command and a message (the copyright when there is none).
-    pub fn show_window(&mut self, m: &mut ScreenModel, env: &Env, cmd: &str, message: Option<&str>) {
+    pub fn show_window(
+        &mut self,
+        m: &mut ScreenModel,
+        env: &Env,
+        cmd: &str,
+        message: Option<&str>,
+    ) {
         let msg = message.unwrap_or("(C) COPYRIGHT QUARTZ SYSTEMS 2026.");
         let wkeys = keys::window().text(5);
-        put(&mut self.sys, m, env, "SYSCMD", &[("CMD", cmd), ("WKEYS", &wkeys), ("WMSG", msg)], &[]);
+        put(
+            &mut self.sys,
+            m,
+            env,
+            "SYSCMD",
+            &[("CMD", cmd), ("WKEYS", &wkeys), ("WMSG", msg)],
+            &[],
+        );
         m.set_cursor(21, 10);
     }
 
@@ -433,7 +476,13 @@ impl Screens {
     }
 
     /// Select Prompt, with the formats of the session's type listed.
-    pub fn show_select(&mut self, m: &mut ScreenModel, env: &Env, list: &[String], message: Option<&str>) {
+    pub fn show_select(
+        &mut self,
+        m: &mut ScreenModel,
+        env: &Env,
+        list: &[String],
+        message: Option<&str>,
+    ) {
         let names: Vec<String> = (7..=20).map(|r| format!("LIST{r:02}")).collect();
         let mut v: Vec<(&str, String)> = vec![("PTYPE", String::new())];
         for (i, n) in names.iter().enumerate() {

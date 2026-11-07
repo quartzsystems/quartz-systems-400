@@ -12,7 +12,16 @@
 use qsweb::msg::Message;
 
 /// Every special authority, in `SPCAUT`'s order.
-pub const SPECIAL: [&str; 8] = ["*ALLOBJ", "*SECADM", "*JOBCTL", "*SPLCTL", "*SAVSYS", "*SERVICE", "*AUDIT", "*IOSYSCFG"];
+pub const SPECIAL: [&str; 8] = [
+    "*ALLOBJ",
+    "*SECADM",
+    "*JOBCTL",
+    "*SPLCTL",
+    "*SAVSYS",
+    "*SERVICE",
+    "*AUDIT",
+    "*IOSYSCFG",
+];
 
 /// A user or group profile, as `DSPUSRPRF` shows it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

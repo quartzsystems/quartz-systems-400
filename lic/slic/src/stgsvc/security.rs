@@ -248,7 +248,10 @@ pub fn function_allowed(system: &mut System, id: &str) -> bool {
     let Some(me) = actor() else {
         return true;
     };
-    crate::svc::security::in_store(system, |txn, env| sec::fcnusg::check(txn, env.qsys, &me, id)).unwrap_or(false)
+    crate::svc::security::in_store(system, |txn, env| {
+        sec::fcnusg::check(txn, env.qsys, &me, id)
+    })
+    .unwrap_or(false)
 }
 
 /// A scheduling priority beyond the actor's `PTYLMT` is refused with
@@ -546,7 +549,11 @@ pub fn sign_on(
 
 /// Sign on at `device` for a user a QAP Telnet ticket proved: every
 /// check but the password.
-pub fn sign_on_ticket(system: &mut System, user: &str, device: &str) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+pub fn sign_on_ticket(
+    system: &mut System,
+    user: &str,
+    device: &str,
+) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
     sign_on_as(system, user, "", device, false, None, true)
 }
 

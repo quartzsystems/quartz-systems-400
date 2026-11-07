@@ -76,7 +76,10 @@ pub fn objaut(words: &[String]) -> Result<Option<Auth>, Msg> {
         return Ok(Some(Auth::EXCLUDE));
     }
     if has("*ALL") {
-        return Ok(Some(Auth::parse(&["*OBJEXIST", "*OBJMGT", "*OBJALTER", "*OBJREF"], false).unwrap_or_default()));
+        return Ok(Some(
+            Auth::parse(&["*OBJEXIST", "*OBJMGT", "*OBJALTER", "*OBJREF"], false)
+                .unwrap_or_default(),
+        ));
     }
     Auth::parse(&words, false)
         .map(Some)
@@ -126,7 +129,11 @@ pub fn md(c: &dyn IfsClient, a: &Md) -> Reply {
     // The parent's mode for *INDIR: the new directory's data authorities.
     let cwd = c.getcwd().unwrap_or_else(|_| "/".into());
     let (parent, _) = split(&absolute(&cwd, &a.dir));
-    let parent = if parent.is_empty() { "/".to_string() } else { parent };
+    let parent = if parent.is_empty() {
+        "/".to_string()
+    } else {
+        parent
+    };
     let mode = if indir {
         c.stat(&parent, true).map_or(0o755, |s| s.mode & 0o777)
     } else {

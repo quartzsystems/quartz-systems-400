@@ -85,7 +85,12 @@ fn values(w: &str) -> Vec<String> {
     w.get(34..)
         .unwrap_or("")
         .split_whitespace()
-        .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+        .filter(|t| {
+            *t != ">"
+                && !t
+                    .chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+        })
         .map(str::to_string)
         .collect()
 }
@@ -115,7 +120,10 @@ fn check_labels(name: &str, text: &str, keys: &[u8]) {
         .map(|r| label(r))
         .filter(|l| !ours.contains(l))
         .collect();
-    assert!(missing.is_empty(), "{name}: not shown {missing:?}\nours {ours:#?}");
+    assert!(
+        missing.is_empty(),
+        "{name}: not shown {missing:?}\nours {ours:#?}"
+    );
 }
 
 /// The configuration the primary shows, as the prompt override gives it.
@@ -126,8 +134,16 @@ fn collector_commands() {
     check("prompt-strpfrcol", "?STRPFRCOL", &[]);
     check("prompt-endpfrcol", "?ENDPFRCOL", &[]);
     check("prompt-chkpfrcol", "?CHKPFRCOL", &[]);
-    check("prompt-cfgpfrcol", &format!("?CFGPFRCOL {PRIMARY_CFG}"), &[]);
-    check_labels("prompt-cfgpfrcol-f10", &format!("?CFGPFRCOL {PRIMARY_CFG}"), &[10]);
+    check(
+        "prompt-cfgpfrcol",
+        &format!("?CFGPFRCOL {PRIMARY_CFG}"),
+        &[],
+    );
+    check_labels(
+        "prompt-cfgpfrcol-f10",
+        &format!("?CFGPFRCOL {PRIMARY_CFG}"),
+        &[10],
+    );
     check("prompt-crtpfrdta", "?CRTPFRDTA", &[]);
 }
 
@@ -139,15 +155,33 @@ fn wrksysact() {
 #[test]
 fn the_values_override_gives_are_the_configuration() {
     let form = perf::config::Config::default().keyword_form();
-    for want in ["INTERVAL(15.00)", "LIB(QPFRDATA)", "DFTCOLPRF(*STANDARDP)", "RETPERIOD(00120 *HOURS)"] {
-        assert!(PRIMARY_CFG.contains(want) && form.contains(want), "{want}: {form}");
+    for want in [
+        "INTERVAL(15.00)",
+        "LIB(QPFRDATA)",
+        "DFTCOLPRF(*STANDARDP)",
+        "RETPERIOD(00120 *HOURS)",
+    ] {
+        assert!(
+            PRIMARY_CFG.contains(want) && form.contains(want),
+            "{want}: {form}"
+        );
     }
 }
 
 #[test]
 fn where_they_run() {
     use sys_cpps::Site;
-    for c in ["STRPFRCOL", "ENDPFRCOL", "CFGPFRCOL", "CHKPFRCOL", "CRTPFRDTA"] {
-        assert_eq!(sys_cpps::entry(c).map(|e| e.site), Some(Site::Service), "{c}");
+    for c in [
+        "STRPFRCOL",
+        "ENDPFRCOL",
+        "CFGPFRCOL",
+        "CHKPFRCOL",
+        "CRTPFRDTA",
+    ] {
+        assert_eq!(
+            sys_cpps::entry(c).map(|e| e.site),
+            Some(Site::Service),
+            "{c}"
+        );
     }
 }

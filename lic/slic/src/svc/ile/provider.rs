@@ -86,8 +86,9 @@ fn utc_offset_min(s: &str) -> Option<i32> {
 
 impl Provider for StoreProvider {
     fn hardware(&mut self) -> ApiResult<hwrsrc::Table> {
-        hwrsrc::client::table(false)
-            .map_err(|e| ApiFail::id("CPF9898").text(&format!("hardware resource service: {e}"), 512))
+        hwrsrc::client::table(false).map_err(|e| {
+            ApiFail::id("CPF9898").text(&format!("hardware resource service: {e}"), 512)
+        })
     }
 
     fn regfac(&mut self, q: regfac::Query) -> ApiResult<regfac::Answer> {
@@ -448,14 +449,16 @@ impl Provider for StoreProvider {
             } else {
                 Select::Next
             };
-            let got = if remove { dtaq::receive(txn, id, &sel) } else { dtaq::peek(txn, id, &sel) };
-            Ok(got
-                .map_err(|e| e.to_string())?
-                .map(|e| DtaqEntry {
-                    key: e.key,
-                    data: e.data,
-                    sender: Vec::new(),
-                }))
+            let got = if remove {
+                dtaq::receive(txn, id, &sel)
+            } else {
+                dtaq::peek(txn, id, &sel)
+            };
+            Ok(got.map_err(|e| e.to_string())?.map(|e| DtaqEntry {
+                key: e.key,
+                data: e.data,
+                sender: Vec::new(),
+            }))
         })
     }
 
@@ -600,7 +603,9 @@ impl Provider for StoreProvider {
             .sysval("QSYSNAME")
             .map_or_else(|| "QS400".to_string(), |v| ccsid::decode_trimmed(&v.data));
         let value = self
-            .run(neta::AREA, "QSYS", types::DTAARA, |txn, id| neta::read_area(txn, id, &sysname))
+            .run(neta::AREA, "QSYS", types::DTAARA, |txn, id| {
+                neta::read_area(txn, id, &sysname)
+            })
             .ok()
             .and_then(|m| m.get(name).cloned())
             .or_else(|| neta::defaults(&sysname).get(name).cloned())?;

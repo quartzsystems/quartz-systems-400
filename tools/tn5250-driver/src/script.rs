@@ -208,7 +208,9 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
         "pick" => {
             let (text, value) = match rest.strip_prefix('"') {
                 Some(r) => r.split_once('"').context("pick wants \"TEXT\" VALUE")?,
-                None => rest.split_once(char::is_whitespace).context("pick wants TEXT VALUE")?,
+                None => rest
+                    .split_once(char::is_whitespace)
+                    .context("pick wants TEXT VALUE")?,
             };
             s.wait_unlocked(ctx.timeout)?;
             let cols = s.term.cols();
@@ -239,7 +241,11 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
                 .iter()
                 .find_map(|r| {
                     let at = r.find(&format!(". {text}"))?;
-                    let digits: String = r[..at].chars().rev().take_while(char::is_ascii_digit).collect();
+                    let digits: String = r[..at]
+                        .chars()
+                        .rev()
+                        .take_while(char::is_ascii_digit)
+                        .collect();
                     (!digits.is_empty()).then(|| digits.chars().rev().collect::<String>())
                 })
                 .with_context(|| format!("no option {text:?} on the screen"))?;
@@ -248,7 +254,9 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
         "seek" => {
             let (text, n) = match rest.strip_prefix('"') {
                 Some(r) => r.split_once('"').context("seek wants \"TEXT\" N")?,
-                None => rest.split_once(char::is_whitespace).context("seek wants TEXT N")?,
+                None => rest
+                    .split_once(char::is_whitespace)
+                    .context("seek wants TEXT N")?,
             };
             let mut it = n.split_whitespace();
             let n: u32 = it

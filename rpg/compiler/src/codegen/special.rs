@@ -82,7 +82,11 @@ impl Gen<'_> {
         // A result structure moves as its characters.
         let rec = match op.result.first() {
             Some(e) => self.expr(e, Want::default()).map(|v| {
-                if matches!(v.ty, crate::types::Ty::Ds(_)) { format!("{}.all_", v.op) } else { v.op }
+                if matches!(v.ty, crate::types::Ty::Ds(_)) {
+                    format!("{}.all_", v.op)
+                } else {
+                    v.op
+                }
             }),
             None => None,
         };

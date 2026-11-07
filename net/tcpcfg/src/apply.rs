@@ -73,7 +73,14 @@ pub fn start_tcp(c: &mut Ctx<'_>, o: StartOpts) -> Result<Vec<Note>> {
         .ifcs
         .list
         .iter()
-        .map(|i| (i.key(), i.line == LineRef::Loopback, i.autostart, i.addr.is_v6()))
+        .map(|i| {
+            (
+                i.key(),
+                i.line == LineRef::Loopback,
+                i.autostart,
+                i.addr.is_v6(),
+            )
+        })
         .collect();
     for (key, lo, auto, v6) in keys {
         let wanted = lo || (o.strifc && auto && (!v6 || o.strip6));
@@ -101,20 +108,22 @@ pub fn end_tcp(c: &mut Ctx<'_>) -> Result<Vec<Note>> {
     }
     c.st.tcp = TcpStatus::Ending;
     let mut notes = Vec::new();
-    let started: Vec<String> = c
-        .st
-        .ifcs
-        .iter()
-        .filter(|(_, r)| r.status != IfcStatus::Inactive)
-        .map(|(k, _)| k.clone())
-        .collect();
+    let started: Vec<String> =
+        c.st.ifcs
+            .iter()
+            .filter(|(_, r)| r.status != IfcStatus::Inactive)
+            .map(|(k, _)| k.clone())
+            .collect();
     for key in started {
         notes.extend(stop_ifc(c, &key, false));
     }
     notes.extend(sync_routes(c));
     if !c.st.rules.is_empty() {
         if let Err(e) = c.net.set_port_rules(&[]) {
-            notes.push(Note::diag(msg::ATTR_FAILED, format!("Port restrictions not removed: {e}.")));
+            notes.push(Note::diag(
+                msg::ATTR_FAILED,
+                format!("Port restrictions not removed: {e}."),
+            ));
         }
         c.st.rules.clear();
     }
@@ -127,7 +136,10 @@ fn loopback_up(c: &mut Ctx<'_>, notes: &mut Vec<Note>) {
     let lo = match c.net.link("lo") {
         Ok(Some(l)) => l,
         Ok(None) => {
-            notes.push(Note::diag(msg::IFC_FAILED, "The kernel has no loopback link."));
+            notes.push(Note::diag(
+                msg::IFC_FAILED,
+                "The kernel has no loopback link.",
+            ));
             return;
         }
         Err(e) => {
@@ -135,8 +147,13 @@ fn loopback_up(c: &mut Ctx<'_>, notes: &mut Vec<Note>) {
             return;
         }
     };
-    if !lo.up && let Err(e) = c.net.set_up(lo.index, true) {
-        notes.push(Note::diag(msg::IFC_FAILED, format!("Loopback link not started: {e}.")));
+    if !lo.up
+        && let Err(e) = c.net.set_up(lo.index, true)
+    {
+        notes.push(Note::diag(
+            msg::IFC_FAILED,
+            format!("Loopback link not started: {e}."),
+        ));
     }
     for (ip, prefix) in [("127.0.0.1", 8), ("::1", 128)] {
         let a = KAddr {
@@ -147,16 +164,22 @@ fn loopback_up(c: &mut Ctx<'_>, notes: &mut Vec<Note>) {
         if let Err(e) = c.net.add_address(&a)
             && !e.exists
         {
-            notes.push(Note::diag(msg::IFC_FAILED, format!("Loopback address {ip}: {e}.")));
+            notes.push(Note::diag(
+                msg::IFC_FAILED,
+                format!("Loopback address {ip}: {e}."),
+            ));
         }
     }
 }
 
 fn find<'c>(cfg: &'c Config, key: &str) -> Result<&'c Interface> {
     let addr = IfcAddr::parse(key)?;
-    cfg.ifcs
-        .get(&addr)
-        .ok_or_else(|| Error::new(msg::NOT_FOUND, format!("Interface {key} is not configured.")))
+    cfg.ifcs.get(&addr).ok_or_else(|| {
+        Error::new(
+            msg::NOT_FOUND,
+            format!("Interface {key} is not configured."),
+        )
+    })
 }
 
 fn set(c: &mut Ctx<'_>, key: &str, f: impl FnOnce(&mut IfcRun)) {
@@ -177,7 +200,10 @@ pub fn start_ifc(c: &mut Ctx<'_>, key: &str) -> Result<Vec<Note>> {
         ));
     }
     if c.st.ifc_status(&key).started() {
-        return Err(Error::new(msg::IFC_ACTIVE, format!("Interface {key} is already active.")));
+        return Err(Error::new(
+            msg::IFC_ACTIVE,
+            format!("Interface {key} is already active."),
+        ));
     }
     set(c, &key, |r| r.status = IfcStatus::Starting);
     match bring_up(c, &i) {
@@ -189,7 +215,10 @@ pub fn start_ifc(c: &mut Ctx<'_>, key: &str) -> Result<Vec<Note>> {
                 r.installed = installed;
                 r.error.clear();
             });
-            let mut notes = vec![Note::info(msg::IFC_STARTED, format!("Interface {key} started."))];
+            let mut notes = vec![Note::info(
+                msg::IFC_STARTED,
+                format!("Interface {key} started."),
+            )];
             if c.st.tcp == TcpStatus::Active {
                 notes.extend(sync_routes(c));
             }
@@ -216,7 +245,10 @@ fn bring_up(c: &mut Ctx<'_>, i: &Interface) -> Result<Up> {
     let (base, carrier_line) = match &i.line {
         LineRef::Loopback => ("lo".to_string(), None),
         LineRef::Opc => {
-            return Err(Error::new(msg::LINE_NOT_VALID, "*OPC interfaces are not supported."));
+            return Err(Error::new(
+                msg::LINE_NOT_VALID,
+                "*OPC interfaces are not supported.",
+            ));
         }
         LineRef::VirtualIp => {
             if c.net.link(VIP_LINK).map_err(kerr)?.is_none() {
@@ -226,22 +258,33 @@ fn bring_up(c: &mut Ctx<'_>, i: &Interface) -> Result<Up> {
         }
         LineRef::Line(n) => {
             if !c.lines.exists(n) {
-                return Err(Error::new(msg::LINE_NOT_FOUND, format!("Line {n} not found.")));
+                return Err(Error::new(
+                    msg::LINE_NOT_FOUND,
+                    format!("Line {n} not found."),
+                ));
             }
             if !c.lines.varied_on(n) {
-                c.lines
-                    .vary_on(n)
-                    .map_err(|e| Error::new(msg::LINE_FAILED, format!("Line {n} could not be varied on: {e}.")))?;
+                c.lines.vary_on(n).map_err(|e| {
+                    Error::new(
+                        msg::LINE_FAILED,
+                        format!("Line {n} could not be varied on: {e}."),
+                    )
+                })?;
             }
-            let k = c
-                .lines
-                .interface(n)
-                .ok_or_else(|| Error::new(msg::LINE_NOT_VALID, format!("Line {n} has no network port.")))?;
+            let k = c.lines.interface(n).ok_or_else(|| {
+                Error::new(
+                    msg::LINE_NOT_VALID,
+                    format!("Line {n} has no network port."),
+                )
+            })?;
             (k, Some(n.clone()))
         }
     };
     let Some(mut link) = c.net.link(&base).map_err(kerr)? else {
-        return Err(Error::new(msg::LINE_NOT_VALID, format!("Network link {base} does not exist.")));
+        return Err(Error::new(
+            msg::LINE_NOT_VALID,
+            format!("Network link {base} does not exist."),
+        ));
     };
     let mut made = None;
     if let Some(vid) = i.vlan {
@@ -290,7 +333,10 @@ fn bring_up(c: &mut Ctx<'_>, i: &Interface) -> Result<Up> {
             // The client runs beside the engine; `refresh_dhcp` reads
             // what it holds.
             let Some(line_name) = &carrier_line else {
-                return Err(Error::new(msg::LINE_NOT_VALID, "*IP4DHCP needs a line description."));
+                return Err(Error::new(
+                    msg::LINE_NOT_VALID,
+                    "*IP4DHCP needs a line description.",
+                ));
             };
             let mut cfg = dhcp::Config::new(c.net.mac(&link.name).map_err(kerr)?);
             cfg.client_id = client_id(i, cfg.mac);
@@ -331,7 +377,10 @@ fn client_id(i: &Interface, mac: [u8; 6]) -> Option<Vec<u8>> {
 pub fn end_ifc(c: &mut Ctx<'_>, key: &str) -> Result<Vec<Note>> {
     let key = find(c.cfg, key).map_or_else(|_| key.to_string(), Interface::key);
     if c.st.ifc_status(&key) == IfcStatus::Inactive {
-        return Err(Error::new(msg::IFC_INACTIVE, format!("Interface {key} is not active.")));
+        return Err(Error::new(
+            msg::IFC_INACTIVE,
+            format!("Interface {key} is not active."),
+        ));
     }
     let mut notes = stop_ifc(c, &key, true);
     if c.st.tcp == TcpStatus::Active {
@@ -358,19 +407,24 @@ fn stop_ifc(c: &mut Ctx<'_>, key: &str, release: bool) -> Vec<Note> {
         && let Err(e) = c.net.del_address(a)
         && !e.not_found
     {
-        notes.push(Note::diag(msg::IFC_FAILED, format!("Address of {key} not removed: {e}.")));
+        notes.push(Note::diag(
+            msg::IFC_FAILED,
+            format!("Address of {key} not removed: {e}."),
+        ));
     }
     if let Some(made) = &run.made {
-        let still_used = c
-            .st
-            .ifcs
-            .iter()
-            .any(|(k, r)| k != key && r.status.started() && r.link.as_deref() == Some(made));
+        let still_used =
+            c.st.ifcs
+                .iter()
+                .any(|(k, r)| k != key && r.status.started() && r.link.as_deref() == Some(made));
         if !still_used
             && let Ok(Some(l)) = c.net.link(made)
             && let Err(e) = c.net.delete_link(l.index)
         {
-            notes.push(Note::diag(msg::IFC_FAILED, format!("Link {made} not removed: {e}.")));
+            notes.push(Note::diag(
+                msg::IFC_FAILED,
+                format!("Link {made} not removed: {e}."),
+            ));
         }
     }
     set(c, key, |r| {
@@ -380,7 +434,10 @@ fn stop_ifc(c: &mut Ctx<'_>, key: &str, release: bool) -> Vec<Note> {
         r.installed = None;
         r.lease = None;
     });
-    notes.push(Note::info(msg::IFC_ENDED, format!("Interface {key} ended.")));
+    notes.push(Note::info(
+        msg::IFC_ENDED,
+        format!("Interface {key} ended."),
+    ));
     notes
 }
 
@@ -441,7 +498,12 @@ fn kroute(r: &Route, index: u32) -> KRoute {
 pub fn sync_routes(c: &mut Ctx<'_>) -> Vec<Note> {
     let mut notes = Vec::new();
     let keys: Vec<_> = c.cfg.rtes.list.iter().map(Route::key).collect();
-    let gone: Vec<_> = c.st.rtes.keys().filter(|k| !keys.contains(k)).cloned().collect();
+    let gone: Vec<_> =
+        c.st.rtes
+            .keys()
+            .filter(|k| !keys.contains(k))
+            .cloned()
+            .collect();
     for k in gone {
         if let Some(run) = c.st.rtes.remove(&k)
             && let Some(kr) = run.installed
@@ -485,7 +547,10 @@ pub fn sync_routes(c: &mut Ctx<'_>) -> Vec<Note> {
                         Err(e) => {
                             notes.push(Note::diag(
                                 msg::RTE_FAILED,
-                                format!("Route to {} through {} not added: {e}.", r.dest, r.next_hop),
+                                format!(
+                                    "Route to {} through {} not added: {e}.",
+                                    r.dest, r.next_hop
+                                ),
                             ));
                             next.status = RteStatus::Failed;
                             next.error = e.text;
@@ -507,12 +572,18 @@ pub fn apply_attrs(c: &mut Ctx<'_>) -> Vec<Note> {
         reads.push((key.into(), net.sysctl_read(key).ok()));
     }
     let writes = c.cfg.attrs.sysctls(&mut |k| {
-        reads.iter().find(|(x, _)| x == k).and_then(|(_, v)| v.clone())
+        reads
+            .iter()
+            .find(|(x, _)| x == k)
+            .and_then(|(_, v)| v.clone())
     });
     let mut notes = Vec::new();
     for (k, v) in writes {
         if let Err(e) = net.sysctl_write(&k, &v) {
-            notes.push(Note::diag(msg::ATTR_FAILED, format!("Kernel setting {k} not changed: {e}.")));
+            notes.push(Note::diag(
+                msg::ATTR_FAILED,
+                format!("Kernel setting {k} not changed: {e}."),
+            ));
         }
     }
     notes
@@ -526,7 +597,10 @@ pub fn apply_hostname(c: &mut Ctx<'_>) -> Vec<Note> {
     }
     match c.net.set_hostname(&name) {
         Ok(()) => Vec::new(),
-        Err(e) => vec![Note::diag(msg::ATTR_FAILED, format!("Host name not set: {e}."))],
+        Err(e) => vec![Note::diag(
+            msg::ATTR_FAILED,
+            format!("Host name not set: {e}."),
+        )],
     }
 }
 
@@ -541,7 +615,10 @@ pub fn apply_ports(c: &mut Ctx<'_>) -> Vec<Note> {
             c.st.rules = want;
             Vec::new()
         }
-        Err(e) => vec![Note::diag(msg::ATTR_FAILED, format!("Port restrictions not applied: {e}."))],
+        Err(e) => vec![Note::diag(
+            msg::ATTR_FAILED,
+            format!("Port restrictions not applied: {e}."),
+        )],
     }
 }
 
@@ -606,8 +683,15 @@ pub fn refresh(c: &mut Ctx<'_>) -> Vec<Note> {
             }
             set(c, &key, |r| r.status = next);
             changed = true;
-            let id = if next == IfcStatus::Active { msg::IFC_STARTED } else { msg::IFC_FAILED };
-            notes.push(Note::diag(id, format!("Interface {key} is now {}.", next.name())));
+            let id = if next == IfcStatus::Active {
+                msg::IFC_STARTED
+            } else {
+                msg::IFC_FAILED
+            };
+            notes.push(Note::diag(
+                id,
+                format!("Interface {key} is now {}.", next.name()),
+            ));
         }
     }
     if changed {
@@ -623,7 +707,14 @@ pub fn refresh(c: &mut Ctx<'_>) -> Vec<Note> {
 pub fn refresh_dhcp(c: &mut Ctx<'_>) -> Vec<Note> {
     let mut notes = Vec::new();
     let mut changed = false;
-    let ifcs: Vec<Interface> = c.cfg.ifcs.list.iter().filter(|i| i.addr == IfcAddr::Dhcp4).cloned().collect();
+    let ifcs: Vec<Interface> = c
+        .cfg
+        .ifcs
+        .list
+        .iter()
+        .filter(|i| i.addr == IfcAddr::Dhcp4)
+        .cloned()
+        .collect();
     for i in ifcs {
         let key = i.key();
         let run = c.st.ifcs.get(&key).cloned().unwrap_or_default();
@@ -634,7 +725,11 @@ pub fn refresh_dhcp(c: &mut Ctx<'_>) -> Vec<Note> {
             continue;
         };
         let lease = c.net.dhcp_status(link).and_then(|s| s.lease);
-        let next = if lease.is_some() { IfcStatus::Active } else { IfcStatus::Acquiring };
+        let next = if lease.is_some() {
+            IfcStatus::Active
+        } else {
+            IfcStatus::Acquiring
+        };
         if lease == run.lease && next == run.status {
             continue;
         }
@@ -645,9 +740,15 @@ pub fn refresh_dhcp(c: &mut Ctx<'_>) -> Vec<Note> {
             notes.push(match &lease {
                 Some(l) => Note::info(
                     msg::IFC_STARTED,
-                    format!("Interface {key} has address {} from DHCP server {}.", l.addr, l.server),
+                    format!(
+                        "Interface {key} has address {} from DHCP server {}.",
+                        l.addr, l.server
+                    ),
                 ),
-                None => Note::diag(msg::IFC_FAILED, format!("Interface {key} lost its DHCP lease.")),
+                None => Note::diag(
+                    msg::IFC_FAILED,
+                    format!("Interface {key} lost its DHCP lease."),
+                ),
             });
         }
         set(c, &key, |r| {
@@ -667,7 +768,12 @@ pub fn refresh_dhcp(c: &mut Ctx<'_>) -> Vec<Note> {
 pub fn report(cfg: &Config, st: &State, net: &mut dyn NetOps, what: &str) -> Vec<String> {
     let mut out = Vec::new();
     let links = net.links().unwrap_or_default();
-    let name = |i: u32| links.iter().find(|l| l.index == i).map_or("?".to_string(), |l| l.name.clone());
+    let name = |i: u32| {
+        links
+            .iter()
+            .find(|l| l.index == i)
+            .map_or("?".to_string(), |l| l.name.clone())
+    };
     let all = what.is_empty() || what == "*ALL";
     if all || what == "ifc" {
         out.push(format!("TCP/IP {}", st.tcp.name()));
@@ -680,7 +786,11 @@ pub fn report(cfg: &Config, st: &State, net: &mut dyn NetOps, what: &str) -> Vec
                 i.line,
                 run.status.name(),
                 run.link.unwrap_or_default(),
-                if run.error.is_empty() { String::new() } else { format!(" ({})", run.error) }
+                if run.error.is_empty() {
+                    String::new()
+                } else {
+                    format!(" ({})", run.error)
+                }
             ));
             if let Some(l) = &run.lease {
                 out.push(format!(
@@ -694,7 +804,12 @@ pub fn report(cfg: &Config, st: &State, net: &mut dyn NetOps, what: &str) -> Vec
             }
         }
         for a in net.addresses().unwrap_or_default() {
-            out.push(format!("kernel addr {} {}/{}", name(a.link), a.addr, a.prefix));
+            out.push(format!(
+                "kernel addr {} {}/{}",
+                name(a.link),
+                a.addr,
+                a.prefix
+            ));
         }
     }
     if all || what == "rte" {
@@ -727,14 +842,21 @@ pub fn report(cfg: &Config, st: &State, net: &mut dyn NetOps, what: &str) -> Vec
     if all || what == "attr" {
         for (k, v) in cfg.attrs.sysctls(&mut |_| None) {
             let cur = net.sysctl_read(&k).unwrap_or_else(|e| format!("({e})"));
-            out.push(format!("attr {k} want {v} kernel {}", cur.replace('\t', " ")));
+            out.push(format!(
+                "attr {k} want {v} kernel {}",
+                cur.replace('\t', " ")
+            ));
         }
     }
     if all || what == "host" {
         for e in cfg.hosts.sorted() {
             out.push(format!("host {} {}", e.addr, e.names.join(" ")));
         }
-        out.push(format!("domain {} search {}", cfg.domain.fqdn(), cfg.domain.search().join(" ")));
+        out.push(format!(
+            "domain {} search {}",
+            cfg.domain.fqdn(),
+            cfg.domain.search().join(" ")
+        ));
     }
     out
 }

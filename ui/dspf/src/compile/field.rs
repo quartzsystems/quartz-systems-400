@@ -254,7 +254,8 @@ pub(crate) fn build(
                 Some(k) => reffld(k, cx, diags)?,
                 None => (name.clone(), cx.ref_file.clone()),
             };
-            let Some((t, l, d)) = referenced(cx, file_ref.as_ref(), &field, usage == Usage::Hidden) else {
+            let Some((t, l, d)) = referenced(cx, file_ref.as_ref(), &field, usage == Usage::Hidden)
+            else {
                 diags.push(ids::ref_not_found(spec.line, &field));
                 return None;
             };
@@ -469,7 +470,12 @@ fn reffld(k: &Keyword, cx: &Cx<'_>, diags: &mut Diagnostics) -> Option<(String, 
 }
 
 /// The shape of a referenced field.
-fn referenced(cx: &Cx<'_>, file: Option<&FileRef>, field: &str, hidden: bool) -> Option<(FieldType, u32, u8)> {
+fn referenced(
+    cx: &Cx<'_>,
+    file: Option<&FileRef>,
+    field: &str,
+    hidden: bool,
+) -> Option<(FieldType, u32, u8)> {
     let f = file?;
     let formats = cx.resolver.formats(&f.library, &f.file).ok()??;
     let d = formats

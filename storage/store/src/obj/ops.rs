@@ -150,7 +150,12 @@ pub fn bootstrap_root(txn: &mut Txn<'_>, now: u64, system: &str, name: Name) -> 
 /// A job's temporary library in this ASP (the database `QTEMP`): a
 /// root in no other library, so no listing, catalog or save sees it,
 /// flagged temporary so the next IPL deletes what a job left.
-pub fn create_temporary_root(txn: &mut Txn<'_>, name: Name, owner: &str, now: u64) -> Result<ObjectId> {
+pub fn create_temporary_root(
+    txn: &mut Txn<'_>,
+    name: Name,
+    owner: &str,
+    now: u64,
+) -> Result<ObjectId> {
     let asp = txn.store().asp_number();
     let id = ObjectId {
         asp,
@@ -221,7 +226,11 @@ pub fn find_library(txn: &mut Txn<'_>, qsys: ObjectId, name: Name) -> Result<Fou
         && name == qtemp_name()
     {
         let page = dir::header_page(txn, q)?;
-        return Ok(Found { id: q, library: q, page });
+        return Ok(Found {
+            id: q,
+            library: q,
+            page,
+        });
     }
     let lib = Library::load(txn, qsys)?;
     let id = lib

@@ -54,8 +54,9 @@ use std::sync::Mutex;
 use std::thread;
 
 use qap_proto::ops::sql::{
-    Column, Columns, CommitLevel, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Naming, Prepared,
-    Schema, Schemas, SetOptions, SqlFailure, SqlValue, Table as TableEntry, TableKind, Tables,
+    Column, Columns, CommitLevel, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas,
+    ListTables, Naming, Prepared, Schema, Schemas, SetOptions, SqlFailure, SqlValue,
+    Table as TableEntry, TableKind, Tables,
 };
 use qap_proto::{ServerMessage, Status};
 
@@ -160,7 +161,16 @@ impl Db {
     /// The table `r` names, for `me`, under `o`.
     fn resolve(&self, r: &TableRef, o: &SetOptions, me: &str) -> Result<usize, Fail> {
         if r.slash && o.naming == Naming::Sql {
-            return Err(Fail::Sql("42833", -5016, "SQL5016", vec![format!("{}/{}", r.schema.clone().unwrap_or_default(), r.name)]));
+            return Err(Fail::Sql(
+                "42833",
+                -5016,
+                "SQL5016",
+                vec![format!(
+                    "{}/{}",
+                    r.schema.clone().unwrap_or_default(),
+                    r.name
+                )],
+            ));
         }
         let candidates: Vec<String> = match (&r.schema, &o.default_schema) {
             (Some(s), _) => vec![s.clone()],
@@ -168,13 +178,24 @@ impl Db {
             (None, None) if o.naming == Naming::Sql => vec![me.to_string()],
             (None, None) => vec!["QGPL".into(), "HLINV".into()],
         };
-        let found = candidates.iter().find_map(|s| self.tables.iter().position(|t| t.schema == *s && t.name == r.name));
+        let found = candidates.iter().find_map(|s| {
+            self.tables
+                .iter()
+                .position(|t| t.schema == *s && t.name == r.name)
+        });
         let Some(i) = found else {
-            return Err(not_found(&r.name, candidates.first().map_or("", String::as_str)));
+            return Err(not_found(
+                &r.name,
+                candidates.first().map_or("", String::as_str),
+            ));
         };
         let t = &self.tables[i];
         if t.only.is_some_and(|u| u != me) {
-            return Err(Fail::Refused(Status::NotAuthorized, "SQL0551", vec![format!("{}.{}", t.schema, t.name)]));
+            return Err(Fail::Refused(
+                Status::NotAuthorized,
+                "SQL0551",
+                vec![format!("{}.{}", t.schema, t.name)],
+            ));
         }
         Ok(i)
     }
@@ -182,7 +203,11 @@ impl Db {
     /// The table a view, alias or logical file reads; itself otherwise.
     fn base(&self, i: usize) -> usize {
         match &self.tables[i].over {
-            Some((name, _)) => self.tables.iter().position(|t| t.schema == self.tables[i].schema && t.name == *name).unwrap_or(i),
+            Some((name, _)) => self
+                .tables
+                .iter()
+                .position(|t| t.schema == self.tables[i].schema && t.name == *name)
+                .unwrap_or(i),
             None => i,
         }
     }
@@ -191,7 +216,12 @@ impl Db {
     fn rows(&self, i: usize) -> Vec<Vec<SqlValue>> {
         let base = &self.tables[self.base(i)];
         match &self.tables[i].over {
-            Some((_, Some((c, v)))) => base.rows.iter().filter(|r| same(&r[*c], v)).cloned().collect(),
+            Some((_, Some((c, v)))) => base
+                .rows
+                .iter()
+                .filter(|r| same(&r[*c], v))
+                .cloned()
+                .collect(),
             _ => base.rows.clone(),
         }
     }
@@ -218,10 +248,14 @@ fn marker(t: &Table, c: usize) -> Column {
 /// The value of `e`, with `params`, assigned to a column of `col`.
 fn assigned(col: &values::Col, e: &Expr, params: &[SqlValue]) -> Result<SqlValue, Fail> {
     let v = match e {
-        Expr::Param(n) => params.get(*n).cloned().ok_or_else(|| Fail::Sql("07001", -313, "SQL0313", Vec::new()))?,
+        Expr::Param(n) => params
+            .get(*n)
+            .cloned()
+            .ok_or_else(|| Fail::Sql("07001", -313, "SQL0313", Vec::new()))?,
         Expr::Lit(l) => literal(l),
     };
-    assign(col, v).map_err(|(state, code, id)| Fail::Sql(state, code, id, vec![col.column.name.clone()]))
+    assign(col, v)
+        .map_err(|(state, code, id)| Fail::Sql(state, code, id, vec![col.column.name.clone()]))
 }
 
 /// The value of `e`, with `params`, assigned to column `c` of `t`.
@@ -266,21 +300,30 @@ impl Conn {
     }
 
     /// `Prepare` as `me`.
-    pub fn prepare(&mut self, db: &Mutex<Db>, me: &str, text: &str, msg: Msg<'_>) -> SqlResult<Prepared> {
-        self.prepare_in(&lock(db), me, text).map_err(|f| f.stop(msg, None)).map(|p| {
-            let statement = self.id();
-            let reply = Prepared {
-                statement,
-                columns: p.columns.clone(),
-                parameters: p.parameters.clone(),
-            };
-            self.statements.insert(statement, p);
-            reply
-        })
+    pub fn prepare(
+        &mut self,
+        db: &Mutex<Db>,
+        me: &str,
+        text: &str,
+        msg: Msg<'_>,
+    ) -> SqlResult<Prepared> {
+        self.prepare_in(&lock(db), me, text)
+            .map_err(|f| f.stop(msg, None))
+            .map(|p| {
+                let statement = self.id();
+                let reply = Prepared {
+                    statement,
+                    columns: p.columns.clone(),
+                    parameters: p.parameters.clone(),
+                };
+                self.statements.insert(statement, p);
+                reply
+            })
     }
 
     fn prepare_in(&self, db: &Db, me: &str, text: &str) -> Result<Prep, Fail> {
-        let stmt = parse::parse(text).map_err(|tok| Fail::Sql("42601", -104, "SQL0104", vec![tok]))?;
+        let stmt =
+            parse::parse(text).map_err(|tok| Fail::Sql("42601", -104, "SQL0104", vec![tok]))?;
         let table = db.resolve(stmt.table(), &self.options, me)?;
         let t = &db.tables[table];
         let mut parameters = Vec::new();
@@ -298,14 +341,20 @@ impl Conn {
             Stmt::Select { cols, filter, .. } => {
                 columns = match cols {
                     None => t.columns.iter().map(|c| c.column.clone()).collect(),
-                    Some(names) => names.iter().map(|n| column(t, n).map(|c| t.columns[c].column.clone())).collect::<Result<_, _>>()?,
+                    Some(names) => names
+                        .iter()
+                        .map(|n| column(t, n).map(|c| t.columns[c].column.clone()))
+                        .collect::<Result<_, _>>()?,
                 };
                 markers(filter, &mut parameters)?;
             }
             Stmt::Insert { cols, values, .. } => {
                 let targets: Vec<usize> = match cols {
                     None => (0..t.columns.len()).collect(),
-                    Some(names) => names.iter().map(|n| column(t, n)).collect::<Result<_, _>>()?,
+                    Some(names) => names
+                        .iter()
+                        .map(|n| column(t, n))
+                        .collect::<Result<_, _>>()?,
                 };
                 if targets.len() != values.len() {
                     return Err(Fail::Sql("42802", -117, "SQL0117", Vec::new()));
@@ -332,20 +381,43 @@ impl Conn {
 
     /// `Execute` as `me`: a query opens a cursor; a change runs once per
     /// parameter row, stopping at the first that fails.
-    pub fn execute(&mut self, db: &Mutex<Db>, req: &Execute, cancelled: &dyn Fn() -> bool, msg: Msg<'_>) -> SqlResult<Executed> {
+    pub fn execute(
+        &mut self,
+        db: &Mutex<Db>,
+        req: &Execute,
+        cancelled: &dyn Fn() -> bool,
+        msg: Msg<'_>,
+    ) -> SqlResult<Executed> {
         let Some(p) = self.statements.get(&req.statement).cloned() else {
-            return Err(SqlStop::Refused(refusal(msg, Status::NotFound, "SQL0518", &[format!("S{}", req.statement)])));
+            return Err(SqlStop::Refused(refusal(
+                msg,
+                Status::NotFound,
+                "SQL0518",
+                &[format!("S{}", req.statement)],
+            )));
         };
         if let Stmt::Select { cols, filter, .. } = &p.stmt {
             let params = req.rows.first().cloned().unwrap_or_default();
-            return self.open(db, &p, cols.as_deref(), filter, &params).map_err(|f| f.stop(msg, None));
+            return self
+                .open(db, &p, cols.as_deref(), filter, &params)
+                .map_err(|f| f.stop(msg, None));
         }
         let several = !req.rows.is_empty();
-        let rows = if several { req.rows.clone() } else { vec![Vec::new()] };
+        let rows = if several {
+            req.rows.clone()
+        } else {
+            vec![Vec::new()]
+        };
         let mut updated = 0i64;
         for (n, params) in rows.iter().enumerate() {
             if cancelled() {
-                return Err(SqlStop::cancelled(Executed { updated, cursor: None }, msg(CANCELLED, &[])));
+                return Err(SqlStop::cancelled(
+                    Executed {
+                        updated,
+                        cursor: None,
+                    },
+                    msg(CANCELLED, &[]),
+                ));
             }
             if params.len() != p.parameters.len() {
                 let row = several.then(|| u32::try_from(n).unwrap_or(u32::MAX));
@@ -363,10 +435,20 @@ impl Conn {
                 }
             }
         }
-        Ok(Executed { updated, cursor: None })
+        Ok(Executed {
+            updated,
+            cursor: None,
+        })
     }
 
-    fn open(&mut self, db: &Mutex<Db>, p: &Prep, cols: Option<&[String]>, filter: &Filter, params: &[SqlValue]) -> Result<Executed, Fail> {
+    fn open(
+        &mut self,
+        db: &Mutex<Db>,
+        p: &Prep,
+        cols: Option<&[String]>,
+        filter: &Filter,
+        params: &[SqlValue],
+    ) -> Result<Executed, Fail> {
         if params.len() != p.parameters.len() {
             return Err(Fail::Sql("07001", -313, "SQL0313", Vec::new()));
         }
@@ -374,7 +456,10 @@ impl Conn {
         let t = &db.tables[p.table];
         let picks: Vec<usize> = match cols {
             None => (0..t.columns.len()).collect(),
-            Some(names) => names.iter().map(|n| column(t, n)).collect::<Result<_, _>>()?,
+            Some(names) => names
+                .iter()
+                .map(|n| column(t, n))
+                .collect::<Result<_, _>>()?,
         };
         let w = wanted(t, filter, params)?;
         let rows: Vec<Vec<SqlValue>> = db
@@ -398,13 +483,23 @@ impl Conn {
     fn change(&mut self, db: &mut Db, p: &Prep, params: &[SqlValue]) -> Result<i64, Fail> {
         let shown = &db.tables[p.table];
         if matches!(shown.kind, TableKind::View | TableKind::LogicalFile) {
-            return Err(Fail::Sql("42807", -150, "SQL0150", vec![shown.name.clone()]));
+            return Err(Fail::Sql(
+                "42807",
+                -150,
+                "SQL0150",
+                vec![shown.name.clone()],
+            ));
         }
         let ti = db.base(p.table);
         let t = &db.tables[ti];
         if self.options.commit != CommitLevel::None {
             if !t.journaled {
-                return Err(Fail::Sql("55019", -7008, "SQL7008", vec![t.name.clone(), t.schema.clone()]));
+                return Err(Fail::Sql(
+                    "55019",
+                    -7008,
+                    "SQL7008",
+                    vec![t.name.clone(), t.schema.clone()],
+                ));
             }
             self.pending = true;
             self.undo.entry(ti).or_insert_with(|| t.rows.clone());
@@ -414,7 +509,10 @@ impl Conn {
             Stmt::Insert { cols, values, .. } => {
                 let targets: Vec<usize> = match cols {
                     None => (0..t.columns.len()).collect(),
-                    Some(names) => names.iter().map(|n| column(t, n)).collect::<Result<_, _>>()?,
+                    Some(names) => names
+                        .iter()
+                        .map(|n| column(t, n))
+                        .collect::<Result<_, _>>()?,
                 };
                 let mut row: Vec<SqlValue> = t.columns.iter().map(|_| SqlValue::Null).collect();
                 for (c, e) in targets.iter().zip(values) {
@@ -422,7 +520,12 @@ impl Conn {
                 }
                 for (c, v) in row.iter().enumerate() {
                     if *v == SqlValue::Null && !t.columns[c].column.nullable {
-                        return Err(Fail::Sql("23502", -407, "SQL0407", vec![t.columns[c].column.name.clone()]));
+                        return Err(Fail::Sql(
+                            "23502",
+                            -407,
+                            "SQL0407",
+                            vec![t.columns[c].column.name.clone()],
+                        ));
                     }
                 }
                 if let Some(k) = t.key
@@ -435,7 +538,10 @@ impl Conn {
             }
             Stmt::Update { sets, filter, .. } => {
                 // The SET markers come before the WHERE's.
-                let split = sets.iter().filter(|(_, e)| matches!(e, Expr::Param(_))).count();
+                let split = sets
+                    .iter()
+                    .filter(|(_, e)| matches!(e, Expr::Param(_)))
+                    .count();
                 let (sp, wp) = params.split_at(split.min(params.len()));
                 let mut assigned = Vec::new();
                 let mut k = 0;
@@ -472,18 +578,35 @@ impl Conn {
 
     /// `Fetch`: up to `max_rows` (0 for all); a slow table's rows look
     /// at the cancel one by one.
-    pub fn fetch(&mut self, req: &Fetch, cancelled: &dyn Fn() -> bool, msg: Msg<'_>) -> SqlResult<Fetched> {
+    pub fn fetch(
+        &mut self,
+        req: &Fetch,
+        cancelled: &dyn Fn() -> bool,
+        msg: Msg<'_>,
+    ) -> SqlResult<Fetched> {
         let Some(c) = self.cursors.get_mut(&req.cursor) else {
-            return Err(SqlStop::Refused(refusal(msg, Status::NotFound, "SQL0501", &[format!("C{}", req.cursor)])));
+            return Err(SqlStop::Refused(refusal(
+                msg,
+                Status::NotFound,
+                "SQL0501",
+                &[format!("C{}", req.cursor)],
+            )));
         };
-        let want = if req.max_rows == 0 { usize::MAX } else { usize::try_from(req.max_rows).unwrap_or(usize::MAX) };
+        let want = if req.max_rows == 0 {
+            usize::MAX
+        } else {
+            usize::try_from(req.max_rows).unwrap_or(usize::MAX)
+        };
         let mut rows = Vec::new();
         while rows.len() < want && c.pos < c.rows.len() {
             if let Some(d) = c.slow {
                 thread::sleep(d);
                 if cancelled() {
                     self.cursors.remove(&req.cursor);
-                    return Err(SqlStop::cancelled(Fetched { rows, end: false }, msg(CANCELLED, &[])));
+                    return Err(SqlStop::cancelled(
+                        Fetched { rows, end: false },
+                        msg(CANCELLED, &[]),
+                    ));
                 }
             }
             rows.push(c.rows[c.pos].clone());
@@ -500,7 +623,12 @@ impl Conn {
     pub fn close_cursor(&mut self, cursor: u32, msg: Msg<'_>) -> Result<(), Refusal> {
         match self.cursors.remove(&cursor) {
             Some(_) => Ok(()),
-            None => Err(refusal(msg, Status::NotFound, "SQL0501", &[format!("C{cursor}")])),
+            None => Err(refusal(
+                msg,
+                Status::NotFound,
+                "SQL0501",
+                &[format!("C{cursor}")],
+            )),
         }
     }
 
@@ -511,7 +639,12 @@ impl Conn {
     pub fn release(&mut self, statement: u32, msg: Msg<'_>) -> Result<(), Refusal> {
         match self.statements.remove(&statement) {
             Some(_) => Ok(()),
-            None => Err(refusal(msg, Status::NotFound, "SQL0518", &[format!("S{statement}")])),
+            None => Err(refusal(
+                msg,
+                Status::NotFound,
+                "SQL0518",
+                &[format!("S{statement}")],
+            )),
         }
     }
 
@@ -579,7 +712,12 @@ pub fn list_schemas(db: &Db, req: &ListSchemas) -> Schemas {
 /// `NotFound` (`SQL0204`) for a schema that does not exist.
 pub fn list_tables(db: &Db, req: &ListTables, msg: Msg<'_>) -> Result<Tables, Refusal> {
     if !db.schemas.iter().any(|(n, _)| *n == req.schema) {
-        return Err(refusal(msg, Status::NotFound, "SQL0204", &[req.schema.clone(), "*LIB".into()]));
+        return Err(refusal(
+            msg,
+            Status::NotFound,
+            "SQL0204",
+            &[req.schema.clone(), "*LIB".into()],
+        ));
     }
     let all: Vec<TableEntry> = db
         .tables
@@ -601,12 +739,31 @@ pub fn list_tables(db: &Db, req: &ListTables, msg: Msg<'_>) -> Result<Tables, Re
 ///
 /// # Errors
 /// `NotFound` (`SQL0204`), or `NotAuthorized` (`SQL0551`).
-pub fn list_columns(db: &Db, me: &str, req: &ListColumns, msg: Msg<'_>) -> Result<Columns, Refusal> {
-    let Some(t) = db.tables.iter().find(|t| t.schema == req.schema && t.name == req.table) else {
-        return Err(refusal(msg, Status::NotFound, "SQL0204", &[req.table.clone(), req.schema.clone()]));
+pub fn list_columns(
+    db: &Db,
+    me: &str,
+    req: &ListColumns,
+    msg: Msg<'_>,
+) -> Result<Columns, Refusal> {
+    let Some(t) = db
+        .tables
+        .iter()
+        .find(|t| t.schema == req.schema && t.name == req.table)
+    else {
+        return Err(refusal(
+            msg,
+            Status::NotFound,
+            "SQL0204",
+            &[req.table.clone(), req.schema.clone()],
+        ));
     };
     if t.only.is_some_and(|u| u != me) {
-        return Err(refusal(msg, Status::NotAuthorized, "SQL0551", &[format!("{}.{}", t.schema, t.name)]));
+        return Err(refusal(
+            msg,
+            Status::NotAuthorized,
+            "SQL0551",
+            &[format!("{}.{}", t.schema, t.name)],
+        ));
     }
     Ok(Columns {
         columns: t.columns.iter().map(|c| c.column.clone()).collect(),

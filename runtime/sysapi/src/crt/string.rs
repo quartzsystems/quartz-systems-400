@@ -15,7 +15,10 @@ use crate::net::abi::{bound_c, fat, int, is_null, mem, raw, uint};
 /// The bytes from a pointer to the end of its space.
 fn rest(j: &Job, p: u128) -> Result<&'static mut [u8], Errno> {
     let (at, avail) = j.spaces.extent(fat(p)).map_err(|_| Errno::EFAULT)?;
-    Ok(mi::storage::view(at, usize::try_from(avail).unwrap_or(usize::MAX)))
+    Ok(mi::storage::view(
+        at,
+        usize::try_from(avail).unwrap_or(usize::MAX),
+    ))
 }
 
 /// A NUL-terminated string's bytes, without the NUL.
@@ -78,7 +81,11 @@ fn memchr(j: &mut Job, s: u128, c: i64, n: i64) -> u128 {
 
 fn memcmp(j: &mut Job, a: u128, _pad: i64, b: u128, n: i64) -> i64 {
     match (mem(j, a, len(n)), mem(j, b, len(n))) {
-        (Ok(x), Ok(y)) => x.iter().zip(y.iter()).find(|(p, q)| p != q).map_or(0, |(p, q)| i64::from(*p) - i64::from(*q)),
+        (Ok(x), Ok(y)) => x
+            .iter()
+            .zip(y.iter())
+            .find(|(p, q)| p != q)
+            .map_or(0, |(p, q)| i64::from(*p) - i64::from(*q)),
         _ => {
             signal(j);
             0
@@ -117,7 +124,10 @@ fn strtok(j: &mut Job, s: u128, delims: u128) -> u128 {
         super::with_state(j, |st| st.strtok = None);
         return null;
     };
-    let end = b[first..].iter().position(|c| d.contains(c)).map(|i| first + i);
+    let end = b[first..]
+        .iter()
+        .position(|c| d.contains(c))
+        .map(|i| first + i);
     let tok = plus(j, start, first);
     let next = match end {
         Some(e) => {
@@ -243,7 +253,13 @@ fn sscanf(j: &mut Job, argc: i64, s: u128, f: u128, out: [u128; 4]) -> i64 {
         while let Some(&m) = fmt.get(fi) {
             match m {
                 'h' => wide = 2,
-                'l' => wide = if wide == 8 || fmt.get(fi + 1) == Some(&'l') { 8 } else { 4 },
+                'l' => {
+                    wide = if wide == 8 || fmt.get(fi + 1) == Some(&'l') {
+                        8
+                    } else {
+                        4
+                    }
+                }
                 _ => break,
             }
             fi += 1;
@@ -263,7 +279,8 @@ fn sscanf(j: &mut Job, argc: i64, s: u128, f: u128, out: [u128; 4]) -> i64 {
         if matches!(text.get(ti), Some('-' | '+')) {
             ti += 1;
         }
-        if radix == 16 && text.get(ti) == Some(&'0') && matches!(text.get(ti + 1), Some('x' | 'X')) {
+        if radix == 16 && text.get(ti) == Some(&'0') && matches!(text.get(ti + 1), Some('x' | 'X'))
+        {
             ti += 2;
         }
         let from = ti;
@@ -284,11 +301,25 @@ fn sscanf(j: &mut Job, argc: i64, s: u128, f: u128, out: [u128; 4]) -> i64 {
         b.copy_from_slice(&bytes[8 - wide..]);
         stored += 1;
     }
-    if stored == 0 && text.is_empty() { -1 } else { i64::try_from(stored).unwrap_or(0) }
+    if stored == 0 && text.is_empty() {
+        -1
+    } else {
+        i64::try_from(stored).unwrap_or(0)
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
-extern "sysv64" fn b_sscanf(env: *mut Env, argc: i64, _od: i64, s: u128, f: u128, a: u128, b: u128, c: u128, d: u128) -> i64 {
+extern "sysv64" fn b_sscanf(
+    env: *mut Env,
+    argc: i64,
+    _od: i64,
+    s: u128,
+    f: u128,
+    a: u128,
+    b: u128,
+    c: u128,
+    d: u128,
+) -> i64 {
     sscanf(mi::storage::job_of(env), argc, s, f, [a, b, c, d])
 }
 

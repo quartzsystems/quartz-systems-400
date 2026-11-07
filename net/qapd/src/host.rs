@@ -14,17 +14,20 @@ use std::sync::Arc;
 use ifs::client::IfsClient;
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
 use qap_proto::ops::manage::{
-    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType, SetSystemValue, Subsystem,
-    SystemValue, SystemValues,
+    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType,
+    SetSystemValue, Subsystem, SystemValue, SystemValues,
 };
-use qap_proto::ops::messages::{ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent};
+use qap_proto::ops::messages::{
+    ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent,
+};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
-    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId,
+    SpooledFiles,
 };
 use qap_proto::ops::sql::{
-    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared, Schemas, SetOptions,
-    Tables,
+    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared,
+    Schemas, SetOptions, Tables,
 };
 use qap_proto::ops::system::SystemInfo;
 use qap_proto::types::ObjectName;
@@ -140,17 +143,27 @@ pub trait Host {
     }
     /// Prepare a statement as the signed-on profile.
     fn sql_prepare(&mut self, _sql: &str) -> SqlResult<Prepared> {
-        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Prepare"]))))
+        Err(SqlStop::Refused(no_database(
+            self.message(NO_DATABASE, &["Prepare"]),
+        )))
     }
     /// Run a prepared statement once per parameter row, stopping at the
     /// first that fails (`SqlFailure.row`); a query opens a cursor.
     /// `cancelled` as for [`Host::run_command`].
-    fn sql_execute(&mut self, _req: &Execute, _cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
-        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Execute"]))))
+    fn sql_execute(
+        &mut self,
+        _req: &Execute,
+        _cancelled: &dyn Fn() -> bool,
+    ) -> SqlResult<Executed> {
+        Err(SqlStop::Refused(no_database(
+            self.message(NO_DATABASE, &["Execute"]),
+        )))
     }
     /// Rows from a cursor, at most `max_rows` (0 for all).
     fn sql_fetch(&mut self, _req: &Fetch, _cancelled: &dyn Fn() -> bool) -> SqlResult<Fetched> {
-        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Fetch"]))))
+        Err(SqlStop::Refused(no_database(
+            self.message(NO_DATABASE, &["Fetch"]),
+        )))
     }
     /// Close a cursor; `NotFound` when it is not open.
     fn sql_close_cursor(&mut self, _cursor: u32) -> Result<(), Refusal> {
@@ -162,11 +175,15 @@ pub trait Host {
     }
     /// Commit the connection's transaction.
     fn sql_commit(&mut self) -> SqlResult<()> {
-        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Commit"]))))
+        Err(SqlStop::Refused(no_database(
+            self.message(NO_DATABASE, &["Commit"]),
+        )))
     }
     /// Roll back the connection's transaction.
     fn sql_rollback(&mut self) -> SqlResult<()> {
-        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Rollback"]))))
+        Err(SqlStop::Refused(no_database(
+            self.message(NO_DATABASE, &["Rollback"]),
+        )))
     }
     /// The connection ends or runs as another profile: changes not
     /// committed are rolled back, its statements and cursors go.
@@ -191,7 +208,12 @@ pub trait ThreadHost {
     /// Change `user`'s password; signed on as [`ThreadHost::sign_on`]
     /// when the connection was not. In a signed-on connection the
     /// reply's token is all zeros: the session goes on with its own.
-    fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal>;
+    fn change_password(
+        &mut self,
+        user: &str,
+        old: &Secret,
+        new: &Secret,
+    ) -> Result<SignOnReply, Refusal>;
     /// Move the session `token` names to this connection.
     fn resume(&mut self, token: &Token) -> Result<SignOnReply, Refusal>;
     /// Attach this connection to the session `token` names beside its
@@ -220,7 +242,12 @@ pub trait ThreadHost {
     fn delete_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal>;
     /// Move a spooled file to `outq` as `CHGSPLFA OUTQ` does; `first` to
     /// the top of the queue.
-    fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal>;
+    fn move_spooled_file(
+        &mut self,
+        id: &SpooledFileId,
+        outq: &ObjectName,
+        first: bool,
+    ) -> Result<(), Refusal>;
     /// Output queues, as `WRKOUTQ` lists them, paged.
     fn list_output_queues(&mut self, req: &ListOutputQueues) -> Result<OutputQueues, Refusal>;
 
@@ -281,7 +308,12 @@ pub trait ThreadHost {
     /// whether `req` may run (version 7); a refusal is the status and
     /// message the client gets (`NotAuthorized`, [`crate::manage::EXIT_REFUSED`]).
     /// A host without exit programs allows everything.
-    fn exit_allows(&mut self, _point: &str, _format: &str, _req: &ExitRequest) -> Result<(), Refusal> {
+    fn exit_allows(
+        &mut self,
+        _point: &str,
+        _format: &str,
+        _req: &ExitRequest,
+    ) -> Result<(), Refusal> {
         Ok(())
     }
     /// Subsystem descriptions of `library` (`*ALL`, `*LIBL`) and their

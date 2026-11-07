@@ -7,9 +7,7 @@
 use release::Release;
 
 use crate::asp::layout::MAX_UNITS;
-use crate::asp::parity::table::{
-    Level, MemberState, ParityTable, ParityTag, ParityWork, WorkKind,
-};
+use crate::asp::parity::table::{Level, MemberState, ParityTable, ParityTag, ParityWork, WorkKind};
 use crate::asp::unit::UnitState;
 use crate::bytes::{get_u16, get_u32, get_u64, put_u16, put_u32, put_u64, u16_of};
 use crate::obj::ObjectId;
@@ -356,7 +354,11 @@ impl Superblock {
         put_u64(body, OFF_IFS_PAGES, self.ifs_pages);
         assert!(self.spares.len() <= MAX_SPARES, "too many hot spares");
         body[OFF_SPARE_COUNT] = u8::try_from(self.spares.len()).expect("checked");
-        body[OFF_THRESHOLD] = if self.threshold == DEFAULT_THRESHOLD { 0 } else { self.threshold.min(100) };
+        body[OFF_THRESHOLD] = if self.threshold == DEFAULT_THRESHOLD {
+            0
+        } else {
+            self.threshold.min(100)
+        };
         for (i, u) in self.spares.iter().enumerate() {
             let at = OFF_SPARES + 16 * i;
             body[at..at + 16].copy_from_slice(u);

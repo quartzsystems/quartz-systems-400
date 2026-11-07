@@ -275,8 +275,18 @@ impl Op {
     #[must_use]
     pub const fn since(self) -> u16 {
         match self {
-            Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume | Op::SignOff | Op::SystemInfo => 1,
-            Op::TelnetTicket | Op::PasswordStatus | Op::RunCommand | Op::CheckCommand | Op::DescribeCommand => 2,
+            Op::Hello
+            | Op::Ping
+            | Op::SignOn
+            | Op::ChangePassword
+            | Op::Resume
+            | Op::SignOff
+            | Op::SystemInfo => 1,
+            Op::TelnetTicket
+            | Op::PasswordStatus
+            | Op::RunCommand
+            | Op::CheckCommand
+            | Op::DescribeCommand => 2,
             Op::ListSpooledFiles
             | Op::ReadSpooledFile
             | Op::HoldSpooledFile
@@ -357,7 +367,16 @@ impl Op {
     /// Whether it is allowed before sign-on.
     #[must_use]
     pub const fn before_signon(self) -> bool {
-        matches!(self, Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume | Op::Attach | Op::JobInfo)
+        matches!(
+            self,
+            Op::Hello
+                | Op::Ping
+                | Op::SignOn
+                | Op::ChangePassword
+                | Op::Resume
+                | Op::Attach
+                | Op::JobInfo
+        )
     }
 }
 
@@ -380,7 +399,9 @@ pub mod event {
     pub const fn since(service: Service, op: u16) -> Option<u16> {
         match (service, op) {
             (Service::Connection, SERVER_ENDING) | (Service::SignOn, SESSION_ENDED) => Some(1),
-            (Service::Messages, MESSAGE_ARRIVED) | (Service::Spool, SPOOLED_FILE_CHANGED) => Some(6),
+            (Service::Messages, MESSAGE_ARRIVED) | (Service::Spool, SPOOLED_FILE_CHANGED) => {
+                Some(6)
+            }
             _ => None,
         }
     }

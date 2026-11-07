@@ -56,7 +56,10 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
             status_cell(v)
         )
     } else {
-        format!("{} &nbsp; <input type=\"submit\" name=\"start\" value=\"Start\">", status_cell(v))
+        format!(
+            "{} &nbsp; <input type=\"submit\" name=\"start\" value=\"Start\">",
+            status_cell(v)
+        )
     };
     let job = match &v.job {
         Some(j) => format!(
@@ -78,17 +81,34 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let hot = format!(
         "{} {}",
         checkbox("hotbackup", v.entry.hot_backup_active),
-        pick("hot", &partners, v.entry.hot_backup.as_deref().unwrap_or(""))
+        pick(
+            "hot",
+            &partners,
+            v.entry.hot_backup.as_deref().unwrap_or("")
+        )
     );
     let groups = [
         PropGroup {
             title: Some("Identification".into()),
             rows: vec![
-                Prop::new("Instance name", format!("<span class=\"mono\">{}</span>", esc(n))),
+                Prop::new(
+                    "Instance name",
+                    format!("<span class=\"mono\">{}</span>", esc(n)),
+                ),
                 Prop::new("Description", input("desc", &v.entry.description, 50)),
-                Prop::new("Server root", format!("<span class=\"mono\">{}</span>", esc(&v.entry.root))),
-                Prop::new("Document root", input_cmd("docroot", &conf_value(v, "DocumentRoot"), 45)),
-                Prop::new("Server user profile", input("usrprf", &conf_value(v, "ServerUserID"), 10)).help("instance-usrprf"),
+                Prop::new(
+                    "Server root",
+                    format!("<span class=\"mono\">{}</span>", esc(&v.entry.root)),
+                ),
+                Prop::new(
+                    "Document root",
+                    input_cmd("docroot", &conf_value(v, "DocumentRoot"), 45),
+                ),
+                Prop::new(
+                    "Server user profile",
+                    input("usrprf", &conf_value(v, "ServerUserID"), 10),
+                )
+                .help("instance-usrprf"),
             ],
         },
         PropGroup {
@@ -103,11 +123,18 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
         PropGroup {
             title: Some("Startup".into()),
             rows: vec![
-                Prop::new("Start automatically with STRTCP", checkbox("autostart", v.entry.autostart)),
+                Prop::new(
+                    "Start automatically with STRTCP",
+                    checkbox("autostart", v.entry.autostart),
+                ),
                 Prop::new("Hot backup instance", hot).help("instance-hotbackup"),
                 Prop::new(
                     "Number of server threads",
-                    format!("{} ({MIN_THREADS}-{})", input("threads", &conf_value(v, "ThreadsPerChild"), 4), s.max_threads),
+                    format!(
+                        "{} ({MIN_THREADS}-{})",
+                        input("threads", &conf_value(v, "ThreadsPerChild"), 4),
+                        s.max_threads
+                    ),
                 ),
             ],
         },
@@ -115,7 +142,11 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let body = props(
         &rq.ctx,
         &groups,
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     rq.page(tab_page(
         v,
@@ -130,7 +161,9 @@ fn move_docroot(c: &mut Conf, old: &str, new: &str) {
     for n in &mut c.items {
         if let Node::Section(s) = n
             && s.name.eq_ignore_ascii_case("Directory")
-            && s.args.first().is_some_and(|a| a.trim_end_matches('/') == old.trim_end_matches('/'))
+            && s.args
+                .first()
+                .is_some_and(|a| a.trim_end_matches('/') == old.trim_end_matches('/'))
         {
             s.args = vec![new.to_string()];
             s.raw = None;
@@ -168,7 +201,11 @@ fn apply(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
     }
     let docroot = form.str("docroot").trim().trim_end_matches('/').to_string();
     if !docroot.starts_with('/') {
-        return Err(bad_value(&docroot, "Document root", "an absolute path name starting with /"));
+        return Err(bad_value(
+            &docroot,
+            "Document root",
+            "an absolute path name starting with /",
+        ));
     }
     let threads = form.str("threads").trim();
     let range = format!("a number from {MIN_THREADS} to {}", settings.max_threads);

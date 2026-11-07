@@ -147,7 +147,10 @@ fn a_pull_while_the_group_flushes_keeps_all_or_nothing() {
         if ended.is_ok() {
             assert_eq!(got, model, "write {k}: the group ended");
         } else {
-            assert!(got == before || got == model, "write {k}: part of the group");
+            assert!(
+                got == before || got == model,
+                "write {k}: part of the group"
+            );
         }
     }
 }

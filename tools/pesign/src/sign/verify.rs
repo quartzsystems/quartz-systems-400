@@ -12,10 +12,10 @@ use graviola::signing::rsa::VerifyingKey;
 use sha2::{Digest, Sha256};
 use x509_cert::Certificate;
 
+use crate::Error;
 use crate::der::{self as d, SET};
 use crate::pe::{digest, embed};
 use crate::sign::{MESSAGE_DIGEST, SIGNED_DATA, SPC_INDIRECT_DATA};
-use crate::Error;
 
 fn bad(what: &str) -> Error {
     Error::Signature(what.to_string())
@@ -38,7 +38,12 @@ pub fn verify(image: &[u8], cert: &[u8]) -> Result<(), Error> {
     if content.first().map(|t| t.whole) != Some(&d::oid(SPC_INDIRECT_DATA)[..]) {
         return Err(bad("the content is not SpcIndirectDataContent"));
     }
-    let (indirect, _) = d::read(content.get(1).ok_or_else(|| bad("no indirect data"))?.content)?;
+    let (indirect, _) = d::read(
+        content
+            .get(1)
+            .ok_or_else(|| bad("no indirect data"))?
+            .content,
+    )?;
     let parts = d::items(indirect.content)?;
     let digest_info = d::items(parts.get(1).ok_or_else(|| bad("no digest"))?.content)?;
     let want = digest::sha256(image)?;
@@ -47,12 +52,17 @@ pub fn verify(image: &[u8], cert: &[u8]) -> Result<(), Error> {
     }
     let signers = d::items(sd.last().ok_or_else(|| bad("no SignerInfo"))?.content)?;
     let signer = d::items(signers.first().ok_or_else(|| bad("no SignerInfo"))?.content)?;
-    let attrs = signer.iter().find(|t| t.tag == 0xA0).ok_or_else(|| bad("no signed attributes"))?;
+    let attrs = signer
+        .iter()
+        .find(|t| t.tag == 0xA0)
+        .ok_or_else(|| bad("no signed attributes"))?;
     let md: [u8; 32] = Sha256::digest(indirect.content).into();
     let md_ok = d::items(attrs.content)?.iter().any(|a| {
         d::items(a.content).is_ok_and(|v| {
             v.first().map(|t| t.whole) == Some(&d::oid(MESSAGE_DIGEST)[..])
-                && v.get(1).and_then(|s| d::read(s.content).ok()).is_some_and(|(o, _)| o.content == md)
+                && v.get(1)
+                    .and_then(|s| d::read(s.content).ok())
+                    .is_some_and(|(o, _)| o.content == md)
         })
     });
     if !md_ok {
@@ -68,9 +78,16 @@ pub fn verify(image: &[u8], cert: &[u8]) -> Result<(), Error> {
     key.verify_pkcs1_sha256(sig, &covered)
         .map_err(|_| bad("the RSA signature does not verify with the db certificate"))?;
     // The signer is the certificate given.
-    let serial = c.tbs_certificate().serial_number().to_der().map_err(|e| Error::Key(e.to_string()))?;
+    let serial = c
+        .tbs_certificate()
+        .serial_number()
+        .to_der()
+        .map_err(|e| Error::Key(e.to_string()))?;
     let ias = signer.get(1).ok_or_else(|| bad("no issuer and serial"))?;
-    if !d::items(ias.content)?.iter().any(|t| t.whole == serial.as_slice()) {
+    if !d::items(ias.content)?
+        .iter()
+        .any(|t| t.whole == serial.as_slice())
+    {
         return Err(bad("the signer is not the db certificate"));
     }
     Ok(())

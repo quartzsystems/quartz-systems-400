@@ -99,7 +99,10 @@ pub(crate) fn signatures_clean(s: &mut Session) -> Result<String, String> {
         Err(format!("CHKOBJITG:\n{out}"))
     } else {
         // A build from before CHKOBJITG (it lands with the merge).
-        let first = out.lines().find(|l| !l.trim().is_empty()).unwrap_or_default();
+        let first = out
+            .lines()
+            .find(|l| !l.trim().is_empty())
+            .unwrap_or_default();
         Ok(format!("CHKOBJITG not run: {}", first.trim()))
     }
 }
@@ -112,7 +115,10 @@ impl Suite {
     }
 
     /// Steps 8 to 11. `installed` is step 1's disk.
-    pub(crate) fn install_matrix(&self, installed: &PathBuf) -> Result<Vec<StepReport>, HarnessError> {
+    pub(crate) fn install_matrix(
+        &self,
+        installed: &PathBuf,
+    ) -> Result<Vec<StepReport>, HarnessError> {
         Ok(vec![
             self.rsp_mirrored()?,
             self.savsys_recovery(installed)?,
@@ -125,7 +131,11 @@ impl Suite {
         let name = "8 response file mirrored";
         let start = Instant::now();
         if self.skipped(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let iso = fs::read(self.iso.as_ref().expect("checked in new"))?;
         let stick = self.out_dir.join("rsp-stick.img");
@@ -135,7 +145,10 @@ impl Suite {
             log: String::new(),
         })?;
         fs::write(&stick, disk)?;
-        let (a, b) = (self.out_dir.join("rsp-a.img"), self.out_dir.join("rsp-b.img"));
+        let (a, b) = (
+            self.out_dir.join("rsp-a.img"),
+            self.out_dir.join("rsp-b.img"),
+        );
         blank(&a, 4 * GIB)?;
         blank(&b, 4 * GIB)?;
         let launch = Launch {
@@ -194,7 +207,11 @@ impl Suite {
         let name = "9 SAVSYS and recovery";
         let start = Instant::now();
         if self.skipped(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let system = self.out_dir.join("savsys-system.img");
         fs::copy(installed, &system)?;
@@ -221,23 +238,38 @@ impl Suite {
             }
             // User data for the recovery's RSTLIB and RST.
             s.command("crtlib LIB(RCVUSR) TEXT('user data')", CMD)?;
-            s.command("crtdtaara DTAARA(RCVUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')", CMD)?;
+            s.command(
+                "crtdtaara DTAARA(RCVUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')",
+                CMD,
+            )?;
             s.command("svc.ifs mkdir /rcvdata", CMD)?;
             s.command("svc.ifs put /rcvdata/note.txt kept in the IFS", CMD)?;
             // A virtual tape over an image catalog, as any save uses.
             let long = Duration::from_mins(15);
             for (line, want) in [
                 ("CRTDEVTAP DEVD(TAPVRT01) RSRCNAME(*VRT)", "CPC2618"),
-                ("CRTIMGCLG IMGCLG(SAVSYS) DIR('/savsys') TYPE(*TAP)", "CPCBC01"),
-                ("ADDIMGCLGE IMGCLG(SAVSYS) FROMFILE(*NEW) TOFILE(SYS001) VOLNAM(SYS001) IMGSIZ(900)", "CPCBC03"),
+                (
+                    "CRTIMGCLG IMGCLG(SAVSYS) DIR('/savsys') TYPE(*TAP)",
+                    "CPCBC01",
+                ),
+                (
+                    "ADDIMGCLGE IMGCLG(SAVSYS) FROMFILE(*NEW) TOFILE(SYS001) VOLNAM(SYS001) IMGSIZ(900)",
+                    "CPCBC03",
+                ),
                 ("LODIMGCLG IMGCLG(SAVSYS) DEV(TAPVRT01)", "CPCBC06"),
-                ("VRYCFG CFGOBJ(TAPVRT01) CFGTYPE(*DEV) STATUS(*ON)", "CPC2605"),
+                (
+                    "VRYCFG CFGOBJ(TAPVRT01) CFGTYPE(*DEV) STATUS(*ON)",
+                    "CPC2605",
+                ),
                 // SAVSYS needs the restricted state.
                 ("ENDSBS SBS(*ALL) OPTION(*IMMED)", "ending"),
                 ("SAVSYS DEV(TAPVRT01)", "CPC3703"),
                 ("CHKTAP DEV(TAPVRT01)", "system save (SAVSYS)"),
                 ("SAVLIB LIB(*NONSYS) DEV(TAPVRT01)", "CPC3722"),
-                ("SAV DEV('/QSYS.LIB/TAPVRT01.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT) ('/savsys' *OMIT))", "objects saved, 0 not saved"),
+                (
+                    "SAV DEV('/QSYS.LIB/TAPVRT01.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT) ('/savsys' *OMIT))",
+                    "objects saved, 0 not saved",
+                ),
                 ("svc.vrtout TAPVRT01 /dev/vdb", "bytes copied"),
             ] {
                 let out = s.command(line, long)?;
@@ -264,7 +296,11 @@ impl Suite {
             let rows = labels
                 .lines()
                 .filter(|l| l.trim_start().starts_with(|c: char| c.is_ascii_digit()))
-                .filter(|l| ["QS400", "QSAVSECDTA", "QSAVCFG"].iter().any(|w| l.contains(w)))
+                .filter(|l| {
+                    ["QS400", "QSAVSECDTA", "QSAVCFG"]
+                        .iter()
+                        .any(|w| l.contains(w))
+                })
                 .count();
             Ok(rows.to_string())
         })();
@@ -346,7 +382,11 @@ impl Suite {
         let name = "10 slip install V1R1M0";
         let start = Instant::now();
         if self.skipped(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         // The suite's media is the current release (V1R1M0); the system
         // upgraded is installed from V1R0M0 media, a build made with
@@ -371,7 +411,11 @@ impl Suite {
         };
         let mut s = Session::spawn(&old_media)?;
         if let Err(e) = self.automatic_install(&mut s) {
-            return report(name, start, Err((format!("V1R0M0 install: {e}"), s.log.clone())));
+            return report(
+                name,
+                start,
+                Err((format!("V1R0M0 install: {e}"), s.log.clone())),
+            );
         }
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(30));
@@ -396,20 +440,47 @@ impl Suite {
             }
             for (line, want) in [
                 ("crtlib LIB(SLIPUSR) TEXT('user data')", ""),
-                ("crtdtaara DTAARA(SLIPUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')", ""),
-                ("runsql SQL('CREATE TABLE SLIPUSR.ORDERS (ID INTEGER, ITEM CHAR(10))') COMMIT(*NONE)", ""),
+                (
+                    "crtdtaara DTAARA(SLIPUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')",
+                    "",
+                ),
+                (
+                    "runsql SQL('CREATE TABLE SLIPUSR.ORDERS (ID INTEGER, ITEM CHAR(10))') COMMIT(*NONE)",
+                    "",
+                ),
                 ("crtjrnrcv SLIPUSR/RCV0001", "created"),
                 ("crtjrn SLIPUSR/JRN JRNRCV(SLIPUSR/RCV0001)", "created"),
-                ("strjrnpf SLIPUSR/ORDERS JRN(SLIPUSR/JRN) IMAGES(*BOTH)", "started"),
-                ("runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(1, ''bolts'')') COMMIT(*NONE)", ""),
-                ("runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(2, ''nuts'')') COMMIT(*NONE)", ""),
+                (
+                    "strjrnpf SLIPUSR/ORDERS JRN(SLIPUSR/JRN) IMAGES(*BOTH)",
+                    "started",
+                ),
+                (
+                    "runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(1, ''bolts'')') COMMIT(*NONE)",
+                    "",
+                ),
+                (
+                    "runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(2, ''nuts'')') COMMIT(*NONE)",
+                    "",
+                ),
                 ("DSPLIBL OUTPUT(*PRINT)", ""),
                 ("crtlib LIB(SLIPSAV) TEXT('saved by V1R0M0')", ""),
-                ("crtdtaara DTAARA(SLIPSAV/OLDSAVE) TYPE(*CHAR) LEN(20) VALUE('from V1R0M0')", ""),
-                ("runsql SQL('CREATE TABLE SLIPSAV.PARTS (ID INTEGER, NAME CHAR(10))') COMMIT(*NONE)", ""),
-                ("runsql SQL('INSERT INTO SLIPSAV.PARTS VALUES(7, ''gears'')') COMMIT(*NONE)", ""),
+                (
+                    "crtdtaara DTAARA(SLIPSAV/OLDSAVE) TYPE(*CHAR) LEN(20) VALUE('from V1R0M0')",
+                    "",
+                ),
+                (
+                    "runsql SQL('CREATE TABLE SLIPSAV.PARTS (ID INTEGER, NAME CHAR(10))') COMMIT(*NONE)",
+                    "",
+                ),
+                (
+                    "runsql SQL('INSERT INTO SLIPSAV.PARTS VALUES(7, ''gears'')') COMMIT(*NONE)",
+                    "",
+                ),
                 ("crtsavf FILE(SLIPUSR/OLDSAVF)", ""),
-                ("savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)", "CPC3722"),
+                (
+                    "savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
+                    "CPC3722",
+                ),
                 ("dltlib LIB(SLIPSAV)", ""),
             ] {
                 let out = s.command(line, CMD)?;
@@ -636,10 +707,18 @@ impl Suite {
         let name = "14 restore LIC in place";
         let start = Instant::now();
         if self.skipped(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let Some(iso) = self.iso.clone() else {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped: no media".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped: no media".into(),
+            });
         };
         let system = self.out_dir.join("restore-system.img");
         fs::copy(installed, &system)?;
@@ -726,7 +805,11 @@ impl Suite {
         let name = "11 power pull mid-install";
         let start = Instant::now();
         if self.skipped(name) {
-            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+            return Ok(StepReport {
+                name,
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
         }
         let target = self.out_dir.join("pull.img");
         blank(&target, 4 * GIB)?;

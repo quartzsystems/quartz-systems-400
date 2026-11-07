@@ -144,12 +144,38 @@ mod tests {
     fn assigns_and_unassigns() {
         let w = World::with_system();
         with_cert(&w, "ADM");
-        assert_eq!(assign(&w.ctx(), ADMIN, Some("ADM")).unwrap(), [Note::new(msgs::ASSIGNED, &["ADM", ADMIN])]);
-        assert_eq!(list(&w.ctx()).unwrap().iter().find(|a| a.id == ADMIN).unwrap().label.as_deref(), Some("ADM"));
-        assert!(matches!(assign(&w.ctx(), ADMIN, Some("NONE")), Err(CertError::LabelNotFound(_))));
-        assert!(matches!(assign(&w.ctx(), "NOT_AN_APP", Some("ADM")), Err(CertError::NotRegistered(_))));
+        assert_eq!(
+            assign(&w.ctx(), ADMIN, Some("ADM")).unwrap(),
+            [Note::new(msgs::ASSIGNED, &["ADM", ADMIN])]
+        );
+        assert_eq!(
+            list(&w.ctx())
+                .unwrap()
+                .iter()
+                .find(|a| a.id == ADMIN)
+                .unwrap()
+                .label
+                .as_deref(),
+            Some("ADM")
+        );
+        assert!(matches!(
+            assign(&w.ctx(), ADMIN, Some("NONE")),
+            Err(CertError::LabelNotFound(_))
+        ));
+        assert!(matches!(
+            assign(&w.ctx(), "NOT_AN_APP", Some("ADM")),
+            Err(CertError::NotRegistered(_))
+        ));
         assign(&w.ctx(), ADMIN, None).unwrap();
-        assert_eq!(list(&w.ctx()).unwrap().iter().find(|a| a.id == ADMIN).unwrap().label, None);
+        assert_eq!(
+            list(&w.ctx())
+                .unwrap()
+                .iter()
+                .find(|a| a.id == ADMIN)
+                .unwrap()
+                .label,
+            None
+        );
     }
 
     #[test]
@@ -159,7 +185,10 @@ mod tests {
         let mut s = w.ctx().open(&Keystore::system()).unwrap();
         s.add_ca("ROOT", ca, true, NOW).unwrap();
         s.save(&w.files).unwrap();
-        assert!(matches!(assign(&w.ctx(), ADMIN, Some("ROOT")), Err(CertError::Invalid(_))));
+        assert!(matches!(
+            assign(&w.ctx(), ADMIN, Some("ROOT")),
+            Err(CertError::Invalid(_))
+        ));
         // ... but it may be on a trust list.
         let c = Change {
             client_auth: Some(ClientAuth::Required),
@@ -167,8 +196,15 @@ mod tests {
             text: Some("Admin".into()),
         };
         change(&w.ctx(), ADMIN, &c).unwrap();
-        let a = list(&w.ctx()).unwrap().into_iter().find(|a| a.id == ADMIN).unwrap();
-        assert_eq!((a.client_auth, a.text.as_str()), (ClientAuth::Required, "Admin"));
+        let a = list(&w.ctx())
+            .unwrap()
+            .into_iter()
+            .find(|a| a.id == ADMIN)
+            .unwrap();
+        assert_eq!(
+            (a.client_auth, a.text.as_str()),
+            (ClientAuth::Required, "Admin")
+        );
         with_cert(&w, "LEAF");
         let bad = Change {
             ca_trust: Some(CaTrust::Only(vec!["LEAF".into()])),
@@ -181,7 +217,10 @@ mod tests {
     fn user_ids_come_and_go_shipped_ones_stay() {
         let w = World::with_system();
         add(&w.ctx(), "ACME_ORDERS", AppKind::Client, "Orders").unwrap();
-        assert!(matches!(add(&w.ctx(), "ACME_ORDERS", AppKind::Client, ""), Err(CertError::AlreadyRegistered(_))));
+        assert!(matches!(
+            add(&w.ctx(), "ACME_ORDERS", AppKind::Client, ""),
+            Err(CertError::AlreadyRegistered(_))
+        ));
         let c = Change {
             client_auth: Some(ClientAuth::Optional),
             ..Change::default()

@@ -45,7 +45,12 @@ pub fn drop_with_dependents(txn: &mut Txn<'_>, ctx: &mut SqlContext, id: ObjectI
 
 /// `DROP TABLE`, `DROP VIEW` or `DROP INDEX`. Without `RESTRICT` what
 /// depends on the object goes with it, as with `CASCADE`.
-pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, restrict: bool) -> Result<()> {
+pub fn drop(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    name: &ObjectName,
+    restrict: bool,
+) -> Result<()> {
     let id = ctx.resolve_file(txn, name)?;
     // RESTRICT refuses a table views or indexes depend on (`SQL0616`),
     // then a parent table (`SQL0478`), in the primary's order; otherwise
@@ -54,16 +59,24 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, restrict
         let deps = dependents(txn, ctx, id)?;
         if !deps.is_empty() {
             let what: Vec<String> = deps.iter().map(|&d| names::sql_name(txn, d)).collect();
-            return Err(SqlError::Restrict { name: name.name.value.clone(), what: what.join(", ") });
+            return Err(SqlError::Restrict {
+                name: name.name.value.clone(),
+                what: what.join(", "),
+            });
         }
     }
     if restrict
-        && let Some(d) = db::cst::list(txn, id)?.iter().find(|c| c.kind == db::cst::Kind::Dependent && c.other != id)
+        && let Some(d) = db::cst::list(txn, id)?
+            .iter()
+            .find(|c| c.kind == db::cst::Kind::Dependent && c.other != id)
     {
         return Err(SqlError::Integrity {
             sqlcode: -478,
             sqlstate: "42893",
-            what: format!("{} is the parent of constraint {}", name.name.value, d.other_name),
+            what: format!(
+                "{} is the parent of constraint {}",
+                name.name.value, d.other_name
+            ),
         });
     }
     drop_with_dependents(txn, ctx, id)

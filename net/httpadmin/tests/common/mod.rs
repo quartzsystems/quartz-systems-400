@@ -58,7 +58,12 @@ impl Browser {
         }
         let r = self.admin.handle(&req, &peer());
         if let Some(sc) = r.header("Set-Cookie") {
-            let v = sc.split(';').next().unwrap_or("").trim_start_matches("QS400SID=").to_string();
+            let v = sc
+                .split(';')
+                .next()
+                .unwrap_or("")
+                .trim_start_matches("QS400SID=")
+                .to_string();
             self.cookie = (!v.is_empty()).then_some(v);
         }
         if let Some(c) = &self.cookie
@@ -71,7 +76,11 @@ impl Browser {
 
     /// `GET` a route under the prefix (or an absolute path).
     pub fn get(&mut self, route: &str) -> Response {
-        let path = if route.starts_with("/qs400/") { route.to_string() } else { PRODUCT.url(route) };
+        let path = if route.starts_with("/qs400/") {
+            route.to_string()
+        } else {
+            PRODUCT.url(route)
+        };
         self.send(Request::new("GET", &path))
     }
 
@@ -86,15 +95,28 @@ impl Browser {
 
     /// `POST` exactly these fields.
     pub fn post_raw(&mut self, route: &str, fields: &[(&str, &str)]) -> Response {
-        let path = if route.starts_with("/qs400/") { route.to_string() } else { PRODUCT.url(route) };
+        let path = if route.starts_with("/qs400/") {
+            route.to_string()
+        } else {
+            PRODUCT.url(route)
+        };
         let mut req = Request::new("POST", &path);
         req.body = fields
             .iter()
-            .map(|(k, v)| format!("{}={}", qsweb::http::form::encode(k), qsweb::http::form::encode(v)))
+            .map(|(k, v)| {
+                format!(
+                    "{}={}",
+                    qsweb::http::form::encode(k),
+                    qsweb::http::form::encode(v)
+                )
+            })
             .collect::<Vec<_>>()
             .join("&")
             .into_bytes();
-        req.headers.push(("content-type".into(), "application/x-www-form-urlencoded".into()));
+        req.headers.push((
+            "content-type".into(),
+            "application/x-www-form-urlencoded".into(),
+        ));
         self.send(req)
     }
 
@@ -129,7 +151,8 @@ pub fn proto(url: &str) -> Option<String> {
     let (path, query) = r.split_once('?').unwrap_or((r, ""));
     // The tree's [+] and [-] stand for the group's first page.
     if path == "/nav" {
-        let q = qsweb::http::Request::new("GET", &format!("{}?{query}", PRODUCT.url("/nav"))).query();
+        let q =
+            qsweb::http::Request::new("GET", &format!("{}?{query}", PRODUCT.url("/nav"))).query();
         let g = q.get("open").or_else(|| q.get("close"))?;
         let first = PRODUCT.nav.iter().find(|n| n.label == g)?.items.first()?.1;
         return proto(&PRODUCT.url(first));
@@ -145,7 +168,9 @@ pub fn proto(url: &str) -> Option<String> {
             }
             "confirm-stop".into()
         }
-        ["instance", _, "remove"] | ["certs", "confirm"] => return Some("shared/confirm.html".into()),
+        ["instance", _, "remove"] | ["certs", "confirm"] => {
+            return Some("shared/confirm.html".into());
+        }
         ["instance", _, "directory"] => "instance-directory-props".into(),
         ["instance", _, page, ..] => format!("instance-{page}"),
         ["create", "step", n] => format!("create-{n}"),
@@ -174,7 +199,10 @@ pub fn relative(target: &str, from: &str) -> String {
 pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
     let mut g = golden(file);
     for (from, to) in fix {
-        assert!(g.contains(from), "golden fix not applicable to {file}: {from}");
+        assert!(
+            g.contains(from),
+            "golden fix not applicable to {file}: {from}"
+        );
         g = g.replace(from, to);
     }
     let dir = file.split('/').next().unwrap_or("");

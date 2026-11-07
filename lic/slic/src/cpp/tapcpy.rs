@@ -13,12 +13,14 @@ use std::fmt::Write as _;
 use cmd::block::Parms;
 use db::file::FileKind;
 use medio::MediaError;
-use medio::tapf::{CopyIn, CopyOut, TapeFileDef, copy_from_tape, copy_to_tape, lengths, record_format};
+use medio::tapf::{
+    CopyIn, CopyOut, TapeFileDef, copy_from_tape, copy_to_tape, lengths, record_format,
+};
 use qsname::{MemberSpec, Name};
 use sql::SqlContext;
+use stg::proto::CmdReply;
 use store::obj::{JobHandle, ObjectId, ops, types};
 use store::txn::Txn;
-use stg::proto::CmdReply;
 use tape::label::{Date, Expiry, FileLabel};
 use tape::{SeqNbr, TapeTransport, VolumeProvider};
 
@@ -55,7 +57,11 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 fn qual(parms: &Parms, kwd: &str) -> String {
     let (n, l) = parms.qual(kwd);
     let (n, l) = (n.to_ascii_uppercase(), l.to_ascii_uppercase());
-    if l.is_empty() || l.starts_with('*') { n } else { format!("{l}/{n}") }
+    if l.is_empty() || l.starts_with('*') {
+        n
+    } else {
+        format!("{l}/{n}")
+    }
 }
 
 fn values(parms: &Parms, kwd: &str) -> Vec<String> {
@@ -69,7 +75,9 @@ fn values(parms: &Parms, kwd: &str) -> Vec<String> {
 
 /// Whether `id` is a tape file.
 fn is_tapf(txn: &mut Txn<'_>, id: ObjectId) -> bool {
-    ops::read_header(txn, id).is_ok_and(|(_, h)| h.id.type_code == types::FILE && ccsid::decode_trimmed(&h.attribute) == "TAPF")
+    ops::read_header(txn, id).is_ok_and(|(_, h)| {
+        h.id.type_code == types::FILE && ccsid::decode_trimmed(&h.attribute) == "TAPF"
+    })
 }
 
 fn tapf_id(txn: &mut Txn<'_>, ctx: &SqlContext, qual: &str) -> Result<ObjectId, String> {
@@ -116,7 +124,11 @@ fn expiry(v: &str) -> Option<Expiry> {
 fn apply(d: &mut TapeFileDef, parms: &Parms) {
     let name = |k: &str| parms.name(k);
     let list = |k: &str| -> Option<Vec<String>> {
-        let raw: Vec<String> = parms.list(k).iter().map(|v| v.source().trim().to_ascii_uppercase()).collect();
+        let raw: Vec<String> = parms
+            .list(k)
+            .iter()
+            .map(|v| v.source().trim().to_ascii_uppercase())
+            .collect();
         match raw.first().map(String::as_str) {
             None | Some("*SAME") => None,
             Some("*NONE") => Some(Vec::new()),
@@ -139,7 +151,11 @@ fn apply(d: &mut TapeFileDef, parms: &Parms) {
         Some(n) if n > 0 => d.seq = u32::try_from(n).ok(),
         _ => {}
     }
-    let label = parms.text("LABEL").trim().trim_matches('\'').to_ascii_uppercase();
+    let label = parms
+        .text("LABEL")
+        .trim()
+        .trim_matches('\'')
+        .to_ascii_uppercase();
     match label.as_str() {
         "" | "*SAME" => {}
         "*NONE" => d.label.clear(),
@@ -192,13 +208,24 @@ fn crttapf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             system: "QS400".into(),
             now: now_unix(),
         };
-        wm::obj::create_attr(txn, lib, (fname, types::FILE, "TAPF"), &d.text, &stamp, &d.encode())
-            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF7302")))?;
+        wm::obj::create_attr(
+            txn,
+            lib,
+            (fname, types::FILE, "TAPF"),
+            &d.text,
+            &stamp,
+            &d.encode(),
+        )
+        .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF7302")))?;
         let (_, h) = ops::read_header(txn, lib).map_err(|e| e.to_string())?;
         Ok(h.name.to_string())
     })?;
     let n = q.rsplit('/').next().unwrap_or(&q).to_string();
-    Ok(done(format!("{TAPF_CREATED} Tape file {n} created in library {lib}.\n"), TAPF_CREATED, &[(&n, 10), (&lib, 10)]))
+    Ok(done(
+        format!("{TAPF_CREATED} Tape file {n} created in library {lib}.\n"),
+        TAPF_CREATED,
+        &[(&n, 10), (&lib, 10)],
+    ))
 }
 
 fn chgtapf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -213,7 +240,11 @@ fn chgtapf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     })?;
     let n = q.rsplit('/').next().unwrap_or(&q).to_string();
     let lib = q.split_once('/').map_or("*LIBL", |(l, _)| l).to_string();
-    Ok(done(format!("{TAPF_CHANGED} Tape file {n} changed.\n"), TAPF_CHANGED, &[(&n, 10), (&lib, 10)]))
+    Ok(done(
+        format!("{TAPF_CHANGED} Tape file {n} changed.\n"),
+        TAPF_CHANGED,
+        &[(&n, 10), (&lib, 10)],
+    ))
 }
 
 /// `DLTF` of a tape file; `None` when `qual` is not one.
@@ -243,7 +274,10 @@ pub fn dspfd(system: &mut System, qual: &str) -> Option<Result<String, String>> 
             return Ok(None);
         }
         let d = read_def(txn, id)?;
-        Ok(Some(format!("File  . . . . . . . : {qual}\n{}", d.describe())))
+        Ok(Some(format!(
+            "File  . . . . . . . : {qual}\n{}",
+            d.describe()
+        )))
     });
     match r {
         Ok(None) => None,
@@ -263,15 +297,24 @@ fn member_records(system: &mut System, file: &str, mbr: &MemberSpec) -> Result<R
     with_txn(store, |txn| {
         let id = file_id(txn, ctx, file)?;
         let desc = db::file::describe(txn, id).map_err(|e| crate::svc::db::db_err(&e))?;
-        let ebcdic = ccsid::conv::Codec::of(desc.attr.ccsid).ok().flatten().is_none_or(|c| c.is_ebcdic());
+        let ebcdic = ccsid::conv::Codec::of(desc.attr.ccsid)
+            .ok()
+            .flatten()
+            .is_none_or(|c| c.is_ebcdic());
         let m = db::Member::open_by(txn, id, *mbr).map_err(|e| crate::svc::db::db_err(&e))?;
         let name = m.name().to_string();
         drop(m);
         let spec = MemberSpec::Name(Name::parse(&name).map_err(|e| e.to_string())?);
         if desc.attr.kind == FileKind::Source {
             let width = db::source::data_width(txn, id).map_err(|e| crate::svc::db::db_err(&e))?;
-            let recs = db::source::records(txn, id, spec).map_err(|e| crate::svc::db::db_err(&e))?;
-            Ok((name, recs.into_iter().map(|(_, _, d)| d).collect(), width, ebcdic))
+            let recs =
+                db::source::records(txn, id, spec).map_err(|e| crate::svc::db::db_err(&e))?;
+            Ok((
+                name,
+                recs.into_iter().map(|(_, _, d)| d).collect(),
+                width,
+                ebcdic,
+            ))
         } else {
             let m = db::Member::open_by(txn, id, spec).map_err(|e| crate::svc::db::db_err(&e))?;
             let len = m.format().format.record_len as usize;
@@ -289,7 +332,10 @@ fn member_records(system: &mut System, file: &str, mbr: &MemberSpec) -> Result<R
 
 /// EBCDIC records as ASCII, for `CODE(*ASCII)`.
 fn to_ascii(r: &[u8]) -> Vec<u8> {
-    ccsid::from_ebcdic(r).chars().map(|c| u8::try_from(c).ok().filter(u8::is_ascii).unwrap_or(b'?')).collect()
+    ccsid::from_ebcdic(r)
+        .chars()
+        .map(|c| u8::try_from(c).ok().filter(u8::is_ascii).unwrap_or(b'?'))
+        .collect()
 }
 
 /// ASCII records back as EBCDIC.
@@ -303,7 +349,11 @@ struct ToTape(CopyOut);
 
 impl TapeJob for ToTape {
     type Out = tape::volume::WriteSummary;
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, p: &mut dyn VolumeProvider<D>) -> Result<Self::Out, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        p: &mut dyn VolumeProvider<D>,
+    ) -> Result<Self::Out, MediaError> {
         copy_to_tape(d, p, &self.0)
     }
 }
@@ -312,7 +362,11 @@ struct FromTape(CopyIn);
 
 impl TapeJob for FromTape {
     type Out = (Vec<Vec<u8>>, FileLabel);
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, p: &mut dyn VolumeProvider<D>) -> Result<Self::Out, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        p: &mut dyn VolumeProvider<D>,
+    ) -> Result<Self::Out, MediaError> {
         copy_from_tape(d, p, &self.0)
     }
 }
@@ -353,13 +407,25 @@ fn cpytotap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         0 => def.seq.map_or(SeqNbr::End, SeqNbr::Number),
         n => SeqNbr::Number(u32::try_from(n).unwrap_or(1)),
     };
-    let label = match parms.text("TOLABEL").trim().trim_matches('\'').to_ascii_uppercase().as_str() {
+    let label = match parms
+        .text("TOLABEL")
+        .trim()
+        .trim_matches('\'')
+        .to_ascii_uppercase()
+        .as_str()
+    {
         "" | "*FROMMBR" => mname.clone(),
         "*TAPF" => def.label.clone(),
         "*NONE" => String::new(),
         l => l.to_string(),
     };
-    let unlabeled = match parms.elems("TOREELS").first().copied().flatten().map(|v| v.source().trim().to_ascii_uppercase()) {
+    let unlabeled = match parms
+        .elems("TOREELS")
+        .first()
+        .copied()
+        .flatten()
+        .map(|v| v.source().trim().to_ascii_uppercase())
+    {
         Some(v) if v == "*NL" => true,
         Some(v) if v == "*SL" => false,
         _ => def.unlabeled,
@@ -385,7 +451,10 @@ fn cpytotap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let end_opt = own(&parms.name("TOENDOPT")).map_or(def.end_opt, medio::tapf::parse_end_opt);
     let expires = expiry(&parms.text("TOEXPDATE")).unwrap_or(def.expires);
     let today = stream::today();
-    let job = system.jobs.get(system.current_job).map_or_else(|| "QSYS".to_string(), |j| j.name.clone());
+    let job = system
+        .jobs
+        .get(system.current_job)
+        .map_or_else(|| "QSYS".to_string(), |j| j.name.clone());
     let n = recs.len();
     let mut copy = CopyOut {
         vols: vols.clone(),
@@ -421,7 +490,11 @@ fn cpytotap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             r => break r?,
         }
     };
-    let shown = if label.is_empty() { "*NONE".to_string() } else { label };
+    let shown = if label.is_empty() {
+        "*NONE".to_string()
+    } else {
+        label
+    };
     let count = n.to_string();
     Ok(done(
         format!(
@@ -438,7 +511,11 @@ fn cpytotap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 fn listing(recs: &[Vec<u8>], hex: bool, ebcdic: bool) -> String {
     let mut s = String::new();
     for (i, r) in recs.iter().enumerate() {
-        let text = if ebcdic { ccsid::from_ebcdic(r) } else { String::from_utf8_lossy(r).into_owned() };
+        let text = if ebcdic {
+            ccsid::from_ebcdic(r)
+        } else {
+            String::from_utf8_lossy(r).into_owned()
+        };
         let _ = writeln!(s, "{:>6}  {}", i + 1, text.trim_end());
         if hex {
             let _ = write!(s, "        ");
@@ -459,12 +536,24 @@ fn cpyfrmtap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         let v = values(parms, "FROMVOL");
         if v.is_empty() { def.vols.clone() } else { v }
     };
-    let unlabeled = match parms.elems("FROMREELS").first().copied().flatten().map(|v| v.source().trim().to_ascii_uppercase()) {
+    let unlabeled = match parms
+        .elems("FROMREELS")
+        .first()
+        .copied()
+        .flatten()
+        .map(|v| v.source().trim().to_ascii_uppercase())
+    {
         Some(v) if v == "*NL" => true,
         Some(v) if v == "*SL" => false,
         _ => def.unlabeled,
     };
-    let label = match parms.text("FROMLABEL").trim().trim_matches('\'').to_ascii_uppercase().as_str() {
+    let label = match parms
+        .text("FROMLABEL")
+        .trim()
+        .trim_matches('\'')
+        .to_ascii_uppercase()
+        .as_str()
+    {
         "" | "*TAPF" => Some(def.label.clone()).filter(|l| !l.is_empty()),
         "*NONE" => None,
         l => Some(l.to_string()),
@@ -473,7 +562,9 @@ fn cpyfrmtap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         0 => def.seq,
         n => u32::try_from(n).ok(),
     };
-    let rcdblk = own(&parms.name("FROMRCDBLK")).map(str::to_string).or_else(|| unlabeled.then(|| def.rcdblk.clone()));
+    let rcdblk = own(&parms.name("FROMRCDBLK"))
+        .map(str::to_string)
+        .or_else(|| unlabeled.then(|| def.rcdblk.clone()));
     let rcdlen = match parms.int("FROMRCDLEN").unwrap_or(0) {
         0 => def.rcdlen,
         -1 => 0,
@@ -481,7 +572,11 @@ fn cpyfrmtap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     let c = CopyIn {
         vols: vols.clone(),
-        seq: if label.is_some() && parms.int("FROMSEQNBR").unwrap_or(0) == 0 { None } else { seq },
+        seq: if label.is_some() && parms.int("FROMSEQNBR").unwrap_or(0) == 0 {
+            None
+        } else {
+            seq
+        },
         label: label.clone().filter(|_| !unlabeled),
         unlabeled,
         end_opt: own(&parms.name("FROMENDOPT")).map_or(def.end_opt, medio::tapf::parse_end_opt),
@@ -495,19 +590,29 @@ fn cpyfrmtap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     if def.ascii {
         recs = recs.iter().map(|r| from_ascii(r)).collect();
     }
-    let shown = if l.file_id.is_empty() { "*NONE".to_string() } else { l.file_id.clone() };
+    let shown = if l.file_id.is_empty() {
+        "*NONE".to_string()
+    } else {
+        l.file_id.clone()
+    };
     let n = recs.len();
     let count = n.to_string();
     let (to, tolib) = parms.qual("TOFILE");
     if to.eq_ignore_ascii_case("*PRINT") {
         let mut text = format!("{COPIED_FROM} {n} records copied from tape file {shown}.\n");
         text.push_str(&listing(&recs, parms.name("OUTFMT") == "*HEX", true));
-        return Ok(done(text, COPIED_FROM, &[(&count, 10), (&shown, 17), ("*PRINT", 10)]));
+        return Ok(done(
+            text,
+            COPIED_FROM,
+            &[(&count, 10), (&shown, 17), ("*PRINT", 10)],
+        ));
     }
     let target = qual(parms, "TOFILE");
     let _ = tolib;
     let mbr = match parms.name("TOMBR").as_str() {
-        "" | "*FROMLABEL" => Some(l.file_id.clone()).filter(|m| !m.is_empty()).or_else(|| label.clone()),
+        "" | "*FROMLABEL" => Some(l.file_id.clone())
+            .filter(|m| !m.is_empty())
+            .or_else(|| label.clone()),
         "*FIRST" => None,
         m => Some(m.to_string()),
     };
@@ -521,7 +626,8 @@ fn cpyfrmtap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             Some(m) => {
                 let name = Name::parse(m).map_err(|e| format!("CPD0084 member {m}: {e}"))?;
                 if !desc.members.iter().any(|e| e.name == name) {
-                    db::file::add_member(txn, id, name, "", None, now).map_err(|e| crate::svc::db::db_err(&e))?;
+                    db::file::add_member(txn, id, name, "", None, now)
+                        .map_err(|e| crate::svc::db::db_err(&e))?;
                 }
                 MemberSpec::Name(name)
             }
@@ -547,17 +653,24 @@ fn cpyfrmtap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             "*ADD" => existing,
             "*REPLACE" => Vec::new(),
             _ if !existing.is_empty() => {
-                return Err(format!("CPF2817 the member already holds {} records; give MBROPT(*ADD) or *REPLACE", existing.len()));
+                return Err(format!(
+                    "CPF2817 the member already holds {} records; give MBROPT(*ADD) or *REPLACE",
+                    existing.len()
+                ));
             }
             _ => Vec::new(),
         };
         all.extend(recs);
         if source {
-            db::source::put_records(txn, crate::svc::db::JOB, id, spec, &all, now).map_err(|e| crate::svc::db::db_err(&e))?;
+            db::source::put_records(txn, crate::svc::db::JOB, id, spec, &all, now)
+                .map_err(|e| crate::svc::db::db_err(&e))?;
         } else {
-            db::util::put_records(txn, crate::svc::db::JOB, id, spec, &all, 0x40, now).map_err(|e| crate::svc::db::db_err(&e))?;
+            db::util::put_records(txn, crate::svc::db::JOB, id, spec, &all, 0x40, now)
+                .map_err(|e| crate::svc::db::db_err(&e))?;
         }
-        let m = db::Member::open_by(txn, id, MemberSpec::First).map(|m| m.name().to_string()).unwrap_or_default();
+        let m = db::Member::open_by(txn, id, MemberSpec::First)
+            .map(|m| m.name().to_string())
+            .unwrap_or_default();
         Ok(mbr.clone().unwrap_or(m))
     })?;
     let to_name = format!("{target}/{into}");
@@ -576,7 +689,10 @@ mod tests {
     fn expiry_dates() {
         assert_eq!(expiry("*PERM"), Some(Expiry::Perm));
         assert_eq!(expiry("*TAPF"), None);
-        assert_eq!(expiry("1261231"), Date::from_ymd(2026, 12, 31).map(Expiry::Date));
+        assert_eq!(
+            expiry("1261231"),
+            Date::from_ymd(2026, 12, 31).map(Expiry::Date)
+        );
     }
 
     #[test]
@@ -584,6 +700,5 @@ mod tests {
         let e = ccsid::to_ebcdic("ABC 123").unwrap();
         assert_eq!(to_ascii(&e), b"ABC 123");
         assert_eq!(from_ascii(b"ABC 123"), e);
-
     }
 }

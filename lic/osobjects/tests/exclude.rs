@@ -56,7 +56,12 @@ fn system(ipls: usize) -> (Store, ObjectId) {
         wal_pages: 2048,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     for lib in ["QGPL", "QUSRSYS", "QSYS2", "QRECOVERY", "QSPL"] {
@@ -76,7 +81,11 @@ fn system(ipls: usize) -> (Store, ObjectId) {
         )
         .unwrap();
     }
-    let stamp = wm::obj::Stamp { owner: "QSYS".into(), system: "QS400".into(), now: NOW };
+    let stamp = wm::obj::Stamp {
+        owner: "QSYS".into(),
+        system: "QS400".into(),
+        now: NOW,
+    };
     // The first IPL: the objects, then the profiles (re-owning them).
     osobjects::create(&mut t, qsys, &stamp).unwrap();
     sec::profile::shipped::install(&mut t, qsys, 40, 0, NOW).unwrap();
@@ -90,10 +99,17 @@ fn system(ipls: usize) -> (Store, ObjectId) {
         "QPWDLVL" => "0".to_string(),
         _ => String::new(),
     };
-    let env = sec::cmd::Env { qsys, actor: &secofr, now: NOW, sysval: &sysval };
+    let env = sec::cmd::Env {
+        qsys,
+        actor: &secofr,
+        now: NOW,
+        sysval: &sysval,
+    };
     let k = sec::cmd::Keywords::new(&[("USRPRF", "QAPTEST"), ("PASSWORD", "QAP4STEP")]);
     sec::cmd::usrprf::crtusrprf(&mut t, &env, &k).unwrap();
-    let qgpl = ops::find_library(&mut t, qsys, Name::parse("QGPL").unwrap()).unwrap().id;
+    let qgpl = ops::find_library(&mut t, qsys, Name::parse("QGPL").unwrap())
+        .unwrap()
+        .id;
     let pgm = create(&mut t, qgpl, "QAPXPGM", types::PGM);
     sec::auth::grant::set_public(&mut t, pgm, Some(Auth::EXCLUDE)).unwrap();
     let lib = create(&mut t, qsys, "QAPXLIB", types::LIB);
@@ -110,11 +126,20 @@ fn outcomes(store: &mut Store, qsys: ObjectId, user: &str) -> [Option<String>; 3
     let mut t = store.begin().unwrap();
     let me = Principal::load(&mut t, qsys, user, 40).unwrap();
     let s = Rc::new(RefCell::new(Session::new(me)));
-    let qgpl = ops::find_library(&mut t, qsys, Name::parse("QGPL").unwrap()).unwrap().id;
-    let names = NameContext { curlib: Some(qgpl), libl: vec![qsys, qgpl] };
+    let qgpl = ops::find_library(&mut t, qsys, Name::parse("QGPL").unwrap())
+        .unwrap()
+        .id;
+    let names = NameContext {
+        curlib: Some(qgpl),
+        libl: vec![qsys, qgpl],
+    };
     as_job(&s, || {
         let cmd = {
-            let mut src = cmd::store::StoreSource { txn: &mut t, qsys, names: names.clone() };
+            let mut src = cmd::store::StoreSource {
+                txn: &mut t,
+                qsys,
+                names: names.clone(),
+            };
             match src.lookup("DSPPTF", None) {
                 Ok(Some(_)) => None,
                 Ok(None) => Some("not found".to_string()),
@@ -125,13 +150,28 @@ fn outcomes(store: &mut Store, qsys: ObjectId, user: &str) -> [Option<String>; 3
             StoreError::NotAuthorized { msgid, .. } => Some((*msgid).to_string()),
             other => panic!("{other}"),
         };
-        let found = ops::resolve(&mut t, qsys, &names, LibSpec::Libl, Name::parse("QAPXPGM").unwrap(), types::PGM).unwrap();
+        let found = ops::resolve(
+            &mut t,
+            qsys,
+            &names,
+            LibSpec::Libl,
+            Name::parse("QAPXPGM").unwrap(),
+            types::PGM,
+        )
+        .unwrap();
         let pgm = match ops::describe(&mut t, found.id) {
             Ok(_) => None,
             Err(e) => not_authorized(&e),
         };
         let lib = LibSpec::Name(Name::parse("QAPXLIB").unwrap());
-        let lib = match ops::resolve(&mut t, qsys, &names, lib, Name::parse("QAPXDTA").unwrap(), types::DTAARA) {
+        let lib = match ops::resolve(
+            &mut t,
+            qsys,
+            &names,
+            lib,
+            Name::parse("QAPXDTA").unwrap(),
+            types::DTAARA,
+        ) {
             Ok(_) => None,
             Err(e) => not_authorized(&e),
         };
@@ -144,8 +184,14 @@ fn excluded_objects_refuse_a_plain_profile() {
     for ipls in [1, 2] {
         let (mut store, qsys) = system(ipls);
         let [cmd, pgm, lib] = outcomes(&mut store, qsys, "QAPTEST");
-        assert!(cmd.as_deref().is_some_and(|m| m != "not found"), "after {ipls} IPL(s), DSPPTF: {cmd:?}");
-        assert!(pgm.is_some(), "after {ipls} IPL(s), QGPL/QAPXPGM was allowed");
+        assert!(
+            cmd.as_deref().is_some_and(|m| m != "not found"),
+            "after {ipls} IPL(s), DSPPTF: {cmd:?}"
+        );
+        assert!(
+            pgm.is_some(),
+            "after {ipls} IPL(s), QGPL/QAPXPGM was allowed"
+        );
         assert!(lib.is_some(), "after {ipls} IPL(s), QAPXLIB was allowed");
         assert_eq!(outcomes(&mut store, qsys, "QSECOFR"), [None, None, None]);
     }
@@ -159,11 +205,18 @@ fn every_shipped_exclusion_survives_the_ipls() {
         let mut t = store.begin().unwrap();
         let lib = store::obj::library::Library::load(&mut t, qsys).unwrap();
         for name in sys_cpps::inventory::PUBLIC_EXCLUDE {
-            let Some(id) = lib.lookup(&mut t, types::CMD, Name::parse(name).unwrap()).unwrap() else {
+            let Some(id) = lib
+                .lookup(&mut t, types::CMD, Name::parse(name).unwrap())
+                .unwrap()
+            else {
                 continue;
             };
             let (_, h) = ops::read_header(&mut t, id).unwrap();
-            assert_eq!(h.public_authority, store::obj::Authority::EXCLUDE, "after {ipls} IPL(s), {name}");
+            assert_eq!(
+                h.public_authority,
+                store::obj::Authority::EXCLUDE,
+                "after {ipls} IPL(s), {name}"
+            );
         }
     }
 }

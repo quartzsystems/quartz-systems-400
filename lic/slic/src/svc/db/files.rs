@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::fmt::Write as _;
 
 use db::file::{self, CreateFileOpts, MemberOpt, Size};
+use db::util::Hold;
 use db::util::{
     self, CpyfOpts, DtaFmt, ErrLvl, FmtOpt, ImpfOpts, KeyFile, MbrOpt, RcdDlm, RmvBlank, Target,
     ToMember,
@@ -15,7 +16,6 @@ use db::util::{
 use dds::{CompileOpts, DateFmt, FileRef, MapRefs, RefResolver, TimeFmt, compile_lf, compile_pf};
 use qsname::{LibSpec, MemberSpec, Name};
 use sql::SqlContext;
-use db::util::Hold;
 use store::obj::{JobHandle, LockState, ObjectId};
 use store::txn::Txn;
 
@@ -199,7 +199,9 @@ pub fn crtsrcpf(system: &mut System, p: &Params) -> Result<String, String> {
 /// `crtlf LIB/FILE SRCFILE(...) [SRCMBR(M)]`.
 pub fn crtlf(system: &mut System, p: &Params) -> Result<String, String> {
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| crtlf_in(txn, ctx, super::JOB, p, &mut db::no_pause))
+    with_txn(store, |txn| {
+        crtlf_in(txn, ctx, super::JOB, p, &mut db::no_pause)
+    })
 }
 
 /// `CRTLF` in a transaction: the file made, then its member's path
@@ -416,7 +418,9 @@ pub fn chgpf(system: &mut System, p: &Params) -> Result<String, String> {
 /// `rgzpfm LIB/FILE [MBR(M)] [KEYFILE(*FILE|LIB/LF)]`.
 pub fn rgzpfm(system: &mut System, p: &Params) -> Result<String, String> {
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| rgzpfm_in(txn, ctx, super::JOB, p, &mut db::no_pause))
+    with_txn(store, |txn| {
+        rgzpfm_in(txn, ctx, super::JOB, p, &mut db::no_pause)
+    })
 }
 
 /// `RGZPFM` in a transaction, its reading pausing (`pause`).
@@ -460,7 +464,9 @@ fn errlvl(p: &Params) -> Result<ErrLvl, String> {
 /// `cpyf FROMFILE(LIB/F) TOFILE(LIB/F) [...]`.
 pub fn cpyf(system: &mut System, p: &Params) -> Result<String, String> {
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| cpyf_in(txn, ctx, super::JOB, p, &mut db::no_pause))
+    with_txn(store, |txn| {
+        cpyf_in(txn, ctx, super::JOB, p, &mut db::no_pause)
+    })
 }
 
 /// `CPYF` in a transaction, pausing (`pause`) between batches of the
@@ -529,16 +535,22 @@ pub fn cpyf_in(
         // (`run_cmd_calling`), else refused (`CPF502B`).
         let later = sql::exec::routine::midcall::Deferred::default();
         let mode = ctx.midcall.as_ref().map_or(db::trg::Mode::Refuse, |m| {
-            db::trg::Mode::Call(sql::exec::routine::midcall::Triggers::shared(m.clone(), later.clone()))
+            db::trg::Mode::Call(sql::exec::routine::midcall::Triggers::shared(
+                m.clone(),
+                later.clone(),
+            ))
         });
-        let r = util::cpyf_firing(txn, job, from_id, &target, &opts, pause, mode)
-            .map_err(|e| match &e {
-                // As the primary: the program's failure stops the copy,
-                // the records before it copied.
-                db::DbError::TriggerFailed { .. } => format!("CPF2972 {e}"),
-                _ => db_err(&e),
-            })?;
-        sql::exec::routine::midcall::fire_deferred(txn, ctx.midcall.as_ref(), &later).map_err(|e| format!("CPF2972 {e}"))?;
+        let r =
+            util::cpyf_firing(txn, job, from_id, &target, &opts, pause, mode).map_err(
+                |e| match &e {
+                    // As the primary: the program's failure stops the copy,
+                    // the records before it copied.
+                    db::DbError::TriggerFailed { .. } => format!("CPF2972 {e}"),
+                    _ => db_err(&e),
+                },
+            )?;
+        sql::exec::routine::midcall::fire_deferred(txn, ctx.midcall.as_ref(), &later)
+            .map_err(|e| format!("CPF2972 {e}"))?;
         Ok(format!(
             "{} records copied to member {}, {} excluded, {} not copied{}.",
             r.copied,
@@ -615,7 +627,9 @@ fn impf_opts(p: &Params) -> Result<ImpfOpts, String> {
 pub fn cpytoimpf(system: &mut System, p: &Params) -> Result<String, String> {
     let text = {
         let (store, ctx) = db(system)?;
-        with_txn(store, |txn| cpytoimpf_in(txn, ctx, super::JOB, p, &mut db::no_pause))?
+        with_txn(store, |txn| {
+            cpytoimpf_in(txn, ctx, super::JOB, p, &mut db::no_pause)
+        })?
     };
     cpytoimpf_out(system, p, text)
 }
@@ -673,7 +687,9 @@ pub fn cpytoimpf_out(system: &mut System, p: &Params, text: String) -> Result<St
 pub fn cpyfrmimpf(system: &mut System, p: &Params) -> Result<String, String> {
     let text = cpyfrmimpf_text(system, p)?;
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| cpyfrmimpf_in(txn, ctx, super::JOB, p, &text, &mut db::no_pause))
+    with_txn(store, |txn| {
+        cpyfrmimpf_in(txn, ctx, super::JOB, p, &text, &mut db::no_pause)
+    })
 }
 
 /// The text `CPYFRMIMPF` reads, from the job's IFS or a buffer.
@@ -708,7 +724,8 @@ pub fn cpyfrmimpf_in(
     let mbr = member_spec(p, "TOMBR")?;
     let opts = impf_opts(p)?;
     let id = file_id(txn, ctx, &to)?;
-    let r = util::cpyfrmimpf_paused(txn, job, id, mbr, text.as_bytes(), &opts, pause).map_err(|e| db_err(&e))?;
+    let r = util::cpyfrmimpf_paused(txn, job, id, mbr, text.as_bytes(), &opts, pause)
+        .map_err(|e| db_err(&e))?;
     let mut out = format!("{} records copied, {} not copied.", r.records, r.errors);
     for (n, why) in r.skipped.iter().take(20) {
         let _ = write!(out, "\n  record {n}: {why}");
@@ -746,7 +763,8 @@ fn from_ccsid(p: &Params) -> Result<ifscmd::stmf::StmfCcsid, String> {
     let w = p.kw("FROMCCSID").unwrap_or("");
     match w.trim().to_ascii_uppercase().as_str() {
         "*FILE" => Ok(ifscmd::stmf::StmfCcsid::Stmf),
-        _ => ifscmd::stmf::impf::ccsid_word(w).ok_or_else(|| format!("FROMCCSID({w}) is not a CCSID")),
+        _ => ifscmd::stmf::impf::ccsid_word(w)
+            .ok_or_else(|| format!("FROMCCSID({w}) is not a CCSID")),
     }
 }
 

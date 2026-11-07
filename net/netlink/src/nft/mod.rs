@@ -25,7 +25,10 @@ mod expr;
 use consts::*;
 pub use expr::port_drop_exprs;
 
-use crate::codec::{Attrs, Builder, NLM_F_ACK, NLM_F_APPEND, NLM_F_CREATE, NLM_F_DUMP, NLM_F_REQUEST, NLMSG_ERROR, messages};
+use crate::codec::{
+    Attrs, Builder, NLM_F_ACK, NLM_F_APPEND, NLM_F_CREATE, NLM_F_DUMP, NLM_F_REQUEST, NLMSG_ERROR,
+    messages,
+};
 use crate::{Bus, Error, Result, Socket};
 
 /// The QS/400 table.
@@ -321,7 +324,10 @@ mod tests {
     fn rule_carries_the_expressions_in_order() {
         let r = PortRule::new(L4::Tcp, 8000, 8100).unwrap();
         let m = new_rule(&r).finish(9);
-        assert_eq!(ne_u16(&m, 4), Some((NFNL_SUBSYS_NFTABLES << 8) | NFT_MSG_NEWRULE));
+        assert_eq!(
+            ne_u16(&m, 4),
+            Some((NFNL_SUBSYS_NFTABLES << 8) | NFT_MSG_NEWRULE)
+        );
         assert_eq!(m[NLMSG_HDRLEN], NFPROTO_INET);
         let attrs = Attrs::new(&m[NLMSG_HDRLEN + 4..]);
         assert_eq!(attrs.get(NFTA_RULE_TABLE).unwrap().str(), TABLE);
@@ -334,10 +340,23 @@ mod tests {
             .collect();
         assert_eq!(
             names,
-            ["meta", "cmp", "payload", "range", "socket", "bitwise", "cmp", "counter", "immediate"]
+            [
+                "meta",
+                "cmp",
+                "payload",
+                "range",
+                "socket",
+                "bitwise",
+                "cmp",
+                "counter",
+                "immediate"
+            ]
         );
         let udata = attrs.get(NFTA_RULE_USERDATA).unwrap();
-        assert_eq!(parse_comment(udata.data).as_deref(), Some("qs400 tcp 8000-8100"));
+        assert_eq!(
+            parse_comment(udata.data).as_deref(),
+            Some("qs400 tcp 8000-8100")
+        );
 
         // One port compares instead of a range.
         let one = new_rule(&PortRule::new(L4::Udp, 53, 53).unwrap()).finish(1);

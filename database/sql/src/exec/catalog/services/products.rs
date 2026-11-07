@@ -17,7 +17,11 @@ use crate::error::{Result, SqlError};
 pub const PRODUCT_NO_VALUE: &[&str] = &["REGISTRATION_TYPE", "REGISTRATION_VALUE"];
 
 fn failed(e: String) -> SqlError {
-    SqlError::Coded { code: -443, state: "38501", what: e }
+    SqlError::Coded {
+        code: -443,
+        state: "38501",
+        what: e,
+    }
 }
 
 /// `SOFTWARE_PRODUCT_INFO`.
@@ -64,7 +68,10 @@ pub fn ptfs(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
         out.yes("PTF_ON_ORDER", p.status == "ON ORDER");
         out.text("PTF_IPL_ACTION", p.ipl_action.as_str());
         out.yes("PTF_ACTION_PENDING", p.ipl_action != "NONE");
-        out.text("PTF_IPL_REQUIRED", if p.delayed { "DELAYED" } else { "IMMEDIATE" });
+        out.text(
+            "PTF_IPL_REQUIRED",
+            if p.delayed { "DELAYED" } else { "IMMEDIATE" },
+        );
         out.yes("PTF_IS_RELEASED", true);
         out.stamp("PTF_STATUS_TIMESTAMP", p.changed);
         out.text_or_null("PTF_SUPERSEDED_BY_PTF", &p.superseded_by);

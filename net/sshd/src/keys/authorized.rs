@@ -68,7 +68,10 @@ fn parse_options(text: &str) -> Option<KeyOptions> {
     items.push(cur);
     for item in items {
         let (name, value) = match item.split_once('=') {
-            Some((n, v)) => (n.to_ascii_lowercase(), Some(v.trim_matches('"').to_string())),
+            Some((n, v)) => (
+                n.to_ascii_lowercase(),
+                Some(v.trim_matches('"').to_string()),
+            ),
             None => (item.to_ascii_lowercase(), None),
         };
         match (name.as_str(), value) {

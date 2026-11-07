@@ -25,7 +25,8 @@ pub const SERVER_USER: &str = "QTMHHTTP";
 fn store_paths(system: &mut System, call: &CertCall) -> Vec<String> {
     let mut v: Vec<String> = SYSTEM_STORES.iter().map(|s| s.2.to_string()).collect();
     v.extend([USER_STORES.to_string(), LOCAL_CA_STORE.to_string()]);
-    let made = super::certs::with_stores(system, &[USER_STORES], false, user_stores).unwrap_or_default();
+    let made =
+        super::certs::with_stores(system, &[USER_STORES], false, user_stores).unwrap_or_default();
     v.extend(made.into_iter().map(|(_, p)| p));
     if let CertCall::CreateStore { path, .. } = call {
         v.push(path.clone());
@@ -110,12 +111,18 @@ mod tests {
     #[test]
     fn entries() {
         let e = event("ADMIN", "AF", "BOB", "QHTTPSVR/ADMIN", "*IOSYSCFG").unwrap();
-        assert_eq!((e.get("ONAM"), e.get("OLIB"), e.get("VIOL")), ("ADMIN", "QHTTPSVR", "A"));
+        assert_eq!(
+            (e.get("ONAM"), e.get("OLIB"), e.get("VIOL")),
+            ("ADMIN", "QHTTPSVR", "A")
+        );
         assert_eq!(e.user.as_deref(), Some("BOB"));
         let p = event("ADMIN", "PW", "BOB", "R", "").unwrap();
         assert_eq!((p.get("ETYP"), p.get("USRP")), ("R", "BOB"));
         let z = event("ADMIN", "ZC", "BOB", "/www/web1/conf/httpd.conf", "apply").unwrap();
-        assert_eq!((z.get("ONAM"), z.path()), ("httpd.conf", "/www/web1/conf/httpd.conf"));
+        assert_eq!(
+            (z.get("ONAM"), z.path()),
+            ("httpd.conf", "/www/web1/conf/httpd.conf")
+        );
         assert!(event("ADMIN", "XX", "BOB", "", "").is_none());
     }
 }

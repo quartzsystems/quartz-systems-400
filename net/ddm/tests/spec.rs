@@ -52,7 +52,8 @@ fn layouts() -> BTreeMap<&'static str, &'static [(usize, usize, &'static str)]> 
 }
 
 fn doc() -> String {
-    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/DDM.md")).expect("docs/DDM.md")
+    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/DDM.md"))
+        .expect("docs/DDM.md")
 }
 
 /// The table rows (cells, trimmed, backticks removed) after each marker.
@@ -61,7 +62,11 @@ fn tables(doc: &str, kind: &str) -> BTreeMap<String, Vec<Vec<String>>> {
     let lines: Vec<&str> = doc.lines().collect();
     let prefix = format!("<!-- {kind}: ");
     for (i, l) in lines.iter().enumerate() {
-        let Some(key) = l.trim().strip_prefix(&prefix).and_then(|r| r.strip_suffix(" -->")) else {
+        let Some(key) = l
+            .trim()
+            .strip_prefix(&prefix)
+            .and_then(|r| r.strip_suffix(" -->"))
+        else {
             continue;
         };
         let rows: Vec<Vec<String>> = lines[i + 1..]
@@ -77,7 +82,10 @@ fn tables(doc: &str, kind: &str) -> BTreeMap<String, Vec<Vec<String>>> {
                     .collect()
             })
             .collect();
-        assert!(out.insert(key.to_string(), rows).is_none(), "{kind} {key} appears twice");
+        assert!(
+            out.insert(key.to_string(), rows).is_none(),
+            "{kind} {key} appears twice"
+        );
     }
     out
 }
@@ -101,7 +109,10 @@ fn code_points_match_the_doc() {
         assert_eq!(d, c, "consts table {key} differs from the code");
     }
     for key in doc.keys() {
-        assert!(code.contains_key(key.as_str()), "docs/DDM.md lists unknown consts {key}");
+        assert!(
+            code.contains_key(key.as_str()),
+            "docs/DDM.md lists unknown consts {key}"
+        );
     }
 }
 
@@ -117,11 +128,15 @@ fn layouts_match_the_doc() {
             .iter()
             .map(|r| (r[0].parse().unwrap(), r[1].parse().unwrap(), r[2].clone()))
             .collect();
-        let c: Vec<(usize, usize, String)> = fields.iter().map(|f| (f.0, f.1, f.2.to_string())).collect();
+        let c: Vec<(usize, usize, String)> =
+            fields.iter().map(|f| (f.0, f.1, f.2.to_string())).collect();
         assert_eq!(d, c, "layout {key} differs from the code");
     }
     for key in doc.keys() {
-        assert!(code.contains_key(key.as_str()), "docs/DDM.md lists unknown layout {key}");
+        assert!(
+            code.contains_key(key.as_str()),
+            "docs/DDM.md lists unknown layout {key}"
+        );
     }
 }
 

@@ -16,7 +16,6 @@ use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
 use crate::tcp::{GUEST, forward_port, telnet_answers};
 
-
 /// A console command whose output must hold `want`.
 fn expect(s: &mut Session, line: &str, want: &str) -> Result<String, String> {
     let out = s.command(line, CMD)?;
@@ -39,7 +38,14 @@ fn job_shown(s: &mut Session, name: &str, present: bool) -> Result<String, Strin
             return Ok(out);
         }
         if Instant::now() > end {
-            return Err(format!("{name} {} in:\n{out}", if present { "never shown" } else { "still shown" }));
+            return Err(format!(
+                "{name} {} in:\n{out}",
+                if present {
+                    "never shown"
+                } else {
+                    "still shown"
+                }
+            ));
         }
         std::thread::sleep(Duration::from_millis(500));
     }
@@ -48,7 +54,9 @@ fn job_shown(s: &mut Session, name: &str, present: bool) -> Result<String, Strin
 /// The sign-on page over `stream`, the whole answer.
 fn get(stream: &mut (impl Read + Write)) -> Result<String, String> {
     stream
-        .write_all(b"GET /qs400/httpadmin/signon HTTP/1.1\r\nHost: qs400\r\nConnection: close\r\n\r\n")
+        .write_all(
+            b"GET /qs400/httpadmin/signon HTTP/1.1\r\nHost: qs400\r\nConnection: close\r\n\r\n",
+        )
         .map_err(|e| e.to_string())?;
     let mut out = Vec::new();
     let _ = stream.read_to_end(&mut out);
@@ -104,7 +112,9 @@ fn secure_page(port: u16) -> Result<String, String> {
             .and_then(|mut t| get(&mut t));
         match r {
             Ok(a) if a.starts_with("HTTP/1.1 200 OK") => return Ok(a),
-            other if Instant::now() > end => return Err(format!("HTTPS on port {port}: {other:?}")),
+            other if Instant::now() > end => {
+                return Err(format!("HTTPS on port {port}: {other:?}"));
+            }
             _ => std::thread::sleep(Duration::from_millis(500)),
         }
     }
@@ -143,7 +153,11 @@ impl Suite {
         }
         let plain = forward_port(self, GUEST, 2001)?;
         let p = page(plain)?;
-        for want in ["QS/400 HTTP Server Administration", "name=\"password\"", "Connection: close"] {
+        for want in [
+            "QS/400 HTTP Server Administration",
+            "name=\"password\"",
+            "Connection: close",
+        ] {
             if !p.contains(want) {
                 return Err(format!("the page has no {want:?}:\n{p}"));
             }

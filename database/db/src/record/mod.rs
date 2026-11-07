@@ -38,7 +38,9 @@ impl Eq for Value {}
 /// same; `None` past 63 digits or for a special value.
 #[must_use]
 pub fn float_decimal(x: f64) -> Option<Decimal> {
-    x.is_finite().then(|| Decimal::parse(&format!("{x}")).ok()).flatten()
+    x.is_finite()
+        .then(|| Decimal::parse(&format!("{x}")).ok())
+        .flatten()
 }
 
 /// A float's shortest text that reads back the same, in E notation
@@ -82,19 +84,29 @@ pub fn single_display(x: f32) -> String {
 #[must_use]
 pub fn float_shown(f: &FieldDef, x: f64) -> String {
     #[allow(clippy::cast_possible_truncation)] // a single, widened when read
-    if f.precision == FloatPrecision::Single { single_display(x as f32) } else { float_display(x) }
+    if f.precision == FloatPrecision::Single {
+        single_display(x as f32)
+    } else {
+        float_display(x)
+    }
 }
 
 /// A decimal as the nearest double.
 #[must_use]
 pub fn decimal_f64(d: &Decimal) -> f64 {
-    d.to_string().parse().expect("decimal text parses as a float")
+    d.to_string()
+        .parse()
+        .expect("decimal text parses as a float")
 }
 
 /// The format of a `DECFLOAT` field.
 #[must_use]
 pub fn decfloat_format(f: &FieldDef) -> DfFormat {
-    if f.length <= 16 { DfFormat::D16 } else { DfFormat::D34 }
+    if f.length <= 16 {
+        DfFormat::D16
+    } else {
+        DfFormat::D34
+    }
 }
 
 /// What a byte field is padded with: 0x00 for binary strings, blanks
@@ -141,7 +153,12 @@ pub fn is_utf16(f: &FieldDef) -> bool {
 /// UTF-16BE bytes as text.
 #[must_use]
 pub fn utf16_text(b: &[u8]) -> String {
-    let units: Vec<u16> = b.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c)).collect();
+    let units: Vec<u16> = b
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| u16::from_be_bytes(*c))
+        .collect();
     String::from_utf16_lossy(&units)
 }
 
@@ -246,7 +263,10 @@ pub fn read_field(
         DataType::Binary if f.int_range => int_of(f).and_then(|i| i.decode(bytes)),
         DataType::Binary => Binary::new(digits(f), f.decimals).and_then(|b| b.decode(bytes)),
         DataType::Float => {
-            return float_of(f).decode_f64(bytes).map(Value::Float).map_err(|e| mapping(f, e));
+            return float_of(f)
+                .decode_f64(bytes)
+                .map(Value::Float)
+                .map_err(|e| mapping(f, e));
         }
         DataType::DecFloat => {
             return DecFloat::decode(bytes, decfloat_format(f))
@@ -279,8 +299,20 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
         out[0] = match value {
             Value::Null => 0xF0,
             Value::Char(b) if matches!(b.first(), Some(0xF0 | 0xF1)) => b[0],
-            Value::Num(d) => if d.is_zero() { 0xF0 } else { 0xF1 },
-            Value::Float(x) => if *x == 0.0 { 0xF0 } else { 0xF1 },
+            Value::Num(d) => {
+                if d.is_zero() {
+                    0xF0
+                } else {
+                    0xF1
+                }
+            }
+            Value::Float(x) => {
+                if *x == 0.0 {
+                    0xF0
+                } else {
+                    0xF1
+                }
+            }
             _ => return Err(mapping(f, "not a BOOLEAN")),
         };
         return Ok(());
@@ -373,10 +405,12 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
 pub fn compare(a: &Value, b: &Value) -> Ordering {
     match (a, b) {
         (Value::Null, Value::Null) => Ordering::Equal,
-        (Value::Null, _) | (Value::Char(_), Value::Num(_) | Value::DecFloat(_) | Value::Float(_)) => {
+        (Value::Null, _)
+        | (Value::Char(_), Value::Num(_) | Value::DecFloat(_) | Value::Float(_)) => {
             Ordering::Greater
         }
-        (_, Value::Null) | (Value::Num(_) | Value::DecFloat(_) | Value::Float(_), Value::Char(_)) => Ordering::Less,
+        (_, Value::Null)
+        | (Value::Num(_) | Value::DecFloat(_) | Value::Float(_), Value::Char(_)) => Ordering::Less,
         (Value::Num(x), Value::Num(y)) => x.cmp(y),
         (Value::Float(x), Value::Float(y)) => fcmp(*x, *y),
         (Value::Float(x), Value::Num(y)) => fcmp(*x, decimal_f64(y)),
@@ -397,22 +431,25 @@ pub fn compare(a: &Value, b: &Value) -> Ordering {
 /// Floats by value, zeros alike; a NaN after every number.
 #[must_use]
 pub fn fcmp(x: f64, y: f64) -> Ordering {
-    x.partial_cmp(&y).unwrap_or_else(|| x.is_nan().cmp(&y.is_nan()))
+    x.partial_cmp(&y)
+        .unwrap_or_else(|| x.is_nan().cmp(&y.is_nan()))
 }
 
 /// A DDS literal as a value of field `f`.
 pub fn literal_value(f: &FieldDef, lit: &Literal) -> Result<Value> {
     Ok(match lit {
-        Literal::Quoted(q) if is_utf16(f) => Value::Char(q.encode_utf16().flat_map(u16::to_be_bytes).collect()),
+        Literal::Quoted(q) if is_utf16(f) => {
+            Value::Char(q.encode_utf16().flat_map(u16::to_be_bytes).collect())
+        }
         Literal::Quoted(q) => Value::Char(
             q.chars()
                 .map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE))
                 .collect(),
         ),
         Literal::Hex(h) => Value::Char(h.clone()),
-        Literal::Word(w) if f.data_type == DataType::DecFloat => Value::DecFloat(
-            DecFloat::parse(w, decfloat_format(f)).map_err(|e| mapping(f, e))?,
-        ),
+        Literal::Word(w) if f.data_type == DataType::DecFloat => {
+            Value::DecFloat(DecFloat::parse(w, decfloat_format(f)).map_err(|e| mapping(f, e))?)
+        }
         Literal::Word(w) if f.data_type.is_numeric() => {
             Value::Num(Decimal::parse(w).map_err(|e| mapping(f, e))?)
         }
@@ -524,12 +561,20 @@ mod tests {
         let mut rec = vec![0u8; 16];
         for (len, format) in [(16, DfFormat::D16), (34, DfFormat::D34)] {
             let df = f(DataType::DecFloat, len, 0, 0);
-            for text in ["1.5", "1.50", "1.500", "1E+2", "100", "0", "0.00", "0E+3", "-0", "-1.50", "-1E+2"] {
+            for text in [
+                "1.5", "1.50", "1.500", "1E+2", "100", "0", "0.00", "0E+3", "-0", "-1.50", "-1E+2",
+            ] {
                 let v = Value::DecFloat(DecFloat::parse(text, DfFormat::D34).unwrap());
                 write_field(&df, &mut rec, &v).unwrap();
                 let back = read_field(&df, &rec, &[], None).unwrap();
-                let Value::DecFloat(d) = back else { panic!("{back:?}") };
-                assert_eq!((d.to_string(), d.format()), (text.to_string(), format), "{text}");
+                let Value::DecFloat(d) = back else {
+                    panic!("{back:?}")
+                };
+                assert_eq!(
+                    (d.to_string(), d.format()),
+                    (text.to_string(), format),
+                    "{text}"
+                );
             }
             write_field(&df, &mut rec, &Value::Num(Decimal::parse("-2.50").unwrap())).unwrap();
             assert_eq!(text_of(&read_field(&df, &rec, &[], None).unwrap()), "-2.50");
@@ -549,11 +594,17 @@ mod tests {
         assert_eq!(read_field(&df, &rec, &[], None).unwrap(), v);
         write_field(&df, &mut rec, &Value::Num(Decimal::parse("2.5").unwrap())).unwrap();
         assert_eq!(
-            compare(&read_field(&df, &rec, &[], None).unwrap(), &Value::Num(Decimal::parse("2.50").unwrap())),
+            compare(
+                &read_field(&df, &rec, &[], None).unwrap(),
+                &Value::Num(Decimal::parse("2.50").unwrap())
+            ),
             Ordering::Equal
         );
         write_field(&df, &mut rec, &Value::Null).unwrap();
-        assert_eq!(read_field(&df, &rec, &[], None).unwrap(), Value::DecFloat(DecFloat::zero(DfFormat::D16)));
+        assert_eq!(
+            read_field(&df, &rec, &[], None).unwrap(),
+            Value::DecFloat(DecFloat::zero(DfFormat::D16))
+        );
         let b = f(DataType::Bytes, 4, 0, 8);
         write_field(&b, &mut rec, &Value::Char(vec![0x40, 0xFF])).unwrap();
         assert_eq!(&rec[8..12], &[0x40, 0xFF, 0, 0]);

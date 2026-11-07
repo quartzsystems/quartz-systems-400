@@ -154,7 +154,10 @@ impl<A: Auth, X: Exits> Central<A, X> {
         let req = ExitRequest::host(
             "ZSCN0100",
             zscn0100(
-                &who(&self.user(), regfac::formats::host::func::RTV_CONVERSION_MAP),
+                &who(
+                    &self.user(),
+                    regfac::formats::host::func::RTV_CONVERSION_MAP,
+                ),
                 i32::try_from(from).unwrap_or(0),
                 i32::try_from(to).unwrap_or(0),
                 i16::try_from(map).unwrap_or(0),
@@ -168,10 +171,20 @@ impl<A: Auth, X: Exits> Central<A, X> {
             t
         };
         if !self.exits.allow(EXIT_NLS, &req) {
-            return Outcome::one(reply::frame(&f.header, id::CONVERSION_TABLE, head(rc::EXIT), Vec::new()));
+            return Outcome::one(reply::frame(
+                &f.header,
+                id::CONVERSION_TABLE,
+                head(rc::EXIT),
+                Vec::new(),
+            ));
         }
         if !converts(from) || !converts(to) {
-            return Outcome::one(reply::frame(&f.header, id::CONVERSION_TABLE, head(rc::CCSID), Vec::new()));
+            return Outcome::one(reply::frame(
+                &f.header,
+                id::CONVERSION_TABLE,
+                head(rc::CCSID),
+                Vec::new(),
+            ));
         }
         let points = f.param(cp::CODE_POINTS).map_or_else(
             || hostsvr::central::code_points(!is_unicode(from)).data,
@@ -192,12 +205,21 @@ impl<A: Auth, X: Exits> Central<A, X> {
             "ZSCL0100",
             zscl0100(&who(&self.user(), function), &License::default()),
         );
-        let code = if self.exits.allow(EXIT_LM, &req) { rc::OK } else { rc::EXIT };
+        let code = if self.exits.allow(EXIT_LM, &req) {
+            rc::OK
+        } else {
+            rc::EXIT
+        };
         let mut t = 0u16.to_be_bytes().to_vec();
         t.extend(code.to_be_bytes());
         t.extend(0u16.to_be_bytes());
         t.extend(0u16.to_be_bytes());
-        Outcome::one(reply::frame(&f.header, f.header.req_rep_id, t, f.params.clone()))
+        Outcome::one(reply::frame(
+            &f.header,
+            f.header.req_rep_id,
+            t,
+            f.params.clone(),
+        ))
     }
 }
 
@@ -215,7 +237,9 @@ impl<A: Auth, X: Exits> Handler for Central<A, X> {
         match f.header.req_rep_id {
             id::EXCHANGE_ATTRIBUTES => self.exchange(&f),
             id::CONVERSION_TABLE => self.conversion(&f),
-            id::REQUEST_LICENSE | id::RELEASE_LICENSE | id::RETRIEVE_LICENSE_INFO => self.license(&f),
+            id::REQUEST_LICENSE | id::RELEASE_LICENSE | id::RETRIEVE_LICENSE_INFO => {
+                self.license(&f)
+            }
             _ => Outcome::close(),
         }
     }

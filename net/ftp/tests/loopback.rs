@@ -97,10 +97,34 @@ fn tls_pair() -> (Arc<ServerConfig>, Arc<ClientConfig>) {
         .unwrap()
         .as_secs()
         - 120;
-    ca::create(&files, "capass1", &Subject::cn("Test CA"), KeyAlgorithm::EcdsaP256, now, 3650, fast).unwrap();
+    ca::create(
+        &files,
+        "capass1",
+        &Subject::cn("Test CA"),
+        KeyAlgorithm::EcdsaP256,
+        now,
+        3650,
+        fast,
+    )
+    .unwrap();
     let ca_store = CertStore::open(&files, LOCAL_CA_STORE, "capass1").unwrap();
-    let mut system = CertStore::create_with(&files, SYSTEM_STORE, "system1", StoreKind::System, now, fast).unwrap();
-    ca::issue(&ca_store, &mut system, "FTPSVR", &CertSpec::server(HOST, now, 30), KeyAlgorithm::EcdsaP256).unwrap();
+    let mut system = CertStore::create_with(
+        &files,
+        SYSTEM_STORE,
+        "system1",
+        StoreKind::System,
+        now,
+        fast,
+    )
+    .unwrap();
+    ca::issue(
+        &ca_store,
+        &mut system,
+        "FTPSVR",
+        &CertSpec::server(HOST, now, 30),
+        KeyAlgorithm::EcdsaP256,
+    )
+    .unwrap();
     system.save(&files).unwrap();
     let mut apps = AppRegistry::load(&files).unwrap();
     apps.assign(ftp::server::APP_ID, Some("FTPSVR")).unwrap();
@@ -113,7 +137,15 @@ fn tls_pair() -> (Arc<ServerConfig>, Arc<ClientConfig>) {
 
 /// Run a batch script against `addr`; the client's world and log.
 fn run(addr: SocketAddr, opts: Options, lines: &[&str]) -> (MemHost, Vec<String>, Vec<u16>) {
-    let mut c = Client::new(local(), script(lines), Options { port: addr.port(), ..opts }, "/QSYS.LIB/MYLIB.LIB");
+    let mut c = Client::new(
+        local(),
+        script(lines),
+        Options {
+            port: addr.port(),
+            ..opts
+        },
+        "/QSYS.LIB/MYLIB.LIB",
+    );
     c.run(HOST);
     let log = c.console.out.clone();
     let codes = c.codes.clone();
@@ -135,8 +167,16 @@ const ROUND_TRIP: &[&str] = &[
 ];
 
 fn check_round_trip(host: &MemHost, log: &[String], codes: &[u16]) {
-    assert_eq!(host.member_text("MYLIB", "QTXTSRC", "BACK").unwrap(), ["first line", "second line"], "{log:#?}");
-    assert_eq!(host.member_text("MYLIB", "QTXTSRC", "HELLO").unwrap(), ["PGM", "ENDPGM"], "{log:#?}");
+    assert_eq!(
+        host.member_text("MYLIB", "QTXTSRC", "BACK").unwrap(),
+        ["first line", "second line"],
+        "{log:#?}"
+    );
+    assert_eq!(
+        host.member_text("MYLIB", "QTXTSRC", "HELLO").unwrap(),
+        ["PGM", "ENDPGM"],
+        "{log:#?}"
+    );
     assert!(log.iter().any(|l| l == "QCLSRC.HELLO"), "{log:#?}");
     assert!(codes.contains(&230) && codes.contains(&221), "{codes:?}");
     assert!(codes.iter().filter(|c| **c >= 400).count() == 0, "{log:#?}");
@@ -156,7 +196,10 @@ fn a_batch_script_in_the_clear() {
     check_round_trip(&host, &log, &codes);
     // The password never shows.
     assert!(log.iter().all(|l| !l.contains("SECRET")), "{log:#?}");
-    assert!(log.iter().any(|l| l.starts_with("215 ") && l.contains("OS/400")));
+    assert!(
+        log.iter()
+            .any(|l| l.starts_with("215 ") && l.contains("OS/400"))
+    );
 }
 
 #[test]
@@ -177,7 +220,11 @@ fn active_data_connections_and_block_mode() {
             "quit",
         ],
     );
-    assert_eq!(host.member_text("MYLIB", "QTXTSRC", "HELLO").unwrap(), ["PGM", "ENDPGM"], "{log:#?}");
+    assert_eq!(
+        host.member_text("MYLIB", "QTXTSRC", "HELLO").unwrap(),
+        ["PGM", "ENDPGM"],
+        "{log:#?}"
+    );
     assert!(codes.contains(&200), "{log:#?}");
 }
 
@@ -221,7 +268,19 @@ fn a_refused_sign_on_and_a_missing_system() {
     let addr = server(None, false, 1);
     let (_, log, codes) = run(addr, Options::default(), &["bob WRONG", "pwd", "quit"]);
     assert!(codes.contains(&530) && codes.contains(&530), "{log:#?}");
-    let mut c = Client::new(local(), script(&["quit"]), Options { port: 9, ..Options::default() }, "/QSYS.LIB/MYLIB.LIB");
+    let mut c = Client::new(
+        local(),
+        script(&["quit"]),
+        Options {
+            port: 9,
+            ..Options::default()
+        },
+        "/QSYS.LIB/MYLIB.LIB",
+    );
     c.run("127.0.0.1");
-    assert!(c.console.out.iter().any(|l| l.starts_with("No connection")), "{:?}", c.console.out);
+    assert!(
+        c.console.out.iter().any(|l| l.starts_with("No connection")),
+        "{:?}",
+        c.console.out
+    );
 }

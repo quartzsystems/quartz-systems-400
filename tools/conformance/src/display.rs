@@ -58,7 +58,12 @@ pub fn golden(text: &str, w: usize, h: usize) -> (Image, Layout) {
     }
     // No cursor in the text: put it where no glyph can be.
     screen.cursor = (ROWS, COLS);
-    let mut canvas = Canvas::new(Mode::packed(w, h, PixelFormat::XRGB8888), ROWS, COLS, Scale::Auto);
+    let mut canvas = Canvas::new(
+        Mode::packed(w, h, PixelFormat::XRGB8888),
+        ROWS,
+        COLS,
+        Scale::Auto,
+    );
     canvas.draw(&screen);
     let mut rgb = Vec::with_capacity(w * h * 3);
     for y in 0..h {
@@ -117,7 +122,8 @@ pub fn compare(capture: &Image, golden: &Image, l: &Layout) -> Compared {
                     let x = l.x0 + (c * GLYPH_W + gx) * s;
                     let y = l.y0 + (r * GLYPH_H + gy) * s;
                     let first = capture.at(x, y);
-                    let uniform = (0..s).all(|dy| (0..s).all(|dx| capture.at(x + dx, y + dy) == first));
+                    let uniform =
+                        (0..s).all(|dy| (0..s).all(|dx| capture.at(x + dx, y + dy) == first));
                     if !uniform {
                         out.ragged += 1;
                     }
@@ -127,11 +133,15 @@ pub fn compare(capture: &Image, golden: &Image, l: &Layout) -> Compared {
             }
             if cap == want {
                 out.exact += 1;
-            } else if cap.iter().zip(&want).all(|(a, b)| a.iter().zip(b).all(|(p, q)| p != q)) {
+            } else if cap
+                .iter()
+                .zip(&want)
+                .all(|(a, b)| a.iter().zip(b).all(|(p, q)| p != q))
+            {
                 out.reversed += 1;
-            } else if (0..GLYPH_H).all(|gy| {
-                cap[gy] == want[gy] || (gy >= GLYPH_H - 2 && cap[gy].iter().all(|&p| p))
-            }) {
+            } else if (0..GLYPH_H)
+                .all(|gy| cap[gy] == want[gy] || (gy >= GLYPH_H - 2 && cap[gy].iter().all(|&p| p)))
+            {
                 out.underlined += 1;
             } else {
                 out.wrong.push((r + 1, c + 1));

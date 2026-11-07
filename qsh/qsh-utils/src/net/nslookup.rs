@@ -93,14 +93,12 @@ fn use_server(cx: &UtilCtx<'_>, st: &mut Settings, s: &str) -> Result<(), String
         st.server = Some((s.to_string(), s.to_string()));
         return Ok(());
     }
-    let found = ask(cx, s, rtype::A, None, true)
-        .ok()
-        .and_then(|a| {
-            a.answers
-                .iter()
-                .find(|r| r.rtype == rtype::A)
-                .map(|r| r.data.clone())
-        });
+    let found = ask(cx, s, rtype::A, None, true).ok().and_then(|a| {
+        a.answers
+            .iter()
+            .find(|r| r.rtype == rtype::A)
+            .map(|r| r.data.clone())
+    });
     match found {
         Some(addr) => {
             st.server = Some((s.to_string(), addr));
@@ -208,14 +206,21 @@ fn show_all(out: &mut Out, st: &Settings, default: &str) {
         .server
         .clone()
         .unwrap_or_else(|| (default.to_string(), default.to_string()));
-    out.text(&format!("Default server: {label}\nAddress: {addr}#{}\n\n", st.port));
+    out.text(&format!(
+        "Default server: {label}\nAddress: {addr}#{}\n\n",
+        st.port
+    ));
     out.text("Set options:\n");
     out.text(&format!(
         "  querytype = {}\n",
         st.qtype.map_or_else(|| "A".to_string(), rtype::name)
     ));
     out.text(&format!("  port = {}\n", st.port));
-    out.text(if st.recurse { "  recurse\n" } else { "  norecurse\n" });
+    out.text(if st.recurse {
+        "  recurse\n"
+    } else {
+        "  norecurse\n"
+    });
 }
 
 fn default_server(cx: &UtilCtx<'_>) -> String {
@@ -241,7 +246,10 @@ fn interactive(cx: &UtilCtx<'_>, out: &mut Out, st: &mut Settings) -> i32 {
             ["server" | "lserver", s] => match use_server(cx, st, s) {
                 Ok(()) => {
                     let (label, addr) = st.server.clone().unwrap_or_default();
-                    out.text(&format!("Default server: {label}\nAddress: {addr}#{}\n\n", st.port));
+                    out.text(&format!(
+                        "Default server: {label}\nAddress: {addr}#{}\n\n",
+                        st.port
+                    ));
                 }
                 Err(msg) => {
                     out.text(&format!("*** {msg}\n"));

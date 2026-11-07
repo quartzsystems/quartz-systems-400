@@ -36,7 +36,10 @@ pub fn message(env: &Env, kind: Kind, id: &str, data: &[&str]) -> Message {
 /// `< Back` returns; the buttons post here.
 pub fn msg(rq: &Rq<'_>, id: &str) -> Response {
     let q = rq.query();
-    let back = q.get("back").filter(|b| b.starts_with(PRODUCT.prefix)).map(ToString::to_string);
+    let back = q
+        .get("back")
+        .filter(|b| b.starts_with(PRODUCT.prefix))
+        .map(ToString::to_string);
     if rq.post() {
         let f = rq.form();
         return match back {
@@ -47,7 +50,12 @@ pub fn msg(rq: &Rq<'_>, id: &str) -> Response {
     let data: Vec<String> = q.all("d").into_iter().map(ToString::to_string).collect();
     let data: Vec<&str> = data.iter().map(String::as_str).collect();
     let id = id.to_ascii_uppercase();
-    let Some(sl) = rq.env().system.message(&id, &data).or_else(|| msgs::second_level(&id, &data)) else {
+    let Some(sl) = rq
+        .env()
+        .system
+        .message(&id, &data)
+        .or_else(|| msgs::second_level(&id, &data))
+    else {
         return rq.not_found(&format!("message {id}"));
     };
     let mut page = second_level(&rq.ctx, &sl, None::<&Sent>, "Message");
@@ -65,7 +73,10 @@ pub fn not_found(rq: &Rq<'_>, what: &str) -> Response {
         crumb: vec!["Not found".into()],
         h1: "Not found".into(),
         desc: Some(format!("There is no {what} on this system.")),
-        body: format!("<p><a href=\"{}\">My home page</a></p>", qsweb::html::esc(&PRODUCT.url("/home"))),
+        body: format!(
+            "<p><a href=\"{}\">My home page</a></p>",
+            qsweb::html::esc(&PRODUCT.url("/home"))
+        ),
         help: "contents".into(),
         ..Page::default()
     };
@@ -81,7 +92,10 @@ pub fn not_available(rq: &Rq<'_>, area: &str, group: &'static str) -> Response {
         h1: area.into(),
         desc: Some("This part of Access for Web is not available on this system.".into()),
         messages: vec![rq.message(Kind::Error, msgs::NOT_AVAILABLE, &[area])],
-        body: format!("<p><a href=\"{}\">My home page</a></p>", qsweb::html::esc(&PRODUCT.url("/home"))),
+        body: format!(
+            "<p><a href=\"{}\">My home page</a></p>",
+            qsweb::html::esc(&PRODUCT.url("/home"))
+        ),
         help: "notavail".into(),
         nav: Some((group, None)),
         ..Page::default()

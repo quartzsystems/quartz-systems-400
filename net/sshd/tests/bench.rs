@@ -10,7 +10,11 @@
 //! `cargo test --release -p sshd --test bench -- --ignored --nocapture`
 //! and `QS400_SFTP_BENCH_MIB=N` for the size (default 64).
 
-#![allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::many_single_char_names)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::many_single_char_names
+)]
 
 mod common;
 
@@ -26,7 +30,10 @@ const SFTP: &str = "Subsystem sftp /QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/s
 #[test]
 #[ignore = "bench: run in release with --ignored --nocapture"]
 fn sftp_put_get() {
-    let mib: usize = std::env::var("QS400_SFTP_BENCH_MIB").ok().and_then(|v| v.parse().ok()).unwrap_or(64);
+    let mib: usize = std::env::var("QS400_SFTP_BENCH_MIB")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(64);
     let total = mib << 20;
     let data: Vec<u8> = (0..total).map(|i| (i % 251) as u8).collect();
 

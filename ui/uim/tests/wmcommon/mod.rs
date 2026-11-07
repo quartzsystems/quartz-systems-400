@@ -73,7 +73,10 @@ fn mask(row: &str) -> String {
         let start = at + "System:".len();
         let rest = &text[start..];
         let blanks = rest.len() - rest.trim_start().len();
-        let name_len = rest.trim_start().find(' ').unwrap_or(rest.trim_start().len());
+        let name_len = rest
+            .trim_start()
+            .find(' ')
+            .unwrap_or(rest.trim_start().len());
         if name_len > 0 {
             let from = start + blanks;
             let mut tok: String = "SYSNAME".chars().take(name_len).collect();
@@ -138,7 +141,12 @@ pub fn compare(golden: &str, screen: &Screen) {
             ));
         }
     }
-    assert!(diffs.is_empty(), "{} row(s) differ:\n{}", diffs.len(), diffs.join("\n"));
+    assert!(
+        diffs.is_empty(),
+        "{} row(s) differ:\n{}",
+        diffs.len(),
+        diffs.join("\n")
+    );
 }
 
 /// The input fields the `.attr` grid of capture `rel` (under the golden
@@ -154,7 +162,9 @@ pub fn fields_on_row(rel: &str, screen: &Screen, row: usize) {
         .unwrap_or_default();
     // An input attribute: underlined (bit 2), not hidden (0x27).
     let input = |c: char| {
-        let a = u32::from(c).checked_sub(u32::from('0')).map_or(0, |d| d + 0x20);
+        let a = u32::from(c)
+            .checked_sub(u32::from('0'))
+            .map_or(0, |d| d + 0x20);
         (0x20..=0x3f).contains(&a) && a & 0x04 != 0 && a & 0x07 != 0x07
     };
     let mut want = Vec::new();

@@ -11,10 +11,17 @@ use super::expr::Expr;
 #[must_use]
 pub fn children(e: &Expr) -> Vec<&Expr> {
     match e {
-        Expr::Neg(a) | Expr::Not(a) | Expr::IsNull(a, _) | Expr::Cast(a, _) | Expr::Duration(a, _) | Expr::InSubquery(a, _, _) => {
+        Expr::Neg(a)
+        | Expr::Not(a)
+        | Expr::IsNull(a, _)
+        | Expr::Cast(a, _)
+        | Expr::Duration(a, _)
+        | Expr::InSubquery(a, _, _) => {
             vec![a]
         }
-        Expr::Binary(a, _, b) | Expr::And(a, b) | Expr::Or(a, b) | Expr::Compare(a, _, b, _) => vec![a, b],
+        Expr::Binary(a, _, b) | Expr::And(a, b) | Expr::Or(a, b) | Expr::Compare(a, _, b, _) => {
+            vec![a, b]
+        }
         Expr::Between(a, b, c, _) => vec![a, b, c],
         Expr::InList(a, l, _) => std::iter::once(&**a).chain(l.iter()).collect(),
         Expr::Like(a, p, esc, _) => {
@@ -24,7 +31,11 @@ pub fn children(e: &Expr) -> Vec<&Expr> {
             }
             v
         }
-        Expr::Case { operand, whens, otherwise } => {
+        Expr::Case {
+            operand,
+            whens,
+            otherwise,
+        } => {
             let mut v: Vec<&Expr> = Vec::new();
             if let Some(o) = operand {
                 v.push(o);
@@ -40,7 +51,12 @@ pub fn children(e: &Expr) -> Vec<&Expr> {
         }
         Expr::Function(f) => f.args.iter().collect(),
         Expr::Row(items) => items.iter().collect(),
-        Expr::WithinGroup(w) => w.func.args.iter().chain(w.order.iter().map(|o| &o.expr)).collect(),
+        Expr::WithinGroup(w) => w
+            .func
+            .args
+            .iter()
+            .chain(w.order.iter().map(|o| &o.expr))
+            .collect(),
         Expr::Over(o) => {
             let mut v = vec![&o.func];
             v.extend(o.window.partition.iter());
@@ -54,10 +70,17 @@ pub fn children(e: &Expr) -> Vec<&Expr> {
 /// [`children`], mutable.
 pub fn children_mut(e: &mut Expr) -> Vec<&mut Expr> {
     match e {
-        Expr::Neg(a) | Expr::Not(a) | Expr::IsNull(a, _) | Expr::Cast(a, _) | Expr::Duration(a, _) | Expr::InSubquery(a, _, _) => {
+        Expr::Neg(a)
+        | Expr::Not(a)
+        | Expr::IsNull(a, _)
+        | Expr::Cast(a, _)
+        | Expr::Duration(a, _)
+        | Expr::InSubquery(a, _, _) => {
             vec![a]
         }
-        Expr::Binary(a, _, b) | Expr::And(a, b) | Expr::Or(a, b) | Expr::Compare(a, _, b, _) => vec![a, b],
+        Expr::Binary(a, _, b) | Expr::And(a, b) | Expr::Or(a, b) | Expr::Compare(a, _, b, _) => {
+            vec![a, b]
+        }
         Expr::Between(a, b, c, _) => vec![a, b, c],
         Expr::InList(a, l, _) => std::iter::once(&mut **a).chain(l.iter_mut()).collect(),
         Expr::Like(a, p, esc, _) => {
@@ -67,7 +90,11 @@ pub fn children_mut(e: &mut Expr) -> Vec<&mut Expr> {
             }
             v
         }
-        Expr::Case { operand, whens, otherwise } => {
+        Expr::Case {
+            operand,
+            whens,
+            otherwise,
+        } => {
             let mut v: Vec<&mut Expr> = Vec::new();
             if let Some(o) = operand {
                 v.push(o);
@@ -85,7 +112,11 @@ pub fn children_mut(e: &mut Expr) -> Vec<&mut Expr> {
         Expr::Row(items) => items.iter_mut().collect(),
         Expr::WithinGroup(w) => {
             let w = &mut **w;
-            w.func.args.iter_mut().chain(w.order.iter_mut().map(|o| &mut o.expr)).collect()
+            w.func
+                .args
+                .iter_mut()
+                .chain(w.order.iter_mut().map(|o| &mut o.expr))
+                .collect()
         }
         Expr::Over(o) => {
             let o = &mut **o;

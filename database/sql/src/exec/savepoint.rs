@@ -19,12 +19,20 @@ use crate::error::{Result, SqlError};
 pub const ATOMIC_SAVEPOINT: &str = "#ATOMIC#";
 
 fn not_found(name: &str) -> SqlError {
-    SqlError::Coded { code: -880, state: "3B001", what: format!("savepoint {name} does not exist or is not valid here") }
+    SqlError::Coded {
+        code: -880,
+        state: "3B001",
+        what: format!("savepoint {name} does not exist or is not valid here"),
+    }
 }
 
 /// Run a savepoint statement.
 pub(crate) fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, st: &SavepointStmt) -> Result<Outcome> {
-    let def = if ctx.no_commit { None } else { ctx.session.commit_def().cloned() };
+    let def = if ctx.no_commit {
+        None
+    } else {
+        ctx.session.commit_def().cloned()
+    };
     let Some(def) = def else {
         return loose(ctx, st);
     };
@@ -34,7 +42,11 @@ pub(crate) fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, st: &SavepointStmt) -
         }
         SavepointStmt::Set { name, unique } => {
             if def.borrow_mut().set_savepoint(txn, &name.value, *unique)? == SetSavepoint::Exists {
-                return Err(SqlError::Coded { code: -881, state: "3B501", what: format!("savepoint {} already exists", name.value) });
+                return Err(SqlError::Coded {
+                    code: -881,
+                    state: "3B501",
+                    what: format!("savepoint {} already exists", name.value),
+                });
             }
         }
         SavepointStmt::Release(name) => {
@@ -45,11 +57,23 @@ pub(crate) fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, st: &SavepointStmt) -
         SavepointStmt::RollbackTo(name) => {
             let none = || match name {
                 Some(n) => not_found(&n.value),
-                None => SqlError::Coded { code: -882, state: "3B502", what: "no savepoint is set".into() },
+                None => SqlError::Coded {
+                    code: -882,
+                    state: "3B502",
+                    what: "no savepoint is set".into(),
+                },
             };
             let now = ctx.now;
-            let mut session = std::mem::replace(&mut ctx.session, db::odp::Session::new(ctx.job, ctx.locks.clone()));
-            let r = session.rollback_to_savepoint(txn, name.as_ref().map(|n| n.value.as_str()), now, &mut |t| ctx.pause(t));
+            let mut session = std::mem::replace(
+                &mut ctx.session,
+                db::odp::Session::new(ctx.job, ctx.locks.clone()),
+            );
+            let r = session.rollback_to_savepoint(
+                txn,
+                name.as_ref().map(|n| n.value.as_str()),
+                now,
+                &mut |t| ctx.pause(t),
+            );
             ctx.session = session;
             if r?.is_none() {
                 return Err(none());
@@ -65,9 +89,15 @@ fn loose(ctx: &mut SqlContext, st: &SavepointStmt) -> Result<Outcome> {
     let find = |list: &[(String, bool)], n: &str| list.iter().rposition(|(m, _)| m == n);
     match st {
         SavepointStmt::Set { name, unique } => {
-            if let Some(i) = find(list, &name.value).filter(|_| !name.value.starts_with(ATOMIC_SAVEPOINT)) {
+            if let Some(i) =
+                find(list, &name.value).filter(|_| !name.value.starts_with(ATOMIC_SAVEPOINT))
+            {
                 if *unique || list[i].1 {
-                    return Err(SqlError::Coded { code: -881, state: "3B501", what: format!("savepoint {} already exists", name.value) });
+                    return Err(SqlError::Coded {
+                        code: -881,
+                        state: "3B501",
+                        what: format!("savepoint {} already exists", name.value),
+                    });
                 }
                 list.remove(i);
             }
@@ -80,10 +110,11 @@ fn loose(ctx: &mut SqlContext, st: &SavepointStmt) -> Result<Outcome> {
         SavepointStmt::RollbackTo(name) => {
             let at = match name {
                 Some(n) => find(list, &n.value).ok_or_else(|| not_found(&n.value))?,
-                None => list
-                    .len()
-                    .checked_sub(1)
-                    .ok_or_else(|| SqlError::Coded { code: -882, state: "3B502", what: "no savepoint is set".into() })?,
+                None => list.len().checked_sub(1).ok_or_else(|| SqlError::Coded {
+                    code: -882,
+                    state: "3B502",
+                    what: "no savepoint is set".into(),
+                })?,
             };
             list.truncate(at + 1);
         }

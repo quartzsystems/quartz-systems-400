@@ -132,7 +132,10 @@ impl Session {
             if self.startup.is_none() && tn5250::startup::is_startup(&bytes) {
                 self.trace.raw(&bytes);
                 if let Ok(s) = tn5250::startup::decode(&bytes) {
-                    self.trace.note(&format!("startup response: {} {} {}", s.code, s.system, s.device));
+                    self.trace.note(&format!(
+                        "startup response: {} {} {}",
+                        s.code, s.system, s.device
+                    ));
                     self.startup = Some(s.code);
                 }
                 continue;

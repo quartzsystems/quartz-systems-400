@@ -276,10 +276,18 @@ fn reverse(ccsid: u16) -> &'static HashMap<u32, u8> {
         let mut m = HashMap::new();
         m.insert(37, of(&crate::TO_UNICODE, &[]));
         for (c, t) in TABLES {
-            let skip = DECODE_ONLY.iter().find(|(n, _)| n == c).map_or(&[][..], |(_, s)| *s);
+            let skip = DECODE_ONLY
+                .iter()
+                .find(|(n, _)| n == c)
+                .map_or(&[][..], |(_, s)| *s);
             m.insert(*c, of(t, skip));
         }
-        for (c, t) in [(930, &SB0930), (5026, &SB0930), (939, &SB0939), (5035, &SB0939)] {
+        for (c, t) in [
+            (930, &SB0930),
+            (5026, &SB0930),
+            (939, &SB0939),
+            (5035, &SB0939),
+        ] {
             m.insert(c, of(t, &[]));
         }
         m

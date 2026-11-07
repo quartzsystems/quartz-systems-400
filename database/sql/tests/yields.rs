@@ -43,7 +43,12 @@ fn fixture() -> Fixture {
         wal_pages: 256,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -99,11 +104,20 @@ fn run_script(f: &Fixture, job: u64, text: &str) -> Result<(), String> {
     };
     let mut st = f.store.borrow_mut();
     let r = runsqlstm(&mut st, &mut ctx, text, &opts).map_err(|e| e.to_string())?;
-    if r.errors == 0 { Ok(()) } else { Err(r.listing) }
+    if r.errors == 0 {
+        Ok(())
+    } else {
+        Err(r.listing)
+    }
 }
 
 fn session(f: &Fixture) -> Session {
-    let mut s = Session::new(Box::new(Rc::clone(&f.store)), f.qsys, JobHandle(1), f.names.clone());
+    let mut s = Session::new(
+        Box::new(Rc::clone(&f.store)),
+        f.qsys,
+        JobHandle(1),
+        f.names.clone(),
+    );
     s.ctx.now = Some(NOW);
     s.ctx.yield_every = Duration::ZERO;
     s
@@ -160,10 +174,20 @@ fn yielder(f: &Fixture, table: &'static str, log: &Rc<Log>) -> sql::exec::Yielde
         // read and tries to drop the table being read.
         if n <= 2 {
             let id = 100_000 + i64::from(n);
-            run_script(&fx, 2, &format!("INSERT INTO QSTEST.{table} VALUES ({id}, 'New')")).unwrap();
+            run_script(
+                &fx,
+                2,
+                &format!("INSERT INTO QSTEST.{table} VALUES ({id}, 'New')"),
+            )
+            .unwrap();
             log.inserted.borrow_mut().push(id);
         }
-        run_script(&fx, 2, &format!("UPDATE QSTEST.{table} SET NAME = 'Changed' WHERE ID = 1")).unwrap();
+        run_script(
+            &fx,
+            2,
+            &format!("UPDATE QSTEST.{table} SET NAME = 'Changed' WHERE ID = 1"),
+        )
+        .unwrap();
         if run_script(&fx, 2, &format!("DROP TABLE QSTEST.{table}")).is_err() {
             log.drop_refused.set(true);
         }
@@ -178,7 +202,12 @@ fn a_long_query_yields_and_sees_committed_changes() {
         let mut s = session(&f);
         let log = Rc::new(Log::default());
         s.ctx.yielder = Some(yielder(&f, table, &log));
-        let r = run(&mut s, Op::Open, "C1", &format!("SELECT ID FROM QSTEST.{table} WHERE ID > 0"));
+        let r = run(
+            &mut s,
+            Op::Open,
+            "C1",
+            &format!("SELECT ID FROM QSTEST.{table} WHERE ID > 0"),
+        );
         assert_eq!(r.sqlca.sqlcode, 0, "{table}: {:?}", r.sqlca);
         let yields = log.yields.get();
         assert!(yields >= 3, "{table}: {yields} yields over {ROWS} rows");
@@ -234,14 +263,28 @@ fn a_change_takes_turns_between_rows() {
         }
         false
     }));
-    let r = run(&mut s, Op::Exec, "", "UPDATE QSTEST.T SET NAME = 'All' WHERE ID > 0");
+    let r = run(
+        &mut s,
+        Op::Exec,
+        "",
+        "UPDATE QSTEST.T SET NAME = 'All' WHERE ID > 0",
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let seen = seen.borrow();
     assert!(seen.len() > 10, "{} yields", seen.len());
-    assert!(seen.iter().any(|&n| n > 0 && n < ROWS), "partial changes seen: {seen:?}");
+    assert!(
+        seen.iter().any(|&n| n > 0 && n < ROWS),
+        "partial changes seen: {seen:?}"
+    );
     // The row that left the condition while it ran is not changed.
     assert_eq!(r.sqlca.sqlerrd[2], i32::try_from(ROWS - 1).unwrap());
-    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T WHERE ID = -999 AND NAME = 'All'"), 0);
+    assert_eq!(
+        count_as_other(
+            &f,
+            "SELECT COUNT(*) FROM QSTEST.T WHERE ID = -999 AND NAME = 'All'"
+        ),
+        0
+    );
     // A DELETE takes turns the same way.
     s.ctx.yielder = Some(Rc::new(|| false));
     let r = run(&mut s, Op::Exec, "", "DELETE FROM QSTEST.T WHERE ID > 500");
@@ -261,7 +304,12 @@ fn what_runs_in_one_view_never_yields() {
         false
     }));
     // Statements other than queries and changes.
-    run(&mut s, Op::Exec, "", "CREATE TABLE QSTEST.C AS (SELECT * FROM QSTEST.T) WITH DATA");
+    run(
+        &mut s,
+        Op::Exec,
+        "",
+        "CREATE TABLE QSTEST.C AS (SELECT * FROM QSTEST.T) WITH DATA",
+    );
     assert_eq!(n.get(), 0, "no yield");
     // Under *ALL a query takes turns too: what it read is read-locked.
     let all = Desc {
@@ -270,10 +318,24 @@ fn what_runs_in_one_view_never_yields() {
         ..Desc::default()
     };
     assert!(sql::embed::may_yield(&all));
-    assert!(sql::embed::may_yield(&Desc { op: Op::Open, ..Desc::default() }));
-    assert!(sql::embed::may_yield(&Desc { op: Op::ExecImm, ..Desc::default() }));
-    assert!(!sql::embed::may_yield(&Desc { op: Op::Describe, ..Desc::default() }));
-    run(&mut s, Op::Exec, "", "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+    assert!(sql::embed::may_yield(&Desc {
+        op: Op::Open,
+        ..Desc::default()
+    }));
+    assert!(sql::embed::may_yield(&Desc {
+        op: Op::ExecImm,
+        ..Desc::default()
+    }));
+    assert!(!sql::embed::may_yield(&Desc {
+        op: Op::Describe,
+        ..Desc::default()
+    }));
+    run(
+        &mut s,
+        Op::Exec,
+        "",
+        "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE",
+    );
     let r = run(&mut s, Op::Query, "", "SELECT COUNT(*) FROM QSTEST.T");
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert!(n.get() > 0, "yields under *ALL");
@@ -296,7 +358,12 @@ fn longest_wait(f: &Fixture, op: Op, text: &str) -> (Duration, Duration, u32, Re
     s.ctx.yielder = Some(Rc::new(move || {
         log.borrow_mut().push(std::time::Instant::now());
         assert_eq!(count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K"), ROWS);
-        assert!(count_as_other(&fx, "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'") >= 2);
+        assert!(
+            count_as_other(
+                &fx,
+                "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'"
+            ) >= 2
+        );
         run_script(&fx, 2, "UPDATE QSTEST.K SET NAME = NAME WHERE ID = 1").unwrap();
         false
     }));
@@ -330,7 +397,10 @@ fn an_aggregate_over_exists_never_holds_others_up() {
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert_eq!(r.rows[0][0].as_i64().unwrap(), 0);
     assert!(yields >= 10, "{yields} yields in {total:?}");
-    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+    assert!(
+        gap < BOUND,
+        "others waited {gap:?} (statement {total:?}, {yields} yields)"
+    );
 }
 
 #[test]
@@ -344,7 +414,10 @@ fn a_slow_select_never_holds_others_up() {
     );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert!(yields >= 10, "{yields} yields in {total:?}");
-    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+    assert!(
+        gap < BOUND,
+        "others waited {gap:?} (statement {total:?}, {yields} yields)"
+    );
 }
 
 #[test]
@@ -368,7 +441,12 @@ fn a_join_yields_between_its_outer_rows() {
         seen.set(seen.get() + 1);
         false
     }));
-    let r = run(&mut s, Op::Query, "", "SELECT COUNT(*) FROM QSTEST.T A, QSTEST.K B WHERE A.ID = B.ID");
+    let r = run(
+        &mut s,
+        Op::Query,
+        "",
+        "SELECT COUNT(*) FROM QSTEST.T A, QSTEST.K B WHERE A.ID = B.ID",
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert_eq!(r.rows[0][0].as_i64().unwrap(), ROWS);
     // The two scans yield a few times each; the join once per outer row.
@@ -382,7 +460,11 @@ fn ids_as_other(f: &Fixture, table: &str) -> Vec<i64> {
     ctx.naming = Naming::Sql;
     let mut st = f.store.borrow_mut();
     let mut txn = st.begin().unwrap();
-    let p = sql::prepare(&format!("SELECT ID FROM QSTEST.{table} ORDER BY ID"), Naming::Sql).unwrap();
+    let p = sql::prepare(
+        &format!("SELECT ID FROM QSTEST.{table} ORDER BY ID"),
+        Naming::Sql,
+    )
+    .unwrap();
     let ids = match p.execute(&mut txn, &mut ctx, &[]).unwrap() {
         sql::Outcome::Rows(rs) => rs.rows.iter().map(|r| r[0].as_i64().unwrap()).collect(),
         o => panic!("{o:?}"),
@@ -395,13 +477,29 @@ fn ids_as_other(f: &Fixture, table: &str) -> Vec<i64> {
 /// would decide later rows differently if it saw its own changes.
 const SUBQUERY_CHANGES: &[(&str, &str, i32)] = &[
     // Its own updates raise the average past the rows still to come.
-    ("T", "UPDATE QSTEST.T SET ID = ID + 2000 WHERE ID > (SELECT AVG(ID) FROM QSTEST.T)", 500),
+    (
+        "T",
+        "UPDATE QSTEST.T SET ID = ID + 2000 WHERE ID > (SELECT AVG(ID) FROM QSTEST.T)",
+        500,
+    ),
     // Its own deletes take out the IDs later rows are matched by.
-    ("T", "DELETE FROM QSTEST.T WHERE ID IN (SELECT ID + 1 FROM QSTEST.T WHERE ID < 600)", 599),
+    (
+        "T",
+        "DELETE FROM QSTEST.T WHERE ID IN (SELECT ID + 1 FROM QSTEST.T WHERE ID < 600)",
+        599,
+    ),
     // The same through a correlated subquery (by key).
-    ("K", "DELETE FROM QSTEST.K A WHERE EXISTS (SELECT 1 FROM QSTEST.K B WHERE B.ID = A.ID - 1)", 999),
+    (
+        "K",
+        "DELETE FROM QSTEST.K A WHERE EXISTS (SELECT 1 FROM QSTEST.K B WHERE B.ID = A.ID - 1)",
+        999,
+    ),
     // AVG of an INTEGER is an INTEGER: 500, not 500.5.
-    ("T", "UPDATE QSTEST.T SET ID = ID + 1 WHERE ID < (SELECT AVG(ID) FROM QSTEST.T)", 499),
+    (
+        "T",
+        "UPDATE QSTEST.T SET ID = ID + 1 WHERE ID < (SELECT AVG(ID) FROM QSTEST.T)",
+        499,
+    ),
 ];
 
 #[test]
@@ -429,7 +527,9 @@ fn a_subquery_change_decides_as_of_its_start() {
             let turn = seen.get() + 1;
             seen.set(turn);
             if turn % 100 == 1 && turn < 1000 {
-                let text = format!("UPDATE QSTEST.{table} SET NAME = 'Other {turn}' WHERE ID BETWEEN 400 AND 600 OR ID > 900");
+                let text = format!(
+                    "UPDATE QSTEST.{table} SET NAME = 'Other {turn}' WHERE ID BETWEEN 400 AND 600 OR ID > 900"
+                );
                 run_script(&fx, 2, &text).unwrap();
             }
             false
@@ -437,7 +537,11 @@ fn a_subquery_change_decides_as_of_its_start() {
         let r = run(&mut s, Op::Exec, "", text);
         assert_eq!(r.sqlca.sqlerrd[2], want, "{text}: {:?}", r.sqlca);
         assert!(turns.get() > 10, "{text}: {} yields", turns.get());
-        assert_eq!(ids_as_other(&f, table), expected, "{text}: the same rows as without turns");
+        assert_eq!(
+            ids_as_other(&f, table),
+            expected,
+            "{text}: the same rows as without turns"
+        );
     }
 }
 
@@ -451,7 +555,10 @@ fn a_subquery_change_never_holds_others_up() {
     );
     assert_eq!(r.sqlca.sqlerrd[2], 900, "{:?}", r.sqlca);
     assert!(yields >= 10, "{yields} yields in {total:?}");
-    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+    assert!(
+        gap < BOUND,
+        "others waited {gap:?} (statement {total:?}, {yields} yields)"
+    );
 }
 
 /// Merges whose `ON` reads the table they change, which would match
@@ -502,7 +609,9 @@ fn a_merge_takes_turns_as_of_its_start() {
             // changes the rows still to come, a few times.
             if turn.is_multiple_of(20) && shot.get() < 3 && count_as_other(&fx, probe) > 0 {
                 shot.set(shot.get() + 1);
-                let text = format!("UPDATE QSTEST.{table} SET NAME = 'Other {turn}' WHERE ID BETWEEN 600 AND 1000");
+                let text = format!(
+                    "UPDATE QSTEST.{table} SET NAME = 'Other {turn}' WHERE ID BETWEEN 600 AND 1000"
+                );
                 run_script(&fx, 2, &text).unwrap();
             }
             false
@@ -510,8 +619,15 @@ fn a_merge_takes_turns_as_of_its_start() {
         let r = run(&mut s, Op::Exec, "", text);
         assert_eq!(r.sqlca.sqlerrd[2], want, "{text}: {:?}", r.sqlca);
         assert!(turns.get() > 10, "{text}: {} yields", turns.get());
-        assert!(fired.get() > 0, "{text}: no changes by the other job while it wrote");
-        assert_eq!(ids_as_other(&f, table), expected, "{text}: the same rows as without turns");
+        assert!(
+            fired.get() > 0,
+            "{text}: no changes by the other job while it wrote"
+        );
+        assert_eq!(
+            ids_as_other(&f, table),
+            expected,
+            "{text}: the same rows as without turns"
+        );
     }
 }
 
@@ -526,7 +642,10 @@ fn a_merge_never_holds_others_up() {
     );
     assert_eq!(r.sqlca.sqlerrd[2], 200, "{:?}", r.sqlca);
     assert!(yields >= 10, "{yields} yields in {total:?}");
-    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+    assert!(
+        gap < BOUND,
+        "others waited {gap:?} (statement {total:?}, {yields} yields)"
+    );
 }
 
 /// `text` run as job 2: whether it worked.
@@ -557,15 +676,27 @@ fn an_index_is_built_taking_turns() {
         ));
         false
     }));
-    let r = run(&mut s, Op::Exec, "", "CREATE INDEX QSTEST.TI ON QSTEST.T (NAME DESC)");
+    let r = run(
+        &mut s,
+        Op::Exec,
+        "",
+        "CREATE INDEX QSTEST.TI ON QSTEST.T (NAME DESC)",
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let seen = seen.borrow();
     assert!(seen.len() >= 3, "{} yields", seen.len());
-    assert!(seen.iter().all(|&(n, upd, drop, other, idx)| n == ROWS && !upd && !drop && other && !idx), "{seen:?}");
+    assert!(
+        seen.iter()
+            .all(|&(n, upd, drop, other, idx)| n == ROWS && !upd && !drop && other && !idx),
+        "{seen:?}"
+    );
     // Built, and the table is free again.
     assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.TI"), ROWS);
     assert!(works(&f, "UPDATE QSTEST.T SET NAME = 'Row 1' WHERE ID = 1"));
-    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.TI WHERE NAME = 'Row 1'"), 1);
+    assert_eq!(
+        count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.TI WHERE NAME = 'Row 1'"),
+        1
+    );
 
     // Ended part way, after it committed a part: nothing of it stays.
     let n = Rc::new(Cell::new(0u32));
@@ -574,7 +705,12 @@ fn an_index_is_built_taking_turns() {
         turns.set(turns.get() + 1);
         turns.get() == 2
     }));
-    let r = run(&mut s, Op::Exec, "", "CREATE INDEX QSTEST.TJ ON QSTEST.T (NAME)");
+    let r = run(
+        &mut s,
+        Op::Exec,
+        "",
+        "CREATE INDEX QSTEST.TJ ON QSTEST.T (NAME)",
+    );
     assert_eq!(r.sqlca.sqlstate, "57014", "{:?}", r.sqlca);
     assert!(!works(&f, "DROP INDEX QSTEST.TJ"), "the index is gone");
     assert!(works(&f, "UPDATE QSTEST.T SET NAME = 'Row 2' WHERE ID = 2"));
@@ -583,9 +719,13 @@ fn an_index_is_built_taking_turns() {
 #[test]
 fn an_index_build_never_holds_others_up() {
     let f = fixture();
-    let (gap, total, yields, r) = longest_wait(&f, Op::Exec, "CREATE INDEX QSTEST.TI ON QSTEST.T (NAME)");
+    let (gap, total, yields, r) =
+        longest_wait(&f, Op::Exec, "CREATE INDEX QSTEST.TI ON QSTEST.T (NAME)");
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+    assert!(
+        gap < BOUND,
+        "others waited {gap:?} (statement {total:?}, {yields} yields)"
+    );
 }
 
 #[test]
@@ -607,19 +747,41 @@ fn a_unique_index_over_repeated_keys_is_refused() {
         "ALTER TABLE QSTEST.T ADD PRIMARY KEY (NAME)",
     ] {
         let r = run(&mut s, Op::Exec, "", text);
-        assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-603, "23515"), "{text}: {:?}", r.sqlca);
+        assert_eq!(
+            (r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()),
+            (-603, "23515"),
+            "{text}: {:?}",
+            r.sqlca
+        );
     }
     assert!(n.get() >= 3, "{} turns", n.get());
     // Nothing of them stays; the table is free and whole.
     assert!(!works(&f, "DROP INDEX QSTEST.TU"));
     assert!(!works(&f, "ALTER TABLE QSTEST.T DROP CONSTRAINT TUQ"));
-    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSYS2.SYSINDEXES WHERE TABLE_NAME = 'T'"), 0);
-    assert!(works(&f, "UPDATE QSTEST.T SET NAME = 'Row 5000' WHERE ID = 5000"));
+    assert_eq!(
+        count_as_other(
+            &f,
+            "SELECT COUNT(*) FROM QSYS2.SYSINDEXES WHERE TABLE_NAME = 'T'"
+        ),
+        0
+    );
+    assert!(works(
+        &f,
+        "UPDATE QSTEST.T SET NAME = 'Row 5000' WHERE ID = 5000"
+    ));
     // Without the repeat, both are made.
-    let r = run(&mut s, Op::Exec, "", "CREATE UNIQUE INDEX QSTEST.TU ON QSTEST.T (NAME)");
+    let r = run(
+        &mut s,
+        Op::Exec,
+        "",
+        "CREATE UNIQUE INDEX QSTEST.TU ON QSTEST.T (NAME)",
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert!(!works(&f, "INSERT INTO QSTEST.T VALUES (5001, 'Row 9')"));
-    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T"), ROWS + 1);
+    assert_eq!(
+        count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T"),
+        ROWS + 1
+    );
 }
 
 #[test]
@@ -641,19 +803,35 @@ fn a_table_is_altered_taking_turns() {
         ));
         false
     }));
-    let r = run(&mut s, Op::Exec, "", "ALTER TABLE QSTEST.T ADD COLUMN EXTRA CHAR(5) NOT NULL DEFAULT 'E'");
+    let r = run(
+        &mut s,
+        Op::Exec,
+        "",
+        "ALTER TABLE QSTEST.T ADD COLUMN EXTRA CHAR(5) NOT NULL DEFAULT 'E'",
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let seen = seen.borrow();
     assert!(seen.len() >= 3, "{} yields", seen.len());
     assert!(seen.iter().all(|&(t, k)| !t && k), "{seen:?}");
     assert_eq!(ids_as_other(&f, "T"), (1..=ROWS).collect::<Vec<_>>());
-    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T WHERE EXTRA = 'E' AND NAME LIKE 'Row %'"), ROWS);
+    assert_eq!(
+        count_as_other(
+            &f,
+            "SELECT COUNT(*) FROM QSTEST.T WHERE EXTRA = 'E' AND NAME LIKE 'Row %'"
+        ),
+        ROWS
+    );
 }
 
 #[test]
 fn a_rollback_is_undone_taking_turns() {
     let f = fixture();
-    run_script(&f, 2, "CREATE SCHEMA QSJ; CREATE TABLE QSJ.R (ID INT NOT NULL, NAME VARCHAR(20) NOT NULL)").unwrap();
+    run_script(
+        &f,
+        2,
+        "CREATE SCHEMA QSJ; CREATE TABLE QSJ.R (ID INT NOT NULL, NAME VARCHAR(20) NOT NULL)",
+    )
+    .unwrap();
     let mut s = session(&f);
     let chg = |text: &str| Request {
         scope: "1:Y".into(),
@@ -667,7 +845,12 @@ fn a_rollback_is_undone_taking_turns() {
         inputs: Vec::new(),
     };
     let r = s.run(&chg("INSERT INTO QSJ.R SELECT ID, NAME FROM QSTEST.T"));
-    assert_eq!(r.sqlca.sqlerrd[2], i32::try_from(ROWS).unwrap(), "{:?}", r.sqlca);
+    assert_eq!(
+        r.sqlca.sqlerrd[2],
+        i32::try_from(ROWS).unwrap(),
+        "{:?}",
+        r.sqlca
+    );
     let fx = Fixture {
         store: Rc::clone(&f.store),
         qsys: f.qsys,
@@ -679,7 +862,8 @@ fn a_rollback_is_undone_taking_turns() {
     s.ctx.yielder = Some(Rc::new(move || {
         // The rows still to undo stay locked to the unit of work; other
         // tables are read.
-        let mut ctx = SqlContext::with_locks(fx.qsys, JobHandle(2), fx.names.clone(), locks.clone());
+        let mut ctx =
+            SqlContext::with_locks(fx.qsys, JobHandle(2), fx.names.clone(), locks.clone());
         ctx.now = Some(NOW);
         let opts = RunOpts {
             naming: Naming::Sql,
@@ -687,9 +871,18 @@ fn a_rollback_is_undone_taking_turns() {
         };
         let upd = {
             let mut st = fx.store.borrow_mut();
-            runsqlstm(&mut st, &mut ctx, "UPDATE QSJ.R SET NAME = 'X' WHERE ID = 1", &opts).unwrap().errors == 0
+            runsqlstm(
+                &mut st,
+                &mut ctx,
+                "UPDATE QSJ.R SET NAME = 'X' WHERE ID = 1",
+                &opts,
+            )
+            .unwrap()
+            .errors
+                == 0
         };
-        log.borrow_mut().push((upd, count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K")));
+        log.borrow_mut()
+            .push((upd, count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K")));
         false
     }));
     let r = s.run(&chg("ROLLBACK"));
@@ -720,8 +913,20 @@ fn set_waitrcd(f: &Fixture, lib: &str, file: &str, wait: db::Wait) {
     let mut st = f.store.borrow_mut();
     let mut txn = st.begin().unwrap();
     let spec = qsname::LibSpec::Name(Name::parse(lib).unwrap());
-    let id = ops::resolve(&mut txn, f.qsys, &f.names, spec, Name::parse(file).unwrap(), types::FILE).unwrap().id;
-    let c = db::chg::ChgPf { wait_rcd: Some(wait), ..db::chg::ChgPf::default() };
+    let id = ops::resolve(
+        &mut txn,
+        f.qsys,
+        &f.names,
+        spec,
+        Name::parse(file).unwrap(),
+        types::FILE,
+    )
+    .unwrap()
+    .id;
+    let c = db::chg::ChgPf {
+        wait_rcd: Some(wait),
+        ..db::chg::ChgPf::default()
+    };
     db::chg::chgpf(&mut txn, JobHandle(9), id, &c).unwrap();
     txn.commit().unwrap();
 }
@@ -729,14 +934,29 @@ fn set_waitrcd(f: &Fixture, lib: &str, file: &str, wait: db::Wait) {
 #[test]
 fn a_change_waits_for_a_held_record() {
     let f = fixture();
-    run_script(&f, 2, "CREATE SCHEMA QSJ; CREATE TABLE QSJ.R (ID INT NOT NULL, NAME VARCHAR(20) NOT NULL)").unwrap();
-    run_script(&f, 2, "INSERT INTO QSJ.R SELECT ID, NAME FROM QSTEST.T WHERE ID <= 10").unwrap();
+    run_script(
+        &f,
+        2,
+        "CREATE SCHEMA QSJ; CREATE TABLE QSJ.R (ID INT NOT NULL, NAME VARCHAR(20) NOT NULL)",
+    )
+    .unwrap();
+    run_script(
+        &f,
+        2,
+        "INSERT INTO QSJ.R SELECT ID, NAME FROM QSTEST.T WHERE ID <= 10",
+    )
+    .unwrap();
     let mut s = session(&f);
     // The holder: job 2 under commitment control, sharing the record locks.
     let ctx = SqlContext::with_locks(f.qsys, JobHandle(2), f.names.clone(), s.ctx.locks.clone());
-    let holder = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&f.store)), ctx)));
+    let holder = Rc::new(RefCell::new(Session::with_ctx(
+        Box::new(Rc::clone(&f.store)),
+        ctx,
+    )));
     let hold = |h: &Rc<RefCell<Session>>| {
-        let r = h.borrow_mut().run(&under_chg("UPDATE QSJ.R SET NAME = 'Held' WHERE ID = 5"));
+        let r = h
+            .borrow_mut()
+            .run(&under_chg("UPDATE QSJ.R SET NAME = 'Held' WHERE ID = 5"));
         assert_eq!(r.sqlca.sqlerrd[2], 1, "{:?}", r.sqlca);
     };
 
@@ -744,7 +964,11 @@ fn a_change_waits_for_a_held_record() {
     hold(&holder);
     let turns = Rc::new(Cell::new(0u32));
     let (seen, h) = (Rc::clone(&turns), Rc::clone(&holder));
-    let fx = Fixture { store: Rc::clone(&f.store), qsys: f.qsys, names: f.names.clone() };
+    let fx = Fixture {
+        store: Rc::clone(&f.store),
+        qsys: f.qsys,
+        names: f.names.clone(),
+    };
     s.ctx.yielder = Some(Rc::new(move || {
         seen.set(seen.get() + 1);
         // Others are answered meanwhile.
@@ -758,7 +982,10 @@ fn a_change_waits_for_a_held_record() {
     let r = run(&mut s, Op::Exec, "", "UPDATE QSJ.R SET NAME = 'Mine'");
     assert_eq!(r.sqlca.sqlerrd[2], 10, "{:?}", r.sqlca);
     assert!(turns.get() >= 20, "{} turns", turns.get());
-    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSJ.R WHERE NAME = 'Mine'"), 10);
+    assert_eq!(
+        count_as_other(&f, "SELECT COUNT(*) FROM QSJ.R WHERE NAME = 'Mine'"),
+        10
+    );
 
     // Held past the file's wait: SQL0913, the rows before it changed.
     set_waitrcd(&f, "QSJ", "R", db::Wait::Seconds(1));
@@ -772,7 +999,11 @@ fn a_change_waits_for_a_held_record() {
     let at = std::time::Instant::now();
     let r = run(&mut s, Op::Exec, "", "DELETE FROM QSJ.R");
     assert_eq!(r.sqlca.sqlcode, -913, "{:?}", r.sqlca);
-    assert!(at.elapsed() >= Duration::from_secs(1), "waited {:?}", at.elapsed());
+    assert!(
+        at.elapsed() >= Duration::from_secs(1),
+        "waited {:?}",
+        at.elapsed()
+    );
     assert!(turns.get() > 10, "{} turns while it waited", turns.get());
     holder.borrow_mut().run(&under_chg("ROLLBACK"));
     // *IMMED: no wait.
@@ -801,7 +1032,11 @@ fn rows_of_c(f: &Fixture) -> Vec<String> {
     ctx.naming = Naming::Sql;
     let mut st = f.store.borrow_mut();
     let mut txn = st.begin().unwrap();
-    let p = sql::prepare("SELECT ID, NAME, EXTRA FROM QSTEST.C ORDER BY ID", Naming::Sql).unwrap();
+    let p = sql::prepare(
+        "SELECT ID, NAME, EXTRA FROM QSTEST.C ORDER BY ID",
+        Naming::Sql,
+    )
+    .unwrap();
     let rows = match p.execute(&mut txn, &mut ctx, &[]).unwrap() {
         sql::Outcome::Rows(rs) => rs.rows.iter().map(|r| format!("{r:?}")).collect(),
         o => panic!("{o:?}"),
@@ -834,7 +1069,12 @@ fn a_script_takes_turns_inside_and_between_statements() {
     ctx.yielder = Some(Rc::new(move || {
         log.borrow_mut().push(std::time::Instant::now());
         assert_eq!(count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K"), ROWS);
-        assert!(count_as_other(&fx, "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'") >= 2);
+        assert!(
+            count_as_other(
+                &fx,
+                "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'"
+            ) >= 2
+        );
         run_script(&fx, 2, "UPDATE QSTEST.K SET NAME = NAME WHERE ID = 1").unwrap();
         false
     }));

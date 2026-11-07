@@ -29,15 +29,28 @@ impl Map {
     fn new(fd: impl AsFd, len: usize, prot: ProtFlags, offset: u64) -> io::Result<Self> {
         // SAFETY: a fresh shared mapping of the kernel's object at no
         // fixed address; nothing else aliases it until it is returned.
-        let p = unsafe { mmap(null_mut(), len, prot, MapFlags::SHARED | MapFlags::POPULATE, fd, offset)? };
-        let ptr = NonNull::new(p.cast::<u8>()).ok_or_else(|| io::Error::other("mmap returned null"))?;
+        let p = unsafe {
+            mmap(
+                null_mut(),
+                len,
+                prot,
+                MapFlags::SHARED | MapFlags::POPULATE,
+                fd,
+                offset,
+            )?
+        };
+        let ptr =
+            NonNull::new(p.cast::<u8>()).ok_or_else(|| io::Error::other("mmap returned null"))?;
         Ok(Self { ptr, len })
     }
 
     /// The `u32` the kernel shares at `off`.
     fn atomic(&self, off: u32) -> &AtomicU32 {
         let off = off as usize;
-        assert!(off + 4 <= self.len && off.is_multiple_of(4), "ring offset outside its map");
+        assert!(
+            off + 4 <= self.len && off.is_multiple_of(4),
+            "ring offset outside its map"
+        );
         // SAFETY: in bounds and aligned (checked: the map is page aligned
         // and `off` a multiple of 4); the kernel updates the word
         // concurrently, so it is only reached as an atomic.
@@ -94,7 +107,12 @@ impl Ring {
         let cq_len = p.cq_off.cqes as usize + p.cq_entries as usize * CQE_LEN;
         let rw = ProtFlags::READ | ProtFlags::WRITE;
         let single = p.features.contains(IoringFeatureFlags::SINGLE_MMAP);
-        let sq = Map::new(&fd, if single { sq_len.max(cq_len) } else { sq_len }, rw, IORING_OFF_SQ_RING)?;
+        let sq = Map::new(
+            &fd,
+            if single { sq_len.max(cq_len) } else { sq_len },
+            rw,
+            IORING_OFF_SQ_RING,
+        )?;
         let cq = if single {
             None
         } else {
@@ -141,8 +159,12 @@ impl Ring {
         unsafe {
             std::ptr::copy_nonoverlapping(sqe.as_ptr(), self.sqes.ptr.as_ptr().add(at), SQE_LEN);
         }
-        self.sq.atomic(self.sq_array + idx * 4).store(idx, Ordering::Relaxed);
-        self.sq.atomic(self.sq_tail).store(tail.wrapping_add(1), Ordering::Release);
+        self.sq
+            .atomic(self.sq_array + idx * 4)
+            .store(idx, Ordering::Relaxed);
+        self.sq
+            .atomic(self.sq_tail)
+            .store(tail.wrapping_add(1), Ordering::Release);
         self.pending += 1;
         true
     }
@@ -153,7 +175,9 @@ impl Ring {
             // SAFETY: every queued entry points only at memory its owner
             // keeps alive until the entry completes (the queue's buffers
             // and the control commands' arguments, held across the wait).
-            match unsafe { io_uring_enter(&self.fd, self.pending, want, IoringEnterFlags::GETEVENTS) } {
+            match unsafe {
+                io_uring_enter(&self.fd, self.pending, want, IoringEnterFlags::GETEVENTS)
+            } {
                 Ok(n) => {
                     self.pending -= n.min(self.pending);
                     return Ok(());
@@ -180,7 +204,8 @@ impl Ring {
         unsafe {
             std::ptr::copy_nonoverlapping(cq.ptr.as_ptr().add(at), out.as_mut_ptr(), CQE_LEN);
         }
-        cq.atomic(self.cq_head).store(head.wrapping_add(1), Ordering::Release);
+        cq.atomic(self.cq_head)
+            .store(head.wrapping_add(1), Ordering::Release);
         Some(out)
     }
 }

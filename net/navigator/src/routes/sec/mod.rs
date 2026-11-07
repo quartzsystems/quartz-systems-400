@@ -47,7 +47,10 @@ pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
 
 /// One entry as printed, its time `time`.
 pub fn line(time: &str, e: &AuditEntry) -> String {
-    format!("{time:<10}{:<6}{:<11}{:<33}{}", e.kind, e.user, e.job, e.detail)
+    format!(
+        "{time:<10}{:<6}{:<11}{:<33}{}",
+        e.kind, e.user, e.job, e.detail
+    )
 }
 
 /// Days since 1970 of `MM/DD/YY`.
@@ -58,7 +61,11 @@ fn day_of(s: &str) -> Option<i64> {
     if p.next().is_some() || !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return None;
     }
-    let y = if y < 100 { 2000 + i64::from(y) } else { i64::from(y) };
+    let y = if y < 100 {
+        2000 + i64::from(y)
+    } else {
+        i64::from(y)
+    };
     Some(crate::util::days(y, m, d))
 }
 
@@ -67,29 +74,50 @@ fn offset(rq: &Rq<'_>) -> i64 {
     let now = rq.env().system.now();
     let (d, t) = rq.stamp(now);
     let mut hms = t.split(':').map(|x| x.parse::<i64>().unwrap_or(0));
-    let secs = hms.next().unwrap_or(0) * 3600 + hms.next().unwrap_or(0) * 60 + hms.next().unwrap_or(0);
+    let secs =
+        hms.next().unwrap_or(0) * 3600 + hms.next().unwrap_or(0) * 60 + hms.next().unwrap_or(0);
     let local = day_of(&d).unwrap_or(0) * 86_400 + secs;
     local - i64::try_from(now).unwrap_or(0)
 }
 
 fn audit(rq: &Rq<'_>) -> Response {
     let journal = Target::obj("QSYS", "QAUDJRN", "*JRN");
-    if let Err(r) = rq.require(Need::Audit, "Display Audit Journal Entries", &journal, &[GROUP, "Audit journal"]) {
+    if let Err(r) = rq.require(
+        Need::Audit,
+        "Display Audit Journal Entries",
+        &journal,
+        &[GROUP, "Audit journal"],
+    ) {
         return r;
     }
     let q = rq.query();
     let code = q.str("t").get(..2).unwrap_or("").to_ascii_uppercase();
-    let chosen = TYPES.iter().find(|t| t.starts_with(&code) && !code.is_empty() && **t != "*ALL");
-    let kind = if code.is_empty() || code == "*A" { String::new() } else { code.clone() };
+    let chosen = TYPES
+        .iter()
+        .find(|t| t.starts_with(&code) && !code.is_empty() && **t != "*ALL");
+    let kind = if code.is_empty() || code == "*A" {
+        String::new()
+    } else {
+        code.clone()
+    };
     let user = match q.str("u").trim().to_ascii_uppercase() {
         u if u.is_empty() => "*ALL".to_string(),
         u => u,
     };
     let today = rq.stamp(rq.env().system.now()).0;
-    let from_s = if day_of(q.str("f")).is_some() { q.str("f").trim().to_string() } else { today.clone() };
-    let to_s = if day_of(q.str("to")).is_some() { q.str("to").trim().to_string() } else { today.clone() };
+    let from_s = if day_of(q.str("f")).is_some() {
+        q.str("f").trim().to_string()
+    } else {
+        today.clone()
+    };
+    let to_s = if day_of(q.str("to")).is_some() {
+        q.str("to").trim().to_string()
+    } else {
+        today.clone()
+    };
     let off = offset(rq);
-    let at = |s: &str, end: i64| u64::try_from(day_of(s).unwrap_or(0) * 86_400 + end - off).unwrap_or(0);
+    let at =
+        |s: &str, end: i64| u64::try_from(day_of(s).unwrap_or(0) * 86_400 + end - off).unwrap_or(0);
     let f = AuditFilter {
         kind: kind.clone(),
         user: user.clone(),
@@ -121,11 +149,28 @@ fn audit(rq: &Rq<'_>) -> Response {
             .iter()
             .map(|e| {
                 let (d, t) = rq.stamp(e.at);
-                [d, t, e.kind.clone(), e.user.clone(), e.job.clone(), e.detail.clone()].into_iter().map(Some).collect()
+                [
+                    d,
+                    t,
+                    e.kind.clone(),
+                    e.user.clone(),
+                    e.job.clone(),
+                    e.detail.clone(),
+                ]
+                .into_iter()
+                .map(Some)
+                .collect()
             })
             .collect();
-        let cols: Vec<String> = ["Date", "Time", "Type", "User", "Job", "Detail"].iter().map(ToString::to_string).collect();
-        return Response::download("audit.csv", "text/csv; charset=utf-8", super::db::csv(&cols, &rows));
+        let cols: Vec<String> = ["Date", "Time", "Type", "User", "Job", "Detail"]
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        return Response::download(
+            "audit.csv",
+            "text/csv; charset=utf-8",
+            super::db::csv(&cols, &rows),
+        );
     }
     let p = Paging::from_query(q.str("page"), q.str("rows"), entries.len(), kept.clone());
     let mut out = String::from(HEADING);
@@ -157,8 +202,14 @@ fn audit(rq: &Rq<'_>) -> Response {
         esc(&rcv.journal),
         esc(&rcv.receiver),
         esc(&rq.stamp(rcv.attached).0),
-        link(&rq.ctx.url(&format!("/audit{}", query(&csv_q))), "Download as CSV"),
-        link(&rq.ctx.url("/sysval?cat=security"), "Auditing system values"),
+        link(
+            &rq.ctx.url(&format!("/audit{}", query(&csv_q))),
+            "Download as CSV"
+        ),
+        link(
+            &rq.ctx.url("/sysval?cat=security"),
+            "Auditing system values"
+        ),
     );
     group_page(
         rq,

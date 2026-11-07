@@ -217,11 +217,18 @@ fn matches(s: &str, pat: &str) -> Result<Value, String> {
     let m = re.find_at(text, 0);
     if re.groups() > 0 {
         let g = m
-            .and_then(|m| m.group(text, 1).map(|b| String::from_utf8_lossy(b).into_owned()))
+            .and_then(|m| {
+                m.group(text, 1)
+                    .map(|b| String::from_utf8_lossy(b).into_owned())
+            })
             .unwrap_or_default();
         return Ok(Value::Str(g));
     }
-    let n = m.map_or(0, |m| String::from_utf8_lossy(&text[m.start..m.end]).chars().count());
+    let n = m.map_or(0, |m| {
+        String::from_utf8_lossy(&text[m.start..m.end])
+            .chars()
+            .count()
+    });
     Ok(Value::Int(n as i64))
 }
 

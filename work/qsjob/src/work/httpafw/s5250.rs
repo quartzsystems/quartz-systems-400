@@ -72,12 +72,19 @@ impl LiveS5250 {
     }
 
     fn conn(&self, user: &str, id: u32) -> Option<Arc<Conn>> {
-        self.conns.lock().unwrap_or_else(PoisonError::into_inner).get(&(user.to_string(), id)).cloned()
+        self.conns
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .get(&(user.to_string(), id))
+            .cloned()
     }
 }
 
 /// `f` with the IFS as the job.
-fn ifs<T: Send + Default + 'static>(link: &Link, f: impl FnOnce(&dyn IfsClient) -> T + Send + 'static) -> T {
+fn ifs<T: Send + Default + 'static>(
+    link: &Link,
+    f: impl FnOnce(&dyn IfsClient) -> T + Send + 'static,
+) -> T {
     link.job(move |m| {
         let c = RemoteIfs::new(m.link.clone());
         f(&c)
@@ -105,7 +112,10 @@ fn write_file(c: &dyn IfsClient, path: &str, text: &str) -> Result<(), String> {
         let _ = c.mkdir(&at, 0o700);
     }
     let fd = c
-        .open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o600))
+        .open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o600),
+        )
         .map_err(|e| e.text().to_string())?;
     let r = write_all(c, fd, text.as_bytes()).map_err(|e| e.text().to_string());
     let _ = c.close(fd);
@@ -117,7 +127,10 @@ fn saved_of(id: u32, text: &str) -> Option<Saved> {
     let mut file = SessionFile::parse(text).ok()?;
     let own = file.extra.remove(OWN);
     let own = own.as_ref().and_then(toml::Value::as_table);
-    let last_used = own.and_then(|t| t.get("last_used")).and_then(toml::Value::as_integer).unwrap_or(0);
+    let last_used = own
+        .and_then(|t| t.get("last_used"))
+        .and_then(toml::Value::as_integer)
+        .unwrap_or(0);
     let macros = own
         .and_then(|t| t.get("macro"))
         .and_then(toml::Value::as_array)
@@ -128,8 +141,17 @@ fn saved_of(id: u32, text: &str) -> Option<Saved> {
                     let file = MacroFile::parse(m.get("qsm")?.as_str()?).ok()?;
                     Some(SavedMacro {
                         file,
-                        recorded: u64::try_from(m.get("recorded").and_then(toml::Value::as_integer).unwrap_or(0)).unwrap_or(0),
-                        shared: m.get("shared").and_then(toml::Value::as_str).unwrap_or("").to_string(),
+                        recorded: u64::try_from(
+                            m.get("recorded")
+                                .and_then(toml::Value::as_integer)
+                                .unwrap_or(0),
+                        )
+                        .unwrap_or(0),
+                        shared: m
+                            .get("shared")
+                            .and_then(toml::Value::as_str)
+                            .unwrap_or("")
+                            .to_string(),
                     })
                 })
                 .collect()
@@ -147,13 +169,19 @@ fn saved_of(id: u32, text: &str) -> Option<Saved> {
 fn text_of(s: &Saved) -> String {
     let mut file = s.file.clone();
     let mut own = toml::Table::new();
-    own.insert("last_used".into(), toml::Value::Integer(i64::try_from(s.last_used).unwrap_or(0)));
+    own.insert(
+        "last_used".into(),
+        toml::Value::Integer(i64::try_from(s.last_used).unwrap_or(0)),
+    );
     let macros: Vec<toml::Value> = s
         .macros
         .iter()
         .map(|m| {
             let mut t = toml::Table::new();
-            t.insert("recorded".into(), toml::Value::Integer(i64::try_from(m.recorded).unwrap_or(0)));
+            t.insert(
+                "recorded".into(),
+                toml::Value::Integer(i64::try_from(m.recorded).unwrap_or(0)),
+            );
             t.insert("shared".into(), toml::Value::String(m.shared.clone()));
             t.insert("qsm".into(), toml::Value::String(m.file.to_text()));
             toml::Value::Table(t)
@@ -187,21 +215,40 @@ impl Session5250 for LiveS5250 {
         }
         let id = saved.id;
         let (path, text) = (format!("{}/{id}.qsd", dir(user)), text_of(&saved));
-        let r: Option<Result<(), String>> = ifs(&self.link, move |c| Some(write_file(c, &path, &text)));
+        let r: Option<Result<(), String>> =
+            ifs(&self.link, move |c| Some(write_file(c, &path, &text)));
         match r {
             Some(Ok(())) => Ok(id),
-            Some(Err(e)) => Err(msg("CPFA0A9", &format!("The session could not be kept: {e}"), &[])),
-            None => Err(msg("CPF9897", "Access for Web is ending; the request was not run.", &[])),
+            Some(Err(e)) => Err(msg(
+                "CPFA0A9",
+                &format!("The session could not be kept: {e}"),
+                &[],
+            )),
+            None => Err(msg(
+                "CPF9897",
+                "Access for Web is ending; the request was not run.",
+                &[],
+            )),
         }
     }
 
     fn delete(&self, user: &str, id: u32) -> Result<(), Message> {
         let path = format!("{}/{id}.qsd", dir(user));
-        let r: Option<Result<(), String>> = ifs(&self.link, move |c| Some(c.unlink(&path).map_err(|e| e.text().to_string())));
+        let r: Option<Result<(), String>> = ifs(&self.link, move |c| {
+            Some(c.unlink(&path).map_err(|e| e.text().to_string()))
+        });
         match r {
             Some(Ok(())) => Ok(()),
-            Some(Err(e)) => Err(msg("CPFA0A9", &format!("The session could not be deleted: {e}"), &[])),
-            None => Err(msg("CPF9897", "Access for Web is ending; the request was not run.", &[])),
+            Some(Err(e)) => Err(msg(
+                "CPFA0A9",
+                &format!("The session could not be deleted: {e}"),
+                &[],
+            )),
+            None => Err(msg(
+                "CPF9897",
+                "Access for Web is ending; the request was not run.",
+                &[],
+            )),
         }
     }
 
@@ -224,13 +271,29 @@ impl Session5250 for LiveS5250 {
     }
 
     fn put_keymap(&self, user: &str, name: &str, map: &KeyMap) -> Result<(), Message> {
-        let safe: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || "-_".contains(*c)).take(40).collect();
-        let (path, text) = (format!("{}/keymaps/{safe}.qkm", dir(user)), KeymapFile::new(map.clone()).to_text());
-        let r: Option<Result<(), String>> = ifs(&self.link, move |c| Some(write_file(c, &path, &text)));
+        let safe: String = name
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric() || "-_".contains(*c))
+            .take(40)
+            .collect();
+        let (path, text) = (
+            format!("{}/keymaps/{safe}.qkm", dir(user)),
+            KeymapFile::new(map.clone()).to_text(),
+        );
+        let r: Option<Result<(), String>> =
+            ifs(&self.link, move |c| Some(write_file(c, &path, &text)));
         match r {
             Some(Ok(())) => Ok(()),
-            Some(Err(e)) => Err(msg("CPFA0A9", &format!("The keyboard map could not be kept: {e}"), &[])),
-            None => Err(msg("CPF9897", "Access for Web is ending; the request was not run.", &[])),
+            Some(Err(e)) => Err(msg(
+                "CPFA0A9",
+                &format!("The keyboard map could not be kept: {e}"),
+                &[],
+            )),
+            None => Err(msg(
+                "CPF9897",
+                "Access for Web is ending; the request was not run.",
+                &[],
+            )),
         }
     }
 
@@ -242,20 +305,35 @@ impl Session5250 for LiveS5250 {
         if let Some(old) = self.conn(user, saved.id) {
             old.end();
         }
-        let local = saved.file.system.name.eq_ignore_ascii_case(&system_name(&self.link));
+        let local = saved
+            .file
+            .system
+            .name
+            .eq_ignore_ascii_case(&system_name(&self.link));
         if !local {
             // BLOCKED(rel): a session to another system goes through that system's own Access for Web; refused with QAD1002.
             let sys = saved.file.system.name.as_str();
-            return Err(msg("QAD1002", &format!("Connection to {sys} refused."), &[sys]));
+            return Err(msg(
+                "QAD1002",
+                &format!("Connection to {sys} refused."),
+                &[sys],
+            ));
         }
         let ticket = if saved.file.session.auto_sign_on && saved.file.system.tls {
             ticket(&self.link, user)
         } else {
             None
         };
-        let tls = if saved.file.system.tls { tls_config(&self.link) } else { None };
+        let tls = if saved.file.system.tls {
+            tls_config(&self.link)
+        } else {
+            None
+        };
         let conn = Conn::start(user, saved, ticket, tls)?;
-        self.conns.lock().unwrap_or_else(PoisonError::into_inner).insert((user.to_string(), saved.id), conn);
+        self.conns
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .insert((user.to_string(), saved.id), conn);
         Ok(())
     }
 
@@ -280,7 +358,11 @@ impl Session5250 for LiveS5250 {
         let l = c.snapshot();
         if l.state == State::Disconnected {
             let sys = l.view.system;
-            return Err(msg("QAD1006", &format!("Session to {sys} disconnected."), &[&sys]));
+            return Err(msg(
+                "QAD1006",
+                &format!("Session to {sys} disconnected."),
+                &[&sys],
+            ));
         }
         let _ = c.tx.send(Cmd::Input(input));
         Ok(())
@@ -294,13 +376,18 @@ impl Session5250 for LiveS5250 {
 }
 
 fn system_name(link: &Link) -> String {
-    link.job(|m| crate::work::web::system::system_name(m)).unwrap_or_default()
+    link.job(|m| crate::work::web::system::system_name(m))
+        .unwrap_or_default()
 }
 
 /// A one-time ticket for `user`, 64 hex characters.
 fn ticket(link: &Link, user: &str) -> Option<String> {
     let u = user.to_string();
-    let t = link.bridge.call(move |m| m.as_user(&u, |m| m.ask(Client::qap_ticket).ok()).ok().flatten())??;
+    let t = link.bridge.call(move |m| {
+        m.as_user(&u, |m| m.ask(Client::qap_ticket).ok())
+            .ok()
+            .flatten()
+    })??;
     Some(t.0.iter().fold(String::new(), |mut s, b| {
         let _ = write!(s, "{b:02x}");
         s
@@ -331,22 +418,60 @@ fn verify(link: &Link, user: &str, system: &str, sign_on: bool) -> Vec<Check> {
     out.push(check(
         "Name lookup",
         Some(local),
-        if local { format!("{} = 127.0.0.1", system.to_ascii_lowercase()) } else { format!("{system} is not this system") },
+        if local {
+            format!("{} = 127.0.0.1", system.to_ascii_lowercase())
+        } else {
+            format!("{system} is not this system")
+        },
     ));
-    let port = |p: u16| TcpStream::connect_timeout(&SocketAddr::from(([127, 0, 0, 1], p)), Duration::from_secs(3)).is_ok();
-    out.push(check("Telnet port 23", Some(local && port(23)), String::new()));
+    let port = |p: u16| {
+        TcpStream::connect_timeout(
+            &SocketAddr::from(([127, 0, 0, 1], p)),
+            Duration::from_secs(3),
+        )
+        .is_ok()
+    };
+    out.push(check(
+        "Telnet port 23",
+        Some(local && port(23)),
+        String::new(),
+    ));
     let tls = local && port(992);
-    out.push(check("Telnet TLS port 992: handshake and certificate", Some(tls), if tls { String::new() } else { "Not listening".into() }));
+    out.push(check(
+        "Telnet TLS port 992: handshake and certificate",
+        Some(tls),
+        if tls {
+            String::new()
+        } else {
+            "Not listening".into()
+        },
+    ));
     let qap = local && port(2320);
     out.push(check("QAP port 2320", Some(qap), String::new()));
-    out.push(check("TLS 1.3 handshake and certificate (QS400_ACCESS_SERVER)", if qap { Some(true) } else { None }, String::new()));
-    out.push(check("QAP Hello", if qap { Some(true) } else { None }, if qap { "QAP version 6".into() } else { String::new() }));
+    out.push(check(
+        "TLS 1.3 handshake and certificate (QS400_ACCESS_SERVER)",
+        if qap { Some(true) } else { None },
+        String::new(),
+    ));
+    out.push(check(
+        "QAP Hello",
+        if qap { Some(true) } else { None },
+        if qap {
+            "QAP version 6".into()
+        } else {
+            String::new()
+        },
+    ));
     if sign_on && local {
         let ok = ticket(link, user).is_some();
         out.push(check(
             "Test sign-on",
             Some(ok),
-            if ok { format!("Signed on as {user} and off again") } else { format!("Automatic sign-on is not allowed for user profile {user}.") },
+            if ok {
+                format!("Signed on as {user} and off again")
+            } else {
+                format!("Automatic sign-on is not allowed for user profile {user}.")
+            },
         ));
     } else {
         out.push(check("Test sign-on", None, "Not requested".into()));
@@ -368,32 +493,71 @@ struct Conn {
 }
 
 impl Conn {
-    fn start(user: &str, s: &Saved, ticket: Option<String>, tls: Option<Arc<rustls::ClientConfig>>) -> Result<Arc<Conn>, Message> {
+    fn start(
+        user: &str,
+        s: &Saved,
+        ticket: Option<String>,
+        tls: Option<Arc<rustls::ClientConfig>>,
+    ) -> Result<Arc<Conn>, Message> {
         let (rows, cols) = s.file.session.screen_size.rows_cols();
-        let scheme = if s.file.session.colour_map == ColorMap::BlackOnWhite { Scheme::BlackOnWhite } else { Scheme::Console };
+        let scheme = if s.file.session.colour_map == ColorMap::BlackOnWhite {
+            Scheme::BlackOnWhite
+        } else {
+            Scheme::Console
+        };
         let system = s.file.system.name.to_ascii_uppercase();
         let secure = s.file.system.tls;
         let port = if secure { 992 } else { 23 };
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
         let tcp = TcpStream::connect_timeout(&addr, CONNECT).map_err(|e| {
             if e.kind() == std::io::ErrorKind::TimedOut {
-                msg("QAD1004", &format!("Connection to {system} timed out."), &[&system])
+                msg(
+                    "QAD1004",
+                    &format!("Connection to {system} timed out."),
+                    &[&system],
+                )
             } else {
-                msg("QAD1002", &format!("Connection to {system} refused."), &[&system])
+                msg(
+                    "QAD1002",
+                    &format!("Connection to {system} refused."),
+                    &[&system],
+                )
             }
         })?;
         let _ = tcp.set_read_timeout(Some(Duration::from_millis(50)));
         let stream: Box<dyn Stream> = match (secure, tls) {
             (false, _) => Box::new(tcp),
             (true, Some(cfg)) => {
-                let name = rustls::pki_types::ServerName::try_from("localhost").map_err(|e| msg("QAD1010", &format!("TLS handshake with {system} failed: {e}."), &[&system, &e.to_string()]))?;
-                let c = rustls::ClientConnection::new(cfg, name).map_err(|e| msg("QAD1010", &format!("TLS handshake with {system} failed: {e}."), &[&system, &e.to_string()]))?;
+                let name = rustls::pki_types::ServerName::try_from("localhost").map_err(|e| {
+                    msg(
+                        "QAD1010",
+                        &format!("TLS handshake with {system} failed: {e}."),
+                        &[&system, &e.to_string()],
+                    )
+                })?;
+                let c = rustls::ClientConnection::new(cfg, name).map_err(|e| {
+                    msg(
+                        "QAD1010",
+                        &format!("TLS handshake with {system} failed: {e}."),
+                        &[&system, &e.to_string()],
+                    )
+                })?;
                 Box::new(rustls::StreamOwned::new(c, tcp))
             }
-            (true, None) => return Err(msg("QAD1010", &format!("TLS handshake with {system} failed: no TLS configuration."), &[&system, "no TLS configuration"])),
+            (true, None) => {
+                return Err(msg(
+                    "QAD1010",
+                    &format!("TLS handshake with {system} failed: no TLS configuration."),
+                    &[&system, "no TLS configuration"],
+                ));
+            }
         };
         let mut cfg = Config {
-            terminal_type: if cols == 132 { Model::M3477Fc.terminal_type().into() } else { Model::M3179.terminal_type().into() },
+            terminal_type: if cols == 132 {
+                Model::M3477Fc.terminal_type().into()
+            } else {
+                Model::M3179.terminal_type().into()
+            },
             device: s.file.session.device_name.clone(),
             codepage: s.file.session.ccsid.to_string(),
             ..Config::default()
@@ -402,7 +566,11 @@ impl Conn {
             cfg.user = Some(user.to_ascii_uppercase());
             cfg.ticket = Some(t);
         }
-        let model = if cols == 132 { Model::M3477Fc } else { Model::M3179 };
+        let model = if cols == 132 {
+            Model::M3477Fc
+        } else {
+            Model::M3179
+        };
         let (tx, rx) = mpsc::channel();
         let conn = Arc::new(Conn {
             live: Mutex::new(Live {
@@ -413,7 +581,11 @@ impl Conn {
                     tls: secure,
                     scheme,
                 },
-                state: if cfg.ticket.is_some() { State::SigningOn } else { State::Connected },
+                state: if cfg.ticket.is_some() {
+                    State::SigningOn
+                } else {
+                    State::Connected
+                },
                 message: None,
                 version: 1,
             }),
@@ -422,14 +594,26 @@ impl Conn {
         });
         let c = conn.clone();
         std::thread::spawn(move || {
-            let why = c.run(stream, TelnetClient::new(cfg), Terminal::new(Capabilities { model, gui: false, color: true }), &rx);
+            let why = c.run(
+                stream,
+                TelnetClient::new(cfg),
+                Terminal::new(Capabilities {
+                    model,
+                    gui: false,
+                    color: true,
+                }),
+                &rx,
+            );
             c.closed(&system, why);
         });
         Ok(conn)
     }
 
     fn snapshot(&self) -> Live {
-        self.live.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.live
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     fn end(&self) {
@@ -442,9 +626,18 @@ impl Conn {
         l.state = State::Disconnected;
         l.view.connected = false;
         l.message = Some(if by_system {
-            msg("QAD1005", &format!("Session to {system} ended by the system."), &[system])
+            msg(
+                "QAD1005",
+                &format!("Session to {system} ended by the system."),
+                &[system],
+            )
         } else {
-            Message::new(Kind::Info, "QAD1006", &format!("Session to {system} disconnected.")).with_data(&[system])
+            Message::new(
+                Kind::Info,
+                "QAD1006",
+                &format!("Session to {system} disconnected."),
+            )
+            .with_data(&[system])
         });
         l.version += 1;
         self.changed.notify_all();
@@ -457,11 +650,20 @@ impl Conn {
         let cols = t.cols();
         let cells = t.cells();
         let mut s = Screen::blank(rows, cols);
-        let mut a = cells.iter().rev().copied().find(|b| attr::is_attr(*b)).unwrap_or(0x20);
+        let mut a = cells
+            .iter()
+            .rev()
+            .copied()
+            .find(|b| attr::is_attr(*b))
+            .unwrap_or(0x20);
         for (i, &b) in cells.iter().enumerate().take(rows * cols) {
             s.cells[i] = if attr::is_attr(b) {
                 a = b;
-                Cell { ch: ' ', attr: b, is_attr: true }
+                Cell {
+                    ch: ' ',
+                    attr: b,
+                    is_attr: true,
+                }
             } else {
                 Cell {
                     // BLOCKED(rel): the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only.
@@ -489,14 +691,21 @@ impl Conn {
     }
 
     /// The connection's loop; whether the system ended it.
-    fn run(&self, mut io: Box<dyn Stream>, mut client: TelnetClient, mut term: Terminal, rx: &Receiver<Cmd>) -> bool {
+    fn run(
+        &self,
+        mut io: Box<dyn Stream>,
+        mut client: TelnetClient,
+        mut term: Terminal,
+        rx: &Receiver<Cmd>,
+    ) -> bool {
         let mut buf = vec![0u8; 16384];
         loop {
             match io.read(&mut buf) {
                 Ok(0) => return true,
                 Ok(n) => {
                     let (reply, records) = client.feed(&buf[..n]);
-                    if !reply.is_empty() && io.write_all(&reply).and_then(|()| io.flush()).is_err() {
+                    if !reply.is_empty() && io.write_all(&reply).and_then(|()| io.flush()).is_err()
+                    {
                         return true;
                     }
                     for rec in records {
@@ -509,7 +718,11 @@ impl Conn {
                     }
                     self.publish(&term);
                 }
-                Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => {}
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                    ) => {}
                 Err(_) => return true,
             }
             while let Ok(cmd) = rx.try_recv() {

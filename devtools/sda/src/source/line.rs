@@ -128,7 +128,12 @@ mod tests {
         l.set_right(42, 44, "21");
         assert_eq!(
             l.text(),
-            format!("{}A{}FLD001{}10   I  3 21", " ".repeat(5), " ".repeat(12), " ".repeat(8))
+            format!(
+                "{}A{}FLD001{}10   I  3 21",
+                " ".repeat(5),
+                " ".repeat(12),
+                " ".repeat(8)
+            )
         );
         assert_eq!(l.name(), "FLD001");
         assert_eq!(l.location(), ("3".into(), "21".into()));

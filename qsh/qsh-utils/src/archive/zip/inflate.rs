@@ -37,7 +37,9 @@ pub const DIST_EXTRA: [u8; 30] = [
     13,
 ];
 /// The order code length code lengths are sent in.
-pub const CL_ORDER: [usize; 19] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+pub const CL_ORDER: [usize; 19] = [
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+];
 
 struct Bits<'a> {
     data: &'a [u8],
@@ -54,7 +56,11 @@ impl Bits<'_> {
             self.buf |= u32::from(b) << self.cnt;
             self.cnt += 8;
         }
-        let v = if n == 0 { 0 } else { self.buf & ((1u32 << n) - 1) };
+        let v = if n == 0 {
+            0
+        } else {
+            self.buf & ((1u32 << n) - 1)
+        };
         self.buf = if n >= 32 { 0 } else { self.buf >> n };
         self.cnt -= n;
         Ok(v)
@@ -256,7 +262,10 @@ mod tests {
     fn known_streams() {
         // A fixed-code block of "a" and a stored block of "hi".
         assert_eq!(inflate(&[0x4b, 0x04, 0x00]).unwrap(), b"a");
-        assert_eq!(inflate(&[0x01, 0x02, 0x00, 0xfd, 0xff, b'h', b'i']).unwrap(), b"hi");
+        assert_eq!(
+            inflate(&[0x01, 0x02, 0x00, 0xfd, 0xff, b'h', b'i']).unwrap(),
+            b"hi"
+        );
         assert_eq!(inflate(&[0x07]), Err(Error::Damaged));
         assert_eq!(inflate(&[]), Err(Error::Truncated));
     }

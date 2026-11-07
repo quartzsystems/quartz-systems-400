@@ -50,10 +50,19 @@ pub(crate) fn release_text() -> String {
     format!("V{}R{}M{}", r.v, r.r, r.m)
 }
 
-fn space(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, text: &str, create: bool) -> Result<Option<ObjectId>, String> {
+fn space(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    name: &str,
+    text: &str,
+    create: bool,
+) -> Result<Option<ObjectId>, String> {
     let name = qsname::Name::parse(name).expect("name");
     let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
-    if let Some(id) = lib.lookup(txn, types::USRSPC, name).map_err(|e| e.to_string())? {
+    if let Some(id) = lib
+        .lookup(txn, types::USRSPC, name)
+        .map_err(|e| e.to_string())?
+    {
         return Ok(Some(id));
     }
     if !create {
@@ -72,7 +81,8 @@ fn space(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, text: &str, create: bool
     };
     let id = usrspc::create(txn, &params, 16, true, 0).map_err(|e| e.to_string())?;
     // Shipped *PUBLIC *USE, as QSYS's other objects.
-    sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::USE)).map_err(|e| e.to_string())?;
+    sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::USE))
+        .map_err(|e| e.to_string())?;
     Ok(Some(id))
 }
 
@@ -92,7 +102,12 @@ pub(super) fn space_text(system: &mut System, name: &str) -> Result<String, Stri
 }
 
 /// Keep `text` in user space `QSYS/name`, made when missing.
-pub(super) fn store_space_text(system: &mut System, name: &str, desc: &str, text: &str) -> Result<(), String> {
+pub(super) fn store_space_text(
+    system: &mut System,
+    name: &str,
+    desc: &str,
+    text: &str,
+) -> Result<(), String> {
     in_store(system, |txn, qsys, _| {
         let id = space(txn, qsys, name, desc, true)?.expect("created");
         usrspc::write(txn, id, 0, &(text.len() as u64).to_be_bytes()).map_err(|e| e.to_string())?;
@@ -175,7 +190,8 @@ fn lodptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
     let product = licpgm(parms);
     let dev = parms.text("DEV").to_ascii_uppercase();
-    let media = crate::stgsvc::media::stream::is_device(&dev).then(|| crate::stgsvc::media::stream::of(parms, &dev));
+    let media = crate::stgsvc::media::stream::is_device(&dev)
+        .then(|| crate::stgsvc::media::stream::of(parms, &dev));
     if media.is_none() && dev != "*SAVF" {
         return Err(format!("CPF9814 device {dev} not found"));
     }
@@ -208,9 +224,17 @@ fn lodptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         if release::product_id(&pkg.header.product) != product {
             continue;
         }
-        apply::load(&mut db, &pkg, &format!("QGPL/{p}"), &release_text(), now_unix())
-            .map_err(|e| format!("{} {e}", e.msgid()))?;
-        reply.messages.push(msg(LOADED, 4, &[(p, 7), (&product, 7)]));
+        apply::load(
+            &mut db,
+            &pkg,
+            &format!("QGPL/{p}"),
+            &release_text(),
+            now_unix(),
+        )
+        .map_err(|e| format!("{} {e}", e.msgid()))?;
+        reply
+            .messages
+            .push(msg(LOADED, 4, &[(p, 7), (&product, 7)]));
         let _ = writeln!(reply.text, "{LOADED} PTF {p} {product} loaded");
         loaded += 1;
     }
@@ -255,8 +279,14 @@ pub(super) fn ctx_run<T>(
     Ok(sec::guard::as_system(|| f(&mut cx)))
 }
 
-pub(super) fn package_of(system: &mut System, db: &PtfDb, ptf: &str) -> Result<(Package, Vec<u8>), String> {
-    let r = db.get(ptf).ok_or_else(|| format!("CPF3606 PTF {ptf} is not loaded"))?;
+pub(super) fn package_of(
+    system: &mut System,
+    db: &PtfDb,
+    ptf: &str,
+) -> Result<(Package, Vec<u8>), String> {
+    let r = db
+        .get(ptf)
+        .ok_or_else(|| format!("CPF3606 PTF {ptf} is not loaded"))?;
     let bytes = read_ptf(system, &r.savf)?;
     let pkg = package::open(&bytes, &trusted_keys()).map_err(|e| format!("{} {e}", e.msgid()))?;
     Ok((pkg, bytes))
@@ -283,15 +313,22 @@ fn apyptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
                 r.action = Action::ApplyAtIpl;
             } else {
                 let (pkg, bytes) = package_of(system, &db, p)?;
-                ctx_run(system, |cx| apply::apply_temp(cx, &mut db, &pkg, &bytes, &batch, false))?
-                    .map_err(|e| format!("{} {e}", e.msgid()))?;
+                ctx_run(system, |cx| {
+                    apply::apply_temp(cx, &mut db, &pkg, &bytes, &batch, false)
+                })?
+                .map_err(|e| format!("{} {e}", e.msgid()))?;
             }
             // A LIC PTF's image goes to the other slot now.
-            if super::ptflic::is_lic(&db, p) && db.get(p).is_some_and(|r| r.action == Action::ApplyAtIpl) {
+            if super::ptflic::is_lic(&db, p)
+                && db.get(p).is_some_and(|r| r.action == Action::ApplyAtIpl)
+            {
                 let s = super::ptflic::stage(system, &mut db, p);
                 store_db(system, &db)?;
                 let s = s?;
-                let _ = writeln!(reply.text, "PTF {p}: its LIC image is in slot {s:?}; the next IPL boots it");
+                let _ = writeln!(
+                    reply.text,
+                    "PTF {p}: its LIC image is in slot {s:?}; the next IPL boots it"
+                );
             }
         }
         if perm && db.get(p).is_some_and(|r| r.status == Status::TempApplied) {
@@ -310,7 +347,9 @@ fn apyptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             }
         });
         let _ = writeln!(reply.text, "{APPLIED} PTF {p} {product}: {state}");
-        reply.messages.push(msg(APPLIED, 4, &[(p, 7), (&product, 7)]));
+        reply
+            .messages
+            .push(msg(APPLIED, 4, &[(p, 7), (&product, 7)]));
     }
     store_db(system, &db)?;
     Ok(reply)
@@ -325,10 +364,17 @@ fn rmvptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let mut reply = CmdReply::default();
     for p in &batch {
         // A LIC PTF goes by an IPL back to the slot with the old image.
-        if super::ptflic::is_lic(&db, p) && db.get(p).is_some_and(|r| r.status == Status::TempApplied) {
+        if super::ptflic::is_lic(&db, p)
+            && db.get(p).is_some_and(|r| r.status == Status::TempApplied)
+        {
             let s = super::ptflic::remove(system, &mut db, p)?;
-            let _ = writeln!(reply.text, "{REMOVED} PTF {p} {product}: Remove at next IPL, from slot {s:?}");
-            reply.messages.push(msg(REMOVED, 4, &[(p, 7), (&product, 7)]));
+            let _ = writeln!(
+                reply.text,
+                "{REMOVED} PTF {p} {product}: Remove at next IPL, from slot {s:?}"
+            );
+            reply
+                .messages
+                .push(msg(REMOVED, 4, &[(p, 7), (&product, 7)]));
             continue;
         }
         ctx_run(system, |cx| apply::remove(cx, &mut db, p, perm))?
@@ -344,7 +390,9 @@ fn rmvptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             });
         }
         let _ = writeln!(reply.text, "{REMOVED} PTF {p} {product} removed");
-        reply.messages.push(msg(REMOVED, 4, &[(p, 7), (&product, 7)]));
+        reply
+            .messages
+            .push(msg(REMOVED, 4, &[(p, 7), (&product, 7)]));
     }
     store_db(system, &db)?;
     Ok(reply)
@@ -371,7 +419,11 @@ fn dspptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         .filter(|r| sel.is_empty() || sel.contains(&r.ptf))
         .collect();
     if parms.name("OUTPUT") == "*OUTFILE" {
-        let prod = if product.is_empty() || product == "*ALL" { release::PRODUCT_ID } else { product.as_str() };
+        let prod = if product.is_empty() || product == "*ALL" {
+            release::PRODUCT_ID
+        } else {
+            product.as_str()
+        };
         let text = super::dspout::ptfs(system, parms, prod, &rows)?;
         return Ok(CmdReply {
             text,
@@ -416,7 +468,10 @@ pub(crate) struct Cover {
 /// Whether `status` is in the `STATUS` selection.
 fn status_wanted(sel: &str, s: Status) -> bool {
     match sel {
-        "*NOTAPY" => matches!(s, Status::Loaded | Status::TempRemoved | Status::CoverLetterOnly | Status::SaveFileOnly),
+        "*NOTAPY" => matches!(
+            s,
+            Status::Loaded | Status::TempRemoved | Status::CoverLetterOnly | Status::SaveFileOnly
+        ),
         "*APYPERM" => s == Status::PermApplied,
         "*APYTEMP" => s == Status::TempApplied,
         _ => true,
@@ -425,7 +480,13 @@ fn status_wanted(sel: &str, s: Status) -> bool {
 
 /// The cover letters `LICPGM`, `SELECT`, `CVRATR` and `STATUS` select;
 /// `CPF6613` when none does.
-pub(crate) fn cover_letters(system: &mut System, product: &str, select: &[String], cvratr: &[String], status: &str) -> Result<Vec<Cover>, String> {
+pub(crate) fn cover_letters(
+    system: &mut System,
+    product: &str,
+    select: &[String],
+    cvratr: &[String],
+    status: &str,
+) -> Result<Vec<Cover>, String> {
     let db = load_db(system)?;
     let product = release::product_id(&product.trim().to_ascii_uppercase()).to_string();
     let ids: Vec<String> = db
@@ -438,11 +499,21 @@ pub(crate) fn cover_letters(system: &mut System, product: &str, select: &[String
         .collect();
     let mut out = Vec::new();
     for p in ids {
-        let Ok((pkg, _)) = package_of(system, &db, &p) else { continue };
+        let Ok((pkg, _)) = package_of(system, &db, &p) else {
+            continue;
+        };
         if pkg.cover.trim().is_empty() {
             continue;
         }
-        let attr = if pkg.cover.to_ascii_uppercase().contains("SPECIAL INSTRUCTIONS") { "*SPCINST" } else { "*DFT" };
+        let attr = if pkg
+            .cover
+            .to_ascii_uppercase()
+            .contains("SPECIAL INSTRUCTIONS")
+        {
+            "*SPCINST"
+        } else {
+            "*DFT"
+        };
         if !cvratr.is_empty() && !cvratr.iter().any(|a| a == attr) {
             continue;
         }
@@ -475,7 +546,10 @@ fn dspptfcvr(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     )?;
     let mut lines = Vec::new();
     for c in &covers {
-        lines.push(format!("PTF {}  Product {}  Release {}  Status {}", c.ptf, c.product, c.release, c.status));
+        lines.push(format!(
+            "PTF {}  Product {}  Release {}  Status {}",
+            c.ptf, c.product, c.release, c.status
+        ));
         lines.extend(c.text.lines().map(str::to_string));
         lines.push(String::new());
     }
@@ -529,9 +603,11 @@ pub fn ipl_pending(system: &mut System) -> String {
                 system.emit(&crate::src::PTF_APPLY);
                 package_of(system, &db, p)
                     .and_then(|(pkg, bytes)| {
-                        ctx_run(system, |cx| apply::apply_temp(cx, &mut db, &pkg, &bytes, &[], true))?
-                            .map(|_| ())
-                            .map_err(|e| e.to_string())
+                        ctx_run(system, |cx| {
+                            apply::apply_temp(cx, &mut db, &pkg, &bytes, &[], true)
+                        })?
+                        .map(|_| ())
+                        .map_err(|e| e.to_string())
                     })
                     .inspect(|()| applied += 1)
             }

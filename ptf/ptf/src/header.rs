@@ -200,15 +200,25 @@ impl PtfHeader {
         b[62..64].copy_from_slice(&n(self.exits.len()));
         b[64..68].copy_from_slice(&self.object_count.to_be_bytes());
         b[68..72].copy_from_slice(&self.store_format.to_be_bytes());
-        for r in self.prereqs.iter().chain(&self.coreqs).chain(&self.supersedes) {
+        for r in self
+            .prereqs
+            .iter()
+            .chain(&self.coreqs)
+            .chain(&self.supersedes)
+        {
             put_ref(&mut b, r);
         }
         for e in &self.exits {
             let mut x = [0u8; EXIT_LEN];
             ccsid::encode_fixed(&e.library, &mut x[0..10]).ok();
             ccsid::encode_fixed(&e.program, &mut x[10..20]).ok();
-            x[20] = u8::try_from(ExitWhen::ALL.iter().position(|w| *w == e.when).expect("listed"))
-                .expect("small");
+            x[20] = u8::try_from(
+                ExitWhen::ALL
+                    .iter()
+                    .position(|w| *w == e.when)
+                    .expect("listed"),
+            )
+            .expect("small");
             b.extend_from_slice(&x);
         }
         b
@@ -251,7 +261,9 @@ impl PtfHeader {
             exits.push(ExitProgram {
                 library: ccsid::decode_trimmed(&x[0..10]),
                 program: ccsid::decode_trimmed(&x[10..20]),
-                when: *ExitWhen::ALL.get(usize::from(x[20])).ok_or_else(|| bad("exit"))?,
+                when: *ExitWhen::ALL
+                    .get(usize::from(x[20]))
+                    .ok_or_else(|| bad("exit"))?,
             });
         }
         Ok(Self {

@@ -40,7 +40,9 @@ fn files() -> Vec<PathBuf> {
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter(|p| {
             let n = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            std::path::Path::new(n).extension().is_some_and(|x| x.eq_ignore_ascii_case("sht"))
+            std::path::Path::new(n)
+                .extension()
+                .is_some_and(|x| x.eq_ignore_ascii_case("sht"))
                 && (n.starts_with("text-") || n.starts_with("misc-"))
         })
         .collect();

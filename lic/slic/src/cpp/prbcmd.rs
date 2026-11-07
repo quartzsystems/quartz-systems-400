@@ -61,10 +61,21 @@ pub fn rows(system: &mut System, status: &[PrbStatus]) -> Result<Vec<Vec<String>
 }
 
 fn detail(out: &mut String, p: &Problem) {
-    let _ = writeln!(out, "Problem ID {}  status {}  type {}  severity {}", p.id, p.status.display(), p.kind.number(), p.severity);
+    let _ = writeln!(
+        out,
+        "Problem ID {}  status {}  type {}  severity {}",
+        p.id,
+        p.status.display(),
+        p.kind.number(),
+        p.severity
+    );
     let _ = writeln!(out, "  {}", p.text);
     let _ = writeln!(out, "  symptoms {}", p.symptoms);
-    let _ = writeln!(out, "  system {}  opened {}  changed {}", p.system, p.opened, p.changed);
+    let _ = writeln!(
+        out,
+        "  system {}  opened {}  changed {}",
+        p.system, p.opened, p.changed
+    );
     if !p.assigned_to.is_empty() {
         let _ = writeln!(out, "  assigned to {}", p.assigned_to);
     }
@@ -132,15 +143,36 @@ pub fn detail_data(system: &mut System, id: &str) -> Result<stg::proto::PanelDat
         pair("PRBSEV", p.severity.to_string()),
         pair("PRBTEXT", p.text.clone()),
         pair("PRBREF", code),
-        pair("PRBRSRC", if rsrc.is_empty() { "*NONE".into() } else { rsrc }),
+        pair(
+            "PRBRSRC",
+            if rsrc.is_empty() {
+                "*NONE".into()
+            } else {
+                rsrc
+            },
+        ),
         pair("PRBSYS", p.system.clone()),
         pair("PRBODATE", od),
         pair("PRBOTIME", ot),
         pair("PRBCDATE", cd),
         pair("PRBCTIME", ct),
-        pair("PRBASGN", if p.assigned_to.is_empty() { "*NONE".into() } else { p.assigned_to.clone() }),
+        pair(
+            "PRBASGN",
+            if p.assigned_to.is_empty() {
+                "*NONE".into()
+            } else {
+                p.assigned_to.clone()
+            },
+        ),
         pair("PRBSYMP", p.symptoms.clone()),
-        pair("PRBRPT", if log.reports.contains_key(id) { "*YES".into() } else { "*NO".into() }),
+        pair(
+            "PRBRPT",
+            if log.reports.contains_key(id) {
+                "*YES".into()
+            } else {
+                "*NO".into()
+            },
+        ),
     ];
     let rows = p
         .notes
@@ -166,7 +198,11 @@ fn list(system: &mut System, parms: &Parms, details: bool) -> Result<String, Str
         return report(system, &probs);
     }
     let mut out = String::new();
-    for p in log.list(&f).into_iter().filter(|p| id.as_ref().is_none_or(|i| *i == p.id)) {
+    for p in log
+        .list(&f)
+        .into_iter()
+        .filter(|p| id.as_ref().is_none_or(|i| *i == p.id))
+    {
         if details {
             detail(&mut out, p);
         } else {
@@ -185,7 +221,11 @@ fn change(system: &mut System, parms: &Parms) -> Result<String, String> {
     let p = log
         .get_mut(&id)
         .ok_or_else(|| format!("CPF3925 problem {id} not found"))?;
-    if let Some(sev) = parms.int("SEV").and_then(|s| u8::try_from(s).ok()).filter(|s| (1..=4).contains(s)) {
+    if let Some(sev) = parms
+        .int("SEV")
+        .and_then(|s| u8::try_from(s).ok())
+        .filter(|s| (1..=4).contains(s))
+    {
         p.severity = sev;
     }
     let to = parms.text("ASSIGNTO");
@@ -209,7 +249,10 @@ fn delete(system: &mut System, parms: &Parms) -> Result<String, String> {
     let n = if let Some(id) = id_of(parms) {
         usize::from(log.problems.remove(&id).is_some())
     } else {
-        let days = parms.int("DAYS").and_then(|d| u64::try_from(d).ok()).unwrap_or(30);
+        let days = parms
+            .int("DAYS")
+            .and_then(|d| u64::try_from(d).ok())
+            .unwrap_or(30);
         let f = Filter {
             status: statuses(parms),
             before: Some(now_unix().saturating_sub(days * 86_400)),

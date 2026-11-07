@@ -87,7 +87,11 @@ fn msgq_fail(e: &str, lib: &str, name: &str) -> ApiFail {
 impl Provider for RemoteProvider {
     fn signed_on_users(&mut self) -> ApiResult<Vec<String>> {
         let jobs = self.link.borrow_mut().with(Client::active_jobs);
-        let mut users: Vec<String> = jobs.into_iter().filter(|j| j.kind == 'I').map(|j| j.user).collect();
+        let mut users: Vec<String> = jobs
+            .into_iter()
+            .filter(|j| j.kind == 'I')
+            .map(|j| j.user)
+            .collect();
         users.sort();
         users.dedup();
         Ok(users)

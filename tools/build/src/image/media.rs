@@ -74,13 +74,17 @@ pub struct Parts<'a> {
 pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
     let mut b = IsoBuilder::new(p.volume_id, p.epoch);
     // The marker the media locator looks for, with the payload.
-    let mut files: Vec<ManifestFile> = [(SLOT_A_FILE, &p.slot_a), (SLOT_B_FILE, &p.slot_b), (BOOT_FILE, &p.uki)]
-        .map(|(path, data)| ManifestFile {
-            path: path.to_string(),
-            size: data.len() as u64,
-            sha256: sha256_bytes(data),
-        })
-        .to_vec();
+    let mut files: Vec<ManifestFile> = [
+        (SLOT_A_FILE, &p.slot_a),
+        (SLOT_B_FILE, &p.slot_b),
+        (BOOT_FILE, &p.uki),
+    ]
+    .map(|(path, data)| ManifestFile {
+        path: path.to_string(),
+        size: data.len() as u64,
+        sha256: sha256_bytes(data),
+    })
+    .to_vec();
     for (id, data) in &p.lp {
         files.push(ManifestFile {
             path: instmedia::Payload::Product(id.clone()).path(),
@@ -122,16 +126,29 @@ pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
 
 /// Where the Knowledge Center (`build kc`) and the PTF baseline (`build
 /// release`) are written, and the directories they take on the media.
-pub const EXTRA_TREES: &[(&str, &str)] = &[("kc", "QS400/KC"), ("ptf-baseline", "QS400/PTF"), ("media-root", "")];
+pub const EXTRA_TREES: &[(&str, &str)] = &[
+    ("kc", "QS400/KC"),
+    ("ptf-baseline", "QS400/PTF"),
+    ("media-root", ""),
+];
 
 /// Every file of the extra trees that exist, with its path on the media.
 fn extra_files(ctx: &Ctx) -> Result<Vec<(String, Vec<u8>)>> {
     fn walk(dir: &Path, rel: &str, out: &mut Vec<(String, Vec<u8>)>) -> Result<()> {
-        let mut entries: Vec<_> = fs::read_dir(dir)?.filter_map(|e| e.ok().map(|e| e.path())).collect();
+        let mut entries: Vec<_> = fs::read_dir(dir)?
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .collect();
         entries.sort();
         for p in entries {
-            let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            let r = if rel.is_empty() { name } else { format!("{rel}/{name}") };
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            let r = if rel.is_empty() {
+                name
+            } else {
+                format!("{rel}/{name}")
+            };
             if p.is_dir() {
                 walk(&p, &r, out)?;
             } else {
@@ -145,7 +162,15 @@ fn extra_files(ctx: &Ctx) -> Result<Vec<(String, Vec<u8>)>> {
         let dir = ctx.paths.images().join(sub);
         if dir.is_dir() {
             walk(&dir, on_media, &mut out)?;
-            info!("iso: {} from {}", if on_media.is_empty() { "the root" } else { on_media }, dir.display());
+            info!(
+                "iso: {} from {}",
+                if on_media.is_empty() {
+                    "the root"
+                } else {
+                    on_media
+                },
+                dir.display()
+            );
         }
     }
     Ok(out)
@@ -164,8 +189,15 @@ fn boot_image(ctx: &Ctx, uki_bytes: &[u8]) -> Result<Vec<u8>> {
         uki_bytes.len(),
         spec.bytes / (1024 * 1024)
     );
-    info!("iso: building {} MiB FAT16 boot image", spec.bytes / (1024 * 1024));
-    let keys_dir = ctx.paths.images().join("media-root").join(crate::image::release::KEYS);
+    info!(
+        "iso: building {} MiB FAT16 boot image",
+        spec.bytes / (1024 * 1024)
+    );
+    let keys_dir = ctx
+        .paths
+        .images()
+        .join("media-root")
+        .join(crate::image::release::KEYS);
     let mut keys = Vec::new();
     for k in KEY_FILES {
         if let Ok(b) = fs::read(keys_dir.join(k)) {
@@ -182,7 +214,10 @@ fn boot_image(ctx: &Ctx, uki_bytes: &[u8]) -> Result<Vec<u8>> {
         want.extend(keys.iter().map(|(p, _)| p.clone()));
     }
     want.sort();
-    ensure!(listing == want, "boot image contents unexpected: {listing:?}");
+    ensure!(
+        listing == want,
+        "boot image contents unexpected: {listing:?}"
+    );
     Ok(efi)
 }
 
@@ -276,10 +311,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
 pub fn validate(image: &[u8], uki: &[u8]) -> Result<String> {
     use optical::iso::{boot::PLATFORM_EFI, hybrid};
     let img = optical::IsoImage::open(image).context("ISO does not read back")?;
-    let entry = img
-        .info()
-        .boot
-        .context("no El Torito boot entry")?;
+    let entry = img.info().boot.context("no El Torito boot entry")?;
     ensure!(
         entry.platform == PLATFORM_EFI && entry.bootable && entry.media == 0,
         "El Torito entry is not a bootable EFI no-emulation entry: {entry:?}"
@@ -292,10 +324,16 @@ pub fn validate(image: &[u8], uki: &[u8]) -> Result<String> {
     let efi_bytes = img.read_file(&efi)?;
     let inner = fat::read_file(&efi_bytes, BOOT_FILE)
         .with_context(|| format!("{BOOT_IMAGE} has no {BOOT_FILE}"))?;
-    ensure!(inner == uki, "{BOOT_IMAGE}'s {BOOT_FILE} is not the media UKI");
+    ensure!(
+        inner == uki,
+        "{BOOT_IMAGE}'s {BOOT_FILE} is not the media UKI"
+    );
     for path in [BOOT_FILE, LIC_FILE] {
         let loose = img.read_file(&img.lookup(path)?)?;
-        ensure!(loose == inner, "{path} in the ISO tree differs from the boot image's");
+        ensure!(
+            loose == inner,
+            "{path} in the ISO tree differs from the boot image's"
+        );
     }
     let gpt = hybrid::verify(&image).context("partition table")?;
     let p1 = gpt
@@ -372,21 +410,31 @@ mod tests {
         let m = Manifest::parse(std::str::from_utf8(&m).unwrap()).unwrap();
         assert_eq!(m.file(SLOT_A_FILE).unwrap().size, 6);
         assert_eq!(m.release, "V1R0M0");
-        let public = ed25519_dalek::SigningKey::from_bytes(&[5; 32]).verifying_key().to_bytes();
+        let public = ed25519_dalek::SigningKey::from_bytes(&[5; 32])
+            .verifying_key()
+            .to_bytes();
         instmedia::sign::verify(&m, &public).unwrap();
         let c = instmedia::Contents::of(m.clone()).unwrap();
         assert_eq!(c.products(), vec!["QS00SS1".to_string()]);
         let lp = img.lookup("QS400/LP/QS00SS1.SAVF").unwrap();
         assert_eq!(img.read_file(&lp).unwrap(), b"os");
-        let r = img.read_file(&img.lookup(manifest::RESPONSE).unwrap()).unwrap();
+        let r = img
+            .read_file(&img.lookup(manifest::RESPONSE).unwrap())
+            .unwrap();
         assert_eq!(r, b"language = 2924\n");
         let boot = img.info().boot.unwrap();
         assert_eq!(img.lookup(BOOT_IMAGE).unwrap().extents[0].0, boot.lba);
         let gpt = optical::iso::hybrid::verify(&img.source().to_vec()).unwrap();
         let esp = img.lookup(BOOT_IMAGE).unwrap();
         assert_eq!(gpt.partitions[0].first_lba, u64::from(boot.lba) * 4);
-        assert_eq!(gpt.partitions[0].last_lba, u64::from(boot.lba) * 4 + esp.size / 512 - 1);
-        assert_eq!(gpt.partitions[1].type_guid, optical::iso::hybrid::QUARTZ_MEDIA);
+        assert_eq!(
+            gpt.partitions[0].last_lba,
+            u64::from(boot.lba) * 4 + esp.size / 512 - 1
+        );
+        assert_eq!(
+            gpt.partitions[1].type_guid,
+            optical::iso::hybrid::QUARTZ_MEDIA
+        );
         // The installer's reader still finds the slot UKIs.
         let mut cur = std::io::Cursor::new(iso);
         let (id, _) = diskimg::iso9660::read_root(&mut cur).unwrap();

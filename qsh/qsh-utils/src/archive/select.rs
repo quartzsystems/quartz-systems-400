@@ -27,7 +27,11 @@ impl Select {
                 .iter()
                 .map(|p| {
                     let t = p.trim_end_matches('/');
-                    if t.is_empty() { p.clone() } else { t.to_string() }
+                    if t.is_empty() {
+                        p.clone()
+                    } else {
+                        t.to_string()
+                    }
                 })
                 .collect(),
             used: vec![false; pats.len()],

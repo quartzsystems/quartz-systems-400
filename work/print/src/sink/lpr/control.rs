@@ -50,7 +50,9 @@ pub fn unescape(s: &str) -> String {
     let mut i = 0;
     while i < b.len() {
         if b[i] == b'%'
-            && let Some(v) = s.get(i + 1..i + 3).and_then(|h| u8::from_str_radix(h, 16).ok())
+            && let Some(v) = s
+                .get(i + 1..i + 3)
+                .and_then(|h| u8::from_str_radix(h, 16).ok())
         {
             out.push(v);
             i += 3;
@@ -197,7 +199,10 @@ impl ControlFile {
     /// The operand of the first `c` line.
     #[must_use]
     pub fn get(&self, c: u8) -> Option<&str> {
-        self.lines.iter().find(|(k, _)| *k == c).map(|(_, v)| v.as_str())
+        self.lines
+            .iter()
+            .find(|(k, _)| *k == c)
+            .map(|(_, v)| v.as_str())
     }
 
     /// The print commands: `(letter, data file name)`.
@@ -214,7 +219,11 @@ impl ControlFile {
     /// file has no `YQS400=1` line.
     #[must_use]
     pub fn extension(&self) -> Option<Vec<(String, String)>> {
-        let mut ext = self.lines.iter().filter(|(k, _)| *k == EXT).map(|(_, v)| v.as_str());
+        let mut ext = self
+            .lines
+            .iter()
+            .filter(|(k, _)| *k == EXT)
+            .map(|(_, v)| v.as_str());
         if ext.next()? != VERSION_LINE {
             return None;
         }

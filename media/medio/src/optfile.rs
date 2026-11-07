@@ -170,7 +170,12 @@ fn make_parents(v: &mut optical::Volume, path: &str) -> optical::Result<()> {
 
 /// Put `data` at `path` (and the label `part`, when given) on `v`;
 /// nothing stays when it does not fit.
-fn put(v: &mut optical::Volume, path: &str, data: &[u8], part: Option<&Part>) -> optical::Result<()> {
+fn put(
+    v: &mut optical::Volume,
+    path: &str,
+    data: &[u8],
+    part: Option<&Part>,
+) -> optical::Result<()> {
     make_parents(v, path)?;
     let side = format!("{path}{PART_SUFFIX}");
     match part {
@@ -204,7 +209,9 @@ impl OpticalWriter<'_> {
             more: false,
             bytes: rest.len() as u64,
         };
-        let whole = self.set.with(vol, |v| put(v, &path, rest, (n > 1).then_some(&last)));
+        let whole = self
+            .set
+            .with(vol, |v| put(v, &path, rest, (n > 1).then_some(&last)));
         let over = match whole {
             Ok(()) => return Ok(rest.len()),
             Err(optical::Error::VolumeFull { need, capacity }) if spans => need - capacity,
@@ -227,7 +234,10 @@ impl OpticalWriter<'_> {
                 more: true,
                 bytes: len as u64,
             };
-            match self.set.with(vol, |v| put(v, &path, &rest[..len], Some(&p))) {
+            match self
+                .set
+                .with(vol, |v| put(v, &path, &rest[..len], Some(&p)))
+            {
                 Ok(()) => return Ok(len),
                 Err(optical::Error::VolumeFull { need, capacity }) => {
                     fit = fit.saturating_sub(need - capacity + MARGIN) / SECTOR * SECTOR;

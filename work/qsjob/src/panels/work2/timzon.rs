@@ -20,7 +20,12 @@ use crate::display::uim::{LineMsg, Response, UimDialog};
 const VIEWS: [&str; 4] = ["WRKTIMZON", "WRKTIMZON2", "WRKTIMZON3", "WRKTIMZON4"];
 
 /// `WRKTIMZON TIMZON(name|generic*|*ALL)`.
-pub fn wrktimzon(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrktimzon(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let filter = parm(r, "TIMZON").unwrap_or_else(|| "*ALL".into());
     let mut d = dialog(host, "QSTIMZON")?;
     let mut view = 0usize;
@@ -31,7 +36,11 @@ pub fn wrktimzon(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
             Ok(())
         };
         let mut next = None;
-        let mut keys = |job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, resp: Response| {
+        let mut keys = |job: &mut Job,
+                        host: &Host,
+                        surface: &mut Surface,
+                        d: &mut UimDialog,
+                        resp: Response| {
             Ok(match resp {
                 Response::Return(11) => {
                     next = Some((view + 1) % VIEWS.len());
@@ -53,10 +62,18 @@ pub fn wrktimzon(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                         match fetch(host, "TIMZONPRT", &[name.trim()]) {
                             Ok((vars, _)) => {
                                 if let Some((_, t)) = vars.iter().find(|(k, _)| k == "DONE") {
-                                    d.send(LineMsg { text: Some(t.clone()), ..LineMsg::default() });
+                                    d.send(LineMsg {
+                                        text: Some(t.clone()),
+                                        ..LineMsg::default()
+                                    });
                                 }
                             }
-                            Err(f) => d.send(LineMsg { id: f.msgid, error: true, text: Some(f.text), ..LineMsg::default() }),
+                            Err(f) => d.send(LineMsg {
+                                id: f.msgid,
+                                error: true,
+                                text: Some(f.text),
+                                ..LineMsg::default()
+                            }),
                         }
                         Step::Stay
                     }
@@ -65,7 +82,15 @@ pub fn wrktimzon(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                 other => no_more(d, &other),
             })
         };
-        work(job, host, surface, &mut d, VIEWS[view], &mut reload, &mut keys)?;
+        work(
+            job,
+            host,
+            surface,
+            &mut d,
+            VIEWS[view],
+            &mut reload,
+            &mut keys,
+        )?;
         match next {
             Some(v) => view = v,
             None => return Ok(String::new()),
@@ -77,7 +102,11 @@ pub fn wrktimzon(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
 fn details(host: &Host, surface: &mut Surface, name: &str) -> Result<(), Fail> {
     let mut d = dialog(host, "QSTIMZON")?;
     let data = fetch(host, "TIMZONDTL", &[name])?;
-    let panel = data.0.iter().find(|(k, _)| k == "PANEL").map_or_else(|| "DSPTZN".to_string(), |(_, v)| v.clone());
+    let panel = data
+        .0
+        .iter()
+        .find(|(k, _)| k == "PANEL")
+        .map_or_else(|| "DSPTZN".to_string(), |(_, v)| v.clone());
     let mut reload = |_: &Host, d: &mut UimDialog| -> Result<(), Fail> {
         for (k, v) in &data.0 {
             d.set(k, v);

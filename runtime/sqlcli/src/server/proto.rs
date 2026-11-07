@@ -77,13 +77,21 @@ ipc::wire_enum!(FromServer {
 /// A request as it crosses.
 #[must_use]
 pub fn run_message(req: &Request) -> ToServer {
-    ToServer::Run { scope: req.scope.clone(), desc: req.desc.encode(), inputs: req.inputs.iter().map(to_wire).collect() }
+    ToServer::Run {
+        scope: req.scope.clone(),
+        desc: req.desc.encode(),
+        inputs: req.inputs.iter().map(to_wire).collect(),
+    }
 }
 
 /// The request a `Run` carries.
 #[must_use]
 pub fn request_of(scope: &str, desc: &str, inputs: &[WireValue]) -> Option<Request> {
-    Some(Request { scope: scope.to_string(), desc: Desc::decode(desc)?, inputs: inputs.iter().map(from_wire).collect() })
+    Some(Request {
+        scope: scope.to_string(),
+        desc: Desc::decode(desc)?,
+        inputs: inputs.iter().map(from_wire).collect(),
+    })
 }
 
 /// A reply as it crosses.
@@ -91,14 +99,22 @@ pub fn request_of(scope: &str, desc: &str, inputs: &[WireValue]) -> Option<Reque
 pub fn done_message(reply: &Reply, outs: &[(usize, Value)]) -> FromServer {
     FromServer::Done {
         reply: reply.to_wire(),
-        outs: outs.iter().map(|(m, v)| (u32::try_from(*m).unwrap_or(u32::MAX), to_wire(v))).collect(),
+        outs: outs
+            .iter()
+            .map(|(m, v)| (u32::try_from(*m).unwrap_or(u32::MAX), to_wire(v)))
+            .collect(),
     }
 }
 
 /// The reply a `Done` carries.
 #[must_use]
 pub fn reply_of(reply: &WireReply, outs: &[(u32, WireValue)]) -> (Reply, Vec<(usize, Value)>) {
-    (Reply::from_wire(reply), outs.iter().map(|(m, v)| (*m as usize, from_wire(v))).collect())
+    (
+        Reply::from_wire(reply),
+        outs.iter()
+            .map(|(m, v)| (*m as usize, from_wire(v)))
+            .collect(),
+    )
 }
 
 #[cfg(test)]
@@ -110,17 +126,38 @@ mod tests {
     fn messages_round_trip() {
         let req = Request {
             scope: "CLI:2".into(),
-            desc: Desc { op: Op::Execute, name: "S3".into(), ..Desc::default() },
+            desc: Desc {
+                op: Op::Execute,
+                name: "S3".into(),
+                ..Desc::default()
+            },
             inputs: vec![Value::int(4), Value::Str("x".into()), Value::Null],
         };
         let m = run_message(&req);
         let back: ToServer = ipc::decode(&ipc::encode(&m)).unwrap();
-        let ToServer::Run { scope, desc, inputs } = back else { panic!("not a run") };
+        let ToServer::Run {
+            scope,
+            desc,
+            inputs,
+        } = back
+        else {
+            panic!("not a run")
+        };
         assert_eq!(request_of(&scope, &desc, &inputs).unwrap(), req);
-        let hello = ToServer::Hello { ticket: vec![1, 2], user: String::new(), password: String::new() };
-        assert_eq!(ipc::decode::<ToServer>(&ipc::encode(&hello)).unwrap(), hello);
+        let hello = ToServer::Hello {
+            ticket: vec![1, 2],
+            user: String::new(),
+            password: String::new(),
+        };
+        assert_eq!(
+            ipc::decode::<ToServer>(&ipc::encode(&hello)).unwrap(),
+            hello
+        );
         let d = done_message(&Reply::default(), &[(1, Value::int(9))]);
-        let FromServer::Done { reply, outs } = ipc::decode::<FromServer>(&ipc::encode(&d)).unwrap() else { panic!("not done") };
+        let FromServer::Done { reply, outs } = ipc::decode::<FromServer>(&ipc::encode(&d)).unwrap()
+        else {
+            panic!("not done")
+        };
         assert_eq!(reply_of(&reply, &outs).1, vec![(1, Value::int(9))]);
     }
 }

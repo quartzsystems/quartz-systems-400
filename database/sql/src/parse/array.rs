@@ -11,7 +11,12 @@ use crate::ast::{Expr, Function, ObjectName, TableRef, WithinGroup};
 use crate::error::Result;
 
 fn func(name: &str, args: Vec<Expr>) -> Expr {
-    Expr::Function(Function { name: name.into(), distinct: false, star: false, args })
+    Expr::Function(Function {
+        name: name.into(),
+        distinct: false,
+        star: false,
+        args,
+    })
 }
 
 impl Parser {
@@ -50,7 +55,11 @@ impl Parser {
         self.expect_words(&["ORDER", "BY"])?;
         let order = self.order_list()?;
         self.expect_sym(")")?;
-        Ok(Expr::WithinGroup(Box::new(WithinGroup { func: f, order, overflow: None })))
+        Ok(Expr::WithinGroup(Box::new(WithinGroup {
+            func: f,
+            order,
+            overflow: None,
+        })))
     }
 
     /// At `UNNEST (`: the table reference.
@@ -66,6 +75,11 @@ impl Parser {
         let (alias, columns) = self.correlation()?;
         let alias = alias.ok_or_else(|| self.expected("a correlation name"))?;
         let name = ObjectName::new(if ordinality { "*UNNESTO" } else { "*UNNEST" });
-        Ok(TableRef::Lateral(Box::new(TableRef::Function { name, args, alias, columns })))
+        Ok(TableRef::Lateral(Box::new(TableRef::Function {
+            name,
+            args,
+            alias,
+            columns,
+        })))
     }
 }

@@ -40,12 +40,19 @@ pub fn second_level(ctx: &Ctx, sl: &SecondLevel, sent: Option<&Sent>, crumb: &st
     ];
     if let Some(s) = sent {
         rows.push(Prop::new("Message type", esc(&s.msg_type)));
-        rows.push(Prop::new("Date sent", format!("{} &nbsp; {}", esc(&s.date), esc(&s.time))));
+        rows.push(Prop::new(
+            "Date sent",
+            format!("{} &nbsp; {}", esc(&s.date), esc(&s.time)),
+        ));
         rows.push(Prop::new("From job", esc(&s.job)).mono());
         rows.push(Prop::new("From program", esc(&s.program)).mono());
     }
     body.push('\n');
-    body.push_str(&props_table(ctx.product, &[PropGroup { title: None, rows }], true));
+    body.push_str(&props_table(
+        ctx.product,
+        &[PropGroup { title: None, rows }],
+        true,
+    ));
     let _ = write!(
         body,
         "\n<h2>Message</h2>\n<pre class=\"out\">{}</pre>\n<h2>Cause</h2>\n<p>{}</p>\n<h2>Recovery</h2>\n<p>{}</p>\n",
@@ -54,19 +61,30 @@ pub fn second_level(ctx: &Ctx, sl: &SecondLevel, sent: Option<&Sent>, crumb: &st
         esc(&sl.recovery)
     );
     if let Some(s) = sent.filter(|s| !s.technical.is_empty()) {
-        let _ = writeln!(body, "<h2>Technical details</h2>\n<pre class=\"out\">{}</pre>", esc(&s.technical));
+        let _ = writeln!(
+            body,
+            "<h2>Technical details</h2>\n<pre class=\"out\">{}</pre>",
+            esc(&s.technical)
+        );
     }
     body.push_str(&form(
         ctx,
         "",
-        &buttons(&[Button::bare("< Back"), Button::bare("Job log"), Button::bare("Close")]),
+        &buttons(&[
+            Button::bare("< Back"),
+            Button::bare("Job log"),
+            Button::bare("Close"),
+        ]),
     ));
     body.push('\n');
     Page {
         title: "Error".into(),
         crumb: vec![crumb.into()],
         h1: "Error".into(),
-        desc: Some("The request could not be completed. The message below was returned by the system.".into()),
+        desc: Some(
+            "The request could not be completed. The message below was returned by the system."
+                .into(),
+        ),
         messages: vec![Message::new(Kind::Error, &sl.id, &sl.text)],
         body,
         help: "error".into(),
@@ -112,7 +130,11 @@ pub fn not_authorized(ctx: &Ctx, r: &Refusal) -> Page {
         "\n<p>{}</p>\n{}\n<p>Contact the security officer (QSECOFR) if you need this authority. The attempt has been recorded in the audit journal (entry type AF).</p>\n{}\n",
         r.explain,
         props_table(ctx.product, &[PropGroup { title: None, rows }], true),
-        form(ctx, "", &buttons(&[Button::bare("< Back"), Button::bare("Home")]))
+        form(
+            ctx,
+            "",
+            &buttons(&[Button::bare("< Back"), Button::bare("Home")])
+        )
     );
     let mut crumb = r.crumb.clone();
     crumb.push("Not authorized".into());

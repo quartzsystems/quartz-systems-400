@@ -14,7 +14,10 @@ use crate::ast::{BinOp, Expr, Literal};
 /// [`SqlType::unknown`] when there is none.
 #[must_use]
 pub fn infer(e: &Expr, scope: &Scope<'_>) -> SqlType {
-    type_in(e, scope).ok().flatten().unwrap_or_else(SqlType::unknown)
+    type_in(e, scope)
+        .ok()
+        .flatten()
+        .unwrap_or_else(SqlType::unknown)
 }
 
 /// Date, time and timestamp arithmetic: the durations of a subtraction,
@@ -29,7 +32,9 @@ pub fn datetime(a: &SqlType, op: BinOp, b: &SqlType) -> Option<SqlType> {
             let p = a.scale().max(b.scale());
             SqlType::decimal(14 + u32::from(p), p, null)
         }
-        (Kind::Date | Kind::Time | Kind::Timestamp, BinOp::Add | BinOp::Sub, _) => a.clone().nullable(null),
+        (Kind::Date | Kind::Time | Kind::Timestamp, BinOp::Add | BinOp::Sub, _) => {
+            a.clone().nullable(null)
+        }
         (_, BinOp::Add, Kind::Date | Kind::Time | Kind::Timestamp) => b.clone().nullable(null),
         _ => return None,
     })
@@ -49,7 +54,13 @@ pub fn byte_size(t: &SqlType) -> u32 {
         Kind::Integer | Kind::Real | Kind::Date => 4,
         Kind::BigInt | Kind::Double => 8,
         Kind::Decimal => t.len() / 2 + 1,
-        Kind::DecFloat => if t.len() <= 16 { 8 } else { 16 },
+        Kind::DecFloat => {
+            if t.len() <= 16 {
+                8
+            } else {
+                16
+            }
+        }
         Kind::Time => 3,
         Kind::Timestamp => 10,
         Kind::Graphic | Kind::Vargraphic | Kind::Dbclob => t.len() * 2,
@@ -60,7 +71,9 @@ pub fn byte_size(t: &SqlType) -> u32 {
 /// The arguments with an unknown one as [`SqlType::unknown`].
 #[must_use]
 pub fn known(args: &[Option<SqlType>]) -> Vec<SqlType> {
-    args.iter().map(|a| a.clone().unwrap_or_else(SqlType::unknown)).collect()
+    args.iter()
+        .map(|a| a.clone().unwrap_or_else(SqlType::unknown))
+        .collect()
 }
 
 /// The built-in scalar functions' result types (a [`super::FunctionType`]).
@@ -83,8 +96,12 @@ pub fn builtin(name: &str, given: &[Option<SqlType>], exprs: &[Expr]) -> Option<
             t.nullable(null)
         }
         "NVL" => {
-            let typed: Vec<SqlType> =
-                given.iter().zip(exprs).filter(|(_, e)| !matches!(e, Expr::Literal(Literal::Null))).filter_map(|(t, _)| t.clone()).collect();
+            let typed: Vec<SqlType> = given
+                .iter()
+                .zip(exprs)
+                .filter(|(_, e)| !matches!(e, Expr::Literal(Literal::Null)))
+                .filter_map(|(t, _)| t.clone())
+                .collect();
             let mut t = typed.first()?.clone();
             for a in &typed[1..] {
                 t = unify_or(t, a);
@@ -93,27 +110,52 @@ pub fn builtin(name: &str, given: &[Option<SqlType>], exprs: &[Expr]) -> Option<
         }
         "DATE" => SqlType::date(null),
         "TIME" => SqlType::time(null),
-        "TIMESTAMP" => SqlType::timestamp(num(1).and_then(|p| u8::try_from(p).ok()).unwrap_or(6), null),
+        "TIMESTAMP" => {
+            SqlType::timestamp(num(1).and_then(|p| u8::try_from(p).ok()).unwrap_or(6), null)
+        }
         "NOW" => SqlType::timestamp(6, false),
         "CARDINALITY" | "MAX_CARDINALITY" => SqlType::bigint(true),
-        "LENGTH" | "CHAR_LENGTH" | "CHARACTER_LENGTH" | "OCTET_LENGTH" | "YEAR" | "MONTH" | "DAY" | "DAYOFMONTH"
-        | "HOUR" | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS" | "POSSTR" | "LOCATE" | "POSITION" | "DAYOFWEEK"
-        | "DAYOFWEEK_ISO" | "DAYOFYEAR" | "WEEK" | "LEAP" | "JULIAN_DAY" => SqlType::int(null),
+        "LENGTH" | "CHAR_LENGTH" | "CHARACTER_LENGTH" | "OCTET_LENGTH" | "YEAR" | "MONTH"
+        | "DAY" | "DAYOFMONTH" | "HOUR" | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS"
+        | "POSSTR" | "LOCATE" | "POSITION" | "DAYOFWEEK" | "DAYOFWEEK_ISO" | "DAYOFYEAR"
+        | "WEEK" | "LEAP" | "JULIAN_DAY" => SqlType::int(null),
         "POWER" | "POW" | "SQRT" => SqlType::double(null),
         "BOOLEAN" => SqlType::boolean(null),
         "DECIMAL" | "DEC" | "ZONED" => {
             let (dp, ds) = first.and_then(|t| t.digits()).unwrap_or((15, 0));
             let p = num(1).unwrap_or(if exprs.len() > 1 { 15 } else { dp });
             let s = num(2).unwrap_or(if exprs.len() > 1 { 0 } else { u32::from(ds) });
-            let kind = if name == "ZONED" { Kind::Numeric } else { Kind::Decimal };
-            SqlType::new(kind, p.clamp(1, 63), u8::try_from(s.min(p)).unwrap_or(0), null)
+            let kind = if name == "ZONED" {
+                Kind::Numeric
+            } else {
+                Kind::Decimal
+            };
+            SqlType::new(
+                kind,
+                p.clamp(1, 63),
+                u8::try_from(s.min(p)).unwrap_or(0),
+                null,
+            )
         }
         "BINARY" | "VARBINARY" => {
             let n = num(1).unwrap_or_else(|| first.map_or(1, |t| t.len()));
-            SqlType::new(if name == "BINARY" { Kind::Binary } else { Kind::Varbinary }, n, 0, null)
+            SqlType::new(
+                if name == "BINARY" {
+                    Kind::Binary
+                } else {
+                    Kind::Varbinary
+                },
+                n,
+                0,
+                null,
+            )
         }
         "CHAR" | "VARCHAR" => {
-            let kind = if name == "CHAR" { Kind::Char } else { Kind::Varchar };
+            let kind = if name == "CHAR" {
+                Kind::Char
+            } else {
+                Kind::Varchar
+            };
             let n = match (num(1), first) {
                 (Some(n), _) => n,
                 (_, Some(t)) => match t.kind() {
@@ -126,9 +168,14 @@ pub fn builtin(name: &str, given: &[Option<SqlType>], exprs: &[Expr]) -> Option<
             };
             SqlType::new(kind, n, 0, null)
         }
-        "DIGITS" => SqlType::char(first.and_then(|t| t.digits()).map_or(15, |(p, _)| if p == 11 { 10 } else { p }), null),
-        "SUBSTR" | "SUBSTRING" | "LEFT" | "RIGHT" | "TRIM" | "LTRIM" | "RTRIM" | "STRIP" | "UPPER" | "UCASE" | "LOWER"
-        | "LCASE" => {
+        "DIGITS" => SqlType::char(
+            first
+                .and_then(|t| t.digits())
+                .map_or(15, |(p, _)| if p == 11 { 10 } else { p }),
+            null,
+        ),
+        "SUBSTR" | "SUBSTRING" | "LEFT" | "RIGHT" | "TRIM" | "LTRIM" | "RTRIM" | "STRIP"
+        | "UPPER" | "UCASE" | "LOWER" | "LCASE" => {
             // The source: last after TRIM's end word, else first.
             let moded = matches!(exprs.first(), Some(Expr::Literal(Literal::Str(m))) if matches!(m.as_str(), "BOTH" | "LEADING" | "TRAILING" | "B" | "L" | "T"));
             let t = if moded { args.last().cloned() } else { first };
@@ -142,9 +189,16 @@ pub fn builtin(name: &str, given: &[Option<SqlType>], exprs: &[Expr]) -> Option<
             SqlType::new(kind, t.len(), 0, null)
         }
         "CONCAT" => arith_or(&first?, BinOp::Concat, args.get(1)?),
-        "REPLACE" => SqlType::varchar(first.map_or(4000, |t| t.len().max(1)).saturating_mul(4).min(32740), null),
+        "REPLACE" => SqlType::varchar(
+            first
+                .map_or(4000, |t| t.len().max(1))
+                .saturating_mul(4)
+                .min(32740),
+            null,
+        ),
         "HEX" => SqlType::varchar(first.map_or(2, |t| byte_size(&t) * 2).min(32740), null),
-        "ABS" | "ABSVAL" | "MOD" | "ROUND" | "TRUNCATE" | "TRUNC" | "CEILING" | "CEIL" | "FLOOR" => {
+        "ABS" | "ABSVAL" | "MOD" | "ROUND" | "TRUNCATE" | "TRUNC" | "CEILING" | "CEIL"
+        | "FLOOR" => {
             let t = first.unwrap_or_else(|| SqlType::int(null));
             if name == "MOD" {
                 let b = args.get(1).cloned().unwrap_or_else(|| t.clone());
@@ -161,7 +215,9 @@ pub fn builtin(name: &str, given: &[Option<SqlType>], exprs: &[Expr]) -> Option<
             _ => return None,
         },
         "*DISTINCT" | "*NOTDISTINCT" => SqlType::boolean(false),
-        "ADD_MONTHS" | "LAST_DAY" | "NEXT_DAY" => first.unwrap_or_else(|| SqlType::date(null)).nullable(null),
+        "ADD_MONTHS" | "LAST_DAY" | "NEXT_DAY" => {
+            first.unwrap_or_else(|| SqlType::date(null)).nullable(null)
+        }
         "DAYNAME" | "MONTHNAME" => SqlType::varchar(100, null),
         // The identity value the job last gave (the primary).
         "IDENTITY_VAL_LOCAL" => SqlType::decimal(31, 0, true),

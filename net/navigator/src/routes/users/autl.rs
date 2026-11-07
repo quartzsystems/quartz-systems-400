@@ -13,7 +13,8 @@ use std::cmp::Reverse;
 use qsweb::html::esc;
 use qsweb::http::Response;
 use qsweb::partials::{
-    Button, Cell, Col, List, Prop, PropGroup, actions, buttons, checkbox, form, input, list_table, props,
+    Button, Cell, Col, List, Prop, PropGroup, actions, buttons, checkbox, form, input, list_table,
+    props,
 };
 
 use super::{confirm_page, page, run};
@@ -31,7 +32,13 @@ pub fn route(rq: &Rq<'_>, rest: &[&str]) -> Response {
         ["create"] => create(rq),
         [name, rest @ ..] => {
             let name = name.to_ascii_uppercase();
-            let Some(l) = rq.env().users.lists(rq.user()).into_iter().find(|l| l.name == name) else {
+            let Some(l) = rq
+                .env()
+                .users
+                .lists(rq.user())
+                .into_iter()
+                .find(|l| l.name == name)
+            else {
                 return rq.not_found(&format!("authorization list {name}"));
             };
             match rest {
@@ -39,7 +46,10 @@ pub fn route(rq: &Rq<'_>, rest: &[&str]) -> Response {
                 ["objects"] => objects(rq, &l),
                 ["remove"] => remove(rq, &l),
                 ["delete"] => delete(rq, &l),
-                _ => rq.not_found(&format!("page {} of authorization list {name}", rest.join("/"))),
+                _ => rq.not_found(&format!(
+                    "page {} of authorization list {name}",
+                    rest.join("/")
+                )),
             }
         }
     }
@@ -87,7 +97,11 @@ fn list(rq: &Rq<'_>) -> Response {
         empty: "There are no authorization lists.".into(),
         keep: Vec::new(),
     };
-    let body = format!("{}{}", list_table(&table), form(&rq.ctx, "", &buttons(&[Button::bare("Create...")])));
+    let body = format!(
+        "{}{}",
+        list_table(&table),
+        form(&rq.ctx, "", &buttons(&[Button::bare("Create...")]))
+    );
     page(
         rq,
         &["Authorization lists"],
@@ -107,12 +121,18 @@ fn marks(e: &AuthEntry) -> [bool; 11] {
         "*USE" => (true, false, [true, false, false, false, true]),
         _ => (false, false, [false; 5]),
     };
-    [opr, mgt, mgt, mgt, mgt, data[0], data[1], data[2], data[3], data[4], e.list_mgt]
+    [
+        opr, mgt, mgt, mgt, mgt, data[0], data[1], data[2], data[3], data[4], e.list_mgt,
+    ]
 }
 
 /// `AUT()` of an authority and list management.
 fn aut(level: &str, mgt: bool) -> String {
-    if mgt { format!("{level} *AUTLMGT") } else { level.to_string() }
+    if mgt {
+        format!("{level} *AUTLMGT")
+    } else {
+        level.to_string()
+    }
 }
 
 /// `/autl/<name>`: the entries, Add and Change.
@@ -123,10 +143,18 @@ fn entries(rq: &Rq<'_>, l: &AuthList) -> Response {
         if f.has("cancel") {
             return rq.redirect(&here);
         }
-        let a = AUTHORITIES.iter().find(|a| f.str("a") == **a).copied().unwrap_or("*USE");
+        let a = AUTHORITIES
+            .iter()
+            .find(|a| f.str("a") == **a)
+            .copied()
+            .unwrap_or("*USE");
         let u = f.str("u").trim().to_ascii_uppercase();
         let cmd = if f.has("change") {
-            format!("CHGAUTLE AUTL({}) USER({u}) AUT({})", l.name, aut(a, f.has("m")))
+            format!(
+                "CHGAUTLE AUTL({}) USER({u}) AUT({})",
+                l.name,
+                aut(a, f.has("m"))
+            )
         } else {
             format!("ADDAUTLE AUTL({}) USER({u}) AUT({a})", l.name)
         };
@@ -144,20 +172,33 @@ fn entries(rq: &Rq<'_>, l: &AuthList) -> Response {
             let mut r = vec![
                 Cell::act(actions(&[
                     (rq.ctx.url(&format!("{here}?edit={}", e.user)), "Change"),
-                    (rq.ctx.url(&format!("{here}/remove?user={}", e.user)), "Remove"),
+                    (
+                        rq.ctx.url(&format!("{here}/remove?user={}", e.user)),
+                        "Remove",
+                    ),
                 ])),
                 Cell::mono(&e.user),
                 Cell::mono(&e.authority),
             ];
-            r.extend(marks(e).iter().map(|m| Cell::text(if *m { "X" } else { "" })));
+            r.extend(
+                marks(e)
+                    .iter()
+                    .map(|m| Cell::text(if *m { "X" } else { "" })),
+            );
             r
         })
         .collect();
-    let mut cols = vec![Col::plain("Actions"), Col::sorted("User", "u"), Col::sorted("Object authority", "a")];
+    let mut cols = vec![
+        Col::plain("Actions"),
+        Col::sorted("User", "u"),
+        Col::sorted("Object authority", "a"),
+    ];
     cols.extend(
-        ["Opr", "Mgt", "Exist", "Alter", "Ref", "Read", "Add", "Upd", "Dlt", "Exec", "List mgt"]
-            .iter()
-            .map(|c| Col::plain(c)),
+        [
+            "Opr", "Mgt", "Exist", "Alter", "Ref", "Read", "Add", "Upd", "Dlt", "Exec", "List mgt",
+        ]
+        .iter()
+        .map(|c| Col::plain(c)),
     );
     let table = List {
         cols,
@@ -177,7 +218,10 @@ fn entries(rq: &Rq<'_>, l: &AuthList) -> Response {
                 esc(&e.user),
                 pick("a", &strings(AUTHORITIES), &e.authority),
                 checkbox("m", e.list_mgt),
-                buttons(&[Button::new("change", "Change"), Button::new("cancel", "Cancel")])
+                buttons(&[
+                    Button::new("change", "Change"),
+                    Button::new("cancel", "Cancel")
+                ])
             ),
         ),
         None => form(
@@ -199,7 +243,15 @@ fn entries(rq: &Rq<'_>, l: &AuthList) -> Response {
         esc(&rq.ctx.url("/autl"))
     );
     let title = format!("Authorization list: {}", l.name);
-    page(rq, &["Authorization lists", &l.name], &title, None, format!("{head}{}{tail}", list_table(&table)), "autl", None)
+    page(
+        rq,
+        &["Authorization lists", &l.name],
+        &title,
+        None,
+        format!("{head}{}{tail}", list_table(&table)),
+        "autl",
+        None,
+    )
 }
 
 /// `/autl/<name>/objects`: the objects the list secures.
@@ -209,10 +261,22 @@ fn objects(rq: &Rq<'_>, l: &AuthList) -> Response {
         .users
         .secured(rq.user(), &l.name)
         .into_iter()
-        .map(|o| vec![Cell::mono(&o.object), Cell::mono(&o.lib), Cell::mono(&o.typ), Cell::mono(&o.owner)])
+        .map(|o| {
+            vec![
+                Cell::mono(&o.object),
+                Cell::mono(&o.lib),
+                Cell::mono(&o.typ),
+                Cell::mono(&o.owner),
+            ]
+        })
         .collect();
     let table = List {
-        cols: vec![Col::plain("Object"), Col::plain("Library"), Col::plain("Type"), Col::plain("Owner")],
+        cols: vec![
+            Col::plain("Object"),
+            Col::plain("Library"),
+            Col::plain("Type"),
+            Col::plain("Owner"),
+        ],
         rows,
         empty: "The list secures no objects.".into(),
         keep: Vec::new(),

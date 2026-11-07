@@ -100,7 +100,8 @@ pub fn host_matches(h: &str, client: IpAddr) -> bool {
     }
     // A partial address: `10.1` or `10.1.`.
     let parts: Vec<&str> = h.trim_end_matches('.').split('.').collect();
-    if parts.len() < 4 && parts.iter().all(|p| p.parse::<u8>().is_ok())
+    if parts.len() < 4
+        && parts.iter().all(|p| p.parse::<u8>().is_ok())
         && let Some(c) = v4(client)
     {
         return parts.iter().zip(c).all(|(p, b)| p.parse::<u8>() == Ok(b));
@@ -197,9 +198,9 @@ impl DirConf {
     /// Apply the directives of one scope (not its sections); `fresh`
     /// is where the scope's access group starts when it names one.
     pub fn apply(&mut self, items: &[Node]) {
-        let names_access = items
-            .iter()
-            .any(|n| matches!(n, Node::Directive(d) if d.is("Order") || d.is("Allow") || d.is("Deny")));
+        let names_access = items.iter().any(
+            |n| matches!(n, Node::Directive(d) if d.is("Order") || d.is("Allow") || d.is("Deny")),
+        );
         if names_access {
             self.access = Access::default();
         }
@@ -258,7 +259,10 @@ impl DirConf {
             }
             "addtype" => {
                 for ext in &a[1..] {
-                    self.types.push((a[0].clone(), ext.trim_start_matches('.').to_ascii_lowercase()));
+                    self.types.push((
+                        a[0].clone(),
+                        ext.trim_start_matches('.').to_ascii_lowercase(),
+                    ));
                 }
             }
             "defaulttype" => self.default_type = Some(a[0].clone()),
@@ -286,13 +290,20 @@ impl DirConf {
 
     /// The `ErrorDocument` for `status`.
     pub fn error_doc(&self, status: u16) -> Option<&str> {
-        self.error_docs.iter().find(|(c, _)| *c == status).map(|(_, t)| t.as_str())
+        self.error_docs
+            .iter()
+            .find(|(c, _)| *c == status)
+            .map(|(_, t)| t.as_str())
     }
 }
 
 /// A path with one trailing slash removed (but `/` kept).
 fn trim(p: &str) -> &str {
-    if p.len() > 1 { p.trim_end_matches('/') } else { p }
+    if p.len() > 1 {
+        p.trim_end_matches('/')
+    } else {
+        p
+    }
 }
 
 /// Whether directory `dir` holds `path` (or is it).
@@ -324,7 +335,12 @@ pub fn matching<'a>(sections: &[&'a Section], fs: Option<&str>, url: &str) -> Ve
         .filter(|s| s.name.eq_ignore_ascii_case("Directory"))
         .filter(|s| fs.is_some_and(|f| s.args.first().is_some_and(|d| under(d, f))))
         .collect();
-    dirs.sort_by_key(|s| trim(s.args.first().map_or("", String::as_str)).split('/').filter(|p| !p.is_empty()).count());
+    dirs.sort_by_key(|s| {
+        trim(s.args.first().map_or("", String::as_str))
+            .split('/')
+            .filter(|p| !p.is_empty())
+            .count()
+    });
     let name = fs.and_then(|f| f.rsplit('/').next()).unwrap_or("");
     let files = sections
         .iter()
@@ -351,7 +367,14 @@ mod tests {
     #[test]
     fn hosts() {
         let c = ip("10.1.2.3");
-        for yes in ["all", "10.1", "10.1.", "10.1.2.3", "10.0.0.0/8", "10.1.0.0/255.255.0.0"] {
+        for yes in [
+            "all",
+            "10.1",
+            "10.1.",
+            "10.1.2.3",
+            "10.0.0.0/8",
+            "10.1.0.0/255.255.0.0",
+        ] {
             assert!(host_matches(yes, c), "{yes}");
         }
         for no in ["10.2", "10.1.2.4", "11.0.0.0/8", "example.com", "::1"] {
@@ -369,7 +392,9 @@ mod tests {
             allow: vec!["10.0.0.0/8".into()],
             deny: vec!["10.9".into()],
         };
-        assert!(a.allows(ip("10.1.1.1")) && !a.allows(ip("10.9.1.1")) && !a.allows(ip("192.168.1.1")));
+        assert!(
+            a.allows(ip("10.1.1.1")) && !a.allows(ip("10.9.1.1")) && !a.allows(ip("192.168.1.1"))
+        );
         a.order = Order::DenyAllow;
         assert!(a.allows(ip("192.168.1.1")) && a.allows(ip("10.9.1.1")));
         a.deny = vec!["all".into()];
@@ -381,7 +406,10 @@ mod tests {
     fn redirects() {
         let r = Redirect::parse(&["/old".into(), "http://x/new".into()]).unwrap();
         assert_eq!(r.status, 302);
-        assert_eq!(r.target("/old/a.html"), Some(Some("http://x/new/a.html".into())));
+        assert_eq!(
+            r.target("/old/a.html"),
+            Some(Some("http://x/new/a.html".into()))
+        );
         assert_eq!(r.target("/older"), None);
         let g = Redirect::parse(&["gone".into(), "/dead".into()]).unwrap();
         assert_eq!((g.status, g.target("/dead")), (410, Some(None)));
@@ -397,7 +425,17 @@ mod tests {
              <LimitExcept GET>\n Require user ADMIN\n</LimitExcept>\n</Directory>\n<Files *.cfg>\n Deny From all\n</Files>\n",
         )
         .unwrap();
-        let secs: Vec<&Section> = c.items.iter().filter_map(|n| if let Node::Section(s) = n { Some(s) } else { None }).collect();
+        let secs: Vec<&Section> = c
+            .items
+            .iter()
+            .filter_map(|n| {
+                if let Node::Section(s) = n {
+                    Some(s)
+                } else {
+                    None
+                }
+            })
+            .collect();
         let resolve = |fs: &str, method: &str| {
             let mut d = DirConf::base();
             d.apply(&c.items);
@@ -412,9 +450,19 @@ mod tests {
         let doc = resolve("/www/x/htdocs/a.html", "GET");
         assert!(doc.access.allows(ip("1.2.3.4")) && doc.indexes && doc.require.is_empty());
         let p = resolve("/www/x/htdocs/priv/a.html", "GET");
-        assert_eq!((p.auth_name.as_str(), p.require.clone()), ("Private", vec!["valid-user".to_string()]));
-        assert_eq!(resolve("/www/x/htdocs/priv/a.html", "POST").require, ["user", "ADMIN"]);
-        assert!(!resolve("/www/x/htdocs/s.cfg", "GET").access.allows(ip("1.2.3.4")));
+        assert_eq!(
+            (p.auth_name.as_str(), p.require.clone()),
+            ("Private", vec!["valid-user".to_string()])
+        );
+        assert_eq!(
+            resolve("/www/x/htdocs/priv/a.html", "POST").require,
+            ["user", "ADMIN"]
+        );
+        assert!(
+            !resolve("/www/x/htdocs/s.cfg", "GET")
+                .access
+                .allows(ip("1.2.3.4"))
+        );
         assert!(c.get("Options").is_some());
         assert!(glob("*.cfg", "s.cfg") && !glob("*.cfg", "s.cfgx") && glob("a?c", "abc"));
     }

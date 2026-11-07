@@ -336,10 +336,30 @@ pub fn program_with(shared_memory: bool) -> Vec<Insn> {
     let guard = if shared_memory { 0 } else { 6 };
     assert!(n + guard < 254, "the allow list must fit one jump");
     let mut p = vec![
-        Insn { code: LD_ABS, jt: 0, jf: 0, k: ARCH },
-        Insn { code: JEQ, jt: 1, jf: 0, k: ARCH_X86_64 },
-        Insn { code: RET, jt: 0, jf: 0, k: RET_KILL },
-        Insn { code: LD_ABS, jt: 0, jf: 0, k: NR },
+        Insn {
+            code: LD_ABS,
+            jt: 0,
+            jf: 0,
+            k: ARCH,
+        },
+        Insn {
+            code: JEQ,
+            jt: 1,
+            jf: 0,
+            k: ARCH_X86_64,
+        },
+        Insn {
+            code: RET,
+            jt: 0,
+            jf: 0,
+            k: RET_KILL,
+        },
+        Insn {
+            code: LD_ABS,
+            jt: 0,
+            jf: 0,
+            k: NR,
+        },
         // The x32 ABI's numbers are refused.
         Insn {
             code: JGE,
@@ -352,12 +372,42 @@ pub fn program_with(shared_memory: bool) -> Vec<Insn> {
         // mmap with MAP_SHARED and PROT_WRITE: to the EPERM return.
         let to_errno = u8::try_from(n + 1).expect("checked");
         p.extend([
-            Insn { code: JEQ, jt: 0, jf: 4, k: MMAP },
-            Insn { code: LD_ABS, jt: 0, jf: 0, k: ARG3 },
-            Insn { code: JSET, jt: 0, jf: 2, k: MAP_SHARED },
-            Insn { code: LD_ABS, jt: 0, jf: 0, k: ARG2 },
-            Insn { code: JSET, jt: to_errno, jf: 0, k: PROT_WRITE },
-            Insn { code: LD_ABS, jt: 0, jf: 0, k: NR },
+            Insn {
+                code: JEQ,
+                jt: 0,
+                jf: 4,
+                k: MMAP,
+            },
+            Insn {
+                code: LD_ABS,
+                jt: 0,
+                jf: 0,
+                k: ARG3,
+            },
+            Insn {
+                code: JSET,
+                jt: 0,
+                jf: 2,
+                k: MAP_SHARED,
+            },
+            Insn {
+                code: LD_ABS,
+                jt: 0,
+                jf: 0,
+                k: ARG2,
+            },
+            Insn {
+                code: JSET,
+                jt: to_errno,
+                jf: 0,
+                k: PROT_WRITE,
+            },
+            Insn {
+                code: LD_ABS,
+                jt: 0,
+                jf: 0,
+                k: NR,
+            },
         ]);
     }
     for (i, nr) in allowed.iter().enumerate() {
@@ -368,8 +418,18 @@ pub fn program_with(shared_memory: bool) -> Vec<Insn> {
             k: *nr,
         });
     }
-    p.push(Insn { code: RET, jt: 0, jf: 0, k: RET_ERRNO | EPERM });
-    p.push(Insn { code: RET, jt: 0, jf: 0, k: RET_ALLOW });
+    p.push(Insn {
+        code: RET,
+        jt: 0,
+        jf: 0,
+        k: RET_ERRNO | EPERM,
+    });
+    p.push(Insn {
+        code: RET,
+        jt: 0,
+        jf: 0,
+        k: RET_ALLOW,
+    });
     p
 }
 
@@ -431,7 +491,10 @@ mod tests {
         for n in [101, 165, 169, 175, 321, 272, 308, 425, 434, 164, 246] {
             assert_eq!(check(&p, ARCH_X86_64, n), RET_ERRNO | EPERM, "{n}");
         }
-        assert_eq!(check(&p, ARCH_X86_64, X32_BIT | nr("read")), RET_ERRNO | EPERM);
+        assert_eq!(
+            check(&p, ARCH_X86_64, X32_BIT | nr("read")),
+            RET_ERRNO | EPERM
+        );
         assert_eq!(check(&p, 0x4000_0003, nr("read")), RET_KILL);
     }
 
@@ -441,16 +504,23 @@ mod tests {
         for n in SHM {
             assert_eq!(check(&p, ARCH_X86_64, n), RET_ERRNO | EPERM, "{n}");
         }
-        let map = |prot: u64, flags: u64| check_args(&p, ARCH_X86_64, MMAP, [0, 4096, prot, flags, 0, 0]);
+        let map =
+            |prot: u64, flags: u64| check_args(&p, ARCH_X86_64, MMAP, [0, 4096, prot, flags, 0, 0]);
         assert_eq!(map(3, 1), RET_ERRNO | EPERM);
         assert_eq!(map(1, 1), RET_ALLOW);
         assert_eq!(map(3, 2), RET_ALLOW);
         assert_eq!(check(&p, ARCH_X86_64, nr("read")), RET_ALLOW);
         assert_eq!(check(&p, ARCH_X86_64, 101), RET_ERRNO | EPERM);
-        assert_eq!(check(&p, ARCH_X86_64, X32_BIT | nr("read")), RET_ERRNO | EPERM);
+        assert_eq!(
+            check(&p, ARCH_X86_64, X32_BIT | nr("read")),
+            RET_ERRNO | EPERM
+        );
         let on = program_with(true);
         assert_eq!(check(&on, ARCH_X86_64, 30), RET_ALLOW);
-        assert_eq!(check_args(&on, ARCH_X86_64, MMAP, [0, 4096, 3, 1, 0, 0]), RET_ALLOW);
+        assert_eq!(
+            check_args(&on, ARCH_X86_64, MMAP, [0, 4096, 3, 1, 0, 0]),
+            RET_ALLOW
+        );
     }
 
     #[test]

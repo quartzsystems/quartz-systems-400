@@ -126,7 +126,8 @@ impl FakeNet {
     }
 
     fn op(&mut self, name: &str, args: &str) -> NetResult<()> {
-        self.log.push(format!("{name} {args}").trim_end().to_string());
+        self.log
+            .push(format!("{name} {args}").trim_end().to_string());
         if self.failing.contains(name) {
             return Err(NetError::new(format!("{name} refused")));
         }
@@ -134,11 +135,14 @@ impl FakeNet {
     }
 
     fn link_mut(&mut self, index: u32) -> NetResult<&mut LinkInfo> {
-        self.links.iter_mut().find(|l| l.index == index).ok_or(NetError {
-            text: format!("no link {index}"),
-            exists: false,
-            not_found: true,
-        })
+        self.links
+            .iter_mut()
+            .find(|l| l.index == index)
+            .ok_or(NetError {
+                text: format!("no link {index}"),
+                exists: false,
+                not_found: true,
+            })
     }
 }
 
@@ -196,7 +200,11 @@ impl NetOps for FakeNet {
         if self.links.iter().any(|l| l.name == name) {
             return Err(exists(name));
         }
-        let carrier = self.links.iter().find(|l| l.index == parent).and_then(|l| l.carrier);
+        let carrier = self
+            .links
+            .iter()
+            .find(|l| l.index == parent)
+            .and_then(|l| l.carrier);
         let l = LinkInfo {
             index: self.next_index(),
             name: name.into(),
@@ -225,8 +233,15 @@ impl NetOps for FakeNet {
     }
 
     fn add_address(&mut self, a: &KAddr) -> NetResult<()> {
-        self.op("add_address", &format!("{} {}/{}", a.link, a.addr, a.prefix))?;
-        if self.addrs.iter().any(|x| x.link == a.link && x.addr == a.addr) {
+        self.op(
+            "add_address",
+            &format!("{} {}/{}", a.link, a.addr, a.prefix),
+        )?;
+        if self
+            .addrs
+            .iter()
+            .any(|x| x.link == a.link && x.addr == a.addr)
+        {
             return Err(exists("address"));
         }
         self.addrs.push(a.clone());
@@ -234,9 +249,13 @@ impl NetOps for FakeNet {
     }
 
     fn del_address(&mut self, a: &KAddr) -> NetResult<()> {
-        self.op("del_address", &format!("{} {}/{}", a.link, a.addr, a.prefix))?;
+        self.op(
+            "del_address",
+            &format!("{} {}/{}", a.link, a.addr, a.prefix),
+        )?;
         let before = self.addrs.len();
-        self.addrs.retain(|x| !(x.link == a.link && x.addr == a.addr));
+        self.addrs
+            .retain(|x| !(x.link == a.link && x.addr == a.addr));
         if before == self.addrs.len() {
             return Err(missing("address"));
         }
@@ -251,15 +270,16 @@ impl NetOps for FakeNet {
         let dst = r.dst.map_or("default".into(), |d| d.to_string());
         let via = r.gateway.map_or(String::new(), |g| format!(" via {g}"));
         self.op("add_route", &format!("{dst}/{}{via}", r.prefix))?;
-        if self
-            .routes
-            .iter()
-            .any(|x| x.dst == r.dst && x.prefix == r.prefix && x.gateway == r.gateway && x.tos == r.tos)
-        {
+        if self.routes.iter().any(|x| {
+            x.dst == r.dst && x.prefix == r.prefix && x.gateway == r.gateway && x.tos == r.tos
+        }) {
             return Err(exists("route"));
         }
         if let Some(gw) = r.gateway {
-            let reachable = self.addrs.iter().any(|a| crate::addr::contains(a.addr, a.prefix, gw));
+            let reachable = self
+                .addrs
+                .iter()
+                .any(|a| crate::addr::contains(a.addr, a.prefix, gw));
             if !reachable {
                 return Err(NetError::new(format!("{gw} is not on a connected network")));
             }
@@ -272,8 +292,9 @@ impl NetOps for FakeNet {
         let dst = r.dst.map_or("default".into(), |d| d.to_string());
         self.op("del_route", &format!("{dst}/{}", r.prefix))?;
         let before = self.routes.len();
-        self.routes
-            .retain(|x| !(x.dst == r.dst && x.prefix == r.prefix && x.gateway == r.gateway && x.tos == r.tos));
+        self.routes.retain(|x| {
+            !(x.dst == r.dst && x.prefix == r.prefix && x.gateway == r.gateway && x.tos == r.tos)
+        });
         if before == self.routes.len() {
             return Err(missing("route"));
         }
@@ -303,7 +324,9 @@ impl NetOps for FakeNet {
     }
 
     fn dhcp_start(&mut self, link: &str, cfg: dhcp::Config) -> NetResult<()> {
-        let kept = cfg.previous.map_or_else(String::new, |l| format!(" kept {}", l.addr));
+        let kept = cfg
+            .previous
+            .map_or_else(String::new, |l| format!(" kept {}", l.addr));
         self.op("dhcp_start", &format!("{link}{kept}"))?;
         self.dhcp.insert(
             link.to_string(),
@@ -316,7 +339,10 @@ impl NetOps for FakeNet {
     }
 
     fn dhcp_stop(&mut self, link: &str, release: bool) {
-        let _ = self.op("dhcp_stop", &format!("{link}{}", if release { " release" } else { "" }));
+        let _ = self.op(
+            "dhcp_stop",
+            &format!("{link}{}", if release { " release" } else { "" }),
+        );
         self.dhcp.remove(link);
     }
 
@@ -325,7 +351,11 @@ impl NetOps for FakeNet {
     }
 
     fn mac(&mut self, link: &str) -> NetResult<[u8; 6]> {
-        let i = self.links.iter().find(|l| l.name == link).map_or(0, |l| l.index);
+        let i = self
+            .links
+            .iter()
+            .find(|l| l.name == link)
+            .map_or(0, |l| l.index);
         Ok([2, 0, 0, 0, 0, u8::try_from(i).unwrap_or(0)])
     }
 }

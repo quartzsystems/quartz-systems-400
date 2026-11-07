@@ -24,7 +24,8 @@ const SPLF_ROWS: usize = 19;
 
 /// The command's text form, run in the storage service.
 fn text_form(host: &Host, r: &Resolved) -> Result<String, Fail> {
-    let word = sys_cpps::entry(&r.name).map_or_else(|| r.name.to_ascii_lowercase(), |e| e.word.clone());
+    let word =
+        sys_cpps::entry(&r.name).map_or_else(|| r.name.to_ascii_lowercase(), |e| e.word.clone());
     let line = sys_cpps::bridge::specified_line(&word, &crate::command::parms_of(r));
     let text = host.exec(&line).text;
     let first = text.lines().next().unwrap_or("").trim();
@@ -42,14 +43,18 @@ pub fn splf(host: &Host, surface: &mut Surface, r: &Resolved, file: &str) -> Res
     if parm(r, "OUTPUT").as_deref() == Some("*OUTFILE") {
         return Ok(text);
     }
-    let lines: Vec<String> = text
-        .lines()
-        .map(|l| l.chars().take(78).collect())
-        .collect();
+    let lines: Vec<String> = text.lines().map(|l| l.chars().take(78).collect()).collect();
     let n = lines.len();
     let mut d = dialog(host, "QUIDSPFD")?;
     d.set("SPLF", file);
-    fill(&mut d, "LINES", lines.iter().map(|l| entry(&[("LINE", l.clone())])).collect());
+    fill(
+        &mut d,
+        "LINES",
+        lines
+            .iter()
+            .map(|l| entry(&[("LINE", l.clone())]))
+            .collect(),
+    );
     let mut find = String::new();
     loop {
         let top = d.list_mut("LINES").top;
@@ -74,7 +79,9 @@ pub fn splf(host: &Host, surface: &mut Surface, r: &Resolved, file: &str) -> Res
             c => {
                 if let Ok(k) = c.parse::<i64>() {
                     let to = i64::try_from(l.top).unwrap_or(0) + k;
-                    l.top = usize::try_from(to.max(0)).unwrap_or(0).min(n.saturating_sub(1));
+                    l.top = usize::try_from(to.max(0))
+                        .unwrap_or(0)
+                        .min(n.saturating_sub(1));
                 } else {
                     d.error("CPD9B95", &[c]);
                     search = false;
@@ -84,9 +91,11 @@ pub fn splf(host: &Host, surface: &mut Surface, r: &Resolved, file: &str) -> Res
         if search && !find.is_empty() {
             d.set("FIND", "");
             let from = d.list_mut("LINES").top + 1;
-            let hit = (from..n)
-                .chain(0..from)
-                .find(|i| lines[*i].to_ascii_uppercase().contains(&find.to_ascii_uppercase()));
+            let hit = (from..n).chain(0..from).find(|i| {
+                lines[*i]
+                    .to_ascii_uppercase()
+                    .contains(&find.to_ascii_uppercase())
+            });
             match hit {
                 Some(i) => d.list_mut("LINES").top = i,
                 None => d.error("CPD9B8C", &[&find]),
@@ -121,9 +130,17 @@ pub fn dspdtaara(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
                 .and_then(|p| p.decode(&value.value).ok())
                 .map(|v| v.to_string())
                 .unwrap_or_default();
-            ("*DEC", format!("{} {}", value.len, value.decimals), vec![shown])
+            (
+                "*DEC",
+                format!("{} {}", value.len, value.decimals),
+                vec![shown],
+            )
         }
-        DataAreaKind::Lgl => ("*LGL", "1".to_string(), vec![ccsid::from_ebcdic(&value.value)]),
+        DataAreaKind::Lgl => (
+            "*LGL",
+            "1".to_string(),
+            vec![ccsid::from_ebcdic(&value.value)],
+        ),
         DataAreaKind::Char => {
             // In quotes, as the system shows a character value.
             let text: Vec<char> = ccsid::from_ebcdic(&value.value).chars().collect();
@@ -156,7 +173,12 @@ pub fn dspdtaara(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
 }
 
 /// `WRKOBJOWN`: the objects a user profile owns, with their options.
-pub fn wrkobjown(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkobjown(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let user = parm(r, "USRPRF")
         .filter(|u| !u.is_empty() && u != "*CURRENT")
         .unwrap_or_else(|| super::user(host));

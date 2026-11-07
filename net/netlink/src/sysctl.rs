@@ -131,7 +131,11 @@ impl Sysctl {
     }
 
     fn path(&self, key: &str) -> Result<PathBuf> {
-        if key.is_empty() || key.split('/').any(|c| c.is_empty() || c == "." || c == "..") {
+        if key.is_empty()
+            || key
+                .split('/')
+                .any(|c| c.is_empty() || c == "." || c == "..")
+        {
             return Err(Error::Invalid(format!("sysctl key {key}")));
         }
         Ok(self.root.join(key))

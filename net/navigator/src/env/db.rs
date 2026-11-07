@@ -49,7 +49,9 @@ pub struct SqlOutcome {
 impl SqlOutcome {
     /// Whether an error stopped the statement.
     pub fn failed(&self) -> bool {
-        self.messages.iter().any(|m| m.kind == qsweb::msg::Kind::Error)
+        self.messages
+            .iter()
+            .any(|m| m.kind == qsweb::msg::Kind::Error)
     }
 }
 
@@ -86,7 +88,12 @@ pub enum ObjKind {
 
 impl ObjKind {
     /// Every kind, in the tree's order.
-    pub const ALL: [ObjKind; 4] = [ObjKind::Tables, ObjKind::Views, ObjKind::Indexes, ObjKind::Procedures];
+    pub const ALL: [ObjKind; 4] = [
+        ObjKind::Tables,
+        ObjKind::Views,
+        ObjKind::Indexes,
+        ObjKind::Procedures,
+    ];
 
     /// The tree's label.
     pub fn label(self) -> &'static str {
@@ -231,7 +238,10 @@ pub struct TableDesc {
 impl TableDesc {
     /// The primary key's columns, as written.
     pub fn primary_key(&self) -> Option<&str> {
-        self.constraints.iter().find(|c| c.kind == "PRIMARY KEY").map(|c| c.columns.as_str())
+        self.constraints
+            .iter()
+            .find(|c| c.kind == "PRIMARY KEY")
+            .map(|c| c.columns.as_str())
     }
 }
 
@@ -249,7 +259,18 @@ pub trait Db: Send + Sync {
     fn ddl(&self, user: &str, schema: &str, table: &str) -> Result<String, Message>;
     /// Run one statement as the user; a query keeps at most `max_rows`
     /// rows (`None`: all).
-    fn run_sql(&self, user: &str, statement: &str, opts: &SqlOptions, max_rows: Option<usize>) -> SqlOutcome;
+    fn run_sql(
+        &self,
+        user: &str,
+        statement: &str,
+        opts: &SqlOptions,
+        max_rows: Option<usize>,
+    ) -> SqlOutcome;
     /// How the statement would run: the access plan's lines.
-    fn explain(&self, user: &str, statement: &str, opts: &SqlOptions) -> Result<Vec<String>, Message>;
+    fn explain(
+        &self,
+        user: &str,
+        statement: &str,
+        opts: &SqlOptions,
+    ) -> Result<Vec<String>, Message>;
 }

@@ -44,7 +44,10 @@ impl Default for FixturePolicy {
         let mut m = BTreeMap::new();
         m.insert(
             "WEBUSERS".to_string(),
-            WEBUSERS_DENIED.iter().map(|f| ((*f).to_string(), Setting::Deny)).collect(),
+            WEBUSERS_DENIED
+                .iter()
+                .map(|f| ((*f).to_string(), Setting::Deny))
+                .collect(),
         );
         Self { map: Mutex::new(m) }
     }
@@ -52,11 +55,19 @@ impl Default for FixturePolicy {
 
 impl PolicyStore for FixturePolicy {
     fn settings(&self, subject: &str) -> Vec<(String, Setting)> {
-        self.map.lock().expect("policies").get(subject).cloned().unwrap_or_default()
+        self.map
+            .lock()
+            .expect("policies")
+            .get(subject)
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn put(&self, subject: &str, entries: &[(String, Setting)]) -> Result<(), Message> {
-        self.map.lock().expect("policies").insert(subject.to_string(), entries.to_vec());
+        self.map
+            .lock()
+            .expect("policies")
+            .insert(subject.to_string(), entries.to_vec());
         Ok(())
     }
 }
@@ -74,7 +85,10 @@ impl Default for FixturePrefs {
             "CWELLMAN".to_string(),
             vec![
                 (crate::prefs::SCREEN.to_string(), "27".to_string()),
-                (crate::prefs::SIGNON_FROM.to_string(), "10.0.10.55".to_string()),
+                (
+                    crate::prefs::SIGNON_FROM.to_string(),
+                    "10.0.10.55".to_string(),
+                ),
             ],
         );
         Self { map: Mutex::new(m) }
@@ -83,11 +97,19 @@ impl Default for FixturePrefs {
 
 impl PrefStore for FixturePrefs {
     fn get(&self, user: &str) -> Vec<(String, String)> {
-        self.map.lock().expect("prefs").get(user).cloned().unwrap_or_default()
+        self.map
+            .lock()
+            .expect("prefs")
+            .get(user)
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn put(&self, user: &str, values: &[(String, String)]) -> Result<(), Message> {
-        self.map.lock().expect("prefs").insert(user.to_string(), values.to_vec());
+        self.map
+            .lock()
+            .expect("prefs")
+            .insert(user.to_string(), values.to_vec());
         Ok(())
     }
 

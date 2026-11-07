@@ -251,10 +251,48 @@ impl File {
 
 /// The file keywords (free form adds the device keywords).
 const FILE_KEYWORDS: &[&str] = &[
-    "ALIAS", "BLOCK", "CCSID", "COMMIT", "DATA", "DATFMT", "DEVID", "EXTDESC", "EXTFILE", "EXTIND", "EXTMBR",
-    "FORMLEN", "FORMOFL", "HANDLER", "IGNORE", "INCLUDE", "INDDS", "INFDS", "INFSR", "KEYED", "KEYLOC",
-    "LIKEFILE", "MAXDEV", "OFLIND", "PASS", "PGMNAME", "PLIST", "PREFIX", "PRTCTL", "QUALIFIED", "RAFDATA",
-    "RECNO", "RENAME", "SAVEDS", "SAVEIND", "SFILE", "SLN", "STATIC", "TEMPLATE", "TIMFMT", "USAGE", "USROPN",
+    "ALIAS",
+    "BLOCK",
+    "CCSID",
+    "COMMIT",
+    "DATA",
+    "DATFMT",
+    "DEVID",
+    "EXTDESC",
+    "EXTFILE",
+    "EXTIND",
+    "EXTMBR",
+    "FORMLEN",
+    "FORMOFL",
+    "HANDLER",
+    "IGNORE",
+    "INCLUDE",
+    "INDDS",
+    "INFDS",
+    "INFSR",
+    "KEYED",
+    "KEYLOC",
+    "LIKEFILE",
+    "MAXDEV",
+    "OFLIND",
+    "PASS",
+    "PGMNAME",
+    "PLIST",
+    "PREFIX",
+    "PRTCTL",
+    "QUALIFIED",
+    "RAFDATA",
+    "RECNO",
+    "RENAME",
+    "SAVEDS",
+    "SAVEIND",
+    "SFILE",
+    "SLN",
+    "STATIC",
+    "TEMPLATE",
+    "TIMFMT",
+    "USAGE",
+    "USROPN",
 ];
 
 fn kw<'a>(f: &'a FileDecl, name: &str) -> Option<&'a Keyword> {
@@ -275,19 +313,35 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         ..File::default()
     };
     // A keyword area token that is not a word.
-    for k in f.kws.iter().filter(|k| !k.name.starts_with(|c: char| c.is_ascii_alphabetic() || c == '*')) {
+    for k in f.kws.iter().filter(|k| {
+        !k.name
+            .starts_with(|c: char| c.is_ascii_alphabetic() || c == '*')
+    }) {
         diags.push(Diag::new(rpgfront::diag::ids::BAD_KEYWORD, 30, k.at).arg(k.name.clone()));
     }
     // Each keyword once (the repeatable ones aside).
     for (i, k) in f.kws.iter().enumerate() {
         let again = f.kws[..i].iter().any(|x| x.name == k.name);
-        if again && !matches!(k.name.as_str(), "RENAME" | "IGNORE" | "INCLUDE" | "SFILE" | "PREFIX") {
+        if again
+            && !matches!(
+                k.name.as_str(),
+                "RENAME" | "IGNORE" | "INCLUDE" | "SFILE" | "PREFIX"
+            )
+        {
             diags.push(Diag::new(ids::FILE_KEYWORD_TWICE, 20, k.at).arg(k.name.clone()));
         }
     }
     // A keyword the compiler does not know is ignored.
-    for k in f.kws.iter().filter(|k| k.name.starts_with(|c: char| c.is_ascii_alphabetic())) {
-        let device = f.fixed.is_none() && matches!(k.name.as_str(), "DISK" | "PRINTER" | "WORKSTN" | "SEQ" | "SPECIAL");
+    for k in f
+        .kws
+        .iter()
+        .filter(|k| k.name.starts_with(|c: char| c.is_ascii_alphabetic()))
+    {
+        let device = f.fixed.is_none()
+            && matches!(
+                k.name.as_str(),
+                "DISK" | "PRINTER" | "WORKSTN" | "SEQ" | "SPECIAL"
+            );
         if !device && !FILE_KEYWORDS.contains(&k.name.as_str()) {
             diags.push(Diag::new(ids::UNKNOWN_FILE_KEYWORD, 30, k.at).arg(k.name.clone()));
         }
@@ -377,13 +431,20 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         }
         // Keywords a printer does not take.
         if out.dev == Dev::Printer {
-            for k in f.kws.iter().filter(|k| matches!(k.name.as_str(), "KEYED" | "BLOCK" | "COMMIT" | "RECNO" | "SFILE")) {
+            for k in f.kws.iter().filter(|k| {
+                matches!(
+                    k.name.as_str(),
+                    "KEYED" | "BLOCK" | "COMMIT" | "RECNO" | "SFILE"
+                )
+            }) {
                 diags.push(Diag::new(ids::NOT_FOR_PRINTER, 20, k.at).arg(k.name.clone()));
             }
         }
         // A USAGE value that is not one: as if none were given.
         let usage = kw(f, "USAGE").filter(|k| {
-            let ok = usage_words(k).iter().all(|w| matches!(w.as_str(), "*INPUT" | "*OUTPUT" | "*UPDATE" | "*DELETE"));
+            let ok = usage_words(k)
+                .iter()
+                .all(|w| matches!(w.as_str(), "*INPUT" | "*OUTPUT" | "*UPDATE" | "*DELETE"));
             if !ok {
                 let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
                 diags.push(Diag::new(ids::USAGE_PARM, 20, at));
@@ -428,7 +489,10 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
             },
         }
         out.keyed = kw(f, "KEYED").is_some();
-        out.keylen = kw(f, "KEYED").and_then(|k| crate::decl::int_arg(k, 1)).and_then(|v| u32::try_from(v).ok()).unwrap_or(0);
+        out.keylen = kw(f, "KEYED")
+            .and_then(|k| crate::decl::int_arg(k, 1))
+            .and_then(|v| u32::try_from(v).ok())
+            .unwrap_or(0);
         out.designation = "F".into();
         if out.dev == Dev::Printer {
             out.designation.clear();
@@ -439,7 +503,12 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     out.infsr = kw(f, "INFSR").and_then(|k| word_arg(k, 0));
     out.indds = kw(f, "INDDS").and_then(|k| word_arg(k, 0));
     out.usropn = kw(f, "USROPN").is_some();
-    let num = |n: &str| kw(f, n).and_then(|k| crate::decl::int_arg(k, 0)).and_then(|v| u16::try_from(v).ok()).unwrap_or(0);
+    let num = |n: &str| {
+        kw(f, n)
+            .and_then(|k| crate::decl::int_arg(k, 0))
+            .and_then(|v| u16::try_from(v).ok())
+            .unwrap_or(0)
+    };
     out.form = (num("FORMLEN"), num("FORMOFL"));
     out.extind = kw(f, "EXTIND").and_then(|k| word_arg(k, 0));
     out.prtctl = kw(f, "PRTCTL").and_then(|k| word_arg(k, 0));
@@ -448,19 +517,35 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     out.handler_kw = kw(f, "HANDLER").cloned();
     out.alias = kw(f, "ALIAS").is_some();
     out.recno = kw(f, "RECNO").and_then(|k| word_arg(k, 0));
-    out.pgmname = kw(f, "PGMNAME").and_then(|k| crate::decl::str_arg(k, 0).or_else(|| word_arg(k, 0)));
+    out.pgmname =
+        kw(f, "PGMNAME").and_then(|k| crate::decl::str_arg(k, 0).or_else(|| word_arg(k, 0)));
     out.qualified = kw(f, "QUALIFIED").is_some();
     out.template = kw(f, "TEMPLATE").is_some();
     out.prefix = kw(f, "PREFIX").and_then(|k| {
-        let p = k.arg(0)?.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>().to_ascii_uppercase();
-        Some((p, int_arg(k, 1).and_then(|v| u32::try_from(v).ok()).unwrap_or(0)))
+        let p = k
+            .arg(0)?
+            .toks
+            .iter()
+            .map(rpgfront::lex::Tok::text)
+            .collect::<String>()
+            .to_ascii_uppercase();
+        Some((
+            p,
+            int_arg(k, 1)
+                .and_then(|v| u32::try_from(v).ok())
+                .unwrap_or(0),
+        ))
     });
     for k in f.kws.iter().filter(|k| k.name == "RENAME") {
         if let (Some(a), Some(b)) = (word_arg(k, 0), word_arg(k, 1)) {
             out.renames.push((a, b));
         }
     }
-    for k in f.kws.iter().filter(|k| k.name == "IGNORE" || k.name == "INCLUDE") {
+    for k in f
+        .kws
+        .iter()
+        .filter(|k| k.name == "IGNORE" || k.name == "INCLUDE")
+    {
         let v: Vec<String> = (0..k.args.len()).filter_map(|i| word_arg(k, i)).collect();
         if k.name == "IGNORE" {
             out.ignore.extend(v);
@@ -477,10 +562,16 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     }
     out.obj = match kw(f, "EXTFILE") {
         Some(k) => {
-            let mut s = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default().to_ascii_uppercase();
+            let mut s = str_arg(k, 0)
+                .or_else(|| word_arg(k, 0))
+                .unwrap_or_default()
+                .to_ascii_uppercase();
             // EXTFILE(*EXTDESC): the file EXTDESC names.
             if s == "*EXTDESC" {
-                s = kw(f, "EXTDESC").and_then(|k| str_arg(k, 0)).unwrap_or_else(|| out.name.clone()).to_ascii_uppercase();
+                s = kw(f, "EXTDESC")
+                    .and_then(|k| str_arg(k, 0))
+                    .unwrap_or_else(|| out.name.clone())
+                    .to_ascii_uppercase();
             }
             match s.split_once('/') {
                 Some((l, n)) => (l.to_string(), n.to_string()),
@@ -494,7 +585,12 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         .unwrap_or_else(|| "*FIRST".into());
     // Keywords of program-described files only.
     if out.external
-        && let Some(k) = f.kws.iter().find(|k| matches!(k.name.as_str(), "RAFDATA" | "KEYLOC" | "FORMLEN" | "FORMOFL"))
+        && let Some(k) = f.kws.iter().find(|k| {
+            matches!(
+                k.name.as_str(),
+                "RAFDATA" | "KEYLOC" | "FORMLEN" | "FORMOFL"
+            )
+        })
     {
         diags.push(Diag::new(ids::NOT_FOR_EXTERNAL, 20, k.at).arg(k.name.clone()));
     }
@@ -502,7 +598,9 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     // for a file and for a parameter, which is the caller's handle).
     out.likefile = kw(f, "LIKEFILE").and_then(|k| word_arg(k, 0));
     if out.external && out.likefile.is_none() {
-        let desc_name = kw(f, "EXTDESC").and_then(|k| str_arg(k, 0)).unwrap_or_else(|| out.name.clone());
+        let desc_name = kw(f, "EXTDESC")
+            .and_then(|k| str_arg(k, 0))
+            .unwrap_or_else(|| out.name.clone());
         let (lib, name) = match desc_name.split_once('/') {
             Some((l, n)) => (l.to_string(), n.to_string()),
             None => (out.obj.0.clone(), desc_name),

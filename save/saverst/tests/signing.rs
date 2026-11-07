@@ -13,9 +13,11 @@ use std::sync::Arc;
 use blockdev::{BlockDev, MemBlockDev};
 use ed25519_dalek::SigningKey;
 use qsname::Name;
-use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use saverst::sign::{self, Integrity};
-use saverst::{AllowAll, AllowRestore, Hooks, RestoreOptions, SaveOptions, msg, restore, save_library};
+use saverst::{
+    AllowAll, AllowRestore, Hooks, RestoreOptions, SaveOptions, msg, restore, save_library,
+};
+use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use store::obj::space::Space;
 use store::obj::{CreateParams, JobHandle, ObjectId, Signature, ops, types};
 use store::{FormatParams, Store, StoreConfig, Txn};
@@ -65,8 +67,12 @@ fn system() -> (Store, ObjectId) {
         wal_pages: 256,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default())
-        .unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(&mut t, &params(qsys, "QSTEST", types::LIB)).unwrap();
@@ -107,11 +113,27 @@ fn saved(store: &mut Store, qsys: ObjectId) -> Vec<u8> {
         user: "QSECOFR".into(),
     };
     let mut w = Writer::new(Vec::new(), &h).unwrap();
-    save_library(store, JobHandle(1), &AllowAll, qsys, "QSTEST", &SaveOptions::default(), &mut w).unwrap();
+    save_library(
+        store,
+        JobHandle(1),
+        &AllowAll,
+        qsys,
+        "QSTEST",
+        &SaveOptions::default(),
+        &mut w,
+    )
+    .unwrap();
     w.finish(0).unwrap().1
 }
 
-fn outcome(store: &mut Store, qsys: ObjectId, bytes: &[u8], lib: &str, verify: u8, allow: &str) -> Vec<(String, Option<&'static str>)> {
+fn outcome(
+    store: &mut Store,
+    qsys: ObjectId,
+    bytes: &[u8],
+    lib: &str,
+    verify: u8,
+    allow: &str,
+) -> Vec<(String, Option<&'static str>)> {
     let mut r = Reader::new(Cursor::new(bytes)).unwrap();
     let opts = RestoreOptions {
         target_library: Some(lib.into()),
@@ -126,7 +148,9 @@ fn outcome(store: &mut Store, qsys: ObjectId, bytes: &[u8], lib: &str, verify: u
 }
 
 fn lookup(t: &mut Txn<'_>, qsys: ObjectId, lib: &str, n: &str) -> ObjectId {
-    let l = ops::find_library(t, qsys, Name::parse(lib).unwrap()).unwrap().id;
+    let l = ops::find_library(t, qsys, Name::parse(lib).unwrap())
+        .unwrap()
+        .id;
     store::obj::library::Library::load(t, l)
         .unwrap()
         .lookup(t, types::PGM, Name::parse(n).unwrap())
@@ -142,34 +166,59 @@ fn qvfyobjrst_levels() {
     // 3, the default: unsigned restores, a bad signature does not.
     assert_eq!(
         outcome(&mut s, q, &bytes, "L3", 3, "*ALL *ALWVLDERR"),
-        [("GOOD".into(), None), ("NOSIG".into(), None), ("TAMPERED".into(), None)],
+        [
+            ("GOOD".into(), None),
+            ("NOSIG".into(), None),
+            ("TAMPERED".into(), None)
+        ],
         "*ALL in QALWOBJRST allows validation errors"
     );
     assert_eq!(
         outcome(&mut s, q, &bytes, "L3B", 3, "*ALWSYSSTT"),
-        [("GOOD".into(), None), ("NOSIG".into(), None), ("TAMPERED".into(), sig)]
+        [
+            ("GOOD".into(), None),
+            ("NOSIG".into(), None),
+            ("TAMPERED".into(), sig)
+        ]
     );
     // 5: only good signatures.
     assert_eq!(
         outcome(&mut s, q, &bytes, "L5", 5, "*ALWSYSSTT"),
-        [("GOOD".into(), None), ("NOSIG".into(), sig), ("TAMPERED".into(), sig)]
+        [
+            ("GOOD".into(), None),
+            ("NOSIG".into(), sig),
+            ("TAMPERED".into(), sig)
+        ]
     );
     // 1: nothing is checked.
     assert_eq!(
         outcome(&mut s, q, &bytes, "L1", 1, "*ALWSYSSTT"),
-        [("GOOD".into(), None), ("NOSIG".into(), None), ("TAMPERED".into(), None)]
+        [
+            ("GOOD".into(), None),
+            ("NOSIG".into(), None),
+            ("TAMPERED".into(), None)
+        ]
     );
     // The restored good program keeps its signature and checks clean;
     // the tampered one restored at level 1 carries none.
     let public = key().verifying_key().to_bytes();
     let mut t = s.begin().unwrap();
     let good = lookup(&mut t, q, "L1", "GOOD");
-    assert_eq!(sign::check(&mut t, good, &[public]).unwrap(), Integrity::Good);
+    assert_eq!(
+        sign::check(&mut t, good, &[public]).unwrap(),
+        Integrity::Good
+    );
     let bad = lookup(&mut t, q, "L1", "TAMPERED");
-    assert_eq!(sign::check(&mut t, bad, &[public]).unwrap(), Integrity::Unsigned);
+    assert_eq!(
+        sign::check(&mut t, bad, &[public]).unwrap(),
+        Integrity::Unsigned
+    );
     // On the original system the tampered program fails CHKOBJITG.
     let orig = lookup(&mut t, q, "QSTEST", "TAMPERED");
-    assert_eq!(sign::check(&mut t, orig, &[public]).unwrap(), Integrity::Bad);
+    assert_eq!(
+        sign::check(&mut t, orig, &[public]).unwrap(),
+        Integrity::Bad
+    );
     t.abort();
 }
 
@@ -220,7 +269,9 @@ fn converted(level: u8) -> Vec<(String, bool)> {
         convert: level,
         ..RestoreOptions::default()
     };
-    let c = Converter { calls: std::cell::RefCell::new(Vec::new()) };
+    let c = Converter {
+        calls: std::cell::RefCell::new(Vec::new()),
+    };
     restore(&mut s, JobHandle(1), &c, q, &mut r, &opts).unwrap();
     let mut v = c.calls.into_inner();
     v.sort();

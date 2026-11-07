@@ -16,7 +16,13 @@ use crate::display::surface::Surface;
 use crate::display::uim::{Choice, Response, UimDialog};
 
 /// What an option without a `CMD` action does on a list.
-type Special<'a> = &'a mut dyn FnMut(&mut Job, &Host, &mut Surface, &mut UimDialog, &Choice) -> Result<Option<Left>, Fail>;
+type Special<'a> = &'a mut dyn FnMut(
+    &mut Job,
+    &Host,
+    &mut Surface,
+    &mut UimDialog,
+    &Choice,
+) -> Result<Option<Left>, Fail>;
 
 /// One list: its group, panels, data and list names, and what its
 /// `RETURN` options do.
@@ -39,7 +45,11 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, spec: Spec<'_>) -> Re
     for (k, v) in spec.ext {
         d.list_mut(spec.list).set_ext(k, v);
     }
-    let panel = if may_change(host) { spec.full } else { spec.only };
+    let panel = if may_change(host) {
+        spec.full
+    } else {
+        spec.only
+    };
     let mut args: Vec<String> = Vec::new();
     let mut last = String::new();
     loop {
@@ -76,7 +86,11 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, spec: Spec<'_>) -> Re
             }
             Response::Return(13) => {
                 // The host table in the order entries were added, and back.
-                args = if args.is_empty() { vec!["ADD".into()] } else { Vec::new() };
+                args = if args.is_empty() {
+                    vec!["ADD".into()]
+                } else {
+                    Vec::new()
+                };
             }
             Response::Return(17) => d.list_mut(spec.list).top = 0,
             Response::Return(18) => {
@@ -220,7 +234,11 @@ pub fn ports(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, 
                     let v = |k: &str| cell(d, &c.list, c.row, k);
                     let range = [v("PLOWER"), v("PUPPER")].join(" ");
                     let mut text = "?ADDTCPPORT".to_string();
-                    for (kwd, val) in [("PORT", range.trim().to_string()), ("PROTOCOL", v("PPROTO")), ("USRPRF", v("PUSER"))] {
+                    for (kwd, val) in [
+                        ("PORT", range.trim().to_string()),
+                        ("PROTOCOL", v("PPROTO")),
+                        ("USRPRF", v("PUSER")),
+                    ] {
                         if !val.is_empty() && (kwd != "PORT" || val != "*ONLY") {
                             text = format!("{text} {kwd}({val})");
                         }
@@ -236,7 +254,9 @@ pub fn ports(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, 
                     d.set_message(exec(
                         job,
                         host,
-                        &format!("RMVTCPPORT PORT({lower} {upper}) PROTOCOL({proto}) USRPRF({user})"),
+                        &format!(
+                            "RMVTCPPORT PORT({lower} {upper}) PROTOCOL({proto}) USRPRF({user})"
+                        ),
                     ));
                     Ok(None)
                 }

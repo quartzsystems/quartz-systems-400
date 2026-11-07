@@ -244,11 +244,19 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
         }
         _ => {
             let prompt = typed.starts_with('?');
-            let mode = if prompt { RunMode::PromptRun } else { RunMode::Run };
+            let mode = if prompt {
+                RunMode::PromptRun
+            } else {
+                RunMode::Run
+            };
             let cmd = typed.trim_start_matches('?');
             inter::remember(s, cmd);
             if word == "call" && cmd.to_ascii_uppercase().trim_end().ends_with("QCMD") {
-                return if inter::command_entry(s) { Flow::SignOff } else { Flow::Back };
+                return if inter::command_entry(s) {
+                    Flow::SignOff
+                } else {
+                    Flow::Back
+                };
             }
             if let Some(m) = inter::command_msg(s, cmd, mode) {
                 dialog.send(m);
@@ -272,7 +280,12 @@ fn unavailable(group: &uim::PanelGroup, panel: &str, text: &str) -> Option<(&'st
     menu.all_items()
         .into_iter()
         .any(|i| i.text.is_empty() && matches!(&i.action, uim::model::Action::Cmd(c) if c == text))
-        .then(|| (menus::unavailable::COMMAND, menus::unavailable::command_name(text)))
+        .then(|| {
+            (
+                menus::unavailable::COMMAND,
+                menus::unavailable::command_name(text),
+            )
+        })
 }
 
 /// `CPF9801`: the menu is not there (the oracle says so for GO).
@@ -291,7 +304,11 @@ fn load(s: &mut Session<'_>, q: &Qualified) -> Result<(MenuAttrs, Rc<uim::PanelG
         .pnlgrp
         .clone()
         .unwrap_or_else(|| Qualified::new(&real, &q.name));
-    let lib = if pnlgrp.lib == "*MENU" { real.clone() } else { pnlgrp.lib.clone() };
+    let lib = if pnlgrp.lib == "*MENU" {
+        real.clone()
+    } else {
+        pnlgrp.lib.clone()
+    };
     let (payload, _) = s
         .link
         .borrow_mut()
@@ -307,7 +324,10 @@ mod tests {
     #[test]
     fn go_takes_the_menu_typed() {
         assert_eq!(go_params("USER"), ("USER".into(), true));
-        assert_eq!(go_params("menu(qgpl/mine) rtnpnt(*no)"), ("QGPL/MINE".into(), false));
+        assert_eq!(
+            go_params("menu(qgpl/mine) rtnpnt(*no)"),
+            ("QGPL/MINE".into(), false)
+        );
         assert_eq!(go_params(""), ("MAIN".into(), true));
         assert_eq!(go_params("*main"), ("*MAIN".into(), true));
     }

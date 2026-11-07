@@ -462,8 +462,7 @@ fn user_space_whole_pages_relocate() {
     let mut model = vec![0u8; size];
     let id = {
         let mut t = store.begin().unwrap();
-        let id =
-            usrspc::create(&mut t, &params_for(lib, "BIG", 0), size as u64, false, 0).unwrap();
+        let id = usrspc::create(&mut t, &params_for(lib, "BIG", 0), size as u64, false, 0).unwrap();
         t.commit().unwrap();
         id
     };
@@ -502,7 +501,9 @@ fn user_space_whole_pages_relocate() {
         expect_space(&mut t, id, &model);
         t.commit().unwrap();
     }
-    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_800).unwrap();
+    let report = store
+        .reclaim(store::ReclaimMode::Check, 1_767_225_800)
+        .unwrap();
     assert_eq!(report.problems(), 0, "{report}");
     // Short whole-page spans are patched, not moved.
     {
@@ -522,8 +523,8 @@ fn user_space_whole_pages_relocate() {
     let mut big_model = vec![0u8; big];
     let big_id = {
         let mut t = store.begin().unwrap();
-        let id = usrspc::create(&mut t, &params_for(lib, "BIGGER", 0), big as u64, false, 0)
-            .unwrap();
+        let id =
+            usrspc::create(&mut t, &params_for(lib, "BIGGER", 0), big as u64, false, 0).unwrap();
         t.commit().unwrap();
         id
     };
@@ -549,7 +550,9 @@ fn user_space_whole_pages_relocate() {
         expect_space(&mut t, id, &model);
         t.commit().unwrap();
     }
-    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_900).unwrap();
+    let report = store
+        .reclaim(store::ReclaimMode::Check, 1_767_225_900)
+        .unwrap();
     assert_eq!(report.problems(), 0, "{report}");
 }
 
@@ -704,7 +707,9 @@ fn user_index_long_entries() {
         );
         t.commit().unwrap();
     }
-    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_800).unwrap();
+    let report = store
+        .reclaim(store::ReclaimMode::Check, 1_767_225_800)
+        .unwrap();
     assert_eq!(report.problems(), 0, "{report}");
     {
         let mut t = store.begin().unwrap();
@@ -715,9 +720,14 @@ fn user_index_long_entries() {
         );
         t.commit().unwrap();
         store.checkpoint().unwrap();
-        assert!(store.asp().total_free() > free, "the overflow page came back");
+        assert!(
+            store.asp().total_free() > free,
+            "the overflow page came back"
+        );
     }
-    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_900).unwrap();
+    let report = store
+        .reclaim(store::ReclaimMode::Check, 1_767_225_900)
+        .unwrap();
     assert_eq!(report.problems(), 0, "{report}");
     let mut t = store.begin().unwrap();
     assert_eq!(usridx::describe(&mut t, idx).unwrap().entry_count, 2);
@@ -725,7 +735,9 @@ fn user_index_long_entries() {
     ops::delete(&mut t, JobHandle(1), idx).unwrap();
     t.commit().unwrap();
     store.checkpoint().unwrap();
-    let report = store.reclaim(store::ReclaimMode::Check, 1_767_226_000).unwrap();
+    let report = store
+        .reclaim(store::ReclaimMode::Check, 1_767_226_000)
+        .unwrap();
     assert_eq!(report.problems(), 0, "{report}");
 }
 

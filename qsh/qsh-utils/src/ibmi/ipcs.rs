@@ -195,7 +195,11 @@ pub fn run_ipcs(cx: &mut UtilCtx<'_>) -> i32 {
     let list = match cx.sys.ipc_list() {
         Ok(l) => l,
         Err(e) => {
-            complain(cx, name, &format!("The IPC objects cannot be listed: {}", e.errno.text()));
+            complain(
+                cx,
+                name,
+                &format!("The IPC objects cannot be listed: {}", e.errno.text()),
+            );
             return 1;
         }
     };

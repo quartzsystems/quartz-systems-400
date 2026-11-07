@@ -15,11 +15,13 @@
 pub mod conv;
 pub mod impf;
 
+use ifs::Errno;
 use ifs::client::{IfsClient, read_all, write_all};
-use ifs::ops::flags::{O_APPEND, O_CCSID, O_CREAT, O_EXCL, O_INHERITMODE, O_RDONLY, O_TRUNC, O_WRONLY};
+use ifs::ops::flags::{
+    O_APPEND, O_CCSID, O_CREAT, O_EXCL, O_INHERITMODE, O_RDONLY, O_TRUNC, O_WRONLY,
+};
 use ifs::ops::{Attr, OpenArgs};
 use ifs::vfs::qsys::{MemberData, QsysNode, QsysView, node_of};
-use ifs::Errno;
 use sec::auth::bits::Auth;
 use sec::auth::principal::Principal;
 
@@ -268,19 +270,29 @@ fn stmf_choice(c: &Common) -> StmfCcsid {
 /// when data is converted (`CPDA08C`).
 fn dbf_ccsid(c: &Common, file: u16, path: &str) -> Result<u16, Msg> {
     match c.dbfccsid {
-        Some(d) if file != 65535 && d != file => Err(Msg::new("CPDA08B")
-            .bin4(i64::from(d))
-            .bin4(i64::from(file))),
+        Some(d) if file != 65535 && d != file => {
+            Err(Msg::new("CPDA08B").bin4(i64::from(d)).bin4(i64::from(file)))
+        }
         Some(d) => Ok(d),
         None if file == 65535 && c.cvtdta == Cvt::Auto => Err(Msg::path("CPDA08C", path)),
         None => Ok(file),
     }
 }
 
-fn has(q: &dyn QsysView, lib: &str, file: &str, who: &Principal, need: &[&str]) -> Result<(), Errno> {
+fn has(
+    q: &dyn QsysView,
+    lib: &str,
+    file: &str,
+    who: &Principal,
+    need: &[&str],
+) -> Result<(), Errno> {
     let have = q.authority(lib, file, "*FILE", who)?;
     let need = Auth::parse(need, false).unwrap_or(Auth::ALL);
-    if have.has(need) { Ok(()) } else { Err(Errno::EACCES) }
+    if have.has(need) {
+        Ok(())
+    } else {
+        Err(Errno::EACCES)
+    }
 }
 
 /// `CPYTOSTMF`.
@@ -315,29 +327,31 @@ pub fn cpytostmf(c: &dyn IfsClient, q: &dyn QsysView, who: &Principal, a: &ToStm
     let choice = stmf_choice(&a.common);
     let target = choice.resolve(existing, dbf);
     if let (Some(have), Opt::Add) = (existing, a.stmfopt)
-        && have != target {
-            return fail(
-                Msg::new("CPDA08A")
-                    .bin4(i64::from(target))
-                    .bin4(i64::from(have))
-                    .vary(&a.tostmf),
-            );
-        }
+        && have != target
+    {
+        return fail(
+            Msg::new("CPDA08A")
+                .bin4(i64::from(target))
+                .bin4(i64::from(have))
+                .vary(&a.tostmf),
+        );
+    }
     let bytes = match conv::to_stream(&m, dbf, target, a.common.cvtdta, a.common.endlinfmt) {
         Ok(b) => b,
         Err(conv::Unsupported(f, t)) => {
             return fail(Msg::new("CPDA097").bin4(i64::from(f)).bin4(i64::from(t)));
         }
     };
-    let r = write_stream(c, &a.tostmf, open_args(existing, a, target), &bytes)
-        .and_then(|()| match existing {
+    let r = write_stream(c, &a.tostmf, open_args(existing, a, target), &bytes).and_then(|()| {
+        match existing {
             Some(have) if have != target => c.set_attr(&a.tostmf, &Attr::Ccsid(target), true),
             _ => Ok(()),
-        });
+        }
+    });
     match r {
-        Ok(()) => Reply::done(
-            Msg::paths("CPCA082", &[&a.frommbr, &a.tostmf]).bin4(n64(m.records.len())),
-        ),
+        Ok(()) => {
+            Reply::done(Msg::paths("CPCA082", &[&a.frommbr, &a.tostmf]).bin4(n64(m.records.len())))
+        }
         Err(e) => fail(Msg::errno(e, &a.tostmf)),
     }
 }
@@ -393,10 +407,9 @@ pub fn cpyfrmstmf(c: &dyn IfsClient, q: &dyn QsysView, who: &Principal, a: &FrmS
     if exists && a.mbropt == Opt::None {
         return fail(Msg::paths("CPDA089", &[&a.fromstmf, &a.tombr]));
     }
-    if !exists
-        && let Err(e) = q.create_member(&lib, &file, &mbr, who) {
-            return fail(Msg::errno(e, &a.tombr));
-        }
+    if !exists && let Err(e) = q.create_member(&lib, &file, &mbr, who) {
+        return fail(Msg::errno(e, &a.tombr));
+    }
     let m: MemberData = match q.read_member(&lib, &file, &mbr) {
         Ok(m) => m,
         Err(e) => return fail(Msg::errno(e, &a.tombr)),

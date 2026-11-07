@@ -40,7 +40,8 @@ impl Build {
         let depth = self.u32(el, "DEPTH").unwrap_or(24);
         let width = self.u32(el, "WIDTH").unwrap_or(80);
         let screen = matches!((depth, width), (24, 80 | 132) | (27, 132));
-        let popup = (5..=25).contains(&depth) && (20..=128).contains(&width) && (depth < 24 || width < 80);
+        let popup =
+            (5..=25).contains(&depth) && (20..=128).contains(&width) && (depth < 24 || width < 80);
         if !screen && !popup {
             self.diags.push(ids::bad_panel_size(el.line, depth, width));
         }

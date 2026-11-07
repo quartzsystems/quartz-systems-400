@@ -165,7 +165,11 @@ pub fn chggrpa(host: &Host, name: &str, text: &str) -> Result<String, Fail> {
     } else {
         name.to_string()
     };
-    let text = if text.eq_ignore_ascii_case("*SAME") { "" } else { text };
+    let text = if text.eq_ignore_ascii_case("*SAME") {
+        ""
+    } else {
+        text
+    };
     host.link
         .borrow_mut()
         .with(|l| l.grp_chg(name, text.to_string()))
@@ -176,7 +180,11 @@ pub fn chggrpa(host: &Host, name: &str, text: &str) -> Result<String, Fail> {
 /// `TFRGRPJOB GRPJOB(name|*PRV|*SELECT) INLGRPPGM(lib/pgm|*NONE)`.
 pub fn tfrgrpjob(host: &Host, which: &str, program: &str) -> Result<String, Fail> {
     let which = if which.is_empty() { "*SELECT" } else { which };
-    let program = if program.is_empty() || program.starts_with('*') { "" } else { program };
+    let program = if program.is_empty() || program.starts_with('*') {
+        ""
+    } else {
+        program
+    };
     match transfer_to(host, which, program) {
         Ok(Act::Gone) => {
             keys::gone();
@@ -190,16 +198,16 @@ pub fn tfrgrpjob(host: &Host, which: &str, program: &str) -> Result<String, Fail
 /// `ENDGRPJOB GRPJOB(name|*)`: another job of the group ends; this one
 /// signs off, and the display goes to another job of the group.
 pub fn endgrpjob(host: &Host, which: &str) -> Result<String, Fail> {
-    let (_, me, members) = info(host)
-        .ok_or_else(|| fail("CPF1311 The job is not a group job."))?;
+    let (_, me, members) = info(host).ok_or_else(|| fail("CPF1311 The job is not a group job."))?;
     if which.is_empty() || which == "*" || which == me {
         keys::sign_off();
         return Ok(String::new());
     }
-    let m = members
-        .iter()
-        .find(|m| m.0 == which)
-        .ok_or_else(|| fail(&format!("CPF1310 Group job {which} not found in the group.")))?;
+    let m = members.iter().find(|m| m.0 == which).ok_or_else(|| {
+        fail(&format!(
+            "CPF1310 Group job {which} not found in the group."
+        ))
+    })?;
     host.ctl
         .borrow_mut()
         .send(&FromJob::GroupEnd { job: m.1 })

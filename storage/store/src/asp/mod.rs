@@ -498,8 +498,7 @@ impl Asp {
                     unit,
                     entry: entry.clone(),
                     used_pages,
-                    attached: self.io.unit_attached(unit)
-                        && self.parity.attached(&entry.unit_uuid),
+                    attached: self.io.unit_attached(unit) && self.parity.attached(&entry.unit_uuid),
                 }
             })
             .collect()

@@ -75,12 +75,17 @@ impl TcpServer for HttpAdmin {
         let spec = self.spec();
         check_instance(spec, req)?;
         if !self.active(env, req) {
-            return Ok(format!("{} {} server not active.", msg::NOT_ACTIVE, spec.name));
+            return Ok(format!(
+                "{} {} server not active.",
+                msg::NOT_ACTIVE,
+                spec.name
+            ));
         }
         // `ADMIN` only: `NAVIGATOR` ends as its own instance.
         if let Some(l) = spec.listener() {
-            env.end_job(l.name, immediate)
-                .map_err(|e| Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special)))?;
+            env.end_job(l.name, immediate).map_err(|e| {
+                Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special))
+            })?;
         }
         Ok(format!("{} {} server ending.", msg::ENDING, spec.name))
     }
@@ -94,7 +99,9 @@ pub struct Ftp;
 impl Ftp {
     /// The listener's job name.
     fn listener_name(&self) -> String {
-        self.spec().listener().map_or_else(|| "QTFTP00001".into(), |l| l.numbered(1))
+        self.spec()
+            .listener()
+            .map_or_else(|| "QTFTP00001".into(), |l| l.numbered(1))
     }
 }
 
@@ -106,7 +113,9 @@ impl TcpServer for Ftp {
     fn jobs(&self, req: &Request, attrs: &ServerAttrs) -> Result<Vec<JobStart>, Refusal> {
         check_instance(self.spec(), req)?;
         let a = FtpAttrs::from_bag(&attrs.bag);
-        let mut j = listener_job(self.spec(), a.rqsdta()).into_iter().collect::<Vec<_>>();
+        let mut j = listener_job(self.spec(), a.rqsdta())
+            .into_iter()
+            .collect::<Vec<_>>();
         for job in &mut j {
             job.subsystem = a.subsystem();
         }
@@ -122,10 +131,15 @@ impl TcpServer for Ftp {
         let spec = self.spec();
         check_instance(spec, req)?;
         if !self.active(env, req) {
-            return Ok(format!("{} {} server not active.", msg::NOT_ACTIVE, spec.name));
+            return Ok(format!(
+                "{} {} server not active.",
+                msg::NOT_ACTIVE,
+                spec.name
+            ));
         }
-        env.end_job(&self.listener_name(), immediate)
-            .map_err(|e| Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special)))?;
+        env.end_job(&self.listener_name(), immediate).map_err(|e| {
+            Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special))
+        })?;
         Ok(format!("{} {} server ending.", msg::ENDING, spec.name))
     }
 }

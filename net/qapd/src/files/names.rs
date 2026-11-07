@@ -80,6 +80,7 @@ pub(super) fn copy(c: &dyn IfsClient, req: &FromTo) -> Done {
         to_ccsid: None,
         keep_owner: false,
     };
-    c.copy(from, &req.to, opts).map_err(|e| Stop::errno(e, from))?;
+    c.copy(from, &req.to, opts)
+        .map_err(|e| Stop::errno(e, from))?;
     Ok(Vec::new())
 }

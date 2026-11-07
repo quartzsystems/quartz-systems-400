@@ -16,7 +16,11 @@ pub fn civil(days: i64) -> (i64, u32, u32) {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = yoe + era * 400 + i64::from(m <= 2);
-    (y, u32::try_from(m).unwrap_or(1), u32::try_from(d).unwrap_or(1))
+    (
+        y,
+        u32::try_from(m).unwrap_or(1),
+        u32::try_from(d).unwrap_or(1),
+    )
 }
 
 /// Days since 1970-01-01 of a date.

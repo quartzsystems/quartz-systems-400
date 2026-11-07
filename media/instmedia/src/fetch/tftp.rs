@@ -35,7 +35,11 @@ pub fn get(host: &str, port: u16, path: &str, wait: Duration) -> Result<Vec<u8>,
         .map_err(|e| format!("{host}: {e}"))?
         .next()
         .ok_or_else(|| format!("{host}: no address"))?;
-    let bind = if server.is_ipv4() { "0.0.0.0:0" } else { "[::]:0" };
+    let bind = if server.is_ipv4() {
+        "0.0.0.0:0"
+    } else {
+        "[::]:0"
+    };
     let s = UdpSocket::bind(bind).map_err(|e| e.to_string())?;
     s.set_read_timeout(Some(wait)).map_err(|e| e.to_string())?;
     let file = path.trim_start_matches('/');
@@ -51,7 +55,8 @@ pub fn get(host: &str, port: u16, path: &str, wait: Duration) -> Result<Vec<u8>,
             Ok(x) => x,
             Err(_) if tries < 5 => {
                 tries += 1;
-                s.send_to(&last, peer.unwrap_or(server)).map_err(|e| e.to_string())?;
+                s.send_to(&last, peer.unwrap_or(server))
+                    .map_err(|e| e.to_string())?;
                 continue;
             }
             Err(e) => return Err(format!("tftp://{host}/{file}: {e}")),
@@ -83,7 +88,9 @@ pub fn get(host: &str, port: u16, path: &str, wait: Duration) -> Result<Vec<u8>,
                 s.send_to(&ack, from).map_err(|e| e.to_string())?;
             }
             ERROR => {
-                let text = String::from_utf8_lossy(&buf[4..n]).trim_end_matches('\0').to_string();
+                let text = String::from_utf8_lossy(&buf[4..n])
+                    .trim_end_matches('\0')
+                    .to_string();
                 return Err(format!("tftp://{host}/{file}: {text} (error {num})"));
             }
             _ => {}
@@ -105,9 +112,14 @@ mod tests {
             let (n, client) = listen.recv_from(&mut buf).unwrap();
             assert_eq!(&buf[..n], &request("qs400/INSTALL.RSP")[..]);
             let t = UdpSocket::bind("127.0.0.1:0").unwrap();
-            t.set_read_timeout(Some(Duration::from_millis(300))).unwrap();
+            t.set_read_timeout(Some(Duration::from_millis(300)))
+                .unwrap();
             let mut dropped = false;
-            for (i, chunk) in content.chunks(BLOCK).chain(std::iter::once(&[][..])).enumerate() {
+            for (i, chunk) in content
+                .chunks(BLOCK)
+                .chain(std::iter::once(&[][..]))
+                .enumerate()
+            {
                 if i > 0 && chunk.is_empty() && !content.len().is_multiple_of(BLOCK) {
                     break;
                 }
@@ -128,9 +140,17 @@ mod tests {
 
     #[test]
     fn reads_a_file_of_several_blocks() {
-        let content: Vec<u8> = (0..1300u32).map(|i| u8::try_from(i % 251).unwrap()).collect();
+        let content: Vec<u8> = (0..1300u32)
+            .map(|i| u8::try_from(i % 251).unwrap())
+            .collect();
         let port = serve(content.clone());
-        let got = get("127.0.0.1", port, "/qs400/INSTALL.RSP", Duration::from_millis(200)).unwrap();
+        let got = get(
+            "127.0.0.1",
+            port,
+            "/qs400/INSTALL.RSP",
+            Duration::from_millis(200),
+        )
+        .unwrap();
         assert_eq!(got, content);
     }
 
@@ -138,6 +158,15 @@ mod tests {
     fn an_exact_multiple_ends_with_an_empty_block() {
         let content = vec![b'x'; 1024];
         let port = serve(content.clone());
-        assert_eq!(get("127.0.0.1", port, "qs400/INSTALL.RSP", Duration::from_millis(200)).unwrap(), content);
+        assert_eq!(
+            get(
+                "127.0.0.1",
+                port,
+                "qs400/INSTALL.RSP",
+                Duration::from_millis(200)
+            )
+            .unwrap(),
+            content
+        );
     }
 }

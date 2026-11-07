@@ -52,7 +52,10 @@ fn fixed_token(id: &str) -> Option<usize> {
 /// A specification in fixed columns (not free-form text).
 fn is_fixed_spec(l: &Line) -> bool {
     !l.fully_free
-        && l.text.chars().nth(5).is_some_and(|c| "HFDICOPhfdicop".contains(c))
+        && l.text
+            .chars()
+            .nth(5)
+            .is_some_and(|c| "HFDICOPhfdicop".contains(c))
         && l.text.chars().nth(6).is_none_or(|c| c != '/' && c != '*')
 }
 
@@ -84,11 +87,13 @@ enum Rule {
 
 fn rule(id: &str) -> Option<Rule> {
     Some(match id {
-        "RNF0503" | "RNF3557" | "RNF0533" | "RNF3358" | "RNF3596" | "RNF0231" | "RNF3452" | "RNF0504" | "RNF3559"
-        | "RNF3564" | "RNF3813" | "RNF0612" | "RNF0614" | "RNF1311" | "RNF1331" | "RNF1317" | "RNF3568" | "RNF1008"
-        | "RNF1303" | "RNF0341" | "RNF1306" | "RNF0312" | "RNF5377" | "RNF0369" | "RNF3450" => Rule::Arg(1),
+        "RNF0503" | "RNF3557" | "RNF0533" | "RNF3358" | "RNF3596" | "RNF0231" | "RNF3452"
+        | "RNF0504" | "RNF3559" | "RNF3564" | "RNF3813" | "RNF0612" | "RNF0614" | "RNF1311"
+        | "RNF1331" | "RNF1317" | "RNF3568" | "RNF1008" | "RNF1303" | "RNF0341" | "RNF1306"
+        | "RNF0312" | "RNF5377" | "RNF0369" | "RNF3450" => Rule::Arg(1),
         "RNF0512" | "RNF3561" => Rule::Arg(2),
-        "RNF3327" | "RNF3312" | "RNF3322" | "RNF3323" | "RNF3740" | "RNF2416" | "RNF3333" | "RNF3575" => Rule::Raw,
+        "RNF3327" | "RNF3312" | "RNF3322" | "RNF3323" | "RNF3740" | "RNF2416" | "RNF3333"
+        | "RNF3575" => Rule::Raw,
         "RNF0607" | "RNF0316" | "RNF0637" => Rule::Close,
         "RNF0317" => Rule::LastColon,
         "RNF0256" => Rule::AfterFirst,
@@ -97,8 +102,8 @@ fn rule(id: &str) -> Option<Rule> {
         "RNF0274" => Rule::Directive,
         "RNF5248" => Rule::EndSuffix,
         "RNF5048" => Rule::Extender,
-        "RNF5412" | "RNF5413" | "RNF5344" | "RNF5294" | "RNF5116" | "RNF3768" | "RNF7261" | "RNF3556" | "RNF3530"
-        | "RNF5425" => Rule::Operand,
+        "RNF5412" | "RNF5413" | "RNF5344" | "RNF5294" | "RNF5116" | "RNF3768" | "RNF7261"
+        | "RNF3556" | "RNF3530" | "RNF5425" => Rule::Operand,
         _ => return None,
     })
 }
@@ -112,7 +117,9 @@ fn word_end(t: &[char], i: usize) -> usize {
     let mut j = i;
     while j < t.len() {
         let c = t[j];
-        let inner = matches!(c, '-' | '.') && j > i && t.get(j + 1).is_some_and(char::is_ascii_alphanumeric);
+        let inner = matches!(c, '-' | '.')
+            && j > i
+            && t.get(j + 1).is_some_and(char::is_ascii_alphanumeric);
         if !(is_name(c) || inner) || (c == '*' && j > i) {
             break;
         }
@@ -132,10 +139,18 @@ fn skip_blanks(t: &[char], mut i: usize) -> usize {
 pub(crate) fn token(t: &[char], i: usize) -> usize {
     let Some(&c) = t.get(i) else { return 1 };
     if c == '\'' {
-        return t[i + 1..].iter().position(|x| *x == '\'').map_or(1, |p| p + 2);
+        return t[i + 1..]
+            .iter()
+            .position(|x| *x == '\'')
+            .map_or(1, |p| p + 2);
     }
-    if c.is_ascii_digit() || ((c == '-' || c == '+') && t.get(i + 1).is_some_and(char::is_ascii_digit)) {
-        return 1 + t[i + 1..].iter().take_while(|x| x.is_ascii_digit() || matches!(x, '.' | ',')).count();
+    if c.is_ascii_digit()
+        || ((c == '-' || c == '+') && t.get(i + 1).is_some_and(char::is_ascii_digit))
+    {
+        return 1 + t[i + 1..]
+            .iter()
+            .take_while(|x| x.is_ascii_digit() || matches!(x, '.' | ','))
+            .count();
     }
     (word_end(t, i) - i).max(1)
 }
@@ -165,7 +180,13 @@ pub(crate) fn place(d: &Diag, l: &Line, col: usize, alt: usize) -> Option<(usize
     // A column 0 is the statement's start.
     let first = l.text.chars().position(|c| c != ' ').map_or(1, |p| p + 1);
     let col = if col == 0 { first } else { col };
-    place_at(d, l, col).or_else(|| if alt > 0 && alt != col { place_at(d, l, alt) } else { None })
+    place_at(d, l, col).or_else(|| {
+        if alt > 0 && alt != col {
+            place_at(d, l, alt)
+        } else {
+            None
+        }
+    })
 }
 
 fn place_at(d: &Diag, l: &Line, col: usize) -> Option<(usize, usize)> {
@@ -184,7 +205,8 @@ fn place_at(d: &Diag, l: &Line, col: usize) -> Option<(usize, usize)> {
     // A numeric entry not right-aligned: a file's whole entry, else
     // from the entry to its field's end.
     if !l.fully_free && d.msgid == "RNF0263" {
-        let fields: &[(usize, usize)] = match l.text.chars().nth(5).map(|c| c.to_ascii_uppercase()) {
+        let fields: &[(usize, usize)] = match l.text.chars().nth(5).map(|c| c.to_ascii_uppercase())
+        {
             Some('F') => &[(23, 27), (29, 33)],
             Some('D') => &[(26, 32), (33, 39), (41, 42)],
             Some('C') => &[(64, 68), (69, 70)],

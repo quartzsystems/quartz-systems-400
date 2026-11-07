@@ -47,7 +47,8 @@ pub fn work_with_dst_environment(privileges: Privilege) -> Submenu {
                         vec![
                             format!("Console type . . . . . :  {}", env.console_type()),
                             String::new(),
-                            "Option 6 of the DST menu chooses the local or the serial console;".into(),
+                            "Option 6 of the DST menu chooses the local or the serial console;"
+                                .into(),
                             "there is no operations console over the LAN.".into(),
                         ],
                     )))
@@ -170,7 +171,9 @@ impl Panel for UserList {
                     "Confirm Delete of Service Tools User ID",
                     lines,
                     0,
-                    Box::new(move |env: &mut dyn DstEnv| env.change_user(&change).map(|()| done.clone())),
+                    Box::new(move |env: &mut dyn DstEnv| {
+                        env.change_user(&change).map(|()| done.clone())
+                    }),
                 )
             }
             4 => Flow::Push(Box::new(display_user(env, &name))),
@@ -193,7 +196,9 @@ impl Panel for UserList {
                     "Confirm Change of Service Tools User ID",
                     lines,
                     0,
-                    Box::new(move |env: &mut dyn DstEnv| env.change_user(&change).map(|()| done.clone())),
+                    Box::new(move |env: &mut dyn DstEnv| {
+                        env.change_user(&change).map(|()| done.clone())
+                    }),
                 )
             }
             _ => Flow::Push(Box::new(ResetPassword::new(name))),

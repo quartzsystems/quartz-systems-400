@@ -15,9 +15,10 @@ use qsweb::msg::Message;
 
 use super::cl::{done, fail, parse, split, unquote};
 use super::{PROFILES, has_special};
-use crate::env::users::{AuthEntry, AuthList, ObjectAuthority, Profile, SPECIAL, SecuredObject, Users};
+use crate::env::users::{
+    AuthEntry, AuthList, ObjectAuthority, Profile, SPECIAL, SecuredObject, Users,
+};
 use crate::util::secs;
-
 
 /// The sample system's users and groups.
 pub struct FixtureUsers {
@@ -41,26 +42,170 @@ pub struct State {
 }
 
 /// `(name, text, enabled, class, last sign-on, group, supplemental, owned)`.
-type Row = (&'static str, &'static str, bool, &'static str, (u32, u32, u32, u32, u32), &'static str, &'static str, u32);
+type Row = (
+    &'static str,
+    &'static str,
+    bool,
+    &'static str,
+    (u32, u32, u32, u32, u32),
+    &'static str,
+    &'static str,
+    u32,
+);
 
 /// The users, in the system's order. Dates are `(month, day, h, m, s)`
 /// of 2026.
 const USERS: &[Row] = &[
-    ("QSECOFR", "Security officer", true, "*SECOFR", (10, 29, 13, 50, 1), "", "ADMINS WEBUSERS WAREHOUSE", 412),
-    ("QPGMR", "Programmer", true, "*PGMR", (10, 29, 6, 0, 0), "", "WEBUSERS WAREHOUSE", 58),
-    ("QUSER", "Default user for host servers", true, "*USER", (10, 29, 14, 2, 11), "", "SERVICES WEBUSERS", 4),
-    ("QTMHHTTP", "HTTP server user", true, "*USER", (10, 29, 6, 0, 1), "", "SERVICES WEBUSERS", 12),
-    ("QTCP", "TCP/IP", true, "*USER", (10, 27, 6, 0, 0), "", "", 31),
-    ("QSSHD", "SSH daemon", true, "*USER", (10, 27, 6, 0, 2), "", "SERVICES WEBUSERS", 3),
-    ("TESTUSER", "Cody Wellman", true, "*SECOFR", (10, 29, 13, 5, 0), "ADMINS", "OPS WEBUSERS WAREHOUSE ACCTG", 37),
-    ("OPERATOR", "System operator", true, "*SYSOPR", (10, 29, 12, 50, 0), "OPS", "WEBUSERS WAREHOUSE", 6),
-    ("WEBUSER", "Access for Web default user", true, "*USER", (10, 29, 11, 41, 50), "WEBUSERS", "", 0),
-    ("GUEST", "Guest profile", false, "*USER", (10, 12, 9, 20, 17), "WEBUSERS", "", 0),
-    ("INVSVC", "Inventory service account", true, "*USER", (10, 29, 6, 0, 0), "SERVICES", "WEBUSERS WAREHOUSE", 22),
-    ("BACKUP", "Backup operator", true, "*SYSOPR", (10, 28, 23, 30, 0), "OPS", "WEBUSERS WAREHOUSE ACCTG", 2),
-    ("JDOE", "J. Doe - warehouse", true, "*USER", (10, 29, 8, 2, 33), "WAREHOUSE", "WEBUSERS ACCTG", 3),
-    ("ASMITH", "A. Smith - accounting", true, "*USER", (10, 28, 16, 44, 10), "ACCTG", "WEBUSERS WAREHOUSE", 5),
-    ("TEMP01", "Temporary contractor", false, "*USER", (8, 30, 10, 11, 0), "", "WEBUSERS WAREHOUSE ACCTG", 0),
+    (
+        "QSECOFR",
+        "Security officer",
+        true,
+        "*SECOFR",
+        (10, 29, 13, 50, 1),
+        "",
+        "ADMINS WEBUSERS WAREHOUSE",
+        412,
+    ),
+    (
+        "QPGMR",
+        "Programmer",
+        true,
+        "*PGMR",
+        (10, 29, 6, 0, 0),
+        "",
+        "WEBUSERS WAREHOUSE",
+        58,
+    ),
+    (
+        "QUSER",
+        "Default user for host servers",
+        true,
+        "*USER",
+        (10, 29, 14, 2, 11),
+        "",
+        "SERVICES WEBUSERS",
+        4,
+    ),
+    (
+        "QTMHHTTP",
+        "HTTP server user",
+        true,
+        "*USER",
+        (10, 29, 6, 0, 1),
+        "",
+        "SERVICES WEBUSERS",
+        12,
+    ),
+    (
+        "QTCP",
+        "TCP/IP",
+        true,
+        "*USER",
+        (10, 27, 6, 0, 0),
+        "",
+        "",
+        31,
+    ),
+    (
+        "QSSHD",
+        "SSH daemon",
+        true,
+        "*USER",
+        (10, 27, 6, 0, 2),
+        "",
+        "SERVICES WEBUSERS",
+        3,
+    ),
+    (
+        "TESTUSER",
+        "Cody Wellman",
+        true,
+        "*SECOFR",
+        (10, 29, 13, 5, 0),
+        "ADMINS",
+        "OPS WEBUSERS WAREHOUSE ACCTG",
+        37,
+    ),
+    (
+        "OPERATOR",
+        "System operator",
+        true,
+        "*SYSOPR",
+        (10, 29, 12, 50, 0),
+        "OPS",
+        "WEBUSERS WAREHOUSE",
+        6,
+    ),
+    (
+        "WEBUSER",
+        "Access for Web default user",
+        true,
+        "*USER",
+        (10, 29, 11, 41, 50),
+        "WEBUSERS",
+        "",
+        0,
+    ),
+    (
+        "GUEST",
+        "Guest profile",
+        false,
+        "*USER",
+        (10, 12, 9, 20, 17),
+        "WEBUSERS",
+        "",
+        0,
+    ),
+    (
+        "INVSVC",
+        "Inventory service account",
+        true,
+        "*USER",
+        (10, 29, 6, 0, 0),
+        "SERVICES",
+        "WEBUSERS WAREHOUSE",
+        22,
+    ),
+    (
+        "BACKUP",
+        "Backup operator",
+        true,
+        "*SYSOPR",
+        (10, 28, 23, 30, 0),
+        "OPS",
+        "WEBUSERS WAREHOUSE ACCTG",
+        2,
+    ),
+    (
+        "JDOE",
+        "J. Doe - warehouse",
+        true,
+        "*USER",
+        (10, 29, 8, 2, 33),
+        "WAREHOUSE",
+        "WEBUSERS ACCTG",
+        3,
+    ),
+    (
+        "ASMITH",
+        "A. Smith - accounting",
+        true,
+        "*USER",
+        (10, 28, 16, 44, 10),
+        "ACCTG",
+        "WEBUSERS WAREHOUSE",
+        5,
+    ),
+    (
+        "TEMP01",
+        "Temporary contractor",
+        false,
+        "*USER",
+        (8, 30, 10, 11, 0),
+        "",
+        "WEBUSERS WAREHOUSE ACCTG",
+        0,
+    ),
 ];
 
 /// The groups: name, text, GID.
@@ -101,26 +246,28 @@ fn profile(name: &str, text: &str, class: &str) -> Profile {
 pub fn profiles() -> Vec<Profile> {
     let mut out: Vec<Profile> = USERS
         .iter()
-        .map(|&(name, text, enabled, class, (mo, d, h, mi, s), group, supp, owned)| {
-            let mut p = profile(name, text, class);
-            p.enabled = enabled;
-            p.last_signon = Some(secs(2026, mo, d, h, mi, s));
-            p.group = group.into();
-            p.supplemental = supp.split_whitespace().map(ToString::to_string).collect();
-            p.owned = owned;
-            p.special = match PROFILES.iter().find(|q| q.name == name) {
-                Some(q) => q.special.iter().map(ToString::to_string).collect(),
-                None => match class {
-                    "*SECOFR" => SPECIAL.iter().map(ToString::to_string).collect(),
-                    "*SYSOPR" => vec!["*JOBCTL".into(), "*SAVSYS".into()],
-                    _ => Vec::new(),
-                },
-            };
-            if name == "GUEST" {
-                p.invalid_signons = 3;
-            }
-            p
-        })
+        .map(
+            |&(name, text, enabled, class, (mo, d, h, mi, s), group, supp, owned)| {
+                let mut p = profile(name, text, class);
+                p.enabled = enabled;
+                p.last_signon = Some(secs(2026, mo, d, h, mi, s));
+                p.group = group.into();
+                p.supplemental = supp.split_whitespace().map(ToString::to_string).collect();
+                p.owned = owned;
+                p.special = match PROFILES.iter().find(|q| q.name == name) {
+                    Some(q) => q.special.iter().map(ToString::to_string).collect(),
+                    None => match class {
+                        "*SECOFR" => SPECIAL.iter().map(ToString::to_string).collect(),
+                        "*SYSOPR" => vec!["*JOBCTL".into(), "*SAVSYS".into()],
+                        _ => Vec::new(),
+                    },
+                };
+                if name == "GUEST" {
+                    p.invalid_signons = 3;
+                }
+                p
+            },
+        )
         .collect();
     out.extend(GROUPS.iter().map(|&(name, text, gid)| {
         let mut p = profile(name, text, "*USER");
@@ -167,7 +314,11 @@ fn lists() -> Vec<AuthList> {
             "HTTP server configuration",
             "QSECOFR",
             6,
-            vec![e("QSECOFR", "*ALL", true), e("*PUBLIC", "*USE", false), e("QTMHHTTP", "*CHANGE", false)],
+            vec![
+                e("QSECOFR", "*ALL", true),
+                e("*PUBLIC", "*USE", false),
+                e("QTMHHTTP", "*CHANGE", false),
+            ],
         ),
         l(
             "PAYROLL",
@@ -220,7 +371,9 @@ impl Default for FixtureUsers {
 
 /// A parameter's list of values.
 fn values(v: &str) -> Vec<String> {
-    v.split_whitespace().map(|s| unquote(s).to_ascii_uppercase()).collect()
+    v.split_whitespace()
+        .map(|s| unquote(s).to_ascii_uppercase())
+        .collect()
 }
 
 /// `*NONE` as empty.
@@ -233,7 +386,8 @@ fn none(v: &str) -> String {
 fn valid_name(n: &str) -> bool {
     (1..=10).contains(&n.len())
         && n.starts_with(|c: char| c.is_ascii_uppercase() || "$#@".contains(c))
-        && n.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || "$#@_".contains(c))
+        && n.chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || "$#@_".contains(c))
 }
 
 /// Apply `CRTUSRPRF`/`CHGUSRPRF` parameters to `p`.
@@ -286,7 +440,10 @@ fn apply(p: &mut Profile, k: &BTreeMap<String, String>) {
         p.home = unquote(v);
     }
     if let Some(v) = get("SPCAUT") {
-        p.special = values(v).into_iter().filter(|s| s.starts_with('*') && s != "*NONE").collect();
+        p.special = values(v)
+            .into_iter()
+            .filter(|s| s.starts_with('*') && s != "*NONE")
+            .collect();
     }
     if let Some(v) = get("LANGID") {
         p.language = v.into();
@@ -304,8 +461,19 @@ fn apply(p: &mut Profile, k: &BTreeMap<String, String>) {
 
 impl State {
     #[allow(clippy::too_many_lines)]
-    fn run(&mut self, user: &str, name: &str, k: &BTreeMap<String, String>) -> Result<Message, Message> {
-        let get = |n: &str| k.get(n).map(String::as_str).unwrap_or_default().trim().to_ascii_uppercase();
+    fn run(
+        &mut self,
+        user: &str,
+        name: &str,
+        k: &BTreeMap<String, String>,
+    ) -> Result<Message, Message> {
+        let get = |n: &str| {
+            k.get(n)
+                .map(String::as_str)
+                .unwrap_or_default()
+                .trim()
+                .to_ascii_uppercase()
+        };
         let secadm = has_special(user, "*SECADM");
         match name {
             "CRTUSRPRF" | "CHGUSRPRF" | "DLTUSRPRF" if !secadm => fail("CPF2292", &[]),
@@ -329,7 +497,14 @@ impl State {
                 p.limit_capabilities = "*NO".into();
                 apply(&mut p, k);
                 if get("GID") == "*GEN" {
-                    p.gid = Some(self.profiles.iter().filter_map(|q| q.gid).max().unwrap_or(1000) + 1);
+                    p.gid = Some(
+                        self.profiles
+                            .iter()
+                            .filter_map(|q| q.gid)
+                            .max()
+                            .unwrap_or(1000)
+                            + 1,
+                    );
                 }
                 p.is_group = p.gid.is_some();
                 self.profiles.push(p);
@@ -342,7 +517,12 @@ impl State {
                 };
                 if values(k.get("SPCAUT").map_or("", String::as_str))
                     .iter()
-                    .any(|s| s.starts_with('*') && s != "*NONE" && !p.special.contains(s) && !has_special(user, s))
+                    .any(|s| {
+                        s.starts_with('*')
+                            && s != "*NONE"
+                            && !p.special.contains(s)
+                            && !has_special(user, s)
+                    })
                 {
                     return fail("CPF2291", &[]);
                 }
@@ -404,7 +584,10 @@ impl State {
                         },
                         AuthEntry {
                             user: "*PUBLIC".into(),
-                            authority: get("AUT").chars().next().map_or("*EXCLUDE".into(), |_| get("AUT")),
+                            authority: get("AUT")
+                                .chars()
+                                .next()
+                                .map_or("*EXCLUDE".into(), |_| get("AUT")),
                             list_mgt: false,
                         },
                     ],
@@ -428,7 +611,11 @@ impl State {
                 }
                 let users = values(k.get("USER").map_or("", String::as_str));
                 let aut = values(k.get("AUT").map_or("*USE", String::as_str));
-                let level = aut.iter().find(|a| *a != "*AUTLMGT").cloned().unwrap_or_else(|| "*USE".into());
+                let level = aut
+                    .iter()
+                    .find(|a| *a != "*AUTLMGT")
+                    .cloned()
+                    .unwrap_or_else(|| "*USE".into());
                 let mgt = aut.iter().any(|a| a == "*AUTLMGT");
                 for u in &users {
                     let at = l.entries.iter().position(|e| e.user == *u);
@@ -569,7 +756,11 @@ mod tests {
     fn groups_and_members() {
         let ps = profiles();
         assert_eq!(ps.iter().filter(|p| !p.is_group).count(), 15);
-        let members = |g: &str| ps.iter().filter(|p| p.group == g || p.supplemental.iter().any(|s| s == g)).count();
+        let members = |g: &str| {
+            ps.iter()
+                .filter(|p| p.group == g || p.supplemental.iter().any(|s| s == g))
+                .count()
+        };
         let counts: Vec<usize> = GROUPS.iter().map(|g| members(g.0)).collect();
         assert_eq!(counts, [2, 3, 14, 4, 9, 5]);
     }

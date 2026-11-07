@@ -45,11 +45,24 @@ fn pair(a: (Dt, Class), b: (Dt, Class)) -> (Dt, Dt) {
     if a.1 == b.1 {
         return (a.0, b.0);
     }
-    (dates::recast(a.0, a.1, Class::Stamp), dates::recast(b.0, b.1, Class::Stamp))
+    (
+        dates::recast(a.0, a.1, Class::Stamp),
+        dates::recast(b.0, b.1, Class::Stamp),
+    )
 }
 
 /// `_QRNX_DTCVT(dst, dd, df, src, sd, sf)`: assignment and conversion.
-pub extern "sysv64" fn cvt(env: *mut Env, _argc: i64, _od: i64, dst: i64, dd: i64, df: i64, src: i64, sd: i64, sf: i64) {
+pub extern "sysv64" fn cvt(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    dst: i64,
+    dd: i64,
+    df: i64,
+    src: i64,
+    sd: i64,
+    sf: i64,
+) {
     let r = read(src, sd, sf).and_then(|(v, from)| {
         let d = Desc::of(dd);
         let f = Fmt::of(df);
@@ -62,7 +75,17 @@ pub extern "sysv64" fn cvt(env: *mut Env, _argc: i64, _od: i64, dst: i64, dd: i6
 }
 
 /// `_QRNX_DTCMP(a, ad, af, b, bd, bf) -> -1|0|1`.
-pub extern "sysv64" fn cmp(env: *mut Env, _argc: i64, _od: i64, a: i64, ad: i64, af: i64, b: i64, bd: i64, bf: i64) -> i32 {
+pub extern "sysv64" fn cmp(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    a: i64,
+    ad: i64,
+    af: i64,
+    b: i64,
+    bd: i64,
+    bf: i64,
+) -> i32 {
     match read(a, ad, af).and_then(|x| Ok((x, read(b, bd, bf)?))) {
         Ok((x, y)) => {
             let (x, y) = pair(x, y);
@@ -97,7 +120,12 @@ pub extern "sysv64" fn add(
         let v = dates::add(v, c, n, unit)?;
         let d = Desc::of(dd);
         let f = Fmt::of(df);
-        dates::write(dst.cast_unsigned(), &d, f, dates::recast(v, c, class(&d, f)))
+        dates::write(
+            dst.cast_unsigned(),
+            &d,
+            f,
+            dates::recast(v, c, class(&d, f)),
+        )
     });
     if let Err(e) = r {
         signal(env, e);
@@ -117,10 +145,12 @@ pub extern "sysv64" fn diff(
     bf: i64,
     unit: i32,
 ) -> i64 {
-    let r = read(a, ad, af).and_then(|x| Ok((x, read(b, bd, bf)?))).and_then(|(x, y)| {
-        let (x, y) = pair(x, y);
-        dates::diff(x, y, unit)
-    });
+    let r = read(a, ad, af)
+        .and_then(|x| Ok((x, read(b, bd, bf)?)))
+        .and_then(|(x, y)| {
+            let (x, y) = pair(x, y);
+            dates::diff(x, y, unit)
+        });
     r.unwrap_or_else(|e| {
         signal(env, e);
         0
@@ -128,16 +158,33 @@ pub extern "sysv64" fn diff(
 }
 
 /// `_QRNX_DTSUB(src, sd, sf, unit) -> i64`: `%SUBDT`, `EXTRCT`.
-pub extern "sysv64" fn sub(env: *mut Env, _argc: i64, _od: i64, src: i64, sd: i64, sf: i64, unit: i32) -> i64 {
-    read(src, sd, sf).and_then(|(v, _)| dates::part(v, unit)).unwrap_or_else(|e| {
-        signal(env, e);
-        0
-    })
+pub extern "sysv64" fn sub(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    src: i64,
+    sd: i64,
+    sf: i64,
+    unit: i32,
+) -> i64 {
+    read(src, sd, sf)
+        .and_then(|(v, _)| dates::part(v, unit))
+        .unwrap_or_else(|e| {
+            signal(env, e);
+            0
+        })
 }
 
 /// `_QRNX_DTTEST(src, sd, sf) -> 1|0`: whether the operand holds a
 /// valid value (`TEST`).
-pub extern "sysv64" fn test(_env: *mut Env, _argc: i64, _od: i64, src: i64, sd: i64, sf: i64) -> i32 {
+pub extern "sysv64" fn test(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    src: i64,
+    sd: i64,
+    sf: i64,
+) -> i32 {
     i32::from(read(src, sd, sf).is_ok())
 }
 

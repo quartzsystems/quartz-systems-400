@@ -145,7 +145,11 @@ pub const INSTALL_RESTORE_UNITS: Src = src(
     Phase::Os,
 );
 /// The release rule refused the install (docs/INSTALL.md).
-pub const INSTALL_REFUSED: Src = src("A6004080", "Install refused by the release rule", Phase::Attention);
+pub const INSTALL_REFUSED: Src = src(
+    "A6004080",
+    "Install refused by the release rule",
+    Phase::Attention,
+);
 /// The operating system's load is restored into QSYS.
 pub const INSTALL_OS_LOAD: Src = src("C6004130", "Operating system load restored", Phase::Os);
 /// Programs translated again after an upgrade.
@@ -159,7 +163,11 @@ pub const PTF_APPLY: Src = src("C6004501", "Applying delayed PTFs", Phase::Os);
 /// PTFs marked for the next IPL being removed.
 pub const PTF_REMOVE: Src = src("C6004502", "Removing PTFs", Phase::Os);
 /// A LIC PTF took effect from the other slot.
-pub const PTF_LIC: Src = src("C6004503", "LIC PTF in effect from the other slot", Phase::Os);
+pub const PTF_LIC: Src = src(
+    "C6004503",
+    "LIC PTF in effect from the other slot",
+    Phase::Os,
+);
 /// A delayed PTF failed to apply.
 pub const PTF_FAILED: Src = src("C6004504", "Delayed PTF failed to apply", Phase::Attention);
 /// The operating system install is done.
@@ -194,11 +202,19 @@ pub const DISK_NOT_CONFIGURED: Src = src("A6001260", "Disk unit not configured",
 /// No IFS partition on any disk; the IPL goes on without the IFS.
 pub const IFS_MISSING: Src = src("A6001270", "IFS partition missing", Phase::Attention);
 /// ASP 1 has no room for the IFS volume; the IPL goes on without it.
-pub const IFS_NOT_CREATED: Src = src("A6001271", "IFS not created: ASP 1 is too full", Phase::Attention);
+pub const IFS_NOT_CREATED: Src = src(
+    "A6001271",
+    "IFS not created: ASP 1 is too full",
+    Phase::Attention,
+);
 /// The IFS would not mount; the IPL goes on without it.
 pub const IFS_MOUNT_FAILED: Src = src("A6001275", "IFS mount failed", Phase::Attention);
 /// The IFS volume's block device could not be served.
-pub const IFS_NOT_SERVED: Src = src("A6001276", "IFS device could not be served", Phase::Attention);
+pub const IFS_NOT_SERVED: Src = src(
+    "A6001276",
+    "IFS device could not be served",
+    Phase::Attention,
+);
 /// A tape or optical device failed; its resource is in the log entry.
 pub const DEVICE_ERROR: Src = src("A6006300", "Media device error", Phase::Attention);
 /// A volume could not be read or written.

@@ -48,7 +48,10 @@ fn hand_over(l: &TcpListener, d: &'static Daemon, tls: bool, me: sockets::JobId)
         let fd = sockets::Fd::from(OwnedFd::from(s));
         let note: &[u8] = if tls { b"T" } else { b"" };
         if let Err(e) = relay::give(relay::SOCKET, &fd, &pool, &me, note) {
-            eprintln!("qsjob: {}: handing a connection to {program}: {e:?}", d.name);
+            eprintln!(
+                "qsjob: {}: handing a connection to {program}: {e:?}",
+                d.name
+            );
         }
     }
 }

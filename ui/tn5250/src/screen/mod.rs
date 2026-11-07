@@ -331,10 +331,7 @@ impl ScreenModel {
         let end = to * self.cols;
         self.cells[start..end].iter_mut().for_each(|c| *c = NULL);
         self.remove_fields_in(start, end);
-        if self
-            .cursor
-            .is_some_and(|(r, _)| r >= from && r <= to)
-        {
+        if self.cursor.is_some_and(|(r, _)| r >= from && r <= to) {
             self.cursor = None;
         }
     }
@@ -349,7 +346,9 @@ impl ScreenModel {
     /// The index of the field starting at `(row, col)`.
     #[must_use]
     pub fn field_index_at(&self, row: usize, col: usize) -> Option<usize> {
-        self.fields.iter().position(|f| f.row == row && f.col == col)
+        self.fields
+            .iter()
+            .position(|f| f.row == row && f.col == col)
     }
 
     /// Protect or free a field by index.

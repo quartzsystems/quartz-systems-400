@@ -34,7 +34,11 @@ fn a_problem_from_detection_to_deletion() {
     assert_eq!(user.severity, 1);
     let u = log.create(PrbType::User, &user, "QS400", NOW + 20);
     // WRKPRB views: all, newest first; hardware only.
-    let all: Vec<&str> = log.list(&Filter::default()).iter().map(|p| p.id.as_str()).collect();
+    let all: Vec<&str> = log
+        .list(&Filter::default())
+        .iter()
+        .map(|p| p.id.as_str())
+        .collect();
     assert_eq!(all, [u.as_str(), hw.as_str(), id.as_str()]);
     let hwonly = log.list(&Filter {
         hardware: true,

@@ -218,7 +218,9 @@ impl Type {
     #[must_use]
     pub fn var_prefix(&self) -> Option<u32> {
         match self {
-            Self::VarChar(_, p) | Self::VarUcs2(_, p) | Self::VarGraphic(_, p) => Some(u32::from(*p)),
+            Self::VarChar(_, p) | Self::VarUcs2(_, p) | Self::VarGraphic(_, p) => {
+                Some(u32::from(*p))
+            }
             _ => None,
         }
     }
@@ -321,7 +323,10 @@ impl Type {
                         return Err(bad("the stride is less than the element's size".into()));
                     }
                     if elem.align() == PTR_ALIGN && s % PTR_ALIGN != 0 {
-                        return Err(bad("an element holding a pointer needs a stride of a multiple of 16".into()));
+                        return Err(bad(
+                            "an element holding a pointer needs a stride of a multiple of 16"
+                                .into(),
+                        ));
                     }
                 }
                 if self.size() > u64::from(u32::MAX) {
@@ -420,7 +425,11 @@ impl StructType {
 
 /// The text of a varying prefix: nothing for the 2-byte default.
 fn pfx(p: u8) -> String {
-    if p == 2 { String::new() } else { format!(":{p}") }
+    if p == 2 {
+        String::new()
+    } else {
+        format!(":{p}")
+    }
 }
 
 impl fmt::Display for Type {
@@ -452,8 +461,16 @@ impl fmt::Display for Type {
             Self::Ptr => f.write_str("ptr"),
             Self::ProcPtr => f.write_str("procptr"),
             Self::Bytes(n) => write!(f, "bytes({n})"),
-            Self::Array { len, elem, stride: None } => write!(f, "array[{len}] of {elem}"),
-            Self::Array { len, elem, stride: Some(s) } => write!(f, "array[{len}:{s}] of {elem}"),
+            Self::Array {
+                len,
+                elem,
+                stride: None,
+            } => write!(f, "array[{len}] of {elem}"),
+            Self::Array {
+                len,
+                elem,
+                stride: Some(s),
+            } => write!(f, "array[{len}:{s}] of {elem}"),
             Self::Struct(s) => {
                 write!(f, "struct({}) {{", s.size)?;
                 for (i, fl) in s.fields.iter().enumerate() {

@@ -58,8 +58,17 @@ impl TrgState {
     /// write instead, when a trigger changed it. Refused at once, nothing
     /// changed, when the path cannot call programs and any trigger fires
     /// for the event (after ones included).
-    pub fn before(&mut self, txn: &mut Txn<'_>, m: &mut Member, row: &Row<'_>, lvl: u8) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
-        let row = &Row { set: self.set_columns.as_deref(), ..*row };
+    pub fn before(
+        &mut self,
+        txn: &mut Txn<'_>,
+        m: &mut Member,
+        row: &Row<'_>,
+        lvl: u8,
+    ) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
+        let row = &Row {
+            set: self.set_columns.as_deref(),
+            ..*row
+        };
         let Some(active) = m.trgs.clone() else {
             return Ok(None);
         };
@@ -67,7 +76,9 @@ impl TrgState {
             return Ok(None);
         }
         match self.mode.clone() {
-            Mode::Refuse => Err(DbError::TriggerNotCallable { file: m.file.name().to_string() }),
+            Mode::Refuse => Err(DbError::TriggerNotCallable {
+                file: m.file.name().to_string(),
+            }),
             Mode::Call(c) => {
                 let r = fire::call_all(txn, &c, &active, m, Time::Before, row, lvl);
                 // The program's own requests may have changed the member.
@@ -83,7 +94,9 @@ impl TrgState {
                         return Err(fire::failed(m.file.name(), &t, true, f));
                     }
                     let nulls = usize::from(m.format().null_map_len);
-                    return Ok(r.buffer.and_then(|b| buffer::new_image(m.format(), &b, nulls)));
+                    return Ok(r
+                        .buffer
+                        .and_then(|b| buffer::new_image(m.format(), &b, nulls)));
                 }
                 let calls = fire::calls(&active, m, Time::Before, row, lvl);
                 if calls.is_empty() {
@@ -96,8 +109,17 @@ impl TrgState {
     }
 
     /// After `row` of `m` changed (or was read): its after triggers.
-    pub fn after(&mut self, txn: &mut Txn<'_>, m: &mut Member, row: &Row<'_>, lvl: u8) -> Result<()> {
-        let row = &Row { set: self.set_columns.as_deref(), ..*row };
+    pub fn after(
+        &mut self,
+        txn: &mut Txn<'_>,
+        m: &mut Member,
+        row: &Row<'_>,
+        lvl: u8,
+    ) -> Result<()> {
+        let row = &Row {
+            set: self.set_columns.as_deref(),
+            ..*row
+        };
         let Some(active) = m.trgs.clone() else {
             return Ok(());
         };
@@ -105,14 +127,17 @@ impl TrgState {
             return Ok(());
         }
         match self.mode.clone() {
-            Mode::Refuse => Err(DbError::TriggerNotCallable { file: m.file.name().to_string() }),
+            Mode::Refuse => Err(DbError::TriggerNotCallable {
+                file: m.file.name().to_string(),
+            }),
             Mode::Call(c) => {
                 let r = fire::call_all(txn, &c, &active, m, Time::After, row, lvl).map(|_| ());
                 m.refresh(txn)?;
                 r
             }
             Mode::Defer => {
-                self.due.extend(fire::calls(&active, m, Time::After, row, lvl));
+                self.due
+                    .extend(fire::calls(&active, m, Time::After, row, lvl));
                 Ok(())
             }
         }
@@ -126,7 +151,9 @@ impl TrgState {
         }
         match (&self.mode, &m.trgs) {
             (Mode::Refuse, Some(a)) if a.any(crate::trg::Event::Read) => {
-                Err(DbError::TriggerNotCallable { file: m.file.name().to_string() })
+                Err(DbError::TriggerNotCallable {
+                    file: m.file.name().to_string(),
+                })
             }
             _ => Ok(()),
         }

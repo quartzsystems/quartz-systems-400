@@ -36,8 +36,16 @@ fn line(f: &AuditFilter) -> String {
     let user = f.user.trim().to_ascii_uppercase();
     let mut l = format!(
         "DSPAUDJRNE ENTTYP({}) USRPRF({})",
-        if kind.is_empty() { "*ALL" } else { kind.as_str() },
-        if user.is_empty() { "*ALL" } else { user.as_str() }
+        if kind.is_empty() {
+            "*ALL"
+        } else {
+            kind.as_str()
+        },
+        if user.is_empty() {
+            "*ALL"
+        } else {
+            user.as_str()
+        }
     );
     if f.from != 0 {
         let _ = write!(l, " FROMTIME({})", ymd(f.from));
@@ -102,7 +110,12 @@ fn receiver(m: &Main) -> AuditReceiver {
     let Ok(rows) = m.ask(Client::secaud_panel) else {
         return AuditReceiver::default();
     };
-    let get = |k: &str| rows.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
+    let get = |k: &str| {
+        rows.iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    };
     let journal = get("Security journal");
     if journal.is_empty() || journal == "*NONE" {
         return AuditReceiver::default();
@@ -111,7 +124,8 @@ fn receiver(m: &Main) -> AuditReceiver {
     let (lib, _) = journal.split_once('/').unwrap_or(("QSYS", ""));
     let (l, n) = (lib.to_string(), receiver.clone());
     let offset = m.ask(Client::now).offset_min;
-    let attached = m.ask(|c| c.object(l, n, "*JRNRCV".into()))
+    let attached = m
+        .ask(|c| c.object(l, n, "*JRNRCV".into()))
         .map_or(0, |o| cyy_secs(&o.created, offset));
     AuditReceiver {
         journal,
@@ -125,7 +139,13 @@ impl Security for LiveSecurity {
         let f = filter.clone();
         self.link
             .read(user, move |m| Some(entries(m, &f)))
-            .unwrap_or_else(|| Err(Message::new(Kind::Error, "CPF9897", "Navigator could not read the audit journal.")))
+            .unwrap_or_else(|| {
+                Err(Message::new(
+                    Kind::Error,
+                    "CPF9897",
+                    "Navigator could not read the audit journal.",
+                ))
+            })
     }
 
     fn audit_receiver(&self, user: &str) -> AuditReceiver {
@@ -154,6 +174,9 @@ mod tests {
             from: 1_793_491_200,
             to: 0,
         };
-        assert_eq!(line(&f), "DSPAUDJRNE ENTTYP(PW) USRPRF(*ALL) FROMTIME(2026-11-01) OUTPUT(*)");
+        assert_eq!(
+            line(&f),
+            "DSPAUDJRNE ENTTYP(PW) USRPRF(*ALL) FROMTIME(2026-11-01) OUTPUT(*)"
+        );
     }
 }

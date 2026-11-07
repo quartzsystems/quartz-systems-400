@@ -531,7 +531,10 @@ impl MsgQ {
     /// inquiry or has its reply.
     pub fn inquiry(&self, key: u32) -> Result<usize> {
         if !self.msgs.iter().any(|m| m.key == key) {
-            return Err(Error::value("CPF2410", format!("message key {key:08X} not found")));
+            return Err(Error::value(
+                "CPF2410",
+                format!("message key {key:08X} not found"),
+            ));
         }
         self.waiting(key, MsgKind::Inq)
     }
@@ -553,13 +556,24 @@ impl MsgQ {
     pub fn copy_of(&self, of: &(String, String), inquiry: u32) -> Option<u32> {
         self.msgs
             .iter()
-            .find(|m| m.kind == MsgKind::Copy && m.status == Status::Unanswered && m.reply_key == inquiry && &m.reply_to == of)
+            .find(|m| {
+                m.kind == MsgKind::Copy
+                    && m.status == Status::Unanswered
+                    && m.reply_key == inquiry
+                    && &m.reply_to == of
+            })
             .map(|m| m.key)
     }
 
     /// Answer the sender's copy `key` with `reply`: the reply goes on
     /// the queue after it; the reply's key.
-    pub fn answer_copy(&mut self, key: u32, reply: &str, from: (String, String, u32), time: u64) -> Result<u32> {
+    pub fn answer_copy(
+        &mut self,
+        key: u32,
+        reply: &str,
+        from: (String, String, u32),
+        time: u64,
+    ) -> Result<u32> {
         let i = self.waiting(key, MsgKind::Copy)?;
         let rkey = self.take_key();
         let m = &mut self.msgs[i];
@@ -594,9 +608,14 @@ impl MsgQ {
             .msgs
             .iter()
             .position(|m| m.key == key && m.kind == kind)
-            .ok_or_else(|| Error::value("CPF2422", format!("message {key:08X} is not an inquiry")))?;
+            .ok_or_else(|| {
+                Error::value("CPF2422", format!("message {key:08X} is not an inquiry"))
+            })?;
         if self.msgs[i].status != Status::Unanswered {
-            return Err(Error::value("CPF2422", format!("message {key:08X} has its reply already")));
+            return Err(Error::value(
+                "CPF2422",
+                format!("message {key:08X} has its reply already"),
+            ));
         }
         Ok(i)
     }
@@ -734,13 +753,25 @@ mod tests {
         };
         let a = q.send(info("a")).unwrap();
         // Past the wrap, 0 is skipped and so is a key still in use.
-        q.msgs.push(QMsg { key: 1, ..info("held") });
-        let b = q.send(QMsg { kind: MsgKind::Inq, dft: "Y".into(), ..info("b") }).unwrap();
+        q.msgs.push(QMsg {
+            key: 1,
+            ..info("held")
+        });
+        let b = q
+            .send(QMsg {
+                kind: MsgKind::Inq,
+                dft: "Y".into(),
+                ..info("b")
+            })
+            .unwrap();
         assert_eq!((a, b), (u32::MAX, 2));
         let c = q.send(info("c")).unwrap();
         // The reply goes after its inquiry, but arrives last.
         let r = q.reply(b, "", ("J".into(), "U".into(), 1), 9).unwrap();
-        assert_eq!(q.msgs.iter().map(|m| m.key).collect::<Vec<_>>(), [a, 1, b, r, c]);
+        assert_eq!(
+            q.msgs.iter().map(|m| m.key).collect::<Vec<_>>(),
+            [a, 1, b, r, c]
+        );
         let order: Vec<u32> = q.by_arrival().iter().map(|m| m.key).collect();
         assert_eq!(order, [a, 1, b, c, r]);
         assert_eq!(q.msgs[3].text, "Y");
@@ -762,9 +793,14 @@ mod tests {
             .unwrap();
         assert_eq!(q.copy_of(&to, 4), None);
         assert_eq!(q.copy_of(&to, 5), Some(k));
-        let r = q.answer_copy(k, "YES", ("J".into(), "ANN".into(), 2), 3).unwrap();
+        let r = q
+            .answer_copy(k, "YES", ("J".into(), "ANN".into(), 2), 3)
+            .unwrap();
         assert_eq!(q.msgs[0].reply, "YES");
-        assert_eq!((q.msgs[1].kind, q.msgs[1].reply_key, q.msgs[1].key), (MsgKind::Rpy, k, r));
+        assert_eq!(
+            (q.msgs[1].kind, q.msgs[1].reply_key, q.msgs[1].key),
+            (MsgKind::Rpy, k, r)
+        );
         assert_eq!(q.copy_of(&to, 5), None);
         let back = MsgQ::decode(&q.encode()).unwrap();
         assert_eq!(back, q);

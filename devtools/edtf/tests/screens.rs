@@ -82,7 +82,13 @@ fn compare(golden: &Path, got: &[String]) {
     for (i, w) in want.iter().enumerate() {
         let o = masked(w, got.get(i).map_or("", String::as_str));
         if w.trim_end() != o.trim_end() {
-            let _ = writeln!(diff, "row {}:\n  want |{}|\n  got  |{}|", i + 1, w.trim_end(), o.trim_end());
+            let _ = writeln!(
+                diff,
+                "row {}:\n  want |{}|\n  got  |{}|",
+                i + 1,
+                w.trim_end(),
+                o.trim_end()
+            );
         }
     }
     assert!(diff.is_empty(), "{} differs:\n{diff}", golden.display());
@@ -93,7 +99,11 @@ fn check_ours(name: &str, got: &[String]) {
     let p = ours(name);
     if std::env::var_os("QS400_UPDATE_GOLDEN").is_some() || !p.exists() {
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
-        let mut t = got.iter().map(|r| r.trim_end()).collect::<Vec<_>>().join("\n");
+        let mut t = got
+            .iter()
+            .map(|r| r.trim_end())
+            .collect::<Vec<_>>()
+            .join("\n");
         t.push('\n');
         std::fs::write(&p, t).unwrap();
         return;
@@ -181,7 +191,10 @@ fn line_commands_at_the_display() {
     d.exchange(&mut s, &[(8, 5, "typed here")], Key::Enter);
     d.show(&s);
     check_ours("edtf-typed", &d.rows());
-    assert_eq!(s.buf.texts(), vec!["Quartz IFS probe", "typed here", "line two"]);
+    assert_eq!(
+        s.buf.texts(),
+        vec!["Quartz IFS probe", "typed here", "line two"]
+    );
     let bytes = s.bytes().unwrap();
     assert_eq!(bytes, b"Quartz IFS probe\r\ntyped here\r\nline two\r\n");
 }
@@ -243,7 +256,10 @@ fn services_display() {
     edtf::services::apply(&mut s, &c).unwrap();
     assert_eq!(s.new_ccsid, Some(1208));
     assert_eq!(s.col_by, 40);
-    assert_eq!(s.bytes().unwrap(), b"Quartz IFS probe\nline two\n\tline three after a tab\n");
+    assert_eq!(
+        s.bytes().unwrap(),
+        b"Quartz IFS probe\nline two\n\tline three after a tab\n"
+    );
     s.saved();
     assert_eq!(s.file_ccsid, 1208);
     assert_eq!(s.message.as_ref().unwrap().id, "CPIB612");
@@ -251,7 +267,10 @@ fn services_display() {
         eol: "*XX".into(),
         ..edtf::services::Choices::default()
     };
-    assert_eq!(edtf::services::apply(&mut s, &bad).unwrap_err().id, "CPDB624");
+    assert_eq!(
+        edtf::services::apply(&mut s, &bad).unwrap_err().id,
+        "CPDB624"
+    );
 }
 
 /// Every message the editor shows is in the system message file with

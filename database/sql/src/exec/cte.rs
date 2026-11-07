@@ -15,11 +15,11 @@ use std::rc::Rc;
 
 use store::txn::Txn;
 
+use super::SqlContext;
 use super::eval::{ColInfo, Env, Row, Schema};
 use super::query::run_body;
 use super::restype::SqlType;
 use super::sort::{KeySpec, cmp_keys};
-use super::SqlContext;
 use crate::ast::{Query, RecursiveCte};
 use crate::error::{Result, SqlError};
 use crate::value::Value;
@@ -42,7 +42,15 @@ impl Binding {
     /// The columns under a correlation name.
     pub(crate) fn schema_as(&self, alias: &str) -> Schema {
         Schema {
-            cols: self.schema.cols.iter().map(|c| ColInfo { table: Some(alias.to_string()), ..c.clone() }).collect(),
+            cols: self
+                .schema
+                .cols
+                .iter()
+                .map(|c| ColInfo {
+                    table: Some(alias.to_string()),
+                    ..c.clone()
+                })
+                .collect(),
         }
     }
 }
@@ -69,17 +77,27 @@ fn run_sides(
     let mut rows = Vec::new();
     for b in sides {
         let (s, produced) = run_body(txn, ctx, params, &Query::of(b.clone()), outer, explain_only)?;
-        let visible: Vec<usize> = s.cols.iter().enumerate().filter(|(_, c)| !c.hidden).map(|(i, _)| i).collect();
+        let visible: Vec<usize> = s
+            .cols
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| !c.hidden)
+            .map(|(i, _)| i)
+            .collect();
         if let Some(w) = width
             && w != visible.len()
         {
-            return Err(SqlError::ValueCount { what: "the sides of the recursive union have different numbers of columns".into() });
+            return Err(SqlError::ValueCount {
+                what: "the sides of the recursive union have different numbers of columns".into(),
+            });
         }
         for p in produced {
             rows.push(visible.iter().map(|&i| p.out[i].clone()).collect());
         }
         if schema.is_none() {
-            schema = Some(Rc::new(Schema { cols: visible.iter().map(|&i| s.cols[i].clone()).collect() }));
+            schema = Some(Rc::new(Schema {
+                cols: visible.iter().map(|&i| s.cols[i].clone()).collect(),
+            }));
         }
     }
     Ok((schema, rows))
@@ -98,12 +116,21 @@ pub(crate) fn run(
     explain_only: bool,
 ) -> Result<(Rc<Schema>, Vec<Row>)> {
     if cte.cycle.as_ref().is_some_and(|c| c.using.is_some()) {
-        return Err(SqlError::Unsupported { what: "CYCLE ... USING".into() });
+        return Err(SqlError::Unsupported {
+            what: "CYCLE ... USING".into(),
+        });
     }
     let (seed_schema, seed) = run_sides(txn, ctx, params, &cte.seed, outer, explain_only, None)?;
     let seed_schema = seed_schema.unwrap_or_default();
     if seed_schema.cols.len() != cte.columns.len() {
-        return Err(SqlError::ValueCount { what: format!("{} names {} columns for {} values", cte.name.value, cte.columns.len(), seed_schema.cols.len()) });
+        return Err(SqlError::ValueCount {
+            what: format!(
+                "{} names {} columns for {} values",
+                cte.name.value,
+                cte.columns.len(),
+                seed_schema.cols.len()
+            ),
+        });
     }
     // The name's columns: the list's names, the initial rows' types, null-capable.
     let named = Rc::new(Schema {
@@ -111,12 +138,22 @@ pub(crate) fn run(
             .cols
             .iter()
             .zip(&cte.columns)
-            .map(|(c, n)| ColInfo { name: n.value.clone(), table: Some(cte.name.value.clone()), hidden: false, ..c.clone() })
+            .map(|(c, n)| ColInfo {
+                name: n.value.clone(),
+                table: Some(cte.name.value.clone()),
+                hidden: false,
+                ..c.clone()
+            })
             .collect(),
     });
     let width = named.cols.len();
     let index_of = |n: &crate::ast::Ident| -> Result<usize> {
-        cte.columns.iter().position(|c| c.value == n.value).ok_or_else(|| SqlError::ColumnNotFound { name: n.value.clone() })
+        cte.columns
+            .iter()
+            .position(|c| c.value == n.value)
+            .ok_or_else(|| SqlError::ColumnNotFound {
+                name: n.value.clone(),
+            })
     };
     let by: Vec<usize> = match &cte.search {
         Some(s) => s.by.iter().map(index_of).collect::<Result<_>>()?,
@@ -127,12 +164,32 @@ pub(crate) fn run(
         None => Vec::new(),
     };
     let step = |ctx: &mut SqlContext, txn: &mut Txn<'_>, rows: Vec<Row>| -> Result<Vec<Row>> {
-        ctx.ctes.push(Binding { name: cte.name.value.clone(), schema: named.clone(), rows: Rc::new(rows) });
-        let r = run_sides(txn, ctx, params, &cte.step, outer, explain_only, Some(width));
+        ctx.ctes.push(Binding {
+            name: cte.name.value.clone(),
+            schema: named.clone(),
+            rows: Rc::new(rows),
+        });
+        let r = run_sides(
+            txn,
+            ctx,
+            params,
+            &cte.step,
+            outer,
+            explain_only,
+            Some(width),
+        );
         ctx.ctes.pop();
         Ok(r?.1)
     };
-    let mut nodes: Vec<Node> = seed.into_iter().map(|row| Node { row, level: 0, parent: None, cyclic: false }).collect();
+    let mut nodes: Vec<Node> = seed
+        .into_iter()
+        .map(|row| Node {
+            row,
+            level: 0,
+            parent: None,
+            cyclic: false,
+        })
+        .collect();
     let mut charge = ctx.charge();
     for n in &nodes {
         charge.row(&n.row)?;
@@ -144,7 +201,9 @@ pub(crate) fn run(
         while !frontier.is_empty() {
             level += 1;
             if level > MAX_LEVELS {
-                return Err(SqlError::ResourceLimit { what: format!("{} recursed past {MAX_LEVELS} levels", cte.name.value) });
+                return Err(SqlError::ResourceLimit {
+                    what: format!("{} recursed past {MAX_LEVELS} levels", cte.name.value),
+                });
             }
             let mut next = Vec::new();
             if one_by_one {
@@ -159,7 +218,12 @@ pub(crate) fn run(
                             let mut a = Some(p);
                             let mut hit = false;
                             while let Some(i) = a {
-                                if cyc.iter().map(|&c| nodes[i].row[c].key()).collect::<Vec<_>>() == key {
+                                if cyc
+                                    .iter()
+                                    .map(|&c| nodes[i].row[c].key())
+                                    .collect::<Vec<_>>()
+                                    == key
+                                {
                                     hit = true;
                                     break;
                                 }
@@ -169,7 +233,12 @@ pub(crate) fn run(
                         };
                         charge.row(&row)?;
                         next.push(nodes.len());
-                        nodes.push(Node { row, level, parent: Some(p), cyclic });
+                        nodes.push(Node {
+                            row,
+                            level,
+                            parent: Some(p),
+                            cyclic,
+                        });
                     }
                 }
             } else {
@@ -177,7 +246,12 @@ pub(crate) fn run(
                 for row in step(ctx, txn, rows)? {
                     charge.row(&row)?;
                     next.push(nodes.len());
-                    nodes.push(Node { row, level, parent: None, cyclic: false });
+                    nodes.push(Node {
+                        row,
+                        level,
+                        parent: None,
+                        cyclic: false,
+                    });
                 }
             }
             frontier = next;
@@ -193,13 +267,29 @@ pub(crate) fn run(
         .cols
         .iter()
         .zip(columns.iter().map(Some).chain(std::iter::repeat(None)))
-        .map(|(c, n)| ColInfo { name: n.map_or_else(|| c.name.clone(), |n| n.value.clone()), table: Some(alias.to_string()), ..c.clone() })
+        .map(|(c, n)| ColInfo {
+            name: n.map_or_else(|| c.name.clone(), |n| n.value.clone()),
+            table: Some(alias.to_string()),
+            ..c.clone()
+        })
         .collect();
     if let Some(s) = &cte.search {
-        cols.push(ColInfo { name: s.set.value.clone(), table: Some(alias.to_string()), field: Some(SqlType::bigint(false).to_field()), nullable: false, hidden: true });
+        cols.push(ColInfo {
+            name: s.set.value.clone(),
+            table: Some(alias.to_string()),
+            field: Some(SqlType::bigint(false).to_field()),
+            nullable: false,
+            hidden: true,
+        });
     }
     if let Some(c) = &cte.cycle {
-        cols.push(ColInfo { name: c.set.value.clone(), table: Some(alias.to_string()), field: Some(SqlType::char(1, false).to_field()), nullable: false, hidden: true });
+        cols.push(ColInfo {
+            name: c.set.value.clone(),
+            table: Some(alias.to_string()),
+            field: Some(SqlType::char(1, false).to_field()),
+            nullable: false,
+            hidden: true,
+        });
     }
     let mut out = Vec::with_capacity(nodes.len());
     for (seq, &i) in order.iter().enumerate() {
@@ -208,12 +298,17 @@ pub(crate) fn run(
             row.push(Value::int(i64::try_from(seq + 1).expect("fits")));
         }
         if let Some(c) = &cte.cycle {
-            row.push(Value::Str(if nodes[i].cyclic { c.to.clone() } else { c.default.clone() }));
+            row.push(Value::Str(if nodes[i].cyclic {
+                c.to.clone()
+            } else {
+                c.default.clone()
+            }));
         }
         out.push(row);
     }
     if explain_only {
-        ctx.explain.push(format!("RECURSIVE {} ({alias})", cte.name.value));
+        ctx.explain
+            .push(format!("RECURSIVE {} ({alias})", cte.name.value));
     }
     Ok((Rc::new(Schema { cols }), out))
 }
@@ -222,7 +317,13 @@ fn sort_by(nodes: &[Node], ids: &mut [usize], by: &[usize]) -> Result<()> {
     if by.is_empty() {
         return Ok(());
     }
-    let specs = vec![KeySpec { desc: false, nulls_first: false }; by.len()];
+    let specs = vec![
+        KeySpec {
+            desc: false,
+            nulls_first: false
+        };
+        by.len()
+    ];
     let key = |i: usize| -> Vec<Value> { by.iter().map(|&c| nodes[i].row[c].clone()).collect() };
     let mut failure = None;
     ids.sort_by(|a, b| match cmp_keys(&key(*a), &key(*b), &specs) {

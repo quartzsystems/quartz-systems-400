@@ -90,7 +90,12 @@ impl Sys {
 
 fn put(c: &dyn IfsClient, path: &str, data: &[u8], ccsid: u32) {
     let fd = c
-        .open(path, OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID).mode(0o644).conv(ccsid))
+        .open(
+            path,
+            OpenArgs::new(O_WRONLY | O_CREAT | O_CCSID)
+                .mode(0o644)
+                .conv(ccsid),
+        )
         .unwrap();
     write_all(c, fd, data).unwrap();
     c.close(fd).unwrap();
@@ -114,7 +119,10 @@ fn completions(r: &Reply) -> Vec<String> {
 
 fn done(r: &Reply, id: &str) {
     assert!(r.escape.is_none(), "{id}: escape {:?}", r.escape);
-    assert!(completions(r).contains(&id.to_string()), "{id} not in {r:?}");
+    assert!(
+        completions(r).contains(&id.to_string()),
+        "{id} not in {r:?}"
+    );
 }
 
 fn refused(r: &Reply, id: &str) {
@@ -156,12 +164,27 @@ fn directories_and_the_current_directory() {
     assert_eq!(a.entries[0].data, "*EXCLUDE");
     // Not empty, then the subtree.
     put(&c, "/home/bob/sub/f", b"x", 819);
-    refused(&c.with(|c| dirs::rd(c, "/home/bob/sub", Subtree::None, false)), "CPFA0AC");
-    refused(&c.with(|c| dirs::rd(c, "sub", Subtree::All, true)), "CPDA0B8");
-    done(&c.with(|c| dirs::rd(c, "/home/bob/sub", Subtree::None, true)), "CPCA085");
-    done(&c.with(|c| dirs::md(c, &dirs::Md::new("/home/bob/t/"))), "CPCA083");
+    refused(
+        &c.with(|c| dirs::rd(c, "/home/bob/sub", Subtree::None, false)),
+        "CPFA0AC",
+    );
+    refused(
+        &c.with(|c| dirs::rd(c, "sub", Subtree::All, true)),
+        "CPDA0B8",
+    );
+    done(
+        &c.with(|c| dirs::rd(c, "/home/bob/sub", Subtree::None, true)),
+        "CPCA085",
+    );
+    done(
+        &c.with(|c| dirs::md(c, &dirs::Md::new("/home/bob/t/"))),
+        "CPCA083",
+    );
     put(&c, "/home/bob/t/g", b"y", 819);
-    done(&c.with(|c| dirs::rd(c, "/home/bob/t", Subtree::All, false)), "CPCA085");
+    done(
+        &c.with(|c| dirs::rd(c, "/home/bob/t", Subtree::All, false)),
+        "CPCA085",
+    );
     refused(&c.with(|c| dirs::cd(c, "/nowhere")), "CPFA0A9");
 }
 
@@ -191,12 +214,12 @@ fn links_rename_move_copy_and_patterns() {
         ..links::Cpy::default()
     };
     done(&c.with(|c| links::cpy(c, &a)), "CPCA087");
-    assert_eq!(get(&c, "/tmp/d.log"), ccsid::conv::from_str(37, "c.log").unwrap());
+    assert_eq!(
+        get(&c, "/tmp/d.log"),
+        ccsid::conv::from_str(37, "c.log").unwrap()
+    );
     refused(&c.with(|c| links::cpy(c, &a)), "CPFA097");
-    let a = links::Cpy {
-        replace: true,
-        ..a
-    };
+    let a = links::Cpy { replace: true, ..a };
     done(&c.with(|c| links::cpy(c, &a)), "CPCA087");
     let m = links::Mov {
         obj: "/w/d.log".into(),
@@ -225,9 +248,15 @@ fn links_rename_move_copy_and_patterns() {
     };
     done(&c.with(|c| links::cpy(c, &d)), "CPCA087");
     // Links, symbolic and hard.
-    done(&c.with(|c| links::addlnk(c, "/tmp/e.log", "/tmp/sym", false)), "CPCA088");
+    done(
+        &c.with(|c| links::addlnk(c, "/tmp/e.log", "/tmp/sym", false)),
+        "CPCA088",
+    );
     assert_eq!(c.with(|c| c.readlink("/tmp/sym")).unwrap(), "/tmp/e.log");
-    done(&c.with(|c| links::addlnk(c, "/tmp/e.log", "/tmp/hard", true)), "CPCA088");
+    done(
+        &c.with(|c| links::addlnk(c, "/tmp/e.log", "/tmp/hard", true)),
+        "CPCA088",
+    );
     assert_eq!(c.with(|c| c.stat("/tmp/e.log", true)).unwrap().nlink, 2);
 }
 
@@ -258,7 +287,11 @@ fn authority_owner_and_group() {
     assert_eq!(bob.data, "*RWX");
     // BOB may now write.
     let bob_c = s.as_user("BOB", 3);
-    assert!(bob_c.with(|c| c.open("/p/f", OpenArgs::new(O_WRONLY))).is_ok());
+    assert!(
+        bob_c
+            .with(|c| c.open("/p/f", OpenArgs::new(O_WRONLY)))
+            .is_ok()
+    );
     // *NONE and *NONE removes the private authority.
     let ch = auth::Chgaut {
         dtaaut: "*NONE".into(),
@@ -296,7 +329,11 @@ fn authority_owner_and_group() {
     assert!(!sec.with(|c| auth::chgpgp(c, &g)).failed());
     let rows = sec.with(|c| c.dspaut("/p/f")).unwrap();
     assert_eq!(rows.group.as_deref(), Some("DEV"));
-    assert!(rows.entries.iter().any(|e| e.who == "DEV" && e.data == "*RX"));
+    assert!(
+        rows.entries
+            .iter()
+            .any(|e| e.who == "DEV" && e.data == "*RX")
+    );
     // The subtree: every object, counted.
     put(&sec, "/p/g", b"x", 819);
     let r = sec.with(|c| auth::chgown(c, "/p", "ANN", false, Subtree::All, false));
@@ -326,7 +363,10 @@ fn owner_and_group_subtrees_go_on_past_failures() {
     }
     put(&sec, "/t/s/c", b"x", 819);
     // ANN owns /t and two files; QSECOFR keeps /t/s and /t/s/c.
-    assert!(!sec.with(|c| auth::chgown(c, "/t", "ANN", true, Subtree::None, false)).failed());
+    assert!(
+        !sec.with(|c| auth::chgown(c, "/t", "ANN", true, Subtree::None, false))
+            .failed()
+    );
     let ann = s.as_user("ANN", 4);
     put(&ann, "/t/a", b"a", 819);
     put(&ann, "/t/b", b"b", 819);
@@ -338,7 +378,10 @@ fn owner_and_group_subtrees_go_on_past_failures() {
     assert_eq!(first_path(r.escape.as_ref().unwrap()), "/t/s");
     assert_eq!(
         diagnostics(&r),
-        [("CPFA09C".to_string(), "/t/s".to_string()), ("CPFA09C".into(), "/t/s/c".into())]
+        [
+            ("CPFA09C".to_string(), "/t/s".to_string()),
+            ("CPFA09C".into(), "/t/s/c".into())
+        ]
     );
     for p in ["/t", "/t/a", "/t/b"] {
         assert_eq!(owner(p), "BOB", "{p}");
@@ -353,7 +396,10 @@ fn owner_and_group_subtrees_go_on_past_failures() {
 
     // CHGPGP: ANN (in DEV) owns /t again and its files; the same pattern.
     for p in ["/t/a", "/t/b"] {
-        assert!(!sec.with(|c| auth::chgown(c, p, "ANN", true, Subtree::None, false)).failed());
+        assert!(
+            !sec.with(|c| auth::chgown(c, p, "ANN", true, Subtree::None, false))
+                .failed()
+        );
     }
     let g = auth::Chgpgp {
         obj: "/t".into(),
@@ -383,41 +429,122 @@ fn attributes_checkout_and_journaling() {
     let s = Sys::new();
     let c = s.as_user("QSECOFR", 1);
     put(&c, "/tmp/f", b"abc", 819);
-    let r = c.with(|c| attr::chgatr(c, "/tmp/f", attr::atr::READONLY, attr::val::YES, "", Subtree::None, false));
+    let r = c.with(|c| {
+        attr::chgatr(
+            c,
+            "/tmp/f",
+            attr::atr::READONLY,
+            attr::val::YES,
+            "",
+            Subtree::None,
+            false,
+        )
+    });
     assert!(!r.failed(), "{r:?}");
-    let e = c.with(|c| c.open("/tmp/f", OpenArgs::new(O_WRONLY))).unwrap_err();
+    let e = c
+        .with(|c| c.open("/tmp/f", OpenArgs::new(O_WRONLY)))
+        .unwrap_err();
     refused(&Reply::errno(e, "/tmp/f"), "CPFA0B1");
-    let r = c.with(|c| attr::chgatr(c, "/tmp/f", attr::atr::CCSID, 1208, "", Subtree::None, false));
+    let r = c.with(|c| {
+        attr::chgatr(
+            c,
+            "/tmp/f",
+            attr::atr::CCSID,
+            1208,
+            "",
+            Subtree::None,
+            false,
+        )
+    });
     assert!(!r.failed(), "{r:?}");
     assert_eq!(c.with(|c| c.stat("/tmp/f", true)).unwrap().ccsid, 1208);
-    let r = c.with(|c| attr::chgatr(c, "/tmp/f", attr::atr::TEXT, attr::val::NONE, "a probe", Subtree::None, false));
+    let r = c.with(|c| {
+        attr::chgatr(
+            c,
+            "/tmp/f",
+            attr::atr::TEXT,
+            attr::val::NONE,
+            "a probe",
+            Subtree::None,
+            false,
+        )
+    });
     assert!(!r.failed(), "{r:?}");
     let t = c
         .with(|c| c.get_attrs("/tmp/f", &[AttrId::Text], false))
         .unwrap();
     assert_eq!(t, vec![Attr::Text("a probe".into())]);
     refused(
-        &c.with(|c| attr::chgatr(c, "/tmp/f", attr::atr::TEXT, attr::val::YES, "x", Subtree::None, false)),
+        &c.with(|c| {
+            attr::chgatr(
+                c,
+                "/tmp/f",
+                attr::atr::TEXT,
+                attr::val::YES,
+                "x",
+                Subtree::None,
+                false,
+            )
+        }),
         "CPDA0C2",
     );
     refused(
-        &c.with(|c| attr::chgatr(c, "/tmp/f", attr::atr::HIDDEN, attr::val::NO, "x", Subtree::None, false)),
+        &c.with(|c| {
+            attr::chgatr(
+                c,
+                "/tmp/f",
+                attr::atr::HIDDEN,
+                attr::val::NO,
+                "x",
+                Subtree::None,
+                false,
+            )
+        }),
         "CPDA0C1",
     );
     refused(
-        &c.with(|c| attr::chgatr(c, "/tmp/f", attr::atr::HIDDEN, attr::val::DYNAMIC, "", Subtree::None, false)),
+        &c.with(|c| {
+            attr::chgatr(
+                c,
+                "/tmp/f",
+                attr::atr::HIDDEN,
+                attr::val::DYNAMIC,
+                "",
+                Subtree::None,
+                false,
+            )
+        }),
         "CPDA03D",
     );
     refused(
-        &c.with(|c| attr::chgatr(c, "/tmp/f", attr::atr::RUNEXIT, attr::val::YES, "", Subtree::None, false)),
+        &c.with(|c| {
+            attr::chgatr(
+                c,
+                "/tmp/f",
+                attr::atr::RUNEXIT,
+                attr::val::YES,
+                "",
+                Subtree::None,
+                false,
+            )
+        }),
         "CPFA0ED",
     );
     // Check-out and check-in.
     put(&c, "/tmp/g", b"g", 819);
-    done(&c.with(|c| attr::checkout(c, "/tmp/g", Subtree::None, true)), "CPCA08F");
+    done(
+        &c.with(|c| attr::checkout(c, "/tmp/g", Subtree::None, true)),
+        "CPCA08F",
+    );
     let bob = s.as_user("BOB", 2);
-    refused(&bob.with(|c| attr::checkout(c, "/tmp/g", Subtree::None, false)), "CPFA09C");
-    done(&c.with(|c| attr::checkout(c, "/tmp/g", Subtree::None, false)), "CPCA08A");
+    refused(
+        &bob.with(|c| attr::checkout(c, "/tmp/g", Subtree::None, false)),
+        "CPFA09C",
+    );
+    done(
+        &c.with(|c| attr::checkout(c, "/tmp/g", Subtree::None, false)),
+        "CPCA08A",
+    );
     // Journaling, stored.
     let j = attr::StrJrn {
         objs: vec!["/tmp/g".into()],
@@ -427,7 +554,10 @@ fn attributes_checkout_and_journaling() {
         ..attr::StrJrn::default()
     };
     let r = c.with(|c| attr::strjrn(c, &j));
-    assert!(!r.failed() && r.text.contains("started for 1 object"), "{r:?}");
+    assert!(
+        !r.failed() && r.text.contains("started for 1 object"),
+        "{r:?}"
+    );
     let info = c
         .with(|c| c.get_attrs("/tmp/g", &[AttrId::JournalInformation], false))
         .unwrap();
@@ -448,18 +578,38 @@ fn user_defined_file_systems() {
     let s = Sys::new();
     let c = s.as_user("QSECOFR", 1);
     let u = "/dev/QASP01/mine.udfs";
-    done(&c.with(|c| udfs::crtudfs(c, u, false, "*SYSVAL", "probe")), "CPCA1C0");
+    done(
+        &c.with(|c| udfs::crtudfs(c, u, false, "*SYSVAL", "probe")),
+        "CPCA1C0",
+    );
     done(&c.with(|c| dirs::md(c, &dirs::Md::new("/mnt"))), "CPCA083");
-    refused(&c.with(|c| udfs::mount(c, "*NFS", "host:/x", "/mnt", "rw")), "CPFA0AD");
-    done(&c.with(|c| udfs::mount(c, "*UDFS", u, "/mnt", "rw")), "CPCA1B0");
+    refused(
+        &c.with(|c| udfs::mount(c, "*NFS", "host:/x", "/mnt", "rw")),
+        "CPFA0AD",
+    );
+    done(
+        &c.with(|c| udfs::mount(c, "*UDFS", u, "/mnt", "rw")),
+        "CPCA1B0",
+    );
     let r = c.with(|c| udfs::dspudfs(c, u));
-    assert!(r.text.contains("Mounted over") && r.text.contains("/mnt"), "{}", r.text);
-    assert!(r.text.contains("*MONO") && r.text.contains("probe"), "{}", r.text);
+    assert!(
+        r.text.contains("Mounted over") && r.text.contains("/mnt"),
+        "{}",
+        r.text
+    );
+    assert!(
+        r.text.contains("*MONO") && r.text.contains("probe"),
+        "{}",
+        r.text
+    );
     refused(&c.with(|c| udfs::dltudfs(c, u)), "CPFA09E");
     // BOB lacks *IOSYSCFG.
     let bob = s.as_user("BOB", 2);
     assert!(bob.with(|c| udfs::unmount(c, "*UDFS", u, "")).failed());
-    done(&c.with(|c| udfs::unmount(c, "*UDFS", "", "/mnt")), "CPCA1B1");
+    done(
+        &c.with(|c| udfs::unmount(c, "*UDFS", "", "/mnt")),
+        "CPCA1B1",
+    );
     done(&c.with(|c| udfs::dltudfs(c, u)), "CPCA1C1");
 }
 
@@ -467,25 +617,52 @@ fn user_defined_file_systems() {
 fn text_forms() {
     let s = Sys::new();
     let c = s.as_user("QSECOFR", 1);
-    done(&c.with(|c| dirs::md(c, &dirs::Md::new("/home/q"))), "CPCA083");
-    put(&c, "/home/q/qsnet.txt", b"Quartz IFS probe\r\nline two\r\n\tline three after a tab\r\n", 819);
+    done(
+        &c.with(|c| dirs::md(c, &dirs::Md::new("/home/q"))),
+        "CPCA083",
+    );
+    put(
+        &c,
+        "/home/q/qsnet.txt",
+        b"Quartz IFS probe\r\nline two\r\n\tline three after a tab\r\n",
+        819,
+    );
     put(&c, "/home/q/a-very-long-name-for-a-file.txt", b"x", 819);
     let r = c.with(|c| text::links_text(c, "/home/q/*", "*ALL"));
     let lines: Vec<&str> = r.text.lines().collect();
     assert_eq!(lines[0].trim_end(), " Directory  . . . . :   /home/q");
-    assert!(lines[2].starts_with(" a-very-long-name-f >   STMF"), "{}", lines[2]);
-    assert!(lines[3].starts_with(" qsnet.txt              STMF"), "{}", lines[3]);
+    assert!(
+        lines[2].starts_with(" a-very-long-name-f >   STMF"),
+        "{}",
+        lines[2]
+    );
+    assert!(
+        lines[3].starts_with(" qsnet.txt              STMF"),
+        "{}",
+        lines[3]
+    );
     let r = c.with(|c| text::links_text(c, "/", "*ALL"));
     assert!(r.text.contains(" /                      DIR"), "{}", r.text);
     let r = c.with(|c| text::links_text(c, "/home/q/*", "*DIR"));
     refused(&r, "CPFA0B2");
     let r = c.with(|c| text::file_text(c, "/home/q/qsnet.txt"));
-    assert_eq!(r.text, "Quartz IFS probe\nline two\n line three after a tab\n");
+    assert_eq!(
+        r.text,
+        "Quartz IFS probe\nline two\n line three after a tab\n"
+    );
     refused(&c.with(|c| text::file_text(c, "/home/q")), "CPFA0DA");
     let r = c.with(|c| text::authority_text(c, "/home/q/qsnet.txt"));
-    assert!(r.text.contains(" Owner  . . . . . . . . . . . . :   QSECOFR"), "{}", r.text);
-    assert!(r.text.lines().any(|l| l.starts_with(" QSECOFR     *RW "))
-        && r.text.contains('X'), "{}", r.text);
+    assert!(
+        r.text
+            .contains(" Owner  . . . . . . . . . . . . :   QSECOFR"),
+        "{}",
+        r.text
+    );
+    assert!(
+        r.text.lines().any(|l| l.starts_with(" QSECOFR     *RW ")) && r.text.contains('X'),
+        "{}",
+        r.text
+    );
     let r = c.with(|c| text::attributes_text(c, "/home/q/qsnet.txt", true));
     assert!(r.text.contains("Coded character set ID"), "{}", r.text);
     assert!(r.text.contains(":   819"), "{}", r.text);
@@ -501,7 +678,10 @@ fn reclaim_and_save() {
     let s = Sys::new();
     let c = s.as_user("QSECOFR", 1);
     let r = c.with(|c| admin::rcllnk(c, true));
-    assert!(r.escape.is_none() && r.text.contains("object links checked"), "{r:?}");
+    assert!(
+        r.escape.is_none() && r.text.contains("object links checked"),
+        "{r:?}"
+    );
     let r = c.with(|c| admin::sav(c, &["/home".into()], true));
     refused(&r, "CPF3700");
     assert!(r.text.contains("Phase 11"), "{}", r.text);

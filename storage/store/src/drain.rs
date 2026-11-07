@@ -113,7 +113,10 @@ impl Store {
             let left = self.leftovers(span);
             tracing::warn!("drain: span {span}: {left}");
             let unit = self.asp().layout().span(span).primary;
-            return Err(StoreError::refused(unit, Refusal::CannotMove { pages: used, left }));
+            return Err(StoreError::refused(
+                unit,
+                Refusal::CannotMove { pages: used, left },
+            ));
         }
         info!(
             "drain: span {span}: {} object(s), {} page(s), {} tree(s) moved",
@@ -145,14 +148,21 @@ impl Store {
     /// with the most room, as a drain moves them. `done` once no span is
     /// that much fuller than the average, there is one span only, or a
     /// whole pass over the objects moved nothing more.
-    pub fn balance_step(&mut self, cursor: &mut BalanceCursor, objects: usize) -> Result<BalanceStep> {
+    pub fn balance_step(
+        &mut self,
+        cursor: &mut BalanceCursor,
+        objects: usize,
+    ) -> Result<BalanceStep> {
         let mut step = BalanceStep::default();
         let Some(span) = self.fullest_span() else {
             step.done = true;
             return Ok(step);
         };
         if cursor.span != Some(span) {
-            *cursor = BalanceCursor { span: Some(span), ..BalanceCursor::default() };
+            *cursor = BalanceCursor {
+                span: Some(span),
+                ..BalanceCursor::default()
+            };
         }
         let entries = {
             let mut t = self.begin()?;
@@ -421,7 +431,10 @@ fn move_slot_trees(
         let Some(root) = h.tree_roots[slot] else {
             continue;
         };
-        if !btree::walk_pages(txn, root)?.into_iter().any(|p| on_span(txn, span, p)) {
+        if !btree::walk_pages(txn, root)?
+            .into_iter()
+            .any(|p| on_span(txn, span, p))
+        {
             continue;
         }
         let (key_len, items) = btree::dump(txn, root)?;

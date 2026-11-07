@@ -86,7 +86,8 @@ pub fn function(op: &str) -> &'static str {
         "UP" => "U",
         "IN" => "I",
         "DL" => "D",
-        "AL" | "CC" | "CD" | "CF" | "CG" | "CI" | "CP" | "CQ" | "CS" | "CT" | "CV" | "CB" | "DR" | "LO" | "CO" | "RT" | "GR" | "RV" => "L",
+        "AL" | "CC" | "CD" | "CF" | "CG" | "CI" | "CP" | "CQ" | "CS" | "CT" | "CV" | "CB"
+        | "DR" | "LO" | "CO" | "RT" | "GR" | "RV" => "L",
         _ => "O",
     }
 }
@@ -94,7 +95,12 @@ pub fn function(op: &str) -> &'static str {
 /// The statement operation (`QQC21`) of a statement's text.
 #[must_use]
 pub fn operation(text: &str) -> &'static str {
-    let mut w: Vec<String> = text.split(|c: char| c.is_whitespace() || c == '(').filter(|s| !s.is_empty()).take(5).map(str::to_ascii_uppercase).collect();
+    let mut w: Vec<String> = text
+        .split(|c: char| c.is_whitespace() || c == '(')
+        .filter(|s| !s.is_empty())
+        .take(5)
+        .map(str::to_ascii_uppercase)
+        .collect();
     if w.len() > 2 && w[0] == "CREATE" && w[1] == "OR" {
         w.drain(1..3);
     }
@@ -161,7 +167,11 @@ fn create_op(kind: &str) -> &'static str {
 pub fn now(ctx: &SqlContext) -> Timestamp {
     let (secs, picos) = ctx.clock_picos();
     let local = secs.saturating_add_signed(ctx.registers.timezone_secs);
-    Timestamp::new(Date::from_unix(local), Time::from_unix(local), picos / 1_000_000 * 1_000_000)
+    Timestamp::new(
+        Date::from_unix(local),
+        Time::from_unix(local),
+        picos / 1_000_000 * 1_000_000,
+    )
 }
 
 /// The columns every record has.
@@ -169,7 +179,10 @@ fn common(ctx: &SqlContext, job: &JobIdent, id: i64, ucnt: i64) -> Record {
     let mut r = Record(Vec::with_capacity(40));
     r.n("QQRID", id);
     r.set("QQTIME", Value::Timestamp(now(ctx)));
-    r.s("QQJFLD", &format!("{:<10}{:<10}{:06}", job.name, job.user, job.number));
+    r.s(
+        "QQJFLD",
+        &format!("{:<10}{:<10}{:06}", job.name, job.user, job.number),
+    );
     r.s("QQRDBN", &ctx.dbmon.system);
     r.s("QQSYS", &ctx.dbmon.system);
     r.s("QQJOB", &job.name);
@@ -182,13 +195,28 @@ fn common(ctx: &SqlContext, job: &JobIdent, id: i64, ucnt: i64) -> Record {
 
 /// A `3018` record: a monitor started (`S`) or ended (`E`).
 #[must_use]
-pub fn monitor(ctx: &SqlContext, job: &JobIdent, scope: &Scope, id: &str, start: bool, comment: &str, command: &str) -> Record {
+pub fn monitor(
+    ctx: &SqlContext,
+    job: &JobIdent,
+    scope: &Scope,
+    id: &str,
+    start: bool,
+    comment: &str,
+    command: &str,
+) -> Record {
     let mut r = common(ctx, job, 3018, 0);
     r.0.retain(|(c, _)| *c != "QQUDEF");
     r.s("QQUDEF", comment);
     r.s("QQC11", if *scope == Scope::All { "A" } else { "C" });
     r.s("QQC12", if start { "S" } else { "E" });
-    r.s("QQC301", if *scope == Scope::All { "*ALL/*ALL/*ALL" } else { "*" });
+    r.s(
+        "QQC301",
+        if *scope == Scope::All {
+            "*ALL/*ALL/*ALL"
+        } else {
+            "*"
+        },
+    );
     r.s("QQC101", id);
     r.s("QQC102", &release());
     r.s("QQ1000L", command);
@@ -203,7 +231,14 @@ fn release() -> String {
 /// The records of one statement, in IBM's order: the access methods,
 /// the summary, the input values, the statement.
 #[must_use]
-pub fn statement(ctx: &SqlContext, job: &JobIdent, o: &Observed<'_>, plan: &[PlanEvent], ucnt: u64, stn: u64) -> Vec<Record> {
+pub fn statement(
+    ctx: &SqlContext,
+    job: &JobIdent,
+    o: &Observed<'_>,
+    plan: &[PlanEvent],
+    ucnt: u64,
+    stn: u64,
+) -> Vec<Record> {
     let u = i64::try_from(ucnt).unwrap_or(i64::MAX);
     let mut out = Vec::new();
     for e in plan {
@@ -214,13 +249,30 @@ pub fn statement(ctx: &SqlContext, job: &JobIdent, o: &Observed<'_>, plan: &[Pla
     }
     if !o.inputs.is_empty() && (ucnt > 0) {
         let mut r = common(ctx, job, 3010, u);
-        let vals: Vec<String> = o.inputs.iter().map(|v| if matches!(v, Value::Null) { "NULL".into() } else { v.to_string() }).collect();
+        let vals: Vec<String> = o
+            .inputs
+            .iter()
+            .map(|v| {
+                if matches!(v, Value::Null) {
+                    "NULL".into()
+                } else {
+                    v.to_string()
+                }
+            })
+            .collect();
         let joined = vals.join(",");
         r.s("QQC11", "R");
         r.s("QQC12", "I");
         r.s("QQ1000", &cut(&joined, 1000));
         r.n("QQI7", i64::try_from(joined.chars().count()).unwrap_or(0));
-        r.s("QVC11", if joined.chars().count() > 1000 { "Y" } else { "N" });
+        r.s(
+            "QVC11",
+            if joined.chars().count() > 1000 {
+                "Y"
+            } else {
+                "N"
+            },
+        );
         out.push(r);
     }
     out.push(sql_info(ctx, job, o, u, stn));
@@ -244,10 +296,27 @@ fn table_cols(r: &mut Record, t: &TableName) {
     r.s("QVPLIB", &t.lib);
 }
 
-fn access(ctx: &SqlContext, job: &JobIdent, e: &PlanEvent, ucnt: i64, plan: &[PlanEvent]) -> Record {
-    let tables = i64::try_from(plan.iter().filter(|p| !matches!(p, PlanEvent::Sort { .. })).count()).unwrap_or(1);
+fn access(
+    ctx: &SqlContext,
+    job: &JobIdent,
+    e: &PlanEvent,
+    ucnt: i64,
+    plan: &[PlanEvent],
+) -> Record {
+    let tables = i64::try_from(
+        plan.iter()
+            .filter(|p| !matches!(p, PlanEvent::Sort { .. }))
+            .count(),
+    )
+    .unwrap_or(1);
     match e {
-        PlanEvent::Scan { table, rows, indexes, selection, position } => {
+        PlanEvent::Scan {
+            table,
+            rows,
+            indexes,
+            selection,
+            position,
+        } => {
             let mut r = common(ctx, job, 3000, ucnt);
             subselect(&mut r);
             table_cols(&mut r, table);
@@ -264,7 +333,15 @@ fn access(ctx: &SqlContext, job: &JobIdent, e: &PlanEvent, ucnt: i64, plan: &[Pl
             r.n("QVFILES", tables);
             r
         }
-        PlanEvent::Index { table, index, constraint, rows, positioned, ordering, position } => {
+        PlanEvent::Index {
+            table,
+            index,
+            constraint,
+            rows,
+            positioned,
+            ordering,
+            position,
+        } => {
             let mut r = common(ctx, job, 3001, ucnt);
             subselect(&mut r);
             table_cols(&mut r, table);
@@ -324,19 +401,47 @@ fn summary(ctx: &SqlContext, job: &JobIdent, plan: &[PlanEvent], ucnt: i64, host
         PlanEvent::Sort { reason, .. } => Some(*reason),
         _ => None,
     });
-    let tables = plan.iter().filter(|p| !matches!(p, PlanEvent::Sort { .. })).count();
-    let ordered_by_index = plan.iter().any(|p| matches!(p, PlanEvent::Index { ordering: true, .. }));
-    r.yn("QQORDG", matches!(sorted, Some("F2" | "F7")) || ordered_by_index);
+    let tables = plan
+        .iter()
+        .filter(|p| !matches!(p, PlanEvent::Sort { .. }))
+        .count();
+    let ordered_by_index = plan
+        .iter()
+        .any(|p| matches!(p, PlanEvent::Index { ordering: true, .. }));
+    r.yn(
+        "QQORDG",
+        matches!(sorted, Some("F2" | "F7")) || ordered_by_index,
+    );
     r.yn("QQGRPG", sorted == Some("F1"));
     r.yn("QQJNG", tables > 1);
     r.yn("QQUNIN", sorted == Some("F5"));
     r.yn("QQHSTV", host);
-    r.yn("QQRCDS", plan.iter().any(|p| matches!(p, PlanEvent::Scan { selection: true, .. })));
+    r.yn(
+        "QQRCDS",
+        plan.iter().any(|p| {
+            matches!(
+                p,
+                PlanEvent::Scan {
+                    selection: true,
+                    ..
+                }
+            )
+        }),
+    );
     r.yn("QQC11", false);
     r.yn("QQC12", false);
     r.s("QQC102", "*N");
     r.s("QQC103", "QAQQINI");
-    r.s("QVC11", if ordered_by_index { "I" } else if sorted.is_some() { "S" } else { " " });
+    r.s(
+        "QVC11",
+        if ordered_by_index {
+            "I"
+        } else if sorted.is_some() {
+            "S"
+        } else {
+            " "
+        },
+    );
     // The join method: `N` nested loop, `H` hash, `M` sort-merge.
     let method = ctx.plan.join_code().unwrap_or('N').to_string();
     r.s("QVC13", if tables > 1 { &method } else { " " });
@@ -348,8 +453,18 @@ fn summary(ctx: &SqlContext, job: &JobIdent, plan: &[PlanEvent], ucnt: i64, host
 /// A `1000` record of a plan cache entry, as `DUMP_PLAN_CACHE` writes
 /// it: the statement, its number, when it was last used.
 #[must_use]
-pub fn cached(ctx: &SqlContext, text: &str, number: u64, (first, last): (Timestamp, Timestamp), sql_naming: bool) -> Record {
-    let job = JobIdent { name: "QDBSRV01".into(), user: "QSYS".into(), number: 0 };
+pub fn cached(
+    ctx: &SqlContext,
+    text: &str,
+    number: u64,
+    (first, last): (Timestamp, Timestamp),
+    sql_naming: bool,
+) -> Record {
+    let job = JobIdent {
+        name: "QDBSRV01".into(),
+        user: "QSYS".into(),
+        number: 0,
+    };
     let n = i64::try_from(number).unwrap_or(i64::MAX);
     let mut r = common(ctx, &job, 1000, n);
     r.0.retain(|(c, _)| *c != "QQTIME");
@@ -389,7 +504,14 @@ fn sql_info(ctx: &SqlContext, job: &JobIdent, o: &Observed<'_>, ucnt: i64, stn: 
     r.s("QQC182", o.statement);
     r.s("QQ1000", &cut(o.text, 1000));
     r.s("QQ1000L", o.text);
-    r.s("QVC17", if ctx.naming == crate::ast::Naming::Sql { "S" } else { "N" });
+    r.s(
+        "QVC17",
+        if ctx.naming == crate::ast::Naming::Sql {
+            "S"
+        } else {
+            "N"
+        },
+    );
     r.s("QVC102", &ctx.user);
     if let Some(s) = ctx.current_schema {
         r.s("QVC1284", &s.to_string());

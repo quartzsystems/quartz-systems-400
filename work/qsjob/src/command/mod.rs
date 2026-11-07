@@ -13,14 +13,14 @@
 
 pub mod ddm;
 pub mod exits;
-pub mod hostsvr;
 pub mod ftp;
+pub mod hostsvr;
 pub mod jobsite;
 pub mod natives;
+pub mod netcmd;
 pub mod nettools;
 pub mod prompt;
 pub mod rcvjrne;
-pub mod netcmd;
 pub mod tcp;
 pub mod tcpsvr;
 pub mod telnet;
@@ -210,12 +210,13 @@ pub fn run_with(
     // Prompted (F4, a menu's `CMD ?SNDMSG`): what is missing is the
     // prompt's to ask for, so the line is analyzed as `?` asks.
     let asked;
-    let text = if matches!(mode, RunMode::PromptRun | RunMode::PromptReturn) && !text.starts_with('?') {
-        asked = format!("?{text}");
-        asked.as_str()
-    } else {
-        text
-    };
+    let text =
+        if matches!(mode, RunMode::PromptRun | RunMode::PromptReturn) && !text.starts_with('?') {
+            asked = format!("?{text}");
+            asked.as_str()
+        } else {
+            text
+        };
     let resolved = {
         let mut cmds = host.cmds.borrow_mut();
         let attrs = host.attrs();
@@ -451,7 +452,10 @@ mod lda {
         };
         let (start, len) = sub.unwrap_or((1, GDA_LEN));
         if start == 0 || start + len - 1 > GDA_LEN {
-            return Err(Fail::new("CPF1015", "*GDA: the substring lies outside the area"));
+            return Err(Fail::new(
+                "CPF1015",
+                "*GDA: the substring lies outside the area",
+            ));
         }
         if r.name == "CHGDTAARA" {
             let value = r
@@ -469,7 +473,11 @@ mod lda {
                 .map(|()| String::new())
                 .map_err(fail);
         }
-        let all = host.link.borrow_mut().with(Client::gda_read).map_err(fail)?;
+        let all = host
+            .link
+            .borrow_mut()
+            .with(Client::gda_read)
+            .map_err(fail)?;
         let text = ccsid::from_ebcdic(&all);
         let part: String = text.chars().skip(start - 1).take(len).collect();
         let mut out = String::new();
@@ -589,7 +597,12 @@ mod lda {
 }
 
 /// A system command in the storage service.
-pub(crate) fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+pub(crate) fn service(
+    job: &mut Job,
+    host: &Host,
+    r: &Resolved,
+    out: &mut Outcome,
+) -> Result<String, Fail> {
     let built = block::build(&r.def, &r.parms).map_err(|e| Fail::new(e.msgid(), e.to_string()))?;
     let specified: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
     // The keyword form as typed, for the service's bridge: the block
@@ -642,7 +655,12 @@ pub(crate) fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcom
             // Nothing printed: the completion messages say what was done.
             let mut text = String::new();
             for m in reply.messages.iter().filter(|m| m.kind == 4) {
-                let (t, _, _) = job.describe_message(&m.msgid, sysapi::param::file_of(&m.msgid), "*LIBL", &m.data);
+                let (t, _, _) = job.describe_message(
+                    &m.msgid,
+                    sysapi::param::file_of(&m.msgid),
+                    "*LIBL",
+                    &m.data,
+                );
                 let _ = writeln!(text, "{}", t.trim_end());
             }
             Ok(text)
@@ -666,7 +684,12 @@ fn call_for_service(job: &mut Job, host: &Host, plan: &[u8]) -> CmdReply {
     };
     let req = stg::Request::SqlRun {
         scope: String::new(),
-        desc: Desc { op: Op::Called, name: midcall::ANSWER.into(), ..Desc::default() }.encode(),
+        desc: Desc {
+            op: Op::Called,
+            name: midcall::ANSWER.into(),
+            ..Desc::default()
+        }
+        .encode(),
         inputs: inputs.iter().map(sql::embed::to_wire).collect(),
     };
     host.link.borrow_mut().with(|l| {
@@ -689,7 +712,10 @@ fn user_cpp(job: &mut Job, _host: &Host, r: &Resolved) -> Result<String, Fail> {
         if let Err(e) = job.call_program(&v.name, &v.lib, &addrs) {
             return Err(Fail::new(
                 &e.msgid(),
-                format!("validity checking program {}/{} could not be called", v.lib, v.name),
+                format!(
+                    "validity checking program {}/{} could not be called",
+                    v.lib, v.name
+                ),
             ));
         }
         if let Some(e) = job.clear() {
@@ -790,7 +816,14 @@ fn failed(job: &mut Job, e: &CmdError) -> Outcome {
 
 fn log_diag(job: &mut Job, d: &Diag, kind: MsgType) {
     let help = (!d.detail.is_empty()).then(|| d.detail.clone());
-    job.log_external_with(&d.msgid, sysapi::param::file_of(&d.msgid), &d.data, kind, None, help);
+    job.log_external_with(
+        &d.msgid,
+        sysapi::param::file_of(&d.msgid),
+        &d.data,
+        kind,
+        None,
+        help,
+    );
 }
 
 /// A diagnostic as the console shows it: the identifier and its text,
@@ -799,7 +832,8 @@ fn shown_diag(job: &mut Job, d: &Diag) -> String {
     if !d.detail.is_empty() {
         return format!("{} {}\n", d.msgid, d.detail);
     }
-    let (text, _, _) = job.describe_message(&d.msgid, sysapi::param::file_of(&d.msgid), "*LIBL", &d.data);
+    let (text, _, _) =
+        job.describe_message(&d.msgid, sysapi::param::file_of(&d.msgid), "*LIBL", &d.data);
     format!("{} {}\n", d.msgid, text.trim_end())
 }
 
@@ -818,7 +852,8 @@ fn shown(job: &mut Job, f: &Fail) -> String {
         }
         return format!("{head}{} {last}\n", f.msgid);
     }
-    let (text, _, _) = job.describe_message(&f.msgid, sysapi::param::file_of(&f.msgid), "*LIBL", &f.data);
+    let (text, _, _) =
+        job.describe_message(&f.msgid, sysapi::param::file_of(&f.msgid), "*LIBL", &f.data);
     format!("{} {}\n", f.msgid, text.trim_end())
 }
 

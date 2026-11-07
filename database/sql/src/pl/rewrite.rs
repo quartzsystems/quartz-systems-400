@@ -92,7 +92,11 @@ pub fn render(t: &Tok, out: &mut String) {
 /// # Errors
 ///
 /// The text does not tokenize.
-pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns: &HashSet<String, S>) -> Result<Rewritten> {
+pub fn rewrite<S: std::hash::BuildHasher>(
+    text: &str,
+    names: &dyn Names,
+    columns: &HashSet<String, S>,
+) -> Result<Rewritten> {
     let toks: Vec<Tok> = tokenize(text)?.into_iter().map(|t| t.tok).collect();
     let mut out = Rewritten::default();
     let mut i = 0;
@@ -121,7 +125,8 @@ pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns
                 {
                     replaced = Some((k, 3));
                 }
-            } else if !matches!(next, Some(Tok::Sym("("))) && !columns.contains(w.as_str())
+            } else if !matches!(next, Some(Tok::Sym("(")))
+                && !columns.contains(w.as_str())
                 && let Some(k) = names.variable(w)
             {
                 replaced = Some((k, 1));
@@ -132,8 +137,12 @@ pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns
         }
         if let Some((k, n)) = replaced {
             let after = toks.get(i + n);
-            let char_arg = matches!(prev, Some(Tok::Sym("("))) && matches!(before, Some(Tok::Word(w)) if w == "CHAR") && matches!(after, Some(Tok::Sym(")")));
-            if matches!(after, Some(Tok::Sym("["))) && let Some(t) = names.element_type(k) {
+            let char_arg = matches!(prev, Some(Tok::Sym("(")))
+                && matches!(before, Some(Tok::Word(w)) if w == "CHAR")
+                && matches!(after, Some(Tok::Sym(")")));
+            if matches!(after, Some(Tok::Sym("[")))
+                && let Some(t) = names.element_type(k)
+            {
                 out.text.push_str("CAST(?");
                 casts.push((depth, t));
             } else if let Some(t) = names.cast_type(k).or_else(|| if char_arg { names.type_of(k) } else { None })
@@ -154,7 +163,9 @@ pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns
                 Tok::Sym("[") => depth += 1,
                 Tok::Sym("]") => {
                     depth = depth.saturating_sub(1);
-                    if casts.last().is_some_and(|(d, _)| *d == depth) && !matches!(toks.get(i + 1), Some(Tok::Sym("["))) {
+                    if casts.last().is_some_and(|(d, _)| *d == depth)
+                        && !matches!(toks.get(i + 1), Some(Tok::Sym("[")))
+                    {
                         let (_, ty) = casts.pop().expect("an open CAST");
                         let _ = write!(out.text, " AS {ty})");
                     }
@@ -192,8 +203,16 @@ mod tests {
     #[test]
     fn variables_become_markers() {
         let cols: HashSet<String> = ["NAME".to_string(), "ID".to_string()].into();
-        let r = rewrite("UPDATE T SET NAME = P1.NAME, AMT = TOTAL + 1 WHERE ID = v_id AND t.x = 'v_id'", &Vars, &cols).unwrap();
-        assert_eq!(r.text, "UPDATE T SET NAME = ?, AMT = ? + 1 WHERE ID = ? AND T.X = 'v_id'");
+        let r = rewrite(
+            "UPDATE T SET NAME = P1.NAME, AMT = TOTAL + 1 WHERE ID = v_id AND t.x = 'v_id'",
+            &Vars,
+            &cols,
+        )
+        .unwrap();
+        assert_eq!(
+            r.text,
+            "UPDATE T SET NAME = ?, AMT = ? + 1 WHERE ID = ? AND T.X = 'v_id'"
+        );
         assert_eq!(r.vars, vec![2, 1, 0]);
         let r = rewrite("SELECT COUNT(*) AS TOTAL FROM T", &Vars, &HashSet::new()).unwrap();
         assert_eq!(r.text, "SELECT COUNT(*) AS TOTAL FROM T");

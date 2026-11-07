@@ -20,8 +20,9 @@ const NAME: &str = "file";
 const SAMPLE: usize = 4096;
 
 fn ascii_text(b: &[u8]) -> bool {
-    b.iter()
-        .all(|&c| (0x20..0x7f).contains(&c) || matches!(c, b'\t' | b'\n' | b'\r' | 0x0c | 0x08 | 0x0b))
+    b.iter().all(|&c| {
+        (0x20..0x7f).contains(&c) || matches!(c, b'\t' | b'\n' | b'\r' | 0x0c | 0x08 | 0x0b)
+    })
 }
 
 fn latin1_text(b: &[u8]) -> bool {
@@ -127,7 +128,10 @@ fn content(cx: &UtilCtx<'_>, abs: &str, st: &Stat) -> Result<String, qsh::sys::S
         Ok(_) => true,
         Err(e) => e.error_len().is_none() && n == SAMPLE,
     };
-    if utf8 && b.iter().all(|&c| c >= 0x20 || matches!(c, b'\t' | b'\n' | b'\r' | 0x0c)) {
+    if utf8
+        && b.iter()
+            .all(|&c| c >= 0x20 || matches!(c, b'\t' | b'\n' | b'\r' | 0x0c))
+    {
         return Ok("UTF-8 text".to_string());
     }
     if ebcdic_text(b) {

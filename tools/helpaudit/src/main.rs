@@ -13,12 +13,19 @@ fn main() -> Result<()> {
     let root = helpaudit::find_root(&cwd).context("not inside the QS/400 tree")?;
     match args.first().map(String::as_str) {
         None | Some("check") => {
-            let limit = if args.iter().any(|a| a == "--all") { usize::MAX } else { 40 };
+            let limit = if args.iter().any(|a| a == "--all") {
+                usize::MAX
+            } else {
+                40
+            };
             let report = helpaudit::audit(&root)?;
             print!("{}", report.details(limit));
             let stale = helpaudit::generate::stale(&root)?;
             if !stale.is_empty() {
-                println!("\ncommand help out of date (helpaudit gen): {}", stale.join(" "));
+                println!(
+                    "\ncommand help out of date (helpaudit gen): {}",
+                    stale.join(" ")
+                );
             }
             if report.fails() || !stale.is_empty() {
                 bail!("help is missing");

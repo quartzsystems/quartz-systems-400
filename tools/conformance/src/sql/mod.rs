@@ -31,13 +31,23 @@ pub fn ours_dir() -> PathBuf {
 /// The captured outcome of a case, when there is one.
 #[must_use]
 pub fn expected(c: &Case) -> Option<String> {
-    fs::read_to_string(root().join("expected").join(&c.area).join(format!("{}.out", c.name))).ok()
+    fs::read_to_string(
+        root()
+            .join("expected")
+            .join(&c.area)
+            .join(format!("{}.out", c.name)),
+    )
+    .ok()
 }
 
 /// The outcome lines that are compared: all but the `-- captured from`
 /// line, line ends normalized.
 fn body(text: &str) -> Vec<&str> {
-    let lines: Vec<&str> = text.lines().filter(|l| !l.starts_with("-- captured from")).map(str::trim_end).collect();
+    let lines: Vec<&str> = text
+        .lines()
+        .filter(|l| !l.starts_with("-- captured from"))
+        .map(str::trim_end)
+        .collect();
     at_fetch(&lines)
 }
 
@@ -51,7 +61,9 @@ fn at_fetch<'a>(lines: &[&'a str]) -> Vec<&'a str> {
     while i < lines.len() {
         if lines[i].starts_with("sqlcode 0 ") {
             let mut j = i + 1;
-            while j < lines.len() && (lines[j].starts_with("# ") || lines[j].starts_with("warning ")) {
+            while j < lines.len()
+                && (lines[j].starts_with("# ") || lines[j].starts_with("warning "))
+            {
                 j += 1;
             }
             if j > i + 1 && j < lines.len() && lines[j].starts_with("sqlcode -") {
@@ -72,7 +84,12 @@ pub fn diff(ours: &str, theirs: &str) -> Option<String> {
     for i in 0..a.len().max(b.len()) {
         let (x, y) = (a.get(i).copied(), b.get(i).copied());
         if x != y {
-            let stmt = a[..i.min(a.len())].iter().rev().find(|l| l.starts_with("> ")).copied().unwrap_or("");
+            let stmt = a[..i.min(a.len())]
+                .iter()
+                .rev()
+                .find(|l| l.starts_with("> "))
+                .copied()
+                .unwrap_or("");
             return Some(format!(
                 "line {}: {stmt}\n    ours:   {}\n    oracle: {}",
                 i + 1,

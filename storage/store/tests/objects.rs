@@ -415,7 +415,10 @@ fn change_stamps_rise_and_never_repeat() {
     let a = ops::create(&mut t, &params(lib, "A", types::DTAARA)).unwrap();
     t.commit().unwrap();
     let a0 = stamp(&mut store, a);
-    assert!(stamp(&mut store, lib) > lib0, "an entry added changes the library");
+    assert!(
+        stamp(&mut store, lib) > lib0,
+        "an entry added changes the library"
+    );
     let mut t = store.begin().unwrap();
     ops::change_text(&mut t, a, "new text", 1_767_225_700).unwrap();
     t.commit().unwrap();

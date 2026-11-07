@@ -7,8 +7,8 @@
 
 use std::sync::Arc;
 
-use qsh::sys::stream::write_all;
 use qsh::sys::UtilCtx;
+use qsh::sys::stream::write_all;
 
 use super::parse::{Addr, Cmd, Line, Rep, Script, WFile};
 use crate::common::complain_sys;
@@ -284,7 +284,13 @@ fn substitute(st: &mut State, re: &Regex, rep: &[Rep], global: bool, nth: usize)
 }
 
 /// Run a script over the operands.
-pub fn run(cx: &mut UtilCtx<'_>, name: &str, prog: Script, quiet: bool, operands: &[String]) -> i32 {
+pub fn run(
+    cx: &mut UtilCtx<'_>,
+    name: &str,
+    prog: Script,
+    quiet: bool,
+    operands: &[String],
+) -> i32 {
     let mut lines = prog.lines;
     // Resolve block jumps.
     let mut stack = Vec::new();
@@ -440,7 +446,11 @@ pub fn run(cx: &mut UtilCtx<'_>, name: &str, prog: Script, quiet: bool, operands
                     st.emit(&ps, true);
                 }
                 Cmd::PrintFirst => {
-                    let end = st.ps.iter().position(|&b| b == b'\n').unwrap_or(st.ps.len());
+                    let end = st
+                        .ps
+                        .iter()
+                        .position(|&b| b == b'\n')
+                        .unwrap_or(st.ps.len());
                     let first = st.ps[..end].to_vec();
                     st.emit(&first, true);
                 }

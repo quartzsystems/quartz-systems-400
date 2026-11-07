@@ -39,7 +39,11 @@ fn level(s: &mut Session) -> Result<String, String> {
 /// Write `text` to `path` in the guest's IFS through the xfer area.
 fn put(s: &mut Session, path: &str, name: &str, text: &str) -> Result<(), String> {
     crate::qsh::push_hex(s, name, text.as_bytes())?;
-    want(&s.command(&format!("svc.ifs putx {path} {name}"), CMD)?, path, &["bytes"])
+    want(
+        &s.command(&format!("svc.ifs putx {path} {name}"), CMD)?,
+        path,
+        &["bytes"],
+    )
 }
 
 fn set_level(s: &mut Session, v: &str) -> Result<(), String> {
@@ -57,7 +61,10 @@ impl Suite {
             .map_err(|e| format!("the build's dev key: {e}"))?;
         put(s, "/tmp/s81.key", "S81KEY", key.trim())?;
         s.command("crtlib LIB(QS81)", CMD)?;
-        s.command("crtdtaara DTAARA(QS81/LEVEL) TYPE(*CHAR) LEN(10) VALUE('level1')", CMD)?;
+        s.command(
+            "crtdtaara DTAARA(QS81/LEVEL) TYPE(*CHAR) LEN(10) VALUE('level1')",
+            CMD,
+        )?;
         // Each PTF is built from the object as it should become.
         // QS08102 names IBM's ID, as a V1R0M0 PTF did: it is the same
         // product.
@@ -67,8 +74,16 @@ impl Suite {
         ] {
             set_level(s, v)?;
             let path = format!("/tmp/{ptf}.toml");
-            put(s, &path, &format!("M{ptf}"), &manifest(ptf, product, kind, pre))?;
-            let made = s.command(&format!("qscrtptf MANIFEST('{path}') KEYFILE('/tmp/s81.key')"), CMD)?;
+            put(
+                s,
+                &path,
+                &format!("M{ptf}"),
+                &manifest(ptf, product, kind, pre),
+            )?;
+            let made = s.command(
+                &format!("qscrtptf MANIFEST('{path}') KEYFILE('/tmp/s81.key')"),
+                CMD,
+            )?;
             if made.contains("CPF") || made.contains("CPD") {
                 return Err(format!("QSCRTPTF {ptf}: {made}"));
             }
@@ -87,7 +102,11 @@ impl Suite {
             &["QS08101", "Loaded"],
         )?;
         let applied = s.command("apyptf LICPGM(QS00SS1) SELECT(QS08101) APY(*TEMP)", CMD)?;
-        want(&applied, "APYPTF *TEMP", &["CPC3606", "Temporarily applied"])?;
+        want(
+            &applied,
+            "APYPTF *TEMP",
+            &["CPC3606", "Temporarily applied"],
+        )?;
         want(&level(s)?, "the level after APYPTF", &["level1"])?;
         let removed = s.command("rmvptf LICPGM(QS00SS1) SELECT(QS08101) RMV(*TEMP)", CMD)?;
         want(&removed, "RMVPTF *TEMP", &["CPC3608"])?;
@@ -95,12 +114,18 @@ impl Suite {
         // QS08102 needs QS08101 applied.
         let refused = s.command("apyptf LICPGM(QS00SS1) SELECT(QS08102) DELAYED(*YES)", CMD)?;
         if refused.contains("CPC3606") {
-            return Err(format!("QS08102 applied without its prerequisite: {refused}"));
+            return Err(format!(
+                "QS08102 applied without its prerequisite: {refused}"
+            ));
         }
         let again = s.command("apyptf LICPGM(QS00SS1) SELECT(QS08101) APY(*TEMP)", CMD)?;
         want(&again, "APYPTF QS08101 again", &["CPC3606"])?;
         let delayed = s.command("apyptf LICPGM(QS00SS1) SELECT(QS08102) DELAYED(*YES)", CMD)?;
-        want(&delayed, "APYPTF DELAYED(*YES)", &["CPC3606", "Apply at next IPL"])?;
+        want(
+            &delayed,
+            "APYPTF DELAYED(*YES)",
+            &["CPC3606", "Apply at next IPL"],
+        )?;
         want(&level(s)?, "the level before the IPL", &["level1"])?;
         // The IPL applies it.
         s.send("pwrdwn restart")?;
@@ -115,7 +140,11 @@ impl Suite {
         )?;
         // IBM's ID finds the same PTFs; ours is what shows.
         let ibm = s.command("dspptf LICPGM(5770SS1)", CMD)?;
-        want(&ibm, "DSPPTF LICPGM(5770SS1)", &["QS08101", "QS08102", "QS00SS1"])?;
+        want(
+            &ibm,
+            "DSPPTF LICPGM(5770SS1)",
+            &["QS08101", "QS08102", "QS00SS1"],
+        )?;
         if ibm.contains("5770") {
             return Err(format!("DSPPTF shows an IBM product ID:\n{ibm}"));
         }

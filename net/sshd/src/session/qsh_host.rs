@@ -140,10 +140,17 @@ impl<J: JobSys> SessionHost for QshHost<J> {
                     interactive: Some(false),
                     ..Invocation::default()
                 };
-                code(session::run(sys, &inv, Some(stdin), Some(stdout), Some(stderr)))
+                code(session::run(
+                    sys,
+                    &inv,
+                    Some(stdin),
+                    Some(stdout),
+                    Some(stderr),
+                ))
             }
             SessionKind::Subsystem { name, .. } => {
-                let _ = stderr.write(format!("qsh: subsystem {name} is not available\n").as_bytes());
+                let _ =
+                    stderr.write(format!("qsh: subsystem {name} is not available\n").as_bytes());
                 Exit::Status(127)
             }
         }

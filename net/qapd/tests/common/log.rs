@@ -49,7 +49,10 @@ impl Subscriber for Capture {
         if let Some(echo) = *ECHO.lock().unwrap_or_else(PoisonError::into_inner) {
             echo(&f.0);
         }
-        LINES.lock().unwrap_or_else(PoisonError::into_inner).push(f.0);
+        LINES
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push(f.0);
     }
     fn enter(&self, _: &Id) {}
     fn exit(&self, _: &Id) {}
@@ -59,7 +62,9 @@ impl Subscriber for Capture {
 pub fn capture(echo: Option<fn(&Line)>) {
     static INIT: Once = Once::new();
     *ECHO.lock().unwrap_or_else(PoisonError::into_inner) = echo;
-    INIT.call_once(|| tracing::subscriber::set_global_default(Capture).expect("the only subscriber"));
+    INIT.call_once(|| {
+        tracing::subscriber::set_global_default(Capture).expect("the only subscriber")
+    });
 }
 
 /// The lines of connection `connection`.

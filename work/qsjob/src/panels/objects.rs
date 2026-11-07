@@ -250,6 +250,9 @@ mod tests {
             stamp(&ccsid::nls::Formats::default(), "1261023101112"),
             ("10/23/26".into(), "10:11:12".into())
         );
-        assert_eq!(stamp(&ccsid::nls::Formats::default(), ""), (String::new(), String::new()));
+        assert_eq!(
+            stamp(&ccsid::nls::Formats::default(), ""),
+            (String::new(), String::new())
+        );
     }
 }

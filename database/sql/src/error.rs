@@ -412,7 +412,9 @@ impl SqlError {
             Self::DateTimeExpr { .. } => -182,
             Self::Duration { .. } => -187,
             Self::Database { .. } => -901,
-            Self::Coded { code, .. } | Self::Recursion { code, .. } | Self::Signalled { code, .. } => *code,
+            Self::Coded { code, .. }
+            | Self::Recursion { code, .. }
+            | Self::Signalled { code, .. } => *code,
         }
     }
 
@@ -420,7 +422,10 @@ impl SqlError {
     #[must_use]
     pub fn sqlstate(&self) -> &str {
         match self {
-            Self::Syntax { .. } | Self::ThreePartName { .. } | Self::Keyword { .. } | Self::RowComparison { .. } => "42601",
+            Self::Syntax { .. }
+            | Self::ThreePartName { .. }
+            | Self::Keyword { .. }
+            | Self::RowComparison { .. } => "42601",
             Self::Unsupported { .. } => "42612",
             Self::NameTooLong { .. } => "42622",
             Self::Literal { .. } | Self::Conversion { .. } => "22018",
@@ -470,6 +475,10 @@ impl SqlError {
     #[must_use]
     pub fn msgid(&self) -> String {
         let n = self.sqlcode().unsigned_abs();
-        if n > 9999 { format!("SQ{n:05}") } else { format!("SQL{n:04}") }
+        if n > 9999 {
+            format!("SQ{n:05}")
+        } else {
+            format!("SQL{n:04}")
+        }
     }
 }

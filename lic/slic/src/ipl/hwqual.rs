@@ -21,7 +21,9 @@ pub fn report(system: &mut System) -> Report {
         let _ = crate::platform::efivar::mount_vars();
     }
     let t = hwrsrc::client::table(true).unwrap_or_else(|e| {
-        system.out.serial(&format!("slic: hardware resource service: {e}; walking sysfs\n"));
+        system.out.serial(&format!(
+            "slic: hardware resource service: {e}; walking sysfs\n"
+        ));
         hwrsrc::Table::scan(&roots.sys)
     });
     hwqual::run(&t, &roots, now_unix())

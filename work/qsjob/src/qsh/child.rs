@@ -35,8 +35,8 @@ use stg::{Client, Shared};
 use sysapi::envproc::{Procs, SpawnReq, Var};
 use wm::ctl::{FromJob, Start, ToJob};
 
-use crate::console::host::Host;
 use crate::console::Console;
+use crate::console::host::Host;
 
 /// The role of a child job.
 pub const ROLE: &str = "SPAWN";
@@ -220,7 +220,9 @@ pub fn start_shell(
         kind: 0,
         path: "/usr/bin/qsh".into(),
         argv,
-        threads: env.iter().any(|(k, v)| k == "QIBM_MULTI_THREADED" && v == "Y"),
+        threads: env
+            .iter()
+            .any(|(k, v)| k == "QIBM_MULTI_THREADED" && v == "Y"),
         env,
         cwd: cwd.to_string(),
         stdin_fd: -1,
@@ -309,7 +311,12 @@ impl Child for ShellChild {
 
 /// A shell's program as a child job (`JobSys::spawn` of a PASE program).
 pub fn spawn_for_shell(host: &Host, req: &JobSpawn) -> Result<Box<dyn Child>, SysError> {
-    let fd = |n: u32| req.fds.iter().find(|(k, _)| *k == n).map(|(_, f)| f.clone());
+    let fd = |n: u32| {
+        req.fds
+            .iter()
+            .find(|(k, _)| *k == n)
+            .map(|(_, f)| f.clone())
+    };
     let io = |_| SysError::new(Errno::EIO);
     let (in_r, in_w) = std::io::pipe().map_err(io)?;
     let (out_r, out_w) = std::io::pipe().map_err(io)?;
@@ -329,7 +336,10 @@ pub fn spawn_for_shell(host: &Host, req: &JobSpawn) -> Result<Box<dyn Child>, Sy
         kind: kind_code(req.kind),
         path: req.path.clone(),
         argv: req.argv.clone(),
-        threads: req.env.iter().any(|(k, v)| k == "QIBM_MULTI_THREADED" && v == "Y"),
+        threads: req
+            .env
+            .iter()
+            .any(|(k, v)| k == "QIBM_MULTI_THREADED" && v == "Y"),
         env: req.env.clone(),
         cwd: req.cwd.clone(),
         stdin_fd: -1,
@@ -359,7 +369,13 @@ pub fn signal(host: &Host, pid: i32, sig: i32) -> Result<(), i32> {
     };
     if j.user != host.start.user {
         let me = host.link.borrow_mut().with(Client::whoami);
-        if me.require(sec::profile::SpecialAuth::JOBCTL, "signal another user's job").is_err() {
+        if me
+            .require(
+                sec::profile::SpecialAuth::JOBCTL,
+                "signal another user's job",
+            )
+            .is_err()
+        {
             return Err(Errno::EPERM.0);
         }
     }
@@ -391,7 +407,9 @@ impl JobProcs {
         if qsh_job::sys::SHELLS.contains(&path.to_ascii_lowercase().as_str()) {
             return Ok(ChildKind::Shell);
         }
-        if super::object_of(path, ".PGM").is_some() && path.to_ascii_uppercase().starts_with("/QSYS.LIB/") {
+        if super::object_of(path, ".PGM").is_some()
+            && path.to_ascii_uppercase().starts_with("/QSYS.LIB/")
+        {
             return Ok(ChildKind::Program);
         }
         if super::pase::is_elf(&self.host, path) {
@@ -462,7 +480,9 @@ impl Procs for JobProcs {
             kind: kind_code(kind),
             path,
             argv: req.argv,
-            threads: env.iter().any(|(k, v)| k == "QIBM_MULTI_THREADED" && v == "Y"),
+            threads: env
+                .iter()
+                .any(|(k, v)| k == "QIBM_MULTI_THREADED" && v == "Y"),
             env,
             cwd: "/".into(),
             stdin_fd: -1,
@@ -533,7 +553,10 @@ impl<W: Write + Send + 'static> Stream for OsOut<W> {
         Ok(0)
     }
     fn write(&self, buf: &[u8]) -> std::io::Result<usize> {
-        let mut w = self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut w = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         w.write_all(buf)?;
         w.flush()?;
         Ok(buf.len())
@@ -580,7 +603,11 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
             })
             .collect(),
     );
-    stg::remote::status(link, wm::job::Status::Run, &format!("PGM-{}", program_name(&data.path)));
+    stg::remote::status(
+        link,
+        wm::job::Status::Run,
+        &format!("PGM-{}", program_name(&data.path)),
+    );
     let input: Option<Fd> = (data.stdin_fd >= 0)
         .then(|| std::fs::File::open(format!("/proc/self/fd/{}", data.stdin_fd)).ok())
         .flatten()
@@ -597,7 +624,12 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
             }
             let job = c.job();
             let mut side = super::side::JobSide::new(job, &host);
-            qsh_job::run::invoke(&mut side, setup, data.argv.clone(), [input, Some(out), Some(err)])
+            qsh_job::run::invoke(
+                &mut side,
+                setup,
+                data.argv.clone(),
+                [input, Some(out), Some(err)],
+            )
         }
         2 => {
             let host = c.host.clone();
@@ -616,7 +648,14 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         _ => {
             let host = c.host.clone();
             let fds = [data.stdin_fd, 1, 2];
-            match super::pase::run_with_fds(&host, &data.path, data.argv.clone(), data.env.clone(), &data.cwd, fds) {
+            match super::pase::run_with_fds(
+                &host,
+                &data.path,
+                data.argv.clone(),
+                data.env.clone(),
+                &data.cwd,
+                fds,
+            ) {
                 Ok(code) => code,
                 Err(e) => {
                     let _ = err.write(format!("{e}\n").as_bytes());

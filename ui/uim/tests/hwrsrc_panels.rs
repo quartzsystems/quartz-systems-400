@@ -16,7 +16,9 @@ use common::{compare_in, golden_rows_in, shipped};
 use uim::render::{ListState, MapDialog, Options, render};
 
 fn dir(sub: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/golden").join(sub)
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/conformance/golden")
+        .join(sub)
 }
 
 fn opts() -> Options {
@@ -35,7 +37,11 @@ fn list(rows: &[Vec<(&str, String)>], top: usize) -> ListState {
         ..ListState::default()
     };
     for r in rows {
-        l.rows.push(r.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect());
+        l.rows.push(
+            r.iter()
+                .map(|(k, v)| ((*k).to_string(), v.clone()))
+                .collect(),
+        );
     }
     l.total = Some(top + l.rows.len());
     l
@@ -118,7 +124,11 @@ fn wrkhdwrsc_cmn() {
             ("    CMN04", "268C", "Operational", "Ethernet Port"),
         ]),
     );
-    compare_in(&dir("phase10/cmn"), "wrkhdwrsc-cmn", &render(&g, "HWCMN", &d, &opts()).unwrap());
+    compare_in(
+        &dir("phase10/cmn"),
+        "wrkhdwrsc-cmn",
+        &render(&g, "HWCMN", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -146,7 +156,11 @@ fn wrkhdwrsc_stg() {
             ("CMB07", "6B25-001", "Operational", "Storage Controller"),
         ]),
     );
-    compare_in(&dir("phase11/hwrsrc"), "wrkhdwrsc-stg", &render(&g, "HWSTG", &d, &opts()).unwrap());
+    compare_in(
+        &dir("phase11/hwrsrc"),
+        "wrkhdwrsc-stg",
+        &render(&g, "HWSTG", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -154,26 +168,70 @@ fn wrkhdwrsc_prc() {
     let g = shipped("QUIHDWRSC");
     let mut d = kind("Processor");
     let mut rows = vec![
-        ("CEC01", "9824-22A".to_string(), "Operational", "Main Card Enclosure"),
-        ("PN01", "6B5D".into(), "Not detected", "System Control Panel"),
-        ("PN02", "6B5C".into(), "Not detected", "System Control Panel"),
+        (
+            "CEC01",
+            "9824-22A".to_string(),
+            "Operational",
+            "Main Card Enclosure",
+        ),
+        (
+            "PN01",
+            "6B5D".into(),
+            "Not detected",
+            "System Control Panel",
+        ),
+        (
+            "PN02",
+            "6B5C".into(),
+            "Not detected",
+            "System Control Panel",
+        ),
         ("PN03", "6B86".into(), "Operational", "System Control Panel"),
         ("PN04", "6C85".into(), "Operational", "System Control Panel"),
     ];
     for i in 1..=8 {
-        rows.push(("MP0X", "5C3F".into(), "Not detected", "System Processor Card"));
+        rows.push((
+            "MP0X",
+            "5C3F".into(),
+            "Not detected",
+            "System Processor Card",
+        ));
         let _ = i;
     }
-    let names = ["MP01", "MP02", "MP03", "MP04", "MP05", "MP06", "MP07", "MP08"];
+    let names = [
+        "MP01", "MP02", "MP03", "MP04", "MP05", "MP06", "MP07", "MP08",
+    ];
     for (r, n) in rows.iter_mut().skip(5).zip(names) {
         r.0 = n;
     }
-    rows.push(("MP09", "5CD1".into(), "Operational", "System Processor Card"));
-    rows.push(("MP10", "5CD1".into(), "Operational", "System Processor Card"));
-    rows.push(("MP11", "5CD1".into(), "Operational", "System Processor Card"));
-    let r: Vec<(&str, &str, &str, &str)> = rows.iter().map(|(a, b, c, e)| (*a, b.as_str(), *c, *e)).collect();
+    rows.push((
+        "MP09",
+        "5CD1".into(),
+        "Operational",
+        "System Processor Card",
+    ));
+    rows.push((
+        "MP10",
+        "5CD1".into(),
+        "Operational",
+        "System Processor Card",
+    ));
+    rows.push((
+        "MP11",
+        "5CD1".into(),
+        "Operational",
+        "System Processor Card",
+    ));
+    let r: Vec<(&str, &str, &str, &str)> = rows
+        .iter()
+        .map(|(a, b, c, e)| (*a, b.as_str(), *c, *e))
+        .collect();
     d.set_list("RSCTMS", tm_rows(&r));
-    compare_in(&dir("phase11/hwrsrc"), "wrkhdwrsc-prc", &render(&g, "HWPRC", &d, &opts()).unwrap());
+    compare_in(
+        &dir("phase11/hwrsrc"),
+        "wrkhdwrsc-prc",
+        &render(&g, "HWPRC", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -187,7 +245,11 @@ fn wrkhdwrsc_lws() {
             ("  CTL01", "6A59", "Operational", "Work Station Controller"),
         ]),
     );
-    compare_in(&dir("phase11/hwrsrc"), "wrkhdwrsc-lws", &render(&g, "HWLWS", &d, &opts()).unwrap());
+    compare_in(
+        &dir("phase11/hwrsrc"),
+        "wrkhdwrsc-lws",
+        &render(&g, "HWLWS", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -195,10 +257,20 @@ fn wrkhdwrsc_crp_and_csa_empty() {
     let g = shipped("QUIHDWRSC");
     let mut d = kind("Cryptographic");
     d.set_list("RSCS", type_rows(&[]));
-    compare_but("phase11/hwrsrc", "wrkhdwrsc-crp", &render(&g, "HWCRP", &d, &opts()).unwrap(), 8);
+    compare_but(
+        "phase11/hwrsrc",
+        "wrkhdwrsc-crp",
+        &render(&g, "HWCRP", &d, &opts()).unwrap(),
+        8,
+    );
     let mut d = kind("Coupled");
     d.set_list("RSCCSA", list(&[], 0));
-    compare_but("phase11/hwrsrc", "wrkhdwrsc-csa", &render(&g, "HWCSA", &d, &opts()).unwrap(), 8);
+    compare_but(
+        "phase11/hwrsrc",
+        "wrkhdwrsc-csa",
+        &render(&g, "HWCSA", &d, &opts()).unwrap(),
+        8,
+    );
 }
 
 /// The detail of the oracle's `CMB09`: the location, then the logical
@@ -231,14 +303,47 @@ fn spd() -> Vec<String> {
 #[test]
 fn detail_pages() {
     let g = shipped("QUIHDWRSC");
-    let d = detail("CMB09", "Comm Processor", "6B03-001", "U9824.22A.78EA841-V22-C1", &spd());
-    compare_in(&dir("phase10/cmn"), "wrkhdwrsc-cmn-7", &render(&g, "DETAIL", &d, &opts()).unwrap());
-    let mut d2 = detail("CMB09", "Comm Processor", "6B03-001", "U9824.22A.78EA841-V22-C1", &[]);
-    let rest: Vec<Vec<(&str, String)>> = spd()[5..].iter().map(|l| vec![("DLINE", l.clone())]).collect();
+    let d = detail(
+        "CMB09",
+        "Comm Processor",
+        "6B03-001",
+        "U9824.22A.78EA841-V22-C1",
+        &spd(),
+    );
+    compare_in(
+        &dir("phase10/cmn"),
+        "wrkhdwrsc-cmn-7",
+        &render(&g, "DETAIL", &d, &opts()).unwrap(),
+    );
+    let mut d2 = detail(
+        "CMB09",
+        "Comm Processor",
+        "6B03-001",
+        "U9824.22A.78EA841-V22-C1",
+        &[],
+    );
+    let rest: Vec<Vec<(&str, String)>> = spd()[5..]
+        .iter()
+        .map(|l| vec![("DLINE", l.clone())])
+        .collect();
     d2.set_list("DLINES", list(&rest, 5));
-    compare_in(&dir("phase10/cmn"), "wrkhdwrsc-cmn-7-2", &render(&g, "DETAIL", &d2, &opts()).unwrap());
-    let d = detail("CMB01", "Storage Controller", "290A-001", "U9824.22A.78EA841-V22-C4", &spd());
-    compare_in(&dir("phase11/hwrsrc"), "wrkhdwrsc-stg-7", &render(&g, "DETAIL", &d, &opts()).unwrap());
+    compare_in(
+        &dir("phase10/cmn"),
+        "wrkhdwrsc-cmn-7-2",
+        &render(&g, "DETAIL", &d2, &opts()).unwrap(),
+    );
+    let d = detail(
+        "CMB01",
+        "Storage Controller",
+        "290A-001",
+        "U9824.22A.78EA841-V22-C4",
+        &spd(),
+    );
+    compare_in(
+        &dir("phase11/hwrsrc"),
+        "wrkhdwrsc-stg-7",
+        &render(&g, "DETAIL", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -252,7 +357,11 @@ fn configuration_descriptions() {
         vec![("CFGD", "LINETH".to_string())],
     ];
     d.set_list("CFGDS", list(&r, 0));
-    compare_in(&dir("phase10/cmn"), "wrkhdwrsc-cmn04-5", &render(&g, "CFGD", &d, &opts()).unwrap());
+    compare_in(
+        &dir("phase10/cmn"),
+        "wrkhdwrsc-cmn04-5",
+        &render(&g, "CFGD", &d, &opts()).unwrap(),
+    );
 }
 
 // --- DSPHDWRSC against the V7R1M0 captures (golden/verified/oracle71/panels)
@@ -282,7 +391,11 @@ fn dsphdwrsc_cmn() {
             ("  LIN04", "6B26", "Operational", "Comm Adapter"),
         ]),
     );
-    compare_in(&dir(V71), "dsphdwrsc-cmn", &render(&g, "DCMN", &d, &opts()).unwrap());
+    compare_in(
+        &dir(V71),
+        "dsphdwrsc-cmn",
+        &render(&g, "DCMN", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -302,7 +415,11 @@ fn dsphdwrsc_stg() {
             ("  DC04", "57B7", "Operational", "Storage Controller"),
         ]),
     );
-    compare_in(&dir(V71), "dsphdwrsc-stg", &render(&g, "DSTG", &d, &opts()).unwrap());
+    compare_in(
+        &dir(V71),
+        "dsphdwrsc-stg",
+        &render(&g, "DSTG", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -329,7 +446,11 @@ fn dsphdwrsc_prc() {
     l.complete = false;
     l.total = None;
     d.set_list("RSCTMS", l);
-    compare_in(&dir(V71), "dsphdwrsc-prc", &render(&g, "DPRC", &d, &opts()).unwrap());
+    compare_in(
+        &dir(V71),
+        "dsphdwrsc-prc",
+        &render(&g, "DPRC", &d, &opts()).unwrap(),
+    );
 }
 
 #[test]
@@ -343,7 +464,11 @@ fn dsphdwrsc_lws() {
             ("  CTL01", "6A59", "Operational", "Work Station Controller"),
         ]),
     );
-    compare_in(&dir(V71), "dsphdwrsc-lws", &render(&g, "DLWS", &d, &opts()).unwrap());
+    compare_in(
+        &dir(V71),
+        "dsphdwrsc-lws",
+        &render(&g, "DLWS", &d, &opts()).unwrap(),
+    );
 }
 
 /// The empty lists: their text is Quartz's, compared for its place.
@@ -352,16 +477,33 @@ fn dsphdwrsc_crp_and_csa_empty() {
     let g = shipped("QUIHDWRSC");
     let mut d = kind("Cryptographic");
     d.set_list("RSCS", type_rows(&[]));
-    compare_but(V71, "dsphdwrsc-crp", &render(&g, "DCRP", &d, &opts()).unwrap(), 8);
+    compare_but(
+        V71,
+        "dsphdwrsc-crp",
+        &render(&g, "DCRP", &d, &opts()).unwrap(),
+        8,
+    );
     let mut d = kind("Coupled");
     d.set_list("RSCCSA", list(&[], 0));
-    compare_but(V71, "dsphdwrsc-csa", &render(&g, "DCSA", &d, &opts()).unwrap(), 8);
+    compare_but(
+        V71,
+        "dsphdwrsc-csa",
+        &render(&g, "DCSA", &d, &opts()).unwrap(),
+        8,
+    );
 }
 
 #[test]
 fn work_with_a_storage_controller() {
     let g = shipped("QUIHDWRSC");
     let mut d = kind("Storage Controller");
-    d.set_list("RSCTMS", tm_rows(&[("DC03", "298A-001", "Operational", "Storage Controller")]));
-    compare_in(&dir("phase11/hwrsrc"), "wrkhdwrsc-stg-dc03-9", &render(&g, "HWSUB", &d, &opts()).unwrap());
+    d.set_list(
+        "RSCTMS",
+        tm_rows(&[("DC03", "298A-001", "Operational", "Storage Controller")]),
+    );
+    compare_in(
+        &dir("phase11/hwrsrc"),
+        "wrkhdwrsc-stg-dc03-9",
+        &render(&g, "HWSUB", &d, &opts()).unwrap(),
+    );
 }

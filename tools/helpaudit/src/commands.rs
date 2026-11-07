@@ -20,9 +20,8 @@ pub fn definitions(root: &Path) -> Result<Vec<(CmdDef, String)>> {
     for p in files(&root.join(DIR), "cmd")? {
         let name = stem(&p);
         let text = read(&p)?;
-        let def = cmd::source::compile(&name, &text).map_err(|d| {
-            AuditError::Compile(format!("{DIR}/{name}.cmd"), format!("{d:?}"))
-        })?;
+        let def = cmd::source::compile(&name, &text)
+            .map_err(|d| AuditError::Compile(format!("{DIR}/{name}.cmd"), format!("{d:?}")))?;
         out.push((def, text));
     }
     Ok(out)

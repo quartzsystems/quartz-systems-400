@@ -99,8 +99,9 @@ pub fn scalar(
         }
         ParmType::VarName => {
             return Err(match tok {
-                Tok::Builtin { .. } => bad("CPD0105")
-                    .detail(format!("{kwd}: a built-in function is not a CL variable name")),
+                Tok::Builtin { .. } => bad("CPD0105").detail(format!(
+                    "{kwd}: a built-in function is not a CL variable name"
+                )),
                 _ => bad("CPD0081").detail(format!("{kwd} needs a CL variable name")),
             });
         }
@@ -200,10 +201,9 @@ fn restrictions(
         if let Some((op, lim)) = &parm.rel {
             let l = Decimal::parse(lim).map_err(|_| bad("CPD0084"))?;
             if !op.holds(d.cmp(&l)) {
-                return Err(bad(rel_msgid(*op)).detail(format!(
-                    "{kwd}: {d} is not {} {lim}",
-                    op.text()
-                )));
+                return Err(
+                    bad(rel_msgid(*op)).detail(format!("{kwd}: {d} is not {} {lim}", op.text()))
+                );
             }
         }
         if let Some((lo, hi)) = &parm.range {
@@ -221,10 +221,9 @@ fn restrictions(
         if let Some((op, lim)) = &parm.rel {
             let lim = lim.trim_matches('\'');
             if !op.holds(ccsid::ebcdic_cmp_str(s, lim)) {
-                return Err(bad(rel_msgid(*op)).detail(format!(
-                    "{kwd}: {s} is not {} {lim}",
-                    op.text()
-                )));
+                return Err(
+                    bad(rel_msgid(*op)).detail(format!("{kwd}: {s} is not {} {lim}", op.text()))
+                );
             }
         }
         if let Some((lo, hi)) = &parm.range {
@@ -347,7 +346,12 @@ fn name(parm: &Parm, kwd: &str, w: &str, trusted: bool) -> Result<Value, Diag> {
                 return Err(bad());
             }
             let dot = parm.ty != ParmType::SName;
-            if !c.all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || "$#@_".contains(ch) || (dot && ch == '.')) {
+            if !c.all(|ch| {
+                ch.is_ascii_uppercase()
+                    || ch.is_ascii_digit()
+                    || "$#@_".contains(ch)
+                    || (dot && ch == '.')
+            }) {
                 return Err(bad());
             }
         }

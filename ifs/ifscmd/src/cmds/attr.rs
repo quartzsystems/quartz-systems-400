@@ -120,7 +120,11 @@ fn attribute(atr: i64, value: i64, text: &str) -> Result<Option<Attr>, Msg> {
             text.to_string()
         }),
         atr::RUNEXIT | atr::CRTRUNEXIT => {
-            let name = if atr == atr::RUNEXIT { "*RUNEXIT" } else { "*CRTRUNEXIT" };
+            let name = if atr == atr::RUNEXIT {
+                "*RUNEXIT"
+            } else {
+                "*CRTRUNEXIT"
+            };
             return Err(Msg::new("CPFA0ED").chars(name, 10));
         }
         _ => return Err(Msg::new("CPDA03C").bin2(atr)),
@@ -128,7 +132,15 @@ fn attribute(atr: i64, value: i64, text: &str) -> Result<Option<Attr>, Msg> {
 }
 
 /// `CHGATR`.
-pub fn chgatr(c: &dyn IfsClient, obj: &str, atr: i64, value: i64, text: &str, subtree: Subtree, symlnk: bool) -> Reply {
+pub fn chgatr(
+    c: &dyn IfsClient,
+    obj: &str,
+    atr: i64,
+    value: i64,
+    text: &str,
+    subtree: Subtree,
+    symlnk: bool,
+) -> Reply {
     let a = match attribute(atr, value, text.trim()) {
         Ok(Some(a)) => a,
         Ok(None) => return Reply::text("Attribute changed.\n"),
@@ -153,7 +165,11 @@ pub fn chgatr(c: &dyn IfsClient, obj: &str, atr: i64, value: i64, text: &str, su
 pub fn checkout(c: &dyn IfsClient, obj: &str, subtree: Subtree, out: bool) -> Reply {
     let comp = if out { "CPCA08F" } else { "CPCA08A" };
     if subtree == Subtree::None {
-        let r = if out { c.check_out(obj) } else { c.check_in(obj) };
+        let r = if out {
+            c.check_out(obj)
+        } else {
+            c.check_in(obj)
+        };
         return match r {
             Ok(()) => Reply::done(Msg::path(comp, obj)),
             Err(e) => Reply::errno(e, obj),
@@ -213,7 +229,9 @@ pub fn strjrn(c: &dyn IfsClient, a: &StrJrn) -> Reply {
         inherit: a.inherit,
         ..Journal::default()
     };
-    journal_each(c, &a.objs, a.subtree, "started", |p| c.start_journal(p, j.clone()))
+    journal_each(c, &a.objs, a.subtree, "started", |p| {
+        c.start_journal(p, j.clone())
+    })
 }
 
 /// `ENDJRN` on IFS objects.

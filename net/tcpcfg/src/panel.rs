@@ -19,7 +19,10 @@ pub type Row = Vec<(String, String)>;
 pub type Data = (Vec<(String, String)>, Vec<(String, Vec<Row>)>);
 
 fn row(pairs: &[(&str, String)]) -> Row {
-    pairs.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect()
+    pairs
+        .iter()
+        .map(|(k, v)| ((*k).to_string(), v.clone()))
+        .collect()
 }
 
 fn vars(pairs: &[(&str, String)]) -> Vec<(String, String)> {
@@ -27,7 +30,11 @@ fn vars(pairs: &[(&str, String)]) -> Vec<(String, String)> {
 }
 
 fn blank_star(t: &str) -> String {
-    if t.is_empty() { "*BLANK".into() } else { t.to_string() }
+    if t.is_empty() {
+        "*BLANK".into()
+    } else {
+        t.to_string()
+    }
 }
 
 /// The panel data `what` names (`IFC`, `IFC5`, `RTE`, `RTE5`, `PORT`,
@@ -41,7 +48,10 @@ pub fn data(cfg: &Config, st: &State, what: &str, args: &[String]) -> Option<Dat
         "RTE" => (Vec::new(), vec![("RTES".into(), rtes(cfg, st))]),
         "RTE5" => (rte_detail(cfg, args)?, Vec::new()),
         "PORT" => (Vec::new(), vec![("PORTS".into(), ports(cfg))]),
-        "HTE" => (Vec::new(), vec![("HOSTS".into(), hosts(cfg, arg(0) == "ADD"))]),
+        "HTE" => (
+            Vec::new(),
+            vec![("HOSTS".into(), hosts(cfg, arg(0) == "ADD"))],
+        ),
         "HTE5" => hte_detail(cfg, arg(0))?,
         "SRV" => (Vec::new(), vec![("SVCS".into(), services(cfg))]),
         "PCL" => (Vec::new(), vec![("PCLS".into(), protocols(cfg))]),
@@ -60,11 +70,17 @@ pub fn ifcs(cfg: &Config, st: &State) -> Vec<Row> {
         };
         out.push(row(&[
             ("IFCADR", i.key()),
-            ("IFCMASK", i.mask.map_or_else(|| "*".into(), |m| m.to_string())),
+            (
+                "IFCMASK",
+                i.mask.map_or_else(|| "*".into(), |m| m.to_string()),
+            ),
             ("IFCLIND", i.line.name().to_string()),
             ("IFCLTYPE", i.line_type().to_string()),
             ("IFCSTS", status),
-            ("IFCALIAS", i.alias.clone().unwrap_or_else(|| "*NONE".into())),
+            (
+                "IFCALIAS",
+                i.alias.clone().unwrap_or_else(|| "*NONE".into()),
+            ),
             ("IFCTEXT", i.text.clone()),
         ]));
         // The interface a lease made, after the `*IP4DHCP` entry.
@@ -84,7 +100,11 @@ pub fn ifcs(cfg: &Config, st: &State) -> Vec<Row> {
 }
 
 /// The `*IP4DHCP` interface whose lease holds `addr`, with the lease.
-fn leased<'c>(cfg: &'c Config, st: &State, addr: &str) -> Option<(&'c crate::model::ifc::Interface, dhcp::Lease)> {
+fn leased<'c>(
+    cfg: &'c Config,
+    st: &State,
+    addr: &str,
+) -> Option<(&'c crate::model::ifc::Interface, dhcp::Lease)> {
     let i = cfg.ifcs.get(&IfcAddr::Dhcp4)?;
     let l = st.ifcs.get(&i.key())?.lease.clone()?;
     (l.addr.to_string() == addr.trim()).then_some((i, l))
@@ -103,7 +123,10 @@ pub fn ifc_detail(cfg: &Config, st: &State, key: &str) -> Option<Vec<(String, St
             ("DLCLIFC", "*NONE".into()),
             ("DSTS", IfcStatus::Active.name().to_string()),
             ("DTOS", i.tos.name().to_string()),
-            ("DMTU", i.mtu.map_or_else(|| "*LIND".into(), |m| m.to_string())),
+            (
+                "DMTU",
+                i.mtu.map_or_else(|| "*LIND".into(), |m| m.to_string()),
+            ),
             ("DAUTO", yes(i.autostart).to_string()),
             ("DTEXT", "*BLANK".into()),
         ]));
@@ -111,15 +134,32 @@ pub fn ifc_detail(cfg: &Config, st: &State, key: &str) -> Option<Vec<(String, St
     let i = cfg.ifcs.get(&IfcAddr::parse(key).ok()?)?;
     Some(vars(&[
         ("DADR", i.key()),
-        ("DMASK", i.mask.map_or_else(|| "*".into(), |m| m.to_string())),
+        (
+            "DMASK",
+            i.mask.map_or_else(|| "*".into(), |m| m.to_string()),
+        ),
         ("DLIND", i.line.name().to_string()),
         ("DALIAS", i.alias.clone().unwrap_or_else(|| "*NONE".into())),
-        ("DCCSID", if i.alias.is_some() { "37".into() } else { "*NONE".into() }),
+        (
+            "DCCSID",
+            if i.alias.is_some() {
+                "37".into()
+            } else {
+                "*NONE".into()
+            },
+        ),
         ("DLTYPE", i.line_type().to_string()),
-        ("DLCLIFC", i.local_ifc.map_or_else(|| "*NONE".into(), |l| l.to_string())),
+        (
+            "DLCLIFC",
+            i.local_ifc
+                .map_or_else(|| "*NONE".into(), |l| l.to_string()),
+        ),
         ("DSTS", st.ifc_status(&i.key()).name().to_string()),
         ("DTOS", i.tos.name().to_string()),
-        ("DMTU", i.mtu.map_or_else(|| "*LIND".into(), |m| m.to_string())),
+        (
+            "DMTU",
+            i.mtu.map_or_else(|| "*LIND".into(), |m| m.to_string()),
+        ),
         ("DAUTO", yes(i.autostart).to_string()),
         ("DTEXT", blank_star(&i.text)),
     ]))
@@ -136,7 +176,10 @@ pub fn rtes(cfg: &Config, st: &State) -> Vec<Row> {
                 ("RTEDEST", r.dest.to_string()),
                 ("RTEMASK", r.mask_text()),
                 ("RTEHOP", r.next_hop.to_string()),
-                ("RTEIFC", r.bind_ifc.map_or_else(|| "*NONE".into(), |b| b.to_string())),
+                (
+                    "RTEIFC",
+                    r.bind_ifc.map_or_else(|| "*NONE".into(), |b| b.to_string()),
+                ),
                 ("RTETOS", r.tos.name().to_string()),
                 ("RTESTS", st.rte_status(&r.key()).name().to_string()),
                 ("RTETEXT", r.text.clone()),
@@ -172,8 +215,14 @@ pub fn rte_detail(cfg: &Config, args: &[String]) -> Option<Vec<(String, String)>
         ("DMASK", r.mask_text()),
         ("DTOS", r.tos.name().to_string()),
         ("DHOP", r.next_hop.to_string()),
-        ("DIFC", r.bind_ifc.map_or_else(|| "*NONE".into(), |b| b.to_string())),
-        ("DMTU", r.mtu.map_or_else(|| "*IFC".into(), |m| m.to_string())),
+        (
+            "DIFC",
+            r.bind_ifc.map_or_else(|| "*NONE".into(), |b| b.to_string()),
+        ),
+        (
+            "DMTU",
+            r.mtu.map_or_else(|| "*IFC".into(), |m| m.to_string()),
+        ),
         ("DDUP", r.dup_pty.to_string()),
         ("DMETRIC", r.metric.to_string()),
         ("DREDST", yes(r.redist).to_string()),
@@ -189,7 +238,10 @@ pub fn ports(cfg: &Config) -> Vec<Row> {
         .map(|p| {
             row(&[
                 ("PLOWER", p.lower.to_string()),
-                ("PUPPER", p.upper.map_or_else(|| "*ONLY".into(), |u| u.to_string())),
+                (
+                    "PUPPER",
+                    p.upper.map_or_else(|| "*ONLY".into(), |u| u.to_string()),
+                ),
                 ("PPROTO", p.proto.name().to_string()),
                 ("PUSER", p.user.clone()),
             ])
@@ -209,7 +261,14 @@ pub fn hosts(cfg: &Config, by_add: bool) -> Vec<Row> {
     for e in list {
         for (n, name) in e.names.iter().enumerate() {
             out.push(row(&[
-                ("HTEADR", if n == 0 { e.addr.to_string() } else { String::new() }),
+                (
+                    "HTEADR",
+                    if n == 0 {
+                        e.addr.to_string()
+                    } else {
+                        String::new()
+                    },
+                ),
                 ("HTENAME", name.clone()),
                 ("HTEKEY", e.addr.to_string()),
             ]));
@@ -221,7 +280,11 @@ pub fn hosts(cfg: &Config, by_add: bool) -> Vec<Row> {
 /// Option 5 on a host table entry: its address and text, its names.
 pub fn hte_detail(cfg: &Config, addr: &str) -> Option<Data> {
     let e = cfg.hosts.get(addr.trim().parse().ok()?)?;
-    let names = e.names.iter().map(|n| row(&[("DNAME", n.clone())])).collect();
+    let names = e
+        .names
+        .iter()
+        .map(|n| row(&[("DNAME", n.clone())]))
+        .collect();
     Some((
         vars(&[("DADR", e.addr.to_string()), ("DTEXT", e.text.clone())]),
         vec![("NAMES".into(), names)],
@@ -248,7 +311,12 @@ pub fn protocols(cfg: &Config) -> Vec<Row> {
     let mut v: Vec<_> = cfg.protocols.iter().collect();
     v.sort_by_key(|p| p.name.to_ascii_lowercase());
     v.into_iter()
-        .map(|p| row(&[("PCLNAME", p.name.clone()), ("PCLNBR", p.number.to_string())]))
+        .map(|p| {
+            row(&[
+                ("PCLNAME", p.name.clone()),
+                ("PCLNBR", p.number.to_string()),
+            ])
+        })
         .collect()
 }
 
@@ -270,7 +338,14 @@ mod tests {
     fn panel_data() {
         let mut cfg = Config::default();
         cfg.hosts
-            .add(HostEntry::new("185.113.5.134".parse().unwrap(), &["PUB400.COM".into(), "WWW.PUB400.COM".into()], "").unwrap())
+            .add(
+                HostEntry::new(
+                    "185.113.5.134".parse().unwrap(),
+                    &["PUB400.COM".into(), "WWW.PUB400.COM".into()],
+                    "",
+                )
+                .unwrap(),
+            )
             .unwrap();
         let st = State::default();
         let ifc = ifcs(&cfg, &st);

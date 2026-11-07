@@ -141,10 +141,16 @@ pub fn stage(
     if let Some((p, _)) = &st.pending
         && p != ptf
     {
-        return Err(Error::refused("CPF3601", format!("LIC PTF {p} waits for the IPL")));
+        return Err(Error::refused(
+            "CPF3601",
+            format!("LIC PTF {p} waits for the IPL"),
+        ));
     }
     if st.removing.is_some() {
-        return Err(Error::refused("CPF3601", "a LIC PTF waits to be removed at the IPL"));
+        return Err(Error::refused(
+            "CPF3601",
+            "a LIC PTF waits to be removed at the IPL",
+        ));
     }
     let target = booted.other();
     if st.temp.iter().any(|(_, s)| s.other() == target) {
@@ -154,7 +160,8 @@ pub fn stage(
         ));
     }
     st.pending = None;
-    esp.write(target, image_for(target, a, b)).map_err(|e| Error::NotPtf(format!("slot {}: {e}", letter(target))))?;
+    esp.write(target, image_for(target, a, b))
+        .map_err(|e| Error::NotPtf(format!("slot {}: {e}", letter(target))))?;
     st.pending = Some((ptf.to_string(), target));
     Ok(target)
 }
@@ -238,9 +245,12 @@ pub fn at_ipl(
 /// `RMVPTF` of a temporarily applied LIC PTF: Remove at next IPL, and
 /// the IPL boots the slot with the image before it.
 pub fn remove(st: &mut SlotState, db: &mut PtfDb, ptf: &str, now: u64) -> Result<Slot> {
-    let s = st
-        .slot_of(ptf)
-        .ok_or_else(|| Error::refused("CPF3606", format!("{ptf} is not a temporarily applied LIC PTF")))?;
+    let s = st.slot_of(ptf).ok_or_else(|| {
+        Error::refused(
+            "CPF3606",
+            format!("{ptf} is not a temporarily applied LIC PTF"),
+        )
+    })?;
     if st.pending.is_some() {
         return Err(Error::refused("CPF3601", "a LIC PTF waits for the IPL"));
     }
@@ -265,14 +275,21 @@ pub fn make_permanent(
     b: Option<&[u8]>,
     now: u64,
 ) -> Result<()> {
-    let s = st
-        .slot_of(ptf)
-        .ok_or_else(|| Error::refused("CPF3606", format!("{ptf} is not a temporarily applied LIC PTF")))?;
+    let s = st.slot_of(ptf).ok_or_else(|| {
+        Error::refused(
+            "CPF3606",
+            format!("{ptf} is not a temporarily applied LIC PTF"),
+        )
+    })?;
     if st.removing.as_ref().is_some_and(|(p, _)| p == ptf) {
-        return Err(Error::refused("CPF3601", format!("{ptf} waits to be removed")));
+        return Err(Error::refused(
+            "CPF3601",
+            format!("{ptf} waits to be removed"),
+        ));
     }
     let other = s.other();
-    esp.write(other, image_for(other, a, b)).map_err(|e| Error::NotPtf(format!("slot {}: {e}", letter(other))))?;
+    esp.write(other, image_for(other, a, b))
+        .map_err(|e| Error::NotPtf(format!("slot {}: {e}", letter(other))))?;
     st.temp.retain(|(p, _)| p != ptf);
     if let Some(r) = db.ptfs.get_mut(ptf) {
         r.status = Status::PermApplied;

@@ -72,11 +72,23 @@ fn trusted_keys(ctx: &Ctx) -> Result<Vec<u8>> {
         .to_bytes()
         .to_vec();
     if let Some(path) = std::env::var_os(TRUSTED_ENV) {
-        let text = fs::read_to_string(&path)
-            .with_context(|| format!("cannot read {TRUSTED_ENV}={}", PathBuf::from(&path).display()))?;
-        for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
-            let k = hex::decode(line).with_context(|| format!("{TRUSTED_ENV}: {line:?} is not hex"))?;
-            ensure!(k.len() == 32, "{TRUSTED_ENV}: {line:?} is not a 32-byte key");
+        let text = fs::read_to_string(&path).with_context(|| {
+            format!(
+                "cannot read {TRUSTED_ENV}={}",
+                PathBuf::from(&path).display()
+            )
+        })?;
+        for line in text
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        {
+            let k =
+                hex::decode(line).with_context(|| format!("{TRUSTED_ENV}: {line:?} is not hex"))?;
+            ensure!(
+                k.len() == 32,
+                "{TRUSTED_ENV}: {line:?} is not a 32-byte key"
+            );
             if !out.chunks(32).any(|c| c == k.as_slice()) {
                 out.extend_from_slice(&k);
             }

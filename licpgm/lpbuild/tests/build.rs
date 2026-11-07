@@ -96,7 +96,13 @@ fn check(id: &str, stream: &[u8], key: &SigningKey) -> usize {
         assert_ne!(o.descriptor.flags & savfmt::object::flags::SIGNED, 0);
         assert_eq!(sig.key_id, saverst::sign::key_id(&public));
         assert!(
-            saverst::sign::verify_saved(&public, &o.descriptor, &o.parts, &o.digest, &sig.signature),
+            saverst::sign::verify_saved(
+                &public,
+                &o.descriptor,
+                &o.parts,
+                &o.digest,
+                &sig.signature
+            ),
             "{id}: {} {} type {:#x}: bad signature",
             savfmt::text(&o.descriptor.library),
             savfmt::text(&o.descriptor.name),
@@ -110,7 +116,9 @@ fn check(id: &str, stream: &[u8], key: &SigningKey) -> usize {
 #[test]
 fn products_build_signed() {
     let key = SigningKey::from_bytes(&[42; 32]);
-    for id in ["QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV", "QS00PT1", "QS00RPG", "QS00AFW"] {
+    for id in [
+        "QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV", "QS00PT1", "QS00RPG", "QS00AFW",
+    ] {
         let b = lpbuild::build(&manifest(id), &key, NOW).unwrap();
         assert_eq!(b.product, id);
         let n = check(id, &b.stream, &key);

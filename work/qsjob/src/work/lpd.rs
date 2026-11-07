@@ -62,7 +62,10 @@ impl Spooler for Bridge {
 
     fn submit(&mut self, job: Job) -> Result<(), String> {
         let peer = self.peer.clone();
-        self.ask(|tx| Ask::Submit(job, peer, tx), Err("the LPD job is ending".into()))
+        self.ask(
+            |tx| Ask::Submit(job, peer, tx),
+            Err("the LPD job is ending".into()),
+        )
     }
 
     fn state(&mut self, queue: &str, long: bool, list: &[String]) -> String {
@@ -106,7 +109,8 @@ fn outq(link: &Shared, queue: &str) -> Option<String> {
     let ok = |n: &str| {
         (1..=10).contains(&n.len())
             && !n.starts_with(|c: char| c.is_ascii_digit())
-            && n.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '#' | '@' | '$' | '_' | '*'))
+            && n.chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '#' | '@' | '$' | '_' | '*'))
     };
     if !ok(&name) || !ok(&lib) {
         return None;
@@ -126,7 +130,8 @@ fn outq(link: &Shared, queue: &str) -> Option<String> {
 
 /// Spool every file of `job` onto its queue.
 fn submit(link: &Shared, job: &Job, peer: &str) -> Result<(), String> {
-    let q = outq(link, &job.queue).ok_or_else(|| format!("{} is not an output queue", job.queue))?;
+    let q =
+        outq(link, &job.queue).ok_or_else(|| format!("{} is not an output queue", job.queue))?;
     for s in lpd::convert::spooled(job) {
         let a = &s.attrs;
         let attrs = SplfAttrs {
@@ -155,9 +160,14 @@ fn submit(link: &Shared, job: &Job, peer: &str) -> Result<(), String> {
             ..SplfAttrs::default()
         };
         let id = link.borrow_mut().with(|l| l.splf_open(attrs))?;
-        link.borrow_mut().with(|l| l.splf_put(id, s.data.clone(), s.pages, s.records))?;
+        link.borrow_mut()
+            .with(|l| l.splf_put(id, s.data.clone(), s.pages, s.records))?;
         link.borrow_mut().with(|l| l.splf_close(id, false))?;
-        let from = if s.user.is_empty() { peer.to_string() } else { format!("{}@{peer}", s.user) };
+        let from = if s.user.is_empty() {
+            peer.to_string()
+        } else {
+            format!("{}@{peer}", s.user)
+        };
         netsvc::joblog(
             link,
             PGM,
@@ -198,7 +208,12 @@ fn answer(link: &Shared, ask: Ask) {
         Ask::Submit(job, peer, tx) => {
             let r = submit(link, &job, &peer);
             if let Err(e) = &r {
-                netsvc::joblog(link, PGM, msg::LPD_REFUSED, &format!("LPD job from {peer} not spooled: {e}."));
+                netsvc::joblog(
+                    link,
+                    PGM,
+                    msg::LPD_REFUSED,
+                    &format!("LPD job from {peer} not spooled: {e}."),
+                );
             }
             let _ = tx.send(r);
         }

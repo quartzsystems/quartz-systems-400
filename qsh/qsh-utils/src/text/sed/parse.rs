@@ -250,7 +250,10 @@ impl P<'_> {
         if start == self.i {
             return None;
         }
-        std::str::from_utf8(&self.s[start..self.i]).ok()?.parse().ok()
+        std::str::from_utf8(&self.s[start..self.i])
+            .ok()?
+            .parse()
+            .ok()
     }
 
     /// Read up to an unescaped `delim`; `\delim` becomes `delim`, `\n`

@@ -279,7 +279,12 @@ impl DisplaySource for DdsDisplay {
             .map_err(|_| IoFail::new(1299, "CPD9D08", &[format, &lib]))
     }
 
-    fn sfl_chain(&mut self, handle: u32, format: &str, rrn: u32) -> Result<Option<DisplayInput>, IoFail> {
+    fn sfl_chain(
+        &mut self,
+        handle: u32,
+        format: &str,
+        rrn: u32,
+    ) -> Result<Option<DisplayInput>, IoFail> {
         let open = self.open_file(handle, format)?;
         let lib = open.lib.clone();
         let got = open
@@ -289,7 +294,13 @@ impl DisplaySource for DdsDisplay {
         Ok(got.map(|i| sfl_input(format, i)))
     }
 
-    fn sfl_update(&mut self, handle: u32, format: &str, record: &[u8], indicators: &[u8]) -> Result<(), IoFail> {
+    fn sfl_update(
+        &mut self,
+        handle: u32,
+        format: &str,
+        record: &[u8],
+        indicators: &[u8],
+    ) -> Result<(), IoFail> {
         let open = self.open_file(handle, format)?;
         let lib = open.lib.clone();
         match open.rt.sfl_update(format, record, indicators) {

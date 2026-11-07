@@ -146,9 +146,17 @@ pub fn make_qtemp(system: &mut System, user: &str) -> Result<(ObjectId, u64), St
     let (store, _) = asp1(system)?;
     let owner = if user.is_empty() { "QSYS" } else { user };
     crate::svc::db::with_txn(store, |txn| {
-        let id = ops::create_temporary_root(txn, Name::parse("QTEMP").expect("valid"), owner, now_unix())
-            .map_err(|e| e.to_string())?;
-        let made = ops::read_header(txn, id).map_err(|e| e.to_string())?.1.created;
+        let id = ops::create_temporary_root(
+            txn,
+            Name::parse("QTEMP").expect("valid"),
+            owner,
+            now_unix(),
+        )
+        .map_err(|e| e.to_string())?;
+        let made = ops::read_header(txn, id)
+            .map_err(|e| e.to_string())?
+            .1
+            .created;
         Ok((id, made))
     })
 }
@@ -243,7 +251,11 @@ pub fn chgjob(
         super::security::may_control(&found.user, &found.qualified())?;
         found.number
     };
-    let user = system.jobs.get(number).map(|j| j.user.clone()).unwrap_or_default();
+    let user = system
+        .jobs
+        .get(number)
+        .map(|j| j.user.clone())
+        .unwrap_or_default();
     let resolved: Vec<(String, String)> = changes
         .iter()
         .map(|(kw, v)| (kw.clone(), national(system, &user, kw, v)))
@@ -297,7 +309,11 @@ pub fn apply_class(system: &mut System, attrs: &mut wm::job::JobAttrs, class: &s
 /// (`CCSID` -2 and -1).
 fn national(system: &mut System, user: &str, kw: &str, v: &str) -> String {
     let t = v.trim().to_ascii_uppercase();
-    let sysval = |system: &System, name: &str| super::security::sysval_text(system, name).trim().to_string();
+    let sysval = |system: &System, name: &str| {
+        super::security::sysval_text(system, name)
+            .trim()
+            .to_string()
+    };
     match (kw, t.as_str()) {
         ("CCSID", "-2" | "*SYSVAL") => sysval(system, "QCCSID"),
         ("CCSID", "-1" | "*USRPRF") => match user_dft(system, user).ccsid {
@@ -311,7 +327,14 @@ fn national(system: &mut System, user: &str, kw: &str, v: &str) -> String {
             let p = user_dft(system, user);
             let mine = if kw == "LANGID" { p.langid } else { p.cntryid };
             if mine.trim().is_empty() || mine.starts_with('*') {
-                sysval(system, if kw == "LANGID" { "QLANGID" } else { "QCNTRYID" })
+                sysval(
+                    system,
+                    if kw == "LANGID" {
+                        "QLANGID"
+                    } else {
+                        "QCNTRYID"
+                    },
+                )
             } else {
                 mine.trim().to_string()
             }
@@ -329,9 +352,10 @@ pub fn language_library(system: &mut System, langid: &str) -> Option<String> {
     }
     let lib = lang.library();
     let name = qsname::Name::parse(&lib).ok()?;
-    super::spool::with_store(system, |txn, qsys| Ok(store::obj::ops::find_library(txn, qsys, name).is_ok()))
-        .ok()
-        .filter(|found| *found)
-        .map(|_| lib)
+    super::spool::with_store(system, |txn, qsys| {
+        Ok(store::obj::ops::find_library(txn, qsys, name).is_ok())
+    })
+    .ok()
+    .filter(|found| *found)
+    .map(|_| lib)
 }
-

@@ -77,11 +77,19 @@ fn text_reply(text: String) -> CmdReply {
 
 // --- the user spaces in QUSRSYS
 
-fn space(txn: &mut Txn<'_>, qsys: ObjectId, obj: (&str, &str), create: bool) -> Result<Option<ObjectId>, String> {
+fn space(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    obj: (&str, &str),
+    create: bool,
+) -> Result<Option<ObjectId>, String> {
     let lib = wm::obj::library(txn, qsys, obj.0).map_err(|e| format!("CPF2110 {e}"))?;
     let name = qsname::Name::parse(obj.1).map_err(|e| e.to_string())?;
     let l = Library::load(txn, lib).map_err(|e| e.to_string())?;
-    if let Some(id) = l.lookup(txn, types::USRSPC, name).map_err(|e| e.to_string())? {
+    if let Some(id) = l
+        .lookup(txn, types::USRSPC, name)
+        .map_err(|e| e.to_string())?
+    {
         return Ok(Some(id));
     }
     if !create {
@@ -111,7 +119,8 @@ fn load_text(system: &mut System, obj: (&str, &str)) -> Result<String, String> {
         };
         let len = usrspc::read(txn, id, 0, 8).map_err(|e| e.to_string())?;
         let len = u64::from_be_bytes(len.try_into().map_err(|_| "short space")?);
-        let text = usrspc::read(txn, id, 8, usize::try_from(len).unwrap_or(0)).map_err(|e| e.to_string())?;
+        let text = usrspc::read(txn, id, 8, usize::try_from(len).unwrap_or(0))
+            .map_err(|e| e.to_string())?;
         Ok(String::from_utf8_lossy(&text).into_owned())
     })
 }
@@ -173,7 +182,14 @@ fn outcome(r: &CmdReply) -> (bool, String) {
         .unwrap_or("")
         .to_string();
     match &r.escape {
-        Some(e) => (false, if last.is_empty() { format!("{} ended", e.msgid) } else { last }),
+        Some(e) => (
+            false,
+            if last.is_empty() {
+                format!("{} ended", e.msgid)
+            } else {
+                last
+            },
+        ),
         None => (true, last),
     }
 }
@@ -193,26 +209,45 @@ fn chgclnup(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             return None;
         }
         match k {
-            "USRMSG" => parms.elems(k).first().copied().flatten().map(cmd::Value::source),
+            "USRMSG" => parms
+                .elems(k)
+                .first()
+                .copied()
+                .flatten()
+                .map(cmd::Value::source),
             "JOBQ" => {
                 let (n, l) = parms.qual(k);
-                Some(if l.is_empty() || n.starts_with('*') { n } else { format!("{l}/{n}") })
+                Some(if l.is_empty() || n.starts_with('*') {
+                    n
+                } else {
+                    format!("{l}/{n}")
+                })
             }
             _ => Some(parms.text(k)),
         }
     };
-    c.apply(get).map_err(|clnup::Bad(k, v)| format!("CPD0084 {k}({v}) is not valid"))?;
+    c.apply(get)
+        .map_err(|clnup::Bad(k, v)| format!("CPD0084 {k}({v}) is not valid"))?;
     store_text(system, clnup::OBJECT, &c.encode())?;
     if c.scheduled {
         schedule(system, &c)?;
     }
-    Ok(super::done(format!("{CLN_CHANGED} Cleanup options changed.\n"), CLN_CHANGED, &[]))
+    Ok(super::done(
+        format!("{CLN_CHANGED} Cleanup options changed.\n"),
+        CLN_CHANGED,
+        &[],
+    ))
 }
 
 /// The daily entry, replaced with the options' time and queue.
 fn schedule(system: &mut System, c: &Cleanup) -> Result<(), String> {
     let me = me(system);
-    let _ = crate::stgsvc::jobscd::command(system, me, "rmvjobscde", &format!("rmvjobscde JOB({})", clnup::SCHED_ENTRY));
+    let _ = crate::stgsvc::jobscd::command(
+        system,
+        me,
+        "rmvjobscde",
+        &format!("rmvjobscde JOB({})", clnup::SCHED_ENTRY),
+    );
     let Some(line) = c.sched_entry() else {
         // *SCDPWROFF: the cleanup runs when the power schedule ends the system.
         return Ok(());
@@ -224,7 +259,9 @@ fn strclnup(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     crate::stgsvc::security::require(SpecialAuth::JOBCTL, "start cleanup")?;
     let mut c = cleanup(system)?;
     if !c.allow {
-        return Err(format!("{CLN_NOT_ALLOWED} Cleanup is not allowed: CHGCLNUP ALWCLNUP(*YES) allows it."));
+        return Err(format!(
+            "{CLN_NOT_ALLOWED} Cleanup is not allowed: CHGCLNUP ALWCLNUP(*YES) allows it."
+        ));
     }
     if parms.name("OPTION") == "*IMMED" {
         let now = now_unix();
@@ -236,13 +273,20 @@ fn strclnup(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         let who = crate::stgsvc::msgs::sender(system, me(system));
         let data = wm::joblog::data(&[(&summary, 200)]);
         crate::stgsvc::hist::system_message(system, CLN_DONE, &data, "01", who);
-        return Ok(super::done(format!("{CLN_DONE} Cleanup ran: {summary}.\n"), CLN_DONE, &[(&summary, 200)]));
+        return Ok(super::done(
+            format!("{CLN_DONE} Cleanup ran: {summary}.\n"),
+            CLN_DONE,
+            &[(&summary, 200)],
+        ));
     }
     schedule(system, &c).map_err(|e| format!("{CLN_NOT_STARTED} {e}"))?;
     c.scheduled = true;
     store_text(system, clnup::OBJECT, &c.encode())?;
     Ok(super::done(
-        format!("{CLN_SCHEDULED} Cleanup scheduled daily at {}.\n", c.strtime),
+        format!(
+            "{CLN_SCHEDULED} Cleanup scheduled daily at {}.\n",
+            c.strtime
+        ),
         CLN_SCHEDULED,
         &[(&c.strtime, 10)],
     ))
@@ -252,10 +296,19 @@ fn endclnup(system: &mut System) -> Result<CmdReply, String> {
     crate::stgsvc::security::require(SpecialAuth::JOBCTL, "end cleanup")?;
     let mut c = cleanup(system)?;
     let me = me(system);
-    let _ = crate::stgsvc::jobscd::command(system, me, "rmvjobscde", &format!("rmvjobscde JOB({})", clnup::SCHED_ENTRY));
+    let _ = crate::stgsvc::jobscd::command(
+        system,
+        me,
+        "rmvjobscde",
+        &format!("rmvjobscde JOB({})", clnup::SCHED_ENTRY),
+    );
     c.scheduled = false;
     store_text(system, clnup::OBJECT, &c.encode())?;
-    Ok(super::done(format!("{CLN_ENDED} Cleanup ended.\n"), CLN_ENDED, &[]))
+    Ok(super::done(
+        format!("{CLN_ENDED} Cleanup ended.\n"),
+        CLN_ENDED,
+        &[],
+    ))
 }
 
 /// `yyddd` of a history file name to Unix seconds.
@@ -274,8 +327,18 @@ pub fn run_cleanup(system: &mut System, c: &Cleanup, now: u64) -> Removed {
         .spool
         .files
         .values()
-        .filter(|e| matches!(e.attrs.outq.as_str(), "QUSRSYS/QEZJOBLOG" | "QUSRSYS/QEZDEBUG"))
-        .filter(|e| !matches!(e.attrs.status, wm::obj::splf::Status::Opn | wm::obj::splf::Status::Wtr))
+        .filter(|e| {
+            matches!(
+                e.attrs.outq.as_str(),
+                "QUSRSYS/QEZJOBLOG" | "QUSRSYS/QEZDEBUG"
+            )
+        })
+        .filter(|e| {
+            !matches!(
+                e.attrs.status,
+                wm::obj::splf::Status::Opn | wm::obj::splf::Status::Wtr
+            )
+        })
         .filter(|e| c.sysprt.expired(e.attrs.created / 1_000_000, now))
         .map(|e| e.attrs.id)
         .collect();
@@ -302,7 +365,9 @@ pub fn run_cleanup(system: &mut System, c: &Cleanup, now: u64) -> Removed {
             .map_err(|e| e.to_string())?
             .into_iter()
             .map(|(k, id)| (k.name.to_string(), id))
-            .filter(|(n, _)| n.len() == 10 && n.starts_with("QHST") && n[4..].bytes().all(|b| b.is_ascii_digit()))
+            .filter(|(n, _)| {
+                n.len() == 10 && n.starts_with("QHST") && n[4..].bytes().all(|b| b.is_ascii_digit())
+            })
             .collect();
         hist.sort();
         // The newest file is the one being written.
@@ -316,7 +381,13 @@ pub fn run_cleanup(system: &mut System, c: &Cleanup, now: u64) -> Removed {
             }
         }
         let mut rcvs = 0;
-        for (_, jid) in ops::list(txn, qsys, Some(types::type_by_name("*JRN").map_or(0x0018, |t| t.code))).map_err(|e| e.to_string())? {
+        for (_, jid) in ops::list(
+            txn,
+            qsys,
+            Some(types::type_by_name("*JRN").map_or(0x0018, |t| t.code)),
+        )
+        .map_err(|e| e.to_string())?
+        {
             let Ok(j) = jrn::Journal::load(txn, jid) else {
                 continue;
             };
@@ -324,7 +395,10 @@ pub fn run_cleanup(system: &mut System, c: &Cleanup, now: u64) -> Removed {
                 let Ok(rcv) = jrn::Receiver::load(txn, d.receiver) else {
                     continue;
                 };
-                let detached = matches!(rcv.attr.status, jrn::RcvStatus::Online | jrn::RcvStatus::Saved);
+                let detached = matches!(
+                    rcv.attr.status,
+                    jrn::RcvStatus::Online | jrn::RcvStatus::Saved
+                );
                 if detached
                     && rcv.attr.detached != 0
                     && keep.expired(rcv.attr.detached, now)
@@ -365,7 +439,6 @@ pub fn run_cleanup(system: &mut System, c: &Cleanup, now: u64) -> Removed {
     r
 }
 
-
 /// Messages past keeping removed: (user, system and workstation).
 fn clean_messages(system: &mut System, c: &Cleanup, now: u64) -> (usize, usize) {
     let mut r = (0, 0);
@@ -392,7 +465,14 @@ fn clean_messages(system: &mut System, c: &Cleanup, now: u64) -> (usize, usize) 
             let before = q.msgs.len();
             q.msgs.retain(|m| {
                 let unanswered = m.status == MsgStatus::Unanswered;
-                !clnup::message_expired(c, system_q, m.severity, unanswered, m.time / 1_000_000, now)
+                !clnup::message_expired(
+                    c,
+                    system_q,
+                    m.severity,
+                    unanswered,
+                    m.time / 1_000_000,
+                    now,
+                )
             });
             let gone = before - q.msgs.len();
             Ok((gone, gone > 0))
@@ -441,7 +521,11 @@ fn chgbckup(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         match k {
             "DEV" | "TAPSET" => {
                 let v = items(parms, k);
-                Some(if v.eq_ignore_ascii_case("*NONE") { String::new() } else { v })
+                Some(if v.eq_ignore_ascii_case("*NONE") {
+                    String::new()
+                } else {
+                    v
+                })
             }
             "EXITPGM" => {
                 let (n, l) = parms.qual(k);
@@ -452,14 +536,19 @@ fn chgbckup(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     };
     // DEV(*NONE) clears the devices.
     let clear_dev = parms.specified("DEV") && items(parms, "DEV").eq_ignore_ascii_case("*NONE");
-    b.apply(&ws, get).map_err(|bckup::Bad(k, v)| format!("CPD0084 {k}({v}) is not valid"))?;
+    b.apply(&ws, get)
+        .map_err(|bckup::Bad(k, v)| format!("CPD0084 {k}({v}) is not valid"))?;
     if clear_dev {
         for w in &ws {
             b.of_mut(*w).dev.clear();
         }
     }
     store_text(system, bckup::OBJECT, &b.encode())?;
-    Ok(super::done(format!("{BCK_CHANGED} Backup options changed.\n"), BCK_CHANGED, &[]))
+    Ok(super::done(
+        format!("{BCK_CHANGED} Backup options changed.\n"),
+        BCK_CHANGED,
+        &[],
+    ))
 }
 
 /// The date of a Unix time, `MM/DD/YY`; blank for never.
@@ -491,7 +580,10 @@ fn backup_fields(b: &Backup, w: Which) -> Vec<(String, String)> {
         ("EXITPGM".into(), o.exitpgm.clone()),
     ];
     for i in 0..7 {
-        v.push((format!("TAPSET{}", i + 1), o.tapset.get(i).cloned().unwrap_or_default()));
+        v.push((
+            format!("TAPSET{}", i + 1),
+            o.tapset.get(i).cloned().unwrap_or_default(),
+        ));
     }
     v
 }
@@ -522,7 +614,8 @@ fn dspbckup(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     }
     if parms.name("OUTPUT") == "*PRINT" {
         let lines: Vec<String> = out.lines().map(str::to_string).collect();
-        return crate::svc::security::print_as(system, "QPEZBCKUP", "DSPBCKUP", &lines, false).map(text_reply);
+        return crate::svc::security::print_as(system, "QPEZBCKUP", "DSPBCKUP", &lines, false)
+            .map(text_reply);
     }
     Ok(text_reply(out))
 }
@@ -566,7 +659,15 @@ pub(crate) fn backup_status(system: &mut System) -> Result<BackupStatus, String>
     let items = bhist::ITEMS
         .iter()
         .map(|it| match last.get(it).and_then(|&i| h.runs.get(i)) {
-            Some(r) => (*it, date(r.started).0, if r.tapset == "*NONE" { String::new() } else { r.tapset.clone() }),
+            Some(r) => (
+                *it,
+                date(r.started).0,
+                if r.tapset == "*NONE" {
+                    String::new()
+                } else {
+                    r.tapset.clone()
+                },
+            ),
             None => (*it, String::new(), String::new()),
         })
         .collect();
@@ -584,7 +685,12 @@ pub(crate) fn backup_status(system: &mut System) -> Result<BackupStatus, String>
                 tapset: r.tapset.clone(),
                 ok: r.ok,
                 changes: r.steps.contains("SAVCHGOBJ"),
-                steps: r.steps.split(';').filter(|s| !s.is_empty()).map(str::to_string).collect(),
+                steps: r
+                    .steps
+                    .split(';')
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+                    .collect(),
             }
         })
         .collect();
@@ -610,7 +716,10 @@ const ITEM_TEXT: [&str; 13] = [
 
 fn dspbcksts(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let s = backup_status(system)?;
-    let mut lines = vec![format!("{:<44}{:<15}{}", "What was backed up", "Last backup", "Tape set")];
+    let mut lines = vec![format!(
+        "{:<44}{:<15}{}",
+        "What was backed up", "Last backup", "Tape set"
+    )];
     for ((_, d, t), what) in s.items.iter().zip(ITEM_TEXT) {
         lines.push(format!("{what:<44}{d:<15}{t}"));
     }
@@ -627,14 +736,19 @@ fn dspbcksts(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             r.option,
             r.dev,
             r.tapset,
-            if r.ok { "Completed" } else { "Ended with errors" }
+            if r.ok {
+                "Completed"
+            } else {
+                "Ended with errors"
+            }
         ));
         for st in &r.steps {
             lines.push(format!("      {st}"));
         }
     }
     if parms.name("OUTPUT") == "*PRINT" {
-        return crate::svc::security::print_as(system, "QPEZBCKUP", "DSPBCKSTS", &lines, false).map(text_reply);
+        return crate::svc::security::print_as(system, "QPEZBCKUP", "DSPBCKSTS", &lines, false)
+            .map(text_reply);
     }
     Ok(text_reply(lines.join("\n") + "\n"))
 }
@@ -689,7 +803,11 @@ fn plan(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let yn = |b: bool| if b { 'Y' } else { 'N' };
     let mut out = format!(
         "DEV {dev} TAPSET {} RESTRICTED {} SBMJOB {} IPL {} CTL {}\n",
-        if o.tapset.is_empty() { "*NONE".into() } else { o.next_tapset() },
+        if o.tapset.is_empty() {
+            "*NONE".into()
+        } else {
+            o.next_tapset()
+        },
         yn(system.sbs.is_empty()),
         yn(o.sbmjob),
         yn(o.ipl_after),
@@ -710,7 +828,10 @@ fn done(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let steps: Vec<&str> = fields.collect();
     let now = now_unix();
     let mut h = History::decode(&load_text(system, bhist::OBJECT)?);
-    let started = steps.first().and_then(|s| s.parse::<u64>().ok()).unwrap_or(now);
+    let started = steps
+        .first()
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(now);
     h.add(Run {
         option: opt.clone(),
         started,
@@ -734,9 +855,15 @@ fn done(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let data = wm::joblog::data(&[(&opt, 10)]);
     crate::stgsvc::hist::system_message(system, id, &data, if ok { "01" } else { "15" }, who);
     if ok {
-        Ok(super::done(format!("{id} Backup {opt} completed.\n"), id, &[(&opt, 10)]))
+        Ok(super::done(
+            format!("{id} Backup {opt} completed.\n"),
+            id,
+            &[(&opt, 10)],
+        ))
     } else {
-        Err(format!("{id} Backup {opt} ended; one or more saves failed."))
+        Err(format!(
+            "{id} Backup {opt} ended; one or more saves failed."
+        ))
     }
 }
 
@@ -767,7 +894,10 @@ fn prtsysinf(system: &mut System) -> Result<CmdReply, String> {
     crate::stgsvc::security::require(SpecialAuth::ALLOBJ, "print the system information")?;
     let mut lines: Vec<String> = Vec::new();
     let (d, t) = wm::joblog::stamp_of(now_unix().saturating_mul(1_000_000));
-    lines.push(format!("System information for {}    {d} {t}", system.system_name()));
+    lines.push(format!(
+        "System information for {}    {d} {t}",
+        system.system_name()
+    ));
     lines.push(String::new());
     let sections: [(&str, &str); 7] = [
         ("System values", "WRKSYSVAL OUTPUT(*PRINT)"),

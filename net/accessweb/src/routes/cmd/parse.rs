@@ -59,8 +59,15 @@ pub fn parse(s: &str) -> Parsed {
         .map(|word| {
             let open = word.find('(');
             match open {
-                Some(i) if i > 0 && word.ends_with(')') && word[..i].chars().all(|c| c.is_ascii_alphanumeric()) => {
-                    (Some(word[..i].to_ascii_uppercase()), word[i + 1..word.len() - 1].to_string())
+                Some(i)
+                    if i > 0
+                        && word.ends_with(')')
+                        && word[..i].chars().all(|c| c.is_ascii_alphanumeric()) =>
+                {
+                    (
+                        Some(word[..i].to_ascii_uppercase()),
+                        word[i + 1..word.len() - 1].to_string(),
+                    )
                 }
                 _ => (None, word),
             }
@@ -85,9 +92,15 @@ mod tests {
         assert_eq!(p.values[0], (Some("SBS".into()), "QHTTPSVR QBATCH".into()));
         assert_eq!(elements(&p.values[0].1), ["QHTTPSVR", "QBATCH"]);
         let p = parse("SBMJOB CMD(CALL PGM(A/B) PARM('x y')) JOB(J)");
-        assert_eq!(p.values[0], (Some("CMD".into()), "CALL PGM(A/B) PARM('x y')".into()));
+        assert_eq!(
+            p.values[0],
+            (Some("CMD".into()), "CALL PGM(A/B) PARM('x y')".into())
+        );
         let p = parse("DSPMSG QSYSOPR");
         assert_eq!(p.values, [(None, "QSYSOPR".to_string())]);
-        assert_eq!(words("SNDMSG MSG('a ( b') TOUSR(X)"), ["SNDMSG", "MSG('a ( b')", "TOUSR(X)"]);
+        assert_eq!(
+            words("SNDMSG MSG('a ( b') TOUSR(X)"),
+            ["SNDMSG", "MSG('a ( b')", "TOUSR(X)"]
+        );
     }
 }

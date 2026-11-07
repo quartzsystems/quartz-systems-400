@@ -44,7 +44,12 @@ fn system(seed: u64, objs: &[(&str, &str)]) -> (Store, ObjectId) {
         wal_pages: 256,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let p = |lib, n: &str, ty| CreateParams {
@@ -112,7 +117,9 @@ fn make(ptf: &str, obj: &str, value: &str, prereqs: &[&str], kind: PtfKind) -> V
 
 fn value(s: &mut Store, q: ObjectId, obj: &str) -> String {
     let mut t = s.begin().unwrap();
-    let l = ops::find_library(&mut t, q, Name::parse("QSVCLIB").unwrap()).unwrap().id;
+    let l = ops::find_library(&mut t, q, Name::parse("QSVCLIB").unwrap())
+        .unwrap()
+        .id;
     let id = store::obj::library::Library::load(&mut t, l)
         .unwrap()
         .lookup(&mut t, types::DTAARA, Name::parse(obj).unwrap())

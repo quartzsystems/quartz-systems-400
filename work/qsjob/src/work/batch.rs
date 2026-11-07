@@ -96,10 +96,15 @@ fn startup(c: &mut Console, link: &Shared) -> u16 {
             severity: 20,
             msgid: STARTUP_FAILED.into(),
             msgf: ("QCPFMSG".into(), "QSYS".into()),
-            text: format!("Startup program {lib}/{pgm} did not run to its end; see the job log of this job."),
+            text: format!(
+                "Startup program {lib}/{pgm} did not run to its end; see the job log of this job."
+            ),
             ..wm::obj::msgq::QMsg::default()
         };
-        if let Err(e) = link.borrow_mut().with(|l| stg::Client::msgq_send(l, "*SYSOPR".into(), m)) {
+        if let Err(e) = link
+            .borrow_mut()
+            .with(|l| stg::Client::msgq_send(l, "*SYSOPR".into(), m))
+        {
             eprintln!("qsjob: QSYSOPR: {e}");
         }
     }
@@ -113,7 +118,11 @@ const STARTUP_FAILED: &str = "CPI0915";
 /// The end code of a run: 20 when it ended in an escape (the analyzer
 /// refused it, the program could not be called or left one).
 fn ended(o: &crate::command::Outcome) -> u16 {
-    if o.escape.is_some() { 20 } else { end_code(&o.text) }
+    if o.escape.is_some() {
+        20
+    } else {
+        end_code(&o.text)
+    }
 }
 
 /// The end code a run's output implies: 20 when the program could not

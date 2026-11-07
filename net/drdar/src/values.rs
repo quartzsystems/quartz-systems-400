@@ -33,5 +33,10 @@ pub fn sqlca(c: &ddm::sql::Sqlca) -> sql::Sqlca {
 /// An SQLCA of `code` and `state`, the message tokens `what`.
 #[must_use]
 pub fn coded(code: i32, state: &str, what: &str) -> sql::Sqlca {
-    sql::Sqlca { sqlcode: code, sqlstate: state.into(), sqlerrmc: what.into(), ..sql::Sqlca::default() }
+    sql::Sqlca {
+        sqlcode: code,
+        sqlstate: state.into(),
+        sqlerrmc: what.into(),
+        ..sql::Sqlca::default()
+    }
 }

@@ -105,7 +105,9 @@ impl DataConn for MemData {
     fn finish(&mut self) -> io::Result<()> {
         if !self.done {
             self.done = true;
-            self.sent.borrow_mut().push(std::mem::take(&mut self.output));
+            self.sent
+                .borrow_mut()
+                .push(std::mem::take(&mut self.output));
         }
         Ok(())
     }

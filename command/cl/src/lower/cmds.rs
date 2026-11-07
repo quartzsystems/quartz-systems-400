@@ -781,12 +781,17 @@ impl Gen<'_, '_> {
             Some(Value::Char(t)) => t,
             _ => "*INFO".into(),
         };
-        let spec = |k: &str| r.get(k).filter(|b| b.specified).and_then(|b| b.value.clone());
+        let spec = |k: &str| {
+            r.get(k)
+                .filter(|b| b.specified)
+                .and_then(|b| b.value.clone())
+        };
         // `TOUSR`: a profile's queue in QUSRSYS, the operator's, the
         // requester's (decided when it runs: the external queue of an
         // interactive job, else QSYSOPR) or every signed-on user's.
         if let Some(u) = spec("TOUSR") {
-            let qual = |n: &str, l: &str| Value::Qual(vec![Value::Char(n.into()), Value::Char(l.into())]);
+            let qual =
+                |n: &str, l: &str| Value::Qual(vec![Value::Char(n.into()), Value::Char(l.into())]);
             let q = match u.source().as_str() {
                 "*SYSOPR" | "QSYSOPR" => qual("QSYSOPR", "QSYS"),
                 s @ ("*REQUESTER" | "*ALLACT") => qual(s, ""),
@@ -813,7 +818,11 @@ impl Gen<'_, '_> {
                 // it is taken from (`*` the program itself).
                 let (rel, entry) = match get("TOPGMQ") {
                     Some(Value::Elems(items)) => (
-                        items.first().cloned().flatten().map_or_else(|| "*PRV".into(), |v| v.source()),
+                        items
+                            .first()
+                            .cloned()
+                            .flatten()
+                            .map_or_else(|| "*PRV".into(), |v| v.source()),
                         items.get(1).cloned().flatten(),
                     ),
                     Some(v) => (v.source(), None),
@@ -945,7 +954,9 @@ impl Gen<'_, '_> {
             _ => self.chars(20, &qstr("*PGMQ")),
         };
         let key = self.chars(4, &qstr(""));
-        self.ins(&format!("call QSYS/QCLSNDM({id}, {f}, {d}, {len}, {t}, {q}, {count}, {rpy}, {key})"));
+        self.ins(&format!(
+            "call QSYS/QCLSNDM({id}, {f}, {d}, {len}, {t}, {q}, {count}, {rpy}, {key})"
+        ));
         if let Some(Value::Var(v)) = get("KEYVAR") {
             self.ins(&format!("mov ${v}, {key}"));
         }
@@ -978,7 +989,9 @@ impl Gen<'_, '_> {
         let counter = int(self, if rel == "*PRV" { "1" } else { "0" });
         let key = self.chars(4, &qstr(""));
         let errc = int(self, "0");
-        self.ins(&format!("call QSYS/QMHSNDPM({id}, {f}, {d}, {len}, {t}, {e}, {counter}, {key}, {errc})"));
+        self.ins(&format!(
+            "call QSYS/QMHSNDPM({id}, {f}, {d}, {len}, {t}, {e}, {counter}, {key}, {errc})"
+        ));
         if let Some(Value::Var(v)) = r.get("KEYVAR").and_then(|b| b.value.clone()) {
             self.ins(&format!("mov ${v}, {key}"));
         }
@@ -1096,9 +1109,15 @@ impl Gen<'_, '_> {
                 continue;
             };
             match (numeric, t) {
-                (true, VarType::Dec | VarType::Int | VarType::Uint) => self.ins(&format!("dec.mov {place}, {from}")),
+                (true, VarType::Dec | VarType::Int | VarType::Uint) => {
+                    self.ins(&format!("dec.mov {place}, {from}"))
+                }
                 (false, VarType::Char) => self.ins(&format!("mov {place}, {from}")),
-                _ => self.err(s.line, ids::TYPE_MISMATCH, format!("&{v} has the wrong type for {kw}")),
+                _ => self.err(
+                    s.line,
+                    ids::TYPE_MISMATCH,
+                    format!("&{v} has the wrong type for {kw}"),
+                ),
             }
         }
     }
@@ -1140,7 +1159,10 @@ impl Gen<'_, '_> {
             let e = self.chars(10, &qstr(&e));
             let counter = int(self, if pgmq == "*PRV" { "1" } else { "0" });
             let (key, which) = match get("MSGKEY") {
-                Some(Value::Var(k)) => (self.chars(4, &format!("${k}")), self.chars(10, &qstr("*BYKEY"))),
+                Some(Value::Var(k)) => (
+                    self.chars(4, &format!("${k}")),
+                    self.chars(10, &qstr("*BYKEY")),
+                ),
                 _ => {
                     let clear = match get("CLEAR") {
                         Some(Value::Char(c)) => c,
@@ -1150,7 +1172,9 @@ impl Gen<'_, '_> {
                 }
             };
             let errc = int(self, "0");
-            self.ins(&format!("call QSYS/QMHRMVPM({e}, {counter}, {key}, {which}, {errc})"));
+            self.ins(&format!(
+                "call QSYS/QMHRMVPM({e}, {counter}, {key}, {which}, {errc})"
+            ));
             return;
         }
         match get("MSGKEY") {

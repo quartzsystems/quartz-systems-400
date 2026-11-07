@@ -155,7 +155,12 @@ fn product_directory_states_match_the_spec() {
     let rows: Vec<(String, String, bool)> = section
         .lines()
         .filter_map(|l| {
-            let cells: Vec<&str> = l.trim().trim_matches('|').split('|').map(str::trim).collect();
+            let cells: Vec<&str> = l
+                .trim()
+                .trim_matches('|')
+                .split('|')
+                .map(str::trim)
+                .collect();
             (cells.len() == 4 && cells[0].len() == 2 && cells[0] != "--").then(|| {
                 (
                     cells[0].to_string(),

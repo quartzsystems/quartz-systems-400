@@ -33,7 +33,11 @@ fn ctx(stamp: &wm::obj::Stamp) -> msgf::store::Ctx {
 }
 
 /// `QSYS2924` when absent; how many objects were made.
-pub fn install_primary(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Result<usize, String> {
+pub fn install_primary(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    stamp: &wm::obj::Stamp,
+) -> Result<usize, String> {
     let lib = format!("QSYS{}", ccsid::nls::PRIMARY);
     msgf::store::ensure_library(txn, &ctx(stamp), qsys, &lib, &text("TXT0201"))
         .map(|(_, made)| usize::from(made))
@@ -51,7 +55,8 @@ pub fn install_language(
     replace: bool,
 ) -> Result<(String, usize), String> {
     let lang = msgf::nls::language(feature).ok_or_else(|| format!("TXT0203\t{feature}"))?;
-    let (lib, made) = msgf::store::install_language(txn, &ctx(stamp), qsys, &lang, replace).map_err(|e| e.to_string())?;
+    let (lib, made) = msgf::store::install_language(txn, &ctx(stamp), qsys, &lang, replace)
+        .map_err(|e| e.to_string())?;
     let mut n = made.len();
     for name in DISPLAY_FILES {
         let Some((_, dds)) = dspf::sys::FILES.iter().find(|(f, _)| f == name) else {
@@ -65,7 +70,8 @@ pub fn install_language(
             continue;
         }
         if let Some(id) = found {
-            store::obj::ops::delete(txn, store::obj::JobHandle(0), id).map_err(|e| e.to_string())?;
+            store::obj::ops::delete(txn, store::obj::JobHandle(0), id)
+                .map_err(|e| e.to_string())?;
         }
         let (src, _) = dspf::Source::from_text(&lang.translate_dds(dds));
         let (payload, _, _) = compile(&src, &dspf::MapRefs::default(), name)?;

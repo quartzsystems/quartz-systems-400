@@ -122,9 +122,11 @@ fn unpack(b: &[u8], scale: u32) -> String {
 
 fn numeric(sql_type: &str) -> bool {
     let t = sql_type.to_ascii_uppercase();
-    ["INT", "DEC", "NUMERIC", "FLOAT", "DOUBLE", "REAL", "BIGINT", "SMALLINT"]
-        .iter()
-        .any(|k| t.contains(k))
+    [
+        "INT", "DEC", "NUMERIC", "FLOAT", "DOUBLE", "REAL", "BIGINT", "SMALLINT",
+    ]
+    .iter()
+    .any(|k| t.contains(k))
 }
 
 fn rdata(d: &sockets::resolver::codec::Rdata) -> String {
@@ -232,7 +234,12 @@ impl Side for JobSide<'_> {
         })
     }
 
-    fn call_program(&mut self, lib: &str, pgm: &str, args: &[String]) -> Result<ProgramRun, SysError> {
+    fn call_program(
+        &mut self,
+        lib: &str,
+        pgm: &str,
+        args: &[String],
+    ) -> Result<ProgramRun, SysError> {
         let parms: Vec<String> = args
             .iter()
             .map(|a| format!("'{}'", a.replace('\'', "''")))
@@ -266,10 +273,7 @@ impl Side for JobSide<'_> {
                 pid: i32::try_from(j.pid).unwrap_or(0),
                 ppid: 1,
                 pgid: i32::try_from(j.pid).unwrap_or(0),
-                uid: ids
-                    .iter()
-                    .find(|i| i.name == j.user)
-                    .map_or(0, |i| i.uid),
+                uid: ids.iter().find(|i| i.name == j.user).map_or(0, |i| i.uid),
                 job: j.qualified(),
                 status: j.job_status().code().to_string(),
                 function: j.function.clone(),
@@ -407,7 +411,8 @@ impl Side for JobSide<'_> {
                 value: ccsid::from_ebcdic(&b),
             });
         }
-        let (lib, obj) = super::object_of(&up, ".DTAARA").ok_or_else(|| SysError::new(Errno::EINVAL))?;
+        let (lib, obj) =
+            super::object_of(&up, ".DTAARA").ok_or_else(|| SysError::new(Errno::EINVAL))?;
         let v = self
             .host
             .link

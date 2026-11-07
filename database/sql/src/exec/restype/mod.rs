@@ -42,7 +42,15 @@ impl SqlType {
     /// A type that is never null.
     #[must_use]
     pub fn not_null(t: DataType) -> Self {
-        Self { spec: TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }, nullable: false }
+        Self {
+            spec: TypeSpec {
+                data_type: t,
+                ccsid: None,
+                bit_data: false,
+                udt: None,
+            },
+            nullable: false,
+        }
     }
 
     /// The data type.
@@ -92,13 +100,19 @@ impl<'a> Scope<'a> {
     /// The scope of one row's columns.
     #[must_use]
     pub fn of(schema: &'a Schema) -> Self {
-        Self { frames: vec![schema], ..Self::default() }
+        Self {
+            frames: vec![schema],
+            ..Self::default()
+        }
     }
 
     /// The scope of an environment's frames.
     #[must_use]
     pub fn of_env(env: &'a super::eval::Env) -> Self {
-        Self { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect(), ..Self::default() }
+        Self {
+            frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect(),
+            ..Self::default()
+        }
     }
 
     /// A column's type: `Ok(None)` when it is found without a type or not
@@ -112,16 +126,25 @@ impl<'a> Scope<'a> {
             };
             if let Some(i) = found {
                 let col = &s.cols[i];
-                return Ok(col.field.as_ref().map(|f| of_field(f).or_null(col.nullable)));
+                return Ok(col
+                    .field
+                    .as_ref()
+                    .map(|f| of_field(f).or_null(col.nullable)));
             }
         }
-        Ok(self.variables.iter().find(|(q, n, _)| q.as_deref() == table && n == name).map(|(_, _, t)| t.clone()))
+        Ok(self
+            .variables
+            .iter()
+            .find(|(q, n, _)| q.as_deref() == table && n == name)
+            .map(|(_, _, t)| t.clone()))
     }
 
     /// Whether a column of that name is in scope.
     #[must_use]
     pub fn has(&self, table: Option<&str>, name: &str) -> bool {
-        self.frames.iter().any(|s| !matches!(s.find(table, name), Ok(None)))
+        self.frames
+            .iter()
+            .any(|s| !matches!(s.find(table, name), Ok(None)))
     }
 }
 
@@ -155,9 +178,16 @@ pub fn of_field(f: &FieldDef) -> SqlType {
         D::Clob => DataType::Clob(len),
         D::Dbclob => DataType::Dbclob(len),
     };
-    let ccsid = f.ccsid.filter(|c| *c != 65535 || !matches!(f.data_type, D::Bytes | D::Blob));
+    let ccsid = f
+        .ccsid
+        .filter(|c| *c != 65535 || !matches!(f.data_type, D::Bytes | D::Blob));
     SqlType {
-        spec: TypeSpec { data_type: t, bit_data: ccsid == Some(65535), ccsid: ccsid.filter(|c| *c != 65535), udt: f.udt.clone() },
+        spec: TypeSpec {
+            data_type: t,
+            bit_data: ccsid == Some(65535),
+            ccsid: ccsid.filter(|c| *c != 65535),
+            udt: f.udt.clone(),
+        },
         nullable: f.allow_null,
     }
 }
@@ -195,7 +225,10 @@ pub fn field_of(t: &SqlType) -> FieldDef {
     f.varlen = var;
     f.allow_null = t.nullable;
     f.udt.clone_from(&t.spec.udt);
-    f.int_range = matches!(t.data_type(), DataType::SmallInt | DataType::Integer | DataType::BigInt);
+    f.int_range = matches!(
+        t.data_type(),
+        DataType::SmallInt | DataType::Integer | DataType::BigInt
+    );
     match t.data_type() {
         DataType::Real => {
             f.precision = FloatPrecision::Single;
@@ -226,10 +259,15 @@ fn number_literal(n: &str) -> Option<DataType> {
         return Some(DataType::Double);
     }
     let (int, frac) = n.split_once('.').unwrap_or((n, ""));
-    if frac.is_empty() && !n.contains('.')
+    if frac.is_empty()
+        && !n.contains('.')
         && let Ok(v) = int.parse::<i64>()
     {
-        return Some(if i32::try_from(v).is_ok() { DataType::Integer } else { DataType::BigInt });
+        return Some(if i32::try_from(v).is_ok() {
+            DataType::Integer
+        } else {
+            DataType::BigInt
+        });
     }
     let p = u8::try_from(int.len() + frac.len()).ok()?.max(1);
     Some(DataType::Decimal(p, u8::try_from(frac.len()).ok()?))
@@ -247,17 +285,26 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
     let nn = |t: DataType| Ok(Some(SqlType::not_null(t)));
     match e {
         Expr::Literal(l) => match l {
-            Literal::Str(s) => nn(DataType::Varchar(u32::try_from(s.chars().count()).unwrap_or(u32::MAX))),
-            Literal::Hex(h) => nn(DataType::Varchar(u32::try_from(h.len()).unwrap_or(u32::MAX))),
-            Literal::Bin(b) => nn(DataType::Varbinary(u32::try_from(b.len()).unwrap_or(u32::MAX))),
+            Literal::Str(s) => nn(DataType::Varchar(
+                u32::try_from(s.chars().count()).unwrap_or(u32::MAX),
+            )),
+            Literal::Hex(h) => nn(DataType::Varchar(
+                u32::try_from(h.len()).unwrap_or(u32::MAX),
+            )),
+            Literal::Bin(b) => nn(DataType::Varbinary(
+                u32::try_from(b.len()).unwrap_or(u32::MAX),
+            )),
             Literal::Bool(_) => nn(DataType::Boolean),
             Literal::Num(n) => Ok(number_literal(n).map(SqlType::not_null)),
             Literal::Null => Ok(None),
             Literal::Date(_) => nn(DataType::Date),
             Literal::Time(_) => nn(DataType::Time),
-            Literal::Timestamp(s) => Ok(crate::value::Timestamp::parse(s).map(|t| SqlType::not_null(DataType::Timestamp(t.precision)))),
+            Literal::Timestamp(s) => Ok(crate::value::Timestamp::parse(s)
+                .map(|t| SqlType::not_null(DataType::Timestamp(t.precision)))),
         },
-        Expr::Column(c) => scope.column(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value),
+        Expr::Column(c) => {
+            scope.column(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)
+        }
         Expr::Default => scope.column(None, "DEFAULT"),
         Expr::Register(r) => match r {
             Register::Date => nn(DataType::Date),
@@ -273,16 +320,30 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
             let inner = type_in(a, scope)?;
             let mut spec = super::udt::typing::cast(inner.as_ref(), t)?;
             if let Some(i) = &inner {
-                check_cast(&SqlType { spec: TypeSpec { udt: None, ..i.spec.clone() }, nullable: i.nullable }, &spec)?;
+                check_cast(
+                    &SqlType {
+                        spec: TypeSpec {
+                            udt: None,
+                            ..i.spec.clone()
+                        },
+                        nullable: i.nullable,
+                    },
+                    &spec,
+                )?;
                 // Binary data cast to a character type is bit data.
-                if unify::is_binary(i.data_type()) && matches!(t.data_type, DataType::Char(_) | DataType::Varchar(_)) {
+                if unify::is_binary(i.data_type())
+                    && matches!(t.data_type, DataType::Char(_) | DataType::Varchar(_))
+                {
                     spec.bit_data = true;
                 }
             }
             if spec.ccsid == Some(65535) {
                 spec.bit_data = true;
             }
-            Ok(Some(SqlType { spec, nullable: inner.is_none_or(|i| i.nullable) }))
+            Ok(Some(SqlType {
+                spec,
+                nullable: inner.is_none_or(|i| i.nullable),
+            }))
         }
         Expr::Neg(a) => {
             let t = type_in(a, scope)?;
@@ -300,13 +361,21 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
             }
             let (x, y) = (type_in(a, scope)?, type_in(b, scope)?);
             super::udt::typing::operator(x.as_ref(), y.as_ref(), *op == BinOp::Concat)?;
-            let (Some(x), Some(y)) = (x, y) else { return Ok(None) };
+            let (Some(x), Some(y)) = (x, y) else {
+                return Ok(None);
+            };
             if let Some(t) = rules::datetime(&x, *op, &y) {
                 return Ok(Some(t));
             }
-            Ok(if *op == BinOp::Concat { unify::concat(&x, &y) } else { arith(&x, *op, &y) })
+            Ok(if *op == BinOp::Concat {
+                unify::concat(&x, &y)
+            } else {
+                arith(&x, *op, &y)
+            })
         }
-        Expr::Case { whens, otherwise, .. } => {
+        Expr::Case {
+            whens, otherwise, ..
+        } => {
             let mut results = Vec::with_capacity(whens.len() + 1);
             for (_, t) in whens {
                 results.push(t);
@@ -335,9 +404,22 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
             .map(|(_, t)| SqlType::not_null(t.clone()))),
         // A predicate as a value is a BOOLEAN (IBM i 7.5).
         Expr::IsNull(..) | Expr::Exists(..) => nn(DataType::Boolean),
-        Expr::Compare(..) | Expr::And(..) | Expr::Or(..) | Expr::Not(_) | Expr::Between(..) | Expr::InList(..) | Expr::InSubquery(..) | Expr::Like(..) => {
-            Ok(Some(SqlType { spec: TypeSpec { data_type: DataType::Boolean, ccsid: None, bit_data: false, udt: None }, nullable: true }))
-        }
+        Expr::Compare(..)
+        | Expr::And(..)
+        | Expr::Or(..)
+        | Expr::Not(_)
+        | Expr::Between(..)
+        | Expr::InList(..)
+        | Expr::InSubquery(..)
+        | Expr::Like(..) => Ok(Some(SqlType {
+            spec: TypeSpec {
+                data_type: DataType::Boolean,
+                ccsid: None,
+                bit_data: false,
+                udt: None,
+            },
+            nullable: true,
+        })),
         _ => Ok(None),
     }
 }
@@ -359,8 +441,12 @@ fn function(f: &Function, scope: &Scope<'_>) -> Result<Option<SqlType>> {
     let mut args = Vec::with_capacity(f.args.len());
     for a in &f.args {
         args.push(match a {
-            Expr::Column(c) if c.table.is_none() && !scope.has(None, &c.column.value) => Some(SqlType::varchar(10, false)),
-            Expr::Cast(x, t) if matches!(**x, Expr::Literal(Literal::Null)) && f.name == "INTERPRET" => {
+            Expr::Column(c) if c.table.is_none() && !scope.has(None, &c.column.value) => {
+                Some(SqlType::varchar(10, false))
+            }
+            Expr::Cast(x, t)
+                if matches!(**x, Expr::Literal(Literal::Null)) && f.name == "INTERPRET" =>
+            {
                 Some(SqlType::of_data_type(&t.data_type, false))
             }
             a => type_in(a, scope)?,
@@ -375,7 +461,9 @@ fn function(f: &Function, scope: &Scope<'_>) -> Result<Option<SqlType>> {
     if f.star || f.distinct {
         return Ok(None);
     }
-    Ok(FUNCTION_TYPES.iter().find_map(|g| g(&f.name, &args, &f.args)))
+    Ok(FUNCTION_TYPES
+        .iter()
+        .find_map(|g| g(&f.name, &args, &f.args)))
 }
 
 /// The characters a value of `t` takes as text: `CHAR(x)` of a number,
@@ -428,7 +516,11 @@ fn cast_functions(name: &str, args: &[Option<SqlType>], exprs: &[Expr]) -> Optio
         "DECFLOAT_FORMAT" => DataType::DecFloat(34),
         "QUANTIZE" => {
             let second = args.get(1)?.as_ref()?;
-            let n = if df(first) == 16 && df(second) == 16 { 16 } else { 34 };
+            let n = if df(first) == 16 && df(second) == 16 {
+                16
+            } else {
+                34
+            };
             return Some(SqlType::not_null(DataType::DecFloat(n)).or_null(null || second.nullable));
         }
         "COMPARE_DECFLOAT" | "TOTALORDER" => {
@@ -438,13 +530,23 @@ fn cast_functions(name: &str, args: &[Option<SqlType>], exprs: &[Expr]) -> Optio
         "DATE" if exprs.len() == 1 => DataType::Date,
         "TIME" if exprs.len() == 1 => DataType::Time,
         "TIMESTAMP" if exprs.len() == 1 => DataType::Timestamp(6),
-        "BINARY" | "VARBINARY" if unify::is_text(first.data_type()) || unify::is_binary(first.data_type()) => {
+        "BINARY" | "VARBINARY"
+            if unify::is_text(first.data_type()) || unify::is_binary(first.data_type()) =>
+        {
             let n = int_arg(1).or_else(|| char_length(first.data_type()))?;
-            if name == "BINARY" { DataType::Binary(n) } else { DataType::Varbinary(n) }
+            if name == "BINARY" {
+                DataType::Binary(n)
+            } else {
+                DataType::Varbinary(n)
+            }
         }
         "CHAR" | "VARCHAR" if unify::is_number(first.data_type()) => {
             let n = char_length(first.data_type())?;
-            if name == "CHAR" { DataType::Char(n) } else { DataType::Varchar(n) }
+            if name == "CHAR" {
+                DataType::Char(n)
+            } else {
+                DataType::Varchar(n)
+            }
         }
         _ => return None,
     };
@@ -482,7 +584,9 @@ pub fn conform(v: Value, t: &SqlType, mode: qdecimal::DfRounding) -> Result<Valu
             Ok(Value::Bin(b))
         }
         // A timestamp to the column's precision.
-        (DataType::Timestamp(p), Value::Timestamp(ts)) if ts.precision != *p => Ok(Value::Timestamp(ts.with_precision(*p))),
+        (DataType::Timestamp(p), Value::Timestamp(ts)) if ts.precision != *p => {
+            Ok(Value::Timestamp(ts.with_precision(*p)))
+        }
         (DataType::Char(n) | DataType::Graphic(n), Value::Str(s)) => {
             let have = s.chars().count();
             let n = usize::try_from(*n).unwrap_or(usize::MAX);
@@ -503,9 +607,20 @@ pub fn conform(v: Value, t: &SqlType, mode: qdecimal::DfRounding) -> Result<Valu
 /// string (`SQL0332`); a time to a timestamp (`SQL0171`).
 pub fn check_cast(from: &SqlType, to: &TypeSpec) -> Result<()> {
     let (x, y) = (from.data_type(), &to.data_type);
-    let datetime = |t: &DataType| matches!(t, DataType::Date | DataType::Time | DataType::Timestamp(_));
-    let lob = |t: &DataType| matches!(t, DataType::Clob(_) | DataType::Dbclob(_) | DataType::Blob(_));
-    let graphic = |t: &DataType| matches!(t, DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_));
+    let datetime =
+        |t: &DataType| matches!(t, DataType::Date | DataType::Time | DataType::Timestamp(_));
+    let lob = |t: &DataType| {
+        matches!(
+            t,
+            DataType::Clob(_) | DataType::Dbclob(_) | DataType::Blob(_)
+        )
+    };
+    let graphic = |t: &DataType| {
+        matches!(
+            t,
+            DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_)
+        )
+    };
     let refused = (unify::is_number(x) && (unify::is_binary(y) || datetime(y)))
         || ((unify::is_binary(x) || datetime(x)) && unify::is_number(y))
         || (lob(x) && datetime(y))
@@ -527,7 +642,10 @@ pub fn check_cast(from: &SqlType, to: &TypeSpec) -> Result<()> {
         return Err(crate::error::SqlError::Coded {
             code: -332,
             state: "57017",
-            what: format!("data in CCSID 65535 cannot be converted to CCSID {}", to.ccsid.unwrap_or(1200)),
+            what: format!(
+                "data in CCSID 65535 cannot be converted to CCSID {}",
+                to.ccsid.unwrap_or(1200)
+            ),
         });
     }
     if *x == DataType::Time && matches!(y, DataType::Timestamp(_)) {
@@ -543,7 +661,11 @@ pub fn check_cast(from: &SqlType, to: &TypeSpec) -> Result<()> {
             return Err(crate::error::SqlError::Coded {
                 code: -461,
                 state: "42846",
-                what: format!("{} needs more characters than {}", super::cast::type_name(x), super::cast::type_name(y)),
+                what: format!(
+                    "{} needs more characters than {}",
+                    super::cast::type_name(x),
+                    super::cast::type_name(y)
+                ),
             });
         }
     }
@@ -554,13 +676,20 @@ pub fn check_cast(from: &SqlType, to: &TypeSpec) -> Result<()> {
 /// common, written into `left`; the types the rows are fitted to (`None`
 /// where a side's type is not known); `SQL0415` for a distinct type
 /// beside another type.
-pub fn union_types(left: &mut [super::eval::ColInfo], right: &[&super::eval::ColInfo]) -> Result<Vec<Option<SqlType>>> {
+pub fn union_types(
+    left: &mut [super::eval::ColInfo],
+    right: &[&super::eval::ColInfo],
+) -> Result<Vec<Option<SqlType>>> {
     let mut out = Vec::with_capacity(left.len());
     for (l, r) in left.iter_mut().zip(right) {
         let t = match (&l.field, &r.field) {
             (Some(a), Some(b)) => {
-                let (x, y) = (of_field(a).or_null(l.nullable), of_field(b).or_null(r.nullable));
-                if let Some(e) = super::udt::typing::mixed(&x, &y, super::udt::typing::Mixed::Union) {
+                let (x, y) = (
+                    of_field(a).or_null(l.nullable),
+                    of_field(b).or_null(r.nullable),
+                );
+                if let Some(e) = super::udt::typing::mixed(&x, &y, super::udt::typing::Mixed::Union)
+                {
                     return Err(e);
                 }
                 unify(&x, &y)
@@ -577,8 +706,14 @@ pub fn union_types(left: &mut [super::eval::ColInfo], right: &[&super::eval::Col
 }
 
 /// The columns of a `VALUES`: each the rows' common type.
-pub fn values_types(rows: &[Vec<Expr>], width: usize, scope: &Scope<'_>) -> Result<Vec<Option<SqlType>>> {
-    (0..width).map(|i| unify::all(rows.iter().filter_map(|r| r.get(i)), scope, false)).collect()
+pub fn values_types(
+    rows: &[Vec<Expr>],
+    width: usize,
+    scope: &Scope<'_>,
+) -> Result<Vec<Option<SqlType>>> {
+    (0..width)
+        .map(|i| unify::all(rows.iter().filter_map(|r| r.get(i)), scope, false))
+        .collect()
 }
 
 /// The global variables `exprs` name where `scope` has no such column.
@@ -603,12 +738,21 @@ pub fn variables<'e>(
     let mut out: Vec<(Option<String>, String, SqlType)> = Vec::new();
     for c in found {
         let q = c.table.as_ref().map(|t| t.value.clone());
-        if scope.has(q.as_deref(), &c.column.value) || out.iter().any(|(a, b, _)| *a == q && *b == c.column.value) {
+        if scope.has(q.as_deref(), &c.column.value)
+            || out.iter().any(|(a, b, _)| *a == q && *b == c.column.value)
+        {
             continue;
         }
-        let name = crate::ast::ObjectName { schema: c.table.clone(), name: c.column.clone() };
+        let name = crate::ast::ObjectName {
+            schema: c.table.clone(),
+            name: c.column.clone(),
+        };
         if let Ok(Some(f)) = super::var::find(txn, ctx, &name) {
-            out.push((q, c.column.value.clone(), SqlType::not_null(f.data_type.data_type.clone()).or_null(true)));
+            out.push((
+                q,
+                c.column.value.clone(),
+                SqlType::not_null(f.data_type.data_type.clone()).or_null(true),
+            ));
         }
     }
     out
@@ -635,5 +779,8 @@ pub fn sequences<'e>(
     for e in exprs {
         names(e, &mut found);
     }
-    found.into_iter().filter_map(|n| super::seq::data_type(txn, ctx, &n).map(|t| (n, t))).collect()
+    found
+        .into_iter()
+        .filter_map(|n| super::seq::data_type(txn, ctx, &n).map(|t| (n, t)))
+        .collect()
 }

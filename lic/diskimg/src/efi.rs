@@ -61,7 +61,11 @@ pub fn load_option(description: &str, esp: &EspLocation, path: &str) -> Vec<u8> 
     dp.extend_from_slice(&[0x7F, 0xFF, 0x04, 0x00]);
     let mut out = Vec::new();
     out.extend_from_slice(&LOAD_OPTION_ACTIVE.to_le_bytes());
-    out.extend_from_slice(&u16::try_from(dp.len()).expect("device path fits").to_le_bytes());
+    out.extend_from_slice(
+        &u16::try_from(dp.len())
+            .expect("device path fits")
+            .to_le_bytes(),
+    );
     out.extend_from_slice(&ucs2(description));
     out.extend_from_slice(&dp);
     out
@@ -169,8 +173,14 @@ mod tests {
         assert_eq!(dp, 42 + 4 + 2 * 17 + 4);
         assert_eq!(&b[b.len() - 4..], &[0x7F, 0xFF, 4, 0]);
         assert_eq!(boot_name(0x5142), "Boot5142");
-        assert_eq!(parse_numbers(&file_bytes(&numbers(&[1, 0x5142]))), [1, 0x5142]);
+        assert_eq!(
+            parse_numbers(&file_bytes(&numbers(&[1, 0x5142]))),
+            [1, 0x5142]
+        );
         assert_eq!(order_with_front(&[3, 0x5142, 1], &[0x5142]), [0x5142, 3, 1]);
-        assert_eq!(order_with_front(&[3, 0x5141, 1], &[0x5142, 0x5141]), [0x5142, 0x5141, 3, 1]);
+        assert_eq!(
+            order_with_front(&[3, 0x5141, 1], &[0x5142, 0x5141]),
+            [0x5142, 0x5141, 3, 1]
+        );
     }
 }

@@ -44,12 +44,18 @@ pub fn serve(target: &dyn Target, d: &IoDesc, buf: &mut [u8]) -> i32 {
 
 fn transfer(target: &dyn Target, d: &IoDesc, buf: &mut [u8]) -> Result<i32, i32> {
     let bytes = usize::try_from(d.sectors).map_err(|_| EINVAL)? * 512;
-    if !d.start.is_multiple_of(SECTORS_PER_BLOCK) || !bytes.is_multiple_of(BLOCK) || bytes > buf.len() {
+    if !d.start.is_multiple_of(SECTORS_PER_BLOCK)
+        || !bytes.is_multiple_of(BLOCK)
+        || bytes > buf.len()
+    {
         return Err(EINVAL);
     }
     let block = d.start / SECTORS_PER_BLOCK;
     let count = (bytes / BLOCK) as u64;
-    if block.checked_add(count).is_none_or(|end| end > target.blocks()) {
+    if block
+        .checked_add(count)
+        .is_none_or(|end| end > target.blocks())
+    {
         return Err(EINVAL);
     }
     let data = &mut buf[..bytes];

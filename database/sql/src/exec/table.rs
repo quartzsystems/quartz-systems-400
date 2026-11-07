@@ -25,7 +25,9 @@ pub fn column_names(cols: &[ColumnDef]) -> Result<Vec<Name>> {
     for c in cols {
         names::check_length(&c.name)?;
         out.push(match &c.system_name {
-            Some(s) => Some(names::direct(s).ok_or_else(|| SqlError::SystemName { name: s.value.clone() })?),
+            Some(s) => Some(names::direct(s).ok_or_else(|| SqlError::SystemName {
+                name: s.value.clone(),
+            })?),
             None => names::direct(&c.name).filter(|n| !n.is_quoted()),
         });
     }
@@ -48,7 +50,9 @@ fn names_of(sql: &[String]) -> Vec<Name> {
         let direct = Name::parse(s).ok().filter(|n| n.to_string() == *s);
         let n = match direct {
             Some(n) if !taken.contains(&n) => n,
-            _ => names::generate_column(s, &|n| taken.contains(n) || sql.iter().any(|o| o == &n.to_string())),
+            _ => names::generate_column(s, &|n| {
+                taken.contains(n) || sql.iter().any(|o| o == &n.to_string())
+            }),
         };
         taken.push(n);
         out.push(n);
@@ -57,12 +61,28 @@ fn names_of(sql: &[String]) -> Vec<Name> {
 }
 
 /// `CREATE TABLE`, every form.
-pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable, params: &[Value]) -> Result<u64> {
+pub fn create(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    t: &CreateTable,
+    params: &[Value],
+) -> Result<u64> {
     // `SESSION` is a declared temporary table's qualifier, no schema.
-    if t.name.schema.as_ref().is_some_and(|s| s.value == super::qtemp::SESSION) {
-        return Err(SqlError::ObjectNotFound { name: super::qtemp::SESSION.into(), kind: "schema" });
+    if t.name
+        .schema
+        .as_ref()
+        .is_some_and(|s| s.value == super::qtemp::SESSION)
+    {
+        return Err(SqlError::ObjectNotFound {
+            name: super::qtemp::SESSION.into(),
+            kind: "schema",
+        });
     }
-    let replaced = if t.replace { replace_old(txn, ctx, t)? } else { None };
+    let replaced = if t.replace {
+        replace_old(txn, ctx, t)?
+    } else {
+        None
+    };
     let count = if let Some((of, all_null)) = &t.like {
         let info = ctx.resolve_table(txn, of)?;
         let mut fields = info.format.format.fields.clone();
@@ -78,7 +98,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable, params: 
         let (cols, rows) = super::query::columns_and_rows(txn, ctx, params, query)?;
         let fields = fields_of(&t.column_names, &cols)?;
         let id = create_from_fields(txn, ctx, t, fields)?;
-        if *data { insert_rows(txn, ctx, id, rows)? } else { 0 }
+        if *data {
+            insert_rows(txn, ctx, id, rows)?
+        } else {
+            0
+        }
     } else {
         super::ddl::create_table_def(txn, ctx, t)?;
         0
@@ -107,15 +131,27 @@ pub(crate) fn is_volatile(txn: &mut Txn<'_>, id: ObjectId) -> bool {
     db::sqlinf::load(txn, id)
         .ok()
         .flatten()
-        .and_then(|i| i.first(db::sqlinf::tag::TABLE).and_then(|b| TableDef::decode(b).ok()))
+        .and_then(|i| {
+            i.first(db::sqlinf::tag::TABLE)
+                .and_then(|b| TableDef::decode(b).ok())
+        })
         .is_some_and(|d| d.volatile)
 }
 
 /// Make table `id` `VOLATILE` or not: its `TABLE` entry, dropped when
 /// nothing is left in it. A file SQL did not make keeps its kind.
-pub(crate) fn set_volatile(txn: &mut Txn<'_>, ctx: &SqlContext, id: ObjectId, on: bool) -> Result<()> {
-    let mut info = db::sqlinf::load(txn, id)?.unwrap_or_else(|| db::sqlinf::SqlInfo::new(db::sqlinf::Kind::File));
-    let mut d = info.first(db::sqlinf::tag::TABLE).and_then(|b| TableDef::decode(b).ok()).unwrap_or_default();
+pub(crate) fn set_volatile(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    id: ObjectId,
+    on: bool,
+) -> Result<()> {
+    let mut info = db::sqlinf::load(txn, id)?
+        .unwrap_or_else(|| db::sqlinf::SqlInfo::new(db::sqlinf::Kind::File));
+    let mut d = info
+        .first(db::sqlinf::tag::TABLE)
+        .and_then(|b| TableDef::decode(b).ok())
+        .unwrap_or_default();
     d.volatile = on;
     if d == TableDef::default() {
         info.remove(db::sqlinf::tag::TABLE);
@@ -138,12 +174,17 @@ fn fields_of(given: &[Ident], cols: &[ColInfo]) -> Result<Vec<FieldDef>> {
         }
         let Some(f) = &c.field else {
             return Err(SqlError::Unsupported {
-                what: format!("CREATE TABLE AS with the expression column {}: its type is not derived yet", c.name),
+                what: format!(
+                    "CREATE TABLE AS with the expression column {}: its type is not derived yet",
+                    c.name
+                ),
             });
         };
         let name = match given.get(i) {
             Some(g) => g.value.clone(),
-            None if f.name.to_string() == c.name => f.alias.clone().unwrap_or_else(|| c.name.clone()),
+            None if f.name.to_string() == c.name => {
+                f.alias.clone().unwrap_or_else(|| c.name.clone())
+            }
             None => c.name.clone(),
         };
         let mut f = f.clone();
@@ -202,7 +243,12 @@ fn create_from_fields(
         library,
         name,
         &def,
-        &CreateFileOpts { now: ctx.clock(), text: String::new(), size: file::Size::NOMAX, ..CreateFileOpts::default() },
+        &CreateFileOpts {
+            now: ctx.clock(),
+            text: String::new(),
+            size: file::Size::NOMAX,
+            ..CreateFileOpts::default()
+        },
     )?;
     super::ddl::finish_table(txn, ctx, library, id, sql.as_deref(), &t.name.name.value)?;
     super::udt::column::record(txn, id, &typed, db::sqlinf::Kind::Table, ctx.clock())?;
@@ -210,22 +256,48 @@ fn create_from_fields(
 }
 
 /// Insert rows into a new table through the ordinary insert path.
-fn insert_rows(txn: &mut Txn<'_>, ctx: &mut SqlContext, id: ObjectId, rows: Vec<Vec<Value>>) -> Result<u64> {
+fn insert_rows(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    id: ObjectId,
+    rows: Vec<Vec<Value>>,
+) -> Result<u64> {
     if rows.is_empty() {
         return Ok(0);
     }
     let info = table_info(txn, id)?;
     let idx: Vec<usize> = (0..info.format.format.fields.len()).collect();
-    let rows = rows.into_iter().map(|r| r.into_iter().map(Some).collect()).collect();
+    let rows = rows
+        .into_iter()
+        .map(|r| r.into_iter().map(Some).collect())
+        .collect();
     super::dml::write_rows(txn, ctx, &[], &info, &idx, None, rows)
 }
 
 /// A file's first member and format as a table.
 fn table_info(txn: &mut Txn<'_>, id: ObjectId) -> Result<super::TableInfo> {
     let desc = file::describe(txn, id)?;
-    let member = *desc.members.first().ok_or_else(|| SqlError::ObjectNotFound { name: desc.name().to_string(), kind: "member" })?;
-    let format = desc.formats.first().cloned().ok_or_else(|| SqlError::ObjectNotFound { name: desc.name().to_string(), kind: "table" })?;
-    Ok(super::TableInfo { id, desc, member, format })
+    let member = *desc
+        .members
+        .first()
+        .ok_or_else(|| SqlError::ObjectNotFound {
+            name: desc.name().to_string(),
+            kind: "member",
+        })?;
+    let format = desc
+        .formats
+        .first()
+        .cloned()
+        .ok_or_else(|| SqlError::ObjectNotFound {
+            name: desc.name().to_string(),
+            kind: "table",
+        })?;
+    Ok(super::TableInfo {
+        id,
+        desc,
+        member,
+        format,
+    })
 }
 
 /// The rows of a table being replaced, by column SQL name.
@@ -241,20 +313,43 @@ fn replace_old(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) -> Resu
     let Ok(id) = ctx.resolve_file(txn, &t.name) else {
         return Ok(None);
     };
-    if file::alias_of(txn, id)?.is_some() || file::describe(txn, id)?.attr.kind != file::FileKind::Physical {
-        return Err(SqlError::Exists { name: t.name.name.value.clone(), kind: "*FILE" });
+    if file::alias_of(txn, id)?.is_some()
+        || file::describe(txn, id)?.attr.kind != file::FileKind::Physical
+    {
+        return Err(SqlError::Exists {
+            name: t.name.name.value.clone(),
+            kind: "*FILE",
+        });
     }
     let old = table_info(txn, id)?;
     if !old.desc.dependents.is_empty() {
         // BLOCKED(rel): IBM keeps the views and indexes over a replaced
         // table; rebuilding them waits on ALTER TABLE's (SQL-2).
-        return Err(SqlError::Unsupported { what: "CREATE OR REPLACE TABLE of a table with views or indexes over it".into() });
+        return Err(SqlError::Unsupported {
+            what: "CREATE OR REPLACE TABLE of a table with views or indexes over it".into(),
+        });
     }
-    let columns = old.format.format.fields.iter().map(|f| f.alias.clone().unwrap_or_else(|| f.name.to_string())).collect();
+    let columns = old
+        .format
+        .format
+        .fields
+        .iter()
+        .map(|f| f.alias.clone().unwrap_or_else(|| f.name.to_string()))
+        .collect();
     let rows = if t.preserve_rows {
-        let (_, rows) = super::query::matching_rows(txn, ctx, &[], &old, "T", None, &super::eval::Env::default())?;
+        let (_, rows) = super::query::matching_rows(
+            txn,
+            ctx,
+            &[],
+            &old,
+            "T",
+            None,
+            &super::eval::Env::default(),
+        )?;
         // The relative record number comes first.
-        rows.into_iter().map(|r| r.into_iter().skip(1).collect()).collect()
+        rows.into_iter()
+            .map(|r| r.into_iter().skip(1).collect())
+            .collect()
     } else {
         Vec::new()
     };
@@ -277,7 +372,11 @@ fn restore_rows(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable, old: K
             from.push(i);
         }
     }
-    let rows = old.rows.into_iter().map(|r| from.iter().map(|&i| Some(r[i].clone())).collect()).collect();
+    let rows = old
+        .rows
+        .into_iter()
+        .map(|r| from.iter().map(|&i| Some(r[i].clone())).collect())
+        .collect();
     super::dml::write_rows(txn, ctx, &[], &info, &idx, None, rows)?;
     Ok(())
 }

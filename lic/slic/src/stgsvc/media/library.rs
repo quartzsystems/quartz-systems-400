@@ -30,7 +30,10 @@ pub(crate) fn refused(e: &medio::MediaError) -> String {
 fn library_target(system: &mut System, dev: &str) -> Result<(Target, imgclg::Catalog), String> {
     let t = drive::target(system, dev)?;
     if t.kind != MediaKind::TapeLibrary {
-        return Err(format!("CPF6745 device {} is not a tape media library", t.dev));
+        return Err(format!(
+            "CPF6745 device {} is not a tape media library",
+            t.dev
+        ));
     }
     if !t.virtual_ {
         return Err(format!(
@@ -38,10 +41,17 @@ fn library_target(system: &mut System, dev: &str) -> Result<(Target, imgclg::Cat
             t.dev
         ));
     }
-    let c = super::catalog_on(&t.dev)
-        .ok_or_else(|| format!("{NOT_READY} device {} not ready: no image catalog is loaded", t.dev))?;
+    let c = super::catalog_on(&t.dev).ok_or_else(|| {
+        format!(
+            "{NOT_READY} device {} not ready: no image catalog is loaded",
+            t.dev
+        )
+    })?;
     if c.kind != imgclg::ImgType::Tap {
-        return Err(format!("{NOT_READY} device {} not ready: image catalog {} is not a tape catalog", t.dev, c.name));
+        return Err(format!(
+            "{NOT_READY} device {} not ready: image catalog {} is not a tape catalog",
+            t.dev, c.name
+        ));
     }
     Ok((t, c))
 }
@@ -53,7 +63,11 @@ fn state_path(c: &imgclg::Catalog) -> std::path::PathBuf {
 /// The library over the catalog's loaded entries, as last kept.
 fn open(t: &Target, c: &imgclg::Catalog) -> Result<CatalogLibrary<File>, String> {
     let mut tapes = Vec::new();
-    for e in c.entries.iter().filter(|e| e.status != imgclg::EntryStatus::Available) {
+    for e in c
+        .entries
+        .iter()
+        .filter(|e| e.status != imgclg::EntryStatus::Available)
+    {
         let path = c.path_of(e);
         let f = open_image(&path).map_err(|x| format!("CPF6708 {path}: {x}"))?;
         let mut v = VirtualTape::open(f).map_err(|x| format!("CPF6772 {path}: {x}"))?;
@@ -120,14 +134,22 @@ fn place(lib: &CatalogLibrary<File>, l: Location) -> String {
             .drives
             .iter()
             .find(|d| d.address == a)
-            .map_or_else(|| format!("Drive {}", a - DRIVE_BASE + 1), |d| d.name.clone()),
+            .map_or_else(
+                || format!("Drive {}", a - DRIVE_BASE + 1),
+                |d| d.name.clone(),
+            ),
         Location::Outside => "*NONE".into(),
     }
 }
 
 /// The cartridges of library `dev` that `ids` (generic, empty for all)
 /// and `cgy` (`*ALL` for any) select.
-pub(crate) fn rows(system: &mut System, dev: &str, ids: &[String], cgy: &str) -> Result<Vec<CtgRow>, String> {
+pub(crate) fn rows(
+    system: &mut System,
+    dev: &str,
+    ids: &[String],
+    cgy: &str,
+) -> Result<Vec<CtgRow>, String> {
     let (_, c) = library_target(system, dev)?;
     let volumes = labels(&c);
     with_library(system, dev, |_, _, lib| {
@@ -135,7 +157,11 @@ pub(crate) fn rows(system: &mut System, dev: &str, ids: &[String], cgy: &str) ->
         let carts: Vec<_> = lib.model.cartridges().cloned().collect();
         for k in carts {
             let pick = ids.is_empty()
-                || ids.iter().any(|g| g == "*ALL" || *g == k.id || g.strip_suffix('*').is_some_and(|p| k.id.starts_with(p)));
+                || ids.iter().any(|g| {
+                    g == "*ALL"
+                        || *g == k.id
+                        || g.strip_suffix('*').is_some_and(|p| k.id.starts_with(p))
+                });
             if !pick || !(cgy.is_empty() || cgy == "*ALL" || cgy == k.category.name()) {
                 continue;
             }
@@ -153,7 +179,9 @@ pub(crate) fn rows(system: &mut System, dev: &str, ids: &[String], cgy: &str) ->
                 category: k.category.name().to_string(),
                 status: status.into(),
                 location: place(lib, k.location),
-                home: k.home.map_or_else(|| "*NONE".to_string(), |h| slot_no(h).to_string()),
+                home: k
+                    .home
+                    .map_or_else(|| "*NONE".to_string(), |h| slot_no(h).to_string()),
                 id: k.id,
             });
         }
@@ -164,11 +192,20 @@ pub(crate) fn rows(system: &mut System, dev: &str, ids: &[String], cgy: &str) ->
 /// Each loaded entry's cartridge identifier and label volume.
 fn labels(c: &imgclg::Catalog) -> Vec<(String, String)> {
     let mut v = Vec::new();
-    for e in c.entries.iter().filter(|e| e.status != imgclg::EntryStatus::Available) {
-        let Ok(f) = open_image(&c.path_of(e)) else { continue };
-        let Ok(mut t) = VirtualTape::open(f) else { continue };
+    for e in c
+        .entries
+        .iter()
+        .filter(|e| e.status != imgclg::EntryStatus::Available)
+    {
+        let Ok(f) = open_image(&c.path_of(e)) else {
+            continue;
+        };
+        let Ok(mut t) = VirtualTape::open(f) else {
+            continue;
+        };
         let tag = tape::device::cartridge_id(t.tag()).to_string();
-        let vol = tape::volume::identify(&mut t).map_or_else(|_| "*UNKNOWN".to_string(), |k| k.id());
+        let vol =
+            tape::volume::identify(&mut t).map_or_else(|_| "*UNKNOWN".to_string(), |k| k.id());
         let _ = t.rewind();
         v.push((tag, vol));
     }
@@ -178,7 +215,10 @@ fn labels(c: &imgclg::Catalog) -> Vec<(String, String)> {
 /// The cartridge's label volume, for `ADDTAPCTG CHECK(*YES)`.
 pub(crate) fn label_of(system: &mut System, dev: &str, id: &str) -> Result<Option<String>, String> {
     let (_, c) = library_target(system, dev)?;
-    Ok(labels(&c).into_iter().find(|(t, _)| t == id).map(|(_, v)| v))
+    Ok(labels(&c)
+        .into_iter()
+        .find(|(t, _)| t == id)
+        .map(|(_, v)| v))
 }
 
 /// One drive of a library as `WRKMLBSTS` shows it.

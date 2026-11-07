@@ -99,10 +99,11 @@ fn main() -> Result<()> {
                 .with_context(|| dir.display().to_string())?
                 .filter_map(|e| e.ok().map(|e| e.path()))
                 .filter(|p| {
-                    p.extension()
-                        .is_some_and(|e| {
-                            e.eq_ignore_ascii_case("rpgle") || e.eq_ignore_ascii_case("sqlrpgle") || e.eq_ignore_ascii_case("rpg")
-                        })
+                    p.extension().is_some_and(|e| {
+                        e.eq_ignore_ascii_case("rpgle")
+                            || e.eq_ignore_ascii_case("sqlrpgle")
+                            || e.eq_ignore_ascii_case("rpg")
+                    })
                 })
                 .collect();
             files.sort();
@@ -130,8 +131,12 @@ fn main() -> Result<()> {
             let mut s = session::Session::open()?;
             for c in &cmds {
                 let (ok, reply) = s.probe(c)?;
-                println!("{}: {c}
-  {}", if ok { "ok" } else { "failed" }, reply.trim());
+                println!(
+                    "{}: {c}
+  {}",
+                    if ok { "ok" } else { "failed" },
+                    reply.trim()
+                );
             }
             s.close();
             Ok(())
@@ -149,7 +154,9 @@ fn rediag(dir: &Path, rpg3_only: bool) -> Result<()> {
             continue;
         }
         let lst = p.with_extension("lst");
-        let Ok(listing) = std::fs::read_to_string(&lst) else { continue };
+        let Ok(listing) = std::fs::read_to_string(&lst) else {
+            continue;
+        };
         let lines: Vec<String> = listing.lines().map(str::to_string).collect();
         let diags = if listing.contains("IBM RPG/400") {
             rpg_oracle::listing::diags_rpg3(&lines)
@@ -170,7 +177,11 @@ fn rediag(dir: &Path, rpg3_only: bool) -> Result<()> {
             if l.starts_with("created: ") && !placed {
                 placed = true;
                 for d in &diags {
-                    let _ = writeln!(out, "diag: {} {:02} line {} seq {}", d.msgid, d.severity, d.line, d.seq);
+                    let _ = writeln!(
+                        out,
+                        "diag: {} {:02} line {} seq {}",
+                        d.msgid, d.severity, d.line, d.seq
+                    );
                 }
             }
         }
@@ -202,7 +213,10 @@ fn run(files: &[PathBuf], out: Option<&Path>, missing: bool) -> Result<()> {
             bail!("{}: a member name has at most 10 characters", c.name);
         }
         if let Some(line) = c.too_wide() {
-            bail!("{}: line {line} is wider than the record length allows", c.name);
+            bail!(
+                "{}: line {line} is wider than the record length allows",
+                c.name
+            );
         }
         let dir = out_dir(f, out);
         if missing && dir.join(format!("{}.out", c.name)).exists() {
@@ -225,15 +239,28 @@ fn run(files: &[PathBuf], out: Option<&Path>, missing: bool) -> Result<()> {
                     if !cv.ok {
                         let _ = writeln!(head, "# failed {}", cv.cause);
                     }
-                    std::fs::write(dir.join(format!("{}.cvt", c.name)), head + &cv.source.join("\n") + "\n")?;
-                    std::fs::write(dir.join(format!("{}.rpt", c.name)), cv.report.join("\n") + "\n")?;
+                    std::fs::write(
+                        dir.join(format!("{}.cvt", c.name)),
+                        head + &cv.source.join("\n") + "\n",
+                    )?;
+                    std::fs::write(
+                        dir.join(format!("{}.rpt", c.name)),
+                        cv.report.join("\n") + "\n",
+                    )?;
                 }
                 std::fs::write(dir.join(format!("{}.out", c.name)), outcome.render())?;
-                std::fs::write(dir.join(format!("{}.lst", c.name)), listing.join("\n") + "\n")?;
+                std::fs::write(
+                    dir.join(format!("{}.lst", c.name)),
+                    listing.join("\n") + "\n",
+                )?;
                 println!(
                     "{}: {}{}",
                     c.name,
-                    if outcome.created { "created" } else { "not created" },
+                    if outcome.created {
+                        "created"
+                    } else {
+                        "not created"
+                    },
                     match &outcome.run {
                         rpg_oracle::outcome::Run::Escape(id) => format!(", escape {id}"),
                         rpg_oracle::outcome::Run::Ok => ", ran".into(),

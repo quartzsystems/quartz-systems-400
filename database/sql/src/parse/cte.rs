@@ -9,7 +9,9 @@
 //! becomes a [`TableRef::Recursive`].
 
 use super::Parser;
-use crate::ast::{Cycle, Expr, Ident, Query, QueryBody, RecursiveCte, Search, SelectItem, TableRef};
+use crate::ast::{
+    Cycle, Expr, Ident, Query, QueryBody, RecursiveCte, Search, SelectItem, TableRef,
+};
 use crate::error::{Result, SqlError};
 use crate::lex::Tok;
 
@@ -28,7 +30,8 @@ impl Parser {
         self.is_word("WITH")
             && (self.is_word_at(2, "AS")
                 || self.is_sym_at(2, "(")
-                || (self.is_word_at(1, "RECURSIVE") && (self.is_word_at(3, "AS") || self.is_sym_at(3, "("))))
+                || (self.is_word_at(1, "RECURSIVE")
+                    && (self.is_word_at(3, "AS") || self.is_sym_at(3, "("))))
     }
 
     /// `WITH ... query`.
@@ -52,7 +55,10 @@ impl Parser {
                 Def::Recursive(Box::new(split(&name, &columns, &q, search, cycle)?))
             } else {
                 if search.is_some() || cycle.is_some() {
-                    return Err(SqlError::Unsupported { what: "SEARCH or CYCLE on a common table expression that is not recursive".into() });
+                    return Err(SqlError::Unsupported {
+                        what: "SEARCH or CYCLE on a common table expression that is not recursive"
+                            .into(),
+                    });
                 }
                 Def::Plain(Box::new(q))
             };
@@ -67,7 +73,11 @@ impl Parser {
     }
 
     fn optional_ident_list_cte(&mut self) -> Result<Vec<Ident>> {
-        if self.is_sym("(") { self.ident_list() } else { Ok(Vec::new()) }
+        if self.is_sym("(") {
+            self.ident_list()
+        } else {
+            Ok(Vec::new())
+        }
     }
 
     fn search(&mut self) -> Result<Option<Search>> {
@@ -86,7 +96,11 @@ impl Parser {
             by.push(self.ident()?);
         }
         self.expect_word("SET")?;
-        Ok(Some(Search { depth, by, set: self.ident()? }))
+        Ok(Some(Search {
+            depth,
+            by,
+            set: self.ident()?,
+        }))
     }
 
     fn cycle(&mut self) -> Result<Option<Cycle>> {
@@ -103,8 +117,18 @@ impl Parser {
         let to = self.cycle_mark()?;
         self.expect_word("DEFAULT")?;
         let default = self.cycle_mark()?;
-        let using = if self.eat_word("USING") { Some(self.ident()?) } else { None };
-        Ok(Some(Cycle { columns, set, to, default, using }))
+        let using = if self.eat_word("USING") {
+            Some(self.ident()?)
+        } else {
+            None
+        };
+        Ok(Some(Cycle {
+            columns,
+            set,
+            to,
+            default,
+            using,
+        }))
     }
 
     fn cycle_mark(&mut self) -> Result<String> {
@@ -122,7 +146,12 @@ impl Parser {
 /// without `ALL`.
 fn leaves(b: &QueryBody, out: &mut Vec<QueryBody>) -> bool {
     match b {
-        QueryBody::Union { left, right, all, op } => {
+        QueryBody::Union {
+            left,
+            right,
+            all,
+            op,
+        } => {
             let l = leaves(left, out);
             let r = leaves(right, out);
             l && r && *all && *op == crate::ast::SetOp::Union
@@ -134,22 +163,52 @@ fn leaves(b: &QueryBody, out: &mut Vec<QueryBody>) -> bool {
     }
 }
 
-fn split(name: &Ident, columns: &[Ident], q: &Query, search: Option<Search>, cycle: Option<Cycle>) -> Result<RecursiveCte> {
+fn split(
+    name: &Ident,
+    columns: &[Ident],
+    q: &Query,
+    search: Option<Search>,
+    cycle: Option<Cycle>,
+) -> Result<RecursiveCte> {
     if !q.order_by.is_empty() || q.fetch_first.is_some() || q.offset.is_some() {
-        return Err(SqlError::Recursion { name: name.value.clone(), what: "ORDER BY or a row limit".into(), code: -342 });
+        return Err(SqlError::Recursion {
+            name: name.value.clone(),
+            what: "ORDER BY or a row limit".into(),
+            code: -342,
+        });
     }
     let mut sides = Vec::new();
     if !leaves(&q.body, &mut sides) {
-        return Err(SqlError::Recursion { name: name.value.clone(), what: "UNION without ALL".into(), code: -342 });
+        return Err(SqlError::Recursion {
+            name: name.value.clone(),
+            what: "UNION without ALL".into(),
+            code: -342,
+        });
     }
-    let (step, seed): (Vec<QueryBody>, Vec<QueryBody>) = sides.into_iter().partition(|b| names_body(b, name));
+    let (step, seed): (Vec<QueryBody>, Vec<QueryBody>) =
+        sides.into_iter().partition(|b| names_body(b, name));
     if seed.is_empty() {
-        return Err(SqlError::Recursion { name: name.value.clone(), what: "no initial rows: it names only itself".into(), code: -346 });
+        return Err(SqlError::Recursion {
+            name: name.value.clone(),
+            what: "no initial rows: it names only itself".into(),
+            code: -346,
+        });
     }
     if columns.is_empty() {
-        return Err(SqlError::Recursion { name: name.value.clone(), what: "no column list".into(), code: -343 });
+        return Err(SqlError::Recursion {
+            name: name.value.clone(),
+            what: "no column list".into(),
+            code: -343,
+        });
     }
-    Ok(RecursiveCte { name: name.clone(), columns: columns.to_vec(), seed, step, search, cycle })
+    Ok(RecursiveCte {
+        name: name.clone(),
+        columns: columns.to_vec(),
+        seed,
+        step,
+        search,
+        cycle,
+    })
 }
 
 /// Whether a body names `name` as a table.
@@ -158,7 +217,9 @@ fn names_body(b: &QueryBody, name: &Ident) -> bool {
         QueryBody::Select(s) => {
             s.from.iter().any(|t| names_table(t, name))
                 || s.where_clause.as_ref().is_some_and(|w| names_expr(w, name))
-                || s.items.iter().any(|i| matches!(i, SelectItem::Expr(e, _) if names_expr(e, name)))
+                || s.items
+                    .iter()
+                    .any(|i| matches!(i, SelectItem::Expr(e, _) if names_expr(e, name)))
         }
         QueryBody::Values(_) => false,
         QueryBody::Union { left, right, .. } => names_body(left, name) || names_body(right, name),
@@ -182,7 +243,9 @@ fn names_expr(e: &Expr, name: &Ident) -> bool {
     match e {
         Expr::Exists(q, _) | Expr::Subquery(q) => names_body(&q.body, name),
         Expr::InSubquery(a, q, _) => names_expr(a, name) || names_body(&q.body, name),
-        e => crate::ast::visit::children(e).into_iter().any(|c| names_expr(c, name)),
+        e => crate::ast::visit::children(e)
+            .into_iter()
+            .any(|c| names_expr(c, name)),
     }
 }
 
@@ -233,20 +296,42 @@ fn substitute_body(b: &mut QueryBody, ctes: &[Cte]) {
 
 fn substitute_table(t: &mut TableRef, ctes: &[Cte]) {
     match t {
-        TableRef::Table { name, alias, columns } if name.schema.is_none() => {
+        TableRef::Table {
+            name,
+            alias,
+            columns,
+        } if name.schema.is_none() => {
             // The last definition of a name is the one in scope.
-            if let Some((cname, ccols, def)) = ctes.iter().rev().find(|(n, _, _)| n.value == name.name.value) {
+            if let Some((cname, ccols, def)) = ctes
+                .iter()
+                .rev()
+                .find(|(n, _, _)| n.value == name.name.value)
+            {
                 let alias = alias.clone().unwrap_or_else(|| cname.clone());
-                let cols = if columns.is_empty() { ccols.clone() } else { columns.clone() };
+                let cols = if columns.is_empty() {
+                    ccols.clone()
+                } else {
+                    columns.clone()
+                };
                 *t = match def {
-                    Def::Plain(q) => TableRef::Subquery { query: q.clone(), alias, columns: cols },
-                    Def::Recursive(r) => TableRef::Recursive { cte: r.clone(), alias, columns: cols },
+                    Def::Plain(q) => TableRef::Subquery {
+                        query: q.clone(),
+                        alias,
+                        columns: cols,
+                    },
+                    Def::Recursive(r) => TableRef::Recursive {
+                        cte: r.clone(),
+                        alias,
+                        columns: cols,
+                    },
                 };
             }
         }
         TableRef::Table { .. } | TableRef::DataChange { .. } | TableRef::Recursive { .. } => {}
         TableRef::Subquery { query, .. } => substitute_query(query, ctes),
-        TableRef::Join { left, right, on, .. } => {
+        TableRef::Join {
+            left, right, on, ..
+        } => {
             substitute_table(left, ctes);
             substitute_table(right, ctes);
             if let Some(e) = on {

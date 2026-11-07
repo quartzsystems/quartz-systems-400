@@ -330,7 +330,10 @@ impl DisplayFile {
         }
         for f in &r.fields {
             for e in &f.errmsg {
-                let t = e.text.clone().or_else(|| e.id.as_ref().map(|(id, _)| id.clone()));
+                let t = e
+                    .text
+                    .clone()
+                    .or_else(|| e.id.as_ref().map(|(id, _)| id.clone()));
                 if let (Some(n), Some(t)) = (e.ind, t) {
                     add(n, &t);
                 }

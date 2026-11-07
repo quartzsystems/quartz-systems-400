@@ -33,7 +33,13 @@ pub fn run_compress(cx: &mut UtilCtx<'_>) -> i32 {
         None => 16,
         Some(b) => match number(b) {
             Some(n @ 9..=16) => n as u32,
-            _ => return usage(cx, "compress", &format!("The code size {b} is not between 9 and 16.")),
+            _ => {
+                return usage(
+                    cx,
+                    "compress",
+                    &format!("The code size {b} is not between 9 and 16."),
+                );
+            }
         },
     };
     let o = Opts {
@@ -111,7 +117,11 @@ fn to_stdout(
         Ok(()) => 0,
         Err(e) if e.kind() == std::io::ErrorKind::BrokenPipe => 1,
         Err(e) => {
-            complain(cx, name, &format!("standard output: {}", crate::common::io::errno_text(&e)));
+            complain(
+                cx,
+                name,
+                &format!("standard output: {}", crate::common::io::errno_text(&e)),
+            );
             1
         }
     }
@@ -133,7 +143,14 @@ fn regular(cx: &UtilCtx<'_>, name: &str, f: &str) -> Option<qsh::sys::Stat> {
 
 /// Write `data` as `to` with the mode and time of `st`, then remove
 /// `from`.
-fn replace(cx: &UtilCtx<'_>, name: &str, from: &str, to: &str, data: &[u8], st: &qsh::sys::Stat) -> bool {
+fn replace(
+    cx: &UtilCtx<'_>,
+    name: &str,
+    from: &str,
+    to: &str,
+    data: &[u8],
+    st: &qsh::sys::Stat,
+) -> bool {
     let to_abs = cx.path(to);
     if let Err(e) = write_file(cx, &to_abs, data) {
         complain_sys(cx, name, to, e);
@@ -156,7 +173,11 @@ fn compress_one(cx: &UtilCtx<'_>, o: &Opts, f: &str) -> i32 {
     // The suffix is `.Z` exactly; `.z` is another format's.
     #[allow(clippy::case_sensitive_file_extension_comparisons)]
     if f.ends_with(".Z") {
-        complain(cx, name, &format!("{f}: The name already ends in .Z; left alone."));
+        complain(
+            cx,
+            name,
+            &format!("{f}: The name already ends in .Z; left alone."),
+        );
         return 1;
     }
     let Some(st) = regular(cx, name, f) else {
@@ -172,13 +193,21 @@ fn compress_one(cx: &UtilCtx<'_>, o: &Opts, f: &str) -> i32 {
     let z = lzw::compress(&data, o.bits);
     if z.len() >= data.len() && !o.force {
         if o.verbose {
-            complain(cx, name, &format!("{f}: Compressing would not make it smaller; left alone."));
+            complain(
+                cx,
+                name,
+                &format!("{f}: Compressing would not make it smaller; left alone."),
+            );
         }
         return 2;
     }
     let target = format!("{f}.Z");
     if cx.sys.lstat(&cx.path(&target)).is_ok() && !o.force {
-        complain(cx, name, &format!("{target}: The file exists; {f} left alone."));
+        complain(
+            cx,
+            name,
+            &format!("{target}: The file exists; {f} left alone."),
+        );
         return 1;
     }
     if !replace(cx, name, f, &target, &z, &st) {
@@ -219,7 +248,10 @@ fn expand_all(cx: &UtilCtx<'_>, name: &str, o: &Opts, ops: &[String]) -> i32 {
             status = 1;
             continue;
         };
-        let data = match read_input(cx, &zname).map_err(|e| e.errno.text().to_string()).and_then(|d| decode(&d)) {
+        let data = match read_input(cx, &zname)
+            .map_err(|e| e.errno.text().to_string())
+            .and_then(|d| decode(&d))
+        {
             Ok(d) => d,
             Err(t) => {
                 complain(cx, name, &format!("{zname}: {t}"));
@@ -228,7 +260,11 @@ fn expand_all(cx: &UtilCtx<'_>, name: &str, o: &Opts, ops: &[String]) -> i32 {
             }
         };
         if cx.sys.lstat(&cx.path(&plain)).is_ok() && !o.force {
-            complain(cx, name, &format!("{plain}: The file exists; {zname} left alone."));
+            complain(
+                cx,
+                name,
+                &format!("{plain}: The file exists; {zname} left alone."),
+            );
             status = 1;
             continue;
         }

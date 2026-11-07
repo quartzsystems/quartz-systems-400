@@ -56,7 +56,10 @@ fn tab_label(stmt: &str) -> String {
     }
     let rest = stmt.trim_start()[6..].trim_start();
     let upper = rest.to_ascii_uppercase();
-    let end = upper.find(" FROM ").or_else(|| upper.find("\nFROM ")).unwrap_or(rest.len());
+    let end = upper
+        .find(" FROM ")
+        .or_else(|| upper.find("\nFROM "))
+        .unwrap_or(rest.len());
     // The select list's items, outside parentheses.
     let list = &rest[..end];
     let mut items = Vec::new();
@@ -78,7 +81,11 @@ fn tab_label(stmt: &str) -> String {
         let item = item.split_whitespace().collect::<Vec<_>>().join(" ");
         let up = item.to_ascii_uppercase();
         let item = up.find(" AS ").map_or(item.as_str(), |a| &item[..a]);
-        let next = if n == 0 { format!("{label} {item}") } else { format!("{label}, {item}") };
+        let next = if n == 0 {
+            format!("{label} {item}")
+        } else {
+            format!("{label}, {item}")
+        };
         if next.len() > 25 {
             label.push_str(" ...");
             return label;
@@ -90,15 +97,27 @@ fn tab_label(stmt: &str) -> String {
 
 /// What the tab says of the rows.
 fn tab_count(r: &Res) -> String {
-    let plural = |n: usize, w: &str| if n == 1 { format!("1 {w}") } else { format!("{n} {w}s") };
+    let plural = |n: usize, w: &str| {
+        if n == 1 {
+            format!("1 {w}")
+        } else {
+            format!("{n} {w}s")
+        }
+    };
     if r.failed {
         "failed".into()
     } else if r.query() {
         plural(r.rows.len(), "row")
-    } else if !matches!(script::verb(&r.statement).as_str(), "INSERT" | "UPDATE" | "DELETE" | "MERGE") {
+    } else if !matches!(
+        script::verb(&r.statement).as_str(),
+        "INSERT" | "UPDATE" | "DELETE" | "MERGE"
+    ) {
         "done".into()
     } else {
-        format!("{} changed", plural(usize::try_from(r.changed).unwrap_or(0), "row"))
+        format!(
+            "{} changed",
+            plural(usize::try_from(r.changed).unwrap_or(0), "row")
+        )
     }
 }
 
@@ -127,13 +146,19 @@ fn completion(rq: &Rq<'_>, stmt: &str, o: &Outcome, opts: &Options) -> Message {
     }
     if o.query() {
         let secs = format!("{}.{:03}", o.ms / 1000, o.ms % 1000);
-        return rq.message(MsgKind::Done, "SQL7958", &[&o.rows.len().to_string(), &secs]);
+        return rq.message(
+            MsgKind::Done,
+            "SQL7958",
+            &[&o.rows.len().to_string(), &secs],
+        );
     }
     let (t, s) = target(stmt, &opts.schema);
     let n = o.changed.to_string();
     let verb = script::verb(stmt);
     let mut m = match verb.as_str() {
-        "INSERT" | "UPDATE" | "DELETE" | "MERGE" if o.changed == 0 => rq.message(MsgKind::Info, "SQL0100", &[&verb]),
+        "INSERT" | "UPDATE" | "DELETE" | "MERGE" if o.changed == 0 => {
+            rq.message(MsgKind::Info, "SQL0100", &[&verb])
+        }
         "INSERT" => rq.message(MsgKind::Done, "SQL7956", &[&t, &s, &n]),
         "UPDATE" | "MERGE" => rq.message(MsgKind::Done, "SQL7957", &[&t, &s, &n]),
         "DELETE" => rq.message(MsgKind::Done, "SQL7955", &[&t, &s, &n]),
@@ -142,7 +167,11 @@ fn completion(rq: &Rq<'_>, stmt: &str, o: &Outcome, opts: &Options) -> Message {
         _ => rq.message(MsgKind::Done, "SQL7977", &[&verb]),
     };
     if opts.commit != Commit::None && o.changed > 0 {
-        let _ = write!(m.text, " Changes are uncommitted (commit level {}).", opts.commit.label());
+        let _ = write!(
+            m.text,
+            " Changes are uncommitted (commit level {}).",
+            opts.commit.label()
+        );
     }
     m
 }
@@ -172,7 +201,12 @@ fn connect(rq: &Rq<'_>, w: &mut SqlWork, opts: &Options) -> Result<u32, Vec<Mess
 }
 
 /// Run `statements` in the page's connection.
-fn run(rq: &Rq<'_>, w: &mut SqlWork, statements: &[script::Statement], opts: &Options) -> Vec<Message> {
+fn run(
+    rq: &Rq<'_>,
+    w: &mut SqlWork,
+    statements: &[script::Statement],
+    opts: &Options,
+) -> Vec<Message> {
     let c = match connect(rq, w, opts) {
         Ok(c) => c,
         Err(m) => return m,
@@ -195,7 +229,11 @@ fn run(rq: &Rq<'_>, w: &mut SqlWork, statements: &[script::Statement], opts: &Op
             cursor: o.cursor,
             changed: o.changed,
             message: Some(message),
-            sqlstate: if o.sqlstate.is_empty() { "00000".into() } else { o.sqlstate },
+            sqlstate: if o.sqlstate.is_empty() {
+                "00000".into()
+            } else {
+                o.sqlstate
+            },
             sqlcode: o.sqlcode,
             ms: o.ms,
             failed,
@@ -204,7 +242,13 @@ fn run(rq: &Rq<'_>, w: &mut SqlWork, statements: &[script::Statement], opts: &Op
             break;
         }
     }
-    db.remember(rq.user(), &statements.iter().map(|s| s.text.clone()).collect::<Vec<_>>());
+    db.remember(
+        rq.user(),
+        &statements
+            .iter()
+            .map(|s| s.text.clone())
+            .collect::<Vec<_>>(),
+    );
     Vec::new()
 }
 
@@ -215,7 +259,11 @@ fn first_tab(w: &SqlWork) -> usize {
 
 /// The tab shown (`?tab=`, from 1).
 fn tab_of(rq: &Rq<'_>, w: &SqlWork) -> usize {
-    rq.query().get("tab").and_then(|t| t.parse().ok()).filter(|t| (1..=w.results.len()).contains(t)).unwrap_or_else(|| first_tab(w))
+    rq.query()
+        .get("tab")
+        .and_then(|t| t.parse().ok())
+        .filter(|t| (1..=w.results.len()).contains(t))
+        .unwrap_or_else(|| first_tab(w))
 }
 
 /// Rows sorted by `?sort=` (a column's name, lower case).
@@ -247,7 +295,11 @@ fn result_tabs(w: &SqlWork, n: usize) -> String {
             let k = i + 1;
             let label = format!("{k}: {} ({})", tab_label(&r.statement), tab_count(r));
             let href = if k == first || !r.query() {
-                PRODUCT.url(&if k == first { "/sql".to_string() } else { format!("/sql?tab={k}") })
+                PRODUCT.url(&if k == first {
+                    "/sql".to_string()
+                } else {
+                    format!("/sql?tab={k}")
+                })
             } else {
                 PRODUCT.url(&format!("/sql/result/{k}"))
             };
@@ -262,8 +314,20 @@ fn result_tabs(w: &SqlWork, n: usize) -> String {
 fn result_table(rq: &Rq<'_>, r: &Res, keep: Vec<(String, String)>) -> String {
     let rows = sorted(rq, r);
     list_table(&List {
-        cols: r.columns.iter().map(|c| Col::sorted(&c.name, &c.name.to_ascii_lowercase())).collect(),
-        rows: rows.iter().map(|row| row.iter().zip(&r.columns).map(|(v, c)| cell(v, c.numeric())).collect()).collect(),
+        cols: r
+            .columns
+            .iter()
+            .map(|c| Col::sorted(&c.name, &c.name.to_ascii_lowercase()))
+            .collect(),
+        rows: rows
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .zip(&r.columns)
+                    .map(|(v, c)| cell(v, c.numeric()))
+                    .collect()
+            })
+            .collect(),
         empty: "No rows.".into(),
         keep,
     })
@@ -281,12 +345,19 @@ fn fetch_line(rq: &Rq<'_>, r: &Res, n: usize, first: usize, copy: bool) -> Strin
     let copy_link = if copy {
         format!(
             " &nbsp; <a href=\"{}\">Copy row</a>",
-            esc(&PRODUCT.url(&format!("/sql{}", query(&[("tab", &n.to_string()), ("copy", "1")]))))
+            esc(&PRODUCT.url(&format!(
+                "/sql{}",
+                query(&[("tab", &n.to_string()), ("copy", "1")])
+            )))
         )
     } else {
         String::new()
     };
-    let action = if n == first { String::new() } else { PRODUCT.url(&format!("/sql?tab={n}")) };
+    let action = if n == first {
+        String::new()
+    } else {
+        PRODUCT.url(&format!("/sql?tab={n}"))
+    };
     qsweb::partials::form(
         &rq.ctx,
         &action,
@@ -298,24 +369,45 @@ fn fetch_line(rq: &Rq<'_>, r: &Res, n: usize, first: usize, copy: bool) -> Strin
 
 /// The messages of the last run.
 fn messages_table(rq: &Rq<'_>, w: &SqlWork) -> String {
-    let mut rows: Vec<(usize, &Res)> = w.results.iter().enumerate().map(|(i, r)| (i + 1, r)).collect();
+    let mut rows: Vec<(usize, &Res)> = w
+        .results
+        .iter()
+        .enumerate()
+        .map(|(i, r)| (i + 1, r))
+        .collect();
     if rq.query().str("sort") == "id" {
-        rows.sort_by(|a, b| a.1.message.as_ref().map(|m| &m.id).cmp(&b.1.message.as_ref().map(|m| &m.id)));
+        rows.sort_by(|a, b| {
+            a.1.message
+                .as_ref()
+                .map(|m| &m.id)
+                .cmp(&b.1.message.as_ref().map(|m| &m.id))
+        });
     }
     let cells = rows
         .iter()
         .map(|(n, r)| {
-            let m = r.message.clone().unwrap_or_else(|| Message::new(MsgKind::Info, "", ""));
+            let m = r
+                .message
+                .clone()
+                .unwrap_or_else(|| Message::new(MsgKind::Info, "", ""));
             let mut href = PRODUCT.msg(&m.id);
             for (i, d) in m.data.iter().enumerate() {
                 href.push(if i == 0 { '?' } else { '&' });
                 href.push_str("d=");
                 href.push_str(&qsweb::http::form::encode(d));
             }
-            let count = if r.query() { r.rows.len().to_string() } else { r.changed.to_string() };
+            let count = if r.query() {
+                r.rows.len().to_string()
+            } else {
+                r.changed.to_string()
+            };
             vec![
                 Cell::num(&n.to_string()),
-                Cell::mono_html(format!("<a href=\"{}\" target=\"_blank\">{}</a>", esc(&href), esc(&m.id))),
+                Cell::mono_html(format!(
+                    "<a href=\"{}\" target=\"_blank\">{}</a>",
+                    esc(&href),
+                    esc(&m.id)
+                )),
                 Cell::mono(&r.sqlstate),
                 Cell::num(&r.sqlcode.to_string()),
                 Cell::text(&m.text),
@@ -343,7 +435,11 @@ fn messages_table(rq: &Rq<'_>, w: &SqlWork) -> String {
 /// The main page.
 fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
     let opts = &w.opts;
-    let schema = if opts.schema.is_empty() { rq.prefs().get(crate::prefs::SCHEMA) } else { opts.schema.clone() };
+    let schema = if opts.schema.is_empty() {
+        rq.prefs().get(crate::prefs::SCHEMA)
+    } else {
+        opts.schema.clone()
+    };
     let commits: Vec<String> = Commit::ALL.iter().map(|c| c.label().to_string()).collect();
     let recent = if w.recent.is_empty() {
         String::new()
@@ -352,15 +448,30 @@ fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
             .recent
             .iter()
             .enumerate()
-            .map(|(i, (name, _))| format!("<a href=\"{}\">{}</a>", esc(&PRODUCT.url(&format!("/sql?recent={i}"))), esc(name)))
+            .map(|(i, (name, _))| {
+                format!(
+                    "<a href=\"{}\">{}</a>",
+                    esc(&PRODUCT.url(&format!("/sql?recent={i}"))),
+                    esc(name)
+                )
+            })
             .collect();
         format!(" &nbsp; Recent: {}", links.join(", "))
     };
-    let check = |name: &str, on: bool| format!("<input type=\"checkbox\" name=\"{name}\"{}>", if on { " checked" } else { "" });
+    let check = |name: &str, on: bool| {
+        format!(
+            "<input type=\"checkbox\" name=\"{name}\"{}>",
+            if on { " checked" } else { "" }
+        )
+    };
     let mut inner = format!(
         "<table class=\"props\"><tr><th>Options</th><td>Default schema {} &nbsp; Naming {} &nbsp; Commit level {} &nbsp; <input type=\"submit\" name=\"c\" value=\"Commit\"> <input type=\"submit\" name=\"r\" value=\"Rollback\"> &nbsp; {} Stop at first error &nbsp; {} Show CCSID 65535 data as text</td></tr>",
         pick("schema", &schemas(rq), &schema),
-        picks("naming", &["SQL", "System"], if opts.system_naming { "System" } else { "SQL" }),
+        picks(
+            "naming",
+            &["SQL", "System"],
+            if opts.system_naming { "System" } else { "SQL" }
+        ),
         pick("commit", &commits, opts.commit.label()),
         check("stop", w.stop),
         check("hex", w.hex)
@@ -370,8 +481,15 @@ fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
         "<tr><th>Script</th><td><textarea name=\"sql\" rows=\"10\" cols=\"100\" class=\"conf\">{}</textarea><br><span class=\"small grey\">Line 1, column 1</span></td></tr><tr><th>File</th><td><input type=\"file\" name=\"sqlfile\" size=\"30\"> <input type=\"submit\" name=\"open\" value=\"Open .sql\"> <input type=\"submit\" name=\"saveas\" value=\"Save as .sql\">{recent}</td></tr></table>",
         esc(&w.script)
     );
-    let formats: Vec<String> = Format::DOWNLOAD.iter().map(|f| f.label().to_string()).collect();
-    let save = if rq.allowed(policy::DB_SAVE) { "<input type=\"submit\" name=\"save\" value=\"Save request...\">" } else { "" };
+    let formats: Vec<String> = Format::DOWNLOAD
+        .iter()
+        .map(|f| f.label().to_string())
+        .collect();
+    let save = if rq.allowed(policy::DB_SAVE) {
+        "<input type=\"submit\" name=\"save\" value=\"Save request...\">"
+    } else {
+        ""
+    };
     let _ = write!(
         inner,
         "<div class=\"buttons\"><input type=\"submit\" name=\"run1\" value=\"Run statement (at cursor)\"><input type=\"submit\" name=\"runsel\" value=\"Run selected\"><input type=\"submit\" name=\"runall\" value=\"Run all\"><input type=\"submit\" name=\"cancel\" value=\"Cancel\"><input type=\"submit\" name=\"output\" value=\"Download as\"> {}{save}<input type=\"submit\" name=\"clear\" value=\"Clear\"></div>",
@@ -379,24 +497,39 @@ fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
     );
     let tab = tab_of(rq, w);
     let first = first_tab(w);
-    let action = if tab == first { String::new() } else { PRODUCT.url(&format!("/sql?tab={tab}")) };
+    let action = if tab == first {
+        String::new()
+    } else {
+        PRODUCT.url(&format!("/sql?tab={tab}"))
+    };
     let mut body = upload_form(&rq.ctx, &action, &inner);
     if !w.results.is_empty() {
         body.push_str("<h2>Results</h2>");
         body.push_str(&result_tabs(w, tab));
         let r = &w.results[tab - 1];
         if r.query() {
-            let keep = if tab == first { Vec::new() } else { vec![("tab".to_string(), tab.to_string())] };
+            let keep = if tab == first {
+                Vec::new()
+            } else {
+                vec![("tab".to_string(), tab.to_string())]
+            };
             body.push_str(&result_table(rq, r, keep));
             let max = rq.prefs().max_rows();
-            let _ = write!(body, "<div class=\"small\">{} rows returned (maximum {max}). </div>", r.rows.len());
+            let _ = write!(
+                body,
+                "<div class=\"small\">{} rows returned (maximum {max}). </div>",
+                r.rows.len()
+            );
             body.push_str(&fetch_line(rq, r, tab, first, true));
             if rq.query().has("copy") {
                 let text = crate::data::files::write(
                     Format::Tsv,
                     &r.columns,
                     &r.rows,
-                    &files::Write { crlf: false, ..files::Write::default() },
+                    &files::Write {
+                        crlf: false,
+                        ..files::Write::default()
+                    },
                 );
                 let _ = write!(
                     body,
@@ -415,7 +548,13 @@ fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
         let links: Vec<String> = history
             .iter()
             .enumerate()
-            .map(|(i, h)| format!("<a href=\"{}\">{}</a>", esc(&PRODUCT.url(&format!("/sql?h={i}"))), esc(h)))
+            .map(|(i, h)| {
+                format!(
+                    "<a href=\"{}\">{}</a>",
+                    esc(&PRODUCT.url(&format!("/sql?h={i}"))),
+                    esc(h)
+                )
+            })
             .collect();
         body.push_str(&links.join("<br>"));
         body.push_str("</div>");
@@ -436,7 +575,11 @@ fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
 /// Policy for each statement: SELECT-only or any.
 fn allowed(rq: &Rq<'_>, statements: &[script::Statement]) -> Result<(), Response> {
     for st in statements {
-        let f = if sqltext::reads_only(&st.text) { policy::DB_SELECT } else { policy::DB_SQL };
+        let f = if sqltext::reads_only(&st.text) {
+            policy::DB_SELECT
+        } else {
+            policy::DB_SQL
+        };
         rq.policy(f, CRUMB)?;
     }
     Ok(())
@@ -478,11 +621,20 @@ pub fn page(rq: &Rq<'_>) -> Response {
             }
         } else if let Some(id) = q.get("req").and_then(|h| h.parse::<u32>().ok()) {
             let groups = rq.env().system.groups(rq.user());
-            if let Some(r) = rq.env().db.requests(rq.user(), &groups).into_iter().find(|r| r.id == id && r.typ == crate::env::db::ReqType::Sql) {
+            if let Some(r) = rq
+                .env()
+                .db
+                .requests(rq.user(), &groups)
+                .into_iter()
+                .find(|r| r.id == id && r.typ == crate::env::db::ReqType::Sql)
+            {
                 w.script.clone_from(&r.body);
                 // A link runs only what reads; anything else waits for Run.
                 let sts = script::split(&w.script);
-                if q.has("run") && !sts.is_empty() && sts.iter().all(|s| sqltext::reads_only(&s.text)) {
+                if q.has("run")
+                    && !sts.is_empty()
+                    && sts.iter().all(|s| sqltext::reads_only(&s.text))
+                {
                     if let Err(resp) = allowed(rq, &sts) {
                         return resp;
                     }
@@ -503,7 +655,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let f = rq.form();
     let back = |w: &SqlWork| {
         let tab = tab_of(rq, w);
-        if tab == first_tab(w) { "/sql".to_string() } else { format!("/sql?tab={tab}") }
+        if tab == first_tab(w) {
+            "/sql".to_string()
+        } else {
+            format!("/sql?tab={tab}")
+        }
     };
     // Every post keeps the fields typed.
     if f.has("sql") {
@@ -524,21 +680,37 @@ pub fn page(rq: &Rq<'_>) -> Response {
         let sts = if f.has("runall") {
             script::split(&text)
         } else if f.has("runsel") {
-            match (f.get("sel0").and_then(|a| a.parse().ok()), f.get("sel1").and_then(|b| b.parse().ok())) {
+            match (
+                f.get("sel0").and_then(|a| a.parse().ok()),
+                f.get("sel1").and_then(|b| b.parse().ok()),
+            ) {
                 (Some(a), Some(b)) if a != b => script::selected(&text, a, b),
                 _ => {
                     let snapshot = w.clone();
                     drop(wk);
-                    return show(rq, &snapshot, vec![rq.message(MsgKind::Error, msgs::SELECT_STATEMENTS, &[])]);
+                    return show(
+                        rq,
+                        &snapshot,
+                        vec![rq.message(MsgKind::Error, msgs::SELECT_STATEMENTS, &[])],
+                    );
                 }
             }
         } else {
-            script::at(&text, f.get("pos").and_then(|p| p.parse().ok()).unwrap_or(0)).into_iter().collect()
+            script::at(
+                &text,
+                f.get("pos").and_then(|p| p.parse().ok()).unwrap_or(0),
+            )
+            .into_iter()
+            .collect()
         };
         if sts.is_empty() {
             let snapshot = w.clone();
             drop(wk);
-            return show(rq, &snapshot, vec![rq.message(MsgKind::Error, msgs::NO_STATEMENT, &[])]);
+            return show(
+                rq,
+                &snapshot,
+                vec![rq.message(MsgKind::Error, msgs::NO_STATEMENT, &[])],
+            );
         }
         if let Err(r) = allowed(rq, &sts) {
             return r;
@@ -555,14 +727,26 @@ pub fn page(rq: &Rq<'_>) -> Response {
                 flash.push(m);
             } else {
                 w.pending = false;
-                flash.push(rq.message(MsgKind::Done, if commit { "SQL7960" } else { "SQL7961" }, &[]));
+                flash.push(rq.message(
+                    MsgKind::Done,
+                    if commit { "SQL7960" } else { "SQL7961" },
+                    &[],
+                ));
             }
         } else {
-            flash.push(rq.message(MsgKind::Done, if commit { "SQL7960" } else { "SQL7961" }, &[]));
+            flash.push(rq.message(
+                MsgKind::Done,
+                if commit { "SQL7960" } else { "SQL7961" },
+                &[],
+            ));
         }
     } else if f.has("fetch") || f.has("fetchall") {
         let tab = tab_of(rq, w);
-        let max = if f.has("fetchall") { usize::MAX } else { rq.prefs().max_rows() };
+        let max = if f.has("fetchall") {
+            usize::MAX
+        } else {
+            rq.prefs().max_rows()
+        };
         if let (Some(c), Some(r)) = (w.conn, w.results.get_mut(tab - 1))
             && let Some(cur) = r.cursor
         {
@@ -582,7 +766,12 @@ pub fn page(rq: &Rq<'_>) -> Response {
             db.cancel(&user, c);
         }
     } else if f.has("open") {
-        let part = rq.req.multipart().unwrap_or_default().into_iter().find(|p| p.name == "sqlfile" && p.filename.is_some());
+        let part = rq
+            .req
+            .multipart()
+            .unwrap_or_default()
+            .into_iter()
+            .find(|p| p.name == "sqlfile" && p.filename.is_some());
         match part {
             Some(p) if !p.data.is_empty() => {
                 let name = p.filename.clone().unwrap_or_default();
@@ -594,17 +783,33 @@ pub fn page(rq: &Rq<'_>) -> Response {
                         w.recent.truncate(5);
                         w.file = name;
                     }
-                    Err(_) => flash.push(rq.message(MsgKind::Error, msgs::FILE_UNREADABLE, &[&name, "it is not UTF-8 text"])),
+                    Err(_) => flash.push(rq.message(
+                        MsgKind::Error,
+                        msgs::FILE_UNREADABLE,
+                        &[&name, "it is not UTF-8 text"],
+                    )),
                 }
             }
-            _ => flash.push(rq.message(MsgKind::Error, msgs::FILE_UNREADABLE, &["(none)", "no file was sent"])),
+            _ => flash.push(rq.message(
+                MsgKind::Error,
+                msgs::FILE_UNREADABLE,
+                &["(none)", "no file was sent"],
+            )),
         }
     } else if f.has("saveas") {
-        let name = if w.file.is_empty() { "script.sql".to_string() } else { w.file.clone() };
+        let name = if w.file.is_empty() {
+            "script.sql".to_string()
+        } else {
+            w.file.clone()
+        };
         w.recent.retain(|r| r.0 != name);
         w.recent.insert(0, (name.clone(), w.script.clone()));
         w.recent.truncate(5);
-        return Response::download(&name, "application/sql; charset=utf-8", w.script.clone().into_bytes());
+        return Response::download(
+            &name,
+            "application/sql; charset=utf-8",
+            w.script.clone().into_bytes(),
+        );
     } else if f.has("output") {
         let tab = tab_of(rq, w);
         let fmt = Format::of(f.str("fmt")).unwrap_or(Format::Csv);
@@ -619,8 +824,20 @@ pub fn page(rq: &Rq<'_>) -> Response {
                     flash.push(m);
                 } else {
                     let cols: Vec<ResultColumn> = o.columns;
-                    let data = files::write(fmt, &cols, &o.rows, &files::Write { title: format!("Result {tab}"), ..files::Write::default() });
-                    return Response::download(&format!("result-{tab}.{}", fmt.extension()), fmt.content_type(), data);
+                    let data = files::write(
+                        fmt,
+                        &cols,
+                        &o.rows,
+                        &files::Write {
+                            title: format!("Result {tab}"),
+                            ..files::Write::default()
+                        },
+                    );
+                    return Response::download(
+                        &format!("result-{tab}.{}", fmt.extension()),
+                        fmt.content_type(),
+                        data,
+                    );
                 }
             }
             _ => flash.push(rq.message(MsgKind::Error, msgs::NO_RESULT, &[&tab.to_string()])),
@@ -665,7 +882,11 @@ pub fn result(rq: &Rq<'_>, n: &str) -> Response {
     }
     let work = state::work(rq);
     let w = work.lock().expect("work").sql.clone();
-    let Some(k) = n.parse::<usize>().ok().filter(|k| (1..=w.results.len()).contains(k)) else {
+    let Some(k) = n
+        .parse::<usize>()
+        .ok()
+        .filter(|k| (1..=w.results.len()).contains(k))
+    else {
         return rq.not_found(&format!("result {n} of Run SQL"));
     };
     let r = &w.results[k - 1];
@@ -678,7 +899,11 @@ pub fn result(rq: &Rq<'_>, n: &str) -> Response {
         let _ = write!(
             body,
             "<div class=\"small\">{} <a href=\"{}\">Back to the script</a></div>",
-            if r.cursor.is_some() { format!("{} rows fetched; more rows remain.", r.rows.len()) } else { format!("{0} rows fetched of {0}.", r.rows.len()) },
+            if r.cursor.is_some() {
+                format!("{} rows fetched; more rows remain.", r.rows.len())
+            } else {
+                format!("{0} rows fetched of {0}.", r.rows.len())
+            },
             esc(&PRODUCT.url("/sql"))
         );
     } else if let Some(m) = &r.message {
@@ -705,9 +930,18 @@ mod tests {
             tab_label("SELECT asset_tag, location, manufacturer FROM hlinv.assets"),
             "SELECT asset_tag ..."
         );
-        assert_eq!(tab_label("SELECT location, COUNT(*) AS n FROM hlinv.assets GROUP BY location"), "SELECT location, COUNT(*)");
+        assert_eq!(
+            tab_label("SELECT location, COUNT(*) AS n FROM hlinv.assets GROUP BY location"),
+            "SELECT location, COUNT(*)"
+        );
         assert_eq!(tab_label("update t set a = 1"), "UPDATE");
-        assert_eq!(target("UPDATE hlinv.assets SET x = 1", "Q"), ("ASSETS".into(), "HLINV".into()));
-        assert_eq!(target("insert into t values (1)", "QGPL"), ("T".into(), "QGPL".into()));
+        assert_eq!(
+            target("UPDATE hlinv.assets SET x = 1", "Q"),
+            ("ASSETS".into(), "HLINV".into())
+        );
+        assert_eq!(
+            target("insert into t values (1)", "QGPL"),
+            ("T".into(), "QGPL".into())
+        );
     }
 }

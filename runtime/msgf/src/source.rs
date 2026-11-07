@@ -43,8 +43,7 @@ pub const QRPGMSG: &str = include_str!("../msgs/qrpgmsg.toml");
 
 /// Message files of product libraries: the library, its text, the
 /// file's source.
-pub const PRODUCT_FILES: &[(&str, &str, &str)] =
-    &[
+pub const PRODUCT_FILES: &[(&str, &str, &str)] = &[
     ("QHTTPSVR", "HTTP server", QZHBMSG),
     ("QRPG", "RPG/400", QRPGMSG),
     ("QUSRSYS", "User system library", QZXWMSG),
@@ -211,10 +210,12 @@ impl MsgToml {
 /// The system message files, parsed from their sources.
 #[must_use]
 pub fn builtin() -> Vec<MsgFile> {
-    [QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF, QEDTMSG, QSTXTMSG]
-        .iter()
-        .map(|s| parse(s).expect("the built-in sources parse"))
-        .collect()
+    [
+        QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF, QEDTMSG, QSTXTMSG,
+    ]
+    .iter()
+    .map(|s| parse(s).expect("the built-in sources parse"))
+    .collect()
 }
 
 /// The product libraries' message files: library, its text, the file.

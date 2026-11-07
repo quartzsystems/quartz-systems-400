@@ -64,7 +64,10 @@ impl<'c, R: Read, W: Write> Sftp<'c, R, W> {
     }
 
     fn packet(&mut self, body: &[u8]) -> SshResult<()> {
-        let mut p = u32::try_from(body.len()).unwrap_or(0).to_be_bytes().to_vec();
+        let mut p = u32::try_from(body.len())
+            .unwrap_or(0)
+            .to_be_bytes()
+            .to_vec();
         p.extend_from_slice(body);
         self.c.send_data(self.chan, &p)
     }
@@ -137,14 +140,21 @@ impl<'c, R: Read, W: Write> Sftp<'c, R, W> {
         attrs.encode(&mut w);
         Ok(self
             .expect(proto::OPEN, &w.finish(), proto::HANDLE)?
-            .map(|b| Reader::new(&b).bytes().map(<[u8]>::to_vec).unwrap_or_default()))
+            .map(|b| {
+                Reader::new(&b)
+                    .bytes()
+                    .map(<[u8]>::to_vec)
+                    .unwrap_or_default()
+            }))
     }
 
     /// `CLOSE`.
     pub fn close(&mut self, h: &[u8]) -> SftpResult<()> {
         let mut w = Writer::new();
         w.bytes(h);
-        Ok(self.expect(proto::CLOSE, &w.finish(), proto::STATUS)?.map(|_| ()))
+        Ok(self
+            .expect(proto::CLOSE, &w.finish(), proto::STATUS)?
+            .map(|_| ()))
     }
 
     /// Read a whole file.
@@ -173,11 +183,7 @@ impl<'c, R: Read, W: Write> Sftp<'c, R, W> {
             permissions: Some(0o644),
             ..Attrs::default()
         };
-        let h = match self.open(
-            path,
-            pflags::WRITE | pflags::CREAT | pflags::TRUNC,
-            &attrs,
-        )? {
+        let h = match self.open(path, pflags::WRITE | pflags::CREAT | pflags::TRUNC, &attrs)? {
             Ok(h) => h,
             Err(e) => return Ok(Err(e)),
         };
@@ -212,7 +218,9 @@ impl<'c, R: Read, W: Write> Sftp<'c, R, W> {
         let mut w = Writer::new();
         w.str(path);
         a.encode(&mut w);
-        Ok(self.expect(proto::SETSTAT, &w.finish(), proto::STATUS)?.map(|_| ()))
+        Ok(self
+            .expect(proto::SETSTAT, &w.finish(), proto::STATUS)?
+            .map(|_| ()))
     }
 
     fn simple(&mut self, kind: u8, paths: &[&str]) -> SftpResult<()> {
@@ -225,7 +233,9 @@ impl<'c, R: Read, W: Write> Sftp<'c, R, W> {
     pub fn mkdir(&mut self, path: &str) -> SftpResult<()> {
         let mut w = Writer::new();
         w.str(path).u32(0);
-        Ok(self.expect(proto::MKDIR, &w.finish(), proto::STATUS)?.map(|_| ()))
+        Ok(self
+            .expect(proto::MKDIR, &w.finish(), proto::STATUS)?
+            .map(|_| ()))
     }
 
     /// `RMDIR`.
@@ -304,7 +314,9 @@ impl<'c, R: Read, W: Write> Sftp<'c, R, W> {
         for a in args {
             w.str(a);
         }
-        Ok(self.expect(proto::EXTENDED, &w.finish(), proto::STATUS)?.map(|_| ()))
+        Ok(self
+            .expect(proto::EXTENDED, &w.finish(), proto::STATUS)?
+            .map(|_| ()))
     }
 
     /// End the session.

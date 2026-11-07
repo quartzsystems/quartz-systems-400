@@ -39,7 +39,9 @@ pub fn setatnpgm(host: &Host, pgm: &str, set: &str) -> Result<String, Fail> {
                 s.pop();
             }
             "*CURRENT" | "" => {
-                let cur = s.last().map_or_else(|| profile_program(host), |(p, _)| p.clone());
+                let cur = s
+                    .last()
+                    .map_or_else(|| profile_program(host), |(p, _)| p.clone());
                 s.push((cur, on));
             }
             p => s.push((p.to_string(), on)),
@@ -120,7 +122,8 @@ fn preattention(host: &Host) {
         user: "*CURRENT".into(),
         format: "ATTN0100".into(),
     };
-    let Ok(sec::api::Answer::Bytes { data: on }) = host.link.borrow_mut().with(|l| l.sec_api(q)) else {
+    let Ok(sec::api::Answer::Bytes { data: on }) = host.link.borrow_mut().with(|l| l.sec_api(q))
+    else {
         return;
     };
     if !on.contains(&1) {
@@ -135,7 +138,11 @@ fn preattention(host: &Host) {
         if n == 0 || on.get(n - 1) != Some(&1) {
             continue;
         }
-        let lib = if p.lib.is_empty() { "*LIBL" } else { p.lib.as_str() };
+        let lib = if p.lib.is_empty() {
+            "*LIBL"
+        } else {
+            p.lib.as_str()
+        };
         let _ = keys::command(host, &format!("CALL PGM({lib}/{})", p.pgm), RunMode::Run);
     }
 }
@@ -175,7 +182,11 @@ fn menu_group(host: &Host, name: &str) -> Option<std::rc::Rc<uim::PanelGroup>> {
         .pnlgrp
         .clone()
         .unwrap_or_else(|| menus::Qualified::new(&real, name));
-    let lib = if q.lib == "*MENU" { real } else { q.lib.clone() };
+    let lib = if q.lib == "*MENU" {
+        real
+    } else {
+        q.lib.clone()
+    };
     let (payload, _) = host
         .link
         .borrow_mut()
@@ -230,7 +241,11 @@ fn assist(host: &Host) -> Act {
                 Response::Command(text) => {
                     let text = d.substitute(&text, None);
                     let prompt = text.starts_with('?');
-                    let mode = if prompt { RunMode::PromptRun } else { RunMode::Run };
+                    let mode = if prompt {
+                        RunMode::PromptRun
+                    } else {
+                        RunMode::Run
+                    };
                     let o = keys::command(host, text.trim_start_matches('?'), mode);
                     if keys::unwinding() {
                         return Act::Gone;
@@ -265,15 +280,33 @@ fn draw_window(m: &mut tn5250::screen::ScreenModel, value: &str, message: &str) 
         m.put(r, 2, ":", attr::BLUE);
         m.put(r, right, ":", attr::BLUE);
     }
-    m.put(WIN_TOP + WIN_ROWS - 1, 2, &format!(":{}:", ".".repeat(right - 4)), attr::BLUE);
+    m.put(
+        WIN_TOP + WIN_ROWS - 1,
+        2,
+        &format!(":{}:", ".".repeat(right - 4)),
+        attr::BLUE,
+    );
     m.put(WIN_TOP + 2, 4, "===>", attr::GREEN);
     let len = inner - 8;
-    m.field(WIN_TOP + 2, 9, len, attr::GREEN_UL, value, Ffw::default(), &[]);
+    m.field(
+        WIN_TOP + 2,
+        9,
+        len,
+        attr::GREEN_UL,
+        value,
+        Ffw::default(),
+        &[],
+    );
     if !message.is_empty() {
         let shown: String = message.chars().take(right - 6).collect();
         m.put(WIN_TOP + 3, 4, &shown, attr::WHITE);
     }
-    m.put(WIN_TOP + 4, 4, "F4=Prompt   F9=Retrieve   F12=Cancel", attr::BLUE);
+    m.put(
+        WIN_TOP + 4,
+        4,
+        "F4=Prompt   F9=Retrieve   F12=Cancel",
+        attr::BLUE,
+    );
     m.set_cursor(WIN_TOP + 2, 9);
     m.field_index_at(WIN_TOP + 2, 9)
 }
@@ -281,7 +314,11 @@ fn draw_window(m: &mut tn5250::screen::ScreenModel, value: &str, message: &str) 
 /// `QUSCMDLN`: a command line in a window over the screen, until F12
 /// (or F3) leaves it.
 pub fn cmdline(host: &Host) -> Act {
-    let saved = host.display.borrow().as_ref().map(crate::display::Display::snapshot);
+    let saved = host
+        .display
+        .borrow()
+        .as_ref()
+        .map(crate::display::Display::snapshot);
     let mut surface = Surface::new(host.clone());
     let mut typed = String::new();
     let mut message = String::new();
@@ -356,7 +393,10 @@ mod tests {
         assert_eq!(target("QSYS/QUSCMDLN"), Target::CmdLine);
         assert_eq!(target("QUSCMDLN  QSYS      "), Target::CmdLine);
         assert_eq!(target("MYLIB/MYATN"), Target::Call("MYLIB/MYATN".into()));
-        assert_eq!(target("MYATN     MYLIB     "), Target::Call("MYLIB/MYATN".into()));
+        assert_eq!(
+            target("MYATN     MYLIB     "),
+            Target::Call("MYLIB/MYATN".into())
+        );
     }
 
     #[test]

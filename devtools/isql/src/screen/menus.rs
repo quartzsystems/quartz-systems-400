@@ -248,14 +248,27 @@ impl Placed {
         Self {
             key: Some(r.key),
             col: 4,
-            label: crate::attrs::field(r.key).map_or("", |f| f.label).to_string(),
+            label: crate::attrs::field(r.key)
+                .map_or("", |f| f.label)
+                .to_string(),
             field: (37, r.width),
-            hints: r.hints.iter().map(|(c, h)| (*c, (*h).to_string())).collect(),
+            hints: r
+                .hints
+                .iter()
+                .map(|(c, h)| (*c, (*h).to_string()))
+                .collect(),
             height: r.hints.len().max(1),
         }
     }
 
-    fn word(key: &'static str, col: usize, label: &str, field: (usize, usize), hints: &[&str], w: &Words<'_>) -> Self {
+    fn word(
+        key: &'static str,
+        col: usize,
+        label: &str,
+        field: (usize, usize),
+        hints: &[&str],
+        w: &Words<'_>,
+    ) -> Self {
         Self {
             key: Some(key),
             col,
@@ -288,7 +301,11 @@ mod words {
 fn items(a: &Attrs, w: &Words<'_>) -> Vec<Placed> {
     let label = |key: &str| {
         let l = crate::attrs::field(key).map_or("", |f| f.label);
-        if l.starts_with("TXT") { w(l) } else { l.to_string() }
+        if l.starts_with("TXT") {
+            w(l)
+        } else {
+            l.to_string()
+        }
     };
     let mut out = Vec::new();
     for r in PAGE1.iter().chain(PAGE2) {
@@ -304,7 +321,14 @@ fn items(a: &Attrs, w: &Words<'_>) -> Vec<Placed> {
             continue;
         }
         match a.output() {
-            Output::Printer => out.push(Placed::word("PRINTER", 4, &label("PRINTER"), (37, 10), &[words::NAME], w)),
+            Output::Printer => out.push(Placed::word(
+                "PRINTER",
+                4,
+                &label("PRINTER"),
+                (37, 10),
+                &[words::NAME],
+                w,
+            )),
             Output::File => {
                 out.push(Placed {
                     key: None,
@@ -314,19 +338,60 @@ fn items(a: &Attrs, w: &Words<'_>) -> Vec<Placed> {
                     hints: Vec::new(),
                     height: 1,
                 });
-                out.push(Placed::word("OUTFILE", 6, &label("OUTFILE"), (37, 10), &[words::NAME], w));
-                out.push(Placed::word("OUTLIB", 8, &label("OUTLIB"), (39, 10), &[words::NAME], w));
-                out.push(Placed::word("OUTMBR", 6, &label("OUTMBR"), (37, 10), &[words::MEMBERS], w));
+                out.push(Placed::word(
+                    "OUTFILE",
+                    6,
+                    &label("OUTFILE"),
+                    (37, 10),
+                    &[words::NAME],
+                    w,
+                ));
+                out.push(Placed::word(
+                    "OUTLIB",
+                    8,
+                    &label("OUTLIB"),
+                    (39, 10),
+                    &[words::NAME],
+                    w,
+                ));
+                out.push(Placed::word(
+                    "OUTMBR",
+                    6,
+                    &label("OUTMBR"),
+                    (37, 10),
+                    &[words::MEMBERS],
+                    w,
+                ));
                 out.push(Placed::word(
                     "OUTOPT",
                     6,
                     &label("OUTOPT"),
                     (37, 1),
-                    &[words::CREATE_FILE, words::REPLACE_FILE, words::CREATE_MEMBER, words::REPLACE_MEMBER, words::ADD_MEMBER],
+                    &[
+                        words::CREATE_FILE,
+                        words::REPLACE_FILE,
+                        words::CREATE_MEMBER,
+                        words::REPLACE_MEMBER,
+                        words::ADD_MEMBER,
+                    ],
                     w,
                 ));
-                out.push(Placed::word("OUTAUT", 6, &label("OUTAUT"), (37, 10), &[words::AUTL, words::AUTS, words::AUTS2], w));
-                out.push(Placed::word("OUTTEXT", 6, &label("OUTTEXT"), (37, 50), &[], w));
+                out.push(Placed::word(
+                    "OUTAUT",
+                    6,
+                    &label("OUTAUT"),
+                    (37, 10),
+                    &[words::AUTL, words::AUTS, words::AUTS2],
+                    w,
+                ));
+                out.push(Placed::word(
+                    "OUTTEXT",
+                    6,
+                    &label("OUTTEXT"),
+                    (37, 50),
+                    &[],
+                    w,
+                ));
             }
             Output::Display => {}
         }
@@ -381,7 +446,13 @@ pub fn attributes(page: usize, a: &Attrs, msg: Option<&str>, w: &Words<'_>) -> S
         match it.key {
             None => put(&mut s, row, it.col, Attr::Normal, &it.label),
             Some(key) => {
-                put(&mut s, row, it.col, Attr::Normal, &leader(&it.label, it.col, 33));
+                put(
+                    &mut s,
+                    row,
+                    it.col,
+                    Attr::Normal,
+                    &leader(&it.label, it.col, 33),
+                );
                 var(&mut s, row, it.field.0, it.field.1, key, &a.shown(key));
                 first.get_or_insert((row, it.field.0));
                 for (i, (col, h)) in it.hints.iter().enumerate() {

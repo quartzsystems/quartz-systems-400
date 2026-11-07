@@ -126,7 +126,9 @@ pub enum PlaceError {
         col: u16,
     },
     /// A target without a move.
-    #[error("A target at row {row:02}, column {col:03} has nothing to move; type - before what goes there.")]
+    #[error(
+        "A target at row {row:02}, column {col:03} has nothing to move; type - before what goes there."
+    )]
     NoSource {
         /// Row.
         row: u16,
@@ -141,10 +143,18 @@ impl PlaceError {
     pub fn msg(&self) -> uim::engine::LineMsg {
         use uim::engine::LineMsg;
         match self {
-            Self::BadField { text, row, col } => LineMsg::error("CPD9CE8", &[text, &row.to_string(), &col.to_string()]),
-            Self::BadCode { code, row, col } => LineMsg::error("CPD9CE9", &[code, &row.to_string(), &col.to_string()]),
-            Self::NoTarget { row, col } => LineMsg::error("CPD9CEA", &[&row.to_string(), &col.to_string()]),
-            Self::NoSource { row, col } => LineMsg::error("CPD9CEB", &[&row.to_string(), &col.to_string()]),
+            Self::BadField { text, row, col } => {
+                LineMsg::error("CPD9CE8", &[text, &row.to_string(), &col.to_string()])
+            }
+            Self::BadCode { code, row, col } => {
+                LineMsg::error("CPD9CE9", &[code, &row.to_string(), &col.to_string()])
+            }
+            Self::NoTarget { row, col } => {
+                LineMsg::error("CPD9CEA", &[&row.to_string(), &col.to_string()])
+            }
+            Self::NoSource { row, col } => {
+                LineMsg::error("CPD9CEB", &[&row.to_string(), &col.to_string()])
+            }
         }
     }
 }
@@ -453,7 +463,10 @@ pub fn apply(record: &mut Record, edits: &[Edit], taken: &[String]) -> Option<us
         };
         let at = insert_at(record, el.pos);
         record.elements.insert(at, el);
-        delete.iter_mut().filter(|d| **d >= at).for_each(|d| *d += 1);
+        delete
+            .iter_mut()
+            .filter(|d| **d >= at)
+            .for_each(|d| *d += 1);
         if let Some(k) = keywords.as_mut()
             && *k >= at
         {
@@ -557,12 +570,24 @@ mod tests {
     fn codes() {
         let mut r = sample();
         let shown = render(&r, &[], &View::default());
-        let t = typed(&shown, &[(3, 1, "H"), (3, 20, "R"), (5, 8, "D"), (7, 19, "CY")]);
+        let t = typed(
+            &shown,
+            &[(3, 1, "H"), (3, 20, "R"), (5, 8, "D"), (7, 19, "CY")],
+        );
         let edits = parse(&r, &shown, &t).unwrap();
-        assert!(edits.contains(&Edit::Attr { index: 0, value: "HI" }));
-        assert!(edits.contains(&Edit::Attr { index: 1, value: "RI" }));
+        assert!(edits.contains(&Edit::Attr {
+            index: 0,
+            value: "HI"
+        }));
+        assert!(edits.contains(&Edit::Attr {
+            index: 1,
+            value: "RI"
+        }));
         assert!(edits.contains(&Edit::Delete { index: 3 }));
-        assert!(edits.contains(&Edit::Color { index: 6, value: "YLW" }));
+        assert!(edits.contains(&Edit::Color {
+            index: 6,
+            value: "YLW"
+        }));
         apply(&mut r, &edits, &[]);
         assert_eq!(r.elements.len(), 6);
         assert_eq!(r.elements[0].attrs, ["HI"]);
@@ -600,7 +625,10 @@ mod tests {
         let r = Record::new("X", RecordType::Record);
         let shown = render(&r, &[], &View::default());
         let t = typed(&shown, &[(2, 2, "+Q(3)")]);
-        assert!(matches!(parse(&r, &shown, &t), Err(PlaceError::BadField { .. })));
+        assert!(matches!(
+            parse(&r, &shown, &t),
+            Err(PlaceError::BadField { .. })
+        ));
         let t = typed(&shown, &[(2, 2, "+I(2,1)")]);
         assert!(parse(&r, &shown, &t).is_err());
     }

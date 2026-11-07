@@ -63,7 +63,10 @@ pub const NAV: &[NavGroup] = &[
     },
     NavGroup {
         label: "Print",
-        items: &[("Printer output", "/print"), ("Printers", "/print/printers")],
+        items: &[
+            ("Printer output", "/print"),
+            ("Printers", "/print/printers"),
+        ],
     },
     NavGroup {
         label: "Messages",

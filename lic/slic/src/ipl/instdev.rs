@@ -52,7 +52,12 @@ pub fn tape_drives(t: &hwrsrc::Table) -> Vec<(String, PathBuf)> {
     t.resources
         .iter()
         .filter(|r| r.kind == hwrsrc::Kind::Tape && r.operational())
-        .map(|r| (r.name.clone(), PathBuf::from(format!("/dev/n{}", r.location))))
+        .map(|r| {
+            (
+                r.name.clone(),
+                PathBuf::from(format!("/dev/n{}", r.location)),
+            )
+        })
         .collect()
 }
 
@@ -139,7 +144,10 @@ fn action(store_release: Option<release::Release>, c: &Contents) -> (String, Opt
         Ok(InstallKind::Upgrade { from, to }) => (format!("Upgrade from {from} to {to}"), None),
         Err(_) => (
             format!("Not allowed over {have}"),
-            Some(svctools::dst::upgrade_refused(&c.release.to_string(), &have.to_string())),
+            Some(svctools::dst::upgrade_refused(
+                &c.release.to_string(),
+                &have.to_string(),
+            )),
         ),
     }
 }
@@ -148,7 +156,9 @@ fn action(store_release: Option<release::Release>, c: &Contents) -> (String, Opt
 /// forgets the last scan). `store_release` is the release ASP 1 records,
 /// `None` for none yet.
 pub fn scan(store_release: Option<release::Release>, rescan: bool) -> Vec<Found> {
-    let mut g = SCAN.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut g = SCAN
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if rescan {
         *g = None;
     }
@@ -199,7 +209,9 @@ pub fn scan(store_release: Option<release::Release>, rescan: bool) -> Vec<Found>
         }
         let Some(h) = head(&d.dev, 8) else { continue };
         let (carrier, contents, name) = if h == tape::virt::format::MAGIC[..] {
-            let Some(c) = tape_contents(&d.dev) else { continue };
+            let Some(c) = tape_contents(&d.dev) else {
+                continue;
+            };
             tapes += 1;
             (Carrier::Tape(d.dev.clone()), c, format!("TAPVRT{tapes:02}"))
         } else if let Some(c) = iso_contents(&d.dev) {
@@ -233,7 +245,9 @@ pub fn media_disks() -> Vec<String> {
     if !scanned {
         scan(None, false);
     }
-    let g = SCAN.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let g = SCAN
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     g.as_ref()
         .map(|v| {
             v.iter()
@@ -250,19 +264,18 @@ pub fn media_disks() -> Vec<String> {
 
 /// The device named `name`.
 pub fn by_name(name: &str) -> Option<Found> {
-    let g = SCAN.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    g.as_ref()?
-        .iter()
-        .find(|f| f.device.name == name)
-        .cloned()
+    let g = SCAN
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    g.as_ref()?.iter().find(|f| f.device.name == name).cloned()
 }
 
 /// One payload from a device, checked against its manifest.
 pub fn read(found: &Found, p: &Payload) -> Result<Vec<u8>, String> {
     let r = match &found.carrier {
-        Carrier::Boot(f) => media::with_media(f, |at| {
-            DirSource::open(at).and_then(|mut s| s.read(p))
-        })?,
+        Carrier::Boot(f) => {
+            media::with_media(f, |at| DirSource::open(at).and_then(|mut s| s.read(p)))?
+        }
         Carrier::Tape(dev) => {
             let f = OpenOptions::new()
                 .read(true)
@@ -274,7 +287,8 @@ pub fn read(found: &Found, p: &Payload) -> Result<Vec<u8>, String> {
         }
         Carrier::Iso(dev) => {
             let f = File::open(dev).map_err(|e| format!("{}: {e}", dev.display()))?;
-            let iso = optical::device::open_media(std::sync::Arc::new(f)).map_err(|e| e.to_string())?;
+            let iso =
+                optical::device::open_media(std::sync::Arc::new(f)).map_err(|e| e.to_string())?;
             IsoSource::open(iso).and_then(|mut s| s.read(p))
         }
         Carrier::Drive(node) => {
@@ -319,7 +333,9 @@ mod tests {
 
     /// A labeled tape in memory holding a system save.
     fn saved() -> VirtualTape<Cursor<Vec<u8>>> {
-        let mut t = VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(4, "SYS001")).unwrap();
+        let mut t =
+            VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(4, "SYS001"))
+                .unwrap();
         inztap(
             &mut t,
             &InzOptions {
@@ -384,7 +400,9 @@ mod tests {
 
     #[test]
     fn a_tape_of_other_data_is_not_install_media() {
-        let mut t = VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(4, "DATA01")).unwrap();
+        let mut t =
+            VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(4, "DATA01"))
+                .unwrap();
         assert!(probe(&mut t).is_none());
         inztap(
             &mut t,

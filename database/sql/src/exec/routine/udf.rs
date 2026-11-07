@@ -17,8 +17,8 @@ use store::txn::Txn;
 
 use super::find;
 use crate::ast::{
-    AssignSource, Compound, CreateRoutine, Ident, ObjectName, PlExpr, PlKind, PlSql, PlStmt, Query, Returns,
-    RoutineBody, Statement, TypeSpec,
+    AssignSource, Compound, CreateRoutine, Ident, ObjectName, PlExpr, PlKind, PlSql, PlStmt, Query,
+    Returns, RoutineBody, Statement, TypeSpec,
 };
 use crate::error::{Result, SqlError};
 use crate::exec::SqlContext;
@@ -59,14 +59,24 @@ pub fn check_body(s: &PlStmt) -> Result<()> {
             }
             all(&c.body)
         }
-        PlKind::Set(_) | PlKind::Return(_) | PlKind::ReturnQuery(_) | PlKind::Leave(_) | PlKind::Iterate(_) | PlKind::Signal(_) => Ok(()),
-        PlKind::If { branches, otherwise } => {
+        PlKind::Set(_)
+        | PlKind::Return(_)
+        | PlKind::ReturnQuery(_)
+        | PlKind::Leave(_)
+        | PlKind::Iterate(_)
+        | PlKind::Signal(_) => Ok(()),
+        PlKind::If {
+            branches,
+            otherwise,
+        } => {
             for (_, b) in branches {
                 all(b)?;
             }
             otherwise.as_deref().map_or(Ok(()), all)
         }
-        PlKind::Case { whens, otherwise, .. } => {
+        PlKind::Case {
+            whens, otherwise, ..
+        } => {
             for (_, b) in whens {
                 all(b)?;
             }
@@ -75,7 +85,9 @@ pub fn check_body(s: &PlStmt) -> Result<()> {
         PlKind::Loop(b) | PlKind::While(_, b) | PlKind::Repeat(b, _) => all(b),
         PlKind::For { body, .. } => all(body),
         PlKind::Sql(q) if !q.into.is_empty() && matches!(q.stmt, Statement::Select(_)) => Ok(()),
-        _ => Err(unsupported("that statement in an SQL function: functions read data and compute")),
+        _ => Err(unsupported(
+            "that statement in an SQL function: functions read data and compute",
+        )),
     }
 }
 
@@ -102,11 +114,13 @@ pub fn arg_form(e: &crate::ast::Expr) -> ArgForm {
     use crate::ast::{Expr, Literal};
     match e {
         Expr::Literal(Literal::Str(_)) => ArgForm::Str,
-        Expr::Literal(Literal::Num(n)) if n.bytes().all(|b| b.is_ascii_digit()) => match n.parse::<i64>() {
-            Ok(v) if i32::try_from(v).is_ok() => ArgForm::Int,
-            Ok(_) => ArgForm::Big,
-            Err(_) => ArgForm::Other,
-        },
+        Expr::Literal(Literal::Num(n)) if n.bytes().all(|b| b.is_ascii_digit()) => {
+            match n.parse::<i64>() {
+                Ok(v) if i32::try_from(v).is_ok() => ArgForm::Int,
+                Ok(_) => ArgForm::Big,
+                Err(_) => ArgForm::Other,
+            }
+        }
         _ => ArgForm::Other,
     }
 }
@@ -114,7 +128,13 @@ pub fn arg_form(e: &crate::ast::Expr) -> ArgForm {
 /// Call a user function `name` (possibly `SCHEMA.NAME`) on `args`, or
 /// `None` when no function of that name takes the arguments in the
 /// schema or the path. `forms` are the arguments' [`ArgForm`]s.
-pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value], forms: &[ArgForm]) -> Option<Result<Value>> {
+pub fn call(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    name: &str,
+    args: &[Value],
+    forms: &[ArgForm],
+) -> Option<Result<Value>> {
     let on = match name.split_once('.') {
         Some((s, n)) => ObjectName::qualified(s, n),
         None => ObjectName::new(name),
@@ -178,25 +198,42 @@ fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, args: &[Value]) -> R
     }
     DEPTH.with(|d| d.set(depth + 1));
     let r = (|| {
-        let mut it = Interp { txn, ctx, slots: Vec::new(), frames: Vec::new(), table: None };
-        let mut frame = Frame { label: Some(def.name.name.value.clone()), vars: Vec::new() };
+        let mut it = Interp {
+            txn,
+            ctx,
+            slots: Vec::new(),
+            frames: Vec::new(),
+            table: None,
+        };
+        let mut frame = Frame {
+            label: Some(def.name.name.value.clone()),
+            vars: Vec::new(),
+        };
         for (p, a) in def.parms.iter().zip(args) {
             it.slots.push((p.ty.clone(), cast(a, &p.ty)?));
-            frame.vars.push((p.name.as_ref().map(|n| n.value.clone()).unwrap_or_default(), it.slots.len() - 1));
+            frame.vars.push((
+                p.name.as_ref().map(|n| n.value.clone()).unwrap_or_default(),
+                it.slots.len() - 1,
+            ));
         }
         it.frames.push(frame);
         let body = match &def.body {
             RoutineBody::Sql(b) => b,
             RoutineBody::Sourced(src, _) => {
                 let n = src.to_string();
-                return crate::exec::func::call(n.rsplit('.').next().unwrap_or(&n), args, it.ctx).and_then(|v| cast(&v, ret));
+                return crate::exec::func::call(n.rsplit('.').next().unwrap_or(&n), args, it.ctx)
+                    .and_then(|v| cast(&v, ret));
             }
             RoutineBody::External => return Err(unsupported("external functions")),
         };
         match it.stmt(body)? {
             Flow::Return(v) => cast(&v, ret),
             // A function that ends without RETURN (SQL2F03F5).
-            _ => Err(SqlError::Coded { code: -578, state: "2F005", what: format!("function {} ended without a RETURN", def.name) }),
+            _ => Err(SqlError::Coded {
+                code: -578,
+                state: "2F005",
+                what: format!("function {} ended without a RETURN", def.name),
+            }),
         }
     })();
     DEPTH.with(|d| d.set(depth));
@@ -208,7 +245,9 @@ fn parsed(text: &str) -> Result<Rc<CreateRoutine>> {
         return Ok(d);
     }
     let Statement::CreateRoutine(r) = crate::parse::parse(text, crate::ast::Naming::Sql)? else {
-        return Err(unsupported("a function definition that is not CREATE FUNCTION"));
+        return Err(unsupported(
+            "a function definition that is not CREATE FUNCTION",
+        ));
     };
     let r: Rc<CreateRoutine> = Rc::new(*r);
     PARSED.with(|p| {
@@ -262,17 +301,29 @@ struct Interp<'a, 't> {
 
 impl Names for Interp<'_, '_> {
     fn variable(&self, name: &str) -> Option<usize> {
-        self.frames.iter().rev().find_map(|f| f.vars.iter().rev().find(|(n, _)| n == name).map(|(_, k)| *k))
+        self.frames.iter().rev().find_map(|f| {
+            f.vars
+                .iter()
+                .rev()
+                .find(|(n, _)| n == name)
+                .map(|(_, k)| *k)
+        })
     }
 
     fn qualified(&self, label: &str, name: &str) -> Option<usize> {
-        self.frames.iter().rev().find(|f| f.label.as_deref() == Some(label)).and_then(|f| f.vars.iter().find(|(n, _)| n == name).map(|(_, k)| *k))
+        self.frames
+            .iter()
+            .rev()
+            .find(|f| f.label.as_deref() == Some(label))
+            .and_then(|f| f.vars.iter().find(|(n, _)| n == name).map(|(_, k)| *k))
     }
 
     // A variable's marker has the variable's type, as IBM types it:
     // `ROUND(P * 20, 0) / 20` keeps P's scale.
     fn cast_type(&self, k: usize) -> Option<String> {
-        self.slots.get(k).map(|(t, _)| crate::pl::types::type_text(t))
+        self.slots
+            .get(k)
+            .map(|(t, _)| crate::pl::types::type_text(t))
     }
 }
 
@@ -282,7 +333,11 @@ impl Interp<'_, '_> {
             Some((l, v)) => self.qualified(l, v),
             None => self.variable(name),
         };
-        k.ok_or_else(|| SqlError::Coded { code: -312, state: "42618", what: format!("variable {name} is not declared") })
+        k.ok_or_else(|| SqlError::Coded {
+            code: -312,
+            state: "42618",
+            what: format!("variable {name} is not declared"),
+        })
     }
 
     /// The rows of a query text, its variables passed as markers.
@@ -296,12 +351,22 @@ impl Interp<'_, '_> {
 
     fn value(&mut self, e: &PlExpr) -> Result<Value> {
         let rows = self.rows(&format!("VALUES ({})", e.text), &HashSet::new())?;
-        Ok(rows.into_iter().next().and_then(|r| r.into_iter().next()).unwrap_or(Value::Null))
+        Ok(rows
+            .into_iter()
+            .next()
+            .and_then(|r| r.into_iter().next())
+            .unwrap_or(Value::Null))
     }
 
     fn truth(&mut self, e: &PlExpr) -> Result<bool> {
-        let rows = self.rows(&format!("VALUES CASE WHEN ({}) THEN 1 ELSE 0 END", e.text), &HashSet::new())?;
-        Ok(rows.first().and_then(|r| r.first()).is_some_and(|v| v.as_i64().ok() == Some(1)))
+        let rows = self.rows(
+            &format!("VALUES CASE WHEN ({}) THEN 1 ELSE 0 END", e.text),
+            &HashSet::new(),
+        )?;
+        Ok(rows
+            .first()
+            .and_then(|r| r.first())
+            .is_some_and(|v| v.as_i64().ok() == Some(1)))
     }
 
     fn assign(&mut self, name: &Ident, v: &Value) -> Result<()> {
@@ -325,7 +390,9 @@ impl Interp<'_, '_> {
     fn round(&mut self, label: Option<&Ident>, body: &[PlStmt]) -> Result<Option<Flow>> {
         match self.stmts(body)? {
             Flow::Next => Ok(None),
-            Flow::Leave(l) if Some(l.as_str()) == label.map(|x| x.value.as_str()) => Ok(Some(Flow::Next)),
+            Flow::Leave(l) if Some(l.as_str()) == label.map(|x| x.value.as_str()) => {
+                Ok(Some(Flow::Next))
+            }
             Flow::Iterate(l) if Some(l.as_str()) == label.map(|x| x.value.as_str()) => Ok(None),
             other => Ok(Some(other)),
         }
@@ -346,7 +413,8 @@ impl Interp<'_, '_> {
                             }
                         }
                         AssignSource::Row(q) => {
-                            let rows = self.rows(&format!("VALUES ({})", q.text), &HashSet::new())?;
+                            let rows =
+                                self.rows(&format!("VALUES ({})", q.text), &HashSet::new())?;
                             let row = rows.into_iter().next().unwrap_or_default();
                             for (t, v) in a.targets.iter().zip(row) {
                                 self.assign(t, &v)?;
@@ -358,7 +426,10 @@ impl Interp<'_, '_> {
             }
             PlKind::Return(Some(e)) => Flow::Return(self.value(e)?),
             PlKind::Return(None) => Flow::Return(Value::Null),
-            PlKind::If { branches, otherwise } => {
+            PlKind::If {
+                branches,
+                otherwise,
+            } => {
                 for (c, b) in branches {
                     if self.truth(c)? {
                         return self.stmts(b);
@@ -369,10 +440,17 @@ impl Interp<'_, '_> {
                     None => Flow::Next,
                 }
             }
-            PlKind::Case { operand, whens, otherwise } => {
+            PlKind::Case {
+                operand,
+                whens,
+                otherwise,
+            } => {
                 for (w, b) in whens {
                     let hit = match operand {
-                        Some(o) => self.truth(&PlExpr { text: format!("({}) = ({})", o.text, w.text), expr: w.expr.clone() })?,
+                        Some(o) => self.truth(&PlExpr {
+                            text: format!("({}) = ({})", o.text, w.text),
+                            expr: w.expr.clone(),
+                        })?,
                         None => self.truth(w)?,
                     };
                     if hit {
@@ -381,7 +459,13 @@ impl Interp<'_, '_> {
                 }
                 match otherwise {
                     Some(o) => self.stmts(o)?,
-                    None => return Err(SqlError::Coded { code: -773, state: "20000", what: "no WHEN of the CASE statement held".into() }),
+                    None => {
+                        return Err(SqlError::Coded {
+                            code: -773,
+                            state: "20000",
+                            what: "no WHEN of the CASE statement held".into(),
+                        });
+                    }
                 }
             }
             PlKind::Loop(b) => loop {
@@ -405,20 +489,28 @@ impl Interp<'_, '_> {
                     break Flow::Next;
                 }
             },
-            PlKind::For { var, query, body, .. } => self.for_loop(var, query, body, s.label.as_ref())?,
+            PlKind::For {
+                var, query, body, ..
+            } => self.for_loop(var, query, body, s.label.as_ref())?,
             PlKind::Leave(l) => Flow::Leave(l.value.clone()),
             PlKind::Iterate(l) => Flow::Iterate(l.value.clone()),
             PlKind::Signal(sg) => {
                 let state = match &sg.state {
                     Some(crate::ast::SignalValue::State(st)) => st.clone(),
-                    Some(crate::ast::SignalValue::Variable(e)) => self.value(e)?.as_text().trim_end().to_string(),
+                    Some(crate::ast::SignalValue::Variable(e)) => {
+                        self.value(e)?.as_text().trim_end().to_string()
+                    }
                     _ => return Err(unsupported("SIGNAL of a condition name in a function")),
                 };
                 let text = match &sg.message {
                     Some(m) => self.value(m)?.as_text().trim_end().to_string(),
                     None => format!("SQLSTATE {state} was signalled"),
                 };
-                return Err(SqlError::Signalled { code: -438, state, what: text.chars().take(70).collect() });
+                return Err(SqlError::Signalled {
+                    code: -438,
+                    state,
+                    what: text.chars().take(70).collect(),
+                });
             }
             PlKind::Sql(q) => self.select_into(q)?,
             PlKind::ReturnQuery(q) => {
@@ -439,7 +531,10 @@ impl Interp<'_, '_> {
     }
 
     fn compound(&mut self, c: &Compound, label: Option<&Ident>) -> Result<Flow> {
-        self.frames.push(Frame { label: label.map(|l| l.value.clone()), vars: Vec::new() });
+        self.frames.push(Frame {
+            label: label.map(|l| l.value.clone()),
+            vars: Vec::new(),
+        });
         let r = (|| {
             for v in &c.vars {
                 for n in &v.names {
@@ -449,7 +544,11 @@ impl Interp<'_, '_> {
                     };
                     self.slots.push((v.ty.clone(), init));
                     let k = self.slots.len() - 1;
-                    self.frames.last_mut().expect("frame").vars.push((n.value.clone(), k));
+                    self.frames
+                        .last_mut()
+                        .expect("frame")
+                        .vars
+                        .push((n.value.clone(), k));
                 }
             }
             self.stmts(&c.body)
@@ -479,7 +578,11 @@ impl Interp<'_, '_> {
         match rows.len() {
             0 => {}
             1 => {
-                for (t, v) in q.into.iter().zip(rows.into_iter().next().unwrap_or_default()) {
+                for (t, v) in q
+                    .into
+                    .iter()
+                    .zip(rows.into_iter().next().unwrap_or_default())
+                {
                     self.assign(t, &v)?;
                 }
             }
@@ -488,16 +591,31 @@ impl Interp<'_, '_> {
         Ok(Flow::Next)
     }
 
-    fn for_loop(&mut self, var: &Ident, q: &PlSql, body: &[PlStmt], label: Option<&Ident>) -> Result<Flow> {
+    fn for_loop(
+        &mut self,
+        var: &Ident,
+        q: &PlSql,
+        body: &[PlStmt],
+        label: Option<&Ident>,
+    ) -> Result<Flow> {
         let cols = self.table_columns(&q.stmt);
         let r = rewrite::rewrite(&q.text, self, &cols)?;
         let params: Vec<Value> = r.vars.iter().map(|k| self.slots[*k].1.clone()).collect();
         let query = query_of(&r.text)?;
-        let rs = crate::exec::query::run_query(self.txn, self.ctx, &params, &query, &Env::default())?;
-        let mut frame = Frame { label: Some(var.value.clone()), vars: Vec::new() };
+        let rs =
+            crate::exec::query::run_query(self.txn, self.ctx, &params, &query, &Env::default())?;
+        let mut frame = Frame {
+            label: Some(var.value.clone()),
+            vars: Vec::new(),
+        };
         let base = self.slots.len();
         for (i, c) in rs.columns.iter().enumerate() {
-            let ty = crate::pl::types::parse_type(&c.data_type).unwrap_or(TypeSpec { data_type: crate::ast::DataType::Varchar(32_740), ccsid: None, bit_data: false, udt: None });
+            let ty = crate::pl::types::parse_type(&c.data_type).unwrap_or(TypeSpec {
+                data_type: crate::ast::DataType::Varchar(32_740),
+                ccsid: None,
+                bit_data: false,
+                udt: None,
+            });
             self.slots.push((ty, Value::Null));
             frame.vars.push((c.name.clone(), base + i));
         }
@@ -534,8 +652,20 @@ fn fit(v: &Value, t: &crate::ast::DataType, form: ArgForm) -> u32 {
         (Value::Num(_), D::SmallInt) if matches!(form, ArgForm::Int | ArgForm::Big) => 0,
         (Value::Num(_), D::Integer) if form == ArgForm::Big => 0,
         (Value::Num(d), D::SmallInt | D::Integer | D::BigInt) => u32::from(d.scale() == 0) * 3,
-        (Value::Num(d), D::Decimal(..) | D::Numeric(..)) => if d.scale() == 0 { 2 } else { 3 },
-        (Value::Str(_), D::Char(_)) => if literal { 0 } else { 3 },
+        (Value::Num(d), D::Decimal(..) | D::Numeric(..)) => {
+            if d.scale() == 0 {
+                2
+            } else {
+                3
+            }
+        }
+        (Value::Str(_), D::Char(_)) => {
+            if literal {
+                0
+            } else {
+                3
+            }
+        }
         (Value::Null, _)
         | (Value::Num(_), D::Real | D::Double | D::DecFloat(_))
         | (Value::Double(_) | Value::Real(_), D::DecFloat(_))
@@ -561,7 +691,9 @@ thread_local! {
 
 /// Keep a function's result type for the type rules (`restype`).
 pub fn remember(def: &CreateRoutine, schema: &str) {
-    let Some(Returns::Scalar(t, _)) = &def.returns else { return };
+    let Some(Returns::Scalar(t, _)) = &def.returns else {
+        return;
+    };
     let n = def.parms.len();
     let name = &def.name.name.value;
     RESULTS.with(|r| {
@@ -588,11 +720,17 @@ pub fn forget(name: &str, schema: &str, parms: usize) {
 
 /// A user function's result type, when this process knows it (a
 /// `restype` function family, asked after the built-ins).
-pub fn result_type(name: &str, args: &[Option<crate::exec::restype::SqlType>], _: &[crate::ast::Expr]) -> Option<crate::exec::restype::SqlType> {
+pub fn result_type(
+    name: &str,
+    args: &[Option<crate::exec::restype::SqlType>],
+    _: &[crate::ast::Expr],
+) -> Option<crate::exec::restype::SqlType> {
     RESULTS.with(|r| {
-        r.borrow()
-            .get(name)
-            .and_then(|e| e.iter().find(|(k, _)| *k == args.len()).map(|(_, t)| crate::exec::restype::SqlType::of_data_type(&t.data_type, true)))
+        r.borrow().get(name).and_then(|e| {
+            e.iter()
+                .find(|(k, _)| *k == args.len())
+                .map(|(_, t)| crate::exec::restype::SqlType::of_data_type(&t.data_type, true))
+        })
     })
 }
 
@@ -610,12 +748,21 @@ pub fn table(
         Ok(f) => f,
         Err(e) => return Some(Err(e)),
     };
-    let found: Vec<_> = found.into_iter().filter(|f| f.routine.def.function_type == 2).collect();
+    let found: Vec<_> = found
+        .into_iter()
+        .filter(|f| f.routine.def.function_type == 2)
+        .collect();
     let f = best_fit(found, args, forms)?;
     Some(run_table(txn, ctx, &f.routine.def.text, args, alias))
 }
 
-fn run_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, args: &[Value], alias: &str) -> Result<crate::exec::catalog::Table> {
+fn run_table(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    text: &str,
+    args: &[Value],
+    alias: &str,
+) -> Result<crate::exec::catalog::Table> {
     use crate::exec::eval::{ColInfo, Schema};
     let def = parsed(text)?;
     let Some(Returns::Table(cols)) = &def.returns else {
@@ -630,34 +777,70 @@ fn run_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, args: &[Value]
     }
     DEPTH.with(|d| d.set(depth + 1));
     let r = (|| {
-        let mut it = Interp { txn, ctx, slots: Vec::new(), frames: Vec::new(), table: None };
-        let mut frame = Frame { label: Some(def.name.name.value.clone()), vars: Vec::new() };
+        let mut it = Interp {
+            txn,
+            ctx,
+            slots: Vec::new(),
+            frames: Vec::new(),
+            table: None,
+        };
+        let mut frame = Frame {
+            label: Some(def.name.name.value.clone()),
+            vars: Vec::new(),
+        };
         for (p, a) in def.parms.iter().zip(args) {
             it.slots.push((p.ty.clone(), cast(a, &p.ty)?));
-            frame.vars.push((p.name.as_ref().map(|n| n.value.clone()).unwrap_or_default(), it.slots.len() - 1));
+            frame.vars.push((
+                p.name.as_ref().map(|n| n.value.clone()).unwrap_or_default(),
+                it.slots.len() - 1,
+            ));
         }
         it.frames.push(frame);
         it.stmt(body)?;
-        it.table.take().ok_or_else(|| SqlError::Coded { code: -578, state: "2F005", what: format!("table function {} ended without a RETURN", def.name) })
+        it.table.take().ok_or_else(|| SqlError::Coded {
+            code: -578,
+            state: "2F005",
+            what: format!("table function {} ended without a RETURN", def.name),
+        })
     })();
     DEPTH.with(|d| d.set(depth));
     let rows = r?;
     let mut out = Vec::with_capacity(rows.len());
     for row in rows {
         if row.len() != cols.len() {
-            return Err(SqlError::ValueCount { what: format!("the query of {} gives {} columns for {}", def.name, row.len(), cols.len()) });
+            return Err(SqlError::ValueCount {
+                what: format!(
+                    "the query of {} gives {} columns for {}",
+                    def.name,
+                    row.len(),
+                    cols.len()
+                ),
+            });
         }
-        out.push(row.iter().zip(cols).map(|(v, (_, t))| cast(v, t)).collect::<Result<Vec<_>>>()?);
+        out.push(
+            row.iter()
+                .zip(cols)
+                .map(|(v, (_, t))| cast(v, t))
+                .collect::<Result<Vec<_>>>()?,
+        );
     }
     let schema = Schema {
         cols: cols
             .iter()
             .map(|(n, t)| {
-                let mut field = crate::exec::restype::field_of(&crate::exec::restype::SqlType::of_data_type(&t.data_type, true));
+                let mut field = crate::exec::restype::field_of(
+                    &crate::exec::restype::SqlType::of_data_type(&t.data_type, true),
+                );
                 if let Ok(fname) = qsname::Name::parse(&n.value) {
                     field.name = fname;
                 }
-                ColInfo { name: n.value.clone(), table: Some(alias.to_string()), field: Some(field), nullable: true, hidden: false }
+                ColInfo {
+                    name: n.value.clone(),
+                    table: Some(alias.to_string()),
+                    field: Some(field),
+                    nullable: true,
+                    hidden: false,
+                }
             })
             .collect(),
     };

@@ -32,7 +32,10 @@ const ROUTES: &[(&str, &str)] = &[
     ("/db/tables?s=HLINV", "web/tables.html"),
     ("/db/HLINV/ASSETS", "web/table-view.html"),
     ("/db/HLINV/ASSETS/insert", "web/table-insert.html"),
-    ("/db/HLINV/ASSETS/edit?key=QS000101", "web/table-insert.html"),
+    (
+        "/db/HLINV/ASSETS/edit?key=QS000101",
+        "web/table-insert.html",
+    ),
     ("/sql", "web/run-sql.html"),
     ("/sql/result/2", "web/run-sql-result-2.html"),
     ("/requests", "web/my-requests.html"),
@@ -40,9 +43,15 @@ const ROUTES: &[(&str, &str)] = &[
     ("/db/copy/from", "web/copy-export.html"),
     // Group 4.
     ("/files?path=/home/CWELLMAN", "web/files.html"),
-    ("/files/props?path=/home/CWELLMAN/assets_br1.csv", "web/file-props.html"),
+    (
+        "/files/props?path=/home/CWELLMAN/assets_br1.csv",
+        "web/file-props.html",
+    ),
     ("/files/shares", "web/my-files.html"),
-    ("/files/edit?path=/home/CWELLMAN/invload.clle", "web/file-edit.html"),
+    (
+        "/files/edit?path=/home/CWELLMAN/invload.clle",
+        "web/file-edit.html",
+    ),
     // Group 5.
     ("/print", "web/printer-output.html"),
     ("/print/props/1", "web/splf-props.html"),
@@ -54,18 +63,42 @@ const ROUTES: &[(&str, &str)] = &[
     ("/jobs/server", "web/server-jobs.html"),
     // Group 6.
     ("/cmd", "web/run-command.html"),
-    ("/cmd/prompt?cmd=WRKACTJOB+SBS(QHTTPSVR)", "web/command-prompt.html"),
+    (
+        "/cmd/prompt?cmd=WRKACTJOB+SBS(QHTTPSVR)",
+        "web/command-prompt.html",
+    ),
     ("/cmd/saved", "web/my-commands.html"),
     ("/download", "web/download.html"),
     // Pages of the other products it links to.
     ("/qs400/navigator/jobs", "nav/active-jobs.html"),
-    ("/qs400/navigator/job/123402/CWELLMAN/INVBATCH/end", "nav/end-job-confirm.html"),
-    ("/qs400/navigator/job/123402/CWELLMAN/INVBATCH/general", "nav/job-props-general.html"),
-    ("/qs400/navigator/job/123402/CWELLMAN/INVBATCH/joblog", "nav/job-props-joblog.html"),
-    ("/qs400/navigator/msgq/QUSRSYS/CWELLMAN/1", "nav/message-detail.html"),
-    ("/qs400/navigator/splf/123402/CWELLMAN/INVBATCH/INVRPT/1", "nav/spooled-view.html"),
-    ("/qs400/navigator/db/HLINV/ASSETS/columns", "nav/table-columns.html"),
-    ("/qs400/httpadmin/instance/ACCESSWEB/general", "http/instance-general.html"),
+    (
+        "/qs400/navigator/job/123402/CWELLMAN/INVBATCH/end",
+        "nav/end-job-confirm.html",
+    ),
+    (
+        "/qs400/navigator/job/123402/CWELLMAN/INVBATCH/general",
+        "nav/job-props-general.html",
+    ),
+    (
+        "/qs400/navigator/job/123402/CWELLMAN/INVBATCH/joblog",
+        "nav/job-props-joblog.html",
+    ),
+    (
+        "/qs400/navigator/msgq/QUSRSYS/CWELLMAN/1",
+        "nav/message-detail.html",
+    ),
+    (
+        "/qs400/navigator/splf/123402/CWELLMAN/INVBATCH/INVRPT/1",
+        "nav/spooled-view.html",
+    ),
+    (
+        "/qs400/navigator/db/HLINV/ASSETS/columns",
+        "nav/table-columns.html",
+    ),
+    (
+        "/qs400/httpadmin/instance/ACCESSWEB/general",
+        "http/instance-general.html",
+    ),
 ];
 
 /// Goldens that are another state of a page above (the same route
@@ -73,10 +106,16 @@ const ROUTES: &[(&str, &str)] = &[
 const STATES: &[(&str, &str)] = &[
     ("web/5250-session-white.html", "web/5250-session.html"),
     ("web/5250-session-wide.html", "web/5250-session.html"),
-    ("web/5250-session-disconnected.html", "web/5250-session.html"),
+    (
+        "web/5250-session-disconnected.html",
+        "web/5250-session.html",
+    ),
     ("web/5250-session-wait.html", "web/5250-session.html"),
     ("shared/img/5250-24x80-off.png", "shared/img/5250-24x80.png"),
-    ("shared/img/5250-24x80-white.png", "shared/img/5250-24x80.png"),
+    (
+        "shared/img/5250-24x80-white.png",
+        "shared/img/5250-24x80.png",
+    ),
     ("shared/img/5250-24x80-x2.png", "shared/img/5250-24x80.png"),
     ("shared/img/5250-27x132.png", "shared/img/5250-24x80.png"),
     ("shared/img/5250-signon.png", "shared/img/5250-24x80.png"),
@@ -85,7 +124,13 @@ const STATES: &[(&str, &str)] = &[
 
 #[test]
 fn every_route_maps_to_its_golden() {
-    let url = |r: &str| if r.starts_with("/qs400/") { r.to_string() } else { accessweb::PRODUCT.url(r) };
+    let url = |r: &str| {
+        if r.starts_with("/qs400/") {
+            r.to_string()
+        } else {
+            accessweb::PRODUCT.url(r)
+        }
+    };
     for (route, file) in ROUTES {
         assert_eq!(proto(&url(route)).as_deref(), Some(*file), "{route}");
     }
@@ -100,9 +145,16 @@ fn every_route_maps_to_its_golden() {
         }
     }
     for (file, base) in STATES {
-        assert!(seen.contains(&(*file).to_string()) && ROUTES.iter().any(|r| r.1 == *base), "{file}");
+        assert!(
+            seen.contains(&(*file).to_string()) && ROUTES.iter().any(|r| r.1 == *base),
+            "{file}"
+        );
     }
-    assert_eq!(seen.iter().filter(|f| f.starts_with("web/")).count(), 40, "{seen:?}");
+    assert_eq!(
+        seen.iter().filter(|f| f.starts_with("web/")).count(),
+        40,
+        "{seen:?}"
+    );
 }
 
 #[test]
@@ -111,7 +163,11 @@ fn signon() {
     let r = b.get("/signon");
     assert_eq!(r.status, 200);
     // The form posts back to the sign-on route; home follows by redirect.
-    assert_golden(&r.text(), "web/signon.html", &[("action=\"home.html\"", "action=\"signon.html\"")]);
+    assert_golden(
+        &r.text(),
+        "web/signon.html",
+        &[("action=\"home.html\"", "action=\"signon.html\"")],
+    );
 }
 
 #[test]
@@ -139,7 +195,10 @@ fn change_password() {
                 "QAD4031</a> - Password for CWELLMAN on QSHQ400 expires in 5 days.",
             ),
             // One form, not two nested.
-            ("<form method=\"post\"><form method=\"post\">", "<form method=\"post\">"),
+            (
+                "<form method=\"post\"><form method=\"post\">",
+                "<form method=\"post\">",
+            ),
             ("</form></form>", "</form>"),
         ],
     );
@@ -183,11 +242,7 @@ fn preferences() {
     let mut b = Browser::signed_on();
     let r = b.get("/preferences");
     assert_eq!(r.status, 200);
-    assert_golden(
-        &r.text(),
-        "web/preferences.html",
-        &[HEADER_USER],
-    );
+    assert_golden(&r.text(), "web/preferences.html", &[HEADER_USER]);
 }
 
 // Group 2: the 5250 session (handoff steps 5-6b).
@@ -234,15 +289,25 @@ fn s5250_verify() {
     assert_golden(
         &r.text(),
         "web/5250-verify.html",
-        &[HEADER_USER, ("<form method=\"post\"><form method=\"post\">", "<form method=\"post\">"), ("</form></form>", "</form>")],
+        &[
+            HEADER_USER,
+            (
+                "<form method=\"post\"><form method=\"post\">",
+                "<form method=\"post\">",
+            ),
+            ("</form></form>", "</form>"),
+        ],
     );
 }
 
 /// Where the prototype's comment says the page's one script goes.
-const SCRIPT_AT: &str = "<link rel=\"stylesheet\" type=\"text/css\" href=\"../shared/qs400.css\" />";
+const SCRIPT_AT: &str =
+    "<link rel=\"stylesheet\" type=\"text/css\" href=\"../shared/qs400.css\" />";
 
 fn session_fixes(scale: &str, scheme: &str) -> Vec<(String, String)> {
-    let script = format!("<script src=\"5250-session.js\" data-session=\"1\" data-scale=\"{scale}\" data-scheme=\"{scheme}\"></script>");
+    let script = format!(
+        "<script src=\"5250-session.js\" data-session=\"1\" data-scale=\"{scale}\" data-scheme=\"{scheme}\"></script>"
+    );
     vec![
         (HEADER_USER.0.to_string(), HEADER_USER.1.to_string()),
         (SCRIPT_AT.to_string(), format!("{SCRIPT_AT}{script}")),
@@ -250,7 +315,10 @@ fn session_fixes(scale: &str, scheme: &str) -> Vec<(String, String)> {
 }
 
 fn golden_owned(served: &str, file: &str, fixes: &[(String, String)]) {
-    let f: Vec<(&str, &str)> = fixes.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+    let f: Vec<(&str, &str)> = fixes
+        .iter()
+        .map(|(a, b)| (a.as_str(), b.as_str()))
+        .collect();
     assert_golden(served, file, &f);
 }
 
@@ -259,7 +327,11 @@ fn s5250_session() {
     let mut b = Browser::signed_on();
     let r = b.get("/5250/session/1");
     assert_eq!(r.status, 200, "{}", r.text());
-    golden_owned(&r.text(), "web/5250-session.html", &session_fixes("1", "console"));
+    golden_owned(
+        &r.text(),
+        "web/5250-session.html",
+        &session_fixes("1", "console"),
+    );
 }
 
 #[test]
@@ -288,7 +360,9 @@ fn s5250_session_states() {
     golden_owned(&r.text(), "web/5250-session-white.html", &fixes);
     // 27 x 132.
     let mut b = Browser::signed_on();
-    b.fx.s5250.set_live(1, |l| l.view.screen = accessweb::fixture::session5250::wrkactjob(27, 132));
+    b.fx.s5250.set_live(1, |l| {
+        l.view.screen = accessweb::fixture::session5250::wrkactjob(27, 132)
+    });
     let r = b.get("/5250/session/1");
     let mut fixes = session_fixes("1", "console");
     fixes.push(("5250-27x132.png".into(), "5250-24x80.png".into()));
@@ -318,10 +392,15 @@ fn s5250_session_disconnected_and_wait() {
     fixes.push(("5250-24x80-off.png".into(), "5250-24x80.png".into()));
     // The desktop's message for a session the system ended, in its words.
     fixes.push((
-        "QAD1004</a> - The connection to QSHQ400 was closed by the system at 10/29/26 14:40:12.".into(),
+        "QAD1004</a> - The connection to QSHQ400 was closed by the system at 10/29/26 14:40:12."
+            .into(),
         "QAD1005</a> - Session to QSHQ400 ended by the system.".into(),
     ));
-    golden_owned(&default_session(&mut b), "web/5250-session-disconnected.html", &fixes);
+    golden_owned(
+        &default_session(&mut b),
+        "web/5250-session-disconnected.html",
+        &fixes,
+    );
     b.fx.s5250.set_live(2, |l| {
         l.state = accessweb::env::session5250::State::SigningOn;
         l.view.connected = true;
@@ -332,7 +411,11 @@ fn s5250_session_disconnected_and_wait() {
     fixes.push(("5250-wait.png".into(), "5250-24x80.png".into()));
     // The status bar's cursor is the sign-on display's.
     fixes.push(("TLS &nbsp; 24/006".into(), "TLS &nbsp; 06/049".into()));
-    golden_owned(&default_session(&mut b), "web/5250-session-wait.html", &fixes);
+    golden_owned(
+        &default_session(&mut b),
+        "web/5250-session-wait.html",
+        &fixes,
+    );
 }
 
 #[test]
@@ -354,8 +437,15 @@ fn s5250_keymap() {
         "<form method=\"post\"><table class=\"list\"".into(),
         "<form method=\"post\" enctype=\"multipart/form-data\"><table class=\"list\"".into(),
     ));
-    for (v, n) in [("Add", "add"), ("Load", "load"), ("Export keyboard map (.qkm)", "export")] {
-        fixes.push((format!("<input type=\"submit\" value=\"{v}\">"), format!("<input type=\"submit\" name=\"{n}\" value=\"{v}\">")));
+    for (v, n) in [
+        ("Add", "add"),
+        ("Load", "load"),
+        ("Export keyboard map (.qkm)", "export"),
+    ] {
+        fixes.push((
+            format!("<input type=\"submit\" value=\"{v}\">"),
+            format!("<input type=\"submit\" name=\"{n}\" value=\"{v}\">"),
+        ));
     }
     golden_owned(&r.text(), "web/5250-keymap.html", &fixes);
 }
@@ -373,9 +463,15 @@ fn s5250_macros() {
             // Data: the macro being edited has the six steps the editor shows.
             ("<td>4</td>", "<td>6</td>"),
             // One form, not two nested; Record has a name.
-            ("enctype=\"multipart/form-data\"><form method=\"post\">", "enctype=\"multipart/form-data\">"),
+            (
+                "enctype=\"multipart/form-data\"><form method=\"post\">",
+                "enctype=\"multipart/form-data\">",
+            ),
             ("</form></form>", "</form>"),
-            ("<input type=\"submit\" value=\"Record...\">", "<input type=\"submit\" name=\"record\" value=\"Record...\">"),
+            (
+                "<input type=\"submit\" value=\"Record...\">",
+                "<input type=\"submit\" name=\"record\" value=\"Record...\">",
+            ),
         ],
     );
 }
@@ -386,13 +482,22 @@ fn s5250_macros() {
 /// names its inquiry; the text a user is to type starts empty (data).
 const MESSAGES_FIXES: &[(&str, &str)] = &[
     HEADER_USER,
-    ("<input type=\"submit\" value=\"Reply\">", "<input type=\"submit\" name=\"reply\" value=\"Reply\">"),
-    ("<input type=\"submit\" value=\"Send\">", "<input type=\"submit\" name=\"send\" value=\"Send\">"),
+    (
+        "<input type=\"submit\" value=\"Reply\">",
+        "<input type=\"submit\" name=\"reply\" value=\"Reply\">",
+    ),
+    (
+        "<input type=\"submit\" value=\"Send\">",
+        "<input type=\"submit\" name=\"send\" value=\"Send\">",
+    ),
     (
         "<h3>Reply to inquiry CPA0702</h3>Reply:",
         "<h3>Reply to inquiry CPA0702</h3><input type=\"hidden\" name=\"key\" value=\"00000003\">Reply:",
     ),
-    ("Thanks - release INVLABEL when PRT02 is reloaded.</textarea>", "</textarea>"),
+    (
+        "Thanks - release INVLABEL when PRT02 is reloaded.</textarea>",
+        "</textarea>",
+    ),
 ];
 
 #[test]
@@ -457,7 +562,10 @@ fn run_command() {
         &[
             HEADER_USER,
             // The desktop's texts, the command named.
-            ("QAD5010</a> - Command completed.", "QAD5010</a> - Command CHGDEVDSP completed."),
+            (
+                "QAD5010</a> - Command completed.",
+                "QAD5010</a> - Command CHGDEVDSP completed.",
+            ),
             (
                 "QAD5011</a> - Command ended with an error; the escape message is the last one listed.",
                 "QAD5011</a> - Command CALL ended with an error.",
@@ -479,11 +587,23 @@ fn command_prompt() {
             // Fields are named by their keywords.
             ("name=\"cpu\"", "name=\"cpupctlmt\""),
             ("name=\"rsp\"", "name=\"rsplmt\""),
-            ("<input type=\"text\" name=\"int\" value=\"\" size=\"4\">", "<input type=\"text\" name=\"interval\" value=\"\" size=\"4\" class=\"cmd\">"),
+            (
+                "<input type=\"text\" name=\"int\" value=\"\" size=\"4\">",
+                "<input type=\"text\" name=\"interval\" value=\"\" size=\"4\" class=\"cmd\">",
+            ),
             // Three nameless buttons in one form cannot be told apart.
-            ("<input type=\"submit\" value=\"Run\">", "<input type=\"submit\" name=\"run\" value=\"Run\">"),
-            ("<input type=\"submit\" value=\"Show command string\">", "<input type=\"submit\" name=\"show\" value=\"Show command string\">"),
-            ("<input type=\"submit\" value=\"Save to My commands\">", "<input type=\"submit\" name=\"save\" value=\"Save to My commands\">"),
+            (
+                "<input type=\"submit\" value=\"Run\">",
+                "<input type=\"submit\" name=\"run\" value=\"Run\">",
+            ),
+            (
+                "<input type=\"submit\" value=\"Show command string\">",
+                "<input type=\"submit\" name=\"show\" value=\"Show command string\">",
+            ),
+            (
+                "<input type=\"submit\" value=\"Save to My commands\">",
+                "<input type=\"submit\" name=\"save\" value=\"Save to My commands\">",
+            ),
             // The string holds every parameter with a value.
             (
                 "WRKACTJOB OUTPUT(*) RESET(*NO) SBS(QHTTPSVR) SEQ(*SBS) JOB(*ALL)</span>",
@@ -512,10 +632,16 @@ fn download() {
         &[
             HEADER_USER,
             // QS/400's own product data directory (the brief).
-            ("/QS400/ProdData/Access/Web/download", "/QQS/ProdData/Access/Web/download"),
+            (
+                "/QS400/ProdData/Access/Web/download",
+                "/QQS/ProdData/Access/Web/download",
+            ),
             // The links went nowhere.
             ("<a href=\"#\">", "<a href=\"download.html\">"),
-            ("<a href=\"table-view.html\">Export a table as CSV</a>", "<a href=\"tables.html\">Export a table as CSV</a>"),
+            (
+                "<a href=\"table-view.html\">Export a table as CSV</a>",
+                "<a href=\"tables.html\">Export a table as CSV</a>",
+            ),
         ],
     );
 }

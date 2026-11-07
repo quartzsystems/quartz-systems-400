@@ -103,15 +103,33 @@ impl Row {
 /// (`AT`), and three add lines (`ADDH`, `ADDM`, `ADDP` with
 /// `ADDxLEN`).
 #[must_use]
-pub fn work_with_fields(record: &str, rows: &[Row], top: usize, roll: &str, msg: Option<&str>) -> Screen {
+pub fn work_with_fields(
+    record: &str,
+    rows: &[Row],
+    top: usize,
+    roll: &str,
+    msg: Option<&str>,
+) -> Screen {
     let mut s = blank();
     title(&mut s, 33, "Work with Fields");
     put(&mut s, 3, 2, Attr::Normal, "Record . . . :");
     put(&mut s, 3, 19, Attr::HighIntensity, record);
     put(&mut s, 5, 2, Attr::Blue, "Type information, press Enter.");
-    put(&mut s, 6, 4, Attr::Normal, &leader("Number of fields to roll", 4, 63));
+    put(
+        &mut s,
+        6,
+        4,
+        Attr::Normal,
+        &leader("Number of fields to roll", 4, 63),
+    );
     var(&mut s, 6, 67, 3, "ROLL", &format!("{roll:>3}"));
-    put(&mut s, 8, 2, Attr::Blue, "Type options, change values, press Enter.");
+    put(
+        &mut s,
+        8,
+        2,
+        Attr::Blue,
+        "Type options, change values, press Enter.",
+    );
     put(&mut s, 9, 4, Attr::Blue, "1=Select keywords");
     put(&mut s, 9, 23, Attr::Blue, "2=Edit comments");
     put(&mut s, 9, 41, Attr::Blue, "4=Delete field");
@@ -194,7 +212,14 @@ pub fn work_with_fields(record: &str, rows: &[Row], top: usize, roll: &str, msg:
         var(&mut s, row, 41, 7, &format!("{name}LEN"), "");
         put(&mut s, row, 50, Attr::Normal, text);
     }
-    keys(&mut s, &[(23, 2, "F3=Exit"), (23, 12, "F6=Sort by row/column"), (23, 36, "F12=Cancel")]);
+    keys(
+        &mut s,
+        &[
+            (23, 2, "F3=Exit"),
+            (23, 12, "F6=Sort by row/column"),
+            (23, 36, "F12=Cancel"),
+        ],
+    );
     message(&mut s, msg);
     s.cursor = Some((12, 4));
     s
@@ -343,7 +368,13 @@ pub const COLORS: &[(&str, &str)] = &[
 /// A Y/N list for display attributes or colors: one field per value,
 /// named by the value.
 #[must_use]
-pub fn choose(title_text: &str, what: &str, items: &[(&str, &str)], v: Values<'_>, msg: Option<&str>) -> Screen {
+pub fn choose(
+    title_text: &str,
+    what: &str,
+    items: &[(&str, &str)],
+    v: Values<'_>,
+    msg: Option<&str>,
+) -> Screen {
     let mut s = blank();
     let col = 1 + (80 - title_text.chars().count()) / 2;
     title(&mut s, col, title_text);
@@ -374,7 +405,13 @@ pub fn keyword_text(title_text: &str, what: &str, lines: &[String], msg: Option<
     title(&mut s, col, title_text);
     put(&mut s, 3, 2, Attr::Normal, &leader("For", 2, 16));
     put(&mut s, 3, 19, Attr::HighIntensity, what);
-    put(&mut s, 5, 2, Attr::Blue, "Type keywords and their parameters, press Enter.");
+    put(
+        &mut s,
+        5,
+        2,
+        Attr::Blue,
+        "Type keywords and their parameters, press Enter.",
+    );
     for i in 0..KEYWORD_LINES {
         let v = lines.get(i).map_or("", String::as_str);
         var(&mut s, 7 + i, 4, 74, &format!("KW{i}"), v);

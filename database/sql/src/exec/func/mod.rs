@@ -5,8 +5,8 @@
 //! Scalar functions. The first set is here; later sets are families in
 //! their own modules, each listed in [`FAMILIES`] and asked first.
 
-mod decfloat;
 pub(crate) mod datetime;
+mod decfloat;
 mod format;
 pub(crate) mod math;
 pub(crate) mod misc;
@@ -124,15 +124,27 @@ pub(crate) struct Family {
 
 /// The families, asked in order before the first set.
 const FAMILIES: &[Family] = &[
-    Family { call: super::array::call },
-    Family { call: decfloat::call },
-    Family { call: super::json::plain },
-    Family { call: integrity::call },
+    Family {
+        call: super::array::call,
+    },
+    Family {
+        call: decfloat::call,
+    },
+    Family {
+        call: super::json::plain,
+    },
+    Family {
+        call: integrity::call,
+    },
     Family { call: string::call },
-    Family { call: datetime::call },
+    Family {
+        call: datetime::call,
+    },
     Family { call: math::call },
     Family { call: misc::call },
-    Family { call: services::call },
+    Family {
+        call: services::call,
+    },
 ];
 
 /// Call a scalar function; `args` are already evaluated.
@@ -210,7 +222,9 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
             if let Value::Bin(b) = a(0) {
                 let start = usize::try_from(a(1).as_i64()?.max(1) - 1).expect("positive");
                 if start > b.len() {
-                    return Err(SqlError::Overflow { what: "SUBSTR start past the end".into() });
+                    return Err(SqlError::Overflow {
+                        what: "SUBSTR start past the end".into(),
+                    });
                 }
                 let len = match args.get(2) {
                     Some(l) => usize::try_from(l.as_i64()?).unwrap_or(0),
@@ -447,7 +461,12 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
         }
         "REAL" => {
             arity(name, args, 1, 1)?;
-            let t = crate::ast::TypeSpec { data_type: crate::ast::DataType::Real, ccsid: None, bit_data: false, udt: None };
+            let t = crate::ast::TypeSpec {
+                data_type: crate::ast::DataType::Real,
+                ccsid: None,
+                bit_data: false,
+                udt: None,
+            };
             super::eval::cast(a(0), &t)?
         }
         "DATE" => {
@@ -472,9 +491,13 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
             match args {
                 // TIMESTAMP(x, p): to precision p.
                 [v, Value::Num(p)] => {
-                    let p = p.to_i128().and_then(|p| u8::try_from(p).ok()).filter(|p| *p <= 12).ok_or_else(|| {
-                        SqlError::Overflow { what: "a timestamp precision of 0 to 12 is needed".into() }
-                    })?;
+                    let p = p
+                        .to_i128()
+                        .and_then(|p| u8::try_from(p).ok())
+                        .filter(|p| *p <= 12)
+                        .ok_or_else(|| SqlError::Overflow {
+                            what: "a timestamp precision of 0 to 12 is needed".into(),
+                        })?;
                     Value::Timestamp(v.as_timestamp()?.with_precision(p))
                 }
                 [d, t] => Value::Timestamp(Timestamp::new(d.as_date()?, t.as_time()?, 0)),
@@ -484,17 +507,27 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
         }
         "NOW" => {
             let (secs, picos) = ctx.clock_picos();
-            Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos))
+            Value::Timestamp(Timestamp::new(
+                Date::from_unix(secs),
+                Time::from_unix(secs),
+                picos,
+            ))
         }
         "DECFLOAT" => {
             arity(name, args, 1, 2)?;
             let format = match args.get(1).map(Value::as_i64).transpose()? {
                 None | Some(34) => qdecimal::DfFormat::D34,
                 Some(16) => qdecimal::DfFormat::D16,
-                Some(n) => return Err(SqlError::Overflow { what: format!("DECFLOAT({n}) is not a type") }),
+                Some(n) => {
+                    return Err(SqlError::Overflow {
+                        what: format!("DECFLOAT({n}) is not a type"),
+                    });
+                }
             };
             Value::DecFloat(
-                a(0).as_decfloat(format)?.to_format(format).map_err(crate::value::decfloat_error)?,
+                a(0).as_decfloat(format)?
+                    .to_format(format)
+                    .map_err(crate::value::decfloat_error)?,
             )
         }
         "NORMALIZE_DECFLOAT" => {

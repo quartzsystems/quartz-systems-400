@@ -71,28 +71,41 @@ fn ok_line(out: &str, what: &str) -> Result<(), String> {
 
 /// The harness as a DRDA requester against the guest.
 fn requester(port: u16, rdb: &str) -> Result<String, String> {
-    let stream = TcpStream::connect(("127.0.0.1", port)).map_err(|e| format!("connect 446: {e}"))?;
-    stream.set_read_timeout(Some(Duration::from_secs(60))).map_err(|e| e.to_string())?;
+    let stream =
+        TcpStream::connect(("127.0.0.1", port)).map_err(|e| format!("connect 446: {e}"))?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(60)))
+        .map_err(|e| e.to_string())?;
     let mut opts = ConnectOpts::new(rdb, "QSECOFR", SECOFR_PASSWORD);
     opts.mechanisms = vec![Mechanism::EUsrIdPwd];
-    let mut c = Connection::connect(stream, &opts).map_err(|e| format!("DRDA connect to {rdb}: {e}"))?;
+    let mut c =
+        Connection::connect(stream, &opts).map_err(|e| format!("DRDA connect to {rdb}: {e}"))?;
     let mech = c.mechanism;
     let _ = c.execute_immediate("DROP TABLE QSTEST.DDMT");
     for stmt in [
         "CREATE TABLE QSTEST.DDMT (NAME CHAR(10) NOT NULL, CITY CHAR(10) NOT NULL)",
         "INSERT INTO QSTEST.DDMT VALUES ('Ann', 'Oslo'), ('Bob', 'Lima')",
     ] {
-        let ca = c.execute_immediate(stmt).map_err(|e| format!("{stmt}: {e}"))?;
+        let ca = c
+            .execute_immediate(stmt)
+            .map_err(|e| format!("{stmt}: {e}"))?;
         if ca.is_error() {
             return Err(format!("{stmt}: SQLCODE {} {}", ca.sqlcode, ca.sqlerrmc));
         }
     }
-    let stmt = c.prepare("SELECT NAME, CITY FROM QSTEST.DDMT ORDER BY NAME").map_err(|e| e.to_string())?;
+    let stmt = c
+        .prepare("SELECT NAME, CITY FROM QSTEST.DDMT ORDER BY NAME")
+        .map_err(|e| e.to_string())?;
     let rows = c.query(&stmt).map_err(|e| format!("query: {e}"))?;
     let text: Vec<String> = rows
         .rows
         .iter()
-        .map(|r| r.iter().map(|v| v.render().trim().to_string()).collect::<Vec<_>>().join("|"))
+        .map(|r| {
+            r.iter()
+                .map(|v| v.render().trim().to_string())
+                .collect::<Vec<_>>()
+                .join("|")
+        })
         .collect();
     if text != ["Ann|Oslo", "Bob|Lima"] {
         return Err(format!("the query answered {text:?}"));
@@ -108,16 +121,22 @@ fn requester(port: u16, rdb: &str) -> Result<String, String> {
         blocking: 10,
         format: "DDMT".into(),
     };
-    let file = c.open_file("F1", &block, 2).map_err(|e| format!("S38OPEN: {e}"))?;
+    let file = c
+        .open_file("F1", &block, 2)
+        .map_err(|e| format!("S38OPEN: {e}"))?;
     let mut rec = ddm::wire::ebcdic_fixed("Cy", 10);
     rec.extend(ddm::wire::ebcdic_fixed("Rome", 10));
-    c.put(&file, &[Rec::new(rec, 2)]).map_err(|e| format!("S38PUTM: {e}"))?;
+    c.put(&file, &[Rec::new(rec, 2)])
+        .map_err(|e| format!("S38PUTM: {e}"))?;
     let all = c
         .get(&file, ddm::cp::s38::S38GET, ddm::file::op::FIRST, 0, &[])
         .map_err(|e| format!("S38GET: {e}"))?;
     c.close_file(&file).map_err(|e| format!("S38CLOSE: {e}"))?;
     if all.records.len() != 3 {
-        return Err(format!("record access read {} records, not 3", all.records.len()));
+        return Err(format!(
+            "record access read {} records, not 3",
+            all.records.len()
+        ));
     }
     Ok(format!(
         "the harness's requester signed on ({mech:?}), ran SQL (CREATE, INSERT, SELECT of 2 rows) and record access (S38PUTM, S38GET of 3)"
@@ -127,7 +146,10 @@ fn requester(port: u16, rdb: &str) -> Result<String, String> {
 impl Suite {
     /// Step 100.
     pub(crate) fn ddm(&self, s: &mut Session) -> Result<String, String> {
-        let set = s.command(&format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"), CMD)?;
+        let set = s.command(
+            &format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"),
+            CMD,
+        )?;
         ok_line(&set, "CHGUSRPRF QSECOFR")?;
         let _ = s.command("CRTLIB LIB(QSTEST) TEXT('DDM tests')", CMD);
         let _ = s.command("STRSBS SBSD(QUSRWRK)", CMD);
@@ -139,7 +161,9 @@ impl Suite {
                 break;
             }
             if Instant::now() >= until {
-                return Err(format!("QRWTLSTN or QRWTSRVR is not active ({started}):\n{out}"));
+                return Err(format!(
+                    "QRWTLSTN or QRWTSRVR is not active ({started}):\n{out}"
+                ));
             }
             std::thread::sleep(Duration::from_secs(2));
         }
@@ -148,7 +172,10 @@ impl Suite {
 
         // The guest's own requester, to itself by a second entry.
         let _ = s.command("RMVRDBDIRE RDB(LOOP)", CMD);
-        let add = s.command("ADDRDBDIRE RDB(LOOP) RMTLOCNAME('127.0.0.1' *IP) TEXT('This system again')", CMD)?;
+        let add = s.command(
+            "ADDRDBDIRE RDB(LOOP) RMTLOCNAME('127.0.0.1' *IP) TEXT('This system again')",
+            CMD,
+        )?;
         ok_line(&add, "ADDRDBDIRE")?;
         let _ = s.command("CHGSYSVAL SYSVAL(QRETSVRSEC) VALUE('1')", CMD);
         let _ = s.command("RMVSVRAUTE USRPRF(QSECOFR) SERVER(LOOP)", CMD);
@@ -178,22 +205,41 @@ impl Suite {
         }
         // The local file with the remote one's format, and the program.
         let _ = s.command("DLTF FILE(QGPL/DDMTL)", CMD);
-        let local = s.command("svc.sql CREATE TABLE QGPL/DDMTL (NAME CHAR(10) NOT NULL, CITY CHAR(10) NOT NULL);", CMD)?;
+        let local = s.command(
+            "svc.sql CREATE TABLE QGPL/DDMTL (NAME CHAR(10) NOT NULL, CITY CHAR(10) NOT NULL);",
+            CMD,
+        )?;
         let _ = local;
         secofr_command_entry(s)?;
         let _ = entry_wait(s, "crtsrcpf FILE(QGPL/QCLSRC)", |l| l.contains("QCLSRC"));
         crate::qir::qemu::push(s, "DDMREADS", DDMREAD)?;
-        let put = s.command("svc.srcput QGPL/QCLSRC DDMREAD SRCTYPE(CLLE) FROMSTMF(DDMREADS)", CMD)?;
+        let put = s.command(
+            "svc.srcput QGPL/QCLSRC DDMREAD SRCTYPE(CLLE) FROMSTMF(DDMREADS)",
+            CMD,
+        )?;
         if !put.contains("written") {
             return Err(format!("srcput: {put}"));
         }
-        entry_wait(s, "crtclpgm PGM(QGPL/DDMREAD) SRCFILE(QGPL/QCLSRC)", has(&["DDMREAD", "created"]))?;
-        entry_wait(s, "ovrdbf FILE(DDMTL) TOFILE(QGPL/RDDMT)", |l| l.contains("DDMTL") || l.contains("verride"))?;
+        entry_wait(
+            s,
+            "crtclpgm PGM(QGPL/DDMREAD) SRCFILE(QGPL/QCLSRC)",
+            has(&["DDMREAD", "created"]),
+        )?;
+        entry_wait(s, "ovrdbf FILE(DDMTL) TOFILE(QGPL/RDDMT)", |l| {
+            l.contains("DDMTL") || l.contains("verride")
+        })?;
         let read = entry_wait(s, "call QGPL/DDMREAD", has(&["DDM rows read:"]))?;
         sign_off(s)?;
-        for want in ["DDM row Ann Oslo", "DDM row Bob Lima", "DDM row Cy Rome", "DDM rows read: 3"] {
+        for want in [
+            "DDM row Ann Oslo",
+            "DDM row Bob Lima",
+            "DDM row Cy Rome",
+            "DDM rows read: 3",
+        ] {
             if !read.contains(want) {
-                return Err(format!("the program over the DDM file did not show '{want}':\n{read}"));
+                return Err(format!(
+                    "the program over the DDM file did not show '{want}':\n{read}"
+                ));
             }
         }
         let _ = s.command("DLTF FILE(QGPL/RDDMT)", CMD);
@@ -206,19 +252,32 @@ impl Suite {
         let _ = self;
         let shipped = s.command("DSPOBJD OBJ(QSYS/QWPHPLSR4) OBJTYPE(*WSCST)", CMD)?;
         if !shipped.contains("QWPHPLSR4") || !shipped.contains("TRANSFORM") {
-            return Err(format!("QSYS/QWPHPLSR4 is not shipped as a TRANSFORM *WSCST:\n{shipped}"));
+            return Err(format!(
+                "QSYS/QWPHPLSR4 is not shipped as a TRANSFORM *WSCST:\n{shipped}"
+            ));
         }
         let _ = s.command("CRTSRCPF FILE(QGPL/QTXTSRC)", CMD);
-        let r = s.command("RTVWSCST DEVTYPE(*TRANSFORM) MFRTYPMDL(*HP5) SRCMBR(HP5) SRCFILE(QGPL/QTXTSRC)", CMD)?;
+        let r = s.command(
+            "RTVWSCST DEVTYPE(*TRANSFORM) MFRTYPMDL(*HP5) SRCMBR(HP5) SRCFILE(QGPL/QTXTSRC)",
+            CMD,
+        )?;
         ok_line(&r, "RTVWSCST")?;
         let src = s.command("svc.srcget QGPL/QTXTSRC HP5", CMD)?;
-        for want in [":WSCST DEVCLASS=TRANSFORM.", ":INITPRT", ":PAGSIZE", ":EWSCST."] {
+        for want in [
+            ":WSCST DEVCLASS=TRANSFORM.",
+            ":INITPRT",
+            ":PAGSIZE",
+            ":EWSCST.",
+        ] {
             if !src.contains(want) {
                 return Err(format!("RTVWSCST's source lacks {want}:\n{src}"));
             }
         }
         let _ = s.command("DLTWSCST WSCST(QGPL/MYHP5)", CMD);
-        let c = s.command("CRTWSCST WSCST(QGPL/MYHP5) SRCFILE(QGPL/QTXTSRC) SRCMBR(HP5)", CMD)?;
+        let c = s.command(
+            "CRTWSCST WSCST(QGPL/MYHP5) SRCFILE(QGPL/QTXTSRC) SRCMBR(HP5)",
+            CMD,
+        )?;
         ok_line(&c, "CRTWSCST")?;
         let objd = s.command("DSPOBJD OBJ(QGPL/MYHP5) OBJTYPE(*WSCST)", CMD)?;
         if !objd.contains("TRANSFORM") {
@@ -229,14 +288,27 @@ impl Suite {
         let _ = s.command("STRTCPSVR SERVER(*LPD)", CMD);
         // A spooled file: a CL compile's listing.
         let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
-        crate::qir::qemu::push(s, "WSLISTS", "             PGM
+        crate::qir::qemu::push(
+            s,
+            "WSLISTS",
+            "             PGM
              ENDPGM
-")?;
-        let _ = s.command("svc.srcput QGPL/QCLSRC WSLIST SRCTYPE(CLLE) FROMSTMF(WSLISTS)", CMD)?;
+",
+        )?;
+        let _ = s.command(
+            "svc.srcput QGPL/QCLSRC WSLIST SRCTYPE(CLLE) FROMSTMF(WSLISTS)",
+            CMD,
+        )?;
         let printed = s.command("CRTCLPGM PGM(QGPL/WSLIST) SRCFILE(QGPL/QCLSRC)", CMD)?;
         // The report and its job as the listing message names them.
         let words: Vec<&str> = printed.split_whitespace().collect();
-        let after = |w: &str| words.iter().position(|x| *x == w).and_then(|i| words.get(i + 1)).map(|s| s.trim_end_matches(['.', ',']).to_string());
+        let after = |w: &str| {
+            words
+                .iter()
+                .position(|x| *x == w)
+                .and_then(|i| words.get(i + 1))
+                .map(|s| s.trim_end_matches(['.', ',']).to_string())
+        };
         let report = after("Report").unwrap_or_else(|| "QSYSPRT".into());
         let job = after("job").unwrap_or_else(|| "*".into());
         let sent = s.command(
@@ -244,15 +316,19 @@ impl Suite {
             CMD,
         )?;
         if !sent.contains(" sent ") {
-            return Err(format!("SNDTCPSPLF through QGPL/MYHP5 did not send {report} ({printed}):
-{sent}"));
+            return Err(format!(
+                "SNDTCPSPLF through QGPL/MYHP5 did not send {report} ({printed}):
+{sent}"
+            ));
         }
         let missing = s.command(
             "SNDTCPSPLF RMTSYS('127.0.0.1') PRTQ('QPRINT') FILE(QSYSPRT) SPLNBR(*LAST) TRANSFORM(*YES) MFRTYPMDL(*WSCST) WSCST(QGPL/NOSUCH)",
             CMD,
         )?;
         if !missing.contains("CPF9801") {
-            return Err(format!("a missing *WSCST was not refused with CPF9801:\n{missing}"));
+            return Err(format!(
+                "a missing *WSCST was not refused with CPF9801:\n{missing}"
+            ));
         }
         let d = s.command("DLTWSCST WSCST(QGPL/MYHP5)", CMD)?;
         if !d.contains("deleted") {

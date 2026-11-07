@@ -91,7 +91,10 @@ fn record(r: &str, ext: bool) -> String {
         i.right(&format!("pos{k}"), &cut3("I", r, &format!("pos{k}")))
             .put(&format!("not{k}"), &cut3("I", r, &format!("not{k}")))
             .put(&format!("part{k}"), &cut3("I", r, &format!("part{k}")))
-            .put(&format!("char{k}"), raw3("I", r, &format!("char{k}")).trim_end());
+            .put(
+                &format!("char{k}"),
+                raw3("I", r, &format!("char{k}")).trim_end(),
+            );
     }
     i.text()
 }
@@ -150,10 +153,17 @@ fn ds_line(r: &str) -> String {
     if !occurs.is_empty() {
         kws.push(format!("OCCURS({occurs})"));
     }
-    d.put("name", &if name.is_empty() { String::new() } else { format!(" {name}") })
-        .put("deftype", "DS")
-        .right("to", &cut3("IDS", r, "len"))
-        .put("keywords", &kws.join(" "));
+    d.put(
+        "name",
+        &if name.is_empty() {
+            String::new()
+        } else {
+            format!(" {name}")
+        },
+    )
+    .put("deftype", "DS")
+    .right("to", &cut3("IDS", r, "len"))
+    .put("keywords", &kws.join(" "));
     d.text()
 }
 
@@ -165,21 +175,35 @@ fn subfield(r: &str, ext: bool) -> String {
     d.put("name", &format!("  {name}"));
     if ext {
         let extname = cut3("IF", r, "extname");
-        d.put("ext", "E").put("keywords", &format!("EXTFLD({extname})"));
+        d.put("ext", "E")
+            .put("keywords", &format!("EXTFLD({extname})"));
         return d.text();
     }
     let kw = cut3("IX", r, "keyword");
     if kw.starts_with('*') {
         // The program's name is the procedure's in ILE RPG.
-        let kw = if kw == "*PROGRAM" { "*PROC".to_string() } else { kw };
+        let kw = if kw == "*PROGRAM" {
+            "*PROC".to_string()
+        } else {
+            kw
+        };
         d.put("from", &kw);
     } else {
-        d.right("from", &cut3("IX", r, "from")).right("to", &cut3("IX", r, "to"));
+        d.right("from", &cut3("IX", r, "from"))
+            .right("to", &cut3("IX", r, "to"));
     }
-    d.put("type", data_type(&cut3("IX", r, "format"))).right("decimals", &cut3("IX", r, "decimals"));
+    d.put("type", data_type(&cut3("IX", r, "format")))
+        .right("decimals", &cut3("IX", r, "decimals"));
     if cut3("IX", r, "init") == "I" {
         let v = cut3("IX", r, "value");
-        d.put("keywords", &if v.is_empty() { "INZ".to_string() } else { format!("INZ({v})") });
+        d.put(
+            "keywords",
+            &if v.is_empty() {
+                "INZ".to_string()
+            } else {
+                format!("INZ({v})")
+            },
+        );
     }
     d.text()
 }

@@ -55,7 +55,10 @@ pub fn strtcp(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
     let mut env = super::tcpsvr::JobEnv::new(job, host);
     // *HTTP goes on its own: its instances marked autostart start even
     // when the administration instance is running or does not autostart.
-    let servers: Vec<String> = servers.into_iter().filter(|s| !s.eq_ignore_ascii_case("*HTTP")).collect();
+    let servers: Vec<String> = servers
+        .into_iter()
+        .filter(|s| !s.eq_ignore_ascii_case("*HTTP"))
+        .collect();
     if strsvr {
         match fw.start(&mut env, &servers::Request::autostart("*HTTP")) {
             Ok(t) if !t.is_empty() => {
@@ -89,12 +92,19 @@ pub fn endtcp(job: &mut Job, host: &Host, r: &Resolved, abnormal: bool) -> Resul
     let immediate = abnormal || param(r, "OPTION") != "*CNTRLD";
     let endsvr = abnormal || param(r, "ENDSVR") != "*NO";
     let mut out = String::new();
-    match ask(host, TcpOp::End { immediate, endsvr, ending: true })? {
+    match ask(
+        host,
+        TcpOp::End {
+            immediate,
+            endsvr,
+            ending: true,
+        },
+    )? {
         TcpReply::Done { notes, servers } => {
             lines(&notes, &mut out);
             let fw = super::tcpsvr::framework();
-    let mut env = super::tcpsvr::JobEnv::new(job, host);
-    let mut starter = servers::framework::Starter::new(&fw, &mut env);
+            let mut env = super::tcpsvr::JobEnv::new(job, host);
+            let mut starter = servers::framework::Starter::new(&fw, &mut env);
             for (_, r) in end_all(&mut starter, &servers, immediate) {
                 match r {
                     Ok(t) | Err(t) if !t.trim().is_empty() => {
@@ -107,7 +117,14 @@ pub fn endtcp(job: &mut Job, host: &Host, r: &Resolved, abnormal: bool) -> Resul
         TcpReply::Failed { note } => return Err(Fail::new(&note.msgid, note.line())),
         other => return Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
-    match ask(host, TcpOp::End { immediate, endsvr, ending: false })? {
+    match ask(
+        host,
+        TcpOp::End {
+            immediate,
+            endsvr,
+            ending: false,
+        },
+    )? {
         TcpReply::Done { notes, .. } => lines(&notes, &mut out),
         TcpReply::Failed { note } => return Err(Fail::new(&note.msgid, note.line())),
         other => return Err(Fail::check("", format!("unexpected answer {other:?}"))),
@@ -117,7 +134,13 @@ pub fn endtcp(job: &mut Job, host: &Host, r: &Resolved, abnormal: bool) -> Resul
 
 /// A TCP/IP display's data as text, for a job without a display.
 pub fn listing(host: &Host, what: &str) -> Result<String, Fail> {
-    let data = match ask(host, TcpOp::Panel { what: what.into(), args: Vec::new() })? {
+    let data = match ask(
+        host,
+        TcpOp::Panel {
+            what: what.into(),
+            args: Vec::new(),
+        },
+    )? {
         TcpReply::Panel { data } => data,
         TcpReply::Failed { note } => return Err(Fail::new(&note.msgid, note.line())),
         other => return Err(Fail::check("", format!("unexpected answer {other:?}"))),
@@ -141,8 +164,8 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
         "WRKSRVTBLE" => listing(host, "SRV"),
         "WRKPCLTBLE" => listing(host, "PCL"),
         "WRKNETTBLE" => listing(host, "NET"),
-        "CFGTCP" | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN" | "CFGTCPSMTP"
-        | "CFGTCPPTP" => Err(Fail::no_display(&r.name)),
+        "CFGTCP" | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN"
+        | "CFGTCPSMTP" | "CFGTCPPTP" => Err(Fail::no_display(&r.name)),
         _ => return None,
     })
 }

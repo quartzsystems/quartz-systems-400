@@ -53,10 +53,20 @@ fn hex(b: &[u8]) -> String {
 /// What kind of statement `text` is, for its entry.
 #[must_use]
 pub fn statement_kind(text: &str) -> StmtKind {
-    let w: Vec<String> = text.split_whitespace().take(3).map(str::to_ascii_uppercase).collect();
+    let w: Vec<String> = text
+        .split_whitespace()
+        .take(3)
+        .map(str::to_ascii_uppercase)
+        .collect();
     match w.first().map(String::as_str) {
-        Some("DECLARE") if w.get(2).is_some_and(|x| x == "CURSOR") || w.iter().any(|x| x == "CURSOR") => StmtKind::Declare,
-        Some("SELECT" | "VALUES" | "INSERT" | "UPDATE" | "DELETE" | "MERGE" | "WITH" | "SET") => StmtKind::Planned,
+        Some("DECLARE")
+            if w.get(2).is_some_and(|x| x == "CURSOR") || w.iter().any(|x| x == "CURSOR") =>
+        {
+            StmtKind::Declare
+        }
+        Some("SELECT" | "VALUES" | "INSERT" | "UPDATE" | "DELETE" | "MERGE" | "WITH" | "SET") => {
+            StmtKind::Planned
+        }
         _ => StmtKind::Plain,
     }
 }
@@ -89,7 +99,11 @@ pub struct Precompile {
 }
 
 fn sep(v: &str) -> String {
-    if v.starts_with('*') || v.starts_with('\'') { v.to_string() } else { format!("'{v}'") }
+    if v.starts_with('*') || v.starts_with('\'') {
+        v.to_string()
+    } else {
+        format!("'{v}'")
+    }
 }
 
 /// The options, keyword and value, in the report's order. The values
@@ -98,7 +112,10 @@ fn sep(v: &str) -> String {
 #[must_use]
 pub fn options(p: &Precompile) -> Vec<(String, String)> {
     let other = |k: &str, dft: &str| -> String {
-        p.other.iter().find(|(n, _)| n.eq_ignore_ascii_case(k)).map_or_else(|| dft.to_string(), |(_, v)| v.clone())
+        p.other
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(k))
+            .map_or_else(|| dft.to_string(), |(_, v)| v.clone())
     };
     let mut out = vec![("OBJ".into(), p.object.clone())];
     if !p.srcfile.is_empty() {
@@ -233,14 +250,28 @@ impl Pages<'_> {
 /// The report, FCFC lines.
 #[must_use]
 pub fn render(h: &Heading, options: &[(String, String)], stmts: &[StmtDef]) -> Vec<String> {
-    let mut p = Pages { h, lines: Vec::new(), page: 0, used: 0 };
-    p.group('-', &[format!("Object name...............{}", h.object), format!("Object type...............{}", h.objtype)]);
+    let mut p = Pages {
+        h,
+        lines: Vec::new(),
+        page: 0,
+        used: 0,
+    };
+    p.group(
+        '-',
+        &[
+            format!("Object name...............{}", h.object),
+            format!("Object type...............{}", h.objtype),
+        ],
+    );
     let mut opts = vec![String::new(), format!("  {}", h.command)];
     opts.extend(options.iter().map(|(k, v)| format!("      {k}({v})")));
     opts.push(format!("      STATEMENT TEXT CCSID({})", h.ccsid));
     p.group('-', &opts);
     // Declarations first, then the statements in source order.
-    let order = stmts.iter().filter(|s| s.kind == StmtKind::Declare).chain(stmts.iter().filter(|s| s.kind != StmtKind::Declare));
+    let order = stmts
+        .iter()
+        .filter(|s| s.kind == StmtKind::Declare)
+        .chain(stmts.iter().filter(|s| s.kind != StmtKind::Declare));
     for s in order {
         let mut g: Vec<String> = wrap(&s.text)
             .into_iter()
@@ -252,7 +283,10 @@ pub fn render(h: &Heading, options: &[(String, String)], stmts: &[StmtDef]) -> V
         }
         p.group('-', &g);
     }
-    p.lines.push(format!(" {:31}* * * * *  E N D  O F  L I S T I N G  * * * * *", ""));
+    p.lines.push(format!(
+        " {:31}* * * * *  E N D  O F  L I S T I N G  * * * * *",
+        ""
+    ));
     p.lines
 }
 
@@ -265,19 +299,34 @@ pub fn entries(stmts: &[(u32, String)]) -> Vec<StmtDef> {
     stmts
         .iter()
         .filter(|(_, t)| {
-            let w: Vec<String> = t.split_whitespace().take(2).map(str::to_ascii_uppercase).collect();
+            let w: Vec<String> = t
+                .split_whitespace()
+                .take(2)
+                .map(str::to_ascii_uppercase)
+                .collect();
             // SET OPTION, INCLUDE and WHENEVER are the precompiler's own.
-            let decl = w.first().is_some_and(|x| x == "DECLARE") && !t.to_ascii_uppercase().contains("CURSOR");
-            !(decl || w == ["SET", "OPTION"] || w.first().is_some_and(|x| x == "INCLUDE" || x == "WHENEVER" || x == "BEGIN" || x == "END"))
+            let decl = w.first().is_some_and(|x| x == "DECLARE")
+                && !t.to_ascii_uppercase().contains("CURSOR");
+            !(decl
+                || w == ["SET", "OPTION"]
+                || w.first().is_some_and(|x| {
+                    x == "INCLUDE" || x == "WHENEVER" || x == "BEGIN" || x == "END"
+                }))
         })
-        .map(|(line, t)| StmtDef { line: *line, kind: statement_kind(t), text: statement_text(t) })
+        .map(|(line, t)| StmtDef {
+            line: *line,
+            kind: statement_kind(t),
+            text: statement_text(t),
+        })
         .collect()
 }
 
 /// A `PRTSQLINF` form QS/400 does not print.
 #[must_use]
 pub fn refusal(what: &str) -> String {
-    format!("{what} is not supported: only programs and service programs made with embedded SQL are printed")
+    format!(
+        "{what} is not supported: only programs and service programs made with embedded SQL are printed"
+    )
 }
 
 /// `SQL0204`'s text: `name` in `lib` not found.

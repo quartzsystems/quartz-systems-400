@@ -22,15 +22,11 @@ pub fn run_chgrp(cx: &mut UtilCtx<'_>) -> i32 {
 }
 
 fn user(cx: &UtilCtx<'_>, s: &str) -> Option<u32> {
-    cx.sys
-        .user_id(s)
-        .or_else(|| s.parse().ok())
+    cx.sys.user_id(s).or_else(|| s.parse().ok())
 }
 
 fn group(cx: &UtilCtx<'_>, s: &str) -> Option<u32> {
-    cx.sys
-        .group_id(s)
-        .or_else(|| s.parse().ok())
+    cx.sys.group_id(s).or_else(|| s.parse().ok())
 }
 
 fn change(cx: &mut UtilCtx<'_>, name: &str, group_only: bool) -> i32 {

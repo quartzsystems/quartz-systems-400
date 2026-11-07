@@ -53,7 +53,11 @@ impl fmt::Display for Report {
             writeln!(f, "{} case(s) without a result row", self.missing.len())?;
         }
         if !self.unanswered.is_empty() {
-            writeln!(f, "{} case(s) with a blank result row", self.unanswered.len())?;
+            writeln!(
+                f,
+                "{} case(s) with a blank result row",
+                self.unanswered.len()
+            )?;
         }
         write!(
             f,

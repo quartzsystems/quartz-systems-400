@@ -8,11 +8,11 @@
 mod authority;
 pub(crate) mod db;
 mod fill;
-pub(crate) mod ile;
 pub(crate) mod ifs;
+pub(crate) mod ile;
 mod jobq;
-pub mod neta;
 mod msgq;
+pub mod neta;
 pub(crate) mod objects;
 mod procstat;
 mod sbs;
@@ -387,9 +387,13 @@ pub(crate) fn sysval_set(system: &mut System, name: &str, value: &str) -> String
         return "System values not loaded\n".to_string();
     };
     let name = name.to_ascii_uppercase();
-    let security = vals.catalog().get(&name).is_some_and(|e| e.group == sysval::Group::Sec);
+    let security = vals
+        .catalog()
+        .get(&name)
+        .is_some_and(|e| e.group == sysval::Group::Sec);
     let actor = crate::stgsvc::security::actor();
-    let dst = crate::stgsvc::security::dst_allows_sysval_changes(system.lic.as_ref().map(|(_, r)| r));
+    let dst =
+        crate::stgsvc::security::dst_allows_sysval_changes(system.lic.as_ref().map(|(_, r)| r));
     if let Err(e) = sec::sysval::require_change(actor.as_ref(), &name, security, dst) {
         return format!("{e}\n");
     }
@@ -459,7 +463,8 @@ fn sysdump(system: &mut System, rest: &[&str]) -> String {
         Err(e) => format!("{e}\n"),
     };
     match rest {
-        [] | ["take"] => match crate::stgsvc::dumps::take(system, "Taken from the service console") {
+        [] | ["take"] => match crate::stgsvc::dumps::take(system, "Taken from the service console")
+        {
             Ok(n) => format!("System dump {n} taken.\n"),
             Err(e) => format!("{e}\n"),
         },
@@ -482,7 +487,10 @@ fn sysdump(system: &mut System, rest: &[&str]) -> String {
 
 /// `liclog [MAJOR]`.
 fn liclog(rest: &[&str]) -> String {
-    let major = rest.first().and_then(|m| u16::from_str_radix(m, 16).ok()).unwrap_or(0);
+    let major = rest
+        .first()
+        .and_then(|m| u16::from_str_radix(m, 16).ok())
+        .unwrap_or(0);
     crate::stgsvc::liclog::entries(major)
         .iter()
         .map(|e| crate::stgsvc::liclog::line(e) + "\n")

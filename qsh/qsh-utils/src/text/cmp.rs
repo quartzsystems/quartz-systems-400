@@ -49,7 +49,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     }
     let ops = &p.operands;
     if ops.len() < 2 || ops.len() > 4 {
-        return usage(cx, NAME, "Two files are needed, then up to two skip counts.");
+        return usage(
+            cx,
+            NAME,
+            "Two files are needed, then up to two skip counts.",
+        );
     }
     if ops[0] == "-" && ops[1] == "-" {
         return usage(cx, NAME, "Only one file can be standard input.");

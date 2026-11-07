@@ -17,7 +17,6 @@ use crate::qemu::session::Session;
 use crate::steps::Suite;
 use crate::tcp::{GUEST, forward_port};
 
-
 /// The certificate commands derive store keys (Argon2id), slow without
 /// acceleration.
 const SLOW: Duration = Duration::from_secs(120);
@@ -90,13 +89,30 @@ impl Suite {
             &["TCP1C02", "TCP1C14"],
         )?;
         // The IBM i ID is an alias of the QS400_ one.
-        expect(s, "QSASNCRT APPID(QIBM_HTTP_SERVER_ADMIN) LABEL(STEP70)", &["TCP1C08"])?;
+        expect(
+            s,
+            "QSASNCRT APPID(QIBM_HTTP_SERVER_ADMIN) LABEL(STEP70)",
+            &["TCP1C08"],
+        )?;
         let list = expect(s, "QSWRKCRT", &["STEP70"])?;
-        if !list.lines().any(|l| l.starts_with("STEP70") && l.contains("Expiring") && l.contains("QS400_HTTP_SERVER_ADMIN")) {
-            return Err(format!("QSWRKCRT does not show STEP70 expiring and assigned:\n{list}"));
+        if !list.lines().any(|l| {
+            l.starts_with("STEP70")
+                && l.contains("Expiring")
+                && l.contains("QS400_HTTP_SERVER_ADMIN")
+        }) {
+            return Err(format!(
+                "QSWRKCRT does not show STEP70 expiring and assigned:\n{list}"
+            ));
         }
-        let apps = expect(s, "QSWRKAPPID APPID(QS400_HTTP*)", &["QS400_HTTP_SERVER_ADMIN"])?;
-        if !apps.lines().any(|l| l.starts_with("QS400_HTTP_SERVER_ADMIN") && l.trim_end().ends_with("STEP70")) {
+        let apps = expect(
+            s,
+            "QSWRKAPPID APPID(QS400_HTTP*)",
+            &["QS400_HTTP_SERVER_ADMIN"],
+        )?;
+        if !apps
+            .lines()
+            .any(|l| l.starts_with("QS400_HTTP_SERVER_ADMIN") && l.trim_end().ends_with("STEP70"))
+        {
             return Err(format!("QSWRKAPPID does not show the assignment:\n{apps}"));
         }
         // Twenty days left: the 30-day warning goes to QSYSOPR, once.
@@ -109,7 +125,11 @@ impl Suite {
             return Err(format!("QSCHKCRT warned twice:\n{again}"));
         }
         // The server presents the assigned certificate.
-        expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", &["TCP1A07", "TCP1A08"])?;
+        expect(
+            s,
+            "STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)",
+            &["TCP1A07", "TCP1A08"],
+        )?;
         let port = forward_port(self, GUEST, 2010)?;
         let der = served_certificate(port)?;
         let info = certs::x509::CertInfo::from_der(&der).map_err(|e| e.to_string())?;
@@ -119,7 +139,11 @@ impl Suite {
         expect(s, "ENDTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", &["TCP1A0A"])?;
         // Unassigned, the server goes back to the store's default, which
         // is still STEP70 (the only certificate): nothing else to see.
-        expect(s, "QSASNCRT APPID(QS400_HTTP_SERVER_ADMIN) LABEL(*NONE)", &["TCP1C09"])?;
+        expect(
+            s,
+            "QSASNCRT APPID(QS400_HTTP_SERVER_ADMIN) LABEL(*NONE)",
+            &["TCP1C09"],
+        )?;
         Ok(format!(
             "*SYSTEM made, STEP70 assigned to QS400_HTTP_SERVER_ADMIN and served on 2010 (host {port}, SHA-256 {}...), one expiry warning",
             &info.sha256[..16]

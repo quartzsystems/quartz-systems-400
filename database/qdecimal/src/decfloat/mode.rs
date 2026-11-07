@@ -29,8 +29,15 @@ pub enum DfRounding {
 
 impl DfRounding {
     /// Every mode.
-    pub const ALL: [Self; 7] =
-        [Self::HalfEven, Self::HalfUp, Self::HalfDown, Self::Down, Self::Up, Self::Ceiling, Self::Floor];
+    pub const ALL: [Self; 7] = [
+        Self::HalfEven,
+        Self::HalfUp,
+        Self::HalfDown,
+        Self::Down,
+        Self::Up,
+        Self::Ceiling,
+        Self::Floor,
+    ];
 
     /// The SQL name: `ROUND_HALF_EVEN` ...
     #[must_use]
@@ -57,7 +64,9 @@ impl DfRounding {
     /// whose kept digits end in `last` and whose sign is `neg` rounds
     /// the kept magnitude up by one.
     pub(crate) fn rounds_up(self, neg: bool, last: u8, dropped: &[u8]) -> bool {
-        let Some((&first, rest)) = dropped.split_last() else { return false };
+        let Some((&first, rest)) = dropped.split_last() else {
+            return false;
+        };
         let nonzero = first != 0 || rest.iter().any(|d| *d != 0);
         if !nonzero {
             return false;
@@ -69,7 +78,9 @@ impl DfRounding {
             Ordering::Equal => Ordering::Equal,
         };
         match self {
-            Self::HalfEven => half == Ordering::Greater || (half == Ordering::Equal && last % 2 == 1),
+            Self::HalfEven => {
+                half == Ordering::Greater || (half == Ordering::Equal && last % 2 == 1)
+            }
             Self::HalfUp => half != Ordering::Less,
             Self::HalfDown => half == Ordering::Greater,
             Self::Down => false,

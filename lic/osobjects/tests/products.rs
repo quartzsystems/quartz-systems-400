@@ -76,7 +76,10 @@ fn the_http_server_is_installed_and_checks_clean() {
     let (mut store, qsys) = system();
     let mut t = store.begin().unwrap();
     let made = osobjects::products::create_all(&mut t, qsys, &stamp(NOW)).unwrap();
-    assert_eq!(made, 7, "QHTTPSVR and QZHBMSG, QRPG and QRPGMSG, QZXWMSG and the two Access for Web stores");
+    assert_eq!(
+        made, 7,
+        "QHTTPSVR and QZHBMSG, QRPG and QRPGMSG, QZXWMSG and the two Access for Web stores"
+    );
     assert_eq!(
         osobjects::products::create_all(&mut t, qsys, &stamp(NOW)).unwrap(),
         0

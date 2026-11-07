@@ -108,7 +108,10 @@ pub struct XmlError {
 }
 
 fn ev(kind: Kind, text: impl Into<String>) -> Event {
-    Event { kind, text: text.into() }
+    Event {
+        kind,
+        text: text.into(),
+    }
 }
 
 fn is_name_char(c: char) -> bool {
@@ -131,7 +134,12 @@ fn predef(name: &str) -> Option<char> {
 /// error, whose code and offset come back with the events before it.
 #[must_use]
 pub fn events(doc: &str) -> (Vec<Event>, Option<XmlError>) {
-    let mut p = Parser { s: doc.chars().collect(), i: 0, out: vec![ev(Kind::StartDocument, "")], open: Vec::new() };
+    let mut p = Parser {
+        s: doc.chars().collect(),
+        i: 0,
+        out: vec![ev(Kind::StartDocument, "")],
+        open: Vec::new(),
+    };
     let r = p.document();
     if r.is_ok() {
         p.out.push(ev(Kind::EndDocument, ""));
@@ -148,7 +156,10 @@ struct Parser {
 
 impl Parser {
     fn err(&self, code: u32) -> XmlError {
-        XmlError { code, offset: self.i }
+        XmlError {
+            code,
+            offset: self.i,
+        }
     }
 
     fn peek(&self) -> Option<char> {
@@ -156,7 +167,9 @@ impl Parser {
     }
 
     fn starts(&self, t: &str) -> bool {
-        t.chars().enumerate().all(|(k, c)| self.s.get(self.i + k) == Some(&c))
+        t.chars()
+            .enumerate()
+            .all(|(k, c)| self.s.get(self.i + k) == Some(&c))
     }
 
     fn skip_ws(&mut self) {
@@ -224,7 +237,10 @@ impl Parser {
     }
 
     fn quoted(&mut self) -> Result<String, XmlError> {
-        let q = self.peek().filter(|c| *c == '"' || *c == '\'').ok_or_else(|| self.err(5))?;
+        let q = self
+            .peek()
+            .filter(|c| *c == '"' || *c == '\'')
+            .ok_or_else(|| self.err(5))?;
         self.i += 1;
         let start = self.i;
         while self.peek().is_some_and(|c| c != q) {
@@ -291,11 +307,32 @@ impl Parser {
                 None => num.parse().ok(),
             };
             let c = v.and_then(char::from_u32).ok_or_else(|| self.err(8))?;
-            return Ok(ev(if attr { Kind::AttrUcs2Ref } else { Kind::Ucs2Ref }, c.to_string()));
+            return Ok(ev(
+                if attr {
+                    Kind::AttrUcs2Ref
+                } else {
+                    Kind::Ucs2Ref
+                },
+                c.to_string(),
+            ));
         }
         Ok(match predef(&name) {
-            Some(c) => ev(if attr { Kind::AttrPredefRef } else { Kind::PredefRef }, c.to_string()),
-            None => ev(if attr { Kind::UnknownAttrRef } else { Kind::UnknownRef }, name),
+            Some(c) => ev(
+                if attr {
+                    Kind::AttrPredefRef
+                } else {
+                    Kind::PredefRef
+                },
+                c.to_string(),
+            ),
+            None => ev(
+                if attr {
+                    Kind::UnknownAttrRef
+                } else {
+                    Kind::UnknownRef
+                },
+                name,
+            ),
         })
     }
 
@@ -326,7 +363,10 @@ impl Parser {
                     }
                     self.i += 1;
                     self.skip_ws();
-                    let q = self.peek().filter(|c| *c == '"' || *c == '\'').ok_or_else(|| self.err(9))?;
+                    let q = self
+                        .peek()
+                        .filter(|c| *c == '"' || *c == '\'')
+                        .ok_or_else(|| self.err(9))?;
                     self.i += 1;
                     self.out.push(ev(Kind::AttrName, an));
                     let mut run = String::new();
@@ -444,7 +484,10 @@ pub fn tree(doc: &str) -> Result<Element, XmlError> {
     let mut attr: Option<(String, String)> = None;
     for e in evs {
         match e.kind {
-            Kind::StartElement => stack.push(Element { name: e.text, ..Element::default() }),
+            Kind::StartElement => stack.push(Element {
+                name: e.text,
+                ..Element::default()
+            }),
             Kind::AttrName => attr = Some((e.text, String::new())),
             Kind::AttrChars | Kind::AttrPredefRef | Kind::AttrUcs2Ref => {
                 if let Some(a) = attr.as_mut() {
@@ -471,7 +514,10 @@ pub fn tree(doc: &str) -> Result<Element, XmlError> {
             _ => {}
         }
     }
-    root.ok_or(XmlError { code: 2, offset: doc.len() })
+    root.ok_or(XmlError {
+        code: 2,
+        offset: doc.len(),
+    })
 }
 
 /// The options of `%XML`.
@@ -491,13 +537,22 @@ pub struct Options {
 
 /// Read `%XML`'s options; the first one not valid, as written.
 pub fn options(text: &str) -> Result<Options, String> {
-    let mut o = Options { case: "lower".into(), ..Options::default() };
+    let mut o = Options {
+        case: "lower".into(),
+        ..Options::default()
+    };
     for w in text.split_whitespace() {
         let (k, v) = w.split_once('=').ok_or_else(|| w.to_string())?;
         let lv = v.to_ascii_lowercase();
         match k.to_ascii_lowercase().as_str() {
             "doc" if lv == "string" => {}
-            "path" => o.path = v.split('/').filter(|s| !s.is_empty()).map(str::to_string).collect(),
+            "path" => {
+                o.path = v
+                    .split('/')
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+                    .collect()
+            }
             "case" if matches!(lv.as_str(), "lower" | "upper" | "any") => o.case = lv,
             "allowmissing" if matches!(lv.as_str(), "yes" | "no") => o.allow_missing = lv == "yes",
             "allowextra" if matches!(lv.as_str(), "yes" | "no") => o.allow_extra = lv == "yes",
@@ -625,7 +680,11 @@ pub(crate) fn store_scalar(addr: u64, d: &crate::value::Desc, text: &str) -> Res
 fn fill(addr: u64, s: &Shape, el: &Element, o: &Options) -> Result<(), IntoError> {
     if s.children.is_empty() {
         let d = crate::value::Desc::of(s.desc);
-        let text = if o.trim_none { el.text.clone() } else { trim_all(&el.text) };
+        let text = if o.trim_none {
+            el.text.clone()
+        } else {
+            trim_all(&el.text)
+        };
         return store_scalar(addr, &d, &text);
     }
     // Every child element and attribute is a subfield.
@@ -637,7 +696,11 @@ fn fill(addr: u64, s: &Shape, el: &Element, o: &Options) -> Result<(), IntoError
     }
     for c in &s.children {
         let base = addr + c.off;
-        let kids: Vec<&Element> = el.children.iter().filter(|k| name_matches(&k.name, &c.name, &o.case)).collect();
+        let kids: Vec<&Element> = el
+            .children
+            .iter()
+            .filter(|k| name_matches(&k.name, &c.name, &o.case))
+            .collect();
         if c.dim > 0 {
             if kids.len() > c.dim as usize || (kids.len() < c.dim as usize && !o.allow_missing) {
                 return Err(IntoError::Mismatch);
@@ -649,8 +712,15 @@ fn fill(addr: u64, s: &Shape, el: &Element, o: &Options) -> Result<(), IntoError
         }
         if let Some(e) = kids.first() {
             fill(base, c, e, o)?;
-        } else if let Some((_, v)) = el.attrs.iter().find(|(n, _)| name_matches(n, &c.name, &o.case)) {
-            let e = Element { text: v.clone(), ..Element::default() };
+        } else if let Some((_, v)) = el
+            .attrs
+            .iter()
+            .find(|(n, _)| name_matches(n, &c.name, &o.case))
+        {
+            let e = Element {
+                text: v.clone(),
+                ..Element::default()
+            };
             fill(base, c, &e, o)?;
         } else if !o.allow_missing {
             return Err(IntoError::Mismatch);
@@ -667,13 +737,22 @@ fn selected<'a>(root: &'a Element, s: &Shape, o: &Options) -> Result<Vec<&'a Ele
         }
         return Ok(vec![root]);
     }
-    let eq = |x: &str, p: &str| if o.case == "any" { x.eq_ignore_ascii_case(p) } else { x == p };
+    let eq = |x: &str, p: &str| {
+        if o.case == "any" {
+            x.eq_ignore_ascii_case(p)
+        } else {
+            x == p
+        }
+    };
     if !eq(&root.name, &o.path[0]) {
         return Err(IntoError::Mismatch);
     }
     let mut level = vec![root];
     for p in &o.path[1..] {
-        level = level.iter().flat_map(|e| e.children.iter().filter(|c| eq(&c.name, p))).collect();
+        level = level
+            .iter()
+            .flat_map(|e| e.children.iter().filter(|c| eq(&c.name, p)))
+            .collect();
     }
     Ok(level)
 }
@@ -721,7 +800,14 @@ pub(crate) fn varchar_at(addr: i64) -> String {
 /// Send the runtime's escape for an RPG status.
 fn escape(j: &mut mi::Job, status: u16) {
     let id = format!("RNX{status:04}");
-    let _ = j.send_message(&id, "QRNXMSG", "*LIBL", Vec::new(), qir::MsgType::Escape, mi::QueueRef::Same);
+    let _ = j.send_message(
+        &id,
+        "QRNXMSG",
+        "*LIBL",
+        Vec::new(),
+        qir::MsgType::Escape,
+        mi::QueueRef::Same,
+    );
 }
 
 /// The RPG status of a failed `XML-INTO`.
@@ -735,19 +821,49 @@ fn status(e: IntoError) -> u16 {
 
 /// The code address a procedure pointer in storage holds, if any.
 pub(crate) fn proc_at(addr: i64) -> Option<usize> {
-    let b: [u8; 16] = crate::value::bytes(addr.cast_unsigned(), 16).try_into().ok()?;
+    let b: [u8; 16] = crate::value::bytes(addr.cast_unsigned(), 16)
+        .try_into()
+        .ok()?;
     let p = mi::FatPtr::from_bytes(&b);
-    if p.kind() == Some(mi::PtrKind::Procedure) { usize::try_from(p.offset).ok() } else { None }
+    if p.kind() == Some(mi::PtrKind::Procedure) {
+        usize::try_from(p.offset).ok()
+    } else {
+        None
+    }
 }
 
 /// `XML-INTO %HANDLER`: the elements in groups of the handler's array
 /// size; the number passed.
-fn into_handler(j: &mut mi::Job, addr: usize, comm: i64, s: &Shape, doc: &str, opts: &str) -> Result<i64, IntoError> {
+fn into_handler(
+    j: &mut mi::Job,
+    addr: usize,
+    comm: i64,
+    s: &Shape,
+    doc: &str,
+    opts: &str,
+) -> Result<i64, IntoError> {
     let o = options(opts).map_err(|_| IntoError::Option)?;
     let root = tree(doc).map_err(|_| IntoError::Parse)?;
-    let one = Shape { dim: 0, ..s.clone() };
-    let named = Shape { name: o.path.last().map(|p| p.to_ascii_uppercase()).unwrap_or_default(), ..one.clone() };
-    let els = selected(&root, &named, &Options { case: "any".into(), ..o.clone() })?;
+    let one = Shape {
+        dim: 0,
+        ..s.clone()
+    };
+    let named = Shape {
+        name: o
+            .path
+            .last()
+            .map(|p| p.to_ascii_uppercase())
+            .unwrap_or_default(),
+        ..one.clone()
+    };
+    let els = selected(
+        &root,
+        &named,
+        &Options {
+            case: "any".into(),
+            ..o.clone()
+        },
+    )?;
     let group = usize::try_from(s.dim.max(1)).unwrap_or(1);
     let mut buf = vec![0u8; usize::try_from(s.stride).unwrap_or(0) * group];
     let mut total = 0i64;
@@ -759,7 +875,8 @@ fn into_handler(j: &mut mi::Job, addr: usize, comm: i64, s: &Shape, doc: &str, o
         let n = i64::try_from(chunk.len()).unwrap_or(0);
         total += n;
         let mark = j.raised.len();
-        let rc = mi::act::call_into_handler(j, addr, comm.cast_unsigned(), buf.as_mut_ptr() as u64, n);
+        let rc =
+            mi::act::call_into_handler(j, addr, comm.cast_unsigned(), buf.as_mut_ptr() as u64, n);
         if j.pending() {
             handler_failed(j, mark);
             break;
@@ -774,9 +891,18 @@ fn into_handler(j: &mut mi::Job, addr: usize, comm: i64, s: &Shape, doc: &str, o
 /// A handler ended in error: the operation fails with the error that
 /// ended it (its status, not the function check that followed).
 pub(crate) fn handler_failed(j: &mut mi::Job, mark: usize) {
-    let Some(first) = j.raised.get(mark).cloned() else { return };
+    let Some(first) = j.raised.get(mark).cloned() else {
+        return;
+    };
     j.clear();
-    let _ = j.send_message(&first.msgid, &first.msgf, "*LIBL", first.data, qir::MsgType::Escape, mi::QueueRef::Same);
+    let _ = j.send_message(
+        &first.msgid,
+        &first.msgf,
+        "*LIBL",
+        first.data,
+        qir::MsgType::Escape,
+        mi::QueueRef::Same,
+    );
 }
 
 /// `_QRNX_XMLINTO(target, shape, doc, dd, opts, od, handler, comm)`:
@@ -795,7 +921,9 @@ pub extern "sysv64" fn xml_into(
     comm: i64,
 ) -> i64 {
     let j = job(env);
-    let Some(s) = shape(&varchar_at(shp)) else { return 0 };
+    let Some(s) = shape(&varchar_at(shp)) else {
+        return 0;
+    };
     let (doc, opts) = (text_of(doc, dd), text_of(opts, od));
     let r = match proc_at(h) {
         Some(addr) => into_handler(j, addr, comm, &s, &doc, &opts),
@@ -809,7 +937,17 @@ pub extern "sysv64" fn xml_into(
 
 /// `_QRNX_XMLSAX(handler, comm, doc, dd, opts, od)`: every event of the
 /// document to the handler, until it returns nonzero.
-pub extern "sysv64" fn xml_sax(env: *mut codegen::abi::Env, _argc: i64, _od: i64, h: i64, comm: i64, doc: i64, dd: i64, opts: i64, od: i64) {
+pub extern "sysv64" fn xml_sax(
+    env: *mut codegen::abi::Env,
+    _argc: i64,
+    _od: i64,
+    h: i64,
+    comm: i64,
+    doc: i64,
+    dd: i64,
+    opts: i64,
+    od: i64,
+) {
     let j = job(env);
     let Some(addr) = proc_at(h) else { return };
     let text = text_of(doc, dd);
@@ -822,7 +960,14 @@ pub extern "sysv64" fn xml_sax(env: *mut codegen::abi::Env, _argc: i64, _od: i64
     let mut list: Vec<(i32, Option<String>, i32)> = evs
         .into_iter()
         .map(|e| {
-            let with_text = !matches!(e.kind, Kind::StartDocument | Kind::EndDocument | Kind::EndAttr | Kind::StartCdata | Kind::EndCdata);
+            let with_text = !matches!(
+                e.kind,
+                Kind::StartDocument
+                    | Kind::EndDocument
+                    | Kind::EndAttr
+                    | Kind::StartCdata
+                    | Kind::EndCdata
+            );
             (e.kind as i32, with_text.then_some(e.text), 0)
         })
         .collect();
@@ -830,7 +975,11 @@ pub extern "sysv64" fn xml_sax(env: *mut codegen::abi::Env, _argc: i64, _od: i64
     let mut exc_len = 0;
     if let Some(e) = err {
         exc_len = i64::try_from(e.offset).unwrap_or(0) + 1;
-        list.push((Kind::Exception as i32, None, i32::try_from(e.code).unwrap_or(1)));
+        list.push((
+            Kind::Exception as i32,
+            None,
+            i32::try_from(e.code).unwrap_or(1),
+        ));
     }
     for (event, s, exc) in list {
         let mut data = crate::value::ebcdic(s.as_deref().unwrap_or(""));
@@ -871,7 +1020,11 @@ mod tests {
     use super::*;
 
     fn kinds(doc: &str) -> Vec<(Kind, String)> {
-        events(doc).0.into_iter().map(|e| (e.kind, e.text)).collect()
+        events(doc)
+            .0
+            .into_iter()
+            .map(|e| (e.kind, e.text))
+            .collect()
     }
 
     #[test]

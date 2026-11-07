@@ -37,14 +37,20 @@ fn server_ending_reaches_every_connection() {
     for r in runs {
         let mut r = r;
         let e = r.client.recv().expect("ServerEnding");
-        assert_eq!((e.kind, e.request_id, e.service, e.op), (Kind::Event, 0, Service::Connection, event::SERVER_ENDING));
+        assert_eq!(
+            (e.kind, e.request_id, e.service, e.op),
+            (Kind::Event, 0, Service::Connection, event::SERVER_ENDING)
+        );
         assert_eq!(e.status, Status::ServerEnding);
         assert!(r.client.closed());
         assert_eq!(r.server.join().unwrap(), Closed::ServerEnding);
     }
     // A connection made after the end is refused.
     let late = qapd::testing::try_serve_loopback_as(cfg(), &sys, qapd::testing::next_job());
-    assert_eq!(late.err().map(|e| e.kind()), Some(std::io::ErrorKind::ConnectionRefused));
+    assert_eq!(
+        late.err().map(|e| e.kind()),
+        Some(std::io::ErrorKind::ConnectionRefused)
+    );
 }
 
 #[test]
@@ -61,9 +67,15 @@ fn an_ended_listener_refuses_until_restarted() {
     assert!(refused.is_err(), "connected while ended: {refused:?}");
     // The open connection gets ServerEnding, as before.
     let e = open.recv().expect("ServerEnding");
-    assert_eq!((e.kind, e.service, e.status), (Kind::Event, Service::Connection, Status::ServerEnding));
+    assert_eq!(
+        (e.kind, e.service, e.status),
+        (Kind::Event, Service::Connection, Status::ServerEnding)
+    );
     assert!(open.closed());
-    assert_eq!(l.next_close(Duration::from_secs(10)).map(|(_, why)| why), Some(Closed::ServerEnding));
+    assert_eq!(
+        l.next_close(Duration::from_secs(10)).map(|(_, why)| why),
+        Some(Closed::ServerEnding)
+    );
     // A restart opens the same port again; new connections work.
     sys.restart().expect("restart");
     assert!(l.accepting());
@@ -117,8 +129,16 @@ fn a_dropped_connection_gets_no_reply() {
     let mut r = bob(&sys);
     let mut other = bob(&sys);
     // The job finishes the command before its connection ends.
-    let id = r.client.request(Op::RunCommand, &CommandText { command: "DLYJOB DLY(2)".into() });
-    assert_eq!(sys.wait_running(r.job, Duration::from_secs(10)).as_deref(), Some("DLYJOB"));
+    let id = r.client.request(
+        Op::RunCommand,
+        &CommandText {
+            command: "DLYJOB DLY(2)".into(),
+        },
+    );
+    assert_eq!(
+        sys.wait_running(r.job, Duration::from_secs(10)).as_deref(),
+        Some("DLYJOB")
+    );
     assert!(sys.drop_connection(r.job));
     // Closed under the request: no reply, no event.
     assert!(r.client.closed(), "request {id} was answered");

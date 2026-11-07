@@ -57,16 +57,67 @@ pub struct Sample {
     pub group: bool,
 }
 
-const ALL: &[&str] = &["*ALLOBJ", "*AUDIT", "*IOSYSCFG", "*JOBCTL", "*SAVSYS", "*SECADM", "*SERVICE", "*SPLCTL"];
+const ALL: &[&str] = &[
+    "*ALLOBJ",
+    "*AUDIT",
+    "*IOSYSCFG",
+    "*JOBCTL",
+    "*SAVSYS",
+    "*SECADM",
+    "*SERVICE",
+    "*SPLCTL",
+];
 
 /// The profiles, in the order the system lists them.
 pub const PROFILES: &[Sample] = &[
-    Sample { name: "CWELLMAN", text: "Cody Wellman", class: "*SECOFR", special: ALL, groups: &["ADMINS"], group: false },
-    Sample { name: "QSECOFR", text: "Security officer", class: "*SECOFR", special: ALL, groups: &[], group: false },
-    Sample { name: "WEBUSER", text: "Web user", class: "*USER", special: &[], groups: &["WEBUSERS"], group: false },
-    Sample { name: "WEBUSERS", text: "Access for Web users", class: "*USER", special: &[], groups: &[], group: true },
-    Sample { name: "WAREHOUSE", text: "Warehouse staff", class: "*USER", special: &[], groups: &[], group: true },
-    Sample { name: "ADMINS", text: "Administrators", class: "*SECOFR", special: ALL, groups: &[], group: true },
+    Sample {
+        name: "CWELLMAN",
+        text: "Cody Wellman",
+        class: "*SECOFR",
+        special: ALL,
+        groups: &["ADMINS"],
+        group: false,
+    },
+    Sample {
+        name: "QSECOFR",
+        text: "Security officer",
+        class: "*SECOFR",
+        special: ALL,
+        groups: &[],
+        group: false,
+    },
+    Sample {
+        name: "WEBUSER",
+        text: "Web user",
+        class: "*USER",
+        special: &[],
+        groups: &["WEBUSERS"],
+        group: false,
+    },
+    Sample {
+        name: "WEBUSERS",
+        text: "Access for Web users",
+        class: "*USER",
+        special: &[],
+        groups: &[],
+        group: true,
+    },
+    Sample {
+        name: "WAREHOUSE",
+        text: "Warehouse staff",
+        class: "*USER",
+        special: &[],
+        groups: &[],
+        group: true,
+    },
+    Sample {
+        name: "ADMINS",
+        text: "Administrators",
+        class: "*SECOFR",
+        special: ALL,
+        groups: &[],
+        group: true,
+    },
 ];
 
 fn sample(user: &str) -> Option<&'static Sample> {
@@ -95,11 +146,18 @@ impl Default for FixtureSystem {
 
 impl FixtureSystem {
     fn password(&self, user: &str) -> String {
-        self.passwords.lock().expect("passwords").get(user).cloned().unwrap_or_else(|| PASSWORD.into())
+        self.passwords
+            .lock()
+            .expect("passwords")
+            .get(user)
+            .cloned()
+            .unwrap_or_else(|| PASSWORD.into())
     }
 
     fn refuse(id: &str, user: &str) -> Message {
-        let text = text::second_level(id, &[user]).map(|s| s.text).unwrap_or_default();
+        let text = text::second_level(id, &[user])
+            .map(|s| s.text)
+            .unwrap_or_default();
         Message::new(Kind::Error, id, &text)
     }
 }
@@ -124,11 +182,17 @@ impl System for FixtureSystem {
     fn sign_on(&self, user: &str, password: &str, _from: &str) -> Result<SignOn, Message> {
         let u = user.trim().to_ascii_uppercase();
         let Some(p) = sample(&u) else {
-            self.audit(Audit::Password { user: u.clone(), code: 'U' });
+            self.audit(Audit::Password {
+                user: u.clone(),
+                code: 'U',
+            });
             return Err(Self::refuse("CPF2204", &u));
         };
         if password != self.password(p.name) {
-            self.audit(Audit::Password { user: u.clone(), code: 'P' });
+            self.audit(Audit::Password {
+                user: u.clone(),
+                code: 'P',
+            });
             return Err(Self::refuse("CPF22E2", &u));
         }
         let expired = self.expired.lock().expect("expired").contains(&u);
@@ -149,7 +213,10 @@ impl System for FixtureSystem {
         if new.len() < 8 || new == current {
             return Err(Self::refuse("CPF2234", user));
         }
-        self.passwords.lock().expect("passwords").insert(user.to_string(), new.to_string());
+        self.passwords
+            .lock()
+            .expect("passwords")
+            .insert(user.to_string(), new.to_string());
         self.expired.lock().expect("expired").retain(|u| u != user);
         Ok(())
     }
@@ -167,7 +234,11 @@ impl System for FixtureSystem {
     }
 
     fn user_class(&self, user: &str) -> String {
-        PROFILES.iter().find(|p| p.name == user).map_or("*USER", |p| p.class).to_string()
+        PROFILES
+            .iter()
+            .find(|p| p.name == user)
+            .map_or("*USER", |p| p.class)
+            .to_string()
     }
 
     fn groups(&self, user: &str) -> Vec<String> {
@@ -179,12 +250,23 @@ impl System for FixtureSystem {
     }
 
     fn text(&self, user: &str) -> String {
-        PROFILES.iter().find(|p| p.name == user).map(|p| p.text.to_string()).unwrap_or_default()
+        PROFILES
+            .iter()
+            .find(|p| p.name == user)
+            .map(|p| p.text.to_string())
+            .unwrap_or_default()
     }
 
     fn profiles(&self, _user: &str) -> Vec<Profile> {
         // The order the prototype's select shows.
-        let order = ["CWELLMAN", "QSECOFR", "WEBUSER", "WEBUSERS", "WAREHOUSE", "ADMINS"];
+        let order = [
+            "CWELLMAN",
+            "QSECOFR",
+            "WEBUSER",
+            "WEBUSERS",
+            "WAREHOUSE",
+            "ADMINS",
+        ];
         order
             .iter()
             .filter_map(|n| PROFILES.iter().find(|p| p.name == *n))

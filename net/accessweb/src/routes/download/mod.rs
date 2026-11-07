@@ -87,9 +87,17 @@ fn page(rq: &Rq<'_>) -> Response {
             })
             .collect();
         if name == DATA {
-            links.push(format!("<a href=\"{}\">Export a table as CSV</a>", esc(&PRODUCT.url("/db/tables"))));
+            links.push(format!(
+                "<a href=\"{}\">Export a table as CSV</a>",
+                esc(&PRODUCT.url("/db/tables"))
+            ));
         }
-        let _ = write!(body, "<h2>{}</h2><div class=\"small\">{}</div>", esc(name), links.join("<br>"));
+        let _ = write!(
+            body,
+            "<h2>{}</h2><div class=\"small\">{}</div>",
+            esc(name),
+            links.join("<br>")
+        );
     }
     rq.page(Page {
         title: "Download".into(),

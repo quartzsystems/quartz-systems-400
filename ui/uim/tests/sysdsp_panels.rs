@@ -34,7 +34,10 @@ fn sysreq_help() {
     for (w, o) in want[2..20].iter().zip(&got[2..20]) {
         for row in [w, o] {
             assert!(row.trim_end().len() <= 73, "row passes column 73: {row}");
-            assert!(matches!(first(row), None | Some(2 | 6)), "row starts oddly: {row}");
+            assert!(
+                matches!(first(row), None | Some(2 | 6)),
+                "row starts oddly: {row}"
+            );
         }
         headings += usize::from(first(o) == Some(2));
     }
@@ -46,16 +49,29 @@ fn sysreq_help() {
 
 /// A panel without a golden: its title centered on row 1 and its keys
 /// on the key rows.
-fn title_and_keys(group: &str, panel: &str, d: &MapDialog, title: &str, keys: &[&str]) -> Vec<String> {
+fn title_and_keys(
+    group: &str,
+    panel: &str,
+    d: &MapDialog,
+    title: &str,
+    keys: &[&str],
+) -> Vec<String> {
     let g = shipped(group);
     let s = render(&g, panel, d, &sysname()).unwrap();
     let rows = s.text_rows();
     let col = 1 + (80 - title.len()) / 2;
-    assert_eq!(rows[0].get(col - 1..col - 1 + title.len()), Some(title), "{panel} title");
+    assert_eq!(
+        rows[0].get(col - 1..col - 1 + title.len()),
+        Some(title),
+        "{panel} title"
+    );
     assert!(rows[1].contains("System:"), "{panel}: the system name row");
     let key_rows = format!("{}\n{}", rows[21], rows[22]);
     for k in keys {
-        assert!(key_rows.contains(k), "{panel}: {k} not on the key rows:\n{key_rows}");
+        assert!(
+            key_rows.contains(k),
+            "{panel}: {k} not on the key rows:\n{key_rows}"
+        );
     }
     rows
 }
@@ -86,7 +102,13 @@ fn sysreq_7_wrkstnusr() {
 fn tfrgrpjob() {
     let mut d = MapDialog::new();
     d.set("CURGRP", "GRP1");
-    let rows = title_and_keys("QWCTFRGJ", "TFRGRPJOB", &d, "Transfer to Group Job", &["F3=Exit", "F12=Cancel"]);
+    let rows = title_and_keys(
+        "QWCTFRGJ",
+        "TFRGRPJOB",
+        &d,
+        "Transfer to Group Job",
+        &["F3=Exit", "F12=Cancel"],
+    );
     assert!(rows.iter().any(|r| r.contains("1=Select")));
     assert!(rows.iter().any(|r| r.contains("Group Job")));
 }
@@ -97,7 +119,13 @@ fn about() {
     d.set("RELEASE", "V1R0M0")
         .set("SERIAL", "10A1B2C")
         .set("MODEL", "Dell Inc. PowerEdge R240");
-    let rows = title_and_keys("QUIABOUT", "ABOUT", &d, "About QS/400", &["F3=Exit", "F12=Cancel"]);
+    let rows = title_and_keys(
+        "QUIABOUT",
+        "ABOUT",
+        &d,
+        "About QS/400",
+        &["F3=Exit", "F12=Cancel"],
+    );
     let all = rows.join("\n");
     assert!(all.contains("V1R0M0") && all.contains("10A1B2C"));
     // The firmware's model whole; no processor feature.

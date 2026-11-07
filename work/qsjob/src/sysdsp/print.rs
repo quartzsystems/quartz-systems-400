@@ -40,7 +40,8 @@ fn spool(host: &Host, lines: &[String]) -> Result<u32, String> {
     let mut p = PrinterState::new(open);
     for l in lines {
         let bytes = ccsid::to_ebcdic(l).unwrap_or_default();
-        p.write(&mut sink, "", &bytes).map_err(|e| e.msgid.clone())?;
+        p.write(&mut sink, "", &bytes)
+            .map_err(|e| e.msgid.clone())?;
     }
     p.flush(&mut sink).map_err(|e| e.msgid.clone())?;
     sink.close(id, false).map_err(|e| e.msgid)?;

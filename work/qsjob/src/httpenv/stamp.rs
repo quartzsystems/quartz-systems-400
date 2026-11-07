@@ -9,7 +9,8 @@
 /// `secs` (UTC) at `offset` seconds east of UTC, as `(date, time)`, in
 /// the formats the values name (`ccsid::nls::Formats`, the one path).
 pub fn stamp(secs: u64, offset: i32, datfmt: &str, datsep: &str, timsep: &str) -> (String, String) {
-    ccsid::nls::Formats::parse(datfmt, datsep, timsep, "").stamp(i64::try_from(secs).unwrap_or(0), i64::from(offset))
+    ccsid::nls::Formats::parse(datfmt, datsep, timsep, "")
+        .stamp(i64::try_from(secs).unwrap_or(0), i64::from(offset))
 }
 
 /// The offset of time zone `zone` (a `QTIMZON` value) at `secs`; `None`
@@ -27,12 +28,24 @@ mod tests {
 
     #[test]
     fn formats() {
-        assert_eq!(stamp(T, 0, "*MDY", "/", ":"), ("10/29/26".into(), "14:02:17".into()));
-        assert_eq!(stamp(T, 0, "*YMD", "-", "."), ("26-10-29".into(), "14.02.17".into()));
+        assert_eq!(
+            stamp(T, 0, "*MDY", "/", ":"),
+            ("10/29/26".into(), "14:02:17".into())
+        );
+        assert_eq!(
+            stamp(T, 0, "*YMD", "-", "."),
+            ("26-10-29".into(), "14.02.17".into())
+        );
         assert_eq!(stamp(T, 0, "*DMY", ".", ":").0, "29.10.26");
         assert_eq!(stamp(T, 0, "*JUL", "/", ":").0, "26/302");
-        assert_eq!(stamp(T, -5 * 3600, "*MDY", "/", ":"), ("10/29/26".into(), "09:02:17".into()));
-        assert_eq!(stamp(T, 10 * 3600, "*MDY", "/", ":"), ("10/30/26".into(), "00:02:17".into()));
+        assert_eq!(
+            stamp(T, -5 * 3600, "*MDY", "/", ":"),
+            ("10/29/26".into(), "09:02:17".into())
+        );
+        assert_eq!(
+            stamp(T, 10 * 3600, "*MDY", "/", ":"),
+            ("10/30/26".into(), "00:02:17".into())
+        );
         assert_eq!(stamp(T, 0, "*MDY", " ", ":").0, "10 29 26");
         assert_eq!(zone_offset("Q0000UTC", T), Some(0));
         assert_eq!(zone_offset("NOWHERE", T), None);

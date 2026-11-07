@@ -46,20 +46,38 @@ pub fn page(rq: &Rq<'_>) -> Response {
         PropGroup {
             title: Some("Defaults for new instances".into()),
             rows: vec![
-                Prop::new("Default server user profile", input("usrprf", &s.default_user, 10)),
-                Prop::new("Default server root", input_cmd("root", &s.default_root, 30)),
-                Prop::new("Default threads per instance", input("thr", &s.default_threads.to_string(), 4)),
+                Prop::new(
+                    "Default server user profile",
+                    input("usrprf", &s.default_user, 10),
+                ),
+                Prop::new(
+                    "Default server root",
+                    input_cmd("root", &s.default_root, 30),
+                ),
+                Prop::new(
+                    "Default threads per instance",
+                    input("thr", &s.default_threads.to_string(), 4),
+                ),
             ],
         },
         PropGroup {
             title: Some("Limits".into()),
             rows: vec![
-                Prop::new("Maximum instances", input("max", &s.max_instances.to_string(), 4)),
-                Prop::new("Maximum threads per instance", input("maxthr", &s.max_threads.to_string(), 4)),
+                Prop::new(
+                    "Maximum instances",
+                    input("max", &s.max_instances.to_string(), 4),
+                ),
+                Prop::new(
+                    "Maximum threads per instance",
+                    input("maxthr", &s.max_threads.to_string(), 4),
+                ),
             ],
         },
         PropGroup {
-            title: Some(format!("Administration server ({SELF_INSTANCE}, port {})", admin_port(rq))),
+            title: Some(format!(
+                "Administration server ({SELF_INSTANCE}, port {})",
+                admin_port(rq)
+            )),
             rows: vec![
                 Prop::new(
                     "Require TLS for administration",
@@ -79,7 +97,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
                     "Session timeout",
                     format!("{} minutes", input("to", &s.session_minutes.to_string(), 3)),
                 ),
-                Prop::new("Allow administration from", input_cmd("from", &s.allow_from.join(", "), 40)),
+                Prop::new(
+                    "Allow administration from",
+                    input_cmd("from", &s.allow_from.join(", "), 40),
+                ),
             ],
         },
         PropGroup {
@@ -96,13 +117,19 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let body = props(
         &rq.ctx,
         &groups,
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     rq.page(Page {
         title: "Global settings".into(),
         crumb: CRUMB.iter().map(ToString::to_string).collect(),
         h1: "Global settings".into(),
-        desc: Some("Settings that apply to the administration server and to every instance.".into()),
+        desc: Some(
+            "Settings that apply to the administration server and to every instance.".into(),
+        ),
         body,
         help: "global".into(),
         nav: Some(("Advanced", Some("/global"))),
@@ -110,7 +137,12 @@ pub fn page(rq: &Rq<'_>) -> Response {
     })
 }
 
-fn num(f: &qsweb::http::Form, name: &str, what: &str, range: std::ops::RangeInclusive<u32>) -> Result<u32, Message> {
+fn num(
+    f: &qsweb::http::Form,
+    name: &str,
+    what: &str,
+    range: std::ops::RangeInclusive<u32>,
+) -> Result<u32, Message> {
     f.str(name)
         .trim()
         .parse::<u32>()
@@ -140,7 +172,9 @@ fn read(rq: &Rq<'_>, old: &Settings) -> Result<Settings, Message> {
     let max_threads = num(&f, "maxthr", "the maximum threads per instance", 1..=9999)?;
     let threads = num(&f, "thr", "the default threads per instance", 1..=9999)?;
     if threads > max_threads {
-        return Err(invalid("the default threads per instance exceed the maximum"));
+        return Err(invalid(
+            "the default threads per instance exceed the maximum",
+        ));
     }
     let allow_from: Vec<String> = f
         .str("from")
@@ -152,9 +186,15 @@ fn read(rq: &Rq<'_>, old: &Settings) -> Result<Settings, Message> {
     for n in &allow_from {
         let (a, bits) = n.split_once('/').unwrap_or((n, "0"));
         let ip = a.parse::<std::net::IpAddr>();
-        let max = if matches!(ip, Ok(std::net::IpAddr::V6(_))) { 128 } else { 32 };
+        let max = if matches!(ip, Ok(std::net::IpAddr::V6(_))) {
+            128
+        } else {
+            32
+        };
         if ip.is_err() || bits.parse::<u32>().map_or(true, |b| b > max) {
-            return Err(invalid(&format!("{n} is not an address or network such as 10.0.0.0/8")));
+            return Err(invalid(&format!(
+                "{n} is not an address or network such as 10.0.0.0/8"
+            )));
         }
     }
     if f.has("admtls") && !old.admin_tls && !rq.admin.tls_up() {
@@ -165,7 +205,9 @@ fn read(rq: &Rq<'_>, old: &Settings) -> Result<Settings, Message> {
     }
     let me = rq.peer.addr.ip();
     if !allow_from.is_empty() && !allow_from.iter().any(|n| in_net(me, n)) {
-        return Err(invalid(&format!("the allowed networks do not include your own address {me}")));
+        return Err(invalid(&format!(
+            "the allowed networks do not include your own address {me}"
+        )));
     }
     Ok(Settings {
         default_user: user,
@@ -189,16 +231,52 @@ fn changes(a: &Settings, b: &Settings) -> String {
             c.push(format!("{name} {x} to {y}"));
         }
     };
-    d("default user", a.default_user.clone(), b.default_user.clone());
-    d("default root", a.default_root.clone(), b.default_root.clone());
-    d("default threads", a.default_threads.to_string(), b.default_threads.to_string());
-    d("maximum instances", a.max_instances.to_string(), b.max_instances.to_string());
-    d("maximum threads", a.max_threads.to_string(), b.max_threads.to_string());
-    d("TLS required", a.admin_tls.to_string(), b.admin_tls.to_string());
-    d("session timeout", a.session_minutes.to_string(), b.session_minutes.to_string());
-    d("allowed networks", a.allow_from.join(","), b.allow_from.join(","));
+    d(
+        "default user",
+        a.default_user.clone(),
+        b.default_user.clone(),
+    );
+    d(
+        "default root",
+        a.default_root.clone(),
+        b.default_root.clone(),
+    );
+    d(
+        "default threads",
+        a.default_threads.to_string(),
+        b.default_threads.to_string(),
+    );
+    d(
+        "maximum instances",
+        a.max_instances.to_string(),
+        b.max_instances.to_string(),
+    );
+    d(
+        "maximum threads",
+        a.max_threads.to_string(),
+        b.max_threads.to_string(),
+    );
+    d(
+        "TLS required",
+        a.admin_tls.to_string(),
+        b.admin_tls.to_string(),
+    );
+    d(
+        "session timeout",
+        a.session_minutes.to_string(),
+        b.session_minutes.to_string(),
+    );
+    d(
+        "allowed networks",
+        a.allow_from.join(","),
+        b.allow_from.join(","),
+    );
     d("audit", a.audit.to_string(), b.audit.to_string());
-    if c.is_empty() { "no change".into() } else { c.join("; ") }
+    if c.is_empty() {
+        "no change".into()
+    } else {
+        c.join("; ")
+    }
 }
 
 fn apply(rq: &Rq<'_>) -> Response {
@@ -213,9 +291,14 @@ fn apply(rq: &Rq<'_>) -> Response {
         Err(m) => return rq.done("/global", m),
     };
     if let Err(e) = new.save(files) {
-        return rq.done("/global", invalid(&format!("the settings could not be written: {e}")));
+        return rq.done(
+            "/global",
+            invalid(&format!("the settings could not be written: {e}")),
+        );
     }
-    rq.admin.sessions.set_idle(Duration::from_secs(u64::from(new.session_minutes) * 60));
+    rq.admin
+        .sessions
+        .set_idle(Duration::from_secs(u64::from(new.session_minutes) * 60));
     // The change that turns auditing off is itself audited.
     if old.audit || new.audit {
         rq.env().system.audit(Audit::Change {
@@ -225,5 +308,9 @@ fn apply(rq: &Rq<'_>) -> Response {
         });
     }
     let m = msgs::message(Kind::Done, "HTP8330", &[PATH]);
-    if f.has("ok") { rq.done("/instances", m) } else { rq.done("/global", m) }
+    if f.has("ok") {
+        rq.done("/instances", m)
+    } else {
+        rq.done("/global", m)
+    }
 }

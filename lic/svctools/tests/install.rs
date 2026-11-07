@@ -111,7 +111,10 @@ fn install_screens_match_their_golden_files() {
     p.done(0);
     p.done(1);
     p.done(2);
-    check("restore-status", &svctools::install::lic_status(&e, &p).dump());
+    check(
+        "restore-status",
+        &svctools::install::lic_status(&e, &p).dump(),
+    );
     let mut none = MemEnv::new("QS400");
     let mut r = svctools::install::lic::start();
     r.enter(&f(&["1"]), &mut none);
@@ -182,11 +185,18 @@ fn define_or_change_the_system_at_ipl() {
     e.sysvals = vec![
         ("QDATE".into(), "103026".into(), "System date".into()),
         ("QIPLTYPE".into(), "0".into(), "IPL type".into()),
-        ("QSTRUPPGM".into(), "QSTRUP     QSYS".into(), "Startup program".into()),
+        (
+            "QSTRUPPGM".into(),
+            "QSTRUP     QSYS".into(),
+            "Startup program".into(),
+        ),
     ];
     // IPL Options with "define or change" Y and no major options.
     let mut r = svctools::install::options::start();
-    r.enter(&f(&["2026-10-30", "12:00:00", "N", "Y", "N", "N", "N", "Y", "N"]), &mut e);
+    r.enter(
+        &f(&["2026-10-30", "12:00:00", "N", "Y", "N", "N", "N", "Y", "N"]),
+        &mut e,
+    );
     assert_eq!(r.top(), "ipl-define");
     check("ipl-define", &r.screen(&mut e).dump());
     for (sel, name) in [
@@ -210,14 +220,21 @@ fn define_or_change_the_system_at_ipl() {
     check("ipl-define-chgsysval", &r.screen(&mut e).dump());
     r.enter(&f(&["1"]), &mut e);
     assert!(e.actions.contains(&"sysval QIPLTYPE 1".to_string()));
-    assert!(r.screen(&mut e).dump().contains("System value QIPLTYPE changed"));
+    assert!(
+        r.screen(&mut e)
+            .dump()
+            .contains("System value QIPLTYPE changed")
+    );
     assert_eq!(r.function(3, &mut e), Some(Outcome::Continue));
     // The abnormal end offer and the reclaim screens.
     let mut r = Runner::new(Box::new(AbnormalEnd));
     check("ipl-abnormal", &r.screen(&mut e).dump());
     assert_eq!(r.enter(&f(&["2"]), &mut e), Some(Outcome::Dst));
     check("rclstg-running", &reclaim_screen("QS400", None).dump());
-    check("rclstg-done", &reclaim_screen("QS400", Some("12 objects checked, 0 lost")).dump());
+    check(
+        "rclstg-done",
+        &reclaim_screen("QS400", Some("12 objects checked, 0 lost")).dump(),
+    );
 }
 
 /// A report as the QEMU guest of the conformance suite gives it.
@@ -292,7 +309,13 @@ fn hardware_qualification_from_the_media() {
     e.usb = Some("The report was written to QSHWQUAL.TXT on sdb1 (Cruzer Blade).".into());
     r.enter(&f(&["2"]), &mut e);
     check("hwqual-usb", &r.screen(&mut e).dump());
-    assert_eq!(e.actions.iter().filter(|a| *a == "write report to USB").count(), 2);
+    assert_eq!(
+        e.actions
+            .iter()
+            .filter(|a| *a == "write report to USB")
+            .count(),
+        2
+    );
     // An environment without the run says so.
     let mut none = MemEnv::new("QS400");
     let mut r = svctools::install::lic::start();

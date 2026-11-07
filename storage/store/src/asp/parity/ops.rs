@@ -14,8 +14,8 @@ use tracing::info;
 use crate::asp::Asp;
 use crate::asp::io::IoEvent;
 use crate::asp::parity::{
-    Engine, EngineEvent, Fault, Geometry, Health, Level, Member, MemberState, ParityTag,
-    SetHandle, WorkKind, geometry_of, table::MAX_MEMBERS, unit_of,
+    Engine, EngineEvent, Fault, Geometry, Health, Level, Member, MemberState, ParityTag, SetHandle,
+    WorkKind, geometry_of, table::MAX_MEMBERS, unit_of,
 };
 use crate::asp::superblock::serial_bytes;
 use crate::asp::unit::{UnitHeader, UnitState};
@@ -103,11 +103,15 @@ impl Asp {
     /// Pages of a unit the set holds for parity.
     #[must_use]
     pub fn parity_held(&self, unit: u16) -> u64 {
-        let (Some(set), Some(span)) = (self.parity_set_of(unit), self.layout().span_of_unit(unit)) else {
+        let (Some(set), Some(span)) = (self.parity_set_of(unit), self.layout().span_of_unit(unit))
+        else {
             return 0;
         };
         geometry_of(&self.sb, set).map_or(0, |geo| {
-            self.layout().span(span).pages.saturating_sub(1 + geo.rows_end())
+            self.layout()
+                .span(span)
+                .pages
+                .saturating_sub(1 + geo.rows_end())
         })
     }
 
@@ -161,10 +165,14 @@ impl Asp {
 
     /// Check a unit can join a set.
     fn eligible(&self, unit: u16) -> Result<()> {
-        let e = self.sb.units.get(usize::from(unit)).ok_or_else(|| StoreError::UnitMissing {
-            unit,
-            what: "no such unit".into(),
-        })?;
+        let e = self
+            .sb
+            .units
+            .get(usize::from(unit))
+            .ok_or_else(|| StoreError::UnitMissing {
+                unit,
+                what: "no such unit".into(),
+            })?;
         if e.mirrored() {
             return Err(StoreError::refused(unit, Refusal::Mirrored));
         }
@@ -185,7 +193,11 @@ impl Asp {
             return Err(StoreError::Refused {
                 unit: None,
                 reason: Refusal::ParityUnits {
-                    level: if level == Level::Raid6 { "RAID 6" } else { "RAID 5" },
+                    level: if level == Level::Raid6 {
+                        "RAID 6"
+                    } else {
+                        "RAID 5"
+                    },
                     least: level.min_units(),
                     most: MAX_MEMBERS,
                     got: units.len(),
@@ -197,15 +209,18 @@ impl Asp {
             .map(|&u| self.sb.units[usize::from(u)].usable_pages)
             .min()
             .unwrap_or(0);
-        let geo = Geometry::new(level, units.len(), smallest)
-            .ok_or_else(|| StoreError::UnitTooSmall {
+        let geo = Geometry::new(level, units.len(), smallest).ok_or_else(|| {
+            StoreError::UnitTooSmall {
                 pages: smallest,
                 need: 1 + 3 + 2 * crate::asp::parity::geometry::SLOT_PAGES + units.len() as u64,
-            })?;
+            }
+        })?;
         for &u in units {
             let span = self.span_of(u)?;
             let pages = self.layout().span(span).pages;
-            let used = self.alloc.in_use(span, geo.rows_end(), pages - 1 - geo.rows_end());
+            let used = self
+                .alloc
+                .in_use(span, geo.rows_end(), pages - 1 - geo.rows_end());
             if used > 0 {
                 return Err(StoreError::refused(u, Refusal::ParityShareInUse(used)));
             }
@@ -237,7 +252,8 @@ impl Asp {
             });
             let span = self.layout().span_of_unit(u).expect("unit has a span");
             let pages = self.layout().span(span).pages;
-            self.alloc.hold(span, geo.rows_end(), pages - 1 - geo.rows_end());
+            self.alloc
+                .hold(span, geo.rows_end(), pages - 1 - geo.rows_end());
         }
         let engine = Engine::new(self.sb.asp_uuid, set, geo, members, Some(0));
         let handle = SetHandle {
@@ -246,7 +262,8 @@ impl Asp {
         };
         for (i, &u) in units.iter().enumerate() {
             let pages = self.sb.units[usize::from(u)].pages;
-            self.io.attach(u, handle.device(i, pages), UnitState::Unprotected);
+            self.io
+                .attach(u, handle.device(i, pages), UnitState::Unprotected);
         }
         let at = self.parity.sets.partition_point(|s| s.set < set);
         self.parity.sets.insert(at, handle);
@@ -275,7 +292,8 @@ impl Asp {
             let unit = unit_of(&self.sb, uuid).expect("member in table");
             let span = self.span_of(unit)?;
             let pages = self.layout().span(span).pages;
-            self.alloc.unhold(span, geo.rows_end(), pages - 1 - geo.rows_end());
+            self.alloc
+                .unhold(span, geo.rows_end(), pages - 1 - geo.rows_end());
             match dev {
                 Some(d) => self.io.attach(unit, d, UnitState::Unprotected),
                 None => {

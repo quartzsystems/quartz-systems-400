@@ -93,7 +93,12 @@ pub fn substitute(template: &str, data: &[&str]) -> String {
                 j += 1;
             }
             let n: usize = template[i + 1..j].parse().unwrap_or(0);
-            out.push_str(n.checked_sub(1).and_then(|k| data.get(k)).copied().unwrap_or(""));
+            out.push_str(
+                n.checked_sub(1)
+                    .and_then(|k| data.get(k))
+                    .copied()
+                    .unwrap_or(""),
+            );
             i = j;
         } else {
             let c = template[i..].chars().next().unwrap_or(' ');
@@ -110,7 +115,10 @@ mod tests {
 
     #[test]
     fn substitution() {
-        assert_eq!(substitute("Instance &1 started on &2.", &["API", "*:9443"]), "Instance API started on *:9443.");
+        assert_eq!(
+            substitute("Instance &1 started on &2.", &["API", "*:9443"]),
+            "Instance API started on *:9443."
+        );
         assert_eq!(substitute("&3 & &x", &["a"]), " & &x");
         assert_eq!(Kind::Done.class(), "done");
     }

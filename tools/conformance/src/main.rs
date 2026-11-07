@@ -68,28 +68,60 @@ fn main() -> Result<ExitCode> {
     if let Some(secs) = cli.soak {
         let r = suite.run_soak(std::time::Duration::from_secs(secs))?;
         print!("{}", r.render());
-        return Ok(if r.failures.is_empty() { ExitCode::SUCCESS } else { ExitCode::FAILURE });
+        return Ok(if r.failures.is_empty() {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
+        });
     }
     if let Some(n) = cli.load {
         let r = suite.run_load(n)?;
-        println!("LOAD: {} sessions, {} completed in {:.1}s", r.sessions, r.completed, r.wall.as_secs_f64());
-        println!("  sign-on        median {:6.2}s  p95 {:6.2}s", r.sign_on.0.as_secs_f64(), r.sign_on.1.as_secs_f64());
-        println!("  WRKACTJOB      median {:6.2}s  p95 {:6.2}s", r.first.0.as_secs_f64(), r.first.1.as_secs_f64());
-        println!("  F5 refresh     median {:6.2}s  p95 {:6.2}s", r.refresh.0.as_secs_f64(), r.refresh.1.as_secs_f64());
-        println!("  QEMU peak RSS  {} MiB; CPU {:.1}s over the run", r.qemu_rss_mib, r.qemu_cpu_secs);
+        println!(
+            "LOAD: {} sessions, {} completed in {:.1}s",
+            r.sessions,
+            r.completed,
+            r.wall.as_secs_f64()
+        );
+        println!(
+            "  sign-on        median {:6.2}s  p95 {:6.2}s",
+            r.sign_on.0.as_secs_f64(),
+            r.sign_on.1.as_secs_f64()
+        );
+        println!(
+            "  WRKACTJOB      median {:6.2}s  p95 {:6.2}s",
+            r.first.0.as_secs_f64(),
+            r.first.1.as_secs_f64()
+        );
+        println!(
+            "  F5 refresh     median {:6.2}s  p95 {:6.2}s",
+            r.refresh.0.as_secs_f64(),
+            r.refresh.1.as_secs_f64()
+        );
+        println!(
+            "  QEMU peak RSS  {} MiB; CPU {:.1}s over the run",
+            r.qemu_rss_mib, r.qemu_cpu_secs
+        );
         let mut seen = std::collections::BTreeMap::new();
         for e in &r.errors {
-            *seen.entry(e.lines().next().unwrap_or("").to_string()).or_insert(0) += 1;
+            *seen
+                .entry(e.lines().next().unwrap_or("").to_string())
+                .or_insert(0) += 1;
         }
         for (e, k) in &seen {
             println!("  error x{k}: {e}");
         }
         if let Some(first) = r.errors.first() {
-            println!("--- the first failure ---
-{first}");
+            println!(
+                "--- the first failure ---
+{first}"
+            );
         }
         println!("--- WRKSYSSTS at the peak ---\n{}", r.sys_status);
-        return Ok(if r.completed == r.sessions { ExitCode::SUCCESS } else { ExitCode::FAILURE });
+        return Ok(if r.completed == r.sessions {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
+        });
     }
     let l = suite.launch();
     println!(

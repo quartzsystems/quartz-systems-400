@@ -26,8 +26,8 @@ use wm::wtr::{WtrDest, WtrStep};
 use super::spool::{self, with_outq, with_store};
 use crate::ipl::system::{System, now_unix};
 
-pub use wm::wtr::Writer;
 use wm::wtr::AfterReply;
+pub use wm::wtr::Writer;
 
 /// The inquiry a writer sends when its printer session refuses a file.
 pub const DEVICE_ERROR: &str = "CPA3388";
@@ -89,7 +89,9 @@ pub fn strrmtwtr(system: &mut System, me: u32, p: &Params) -> Result<String, Str
         }
         return Ok(out);
     }
-    let (real, remote) = with_outq(system, &q, |oq, real| Ok(((real.to_string(), oq.is_remote()), false)))?;
+    let (real, remote) = with_outq(system, &q, |oq, real| {
+        Ok(((real.to_string(), oq.is_remote()), false))
+    })?;
     if !remote {
         return Err(format!(
             "CPF3310 output queue {real} has no remote system (RMTSYS)"
@@ -178,7 +180,9 @@ fn start(
     let mut w = Writer::started(dev, &real, job);
     w.formtype = formtype(p);
     w.filesep = p.upper("FILESEP").and_then(|n| n.parse().ok()).unwrap_or(0);
-    w.autoend = p.upper("AUTOEND").is_some_and(|a| a.trim_start_matches('(').starts_with("*YES"));
+    w.autoend = p
+        .upper("AUTOEND")
+        .is_some_and(|a| a.trim_start_matches('(').starts_with("*YES"));
     w.remote = remote;
     system.writers.insert(name.to_string(), w);
     Ok(format!(
@@ -243,7 +247,9 @@ pub fn target(system: &mut System, name: &str) -> Result<WtrDest, String> {
     }
     let d = device(system, &w.dev)?;
     if d.devcls == "*VRT" && d.is_printer() {
-        return Ok(WtrDest::Session { device: w.dev.clone() });
+        return Ok(WtrDest::Session {
+            device: w.dev.clone(),
+        });
     }
     let Some(l) = d.printer.filter(lan_ip) else {
         return Ok(WtrDest::Capture);
@@ -302,7 +308,11 @@ pub fn failed(
     let data = if msgid == "TCP3701" {
         let mut d = cmd::error::data(&[(&file, 10)]);
         d.extend_from_slice(&u16::try_from(number).unwrap_or(u16::MAX).to_be_bytes());
-        d.extend(cmd::error::data(&[(&owner.0, 10), (&owner.1, 10), (&format!("{:06}", owner.2), 6)]));
+        d.extend(cmd::error::data(&[
+            (&owner.0, 10),
+            (&owner.1, 10),
+            (&format!("{:06}", owner.2), 6),
+        ]));
         d
     } else {
         Vec::new()
@@ -590,7 +600,10 @@ pub fn printed(
         .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
     // Only the file this writer has in hand completes.
     if attrs.status != Status::Wtr || attrs.writer != name {
-        return Err(format!("CPF3330 spooled file {} is not printing on writer {name}", attrs.name));
+        return Err(format!(
+            "CPF3330 spooled file {} is not printing on writer {name}",
+            attrs.name
+        ));
     }
     if let Some(w) = system.writers.get_mut(name) {
         w.msgw = None;
@@ -604,7 +617,13 @@ pub fn printed(
 }
 
 /// Keep what the capture device printed: text and PDF in a user space.
-fn capture(system: &mut System, id: u32, attrs: &SplfAttrs, text: &str, pdf: &[u8]) -> Result<(), String> {
+fn capture(
+    system: &mut System,
+    id: u32,
+    attrs: &SplfAttrs,
+    text: &str,
+    pdf: &[u8],
+) -> Result<(), String> {
     let meta = format!("{} {} {}", attrs.name, attrs.job_text(), attrs.number);
     let mut body = Vec::with_capacity(8 + text.len() + pdf.len());
     body.extend_from_slice(&u32::try_from(text.len()).unwrap_or(0).to_le_bytes());

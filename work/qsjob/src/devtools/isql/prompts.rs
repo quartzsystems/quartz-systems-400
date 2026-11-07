@@ -46,7 +46,11 @@ pub fn prompt(host: &Host, surface: &mut Surface, s: &mut Session) {
             unprompted(host, s, &text);
             return;
         };
-        let start = if from_list { Values::new() } else { assemble::fields_of(kind, &text) };
+        let start = if from_list {
+            Values::new()
+        } else {
+            assemble::fields_of(kind, &text)
+        };
         if let Some(stmt) = statement(host, surface, s, kind, start) {
             s.h.clear_input();
             s.h.set_text(&stmt);
@@ -68,9 +72,16 @@ pub fn prompt(host: &Host, surface: &mut Surface, s: &mut Session) {
 /// prompted from the list only; typed, they are checked, so a partial
 /// one is the syntax error pub400 shows (`grant package`: SQL0104).
 fn unprompted(host: &Host, s: &mut Session, text: &str) {
-    let first = text.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
+    let first = text
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_uppercase();
     if matches!(first.as_str(), "GRANT" | "REVOKE") {
-        let r = host.link.borrow_mut().with(|l| l.isql_run(text.to_string(), s.naming(), true, 0));
+        let r = host
+            .link
+            .borrow_mut()
+            .with(|l| l.isql_run(text.to_string(), s.naming(), true, 0));
         if r.sqlcode < 0 {
             let lines = s.h.typed();
             s.h.statement(lines.clone());
@@ -115,7 +126,11 @@ fn pick_statement(surface: &mut Surface, s: &mut Session) -> Option<Kind> {
                     .and_then(|n| n.checked_sub(1))
                     .and_then(|i| STATEMENTS.get(i))
                 else {
-                    msg = Some(crate::display::msgline::say(surface.host(), "CPD6A64", &[&sel]));
+                    msg = Some(crate::display::msgline::say(
+                        surface.host(),
+                        "CPD6A64",
+                        &[&sel],
+                    ));
                     continue;
                 };
                 if let Some(k) = assemble::listed(word) {
@@ -180,7 +195,14 @@ fn display(
 
 /// One of the other statements' prompts until Enter builds its
 /// statement or F12; Page Down and Page Up turn CALL's parameter pages.
-fn panel(host: &Host, surface: &mut Surface, p: &Panel, kind: Kind, start: Values, sql: bool) -> Option<String> {
+fn panel(
+    host: &Host,
+    surface: &mut Surface,
+    p: &Panel,
+    kind: Kind,
+    start: Values,
+    sql: bool,
+) -> Option<String> {
     let w = super::words(host);
     let mut values = start;
     let mut page = 0;
@@ -195,7 +217,9 @@ fn panel(host: &Host, surface: &mut Surface, p: &Panel, kind: Kind, start: Value
             Key::F(4) => msg = Some(crate::display::msgline::say(surface.host(), "CPD9BF1", &[])),
             Key::PageDown if page + 1 < stmt::pages(p) => page += 1,
             Key::PageUp if page > 0 => page -= 1,
-            Key::PageDown => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[])),
+            Key::PageDown => {
+                msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[]))
+            }
             Key::PageUp => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A66", &[])),
             Key::Enter => match assemble::build(kind, &stmt::defaults(p, &values), sql) {
                 Ok(text) => return Some(text),
@@ -216,7 +240,9 @@ fn need(v: &Values, names: &[(&str, &'static str)]) -> Result<(), IsqlError> {
 }
 
 fn trimmed(v: &Values, k: &str) -> String {
-    v.get(k).map(|s| s.trim().to_ascii_uppercase()).unwrap_or_default()
+    v.get(k)
+        .map(|s| s.trim().to_ascii_uppercase())
+        .unwrap_or_default()
 }
 
 /// The columns of the file `name` in `lib` (the library list's first
@@ -232,8 +258,10 @@ fn columns_of(host: &Host, lib: &str, name: &str) -> Option<Vec<String>> {
     } else {
         lib.to_string()
     };
-    let cols: Vec<String> =
-        super::lists::fields(host, &[(lib, name.to_string())]).into_iter().map(|e| e.name).collect();
+    let cols: Vec<String> = super::lists::fields(host, &[(lib, name.to_string())])
+        .into_iter()
+        .map(|e| e.name)
+        .collect();
     (!cols.is_empty()).then_some(cols)
 }
 
@@ -308,7 +336,9 @@ fn column_list(
             Key::F(5) => values.clear(),
             Key::PageDown if page + 1 < list.pages(cols.len()) => page += 1,
             Key::PageUp if page > 0 => page -= 1,
-            Key::PageDown => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[])),
+            Key::PageDown => {
+                msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[]))
+            }
             Key::PageUp => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A66", &[])),
             Key::Enter => match check(&values) {
                 Ok(()) => return Some(values),
@@ -326,11 +356,17 @@ fn key_typed(cols: &[String], v: &Values) -> Result<(), IsqlError> {
     for i in 0..cols.len() {
         let seq = v.get(&columns::seq_name(i)).map_or("", |s| s.trim());
         if !seq.is_empty() && !seq.parse::<u16>().is_ok_and(|n| (1..=999).contains(&n)) {
-            return Err(IsqlError::BadValue { field: "SEQ", value: seq.to_string() });
+            return Err(IsqlError::BadValue {
+                field: "SEQ",
+                value: seq.to_string(),
+            });
         }
         let ord = v.get(&columns::order_name(i)).map_or("", |s| s.trim());
         if !matches!(ord.to_ascii_uppercase().as_str(), "" | "A" | "D") {
-            return Err(IsqlError::BadValue { field: "ORDER", value: ord.to_string() });
+            return Err(IsqlError::BadValue {
+                field: "ORDER",
+                value: ord.to_string(),
+            });
         }
     }
     if columns::key_columns(cols, v).is_empty() {
@@ -340,7 +376,13 @@ fn key_typed(cols: &[String], v: &Values) -> Result<(), IsqlError> {
 }
 
 /// A statement's prompts; the statement built, or `None` when left.
-fn statement(host: &Host, surface: &mut Surface, s: &Session, kind: Kind, start: Values) -> Option<String> {
+fn statement(
+    host: &Host,
+    surface: &mut Surface,
+    s: &Session,
+    kind: Kind,
+    start: Values,
+) -> Option<String> {
     let sql = s.sql();
     let Some(first) = prompt::of(kind) else {
         let p = stmt::of(kind)?;
@@ -351,7 +393,9 @@ fn statement(host: &Host, surface: &mut Surface, s: &Session, kind: Kind, start:
         Kind::Select => Box::new(|v: &Values| need(v, &[("FROM", "FROM")])),
         Kind::Insert => Box::new(|v: &Values| need(v, &[("INTO", "INTO")])),
         Kind::CreateView => Box::new(|v: &Values| need(v, &[("VIEW", "the view")])),
-        Kind::CreateIndex => Box::new(|v: &Values| need(v, &[("INDEX", "the index"), ("TABLE", "the file")])),
+        Kind::CreateIndex => {
+            Box::new(|v: &Values| need(v, &[("INDEX", "the index"), ("TABLE", "the file")]))
+        }
         _ => Box::new(|v: &Values| need(v, &[("TABLE", "the name")])),
     };
     let (file, columns_next) = match kind {
@@ -360,7 +404,16 @@ fn statement(host: &Host, surface: &mut Surface, s: &Session, kind: Kind, start:
         Kind::CreateIndex => (("TABLE", "TABLELIB"), true),
         _ => (("", ""), false),
     };
-    let (mut v1, cols) = first_with_columns(host, surface, first, &mut v, sql, &*check, file, columns_next)?;
+    let (mut v1, cols) = first_with_columns(
+        host,
+        surface,
+        first,
+        &mut v,
+        sql,
+        &*check,
+        file,
+        columns_next,
+    )?;
     // The display after the first, for the statements that need one.
     match kind {
         Kind::Insert if trimmed(&v1, "METHOD") == "2" => {
@@ -375,7 +428,11 @@ fn statement(host: &Host, surface: &mut Surface, s: &Session, kind: Kind, start:
         }
         Kind::Insert => {
             let ok = |x: &Values| {
-                if columns::insert_values(&cols, x).0.is_empty() { Err(IsqlError::Missing("VALUES")) } else { Ok(()) }
+                if columns::insert_values(&cols, x).0.is_empty() {
+                    Err(IsqlError::Missing("VALUES"))
+                } else {
+                    Ok(())
+                }
             };
             let more = column_list(host, surface, List::Insert, &cols, &mut v1, sql, &ok)?;
             let (names, vals) = columns::insert_values(&cols, &more);
@@ -384,21 +441,34 @@ fn statement(host: &Host, surface: &mut Surface, s: &Session, kind: Kind, start:
         }
         Kind::Update => {
             let ok = |x: &Values| {
-                if columns::insert_values(&cols, x).0.is_empty() { Err(IsqlError::Missing("SET")) } else { Ok(()) }
+                if columns::insert_values(&cols, x).0.is_empty() {
+                    Err(IsqlError::Missing("SET"))
+                } else {
+                    Ok(())
+                }
             };
             let more = column_list(host, surface, List::Update, &cols, &mut v1, sql, &ok)?;
             let (names, vals) = columns::insert_values(&cols, &more);
-            let set: Vec<String> = names.iter().zip(&vals).map(|(n, val)| format!("{n} = {val}")).collect();
+            let set: Vec<String> = names
+                .iter()
+                .zip(&vals)
+                .map(|(n, val)| format!("{n} = {val}"))
+                .collect();
             v1.insert("SET".into(), set.join(", "));
             // BLOCKED(rel): the WHERE display after this one is not
             // captured; the statement ends in WHERE for the input lines
             // to finish, so it does not run over every row as it is.
-            return assemble::build(kind, &v1, sql).ok().map(|t| format!("{t} WHERE "));
+            return assemble::build(kind, &v1, sql)
+                .ok()
+                .map(|t| format!("{t} WHERE "));
         }
         Kind::CreateIndex => {
             let ok = |x: &Values| key_typed(&cols, x);
             let more = column_list(host, surface, List::Key, &cols, &mut v1, sql, &ok)?;
-            v1.insert("COLUMNS".into(), columns::key_columns(&cols, &more).join(", "));
+            v1.insert(
+                "COLUMNS".into(),
+                columns::key_columns(&cols, &more).join(", "),
+            );
         }
         Kind::CreateView => {
             let mut w = Values::new();

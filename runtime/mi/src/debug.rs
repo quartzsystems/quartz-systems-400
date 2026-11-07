@@ -222,7 +222,8 @@ impl Job {
                 .filter(|p| {
                     let n = p.name.to_ascii_uppercase();
                     n.strip_prefix(&up).is_some_and(|rest| {
-                        rest.strip_prefix('.').is_some_and(|r| !r.contains('.') && !r.contains('('))
+                        rest.strip_prefix('.')
+                            .is_some_and(|r| !r.contains('.') && !r.contains('('))
                             || rest.starts_with('(') && rest.ends_with(')') && !rest.contains('.')
                     })
                 })

@@ -75,7 +75,12 @@ fn held(h: bool) -> &'static str {
 }
 
 /// `WRKOUTQ [OUTQ(lib/name)]`.
-pub fn wrkoutq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkoutq(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let mut d = crate::panels::dialog(host, "QUIWRKOUTQ")?;
     match qualified(r, "OUTQ").filter(|(_, n)| n != "*ALL") {
         None => list_loop(job, host, surface, &mut d, "QUEUES", &mut |host, d| {
@@ -85,8 +90,14 @@ pub fn wrkoutq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                     let q = payload(host, &lib, &name, "*OUTQ").and_then(|b| OutQ::decode(&b).ok());
                     entry(&[
                         ("FILES", q.as_ref().map_or(0, |q| q.files.len()).to_string()),
-                        ("WRITER", q.as_ref().map(|q| q.writer.clone()).unwrap_or_default()),
-                        ("STATUS", format!(" {}", held(q.as_ref().is_some_and(|q| q.held)))),
+                        (
+                            "WRITER",
+                            q.as_ref().map(|q| q.writer.clone()).unwrap_or_default(),
+                        ),
+                        (
+                            "STATUS",
+                            format!(" {}", held(q.as_ref().is_some_and(|q| q.held))),
+                        ),
                         ("QUEUE", name),
                         ("LIB", lib),
                     ])
@@ -99,7 +110,12 @@ pub fn wrkoutq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                 .link
                 .borrow_mut()
                 .with(|l| l.object(lib.clone(), name.clone(), "*OUTQ".into()))
-                .ok_or_else(|| Fail::new("CPF3357", format!("Output queue {name} in {lib} not found.")))?
+                .ok_or_else(|| {
+                    Fail::new(
+                        "CPF3357",
+                        format!("Output queue {name} in {lib} not found."),
+                    )
+                })?
                 .lib;
             d.set("QUEUE", &name);
             d.set("LIB", &real);
@@ -136,7 +152,12 @@ pub fn wrkoutq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
 }
 
 /// `WRKJOBQ [JOBQ(lib/name)]`.
-pub fn wrkjobq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkjobq(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let mut d = crate::panels::dialog(host, "QUIWRKJOBQ")?;
     match qualified(r, "JOBQ").filter(|(_, n)| n != "*ALL") {
         None => list_loop(job, host, surface, &mut d, "QUEUES", &mut |host, d| {
@@ -153,7 +174,10 @@ pub fn wrkjobq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                         .unwrap_or_default();
                     entry(&[
                         ("JOBS", q.as_ref().map_or(0, |q| q.jobs.len()).to_string()),
-                        ("STATUS", format!(" {}", held(q.as_ref().is_some_and(|q| q.held)))),
+                        (
+                            "STATUS",
+                            format!(" {}", held(q.as_ref().is_some_and(|q| q.held))),
+                        ),
                         ("SBS", sbs),
                         ("QUEUE", name),
                         ("LIB", lib),
@@ -167,7 +191,9 @@ pub fn wrkjobq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                 .link
                 .borrow_mut()
                 .with(|l| l.object(lib.clone(), name.clone(), "*JOBQ".into()))
-                .ok_or_else(|| Fail::new("CPF3307", format!("Job queue {name} in {lib} not found.")))?
+                .ok_or_else(|| {
+                    Fail::new("CPF3307", format!("Job queue {name} in {lib} not found."))
+                })?
                 .lib;
             d.set("QUEUE", &name);
             d.set("LIB", &real);
@@ -183,7 +209,14 @@ pub fn wrkjobq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                     .iter()
                     .any(|(k, s)| *k == qual && !s.is_empty());
                 let sts = held(q.as_ref().is_some_and(|q| q.held));
-                d.set("QSTS", &if attached { format!("{sts}/SBS") } else { sts.to_string() });
+                d.set(
+                    "QSTS",
+                    &if attached {
+                        format!("{sts}/SBS")
+                    } else {
+                        sts.to_string()
+                    },
+                );
                 let rows = q
                     .map(|q| q.jobs)
                     .unwrap_or_default()
@@ -205,7 +238,12 @@ pub fn wrkjobq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
 }
 
 /// `WRKWTR [WTR()]`.
-pub fn wrkwtr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkwtr(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let only = parm(r, "WTR").filter(|w| w != "*ALL");
     let mut d = crate::panels::dialog(host, "QUIWRKWTR")?;
     list_loop(job, host, surface, &mut d, "WRKWTR", &mut |host, d| {
@@ -216,9 +254,11 @@ pub fn wrkwtr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
             .into_iter()
             .filter(|w| only.as_ref().is_none_or(|o| w.0 == *o))
             .map(|(name, dev, status, form, outq, printed)| {
-                let (lib, q) = outq.split_once('/').map_or((String::new(), outq.clone()), |(l, q)| {
-                    (l.to_string(), q.to_string())
-                });
+                let (lib, q) = outq
+                    .split_once('/')
+                    .map_or((String::new(), outq.clone()), |(l, q)| {
+                        (l.to_string(), q.to_string())
+                    });
                 entry(&[
                     ("WRITER", name),
                     ("DEVICE", dev),
@@ -235,7 +275,12 @@ pub fn wrkwtr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
 }
 
 /// `WRKJOBSCDE [JOB()]`.
-pub fn wrkjobscde(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkjobscde(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let only = parm(r, "JOB").filter(|j| j != "*ALL");
     let mut d = crate::panels::dialog(host, "QUIWRKJSCD")?;
     list_loop(job, host, surface, &mut d, "WRKJOBSCDE", &mut |host, d| {

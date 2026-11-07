@@ -10,8 +10,8 @@
 
 use ipc::Wire;
 use qap_proto::ops::manage::{
-    EndHow, EndSubsystem, GetSystemValues, ListHardwareResources, ListPtfs, ListSubsystems, PowerDown, Ptfs,
-    SetSystemValue, SubsystemRef, Subsystems,
+    EndHow, EndSubsystem, GetSystemValues, ListHardwareResources, ListPtfs, ListSubsystems,
+    PowerDown, Ptfs, SetSystemValue, SubsystemRef, Subsystems,
 };
 use qap_proto::{Envelope, Op, Status};
 
@@ -64,7 +64,11 @@ impl ExitRequest {
         b.extend(char_field(&self.name, 20));
         b.extend(char_field(&self.target, 64));
         let detail = ccsid::to_ebcdic(&self.detail).unwrap_or_default();
-        b.extend(u32::try_from(detail.len()).unwrap_or(u32::MAX).to_be_bytes());
+        b.extend(
+            u32::try_from(detail.len())
+                .unwrap_or(u32::MAX)
+                .to_be_bytes(),
+        );
         b.extend(detail);
         b
     }
@@ -91,15 +95,25 @@ fn delay(d: Option<u32>) -> String {
 fn exit_request(user: &str, op: Op, req: &Envelope) -> Option<ExitRequest> {
     let (target, detail) = match op {
         Op::ListSubsystems => (req.body_as::<ListSubsystems>().ok()?.library, String::new()),
-        Op::StartSubsystem => (qualified(&req.body_as::<SubsystemRef>().ok()?.sbsd), String::new()),
+        Op::StartSubsystem => (
+            qualified(&req.body_as::<SubsystemRef>().ok()?.sbsd),
+            String::new(),
+        ),
         Op::EndSubsystem => {
             let b = req.body_as::<EndSubsystem>().ok()?;
-            let t = b.sbsd.as_ref().map_or_else(|| "*ALL".to_string(), qualified);
+            let t = b
+                .sbsd
+                .as_ref()
+                .map_or_else(|| "*ALL".to_string(), qualified);
             (t, format!("{} {}", how(b.how), delay(b.delay)))
         }
         Op::GetSystemValues => {
             let b = req.body_as::<GetSystemValues>().ok()?;
-            let t = if b.names.is_empty() { "*ALL".to_string() } else { b.names.join(" ") };
+            let t = if b.names.is_empty() {
+                "*ALL".to_string()
+            } else {
+                b.names.join(" ")
+            };
             (t, String::new())
         }
         Op::SetSystemValue => {
@@ -108,13 +122,20 @@ fn exit_request(user: &str, op: Op, req: &Envelope) -> Option<ExitRequest> {
         }
         Op::ListPtfs => (req.body_as::<ListPtfs>().ok()?.product, String::new()),
         Op::ListHardwareResources => (
-            req.body_as::<ListHardwareResources>().ok()?.kind.special().to_string(),
+            req.body_as::<ListHardwareResources>()
+                .ok()?
+                .kind
+                .special()
+                .to_string(),
             String::new(),
         ),
         Op::PowerDown => {
             let b = req.body_as::<PowerDown>().ok()?;
             let restart = if b.restart { "*YES" } else { "*NO" };
-            (String::new(), format!("{} {} RESTART({restart})", how(b.how), delay(b.delay)))
+            (
+                String::new(),
+                format!("{} {} RESTART({restart})", how(b.how), delay(b.delay)),
+            )
         }
         Op::ListDiskUnits | Op::IplStatus => (String::new(), String::new()),
         _ => return None,
@@ -134,7 +155,12 @@ fn page<T>(all: Vec<T>, start: u32, max: u32) -> (u32, Vec<T>) {
     let total = u32::try_from(all.len()).unwrap_or(u32::MAX);
     let start = usize::try_from(start).unwrap_or(usize::MAX);
     let it = all.into_iter().skip(start);
-    let v = if max == 0 { it.collect() } else { it.take(usize::try_from(max).unwrap_or(usize::MAX)).collect() };
+    let v = if max == 0 {
+        it.collect()
+    } else {
+        it.take(usize::try_from(max).unwrap_or(usize::MAX))
+            .collect()
+    };
     (total, v)
 }
 
@@ -185,7 +211,9 @@ pub(crate) fn serve(host: &mut dyn ThreadHost, user: &str, op: Op, req: &Envelop
             }))
         }),
         Op::ListDiskUnits => ok(host.disk_units()),
-        Op::ListHardwareResources => body(req, |b: ListHardwareResources| ok(host.hardware_resources(b.kind))),
+        Op::ListHardwareResources => body(req, |b: ListHardwareResources| {
+            ok(host.hardware_resources(b.kind))
+        }),
         Op::IplStatus => ok(host.ipl_status()),
         Op::PowerDown => body(req, |b: PowerDown| done(host.power_down(&b))),
         _ => Answer::status(Status::InvalidRequest),

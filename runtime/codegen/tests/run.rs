@@ -302,7 +302,8 @@ extern "sysv64" fn described(
     // `codegen::abi` documents, for the two arguments of this call.
     unsafe {
         let count = std::ptr::read_unaligned(list.cast::<i32>());
-        let at = list.add(codegen::abi::OPDESC_HEADER as usize)
+        let at = list
+            .add(codegen::abi::OPDESC_HEADER as usize)
             .add(codegen::abi::OPDESC_ENTRY as usize * (usize::try_from(n).unwrap() - 1));
         let desc_type = std::ptr::read_unaligned(at.cast::<i32>());
         let datatype = std::ptr::read_unaligned(at.add(4).cast::<i32>());

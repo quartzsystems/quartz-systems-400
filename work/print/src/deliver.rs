@@ -147,7 +147,11 @@ impl Target {
     }
 
     /// The sink it sends through.
-    pub fn sink(&self, job: &PrintJob, tls: Arc<dyn TlsConnector>) -> Result<Box<dyn Sink>, SinkError> {
+    pub fn sink(
+        &self,
+        job: &PrintJob,
+        tls: Arc<dyn TlsConnector>,
+    ) -> Result<Box<dyn Sink>, SinkError> {
         Ok(match self {
             Self::Lan {
                 host,
@@ -156,7 +160,11 @@ impl Target {
                 secure,
                 ..
             } => {
-                let port = if *port == 0 { driver.default_port() } else { *port };
+                let port = if *port == 0 {
+                    driver.default_port()
+                } else {
+                    *port
+                };
                 match driver {
                     Driver::Ipp => {
                         let mut uri = Uri::parse(host, *secure)?;

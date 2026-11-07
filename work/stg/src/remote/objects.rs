@@ -25,7 +25,10 @@ impl RemoteObjects {
     /// Over a link.
     #[must_use]
     pub fn new(link: Shared) -> Self {
-        Self { link, refused: false }
+        Self {
+            link,
+            refused: false,
+        }
     }
 }
 
@@ -66,10 +69,7 @@ impl ObjectSource for RemoteObjects {
     }
 
     fn adopt(&mut self, programs: &[String]) {
-        let r = self
-            .link
-            .borrow_mut()
-            .with(|l| l.adopt(programs.to_vec()));
+        let r = self.link.borrow_mut().with(|l| l.adopt(programs.to_vec()));
         if let Err(e) = r {
             tracing::warn!("adopted authority: {e}");
         }

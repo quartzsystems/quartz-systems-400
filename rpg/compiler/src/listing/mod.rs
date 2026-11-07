@@ -13,6 +13,9 @@
 //! ours; the layout, the labels and the section order are IBM's.
 
 mod corr;
+mod genlines;
+mod lines;
+mod markers;
 mod page;
 mod prologue;
 mod refs;
@@ -20,9 +23,6 @@ mod source;
 mod sqlgen;
 mod sqlxref;
 mod stmts;
-mod genlines;
-mod lines;
-mod markers;
 mod tail;
 mod xref;
 
@@ -37,9 +37,15 @@ pub(crate) use refs::unset_indicators;
 pub fn listing(c: &Compiled, o: &Options) -> Vec<String> {
     let mut out = Out::new(format!("{}/{}", o.lib, o.name));
     source::SRCSTMT.with(|s| s.set(c.srcstmt()));
-    out.hide_generated = c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*NOEXPDDS"));
+    out.hide_generated = c
+        .ctl
+        .option
+        .iter()
+        .any(|x| x.eq_ignore_ascii_case("*NOEXPDDS"));
     out.subtitle = c.read.lines.iter().find_map(|l| match &l.class {
-        rpgfront::reader::Class::Directive(rpgfront::reader::Directive::Title(t)) => Some(t.trim().to_string()),
+        rpgfront::reader::Class::Directive(rpgfront::reader::Directive::Title(t)) => {
+            Some(t.trim().to_string())
+        }
         _ => None,
     });
     prologue::prologue(&mut out, o);
@@ -61,7 +67,11 @@ pub fn listing(c: &Compiled, o: &Options) -> Vec<String> {
     // Unreferenced names are counted whatever the listing shows, and
     // so are the subfields EVAL-CORR leaves out.
     let (target_only, source_only) = corr::counts(c);
-    let extra = [(xref::UNREF, model.unreferenced()), ("RNF7341", target_only), ("RNF7342", source_only)];
+    let extra = [
+        (xref::UNREF, model.unreferenced()),
+        ("RNF7341", target_only),
+        ("RNF7342", source_only),
+    ];
     if !has("*NOEXT") {
         tail::external(&mut out, c);
     }
@@ -94,7 +104,11 @@ pub(crate) fn sql_xref(
 pub(crate) fn sql_options(o: &Options) -> Options {
     let module = o.command == crate::ctl::Command::CrtRpgMod;
     Options {
-        command: if module { crate::ctl::Command::CrtRpgMod } else { crate::ctl::Command::CrtBndRpg },
+        command: if module {
+            crate::ctl::Command::CrtRpgMod
+        } else {
+            crate::ctl::Command::CrtBndRpg
+        },
         src: ("QTEMP".into(), "QSQLTEMP1".into(), o.name.clone()),
         dbgview: "*STMT".into(),
         tgtrls: "V7R5M0".into(),
@@ -113,7 +127,10 @@ pub(crate) fn from_precompiler(o: &Options) -> bool {
 #[must_use]
 pub fn unnumbered(l: &rpgfront::reader::Line) -> bool {
     use rpgfront::reader::{Class, Directive};
-    matches!(l.class, Class::Directive(Directive::Title(_) | Directive::Space(_) | Directive::Eject))
+    matches!(
+        l.class,
+        Class::Directive(Directive::Title(_) | Directive::Space(_) | Directive::Eject)
+    )
 }
 
 /// Whether IBM lost the procedures: none was declared (a stray
@@ -125,7 +142,10 @@ pub(crate) fn procs_lost(c: &crate::compile::Compiled) -> bool {
 
 /// `S o u r c e` from `Source`.
 pub(crate) fn spaced(s: &str) -> String {
-    s.chars().map(|c| c.to_string()).collect::<Vec<_>>().join(" ")
+    s.chars()
+        .map(|c| c.to_string())
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// A label and IBM's dot leader up to the colon at `colon` (columns
@@ -134,7 +154,11 @@ pub(crate) fn spaced(s: &str) -> String {
 pub(crate) fn leader(start: usize, label: &str, colon: usize) -> String {
     let mut s = format!("{:start$}{label} ", "");
     while s.len() < colon {
-        s.push(if (s.len() + 1) % 2 == (colon + 1) % 2 { '.' } else { ' ' });
+        s.push(if (s.len() + 1) % 2 == (colon + 1) % 2 {
+            '.'
+        } else {
+            ' '
+        });
     }
     s.push(':');
     s
@@ -165,9 +189,21 @@ mod tests {
 
     #[test]
     fn leaders_are_ibms() {
-        assert_eq!(leader(2, "Command", 35), "  Command  . . . . . . . . . . . . :");
-        assert_eq!(leader(2, "Module", 35), "  Module . . . . . . . . . . . . . :");
-        assert_eq!(leader(4, "Issued by", 35), "    Issued by  . . . . . . . . . . :");
-        assert_eq!(leader(2, "Enable performance collection", 35), "  Enable performance collection  . :");
+        assert_eq!(
+            leader(2, "Command", 35),
+            "  Command  . . . . . . . . . . . . :"
+        );
+        assert_eq!(
+            leader(2, "Module", 35),
+            "  Module . . . . . . . . . . . . . :"
+        );
+        assert_eq!(
+            leader(4, "Issued by", 35),
+            "    Issued by  . . . . . . . . . . :"
+        );
+        assert_eq!(
+            leader(2, "Enable performance collection", 35),
+            "  Enable performance collection  . :"
+        );
     }
 }

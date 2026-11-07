@@ -74,7 +74,9 @@ impl Locators {
         let n = (num(params, req::SIZE).unwrap_or(u32::MAX) as usize).min(chars.len() - from);
         let part = &chars[from..from + n];
         let mut out = Vec::new();
-        let want_length = params.iter().any(|p| p.cp == req::CURRENT_LENGTH && p.data.first() == Some(&0xF1));
+        let want_length = params
+            .iter()
+            .any(|p| p.cp == req::CURRENT_LENGTH && p.data.first() == Some(&0xF1));
         if want_length {
             let mut d = 4u16.to_be_bytes().to_vec();
             d.extend(reply::len32(chars.len()).to_be_bytes());
@@ -113,7 +115,10 @@ mod tests {
         ];
         let r = l.retrieve(&params).unwrap();
         assert_eq!(r[0], Param::new(LENGTH, vec![0, 4, 0, 0, 0, 2]));
-        assert_eq!(r[1], Param::new(DATA, vec![0x04, 0xB0, 0, 0, 0, 2, 0, 0x49, 0, 0x44]));
+        assert_eq!(
+            r[1],
+            Param::new(DATA, vec![0x04, 0xB0, 0, 0, 0, 2, 0, 0x49, 0, 0x44])
+        );
         l.free(&params);
         assert!(l.retrieve(&params).is_none());
     }

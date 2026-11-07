@@ -23,13 +23,13 @@ use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Evaluator, Row, Schema, has_aggregate, sql_type};
 use super::grouping;
-use super::restype::{Scope, SqlType, type_in};
 use super::join::{self, Item};
+use super::restype::{Scope, SqlType, type_in};
 use super::sort::{KeySpec, Sorter};
 use super::{ColumnDesc, ResultSet, SqlContext, TableInfo};
 use crate::ast::{
-    CmpOp, ColumnRef, Expr, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem, SetOp,
-    TableRef, columns_of,
+    CmpOp, ColumnRef, Expr, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem,
+    SetOp, TableRef, columns_of,
 };
 use crate::error::{Result, SqlError};
 use crate::value::Value;
@@ -93,7 +93,10 @@ pub fn row_of(txn: &mut Txn<'_>, t: &TableInfo, slot: &Slot) -> Result<Row> {
                     None => *owner.insert(t.lob_owner(txn)?),
                 };
                 let lob = db::member::lob::LobRef::decode(&r)?;
-                row.push(crate::value::lob_value(f, &db::member::lob::read(txn, o, &lob)?));
+                row.push(crate::value::lob_value(
+                    f,
+                    &db::member::lob::read(txn, o, &lob)?,
+                ));
             }
             v => row.push(Value::from_field(f, &v)?),
         }
@@ -162,7 +165,11 @@ fn run_limited(
         Some(_) => None,
         None => Some(0),
     };
-    let limit = match (q.fetch_first.is_some(), literal(&q.fetch_first), literal(&q.offset)) {
+    let limit = match (
+        q.fetch_first.is_some(),
+        literal(&q.fetch_first),
+        literal(&q.offset),
+    ) {
         (true, Some(f), Some(o)) => Some(f.saturating_add(o)),
         _ => None,
     };
@@ -173,12 +180,17 @@ fn run_limited(
     };
     let saved = (ctx.plan.goal, ctx.plan.limit);
     ctx.plan.goal = goal;
-    ctx.plan.limit = if matches!(q.body, QueryBody::Select(_)) { limit.and_then(|l| usize::try_from(l).ok()) } else { None };
+    ctx.plan.limit = if matches!(q.body, QueryBody::Select(_)) {
+        limit.and_then(|l| usize::try_from(l).ok())
+    } else {
+        None
+    };
     let r = body(txn, ctx, params, &q.body, outer, q, explain_only);
     (ctx.plan.goal, ctx.plan.limit) = saved;
     let (schema, mut produced) = r.map_err(|e| set_order_error(q, e))?;
     if !q.order_by.is_empty() && !matches!(q.body, QueryBody::Select(_)) {
-        order_rows(txn, ctx, params, &schema, &mut produced, &q.order_by).map_err(|e| set_order_error(q, e))?;
+        order_rows(txn, ctx, params, &schema, &mut produced, &q.order_by)
+            .map_err(|e| set_order_error(q, e))?;
         if explain_only {
             ctx.explain.push("SORT".into());
         }
@@ -244,7 +256,11 @@ pub fn run_cursor_query(
         {
             match &sel.from[0] {
                 // A catalog view has no file: its cursor is read only.
-                TableRef::Table { name, .. } if super::catalog::is_view(name) && ctx.resolve_table(txn, name).is_err() => None,
+                TableRef::Table { name, .. }
+                    if super::catalog::is_view(name) && ctx.resolve_table(txn, name).is_err() =>
+                {
+                    None
+                }
                 TableRef::Table { name, alias, .. } => Some((
                     ctx.resolve_table(txn, name)?,
                     alias
@@ -334,7 +350,12 @@ fn body(
                     .collect(),
             ))
         }
-        QueryBody::Union { left, right, all, op } => {
+        QueryBody::Union {
+            left,
+            right,
+            all,
+            op,
+        } => {
             let (ls, mut left_rows) = body(txn, ctx, params, left, outer, q, explain_only)?;
             let (rs, right_rows) = body(txn, ctx, params, right, outer, q, explain_only)?;
             if visible_count(&ls) != visible_count(&rs) {
@@ -342,7 +363,8 @@ fn body(
                 return Err(SqlError::Coded {
                     code: -421,
                     state: "42826",
-                    what: "the operands of a set operation have different numbers of columns".into(),
+                    what: "the operands of a set operation have different numbers of columns"
+                        .into(),
                 });
             }
             // Rows of the union carry only visible columns.
@@ -372,7 +394,11 @@ fn body(
             for p in &mut all_rows {
                 for (v, fit) in p.out.iter_mut().zip(&fits) {
                     if let Some(t) = fit {
-                        let r = super::restype::conform(std::mem::replace(v, Value::Null), t, ctx.decfloat_rounding);
+                        let r = super::restype::conform(
+                            std::mem::replace(v, Value::Null),
+                            t,
+                            ctx.decfloat_rounding,
+                        );
                         *v = super::cast::mapped(ctx, r)?;
                     }
                 }
@@ -391,12 +417,18 @@ fn body(
             }
             if !*all {
                 let n = all_rows.len() as u64;
-                ctx.dbmon.note(crate::dbmon::plan::PlanEvent::Sort { rows: n, reason: "F5" });
+                ctx.dbmon.note(crate::dbmon::plan::PlanEvent::Sort {
+                    rows: n,
+                    reason: "F5",
+                });
                 distinct(&mut charge, &mut all_rows)?;
             }
             if explain_only {
-                ctx.explain
-                    .push(format!("{}{}", set_op_word(*op), if *all { " ALL" } else { "" }));
+                ctx.explain.push(format!(
+                    "{}{}",
+                    set_op_word(*op),
+                    if *all { " ALL" } else { "" }
+                ));
             }
             Ok((schema, all_rows))
         }
@@ -510,8 +542,14 @@ pub(crate) type Correlated = (Select, Vec<(Expr, Expr)>);
 /// expression). `None` when its `FROM` has more than tables and joins,
 /// or no conjunct is an equality of an expression of its own columns and
 /// one of only outer columns.
-pub(crate) fn correlation(txn: &mut Txn<'_>, ctx: &SqlContext, sel: &Select) -> Result<Option<Correlated>> {
-    let Some(w) = &sel.where_clause else { return Ok(None) };
+pub(crate) fn correlation(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    sel: &Select,
+) -> Result<Option<Correlated>> {
+    let Some(w) = &sel.where_clause else {
+        return Ok(None);
+    };
     if sel.from.is_empty() || sel.from.iter().any(has_derived) {
         return Ok(None);
     }
@@ -526,7 +564,12 @@ pub(crate) fn correlation(txn: &mut Txn<'_>, ctx: &SqlContext, sel: &Select) -> 
             && !has_subquery(e)
             && cols.iter().all(|c| match &c.table {
                 Some(t) => !scans.iter().any(|s| s.alias == t.value),
-                None => !scans.iter().any(|s| s.schema.cols.iter().any(|col| !col.hidden && col.name == c.column.value)),
+                None => !scans.iter().any(|s| {
+                    s.schema
+                        .cols
+                        .iter()
+                        .any(|col| !col.hidden && col.name == c.column.value)
+                }),
             })
     };
     let inner_only = |e: &Expr| aliases_of(e, &scans).is_some_and(|a| !a.is_empty());
@@ -551,7 +594,9 @@ pub(crate) fn correlation(txn: &mut Txn<'_>, ctx: &SqlContext, sel: &Select) -> 
         return Ok(None);
     }
     let mut out = sel.clone();
-    out.where_clause = kept.into_iter().reduce(|a, b| Expr::And(Box::new(a), Box::new(b)));
+    out.where_clause = kept
+        .into_iter()
+        .reduce(|a, b| Expr::And(Box::new(a), Box::new(b)));
     Ok(Some((out, pairs)))
 }
 
@@ -559,7 +604,9 @@ pub(crate) fn correlation(txn: &mut Txn<'_>, ctx: &SqlContext, sel: &Select) -> 
 fn has_derived(t: &TableRef) -> bool {
     match t {
         TableRef::Table { .. } => false,
-        TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => has_derived(left) || has_derived(right),
+        TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
+            has_derived(left) || has_derived(right)
+        }
         _ => true,
     }
 }
@@ -657,7 +704,12 @@ fn collect_scans(
         | TableRef::Function { .. }
         | TableRef::Recursive { .. }
         | TableRef::DataChange { .. } => {}
-        TableRef::Join { left, right, kind, .. } | TableRef::JoinUsing { left, right, kind, .. } => {
+        TableRef::Join {
+            left, right, kind, ..
+        }
+        | TableRef::JoinUsing {
+            left, right, kind, ..
+        } => {
             let (lp, rp) = match kind {
                 JoinKind::Inner | JoinKind::Cross => (pushable, pushable),
                 JoinKind::Left | JoinKind::LeftException => (pushable, false),
@@ -695,7 +747,11 @@ struct Candidate {
 /// Whether a file is held `*EXCL`: an index whose path is being built
 /// (`ddl::build_index`), not to be read or built again by others.
 fn in_build(txn: &mut Txn<'_>, file: ObjectId) -> bool {
-    txn.store().locks_mut().holders(file).iter().any(|h| h.state == LockState::Exclusive)
+    txn.store()
+        .locks_mut()
+        .holders(file)
+        .iter()
+        .any(|h| h.state == LockState::Exclusive)
 }
 
 fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
@@ -726,7 +782,13 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
     if let Ok(Some(a)) = db::cst::Active::load(txn, &t.desc) {
         for k in &a.keys {
             let c = &a.csts[k.index];
-            if !c.kind.unique() || k.format.format.keys.iter().any(|kf| k.format.format.fields[kf.field].allow_null) {
+            if !c.kind.unique()
+                || k.format
+                    .format
+                    .keys
+                    .iter()
+                    .any(|kf| k.format.format.fields[kf.field].allow_null)
+            {
                 continue;
             }
             out.push(Candidate {
@@ -734,7 +796,12 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
                 file: t.id,
                 fmt: k.format.clone(),
                 keys: key_names(&k.format),
-                label: format!("{}/{} constraint {}", t.desc.library_name, t.desc.name(), c.name),
+                label: format!(
+                    "{}/{} constraint {}",
+                    t.desc.library_name,
+                    t.desc.name(),
+                    c.name
+                ),
                 cst: Some((k.number, a.key_len)),
                 ix: (table_name(t), Some(c.name.clone())),
             });
@@ -779,7 +846,11 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
             label: format!("{}/{} ({})", lf.library_name, lf.name(), entry.name),
             cst: None,
             ix: (
-                crate::dbmon::plan::TableName { lib: lf.library_name.to_string(), file: lf.name().to_string(), member: entry.name.to_string() },
+                crate::dbmon::plan::TableName {
+                    lib: lf.library_name.to_string(),
+                    file: lf.name().to_string(),
+                    member: entry.name.to_string(),
+                },
                 None,
             ),
         });
@@ -797,10 +868,22 @@ fn table_name(t: &TableInfo) -> crate::dbmon::plan::TableName {
 }
 
 /// Tell the database monitor how `t` is read.
-fn monitor_access(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &TableInfo, cands: &[Candidate], choice: Option<&Choice>, selection: bool) {
+fn monitor_access(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    t: &TableInfo,
+    cands: &[Candidate],
+    choice: Option<&Choice>,
+    selection: bool,
+) {
     use crate::dbmon::plan::PlanEvent;
     let rows = Member::open(txn, &t.desc, &t.member).map_or(0, |m| m.attr().record_count);
-    let position = ctx.dbmon.trace.as_ref().map_or(1, |p| p.iter().filter(|e| !matches!(e, PlanEvent::Sort { .. })).count() + 1);
+    let position = ctx.dbmon.trace.as_ref().map_or(1, |p| {
+        p.iter()
+            .filter(|e| !matches!(e, PlanEvent::Sort { .. }))
+            .count()
+            + 1
+    });
     let position = u32::try_from(position).unwrap_or(u32::MAX);
     let e = match choice {
         Some(ch) => {
@@ -816,7 +899,13 @@ fn monitor_access(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &TableInfo, cands:
                 position,
             }
         }
-        None => PlanEvent::Scan { table: table_name(t), rows, indexes: !cands.is_empty(), selection, position },
+        None => PlanEvent::Scan {
+            table: table_name(t),
+            rows,
+            indexes: !cands.is_empty(),
+            selection,
+            position,
+        },
     };
     ctx.dbmon.note(e);
 }
@@ -903,7 +992,13 @@ fn simple_predicates(preds: &[Expr]) -> Vec<(String, CmpOp, Expr)> {
     simple
 }
 
-fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str, w: &Weigh) -> Option<Choice> {
+fn choose(
+    cands: &[Candidate],
+    preds: &[Expr],
+    order: &[OrderItem],
+    alias: &str,
+    w: &Weigh,
+) -> Option<Choice> {
     let mut all: Vec<(Choice, u64, bool)> = Vec::new();
     let simple = simple_predicates(preds);
     for (ci, c) in cands.iter().enumerate() {
@@ -921,7 +1016,11 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str,
             {
                 let st = stats_of(name);
                 known |= st.is_some();
-                share *= super::plan::estimate::compare(st.as_ref(), CmpOp::Eq, super::plan::estimate::constant(v).as_ref());
+                share *= super::plan::estimate::compare(
+                    st.as_ref(),
+                    CmpOp::Eq,
+                    super::plan::estimate::constant(v).as_ref(),
+                );
                 eq.push(v.clone());
                 continue;
             }
@@ -945,7 +1044,10 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str,
                 if lo.is_some() || hi.is_some() {
                     let st = stats_of(name);
                     known |= st.is_some();
-                    let (lv, hv) = (lo.as_ref().map(super::plan::estimate::constant), hi.as_ref().map(super::plan::estimate::constant));
+                    let (lv, hv) = (
+                        lo.as_ref().map(super::plan::estimate::constant),
+                        hi.as_ref().map(super::plan::estimate::constant),
+                    );
                     share *= super::plan::estimate::range(
                         st.as_ref(),
                         lv.as_ref().map(|v| (v.as_ref(), lo_op == CmpOp::Ge)),
@@ -961,7 +1063,18 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str,
             + u32::from(ordered.is_some()) * 3;
         if score > 0 {
             let est = super::plan::estimate::rows(w.rows, share);
-            all.push((Choice { cand: ci, eq, lo, hi, ordered, score }, est, known));
+            all.push((
+                Choice {
+                    cand: ci,
+                    eq,
+                    lo,
+                    hi,
+                    ordered,
+                    score,
+                },
+                est,
+                known,
+            ));
         }
     }
     // The best score, then the fewest rows expected; a small row goal
@@ -972,7 +1085,10 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str,
         let better = match &best {
             None => true,
             Some(b) => {
-                let (co, bo) = (small_goal && c.0.ordered.is_some(), small_goal && b.0.ordered.is_some());
+                let (co, bo) = (
+                    small_goal && c.0.ordered.is_some(),
+                    small_goal && b.0.ordered.is_some(),
+                );
                 (co, c.0.score, std::cmp::Reverse(c.1)) > (bo, b.0.score, std::cmp::Reverse(b.1))
             }
         };
@@ -984,7 +1100,8 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str,
     // Statistics say the key would read much of a large table, and its
     // order is not needed: read the table in arrival order.
     #[allow(clippy::cast_precision_loss)]
-    let wide = !w.volatile && known && w.rows >= SCAN_FLOOR && est as f64 > w.rows as f64 * SCAN_SHARE;
+    let wide =
+        !w.volatile && known && w.rows >= SCAN_FLOOR && est as f64 > w.rows as f64 * SCAN_SHARE;
     if wide && choice.ordered.is_none() {
         return None;
     }
@@ -1094,7 +1211,12 @@ fn scan_table_in(
         super::plan::stats::prime(txn, t.id);
     }
     let volatile = physical && super::table::is_volatile(txn, t.id);
-    let weigh = Weigh { rows: rows_now, member: physical.then_some(t.member.object), goal: ev.ctx.plan.goal, volatile };
+    let weigh = Weigh {
+        rows: rows_now,
+        member: physical.then_some(t.member.object),
+        goal: ev.ctx.plan.goal,
+        volatile,
+    };
     if physical && !volatile && rows_now >= super::plan::stats::ASK_FLOOR {
         // Columns the planner would weigh: ask the collection job for them.
         for (name, _, _) in simple_predicates(&scan.preds) {
@@ -1110,7 +1232,14 @@ fn scan_table_in(
     // Reading a table needs what a read open needs: `*OBJOPR` and `*READ`.
     db::auth::check_open(txn, t.id, db::Usage::INPUT)?;
     if !explain_only && ev.ctx.dbmon.trace.is_some() {
-        monitor_access(txn, ev.ctx, t, &cands, choice.as_ref(), !scan.preds.is_empty());
+        monitor_access(
+            txn,
+            ev.ctx,
+            t,
+            &cands,
+            choice.as_ref(),
+            !scan.preds.is_empty(),
+        );
     }
     if !explain_only {
         let mut objects = vec![t.id, t.member.object];
@@ -1132,7 +1261,10 @@ fn scan_table_in(
     let mut base_pf = open_pf(txn)?;
     // Under `*ALL` each record read is read-locked as it is read, before
     // any yield: no other job changes it while the unit of work runs.
-    let lock = ev.ctx.locks_reads().then(|| (t.desc.name().to_string(), t.member.name.to_string()));
+    let lock = ev
+        .ctx
+        .locks_reads()
+        .then(|| (t.desc.name().to_string(), t.member.name.to_string()));
     let lock_read = |ctx: &mut SqlContext, member: Option<ObjectId>, rrn: u64| -> Result<()> {
         match (&lock, member) {
             (Some((file, mbr)), Some(m)) => ctx.lock_read(m, rrn, file, mbr),
@@ -1152,7 +1284,10 @@ fn scan_table_in(
         // keys give them, the records are not read.
         let key_only = base_pf.is_some()
             && needed.as_ref().is_some_and(|names| {
-                let fields: Option<Vec<String>> = names.iter().map(|n| t.field(n).map(|(_, f)| f.name.to_string())).collect();
+                let fields: Option<Vec<String>> = names
+                    .iter()
+                    .map(|n| t.field(n).map(|(_, f)| f.name.to_string()))
+                    .collect();
                 fields.is_some_and(|f| super::plan::keyonly::covers(&c.fmt, &f))
             });
         if explain_only {
@@ -1207,13 +1342,20 @@ fn scan_table_in(
         let desc = file::describe(txn, c.file)?;
         let mut pm = Member::open(txn, &desc, &c.member)?;
         if pm.attr().path_invalid && in_build(txn, c.file) {
-            return Err(SqlError::Locked { what: format!("{} is being built", c.label) });
+            return Err(SqlError::Locked {
+                what: format!("{} is being built", c.label),
+            });
         }
         pm.ensure_path(txn, &mut |_, _| {})?;
         let backward = ch.ordered == Some(true);
         // The path in batches, each read as far as the bounds allow.
         let path_of = |pm: &Member| {
-            if c.cst.is_some() { pm.cst_tree() } else { pm.path() }.ok_or_else(|| SqlError::Database {
+            if c.cst.is_some() {
+                pm.cst_tree()
+            } else {
+                pm.path()
+            }
+            .ok_or_else(|| SqlError::Database {
                 what: format!("{} has no access path", c.label),
                 msgid: None,
             })
@@ -1275,7 +1417,11 @@ fn scan_table_in(
                         .collect(),
                     None => pm.read_entries(txn, k)?,
                 };
-                let held = if base_pf.is_some() { Some(t.member.object) } else { base_of(&pm, k.format) };
+                let held = if base_pf.is_some() {
+                    Some(t.member.object)
+                } else {
+                    base_of(&pm, k.format)
+                };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
                     if ev.ctx.skips(held, s.rrn) {
@@ -1307,7 +1453,11 @@ fn scan_table_in(
             };
         }
     } else {
-        let several = if base_pf.is_some() { bitmap::describe(&cands, &scan.preds) } else { None };
+        let several = if base_pf.is_some() {
+            bitmap::describe(&cands, &scan.preds)
+        } else {
+            None
+        };
         if explain_only {
             match several {
                 Some(d) => ev.ctx.explain.push(format!("SCAN {label} {d}")),
@@ -1323,7 +1473,9 @@ fn scan_table_in(
             for chunk in list.chunks(KEY_BATCH) {
                 for &rrn in chunk {
                     ev.ctx.poll_interrupt()?;
-                    let Some(s) = pf.read(txn, rrn)?.filter(|s| !s.deleted) else { continue };
+                    let Some(s) = pf.read(txn, rrn)?.filter(|s| !s.deleted) else {
+                        continue;
+                    };
                     if ev.ctx.skips(Some(t.member.object), s.rrn) {
                         continue;
                     }
@@ -1438,7 +1590,14 @@ struct Stop(Option<usize>);
 
 impl Stop {
     /// Whether `r` passes (always, without a goal).
-    fn keeps(&self, txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, scan: &Scan, outer: &Env, r: &Row) -> Result<bool> {
+    fn keeps(
+        &self,
+        txn: &mut Txn<'_>,
+        ev: &mut Evaluator<'_>,
+        scan: &Scan,
+        outer: &Env,
+        r: &Row,
+    ) -> Result<bool> {
         if self.0.is_none() || scan.preds.is_empty() {
             return Ok(true);
         }
@@ -1563,23 +1722,93 @@ pub(super) fn from_rows(
             }
             Ok((Rc::new(Schema { cols }), rows, false))
         }
-        TableRef::Join { left, right, kind, on } if matches!(**right, TableRef::Lateral(_)) => {
-            super::from::lateral_join(txn, ctx, params, left, right, *kind, on.as_ref(), scans, outer, order, explain_only)
+        TableRef::Join {
+            left,
+            right,
+            kind,
+            on,
+        } if matches!(**right, TableRef::Lateral(_)) => super::from::lateral_join(
+            txn,
+            ctx,
+            params,
+            left,
+            right,
+            *kind,
+            on.as_ref(),
+            scans,
+            outer,
+            order,
+            explain_only,
+        ),
+        TableRef::JoinUsing {
+            left,
+            right,
+            kind,
+            columns,
+        } => super::from::join_using(
+            txn,
+            ctx,
+            params,
+            left,
+            right,
+            *kind,
+            columns,
+            scans,
+            outer,
+            order,
+            explain_only,
+        ),
+        TableRef::Lateral(inner) => {
+            from_rows(txn, ctx, params, inner, scans, outer, &[], explain_only)
         }
-        TableRef::JoinUsing { left, right, kind, columns } => {
-            super::from::join_using(txn, ctx, params, left, right, *kind, columns, scans, outer, order, explain_only)
-        }
-        TableRef::Lateral(inner) => from_rows(txn, ctx, params, inner, scans, outer, &[], explain_only),
-        TableRef::Function { name, args, alias, columns } => {
-            super::from::table_function(txn, ctx, params, name, args, alias, columns, outer, explain_only)
-        }
-        TableRef::Recursive { cte, alias, columns } => {
-            let (s, rows) = super::cte::run(txn, ctx, params, cte, &alias.value, columns, outer, explain_only)?;
+        TableRef::Function {
+            name,
+            args,
+            alias,
+            columns,
+        } => super::from::table_function(
+            txn,
+            ctx,
+            params,
+            name,
+            args,
+            alias,
+            columns,
+            outer,
+            explain_only,
+        ),
+        TableRef::Recursive {
+            cte,
+            alias,
+            columns,
+        } => {
+            let (s, rows) = super::cte::run(
+                txn,
+                ctx,
+                params,
+                cte,
+                &alias.value,
+                columns,
+                outer,
+                explain_only,
+            )?;
             Ok((s, rows, false))
         }
-        TableRef::DataChange { kind, statement, alias, columns } => {
-            super::from::data_change(txn, ctx, params, *kind, statement, alias, columns, explain_only)
-        }
+        TableRef::DataChange {
+            kind,
+            statement,
+            alias,
+            columns,
+        } => super::from::data_change(
+            txn,
+            ctx,
+            params,
+            *kind,
+            statement,
+            alias,
+            columns,
+            explain_only,
+        ),
         TableRef::Join {
             left,
             right,
@@ -1610,7 +1839,10 @@ pub(super) fn from_rows(
             }
             let schema = Rc::new(Schema { cols });
             if explain_only {
-                let (l, r) = (estimated(txn, ctx, left, scans), estimated(txn, ctx, right, scans));
+                let (l, r) = (
+                    estimated(txn, ctx, left, scans),
+                    estimated(txn, ctx, right, scans),
+                );
                 let mut parts = Vec::new();
                 if let Some(e) = on {
                     conjuncts(e, &mut parts);
@@ -1624,7 +1856,10 @@ pub(super) fn from_rows(
                     goal: ctx.plan.goal,
                     ..join::method::Inputs::default()
                 };
-                ctx.explain.push(format!("JOIN {kind:?} {} (est. {l} x {r} rows)", join::method::choose(&inputs).name()));
+                ctx.explain.push(format!(
+                    "JOIN {kind:?} {} (est. {l} x {r} rows)",
+                    join::method::choose(&inputs).name()
+                ));
                 return Ok((schema, Vec::new(), lord));
             }
             let mut ev = Evaluator { ctx, params };
@@ -1658,19 +1893,29 @@ fn estimated(txn: &mut Txn<'_>, ctx: &SqlContext, t: &TableRef, scans: &[Scan]) 
     use super::plan::{estimate, stats};
     match t {
         TableRef::Table { name, alias, .. } => {
-            let alias = alias.as_ref().map_or_else(|| name.name.value.clone(), |a| a.value.clone());
-            let Some(scan) = scans.iter().find(|s| s.alias == alias) else { return 1 };
+            let alias = alias
+                .as_ref()
+                .map_or_else(|| name.name.value.clone(), |a| a.value.clone());
+            let Some(scan) = scans.iter().find(|s| s.alias == alias) else {
+                return 1;
+            };
             let Some(info) = &scan.info else {
                 return scan.rows.as_ref().map_or(1, |r| r.len() as u64);
             };
             stats::prime(txn, info.id);
-            let rows = Member::open(txn, &info.desc, &info.member).map_or(0, |m| m.attr().record_count);
+            let rows =
+                Member::open(txn, &info.desc, &info.member).map_or(0, |m| m.attr().record_count);
             let mut share = 1.0;
             for (col, op, v) in simple_predicates(&scan.preds) {
-                let st = info.field(&col).and_then(|(_, f)| stats::get(info.member.object, &f.name.to_string()));
+                let st = info
+                    .field(&col)
+                    .and_then(|(_, f)| stats::get(info.member.object, &f.name.to_string()));
                 share *= estimate::compare(st.as_ref(), op, estimate::constant(&v).as_ref());
             }
-            let others = scan.preds.len().saturating_sub(simple_predicates(&scan.preds).len());
+            let others = scan
+                .preds
+                .len()
+                .saturating_sub(simple_predicates(&scan.preds).len());
             share *= estimate::OTHER.powi(i32::try_from(others).unwrap_or(i32::MAX));
             let _ = ctx;
             estimate::rows(rows, share)
@@ -1706,15 +1951,25 @@ fn select(
     explain_only: bool,
 ) -> Result<(Rc<Schema>, Vec<Produced>)> {
     // Conjuncts only a derived table needs go into it.
-    if sel.where_clause.is_some() && sel.from.iter().any(|t| matches!(t, TableRef::Subquery { .. })) {
+    if sel.where_clause.is_some()
+        && sel
+            .from
+            .iter()
+            .any(|t| matches!(t, TableRef::Subquery { .. }))
+    {
         let mut probe = Vec::new();
         for t in &sel.from {
             collect_scans(txn, ctx, t, true, &mut probe)?;
         }
-        let elsewhere = |n: &str| probe.iter().any(|s| s.schema.cols.iter().any(|c| !c.hidden && c.name == n));
+        let elsewhere = |n: &str| {
+            probe
+                .iter()
+                .any(|s| s.schema.cols.iter().any(|c| !c.hidden && c.name == n))
+        };
         if let Some(pushed) = super::plan::pushdown::push(sel, &elsewhere) {
             if explain_only {
-                ctx.explain.push("PREDICATES pushed into derived tables".into());
+                ctx.explain
+                    .push("PREDICATES pushed into derived tables".into());
             }
             return select(txn, ctx, params, &pushed, outer, order, explain_only);
         }
@@ -1734,7 +1989,12 @@ fn select(
     // A condition's distinct types follow their rules (`udt::typing`),
     // before a row is read.
     if super::udt::registry::any() {
-        let joined = Schema { cols: scans.iter().flat_map(|s| s.schema.cols.iter().cloned()).collect() };
+        let joined = Schema {
+            cols: scans
+                .iter()
+                .flat_map(|s| s.schema.cols.iter().cloned())
+                .collect(),
+        };
         let mut scope = Scope::of_env(outer);
         scope.frames.push(&joined);
         for c in sel.where_clause.iter().chain(&sel.having) {
@@ -1783,7 +2043,11 @@ fn select(
         && !sel.items.iter().any(|i| matches!(i, SelectItem::Expr(e, _) if has_aggregate(e) || super::olap::has_over(e) || has_subquery(e)))
         && !order.iter().any(|o| super::olap::has_over(&o.expr));
     // The columns a lone table must give, when they can be told.
-    let needed = if from_items.len() == 1 && matches!(from_items[0], TableRef::Table { .. }) { needed_columns(sel, order) } else { None };
+    let needed = if from_items.len() == 1 && matches!(from_items[0], TableRef::Table { .. }) {
+        needed_columns(sel, order)
+    } else {
+        None
+    };
     for (i, t) in from_items.iter().enumerate() {
         ctx.plan.stop = if streams { limit } else { None };
         ctx.plan.columns.clone_from(&needed);
@@ -1819,7 +2083,8 @@ fn select(
         levels[level].push(p.clone());
     }
     if explain_only && items.len() > 1 {
-        ctx.explain.push(format!("JOIN {} items depth first", items.len()));
+        ctx.explain
+            .push(format!("JOIN {} items depth first", items.len()));
     }
     if explain_only {
         if !rest.is_empty() {
@@ -1865,14 +2130,23 @@ fn select(
     let sets = if with_sets {
         grouping::sets(&sel.group_by)?
     } else {
-        vec![grouping::GroupingSet { keys: sel.group_by.clone(), absent: Vec::new() }]
+        vec![grouping::GroupingSet {
+            keys: sel.group_by.clone(),
+            absent: Vec::new(),
+        }]
     };
     // Each output row's environment and grouping set.
     let mut envs: Vec<(Env, usize)> = Vec::new();
     if grouped {
         let rows = Rc::new(rows);
         for (si, set) in sets.iter().enumerate() {
-            let having = sel.having.as_ref().map(|h| if with_sets { grouping::rewrite(h, set) } else { h.clone() });
+            let having = sel.having.as_ref().map(|h| {
+                if with_sets {
+                    grouping::rewrite(h, set)
+                } else {
+                    h.clone()
+                }
+            });
             let mut groups: Vec<(Row, Vec<Row>)> = Vec::new();
             let mut index: HashMap<String, usize> = HashMap::new();
             for r in rows.iter() {
@@ -1919,13 +2193,25 @@ fn select(
     scope.sequences = super::restype::sequences(
         txn,
         ev.ctx,
-        sel.items.iter().filter_map(|i| if let SelectItem::Expr(e, _) = i { Some(e) } else { None }),
+        sel.items.iter().filter_map(|i| {
+            if let SelectItem::Expr(e, _) = i {
+                Some(e)
+            } else {
+                None
+            }
+        }),
     );
     scope.variables = super::restype::variables(
         txn,
         ev.ctx,
         &scope,
-        sel.items.iter().filter_map(|i| if let SelectItem::Expr(e, _) = i { Some(e) } else { None }),
+        sel.items.iter().filter_map(|i| {
+            if let SelectItem::Expr(e, _) = i {
+                Some(e)
+            } else {
+                None
+            }
+        }),
     );
     let mut out_cols: Vec<ColInfo> = Vec::new();
     let mut plan: Vec<(Expr, usize, Option<SqlType>)> = Vec::new();
@@ -1968,14 +2254,18 @@ fn select(
                 // A grouping expression another set leaves out is null.
                 let absent = with_sets && sets.iter().any(|s| s.absent.contains(e));
                 let found = match e {
-                    Expr::Column(c) => schema.find(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)?,
+                    Expr::Column(c) => {
+                        schema.find(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)?
+                    }
                     _ => None,
                 };
                 let (field, nullable, ty) = match found {
                     // A column of the row keeps its field.
-                    Some(i) if schema.cols[i].field.is_some() => {
-                        (schema.cols[i].field.clone(), schema.cols[i].nullable || absent, None)
-                    }
+                    Some(i) if schema.cols[i].field.is_some() => (
+                        schema.cols[i].field.clone(),
+                        schema.cols[i].nullable || absent,
+                        None,
+                    ),
                     _ => match type_in(e, &scope)? {
                         Some(t) => {
                             let null = t.nullable || absent;
@@ -2002,18 +2292,33 @@ fn select(
     for (k, item) in order_items.iter_mut().enumerate() {
         if super::olap::has_over(&item.expr) {
             let name = format!("*O{k}");
-            out_cols.push(ColInfo { name: name.clone(), table: None, field: None, nullable: true, hidden: true });
+            out_cols.push(ColInfo {
+                name: name.clone(),
+                table: None,
+                field: None,
+                nullable: true,
+                hidden: true,
+            });
             plan.push((item.expr.clone(), usize::MAX, None));
             item.expr = Expr::Column(ColumnRef {
                 table: None,
-                column: crate::ast::Ident { value: name, delimited: true },
+                column: crate::ast::Ident {
+                    value: name,
+                    delimited: true,
+                },
             });
         }
     }
     let out_schema = Rc::new(Schema { cols: out_cols });
     // The select list of each grouping set.
     let set_plans: Vec<Vec<Expr>> = if with_sets {
-        sets.iter().map(|s| plan.iter().map(|(e, _, _)| grouping::rewrite(e, s)).collect()).collect()
+        sets.iter()
+            .map(|s| {
+                plan.iter()
+                    .map(|(e, _, _)| grouping::rewrite(e, s))
+                    .collect()
+            })
+            .collect()
     } else {
         Vec::new()
     };
@@ -2070,10 +2375,24 @@ fn select(
         distinct(&mut charge, &mut produced)?;
     }
     if !order_items.is_empty() && !ordered {
-        let joined = from_items.len() > 1 || sel.from.iter().any(|f| matches!(f, TableRef::Join { .. } | TableRef::JoinUsing { .. }));
+        let joined = from_items.len() > 1
+            || sel
+                .from
+                .iter()
+                .any(|f| matches!(f, TableRef::Join { .. } | TableRef::JoinUsing { .. }));
         let n = produced.len() as u64;
-        ev.ctx.dbmon.note(crate::dbmon::plan::PlanEvent::Sort { rows: n, reason: if joined { "F2" } else { "F7" } });
-        order_rows(txn, ev.ctx, params, &out_schema, &mut produced, &order_items)?;
+        ev.ctx.dbmon.note(crate::dbmon::plan::PlanEvent::Sort {
+            rows: n,
+            reason: if joined { "F2" } else { "F7" },
+        });
+        order_rows(
+            txn,
+            ev.ctx,
+            params,
+            &out_schema,
+            &mut produced,
+            &order_items,
+        )?;
     }
     Ok((out_schema, produced))
 }
@@ -2234,9 +2553,18 @@ pub(crate) fn columns_and_rows(
     q: &Query,
 ) -> Result<(Vec<ColInfo>, Vec<Row>)> {
     let (schema, produced) = run_body(txn, ctx, params, q, &Env::default(), false)?;
-    let visible: Vec<usize> = schema.cols.iter().enumerate().filter(|(_, c)| !c.hidden).map(|(i, _)| i).collect();
+    let visible: Vec<usize> = schema
+        .cols
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| !c.hidden)
+        .map(|(i, _)| i)
+        .collect();
     let cols = visible.iter().map(|&i| schema.cols[i].clone()).collect();
-    let rows = produced.into_iter().map(|p| visible.iter().map(|&i| p.out[i].clone()).collect()).collect();
+    let rows = produced
+        .into_iter()
+        .map(|p| visible.iter().map(|&i| p.out[i].clone()).collect())
+        .collect();
     Ok((cols, rows))
 }
 
@@ -2251,7 +2579,10 @@ pub(crate) fn columns_and_rows_planned(
     let r = run_body(txn, ctx, params, q, &Env::default(), true);
     ctx.explain = kept;
     let (schema, _) = r?;
-    Ok((schema.cols.iter().filter(|c| !c.hidden).cloned().collect(), Vec::new()))
+    Ok((
+        schema.cols.iter().filter(|c| !c.hidden).cloned().collect(),
+        Vec::new(),
+    ))
 }
 
 /// `FROM a, b, LATERAL (...) x, c`: the items before a lateral one joined
@@ -2262,9 +2593,19 @@ fn fold_laterals(from: &[TableRef]) -> Vec<TableRef> {
         if matches!(t, TableRef::Lateral(_)) && !out.is_empty() {
             let mut left = out.remove(0);
             for x in out.drain(..) {
-                left = TableRef::Join { left: Box::new(left), right: Box::new(x), kind: JoinKind::Cross, on: None };
+                left = TableRef::Join {
+                    left: Box::new(left),
+                    right: Box::new(x),
+                    kind: JoinKind::Cross,
+                    on: None,
+                };
             }
-            out.push(TableRef::Join { left: Box::new(left), right: Box::new(t.clone()), kind: JoinKind::Cross, on: None });
+            out.push(TableRef::Join {
+                left: Box::new(left),
+                right: Box::new(t.clone()),
+                kind: JoinKind::Cross,
+                on: None,
+            });
         } else {
             out.push(t.clone());
         }

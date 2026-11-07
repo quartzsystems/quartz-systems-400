@@ -96,7 +96,10 @@ impl Model {
     /// The `MFRTYPMDL` value.
     #[must_use]
     pub fn name(self) -> &'static str {
-        MODELS.iter().find(|(m, _, _)| *m == self).map_or("*HP4", |(_, n, _)| n)
+        MODELS
+            .iter()
+            .find(|(m, _, _)| *m == self)
+            .map_or("*HP4", |(_, n, _)| n)
     }
 
     /// What it can do.
@@ -254,7 +257,10 @@ mod tests {
     fn selection() {
         assert_eq!(Transform::select(false, "*HP4", None), Transform::Raw);
         assert_eq!(Transform::select(true, "*NONE", None), Transform::Ascii);
-        assert_eq!(Transform::select(true, "*HP5", None), Transform::Pcl(Model::Hp5));
+        assert_eq!(
+            Transform::select(true, "*HP5", None),
+            Transform::Pcl(Model::Hp5)
+        );
         assert_eq!(Transform::select(true, "*WSCST", None), Transform::Ascii);
         assert_eq!(Transform::select(true, "*PDF", None), Transform::Pdf);
         assert_eq!(Format::Pcl.mime(), "application/vnd.hp-PCL");
@@ -262,9 +268,18 @@ mod tests {
         let name = crate::wscst::shipped::for_mfrtypmdl("*IBM4019").unwrap();
         assert_eq!(name, "QWPIBM4019");
         let w = Wscst::parse(&crate::wscst::shipped::source(name)).unwrap();
-        assert!(matches!(Transform::select(true, "*IBM4019", Some(w.clone())), Transform::Custom(_)));
-        assert_eq!(Transform::select(true, "*HP4", Some(w)), Transform::Pcl(Model::Hp4));
-        assert_eq!(crate::wscst::shipped::for_mfrtypmdl("*HPLJ4"), Some("QWPHPLSR4"));
+        assert!(matches!(
+            Transform::select(true, "*IBM4019", Some(w.clone())),
+            Transform::Custom(_)
+        ));
+        assert_eq!(
+            Transform::select(true, "*HP4", Some(w)),
+            Transform::Pcl(Model::Hp4)
+        );
+        assert_eq!(
+            crate::wscst::shipped::for_mfrtypmdl("*HPLJ4"),
+            Some("QWPHPLSR4")
+        );
         assert_eq!(crate::wscst::shipped::for_mfrtypmdl("*NONE"), None);
     }
 }

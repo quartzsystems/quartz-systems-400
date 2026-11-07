@@ -61,35 +61,88 @@ pub fn col(name: &str, label: &str, sql_type: &str, nullable: bool) -> Col {
     let (base, args) = match sql_type.split_once('(') {
         Some((b, rest)) => {
             let (a, tail) = rest.split_once(')').expect("closed");
-            (format!("{b}{tail}"), a.split(',').map(|x| x.trim().parse::<u32>().expect("a number")).collect())
+            (
+                format!("{b}{tail}"),
+                a.split(',')
+                    .map(|x| x.trim().parse::<u32>().expect("a number"))
+                    .collect(),
+            )
         }
         None => (sql_type.to_string(), Vec::<u32>::new()),
     };
     let arg = |i: usize, d: u32| args.get(i).copied().unwrap_or(d);
     let (t, kind, length, scale, ccsid) = match base.as_str() {
-        "SMALLINT" => ("SMALLINT", Kind::Int(i64::from(i16::MIN), i64::from(i16::MAX)), 5, 0, 0),
-        "INTEGER" => ("INTEGER", Kind::Int(i64::from(i32::MIN), i64::from(i32::MAX)), 10, 0, 0),
+        "SMALLINT" => (
+            "SMALLINT",
+            Kind::Int(i64::from(i16::MIN), i64::from(i16::MAX)),
+            5,
+            0,
+            0,
+        ),
+        "INTEGER" => (
+            "INTEGER",
+            Kind::Int(i64::from(i32::MIN), i64::from(i32::MAX)),
+            10,
+            0,
+            0,
+        ),
         "BIGINT" => ("BIGINT", Kind::Int(i64::MIN, i64::MAX), 19, 0, 0),
-        "DECIMAL" => ("DECIMAL", Kind::Dec(arg(0, 5), arg(1, 0)), arg(0, 5), arg(1, 0), 0),
-        "NUMERIC" => ("NUMERIC", Kind::Dec(arg(0, 5), arg(1, 0)), arg(0, 5), arg(1, 0), 0),
+        "DECIMAL" => (
+            "DECIMAL",
+            Kind::Dec(arg(0, 5), arg(1, 0)),
+            arg(0, 5),
+            arg(1, 0),
+            0,
+        ),
+        "NUMERIC" => (
+            "NUMERIC",
+            Kind::Dec(arg(0, 5), arg(1, 0)),
+            arg(0, 5),
+            arg(1, 0),
+            0,
+        ),
         "DECFLOAT" => ("DECFLOAT", Kind::DecFloat, arg(0, 34), 0, 0),
         "REAL" => ("REAL", Kind::Real, 24, 0, 0),
         "DOUBLE" => ("DOUBLE", Kind::Double, 53, 0, 0),
         "CHAR" => ("CHAR", Kind::Text(arg(0, 1), true), arg(0, 1), 0, 37),
         "VARCHAR" => ("VARCHAR", Kind::Text(arg(0, 1), false), arg(0, 1), 0, 37),
-        "CLOB" => ("CLOB", Kind::Text(arg(0, 1_048_576), false), arg(0, 1_048_576), 0, 37),
+        "CLOB" => (
+            "CLOB",
+            Kind::Text(arg(0, 1_048_576), false),
+            arg(0, 1_048_576),
+            0,
+            37,
+        ),
         "GRAPHIC" => ("GRAPHIC", Kind::Text(arg(0, 1), true), arg(0, 1), 0, 1200),
-        "VARGRAPHIC" => ("VARGRAPHIC", Kind::Text(arg(0, 1), false), arg(0, 1), 0, 1200),
+        "VARGRAPHIC" => (
+            "VARGRAPHIC",
+            Kind::Text(arg(0, 1), false),
+            arg(0, 1),
+            0,
+            1200,
+        ),
         "CHAR FOR BIT DATA" => ("CHAR", Kind::Bits(arg(0, 1), true), arg(0, 1), 0, 65535),
         "VARCHAR FOR BIT DATA" => ("VARCHAR", Kind::Bits(arg(0, 1), false), arg(0, 1), 0, 65535),
         "BINARY" => ("BINARY", Kind::Bin(arg(0, 1), true), arg(0, 1), 0, 0),
         "VARBINARY" => ("VARBINARY", Kind::Bin(arg(0, 1), false), arg(0, 1), 0, 0),
-        "BLOB" => ("BLOB", Kind::Bin(arg(0, 1_048_576), false), arg(0, 1_048_576), 0, 0),
+        "BLOB" => (
+            "BLOB",
+            Kind::Bin(arg(0, 1_048_576), false),
+            arg(0, 1_048_576),
+            0,
+            0,
+        ),
         "DATE" => ("DATE", Kind::Date, 10, 0, 0),
         "TIME" => ("TIME", Kind::Time, 8, 0, 0),
         "TIMESTAMP" => {
             let p = arg(0, 6);
-            ("TIMESTAMP", Kind::Ts(u16::try_from(p).unwrap_or(6)), 20 + p, p, 0)
+            (
+                "TIMESTAMP",
+                Kind::Ts(u16::try_from(p).unwrap_or(6)),
+                20 + p,
+                p,
+                0,
+            )
         }
         "BOOLEAN" => ("BOOLEAN", Kind::Bool, 1, 0, 0),
         other => panic!("no type {other}"),
@@ -141,7 +194,11 @@ fn parse_date(text: &str) -> Option<i64> {
 
 /// `hh:mm:ss` or `hh.mm.ss`.
 fn parse_time(s: &str) -> Option<i64> {
-    let v: Vec<i64> = s.trim().split([':', '.']).map(|x| x.parse().ok()).collect::<Option<_>>()?;
+    let v: Vec<i64> = s
+        .trim()
+        .split([':', '.'])
+        .map(|x| x.parse().ok())
+        .collect::<Option<_>>()?;
     let [h, m, sec] = v[..] else { return None };
     (h < 24 && m < 60 && sec < 60).then_some(((h * 60 + m) * 60 + sec) * 1000)
 }
@@ -188,7 +245,11 @@ fn decimal_parts(t: &str) -> Option<(bool, String, String)> {
         return None;
     }
     let i = i.trim_start_matches('0');
-    Some((neg, if i.is_empty() { "0".into() } else { i.into() }, f.into()))
+    Some((
+        neg,
+        if i.is_empty() { "0".into() } else { i.into() },
+        f.into(),
+    ))
 }
 
 /// The shortest text that reads back as `v`.
@@ -211,7 +272,13 @@ fn real_text(v: f32) -> String {
 /// parsed; then rounded to the column's 16 or 34 digits.
 fn decfloat(c: &Column, v: &SqlValue) -> Result<DecFloat, Misfit> {
     let format = DfFormat::of_digits(c.length).unwrap_or(DfFormat::D34);
-    let misfit = |e: DecimalError| if matches!(e, DecimalError::Parse { .. }) { NOT_A_NUMBER } else { OUT_OF_RANGE };
+    let misfit = |e: DecimalError| {
+        if matches!(e, DecimalError::Parse { .. }) {
+            NOT_A_NUMBER
+        } else {
+            OUT_OF_RANGE
+        }
+    };
     let d = match v {
         SqlValue::Integer { value } => Ok(DecFloat::from_i64(*value, DfFormat::D34)),
         SqlValue::Decimal { text } => DecFloat::parse(text, DfFormat::D34),
@@ -240,7 +307,11 @@ fn number_text(v: &SqlValue) -> Option<String> {
 #[allow(clippy::too_many_lines, clippy::many_single_char_names)] // one arm per type
 pub fn assign(c: &Col, v: SqlValue) -> Result<SqlValue, Misfit> {
     if v == SqlValue::Null {
-        return if c.column.nullable { Ok(v) } else { Err(NULL_NOT_ALLOWED) };
+        return if c.column.nullable {
+            Ok(v)
+        } else {
+            Err(NULL_NOT_ALLOWED)
+        };
     }
     Ok(match (c.kind, v) {
         (Kind::Int(lo, hi), v) => {
@@ -275,15 +346,25 @@ pub fn assign(c: &Col, v: SqlValue) -> Result<SqlValue, Misfit> {
             }
             let zero = i == "0" && f.chars().all(|c| c == '0');
             let sign = if neg && !zero { "-" } else { "" };
-            let text = if s == 0 { format!("{sign}{i}") } else { format!("{sign}{i}.{f}") };
+            let text = if s == 0 {
+                format!("{sign}{i}")
+            } else {
+                format!("{sign}{i}.{f}")
+            };
             SqlValue::Decimal { text }
         }
-        (Kind::DecFloat, v) => SqlValue::Decimal { text: decfloat(&c.column, &v)?.to_sci_string() },
+        (Kind::DecFloat, v) => SqlValue::Decimal {
+            text: decfloat(&c.column, &v)?.to_sci_string(),
+        },
         (Kind::Real | Kind::Double, v) => {
             let t = number_text(&v).ok_or(WRONG_TYPE)?;
             let f: f64 = t.parse().map_err(|_| NOT_A_NUMBER)?;
             #[allow(clippy::cast_possible_truncation)]
-            let text = if c.kind == Kind::Real { real_text(f as f32) } else { float_text(f) };
+            let text = if c.kind == Kind::Real {
+                real_text(f as f32)
+            } else {
+                float_text(f)
+            };
             SqlValue::Float { text }
         }
         (Kind::Text(n, fixed), SqlValue::Text { text }) => {
@@ -306,7 +387,11 @@ pub fn assign(c: &Col, v: SqlValue) -> Result<SqlValue, Misfit> {
             }
             if fixed {
                 // An EBCDIC blank pads character data, zero binary.
-                let pad = if matches!(c.kind, Kind::Bits(..)) { 0x40 } else { 0 };
+                let pad = if matches!(c.kind, Kind::Bits(..)) {
+                    0x40
+                } else {
+                    0
+                };
                 data.resize(n, pad);
             }
             SqlValue::Binary { data }
@@ -331,7 +416,8 @@ pub fn assign(c: &Col, v: SqlValue) -> Result<SqlValue, Misfit> {
 
 /// A timestamp with the digits past precision `p` zero.
 fn truncate(ms: i64, picos: u32, p: u16) -> SqlValue {
-    let frac = u64::try_from(ms.rem_euclid(1000)).unwrap_or(0) * 1_000_000_000 + u64::from(picos.min(qap_proto::ops::sql::MAX_PICOS));
+    let frac = u64::try_from(ms.rem_euclid(1000)).unwrap_or(0) * 1_000_000_000
+        + u64::from(picos.min(qap_proto::ops::sql::MAX_PICOS));
     let unit = 10u64.pow(12 - u32::from(p.min(12)));
     let frac = frac / unit * unit;
     SqlValue::Timestamp {
@@ -347,19 +433,25 @@ pub fn same(a: &SqlValue, b: &SqlValue) -> bool {
     match (a, b) {
         (SqlValue::Null, _) | (_, SqlValue::Null) => false,
         (SqlValue::Text { text: x }, SqlValue::Text { text: y }) => x.trim_end() == y.trim_end(),
-        (SqlValue::Decimal { text: x }, SqlValue::Decimal { text: y }) => match (decimal_parts(x), decimal_parts(y)) {
-            (Some((n1, i1, f1)), Some((n2, i2, f2))) => {
-                let (f1, f2) = (f1.trim_end_matches('0'), f2.trim_end_matches('0'));
-                // A zero's sign does not count (`-0 = 0`).
-                let zero = |i: &str, f: &str| i == "0" && f.is_empty();
-                (n1 && !zero(&i1, f1), i1.as_str(), f1) == (n2 && !zero(&i2, f2), i2.as_str(), f2)
+        (SqlValue::Decimal { text: x }, SqlValue::Decimal { text: y }) => {
+            match (decimal_parts(x), decimal_parts(y)) {
+                (Some((n1, i1, f1)), Some((n2, i2, f2))) => {
+                    let (f1, f2) = (f1.trim_end_matches('0'), f2.trim_end_matches('0'));
+                    // A zero's sign does not count (`-0 = 0`).
+                    let zero = |i: &str, f: &str| i == "0" && f.is_empty();
+                    (n1 && !zero(&i1, f1), i1.as_str(), f1)
+                        == (n2 && !zero(&i2, f2), i2.as_str(), f2)
+                }
+                // A `DECFLOAT`: by value, as the engine compares (`1E+2 = 100`).
+                _ => match (
+                    DecFloat::parse(x, DfFormat::D34),
+                    DecFloat::parse(y, DfFormat::D34),
+                ) {
+                    (Ok(a), Ok(b)) => a.sql_cmp(&b) == std::cmp::Ordering::Equal,
+                    _ => x == y,
+                },
             }
-            // A `DECFLOAT`: by value, as the engine compares (`1E+2 = 100`).
-            _ => match (DecFloat::parse(x, DfFormat::D34), DecFloat::parse(y, DfFormat::D34)) {
-                (Ok(a), Ok(b)) => a.sql_cmp(&b) == std::cmp::Ordering::Equal,
-                _ => x == y,
-            },
-        },
+        }
         _ => a == b,
     }
 }
@@ -371,22 +463,82 @@ mod tests {
     #[test]
     fn assignment() {
         let d = col("COST", "", "DECIMAL(11,2)", true);
-        assert_eq!(assign(&d, SqlValue::Decimal { text: "12.5".into() }), Ok(SqlValue::Decimal { text: "12.50".into() }));
-        assert_eq!(assign(&d, SqlValue::Integer { value: 7 }), Ok(SqlValue::Decimal { text: "7.00".into() }));
-        assert_eq!(assign(&d, SqlValue::Decimal { text: "1234567890".into() }), Err(OUT_OF_RANGE));
+        assert_eq!(
+            assign(
+                &d,
+                SqlValue::Decimal {
+                    text: "12.5".into()
+                }
+            ),
+            Ok(SqlValue::Decimal {
+                text: "12.50".into()
+            })
+        );
+        assert_eq!(
+            assign(&d, SqlValue::Integer { value: 7 }),
+            Ok(SqlValue::Decimal {
+                text: "7.00".into()
+            })
+        );
+        assert_eq!(
+            assign(
+                &d,
+                SqlValue::Decimal {
+                    text: "1234567890".into()
+                }
+            ),
+            Err(OUT_OF_RANGE)
+        );
         let c = col("TAG", "", "CHAR(4)", false);
-        assert_eq!(assign(&c, SqlValue::Text { text: "AB".into() }), Ok(SqlValue::Text { text: "AB  ".into() }));
-        assert_eq!(assign(&c, SqlValue::Text { text: "ABCDE".into() }), Err(TOO_LONG));
+        assert_eq!(
+            assign(&c, SqlValue::Text { text: "AB".into() }),
+            Ok(SqlValue::Text {
+                text: "AB  ".into()
+            })
+        );
+        assert_eq!(
+            assign(
+                &c,
+                SqlValue::Text {
+                    text: "ABCDE".into()
+                }
+            ),
+            Err(TOO_LONG)
+        );
         assert_eq!(assign(&c, SqlValue::Null), Err(NULL_NOT_ALLOWED));
         assert_eq!(assign(&c, SqlValue::Integer { value: 1 }), Err(WRONG_TYPE));
         let t = col("TS", "", "TIMESTAMP(6)", true);
         assert_eq!(
-            assign(&t, SqlValue::Timestamp { ms: 1_500, picos: 123_456_789 }),
-            Ok(SqlValue::Timestamp { ms: 1_500, picos: 123_000_000 })
+            assign(
+                &t,
+                SqlValue::Timestamp {
+                    ms: 1_500,
+                    picos: 123_456_789
+                }
+            ),
+            Ok(SqlValue::Timestamp {
+                ms: 1_500,
+                picos: 123_000_000
+            })
         );
         let t0 = col("TS", "", "TIMESTAMP(0)", true);
-        assert_eq!(assign(&t0, SqlValue::Timestamp { ms: 1_500, picos: 1 }), Ok(SqlValue::Timestamp { ms: 1_000, picos: 0 }));
-        assert_eq!(parse_timestamp("1970-01-01-00.00.01.000000000001"), Some((1_000, 1)));
+        assert_eq!(
+            assign(
+                &t0,
+                SqlValue::Timestamp {
+                    ms: 1_500,
+                    picos: 1
+                }
+            ),
+            Ok(SqlValue::Timestamp {
+                ms: 1_000,
+                picos: 0
+            })
+        );
+        assert_eq!(
+            parse_timestamp("1970-01-01-00.00.01.000000000001"),
+            Some((1_000, 1))
+        );
         assert_eq!(date_ms(1970, 1, 2), 86_400_000);
         assert_eq!(float_text(1e300), "1e300");
         assert_eq!(float_text(0.1), "0.1");
@@ -416,18 +568,39 @@ mod tests {
                 ("-Infinity", "-Infinity"),
             ] {
                 assert_eq!(assign(&c, dec(input)), Ok(dec(back)), "{ty} {input}");
-                assert_eq!(assign(&c, SqlValue::Text { text: input.into() }), Ok(dec(back)), "{ty} {input}");
+                assert_eq!(
+                    assign(&c, SqlValue::Text { text: input.into() }),
+                    Ok(dec(back)),
+                    "{ty} {input}"
+                );
             }
             assert_eq!(assign(&c, SqlValue::Integer { value: -7 }), Ok(dec("-7")));
             // A float has no exponent of its own.
-            assert_eq!(assign(&c, SqlValue::Float { text: "1e2".into() }), Ok(dec("100")));
+            assert_eq!(
+                assign(&c, SqlValue::Float { text: "1e2".into() }),
+                Ok(dec("100"))
+            );
             assert_eq!(assign(&c, dec("1.2.3")), Err(NOT_A_NUMBER));
-            assert_eq!(assign(&c, SqlValue::Boolean { value: true }), Err(WRONG_TYPE));
-            assert!(same(&dec("1E+2"), &dec("100")) && same(&dec("1.5"), &dec("1.50")) && !same(&dec("1E+2"), &dec("10")));
-            assert!(same(&dec("-0"), &dec("0.00")) && same(&dec("0E+3"), &dec("-0")) && !same(&dec("-1.5"), &dec("1.5")));
+            assert_eq!(
+                assign(&c, SqlValue::Boolean { value: true }),
+                Err(WRONG_TYPE)
+            );
+            assert!(
+                same(&dec("1E+2"), &dec("100"))
+                    && same(&dec("1.5"), &dec("1.50"))
+                    && !same(&dec("1E+2"), &dec("10"))
+            );
+            assert!(
+                same(&dec("-0"), &dec("0.00"))
+                    && same(&dec("0E+3"), &dec("-0"))
+                    && !same(&dec("-1.5"), &dec("1.5"))
+            );
         }
         let d16 = col("DF", "", "DECFLOAT(16)", true);
-        assert_eq!(assign(&d16, dec("12345678901234567")), Ok(dec("1.234567890123457E+16")));
+        assert_eq!(
+            assign(&d16, dec("12345678901234567")),
+            Ok(dec("1.234567890123457E+16"))
+        );
         assert_eq!(assign(&d16, dec("1E+400")), Err(OUT_OF_RANGE));
         let d34 = col("DF", "", "DECFLOAT(34)", true);
         assert_eq!(assign(&d34, dec("1E+400")), Ok(dec("1E+400")));

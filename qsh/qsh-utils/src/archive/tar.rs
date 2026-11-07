@@ -62,7 +62,9 @@ fn parse(args: &[String]) -> Result<(Keys, Vec<String>), String> {
                 pending.remove(0);
                 match c {
                     'b' => {
-                        let n: usize = a.parse().map_err(|_| format!("The blocking factor {a} is not valid."))?;
+                        let n: usize = a
+                            .parse()
+                            .map_err(|_| format!("The blocking factor {a} is not valid."))?;
                         if n == 0 || n > 20 {
                             return Err(format!("The blocking factor {a} is not valid."));
                         }
@@ -190,7 +192,11 @@ fn create(cx: &UtilCtx<'_>, k: &Keys, file: Option<&str>, ops: &[String], append
     let update = k.func == Some('u');
     let mut counts: Vec<((u64, u64), u32, u32, String)> = Vec::new();
     let mut status = build.add(cx, ops, &mut bytes, &mut |found, name| {
-        if update && old.iter().any(|m| m.name == name && m.mtime >= found.st.mtime) {
+        if update
+            && old
+                .iter()
+                .any(|m| m.name == name && m.mtime >= found.st.mtime)
+        {
             return false;
         }
         if k.confirm && !confirm(cx, &format!("add {name}? ")) {
@@ -208,7 +214,11 @@ fn create(cx: &UtilCtx<'_>, k: &Keys, file: Option<&str>, ops: &[String], append
     if k.links {
         for (_, want, got, name) in &counts {
             if got < want {
-                complain(cx, NAME, &format!("{name}: Not every link to the file was archived."));
+                complain(
+                    cx,
+                    NAME,
+                    &format!("{name}: Not every link to the file was archived."),
+                );
             }
         }
     }
@@ -220,7 +230,13 @@ fn create(cx: &UtilCtx<'_>, k: &Keys, file: Option<&str>, ops: &[String], append
     status
 }
 
-fn list_or_extract(cx: &UtilCtx<'_>, k: &Keys, file: Option<&str>, ops: &[String], extract: bool) -> i32 {
+fn list_or_extract(
+    cx: &UtilCtx<'_>,
+    k: &Keys,
+    file: Option<&str>,
+    ops: &[String],
+    extract: bool,
+) -> i32 {
     let members = match read_all(cx, file).and_then(|d| codec::read(&d)) {
         Ok((_, m)) => m,
         Err(t) => {
@@ -276,7 +292,11 @@ fn list_or_extract(cx: &UtilCtx<'_>, k: &Keys, file: Option<&str>, ops: &[String
         status = 1;
     }
     for name in sel.unmatched() {
-        complain(cx, NAME, &format!("{name}: The archive has no such member."));
+        complain(
+            cx,
+            NAME,
+            &format!("{name}: The archive has no such member."),
+        );
         status = 1;
     }
     out.finish(cx, NAME, status)

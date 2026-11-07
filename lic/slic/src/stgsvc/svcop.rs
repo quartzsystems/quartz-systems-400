@@ -22,7 +22,12 @@ fn arg(args: &[String], i: usize) -> &str {
 }
 
 /// Run `op`.
-pub fn run(system: &mut System, me: &JobInfo, op: &str, args: &[String]) -> Result<Vec<String>, String> {
+pub fn run(
+    system: &mut System,
+    me: &JobInfo,
+    op: &str,
+    args: &[String],
+) -> Result<Vec<String>, String> {
     let job = me.number;
     if let Some(sst) = op.strip_prefix("sst-") {
         return sst_op(system, job, sst, args);
@@ -109,7 +114,9 @@ fn change(
 ) -> Result<Vec<String>, String> {
     let mut l = prblog::load(system)?;
     if l.get(id).is_none() {
-        return Err(format!("CPF3925 Problem {id} not found in the problem log."));
+        return Err(format!(
+            "CPF3925 Problem {id} not found in the problem log."
+        ));
     }
     let msg = f(&mut l, id, now_unix())?;
     prblog::store(system, &l)?;
@@ -123,7 +130,9 @@ fn hex_bytes(s: &str) -> Result<Vec<u8>, String> {
     }
     (0..s.len())
         .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).map_err(|_| format!("{} is not hex", &s[i..i + 2])))
+        .map(|i| {
+            u8::from_str_radix(&s[i..i + 2], 16).map_err(|_| format!("{} is not hex", &s[i..i + 2]))
+        })
         .collect()
 }
 
@@ -133,7 +142,10 @@ fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Ve
     match op {
         "cmntrc-list" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
-            Ok(super::cmntrc::rows().into_iter().map(|(o, t, s)| format!("{o}\t{t}\t{s}")).collect())
+            Ok(super::cmntrc::rows()
+                .into_iter()
+                .map(|(o, t, s)| format!("{o}\t{t}\t{s}"))
+                .collect())
         }
         "capacity" => {
             super::sst::need(system, job, Privilege::NONE)?;
@@ -141,7 +153,11 @@ fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Ve
         }
         "dump-take" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
-            let why = if arg(args, 0).is_empty() { "Taken from the service tools" } else { arg(args, 0) };
+            let why = if arg(args, 0).is_empty() {
+                "Taken from the service tools"
+            } else {
+                arg(args, 0)
+            };
             Ok(vec![dumps::take(system, why)?])
         }
         "dump-list" => {
@@ -175,7 +191,14 @@ fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Ve
                 n => vec![n.parse().map_err(|_| format!("{n} is not a job number"))?],
             };
             let size = arg(args, 3).parse().unwrap_or(1024);
-            let mut t = trace::Trace::new(&name, trace::Kind::Internal, jobs, trace::Detail::All, size, arg(args, 4) != "N");
+            let mut t = trace::Trace::new(
+                &name,
+                trace::Kind::Internal,
+                jobs,
+                trace::Detail::All,
+                size,
+                arg(args, 4) != "N",
+            );
             let cats = arg(args, 1).to_ascii_uppercase();
             if !cats.is_empty() && cats != "*ALL" {
                 for c in cats.split_whitespace() {
@@ -191,7 +214,10 @@ fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Ve
         "trace-stop" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
             let n = trace::end(arg(args, 0)).map_err(strip_id)?;
-            Ok(vec![format!("Trace {} stopped with {n} records.", arg(args, 0))])
+            Ok(vec![format!(
+                "Trace {} stopped with {n} records.",
+                arg(args, 0)
+            )])
         }
         "trace-list" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
@@ -208,12 +234,14 @@ fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Ve
         }
         "trace-show" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
-            let t = trace::get(arg(args, 0)).ok_or_else(|| format!("Trace {} not found", arg(args, 0)))?;
+            let t = trace::get(arg(args, 0))
+                .ok_or_else(|| format!("Trace {} not found", arg(args, 0)))?;
             Ok(trace::report(&t, &|n| dumps::job_name(system, n)))
         }
         "trace-delete" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
-            trace::delete(arg(args, 0)).ok_or_else(|| format!("Trace {} not found", arg(args, 0)))?;
+            trace::delete(arg(args, 0))
+                .ok_or_else(|| format!("Trace {} not found", arg(args, 0)))?;
             Ok(vec![format!("Trace {} deleted.", arg(args, 0))])
         }
         "liclog" => {
@@ -236,8 +264,11 @@ fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Ve
             let by = super::sst::need(system, job, Privilege::DISPLAY_ALTER_DUMP)?;
             super::security::require(sec::profile::SpecialAuth::SERVICE, "alter storage")?;
             let id: store::obj::ObjectId = arg(args, 0).parse()?;
-            let page: u64 = arg(args, 1).parse().map_err(|_| "Type the page number".to_string())?;
-            let offset = usize::from_str_radix(arg(args, 2), 16).map_err(|_| "Type the offset in hex".to_string())?;
+            let page: u64 = arg(args, 1)
+                .parse()
+                .map_err(|_| "Type the page number".to_string())?;
+            let offset = usize::from_str_radix(arg(args, 2), 16)
+                .map_err(|_| "Type the offset in hex".to_string())?;
             let bytes = hex_bytes(arg(args, 3))?;
             dumps::alter(system, id, page, offset, &bytes)?;
             eprintln!("qsstg: SST storage altered by {by}: {id} page {page} offset {offset:X}");
@@ -281,8 +312,12 @@ fn storage(system: &mut System, args: &[String]) -> Result<(String, Vec<u8>), St
     let mut e = crate::ipl::dst::Env::new(system);
     let id = arg(args, 2);
     if id.is_empty() {
-        let u: u16 = arg(args, 0).parse().map_err(|_| "Type a unit number".to_string())?;
-        let p: u64 = arg(args, 1).parse().map_err(|_| "Type a page number".to_string())?;
+        let u: u16 = arg(args, 0)
+            .parse()
+            .map_err(|_| "Type a unit number".to_string())?;
+        let p: u64 = arg(args, 1)
+            .parse()
+            .map_err(|_| "Type a page number".to_string())?;
         let u = u.checked_sub(1).ok_or("Unit numbers start at 1")?;
         Ok((format!("Unit {} page {p}", u + 1), e.read_page(u, p)?))
     } else {
@@ -293,7 +328,11 @@ fn storage(system: &mut System, args: &[String]) -> Result<(String, Vec<u8>), St
 /// `Work with System Capacity`'s figures: label and value.
 fn capacity(system: &mut System) -> Vec<String> {
     let (vars, _) = super::stats::syssts_panel(system, false);
-    let v = |k: &str| vars.iter().find(|(n, _)| n == k).map_or_else(String::new, |(_, x)| x.clone());
+    let v = |k: &str| {
+        vars.iter()
+            .find(|(n, _)| n == k)
+            .map_or_else(String::new, |(_, x)| x.clone())
+    };
     let cpus = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
     let units = crate::ipl::dst::Env::new(system).disk_units();
     let mib: u64 = units.iter().map(|u| u.size_mib).sum();

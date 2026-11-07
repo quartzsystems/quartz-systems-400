@@ -23,10 +23,10 @@ use crate::types::Ty;
 /// The indicators in the order the runtime prints them; `01`-`99` are
 /// the general ones.
 pub const DUMP_INDS: &[&str] = &[
-    "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "KA", "KB", "KC", "KD", "KE", "KF", "KG", "KH", "KI", "KJ",
-    "KK", "KL", "KM", "KN", "KP", "KQ", "KR", "KS", "KT", "KU", "KV", "KW", "KX", "KY", "L1", "L2", "L3", "L4", "L5",
-    "L6", "L7", "L8", "L9", "OA", "OB", "OC", "OD", "OE", "OF", "OG", "OV", "U1", "U2", "U3", "U4", "U5", "U6", "U7",
-    "U8", "LR", "MR", "RT", "1P",
+    "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "KA", "KB", "KC", "KD", "KE", "KF", "KG",
+    "KH", "KI", "KJ", "KK", "KL", "KM", "KN", "KP", "KQ", "KR", "KS", "KT", "KU", "KV", "KW", "KX",
+    "KY", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "OA", "OB", "OC", "OD", "OE", "OF",
+    "OG", "OV", "U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8", "LR", "MR", "RT", "1P",
 ];
 
 /// The runtime's code for a type: `C:n` characters, `V:n:p` varying,
@@ -137,13 +137,32 @@ impl Gen<'_> {
                     }
                     let place = super::place_of(self.t, id);
                     // A structure without subfields shows as its characters.
-                    let empty = matches!(s.kind, Some(Kind::Ds(di)) if self.t.ds[di].subfields.is_empty());
+                    let empty =
+                        matches!(s.kind, Some(Kind::Ds(di)) if self.t.ds[di].subfields.is_empty());
                     if empty {
                         let ty = Ty::Char(self.t.size(&s.ty));
-                        self.dump_var(&mut desc, &mut places, 0, &s.name, &ty, s.dim, &format!("{place}.all_"), here);
+                        self.dump_var(
+                            &mut desc,
+                            &mut places,
+                            0,
+                            &s.name,
+                            &ty,
+                            s.dim,
+                            &format!("{place}.all_"),
+                            here,
+                        );
                         continue;
                     }
-                    self.dump_var(&mut desc, &mut places, 0, &s.name, &s.ty, s.dim, &place, here);
+                    self.dump_var(
+                        &mut desc,
+                        &mut places,
+                        0,
+                        &s.name,
+                        &s.ty,
+                        s.dim,
+                        &place,
+                        here,
+                    );
                     if let (Some(Kind::Ds(di)), 0) = (&s.kind, s.dim) {
                         let subs = self.t.ds[*di].subfields.clone();
                         for sub in subs {
@@ -152,7 +171,16 @@ impl Gen<'_> {
                                 continue;
                             }
                             let sp = format!("{place}.{}", mangle(&ss.name));
-                            self.dump_var(&mut desc, &mut places, 1, &ss.name, &ss.ty, ss.dim, &sp, here);
+                            self.dump_var(
+                                &mut desc,
+                                &mut places,
+                                1,
+                                &ss.name,
+                                &ss.ty,
+                                ss.dim,
+                                &sp,
+                                here,
+                            );
                         }
                     }
                 }
@@ -190,13 +218,27 @@ impl Gen<'_> {
         if desc.len() > 32000 {
             desc.truncate(desc[..32000].rfind(';').unwrap_or(0));
         }
-        self.b.ins(format!("callb _QRNX_DUMP({}, {}, {addrs}, {inds})", quote(&ident), quote(&desc)));
+        self.b.ins(format!(
+            "callb _QRNX_DUMP({}, {}, {addrs}, {inds})",
+            quote(&ident),
+            quote(&desc)
+        ));
     }
 
     /// One variable's record; its address goes to the list when it is
     /// reachable.
     #[allow(clippy::too_many_arguments)]
-    fn dump_var(&self, desc: &mut String, places: &mut Vec<String>, depth: u32, name: &str, ty: &Ty, dim: u32, place: &str, here: bool) {
+    fn dump_var(
+        &self,
+        desc: &mut String,
+        places: &mut Vec<String>,
+        depth: u32,
+        name: &str,
+        ty: &Ty,
+        dim: u32,
+        place: &str,
+        here: bool,
+    ) {
         let slot = if !here {
             -2
         } else if matches!(ty, Ty::Ds(_)) && dim == 0 {

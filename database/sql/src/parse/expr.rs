@@ -105,7 +105,9 @@ impl Parser {
             if self.eat_words(&["DISTINCT", "FROM"]) {
                 // DB2 for i reads NULL here as a name.
                 if self.is_word("NULL") {
-                    return Err(crate::error::SqlError::ColumnNotFound { name: "NULL".into() });
+                    return Err(crate::error::SqlError::ColumnNotFound {
+                        name: "NULL".into(),
+                    });
                 }
                 let right = self.additive()?;
                 return Ok(Expr::Function(Function {
@@ -122,7 +124,12 @@ impl Parser {
             for (word, b) in [("TRUE", true), ("FALSE", false)] {
                 if self.eat_word(word) {
                     let known = Expr::IsNull(Box::new(left.clone()), true);
-                    let same = Expr::Compare(Box::new(left), CmpOp::Eq, Box::new(Expr::Literal(Literal::Bool(b))), None);
+                    let same = Expr::Compare(
+                        Box::new(left),
+                        CmpOp::Eq,
+                        Box::new(Expr::Literal(Literal::Bool(b))),
+                        None,
+                    );
                     let e = Expr::And(Box::new(known), Box::new(same));
                     return Ok(if not { Expr::Not(Box::new(e)) } else { e });
                 }
@@ -342,7 +349,8 @@ impl Parser {
             "CURRENT" | "CURRENT_DATE" | "CURRENT_TIME" | "CURRENT_TIMESTAMP" | "CURRENT_USER"
             | "CURRENT_SCHEMA" | "CURRENT_SERVER" | "CURRENT_PATH" | "CURRENT_TIMEZONE"
             | "USER" | "SESSION_USER" | "SYSTEM_USER"
-                if (w == "CURRENT_TIMESTAMP" || !self.is_sym_at(1, "(")) && !self.is_sym_at(1, ".") =>
+                if (w == "CURRENT_TIMESTAMP" || !self.is_sym_at(1, "("))
+                    && !self.is_sym_at(1, ".") =>
             {
                 self.register(w)
             }
@@ -385,7 +393,10 @@ impl Parser {
                         self.advance();
                         Register::Named("CURRENT IMPLICIT XMLPARSE OPTION")
                     }
-                    w => match crate::exec::registers::CURRENT.iter().find(|(k, _)| *k == w) {
+                    w => match crate::exec::registers::CURRENT
+                        .iter()
+                        .find(|(k, _)| *k == w)
+                    {
                         Some((_, n)) => Register::Named(n),
                         None => return Err(Self::unsupported(&format!("CURRENT {next}"))),
                     },
@@ -408,7 +419,11 @@ impl Parser {
         let Tok::Num(n) = self.tok().clone() else {
             return Err(self.expected("a timestamp precision"));
         };
-        let p = n.parse::<u8>().ok().filter(|p| *p <= 12).ok_or_else(|| self.expected("a precision of 0 to 12"))?;
+        let p = n
+            .parse::<u8>()
+            .ok()
+            .filter(|p| *p <= 12)
+            .ok_or_else(|| self.expected("a precision of 0 to 12"))?;
         self.advance();
         self.expect_sym(")")?;
         Ok(p)
@@ -473,7 +488,9 @@ impl Parser {
             if self.is_sym("(") && !first.delimited && !column.delimited {
                 match first.value.as_str() {
                     "SYSIBM" => return self.call(column.value),
-                    "QSYS2" | "SYSTOOLS" => return self.call(format!("{}.{}", first.value, column.value)),
+                    "QSYS2" | "SYSTOOLS" => {
+                        return self.call(format!("{}.{}", first.value, column.value));
+                    }
                     _ => {}
                 }
             }

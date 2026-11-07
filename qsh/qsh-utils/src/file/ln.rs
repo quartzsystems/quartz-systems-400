@@ -54,9 +54,7 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
                 continue;
             }
         }
-        if !symbolic
-            && let Err(e) = cx.sys.stat(&cx.path(src))
-        {
+        if !symbolic && let Err(e) = cx.sys.stat(&cx.path(src)) {
             complain_sys(cx, name, src, e);
             status = 1;
             continue;

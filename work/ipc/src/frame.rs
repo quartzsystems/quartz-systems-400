@@ -88,8 +88,14 @@ mod tests {
     fn frame_limit() {
         let mut buf = Vec::new();
         write_frame(&mut buf, &[7; 9]).unwrap();
-        assert!(matches!(read_frame_max(&mut buf.as_slice(), 8), Err(WireError::TooLong { len: 9 })));
+        assert!(matches!(
+            read_frame_max(&mut buf.as_slice(), 8),
+            Err(WireError::TooLong { len: 9 })
+        ));
         assert_eq!(read_frame_max(&mut buf.as_slice(), 9).unwrap(), [7; 9]);
-        assert!(matches!(write_frame_max(&mut Vec::new(), &[0; 9], 8), Err(WireError::TooLong { len: 9 })));
+        assert!(matches!(
+            write_frame_max(&mut Vec::new(), &[0; 9], 8),
+            Err(WireError::TooLong { len: 9 })
+        ));
     }
 }

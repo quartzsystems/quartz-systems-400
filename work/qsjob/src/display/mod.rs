@@ -288,7 +288,6 @@ impl Display {
         self.model.invalidate();
     }
 
-
     /// A record from the display: the key, and the inbound record when
     /// the key carried one (System Request and Attention do not).
     pub fn accept_raw(&mut self, flags_: u16, data: &[u8]) -> Option<(u8, Option<Inbound>)> {
@@ -417,7 +416,8 @@ mod tests {
             for i in cells {
                 let (r, c) = (i / 80, i % 80);
                 assert_eq!(
-                    got[r][c], want[r][c],
+                    got[r][c],
+                    want[r][c],
                     "{source}: row {} column {}",
                     r + 1,
                     c + 1
@@ -425,7 +425,10 @@ mod tests {
             }
             let text = t.text_rows();
             for row in if long { [8, 11, 14] } else { [8, 10, 12] } {
-                assert!(text[row][3..].starts_with("Current password") || text[row][3..].starts_with("New password"));
+                assert!(
+                    text[row][3..].starts_with("Current password")
+                        || text[row][3..].starts_with("New password")
+                );
             }
         }
     }

@@ -9,14 +9,14 @@
 //! use integer arithmetic; a float operand makes the operation float.
 //! `AND` and `OR` evaluate their right operand only when needed.
 
-use qdecimal::arith::{self, Mode};
 use qdecimal::Shape;
+use qdecimal::arith::{self, Mode};
 use rpgfront::Diag;
 use rpgfront::ast::{BinOp, Expr, Fig, Lit, Step, UnOp};
 
-use crate::diag::ids;
 use crate::codegen::emit::quote;
 use crate::codegen::{Gen, place_of};
+use crate::diag::ids;
 use crate::syms::{ConstVal, Kind, SymId};
 use crate::types::Ty;
 
@@ -118,7 +118,11 @@ pub fn hex_as_number(v: &V) -> Option<V> {
 /// An IR numeric literal from RPG text.
 fn num_text(text: &str) -> String {
     let t = text.replace(',', ".");
-    let t = if let Some(rest) = t.strip_prefix('+') { rest.to_string() } else { t };
+    let t = if let Some(rest) = t.strip_prefix('+') {
+        rest.to_string()
+    } else {
+        t
+    };
     // `5.` is `5`.
     let t = t.strip_suffix('.').map_or(t.clone(), str::to_string);
     if t.starts_with('.') {
@@ -138,7 +142,11 @@ impl Gen<'_> {
             Expr::Fig(f, _) => Some(V {
                 fig: Some(f.clone()),
                 ..V::lit(
-                    if matches!(f, Fig::On | Fig::Off) { Ty::Ind } else { Ty::Unknown },
+                    if matches!(f, Fig::On | Fig::Off) {
+                        Ty::Ind
+                    } else {
+                        Ty::Unknown
+                    },
                     fig_text(f),
                 )
             }),
@@ -156,8 +164,12 @@ impl Gen<'_> {
                     && v.dim == 0
                 {
                     let t = self.tmp(&Ty::Zoned(d, sc));
-                    self.rt_proc("_QRNX_FIXZONED", "($dst: bytes(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $n: i32)");
-                    self.b.ins(format!("callb _QRNX_FIXZONED({}, {}, {d})", t.op, v.op));
+                    self.rt_proc(
+                        "_QRNX_FIXZONED",
+                        "($dst: bytes(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $n: i32)",
+                    );
+                    self.b
+                        .ins(format!("callb _QRNX_FIXZONED({}, {}, {d})", t.op, v.op));
                     return Some(V { sym: v.sym, ..t });
                 }
                 Some(v)
@@ -188,7 +200,10 @@ impl Gen<'_> {
                 if !s.chars().all(ccsid::is_representable) {
                     self.err(ids::BAD_EXPRESSION_TYPE, 30, s.clone());
                 }
-                V::lit(Ty::Char(u32::try_from(s.chars().count()).unwrap_or(0)), quote(s))
+                V::lit(
+                    Ty::Char(u32::try_from(s.chars().count()).unwrap_or(0)),
+                    quote(s),
+                )
             }
             Lit::Hex(h) => {
                 let n = u32::try_from(h.len() / 2).unwrap_or(0);
@@ -241,7 +256,10 @@ impl Gen<'_> {
     /// The job date as `*DATE` (`mmddyyyy`) or `UDATE` (`mmddyy`): QS/400
     /// jobs date in `*MDY` (`docs/RPG.md`).
     pub fn job_date(&mut self, digits: u8) -> V {
-        let date = V::place(Ty::Zoned(digits, 0), self.b.temp(&format!("zoned({digits},0)")));
+        let date = V::place(
+            Ty::Zoned(digits, 0),
+            self.b.temp(&format!("zoned({digits},0)")),
+        );
         // *USA has the four-digit year, *MDY the two-digit one.
         let code = if digits == 8 { 2 } else { 5 };
         self.dt_now_as(&date, code);
@@ -322,7 +340,8 @@ impl Gen<'_> {
                 let mut dim = sym.dim;
                 let mut cur = id;
                 // A table takes no index: it is ignored.
-                let steps = if sym.table && dim > 0 && matches!(steps.first(), Some(Step::Args(_))) {
+                let steps = if sym.table && dim > 0 && matches!(steps.first(), Some(Step::Args(_)))
+                {
                     self.err(ids::TABLE_INDEX, 20, name.to_string());
                     &steps[1..]
                 } else {
@@ -355,7 +374,10 @@ impl Gen<'_> {
                                 return None;
                             };
                             // Only a qualified structure qualifies a name.
-                            if cur == id && matches!(sym.kind, Some(Kind::Ds(_))) && (!self.t.ds[di].qualified || self.t.ds[di].unqualified_array) {
+                            if cur == id
+                                && matches!(sym.kind, Some(Kind::Ds(_)))
+                                && (!self.t.ds[di].qualified || self.t.ds[di].unqualified_array)
+                            {
                                 self.err(ids::BAD_QUALIFIED, 30, name.to_string());
                                 return None;
                             }
@@ -504,21 +526,36 @@ impl Gen<'_> {
             BinOp::In => return self.in_op(a, b),
             _ => {}
         }
-        let relational = matches!(op, BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge);
-        let w = if relational { Want { compared: true, ..w } } else { w };
+        let relational = matches!(
+            op,
+            BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge
+        );
+        let w = if relational {
+            Want {
+                compared: true,
+                ..w
+            }
+        } else {
+            w
+        };
         // Both operands are looked at, so each undefined name is told.
         let va = self.expr(a, w);
         let vb = self.expr(b, w);
         let (va, vb) = (va?, vb?);
         // An operand whose type could not be resolved: its own error
         // was given; the expression is reported as undefined.
-        if [&va, &vb].iter().any(|v| v.ty == Ty::Unknown && v.kind == Vk::Place) {
+        if [&va, &vb]
+            .iter()
+            .any(|v| v.ty == Ty::Unknown && v.kind == Vk::Place)
+        {
             self.err(ids::UNDEFINED_OPERAND, 30, "");
             return None;
         }
         let before = self.diags.len();
         let r = match op {
-            BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge => self.compare(op, &va, &vb),
+            BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge => {
+                self.compare(op, &va, &vb)
+            }
             BinOp::Add
                 if va.ty.is_string()
                     || vb.ty.is_string()
@@ -527,7 +564,9 @@ impl Gen<'_> {
             {
                 self.concat(&va, &vb)
             }
-            BinOp::Add | BinOp::Sub if va.ty == Ty::Ptr || vb.ty == Ty::Ptr => self.ptr_arith(op, &va, &vb),
+            BinOp::Add | BinOp::Sub if va.ty == Ty::Ptr || vb.ty == Ty::Ptr => {
+                self.ptr_arith(op, &va, &vb)
+            }
             _ => {
                 self.rhs_at = Some(b.pos());
                 let r = self.arith(op, &va, &vb, w);
@@ -537,8 +576,16 @@ impl Gen<'_> {
         };
         // Operands that do not match: IBM goes on with the left one's
         // type, so an assignment of the result is checked too.
-        let arith = matches!(op, BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Pow);
-        if r.is_none() && arith && self.diags[before..].iter().any(|d| d.msgid == ids::TYPE_MISMATCH) {
+        let arith = matches!(
+            op,
+            BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Pow
+        );
+        if r.is_none()
+            && arith
+            && self.diags[before..]
+                .iter()
+                .any(|d| d.msgid == ids::TYPE_MISMATCH)
+        {
             return Some(va);
         }
         r
@@ -577,11 +624,18 @@ impl Gen<'_> {
     pub fn arith(&mut self, op: BinOp, va: &V, vb: &V, w: Want) -> Option<V> {
         // An operand whose type could not be resolved: its own error
         // was given; the expression is reported as undefined.
-        if [va, vb].iter().any(|v| v.ty == Ty::Unknown && v.kind == Vk::Place) {
+        if [va, vb]
+            .iter()
+            .any(|v| v.ty == Ty::Unknown && v.kind == Vk::Place)
+        {
             self.err(ids::UNDEFINED_OPERAND, 30, "");
             return None;
         }
-        if va.ty.is_datetime() || vb.ty.is_datetime() || matches!(va.ty, Ty::Dur(_)) || matches!(vb.ty, Ty::Dur(_)) {
+        if va.ty.is_datetime()
+            || vb.ty.is_datetime()
+            || matches!(va.ty, Ty::Dur(_))
+            || matches!(vb.ty, Ty::Dur(_))
+        {
             return self.dt_arith(op, va, vb);
         }
         if !va.ty.is_numeric() || !vb.ty.is_numeric() {
@@ -589,11 +643,19 @@ impl Gen<'_> {
             return None;
         }
         // A constant zero divisor is refused at compile time.
-        if op == BinOp::Div && vb.kind == Vk::Lit && vb.op.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') {
+        if op == BinOp::Div
+            && vb.kind == Vk::Lit
+            && vb
+                .op
+                .trim_start_matches('-')
+                .chars()
+                .all(|c| c == '0' || c == '.')
+        {
             self.err(ids::DIVIDE_BY_ZERO, 30, String::new());
             return None;
         }
-        let float = matches!(va.ty, Ty::Float(_)) || matches!(vb.ty, Ty::Float(_)) || op == BinOp::Pow;
+        let float =
+            matches!(va.ty, Ty::Float(_)) || matches!(vb.ty, Ty::Float(_)) || op == BinOp::Pow;
         // A float with a decimal or integer operand: done exactly, the
         // result the double toward zero from it, as IBM does it.
         let fa_only = matches!(va.ty, Ty::Float(_)) && !matches!(vb.ty, Ty::Float(_));
@@ -614,7 +676,11 @@ impl Gen<'_> {
                 "(byval $op: i32, byval $f: f64, $d: bytes(1) *VARSIZE, byval $desc: i64, byval $first: i32) -> f64",
             );
             let r = self.b.reg();
-            self.b.ins(format!("{r} = callb _QRNX_FLTMIX({code}, {fr}, {}, {desc}, {})", dp.op, i32::from(fa_only)));
+            self.b.ins(format!(
+                "{r} = callb _QRNX_FLTMIX({code}, {fr}, {}, {desc}, {})",
+                dp.op,
+                i32::from(fa_only)
+            ));
             return Some(V::reg(Ty::Float(8), r));
         }
         if float {
@@ -628,9 +694,7 @@ impl Gen<'_> {
                 BinOp::Div => "div",
                 _ => {
                     // `**` through the runtime library's power.
-                    self.b.ins(format!(
-                        "{r} = callb _QRNX_POW({fa}, {fb})"
-                    ));
+                    self.b.ins(format!("{r} = callb _QRNX_POW({fa}, {fb})"));
                     self.externs.insert(
                         "_QRNX_POW".into(),
                         "extern proc _QRNX_POW(byval $a: f64, byval $b: f64) -> f64".into(),
@@ -647,7 +711,9 @@ impl Gen<'_> {
             matches!(v.ty, Ty::Uns(_))
                 || v.kind == Vk::Lit && matches!(v.ty, Ty::Packed(_, 0)) && !v.op.starts_with('-')
         };
-        let unsigned = (matches!(va.ty, Ty::Uns(_)) || matches!(vb.ty, Ty::Uns(_))) && uns_like(va) && uns_like(vb);
+        let unsigned = (matches!(va.ty, Ty::Uns(_)) || matches!(vb.ty, Ty::Uns(_)))
+            && uns_like(va)
+            && uns_like(vb);
         if unsigned && !self.signed_ops && matches!(op, BinOp::Add | BinOp::Sub | BinOp::Mul) {
             let ra = self.int_reg(va)?;
             let rb = self.int_reg(vb)?;
@@ -673,7 +739,8 @@ impl Gen<'_> {
                 _ => "mul.chk",
             };
             self.b.ins(format!("{r} = {o} {ra}, {rb}"));
-            let wide = matches!(va.ty, Ty::Int(20) | Ty::Uns(20)) || matches!(vb.ty, Ty::Int(20) | Ty::Uns(20));
+            let wide = matches!(va.ty, Ty::Int(20) | Ty::Uns(20))
+                || matches!(vb.ty, Ty::Int(20) | Ty::Uns(20));
             return Some(V::reg(Ty::Int(if wide { 20 } else { 10 }), r));
         }
         // Decimal arithmetic.
@@ -713,7 +780,11 @@ impl Gen<'_> {
         let wanted = if op == BinOp::Div && sh.digits == 63 && !w.compared && !mode.resdecpos {
             sa.max(floor)
         } else if w.compared {
-            if quotient && op != BinOp::Div { natural } else { 0 }
+            if quotient && op != BinOp::Div {
+                natural
+            } else {
+                0
+            }
         } else {
             floor.min(natural)
         };
@@ -721,7 +792,8 @@ impl Gen<'_> {
             // Reported at the right operand: its operator, or its
             // first token.
             let at = self.rhs_at.take().unwrap_or(self.at);
-            self.diags.push(Diag::new(ids::DECIMALS_LOST, 10, at).arg(sh.scale.to_string()));
+            self.diags
+                .push(Diag::new(ids::DECIMALS_LOST, 10, at).arg(sh.scale.to_string()));
         }
         let t = self.b.temp(&format!("packed({},{})", sh.digits, sh.scale));
         if op == BinOp::Div || quotient {
@@ -775,7 +847,14 @@ impl Gen<'_> {
                 self.b.term(format!("br {done}"));
                 self.b.place(&done);
             }
-            Vk::Lit => self.b.ins(format!("mov {t}, {}", if v.op == "*ON" { quote("1") } else { quote("0") })),
+            Vk::Lit => self.b.ins(format!(
+                "mov {t}, {}",
+                if v.op == "*ON" {
+                    quote("1")
+                } else {
+                    quote("0")
+                }
+            )),
             Vk::Reg => {
                 let i = self.b.temp("ind");
                 self.b.ins(format!("store {i}, {}", v.op));
@@ -833,7 +912,8 @@ impl Gen<'_> {
         let r = self.b.reg();
         let numeric = va.ty.is_numeric() || vb.ty.is_numeric();
         let fig_zero = |v: &V| matches!(v.fig, Some(Fig::Zeros | Fig::Hival | Fig::Loval));
-        if numeric && (va.ty.is_numeric() || fig_zero(&va)) && (vb.ty.is_numeric() || fig_zero(&vb)) {
+        if numeric && (va.ty.is_numeric() || fig_zero(&va)) && (vb.ty.is_numeric() || fig_zero(&vb))
+        {
             if matches!(va.ty, Ty::Float(_)) || matches!(vb.ty, Ty::Float(_)) {
                 let fa = self.float_reg(&va);
                 let fb = self.float_reg(&vb);
@@ -862,7 +942,11 @@ impl Gen<'_> {
                     let n = usize::try_from(other.ty.str_len().unwrap_or(1).max(1)).unwrap_or(1);
                     quote(&(if f.fig == Some(Fig::On) { "1" } else { "0" }).repeat(n))
                 };
-                let (a, b) = if fig_ind(&va) { (text(&va, &vb), vb.op.clone()) } else { (va.op.clone(), text(&vb, &va)) };
+                let (a, b) = if fig_ind(&va) {
+                    (text(&va, &vb), vb.op.clone())
+                } else {
+                    (va.op.clone(), text(&vb, &va))
+                };
                 self.b.ins(format!("{r} = str.cmp.{c} {a}, {b}"));
                 return Some(V::reg(Ty::Ind, r));
             }
@@ -899,7 +983,9 @@ impl Gen<'_> {
             self.b.ins(format!("{r} = str.cmp.{c} {a}, {}", vb.op));
             return Some(V::reg(Ty::Ind, r));
         }
-        if matches!(va.ty, Ty::Ptr | Ty::ProcPtr | Ty::Object) || matches!(vb.ty, Ty::Ptr | Ty::ProcPtr | Ty::Object) {
+        if matches!(va.ty, Ty::Ptr | Ty::ProcPtr | Ty::Object)
+            || matches!(vb.ty, Ty::Ptr | Ty::ProcPtr | Ty::Object)
+        {
             // *NULL takes the other side's kind of pointer; an object
             // reference compares as a pointer.
             let proc = va.ty == Ty::ProcPtr || vb.ty == Ty::ProcPtr;
@@ -937,7 +1023,11 @@ impl Gen<'_> {
             return Some(v.op.clone());
         }
         if v.kind == Vk::Lit {
-            return Some(if v.op.contains('1') { "*ON".into() } else { "*OFF".into() });
+            return Some(if v.op.contains('1') {
+                "*ON".into()
+            } else {
+                "*OFF".into()
+            });
         }
         self.ind_reg(v)
     }
@@ -950,7 +1040,13 @@ impl Gen<'_> {
             return t;
         }
         if v.kind == Vk::Lit {
-            return if v.op == "*ON" { quote("1") } else if v.op == "*OFF" { quote("0") } else { v.op.clone() };
+            return if v.op == "*ON" {
+                quote("1")
+            } else if v.op == "*OFF" {
+                quote("0")
+            } else {
+                v.op.clone()
+            };
         }
         let t = self.b.temp("ind");
         self.b.ins(format!("store {t}, {}", v.op));
@@ -968,12 +1064,20 @@ impl Gen<'_> {
         if let Some(p) = self.t.syms[id].parent {
             self.refresh_basing(p, depth + 1);
         }
-        let crate::syms::Storage::Based(ptr) = self.t.syms[id].storage else { return };
+        let crate::syms::Storage::Based(ptr) = self.t.syms[id].storage else {
+            return;
+        };
         self.refresh_basing(ptr, depth + 1);
         if self.t.syms[ptr].kind == Some(crate::syms::Kind::Subfield) {
             let r = self.b.reg();
-            self.b.ins(format!("{r} = load {}", crate::codegen::place_of(self.t, ptr)));
-            self.b.ins(format!("store {}, {r}", crate::codegen::basing_ir(self.t, ptr)));
+            self.b.ins(format!(
+                "{r} = load {}",
+                crate::codegen::place_of(self.t, ptr)
+            ));
+            self.b.ins(format!(
+                "store {}, {r}",
+                crate::codegen::basing_ir(self.t, ptr)
+            ));
         }
     }
 

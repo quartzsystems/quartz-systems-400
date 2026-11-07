@@ -115,7 +115,10 @@ impl State {
             formats: if first {
                 Vec::new()
             } else {
-                self.formats.iter().flat_map(|(_, b)| b.iter().copied()).collect()
+                self.formats
+                    .iter()
+                    .flat_map(|(_, b)| b.iter().copied())
+                    .collect()
             },
             line,
             col,
@@ -124,7 +127,14 @@ impl State {
 
     /// Format command `bytes` of class `class`: the last of its kind.
     fn remember(&mut self, class: u8, sub: u8, bytes: &[u8]) {
-        let key = (class, if (0xD1..=0xD3).contains(&class) { sub } else { 0 });
+        let key = (
+            class,
+            if (0xD1..=0xD3).contains(&class) {
+                sub
+            } else {
+                0
+            },
+        );
         self.formats.retain(|(k, _)| *k != key);
         self.formats.push((key, bytes.to_vec()));
     }
@@ -136,7 +146,12 @@ impl State {
             self.passes.push(BTreeMap::new());
         }
         let col = usize::from(self.col.max(1) - 1);
-        let passes = self.passes.last_mut().expect("a page").entry(self.line.max(1)).or_default();
+        let passes = self
+            .passes
+            .last_mut()
+            .expect("a page")
+            .entry(self.line.max(1))
+            .or_default();
         if passes.is_empty() || self.cr && ch != ' ' {
             passes.push(Vec::new());
         }
@@ -275,7 +290,10 @@ pub fn decode(data: &[u8]) -> (Vec<Page>, Format) {
         .zip(st.passes)
         .map(|(p, passes)| Page {
             lines: p.into_iter().map(|(n, chars)| (n, text(chars))).collect(),
-            passes: passes.into_iter().map(|(n, v)| (n, v.into_iter().map(text).collect())).collect(),
+            passes: passes
+                .into_iter()
+                .map(|(n, v)| (n, v.into_iter().map(text).collect()))
+                .collect(),
         })
         .collect();
     (pages, st.fmt)

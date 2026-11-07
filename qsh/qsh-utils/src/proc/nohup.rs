@@ -46,14 +46,15 @@ fn spawn_wait(cx: &UtilCtx<'_>, mut req: SpawnRequest) -> Result<i32, ExecError>
             sh.extend(argv.iter().skip(1).cloned());
             req.path = SHELL.to_string();
             req.argv = sh;
-            cx.sys
-                .spawn(req)
-                .map_err(|_| ExecError::NotExecutable)?
+            cx.sys.spawn(req).map_err(|_| ExecError::NotExecutable)?
         }
         Err(e) => return Err(ExecError::Sys(e)),
     };
     cx.sys.signal_action(child.pid(), SIGHUP, SigAction::Ignore);
-    child.wait().map(qsh::sys::WaitStatus::code).map_err(ExecError::Sys)
+    child
+        .wait()
+        .map(qsh::sys::WaitStatus::code)
+        .map_err(ExecError::Sys)
 }
 
 /// Run `nohup`.
@@ -77,7 +78,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
     let term = |n: u32| cx.fd(n).is_some_and(|f| f.is_terminal());
     if term(1) {
         let Some((fd, shown)) = open_out(cx) else {
-            complain(cx, NAME, "Neither nohup.out nor $HOME/nohup.out can be opened.");
+            complain(
+                cx,
+                NAME,
+                "Neither nohup.out nor $HOME/nohup.out can be opened.",
+            );
             return 127;
         };
         complain(cx, NAME, &format!("Output goes to {shown}."));

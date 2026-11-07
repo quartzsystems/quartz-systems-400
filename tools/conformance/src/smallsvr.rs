@@ -40,12 +40,21 @@ fn job_shown(s: &mut Session, name: &str, present: bool) -> Result<(), String> {
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let out = s.command("wrkactjob", CMD)?;
-        let shown = out.lines().any(|l| l.split_whitespace().next() == Some(name));
+        let shown = out
+            .lines()
+            .any(|l| l.split_whitespace().next() == Some(name));
         if shown == present {
             return Ok(());
         }
         if Instant::now() > end {
-            return Err(format!("{name} {} in:\n{out}", if present { "never shown" } else { "still shown" }));
+            return Err(format!(
+                "{name} {} in:\n{out}",
+                if present {
+                    "never shown"
+                } else {
+                    "still shown"
+                }
+            ));
         }
         std::thread::sleep(Duration::from_millis(500));
     }
@@ -85,7 +94,9 @@ fn forward_udp(suite: &Suite, guest: u16) -> Result<u16, String> {
         .map(|a| a.port())
         .map_err(|e| e.to_string())?;
     let mut q = crate::qemu::qmp::Qmp::connect(&suite.launch().qmp)?;
-    let out = q.hmp(&format!("hostfwd_add n0 udp:127.0.0.1:{port}-{GUEST}:{guest}"))?;
+    let out = q.hmp(&format!(
+        "hostfwd_add n0 udp:127.0.0.1:{port}-{GUEST}:{guest}"
+    ))?;
     if !out.trim().is_empty() {
         return Err(format!("hostfwd_add: {out}"));
     }
@@ -169,14 +180,22 @@ impl Suite {
         }
         // The guest's clock came from the RTC, which QEMU sets from the host.
         if sample.offset.abs() > 300 * 1_000_000_000 {
-            return Err(format!("the guest's clock is {} s off", sample.offset / 1_000_000_000));
+            return Err(format!(
+                "the guest's clock is {} s off",
+                sample.offset / 1_000_000_000
+            ));
         }
         expect(s, "ENDTCPSVR SERVER(*NTP)", "TCP1A0A")?;
         job_shown(s, "QTOTNTP", false)?;
         expect(s, "ENDTCPSVR SERVER(*LPD)", "TCP1A0A")?;
         job_shown(s, "QTLPD00001", false)?;
         expect(s, "ENDTCPSVR SERVER(*LPD)", "TCP1A09")?;
-        let row = queue.lines().find(|l| l.contains("HARNESS")).unwrap_or("").trim().to_string();
+        let row = queue
+            .lines()
+            .find(|l| l.contains("HARNESS"))
+            .unwrap_or("")
+            .trim()
+            .to_string();
         Ok(format!(
             "LPR from the host ({sent}) spooled [{row}] on QGPL/LPDQ; SNTP answered at stratum {} with offset {} ms; both ended",
             sample.stratum,

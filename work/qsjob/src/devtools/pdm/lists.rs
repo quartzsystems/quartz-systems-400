@@ -451,7 +451,9 @@ fn work(
                     let names = l.items.iter().map(|i| i.name.as_str());
                     match at.or_else(|| position(names, &to)) {
                         Some(i) => l.top = i,
-                        None => l.message = Some(crate::display::msgline::say(host, "CPD9B80", &[&to])),
+                        None => {
+                            l.message = Some(crate::display::msgline::say(host, "CPD9B80", &[&to]))
+                        }
                     }
                     continue;
                 }
@@ -512,7 +514,9 @@ fn header_changed(host: &Host, l: &mut List, a: &Answer) -> bool {
                         l.top = 0;
                         l.load(host);
                     }
-                    None => l.message = Some(crate::display::msgline::say(host, "CPF9812", &[&f, &lb])),
+                    None => {
+                        l.message = Some(crate::display::msgline::say(host, "CPF9812", &[&f, &lb]))
+                    }
                 }
                 return true;
             }
@@ -586,7 +590,11 @@ fn subset(surface: &mut Surface, l: &mut List) -> Flow {
                     n.ty = up("MBRTYPE");
                     let v = |k: &str| vals.get(k).cloned().unwrap_or_default();
                     let (Ok(f), Ok(t)) = (date(&v("FROMDATE")), date(&v("TODATE"))) else {
-                        message = Some(crate::display::msgline::say(surface.host(), "CPD9BF6", &[&"MM/DD/YY"]));
+                        message = Some(crate::display::msgline::say(
+                            surface.host(),
+                            "CPD9BF6",
+                            &[&"MM/DD/YY"],
+                        ));
                         continue;
                     };
                     n.from_date = f.filter(|d| *d != 20_000_101);
@@ -704,7 +712,12 @@ fn options(
                 match objects(job, host, surface, s, spec) {
                     Ok(Flow::Back) => {}
                     Ok(f) => return Some(f),
-                    Err(e) => last = Some(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &e))),
+                    Err(e) => {
+                        last = Some(crate::display::msgline::text_of(
+                            host,
+                            &crate::display::msgline::of_fail(host, &e),
+                        ))
+                    }
                 }
             }
             Ok(Outcome::WorkWith(_)) => {
@@ -717,7 +730,12 @@ fn options(
                 match members(job, host, surface, s, spec) {
                     Ok(Flow::Back) => {}
                     Ok(f) => return Some(f),
-                    Err(e) => last = Some(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &e))),
+                    Err(e) => {
+                        last = Some(crate::display::msgline::text_of(
+                            host,
+                            &crate::display::msgline::of_fail(host, &e),
+                        ))
+                    }
                 }
             }
             Ok(Outcome::Find) => finds.push(item),

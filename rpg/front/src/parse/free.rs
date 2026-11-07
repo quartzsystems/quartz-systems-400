@@ -51,11 +51,37 @@ fn head(toks: &[Tok]) -> (String, usize) {
 fn is_hyphen_word(w: &str) -> bool {
     matches!(
         w,
-        "CTL-OPT" | "DCL-F" | "DCL-S" | "DCL-C" | "DCL-DS" | "DCL-SUBF" | "END-DS" | "DCL-PR"
-            | "END-PR" | "DCL-PI" | "END-PI" | "DCL-PARM" | "DCL-PROC" | "END-PROC" | "DCL-ENUM"
-            | "END-ENUM" | "EVAL-CORR" | "ON-ERROR" | "ON-EXCP" | "ON-EXIT" | "SND-MSG" | "FOR-EACH"
-            | "WHEN-IS" | "WHEN-IN" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN" | "Z-ADD"
-            | "Z-SUB" | "END-EXEC"
+        "CTL-OPT"
+            | "DCL-F"
+            | "DCL-S"
+            | "DCL-C"
+            | "DCL-DS"
+            | "DCL-SUBF"
+            | "END-DS"
+            | "DCL-PR"
+            | "END-PR"
+            | "DCL-PI"
+            | "END-PI"
+            | "DCL-PARM"
+            | "DCL-PROC"
+            | "END-PROC"
+            | "DCL-ENUM"
+            | "END-ENUM"
+            | "EVAL-CORR"
+            | "ON-ERROR"
+            | "ON-EXCP"
+            | "ON-EXIT"
+            | "SND-MSG"
+            | "FOR-EACH"
+            | "WHEN-IS"
+            | "WHEN-IN"
+            | "XML-INTO"
+            | "XML-SAX"
+            | "DATA-INTO"
+            | "DATA-GEN"
+            | "Z-ADD"
+            | "Z-SUB"
+            | "END-EXEC"
     )
 }
 
@@ -80,7 +106,8 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
         }
         "DCL-F" => {
             let Some(name) = decl_name(rest.first()) else {
-                b.diags.push(Diag::new(ids::UNEXPECTED, 30, st.at).arg(word));
+                b.diags
+                    .push(Diag::new(ids::UNEXPECTED, 30, st.at).arg(word));
                 return k + 1;
             };
             let kws = kw::keywords(&rest[1..], st.end, &mut b.diags);
@@ -94,7 +121,8 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
         }
         "DCL-S" | "DCL-C" => {
             let Some(name) = decl_name(rest.first()) else {
-                b.diags.push(Diag::new(ids::UNEXPECTED, 30, st.at).arg(word));
+                b.diags
+                    .push(Diag::new(ids::UNEXPECTED, 30, st.at).arg(word));
                 return k + 1;
             };
             let mut d = Def {
@@ -109,14 +137,21 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
             };
             let body = &rest[1..];
             if d.kind == DefKind::Const {
-                let is_kw = body.first().and_then(Tok::name) == Some("CONST") && body.get(1).is_some_and(|t| t.is("("));
+                let is_kw = body.first().and_then(Tok::name) == Some("CONST")
+                    && body.get(1).is_some_and(|t| t.is("("));
                 // The value, then any keywords (which a constant does not take).
                 if is_kw {
                     let mut kws = kw::keywords(body, st.end, &mut b.diags);
-                    d.value = kws.first().and_then(|k| k.arg(0)).and_then(|a| a.expr.clone());
+                    d.value = kws
+                        .first()
+                        .and_then(|k| k.arg(0))
+                        .and_then(|a| a.expr.clone());
                     // A value that does not parse: the rest is skipped.
                     if d.value.is_none()
-                        && let Some(a) = kws.first().and_then(|k| k.arg(0)).filter(|a| !a.toks.is_empty())
+                        && let Some(a) = kws
+                            .first()
+                            .and_then(|k| k.arg(0))
+                            .filter(|a| !a.toks.is_empty())
                     {
                         let at = a.toks.last().map_or(st.at, |t| t.at);
                         b.diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, at));
@@ -142,7 +177,8 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
         "DCL-ENUM" => group(b, its, k, st, rest, DefKind::Enum, "END-ENUM"),
         "DCL-PROC" => {
             let Some(name) = decl_name(rest.first()) else {
-                b.diags.push(Diag::new(ids::UNEXPECTED, 30, st.at).arg(word));
+                b.diags
+                    .push(Diag::new(ids::UNEXPECTED, 30, st.at).arg(word));
                 return k + 1;
             };
             if let Some(open) = b.proc.take() {
@@ -164,11 +200,13 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
             k + 1
         }
         "END-DS" | "END-PR" | "END-PI" | "END-ENUM" => {
-            b.diags.push(Diag::new(ids::END_NOT_EXPECTED, 20, st.at).arg(word));
+            b.diags
+                .push(Diag::new(ids::END_NOT_EXPECTED, 20, st.at).arg(word));
             k + 1
         }
         "DCL-SUBF" | "DCL-PARM" => {
-            b.diags.push(Diag::new(ids::NOT_IN_GROUP, 20, st.at).arg(word));
+            b.diags
+                .push(Diag::new(ids::NOT_IN_GROUP, 20, st.at).arg(word));
             k + 1
         }
         _ => {
@@ -183,7 +221,15 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
 /// A `DCL-DS`, `DCL-PR`, `DCL-PI` or `DCL-ENUM` group: the header,
 /// then children up to the `END-` statement, unless the header ends
 /// the group itself (`END-DS` in it, or `LIKEDS`/`LIKEREC`).
-fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok], kind: DefKind, end_word: &str) -> usize {
+fn group(
+    b: &mut Builder<'_>,
+    its: &[Item],
+    k: usize,
+    st: &FreeStmt,
+    rest: &[Tok],
+    kind: DefKind,
+    end_word: &str,
+) -> usize {
     let Some(name) = decl_name(rest.first()) else {
         b.diags.push(Diag::new(ids::UNEXPECTED, 30, st.at));
         return k + 1;
@@ -208,7 +254,8 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
     let mut j = k + 1;
     while !closed {
         let Some(Item::Free(child)) = its.get(j) else {
-            b.diags.push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
+            b.diags
+                .push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
             break;
         };
         let (w, n) = head(&child.toks);
@@ -221,7 +268,9 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
         // LIKEREC, is a subfield.
         let nested = kind == DefKind::Ds
             && w == "DCL-DS"
-            && child.toks[n..].iter().any(|t| matches!(t.text().to_ascii_uppercase().as_str(), "LIKEDS" | "LIKEREC"));
+            && child.toks[n..]
+                .iter()
+                .any(|t| matches!(t.text().to_ascii_uppercase().as_str(), "LIKEDS" | "LIKEREC"));
         // A structure inside a structure, a group of its own: its
         // subfields become a template structure the subfield is LIKEDS,
         // with the group's DIM.
@@ -229,14 +278,28 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
             let inner = child.toks[n..].to_vec();
             let iname = decl_name(inner.first()).unwrap_or_default();
             j = group(b, its, j, child, &inner, DefKind::Ds, "END-DS");
-            let tname = format!("_NEST_{}_{}", d.name.to_ascii_uppercase(), iname.to_ascii_uppercase());
+            let tname = format!(
+                "_NEST_{}_{}",
+                d.name.to_ascii_uppercase(),
+                iname.to_ascii_uppercase()
+            );
             let mut sub_kws = Vec::new();
-            if let Some(t) = b.last_group().filter(|t| t.name.eq_ignore_ascii_case(&iname)) {
+            if let Some(t) = b
+                .last_group()
+                .filter(|t| t.name.eq_ignore_ascii_case(&iname))
+            {
                 t.name.clone_from(&tname);
-                let (moved, kept): (Vec<_>, Vec<_>) = std::mem::take(&mut t.kws).into_iter().partition(|k| k.name == "DIM");
+                let (moved, kept): (Vec<_>, Vec<_>) = std::mem::take(&mut t.kws)
+                    .into_iter()
+                    .partition(|k| k.name == "DIM");
                 t.kws = kept;
                 for word in ["TEMPLATE", "QUALIFIED"] {
-                    t.kws.push(Keyword { name: word.into(), args: Vec::new(), parens: false, at: child.at });
+                    t.kws.push(Keyword {
+                        name: word.into(),
+                        args: Vec::new(),
+                        parens: false,
+                        at: child.at,
+                    });
                 }
                 sub_kws = moved;
             }
@@ -244,7 +307,11 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
                 name: "LIKEDS".into(),
                 args: vec![Arg {
                     toks: Vec::new(),
-                    expr: Some(Expr::Ref { name: tname, steps: Vec::new(), at: child.at }),
+                    expr: Some(Expr::Ref {
+                        name: tname,
+                        steps: Vec::new(),
+                        at: child.at,
+                    }),
                 }],
                 parens: true,
                 at: child.at,
@@ -260,16 +327,27 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
         }
         // A declaration other than a child ends the group by mistake.
         // So does a child of the other kind (`DCL-SUBF` in a prototype).
-        let foreign = w == "DCL-SUBF" && kind != DefKind::Ds || w == "DCL-PARM" && kind == DefKind::Ds;
+        let foreign =
+            w == "DCL-SUBF" && kind != DefKind::Ds || w == "DCL-PARM" && kind == DefKind::Ds;
         // So does a free-form operation code: IBM's parser reads a child
         // named `out` or `read` as a calculation (DCL-PARM and DCL-SUBF
         // name such children).
         let opcode = !w.contains('-') && ops::known(&w) && !ops::fixed_only(&w);
-        if !nested && (w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM" || w == "END-PROC" || foreign || opcode) {
-            b.diags.push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
+        if !nested
+            && (w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM"
+                || w == "END-PROC"
+                || foreign
+                || opcode)
+        {
+            b.diags
+                .push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
             break;
         }
-        let toks = if w == "DCL-SUBF" || w == "DCL-PARM" || nested { &child.toks[n..] } else { &child.toks[..] };
+        let toks = if w == "DCL-SUBF" || w == "DCL-PARM" || nested {
+            &child.toks[n..]
+        } else {
+            &child.toks[..]
+        };
         if toks.is_empty() {
             b.diags.push(Diag::new(ids::UNEXPECTED, 30, child.at));
             j += 1;
@@ -362,16 +440,26 @@ fn closes_at_end(toks: &[Tok]) -> bool {
 /// The source text from one position to another, for embedded SQL.
 fn source_between(b: &Builder<'_>, from: Pos, to: Pos) -> String {
     let mut out = String::new();
-    for l in b.lines.iter().filter(|l| l.no >= from.line && l.no <= to.line) {
+    for l in b
+        .lines
+        .iter()
+        .filter(|l| l.no >= from.line && l.no <= to.line)
+    {
         let (col0, area) = l.free_area();
         let chars: Vec<char> = area.chars().collect();
-        let start = if l.no == from.line { usize::from(from.col.saturating_sub(col0)) } else { 0 };
+        let start = if l.no == from.line {
+            usize::from(from.col.saturating_sub(col0))
+        } else {
+            0
+        };
         let end = if l.no == to.line {
             usize::from(to.col.saturating_sub(col0)).min(chars.len())
         } else {
             chars.len()
         };
-        let piece: String = chars.get(start..end.max(start)).map_or(String::new(), |s| s.iter().collect());
+        let piece: String = chars
+            .get(start..end.max(start))
+            .map_or(String::new(), |s| s.iter().collect());
         let piece = match piece.find("//") {
             Some(i) if !piece[..i].contains('\'') => piece[..i].to_string(),
             _ => piece,
@@ -410,17 +498,23 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
     }
     let is_op = !word.is_empty() && ops::known(word) && {
         let after = &toks[n..];
-        let takes_expr = ops::free_takes_expression(word) || matches!(word, "EVAL" | "EVALR" | "EVAL-CORR" | "FOR");
-        let assigns_to_word = after
-            .first()
-            .is_some_and(|t| ["=", "+=", "-=", "*=", "/=", "**=", "."].iter().any(|p| t.is(p)));
+        let takes_expr = ops::free_takes_expression(word)
+            || matches!(word, "EVAL" | "EVALR" | "EVAL-CORR" | "FOR");
+        let assigns_to_word = after.first().is_some_and(|t| {
+            ["=", "+=", "-=", "*=", "/=", "**=", "."]
+                .iter()
+                .any(|p| t.is(p))
+        });
         // `in(3) = x` assigns to an array named like an operation;
         // `chain(e) k f` and `if (a) = b` are operations.
-        let indexed_target =
-            after.first().is_some_and(|t| t.is("(")) && extenders(after).is_none() && has_assignment(after);
+        let indexed_target = after.first().is_some_and(|t| t.is("("))
+            && extenders(after).is_none()
+            && has_assignment(after);
         // `add(f : 1)`: a fixed-form-only name called as a procedure,
         // the whole statement one call.
-        let call = ops::fixed_only(word) && after.first().is_some_and(|t| t.is("(")) && closes_at_end(after);
+        let call = ops::fixed_only(word)
+            && after.first().is_some_and(|t| t.is("("))
+            && closes_at_end(after);
         !assigns_to_word && !call && (takes_expr || !indexed_target)
     };
     if !is_op {
@@ -456,10 +550,19 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
         if ops::extenders_allowed(word, &e) {
             op.ext = e;
         } else {
-            b.diags.push(Diag::new(ids::EXTENDER_NOT_FOR_OP, 20, rest[1].at));
+            b.diags
+                .push(Diag::new(ids::EXTENDER_NOT_FOR_OP, 20, rest[1].at));
         }
         rest = &rest[m..];
-    } else if let [o, Tok { kind: Kind::Name(_), .. }, c, ..] = rest
+    } else if let [
+        o,
+        Tok {
+            kind: Kind::Name(_),
+            ..
+        },
+        c,
+        ..,
+    ] = rest
         && matches!(word, "EVAL" | "EVALR" | "EVAL-CORR" | "CALLP")
         && o.is("(")
         && c.is(")")
@@ -471,7 +574,8 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
         rest = &rest[3..];
     }
     if ops::fixed_only(word) {
-        b.diags.push(Diag::new(ids::NOT_IN_FREE, 30, st.at).arg(word.to_string()));
+        b.diags
+            .push(Diag::new(ids::NOT_IN_FREE, 30, st.at).arg(word.to_string()));
         return None;
     }
     if matches!(word, "EVAL" | "EVALR" | "EVAL-CORR" | "FOR") || ops::free_takes_expression(word) {
@@ -481,13 +585,20 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
     } else {
         let mut c = expr::Cursor::new(rest, st.end);
         let mut list = Vec::new();
-        let keyed = matches!(word, "CHAIN" | "SETLL" | "SETGT" | "READE" | "READPE" | "DELETE");
+        let keyed = matches!(
+            word,
+            "CHAIN" | "SETLL" | "SETGT" | "READE" | "READPE" | "DELETE"
+        );
         while !c.done() {
             // A search argument in parentheses is a key list, even of one.
             let paren = keyed && list.is_empty() && c.peek().is_some_and(|t| t.is("("));
             let at = c.pos();
             if let Some(e) = expr::expr(&mut c, &mut b.diags) {
-                let e = if paren && !matches!(e, Expr::List(..)) { Expr::List(vec![e], at) } else { e };
+                let e = if paren && !matches!(e, Expr::List(..)) {
+                    Expr::List(vec![e], at)
+                } else {
+                    e
+                };
                 list.push(e);
             } else {
                 c.skip_all();

@@ -21,12 +21,25 @@ pub const ITEMS: &[&str] = &[
 /// The run menu's options.
 pub const RUN_ITEMS: &[&str] = &["Change a data file", "Display a data file"];
 
-fn menu(title_col: usize, title: &str, items: &[&str], cmdline: &str, message: Option<&str>, copyright: bool) -> Screen {
+fn menu(
+    title_col: usize,
+    title: &str,
+    items: &[&str],
+    cmdline: &str,
+    message: Option<&str>,
+    copyright: bool,
+) -> Screen {
     let mut s = blank();
     put(&mut s, 1, title_col, Attr::HighIntensity, title);
     put(&mut s, 3, 2, Attr::Blue, "Select one of the following:");
     for (i, text) in items.iter().enumerate() {
-        put(&mut s, 5 + i, 7, Attr::Normal, &format!("{}. {text}", i + 1));
+        put(
+            &mut s,
+            5 + i,
+            7,
+            Attr::Normal,
+            &format!("{}. {text}", i + 1),
+        );
     }
     put(&mut s, 20, 2, Attr::Normal, "Selection or command");
     put(&mut s, 21, 2, Attr::Normal, "===>");
@@ -48,7 +61,14 @@ fn menu(title_col: usize, title: &str, items: &[&str], cmdline: &str, message: O
 /// The DFU menu.
 #[must_use]
 pub fn strdfu(cmdline: &str, message: Option<&str>, copyright: bool) -> Screen {
-    menu(29, "Data File Utility (DFU)", ITEMS, cmdline, message, copyright)
+    menu(
+        29,
+        "Data File Utility (DFU)",
+        ITEMS,
+        cmdline,
+        message,
+        copyright,
+    )
 }
 
 /// Run a DFU Program.

@@ -11,8 +11,8 @@
 mod apply;
 mod view;
 
-use uim::engine::LineMsg;
 use std::collections::HashSet;
+use uim::engine::LineMsg;
 
 use crate::buffer::Buffer;
 use crate::cmdline::SaveTo;
@@ -214,7 +214,13 @@ pub struct Session {
 impl Session {
     /// A session over a member.
     #[must_use]
-    pub fn new(mode: Mode, buf: Buffer, member_type: &str, (lib, file, member): (&str, &str, &str), today: u32) -> Self {
+    pub fn new(
+        mode: Mode,
+        buf: Buffer,
+        member_type: &str,
+        (lib, file, member): (&str, &str, &str),
+        today: u32,
+    ) -> Self {
         let st = SourceType::new(member_type);
         let mut defaults = Defaults {
             srctype: st.name.clone(),
@@ -271,9 +277,8 @@ impl Session {
             return None;
         }
         let up = st.upper().unwrap_or(self.defaults.upper_unknown);
-        let msg = (up != self.defaults.upper).then(|| {
-            LineMsg::info(if up { "CPI9BC3" } else { "CPI9BC4" }, &[])
-        });
+        let msg = (up != self.defaults.upper)
+            .then(|| LineMsg::info(if up { "CPI9BC3" } else { "CPI9BC4" }, &[]));
         self.defaults.upper = up;
         self.left = st.first_column();
         msg
@@ -284,7 +289,9 @@ impl Session {
     #[must_use]
     pub fn body_rows(&self) -> usize {
         if let Some(p) = &self.prompt {
-            return crate::srctype::layout(&p.format).top.saturating_sub(FIRST_ROW);
+            return crate::srctype::layout(&p.format)
+                .top
+                .saturating_sub(FIRST_ROW);
         }
         if self.defaults.full {
             return 24 - FIRST_ROW;
@@ -404,7 +411,9 @@ impl Session {
     pub fn shift(&mut self, right: bool) {
         self.copyright = false;
         if right {
-            self.left = (self.left + SHIFT).min(self.max_left()).max(self.left.min(self.max_left()));
+            self.left = (self.left + SHIFT)
+                .min(self.max_left())
+                .max(self.left.min(self.max_left()));
         } else {
             self.left = self.left.saturating_sub(SHIFT).max(1);
         }
@@ -449,11 +458,14 @@ impl Session {
     /// The record a screen row shows, as a line command target.
     #[must_use]
     pub fn target_at(&self, row: usize) -> Option<Target> {
-        self.shown.iter().find(|s| s.0 == row).and_then(|s| match &s.1 {
-            Item::Rec(id) => Some(Target::Rec(*id)),
-            Item::Ins(id) => Some(Target::Ins(*id)),
-            _ => None,
-        })
+        self.shown
+            .iter()
+            .find(|s| s.0 == row)
+            .and_then(|s| match &s.1 {
+                Item::Rec(id) => Some(Target::Rec(*id)),
+                Item::Ins(id) => Some(Target::Ins(*id)),
+                _ => None,
+            })
     }
 
     /// The data of a target.
@@ -609,8 +621,10 @@ impl Session {
     /// and command definitions go to the command prompter.
     pub fn start_prompt(&mut self, t: Target, format: Option<&str>) -> Action {
         let st = self.srctype();
-        if matches!(st.family, crate::srctype::Family::Cl | crate::srctype::Family::Cmd)
-            && format.is_none_or(|f| f != "**")
+        if matches!(
+            st.family,
+            crate::srctype::Family::Cl | crate::srctype::Family::Cmd
+        ) && format.is_none_or(|f| f != "**")
         {
             return Action::ClPrompt(t, self.target_data(t));
         }

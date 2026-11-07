@@ -29,10 +29,7 @@ pub fn show(host: &Host) -> Act {
         return Act::Say(LineMsg::error("CPF9801", &["QWCDSPWSU", "QSYS"]));
     };
     let device = host.start.device.clone();
-    let mut jobs = host
-        .link
-        .borrow_mut()
-        .with(|l| l.ws_get(device.clone()));
+    let mut jobs = host.link.borrow_mut().with(|l| l.ws_get(device.clone()));
     let me = host.start.number;
     // Without the session's word, this job is the only one.
     if !jobs.iter().any(|j| j.0 == me) {
@@ -45,8 +42,10 @@ pub fn show(host: &Host) -> Act {
         "*DATETIME",
         &format!(
             "{}  {}",
-            env.formats.date(i64::from(year), u32::from(month), u32::from(day), false),
-            env.formats.time(u32::from(hour), u32::from(minute), u32::from(second))
+            env.formats
+                .date(i64::from(year), u32::from(month), u32::from(day), false),
+            env.formats
+                .time(u32::from(hour), u32::from(minute), u32::from(second))
         ),
     );
     let user = host.start.user.clone();
@@ -60,7 +59,10 @@ pub fn show(host: &Host) -> Act {
     let mine = jobs.iter().find(|j| j.0 == me).map_or(1, |j| j.3);
     d.set("CURJOB", if mine == 2 { "B" } else { "A" });
     for (var, j) in [("JOBA", sides[0]), ("JOBB", sides[1])] {
-        let v = j.map_or_else(|| "*NONE".to_string(), |j| format!("{:06}/{}/{}", j.0, j.1, j.2));
+        let v = j.map_or_else(
+            || "*NONE".to_string(),
+            |j| format!("{:06}/{}/{}", j.0, j.1, j.2),
+        );
         d.set(var, &v);
     }
     d.copyright = true;

@@ -59,7 +59,10 @@ fn fail(e: &str) -> Fail {
 /// `STRSRVJOB JOB(number/user/name)`.
 pub fn strsrvjob(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let parts: Vec<String> = match r.get("JOB").and_then(|b| b.value.as_ref()) {
-        Some(Value::Qual(p)) => p.iter().map(|v| v.source().trim().to_ascii_uppercase()).collect(),
+        Some(Value::Qual(p)) => p
+            .iter()
+            .map(|v| v.source().trim().to_ascii_uppercase())
+            .collect(),
         Some(v) => v
             .source()
             .split('/')
@@ -69,7 +72,12 @@ pub fn strsrvjob(host: &Host, r: &Resolved) -> Result<String, Fail> {
         None => Vec::new(),
     };
     // The qualifiers come name first; the service takes number/user/name.
-    let job: Vec<&str> = parts.iter().rev().map(String::as_str).filter(|s| !s.is_empty()).collect();
+    let job: Vec<&str> = parts
+        .iter()
+        .rev()
+        .map(String::as_str)
+        .filter(|s| !s.is_empty())
+        .collect();
     if job.is_empty() {
         return Err(Fail::new("CPD0071", "A job name is needed."));
     }
@@ -131,7 +139,13 @@ pub fn take_stop(job: &mut Job, host: &Host, st: &mut State) -> Option<String> {
                 {
                     let shown = eval(host, &c.var).unwrap_or_default();
                     if !c.holds(&shown) {
-                        let _ = order(host, DbgOrder::Resume { step: false, into: false });
+                        let _ = order(
+                            host,
+                            DbgOrder::Resume {
+                                step: false,
+                                into: false,
+                            },
+                        );
                         continue;
                     }
                 }
@@ -151,8 +165,16 @@ pub fn take_stop(job: &mut Job, host: &Host, st: &mut State) -> Option<String> {
                         StopReason::Step
                     },
                 });
-                let line = st.session.module().and_then(|m| m.map.line_of(stmt)).map_or_else(|| stmt.to_string(), |l| l.to_string());
-                return Some(crate::display::msgline::say(host, "CPI9BE8", &[&line, &program]));
+                let line = st
+                    .session
+                    .module()
+                    .and_then(|m| m.map.line_of(stmt))
+                    .map_or_else(|| stmt.to_string(), |l| l.to_string());
+                return Some(crate::display::msgline::say(
+                    host,
+                    "CPI9BE8",
+                    &[&line, &program],
+                ));
             }
             DbgEvent::Running => st.session.resumed(),
             DbgEvent::Answer { text } => return Some(text),
@@ -174,7 +196,9 @@ pub fn eval(host: &Host, expr: &str) -> Result<String, String> {
             }
         }
         if let Some(a) = answer {
-            return a.strip_prefix('!').map_or(Ok(a.clone()), |_| Err(String::new()));
+            return a
+                .strip_prefix('!')
+                .map_or(Ok(a.clone()), |_| Err(String::new()));
         }
         std::thread::sleep(POLL);
     }

@@ -102,7 +102,9 @@ mod tests {
 
     #[test]
     fn rsa_round_trip() {
-        let n: Vec<u8> = (0..384u32).map(|i| u8::try_from(i % 251).unwrap() | 0x80).collect();
+        let n: Vec<u8> = (0..384u32)
+            .map(|i| u8::try_from(i % 251).unwrap() | 0x80)
+            .collect();
         let der = rsa_public(&n, &[1, 0, 1]);
         let (n2, e2) = rsa_public_parts(&der).unwrap();
         assert_eq!(n2, n);

@@ -76,8 +76,8 @@ fn first_diagnostic(outcome: &str) -> &str {
 /// validity checkers not yet written). A difference anywhere else
 /// fails; one of these that starts to agree should leave the list.
 const OPEN: &[usize] = &[
-    157, 186, 197, 301, 335, 341, 358,
-    442, 443, 444, 445, 446, 494, 527, 554, 555, 604, 723, 724, 750, 751, 764,
+    157, 186, 197, 301, 335, 341, 358, 442, 443, 444, 445, 446, 494, 527, 554, 555, 604, 723, 724,
+    750, 751, 764,
 ];
 
 #[test]
@@ -106,7 +106,9 @@ fn analyzer_agrees_with_the_box() {
         } else if !same && OPEN.contains(&n) {
             eprintln!("still open: {n}: {string}");
         } else if !same {
-            differences.push(format!("{n}: {string}\n    ours:   {ours}\n    theirs: {theirs}"));
+            differences.push(format!(
+                "{n}: {string}\n    ours:   {ours}\n    theirs: {theirs}"
+            ));
         }
     }
     assert!(compared > 0, "the listing held no outcomes");
@@ -129,5 +131,8 @@ fn the_listing_parser_reads_dspmsg_output() {
         ]
     );
     let e = expected();
-    assert!(!e.is_empty() && !e[0].1.is_empty(), "expected.txt reads as pairs");
+    assert!(
+        !e.is_empty() && !e[0].1.is_empty(),
+        "expected.txt reads as pairs"
+    );
 }

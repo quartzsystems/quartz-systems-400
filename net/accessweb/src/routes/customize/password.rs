@@ -23,7 +23,11 @@ fn show(rq: &Rq<'_>, messages: Vec<Message>) -> Response {
     let warn = rq.get(PWD_WARN);
     if !warn.is_empty() {
         let system = rq.env().system.name();
-        messages.push(rq.message(Kind::Info, msgs::PASSWORD_EXPIRES, &[rq.user(), &system, &warn]));
+        messages.push(rq.message(
+            Kind::Info,
+            msgs::PASSWORD_EXPIRES,
+            &[rq.user(), &system, &warn],
+        ));
     }
     let pw = |n: &str| format!("<input type=\"password\" name=\"{n}\" size=\"30\">");
     let rules = format!(
@@ -42,7 +46,10 @@ fn show(rq: &Rq<'_>, messages: Vec<Message>) -> Response {
                 Prop::new("Rules", rules),
             ],
         }],
-        &[Button::new("change", "Change"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("change", "Change"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     rq.page(Page {
         title: "Change password".into(),
@@ -71,7 +78,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
     }
     let (current, new, again) = (f.str("p0"), f.str("p1"), f.str("p2"));
     if new != again {
-        return show(rq, vec![rq.message(Kind::Error, msgs::PASSWORD_MISMATCH, &[])]);
+        return show(
+            rq,
+            vec![rq.message(Kind::Error, msgs::PASSWORD_MISMATCH, &[])],
+        );
     }
     let sys = &rq.env().system;
     if let Err(m) = sys.change_password(rq.user(), current, new) {
@@ -80,9 +90,14 @@ pub fn page(rq: &Rq<'_>) -> Response {
     if expired {
         rq.app.sessions.remove(&rq.session.id);
         let to = format!("{}?changed={}", PRODUCT.url("/signon"), rq.user());
-        return Response::redirect(&to).with("Set-Cookie", &qsweb::session::clear_cookie(PRODUCT.prefix));
+        return Response::redirect(&to)
+            .with("Set-Cookie", &qsweb::session::clear_cookie(PRODUCT.prefix));
     }
     rq.set(&[(PWD_WARN, "")]);
-    let m = rq.message(Kind::Done, msgs::PASSWORD_CHANGED, &[rq.user(), &sys.name()]);
+    let m = rq.message(
+        Kind::Done,
+        msgs::PASSWORD_CHANGED,
+        &[rq.user(), &sys.name()],
+    );
     rq.done("/home", m)
 }

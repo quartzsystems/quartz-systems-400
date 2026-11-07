@@ -16,11 +16,11 @@ use qsweb::msg::Kind;
 use qsweb::partials::{Button, buttons, form};
 
 use super::GROUP;
-use crate::env::policy::Setting;
 use crate::env::Profile;
+use crate::env::policy::Setting;
+use crate::msgs;
 use crate::policy::{self, Effective, Level, PUBLIC, SECTIONS};
 use crate::routes::Rq;
-use crate::msgs;
 
 const CRUMB: &[&str] = &[GROUP, "Policies"];
 
@@ -36,20 +36,35 @@ fn subjects(rq: &Rq<'_>, shown: Option<&str>) -> Vec<(String, &'static str)> {
     {
         out.push((p.name.clone(), "user"));
     }
-    out.extend(all.iter().filter(|p| !p.group && p.class == "*USER").map(|p| (p.name.clone(), "user")));
-    out.extend(all.iter().filter(|p| p.group).map(|p| (p.name.clone(), "group")));
+    out.extend(
+        all.iter()
+            .filter(|p| !p.group && p.class == "*USER")
+            .map(|p| (p.name.clone(), "user")),
+    );
+    out.extend(
+        all.iter()
+            .filter(|p| p.group)
+            .map(|p| (p.name.clone(), "group")),
+    );
     out.push((PUBLIC.into(), ""));
     out
 }
 
 /// `WEBUSER (user)`, `*PUBLIC`.
 fn label(s: &(String, &str)) -> String {
-    if s.1.is_empty() { s.0.clone() } else { format!("{} ({})", s.0, s.1) }
+    if s.1.is_empty() {
+        s.0.clone()
+    } else {
+        format!("{} ({})", s.0, s.1)
+    }
 }
 
 /// The subject a select's option or the query names.
 fn named(v: &str) -> String {
-    v.split_whitespace().next().unwrap_or("").to_ascii_uppercase()
+    v.split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_uppercase()
 }
 
 /// The setting of every function for `subject`, and what it inherits
@@ -72,7 +87,10 @@ fn describe(rq: &Rq<'_>, subject: &str, group: bool) -> String {
     match groups.as_slice() {
         [] => format!("Effective policies for {subject}."),
         [g] => format!("Effective policies for {subject}, including group {g}."),
-        [first @ .., last] => format!("Effective policies for {subject}, including groups {} and {last}.", first.join(", ")),
+        [first @ .., last] => format!(
+            "Effective policies for {subject}, including groups {} and {last}.",
+            first.join(", ")
+        ),
     }
 }
 
@@ -94,7 +112,9 @@ fn show(rq: &Rq<'_>, subject: &str) -> Response {
     let mut body = String::from(
         "<table class=\"msg\"><tr><td class=\"info\">Policies are checked in this order: user profile, group profiles, *PUBLIC. A Deny at any level denies. The user's object authority on the system still applies.</td></tr></table>",
     );
-    let mut inner = String::from("<table class=\"filter\"><tr><td>Profile or group:</td><td><select name=\"p\">");
+    let mut inner = String::from(
+        "<table class=\"filter\"><tr><td>Profile or group:</td><td><select name=\"p\">",
+    );
     for (i, o) in opts.iter().enumerate() {
         let sel = if i > 0 && i == at { " selected" } else { "" };
         let _ = write!(inner, "<option{sel}>{}</option>", esc(&label(o)));
@@ -107,7 +127,11 @@ fn show(rq: &Rq<'_>, subject: &str) -> Response {
     inner.push_str("<table class=\"list\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n<th>Function</th>\n<th>Allow</th>\n<th>Deny</th>\n<th>Set by</th>\n</tr>\n");
     let mut n = 0usize;
     let mut row = |s: &mut String, cells: [String; 4]| {
-        s.push_str(if n % 2 == 1 { "<tr class=\"alt\">\n" } else { "<tr>\n" });
+        s.push_str(if n % 2 == 1 {
+            "<tr class=\"alt\">\n"
+        } else {
+            "<tr>\n"
+        });
         let _ = write!(
             s,
             "<td>{}</td>\n<td class=\"radio\">{}</td>\n<td class=\"radio\">{}</td>\n<td>{}</td>\n</tr>\n",
@@ -116,7 +140,15 @@ fn show(rq: &Rq<'_>, subject: &str) -> Response {
         n += 1;
     };
     for sec in SECTIONS {
-        row(&mut inner, [format!("<b>{}</b>", esc(sec.label)), String::new(), String::new(), String::new()]);
+        row(
+            &mut inner,
+            [
+                format!("<b>{}</b>", esc(sec.label)),
+                String::new(),
+                String::new(),
+                String::new(),
+            ],
+        );
         for (i, (key, text)) in sec.functions.iter().enumerate() {
             let e: Effective = policy::resolve(&lv, key, secadm);
             let name = format!("p_{}_{i}", sec.key);
@@ -144,7 +176,10 @@ fn show(rq: &Rq<'_>, subject: &str) -> Response {
         title: "Policies".into(),
         crumb: CRUMB.iter().map(ToString::to_string).collect(),
         h1: "Policies".into(),
-        desc: Some("Administrator: allow or deny each Access for Web function per profile or group.".into()),
+        desc: Some(
+            "Administrator: allow or deny each Access for Web function per profile or group."
+                .into(),
+        ),
         body,
         help: "policies".into(),
         nav: Some((GROUP, Some("/policies"))),
@@ -155,7 +190,9 @@ fn show(rq: &Rq<'_>, subject: &str) -> Response {
 /// The settings to keep for `subject` from the posted radios: those
 /// that differ from what it inherits.
 fn posted(rq: &Rq<'_>, subject: &str) -> Vec<(String, Setting)> {
-    let group = subjects(rq, Some(subject)).iter().any(|o| o.0 == subject && o.1 == "group");
+    let group = subjects(rq, Some(subject))
+        .iter()
+        .any(|o| o.0 == subject && o.1 == "group");
     let (mut lv, secadm) = view(rq, subject, group);
     if subject == PUBLIC {
         lv.clear();
@@ -181,7 +218,10 @@ fn posted(rq: &Rq<'_>, subject: &str) -> Vec<(String, Setting)> {
 }
 
 fn copy(rq: &Rq<'_>, subject: &str) -> Response {
-    let opts: Vec<(String, &str)> = subjects(rq, Some(subject)).into_iter().filter(|o| o.0 != subject).collect();
+    let opts: Vec<(String, &str)> = subjects(rq, Some(subject))
+        .into_iter()
+        .filter(|o| o.0 != subject)
+        .collect();
     if rq.post() {
         let f = rq.form();
         if f.has("ok") {
@@ -238,7 +278,9 @@ pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
     let q = rq.query();
     let subject = match q.get("p").map(named).filter(|s| !s.is_empty()) {
         Some(s) => s,
-        None => subjects(rq, None).first().map_or_else(|| PUBLIC.to_string(), |s| s.0.clone()),
+        None => subjects(rq, None)
+            .first()
+            .map_or_else(|| PUBLIC.to_string(), |s| s.0.clone()),
     };
     match segs {
         ["policies"] => {}
@@ -264,7 +306,11 @@ pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
         return rq.done(&format!("/policies?p={subject}"), m);
     }
     let m = rq.message(Kind::Done, msgs::POLICIES_CHANGED, &[&subject]);
-    let back = if f.has("ok") { "/home".to_string() } else { format!("/policies?p={subject}") };
+    let back = if f.has("ok") {
+        "/home".to_string()
+    } else {
+        format!("/policies?p={subject}")
+    };
     rq.done(&back, m)
 }
 

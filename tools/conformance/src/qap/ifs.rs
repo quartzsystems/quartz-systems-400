@@ -11,8 +11,8 @@
 //! listed; a directory not empty is `Error`; everything removed.
 
 use qap_proto::ops::ifs::{
-    CreateDirectory, Entries, Entry, EntryKind, FileData, FromTo, ListDirectory, PathRef, ReadFile, WriteFile,
-    WriteMode, Written,
+    CreateDirectory, Entries, Entry, EntryKind, FileData, FromTo, ListDirectory, PathRef, ReadFile,
+    WriteFile, WriteMode, Written,
 };
 use qap_proto::{Envelope, Op, Status};
 
@@ -93,7 +93,11 @@ fn write_pieces(c: &mut Conn, p: &str, ccsid: u16, text: &str) -> Result<u64, St
                 Op::WriteFile,
                 &WriteFile {
                     path: p.into(),
-                    mode: if i == 0 { WriteMode::Create } else { WriteMode::Append },
+                    mode: if i == 0 {
+                        WriteMode::Create
+                    } else {
+                        WriteMode::Append
+                    },
                     offset: 0,
                     ccsid,
                     data: data.into_bytes(),
@@ -108,7 +112,12 @@ fn write_pieces(c: &mut Conn, p: &str, ccsid: u16, text: &str) -> Result<u64, St
 
 /// `p` read from 0 in reads of `step` bytes from each `next_offset`;
 /// the data joined and how many reads it took.
-fn read_on(c: &mut Conn, p: &str, step: u64, as_ccsid: Option<u16>) -> Result<(Vec<u8>, usize), String> {
+fn read_on(
+    c: &mut Conn,
+    p: &str,
+    step: u64,
+    as_ccsid: Option<u16>,
+) -> Result<(Vec<u8>, usize), String> {
     let (mut out, mut at, mut n) = (Vec::new(), 0u64, 0);
     loop {
         let d: FileData = c.ok(
@@ -135,8 +144,15 @@ fn read_on(c: &mut Conn, p: &str, step: u64, as_ccsid: Option<u16>) -> Result<(V
 /// A file's entry, which must be a file of `ccsid` and `size` bytes.
 fn file_entry(c: &mut Conn, p: &str, ccsid: u16, size: usize) -> Result<(), String> {
     let e: Entry = c.ok(Op::GetInfo, &PathRef { path: p.into() })?;
-    if e.kind != EntryKind::File || e.ccsid != ccsid || e.size != size as u64 || e.owner != super::USER {
-        return Err(format!("GetInfo {p}: {e:?}, not a file of CCSID {ccsid}, {size} bytes, owned by {}", super::USER));
+    if e.kind != EntryKind::File
+        || e.ccsid != ccsid
+        || e.size != size as u64
+        || e.owner != super::USER
+    {
+        return Err(format!(
+            "GetInfo {p}: {e:?}, not a file of CCSID {ccsid}, {size} bytes, owned by {}",
+            super::USER
+        ));
     }
     Ok(())
 }
@@ -153,26 +169,41 @@ fn clean(c: &mut Conn) -> Result<(), String> {
 /// The step's body, signed on as `USER`.
 pub fn run(c: &mut Conn) -> Result<String, String> {
     clean(c)?;
-    status(&mkdir(c, &path("sub"), true)?, Status::Ok, "CreateDirectory with parents")?;
+    status(
+        &mkdir(c, &path("sub"), true)?,
+        Status::Ok,
+        "CreateDirectory with parents",
+    )?;
     let again = mkdir(c, DIR, false)?;
     if again.status != Status::Exists || msgid(&again) != "CPFA0A0" {
-        return Err(format!("CreateDirectory of an existing directory: {}", brief(&again)));
+        return Err(format!(
+            "CreateDirectory of an existing directory: {}",
+            brief(&again)
+        ));
     }
     // UTF-8 written in pieces into a CCSID 37 file.
     let t37 = path("t37.txt");
     let stored = ccsid::conv::from_str(37, TEXT).map_err(|e| e.to_string())?;
     let size = write_pieces(c, &t37, 37, TEXT)?;
     if size != stored.len() as u64 {
-        return Err(format!("WriteFile sizes: {size}, the text is {} bytes in CCSID 37", stored.len()));
+        return Err(format!(
+            "WriteFile sizes: {size}, the text is {} bytes in CCSID 37",
+            stored.len()
+        ));
     }
     file_entry(c, &t37, 37, stored.len())?;
     let (raw, _) = read_on(c, &t37, 0, None)?;
     if raw != stored {
-        return Err(format!("{t37} as stored: {raw:02X?}, not the text in CCSID 37"));
+        return Err(format!(
+            "{t37} as stored: {raw:02X?}, not the text in CCSID 37"
+        ));
     }
     let (utf8, reads) = read_on(c, &t37, 5, Some(1208))?;
     if utf8 != TEXT.as_bytes() {
-        return Err(format!("{t37} read as 1208 by 5: {:?}", String::from_utf8_lossy(&utf8)));
+        return Err(format!(
+            "{t37} read as 1208 by 5: {:?}",
+            String::from_utf8_lossy(&utf8)
+        ));
     }
     // Mixed: Japanese written in pieces into CCSID 939, read back by 3
     // bytes, boundaries inside its pairs.
@@ -182,11 +213,16 @@ pub fn run(c: &mut Conn) -> Result<String, String> {
     file_entry(c, &j939, 939, mixed.len())?;
     let (raw, _) = read_on(c, &j939, 0, None)?;
     if raw != mixed {
-        return Err(format!("{j939} in pieces: {raw:02X?}, one write makes {mixed:02X?}"));
+        return Err(format!(
+            "{j939} in pieces: {raw:02X?}, one write makes {mixed:02X?}"
+        ));
     }
     let (jp, jreads) = read_on(c, &j939, 3, Some(1208))?;
     if jp != JAPANESE.as_bytes() {
-        return Err(format!("{j939} read as 1208 by 3: {:?}", String::from_utf8_lossy(&jp)));
+        return Err(format!(
+            "{j939} read as 1208 by 3: {:?}",
+            String::from_utf8_lossy(&jp)
+        ));
     }
     // Listed.
     let l: Entries = list(c, DIR, "*")?.body_as().map_err(|e| e.to_string())?;
@@ -196,18 +232,37 @@ pub fn run(c: &mut Conn) -> Result<String, String> {
     }
     // Copied, its CCSID kept; again without replace is Exists.
     let c37 = path("c37.txt");
-    status(&from_to(c, Op::Copy, &t37, &c37, false)?, Status::Ok, "Copy")?;
+    status(
+        &from_to(c, Op::Copy, &t37, &c37, false)?,
+        Status::Ok,
+        "Copy",
+    )?;
     file_entry(c, &c37, 37, stored.len())?;
     let twice = from_to(c, Op::Copy, &t37, &c37, false)?;
     if twice.status != Status::Exists {
-        return Err(format!("Copy onto a file without replace: {}", brief(&twice)));
+        return Err(format!(
+            "Copy onto a file without replace: {}",
+            brief(&twice)
+        ));
     }
-    status(&from_to(c, Op::Copy, &j939, &c37, true)?, Status::Ok, "Copy with replace")?;
+    status(
+        &from_to(c, Op::Copy, &j939, &c37, true)?,
+        Status::Ok,
+        "Copy with replace",
+    )?;
     file_entry(c, &c37, 939, mixed.len())?;
     // Renamed into the subdirectory.
     let r37 = path("sub/r37.txt");
-    status(&from_to(c, Op::Rename, &c37, &r37, false)?, Status::Ok, "Rename")?;
-    status(&info(c, &c37)?, Status::NotFound, "GetInfo of the renamed file")?;
+    status(
+        &from_to(c, Op::Rename, &c37, &r37, false)?,
+        Status::Ok,
+        "Rename",
+    )?;
+    status(
+        &info(c, &c37)?,
+        Status::NotFound,
+        "GetInfo of the renamed file",
+    )?;
     file_entry(c, &r37, 939, mixed.len())?;
     // The console's directory, *PUBLIC *EXCLUDE.
     let no = list(c, EXCLUDED, "*")?;
@@ -215,9 +270,15 @@ pub fn run(c: &mut Conn) -> Result<String, String> {
         return Err(format!("ListDirectory {EXCLUDED}: {}", brief(&no)));
     }
     let no_mk = mkdir(c, &format!("{EXCLUDED}/x"), false)?;
-    status(&no_mk, Status::NotAuthorized, "CreateDirectory in the excluded directory")?;
+    status(
+        &no_mk,
+        Status::NotAuthorized,
+        "CreateDirectory in the excluded directory",
+    )?;
     // /QSYS.LIB.
-    let q: Entries = list(c, "/QSYS.LIB", "QGPL.LIB")?.body_as().map_err(|e| e.to_string())?;
+    let q: Entries = list(c, "/QSYS.LIB", "QGPL.LIB")?
+        .body_as()
+        .map_err(|e| e.to_string())?;
     if q.total != 1 || q.entries.first().map(|e| e.kind) != Some(EntryKind::Directory) {
         return Err(format!("ListDirectory /QSYS.LIB QGPL.LIB: {q:?}"));
     }
@@ -227,10 +288,20 @@ pub fn run(c: &mut Conn) -> Result<String, String> {
         return Err(format!("Delete of a directory not empty: {}", brief(&full)));
     }
     // Everything goes.
-    for p in [r37.clone(), path("sub"), t37.clone(), j939.clone(), DIR.to_string()] {
+    for p in [
+        r37.clone(),
+        path("sub"),
+        t37.clone(),
+        j939.clone(),
+        DIR.to_string(),
+    ] {
         status(&delete(c, &p)?, Status::Ok, &format!("Delete {p}"))?;
     }
-    status(&info(c, DIR)?, Status::NotFound, "GetInfo of the deleted directory")?;
+    status(
+        &info(c, DIR)?,
+        Status::NotFound,
+        "GetInfo of the deleted directory",
+    )?;
     Ok(format!(
         "{} bytes of UTF-8 written in pieces into CCSID 37 and read back in {reads} converted reads, Japanese into 939 in pieces as one write makes it and back in {jreads} reads of 3 bytes; listed, copied (CCSID kept, then Exists), renamed; {EXCLUDED} NotAuthorized (CPFA09C); /QSYS.LIB listed; a full directory Error (CPFA0AC); all deleted",
         TEXT.len()

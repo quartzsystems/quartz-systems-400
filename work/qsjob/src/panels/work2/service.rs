@@ -12,7 +12,10 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{Step, cell, choice, dialog, display, exec, fetch, fill, load, no_more, parm, refused, show, work};
+use super::{
+    Step, cell, choice, dialog, display, exec, fetch, fill, load, no_more, parm, refused, show,
+    work,
+};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -54,7 +57,12 @@ fn statuses(r: &Resolved) -> Vec<String> {
 }
 
 /// `WRKPRB`, and `DSPPRB` of more than one problem.
-pub fn wrkprb(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkprb(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     if r.name == "DSPPRB"
         && let Some(id) = parm(r, "PRBID").filter(|i| !i.starts_with('*'))
     {
@@ -72,40 +80,41 @@ pub fn wrkprb(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
         load(d, "PRBS", (vars, rows));
         Ok(())
     };
-    let mut keys = |job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, resp: Response| {
-        if let Response::Return(16) = resp {
-            let ids: Vec<String> = (0..d.list_mut("PRBS").rows.len())
-                .filter(|i| cell(d, "PRBS", *i, "PRBSTS") == "PREPARED")
-                .map(|i| cell(d, "PRBS", i, "PRBID"))
-                .collect();
-            if ids.is_empty() {
-                d.error("CPD9BA2", &[]);
+    let mut keys =
+        |job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, resp: Response| {
+            if let Response::Return(16) = resp {
+                let ids: Vec<String> = (0..d.list_mut("PRBS").rows.len())
+                    .filter(|i| cell(d, "PRBS", *i, "PRBSTS") == "PREPARED")
+                    .map(|i| cell(d, "PRBS", i, "PRBID"))
+                    .collect();
+                if ids.is_empty() {
+                    d.error("CPD9BA2", &[]);
+                }
+                for id in ids {
+                    act(host, d, "prb-report", &[&id]);
+                }
+                return Ok(Step::Reload);
             }
-            for id in ids {
-                act(host, d, "prb-report", &[&id]);
+            let Some(c) = choice(&resp).cloned() else {
+                return Ok(super::others(d, &resp));
+            };
+            let id = cell(d, "PRBS", c.row, "PRBID");
+            match c.option.trim() {
+                "2" => exec(job, host, d, &format!("?CHGPRB PRBID({id})")),
+                "4" => exec(job, host, d, &format!("DLTPRB PRBID({id})")),
+                "5" => {
+                    dspprb(host, surface, &id)?;
+                }
+                "6" => exec(job, host, d, &format!("DSPPRB PRBID({id}) OUTPUT(*PRINT)")),
+                "8" => work_with(host, surface, &id)?,
+                "9" => {
+                    d.error("CPD9B81", &[]);
+                }
+                "12" => note(host, surface, &id)?,
+                _ => return Ok(no_more(d, &resp)),
             }
-            return Ok(Step::Reload);
-        }
-        let Some(c) = choice(&resp).cloned() else {
-            return Ok(super::others(d, &resp));
+            Ok(Step::Reload)
         };
-        let id = cell(d, "PRBS", c.row, "PRBID");
-        match c.option.trim() {
-            "2" => exec(job, host, d, &format!("?CHGPRB PRBID({id})")),
-            "4" => exec(job, host, d, &format!("DLTPRB PRBID({id})")),
-            "5" => {
-                dspprb(host, surface, &id)?;
-            }
-            "6" => exec(job, host, d, &format!("DSPPRB PRBID({id}) OUTPUT(*PRINT)")),
-            "8" => work_with(host, surface, &id)?,
-            "9" => {
-                d.error("CPD9B81", &[]);
-            }
-            "12" => note(host, surface, &id)?,
-            _ => return Ok(no_more(d, &resp)),
-        }
-        Ok(Step::Reload)
-    };
     work(job, host, surface, &mut d, "WRKPRB", &mut reload, &mut keys)
 }
 
@@ -199,7 +208,12 @@ pub fn anzprb(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
                 Response::Cancel => break,
                 Response::Return(_) => {
                     let area = area.to_string();
-                    let (m, o, s, t) = (d.get("ANZMSGID"), d.get("ANZOBJ"), d.get("ANZSTOP"), d.get("ANZTEXT"));
+                    let (m, o, s, t) = (
+                        d.get("ANZMSGID"),
+                        d.get("ANZOBJ"),
+                        d.get("ANZSTOP"),
+                        d.get("ANZTEXT"),
+                    );
                     match op(host, "prb-analyze", &[&area, &m, &o, &s, &t]) {
                         Ok(lines) => {
                             let id = lines.first().cloned().unwrap_or_default();
@@ -248,7 +262,12 @@ pub fn wrkcntinf(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<St
 }
 
 /// `WRKSRVPVD`.
-pub fn wrksrvpvd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrksrvpvd(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let cnn = parm(r, "CNNTYPE").unwrap_or_else(|| "*ANY".into());
     let mut d = dialog(host, "QESCNTINF")?;
     let mut reload = |h: &Host, d: &mut UimDialog| -> Result<(), Fail> {
@@ -259,30 +278,44 @@ pub fn wrksrvpvd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         fill(d, "PVDS", rows);
         Ok(())
     };
-    let mut keys = |job: &mut Job, host: &Host, _s: &mut Surface, d: &mut UimDialog, resp: Response| {
-        let Some(c) = choice(&resp).cloned() else {
-            return Ok(super::others(d, &resp));
+    let mut keys =
+        |job: &mut Job, host: &Host, _s: &mut Surface, d: &mut UimDialog, resp: Response| {
+            let Some(c) = choice(&resp).cloned() else {
+                return Ok(super::others(d, &resp));
+            };
+            let cp = cell(d, "PVDS", c.row, "CPNAME");
+            match c.option.trim() {
+                "5" => {
+                    let (net, cnn, text) = (
+                        cell(d, "PVDS", c.row, "NETID"),
+                        cell(d, "PVDS", c.row, "CNNTYPE"),
+                        cell(d, "PVDS", c.row, "PVDTEXT"),
+                    );
+                    d.info("CPI9BB8", &[&cp, &net, &cnn, &text]);
+                    Ok(Step::Stay)
+                }
+                "9" => {
+                    exec(
+                        job,
+                        host,
+                        d,
+                        &format!("SNDSRVRQS ACTION(*TEST) RMTCPNAME({cp})"),
+                    );
+                    Ok(Step::Reload)
+                }
+                _ => Ok(no_more(d, &resp)),
+            }
         };
-        let cp = cell(d, "PVDS", c.row, "CPNAME");
-        match c.option.trim() {
-            "5" => {
-                let (net, cnn, text) = (
-                    cell(d, "PVDS", c.row, "NETID"),
-                    cell(d, "PVDS", c.row, "CNNTYPE"),
-                    cell(d, "PVDS", c.row, "PVDTEXT"),
-                );
-                d.info("CPI9BB8", &[&cp, &net, &cnn, &text]);
-                Ok(Step::Stay)
-            }
-            "9" => {
-                exec(job, host, d, &format!("SNDSRVRQS ACTION(*TEST) RMTCPNAME({cp})"));
-                Ok(Step::Reload)
-            }
-            _ => Ok(no_more(d, &resp)),
-        }
-    };
     let _ = host;
-    work(job, host, surface, &mut d, "WRKSRVPVD", &mut reload, &mut keys)
+    work(
+        job,
+        host,
+        surface,
+        &mut d,
+        "WRKSRVPVD",
+        &mut reload,
+        &mut keys,
+    )
 }
 
 /// `DSPSRVSTS` at a display.

@@ -18,7 +18,9 @@ impl Parser {
             return Err(Self::unsupported("CREATE VARIABLE FOR SYSTEM NAME"));
         }
         if self.is_word("ARRAY") || self.is_sym_at(1, ".") {
-            return Err(Self::unsupported("a global variable of a user-defined or array type"));
+            return Err(Self::unsupported(
+                "a global variable of a user-defined or array type",
+            ));
         }
         let data_type = self.type_spec()?;
         let mut default = None;
@@ -29,7 +31,13 @@ impl Parser {
             let e = self.expr()?;
             default = Some((e, self.text_from(mark)));
         }
-        Ok(Statement::CreateVariable(CreateVariable { name, data_type, default, constant, replace }))
+        Ok(Statement::CreateVariable(CreateVariable {
+            name,
+            data_type,
+            default,
+            constant,
+            replace,
+        }))
     }
 
     /// `SET` of global variables, after `SET`: `v = e [, v = e]...` or
@@ -102,21 +110,34 @@ impl Parser {
                 crate::exec::array::UNBOUNDED
             } else {
                 let n = match self.tok().clone() {
-                    crate::lex::Tok::Num(n) => n.parse::<u64>().ok().filter(|n| (1..=crate::exec::array::UNBOUNDED).contains(n)),
+                    crate::lex::Tok::Num(n) => n
+                        .parse::<u64>()
+                        .ok()
+                        .filter(|n| (1..=crate::exec::array::UNBOUNDED).contains(n)),
                     _ => None,
                 };
-                let Some(n) = n else { return Err(self.expected("the largest cardinality, 1 to 2147483647")) };
+                let Some(n) = n else {
+                    return Err(self.expected("the largest cardinality, 1 to 2147483647"));
+                };
                 self.advance();
                 self.expect_sym("]")?;
                 n
             };
-            return Ok(Statement::CreateType(CreateType { name, source, array: Some(max) }));
+            return Ok(Statement::CreateType(CreateType {
+                name,
+                source,
+                array: Some(max),
+            }));
         }
         // The comparisons are generated either way, as on IBM i.
         let _ = self.eat_words(&["WITH", "COMPARISONS"]);
         if self.eat_words(&["NOT", "FINAL"]) || self.is_word("UNDER") {
             return Err(Self::unsupported("structured types"));
         }
-        Ok(Statement::CreateType(CreateType { name, source, array: None }))
+        Ok(Statement::CreateType(CreateType {
+            name,
+            source,
+            array: None,
+        }))
     }
 }

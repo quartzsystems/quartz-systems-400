@@ -345,7 +345,10 @@ impl Table {
 
     /// Note a reference.
     pub fn refer(&mut self, id: SymId, line: u32, modified: bool) {
-        self.refs.entry(id).or_default().push(Ref { line, modified });
+        self.refs
+            .entry(id)
+            .or_default()
+            .push(Ref { line, modified });
     }
 
     /// A structure's length.
@@ -363,7 +366,11 @@ impl Table {
     /// A type's IR text.
     #[must_use]
     pub fn ir_type(&self, t: &Ty) -> String {
-        t.ir(&|i| self.ds.get(i).map_or_else(|| "char(1)".into(), |d| d.ir_type.clone()))
+        t.ir(&|i| {
+            self.ds
+                .get(i)
+                .map_or_else(|| "char(1)".into(), |d| d.ir_type.clone())
+        })
     }
 
     /// A symbol's IR storage type: its type, as an array when it has

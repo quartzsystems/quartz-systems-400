@@ -33,13 +33,17 @@ pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &Rename) -> Result<()> {
     let old_sql = names::sql_name(txn, id);
     if !super::view::dependents(txn, ctx, id)?.is_empty() {
         // BLOCKED(rel): the views over it keep its name in their query.
-        return Err(SqlError::Unsupported { what: "RENAME of a table or view other views read".into() });
+        return Err(SqlError::Unsupported {
+            what: "RENAME of a table or view other views read".into(),
+        });
     }
     let (new_sys, new_sql): (Name, Option<String>) = match (&r.to, &r.system_name) {
         // `TO SYSTEM NAME x`: the system name only; a table whose SQL name
         // was its system name keeps the old one as its SQL name.
         (None, Some(s)) => {
-            let n = names::direct(s).ok_or_else(|| SqlError::SystemName { name: s.value.clone() })?;
+            let n = names::direct(s).ok_or_else(|| SqlError::SystemName {
+                name: s.value.clone(),
+            })?;
             (n, (old_sql != n.to_string()).then_some(old_sql.clone()))
         }
         (Some(to), sys) => {
@@ -47,22 +51,42 @@ pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &Rename) -> Result<()> {
             names::check_for_system(to, sys.as_ref())?;
             match (names::direct(to), sys) {
                 (Some(n), _) => (n, None),
-                (None, Some(s)) => (names::direct(s).ok_or_else(|| SqlError::SystemName { name: s.value.clone() })?, Some(to.value.clone())),
-                (None, None) if generated_for(old_sys, &to.value) => (old_sys, Some(to.value.clone())),
-                (None, None) => (names::generate(txn, lib, store::obj::types::FILE, &to.value, &|_| false)?, Some(to.value.clone())),
+                (None, Some(s)) => (
+                    names::direct(s).ok_or_else(|| SqlError::SystemName {
+                        name: s.value.clone(),
+                    })?,
+                    Some(to.value.clone()),
+                ),
+                (None, None) if generated_for(old_sys, &to.value) => {
+                    (old_sys, Some(to.value.clone()))
+                }
+                (None, None) => (
+                    names::generate(txn, lib, store::obj::types::FILE, &to.value, &|_| false)?,
+                    Some(to.value.clone()),
+                ),
             }
         }
-        (None, None) => return Err(SqlError::Unsupported { what: "RENAME without TO".into() }),
+        (None, None) => {
+            return Err(SqlError::Unsupported {
+                what: "RENAME without TO".into(),
+            });
+        }
     };
     if let Some(s) = &new_sql
         && *s != old_sql
         && names::find(txn, lib, kind.space(), s)?.is_some()
     {
-        return Err(SqlError::Exists { name: s.clone(), kind: "*FILE" });
+        return Err(SqlError::Exists {
+            name: s.clone(),
+            kind: "*FILE",
+        });
     }
     if new_sys != old_sys {
         ops::rename(txn, id, new_sys, ctx.clock()).map_err(|e| match e {
-            store::StoreError::AlreadyExists { .. } => SqlError::Exists { name: new_sys.to_string(), kind: "*FILE" },
+            store::StoreError::AlreadyExists { .. } => SqlError::Exists {
+                name: new_sys.to_string(),
+                kind: "*FILE",
+            },
             e => e.into(),
         })?;
     }

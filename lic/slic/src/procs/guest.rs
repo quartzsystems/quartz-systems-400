@@ -36,7 +36,9 @@ pub fn start(system: &mut System) {
                 (Some(p), false) => format!("/dev/{p}"),
                 (None, _) => format!("vsock port {}", guestagent::VSOCK_PORT),
             };
-            system.out.serial(&format!("slic: guest agent {pid} on {on}\n"));
+            system
+                .out
+                .serial(&format!("slic: guest agent {pid} on {on}\n"));
             system.procs.guest = Some(GuestProc { pid, _chan: chan });
         }
         Err(e) => system.out.serial(&format!("slic: guest agent: {e}\n")),
@@ -47,7 +49,9 @@ pub fn start(system: &mut System) {
 pub fn reaped(system: &mut System, pid: u32) {
     if system.procs.guest.as_ref().is_some_and(|p| p.pid == pid) {
         system.procs.guest = None;
-        system.out.serial(&format!("slic: guest agent ({pid}) ended; starting it again\n"));
+        system.out.serial(&format!(
+            "slic: guest agent ({pid}) ended; starting it again\n"
+        ));
         start(system);
     }
 }

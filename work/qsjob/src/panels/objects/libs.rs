@@ -151,18 +151,43 @@ struct WrkList {
 }
 
 /// `WRKF`: the files with their options; `FILEATR` keeps one attribute.
-pub fn wrkf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkf(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let attr = parm(r, "FILEATR").unwrap_or_else(|| "*ALL".into());
     let keep = attr.trim_start_matches('*').to_ascii_uppercase();
-    let w = WrkList { group: "QUIWRKF", panel: "WRKF", list: "FILES", var: "FILE", ty: "*FILE", kwd: "FILE" };
+    let w = WrkList {
+        group: "QUIWRKF",
+        panel: "WRKF",
+        list: "FILES",
+        var: "FILE",
+        ty: "*FILE",
+        kwd: "FILE",
+    };
     work_list(job, host, surface, r, &w, &|o| {
-        (attr == "*ALL" || o.attr.eq_ignore_ascii_case(&keep)).then(|| vec![("ATTR", o.attr.clone())])
+        (attr == "*ALL" || o.attr.eq_ignore_ascii_case(&keep))
+            .then(|| vec![("ATTR", o.attr.clone())])
     })
 }
 
 /// `WRKMSGQ`: the message queues with their options.
-pub fn wrkmsgq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
-    let w = WrkList { group: "QUIWRKMSGQ", panel: "WRKMSGQ", list: "QUEUES", var: "MSGQ", ty: "*MSGQ", kwd: "MSGQ" };
+pub fn wrkmsgq(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
+    let w = WrkList {
+        group: "QUIWRKMSGQ",
+        panel: "WRKMSGQ",
+        list: "QUEUES",
+        var: "MSGQ",
+        ty: "*MSGQ",
+        kwd: "MSGQ",
+    };
     work_list(job, host, surface, r, &w, &|_| Some(Vec::new()))
 }
 
@@ -190,7 +215,11 @@ fn work_list(
             let rows = objects(host, &lib, &name, w.ty)
                 .into_iter()
                 .filter_map(|o| {
-                    let mut values = vec![(w.var, o.name.clone()), ("LIB", o.lib.clone()), ("TEXT", o.text.clone())];
+                    let mut values = vec![
+                        (w.var, o.name.clone()),
+                        ("LIB", o.lib.clone()),
+                        ("TEXT", o.text.clone()),
+                    ];
                     values.extend(row(&o)?);
                     Some(entry(&values))
                 })
@@ -222,10 +251,10 @@ fn work_list(
                 }
                 let var = w.var;
                 let l = d.list_mut(w.list);
-                let at = l
-                    .rows
-                    .iter()
-                    .position(|row| row.iter().any(|(v, x)| v == var && x.as_str() >= position.as_str()));
+                let at = l.rows.iter().position(|row| {
+                    row.iter()
+                        .any(|(v, x)| v == var && x.as_str() >= position.as_str())
+                });
                 match at {
                     Some(i) => l.top = i,
                     None => d.error("CPD9B80", &[&position]),

@@ -18,7 +18,11 @@ pub static STATEMENT_LAYOUT: Layout = Layout {
         field("line", 0, 4),
         field("kind", 4, 1),
         field("reserved", 5, 3),
-        Field { name: "text", offset: Some(8), size: None },
+        Field {
+            name: "text",
+            offset: Some(8),
+            size: None,
+        },
     ],
 };
 
@@ -64,7 +68,9 @@ impl StmtDef {
     /// From the entry body.
     pub fn decode(b: &[u8]) -> Result<Self> {
         if b.len() < STATEMENT_FIXED {
-            return Err(DbError::Corrupt { what: "SQL information: statement".into() });
+            return Err(DbError::Corrupt {
+                what: "SQL information: statement".into(),
+            });
         }
         let kind = match b[4] {
             1 => StmtKind::Plain,
@@ -85,7 +91,11 @@ mod tests {
 
     #[test]
     fn statements_round_trip() {
-        let s = StmtDef { line: 12, kind: StmtKind::Declare, text: "DECLARE C1 CURSOR FOR SELECT A FROM T WHERE B = : H".into() };
+        let s = StmtDef {
+            line: 12,
+            kind: StmtKind::Declare,
+            text: "DECLARE C1 CURSOR FOR SELECT A FROM T WHERE B = : H".into(),
+        };
         assert_eq!(StmtDef::decode(&s.encode()).unwrap(), s);
     }
 }

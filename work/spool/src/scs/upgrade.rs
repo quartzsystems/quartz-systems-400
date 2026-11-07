@@ -74,7 +74,9 @@ mod tests {
     fn transparent_data_and_parameters_stay() {
         // TRN of 3 bytes holding 34 4C 01; SHF whose parameter is X'34';
         // a CSP with length 3 holding 34 4C; then one real old AVPP.
-        let old = [0x35, 3, 0x34, 0x4C, 1, 0x2B, 0xC1, 2, 0x34, 0x2B, 0xD2, 3, 0x34, 0x4C, 0x34, 0x4C, 7];
+        let old = [
+            0x35, 3, 0x34, 0x4C, 1, 0x2B, 0xC1, 2, 0x34, 0x2B, 0xD2, 3, 0x34, 0x4C, 0x34, 0x4C, 7,
+        ];
         let new = published_pp(&old).expect("rewritten");
         let mut want = old;
         want[15] = 0xC4;

@@ -16,7 +16,11 @@ use crate::command::Fail;
 /// Print an opened member.
 pub fn member(ctx: &mut Ctx<'_>, m: &SrcMember) -> Result<String, Fail> {
     records(ctx, &m.member, &m.records)?;
-    Ok(crate::display::msgline::say(ctx.host, "CPI9BFF", &[&m.member]))
+    Ok(crate::display::msgline::say(
+        ctx.host,
+        "CPI9BFF",
+        &[&m.member],
+    ))
 }
 
 /// Print records under a heading naming the member.
@@ -28,11 +32,14 @@ pub fn records(ctx: &mut Ctx<'_>, member: &str, recs: &[(u32, u32, String)]) -> 
         .map_err(|e| Fail::new("CPF4101", e))?;
     let fmt = PageFormat::default();
     let mut p = Printer::new(fmt);
-    let head = format!(
-        "SEU source listing   {}/{}({member})",
-        ctx.at.0, ctx.at.1
+    let head = format!("SEU source listing   {}/{}({member})", ctx.at.0, ctx.at.1);
+    p.write_str(
+        &head,
+        Control {
+            skip_before: 1,
+            ..Control::line()
+        },
     );
-    p.write_str(&head, Control { skip_before: 1, ..Control::line() });
     p.write_str("", Control::line());
     for (seq, date, data) in recs {
         let text = format!("{}  {data:<80}  {date:06}", seu::seq_text(*seq));

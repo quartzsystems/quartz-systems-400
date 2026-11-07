@@ -75,7 +75,11 @@ impl AliasDef {
         if b.len() < ATTR_LEN || &b[..8] != MAGIC {
             return None;
         }
-        Some(Self { library: name_at(b, 10), file: name_at(b, 20)?, member: name_at(b, 30) })
+        Some(Self {
+            library: name_at(b, 10),
+            file: name_at(b, 20)?,
+            member: name_at(b, 30),
+        })
     }
 }
 
@@ -118,7 +122,9 @@ pub fn delete_alias(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId) -> Result<(
     crate::auth::check(txn, "obj.delete", id)?;
     if alias_of(txn, id)?.is_none() {
         let (_, h) = ops::read_header(txn, id)?;
-        return Err(DbError::Definition { what: format!("{} is not an alias", h.name) });
+        return Err(DbError::Definition {
+            what: format!("{} is not an alias", h.name),
+        });
     }
     ops::delete(txn, job, id)?;
     Ok(())

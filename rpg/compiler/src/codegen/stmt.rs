@@ -10,12 +10,12 @@
 
 use rpgfront::ast::{AssignOp, BinOp, CondInd, Conditioning, Expr, Fig, Lit, Proc, Stmt};
 
-use crate::decl;
-use crate::diag::ids;
-use crate::files::Dev;
 use crate::codegen::emit::{Body, quote};
 use crate::codegen::expr::{V, Vk, Want};
 use crate::codegen::{Gen, LoopEnd, Open, Subr, place_of};
+use crate::decl;
+use crate::diag::ids;
+use crate::files::Dev;
 use crate::names::mangle;
 use crate::syms::{Kind, Storage, SymId};
 use crate::types::Ty;
@@ -47,11 +47,17 @@ impl Gen<'_> {
             return;
         }
         let dst = self.as_chars(dst);
-        let src = if matches!(dst.ty, Ty::Ds(_)) { src.clone() } else { self.as_chars(src) };
+        let src = if matches!(dst.ty, Ty::Ds(_)) {
+            src.clone()
+        } else {
+            self.as_chars(src)
+        };
         // Text of another class converts to the target's.
         let src = match (super::ucs2::class(&dst.ty), super::ucs2::class(&src.ty)) {
             (Some(to), Some(from)) if to != from && src.fig.is_none() => {
-                let Some(v) = self.to_class(&src, to) else { return };
+                let Some(v) = self.to_class(&src, to) else {
+                    return;
+                };
                 v
             }
             _ => src,
@@ -61,7 +67,9 @@ impl Gen<'_> {
             (d, _) if d.is_numeric() => {
                 if let Some(f) = &src.fig {
                     match f {
-                        Fig::Zeros | Fig::Hival | Fig::Loval => self.b.ins(format!("mov {}, {}", dst.op, src.op)),
+                        Fig::Zeros | Fig::Hival | Fig::Loval => {
+                            self.b.ins(format!("mov {}, {}", dst.op, src.op))
+                        }
                         Fig::All(s) if s.chars().all(|c| c.is_ascii_digit()) => {
                             self.b.ins(format!("mov {}, *ZEROS", dst.op));
                         }
@@ -94,7 +102,14 @@ impl Gen<'_> {
                 }
                 if let Some(Fig::AllX(h)) = &src.fig {
                     let n = usize::try_from(dst.ty.str_len().unwrap_or(0)).unwrap_or(0);
-                    let bytes: String = h.chars().collect::<Vec<_>>().chunks(2).map(|c| c.iter().collect::<String>()).cycle().take(n).collect();
+                    let bytes: String = h
+                        .chars()
+                        .collect::<Vec<_>>()
+                        .chunks(2)
+                        .map(|c| c.iter().collect::<String>())
+                        .cycle()
+                        .take(n)
+                        .collect();
                     self.b.ins(format!("mov {}, x\"{bytes}\"", dst.op));
                     return;
                 }
@@ -177,7 +192,11 @@ impl Gen<'_> {
             (Ty::Ptr | Ty::ProcPtr, _) => {
                 if src.fig == Some(Fig::Null) {
                     let r = self.b.reg();
-                    let k = if dst.ty == Ty::ProcPtr { "procptr" } else { "ptr" };
+                    let k = if dst.ty == Ty::ProcPtr {
+                        "procptr"
+                    } else {
+                        "ptr"
+                    };
                     self.b.ins(format!("{r} = const.{k} *NULL"));
                     self.b.ins(format!("store {}, {r}", dst.op));
                 } else if matches!(src.ty, Ty::Ptr | Ty::ProcPtr) {
@@ -242,7 +261,9 @@ impl Gen<'_> {
     /// the first.
     pub fn overflow_crossed(&mut self, file: &str, st: &str) -> String {
         let prev = format!("$ovp_{}", mangle(file));
-        self.externs.entry(prev.clone()).or_insert_with(|| format!("static {prev}: ind inz(*OFF)"));
+        self.externs
+            .entry(prev.clone())
+            .or_insert_with(|| format!("static {prev}: ind inz(*OFF)"));
         let ov = self.b.reg();
         self.b.ins(format!("{ov} = cmp.eq {st}, 1"));
         let was = self.b.reg();
@@ -261,7 +282,11 @@ impl Gen<'_> {
         let x = match ind.strip_prefix("*IN") {
             Some(n) => self.indicator(n),
             None => {
-                let e = Expr::Ref { name: ind.to_ascii_uppercase(), steps: Vec::new(), at: self.at };
+                let e = Expr::Ref {
+                    name: ind.to_ascii_uppercase(),
+                    steps: Vec::new(),
+                    at: self.at,
+                };
                 self.expr(&e, Want::default())
             }
         };
@@ -317,7 +342,9 @@ impl Gen<'_> {
     /// `ALTSEQ(*SRC)`: two character operands compared through the
     /// alternate collating sequence, unless one is `ALTSEQ(*NONE)`.
     fn altseq_pair(&mut self, a: V, b: V) -> (V, V) {
-        let Some(table) = self.altseq_table() else { return (a, b) };
+        let Some(table) = self.altseq_table() else {
+            return (a, b);
+        };
         let exempt = |g: &Self, v: &V| v.sym.is_some_and(|s| g.t.syms[s].altseq_none);
         if !a.ty.is_char() || !b.ty.is_char() || exempt(self, &a) || exempt(self, &b) {
             return (a, b);
@@ -329,7 +356,10 @@ impl Gen<'_> {
             let n = v.ty.str_len().unwrap_or(1).max(1);
             let t = self.tmp(&Ty::Char(n));
             self.rt_proc("_QRNX_ALTSEQ", "($dst: bytes(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $sd: i64, const $tab: char(256))");
-            self.b.ins(format!("callb _QRNX_ALTSEQ({}, {}, {}, {table})", t.op, r.op, r.desc));
+            self.b.ins(format!(
+                "callb _QRNX_ALTSEQ({}, {}, {}, {table})",
+                t.op, r.op, r.desc
+            ));
             out.push(t);
         }
         let b = out.pop().expect("two");
@@ -348,7 +378,15 @@ impl Gen<'_> {
             for r in &c.records {
                 // Columns 11-80: pairs of from and to, two hex digits each.
                 let body: String = r.chars().skip(10).take(70).collect();
-                let hex: Vec<u8> = body.as_bytes().chunks(2).filter_map(|p| std::str::from_utf8(p).ok().and_then(|h| u8::from_str_radix(h, 16).ok())).collect();
+                let hex: Vec<u8> = body
+                    .as_bytes()
+                    .chunks(2)
+                    .filter_map(|p| {
+                        std::str::from_utf8(p)
+                            .ok()
+                            .and_then(|h| u8::from_str_radix(h, 16).ok())
+                    })
+                    .collect();
                 for pair in hex.chunks(2) {
                     if let [from, to] = pair {
                         tab[usize::from(*from)] = *to;
@@ -361,7 +399,9 @@ impl Gen<'_> {
             acc
         });
         let name = "$altseq_tab".to_string();
-        self.externs.entry(name.clone()).or_insert_with(|| format!("static {name}: char(256) inz(x\"{lit}\")"));
+        self.externs
+            .entry(name.clone())
+            .or_insert_with(|| format!("static {name}: char(256) inz(x\"{lit}\")"));
         Some(name)
     }
 
@@ -437,10 +477,14 @@ impl Gen<'_> {
             return;
         }
         let rc = self.b.reg();
-        self.b.ins(format!("{rc} = callb {}()", Gen::subr_proc(name)));
+        self.b
+            .ins(format!("{rc} = callb {}()", Gen::subr_proc(name)));
         // The subroutine's exception, sent again here.
         let failed = self.b.reg();
-        self.b.ins(format!("{failed} = cmp.eq {rc}, {}", crate::codegen::exc::rp::FAILED));
+        self.b.ins(format!(
+            "{failed} = cmp.eq {rc}, {}",
+            crate::codegen::exc::rp::FAILED
+        ));
         let resend = self.b.label();
         let ok = self.b.label();
         self.b.term(format!("brif {failed}, {resend}, {ok}"));
@@ -450,7 +494,10 @@ impl Gen<'_> {
         let cont = self.b.label();
         let back = self.b.label();
         let one = self.b.reg();
-        self.b.ins(format!("{one} = cmp.eq {rc}, {}", crate::codegen::exc::rp::RETURN));
+        self.b.ins(format!(
+            "{one} = cmp.eq {rc}, {}",
+            crate::codegen::exc::rp::RETURN
+        ));
         self.b.term(format!("brif {one}, {back}, {cont}"));
         self.b.place(&back);
         if self.in_subr_proc {
@@ -463,12 +510,22 @@ impl Gen<'_> {
         // A return point (`ENDSR '*GETIN'`) goes there after an EXSR too:
         // a subroutine hands it to its caller, the main procedure resumes
         // its cycle at the handlers' start.
-        let resume = if self.in_subr_proc { Some((String::new(), None)) } else { self.exsr_resume.clone() };
+        let resume = if self.in_subr_proc {
+            Some((String::new(), None))
+        } else {
+            self.exsr_resume.clone()
+        };
         if let Some((top, slot)) = resume {
             let go = self.b.label();
             let next = self.b.label();
-            let arms: Vec<String> = crate::codegen::exc::rp::RESUME.iter().map(|c| format!("{c}: {go}")).collect();
-            self.b.term(format!("switch {rc}, [{}], default {next}", arms.join(", ")));
+            let arms: Vec<String> = crate::codegen::exc::rp::RESUME
+                .iter()
+                .map(|c| format!("{c}: {go}"))
+                .collect();
+            self.b.term(format!(
+                "switch {rc}, [{}], default {next}",
+                arms.join(", ")
+            ));
             self.b.place(&go);
             if self.in_subr_proc {
                 self.b.term(format!("ret {rc}"));
@@ -522,7 +579,10 @@ impl Gen<'_> {
         // RNF7030.
         if stmts[k].fixed {
             let tail = self.diags.split_off(before);
-            self.diags.extend(tail.into_iter().filter(|d| d.msgid != ids::UNDEFINED_OPERAND));
+            self.diags.extend(
+                tail.into_iter()
+                    .filter(|d| d.msgid != ids::UNDEFINED_OPERAND),
+            );
         }
         n
     }
@@ -701,10 +761,18 @@ impl Gen<'_> {
             ("SELECT", _) => {
                 let end = self.b.label();
                 let subject = op.xf2.clone().map(Box::new);
-                self.open.push(Open::Select { next: None, end, cas: false, subject });
+                self.open.push(Open::Select {
+                    next: None,
+                    end,
+                    cas: false,
+                    subject,
+                });
             }
             ("WHEN" | "WHEN-IS" | "WHEN-IN", sfx) => {
-                let Some(Open::Select { next, end, subject, .. }) = self.open.last().cloned() else {
+                let Some(Open::Select {
+                    next, end, subject, ..
+                }) = self.open.last().cloned()
+                else {
                     self.err(ids::UNBALANCED, 30, "WHEN");
                     return k + 1;
                 };
@@ -721,7 +789,11 @@ impl Gen<'_> {
                                 Expr::List(mut v, _) if v.len() == 1 => v.remove(0),
                                 e => e,
                             };
-                            let bop = if base == "WHEN-IS" { rpgfront::ast::BinOp::Eq } else { rpgfront::ast::BinOp::In };
+                            let bop = if base == "WHEN-IS" {
+                                rpgfront::ast::BinOp::Eq
+                            } else {
+                                rpgfront::ast::BinOp::In
+                            };
                             let before = self.diags.len();
                             let r = self.cond(&Expr::Binary(bop, subj, Box::new(e), at));
                             // Operands of types that do not compare.
@@ -771,10 +843,12 @@ impl Gen<'_> {
             ("ENDSL" | "ENDCS", _) => self.end_select(),
             ("CAS", sfx) => self.cas_op(op, sfx),
             ("EXSR", _) => {
-                if let Some(n) = op.f2.first().and_then(|e| e.name().map(str::to_string).or_else(|| match e {
-                    Expr::Special { word, .. } => Some(word.clone()),
-                    _ => None,
-                })) {
+                if let Some(n) = op.f2.first().and_then(|e| {
+                    e.name().map(str::to_string).or_else(|| match e {
+                        Expr::Special { word, .. } => Some(word.clone()),
+                        _ => None,
+                    })
+                }) {
                     if self.subr_procs {
                         self.exsr_call(&n);
                     } else {
@@ -791,7 +865,11 @@ impl Gen<'_> {
                 if let Some(n) = name {
                     // The calculations before the first subroutine end here.
                     if self.b.is_open() {
-                        let exit = self.calcs_end.clone().or_else(|| self.main_exit.clone()).unwrap_or_default();
+                        let exit = self
+                            .calcs_end
+                            .clone()
+                            .or_else(|| self.main_exit.clone())
+                            .unwrap_or_default();
                         if exit.is_empty() {
                             fall_off(self);
                         } else {
@@ -816,7 +894,9 @@ impl Gen<'_> {
                     self.err(ids::UNBALANCED, 30, "ENDSR");
                 }
             }
-            ("LEAVESR", _) if self.in_subr_proc => self.b.term(format!("ret {}", crate::codegen::exc::rp::NONE)),
+            ("LEAVESR", _) if self.in_subr_proc => self
+                .b
+                .term(format!("ret {}", crate::codegen::exc::rp::NONE)),
             ("LEAVESR", _) => {
                 let n = self.open.iter().rev().find_map(|o| match o {
                     Open::Subr(n) => Some(n.clone()),
@@ -851,7 +931,10 @@ impl Gen<'_> {
                 }
             }
             ("CAB", sfx) => {
-                let target = op.result.first().and_then(|e| e.name().map(|n| (n.to_string(), e.pos())));
+                let target = op
+                    .result
+                    .first()
+                    .and_then(|e| e.name().map(|n| (n.to_string(), e.pos())));
                 if let Some((n, at)) = &target
                     && !self.is_label(n, *at)
                 {
@@ -872,12 +955,16 @@ impl Gen<'_> {
             ("SETON" | "SETOFF", _) => {
                 let v = if base == "SETON" { "*ON" } else { "*OFF" };
                 for i in op.resind.clone() {
-                    if !i.is_empty() && let Some(x) = self.indicator(&i) {
+                    if !i.is_empty()
+                        && let Some(x) = self.indicator(&i)
+                    {
                         self.b.ins(format!("store {}, {v}", x.op));
                     }
                 }
             }
-            ("RETURN", _) if self.in_subr_proc => self.b.term(format!("ret {}", crate::codegen::exc::rp::RETURN)),
+            ("RETURN", _) if self.in_subr_proc => self
+                .b
+                .term(format!("ret {}", crate::codegen::exc::rp::RETURN)),
             ("RETURN", _) => self.return_op(op.xf2.as_ref()),
             ("CALLP", _) => {
                 if let Some(e) = &op.xf2 {
@@ -912,7 +999,11 @@ impl Gen<'_> {
             }
             ("ADD" | "SUB" | "MULT" | "DIV", _) => self.fixed_arith(base, op, half),
             ("EXCEPT", _) => {
-                let name = op.f2.first().and_then(|e| e.name().map(str::to_string)).unwrap_or_default();
+                let name = op
+                    .f2
+                    .first()
+                    .and_then(|e| e.name().map(str::to_string))
+                    .unwrap_or_default();
                 let outputs = self.outputs.clone();
                 if !name.is_empty() && !outputs.iter().any(|o| o.kind == "E" && o.except == name) {
                     self.err(ids::NOT_DEFINED, 30, name.clone());
@@ -921,21 +1012,24 @@ impl Gen<'_> {
             }
             ("UNLOCK", _) if self.names_dtaara(op) => self.dtaara_op(op, base),
             (
-                "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "SETLL" | "SETGT" | "UPDATE" | "DELETE" | "UNLOCK"
-                | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD" | "EXFMT" | "READC",
+                "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "SETLL" | "SETGT" | "UPDATE"
+                | "DELETE" | "UNLOCK" | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD" | "EXFMT"
+                | "READC",
                 _,
             ) => self.db_op(op, base),
             ("POST" | "ACQ" | "REL" | "NEXT", _) => self.device_op(op, base),
             ("FORCE", _) => self.force_op(op),
             // A parameter is no indicator (`*IN`, `*INxx`, `*IN(xx)`).
-            ("PARM", _) if matches!(op.result.first(), Some(Expr::Special { word, .. }) if word.starts_with("*IN")) => {
+            ("PARM", _) if matches!(op.result.first(), Some(Expr::Special { word, .. }) if word.starts_with("*IN")) =>
+            {
                 self.err(ids::PARM_NOT_INDICATOR, 30, String::new());
             }
             ("PLIST" | "PARM", _) => {}
             // Declared before generation (`extfiles::define`); the names
             // are referenced here.
             ("DEFINE", _) => {
-                let like = matches!(op.f1.first(), Some(Expr::Special { word, .. }) if word == "*LIKE");
+                let like =
+                    matches!(op.f1.first(), Some(Expr::Special { word, .. }) if word == "*LIKE");
                 if let Some(b) = op.f2.first().and_then(|e| e.name().map(str::to_string)) {
                     match self.t.find(self.scope, &b).or_else(|| self.t.find(0, &b)) {
                         Some(id) => self.t.refer(id, self.at.line, false),
@@ -956,7 +1050,10 @@ impl Gen<'_> {
             ("CALL" | "CALLB", _) => self.call_op(s),
             ("COMMIT" | "ROLBK", _) => {
                 self.rt_proc("_QRNX_COMMIT", "(byval $k: i32)");
-                self.b.ins(format!("callb _QRNX_COMMIT({})", i32::from(base == "ROLBK") + 1));
+                self.b.ins(format!(
+                    "callb _QRNX_COMMIT({})",
+                    i32::from(base == "ROLBK") + 1
+                ));
             }
             // A dump is taken only with DEBUG(*YES).
             ("DUMP", _) => {
@@ -969,7 +1066,14 @@ impl Gen<'_> {
                 let ind = op.resind[0].clone();
                 if ind.is_empty() {
                     // At the high indicator's columns (71-72).
-                    self.diags.push(rpgfront::Diag::new(ids::NO_HI_IND, 30, rpgfront::ast::Pos { line: self.at.line, col: 71 }));
+                    self.diags.push(rpgfront::Diag::new(
+                        ids::NO_HI_IND,
+                        30,
+                        rpgfront::ast::Pos {
+                            line: self.at.line,
+                            col: 71,
+                        },
+                    ));
                 } else if let Some(x) = self.indicator(&ind) {
                     self.b.ins(format!("store {}, *OFF", x.op));
                 }
@@ -1006,7 +1110,10 @@ impl Gen<'_> {
     /// `ON-EXCP` (message identifiers): close the monitored body at the
     /// first one, then start this handler.
     fn on_error(&mut self, op: &rpgfront::ast::Op, excp: bool) {
-        let Some(Open::Monitor { name, end, closed, .. }) = self.open.last().cloned() else {
+        let Some(Open::Monitor {
+            name, end, closed, ..
+        }) = self.open.last().cloned()
+        else {
             self.err(ids::UNBALANCED, 30, op.code.clone());
             return;
         };
@@ -1029,7 +1136,9 @@ impl Gen<'_> {
                     let v: u32 = n.parse().unwrap_or(0);
                     sels.push(format!("{v}"));
                 }
-                Expr::Special { word, .. } if matches!(word.as_str(), "*PROGRAM" | "*FILE" | "*ALL") => {
+                Expr::Special { word, .. }
+                    if matches!(word.as_str(), "*PROGRAM" | "*FILE" | "*ALL") =>
+                {
                     sels.push(word.clone());
                 }
                 Expr::Lit(Lit::Char(id), _) if excp => sels.push(id.to_ascii_uppercase()),
@@ -1040,7 +1149,10 @@ impl Gen<'_> {
         if sels.is_empty() {
             sels.push("*ALL".into());
         }
-        if let Some(Open::Monitor { closed, handlers, .. }) = self.open.last_mut() {
+        if let Some(Open::Monitor {
+            closed, handlers, ..
+        }) = self.open.last_mut()
+        {
             *closed = true;
             for s in sels {
                 handlers.push((s, label.clone()));
@@ -1051,7 +1163,14 @@ impl Gen<'_> {
     /// `ENDMON`: the region's `monitor` line written with every
     /// handler, and the group's end.
     fn end_monitor(&mut self) {
-        let Some(Open::Monitor { name, end, closed, line, handlers }) = self.open.pop() else {
+        let Some(Open::Monitor {
+            name,
+            end,
+            closed,
+            line,
+            handlers,
+        }) = self.open.pop()
+        else {
             self.err(ids::UNBALANCED, 30, "ENDMON");
             return;
         };
@@ -1064,7 +1183,10 @@ impl Gen<'_> {
         let list: Vec<String> = if handlers.is_empty() {
             vec![format!("*ALL -> {end}")]
         } else {
-            handlers.iter().map(|(s, l)| format!("{s} -> {l}")).collect()
+            handlers
+                .iter()
+                .map(|(s, l)| format!("{s} -> {l}"))
+                .collect()
         };
         self.b.lines[line] = format!("  monitor {name}, {}", list.join(", "));
     }
@@ -1081,9 +1203,15 @@ impl Gen<'_> {
         for it in items {
             match it {
                 Expr::Special { ref word, .. } if word == "*INFO" || word == "*ESCAPE" => {
-                    kind = if word == "*ESCAPE" { "*ESCAPE" } else { "*INFO" };
+                    kind = if word == "*ESCAPE" {
+                        "*ESCAPE"
+                    } else {
+                        "*INFO"
+                    };
                 }
-                Expr::Bif { ref name, ref args, .. } if name == "%TARGET" => target = args.first().cloned(),
+                Expr::Bif {
+                    ref name, ref args, ..
+                } if name == "%TARGET" => target = args.first().cloned(),
                 e => msg = Some(e),
             }
         }
@@ -1103,11 +1231,17 @@ impl Gen<'_> {
             Some(e) => {
                 // Text: an immediate message, as CPF9897's data.
                 let d = self.expr(&e, Want::default());
-                (Some(V::lit(Ty::Char(7), quote("CPF9897"))), Some(V::lit(Ty::Char(10), quote("QCPFMSG"))), d)
+                (
+                    Some(V::lit(Ty::Char(7), quote("CPF9897"))),
+                    Some(V::lit(Ty::Char(10), quote("QCPFMSG"))),
+                    d,
+                )
             }
             None => return,
         };
-        let (Some(id), Some(f)) = (msgid, msgf) else { return };
+        let (Some(id), Some(f)) = (msgid, msgf) else {
+            return;
+        };
         // The identifier as char(7), the file as char(10).
         let idt = self.b.temp("char(7)");
         let idv = self.as_chars(&id);
@@ -1121,7 +1255,9 @@ impl Gen<'_> {
             self.lit_storage(&d)
         });
         let d = data.map(|d| format!(" data({d})")).unwrap_or_default();
-        self.b.ins(format!("sndpgmmsg msgid({id}) msgf({f}){d} type({kind}) to({to})"));
+        self.b.ins(format!(
+            "sndpgmmsg msgid({id}) msgf({f}){d} type({kind}) to({to})"
+        ));
     }
 
     /// `CASxx f1 f2 subr`: the first true comparison of the group runs
@@ -1129,9 +1265,16 @@ impl Gen<'_> {
     fn cas_op(&mut self, op: &rpgfront::ast::Op, sfx: &str) {
         if !matches!(self.open.last(), Some(Open::Select { cas: true, .. })) {
             let end = self.b.label();
-            self.open.push(Open::Select { next: None, end, cas: true, subject: None });
+            self.open.push(Open::Select {
+                next: None,
+                end,
+                cas: true,
+                subject: None,
+            });
         }
-        let Some(Open::Select { next, end, .. }) = self.open.last().cloned() else { return };
+        let Some(Open::Select { next, end, .. }) = self.open.last().cloned() else {
+            return;
+        };
         if let Some(n) = next {
             self.b.term(format!("br {end}"));
             self.b.place(&n);
@@ -1227,7 +1370,9 @@ impl Gen<'_> {
             return;
         }
         // `*IN = value`: every indicator.
-        if aop == AssignOp::Set && matches!(t, Expr::Special { word, index: None, .. } if word == "*IN") {
+        if aop == AssignOp::Set
+            && matches!(t, Expr::Special { word, index: None, .. } if word == "*IN")
+        {
             if let Some(value) = self.expr(v, Want::default()) {
                 for i in 0..99 {
                     self.assign(&V::place(Ty::Ind, format!("$in.x[{i}]")), &value, false);
@@ -1239,7 +1384,10 @@ impl Gen<'_> {
             return;
         };
         let mode = target_mode(self, &tv, half);
-        let w = Want { mode, compared: false };
+        let w = Want {
+            mode,
+            compared: false,
+        };
         let value = match aop {
             AssignOp::Set => self.expr(v, w),
             _ => {
@@ -1256,8 +1404,18 @@ impl Gen<'_> {
                         };
                         if matches!(op, BinOp::Add | BinOp::Sub) && c.ty == Ty::Ptr {
                             self.ptr_arith(op, &c, &r)
-                        } else if op == BinOp::Add && (c.ty.is_string() || matches!(c.ty, Ty::Ds(_))) {
-                            self.expr(&Expr::Binary(BinOp::Add, Box::new(t.clone()), Box::new(v.clone()), self.at), w)
+                        } else if op == BinOp::Add
+                            && (c.ty.is_string() || matches!(c.ty, Ty::Ds(_)))
+                        {
+                            self.expr(
+                                &Expr::Binary(
+                                    BinOp::Add,
+                                    Box::new(t.clone()),
+                                    Box::new(v.clone()),
+                                    self.at,
+                                ),
+                                w,
+                            )
                         } else {
                             self.arith(op, &c, &r, w)
                         }
@@ -1301,7 +1459,10 @@ impl Gen<'_> {
                     AssignOp::Div => BinOp::Div,
                     _ => BinOp::Pow,
                 };
-                self.expr(&Expr::Binary(op, Box::new(t.clone()), Box::new(v.clone()), self.at), Want::default())
+                self.expr(
+                    &Expr::Binary(op, Box::new(t.clone()), Box::new(v.clone()), self.at),
+                    Want::default(),
+                )
             }
         };
         let Some(n) = value.and_then(|x| self.int_reg(&x)) else {
@@ -1394,7 +1555,12 @@ impl Gen<'_> {
                     self.b.term(format!("brif {r}, {leave}, {body}"));
                 }
             }
-            LoopEnd::For { top, index, step, down } => {
+            LoopEnd::For {
+                top,
+                index,
+                step,
+                down,
+            } => {
                 self.b.place(&iter);
                 let o = if down { "dec.sub" } else { "dec.add" };
                 let s = step.unwrap_or_else(|| "1".into());
@@ -1501,10 +1667,18 @@ impl Gen<'_> {
             },
             None => self.b.temp("packed(15,0)"),
         };
-        let start = op.f1.first().and_then(|e| self.expr(e, Want::default())).unwrap_or_else(|| V::lit(Ty::Packed(1, 0), "1"));
+        let start = op
+            .f1
+            .first()
+            .and_then(|e| self.expr(e, Want::default()))
+            .unwrap_or_else(|| V::lit(Ty::Packed(1, 0), "1"));
         let opnd = self.dec_operand(&start);
         self.b.ins(format!("dec.mov {counter}, {}", opnd));
-        let limit = op.f2.first().and_then(|e| self.expr(e, Want::default())).unwrap_or_else(|| V::lit(Ty::Packed(1, 0), "1"));
+        let limit = op
+            .f2
+            .first()
+            .and_then(|e| self.expr(e, Want::default()))
+            .unwrap_or_else(|| V::lit(Ty::Packed(1, 0), "1"));
         // The limit is a number.
         if !limit.ty.is_numeric() && limit.fig.is_none() {
             self.err(ids::BAD_FACTOR2, 30, "DO");
@@ -1546,7 +1720,13 @@ impl Gen<'_> {
                     result_scale: rt.shape().map_or(0, |(_, s)| s),
                     ..qdecimal::Mode::default()
                 };
-                if let Some(val) = self.expr(e, Want { mode, compared: false }) {
+                if let Some(val) = self.expr(
+                    e,
+                    Want {
+                        mode,
+                        compared: false,
+                    },
+                ) {
                     self.assign(&V::place(rt, t.clone()), &val, false);
                 }
             }
@@ -1559,7 +1739,15 @@ impl Gen<'_> {
                     result_scale: rt.shape().map_or(0, |(_, s)| s),
                     ..qdecimal::Mode::default()
                 };
-                let Some(val) = self.expr(e, Want { mode, compared: false }) else { return };
+                let Some(val) = self.expr(
+                    e,
+                    Want {
+                        mode,
+                        compared: false,
+                    },
+                ) else {
+                    return;
+                };
                 let ir = self.ir_ty(&rt);
                 if is_reg_type(&rt) {
                     let r = match rt {
@@ -1605,10 +1793,14 @@ impl Gen<'_> {
             self.b.ins("dsply \" \"");
             return;
         };
-        let Some(v) = self.expr(&m, Want::default()) else { return };
+        let Some(v) = self.expr(&m, Want::default()) else {
+            return;
+        };
         let v = self.as_chars(&v);
         let src = if v.ty.is_numeric() && v.kind != Vk::Place {
-            let t = self.b.temp(&self.ir_ty(&Ty::Packed(31, v.ty.shape().map_or(0, |s| s.1))));
+            let t = self
+                .b
+                .temp(&self.ir_ty(&Ty::Packed(31, v.ty.shape().map_or(0, |s| s.1))));
             self.b.ins(format!("dec.mov {t}, {}", v.op));
             t
         } else {
@@ -1657,7 +1849,9 @@ impl Gen<'_> {
             self.err(ids::WRITE_NO_DS, 30, name);
             return;
         };
-        let Some(v) = self.expr(r, Want::default()) else { return };
+        let Some(v) = self.expr(r, Want::default()) else {
+            return;
+        };
         let v = self.as_chars(&v);
         // A file EXTIND left closed is not written.
         let skip = f.extind.is_some().then(|| {
@@ -1735,17 +1929,31 @@ impl Gen<'_> {
     }
 
     fn fixed_arith(&mut self, base: &str, op: &rpgfront::ast::Op, half: bool) {
-        let Some(r) = op.result.first().cloned() else { return };
+        let Some(r) = op.result.first().cloned() else {
+            return;
+        };
         let Some(t) = self.target(&r) else { return };
         let (a, b) = match (op.f1.first(), op.f2.first()) {
             (Some(f1), Some(f2)) => (f1.clone(), f2.clone()),
             (None, Some(f2)) => (r.clone(), f2.clone()),
             _ => return,
         };
-        let w = Want { mode: target_mode(self, &t, half), compared: false };
-        let (Some(va), Some(vb)) = (self.expr(&a, w), self.expr(&b, w)) else { return };
+        let w = Want {
+            mode: target_mode(self, &t, half),
+            compared: false,
+        };
+        let (Some(va), Some(vb)) = (self.expr(&a, w), self.expr(&b, w)) else {
+            return;
+        };
         // DIV by a zero literal is refused as the operation's error.
-        if base == "DIV" && vb.kind == Vk::Lit && vb.op.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') {
+        if base == "DIV"
+            && vb.kind == Vk::Lit
+            && vb
+                .op
+                .trim_start_matches('-')
+                .chars()
+                .all(|c| c == '0' || c == '.')
+        {
             self.err(ids::DIV_FACTOR2_ZERO, 30, String::new());
             return;
         }
@@ -1784,13 +1992,15 @@ impl Gen<'_> {
         };
         (kind << 56) | (len << 8) | dec
     }
-
 }
 
 /// Whether a type is returned in a register.
 #[must_use]
 pub fn is_reg_type(t: &Ty) -> bool {
-    matches!(t, Ty::Int(_) | Ty::Uns(_) | Ty::Float(_) | Ty::Ind | Ty::Ptr | Ty::ProcPtr)
+    matches!(
+        t,
+        Ty::Int(_) | Ty::Uns(_) | Ty::Float(_) | Ty::Ind | Ty::Ptr | Ty::ProcPtr
+    )
 }
 
 /// Put a type's default value into a place.
@@ -1820,7 +2030,10 @@ fn default_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str) {
             }
             Ty::Ds(i) => {
                 let len = g.t.ds_len(*i);
-                g.b.ins(format!("mov {p}.all_, {}", quote(&" ".repeat(usize::try_from(len).unwrap_or(0)))));
+                g.b.ins(format!(
+                    "mov {p}.all_, {}",
+                    quote(&" ".repeat(usize::try_from(len).unwrap_or(0)))
+                ));
             }
             _ => g.b.ins(format!("mov {p}, {lit}")),
         }
@@ -1832,13 +2045,20 @@ fn default_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str) {
 pub fn init_symbol(g: &mut Gen<'_>, id: SymId) {
     let s = g.t.syms[id].clone();
     let place = place_of(g.t, id);
-    g.at = rpgfront::ast::Pos { line: s.def_line, col: 0 };
+    g.at = rpgfront::ast::Pos {
+        line: s.def_line,
+        col: 0,
+    };
     match &s.kind {
         Some(Kind::Ds(di)) => {
             let ds = g.t.ds[*di].clone();
             let reps = s.dim.max(1);
             for r in 0..reps {
-                let base = if s.dim > 0 { format!("{place}[{r}]") } else { place.clone() };
+                let base = if s.dim > 0 {
+                    format!("{place}[{r}]")
+                } else {
+                    place.clone()
+                };
                 g.b.ins(format!("mov {base}.all_, *BLANKS"));
                 init_subfields(g, *di, &base, ds.inz, true);
             }
@@ -1876,10 +2096,15 @@ fn init_subfields(g: &mut Gen<'_>, di: usize, base: &str, ds_inz: bool, values: 
             format!("{base}.{}", mangle(&ss.name))
         };
         if let Ty::Ds(oi) = ss.ty {
-            let likeds = values && matches!(&ss.inz, Some(Some(Expr::Special { word, .. })) if word == "*LIKEDS");
+            let likeds = values
+                && matches!(&ss.inz, Some(Some(Expr::Special { word, .. })) if word == "*LIKEDS");
             let inz = likeds || ds_inz || matches!(ss.inz, Some(None));
             if inz {
-                let places: Vec<String> = if ss.dim > 0 { (0..ss.dim).map(|i| format!("{p}[{i}]")).collect() } else { vec![p] };
+                let places: Vec<String> = if ss.dim > 0 {
+                    (0..ss.dim).map(|i| format!("{p}[{i}]")).collect()
+                } else {
+                    vec![p]
+                };
                 for q in places {
                     init_subfields(g, oi, &q, true, likeds);
                 }
@@ -1935,12 +2160,20 @@ fn load_ctdata(g: &mut Gen<'_>, id: SymId, place: &str) {
                 k += 1;
                 continue;
             }
-            let text: String = (from..from + width).map(|i| chars.get(i).copied().unwrap_or(' ')).collect();
+            let text: String = (from..from + width)
+                .map(|i| chars.get(i).copied().unwrap_or(' '))
+                .collect();
             let p = format!("{place}[{k}]");
             if s.ty.is_numeric() {
                 let (_, scale) = s.ty.shape().unwrap_or((1, 0));
-                let digits: String = text.chars().map(|c| if c.is_ascii_digit() { c } else { '0' }).collect();
-                let neg = text.chars().last().is_some_and(|c| "}JKLMNOPQR".contains(c) || c == '-');
+                let digits: String = text
+                    .chars()
+                    .map(|c| if c.is_ascii_digit() { c } else { '0' })
+                    .collect();
+                let neg = text
+                    .chars()
+                    .last()
+                    .is_some_and(|c| "}JKLMNOPQR".contains(c) || c == '-');
                 let digits: String = text
                     .chars()
                     .enumerate()
@@ -1964,8 +2197,16 @@ fn load_ctdata(g: &mut Gen<'_>, id: SymId, place: &str) {
                     .collect();
                 let sc = usize::from(scale);
                 let (i, f) = digits.split_at(digits.len().saturating_sub(sc));
-                let lit = if sc > 0 { format!("{}{i}.{f}", if neg { "-" } else { "" }) } else { format!("{}{i}", if neg { "-" } else { "" }) };
-                let lit = if lit.starts_with('.') || lit.starts_with("-.") { lit.replacen('.', "0.", 1) } else { lit };
+                let lit = if sc > 0 {
+                    format!("{}{i}.{f}", if neg { "-" } else { "" })
+                } else {
+                    format!("{}{i}", if neg { "-" } else { "" })
+                };
+                let lit = if lit.starts_with('.') || lit.starts_with("-.") {
+                    lit.replacen('.', "0.", 1)
+                } else {
+                    lit
+                };
                 g.b.ins(format!("dec.mov {p}, {lit}"));
             } else {
                 g.b.ins(format!("mov {p}, {}", quote(&text)));
@@ -1982,7 +2223,9 @@ fn inz_fits(ty: &Ty, v: &V) -> bool {
     }
     match ty {
         Ty::Int(d) | Ty::Uns(d) => {
-            let Ok(n) = v.op.split('.').next().unwrap_or("0").parse::<i128>() else { return false };
+            let Ok(n) = v.op.split('.').next().unwrap_or("0").parse::<i128>() else {
+                return false;
+            };
             let bits = match d {
                 3 => 8,
                 5 => 16,
@@ -2007,7 +2250,9 @@ fn inz_fits(ty: &Ty, v: &V) -> bool {
             };
             int_digits <= usize::from(d - s)
         }
-        t if t.is_char() && !t.is_varying() => v.ty.str_len().unwrap_or(0) <= t.str_len().unwrap_or(0),
+        t if t.is_char() && !t.is_varying() => {
+            v.ty.str_len().unwrap_or(0) <= t.str_len().unwrap_or(0)
+        }
         _ => true,
     }
 }
@@ -2024,7 +2269,9 @@ fn inz_type_ok(ty: &Ty, e: &Expr) -> bool {
         },
         Expr::Lit(Lit::Num(_), _) => ty.is_numeric(),
         // An indicator takes no *HIVAL or *LOVAL.
-        Expr::Special { word, .. } if *ty == Ty::Ind => !matches!(word.as_str(), "*HIVAL" | "*LOVAL"),
+        Expr::Special { word, .. } if *ty == Ty::Ind => {
+            !matches!(word.as_str(), "*HIVAL" | "*LOVAL")
+        }
         _ => true,
     }
 }
@@ -2041,7 +2288,8 @@ fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
     }
     // More decimals than the field keeps: a warning, the rest dropped.
     if let (Expr::Lit(Lit::Num(n), _), Ty::Packed(_, s) | Ty::Zoned(_, s) | Ty::Bin(_, s)) = (e, ty)
-        && n.split_once('.').is_some_and(|(_, f)| f.trim_end_matches('0').len() > usize::from(*s))
+        && n.split_once('.')
+            .is_some_and(|(_, f)| f.trim_end_matches('0').len() > usize::from(*s))
     {
         g.err(ids::INZ_DECIMALS, 10, String::new());
     }
@@ -2087,7 +2335,10 @@ fn fill_fixed(g: &mut Gen<'_>, ty: Ty, v: &V) -> V {
 
 /// The main procedure's mainline calculations, and its subroutines by
 /// name with their bodies (without `BEGSR`, with the `ENDSR`).
-pub fn split_subroutines<'a>(g: &mut Gen<'_>, stmts: &[&'a Stmt]) -> (Vec<&'a Stmt>, Vec<(String, Vec<&'a Stmt>)>) {
+pub fn split_subroutines<'a>(
+    g: &mut Gen<'_>,
+    stmts: &[&'a Stmt],
+) -> (Vec<&'a Stmt>, Vec<(String, Vec<&'a Stmt>)>) {
     let mut main = Vec::new();
     let mut after: Vec<&'a Stmt> = Vec::new();
     let mut subrs: Vec<(String, Vec<&'a Stmt>)> = Vec::new();
@@ -2137,7 +2388,8 @@ pub fn split_subroutines<'a>(g: &mut Gen<'_>, stmts: &[&'a Stmt]) -> (Vec<&'a St
         subrs.push(c);
     }
     for s in after {
-        g.diags.push(rpgfront::Diag::new(ids::AFTER_ENDSR, 30, s.at));
+        g.diags
+            .push(rpgfront::Diag::new(ids::AFTER_ENDSR, 30, s.at));
     }
     (main, subrs)
 }
@@ -2183,7 +2435,8 @@ pub fn subroutine_proc(g: &mut Gen<'_>, name: &str, body: &[&Stmt]) {
     g.in_subr_proc = false;
     let b = std::mem::replace(&mut g.b, saved);
     g.open = saved_open;
-    g.subr_bodies.push(b.finish(&format!("proc {}() -> i32", Gen::subr_proc(name)), "ret 0"));
+    g.subr_bodies
+        .push(b.finish(&format!("proc {}() -> i32", Gen::subr_proc(name)), "ret 0"));
 }
 
 /// Generate calculations, from start to end, with their structure.
@@ -2199,7 +2452,8 @@ pub fn calcs(g: &mut Gen<'_>, stmts: &[&Stmt]) {
         }
         let inside = g.open.iter().any(|o| matches!(o, Open::Subr(_)));
         if in_subrs && !inside && code != "BEGSR" {
-            g.diags.push(rpgfront::Diag::new(ids::AFTER_ENDSR, 30, stmts[k].at));
+            g.diags
+                .push(rpgfront::Diag::new(ids::AFTER_ENDSR, 30, stmts[k].at));
             k += 1;
             continue;
         }
@@ -2244,9 +2498,18 @@ fn fill_switch(g: &mut Gen<'_>, idx: usize, s: &Subr) {
         return;
     }
     let r = g.b.reg();
-    let arms: Vec<String> = s.returns.iter().enumerate().map(|(i, l)| format!("{}: {l}", i + 1)).collect();
+    let arms: Vec<String> = s
+        .returns
+        .iter()
+        .enumerate()
+        .map(|(i, l)| format!("{}: {l}", i + 1))
+        .collect();
     let dft = s.returns[0].clone();
-    g.b.lines[idx] = format!("  {r} = load {}\n  switch {r}, [{}], default {dft}", s.slot, arms.join(", "));
+    g.b.lines[idx] = format!(
+        "  {r} = load {}\n  switch {r}, [{}], default {dft}",
+        s.slot,
+        arms.join(", ")
+    );
 }
 
 /// A procedure body with an `ON-EXIT` section: the body in a monitor
@@ -2364,25 +2627,41 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     }
     let name = p.name.to_ascii_uppercase();
     g.cur_proc.clone_from(&name);
-    let proto = g
-        .t
-        .protos
-        .iter()
-        .find(|x| x.name == name && x.def_line == p.pi.as_ref().map_or(0, |d| d.at.line))
-        .cloned()
-        .or_else(|| g.t.protos.iter().rev().find(|x| x.name == name).cloned());
+    let proto =
+        g.t.protos
+            .iter()
+            .find(|x| x.name == name && x.def_line == p.pi.as_ref().map_or(0, |d| d.at.line))
+            .cloned()
+            .or_else(|| g.t.protos.iter().rev().find(|x| x.name == name).cloned());
     g.ret = proto.as_ref().and_then(|x| x.ret.clone());
     let mut params = Vec::new();
     // The interface's names (a prototype's may be *N).
-    let pi_names: Vec<String> = p.pi.as_ref().map(|d| d.children.iter().map(|c| c.name.clone()).collect()).unwrap_or_default();
+    let pi_names: Vec<String> =
+        p.pi.as_ref()
+            .map(|d| d.children.iter().map(|c| c.name.clone()).collect())
+            .unwrap_or_default();
     if let Some(pr) = &proto {
         for (k, prm) in pr.parms.iter().enumerate() {
-            let pname = pi_names.get(k).filter(|n| !n.is_empty() && !n.starts_with('*')).map_or_else(|| prm.name.clone(), |n| n.to_ascii_uppercase());
+            let pname = pi_names
+                .get(k)
+                .filter(|n| !n.is_empty() && !n.starts_with('*'))
+                .map_or_else(|| prm.name.clone(), |n| n.to_ascii_uppercase());
             let pname = pname.as_str();
             let id = g.t.find_in(scope, pname);
-            let ir = id.map_or_else(|| format!("$p_{}", mangle(pname)), |i| g.t.syms[i].ir.clone());
-            let ty = if prm.likefile.is_some() { "fcb_".to_string() } else { g.t.ir_type(&prm.ty) };
-            let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
+            let ir = id.map_or_else(
+                || format!("$p_{}", mangle(pname)),
+                |i| g.t.syms[i].ir.clone(),
+            );
+            let ty = if prm.likefile.is_some() {
+                "fcb_".to_string()
+            } else {
+                g.t.ir_type(&prm.ty)
+            };
+            let ty = if prm.dim > 0 {
+                format!("array[{}] of {ty}", prm.dim)
+            } else {
+                ty
+            };
             let mut s = String::new();
             if prm.value {
                 s.push_str("byval ");
@@ -2417,7 +2696,9 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     let mut local_ids: Vec<SymId> = (0..g.t.syms.len())
         .filter(|&i| {
             let s = &g.t.syms[i];
-            s.scope == scope && s.parent.is_none() && matches!(s.kind, Some(Kind::Field | Kind::Ds(_)))
+            s.scope == scope
+                && s.parent.is_none()
+                && matches!(s.kind, Some(Kind::Field | Kind::Ds(_)))
         })
         .collect();
     // Pointers BASED declared come before the fields based on them.
@@ -2428,7 +2709,11 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
         match &s.storage {
             Storage::Auto => g.b.decls.push(format!("auto {}: {ty}", s.ir)),
             // Kept between calls: initialized once, from a literal INZ.
-            Storage::Static => g.b.decls.push(format!("static {}: {ty}{}", s.ir, crate::codegen::static_inz(&s))),
+            Storage::Static => g.b.decls.push(format!(
+                "static {}: {ty}{}",
+                s.ir,
+                crate::codegen::static_inz(&s)
+            )),
             Storage::Based(ptr) => {
                 for d in crate::codegen::based_decls(g.t, &s.ir, &ty, *ptr, "auto") {
                     g.b.decls.push(d);
@@ -2447,11 +2732,16 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     let once: Vec<SymId> = local_ids
         .iter()
         .copied()
-        .filter(|&i| g.t.syms[i].storage == Storage::Static && crate::codegen::static_inz(&g.t.syms[i]).is_empty())
+        .filter(|&i| {
+            g.t.syms[i].storage == Storage::Static
+                && crate::codegen::static_inz(&g.t.syms[i]).is_empty()
+        })
         .collect();
     if !once.is_empty() {
         let flag = format!("$sinit_{}", mangle(&name));
-        g.externs.entry(flag.clone()).or_insert_with(|| format!("static {flag}: i64"));
+        g.externs
+            .entry(flag.clone())
+            .or_insert_with(|| format!("static {flag}: i64"));
         let v = g.b.reg();
         g.b.ins(format!("{v} = load {flag}"));
         let first = g.b.reg();
@@ -2479,7 +2769,11 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     }
     finish_subrs(g);
     let export = p.kws.iter().any(|k| k.name == "EXPORT");
-    let ret = g.ret.as_ref().map(|t| format!(" -> {}", g.t.ir_type(t))).unwrap_or_default();
+    let ret = g
+        .ret
+        .as_ref()
+        .map(|t| format!(" -> {}", g.t.ir_type(t)))
+        .unwrap_or_default();
     let body = std::mem::take(&mut g.b);
     // OPDESC on the interface (or a prototype): callers pass descriptors.
     let opdesc = proto.as_ref().is_some_and(|x| x.opdesc)

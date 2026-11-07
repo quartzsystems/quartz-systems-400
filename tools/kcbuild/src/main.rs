@@ -19,7 +19,12 @@ fn main() -> Result<()> {
         .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
     let args: Vec<String> = std::env::args().skip(1).collect();
     let legacy = notes::legacy_from_env();
-    match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
+    match args
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
         ["notes", "--update"] => {
             let n = notes::update(&repo)?;
             println!("{}: blocks rewritten, {n} markers", notes::NOTES);
@@ -32,7 +37,9 @@ fn main() -> Result<()> {
             println!("{}: current", notes::NOTES);
         }
         rest => {
-            let out = rest.first().map_or_else(|| repo.join("target/kc"), PathBuf::from);
+            let out = rest
+                .first()
+                .map_or_else(|| repo.join("target/kc"), PathBuf::from);
             let s = kcbuild::build_checked(&repo, &out, legacy)?;
             println!(
                 "Knowledge Center: {} pages ({} commands, {} messages, {} documents) in {}",

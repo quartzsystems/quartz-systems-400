@@ -21,7 +21,10 @@ fn run(t: &Target, secs: u64) -> Result<bool> {
         corpus: dir().join("corpus").join(t.name),
         crashes: dir().join("crashes").join(t.name),
         hang: Duration::from_secs(10),
-        seed: std::env::var("QS400_FUZZ_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or(0),
+        seed: std::env::var("QS400_FUZZ_SEED")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
     };
     let r = engine::fuzz(t, &o)?;
     println!(
@@ -46,7 +49,11 @@ fn main() -> Result<()> {
             println!(
                 "{} targets; coverage {}",
                 TARGETS.len(),
-                if fuzz::cov::instrumented() { "on" } else { "off (build with `build fuzz`)" }
+                if fuzz::cov::instrumented() {
+                    "on"
+                } else {
+                    "off (build with `build fuzz`)"
+                }
             );
             for t in TARGETS {
                 println!("{:<8} {}", t.name, t.what);

@@ -7,8 +7,8 @@
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 
 use super::{put_u16, put_u32, u16_at, u32_at};
-use crate::consts::{AF_INET, AF_INET6, AF_UNIX, AF_UNSPEC};
 use crate::Errno;
+use crate::consts::{AF_INET, AF_INET6, AF_UNIX, AF_UNSPEC};
 
 /// Which generation of address structure a call reads and writes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -186,8 +186,14 @@ mod tests {
         let mut short = [0u8; 4];
         assert_eq!(a.encode(AddrForm::Bsd43, &mut short), 16);
         assert_eq!(short, [0, 2, 0x1f, 0x90]);
-        assert_eq!(SockAddr::decode(&b43[..6], AddrForm::Bsd43), Err(Errno::EINVAL));
-        assert_eq!(SockAddr::decode(&[0, 6, 0, 0], AddrForm::Bsd43), Err(Errno::EAFNOSUPPORT));
+        assert_eq!(
+            SockAddr::decode(&b43[..6], AddrForm::Bsd43),
+            Err(Errno::EINVAL)
+        );
+        assert_eq!(
+            SockAddr::decode(&[0, 6, 0, 0], AddrForm::Bsd43),
+            Err(Errno::EAFNOSUPPORT)
+        );
     }
 
     #[test]
@@ -208,6 +214,9 @@ mod tests {
         assert_eq!(b[2], 0x61, "EBCDIC slash");
         assert_eq!(SockAddr::decode(&b, AddrForm::Bsd43).unwrap(), u);
         assert_eq!(u.family(), AF_UNIX);
-        assert_eq!(SockAddr::decode(&[0, 0], AddrForm::Bsd43).unwrap(), SockAddr::Unspec);
+        assert_eq!(
+            SockAddr::decode(&[0, 0], AddrForm::Bsd43).unwrap(),
+            SockAddr::Unspec
+        );
     }
 }

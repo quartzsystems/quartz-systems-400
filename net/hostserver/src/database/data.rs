@@ -53,7 +53,11 @@ pub fn decode_rows(b: &[u8], cols: &[ColType]) -> Vec<Vec<Value>> {
             let ia = 20 + (r * ncols + i) * ind;
             let null = b.get(ia).is_some_and(|x| x & 0x80 != 0);
             let n = c.len as usize;
-            row.push(if null { Value::Null } else { decode(reply::slice(b, at, n), c) });
+            row.push(if null {
+                Value::Null
+            } else {
+                decode(reply::slice(b, at, n), c)
+            });
             at += n;
         }
         out.push(row);
@@ -69,7 +73,12 @@ mod tests {
     fn count_row_matches_the_oracle() {
         let c = ColType::integer("00001", false);
         let d = encode_rows(std::slice::from_ref(&c), &[vec![Value::int(1)]], 4);
-        assert_eq!(d, [0, 0, 0, 4, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1]);
+        assert_eq!(
+            d,
+            [
+                0, 0, 0, 4, 0, 0, 0, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1
+            ]
+        );
         assert_eq!(decode_rows(&d, &[c]), vec![vec![Value::int(1)]]);
     }
 }

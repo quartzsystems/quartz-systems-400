@@ -16,8 +16,8 @@ use qsweb::http::Response;
 use qsweb::partials::{Cell, Col, List, Paging, list_table, paging};
 
 use super::{GROUP, crumb, navigator, pick, short_stamp, thousands};
-use crate::env::db::Kind;
 use crate::data::sqltext::like;
+use crate::env::db::Kind;
 use crate::policy;
 use crate::routes::Rq;
 
@@ -64,7 +64,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let preferred = rq.prefs().get(crate::prefs::SCHEMA);
     let mut s = sticky(rq, "s", "");
     if !schemas.contains(&s) {
-        s = if schemas.contains(&preferred) { preferred } else { schemas.first().cloned().unwrap_or_default() };
+        s = if schemas.contains(&preferred) {
+            preferred
+        } else {
+            schemas.first().cloned().unwrap_or_default()
+        };
     }
     let t = sticky(rq, "t", ALL);
     let n = sticky(rq, "n", "*ALL");
@@ -90,7 +94,12 @@ pub fn page(rq: &Rq<'_>) -> Response {
         _ => {}
     }
     let q = rq.query();
-    let p = Paging::from_query(q.str("page"), q.get("rows").unwrap_or("100"), entries.len(), Vec::new());
+    let p = Paging::from_query(
+        q.str("page"),
+        q.get("rows").unwrap_or("100"),
+        entries.len(),
+        Vec::new(),
+    );
     let browse = rq.allowed(policy::DB_BROWSE);
     let write = rq.allowed(policy::DB_WRITE);
     let from = rq.allowed(policy::DB_COPY_FROM);
@@ -110,18 +119,34 @@ pub fn page(rq: &Rq<'_>) -> Response {
                 esc(&navigator(rq, &format!("/db/{}/{}/columns", s, e.name)))
             ));
             if write {
-                acts.push(format!("<a href=\"{}\">Insert record</a>", url(&format!("{view}/insert"))));
+                acts.push(format!(
+                    "<a href=\"{}\">Insert record</a>",
+                    url(&format!("{view}/insert"))
+                ));
             }
             if from {
-                acts.push(format!("<a href=\"{}\">Transfer from</a>", url(&format!("/db/copy/from{st}"))));
+                acts.push(format!(
+                    "<a href=\"{}\">Transfer from</a>",
+                    url(&format!("/db/copy/from{st}"))
+                ));
             }
             if to {
-                acts.push(format!("<a href=\"{}\">Transfer to</a>", url(&format!("/db/copy/to{st}"))));
+                acts.push(format!(
+                    "<a href=\"{}\">Transfer to</a>",
+                    url(&format!("/db/copy/to{st}"))
+                ));
             }
-            acts.push(format!("<a href=\"{}\">Copy name</a>", url(&format!("/db/tables{}", query(&[("copy", &e.name)])))));
+            acts.push(format!(
+                "<a href=\"{}\">Copy name</a>",
+                url(&format!("/db/tables{}", query(&[("copy", &e.name)])))
+            ));
             vec![
                 Cell::act(acts.join(" | ")),
-                Cell::mono_html(if browse { format!("<a href=\"{}\">{}</a>", url(&view), esc(&e.name)) } else { esc(&e.name) }),
+                Cell::mono_html(if browse {
+                    format!("<a href=\"{}\">{}</a>", url(&view), esc(&e.name))
+                } else {
+                    esc(&e.name)
+                }),
                 Cell::text(e.kind.label()),
                 Cell::text(&e.text),
                 Cell::num(&thousands(e.rows)),
@@ -142,7 +167,11 @@ pub fn page(rq: &Rq<'_>) -> Response {
         empty: "No tables, views or files match.".into(),
         keep: Vec::new(),
     };
-    let objects: Vec<String> = Kind::ALL.iter().map(|k| k.plural().to_string()).chain([ALL.to_string()]).collect();
+    let objects: Vec<String> = Kind::ALL
+        .iter()
+        .map(|k| k.plural().to_string())
+        .chain([ALL.to_string()])
+        .collect();
     let filter = format!(
         "<form method=\"get\"><table class=\"filter\" cellspacing=\"0\"><tr><td>Schema pattern:</td><td><input type=\"text\" name=\"sp\" value=\"{}\" size=\"12\" class=\"cmd\"></td><td>Schema:</td><td>{}</td><td>Objects:</td><td>{}</td><td>Name:</td><td><input type=\"text\" name=\"n\" value=\"{}\" size=\"12\"></td><td><input type=\"submit\" value=\"Go\"> </td></tr></table></form>",
         esc(&sp),

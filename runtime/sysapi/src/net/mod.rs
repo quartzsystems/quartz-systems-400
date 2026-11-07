@@ -204,13 +204,12 @@ pub fn net(j: &mut Job) -> Rc<RefCell<Net>> {
     }
     // Between job processes descriptors pass through the storage
     // service's relay; elsewhere (tests) within the process.
-    let passing: Box<dyn DescriptorPassing> = if cfg!(target_os = "linux")
-        && std::path::Path::new(sockets::relay::SOCKET).exists()
-    {
-        Box::new(sockets::Relay::new(internal_job_id(j)))
-    } else {
-        Box::new(InProcess::new(internal_job_id(j)))
-    };
+    let passing: Box<dyn DescriptorPassing> =
+        if cfg!(target_os = "linux") && std::path::Path::new(sockets::relay::SOCKET).exists() {
+            Box::new(sockets::Relay::new(internal_job_id(j)))
+        } else {
+            Box::new(InProcess::new(internal_job_id(j)))
+        };
     configure(
         j,
         NetSetup {
@@ -218,7 +217,8 @@ pub fn net(j: &mut Job) -> Rc<RefCell<Net>> {
             ..NetSetup::default()
         },
     );
-    NETS.with(|m| m.borrow().get(&key(j)).cloned()).expect("just configured")
+    NETS.with(|m| m.borrow().get(&key(j)).cloned())
+        .expect("just configured")
 }
 
 /// Close every socket descriptor of the job; IFS files stay open.
@@ -268,7 +268,10 @@ mod tests {
         }
         // QSQCLI's procedures are the sqlcli crate's; its own test
         // checks them against the table.
-        for (n, s) in ile::SYSTEM_SRVPGM_PROCS.iter().filter(|(_, s)| *s != "QSQCLI") {
+        for (n, s) in ile::SYSTEM_SRVPGM_PROCS
+            .iter()
+            .filter(|(_, s)| *s != "QSQCLI")
+        {
             assert!(ours.contains(n), "{n} ({s}) has no procedure");
         }
         for n in &ours {
@@ -284,7 +287,9 @@ mod tests {
         j.ident.name = "QZDASOINIT".into();
         assert_eq!(ccsid::from_ebcdic(&internal_job_id(j)), "000123QZDASOINIT");
         let n = net(j);
-        let p = n.borrow_mut().text(j, "strerror", 3425, &sockets::strerror(3425));
+        let p = n
+            .borrow_mut()
+            .text(j, "strerror", 3425, &sockets::strerror(3425));
         assert_eq!(n.borrow_mut().text(j, "strerror", 3425, "x"), p, "kept");
         let at = j.spaces.deref(p).unwrap();
         let b = mi::storage::view(at, 4);

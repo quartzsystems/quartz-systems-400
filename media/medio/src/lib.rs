@@ -31,8 +31,8 @@ pub mod tapefile;
 pub mod tapf;
 
 pub use catalog::{CatalogTapes, NextVolume};
-pub use library::{CatalogLibrary, LibraryState, LibraryVolumes};
 pub use error::{MediaError, Result};
+pub use library::{CatalogLibrary, LibraryState, LibraryVolumes};
 
 /// Bytes in each data block of a save on tape.
 pub const SAVE_BLOCK: usize = 64 * 1024;

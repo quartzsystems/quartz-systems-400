@@ -46,7 +46,10 @@ fn find(
 fn crtmsgf(system: &mut System, parms: &Parms) -> Result<String, String> {
     let (n, l) = parms.qual("MSGF");
     // `*HEX` is 65535; a job CCSID otherwise.
-    let ccsid = parms.int("CCSID").and_then(|c| u16::try_from(c).ok()).unwrap_or(65535);
+    let ccsid = parms
+        .int("CCSID")
+        .and_then(|c| u16::try_from(c).ok())
+        .unwrap_or(65535);
     if ccsid != 65535 && !ccsid::nls::job_ccsid_ok(u32::from(ccsid)) {
         return Err("CPD0084 CCSID".into());
     }
@@ -60,7 +63,8 @@ fn crtmsgf(system: &mut System, parms: &Parms) -> Result<String, String> {
     in_store(system, |txn, qsys, names| {
         let lib = library(txn, qsys, names, &l)?;
         let name = Name::parse(&n).map_err(|e| format!("CPD0078 MSGF({n}): {e}"))?;
-        let id = msgf::store::crtmsgf(txn, &ctx, lib, name, &text, false).map_err(|e| format!("CPF2112 {e}"))?;
+        let id = msgf::store::crtmsgf(txn, &ctx, lib, name, &text, false)
+            .map_err(|e| format!("CPF2112 {e}"))?;
         msgf::store::set_ccsid(txn, id, ccsid)
             .map(|()| format!("Message file {n} created in library {}.\n", lib_or(&l)))
             .map_err(|e| format!("CPF2112 {e}"))
@@ -99,7 +103,9 @@ fn fmt_words(v: &Value) -> String {
 fn desc_of(parms: &Parms) -> Result<MsgDesc, String> {
     let id = parms.name("MSGID");
     if !MsgDesc::valid_id(&id) {
-        return Err(format!("CPD0084 MSGID({id}): three letters and four digits"));
+        return Err(format!(
+            "CPD0084 MSGID({id}): three letters and four digits"
+        ));
     }
     let mut vars = Vec::new();
     for item in parms.list("FMT") {
@@ -149,7 +155,10 @@ fn addmsgd(system: &mut System, name: &str, parms: &Parms) -> Result<String, Str
             Ok(format!("Message {msgid} added to message file {}.\n", q.0))
         } else {
             msgf::store::chgmsgd(txn, id, d).map_err(|e| format!("CPF2419 {e}"))?;
-            Ok(format!("Message {msgid} changed in message file {}.\n", q.0))
+            Ok(format!(
+                "Message {msgid} changed in message file {}.\n",
+                q.0
+            ))
         }
     })
 }
@@ -160,7 +169,10 @@ fn rmvmsgd(system: &mut System, parms: &Parms) -> Result<String, String> {
     in_store(system, |txn, qsys, names| {
         let id = find(txn, qsys, names, &q)?;
         msgf::store::rmvmsgd(txn, id, &msgid).map_err(|e| format!("CPF2419 {e}"))?;
-        Ok(format!("Message {msgid} removed from message file {}.\n", q.0))
+        Ok(format!(
+            "Message {msgid} removed from message file {}.\n",
+            q.0
+        ))
     })
 }
 

@@ -45,7 +45,10 @@ impl IfsIo {
     /// Pages of the volume.
     #[must_use]
     pub fn pages(&self) -> u64 {
-        self.volume.read().unwrap_or_else(PoisonError::into_inner).pages()
+        self.volume
+            .read()
+            .unwrap_or_else(PoisonError::into_inner)
+            .pages()
     }
 
     fn runs(&self, v: u64, count: u64) -> Result<Vec<(u64, u64)>> {

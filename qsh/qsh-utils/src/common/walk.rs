@@ -53,12 +53,7 @@ pub struct Walker {
 
 impl Walker {
     /// Walk from `root`; `false` when the callback stopped it.
-    pub fn walk(
-        self,
-        sys: &dyn Sys,
-        root: &str,
-        f: &mut dyn FnMut(Visit<'_>) -> Control,
-    ) -> bool {
+    pub fn walk(self, sys: &dyn Sys, root: &str, f: &mut dyn FnMut(Visit<'_>) -> Control) -> bool {
         let follow = self.follow_all || self.follow_root;
         let st = match Self::stat(sys, root, follow) {
             Ok(st) => st,
@@ -109,8 +104,7 @@ impl Walker {
         }
         let key = (e.st.dev, e.st.ino);
         if stack.contains(&key) {
-            return f(Visit::Fail(&e.path, SysError::new(qsh::sys::Errno::ELOOP)))
-                != Control::Stop;
+            return f(Visit::Fail(&e.path, SysError::new(qsh::sys::Errno::ELOOP))) != Control::Stop;
         }
         let mut names = match sys.read_dir(&e.path) {
             Ok(n) => n,

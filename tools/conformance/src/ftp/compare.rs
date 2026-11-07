@@ -30,7 +30,10 @@ struct Entry {
 /// Whether a listing date is the day the sessions were recorded (what
 /// a session made is that new; what was there before is older).
 fn recent(date: &str) -> bool {
-    date.starts_with("26-10-30") || date.starts_with("Oct 30") || date.starts_with("26-10-29") || date.starts_with("Oct 29")
+    date.starts_with("26-10-30")
+        || date.starts_with("Oct 30")
+        || date.starts_with("26-10-29")
+        || date.starts_with("Oct 29")
 }
 
 /// One listing line as (name, entry).
@@ -49,7 +52,9 @@ fn parse_line(l: &str, nlst: bool) -> (String, Entry) {
     let b = l.as_bytes();
     let unix = b.len() > 10
         && matches!(b[0], b'd' | b'-' | b'l')
-        && b[1..10].iter().all(|c| matches!(c, b'r' | b'w' | b'x' | b'-' | b's' | b'S' | b't' | b'T'));
+        && b[1..10]
+            .iter()
+            .all(|c| matches!(c, b'r' | b'w' | b'x' | b'-' | b's' | b'S' | b't' | b'T'));
     if unix {
         let w: Vec<&str> = l.split_whitespace().collect();
         if w.len() >= 9 {
@@ -175,7 +180,10 @@ pub fn listing(theirs: &[String], more: usize, ours: &[String], nlst: bool) -> V
 /// carriage returns off, an empty last line dropped.
 pub fn text_lines(data: &[u8]) -> Vec<String> {
     let s: String = data.iter().map(|&b| char::from(b)).collect();
-    let mut rows: Vec<String> = s.split('\n').map(|l| l.trim_end_matches('\r').to_string()).collect();
+    let mut rows: Vec<String> = s
+        .split('\n')
+        .map(|l| l.trim_end_matches('\r').to_string())
+        .collect();
     if rows.last().is_some_and(String::is_empty) {
         rows.pop();
     }
@@ -209,9 +217,16 @@ pub fn data(
             if is_listing && ebcdic {
                 // An EBCDIC listing: both sides decoded, a line at each NL.
                 let decode = |rows: &[String]| -> Vec<String> {
-                    let bytes: Vec<u8> = rows.join("\n").chars().map(|c| u8::try_from(u32::from(c)).unwrap_or(b'?')).collect();
+                    let bytes: Vec<u8> = rows
+                        .join("\n")
+                        .chars()
+                        .map(|c| u8::try_from(u32::from(c)).unwrap_or(b'?'))
+                        .collect();
                     let text = ccsid::conv::to_string(37, &bytes).unwrap_or_default();
-                    text.split(['\u{85}', '\n']).filter(|l| !l.is_empty()).map(|l| mask(l.trim_end_matches('\r'))).collect()
+                    text.split(['\u{85}', '\n'])
+                        .filter(|l| !l.is_empty())
+                        .map(|l| mask(l.trim_end_matches('\r')))
+                        .collect()
                 };
                 return listing(&decode(lines), *more, &decode(&rows), nlst);
             }
@@ -224,7 +239,10 @@ pub fn data(
             }
             let n = lines.len().min(60);
             if rows.iter().take(n).ne(lines.iter().take(n)) {
-                d.push(format!("text differs: ours {:?}", rows.iter().take(3).collect::<Vec<_>>()));
+                d.push(format!(
+                    "text differs: ours {:?}",
+                    rows.iter().take(3).collect::<Vec<_>>()
+                ));
             }
             d
         }
@@ -244,11 +262,26 @@ mod tests {
 
     #[test]
     fn listing_lines() {
-        let (n, e) = parse_line("QSYS           143360 26-10-10 00:10:31 *FILE      ARPA", false);
-        assert_eq!((n.as_str(), e.kind.as_str(), e.size), ("ARPA", "*FILE", Some(143_360)));
-        let (n, e) = parse_line("-rwx---r-x   1 QSYS     0          14022 Oct 03 2021  ARPA.INET", false);
-        assert_eq!((n.as_str(), e.owner.as_str(), e.size), ("ARPA.INET", "QSYS", Some(14022)));
-        let (n, _) = parse_line("lrwxrwxrwx   1 QSYS     0             37 Apr 23 2016  ls -> ../x", false);
+        let (n, e) = parse_line(
+            "QSYS           143360 26-10-10 00:10:31 *FILE      ARPA",
+            false,
+        );
+        assert_eq!(
+            (n.as_str(), e.kind.as_str(), e.size),
+            ("ARPA", "*FILE", Some(143_360))
+        );
+        let (n, e) = parse_line(
+            "-rwx---r-x   1 QSYS     0          14022 Oct 03 2021  ARPA.INET",
+            false,
+        );
+        assert_eq!(
+            (n.as_str(), e.owner.as_str(), e.size),
+            ("ARPA.INET", "QSYS", Some(14022))
+        );
+        let (n, _) = parse_line(
+            "lrwxrwxrwx   1 QSYS     0             37 Apr 23 2016  ls -> ../x",
+            false,
+        );
         assert_eq!(n, "ls -> ../x");
         assert!(listing(&["a".into()], 0, &["a".into()], true).is_empty());
         assert_eq!(listing(&["a".into()], 0, &["b".into()], true).len(), 2);

@@ -58,7 +58,11 @@ pub fn compare(stats: Option<&ColumnStats>, op: CmpOp, value: Option<&Value>) ->
 /// (each inclusive or not), `None` for an open side or a value not
 /// known until the statement runs (`Some(None)`).
 #[must_use]
-pub fn range(stats: Option<&ColumnStats>, lo: Option<(Option<&Value>, bool)>, hi: Option<(Option<&Value>, bool)>) -> f64 {
+pub fn range(
+    stats: Option<&ColumnStats>,
+    lo: Option<(Option<&Value>, bool)>,
+    hi: Option<(Option<&Value>, bool)>,
+) -> f64 {
     let known = |b: Option<(Option<&Value>, bool)>| b.is_none_or(|(v, _)| v.is_some());
     let Some(s) = stats.filter(|_| known(lo) && known(hi)) else {
         return match (lo, hi) {
@@ -67,19 +71,31 @@ pub fn range(stats: Option<&ColumnStats>, lo: Option<(Option<&Value>, bool)>, hi
             _ => RANGE,
         };
     };
-    let top = hi.and_then(|(v, incl)| v.map(|v| s.below(v, incl))).unwrap_or_else(|| nonnull(s));
-    let bottom = lo.and_then(|(v, incl)| v.map(|v| s.below(v, !incl))).unwrap_or(0.0);
+    let top = hi
+        .and_then(|(v, incl)| v.map(|v| s.below(v, incl)))
+        .unwrap_or_else(|| nonnull(s));
+    let bottom = lo
+        .and_then(|(v, incl)| v.map(|v| s.below(v, !incl)))
+        .unwrap_or(0.0);
     (top - bottom).clamp(0.0, 1.0)
 }
 
 #[allow(clippy::cast_precision_loss)]
 fn nonnull(s: &ColumnStats) -> f64 {
-    if s.rows == 0 { 0.0 } else { 1.0 - s.nulls as f64 / s.rows as f64 }
+    if s.rows == 0 {
+        0.0
+    } else {
+        1.0 - s.nulls as f64 / s.rows as f64
+    }
 }
 
 /// Rows out of `rows` at share `f`, at least one when any.
 #[must_use]
-#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
 pub fn rows(rows: u64, f: f64) -> u64 {
     if rows == 0 {
         return 0;

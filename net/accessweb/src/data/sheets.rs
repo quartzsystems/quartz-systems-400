@@ -97,7 +97,9 @@ fn part(entries: &[Entry], name: &str) -> Result<Option<String>, String> {
         None => Ok(None),
         Some(e) => {
             let b = e.plain()?;
-            String::from_utf8(b).map(Some).map_err(|_| format!("{name} is not UTF-8"))
+            String::from_utf8(b)
+                .map(Some)
+                .map_err(|_| format!("{name} is not UTF-8"))
         }
     }
 }
@@ -139,15 +141,26 @@ pub fn read_xlsx(b: &[u8]) -> Result<Vec<Vec<Val>>, String> {
     };
     // The first sheet the workbook lists, through its relationship.
     let mut target = "xl/worksheets/sheet1.xml".to_string();
-    if let (Some(book), Some(rels)) = (part(&entries, "xl/workbook.xml")?, part(&entries, "xl/_rels/workbook.xml.rels")?) {
+    if let (Some(book), Some(rels)) = (
+        part(&entries, "xl/workbook.xml")?,
+        part(&entries, "xl/_rels/workbook.xml.rels")?,
+    ) {
         let rid = xml::parse(&book).iter().find_map(|n| match n {
             Node::Open { name, .. } if name == "sheet" => n.attr("r:id").map(ToString::to_string),
             _ => None,
         });
         if let Some(rid) = rid
-            && let Some(t) = xml::parse(&rels).iter().find_map(|n| (n.attr("Id") == Some(&rid)).then(|| n.attr("Target").map(ToString::to_string)).flatten())
+            && let Some(t) = xml::parse(&rels).iter().find_map(|n| {
+                (n.attr("Id") == Some(&rid))
+                    .then(|| n.attr("Target").map(ToString::to_string))
+                    .flatten()
+            })
         {
-            target = if let Some(abs) = t.strip_prefix('/') { abs.to_string() } else { format!("xl/{t}") };
+            target = if let Some(abs) = t.strip_prefix('/') {
+                abs.to_string()
+            } else {
+                format!("xl/{t}")
+            };
         }
     }
     let doc = part(&entries, &target)?.ok_or("the workbook has no sheet")?;
@@ -158,14 +171,19 @@ pub fn read_xlsx(b: &[u8]) -> Result<Vec<Vec<Val>>, String> {
         match &nodes[i] {
             Node::Open { name, .. } if name == "row" => rows.push(Vec::new()),
             Node::Open { name, empty, .. } if name == "c" => {
-                let at = nodes[i].attr("r").map_or_else(|| rows.last().map_or(0, Vec::len), col_of);
+                let at = nodes[i]
+                    .attr("r")
+                    .map_or_else(|| rows.last().map_or(0, Vec::len), col_of);
                 let t = nodes[i].attr("t").unwrap_or("n").to_string();
                 let (mut v, mut is) = (String::new(), String::new());
                 let mut has_v = false;
                 if !*empty {
                     let mut j = i + 1;
                     while j < nodes.len() && !matches!(&nodes[j], Node::Close(n) if n == "c") {
-                        if let Node::Open { name, empty: false, .. } = &nodes[j] {
+                        if let Node::Open {
+                            name, empty: false, ..
+                        } = &nodes[j]
+                        {
                             if name == "v" {
                                 let (s, k) = inner_text(&nodes, j, "v");
                                 (v, has_v) = (s, true);
@@ -181,10 +199,20 @@ pub fn read_xlsx(b: &[u8]) -> Result<Vec<Vec<Val>>, String> {
                     i = j;
                 }
                 let val = match t.as_str() {
-                    "s" => Val::Text(v.trim().parse::<usize>().ok().and_then(|k| shared.get(k).cloned()).unwrap_or_default()),
+                    "s" => Val::Text(
+                        v.trim()
+                            .parse::<usize>()
+                            .ok()
+                            .and_then(|k| shared.get(k).cloned())
+                            .unwrap_or_default(),
+                    ),
                     "inlineStr" => Val::Text(is),
                     "str" | "e" => Val::Text(v),
-                    "b" => Val::Text(if v.trim() == "1" { "1".into() } else { "0".into() }),
+                    "b" => Val::Text(if v.trim() == "1" {
+                        "1".into()
+                    } else {
+                        "0".into()
+                    }),
                     _ if has_v => Val::Num(v.trim().to_string()),
                     _ => Val::Null,
                 };
@@ -241,7 +269,11 @@ pub fn ods(header: Option<&[String]>, rows: &[Vec<Val>], sheet: &str) -> Vec<u8>
     let manifest = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" manifest:version=\"1.2\"><manifest:file-entry manifest:full-path=\"/\" manifest:media-type=\"application/vnd.oasis.opendocument.spreadsheet\"/><manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/></manifest:manifest>";
     zip::write(&[
         // The media type first and stored, as the format says.
-        entry("mimetype", b"application/vnd.oasis.opendocument.spreadsheet", false),
+        entry(
+            "mimetype",
+            b"application/vnd.oasis.opendocument.spreadsheet",
+            false,
+        ),
         entry("META-INF/manifest.xml", manifest.as_bytes(), true),
         entry("content.xml", body.as_bytes(), true),
     ])
@@ -267,22 +299,32 @@ pub fn read_ods(b: &[u8]) -> Result<Vec<Vec<Val>>, String> {
                 }
             }
             Node::Open { name, empty, .. } if name == "table:table-row" && tables == 1 => {
-                let repeat = nodes[i].attr("table:number-rows-repeated").and_then(|r| r.parse().ok()).unwrap_or(1usize);
+                let repeat = nodes[i]
+                    .attr("table:number-rows-repeated")
+                    .and_then(|r| r.parse().ok())
+                    .unwrap_or(1usize);
                 let mut row = Vec::new();
                 let mut j = i + 1;
                 if !*empty {
-                    while j < nodes.len() && !matches!(&nodes[j], Node::Close(n) if n == "table:table-row") {
+                    while j < nodes.len()
+                        && !matches!(&nodes[j], Node::Close(n) if n == "table:table-row")
+                    {
                         if let Node::Open { name, empty, .. } = &nodes[j]
                             && (name == "table:table-cell" || name == "table:covered-table-cell")
                         {
-                            let n = nodes[j].attr("table:number-columns-repeated").and_then(|r| r.parse().ok()).unwrap_or(1usize);
+                            let n = nodes[j]
+                                .attr("table:number-columns-repeated")
+                                .and_then(|r| r.parse().ok())
+                                .unwrap_or(1usize);
                             let typ = nodes[j].attr("office:value-type").unwrap_or("").to_string();
                             let value = nodes[j].attr("office:value").map(ToString::to_string);
                             let mut text = String::new();
                             if !*empty {
                                 let mut k = j + 1;
                                 let mut paras = 0;
-                                while k < nodes.len() && !matches!(&nodes[k], Node::Close(n) if n == name.as_str()) {
+                                while k < nodes.len()
+                                    && !matches!(&nodes[k], Node::Close(n) if n == name.as_str())
+                                {
                                     match &nodes[k] {
                                         Node::Open { name, .. } if name == "text:p" => {
                                             if paras > 0 {
@@ -290,7 +332,9 @@ pub fn read_ods(b: &[u8]) -> Result<Vec<Vec<Val>>, String> {
                                             }
                                             paras += 1;
                                         }
-                                        Node::Open { name, .. } if name == "text:s" => text.push(' '),
+                                        Node::Open { name, .. } if name == "text:s" => {
+                                            text.push(' ')
+                                        }
                                         Node::Text(t) => text.push_str(t),
                                         _ => {}
                                     }
@@ -347,7 +391,11 @@ pub fn xls(header: &[String], rows: &[Vec<Val>], sheet: &str) -> Vec<u8> {
                     let _ = write!(s, "<Cell><Data ss:Type=\"Number\">{}</Data></Cell>", esc(n));
                 }
                 other => {
-                    let _ = write!(s, "<Cell><Data ss:Type=\"String\">{}</Data></Cell>", esc(&other.text()));
+                    let _ = write!(
+                        s,
+                        "<Cell><Data ss:Type=\"String\">{}</Data></Cell>",
+                        esc(&other.text())
+                    );
                 }
             }
         }
@@ -370,7 +418,10 @@ pub fn html(title: &str, header: &[String], numeric: &[bool], rows: &[Vec<Val>])
     s.push_str("</tr>\n");
     for r in rows {
         s.push_str("<tr>");
-        for (v, num) in r.iter().zip(numeric.iter().chain(std::iter::repeat(&false))) {
+        for (v, num) in r
+            .iter()
+            .zip(numeric.iter().chain(std::iter::repeat(&false)))
+        {
             let align = if *num { " align=\"right\"" } else { "" };
             match v {
                 Val::Null => {
@@ -390,7 +441,12 @@ pub fn html(title: &str, header: &[String], numeric: &[bool], rows: &[Vec<Val>])
 /// A PDF of fixed-width text, landscape, as many lines a page as fit.
 pub fn pdf(text: &str) -> Vec<u8> {
     use std::collections::BTreeMap;
-    let width = text.lines().map(|l| l.chars().count()).max().unwrap_or(1).clamp(80, 198);
+    let width = text
+        .lines()
+        .map(|l| l.chars().count())
+        .max()
+        .unwrap_or(1)
+        .clamp(80, 198);
     let fmt = spool::scs::decode::Format {
         width: u16::try_from(width).unwrap_or(198),
         len: 51,
@@ -421,8 +477,16 @@ mod tests {
 
     fn rows() -> Vec<Vec<Val>> {
         vec![
-            vec![Val::Text("QS000101".into()), Val::Num("1200.05".into()), Val::Null],
-            vec![Val::Text("a & <b>".into()), Val::Num("-0.000000000000000000001".into()), Val::Text(String::new())],
+            vec![
+                Val::Text("QS000101".into()),
+                Val::Num("1200.05".into()),
+                Val::Null,
+            ],
+            vec![
+                Val::Text("a & <b>".into()),
+                Val::Num("-0.000000000000000000001".into()),
+                Val::Text(String::new()),
+            ],
         ]
     }
 
@@ -430,8 +494,18 @@ mod tests {
     fn xlsx_both_ways() {
         let h = vec!["TAG".to_string(), "COST".into(), "NOTES".into()];
         let back = read_xlsx(&xlsx(Some(&h), &rows(), "ASSETS")).unwrap();
-        assert_eq!(back[0], vec![Val::Text("TAG".into()), Val::Text("COST".into()), Val::Text("NOTES".into())]);
-        assert_eq!(back[1], vec![Val::Text("QS000101".into()), Val::Num("1200.05".into())]);
+        assert_eq!(
+            back[0],
+            vec![
+                Val::Text("TAG".into()),
+                Val::Text("COST".into()),
+                Val::Text("NOTES".into())
+            ]
+        );
+        assert_eq!(
+            back[1],
+            vec![Val::Text("QS000101".into()), Val::Num("1200.05".into())]
+        );
         assert_eq!(back[2][1], Val::Num("-0.000000000000000000001".into()));
         assert_eq!(col_name(27), "AB");
         assert_eq!(col_of("AB12"), 27);
@@ -440,7 +514,10 @@ mod tests {
     #[test]
     fn ods_both_ways() {
         let back = read_ods(&ods(None, &rows(), "ASSETS")).unwrap();
-        assert_eq!(back[0], vec![Val::Text("QS000101".into()), Val::Num("1200.05".into())]);
+        assert_eq!(
+            back[0],
+            vec![Val::Text("QS000101".into()), Val::Num("1200.05".into())]
+        );
         assert_eq!(back[1][0], Val::Text("a & <b>".into()));
     }
 

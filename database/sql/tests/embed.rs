@@ -29,7 +29,12 @@ fn session() -> Session {
         wal_pages: 128,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(
@@ -80,12 +85,32 @@ fn session() -> Session {
     assert_eq!(r.errors, 0, "{}", r.listing);
     // T is journaled, for commitment control.
     let mut t = store.begin().unwrap();
-    let rcv = jrn::rcv::crtjrnrcv(&mut t, lib, Name::parse("TRCV").unwrap(), &jrn::rcv::CrtJrnRcvOpts::default()).unwrap();
-    let jid = jrn::journal::crtjrn(&mut t, lib, Name::parse("TJRN").unwrap(), rcv, &jrn::journal::CrtJrnOpts::default()).unwrap();
-    let tid = ctx.resolve_file(&mut t, &sql::ast::ObjectName::new("T")).unwrap();
+    let rcv = jrn::rcv::crtjrnrcv(
+        &mut t,
+        lib,
+        Name::parse("TRCV").unwrap(),
+        &jrn::rcv::CrtJrnRcvOpts::default(),
+    )
+    .unwrap();
+    let jid = jrn::journal::crtjrn(
+        &mut t,
+        lib,
+        Name::parse("TJRN").unwrap(),
+        rcv,
+        &jrn::journal::CrtJrnOpts::default(),
+    )
+    .unwrap();
+    let tid = ctx
+        .resolve_file(&mut t, &sql::ast::ObjectName::new("T"))
+        .unwrap();
     db::journal::strjrnpf(&mut t, JobHandle(1), tid, jid, false, true, 1).unwrap();
     t.commit().unwrap();
-    Session::new(Box::new(Rc::new(RefCell::new(store))), qsys, JobHandle(1), names)
+    Session::new(
+        Box::new(Rc::new(RefCell::new(store))),
+        qsys,
+        JobHandle(1),
+        names,
+    )
 }
 
 fn run(s: &mut Session, scope: &str, desc: Desc, inputs: Vec<Value>) -> Reply {
@@ -109,14 +134,29 @@ fn op(op: Op, name: &str, text: &str) -> Desc {
 fn entries(r: &Reply) -> Vec<(i64, i64, String)> {
     r.rows
         .iter()
-        .map(|row| (row[0].as_i64().unwrap(), row[1].as_i64().unwrap(), row[2].as_text()))
+        .map(|row| {
+            (
+                row[0].as_i64().unwrap(),
+                row[1].as_i64().unwrap(),
+                row[2].as_text(),
+            )
+        })
         .collect()
 }
 
 #[test]
 fn describe_gives_the_columns_and_the_markers() {
     let mut s = session();
-    let r = run(&mut s, "1:P", op(Op::Prepare, "S1", "SELECT ID, NAME, DEPT, SAL, ID * 2 AS TWICE, COUNT(*) AS N FROM T GROUP BY ID, NAME, DEPT, SAL"), vec![]);
+    let r = run(
+        &mut s,
+        "1:P",
+        op(
+            Op::Prepare,
+            "S1",
+            "SELECT ID, NAME, DEPT, SAL, ID * 2 AS TWICE, COUNT(*) AS N FROM T GROUP BY ID, NAME, DEPT, SAL",
+        ),
+        vec![],
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let r = run(&mut s, "1:P", op(Op::Describe, "S1", ""), vec![]);
     assert_eq!(
@@ -130,15 +170,41 @@ fn describe_gives_the_columns_and_the_markers() {
             (496, 4, "N".into()),
         ]
     );
-    run(&mut s, "1:P", op(Op::Prepare, "S2", "SELECT NAME FROM T WHERE ID = ? AND DEPT = ?"), vec![]);
+    run(
+        &mut s,
+        "1:P",
+        op(
+            Op::Prepare,
+            "S2",
+            "SELECT NAME FROM T WHERE ID = ? AND DEPT = ?",
+        ),
+        vec![],
+    );
     let mut d = op(Op::Describe, "S2", "");
     d.orient = "INPUT".into();
     let r = run(&mut s, "1:P", d, vec![]);
-    assert_eq!(entries(&r), [(497, 4, "00001".into()), (453, 3, "00002".into())]);
+    assert_eq!(
+        entries(&r),
+        [(497, 4, "00001".into()), (453, 3, "00002".into())]
+    );
     // Not a query: no entries; never prepared: -516.
-    run(&mut s, "1:P", op(Op::Prepare, "S3", "DELETE FROM T WHERE ID = 99"), vec![]);
-    assert!(run(&mut s, "1:P", op(Op::Describe, "S3", ""), vec![]).rows.is_empty());
-    assert_eq!(run(&mut s, "1:P", op(Op::Describe, "S9", ""), vec![]).sqlca.sqlcode, -516);
+    run(
+        &mut s,
+        "1:P",
+        op(Op::Prepare, "S3", "DELETE FROM T WHERE ID = 99"),
+        vec![],
+    );
+    assert!(
+        run(&mut s, "1:P", op(Op::Describe, "S3", ""), vec![])
+            .rows
+            .is_empty()
+    );
+    assert_eq!(
+        run(&mut s, "1:P", op(Op::Describe, "S9", ""), vec![])
+            .sqlca
+            .sqlcode,
+        -516
+    );
 }
 
 #[test]
@@ -179,23 +245,56 @@ fn the_lock_level_changes_between_units_of_work() {
     use db::cmt::LckLvl::{All, Chg, Cs};
     let mut s = session();
     let upd = "UPDATE QSTEST.T SET SAL = 1 WHERE ID = 1";
-    assert_eq!(run(&mut s, "1:P", under(upd, Some(Chg)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(&mut s, "1:P", under(upd, Some(Chg)), vec![])
+            .sqlca
+            .sqlcode,
+        0
+    );
     assert_eq!(level(&s), Some(Chg));
     // A change is pending: the unit keeps its level.
-    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(&mut s, "1:P", under(upd, Some(All)), vec![])
+            .sqlca
+            .sqlcode,
+        0
+    );
     assert_eq!(level(&s), Some(Chg));
-    let r = run(&mut s, "1:P", under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)), vec![]);
-    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-428, "25001"));
+    let r = run(
+        &mut s,
+        "1:P",
+        under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)),
+        vec![],
+    );
+    assert_eq!(
+        (r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()),
+        (-428, "25001")
+    );
     run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
     // The next unit takes the statement's level.
-    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(&mut s, "1:P", under(upd, Some(All)), vec![])
+            .sqlca
+            .sqlcode,
+        0
+    );
     assert_eq!(level(&s), Some(All));
     run(&mut s, "1:P", under("ROLLBACK", Some(All)), vec![]);
     // SET TRANSACTION holds for its unit, over the statements' level.
-    let r = run(&mut s, "1:P", under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)), vec![]);
+    let r = run(
+        &mut s,
+        "1:P",
+        under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)),
+        vec![],
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert_eq!(level(&s), Some(Cs));
-    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(&mut s, "1:P", under(upd, Some(All)), vec![])
+            .sqlca
+            .sqlcode,
+        0
+    );
     assert_eq!(level(&s), Some(Cs));
     run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
     run(&mut s, "1:P", under(upd, Some(All)), vec![]);
@@ -211,11 +310,25 @@ fn a_default_schema_applies_under_system_naming() {
         text: text.into(),
         ..Desc::default()
     };
-    let count = |s: &mut Session| run(s, "1:P", op(Op::Query, "", "SELECT COUNT(*) FROM T"), vec![]).sqlca.sqlcode;
+    let count = |s: &mut Session| {
+        run(
+            s,
+            "1:P",
+            op(Op::Query, "", "SELECT COUNT(*) FROM T"),
+            vec![],
+        )
+        .sqlca
+        .sqlcode
+    };
     // The library list finds T in QSTEST.
     assert_eq!(count(&mut s), 0);
     // A default schema replaces the library list for table names.
-    assert_eq!(run(&mut s, "1:P", sys("SET SCHEMA QSYS"), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(&mut s, "1:P", sys("SET SCHEMA QSYS"), vec![])
+            .sqlca
+            .sqlcode,
+        0
+    );
     assert_eq!(count(&mut s), -204);
     run(&mut s, "1:P", sys("SET SCHEMA DEFAULT"), vec![]);
     assert_eq!(count(&mut s), 0);
@@ -224,17 +337,52 @@ fn a_default_schema_applies_under_system_naming() {
 #[test]
 fn a_prepared_statement_can_be_deallocated() {
     let mut s = session();
-    assert_eq!(run(&mut s, "1:P", op(Op::Prepare, "S1", "SELECT ID FROM T"), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(
+            &mut s,
+            "1:P",
+            op(Op::Prepare, "S1", "SELECT ID FROM T"),
+            vec![]
+        )
+        .sqlca
+        .sqlcode,
+        0
+    );
     let mut open = op(Op::Open, "C1", "");
     open.stmt = "S1".into();
     assert_eq!(run(&mut s, "1:P", open, vec![]).sqlca.sqlcode, 0);
     // Another scope's statement of that name is not this one.
-    assert_eq!(run(&mut s, "1:Q", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, -514);
-    assert_eq!(run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, 0);
-    assert_eq!(run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, -514);
-    assert_eq!(run(&mut s, "1:P", op(Op::Execute, "S1", ""), vec![]).sqlca.sqlcode, -518);
+    assert_eq!(
+        run(&mut s, "1:Q", op(Op::Deallocate, "S1", ""), vec![])
+            .sqlca
+            .sqlcode,
+        -514
+    );
+    assert_eq!(
+        run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![])
+            .sqlca
+            .sqlcode,
+        0
+    );
+    assert_eq!(
+        run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![])
+            .sqlca
+            .sqlcode,
+        -514
+    );
+    assert_eq!(
+        run(&mut s, "1:P", op(Op::Execute, "S1", ""), vec![])
+            .sqlca
+            .sqlcode,
+        -518
+    );
     // The cursor opened from it stays open.
-    assert_eq!(run(&mut s, "1:P", op(Op::Fetch, "C1", ""), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(&mut s, "1:P", op(Op::Fetch, "C1", ""), vec![])
+            .sqlca
+            .sqlcode,
+        0
+    );
 }
 
 #[test]
@@ -259,18 +407,31 @@ fn describe_gives_sql_names_and_labels() {
         p.into = true;
         let r = run(s, "1:P", p, vec![]);
         assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-        r.rows.iter().map(|row| (row[2].as_text(), row[4].as_text())).collect::<Vec<_>>()
+        r.rows
+            .iter()
+            .map(|row| (row[2].as_text(), row[4].as_text()))
+            .collect::<Vec<_>>()
     };
     let label = "Customer            Name".to_string();
     assert_eq!(
         named(&mut s, "SELECT * FROM L"),
         // A column SQL made is headed with its name.
-        [("CUSTOMER_NAME".to_string(), label.clone()), ("ID".into(), "ID".into())]
+        [
+            ("CUSTOMER_NAME".to_string(), label.clone()),
+            ("ID".into(), "ID".into())
+        ]
     );
     // By either name, and under a new name the label stays.
     assert_eq!(
-        named(&mut s, "SELECT CUSNAM, CUSTOMER_NAME AS WHO, ID + 1 AS N FROM L"),
-        [("CUSTOMER_NAME".to_string(), label.clone()), ("WHO".into(), label), ("N".into(), String::new())]
+        named(
+            &mut s,
+            "SELECT CUSNAM, CUSTOMER_NAME AS WHO, ID + 1 AS N FROM L"
+        ),
+        [
+            ("CUSTOMER_NAME".to_string(), label.clone()),
+            ("WHO".into(), label),
+            ("N".into(), String::new())
+        ]
     );
 }
 
@@ -279,38 +440,117 @@ fn describe_gives_sql_names_and_labels() {
 fn locators_stand_for_values_until_the_unit_ends() {
     use db::cmt::LckLvl::Chg;
     let mut s = session();
-    let q = Desc { op: Op::Query, locs: "O0".into(), ..under("SELECT NAME FROM QSTEST.T WHERE ID = 1", Some(Chg)) };
+    let q = Desc {
+        op: Op::Query,
+        locs: "O0".into(),
+        ..under("SELECT NAME FROM QSTEST.T WHERE ID = 1", Some(Chg))
+    };
     let r = run(&mut s, "1:P", q.clone(), vec![]);
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let h = r.rows[0][0].clone();
-    let len = Desc { op: Op::Query, locs: "I0".into(), ..under("VALUES LENGTH(?)", Some(Chg)) };
+    let len = Desc {
+        op: Op::Query,
+        locs: "I0".into(),
+        ..under("VALUES LENGTH(?)", Some(Chg))
+    };
     let r = run(&mut s, "1:P", len.clone(), vec![h.clone()]);
     assert_eq!((r.sqlca.sqlcode, r.rows[0][0].as_i64().unwrap()), (0, 3));
-    assert_eq!(run(&mut s, "1:P", under("FREE LOCATOR ?", Some(Chg)), vec![h.clone()]).sqlca.sqlcode, 0);
-    assert_eq!(run(&mut s, "1:P", len.clone(), vec![h.clone()]).sqlca.sqlcode, -423);
-    assert_eq!(run(&mut s, "1:P", under("FREE LOCATOR ?", Some(Chg)), vec![h]).sqlca.sqlcode, -423);
+    assert_eq!(
+        run(
+            &mut s,
+            "1:P",
+            under("FREE LOCATOR ?", Some(Chg)),
+            vec![h.clone()]
+        )
+        .sqlca
+        .sqlcode,
+        0
+    );
+    assert_eq!(
+        run(&mut s, "1:P", len.clone(), vec![h.clone()])
+            .sqlca
+            .sqlcode,
+        -423
+    );
+    assert_eq!(
+        run(&mut s, "1:P", under("FREE LOCATOR ?", Some(Chg)), vec![h])
+            .sqlca
+            .sqlcode,
+        -423
+    );
     // Held across COMMIT; the others go.
     let a = run(&mut s, "1:P", q.clone(), vec![]).rows[0][0].clone();
     let b = run(&mut s, "1:P", q, vec![]).rows[0][0].clone();
-    assert_eq!(run(&mut s, "1:P", under("HOLD LOCATOR ?", Some(Chg)), vec![a.clone()]).sqlca.sqlcode, 0);
+    assert_eq!(
+        run(
+            &mut s,
+            "1:P",
+            under("HOLD LOCATOR ?", Some(Chg)),
+            vec![a.clone()]
+        )
+        .sqlca
+        .sqlcode,
+        0
+    );
     run(&mut s, "1:P", under("COMMIT", Some(Chg)), vec![]);
     assert_eq!(run(&mut s, "1:P", len.clone(), vec![a]).sqlca.sqlcode, 0);
     assert_eq!(run(&mut s, "1:P", len, vec![b]).sqlca.sqlcode, -423);
     // Without commitment control there are none.
-    let q = Desc { op: Op::Query, locs: "O0".into(), ..under("SELECT NAME FROM QSTEST.T WHERE ID = 1", None) };
+    let q = Desc {
+        op: Op::Query,
+        locs: "O0".into(),
+        ..under("SELECT NAME FROM QSTEST.T WHERE ID = 1", None)
+    };
     assert_eq!(run(&mut s, "2:P", q, vec![]).sqlca.sqlcode, -7034);
 }
 
 #[test]
 fn a_blocked_insert_runs_once_per_row() {
     let mut s = session();
-    let d = Desc { rows: true, ..under("INSERT INTO QSTEST.T (ID, NAME) VALUES (?, ?)", None) };
-    let r = run(&mut s, "1:P", d.clone(), vec![Value::int(7), Value::Str("Kim".into()), Value::int(8), Value::Str("Lou".into()), Value::int(2)]);
+    let d = Desc {
+        rows: true,
+        ..under("INSERT INTO QSTEST.T (ID, NAME) VALUES (?, ?)", None)
+    };
+    let r = run(
+        &mut s,
+        "1:P",
+        d.clone(),
+        vec![
+            Value::int(7),
+            Value::Str("Kim".into()),
+            Value::int(8),
+            Value::Str("Lou".into()),
+            Value::int(2),
+        ],
+    );
     assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlerrd[2]), (0, 2));
-    let diag = run(&mut s, "1:P", Desc { op: Op::Diag, text: "ROW_COUNT,COMMAND_FUNCTION".into(), ..Desc::default() }, vec![]);
-    assert_eq!(diag.rows[0], vec![Value::int(2), Value::Str("INSERT".into())]);
+    let diag = run(
+        &mut s,
+        "1:P",
+        Desc {
+            op: Op::Diag,
+            text: "ROW_COUNT,COMMAND_FUNCTION".into(),
+            ..Desc::default()
+        },
+        vec![],
+    );
+    assert_eq!(
+        diag.rows[0],
+        vec![Value::int(2), Value::Str("INSERT".into())]
+    );
     // A failing row stops the run; the rows before it stay.
-    let r = run(&mut s, "1:P", d, vec![Value::int(9), Value::Str("Max".into()), Value::int(10), Value::Null, Value::int(2)]);
+    let r = run(
+        &mut s,
+        "1:P",
+        d,
+        vec![
+            Value::int(9),
+            Value::Str("Max".into()),
+            Value::int(10),
+            Value::Null,
+            Value::int(2),
+        ],
+    );
     assert_eq!((r.sqlca.sqlcode < 0, r.sqlca.sqlerrd[2]), (true, 1));
 }
 
@@ -320,13 +560,33 @@ fn a_blocked_insert_runs_once_per_row() {
 #[test]
 fn a_sensitive_cursor_sees_later_changes() {
     let mut s = session();
-    let x = |s: &mut Session, t: &str| assert_eq!(run(s, "1:P", op(Op::Exec, "", t), vec![]).sqlca.sqlcode, 0, "{t}");
+    let x = |s: &mut Session, t: &str| {
+        assert_eq!(
+            run(s, "1:P", op(Op::Exec, "", t), vec![]).sqlca.sqlcode,
+            0,
+            "{t}"
+        )
+    };
     x(&mut s, "INSERT INTO QSTEST.T (ID, NAME) VALUES (3, 'Cy')");
-    let d = Desc { sensitive: true, scroll: true, ..op(Op::Open, "C1", "SELECT ID, NAME FROM QSTEST.T") };
+    let d = Desc {
+        sensitive: true,
+        scroll: true,
+        ..op(Op::Open, "C1", "SELECT ID, NAME FROM QSTEST.T")
+    };
     assert_eq!(run(&mut s, "1:P", d, vec![]).sqlca.sqlcode, 0);
     let fetch = |s: &mut Session, orient: &str| {
-        let r = run(s, "1:P", Desc { orient: orient.into(), ..op(Op::Fetch, "C1", "") }, vec![]);
-        r.rows.first().map(|row| format!("{} {}", row[0].as_text(), row[1].as_text()))
+        let r = run(
+            s,
+            "1:P",
+            Desc {
+                orient: orient.into(),
+                ..op(Op::Fetch, "C1", "")
+            },
+            vec![],
+        );
+        r.rows
+            .first()
+            .map(|row| format!("{} {}", row[0].as_text(), row[1].as_text()))
     };
     assert_eq!(fetch(&mut s, "NEXT").as_deref(), Some("1 Ann"));
     x(&mut s, "INSERT INTO QSTEST.T (ID, NAME) VALUES (4, 'Dee')");
@@ -341,9 +601,19 @@ fn a_sensitive_cursor_sees_later_changes() {
     x(&mut s, "DELETE FROM QSTEST.T WHERE ID = 1");
     assert_eq!(fetch(&mut s, "NEXT").as_deref(), Some("2 Bob*"));
     // A query that does not read one table plainly cannot be sensitive.
-    let d = Desc { sensitive: true, ..op(Op::Open, "C2", "SELECT DEPT, COUNT(*) FROM QSTEST.T GROUP BY DEPT") };
+    let d = Desc {
+        sensitive: true,
+        ..op(
+            Op::Open,
+            "C2",
+            "SELECT DEPT, COUNT(*) FROM QSTEST.T GROUP BY DEPT",
+        )
+    };
     let r = run(&mut s, "1:P", d, vec![]);
-    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-243, "36001"));
+    assert_eq!(
+        (r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()),
+        (-243, "36001")
+    );
 }
 
 #[test]
@@ -354,14 +624,26 @@ fn a_called_procedures_result_set_describes_as_a_cursor() {
     let mut d = op(Op::Open, "C1", "SELECT ID, NAME, SAL FROM T ORDER BY ID");
     d.returns = Some(sql::ast::ReturnTo::Client);
     assert_eq!(run(&mut s, "9:PROC", d, vec![]).sqlca.sqlcode, 0);
-    let called = sql::exec::routine::Called { seq, max: 1, sqlstate: "00000".into(), ..Default::default() };
+    let called = sql::exec::routine::Called {
+        seq,
+        max: 1,
+        sqlstate: "00000".into(),
+        ..Default::default()
+    };
     let r = run(&mut s, "Q:", op(Op::Called, "", ""), called.inputs());
     assert_eq!((r.sqlca.sqlcode, r.rows.len()), (466, 1), "{:?}", r.sqlca);
     assert_eq!(r.rows[0][0].as_text(), "RS#1");
     let mut d = op(Op::Describe, "RS#1", "");
     d.orient = "CURSOR".into();
     let r = run(&mut s, "Q:", d.clone(), vec![]);
-    assert_eq!(entries(&r), [(496, 4, "ID".into()), (448, 20, "NAME".into()), (485, 9 * 256 + 2, "SAL".into())]);
+    assert_eq!(
+        entries(&r),
+        [
+            (496, 4, "ID".into()),
+            (448, 20, "NAME".into()),
+            (485, 9 * 256 + 2, "SAL".into())
+        ]
+    );
     let mut f = op(Op::Fetch, "RS#1", "");
     f.rows = true;
     let r = run(&mut s, "Q:", f, vec![Value::int(10)]);
@@ -376,31 +658,73 @@ fn a_calls_markers_describe_with_their_parameters_modes() {
     let r = run(
         &mut s,
         "1:P",
-        op(Op::Exec, "", "CREATE PROCEDURE QSTEST.RSP (IN A INT, OUT B CHAR(5), INOUT C DECIMAL(7, 2)) EXTERNAL NAME QSTEST/RSPGM PARAMETER STYLE GENERAL"),
+        op(
+            Op::Exec,
+            "",
+            "CREATE PROCEDURE QSTEST.RSP (IN A INT, OUT B CHAR(5), INOUT C DECIMAL(7, 2)) EXTERNAL NAME QSTEST/RSPGM PARAMETER STYLE GENERAL",
+        ),
         vec![],
     );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    run(&mut s, "1:P", op(Op::Prepare, "S1", "CALL QSTEST.RSP(?, ?, ?)"), vec![]);
+    run(
+        &mut s,
+        "1:P",
+        op(Op::Prepare, "S1", "CALL QSTEST.RSP(?, ?, ?)"),
+        vec![],
+    );
     let mut d = op(Op::Describe, "S1", "");
     d.orient = "INPUT".into();
     let r = run(&mut s, "1:P", d, vec![]);
-    assert_eq!(entries(&r), [(497, 4, "A".into()), (453, 5, "B".into()), (485, 7 * 256 + 2, "C".into())]);
+    assert_eq!(
+        entries(&r),
+        [
+            (497, 4, "A".into()),
+            (453, 5, "B".into()),
+            (485, 7 * 256 + 2, "C".into())
+        ]
+    );
     let modes: Vec<i64> = r.rows.iter().map(|row| row[9].as_i64().unwrap()).collect();
     assert_eq!(modes, [1, 2, 3]);
     // Without a requester that makes calls, CALL is refused.
-    let r = run(&mut s, "1:P", op(Op::Execute, "S1", ""), vec![Value::int(1), Value::Null, Value::int(2)]);
+    let r = run(
+        &mut s,
+        "1:P",
+        op(Op::Execute, "S1", ""),
+        vec![Value::int(1), Value::Null, Value::int(2)],
+    );
     assert_eq!(r.sqlca.sqlcode, -84);
     // With one, the plan comes back.
     let mut d = op(Op::Execute, "S1", "");
     d.calls = true;
-    let r = run(&mut s, "1:P", d, vec![Value::int(1), Value::Null, Value::int(2)]);
+    let r = run(
+        &mut s,
+        "1:P",
+        d,
+        vec![Value::int(1), Value::Null, Value::int(2)],
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let plan = r.call.expect("a plan");
     assert_eq!((plan.program.as_str(), plan.parms.len()), ("RSPGM", 3));
-    assert_eq!(plan.parms.iter().map(|p| p.marker).collect::<Vec<_>>(), [None, Some(1), Some(2)]);
+    assert_eq!(
+        plan.parms.iter().map(|p| p.marker).collect::<Vec<_>>(),
+        [None, Some(1), Some(2)]
+    );
     // A program without a procedure takes no markers when prepared.
-    let r = run(&mut s, "1:P", op(Op::Prepare, "S2", "CALL QSYS.QCMDEXC(?, ?)"), vec![]);
-    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-204, "42704"));
-    let r = run(&mut s, "1:P", op(Op::Prepare, "S3", "CALL QSTEST.RSPGM('X', 1)"), vec![]);
+    let r = run(
+        &mut s,
+        "1:P",
+        op(Op::Prepare, "S2", "CALL QSYS.QCMDEXC(?, ?)"),
+        vec![],
+    );
+    assert_eq!(
+        (r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()),
+        (-204, "42704")
+    );
+    let r = run(
+        &mut s,
+        "1:P",
+        op(Op::Prepare, "S3", "CALL QSTEST.RSPGM('X', 1)"),
+        vec![],
+    );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
 }

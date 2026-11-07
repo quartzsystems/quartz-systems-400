@@ -71,7 +71,10 @@ fn read_slots() -> Result<(Vec<u8>, Vec<u8>), String> {
 
 fn security_stream(system: &mut System) -> Result<Vec<u8>, String> {
     let head = header_of(system, SaveKind::Security);
-    let storage = system.storage.as_mut().ok_or("CPF3700 object store not open")?;
+    let storage = system
+        .storage
+        .as_mut()
+        .ok_or("CPF3700 object store not open")?;
     let qsys = storage.qsys.ok_or("CPF3700 object store not initialized")?;
     let hooks = SvcHooks::new(qsys);
     let mut w = Writer::new(Vec::new(), &head).map_err(|e| e.to_string())?;
@@ -88,7 +91,10 @@ fn security_stream(system: &mut System) -> Result<Vec<u8>, String> {
 fn config_stream(system: &mut System) -> Result<Vec<u8>, String> {
     let head = header_of(system, SaveKind::Config);
     let jobh = JobHandle(u64::from(system.current_job));
-    let storage = system.storage.as_mut().ok_or("CPF3700 object store not open")?;
+    let storage = system
+        .storage
+        .as_mut()
+        .ok_or("CPF3700 object store not open")?;
     let qsys = storage.qsys.ok_or("CPF3700 object store not initialized")?;
     let hooks = SvcHooks::new(qsys);
     let mut w = Writer::new(Vec::new(), &head).map_err(|e| e.to_string())?;
@@ -116,8 +122,16 @@ fn config_stream(system: &mut System) -> Result<Vec<u8>, String> {
             ..SaveTarget::default()
         },
     };
-    let rep = saverst::save_library(&mut storage.store, jobh, &hooks, qsys, "QSYS", &opts, &mut w)
-        .map_err(|e| e.to_string())?;
+    let rep = saverst::save_library(
+        &mut storage.store,
+        jobh,
+        &hooks,
+        qsys,
+        "QSYS",
+        &opts,
+        &mut w,
+    )
+    .map_err(|e| e.to_string())?;
     w.finish(u32::try_from(rep.not_saved()).unwrap_or(0))
         .map(|(_, b)| b)
         .map_err(|e| e.to_string())
@@ -165,7 +179,11 @@ struct Ident;
 
 impl TapeJob for Ident {
     type Out = String;
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, _: &mut dyn VolumeProvider<D>) -> Result<String, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        _: &mut dyn VolumeProvider<D>,
+    ) -> Result<String, MediaError> {
         match tape::volume::identify(d)? {
             VolumeKind::Labeled { vol1, .. } => Ok(vol1.volume_id),
             _ => Err(tape::TapeError::NotLabeled.into()),
@@ -181,14 +199,23 @@ struct SysJob<'a> {
 
 impl TapeJob for SysJob<'_> {
     type Out = u32;
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, _: &mut dyn VolumeProvider<D>) -> Result<u32, MediaError> {
+    fn run<D: TapeTransport + ?Sized>(
+        &mut self,
+        d: &mut D,
+        _: &mut dyn VolumeProvider<D>,
+    ) -> Result<u32, MediaError> {
         write_tape(d, self.img, &self.w).map_err(media_error)
     }
 }
 
 /// Write `img` on the tape in `m.dev`. Files that have not expired are
 /// asked about (`CPA4036`) unless `CLEAR` says otherwise.
-fn to_tape(system: &mut System, m: &stream::Media, img: &Image, vol: &str) -> Result<String, String> {
+fn to_tape(
+    system: &mut System,
+    m: &stream::Media,
+    img: &Image,
+    vol: &str,
+) -> Result<String, String> {
     let mut w = TapeWrite {
         today: stream::today(),
         expires: m.expires,
@@ -215,12 +242,24 @@ fn to_tape(system: &mut System, m: &stream::Media, img: &Image, vol: &str) -> Re
 /// Write `img` on the optical volume `vol` of `m.dev`. A system save
 /// already there is asked about (`OPT1260`) unless `CLEAR` says
 /// otherwise.
-fn to_optical(system: &mut System, m: &stream::Media, img: &Image, vol: &str) -> Result<String, String> {
+fn to_optical(
+    system: &mut System,
+    m: &stream::Media,
+    img: &Image,
+    vol: &str,
+) -> Result<String, String> {
     let set = media::volume_set();
     let opt = |e: optical::Error| format!("{} {e}", e.msgid());
-    let there = set.with(vol, |v| Ok(v.stat(optical::manifest::PATH).is_ok())).map_err(opt)?;
+    let there = set
+        .with(vol, |v| Ok(v.stat(optical::manifest::PATH).is_ok()))
+        .map_err(opt)?;
     if there && !m.clear {
-        let a = operator::inquiry(system, OPT_EXISTS, &[(optical::manifest::PATH, 64), (vol, 32)], "C");
+        let a = operator::inquiry(
+            system,
+            OPT_EXISTS,
+            &[(optical::manifest::PATH, 64), (vol, 32)],
+            "C",
+        );
         if !a.is("G") {
             return Err(format!(
                 "{} {} is already on volume {vol}; {}",
@@ -236,7 +275,10 @@ fn to_optical(system: &mut System, m: &stream::Media, img: &Image, vol: &str) ->
             MediaError::Optical(o) => opt(o),
             e => format!("{} {e}", e.msgid()),
         })?;
-    Ok(format!("{} files on optical volume {vol}", img.files.len() + 1))
+    Ok(format!(
+        "{} files on optical volume {vol}",
+        img.files.len() + 1
+    ))
 }
 
 fn savsys(system: &mut System, parms: &Parms) -> CmdReply {
@@ -246,7 +288,12 @@ fn savsys(system: &mut System, parms: &Parms) -> CmdReply {
     }
     // The restricted state, as on IBM i: `ENDSBS SBS(*ALL)` first.
     if let Some(sbs) = system.sbs.keys().next() {
-        return failed(NAME, &format!("CPF3785 not all subsystems ended: {sbs} is active; end them with ENDSBS SBS(*ALL)"));
+        return failed(
+            NAME,
+            &format!(
+                "CPF3785 not all subsystems ended: {sbs} is active; end them with ENDSBS SBS(*ALL)"
+            ),
+        );
     }
     let dev = values(parms, "DEV").first().cloned().unwrap_or_default();
     if !stream::is_device(&dev) {
@@ -306,18 +353,30 @@ fn savsys(system: &mut System, parms: &Parms) -> CmdReply {
 /// sent off the system instead (FTP, SFTP).
 pub fn export(dev: &str, path: &str) -> Result<String, String> {
     let dev = dev.to_ascii_uppercase();
-    let c = media::catalog_on(&dev).ok_or_else(|| format!("{} device {dev}: no image catalog is loaded", drive::NOT_READY))?;
+    let c = media::catalog_on(&dev).ok_or_else(|| {
+        format!(
+            "{} device {dev}: no image catalog is loaded",
+            drive::NOT_READY
+        )
+    })?;
     let e = c
         .mounted()
         .ok_or_else(|| format!("{} device {dev}: no volume is mounted", drive::NOT_READY))?;
     let from = catalogs::host_path(&c.path_of(e));
     let mut src = File::open(&from).map_err(|x| format!("{}: {x}", from.display()))?;
-    let mut dst = OpenOptions::new().write(true).open(path).map_err(|x| format!("{path}: {x}"))?;
+    let mut dst = OpenOptions::new()
+        .write(true)
+        .open(path)
+        .map_err(|x| format!("{path}: {x}"))?;
     let n = std::io::copy(&mut src, &mut dst).map_err(|x| format!("{path}: {x}"))?;
     // Whatever followed on the disk is no longer part of the volume.
-    std::io::copy(&mut std::io::repeat(0).take(64 * 1024), &mut dst).map_err(|x| format!("{path}: {x}"))?;
+    std::io::copy(&mut std::io::repeat(0).take(64 * 1024), &mut dst)
+        .map_err(|x| format!("{path}: {x}"))?;
     dst.sync_all().map_err(|x| format!("{path}: {x}"))?;
-    Ok(format!("volume {} of {dev}: {n} bytes copied to {path}", e.volume))
+    Ok(format!(
+        "volume {} of {dev}: {n} bytes copied to {path}",
+        e.volume
+    ))
 }
 
 // ------------------------------------------------------------- recovery
@@ -356,7 +415,10 @@ impl Pending {
             Medium::Disk(p) => ("disk", p.display().to_string()),
             Medium::Drive(r) => ("drive", r.clone()),
         };
-        format!("{PENDING_MAGIC}\n{kind} {} {} {at}\n", self.device, self.files)
+        format!(
+            "{PENDING_MAGIC}\n{kind} {} {} {at}\n",
+            self.device, self.files
+        )
     }
 
     /// From [`PENDING`]'s text.
@@ -386,7 +448,12 @@ impl Pending {
 /// objects are back. User data after the system save (`user`) is left
 /// for the storage service, which has the IFS ([`restore_user_data`]).
 /// One line per step for the log.
-pub fn recover(system: &mut System, secdta: Option<&[u8]>, cfg: Option<&[u8]>, user: Option<&Pending>) -> Vec<String> {
+pub fn recover(
+    system: &mut System,
+    secdta: Option<&[u8]>,
+    cfg: Option<&[u8]>,
+    user: Option<&Pending>,
+) -> Vec<String> {
     let mut out = Vec::new();
     let Some(storage) = system.storage.as_mut() else {
         return vec!["recovery: object store not open".into()];
@@ -398,18 +465,27 @@ pub fn recover(system: &mut System, secdta: Option<&[u8]>, cfg: Option<&[u8]>, u
     let store = &mut storage.store;
     let now = now_unix();
     if let Some(s) = secdta {
-        let r = Reader::new(Cursor::new(s)).map_err(|e| e.to_string()).and_then(|mut r| {
-            let opts = saverst::secdta::ProfileOptions {
-                new_only: false,
-                users: Vec::new(),
-                omit: Vec::new(),
-                now,
-            };
-            sec::guard::as_system(|| {
-                saverst::secdta::restore_profiles(store, JobHandle(0), &hooks, qsys, &mut r, &opts)
-            })
+        let r = Reader::new(Cursor::new(s))
             .map_err(|e| e.to_string())
-        });
+            .and_then(|mut r| {
+                let opts = saverst::secdta::ProfileOptions {
+                    new_only: false,
+                    users: Vec::new(),
+                    omit: Vec::new(),
+                    now,
+                };
+                sec::guard::as_system(|| {
+                    saverst::secdta::restore_profiles(
+                        store,
+                        JobHandle(0),
+                        &hooks,
+                        qsys,
+                        &mut r,
+                        &opts,
+                    )
+                })
+                .map_err(|e| e.to_string())
+            });
         out.push(match r {
             Ok(rep) => format!(
                 "RSTUSRPRF: {} user profiles restored, {} not; {} authorization lists",
@@ -421,23 +497,27 @@ pub fn recover(system: &mut System, secdta: Option<&[u8]>, cfg: Option<&[u8]>, u
         });
     }
     if let Some(c) = cfg {
-        let r = Reader::new(Cursor::new(c)).map_err(|e| e.to_string()).and_then(|mut r| {
-            let opts = RestoreOptions {
-                libraries: vec!["QSYS".into()],
-                select: CFG_TYPES
-                    .iter()
-                    .map(|t| ObjSel {
-                        name: "*ALL".into(),
-                        type_code: Some(*t),
-                    })
-                    .collect(),
-                system: "QS400".into(),
-                now,
-                ..RestoreOptions::default()
-            };
-            sec::guard::as_system(|| saverst::restore(store, JobHandle(0), &hooks, qsys, &mut r, &opts))
+        let r = Reader::new(Cursor::new(c))
+            .map_err(|e| e.to_string())
+            .and_then(|mut r| {
+                let opts = RestoreOptions {
+                    libraries: vec!["QSYS".into()],
+                    select: CFG_TYPES
+                        .iter()
+                        .map(|t| ObjSel {
+                            name: "*ALL".into(),
+                            type_code: Some(*t),
+                        })
+                        .collect(),
+                    system: "QS400".into(),
+                    now,
+                    ..RestoreOptions::default()
+                };
+                sec::guard::as_system(|| {
+                    saverst::restore(store, JobHandle(0), &hooks, qsys, &mut r, &opts)
+                })
                 .map_err(|e| e.to_string())
-        });
+            });
         out.push(match r {
             Ok(rep) => format!(
                 "RSTCFG: {} configuration objects restored",
@@ -449,10 +529,7 @@ pub fn recover(system: &mut System, secdta: Option<&[u8]>, cfg: Option<&[u8]>, u
     if secdta.is_some() {
         let r = sec::guard::as_system(|| saverst::secdta::rstaut(store, &hooks, qsys, &[]));
         out.push(match r {
-            Ok(done) => format!(
-                "RSTAUT: authorities restored for {} profiles",
-                done.len()
-            ),
+            Ok(done) => format!("RSTAUT: authorities restored for {} profiles", done.len()),
             Err(e) => format!("RSTAUT: {e}"),
         });
     }
@@ -480,7 +557,13 @@ const RCY_DIR: &str = "/QRCYCLG";
 
 /// A command's outcome in one line: the escape, or the last line.
 fn outcome(r: &CmdReply) -> String {
-    let last = r.text.lines().map(str::trim).rfind(|l| !l.is_empty()).unwrap_or("").to_string();
+    let last = r
+        .text
+        .lines()
+        .map(str::trim)
+        .rfind(|l| !l.is_empty())
+        .unwrap_or("")
+        .to_string();
     match &r.escape {
         Some(e) if !last.starts_with(&e.msgid) => format!("{} {last}", e.msgid),
         _ => last,
@@ -493,7 +576,13 @@ fn step(system: &mut System, out: &mut Vec<String>, cl: &str) -> bool {
     let word = cl.split([' ', '(']).next().unwrap_or(cl);
     out.push(format!("{word}: {}", outcome(&r)));
     // What was not restored, for the operator.
-    for l in r.text.lines().map(str::trim).filter(|l| l.starts_with("CPF") || l.contains("not restored:")).take(20) {
+    for l in r
+        .text
+        .lines()
+        .map(str::trim)
+        .filter(|l| l.starts_with("CPF") || l.contains("not restored:"))
+        .take(20)
+    {
         out.push(format!("{word}:   {l}"));
     }
     r.escape.is_none()
@@ -512,19 +601,42 @@ fn quiet(system: &mut System, cl: &str) -> Result<(), String> {
 /// whose one entry is the disk, loaded on a virtual device.
 fn attach_disk(system: &mut System, disk: &Path) -> Result<(), String> {
     detach_disk(system);
-    quiet(system, &format!("CRTDEVTAP DEVD({RCY_DEV}) RSRCNAME(*VRT) TEXT('Recovery')"))?;
-    quiet(system, &format!("CRTIMGCLG IMGCLG({RCY_CLG}) DIR('{RCY_DIR}') TYPE(*TAP) CRTDIR(*YES) TEXT('Recovery')"))?;
+    quiet(
+        system,
+        &format!("CRTDEVTAP DEVD({RCY_DEV}) RSRCNAME(*VRT) TEXT('Recovery')"),
+    )?;
+    quiet(
+        system,
+        &format!(
+            "CRTIMGCLG IMGCLG({RCY_CLG}) DIR('{RCY_DIR}') TYPE(*TAP) CRTDIR(*YES) TEXT('Recovery')"
+        ),
+    )?;
     let link = catalogs::host_path(&format!("{RCY_DIR}/{RCY_DEV}"));
     std::os::unix::fs::symlink(disk, &link).map_err(|e| format!("{}: {e}", link.display()))?;
-    quiet(system, &format!("ADDIMGCLGE IMGCLG({RCY_CLG}) FROMFILE({RCY_DEV}) TOFILE(*FROMFILE)"))?;
-    quiet(system, &format!("LODIMGCLG IMGCLG({RCY_CLG}) DEV({RCY_DEV})"))?;
-    quiet(system, &format!("VRYCFG CFGOBJ({RCY_DEV}) CFGTYPE(*DEV) STATUS(*ON)"))
+    quiet(
+        system,
+        &format!("ADDIMGCLGE IMGCLG({RCY_CLG}) FROMFILE({RCY_DEV}) TOFILE(*FROMFILE)"),
+    )?;
+    quiet(
+        system,
+        &format!("LODIMGCLG IMGCLG({RCY_CLG}) DEV({RCY_DEV})"),
+    )?;
+    quiet(
+        system,
+        &format!("VRYCFG CFGOBJ({RCY_DEV}) CFGTYPE(*DEV) STATUS(*ON)"),
+    )
 }
 
 /// Take the recovery's device and catalog away; the disk is left as it is.
 fn detach_disk(system: &mut System) {
-    let _ = quiet(system, &format!("VRYCFG CFGOBJ({RCY_DEV}) CFGTYPE(*DEV) STATUS(*OFF)"));
-    let _ = quiet(system, &format!("LODIMGCLG IMGCLG({RCY_CLG}) OPTION(*UNLOAD)"));
+    let _ = quiet(
+        system,
+        &format!("VRYCFG CFGOBJ({RCY_DEV}) CFGTYPE(*DEV) STATUS(*OFF)"),
+    );
+    let _ = quiet(
+        system,
+        &format!("LODIMGCLG IMGCLG({RCY_CLG}) OPTION(*UNLOAD)"),
+    );
     let _ = std::fs::remove_file(catalogs::host_path(&format!("{RCY_DIR}/{RCY_DEV}")));
     let _ = quiet(system, &format!("DLTIMGCLG IMGCLG({RCY_CLG}) KEEP(*YES)"));
     let _ = std::fs::remove_dir_all(catalogs::host_path(RCY_DIR));
@@ -554,7 +666,10 @@ pub fn restore_user_data(system: &mut System) -> Vec<String> {
     let Some(p) = Pending::parse(&text) else {
         return vec![format!("recovery: {PENDING} is not understood")];
     };
-    let mut out = vec![format!("recovery: user data from {} ({} files)", p.device, p.files)];
+    let mut out = vec![format!(
+        "recovery: user data from {} ({} files)",
+        p.device, p.files
+    )];
     let dev = match &p.medium {
         Medium::Disk(disk) => {
             if let Err(e) = attach_disk(system, disk) {
@@ -566,7 +681,10 @@ pub fn restore_user_data(system: &mut System) -> Vec<String> {
         }
         Medium::Drive(rsrc) => {
             let _ = quiet(system, &format!("CRTDEVTAP DEVD({rsrc}) RSRCNAME({rsrc})"));
-            let _ = quiet(system, &format!("VRYCFG CFGOBJ({rsrc}) CFGTYPE(*DEV) STATUS(*ON)"));
+            let _ = quiet(
+                system,
+                &format!("VRYCFG CFGOBJ({rsrc}) CFGTYPE(*DEV) STATUS(*ON)"),
+            );
             rsrc.clone()
         }
     };

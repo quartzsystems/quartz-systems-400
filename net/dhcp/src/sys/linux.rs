@@ -26,7 +26,10 @@ impl Socket {
         raw.set_reuse_address(true)?;
         raw.set_broadcast(true)?;
         raw.bind_device(Some(link.as_bytes()))?;
-        raw.bind(&SockAddr::from(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, CLIENT_PORT)))?;
+        raw.bind(&SockAddr::from(SocketAddrV4::new(
+            Ipv4Addr::UNSPECIFIED,
+            CLIENT_PORT,
+        )))?;
         Ok(Self { raw })
     }
 
@@ -36,20 +39,29 @@ impl Socket {
             Dest::Broadcast => Ipv4Addr::BROADCAST,
             Dest::Unicast(a) => a,
         };
-        self.raw.send_to(bytes, &SockAddr::from(SocketAddrV4::new(ip, SERVER_PORT)))?;
+        self.raw
+            .send_to(bytes, &SockAddr::from(SocketAddrV4::new(ip, SERVER_PORT)))?;
         Ok(())
     }
 
     /// One datagram, waiting at most `wait`; `None` when none came.
     pub fn recv(&self, wait: Duration) -> io::Result<Option<Vec<u8>>> {
-        self.raw.set_read_timeout(Some(wait.max(Duration::from_millis(1))))?;
+        self.raw
+            .set_read_timeout(Some(wait.max(Duration::from_millis(1))))?;
         let mut buf = vec![0u8; 1600];
         match (&self.raw).read(&mut buf) {
             Ok(n) => {
                 buf.truncate(n);
                 Ok(Some(buf))
             }
-            Err(e) if matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut | io::ErrorKind::Interrupted) => {
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    io::ErrorKind::WouldBlock
+                        | io::ErrorKind::TimedOut
+                        | io::ErrorKind::Interrupted
+                ) =>
+            {
                 Ok(None)
             }
             Err(e) => Err(e),

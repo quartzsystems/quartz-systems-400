@@ -548,7 +548,13 @@ pub trait SystemHost {
     }
 
     /// Write a stream file: replace or append, CCSID of a new file.
-    fn ifs_write(&self, _path: &str, _data: &[u8], _append: bool, _ccsid: u16) -> Option<Result<(), String>> {
+    fn ifs_write(
+        &self,
+        _path: &str,
+        _data: &[u8],
+        _append: bool,
+        _ccsid: u16,
+    ) -> Option<Result<(), String>> {
         None
     }
 
@@ -609,7 +615,11 @@ pub trait SystemHost {
     }
 
     /// Resolve a host name, through `server` when given.
-    fn dns_lookup(&self, _name: &str, _server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
+    fn dns_lookup(
+        &self,
+        _name: &str,
+        _server: Option<&str>,
+    ) -> Option<Result<Vec<std::net::IpAddr>, String>> {
         None
     }
 

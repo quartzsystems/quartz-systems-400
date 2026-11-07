@@ -93,7 +93,8 @@ struct Prepared {
 }
 
 fn prepare(l: &Launch) -> Result<Prepared, PaseError> {
-    let plan = crate::view::plan(&l.ifs, l.qopensys.as_deref(), &l.stage, &l.dev).map_err(|e| PaseError::Io(e.to_string()))?;
+    let plan = crate::view::plan(&l.ifs, l.qopensys.as_deref(), &l.stage, &l.dev)
+        .map_err(|e| PaseError::Io(e.to_string()))?;
     let mut steps = Vec::with_capacity(plan.len());
     for s in plan {
         steps.push(match s {
@@ -104,7 +105,8 @@ fn prepare(l: &Launch) -> Result<Prepared, PaseError> {
             Step::Proc(p) => CStep::Proc(cpath(&p)?),
         });
     }
-    let program = crate::view::inside(&l.program).ok_or_else(|| PaseError::NotVisible(l.program.clone()))?;
+    let program =
+        crate::view::inside(&l.program).ok_or_else(|| PaseError::NotVisible(l.program.clone()))?;
     let cwd = crate::view::inside(&l.cwd).unwrap_or_else(|| "/".into());
     let argv: Vec<CString> = l.argv.iter().map(|a| cstr(a)).collect::<Result<_, _>>()?;
     let envp: Vec<CString> = l
@@ -208,7 +210,8 @@ fn step_no(name: &str) -> usize {
 /// Start the program.
 pub fn start(l: &Launch) -> Result<crate::Child, PaseError> {
     let p = prepare(l)?;
-    std::fs::create_dir_all(&l.stage).map_err(|e| PaseError::Io(format!("{}: {e}", l.stage.display())))?;
+    std::fs::create_dir_all(&l.stage)
+        .map_err(|e| PaseError::Io(format!("{}: {e}", l.stage.display())))?;
     let ready = pipe()?;
     let go = pipe()?;
     let err = pipe()?;
@@ -351,7 +354,14 @@ fn program_main(p: &Prepared, err: i32) -> ! {
     // SAFETY: each call below is a system call on NUL-terminated strings
     // and arrays prepared before the fork, which outlive the process.
     unsafe {
-        if libc::mount(none, p.slash.as_ptr(), none, libc::MS_REC | libc::MS_PRIVATE, null) != 0 {
+        if libc::mount(
+            none,
+            p.slash.as_ptr(),
+            none,
+            libc::MS_REC | libc::MS_PRIVATE,
+            null,
+        ) != 0
+        {
             fail(err, step_no("a private mount namespace"));
         }
         if libc::mount(
@@ -372,7 +382,11 @@ fn program_main(p: &Prepared, err: i32) -> ! {
                     }
                 }
                 CStep::File(f) => {
-                    let fd = libc::open(f.as_ptr(), libc::O_CREAT | libc::O_WRONLY | libc::O_CLOEXEC, 0o644);
+                    let fd = libc::open(
+                        f.as_ptr(),
+                        libc::O_CREAT | libc::O_WRONLY | libc::O_CLOEXEC,
+                        0o644,
+                    );
                     if fd < 0 {
                         fail(err, step_no("a mount point"));
                     }
@@ -384,7 +398,14 @@ fn program_main(p: &Prepared, err: i32) -> ! {
                     }
                 }
                 CStep::Bind(a, b) => {
-                    if libc::mount(a.as_ptr(), b.as_ptr(), none, libc::MS_BIND | libc::MS_REC, null) != 0 {
+                    if libc::mount(
+                        a.as_ptr(),
+                        b.as_ptr(),
+                        none,
+                        libc::MS_BIND | libc::MS_REC,
+                        null,
+                    ) != 0
+                    {
                         fail(err, step_no("a bind mount"));
                     }
                 }
@@ -447,7 +468,12 @@ fn program_main(p: &Prepared, err: i32) -> ! {
             }
         }
         // Every other descriptor closes at exec.
-        libc::syscall(libc::SYS_close_range, 3u32, u32::MAX, libc::CLOSE_RANGE_CLOEXEC);
+        libc::syscall(
+            libc::SYS_close_range,
+            3u32,
+            u32::MAX,
+            libc::CLOSE_RANGE_CLOEXEC,
+        );
         let mut set: libc::sigset_t = std::mem::zeroed();
         libc::sigemptyset(&raw mut set);
         libc::sigprocmask(libc::SIG_SETMASK, &raw const set, std::ptr::null_mut());

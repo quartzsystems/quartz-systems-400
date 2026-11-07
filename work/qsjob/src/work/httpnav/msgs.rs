@@ -72,13 +72,15 @@ fn days(y: i64, mo: i64, d: i64) -> i64 {
 
 /// `CYYMMDD` and `HHMMSS`, local, as seconds since 1970.
 fn local_secs(date: &str, time: &str, offset_min: i32) -> u64 {
-    let n = |s: &str, a: usize, b: usize| s.get(a..b).and_then(|x| x.parse::<i64>().ok()).unwrap_or(0);
+    let n =
+        |s: &str, a: usize, b: usize| s.get(a..b).and_then(|x| x.parse::<i64>().ok()).unwrap_or(0);
     if date.len() < 7 || time.len() < 6 {
         return 0;
     }
     let year = 1900 + n(date, 0, 1) * 100 + n(date, 1, 3);
     let d = days(year, n(date, 3, 5), n(date, 5, 7));
-    let secs = d * 86_400 + n(time, 0, 2) * 3600 + n(time, 2, 4) * 60 + n(time, 4, 6) - i64::from(offset_min) * 60;
+    let secs = d * 86_400 + n(time, 0, 2) * 3600 + n(time, 2, 4) * 60 + n(time, 4, 6)
+        - i64::from(offset_min) * 60;
     u64::try_from(secs).unwrap_or(0)
 }
 
@@ -97,15 +99,19 @@ impl Msgs for LiveMsgs {
     fn own_queue(&self, user: &str) -> (String, String) {
         let u = user.trim().to_ascii_uppercase();
         let fallback = ("QUSRSYS".to_string(), u.clone());
-        let q = self.link.read(user, move |m| match m.sec(Query::Profile { user: u }) {
-            Ok(Answer::Profile { data }) => sec::profile::UsrPrf::decode(&data)
-                .ok()
-                .map(|p| (p.msgq.1, p.msgq.0)),
-            _ => None,
-        });
+        let q = self
+            .link
+            .read(user, move |m| match m.sec(Query::Profile { user: u }) {
+                Ok(Answer::Profile { data }) => sec::profile::UsrPrf::decode(&data)
+                    .ok()
+                    .map(|p| (p.msgq.1, p.msgq.0)),
+                _ => None,
+            });
         match q {
             Some((lib, name)) if !name.is_empty() && !lib.starts_with('*') => (lib, name),
-            Some((_, name)) if !name.is_empty() && !name.starts_with('*') => ("QUSRSYS".into(), name),
+            Some((_, name)) if !name.is_empty() && !name.starts_with('*') => {
+                ("QUSRSYS".into(), name)
+            }
             _ => fallback,
         }
     }
@@ -115,7 +121,12 @@ impl Msgs for LiveMsgs {
         self.link
             .read(user, move |m| Some(m.ask(|l| l.msgq_list(q))))
             .unwrap_or_else(|| Err("CPF9897 Navigator could not read the queue.".into()))
-            .map(|all| all.into_iter().filter(|m| m.kind != MsgKind::Rpy).map(queued).collect())
+            .map(|all| {
+                all.into_iter()
+                    .filter(|m| m.kind != MsgKind::Rpy)
+                    .map(queued)
+                    .collect()
+            })
             .map_err(|e| failure(&e))
     }
 
@@ -151,7 +162,10 @@ mod tests {
     #[test]
     fn history_dates() {
         // 1261101 is 11/01/26; 120000 local at UTC-4 is 16:00 UTC.
-        assert_eq!(local_secs("1261101", "120000", -240), 1_793_491_200 + 16 * 3600);
+        assert_eq!(
+            local_secs("1261101", "120000", -240),
+            1_793_491_200 + 16 * 3600
+        );
         assert_eq!(local_secs("", "", 0), 0);
     }
 }

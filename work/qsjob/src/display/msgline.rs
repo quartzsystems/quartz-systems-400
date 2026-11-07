@@ -9,8 +9,8 @@
 //! this way, never with text of its own.
 
 use mi::Job;
-use qir::MsgType;
 use msgf::MsgDesc;
+use qir::MsgType;
 use stg::Client;
 use uim::engine::LineMsg;
 use wm::obj::msgq::{MsgKind, QMsg};
@@ -66,12 +66,19 @@ pub fn say(host: &Host, id: &str, data: &[&dyn std::fmt::Display]) -> String {
 /// shows.
 fn as_queued(host: &Host, m: &LineMsg) -> QMsg {
     let desc = describe(host, &m.id);
-    let data = desc.as_ref().map(|d| d.data_of(&m.data)).unwrap_or_default();
+    let data = desc
+        .as_ref()
+        .map(|d| d.data_of(&m.data))
+        .unwrap_or_default();
     let time = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_micros()).unwrap_or(0));
     QMsg {
-        kind: if m.error { MsgKind::Diag } else { MsgKind::Info },
+        kind: if m.error {
+            MsgKind::Diag
+        } else {
+            MsgKind::Info
+        },
         severity: desc
             .as_ref()
             .map_or(0, |d| u8::try_from(d.severity).unwrap_or(99)),
@@ -88,7 +95,10 @@ fn as_queued(host: &Host, m: &LineMsg) -> QMsg {
             (None, Some(d)) => d.format(&data),
             (None, None) => m.fallback(),
         },
-        help: desc.as_ref().map(|d| d.format_help(&data)).unwrap_or_default(),
+        help: desc
+            .as_ref()
+            .map(|d| d.format_help(&data))
+            .unwrap_or_default(),
         data,
         ..QMsg::default()
     }
@@ -107,7 +117,9 @@ pub fn help(surface: &mut Surface, m: &LineMsg) -> bool {
 
 /// A message's data as its description's variables render it.
 fn values_of(host: &Host, id: &str, data: &[u8]) -> Vec<String> {
-    describe(host, id).map(|d| d.render_vars(data)).unwrap_or_default()
+    describe(host, id)
+        .map(|d| d.render_vars(data))
+        .unwrap_or_default()
 }
 
 /// A command's escape as a message line's message: its identifier
@@ -118,7 +130,9 @@ pub fn of_fail(host: &Host, f: &Fail) -> LineMsg {
     let values: Vec<&str> = values.iter().map(String::as_str).collect();
     let mut m = LineMsg::error(&f.msgid, &values);
     let last = f.text.trim_end().rsplit('\n').next().unwrap_or("").trim();
-    let last = last.strip_prefix(f.msgid.as_str()).map_or(last, str::trim_start);
+    let last = last
+        .strip_prefix(f.msgid.as_str())
+        .map_or(last, str::trim_start);
     if !last.is_empty() && f.data.is_empty() {
         m.text = Some(last.to_string());
     }
@@ -148,7 +162,9 @@ pub fn of_outcome(job: &Job, host: &Host, since: u32, out: &Outcome) -> Option<L
     match &out.escape {
         // An analysis error shows its first diagnostic, as IBM's line
         // shows `CPD0030` for a command that is not found.
-        Some(f) if f.msgid == "CPF0006" && out.diag.is_some() => out.diag.as_ref().map(|d| of_fail(host, d)),
+        Some(f) if f.msgid == "CPF0006" && out.diag.is_some() => {
+            out.diag.as_ref().map(|d| of_fail(host, d))
+        }
         Some(f) => Some(of_fail(host, f)),
         None => job
             .ext_msgq

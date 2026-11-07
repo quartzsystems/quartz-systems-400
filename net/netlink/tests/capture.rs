@@ -29,9 +29,9 @@ fn raw(bus: Bus, req: &Builder) -> String {
     loop {
         let d = s.recv().unwrap().to_vec();
         let _ = writeln!(out, "{}", hex(&d));
-        let last = messages(&d).filter_map(Result::ok).any(|m| {
-            m.kind == NLMSG_DONE || m.kind == NLMSG_ERROR
-        });
+        let last = messages(&d)
+            .filter_map(Result::ok)
+            .any(|m| m.kind == NLMSG_DONE || m.kind == NLMSG_ERROR);
         if last || req.flags() & netlink::codec::NLM_F_DUMP == 0 {
             return out;
         }
@@ -78,12 +78,31 @@ fn capture_fixtures() {
     rt.mtu = Some(1300);
     r.add_route(&rt).unwrap();
 
-    save("link_vlan.hex", raw(Bus::Route, &route::link::get_by_index(vlan.index)));
-    save("link_bond.hex", raw(Bus::Route, &route::link::get_by_index(bond.index)));
-    save("link_slave.hex", raw(Bus::Route, &route::link::get_by_index(d0.index)));
-    save("addr_dump.hex", raw(Bus::Route, &route::addr::dump_request(None)));
-    save("route_dump_v4.hex", raw(Bus::Route, &route::rt::dump_request(Some(Family::V4))));
-    let mut exists = route::addr::request(&Address::new(vlan.index, "192.0.2.10".parse().unwrap(), 24), true).unwrap();
+    save(
+        "link_vlan.hex",
+        raw(Bus::Route, &route::link::get_by_index(vlan.index)),
+    );
+    save(
+        "link_bond.hex",
+        raw(Bus::Route, &route::link::get_by_index(bond.index)),
+    );
+    save(
+        "link_slave.hex",
+        raw(Bus::Route, &route::link::get_by_index(d0.index)),
+    );
+    save(
+        "addr_dump.hex",
+        raw(Bus::Route, &route::addr::dump_request(None)),
+    );
+    save(
+        "route_dump_v4.hex",
+        raw(Bus::Route, &route::rt::dump_request(Some(Family::V4))),
+    );
+    let mut exists = route::addr::request(
+        &Address::new(vlan.index, "192.0.2.10".parse().unwrap(), 24),
+        true,
+    )
+    .unwrap();
     exists.add_flags(NLM_F_ACK);
     save("error_eexist.hex", raw(Bus::Route, &exists));
 
@@ -94,12 +113,21 @@ fn capture_fixtures() {
     let mut b = [0u8; 300];
     s.read_exact(&mut b).unwrap();
     let l6 = TcpListener::bind("[::1]:8471").unwrap();
-    save("proc_net_tcp.txt", std::fs::read_to_string("/proc/net/tcp").unwrap());
-    save("proc_net_tcp6.txt", std::fs::read_to_string("/proc/net/tcp6").unwrap());
+    save(
+        "proc_net_tcp.txt",
+        std::fs::read_to_string("/proc/net/tcp").unwrap(),
+    );
+    save(
+        "proc_net_tcp6.txt",
+        std::fs::read_to_string("/proc/net/tcp6").unwrap(),
+    );
     drop(l6);
     save(
         "diag_tcp4.hex",
-        raw(Bus::SockDiag, &diag::dump_request(Family::V4, Proto::Tcp, diag::ALL_STATES, true)),
+        raw(
+            Bus::SockDiag,
+            &diag::dump_request(Family::V4, Proto::Tcp, diag::ALL_STATES, true),
+        ),
     );
 
     let mut n = Nft::open().unwrap();

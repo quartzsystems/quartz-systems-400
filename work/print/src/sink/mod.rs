@@ -188,8 +188,10 @@ impl Endpoint {
         for a in self.addrs()? {
             match TcpStream::connect_timeout(&a, self.timeout) {
                 Ok(s) => {
-                    s.set_read_timeout(Some(self.timeout)).map_err(|e| SinkError::io(&e))?;
-                    s.set_write_timeout(Some(self.timeout)).map_err(|e| SinkError::io(&e))?;
+                    s.set_read_timeout(Some(self.timeout))
+                        .map_err(|e| SinkError::io(&e))?;
+                    s.set_write_timeout(Some(self.timeout))
+                        .map_err(|e| SinkError::io(&e))?;
                     let _ = s.set_nodelay(true);
                     return Ok(s);
                 }
@@ -222,7 +224,9 @@ mod tests {
         let e = Endpoint::new("127.0.0.1", port).connect().unwrap_err();
         assert_eq!(e.kind, SinkErrorKind::Refused);
         assert_eq!(e.kind.msgid(), "TCP3427");
-        let e = Endpoint::new("no-such-host.invalid", 9100).connect().unwrap_err();
+        let e = Endpoint::new("no-such-host.invalid", 9100)
+            .connect()
+            .unwrap_err();
         assert_eq!(e.kind, SinkErrorKind::Resolve);
         assert!(e.to_string().starts_with("TCP370A: "));
         assert!(!SinkErrorKind::Rejected.retryable());

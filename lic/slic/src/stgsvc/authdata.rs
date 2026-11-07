@@ -51,7 +51,9 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<
 }
 
 fn pairs(p: &[(&str, String)]) -> Vars {
-    p.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect()
+    p.iter()
+        .map(|(k, v)| ((*k).to_string(), v.clone()))
+        .collect()
 }
 
 /// The detail view's line of `X`s for `bits`.
@@ -68,7 +70,12 @@ fn detail(bits: Auth) -> String {
 /// `OBJAUT LIB NAME TYPE`: the object's names, owner, group and list,
 /// and in `AUTS` each user with the authority, the detail line
 /// (`BITS`) and each single authority (`OPR` .. `EXE`).
-fn object_authorities(system: &mut System, lib: &str, name: &str, ty: &str) -> Result<Sys2Data, String> {
+fn object_authorities(
+    system: &mut System,
+    lib: &str,
+    name: &str,
+    ty: &str,
+) -> Result<Sys2Data, String> {
     let lib = if lib.is_empty() { "*LIBL" } else { lib };
     let p = Params::parse(&format!("DSPOBJAUT OBJ({lib}/{name}) OBJTYPE({ty})"));
     let a = crate::svc::security::in_store(system, |txn, env| {
@@ -105,8 +112,9 @@ fn object_authorities(system: &mut System, lib: &str, name: &str, ty: &str) -> R
 /// `AUTLOBJ LIST`: the list's owner, primary group and the objects it
 /// secures.
 fn secured(system: &mut System, list: &str) -> Result<Sys2Data, String> {
-    let (owner, pgp, objs) =
-        crate::svc::security::in_store(system, |txn, env| sec::cmd::object::secured_objects(txn, env, list))?;
+    let (owner, pgp, objs) = crate::svc::security::in_store(system, |txn, env| {
+        sec::cmd::object::secured_objects(txn, env, list)
+    })?;
     let rows = objs
         .into_iter()
         .map(|o| {

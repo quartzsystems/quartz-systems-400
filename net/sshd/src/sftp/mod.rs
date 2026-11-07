@@ -38,9 +38,16 @@ pub fn serve(ifs: &dyn IfsClient, home: &str, input: &mut dyn Read, output: &mut
         let Some(reply) = s.handle(&body) else {
             break;
         };
-        let mut out = u32::try_from(reply.len()).unwrap_or(0).to_be_bytes().to_vec();
+        let mut out = u32::try_from(reply.len())
+            .unwrap_or(0)
+            .to_be_bytes()
+            .to_vec();
         out.extend_from_slice(&reply);
-        if output.write_all(&out).and_then(|()| output.flush()).is_err() {
+        if output
+            .write_all(&out)
+            .and_then(|()| output.flush())
+            .is_err()
+        {
             break;
         }
     }

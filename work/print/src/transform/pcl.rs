@@ -210,7 +210,11 @@ pub fn render(model: Model, job: &PrintJob, scs: &[u8]) -> Vec<u8> {
     let (pages, fmt) = spool::scs::decode(scs);
     let laid = PrintJob {
         cpi: requested_cpi(job),
-        page_width: if fmt.width > 0 { fmt.width } else { job.page_width },
+        page_width: if fmt.width > 0 {
+            fmt.width
+        } else {
+            job.page_width
+        },
         page_len: if fmt.len > 0 { fmt.len } else { job.page_len },
         ..job.clone()
     };

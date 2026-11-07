@@ -24,8 +24,10 @@ use dds::{CompileOpts, NoRefs, Source, compile_pf};
 use jrn::journal::{CrtJrnOpts, crtjrn};
 use jrn::rcv::{CrtJrnRcvOpts, crtjrnrcv};
 use qsname::{MemberSpec, Name};
+use saverst::{
+    AllowAll, AllowDiff, MbrOpt, RestoreOptions, RestoreReport, RstOption, SaveOptions, msg,
+};
 use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
-use saverst::{AllowAll, AllowDiff, MbrOpt, RestoreOptions, RestoreReport, RstOption, SaveOptions, msg};
 use store::obj::dtaara::{self, DataAreaType, DataAreaValue};
 use store::obj::{CreateParams, JobHandle, ObjectId, ops, types, usrspc};
 use store::{FormatParams, Store, StoreConfig, Txn};
@@ -69,7 +71,13 @@ fn pf_source(fields: &[(&str, u32)]) -> String {
     lines.join("\n")
 }
 
-fn create_pf(t: &mut Txn<'_>, lib: ObjectId, n: &str, fields: &[(&str, u32)], when: u64) -> ObjectId {
+fn create_pf(
+    t: &mut Txn<'_>,
+    lib: ObjectId,
+    n: &str,
+    fields: &[(&str, u32)],
+    when: u64,
+) -> ObjectId {
     let (source, _) = Source::from_text(&pf_source(fields));
     let c = compile_pf(&source, &NoRefs, &CompileOpts::default());
     let pf = c.definition.unwrap_or_else(|| panic!("{}", c.listing));
@@ -109,7 +117,12 @@ fn scenario() -> (Store, ObjectId, Vec<u8>) {
         wal_pages: 512,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default()).unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let q = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let lib = ops::create(&mut t, &params(q, "QSTEST", types::LIB)).unwrap();
@@ -166,8 +179,16 @@ fn scenario() -> (Store, ObjectId, Vec<u8>) {
         user: "QSECOFR".into(),
     };
     let mut w = Writer::new(Vec::new(), &header).unwrap();
-    let rep = saverst::save_library(&mut s, JobHandle(1), &AllowAll, q, "QSTEST", &SaveOptions::default(), &mut w)
-        .unwrap();
+    let rep = saverst::save_library(
+        &mut s,
+        JobHandle(1),
+        &AllowAll,
+        q,
+        "QSTEST",
+        &SaveOptions::default(),
+        &mut w,
+    )
+    .unwrap();
     assert_eq!(rep.not_saved(), 0, "{:?}", rep.objects);
     let (_, bytes) = w.finish(0).unwrap();
 
@@ -192,7 +213,11 @@ fn scenario() -> (Store, ObjectId, Vec<u8>) {
     (s, q, bytes)
 }
 
-const OPTIONS: [(&str, RstOption); 3] = [("*ALL", RstOption::All), ("*NEW", RstOption::New), ("*OLD", RstOption::Old)];
+const OPTIONS: [(&str, RstOption); 3] = [
+    ("*ALL", RstOption::All),
+    ("*NEW", RstOption::New),
+    ("*OLD", RstOption::Old),
+];
 const MBROPTS: [(&str, MbrOpt); 4] = [
     ("*MATCH", MbrOpt::Match),
     ("*ALL", MbrOpt::All),
@@ -274,7 +299,13 @@ fn line(opt: &str, mbr: &str, allow: &str, c: &Cell) -> String {
     if !notes.is_empty() {
         let _ = write!(s, " notes={}", notes.join(","));
     }
-    let _ = write!(s, " changes={} files={} CUST-members={}", r.changes, c.files.join(","), c.cust_members);
+    let _ = write!(
+        s,
+        " changes={} files={} CUST-members={}",
+        r.changes,
+        c.files.join(","),
+        c.cust_members
+    );
     s
 }
 
@@ -309,7 +340,11 @@ fn check_rules(opt: RstOption, mbr: MbrOpt, allow: &str, c: &Cell) {
         }
         // 2: *OLD skips what is missing.
         RstOption::Old => {
-            assert!(r.skipped.iter().any(|(m, w)| *m == msg::SKIP_MISSING && w.contains("US1")));
+            assert!(
+                r.skipped
+                    .iter()
+                    .any(|(m, w)| *m == msg::SKIP_MISSING && w.contains("US1"))
+            );
         }
         _ => {}
     }
@@ -328,7 +363,10 @@ fn check_rules(opt: RstOption, mbr: MbrOpt, allow: &str, c: &Cell) {
     // 13: owner and primary group.
     let owner_ok = matches!(allow, "*OWNER" | "*ALL");
     let pgp_ok = matches!(allow, "*PGP" | "*ALL");
-    assert_eq!(msgid(c, "DA1"), (!owner_ok).then_some(msg::NOT_RESTORED_OWNER));
+    assert_eq!(
+        msgid(c, "DA1"),
+        (!owner_ok).then_some(msg::NOT_RESTORED_OWNER)
+    );
     assert_eq!(msgid(c, "DA2"), (!pgp_ok).then_some(msg::NOT_RESTORED_PGP));
     assert_eq!(has_note(c, msg::OWNER_KEPT), owner_ok);
     assert_eq!(has_note(c, msg::PGP_KEPT), pgp_ok);
@@ -366,6 +404,11 @@ fn every_option_mbropt_and_alwobjdif() {
         std::fs::write(&expected, &out).unwrap();
         return;
     }
-    let want = std::fs::read_to_string(&expected).unwrap_or_default().replace("\r\n", "\n");
-    assert_eq!(out, want, "the matrix changed; QS400_UPDATE_SAVE=1 rewrites it");
+    let want = std::fs::read_to_string(&expected)
+        .unwrap_or_default()
+        .replace("\r\n", "\n");
+    assert_eq!(
+        out, want,
+        "the matrix changed; QS400_UPDATE_SAVE=1 rewrites it"
+    );
 }

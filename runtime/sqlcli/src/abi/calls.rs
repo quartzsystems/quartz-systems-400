@@ -76,7 +76,10 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("SQLGetEnvAttr", get_env_attr as *const () as usize),
         ("SQLSetConnectAttr", set_connect_attr as *const () as usize),
         ("SQLGetConnectAttr", get_connect_attr as *const () as usize),
-        ("SQLSetConnectOption", set_connect_option as *const () as usize),
+        (
+            "SQLSetConnectOption",
+            set_connect_option as *const () as usize,
+        ),
         ("SQLSetStmtAttr", set_stmt_attr as *const () as usize),
         ("SQLGetStmtAttr", get_stmt_attr as *const () as usize),
         ("SQLConnect", connect as *const () as usize),

@@ -78,7 +78,11 @@ fn sort_matches_reference() {
         type Cmp = fn(&String, &String) -> Ordering;
         let cases: &[(&str, Cmp, bool)] = &[
             ("sort in.txt", |a, b| a.as_bytes().cmp(b.as_bytes()), false),
-            ("sort -r in.txt", |a, b| b.as_bytes().cmp(a.as_bytes()), false),
+            (
+                "sort -r in.txt",
+                |a, b| b.as_bytes().cmp(a.as_bytes()),
+                false,
+            ),
             (
                 "sort -f in.txt",
                 |a, b| {
@@ -177,7 +181,11 @@ fn sed_matches_reference() {
     );
     check(
         "sed 's/a/#/' in.txt",
-        joined(&v.iter().map(|l| l.replacen('a', "#", 1)).collect::<Vec<_>>()),
+        joined(
+            &v.iter()
+                .map(|l| l.replacen('a', "#", 1))
+                .collect::<Vec<_>>(),
+        ),
     );
     check(
         "sed 's/\\([^ ]*\\) \\([^ ]*\\)/\\2 \\1/' in.txt",
@@ -204,20 +212,30 @@ fn sed_matches_reference() {
         r.reverse();
         joined(&r)
     });
-    check("sed ':a;N;$!ba;s/\\n/,/g' in.txt", format!("{}\n", v.join(",")));
+    check(
+        "sed ':a;N;$!ba;s/\\n/,/g' in.txt",
+        format!("{}\n", v.join(",")),
+    );
     check("sed -n '$=' in.txt", format!("{}\n", v.len()));
     check(
         "sed -n '/^a/p' in.txt",
-        joined(&v.iter().filter(|l| l.starts_with('a')).cloned().collect::<Vec<_>>()),
+        joined(
+            &v.iter()
+                .filter(|l| l.starts_with('a'))
+                .cloned()
+                .collect::<Vec<_>>(),
+        ),
     );
     check(
         "sed '/x/d' in.txt",
-        joined(&v.iter().filter(|l| !l.contains('x')).cloned().collect::<Vec<_>>()),
+        joined(
+            &v.iter()
+                .filter(|l| !l.contains('x'))
+                .cloned()
+                .collect::<Vec<_>>(),
+        ),
     );
-    check(
-        "sed -n '10,20p' in.txt",
-        joined(&v[9..20]),
-    );
+    check("sed -n '10,20p' in.txt", joined(&v[9..20]));
     check(
         "sed 'n;d' in.txt",
         joined(&v.iter().step_by(2).cloned().collect::<Vec<_>>()),

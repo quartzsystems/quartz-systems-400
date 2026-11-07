@@ -151,7 +151,11 @@ mod tests {
         // Every name is found by itself and by its shortest form.
         for (name, min, s) in TABLE {
             assert_eq!(Sub::parse(name).map(|x| x.0), Some(*s), "{name}");
-            assert_eq!(Sub::parse(&name[..*min]).map(|x| x.0), Some(*s), "{name} short");
+            assert_eq!(
+                Sub::parse(&name[..*min]).map(|x| x.0),
+                Some(*s),
+                "{name} short"
+            );
         }
     }
 }

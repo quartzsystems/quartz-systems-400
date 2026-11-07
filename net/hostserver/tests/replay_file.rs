@@ -24,7 +24,12 @@ fn masks() -> Masks {
             (0x8002, 18..42),
             (0x8002, 62..66),
         ],
-        param: vec![(0x0010, 180..188), (0x000F, 32..56), (0x000F, 76..80), (0x000F, 136..140)],
+        param: vec![
+            (0x0010, 180..188),
+            (0x000F, 32..56),
+            (0x000F, 76..80),
+            (0x000F, 136..140),
+        ],
         skip: Vec::new(),
     }
 }
@@ -34,7 +39,9 @@ fn ifs_trace() {
     for s in ["ifs", "svrmap"] {
         let t = trace("file", s);
         let auth = TraceAuth::of(&t);
-        let diffs = replay(&t, &masks(), &mut || Box::new(FileServer::new(auth.clone(), ifs(), NoExits)) as Box<dyn Handler>);
+        let diffs = replay(&t, &masks(), &mut || {
+            Box::new(FileServer::new(auth.clone(), ifs(), NoExits)) as Box<dyn Handler>
+        });
         accept(&format!("file-{s}"), &diffs);
     }
 }

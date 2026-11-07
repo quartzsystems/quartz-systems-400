@@ -110,7 +110,8 @@ impl Manifest {
         if m.ptf.parse::<release::Ptf>().is_err() {
             return Err(bad(format!("{} is not a PTF identifier", m.ptf)));
         }
-        if m.objects.is_empty() && m.lic.is_empty() && m.cover.is_empty() && m.cover_file.is_empty() {
+        if m.objects.is_empty() && m.lic.is_empty() && m.cover.is_empty() && m.cover_file.is_empty()
+        {
             return Err(bad("the manifest names no objects, image or cover letter"));
         }
         Ok(m)
@@ -123,7 +124,11 @@ impl Manifest {
             .map(|o| {
                 let t = store::obj::types::type_by_name(&o.kind.to_ascii_uppercase())
                     .ok_or_else(|| bad(format!("object type {}", o.kind)))?;
-                Ok((o.library.to_ascii_uppercase(), o.name.to_ascii_uppercase(), t.code))
+                Ok((
+                    o.library.to_ascii_uppercase(),
+                    o.name.to_ascii_uppercase(),
+                    t.code,
+                ))
             })
             .collect()
     }
@@ -135,7 +140,11 @@ impl Manifest {
             ptf: p.to_ascii_uppercase(),
             product: self.product.clone(),
         };
-        let rel = if self.release.is_empty() { release } else { &self.release };
+        let rel = if self.release.is_empty() {
+            release
+        } else {
+            &self.release
+        };
         let kind = match self.kind.as_str() {
             "" | "immediate" => PtfKind::Immediate,
             "delayed" => PtfKind::Delayed,

@@ -229,7 +229,9 @@ pub fn bind(input: BindInput<'_>) -> Result<(ProgramObject, Vec<Diag>)> {
     }
     let unresolved: Vec<String> = imports
         .iter()
-        .filter(|i| i.target == ImportTarget::Unresolved && system_data_size(i.kind, &i.name).is_none())
+        .filter(|i| {
+            i.target == ImportTarget::Unresolved && system_data_size(i.kind, &i.name).is_none()
+        })
         .map(|i| format!("{} ({})", i.name, b.modules[i.module as usize].module.name))
         .collect();
     if !unresolved.is_empty() {
@@ -498,7 +500,10 @@ fn system_data_size(kind: ExportKind, name: &str) -> Option<u64> {
     if kind != ExportKind::Data {
         return None;
     }
-    SYSTEM_DATA.iter().find(|(n, _)| n.eq_ignore_ascii_case(name)).map(|(_, s)| *s)
+    SYSTEM_DATA
+        .iter()
+        .find(|(n, _)| n.eq_ignore_ascii_case(name))
+        .map(|(_, s)| *s)
 }
 
 /// The registration facility's procedures (`QUSRGFA1`, `QUSRGFA2`),

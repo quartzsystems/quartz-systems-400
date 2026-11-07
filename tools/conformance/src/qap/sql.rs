@@ -8,8 +8,8 @@
 use std::time::{Duration, Instant};
 
 use qap_proto::ops::sql::{
-    CommitLevel, CursorRef, Execute, Executed, Fetch, Fetched, Naming, Prepare, Prepared, SetOptions, SqlFailure,
-    SqlValue, StatementRef,
+    CommitLevel, CursorRef, Execute, Executed, Fetch, Fetched, Naming, Prepare, Prepared,
+    SetOptions, SqlFailure, SqlValue, StatementRef,
 };
 use qap_proto::{Envelope, Op, Status};
 
@@ -29,7 +29,8 @@ pub fn options(c: &mut Conn, commit: CommitLevel, schema: Option<&str>) -> Resul
 
 /// `Prepare`.
 pub fn prepare(c: &mut Conn, sql: &str) -> Result<Prepared, String> {
-    c.ok(Op::Prepare, &Prepare { sql: sql.into() }).map_err(|e| format!("{sql}: {e}"))
+    c.ok(Op::Prepare, &Prepare { sql: sql.into() })
+        .map_err(|e| format!("{sql}: {e}"))
 }
 
 /// `Execute` of `statement` over `rows`: the reply as it came.
@@ -47,7 +48,12 @@ pub fn run(c: &mut Conn, sql: &str) -> Result<Executed, String> {
     }
     let e: Executed = r.body_as().map_err(|e| e.to_string())?;
     if e.cursor.is_none() {
-        c.ok::<_, ()>(Op::Release, &StatementRef { statement: p.statement })?;
+        c.ok::<_, ()>(
+            Op::Release,
+            &StatementRef {
+                statement: p.statement,
+            },
+        )?;
     }
     Ok(e)
 }
@@ -57,8 +63,12 @@ pub fn run(c: &mut Conn, sql: &str) -> Result<Executed, String> {
 pub fn run_or(c: &mut Conn, sql: &str, allowed: &[&str]) -> Result<(), String> {
     let p = prepare(c, sql)?;
     let r = execute(c, p.statement, Vec::new())?;
-    let state = r.body_as::<SqlFailure>().map(|f| f.sqlstate).unwrap_or_default();
-    if r.status == Status::Ok || (r.status == Status::SqlError && allowed.contains(&state.as_str())) {
+    let state = r
+        .body_as::<SqlFailure>()
+        .map(|f| f.sqlstate)
+        .unwrap_or_default();
+    if r.status == Status::Ok || (r.status == Status::SqlError && allowed.contains(&state.as_str()))
+    {
         return Ok(());
     }
     Err(format!("{sql}: {}", failure(&r)))
@@ -68,7 +78,13 @@ pub fn run_or(c: &mut Conn, sql: &str, allowed: &[&str]) -> Result<(), String> {
 pub fn failure(r: &Envelope) -> String {
     match r.body_as::<SqlFailure>() {
         Ok(f) if r.status == Status::SqlError => {
-            format!("{} SQLSTATE {} SQLCODE {} row {:?}", brief(r), f.sqlstate, f.sqlcode, f.row)
+            format!(
+                "{} SQLSTATE {} SQLCODE {} row {:?}",
+                brief(r),
+                f.sqlstate,
+                f.sqlcode,
+                f.row
+            )
         }
         _ => brief(r),
     }
@@ -83,12 +99,23 @@ pub fn query(c: &mut Conn, sql: &str) -> Result<Vec<Vec<SqlValue>>, String> {
     }
     let ran: Executed = reply.body_as().map_err(|e| e.to_string())?;
     let cursor = ran.cursor.ok_or_else(|| format!("{sql}: no cursor"))?;
-    let rows: Fetched = c.ok(Op::Fetch, &Fetch { cursor, max_rows: 0 })?;
+    let rows: Fetched = c.ok(
+        Op::Fetch,
+        &Fetch {
+            cursor,
+            max_rows: 0,
+        },
+    )?;
     if !rows.end {
         return Err(format!("{sql}: Fetch of every row did not end the cursor"));
     }
     let _ = c.call(Op::CloseCursor, &CursorRef { cursor })?;
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: stmt.statement })?;
+    c.ok::<_, ()>(
+        Op::Release,
+        &StatementRef {
+            statement: stmt.statement,
+        },
+    )?;
     Ok(rows.rows)
 }
 
@@ -121,7 +148,11 @@ pub fn dec(v: &str) -> SqlValue {
 /// made once.
 pub fn big_table(c: &mut Conn, schema: &str, rows: i64) -> Result<(), String> {
     run_or(c, &format!("CREATE SCHEMA {schema}"), &["42710", "58004"])?;
-    run_or(c, &format!("CREATE TABLE {schema}.BIG (N INTEGER NOT NULL)"), &["42710", "58004"])?;
+    run_or(
+        c,
+        &format!("CREATE TABLE {schema}.BIG (N INTEGER NOT NULL)"),
+        &["42710", "58004"],
+    )?;
     let have = count(c, &format!("SELECT COUNT(*) FROM {schema}.BIG"))?;
     if have >= rows {
         return Ok(());
@@ -131,7 +162,12 @@ pub fn big_table(c: &mut Conn, schema: &str, rows: i64) -> Result<(), String> {
     if r.status != Status::Ok {
         return Err(format!("filling {schema}.BIG: {}", failure(&r)));
     }
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: p.statement })
+    c.ok::<_, ()>(
+        Op::Release,
+        &StatementRef {
+            statement: p.statement,
+        },
+    )
 }
 
 /// The query that runs long: correlated subqueries two deep that never
@@ -149,7 +185,11 @@ pub fn long_query(schema: &str) -> String {
 pub fn still_running(c: &mut Conn, id: u32, settle: Duration) -> Result<(), String> {
     match c.poll_reply(id, settle)? {
         None => Ok(()),
-        Some(r) => Err(format!("the long query ended after {}s: {}", settle.as_secs(), failure(&r))),
+        Some(r) => Err(format!(
+            "the long query ended after {}s: {}",
+            settle.as_secs(),
+            failure(&r)
+        )),
     }
 }
 
@@ -183,7 +223,13 @@ pub fn start_query(c: &mut Conn, sql: &str) -> Result<(u32, Op), String> {
         }
         let e: Executed = r.body_as().map_err(|e| e.to_string())?;
         let cursor = e.cursor.ok_or("the long query has no cursor")?;
-        let id = c.request(Op::Fetch, &Fetch { cursor, max_rows: 0 })?;
+        let id = c.request(
+            Op::Fetch,
+            &Fetch {
+                cursor,
+                max_rows: 0,
+            },
+        )?;
         return Ok((id, Op::Fetch));
     }
     Ok((id, Op::Execute))
@@ -193,7 +239,13 @@ pub fn start_query(c: &mut Conn, sql: &str) -> Result<(u32, Op), String> {
 /// request running it.
 pub fn start_exec(c: &mut Conn, sql: &str) -> Result<u32, String> {
     let p = prepare(c, sql)?;
-    c.request(Op::Execute, &Execute { statement: p.statement, rows: Vec::new() })
+    c.request(
+        Op::Execute,
+        &Execute {
+            statement: p.statement,
+            rows: Vec::new(),
+        },
+    )
 }
 
 /// The reply to `id`, which must be `Ok`, within `limit`.
@@ -211,7 +263,11 @@ pub fn cancel(c: &mut Conn, id: u32) -> Result<(Envelope, Duration), String> {
     c.cancel(id)?;
     let r = c.reply(id, WAIT)?;
     if r.status != Status::Cancelled {
-        return Err(format!("the cancelled query ended {} ({})", failure(&r), msgid(&r)));
+        return Err(format!(
+            "the cancelled query ended {} ({})",
+            failure(&r),
+            msgid(&r)
+        ));
     }
     Ok((r, at.elapsed()))
 }

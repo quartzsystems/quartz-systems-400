@@ -25,7 +25,14 @@ fn captured() -> Captured {
     let mut cur: Option<String> = None;
     for line in text.lines() {
         if let Some(rest) = line.strip_prefix("CMD ") {
-            let name = rest.split_whitespace().next().unwrap_or("").rsplit('/').next().unwrap_or("").to_string();
+            let name = rest
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .to_string();
             out.entry(name.clone()).or_default();
             cur = Some(name);
             continue;
@@ -63,7 +70,8 @@ fn definitions_match_the_capture() {
     let mut bad = Vec::new();
     for name in COMMANDS {
         let theirs = &cap[*name];
-        let src = sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
+        let src =
+            sys_cpps::defs::source(name).unwrap_or_else(|| panic!("{name} has no definition"));
         let def = cmd::source::compile(name, src).unwrap_or_else(|e| panic!("{name}: {e:?}"));
         let ours: Vec<&str> = def.parms.iter().map(|p| p.kwd.as_str()).collect();
         let want: Vec<&str> = theirs.iter().map(|p| p.0.as_str()).collect();
@@ -73,12 +81,20 @@ fn definitions_match_the_capture() {
         }
         for (p, (kwd, min, max, dft, spc)) in def.parms.iter().zip(theirs) {
             if p.min != *min || p.max != *max {
-                bad.push(format!("{name} {kwd}: MIN/MAX {}/{} against {min}/{max}", p.min, p.max));
+                bad.push(format!(
+                    "{name} {kwd}: MIN/MAX {}/{} against {min}/{max}",
+                    p.min, p.max
+                ));
             }
             if p.dft.as_deref() != dft.as_deref() && !(dft.is_none() && p.dft.is_none()) {
                 bad.push(format!("{name} {kwd}: DFT {:?} against {dft:?}", p.dft));
             }
-            let ours: Vec<String> = p.spcval.iter().chain(&p.sngval).map(|s| s.from.clone()).collect();
+            let ours: Vec<String> = p
+                .spcval
+                .iter()
+                .chain(&p.sngval)
+                .map(|s| s.from.clone())
+                .collect();
             for s in spc {
                 if !ours.iter().any(|o| o.eq_ignore_ascii_case(s)) {
                     bad.push(format!("{name} {kwd}: special value {s} missing"));
@@ -94,7 +110,10 @@ fn every_command_has_its_place() {
     for name in COMMANDS.iter().chain(&["SNDSMTPEMM"]) {
         let e = sys_cpps::entry(name).unwrap_or_else(|| panic!("{name} is not in the inventory"));
         assert_eq!(e.site, sys_cpps::Site::Job, "{name}");
-        assert!(sys_cpps::inventory::JOB_SITE.contains(name), "{name} is not a job-site command");
+        assert!(
+            sys_cpps::inventory::JOB_SITE.contains(name),
+            "{name} is not a job-site command"
+        );
     }
 }
 
@@ -161,14 +180,22 @@ fn check(name: &str, text: &str, keys: &[u8], values: bool) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                !t.chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("");
         if label(got) != label(w) || (values && !shown.iter().all(|v| tail.contains(v))) {
             diffs.push(format!("row {}:\n  want {w:?}\n  got  {got:?}", i + 1));
         }
     }
-    assert!(diffs.is_empty(), "{name}:\n{}\n\nours:\n{}", diffs.join("\n"), s.rows.join("\n"));
+    assert!(
+        diffs.is_empty(),
+        "{name}:\n{}\n\nours:\n{}",
+        diffs.join("\n"),
+        s.rows.join("\n")
+    );
 }
 
 #[test]
@@ -197,16 +224,39 @@ fn chgsmtpa_prompt() {
         let mut env = Env::new(&mut src);
         env.setting.interactive = true;
         p.key(k, &fields, &mut env);
-        ours.extend(p.screen().rows.iter().take(20).skip(4).map(|r| label_of(r)).filter(|l| !l.is_empty()));
+        ours.extend(
+            p.screen()
+                .rows
+                .iter()
+                .take(20)
+                .skip(4)
+                .map(|r| label_of(r))
+                .filter(|l| !l.is_empty()),
+        );
     }
     let mut at = 0;
-    for page in ["prompt-chgsmtpa-f10", "prompt-chgsmtpa-f10-2", "prompt-chgsmtpa-f10-3"] {
-        for w in golden_rows(page).iter().take(20).skip(4).map(|r| label_of(r)).filter(|l| !l.is_empty()) {
+    for page in [
+        "prompt-chgsmtpa-f10",
+        "prompt-chgsmtpa-f10-2",
+        "prompt-chgsmtpa-f10-3",
+    ] {
+        for w in golden_rows(page)
+            .iter()
+            .take(20)
+            .skip(4)
+            .map(|r| label_of(r))
+            .filter(|l| !l.is_empty())
+        {
             match ours[at..].iter().position(|o| *o == w) {
                 Some(i) => at += i + 1,
-                None => panic!("{page}: {w:?} not found in order in:
-{}", ours.join("
-")),
+                None => panic!(
+                    "{page}: {w:?} not found in order in:
+{}",
+                    ours.join(
+                        "
+"
+                    )
+                ),
             }
         }
     }
@@ -239,14 +289,26 @@ fn chghttpa() {
         let r = analyze(&mut env, ok).unwrap_or_else(|e| panic!("{ok}: {e:?}"));
         assert_eq!(r.name, "CHGHTTPA");
     }
-    for (bad, id) in [("CHGHTTPA AUTOSTART(*MAYBE)", "CPD0084"), ("CHGHTTPA NBRSVR(3)", "CPD0043")] {
+    for (bad, id) in [
+        ("CHGHTTPA AUTOSTART(*MAYBE)", "CPD0084"),
+        ("CHGHTTPA NBRSVR(3)", "CPD0043"),
+    ] {
         assert_eq!(analyze(&mut env, bad).unwrap_err().msgid(), id, "{bad}");
     }
     let r = analyze(&mut env, "?CHGHTTPA").unwrap();
     let p = Prompter::new(&r);
     let rows = &p.screen().rows;
-    assert!(rows.iter().any(|r| r.contains("Change HTTP Attributes")), "{}", rows.join("\n"));
-    assert!(rows.iter().any(|r| label_of(r) == "Autostart" && r.contains("*SAME")), "{}", rows.join("\n"));
+    assert!(
+        rows.iter().any(|r| r.contains("Change HTTP Attributes")),
+        "{}",
+        rows.join("\n")
+    );
+    assert!(
+        rows.iter()
+            .any(|r| label_of(r) == "Autostart" && r.contains("*SAME")),
+        "{}",
+        rows.join("\n")
+    );
 }
 
 #[test]

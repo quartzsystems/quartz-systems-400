@@ -31,7 +31,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         match cx.sys.credentials() {
             Ok(c) => Some(c.uid),
             Err(e) => {
-                complain(cx, NAME, &format!("The user is not known: {}", e.errno.text()));
+                complain(
+                    cx,
+                    NAME,
+                    &format!("The user is not known: {}", e.errno.text()),
+                );
                 return 1;
             }
         }

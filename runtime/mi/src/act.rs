@@ -260,7 +260,15 @@ type SaxHandler = extern "sysv64" fn(*mut Env, i64, i64, u64, i32, u64, u64, u64
 type IntoHandler = extern "sysv64" fn(*mut Env, i64, i64, u64, u64, i64) -> i32;
 
 /// Call an `XML-SAX` handler procedure; its return code.
-pub fn call_sax_handler(j: &mut crate::job::Job, addr: usize, comm: u64, event: i32, string: u128, len: i64, exc: i32) -> i32 {
+pub fn call_sax_handler(
+    j: &mut crate::job::Job,
+    addr: usize,
+    comm: u64,
+    event: i32,
+    string: u128,
+    len: i64,
+    exc: i32,
+) -> i32 {
     let env = j.env();
     escape(j);
     // SAFETY: `addr` is the code address of a procedure the program
@@ -277,7 +285,13 @@ pub fn call_sax_handler(j: &mut crate::job::Job, addr: usize, comm: u64, event: 
 }
 
 /// Call an `XML-INTO` or `DATA-INTO` handler procedure; its return code.
-pub fn call_into_handler(j: &mut crate::job::Job, addr: usize, comm: u64, items: u64, n: i64) -> i32 {
+pub fn call_into_handler(
+    j: &mut crate::job::Job,
+    addr: usize,
+    comm: u64,
+    items: u64,
+    n: i64,
+) -> i32 {
     let env = j.env();
     escape(j);
     // SAFETY: as for `call_sax_handler`: the handler takes the
@@ -311,14 +325,92 @@ pub fn call_by_ref(j: &mut crate::job::Job, addr: usize, params: &[u64]) {
     // parameters as native addresses, and a callee with fewer
     // parameters ignores the trailing registers and stack slots.
     let f: ByRef6 = unsafe { std::mem::transmute::<usize, ByRef6>(addr) };
-    f(env, i64::try_from(params.len()).unwrap_or(0), 0, p[0], p[1], p[2], p[3], p[4], p[5]);
+    f(
+        env,
+        i64::try_from(params.len()).unwrap_or(0),
+        0,
+        p[0],
+        p[1],
+        p[2],
+        p[3],
+        p[4],
+        p[5],
+    );
     escape(j);
 }
 
 /// The most by-reference parameters [`call_by_ref_many`] passes.
 pub const MAX_BY_REF: usize = 64;
 
-type ByRefMany = extern "sysv64" fn(*mut Env, i64, i64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64, u64);
+type ByRefMany = extern "sysv64" fn(
+    *mut Env,
+    i64,
+    i64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+);
 
 /// Call a bound procedure (a service program's export) with up to
 /// [`MAX_BY_REF`] by-reference parameters, as a dynamic `CALL` of an
@@ -339,7 +431,75 @@ pub fn call_by_ref_many(j: &mut crate::job::Job, addr: usize, params: &[u64]) ->
     // convention a callee with fewer parameters ignores the trailing
     // registers and the stack slots its caller pushed and pops.
     let f: ByRefMany = unsafe { std::mem::transmute::<usize, ByRefMany>(addr) };
-    f(env, i64::try_from(params.len()).unwrap_or(0), 0, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15], p[16], p[17], p[18], p[19], p[20], p[21], p[22], p[23], p[24], p[25], p[26], p[27], p[28], p[29], p[30], p[31], p[32], p[33], p[34], p[35], p[36], p[37], p[38], p[39], p[40], p[41], p[42], p[43], p[44], p[45], p[46], p[47], p[48], p[49], p[50], p[51], p[52], p[53], p[54], p[55], p[56], p[57], p[58], p[59], p[60], p[61], p[62], p[63]);
+    f(
+        env,
+        i64::try_from(params.len()).unwrap_or(0),
+        0,
+        p[0],
+        p[1],
+        p[2],
+        p[3],
+        p[4],
+        p[5],
+        p[6],
+        p[7],
+        p[8],
+        p[9],
+        p[10],
+        p[11],
+        p[12],
+        p[13],
+        p[14],
+        p[15],
+        p[16],
+        p[17],
+        p[18],
+        p[19],
+        p[20],
+        p[21],
+        p[22],
+        p[23],
+        p[24],
+        p[25],
+        p[26],
+        p[27],
+        p[28],
+        p[29],
+        p[30],
+        p[31],
+        p[32],
+        p[33],
+        p[34],
+        p[35],
+        p[36],
+        p[37],
+        p[38],
+        p[39],
+        p[40],
+        p[41],
+        p[42],
+        p[43],
+        p[44],
+        p[45],
+        p[46],
+        p[47],
+        p[48],
+        p[49],
+        p[50],
+        p[51],
+        p[52],
+        p[53],
+        p[54],
+        p[55],
+        p[56],
+        p[57],
+        p[58],
+        p[59],
+        p[60],
+        p[61],
+        p[62],
+        p[63],
+    );
     escape(j);
     true
 }
@@ -727,7 +887,10 @@ impl Activator {
             // is loaded again.
             let same = Arc::ptr_eq(&p.object, &object)
                 || (p.object.modules.len() == object.modules.len()
-                    && p.object.modules.iter().zip(&object.modules).all(|(a, b)| a.module.created == b.module.created && a.module.code.code == b.module.code.code));
+                    && p.object.modules.iter().zip(&object.modules).all(|(a, b)| {
+                        a.module.created == b.module.created
+                            && a.module.code.code == b.module.code.code
+                    }));
             if p.debug == debug && same {
                 return Ok(p.clone());
             }

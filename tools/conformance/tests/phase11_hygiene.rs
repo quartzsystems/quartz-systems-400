@@ -59,7 +59,13 @@ fn repo_root() -> PathBuf {
 /// Every file git tracks, plus untracked files it does not ignore.
 fn tracked_files(root: &Path) -> Vec<PathBuf> {
     let out = std::process::Command::new("git")
-        .args(["ls-files", "--cached", "--others", "--exclude-standard", "-z"])
+        .args([
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ])
         .current_dir(root)
         .output()
         .expect("git ls-files");
@@ -90,7 +96,9 @@ fn joblog_texts(root: &Path, out: &mut BTreeSet<String>) {
                 out.insert(t.trim().to_string());
             } else if let Some(t) = l.trim().strip_prefix("-> FAILED") {
                 let t = t.trim();
-                let t = t.split_once(' ').map_or(t, |(id, rest)| if id.len() == 7 { rest } else { t });
+                let t = t
+                    .split_once(' ')
+                    .map_or(t, |(id, rest)| if id.len() == 7 { rest } else { t });
                 out.insert(t.trim().to_string());
             }
         }
@@ -100,7 +108,9 @@ fn joblog_texts(root: &Path, out: &mut BTreeSet<String>) {
 /// Screen texts of the pub400 goldens: each run of words between wide
 /// gaps of a screen line.
 fn screen_texts(dir: &Path, out: &mut BTreeSet<String>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.is_dir() {
@@ -149,10 +159,7 @@ const PENDING: &[(&str, &str)] = &[];
 const KEY: usize = 12;
 
 /// Every text of `texts` in `hay`.
-fn found<'a>(
-    hay: &str,
-    index: &std::collections::HashMap<&[u8], Vec<&'a str>>,
-) -> Vec<&'a str> {
+fn found<'a>(hay: &str, index: &std::collections::HashMap<&[u8], Vec<&'a str>>) -> Vec<&'a str> {
     let b = hay.as_bytes();
     let mut out = Vec::new();
     if b.len() < KEY {
@@ -181,10 +188,17 @@ fn found<'a>(
 fn phase11_captures_stay_in_conformance() {
     let root = repo_root();
     let texts = ibm_texts(&root);
-    assert!(texts.len() > 50, "the captures hold IBM texts ({} found)", texts.len());
+    assert!(
+        texts.len() > 50,
+        "the captures hold IBM texts ({} found)",
+        texts.len()
+    );
     let mut index: std::collections::HashMap<&[u8], Vec<&str>> = std::collections::HashMap::new();
     for t in &texts {
-        index.entry(&t.as_bytes()[..KEY]).or_default().push(t.as_str());
+        index
+            .entry(&t.as_bytes()[..KEY])
+            .or_default()
+            .push(t.as_str());
     }
     let conformance = root.join("tools/conformance");
     let mut hits = Vec::new();
@@ -192,16 +206,26 @@ fn phase11_captures_stay_in_conformance() {
         if f.starts_with(&conformance) {
             continue;
         }
-        let rel = f.strip_prefix(&root).unwrap_or(&f).to_string_lossy().replace('\\', "/");
+        let rel = f
+            .strip_prefix(&root)
+            .unwrap_or(&f)
+            .to_string_lossy()
+            .replace('\\', "/");
         for t in found(&read(&f), &index) {
             if !PENDING.contains(&(rel.as_str(), t)) {
                 hits.push(format!("{rel}: {t}"));
             }
         }
     }
-    assert!(hits.is_empty(), "IBM text outside tools/conformance:
-  {}", hits.join("
-  "));
+    assert!(
+        hits.is_empty(),
+        "IBM text outside tools/conformance:
+  {}",
+        hits.join(
+            "
+  "
+        )
+    );
 }
 
 /// The string literals of a Rust source: comments are not shipped.
@@ -296,7 +320,12 @@ fn has_phrase(text: &str, phrase: &str) -> bool {
 /// literals, a data file whole; `None` for what ships no text (tests,
 /// docs, scripts).
 fn shipped_text(f: &Path) -> Option<String> {
-    if f.components().any(|c| matches!(c.as_os_str().to_str(), Some("tests" | "benches" | "examples"))) {
+    if f.components().any(|c| {
+        matches!(
+            c.as_os_str().to_str(),
+            Some("tests" | "benches" | "examples")
+        )
+    }) {
         return None;
     }
     let ext = f.extension().and_then(|e| e.to_str()).unwrap_or("");
@@ -337,14 +366,22 @@ fn no_ibm_phrasing_in_phase11_sources() {
         if !dirs.iter().any(|d| f.starts_with(d)) {
             continue;
         }
-        let Some(text) = shipped_text(&f) else { continue };
+        let Some(text) = shipped_text(&f) else {
+            continue;
+        };
         for d in &denied {
             if has_phrase(&text, d) {
                 hits.push(format!("{}: {d:?}", f.display()));
             }
         }
     }
-    assert!(hits.is_empty(), "IBM phrasings in Phase 11 sources:
-  {}", hits.join("
-  "));
+    assert!(
+        hits.is_empty(),
+        "IBM phrasings in Phase 11 sources:
+  {}",
+        hits.join(
+            "
+  "
+        )
+    );
 }

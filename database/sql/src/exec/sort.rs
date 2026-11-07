@@ -425,11 +425,23 @@ fn decode_value(c: &mut Cursor<'_>) -> Result<Value> {
             let lo = u64::from(c.u32()?);
             let hi = u64::from(c.u32()?);
             let precision = c.u8()?;
-            Value::Timestamp(Timestamp { date, time, picos: lo | (hi << 32), precision })
+            Value::Timestamp(Timestamp {
+                date,
+                time,
+                picos: lo | (hi << 32),
+                precision,
+            })
         }
         6 => {
-            let format = if c.u8()? == 1 { qdecimal::DfFormat::D34 } else { qdecimal::DfFormat::D16 };
-            Value::DecFloat(qdecimal::DecFloat::decode(&c.bytes()?, format).map_err(|_| bad("a bad DECFLOAT"))?)
+            let format = if c.u8()? == 1 {
+                qdecimal::DfFormat::D34
+            } else {
+                qdecimal::DfFormat::D16
+            };
+            Value::DecFloat(
+                qdecimal::DecFloat::decode(&c.bytes()?, format)
+                    .map_err(|_| bad("a bad DECFLOAT"))?,
+            )
         }
         7 => Value::Bin(c.bytes()?),
         8 => {

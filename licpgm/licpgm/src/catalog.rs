@@ -106,7 +106,11 @@ pub fn seed(store: &mut dyn ProductStore, now: u64) -> Result<(), StoreError> {
 
 /// A product shipped now but reserved when the store was seeded has
 /// the old definition and no loads: replace the definition.
-fn refresh_reserved(store: &mut dyn ProductStore, dq: &QualName, p: &Package) -> Result<(), StoreError> {
+fn refresh_reserved(
+    store: &mut dyn ProductStore,
+    dq: &QualName,
+    p: &Package,
+) -> Result<(), StoreError> {
     let id = &p.definition.product;
     if store.loads().iter().any(|(_, l)| l.key.product == *id) {
         return Ok(());
@@ -182,8 +186,8 @@ mod tests {
         assert_eq!(
             ids,
             [
-                "QS00SS1", "QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV", "QS00PT1", "QS00RPG",
-                "QS00AFW", "QS00PSE"
+                "QS00SS1", "QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV", "QS00PT1",
+                "QS00RPG", "QS00AFW", "QS00PSE"
             ]
         );
         let reserved: Vec<&str> = c
@@ -207,7 +211,11 @@ mod tests {
         // names the same product there.
         for p in &c.products {
             if let Some(a) = &p.definition.ibm_alias {
-                assert_eq!(release::product_id(a.as_str()), p.definition.product.as_str(), "{a}");
+                assert_eq!(
+                    release::product_id(a.as_str()),
+                    p.definition.product.as_str(),
+                    "{a}"
+                );
             }
         }
         let opts: Vec<u8> = os.definition.options.iter().map(|o| o.option.0).collect();
@@ -252,6 +260,10 @@ mod tests {
         seed(&mut s, 1).unwrap();
         let (_, d) = s.definitions().into_iter().find(|(q, _)| *q == dq).unwrap();
         assert_eq!(d, nav.definition);
-        assert!(s.loads().iter().any(|(_, l)| l.key.product.as_str() == "QS00NAV" && l.state.is_installed()));
+        assert!(
+            s.loads()
+                .iter()
+                .any(|(_, l)| l.key.product.as_str() == "QS00NAV" && l.state.is_installed())
+        );
     }
 }

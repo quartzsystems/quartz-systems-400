@@ -46,8 +46,10 @@ pub fn data(
     match what {
         "SBMJOB" => Ok(sbmjobs(system, me)),
         "WRKPRB" => {
-            let status: Vec<prb::PrbStatus> =
-                args.iter().filter_map(|s| prb::PrbStatus::parse(s)).collect();
+            let status: Vec<prb::PrbStatus> = args
+                .iter()
+                .filter_map(|s| prb::PrbStatus::parse(s))
+                .collect();
             let rows = crate::cpp::problem_rows(system, &status)?;
             let row = |r: Vec<String>| {
                 ["PRBID", "PRBSTS", "PRBTEXT"]
@@ -112,7 +114,9 @@ pub fn data(
         "MLBSTS" => Ok(crate::cpp::medcmd::mlbsts_panel(system, arg(0))),
         "SYSSTS" => Ok(super::stats::syssts_panel(system, arg(0) == "*YES")),
         "DSKSTS" => Ok(super::stats::dsksts_panel(system, arg(0) == "*YES")),
-        "SYSACT" => super::stats::performance_tools(system).map(|()| super::stats::sysact_panel(system)),
+        "SYSACT" => {
+            super::stats::performance_tools(system).map(|()| super::stats::sysact_panel(system))
+        }
         "OUTQD" => outqd(system, arg(0)),
         "SPLF" => {
             super::splcmd::panel_lines(system, me.number, arg(0), arg(1), arg(2), arg(3) == "*HEX")
@@ -379,7 +383,11 @@ fn objlck(system: &mut System, q: &str, ty: &str) -> Result<PanelData, String> {
 /// `DSPJOB OPTION(*JOBLCK)` of job `number/user/name`: the objects it
 /// holds locks on, from the same lock table as `WRKOBJLCK`.
 fn joblck(system: &mut System, q: &str) -> Result<PanelData, String> {
-    let number: u32 = q.split('/').next().and_then(|n| n.trim().parse().ok()).unwrap_or(0);
+    let number: u32 = q
+        .split('/')
+        .next()
+        .and_then(|n| n.trim().parse().ok())
+        .unwrap_or(0);
     let job = system
         .jobs
         .all()
@@ -387,14 +395,21 @@ fn joblck(system: &mut System, q: &str) -> Result<PanelData, String> {
         .find(|j| j.number == number)
         .ok_or_else(|| format!("CPF1070 job {q} not found"))?;
     let rows = in_store(system, |txn, _, _| {
-        let held = txn.store().locks().held_by(store::obj::lock::JobHandle(job.handle));
+        let held = txn
+            .store()
+            .locks()
+            .held_by(store::obj::lock::JobHandle(job.handle));
         let mut rows = Vec::new();
         for (id, state) in held {
-            let Ok(h) = ops::describe(txn, id) else { continue };
+            let Ok(h) = ops::describe(txn, id) else {
+                continue;
+            };
             let lib = if ops::is_library(id) {
                 "QSYS".to_string()
             } else {
-                ops::describe(txn, h.library).map(|l| l.name.to_string()).unwrap_or_default()
+                ops::describe(txn, h.library)
+                    .map(|l| l.name.to_string())
+                    .unwrap_or_default()
             };
             let ty = types::type_by_code(id.type_code).map_or("*N", |t| t.name);
             rows.push(vec![

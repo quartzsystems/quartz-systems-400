@@ -32,7 +32,11 @@ pub static LAYOUT: Layout = Layout {
         field("text_len", 28, 4),
         field("program_len", 32, 4),
         field("reserved", 36, 12),
-        Field { name: "parts", offset: Some(48), size: None },
+        Field {
+            name: "parts",
+            offset: Some(48),
+            size: None,
+        },
     ],
 };
 
@@ -252,17 +256,29 @@ impl Constraint {
     /// The body of the `CONSTRAINT` entry.
     #[must_use]
     pub fn encode(&self) -> Vec<u8> {
-        let program = self.check.as_ref().map(check::Expr::encode).unwrap_or_default();
+        let program = self
+            .check
+            .as_ref()
+            .map(check::Expr::encode)
+            .unwrap_or_default();
         let mut b = vec![0u8; FIXED_LEN];
         b[0] = self.kind.code();
         b[1] = u8::from(!self.enabled) | (u8::from(self.check_pending) << 1);
         b[2] = self.delete_rule.code();
         b[3] = self.update_rule.code();
         b[4..6].copy_from_slice(&self.number.to_le_bytes());
-        b[6..8].copy_from_slice(&u16::try_from(self.columns.len()).expect("few").to_le_bytes());
+        b[6..8].copy_from_slice(
+            &u16::try_from(self.columns.len())
+                .expect("few")
+                .to_le_bytes(),
+        );
         b[8..24].copy_from_slice(&self.other.to_bytes());
         b[24..26].copy_from_slice(&u16::try_from(self.name.len()).expect("short").to_le_bytes());
-        b[26..28].copy_from_slice(&u16::try_from(self.other_name.len()).expect("short").to_le_bytes());
+        b[26..28].copy_from_slice(
+            &u16::try_from(self.other_name.len())
+                .expect("short")
+                .to_le_bytes(),
+        );
         b[28..32].copy_from_slice(&u32::try_from(self.text.len()).expect("fits").to_le_bytes());
         b[32..36].copy_from_slice(&u32::try_from(program.len()).expect("fits").to_le_bytes());
         b.extend_from_slice(self.name.as_bytes());
@@ -277,7 +293,9 @@ impl Constraint {
 
     /// From the body of a `CONSTRAINT` entry.
     pub fn decode(b: &[u8]) -> Result<Self> {
-        let bad = |what: &str| DbError::Corrupt { what: format!("constraint entry: {what}") };
+        let bad = |what: &str| DbError::Corrupt {
+            what: format!("constraint entry: {what}"),
+        };
         if b.len() < FIXED_LEN {
             return Err(bad("short"));
         }
@@ -285,7 +303,8 @@ impl Constraint {
         let u32_at = |i: usize| u32::from_le_bytes(b[i..i + 4].try_into().expect("4")) as usize;
         let kind = Kind::from_code(b[0]).ok_or_else(|| bad("kind"))?;
         let cols = u16_at(6);
-        let (name_len, other_len, text_len, prog_len) = (u16_at(24), u16_at(26), u32_at(28), u32_at(32));
+        let (name_len, other_len, text_len, prog_len) =
+            (u16_at(24), u16_at(26), u32_at(28), u32_at(32));
         let mut at = FIXED_LEN;
         let mut take = |n: usize| -> Result<&[u8]> {
             let s = b.get(at..at + n).ok_or_else(|| bad("parts"))?;
@@ -302,7 +321,11 @@ impl Constraint {
         let other_name = text(take(other_len)?)?;
         let ctext = text(take(text_len)?)?;
         let prog = take(prog_len)?;
-        let check = if prog.is_empty() { None } else { Some(check::Expr::decode(prog)?) };
+        let check = if prog.is_empty() {
+            None
+        } else {
+            Some(check::Expr::decode(prog)?)
+        };
         Ok(Self {
             name,
             kind,

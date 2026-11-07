@@ -370,7 +370,9 @@ impl Sys for HostSys {
             let abs = if target.starts_with('/') {
                 self.host_path(target)
             } else {
-                hp.parent().map_or_else(PathBuf::new, Path::to_path_buf).join(target)
+                hp.parent()
+                    .map_or_else(PathBuf::new, Path::to_path_buf)
+                    .join(target)
             };
             if abs.is_dir() {
                 Ok(std::os::windows::fs::symlink_dir(target, hp)?)

@@ -50,7 +50,11 @@ pub fn panel_of(m: &ScreenModel) -> Panel {
                 col += 1;
                 continue;
             }
-            if let Some(f) = m.fields().iter().find(|f| f.row == row + 1 && f.col == col + 1) {
+            if let Some(f) = m
+                .fields()
+                .iter()
+                .find(|f| f.row == row + 1 && f.col == col + 1)
+            {
                 panel.fields.push((
                     at(row + 1),
                     at(col + 1),
@@ -65,9 +69,16 @@ pub fn panel_of(m: &ScreenModel) -> Panel {
             let mut text = String::new();
             while col < cols
                 && !attr::is_attr(line[col])
-                && !m.fields().iter().any(|f| f.row == row + 1 && f.col == col + 1)
+                && !m
+                    .fields()
+                    .iter()
+                    .any(|f| f.row == row + 1 && f.col == col + 1)
             {
-                text.push(if line[col] == 0 { ' ' } else { ccsid::char_of(line[col]) });
+                text.push(if line[col] == 0 {
+                    ' '
+                } else {
+                    ccsid::char_of(line[col])
+                });
                 col += 1;
             }
             let trimmed = text.trim_end();
@@ -191,7 +202,9 @@ impl Surface {
                                 return None;
                             }
                         }
-                        Some((_, Some(inb))) => return Some(Waited::Key(inb.aid, (inb.row, inb.col))),
+                        Some((_, Some(inb))) => {
+                            return Some(Waited::Key(inb.aid, (inb.row, inb.col)));
+                        }
                         Some((_, None)) => self.flush(Read::MdtFields),
                         None => {}
                     }
@@ -237,8 +250,24 @@ mod tests {
         let mut m = ScreenModel::new(false);
         m.put(1, 36, "Sign On", attr::WHITE);
         m.put(6, 17, "User  . . :", attr::GREEN);
-        m.field(6, 53, 10, attr::GREEN_UL, "", tn5250::ds::field::Ffw::default(), &[]);
-        m.field(7, 53, 10, attr::NONDISPLAY, "", tn5250::ds::field::Ffw::default(), &[]);
+        m.field(
+            6,
+            53,
+            10,
+            attr::GREEN_UL,
+            "",
+            tn5250::ds::field::Ffw::default(),
+            &[],
+        );
+        m.field(
+            7,
+            53,
+            10,
+            attr::NONDISPLAY,
+            "",
+            tn5250::ds::field::Ffw::default(),
+            &[],
+        );
         let p = panel_of(&m);
         assert!(p.texts.contains(&(1, 36, 1, "Sign On".into())));
         assert!(p.texts.contains(&(6, 17, 0, "User  . . :".into())));

@@ -40,7 +40,10 @@ fn line(job: u32) -> Line {
     assert_eq!(l.len(), 1, "one close line: {l:?}");
     let l = l.into_iter().next().unwrap();
     assert_eq!(l["message"], "QAP connection closed");
-    assert_eq!((l["level"].as_str(), l["target"].as_str()), ("INFO", "qapd"));
+    assert_eq!(
+        (l["level"].as_str(), l["target"].as_str()),
+        ("INFO", "qapd")
+    );
     assert_eq!(l["job"], format!("{job:06}/QUSER/QAPCNN"));
     l
 }
@@ -95,7 +98,10 @@ fn a_long_command_is_not_idleness() {
     assert!(since.elapsed() >= Duration::from_millis(200));
     assert_eq!(r.server.join().unwrap(), Closed::Idle);
     let l = line(r.job);
-    assert_eq!((l["reason"].as_str(), l["outstanding"].as_str()), ("idle timeout", "[]"));
+    assert_eq!(
+        (l["reason"].as_str(), l["outstanding"].as_str()),
+        ("idle timeout", "[]")
+    );
 }
 
 #[test]
@@ -103,7 +109,11 @@ fn protocol_errors_and_ends_are_logged() {
     let _one = serial();
     let mut r = start(cfg());
     r.client.hello();
-    r.client.raw(&u32::try_from(qap_proto::MAX_FRAME + 1).unwrap().to_le_bytes());
+    r.client.raw(
+        &u32::try_from(qap_proto::MAX_FRAME + 1)
+            .unwrap()
+            .to_le_bytes(),
+    );
     assert_eq!(r.server.join().unwrap(), Closed::BadFrame);
     assert_eq!(line(r.job)["reason"], "protocol error: bad frame");
 
@@ -114,7 +124,10 @@ fn protocol_errors_and_ends_are_logged() {
     assert_eq!(r.server.join().unwrap(), Closed::Refused);
     assert_eq!(line(r.job)["reason"], "protocol error: Hello refused");
 
-    for (how, reason) in [(Ending::Server, "server ending"), (Ending::Operator, "job ended by an operator")] {
+    for (how, reason) in [
+        (Ending::Server, "server ending"),
+        (Ending::Operator, "job ended by an operator"),
+    ] {
         let mut r = signed_on(cfg(), 1);
         r.c.end(how);
         // The event, then the close.
@@ -192,7 +205,10 @@ fn an_io_error_gives_its_text() {
 #[test]
 fn a_panic_in_the_pump_is_the_reason() {
     let _one = serial();
-    let (why, job) = scripted(vec![Step::Bytes(hello_bytes()), Step::Panic("stream exploded")]);
+    let (why, job) = scripted(vec![
+        Step::Bytes(hello_bytes()),
+        Step::Panic("stream exploded"),
+    ]);
     let Closed::Panic(p) = &why else {
         panic!("{why:?}");
     };
@@ -215,7 +231,10 @@ fn crash(crash: Crash, version: u16, op: Op, body: &CommandText, thread: &str) {
     let Closed::Panic(p) = &why else {
         panic!("{why:?}");
     };
-    assert!(p.contains(thread) && p.contains(&format!("test crash at {crash:?}")), "{p}");
+    assert!(
+        p.contains(thread) && p.contains(&format!("test crash at {crash:?}")),
+        "{p}"
+    );
     let l = line(r.job);
     assert_eq!(l["reason"], format!("panic: {p}"));
     assert_eq!(l["outstanding"], format!("[{id}]"));
@@ -225,9 +244,21 @@ fn crash(crash: Crash, version: u16, op: Op, body: &CommandText, thread: &str) {
 fn a_panic_on_any_thread_is_the_reason() {
     let _one = serial();
     let none = text("");
-    crash(Crash::SystemInfo, 1, Op::SystemInfo, &none, "thread qap-worker-");
+    crash(
+        Crash::SystemInfo,
+        1,
+        Op::SystemInfo,
+        &none,
+        "thread qap-worker-",
+    );
     crash(Crash::Ping, 1, Op::Ping, &none, "thread qap-lanes");
-    crash(Crash::Command, 2, Op::RunCommand, &text("DLYJOB DLY(0)"), "thread ");
+    crash(
+        Crash::Command,
+        2,
+        Op::RunCommand,
+        &text("DLYJOB DLY(0)"),
+        "thread ",
+    );
 }
 
 #[test]

@@ -37,7 +37,12 @@ struct Select {
 }
 
 /// `WRKACTJOB [RESET(*YES)] [SBS(...)]`.
-pub fn wrkactjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrkactjob(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     let mut d = crate::panels::dialog(host, "QWCWRKAJ")?;
     let mut sel = Select {
         sbs: parm(r, "SBS")
@@ -67,7 +72,11 @@ pub fn wrkactjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                     Flow::Stay
                 }
                 Response::Return(23) if !wide => {
-                    panel = if panel == "WRKACTJ1" { "WRKACTJ2" } else { "WRKACTJ1" };
+                    panel = if panel == "WRKACTJ1" {
+                        "WRKACTJ2"
+                    } else {
+                        "WRKACTJ1"
+                    };
                     Flow::Stay
                 }
                 Response::Return(n @ (14 | 20)) => {
@@ -194,7 +203,14 @@ fn column_at(view: usize, wide: bool, (row, col): (usize, usize)) -> Option<&'st
             (103, "THREADS"),
             (112, "TMPSTG"),
         ],
-        (false, 0) => &[(7, "JOB"), (22, "CURUSER"), (34, "TYPE"), (40, "CPU"), (47, "FUNCTION"), (63, "STATUS")],
+        (false, 0) => &[
+            (7, "JOB"),
+            (22, "CURUSER"),
+            (34, "TYPE"),
+            (40, "CPU"),
+            (47, "FUNCTION"),
+            (63, "STATUS"),
+        ],
         (false, 1) => &[
             (7, "JOB"),
             (22, "TYPE"),
@@ -206,9 +222,20 @@ fn column_at(view: usize, wide: bool, (row, col): (usize, usize)) -> Option<&'st
             (58, "AUXIO"),
             (65, "ECPU"),
         ],
-        _ => &[(7, "JOB"), (22, "USER"), (34, "NUMBER"), (42, "TYPE"), (48, "CPU"), (55, "THREADS"), (65, "TMPSTG")],
+        _ => &[
+            (7, "JOB"),
+            (22, "USER"),
+            (34, "NUMBER"),
+            (42, "TYPE"),
+            (48, "CPU"),
+            (55, "THREADS"),
+            (65, "TMPSTG"),
+        ],
     };
-    cols.iter().rev().find(|(start, _)| col >= *start).map(|(_, v)| *v)
+    cols.iter()
+        .rev()
+        .find(|(start, _)| col >= *start)
+        .map(|(_, v)| *v)
 }
 
 /// A job's sort key for a column: numbers by size, the rest by text.
@@ -226,7 +253,12 @@ fn key(a: &ActJob, column: &str) -> (u64, String) {
         "USER" | "CURUSER" => (0, j.user.clone()),
         "FUNCTION" => (0, j.function.clone()),
         "STATUS" => (0, j.job_status().code().to_string()),
-        "TYPE" => (0, j.job_type().map_or(String::new(), |t| wrkactjob_type(t, j.sub_type()).to_string())),
+        "TYPE" => (
+            0,
+            j.job_type().map_or(String::new(), |t| {
+                wrkactjob_type(t, j.sub_type()).to_string()
+            }),
+        ),
         _ => (0, j.name.clone()),
     }
 }
@@ -246,7 +278,11 @@ fn fill(host: &Host, d: &mut UimDialog, data: &ActJobs, sel: &Select) {
         .filter(|a| {
             let j = &a.job;
             let in_sbs = |s: &str| *s == j.subsystem || (j.kind == 'M' && *s == j.name);
-            let kind = j.job_type().map_or("", |t| wrkactjob_type(t, j.sub_type())).trim().to_string();
+            let kind = j
+                .job_type()
+                .map_or("", |t| wrkactjob_type(t, j.sub_type()))
+                .trim()
+                .to_string();
             (sel.sbs.is_empty() || sel.sbs.iter().any(|s| in_sbs(s)))
                 && !sel.excluded.contains(&j.number)
                 && (matches(sbs_sel, &j.subsystem) || (j.kind == 'M' && matches(sbs_sel, &j.name)))
@@ -291,8 +327,22 @@ fn fill(host: &Host, d: &mut UimDialog, data: &ActJobs, sel: &Select) {
                 ("PTY", a.runpty.to_string()),
                 ("CPUSEC", decimal(host, a.cpu_secs)),
                 // Transactions and response time: interactive jobs only.
-                ("INT", if j.kind == 'I' { a.txns.to_string() } else { String::new() }),
-                ("RSP", if j.kind == 'I' { decimal(host, a.rsp) } else { String::new() }),
+                (
+                    "INT",
+                    if j.kind == 'I' {
+                        a.txns.to_string()
+                    } else {
+                        String::new()
+                    },
+                ),
+                (
+                    "RSP",
+                    if j.kind == 'I' {
+                        decimal(host, a.rsp)
+                    } else {
+                        String::new()
+                    },
+                ),
                 ("AUXIO", a.aux_io.to_string()),
                 ("ECPU", decimal(host, u64::from(a.cpu))),
                 ("THREADS", a.threads.to_string()),

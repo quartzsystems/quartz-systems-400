@@ -116,7 +116,12 @@ pub fn refused_start(system: &mut System) {
         return;
     };
     let f = figures(total, used, lower_limit(system), pct);
-    let four = [(&f[0][..], 20), (&f[1][..], 20), (&f[2][..], 7), (&f[3][..], 7)];
+    let four = [
+        (&f[0][..], 20),
+        (&f[1][..], 20),
+        (&f[2][..], 7),
+        (&f[3][..], 7),
+    ];
     tell_operator(system, "CPI099B", &four, false);
     let mut g = WATCH.lock().unwrap_or_else(PoisonError::into_inner);
     let w = g.get_or_insert_with(Watch::default);
@@ -174,11 +179,18 @@ fn storage(system: &mut System, w: &mut Watch, cmds: &mut Vec<String>) {
     let threshold = system
         .storage
         .as_ref()
-        .map_or(store::asp::superblock::DEFAULT_THRESHOLD, |s| s.store.asp_threshold());
+        .map_or(store::asp::superblock::DEFAULT_THRESHOLD, |s| {
+            s.store.asp_threshold()
+        });
     if pct >= f64::from(threshold) {
         if w.threshold.is_none_or(|t| t.elapsed() >= THRESHOLD_AGAIN) {
             let f = figures(total, used, f64::from(threshold), pct);
-            tell_operator(system, "CPF0907", &[(&f[0], 20), (&f[1], 20), (&f[2], 7), (&f[3], 7)], false);
+            tell_operator(
+                system,
+                "CPF0907",
+                &[(&f[0], 20), (&f[1], 20), (&f[2], 7), (&f[3], 7)],
+                false,
+            );
             w.threshold = Some(Instant::now());
         }
     } else {
@@ -201,7 +213,12 @@ fn storage(system: &mut System, w: &mut Watch, cmds: &mut Vec<String>) {
     }
     w.limit = Some((Instant::now(), action.clone(), limit_text));
     let f = figures(total, used, limit, pct);
-    let four = [(&f[0][..], 20), (&f[1][..], 20), (&f[2][..], 7), (&f[3][..], 7)];
+    let four = [
+        (&f[0][..], 20),
+        (&f[1][..], 20),
+        (&f[2][..], 7),
+        (&f[3][..], 7),
+    ];
     let mut five = four.to_vec();
     five.push((&action, 10));
     tell_operator(system, "CPI099C", &five, true);
@@ -209,7 +226,9 @@ fn storage(system: &mut System, w: &mut Watch, cmds: &mut Vec<String>) {
         "*CRITMSG" => send(system, "QUSRSYS", "QSECOFR", "CPI099B", &four),
         "*REGFAC" if !restricted(system) => cmds.extend(regfac_jobs(system)),
         "*ENDSYS" if !restricted(system) => cmds.push("ENDSBS SBS(*ALL) OPTION(*IMMED)".into()),
-        "*PWRDWNSYS" if !restricted(system) => cmds.push("PWRDWNSYS OPTION(*IMMED) RESTART(*YES)".into()),
+        "*PWRDWNSYS" if !restricted(system) => {
+            cmds.push("PWRDWNSYS OPTION(*IMMED) RESTART(*YES)".into())
+        }
         _ => {}
     }
 }
@@ -242,7 +261,11 @@ fn ups_queue(system: &System) -> (String, String) {
     let mut w = v.split_whitespace();
     let name = w.next().unwrap_or("QSYSOPR");
     let lib = w.next().unwrap_or("");
-    let lib = if lib.is_empty() || lib == "*LIBL" { "QSYS" } else { lib };
+    let lib = if lib.is_empty() || lib == "*LIBL" {
+        "QSYS"
+    } else {
+        lib
+    };
     (lib.to_string(), name.to_string())
 }
 
@@ -275,7 +298,11 @@ fn monitored(system: &mut System, lib: &str, name: &str) -> Watched {
     if system.break_alloc.contains_key(&id) || matches!(delivery.as_str(), "*BREAK" | "*NOTIFY") {
         return Watched::Yes;
     }
-    Watched::No(if lib == "QSYS" && name == "QSYSOPR" { "2" } else { "1" })
+    Watched::No(if lib == "QSYS" && name == "QSYSOPR" {
+        "2"
+    } else {
+        "1"
+    })
 }
 
 fn power(system: &mut System, w: &mut Watch, p: Power, cmds: &mut Vec<String>) {
@@ -297,8 +324,13 @@ fn power(system: &mut System, w: &mut Watch, p: Power, cmds: &mut Vec<String>) {
         }
         return;
     }
-    let delay = sysval::ups::delay(sysval(system, "QUPSDLYTIM").split_whitespace().next().unwrap_or("*CALC"))
-        .unwrap_or(Some(sysval::ups::CALC_SECONDS));
+    let delay = sysval::ups::delay(
+        sysval(system, "QUPSDLYTIM")
+            .split_whitespace()
+            .next()
+            .unwrap_or("*CALC"),
+    )
+    .unwrap_or(Some(sysval::ups::CALC_SECONDS));
     if w.battery.is_none() {
         w.battery = Some(Instant::now());
         let t = clock(system);
@@ -315,13 +347,20 @@ fn power(system: &mut System, w: &mut Watch, p: Power, cmds: &mut Vec<String>) {
                     down(w, cmds);
                 }
                 Watched::No(reason) => {
-                    tell_operator(system, "CPF1819", &[(&name, 10), (&lib, 10), (reason, 1)], false);
+                    tell_operator(
+                        system,
+                        "CPF1819",
+                        &[(&name, 10), (&lib, 10), (reason, 1)],
+                        false,
+                    );
                     down(w, cmds);
                 }
             }
         }
     }
-    let gone = w.battery.is_some_and(|t| delay.is_some_and(|d| t.elapsed() >= Duration::from_secs(u64::from(d))));
+    let gone = w
+        .battery
+        .is_some_and(|t| delay.is_some_and(|d| t.elapsed() >= Duration::from_secs(u64::from(d))));
     if p.battery_low || gone {
         down(w, cmds);
     }

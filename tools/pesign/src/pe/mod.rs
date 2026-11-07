@@ -42,7 +42,9 @@ pub struct Layout {
 }
 
 fn u16_at(b: &[u8], o: usize) -> Result<u16, Error> {
-    b.get(o..o + 2).map(|s| u16::from_le_bytes([s[0], s[1]])).ok_or(Error::Pe("truncated header"))
+    b.get(o..o + 2)
+        .map(|s| u16::from_le_bytes([s[0], s[1]]))
+        .ok_or(Error::Pe("truncated header"))
 }
 
 fn u32_at(b: &[u8], o: usize) -> Result<u32, Error> {
@@ -77,9 +79,14 @@ impl Layout {
             return Err(Error::Pe("no certificate table directory"));
         }
         let cert_entry = opt + 112 + CERT_DIR * 8;
-        let cert_table = (usize_at(image, cert_entry)?, usize_at(image, cert_entry + 4)?);
+        let cert_table = (
+            usize_at(image, cert_entry)?,
+            usize_at(image, cert_entry + 4)?,
+        );
         if cert_table.1 > 0 && cert_table.0.checked_add(cert_table.1) != Some(image.len()) {
-            return Err(Error::Pe("the certificate table is not at the end of the file"));
+            return Err(Error::Pe(
+                "the certificate table is not at the end of the file",
+            ));
         }
         let headers = usize_at(image, opt + 60)?;
         let mut sections = Vec::new();
@@ -100,6 +107,12 @@ impl Layout {
         if headers > image.len() || cert_entry + 8 > headers {
             return Err(Error::Pe("bad SizeOfHeaders"));
         }
-        Ok(Self { checksum: opt + 64, cert_entry, headers, sections, cert_table })
+        Ok(Self {
+            checksum: opt + 64,
+            cert_entry,
+            headers,
+            sections,
+            cert_table,
+        })
     }
 }

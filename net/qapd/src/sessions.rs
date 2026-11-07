@@ -94,8 +94,9 @@ impl Sessions {
                 s.detached_at = now;
             }
         }
-        self.map
-            .retain(|_, s| s.connections() > 0 || now < s.detached_at.saturating_add(u64::from(s.idle_secs)));
+        self.map.retain(|_, s| {
+            s.connections() > 0 || now < s.detached_at.saturating_add(u64::from(s.idle_secs))
+        });
         self.ended.retain(|j, _| alive(*j));
     }
 
@@ -114,18 +115,31 @@ impl Sessions {
     }
 
     /// The session `token` names, after a sweep.
-    fn live(&mut self, token: &Token, now: u64, alive: &dyn Fn(u32) -> bool) -> Result<&mut Session, Gone> {
+    fn live(
+        &mut self,
+        token: &Token,
+        now: u64,
+        alive: &dyn Fn(u32) -> bool,
+    ) -> Result<&mut Session, Gone> {
         let was_known = self.map.contains_key(&token.0);
         self.sweep(now, alive);
-        self.map
-            .get_mut(&token.0)
-            .ok_or(if was_known { Gone::Expired } else { Gone::Unknown })
+        self.map.get_mut(&token.0).ok_or(if was_known {
+            Gone::Expired
+        } else {
+            Gone::Unknown
+        })
     }
 
     /// Make `job` the session's resumable connection, moving it from
     /// another job; attached jobs stay. `Full` when that would make more
     /// than [`MAX_CONNECTIONS`].
-    pub fn resume(&mut self, token: &Token, job: u32, now: u64, alive: &dyn Fn(u32) -> bool) -> Result<Session, Gone> {
+    pub fn resume(
+        &mut self,
+        token: &Token,
+        job: u32,
+        now: u64,
+        alive: &dyn Fn(u32) -> bool,
+    ) -> Result<Session, Gone> {
         let s = self.live(token, now, alive)?;
         if s.job.is_none() && s.connections() >= MAX_CONNECTIONS {
             return Err(Gone::Full);
@@ -136,7 +150,13 @@ impl Sessions {
 
     /// Attach `job` to the session beside its other connections; `Full`
     /// when it has [`MAX_CONNECTIONS`].
-    pub fn attach(&mut self, token: &Token, job: u32, now: u64, alive: &dyn Fn(u32) -> bool) -> Result<Session, Gone> {
+    pub fn attach(
+        &mut self,
+        token: &Token,
+        job: u32,
+        now: u64,
+        alive: &dyn Fn(u32) -> bool,
+    ) -> Result<Session, Gone> {
         let s = self.live(token, now, alive)?;
         if s.has(job) {
             return Ok(s.clone());
@@ -262,7 +282,10 @@ mod tests {
         let tok = Token([5; 32]);
         t.create(&tok, "BOB", 60, 1);
         for j in 2..=16u32 {
-            assert_eq!(t.attach(&tok, j, 0, ALIVE).unwrap().connections(), j as usize);
+            assert_eq!(
+                t.attach(&tok, j, 0, ALIVE).unwrap().connections(),
+                j as usize
+            );
         }
         assert_eq!(t.attach(&tok, 17, 0, ALIVE), Err(Gone::Full));
         // One leaves, one more fits.

@@ -54,25 +54,49 @@ fn needs_iosyscfg() {
 fn apply_writes_the_settings_and_audits() {
     let mut b = Browser::signed_on();
     assert_eq!(b.post_raw("/global", &form(&[("to", "45")])).status, 403);
-    let r = b.post("/global", &form(&[("usrprf", "webadm"), ("root", "/www/sites"), ("thr", "60"), ("to", "45"), ("from", "10.0.0.0/8, ::1/128")]));
+    let r = b.post(
+        "/global",
+        &form(&[
+            ("usrprf", "webadm"),
+            ("root", "/www/sites"),
+            ("thr", "60"),
+            ("to", "45"),
+            ("from", "10.0.0.0/8, ::1/128"),
+        ]),
+    );
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/global"));
     let t = b.get("/global").text();
     assert!(t.contains("HTP8330"), "{t}");
     assert!(t.contains("value=\"10.0.0.0/8, ::1/128\"") && t.contains("value=\"/www/sites/\""));
     let s = Settings::load(b.fx.files.as_ref());
-    assert_eq!((s.default_user.as_str(), s.default_threads, s.session_minutes), ("WEBADM", 60, 45));
+    assert_eq!(
+        (
+            s.default_user.as_str(),
+            s.default_threads,
+            s.session_minutes
+        ),
+        ("WEBADM", 60, 45)
+    );
     assert!(!s.admin_tls);
     let audit = b.fx.system.audit.lock().unwrap();
     let zc = audit.iter().find_map(|a| match a {
-        Audit::Change { object, what, .. } if object == httpadmin::settings::PATH => Some(what.clone()),
+        Audit::Change { object, what, .. } if object == httpadmin::settings::PATH => {
+            Some(what.clone())
+        }
         _ => None,
     });
     assert!(zc.unwrap().contains("session timeout 30 to 45"));
     drop(audit);
     // OK goes back to the instances; Cancel changes nothing.
-    let r = b.post("/global", &form(&[("to", "20"), ("apply", ""), ("ok", "OK")]));
+    let r = b.post(
+        "/global",
+        &form(&[("to", "20"), ("apply", ""), ("ok", "OK")]),
+    );
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instances"));
-    let r = b.post("/global", &form(&[("to", "99"), ("apply", ""), ("cancel", "Cancel")]));
+    let r = b.post(
+        "/global",
+        &form(&[("to", "99"), ("apply", ""), ("cancel", "Cancel")]),
+    );
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instances"));
     assert_eq!(Settings::load(b.fx.files.as_ref()).session_minutes, 20);
 }
@@ -85,8 +109,14 @@ fn refuses_bad_values() {
         (vec![("root", "www")], "must start with /"),
         (vec![("thr", "300")], "exceed the maximum"),
         (vec![("to", "0")], "the session timeout is 1 to 1440"),
-        (vec![("from", "10.0.0.0/40")], "is not an address or network"),
-        (vec![("from", "192.168.0.0/16")], "do not include your own address 10.0.10.55"),
+        (
+            vec![("from", "10.0.0.0/40")],
+            "is not an address or network",
+        ),
+        (
+            vec![("from", "192.168.0.0/16")],
+            "do not include your own address 10.0.10.55",
+        ),
     ] {
         let r = b.post("/global", &form(&over));
         assert_eq!(r.header("Location"), Some("/qs400/httpadmin/global"));
@@ -100,17 +130,46 @@ fn refuses_bad_values() {
 fn audit_off_and_tls_take_effect() {
     let mut b = Browser::signed_on();
     // Turning auditing off is itself audited; later changes are not.
-    b.post("/global", &[("usrprf", "QTMHHTTP"), ("root", "/www/"), ("thr", "40"), ("max", "50"), ("maxthr", "200"), ("to", "30"), ("from", ""), ("apply", "Apply")]);
+    b.post(
+        "/global",
+        &[
+            ("usrprf", "QTMHHTTP"),
+            ("root", "/www/"),
+            ("thr", "40"),
+            ("max", "50"),
+            ("maxthr", "200"),
+            ("to", "30"),
+            ("from", ""),
+            ("apply", "Apply"),
+        ],
+    );
     let n = b.fx.system.audit.lock().unwrap().len();
     assert!(n > 0);
     b.get("/global");
-    b.post("/global", &[("usrprf", "QTMHHTTP"), ("root", "/www/"), ("thr", "41"), ("max", "50"), ("maxthr", "200"), ("to", "30"), ("from", ""), ("apply", "Apply")]);
+    b.post(
+        "/global",
+        &[
+            ("usrprf", "QTMHHTTP"),
+            ("root", "/www/"),
+            ("thr", "41"),
+            ("max", "50"),
+            ("maxthr", "200"),
+            ("to", "30"),
+            ("from", ""),
+            ("apply", "Apply"),
+        ],
+    );
     assert_eq!(b.fx.system.audit.lock().unwrap().len(), n);
     // TLS required: plain requests go to 2010.
     b.post("/global", &form(&[("admtls", "on"), ("audit", "")]));
     let r = b.get("/instances");
     assert_eq!(r.status, 303);
-    assert!(r.header("Location").unwrap().starts_with("https://") && r.header("Location").unwrap().contains(":2010/qs400/httpadmin/instances"));
+    assert!(
+        r.header("Location").unwrap().starts_with("https://")
+            && r.header("Location")
+                .unwrap()
+                .contains(":2010/qs400/httpadmin/instances")
+    );
     let s = Settings::load(b.fx.files.as_ref());
     assert!(s.admin_tls && !s.audit);
     // The TLS port went down: 2001 serves instead of redirecting there.
@@ -123,7 +182,9 @@ fn tls_is_not_required_while_its_port_is_down() {
     let mut b = Browser::signed_on();
     b.admin.set_tls_up(false);
     let r = b.post("/global", &form(&[("admtls", "on")]));
-    let page = b.get(r.header("Location").unwrap_or("/qs400/httpadmin/global")).text();
+    let page = b
+        .get(r.header("Location").unwrap_or("/qs400/httpadmin/global"))
+        .text();
     assert!(page.contains("is not listening"), "{page}");
     assert!(!Settings::load(b.fx.files.as_ref()).admin_tls);
 }

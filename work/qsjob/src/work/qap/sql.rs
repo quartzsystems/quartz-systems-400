@@ -37,7 +37,10 @@ pub struct LaneDb<'a>(pub &'a Shared, pub &'a mut Console);
 impl Engine for LaneDb<'_> {
     fn run(&mut self, req: &Request) -> Reply {
         let console = &mut *self.1;
-        crate::console::sqlcall::run(self.0, req, |p| crate::console::sqlcall::perform(console, p)).0
+        crate::console::sqlcall::run(self.0, req, |p| {
+            crate::console::sqlcall::perform(console, p)
+        })
+        .0
     }
 
     fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage {
@@ -51,7 +54,9 @@ pub struct ThreadDb<'a>(pub &'a mut Link);
 impl Engine for ThreadDb<'_> {
     fn run(&mut self, req: &Request) -> Reply {
         let inputs = req.inputs.iter().map(sql::embed::to_wire).collect();
-        let w = self.0.with(|l| l.sql_run(req.scope.clone(), req.desc.encode(), inputs));
+        let w = self
+            .0
+            .with(|l| l.sql_run(req.scope.clone(), req.desc.encode(), inputs));
         Reply::from_wire(&w)
     }
 

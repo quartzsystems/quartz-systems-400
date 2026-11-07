@@ -28,7 +28,10 @@ fn hello_then_ping() {
     assert_eq!(h.system_ccsid, 37);
     let p = r.client.call(Op::Ping, &());
     assert_eq!(p.status, Status::Ok);
-    assert_eq!(p.body_as::<PingReply>().unwrap().server_time, 1_793_000_000_000);
+    assert_eq!(
+        p.body_as::<PingReply>().unwrap().server_time,
+        1_793_000_000_000
+    );
     drop(r.client);
     assert_eq!(r.server.join().unwrap(), Closed::Peer);
 }
@@ -56,7 +59,10 @@ fn hello_must_be_first_with_id_1() {
     assert!(r.client.closed());
     let mut r = start(cfg());
     r.client.set_next_id(6);
-    assert_eq!(r.client.call(Op::Hello, &Hello::default()).status, Status::InvalidRequest);
+    assert_eq!(
+        r.client.call(Op::Hello, &Hello::default()).status,
+        Status::InvalidRequest
+    );
     assert!(r.client.closed());
 }
 
@@ -65,7 +71,10 @@ fn a_second_hello_closes() {
     let mut r = start(cfg());
     r.client.hello();
     r.client.set_next_id(1);
-    assert_eq!(r.client.call(Op::Hello, &Hello::default()).status, Status::InvalidRequest);
+    assert_eq!(
+        r.client.call(Op::Hello, &Hello::default()).status,
+        Status::InvalidRequest
+    );
     assert!(r.client.closed());
 }
 
@@ -73,7 +82,10 @@ fn a_second_hello_closes() {
 fn signed_on_operations_are_refused() {
     let mut r = start(cfg());
     r.client.hello();
-    assert_eq!(r.client.call(Op::SystemInfo, &()).status, Status::NotSignedOn);
+    assert_eq!(
+        r.client.call(Op::SystemInfo, &()).status,
+        Status::NotSignedOn
+    );
     assert_eq!(r.client.call(Op::SignOff, &()).status, Status::NotSignedOn);
     let unknown = Envelope {
         op: 77,
@@ -89,12 +101,19 @@ fn more_than_64_outstanding_is_busy() {
     r.client.hello();
     r.client.sign_on("BOB", "SECRET1");
     r.c.gate.set(false);
-    let ids: Vec<u32> = (0..65).map(|_| r.client.request(Op::SystemInfo, &())).collect();
+    let ids: Vec<u32> = (0..65)
+        .map(|_| r.client.request(Op::SystemInfo, &()))
+        .collect();
     // The 65th is refused at once; the first 64 wait.
     let busy = r.client.recv().unwrap();
     assert_eq!((busy.request_id, busy.status), (ids[64], Status::Busy));
     r.c.gate.set(true);
-    assert!(r.client.replies(&ids[..64]).values().all(|e| e.status == Status::Ok));
+    assert!(
+        r.client
+            .replies(&ids[..64])
+            .values()
+            .all(|e| e.status == Status::Ok)
+    );
     // A request ID still outstanding cannot be used again.
     r.c.gate.set(false);
     let a = r.client.request(Op::SystemInfo, &());
@@ -138,7 +157,8 @@ fn cancel_running_and_waiting() {
 fn frames_over_1_mib_close() {
     let mut r = start(cfg());
     r.client.hello();
-    r.client.raw(&u32::try_from(MAX_FRAME + 1).unwrap().to_le_bytes());
+    r.client
+        .raw(&u32::try_from(MAX_FRAME + 1).unwrap().to_le_bytes());
     assert!(r.client.closed());
     assert_eq!(r.server.join().unwrap(), Closed::BadFrame);
 }
@@ -160,7 +180,10 @@ fn server_ending_is_announced() {
     r.client.hello();
     *r.c.ending.lock().unwrap() = Some(Ending::Server);
     let e = r.client.recv().unwrap();
-    assert_eq!((e.kind, e.request_id, e.service, e.op), (Kind::Event, 0, Service::Connection, event::SERVER_ENDING));
+    assert_eq!(
+        (e.kind, e.request_id, e.service, e.op),
+        (Kind::Event, 0, Service::Connection, event::SERVER_ENDING)
+    );
     assert_eq!(e.status, Status::ServerEnding);
     assert_eq!(e.message.unwrap().id, "TCP1A0A");
     assert!(r.client.closed());

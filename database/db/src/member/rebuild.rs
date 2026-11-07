@@ -20,7 +20,12 @@ use crate::format::FormatDef;
 
 /// Make the member that will replace `entry` of `file`, holding
 /// `format`'s records, and name it in the old member.
-pub fn begin(txn: &mut Txn<'_>, file: &FileDesc, entry: &MemberEntry, format: &FormatDef) -> Result<ObjectId> {
+pub fn begin(
+    txn: &mut Txn<'_>,
+    file: &FileDesc,
+    entry: &MemberEntry,
+    format: &FormatDef,
+) -> Result<ObjectId> {
     let (_, old_h) = ops::read_header(txn, entry.object)?;
     let params = CreateParams {
         library: file.header.library,

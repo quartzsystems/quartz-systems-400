@@ -39,7 +39,9 @@ impl Rtnl {
     /// Every link.
     pub fn links(&mut self) -> Result<Vec<Link>> {
         self.sock.dump(&link::dump_request(), |m| {
-            (m.kind == RTM_NEWLINK).then(|| link::parse(m.payload)).transpose()
+            (m.kind == RTM_NEWLINK)
+                .then(|| link::parse(m.payload))
+                .transpose()
         })
     }
 
@@ -143,7 +145,8 @@ impl Rtnl {
 
     /// Create an 802.1Q sub-interface and return it.
     pub fn create_vlan(&mut self, name: &str, parent: u32, vlan_id: u16) -> Result<Link> {
-        self.sock.ack(&link::new_vlan_request(name, parent, vlan_id)?)?;
+        self.sock
+            .ack(&link::new_vlan_request(name, parent, vlan_id)?)?;
         self.link_by_name(name)
     }
 

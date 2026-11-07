@@ -19,7 +19,8 @@ use certs::apps::AppKind;
 use certs::ca;
 use certs::crypto::keys::KeyAlgorithm;
 use certs::paths::{
-    LOCAL_CA_STORE, OBJECT_SIGNING_STORE, SIGNATURE_VERIFICATION_STORE, SYSTEM_STORE, USER_STORES, stash_path,
+    LOCAL_CA_STORE, OBJECT_SIGNING_STORE, SIGNATURE_VERIFICATION_STORE, SYSTEM_STORE, USER_STORES,
+    stash_path,
 };
 use certs::store::{CertStore, EntryKind};
 use certs::x509::CertInfo;
@@ -27,15 +28,23 @@ use certs::x509::build::{self, CertKind, CertSpec, Subject};
 use certs::{CertError, pem};
 
 use crate::env::{
-    AppInfo, CertDetail, CertFailure, CertRow, EntryType, Import, ImportFormat, ImportSource, KeySpec, NewCert,
-    Signing, StoreInfo, StoreType,
+    AppInfo, CertDetail, CertFailure, CertRow, EntryType, Import, ImportFormat, ImportSource,
+    KeySpec, NewCert, Signing, StoreInfo, StoreType,
 };
 
 /// The system's own stores: name, type, path.
 pub const SYSTEM_STORES: &[(&str, StoreType, &str)] = &[
     ("*SYSTEM", StoreType::System, SYSTEM_STORE),
-    ("*OBJECTSIGNING", StoreType::ObjectSigning, OBJECT_SIGNING_STORE),
-    ("*SIGNATUREVERIFICATION", StoreType::SignatureVerification, SIGNATURE_VERIFICATION_STORE),
+    (
+        "*OBJECTSIGNING",
+        StoreType::ObjectSigning,
+        OBJECT_SIGNING_STORE,
+    ),
+    (
+        "*SIGNATUREVERIFICATION",
+        StoreType::SignatureVerification,
+        SIGNATURE_VERIFICATION_STORE,
+    ),
 ];
 
 /// A `net/certs` error as the product's failure for `store`.
@@ -71,7 +80,9 @@ fn kind_of(k: EntryKind) -> EntryType {
 }
 
 fn io_fail(e: &std::io::Error) -> CertFailure {
-    CertFailure::Invalid(format!("the list of certificate stores could not be used: {e}"))
+    CertFailure::Invalid(format!(
+        "the list of certificate stores could not be used: {e}"
+    ))
 }
 
 /// The stores someone made: name and path, in the order made.
@@ -160,7 +171,9 @@ impl Manager<'_> {
                 self_signed: i.self_signed,
                 not_before: i.not_before,
                 not_after: i.not_after,
-                key: i.key_algorithm.map_or_else(|| format!("{} bits", i.key_bits), key_name),
+                key: i
+                    .key_algorithm
+                    .map_or_else(|| format!("{} bits", i.key_bits), key_name),
                 trusted: e.trusted,
                 is_default,
                 added: e.added,
@@ -224,8 +237,14 @@ impl Manager<'_> {
 
     /// The common name of the certificate in an import, for its label.
     fn common_name(data: &[u8], password: Option<&str>) -> Option<String> {
-        if let Some(t) = std::str::from_utf8(data).ok().filter(|t| t.contains("-----BEGIN ")) {
-            let first = pem::blocks(t).ok()?.into_iter().find(|b| b.label == "CERTIFICATE")?;
+        if let Some(t) = std::str::from_utf8(data)
+            .ok()
+            .filter(|t| t.contains("-----BEGIN "))
+        {
+            let first = pem::blocks(t)
+                .ok()?
+                .into_iter()
+                .find(|b| b.label == "CERTIFICATE")?;
             return CertInfo::from_der(&first.der).ok()?.common_name;
         }
         if let Ok(i) = CertInfo::from_der(data) {
@@ -276,7 +295,10 @@ impl Manager<'_> {
         Ok(CertDetail {
             row,
             serial: info.as_ref().map(|i| i.serial.clone()).unwrap_or_default(),
-            fingerprint: info.as_ref().map(CertInfo::sha256_colons).unwrap_or_default(),
+            fingerprint: info
+                .as_ref()
+                .map(CertInfo::sha256_colons)
+                .unwrap_or_default(),
             san: info.map(|i| i.san).unwrap_or_default(),
             pem,
         })
@@ -288,7 +310,8 @@ impl Manager<'_> {
         let e = s.get(label).map_err(|e| fail(e, store))?;
         if e.kind == EntryKind::Request {
             let ks = self.keystore(store)?;
-            return entries::export(&self.ctx, &ks, label, &entries::ExportFormat::Request).map_err(|e| fail(e, store));
+            return entries::export(&self.ctx, &ks, label, &entries::ExportFormat::Request)
+                .map_err(|e| fail(e, store));
         }
         let ders = if chain {
             let mut c = s.chain(label).map_err(|e| fail(e, store))?;
@@ -297,7 +320,9 @@ impl Manager<'_> {
             if let Some(l) = last.filter(|l| !l.self_signed) {
                 let root = s.entries().iter().find_map(|e| {
                     let i = e.info().ok().flatten()?;
-                    (e.kind == EntryKind::Ca && i.self_signed && i.subject == l.issuer).then(|| e.cert.clone()).flatten()
+                    (e.kind == EntryKind::Ca && i.self_signed && i.subject == l.issuer)
+                        .then(|| e.cert.clone())
+                        .flatten()
                 });
                 c.extend(root);
             }
@@ -305,7 +330,11 @@ impl Manager<'_> {
         } else {
             e.cert.clone().into_iter().collect()
         };
-        Ok(ders.iter().map(|d| pem::encode("CERTIFICATE", d)).collect::<String>().into_bytes())
+        Ok(ders
+            .iter()
+            .map(|d| pem::encode("CERTIFICATE", d))
+            .collect::<String>()
+            .into_bytes())
     }
 
     /// [`Certs::create_store`](crate::env::Certs::create_store).
@@ -315,15 +344,20 @@ impl Manager<'_> {
         let name = name.trim();
         if name.eq_ignore_ascii_case("*SYSTEM") {
             let ks = Keystore::new(SYSTEM_STORE, password);
-            return keystores::create(&self.ctx, &ks, true, true).map(|_| ()).map_err(|e| fail(e, "*SYSTEM"));
+            return keystores::create(&self.ctx, &ks, true, true)
+                .map(|_| ())
+                .map_err(|e| fail(e, "*SYSTEM"));
         }
         if name.is_empty() || name.starts_with('*') {
-            return Err(CertFailure::Invalid(format!("{name} is not a name a store can be given")));
+            return Err(CertFailure::Invalid(format!(
+                "{name} is not a name a store can be given"
+            )));
         }
         if self.find(name).is_ok() || self.stores().iter().any(|s| s.path == path) {
             return Err(CertFailure::StoreExists(name.into()));
         }
-        keystores::create(&self.ctx, &Keystore::new(path, password), true, false).map_err(|e| fail(e, name))?;
+        keystores::create(&self.ctx, &Keystore::new(path, password), true, false)
+            .map_err(|e| fail(e, name))?;
         let mut list = user_stores(&self.ctx);
         list.push((name.into(), path.into()));
         save_user_stores(&self.ctx, &list)
@@ -336,7 +370,8 @@ impl Manager<'_> {
         if old.trim().is_empty() && !self.has_stash(&path) {
             return Err(CertFailure::BadPassword(store.into()));
         }
-        keystores::change_password(&self.ctx, &Keystore::new(&path, old), new).map_err(|e| fail(e, store))?;
+        keystores::change_password(&self.ctx, &Keystore::new(&path, old), new)
+            .map_err(|e| fail(e, store))?;
         Ok(())
     }
 
@@ -344,7 +379,9 @@ impl Manager<'_> {
     pub fn delete_store(&self, store: &str) -> Result<(), CertFailure> {
         let (kind, path) = self.find(store)?;
         if kind != StoreType::Other {
-            return Err(CertFailure::Invalid(format!("{store} is one of the system's own stores and cannot be deleted")));
+            return Err(CertFailure::Invalid(format!(
+                "{store} is one of the system's own stores and cannot be deleted"
+            )));
         }
         keystores::delete(&self.ctx, &Keystore::new(&path, "")).map_err(|e| fail(e, store))?;
         let mut list = user_stores(&self.ctx);
@@ -378,7 +415,11 @@ impl Manager<'_> {
                 state: opt(&d.st),
                 country: opt(&d.c),
             },
-            kind: if new.server { CertKind::Server } else { CertKind::Client },
+            kind: if new.server {
+                CertKind::Server
+            } else {
+                CertKind::Client
+            },
             san: new.san.clone(),
             not_before: self.ctx.now,
             days: new.days,
@@ -387,26 +428,31 @@ impl Manager<'_> {
         let store = &new.store;
         match &new.signing {
             Signing::SelfSigned => {
-                entries::create(c, &ks, &new.label, &spec, alg, &Signer::SelfSigned).map_err(|e| fail(e, store))?;
+                entries::create(c, &ks, &new.label, &spec, alg, &Signer::SelfSigned)
+                    .map_err(|e| fail(e, store))?;
             }
             Signing::Request => {
-                entries::create(c, &ks, &new.label, &spec, alg, &Signer::Request).map_err(|e| fail(e, store))?;
+                entries::create(c, &ks, &new.label, &spec, alg, &Signer::Request)
+                    .map_err(|e| fail(e, store))?;
             }
             Signing::Ca(name) => {
-                let (_, path) = self
-                    .signers
-                    .iter()
-                    .find(|s| &s.0 == name)
-                    .ok_or_else(|| CertFailure::Invalid(format!("{name} is not a certificate authority of this system")))?;
+                let (_, path) = self.signers.iter().find(|s| &s.0 == name).ok_or_else(|| {
+                    CertFailure::Invalid(format!(
+                        "{name} is not a certificate authority of this system"
+                    ))
+                })?;
                 if path == LOCAL_CA_STORE {
-                    entries::create(c, &ks, &new.label, &spec, alg, &Signer::LocalCa(None)).map_err(|e| fail(e, store))?;
+                    entries::create(c, &ks, &new.label, &spec, alg, &Signer::LocalCa(None))
+                        .map_err(|e| fail(e, store))?;
                 } else {
-                    let sealer = c
-                        .sealer
-                        .ok_or_else(|| CertFailure::Invalid("the system has no key to open stashed stores".into()))?;
-                    let ca_store = CertStore::open_stashed(c.files, path, sealer).map_err(|e| fail(e, name))?;
+                    let sealer = c.sealer.ok_or_else(|| {
+                        CertFailure::Invalid("the system has no key to open stashed stores".into())
+                    })?;
+                    let ca_store = CertStore::open_stashed(c.files, path, sealer)
+                        .map_err(|e| fail(e, name))?;
                     let mut target = c.open(&ks).map_err(|e| fail(e, store))?;
-                    ca::issue(&ca_store, &mut target, &new.label, &spec, alg).map_err(|e| fail(e, store))?;
+                    ca::issue(&ca_store, &mut target, &new.label, &spec, alg)
+                        .map_err(|e| fail(e, store))?;
                     target.save(c.files).map_err(|e| fail(e, store))?;
                 }
             }
@@ -429,7 +475,9 @@ impl Manager<'_> {
         let mut data = match &import.source {
             ImportSource::Data(d) => d.clone(),
             ImportSource::Path(p) => {
-                return Err(CertFailure::Invalid(format!("stream file {p} was not read")));
+                return Err(CertFailure::Invalid(format!(
+                    "stream file {p} was not read"
+                )));
             }
         };
         if data.is_empty() {
@@ -452,12 +500,18 @@ impl Manager<'_> {
                 .ok_or_else(|| CertFailure::Invalid("no common name could be read from the file (a PKCS#12 file needs its password); give a label".into()))?,
         };
         let c = &self.ctx;
-        let notes = entries::import(c, &ks, &label, &data, format, pw, true).map_err(|e| match e {
-            // The password is the file's, not the store's.
-            CertError::BadPassword => CertFailure::Invalid("the password does not open the file".into()),
-            e => fail(e, store),
-        })?;
-        let labels: Vec<String> = notes.into_iter().filter_map(|n| n.data.into_iter().next()).collect();
+        let notes =
+            entries::import(c, &ks, &label, &data, format, pw, true).map_err(|e| match e {
+                // The password is the file's, not the store's.
+                CertError::BadPassword => {
+                    CertFailure::Invalid("the password does not open the file".into())
+                }
+                e => fail(e, store),
+            })?;
+        let labels: Vec<String> = notes
+            .into_iter()
+            .filter_map(|n| n.data.into_iter().next())
+            .collect();
         if import.make_default && !import.ca && labels.iter().any(|l| l == &label) {
             let ch = entries::Change {
                 default: true,
@@ -502,7 +556,11 @@ impl Manager<'_> {
             .iter()
             .filter_map(|id| all.iter().find(|a| a.id == *id).map(info))
             .collect();
-        out.extend(all.iter().filter(|a| !a.shipped && !shown.contains(&a.id.as_str())).map(info));
+        out.extend(
+            all.iter()
+                .filter(|a| !a.shipped && !shown.contains(&a.id.as_str()))
+                .map(info),
+        );
         out
     }
 
@@ -515,7 +573,10 @@ impl Manager<'_> {
     /// [`Certs::register_instance`](crate::env::Certs::register_instance).
     pub fn register_instance(&self, instance: &str) -> Result<(), CertFailure> {
         let id = certs::apps::http_server(instance);
-        let text = format!("HTTP server instance {}", instance.trim().to_ascii_uppercase());
+        let text = format!(
+            "HTTP server instance {}",
+            instance.trim().to_ascii_uppercase()
+        );
         match appids::add(&self.ctx, &id, AppKind::Server, &text) {
             Ok(_) | Err(CertError::AlreadyRegistered(_)) => Ok(()),
             Err(e) => Err(fail(e, "*SYSTEM")),
@@ -538,7 +599,12 @@ impl Manager<'_> {
     }
 
     /// [`Certs::export_pkcs12`](crate::env::Certs::export_pkcs12).
-    pub fn export_pkcs12(&self, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure> {
+    pub fn export_pkcs12(
+        &self,
+        store: &str,
+        label: &str,
+        password: &str,
+    ) -> Result<Vec<u8>, CertFailure> {
         let ks = self.keystore(store)?;
         let f = entries::ExportFormat::Pkcs12(password.to_string());
         entries::export(&self.ctx, &ks, label, &f).map_err(|e| fail(e, store))

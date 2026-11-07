@@ -79,7 +79,11 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
             "QSH0002 The QSH terminal session needs a display; run QSH CMD() here.",
         ));
     };
-    let terminal = if crate::panels::shows_panels(host, r) { "5250" } else { "PIPELINE" };
+    let terminal = if crate::panels::shows_panels(host, r) {
+        "5250"
+    } else {
+        "PIPELINE"
+    };
     let setup = super::setup(host, terminal);
     let b = {
         let mut side = super::side::JobSide::new(job, host);
@@ -89,7 +93,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     let msg = b.result.message;
     let data = msg.data.to_be_bytes().to_vec();
     let line = match msg.id {
-        "QSH0005" => format!("QSH0005 The command finished with exit status {}.", msg.data),
+        "QSH0005" => format!(
+            "QSH0005 The command finished with exit status {}.",
+            msg.data
+        ),
         "QSH0006" => format!("QSH0006 The command was stopped by signal {}.", msg.data),
         _ => "QSH0007 The command was stopped by an exception.".to_string(),
     };

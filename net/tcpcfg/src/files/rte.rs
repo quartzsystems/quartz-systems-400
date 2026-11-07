@@ -45,7 +45,10 @@ fn encode4(r: &Route) -> Rec {
         .set_bin("NETWORKID", bits(r.dest.ip()))
         .set_bin("MTU", i64::from(r.mtu.unwrap_or(0)))
         .set("RTETYPE", if r.dest == Dest::DftRoute { "D" } else { "S" })
-        .set("BINDIFC", &r.bind_ifc.map_or("*NONE".into(), |b| b.to_string()))
+        .set(
+            "BINDIFC",
+            &r.bind_ifc.map_or("*NONE".into(), |b| b.to_string()),
+        )
         .set_bin("BINBINDIFC", r.bind_ifc.map_or(0, v4_bits))
         .set_bin("PRECEDENCE", i64::from(r.dup_pty))
         .set_bin("RIPMETRIC", i64::from(r.metric))
@@ -74,7 +77,10 @@ fn encode6(r: &Route) -> Rec {
 pub(super) fn decode(v4: &[Rec], v6: &[Rec]) -> Routes {
     let mut list = Vec::new();
     for x in v4 {
-        let (Ok(dest), Ok(hop)) = (Dest::parse(&x.get("RTEDEST")), x.get("NEXTHOP").parse::<IpAddr>()) else {
+        let (Ok(dest), Ok(hop)) = (
+            Dest::parse(&x.get("RTEDEST")),
+            x.get("NEXTHOP").parse::<IpAddr>(),
+        ) else {
             continue;
         };
         let mask = x.get("SUBNETMASK");
@@ -87,26 +93,44 @@ pub(super) fn decode(v4: &[Rec], v6: &[Rec]) -> Routes {
         r.tos = Tos::parse(&x.get("TOS")).unwrap_or_default();
         r.mtu = u32::try_from(x.bin("MTU")).ok().filter(|m| *m != 0);
         r.bind_ifc = x.get("BINDIFC").parse().ok();
-        r.dup_pty = u8::try_from(x.bin("PRECEDENCE")).ok().filter(|p| *p != 0).unwrap_or(5);
-        r.metric = u8::try_from(x.bin("RIPMETRIC")).ok().filter(|p| *p != 0).unwrap_or(1);
+        r.dup_pty = u8::try_from(x.bin("PRECEDENCE"))
+            .ok()
+            .filter(|p| *p != 0)
+            .unwrap_or(5);
+        r.metric = u8::try_from(x.bin("RIPMETRIC"))
+            .ok()
+            .filter(|p| *p != 0)
+            .unwrap_or(1);
         r.redist = x.get("RIPREDIST") == "*YES";
         r.text = x.get_g("TEXT");
         list.push(r);
     }
     for x in v6 {
-        let (Ok(dest), Ok(hop)) = (Dest::parse(&x.get("RTEDEST")), x.get("NEXTHOP").parse::<IpAddr>()) else {
+        let (Ok(dest), Ok(hop)) = (
+            Dest::parse(&x.get("RTEDEST")),
+            x.get("NEXTHOP").parse::<IpAddr>(),
+        ) else {
             continue;
         };
         let mut r = Route::new(dest, u8::try_from(x.bin("PFXLEN")).unwrap_or(0), hop);
         r.tos = Tos::parse(&x.get("TOS")).unwrap_or_default();
         let line = x.get("BINDLIND");
         if !line.is_empty() {
-            r.bind_line = Some((line, u16::try_from(x.bin("BINDVLAN")).ok().filter(|v| *v != 0)));
+            r.bind_line = Some((
+                line,
+                u16::try_from(x.bin("BINDVLAN")).ok().filter(|v| *v != 0),
+            ));
         }
         r.mtu = u32::try_from(x.bin("MTU")).ok().filter(|m| *m != 0);
-        r.metric = u8::try_from(x.bin("METRIC")).ok().filter(|p| *p != 0).unwrap_or(1);
+        r.metric = u8::try_from(x.bin("METRIC"))
+            .ok()
+            .filter(|p| *p != 0)
+            .unwrap_or(1);
         r.redist = x.get("REDST") == "*YES";
-        r.dup_pty = u8::try_from(x.bin("DUPRTEPTY")).ok().filter(|p| *p != 0).unwrap_or(5);
+        r.dup_pty = u8::try_from(x.bin("DUPRTEPTY"))
+            .ok()
+            .filter(|p| *p != 0)
+            .unwrap_or(5);
         r.text = x.get("TEXT");
         list.push(r);
     }

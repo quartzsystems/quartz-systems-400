@@ -166,7 +166,10 @@ pub struct SqlInclude {
 /// An SQL `INCLUDE` ending at the last line read: the name and the
 /// statement's lines. Free form takes one line; fixed form a
 /// `C/EXEC SQL INCLUDE name` line and its `C/END-EXEC`.
-fn sql_include_at(lines: &[Line], pending: &mut Option<(String, usize)>) -> Option<(String, Vec<usize>)> {
+fn sql_include_at(
+    lines: &[Line],
+    pending: &mut Option<(String, usize)>,
+) -> Option<(String, Vec<usize>)> {
     let i = lines.len().checked_sub(1)?;
     let l = &lines[i];
     match l.class {
@@ -247,7 +250,11 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         members: vec![main],
         ..Read::default()
     };
-    let mut defined: Vec<String> = opts.defines.iter().map(|d| d.to_ascii_uppercase()).collect();
+    let mut defined: Vec<String> = opts
+        .defines
+        .iter()
+        .map(|d| d.to_ascii_uppercase())
+        .collect();
     let mut conds: Vec<Cond> = Vec::new();
     let mut stack = vec![Frame {
         member: 0,
@@ -266,7 +273,14 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
             // End of member: an open /IF of this member is an error.
             let f = stack.pop().expect("a frame");
             for c in conds.drain(f.conds.min(conds.len())..) {
-                r.diags.push(Diag::new(ids::COND_NO_ENDIF, 30, Pos { line: c.line, col: 0 }));
+                r.diags.push(Diag::new(
+                    ids::COND_NO_ENDIF,
+                    30,
+                    Pos {
+                        line: c.line,
+                        col: 0,
+                    },
+                ));
             }
             continue;
         };
@@ -279,7 +293,10 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         // A fully free member goes to fixed form at `**END-FREE` and
         // back at `**FREE` (the precompiler's generated source).
         let marker = rec.text.trim().to_ascii_uppercase();
-        if !first && ((top.fully_free && marker == "**END-FREE") || (top.fixed_part && marker == "**FREE")) {
+        if !first
+            && ((top.fully_free && marker == "**END-FREE")
+                || (top.fixed_part && marker == "**FREE"))
+        {
             top.fixed_part = !top.fixed_part;
             top.fully_free = !top.fixed_part;
             r.lines.push(Line {
@@ -303,7 +320,9 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                     if cond.is_none() {
                         r.diags.push(Diag::new(ids::BAD_CONDITION, 30, at));
                     }
-                    let hit = cond.as_ref().is_some_and(|(not, name)| defined.contains(name) != *not);
+                    let hit = cond
+                        .as_ref()
+                        .is_some_and(|(not, name)| defined.contains(name) != *not);
                     conds.push(Cond {
                         active: active && hit,
                         taken: hit,
@@ -319,7 +338,9 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                         if cond.is_none() {
                             r.diags.push(Diag::new(ids::BAD_CONDITION, 30, at));
                         }
-                        let hit = cond.as_ref().is_some_and(|(not, name)| defined.contains(name) != *not);
+                        let hit = cond
+                            .as_ref()
+                            .is_some_and(|(not, name)| defined.contains(name) != *not);
                         c.active = c.outer && !c.taken && hit && !c.seen_else;
                         c.taken |= hit;
                     }
@@ -346,7 +367,9 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                 d,
                 Directive::If(..) | Directive::ElseIf(..) | Directive::Else | Directive::EndIf
             ) {
-                if !matches!(d, Directive::EndIf) && conds.last().is_some_and(|c| c.outer && !c.active) {
+                if !matches!(d, Directive::EndIf)
+                    && conds.last().is_some_and(|c| c.outer && !c.active)
+                {
                     r.excluded.push(no);
                 }
                 r.lines.push(Line {
@@ -391,8 +414,14 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         let eof = matches!(class, Class::Directive(Directive::Eof));
         let copy = match &class {
             Class::Directive(Directive::Copy {
-                lib, file, member, word, ..
-            }) if !member.is_empty() => Some((lib.clone(), file.clone(), member.clone(), word.clone())),
+                lib,
+                file,
+                member,
+                word,
+                ..
+            }) if !member.is_empty() => {
+                Some((lib.clone(), file.clone(), member.clone(), word.clone()))
+            }
             _ => None,
         };
         r.lines.push(Line {
@@ -422,7 +451,9 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                 for i in at {
                     r.lines[i].class = Class::Comment;
                 }
-                let free = m.as_ref().is_some_and(|m| is_free_marker(m.records.first().map_or("", |x| x.text.as_str())));
+                let free = m.as_ref().is_some_and(|m| {
+                    is_free_marker(m.records.first().map_or("", |x| x.text.as_str()))
+                });
                 let idx = m.map(|m| {
                     r.members.push(m);
                     r.members.len() - 1
@@ -461,14 +492,24 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
             let stmf = lib == STMF || (r.members[0].lib == STMF && !word.contains(','));
             let m = if stmf {
                 let cur = &r.members[stack.last().expect("a frame").member];
-                let dir = if cur.lib == STMF { cur.file.clone() } else { String::new() };
-                let target = if lib == STMF { name.clone() } else { word.clone() };
+                let dir = if cur.lib == STMF {
+                    cur.file.clone()
+                } else {
+                    String::new()
+                };
+                let target = if lib == STMF {
+                    name.clone()
+                } else {
+                    word.clone()
+                };
                 if stack.len() > usize::from(opts.copynest) {
-                    r.diags.push(Diag::new(ids::COPY_NESTING, 40, at).arg(target));
+                    r.diags
+                        .push(Diag::new(ids::COPY_NESTING, 40, at).arg(target));
                     continue;
                 }
                 let Some(m) = includes.member(STMF, &dir, &target) else {
-                    r.diags.push(Diag::new(ids::COPY_NOT_FOUND, 40, at).arg(target));
+                    r.diags
+                        .push(Diag::new(ids::COPY_NOT_FOUND, 40, at).arg(target));
                     continue;
                 };
                 let busy = stack.iter().any(|f| {
@@ -476,7 +517,8 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                     x.lib == STMF && x.name == m.name
                 });
                 if busy {
-                    r.diags.push(Diag::new(ids::COPY_NESTING, 40, at).arg(m.name.clone()));
+                    r.diags
+                        .push(Diag::new(ids::COPY_NESTING, 40, at).arg(m.name.clone()));
                     continue;
                 }
                 m
@@ -486,11 +528,14 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                     m.file.eq_ignore_ascii_case(&file) && m.name.eq_ignore_ascii_case(&name)
                 });
                 if busy || stack.len() > usize::from(opts.copynest) {
-                    r.diags.push(Diag::new(ids::COPY_NESTING, 40, at).arg(format!("{file},{name}")));
+                    r.diags
+                        .push(Diag::new(ids::COPY_NESTING, 40, at).arg(format!("{file},{name}")));
                     continue;
                 }
                 let Some(m) = includes.member(&lib, &file, &name) else {
-                    r.diags.push(Diag::new(ids::COPY_NOT_FOUND, 40, at).arg(format!("{lib}/{file},{name}")));
+                    r.diags.push(
+                        Diag::new(ids::COPY_NOT_FOUND, 40, at).arg(format!("{lib}/{file},{name}")),
+                    );
                     continue;
                 };
                 m
@@ -509,7 +554,14 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         }
     }
     for c in conds {
-        r.diags.push(Diag::new(ids::COND_NO_ENDIF, 30, Pos { line: c.line, col: 0 }));
+        r.diags.push(Diag::new(
+            ids::COND_NO_ENDIF,
+            30,
+            Pos {
+                line: c.line,
+                col: 0,
+            },
+        ));
     }
     r.defined = defined;
     r
@@ -517,7 +569,9 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
 
 /// Whether a record is the `**FREE` marker.
 fn is_free_marker(text: &str) -> bool {
-    text.get(..6).is_some_and(|h| h.eq_ignore_ascii_case("**FREE")) && text[6..].trim().is_empty()
+    text.get(..6)
+        .is_some_and(|h| h.eq_ignore_ascii_case("**FREE"))
+        && text[6..].trim().is_empty()
 }
 
 /// Classify one record.
@@ -621,7 +675,12 @@ fn directive(t: &str) -> Option<Directive> {
     Some(match word {
         "/COPY" | "/INCLUDE" => {
             let (lib, file, member) = copy_target(rest_orig);
-            let target = rest_orig.split_whitespace().next().unwrap_or("").trim_matches('\'').to_string();
+            let target = rest_orig
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .trim_matches('\'')
+                .to_string();
             Directive::Copy {
                 lib,
                 file,
@@ -647,7 +706,9 @@ fn directive(t: &str) -> Option<Directive> {
         // A word after the slash is a directive, known or not; a
         // statement's continuation (`/ b;`) is not.
         _ if word[1..].starts_with(|c: char| c.is_ascii_alphabetic())
-            && word[1..].chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+            && word[1..]
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-')
             && !t.contains(';') =>
         {
             Directive::Unknown(t.to_string())
@@ -710,7 +771,12 @@ mod tests {
             "     H DFTACTGRP(*NO)\n      * a comment\n      /COPY CPY\n      /IF DEFINED(X)\n     D A               S             10\n      /ELSE\n     D B               S             10\n      /ENDIF\n       dcl-s c int(10);\n**CTDATA ARR\nabc\n",
         );
         let mut inc = MemIncludes::default();
-        inc.members.push(Member::from_text("L", "QRPGLESRC", "CPY", "**FREE\ndcl-c K 1;\n"));
+        inc.members.push(Member::from_text(
+            "L",
+            "QRPGLESRC",
+            "CPY",
+            "**FREE\ndcl-c K 1;\n",
+        ));
         let r = read(main, &mut inc, &Options::default());
         assert!(r.diags.is_empty(), "{:?}", r.diags);
         let c = classes(&r);
@@ -736,7 +802,12 @@ mod tests {
             "**FREE\nexec sql include INC;\nexec sql include sqlda;\nexec sql include NOPE;\n",
         );
         let mut inc = MemIncludes::default();
-        inc.members.push(Member::from_text("L", "QSRC", "INC", "       dcl-s n int(10);\n"));
+        inc.members.push(Member::from_text(
+            "L",
+            "QSRC",
+            "INC",
+            "       dcl-s n int(10);\n",
+        ));
         let r = read(main, &mut inc, &Options::default());
         let c = classes(&r);
         assert_eq!(c[1], (2, Class::Comment));
@@ -747,12 +818,24 @@ mod tests {
         assert_eq!(c[4], (5, Class::Free));
         assert!(r.sqlda);
         assert_eq!(r.sql_includes.len(), 2);
-        assert_eq!((r.sql_includes[0].line, r.sql_includes[0].member, r.sql_includes[0].fully_free), (2, Some(1), false));
+        assert_eq!(
+            (
+                r.sql_includes[0].line,
+                r.sql_includes[0].member,
+                r.sql_includes[0].fully_free
+            ),
+            (2, Some(1), false)
+        );
     }
 
     #[test]
     fn missing_members_and_recursion() {
-        let main = Member::from_text("L", "QRPGLESRC", "MAIN", "      /COPY NOPE\n      /COPY QRPGLESRC,MAIN\n");
+        let main = Member::from_text(
+            "L",
+            "QRPGLESRC",
+            "MAIN",
+            "      /COPY NOPE\n      /COPY QRPGLESRC,MAIN\n",
+        );
         let mut inc = MemIncludes::default();
         inc.members.push(main.clone());
         let r = read(main, &mut inc, &Options::default());

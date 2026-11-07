@@ -39,7 +39,11 @@ pub fn work_with_mirrored_protection() -> Submenu {
                 "Stop mirrored protection",
                 Some(Box::new(|env| Flow::Push(Box::new(stop(env))))),
             ),
-            (4, "Enable remote load source mirroring", crate::dst::common::says(crate::dst::answers::NO_REMOTE_BUS)),
+            (
+                4,
+                "Enable remote load source mirroring",
+                crate::dst::common::says(crate::dst::answers::NO_REMOTE_BUS),
+            ),
         ],
     )
 }
@@ -89,7 +93,11 @@ impl std::fmt::Display for Refusal {
                 "{n} units have no partner; mirroring needs an even number of units"
             ),
             Self::NoPartner(u) => {
-                write!(f, "No unit or disk of sufficient size can pair with unit {}", u + 1)
+                write!(
+                    f,
+                    "No unit or disk of sufficient size can pair with unit {}",
+                    u + 1
+                )
             }
             Self::CannotLeave(u) => write!(
                 f,
@@ -122,7 +130,11 @@ fn used_mib(u: &DiskUnit) -> u64 {
 
 /// The first candidate at least `size` MiB, one behind another
 /// controller preferred.
-fn best<'a>(size: u64, controller: &str, cands: impl Iterator<Item = (u64, &'a str)>) -> Option<usize> {
+fn best<'a>(
+    size: u64,
+    controller: &str,
+    cands: impl Iterator<Item = (u64, &'a str)>,
+) -> Option<usize> {
     let fits: Vec<(usize, &str)> = cands
         .enumerate()
         .filter(|(_, (s, _))| *s >= size)
@@ -265,7 +277,11 @@ pub fn pair_rows(p: &Pairing) -> [String; 2] {
             &d.serial,
             &d.type_model,
             &d.resource,
-            if p.from_unit.is_some() { "  data moves" } else { "" },
+            if p.from_unit.is_some() {
+                "  data moves"
+            } else {
+                ""
+            },
         ),
     ]
 }
@@ -453,7 +469,10 @@ mod tests {
         }
         // Units 4 and 5 pair with each other; the set is left alone.
         let pairs = propose_pairs(&units, &[]).unwrap();
-        assert_eq!(summary(&pairs), vec![(3, "/dev/sde".into(), Some(4), "Device")]);
+        assert_eq!(
+            summary(&pairs),
+            vec![(3, "/dev/sde".into(), Some(4), "Device")]
+        );
         // A parity unit after the partners keeps them from leaving.
         units[4].status = "DPY/Active".into();
         units[2].status = "Unprotected".into();
@@ -473,7 +492,10 @@ mod tests {
             paired(unit(3, 20, "DC01"), 0),
         ];
         let pairs = propose_pairs(&units, &[]).unwrap();
-        assert_eq!(summary(&pairs), vec![(1, "/dev/sdc".into(), Some(2), "Device")]);
+        assert_eq!(
+            summary(&pairs),
+            vec![(1, "/dev/sdc".into(), Some(2), "Device")]
+        );
     }
 
     #[test]
@@ -537,7 +559,10 @@ mod tests {
         );
         // Spares for every unit: nothing leaves the configuration.
         let pairs = propose_pairs(&units[..1], &[spare("sdx", 500), spare("sdy", 1000)]).unwrap();
-        assert_eq!(summary(&pairs), vec![(0, "/dev/sdy".into(), None, "Controller")]);
+        assert_eq!(
+            summary(&pairs),
+            vec![(0, "/dev/sdy".into(), None, "Controller")]
+        );
     }
 
     #[test]
@@ -560,7 +585,10 @@ mod tests {
 
     #[test]
     fn nothing_left_to_pair() {
-        let units = vec![paired(unit(0, 10, "DC01"), 1), paired(unit(1, 10, "DC01"), 0)];
+        let units = vec![
+            paired(unit(0, 10, "DC01"), 1),
+            paired(unit(1, 10, "DC01"), 0),
+        ];
         assert_eq!(propose_pairs(&units, &[]), Err(Refusal::NothingToPair));
     }
 }

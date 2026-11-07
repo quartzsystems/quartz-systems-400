@@ -131,7 +131,10 @@ fn env() -> MemEnv {
 }
 
 fn menu() -> Runner {
-    Runner::new(Box::new(sst::SstMenu::new("QSECOFR".into(), Privilege::ALL)))
+    Runner::new(Box::new(sst::SstMenu::new(
+        "QSECOFR".into(),
+        Privilege::ALL,
+    )))
 }
 
 fn walk(env: &mut MemEnv, path: &[&str]) -> Runner {
@@ -204,7 +207,12 @@ fn changes_ask_first() {
     assert_eq!(r.top(), "dst-disk-recovery");
     // Deleting a user ID.
     let mut r = walk(&mut e, &["8", "1"]);
-    let row = e.users.list().iter().position(|u| u.name == "22222222").unwrap();
+    let row = e
+        .users
+        .list()
+        .iter()
+        .position(|u| u.name == "22222222")
+        .unwrap();
     let mut opts = vec![String::new(); e.users.list().len()];
     opts[row] = "3".into();
     r.enter(&opts, &mut e);
@@ -228,7 +236,10 @@ fn changes_ask_first() {
 #[test]
 fn a_user_without_the_privilege_is_refused() {
     let mut e = env();
-    let mut r = Runner::new(Box::new(sst::SstMenu::new("22222222".into(), Privilege::IPL)));
+    let mut r = Runner::new(Box::new(sst::SstMenu::new(
+        "22222222".into(),
+        Privilege::IPL,
+    )));
     r.enter(&f(&["3"]), &mut e);
     assert!(r.screen(&mut e).dump().contains("not authorized"));
     r.enter(&f(&["7"]), &mut e);

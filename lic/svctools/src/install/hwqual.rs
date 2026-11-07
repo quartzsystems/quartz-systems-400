@@ -18,7 +18,11 @@ pub fn menu() -> Submenu {
         "hwqual",
         "Hardware Qualification",
         vec![
-            (1, "Display hardware qualification report", Some(Box::new(display))),
+            (
+                1,
+                "Display hardware qualification report",
+                Some(Box::new(display)),
+            ),
             (2, "Write report to USB device", Some(Box::new(usb))),
         ],
     )
@@ -31,7 +35,11 @@ pub fn menu() -> Submenu {
 
 fn display(env: &mut dyn DstEnv) -> Flow {
     match env.hardware_report() {
-        Ok(lines) => Flow::Push(Box::new(Notice::new("hwqual-report", "Hardware Qualification Report", lines))),
+        Ok(lines) => Flow::Push(Box::new(Notice::new(
+            "hwqual-report",
+            "Hardware Qualification Report",
+            lines,
+        ))),
         Err(e) => Flow::Error(e),
     }
 }

@@ -37,7 +37,11 @@ impl Url {
             Some(i) => (&rest[..i], rest[i..].to_string()),
             None => (rest, "/".to_string()),
         };
-        let target = if target.starts_with('?') { format!("/{target}") } else { target };
+        let target = if target.starts_with('?') {
+            format!("/{target}")
+        } else {
+            target
+        };
         let target = target.split('#').next().unwrap_or("/").to_string();
         let (userinfo, hostport) = match auth.rsplit_once('@') {
             Some((u, h)) => (Some(u.to_string()), h),
@@ -61,14 +65,28 @@ impl Url {
         if host.is_empty() {
             return Err(bad());
         }
-        Ok(Self { tls, host, port, target, userinfo })
+        Ok(Self {
+            tls,
+            host,
+            port,
+            target,
+            userinfo,
+        })
     }
 
     /// `host[:port]` as the `Host` header has it.
     #[must_use]
     pub fn authority(&self) -> String {
-        let h = if self.host.contains(':') { format!("[{}]", self.host) } else { self.host.clone() };
-        if self.port == if self.tls { 443 } else { 80 } { h } else { format!("{h}:{}", self.port) }
+        let h = if self.host.contains(':') {
+            format!("[{}]", self.host)
+        } else {
+            self.host.clone()
+        };
+        if self.port == if self.tls { 443 } else { 80 } {
+            h
+        } else {
+            format!("{h}:{}", self.port)
+        }
     }
 
     /// `location` read against this URL.
@@ -89,8 +107,10 @@ impl Url {
 }
 
 fn strip_ci<'a>(s: &'a str, prefix: &str) -> Option<&'a str> {
-    (s.len() >= prefix.len() && s.is_char_boundary(prefix.len()) && s[..prefix.len()].eq_ignore_ascii_case(prefix))
-        .then(|| &s[prefix.len()..])
+    (s.len() >= prefix.len()
+        && s.is_char_boundary(prefix.len())
+        && s[..prefix.len()].eq_ignore_ascii_case(prefix))
+    .then(|| &s[prefix.len()..])
 }
 
 #[cfg(test)]
@@ -100,9 +120,20 @@ mod tests {
     #[test]
     fn urls() {
         let u = Url::parse("https://example.com/a/b?x=1#f").unwrap();
-        assert_eq!((u.tls, u.host.as_str(), u.port, u.target.as_str()), (true, "example.com", 443, "/a/b?x=1"));
+        assert_eq!(
+            (u.tls, u.host.as_str(), u.port, u.target.as_str()),
+            (true, "example.com", 443, "/a/b?x=1")
+        );
         let u = Url::parse("http://u:p@[::1]:8080").unwrap();
-        assert_eq!((u.host.as_str(), u.port, u.target.as_str(), u.userinfo.as_deref()), ("::1", 8080, "/", Some("u:p")));
+        assert_eq!(
+            (
+                u.host.as_str(),
+                u.port,
+                u.target.as_str(),
+                u.userinfo.as_deref()
+            ),
+            ("::1", 8080, "/", Some("u:p"))
+        );
         assert_eq!(u.authority(), "[::1]:8080");
         assert!(Url::parse("ftp://x").is_err());
         let j = Url::parse("http://h/a/b").unwrap().join("c?d").unwrap();

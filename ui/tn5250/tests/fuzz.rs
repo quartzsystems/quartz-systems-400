@@ -44,7 +44,9 @@ impl Lcg {
         (0..n)
             .map(|_| match self.next() % 8 {
                 0 => 0x04,
-                1 => [0x11, 0x40, 0x52, 0x1D, 0x01, 0x02, 0x03, 0x10, 0x13, 0x14, 0x23, 0xF3][(self.next() % 12) as usize],
+                1 => [
+                    0x11, 0x40, 0x52, 0x1D, 0x01, 0x02, 0x03, 0x10, 0x13, 0x14, 0x23, 0xF3,
+                ][(self.next() % 12) as usize],
                 2 => (self.next() % 28) as u8,
                 3 => 0x20 + (self.next() % 32) as u8,
                 _ => self.byte(),

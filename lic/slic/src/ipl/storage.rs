@@ -10,8 +10,8 @@
 use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use blockdev::{BlockDev, LinuxBlockDev, MemBlockDev};
@@ -638,7 +638,11 @@ pub fn use_hot_spares(system: &mut System) {
         system.out.serial(&format!(
             "slic: a hot spare took the place of disk unit {}; it is {}\n",
             u.unit,
-            if u.parity { "rebuilt from its parity set" } else { "resumed from its partner" }
+            if u.parity {
+                "rebuilt from its parity set"
+            } else {
+                "resumed from its partner"
+            }
         ));
         if !u.parity
             && let Err(e) = start_resume(system, u.unit)
@@ -770,7 +774,10 @@ fn parity_idle_budget(system: &System) -> u64 {
             s.store
                 .parity_sets()
                 .iter()
-                .find(|set| set.sync_percent.is_some() || set.members.iter().any(|m| m.rebuild_percent.is_some()))
+                .find(|set| {
+                    set.sync_percent.is_some()
+                        || set.members.iter().any(|m| m.rebuild_percent.is_some())
+                })
                 .map(|set| (set.geometry.n * set.geometry.w()) as u64)
         })
         .unwrap_or(1)
@@ -880,9 +887,7 @@ pub fn unit_candidates() -> Vec<PathBuf> {
     let mut paths: Vec<PathBuf> = diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID)
         .unwrap_or_default()
         .into_iter()
-        .filter(|p| {
-            (home.is_some() && diskimg::locate::disk_of(p) == home) || has_unit_header(p)
-        })
+        .filter(|p| (home.is_some() && diskimg::locate::disk_of(p) == home) || has_unit_header(p))
         .collect();
     for disk in diskimg::locate::whole_disks().unwrap_or_default() {
         if disk.has_qs400 {

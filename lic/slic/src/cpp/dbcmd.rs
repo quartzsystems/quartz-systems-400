@@ -130,7 +130,11 @@ fn chgpf(system: &mut System, name: &str, parms: &Parms) -> Result<String, Strin
         let (sn, sl) = parms.qual("SRCFILE");
         let mbr = {
             let m = parms.name("SRCMBR");
-            if m.is_empty() || m == "*FILE" { q.0.clone() } else { m }
+            if m.is_empty() || m == "*FILE" {
+                q.0.clone()
+            } else {
+                m
+            }
         };
         let line = format!(
             "chgpf {}/{} SRCFILE({}/{sn}) SRCMBR({mbr})",
@@ -156,7 +160,9 @@ fn chgpf(system: &mut System, name: &str, parms: &Parms) -> Result<String, Strin
         } else {
             let n = |i: usize, d: u32| -> Result<u32, String> {
                 word(i).map_or(Ok(d), |w| {
-                    w.trim().parse().map_err(|_| "CPD0084 SIZE: numbers are needed".to_string())
+                    w.trim()
+                        .parse()
+                        .map_err(|_| "CPD0084 SIZE: numbers are needed".to_string())
                 })
             };
             Size {
@@ -197,7 +203,8 @@ fn chgpf(system: &mut System, name: &str, parms: &Parms) -> Result<String, Strin
     let job = job_handle(system);
     in_store(system, |txn, qsys, names| {
         let id = file(txn, qsys, names, &q)?;
-        db::chg::chgpf(txn, job, id, &c).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
+        db::chg::chgpf(txn, job, id, &c)
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
         Ok(format!("{out}File {} changed.\n", q.0))
     })
 }
@@ -238,7 +245,8 @@ fn chglf(system: &mut System, parms: &Parms) -> Result<String, String> {
     let job = job_handle(system);
     in_store(system, |txn, qsys, names| {
         let id = file(txn, qsys, names, &q)?;
-        db::chg::chglf(txn, job, id, &c).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
+        db::chg::chglf(txn, job, id, &c)
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
         Ok(format!("File {} changed.\n", q.0))
     })
 }
@@ -248,10 +256,14 @@ fn chgpfm(system: &mut System, parms: &Parms) -> Result<String, String> {
     let mbr = parms.name("MBR");
     let m = Name::parse(&mbr).map_err(|e| format!("CPD0078 MBR({mbr}): {e}"))?;
     let text = text_change(parms);
-    let srctype = parms.specified("SRCTYPE").then(|| match parms.name("SRCTYPE").as_str() {
-        "*NONE" | "" => Ok(None),
-        t => Name::parse(t).map(Some).map_err(|e| format!("CPD0078 SRCTYPE({t}): {e}")),
-    });
+    let srctype = parms
+        .specified("SRCTYPE")
+        .then(|| match parms.name("SRCTYPE").as_str() {
+            "*NONE" | "" => Ok(None),
+            t => Name::parse(t)
+                .map(Some)
+                .map_err(|e| format!("CPD0078 SRCTYPE({t}): {e}")),
+        });
     let srctype = srctype.transpose()?;
     let now = now_unix();
     in_store(system, |txn, qsys, names| {
@@ -300,8 +312,16 @@ fn cpysrcf(system: &mut System, parms: &Parms) -> Result<String, String> {
             db::file::add_member(txn, t, target, "", entry.srctype, now)
                 .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
         }
-        let n = db::source::srcput(txn, job, t, MemberSpec::Name(target), &text, entry.srctype, now)
-            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
+        let n = db::source::srcput(
+            txn,
+            job,
+            t,
+            MemberSpec::Name(target),
+            &text,
+            entry.srctype,
+            now,
+        )
+        .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
         Ok(format!(
             "{n} record(s) copied from member {} of {} to member {target} of {}.\n",
             entry.name, from.0, to.0
@@ -315,8 +335,19 @@ fn cpysrcf(system: &mut System, parms: &Parms) -> Result<String, String> {
 /// `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `LANGID` (with `SRTSEQ(*HEX)`),
 /// `SYSTIME`, `TGTRLS` and the listing options have no effect here.
 const CHECKED_OPTIONS: &[&str] = &[
-    "DATFMT", "DATSEP", "TIMFMT", "TIMSEP", "DECMPT", "SRTSEQ", "SQLCURRULE", "DECRESULT", "CONACC", "USRPRF", "DYNUSRPRF",
-    "SAAFLAG", "FLAGSTD",
+    "DATFMT",
+    "DATSEP",
+    "TIMFMT",
+    "TIMSEP",
+    "DECMPT",
+    "SRTSEQ",
+    "SQLCURRULE",
+    "DECRESULT",
+    "CONACC",
+    "USRPRF",
+    "DYNUSRPRF",
+    "SAAFLAG",
+    "FLAGSTD",
 ];
 
 fn check_run_options(parms: &Parms) -> Result<(), String> {
@@ -376,7 +407,10 @@ fn margins(parms: &Parms, text: String) -> String {
     match right {
         Some(n) if parms.specified("MARGINS") && n > 0 => {
             let n = usize::try_from(n).unwrap_or(usize::MAX);
-            text.lines().map(|l| l.chars().take(n).collect::<String>()).collect::<Vec<_>>().join("\n")
+            text.lines()
+                .map(|l| l.chars().take(n).collect::<String>())
+                .collect::<Vec<_>>()
+                .join("\n")
         }
         _ => text,
     }
@@ -430,7 +464,11 @@ fn runsql_reply(report: Result<RunReport, String>) -> CmdReply {
         Err(e) => return failed("RUNSQL", &e),
     };
     if report.errors > 0 {
-        return escape("SQL9010", "RUNSQL", &format!("the statement failed\n{}", report.listing));
+        return escape(
+            "SQL9010",
+            "RUNSQL",
+            &format!("the statement failed\n{}", report.listing),
+        );
     }
     plain(report.listing)
 }
@@ -440,12 +478,16 @@ fn runsqlstm_text(system: &mut System, parms: &Parms) -> Result<String, String> 
     let q = parms.qual("SRCFILE");
     let mbr = member(parms, "SRCMBR")?;
     // SRCSTMF: the statements are a stream file read in the job's name.
-    let stmf = parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty());
+    let stmf = parms
+        .specified("SRCSTMF")
+        .then(|| parms.text("SRCSTMF"))
+        .filter(|s| !s.is_empty());
     match stmf {
         Some(path) => super::stmf::read_as_job(system, &path),
         None => in_store(system, |txn, qsys, names| {
             let id = file(txn, qsys, names, &q)?;
-            db::source::srcget(txn, id, mbr).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))
+            db::source::srcget(txn, id, mbr)
+                .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))
         })
         .map(|t| margins(parms, t)),
     }
@@ -454,10 +496,11 @@ fn runsqlstm_text(system: &mut System, parms: &Parms) -> Result<String, String> 
 /// `RUNSQLSTM SRCFILE(lib/file) SRCMBR(m)` or `SRCSTMF(path)`: the statements;
 /// `SQL9006` when errors passed `ERRLVL`.
 fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
-    let (text, opts) = match runsqlstm_text(system, parms).and_then(|t| Ok((t, run_opts(parms, system)?))) {
-        Ok(v) => v,
-        Err(e) => return failed("RUNSQLSTM", &e),
-    };
+    let (text, opts) =
+        match runsqlstm_text(system, parms).and_then(|t| Ok((t, run_opts(parms, system)?))) {
+            Ok(v) => v,
+            Err(e) => return failed("RUNSQLSTM", &e),
+        };
     if syntax_only(parms) {
         let report = syntax_report(&text, opts.naming);
         print_listing(system, parms, &text, &report);
@@ -477,7 +520,10 @@ fn print_listing(system: &mut System, parms: &Parms, text: &str, report: &RunRep
     if parms.name("OUTPUT") != "*PRINT" {
         return;
     }
-    let stmf = parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty());
+    let stmf = parms
+        .specified("SRCSTMF")
+        .then(|| parms.text("SRCSTMF"))
+        .filter(|s| !s.is_empty());
     let (name, source) = if let Some(path) = &stmf {
         let stem = path.rsplit('/').next().unwrap_or(path);
         let stem = stem.split('.').next().unwrap_or(stem).to_ascii_uppercase();
@@ -485,8 +531,15 @@ fn print_listing(system: &mut System, parms: &Parms, text: &str, report: &RunRep
     } else {
         let (file, lib) = parms.qual("SRCFILE");
         let mbr = parms.name("SRCMBR");
-        let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib };
-        (mbr.clone(), vec![("TXT0943", format!("{lib}/{file}")), ("TXT0944", mbr)])
+        let lib = if lib.is_empty() {
+            "*LIBL".to_string()
+        } else {
+            lib
+        };
+        (
+            mbr.clone(),
+            vec![("TXT0943", format!("{lib}/{file}")), ("TXT0944", mbr)],
+        )
     };
     let value = |kwd: &str| -> String {
         match kwd {
@@ -499,12 +552,24 @@ fn print_listing(system: &mut System, parms: &Parms, text: &str, report: &RunRep
                     "*DECSCALE" => 1,
                     _ => 2,
                 };
-                e.get(i).copied().flatten().map_or_else(|| ["31", "31", "0"][i].to_string(), cmd::Value::source)
+                e.get(i)
+                    .copied()
+                    .flatten()
+                    .map_or_else(|| ["31", "31", "0"][i].to_string(), cmd::Value::source)
             }
-            "MARGINS" => parms.elems("MARGINS").first().copied().flatten().map_or_else(|| "80".into(), cmd::Value::source),
+            "MARGINS" => parms
+                .elems("MARGINS")
+                .first()
+                .copied()
+                .flatten()
+                .map_or_else(|| "80".into(), cmd::Value::source),
             "PRTFILE" => {
                 let (f, l) = parms.qual("PRTFILE");
-                format!("{}/{}", if l.is_empty() { "*LIBL" } else { &l }, if f.is_empty() { "QSYSPRT" } else { &f })
+                format!(
+                    "{}/{}",
+                    if l.is_empty() { "*LIBL" } else { &l },
+                    if f.is_empty() { "QSYSPRT" } else { &f }
+                )
             }
             "ERRLVL" => parms.int("ERRLVL").unwrap_or(10).to_string(),
             k => {
@@ -520,7 +585,10 @@ fn print_listing(system: &mut System, parms: &Parms, text: &str, report: &RunRep
         name: &name,
         source,
         value: &value,
-        stamp: (format!("{:02}-{mo:02}-{d:02}", y % 100), format!("{hh:02}:{mm:02}:{ss:02}")),
+        stamp: (
+            format!("{:02}-{mo:02}-{d:02}", y % 100),
+            format!("{hh:02}:{mm:02}:{ss:02}"),
+        ),
         changed: None,
         records: text.lines().map(str::to_string).collect(),
     };
@@ -558,8 +626,18 @@ pub(super) fn runsql_long(
     job: JobHandle,
 ) -> Result<super::longcmd::Long, Box<CmdReply>> {
     let runsql = name == "RUNSQL";
-    let text = if runsql { Ok(parms.text("SQL")) } else { runsqlstm_text(system, parms) };
-    let prepared = text.and_then(|t| Ok((t, run_opts(parms, system)?, super::longcmd::context(system, job)?)));
+    let text = if runsql {
+        Ok(parms.text("SQL"))
+    } else {
+        runsqlstm_text(system, parms)
+    };
+    let prepared = text.and_then(|t| {
+        Ok((
+            t,
+            run_opts(parms, system)?,
+            super::longcmd::context(system, job)?,
+        ))
+    });
     let (text, opts, mut ctx) = match prepared {
         Ok(v) => v,
         Err(e) => return Err(Box::new(failed(name, &e))),
@@ -578,7 +656,8 @@ pub(super) fn runsql_long(
         ctx.yielder = Some(w.yielder());
         // CALL and trigger programs: made by the job, when it makes them.
         ctx.midcall = w.midcall();
-        let report = sql::runsqlstm_lent(w.lender(), &mut ctx, &text, &opts).map_err(|e| e.to_string());
+        let report =
+            sql::runsqlstm_lent(w.lender(), &mut ctx, &text, &opts).map_err(|e| e.to_string());
         Box::new(move |system: &mut System| {
             if runsql {
                 return runsql_reply(report);
@@ -627,7 +706,11 @@ fn wrkjrna(system: &mut System, parms: &Parms) -> Result<String, String> {
                 h.name,
                 d.status.name(),
                 sec::cmd::civil(d.attached),
-                if attached == Some(d.receiver) { "  (attached)" } else { "" }
+                if attached == Some(d.receiver) {
+                    "  (attached)"
+                } else {
+                    ""
+                }
             );
         }
         out.push_str("  Journaled objects:\n");
@@ -641,7 +724,11 @@ fn wrkjrna(system: &mut System, parms: &Parms) -> Result<String, String> {
                 h.name,
                 ty,
                 if o.both_images { "*BOTH" } else { "*AFTER" },
-                if o.omit_open_close { "*OPNCLO" } else { "*NONE" },
+                if o.omit_open_close {
+                    "*OPNCLO"
+                } else {
+                    "*NONE"
+                },
                 sec::cmd::civil(o.started)
             );
         }

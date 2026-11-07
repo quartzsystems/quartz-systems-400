@@ -32,11 +32,19 @@ use crate::ast::{CreateType, ObjectName};
 use crate::error::{Result, SqlError};
 
 fn err(code: i32, state: &'static str, what: impl Into<String>) -> SqlError {
-    SqlError::Coded { code, state, what: what.into() }
+    SqlError::Coded {
+        code,
+        state,
+        what: what.into(),
+    }
 }
 
 /// The type `name` names: its `*SQLUDT`.
-pub fn find(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName) -> Result<Option<(ObjectId, Udt)>> {
+pub fn find(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+) -> Result<Option<(ObjectId, Udt)>> {
     let Ok(lib) = ctx.library_for(txn, name) else {
         return Ok(None);
     };
@@ -67,7 +75,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateType) -> Result
     super::qtemp::unsupported_in_qtemp(&c.name, "a type")?;
     let lib = ctx.library_for(txn, &c.name)?;
     if find(txn, ctx, &c.name)?.is_some() {
-        return Err(err(-601, "42710", format!("type {} exists", c.name.name.value)));
+        return Err(err(
+            -601,
+            "42710",
+            format!("type {} exists", c.name.name.value),
+        ));
     }
     let long = c.name.name.value.len() > 10;
     let sys = if long {
@@ -95,18 +107,39 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateType) -> Result
         info.set(tag::NAME, c.name.name.value.as_bytes().to_vec());
     }
     let (metatype, cardinality) = c.array.map_or((b'T', 0), |n| (b'A', n));
-    info.set(tag::TYPE, Udt { metatype, source: crate::pl::types::type_text(&c.source), cardinality }.encode());
+    info.set(
+        tag::TYPE,
+        Udt {
+            metatype,
+            source: crate::pl::types::type_text(&c.source),
+            cardinality,
+        }
+        .encode(),
+    );
     sqlinf::save(txn, id, &info, now)?;
-    names::put(txn, lib, Space::Type, &c.name.name.value, Target { id, system: sys })?;
+    names::put(
+        txn,
+        lib,
+        Space::Type,
+        &c.name.name.value,
+        Target { id, system: sys },
+    )?;
     Ok(())
 }
 
 /// `DROP TYPE`.
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Result<()> {
-    let (id, _) = find(txn, ctx, name)?.ok_or_else(|| SqlError::ObjectNotFound { kind: "type", name: name.name.value.clone() })?;
+    let (id, _) = find(txn, ctx, name)?.ok_or_else(|| SqlError::ObjectNotFound {
+        kind: "type",
+        name: name.name.value.clone(),
+    })?;
     db::auth::check(txn, "obj.delete", id).map_err(SqlError::from)?;
     if let Some(user) = column::user_of(txn, ctx.qsys, id)? {
-        return Err(SqlError::Integrity { sqlcode: -478, sqlstate: "42893", what: format!("{} has a column of type {}", user, name.name.value) });
+        return Err(SqlError::Integrity {
+            sqlcode: -478,
+            sqlstate: "42893",
+            what: format!("{} has a column of type {}", user, name.name.value),
+        });
     }
     let lib = ctx.library_for(txn, name)?;
     names::remove(txn, lib, Space::Type, &name.name.value)?;
@@ -122,11 +155,21 @@ pub type Listed = (Name, String, Udt, u64, String);
 pub fn in_library(txn: &mut Txn<'_>, lib: ObjectId) -> Result<Vec<Listed>> {
     let mut out = Vec::new();
     for (sys, id) in ops::list(txn, lib, Some(types::SQLUDT))? {
-        let Ok(Some(info)) = sqlinf::load(txn, id) else { continue };
-        let Some(Ok(u)) = info.first(tag::TYPE).map(Udt::decode) else { continue };
+        let Ok(Some(info)) = sqlinf::load(txn, id) else {
+            continue;
+        };
+        let Some(Ok(u)) = info.first(tag::TYPE).map(Udt::decode) else {
+            continue;
+        };
         let (_, h) = ops::read_header(txn, id)?;
         let name = info.name().unwrap_or_else(|| sys.name.to_string());
-        out.push((sys.name, name, u, h.created, ccsid::decode_trimmed(&h.owner)));
+        out.push((
+            sys.name,
+            name,
+            u,
+            h.created,
+            ccsid::decode_trimmed(&h.owner),
+        ));
     }
     Ok(out)
 }

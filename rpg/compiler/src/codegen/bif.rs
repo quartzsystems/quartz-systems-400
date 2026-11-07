@@ -11,10 +11,10 @@
 
 use rpgfront::ast::{Expr, Fig, Lit, Step};
 
-use crate::diag::ids;
+use crate::codegen::Gen;
 use crate::codegen::emit::quote;
 use crate::codegen::expr::{V, Vk, Want};
-use crate::codegen::Gen;
+use crate::diag::ids;
 use crate::names::mangle;
 use crate::syms::{Kind, Parm, Proto, SymId};
 use crate::types::{DatFmt, Ty};
@@ -167,7 +167,9 @@ impl Gen<'_> {
                 if let Some(occ) = self.occurs_of(a) {
                     n.1 = occ;
                 }
-                let all = args.get(1).is_some_and(|a| matches!(a, Expr::Special { word, .. } if word == "*ALL"));
+                let all = args
+                    .get(1)
+                    .is_some_and(|a| matches!(a, Expr::Special { word, .. } if word == "*ALL"));
                 let n = if all { n.0 * n.1.max(1) } else { n.0 };
                 Some(V::lit(Ty::Packed(10, 0), n.to_string()))
             }
@@ -225,7 +227,11 @@ impl Gen<'_> {
                 if let Some(p) = lit(args.get(1))
                     && (p < 1 || !s.ty.is_varying() && p > i64::from(len))
                 {
-                    let id = if p < 1 { ids::SUBST_START } else { ids::SUBST_START_LONG };
+                    let id = if p < 1 {
+                        ids::SUBST_START
+                    } else {
+                        ids::SUBST_START_LONG
+                    };
                     self.err(id, 20, name.to_string());
                     return None;
                 }
@@ -243,14 +249,19 @@ impl Gen<'_> {
                 let (ty, l) = match args.get(2) {
                     Some(Expr::Lit(Lit::Num(n), _)) => {
                         let k: u32 = n.parse().unwrap_or(1);
-                        (super::ucs2::text_ty(c, k.max(1), false), Some(self.int_arg(&args[2])?))
+                        (
+                            super::ucs2::text_ty(c, k.max(1), false),
+                            Some(self.int_arg(&args[2])?),
+                        )
                     }
                     Some(e) => (super::ucs2::text_ty(c, len, true), Some(self.int_arg(e)?)),
                     None => (super::ucs2::text_ty(c, len, true), None),
                 };
                 let t = self.tmp(&ty);
                 match l {
-                    Some(l) => self.b.ins(format!("str.subst {}, {}, {start}, {l}", t.op, s.op)),
+                    Some(l) => self
+                        .b
+                        .ins(format!("str.subst {}, {}, {start}, {l}", t.op, s.op)),
                     None => {
                         let r = self.b.reg();
                         self.b.ins(format!("{r} = str.len {}", s.op));
@@ -260,7 +271,8 @@ impl Gen<'_> {
                         self.b.ins(format!("{n} = sub {r64}, {start}"));
                         let n1 = self.b.reg();
                         self.b.ins(format!("{n1} = add {n}, 1"));
-                        self.b.ins(format!("str.subst {}, {}, {start}, {n1}", t.op, s.op));
+                        self.b
+                            .ins(format!("str.subst {}, {}, {start}, {n1}", t.op, s.op));
                     }
                 }
                 Some(t)
@@ -275,7 +287,8 @@ impl Gen<'_> {
                 match args.get(2) {
                     Some(s) => {
                         let s = self.int_arg(s)?;
-                        self.b.ins(format!("{r} = str.scan {}, {}, {s}", n.op, h.op));
+                        self.b
+                            .ins(format!("{r} = str.scan {}, {}, {s}", n.op, h.op));
                     }
                     None => self.b.ins(format!("{r} = str.scan {}, {}", n.op, h.op)),
                 }
@@ -288,7 +301,11 @@ impl Gen<'_> {
                 let set = self.str_arg(&args[0])?;
                 let s = self.str_arg(&args[1])?;
                 let r = self.b.reg();
-                let op = if name == "%CHECK" { "str.check" } else { "str.checkr" };
+                let op = if name == "%CHECK" {
+                    "str.check"
+                } else {
+                    "str.checkr"
+                };
                 match args.get(2) {
                     Some(st) => {
                         let st = self.int_arg(st)?;
@@ -309,9 +326,15 @@ impl Gen<'_> {
                 match args.get(3) {
                     Some(st) => {
                         let st = self.int_arg(st)?;
-                        self.b.ins(format!("str.xlate {}, {}, {}, {}, {st}", t.op, from.op, to.op, s.op));
+                        self.b.ins(format!(
+                            "str.xlate {}, {}, {}, {}, {st}",
+                            t.op, from.op, to.op, s.op
+                        ));
                     }
-                    None => self.b.ins(format!("str.xlate {}, {}, {}, {}", t.op, from.op, to.op, s.op)),
+                    None => self.b.ins(format!(
+                        "str.xlate {}, {}, {}, {}",
+                        t.op, from.op, to.op, s.op
+                    )),
                 }
                 Some(t)
             }
@@ -320,10 +343,14 @@ impl Gen<'_> {
                     return None;
                 }
                 let s = self.str_arg(&args[0])?;
-                let (lo, up) = (quote("abcdefghijklmnopqrstuvwxyz"), quote("ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
+                let (lo, up) = (
+                    quote("abcdefghijklmnopqrstuvwxyz"),
+                    quote("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                );
                 let (from, to) = if name == "%UPPER" { (lo, up) } else { (up, lo) };
                 let t = self.tmp(&s.ty.clone());
-                self.b.ins(format!("str.xlate {}, {from}, {to}, {}", t.op, s.op));
+                self.b
+                    .ins(format!("str.xlate {}, {from}, {to}, {}", t.op, s.op));
                 Some(t)
             }
             "%REPLACE" => {
@@ -349,9 +376,15 @@ impl Gen<'_> {
                 match args.get(3) {
                     Some(l) => {
                         let l = self.int_arg(l)?;
-                        self.b.ins(format!("str.replace {}, {}, {}, {start}, {l}", t.op, src.op, repl.op));
+                        self.b.ins(format!(
+                            "str.replace {}, {}, {}, {start}, {l}",
+                            t.op, src.op, repl.op
+                        ));
                     }
-                    None => self.b.ins(format!("str.replace {}, {}, {}, {start}", t.op, src.op, repl.op)),
+                    None => self.b.ins(format!(
+                        "str.replace {}, {}, {}, {start}",
+                        t.op, src.op, repl.op
+                    )),
                 }
                 Some(t)
             }
@@ -363,15 +396,23 @@ impl Gen<'_> {
                 if name == "%GRAPH" && !self.ctl.graph_ccsid {
                     self.err(ids::GRAPH_IGNORED, 30, name.to_string());
                     match &args[0] {
-                        Expr::Lit(Lit::Char(_), _) => self.err(ids::GRAPH_NO_SHIFT, 20, name.to_string()),
-                        Expr::Lit(Lit::Num(_), _) => self.err(ids::GRAPH_PARM, 20, name.to_string()),
+                        Expr::Lit(Lit::Char(_), _) => {
+                            self.err(ids::GRAPH_NO_SHIFT, 20, name.to_string())
+                        }
+                        Expr::Lit(Lit::Num(_), _) => {
+                            self.err(ids::GRAPH_PARM, 20, name.to_string())
+                        }
                         _ => {}
                     }
                     return None;
                 }
                 let v = self.expr(&args[0], Want::default())?;
                 let v = self.as_chars(&v);
-                let to = if name == "%UCS2" { super::ucs2::TextClass::Ucs2 } else { super::ucs2::TextClass::Graph };
+                let to = if name == "%UCS2" {
+                    super::ucs2::TextClass::Ucs2
+                } else {
+                    super::ucs2::TextClass::Graph
+                };
                 if !v.ty.is_string() {
                     self.err(ids::BIF_ARGS, 30, name.to_string());
                     return None;
@@ -476,7 +517,10 @@ impl Gen<'_> {
                 }
                 let a = self.expr(&args[0], Want::default())?;
                 let b = self.expr(&args[1], Want::default())?;
-                if a.ty.is_integer() && b.ty.is_integer() || a.ty.shape().is_some_and(|s| s.1 == 0) && b.ty.shape().is_some_and(|s| s.1 == 0) {
+                if a.ty.is_integer() && b.ty.is_integer()
+                    || a.ty.shape().is_some_and(|s| s.1 == 0)
+                        && b.ty.shape().is_some_and(|s| s.1 == 0)
+                {
                     let ra = self.int_reg(&a)?;
                     let rb = self.int_reg(&b)?;
                     let r = self.b.reg();
@@ -526,7 +570,8 @@ impl Gen<'_> {
                 let r = self.b.reg();
                 self.b.ins(format!("{r} = addr {}", v.op));
                 // `%ADDR(v : *DATA)`: a varying field's data, past its prefix.
-                let data = matches!(args.get(1), Some(Expr::Special { word, .. }) if word == "*DATA");
+                let data =
+                    matches!(args.get(1), Some(Expr::Special { word, .. }) if word == "*DATA");
                 let prefix = match v.ty {
                     Ty::VarChar(_, p) | Ty::VarUcs2(_, p) | Ty::VarGraph(_, p) => i64::from(p),
                     _ => 0,
@@ -545,7 +590,9 @@ impl Gen<'_> {
                         let n = s.to_ascii_uppercase();
                         if !self.local_procs.contains(&n) && self.t.find(self.scope, &n).is_none() {
                             let ir = mangle(&n);
-                            self.externs.entry(ir.clone()).or_insert_with(|| format!("extern proc {ir}()"));
+                            self.externs
+                                .entry(ir.clone())
+                                .or_insert_with(|| format!("extern proc {ir}()"));
                         }
                         n
                     }
@@ -562,7 +609,10 @@ impl Gen<'_> {
                 // A prototype's procedure is declared as a call would.
                 let mut ir = mangle(&n);
                 if !self.local_procs.contains(&n.to_ascii_uppercase())
-                    && let Some(Some(crate::syms::Kind::Proto(pi))) = self.t.find(self.scope, &n.to_ascii_uppercase()).map(|i| self.t.syms[i].kind.clone())
+                    && let Some(Some(crate::syms::Kind::Proto(pi))) = self
+                        .t
+                        .find(self.scope, &n.to_ascii_uppercase())
+                        .map(|i| self.t.syms[i].kind.clone())
                 {
                     let p = self.t.protos[pi].clone();
                     if p.extpgm.is_none() {
@@ -601,7 +651,10 @@ impl Gen<'_> {
                 self.b.ins(format!("mov {}, *ZEROS", acc.op));
                 let digits = u8::min(63, d + 10);
                 for i in 0..v.dim {
-                    self.b.ins(format!("dec.add {}, {}, {}[{i}] prec({digits},{s})", acc.op, acc.op, v.op));
+                    self.b.ins(format!(
+                        "dec.add {}, {}, {}[{i}] prec({digits},{s})",
+                        acc.op, acc.op, v.op
+                    ));
                 }
                 Some(acc)
             }
@@ -625,7 +678,11 @@ impl Gen<'_> {
                 let mut best = self.expr(&args[0], w)?;
                 for a in &args[1..] {
                     let v = self.expr(a, w)?;
-                    let op = if name == "%MAX" { rpgfront::ast::BinOp::Gt } else { rpgfront::ast::BinOp::Lt };
+                    let op = if name == "%MAX" {
+                        rpgfront::ast::BinOp::Gt
+                    } else {
+                        rpgfront::ast::BinOp::Lt
+                    };
                     let c = self.compare(op, &v, &best)?;
                     let ty = if best.ty.is_numeric() && v.ty.is_numeric() {
                         let (d1, s1) = best.ty.shape().unwrap_or((31, 0));
@@ -689,7 +746,15 @@ impl Gen<'_> {
     fn assign_char_of_ind(&mut self, t: &V, v: &V) {
         match v.kind {
             Vk::Place => self.b.ins(format!("cvt {}, {}", t.op, v.op)),
-            Vk::Lit => self.b.ins(format!("mov {}, {}", t.op, if v.op == "*ON" { quote("1") } else { quote("0") })),
+            Vk::Lit => self.b.ins(format!(
+                "mov {}, {}",
+                t.op,
+                if v.op == "*ON" {
+                    quote("1")
+                } else {
+                    quote("0")
+                }
+            )),
             Vk::Reg => {
                 let i = self.b.temp("ind");
                 self.b.ins(format!("store {i}, {}", v.op));
@@ -722,13 +787,17 @@ impl Gen<'_> {
 
     /// The occurrences of a multiple-occurrence structure named alone.
     fn occurs_of(&self, e: &Expr) -> Option<u32> {
-        let Expr::Ref { name, steps, .. } = e else { return None };
+        let Expr::Ref { name, steps, .. } = e else {
+            return None;
+        };
         if !steps.is_empty() {
             return None;
         }
         let id = self.t.find(self.scope, name)?;
         match self.t.syms[id].kind {
-            Some(crate::syms::Kind::Ds(di)) if self.t.ds[di].occurs > 0 => Some(self.t.ds[di].occurs),
+            Some(crate::syms::Kind::Ds(di)) if self.t.ds[di].occurs > 0 => {
+                Some(self.t.ds[di].occurs)
+            }
             _ => None,
         }
     }
@@ -741,13 +810,21 @@ impl Gen<'_> {
             t => t.shape().unwrap_or((31, 0)),
         };
         let len = u32::from(d) + 2 + if s > 0 && d == s { 1 } else { 0 };
-        let len = if matches!(v.ty, Ty::Float(_)) { 30 } else { len };
+        let len = if matches!(v.ty, Ty::Float(_)) {
+            30
+        } else {
+            len
+        };
         let t = self.tmp(&Ty::varchar(len.max(1)));
         let src = self.num_place(v);
         let desc = self.desc_of(&src);
         self.rt_proc("_QRNX_CHARNUM", "($dst: varchar(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $desc: i64, byval $point: i32)");
-        let point = i32::from(u8::try_from(self.ctl.decedit.0).unwrap_or(b'.')) | (i32::from(self.ctl.lead_zero) << 8);
-        self.b.ins(format!("callb _QRNX_CHARNUM({}, {}, {desc}, {point})", t.op, src.op));
+        let point = i32::from(u8::try_from(self.ctl.decedit.0).unwrap_or(b'.'))
+            | (i32::from(self.ctl.lead_zero) << 8);
+        self.b.ins(format!(
+            "callb _QRNX_CHARNUM({}, {}, {desc}, {point})",
+            t.op, src.op
+        ));
         t
     }
 
@@ -853,8 +930,16 @@ impl Gen<'_> {
             "_QRNX_EDITC",
             "($dst: varchar(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $desc: i64, byval $code: i32, byval $fill: i32, const $cur: char(1) *VARSIZE)",
         );
-        let cur = if fill == 2 { self.ctl.cursym.to_string() } else { cur };
-        let cur_lit = if cur.is_empty() { quote(" ") } else { quote(&cur) };
+        let cur = if fill == 2 {
+            self.ctl.cursym.to_string()
+        } else {
+            cur
+        };
+        let cur_lit = if cur.is_empty() {
+            quote(" ")
+        } else {
+            quote(&cur)
+        };
         let fill = fill | self.ctl.edit_flags();
         self.b.ins(format!(
             "callb _QRNX_EDITC({}, {}, {desc}, {}, {fill}, {cur_lit})",
@@ -871,7 +956,11 @@ impl Gen<'_> {
         }
         let v = self.expr(&args[0], Want::default())?;
         // The edit word is a character literal.
-        if !matches!(&args[1], Expr::Lit(Lit::Char(_), _)) && self.expr(&args[1], Want::default()).is_some_and(|w| !w.ty.is_string()) {
+        if !matches!(&args[1], Expr::Lit(Lit::Char(_), _))
+            && self
+                .expr(&args[1], Want::default())
+                .is_some_and(|w| !w.ty.is_string())
+        {
             self.err(ids::BAD_EDIT_WORD, 20, "%EDITW");
             return None;
         }
@@ -889,7 +978,10 @@ impl Gen<'_> {
             "($dst: char(1) *VARSIZE, byval $dlen: i32, $src: bytes(1) *VARSIZE, byval $desc: i64, const $word: char(1) *VARSIZE, byval $wlen: i32)",
         );
         let w = self.lit_storage(&word);
-        self.b.ins(format!("callb _QRNX_EDITW({}, {n}, {}, {desc}, {w}, {n})", t.op, src.op));
+        self.b.ins(format!(
+            "callb _QRNX_EDITW({}, {n}, {}, {desc}, {w}, {n})",
+            t.op, src.op
+        ));
         Some(t)
     }
 
@@ -985,7 +1077,11 @@ impl Gen<'_> {
             return self.file_argument(e);
         }
         let v = self.expr(e, Want::default())?;
-        let v = if matches!(prm.ty, Ty::Ds(_)) { v } else { self.as_chars(&v) };
+        let v = if matches!(prm.ty, Ty::Ds(_)) {
+            v
+        } else {
+            self.as_chars(&v)
+        };
         // Structures LIKEDS the same one are the same type.
         let same_ds = match (&v.ty, &prm.ty) {
             (Ty::Ds(a), Ty::Ds(b)) => self.t.ds[*a].ir_type == self.t.ds[*b].ir_type,
@@ -1151,7 +1247,11 @@ impl Gen<'_> {
     /// the runtime's handle of the file in it.
     fn file_argument(&mut self, e: &Expr) -> Option<String> {
         let f = match e {
-            Expr::Ref { name, steps, .. } if steps.is_empty() => match self.t.find(self.scope, name).map(|i| self.t.syms[i].kind.clone()) {
+            Expr::Ref { name, steps, .. } if steps.is_empty() => match self
+                .t
+                .find(self.scope, name)
+                .map(|i| self.t.syms[i].kind.clone())
+            {
                 Some(Some(crate::syms::Kind::File(i))) => self.files.get(i).cloned(),
                 _ => None,
             },
@@ -1181,7 +1281,9 @@ impl Gen<'_> {
             // A subfield of a qualified data structure.
             Some((ds, f)) => {
                 let d = self.t.find(self.scope, ds)?;
-                let Some(Kind::Ds(i)) = self.t.syms[d].kind else { return None };
+                let Some(Kind::Ds(i)) = self.t.syms[d].kind else {
+                    return None;
+                };
                 self.t.subfield(i, f)?
             }
             None => self.t.find(self.scope, ext)?,
@@ -1190,7 +1292,11 @@ impl Gen<'_> {
             return None;
         }
         let place = crate::codegen::place_of(self.t, id);
-        let decl = self.declare_callee(&Proto { extproc: Some(format!("_QRNPP_{}", p.name)), extproc_word: false, ..p.clone() });
+        let decl = self.declare_callee(&Proto {
+            extproc: Some(format!("_QRNPP_{}", p.name)),
+            extproc_word: false,
+            ..p.clone()
+        });
         if let Some(e) = self.externs.get_mut(&decl) {
             *e = e.replacen("extern proc ", "proto ", 1);
         }
@@ -1218,8 +1324,16 @@ impl Gen<'_> {
             .iter()
             .enumerate()
             .map(|(i, prm)| {
-                let ty = if prm.likefile.is_some() { "fcb_".to_string() } else { self.t.ir_type(&prm.ty) };
-                let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
+                let ty = if prm.likefile.is_some() {
+                    "fcb_".to_string()
+                } else {
+                    self.t.ir_type(&prm.ty)
+                };
+                let ty = if prm.dim > 0 {
+                    format!("array[{}] of {ty}", prm.dim)
+                } else {
+                    ty
+                };
                 let mut s = String::new();
                 let ty = if cstyle && !prm.value {
                     "ptr".to_string()
@@ -1247,9 +1361,17 @@ impl Gen<'_> {
                 s
             })
             .collect();
-        let ret = p.ret.as_ref().map(|t| format!(" -> {}", self.t.ir_type(t))).unwrap_or_default();
+        let ret = p
+            .ret
+            .as_ref()
+            .map(|t| format!(" -> {}", self.t.ir_type(t)))
+            .unwrap_or_default();
         // OPDESC: the call passes operational descriptors.
-        let ret = if p.opdesc { format!("{ret} opdesc") } else { ret };
+        let ret = if p.opdesc {
+            format!("{ret} opdesc")
+        } else {
+            ret
+        };
         (params, ret)
     }
 
@@ -1261,14 +1383,21 @@ impl Gen<'_> {
         let mine = format!("extern proc {ir}({}){ret}", params.join(", "));
         // EXTPROC naming a procedure of this module: through its address
         // with this prototype's own signature.
-        let local = p.extproc.as_ref().is_some_and(|e| self.local_procs.contains(&e.to_ascii_uppercase()));
+        let local = p
+            .extproc
+            .as_ref()
+            .is_some_and(|e| self.local_procs.contains(&e.to_ascii_uppercase()));
         if !local && self.externs.get(ir).is_none_or(|e| *e == mine) {
             return None;
         }
         // Local prototypes of one name may differ too: one each.
         let base = format!("_QRNPX_{}", mangle(&p.name.to_ascii_uppercase()));
         for i in 1.. {
-            let name = if i == 1 { base.clone() } else { format!("{base}_{i}") };
+            let name = if i == 1 {
+                base.clone()
+            } else {
+                format!("{base}_{i}")
+            };
             let text = format!("proto {name}({}){ret}", params.join(", "));
             match self.externs.get(&name) {
                 Some(e) if *e != text => {}
@@ -1295,7 +1424,11 @@ impl Gen<'_> {
                     "extern pgm {name}({}) pgm({}) lib({})",
                     params.join(", "),
                     mangle(&obj.to_ascii_uppercase()),
-                    if lib == "*LIBL" { lib.clone() } else { mangle(&lib) }
+                    if lib == "*LIBL" {
+                        lib.clone()
+                    } else {
+                        mangle(&lib)
+                    }
                 )
             });
             return name;
@@ -1303,7 +1436,9 @@ impl Gen<'_> {
         let ext = p.extproc.clone().unwrap_or_else(|| p.name.clone());
         let ir = mangle(&ext.to_ascii_uppercase());
         // A prototype whose EXTPROC names a procedure of this module calls it.
-        if !self.local_procs.contains(&p.name) && !self.local_procs.contains(&ext.to_ascii_uppercase()) {
+        if !self.local_procs.contains(&p.name)
+            && !self.local_procs.contains(&ext.to_ascii_uppercase())
+        {
             self.externs
                 .entry(ir.clone())
                 .or_insert_with(|| format!("extern proc {ir}({}){ret}", params.join(", ")));

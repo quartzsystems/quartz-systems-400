@@ -13,8 +13,8 @@
 
 mod cmn;
 mod config;
-mod hdwrsc;
 mod editors;
+mod hdwrsc;
 mod programs;
 mod security;
 
@@ -233,4 +233,3 @@ fn service_text(host: &Host, line: &str) -> Result<String, Fail> {
     }
     Ok(text)
 }
-

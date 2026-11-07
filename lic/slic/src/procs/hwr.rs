@@ -33,7 +33,11 @@ pub fn start(system: &mut System) -> Result<(), String> {
     let _ = chan.set_timeout(None);
     system.out.serial(&format!(
         "slic: hardware resource service {pid}: {count} resources{}\n",
-        if hotplug { "" } else { "; uevent socket unavailable, no hotplug" }
+        if hotplug {
+            ""
+        } else {
+            "; uevent socket unavailable, no hotplug"
+        }
     ));
     system.procs.hwr = Some(HwrProc { pid, _chan: chan });
     Ok(())
@@ -43,12 +47,11 @@ pub fn start(system: &mut System) -> Result<(), String> {
 pub fn reaped(system: &mut System, pid: u32) {
     if system.procs.hwr.as_ref().is_some_and(|p| p.pid == pid) {
         system.procs.hwr = None;
-        system
-            .out
-            .serial(&format!("slic: hardware resource service ({pid}) ended; starting it again\n"));
+        system.out.serial(&format!(
+            "slic: hardware resource service ({pid}) ended; starting it again\n"
+        ));
         if let Err(e) = start(system) {
             system.out.serial(&format!("slic: {e}\n"));
         }
     }
 }
-

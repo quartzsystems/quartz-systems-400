@@ -64,13 +64,19 @@ pub fn sys() -> MemSys {
     let files: &[(&str, &str)] = &[
         ("fruits.txt", "apple\nbanana\ncherry\n"),
         ("nums.txt", "10\n9\n100\n-5\n2.5\n"),
-        ("words.txt", "the quick brown fox\njumps over\nthe lazy dog\n"),
+        (
+            "words.txt",
+            "the quick brown fox\njumps over\nthe lazy dog\n",
+        ),
         ("empty.txt", ""),
         ("nonl.txt", "no newline"),
         ("tabs.txt", "a\tb\tc\n1\t2\t3\n"),
         ("csv.txt", "x,1,b\ny,2,a\nz,3,c\n"),
         ("dup.txt", "a\na\nb\nc\nc\nc\nd\n"),
-        ("people.txt", "bob 25 ny\nalice 30 la\ncarol 25 sf\ndave 19 ny\n"),
+        (
+            "people.txt",
+            "bob 25 ny\nalice 30 la\ncarol 25 sf\ndave 19 ny\n",
+        ),
         ("mixed.txt", "Apple\nbanana\nCherry\napple\n"),
         ("sub/deep.txt", "deep\n"),
         ("sub/inner/leaf", "leaf\n"),

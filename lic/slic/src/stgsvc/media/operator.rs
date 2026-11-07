@@ -105,7 +105,12 @@ enum Earlier {
 /// yet, or one still waiting.
 fn earlier(system: &mut System, msgid: &str, data: &[u8]) -> Option<Earlier> {
     crate::stgsvc::msgs::with_queue(system, "msgq.receive", "QSYS", "QSYSOPR", |q, _| {
-        let same = |m: &QMsg| m.kind == MsgKind::Inq && m.msgid == msgid && m.data == data && m.from_pgm == OPERATOR_PGM;
+        let same = |m: &QMsg| {
+            m.kind == MsgKind::Inq
+                && m.msgid == msgid
+                && m.data == data
+                && m.from_pgm == OPERATOR_PGM
+        };
         let mut found = None;
         let mut take = None;
         for m in q.msgs.iter().rev().filter(|m| same(m)) {
@@ -113,7 +118,10 @@ fn earlier(system: &mut System, msgid: &str, data: &[u8]) -> Option<Earlier> {
                 found = Some(Earlier::Waiting(m.key));
                 break;
             }
-            let fresh = q.msgs.iter().any(|r| r.key == m.reply_key && r.kind == MsgKind::Rpy && r.status == Status::New);
+            let fresh = q
+                .msgs
+                .iter()
+                .any(|r| r.key == m.reply_key && r.kind == MsgKind::Rpy && r.status == Status::New);
             if fresh {
                 found = Some(Earlier::Answered(m.reply.trim().to_ascii_uppercase()));
                 take = Some(m.reply_key);
@@ -137,7 +145,9 @@ const OPERATOR_PGM: &str = "QTAERR";
 fn answer(system: &mut System, key: u32, reply: &str) {
     let from = crate::stgsvc::msgs::sender(system, system.current_job);
     let _ = crate::stgsvc::msgs::with_queue(system, "msgq.reply", "QSYS", "QSYSOPR", |q, _| {
-        let rk = q.reply(key, reply, from, crate::stgsvc::msgs::now_micros()).map_err(|e| e.to_string())?;
+        let rk = q
+            .reply(key, reply, from, crate::stgsvc::msgs::now_micros())
+            .map_err(|e| e.to_string())?;
         let _ = q.receive(None, Some(rk), false);
         Ok(((), true))
     });
@@ -149,7 +159,12 @@ fn answer(system: &mut System, key: u32, reply: &str) {
 /// list's entry, and `*RQD` (or no entry) leaves the inquiry waiting,
 /// the operation ended until it runs again after the reply. An inquiry
 /// answered here shows its reply on `QSYSOPR`.
-pub(crate) fn inquiry(system: &mut System, msgid: &str, data: &[(&str, usize)], dft: &str) -> Answer {
+pub(crate) fn inquiry(
+    system: &mut System,
+    msgid: &str,
+    data: &[(&str, usize)],
+    dft: &str,
+) -> Answer {
     let m = message(system, msgid, data);
     let before = earlier(system, msgid, &m.data);
     if let Some(Earlier::Answered(r)) = before {
@@ -184,7 +199,9 @@ pub(crate) fn inquiry(system: &mut System, msgid: &str, data: &[(&str, usize)], 
             return Answer::Reply(dft.to_string());
         }
     };
-    let Some(r) = reply else { return Answer::Waiting };
+    let Some(r) = reply else {
+        return Answer::Waiting;
+    };
     answer(system, key, &r);
     Answer::Reply(r)
 }
@@ -239,12 +256,25 @@ pub(crate) fn event_of(e: &medio::MediaError) -> Event {
     use medio::MediaError as M;
     use tape::{TapeError as T, TransportError as X};
     match e {
-        M::Tape(T::Transport(X::Io(_) | X::Density(_) | X::BlockTooLarge { .. } | X::BlockSize { .. }) | T::Changer(_)) => Event::Device,
-        M::Tape(T::Transport(X::Format(_)) | T::Label(_)) | M::Optical(optical::Error::Malformed(_) | optical::Error::Io(_)) => Event::Media,
         M::Tape(
-            T::Transport(_) | T::WrongVolume { .. } | T::NotContinuation { .. } | T::EndOfVolume | T::NotLabeled | T::Labeled,
+            T::Transport(X::Io(_) | X::Density(_) | X::BlockTooLarge { .. } | X::BlockSize { .. })
+            | T::Changer(_),
+        ) => Event::Device,
+        M::Tape(T::Transport(X::Format(_)) | T::Label(_))
+        | M::Optical(optical::Error::Malformed(_) | optical::Error::Io(_)) => Event::Media,
+        M::Tape(
+            T::Transport(_)
+            | T::WrongVolume { .. }
+            | T::NotContinuation { .. }
+            | T::EndOfVolume
+            | T::NotLabeled
+            | T::Labeled,
         )
-        | M::Optical(optical::Error::WriteProtected | optical::Error::ReadOnly | optical::Error::VolumeFull { .. }) => Event::Attention,
+        | M::Optical(
+            optical::Error::WriteProtected
+            | optical::Error::ReadOnly
+            | optical::Error::VolumeFull { .. },
+        ) => Event::Attention,
         _ => Event::Quiet,
     }
 }

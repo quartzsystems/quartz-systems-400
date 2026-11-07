@@ -25,7 +25,8 @@ use crate::{PRODUCT, msgs};
 const CIPHERS: &[&str] = &["*DFT (system value QSSLCSL)", "*STRONG", "Custom..."];
 
 /// The protocol boxes: field, label, `SSLProtocolDisable` word.
-const PROTOCOLS: &[(&str, &str, &str)] = &[("t13", "TLS 1.3", "TLSv1.3"), ("t12", "TLS 1.2", "TLSv1.2")];
+const PROTOCOLS: &[(&str, &str, &str)] =
+    &[("t13", "TLS 1.3", "TLSv1.3"), ("t12", "TLS 1.2", "TLSv1.2")];
 
 /// The versions the server never offers, always written disabled.
 const NEVER: &[&str] = &["TLSv1", "TLSv1.1"];
@@ -35,17 +36,29 @@ const NONE: &str = "(none)";
 
 /// Whether a virtual host is a TLS one.
 fn is_tls(s: &Section) -> bool {
-    s.name.eq_ignore_ascii_case("VirtualHost") && (s.get("SSLEngine").is_some() || s.get("SSLAppName").is_some())
+    s.name.eq_ignore_ascii_case("VirtualHost")
+        && (s.get("SSLEngine").is_some() || s.get("SSLAppName").is_some())
 }
 
 fn tls_hosts(c: &Conf) -> Vec<&Section> {
-    c.sections("VirtualHost").into_iter().filter(|s| is_tls(s)).collect()
+    c.sections("VirtualHost")
+        .into_iter()
+        .filter(|s| is_tls(s))
+        .collect()
 }
 
 /// The instance's certificate application (an old ID as its new one).
 pub fn app_name(c: Option<&Conf>, name: &str) -> String {
-    c.and_then(|c| tls_hosts(c).iter().map(|s| s.value("SSLAppName")).find(|a| !a.is_empty()))
-        .map_or_else(|| certs::apps::http_server(name), |a| certs::apps::canonical(&a).into_owned())
+    c.and_then(|c| {
+        tls_hosts(c)
+            .iter()
+            .map(|s| s.value("SSLAppName"))
+            .find(|a| !a.is_empty())
+    })
+    .map_or_else(
+        || certs::apps::http_server(name),
+        |a| certs::apps::canonical(&a).into_owned(),
+    )
 }
 
 /// `GET` shows the settings; `POST` applies them.
@@ -57,16 +70,29 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let c = v.conf.as_ref().unwrap_or(&empty);
     let hosts = tls_hosts(c);
     let first = hosts.first();
-    let on = hosts.iter().any(|s| s.value("SSLEngine").eq_ignore_ascii_case("on"));
+    let on = hosts
+        .iter()
+        .any(|s| s.value("SSLEngine").eq_ignore_ascii_case("on"));
     let app = app_name(v.conf.as_ref(), v.name());
-    let disabled = first.map(|s| s.value("SSLProtocolDisable")).unwrap_or_default();
+    let disabled = first
+        .map(|s| s.value("SSLProtocolDisable"))
+        .unwrap_or_default();
     let disabled: Vec<&str> = disabled.split_whitespace().collect();
-    let cipher = match first.map(|s| s.value("SSLCipherSpec")).unwrap_or_default().as_str() {
+    let cipher = match first
+        .map(|s| s.value("SSLCipherSpec"))
+        .unwrap_or_default()
+        .as_str()
+    {
         "" => CIPHERS[0],
         "*STRONG" => CIPHERS[1],
         _ => CIPHERS[2],
     };
-    let auth = match first.map(|s| s.value("SSLClientAuth")).unwrap_or_default().to_ascii_lowercase().as_str() {
+    let auth = match first
+        .map(|s| s.value("SSLClientAuth"))
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "optional" | "1" => "opt",
         "required" | "2" => "req",
         _ => "none",
@@ -76,8 +102,13 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
         .map(|(f, l, w)| format!("{} {}", checkbox(f, !disabled.contains(w)), esc(l)))
         .collect::<Vec<_>>()
         .join("<br>");
-    let protocols = format!("{protocols}<br><span class=\"small grey\">TLS 1.1 and older are not offered.</span>");
-    let enable = format!("{} Use TLS for ports marked TLS on the Ports &amp; addresses page", checkbox("tls", on));
+    let protocols = format!(
+        "{protocols}<br><span class=\"small grey\">TLS 1.1 and older are not offered.</span>"
+    );
+    let enable = format!(
+        "{} Use TLS for ports marked TLS on the Ports &amp; addresses page",
+        checkbox("tls", on)
+    );
     let enable = if hosts.is_empty() {
         format!(
             "{enable}<br><span class=\"small grey\">The instance has no TLS port. Add one on the <a href=\"{}\">Ports &amp; addresses</a> page first.</span>",
@@ -105,7 +136,10 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
                     ),
                 ),
                 Prop::new("Certificate", cert_choice(rq, &app)),
-                Prop::new("Certificate store", "<span class=\"mono\">*SYSTEM</span>".into()),
+                Prop::new(
+                    "Certificate store",
+                    "<span class=\"mono\">*SYSTEM</span>".into(),
+                ),
             ],
         },
         PropGroup {
@@ -120,7 +154,11 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let body = props(
         &rq.ctx,
         &groups,
-        &[Button::new("apply", "Apply"), Button::new("ok", "OK"), Button::new("cancel", "Cancel")],
+        &[
+            Button::new("apply", "Apply"),
+            Button::new("ok", "OK"),
+            Button::new("cancel", "Cancel"),
+        ],
     );
     rq.page(tab_page(
         v,
@@ -145,7 +183,9 @@ fn choices(rq: &Rq<'_>, app: &str) -> Vec<String> {
         .filter(|(_, expires)| *expires > soon)
         .map(|(label, expires)| format!("{label} (expires {})", rq.stamp(expires).0))
         .collect();
-    let first_assigned = out.first().is_some_and(|o| assigned.as_deref() == Some(label_of(o)));
+    let first_assigned = out
+        .first()
+        .is_some_and(|o| assigned.as_deref() == Some(label_of(o)));
     if !out.is_empty() && !first_assigned {
         out.insert(0, NONE.into());
     }
@@ -183,7 +223,12 @@ fn post(rq: &Rq<'_>, v: &View) -> Response {
     let app = app_name(v.conf.as_ref(), v.name());
     if let Some(c) = chosen(rq)
         && rq.env().certs.app_label(&app).as_deref() != Some(c.as_str())
-        && let Err(r) = rq.require_each(&[Need::AllObj, Need::SecAdm], "Assign certificate", &app, &["Manage", "Server instances", v.name()])
+        && let Err(r) = rq.require_each(
+            &[Need::AllObj, Need::SecAdm],
+            "Assign certificate",
+            &app,
+            &["Manage", "Server instances", v.name()],
+        )
     {
         return r;
     }
@@ -201,7 +246,11 @@ fn apply(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
         }
     }
     if disable.len() == PROTOCOLS.len() + NEVER.len() {
-        return Err(bad_value("", "Protocol versions", "at least one TLS version"));
+        return Err(bad_value(
+            "",
+            "Protocol versions",
+            "at least one TLS version",
+        ));
     }
     let cipher = form.str("cipher");
     let auth = match form.str("ca") {
@@ -219,23 +268,32 @@ fn apply(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
     let assigned = cm.app_label(&app);
     let chosen = chosen(rq);
     // Without an assignment the store's default certificate is presented.
-    let default = || cm.stores().into_iter().find(|s| s.name == "*SYSTEM").and_then(|s| s.default);
+    let default = || {
+        cm.stores()
+            .into_iter()
+            .find(|s| s.name == "*SYSTEM")
+            .and_then(|s| s.default)
+    };
     if on && chosen.is_none() && assigned.is_none() && default().is_none() {
         return Err(msgs::message(Kind::Error, "HTP8125", &[&app, name]));
     }
     // The instance's own ID is registered before it is used; one the
     // file names otherwise is someone's to register.
     if (on || chosen.is_some()) && app == certs::apps::http_server(name) {
-        cm
-            .register_instance(name)
+        cm.register_instance(name)
             .map_err(|e| msgs::message(Kind::Error, "HTP8126", &[&app, name, &e.to_string()]))?;
     }
     if let Some(c) = chosen.filter(|c| assigned.as_ref() != Some(c)) {
-        cm.assign(rq.user(), &app, Some(&c)).map_err(|e| failed(&e))?;
+        cm.assign(rq.user(), &app, Some(&c))
+            .map_err(|e| failed(&e))?;
         rq.audit_change(&app, &format!("certificate {c} assigned"));
     }
     edit(rq, v, |c| {
-        if !c.items.iter().any(|n| matches!(n, Node::Section(s) if is_tls(s))) {
+        if !c
+            .items
+            .iter()
+            .any(|n| matches!(n, Node::Section(s) if is_tls(s)))
+        {
             return Ok(());
         }
         for n in &mut c.items {
@@ -247,7 +305,10 @@ fn apply(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
             if s.get("SSLAppName").is_none() {
                 s.set("SSLAppName", &[&app]);
             }
-            s.set("SSLProtocolDisable", &disable.iter().map(String::as_str).collect::<Vec<_>>());
+            s.set(
+                "SSLProtocolDisable",
+                &disable.iter().map(String::as_str).collect::<Vec<_>>(),
+            );
             if cipher == CIPHERS[0] {
                 s.unset("SSLCipherSpec");
             } else if cipher == CIPHERS[1] {

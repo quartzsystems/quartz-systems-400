@@ -119,10 +119,18 @@ fn strtcp_starts_loopback_autostart_interfaces_and_routes() {
     assert_eq!(notes.last().unwrap().msgid, msg::STARTED);
     assert!(notes.iter().all(|n| !n.error), "{notes:?}");
     assert_eq!(w.st.tcp, TcpStatus::Active);
-    assert_eq!(w.lines.varied, vec!["ETHLINE".to_string()], "the line was varied on");
+    assert_eq!(
+        w.lines.varied,
+        vec!["ETHLINE".to_string()],
+        "the line was varied on"
+    );
     assert_eq!(w.st.ifc_status("127.0.0.1"), IfcStatus::Active);
     assert_eq!(w.st.ifc_status("10.0.2.16"), IfcStatus::Active);
-    assert_eq!(w.st.ifc_status("10.0.3.16"), IfcStatus::Inactive, "AUTOSTART(*NO)");
+    assert_eq!(
+        w.st.ifc_status("10.0.3.16"),
+        IfcStatus::Inactive,
+        "AUTOSTART(*NO)"
+    );
     assert_eq!(w.net.addrs_on("eth0"), vec!["10.0.2.16/24".to_string()]);
     assert!(w.net.links[1].up);
     let dft = w.cfg.rtes.list[0].key();
@@ -132,12 +140,21 @@ fn strtcp_starts_loopback_autostart_interfaces_and_routes() {
     assert_eq!(w.net.hostname, "qs400");
     assert_eq!(w.net.rules, vec![(Proto::Tcp, 8000, 8100)]);
     assert_eq!(
-        apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap_err().msgid,
+        apply::start_tcp(&mut w.ctx(), StartOpts::default())
+            .unwrap_err()
+            .msgid,
         msg::ALREADY_ACTIVE
     );
     let snap = w.st.snapshot(&w.cfg);
     assert_eq!(snap.tcp, "Active");
-    assert_eq!(snap.ifcs.iter().find(|i| i.addr == "10.0.2.16").unwrap().link, "eth0");
+    assert_eq!(
+        snap.ifcs
+            .iter()
+            .find(|i| i.addr == "10.0.2.16")
+            .unwrap()
+            .link,
+        "eth0"
+    );
 }
 
 #[test]
@@ -157,12 +174,19 @@ fn strifc_no_starts_only_the_loopback() {
     let dft = w.cfg.rtes.list[0].key();
     assert_eq!(w.st.rte_status(&dft), RteStatus::Inactive);
     apply::start_ifc(&mut w.ctx(), "10.0.2.16").unwrap();
-    assert_eq!(w.st.rte_status(&dft), RteStatus::Active, "the route follows its interface");
+    assert_eq!(
+        w.st.rte_status(&dft),
+        RteStatus::Active,
+        "the route follows its interface"
+    );
     apply::end_ifc(&mut w.ctx(), "10.0.2.16").unwrap();
     assert_eq!(w.st.rte_status(&dft), RteStatus::Inactive);
     assert!(w.net.routes.is_empty());
     assert!(w.net.addrs_on("eth0").is_empty());
-    assert_eq!(apply::end_ifc(&mut w.ctx(), "10.0.2.16").unwrap_err().msgid, msg::IFC_INACTIVE);
+    assert_eq!(
+        apply::end_ifc(&mut w.ctx(), "10.0.2.16").unwrap_err().msgid,
+        msg::IFC_INACTIVE
+    );
 }
 
 #[test]
@@ -190,9 +214,14 @@ fn endtcp_takes_everything_out() {
         "the loopback addresses stay for the system's own use"
     );
     assert_eq!(w.st.ifc_status("127.0.0.1"), IfcStatus::Inactive);
-    assert_eq!(apply::end_tcp(&mut w.ctx()).unwrap_err().msgid, msg::NOT_ACTIVE);
     assert_eq!(
-        apply::start_ifc(&mut w.ctx(), "10.0.2.16").unwrap_err().msgid,
+        apply::end_tcp(&mut w.ctx()).unwrap_err().msgid,
+        msg::NOT_ACTIVE
+    );
+    assert_eq!(
+        apply::start_ifc(&mut w.ctx(), "10.0.2.16")
+            .unwrap_err()
+            .msgid,
         msg::NOT_AVAILABLE
     );
 }
@@ -209,18 +238,28 @@ fn interface_failures() {
     big.mtu = Some(9000);
     w.cfg.ifcs.add(big).unwrap();
     let notes = apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
-    let ids: Vec<&str> = notes.iter().filter(|n| n.error).map(|n| n.msgid.as_str()).collect();
+    let ids: Vec<&str> = notes
+        .iter()
+        .filter(|n| n.error)
+        .map(|n| n.msgid.as_str())
+        .collect();
     assert_eq!(ids, vec![msg::LINE_NOT_FOUND, msg::IFC_FAILED], "{notes:?}");
     assert_eq!(w.st.ifc_status("10.0.9.1"), IfcStatus::Failed);
     assert_eq!(w.st.ifc_status("10.0.7.1"), IfcStatus::Failed);
     assert_eq!(w.st.ifc_status("10.0.8.1"), IfcStatus::Active);
     assert_eq!(w.net.addrs_on("eth0.12"), vec!["10.0.8.1/24".to_string()]);
     apply::end_ifc(&mut w.ctx(), "10.0.8.1").unwrap();
-    assert!(w.net.links.iter().all(|l| l.name != "eth0.12"), "the VLAN link it made is gone");
+    assert!(
+        w.net.links.iter().all(|l| l.name != "eth0.12"),
+        "the VLAN link it made is gone"
+    );
     // A failed interface can be started again once fixed.
     w.net.failing.clear();
     apply::start_ifc(&mut w.ctx(), "10.0.7.1").unwrap();
-    assert_eq!(w.net.links.iter().find(|l| l.name == "eth0").unwrap().mtu, 9000);
+    assert_eq!(
+        w.net.links.iter().find(|l| l.name == "eth0").unwrap().mtu,
+        9000
+    );
 }
 
 #[test]
@@ -249,11 +288,18 @@ fn virtual_ip_and_changes_while_active() {
     vip.mask = Some(Ipv4Addr::BROADCAST);
     w.cfg.ifcs.add(vip).unwrap();
     apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
-    assert_eq!(w.net.addrs_on(apply::VIP_LINK), vec!["10.0.2.20/32".to_string()]);
+    assert_eq!(
+        w.net.addrs_on(apply::VIP_LINK),
+        vec!["10.0.2.20/32".to_string()]
+    );
     // A route added while active goes in at once.
     w.cfg
         .rtes
-        .add(Route::new(Dest::parse("192.168.50.0").unwrap(), 24, "10.0.2.3".parse().unwrap()))
+        .add(Route::new(
+            Dest::parse("192.168.50.0").unwrap(),
+            24,
+            "10.0.2.3".parse().unwrap(),
+        ))
         .unwrap();
     apply::on_change(&mut w.ctx(), Table::Rte);
     assert_eq!(w.net.routes.len(), 2);
@@ -265,7 +311,11 @@ fn virtual_ip_and_changes_while_active() {
     w.net.failing.insert("add_route".into());
     w.cfg
         .rtes
-        .add(Route::new(Dest::parse("192.168.60.0").unwrap(), 24, "10.0.2.3".parse().unwrap()))
+        .add(Route::new(
+            Dest::parse("192.168.60.0").unwrap(),
+            24,
+            "10.0.2.3".parse().unwrap(),
+        ))
         .unwrap();
     let n = apply::on_change(&mut w.ctx(), Table::Rte);
     assert_eq!(n[0].msgid, msg::RTE_FAILED);
@@ -275,8 +325,18 @@ fn virtual_ip_and_changes_while_active() {
     apply::on_change(&mut w.ctx(), Table::TcpIp);
     assert_eq!(w.net.sysctls["ipv4/ip_default_ttl"], "32");
     let report = apply::report(&w.cfg, &w.st, &mut w.net, "");
-    assert!(report.iter().any(|l| l.starts_with("ifc 10.0.2.20 /32 *VIRTUALIP Active")), "{report:#?}");
-    assert!(report.iter().any(|l| l.contains("kernel route default/0 via 10.0.2.2 dev eth0 qs400")), "{report:#?}");
+    assert!(
+        report
+            .iter()
+            .any(|l| l.starts_with("ifc 10.0.2.20 /32 *VIRTUALIP Active")),
+        "{report:#?}"
+    );
+    assert!(
+        report
+            .iter()
+            .any(|l| l.contains("kernel route default/0 via 10.0.2.2 dev eth0 qs400")),
+        "{report:#?}"
+    );
 }
 
 fn lease(addr: &str) -> dhcp::Lease {
@@ -299,22 +359,39 @@ fn lease(addr: &str) -> dhcp::Lease {
 fn dhcp_interface_acquires_releases_and_keeps() {
     let mut w = World::new();
     w.cfg.ifcs.list.clear();
-    w.cfg.ifcs.add(Interface::new(IfcAddr::Dhcp4, LineRef::Line("ETHLINE".into()))).unwrap();
+    w.cfg
+        .ifcs
+        .add(Interface::new(
+            IfcAddr::Dhcp4,
+            LineRef::Line("ETHLINE".into()),
+        ))
+        .unwrap();
     w.cfg.rtes.list.clear();
     w.cfg
         .rtes
-        .add(Route::new(Dest::Ip("192.168.9.0".parse().unwrap()), 24, "10.0.4.1".parse().unwrap()))
+        .add(Route::new(
+            Dest::Ip("192.168.9.0".parse().unwrap()),
+            24,
+            "10.0.4.1".parse().unwrap(),
+        ))
         .unwrap();
     apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
     assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Acquiring);
-    assert!(w.net.log.iter().any(|l| l == "dhcp_start eth0"), "{:?}", w.net.log);
+    assert!(
+        w.net.log.iter().any(|l| l == "dhcp_start eth0"),
+        "{:?}",
+        w.net.log
+    );
     let rows = tcpcfg::panel::ifcs(&w.cfg, &w.st);
     assert_eq!(rows.len(), 1);
     // The server answers: Active, the lease shown and kept, the route
     // through the leased network added.
     w.net.grant("eth0", lease("10.0.4.15"));
     let notes = apply::refresh(&mut w.ctx());
-    assert!(notes.iter().any(|n| n.text.contains("10.0.4.15")), "{notes:?}");
+    assert!(
+        notes.iter().any(|n| n.text.contains("10.0.4.15")),
+        "{notes:?}"
+    );
     assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Active);
     assert_eq!(w.st.kept["ETHLINE"].addr, Ipv4Addr::new(10, 0, 4, 15));
     let rk = w.cfg.rtes.list[0].key();
@@ -329,7 +406,14 @@ fn dhcp_interface_acquires_releases_and_keeps() {
     assert!(w.net.log.iter().any(|l| l == "dhcp_stop eth0"));
     assert!(w.st.kept.contains_key("ETHLINE"));
     apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
-    assert!(w.net.log.iter().any(|l| l == "dhcp_start eth0 kept 10.0.4.15"), "{:?}", w.net.log);
+    assert!(
+        w.net
+            .log
+            .iter()
+            .any(|l| l == "dhcp_start eth0 kept 10.0.4.15"),
+        "{:?}",
+        w.net.log
+    );
     // ENDTCPIFC gives it back.
     apply::end_ifc(&mut w.ctx(), "*ip4dhcp").unwrap();
     assert!(w.net.log.iter().any(|l| l == "dhcp_stop eth0 release"));
@@ -341,7 +425,13 @@ fn dhcp_interface_acquires_releases_and_keeps() {
 fn dhcp_needs_a_line() {
     let mut w = World::new();
     w.cfg.ifcs.list.clear();
-    w.cfg.ifcs.add(Interface::new(IfcAddr::Dhcp4, LineRef::Line("NOLINE".into()))).unwrap();
+    w.cfg
+        .ifcs
+        .add(Interface::new(
+            IfcAddr::Dhcp4,
+            LineRef::Line("NOLINE".into()),
+        ))
+        .unwrap();
     apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
     assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Failed);
 }

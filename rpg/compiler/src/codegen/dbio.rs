@@ -42,8 +42,7 @@ pub enum KeyArg {
 /// read, its status, the record type the cycle identified and the
 /// runtime's handle of the open file (`fileref`). A `LIKEFILE`
 /// parameter is the caller's block, by reference.
-pub const FCB_TYPE: &str =
-    "type fcb_ = struct(16) { eof: ind @0, fnd: ind @1, eq: ind @2, st: zoned(5,0) @3, rt: i32 @8, h: i32 @12 }";
+pub const FCB_TYPE: &str = "type fcb_ = struct(16) { eof: ind @0, fnd: ind @1, eq: ind @2, st: zoned(5,0) @3, rt: i32 @8, h: i32 @12 }";
 
 /// The statics a module's files need: record buffers, control blocks
 /// and the last-operation flags. Parameter files of the same name share
@@ -53,10 +52,11 @@ pub fn statics(files: &[File], t: &crate::syms::Table) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "{FCB_TYPE}");
     let mut seen = std::collections::BTreeSet::new();
-    for f in files
-        .iter()
-        .filter(|f| (matches!(f.dev, Dev::Disk | Dev::Workstn | Dev::Special) || f.dev == Dev::Printer && f.external) && !f.template)
-    {
+    for f in files.iter().filter(|f| {
+        (matches!(f.dev, Dev::Disk | Dev::Workstn | Dev::Special)
+            || f.dev == Dev::Printer && f.external)
+            && !f.template
+    }) {
         let n = mangle(&f.name);
         if !seen.insert(n.clone()) {
             continue;
@@ -82,7 +82,12 @@ pub fn statics(files: &[File], t: &crate::syms::Table) -> String {
 /// A file's record buffer length: its longest format, or the
 /// program-described length.
 fn buffer_len(f: &File, t: &crate::syms::Table) -> u32 {
-    let ext = t.recfmts.iter().filter(|r| r.file_name == f.name).map(|r| r.fmt.len).max();
+    let ext = t
+        .recfmts
+        .iter()
+        .filter(|r| r.file_name == f.name)
+        .map(|r| r.fmt.len)
+        .max();
     ext.unwrap_or(0).max(f.reclen)
 }
 
@@ -103,11 +108,25 @@ impl Gen<'_> {
         if let Some(fmt) = fmt {
             // The file of this scope (parameter files of one name differ
             // by procedure), else any of the name.
-            let fi = match self.t.find(self.scope, &name).map(|id| self.t.syms[id].kind.clone()) {
+            let fi = match self
+                .t
+                .find(self.scope, &name)
+                .map(|id| self.t.syms[id].kind.clone())
+            {
                 Some(Some(Kind::File(i))) => Some(i),
                 _ => self.files.iter().position(|f| f.name == name),
             };
-            let at = self.t.recfmts.iter().position(|r| Some(r.file) == fi && r.name == fmt).or_else(|| self.t.recfmts.iter().position(|r| r.file_name == name && r.name == fmt));
+            let at = self
+                .t
+                .recfmts
+                .iter()
+                .position(|r| Some(r.file) == fi && r.name == fmt)
+                .or_else(|| {
+                    self.t
+                        .recfmts
+                        .iter()
+                        .position(|r| r.file_name == name && r.name == fmt)
+                });
             if let Some(i) = at {
                 self.used_formats.insert(i);
             }
@@ -121,11 +140,20 @@ impl Gen<'_> {
                 }
             };
         }
-        let sym = self.t.find(self.scope, &name).map(|id| self.t.syms[id].kind.clone());
+        let sym = self
+            .t
+            .find(self.scope, &name)
+            .map(|id| self.t.syms[id].kind.clone());
         match sym {
             Some(Some(Kind::File(i))) => {
                 let f = self.files.get(i).cloned()?;
-                let r = self.t.recfmts.iter().find(|r| r.file == i).or_else(|| self.t.recfmts.iter().find(|r| r.file_name == f.name)).cloned();
+                let r = self
+                    .t
+                    .recfmts
+                    .iter()
+                    .find(|r| r.file == i)
+                    .or_else(|| self.t.recfmts.iter().find(|r| r.file_name == f.name))
+                    .cloned();
                 Some((f, r))
             }
             Some(Some(Kind::Format(i))) => {
@@ -168,7 +196,11 @@ impl Gen<'_> {
             self.rt_proc("_QRNX_CMTOPEN", "(byval $on: i32)");
             let place = match flag.strip_prefix("*IN") {
                 Some(i) => self.indicator(i).map(|x| x.op),
-                None => self.t.find(self.scope, &flag).filter(|_| !flag.is_empty()).map(|id| crate::codegen::place_of(self.t, id)),
+                None => self
+                    .t
+                    .find(self.scope, &flag)
+                    .filter(|_| !flag.is_empty())
+                    .map(|id| crate::codegen::place_of(self.t, id)),
             };
             match place {
                 Some(place) => {
@@ -193,10 +225,15 @@ impl Gen<'_> {
                 None => Some(format!("$fi_{}", mangle(&f.name))),
             }
         } else {
-            f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)).map(|id| crate::codegen::place_of(self.t, id))
+            f.infds
+                .as_ref()
+                .and_then(|n| self.t.find(self.scope, n))
+                .map(|id| crate::codegen::place_of(self.t, id))
         };
         match infds {
-            Some(p) => self.b.ins(format!("{r} = dbopen {} infds({p})", mangle(&f.name))),
+            Some(p) => self
+                .b
+                .ins(format!("{r} = dbopen {} infds({p})", mangle(&f.name))),
             None => self.b.ins(format!("{r} = dbopen {}", mangle(&f.name))),
         }
         if matches!(f.dev, Dev::Disk | Dev::Workstn) {
@@ -216,8 +253,14 @@ impl Gen<'_> {
         {
             let n = self.t.ds[di].len.min(99);
             let p = self.b.reg();
-            self.b.ins(format!("{p} = addr {}", crate::codegen::place_of(self.t, id)));
-            self.b.ins(format!("mov [{p} +0]:char({n}), {}", crate::codegen::emit::quote(&"0".repeat(n as usize))));
+            self.b.ins(format!(
+                "{p} = addr {}",
+                crate::codegen::place_of(self.t, id)
+            ));
+            self.b.ins(format!(
+                "mov [{p} +0]:char({n}), {}",
+                crate::codegen::emit::quote(&"0".repeat(n as usize))
+            ));
         }
         r
     }
@@ -229,7 +272,9 @@ impl Gen<'_> {
             self.implicit_open(f);
             return;
         };
-        let Some(x) = self.indicator(ind.trim_start_matches("*IN")) else { return };
+        let Some(x) = self.indicator(ind.trim_start_matches("*IN")) else {
+            return;
+        };
         let on = self.b.reg();
         self.b.ins(format!("{on} = load {}", x.op));
         let (yes, no) = (self.b.label(), self.b.label());
@@ -272,7 +317,9 @@ impl Gen<'_> {
     /// The flag a printer or special file keeps of being open.
     pub fn open_flag(&mut self, f: &File) -> String {
         let po = format!("$po_{}", mangle(&f.name));
-        self.externs.entry(po.clone()).or_insert_with(|| format!("static {po}: ind inz(*OFF)"));
+        self.externs
+            .entry(po.clone())
+            .or_insert_with(|| format!("static {po}: ind inz(*OFF)"));
         po
     }
 
@@ -304,7 +351,12 @@ impl Gen<'_> {
         };
         let Some((f, fmt)) = self.db_target(&target) else {
             // An undefined file of an operation with a search argument.
-            if !op.f1.is_empty() && self.diags.last().is_some_and(|d| d.msgid == ids::NOT_DEFINED) {
+            if !op.f1.is_empty()
+                && self
+                    .diags
+                    .last()
+                    .is_some_and(|d| d.msgid == ids::NOT_DEFINED)
+            {
                 self.err(ids::UNDEFINED_OPERAND, 30, "");
             }
             return;
@@ -374,9 +426,11 @@ impl Gen<'_> {
         // Fields into the buffer before an output operation.
         if matches!(base, "WRITE" | "UPDATE") && ds.is_none() {
             let only: Option<Vec<String>> = match op.result.first() {
-                Some(Expr::Bif { name, args, .. }) if name == "%FIELDS" => {
-                    Some(args.iter().filter_map(|a| a.name().map(str::to_string)).collect())
-                }
+                Some(Expr::Bif { name, args, .. }) if name == "%FIELDS" => Some(
+                    args.iter()
+                        .filter_map(|a| a.name().map(str::to_string))
+                        .collect(),
+                ),
                 _ => None,
             };
             match &fmt {
@@ -394,7 +448,14 @@ impl Gen<'_> {
             self.feedback(&n, "DELETE");
         } else if base == "DELETE" && !matches!(key, KeyArg::None) {
             // DELETE by key: find the record, then delete it.
-            status = self.dbio(&n, "CHAIN", Some("$rb_".to_string() + &n), &key, false, None);
+            status = self.dbio(
+                &n,
+                "CHAIN",
+                Some("$rb_".to_string() + &n),
+                &key,
+                false,
+                None,
+            );
             self.feedback(&n, "CHAIN");
             let del = self.b.label();
             let done = self.b.label();
@@ -407,20 +468,29 @@ impl Gen<'_> {
             self.b.place(&done);
         } else {
             let irop = match base {
-                "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "SETLL" | "SETGT" | "WRITE" | "UPDATE" | "DELETE" | "UNLOCK" | "FEOD" => base,
+                "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "SETLL" | "SETGT" | "WRITE"
+                | "UPDATE" | "DELETE" | "UNLOCK" | "FEOD" => base,
                 _ => {
                     self.err(ids::UNSUPPORTED, 30, op.code.clone());
                     return;
                 }
             };
-            let rec = matches!(base, "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "WRITE" | "UPDATE").then(|| rec.clone());
+            let rec = matches!(
+                base,
+                "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "WRITE" | "UPDATE"
+            )
+            .then(|| rec.clone());
             let key = if matches!(base, "READE" | "READPE") && matches!(key, KeyArg::None) {
                 KeyArg::Rrn("0".into())
             } else {
                 key.clone()
             };
             // Under ALWNULL(*USRCTL) the record's null map travels with it.
-            let nulls = if ds.is_none() && matches!(base, "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "WRITE" | "UPDATE") {
+            let nulls = if ds.is_none()
+                && matches!(
+                    base,
+                    "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "WRITE" | "UPDATE"
+                ) {
                 fmt.as_ref().and_then(|r| self.null_map(&f, r))
             } else {
                 None
@@ -453,7 +523,8 @@ impl Gen<'_> {
         if matches!(base, "READ" | "READP" | "READE" | "READPE" | "CHAIN") {
             self.recno_after(&f, &status);
         }
-        let by_file = matches!(&target, Expr::Ref { name, steps, .. } if *name == f.name && steps.is_empty());
+        let by_file =
+            matches!(&target, Expr::Ref { name, steps, .. } if *name == f.name && steps.is_empty());
         self.infds_opcode(&f, base, by_file);
         self.infds_closed(&f, &status);
         self.file_error(op, &f, &status);
@@ -462,8 +533,12 @@ impl Gen<'_> {
     /// The INFDS operation code: five characters of the operation and
     /// `F` (by file name) or `R` (by record format).
     pub fn infds_opcode(&mut self, f: &File, base: &str, by_file: bool) {
-        let Some(id) = f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) else { return };
-        let Some(Kind::Ds(di)) = self.t.syms[id].kind.clone() else { return };
+        let Some(id) = f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) else {
+            return;
+        };
+        let Some(Kind::Ds(di)) = self.t.syms[id].kind.clone() else {
+            return;
+        };
         if self.t.ds_len(di) < 21 {
             return;
         }
@@ -475,14 +550,21 @@ impl Gen<'_> {
         let place = crate::codegen::place_of(self.t, id);
         let p = self.b.reg();
         self.b.ins(format!("{p} = addr {place}"));
-        self.b.ins(format!("mov [{p} +15]:char(6), {}", crate::codegen::emit::quote(&text)));
+        self.b.ins(format!(
+            "mov [{p} +15]:char(6), {}",
+            crate::codegen::emit::quote(&text)
+        ));
     }
 
     /// The status of an operation on a closed file (01211) into the
     /// INFDS, which the runtime knows only while the file is open.
     pub fn infds_closed(&mut self, f: &File, status: &str) {
-        let Some(id) = f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) else { return };
-        let Some(Kind::Ds(di)) = self.t.syms[id].kind.clone() else { return };
+        let Some(id) = f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) else {
+            return;
+        };
+        let Some(Kind::Ds(di)) = self.t.syms[id].kind.clone() else {
+            return;
+        };
         if self.t.ds_len(di) < 15 {
             return;
         }
@@ -500,7 +582,15 @@ impl Gen<'_> {
     }
 
     /// The `dbio` instruction; its status register.
-    fn dbio(&mut self, n: &str, op: &str, rec: Option<String>, key: &KeyArg, nolock: bool, nulls: Option<&str>) -> String {
+    fn dbio(
+        &mut self,
+        n: &str,
+        op: &str,
+        rec: Option<String>,
+        key: &KeyArg,
+        nolock: bool,
+        nulls: Option<&str>,
+    ) -> String {
         let r = self.b.reg();
         let mut s = format!("{r} = dbio {n} {op}");
         if let Some(p) = rec {
@@ -536,21 +626,41 @@ impl Gen<'_> {
             return None;
         }
         let n = mangle(&f.name);
-        let k = self.t.recfmts.iter().filter(|x| x.file_name == f.name).map(|x| x.fmt.fields.len()).max().unwrap_or(1).max(1);
+        let k = self
+            .t
+            .recfmts
+            .iter()
+            .filter(|x| x.file_name == f.name)
+            .map(|x| x.fmt.fields.len())
+            .max()
+            .unwrap_or(1)
+            .max(1);
         let place = format!("$nm_{n}");
-        self.externs.entry(place.clone()).or_insert_with(|| format!("static {place}: array[{k}] of ind"));
+        self.externs
+            .entry(place.clone())
+            .or_insert_with(|| format!("static {place}: array[{k}] of ind"));
         Some(place)
     }
 
     /// The fields' null indicators from the null map, or into it.
     fn nulls_move(&mut self, f: &File, r: &RecFmt, into_map: bool, only: Option<&[String]>) {
-        let Some(map) = self.null_map(f, r) else { return };
+        let Some(map) = self.null_map(f, r) else {
+            return;
+        };
         for (i, fd) in r.fmt.fields.iter().enumerate() {
-            let Some(name) = r.names.get(i).cloned() else { continue };
+            let Some(name) = r.names.get(i).cloned() else {
+                continue;
+            };
             if only.is_some_and(|o| !o.contains(&name)) {
                 continue;
             }
-            let Some(id) = self.t.find(self.scope, &name).filter(|&id| fd.nullable && self.t.syms[id].nullind) else { continue };
+            let Some(id) = self
+                .t
+                .find(self.scope, &name)
+                .filter(|&id| fd.nullable && self.t.syms[id].nullind)
+            else {
+                continue;
+            };
             let ind = self.null_place(id);
             if into_map {
                 self.b.ins(format!("mov {map}[{i}], {ind}"));
@@ -668,8 +778,15 @@ impl Gen<'_> {
     /// The escape of a status of 1000 or more, the file's number in
     /// `$ferr`.
     fn raise_file_error(&mut self, f: &File, status: &str) {
-        let k = self.files.iter().position(|x| x.name == f.name && x.scope == f.scope).unwrap_or(0);
-        self.rt_proc("_QRNX_FILEERR", "(byval $status: i32, const $file: char(10))");
+        let k = self
+            .files
+            .iter()
+            .position(|x| x.name == f.name && x.scope == f.scope)
+            .unwrap_or(0);
+        self.rt_proc(
+            "_QRNX_FILEERR",
+            "(byval $status: i32, const $file: char(10))",
+        );
         let err = self.b.reg();
         self.b.ins(format!("{err} = cmp.ge {status}, 1000"));
         let raise = self.b.label();
@@ -677,7 +794,10 @@ impl Gen<'_> {
         self.b.term(format!("brif {err}, {raise}, {done}"));
         self.b.place(&raise);
         self.b.ins(format!("store $ferr, {}", k + 1));
-        self.b.ins(format!("callb _QRNX_FILEERR({status}, {})", crate::codegen::emit::quote(&format!("{:<10}", f.name))));
+        self.b.ins(format!(
+            "callb _QRNX_FILEERR({status}, {})",
+            crate::codegen::emit::quote(&format!("{:<10}", f.name))
+        ));
         self.b.place(&done);
     }
 
@@ -690,30 +810,57 @@ impl Gen<'_> {
             if !matches!(fd.usage, 'I' | 'B') {
                 continue;
             }
-            let Some(name) = r.names.get(i).cloned() else { continue };
-            let Some(id) = self.t.find(self.scope, &name) else { continue };
+            let Some(name) = r.names.get(i).cloned() else {
+                continue;
+            };
+            let Some(id) = self.t.find(self.scope, &name) else {
+                continue;
+            };
             self.t.refer(id, self.at.line, true);
-            let dst = V::place(self.t.syms[id].ty.clone(), crate::codegen::place_of(self.t, id));
-            let src = V::place(fd.ty.clone(), format!("[{p} +{}]:{}", fd.offset, self.ir_ty(&fd.ty)));
+            let dst = V::place(
+                self.t.syms[id].ty.clone(),
+                crate::codegen::place_of(self.t, id),
+            );
+            let src = V::place(
+                fd.ty.clone(),
+                format!("[{p} +{}]:{}", fd.offset, self.ir_ty(&fd.ty)),
+            );
             if dst.ty == src.ty {
                 self.b.ins(format!("mov {}, {}", dst.op, src.op));
             } else {
                 self.assign(&dst, &src, false);
             }
         }
-        let specs: Vec<rpgfront::ast::Input> =
-            self.inputs.iter().filter(|i| i.external && (i.name == r.name || i.name == r.fmt.name)).cloned().collect();
+        let specs: Vec<rpgfront::ast::Input> = self
+            .inputs
+            .iter()
+            .filter(|i| i.external && (i.name == r.name || i.name == r.fmt.name))
+            .cloned()
+            .collect();
         for i in specs {
             if !i.rid.is_empty()
                 && let Some(x) = self.indicator(&i.rid)
             {
                 self.b.ins(format!("store {}, *ON", x.op));
             }
-            for x in i.fields.iter().filter(|x| x.inds.iter().any(|s| !s.is_empty())) {
-                let Some(k) = r.fmt.fields.iter().position(|d| d.name == x.extname) else { continue };
-                let Some(name) = r.names.get(k).cloned() else { continue };
-                let Some(id) = self.t.find(self.scope, &name) else { continue };
-                let v = V::place(self.t.syms[id].ty.clone(), crate::codegen::place_of(self.t, id));
+            for x in i
+                .fields
+                .iter()
+                .filter(|x| x.inds.iter().any(|s| !s.is_empty()))
+            {
+                let Some(k) = r.fmt.fields.iter().position(|d| d.name == x.extname) else {
+                    continue;
+                };
+                let Some(name) = r.names.get(k).cloned() else {
+                    continue;
+                };
+                let Some(id) = self.t.find(self.scope, &name) else {
+                    continue;
+                };
+                let v = V::place(
+                    self.t.syms[id].ty.clone(),
+                    crate::codegen::place_of(self.t, id),
+                );
                 self.field_inds(&v, &x.inds);
             }
         }
@@ -727,13 +874,23 @@ impl Gen<'_> {
             if !matches!(fd.usage, 'O' | 'B') {
                 continue;
             }
-            let Some(name) = r.names.get(i).cloned() else { continue };
+            let Some(name) = r.names.get(i).cloned() else {
+                continue;
+            };
             if only.is_some_and(|o| !o.contains(&name)) {
                 continue;
             }
-            let Some(id) = self.t.find(self.scope, &name) else { continue };
-            let src = V::place(self.t.syms[id].ty.clone(), crate::codegen::place_of(self.t, id));
-            let dst = V::place(fd.ty.clone(), format!("[{p} +{}]:{}", fd.offset, self.ir_ty(&fd.ty)));
+            let Some(id) = self.t.find(self.scope, &name) else {
+                continue;
+            };
+            let src = V::place(
+                self.t.syms[id].ty.clone(),
+                crate::codegen::place_of(self.t, id),
+            );
+            let dst = V::place(
+                fd.ty.clone(),
+                format!("[{p} +{}]:{}", fd.offset, self.ir_ty(&fd.ty)),
+            );
             if dst.ty == src.ty {
                 self.b.ins(format!("mov {}, {}", dst.op, src.op));
             } else {
@@ -751,7 +908,11 @@ impl Gen<'_> {
 
     /// The program-described input records of a file.
     pub fn records_of(&self, f: &File) -> Vec<rpgfront::ast::Input> {
-        self.inputs.iter().filter(|i| !i.external && i.name == f.name).cloned().collect()
+        self.inputs
+            .iter()
+            .filter(|i| !i.external && i.name == f.name)
+            .cloned()
+            .collect()
     }
 
     /// The record type of the record in the buffer by the record
@@ -781,11 +942,21 @@ impl Gen<'_> {
                 self.b.term(format!("br {hit}"));
             }
             for (gi, g) in groups.iter().enumerate() {
-                let alt = if gi + 1 < groups.len() { self.b.label() } else { next.clone() };
+                let alt = if gi + 1 < groups.len() {
+                    self.b.label()
+                } else {
+                    next.clone()
+                };
                 for c in g {
                     let byte = self.b.reg();
-                    self.b.ins(format!("{byte} = load [{p} +{}]:u8", c.pos.saturating_sub(1)));
-                    let want = ccsid::to_ebcdic(&c.ch.to_string()).ok().and_then(|v| v.first().copied()).unwrap_or(0x40);
+                    self.b.ins(format!(
+                        "{byte} = load [{p} +{}]:u8",
+                        c.pos.saturating_sub(1)
+                    ));
+                    let want = ccsid::to_ebcdic(&c.ch.to_string())
+                        .ok()
+                        .and_then(|v| v.first().copied())
+                        .unwrap_or(0x40);
                     let (mask, val) = match c.part {
                         'Z' => (0xF0, want & 0xF0),
                         'D' => (0x0F, want & 0x0F),
@@ -794,7 +965,10 @@ impl Gen<'_> {
                     let m = self.b.reg();
                     self.b.ins(format!("{m} = and {byte}, {mask}"));
                     let eq = self.b.reg();
-                    self.b.ins(format!("{eq} = cmp.{} {m}, {val}", if c.not { "ne" } else { "eq" }));
+                    self.b.ins(format!(
+                        "{eq} = cmp.{} {m}, {val}",
+                        if c.not { "ne" } else { "eq" }
+                    ));
                     let ok = self.b.label();
                     self.b.term(format!("brif {eq}, {ok}, {alt}"));
                     self.b.place(&ok);
@@ -834,7 +1008,9 @@ impl Gen<'_> {
             if r.rid.is_empty() || r.rid == "**" {
                 continue;
             }
-            let Some(x) = self.indicator(&r.rid) else { continue };
+            let Some(x) = self.indicator(&r.rid) else {
+                continue;
+            };
             let c = self.b.reg();
             self.b.ins(format!("{c} = cmp.eq {rt}, {k}"));
             let on = self.b.label();
@@ -859,8 +1035,15 @@ impl Gen<'_> {
         self.b.ins(format!("{rt} = load $fcb_{n}.rt"));
         let done = self.b.label();
         let labels: Vec<String> = recs.iter().map(|_| self.b.label()).collect();
-        let arms: Vec<String> = labels.iter().enumerate().map(|(k, l)| format!("{k}: {l}")).collect();
-        self.b.term(format!("switch {rt}, [{}], default {done}", arms.join(", ")));
+        let arms: Vec<String> = labels
+            .iter()
+            .enumerate()
+            .map(|(k, l)| format!("{k}: {l}"))
+            .collect();
+        self.b.term(format!(
+            "switch {rt}, [{}], default {done}",
+            arms.join(", ")
+        ));
         for (r, l) in recs.iter().zip(&labels) {
             self.b.place(l);
             for x in &r.fields {
@@ -875,10 +1058,18 @@ impl Gen<'_> {
     fn input_field(&mut self, p: &str, x: &rpgfront::ast::InputField) {
         let Some(ty) = input_type(x) else { return };
         let from: u32 = x.from.trim().parse().unwrap_or(1);
-        let Some(id) = self.t.find(self.scope, &x.name) else { return };
+        let Some(id) = self.t.find(self.scope, &x.name) else {
+            return;
+        };
         self.t.refer(id, x.at.line, true);
-        let dst = V::place(self.t.syms[id].ty.clone(), crate::codegen::place_of(self.t, id));
-        let src = V::place(ty.clone(), format!("[{p} +{}]:{}", from - 1, self.ir_ty(&ty)));
+        let dst = V::place(
+            self.t.syms[id].ty.clone(),
+            crate::codegen::place_of(self.t, id),
+        );
+        let src = V::place(
+            ty.clone(),
+            format!("[{p} +{}]:{}", from - 1, self.ir_ty(&ty)),
+        );
         if dst.ty == src.ty {
             self.b.ins(format!("mov {}, {}", dst.op, src.op));
         } else {
@@ -915,7 +1106,10 @@ impl Gen<'_> {
 
     /// The key of a positioning operation.
     pub fn key_of(&mut self, f: &File, fmt: Option<&RecFmt>, e: &Expr) -> Option<KeyArg> {
-        if let Expr::Special { word, index: None, .. } = e {
+        if let Expr::Special {
+            word, index: None, ..
+        } = e
+        {
             match word.as_str() {
                 "*START" => return Some(KeyArg::Limit(-1)),
                 "*END" => return Some(KeyArg::Limit(-2)),
@@ -962,7 +1156,9 @@ impl Gen<'_> {
                     && let Some(fd) = r.fmt.fields.iter().find(|x| x.name == *k)
                 {
                     let same = match (&v.ty, &fd.ty) {
-                        (a, b) if a.is_numeric() && b.is_numeric() => a.shape() == b.shape() || v.kind == Vk::Lit && v.fig.is_some(),
+                        (a, b) if a.is_numeric() && b.is_numeric() => {
+                            a.shape() == b.shape() || v.kind == Vk::Lit && v.fig.is_some()
+                        }
                         (Ty::Unknown, _) => true,
                         (a, b) if a.is_string() && b.is_string() => a.str_len() == b.str_len(),
                         (a, b) => a == b,
@@ -1010,7 +1206,9 @@ impl Gen<'_> {
             let _ = write!(layout, "k{i}: {} @{at}", self.ir_ty(ty));
             at += self.t.size(ty);
         }
-        let t = self.b.temp(&format!("struct({}) {{ {layout} }}", at.max(1)));
+        let t = self
+            .b
+            .temp(&format!("struct({}) {{ {layout} }}", at.max(1)));
         for (i, v) in values.iter().enumerate() {
             let dst = V::place(fields[i].clone(), format!("{t}.k{i}"));
             self.assign(&dst, v, false);
@@ -1034,14 +1232,21 @@ impl Gen<'_> {
         let mut out = Vec::new();
         for s in subs.into_iter().take(n) {
             let sym = self.t.syms[s].clone();
-            out.push(V::place(sym.ty.clone(), format!("{}.{}", v.op, mangle(&sym.name))));
+            out.push(V::place(
+                sym.ty.clone(),
+                format!("{}.{}", v.op, mangle(&sym.name)),
+            ));
         }
         Some(out)
     }
 
     fn open_op(&mut self, op: &Op) {
-        let Some(e) = op.f2.first().cloned() else { return };
-        let Some((f, _)) = self.db_target(&e) else { return };
+        let Some(e) = op.f2.first().cloned() else {
+            return;
+        };
+        let Some((f, _)) = self.db_target(&e) else {
+            return;
+        };
         let n = mangle(&f.name);
         let st = self.b.temp("i32");
         // Already open: 01215.
@@ -1092,7 +1297,9 @@ impl Gen<'_> {
             self.err(ids::FILE_NOT_DEFINED, 30, op.code.clone());
             return;
         };
-        let Some((f, _)) = self.db_target(&e) else { return };
+        let Some((f, _)) = self.db_target(&e) else {
+            return;
+        };
         if base != "POST" && f.dev != Dev::Workstn {
             self.err(ids::OP_NOT_FOR_FILE, 30, f.name.clone());
             return;
@@ -1136,9 +1343,15 @@ impl Gen<'_> {
     fn close_op(&mut self, op: &Op) {
         let all = matches!(op.f2.first(), Some(Expr::Special { word, .. }) if word == "*ALL");
         let files: Vec<File> = if all {
-            self.files.iter().filter(|f| f.scope == 0 && !f.template).cloned().collect()
+            self.files
+                .iter()
+                .filter(|f| f.scope == 0 && !f.template)
+                .cloned()
+                .collect()
         } else {
-            let Some(e) = op.f2.first().cloned() else { return };
+            let Some(e) = op.f2.first().cloned() else {
+                return;
+            };
             match self.db_target(&e) {
                 Some((f, _)) => vec![f],
                 None => return,
@@ -1187,7 +1400,9 @@ impl Gen<'_> {
                     None => Some(V::place(Ty::Zoned(5, 0), "$status")),
                     Some(e) => {
                         let e = e.clone();
-                        self.db_target(&e).map(|(f, _)| V::place(Ty::Zoned(5, 0), format!("$fcb_{}.st", mangle(&f.name))))
+                        self.db_target(&e).map(|(f, _)| {
+                            V::place(Ty::Zoned(5, 0), format!("$fcb_{}.st", mangle(&f.name)))
+                        })
                     }
                 });
             }
@@ -1214,8 +1429,15 @@ impl Gen<'_> {
             None => Some(V::place(Ty::Ind, format!("${flag}_"))),
             Some(e) => {
                 let e = e.clone();
-                let r = self.db_target(&e).map(|(f, _)| V::place(Ty::Ind, format!("$fcb_{}.{flag}", mangle(&f.name))));
-                if r.is_none() && self.diags.last().is_some_and(|d| d.msgid == ids::NOT_DEFINED) {
+                let r = self
+                    .db_target(&e)
+                    .map(|(f, _)| V::place(Ty::Ind, format!("$fcb_{}.{flag}", mangle(&f.name))));
+                if r.is_none()
+                    && self
+                        .diags
+                        .last()
+                        .is_some_and(|d| d.msgid == ids::NOT_DEFINED)
+                {
                     self.err(ids::BIF_NAME_UNDEFINED, 30, name.to_string());
                 }
                 r
@@ -1242,7 +1464,9 @@ impl Gen<'_> {
             let skip = if fld.cond.is_empty() {
                 None
             } else {
-                let Some(r) = self.conditioning(&fld.cond) else { continue };
+                let Some(r) = self.conditioning(&fld.cond) else {
+                    continue;
+                };
                 let run = self.b.label();
                 let skip = self.b.label();
                 self.b.term(format!("brif {r}, {run}, {skip}"));
@@ -1280,17 +1504,26 @@ impl Gen<'_> {
             let width = self.t.size(&ty);
             let end = match fld.end.trim() {
                 "" => prev_end + width,
-                e if e.starts_with('+') => prev_end + e[1..].trim().parse::<u32>().unwrap_or(0) + width,
+                e if e.starts_with('+') => {
+                    prev_end + e[1..].trim().parse::<u32>().unwrap_or(0) + width
+                }
                 e => e.parse::<u32>().unwrap_or(prev_end + width),
             };
             if end > len || width > end {
                 self.err(ids::INDEX_RANGE, 30, fld.end.clone());
                 continue;
             }
-            let dst = V::place(ty.clone(), format!("[{p} +{}]:{}", end - width, self.ir_ty(&ty)));
+            let dst = V::place(
+                ty.clone(),
+                format!("[{p} +{}]:{}", end - width, self.ir_ty(&ty)),
+            );
             self.assign(&dst, &v, false);
             if fld.blank && v.kind == Vk::Place {
-                let lit = if v.ty.is_numeric() { "*ZEROS" } else { "*BLANKS" };
+                let lit = if v.ty.is_numeric() {
+                    "*ZEROS"
+                } else {
+                    "*BLANKS"
+                };
                 self.b.ins(format!("mov {}, {lit}", v.op));
             }
             prev_end = end;
@@ -1316,26 +1549,65 @@ impl Gen<'_> {
 /// (`RNF7066`), and input files RPG reads in blocks (`RNF7086`): input
 /// only, without `BLOCK(*NO)`, read only by `READ`.
 pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
-    let ops: Vec<&rpgfront::ast::Op> = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter())).map(|s| &s.op).collect();
+    let ops: Vec<&rpgfront::ast::Op> = m
+        .calcs
+        .iter()
+        .chain(m.procs.iter().flat_map(|p| p.calcs.iter()))
+        .map(|s| &s.op)
+        .collect();
     for (i, r) in g.t.recfmts.clone().iter().enumerate() {
         let named_out = g.outputs.iter().any(|o| o.name == r.name);
-        let cycle = g.files.get(r.file).is_some_and(|f| matches!(f.designation.as_str(), "P" | "S"));
+        let cycle = g
+            .files
+            .get(r.file)
+            .is_some_and(|f| matches!(f.designation.as_str(), "P" | "S"));
         if !g.used_formats.contains(&i) && !named_out && !cycle {
             let line = g.files.get(r.file).map_or(0, |f| f.def_line);
-            g.diags.push(rpgfront::Diag::new(ids::FORMAT_UNUSED, 0, rpgfront::ast::Pos { line, col: 7 }).arg(r.name.clone()));
+            g.diags.push(
+                rpgfront::Diag::new(ids::FORMAT_UNUSED, 0, rpgfront::ast::Pos { line, col: 7 })
+                    .arg(r.name.clone()),
+            );
         }
     }
-    for f in g.files.iter().filter(|f| f.ext.as_ref().is_some_and(|e| e.indara)) {
-        g.diags.push(rpgfront::Diag::new(ids::INDARA, 0, rpgfront::ast::Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
+    for f in g
+        .files
+        .iter()
+        .filter(|f| f.ext.as_ref().is_some_and(|e| e.indara))
+    {
+        g.diags.push(
+            rpgfront::Diag::new(
+                ids::INDARA,
+                0,
+                rpgfront::ast::Pos {
+                    line: f.def_line,
+                    col: 7,
+                },
+            )
+            .arg(f.name.clone()),
+        );
     }
     // A file read only, or written only, is blocked. A file whose
     // description was not found is ignored.
     for f in g.files.iter().filter(|f| {
-        f.dev == Dev::Disk && !f.template && f.input != f.output && !f.update && !f.noblock && (!f.external || f.ext.is_some())
+        f.dev == Dev::Disk
+            && !f.template
+            && f.input != f.output
+            && !f.update
+            && !f.noblock
+            && (!f.external || f.ext.is_some())
     }) {
-        let allowed: &[&str] = if f.input { &["READ", "OPEN", "CLOSE", "FEOD", "FORCE"] } else { &["WRITE", "OPEN", "CLOSE", "FEOD"] };
+        let allowed: &[&str] = if f.input {
+            &["READ", "OPEN", "CLOSE", "FEOD", "FORCE"]
+        } else {
+            &["WRITE", "OPEN", "CLOSE", "FEOD"]
+        };
         let names: Vec<String> = std::iter::once(f.name.clone())
-            .chain(g.t.recfmts.iter().filter(|r| r.file_name == f.name).map(|r| r.name.clone()))
+            .chain(
+                g.t.recfmts
+                    .iter()
+                    .filter(|r| r.file_name == f.name)
+                    .map(|r| r.name.clone()),
+            )
             .collect();
         let only_read = ops.iter().all(|op| {
             let target = op.f2.first().and_then(|e| match e {
@@ -1348,7 +1620,17 @@ pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
             }
         });
         if only_read {
-            g.diags.push(rpgfront::Diag::new(ids::BLOCKED, 0, rpgfront::ast::Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
+            g.diags.push(
+                rpgfront::Diag::new(
+                    ids::BLOCKED,
+                    0,
+                    rpgfront::ast::Pos {
+                        line: f.def_line,
+                        col: 7,
+                    },
+                )
+                .arg(f.name.clone()),
+            );
         }
     }
 }

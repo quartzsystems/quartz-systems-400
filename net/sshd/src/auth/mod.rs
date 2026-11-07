@@ -71,7 +71,8 @@ pub fn profile_name(user: &str) -> Option<String> {
     let u = user.trim().to_ascii_uppercase();
     let ok = !u.is_empty()
         && u.len() <= 10
-        && u.chars().all(|c| c.is_ascii_alphanumeric() || "#$@_".contains(c))
+        && u.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "#$@_".contains(c))
         && !u.starts_with(|c: char| c.is_ascii_digit() || c == '_');
     ok.then_some(u)
 }

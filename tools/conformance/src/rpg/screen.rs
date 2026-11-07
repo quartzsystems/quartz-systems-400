@@ -46,7 +46,11 @@ impl KitDisplay {
     /// Over a member's display files, its steps and the messages its
     /// setup adds.
     #[must_use]
-    pub fn new(displays: Vec<(String, Rc<dspf::DisplayFile>)>, steps: &[String], messages: BTreeMap<String, String>) -> Self {
+    pub fn new(
+        displays: Vec<(String, Rc<dspf::DisplayFile>)>,
+        steps: &[String],
+        messages: BTreeMap<String, String>,
+    ) -> Self {
         Self(Rc::new(RefCell::new(Screen {
             steps: steps.iter().cloned().collect(),
             shown: Vec::new(),
@@ -127,7 +131,10 @@ impl Screen {
         let Some(rec) = self.term.take_outbox().into_iter().next() else {
             return Err(fail("no record".into()));
         };
-        let inb = self.model.accept(&rec.data).ok_or_else(|| fail("not an input".into()))?;
+        let inb = self
+            .model
+            .accept(&rec.data)
+            .ok_or_else(|| fail("not an input".into()))?;
         Ok(Some((inb.aid, (inb.row, inb.col))))
     }
 }
@@ -150,10 +157,17 @@ impl DisplaySource for KitDisplay {
         })
     }
 
-    fn write(&mut self, handle: u32, format: &str, record: &[u8], indicators: &[u8]) -> Result<(), IoFail> {
+    fn write(
+        &mut self,
+        handle: u32,
+        format: &str,
+        record: &[u8],
+        indicators: &[u8],
+    ) -> Result<(), IoFail> {
         let s = &mut *self.0.borrow_mut();
         let rt = s.files.get_mut(&handle).ok_or_else(|| not_open(format))?;
-        rt.write(&mut s.model, &s.env, format, record, indicators).map_err(|_| bad(format))
+        rt.write(&mut s.model, &s.env, format, record, indicators)
+            .map_err(|_| bad(format))
     }
 
     fn read(&mut self, handle: u32, format: &str) -> Result<DisplayInput, IoFail> {
@@ -182,19 +196,41 @@ impl DisplaySource for KitDisplay {
         }
     }
 
-    fn sfl_write(&mut self, handle: u32, format: &str, rrn: u32, record: &[u8], indicators: &[u8]) -> Result<(), IoFail> {
+    fn sfl_write(
+        &mut self,
+        handle: u32,
+        format: &str,
+        rrn: u32,
+        record: &[u8],
+        indicators: &[u8],
+    ) -> Result<(), IoFail> {
         let s = &mut *self.0.borrow_mut();
         let rt = s.files.get_mut(&handle).ok_or_else(|| not_open(format))?;
-        rt.sfl_write(format, rrn as usize, record, indicators).map_err(|_| bad(format))
+        rt.sfl_write(format, rrn as usize, record, indicators)
+            .map_err(|_| bad(format))
     }
 
-    fn sfl_chain(&mut self, handle: u32, format: &str, rrn: u32) -> Result<Option<DisplayInput>, IoFail> {
+    fn sfl_chain(
+        &mut self,
+        handle: u32,
+        format: &str,
+        rrn: u32,
+    ) -> Result<Option<DisplayInput>, IoFail> {
         let s = &mut *self.0.borrow_mut();
         let rt = s.files.get_mut(&handle).ok_or_else(|| not_open(format))?;
-        Ok(rt.sfl_chain(format, rrn as usize).map_err(|_| bad(format))?.map(|i| input_of(format, i)))
+        Ok(rt
+            .sfl_chain(format, rrn as usize)
+            .map_err(|_| bad(format))?
+            .map(|i| input_of(format, i)))
     }
 
-    fn sfl_update(&mut self, handle: u32, format: &str, record: &[u8], indicators: &[u8]) -> Result<(), IoFail> {
+    fn sfl_update(
+        &mut self,
+        handle: u32,
+        format: &str,
+        record: &[u8],
+        indicators: &[u8],
+    ) -> Result<(), IoFail> {
         let s = &mut *self.0.borrow_mut();
         let rt = s.files.get_mut(&handle).ok_or_else(|| not_open(format))?;
         match rt.sfl_update(format, record, indicators) {
@@ -207,7 +243,10 @@ impl DisplaySource for KitDisplay {
     fn sfl_readc(&mut self, handle: u32, format: &str) -> Result<Option<DisplayInput>, IoFail> {
         let s = &mut *self.0.borrow_mut();
         let rt = s.files.get_mut(&handle).ok_or_else(|| not_open(format))?;
-        Ok(rt.sfl_readc(format).map_err(|_| bad(format))?.map(|i| input_of(format, i)))
+        Ok(rt
+            .sfl_readc(format)
+            .map_err(|_| bad(format))?
+            .map(|i| input_of(format, i)))
     }
 
     fn close(&mut self, handle: u32) -> Result<(), IoFail> {

@@ -43,21 +43,35 @@ pub fn current(system: &mut System) -> IplAttrs {
 }
 
 fn chgipla(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    crate::stgsvc::security::require(sec::profile::SpecialAuth::ALLOBJ, "change the IPL attributes")?;
+    crate::stgsvc::security::require(
+        sec::profile::SpecialAuth::ALLOBJ,
+        "change the IPL attributes",
+    )?;
     let mut a = current(system);
     for attr in ATTRS {
         let v = parms.text(attr.kwd);
         let v = v.trim();
         // The message names the parameter, not the command.
         if !v.is_empty() && a.set(attr.kwd, v).is_err() {
-            return Ok(super::escape("CPD0084", attr.kwd, &format!("{}({v}) is not valid", attr.kwd)));
+            return Ok(super::escape(
+                "CPD0084",
+                attr.kwd,
+                &format!("{}({v}) is not valid", attr.kwd),
+            ));
         }
     }
-    let (part, record) = system.lic.as_mut().ok_or("CPF3700 the LIC partition is not attached")?;
+    let (part, record) = system
+        .lic
+        .as_mut()
+        .ok_or("CPF3700 the LIC partition is not attached")?;
     part.refresh(record);
     a.store(record).map_err(|e| e.to_string())?;
     part.write(record).map_err(|e| e.to_string())?;
-    Ok(super::done(format!("{CHANGED} IPL attributes changed\n"), CHANGED, &[]))
+    Ok(super::done(
+        format!("{CHANGED} IPL attributes changed\n"),
+        CHANGED,
+        &[],
+    ))
 }
 
 fn dspipla(system: &mut System) -> CmdReply {
@@ -73,7 +87,10 @@ fn set_flags(system: &mut System, flags: &str) -> Result<(), String> {
         let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
         let n = qsname::Name::parse(QSTRUP_FLAGS).expect("name");
         let v = DataAreaValue::Char(flags);
-        match lib.lookup(txn, types::DTAARA, n).map_err(|e| e.to_string())? {
+        match lib
+            .lookup(txn, types::DTAARA, n)
+            .map_err(|e| e.to_string())?
+        {
             Some(id) => dtaara::write(txn, id, &v).map_err(|e| e.to_string()),
             None => dtaara::create(
                 txn,

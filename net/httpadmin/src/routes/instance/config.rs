@@ -36,7 +36,14 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let text = if pending.is_empty() {
         match instance::read_conf(rq.env().files.as_ref(), &v.entry.root) {
             Ok(t) => t,
-            Err(e) => return rq.page(tab_page(v, "config", Some(&path), &format!("<p>{}</p>", esc(&e.to_string())))),
+            Err(e) => {
+                return rq.page(tab_page(
+                    v,
+                    "config",
+                    Some(&path),
+                    &format!("<p>{}</p>", esc(&e.to_string())),
+                ));
+            }
         }
     } else {
         pending
@@ -62,7 +69,11 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     let area = format!(
         "<textarea name=\"conf\" class=\"conf\" rows=\"40\" wrap=\"off\">{lead}{}</textarea>{}",
         esc(&text),
-        buttons(&[Button::new("validate", "Validate"), Button::new("apply", "Apply"), Button::new("reset", "Reset")])
+        buttons(&[
+            Button::new("validate", "Validate"),
+            Button::new("apply", "Apply"),
+            Button::new("reset", "Reset")
+        ])
     );
     let body = format!("{status}{}", form(&rq.ctx, "", &area));
     rq.page(tab_page(v, "config", Some(&path), &body))
@@ -80,7 +91,11 @@ fn post(rq: &Rq<'_>, v: &View) -> Response {
     if f.has("validate") {
         rq.set(&[(&key(v.name()), &text)]);
         let m = match conf::parse(&text) {
-            Ok(_) => msgs::message(Kind::Info, "HTP8101", &[&instance::conf_path(&v.entry.root)]),
+            Ok(_) => msgs::message(
+                Kind::Info,
+                "HTP8101",
+                &[&instance::conf_path(&v.entry.root)],
+            ),
             Err(e) => conf_error(v, &e),
         };
         return rq.done(&here, m);
@@ -96,7 +111,10 @@ fn post(rq: &Rq<'_>, v: &View) -> Response {
     let m = match instance::apply_conf(files, v.name(), &v.entry.root, &text, v.running()) {
         Ok(()) => {
             rq.clear(&key(v.name()));
-            rq.audit_change(&instance::conf_path(&v.entry.root), "configuration file replaced");
+            rq.audit_change(
+                &instance::conf_path(&v.entry.root),
+                "configuration file replaced",
+            );
             super::changed(v)
         }
         Err(httpd::Error::Conf(e)) => conf_error(v, &e),

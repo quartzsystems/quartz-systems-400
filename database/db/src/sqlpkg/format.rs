@@ -55,7 +55,11 @@ pub static STMT_LAYOUT: Layout = Layout {
         field("cols_len", 32, 4),
         field("markers_len", 36, 4),
         field("reserved2", 40, 8),
-        Field { name: "parts", offset: Some(48), size: None },
+        Field {
+            name: "parts",
+            offset: Some(48),
+            size: None,
+        },
     ],
 };
 
@@ -114,7 +118,9 @@ pub struct PkgStmt {
 }
 
 fn bad(what: &str) -> DbError {
-    DbError::Corrupt { what: format!("SQL package: {what}") }
+    DbError::Corrupt {
+        what: format!("SQL package: {what}"),
+    }
 }
 
 fn padded(s: &str, n: usize) -> Vec<u8> {
@@ -167,7 +173,11 @@ impl PkgAttr {
             return Err(bad(&format!("version {version}")));
         }
         let a = Self {
-            kind: if b[2] == 1 { PkgKind::Bound } else { PkgKind::Extended },
+            kind: if b[2] == 1 {
+                PkgKind::Bound
+            } else {
+                PkgKind::Extended
+            },
             sql_naming: b[3] == 1,
             commit: b[4],
             date_format: b[5],

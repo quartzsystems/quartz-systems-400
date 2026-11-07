@@ -135,8 +135,8 @@ impl History {
 
 /// The items `DSPBCKSTS` lists, in its order: the panel variable's stem.
 pub const ITEMS: [&str; 13] = [
-    "ULALL", "ULALLC", "ULLIST", "ULLISTC", "FLALL", "FLALLC", "FLLIST", "UDALL", "UDALLC", "SECDTA", "CFGDTA",
-    "OVCAL", "OVMAIL",
+    "ULALL", "ULALLC", "ULLIST", "ULLISTC", "FLALL", "FLALLC", "FLLIST", "UDALL", "UDALLC",
+    "SECDTA", "CFGDTA", "OVCAL", "OVMAIL",
 ];
 
 #[cfg(test)]
@@ -174,7 +174,10 @@ mod tests {
         };
         let mut h = History::default();
         h.add(run("*DAILY", "SAVLIB completed;SAVSECDTA completed"));
-        h.add(run("*WEEKLY", "SAVLIB completed;SAVCFG failed;SAV completed"));
+        h.add(run(
+            "*WEEKLY",
+            "SAVLIB completed;SAVCFG failed;SAV completed",
+        ));
         h.add(run("*DAILY", "SAVCHGOBJ completed"));
         let s = h.last_saved(|o| o == "*DAILY");
         assert_eq!(s.get("ULLIST"), Some(&0));

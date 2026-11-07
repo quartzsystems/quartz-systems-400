@@ -25,7 +25,12 @@ mod tests {
     #[test]
     fn main_menu_is_shipped_and_compiles() {
         let text = source("MAIN").expect("MAIN");
-        let c = uim::compile(text, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let c = uim::compile(
+            text,
+            &uim::NoImbeds,
+            &uim::NoImports,
+            &uim::CompileOpts::default(),
+        );
         assert!(c.ok(), "{}", c.listing);
         let g = c.group.unwrap();
         let p = g.panel("MAIN").expect("a MAIN panel");

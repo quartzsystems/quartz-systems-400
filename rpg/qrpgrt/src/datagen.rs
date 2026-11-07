@@ -68,7 +68,10 @@ fn read_shape(recs: &[&str], i: &mut usize) -> Option<Node> {
         stride: f.get(4)?.parse().ok()?,
         dtype: f.get(6)?.parse().ok()?,
         dtz: f.get(7)?.parse().ok()?,
-        sep: f.get(8).and_then(|s| s.chars().next()).filter(|c| *c != '~'),
+        sep: f
+            .get(8)
+            .and_then(|s| s.chars().next())
+            .filter(|c| *c != '~'),
         ccsid: f.get(9)?.parse().ok()?,
         children: Vec::new(),
     };
@@ -88,7 +91,9 @@ struct Options {
 fn options(text: &str) -> Result<Options, (u16, u32)> {
     let mut o = Options::default();
     for w in text.split_whitespace() {
-        let Some((k, v)) = w.split_once('=') else { return Err((352, 1)) };
+        let Some((k, v)) = w.split_once('=') else {
+            return Err((352, 1));
+        };
         match k.to_ascii_lowercase().as_str() {
             "doc" if v.eq_ignore_ascii_case("string") => {}
             // Output to a stream file is not written (docs/RPG.md).
@@ -108,9 +113,25 @@ fn options(text: &str) -> Result<Options, (u16, u32)> {
 /// An event's information.
 enum Info {
     None,
-    Ds { elem: u32, total: u32, subs: u32, num: u32, names: Vec<String> },
-    Array { total: u32, subs: u32, num: u32 },
-    Scalar { elem: u32, total: u32, num: u32, node: Node, text: String },
+    Ds {
+        elem: u32,
+        total: u32,
+        subs: u32,
+        num: u32,
+        names: Vec<String>,
+    },
+    Array {
+        total: u32,
+        subs: u32,
+        num: u32,
+    },
+    Scalar {
+        elem: u32,
+        total: u32,
+        num: u32,
+        node: Node,
+        text: String,
+    },
 }
 
 /// One `DATA-GEN` in progress.
@@ -136,20 +157,28 @@ fn scalar_text(n: &Node, b: &[u8]) -> String {
             let v = crate::value::read_f64(b.as_ptr() as u64, &d).unwrap_or(0.0);
             crate::natives::editflt_text(v, d.len == 4)
         }
-        K::Packed | K::Zoned | K::Bin | K::Int | K::Uns => match crate::value::read_num(b.as_ptr() as u64, &d) {
-            Ok(v) => {
-                let s = v.char_text(d.dec);
-                if let Some(r) = s.strip_prefix('.') {
-                    format!("0.{r}")
-                } else if let Some(r) = s.strip_prefix("-.") {
-                    format!("-0.{r}")
-                } else {
-                    s
+        K::Packed | K::Zoned | K::Bin | K::Int | K::Uns => {
+            match crate::value::read_num(b.as_ptr() as u64, &d) {
+                Ok(v) => {
+                    let s = v.char_text(d.dec);
+                    if let Some(r) = s.strip_prefix('.') {
+                        format!("0.{r}")
+                    } else if let Some(r) = s.strip_prefix("-.") {
+                        format!("-0.{r}")
+                    } else {
+                        s
+                    }
                 }
+                Err(_) => String::new(),
             }
-            Err(_) => String::new(),
-        },
-        K::Ind => if b.first() == Some(&0xF1) { "1".into() } else { "0".into() },
+        }
+        K::Ind => {
+            if b.first() == Some(&0xF1) {
+                "1".into()
+            } else {
+                "0".into()
+            }
+        }
         K::VarChar => ccsid::from_ebcdic(d.var_data(b)),
         // Fixed characters without their trailing blanks.
         _ if n.ccsid == 13488 => decode(13488, b).trim_end().to_string(),
@@ -158,17 +187,30 @@ fn scalar_text(n: &Node, b: &[u8]) -> String {
 }
 
 /// The events for a node: (event, name, info).
-fn events(n: &Node, base: u64, num: u32, name: &str, o: &Options, out: &mut Vec<(u32, String, Info)>) -> Result<(), (u16, u32)> {
+fn events(
+    n: &Node,
+    base: u64,
+    num: u32,
+    name: &str,
+    o: &Options,
+    out: &mut Vec<(u32, String, Info)>,
+) -> Result<(), (u16, u32)> {
     let is_counter = |c: &Node, parent: &Node| {
         !o.countprefix.is_empty()
             && c.name.to_ascii_uppercase().starts_with(&o.countprefix)
-            && parent.children.iter().any(|x| x.name.eq_ignore_ascii_case(&c.name[o.countprefix.len()..]))
+            && parent
+                .children
+                .iter()
+                .any(|x| x.name.eq_ignore_ascii_case(&c.name[o.countprefix.len()..]))
     };
     let count_of = |parent: &Node, base: u64, c: &Node| -> Result<Option<u32>, (u16, u32)> {
         if o.countprefix.is_empty() {
             return Ok(None);
         }
-        let Some(k) = parent.children.iter().find(|x| x.name.eq_ignore_ascii_case(&format!("{}{}", o.countprefix, c.name))) else {
+        let Some(k) = parent.children.iter().find(|x| {
+            x.name
+                .eq_ignore_ascii_case(&format!("{}{}", o.countprefix, c.name))
+        }) else {
             return Ok(None);
         };
         let d = crate::value::Desc::of(k.desc);
@@ -180,48 +222,126 @@ fn events(n: &Node, base: u64, num: u32, name: &str, o: &Options, out: &mut Vec<
         }
         Ok(Some(u32::try_from(n).unwrap_or(0)))
     };
-    let structure = |n: &Node, at: u64, elem: u32, total: u32, num: u32, out: &mut Vec<(u32, String, Info)>| -> Result<(), (u16, u32)> {
+    let structure = |n: &Node,
+                     at: u64,
+                     elem: u32,
+                     total: u32,
+                     num: u32,
+                     out: &mut Vec<(u32, String, Info)>|
+     -> Result<(), (u16, u32)> {
         let kids: Vec<&Node> = n.children.iter().filter(|c| !is_counter(c, n)).collect();
         let subs = u32::try_from(kids.len()).unwrap_or(0);
         let names: Vec<String> = kids.iter().map(|c| c.name.clone()).collect();
-        out.push((5, name.to_string(), Info::Ds { elem, total, subs, num, names: names.clone() }));
+        out.push((
+            5,
+            name.to_string(),
+            Info::Ds {
+                elem,
+                total,
+                subs,
+                num,
+                names: names.clone(),
+            },
+        ));
         for (k, c) in kids.iter().enumerate() {
             let shown = count_of(n, at, c)?;
             let c2 = match shown {
-                Some(m) if c.dim > 0 => Node { dim: m, ..(*c).clone() },
+                Some(m) if c.dim > 0 => Node {
+                    dim: m,
+                    ..(*c).clone()
+                },
                 Some(0) => continue,
                 _ => (*c).clone(),
             };
-            events(&c2, at + c.off, u32::try_from(k + 1).unwrap_or(0), &c.name, o, out)?;
+            events(
+                &c2,
+                at + c.off,
+                u32::try_from(k + 1).unwrap_or(0),
+                &c.name,
+                o,
+                out,
+            )?;
         }
-        out.push((6, name.to_string(), Info::Ds { elem, total, subs, num, names }));
+        out.push((
+            6,
+            name.to_string(),
+            Info::Ds {
+                elem,
+                total,
+                subs,
+                num,
+                names,
+            },
+        ));
         Ok(())
     };
     let scalar = |n: &Node, at: u64, elem: u32, total: u32| {
         let b = crate::value::bytes(at, usize::try_from(n.stride).unwrap_or(0)).to_vec();
-        Info::Scalar { elem, total, num, node: n.clone(), text: scalar_text(n, &b) }
+        Info::Scalar {
+            elem,
+            total,
+            num,
+            node: n.clone(),
+            text: scalar_text(n, &b),
+        }
     };
     if n.children.is_empty() && n.desc != 0 || n.children.is_empty() && n.dtype != 0 {
         if n.dim == 0 {
             out.push((11, name.to_string(), scalar(n, base, 0, 0)));
             return Ok(());
         }
-        out.push((7, name.to_string(), Info::Array { total: n.dim, subs: 0, num }));
+        out.push((
+            7,
+            name.to_string(),
+            Info::Array {
+                total: n.dim,
+                subs: 0,
+                num,
+            },
+        ));
         for k in 0..n.dim {
-            out.push((11, name.to_string(), scalar(n, base + n.stride * u64::from(k), k + 1, n.dim)));
+            out.push((
+                11,
+                name.to_string(),
+                scalar(n, base + n.stride * u64::from(k), k + 1, n.dim),
+            ));
         }
-        out.push((8, name.to_string(), Info::Array { total: n.dim, subs: 0, num }));
+        out.push((
+            8,
+            name.to_string(),
+            Info::Array {
+                total: n.dim,
+                subs: 0,
+                num,
+            },
+        ));
         return Ok(());
     }
     if n.dim == 0 {
         return structure(n, base, 0, 0, num, out);
     }
     let subs = u32::try_from(n.children.iter().filter(|c| !is_counter(c, n)).count()).unwrap_or(0);
-    out.push((9, name.to_string(), Info::Array { total: n.dim, subs, num }));
+    out.push((
+        9,
+        name.to_string(),
+        Info::Array {
+            total: n.dim,
+            subs,
+            num,
+        },
+    ));
     for k in 0..n.dim {
         structure(n, base + n.stride * u64::from(k), k + 1, n.dim, num, out)?;
     }
-    out.push((10, name.to_string(), Info::Array { total: n.dim, subs, num }));
+    out.push((
+        10,
+        name.to_string(),
+        Info::Array {
+            total: n.dim,
+            subs,
+            num,
+        },
+    ));
     Ok(())
 }
 
@@ -258,7 +378,14 @@ fn fail_in_callback(env: *mut Env, status: u16, reason: u32) {
     if let Some(frames) = frames {
         let up = u32::try_from(j.act.frames.len().saturating_sub(frames)).unwrap_or(0);
         let id = format!("RNX{status:04}");
-        let _ = j.send_message(&id, "QRNXMSG", "*LIBL", reason.to_be_bytes().to_vec(), qir::MsgType::Escape, mi::QueueRef::Up(up));
+        let _ = j.send_message(
+            &id,
+            "QRNXMSG",
+            "*LIBL",
+            reason.to_be_bytes().to_vec(),
+            qir::MsgType::Escape,
+            mi::QueueRef::Up(up),
+        );
     }
 }
 
@@ -293,10 +420,31 @@ extern "sysv64" fn cb_error(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: 
 }
 
 /// `QrnDgTrace(handle, text, nested)`: nothing is traced.
-extern "sysv64" fn cb_trace(_env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, _m0: u64, _m1: u64, _n: u64) {}
+extern "sysv64" fn cb_trace(
+    _env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    _m0: u64,
+    _m1: u64,
+    _n: u64,
+) {
+}
 
 /// `QrnDgAddText(handle, text, chars)`: UTF-16.
-extern "sysv64" fn cb_add(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, t0: u64, t1: u64, chars: u64) {
+extern "sysv64" fn cb_add(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    t0: u64,
+    t1: u64,
+    chars: u64,
+) {
     let j = mi::storage::job_of(env);
     match bytes_at(j, t0, t1, low(chars) * 2) {
         Some(b) => add(&decode(1200, &b)),
@@ -305,7 +453,18 @@ extern "sysv64" fn cb_add(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u6
 }
 
 /// `QrnDgAddTextCcsid(handle, text, bytes, ccsid)`.
-extern "sysv64" fn cb_add_ccsid(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, t0: u64, t1: u64, n: u64, ccsid: u64) {
+extern "sysv64" fn cb_add_ccsid(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    t0: u64,
+    t1: u64,
+    n: u64,
+    ccsid: u64,
+) {
     let j = mi::storage::job_of(env);
     let c = u32::try_from(low(ccsid)).unwrap_or(0);
     if matches!(c, 1200 | 13488) && low(n) % 2 == 1 {
@@ -319,7 +478,16 @@ extern "sysv64" fn cb_add_ccsid(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _
 }
 
 /// `QrnDgAddTextString(handle, text)`: ends at a null, the job's CCSID.
-extern "sysv64" fn cb_add_string(env: *mut Env, _argc: i64, _od: i64, _h0: u64, _h1: u64, _r9: u64, t0: u64, t1: u64) {
+extern "sysv64" fn cb_add_string(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    _h0: u64,
+    _h1: u64,
+    _r9: u64,
+    t0: u64,
+    t1: u64,
+) {
     let j = mi::storage::job_of(env);
     let p = mi::FatPtr::from_halves(t0, t1);
     let Ok((base, room)) = j.spaces.extent(p) else {
@@ -339,9 +507,21 @@ extern "sysv64" fn cb_new_line(_env: *mut Env, _argc: i64, _od: i64, _h0: u64, _
 
 /// `QrnDgGetSubfieldName(handle, number)`: the name, into the return
 /// value (`VARUCS2(4096:4)`).
-extern "sysv64" fn cb_subfield(env: *mut Env, _argc: i64, _od: i64, ret: u64, _h0: u64, _h1: u64, num: u64) {
+extern "sysv64" fn cb_subfield(
+    env: *mut Env,
+    _argc: i64,
+    _od: i64,
+    ret: u64,
+    _h0: u64,
+    _h1: u64,
+    num: u64,
+) {
     let k = low(num);
-    let name = RUNS.with(|r| r.borrow().last().and_then(|run| run.subfields.get(k.wrapping_sub(1)).cloned()));
+    let name = RUNS.with(|r| {
+        r.borrow()
+            .last()
+            .and_then(|run| run.subfields.get(k.wrapping_sub(1)).cloned())
+    });
     let b = crate::value::bytes(ret, 4 + 2 * 4096);
     if let Some(n) = name {
         put_name(b, 0, &n);
@@ -366,14 +546,25 @@ fn env_procs() -> [usize; 7] {
 
 /// Generate: the text, or the failure (sent already when it came from a
 /// procedure the generator called).
-fn generate(j: &mut mi::Job, c: &Callee, shape: &Node, base: u64, o: &Options, up: &UserParm) -> Result<String, Option<(u16, u32)>> {
+fn generate(
+    j: &mut mi::Job,
+    c: &Callee,
+    shape: &Node,
+    base: u64,
+    o: &Options,
+    up: &UserParm,
+) -> Result<String, Option<(u16, u32)>> {
     let top = o.name.clone().unwrap_or_else(|| shape.name.clone());
     let mut evs = vec![(3, String::new(), Info::None)];
     events(shape, base, 0, &top, o, &mut evs).map_err(Some)?;
     evs.push((4, String::new(), Info::None));
     let mut envb = vec![0u8; 20 * 16];
     for (i, a) in env_procs().iter().enumerate() {
-        put(&mut envb, i * 16, &mi::FatPtr::procedure(*a as u64).to_bytes());
+        put(
+            &mut envb,
+            i * 16,
+            &mi::FatPtr::procedure(*a as u64).to_bytes(),
+        );
     }
     let (env_r, env_p) = Region::new(j, envb);
     let (h_r, h_p) = Region::new(j, vec![0; 16]);
@@ -423,7 +614,13 @@ fn generate(j: &mut mi::Job, c: &Callee, shape: &Node, base: u64, o: &Options, u
         let mut value_r = None;
         match info {
             Info::None => {}
-            Info::Ds { elem, total, subs, num, .. } => {
+            Info::Ds {
+                elem,
+                total,
+                subs,
+                num,
+                ..
+            } => {
                 put_u32(b, at::INFO, *elem);
                 put_u32(b, at::INFO + 4, *total);
                 put_u32(b, at::INFO + 8, *subs);
@@ -436,14 +633,26 @@ fn generate(j: &mut mi::Job, c: &Callee, shape: &Node, base: u64, o: &Options, u
                 put_u32(b, at::INFO + 4, *subs);
                 put_u32(b, at::INFO + 8, *num);
             }
-            Info::Scalar { elem, total, num, node, text } => {
+            Info::Scalar {
+                elem,
+                total,
+                num,
+                node,
+                text,
+            } => {
                 put_u32(b, at::INFO, *elem);
                 put_u32(b, at::INFO + 4, *total);
-                put_u32(b, at::INFO + 8, if node.dtype == 1 { 37 } else { node.ccsid });
+                put_u32(
+                    b,
+                    at::INFO + 8,
+                    if node.dtype == 1 { 37 } else { node.ccsid },
+                );
                 put_u32(b, at::INFO + 12, *num);
                 b[at::INFO + 16] = node.dtype;
                 b[at::INFO + 17] = node.dtz;
-                b[at::INFO + 18] = node.sep.map_or(0, |c| crate::value::ebcdic(&c.to_string())[0]);
+                b[at::INFO + 18] = node
+                    .sep
+                    .map_or(0, |c| crate::value::ebcdic(&c.to_string())[0]);
                 // Every value goes in UTF-16.
                 let data: Vec<u8> = text.encode_utf16().flat_map(u16::to_be_bytes).collect();
                 let (ccsid, chars) = (1200u32, data.len() / 2);
@@ -498,7 +707,10 @@ fn generate(j: &mut mi::Job, c: &Callee, shape: &Node, base: u64, o: &Options, u
         });
     }
     let run = RUNS.with(|r| r.borrow_mut().pop());
-    for r in [Some(env_r), Some(h_r), Some(parm), up_r].into_iter().flatten() {
+    for r in [Some(env_r), Some(h_r), Some(parm), up_r]
+        .into_iter()
+        .flatten()
+    {
         r.drop_in(j);
     }
     result?;
@@ -528,7 +740,9 @@ pub extern "sysv64" fn data_gen(
     let text = crate::xml::varchar_at(shp);
     let recs: Vec<&str> = text.split(';').filter(|r| !r.is_empty()).collect();
     let mut i = 0;
-    let Some(shape) = read_shape(&recs, &mut i) else { return };
+    let Some(shape) = read_shape(&recs, &mut i) else {
+        return;
+    };
     let o = match options(&crate::xml::text_of(opts, optd)) {
         Ok(o) => o,
         Err((s, r)) => {
@@ -598,20 +812,41 @@ fn json_string(s: &str) -> String {
 }
 
 fn xml_text(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 /// One event of a shipped generator.
 pub fn shipped_generator(j: &mut mi::Job, args: &[u64], style: Style) {
     let Some(&parm) = args.first() else { return };
     let b = crate::value::bytes(parm, PARM_LEN).to_vec();
-    let event = u32::from_be_bytes([b[at::EVENT], b[at::EVENT + 1], b[at::EVENT + 2], b[at::EVENT + 3]]);
-    let n = u32::from_be_bytes([b[at::NAME], b[at::NAME + 1], b[at::NAME + 2], b[at::NAME + 3]]) as usize;
+    let event = u32::from_be_bytes([
+        b[at::EVENT],
+        b[at::EVENT + 1],
+        b[at::EVENT + 2],
+        b[at::EVENT + 3],
+    ]);
+    let n = u32::from_be_bytes([
+        b[at::NAME],
+        b[at::NAME + 1],
+        b[at::NAME + 2],
+        b[at::NAME + 3],
+    ]) as usize;
     let name = decode(1200, &b[at::NAME + 4..at::NAME + 4 + 2 * n.min(4096)]);
     let value = || -> (u8, String) {
         let dtype = b[at::INFO + 16];
-        let len = u32::from_be_bytes([b[at::INFO + 44], b[at::INFO + 45], b[at::INFO + 46], b[at::INFO + 47]]) as usize;
-        let p = mi::FatPtr::from_bytes(&b[at::INFO + 64..at::INFO + 80].try_into().unwrap_or([0; 16]));
+        let len = u32::from_be_bytes([
+            b[at::INFO + 44],
+            b[at::INFO + 45],
+            b[at::INFO + 46],
+            b[at::INFO + 47],
+        ]) as usize;
+        let p = mi::FatPtr::from_bytes(
+            &b[at::INFO + 64..at::INFO + 80]
+                .try_into()
+                .unwrap_or([0; 16]),
+        );
         let text = match j.spaces.deref(p) {
             Ok(a) if a != 0 => decode(1200, crate::value::bytes(a, len)),
             _ => String::new(),

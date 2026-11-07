@@ -27,11 +27,18 @@ use crate::console::host::Host;
 const BUFFER: usize = 32_767;
 
 fn text(v: &Value) -> String {
-    v.source().trim().trim_matches('\'').trim().to_ascii_uppercase()
+    v.source()
+        .trim()
+        .trim_matches('\'')
+        .trim()
+        .to_ascii_uppercase()
 }
 
 fn parm(r: &Resolved, kwd: &str) -> String {
-    r.get(kwd).and_then(|b| b.value.as_ref()).map(text).unwrap_or_default()
+    r.get(kwd)
+        .and_then(|b| b.value.as_ref())
+        .map(text)
+        .unwrap_or_default()
 }
 
 fn given(r: &Resolved, kwd: &str) -> bool {
@@ -42,7 +49,10 @@ fn qual(r: &Resolved, kwd: &str) -> (String, String) {
     match r.get(kwd).and_then(|b| b.value.as_ref()) {
         Some(Value::Qual(p)) => (
             p.first().map(text).unwrap_or_default(),
-            p.get(1).map(text).filter(|l| !l.is_empty()).unwrap_or_else(|| "*LIBL".into()),
+            p.get(1)
+                .map(text)
+                .filter(|l| !l.is_empty())
+                .unwrap_or_else(|| "*LIBL".into()),
         ),
         Some(v) => (text(v), "*LIBL".into()),
         None => (String::new(), "*LIBL".into()),
@@ -52,7 +62,11 @@ fn qual(r: &Resolved, kwd: &str) -> (String, String) {
 /// The values of a list parameter, each as its first element.
 fn firsts(r: &Resolved, kwd: &str) -> Vec<String> {
     let first = |v: &Value| match v {
-        Value::Elems(e) => e.first().and_then(Option::as_ref).map(text).unwrap_or_default(),
+        Value::Elems(e) => e
+            .first()
+            .and_then(Option::as_ref)
+            .map(text)
+            .unwrap_or_default(),
         Value::Qual(p) => {
             let n = p.first().map(text).unwrap_or_default();
             match p.get(1).map(text).filter(|l| !l.is_empty() && l != "*LIBL") {
@@ -82,7 +96,20 @@ fn unsupported(r: &Resolved) -> Option<Fail> {
     if !(fmt.is_empty() || fmt == "*TYPE1") {
         return refuse("ENTFMT");
     }
-    for k in ["OBJ", "OBJPATH", "PATTERN", "FROMTIME", "TOTIME", "FROMENTLRG", "TOENTLRG", "CCIDLRG", "CMTCYCID", "PGM", "USRPRF", "NULLINDLEN"] {
+    for k in [
+        "OBJ",
+        "OBJPATH",
+        "PATTERN",
+        "FROMTIME",
+        "TOTIME",
+        "FROMENTLRG",
+        "TOENTLRG",
+        "CCIDLRG",
+        "CMTCYCID",
+        "PGM",
+        "USRPRF",
+        "NULLINDLEN",
+    ] {
         if given(r, k) {
             return refuse(k);
         }
@@ -106,11 +133,17 @@ fn filter(r: &Resolved, jrn: &str, from: u64, to: Option<u64>) -> String {
     if let Some(f) = files.first().filter(|f| !f.is_empty() && *f != "*ALLFILE") {
         let _ = write!(line, " FILE({f})");
     }
-    let codes: Vec<String> = firsts(r, "JRNCDE").into_iter().filter(|c| !c.starts_with('*')).collect();
+    let codes: Vec<String> = firsts(r, "JRNCDE")
+        .into_iter()
+        .filter(|c| !c.starts_with('*'))
+        .collect();
     if !codes.is_empty() {
         let _ = write!(line, " JRNCDE({})", codes.join(" "));
     }
-    let types: Vec<String> = firsts(r, "ENTTYP").into_iter().filter(|t| !t.starts_with('*')).collect();
+    let types: Vec<String> = firsts(r, "ENTTYP")
+        .into_iter()
+        .filter(|t| !t.starts_with('*'))
+        .collect();
     if !types.is_empty() {
         let _ = write!(line, " ENTTYP({})", types.join(" "));
     } else if firsts(r, "ENTTYP").iter().any(|t| t == "*RCD" || t == "*R") {
@@ -146,13 +179,22 @@ fn entries(host: &Host, line: &str) -> Result<(Vec<Vec<u8>>, u64), Fail> {
         .into_iter()
         .filter(|(n, _)| n == "ENTRIES")
         .flat_map(|(_, rows)| rows)
-        .filter_map(|row| row.into_iter().find(|(k, _)| k == "REC").map(|(_, v)| unhex(&v)))
+        .filter_map(|row| {
+            row.into_iter()
+                .find(|(k, _)| k == "REC")
+                .map(|(_, v)| unhex(&v))
+        })
         .collect();
     Ok((recs, last))
 }
 
 /// Call the exit program; whether it asked to end (`9`).
-fn call(job: &mut Job, (pgm, lib): (&str, &str), entry: Option<&[u8]>, more: bool) -> Result<bool, Fail> {
+fn call(
+    job: &mut Job,
+    (pgm, lib): (&str, &str),
+    entry: Option<&[u8]>,
+    more: bool,
+) -> Result<bool, Fail> {
     let mut buf = vec![0x40u8; BUFFER];
     if let Some(e) = entry {
         let n = e.len().min(BUFFER - 5);
@@ -183,7 +225,11 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
         return Err(f);
     }
     let (jname, jlib) = qual(r, "JRN");
-    let jrn = if jlib == "*LIBL" { jname.clone() } else { format!("{jlib}/{jname}") };
+    let jrn = if jlib == "*LIBL" {
+        jname.clone()
+    } else {
+        format!("{jlib}/{jname}")
+    };
     let (pname, plib) = qual(r, "EXITPGM");
     let limit: Option<usize> = match parm(r, "NBRENT").as_str() {
         "*ALL" | "" | "0" => None,

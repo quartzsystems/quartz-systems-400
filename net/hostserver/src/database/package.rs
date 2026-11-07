@@ -41,15 +41,25 @@ pub fn sqlda(cols: &[ColType], markers: bool) -> Vec<u8> {
     b.extend(n.to_be_bytes());
     for (i, c) in cols.iter().enumerate() {
         let len = match c.base {
-            sqltype::DECIMAL | sqltype::NUMERIC => u32::from(c.precision) * 256 + u32::from(c.scale),
-            sqltype::CHAR | sqltype::VARCHAR | sqltype::LONGVARCHAR | sqltype::GRAPHIC | sqltype::VARGRAPHIC => u32::from(c.scale),
+            sqltype::DECIMAL | sqltype::NUMERIC => {
+                u32::from(c.precision) * 256 + u32::from(c.scale)
+            }
+            sqltype::CHAR
+            | sqltype::VARCHAR
+            | sqltype::LONGVARCHAR
+            | sqltype::GRAPHIC
+            | sqltype::VARGRAPHIC => u32::from(c.scale),
             _ => c.len,
         };
         b.extend((c.base | u16::from(c.null)).to_be_bytes());
         b.extend(u16::try_from(len).unwrap_or(u16::MAX).to_be_bytes());
         b.extend([0u8; 44]);
         // A marker is named by its number, as the primary names it.
-        let name = if markers || c.name.is_empty() { format!("{:05}", i + 1) } else { c.name.clone() };
+        let name = if markers || c.name.is_empty() {
+            format!("{:05}", i + 1)
+        } else {
+            c.name.clone()
+        };
         let name: String = name.chars().take(30).collect();
         b.extend(u16::try_from(name.len()).unwrap_or(30).to_be_bytes());
         b.extend(text::ebcdic_fixed(&name, 30));
@@ -78,7 +88,13 @@ pub fn package_info(rows: &[Vec<Value>]) -> Vec<u8> {
     for s in stmts {
         let int = |i: usize| s.get(i).and_then(|v| v.as_i64().ok()).unwrap_or(0);
         let name = s.first().map(Value::as_text).unwrap_or_default();
-        let utf16: Vec<u8> = s.get(2).map(Value::as_text).unwrap_or_default().encode_utf16().flat_map(u16::to_be_bytes).collect();
+        let utf16: Vec<u8> = s
+            .get(2)
+            .map(Value::as_text)
+            .unwrap_or_default()
+            .encode_utf16()
+            .flat_map(u16::to_be_bytes)
+            .collect();
         let (cols, markers) = (bin(s.get(3)), bin(s.get(4)));
         entries.push(u8::try_from(int(5)).unwrap_or(0));
         entries.extend(u16::try_from(int(1)).unwrap_or(0).to_be_bytes());
@@ -123,7 +139,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     /// The package a request names: its 0x3804, and the library its
     /// 0x3801 gives or the package request last named.
     fn pkg_named(&self, params: &[Param]) -> Option<(String, String)> {
-        let name = params.iter().find(|p| p.cp == db_request::PACKAGE_NAME).map(db_text)?;
+        let name = params
+            .iter()
+            .find(|p| p.cp == db_request::PACKAGE_NAME)
+            .map(db_text)?;
         let lib = params
             .iter()
             .find(|p| p.cp == db_request::LIBRARY_NAME)
@@ -141,7 +160,14 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         self.package = Some((lib.clone(), name.clone()));
         let (ca, extra) = match r.function {
             hostsvr::database::id::CREATE_PACKAGE => {
-                let commit = if self.autocommit { 0 } else { [0, 2, 1, 3, 4].get(usize::from(self.commit)).copied().unwrap_or(0) };
+                let commit = if self.autocommit {
+                    0
+                } else {
+                    [0, 2, 1, 3, 4]
+                        .get(usize::from(self.commit))
+                        .copied()
+                        .unwrap_or(0)
+                };
                 let attrs = vec![
                     Value::int(0),
                     Value::int(i64::from(self.sql_naming)),
@@ -154,21 +180,38 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                     Value::Str(self.default_lib.clone()),
                     Value::Str(String::new()),
                 ];
-                (self.pkg_action("CREATE", &lib, &name, attrs).sqlca, Vec::new())
+                (
+                    self.pkg_action("CREATE", &lib, &name, attrs).sqlca,
+                    Vec::new(),
+                )
             }
             hostsvr::database::id::RETURN_PACKAGE => {
                 let rep = self.pkg_action("RETURN", &lib, &name, Vec::new());
                 if rep.sqlca.is_error() {
                     (rep.sqlca, Vec::new())
                 } else {
-                    self.pkg_stmts = rep.rows.iter().skip(1).map(|s| (s[0].as_text(), s[2].as_text())).collect();
-                    (Sqlca::default(), vec![Param::new(db_reply::PACKAGE_INFO, package_info(&rep.rows))])
+                    self.pkg_stmts = rep
+                        .rows
+                        .iter()
+                        .skip(1)
+                        .map(|s| (s[0].as_text(), s[2].as_text()))
+                        .collect();
+                    (
+                        Sqlca::default(),
+                        vec![Param::new(db_reply::PACKAGE_INFO, package_info(&rep.rows))],
+                    )
                 }
             }
-            hostsvr::database::id::CLEAR_PACKAGE => (self.pkg_action("CLEAR", &lib, &name, Vec::new()).sqlca, Vec::new()),
+            hostsvr::database::id::CLEAR_PACKAGE => (
+                self.pkg_action("CLEAR", &lib, &name, Vec::new()).sqlca,
+                Vec::new(),
+            ),
             _ => {
                 self.package = None;
-                (self.pkg_action("DELETE", &lib, &name, Vec::new()).sqlca, Vec::new())
+                (
+                    self.pkg_action("DELETE", &lib, &name, Vec::new()).sqlca,
+                    Vec::new(),
+                )
             }
         };
         self.finish(r, ca, extra)
@@ -177,7 +220,9 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     /// After a prepare that names the package: the second prepare of the
     /// same text on this connection puts the statement in it.
     pub(super) fn package_prepared(&mut self, rpb: &super::Rpb, params: &[Param]) {
-        let Some((lib, name)) = self.pkg_named(params) else { return };
+        let Some((lib, name)) = self.pkg_named(params) else {
+            return;
+        };
         let n = self.prepares.entry(rpb.text.clone()).or_insert(0);
         *n += 1;
         if *n != 2 {
@@ -208,14 +253,33 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         if !params.iter().any(|p| p.cp == db_request::PACKAGE_NAME) {
             return;
         }
-        let Some(stmt) = params.iter().find(|p| p.cp == db_request::STATEMENT_NAME).map(db_text) else { return };
-        let mut text = self.pkg_stmts.iter().find(|(n, _)| n.eq_ignore_ascii_case(&stmt)).map(|(_, t)| t.clone());
+        let Some(stmt) = params
+            .iter()
+            .find(|p| p.cp == db_request::STATEMENT_NAME)
+            .map(db_text)
+        else {
+            return;
+        };
+        let mut text = self
+            .pkg_stmts
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(&stmt))
+            .map(|(_, t)| t.clone());
         if text.is_none()
             && let Some((lib, name)) = self.pkg_named(params)
         {
             let rep = self.pkg_action("RETURN", &lib, &name, Vec::new());
-            self.pkg_stmts = rep.rows.iter().skip(1).map(|s| (s[0].as_text(), s[2].as_text())).collect();
-            text = self.pkg_stmts.iter().find(|(n, _)| n.eq_ignore_ascii_case(&stmt)).map(|(_, t)| t.clone());
+            self.pkg_stmts = rep
+                .rows
+                .iter()
+                .skip(1)
+                .map(|s| (s[0].as_text(), s[2].as_text()))
+                .collect();
+            text = self
+                .pkg_stmts
+                .iter()
+                .find(|(n, _)| n.eq_ignore_ascii_case(&stmt))
+                .map(|(_, t)| t.clone());
         }
         let Some(text) = text else { return };
         let rpb = self.rpb(r);
@@ -260,9 +324,15 @@ mod tests {
         assert_eq!(&b[24..26], &[0, 1]);
         let e = &b[42..106];
         assert_eq!(&e[..3], &[0, 0, 2]);
-        let words: Vec<u32> = e[40..].chunks(4).map(|c| u32::from_be_bytes([c[0], c[1], c[2], c[3]])).collect();
+        let words: Vec<u32> = e[40..]
+            .chunks(4)
+            .map(|c| u32::from_be_bytes([c[0], c[1], c[2], c[3]]))
+            .collect();
         assert_eq!(words, [0xE0, 0x60, 0x70, 0x70, 0x140, 0x60]);
-        assert_eq!(&b[0xE0 - 6..0xE0 - 6 + 8], text::ebcdic("SQLDA   ").as_slice());
+        assert_eq!(
+            &b[0xE0 - 6..0xE0 - 6 + 8],
+            text::ebcdic("SQLDA   ").as_slice()
+        );
         // The column's entry: INTEGER null-capable, 4 bytes, named N.
         assert_eq!(&b[0xE0 - 6 + 16..0xE0 - 6 + 20], &[0x01, 0xF1, 0, 4]);
         assert_eq!(&b[0x140 - 6 + 64..0x140 - 6 + 66], &[0, 5]);

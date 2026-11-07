@@ -625,7 +625,9 @@ impl ObjectHeader {
             auth_gen: get_u64(body, OFF_AUTH_GEN),
             save: SaveInfo::decode(&body[OFF_SAVE..OFF_SAVE + 76]),
             signature: (get_u32(body, OFF_SIGNATURE + 72) & 1 != 0).then(|| Signature {
-                bytes: body[OFF_SIGNATURE..OFF_SIGNATURE + 64].try_into().expect("64"),
+                bytes: body[OFF_SIGNATURE..OFF_SIGNATURE + 64]
+                    .try_into()
+                    .expect("64"),
                 key_id: body[OFF_SIGNATURE + 64..OFF_SIGNATURE + 72]
                     .try_into()
                     .expect("8"),
@@ -713,7 +715,12 @@ mod tests {
         let mut v3 = body.clone();
         v3[OFF_VERSION..OFF_VERSION + 4].copy_from_slice(&3u32.to_le_bytes());
         assert!(ObjectHeader::decode(&v3, 1).is_err());
-        h.sql = ObjectId { asp: 1, type_code: crate::obj::types::SQLINF, serial: 9, generation: 0 };
+        h.sql = ObjectId {
+            asp: 1,
+            type_code: crate::obj::types::SQLINF,
+            serial: 9,
+            generation: 0,
+        };
         h.encode(&mut body);
         assert_eq!(ObjectHeader::decode(&body, 1).unwrap().sql, h.sql);
         body[0] = 0;

@@ -222,7 +222,12 @@ impl CommitDef {
     /// the cycle ends, so no other job changes it meanwhile.
     pub fn lock_read(&mut self, member: ObjectId, rrn: u64) -> std::result::Result<(), Refused> {
         let who = Holder::new(self.job, self.owner);
-        if self.locks.lock().expect("lock table").lock_read(member, rrn, who)? {
+        if self
+            .locks
+            .lock()
+            .expect("lock table")
+            .lock_read(member, rrn, who)?
+        {
             self.reads.push((member, rrn));
         }
         Ok(())
@@ -330,7 +335,12 @@ impl CommitDef {
     /// the cycle's record locks held throughout. A cycle left part undone
     /// (a crash) is rolled back the rest of the way at the next IPL: the
     /// undoing entries are the cycle's, and undone in turn.
-    pub fn rollback_paused(&mut self, txn: &mut Txn<'_>, now: Option<u64>, pause: crate::Pause<'_>) -> Result<ChangeReport> {
+    pub fn rollback_paused(
+        &mut self,
+        txn: &mut Txn<'_>,
+        now: Option<u64>,
+        pause: crate::Pause<'_>,
+    ) -> Result<ChangeReport> {
         if self.cycle == 0 {
             self.release_locks();
             return Ok(ChangeReport::default());
@@ -358,7 +368,12 @@ impl CommitDef {
 
     /// `SAVEPOINT name [UNIQUE]`: one of the same name not `UNIQUE` is
     /// replaced.
-    pub fn set_savepoint(&mut self, txn: &mut Txn<'_>, name: &str, unique: bool) -> Result<SetSavepoint> {
+    pub fn set_savepoint(
+        &mut self,
+        txn: &mut Txn<'_>,
+        name: &str,
+        unique: bool,
+    ) -> Result<SetSavepoint> {
         if let Some(i) = self.savepoints.iter().position(|s| s.name == name) {
             if unique || self.savepoints[i].unique {
                 return Ok(SetSavepoint::Exists);
@@ -373,7 +388,11 @@ impl CommitDef {
     /// routine that calls itself): the names find the latest.
     pub fn nest_savepoint(&mut self, txn: &mut Txn<'_>, name: &str, unique: bool) -> Result<()> {
         let marks = self.marks(txn)?;
-        self.savepoints.push(Savepoint { name: name.to_string(), unique, marks });
+        self.savepoints.push(Savepoint {
+            name: name.to_string(),
+            unique,
+            marks,
+        });
         Ok(())
     }
 
@@ -462,7 +481,8 @@ impl CommitDef {
 /// earlier time than the changes it undid), the journals interleaved
 /// by time.
 fn merge(each: Vec<Vec<jrn::Entry>>) -> Vec<jrn::Entry> {
-    let mut lists: Vec<std::collections::VecDeque<jrn::Entry>> = each.into_iter().map(Into::into).collect();
+    let mut lists: Vec<std::collections::VecDeque<jrn::Entry>> =
+        each.into_iter().map(Into::into).collect();
     let mut out = Vec::new();
     loop {
         let next = lists

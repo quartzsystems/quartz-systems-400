@@ -269,7 +269,13 @@ impl Flow<'_> {
         }
     }
 
-    fn chars(&self, spans: &[Span], (attr, link): (Attr, usize), out: &mut Vec<Ch>, links: &mut Vec<String>) {
+    fn chars(
+        &self,
+        spans: &[Span],
+        (attr, link): (Attr, usize),
+        out: &mut Vec<Ch>,
+        links: &mut Vec<String>,
+    ) {
         for s in spans {
             match s {
                 Span::Text(t) => out.extend(t.chars().map(|c| (c, attr, link))),

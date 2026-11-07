@@ -89,7 +89,10 @@ const PARMS: &[(&str, &str)] = &[
 /// put the job in, with why.
 const NOT_HERE: &[(&str, &str)] = &[
     ("DSPDTA", "runs a DFU program; step 55 makes one"),
-    ("DSPMODSRC", "shows a program being debugged; it follows STRDBG here"),
+    (
+        "DSPMODSRC",
+        "shows a program being debugged; it follows STRDBG here",
+    ),
 ];
 
 /// Commands run in the debug session `STRDBG` starts, before `ENDDBG`.
@@ -185,7 +188,11 @@ fn setup(s: &mut Session) -> String {
     for line in SETUP {
         match s.command(line, CMD) {
             Ok(out) if out.lines().any(|l| l.trim_start().starts_with("CPF")) => {
-                let _ = writeln!(failed, "  {line}: {}", out.lines().next().unwrap_or("").trim());
+                let _ = writeln!(
+                    failed,
+                    "  {line}: {}",
+                    out.lines().next().unwrap_or("").trim()
+                );
             }
             Ok(_) => {}
             Err(e) => {
@@ -200,16 +207,31 @@ fn setup(s: &mut Session) -> String {
             .find(|l| l.starts_with("CMN") && l.contains("Ethernet port"))
             .and_then(|l| l.split_whitespace().next())
     {
-        let _ = s.command(&format!("CRTLINETH LIND(Q82ETH) RSRCNAME({port}) ONLINE(*NO)"), CMD);
+        let _ = s.command(
+            &format!("CRTLINETH LIND(Q82ETH) RSRCNAME({port}) ONLINE(*NO)"),
+            CMD,
+        );
     }
     // A printer file source for RLU.
-    if crate::qir::qemu::push(s, "Q82RLUSRC", "     A          R LINE1\n     A                                  2'Step 82'\n").is_ok() {
-        let _ = s.command("svc.srcput Q82LIB/QDDSSRC Q82RLU SRCTYPE(PRTF) FROMSTMF(Q82RLUSRC)", CMD);
+    if crate::qir::qemu::push(
+        s,
+        "Q82RLUSRC",
+        "     A          R LINE1\n     A                                  2'Step 82'\n",
+    )
+    .is_ok()
+    {
+        let _ = s.command(
+            "svc.srcput Q82LIB/QDDSSRC Q82RLU SRCTYPE(PRTF) FROMSTMF(Q82RLUSRC)",
+            CMD,
+        );
     }
     // A stream file, and the module and programs.
     let _ = s.command("svc.ifs put /q82.txt Step 82 stream file", CMD);
     if crate::qir::qemu::push(s, "Q82SRC", MODULE_SRC).is_ok() {
-        let _ = s.command("svc.srcput Q82LIB/QCLSRC Q82MOD SRCTYPE(CLLE) FROMSTMF(Q82SRC)", CMD);
+        let _ = s.command(
+            "svc.srcput Q82LIB/QCLSRC Q82MOD SRCTYPE(CLLE) FROMSTMF(Q82SRC)",
+            CMD,
+        );
         for line in [
             "crtclmod MODULE(Q82LIB/Q82MOD) SRCFILE(Q82LIB/QCLSRC) DBGVIEW(*SOURCE)",
             "crtpgm PGM(Q82LIB/Q82PGM) MODULE(Q82LIB/Q82MOD)",
@@ -219,7 +241,11 @@ fn setup(s: &mut Session) -> String {
             if let Ok(out) = s.command(line, CMD)
                 && out.contains("CPF")
             {
-                let _ = writeln!(failed, "  {line}: {}", out.lines().next().unwrap_or("").trim());
+                let _ = writeln!(
+                    failed,
+                    "  {line}: {}",
+                    out.lines().next().unwrap_or("").trim()
+                );
             }
         }
     }
@@ -266,7 +292,9 @@ fn to_main(d: &mut tn5250_driver::session::Session, ctx: &mut Context) -> Result
             "key f3\n"
         };
         // Done when the menu or the sign-on shows, or another display.
-        press(d, ctx, keys, &|d, before| at_main(d) || signed_off(d) || screen(d) != before)?;
+        press(d, ctx, keys, &|d, before| {
+            at_main(d) || signed_off(d) || screen(d) != before
+        })?;
     }
     Ok(at_main(d))
 }
@@ -308,11 +336,16 @@ impl Suite {
                            name: &str,
                            failures: &mut Vec<String>|
          -> Result<(), String> {
-            let parms = PARMS.iter().find(|(n, _)| *n == name).map_or("", |(_, p)| *p);
+            let parms = PARMS
+                .iter()
+                .find(|(n, _)| *n == name)
+                .map_or("", |(_, p)| *p);
             let line = format!("{name} {parms}");
             run(d, ctx, &format!("type \"{}\"\n", line.trim()))?;
             // Done when the menu is gone or its message line changed.
-            press(d, ctx, "key enter\n", &|d, _| row(d, 1) != main_title || row(d, 24) != main_24)?;
+            press(d, ctx, "key enter\n", &|d, _| {
+                row(d, 1) != main_title || row(d, 24) != main_24
+            })?;
             let title = row(d, 1);
             let shown = screen(d);
             let fail = if at_main(d) || title == main_title {
@@ -349,7 +382,11 @@ impl Suite {
                 }
             }
             if ended {
-                run(d, ctx, &format!("signon QSECOFR {SECOFR_PASSWORD}\nwait \"Main Menu\"\n"))?;
+                run(
+                    d,
+                    ctx,
+                    &format!("signon QSECOFR {SECOFR_PASSWORD}\nwait \"Main Menu\"\n"),
+                )?;
             }
             if !at_main(d) {
                 // A display with no way out: a new session goes on.
@@ -371,7 +408,11 @@ impl Suite {
             try_one(&mut d, &mut ctx, name, &mut failures)?;
         }
         // The debugger's displays, inside a debug session.
-        run(&mut d, &mut ctx, "type \"STRDBG PGM(Q82LIB/Q82PGM) UPDPROD(*YES)\"\nkey enter\nsettle 2000\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type \"STRDBG PGM(Q82LIB/Q82PGM) UPDPROD(*YES)\"\nkey enter\nsettle 2000\n",
+        )?;
         to_main(&mut d, &mut ctx)?;
         for name in IN_DEBUG {
             try_one(&mut d, &mut ctx, name, &mut failures)?;
@@ -379,7 +420,10 @@ impl Suite {
         run(&mut d, &mut ctx, "type ENDDBG\nkey enter\nsettle 1000\n")?;
         d.disconnect();
 
-        let mut detail = format!("{} display commands from MAIN", names.len() + IN_DEBUG.len());
+        let mut detail = format!(
+            "{} display commands from MAIN",
+            names.len() + IN_DEBUG.len()
+        );
         for (n, why) in NOT_HERE {
             let _ = write!(detail, "; {n} not run ({why})");
         }

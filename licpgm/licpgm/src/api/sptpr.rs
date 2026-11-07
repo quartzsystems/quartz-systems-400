@@ -32,8 +32,7 @@ pub fn qszsptpr(
         _ => return Err(ApiError::new("CPF3C1D")),
     };
     let pid = char_at(info, 0, 7);
-    let product = ProductId::input(&pid)
-        .map_err(|_| ApiError::new("CPF0C1F").text(&pid, 7))?;
+    let product = ProductId::input(&pid).map_err(|_| ApiError::new("CPF0C1F").text(&pid, 7))?;
     let rs = char_at(info, 7, 6);
     let release = id::parse_release(&rs).map_err(|_| ApiError::new("CPF0C1D").text(&rs, 6))?;
     let os = char_at(info, 13, 4);

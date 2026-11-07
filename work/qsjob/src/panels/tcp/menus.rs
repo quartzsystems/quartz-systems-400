@@ -14,7 +14,13 @@ use crate::display::surface::Surface;
 use crate::display::uim::{CMDLINE_VAR, Response, UimDialog};
 
 /// What a `RETURN n` option of a menu does.
-type Options<'a> = &'a mut dyn FnMut(&mut Job, &Host, &mut Surface, &mut UimDialog, u32) -> Result<Option<Left>, Fail>;
+type Options<'a> = &'a mut dyn FnMut(
+    &mut Job,
+    &Host,
+    &mut Surface,
+    &mut UimDialog,
+    u32,
+) -> Result<Option<Left>, Fail>;
 
 /// Show a menu panel until it is left; `on` runs its `RETURN` options.
 fn menu(
@@ -44,7 +50,11 @@ fn menu(
                     d.error("CPD9B86", &[]);
                 } else {
                     last.clone_from(&typed);
-                    d.set_message(exec(job, host, &format!("?{}", typed.trim_start_matches('?'))));
+                    d.set_message(exec(
+                        job,
+                        host,
+                        &format!("?{}", typed.trim_start_matches('?')),
+                    ));
                     d.set(CMDLINE_VAR, "");
                 }
             }
@@ -54,7 +64,8 @@ fn menu(
                 Some(Left::Cancel) | None => {}
             },
             Response::Print => d.error("CPD9B84", &[]),
-            Response::Return(_) | Response::Options(_) | Response::Menu(_) | Response::Panel(_) => {}
+            Response::Return(_) | Response::Options(_) | Response::Menu(_) | Response::Panel(_) => {
+            }
         }
     }
 }
@@ -62,38 +73,61 @@ fn menu(
 /// `CFGTCP`.
 pub fn cfgtcp(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, Fail> {
     let mut d = dialog(host, "QTOCCFG", false)?;
-    menu(job, host, surface, &mut d, "CFGTCP", &mut |job, host, surface, d, n| {
-        Ok(match n {
-            101 => Some(lists::ifcs(job, host, surface)?),
-            102 => Some(lists::rtes(job, host, surface)?),
-            104 => Some(lists::ports(job, host, surface)?),
-            110 => Some(lists::hosts(job, host, surface)?),
-            121 => {
-                let mut t = dialog(host, "QTOCCFG", false)?;
-                Some(menu(job, host, surface, &mut t, "CFGTBL", &mut |_, _, _, _, _| Ok(None))?)
-            }
-            123 => {
-                d.error("CPD9B81", &[]);
-                None
-            }
-            _ => None,
-        })
-    })
+    menu(
+        job,
+        host,
+        surface,
+        &mut d,
+        "CFGTCP",
+        &mut |job, host, surface, d, n| {
+            Ok(match n {
+                101 => Some(lists::ifcs(job, host, surface)?),
+                102 => Some(lists::rtes(job, host, surface)?),
+                104 => Some(lists::ports(job, host, surface)?),
+                110 => Some(lists::hosts(job, host, surface)?),
+                121 => {
+                    let mut t = dialog(host, "QTOCCFG", false)?;
+                    Some(menu(
+                        job,
+                        host,
+                        surface,
+                        &mut t,
+                        "CFGTBL",
+                        &mut |_, _, _, _, _| Ok(None),
+                    )?)
+                }
+                123 => {
+                    d.error("CPD9B81", &[]);
+                    None
+                }
+                _ => None,
+            })
+        },
+    )
 }
 
 /// `CFGTCPAPP` (`panel` CFGTCPAPP) or one application's menu.
 pub fn app(job: &mut Job, host: &Host, surface: &mut Surface, panel: &str) -> Result<Left, Fail> {
     let copyright = matches!(panel, "CFGSNMP" | "CFGTELN" | "CFGSMTP");
     let mut d = dialog(host, "QTOCAPP", copyright)?;
-    menu(job, host, surface, &mut d, panel, &mut |_, _, _, _, _| Ok(None))
+    menu(job, host, surface, &mut d, panel, &mut |_, _, _, _, _| {
+        Ok(None)
+    })
 }
 
 /// `CFGTCPPTP`: point-to-point needs PPP lines and modems, which this
 /// release does not have.
 pub fn ptp(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, Fail> {
     let mut d = dialog(host, "QTOCCFG", false)?;
-    menu(job, host, surface, &mut d, "CFGPTP", &mut |_, _, _, d, _| {
-        d.error("CPD9B81", &[]);
-        Ok(None)
-    })
+    menu(
+        job,
+        host,
+        surface,
+        &mut d,
+        "CFGPTP",
+        &mut |_, _, _, d, _| {
+            d.error("CPD9B81", &[]);
+            Ok(None)
+        },
+    )
 }

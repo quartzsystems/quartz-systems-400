@@ -73,7 +73,8 @@ pub fn handle(handler: &Arc<dyn Handler>, req: Request, peer: Peer) -> Result<Re
             let _ = done.send(Ok(resp));
         })
         .map_err(|e| format!("no thread for the request: {e}"))?;
-    rx.recv().unwrap_or_else(|_| Err("the request ended without an answer".into()))
+    rx.recv()
+        .unwrap_or_else(|_| Err("the request ended without an answer".into()))
 }
 
 /// The page a failed request gets.

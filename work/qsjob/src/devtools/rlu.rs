@@ -39,8 +39,12 @@ struct Session {
 pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let _ = out;
     let (file, lib) = qual(r, "SRCFILE");
-    let file = file.filter(|f| f != "*PRV").unwrap_or_else(|| "QDDSSRC".into());
-    let lib = lib.filter(|l| l != "*PRV").unwrap_or_else(|| "*LIBL".into());
+    let file = file
+        .filter(|f| f != "*PRV")
+        .unwrap_or_else(|| "QDDSSRC".into());
+    let lib = lib
+        .filter(|l| l != "*PRV")
+        .unwrap_or_else(|| "*LIBL".into());
     let member = parm(r, "SRCMBR")
         .filter(|m| m != "*PRV")
         .ok_or_else(|| Fail::new("CPD0071", "Name the source member to work with."))?;
@@ -71,7 +75,9 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         dds::prtf::PrtfDefinition::default()
     });
     let option = parm(r, "OPTION").unwrap_or_else(|| "2".into());
-    let text = parm(r, "TEXT").filter(|t| t != "*BLANK").unwrap_or_default();
+    let text = parm(r, "TEXT")
+        .filter(|t| t != "*BLANK")
+        .unwrap_or_default();
     let mut s = Session {
         lib: real,
         file,
@@ -144,7 +150,13 @@ fn shown(s: &Session, top: usize, from: usize) -> (Vec<ImageLine>, Vec<Option<us
     all.into_iter().skip(top).take(IMAGE_ROWS).unzip()
 }
 
-fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, mut message: Option<String>) {
+fn edit(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    s: &mut Session,
+    mut message: Option<String>,
+) {
     let mut top = 0usize;
     let mut from = 1usize;
     let mut key_set = 0usize;
@@ -166,7 +178,9 @@ fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, mut 
         // What was typed over the image, then the line commands.
         let mut commands = Vec::new();
         for (i, l) in lines.iter().enumerate() {
-            let Some(Some(at)) = index.get(i) else { continue };
+            let Some(Some(at)) = index.get(i) else {
+                continue;
+            };
             if let Some(t) = a.vars.get(&format!("L{i}"))
                 && t.trim_end() != l.text.trim_end()
             {
@@ -284,12 +298,19 @@ fn exit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> b
     v.insert("TEXT".into(), s.text.clone());
     let mut message: Option<String> = None;
     loop {
-        let screen = screen::exit(&|k| v.get(k).cloned().unwrap_or_default(), message.as_deref());
+        let screen = screen::exit(
+            &|k| v.get(k).cloned().unwrap_or_default(),
+            message.as_deref(),
+        );
         let Some(a) = show(surface, &screen) else {
             return true;
         };
         for (k, x) in &a.vars {
-            let x = if k == "TEXT" { x.trim().to_string() } else { x.trim().to_ascii_uppercase() };
+            let x = if k == "TEXT" {
+                x.trim().to_string()
+            } else {
+                x.trim().to_ascii_uppercase()
+            };
             v.insert(k.clone(), x);
         }
         match a.key {
@@ -325,7 +346,10 @@ fn exit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> b
                     );
                     let out = crate::command::run(job, host, &cmd);
                     if let Some(f) = out.escape {
-                        message = Some(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &f)));
+                        message = Some(crate::display::msgline::text_of(
+                            host,
+                            &crate::display::msgline::of_fail(host, &f),
+                        ));
                         continue;
                     }
                 }

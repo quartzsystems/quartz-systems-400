@@ -275,7 +275,10 @@ impl MemSys {
             Kind::Symlink(_) => "*SYMLNK".to_string(),
             Kind::Null => "*CHRSF".to_string(),
             Kind::Fifo => "*FIFO".to_string(),
-            Kind::Object(_) => up.rsplit('.').next().map_or("*OBJ".to_string(), |t| format!("*{t}")),
+            Kind::Object(_) => up
+                .rsplit('.')
+                .next()
+                .map_or("*OBJ".to_string(), |t| format!("*{t}")),
         };
         let ccsid = if qsys { "37" } else { "819" };
         let yes_no = |b: bool| if b { "YES" } else { "NO" }.to_string();
@@ -284,7 +287,10 @@ impl MemSys {
         m.insert("CCSID".to_string(), ccsid.to_string());
         m.insert("CODEPAGE".to_string(), ccsid.to_string());
         m.insert("DATA_SIZE".to_string(), st.size.to_string());
-        m.insert("ALLOC_SIZE".to_string(), (st.size.div_ceil(4096) * 4096).to_string());
+        m.insert(
+            "ALLOC_SIZE".to_string(),
+            (st.size.div_ceil(4096) * 4096).to_string(),
+        );
         m.insert("ASP".to_string(), "1".to_string());
         m.insert("ALWSAV".to_string(), yes_no(true));
         m.insert("PC_READ_ONLY".to_string(), yes_no(st.mode & 0o222 == 0));

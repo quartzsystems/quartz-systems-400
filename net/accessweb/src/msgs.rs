@@ -29,7 +29,13 @@ pub struct Desc {
     pub recovery: &'static str,
 }
 
-const fn d(id: &'static str, severity: u8, text: &'static str, cause: &'static str, recovery: &'static str) -> Desc {
+const fn d(
+    id: &'static str,
+    severity: u8,
+    text: &'static str,
+    cause: &'static str,
+    recovery: &'static str,
+) -> Desc {
     Desc {
         id,
         severity,
@@ -823,8 +829,16 @@ mod tests {
     #[test]
     fn table_is_well_formed() {
         for (i, m) in MESSAGES.iter().enumerate() {
-            assert!((m.id.starts_with("XWA") || m.id.starts_with("QAD")) && m.id.len() == 7, "{}", m.id);
-            assert!(MESSAGES[i + 1..].iter().all(|n| n.id != m.id), "{} twice", m.id);
+            assert!(
+                (m.id.starts_with("XWA") || m.id.starts_with("QAD")) && m.id.len() == 7,
+                "{}",
+                m.id
+            );
+            assert!(
+                MESSAGES[i + 1..].iter().all(|n| n.id != m.id),
+                "{} twice",
+                m.id
+            );
             assert!(m.text.ends_with('.'), "{}", m.id);
         }
         assert_eq!(

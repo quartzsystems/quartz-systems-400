@@ -40,12 +40,17 @@ impl LinuxGuest {
     /// Over the sysfs at `sys`.
     #[must_use]
     pub fn new(sys: &Path) -> Self {
-        Self { sys: sys.to_path_buf() }
+        Self {
+            sys: sys.to_path_buf(),
+        }
     }
 }
 
 fn mac_text(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect::<Vec<_>>().join(":")
+    b.iter()
+        .map(|x| format!("{x:02x}"))
+        .collect::<Vec<_>>()
+        .join(":")
 }
 
 impl Guest for LinuxGuest {
@@ -63,7 +68,9 @@ impl Guest for LinuxGuest {
     }
 
     fn interfaces(&mut self) -> Vec<Interface> {
-        let Ok(mut nl) = Rtnl::open() else { return Vec::new() };
+        let Ok(mut nl) = Rtnl::open() else {
+            return Vec::new();
+        };
         let links = nl.links().unwrap_or_default();
         let addrs = nl.addresses(None).unwrap_or_default();
         links
@@ -80,7 +87,11 @@ impl Guest for LinuxGuest {
                             prefix: a.prefix,
                         })
                         .collect(),
-                    mac: if l.mac.iter().all(|b| *b == 0) && !l.is_loopback() { String::new() } else { mac_text(&l.mac) },
+                    mac: if l.mac.iter().all(|b| *b == 0) && !l.is_loopback() {
+                        String::new()
+                    } else {
+                        mac_text(&l.mac)
+                    },
                     name: l.name,
                     stats: [
                         s.rx_bytes,
@@ -124,7 +135,8 @@ impl Guest for LinuxGuest {
             rd.filter_map(Result::ok)
                 .filter(|e| {
                     let n = e.file_name().to_string_lossy().into_owned();
-                    n.strip_prefix("cpu").is_some_and(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_digit()))
+                    n.strip_prefix("cpu")
+                        .is_some_and(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_digit()))
                 })
                 .count()
                 .max(1)
@@ -138,10 +150,18 @@ impl Guest for LinuxGuest {
     fn stop(&mut self, how: Stop) -> Result<(), String> {
         let s = self.status();
         if s.state != "complete" {
-            return Err(format!("The system cannot power down now (state {})", if s.state.is_empty() { "unknown" } else { &s.state }));
+            return Err(format!(
+                "The system cannot power down now (state {})",
+                if s.state.is_empty() {
+                    "unknown"
+                } else {
+                    &s.state
+                }
+            ));
         }
         let restart = u8::from(how == Stop::Restart);
-        std::fs::write(POWER_REQUEST, format!("0 {DELAY} {restart} 0\n")).map_err(|e| e.to_string())?;
+        std::fs::write(POWER_REQUEST, format!("0 {DELAY} {restart} 0\n"))
+            .map_err(|e| e.to_string())?;
         rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1)
             .map_err(|e| e.to_string())
     }
@@ -151,7 +171,10 @@ impl Guest for LinuxGuest {
 type Shared = Arc<Mutex<Agent<LinuxGuest>>>;
 
 fn answer(agent: &Shared, input: &[u8]) -> Vec<u8> {
-    agent.lock().unwrap_or_else(PoisonError::into_inner).feed(input)
+    agent
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .feed(input)
 }
 
 /// Serve the virtio-serial port `/dev/<node>`. A read of nothing means
@@ -200,7 +223,10 @@ fn serve_vsock(agent: &Shared, port: u32) {
             // Facts are read fresh; the shared agent keeps the stop.
             let out = own.feed(&buf[..n]);
             if let Some(how) = own.stopping.take() {
-                agent.lock().unwrap_or_else(PoisonError::into_inner).stopping = Some(how);
+                agent
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .stopping = Some(how);
             }
             if !out.is_empty() && f.write_all(&out).is_err() {
                 break;

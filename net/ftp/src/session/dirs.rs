@@ -38,7 +38,8 @@ impl<H: Host> Session<H> {
         if self.namefmt == 1 || arg.starts_with('/') {
             return Ok(Self::canonical(&names::join(&self.cwd, arg, &self.home())));
         }
-        let n = names::parse_lib_name(arg).ok_or_else(|| Reply::new(501, format!("{arg} is not a name in format 0.")))?;
+        let n = names::parse_lib_name(arg)
+            .ok_or_else(|| Reply::new(501, format!("{arg} is not a name in format 0.")))?;
         Ok(self.lib_name_path(&n))
     }
 
@@ -49,11 +50,16 @@ impl<H: Host> Session<H> {
         if self.namefmt == 1 || arg.starts_with('/') {
             return self.object_path(arg);
         }
-        let n = names::parse_lib_name(arg).ok_or_else(|| Reply::new(501, format!("{arg} is not a name in format 0.")))?;
+        let n = names::parse_lib_name(arg)
+            .ok_or_else(|| Reply::new(501, format!("{arg} is not a name in format 0.")))?;
         if n.mbr.is_some() {
             return Ok(self.lib_name_path(&n));
         }
-        let lib = n.lib.clone().or_else(|| self.curlib()).unwrap_or_else(|| "QGPL".into());
+        let lib = n
+            .lib
+            .clone()
+            .or_else(|| self.curlib())
+            .unwrap_or_else(|| "QGPL".into());
         let savf = objects::savf_path(&lib, &n.file);
         if objects::exists(self.host.ifs(), &savf) {
             return Ok(savf);
@@ -65,7 +71,11 @@ impl<H: Host> Session<H> {
     /// given, the file's name as the member when none is given (a save
     /// file of that name is the save file).
     pub(super) fn lib_name_path(&mut self, n: &LibName) -> String {
-        let lib = n.lib.clone().or_else(|| self.curlib()).unwrap_or_else(|| "QGPL".into());
+        let lib = n
+            .lib
+            .clone()
+            .or_else(|| self.curlib())
+            .unwrap_or_else(|| "QGPL".into());
         if let Some(m) = &n.mbr {
             objects::member_path(&lib, &n.file, m)
         } else {
@@ -127,7 +137,10 @@ impl<H: Host> Session<H> {
                 }
                 Reply::new(250, self.place_text())
             }
-            Ok(_) => not_changed(&format!("{} is not a directory or library.", describe(&path))),
+            Ok(_) => not_changed(&format!(
+                "{} is not a directory or library.",
+                describe(&path)
+            )),
             Err(e) => not_changed(&format!(
                 "{} cannot be used: {}.",
                 if lib0 { describe(&path) } else { path.clone() },
@@ -176,7 +189,10 @@ impl<H: Host> Session<H> {
         }
         let path = self.dir_path(arg);
         if let Some(QsysNode::Mbr(..)) = names::qsys_node(&path) {
-            return Reply::new(550, "A member cannot be the current library; nothing changed.");
+            return Reply::new(
+                550,
+                "A member cannot be the current library; nothing changed.",
+            );
         }
         self.change_to(path, net)
     }
@@ -194,7 +210,10 @@ impl<H: Host> Session<H> {
             return Reply::new(501, format!("A library name cannot hold ({c})."));
         }
         if lib.chars().count() > 10 {
-            return Reply::new(501, format!("{lib} is longer than the ten characters of a name."));
+            return Reply::new(
+                501,
+                format!("{lib} is longer than the ten characters of a name."),
+            );
         }
         if lib.contains('.') {
             return Reply::lines(
@@ -240,10 +259,16 @@ impl<H: Host> Session<H> {
             return Reply::new(550, format!("An exit program refused to create {path}."));
         }
         if objects::exists(self.host.ifs(), &path) {
-            return Reply::new(550, format!("{} exists already; nothing was created.", describe(&path)));
+            return Reply::new(
+                550,
+                format!("{} exists already; nothing was created.", describe(&path)),
+            );
         }
         let made = match names::qsys_node(&path) {
-            Some(QsysNode::Lib(l)) => self.host.command(&format!("CRTLIB LIB({l})")).map_err(|e| e.text),
+            Some(QsysNode::Lib(l)) => self
+                .host
+                .command(&format!("CRTLIB LIB({l})"))
+                .map_err(|e| e.text),
             Some(_) => return Reply::new(501, "Only a library can be made in /QSYS.LIB."),
             None => self.host.ifs().mkdir(&path, 0o777).map_err(errno_text),
         };
@@ -269,10 +294,14 @@ impl<H: Host> Session<H> {
             return Reply::new(550, format!("An exit program refused to delete {path}."));
         }
         let gone = match names::qsys_node(&path) {
-            Some(QsysNode::Lib(l)) => self.host.command(&format!("DLTLIB LIB({l})")).map_err(|e| e.text),
-            Some(QsysNode::Obj(l, f, t)) if t == "*FILE" => {
-                self.host.command(&format!("DLTF FILE({l}/{f})")).map_err(|e| e.text)
-            }
+            Some(QsysNode::Lib(l)) => self
+                .host
+                .command(&format!("DLTLIB LIB({l})"))
+                .map_err(|e| e.text),
+            Some(QsysNode::Obj(l, f, t)) if t == "*FILE" => self
+                .host
+                .command(&format!("DLTF FILE({l}/{f})"))
+                .map_err(|e| e.text),
             Some(_) => Err("it is not a directory".into()),
             None => match objects::look(self.host.ifs(), &path) {
                 Ok((Kind::Dir, _)) => self.host.ifs().rmdir(&path).map_err(errno_text),
@@ -292,12 +321,16 @@ impl<H: Host> Session<H> {
             Err(r) => return r,
         };
         if !self.allowed(net, op::DELETE_FILE, &path) {
-            return Reply::new(550, format!("An exit program refused to delete {}.", describe(&path)));
+            return Reply::new(
+                550,
+                format!("An exit program refused to delete {}.", describe(&path)),
+            );
         }
         let gone = match objects::look(self.host.ifs(), &path) {
-            Ok((Kind::File(l, f) | Kind::Savf(l, f), _)) => {
-                self.host.command(&format!("DLTF FILE({l}/{f})")).map_err(|e| e.text)
-            }
+            Ok((Kind::File(l, f) | Kind::Savf(l, f), _)) => self
+                .host
+                .command(&format!("DLTF FILE({l}/{f})"))
+                .map_err(|e| e.text),
             Ok((k, _)) if k.is_dir() => Err("it is a directory".to_string()),
             Ok(_) => self.host.ifs().unlink(&path).map_err(errno_text),
             Err(e) => Err(errno_text(e)),
@@ -314,10 +347,16 @@ impl<H: Host> Session<H> {
             Err(r) => return r,
         };
         if !self.allowed(net, op::RENAME, &path) {
-            return Reply::new(550, format!("An exit program refused to rename {}.", describe(&path)));
+            return Reply::new(
+                550,
+                format!("An exit program refused to rename {}.", describe(&path)),
+            );
         }
         if let Err(e) = self.host.ifs().stat(&path, false) {
-            return Reply::new(550, format!("{} cannot be renamed: {}.", describe(&path), errno_text(e)));
+            return Reply::new(
+                550,
+                format!("{} cannot be renamed: {}.", describe(&path), errno_text(e)),
+            );
         }
         let shown = describe(&path);
         self.rnfr = Some(path);
@@ -329,15 +368,23 @@ impl<H: Host> Session<H> {
         let Some(from) = from else {
             return Reply::new(503, "Send RNFR first.");
         };
-        let to = match (names::qsys_node(&from), self.namefmt, arg.trim().starts_with('/')) {
+        let to = match (
+            names::qsys_node(&from),
+            self.namefmt,
+            arg.trim().starts_with('/'),
+        ) {
             // In format 0 a bare new name stays in the same file.
             (Some(QsysNode::Mbr(l, f, _)), 0, false) => match names::parse_lib_name(arg) {
-                Some(n) if n.lib.is_none() && n.mbr.is_none() => objects::member_path(&l, &f, &n.file),
+                Some(n) if n.lib.is_none() && n.mbr.is_none() => {
+                    objects::member_path(&l, &f, &n.file)
+                }
                 Some(n) => {
                     let lib = n.lib.clone().unwrap_or(l);
                     objects::member_path(&lib, &n.file, n.mbr.as_deref().unwrap_or(&n.file))
                 }
-                None => return Reply::new(550, format!("{} is not a name in format 0.", arg.trim())),
+                None => {
+                    return Reply::new(550, format!("{} is not a name in format 0.", arg.trim()));
+                }
             },
             _ => match self.file_or_member_path(arg) {
                 Ok(p) => p,
@@ -373,10 +420,17 @@ impl<H: Host> Session<H> {
             (Some(QsysNode::Mbr(..) | QsysNode::Obj(..)), None) => {
                 Err("a library object cannot be moved out of /QSYS.LIB".into())
             }
-            _ => self.host.ifs().rename(&from, &to, RenameMode::Keep).map_err(errno_text),
+            _ => self
+                .host
+                .ifs()
+                .rename(&from, &to, RenameMode::Keep)
+                .map_err(errno_text),
         };
         match done {
-            Ok(()) => Reply::new(250, format!("Renamed {} to {}.", describe(&from), describe(&to))),
+            Ok(()) => Reply::new(
+                250,
+                format!("Renamed {} to {}.", describe(&from), describe(&to)),
+            ),
             Err(e) => Reply::new(550, format!("{} not renamed: {e}.", describe(&from))),
         }
     }

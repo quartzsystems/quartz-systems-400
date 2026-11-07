@@ -22,7 +22,14 @@ pub fn current_register(t: &DataType) -> Option<Register> {
 }
 
 fn not_fit(c: &ColumnDef) -> SqlError {
-    SqlError::Coded { code: -574, state: "42894", what: format!("the default of column {} does not fit its type", c.name.value) }
+    SqlError::Coded {
+        code: -574,
+        state: "42894",
+        what: format!(
+            "the default of column {} does not fit its type",
+            c.name.value
+        ),
+    }
 }
 
 /// The longest string a character or binary type holds.
@@ -62,7 +69,11 @@ fn number_fits(text: &str, t: &DataType) -> bool {
         return true;
     }
     // Trailing zeros of the fraction carry no digit.
-    let text = if text.contains('.') { text.trim_end_matches('0').trim_end_matches('.') } else { text };
+    let text = if text.contains('.') {
+        text.trim_end_matches('0').trim_end_matches('.')
+    } else {
+        text
+    };
     let Ok(d) = qdecimal::Decimal::parse(text) else {
         return false;
     };
@@ -70,7 +81,9 @@ fn number_fits(text: &str, t: &DataType) -> bool {
     match t {
         DataType::Decimal(p, s) | DataType::Numeric(p, s) => range(*p, *s),
         DataType::SmallInt | DataType::Integer | DataType::BigInt => {
-            let Ok(v) = text.parse::<i128>() else { return false };
+            let Ok(v) = text.parse::<i128>() else {
+                return false;
+            };
             super::column::type_range(t).is_some_and(|(lo, hi)| v >= lo && v <= hi)
         }
         _ => true,
@@ -84,11 +97,26 @@ fn check_date(text: &str) -> Result<()> {
         return Ok(());
     }
     let b = text.as_bytes();
-    let shaped = b.len() == 10 && b.iter().enumerate().all(|(i, c)| if i == 4 || i == 7 { *c == b'-' } else { c.is_ascii_digit() });
+    let shaped = b.len() == 10
+        && b.iter().enumerate().all(|(i, c)| {
+            if i == 4 || i == 7 {
+                *c == b'-'
+            } else {
+                c.is_ascii_digit()
+            }
+        });
     if shaped {
-        Err(SqlError::Coded { code: -181, state: "22007", what: format!("'{text}' is not a valid date") })
+        Err(SqlError::Coded {
+            code: -181,
+            state: "22007",
+            what: format!("'{text}' is not a valid date"),
+        })
     } else {
-        Err(SqlError::Coded { code: -180, state: "22007", what: format!("'{text}' is not in a date's form") })
+        Err(SqlError::Coded {
+            code: -180,
+            state: "22007",
+            what: format!("'{text}' is not in a date's form"),
+        })
     }
 }
 
@@ -107,15 +135,20 @@ pub fn check(c: &ColumnDef) -> Result<()> {
         Expr::Literal(Literal::Str(v)) => match t {
             DataType::Date => return check_date(v),
             t if numeric(t) => false,
-            t => string_len(t).is_none_or(|n| v.trim_end_matches(' ').chars().count() <= n as usize),
+            t => {
+                string_len(t).is_none_or(|n| v.trim_end_matches(' ').chars().count() <= n as usize)
+            }
         },
-        Expr::Literal(Literal::Hex(b) | Literal::Bin(b)) => string_len(t).is_none_or(|n| b.len() <= n as usize),
+        Expr::Literal(Literal::Hex(b) | Literal::Bin(b)) => {
+            string_len(t).is_none_or(|n| b.len() <= n as usize)
+        }
         Expr::Literal(Literal::Num(v)) => {
             let text = if negative { format!("-{v}") } else { v.clone() };
             numeric(t) && number_fits(&text, t)
         }
         Expr::Register(r) => {
-            let chars = |min: u32| matches!(t, DataType::Char(n) | DataType::Varchar(n) if *n >= min);
+            let chars =
+                |min: u32| matches!(t, DataType::Char(n) | DataType::Varchar(n) if *n >= min);
             match r {
                 Register::Date => matches!(t, DataType::Date | DataType::Timestamp(_)) || chars(10),
                 Register::Time => matches!(t, DataType::Time) || chars(8),

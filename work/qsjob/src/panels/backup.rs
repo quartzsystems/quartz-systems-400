@@ -24,7 +24,13 @@ use crate::display::surface::Surface;
 use crate::display::uim::{Response, UimDialog};
 
 /// The `DSPBCKUP` panel, at a display.
-pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out: &mut Outcome) -> Option<Result<String, Fail>> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    _out: &mut Outcome,
+) -> Option<Result<String, Fail>> {
     if r.name != "DSPBCKUP" {
         return None;
     }
@@ -55,8 +61,17 @@ fn dialog(host: &Host) -> Result<UimDialog, Fail> {
     Ok(d)
 }
 
-fn dspbckup(job: &mut Job, host: &Host, surface: &mut Surface, which: &str) -> Result<String, Fail> {
-    let text = exec(job, host, &format!("QSBCKUP ACTION(*FIELDS) BCKUPOPT({which})"))?;
+fn dspbckup(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    which: &str,
+) -> Result<String, Fail> {
+    let text = exec(
+        job,
+        host,
+        &format!("QSBCKUP ACTION(*FIELDS) BCKUPOPT({which})"),
+    )?;
     let mut d = dialog(host)?;
     for l in text.lines() {
         if let Some((k, v)) = l.split_once('=') {
@@ -73,7 +88,9 @@ fn dspbckup(job: &mut Job, host: &Host, surface: &mut Surface, which: &str) -> R
             Response::Return(16 | 17) => {
                 d.info("CPI9B86", &[]);
             }
-            Response::Return(_) | Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
+            Response::Return(_) | Response::Exit | Response::Cancel | Response::Gone => {
+                return Ok(String::new());
+            }
             _ => {}
         }
     }
@@ -84,7 +101,10 @@ fn dspbckup(job: &mut Job, host: &Host, surface: &mut Surface, which: &str) -> R
 /// the system's own (`QSVCJOB`).
 fn in_subsystem(host: &Host) -> Result<(), Fail> {
     let s = &host.start;
-    if s.subsystem.is_empty() || s.kind == 'S' || (s.kind == 'I' && s.name == crate::display::CONSOLE_DEVICE) {
+    if s.subsystem.is_empty()
+        || s.kind == 'S'
+        || (s.kind == 'I' && s.name == crate::display::CONSOLE_DEVICE)
+    {
         return Ok(());
     }
     Err(Fail::new(
@@ -151,7 +171,10 @@ fn defaults(job: &mut Job, host: &Host) -> Result<Option<Defaults>, Fail> {
     let kept = Defaults::decode(&exec(job, host, "QSBCKUP ACTION(*DFT)")?);
     if !crate::panels::shows_host_panels(host) {
         // Nobody to answer a prompt.
-        return Ok(Some(Defaults { prompt: false, ..kept }));
+        return Ok(Some(Defaults {
+            prompt: false,
+            ..kept
+        }));
     }
     let mut surface = Surface::new(host.clone());
     let mut d = dialog(host)?;
@@ -161,7 +184,11 @@ fn defaults(job: &mut Job, host: &Host) -> Result<Option<Defaults>, Fail> {
     loop {
         match show(&mut d, &mut surface, "SAVDFT")? {
             Response::Return(_) => {
-                let typed: BTreeMap<String, String> = kept.fields().iter().map(|(k, _)| ((*k).to_string(), d.get(k).clone())).collect();
+                let typed: BTreeMap<String, String> = kept
+                    .fields()
+                    .iter()
+                    .map(|(k, _)| ((*k).to_string(), d.get(k).clone()))
+                    .collect();
                 match Defaults::from_fields(|k| typed.get(k).cloned().unwrap_or_default()) {
                     Ok(v) => return Ok(Some(v)),
                     Err(gosave::Bad(f, v)) => d.error("CPD9B8D", &[f, &v]),
@@ -178,14 +205,30 @@ fn defaults(job: &mut Job, host: &Host) -> Result<Option<Defaults>, Fail> {
 fn run_all(job: &mut Job, host: &Host, cmds: &[String]) -> Vec<(String, bool, String)> {
     let mut out = Vec::new();
     for c in cmds {
-        let verb = c.trim_start_matches('?').split_whitespace().next().unwrap_or("").to_string();
+        let verb = c
+            .trim_start_matches('?')
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_string();
         let r = exec(job, host, c);
         if verb == "ENDSBS" && r.is_ok() && !wait_restricted(host) {
-            out.push((verb, false, "the subsystems did not end in five minutes".into()));
+            out.push((
+                verb,
+                false,
+                "the subsystems did not end in five minutes".into(),
+            ));
             break;
         }
         let (ok, line) = match r {
-            Ok(t) => (true, t.lines().map(str::trim).rfind(|l| !l.is_empty()).unwrap_or("").to_string()),
+            Ok(t) => (
+                true,
+                t.lines()
+                    .map(str::trim)
+                    .rfind(|l| !l.is_empty())
+                    .unwrap_or("")
+                    .to_string(),
+            ),
             Err(f) => (false, f.text.lines().last().unwrap_or(&f.msgid).to_string()),
         };
         out.push((verb, ok, line));
@@ -208,11 +251,21 @@ fn report(results: &[(String, bool, String)]) -> String {
 }
 
 /// Record a run in the backup history.
-fn record(job: &mut Job, host: &Host, option: &str, dev: &str, tapset: &str, started: u64, results: &[(String, bool, String)]) -> Result<String, Fail> {
+fn record(
+    job: &mut Job,
+    host: &Host,
+    option: &str,
+    dev: &str,
+    tapset: &str,
+    started: u64,
+    results: &[(String, bool, String)],
+) -> Result<String, Fail> {
     let ok = results.iter().all(|(_, ok, _)| *ok);
     let steps: Vec<String> = results
         .iter()
-        .map(|(v, ok, _)| format!("{v} {}", if *ok { "completed" } else { "failed" }).replace(['\'', ';'], " "))
+        .map(|(v, ok, _)| {
+            format!("{v} {}", if *ok { "completed" } else { "failed" }).replace(['\'', ';'], " ")
+        })
         .collect();
     let data = format!("{};{tapset};{started};{}", u8::from(ok), steps.join(";"));
     exec(
@@ -235,10 +288,16 @@ fn menu_option(job: &mut Job, host: &Host, menu: Menu, option: &str) -> Result<S
     };
     if option == "20" {
         let data = d.encode().replace('\n', ";");
-        exec(job, host, &format!("QSBCKUP ACTION(*SETDFT) DATA('{data}')"))?;
+        exec(
+            job,
+            host,
+            &format!("QSBCKUP ACTION(*SETDFT) DATA('{data}')"),
+        )?;
         return Ok("Save defaults kept for options 21, 22 and 23.\n".into());
     }
-    let n: u8 = option.parse().map_err(|_| Fail::new("CPD0084", format!("OPTION({option}) is not valid")))?;
+    let n: u8 = option
+        .parse()
+        .map_err(|_| Fail::new("CPD0084", format!("OPTION({option}) is not valid")))?;
     in_subsystem(host)?;
     let have = |c: &str| sys_cpps::entry(c).is_some();
     let cmds = gosave::sequence(menu, n, &d, &controlling(host), &have);
@@ -269,11 +328,26 @@ fn menu_option(job: &mut Job, host: &Host, menu: Menu, option: &str) -> Result<S
 
 /// `RUNBCKUP BCKUPOPT() DEV()`.
 fn runbckup(job: &mut Job, host: &Host, which: &str, dev: &str) -> Result<String, Fail> {
-    let dev = dev.trim_matches(|c| c == '(' || c == ')').split_whitespace().next().unwrap_or("*BCKUPOPT").to_string();
-    let plan = exec(job, host, &format!("QSBCKUP ACTION(*PLAN) BCKUPOPT({which}) DEV({dev})"))?;
+    let dev = dev
+        .trim_matches(|c| c == '(' || c == ')')
+        .split_whitespace()
+        .next()
+        .unwrap_or("*BCKUPOPT")
+        .to_string();
+    let plan = exec(
+        job,
+        host,
+        &format!("QSBCKUP ACTION(*PLAN) BCKUPOPT({which}) DEV({dev})"),
+    )?;
     let mut lines = plan.lines();
     let head: Vec<&str> = lines.next().unwrap_or("").split_whitespace().collect();
-    let field = |k: &str| head.iter().position(|w| *w == k).and_then(|i| head.get(i + 1)).copied().unwrap_or("");
+    let field = |k: &str| {
+        head.iter()
+            .position(|w| *w == k)
+            .and_then(|i| head.get(i + 1))
+            .copied()
+            .unwrap_or("")
+    };
     let dev = field("DEV").to_string();
     let tapset = field("TAPSET").to_string();
     let steps: Vec<(bool, String)> = lines
@@ -285,7 +359,9 @@ fn runbckup(job: &mut Job, host: &Host, which: &str, dev: &str) -> Result<String
         return exec(
             job,
             host,
-            &format!("SBMJOB CMD(RUNBCKUP BCKUPOPT({which}) DEV({dev})) JOB(QEZBCKUP) JOBQ(QSYS/QBATCH)"),
+            &format!(
+                "SBMJOB CMD(RUNBCKUP BCKUPOPT({which}) DEV({dev})) JOB(QEZBCKUP) JOBQ(QSYS/QBATCH)"
+            ),
         );
     }
     let mut cmds: Vec<String> = Vec::new();
@@ -305,7 +381,11 @@ fn runbckup(job: &mut Job, host: &Host, which: &str, dev: &str) -> Result<String
     let summary = report(&results);
     let r = record(job, host, which, &dev, &tapset, started, &results);
     if field("IPL") == "Y" && results.iter().all(|(_, ok, _)| *ok) {
-        let _ = exec(job, host, "PWRDWNSYS OPTION(*CNTRLD) RESTART(*YES) CONFIRM(*NO)");
+        let _ = exec(
+            job,
+            host,
+            "PWRDWNSYS OPTION(*CNTRLD) RESTART(*YES) CONFIRM(*NO)",
+        );
     }
     r.map(|t| format!("{summary}{t}")).map_err(|mut f| {
         f.text = format!("{summary}{}", f.text);

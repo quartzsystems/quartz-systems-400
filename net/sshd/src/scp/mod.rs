@@ -123,7 +123,10 @@ struct Session<'a> {
 
 impl Session<'_> {
     fn send(&mut self, b: &[u8]) -> bool {
-        self.output.write_all(b).and_then(|()| self.output.flush()).is_ok()
+        self.output
+            .write_all(b)
+            .and_then(|()| self.output.flush())
+            .is_ok()
     }
 
     fn ack(&mut self) -> bool {
@@ -147,7 +150,13 @@ impl Session<'_> {
                         return None;
                     }
                 }
-                _ => return if out.is_empty() { None } else { Some(String::from_utf8_lossy(&out).into_owned()) },
+                _ => {
+                    return if out.is_empty() {
+                        None
+                    } else {
+                        Some(String::from_utf8_lossy(&out).into_owned())
+                    };
+                }
             }
         }
     }

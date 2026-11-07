@@ -127,7 +127,14 @@ impl Stats {
     /// or waiting, and whether it got an activity level. Input from the
     /// display starts a transaction; the next wait there ends it.
     #[allow(clippy::fn_params_excessive_bools)] // the states a status report carries
-    pub fn status(&mut self, number: u32, was_dspw: bool, dspw: bool, runnable: bool, granted: bool) {
+    pub fn status(
+        &mut self,
+        number: u32,
+        was_dspw: bool,
+        dspw: bool,
+        runnable: bool,
+        granted: bool,
+    ) {
         let t = self.txns.entry(number).or_default();
         if dspw {
             if let Some(at) = self.inflight.remove(&number) {
@@ -492,7 +499,9 @@ pub fn wrkactjob(system: &mut System, view: &str) -> String {
     let page_kb = 4u64;
     match view {
         "2" => {
-            out.push_str("Opt  Subsystem/Job  Type  Pool  Pty      CPU  Int    Rsp  AuxIO  CPU %\n");
+            out.push_str(
+                "Opt  Subsystem/Job  Type  Pool  Pty      CPU  Int    Rsp  AuxIO  CPU %\n",
+            );
         }
         "3" => out.push_str(
             "Opt  Subsystem/Job  User        Number  Type  Threads  Temp Stg (M)  Status\n",
@@ -1098,7 +1107,10 @@ pub fn sysact_panel(system: &mut System) -> stg::proto::PanelData {
                 pair("NUMBER", format!("{:06}", j.number)),
                 pair("THREAD", "00000001"),
                 pair("PTY", pty),
-                pair("CPU", format!("{:.1}", percent(d.job_ticks(j.number), ticks))),
+                pair(
+                    "CPU",
+                    format!("{:.1}", percent(d.job_ticks(j.number), ticks)),
+                ),
                 pair("SYNCIO", 0),
                 pair("ASYNCIO", d.job_aux(j.number)),
                 pair("CPUDB", ".0"),
@@ -1106,7 +1118,11 @@ pub fn sysact_panel(system: &mut System) -> stg::proto::PanelData {
                 pair("CPUT", tenths(percent(d.job_ticks(j.number), ticks))),
                 pair("DBR", d.job_io(j.number).db_reads),
                 pair("DBW", d.job_io(j.number).db_writes),
-                pair("NDBR", d.job_aux(j.number).saturating_sub(d.job_io(j.number).db_reads + d.job_io(j.number).db_writes)),
+                pair(
+                    "NDBR",
+                    d.job_aux(j.number)
+                        .saturating_sub(d.job_io(j.number).db_reads + d.job_io(j.number).db_writes),
+                ),
                 pair("ALLOC", d.job_rss(j.number).0),
                 pair("DEALLOC", d.job_rss(j.number).1),
                 pair("WAIT", d.wait_tenths(j.number)),
@@ -1125,14 +1141,24 @@ pub fn secs_between(now: &Sample, base: &Sample) -> u32 {
 /// The interval from `base` to `now` as Collection Services records
 /// it: interval `number`, ending at local time `end`.
 #[allow(clippy::too_many_lines)] // one record per category, in order
-pub fn interval_data(system: &mut System, now: &Sample, base: &Sample, number: u32, end: u64) -> perf::sample::Interval {
+pub fn interval_data(
+    system: &mut System,
+    now: &Sample,
+    base: &Sample,
+    number: u32,
+    end: u64,
+) -> perf::sample::Interval {
     use perf::sample::{DiskData, Interval, JobData, LineData, PoolData, SysData};
     let d = Delta { now, base };
-    let ms = u64::try_from(now.at.duration_since(base.at).as_millis()).unwrap_or(u64::MAX).max(1);
+    let ms = u64::try_from(now.at.duration_since(base.at).as_millis())
+        .unwrap_or(u64::MAX)
+        .max(1);
     // Clock ticks are hundredths of a second.
     let tick_ms = |t: u64| t * 10;
     let cpus = u64::from(now.cpu.cpus.max(1));
-    let busy = d.ticks().saturating_sub(now.cpu.idle.saturating_sub(base.cpu.idle));
+    let busy = d
+        .ticks()
+        .saturating_sub(now.cpu.idle.saturating_sub(base.cpu.idle));
     let io = |s: &Sample, n: u32| s.io.get(&n).copied().unwrap_or_default();
     let tx = |s: &Sample, n: u32| s.txns.get(&n).copied().unwrap_or_default();
     let mut jobs = Vec::new();
@@ -1146,8 +1172,16 @@ pub fn interval_data(system: &mut System, now: &Sample, base: &Sample, number: u
         let opens = i1.opens.saturating_sub(i0.opens);
         jobs.push(JobData {
             kind: j.kind.to_string(),
-            sub_type: if j.subtype == ' ' || j.subtype == '\0' { String::new() } else { j.subtype.to_string() },
-            sbs_lib: if j.subsystem.is_empty() { String::new() } else { "QSYS".into() },
+            sub_type: if j.subtype == ' ' || j.subtype == '\0' {
+                String::new()
+            } else {
+                j.subtype.to_string()
+            },
+            sbs_lib: if j.subsystem.is_empty() {
+                String::new()
+            } else {
+                "QSYS".into()
+            },
             subsystem: j.subsystem.clone(),
             pool: system.pools.get(&j.pool).map_or(2, |p| p.number),
             priority: system.attrs.get(&n).map_or(0, |a| a.runpty),
@@ -1230,7 +1264,12 @@ pub fn interval_data(system: &mut System, now: &Sample, base: &Sample, number: u
         .iter()
         .enumerate()
         .map(|(i, (line, st))| {
-            let b = base.lines.iter().find(|(l, _)| l == line).map(|(_, s)| *s).unwrap_or_default();
+            let b = base
+                .lines
+                .iter()
+                .find(|(l, _)| l == line)
+                .map(|(_, s)| *s)
+                .unwrap_or_default();
             LineData {
                 line: line.clone(),
                 resource: format!("CMN{:02}", i + 1),
@@ -1246,7 +1285,11 @@ pub fn interval_data(system: &mut System, now: &Sample, base: &Sample, number: u
         .collect();
     let (asp_mb, asp_pct, _) = asp_figures(system);
     let asp_bytes = asp_mb << 20;
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)] // a percentage of a size
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_precision_loss
+    )] // a percentage of a size
     let asp_used = (asp_bytes as f64 * asp_pct / 100.0) as u64;
     let jobs_n = u32::try_from(jobs.len()).unwrap_or(u32::MAX);
     let system_data = SysData {
@@ -1290,17 +1333,38 @@ pub fn sql_status(system: &mut System) -> sql::exec::catalog::services::host::Sy
     let sv = |n: &str| crate::stgsvc::security::sysval_text(system, n);
     let max_jobs: u32 = sv("QMAXJOB").trim().parse().unwrap_or(0);
     let interactive = jobs.iter().filter(|j| j.kind == 'I').count() as u32;
-    let batch = |code: &str| jobs.iter().filter(|j| j.kind == 'B' && j.job_status().code() == code).count() as u32;
+    let batch = |code: &str| {
+        jobs.iter()
+            .filter(|j| j.kind == 'B' && j.job_status().code() == code)
+            .count() as u32
+    };
     let running = jobs.iter().filter(|j| j.kind == 'B').count() as u32;
     let threads = now.procs.values().map(|p| p.threads.max(1)).sum();
-    let ipl_mode = if system.mode == licpart::IplMode::Manual { "MANUAL" } else { "NORMAL" };
+    let ipl_mode = if system.mode == licpart::IplMode::Manual {
+        "MANUAL"
+    } else {
+        "NORMAL"
+    };
     sql::exec::catalog::services::host::SystemStatus {
         total_jobs: (jobs.len() + system.queued.len() + system.joblog_pending.len()) as u32,
         max_jobs,
         active_jobs: jobs.len() as u32,
-        interactive_pct: if max_jobs == 0 { 0.0 } else { f64::from(interactive) * 100.0 / f64::from(max_jobs) },
+        interactive_pct: if max_jobs == 0 {
+            0.0
+        } else {
+            f64::from(interactive) * 100.0 / f64::from(max_jobs)
+        },
         signed_on: interactive,
-        batch: [running, system.queued.len() as u32, 0, batch("MSGW"), 0, 0, 0, 0],
+        batch: [
+            running,
+            system.queued.len() as u32,
+            0,
+            batch("MSGW"),
+            0,
+            0,
+            0,
+            0,
+        ],
         elapsed_ms: d.whole_secs() * 1000,
         cpu_pct: d.cpu_used(),
         cpus: std::thread::available_parallelism().map_or(1, |n| n.get() as u32),
@@ -1311,11 +1375,21 @@ pub fn sql_status(system: &mut System) -> sql::exec::catalog::services::host::Sy
         temp_max_mb: temp_mb,
         threads,
         restricted: system.sbs.is_empty(),
-        host_name: read("/proc/sys/kernel/hostname").map(|h| h.trim().to_string()).unwrap_or_default(),
-        machine: (String::new(), sv("QMODEL").trim().to_string(), sv("QSRLNBR").trim().to_string()),
+        host_name: read("/proc/sys/kernel/hostname")
+            .map(|h| h.trim().to_string())
+            .unwrap_or_default(),
+        machine: (
+            String::new(),
+            sv("QMODEL").trim().to_string(),
+            sv("QSRLNBR").trim().to_string(),
+        ),
         ipl_mode: ipl_mode.into(),
         ipl_type: sv("QIPLTYPE").trim().to_string(),
-        table: [system.queued.len() as u32, 0, system.joblog_pending.len() as u32],
+        table: [
+            system.queued.len() as u32,
+            0,
+            system.joblog_pending.len() as u32,
+        ],
         scheduler_active: jobs.iter().any(|j| j.name == "QEJSCHED"),
     }
 }
@@ -1325,7 +1399,10 @@ pub fn sql_status(system: &mut System) -> sql::exec::catalog::services::host::Sy
 #[allow(clippy::cast_precision_loss)] // counters far below 2^52
 pub fn sql_pools(system: &mut System) -> Vec<sql::exec::catalog::services::host::MemoryPool> {
     let (now, base) = interval(system, |s| &mut s.syssts, false);
-    let d = Delta { now: &now, base: &base };
+    let d = Delta {
+        now: &now,
+        base: &base,
+    };
     let per_min = |n: u64| n as f64 * 60.0 / d.secs();
     system
         .pools
@@ -1335,7 +1412,13 @@ pub fn sql_pools(system: &mut System) -> Vec<sql::exec::catalog::services::host:
             let (db, ndb) = d.faults(&p.name);
             let (aw, wi, ai) = d.counters(&p.name);
             let subsystem = p.name.split_once('/').map(|(sbs, _)| {
-                (system.sbs.get(sbs).map_or_else(String::new, |a| a.lib.clone()), sbs.to_string())
+                (
+                    system
+                        .sbs
+                        .get(sbs)
+                        .map_or_else(String::new, |a| a.lib.clone()),
+                    sbs.to_string(),
+                )
             });
             sql::exec::catalog::services::host::MemoryPool {
                 number: p.number,
@@ -1378,8 +1461,20 @@ pub fn sql_disks(system: &mut System) -> Vec<sql::exec::catalog::services::host:
                 protection: u.protection.clone(),
                 capacity: u.usable * 4096,
                 free: u.usable.saturating_sub(u.used) * 4096,
-                totals: [t.reads, t.writes, t.read_sectors, t.write_sectors, t.busy_ms],
-                elapsed: [x.reads, x.writes, x.read_sectors, x.write_sectors, x.busy_ms],
+                totals: [
+                    t.reads,
+                    t.writes,
+                    t.read_sectors,
+                    t.write_sectors,
+                    t.busy_ms,
+                ],
+                elapsed: [
+                    x.reads,
+                    x.writes,
+                    x.read_sectors,
+                    x.write_sectors,
+                    x.busy_ms,
+                ],
                 elapsed_ms: ms,
             }
         })

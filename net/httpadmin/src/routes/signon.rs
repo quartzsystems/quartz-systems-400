@@ -35,7 +35,11 @@ pub fn signon(admin: &Admin, req: &Request, peer: &Peer) -> Response {
     let s = Settings::load(admin.env.files.as_ref());
     let special = sys.special(&user);
     let ok = special.iter().any(|a| a == "*IOSYSCFG" || a == "*ALLOBJ")
-        || (s.admin_group != "*NONE" && sys.groups(&user).iter().any(|g| g.eq_ignore_ascii_case(&s.admin_group)));
+        || (s.admin_group != "*NONE"
+            && sys
+                .groups(&user)
+                .iter()
+                .any(|g| g.eq_ignore_ascii_case(&s.admin_group)));
     if !ok {
         sys.audit(Audit::Refused {
             user: user.clone(),
@@ -45,7 +49,9 @@ pub fn signon(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         let m = msgs::message(Kind::Error, "HTP8111", &[&user, &s.admin_group]);
         return page(admin, &user, &[m]);
     }
-    admin.sessions.set_idle(std::time::Duration::from_secs(u64::from(s.session_minutes.max(1)) * 60));
+    admin.sessions.set_idle(std::time::Duration::from_secs(
+        u64::from(s.session_minutes.max(1)) * 60,
+    ));
     let sess = admin.sessions.create(&user);
     Response::redirect(&PRODUCT.url("/instances")).with(
         "Set-Cookie",
@@ -58,5 +64,6 @@ pub fn signoff(admin: &Admin, req: &Request, _peer: &Peer) -> Response {
     if let Some(id) = req.cookie(session::COOKIE) {
         admin.sessions.remove(id);
     }
-    Response::redirect(&PRODUCT.url("/signon")).with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
+    Response::redirect(&PRODUCT.url("/signon"))
+        .with("Set-Cookie", &session::clear_cookie(PRODUCT.prefix))
 }

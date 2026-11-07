@@ -75,7 +75,11 @@ pub fn run_attr(cx: &mut UtilCtx<'_>) -> i32 {
             }
             None => {
                 out.flush();
-                complain(cx, name, &format!("{file}: {n}: The attribute is not known."));
+                complain(
+                    cx,
+                    name,
+                    &format!("{file}: {n}: The attribute is not known."),
+                );
                 status = 1;
             }
         }

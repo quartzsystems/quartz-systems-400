@@ -14,7 +14,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use rustix::net::{
-    RecvAncillaryBuffer, RecvAncillaryMessage, RecvFlags, SendAncillaryBuffer, SendAncillaryMessage, SendFlags,
+    RecvAncillaryBuffer, RecvAncillaryMessage, RecvFlags, SendAncillaryBuffer,
+    SendAncillaryMessage, SendFlags,
 };
 
 use super::{State, Taken, op, status};
@@ -39,7 +40,13 @@ fn send(sock: BorrowedFd<'_>, data: &[u8], fd: Option<BorrowedFd<'_>>) -> Result
         fds = [f];
         control.push(SendAncillaryMessage::ScmRights(&fds));
     }
-    rustix::net::sendmsg(sock, &[IoSlice::new(data)], &mut control, SendFlags::NOSIGNAL).map_err(rx)?;
+    rustix::net::sendmsg(
+        sock,
+        &[IoSlice::new(data)],
+        &mut control,
+        SendFlags::NOSIGNAL,
+    )
+    .map_err(rx)?;
     Ok(())
 }
 
@@ -47,8 +54,13 @@ fn send(sock: BorrowedFd<'_>, data: &[u8], fd: Option<BorrowedFd<'_>>) -> Result
 fn recv(sock: BorrowedFd<'_>, buf: &mut [u8]) -> Result<(usize, Option<OwnedFd>), Errno> {
     let mut space = [MaybeUninit::<u8>::uninit(); rustix::cmsg_space!(ScmRights(1))];
     let mut control = RecvAncillaryBuffer::new(&mut space);
-    let r = rustix::net::recvmsg(sock, &mut [IoSliceMut::new(buf)], &mut control, RecvFlags::CMSG_CLOEXEC)
-        .map_err(rx)?;
+    let r = rustix::net::recvmsg(
+        sock,
+        &mut [IoSliceMut::new(buf)],
+        &mut control,
+        RecvFlags::CMSG_CLOEXEC,
+    )
+    .map_err(rx)?;
     let mut fd = None;
     for m in control.drain() {
         if let RecvAncillaryMessage::ScmRights(mut fds) = m
@@ -79,12 +91,21 @@ pub fn give(path: &str, fd: &Fd, target: &JobId, source: &JobId, note: &[u8]) ->
     send(s.as_fd(), &m, Some(fd.0.as_fd()))?;
     let mut b = [0u8; 1];
     let (n, _) = recv(s.as_fd(), &mut b)?;
-    if n == 1 && b[0] == status::OK { Ok(()) } else { Err(Errno::EINVAL) }
+    if n == 1 && b[0] == status::OK {
+        Ok(())
+    } else {
+        Err(Errno::EINVAL)
+    }
 }
 
 /// Take a descriptor given to `me` (from `source` when given), waiting
 /// up to `wait_ms` (0 forever); `None` when none came in time.
-pub fn take(path: &str, me: &JobId, source: Option<&JobId>, wait_ms: u32) -> Result<Option<Taken>, Errno> {
+pub fn take(
+    path: &str,
+    me: &JobId,
+    source: Option<&JobId>,
+    wait_ms: u32,
+) -> Result<Option<Taken>, Errno> {
     take_as(path, me, None, source, wait_ms)
 }
 
@@ -130,7 +151,11 @@ pub fn idle(path: &str, pool: &JobId) -> Result<u32, Errno> {
     send(s.as_fd(), &m, None)?;
     let mut b = [0u8; 4];
     let (n, _) = recv(s.as_fd(), &mut b)?;
-    if n == 4 { Ok(u32::from_be_bytes(b)) } else { Err(Errno::EINVAL) }
+    if n == 4 {
+        Ok(u32::from_be_bytes(b))
+    } else {
+        Err(Errno::EINVAL)
+    }
 }
 
 /// How many descriptors wait for `target` (a pool with no idle taker
@@ -142,7 +167,11 @@ pub fn queued(path: &str, target: &JobId) -> Result<u32, Errno> {
     send(s.as_fd(), &m, None)?;
     let mut b = [0u8; 4];
     let (n, _) = recv(s.as_fd(), &mut b)?;
-    if n == 4 { Ok(u32::from_be_bytes(b)) } else { Err(Errno::EINVAL) }
+    if n == 4 {
+        Ok(u32::from_be_bytes(b))
+    } else {
+        Err(Errno::EINVAL)
+    }
 }
 
 /// One connection's request.
@@ -155,7 +184,12 @@ fn answer(s: &UnixStream, st: &State<OwnedFd>) -> Result<(), Errno> {
                 return send(s.as_fd(), &[status::BAD], None);
             };
             let len = usize::from(b[33]);
-            st.give(id(&b[1..17]), id(&b[17..33]), b[34..(34 + len).min(n)].to_vec(), fd);
+            st.give(
+                id(&b[1..17]),
+                id(&b[17..33]),
+                b[34..(34 + len).min(n)].to_vec(),
+                fd,
+            );
             send(s.as_fd(), &[status::OK], None)
         }
         Some(op::TAKE) if n >= 37 => {

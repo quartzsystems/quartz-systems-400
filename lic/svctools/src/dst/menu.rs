@@ -99,7 +99,9 @@ impl Panel for MainMenu {
             9 => Flow::Push(Box::new(crate::dst::storage::work_with_save_storage())),
             10 => Flow::Push(Box::new(crate::dst::remote::work_with_remote_service())),
             11 => Flow::Push(Box::new(crate::dst::partitions::NotSupported)),
-            12 => Flow::Push(Box::new(crate::dst::capacity::work_with_system_capacity("dst-capacity"))),
+            12 => Flow::Push(Box::new(crate::dst::capacity::work_with_system_capacity(
+                "dst-capacity",
+            ))),
             14 => Flow::Message(answers::NOT_RESTRICTED.into()),
             _ => Flow::Error(INVALID_SELECTION.into()),
         }

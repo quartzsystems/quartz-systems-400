@@ -38,14 +38,21 @@ const COMPLETE: [u8; 10] = [0x00, 0x0A, 0x12, 0xA0, 0x01, 0x02, 0x04, 0x00, 0x00
 fn page() -> Vec<u8> {
     let mut p = spool::printer::Printer::new(spool::printer::PageFormat::default());
     for i in 0..60 {
-        p.write_str(&format!("LINE {i:03} {}", "X".repeat(100)), spool::printer::Control::line());
+        p.write_str(
+            &format!("LINE {i:03} {}", "X".repeat(100)),
+            spool::printer::Control::line(),
+        );
     }
     p.take()
 }
 
 /// The record without `IAC EOR` and with doubled `IAC`s undone.
 fn unframe(wire: &[u8]) -> Vec<u8> {
-    assert_eq!(&wire[wire.len() - 2..], &[0xFF, 0xEF], "each record ends IAC EOR");
+    assert_eq!(
+        &wire[wire.len() - 2..],
+        &[0xFF, 0xEF],
+        "each record ends IAC EOR"
+    );
     let body = &wire[..wire.len() - 2];
     let mut out = Vec::with_capacity(body.len());
     let mut i = 0;
@@ -74,7 +81,11 @@ fn a_one_page_file_is_one_print_job() {
         let len = u16::from_be_bytes([r[0], r[1]]) as usize;
         assert_eq!(len, r.len(), "record {i}: length");
         assert_eq!(&r[2..4], &[0x12, 0xA0], "record {i}: GDS");
-        assert_eq!(&r[4..6], &[0x01, 0x01], "record {i}: print record, server to client");
+        assert_eq!(
+            &r[4..6],
+            &[0x01, 0x01],
+            "record {i}: print record, server to client"
+        );
         assert_eq!(r[6], 0x0A, "record {i}: header length");
         let chain = match (i, last) {
             (_, true) => 0x08,
@@ -100,7 +111,9 @@ fn the_captured_refusal_stops_at_the_first_record() {
     let mut c = Client {
         wire: Vec::new(),
         answer: Box::new(|_| {
-            Some(vec![0x00, 0x0E, 0x12, 0xA0, 0x01, 0x02, 0x08, 0x80, 0x00, 0x00, 0x08, 0x11, 0x02, 0x28])
+            Some(vec![
+                0x00, 0x0E, 0x12, 0xA0, 0x01, 0x02, 0x08, 0x80, 0x00, 0x00, 0x08, 0x11, 0x02, 0x28,
+            ])
         }),
     };
     let mut sent = 0;

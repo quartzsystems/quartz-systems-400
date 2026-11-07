@@ -46,16 +46,27 @@ pub struct Link {
 }
 
 fn gone() -> Message {
-    Message::new(Kind::Error, "CPF9897", "Navigator is ending; the request was not run.")
+    Message::new(
+        Kind::Error,
+        "CPF9897",
+        "Navigator is ending; the request was not run.",
+    )
 }
 
 impl Link {
     /// `f` on the job's thread with the job swapped to `user`, so the
     /// service checks that user's authority; the default when the user
     /// is not signed on here or the job is ending.
-    pub fn read<T: Send + Default + 'static>(&self, user: &str, f: impl FnOnce(&mut Main) -> T + Send + 'static) -> T {
+    pub fn read<T: Send + Default + 'static>(
+        &self,
+        user: &str,
+        f: impl FnOnce(&mut Main) -> T + Send + 'static,
+    ) -> T {
         let u = user.to_string();
-        self.bridge.call(move |m| m.as_user(&u, f).ok()).flatten().unwrap_or_default()
+        self.bridge
+            .call(move |m| m.as_user(&u, f).ok())
+            .flatten()
+            .unwrap_or_default()
     }
 
     /// Run CL `command` through the analyzer as `user`: the completion
@@ -69,7 +80,12 @@ impl Link {
 }
 
 /// The listeners, started off the job's thread.
-fn start_listeners(bridge: &Bridge, nav: Arc<Navigator>, a: HttpAttrs, system: String) -> Result<Vec<Running>, String> {
+fn start_listeners(
+    bridge: &Bridge,
+    nav: Arc<Navigator>,
+    a: HttpAttrs,
+    system: String,
+) -> Result<Vec<Running>, String> {
     let mut running = Vec::new();
     let plain = listen::bind(a.port)
         .and_then(|l| listen::serve(l, None, Web::new(nav.clone())))
@@ -97,10 +113,15 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let (bridge, rx) = Bridge::new();
     let name = system_name(&main);
     let core = Core::new(bridge.clone(), Dates::of(&main), name.clone());
-    let l = Link { bridge: bridge.clone() };
+    let l = Link {
+        bridge: bridge.clone(),
+    };
     let me = format!("{:06}/{}/{}", start.number, start.user, start.name);
     let env = Env {
-        system: Arc::new(system::LiveSystem { core, link: l.clone() }),
+        system: Arc::new(system::LiveSystem {
+            core,
+            link: l.clone(),
+        }),
         work: Arc::new(work::LiveWork::new(l.clone(), me)),
         msgs: Arc::new(msgs::LiveMsgs { link: l.clone() }),
         users: Arc::new(users::LiveUsers { link: l.clone() }),
@@ -140,7 +161,12 @@ mod tests {
         for (name, src) in sources {
             for (n, line) in src.lines().enumerate() {
                 let held = line.contains(".borrow_mut()") || line.contains(".borrow()");
-                assert!(!held, "{name}:{}: use Main::ask, not the link's RefCell: {}", n + 1, line.trim());
+                assert!(
+                    !held,
+                    "{name}:{}: use Main::ask, not the link's RefCell: {}",
+                    n + 1,
+                    line.trim()
+                );
             }
         }
     }

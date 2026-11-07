@@ -235,7 +235,12 @@ fn a_ticket_proves_the_user_only() {
     let mut a = attempt("BOB", "");
     a.ticket = true;
     assert_eq!(msgid(&mut t, qsys, &a), "OK");
-    usrprf::chgusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB"), ("STATUS", "*DISABLED")])).unwrap();
+    usrprf::chgusrprf(
+        &mut t,
+        &env,
+        &Keywords::new(&[("USRPRF", "BOB"), ("STATUS", "*DISABLED")]),
+    )
+    .unwrap();
     assert_eq!(msgid(&mut t, qsys, &a), "CPF1394");
 }
 
@@ -262,15 +267,35 @@ fn automatic_sign_on_needs_a_profile_that_can_sign_on() {
     )
     .unwrap();
     assert!(signon::automatic_allowed(&bob(&mut t), &policy, NOW));
-    usrprf::chgusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB"), ("PWDEXP", "*YES")])).unwrap();
-    assert!(!signon::automatic_allowed(&bob(&mut t), &policy, NOW), "expired");
     usrprf::chgusrprf(
         &mut t,
         &env,
-        &Keywords::new(&[("USRPRF", "BOB"), ("PASSWORD", "Other456"), ("PWDEXP", "*NO")]),
+        &Keywords::new(&[("USRPRF", "BOB"), ("PWDEXP", "*YES")]),
+    )
+    .unwrap();
+    assert!(
+        !signon::automatic_allowed(&bob(&mut t), &policy, NOW),
+        "expired"
+    );
+    usrprf::chgusrprf(
+        &mut t,
+        &env,
+        &Keywords::new(&[
+            ("USRPRF", "BOB"),
+            ("PASSWORD", "Other456"),
+            ("PWDEXP", "*NO"),
+        ]),
     )
     .unwrap();
     assert!(signon::automatic_allowed(&bob(&mut t), &policy, NOW));
-    usrprf::chgusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB"), ("STATUS", "*DISABLED")])).unwrap();
-    assert!(!signon::automatic_allowed(&bob(&mut t), &policy, NOW), "disabled");
+    usrprf::chgusrprf(
+        &mut t,
+        &env,
+        &Keywords::new(&[("USRPRF", "BOB"), ("STATUS", "*DISABLED")]),
+    )
+    .unwrap();
+    assert!(
+        !signon::automatic_allowed(&bob(&mut t), &policy, NOW),
+        "disabled"
+    );
 }

@@ -23,13 +23,36 @@ use crate::s5250::files::qkm::KeymapFile;
 /// Keys shown as one row while each keeps its default: label, keys,
 /// what the Function column says.
 const GROUPS: &[(&str, &[&str], &str)] = &[
-    ("F1 ... F12", &["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"], "F1 ... F12"),
+    (
+        "F1 ... F12",
+        &[
+            "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+        ],
+        "F1 ... F12",
+    ),
     (
         "Shift+F1 ... Shift+F12",
-        &["Shift+F1", "Shift+F2", "Shift+F3", "Shift+F4", "Shift+F5", "Shift+F6", "Shift+F7", "Shift+F8", "Shift+F9", "Shift+F10", "Shift+F11", "Shift+F12"],
+        &[
+            "Shift+F1",
+            "Shift+F2",
+            "Shift+F3",
+            "Shift+F4",
+            "Shift+F5",
+            "Shift+F6",
+            "Shift+F7",
+            "Shift+F8",
+            "Shift+F9",
+            "Shift+F10",
+            "Shift+F11",
+            "Shift+F12",
+        ],
         "F13 ... F24",
     ),
-    ("Left / Right / Up / Down", &["Left", "Right", "Up", "Down"], "Cursor"),
+    (
+        "Left / Right / Up / Down",
+        &["Left", "Right", "Up", "Down"],
+        "Cursor",
+    ),
 ];
 
 /// The rows in the dialog's order: a single key, or a group's label.
@@ -59,13 +82,20 @@ const ORDER: &[&str] = &[
 /// the Function column.
 fn rows(map: &KeyMap) -> Vec<(String, Vec<String>, String)> {
     let defaults = KeyMap::defaults();
-    let label = |k: &str| map.function(k).map_or_else(|| "None".to_string(), |f| function_label(f).to_string());
+    let label = |k: &str| {
+        map.function(k)
+            .map_or_else(|| "None".to_string(), |f| function_label(f).to_string())
+    };
     let mut out = Vec::new();
     let mut shown: Vec<String> = Vec::new();
     for item in ORDER {
         if let Some((g, keys, what)) = GROUPS.iter().find(|g| g.0 == *item) {
             if keys.iter().all(|k| map.function(k) == defaults.function(k)) {
-                out.push(((*g).to_string(), keys.iter().map(ToString::to_string).collect(), (*what).to_string()));
+                out.push((
+                    (*g).to_string(),
+                    keys.iter().map(ToString::to_string).collect(),
+                    (*what).to_string(),
+                ));
             } else {
                 for k in *keys {
                     out.push(((*k).to_string(), vec![(*k).to_string()], label(k)));
@@ -89,7 +119,11 @@ fn options(chosen: Option<&str>) -> String {
         s.push_str("<option selected>None</option>");
     }
     for (name, label) in FUNCTIONS {
-        let sel = if Some(*name) == chosen { " selected" } else { "" };
+        let sel = if Some(*name) == chosen {
+            " selected"
+        } else {
+            ""
+        };
         let _ = write!(s, "<option{sel}>{}</option>", esc(label));
     }
     s
@@ -134,12 +168,31 @@ pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
         let k = f.str("key").trim();
         match by_label(f.str("fn")) {
             Some(func) if !k.is_empty() => map.assign(k, func),
-            _ => return show(rq, &s, &map, vec![rq.message(Kind::Error, crate::msgs::BAD_VALUE, &[k, "Add a key"])]),
+            _ => {
+                return show(
+                    rq,
+                    &s,
+                    &map,
+                    vec![rq.message(Kind::Error, crate::msgs::BAD_VALUE, &[k, "Add a key"])],
+                );
+            }
         }
     } else if f.has("load") {
         let parts = rq.req.multipart().unwrap_or_default();
-        let Some(p) = parts.iter().find(|p| p.name == "qkm" && p.filename.as_deref().is_some_and(|n| !n.is_empty())) else {
-            return show(rq, &s, &map, vec![rq.message(Kind::Error, crate::msgs::BAD_VALUE, &["", "Load keyboard map"])]);
+        let Some(p) = parts
+            .iter()
+            .find(|p| p.name == "qkm" && p.filename.as_deref().is_some_and(|n| !n.is_empty()))
+        else {
+            return show(
+                rq,
+                &s,
+                &map,
+                vec![rq.message(
+                    Kind::Error,
+                    crate::msgs::BAD_VALUE,
+                    &["", "Load keyboard map"],
+                )],
+            );
         };
         let name = p.filename.clone().unwrap_or_default();
         match KeymapFile::parse(&String::from_utf8_lossy(&p.data)) {
@@ -161,7 +214,10 @@ pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
     s.file.set_keymap(&map);
     let done = !f.has("add") && !f.has("load") && !f.has("restore_defaults");
     match rq.env().session5250.put(rq.user(), s.clone()) {
-        Ok(_) if done => rq.done(&back, rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title])),
+        Ok(_) if done => rq.done(
+            &back,
+            rq.message(Kind::Info, crate::msgs::SESSION_SAVED, &[&title]),
+        ),
         Ok(_) => {
             for m in messages {
                 rq.flash(m);
@@ -173,8 +229,23 @@ pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
 }
 
 fn file(s: &Saved, map: &KeyMap) -> Response {
-    let name: String = s.file.display_title().chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' }).collect();
-    Response::download(&format!("{name}.qkm"), "application/toml; charset=utf-8", KeymapFile::new(map.clone()).to_text().into_bytes())
+    let name: String = s
+        .file
+        .display_title()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    Response::download(
+        &format!("{name}.qkm"),
+        "application/toml; charset=utf-8",
+        KeymapFile::new(map.clone()).to_text().into_bytes(),
+    )
 }
 
 /// `GET /5250/<id>/keymap/export`: the map as a `.qkm` file.
@@ -191,22 +262,42 @@ pub fn json(map: &KeyMap) -> String {
     let pairs: Vec<String> = map
         .keys
         .iter()
-        .map(|(k, f)| format!("\"{}\":\"{}\"", k.replace('\\', "\\\\").replace('"', "\\\""), f))
+        .map(|(k, f)| {
+            format!(
+                "\"{}\":\"{}\"",
+                k.replace('\\', "\\\\").replace('"', "\\\""),
+                f
+            )
+        })
         .collect();
     format!("{{{}}}", pairs.join(","))
 }
 
 fn show(rq: &Rq<'_>, s: &Saved, map: &KeyMap, messages: Vec<Message>) -> Response {
     let title = s.file.display_title();
-    let mut t = String::from("<table class=\"list\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n<th>Key</th>\n<th>Function</th>\n<th>Change to</th>\n</tr>\n");
+    let mut t = String::from(
+        "<table class=\"list\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n<th>Key</th>\n<th>Function</th>\n<th>Change to</th>\n</tr>\n",
+    );
     for (i, (label, keys, what)) in rows(map).iter().enumerate() {
-        t.push_str(if i % 2 == 1 { "<tr class=\"alt\">\n" } else { "<tr>\n" });
+        t.push_str(if i % 2 == 1 {
+            "<tr class=\"alt\">\n"
+        } else {
+            "<tr>\n"
+        });
         let change = if keys.len() == 1 {
-            format!("<select name=\"m{i}\">{}</select>", options(map.function(&keys[0])))
+            format!(
+                "<select name=\"m{i}\">{}</select>",
+                options(map.function(&keys[0]))
+            )
         } else {
             String::new()
         };
-        let _ = write!(t, "<td class=\"mono\">{}</td>\n<td>{}</td>\n<td>{change}</td>\n</tr>\n", esc(label), esc(what));
+        let _ = write!(
+            t,
+            "<td class=\"mono\">{}</td>\n<td>{}</td>\n<td>{change}</td>\n</tr>\n",
+            esc(label),
+            esc(what)
+        );
     }
     t.push_str("</table>");
     let all = FUNCTIONS.iter().fold(String::new(), |mut s, (_, l)| {

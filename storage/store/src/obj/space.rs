@@ -125,7 +125,12 @@ impl Space {
             return self.write(txn, off, bytes);
         }
         let at = |index: u64| usize::try_from(index * PAGE_BYTES - off).expect("in bytes");
-        if !self.relocate(txn, first_full, end_full, &bytes[at(first_full)..at(end_full)])? {
+        if !self.relocate(
+            txn,
+            first_full,
+            end_full,
+            &bytes[at(first_full)..at(end_full)],
+        )? {
             return self.write(txn, off, bytes);
         }
         let head = at(first_full);

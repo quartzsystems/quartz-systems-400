@@ -30,7 +30,10 @@ fn a_long_command_holds_up_nothing_else() {
         let e = r.client.call(op, &());
         assert_eq!(e.status, Status::Ok, "{op:?}");
     }
-    assert!(at.elapsed() < Duration::from_secs(2), "answered while the command ran");
+    assert!(
+        at.elapsed() < Duration::from_secs(2),
+        "answered while the command ran"
+    );
     let e = r.client.reply(long);
     assert_eq!(e.status, Status::Ok);
     assert!(at.elapsed() >= Duration::from_secs(3));
@@ -45,7 +48,10 @@ fn commands_run_in_arrival_order() {
     let second = r.client.request(Op::RunCommand, &text("CRTLIB LIB(AFTER)"));
     // The second waits for the first: its reply comes after.
     let a = r.client.recv().unwrap();
-    assert_eq!((a.kind, a.request_id, a.status), (Kind::Reply, first, Status::Ok));
+    assert_eq!(
+        (a.kind, a.request_id, a.status),
+        (Kind::Reply, first, Status::Ok)
+    );
     let b = r.client.reply(second);
     assert_eq!(b.status, Status::Ok);
     let reply: CommandReply = b.body_as().unwrap();

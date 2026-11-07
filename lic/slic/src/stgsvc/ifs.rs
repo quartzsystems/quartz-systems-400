@@ -219,7 +219,12 @@ fn build(system: &mut System) -> Result<Ifs<LinuxBackend>, String> {
     let b = LinuxBackend::open(ROOT).map_err(|e| format!("{ROOT}: {}", e.text()))?;
     // `/QOPT` is the optical volumes the image catalogs load.
     let opt = ifs::vfs::optical::Volumes::new(super::media::volume_set());
-    let ifs = Ifs::with_optical(b, Box::new(StoreQsys::new(Lent)), Box::new(opt), Config::default());
+    let ifs = Ifs::with_optical(
+        b,
+        Box::new(StoreQsys::new(Lent)),
+        Box::new(opt),
+        Config::default(),
+    );
     with_lent(system, JobHandle(0), || {
         let env = StoreEnv::new(&Lent);
         ifs.ensure_layout(&env)?;

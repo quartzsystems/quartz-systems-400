@@ -197,7 +197,10 @@ impl VarType {
     pub fn encode(&self, value: &str) -> Vec<u8> {
         let text = |s: &str| {
             ccsid::to_ebcdic(s).unwrap_or_else(|_| {
-                let safe: String = s.chars().map(|c| if c.is_ascii() { c } else { '?' }).collect();
+                let safe: String = s
+                    .chars()
+                    .map(|c| if c.is_ascii() { c } else { '?' })
+                    .collect();
                 ccsid::to_ebcdic(&safe).unwrap_or_default()
             })
         };
@@ -207,20 +210,32 @@ impl VarType {
             b
         };
         match self {
-            Self::Char(n) | Self::QtdChar(n) | Self::CChar(n) | Self::IType(n) => fixed(*n as usize),
+            Self::Char(n) | Self::QtdChar(n) | Self::CChar(n) | Self::IType(n) => {
+                fixed(*n as usize)
+            }
             Self::VaryChar(p) => {
                 let b = text(value);
                 let mut out = if *p == 2 {
-                    u16::try_from(b.len()).unwrap_or(u16::MAX).to_be_bytes().to_vec()
+                    u16::try_from(b.len())
+                        .unwrap_or(u16::MAX)
+                        .to_be_bytes()
+                        .to_vec()
                 } else {
-                    u32::try_from(b.len()).unwrap_or(u32::MAX).to_be_bytes().to_vec()
+                    u32::try_from(b.len())
+                        .unwrap_or(u32::MAX)
+                        .to_be_bytes()
+                        .to_vec()
                 };
                 out.extend(b);
                 out
             }
             Self::Dec(d, s) => {
                 let n = usize::from(*d) / 2 + 1;
-                let v = if value.trim().is_empty() { "0" } else { value.trim() };
+                let v = if value.trim().is_empty() {
+                    "0"
+                } else {
+                    value.trim()
+                };
                 qdecimal::Decimal::parse(v)
                     .ok()
                     .and_then(|v| {

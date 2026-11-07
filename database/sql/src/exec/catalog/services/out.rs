@@ -29,21 +29,42 @@ impl Out {
     /// `NOT NULL` columns in `no_value` described nullable.
     #[must_use]
     pub fn new(shape: &'static Shape, alias: &str, no_value: &'static [&'static str]) -> Self {
-        let mut cols: Vec<_> = shape.cols.iter().map(|c| c.info(alias, c.nullable || no_value.contains(&c.name.as_str()))).collect();
+        let mut cols: Vec<_> = shape
+            .cols
+            .iter()
+            .map(|c| c.info(alias, c.nullable || no_value.contains(&c.name.as_str())))
+            .collect();
         // A long name cut to ten characters may meet another's system
         // name (`PTF_STATUS_TIMESTAMP`, `PTF_STATUS`): the later one
         // gets a system name of its position.
         for i in 1..cols.len() {
             let short = cols[i].field.as_ref().map(|f| f.name);
-            if short.is_some() && cols[..i].iter().any(|c| c.field.as_ref().map(|f| f.name) == short)
-                && let (Some(f), Ok(n)) = (cols[i].field.as_mut(), qsname::Name::parse(&format!("COL{:05}", i + 1)))
+            if short.is_some()
+                && cols[..i]
+                    .iter()
+                    .any(|c| c.field.as_ref().map(|f| f.name) == short)
+                && let (Some(f), Ok(n)) = (
+                    cols[i].field.as_mut(),
+                    qsname::Name::parse(&format!("COL{:05}", i + 1)),
+                )
             {
                 f.alias = Some(shape.cols[i].name.clone());
                 f.name = n;
             }
         }
-        let index = shape.cols.iter().enumerate().map(|(i, c)| (c.name.as_str(), i)).collect();
-        Self { shape, schema: Schema { cols }, index, rows: Vec::new(), unknown: Vec::new() }
+        let index = shape
+            .cols
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (c.name.as_str(), i))
+            .collect();
+        Self {
+            shape,
+            schema: Schema { cols },
+            index,
+            rows: Vec::new(),
+            unknown: Vec::new(),
+        }
     }
 
     /// Whether the shape has `col`.
@@ -89,7 +110,10 @@ impl Out {
                 }
                 Value::Str(s)
             }
-            Value::Str(s) if matches!(c.ty.as_str(), "VARCHAR" | "VARG") && s.chars().count() > c.len as usize => {
+            Value::Str(s)
+                if matches!(c.ty.as_str(), "VARCHAR" | "VARG")
+                    && s.chars().count() > c.len as usize =>
+            {
                 Value::Str(s.chars().take(c.len as usize).collect())
             }
             other => other,
@@ -146,7 +170,11 @@ impl Out {
             self.set(col, Value::Null);
             return;
         }
-        let ts = Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), u64::from(micros) * 1_000_000);
+        let ts = Timestamp::new(
+            Date::from_unix(secs),
+            Time::from_unix(secs),
+            u64::from(micros) * 1_000_000,
+        );
         self.set(col, Value::Timestamp(ts));
     }
 

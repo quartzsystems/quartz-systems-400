@@ -14,8 +14,8 @@ use std::io::Cursor;
 use cmd::Value;
 use cmd::block::Parms;
 use saverst::{
-    AllowDiff, AllowRestore, Hooks, MbrOpt, ObjSel, RestoreOptions, RestoreReport, RstOption, SaveOptions,
-    SaveReport, SaveTarget, msg,
+    AllowDiff, AllowRestore, Hooks, MbrOpt, ObjSel, RestoreOptions, RestoreReport, RstOption,
+    SaveOptions, SaveReport, SaveTarget, msg,
 };
 use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
 use sec::profile::SpecialAuth;
@@ -147,7 +147,11 @@ impl Hooks for SvcHooks {
             Some(h) => sec::guard::allowed(txn, self.qsys, "obj.restore", h.id),
             None => sec::guard::allowed(txn, self.qsys, "lib.create-in", lib),
         };
-        if ok { Ok(()) } else { Err(msg::NOT_RESTORED_AUTH) }
+        if ok {
+            Ok(())
+        } else {
+            Err(msg::NOT_RESTORED_AUTH)
+        }
     }
 
     fn set_private(
@@ -158,8 +162,16 @@ impl Hooks for SvcHooks {
         bits: u32,
     ) -> store::Result<()> {
         let name = store::obj::header::text_of(&profile);
-        sec::auth::grant::set_private(txn, self.qsys, id, &name, Some(sec::auth::bits::Auth::of(store::obj::Authority(bits))))
-            .map_err(|e| store::StoreError::BadValue { what: e.to_string() })
+        sec::auth::grant::set_private(
+            txn,
+            self.qsys,
+            id,
+            &name,
+            Some(sec::auth::bits::Auth::of(store::obj::Authority(bits))),
+        )
+        .map_err(|e| store::StoreError::BadValue {
+            what: e.to_string(),
+        })
     }
 
     fn secure(&self, txn: &mut Txn<'_>, autl: &str, id: ObjectId) -> store::Result<()> {
@@ -176,7 +188,9 @@ impl Hooks for SvcHooks {
     }
 
     fn system_key(&self, key_id: [u8; 8]) -> bool {
-        trusted_keys().iter().any(|k| saverst::sign::key_id(k) == key_id)
+        trusted_keys()
+            .iter()
+            .any(|k| saverst::sign::key_id(k) == key_id)
     }
 
     fn spool_part(&self, lib: &str, name: &str) -> Option<Vec<u8>> {
@@ -199,9 +213,7 @@ const TRUSTED_KEYS: &str = "/qs400/keys/system.pub";
 /// The trusted signers' public keys.
 pub(crate) fn trusted_keys() -> Vec<[u8; 32]> {
     std::fs::read(TRUSTED_KEYS)
-        .map(|b| {
-            b.as_chunks::<32>().0.to_vec()
-        })
+        .map(|b| b.as_chunks::<32>().0.to_vec())
         .unwrap_or_default()
 }
 
@@ -272,7 +284,9 @@ fn chgsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         text: parms.text("TEXT"),
     };
     let now = now_unix();
-    in_store(system, |txn, qsys, names| change_savf(txn, qsys, names, &file, &ch, now))?;
+    in_store(system, |txn, qsys, names| {
+        change_savf(txn, qsys, names, &file, &ch, now)
+    })?;
     Ok(CmdReply::default())
 }
 
@@ -322,7 +336,12 @@ fn clrsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 /// when it holds records. `*SAVSYS` covers the objects saved, not the
 /// save file (IBM's table puts no `*SAVSYS` footnote on its rows);
 /// `*ALLOBJ` passes through the search. Returns the records it holds.
-pub(super) fn may_write_savf(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId, file: &str) -> Result<u64, String> {
+pub(super) fn may_write_savf(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    id: ObjectId,
+    file: &str,
+) -> Result<u64, String> {
     let used = savf::len(txn, id).map_err(|e| e.to_string())?;
     let ok = if used > 0 {
         sec::guard::allowed(txn, qsys, "savf.replace", id)
@@ -347,7 +366,9 @@ fn save_target(
     let id = find_savf(txn, qsys, names, file)?;
     let used = may_write_savf(txn, qsys, id, &file.0)?;
     if clear == "*AFTER" {
-        return Err(format!("{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"));
+        return Err(format!(
+            "{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"
+        ));
     }
     if used > 0 && !matches!(clear, "*ALL" | "*REPLACE") {
         return Err(format!(
@@ -359,7 +380,12 @@ fn save_target(
 }
 
 /// A restore or display from save file `id`: `*USE`, `*SAVSYS` or not.
-pub(super) fn may_read_savf(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId, file: &str) -> Result<(), String> {
+pub(super) fn may_read_savf(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    id: ObjectId,
+    file: &str,
+) -> Result<(), String> {
     if sec::guard::allowed(txn, qsys, "savf.read", id) {
         Ok(())
     } else {
@@ -373,7 +399,10 @@ pub(super) fn may_read_savf(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId, fil
 /// everything (level 7).
 fn convert_level(system: &System, parms: &Parms) -> u8 {
     let t = parms.name("FRCOBJCVN");
-    let words: Vec<&str> = t.split(|c: char| c.is_whitespace() || c == '(' || c == ')').filter(|w| !w.is_empty()).collect();
+    let words: Vec<&str> = t
+        .split(|c: char| c.is_whitespace() || c == '(' || c == ')')
+        .filter(|w| !w.is_empty())
+        .collect();
     if words.contains(&"*ALL") {
         7
     } else if words.contains(&"*YES") || words.contains(&"*RQD") {
@@ -466,13 +495,17 @@ fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
 fn last_savlib(system: &mut System, lib: &str) -> u64 {
     in_store(system, |txn, qsys, _| {
         let n = qsname::Name::parse(lib).map_err(|e| e.to_string())?;
-        let id = ops::find_library(txn, qsys, n).map_err(|e| e.to_string())?.id;
+        let id = ops::find_library(txn, qsys, n)
+            .map_err(|e| e.to_string())?
+            .id;
         let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
-        Ok(if store::obj::header::text_of(&h.save.command) == "SAVLIB" {
-            h.last_saved
-        } else {
-            0
-        })
+        Ok(
+            if store::obj::header::text_of(&h.save.command) == "SAVLIB" {
+                h.last_saved
+            } else {
+                0
+            },
+        )
     })
     .unwrap_or(0)
 }
@@ -498,12 +531,18 @@ const USER_Q: &[&str] = &[
 /// security data, IFS, install media) and `omit`.
 pub(super) fn library_files(labels: &[String], wanted: &[String], omit: &[String]) -> Vec<String> {
     let other = |l: &str| {
-        matches!(l, "QFILEIOC" | "QFILEUPR" | IFS_LABEL | instmedia::layout::MANIFEST_LABEL)
-            || instmedia::Payload::from_label(l).is_some()
+        matches!(
+            l,
+            "QFILEIOC" | "QFILEUPR" | IFS_LABEL | instmedia::layout::MANIFEST_LABEL
+        ) || instmedia::Payload::from_label(l).is_some()
     };
     let mut out: Vec<String> = Vec::new();
     for l in labels.iter().map(|l| l.trim().to_ascii_uppercase()) {
-        if other(&l) || NEVER.contains(&l.as_str()) || qsname::Name::parse(&l).is_err() || out.contains(&l) {
+        if other(&l)
+            || NEVER.contains(&l.as_str())
+            || qsname::Name::parse(&l).is_err()
+            || out.contains(&l)
+        {
             continue;
         }
         if omit.iter().any(|o| saverst::select::generic(o, &l)) {
@@ -698,7 +737,11 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
                 device: m.dev.clone(),
                 file: None,
                 volume: m.vols.first().cloned().unwrap_or_else(|| "*MOUNTED".into()),
-                label: if m.label.is_empty() { libs.first().cloned().unwrap_or_default() } else { m.label.clone() },
+                label: if m.label.is_empty() {
+                    libs.first().cloned().unwrap_or_default()
+                } else {
+                    m.label.clone()
+                },
                 seq: 0,
             },
             None => SaveTarget {
@@ -713,7 +756,9 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     let savf_id = if media.is_some() {
         None
     } else {
-        match in_store(system, |txn, qsys, names| save_target(txn, qsys, names, &savf_name, &clear)) {
+        match in_store(system, |txn, qsys, names| {
+            save_target(txn, qsys, names, &savf_name, &clear)
+        }) {
             Ok(id) => Some(id),
             Err(e) => return failed(name, &e),
         }
@@ -755,7 +800,8 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     let hooks = SvcHooks { qsys, spool };
     // A save of several libraries to media is a file per library, as
     // IBM writes it; to a save file it is one stream.
-    let per_lib = media.as_ref().is_some_and(|m| m.label.is_empty()) && name != "SAVCFG" && libs.len() > 1;
+    let per_lib =
+        media.as_ref().is_some_and(|m| m.label.is_empty()) && name != "SAVCFG" && libs.len() > 1;
     let new_writer = || {
         Writer::new(Vec::new(), &head).map(|mut w| {
             let _ = w.parameters(&parms.to_line(name));
@@ -791,7 +837,9 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
                         Ok(n) => n,
                         Err(e) => return failed(name, &format!("CPF3793 {e}")),
                     };
-                    match std::mem::replace(&mut w, next).finish(u32::try_from(ns).unwrap_or(u32::MAX)) {
+                    match std::mem::replace(&mut w, next)
+                        .finish(u32::try_from(ns).unwrap_or(u32::MAX))
+                    {
                         Ok((_, b)) => streams.push((lib.clone(), b)),
                         Err(e) => return failed(name, &format!("CPF3793 {e}")),
                     }
@@ -834,7 +882,11 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
                     written.push_str(&written_line(&w));
                     // The next library's file follows where this one ended.
                     cur.seq = 0;
-                    if let Some(at) = w.volumes.last().and_then(|l| cur.vols.iter().position(|v| v == l)) {
+                    if let Some(at) = w
+                        .volumes
+                        .last()
+                        .and_then(|l| cur.vols.iter().position(|v| v == l))
+                    {
                         cur.vols = cur.vols[at..].to_vec();
                     }
                 }
@@ -975,7 +1027,11 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             .filter_map(|t| type_code(t))
             .filter(|t| CFG_TYPES.contains(t))
             .collect();
-        let types = if wanted.is_empty() { CFG_TYPES.to_vec() } else { wanted };
+        let types = if wanted.is_empty() {
+            CFG_TYPES.to_vec()
+        } else {
+            wanted
+        };
         values(parms, "OBJ")
             .iter()
             .flat_map(|o| {
@@ -1030,13 +1086,25 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         },
     };
     // A save of several libraries on media is a file per library.
-    let named: Vec<String> = saved.iter().filter(|l| !l.starts_with('*')).cloned().collect();
+    let named: Vec<String> = saved
+        .iter()
+        .filter(|l| !l.starts_with('*'))
+        .cloned()
+        .collect();
     let reads: Vec<Result<Vec<u8>, String>> = if let Some(m) = &media {
         let first = saved.first().cloned().unwrap_or_default();
         if name == "RSTCFG" {
-            vec![stream::restore(system, m, Some("QFILEIOC"), OptTarget::System("SAVCFG"))]
+            vec![stream::restore(
+                system,
+                m,
+                Some("QFILEIOC"),
+                OptTarget::System("SAVCFG"),
+            )]
         } else if name == "RSTLIB" && named.len() > 1 && m.label.is_empty() {
-            let each = Media { seq: 0, ..m.clone() };
+            let each = Media {
+                seq: 0,
+                ..m.clone()
+            };
             named
                 .iter()
                 .map(|l| stream::restore(system, &each, Some(l), OptTarget::Library(l)))
@@ -1045,7 +1113,10 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             // *NONSYS, *ALLUSR, *IBM: every library file on the medium.
             match stream::file_labels(system, m) {
                 Ok(labels) => {
-                    let each = Media { seq: 0, ..m.clone() };
+                    let each = Media {
+                        seq: 0,
+                        ..m.clone()
+                    };
                     let libs = library_files(&labels, &saved, &values(parms, "OMITLIB"));
                     if libs.is_empty() {
                         vec![Err(format!("CPF3780 no library saves on device {}", m.dev))]
@@ -1059,7 +1130,12 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             }
         } else {
             let label = (!first.starts_with('*')).then_some(first.as_str());
-            vec![stream::restore(system, m, label, OptTarget::Library(&first))]
+            vec![stream::restore(
+                system,
+                m,
+                label,
+                OptTarget::Library(&first),
+            )]
         }
     } else {
         vec![in_store(system, |txn, qsys, names| {
@@ -1125,9 +1201,8 @@ fn restore_stream(
     // The hooks decide who may restore; the objects are made by the
     // system so they keep their saved owners.
     let store = &mut storage.store;
-    let res = sec::guard::as_system(|| {
-        saverst::restore(store, jobh, &hooks, qsys, &mut reader, opts)
-    });
+    let res =
+        sec::guard::as_system(|| saverst::restore(store, jobh, &hooks, qsys, &mut reader, opts));
     match res {
         Ok(r) => {
             let mut reply = rst_reply(&r, opts.target_library.as_deref());
@@ -1162,10 +1237,13 @@ fn spool_parts(
     let mut queues = Vec::new();
     for lib in libs {
         let names = in_store(system, |txn, qsys, _| {
-            let Ok(found) = qsname::Name::parse(lib).map(|n| ops::find_library(txn, qsys, n)) else {
+            let Ok(found) = qsname::Name::parse(lib).map(|n| ops::find_library(txn, qsys, n))
+            else {
                 return Ok(Vec::new());
             };
-            let Ok(found) = found else { return Ok(Vec::new()) };
+            let Ok(found) = found else {
+                return Ok(Vec::new());
+            };
             Ok(store::obj::library::Library::load(txn, found.id)
                 .and_then(|l| l.list(txn, Some(types::OUTQ)))
                 .map_err(|e| e.to_string())?
@@ -1213,8 +1291,12 @@ fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
         else {
             break;
         };
-        let Some(rec) = take(&mut at, len as usize) else { break };
-        let Ok(saved) = wm::obj::splf::SplfAttrs::decode(rec) else { break };
+        let Some(rec) = take(&mut at, len as usize) else {
+            break;
+        };
+        let Ok(saved) = wm::obj::splf::SplfAttrs::decode(rec) else {
+            break;
+        };
         let Some(dlen) = take(&mut at, 8).map(|b| u64::from_be_bytes(b.try_into().expect("8")))
         else {
             break;
@@ -1223,11 +1305,16 @@ fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
             break;
         };
         // Saved before the published PP codes: converted as at IPL.
-        let old = wm::obj::splf::record_version(rec).is_ok_and(|v| v == wm::obj::splf::VERSION_OLD_PP);
-        let converted = old.then(|| crate::stgsvc::spool::published(&saved, data)).flatten();
+        let old =
+            wm::obj::splf::record_version(rec).is_ok_and(|v| v == wm::obj::splf::VERSION_OLD_PP);
+        let converted = old
+            .then(|| crate::stgsvc::spool::published(&saved, data))
+            .flatten();
         let data = converted.as_deref().unwrap_or(data);
         let exists = system.spool.files.values().any(|e| {
-            e.attrs.job == saved.job && e.attrs.name == saved.name && e.attrs.created == saved.created
+            e.attrs.job == saved.job
+                && e.attrs.name == saved.name
+                && e.attrs.created == saved.created
         });
         if exists {
             continue;
@@ -1262,7 +1349,9 @@ fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
         let _ = writeln!(text, "{id} {t}");
     }
     for n in &r.not_found {
-        reply.messages.push(message(msg::NOT_IN_SAVE, 5, &[(n, 10)]));
+        reply
+            .messages
+            .push(message(msg::NOT_IN_SAVE, 5, &[(n, 10)]));
         let _ = writeln!(text, "{} {n} is not in the save", msg::NOT_IN_SAVE);
     }
     for o in r.objects.iter().filter(|o| o.msgid.is_some()) {
@@ -1280,9 +1369,11 @@ fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
                 | msg::NOT_RESTORED_BASED_ON
                 | msg::NOT_RESTORED_MEMBERS
         ) {
-            reply
-                .messages
-                .push(message(msg::NOT_RESTORED, 5, &[(&o.name, 10), (&o.library, 10)]));
+            reply.messages.push(message(
+                msg::NOT_RESTORED,
+                5,
+                &[(&o.name, 10), (&o.library, 10)],
+            ));
         }
     }
     if r.changes > 0 {
@@ -1319,11 +1410,19 @@ fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
 fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, Box<CmdReply>> {
     let dev = values(parms, "DEV");
     if let Some(m) = media_of(parms) {
-        return stream::restore(system, &m, Some(SECDTA_LABEL), OptTarget::System("SAVSECDTA"))
-            .map_err(|e| Box::new(failed(name, &e)));
+        return stream::restore(
+            system,
+            &m,
+            Some(SECDTA_LABEL),
+            OptTarget::System("SAVSECDTA"),
+        )
+        .map_err(|e| Box::new(failed(name, &e)));
     }
     if dev.first().map(String::as_str) != Some("*SAVF") {
-        return Err(Box::new(failed(name, &format!("{NO_DEVICE} device {} not found", dev.join(" ")))));
+        return Err(Box::new(failed(
+            name,
+            &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
+        )));
     }
     let savf_name = parms.qual("SAVF");
     let stream = in_store(system, |txn, qsys, names| {
@@ -1425,14 +1524,19 @@ fn savsecdta(system: &mut System, parms: &Parms) -> CmdReply {
     let dev = values(parms, "DEV");
     let media = media_of(parms);
     if media.is_none() && dev.first().map(String::as_str) != Some("*SAVF") {
-        return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" ")));
+        return failed(
+            NAME,
+            &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
+        );
     }
     let savf_name = parms.qual("SAVF");
     let clear = parms.text("CLEAR");
     let savf_id = if media.is_some() {
         None
     } else {
-        match in_store(system, |txn, qsys, names| save_target(txn, qsys, names, &savf_name, &clear)) {
+        match in_store(system, |txn, qsys, names| {
+            save_target(txn, qsys, names, &savf_name, &clear)
+        }) {
             Ok(id) => Some(id),
             Err(e) => return failed(NAME, &e),
         }
@@ -1537,7 +1641,9 @@ fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
     let mut reply = CmdReply::default();
     for o in rep.objects.iter().filter(|o| o.msgid.is_some()) {
         let id = o.msgid.unwrap_or(msg::NOT_RESTORED_DAMAGED);
-        reply.messages.push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
+        reply
+            .messages
+            .push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
         let _ = writeln!(reply.text, "{id} {} not restored", o.name);
     }
     // The job calls QIBM_QSY_RST_PROFILE for each profile restored.
@@ -1584,7 +1690,8 @@ fn rstaut(system: &mut System, parms: &Parms) -> CmdReply {
     };
     let hooks = SvcHooks::new(qsys);
     let store = &mut storage.store;
-    let done = match sec::guard::as_system(|| saverst::secdta::rstaut(store, &hooks, qsys, &users)) {
+    let done = match sec::guard::as_system(|| saverst::secdta::rstaut(store, &hooks, qsys, &users))
+    {
         Ok(d) => d,
         Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
     };
@@ -1598,12 +1705,16 @@ fn rstaut(system: &mut System, parms: &Parms) -> CmdReply {
             d.restored, d.profile, d.not_restored
         );
         if d.not_restored == 0 {
-            reply.messages.push(message(AUTH_RESTORED, 4, &[(&r, 10), (&d.profile, 10)]));
-        } else {
-            partial = true;
             reply
                 .messages
-                .push(message(AUTH_NOT_RESTORED, 5, &[(&r, 10), (&d.profile, 10), (&n, 10)]));
+                .push(message(AUTH_RESTORED, 4, &[(&r, 10), (&d.profile, 10)]));
+        } else {
+            partial = true;
+            reply.messages.push(message(
+                AUTH_NOT_RESTORED,
+                5,
+                &[(&r, 10), (&d.profile, 10), (&n, 10)],
+            ));
         }
     }
     if partial {
@@ -1636,7 +1747,11 @@ fn ifs_objects(parms: &Parms) -> Vec<(String, bool, Option<String>)> {
                 part(e, 1).is_none_or(|x| !matches!(x.as_str(), "O" | "*OMIT")),
                 part(e, 2).filter(|n| !n.is_empty() && n != "*SAME"),
             ),
-            other => (other.source().trim().trim_matches('\'').to_string(), true, None),
+            other => (
+                other.source().trim().trim_matches('\'').to_string(),
+                true,
+                None,
+            ),
         };
         out.push((if path.is_empty() { ".".into() } else { path }, inc, new));
     }
@@ -1660,7 +1775,11 @@ fn expand(dir: &str, names: &[String], pattern: &str, omit: &[String]) -> Vec<St
             u.len() >= head.len() + tail.len() && u.starts_with(head) && u.ends_with(tail)
         })
         .map(|n| format!("{}/{n}", dir.trim_end_matches('/')))
-        .filter(|p| !omit.iter().any(|o| path_under(&p.to_ascii_uppercase(), &o.to_ascii_uppercase())))
+        .filter(|p| {
+            !omit
+                .iter()
+                .any(|o| path_under(&p.to_ascii_uppercase(), &o.to_ascii_uppercase()))
+        })
         .collect();
     out.sort();
     out
@@ -1677,11 +1796,19 @@ fn path_under(path: &str, pattern: &str) -> bool {
 
 /// The save file a `DEV('/QSYS.LIB/LIB.LIB/NAME.FILE')` names.
 fn savf_path(dev: &str) -> Option<(String, String)> {
-    let comps: Vec<&str> = dev.trim_matches('\'').split('/').filter(|s| !s.is_empty()).collect();
+    let comps: Vec<&str> = dev
+        .trim_matches('\'')
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .collect();
     match comps.as_slice() {
         [q, lib, file] if q.eq_ignore_ascii_case("QSYS.LIB") => {
-            let lib = lib.strip_suffix(".LIB").or_else(|| lib.strip_suffix(".lib"))?;
-            let file = file.strip_suffix(".FILE").or_else(|| file.strip_suffix(".file"))?;
+            let lib = lib
+                .strip_suffix(".LIB")
+                .or_else(|| lib.strip_suffix(".lib"))?;
+            let file = file
+                .strip_suffix(".FILE")
+                .or_else(|| file.strip_suffix(".file"))?;
             Some((file.to_ascii_uppercase(), lib.to_ascii_uppercase()))
         }
         _ => None,
@@ -1771,11 +1898,19 @@ const IFS_LABEL: &str = "QSAVIFS";
 fn sav(system: &mut System, parms: &Parms) -> CmdReply {
     const NAME: &str = "SAV";
     let dev = values(parms, "DEV");
-    let media = dev.first().and_then(|d| device_path(d)).map(|d| stream::of(parms, &d));
+    let media = dev
+        .first()
+        .and_then(|d| device_path(d))
+        .map(|d| stream::of(parms, &d));
     let savf_name = dev.first().and_then(|d| savf_path(d));
     let savf_id = match (&media, &savf_name) {
         (Some(_), _) => None,
-        (None, None) => return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" "))),
+        (None, None) => {
+            return failed(
+                NAME,
+                &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
+            );
+        }
         (None, Some(savf_name)) => match in_store(system, |txn, qsys, names| {
             let id = find_savf(txn, qsys, names, savf_name)?;
             may_write_savf(txn, qsys, id, &savf_name.0)?;
@@ -1873,10 +2008,18 @@ fn sav(system: &mut System, parms: &Parms) -> CmdReply {
 fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
     const NAME: &str = "RST";
     let dev = values(parms, "DEV");
-    let media = dev.first().and_then(|d| device_path(d)).map(|d| stream::of(parms, &d));
+    let media = dev
+        .first()
+        .and_then(|d| device_path(d))
+        .map(|d| stream::of(parms, &d));
     let read = match (&media, dev.first().and_then(|d| savf_path(d))) {
         (Some(m), _) => stream::restore(system, m, Some(IFS_LABEL), OptTarget::Ifs(1)),
-        (None, None) => return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" "))),
+        (None, None) => {
+            return failed(
+                NAME,
+                &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
+            );
+        }
         (None, Some(savf_name)) => in_store(system, |txn, qsys, names| {
             let id = find_savf(txn, qsys, names, &savf_name)?;
             may_read_savf(txn, qsys, id, &savf_name.0)?;
@@ -1917,13 +2060,25 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
                 not.push("a damaged link".to_string());
                 continue;
             };
-            let pick = objs.iter().filter(|(p, _, _)| path_under(&d.path, p)).max_by_key(|(p, _, _)| p.len());
-            let Some((from, true, new)) = pick else { continue };
+            let pick = objs
+                .iter()
+                .filter(|(p, _, _)| path_under(&d.path, p))
+                .max_by_key(|(p, _, _)| p.len());
+            let Some((from, true, new)) = pick else {
+                continue;
+            };
             let to = new
                 .as_ref()
                 .map_or_else(|| d.path.clone(), |n| d.path.replacen(from.as_str(), n, 1));
             let hard = d.hard_link_of.as_ref().and_then(|h| moved.get(h).cloned());
-            match ifs.restore(cx, &d, o.part(savfmt::Part::IFS_DATA), &to, hard.as_deref(), opts) {
+            match ifs.restore(
+                cx,
+                &d,
+                o.part(savfmt::Part::IFS_DATA),
+                &to,
+                hard.as_deref(),
+                opts,
+            ) {
                 Ok(ifs::save::Restored::Skipped) => {}
                 Ok(_) => {
                     ok += 1;
@@ -1958,11 +2113,7 @@ pub type SavfListing = (Vec<(String, String)>, Vec<Vec<String>>);
 /// and one row per object (object, type, library, attribute, size,
 /// text, owner, `YES` or `NO` for its data saved). `DSPSAVF`'s panel
 /// and its text form.
-pub fn savf_listing(
-    system: &mut System,
-    file: &str,
-    lib: &str,
-) -> Result<SavfListing, String> {
+pub fn savf_listing(system: &mut System, file: &str, lib: &str) -> Result<SavfListing, String> {
     let q = (file.to_ascii_uppercase(), lib.to_ascii_uppercase());
     let stream = in_store(system, |txn, qsys, names| {
         let id = find_savf(txn, qsys, names, &q)?;
@@ -1999,20 +2150,39 @@ pub fn stream_listing(stream: &[u8]) -> Result<SavfListing, String> {
         ("Library saved".into(), saved_lib),
         ("Objects displayed".into(), trailer.objects.to_string()),
         ("Records".into(), records.to_string()),
-        ("Release level".into(), format!("V{}R{}M{}", head.release.0, head.release.1, head.release.2)),
-        ("Target release".into(), format!("V{}R{}M{}", head.target.0, head.target.1, head.target.2)),
-        ("Data compressed".into(), if head.compression == savfmt::Compression::None { "No" } else { "Yes" }.into()),
+        (
+            "Release level".into(),
+            format!("V{}R{}M{}", head.release.0, head.release.1, head.release.2),
+        ),
+        (
+            "Target release".into(),
+            format!("V{}R{}M{}", head.target.0, head.target.1, head.target.2),
+        ),
+        (
+            "Data compressed".into(),
+            if head.compression == savfmt::Compression::None {
+                "No"
+            } else {
+                "Yes"
+            }
+            .into(),
+        ),
         ("System serial number".into(), head.serial.clone()),
         ("Save date/time".into(), head.created.to_string()),
         ("Command".into(), parameters),
     ];
     let mut rows = Vec::new();
-    for e in index.iter().filter(|e| e.owner_index == savfmt::object::NO_OWNER) {
-        let (d, tail) = savfmt::descriptor_at(&mut cur, e.offset).map_err(|x| format!("CPF3743 {x}"))?;
+    for e in index
+        .iter()
+        .filter(|e| e.owner_index == savfmt::object::NO_OWNER)
+    {
+        let (d, tail) =
+            savfmt::descriptor_at(&mut cur, e.offset).map_err(|x| format!("CPF3743 {x}"))?;
         let ty = if d.has(savfmt::object::flags::IFS) {
             "*IFS".to_string()
         } else {
-            types::type_by_code(d.type_code).map_or_else(|| format!("{:04X}", d.type_code), |t| t.name.to_string())
+            types::type_by_code(d.type_code)
+                .map_or_else(|| format!("{:04X}", d.type_code), |t| t.name.to_string())
         };
         let name = if d.has(savfmt::object::flags::IFS) {
             String::from_utf8_lossy(&tail).into_owned()
@@ -2027,7 +2197,12 @@ pub fn stream_listing(stream: &[u8]) -> Result<SavfListing, String> {
             d.size_bytes.to_string(),
             savfmt::text(&d.text),
             savfmt::text(&d.owner),
-            if d.has(savfmt::object::flags::FREED) { "NO" } else { "YES" }.to_string(),
+            if d.has(savfmt::object::flags::FREED) {
+                "NO"
+            } else {
+                "YES"
+            }
+            .to_string(),
         ]);
     }
     Ok((desc, rows))
@@ -2042,9 +2217,17 @@ fn dspsavf(system: &mut System, parms: &Parms) -> CmdReply {
             for (k, v) in &desc {
                 let _ = writeln!(text, "{k:<24} {v}");
             }
-            let _ = writeln!(text, "{:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Object", "Type", "Library", "Attribute", "Size");
+            let _ = writeln!(
+                text,
+                "{:<10} {:<10} {:<10} {:<10} {:>12}  Text",
+                "Object", "Type", "Library", "Attribute", "Size"
+            );
             for r in &rows {
-                let _ = writeln!(text, "{:<10} {:<10} {:<10} {:<10} {:>12}  {}", r[0], r[1], r[2], r[3], r[4], r[5]);
+                let _ = writeln!(
+                    text,
+                    "{:<10} {:<10} {:<10} {:<10} {:>12}  {}",
+                    r[0], r[1], r[2], r[3], r[4], r[5]
+                );
             }
             CmdReply {
                 text,
@@ -2081,10 +2264,19 @@ mod tests {
             "QSYS2",
             "QFILEIOC",
         ]);
-        assert_eq!(library_files(&tape, &s(&["*NONSYS"]), &[]), s(&["QGPL", "QUSRSYS", "PAYROLL", "QSYS2"]));
-        assert_eq!(library_files(&tape, &s(&["*ALLUSR"]), &s(&["PAY*"])), s(&["QGPL", "QUSRSYS", "QSYS2"]));
+        assert_eq!(
+            library_files(&tape, &s(&["*NONSYS"]), &[]),
+            s(&["QGPL", "QUSRSYS", "PAYROLL", "QSYS2"])
+        );
+        assert_eq!(
+            library_files(&tape, &s(&["*ALLUSR"]), &s(&["PAY*"])),
+            s(&["QGPL", "QUSRSYS", "QSYS2"])
+        );
         assert!(library_files(&tape, &s(&["*IBM"]), &[]).is_empty());
-        assert_eq!(library_files(&s(&["QS400LPQS00WDS", "QDEVTOOLS"]), &s(&["*IBM"]), &[]), s(&["QDEVTOOLS"]));
+        assert_eq!(
+            library_files(&s(&["QS400LPQS00WDS", "QDEVTOOLS"]), &s(&["*IBM"]), &[]),
+            s(&["QDEVTOOLS"])
+        );
     }
 }
 
@@ -2094,11 +2286,20 @@ mod sav_tests {
 
     #[test]
     fn a_pattern_names_the_directory_entries() {
-        let names: Vec<String> = ["QSYS.LIB", "home", "QOpenSys", "savsys", "rcvdata"].iter().map(|s| (*s).to_string()).collect();
+        let names: Vec<String> = ["QSYS.LIB", "home", "QOpenSys", "savsys", "rcvdata"]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect();
         let omit = vec!["/QSYS.LIB".to_string(), "/savsys".to_string()];
-        assert_eq!(expand("/", &names, "*", &omit), vec!["/QOpenSys", "/home", "/rcvdata"]);
+        assert_eq!(
+            expand("/", &names, "*", &omit),
+            vec!["/QOpenSys", "/home", "/rcvdata"]
+        );
         assert_eq!(expand("/", &names, "Q*", &omit), vec!["/QOpenSys"]);
-        assert_eq!(expand("/home", &["a.txt".into(), "b.log".into()], "*.TXT", &[]), vec!["/home/a.txt"]);
+        assert_eq!(
+            expand("/home", &["a.txt".into(), "b.log".into()], "*.TXT", &[]),
+            vec!["/home/a.txt"]
+        );
     }
 }
 
@@ -2123,7 +2324,11 @@ mod auth_tests {
     const NOW: u64 = 1_767_225_600;
 
     fn sysval(n: &str) -> String {
-        if n == "QSECURITY" { "40".into() } else { String::new() }
+        if n == "QSECURITY" {
+            "40".into()
+        } else {
+            String::new()
+        }
     }
 
     fn create(t: &mut Txn<'_>, lib: ObjectId, name: &str, type_code: u16) -> ObjectId {
@@ -2146,7 +2351,13 @@ mod auth_tests {
 
     /// A guarded store with APPLIB/SF (`*PUBLIC *USE`) and the sessions
     /// of BOB and QSECOFR.
-    fn setup() -> (Store, ObjectId, ObjectId, Rc<RefCell<Session>>, Rc<RefCell<Session>>) {
+    fn setup() -> (
+        Store,
+        ObjectId,
+        ObjectId,
+        Rc<RefCell<Session>>,
+        Rc<RefCell<Session>>,
+    ) {
         let d = Arc::new(MemBlockDev::with_seed(16384, 7));
         let params = FormatParams {
             asp_number: 1,
@@ -2156,8 +2367,12 @@ mod auth_tests {
             wal_pages: 128,
             now: NOW,
         };
-        let mut store =
-            Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let mut store = Store::format(
+            vec![Box::new(d) as Box<dyn BlockDev>],
+            &params,
+            StoreConfig::default(),
+        )
+        .unwrap();
         let qsys = {
             let mut t = store.begin().unwrap();
             let q = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
@@ -2197,7 +2412,9 @@ mod auth_tests {
         usrprf::crtusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB")])).unwrap();
         grant::set_public(&mut t, app, Some(Auth::USE)).unwrap();
         grant::set_public(&mut t, sf, Some(Auth::USE)).unwrap();
-        let bob = Rc::new(RefCell::new(Session::new(Principal::load(&mut t, qsys, "BOB", 40).unwrap())));
+        let bob = Rc::new(RefCell::new(Session::new(
+            Principal::load(&mut t, qsys, "BOB", 40).unwrap(),
+        )));
         let secofr = Rc::new(RefCell::new(Session::new(secofr)));
         t.commit().unwrap();
         (store, qsys, app, bob, secofr)
@@ -2221,11 +2438,17 @@ mod auth_tests {
         };
         let file = ("SF".to_string(), "APPLIB".to_string());
         let mut t = store.begin().unwrap();
-        let e = as_job(&bob, || change_savf(&mut t, qsys, &names, &file, &change(), NOW)).unwrap_err();
+        let e = as_job(&bob, || {
+            change_savf(&mut t, qsys, &names, &file, &change(), NOW)
+        })
+        .unwrap_err();
         assert!(e.starts_with("CPF2189"), "{e}");
         let id = find_savf(&mut t, qsys, &names, &file).unwrap();
         assert_eq!(savf::attr(&mut t, id).unwrap().max_records, 0);
-        as_job(&secofr, || change_savf(&mut t, qsys, &names, &file, &change(), NOW)).unwrap();
+        as_job(&secofr, || {
+            change_savf(&mut t, qsys, &names, &file, &change(), NOW)
+        })
+        .unwrap();
         assert_eq!(savf::attr(&mut t, id).unwrap().max_records, 99);
     }
 
@@ -2237,7 +2460,8 @@ mod auth_tests {
             libl: vec![qsys, app],
         };
         let mut t = store.begin().unwrap();
-        let read = |t: &mut Txn<'_>| super::super::lpapi::media_savf(t, qsys, &names, "APPLIB", "SF");
+        let read =
+            |t: &mut Txn<'_>| super::super::lpapi::media_savf(t, qsys, &names, "APPLIB", "SF");
         assert_eq!(as_job(&bob, || read(&mut t)).unwrap(), b"stream");
         let id = find_savf(&mut t, qsys, &names, &("SF".into(), "APPLIB".into())).unwrap();
         grant::set_public(&mut t, id, Some(Auth::EXCLUDE)).unwrap();
@@ -2280,8 +2504,15 @@ mod auth_tests {
             now: NOW,
             sysval: &sysval,
         };
-        usrprf::crtusrprf(t, &env, &Keywords::new(&[("USRPRF", name), ("SPCAUT", spc)])).unwrap();
-        Rc::new(RefCell::new(Session::new(Principal::load(t, qsys, name, 40).unwrap())))
+        usrprf::crtusrprf(
+            t,
+            &env,
+            &Keywords::new(&[("USRPRF", name), ("SPCAUT", spc)]),
+        )
+        .unwrap();
+        Rc::new(RefCell::new(Session::new(
+            Principal::load(t, qsys, name, 40).unwrap(),
+        )))
     }
 
     #[test]
@@ -2297,7 +2528,10 @@ mod auth_tests {
         let empty = ("EMPTY".to_string(), "APPLIB".to_string());
         let full = ("SF".to_string(), "APPLIB".to_string());
         // *PUBLIC *USE: no *ADD to save into, *USE to restore from.
-        let e = as_job(&saver, || save_target(&mut t, qsys, &names, &empty, "*NONE")).unwrap_err();
+        let e = as_job(&saver, || {
+            save_target(&mut t, qsys, &names, &empty, "*NONE")
+        })
+        .unwrap_err();
         assert!(e.starts_with("CPF2189"), "{e}");
         let sf = find_savf(&mut t, qsys, &names, &full).unwrap();
         as_job(&saver, || may_read_savf(&mut t, qsys, sf, "SF")).unwrap();
@@ -2317,7 +2551,10 @@ mod auth_tests {
         let id = empty_savf(&mut t, app);
         let empty = ("EMPTY".to_string(), "APPLIB".to_string());
         grant::set_private(&mut t, qsys, id, "BOB", Some(auth(&["*USE", "*ADD"]))).unwrap();
-        assert_eq!(as_job(&bob, || save_target(&mut t, qsys, &names, &empty, "*NONE")).unwrap(), id);
+        assert_eq!(
+            as_job(&bob, || save_target(&mut t, qsys, &names, &empty, "*NONE")).unwrap(),
+            id
+        );
     }
 
     #[test]
@@ -2333,8 +2570,18 @@ mod auth_tests {
         grant::set_private(&mut t, qsys, sf, "BOB", Some(auth(&["*USE", "*ADD"]))).unwrap();
         let e = as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*ALL")).unwrap_err();
         assert!(e.starts_with("CPF2189"), "{e}");
-        grant::set_private(&mut t, qsys, sf, "BOB", Some(auth(&["*USE", "*ADD", "*OBJMGT"]))).unwrap();
-        assert_eq!(as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*ALL")).unwrap(), sf);
+        grant::set_private(
+            &mut t,
+            qsys,
+            sf,
+            "BOB",
+            Some(auth(&["*USE", "*ADD", "*OBJMGT"])),
+        )
+        .unwrap();
+        assert_eq!(
+            as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*ALL")).unwrap(),
+            sf
+        );
         // Allowed, but still not cleared without CLEAR.
         let e = as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*NONE")).unwrap_err();
         assert!(e.starts_with(SAVF_NOT_EMPTY), "{e}");
@@ -2353,7 +2600,10 @@ mod auth_tests {
         grant::set_public(&mut t, sf, Some(Auth::EXCLUDE)).unwrap();
         let all = user_with(&mut t, qsys, "ALLER", "*ALLOBJ");
         for s in [&secofr, &all] {
-            assert_eq!(as_job(s, || save_target(&mut t, qsys, &names, &full, "*REPLACE")).unwrap(), sf);
+            assert_eq!(
+                as_job(s, || save_target(&mut t, qsys, &names, &full, "*REPLACE")).unwrap(),
+                sf
+            );
             as_job(s, || may_read_savf(&mut t, qsys, sf, "SF")).unwrap();
         }
     }

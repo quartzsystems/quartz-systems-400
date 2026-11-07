@@ -140,7 +140,13 @@ impl DdmFile {
 
     fn from_pairs(p: &[(String, String)]) -> Option<Self> {
         let (lib, file) = get(p, "FILE")?.split_once('/')?;
-        let mut d = Self::new(lib, file, get(p, "RMTFILE")?, get(p, "RMTLOCNAME")?, get(p, "TYPE").unwrap_or("*SNA"));
+        let mut d = Self::new(
+            lib,
+            file,
+            get(p, "RMTFILE")?,
+            get(p, "RMTLOCNAME")?,
+            get(p, "TYPE").unwrap_or("*SNA"),
+        );
         let s = |k: &str| get(p, k).unwrap_or_default().to_string();
         d.rdb = s("RDB");
         d.port = get(p, "PORT").and_then(|v| v.parse().ok()).unwrap_or(446);

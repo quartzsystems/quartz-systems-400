@@ -188,9 +188,10 @@ pub fn join_matches(join: &JoinDef, from: BaseRecord<'_>, to: BaseRecord<'_>) ->
         let left = record::read_field(from_field, from.1, from.2, from.0.null_index(from_index))?;
         let right = record::read_field(to_field, to.1, to.2, to.0.null_index(to_index))?;
         let same = match (&left, &right) {
-            (Value::Num(_) | Value::Float(_) | Value::DecFloat(_), Value::Num(_) | Value::Float(_) | Value::DecFloat(_)) => {
-                record::compare(&left, &right) == std::cmp::Ordering::Equal
-            }
+            (
+                Value::Num(_) | Value::Float(_) | Value::DecFloat(_),
+                Value::Num(_) | Value::Float(_) | Value::DecFloat(_),
+            ) => record::compare(&left, &right) == std::cmp::Ordering::Equal,
             (Value::Char(left), Value::Char(right)) => trim_blanks(left) == trim_blanks(right),
             _ => false,
         };

@@ -109,10 +109,20 @@ mod tests {
     #[test]
     fn rooted_paths_both_ways() {
         let mut m = RootedPaths::new("/qs400/ifs/");
-        assert_eq!(m.to_host("/tmp/a.sock", UnixUse::Bind).unwrap(), "/qs400/ifs/tmp/a.sock");
+        assert_eq!(
+            m.to_host("/tmp/a.sock", UnixUse::Bind).unwrap(),
+            "/qs400/ifs/tmp/a.sock"
+        );
         m.cwd = "/home/QSTEST".into();
-        assert_eq!(m.to_host("s/../b.sock", UnixUse::Connect).unwrap(), "/qs400/ifs/home/QSTEST/b.sock");
-        assert_eq!(m.to_host("/../../etc", UnixUse::Bind).unwrap(), "/qs400/ifs/etc", "never above the root");
+        assert_eq!(
+            m.to_host("s/../b.sock", UnixUse::Connect).unwrap(),
+            "/qs400/ifs/home/QSTEST/b.sock"
+        );
+        assert_eq!(
+            m.to_host("/../../etc", UnixUse::Bind).unwrap(),
+            "/qs400/ifs/etc",
+            "never above the root"
+        );
         assert_eq!(m.to_ifs("/qs400/ifs/tmp/a.sock"), "/tmp/a.sock");
         assert_eq!(m.to_ifs("/elsewhere"), "/elsewhere");
         assert_eq!(m.to_host("", UnixUse::Bind), Err(Errno::ENOENT));

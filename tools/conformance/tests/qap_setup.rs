@@ -27,7 +27,12 @@ fn open() -> (Store, SqlContext) {
         wal_pages: 256,
         now: NOW,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys: ObjectId = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     t.commit().unwrap();
@@ -44,7 +49,8 @@ fn open() -> (Store, SqlContext) {
 }
 
 fn script(name: &str) -> String {
-    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("qap").join(name)).expect("the script")
+    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("qap").join(name))
+        .expect("the script")
 }
 
 fn run(store: &mut Store, ctx: &mut SqlContext, name: &str) -> sql::RunReport {
@@ -77,21 +83,62 @@ fn hlinv_sets_up_the_test_systems_database() {
     assert_eq!(q("SELECT COUNT(*) FROM HLINV.ASSETS"), "12");
     assert_eq!(q("SELECT COUNT(*) FROM HLINV.ASSETSACT"), "11");
     assert_eq!(q("SELECT COUNT(*) FROM HLINV.HW"), "12");
-    assert_eq!(q("SELECT TABLE_TYPE FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLINV' AND TABLE_NAME = 'HW'"), "A");
-    assert_eq!(q("SELECT MODEL FROM HLINV.ASSETS WHERE ASSET_TAG = 'QS000302'"), "UR20-FBC-EIP");
+    assert_eq!(
+        q(
+            "SELECT TABLE_TYPE FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLINV' AND TABLE_NAME = 'HW'"
+        ),
+        "A"
+    );
+    assert_eq!(
+        q("SELECT MODEL FROM HLINV.ASSETS WHERE ASSET_TAG = 'QS000302'"),
+        "UR20-FBC-EIP"
+    );
     assert_eq!(q("SELECT COUNT(*) FROM HLTEST.ALLTYPES"), "7");
-    assert_eq!(q("SELECT C_VARCHAR FROM HLTEST.ALLTYPES WHERE ID = 2"), "na\u{ef}ve caf\u{e9}");
+    assert_eq!(
+        q("SELECT C_VARCHAR FROM HLTEST.ALLTYPES WHERE ID = 2"),
+        "na\u{ef}ve caf\u{e9}"
+    );
     assert_eq!(q("SELECT COUNT(*) FROM HLTEST.SLOW"), "300");
     assert_eq!(q("SELECT SUM(LENGTH(DATA)) FROM HLTEST.BIG"), "1100000");
-    assert_eq!(q("SELECT C_BOOLEAN FROM HLTEST.ALLTYPES WHERE ID = 2"), "FALSE");
-    assert_eq!(q("SELECT C_SMALLINT || ' ' || C_INTEGER FROM HLTEST.ALLTYPES WHERE ID = 1"), "-32767 2147483601");
-    assert_eq!(q("SELECT C_DOUBLE || ' ' || C_REAL FROM HLTEST.ALLTYPES WHERE ID = 2"), "1E300 3.4028235E38");
-    assert_eq!(q("SELECT C_DOUBLE FROM HLTEST.ALLTYPES WHERE ID = 3"), "-2.5E-308");
-    assert_eq!(q("SELECT C_GRAPHIC || '/' || C_VARGRAPH FROM HLTEST.ALLTYPES WHERE ID = 1"), "ＡＢ   /全角テキスト");
-    assert_eq!(q("SELECT C_GRAPHIC FROM HLTEST.ALLTYPES WHERE ID = 2"), "漢字");
-    assert_eq!(q("SELECT LENGTH(C_BLOB) FROM HLTEST.ALLTYPES WHERE ID = 3"), "300");
-    assert_eq!(q("SELECT COUNT(*) FROM HLTEST.ALLTYPES WHERE C_TS12 IS NULL"), "1");
+    assert_eq!(
+        q("SELECT C_BOOLEAN FROM HLTEST.ALLTYPES WHERE ID = 2"),
+        "FALSE"
+    );
+    assert_eq!(
+        q("SELECT C_SMALLINT || ' ' || C_INTEGER FROM HLTEST.ALLTYPES WHERE ID = 1"),
+        "-32767 2147483601"
+    );
+    assert_eq!(
+        q("SELECT C_DOUBLE || ' ' || C_REAL FROM HLTEST.ALLTYPES WHERE ID = 2"),
+        "1E300 3.4028235E38"
+    );
+    assert_eq!(
+        q("SELECT C_DOUBLE FROM HLTEST.ALLTYPES WHERE ID = 3"),
+        "-2.5E-308"
+    );
+    assert_eq!(
+        q("SELECT C_GRAPHIC || '/' || C_VARGRAPH FROM HLTEST.ALLTYPES WHERE ID = 1"),
+        "ＡＢ   /全角テキスト"
+    );
+    assert_eq!(
+        q("SELECT C_GRAPHIC FROM HLTEST.ALLTYPES WHERE ID = 2"),
+        "漢字"
+    );
+    assert_eq!(
+        q("SELECT LENGTH(C_BLOB) FROM HLTEST.ALLTYPES WHERE ID = 3"),
+        "300"
+    );
+    assert_eq!(
+        q("SELECT COUNT(*) FROM HLTEST.ALLTYPES WHERE C_TS12 IS NULL"),
+        "1"
+    );
     assert_eq!(q("SELECT COUNT(*) FROM HLPAY.SALARIES"), "2");
-    assert_eq!(q("SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLMANY'"), "150");
-    assert_eq!(q("SELECT COUNT(*) FROM QSYS2.SYSSCHEMAS WHERE SCHEMA_NAME LIKE 'ARCH%'"), "140");
+    assert_eq!(
+        q("SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLMANY'"),
+        "150"
+    );
+    assert_eq!(
+        q("SELECT COUNT(*) FROM QSYS2.SYSSCHEMAS WHERE SCHEMA_NAME LIKE 'ARCH%'"),
+        "140"
+    );
 }

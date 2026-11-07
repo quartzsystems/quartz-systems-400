@@ -140,7 +140,9 @@ fn ship_group(
 ) -> Result<bool, String> {
     let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
     let n = Name::parse(name).map_err(|e| format!("{name}: {e}"))?;
-    let have = lib.lookup(txn, pnlgrp_type(), n).map_err(|e| e.to_string())?;
+    let have = lib
+        .lookup(txn, pnlgrp_type(), n)
+        .map_err(|e| e.to_string())?;
     if have.is_some_and(|id| same_source(txn, id, text)) {
         return Ok(false);
     }
@@ -164,7 +166,12 @@ fn ship_group(
 pub fn qhss1_entries() -> Vec<(String, Vec<String>, String, String)> {
     let mut out = Vec::new();
     for (name, text) in uim::shipped::FILES.iter().chain(menus::shipped::FILES) {
-        let c = uim::compile(text, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let c = uim::compile(
+            text,
+            &uim::NoImbeds,
+            &uim::NoImports,
+            &uim::CompileOpts::default(),
+        );
         let Some(g) = c.group else {
             continue;
         };
@@ -173,10 +180,14 @@ pub fn qhss1_entries() -> Vec<(String, Vec<String>, String, String)> {
         for h in &g.helps {
             let own: Vec<_> = topics.iter().filter(|t| t.module == h.name).collect();
             if !own.is_empty() {
-                out.extend(
-                    own.into_iter()
-                        .map(|t| (t.title.clone(), t.roots.clone(), t.pnlgrp.clone(), t.module.clone())),
-                );
+                out.extend(own.into_iter().map(|t| {
+                    (
+                        t.title.clone(),
+                        t.roots.clone(),
+                        t.pnlgrp.clone(),
+                        t.module.clone(),
+                    )
+                }));
                 continue;
             }
             let title = uim::model::Span::plain(&h.title).trim().to_string();
@@ -247,7 +258,12 @@ pub fn install_shipped(
     }
     let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
     let idx = Name::parse(QHSS1).map_err(|e| e.to_string())?;
-    if made > 0 || lib.lookup(txn, schidx_type(), idx).map_err(|e| e.to_string())?.is_none() {
+    if made > 0
+        || lib
+            .lookup(txn, schidx_type(), idx)
+            .map_err(|e| e.to_string())?
+            .is_none()
+    {
         ship_qhss1(txn, qsys, stamp)?;
         made += 1;
     }
@@ -260,7 +276,10 @@ mod tests {
     fn qhss1_holds_every_kind_of_help() {
         let e = super::qhss1_entries();
         assert!(e.len() > 5000, "{}", e.len());
-        assert!(e.iter().any(|t| t.2 == "QSYS/QHWMCMD" && t.3 == "ADDLIBLE/LIB"));
+        assert!(
+            e.iter()
+                .any(|t| t.2 == "QSYS/QHWMCMD" && t.3 == "ADDLIBLE/LIB")
+        );
         assert!(e.iter().any(|t| t.2 == "QSYS/QUIWRKLIB" && t.3 == "WRKLIB"));
         assert!(e.iter().all(|t| !t.1.is_empty()));
     }

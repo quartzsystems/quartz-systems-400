@@ -63,7 +63,11 @@ impl Entry {
 #[must_use]
 pub fn tenths(t: u64) -> String {
     let (w, f) = (t / 10, t % 10);
-    if w == 0 { format!(".{f}") } else { format!("{w}.{f}") }
+    if w == 0 {
+        format!(".{f}")
+    } else {
+        format!("{w}.{f}")
+    }
 }
 
 /// The option legend, from column 4.
@@ -195,7 +199,13 @@ mod tests {
             "QPADEV0001   USERNAM     009069  0000003B      0      0      16       0"
         );
         assert_eq!(tenths(1045), "104.5");
-        assert_eq!(keys(3, 0).0, "F3=Exit   F10=Update list   F11=View 1   F12=Cancel   F19=Automatic refresh");
-        assert_eq!(listed(&[e.clone(), Entry { cpu: 0, ..e }], 1, false).len(), 1);
+        assert_eq!(
+            keys(3, 0).0,
+            "F3=Exit   F10=Update list   F11=View 1   F12=Cancel   F19=Automatic refresh"
+        );
+        assert_eq!(
+            listed(&[e.clone(), Entry { cpu: 0, ..e }], 1, false).len(),
+            1
+        );
     }
 }

@@ -95,14 +95,29 @@ pub fn tokens(text: &str) -> Vec<Tok> {
                 v.push(chars[i].1);
                 i += 1;
             }
-            let kind = if c == '\'' { Kind::Str(v) } else { Kind::Delim(v) };
-            out.push(Tok { kind, start, end: end_at(i) });
+            let kind = if c == '\'' {
+                Kind::Str(v)
+            } else {
+                Kind::Delim(v)
+            };
+            out.push(Tok {
+                kind,
+                start,
+                end: end_at(i),
+            });
             continue;
         }
-        if c == ':' && chars.get(i + 1).is_some_and(|x| name_char(x.1) && !x.1.is_ascii_digit()) {
+        if c == ':'
+            && chars
+                .get(i + 1)
+                .is_some_and(|x| name_char(x.1) && !x.1.is_ascii_digit())
+        {
             i += 1;
             let mut v = String::new();
-            while i < chars.len() && (name_char(chars[i].1) || chars[i].1 == '.' && chars.get(i + 1).is_some_and(|x| name_char(x.1))) {
+            while i < chars.len()
+                && (name_char(chars[i].1)
+                    || chars[i].1 == '.' && chars.get(i + 1).is_some_and(|x| name_char(x.1)))
+            {
                 v.push(chars[i].1.to_ascii_uppercase());
                 i += 1;
             }
@@ -232,8 +247,12 @@ impl Edits {
     /// The edited text of `start..end`, with the edits inside it.
     #[must_use]
     pub fn apply_range(&self, text: &str, start: usize, end: usize) -> String {
-        let mut list: Vec<(usize, usize, String)> =
-            self.list.iter().filter(|e| e.0 >= start && e.1 <= end).cloned().collect();
+        let mut list: Vec<(usize, usize, String)> = self
+            .list
+            .iter()
+            .filter(|e| e.0 >= start && e.1 <= end)
+            .cloned()
+            .collect();
         list.sort_by_key(|e| e.0);
         let text = &text[..end];
         let mut out = String::new();
@@ -272,7 +291,10 @@ mod tests {
         let l = host_list(&t, into + 1, from);
         assert_eq!(l.len(), 2);
         assert_eq!((l[0].name.as_str(), l[0].ind.as_deref()), ("X", Some("I")));
-        assert_eq!((l[1].name.as_str(), l[1].ind.as_deref()), ("DS.SUB", Some("J")));
+        assert_eq!(
+            (l[1].name.as_str(), l[1].ind.as_deref()),
+            ("DS.SUB", Some("J"))
+        );
         assert!(t.iter().any(|x| x.kind == Kind::Str("x:y".into())));
     }
 

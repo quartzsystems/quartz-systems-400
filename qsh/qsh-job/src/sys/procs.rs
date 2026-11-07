@@ -132,8 +132,8 @@ fn program(
         .find(|(k, _)| *k == 1)
         .map(|(_, f)| f.clone());
     let args: Vec<String> = req.argv.iter().skip(1).cloned().collect();
-    let body = Box::new(move || {
-        match broker.call(move |s| s.call_program(&lib, &pgm, &args)) {
+    let body = Box::new(
+        move || match broker.call(move |s| s.call_program(&lib, &pgm, &args)) {
             Ok(Ok(run)) => {
                 if let Some(o) = &out {
                     let _ = write_all(&**o, run.output.as_bytes());
@@ -141,8 +141,8 @@ fn program(
                 run.status
             }
             _ => 126,
-        }
-    });
+        },
+    );
     let name = req.argv.first().cloned().unwrap_or_default();
     Ok(Box::new(ThreadChild::start(pid, &name, body)?))
 }

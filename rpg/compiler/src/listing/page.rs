@@ -79,12 +79,20 @@ impl Out {
         };
         self.lines.push(format!(
             "{cc}{:<64}{:<26}Page {:>5}",
-            format!(" {} {}  QS/400  RN        QS/400 ILE RPG", release::DEV_TOOLS_ID, release::RELEASE),
+            format!(
+                " {} {}  QS/400  RN        QS/400 ILE RPG",
+                release::DEV_TOOLS_ID,
+                release::RELEASE
+            ),
             self.title,
             self.page
         ));
         self.pos += 1;
-        if self.rulers.as_ref().is_some_and(|(a, b)| a.is_empty() && b.is_empty()) {
+        if self
+            .rulers
+            .as_ref()
+            .is_some_and(|(a, b)| a.is_empty() && b.is_empty())
+        {
             // Blank rulers: one record of their height.
             self.lines.push("-".into());
             self.pos += 3;
@@ -111,7 +119,11 @@ impl Out {
             }
             cc = [' ', ' ', '0', '-'][total];
         }
-        if if self.late { self.overflowed() } else { self.pos + advance(cc) > OVERFLOW } {
+        if if self.late {
+            self.overflowed()
+        } else {
+            self.pos + advance(cc) > OVERFLOW
+        } {
             self.heading();
             cc = if self.rulers.is_some() { ' ' } else { more(cc) };
         }

@@ -92,7 +92,10 @@ pub fn date1(local: i64, now: i64) -> String {
 
 /// One `LISTFMT 0` line of an object with size and time.
 pub fn line0(owner: &str, size: u64, local: i64, objtype: &str, name: &str) -> String {
-    format!("{owner:<10}{size:>11} {} {objtype:<10} {name}", date0(local))
+    format!(
+        "{owner:<10}{size:>11} {} {objtype:<10} {name}",
+        date0(local)
+    )
 }
 
 /// One `LISTFMT 0` member line: no size, no time.
@@ -102,7 +105,11 @@ pub fn member0(owner: &str, name: &str) -> String {
 
 /// The `ls` mode string; `dir` forces a `d`.
 pub fn mode_string(mode: u32, dir: bool) -> String {
-    let t = if dir || mode & S_IFMT == S_IFDIR { 'd' } else { '-' };
+    let t = if dir || mode & S_IFMT == S_IFDIR {
+        'd'
+    } else {
+        '-'
+    };
     let mut s = String::with_capacity(10);
     s.push(t);
     for shift in [6, 3, 0] {
@@ -116,7 +123,16 @@ pub fn mode_string(mode: u32, dir: bool) -> String {
 
 /// One `LISTFMT 1` line.
 #[allow(clippy::too_many_arguments)]
-pub fn line1(mode: &str, nlink: u32, owner: &str, group: &str, size: u64, local: i64, now: i64, name: &str) -> String {
+pub fn line1(
+    mode: &str,
+    nlink: u32,
+    owner: &str,
+    group: &str,
+    size: u64,
+    local: i64,
+    now: i64,
+    name: &str,
+) -> String {
     format!(
         "{mode} {nlink:>3} {owner:<8} {group:<8} {size:>7} {} {name}",
         date1(local, now)
@@ -151,7 +167,10 @@ mod tests {
         // 2026-10-29 21:33:00 UTC.
         let t = 1_793_309_580;
         let c = civil(t);
-        assert_eq!((c.year, c.month, c.day, c.hour, c.minute), (2026, 10, 29, 21, 33));
+        assert_eq!(
+            (c.year, c.month, c.day, c.hour, c.minute),
+            (2026, 10, 29, 21, 33)
+        );
         assert_eq!(date0(t), "26-10-29 21:33:00");
         assert_eq!(date1(t, t + 10), "Oct 29 21:33");
         assert_eq!(date1(t - 400 * 86_400, t), "Sep 24 2025 ");

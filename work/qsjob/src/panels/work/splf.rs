@@ -19,12 +19,20 @@ use crate::display::uim::Response;
 const VIEWS: usize = 3;
 
 /// `WRKSPLF [SELECT(user ...)] [JOB()]`.
-pub fn wrksplf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+pub fn wrksplf(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
     // The first element of SELECT is the user.
-    let select = r.get("SELECT").and_then(|b| b.value.as_ref()).and_then(|v| match v {
-        Value::Elems(items) => items.first().cloned().flatten(),
-        other => Some(other.clone()),
-    });
+    let select = r
+        .get("SELECT")
+        .and_then(|b| b.value.as_ref())
+        .and_then(|v| match v {
+            Value::Elems(items) => items.first().cloned().flatten(),
+            other => Some(other.clone()),
+        });
     let user = match select.map(|v| v.source().to_ascii_uppercase()).as_deref() {
         None | Some("*CURRENT") => host.start.user.clone(),
         Some("*ALL") => String::new(),
@@ -46,11 +54,25 @@ pub fn wrksplf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                 entry(&[
                     ("FILE", f.name.clone()),
                     ("USER", f.job.1.clone()),
-                    ("DEVQ", if f.writer.is_empty() { queue } else { f.writer.clone() }),
+                    (
+                        "DEVQ",
+                        if f.writer.is_empty() {
+                            queue
+                        } else {
+                            f.writer.clone()
+                        },
+                    ),
                     ("USRDTA", f.usrdta.clone()),
                     ("STS", f.status.code().to_string()),
                     ("PAGES", f.pages.to_string()),
-                    ("CURPAGE", if f.last_page == 0 { String::new() } else { f.last_page.to_string() }),
+                    (
+                        "CURPAGE",
+                        if f.last_page == 0 {
+                            String::new()
+                        } else {
+                            f.last_page.to_string()
+                        },
+                    ),
                     ("COPIES", f.copies_left.max(1).to_string()),
                     ("JOB", f.job.0.clone()),
                     ("NUMBER", format!("{:06}", f.job.2)),

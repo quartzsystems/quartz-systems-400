@@ -71,7 +71,13 @@ fn until(s: &mut Session, line: &str, want: &[&str]) -> Result<String, String> {
 
 /// A TN5250 session on the forwarded port, with or without the RFC 4777
 /// variables, pumped until one of `want` shows; which one, and the screen.
-fn telnet(port: u16, user: &str, password: &str, auto: bool, want: &[&str]) -> Result<(usize, String), String> {
+fn telnet(
+    port: u16,
+    user: &str,
+    password: &str,
+    auto: bool,
+    want: &[&str],
+) -> Result<(usize, String), String> {
     let mut c = Connect::qs400(port, user, password);
     c.auto_signon = auto;
     c.encoding = Encoding::Sha;
@@ -152,12 +158,32 @@ fn fake_router() -> Result<(u16, mpsc::Receiver<Vec<String>>), String> {
 impl Suite {
     /// Step 96: an interface from DHCP on the NIC's line.
     pub(crate) fn dhcp_client(&self, s: &mut Session) -> Result<String, String> {
-        expect(s, &format!("ADDTCPIFC INTNETADR(*IP4DHCP) LIND({LINE}) AUTOSTART(*NO)"), &["TCP1D03"])?;
+        expect(
+            s,
+            &format!("ADDTCPIFC INTNETADR(*IP4DHCP) LIND({LINE}) AUTOSTART(*NO)"),
+            &["TCP1D03"],
+        )?;
         expect(s, "STRTCPIFC INTNETADR(*IP4DHCP)", &["TCP1A0B"])?;
-        until(s, "svc.tcp ifc", &[&format!("kernel addr eth0 {DHCP_FIRST}/24")])?;
-        let ifc = until(s, "svc.tcp ifc", &["ifc *IP4DHCP", "Active", &format!("lease *IP4DHCP {DHCP_FIRST}/24 from 10.0.2.2")])?;
+        until(
+            s,
+            "svc.tcp ifc",
+            &[&format!("kernel addr eth0 {DHCP_FIRST}/24")],
+        )?;
+        let ifc = until(
+            s,
+            "svc.tcp ifc",
+            &[
+                "ifc *IP4DHCP",
+                "Active",
+                &format!("lease *IP4DHCP {DHCP_FIRST}/24 from 10.0.2.2"),
+            ],
+        )?;
         let netstat = expect(s, "NETSTAT OPTION(*IFC)", &["*IP4DHCP", DHCP_FIRST])?;
-        let kept = until(s, "svc.ifs cat /QIBM/UserData/OS400/TCPIP/DHCP/LEASES", &[&format!("[{LINE}]"), &format!("addr={DHCP_FIRST}")])?;
+        let kept = until(
+            s,
+            "svc.ifs cat /QIBM/UserData/OS400/TCPIP/DHCP/LEASES",
+            &[&format!("[{LINE}]"), &format!("addr={DHCP_FIRST}")],
+        )?;
         expect(s, "ENDTCPIFC INTNETADR(*IP4DHCP)", &["TCP1A0C"])?;
         let gone = until(s, "svc.tcp ifc", &["ifc *IP4DHCP"])?;
         if gone.contains(&format!("kernel addr eth0 {DHCP_FIRST}/")) {
@@ -169,7 +195,9 @@ impl Suite {
         }
         expect(s, "RMVTCPIFC INTNETADR(*IP4DHCP)", &["TCP1D05"])?;
         let _ = (ifc, netstat, kept);
-        Ok(format!("{DHCP_FIRST} leased on {LINE}, shown by NETSTAT *IFC, kept in the IFS, released by ENDTCPIFC"))
+        Ok(format!(
+            "{DHCP_FIRST} leased on {LINE}, shown by NETSTAT *IFC, kept in the IFS, released by ENDTCPIFC"
+        ))
     }
 
     /// Step 97: automatic sign-on over telnet.
@@ -178,7 +206,9 @@ impl Suite {
         let _ = s.command(&format!("DLTUSRPRF USRPRF({AUTO_USER})"), CMD);
         expect(
             s,
-            &format!("CRTUSRPRF USRPRF({AUTO_USER}) PASSWORD('{AUTO_PWD}') PWDEXP(*NO) INLMNU(MAIN) TEXT('Step 97')"),
+            &format!(
+                "CRTUSRPRF USRPRF({AUTO_USER}) PASSWORD('{AUTO_PWD}') PWDEXP(*NO) INLMNU(MAIN) TEXT('Step 97')"
+            ),
             &[AUTO_USER],
         )?;
         // Signed on: the main menu or the sign-on information first.
@@ -195,14 +225,18 @@ impl Suite {
             d.disconnect();
             if !text.contains("Main Menu") && !text.contains("Sign-on Information") {
                 let log = s.command("dsplog", CMD).unwrap_or_default();
-                return Err(format!("{AUTO_USER} does not sign on at the display:\n{text}\n{log}"));
+                return Err(format!(
+                    "{AUTO_USER} does not sign on at the display:\n{text}\n{log}"
+                ));
             }
         }
         // QRMTSIGN *VERIFY (shipped): the substitute signs on.
         let (i, screen) = telnet(port, AUTO_USER, AUTO_PWD, true, &want)?;
         if i > 1 {
             let log = s.command("dsplog", CMD).unwrap_or_default();
-            return Err(format!("a valid SHA-1 substitute did not sign on:\n{screen}\n{log}"));
+            return Err(format!(
+                "a valid SHA-1 substitute did not sign on:\n{screen}\n{log}"
+            ));
         }
         // A wrong password: the sign-on display.
         let (i, _) = telnet(port, AUTO_USER, "Wrong2026", true, &want)?;
@@ -211,41 +245,68 @@ impl Suite {
         }
         // *FRCSIGNON and *REJECT: the sign-on display whatever came.
         for v in ["*FRCSIGNON", "*REJECT"] {
-            expect(s, &format!("CHGSYSVAL SYSVAL(QRMTSIGN) VALUE('{v}')"), &["QRMTSIGN"])?;
+            expect(
+                s,
+                &format!("CHGSYSVAL SYSVAL(QRMTSIGN) VALUE('{v}')"),
+                &["QRMTSIGN"],
+            )?;
             let (i, _) = telnet(port, AUTO_USER, AUTO_PWD, true, &want)?;
             if i != 2 {
                 let _ = s.command("CHGSYSVAL SYSVAL(QRMTSIGN) VALUE('*VERIFY')", CMD);
                 return Err(format!("QRMTSIGN {v} signed on automatically"));
             }
         }
-        expect(s, "CHGSYSVAL SYSVAL(QRMTSIGN) VALUE('*VERIFY')", &["QRMTSIGN"])?;
+        expect(
+            s,
+            "CHGSYSVAL SYSVAL(QRMTSIGN) VALUE('*VERIFY')",
+            &["QRMTSIGN"],
+        )?;
         // An INIT0100 exit program signs on AUTOUSR for a client that sent
         // no user at all.
         let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
         crate::qir::qemu::push(s, "TNEXITSRC", EXIT_SRC)?;
-        expect(s, "svc.srcput QGPL/QCLSRC TNEXIT SRCTYPE(CLLE) FROMSTMF(TNEXITSRC)", &["written"])?;
+        expect(
+            s,
+            "svc.srcput QGPL/QCLSRC TNEXIT SRCTYPE(CLLE) FROMSTMF(TNEXITSRC)",
+            &["written"],
+        )?;
         let _ = s.command("DLTPGM PGM(QGPL/TNEXIT)", CMD);
-        expect(s, "CRTCLPGM PGM(QGPL/TNEXIT) SRCFILE(QGPL/QCLSRC) SRCMBR(TNEXIT)", &["TNEXIT"])?;
+        expect(
+            s,
+            "CRTCLPGM PGM(QGPL/TNEXIT) SRCFILE(QGPL/QCLSRC) SRCMBR(TNEXIT)",
+            &["TNEXIT"],
+        )?;
         expect(
             s,
             "ADDEXITPGM EXITPNT(QIBM_QTG_DEVINIT) FORMAT(INIT0100) PGMNBR(1) PGM(QGPL/TNEXIT)",
             &["added to exit point"],
         )?;
         let r = telnet(port, "", "", false, &want);
-        let _ = s.command("RMVEXITPGM EXITPNT(QIBM_QTG_DEVINIT) FORMAT(INIT0100) PGMNBR(1)", CMD);
+        let _ = s.command(
+            "RMVEXITPGM EXITPNT(QIBM_QTG_DEVINIT) FORMAT(INIT0100) PGMNBR(1)",
+            CMD,
+        );
         let (i, screen) = r?;
         if i > 1 {
-            return Err(format!("the exit program's automatic sign-on showed:\n{screen}"));
+            return Err(format!(
+                "the exit program's automatic sign-on showed:\n{screen}"
+            ));
         }
         let jobs = s.command("wrkactjob", CMD)?;
         let _ = jobs;
-        Ok(format!("SHA-1 substitute signs {AUTO_USER} on; a wrong one, *FRCSIGNON and *REJECT show the sign-on display; an INIT0100 program signs {AUTO_USER} on"))
+        Ok(format!(
+            "SHA-1 substitute signs {AUTO_USER} on; a wrong one, *FRCSIGNON and *REJECT show the sign-on display; an INIT0100 program signs {AUTO_USER} on"
+        ))
     }
 
     /// Step 98: the mail router's credentials.
     pub(crate) fn smtp_relay_auth(&self, s: &mut Session) -> Result<String, String> {
         let (port, rx) = fake_router()?;
-        expect(s, &format!("CHGSMTPA MAILROUTER('10.0.2.2:{port}') FWDHUBSVR(*NONE)"), &["TCP1A10"])?;
+        expect(
+            s,
+            &format!("CHGSMTPA MAILROUTER('10.0.2.2:{port}') FWDHUBSVR(*NONE)"),
+            &["TCP1A10"],
+        )?;
         let _ = s.command("RMVSMTPLE TYPE(*HOSTAUTH) HOSTNAME('10.0.2.2')", CMD);
         expect(
             s,
@@ -257,12 +318,21 @@ impl Suite {
             "SNDSMTPEMM RCP(('ops@example.com')) SUBJECT('Step 98') NOTE('relay credentials')",
             &["TCP1A4B"],
         )?;
-        let seen = rx.recv_timeout(Duration::from_secs(60)).map_err(|_| "the fake router saw no session".to_string())?;
+        let seen = rx
+            .recv_timeout(Duration::from_secs(60))
+            .map_err(|_| "the fake router saw no session".to_string())?;
         let want = format!("AUTH PLAIN {}", mail::encode::base64(b"\0mailer\0S3cret98"));
         if !seen.contains(&want) {
             return Err(format!("the router saw no AUTH PLAIN for mailer: {seen:?}"));
         }
-        expect(s, "RMVSMTPLE TYPE(*HOSTAUTH) HOSTNAME('10.0.2.2')", &["TCP1D05"])?;
-        Ok("ADDSMTPLE *HOSTAUTH kept sealed; SNDSMTPEMM signed on to the router with AUTH PLAIN".into())
+        expect(
+            s,
+            "RMVSMTPLE TYPE(*HOSTAUTH) HOSTNAME('10.0.2.2')",
+            &["TCP1D05"],
+        )?;
+        Ok(
+            "ADDSMTPLE *HOSTAUTH kept sealed; SNDSMTPEMM signed on to the router with AUTH PLAIN"
+                .into(),
+        )
     }
 }

@@ -21,7 +21,11 @@ fn table(md: &str, title: &str) -> Vec<Row> {
     let heading = format!("### `{title}`");
     let mut lines = md.lines().skip_while(|l| *l != heading).skip(1);
     let mut rows = Vec::new();
-    for l in lines.by_ref().skip_while(|l| !l.starts_with("| Position")).skip(2) {
+    for l in lines
+        .by_ref()
+        .skip_while(|l| !l.starts_with("| Position"))
+        .skip(2)
+    {
         if !l.starts_with('|') {
             break;
         }
@@ -56,7 +60,11 @@ fn words(rows: &[Row]) -> Vec<(String, u32, u32)> {
         .filter(|r| !r.word.is_empty())
         .map(|r| {
             let len = r.len.expect("a word's field has a length");
-            (r.word.clone(), u32::try_from(r.pos - 1).unwrap(), u32::try_from(len).unwrap())
+            (
+                r.word.clone(),
+                u32::try_from(r.pos - 1).unwrap(),
+                u32::try_from(len).unwrap(),
+            )
         })
         .collect()
 }
@@ -64,24 +72,39 @@ fn words(rows: &[Row]) -> Vec<(String, u32, u32)> {
 #[test]
 fn infds_matches_the_spec() {
     let rows = table(&doc(), "INFDS");
-    let code: Vec<_> = mi::io::infds::FIELDS.iter().map(|(n, (o, l))| ((*n).to_string(), *o, *l)).collect();
+    let code: Vec<_> = mi::io::infds::FIELDS
+        .iter()
+        .map(|(n, (o, l))| ((*n).to_string(), *o, *l))
+        .collect();
     assert_eq!(named(&rows), code, "mi::io::infds against docs/RPG.md");
-    let code: Vec<_> = rpgc::extfiles::INFDS_WORDS.iter().map(|(w, o, l, _)| ((*w).to_string(), *o, *l)).collect();
+    let code: Vec<_> = rpgc::extfiles::INFDS_WORDS
+        .iter()
+        .map(|(w, o, l, _)| ((*w).to_string(), *o, *l))
+        .collect();
     assert_eq!(words(&rows), code, "INFDS_WORDS against docs/RPG.md");
 }
 
 #[test]
 fn psds_matches_the_spec() {
     let rows = table(&doc(), "PSDS");
-    let code: Vec<_> = qrpgrt::exc::PSDS.iter().map(|(n, (p, l))| ((*n).to_string(), p - 1, *l)).collect();
+    let code: Vec<_> = qrpgrt::exc::PSDS
+        .iter()
+        .map(|(n, (p, l))| ((*n).to_string(), p - 1, *l))
+        .collect();
     assert_eq!(named(&rows), code, "qrpgrt::exc::PSDS against docs/RPG.md");
-    let code: Vec<_> = rpgc::extfiles::PSDS_WORDS.iter().map(|(w, o, l, _)| ((*w).to_string(), *o, *l)).collect();
+    let code: Vec<_> = rpgc::extfiles::PSDS_WORDS
+        .iter()
+        .map(|(w, o, l, _)| ((*w).to_string(), *o, *l))
+        .collect();
     assert_eq!(words(&rows), code, "PSDS_WORDS against docs/RPG.md");
 }
 
 #[test]
 fn open_access_parameter_matches_the_spec() {
     let rows = table(&doc(), "QrnOpenAccess_T");
-    let code: Vec<_> = qrpgrt::oa::FIELDS.iter().map(|(n, (o, l))| ((*n).to_string(), *o, *l)).collect();
+    let code: Vec<_> = qrpgrt::oa::FIELDS
+        .iter()
+        .map(|(n, (o, l))| ((*n).to_string(), *o, *l))
+        .collect();
     assert_eq!(named(&rows), code, "qrpgrt::oa::FIELDS against docs/RPG.md");
 }

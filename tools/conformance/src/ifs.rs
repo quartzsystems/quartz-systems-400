@@ -106,11 +106,19 @@ impl Suite {
         )?;
         want(&into, "CPYFRMSTMF", &["copied"])?;
         let member = s.command("svc.srcget QGPL/QIFSSRC IN2", CMD)?;
-        want(&member, "the member copied back", &["SNDPGMMSG MSG('IFS step')", "ENDPGM"])?;
+        want(
+            &member,
+            "the member copied back",
+            &["SNDPGMMSG MSG('IFS step')", "ENDPGM"],
+        )?;
         let list = s.command("wrklnk OBJ('/home/qs63/*')", CMD)?;
         want(&list, "WRKLNK", &["/home/qs63", "out.txt", "STMF"])?;
         let shown = s.command("dspf STMF('/home/qs63/out.txt')", CMD)?;
-        want(&shown, "DSPF", &["PGM", "SNDPGMMSG MSG('IFS step')", "ENDPGM"])?;
+        want(
+            &shown,
+            "DSPF",
+            &["PGM", "SNDPGMMSG MSG('IFS step')", "ENDPGM"],
+        )?;
         let gone = s.command("del OBJLNK('/home/qs63/*.txt')", CMD)?;
         want(&gone, "DEL", &["/home/qs63/out.txt"])?;
         let rd = s.command("rd DIR('/home/qs63')", CMD)?;

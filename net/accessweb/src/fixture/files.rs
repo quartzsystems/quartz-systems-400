@@ -111,7 +111,11 @@ fn binary_of(head: &[u8], n: usize) -> Vec<u8> {
     let mut v = head.to_vec();
     let mut i: u32 = 0;
     while v.len() < n {
-        v.push(if i.is_multiple_of(7) { 0 } else { u8::try_from(i % 251).unwrap_or(0) });
+        v.push(if i.is_multiple_of(7) {
+            0
+        } else {
+            u8::try_from(i % 251).unwrap_or(0)
+        });
         i += 1;
     }
     v.truncate(n);
@@ -152,7 +156,10 @@ pub fn tree() -> BTreeMap<String, Node> {
     put("/QS400/UserData", sys(dir(0o755, early)));
     put("/QS400/UserData/Shares", sys(dir(0o755, early)));
     put("/QS400/UserData/Shares/docs", sys(dir(0o777, early)));
-    put("/QS400/UserData/Shares/docs/reports", dir(0o777, local(10, 1, 9, 0, 0)));
+    put(
+        "/QS400/UserData/Shares/docs/reports",
+        dir(0o777, local(10, 1, 9, 0, 0)),
+    );
     put("/QSYS.LIB", sys(dir(0o755, early)));
     put("/QSYS.LIB/HLINV.LIB", dir(0o750, early));
     put("/www", sys(dir(0o755, early)));
@@ -160,14 +167,31 @@ pub fn tree() -> BTreeMap<String, Node> {
     put("/www/webstore/htdocs", sys(dir(0o755, early)));
     put(HOME, dir(0o700, early));
     put("/home/CWELLMAN/certs", dir(0o700, local(10, 20, 11, 2, 0)));
-    put("/home/CWELLMAN/scripts", dir(0o750, local(10, 28, 17, 40, 0)));
-    put("/home/CWELLMAN/upload", dir(0o770, local(10, 29, 13, 30, 0)));
+    put(
+        "/home/CWELLMAN/scripts",
+        dir(0o750, local(10, 28, 17, 40, 0)),
+    );
+    put(
+        "/home/CWELLMAN/upload",
+        dir(0o770, local(10, 29, 13, 30, 0)),
+    );
     put(
         "/home/CWELLMAN/.profile",
-        node(Data::File(text_of("export PATH=/QOpenSys/usr/bin:/usr/bin:$PATH\n", 412)), 0o600, 1208, early),
+        node(
+            Data::File(text_of(
+                "export PATH=/QOpenSys/usr/bin:/usr/bin:$PATH\n",
+                412,
+            )),
+            0o600,
+            1208,
+            early,
+        ),
     );
     let mut csv = node(
-        Data::File(text_of("QS000101,QS-HQ-R1,QUANTA,T4048-IX8,QTFCEV2340021,SWITCH,ACTIVE\n", 2118)),
+        Data::File(text_of(
+            "QS000101,QS-HQ-R1,QUANTA,T4048-IX8,QTFCEV2340021,SWITCH,ACTIVE\n",
+            2118,
+        )),
         0o640,
         1208,
         local(10, 29, 13, 30, 2),
@@ -177,46 +201,119 @@ pub fn tree() -> BTreeMap<String, Node> {
     put("/home/CWELLMAN/assets_br1.csv", csv);
     put(
         "/home/CWELLMAN/inventory_2026-10.pdf",
-        node(Data::File(binary_of(b"%PDF-1.4\n", 240_112)), 0o644, 65535, local(10, 28, 18, 2, 0)),
+        node(
+            Data::File(binary_of(b"%PDF-1.4\n", 240_112)),
+            0o644,
+            65535,
+            local(10, 28, 18, 2, 0),
+        ),
     );
     put(
         "/home/CWELLMAN/invload.clle",
-        node(Data::File(INVLOAD.as_bytes().to_vec()), 0o640, 1208, local(10, 29, 13, 5, 0)),
+        node(
+            Data::File(INVLOAD.as_bytes().to_vec()),
+            0o640,
+            1208,
+            local(10, 29, 13, 5, 0),
+        ),
     );
     put(
         "/home/CWELLMAN/notes.txt",
-        node(Data::File(text_of("Rack QS-HQ-R3 gets the lab build box next week.\n", 9310)), 0o600, 1208, local(10, 27, 21, 15, 0)),
+        node(
+            Data::File(text_of(
+                "Rack QS-HQ-R3 gets the lab build box next week.\n",
+                9310,
+            )),
+            0o600,
+            1208,
+            local(10, 27, 21, 15, 0),
+        ),
     );
     put(
         "/home/CWELLMAN/reports",
-        node(Data::Link("/QS400/UserData/Shares/docs/reports".into()), 0o777, 0, local(10, 1, 9, 0, 0)),
+        node(
+            Data::Link("/QS400/UserData/Shares/docs/reports".into()),
+            0o777,
+            0,
+            local(10, 1, 9, 0, 0),
+        ),
     );
-    put("/home/CWELLMAN/old-link", node(Data::Link("/home/CWELLMAN/gone".into()), 0o777, 0, early));
+    put(
+        "/home/CWELLMAN/old-link",
+        node(Data::Link("/home/CWELLMAN/gone".into()), 0o777, 0, early),
+    );
     put(
         "/home/CWELLMAN/webstore.p12",
-        node(Data::File(binary_of(&[0x30, 0x82, 0x0d, 0x46], 3402)), 0o600, 65535, local(10, 20, 11, 2, 0)),
+        node(
+            Data::File(binary_of(&[0x30, 0x82, 0x0d, 0x46], 3402)),
+            0o600,
+            65535,
+            local(10, 20, 11, 2, 0),
+        ),
     );
     let up = local(10, 29, 13, 30, 0);
-    put("/home/CWELLMAN/upload/assets_br2.csv", node(Data::File(text_of("QS000401,QS-BR1-R1,DELL,S4048-ON\n", 41_200)), 0o640, 1208, up));
-    put("/home/CWELLMAN/upload/old.csv", node(Data::File(text_of("QS000110,QS-HQ-R1\n", 640)), 0o640, 1208, up));
-    put("/home/CWELLMAN/upload/old2.csv", node(Data::File(text_of("QS000111,QS-HQ-R1\n", 320)), 0o640, 1208, up));
+    put(
+        "/home/CWELLMAN/upload/assets_br2.csv",
+        node(
+            Data::File(text_of("QS000401,QS-BR1-R1,DELL,S4048-ON\n", 41_200)),
+            0o640,
+            1208,
+            up,
+        ),
+    );
+    put(
+        "/home/CWELLMAN/upload/old.csv",
+        node(
+            Data::File(text_of("QS000110,QS-HQ-R1\n", 640)),
+            0o640,
+            1208,
+            up,
+        ),
+    );
+    put(
+        "/home/CWELLMAN/upload/old2.csv",
+        node(
+            Data::File(text_of("QS000111,QS-HQ-R1\n", 320)),
+            0o640,
+            1208,
+            up,
+        ),
+    );
     t
 }
 
 /// The queue `web/files.html` shows.
 pub fn sample_queue() -> Queue {
     let q = Queue::default();
-    let mut t = Transfer::new("/home/CWELLMAN/upload/assets_br2.csv", Direction::Upload, Mode::Text(1208, Endings::Lf), 41_200);
+    let mut t = Transfer::new(
+        "/home/CWELLMAN/upload/assets_br2.csv",
+        Direction::Upload,
+        Mode::Text(1208, Endings::Lf),
+        41_200,
+    );
     t.done = 41_200;
     t.state = State::Complete;
     q.add(super::USER, t);
-    let mut t = Transfer::new("/home/CWELLMAN/inventory_2026-10.pdf", Direction::Download, Mode::Binary, 240_112);
+    let mut t = Transfer::new(
+        "/home/CWELLMAN/inventory_2026-10.pdf",
+        Direction::Download,
+        Mode::Binary,
+        240_112,
+    );
     t.done = 128_000;
     t.state = State::Running(Some("inventory_2026-10.pdf.qsapart".into()));
     q.add(super::USER, t);
-    let mut t = Transfer::new("/home/CWELLMAN/scripts/backup.sh", Direction::Upload, Mode::Binary, 2048);
+    let mut t = Transfer::new(
+        "/home/CWELLMAN/scripts/backup.sh",
+        Direction::Upload,
+        Mode::Binary,
+        2048,
+    );
     t.state = State::Failed("QAD8021".into(), "not authorized".into());
-    t.data = Some(std::sync::Arc::new(text_of("#!/bin/sh\nSAV DEV('/QSYS.LIB/QGPL.LIB/BKUP.FILE')\n", 2048)));
+    t.data = Some(std::sync::Arc::new(text_of(
+        "#!/bin/sh\nSAV DEV('/QSYS.LIB/QGPL.LIB/BKUP.FILE')\n",
+        2048,
+    )));
     q.add(super::USER, t);
     q
 }
@@ -240,7 +337,9 @@ impl Default for FixtureFiles {
 
 /// A system message from the sample system's texts.
 fn msg(id: &str, data: &[&str]) -> Message {
-    let t = text::second_level(id, data).map(|s| s.text).unwrap_or_default();
+    let t = text::second_level(id, data)
+        .map(|s| s.text)
+        .unwrap_or_default();
     Message::new(MsgKind::Error, id, &t).with_data(data)
 }
 
@@ -257,13 +356,18 @@ fn name(p: &str) -> &str {
 
 /// The path normalised: one slash between parts, no trailing slash.
 fn clean(p: &str) -> String {
-    let parts: Vec<&str> = p.split('/').filter(|s| !s.is_empty() && *s != ".").collect();
+    let parts: Vec<&str> = p
+        .split('/')
+        .filter(|s| !s.is_empty() && *s != ".")
+        .collect();
     format!("/{}", parts.join("/"))
 }
 
 impl FixtureFiles {
     fn all_obj(user: &str) -> bool {
-        PROFILES.iter().any(|p| p.name == user && p.special.contains(&"*ALLOBJ"))
+        PROFILES
+            .iter()
+            .any(|p| p.name == user && p.special.contains(&"*ALLOBJ"))
     }
 
     /// Whether `user` has `bit` (4 read, 2 write, 1 execute) to `n`.
@@ -301,7 +405,11 @@ impl FixtureFiles {
         if n.data != Data::Dir {
             return Err(msg("CPFA0A9", &[parent(path)]));
         }
-        if Self::may(user, n, 2) { Ok(()) } else { Err(msg("CPFA09C", &[path])) }
+        if Self::may(user, n, 2) {
+            Ok(())
+        } else {
+            Err(msg("CPFA09C", &[path]))
+        }
     }
 
     fn entry_of(t: &BTreeMap<String, Node>, path: &str, n: &Node) -> Entry {
@@ -349,10 +457,15 @@ impl Files for FixtureFiles {
             return Err(msg("CPFA0A9", &[dir]));
         }
         let t = self.tree.lock().expect("tree");
-        let pre = if p == "/" { "/".to_string() } else { format!("{p}/") };
-        Ok(t
-            .iter()
-            .filter(|(k, _)| k.len() > pre.len() && k.starts_with(&pre) && !k[pre.len()..].contains('/'))
+        let pre = if p == "/" {
+            "/".to_string()
+        } else {
+            format!("{p}/")
+        };
+        Ok(t.iter()
+            .filter(|(k, _)| {
+                k.len() > pre.len() && k.starts_with(&pre) && !k[pre.len()..].contains('/')
+            })
             .map(|(k, n)| Self::entry_of(&t, k, n))
             .collect())
     }
@@ -360,7 +473,9 @@ impl Files for FixtureFiles {
     fn entry(&self, _user: &str, path: &str) -> Result<Entry, Message> {
         let t = self.tree.lock().expect("tree");
         let p = clean(path);
-        t.get(&p).map(|n| Self::entry_of(&t, &p, n)).ok_or_else(|| msg("CPFA0A9", &[path]))
+        t.get(&p)
+            .map(|n| Self::entry_of(&t, &p, n))
+            .ok_or_else(|| msg("CPFA0A9", &[path]))
     }
 
     fn props(&self, user: &str, path: &str) -> Result<Props, Message> {
@@ -389,7 +504,9 @@ impl Files for FixtureFiles {
             return Err(msg("CPFA0DA", &[path]));
         };
         let start = usize::try_from(offset).unwrap_or(usize::MAX).min(b.len());
-        let end = start.saturating_add(usize::try_from(len).unwrap_or(usize::MAX)).min(b.len());
+        let end = start
+            .saturating_add(usize::try_from(len).unwrap_or(usize::MAX))
+            .min(b.len());
         Ok(b[start..end].to_vec())
     }
 

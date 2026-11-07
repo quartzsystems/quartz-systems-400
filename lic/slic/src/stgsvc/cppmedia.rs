@@ -15,7 +15,9 @@ use crate::ipl::system::System;
 type Rows = Vec<Vec<(String, String)>>;
 
 fn pairs(p: &[(&str, String)]) -> Vec<(String, String)> {
-    p.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect()
+    p.iter()
+        .map(|(k, v)| ((*k).to_string(), v.clone()))
+        .collect()
 }
 
 fn arg(args: &[String], i: usize) -> String {
@@ -25,13 +27,27 @@ fn arg(args: &[String], i: usize) -> String {
 /// The six columns of a saved object, after `lead`.
 fn object(lead: (&str, String), r: &[String]) -> Vec<(String, String)> {
     let c = |i: usize| r.get(i).cloned().unwrap_or_default();
-    pairs(&[lead, ("OBJ", c(0)), ("OTYPE", c(1)), ("OLIB", c(2)), ("OATTR", c(3)), ("OSIZE", c(4)), ("OTEXT", c(5))])
+    pairs(&[
+        lead,
+        ("OBJ", c(0)),
+        ("OTYPE", c(1)),
+        ("OLIB", c(2)),
+        ("OATTR", c(3)),
+        ("OSIZE", c(4)),
+        ("OTEXT", c(5)),
+    ])
 }
 
 /// `DSPTAP DEV VOL LABEL first last DATA ENDOPT`.
 pub(super) fn tape(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
     let n = |i: usize, d: u32| arg(args, i).trim().parse().unwrap_or(d);
-    let (dev, vol, label, data, endopt) = (arg(args, 0), arg(args, 1), arg(args, 2), arg(args, 5), arg(args, 6));
+    let (dev, vol, label, data, endopt) = (
+        arg(args, 0),
+        arg(args, 1),
+        arg(args, 2),
+        arg(args, 5),
+        arg(args, 6),
+    );
     let v = meddsp::tape_view(
         system,
         &TapAsk {
@@ -68,7 +84,15 @@ pub(super) fn tape(system: &mut System, args: &[String]) -> Result<Sys2Data, Str
                 ("FLEN", format!("{:010}", f.blocks)),
                 ("BUFOFF", String::new()),
                 ("CTLCHR", String::new()),
-                ("MVIND", if f.end == "EOV" || f.volseq > 1 { "Y" } else { "" }.to_string()),
+                (
+                    "MVIND",
+                    if f.end == "EOV" || f.volseq > 1 {
+                        "Y"
+                    } else {
+                        ""
+                    }
+                    .to_string(),
+                ),
                 ("FVSEQ", format!("{:010}", f.volseq)),
                 ("FCRT", f.created.clone()),
                 ("FEXP", f.expires.clone()),
@@ -77,7 +101,10 @@ pub(super) fn tape(system: &mut System, args: &[String]) -> Result<Sys2Data, Str
                 ("SYSCOD", f.system_code.clone()),
             ]);
             let save = v.saves.iter().find(|s| s.seq == f.seq);
-            row.push(("ISSAVE".into(), if save.is_some() { "Y" } else { "N" }.into()));
+            row.push((
+                "ISSAVE".into(),
+                if save.is_some() { "Y" } else { "N" }.into(),
+            ));
             if let Some(s) = save {
                 row.extend(pairs(&[
                     ("SLIB", s.library.clone()),
@@ -96,7 +123,11 @@ pub(super) fn tape(system: &mut System, args: &[String]) -> Result<Sys2Data, Str
             row
         })
         .collect();
-    let objs: Rows = v.objects.iter().map(|o| saved_object(o.seq, &o.row)).collect();
+    let objs: Rows = v
+        .objects
+        .iter()
+        .map(|o| saved_object(o.seq, &o.row))
+        .collect();
     Ok((vars, vec![("FILES".into(), files), ("OBJS".into(), objs)]))
 }
 
@@ -154,20 +185,35 @@ pub(super) fn cartridges(system: &mut System, args: &[String]) -> Result<Sys2Dat
 
 /// `DSPOPT VOL DEV DATA PATH`: `VIEW` says which panel.
 pub(super) fn optical(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
-    let v = meddsp::optical_view(system, &arg(args, 0), &arg(args, 1), &arg(args, 2), &arg(args, 3))?;
+    let v = meddsp::optical_view(
+        system,
+        &arg(args, 0),
+        &arg(args, 1),
+        &arg(args, 2),
+        &arg(args, 3),
+    )?;
     Ok(match v {
         OptView::Volume(o) => {
             let a = &o.attrs;
             let yn = |b: bool| if b { "Yes" } else { "No" }.to_string();
             let when = |t: Option<&optical::iso::Timestamp>| {
-                t.map(|t| format!("{}  {}", meddsp::opt_mdy(t), meddsp::opt_hms(t))).unwrap_or_default()
+                t.map(|t| format!("{}  {}", meddsp::opt_mdy(t), meddsp::opt_hms(t)))
+                    .unwrap_or_default()
             };
             let vars = pairs(&[
                 ("VIEW", "VOLATR".into()),
                 ("VOLID", a.volume_id.clone()),
                 ("DEV", o.dev.clone()),
                 ("VOLTYPE", "*PRIMARY".into()),
-                ("MEDTYPE", if a.writable_layout { "*DVD-RAM" } else { "*CD-ROM" }.into()),
+                (
+                    "MEDTYPE",
+                    if a.writable_layout {
+                        "*DVD-RAM"
+                    } else {
+                        "*CD-ROM"
+                    }
+                    .into(),
+                ),
                 ("MEDFMT", a.media_format.to_string()),
                 ("VOLTEXT", a.text.clone()),
                 ("WRTPTC", yn(a.write_protected)),
@@ -195,21 +241,32 @@ pub(super) fn optical(system: &mut System, args: &[String]) -> Result<Sys2Data, 
                     ])
                 })
                 .collect();
-            (pairs(&[("VIEW", "DIRATR".into()), ("DEV", dev), ("VOLID", vol)]), vec![("DIRS".into(), rows)])
+            (
+                pairs(&[("VIEW", "DIRATR".into()), ("DEV", dev), ("VOLID", vol)]),
+                vec![("DIRS".into(), rows)],
+            )
         }
         OptView::Files(dev, vol, files) => {
             let rows: Rows = files
                 .iter()
                 .map(|f| pairs(&[("FPATH", f.path.clone()), ("FSIZE", f.size.to_string())]))
                 .collect();
-            (pairs(&[("VIEW", "FILATR".into()), ("DEV", dev), ("VOLID", vol)]), vec![("OFILES".into(), rows)])
+            (
+                pairs(&[("VIEW", "FILATR".into()), ("DEV", dev), ("VOLID", vol)]),
+                vec![("OFILES".into(), rows)],
+            )
         }
         OptView::Saves(dev, vol, saves) => {
             let rows: Rows = saves
                 .iter()
-                .flat_map(|(f, (_, rows))| rows.iter().map(move |r| object(("OFILE", f.clone()), r)))
+                .flat_map(|(f, (_, rows))| {
+                    rows.iter().map(move |r| object(("OFILE", f.clone()), r))
+                })
                 .collect();
-            (pairs(&[("VIEW", "SAVRST".into()), ("DEV", dev), ("VOLID", vol)]), vec![("OSAVS".into(), rows)])
+            (
+                pairs(&[("VIEW", "SAVRST".into()), ("DEV", dev), ("VOLID", vol)]),
+                vec![("OSAVS".into(), rows)],
+            )
         }
     })
 }
@@ -230,7 +287,13 @@ pub(super) fn volumes(system: &mut System, args: &[String]) -> Result<Sys2Data, 
             ])
         })
         .collect();
-    let all = |s: String| if s.trim().is_empty() { "*ALL".to_string() } else { s };
+    let all = |s: String| {
+        if s.trim().is_empty() {
+            "*ALL".to_string()
+        } else {
+            s
+        }
+    };
     let vars = pairs(&[("WDEV", all(arg(args, 0))), ("CSI", all(arg(args, 2)))]);
     Ok((vars, vec![("VOLS".into(), rows)]))
 }

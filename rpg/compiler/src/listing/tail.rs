@@ -17,9 +17,23 @@ use crate::msgs;
 
 pub(crate) fn additional(out: &mut Out, c: &Compiled) {
     out.new_page(None);
-    out.line('0', format!("{:10}{}", "", spaced("Additional Diagnostic Messages")));
-    out.line('0', if c.srcstmt() { " Msg id  Sv   Statement    Message text" } else { " Msg id  Sv Number Seq     Message text" });
-    let mut ds: Vec<&rpgfront::Diag> = c.diags.iter().filter(|d| source::place_in(c, d) == Place::Additional).collect();
+    out.line(
+        '0',
+        format!("{:10}{}", "", spaced("Additional Diagnostic Messages")),
+    );
+    out.line(
+        '0',
+        if c.srcstmt() {
+            " Msg id  Sv   Statement    Message text"
+        } else {
+            " Msg id  Sv Number Seq     Message text"
+        },
+    );
+    let mut ds: Vec<&rpgfront::Diag> = c
+        .diags
+        .iter()
+        .filter(|d| source::place_in(c, d) == Place::Additional)
+        .collect();
     // By line, then in the order IBM's checks find them.
     let rank = |id: &str| match id {
         "RNF7451" => 0,
@@ -41,11 +55,28 @@ pub(crate) fn additional(out: &mut Out, c: &Compiled) {
     let line = |d: &rpgfront::Diag| if d.at.line == 0 { u32::MAX } else { d.at.line };
     ds.sort_by_key(|d| match d.msgid {
         "RNF7451" => (0, Vec::new(), 0, line(d), 0),
-        "RNF7030" => (1, super::xref::ebcdic_key(d.args.first().map_or("", String::as_str)), 0, line(d), 0),
+        "RNF7030" => (
+            1,
+            super::xref::ebcdic_key(d.args.first().map_or("", String::as_str)),
+            0,
+            line(d),
+            0,
+        ),
         _ => (2, Vec::new(), group(d.msgid), line(d), rank(d.msgid)),
     });
     for d in ds {
-        let field = if c.srcstmt() { String::new() } else { format!("{:>6}", if d.at.line == 0 { 0 } else { c.listing_line(d.at.line) }) };
+        let field = if c.srcstmt() {
+            String::new()
+        } else {
+            format!(
+                "{:>6}",
+                if d.at.line == 0 {
+                    0
+                } else {
+                    c.listing_line(d.at.line)
+                }
+            )
+        };
         source::diag_lines(out, d, &field, &source::seq_of(c, d));
     }
     out.end_line(
@@ -57,11 +88,26 @@ pub(crate) fn additional(out: &mut Out, c: &Compiled) {
 /// The output buffer positions of program-described output fields,
 /// after the additional diagnostics.
 pub(crate) fn buffer(out: &mut Out, c: &Compiled) {
-    let fields: Vec<_> = c.module.outputs.iter().filter(|o| !c.table.recfmts.iter().any(|r| r.name.eq_ignore_ascii_case(&o.name))).collect();
+    let fields: Vec<_> = c
+        .module
+        .outputs
+        .iter()
+        .filter(|o| {
+            !c.table
+                .recfmts
+                .iter()
+                .any(|r| r.name.eq_ignore_ascii_case(&o.name))
+        })
+        .collect();
     let plan = super::genlines::plan(c);
     let nums = super::source::numbers(c, &plan);
     // Each kind of output operation (WRITE, UPDATE) has its own buffer.
-    let calcs: Vec<&rpgfront::ast::Stmt> = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter())).collect();
+    let calcs: Vec<&rpgfront::ast::Stmt> = c
+        .module
+        .calcs
+        .iter()
+        .chain(c.module.procs.iter().flat_map(|p| p.calcs.iter()))
+        .collect();
     let ops_naming = |fmt: &str| {
         [&["WRITE", "EXFMT"][..], &["UPDATE"][..]]
             .iter()
@@ -69,7 +115,12 @@ pub(crate) fn buffer(out: &mut Out, c: &Compiled) {
                 calcs.iter().any(|s| {
                     ops.contains(&s.op.code.as_str())
                         && s.op.result.is_empty()
-                        && s.op.f2.first().or_else(|| s.op.f1.first()).and_then(|e| e.name()).is_some_and(|n| n.eq_ignore_ascii_case(fmt))
+                        && s.op
+                            .f2
+                            .first()
+                            .or_else(|| s.op.f1.first())
+                            .and_then(|e| e.name())
+                            .is_some_and(|n| n.eq_ignore_ascii_case(fmt))
                 })
             })
             .count()
@@ -81,14 +132,22 @@ pub(crate) fn buffer(out: &mut Out, c: &Compiled) {
         fmts.dedup();
         for fmt in fmts {
             for _ in 0..ops_naming(fmt) {
-                generated.extend(b.positions.iter().filter(|p| p.0 == *fmt).map(|(_, k, s, e, n)| (first + k, *s, *e, n.clone())));
+                generated.extend(
+                    b.positions
+                        .iter()
+                        .filter(|p| p.0 == *fmt)
+                        .map(|(_, k, s, e, n)| (first + k, *s, *e, n.clone())),
+                );
             }
         }
     }
     if fields.iter().all(|o| o.fields.is_empty()) && generated.is_empty() {
         return;
     }
-    out.line('-', format!("{:17}{}", "", spaced("Output Buffer Positions")));
+    out.line(
+        '-',
+        format!("{:17}{}", "", spaced("Output Buffer Positions")),
+    );
     out.line('0', "Line   Start End   Field or Constant");
     out.line('0', "Number Pos   Pos");
     for o in fields {
@@ -97,26 +156,36 @@ pub(crate) fn buffer(out: &mut Out, c: &Compiled) {
             let width = field_width(c, f);
             let end = match f.end.trim() {
                 "" => prev_end + width,
-                e if e.starts_with('+') => prev_end + e[1..].trim().parse::<u32>().unwrap_or(0) + width,
+                e if e.starts_with('+') => {
+                    prev_end + e[1..].trim().parse::<u32>().unwrap_or(0) + width
+                }
                 e => e.parse::<u32>().unwrap_or(prev_end + width),
             };
             let start = (end + 1).saturating_sub(width.max(1));
             let what = if f.field.is_empty() {
                 match &f.constant {
-                    Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(s), _)) => format!("'{s}'"),
+                    Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(s), _)) => {
+                        format!("'{s}'")
+                    }
                     _ => String::new(),
                 }
             } else {
                 f.field.to_ascii_uppercase()
             };
-            out.line(' ', format!("{:>6}{start:>6}{end:>6} {what}", c.listing_line(f.at.line)));
+            out.line(
+                ' ',
+                format!("{:>6}{start:>6}{end:>6} {what}", c.listing_line(f.at.line)),
+            );
             prev_end = end;
         }
     }
     for (no, start, end, name) in generated {
         out.line(' ', format!("{no:>6}{start:>6}{end:>6} {name}"));
     }
-    out.end_line('0', " * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *");
+    out.end_line(
+        '0',
+        " * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *",
+    );
 }
 
 /// The members `/COPY` brought in, after the additional diagnostics.
@@ -124,27 +193,50 @@ pub(crate) fn copies(out: &mut Out, c: &Compiled) {
     let mut rows = Vec::new();
     let mut seen = Vec::new();
     for (k, l) in c.read.lines.iter().enumerate() {
-        let Some(next) = c.read.lines.get(k + 1) else { continue };
-        if next.member == 0 || next.member == l.member || seen.contains(&next.member) || next.depth <= l.depth {
+        let Some(next) = c.read.lines.get(k + 1) else {
+            continue;
+        };
+        if next.member == 0
+            || next.member == l.member
+            || seen.contains(&next.member)
+            || next.depth <= l.depth
+        {
             continue;
         }
         seen.push(next.member);
-        let Some(m) = c.read.members.get(next.member) else { continue };
+        let Some(m) = c.read.members.get(next.member) else {
+            continue;
+        };
         rows.push((c.listing_line(l.no), seen.len(), m));
     }
     if rows.is_empty() {
         return;
     }
     out.line('-', format!("{:28}{}", "", spaced("/Copy Members")));
-    out.line('0', "Line   Src  RPG name   <-------- External name -------> CCSID  <- Last change ->");
-    out.line('0', "Number Id              Library    File       Member            Date     Time");
+    out.line(
+        '0',
+        "Line   Src  RPG name   <-------- External name -------> CCSID  <- Last change ->",
+    );
+    out.line(
+        '0',
+        "Number Id              Library    File       Member            Date     Time",
+    );
     for (no, id, m) in rows {
         out.line(
             ' ',
-            format!("{no:>6}{id:>5} {:<10} {:<10} {:<10} {:<10}{:>6}  dd-dd-dd tt:tt:tt", m.name, m.lib, m.file, m.name, m.ccsid),
+            format!(
+                "{no:>6}{id:>5} {:<10} {:<10} {:<10} {:<10}{:>6}  dd-dd-dd tt:tt:tt",
+                m.name, m.lib, m.file, m.name, m.ccsid
+            ),
         );
     }
-    out.end_line('0', format!("{:9}{}", "", "* * * * *   E N D   O F   / C O P Y   M E M B E R S   * * * * *"));
+    out.end_line(
+        '0',
+        format!(
+            "{:9}{}",
+            "", "* * * * *   E N D   O F   / C O P Y   M E M B E R S   * * * * *"
+        ),
+    );
 }
 
 /// How many positions an output field takes.
@@ -152,13 +244,19 @@ fn field_width(c: &Compiled, f: &rpgfront::ast::OutputField) -> u32 {
     use crate::types::Ty;
     if f.field.is_empty() {
         return match &f.constant {
-            Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(s), _)) => u32::try_from(s.chars().count()).unwrap_or(0),
+            Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(s), _)) => {
+                u32::try_from(s.chars().count()).unwrap_or(0)
+            }
             _ => 0,
         };
     }
     let name = f.field.to_ascii_uppercase();
     if name.starts_with("PAGE") {
-        return if f.edit.is_empty() { 4 } else { edit_width(4, 0, &f.edit).unwrap_or(4) };
+        return if f.edit.is_empty() {
+            4
+        } else {
+            edit_width(4, 0, &f.edit).unwrap_or(4)
+        };
     }
     if name.starts_with("*IN") {
         return 1;
@@ -168,9 +266,15 @@ fn field_width(c: &Compiled, f: &rpgfront::ast::OutputField) -> u32 {
         "*DATE" => Some(8),
         _ => None,
     } {
-        return if f.edit.is_empty() { u32::from(d) } else { edit_width(d, 0, &f.edit).unwrap_or(u32::from(d)) };
+        return if f.edit.is_empty() {
+            u32::from(d)
+        } else {
+            edit_width(d, 0, &f.edit).unwrap_or(u32::from(d))
+        };
     }
-    let Some(id) = c.table.find(0, &name) else { return 0 };
+    let Some(id) = c.table.find(0, &name) else {
+        return 0;
+    };
     let s = &c.table.syms[id];
     if let Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(w), _)) = &f.constant
         && s.ty.is_numeric()
@@ -181,7 +285,15 @@ fn field_width(c: &Compiled, f: &rpgfront::ast::OutputField) -> u32 {
     if let Ty::Packed(d, _) | Ty::Zoned(d, _) | Ty::Bin(d, _) | Ty::Int(d) | Ty::Uns(d) = &s.ty {
         match f.format.trim() {
             "P" => return u32::from(*d) / 2 + 1,
-            "B" => return if *d <= 4 { 2 } else if *d <= 9 { 4 } else { 8 },
+            "B" => {
+                return if *d <= 4 {
+                    2
+                } else if *d <= 9 {
+                    4
+                } else {
+                    8
+                };
+            }
             "S" => return u32::from(*d),
             _ => {}
         }
@@ -190,8 +302,12 @@ fn field_width(c: &Compiled, f: &rpgfront::ast::OutputField) -> u32 {
         Ty::Packed(d, sc) | Ty::Zoned(d, sc) | Ty::Bin(d, sc) if !f.edit.is_empty() => {
             edit_width(*d, *sc, &f.edit).unwrap_or(u32::from(*d))
         }
-        Ty::Int(d) | Ty::Uns(d) if !f.edit.is_empty() => edit_width(*d, 0, &f.edit).unwrap_or(u32::from(*d)),
-        Ty::Packed(d, _) | Ty::Zoned(d, _) | Ty::Bin(d, _) | Ty::Int(d) | Ty::Uns(d) => u32::from(*d),
+        Ty::Int(d) | Ty::Uns(d) if !f.edit.is_empty() => {
+            edit_width(*d, 0, &f.edit).unwrap_or(u32::from(*d))
+        }
+        Ty::Packed(d, _) | Ty::Zoned(d, _) | Ty::Bin(d, _) | Ty::Int(d) | Ty::Uns(d) => {
+            u32::from(*d)
+        }
         Ty::Ind => 1,
         t => t.size(&|i| c.table.ds_len(i)),
     }
@@ -209,20 +325,38 @@ pub(crate) fn external(out: &mut Out, c: &Compiled) {
     out.new_page(None);
     out.line('0', format!("{:22}{}", "", spaced("External References")));
     out.line('0', "      Statically bound procedures:");
-    out.line(' ', "         Procedure                            References");
+    out.line(
+        ' ',
+        "         Procedure                            References",
+    );
     for (name, refs) in &procs {
         let mut chunks = refs.chunks(4);
-        out.line(' ', format!("{:9}{name:<36}{}", "", chunks.next().map(<[String]>::concat).unwrap_or_default()));
+        out.line(
+            ' ',
+            format!(
+                "{:9}{name:<36}{}",
+                "",
+                chunks.next().map(<[String]>::concat).unwrap_or_default()
+            ),
+        );
         for ch in chunks {
             out.line(' ', format!("{:45}{}", "", ch.concat()));
         }
     }
     // IBM leaves the list blank after a second interface it ignored
     // or an EXTPROC in error.
-    if procs.is_empty() && !c.diags.iter().any(|d| matches!(d.msgid, "RNF3768" | "RNF3746")) {
+    if procs.is_empty()
+        && !c
+            .diags
+            .iter()
+            .any(|d| matches!(d.msgid, "RNF3768" | "RNF3746"))
+    {
         out.line(' ', "         No references in the source.");
     }
-    for (title, list) in [("      Imported fields:", &imported), ("      Exported fields:", &exported)] {
+    for (title, list) in [
+        ("      Imported fields:", &imported),
+        ("      Exported fields:", &exported),
+    ] {
         out.line('0', title);
         out.line(' ', "         Field             Attributes         Defined");
         for (name, attr, def) in list {
@@ -232,7 +366,13 @@ pub(crate) fn external(out: &mut Out, c: &Compiled) {
             out.line(' ', "         No references in the source.");
         }
     }
-    out.end_line('0', format!("{:3}{}", "", "* * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *"));
+    out.end_line(
+        '0',
+        format!(
+            "{:3}{}",
+            "", "* * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *"
+        ),
+    );
 }
 
 /// Where the summary's texts start, and their width.
@@ -252,48 +392,120 @@ pub(crate) fn summary(out: &mut Out, c: &Compiled, extra: &[(&'static str, usize
         *counts.entry((0, id)).or_default() += n;
     }
     for ((sev, id), n) in counts {
-        let text = super::lines::wrap_to(&msgs::summary_text(id), SUMMARY_WIDTH, super::lines::lines(id, true));
+        let text = super::lines::wrap_to(
+            &msgs::summary_text(id),
+            SUMMARY_WIDTH,
+            super::lines::lines(id, true),
+        );
         out.line(' ', format!("*{id} {sev:02} {n:>6} {}", text[0]));
         for t in &text[1..] {
             out.line(' ', format!("{:SUMMARY_AT$}{t}", ""));
         }
     }
-    out.end_line('0', format!("{:7}{}", "", "* * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *"));
+    out.end_line(
+        '0',
+        format!(
+            "{:7}{}",
+            "", "* * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *"
+        ),
+    );
 }
 
 pub(crate) fn final_summary(out: &mut Out, c: &Compiled, o: &Options, unref: usize) {
     out.new_page(None);
     out.line('0', format!("{:28}{}", "", spaced("Final Summary")));
-    let n = |lo: u8, hi: u8| c.diags.iter().filter(|d| d.severity >= lo && d.severity <= hi).count();
+    let n = |lo: u8, hi: u8| {
+        c.diags
+            .iter()
+            .filter(|d| d.severity >= lo && d.severity <= hi)
+            .count()
+    };
     out.line('0', "  Message Totals:");
-    out.line('0', format!("    Information  (00) . . . . . . . :  {:>7}", n(0, 9) + unref));
-    out.line(' ', format!("    Warning      (10) . . . . . . . :  {:>7}", n(10, 19)));
-    out.line(' ', format!("    Error        (20) . . . . . . . :  {:>7}", n(20, 29)));
-    out.line(' ', format!("    Severe Error (30+)  . . . . . . :  {:>7}", n(30, 99)));
+    out.line(
+        '0',
+        format!(
+            "    Information  (00) . . . . . . . :  {:>7}",
+            n(0, 9) + unref
+        ),
+    );
+    out.line(
+        ' ',
+        format!("    Warning      (10) . . . . . . . :  {:>7}", n(10, 19)),
+    );
+    out.line(
+        ' ',
+        format!("    Error        (20) . . . . . . . :  {:>7}", n(20, 29)),
+    );
+    out.line(
+        ' ',
+        format!("    Severe Error (30+)  . . . . . . :  {:>7}", n(30, 99)),
+    );
     out.line(' ', "    ---------------------------------  -------");
-    out.line(' ', format!("    Total . . . . . . . . . . . . . :  {:>7}", c.diags.len() + unref));
+    out.line(
+        ' ',
+        format!(
+            "    Total . . . . . . . . . . . . . :  {:>7}",
+            c.diags.len() + unref
+        ),
+    );
     let (records, specs, data, comments) = totals(c);
     out.line('-', "  Source Totals:");
-    out.line('0', format!("    Records . . . . . . . . . . . . :  {records:>7}"));
-    out.line(' ', format!("    Specifications  . . . . . . . . :  {specs:>7}"));
-    out.line(' ', format!("    Data records  . . . . . . . . . :  {data:>7}"));
-    out.line(' ', format!("    Comments  . . . . . . . . . . . :  {comments:>7}"));
-    out.end_line('0', format!("{:9}{}", "", "* * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *"));
+    out.line(
+        '0',
+        format!("    Records . . . . . . . . . . . . :  {records:>7}"),
+    );
+    out.line(
+        ' ',
+        format!("    Specifications  . . . . . . . . :  {specs:>7}"),
+    );
+    out.line(
+        ' ',
+        format!("    Data records  . . . . . . . . . :  {data:>7}"),
+    );
+    out.line(
+        ' ',
+        format!("    Comments  . . . . . . . . . . . :  {comments:>7}"),
+    );
+    out.end_line(
+        '0',
+        format!(
+            "{:9}{}",
+            "", "* * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *"
+        ),
+    );
     out.line(' ', completion(c, o));
-    out.line(' ', format!("{:10}{}", "", "* * * * *   E N D   O F   C O M P I L A T I O N   * * * * *"));
+    out.line(
+        ' ',
+        format!(
+            "{:10}{}",
+            "", "* * * * *   E N D   O F   C O M P I L A T I O N   * * * * *"
+        ),
+    );
 }
 
 /// The source totals: records, specifications, data records, comments.
 fn totals(c: &Compiled) -> (usize, usize, usize, usize) {
-    let hidden_gen = c.ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*NOEXPDDS"));
-    let made: usize = if hidden_gen { 0 } else { c.generated.iter().map(|(_, n)| *n as usize).sum() };
+    let hidden_gen = c
+        .ctl
+        .option
+        .iter()
+        .any(|o| o.eq_ignore_ascii_case("*NOEXPDDS"));
+    let made: usize = if hidden_gen {
+        0
+    } else {
+        c.generated.iter().map(|(_, n)| *n as usize).sum()
+    };
     let mut records = made;
     let mut specs = made;
     let mut data = 0;
     let mut comments = 0;
     let info = super::stmts::analyze(&c.read.lines);
     let mut between = false;
-    let hidden = c.ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*NOSHOWCPY"));
+    let hidden = c
+        .ctl
+        .option
+        .iter()
+        .any(|o| o.eq_ignore_ascii_case("*NOSHOWCPY"));
     for (l, inf) in c.read.lines.iter().zip(&info) {
         if l.class == Class::Skipped || (l.member > 0 && hidden) || super::unnumbered(l) {
             continue;
@@ -314,7 +526,12 @@ fn totals(c: &Compiled) -> (usize, usize, usize, usize) {
                     }
                 }
                 let ignored = between && inf.ty == super::stmts::Ty::Spec('C');
-                if !ignored && !matches!(inf.ty, super::stmts::Ty::Spec('P') | super::stmts::Ty::EndProc) {
+                if !ignored
+                    && !matches!(
+                        inf.ty,
+                        super::stmts::Ty::Spec('P') | super::stmts::Ty::EndProc
+                    )
+                {
                     specs += 1;
                 }
             }
@@ -328,10 +545,20 @@ fn totals(c: &Compiled) -> (usize, usize, usize, usize) {
 /// The completion message's line: our text of `RNS9304`/`RNS9305`
 /// (created) or `RNS9308` (stopped).
 fn completion(c: &Compiled, o: &Options) -> String {
-    let what = if o.command == Command::CrtRpgMod { "Module" } else { "Program" };
-    if c.created {
-        format!("{what} {} created in library {}. Highest severity: {:02}.", o.name, o.lib, c.max_severity)
+    let what = if o.command == Command::CrtRpgMod {
+        "Module"
     } else {
-        format!("The compile of {} in {} stopped at severity {:02}.", o.name, o.lib, c.max_severity)
+        "Program"
+    };
+    if c.created {
+        format!(
+            "{what} {} created in library {}. Highest severity: {:02}.",
+            o.name, o.lib, c.max_severity
+        )
+    } else {
+        format!(
+            "The compile of {} in {} stopped at severity {:02}.",
+            o.name, o.lib, c.max_severity
+        )
     }
 }

@@ -43,7 +43,10 @@ impl Distinct {
     /// The source type marked as this type.
     #[must_use]
     pub fn spec(&self) -> TypeSpec {
-        TypeSpec { udt: Some(self.qualified()), ..self.source.clone() }
+        TypeSpec {
+            udt: Some(self.qualified()),
+            ..self.source.clone()
+        }
     }
 }
 
@@ -74,25 +77,50 @@ pub fn enter(txn: &mut Txn<'_>, ctx: &SqlContext) {
         });
     }
     // No types, no path to work out (most statements).
-    let path = if STATE.with(|s| s.borrow().types.is_empty()) { Vec::new() } else { crate::exec::routine::find::path(txn, ctx) };
+    let path = if STATE.with(|s| s.borrow().types.is_empty()) {
+        Vec::new()
+    } else {
+        crate::exec::routine::find::path(txn, ctx)
+    };
     STATE.with(|s| s.borrow_mut().path = path);
 }
 
 /// Every distinct type of the store (array types left out).
 fn list(txn: &mut Txn<'_>, qsys: ObjectId) -> Vec<Distinct> {
-    let Ok(libs) = ops::list(txn, qsys, Some(types::LIB)) else { return Vec::new() };
+    let Ok(libs) = ops::list(txn, qsys, Some(types::LIB)) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for (k, lib) in libs {
-        let Ok(udts) = ops::list(txn, lib, Some(types::SQLUDT)) else { continue };
+        let Ok(udts) = ops::list(txn, lib, Some(types::SQLUDT)) else {
+            continue;
+        };
         for (sys, id) in udts {
-            let Ok(Some(info)) = db::sqlinf::load(txn, id) else { continue };
-            let Some(Ok(u)) = info.first(db::sqlinf::tag::TYPE).map(db::sqlinf::var::Udt::decode) else { continue };
+            let Ok(Some(info)) = db::sqlinf::load(txn, id) else {
+                continue;
+            };
+            let Some(Ok(u)) = info
+                .first(db::sqlinf::tag::TYPE)
+                .map(db::sqlinf::var::Udt::decode)
+            else {
+                continue;
+            };
             if u.metatype != b'T' {
                 continue;
             }
-            let Ok(source) = crate::pl::types::parse_type(&u.source) else { continue };
-            let name = info.name().unwrap_or_else(|| sys.name.to_string().trim_end().to_string());
-            out.push(Distinct { id, lib, schema: k.name, name, source });
+            let Ok(source) = crate::pl::types::parse_type(&u.source) else {
+                continue;
+            };
+            let name = info
+                .name()
+                .unwrap_or_else(|| sys.name.to_string().trim_end().to_string());
+            out.push(Distinct {
+                id,
+                lib,
+                schema: k.name,
+                name,
+                source,
+            });
         }
     }
     out
@@ -110,16 +138,29 @@ pub fn find(name: &str) -> Option<Distinct> {
         let s = s.borrow();
         let named = |d: &&Distinct| d.name == base;
         if let Some(sc) = schema {
-            return s.types.iter().filter(named).find(|d| d.schema.to_string().trim_end() == sc).cloned();
+            return s
+                .types
+                .iter()
+                .filter(named)
+                .find(|d| d.schema.to_string().trim_end() == sc)
+                .cloned();
         }
-        s.path.iter().find_map(|l| s.types.iter().filter(named).find(|d| d.lib == *l).cloned())
+        s.path
+            .iter()
+            .find_map(|l| s.types.iter().filter(named).find(|d| d.lib == *l).cloned())
     })
 }
 
 /// The type a `SCHEMA.NAME` a column carries names.
 #[must_use]
 pub fn by_qualified(q: &str) -> Option<Distinct> {
-    STATE.with(|s| s.borrow().types.iter().find(|d| d.qualified() == q).cloned())
+    STATE.with(|s| {
+        s.borrow()
+            .types
+            .iter()
+            .find(|d| d.qualified() == q)
+            .cloned()
+    })
 }
 
 /// Whether library `lib` is searched for an unqualified function name.
@@ -139,9 +180,9 @@ pub fn any() -> bool {
 #[must_use]
 pub fn with_source_in(schema: &str, function: &str) -> bool {
     STATE.with(|s| {
-        s.borrow()
-            .types
-            .iter()
-            .any(|d| d.schema.to_string().trim_end() == schema && super::typing::source_function(&d.source.data_type) == function)
+        s.borrow().types.iter().any(|d| {
+            d.schema.to_string().trim_end() == schema
+                && super::typing::source_function(&d.source.data_type) == function
+        })
     })
 }

@@ -29,16 +29,25 @@ fn every_program_runs_and_matches() {
                 fs::write(ours.join(format!("{}.out", case.name)), &text).unwrap();
                 if update {
                     fs::create_dir_all(kit.expected_dir()).unwrap();
-                    fs::write(kit.expected_dir().join(format!("{}.out", case.name)), &text).unwrap();
+                    fs::write(kit.expected_dir().join(format!("{}.out", case.name)), &text)
+                        .unwrap();
                 }
             }
             Err(e) => failures.push(e),
         }
     }
-    assert!(failures.is_empty(), "programs that did not run:\n{}", failures.join("\n"));
+    assert!(
+        failures.is_empty(),
+        "programs that did not run:\n{}",
+        failures.join("\n")
+    );
     let c = compare(&ours, &kit.expected_dir());
     eprintln!("{}", c.render());
-    assert!(c.mismatched.is_empty(), "outcomes differ from the expected files:\n{}", c.render());
+    assert!(
+        c.mismatched.is_empty(),
+        "outcomes differ from the expected files:\n{}",
+        c.render()
+    );
     assert!(
         c.missing.is_empty(),
         "programs without an expected file: {:?}; QS400_UPDATE_IFSAPI=1 cargo test -p conformance --test ifs_api",
@@ -55,7 +64,8 @@ fn every_program_has_its_rpg_probe() {
         .unwrap()
         .filter_map(|e| {
             let p = e.ok()?.path();
-            (p.extension()? == "rpgle").then(|| p.file_stem().unwrap().to_string_lossy().to_uppercase())
+            (p.extension()? == "rpgle")
+                .then(|| p.file_stem().unwrap().to_string_lossy().to_uppercase())
         })
         .collect();
     rpg.sort();
@@ -66,14 +76,22 @@ fn every_program_has_its_rpg_probe() {
 /// characters as blanks, trailing blanks and empty lines left out.
 fn normal(lines: impl Iterator<Item = String>) -> Vec<String> {
     lines
-        .map(|l| l.chars().map(|c| if c.is_control() { ' ' } else { c }).collect::<String>().trim_end().to_string())
+        .map(|l| {
+            l.chars()
+                .map(|c| if c.is_control() { ' ' } else { c })
+                .collect::<String>()
+                .trim_end()
+                .to_string()
+        })
         .filter(|l| !l.is_empty())
         .collect()
 }
 
 /// A spooled line's text without its `page/line ` prefix.
 fn text_of(l: &str) -> String {
-    let Some((_, rest)) = l.split_once('/') else { return String::new() };
+    let Some((_, rest)) = l.split_once('/') else {
+        return String::new();
+    };
     let digits = rest.chars().take_while(char::is_ascii_digit).count();
     rest.get(digits.max(3) + 1..).unwrap_or("").to_string()
 }
@@ -104,7 +122,13 @@ fn the_rpg_probes_print_what_the_ir_shows() {
         };
         if !o.created {
             let why: Vec<&str> = notes.lines().filter(|l| l.starts_with(';')).collect();
-            failures.push(format!("{}: not created: {} {:?}\n{}", case.name, o.cause, o.diags, why.join("\n")));
+            failures.push(format!(
+                "{}: not created: {} {:?}\n{}",
+                case.name,
+                o.cause,
+                o.diags,
+                why.join("\n")
+            ));
             continue;
         }
         let printed = normal(
@@ -114,7 +138,8 @@ fn the_rpg_probes_print_what_the_ir_shows() {
                 .flat_map(|s| s.lines.iter())
                 .map(|l| text_of(l)),
         );
-        let expected = fs::read_to_string(kit.expected_dir().join(format!("{}.out", case.name))).unwrap();
+        let expected =
+            fs::read_to_string(kit.expected_dir().join(format!("{}.out", case.name))).unwrap();
         let shown = normal(
             expected
                 .lines()
@@ -124,7 +149,11 @@ fn the_rpg_probes_print_what_the_ir_shows() {
                 .map(str::to_string),
         );
         if printed != shown {
-            let at = printed.iter().zip(&shown).position(|(a, b)| a != b).unwrap_or(printed.len().min(shown.len()));
+            let at = printed
+                .iter()
+                .zip(&shown)
+                .position(|(a, b)| a != b)
+                .unwrap_or(printed.len().min(shown.len()));
             failures.push(format!(
                 "{}: line {at}: printed {:?}, the IR shows {:?} ({:?})",
                 case.name,

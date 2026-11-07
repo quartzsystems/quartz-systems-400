@@ -282,26 +282,41 @@ impl<B: Backend> Ifs<B> {
         self.chgown_at(cx, p, true, new_owner, revoke_old)
     }
 
-    fn chgown_at(&self, cx: &Ctx<'_>, p: &str, follow: bool, new_owner: &str, revoke_old: bool) -> Result<()> {
+    fn chgown_at(
+        &self,
+        cx: &Ctx<'_>,
+        p: &str,
+        follow: bool,
+        new_owner: &str,
+        revoke_old: bool,
+    ) -> Result<()> {
         if !cx.env.profile_exists(new_owner) {
             return Err(Errno::EINVAL);
         }
         let new_owner = new_owner.to_string();
-        self.edit_at(cx, p, follow, Op::Chown, AuditKind::Owner, "CHGOWN", move |m, _| {
-            if m.owner == new_owner {
-                return Ok(new_owner);
-            }
-            let old = std::mem::replace(&mut m.owner, new_owner.clone());
-            m.set_private(&new_owner, None);
-            if !revoke_old {
-                m.set_private(&old, Some(m.owner_auth));
-            }
-            if m.group.as_deref() == Some(new_owner.as_str()) {
-                m.group = None;
-                m.group_auth = Auth::EXCLUDE;
-            }
-            Ok(format!("{old} {new_owner}"))
-        })
+        self.edit_at(
+            cx,
+            p,
+            follow,
+            Op::Chown,
+            AuditKind::Owner,
+            "CHGOWN",
+            move |m, _| {
+                if m.owner == new_owner {
+                    return Ok(new_owner);
+                }
+                let old = std::mem::replace(&mut m.owner, new_owner.clone());
+                m.set_private(&new_owner, None);
+                if !revoke_old {
+                    m.set_private(&old, Some(m.owner_auth));
+                }
+                if m.group.as_deref() == Some(new_owner.as_str()) {
+                    m.group = None;
+                    m.group_auth = Auth::EXCLUDE;
+                }
+                Ok(format!("{old} {new_owner}"))
+            },
+        )
     }
 
     /// `CHGPGP`: a group profile (not the owner) or `None`. A private

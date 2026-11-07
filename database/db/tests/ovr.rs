@@ -499,11 +499,19 @@ fn call_levels_merge_and_end() {
             .level(2),
     );
     let o = s.override_for(name("CUST")).unwrap();
-    assert_eq!(o.tofile, Some(fileref("QSTEST/CUST2")), "merged from level 0");
+    assert_eq!(
+        o.tofile,
+        Some(fileref("QSTEST/CUST2")),
+        "merged from level 0"
+    );
     assert_eq!(o.member, Some(MemberSpec::Name(name("ARCH"))));
     assert_eq!(o.level, 2);
     // The deeper level's value wins where both say something.
-    s.ovrdbf(Override::new(name("CUST")).tofile(fileref("QSTEST/CUST3")).level(3));
+    s.ovrdbf(
+        Override::new(name("CUST"))
+            .tofile(fileref("QSTEST/CUST3"))
+            .level(3),
+    );
     assert_eq!(
         s.override_for(name("CUST")).unwrap().tofile,
         Some(fileref("QSTEST/CUST3"))

@@ -116,14 +116,17 @@ impl DdmRedirect {
     /// As the failure an open returns.
     #[must_use]
     pub fn to_fail(&self) -> IoFail {
-        let local = self
-            .local
-            .as_ref()
-            .map_or_else(String::new, |f| format!("{} {} {} {}", f.name, f.rec_len, f.fields, f.keys));
+        let local = self.local.as_ref().map_or_else(String::new, |f| {
+            format!("{} {} {} {}", f.name, f.rec_len, f.fields, f.keys)
+        });
         IoFail {
             status: 1299,
             msgid: DDM_OPEN.into(),
-            data: format!("{}\n{}\n{}\n{}", self.file, self.library, local, self.payload).into_bytes(),
+            data: format!(
+                "{}\n{}\n{}\n{}",
+                self.file, self.library, local, self.payload
+            )
+            .into_bytes(),
         }
     }
 
@@ -139,12 +142,14 @@ impl DdmRedirect {
         let library = parts.next()?.to_string();
         let mut words = parts.next()?.split(' ');
         let local = match (words.next(), words.next(), words.next(), words.next()) {
-            (Some(name), Some(len), Some(fields), Some(keys)) if !name.is_empty() => Some(DdmFormat {
-                name: name.to_string(),
-                rec_len: len.parse().ok()?,
-                fields: fields.parse().ok()?,
-                keys: keys.parse().ok()?,
-            }),
+            (Some(name), Some(len), Some(fields), Some(keys)) if !name.is_empty() => {
+                Some(DdmFormat {
+                    name: name.to_string(),
+                    rec_len: len.parse().ok()?,
+                    fields: fields.parse().ok()?,
+                    keys: keys.parse().ok()?,
+                })
+            }
             _ => None,
         };
         Some(Self {

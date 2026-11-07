@@ -118,7 +118,13 @@ fn hp5si_duplex_tray_copies() {
         duplex: Duplex::Tumble,
         ..PrintJob::default()
     };
-    run("hp5si-80x84-tumble", &Transform::Pcl(Model::Hp5SI), &job, 80, 84);
+    run(
+        "hp5si-80x84-tumble",
+        &Transform::Pcl(Model::Hp5SI),
+        &job,
+        80,
+        84,
+    );
 }
 
 #[test]
@@ -130,7 +136,13 @@ fn hp5_font_and_chrid() {
         chrid: "695 1252".into(),
         ..PrintJob::default()
     };
-    run("hp5-font252-cp1252", &Transform::Pcl(Model::Hp5), &job, 132, 66);
+    run(
+        "hp5-font252-cp1252",
+        &Transform::Pcl(Model::Hp5),
+        &job,
+        132,
+        66,
+    );
 }
 
 #[test]
@@ -142,7 +154,13 @@ fn hpplus_a4_by_cpi() {
         chrid: "697 850".into(),
         ..PrintJob::default()
     };
-    run("hpplus-96x70-cpi12", &Transform::Pcl(Model::HpPlus), &job, 96, 70);
+    run(
+        "hpplus-96x70-cpi12",
+        &Transform::Pcl(Model::HpPlus),
+        &job,
+        96,
+        70,
+    );
 }
 
 #[test]
@@ -169,7 +187,13 @@ fn wscst_sample() {
         duplex: Duplex::Yes,
         ..PrintJob::default()
     };
-    run("wscst-sample-80x66", &Transform::Custom(Box::new(w)), &job, 80, 66);
+    run(
+        "wscst-sample-80x66",
+        &Transform::Custom(Box::new(w)),
+        &job,
+        80,
+        66,
+    );
 }
 
 #[test]

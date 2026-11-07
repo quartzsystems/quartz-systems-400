@@ -15,7 +15,10 @@ pub const SUBSYSTEM: &str = "QHTTPSVR";
 
 /// `STRTCPSVR` for one instance.
 pub fn start_command(instance: &str) -> String {
-    format!("STRTCPSVR SERVER(*HTTP) HTTPSVR({})", instance.trim().to_ascii_uppercase())
+    format!(
+        "STRTCPSVR SERVER(*HTTP) HTTPSVR({})",
+        instance.trim().to_ascii_uppercase()
+    )
 }
 
 /// `ENDTCPSVR` for one instance.
@@ -24,14 +27,19 @@ pub fn end_command(instance: &str, how: EndHow) -> String {
         EndHow::Controlled(delay) => format!("OPTION(*CNTRLD) DELAY({delay})"),
         EndHow::Immediate => "OPTION(*IMMED)".into(),
     };
-    format!("ENDTCPSVR SERVER(*HTTP) HTTPSVR({}) {option}", instance.trim().to_ascii_uppercase())
+    format!(
+        "ENDTCPSVR SERVER(*HTTP) HTTPSVR({}) {option}",
+        instance.trim().to_ascii_uppercase()
+    )
 }
 
 /// `TCP1A07 HTTP server starting.` as identifier and text.
 fn split_line(line: &str) -> Option<(&str, &str)> {
     let (id, rest) = line.trim().split_once(' ')?;
     let b = id.as_bytes();
-    let ok = b.len() == 7 && b[..3].iter().all(u8::is_ascii_alphabetic) && b[3..].iter().all(u8::is_ascii_hexdigit);
+    let ok = b.len() == 7
+        && b[..3].iter().all(u8::is_ascii_alphabetic)
+        && b[3..].iter().all(u8::is_ascii_hexdigit);
     ok.then(|| (id, rest.trim()))
 }
 
@@ -54,7 +62,11 @@ pub fn outcome(text: &str, escape: Option<(&str, &str)>) -> Result<Message, Mess
 
 /// The open connections an instance job's function (`CNN-n`) shows.
 pub fn connections(function: &str) -> u32 {
-    function.trim().strip_prefix("CNN-").and_then(|n| n.trim().parse().ok()).unwrap_or(0)
+    function
+        .trim()
+        .strip_prefix("CNN-")
+        .and_then(|n| n.trim().parse().ok())
+        .unwrap_or(0)
 }
 
 /// The jobs of [`SUBSYSTEM`] that run instances (not its monitor), one
@@ -100,17 +112,31 @@ mod tests {
 
     #[test]
     fn commands_and_outcomes() {
-        assert_eq!(start_command("web1"), "STRTCPSVR SERVER(*HTTP) HTTPSVR(WEB1)");
+        assert_eq!(
+            start_command("web1"),
+            "STRTCPSVR SERVER(*HTTP) HTTPSVR(WEB1)"
+        );
         assert_eq!(
             end_command("WEB1", EndHow::Controlled(30)),
             "ENDTCPSVR SERVER(*HTTP) HTTPSVR(WEB1) OPTION(*CNTRLD) DELAY(30)"
         );
         assert!(end_command("WEB1", EndHow::Immediate).ends_with("OPTION(*IMMED)"));
         let ok = outcome("TCP1A07 HTTP server starting.\n", None).unwrap();
-        assert_eq!((ok.kind, ok.id.as_str(), ok.text.as_str()), (Kind::Done, "TCP1A07", "HTTP server starting."));
+        assert_eq!(
+            (ok.kind, ok.id.as_str(), ok.text.as_str()),
+            (Kind::Done, "TCP1A07", "HTTP server starting.")
+        );
         let e = outcome("", Some(("CPF9801", "CPF9801 Object not found."))).unwrap_err();
-        assert_eq!((e.kind, e.id.as_str(), e.text.as_str()), (Kind::Error, "CPF9801", "Object not found."));
-        assert_eq!(outcome("", Some(("CPD0043", "Keyword OPTION not valid."))).unwrap_err().text, "Keyword OPTION not valid.");
+        assert_eq!(
+            (e.kind, e.id.as_str(), e.text.as_str()),
+            (Kind::Error, "CPF9801", "Object not found.")
+        );
+        assert_eq!(
+            outcome("", Some(("CPD0043", "Keyword OPTION not valid.")))
+                .unwrap_err()
+                .text,
+            "Keyword OPTION not valid."
+        );
     }
 
     #[test]
@@ -126,7 +152,10 @@ mod tests {
             job("QTVTELNET", 40, "QSYSWRK", 'B', 1),
         ];
         let j = instance_jobs(&active);
-        let names: Vec<(&str, &str)> = j.iter().map(|h| (h.instance.as_str(), h.number.as_str())).collect();
+        let names: Vec<(&str, &str)> = j
+            .iter()
+            .map(|h| (h.instance.as_str(), h.number.as_str()))
+            .collect();
         assert_eq!(names, [("ADMIN", "000020"), ("WEB1", "000030")]);
         assert_eq!(j[0].qualified(), "000020/QTMHHTTP/ADMIN");
         assert_eq!((j[0].connections, j[1].connections), (0, 17));

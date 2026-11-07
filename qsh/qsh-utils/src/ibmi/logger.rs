@@ -19,13 +19,12 @@ use crate::common::{complain_sys, usage};
 const NAME: &str = "logger";
 
 const FACILITIES: &[&str] = &[
-    "auth", "authpriv", "cron", "daemon", "ftp", "kern", "lpr", "mail", "news", "syslog",
-    "user", "uucp", "local0", "local1", "local2", "local3", "local4", "local5", "local6",
-    "local7", "security",
+    "auth", "authpriv", "cron", "daemon", "ftp", "kern", "lpr", "mail", "news", "syslog", "user",
+    "uucp", "local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7",
+    "security",
 ];
 const LEVELS: &[&str] = &[
-    "emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "panic", "error",
-    "warn",
+    "emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "panic", "error", "warn",
 ];
 
 /// Is this a `facility.level` (or a level alone)?

@@ -76,7 +76,8 @@ static LOG: Mutex<Log> = Mutex::new(Log {
 });
 
 fn log() -> std::sync::MutexGuard<'static, Log> {
-    LOG.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    LOG.lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 /// Write an entry.
@@ -142,7 +143,10 @@ mod tests {
     fn codes_are_unique_and_majors_known() {
         for (i, a) in MINORS.iter().enumerate() {
             assert!(MAJORS.iter().any(|m| m.0 == a.0), "{a:?}");
-            assert!(!MINORS[i + 1..].iter().any(|b| b.0 == a.0 && b.1 == a.1), "{a:?}");
+            assert!(
+                !MINORS[i + 1..].iter().any(|b| b.0 == a.0 && b.1 == a.1),
+                "{a:?}"
+            );
         }
     }
 }

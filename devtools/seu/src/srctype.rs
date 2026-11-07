@@ -70,7 +70,10 @@ impl SourceType {
     #[must_use]
     pub fn known(&self) -> bool {
         self.family != Family::Other
-            || matches!(self.name.as_str(), "TXT" | "C" | "CPP" | "H" | "CBL" | "CBLLE" | "SQL")
+            || matches!(
+                self.name.as_str(),
+                "TXT" | "C" | "CPP" | "H" | "CBL" | "CBLLE" | "SQL"
+            )
     }
 
     /// The first column the display shows.
@@ -180,9 +183,27 @@ pub fn select_lines(st: &SourceType) -> Vec<String> {
         }
     };
     match st.family {
-        Family::RpgIle => group("ILE RPG:", &["H F D I C CX O P: the specifications;", "* comment, ** free format"]),
-        Family::Rpg => group("RPG:", &["H F I C O P: the specifications;", "* comment, ** free format"]),
-        Family::Dds => group("DDS:", &["PF physical, LF logical, DP display and printer,", "BC communications files; A* comment"]),
+        Family::RpgIle => group(
+            "ILE RPG:",
+            &[
+                "H F D I C CX O P: the specifications;",
+                "* comment, ** free format",
+            ],
+        ),
+        Family::Rpg => group(
+            "RPG:",
+            &[
+                "H F I C O P: the specifications;",
+                "* comment, ** free format",
+            ],
+        ),
+        Family::Dds => group(
+            "DDS:",
+            &[
+                "PF physical, LF logical, DP display and printer,",
+                "BC communications files; A* comment",
+            ],
+        ),
         _ => {}
     }
     group("Any type:", &["** free format"]);
@@ -195,8 +216,22 @@ fn is_free_op(op: &str) -> bool {
     let base = o.split('(').next().unwrap_or("");
     matches!(
         base,
-        "EVAL" | "EVALR" | "IF" | "ELSEIF" | "DOW" | "DOU" | "WHEN" | "FOR" | "CALLP" | "RETURN"
-            | "ON-ERROR" | "SORTA" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "MONITOR"
+        "EVAL"
+            | "EVALR"
+            | "IF"
+            | "ELSEIF"
+            | "DOW"
+            | "DOU"
+            | "WHEN"
+            | "FOR"
+            | "CALLP"
+            | "RETURN"
+            | "ON-ERROR"
+            | "SORTA"
+            | "XML-INTO"
+            | "XML-SAX"
+            | "DATA-INTO"
+            | "MONITOR"
     )
 }
 
@@ -713,8 +748,14 @@ mod tests {
         let r = SourceType::new("RPGLE");
         assert_eq!(r.format_of("     D*** comment"), "*");
         assert_eq!(r.format_of("     D QUSEI00                13     19"), "D");
-        assert_eq!(r.format_of("     C                   EVAL      X = 1"), "CX");
-        assert_eq!(r.format_of("     C     A             ADD       B             C"), "C");
+        assert_eq!(
+            r.format_of("     C                   EVAL      X = 1"),
+            "CX"
+        );
+        assert_eq!(
+            r.format_of("     C     A             ADD       B             C"),
+            "C"
+        );
         assert_eq!(r.format_of("     A          R X"), "**");
         let d = SourceType::new("DSPF");
         assert_eq!(d.format_of("     A          R X"), "DP");

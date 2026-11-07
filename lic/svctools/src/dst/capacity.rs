@@ -71,7 +71,12 @@ fn processor_status(env: &mut dyn DstEnv) -> Notice {
         line("Installed processors", &processors),
         line("Active processors", &processors),
     ];
-    for k in ["Processor use, %", "Main storage, MB", "Storage pools", "Active jobs"] {
+    for k in [
+        "Processor use, %",
+        "Main storage, MB",
+        "Storage pools",
+        "Active jobs",
+    ] {
         if let Some(v) = figure(&cap, k) {
             lines.push(line(k, &v));
         }
@@ -80,15 +85,24 @@ fn processor_status(env: &mut dyn DstEnv) -> Notice {
     lines.push(String::new());
     lines.push("Every installed processor is active: this system has no capacity".into());
     lines.push("held in reserve to be activated later.".into());
-    Notice::new("sst-capacity-processor", "Display Processor Capacity Status", lines)
+    Notice::new(
+        "sst-capacity-processor",
+        "Display Processor Capacity Status",
+        lines,
+    )
 }
 
 fn storage_status(env: &mut dyn DstEnv) -> Notice {
     let cap = env.capacity();
-    let mut lines: Vec<String> = ["Disk units configured", "System ASP capacity", "System ASP used, %", "ASP threshold, %"]
-        .iter()
-        .filter_map(|k| figure(&cap, k).map(|v| line(k, &v)))
-        .collect();
+    let mut lines: Vec<String> = [
+        "Disk units configured",
+        "System ASP capacity",
+        "System ASP used, %",
+        "ASP threshold, %",
+    ]
+    .iter()
+    .filter_map(|k| figure(&cap, k).map(|v| line(k, &v)))
+    .collect();
     lines.push(String::new());
     lines.push("Unit  ASP    Size (MiB)  Used %  Protection".into());
     for u in env.disk_units() {
@@ -98,7 +112,11 @@ fn storage_status(env: &mut dyn DstEnv) -> Notice {
             u.asp,
             u.size_mib,
             u.percent_used,
-            if u.mirrored { "Mirrored" } else { "Unprotected" }
+            if u.mirrored {
+                "Mirrored"
+            } else {
+                "Unprotected"
+            }
         ));
     }
     Notice::new("sst-capacity-storage", "Display Storage Capacity", lines)

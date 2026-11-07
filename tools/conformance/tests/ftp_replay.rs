@@ -19,7 +19,10 @@ fn replay_transcripts() {
     let gaps = std::fs::read_to_string(root.join("gaps.txt")).unwrap_or_default();
     let transcripts = ftp::load(&root.join("transcripts"));
     assert!(!transcripts.is_empty(), "no transcripts");
-    let outcomes: Vec<ftp::Outcome> = transcripts.iter().map(|t| ftp::replay(t, &fixture, &gaps)).collect();
+    let outcomes: Vec<ftp::Outcome> = transcripts
+        .iter()
+        .map(|t| ftp::replay(t, &fixture, &gaps))
+        .collect();
     let table = ftp::report(&outcomes);
     let mut details = String::new();
     for o in &outcomes {

@@ -141,7 +141,11 @@ impl Drop for Running {
 }
 
 /// Accept on `listener` until stopped, TLS first when `tls` is given.
-pub fn serve(listener: TcpListener, tls: Option<Arc<ServerConfig>>, service: Arc<dyn Service>) -> io::Result<Running> {
+pub fn serve(
+    listener: TcpListener,
+    tls: Option<Arc<ServerConfig>>,
+    service: Arc<dyn Service>,
+) -> io::Result<Running> {
     listener.set_nonblocking(true)?;
     let addr = listener.local_addr()?;
     let stop = Arc::new(AtomicBool::new(false));

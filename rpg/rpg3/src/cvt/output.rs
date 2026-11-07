@@ -12,7 +12,10 @@ use super::{Out, Sect};
 /// an `AND`/`OR`.
 fn is_record(r: &str) -> bool {
     let rel = cut3("O", r, "relation");
-    !cut3("O", r, "name").is_empty() || rel == "AND" || rel == "OR" || !cut3("O", r, "type").is_empty()
+    !cut3("O", r, "name").is_empty()
+        || rel == "AND"
+        || rel == "OR"
+        || !cut3("O", r, "type").is_empty()
 }
 
 /// Convert one output specification.
@@ -25,7 +28,8 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
         if rel == "AND" || rel == "OR" {
             o.put("relation", &rel);
         } else {
-            o.put("name", &cut3("O", r, "name")).put("type", &cut3("O", r, "type"));
+            o.put("name", &cut3("O", r, "name"))
+                .put("type", &cut3("O", r, "type"));
             let add = cut3("O", r, "add");
             if add == "ADD" || add == "DEL" {
                 o.put("add", &add);
@@ -34,7 +38,8 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
                     .right("spaceb", &cut3("O", r, "spaceb"))
                     .right("spacea", &cut3("O", r, "spacea"));
             }
-            o.right("skipb", &cut3("O", r, "skipb")).right("skipa", &cut3("O", r, "skipa"));
+            o.right("skipb", &cut3("O", r, "skipb"))
+                .right("skipa", &cut3("O", r, "skipa"));
             o.put("except", &cut3("O", r, "except"));
         }
         o.put("cond", cond.trim_end());

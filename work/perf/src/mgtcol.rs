@@ -101,7 +101,10 @@ pub fn new_payload(h: &Header) -> Vec<u8> {
 #[must_use]
 pub fn frame(i: &Interval) -> Vec<u8> {
     let body = ipc::encode(i);
-    let mut out = u32::try_from(body.len()).unwrap_or(u32::MAX).to_be_bytes().to_vec();
+    let mut out = u32::try_from(body.len())
+        .unwrap_or(u32::MAX)
+        .to_be_bytes()
+        .to_vec();
     out.extend_from_slice(&body);
     out
 }
@@ -218,7 +221,10 @@ mod tests {
             ..Interval::default()
         };
         p.extend(frame(&i));
-        p.extend(frame(&Interval { number: 2, ..i.clone() }));
+        p.extend(frame(&Interval {
+            number: 2,
+            ..i.clone()
+        }));
         p[OFF_ENDED..OFF_ENDED + 8].copy_from_slice(&1_030u64.to_be_bytes());
         let c = parse(&p).unwrap();
         assert_eq!(c.header, h);

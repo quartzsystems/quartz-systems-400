@@ -19,5 +19,5 @@ pub mod report;
 
 pub use contact::{Contact, Provider};
 pub use log::{Filter, ProblemLog};
-pub use problem::{Origin, Problem, PrbStatus, PrbType};
+pub use problem::{Origin, PrbStatus, PrbType, Problem};
 pub use report::{Reported, Sender, Unconnected};

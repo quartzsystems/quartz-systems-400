@@ -24,7 +24,8 @@ type Fld = (String, char, u32, u32, u32, u32);
 /// The capture, by file: format, record length, fields in order.
 #[allow(clippy::many_single_char_names)] // one per column
 fn oracle() -> BTreeMap<String, (String, u32, Vec<Fld>)> {
-    let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/oracle/perf/qapm-ffd.txt");
+    let p = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/conformance/oracle/perf/qapm-ffd.txt");
     let text = std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("{}: {e}", p.display()));
     let mut out: BTreeMap<String, (String, u32, Vec<Fld>)> = BTreeMap::new();
     for l in text.lines().map(str::trim_end) {
@@ -57,7 +58,12 @@ fn qapm_files_match_the_oracle() {
         wal_pages: 128,
         now: 1_767_225_600,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, 1_767_225_600, "QS400").unwrap();
     let lib = ops::create(
@@ -88,10 +94,17 @@ fn qapm_files_match_the_oracle() {
         assert_eq!(ffd.formats.len(), 1, "{file}");
         let f = &ffd.formats[0];
         if f.name.to_string() != *format || f.record_len != *reclen {
-            diffs.push(format!("{file}: format {} {} want {format} {reclen}", f.name, f.record_len));
+            diffs.push(format!(
+                "{file}: format {} {} want {format} {reclen}",
+                f.name, f.record_len
+            ));
         }
         if f.fields.len() != fields.len() {
-            diffs.push(format!("{file}: {} fields, want {}", f.fields.len(), fields.len()));
+            diffs.push(format!(
+                "{file}: {} fields, want {}",
+                f.fields.len(),
+                fields.len()
+            ));
         }
         for (got, w) in f.fields.iter().zip(fields) {
             let numeric = matches!(w.1, 'P' | 'S' | 'B');

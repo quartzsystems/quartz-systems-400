@@ -108,7 +108,9 @@ impl IoFeedback {
             | DbError::RefNoParent { .. }
             | DbError::RefRestricted { .. }
             | DbError::CheckPending { .. } => status::CONSTRAINT,
-            DbError::TriggerFailed { before: true, .. } | DbError::TriggerNotCallable { .. } => status::TRIGGER_BEFORE,
+            DbError::TriggerFailed { before: true, .. } | DbError::TriggerNotCallable { .. } => {
+                status::TRIGGER_BEFORE
+            }
             DbError::TriggerFailed { before: false, .. } => status::TRIGGER_AFTER,
             DbError::RecordLocked { .. } => status::LOCKED,
             DbError::NoLockedRecord { .. } => status::NO_PRIOR_READ,

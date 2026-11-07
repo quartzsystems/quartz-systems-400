@@ -101,14 +101,24 @@ fn new_token() -> Result<Token, QapRefused> {
     let mut b = [0u8; 32];
     std::fs::File::open("/dev/urandom")
         .and_then(|mut f| f.read_exact(&mut b))
-        .map_err(|_| refused(ERROR, "CPF9898", "No random numbers for a session token.", &[]))?;
+        .map_err(|_| {
+            refused(
+                ERROR,
+                "CPF9898",
+                "No random numbers for a session token.",
+                &[],
+            )
+        })?;
     Ok(Token(b))
 }
 
 /// `IDLETIMO` from the server table.
 fn idle_secs(system: &mut System) -> u32 {
     super::tcp::with(system, |_, rt| {
-        rt.cfg.servers.get("*QAP").map(|a| QapAttrs::from_bag(&a.bag).idletimo)
+        rt.cfg
+            .servers
+            .get("*QAP")
+            .map(|a| QapAttrs::from_bag(&a.bag).idletimo)
     })
     .ok()
     .flatten()
@@ -136,7 +146,10 @@ fn describe(system: &mut System, user: &str, token: &Token, idle: u32) -> QapSes
         };
     };
     let ccsid = if p.ccsid == 0 {
-        sysval_text(system, "QCCSID").trim().parse().unwrap_or(65535)
+        sysval_text(system, "QCCSID")
+            .trim()
+            .parse()
+            .unwrap_or(65535)
     } else {
         u16::try_from(p.ccsid).unwrap_or(65535)
     };
@@ -174,11 +187,18 @@ fn libl_of(system: &mut System, ctx: &JobCtx, user: &str) {
         return;
     };
     let prf = super::jobs::user_dft(system, user);
-    let vals: std::collections::HashMap<String, String> = ["QSYSLIBL", "QUSRLIBL", "QCCSID", "QLANGID", "QCNTRYID", "QDATFMT", "QDATSEP", "QTIMSEP", "QDECFMT"]
-        .iter()
-        .map(|n| ((*n).to_string(), sysval_text(system, n)))
-        .collect();
-    let get = |n: &str| vals.get(n).cloned().unwrap_or_else(|| sysval_text(system, n));
+    let vals: std::collections::HashMap<String, String> = [
+        "QSYSLIBL", "QUSRLIBL", "QCCSID", "QLANGID", "QCNTRYID", "QDATFMT", "QDATSEP", "QTIMSEP",
+        "QDECFMT",
+    ]
+    .iter()
+    .map(|n| ((*n).to_string(), sysval_text(system, n)))
+    .collect();
+    let get = |n: &str| {
+        vals.get(n)
+            .cloned()
+            .unwrap_or_else(|| sysval_text(system, n))
+    };
     let a = wm::job::JobAttrs::resolve_for(&jobd, &d, &wm::obj::cls::Cls::default(), &get, &prf);
     if let Some(mine) = system.attrs.get_mut(&ctx.job.number) {
         mine.libl.usr = a.libl.usr;
@@ -200,21 +220,39 @@ fn open(system: &mut System, ctx: &mut JobCtx, user: &str) -> Result<QapSession,
 }
 
 /// `qap_signon`.
-pub fn signon(system: &mut System, ctx: &mut JobCtx, user: &str, password: &str) -> Result<QapSession, QapRefused> {
+pub fn signon(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    user: &str,
+    password: &str,
+) -> Result<QapSession, QapRefused> {
     connection_job(ctx)?;
     if signed_on(ctx).is_some() {
-        return Err(refused(INVALID_REQUEST, "CPF9898", "The connection is signed on already.", &[]));
+        return Err(refused(
+            INVALID_REQUEST,
+            "CPF9898",
+            "The connection is signed on already.",
+            &[],
+        ));
     }
     let user = user.trim().to_ascii_uppercase();
     match sign_on(system, &user, password, "", false, None) {
         Err(e) => Err(signon_refused(&e, &user)),
-        Ok(s) if s.next == sec::signon::Next::ChangePassword => Err(refused(PASSWORD_EXPIRED, EXPIRED, "", &[])),
+        Ok(s) if s.next == sec::signon::Next::ChangePassword => {
+            Err(refused(PASSWORD_EXPIRED, EXPIRED, "", &[]))
+        }
         Ok(s) => open(system, ctx, &s.user),
     }
 }
 
 /// `qap_chgpwd`.
-pub fn chgpwd(system: &mut System, ctx: &mut JobCtx, user: &str, old: &str, new: &str) -> Result<QapSession, QapRefused> {
+pub fn chgpwd(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    user: &str,
+    old: &str,
+    new: &str,
+) -> Result<QapSession, QapRefused> {
     connection_job(ctx)?;
     let user = user.trim().to_ascii_uppercase();
     let already = signed_on(ctx);
@@ -253,21 +291,39 @@ fn token_of(b: &[u8]) -> Option<Token> {
 }
 
 /// `qap_resume`.
-pub fn resume(system: &mut System, ctx: &mut JobCtx, token: &[u8]) -> Result<QapSession, QapRefused> {
+pub fn resume(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    token: &[u8],
+) -> Result<QapSession, QapRefused> {
     join(system, ctx, token, false)
 }
 
 /// `qap_attach`: as `qap_resume`, but beside the session's other jobs.
-pub fn attach(system: &mut System, ctx: &mut JobCtx, token: &[u8]) -> Result<QapSession, QapRefused> {
+pub fn attach(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    token: &[u8],
+) -> Result<QapSession, QapRefused> {
     join(system, ctx, token, true)
 }
 
 /// Resume or attach: the job runs as the session's profile with the
 /// library list of its job description, its other state its own.
-fn join(system: &mut System, ctx: &mut JobCtx, token: &[u8], attach: bool) -> Result<QapSession, QapRefused> {
+fn join(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    token: &[u8],
+    attach: bool,
+) -> Result<QapSession, QapRefused> {
     connection_job(ctx)?;
     if signed_on(ctx).is_some() {
-        return Err(refused(INVALID_REQUEST, "CPF9898", "The connection is signed on already.", &[]));
+        return Err(refused(
+            INVALID_REQUEST,
+            "CPF9898",
+            "The connection is signed on already.",
+            &[],
+        ));
     }
     let gone = || refused(SESSION_EXPIRED, SESSION_GONE, "", &[]);
     let token = token_of(token).ok_or_else(gone)?;
@@ -282,7 +338,10 @@ fn join(system: &mut System, ctx: &mut JobCtx, token: &[u8], attach: bool) -> Re
     let s = match r {
         Ok(s) => s,
         Err(Gone::Full) => {
-            let user = table.get(&token).map(|s| s.user.clone()).unwrap_or_default();
+            let user = table
+                .get(&token)
+                .map(|s| s.user.clone())
+                .unwrap_or_default();
             return Err(refused(BUSY, SESSION_FULL, "", &[&user]));
         }
         Err(_) => return Err(gone()),
@@ -300,7 +359,11 @@ pub fn signoff(system: &mut System, ctx: &mut JobCtx, token: &[u8], operator: bo
         return;
     }
     if let Some(t) = token_of(token) {
-        let why = if operator { EndedBy::Operator } else { EndedBy::SignOff };
+        let why = if operator {
+            EndedBy::Operator
+        } else {
+            EndedBy::SignOff
+        };
         sessions()
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
@@ -340,7 +403,10 @@ pub fn ended(ctx: &JobCtx) -> Option<bool> {
 /// `qap_end_all`.
 pub fn end_all(ctx: &JobCtx) {
     if ctx.job.name == LISTENER {
-        sessions().lock().unwrap_or_else(PoisonError::into_inner).clear();
+        sessions()
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clear();
     }
 }
 
@@ -465,7 +531,12 @@ fn telnet_job(ctx: &JobCtx) -> bool {
 /// `telnet_verify`: whether `proof` is `user`'s password, before the
 /// device exists (the `INIT0100` "client password validated"). Nothing
 /// is changed: the sign-on that follows counts a wrong one.
-pub fn telnet_verify(system: &mut System, ctx: &JobCtx, user: &str, proof: &sec::signon::Substitute) -> bool {
+pub fn telnet_verify(
+    system: &mut System,
+    ctx: &JobCtx,
+    user: &str,
+    proof: &sec::signon::Substitute,
+) -> bool {
     if !telnet_job(ctx) {
         return false;
     }
@@ -492,7 +563,10 @@ pub fn telnet_exit_signon(
     if !telnet_job(ctx) {
         return Err(sec::signon::Refused {
             msgid: "CPF2207".into(),
-            text: format!("Job {} may not sign a user on for an exit program.", ctx.job.name),
+            text: format!(
+                "Job {} may not sign a user on for an exit program.",
+                ctx.job.name
+            ),
             vary_off: false,
         });
     }

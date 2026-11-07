@@ -164,11 +164,21 @@ pub const FIELDS: &[Field] = &[
     ),
     f("OUTFILE", "File", "QSQLSELECT", Check::NameOr(&[])),
     f("OUTLIB", "Library", "*CURLIB", Check::NameOr(&["*CURLIB"])),
-    f("OUTMBR", "Member", "*FILE", Check::NameOr(&["*FILE", "*FIRST", "*ALL"])),
+    f(
+        "OUTMBR",
+        "Member",
+        "*FILE",
+        Check::NameOr(&["*FILE", "*FIRST", "*ALL"]),
+    ),
     // Labelled by `QSTXTMSG` identifier: the printer and the output
     // file's option, authority and text.
     f("PRINTER", "TXT0930", "*PRINT", Check::NameOr(&["*PRINT"])),
-    f("OUTOPT", "TXT0931", "1", Check::Set(&["1", "2", "3", "4", "5"])),
+    f(
+        "OUTOPT",
+        "TXT0931",
+        "1",
+        Check::Set(&["1", "2", "3", "4", "5"]),
+    ),
     f(
         "OUTAUT",
         "TXT0932",
@@ -347,14 +357,22 @@ impl Attrs {
         a.resolve_job(job);
         let sep = |key: &str, dft: char| {
             let v = a.get(key);
-            if v == "*JOB" { dft } else { v.chars().next().unwrap_or(dft) }
+            if v == "*JOB" {
+                dft
+            } else {
+                v.chars().next().unwrap_or(dft)
+            }
         };
         Format {
             date: DateFmt::parse(&a.get("DATFMT")).unwrap_or(DateFmt::Iso),
             datsep: sep("DATSEP", '-'),
             time: TimeFmt::parse(&a.get("TIMFMT")).unwrap_or(TimeFmt::Hms),
             timsep: sep("TIMSEP", ':'),
-            point: if a.get("DECPNT") == "*COMMA" { ',' } else { '.' },
+            point: if a.get("DECPNT") == "*COMMA" {
+                ','
+            } else {
+                '.'
+            },
         }
     }
 
@@ -448,7 +466,11 @@ mod tests {
         assert_eq!(f.date, DateFmt::Ymd);
         assert_eq!(f.timsep, ':');
         // As the job holds it: no asterisk.
-        let job = JobFormats { datfmt: "MDY".into(), datsep: "/".into(), ..job };
+        let job = JobFormats {
+            datfmt: "MDY".into(),
+            datsep: "/".into(),
+            ..job
+        };
         assert_eq!(Attrs::default().format(&job).date, DateFmt::Mdy);
     }
 

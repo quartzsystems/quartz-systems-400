@@ -17,7 +17,11 @@ use stg::{Client, Shared};
 pub fn regfac(link: &Shared) -> bool {
     link.borrow_mut()
         .with(|l| l.sysval("QPWDVLDPGM".into()))
-        .is_some_and(|v| ccsid::from_ebcdic(&v.data).trim().eq_ignore_ascii_case("*REGFAC"))
+        .is_some_and(|v| {
+            ccsid::from_ebcdic(&v.data)
+                .trim()
+                .eq_ignore_ascii_case("*REGFAC")
+        })
 }
 
 /// The programs of `QIBM_QSY_VLD_PASSWRD`: whether all accepted.

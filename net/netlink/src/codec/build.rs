@@ -98,7 +98,8 @@ impl Builder {
     pub fn nest(&mut self, kind: u16, f: impl FnOnce(&mut Self)) -> &mut Self {
         let start = self.buf.len();
         self.buf.extend_from_slice(&[0, 0]);
-        self.buf.extend_from_slice(&(kind | NLA_F_NESTED).to_ne_bytes());
+        self.buf
+            .extend_from_slice(&(kind | NLA_F_NESTED).to_ne_bytes());
         f(self);
         let len = u16::try_from(self.buf.len() - start).expect("nest under 64 KiB");
         self.buf[start..start + 2].copy_from_slice(&len.to_ne_bytes());

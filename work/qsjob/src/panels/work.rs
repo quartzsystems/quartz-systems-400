@@ -106,7 +106,11 @@ pub(crate) fn stamp(host: &Host) -> String {
         },
         |z| z.abbr_at(now.unix).to_string(),
     );
-    let zone = if zone.is_empty() { "UTC".to_string() } else { zone };
+    let zone = if zone.is_empty() {
+        "UTC".to_string()
+    } else {
+        zone
+    };
     format!("{date}  {time} {zone}")
 }
 
@@ -127,7 +131,13 @@ fn qual_job(number: u32, user: &str, name: &str) -> String {
 }
 
 /// Run a command for a panel; what it said goes on the message line.
-fn run_command(job: &mut Job, host: &Host, d: &mut UimDialog, history: &mut Vec<String>, text: &str) {
+fn run_command(
+    job: &mut Job,
+    host: &Host,
+    d: &mut UimDialog,
+    history: &mut Vec<String>,
+    text: &str,
+) {
     let text = text.trim();
     if text.is_empty() {
         return;

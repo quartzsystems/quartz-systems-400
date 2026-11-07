@@ -53,7 +53,11 @@ impl Response {
     /// A text response.
     #[must_use]
     pub fn text(status: u16, text: &str) -> Self {
-        Self::new(status, "text/plain; charset=utf-8", text.as_bytes().to_vec())
+        Self::new(
+            status,
+            "text/plain; charset=utf-8",
+            text.as_bytes().to_vec(),
+        )
     }
 
     /// A header's value.
@@ -89,7 +93,10 @@ fn reason(status: u16) -> &'static str {
 
 /// Write a request; `host` is the `Host` header.
 pub fn write_request(w: &mut impl Write, req: &Request, host: &str) -> Result<()> {
-    let mut head = format!("{} {} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n", req.method, req.target);
+    let mut head = format!(
+        "{} {} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n",
+        req.method, req.target
+    );
     for (k, v) in &req.headers {
         let _ = write!(head, "{k}: {v}\r\n");
     }
@@ -102,7 +109,11 @@ pub fn write_request(w: &mut impl Write, req: &Request, host: &str) -> Result<()
 
 /// Write a response.
 pub fn write_response(w: &mut impl Write, res: &Response) -> Result<()> {
-    let mut head = format!("HTTP/1.1 {} {}\r\nConnection: close\r\n", res.status, reason(res.status));
+    let mut head = format!(
+        "HTTP/1.1 {} {}\r\nConnection: close\r\n",
+        res.status,
+        reason(res.status)
+    );
     for (k, v) in &res.headers {
         let _ = write!(head, "{k}: {v}\r\n");
     }
@@ -120,7 +131,10 @@ fn read_head(r: &mut impl BufRead) -> Result<(String, Vec<(String, String)>)> {
     let mut headers = Vec::new();
     loop {
         let mut line = Vec::new();
-        let n = r.by_ref().take(HEAD_MAX as u64).read_until(b'\n', &mut line)?;
+        let n = r
+            .by_ref()
+            .take(HEAD_MAX as u64)
+            .read_until(b'\n', &mut line)?;
         if n == 0 {
             return Err(Error::Protocol("connection closed in the head".into()));
         }
@@ -200,7 +214,11 @@ pub fn read_response(r: impl Read, head_only: bool) -> Result<Response> {
     } else {
         read_body(&mut r, &headers, true)?
     };
-    Ok(Response { status, headers, body })
+    Ok(Response {
+        status,
+        headers,
+        body,
+    })
 }
 
 #[cfg(test)]

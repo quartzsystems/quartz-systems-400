@@ -87,7 +87,13 @@ impl FileError {
             FileError::Newer(v) => ("QAD2002", vec![name.to_string(), v.to_string()]),
             other => {
                 let why = other.to_string();
-                ("QAD2001", vec![name.to_string(), why.trim().trim_end_matches('.').to_string()])
+                (
+                    "QAD2001",
+                    vec![
+                        name.to_string(),
+                        why.trim().trim_end_matches('.').to_string(),
+                    ],
+                )
             }
         }
     }
@@ -104,10 +110,20 @@ fn kind_name(kind: &str) -> &'static str {
 
 /// Check the header of `text` only: kind and version.
 pub fn check_header(text: &str, kind: &str) -> Result<(), FileError> {
-    let table: toml::Table = toml::from_str(text).map_err(|e| FileError::Parse(e.message().trim().to_owned()))?;
-    let header = table.get("qsaccess").and_then(toml::Value::as_table).ok_or(FileError::NoHeader)?;
-    let found = header.get("kind").and_then(toml::Value::as_str).ok_or(FileError::NoHeader)?;
-    let version = header.get("version").and_then(toml::Value::as_integer).ok_or(FileError::NoHeader)?;
+    let table: toml::Table =
+        toml::from_str(text).map_err(|e| FileError::Parse(e.message().trim().to_owned()))?;
+    let header = table
+        .get("qsaccess")
+        .and_then(toml::Value::as_table)
+        .ok_or(FileError::NoHeader)?;
+    let found = header
+        .get("kind")
+        .and_then(toml::Value::as_str)
+        .ok_or(FileError::NoHeader)?;
+    let version = header
+        .get("version")
+        .and_then(toml::Value::as_integer)
+        .ok_or(FileError::NoHeader)?;
     if found != kind {
         return Err(FileError::WrongKind {
             found: found.to_owned(),
@@ -118,7 +134,9 @@ pub fn check_header(text: &str, kind: &str) -> Result<(), FileError> {
         return Err(FileError::Newer(version));
     }
     if version < 1 {
-        return Err(FileError::Invalid(format!("format version {version} is not valid")));
+        return Err(FileError::Invalid(format!(
+            "format version {version} is not valid"
+        )));
     }
     Ok(())
 }
@@ -144,12 +162,26 @@ mod tests {
     fn header_checks() {
         let ok = "[qsaccess]\nkind = \"display\"\nversion = 1\n";
         assert!(check_header(ok, DISPLAY).is_ok());
-        assert!(matches!(check_header(ok, MACRO), Err(FileError::WrongKind { found, .. }) if found == "display"));
-        assert!(matches!(check_header("[qsaccess]\nkind = \"display\"\nversion = 2\n", DISPLAY), Err(FileError::Newer(2))));
-        assert!(matches!(check_header("[system]\nname = \"a\"\n", DISPLAY), Err(FileError::NoHeader)));
-        assert!(matches!(check_header("[qsaccess\n", DISPLAY), Err(FileError::Parse(_))));
+        assert!(
+            matches!(check_header(ok, MACRO), Err(FileError::WrongKind { found, .. }) if found == "display")
+        );
+        assert!(matches!(
+            check_header("[qsaccess]\nkind = \"display\"\nversion = 2\n", DISPLAY),
+            Err(FileError::Newer(2))
+        ));
+        assert!(matches!(
+            check_header("[system]\nname = \"a\"\n", DISPLAY),
+            Err(FileError::NoHeader)
+        ));
+        assert!(matches!(
+            check_header("[qsaccess\n", DISPLAY),
+            Err(FileError::Parse(_))
+        ));
         assert_eq!(FileError::Newer(2).message("a.qsd").0, "QAD2002");
         let (id, data) = FileError::Invalid("CCSID 9 is not supported.".into()).message("a.qsd");
-        assert_eq!((id, data[1].as_str()), ("QAD2001", "CCSID 9 is not supported"));
+        assert_eq!(
+            (id, data[1].as_str()),
+            ("QAD2001", "CCSID 9 is not supported")
+        );
     }
 }

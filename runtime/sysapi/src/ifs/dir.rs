@@ -66,10 +66,20 @@ fn native_of(j: &mut Job, p: u128) -> R<u64> {
 fn next(j: &mut Job, p: u128) -> R<Option<DirEnt>> {
     let at = native_of(j, p)?;
     let st = state(j);
-    if let Some(e) = st.borrow_mut().dirs.get_mut(&at).and_then(|d| d.ahead.pop_front()) {
+    if let Some(e) = st
+        .borrow_mut()
+        .dirs
+        .get_mut(&at)
+        .and_then(|d| d.ahead.pop_front())
+    {
         return Ok(Some(e));
     }
-    let handle = st.borrow().dirs.get(&at).map(|d| d.handle).ok_or(Errno::EBADF)?;
+    let handle = st
+        .borrow()
+        .dirs
+        .get(&at)
+        .map(|d| d.handle)
+        .ok_or(Errno::EBADF)?;
     let batch = client(j).readdir(handle, BATCH)?;
     let mut s = st.borrow_mut();
     let d = s.dirs.get_mut(&at).ok_or(Errno::EBADF)?;
@@ -93,7 +103,12 @@ pub(crate) fn dirent_bytes(ccsid: u16, e: &DirEnt) -> R<Vec<u8>> {
     }
     let mut b = vec![0u8; l.size];
     lay::put_n(&mut b, l, "d_fileno", e.ino & 0xFFFF_FFFF);
-    lay::put_n(&mut b, l, "d_reclen", reclen(lay::at(l, "d_name").0, name.len()));
+    lay::put_n(
+        &mut b,
+        l,
+        "d_reclen",
+        reclen(lay::at(l, "d_name").0, name.len()),
+    );
     let (nls, _) = lay::at(l, "d_nlsinfo");
     b[nls..nls + 4].copy_from_slice(&u32::from(ccsid).to_be_bytes());
     lay::put_n(&mut b, l, "d_namelen", name.len() as u64);
@@ -112,7 +127,12 @@ pub(crate) fn dirent_lg_bytes(ccsid: u16, e: &DirEnt) -> R<Vec<u8>> {
     }
     let mut b = vec![0u8; l.size];
     lay::put_n(&mut b, l, "d_lg_fileno", e.ino & 0xFFFF_FFFF);
-    lay::put_n(&mut b, l, "d_lg_reclen", reclen(lay::at(l, "d_lg_name").0, q.len() - 32));
+    lay::put_n(
+        &mut b,
+        l,
+        "d_lg_reclen",
+        reclen(lay::at(l, "d_lg_name").0, q.len() - 32),
+    );
     lay::put(&mut b, l, "d_lg_qlg", &q[..32]);
     lay::put(&mut b, l, "d_lg_name", &q[32..]);
     Ok(b)
@@ -124,7 +144,11 @@ fn entry_ptr(j: &mut Job, at: u64, lg: bool, bytes: &[u8]) -> R<u128> {
     let missing = {
         let s = st.borrow();
         let d = s.dirs.get(&at).ok_or(Errno::EBADF)?;
-        if lg { d.entry_lg.is_none() } else { d.entry.is_none() }
+        if lg {
+            d.entry_lg.is_none()
+        } else {
+            d.entry.is_none()
+        }
     };
     if missing {
         let e = Stable::new(j, bytes.len());
@@ -138,7 +162,12 @@ fn entry_ptr(j: &mut Job, at: u64, lg: bool, bytes: &[u8]) -> R<u128> {
     }
     let mut s = st.borrow_mut();
     let d = s.dirs.get_mut(&at).ok_or(Errno::EBADF)?;
-    let e = if lg { d.entry_lg.as_mut() } else { d.entry.as_mut() }.ok_or(Errno::EBADF)?;
+    let e = if lg {
+        d.entry_lg.as_mut()
+    } else {
+        d.entry.as_mut()
+    }
+    .ok_or(Errno::EBADF)?;
     e.bytes()[..bytes.len()].copy_from_slice(bytes);
     Ok(raw(e.ptr()))
 }
@@ -148,7 +177,11 @@ fn read_one(j: &mut Job, p: u128, lg: bool) -> R<Option<u128>> {
         return Ok(None);
     };
     let ccsid = job_ccsid(j);
-    let bytes = if lg { dirent_lg_bytes(ccsid, &e)? } else { dirent_bytes(ccsid, &e)? };
+    let bytes = if lg {
+        dirent_lg_bytes(ccsid, &e)?
+    } else {
+        dirent_bytes(ccsid, &e)?
+    };
     let at = native_of(j, p)?;
     entry_ptr(j, at, lg, &bytes).map(Some)
 }
@@ -177,7 +210,11 @@ fn readdir_r_any(j: &mut Job, p: u128, entry: u128, result: u128, lg: bool) -> i
             }
             Some(e) => {
                 let ccsid = job_ccsid(j);
-                let bytes = if lg { dirent_lg_bytes(ccsid, &e)? } else { dirent_bytes(ccsid, &e)? };
+                let bytes = if lg {
+                    dirent_lg_bytes(ccsid, &e)?
+                } else {
+                    dirent_bytes(ccsid, &e)?
+                };
                 mem(j, entry, bytes.len())?.copy_from_slice(&bytes);
                 put_ptr(res, 0, fat(entry));
                 Ok(())
@@ -249,7 +286,10 @@ fn closedir(j: &mut Job, p: u128) -> i64 {
     let r = (|| {
         let at = native_of(j, p)?;
         let d = state(j).borrow_mut().dirs.remove(&at).ok_or(Errno::EBADF)?;
-        for s in [Some(&d.block), d.entry.as_ref(), d.entry_lg.as_ref()].into_iter().flatten() {
+        for s in [Some(&d.block), d.entry.as_ref(), d.entry_lg.as_ref()]
+            .into_iter()
+            .flatten()
+        {
             j.spaces.kill_at(s.native());
         }
         client(j).closedir(d.handle)

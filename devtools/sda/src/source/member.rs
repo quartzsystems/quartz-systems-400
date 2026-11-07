@@ -405,7 +405,11 @@ impl Member {
     pub fn field_names(&self) -> Vec<String> {
         self.records
             .iter()
-            .flat_map(|r| r.elements.iter().filter_map(|e| e.name().map(str::to_string)))
+            .flat_map(|r| {
+                r.elements
+                    .iter()
+                    .filter_map(|e| e.name().map(str::to_string))
+            })
             .collect()
     }
 
@@ -419,7 +423,10 @@ impl Member {
 fn word_kw(name: &str, parms: &[&str]) -> Keyword {
     Keyword {
         name: name.into(),
-        parms: parms.iter().map(|p| dds::lex::Parm::Word((*p).into())).collect(),
+        parms: parms
+            .iter()
+            .map(|p| dds::lex::Parm::Word((*p).into()))
+            .collect(),
         line: 0,
     }
 }
@@ -449,9 +456,13 @@ pub fn type_keywords(ty: RecordType, m: &Member) -> Vec<Keyword> {
         ],
         RecordType::MessageSubfile => vec![word_kw("SFL", &[]), word_kw("SFLMSGRCD", &["24"])],
         RecordType::Window => vec![word_kw("WINDOW", &window)],
-        RecordType::WindowSubfile => vec![word_kw("SFLCTL", &[&last_sfl]), word_kw("WINDOW", &window)],
+        RecordType::WindowSubfile => {
+            vec![word_kw("SFLCTL", &[&last_sfl]), word_kw("WINDOW", &window)]
+        }
         RecordType::PullDown => vec![word_kw("PULLDOWN", &[])],
-        RecordType::PullDownSubfile => vec![word_kw("SFLCTL", &[&last_sfl]), word_kw("PULLDOWN", &[])],
+        RecordType::PullDownSubfile => {
+            vec![word_kw("SFLCTL", &[&last_sfl]), word_kw("PULLDOWN", &[])]
+        }
         RecordType::MenuBar => vec![word_kw("MNUBAR", &[])],
     }
 }
@@ -463,7 +474,11 @@ pub fn errors(lines: &[String]) -> Vec<String> {
     let (src, _) = Source::from_text(&lines.join("\n"));
     let c = dspf::compile_dspf(&src, &dds::NoRefs, &dds::CompileOpts::default());
     let mut bad = Vec::new();
-    for d in c.diagnostics.iter().filter(|d| d.severity >= dds::Severity::Error) {
+    for d in c
+        .diagnostics
+        .iter()
+        .filter(|d| d.severity >= dds::Severity::Error)
+    {
         let Some(at) = d.line else { continue };
         let upto = at.min(lines.len().saturating_sub(1));
         let name = lines[..=upto]
@@ -549,7 +564,9 @@ fn measure(m: &mut Member, source: &Source) {
     let c = dspf::compile_dspf(source, &dds::NoRefs, &dds::CompileOpts::default());
     let Some(def) = c.definition else { return };
     for rec in &def.records {
-        let Some(ri) = m.record(&rec.name) else { continue };
+        let Some(ri) = m.record(&rec.name) else {
+            continue;
+        };
         for f in &rec.fields {
             let r = &mut m.records[ri];
             let Some(e) = r.elements.iter_mut().find(|e| e.src_line == Some(f.line)) else {
@@ -588,7 +605,10 @@ fn ranges(specs: &[Spec], all: &[Line]) -> Vec<(usize, usize)> {
 fn finish(mut r: Record) -> Record {
     let has = |k: &str| r.keywords.iter().any(|kw| kw.name == k);
     r.ty = if has("SFLCTL") {
-        r.related = r.keyword("SFLCTL").and_then(|k| k.word(0)).map(str::to_string);
+        r.related = r
+            .keyword("SFLCTL")
+            .and_then(|k| k.word(0))
+            .map(str::to_string);
         if has("WINDOW") {
             RecordType::WindowSubfile
         } else if has("PULLDOWN") {
@@ -647,7 +667,10 @@ fn element(s: &Spec, lines: Vec<Line>, from: usize) -> Element {
         if line_cond(k) {
             continue;
         }
-        let words = k.parms.iter().filter_map(|p| p.as_word().map(str::to_string));
+        let words = k
+            .parms
+            .iter()
+            .filter_map(|p| p.as_word().map(str::to_string));
         match k.name.as_str() {
             "DSPATR" => attrs.extend(words),
             "COLOR" => colors.extend(words),
@@ -689,7 +712,11 @@ pub fn natural_width(kind: &Kind, keywords: &[Keyword]) -> u32 {
     match kind {
         Kind::Constant { text, .. } => u32::try_from(text.chars().count()).unwrap_or(0),
         Kind::Field {
-            len, dec, usage, ty, ..
+            len,
+            dec,
+            usage,
+            ty,
+            ..
         } => {
             if let Some(w) = keywords
                 .iter()

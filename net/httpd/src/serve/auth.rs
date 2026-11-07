@@ -48,8 +48,10 @@ impl MemAuth {
     /// Add `user` with `password` to `source`.
     #[must_use]
     pub fn with(mut self, source: &str, user: &str, password: &str) -> Self {
-        self.users
-            .insert((source.to_ascii_uppercase(), user.to_ascii_uppercase()), password.to_string());
+        self.users.insert(
+            (source.to_ascii_uppercase(), user.to_ascii_uppercase()),
+            password.to_string(),
+        );
         self
     }
 }
@@ -73,7 +75,9 @@ pub struct NoAuth;
 
 impl Authenticator for NoAuth {
     fn check(&self, source: &str, _: &str, _: &str) -> Result<String, Refused> {
-        Err(Refused::Unavailable(format!("{source} cannot be checked by this server.")))
+        Err(Refused::Unavailable(format!(
+            "{source} cannot be checked by this server."
+        )))
     }
 }
 
@@ -129,10 +133,18 @@ pub fn gate(d: &DirConf, authorization: Option<&str>, auth: &dyn Authenticator) 
     if d.require.is_empty() {
         return Gate::Open(None);
     }
-    if !d.auth_type.as_deref().is_some_and(|t| t.eq_ignore_ascii_case("basic")) {
+    if !d
+        .auth_type
+        .as_deref()
+        .is_some_and(|t| t.eq_ignore_ascii_case("basic"))
+    {
         return Gate::Forbidden(Some("Require is set but AuthType Basic is not.".into()));
     }
-    let realm = if d.auth_name.is_empty() { "Restricted".to_string() } else { d.auth_name.clone() };
+    let realm = if d.auth_name.is_empty() {
+        "Restricted".to_string()
+    } else {
+        d.auth_name.clone()
+    };
     let Some((user, password)) = authorization.and_then(credentials) else {
         return Gate::Challenge(realm);
     };
@@ -145,7 +157,9 @@ pub fn gate(d: &DirConf, authorization: Option<&str>, auth: &dyn Authenticator) 
     let what = d.require[0].to_ascii_lowercase();
     match what.as_str() {
         "valid-user" => Gate::Open(Some(name)),
-        "user" if d.require[1..].iter().any(|u| u.eq_ignore_ascii_case(&name)) => Gate::Open(Some(name)),
+        "user" if d.require[1..].iter().any(|u| u.eq_ignore_ascii_case(&name)) => {
+            Gate::Open(Some(name))
+        }
         "user" => Gate::Challenge(realm),
         other => Gate::Forbidden(Some(format!("Require {other} is not supported."))),
     }
@@ -160,16 +174,38 @@ mod tests {
         assert_eq!(base64("Ym9iOnNlY3JldA==").unwrap(), b"bob:secret");
         assert_eq!(base64("YQ").unwrap(), b"a");
         assert!(base64("a$b").is_none());
-        assert_eq!(credentials("Basic Ym9iOnNlY3JldA=="), Some(("bob".into(), "secret".into())));
-        let auth = MemAuth::new().with(SYSTEM, "BOB", "secret").with("QUSRSYS/WEB", "ann", "pw");
-        let mut d = DirConf { require: vec!["valid-user".into()], auth_type: Some("Basic".into()), auth_name: "Shop".into(), ..DirConf::default() };
+        assert_eq!(
+            credentials("Basic Ym9iOnNlY3JldA=="),
+            Some(("bob".into(), "secret".into()))
+        );
+        let auth = MemAuth::new()
+            .with(SYSTEM, "BOB", "secret")
+            .with("QUSRSYS/WEB", "ann", "pw");
+        let mut d = DirConf {
+            require: vec!["valid-user".into()],
+            auth_type: Some("Basic".into()),
+            auth_name: "Shop".into(),
+            ..DirConf::default()
+        };
         assert_eq!(gate(&d, None, &auth), Gate::Challenge("Shop".into()));
-        assert_eq!(gate(&d, Some("Basic Ym9iOnNlY3JldA=="), &auth), Gate::Open(Some("BOB".into())));
-        assert_eq!(gate(&d, Some("Basic Ym9iOndyb25n"), &auth), Gate::Challenge("Shop".into()));
+        assert_eq!(
+            gate(&d, Some("Basic Ym9iOnNlY3JldA=="), &auth),
+            Gate::Open(Some("BOB".into()))
+        );
+        assert_eq!(
+            gate(&d, Some("Basic Ym9iOndyb25n"), &auth),
+            Gate::Challenge("Shop".into())
+        );
         d.require = vec!["user".into(), "ann".into()];
-        assert_eq!(gate(&d, Some("Basic Ym9iOnNlY3JldA=="), &auth), Gate::Challenge("Shop".into()));
+        assert_eq!(
+            gate(&d, Some("Basic Ym9iOnNlY3JldA=="), &auth),
+            Gate::Challenge("Shop".into())
+        );
         d.passwd_file = Some("QUSRSYS/NONE".into());
-        assert!(matches!(gate(&d, Some("Basic Ym9iOnNlY3JldA=="), &auth), Gate::Forbidden(Some(_))));
+        assert!(matches!(
+            gate(&d, Some("Basic Ym9iOnNlY3JldA=="), &auth),
+            Gate::Forbidden(Some(_))
+        ));
         d.auth_type = None;
         assert!(matches!(gate(&d, None, &auth), Gate::Forbidden(_)));
         assert_eq!(gate(&DirConf::default(), None, &NoAuth), Gate::Open(None));

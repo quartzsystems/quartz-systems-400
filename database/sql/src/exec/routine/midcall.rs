@@ -44,7 +44,13 @@ pub fn trigger_plan(c: &Call) -> CallPlan {
         style: CallStyle::Trigger,
         routine: c.trigger.clone(),
         specific: ccsid::decode_trimmed(c.file.as_bytes()),
-        parms: vec![PlanParm { mode: 3, desc: 0, extra: 0, value: Value::Bin(c.buffer.clone()), marker: None }],
+        parms: vec![PlanParm {
+            mode: 3,
+            desc: 0,
+            extra: 0,
+            value: Value::Bin(c.buffer.clone()),
+            marker: None,
+        }],
         ..CallPlan::default()
     }
 }
@@ -73,7 +79,9 @@ pub fn trigger_inputs(buffer: &[u8], failed: Option<&Failure>) -> Vec<Value> {
 
 /// [`trigger_inputs`] read back.
 fn trigger_answer(v: &[Value]) -> Option<(Vec<u8>, Option<Failure>)> {
-    let Some(Value::Bin(buf)) = v.first() else { return None };
+    let Some(Value::Bin(buf)) = v.first() else {
+        return None;
+    };
     let msgid = v.get(1)?.as_text();
     let failure = (!msgid.trim().is_empty()).then(|| Failure {
         msgid: msgid.trim().to_string(),
@@ -104,7 +112,8 @@ impl Triggers {
     fn now(&self, txn: &mut Txn<'_>, call: &mut Call) -> std::result::Result<(), Failure> {
         // What the statement wrote so far is committed and the store
         // given back: the program's own requests are others'.
-        txn.commit_part().map_err(|e| refused(call, &e.to_string()))?;
+        txn.commit_part()
+            .map_err(|e| refused(call, &e.to_string()))?;
         if !txn.suspend() {
             return Err(refused(call, "the statement cannot give the store back"));
         }
@@ -113,7 +122,8 @@ impl Triggers {
         let Some(v) = answer else {
             return Err(refused(call, "the statement ended while it ran"));
         };
-        let (buf, failure) = trigger_answer(&v).ok_or_else(|| refused(call, "its answer was not understood"))?;
+        let (buf, failure) =
+            trigger_answer(&v).ok_or_else(|| refused(call, "its answer was not understood"))?;
         if let Some(f) = failure {
             return Err(f);
         }
@@ -131,18 +141,31 @@ impl Triggers {
 ///
 /// A call failed (`SQL0723`, `SQL0443`, `SQL0204`): the later ones are
 /// not made.
-pub fn fire_deferred(txn: &mut Txn<'_>, mid: Option<&MidCaller>, later: &Deferred) -> crate::error::Result<()> {
+pub fn fire_deferred(
+    txn: &mut Txn<'_>,
+    mid: Option<&MidCaller>,
+    later: &Deferred,
+) -> crate::error::Result<()> {
     let calls = std::mem::take(&mut *later.borrow_mut());
     let Some(mid) = mid else { return Ok(()) };
-    let t = Triggers { mid: Rc::clone(mid), later: Rc::default() };
+    let t = Triggers {
+        mid: Rc::clone(mid),
+        later: Rc::default(),
+    };
     for mut c in calls {
-        t.now(txn, &mut c).map_err(|f| crate::error::SqlError::from(db::trg::fire::failed(c.file, &c.trigger, false, f)))?;
+        t.now(txn, &mut c).map_err(|f| {
+            crate::error::SqlError::from(db::trg::fire::failed(c.file, &c.trigger, false, f))
+        })?;
     }
     Ok(())
 }
 
 fn refused(c: &Call, why: &str) -> Failure {
-    Failure { msgid: "CPF502B".into(), text: format!("trigger {} was not called: {why}", c.trigger), not_found: false }
+    Failure {
+        msgid: "CPF502B".into(),
+        text: format!("trigger {} was not called: {why}", c.trigger),
+        not_found: false,
+    }
 }
 
 impl Caller for Triggers {
@@ -175,11 +198,26 @@ mod tests {
             deferred: false,
         };
         let p = CallPlan::decode(&trigger_plan(&c).encode()).unwrap();
-        assert_eq!((p.style, p.program.as_str(), p.library.as_str(), p.routine.as_str()), (CallStyle::Trigger, "TRGPGM", "QSTEST", "T1"));
+        assert_eq!(
+            (
+                p.style,
+                p.program.as_str(),
+                p.library.as_str(),
+                p.routine.as_str()
+            ),
+            (CallStyle::Trigger, "TRGPGM", "QSTEST", "T1")
+        );
         assert_eq!(plan_buffer(&p), c.buffer);
         let ok = trigger_answer(&trigger_inputs(&[1, 2], None)).unwrap();
         assert_eq!(ok, (vec![1, 2], None));
-        let f = Failure { msgid: "CPF4160".into(), text: "gone".into(), not_found: true };
-        assert_eq!(trigger_answer(&trigger_inputs(&[], Some(&f))).unwrap().1, Some(f));
+        let f = Failure {
+            msgid: "CPF4160".into(),
+            text: "gone".into(),
+            not_found: true,
+        };
+        assert_eq!(
+            trigger_answer(&trigger_inputs(&[], Some(&f))).unwrap().1,
+            Some(f)
+        );
     }
 }

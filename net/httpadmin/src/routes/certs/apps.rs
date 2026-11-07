@@ -8,7 +8,10 @@
 use qsweb::frame::Page;
 use qsweb::http::Response;
 use qsweb::msg::{Kind, Message};
-use qsweb::partials::{Button, Cell, Col, List, Prop, PropGroup, actions, buttons, form, grey, list_table, props_table, select};
+use qsweb::partials::{
+    Button, Cell, Col, List, Prop, PropGroup, actions, buttons, form, grey, list_table,
+    props_table, select,
+};
 
 use super::{Rq, WARN_DAYS, days_left, expiry_status, failed, invalid, url_q};
 use crate::PRODUCT;
@@ -20,7 +23,9 @@ use crate::msgs;
 fn assignable(rows: &[CertRow], now: u64) -> Vec<&CertRow> {
     let mut v: Vec<&CertRow> = rows
         .iter()
-        .filter(|r| matches!(r.kind, EntryType::Server | EntryType::Client) && days_left(r, now) > WARN_DAYS)
+        .filter(|r| {
+            matches!(r.kind, EntryType::Server | EntryType::Client) && days_left(r, now) > WARN_DAYS
+        })
         .collect();
     v.sort_by_key(|r| r.added);
     v
@@ -33,7 +38,10 @@ fn status(a: &AppInfo, rows: &[CertRow], now: u64) -> (String, i64) {
     };
     match rows.iter().find(|r| &r.label == l) {
         Some(r) => (expiry_status(r, now).unwrap_or_default(), days_left(r, now)),
-        None => (qsweb::partials::status("Not in store", Some(false)), i64::MIN + 1),
+        None => (
+            qsweb::partials::status("Not in store", Some(false)),
+            i64::MIN + 1,
+        ),
     }
 }
 
@@ -66,7 +74,9 @@ pub fn page(rq: &Rq<'_>) -> Response {
                 Cell::mono(&a.id),
                 Cell::text(if a.server { "Server" } else { "Client" }),
                 Cell::text(&a.description),
-                a.label.as_deref().map_or_else(|| Cell::html(grey("(none)")), Cell::text),
+                a.label
+                    .as_deref()
+                    .map_or_else(|| Cell::html(grey("(none)")), Cell::text),
                 Cell::mono("*SYSTEM"),
                 Cell::html(status(a, &rows, now).0),
             ]
@@ -100,7 +110,10 @@ pub fn page(rq: &Rq<'_>) -> Response {
         .collect();
     let opts: Vec<&str> = options.iter().map(String::as_str).collect();
     let cert = q.str("cert");
-    let chosen = options.iter().find(|o| label_of(o) == cert).map_or("", String::as_str);
+    let chosen = options
+        .iter()
+        .find(|o| label_of(o) == cert)
+        .map_or("", String::as_str);
     let (messages, copy_html) = why_none(rq, &system, options.is_empty());
     let form_html = form(
         &rq.ctx,
@@ -140,12 +153,17 @@ pub fn page(rq: &Rq<'_>) -> Response {
 /// Why the Certificate list is short, as message rows, and the Copy to
 /// `*SYSTEM` form for a certificate of another store (`?cert=&store=`,
 /// from its page's Assign to application).
-fn why_none(rq: &Rq<'_>, system: &Result<Vec<CertRow>, CertFailure>, empty: bool) -> (Vec<Message>, String) {
+fn why_none(
+    rq: &Rq<'_>,
+    system: &Result<Vec<CertRow>, CertFailure>,
+    empty: bool,
+) -> (Vec<Message>, String) {
     let q = rq.query();
     let (label, store) = (q.str("cert"), q.str("store"));
     let mut out = Vec::new();
     let mut copy = String::new();
-    let elsewhere = !store.is_empty() && !store.eq_ignore_ascii_case("*SYSTEM") && !label.is_empty();
+    let elsewhere =
+        !store.is_empty() && !store.eq_ignore_ascii_case("*SYSTEM") && !label.is_empty();
     match system {
         Err(e) => out.push(msgs::message(Kind::Error, "HTP8313", &[&e.to_string()])),
         Ok(rows) if elsewhere && rows.iter().all(|r| r.label != label) => {
@@ -156,7 +174,11 @@ fn why_none(rq: &Rq<'_>, system: &Result<Vec<CertRow>, CertFailure>, empty: bool
                 &buttons(&[Button::new("copy", "Copy to *SYSTEM")]),
             );
         }
-        Ok(_) if empty => out.push(msgs::message(Kind::Info, "HTP8312", &[&WARN_DAYS.to_string()])),
+        Ok(_) if empty => out.push(msgs::message(
+            Kind::Info,
+            "HTP8312",
+            &[&WARN_DAYS.to_string()],
+        )),
         Ok(_) => {}
     }
     (out, copy)
@@ -172,12 +194,18 @@ fn assign(rq: &Rq<'_>) -> Response {
     let app = f.str("app").trim();
     let label = label_of(f.str("cert").trim());
     if app.is_empty() || label.is_empty() {
-        return rq.done("/certs/apps", invalid("choose an application and a certificate"));
+        return rq.done(
+            "/certs/apps",
+            invalid("choose an application and a certificate"),
+        );
     }
     match rq.env().certs.assign(rq.user(), app, Some(label)) {
         Ok(()) => {
             rq.audit_change(app, &format!("certificate {label} assigned"));
-            rq.done("/certs/apps", msgs::message(Kind::Done, "HTP8310", &[label, app]))
+            rq.done(
+                "/certs/apps",
+                msgs::message(Kind::Done, "HTP8310", &[label, app]),
+            )
         }
         Err(e) => rq.done("/certs/apps", failed(&e)),
     }

@@ -153,7 +153,11 @@ pub fn server_config(link: &mut Link, host: &str) -> Result<Arc<rustls::ServerCo
 }
 
 /// A server configuration over a PEM certificate and key.
-fn config_of(link: &mut Link, cert_pem: &str, key_pem: &str) -> Result<Arc<rustls::ServerConfig>, String> {
+fn config_of(
+    link: &mut Link,
+    cert_pem: &str,
+    key_pem: &str,
+) -> Result<Arc<rustls::ServerConfig>, String> {
     let certs: Vec<CertificateDer<'static>> = CertificateDer::pem_slice_iter(cert_pem.as_bytes())
         .collect::<Result<_, _>>()
         .map_err(|e| format!("certificate: {e}"))?;
@@ -192,7 +196,10 @@ pub fn policy(link: &mut Link) -> tls::policy::TlsPolicy {
 
 /// The server configuration of `app_id`'s certificate in `*SYSTEM`;
 /// `None` when nothing is assigned (nor a store default).
-pub fn from_store(link: &mut Link, app_id: &str) -> Result<Option<Arc<rustls::ServerConfig>>, String> {
+pub fn from_store(
+    link: &mut Link,
+    app_id: &str,
+) -> Result<Option<Arc<rustls::ServerConfig>>, String> {
     let p = policy(link);
     from_store_with(link, app_id, &p, false)
 }
@@ -213,9 +220,7 @@ fn from_store_with(
     policy: &tls::policy::TlsPolicy,
     assigned: bool,
 ) -> Result<Option<Arc<rustls::ServerConfig>>, String> {
-    let t = link
-        .cert_app(app_id.into())
-        .map_err(|e| e.to_string())??;
+    let t = link.cert_app(app_id.into()).map_err(|e| e.to_string())??;
     if t.label.is_empty() || t.chain.is_empty() || (assigned && !t.assigned) {
         return Ok(None);
     }
@@ -242,7 +247,11 @@ fn from_store_with(
 
 /// The configuration of the server of application `app_id`: its
 /// certificate from `*SYSTEM`, else the system's own self-signed one.
-pub fn app_server_config(link: &mut Link, app_id: &str, host: &str) -> Result<Arc<rustls::ServerConfig>, String> {
+pub fn app_server_config(
+    link: &mut Link,
+    app_id: &str,
+    host: &str,
+) -> Result<Arc<rustls::ServerConfig>, String> {
     match from_store(link, app_id) {
         Ok(Some(c)) => return Ok(c),
         Ok(None) => {}
@@ -294,7 +303,8 @@ pub fn client_config_with(
             Vec::new()
         }
     };
-    tls::config::client_config(&policy(link), trusted_roots(extra), None, auth).map_err(|e| e.to_string())
+    tls::config::client_config(&policy(link), trusted_roots(extra), None, auth)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -306,7 +316,9 @@ mod tests {
         let shipped = trusted_roots(Vec::new()).len();
         assert!(shipped > 0);
         let (c, _) = make_certificate("QSCA").unwrap();
-        let der = CertificateDer::from_pem_slice(c.as_bytes()).unwrap().to_vec();
+        let der = CertificateDer::from_pem_slice(c.as_bytes())
+            .unwrap()
+            .to_vec();
         assert_eq!(trusted_roots(vec![der]).len(), shipped + 1);
         // Bytes that are no certificate are left out.
         assert_eq!(trusted_roots(vec![vec![1, 2, 3]]).len(), shipped);

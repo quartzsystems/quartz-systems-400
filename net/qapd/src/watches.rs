@@ -23,7 +23,8 @@ use std::thread::JoinHandle;
 use qap_proto::ops::event;
 use qap_proto::ops::messages::{Key, ListMessages, MessageArrived, Queue, QueueRef, QueuedMessage};
 use qap_proto::ops::spool::{
-    ListSpooledFiles, SpoolChange, SpoolTarget, SpooledFile, SpooledFileChanged, SpooledFileId, WatchSpool,
+    ListSpooledFiles, SpoolChange, SpoolTarget, SpooledFile, SpooledFileChanged, SpooledFileId,
+    WatchSpool,
 };
 use qap_proto::{Envelope, Service, Status};
 
@@ -118,7 +119,11 @@ fn all_messages(host: &mut dyn ThreadHost, q: &Queue) -> Result<Vec<QueuedMessag
 
 /// `WatchQueue`: the queue is listed as `ListMessages` lists it, and
 /// what is on it now is known.
-pub(crate) fn watch_queue(shared: &Arc<Shared>, host: &mut dyn ThreadHost, req: &Envelope) -> Answer {
+pub(crate) fn watch_queue(
+    shared: &Arc<Shared>,
+    host: &mut dyn ThreadHost,
+    req: &Envelope,
+) -> Answer {
     let Ok(b) = req.body_as::<QueueRef>() else {
         return Answer::status(Status::InvalidRequest);
     };
@@ -160,11 +165,16 @@ pub(crate) fn unwatch_queue(shared: &Shared, host: &mut dyn ThreadHost, req: &En
 
 /// `WatchSpool`: the target is listed as `ListSpooledFiles` lists it,
 /// and its files now are known.
-pub(crate) fn watch_spool(shared: &Arc<Shared>, host: &mut dyn ThreadHost, req: &Envelope) -> Answer {
+pub(crate) fn watch_spool(
+    shared: &Arc<Shared>,
+    host: &mut dyn ThreadHost,
+    req: &Envelope,
+) -> Answer {
     let Ok(b) = req.body_as::<WatchSpool>() else {
         return Answer::status(Status::InvalidRequest);
     };
-    if matches!(&b.target, SpoolTarget::User { profile } if profile.trim().eq_ignore_ascii_case("*ALL")) {
+    if matches!(&b.target, SpoolTarget::User { profile } if profile.trim().eq_ignore_ascii_case("*ALL"))
+    {
         return Answer::status(Status::InvalidRequest);
     }
     let files = match host.list_spooled_files(&listing(&b.target)) {
@@ -350,7 +360,8 @@ fn messages(shared: &Shared, host: &mut dyn ThreadHost, q: &Queue, era: u64) {
             message: m,
         };
         shared.send(vec![
-            Envelope::event(Service::Messages, event::MESSAGE_ARRIVED, Status::Ok, None).with_body(&body),
+            Envelope::event(Service::Messages, event::MESSAGE_ARRIVED, Status::Ok, None)
+                .with_body(&body),
         ]);
     }
 }
@@ -361,7 +372,8 @@ fn spool(shared: &Shared, host: &mut dyn ThreadHost, t: &SpoolTarget, era: u64) 
     let Ok(list) = host.list_spooled_files(&listing(t)) else {
         return;
     };
-    let now: HashMap<SpooledFileId, SpooledFile> = list.files.into_iter().map(|f| (f.id.clone(), f)).collect();
+    let now: HashMap<SpooledFileId, SpooledFile> =
+        list.files.into_iter().map(|f| (f.id.clone(), f)).collect();
     let mut w = lock(&shared.watches);
     if w.era != era {
         return;
@@ -370,12 +382,19 @@ fn spool(shared: &Shared, host: &mut dyn ThreadHost, t: &SpoolTarget, era: u64) 
         return;
     };
     let order = |f: &SpooledFile| (f.created, f.id.job.number.clone(), f.id.number);
-    let mut removed: Vec<&SpooledFile> = watch.files.values().filter(|f| !now.contains_key(&f.id)).collect();
+    let mut removed: Vec<&SpooledFile> = watch
+        .files
+        .values()
+        .filter(|f| !now.contains_key(&f.id))
+        .collect();
     let mut changed: Vec<&SpooledFile> = now
         .values()
         .filter(|f| watch.files.get(&f.id).is_some_and(|old| old != *f))
         .collect();
-    let mut added: Vec<&SpooledFile> = now.values().filter(|f| !watch.files.contains_key(&f.id)).collect();
+    let mut added: Vec<&SpooledFile> = now
+        .values()
+        .filter(|f| !watch.files.contains_key(&f.id))
+        .collect();
     removed.sort_by_key(|f| order(f));
     changed.sort_by_key(|f| order(f));
     added.sort_by_key(|f| order(f));
@@ -393,7 +412,13 @@ fn spool(shared: &Shared, host: &mut dyn ThreadHost, t: &SpoolTarget, era: u64) 
                 id: f.id.clone(),
             };
             events.push(
-                Envelope::event(Service::Spool, event::SPOOLED_FILE_CHANGED, Status::Ok, None).with_body(&body),
+                Envelope::event(
+                    Service::Spool,
+                    event::SPOOLED_FILE_CHANGED,
+                    Status::Ok,
+                    None,
+                )
+                .with_body(&body),
             );
         }
     }

@@ -51,7 +51,12 @@ pub fn of_sqlda(sqltype: i64, sqllen: i64, ccsid: u16) -> (i16, i32, i16) {
     let base = sqltype & !1;
     let len = i32::try_from(sqllen).unwrap_or(i32::MAX);
     let wide = matches!(ccsid, 1200 | 13488);
-    let dec = || (i32::try_from(sqllen >> 8).unwrap_or(0), i16::try_from(sqllen & 0xFF).unwrap_or(0));
+    let dec = || {
+        (
+            i32::try_from(sqllen >> 8).unwrap_or(0),
+            i16::try_from(sqllen & 0xFF).unwrap_or(0),
+        )
+    };
     match base {
         384 => (ty::DATE, 10, 0),
         388 => (ty::TIME, 8, 0),
@@ -113,7 +118,12 @@ pub fn params(rows: &[Vec<Value>]) -> Vec<ParamDesc> {
         .map(|r| {
             let ccsid = u16::try_from(int_of(r.get(3))).unwrap_or(0);
             let (sql_type, size, scale) = of_sqlda(int_of(r.first()), int_of(r.get(1)), ccsid);
-            ParamDesc { sql_type, size, scale, mode: i16::try_from(int_of(r.get(9))).unwrap_or(0) }
+            ParamDesc {
+                sql_type,
+                size,
+                scale,
+                mode: i16::try_from(int_of(r.get(9))).unwrap_or(0),
+            }
         })
         .collect()
 }

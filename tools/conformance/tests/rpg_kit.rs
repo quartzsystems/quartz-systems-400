@@ -44,22 +44,37 @@ fn every_member_matches_the_oracle() {
         };
         let text = o.render();
         fs::write(ours.join(format!("{}.out", case.name)), &text).unwrap();
-        fs::write(ours.join(format!("{}.lst", case.name)), listing.join("\n") + "\n").unwrap();
+        fs::write(
+            ours.join(format!("{}.lst", case.name)),
+            listing.join("\n") + "\n",
+        )
+        .unwrap();
         fs::write(ours.join(format!("{}.qir", case.name)), notes).unwrap();
         if let Ok(e) = fs::read_to_string(kit.expected_dir().join(format!("{}.lst", case.name))) {
             let ibm: Vec<String> = e.lines().map(str::to_string).collect();
             lst_compared += 1;
-            if lstcmp::first_difference(&lstcmp::normalize(&listing, true), &lstcmp::normalize(&ibm, false)).is_none() {
+            if lstcmp::first_difference(
+                &lstcmp::normalize(&listing, true),
+                &lstcmp::normalize(&ibm, false),
+            )
+            .is_none()
+            {
                 lst_match += 1;
             }
         }
         let exp = kit.expected_dir().join(format!("{}.out", case.name));
         match fs::read_to_string(&exp) {
             Ok(e) if comparable(&e) == comparable(&text) => passed += 1,
-            Ok(_) if known.contains(&case.name.as_str()) || known.contains(&format!("{batch}/*").as_str()) => {
+            Ok(_)
+                if known.contains(&case.name.as_str())
+                    || known.contains(&format!("{batch}/*").as_str()) =>
+            {
                 known_hit.push(case.name.clone());
             }
-            Ok(_) => failures.push(format!("{batch}/{}: differs (diff target/conformance-rpg/ours/{0}.out against expected)", case.name)),
+            Ok(_) => failures.push(format!(
+                "{batch}/{}: differs (diff target/conformance-rpg/ours/{0}.out against expected)",
+                case.name
+            )),
             Err(_) => missing.push(case.name.clone()),
         }
     }
@@ -69,7 +84,9 @@ fn every_member_matches_the_oracle() {
         known_hit.len(),
         missing.len()
     );
-    eprintln!("rpg listings: {lst_match} of {lst_compared} match the oracle's (tests/rpg_listing.rs compares them)");
+    eprintln!(
+        "rpg listings: {lst_match} of {lst_compared} match the oracle's (tests/rpg_listing.rs compares them)"
+    );
     if !known_hit.is_empty() {
         eprintln!("known to differ: {}", known_hit.join(" "));
     }

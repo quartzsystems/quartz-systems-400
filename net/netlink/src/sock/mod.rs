@@ -98,7 +98,11 @@ impl Socket {
     /// Send `req` and hand every reply message to `f` until the request
     /// is complete: `NLMSG_DONE` for a dump, the acknowledgement for
     /// `NLM_F_ACK`, otherwise the first datagram with a reply.
-    pub fn request(&mut self, req: &Builder, mut f: impl FnMut(&Msg<'_>) -> Result<()>) -> Result<()> {
+    pub fn request(
+        &mut self,
+        req: &Builder,
+        mut f: impl FnMut(&Msg<'_>) -> Result<()>,
+    ) -> Result<()> {
         let seq = self.next_seq();
         let dump = req.flags() & NLM_F_DUMP == NLM_F_DUMP;
         let ack = req.flags() & NLM_F_ACK != 0;

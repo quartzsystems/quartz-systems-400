@@ -16,8 +16,8 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use ile::{ActGrpAttr, CreateData, ModuleObject, PgmKind};
-use mi::io::spool::{MemSpool, PrinterOpen, SpoolSink};
 use mi::io::IoFail;
+use mi::io::spool::{MemSpool, PrinterOpen, SpoolSink};
 use mi::{Job, MemSource, MemUserSpaces};
 use rpg_oracle::Case;
 use rpg_oracle::listing::Diag as ODiag;
@@ -77,7 +77,11 @@ fn messages(case: &Case) -> std::collections::BTreeMap<String, String> {
         // The text as written: kwd() upper-cases.
         let text = cmd
             .find("MSG('")
-            .and_then(|at| cmd[at + 5..].find("')").map(|end| cmd[at + 5..at + 5 + end].replace("''", "'")))
+            .and_then(|at| {
+                cmd[at + 5..]
+                    .find("')")
+                    .map(|end| cmd[at + 5..at + 5 + end].replace("''", "'"))
+            })
             .unwrap_or_default();
         out.insert(id, text);
     }
@@ -90,18 +94,39 @@ fn data_areas(case: &Case) -> mi::io::MemData {
     let mut d = mi::io::MemData::default();
     for s in &case.setup {
         let cmd = case.fill(s, "QGPL");
-        if !cmd.trim_start().to_ascii_uppercase().starts_with("CRTDTAARA") {
+        if !cmd
+            .trim_start()
+            .to_ascii_uppercase()
+            .starts_with("CRTDTAARA")
+        {
             continue;
         }
         let q = build::kwd(&cmd, "DTAARA");
-        let (lib, name) = q.split_once('/').map_or(("QGPL".to_string(), q.clone()), |(l, n)| (l.to_string(), n.to_string()));
-        let len: u32 = build::kwd(&cmd, "LEN").split_whitespace().next().and_then(|n| n.parse().ok()).unwrap_or(32);
+        let (lib, name) = q
+            .split_once('/')
+            .map_or(("QGPL".to_string(), q.clone()), |(l, n)| {
+                (l.to_string(), n.to_string())
+            });
+        let len: u32 = build::kwd(&cmd, "LEN")
+            .split_whitespace()
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(32);
         let text = cmd
             .find("VALUE('")
-            .and_then(|at| cmd[at + 7..].find("')").map(|end| cmd[at + 7..at + 7 + end].replace("''", "'")))
+            .and_then(|at| {
+                cmd[at + 7..]
+                    .find("')")
+                    .map(|end| cmd[at + 7..at + 7 + end].replace("''", "'"))
+            })
             .unwrap_or_default();
         let mut v = mi::io::DataAreaValue::chars(len);
-        for (i, b) in ccsid::to_ebcdic(&text).unwrap_or_default().into_iter().take(len as usize).enumerate() {
+        for (i, b) in ccsid::to_ebcdic(&text)
+            .unwrap_or_default()
+            .into_iter()
+            .take(len as usize)
+            .enumerate()
+        {
             v.value[i] = b;
         }
         d.add_area(&lib, &name, v);
@@ -129,13 +154,18 @@ impl Kit {
         let mut out = Vec::new();
         for entry in fs::read_dir(&self.root)? {
             let dir = entry?.path();
-            let batch = dir.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+            let batch = dir
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
             if !dir.is_dir() || matches!(batch.as_str(), "expected" | "oracle" | "perf") {
                 continue;
             }
             for f in fs::read_dir(&dir)? {
                 let p = f?.path();
-                if p.extension().is_some_and(|e| e.eq_ignore_ascii_case("rpgle") || e.eq_ignore_ascii_case("rpg")) {
+                if p.extension().is_some_and(|e| {
+                    e.eq_ignore_ascii_case("rpgle") || e.eq_ignore_ascii_case("rpg")
+                }) {
                     out.push((batch.clone(), Case::load(&p)?));
                 }
             }
@@ -164,7 +194,10 @@ impl Kit {
 
 /// The kit's spooled files, with the member's printer files' formats.
 #[derive(Clone, Default)]
-struct KitSpool(Rc<RefCell<MemSpool>>, Vec<(String, Rc<dds::prtf::PrtfDefinition>)>);
+struct KitSpool(
+    Rc<RefCell<MemSpool>>,
+    Vec<(String, Rc<dds::prtf::PrtfDefinition>)>,
+);
 
 impl SpoolSink for KitSpool {
     fn open(&mut self, file: &str, lib: &str, actgrp: &str) -> Result<PrinterOpen, IoFail> {
@@ -189,13 +222,18 @@ pub fn options(case: &Case) -> rpgc::Options {
     let word = |kw: &str| -> Option<String> {
         // The whole keyword: not ACTGRP inside DFTACTGRP.
         let pat = format!("{kw}(");
-        let at = cmd.match_indices(&pat).map(|(i, _)| i).find(|&i| i == 0 || !cmd.as_bytes()[i - 1].is_ascii_alphanumeric())?;
+        let at = cmd
+            .match_indices(&pat)
+            .map(|(i, _)| i)
+            .find(|&i| i == 0 || !cmd.as_bytes()[i - 1].is_ascii_alphanumeric())?;
         let rest = &cmd[at + kw.len() + 1..];
         let end = rest.find(')')?;
         Some(rest[..end].trim().to_string())
     };
     let sql = cmd.starts_with("CRTSQLRPGI");
-    let command = if cmd.starts_with("CRTRPGMOD") || sql && matches!(word("OBJTYPE").as_deref(), Some("*MODULE" | "*SRVPGM")) {
+    let command = if cmd.starts_with("CRTRPGMOD")
+        || sql && matches!(word("OBJTYPE").as_deref(), Some("*MODULE" | "*SRVPGM"))
+    {
         rpgc::Command::CrtRpgMod
     } else if sql {
         rpgc::Command::CrtSqlRpgi
@@ -222,7 +260,10 @@ pub fn options(case: &Case) -> rpgc::Options {
         o.option = v.split_whitespace().map(str::to_string).collect();
     }
     if let Some(v) = word("DEFINE") {
-        o.define = v.split_whitespace().map(|s| s.trim_matches('\'').to_string()).collect();
+        o.define = v
+            .split_whitespace()
+            .map(|s| s.trim_matches('\'').to_string())
+            .collect();
     }
     if let Some(v) = word("TRUNCNBR") {
         o.truncnbr = v != "*NO";
@@ -251,7 +292,11 @@ pub fn options(case: &Case) -> rpgc::Options {
     if let Some(v) = word("GENLVL") {
         o.genlvl = v.parse().unwrap_or(o.genlvl);
     }
-    for (kw, slot) in [("OPTIMIZE", &mut o.optimize), ("ALWNULL", &mut o.alwnull), ("OUTPUT", &mut o.output)] {
+    for (kw, slot) in [
+        ("OPTIMIZE", &mut o.optimize),
+        ("ALWNULL", &mut o.alwnull),
+        ("OUTPUT", &mut o.output),
+    ] {
         if let Some(v) = word(kw) {
             *slot = v;
         }
@@ -297,8 +342,15 @@ pub fn options3(case: &Case) -> rpg3::Options {
 /// The member of an RPG III case.
 #[must_use]
 pub fn member3(case: &Case) -> Member {
-    Member::from_text("QGPL", "QRPGSRC", &case.name, &case.lines.join("
-"))
+    Member::from_text(
+        "QGPL",
+        "QRPGSRC",
+        &case.name,
+        &case.lines.join(
+            "
+",
+        ),
+    )
 }
 
 /// Compile an RPG III case with `CRTRPGPGM`.
@@ -307,7 +359,12 @@ pub fn compile3(case: &Case, db: Option<&files::KitDb>) -> rpg3::Compiled {
     let o = options3(case);
     match db {
         Some(d) => rpg3::compile(&member3(case), &mut includes(case), &mut d.ext(), &o),
-        None => rpg3::compile(&member3(case), &mut includes(case), &mut rpgc::NoExtFiles, &o),
+        None => rpg3::compile(
+            &member3(case),
+            &mut includes(case),
+            &mut rpgc::NoExtFiles,
+            &o,
+        ),
     }
 }
 
@@ -330,7 +387,10 @@ pub fn diags3(c: &rpg3::Compiled) -> Vec<ODiag> {
 
 /// Whether a case is precompiled.
 fn is_sql(case: &Case) -> bool {
-    case.cmd.trim_start().to_ascii_uppercase().starts_with("CRTSQLRPGI")
+    case.cmd
+        .trim_start()
+        .to_ascii_uppercase()
+        .starts_with("CRTSQLRPGI")
 }
 
 /// The member as the oracle's upload leaves it: numbered from 1.00,
@@ -344,8 +404,18 @@ pub fn member(case: &Case) -> Member {
 #[must_use]
 pub fn compile(case: &Case, db: Option<&files::KitDb>) -> rpgc::Compiled {
     match db {
-        Some(d) => rpgc::compile(member(case), &mut includes(case), &mut d.ext(), &options(case)),
-        None => rpgc::compile(member(case), &mut includes(case), &mut rpgc::NoExtFiles, &options(case)),
+        Some(d) => rpgc::compile(
+            member(case),
+            &mut includes(case),
+            &mut d.ext(),
+            &options(case),
+        ),
+        None => rpgc::compile(
+            member(case),
+            &mut includes(case),
+            &mut rpgc::NoExtFiles,
+            &options(case),
+        ),
     }
 }
 
@@ -354,14 +424,21 @@ pub fn compile(case: &Case, db: Option<&files::KitDb>) -> rpgc::Compiled {
 pub fn includes(case: &Case) -> MemIncludes {
     let mut inc = MemIncludes::default();
     for (n, lines) in &case.with {
-        inc.members.push(Member::from_text("QGPL", "QRPGLESRC", n, &lines.join("\n")));
+        inc.members
+            .push(Member::from_text("QGPL", "QRPGLESRC", n, &lines.join("\n")));
     }
     inc
 }
 
 /// Compile one of a case's members as a module with a setup command's
 /// options: the IR, or the reason it was not created.
-fn compile_member(case: &Case, db: Option<&files::KitDb>, mbr: &str, module: &str, cmd: &str) -> Result<String, String> {
+fn compile_member(
+    case: &Case,
+    db: Option<&files::KitDb>,
+    mbr: &str,
+    module: &str,
+    cmd: &str,
+) -> Result<String, String> {
     let lines = if mbr == case.name {
         case.lines.clone()
     } else {
@@ -380,7 +457,11 @@ fn compile_member(case: &Case, db: Option<&files::KitDb>, mbr: &str, module: &st
     let mut o = options(&sub);
     // CRTSQLRPGI's own choice stands.
     if !is_sql(&sub) {
-        o.command = if cmd.trim_start().to_ascii_uppercase().starts_with("CRTBNDRPG") {
+        o.command = if cmd
+            .trim_start()
+            .to_ascii_uppercase()
+            .starts_with("CRTBNDRPG")
+        {
             rpgc::Command::CrtBndRpg
         } else {
             rpgc::Command::CrtRpgMod
@@ -398,7 +479,13 @@ fn compile_member(case: &Case, db: Option<&files::KitDb>, mbr: &str, module: &st
             .diags
             .iter()
             .filter(|d| d.severity > 10)
-            .map(|d| if d.args.is_empty() { d.msgid.to_string() } else { format!("{} {}", d.msgid, d.args.join(" ")) })
+            .map(|d| {
+                if d.args.is_empty() {
+                    d.msgid.to_string()
+                } else {
+                    format!("{} {}", d.msgid, d.args.join(" "))
+                }
+            })
             .collect();
         Err(format!("{module}: not created ({})", ids.join("; ")))
     }
@@ -411,33 +498,42 @@ pub fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
     // reads IBM's listing.
     // (and so do diagnostics in copied members: the oracle reads them
     // against the copy directive's line).
-    let in_copy = c.diags.iter().any(|d| c.read.lines.iter().any(|l| l.no == d.at.line && l.member > 0));
+    let in_copy = c.diags.iter().any(|d| {
+        c.read
+            .lines
+            .iter()
+            .any(|l| l.no == d.at.line && l.member > 0)
+    });
     if c.srcstmt() || in_copy {
         return rpg_oracle::listing::diags(&c.listing);
     }
     let mut out: Vec<ODiag> = c
         .diags
         .iter()
-        .map(|d| if d.msgid.starts_with("SQL") {
-            // The precompile listing numbers source records.
-            ODiag {
-                line: d.at.line,
-                msgid: d.msgid.to_string(),
-                severity: d.severity,
-                seq: String::new(),
+        .map(|d| {
+            if d.msgid.starts_with("SQL") {
+                // The precompile listing numbers source records.
+                ODiag {
+                    line: d.at.line,
+                    msgid: d.msgid.to_string(),
+                    severity: d.severity,
+                    seq: String::new(),
+                }
+            } else {
+                ODiag {
+                    line: c.listing_line(d.at.line),
+                    msgid: d.msgid.to_string(),
+                    severity: d.severity,
+                    seq: c
+                        .read
+                        .lines
+                        .iter()
+                        .find(|l| l.no == d.at.line && d.at.line > 0)
+                        .map(|l| l.seq.clone())
+                        .unwrap_or_default(),
+                }
             }
-        } else { ODiag {
-            line: c.listing_line(d.at.line),
-            msgid: d.msgid.to_string(),
-            severity: d.severity,
-            seq: c
-                .read
-                .lines
-                .iter()
-                .find(|l| l.no == d.at.line && d.at.line > 0)
-                .map(|l| l.seq.clone())
-                .unwrap_or_default(),
-        } })
+        })
         .collect();
     out.sort();
     out.dedup();
@@ -445,7 +541,12 @@ pub fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
 }
 
 /// The program a compile made.
-fn program(c: &rpgc::Compiled, name: &str, objs: &build::Objects, cmd: &str) -> Result<ile::ProgramObject, String> {
+fn program(
+    c: &rpgc::Compiled,
+    name: &str,
+    objs: &build::Objects,
+    cmd: &str,
+) -> Result<ile::ProgramObject, String> {
     let m = qir::parse(&c.qir).map_err(|e| format!("{name}: {e}"))?;
     let actgrp = match &m.actgrp {
         qir::ActGrp::New => ActGrpAttr::New,
@@ -453,11 +554,24 @@ fn program(c: &rpgc::Compiled, name: &str, objs: &build::Objects, cmd: &str) -> 
         qir::ActGrp::Named(n) => ActGrpAttr::Named(n.clone()),
     };
     let dft = m.dftactgrp;
-    let mo = ModuleObject::compile(m, CreateData::default(), CLOCK).map_err(|e| format!("{name}: {e}"))?;
+    let mo = ModuleObject::compile(m, CreateData::default(), CLOCK)
+        .map_err(|e| format!("{name}: {e}"))?;
     // The directories the control specification and the command name.
-    let mut dirs: Vec<String> = c.ctl.bnddir.iter().map(|d| d.rsplit('/').next().unwrap_or(d).to_string()).collect();
+    let mut dirs: Vec<String> = c
+        .ctl
+        .bnddir
+        .iter()
+        .map(|d| d.rsplit('/').next().unwrap_or(d).to_string())
+        .collect();
     dirs.extend(build::names_of(&build::kwd(cmd, "BNDDIR")));
-    objs.bind(&mo.name.clone(), PgmKind::Pgm, vec![mo], &dirs, &[], if dft { ActGrpAttr::Default } else { actgrp })
+    objs.bind(
+        &mo.name.clone(),
+        PgmKind::Pgm,
+        vec![mo],
+        &dirs,
+        &[],
+        if dft { ActGrpAttr::Default } else { actgrp },
+    )
 }
 
 /// The spooled files as page/line rows of printed lines.
@@ -477,8 +591,18 @@ fn spooled(spool: &MemSpool) -> Vec<Spooled> {
                 // are blanks on the oracle's copy.
                 lines: spool::view::pass_rows(&pages)
                     .into_iter()
-                    .map(|(p, l, t)| (p, l, t.chars().map(|c| if c.is_control() { ' ' } else { c }).collect::<String>()))
-                    .filter(|(_, l, t)| !t.trim().is_empty() && (last == 66 || u32::from(last) != u32::from(*l)))
+                    .map(|(p, l, t)| {
+                        (
+                            p,
+                            l,
+                            t.chars()
+                                .map(|c| if c.is_control() { ' ' } else { c })
+                                .collect::<String>(),
+                        )
+                    })
+                    .filter(|(_, l, t)| {
+                        !t.trim().is_empty() && (last == 66 || u32::from(last) != u32::from(*l))
+                    })
                     .map(|(p, l, t)| format!("{p}/{l:<3} {}", t.trim_end()))
                     .collect::<Vec<_>>(),
             }
@@ -497,7 +621,14 @@ fn spooled(spool: &MemSpool) -> Vec<Spooled> {
 pub fn notes(c: &rpgc::Compiled) -> String {
     let mut s = String::new();
     for d in &c.diags {
-        let _ = writeln!(s, "; {} {:02} line {}: {}", d.msgid, d.severity, d.at.line, rpgc::msgs::text(d));
+        let _ = writeln!(
+            s,
+            "; {} {:02} line {}: {}",
+            d.msgid,
+            d.severity,
+            d.at.line,
+            rpgc::msgs::text(d)
+        );
     }
     s.push_str(&c.ir);
     s
@@ -546,10 +677,18 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     let mut objs = build::Objects::default();
     for s in case.setup.iter().chain(&case.post) {
         let cmd = case.fill(s, "QGPL");
-        objs.setup(&cmd, &|mbr, module, cmd| compile_member(case, db.as_ref(), mbr, module, cmd))?;
+        objs.setup(&cmd, &|mbr, module, cmd| {
+            compile_member(case, db.as_ref(), mbr, module, cmd)
+        })?;
     }
     let main_cmd = case.fill(&case.cmd, "QGPL");
-    let verb = main_cmd.trim().to_ascii_uppercase().split_whitespace().next().unwrap_or("").to_string();
+    let verb = main_cmd
+        .trim()
+        .to_ascii_uppercase()
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_string();
     // CRTPGM binds what the setup made; nothing is compiled.
     if verb == "CRTPGM" {
         let mods: Vec<ModuleObject> = build::names_of(&build::kwd(&main_cmd, "MODULE"))
@@ -580,12 +719,21 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     if case.rpg3 {
         let c = compile3(case, db.as_ref());
         let mut notes = notes(&c.inner);
-        notes.insert_str(0, &(c.conversion.text().join("
-") + "
-"));
+        notes.insert_str(
+            0,
+            &(c.conversion.text().join(
+                "
+",
+            ) + "
+"),
+        );
         let mut o = Outcome {
             created: c.created,
-            cause: if c.created { String::new() } else { "QRG9001".into() },
+            cause: if c.created {
+                String::new()
+            } else {
+                "QRG9001".into()
+            },
             diags: diags3(&c),
             ..Outcome::default()
         };
@@ -598,7 +746,12 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     let c = compile(case, db.as_ref());
     let notes = notes(&c);
     // With *NOGEN the command ends normally though nothing is made.
-    let nogen = c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*NOGEN")) && c.max_severity <= c.ctl.genlvl;
+    let nogen = c
+        .ctl
+        .option
+        .iter()
+        .any(|x| x.eq_ignore_ascii_case("*NOGEN"))
+        && c.max_severity <= c.ctl.genlvl;
     let mut o = Outcome {
         created: c.created || nogen,
         // A module not created is RNS9309, a program RNS9310.
@@ -616,7 +769,10 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     };
     // A program that names binding directories is bound even when it
     // is not run: one that is not found means no program.
-    if c.created && case.call.is_empty() && verb == "CRTBNDRPG" && !c.ctl.bnddir.is_empty()
+    if c.created
+        && case.call.is_empty()
+        && verb == "CRTBNDRPG"
+        && !c.ctl.bnddir.is_empty()
         && program(&c, &case.name, &objs, &main_cmd).is_err()
     {
         o.created = false;
@@ -652,10 +808,18 @@ fn cl_parms(list: &str) -> Vec<Vec<u8>> {
         };
         rest = tail.trim_start();
         let num = word.trim_start_matches(['-', '+']);
-        if !word.starts_with('\'') &&!num.is_empty() && num.chars().all(|c| c.is_ascii_digit() || c == '.') {
+        if !word.starts_with('\'')
+            && !num.is_empty()
+            && num.chars().all(|c| c.is_ascii_digit() || c == '.')
+        {
             let p = qdecimal::Decimal::parse(&word)
                 .ok()
-                .and_then(|v| qdecimal::Packed::new(15, 5).ok()?.encode(&v, qdecimal::Rounding::Truncate).ok())
+                .and_then(|v| {
+                    qdecimal::Packed::new(15, 5)
+                        .ok()?
+                        .encode(&v, qdecimal::Rounding::Truncate)
+                        .ok()
+                })
                 .unwrap_or_else(|| vec![0, 0, 0, 0, 0, 0, 0, 0x0F]);
             out.push(p);
         } else {
@@ -687,7 +851,11 @@ fn call_into(
         job.usrspcs.set_source(Box::new(MemUserSpaces::default()));
         job.data = Some(Box::new(data_areas(case)));
         // STRCMTCTL in the setup: the job's commitment definition.
-        let strcmtctl = case.setup.iter().chain(&case.post).find(|s| s.trim_start().to_ascii_uppercase().starts_with("STRCMTCTL"));
+        let strcmtctl = case
+            .setup
+            .iter()
+            .chain(&case.post)
+            .find(|s| s.trim_start().to_ascii_uppercase().starts_with("STRCMTCTL"));
         job.cmtctl = strcmtctl.is_some();
         if let Some(d) = db {
             let mut io = d.io()?;
@@ -698,7 +866,8 @@ fn call_into(
                 } else {
                     db::cmt::CmtScope::ActGrp(db::odp::ovrdbf::DFTACTGRP.into())
                 };
-                io.strcmtctl(lcklvl, scope, CLOCK).map_err(|e| format!("{}: STRCMTCTL: {e}", case.name))?;
+                io.strcmtctl(lcklvl, scope, CLOCK)
+                    .map_err(|e| format!("{}: STRCMTCTL: {e}", case.name))?;
             }
             job.io = Some(Box::new(io));
             job.sql = Some(Box::new(d.sql()));
@@ -716,7 +885,10 @@ fn call_into(
         if let Some(f) = JOB_SETUP.with(|s| s.borrow().clone()) {
             f(&mut job);
         }
-        let spool = KitSpool(Rc::default(), db.map(|d| d.printers.clone()).unwrap_or_default());
+        let spool = KitSpool(
+            Rc::default(),
+            db.map(|d| d.printers.clone()).unwrap_or_default(),
+        );
         job.spool = Some(Box::new(spool.clone()));
         // A member without keys runs in a batch job: no display.
         let display = db
@@ -748,8 +920,21 @@ fn call_into(
             (Ok(()), None) => Run::Ok,
         };
         LAST_JOBLOG.with(|l| {
-            let mut v: Vec<String> = job.console.iter().map(|c| format!("console: {c}")).collect();
-            v.extend(job.joblog.entries().map(|e| format!("{} {} from {} {}: {}", e.msgid, e.kind, e.from.0, e.from_inst, e.text.trim_end())));
+            let mut v: Vec<String> = job
+                .console
+                .iter()
+                .map(|c| format!("console: {c}"))
+                .collect();
+            v.extend(job.joblog.entries().map(|e| {
+                format!(
+                    "{} {} from {} {}: {}",
+                    e.msgid,
+                    e.kind,
+                    e.from.0,
+                    e.from_inst,
+                    e.text.trim_end()
+                )
+            }));
             *l.borrow_mut() = v;
         });
         sysapi::uninstall(&job);

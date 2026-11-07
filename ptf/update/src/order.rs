@@ -124,7 +124,13 @@ impl OrderRequest {
             let v = v.trim();
             match k {
                 "release" => r.release = v.into(),
-                "order" => r.order = if v == "*PTFID" { OrderMode::PtfId } else { OrderMode::Required },
+                "order" => {
+                    r.order = if v == "*PTFID" {
+                        OrderMode::PtfId
+                    } else {
+                        OrderMode::Required
+                    }
+                }
                 "reorder" => r.reorder = v == "*YES",
                 "part" => r.cover_only = v == "*CVRLTR",
                 "item" if !v.is_empty() => r.items.push(v.to_ascii_uppercase()),
@@ -168,11 +174,13 @@ impl OrderResult {
                 ["order"] | [] => {}
                 ["ptf", p, w] => r.ptfs.push((
                     (*p).into(),
-                    Why::from_word(w).ok_or_else(|| Error::Protocol(format!("order line {line:?}")))?,
+                    Why::from_word(w)
+                        .ok_or_else(|| Error::Protocol(format!("order line {line:?}")))?,
                 )),
                 ["group", g, l] => r.groups.push((
                     (*g).into(),
-                    l.parse().map_err(|_| Error::Protocol(format!("order line {line:?}")))?,
+                    l.parse()
+                        .map_err(|_| Error::Protocol(format!("order line {line:?}")))?,
                 )),
                 ["missing", m] => r.missing.push((*m).into()),
                 _ => return Err(Error::Protocol(format!("order line {line:?}"))),
@@ -270,7 +278,11 @@ pub fn resolve(cat: &Catalog, req: &OrderRequest) -> OrderResult {
         why.retain(|id, _| !chain(&sup, id).iter().any(|c| have.contains(c)));
     }
     // Members the catalog does not list cannot be ordered.
-    let unknown: Vec<String> = why.keys().filter(|id| cat.ptf(id).is_none()).cloned().collect();
+    let unknown: Vec<String> = why
+        .keys()
+        .filter(|id| cat.ptf(id).is_none())
+        .cloned()
+        .collect();
     for u in unknown {
         why.remove(&u);
         if !res.missing.contains(&u) {

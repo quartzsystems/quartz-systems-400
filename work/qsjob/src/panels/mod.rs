@@ -170,7 +170,12 @@ pub fn exec(job: &mut Job, host: &Host, text: &str) -> Option<uim::engine::LineM
 
 /// Panel data `what` from the storage service (request 270); a failed
 /// read is command `cmd`'s escape ([`Fail::read`]).
-pub fn panel_data(host: &Host, cmd: &str, what: &str, args: &[&str]) -> Result<stg::proto::Sys2Data, Fail> {
+pub fn panel_data(
+    host: &Host,
+    cmd: &str,
+    what: &str,
+    args: &[&str],
+) -> Result<stg::proto::Sys2Data, Fail> {
     let args: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
     host.link
         .borrow_mut()
@@ -260,18 +265,21 @@ pub fn shows_panels(host: &Host, r: &Resolved) -> bool {
     }
     !r.parms.iter().any(|p| {
         p.kwd == "OUTPUT"
-            && p.value
-                .as_ref()
-                .is_some_and(|v| {
-                    let v = v.to_string().to_ascii_uppercase();
-                    v.contains("*PRINT") || v.contains("*OUTFILE")
-                })
+            && p.value.as_ref().is_some_and(|v| {
+                let v = v.to_string().to_ascii_uppercase();
+                v.contains("*PRINT") || v.contains("*OUTFILE")
+            })
     })
 }
 
 /// Run a command's display when it has a panel driver; `None` when
 /// the command is not a panel, or the job shows none.
-pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Option<Result<String, Fail>> {
+pub fn run(
+    job: &mut Job,
+    host: &Host,
+    r: &Resolved,
+    out: &mut Outcome,
+) -> Option<Result<String, Fail>> {
     if !shows_panels(host, r) {
         return None;
     }
@@ -341,7 +349,12 @@ mod tests {
     use crate::display::uim::UimDialog;
 
     fn entry(values: &[(&str, &str)]) -> (UimDialog, Choice) {
-        let c = uim::compile(":PNLGRP.\n:EPNLGRP.\n", &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let c = uim::compile(
+            ":PNLGRP.\n:EPNLGRP.\n",
+            &uim::NoImbeds,
+            &uim::NoImports,
+            &uim::CompileOpts::default(),
+        );
         let mut d = UimDialog::new(Rc::new(c.group.expect("a group")), "QS400");
         for (k, v) in values {
             d.list_mut("L").set_ext(k, v);
@@ -369,6 +382,9 @@ mod tests {
         let (d, c) = entry(&[("VOL", "VOL01")]);
         assert_eq!(ext_command(&d, &c, "?ADDOPTCTG"), "?ADDOPTCTG");
         let (d, c) = entry(&[]);
-        assert_eq!(ext_command(&d, &c, "?ADDTCPHTE INTNETADR('&HTEADR.')"), "?ADDTCPHTE");
+        assert_eq!(
+            ext_command(&d, &c, "?ADDTCPHTE INTNETADR('&HTEADR.')"),
+            "?ADDTCPHTE"
+        );
     }
 }

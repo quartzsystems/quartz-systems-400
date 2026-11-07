@@ -100,10 +100,19 @@ fn check(names: &[&str], text: &str, keys: &[&[u8]]) {
             .get(34..)
             .unwrap_or("")
             .split_whitespace()
-            .filter(|t| *t != ">" && !t.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()))
+            .filter(|t| {
+                *t != ">"
+                    && !t
+                        .chars()
+                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+            })
             .collect();
         let tail = got.get(34..).unwrap_or("").to_ascii_uppercase();
-        if label(got) != label(w) || !values.iter().all(|v| tail.contains(&v.to_ascii_uppercase())) {
+        if label(got) != label(w)
+            || !values
+                .iter()
+                .all(|v| tail.contains(&v.to_ascii_uppercase()))
+        {
             diffs.push(format!("row {}:\n  want {w:?}\n  got  {got:?}", i + 1));
         }
     }
@@ -114,7 +123,11 @@ fn check(names: &[&str], text: &str, keys: &[&[u8]]) {
 fn runsql() {
     check(&["prompt-runsql"], "?RUNSQL", &[&[]]);
     check(
-        &["prompt-runsql-v-f10", "prompt-runsql-v-2", "prompt-runsql-v-3"],
+        &[
+            "prompt-runsql-v-f10",
+            "prompt-runsql-v-2",
+            "prompt-runsql-v-3",
+        ],
         "?RUNSQL SQL('values 1')",
         &[&[10], &[10, 8], &[10, 8, 8]],
     );
@@ -124,7 +137,11 @@ fn runsql() {
 fn runsqlstm() {
     check(&["prompt-runsqlstm"], "?RUNSQLSTM", &[&[]]);
     check(
-        &["prompt-runsqlstm-f10", "prompt-runsqlstm-f10-2", "prompt-runsqlstm-f10-3"],
+        &[
+            "prompt-runsqlstm-f10",
+            "prompt-runsqlstm-f10-2",
+            "prompt-runsqlstm-f10-3",
+        ],
         "?RUNSQLSTM",
         &[&[10], &[10, 8], &[10, 8, 8]],
     );
@@ -142,7 +159,13 @@ fn crtsqlrpgi() {
             "prompt-crtsqlrpgi-v-5",
         ],
         "?CRTSQLRPGI OBJ(QTEMP/X)",
-        &[&[10], &[10, 8], &[10, 8, 8], &[10, 8, 8, 8], &[10, 8, 8, 8, 8]],
+        &[
+            &[10],
+            &[10, 8],
+            &[10, 8, 8],
+            &[10, 8, 8, 8],
+            &[10, 8, 8, 8, 8],
+        ],
     );
 }
 
@@ -154,7 +177,12 @@ fn strsql() {
 #[test]
 fn strdbmon() {
     check(
-        &["prompt-strdbmon-v", "prompt-strdbmon-v-2", "prompt-strdbmon-v-3", "prompt-strdbmon-v-4"],
+        &[
+            "prompt-strdbmon-v",
+            "prompt-strdbmon-v-2",
+            "prompt-strdbmon-v-3",
+            "prompt-strdbmon-v-4",
+        ],
         "?STRDBMON OUTFILE(QTEMP/X)",
         &[&[], &[8], &[8, 8], &[8, 8, 8]],
     );

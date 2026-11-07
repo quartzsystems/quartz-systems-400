@@ -42,7 +42,13 @@ pub struct Entry {
 
 impl Entry {
     /// An entry for bytes, deflated when that is smaller.
-    pub fn new(name: &str, plain: &[u8], deflate: bool, dos: (u16, u16), mode: Option<u32>) -> Self {
+    pub fn new(
+        name: &str,
+        plain: &[u8],
+        deflate: bool,
+        dos: (u16, u16),
+        mode: Option<u32>,
+    ) -> Self {
         let crc = crc::crc32(plain);
         let (method, data) = if deflate && !plain.is_empty() {
             let z = deflate::deflate(plain);
@@ -129,7 +135,11 @@ pub fn write(entries: &[Entry]) -> Vec<u8> {
     let mut central = Vec::new();
     for e in entries {
         let offset = out.len() as u32;
-        let need = if e.method == DEFLATED || e.is_dir() { 20 } else { 10 };
+        let need = if e.method == DEFLATED || e.is_dir() {
+            20
+        } else {
+            10
+        };
         let flags: u16 = if e.name.is_ascii() { 0 } else { 0x0800 };
         let header = |o: &mut Vec<u8>| {
             put16(o, flags);
@@ -217,7 +227,10 @@ pub fn read(b: &[u8]) -> Result<Vec<Entry>, String> {
         let lnlen = usize::from(u16le(b, local + 26).ok_or_else(damaged)?);
         let lxlen = usize::from(u16le(b, local + 28).ok_or_else(damaged)?);
         let data_at = local + 30 + lnlen + lxlen;
-        let data = b.get(data_at..data_at + csize).ok_or_else(damaged)?.to_vec();
+        let data = b
+            .get(data_at..data_at + csize)
+            .ok_or_else(damaged)?
+            .to_vec();
         let mode = (made >> 8 == 3 && ext >> 16 != 0).then_some((ext >> 16) & 0o7777);
         out.push(Entry {
             name,

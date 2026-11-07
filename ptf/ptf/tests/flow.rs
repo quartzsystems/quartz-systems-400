@@ -41,8 +41,12 @@ fn system(seed: u64, value: &str) -> (Store, ObjectId) {
         wal_pages: 256,
         now: NOW,
     };
-    let mut s = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &fp, StoreConfig::default())
-        .unwrap();
+    let mut s = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &fp,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = s.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
     let p = |lib, n: &str, ty| CreateParams {
@@ -112,7 +116,9 @@ fn make(ptf: &str, value: &str, prereqs: &[&str], supersedes: &[&str]) -> Vec<u8
 
 fn level(s: &mut Store, q: ObjectId) -> String {
     let mut t = s.begin().unwrap();
-    let l = ops::find_library(&mut t, q, Name::parse("QSVCLIB").unwrap()).unwrap().id;
+    let l = ops::find_library(&mut t, q, Name::parse("QSVCLIB").unwrap())
+        .unwrap()
+        .id;
     let id = store::obj::library::Library::load(&mut t, l)
         .unwrap()
         .lookup(&mut t, types::DTAARA, Name::parse("LEVEL").unwrap())
@@ -140,7 +146,10 @@ fn load_apply_remove_and_make_permanent() {
     let pkg = package::open(&one, &trusted()).unwrap();
     assert_eq!(pkg.header.ptf, "QS00001");
     assert!(pkg.cover.contains("level1"));
-    assert_eq!(pkg.objects, [("QSVCLIB".into(), "LEVEL".into(), types::DTAARA)]);
+    assert_eq!(
+        pkg.objects,
+        [("QSVCLIB".into(), "LEVEL".into(), types::DTAARA)]
+    );
     // An untrusted signer is refused.
     let other = [SigningKey::from_bytes(&[1; 32]).verifying_key().to_bytes()];
     assert!(package::open(&one, &other).is_err());
@@ -225,7 +234,9 @@ fn prerequisites_supersedes_and_groups() {
         now: NOW,
     };
     assert_eq!(
-        apply::remove(&mut cx, &mut db, "QS00001", false).unwrap_err().msgid(),
+        apply::remove(&mut cx, &mut db, "QS00001", false)
+            .unwrap_err()
+            .msgid(),
         apply::msg::NEEDED
     );
     // Loading QS00003 supersedes QS00002.
@@ -279,7 +290,10 @@ fn delayed_ptfs_wait_for_the_ipl() {
     let a = apply::apply_temp(&mut cx, &mut db, &pkg, &bytes, &[], false).unwrap();
     assert_eq!(a, Action::ApplyAtIpl);
     assert_eq!(level(&mut s, q), "base");
-    assert_eq!(apply::pending(&db), [("QS00009".to_string(), Action::ApplyAtIpl)]);
+    assert_eq!(
+        apply::pending(&db),
+        [("QS00009".to_string(), Action::ApplyAtIpl)]
+    );
     // The IPL applies it.
     let mut cx = Ctx {
         store: &mut s,

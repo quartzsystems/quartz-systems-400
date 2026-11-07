@@ -19,7 +19,9 @@ impl Gen<'_> {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
         };
-        let Some(nv) = self.expr(n, Want::default()) else { return };
+        let Some(nv) = self.expr(n, Want::default()) else {
+            return;
+        };
         let Some(n) = self.int_reg(&nv) else { return };
         let Some(t) = self.target(t) else { return };
         self.rt_proc("_QRNX_ALLOC", "($p: ptr, byval $n: i64)");
@@ -32,7 +34,9 @@ impl Gen<'_> {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
         };
-        let Some(nv) = self.expr(n, Want::default()) else { return };
+        let Some(nv) = self.expr(n, Want::default()) else {
+            return;
+        };
         let Some(n) = self.int_reg(&nv) else { return };
         let Some(t) = self.target(t) else { return };
         self.rt_proc("_QRNX_REALLOC", "($p: ptr, byval $n: i64)");

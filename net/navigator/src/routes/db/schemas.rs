@@ -10,7 +10,9 @@ use std::fmt::Write as _;
 
 use qsweb::html::esc;
 use qsweb::http::Response;
-use qsweb::partials::{Cell, Col, List, Prop, PropGroup, actions, link, list_table, mono, props_table};
+use qsweb::partials::{
+    Cell, Col, List, Prop, PropGroup, actions, link, list_table, mono, props_table,
+};
 
 use super::mb10;
 use crate::PRODUCT;
@@ -34,7 +36,11 @@ pub fn page(rq: &Rq<'_>, name: Option<&str>) -> Response {
     let mut tree = String::from("<div><span class=\"glyph\">[-]</span> <b>Schemas</b></div>");
     for s in &all {
         if s.name == schema.name {
-            let _ = write!(tree, "<div class=\"navitem\"><span class=\"glyph\">[-]</span> <b>{}</b></div>", esc(&s.name));
+            let _ = write!(
+                tree,
+                "<div class=\"navitem\"><span class=\"glyph\">[-]</span> <b>{}</b></div>",
+                esc(&s.name)
+            );
         } else {
             let _ = write!(
                 tree,
@@ -55,11 +61,18 @@ pub fn page(rq: &Rq<'_>, name: Option<&str>) -> Response {
             );
             for o in &objs {
                 let name = if kind == ObjKind::Tables {
-                    link(&rq.ctx.url(&format!("/db/{}/{}/columns", schema.name, o.name)), &o.name)
+                    link(
+                        &rq.ctx
+                            .url(&format!("/db/{}/{}/columns", schema.name, o.name)),
+                        &o.name,
+                    )
                 } else {
                     esc(&o.name)
                 };
-                let _ = write!(tree, "<div class=\"navitem2\" style=\"margin-left:42px\">{name}</div>");
+                let _ = write!(
+                    tree,
+                    "<div class=\"navitem2\" style=\"margin-left:42px\">{name}</div>"
+                );
             }
             shown = objs;
         } else {
@@ -98,7 +111,11 @@ pub fn page(rq: &Rq<'_>, name: Option<&str>) -> Response {
 }
 
 fn attributes(rq: &Rq<'_>, s: &Schema) -> PropGroup {
-    let journal = if s.journal.is_empty() { "None".to_string() } else { mono(&s.journal) };
+    let journal = if s.journal.is_empty() {
+        "None".to_string()
+    } else {
+        mono(&s.journal)
+    };
     PropGroup {
         title: None,
         rows: vec![
@@ -118,7 +135,13 @@ fn changed(rq: &Rq<'_>, secs: u64) -> String {
     format!("{d} {}", &t[..t.len().min(5)])
 }
 
-fn objects(rq: &Rq<'_>, schema: &str, kind: ObjKind, mut objs: Vec<DbObject>, sort: &str) -> String {
+fn objects(
+    rq: &Rq<'_>,
+    schema: &str,
+    kind: ObjKind,
+    mut objs: Vec<DbObject>,
+    sort: &str,
+) -> String {
     let keep = if kind == ObjKind::Tables {
         Vec::new()
     } else {
@@ -176,9 +199,17 @@ fn objects(rq: &Rq<'_>, schema: &str, kind: ObjKind, mut objs: Vec<DbObject>, so
                     let over = if o.over.is_empty() {
                         Cell::text("")
                     } else {
-                        Cell::mono_html(link(&rq.ctx.url(&format!("/db/{schema}/{}/columns", o.over)), &o.over))
+                        Cell::mono_html(link(
+                            &rq.ctx.url(&format!("/db/{schema}/{}/columns", o.over)),
+                            &o.over,
+                        ))
                     };
-                    vec![Cell::mono(&o.name), Cell::text(&o.text), over, Cell::text(&changed(rq, o.changed))]
+                    vec![
+                        Cell::mono(&o.name),
+                        Cell::text(&o.text),
+                        over,
+                        Cell::text(&changed(rq, o.changed)),
+                    ]
                 })
                 .collect(),
             empty: format!("The schema has no {}.", kind.label().to_ascii_lowercase()),

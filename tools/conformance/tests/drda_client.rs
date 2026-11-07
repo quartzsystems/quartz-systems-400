@@ -37,18 +37,38 @@ impl Connector for Tcp {
 
     fn connect(&mut self, rdb: &str, user: Option<(&str, &str)>) -> Result<Box<dyn Server>, Sqlca> {
         let (u, p) = user.expect("the test gives a user");
-        let s = TcpStream::connect((self.host.as_str(), 446)).map_err(|e| Sqlca { sqlcode: -30_080, sqlstate: "08001".into(), sqlerrmc: e.to_string(), ..Sqlca::default() })?;
+        let s = TcpStream::connect((self.host.as_str(), 446)).map_err(|e| Sqlca {
+            sqlcode: -30_080,
+            sqlstate: "08001".into(),
+            sqlerrmc: e.to_string(),
+            ..Sqlca::default()
+        })?;
         s.set_read_timeout(Some(Duration::from_secs(60))).unwrap();
         let mut o = ConnectOpts::new(rdb, u, p);
         o.collection = "QSTEST".into();
         o.package = "QSDRDAR".into();
-        let c = Connection::connect(s, &o).map_err(|e| Sqlca { sqlcode: -30_082, sqlstate: "08001".into(), sqlerrmc: e.to_string(), ..Sqlca::default() })?;
+        let c = Connection::connect(s, &o).map_err(|e| Sqlca {
+            sqlcode: -30_082,
+            sqlstate: "08001".into(),
+            sqlerrmc: e.to_string(),
+            ..Sqlca::default()
+        })?;
         Ok(Box::new(Remote::new(c)))
     }
 }
 
 fn req(op: Op, text: &str, inputs: Vec<Value>) -> Request {
-    Request { scope: "1:M".into(), desc: Desc { op, name: "C1".into(), sql_naming: true, text: text.into(), ..Desc::default() }, inputs }
+    Request {
+        scope: "1:M".into(),
+        desc: Desc {
+            op,
+            name: "C1".into(),
+            sql_naming: true,
+            text: text.into(),
+            ..Desc::default()
+        },
+        inputs,
+    }
 }
 
 fn done(r: Routed) -> sql::embed::Reply {
@@ -62,16 +82,29 @@ fn done(r: Routed) -> sql::embed::Reply {
 #[ignore = "needs the primary oracle"]
 fn connect_to_the_primary_and_read_qstest() {
     let e = Env::load().expect("the oracle environment");
-    let c = e.credentials(Target::Oracle, None).expect("oracle credentials");
+    let c = e
+        .credentials(Target::Oracle, None)
+        .expect("oracle credentials");
     let host = c.host.split(':').next().unwrap_or(&c.host).to_string();
     let mut net = Tcp { host };
     let mut s = Sessions::default();
-    let r = done(s.route(&mut net, &req(Op::Exec, &format!("CONNECT TO {RDB} USER ? USING ?"), vec![Value::Str(c.user.clone()), Value::Str(c.password.clone())])));
+    let r = done(s.route(
+        &mut net,
+        &req(
+            Op::Exec,
+            &format!("CONNECT TO {RDB} USER ? USING ?"),
+            vec![Value::Str(c.user.clone()), Value::Str(c.password.clone())],
+        ),
+    ));
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert_eq!(s.current, Current::Remote(RDB.into()));
 
     let _ = s.route(&mut net, &req(Op::Exec, "DROP TABLE QSTEST.DBM1", vec![]));
-    for stmt in ["CREATE TABLE QSTEST.DBM1 (K INT NOT NULL PRIMARY KEY, V VARCHAR(20))", "INSERT INTO QSTEST.DBM1 VALUES (1, 'one'), (2, 'two'), (3, 'three')", "COMMIT"] {
+    for stmt in [
+        "CREATE TABLE QSTEST.DBM1 (K INT NOT NULL PRIMARY KEY, V VARCHAR(20))",
+        "INSERT INTO QSTEST.DBM1 VALUES (1, 'one'), (2, 'two'), (3, 'three')",
+        "COMMIT",
+    ] {
         if let Routed::Done(r) = s.route(&mut net, &req(Op::Exec, stmt, vec![])) {
             assert!(!r.sqlca.is_error(), "{stmt}: {:?}", r.sqlca);
         }
@@ -81,11 +114,17 @@ fn connect_to_the_primary_and_read_qstest() {
     println!("CURRENT SERVER: {:?}", r.rows);
     assert_eq!(r.rows, vec![vec![Value::Str(RDB.into())]]);
 
-    let r = done(s.route(&mut net, &req(Op::Query, "SELECT COUNT(*) FROM QSTEST.DBM1", vec![])));
+    let r = done(s.route(
+        &mut net,
+        &req(Op::Query, "SELECT COUNT(*) FROM QSTEST.DBM1", vec![]),
+    ));
     println!("COUNT: {:?} {:?}", r.sqlca.sqlcode, r.rows);
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
 
-    let r = done(s.route(&mut net, &req(Op::Open, "SELECT K, V FROM QSTEST.DBM1 ORDER BY K", vec![])));
+    let r = done(s.route(
+        &mut net,
+        &req(Op::Open, "SELECT K, V FROM QSTEST.DBM1 ORDER BY K", vec![]),
+    ));
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let mut rows = Vec::new();
     loop {
@@ -98,20 +137,49 @@ fn connect_to_the_primary_and_read_qstest() {
     }
     println!("rows: {rows:?}");
     assert!(!rows.is_empty());
-    assert_eq!(done(s.route(&mut net, &req(Op::Close, "", vec![]))).sqlca.sqlcode, 0);
+    assert_eq!(
+        done(s.route(&mut net, &req(Op::Close, "", vec![])))
+            .sqlca
+            .sqlcode,
+        0
+    );
 
     // The server's own errors come back as its SQLCA.
-    let r = done(s.route(&mut net, &req(Op::Query, "SELECT * FROM QSTEST.NOSUCH", vec![])));
+    let r = done(s.route(
+        &mut net,
+        &req(Op::Query, "SELECT * FROM QSTEST.NOSUCH", vec![]),
+    ));
     assert_eq!(r.sqlca.sqlcode, -204, "{:?}", r.sqlca);
 
-    assert!(!done(s.route(&mut net, &req(Op::Exec, "DROP TABLE QSTEST.DBM1", vec![]))).sqlca.is_error());
-    assert!(matches!(s.route(&mut net, &req(Op::Exec, "COMMIT", vec![])), Routed::Local));
-    assert!(matches!(s.route(&mut net, &req(Op::Exec, "SET CONNECTION QS400", vec![])), Routed::Done(_)));
+    assert!(
+        !done(s.route(&mut net, &req(Op::Exec, "DROP TABLE QSTEST.DBM1", vec![])))
+            .sqlca
+            .is_error()
+    );
+    assert!(matches!(
+        s.route(&mut net, &req(Op::Exec, "COMMIT", vec![])),
+        Routed::Local
+    ));
+    assert!(matches!(
+        s.route(&mut net, &req(Op::Exec, "SET CONNECTION QS400", vec![])),
+        Routed::Done(_)
+    ));
     assert_eq!(s.current, Current::Local);
-    assert!(matches!(s.route(&mut net, &req(Op::Query, "VALUES 1", vec![])), Routed::Local));
+    assert!(matches!(
+        s.route(&mut net, &req(Op::Query, "VALUES 1", vec![])),
+        Routed::Local
+    ));
 
     // Disconnecting a server that is not the current one keeps the local one current.
-    assert_eq!(done(s.route(&mut net, &req(Op::Exec, &format!("DISCONNECT {RDB}"), vec![]))).sqlca.sqlcode, 0);
+    assert_eq!(
+        done(s.route(
+            &mut net,
+            &req(Op::Exec, &format!("DISCONNECT {RDB}"), vec![])
+        ))
+        .sqlca
+        .sqlcode,
+        0
+    );
     assert_eq!(s.current, Current::Local);
     assert!(s.servers().is_empty());
 
@@ -121,6 +189,8 @@ fn connect_to_the_primary_and_read_qstest() {
     let mut o = ConnectOpts::new(RDB, &c.user, &c.password);
     o.access_rdb = false;
     let mut cmd = Connection::connect(st, &o).expect("DDM connection");
-    let r = cmd.remote_command("DLTSQLPKG SQLPKG(QSTEST/QSDRDAR)").expect("S38CMD");
+    let r = cmd
+        .remote_command("DLTSQLPKG SQLPKG(QSTEST/QSDRDAR)")
+        .expect("S38CMD");
     assert!(r.error().is_none(), "{:?}", r.messages);
 }

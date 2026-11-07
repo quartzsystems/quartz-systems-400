@@ -266,7 +266,11 @@ fn program_options(
         let point = format!("EXITPNT({name}) FORMAT({format})");
         // Option 1 on the add entry, with the program typed there.
         if c.is_ext() {
-            let text = crate::panels::ext_command(d, c, &format!("?ADDEXITPGM {point} PGM(&PGMLIB./&PGM.)"));
+            let text = crate::panels::ext_command(
+                d,
+                c,
+                &format!("?ADDEXITPGM {point} PGM(&PGMLIB./&PGM.)"),
+            );
             if let Some(m) = command(job, host, &text) {
                 shown = Some(m);
             }

@@ -84,7 +84,8 @@ pub fn make(
             qir::ActGrp::Named(n) => ActGrpAttr::Named(n.clone()),
         }
     };
-    let mut object = ModuleObject::compile(module, create, now).map_err(|e| format!("CPF0006 {e}"))?;
+    let mut object =
+        ModuleObject::compile(module, create, now).map_err(|e| format!("CPF0006 {e}"))?;
     object.source.clone_from(&made.source);
     let n = Name::parse(&made.name).map_err(|e| format!("CPD0078 PGM({}): {e}", made.name))?;
     let lib_name = ops::describe(txn, lib_id).map_err(|e| e.to_string())?.name;

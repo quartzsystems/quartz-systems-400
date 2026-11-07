@@ -169,7 +169,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
                 len = base_len;
             }
             if base_len + w.len() + 1 > size {
-                complain(cx, name, "An argument is longer than the command line size.");
+                complain(
+                    cx,
+                    name,
+                    "An argument is longer than the command line size.",
+                );
                 return 1;
             }
             len += w.len() + 1;
@@ -178,7 +182,10 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         if !cur.is_empty() || items.is_empty() {
             groups.push(cur);
         }
-        if exact && per_args.is_some_and(|n| groups.last().is_some_and(|g| g.len() < n)) && groups.len() > 1 {
+        if exact
+            && per_args.is_some_and(|n| groups.last().is_some_and(|g| g.len() < n))
+            && groups.len() > 1
+        {
             complain(cx, name, "The arguments do not fit the command line size.");
             return 1;
         }
@@ -193,7 +200,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
             None => base.iter().cloned().chain(g).collect(),
         };
         if trace || prompt {
-            let _ = cx.err(&format!("{}{}", argv.join(" "), if prompt { "?..." } else { "\n" }));
+            let _ = cx.err(&format!(
+                "{}{}",
+                argv.join(" "),
+                if prompt { "?..." } else { "\n" }
+            ));
             if prompt && !confirm(cx, "") {
                 continue;
             }

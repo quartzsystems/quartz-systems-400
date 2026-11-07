@@ -166,7 +166,11 @@ impl<'a> UserAuth<'a> {
                 let signed = r.bool()?;
                 let alg = r.str()?.to_string();
                 let blob = r.bytes()?.to_vec();
-                let sig = if signed { Some(r.bytes()?.to_vec()) } else { None };
+                let sig = if signed {
+                    Some(r.bytes()?.to_vec())
+                } else {
+                    None
+                };
                 self.publickey(out, account, &user, &alg, &blob, sig.as_deref())
             }
             "none" => self.failed(out, false),

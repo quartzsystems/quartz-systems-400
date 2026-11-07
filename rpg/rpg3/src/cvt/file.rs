@@ -7,8 +7,8 @@
 //! counter specification and the continuation lines (`K` in column 53)
 //! become ILE RPG keywords.
 
-use super::place::{Rec, cut3};
 use super::Out;
+use super::place::{Rec, cut3};
 
 /// The line counter specifications: form length and overflow line by file.
 #[derive(Default)]
@@ -68,7 +68,12 @@ impl Files {
 
     /// A file description and its continuation lines: the converted
     /// records with the records they came from.
-    pub(super) fn convert(&self, recs: &[String], at: usize, out: &mut Out) -> Vec<(String, usize)> {
+    pub(super) fn convert(
+        &self,
+        recs: &[String],
+        at: usize,
+        out: &mut Out,
+    ) -> Vec<(String, usize)> {
         let r = &recs[0];
         let name = cut3("F", r, "name");
         let mut f = Rec::new("F", r);

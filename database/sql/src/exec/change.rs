@@ -8,12 +8,14 @@
 
 use store::txn::Txn;
 
-use super::dml;
-use super::eval::{Row, Schema};
-use super::eval::Env;
-use super::query::{row_of, run_query, table_schema};
 use super::SqlContext;
-use crate::ast::{ChangeRows, Delete, Query, QueryBody, Select, SelectItem, Statement, TableRef, Truncate, Where};
+use super::dml;
+use super::eval::Env;
+use super::eval::{Row, Schema};
+use super::query::{row_of, run_query, table_schema};
+use crate::ast::{
+    ChangeRows, Delete, Query, QueryBody, Select, SelectItem, Statement, TableRef, Truncate, Where,
+};
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
@@ -30,7 +32,9 @@ pub(crate) fn data_change_rows(
     explain_only: bool,
 ) -> Result<(Schema, Vec<Row>)> {
     let Statement::Insert(ins) = statement else {
-        return Err(SqlError::Unsupported { what: "a data-change table reference of a statement other than INSERT".into() });
+        return Err(SqlError::Unsupported {
+            what: "a data-change table reference of a statement other than INSERT".into(),
+        });
     };
     let t = ctx.resolve_table(txn, &ins.table)?;
     let schema = table_schema(&t, alias);
@@ -44,26 +48,53 @@ pub(crate) fn data_change_rows(
     r?;
     let mut rows = Vec::with_capacity(captured.len());
     for (rrn, record, null_map) in captured {
-        rows.push(row_of(txn, &t, &db::Slot { rrn, record, null_map, deleted: false })?);
+        rows.push(row_of(
+            txn,
+            &t,
+            &db::Slot {
+                rrn,
+                record,
+                null_map,
+                deleted: false,
+            },
+        )?);
     }
     Ok((schema, rows))
 }
 
 /// `TRUNCATE`: every row deleted as `DELETE` without `WHERE` deletes
 /// them, the count not reported.
-pub(crate) fn truncate(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], t: &Truncate) -> Result<u64> {
+pub(crate) fn truncate(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    t: &Truncate,
+) -> Result<u64> {
     let info = ctx.resolve_table(txn, &t.table)?;
     // `RESTART IDENTITY`: the identity column starts again at its START.
     let restart = if t.restart_identity {
-        let kept = db::sqlinf::seq::columns(txn, info.id)?.into_iter().find_map(|c| match c.kind {
-            db::sqlinf::seq::ColumnKind::Identity(a) => Some(a.start),
-            _ => None,
-        });
-        kept.or_else(|| info.format.format.fields.iter().find_map(|f| f.identity.as_ref().map(|i| i128::from(i.start))))
+        let kept = db::sqlinf::seq::columns(txn, info.id)?
+            .into_iter()
+            .find_map(|c| match c.kind {
+                db::sqlinf::seq::ColumnKind::Identity(a) => Some(a.start),
+                _ => None,
+            });
+        kept.or_else(|| {
+            info.format
+                .format
+                .fields
+                .iter()
+                .find_map(|f| f.identity.as_ref().map(|i| i128::from(i.start)))
+        })
     } else {
         None
     };
-    let d = Delete { table: t.table.clone(), alias: None, where_clause: Where::All, isolation: None };
+    let d = Delete {
+        table: t.table.clone(),
+        alias: None,
+        where_clause: Where::All,
+        isolation: None,
+    };
     // No row to delete is the warning SQL0100.
     let n = dml::delete(txn, ctx, params, &d)?;
     if let Some(start) = restart {
@@ -89,9 +120,9 @@ pub(crate) fn source_tables(
                 leaves(left, out)?;
                 leaves(right, out)
             }
-            TableRef::JoinUsing { .. } | TableRef::Lateral(_) => {
-                Err(SqlError::Unsupported { what: "a LATERAL or USING join in a MERGE source".into() })
-            }
+            TableRef::JoinUsing { .. } | TableRef::Lateral(_) => Err(SqlError::Unsupported {
+                what: "a LATERAL or USING join in a MERGE source".into(),
+            }),
             t => {
                 out.push(t);
                 Ok(())
@@ -106,7 +137,9 @@ pub(crate) fn source_tables(
     let mut names = Vec::new();
     for leaf in parts {
         let alias = match leaf {
-            TableRef::Table { name, alias, .. } => alias.as_ref().map_or_else(|| name.name.value.clone(), |a| a.value.clone()),
+            TableRef::Table { name, alias, .. } => alias
+                .as_ref()
+                .map_or_else(|| name.name.value.clone(), |a| a.value.clone()),
             TableRef::Subquery { alias, .. }
             | TableRef::Function { alias, .. }
             | TableRef::Recursive { alias, .. }

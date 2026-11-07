@@ -128,7 +128,10 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
         },
         _ => (Shape::Program, Command::CrtBndRpg, "PGM", false),
     };
-    let srcstmf = parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty());
+    let srcstmf = parms
+        .specified("SRCSTMF")
+        .then(|| parms.text("SRCSTMF"))
+        .filter(|s| !s.is_empty());
     if srcstmf.is_some() && (parms.specified("SRCFILE") || parms.specified("SRCMBR")) {
         return Err("CPD0074 SRCSTMF is given with SRCFILE or SRCMBR".into());
     }
@@ -225,8 +228,19 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
 /// `CRTSQLRPGI`'s options the precompile does not apply: a value other
 /// than the one it runs with is refused (`SQL0084`), not ignored.
 const UNAPPLIED: &[&str] = &[
-    "RPGPPOPT", "CONACC", "DECFLTRND", "SQLCURRULE", "DECRESULT", "SRTSEQ", "DFTRDBCOL", "DYNDFTCOL", "SQLPATH",
-    "COMPILEOPT", "DYNUSRPRF", "SAAFLAG", "FLAGSTD",
+    "RPGPPOPT",
+    "CONACC",
+    "DECFLTRND",
+    "SQLCURRULE",
+    "DECRESULT",
+    "SRTSEQ",
+    "DFTRDBCOL",
+    "DYNDFTCOL",
+    "SQLPATH",
+    "COMPILEOPT",
+    "DYNUSRPRF",
+    "SAAFLAG",
+    "FLAGSTD",
 ];
 
 fn check_sql_options(parms: &Parms) -> Result<(), String> {
@@ -255,7 +269,11 @@ fn check_sql_options(parms: &Parms) -> Result<(), String> {
 /// and time formats, and the naming in `OPTION` (`*SYS` or `*SQL`).
 fn sql_options(parms: &Parms, genlvl: u8) -> rpgc::sqlpre::Options {
     let dft = rpgc::sqlpre::Options::default();
-    let naming = if words(parms, "OPTION").iter().any(|w| w == "*SQL") { "*SQL" } else { "*SYS" };
+    let naming = if words(parms, "OPTION").iter().any(|w| w == "*SQL") {
+        "*SQL"
+    } else {
+        "*SYS"
+    };
     rpgc::sqlpre::Options {
         commit: named(parms, "COMMIT", &dft.commit),
         naming: naming.into(),

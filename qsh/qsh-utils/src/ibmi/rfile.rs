@@ -134,7 +134,11 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         let src = stdin(cx);
         if p.has('b') {
             if let Err(e) = copy(&src, &fd) {
-                complain(cx, NAME, &format!("{op}: {}", crate::common::io::errno_text(&e)));
+                complain(
+                    cx,
+                    NAME,
+                    &format!("{op}: {}", crate::common::io::errno_text(&e)),
+                );
                 return 1;
             }
             return 0;

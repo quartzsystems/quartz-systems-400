@@ -26,8 +26,8 @@ use common::mem::session;
 use hostserver::database::{Database, DbConfig};
 use hostserver::{Auth, NoExits, Proof};
 use hostsvr::cp::{db_reply, db_request, signon};
-use hostsvr::database::{id, ors};
 use hostsvr::database::param::DbString;
+use hostsvr::database::{id, ors};
 use hostsvr::frame::{Frame, Param};
 use sql::embed::{Desc, Embedded, Op, Request};
 
@@ -63,7 +63,12 @@ fn exec(s: &mut impl Embedded, text: &str) {
         },
         inputs: Vec::new(),
     });
-    assert!(!r.sqlca.is_error(), "{text}: {} {}", r.sqlca.sqlcode, r.sqlca.sqlerrmc);
+    assert!(
+        !r.sqlca.is_error(),
+        "{text}: {} {}",
+        r.sqlca.sqlcode,
+        r.sqlca.sqlerrmc
+    );
 }
 
 /// The server: a session with `rows` rows in `QSTEST.BENCH`; the load
@@ -80,9 +85,19 @@ fn server(rows: usize, done: mpsc::Sender<f64>) -> SocketAddr {
         );
         for start in (0..rows).step_by(100) {
             let vals: Vec<String> = (start..(start + 100).min(rows))
-                .map(|i| format!("({i}, 'C{:04}', {}.{:02}, 'row {i} of the bench table')", i % 997, i % 10_000, i % 100))
+                .map(|i| {
+                    format!(
+                        "({i}, 'C{:04}', {}.{:02}, 'row {i} of the bench table')",
+                        i % 997,
+                        i % 10_000,
+                        i % 100
+                    )
+                })
                 .collect();
-            exec(&mut s, &format!("INSERT INTO QSTEST.BENCH VALUES {}", vals.join(", ")));
+            exec(
+                &mut s,
+                &format!("INSERT INTO QSTEST.BENCH VALUES {}", vals.join(", ")),
+            );
         }
         done.send(t.elapsed().as_secs_f64()).unwrap();
         let cfg = DbConfig {
@@ -112,7 +127,9 @@ struct Conn {
 impl Conn {
     fn ask(&mut self, f: &Frame) -> Frame {
         self.s.write_all(&f.encode()).unwrap();
-        let b = hostserver::io::read_frame(&mut self.s).unwrap().expect("a reply");
+        let b = hostserver::io::read_frame(&mut self.s)
+            .unwrap()
+            .expect("a reply");
         Frame::decode(&b).unwrap()
     }
 }
@@ -120,20 +137,28 @@ impl Conn {
 /// The reply's error class and return code.
 fn class(f: &Frame) -> (u16, i32) {
     let t = &f.template;
-    (u16::from_be_bytes([t[14], t[15]]), i32::from_be_bytes([t[16], t[17], t[18], t[19]]))
+    (
+        u16::from_be_bytes([t[14], t[15]]),
+        i32::from_be_bytes([t[16], t[17], t[18], t[19]]),
+    )
 }
 
 /// Rows in the reply's result data.
 fn rows_in(f: &Frame) -> usize {
     f.param(db_reply::EXTENDED_RESULT_DATA)
         .filter(|p| p.data.len() >= 8)
-        .map_or(0, |p| u32::from_be_bytes([p.data[4], p.data[5], p.data[6], p.data[7]]) as usize)
+        .map_or(0, |p| {
+            u32::from_be_bytes([p.data[4], p.data[5], p.data[6], p.data[7]]) as usize
+        })
 }
 
 #[test]
 #[ignore = "bench: run in release with --ignored --nocapture"]
 fn jdbc_style_fetch() {
-    let rows: usize = std::env::var("QS400_HS_BENCH_ROWS").ok().and_then(|v| v.parse().ok()).unwrap_or(10_000);
+    let rows: usize = std::env::var("QS400_HS_BENCH_ROWS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10_000);
     let (tx, rx) = mpsc::channel();
     let addr = server(rows, tx);
     let load = rx.recv().unwrap();
@@ -149,7 +174,10 @@ fn jdbc_style_fetch() {
         DATABASE,
         0x7002,
         vec![1, 1],
-        vec![Param::new(signon::USER_ID, user), Param::new(signon::PASSWORD, vec![0; 8])],
+        vec![
+            Param::new(signon::USER_ID, user),
+            Param::new(signon::PASSWORD, vec![0; 8]),
+        ],
     ));
     assert_eq!(&start.template[..4], &[0, 0, 0, 0], "start server");
 
@@ -157,14 +185,21 @@ fn jdbc_style_fetch() {
         .encode_utf16()
         .flat_map(u16::to_be_bytes)
         .collect();
-    let stmt = DbString { ccsid: 13488, long: true, text };
+    let stmt = DbString {
+        ccsid: 13488,
+        long: true,
+        text,
+    };
     let ask = ors::RETURN_DATA | ors::SQLCA;
     let t = Instant::now();
     let r = c.ask(&Frame::new(
         DATABASE,
         id::PREPARE_DESCRIBE,
         template(ask | ors::DATA_FORMAT, 1),
-        vec![Param::new(db_request::EXTENDED_STATEMENT_TEXT, stmt.encode())],
+        vec![Param::new(
+            db_request::EXTENDED_STATEMENT_TEXT,
+            stmt.encode(),
+        )],
     ));
     assert_eq!(class(&r).0, 0, "prepare: {:?}", class(&r));
     let buffer = Param::u32(db_request::BUFFER_SIZE, BUFFER);
@@ -179,19 +214,38 @@ fn jdbc_style_fetch() {
     let mut end = class(&r) == (2, 700);
     assert!(class(&r).0 == 0 || end, "open: {:?}", class(&r));
     while !end {
-        let r = c.ask(&Frame::new(DATABASE, id::FETCH, template(ask | ors::RESULT_DATA, 1), vec![buffer.clone()]));
+        let r = c.ask(&Frame::new(
+            DATABASE,
+            id::FETCH,
+            template(ask | ors::RESULT_DATA, 1),
+            vec![buffer.clone()],
+        ));
         trips += 1;
         got += rows_in(&r);
         end = class(&r) == (1, 100);
         assert!(class(&r).0 == 0 || end, "fetch: {:?}", class(&r));
     }
-    let r = c.ask(&Frame::new(DATABASE, id::CLOSE, template(ask, 1), Vec::new()));
+    let r = c.ask(&Frame::new(
+        DATABASE,
+        id::CLOSE,
+        template(ask, 1),
+        Vec::new(),
+    ));
     assert_eq!(class(&r).0, 0, "close");
     let secs = t.elapsed().as_secs_f64();
     assert_eq!(got, rows);
 
-    println!("host server SQL fetch: {rows} rows (INTEGER, CHAR(10), DECIMAL(11,2), VARCHAR(50)), loopback TCP");
+    println!(
+        "host server SQL fetch: {rows} rows (INTEGER, CHAR(10), DECIMAL(11,2), VARCHAR(50)), loopback TCP"
+    );
     println!("  load (multi-row INSERT, not timed below) {load:.3} s");
-    println!("  prepare + open/fetch + {} fetches + close: {secs:.3} s", trips - 1);
-    println!("  {:.0} rows/s, {:.1} rows per reply", rows as f64 / secs, rows as f64 / f64::from(trips));
+    println!(
+        "  prepare + open/fetch + {} fetches + close: {secs:.3} s",
+        trips - 1
+    );
+    println!(
+        "  {:.0} rows/s, {:.1} rows per reply",
+        rows as f64 / secs,
+        rows as f64 / f64::from(trips)
+    );
 }

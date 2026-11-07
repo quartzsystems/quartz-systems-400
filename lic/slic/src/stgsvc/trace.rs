@@ -112,9 +112,18 @@ pub struct Trace {
 impl Trace {
     /// A new active session.
     #[must_use]
-    pub fn new(name: &str, kind: Kind, jobs: Vec<u32>, detail: Detail, max_kib: u64, wrap: bool) -> Self {
+    pub fn new(
+        name: &str,
+        kind: Kind,
+        jobs: Vec<u32>,
+        detail: Detail,
+        max_kib: u64,
+        wrap: bool,
+    ) -> Self {
         // About a hundred bytes a record.
-        let max = usize::try_from(max_kib.saturating_mul(10)).unwrap_or(usize::MAX).clamp(16, 1_000_000);
+        let max = usize::try_from(max_kib.saturating_mul(10))
+            .unwrap_or(usize::MAX)
+            .clamp(16, 1_000_000);
         Self {
             name: name.to_ascii_uppercase(),
             kind,
@@ -172,7 +181,14 @@ impl Trace {
             self.lost
         );
         for r in &self.records {
-            let _ = writeln!(out, "{}\t{}\t{}\t{}", r.ms, r.job, r.category, r.text.replace(['\t', '\n'], " "));
+            let _ = writeln!(
+                out,
+                "{}\t{}\t{}\t{}",
+                r.ms,
+                r.job,
+                r.category,
+                r.text.replace(['\t', '\n'], " ")
+            );
         }
         out
     }
@@ -185,7 +201,11 @@ impl Trace {
         if h.len() != 6 || !h[0].starts_with("QS400TRC") {
             return None;
         }
-        let kind = if h[2] == "J" { Kind::Job } else { Kind::Internal };
+        let kind = if h[2] == "J" {
+            Kind::Job
+        } else {
+            Kind::Internal
+        };
         let mut t = Self::new(h[1], kind, Vec::new(), Detail::parse(h[3]), 100_000, true);
         t.active = false;
         t.started = h[4].parse().unwrap_or(0);
@@ -195,7 +215,10 @@ impl Trace {
             if f.len() != 4 {
                 continue;
             }
-            let category = CATEGORIES.iter().find(|c| c.0 == f[2]).map_or("REQ", |c| c.0);
+            let category = CATEGORIES
+                .iter()
+                .find(|c| c.0 == f[2])
+                .map_or("REQ", |c| c.0);
             t.records.push_back(Record {
                 ms: f[0].parse().unwrap_or(0),
                 job: f[1].parse().unwrap_or(0),
@@ -211,7 +234,9 @@ static ANY: AtomicBool = AtomicBool::new(false);
 static TRACES: Mutex<BTreeMap<String, Trace>> = Mutex::new(BTreeMap::new());
 
 fn traces() -> std::sync::MutexGuard<'static, BTreeMap<String, Trace>> {
-    TRACES.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    TRACES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn now_ms() -> u64 {
@@ -262,9 +287,12 @@ pub fn request(number: u32, req: &stg::Request) {
         "CMD"
     } else if name.contains("Msg") || name.contains("Joblog") {
         "MSG"
-    } else if ["Rla", "Io", "Read", "Write", "Open", "Close", "File", "Mbr", "Splf", "Ifs", "Usrspc", "Dtaq", "Dtaara"]
-        .iter()
-        .any(|k| name.contains(k))
+    } else if [
+        "Rla", "Io", "Read", "Write", "Open", "Close", "File", "Mbr", "Splf", "Ifs", "Usrspc",
+        "Dtaq", "Dtaara",
+    ]
+    .iter()
+    .any(|k| name.contains(k))
     {
         "IO"
     } else if name.contains("Call") || name.contains("Pgm") || name.contains("Activ") {
@@ -272,7 +300,9 @@ pub fn request(number: u32, req: &stg::Request) {
     } else {
         "REQ"
     };
-    let secret = ["Sign", "Pwd", "Password", "Token", "Host", "Sst", "Qap"].iter().any(|k| name.contains(k));
+    let secret = ["Sign", "Pwd", "Password", "Token", "Host", "Sst", "Qap"]
+        .iter()
+        .any(|k| name.contains(k));
     let text = if secret || matches!(category, "CALL" | "CMD" | "REQ") {
         name.to_string()
     } else {
@@ -310,7 +340,12 @@ pub fn end(name: &str) -> Result<usize, String> {
     let n = t.records.len();
     refresh(&all);
     drop(all);
-    super::liclog::write(0x0600, 0x0002, 0, &format!("Trace {name} ended, {n} records"));
+    super::liclog::write(
+        0x0600,
+        0x0002,
+        0,
+        &format!("Trace {name} ended, {n} records"),
+    );
     Ok(n)
 }
 
@@ -351,7 +386,11 @@ pub fn report(t: &Trace, names: &dyn Fn(u32) -> String) -> Vec<String> {
         format!(
             "Trace {}  type {}  {}  records {}  lost to wrapping {}",
             t.name,
-            if t.kind == Kind::Job { "job" } else { "internal" },
+            if t.kind == Kind::Job {
+                "job"
+            } else {
+                "internal"
+            },
             t.detail.name(),
             t.records.len(),
             t.lost

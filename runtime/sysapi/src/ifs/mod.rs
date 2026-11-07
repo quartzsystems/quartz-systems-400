@@ -78,7 +78,10 @@ impl IfsOps for Ops {
     fn read(&mut self, h: u32, buf: &mut [u8]) -> Result<usize, i32> {
         let mut done = 0;
         while done < buf.len() {
-            let got = self.0.read(handle(h), buf.len() - done).map_err(Errno::code)?;
+            let got = self
+                .0
+                .read(handle(h), buf.len() - done)
+                .map_err(Errno::code)?;
             if got.is_empty() {
                 break;
             }
@@ -121,7 +124,11 @@ pub fn configure(j: &mut Job, client: Rc<dyn IfsClient>, ccsid: u16) {
     j.fds.set_ifs_ops(Box::new(Ops(client.clone())));
     let st = IfsState {
         client,
-        ccsid: if ccsid == 0 || ccsid == 65535 { 37 } else { ccsid },
+        ccsid: if ccsid == 0 || ccsid == 65535 {
+            37
+        } else {
+            ccsid
+        },
         dirs: HashMap::new(),
     };
     STATES.with(|m| m.borrow_mut().insert(key(j), Rc::new(RefCell::new(st))));
@@ -134,7 +141,9 @@ pub fn state(j: &mut Job) -> Rc<RefCell<IfsState>> {
         return s;
     }
     configure(j, Rc::new(Unavailable(Errno::ENOTSUP)), 37);
-    STATES.with(|m| m.borrow().get(&key(j)).cloned()).expect("just configured")
+    STATES
+        .with(|m| m.borrow().get(&key(j)).cloned())
+        .expect("just configured")
 }
 
 /// The job's client.

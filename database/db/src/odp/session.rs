@@ -455,7 +455,12 @@ impl Session {
     }
 
     /// [`Self::rollbck`] pausing between batches of changes undone.
-    pub fn rollbck_paused(&mut self, txn: &mut Txn<'_>, now: Option<u64>, pause: crate::Pause<'_>) -> Result<ChangeReport> {
+    pub fn rollbck_paused(
+        &mut self,
+        txn: &mut Txn<'_>,
+        now: Option<u64>,
+        pause: crate::Pause<'_>,
+    ) -> Result<ChangeReport> {
         let c = Rc::clone(self.commit_def().ok_or(DbError::CommitNotActive)?);
         let r = c.borrow_mut().rollback_paused(txn, now, pause)?;
         self.refresh_odps(txn)?;
@@ -464,9 +469,17 @@ impl Session {
 
     /// `ROLLBACK TO SAVEPOINT` in the definition in effect; `None` when
     /// it has no such savepoint.
-    pub fn rollback_to_savepoint(&mut self, txn: &mut Txn<'_>, name: Option<&str>, now: Option<u64>, pause: crate::Pause<'_>) -> Result<Option<ChangeReport>> {
+    pub fn rollback_to_savepoint(
+        &mut self,
+        txn: &mut Txn<'_>,
+        name: Option<&str>,
+        now: Option<u64>,
+        pause: crate::Pause<'_>,
+    ) -> Result<Option<ChangeReport>> {
         let c = Rc::clone(self.commit_def().ok_or(DbError::CommitNotActive)?);
-        let r = c.borrow_mut().rollback_to_savepoint(txn, name, now, pause)?;
+        let r = c
+            .borrow_mut()
+            .rollback_to_savepoint(txn, name, now, pause)?;
         self.refresh_odps(txn)?;
         Ok(r)
     }

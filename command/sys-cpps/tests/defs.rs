@@ -28,7 +28,10 @@ fn every_definition_compiles() {
 fn file_names_match_command_names() {
     for (name, source) in defs::DEFS {
         assert!(
-            name.len() <= 10 && name.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()),
+            name.len() <= 10
+                && name
+                    .chars()
+                    .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()),
             "{name}: a command name is up to ten upper-case characters"
         );
         assert!(source.contains("CMD"), "{name}: no CMD statement");
@@ -38,11 +41,24 @@ fn file_names_match_command_names() {
 #[test]
 fn inventory_is_consistent() {
     let orphans = inventory::orphans();
-    assert!(orphans.is_empty(), "inventory entries without a definition: {orphans:?}");
+    assert!(
+        orphans.is_empty(),
+        "inventory entries without a definition: {orphans:?}"
+    );
     let mut cpps = HashSet::new();
     for e in all() {
-        assert!(e.cpp.len() <= 10 && e.cpp.starts_with('Q'), "{}: CPP {}", e.name, e.cpp);
-        assert!(cpps.insert(e.cpp.clone()), "{}: CPP {} is used twice", e.name, e.cpp);
+        assert!(
+            e.cpp.len() <= 10 && e.cpp.starts_with('Q'),
+            "{}: CPP {}",
+            e.name,
+            e.cpp
+        );
+        assert!(
+            cpps.insert(e.cpp.clone()),
+            "{}: CPP {} is used twice",
+            e.name,
+            e.cpp
+        );
         if e.site == Site::Stub {
             assert!(e.stub.is_some(), "{}: a stub names its message", e.name);
         }
@@ -213,9 +229,18 @@ fn chgown_and_chgpgp_take_subtree() {
         let spec: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
         let parms = cmd::block::read(&r.def, &built.segments, &spec).unwrap();
         assert_eq!(parms.name("SUBTREE"), want, "{text}");
-        let n = flat::nodes(&r.def).into_iter().find(|n| n.keyword == "SUBTREE").expect("SUBTREE");
-        assert_eq!((n.default.as_deref(), n.show), (Some("*NONE"), flat::Show::Always), "{text}");
+        let n = flat::nodes(&r.def)
+            .into_iter()
+            .find(|n| n.keyword == "SUBTREE")
+            .expect("SUBTREE");
+        assert_eq!(
+            (n.default.as_deref(), n.show),
+            (Some("*NONE"), flat::Show::Always),
+            "{text}"
+        );
         assert_eq!(n.values, ["*NONE", "*ALL"], "{text}");
     }
-    assert!(cmd::analyze::analyze(&mut env, "CHGOWN OBJ('/d') NEWOWN(ANN) SUBTREE(*SOME)").is_err());
+    assert!(
+        cmd::analyze::analyze(&mut env, "CHGOWN OBJ('/d') NEWOWN(ANN) SUBTREE(*SOME)").is_err()
+    );
 }

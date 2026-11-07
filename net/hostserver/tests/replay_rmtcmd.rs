@@ -94,7 +94,13 @@ fn cmdcall() {
     let t = trace("rmtcmd", "cmdcall");
     let auth = TraceAuth::of(&t);
     let diffs = replay(&t, &masks(), &mut || {
-        Box::new(RmtCmd::new(auth.clone(), Scripted { outputs: VecDeque::new() }, NoExits)) as Box<dyn Handler>
+        Box::new(RmtCmd::new(
+            auth.clone(),
+            Scripted {
+                outputs: VecDeque::new(),
+            },
+            NoExits,
+        )) as Box<dyn Handler>
     });
     accept("rmtcmd-cmdcall", &diffs);
 }
@@ -105,7 +111,13 @@ fn pgmcall() {
     let auth = TraceAuth::of(&t);
     let outs = outputs(&t);
     let diffs = replay(&t, &masks(), &mut || {
-        Box::new(RmtCmd::new(auth.clone(), Scripted { outputs: outs.clone() }, NoExits)) as Box<dyn Handler>
+        Box::new(RmtCmd::new(
+            auth.clone(),
+            Scripted {
+                outputs: outs.clone(),
+            },
+            NoExits,
+        )) as Box<dyn Handler>
     });
     accept("rmtcmd-pgmcall", &diffs);
 }
@@ -123,7 +135,13 @@ fn other_traces_start() {
         let t = trace("rmtcmd", s);
         let auth = TraceAuth::of(&t);
         let diffs = replay(&t, &masks(), &mut || {
-            Box::new(RmtCmd::new(auth.clone(), Scripted { outputs: VecDeque::new() }, NoExits)) as Box<dyn Handler>
+            Box::new(RmtCmd::new(
+                auth.clone(),
+                Scripted {
+                    outputs: VecDeque::new(),
+                },
+                NoExits,
+            )) as Box<dyn Handler>
         });
         accept(&format!("rmtcmd-{s}"), &diffs);
     }

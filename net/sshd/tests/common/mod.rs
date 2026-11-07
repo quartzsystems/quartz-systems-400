@@ -30,9 +30,9 @@ use sshd::client::{Client, Options};
 use sshd::config::paths;
 use sshd::io::FileSystem;
 use sshd::io::pipe::{PipeReader, PipeWriter, duplex};
+use sshd::session::SessionRequest;
 use sshd::session::qsh_host::QshHost;
 use sshd::session::transfer::FileTransfer;
-use sshd::session::SessionRequest;
 use sshd::{Deps, Server};
 use store::obj::{ObjectId, ops, types};
 use store::{FormatParams, Store, StoreConfig};
@@ -113,21 +113,33 @@ impl StoreAccounts {
         usrprf::crtusrprf(
             &mut t,
             &env,
-            &Keywords::new(&[("USRPRF", "QSTESTGRP"), ("PASSWORD", "*NONE"), ("GID", "*GEN")]),
+            &Keywords::new(&[
+                ("USRPRF", "QSTESTGRP"),
+                ("PASSWORD", "*NONE"),
+                ("GID", "*GEN"),
+            ]),
         )
         .unwrap();
         for u in users {
             usrprf::crtusrprf(
                 &mut t,
                 &env,
-                &Keywords::new(&[("USRPRF", u), ("PASSWORD", PASSWORD), ("GRPPRF", "QSTESTGRP")]),
+                &Keywords::new(&[
+                    ("USRPRF", u),
+                    ("PASSWORD", PASSWORD),
+                    ("GRPPRF", "QSTESTGRP"),
+                ]),
             )
             .unwrap();
         }
         usrprf::chgusrprf(
             &mut t,
             &env,
-            &Keywords::new(&[("USRPRF", "QSECOFR"), ("PASSWORD", PASSWORD), ("PWDEXP", "*NO")]),
+            &Keywords::new(&[
+                ("USRPRF", "QSECOFR"),
+                ("PASSWORD", PASSWORD),
+                ("PWDEXP", "*NO"),
+            ]),
         )
         .unwrap();
         t.commit().unwrap();
@@ -402,6 +414,9 @@ pub fn connect(server: &Arc<Server>) -> TestClient {
 /// Connect and sign on as `user` with the password.
 pub fn signed_on(server: &Arc<Server>, user: &str) -> TestClient {
     let mut c = connect(server);
-    assert!(c.auth_password(user, PASSWORD).unwrap(), "sign-on as {user}");
+    assert!(
+        c.auth_password(user, PASSWORD).unwrap(),
+        "sign-on as {user}"
+    );
     c
 }

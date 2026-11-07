@@ -119,7 +119,11 @@ fn secs3(ms: u64) -> String {
 /// The fields every interval record starts with.
 fn head(i: &Interval, century: bool) -> Row {
     let (t, c) = dtetim(i.end);
-    let mut r = vec![pair("INTNUM", i.number), pair("DTETIM", t), pair("INTSEC", i.secs)];
+    let mut r = vec![
+        pair("INTNUM", i.number),
+        pair("DTETIM", t),
+        pair("INTSEC", i.secs),
+    ];
     if century {
         r.push(pair("DTECEN", c));
     }
@@ -439,7 +443,10 @@ mod tests {
         let job = &rows("QAPMJOBMI", &c)[0];
         assert!(job.contains(&("JBCPU", "1.234".to_string())));
         assert!(job.contains(&("JBNBR", "000042".to_string())));
-        assert_eq!(dtetim(1_793_339_970), ("261030055930".to_string(), "1".to_string()));
+        assert_eq!(
+            dtetim(1_793_339_970),
+            ("261030055930".to_string(), "1".to_string())
+        );
         assert_eq!(rows("QAPMJSUM", &c).len(), 1);
         assert_eq!(rows("QAPMCONF", &c).len(), 8);
     }

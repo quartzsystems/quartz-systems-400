@@ -7,10 +7,10 @@
 //! their parameters marshalled into the job's storage, and the job's
 //! messages returned.
 
+use hostsvr::cp::rmtcmd as cp;
 use hostsvr::frame::{Frame, Param};
 use hostsvr::message::HostMessage;
 use hostsvr::rmtcmd::{ProgramParameter, id, message_option, rc, usage};
-use hostsvr::cp::rmtcmd as cp;
 use regfac::ExitRequest;
 use regfac::formats::host::{Remote, czrc0100};
 
@@ -45,7 +45,13 @@ impl JobMessage {
     /// The extended layout (`0x1106`), text in CCSID 37.
     pub fn to_host(&self) -> HostMessage {
         // Clients split every field: none is sent empty.
-        let or = |s: &str, d: &str| if s.is_empty() { d.to_string() } else { s.to_string() };
+        let or = |s: &str, d: &str| {
+            if s.is_empty() {
+                d.to_string()
+            } else {
+                s.to_string()
+            }
+        };
         let file = (or(&self.file.0, "QCPFMSG"), or(&self.file.1, "QSYS"));
         let text = or(&self.text, &self.id);
         let help = or(&self.help, &text);
@@ -121,7 +127,11 @@ impl<A: Auth, C: Commands, X: Exits> RmtCmd<A, C, X> {
         self.level = reply::be16(&f.template, 12).min(SERVER_LEVEL);
         let mut t = rc::OK.to_be_bytes().to_vec();
         t.extend(self.job.job_ccsid().to_be_bytes());
-        t.extend(if nlv.len() == 4 { nlv } else { text::ebcdic("2924") });
+        t.extend(if nlv.len() == 4 {
+            nlv
+        } else {
+            text::ebcdic("2924")
+        });
         t.extend(SERVER_VRM.to_be_bytes());
         t.extend(SERVER_LEVEL.to_be_bytes());
         Outcome::one(reply::frame(
@@ -180,7 +190,8 @@ impl<A: Auth, C: Commands, X: Exits> RmtCmd<A, C, X> {
         let program = text::from_ebcdic(reply::slice(&f.template, 0, 10));
         let library = text::from_ebcdic(reply::slice(&f.template, 10, 10));
         let option = f.template.get(20).copied().unwrap_or(0);
-        let parms: Vec<ProgramParameter> = hostsvr::rmtcmd::parameters(&f.params).unwrap_or_default();
+        let parms: Vec<ProgramParameter> =
+            hostsvr::rmtcmd::parameters(&f.params).unwrap_or_default();
         let mut bufs: Vec<Vec<u8>> = parms
             .iter()
             .map(|p| {

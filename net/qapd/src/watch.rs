@@ -103,7 +103,9 @@ impl Watch {
     /// or the payload's.
     pub fn panicked(&self, payload: &(dyn Any + Send)) -> Closed {
         let seen = lock(&self.panic).clone();
-        Closed::Panic(seen.unwrap_or_else(|| text(thread::current().name(), payload_str(payload), None)))
+        Closed::Panic(
+            seen.unwrap_or_else(|| text(thread::current().name(), payload_str(payload), None)),
+        )
     }
 
     fn note(&self, t: &str) {
@@ -172,7 +174,11 @@ fn seen(info: &PanicHookInfo<'_>) {
         return;
     };
     let msg = info.payload_as_str().unwrap_or("(no message)");
-    let t = text(thread::current().name(), msg, info.location().map(ToString::to_string));
+    let t = text(
+        thread::current().name(),
+        msg,
+        info.location().map(ToString::to_string),
+    );
     w.note(&t);
     if cfg!(panic = "abort") {
         w.closed(&Closed::Panic(t));

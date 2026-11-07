@@ -337,7 +337,8 @@ fn cpp(job: &mut Job, d: &Doubles, name: &str, args: &[u64]) {
             return;
         }
     };
-    job.console.push(format!("> {}", d.line(&def, &parms.values)));
+    job.console
+        .push(format!("> {}", d.line(&def, &parms.values)));
     if let Some(id) = d.escape_for(name) {
         escape(job, id, name);
         return;
@@ -346,7 +347,9 @@ fn cpp(job: &mut Job, d: &Doubles, name: &str, args: &[u64]) {
     let mut back = parms.values.clone();
     let mut any = false;
     for (i, p) in def.parms.iter().enumerate() {
-        if p.rtnval && let Some(v) = mark(p) {
+        if p.rtnval
+            && let Some(v) = mark(p)
+        {
             back[i].value = Some(v);
             any = true;
         }

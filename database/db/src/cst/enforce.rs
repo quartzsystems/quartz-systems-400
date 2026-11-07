@@ -33,14 +33,19 @@ const DEPENDENTS_MAX: usize = usize::MAX;
 pub fn usable(m: &Member) -> Result<()> {
     let Some(a) = &m.csts else { return Ok(()) };
     if let Some(c) = a.csts.iter().find(|c| c.check_pending && c.enabled) {
-        return Err(DbError::CheckPending { cst: c.name.clone(), file: m.file.name().to_string() });
+        return Err(DbError::CheckPending {
+            cst: c.name.clone(),
+            file: m.file.name().to_string(),
+        });
     }
     Ok(())
 }
 
 /// Before a record is written: its checks and foreign keys.
 pub fn before_write(txn: &mut Txn<'_>, m: &Member, record: &[u8], nulls: &[u8]) -> Result<()> {
-    let Some(a) = m.csts.clone() else { return Ok(()) };
+    let Some(a) = m.csts.clone() else {
+        return Ok(());
+    };
     usable(m)?;
     checks(m, &a, record, nulls)?;
     foreign_keys(txn, m, &a, record, nulls, None)
@@ -55,16 +60,27 @@ pub fn before_update(
     record: &[u8],
     nulls: &[u8],
 ) -> Result<()> {
-    let Some(a) = m.csts.clone() else { return Ok(()) };
+    let Some(a) = m.csts.clone() else {
+        return Ok(());
+    };
     usable(m)?;
     rules_journaled(txn, m, &a, true)?;
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     checks(m, &a, record, nulls)?;
-    foreign_keys(txn, m, &a, record, nulls, Some((&old.record, &old.null_map)))?;
+    foreign_keys(
+        txn,
+        m,
+        &a,
+        record,
+        nulls,
+        Some((&old.record, &old.null_map)),
+    )?;
     // A parent key that changes while dependents match it: the update
     // rules are RESTRICT and NO ACTION only.
     for d in a.csts.iter().filter(|c| c.kind == Kind::Dependent) {
-        let Some((child, ri, pk)) = dependent(txn, &a, d) else { continue };
+        let Some((child, ri, pk)) = dependent(txn, &a, d) else {
+            continue;
+        };
         let pk = &a.keys[pk];
         let before = pk.key(&old.record, &old.null_map)?;
         let after = pk.key(record, nulls)?;
@@ -88,14 +104,23 @@ pub fn before_update(
 
 /// Before record `rrn` is deleted: each dependent file's delete rule,
 /// its changes made under the same commit definition as the parent's.
-pub fn before_delete(txn: &mut Txn<'_>, m: &mut Member, rrn: u64, cmt: Option<&CommitRef>) -> Result<()> {
-    let Some(a) = m.csts.clone() else { return Ok(()) };
+pub fn before_delete(
+    txn: &mut Txn<'_>,
+    m: &mut Member,
+    rrn: u64,
+    cmt: Option<&CommitRef>,
+) -> Result<()> {
+    let Some(a) = m.csts.clone() else {
+        return Ok(());
+    };
     usable(m)?;
     rules_journaled(txn, m, &a, false)?;
     let mut changed = false;
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     for d in a.csts.iter().filter(|c| c.kind == Kind::Dependent) {
-        let Some((mut child, ri, pk)) = dependent(txn, &a, d) else { continue };
+        let Some((mut child, ri, pk)) = dependent(txn, &a, d) else {
+            continue;
+        };
         let pk = &a.keys[pk];
         if path::key_has_null(&pk.format, &old.null_map) {
             continue;
@@ -119,7 +144,9 @@ pub fn before_delete(txn: &mut Txn<'_>, m: &mut Member, rrn: u64, cmt: Option<&C
         // The rule changes the dependents: both files journaled.
         for f in [&m.file, &child.file] {
             if f.attr.journal.is_none() {
-                return Err(DbError::RuleNeedsJournal { file: m.file.name().to_string() });
+                return Err(DbError::RuleNeedsJournal {
+                    file: m.file.name().to_string(),
+                });
             }
         }
         child.jrn = m.jrn;
@@ -132,7 +159,9 @@ pub fn before_delete(txn: &mut Txn<'_>, m: &mut Member, rrn: u64, cmt: Option<&C
                 child.delete(txn, crrn)?;
             } else {
                 {
-                    let slot = child.read(txn, crrn)?.ok_or(DbError::RecordNotFound { rrn: crrn })?;
+                    let slot = child
+                        .read(txn, crrn)?
+                        .ok_or(DbError::RecordNotFound { rrn: crrn })?;
                     let (mut rec, mut nulls) = (slot.record.clone(), slot.null_map.clone());
                     let fmt = child.format().clone();
                     let dft = crate::odp::lfwrite::default_record(&fmt)?;
@@ -149,7 +178,11 @@ pub fn before_delete(txn: &mut Txn<'_>, m: &mut Member, rrn: u64, cmt: Option<&C
                         } else {
                             rec[off..off + len].copy_from_slice(&dft.0[off..off + len]);
                             if let Some(ni) = ni {
-                                crate::record::set_null(&mut nulls, ni, crate::record::is_null(&dft.1, Some(ni)));
+                                crate::record::set_null(
+                                    &mut nulls,
+                                    ni,
+                                    crate::record::is_null(&dft.1, Some(ni)),
+                                );
                             }
                         }
                     }
@@ -177,10 +210,20 @@ fn before_update_excluding(
     nulls: &[u8],
     gone: (ObjectId, u64),
 ) -> Result<()> {
-    let Some(a) = m.csts.clone() else { return Ok(()) };
+    let Some(a) = m.csts.clone() else {
+        return Ok(());
+    };
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     checks(m, &a, record, nulls)?;
-    foreign_keys_excluding(txn, m, &a, record, nulls, Some((&old.record, &old.null_map)), Some(gone))
+    foreign_keys_excluding(
+        txn,
+        m,
+        &a,
+        record,
+        nulls,
+        Some((&old.record, &old.null_map)),
+        Some(gone),
+    )
 }
 
 /// A parent file whose dependents' delete rules change them is updated
@@ -188,8 +231,17 @@ fn before_update_excluding(
 /// IBM refuses at once whatever the rows (`SQL7008` reason 3, `CPF4328`).
 fn rules_journaled(txn: &mut Txn<'_>, m: &Member, a: &Active, update: bool) -> Result<()> {
     for d in a.csts.iter().filter(|c| c.kind == Kind::Dependent) {
-        let child = if d.other == m.file.id { a.csts.clone() } else { super::list(txn, d.other).unwrap_or_default() };
-        let Some(ri) = child.iter().find(|c| c.kind == Kind::Referential && c.name == d.other_name) else { continue };
+        let child = if d.other == m.file.id {
+            a.csts.clone()
+        } else {
+            super::list(txn, d.other).unwrap_or_default()
+        };
+        let Some(ri) = child
+            .iter()
+            .find(|c| c.kind == Kind::Referential && c.name == d.other_name)
+        else {
+            continue;
+        };
         // As on the primary, both files are journaled for a delete of the
         // parent under any delete rule but RESTRICT, and for an update
         // under an update rule of NO ACTION or a delete rule that changes
@@ -202,9 +254,15 @@ fn rules_journaled(txn: &mut Txn<'_>, m: &Member, a: &Active, update: bool) -> R
         if !needs || !ri.enabled {
             continue;
         }
-        let child_jrn = if d.other == m.file.id { m.file.attr.journal } else { crate::file::describe(txn, d.other)?.attr.journal };
+        let child_jrn = if d.other == m.file.id {
+            m.file.attr.journal
+        } else {
+            crate::file::describe(txn, d.other)?.attr.journal
+        };
         if m.file.attr.journal.is_none() || child_jrn.is_none() {
-            return Err(DbError::RuleNeedsJournal { file: m.file.name().to_string() });
+            return Err(DbError::RuleNeedsJournal {
+                file: m.file.name().to_string(),
+            });
         }
     }
     Ok(())
@@ -212,9 +270,17 @@ fn rules_journaled(txn: &mut Txn<'_>, m: &Member, a: &Active, update: bool) -> R
 
 fn checks(m: &Member, a: &Active, record: &[u8], nulls: &[u8]) -> Result<()> {
     let fmt = m.format();
-    for c in a.csts.iter().filter(|c| c.kind == Kind::Check && c.active()) {
+    for c in a
+        .csts
+        .iter()
+        .filter(|c| c.kind == Kind::Check && c.active())
+    {
         let Some(e) = &c.check else { continue };
-        let row = super::check::Row { format: fmt, data: record, nulls };
+        let row = super::check::Row {
+            format: fmt,
+            data: record,
+            nulls,
+        };
         if !e.met(&row)? {
             return Err(DbError::CheckViolation {
                 cst: c.name.clone(),
@@ -265,7 +331,10 @@ fn foreign_keys_excluding(
         let pk = pa.key_of(&c.other_name).ok_or_else(|| no_parent_key(c))?;
         let tree = parent.cst_tree().expect("keyed");
         let found = pa.find(txn, &tree, pk, &key, 2)?;
-        let found = found.iter().filter(|r| gone != Some((parent.id(), **r))).count();
+        let found = found
+            .iter()
+            .filter(|r| gone != Some((parent.id(), **r)))
+            .count();
         // A row that is its own parent (a self-referencing file) counts.
         let own = c.other == m.file.id && pk.key(record, nulls)? == key;
         if found == 0 && !own {
@@ -280,27 +349,50 @@ fn foreign_keys_excluding(
 }
 
 fn no_parent_key(c: &super::Constraint) -> DbError {
-    DbError::Corrupt { what: format!("referential constraint {} has no parent key {}", c.name, c.other_name) }
+    DbError::Corrupt {
+        what: format!(
+            "referential constraint {} has no parent key {}",
+            c.name, c.other_name
+        ),
+    }
 }
 
 /// The dependent member, its referential constraint's index and the
 /// parent key's index in `a.keys`, for a `Dependent` entry; `None` when
 /// the dependent constraint is disabled or gone.
-fn dependent(txn: &mut Txn<'_>, a: &Active, d: &super::Constraint) -> Option<(Member, usize, usize)> {
+fn dependent(
+    txn: &mut Txn<'_>,
+    a: &Active,
+    d: &super::Constraint,
+) -> Option<(Member, usize, usize)> {
     let child = Member::open_by(txn, d.other, MemberSpec::First).ok()?;
     let ca = child.csts.clone()?;
-    let ri = ca.csts.iter().position(|c| c.kind == Kind::Referential && c.name == d.other_name)?;
+    let ri = ca
+        .csts
+        .iter()
+        .position(|c| c.kind == Kind::Referential && c.name == d.other_name)?;
     if !ca.csts[ri].active() {
         return None;
     }
-    let pk = a.keys.iter().position(|k| a.csts[k.index].name == ca.csts[ri].other_name)?;
+    let pk = a
+        .keys
+        .iter()
+        .position(|k| a.csts[k.index].name == ca.csts[ri].other_name)?;
     Some((child, ri, pk))
 }
 
 /// The dependent records whose foreign key is `key`.
-fn children(txn: &mut Txn<'_>, child: &Member, ri: usize, key: &[u8], max: usize) -> Result<Vec<u64>> {
+fn children(
+    txn: &mut Txn<'_>,
+    child: &Member,
+    ri: usize,
+    key: &[u8],
+    max: usize,
+) -> Result<Vec<u64>> {
     let ca = child.csts.as_ref().expect("has constraints");
-    let Some(k) = ca.keys.iter().find(|k| k.index == ri) else { return Ok(Vec::new()) };
+    let Some(k) = ca.keys.iter().find(|k| k.index == ri) else {
+        return Ok(Vec::new());
+    };
     let tree = child.cst_tree().expect("keyed");
     ca.find(txn, &tree, k, key, max)
 }

@@ -83,7 +83,8 @@ struct Pager {
 impl Pager {
     fn heading(&mut self) {
         self.page += 1;
-        self.lines.push(format!("1{:<110}Page {:>5}", self.head, self.page));
+        self.lines
+            .push(format!("1{:<110}Page {:>5}", self.head, self.page));
         self.pos = 1;
         if let Some(t) = self.title.clone() {
             self.pos += advance(t.chars().next().unwrap_or(' '));
@@ -111,7 +112,8 @@ impl Pager {
             };
         }
         self.pos += advance(cc);
-        self.lines.push(format!("{cc}{text}").trim_end().to_string());
+        self.lines
+            .push(format!("{cc}{text}").trim_end().to_string());
     }
 }
 
@@ -174,8 +176,7 @@ fn options(h: &Heading) -> Vec<String> {
     ]
 }
 
-const FREE_RULER: &str =
-    "Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8 ...+... 9 ...+... 0   SEQNBR  Last change";
+const FREE_RULER: &str = "Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8 ...+... 9 ...+... 0   SEQNBR  Last change";
 const FIXED_RULER: &str = "Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8   SEQNBR  Last change       Comments";
 
 /// A record's line: free form whole, fixed form columns 1-80 and its
@@ -194,13 +195,22 @@ fn record(n: usize, r: &Record) -> String {
 /// The listing; `record_of` gives the record a source line is listed
 /// as.
 #[must_use]
-pub fn listing(p: &Precompiled, h: &Heading, records: &[Record], xref: &[XrefEntry], record_of: &dyn Fn(u32) -> u32) -> Vec<String> {
+pub fn listing(
+    p: &Precompiled,
+    h: &Heading,
+    records: &[Record],
+    xref: &[XrefEntry],
+    record_of: &dyn Fn(u32) -> u32,
+) -> Vec<String> {
     let mut out = Pager {
         lines: Vec::new(),
         page: 0,
         pos: 0,
         title: None,
-        head: format!(" {} {}  QS/400 SQL precompiler  {}", h.product, h.release, h.object),
+        head: format!(
+            " {} {}  QS/400 SQL precompiler  {}",
+            h.product, h.release, h.object
+        ),
     };
     out.section(None);
     for (k, r) in options(h).iter().enumerate() {
@@ -219,14 +229,19 @@ pub fn listing(p: &Precompiled, h: &Heading, records: &[Record], xref: &[XrefEnt
         }
         out.line(' ', &record(i + 1, r));
     }
-    out.line('0', &format!("{:32}* * * * *  E N D  O F  S O U R C E  * * * * *", ""));
+    out.line(
+        '0',
+        &format!("{:32}* * * * *  E N D  O F  S O U R C E  * * * * *", ""),
+    );
     // The cross-reference: a name without attributes has its
     // references on its line; one with no references leaves a line.
     out.section(Some(format!("0{:47}CROSS REFERENCE", "")));
     out.line('0', "Data Names                    Define    Reference");
     let mut cc = '0';
     for e in xref {
-        let def = e.define.map_or_else(|| "****".to_string(), |d| d.to_string());
+        let def = e
+            .define
+            .map_or_else(|| "****".to_string(), |d| d.to_string());
         let refs: Vec<String> = e.refs.iter().map(u32::to_string).collect();
         let chunks = wrap(&refs, 132 - 43);
         if e.attr.is_empty() {
@@ -248,19 +263,39 @@ pub fn listing(p: &Precompiled, h: &Heading, records: &[Record], xref: &[XrefEnt
     // without statements is told so.
     let mut shown: Vec<(String, u8, String)> = Vec::new();
     for d in &p.diags {
-        let times = if d.msgid == "SQL0104" && h.set_options.contains(&d.line) { 3 } else { 1 };
+        let times = if d.msgid == "SQL0104" && h.set_options.contains(&d.line) {
+            3
+        } else {
+            1
+        };
         for _ in 0..times {
-            shown.push((d.msgid.to_string(), d.sev, format!("{:>6}  {}", record_of(d.line), msgs::text(d))));
+            shown.push((
+                d.msgid.to_string(),
+                d.sev,
+                format!("{:>6}  {}", record_of(d.line), msgs::text(d)),
+            ));
         }
     }
     if h.statements == 0 {
-        let d = crate::Diag { line: 0, msgid: "SQL0053", sev: 10, args: Vec::new() };
-        shown.push((d.msgid.to_string(), d.sev, format!("{:6}  {}", "", msgs::text(&d))));
+        let d = crate::Diag {
+            line: 0,
+            msgid: "SQL0053",
+            sev: 10,
+            args: Vec::new(),
+        };
+        shown.push((
+            d.msgid.to_string(),
+            d.sev,
+            format!("{:6}  {}", "", msgs::text(&d)),
+        ));
     }
     let count = |lo: u8, hi: u8| shown.iter().filter(|d| d.1 >= lo && d.1 <= hi).count();
     let max = shown.iter().map(|d| d.1).max().unwrap_or(0);
     if shown.is_empty() {
-        out.line(if cc == '0' { '-' } else { '0' }, "No errors found in source");
+        out.line(
+            if cc == '0' { '-' } else { '0' },
+            "No errors found in source",
+        );
     } else {
         out.section(Some(format!("0{:45}DIAGNOSTIC MESSAGES", "")));
         out.line('0', "MSG ID  SEV  RECORD  TEXT");
@@ -275,7 +310,10 @@ pub fn listing(p: &Precompiled, h: &Heading, records: &[Record], xref: &[XrefEnt
         }
         out.line('-', "");
         out.line(' ', &format!("{:20}Message Summary", ""));
-        out.line(' ', "  Total     Info   Warning      Error   Severe  Terminal");
+        out.line(
+            ' ',
+            "  Total     Info   Warning      Error   Severe  Terminal",
+        );
         out.line(
             ' ',
             &format!(
@@ -288,10 +326,19 @@ pub fn listing(p: &Precompiled, h: &Heading, records: &[Record], xref: &[XrefEnt
                 count(40, 99)
             ),
         );
-        out.line('-', &format!("{max:02} level severity errors found in source"));
+        out.line(
+            '-',
+            &format!("{max:02} level severity errors found in source"),
+        );
     }
-    out.line('0', &format!("{:>5} Source records processed", records.len()));
-    out.line(' ', &format!("{:31}* * * * *  E N D  O F  L I S T I N G  * * * * *", ""));
+    out.line(
+        '0',
+        &format!("{:>5} Source records processed", records.len()),
+    );
+    out.line(
+        ' ',
+        &format!("{:31}* * * * *  E N D  O F  L I S T I N G  * * * * *", ""),
+    );
     out.lines
 }
 

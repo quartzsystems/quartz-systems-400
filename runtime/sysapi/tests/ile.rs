@@ -129,7 +129,8 @@ fn an_http_client_exchange_through_the_bound_procedures() {
             assert!(n > 0, "the request ended early");
             got.extend_from_slice(&buf[..n]);
         }
-        s.write_all(b"HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\n").unwrap();
+        s.write_all(b"HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\n")
+            .unwrap();
         s.write_all(b"hello").unwrap();
         got
     });
@@ -144,7 +145,20 @@ fn an_http_client_exchange_through_the_bound_procedures() {
     assert!(text.ends_with("\r\n\r\nhello"), "{text}");
     assert_eq!(bin4(&p, "closed"), 0);
     let sin = p.static_bytes("sin").unwrap();
-    assert_eq!(&sin[..8], &[0, 2, port.to_be_bytes()[0], port.to_be_bytes()[1], 127, 0, 0, 1], "network order in storage");
+    assert_eq!(
+        &sin[..8],
+        &[
+            0,
+            2,
+            port.to_be_bytes()[0],
+            port.to_be_bytes()[1],
+            127,
+            0,
+            0,
+            1
+        ],
+        "network order in storage"
+    );
 }
 
 #[test]
@@ -206,6 +220,19 @@ L0:
     assert_eq!(bin4(&p, "n"), 4);
     assert_eq!(&p.static_bytes("back").unwrap()[..4], b"PING");
     let from = p.static_bytes("from").unwrap();
-    assert_eq!(&from[..8], &[0, 2, port.to_be_bytes()[0], port.to_be_bytes()[1], 127, 0, 0, 1], "the sender's address");
+    assert_eq!(
+        &from[..8],
+        &[
+            0,
+            2,
+            port.to_be_bytes()[0],
+            port.to_be_bytes()[1],
+            127,
+            0,
+            0,
+            1
+        ],
+        "the sender's address"
+    );
     assert_eq!(bin4(&p, "fromlen"), 16);
 }

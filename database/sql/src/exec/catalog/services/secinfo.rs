@@ -67,7 +67,8 @@ const TEXTS: &[(&str, &str)] = &[
 /// The view.
 pub fn view(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> {
     let vals = ask(txn, ctx, "the system values", |h| h.system_values())?;
-    let by: HashMap<&str, &super::host::SysValue> = vals.iter().map(|v| (v.name.as_str(), v)).collect();
+    let by: HashMap<&str, &super::host::SysValue> =
+        vals.iter().map(|v| (v.name.as_str(), v)).collect();
     let text = |n: &str| {
         by.get(n).map(|v| match (&v.text, v.number) {
             (Some(t), _) => t.trim().to_string(),

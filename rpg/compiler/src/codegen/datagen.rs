@@ -21,18 +21,37 @@ use crate::types::Ty;
 
 /// The spellings of the module's names as the source writes them: each
 /// definition's name as its line has it.
-pub fn spellings<S: std::hash::BuildHasher>(m: &rpgfront::ast::Module, lines: &[rpgfront::reader::Line], out: &mut std::collections::HashMap<String, String, S>) {
-    fn walk<S: std::hash::BuildHasher>(defs: &[Def], lines: &[rpgfront::reader::Line], out: &mut std::collections::HashMap<String, String, S>) {
+pub fn spellings<S: std::hash::BuildHasher>(
+    m: &rpgfront::ast::Module,
+    lines: &[rpgfront::reader::Line],
+    out: &mut std::collections::HashMap<String, String, S>,
+) {
+    fn walk<S: std::hash::BuildHasher>(
+        defs: &[Def],
+        lines: &[rpgfront::reader::Line],
+        out: &mut std::collections::HashMap<String, String, S>,
+    ) {
         for d in defs {
             let up = d.name.to_ascii_uppercase();
             if let Some(l) = lines.iter().find(|l| l.no == d.at.line) {
                 let text = l.text.to_ascii_uppercase();
                 let mut from = 0;
                 while let Some(i) = text[from..].find(&up).map(|i| i + from) {
-                    let before = text[..i].chars().last().is_none_or(|c| !c.is_ascii_alphanumeric() && c != '_');
-                    let after = text[i + up.len()..].chars().next().is_none_or(|c| !c.is_ascii_alphanumeric() && c != '_');
-                    if before && after && l.text.is_char_boundary(i) && l.text.is_char_boundary(i + up.len()) {
-                        out.entry(up.clone()).or_insert_with(|| l.text[i..i + up.len()].to_string());
+                    let before = text[..i]
+                        .chars()
+                        .last()
+                        .is_none_or(|c| !c.is_ascii_alphanumeric() && c != '_');
+                    let after = text[i + up.len()..]
+                        .chars()
+                        .next()
+                        .is_none_or(|c| !c.is_ascii_alphanumeric() && c != '_');
+                    if before
+                        && after
+                        && l.text.is_char_boundary(i)
+                        && l.text.is_char_boundary(i + up.len())
+                    {
+                        out.entry(up.clone())
+                            .or_insert_with(|| l.text[i..i + up.len()].to_string());
                         break;
                     }
                     from = i + 1;
@@ -60,9 +79,20 @@ impl Gen<'_> {
         let n = self.spelled(name);
         match ty {
             Ty::Ds(i) => {
-                let subs = self.t.ds.get(*i).map(|d| d.subfields.clone()).unwrap_or_default();
-                let subs: Vec<_> = subs.into_iter().filter(|s| !self.t.syms[*s].name.starts_with('*')).collect();
-                out.push_str(&format!("{n}|0|{off}|{dim}|{stride}|{}|0|0| |0;", subs.len()));
+                let subs = self
+                    .t
+                    .ds
+                    .get(*i)
+                    .map(|d| d.subfields.clone())
+                    .unwrap_or_default();
+                let subs: Vec<_> = subs
+                    .into_iter()
+                    .filter(|s| !self.t.syms[*s].name.starts_with('*'))
+                    .collect();
+                out.push_str(&format!(
+                    "{n}|0|{off}|{dim}|{stride}|{}|0|0| |0;",
+                    subs.len()
+                ));
                 for s in subs {
                     let sym = self.t.syms[s].clone();
                     self.gen_shape(&sym.name, &sym.ty, sym.dim, sym.offset, out);
@@ -84,26 +114,38 @@ impl Gen<'_> {
                     Ty::Timestamp(_) => (14, 1, '-', 0),
                     _ => (1, 0, '\0', 0),
                 };
-                let sep = if sep == '\0' { "~".to_string() } else { sep.to_string() };
-                out.push_str(&format!("{n}|{d}|{off}|{dim}|{stride}|0|{dt}|{fmt}|{sep}|{ccsid};"));
+                let sep = if sep == '\0' {
+                    "~".to_string()
+                } else {
+                    sep.to_string()
+                };
+                out.push_str(&format!(
+                    "{n}|{d}|{off}|{dim}|{stride}|0|{dt}|{fmt}|{sep}|{ccsid};"
+                ));
             }
         }
     }
 
     /// `DATA-GEN var %DATA(out:opts) %GEN(generator:parm)`.
     pub fn data_gen(&mut self, op: &Op, var: &Expr, dargs: &[Expr], gargs: &[Expr]) {
-        let Some(v) = self.expr(var, Want::default()) else { return };
+        let Some(v) = self.expr(var, Want::default()) else {
+            return;
+        };
         if v.kind != Vk::Place {
             self.err(ids::NOT_ASSIGNABLE, 30, op.code.clone());
             return;
         }
-        let name = v.sym.map_or_else(String::new, |s| self.t.syms[s].name.clone());
+        let name = v
+            .sym
+            .map_or_else(String::new, |s| self.t.syms[s].name.clone());
         if let Some(s) = v.sym {
             self.t.refer(s, self.at.line, false);
         }
         let mut shape = String::new();
         self.gen_shape(&name, &v.ty, v.dim, 0, &mut shape);
-        let Some(o) = dargs.first().and_then(|e| self.expr(e, Want::default())) else { return };
+        let Some(o) = dargs.first().and_then(|e| self.expr(e, Want::default())) else {
+            return;
+        };
         if o.kind != Vk::Place || !o.ty.is_string() {
             self.err(ids::NOT_ASSIGNABLE, 30, op.code.clone());
             return;
@@ -112,9 +154,17 @@ impl Gen<'_> {
             self.t.refer(s, self.at.line, true);
         }
         let od = self.desc_of(&o);
-        let Some((opts, optd)) = self.xml_text(dargs.get(1)) else { return };
-        let Some((pname, nd, ptr, up, ud, uk)) = self.callee_operands(gargs) else { return };
-        let target = if matches!(v.ty, Ty::Ds(_)) && v.dim == 0 { format!("{}.all_", v.op) } else { v.op.clone() };
+        let Some((opts, optd)) = self.xml_text(dargs.get(1)) else {
+            return;
+        };
+        let Some((pname, nd, ptr, up, ud, uk)) = self.callee_operands(gargs) else {
+            return;
+        };
+        let target = if matches!(v.ty, Ty::Ds(_)) && v.dim == 0 {
+            format!("{}.all_", v.op)
+        } else {
+            v.op.clone()
+        };
         self.rt_proc(
             "_QRNX_DATAGEN",
             "($v: bytes(1) *VARSIZE, const $shape: varchar(32000), $out: bytes(1) *VARSIZE, byval $od: i64, \

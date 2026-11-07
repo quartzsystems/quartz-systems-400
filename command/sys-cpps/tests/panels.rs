@@ -38,7 +38,8 @@ fn job_arms() -> Vec<String> {
     let mut out = Vec::new();
     for f in files {
         let text = std::fs::read_to_string(&f).unwrap_or_default();
-        let arm = |l: &&str| l.contains("=>") || l.contains(".name == \"") || l.contains(".name != \"");
+        let arm =
+            |l: &&str| l.contains("=>") || l.contains(".name == \"") || l.contains(".name != \"");
         for line in text.lines().filter(arm) {
             let head = line.split("=>").next().unwrap_or("");
             for part in head.split('"').skip(1).step_by(2) {
@@ -51,22 +52,34 @@ fn job_arms() -> Vec<String> {
 
 /// The console process's own words (`lic/slic/src/procs/svcjob.rs`).
 fn console_words() -> Vec<String> {
-    let text = std::fs::read_to_string(root().join("lic/slic/src/procs/svcjob.rs")).expect("svcjob.rs");
+    let text =
+        std::fs::read_to_string(root().join("lic/slic/src/procs/svcjob.rs")).expect("svcjob.rs");
     let at = text.find("pub const LOCAL").expect("LOCAL");
     let body = &text[at..];
     let body = &body[..body.find("];").expect("end of LOCAL")];
-    body.split('"').skip(1).step_by(2).map(str::to_string).collect()
+    body.split('"')
+        .skip(1)
+        .step_by(2)
+        .map(str::to_string)
+        .collect()
 }
 
 #[test]
 fn every_display_runs_in_the_job() {
     let mut wrong = Vec::new();
-    for e in all().iter().filter(|e| is_display(&e.name) && e.name != "GO") {
+    for e in all()
+        .iter()
+        .filter(|e| is_display(&e.name) && e.name != "GO")
+    {
         if e.site != Site::Job || !JOB_SITE.contains(&e.name.as_str()) {
             wrong.push(format!("{} ({:?})", e.name, e.site));
         }
     }
-    assert!(wrong.is_empty(), "displays answered by the service's text:\n  {}", wrong.join("\n  "));
+    assert!(
+        wrong.is_empty(),
+        "displays answered by the service's text:\n  {}",
+        wrong.join("\n  ")
+    );
 }
 
 #[test]
@@ -78,7 +91,11 @@ fn every_display_has_a_driver() {
         .map(|e| e.name.as_str())
         .filter(|n| !arms.iter().any(|a| a == n))
         .collect();
-    assert!(missing.is_empty(), "displays with no panel driver:\n  {}", missing.join("\n  "));
+    assert!(
+        missing.is_empty(),
+        "displays with no panel driver:\n  {}",
+        missing.join("\n  ")
+    );
 }
 
 #[test]
@@ -90,5 +107,9 @@ fn no_command_bridges_to_a_console_word() {
         .filter(|e| words.contains(&e.word))
         .map(|e| format!("{} (word {})", e.name, e.word))
         .collect();
-    assert!(wrong.is_empty(), "commands bridged to the console process:\n  {}", wrong.join("\n  "));
+    assert!(
+        wrong.is_empty(),
+        "commands bridged to the console process:\n  {}",
+        wrong.join("\n  ")
+    );
 }

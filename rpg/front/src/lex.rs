@@ -76,8 +76,8 @@ impl Tok {
 }
 
 const PUNCT: &[&str] = &[
-    "**=", "+=", "-=", "*=", "/=", "**", "<=", ">=", "<>", "(", ")", ":", ",", ".", "=", "<", ">", "+",
-    "-", "*", "/",
+    "**=", "+=", "-=", "*=", "/=", "**", "<=", ">=", "<>", "(", ")", ":", ",", ".", "=", "<", ">",
+    "+", "-", "*", "/",
 ];
 
 /// Characters a name may hold after its first.
@@ -152,7 +152,10 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
             }
             let at = pos(i);
             if c == ';' {
-                out.push(Tok { kind: Kind::Semi, at });
+                out.push(Tok {
+                    kind: Kind::Semi,
+                    at,
+                });
                 i += 1;
                 continue;
             }
@@ -204,7 +207,10 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                     j += 1;
                 }
                 let w: String = chars[i..j].iter().collect::<String>().to_ascii_uppercase();
-                out.push(Tok { kind: Kind::Bif(w), at });
+                out.push(Tok {
+                    kind: Kind::Bif(w),
+                    at,
+                });
                 i = j;
                 continue;
             }
@@ -220,14 +226,32 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                     j += 1;
                 }
                 // A date or time format's separator before `)`: `*MDY-`, `*HMS&`.
-                let base: String = chars[i + 1..j].iter().collect::<String>().to_ascii_uppercase();
+                let base: String = chars[i + 1..j]
+                    .iter()
+                    .collect::<String>()
+                    .to_ascii_uppercase();
                 let format = matches!(
                     base.as_str(),
-                    "MDY" | "DMY" | "YMD" | "JUL" | "ISO" | "USA" | "EUR" | "JIS" | "HMS" | "CYMD" | "CMDY" | "CDMY" | "LONGJUL"
+                    "MDY"
+                        | "DMY"
+                        | "YMD"
+                        | "JUL"
+                        | "ISO"
+                        | "USA"
+                        | "EUR"
+                        | "JIS"
+                        | "HMS"
+                        | "CYMD"
+                        | "CMDY"
+                        | "CDMY"
+                        | "LONGJUL"
                 );
                 if format
                     && matches!(chars.get(j), Some('/' | '-' | '.' | ',' | '&' | ':'))
-                    && chars[j + 1..].iter().find(|c| **c != ' ').is_none_or(|c| *c == ')')
+                    && chars[j + 1..]
+                        .iter()
+                        .find(|c| **c != ' ')
+                        .is_none_or(|c| *c == ')')
                 {
                     j += 1;
                 }
@@ -255,7 +279,11 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                 i = j;
                 continue;
             }
-            if c.is_ascii_digit() || c == '.' && chars.get(i + 1).is_some_and(char::is_ascii_digit) && !operand_ended(&out) {
+            if c.is_ascii_digit()
+                || c == '.'
+                    && chars.get(i + 1).is_some_and(char::is_ascii_digit)
+                    && !operand_ended(&out)
+            {
                 let j = number_end(&chars, i);
                 let w: String = chars[i..j].iter().collect();
                 out.push(Tok {
@@ -273,7 +301,10 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                 // A name continued with `...` at the end of the line is
                 // the definition parser's business; here it is a name.
                 let w: String = chars[i..j].iter().collect::<String>().to_ascii_uppercase();
-                out.push(Tok { kind: Kind::Name(w), at });
+                out.push(Tok {
+                    kind: Kind::Name(w),
+                    at,
+                });
                 i = j;
                 continue;
             }
@@ -315,7 +346,12 @@ pub fn lex_text(text: &str, at: Pos, diags: &mut Vec<Diag>) -> Vec<Tok> {
 /// Whether the last token ends an operand, so a `*` is multiplication.
 fn operand_ended(out: &[Tok]) -> bool {
     out.last().is_some_and(|t| match &t.kind {
-        Kind::Name(_) | Kind::Num(_) | Kind::Str(_) | Kind::Typed(..) | Kind::All(..) | Kind::Special(_) => true,
+        Kind::Name(_)
+        | Kind::Num(_)
+        | Kind::Str(_)
+        | Kind::Typed(..)
+        | Kind::All(..)
+        | Kind::Special(_) => true,
         Kind::Punct(p) => *p == ")",
         _ => false,
     })
@@ -333,12 +369,18 @@ fn number_end(chars: &[char], start: usize) -> usize {
     while j < chars.len() && chars[j].is_ascii_digit() {
         j += 1;
     }
-    if j < chars.len() && (chars[j] == '.' || chars[j] == ',') && chars.get(j + 1).is_some_and(char::is_ascii_digit) {
+    if j < chars.len()
+        && (chars[j] == '.' || chars[j] == ',')
+        && chars.get(j + 1).is_some_and(char::is_ascii_digit)
+    {
         j += 1;
         while j < chars.len() && chars[j].is_ascii_digit() {
             j += 1;
         }
-    } else if j < chars.len() && chars[j] == '.' && !chars.get(j + 1).is_some_and(|c| name_start(*c)) {
+    } else if j < chars.len()
+        && chars[j] == '.'
+        && !chars.get(j + 1).is_some_and(|c| name_start(*c))
+    {
         j += 1;
     }
     if j < chars.len() && matches!(chars[j], 'E' | 'e') {
@@ -394,7 +436,11 @@ fn read_quoted(chars: &[char], mut i: usize, text: &mut String) -> Quoted {
 
 /// The diagnostic for a literal left open: a hexadecimal one has its own.
 fn unclosed(prefix: Option<char>) -> &'static str {
-    if prefix == Some('X') { ids::HEX_APOSTROPHE } else { ids::MISSING_APOSTROPHE }
+    if prefix == Some('X') {
+        ids::HEX_APOSTROPHE
+    } else {
+        ids::MISSING_APOSTROPHE
+    }
 }
 
 fn literal(prefix: Option<char>, text: String, at: Pos) -> Tok {
@@ -464,15 +510,31 @@ mod tests {
     fn continued_literals_and_comments() {
         let mut d = Vec::new();
         let segs = [
-            Segment { line: 1, col: 8, text: "x = 'abc  +" },
-            Segment { line: 2, col: 8, text: "     def'; // a comment" },
+            Segment {
+                line: 1,
+                col: 8,
+                text: "x = 'abc  +",
+            },
+            Segment {
+                line: 2,
+                col: 8,
+                text: "     def'; // a comment",
+            },
         ];
         let t = lex(&segs, &mut d);
         assert!(d.is_empty());
         assert_eq!(t[2].kind, Kind::Str("abc  def".into()));
         let segs = [
-            Segment { line: 1, col: 8, text: "x = 'abc-" },
-            Segment { line: 2, col: 8, text: "   def';" },
+            Segment {
+                line: 1,
+                col: 8,
+                text: "x = 'abc-",
+            },
+            Segment {
+                line: 2,
+                col: 8,
+                text: "   def';",
+            },
         ];
         let t = lex(&segs, &mut d);
         assert_eq!(t[2].kind, Kind::Str("abc   def".into()));
