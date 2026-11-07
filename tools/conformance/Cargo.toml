@@ -14,6 +14,8 @@ name = "conformance"
 path = "src/main.rs"
 
 [dependencies]
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0" }
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 spool = { path = "../../work/spool", version = "0.1.0" }
 wm = { path = "../../work/wm", version = "0.1.0" }
 anyhow.workspace = true

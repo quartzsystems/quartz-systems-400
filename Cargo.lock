@@ -390,6 +390,7 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "cmd",
+ "compdiag",
  "qdecimal",
  "qir",
  "release",
@@ -443,6 +444,7 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "ccsid",
+ "compdiag",
  "ipc",
  "qdecimal",
  "qsname",
@@ -513,6 +515,7 @@ dependencies = [
  "cl",
  "clap",
  "cmd",
+ "compdiag",
  "console",
  "crc",
  "db",
@@ -533,6 +536,7 @@ dependencies = [
  "lpd",
  "mail",
  "mi",
+ "msgf",
  "ntp",
  "optical",
  "print",
@@ -896,6 +900,7 @@ name = "dds"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "compdiag",
  "qsname",
  "thiserror",
 ]
@@ -1755,6 +1760,7 @@ dependencies = [
  "blockdev",
  "ccsid",
  "codegen",
+ "compdiag",
  "qir",
  "qsname",
  "release",
@@ -2883,6 +2889,7 @@ name = "rpgc"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "compdiag",
  "ile",
  "qdecimal",
  "qir",
@@ -3472,6 +3479,7 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "ccsid",
+ "compdiag",
  "db",
  "dds",
  "ile",
