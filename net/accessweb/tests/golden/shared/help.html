@@ -1,0 +1,41 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Help: Active jobs - QS/400</title>
+<link rel="stylesheet" type="text/css" href="qs400.css" />
+</head>
+<body>
+
+<table width="100%" cellspacing="0" cellpadding="0"><tr><td class="hdr">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr><td class="wordmark">QS/400 Help</td>
+  <td class="hdrright">Active jobs &nbsp;&nbsp; <a href="#" >Contents</a> &nbsp;&nbsp; <a href="#">Index</a> &nbsp;&nbsp; <a href="#">Print</a></td></tr></table>
+</td></tr></table>
+<div style="padding: 8px 14px; max-width: 760px">
+<h1>Active jobs</h1>
+<p>Use this page to work with the jobs that are currently active on the system. The list shows every job in every active subsystem, including system jobs, unless a filter restricts it. This is the web equivalent of the WRKACTJOB command.</p>
+<h2>Filter</h2>
+<table class="props" cellspacing="0">
+<tr><th>Subsystem</th><td>Show only jobs running in the chosen subsystem. <span class="mono">*ALL</span> shows every subsystem.</td></tr>
+<tr><th>User</th><td>Show only jobs whose current user matches the value. A generic name may end with <span class="mono">*</span>, for example <span class="mono">QTMH*</span>.</td></tr>
+<tr><th>Job name</th><td>The simple job name, up to 10 characters.</td></tr>
+<tr><th>Status</th><td>One of the active job statuses, for example <span class="mono">RUN</span>, <span class="mono">DEQW</span>, <span class="mono">MSGW</span>, <span class="mono">LCKW</span>, <span class="mono">TIMW</span>.</td></tr>
+</table>
+<h2>Columns</h2>
+<table class="props" cellspacing="0">
+<tr><th>Job name / User / Number</th><td>The three parts of the qualified job name <span class="mono">number/user/name</span>.</td></tr>
+<tr><th>Type</th><td><span class="mono">BCH</span> batch, <span class="mono">INT</span> interactive, <span class="mono">ASJ</span> autostart, <span class="mono">PJ</span> prestart, <span class="mono">SBS</span> subsystem monitor, <span class="mono">SYS</span> system.</td></tr>
+<tr><th>Status</th><td>The current job status. A job in <span class="mono">MSGW</span> status is waiting for a reply to a message and is shown in red.</td></tr>
+<tr><th>CPU %</th><td>Percentage of processing unit time used by the job during the elapsed interval.</td></tr>
+<tr><th>Function</th><td>The current program, command or menu, prefixed with the function type (<span class="mono">PGM-</span>, <span class="mono">CMD-</span>, <span class="mono">MNU-</span>).</td></tr>
+</table>
+<h2>Actions</h2>
+<p><b>Hold</b> holds the job (HLDJOB). <b>Release</b> releases a held job (RLSJOB). <b>End</b> opens the Confirm End Job page, where you choose a controlled or immediate end (ENDJOB). <b>Job log</b> shows the job's messages. <b>Properties</b> shows every attribute of the job. <b>Spooled files</b> lists the output the job has produced.</p>
+<h2>Related information</h2>
+<p><a href="#">Job queues</a> &middot; <a href="#">Subsystems</a> &middot; <a href="#">Message CPF1321</a> &middot; <a href="#">Working with jobs from the command line</a></p>
+<hr>
+<div class="small grey">QS/400 V1R1M0 &middot; Quartz Systems &middot; <a href="#">Close window</a></div>
+</div>
+
+</body>
+</html>

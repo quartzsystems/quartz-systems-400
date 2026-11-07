@@ -107,6 +107,7 @@ members = [
     "net/httpd",
     "net/httpadmin",
     "net/navigator",
+    "net/accessweb",
     "net/nettools",
     "net/ntp",
     "net/lpd",

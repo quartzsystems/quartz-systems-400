@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Edit file: invload.clle - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Files &gt; Browse files &gt; invload.clle</div>
+<h1>Edit file: invload.clle</h1>
+
+
+<p class="small">Path: <span class="mono">/home/CWELLMAN/invload.clle</span> &nbsp; 1,844 bytes &nbsp; CCSID 1208 &nbsp; Line ends: LF &nbsp; <a href="files.html">Back to /home/CWELLMAN</a></p><form method="post"><textarea name="t" class="conf" rows="30" wrap="off">/* INVLOAD - load inventory from CSV uploaded by Access for Web            */
+/* Parameters: &amp;MODE  *ALL | *NEW                                            */
+             PGM        PARM(&amp;MODE)
+             DCL        VAR(&amp;MODE)   TYPE(*CHAR) LEN(10)
+             DCL        VAR(&amp;FILE)   TYPE(*CHAR) LEN(64) +
+                          VALUE('/home/CWELLMAN/upload/assets_br1.csv')
+             DCL        VAR(&amp;MSG)    TYPE(*CHAR) LEN(80)
+
+             CHKOBJ     OBJ(HLINV/ASSETS) OBJTYPE(*FILE)
+             MONMSG     MSGID(CPF9801) EXEC(DO)
+                SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                             MSGDTA('HLINV/ASSETS not found') MSGTYPE(*ESCAPE)
+             ENDDO
+
+             IF         COND(&amp;MODE *EQ '*ALL') THEN(DO)
+                CLRPFM     FILE(HLINV/ASSETSTG)
+             ENDDO
+
+             CPYFRMIMPF FROMSTMF(&amp;FILE) TOFILE(HLINV/ASSETSTG) +
+                          MBROPT(*ADD) RCDDLM(*LF) RMVBLANK(*BOTH) +
+                          FLDDLM(',') STRDLM('"') RPLNULLVAL(*FLDDFT) +
+                          ERRRCDFILE(HLINV/ASSETERR)
+             MONMSG     MSGID(CPF2817) EXEC(DO)
+                SNDPGMMSG  MSG('Import completed with errors, see HLINV/ASSETERR')
+                GOTO       CMDLBL(END)
+             ENDDO
+
+             RUNSQL     SQL('MERGE INTO hlinv.assets a USING hlinv.assetstg s +
+                          ON a.asset_tag = s.asset_tag +
+                          WHEN MATCHED THEN UPDATE SET status = s.status, +
+                            location = s.location, changed_ts = CURRENT TIMESTAMP +
+                          WHEN NOT MATCHED THEN INSERT VALUES (s.asset_tag, +
+                            s.location, s.manufacturer, s.model, s.serial, +
+                            s.asset_type, s.status, s.acquired, s.cost, s.rack_u, +
+                            s.notes, CURRENT TIMESTAMP)') COMMIT(*NONE)
+
+             CHGVAR     VAR(&amp;MSG) VALUE('INVLOAD completed, mode ' *CAT &amp;MODE)
+             SNDMSG     MSG(&amp;MSG) TOUSR(CWELLMAN)
+ END:        ENDPGM
+</textarea><div class="buttons"><input type="submit" value="Save"><input type="submit" value="Save as..."><input type="submit" value="Reset"><input type="submit" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Run command - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[-]</a> <b>Commands</b></div>
+<div class="navitem"><a href="run-command.html" class="navcur">Run command</a></div>
+<div class="navitem"><a href="my-commands.html">My commands</a></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Commands &gt; Run command</div>
+<h1>Run command</h1>
+<div class="desc">Run a CL command on this system, as QS/400 Access for Desktop's Run Command does. Prompt is the web F4.</div>
+
+<form method="post"><table class="props"><tr><th>Command <a class="help" href="../shared/help.html" target="_blank">?</a></th><td><input type="text" name="cmd" value="CALL PGM(HLINV/INVLOAD) PARM('*ALL')" size="90" class="cmd"></td></tr><tr><th>Run</th><td><input type="radio" name="how" value="int" checked> In this window's own connection job (waits for completion; no timeout)<br><input type="radio" name="how" value="batch"> In batch (SBMJOB), job queue: <select name="jobq"><option>QGPL/QBATCH</option><option>QGPL/QPGMR</option></select></td></tr></table><div class="buttons"><input type="submit" name="run" value="Run"><input type="submit" name="check" value="Check"><input type="submit" name="prompt" value="Prompt" formaction="command-prompt.html"><input type="submit" name="cancel" value="Cancel"><input type="submit" name="clear" value="Clear"><input type="submit" name="save" value="Save to My commands"></div></form><h2>Results</h2><p class="small">Command: <span class="mono">CHGDEVDSP DEVD(QPADEV0003) TEXT('Cody - web 5250')</span> &nbsp; Job: <span class="mono">123533/QUSER/QAPCNN</span> &nbsp; <table class="msg" style="display:inline-table;width:auto;margin:0"><tr><td class="done"><a class="msgid" href="../shared/help.html" target="_blank">QAD5010</a> - Command completed.</td></tr></table></p><p class="small">Command: <span class="mono">CALL PGM(HLINV/INVLOAD) PARM('*ALL')</span> &nbsp; Job: <span class="mono">123533/QUSER/QAPCNN</span> &nbsp; <table class="msg" style="display:inline-table;width:auto;margin:0"><tr><td class="error"><a class="msgid" href="../shared/help.html" target="_blank">QAD5011</a> - Command ended with an error; the escape message is the last one listed.</td></tr></table></p><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Sev</th>
+<th><a href="?sort=id">Message ID</a></th>
+<th>Message text</th>
+<th>From program</th>
+<th>Time</th>
+</tr>
+<tr>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPC2191</a></td>
+<td class="mono">Object QPADEV0003 in library QSYS type *DEVD changed.</td>
+<td class="mono">QDCCDEVD</td>
+<td class="mono">14:05:12.117</td>
+</tr>
+<tr class="alt">
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPI2101</a></td>
+<td class="mono">Job 123488/CWELLMAN/QPADEV0003 submitted to job queue QBATCH in library QGPL.</td>
+<td class="mono">QWTPCRJA</td>
+<td class="mono">14:05:13.004</td>
+</tr>
+<tr>
+<td class="num"><span class="err">40</span></td>
+<td class="mono"><a class="err" href="../shared/help.html" target="_blank">CPF9801</a></td>
+<td class="mono">Object INVLOAD in library HLINV not found.</td>
+<td class="mono">QLICKOBJ</td>
+<td class="mono">14:06:40.220</td>
+</tr>
+<tr class="alt">
+<td class="num"><span class="err">40</span></td>
+<td class="mono"><a class="err" href="../shared/help.html" target="_blank">CPF0001</a></td>
+<td class="mono">Error found on CALL command.</td>
+<td class="mono">QCACHECK</td>
+<td class="mono">14:06:40.221</td>
+</tr>
+</table><h2>Recent commands</h2><div class="small mono"><a href="run-command.html">CHGDEVDSP DEVD(QPADEV0003) TEXT('Cody - web 5250')</a><br><a href="run-command.html">DSPJOB JOB(123503/CWELLMAN/INVBATCH) OPTION(*STSA)</a><br><a href="run-command.html">SBMJOB CMD(CALL PGM(HLINV/INVLOAD) PARM('*ALL')) JOB(INVBATCH)</a><br><a href="run-command.html">WRKSPLF SELECT(CWELLMAN)</a><br><a href="run-command.html">DSPMSG QSYSOPR</a></div>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

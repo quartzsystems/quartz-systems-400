@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Server jobs - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[-]</a> <b>Jobs</b></div>
+<div class="navitem"><a href="my-jobs.html">My jobs</a></div>
+<div class="navitem"><a href="server-jobs.html" class="navcur">Server jobs</a></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Jobs &gt; Server jobs</div>
+<h1>Server jobs</h1>
+
+
+<p class="small">Jobs that run the Access for Web server (HTTP instance <a href="../http/instance-general.html">ACCESSWEB</a>) and the host servers serving your session.</p><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th>Job name</th>
+<th>User</th>
+<th>Number</th>
+<th>Type</th>
+<th>Status</th>
+<th>Subsystem</th>
+<th>Function</th>
+<th>Serving</th>
+</tr>
+<tr>
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="../nav/job-props-general.html">Properties</a> | <a href="../shared/notauth.html">End</a></td>
+<td class="mono">ACCESSWEB</td>
+<td class="mono">QTMHHTTP</td>
+<td class="mono">123463</td>
+<td class="mono">BCH</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">PGM-QZHBMAIN</td>
+<td>Access for Web (port 2003/2006)</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="../nav/job-props-general.html">Properties</a> | <a href="../shared/notauth.html">End</a></td>
+<td class="mono">ACCESSWEB</td>
+<td class="mono">QTMHHTTP</td>
+<td class="mono">123464</td>
+<td class="mono">BCI</td>
+<td class="mono">TIMW</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">PGM-QZSRHTTP</td>
+<td>Worker thread pool</td>
+</tr>
+<tr>
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="../nav/job-props-general.html">Properties</a> | <a href="../shared/notauth.html">End</a></td>
+<td class="mono">QZDASOINIT</td>
+<td class="mono">QUSER</td>
+<td class="mono">123411</td>
+<td class="mono">PJ</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="mono">QUSRWRK</td>
+<td class="mono">PGM-QZDASOINIT</td>
+<td>Database (this session)</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="../nav/job-props-general.html">Properties</a> | <a href="../shared/notauth.html">End</a></td>
+<td class="mono">QZRCSRVS</td>
+<td class="mono">QUSER</td>
+<td class="mono">123420</td>
+<td class="mono">PJ</td>
+<td class="mono">PSRW</td>
+<td class="mono">QUSRWRK</td>
+<td class="mono"></td>
+<td>Remote command</td>
+</tr>
+<tr>
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="../nav/job-props-general.html">Properties</a> | <a href="../shared/notauth.html">End</a></td>
+<td class="mono">QZSOSIGN</td>
+<td class="mono">QUSER</td>
+<td class="mono">123421</td>
+<td class="mono">PJ</td>
+<td class="mono">PSRW</td>
+<td class="mono">QUSRWRK</td>
+<td class="mono"></td>
+<td>Sign-on</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="../nav/job-props-general.html">Properties</a> | <a href="../shared/notauth.html">End</a></td>
+<td class="mono">QTVTELNET</td>
+<td class="mono">QTCP</td>
+<td class="mono">123381</td>
+<td class="mono">BCH</td>
+<td class="mono">SELW</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">PGM-QTVTELNT</td>
+<td>5250 session (telnet)</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

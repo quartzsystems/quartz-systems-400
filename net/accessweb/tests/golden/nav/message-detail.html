@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Message CPA5305 - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Messages &gt; QSYSOPR &gt; CPA5305</div>
+<h1>Message CPA5305</h1>
+<div class="desc">Second-level text and reply for an inquiry message.</div>
+
+<table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Message</td></tr>
+<tr><th>Message ID</th><td><a class="msgid" href="../shared/help.html" target="_blank">CPA5305</a></td></tr>
+<tr><th>Severity</th><td>99</td></tr>
+<tr><th>Type</th><td>Inquiry</td></tr>
+<tr><th>Date/time sent</th><td>10/29/26 13:58:02</td></tr>
+<tr><th>From job</th><td><a href="job-props-general.html">123503/CWELLMAN/INVBATCH</a></td></tr>
+<tr><th>From program</th><td><span class="mono">QDBSIGEX</span></td></tr>
+<tr><th>To queue</th><td><span class="mono">QSYS/QSYSOPR</span></td></tr>
+</table><h2>Message</h2><pre class="out">Record 4120 in use by job 123503/CWELLMAN/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)</pre><h2>Cause</h2><p>Record 4120 of member ASSETS in file ASSETS in library HLINV is locked by another job and the wait time of 60 seconds expired. Job 123488/CWELLMAN/QPADEV0003 holds the lock (program HLINV/INVMAIN, update pending).</p><h2>Recovery</h2><p>Reply C to cancel the request, or R to try the operation again after the record has been released. To find the job holding the lock, use the Locks page of this job or the command <span class="mono">DSPRCDLCK FILE(HLINV/ASSETS) MBR(ASSETS) RCDNBR(4120)</span>.</p><form method="post"><h2>Reply</h2><table class="props"><tr><th>Reply</th><td><input type="text" name="reply" value="R" size="10" class="cmd"> &nbsp; Valid replies: <span class="mono">C R</span> &nbsp; Default: <span class="mono">C</span></td></tr></table><div class="buttons"><input type="submit" name="reply" value="Reply"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

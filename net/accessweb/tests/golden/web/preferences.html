@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Preferences - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[-]</a> <b>Customize</b></div>
+<div class="navitem"><a href="preferences.html" class="navcur">Preferences</a></div>
+<div class="navitem"><a href="change-password.html">Change password</a></div>
+<div class="navitem"><a href="policies.html">Policies</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Customize &gt; Preferences</div>
+<h1>Preferences</h1>
+<div class="desc">Preferences for user CWELLMAN.</div>
+
+<div class="tabs"><b>General</b> | <a href="preferences.html">Database</a> | <a href="preferences.html">5250</a> | <a href="preferences.html">Files</a> | <a href="preferences.html">Print</a> | <a href="preferences.html">Home page</a></div><form method="post"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">General</td></tr>
+<tr><th>Rows per page</th><td><select name="rpp"><option>10</option><option selected>25</option><option>50</option><option>100</option></select></td></tr>
+<tr><th>Date format</th><td><select name="df"><option>MM/DD/YY</option><option>DD/MM/YY</option><option>YYYY-MM-DD</option><option>DD.MM.YYYY</option></select></td></tr>
+<tr><th>Time format</th><td><select name="tf"><option>HH:MM:SS (24 hour)</option><option>hh:mm:ss AM/PM</option></select></td></tr>
+<tr><th>Time zone</th><td><select name="tz"><option>System (Eastern, US DST)</option><option>UTC</option></select></td></tr>
+<tr><th>Language</th><td><select name="lang"><option>English (US)</option><option>English (UK)</option><option>German</option><option>French</option></select></td></tr>
+<tr><th>Open help in</th><td><input type="radio" name="h" value="win" checked> New window <input type="radio" name="h" value="same"> Same window</td></tr>
+<tr><th>Confirm before</th><td><input type="checkbox" name="c1" checked> Deleting <input type="checkbox" name="c2" checked> Ending jobs <input type="checkbox" name="c3"> Holding / releasing</td></tr>
+<tr class="subrow"><td colspan="2">Database</td></tr>
+<tr><th>Default schema</th><td><select name="ds"><option>HLINV</option><option>QGPL</option><option>WEBSTORE</option></select></td></tr>
+<tr><th>Naming convention</th><td><input type="radio" name="nm" value="sql" checked> *SQL (schema.table) <input type="radio" name="nm" value="sys"> *SYS (library/file)</td></tr>
+<tr><th>Default output</th><td><select name="do"><option>HTML</option><option>CSV</option><option>PDF</option><option>Excel-compatible</option></select></td></tr>
+<tr><th>Maximum rows returned</th><td><input type="text" name="mr" value="500" size="6"></td></tr>
+<tr><th>Show system column names</th><td><input type="checkbox" name="scn"></td></tr>
+<tr class="subrow"><td colspan="2">5250</td></tr>
+<tr><th>Default screen size</th><td><input type="radio" name="ss" value="24"> 24 x 80 <input type="radio" name="ss" value="27" checked> 27 x 132</td></tr>
+<tr><th>Colours</th><td><input type="radio" name="cl" value="g" checked> Green on black <input type="radio" name="cl" value="w"> Black on white</td></tr>
+<tr><th>Show keypad</th><td><input type="checkbox" name="kp" checked></td></tr>
+<tr><th>Font size</th><td><select name="fs"><option>9pt</option><option selected>10pt</option><option>11pt</option><option>12pt</option></select></td></tr>
+<tr><th>Cursor</th><td><select name="cu"><option>Underline</option><option>Block</option></select></td></tr>
+<tr class="subrow"><td colspan="2">Home page</td></tr>
+<tr><th>Layout</th><td><input type="radio" name="hl" value="list" checked> List with descriptions <input type="radio" name="hl" value="compact"> Compact links only</td></tr>
+<tr><th>Show at sign-on</th><td><input type="checkbox" name="sh" checked> Message and spooled file counts</td></tr>
+</table>
+<div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"><input type="submit" name="restore_defaults" value="Restore defaults"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>My jobs - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[-]</a> <b>Jobs</b></div>
+<div class="navitem"><a href="my-jobs.html" class="navcur">My jobs</a></div>
+<div class="navitem"><a href="server-jobs.html">Server jobs</a></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Jobs &gt; My jobs</div>
+<h1>My jobs</h1>
+<div class="desc">Jobs that belong to your user profile, including completed jobs with output (WRKUSRJOB).</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Status:</td><td><select name="s"><option>All</option><option>Active</option><option>On job queue</option><option>Completed (output)</option></select></td><td><input type="submit" value="Go"> </td></tr></table></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=n">Job name</a></th>
+<th>User</th>
+<th>Number</th>
+<th>Type</th>
+<th><a href="?sort=s">Status</a></th>
+<th>Subsystem</th>
+<th>Function</th>
+<th><a href="?sort=e">Entered</a></th>
+</tr>
+<tr>
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="printer-output.html">Printer output</a> | <a href="my-jobs.html">Hold</a> | <a href="my-jobs.html">Release</a> | <a href="../nav/end-job-confirm.html">End</a> | <a href="../nav/job-props-general.html">Properties</a></td>
+<td class="mono">QPADEV0003</td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">123488</td>
+<td>Interactive</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="mono">QINTER</td>
+<td class="mono">CMD-WRKACTJOB</td>
+<td>10/29/26 13:04</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="printer-output.html">Printer output</a> | <a href="my-jobs.html">Hold</a> | <a href="my-jobs.html">Release</a> | <a href="../nav/end-job-confirm.html">End</a> | <a href="../nav/job-props-general.html">Properties</a></td>
+<td class="mono">INVBATCH</td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">123503</td>
+<td>Batch</td>
+<td class="mono"><span class="err">MSGW</span></td>
+<td class="mono">QBATCH</td>
+<td class="mono">PGM-HLINV/INVLOAD</td>
+<td>10/29/26 13:58</td>
+</tr>
+<tr>
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="printer-output.html">Printer output</a> | <a href="my-jobs.html">Hold</a> | <a href="my-jobs.html">Release</a> | <a href="../nav/end-job-confirm.html">End</a> | <a href="../nav/job-props-general.html">Properties</a></td>
+<td class="mono">QZDASOINIT</td>
+<td class="mono">QUSER</td>
+<td class="mono">123411</td>
+<td>Prestart (database server)</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="mono">QUSRWRK</td>
+<td class="mono"></td>
+<td>10/29/26 13:30</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="printer-output.html">Printer output</a> | <a href="my-jobs.html">Hold</a> | <a href="my-jobs.html">Release</a> | <a href="../nav/end-job-confirm.html">End</a> | <a href="../nav/job-props-general.html">Properties</a></td>
+<td class="mono">INVBATCH</td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">123402</td>
+<td>Batch</td>
+<td class="mono">OUTQ</td>
+<td class="mono"></td>
+<td class="mono"></td>
+<td>10/29/26 06:14</td>
+</tr>
+<tr>
+<td class="act"><a href="../nav/job-props-joblog.html">Job log</a> | <a href="printer-output.html">Printer output</a> | <a href="my-jobs.html">Hold</a> | <a href="my-jobs.html">Release</a> | <a href="../nav/end-job-confirm.html">End</a> | <a href="../nav/job-props-general.html">Properties</a></td>
+<td class="mono">QPADEV0003</td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">123311</td>
+<td>Interactive</td>
+<td class="mono">OUTQ</td>
+<td class="mono"></td>
+<td class="mono"></td>
+<td>10/28/26 17:40</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

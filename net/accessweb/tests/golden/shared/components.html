@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Pattern reference - QS/400</title>
+<link rel="stylesheet" type="text/css" href="qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="../web/signon.html">Sign off</a> &nbsp;&nbsp; <a href="help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="../web/tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="../web/files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="../web/printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="../web/my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="../web/run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="../web/preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">QS/400 &gt; Shared &gt; Pattern reference</div>
+<h1>Pattern reference</h1>
+
+
+
+<p class="small grey">Every pattern the three products use, once. Use this page to check a new page against the standard before adding it.</p>
+
+<h2>1. Message area</h2>
+<table class="msg"><tr><td class="info"><a class="msgid" href="help.html" target="_blank">CPF1321</a> - Job 123456/QUSER/QPADEV0001 ended.</td></tr></table><table class="msg"><tr><td class="done"><a class="msgid" href="help.html" target="_blank">HTP8001</a> - HTTP server instance WEBSTORE started.</td></tr></table><table class="msg"><tr><td class="error"><a class="msgid" href="help.html" target="_blank">SQL0204</a> - TABLE CUSTMAST in QGPL type *FILE not found.</td></tr></table>
+
+<h2>2. List pattern (filter row, sortable headers, per-row actions, paging)</h2>
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Subsystem:</td><td><select name="sbs"><option>*ALL</option><option>QINTER</option><option>QBATCH</option><option>QHTTPSVR</option></select></td><td>User:</td><td><input type="text" name="user" value="" size="10"></td><td>Status:</td><td><select name="sts"><option>*ALL</option><option>RUN</option><option>DEQW</option><option>MSGW</option></select></td><td><input type="submit" value="Go"> </td></tr></table></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=name">Job name</a></th>
+<th><a href="?sort=user">User</a></th>
+<th><a href="?sort=number">Number</a></th>
+<th><a href="?sort=status">Status</a></th>
+<th><a href="?sort=cpu">CPU %</a></th>
+</tr>
+<tr>
+<td class="act"><a href="../nav/active-jobs.html">Hold</a> | <a href="../nav/end-job-confirm.html">End</a> | <a href="../nav/job-props-general.html">Properties</a></td>
+<td class="mono">ADMIN</td>
+<td class="mono">QTMHHTTP</td>
+<td class="mono">123456</td>
+<td><span class="ok">RUN</span></td>
+<td class="num">0.3</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../nav/active-jobs.html">Hold</a> | <a href="../nav/end-job-confirm.html">End</a> | <a href="../nav/job-props-general.html">Properties</a></td>
+<td class="mono">QPADEV0001</td>
+<td class="mono">QSECOFR</td>
+<td class="mono">123460</td>
+<td><span class="err">MSGW</span></td>
+<td class="num">0.0</td>
+</tr>
+</table><form method="get" class="paging">Page 1 of 12 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <a href="?page=2">Next &gt;</a> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option selected>25</option><option>50</option><option>100</option></select> <input type="submit" value="Go"> &nbsp; 288 entries</form>
+<p class="small grey">Variant: a per-row <code>&lt;select&gt;</code> of actions plus "Go": <select name="act"><option>--Select action--</option><option>Hold</option><option>Release</option><option>End</option><option>Job log</option><option>Properties</option></select> <input type="submit" value="Go"></p>
+<p class="small grey">Empty state:</p>
+<table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Job name</th>
+<th>User</th>
+<th>Number</th>
+<th>Status</th>
+</tr>
+<tr><td class="empty" colspan="4">No active jobs match the filter.</td></tr>
+</table>
+
+<h2>3. Properties pattern (tabs, grouped label/value rows, buttons)</h2>
+<div class="tabs"><b>General</b> | <a href="components.html">Options</a> | <a href="components.html">Security</a> | <a href="components.html">Logs</a></div><form method="post"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Identification</td></tr>
+<tr><th>Instance name</th><td><span class="mono">WEBSTORE</span></td></tr>
+<tr><th>Description <a class="help" href="help.html" target="_blank">?</a></th><td><input type="text" name="desc" value="Web store front end" size="40"></td></tr>
+<tr class="subrow"><td colspan="2">Startup</td></tr>
+<tr><th>Start with STRTCP</th><td><input type="checkbox" name="autostart" checked></td></tr>
+<tr><th>Server user profile</th><td><input type="text" name="usrprf" value="QTMHHTTP" size="10"></td></tr>
+</table>
+<div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+
+<h2>4. Wizard pattern</h2>
+<form method="post"><table class="wizard" cellspacing="0"><tr><td class="wsteps"><div class="wstep done">1. Name and description</div><div class="wstep cur">2. Server root</div><div class="wstep ">3. Document root</div><div class="wstep ">4. IP address and port</div><div class="wstep ">5. Access log</div><div class="wstep ">6. Create</div></td><td class="wbody"><h2>Server root</h2><p class="small grey">The directory that holds the configuration, logs and content of the instance.</p><table class="props"><tr><th>Server root</th><td><input type="text" name="root" value="/www/webstore" size="40" class="cmd"></td></tr></table><div class="buttons"><input type="submit" name="back" value="&lt; Back"><input type="submit" name="next" value="Next &gt;"><input type="submit" name="cancel" value="Cancel"></div></td></tr></table></form>
+
+<h2>5. Confirmation and second-level text</h2>
+<p class="small grey">Confirmations are separate pages (see <a href="confirm.html">Confirm Delete Instance</a>). Second-level text is Message, Cause, Recovery, in that order (see <a href="error.html">Error page</a>).</p>
+
+<h2>6. Controls (browser defaults, never restyled)</h2>
+<form method="post">
+<table class="props" cellspacing="0">
+<tr><th>Text</th><td><input type="text" name="t" value="QGPL" size="10"> &nbsp; Command string: <input type="text" name="c" value="WRKACTJOB SBS(QHTTPSVR)" size="40" class="cmd"></td></tr>
+<tr><th>Select</th><td><select name="s"><option>*ALL</option><option>*SYSTEM</option><option>*OBJECTSIGNING</option></select></td></tr>
+<tr><th>Checkbox / radio</th><td><input type="checkbox" name="a" checked> Start automatically &nbsp; <input type="radio" name="r" value="*CNTRLD" checked> *CNTRLD <input type="radio" name="r" value="*IMMED"> *IMMED</td></tr>
+<tr><th>File</th><td><input type="file" name="f"> <input type="submit" value="Browse..."></td></tr>
+<tr><th>Textarea</th><td><textarea name="x" rows="3" cols="60" class="conf">Listen *:80
+DocumentRoot /www/webstore/htdocs</textarea></td></tr>
+<tr><th>Buttons</th><td><input type="submit" value="OK"> <input type="submit" value="Cancel"> <input type="submit" value="Apply"> <input type="submit" value="Refresh"> <input type="submit" value="Start"> <input type="submit" value="Stop"> <input type="submit" value="Restart"> <input type="submit" value="Delete"> <input type="submit" value="Add"> <input type="submit" value="Remove"> <input type="submit" value="Browse..."> <input type="submit" value="&lt; Back"> <input type="submit" value="Next &gt;"> <input type="submit" value="Finish"></td></tr>
+<tr><th>Status words</th><td><span class="ok">Running</span> <span class="ok">Active</span> &nbsp; <span class="err">Stopped</span> <span class="err">Ended</span> <span class="err">Error</span> &nbsp; (text colour only; everything else black)</td></tr>
+<tr><th>Utilisation bar</th><td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="37%"></td><td width="63%"></td></tr></table> 37% &nbsp; <table class="bar" cellspacing="0" cellpadding="0"><tr><td class="hot" width="91%"></td><td width="9%"></td></tr></table> 91%</td></tr>
+<tr><th>Glyphs</th><td><span class="glyph">[+]</span> collapsed &nbsp; <span class="glyph">[-]</span> expanded &nbsp; (text glyphs; a 16&times;16 GIF may replace them)</td></tr>
+</table>
+</form>
+
+<h2>7. System output</h2>
+<pre class="out">Job . . :   ADMIN          User . . :   QTMHHTTP     Number . . . . . . :   123456
+  MSGID      TYPE                    SEV  DATE      TIME             FROM PGM     LIBRARY
+  CPF1124    Information             00   10/29/26  06:00:01.117332  QWTPIIPP     QSYS
+             Message . . . . :   Job 123456/QTMHHTTP/ADMIN started on 10/29/26 at 06:00:01 in subsystem QHTTPSVR in QSYS.
+  HTP8001    Information             00   10/29/26  06:00:03.004210  QZHBMAIN     QHTTPSVR
+             Message . . . . :   HTTP server instance ADMIN started, listening on *:2001.</pre>
+
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

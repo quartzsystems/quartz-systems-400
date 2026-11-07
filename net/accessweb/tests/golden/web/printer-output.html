@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Printer output - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[-]</a> <b>Print</b></div>
+<div class="navitem"><a href="printer-output.html" class="navcur">Printer output</a></div>
+<div class="navitem"><a href="printers.html">Printers</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Print &gt; Printer output</div>
+<h1>Printer output</h1>
+<div class="desc">Spooled files on the system, as QS/400 Access for Desktop's Printer Output lists them (QAD6001 gives the total).</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>User:</td><td><select name="u"><option>*CURRENT</option><option>*ALL</option><option>CWELLMAN</option><option>QPGMR</option></select></td><td>Output queue:</td><td><select name="q"><option>*ALL</option><option>QGPL/QPRINT</option><option>QUSRSYS/QEZJOBLOG</option><option>QGPL/PRT02</option><option>HLINV/INVRPT</option></select> or <input type="text" name="qn" value="" size="20" class="cmd"></td><td>Status:</td><td><select name="s"><option>*ALL</option><option>RDY</option><option>HLD</option><option>SAV</option><option>WTR</option><option>MSGW</option></select></td><td>Form type:</td><td><input type="text" name="ft" value="*ALL" size="8"></td><td>User data:</td><td><input type="text" name="ud" value="*ALL" size="10"></td><td><input type="submit" value="Go"> <input type="submit" name="refresh" value="Refresh"> &nbsp; Auto-refresh: <select name="auto"><option>Off</option><option>15</option><option selected>30</option><option>60</option></select> s</td></tr></table></form><form method="post"><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Select</th>
+<th>Actions</th>
+<th><a href="?sort=f">File</a></th>
+<th><a href="?sort=u">User</a></th>
+<th><a href="?sort=ud">User data</a></th>
+<th><a href="?sort=s">Status</a></th>
+<th><a href="?sort=p">Pages</a></th>
+<th>Copies</th>
+<th>Form type</th>
+<th><a href="?sort=q">Output queue</a></th>
+<th><a href="?sort=c">Created</a></th>
+<th>Job</th>
+</tr>
+<tr>
+<td><input type="checkbox" name="s0"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">INVRPT</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">INVBATCH</td>
+<td class="mono"><span class="ok">RDY</span></td>
+<td class="num">12</td>
+<td class="num">1</td>
+<td class="mono">*STD</td>
+<td class="mono">QGPL/QPRINT</td>
+<td>10/29/26 06:14</td>
+<td class="mono">123402/CWELLMAN/INVBATCH</td>
+</tr>
+<tr class="alt">
+<td><input type="checkbox" name="s1"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">QPJOBLOG</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">INVLOAD</td>
+<td class="mono"><span class="ok">RDY</span></td>
+<td class="num">3</td>
+<td class="num">1</td>
+<td class="mono">*STD</td>
+<td class="mono">QUSRSYS/QEZJOBLOG</td>
+<td>10/29/26 06:15</td>
+<td class="mono">123402/CWELLMAN/INVBATCH</td>
+</tr>
+<tr>
+<td><input type="checkbox" name="s2"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">QPRINT</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono"></td>
+<td class="mono"><span class="err">HLD</span></td>
+<td class="num">1</td>
+<td class="num">1</td>
+<td class="mono">*STD</td>
+<td class="mono">QGPL/QPRINT</td>
+<td>10/28/26 18:00</td>
+<td class="mono">123311/CWELLMAN/QPADEV0003</td>
+</tr>
+<tr class="alt">
+<td><input type="checkbox" name="s3"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">QSYSPRT</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">DSPJOB</td>
+<td class="mono"><span class="ok">RDY</span></td>
+<td class="num">7</td>
+<td class="num">1</td>
+<td class="mono">*STD</td>
+<td class="mono">QGPL/QPRINT</td>
+<td>10/28/26 17:02</td>
+<td class="mono">123311/CWELLMAN/QPADEV0003</td>
+</tr>
+<tr>
+<td><input type="checkbox" name="s4"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">INVLABEL</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">LABELS</td>
+<td class="mono"><span class="ok">RDY</span></td>
+<td class="num">118</td>
+<td class="num">2</td>
+<td class="mono">*LABEL</td>
+<td class="mono">QGPL/PRT02</td>
+<td>10/27/26 09:40</td>
+<td class="mono">123290/CWELLMAN/INVBATCH</td>
+</tr>
+<tr class="alt">
+<td><input type="checkbox" name="s5"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">QPDSPJOB</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono"></td>
+<td class="mono">SAV</td>
+<td class="num">2</td>
+<td class="num">1</td>
+<td class="mono">*STD</td>
+<td class="mono">QGPL/QPRINT</td>
+<td>10/24/26 11:11</td>
+<td class="mono">123101/CWELLMAN/QPADEV0003</td>
+</tr>
+<tr>
+<td><input type="checkbox" name="s6"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">QPJOBLOG</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">QPADEV0003</td>
+<td class="mono"><span class="err">MSGW</span></td>
+<td class="num">1</td>
+<td class="num">1</td>
+<td class="mono">*STD</td>
+<td class="mono">QUSRSYS/QEZJOBLOG</td>
+<td>10/22/26 09:50</td>
+<td class="mono">123050/CWELLMAN/QPADEV0003</td>
+</tr>
+<tr class="alt">
+<td><input type="checkbox" name="s7"></td>
+<td class="act"><a href="../nav/spooled-view.html">Open</a> | <a href="../nav/spooled-view.html">PDF</a> | <a href="../nav/spooled-view.html">Text</a> | <a href="splf-props.html">Properties</a></td>
+<td class="mono"><a href="../nav/spooled-view.html">ASSETEXP</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">EXPORT</td>
+<td class="mono"><span class="ok">WTR</span></td>
+<td class="num">44</td>
+<td class="num">1</td>
+<td class="mono">*STD</td>
+<td class="mono">HLINV/INVRPT</td>
+<td>10/20/26 15:00</td>
+<td class="mono">122990/CWELLMAN/INVBATCH</td>
+</tr>
+</table><div class="buttons">Selected: <input type="submit" value="Hold"> <input type="radio" name="hw" value="now" checked> now <input type="radio" name="hw" value="page"> at end of page &nbsp; <input type="submit" value="Release"> <input type="submit" value="Delete..."> &nbsp; Move to <select name="to"><option>QGPL/QPRINT</option><option>QGPL/PRT02</option><option>QGPL/QPDF</option></select> <input type="checkbox" name="top"> top of queue <input type="submit" value="Move"> &nbsp; <input type="submit" value="Save as PDF"> <input type="submit" value="Save as text"></div></form><form method="get" class="paging">Page 1 of 1 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <span class="grey">Next &gt;</span> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option selected>25</option><option>50</option><option>100</option></select> <input type="submit" value="Go"> &nbsp; 8 entries</form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

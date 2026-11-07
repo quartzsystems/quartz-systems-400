@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Messages - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html" class="navcur">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Messages</div>
+<h1>Messages</h1>
+<div class="desc">Your messages (DSPMSG), as QS/400 Access for Desktop's Messages window lists them.</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Queue:</td><td><select name="q"><option>My queue (QUSRSYS/CWELLMAN)</option><option>QSYSOPR</option><option>Other:</option></select> <input type="text" name="ql" value="" size="10">/<input type="text" name="qnm" value="" size="10"></td><td><input type="submit" value="Go"> <input type="submit" name="refresh" value="Refresh"> &nbsp; <span class="small">Messages waiting: <b>3</b>, 1 inquiry &nbsp; Watch: <select name="w"><option>My queue</option><option>My queue and QSYSOPR</option><option>Off</option></select> Arrived page for <select name="a"><option>Inquiries only</option><option>All</option><option>None</option></select></span></td></tr></table></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=d">Date/time</a></th>
+<th>Sev</th>
+<th><a href="?sort=id">Message ID</a></th>
+<th>Message text</th>
+<th>From</th>
+<th>Type</th>
+</tr>
+<tr>
+<td class="act"><a href="../nav/message-detail.html">Details</a> | <a href="messages.html">Reply</a> | <a href="../shared/confirm.html">Remove</a></td>
+<td class="mono">10/29/26 13:58:05</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA0702</a></td>
+<td><b>CPF0001 received by procedure INVLOAD. (C D I R)</b></td>
+<td><span class="mono">123503/CWELLMAN/INVBATCH</span></td>
+<td>Inquiry</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../nav/message-detail.html">Details</a> | <a href="messages.html">Remove</a></td>
+<td class="mono">10/29/26 13:05:10</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF1241</a></td>
+<td>Job 123488/CWELLMAN/QPADEV0003 submitted to job queue QBATCH in QGPL.</td>
+<td><span class="mono">123488/CWELLMAN/QPADEV0003</span></td>
+<td>Info</td>
+</tr>
+<tr>
+<td class="act"><a href="../nav/message-detail.html">Details</a> | <a href="messages.html">Remove</a></td>
+<td class="mono">10/28/26 17:41:30</td>
+<td class="num">80</td>
+<td class="mono"></td>
+<td>From OPERATOR: PRT02 is out of labels, holding your INVLABEL file until tomorrow.</td>
+<td><span class="mono">OPERATOR</span></td>
+<td>Info</td>
+</tr>
+</table><form method="get" class="paging">Page 1 of 1 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <span class="grey">Next &gt;</span> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option>25</option><option>50</option><option selected>100</option></select> <input type="submit" value="Go"> &nbsp; 3 entries</form><form method="post"><table width="100%"><tr><td width="50%" valign="top"><h3>Reply to inquiry CPA0702</h3>Reply: <input type="text" name="r" value="C" size="10" class="cmd"> <span class="small grey">valid: C D I R; empty = the default</span><div class="buttons"><input type="submit" value="Reply"></div></td><td valign="top"><h3>Send message</h3><table class="props"><tr><th>To</th><td><input type="radio" name="to" value="user" checked> user <input type="text" name="tou" value="OPERATOR" size="10"> <input type="radio" name="to" value="queue"> queue <input type="text" name="toq" value="" size="20" class="cmd"></td></tr><tr><th>Message text</th><td><textarea name="m" rows="3" cols="50">Thanks - release INVLABEL when PRT02 is reloaded.</textarea></td></tr><tr><th>Inquiry</th><td><input type="radio" name="i" value="no" checked> No <input type="radio" name="i" value="yes"> Yes, reply to my queue (the reply shows on this page when it comes)</td></tr></table><div class="buttons"><input type="submit" value="Send"></div></td></tr></table></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

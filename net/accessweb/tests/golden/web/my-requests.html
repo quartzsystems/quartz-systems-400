@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>My requests - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[-]</a> <b>Database</b></div>
+<div class="navitem"><a href="tables.html">Tables</a></div>
+<div class="navitem"><a href="run-sql.html">Run SQL</a></div>
+<div class="navitem"><a href="my-requests.html" class="navcur">My requests</a></div>
+<div class="navitem"><a href="copy-import.html">Copy data to table</a></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Database &gt; My requests</div>
+<h1>My requests</h1>
+<div class="desc">Saved SQL scripts and transfer requests; .qdx and .sql files are the desktop's own formats.</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Type:</td><td><select name="t"><option>All</option><option>SQL</option><option>Copy data to table</option><option>Copy data from table</option></select></td><td>Owner:</td><td><select name="o"><option>Mine</option><option>Shared with me</option><option>All</option></select></td><td><input type="submit" value="Go"> </td></tr></table></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=n">Request</a></th>
+<th>Type</th>
+<th>Statement / source</th>
+<th>Format</th>
+<th><a href="?sort=l">Last run</a></th>
+<th>Shared with</th>
+</tr>
+<tr>
+<td class="act"><a href="run-sql.html">Run</a> | <a href="run-sql.html">Edit</a> | <a href="my-requests.html">Download .qdx / .sql</a> | <a href="my-requests.html">Copy</a> | <a href="../shared/confirm.html">Delete</a> | <a href="my-requests.html">Share</a></td>
+<td>Active assets by location</td>
+<td>SQL</td>
+<td><span class="mono">SELECT location, COUNT(*) FROM hlinv.assets WHERE status='ACTIVE' GROUP BY ...</span></td>
+<td>HTML</td>
+<td>10/29/26 09:12</td>
+<td>*PUBLIC</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="run-sql.html">Run</a> | <a href="run-sql.html">Edit</a> | <a href="my-requests.html">Download .qdx / .sql</a> | <a href="my-requests.html">Copy</a> | <a href="../shared/confirm.html">Delete</a> | <a href="my-requests.html">Share</a></td>
+<td>Expiring contracts</td>
+<td>SQL</td>
+<td><span class="mono">SELECT * FROM hlinv.expiring ORDER BY end_date</span></td>
+<td>PDF</td>
+<td>10/27/26 08:00</td>
+<td>ADMINS</td>
+</tr>
+<tr>
+<td class="act"><a href="run-sql.html">Run</a> | <a href="run-sql.html">Edit</a> | <a href="my-requests.html">Download .qdx / .sql</a> | <a href="my-requests.html">Copy</a> | <a href="../shared/confirm.html">Delete</a> | <a href="my-requests.html">Share</a></td>
+<td>Jobs in MSGW</td>
+<td>SQL</td>
+<td><span class="mono">SELECT * FROM qsys2.active_job_info WHERE job_status='MSGW'</span></td>
+<td>HTML</td>
+<td>10/29/26 13:59</td>
+<td></td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="run-sql.html">Run</a> | <a href="run-sql.html">Edit</a> | <a href="my-requests.html">Download .qdx / .sql</a> | <a href="my-requests.html">Copy</a> | <a href="../shared/confirm.html">Delete</a> | <a href="my-requests.html">Share</a></td>
+<td>Load vendor list</td>
+<td>Copy data to table</td>
+<td><span class="mono">vendors.csv -> HLINV.MANUFACTURERS</span></td>
+<td>CSV</td>
+<td>09/14/26 12:11</td>
+<td></td>
+</tr>
+<tr>
+<td class="act"><a href="run-sql.html">Run</a> | <a href="run-sql.html">Edit</a> | <a href="my-requests.html">Download .qdx / .sql</a> | <a href="my-requests.html">Copy</a> | <a href="../shared/confirm.html">Delete</a> | <a href="my-requests.html">Share</a></td>
+<td>Asset export</td>
+<td>Copy data from table</td>
+<td><span class="mono">HLINV.ASSETS -> assets.xlsx</span></td>
+<td>XLSX</td>
+<td>10/28/26 18:00</td>
+<td>WAREHOUSE</td>
+</tr>
+</table><form method="post" enctype="multipart/form-data"><div class="buttons"><input type="submit" value="New SQL request..." formaction="run-sql.html"><input type="submit" value="New copy request..." formaction="copy-import.html"> &nbsp; Upload a .qdx or .sql: <input type="file" name="f" size="25"> <input type="submit" value="Import"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

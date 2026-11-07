@@ -1,0 +1,17 @@
+[package]
+name = "accessweb"
+description = "QS/400 Access for Web (ports 2003 and 2006): the end-user web interface over the system, gated by its policies"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qsweb = { path = "../qsweb", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+
+[dev-dependencies]
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+
+[lints]
+workspace = true

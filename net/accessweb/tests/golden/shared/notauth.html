@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Not authorized - QS/400</title>
+<link rel="stylesheet" type="text/css" href="qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="../web/signon.html">Sign off</a> &nbsp;&nbsp; <a href="help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="../web/tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="../web/files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="../web/printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="../web/my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="../web/run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="../web/preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Work Management &gt; Active Jobs &gt; Not authorized</div>
+<h1>Not authorized</h1>
+
+<table class="msg"><tr><td class="error"><a class="msgid" href="help.html" target="_blank">CPF2207</a> - Not authorized to use object ADMIN in library QSYS type *JOB.</td></tr></table>
+
+<p>You are not authorized to use this function. Your user profile <span class="mono">WEBUSER</span> has user class <span class="mono">*USER</span> and does not have the <span class="mono">*ALLOBJ</span> or <span class="mono">*JOBCTL</span> special authority required to end jobs that belong to other users.</p>
+<table class="props" cellspacing="0">
+<tr><th>Function</th><td>End job</td></tr>
+<tr><th>Object</th><td class="mono">123456/QTMHHTTP/ADMIN</td></tr>
+<tr><th>Required authority</th><td class="mono">*JOBCTL</td></tr>
+<tr><th>User profile</th><td class="mono">WEBUSER</td></tr>
+<tr><th>Policy</th><td>Access for Web policy "Jobs - End server jobs" is set to <b>Deny</b> for group <span class="mono">WEBUSERS</span>.</td></tr>
+</table>
+<p>Contact the security officer (QSECOFR) if you need this authority. The attempt has been recorded in the audit journal (entry type AF).</p>
+<form method="post"><div class="buttons"><input type="submit" value="&lt; Back"><input type="submit" value="Home"></div></form>
+
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

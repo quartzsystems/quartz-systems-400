@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Run SQL - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[-]</a> <b>Database</b></div>
+<div class="navitem"><a href="tables.html">Tables</a></div>
+<div class="navitem"><a href="run-sql.html" class="navcur">Run SQL</a></div>
+<div class="navitem"><a href="my-requests.html">My requests</a></div>
+<div class="navitem"><a href="copy-import.html">Copy data to table</a></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Database &gt; Run SQL</div>
+<h1>Run SQL</h1>
+<div class="desc">Run SQL scripts on this system in a connection of this page's own, as QS/400 Access for Desktop's Run SQL does.</div>
+
+<form method="post" enctype="multipart/form-data"><table class="props"><tr><th>Options</th><td>Default schema <select name="schema"><option>HLINV</option><option>QGPL</option><option>QSYS2</option><option>WEBSTORE</option></select> &nbsp; Naming <select name="naming"><option>SQL</option><option>System</option></select> &nbsp; Commit level <select name="commit"><option>None</option><option>Read uncommitted</option><option selected>Read committed</option><option>Repeatable read</option><option>Serializable</option></select> &nbsp; <input type="submit" name="c" value="Commit"> <input type="submit" name="r" value="Rollback"> &nbsp; <input type="checkbox" name="stop" checked> Stop at first error &nbsp; <input type="checkbox" name="hex"> Show CCSID 65535 data as text</td></tr><tr><th>Script</th><td><textarea name="sql" rows="10" cols="100" class="conf">-- statements separated by ;
+SELECT asset_tag, location, manufacturer, model, serial, asset_type, status, acquired
+  FROM hlinv.assets
+ WHERE status IN ('ACTIVE', 'SPARE')
+ ORDER BY location, asset_tag;
+
+SELECT location, COUNT(*) AS n FROM hlinv.assets GROUP BY location;
+
+UPDATE hlinv.assets SET status = 'RETIRED' WHERE asset_tag = 'QS000301';</textarea><br><span class="small grey">Line 1, column 1</span></td></tr><tr><th>File</th><td><input type="file" name="sqlfile" size="30"> <input type="submit" name="open" value="Open .sql"> <input type="submit" name="saveas" value="Save as .sql"> &nbsp; Recent: <a href="run-sql.html">assets-by-location.sql</a>, <a href="run-sql.html">retire-asset.sql</a></td></tr></table><div class="buttons"><input type="submit" name="run1" value="Run statement (at cursor)"><input type="submit" name="runsel" value="Run selected"><input type="submit" name="runall" value="Run all"><input type="submit" name="cancel" value="Cancel"><input type="submit" name="output" value="Download as"> <select name="fmt"><option>CSV</option><option>TSV</option><option>XLSX</option><option>ODS</option><option>Fixed width</option><option>HTML</option><option>PDF</option></select><input type="submit" name="save" value="Save request..."><input type="submit" name="clear" value="Clear"></div></form><h2>Results</h2><div class="tabs"><b>1: SELECT asset_tag ... (12 rows)</b> | <a href="run-sql-result-2.html">2: SELECT location, COUNT(*) (4 rows)</a> | <a href="run-sql.html">3: UPDATE (1 row changed)</a></div><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th><a href="?sort=asset_tag">ASSET_TAG</a></th>
+<th><a href="?sort=location">LOCATION</a></th>
+<th><a href="?sort=manufacturer">MANUFACTURER</a></th>
+<th><a href="?sort=model">MODEL</a></th>
+<th><a href="?sort=serial">SERIAL</a></th>
+<th><a href="?sort=asset_type">ASSET_TYPE</a></th>
+<th><a href="?sort=status">STATUS</a></th>
+<th><a href="?sort=acquired">ACQUIRED</a></th>
+</tr>
+<tr>
+<td class="mono">QS000101</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">QUANTA</td>
+<td class="mono">T4048-IX8</td>
+<td class="mono">QTFCEV2340021</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2025-03-11</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000102</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">QUANTA</td>
+<td class="mono">T4048-IX8</td>
+<td class="mono">QTFCEV2340022</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2025-03-11</td>
+</tr>
+<tr>
+<td class="mono">QS000110</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">EDGECORE</td>
+<td class="mono">AS5712-54X</td>
+<td class="mono">571254X2041B0019</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-11-02</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000111</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">EDGECORE</td>
+<td class="mono">AS5712-54X</td>
+<td class="mono">571254X2041B0020</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-11-02</td>
+</tr>
+<tr>
+<td class="mono">QS000201</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">R740XD</td>
+<td class="mono">7XK2Q33</td>
+<td class="mono">SERVER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-06-20</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000202</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">R740XD</td>
+<td class="mono">7XK2Q34</td>
+<td class="mono">SERVER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-06-20</td>
+</tr>
+<tr>
+<td class="mono">QS000203</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">R740XD</td>
+<td class="mono">7XK2Q35</td>
+<td class="mono">SERVER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-06-20</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000210</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">QLE2562</td>
+<td class="mono">BFE1234567</td>
+<td class="mono">ADAPTER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2026-09-20</td>
+</tr>
+<tr>
+<td class="mono">QS000302</td>
+<td class="mono">QS-HQ-R3</td>
+<td class="mono">WEIDMULLER</td>
+<td class="mono">UR20-FBC-EIP</td>
+<td class="mono">2024-11-00341</td>
+<td class="mono">IO-COUPLER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2026-10-01</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000401</td>
+<td class="mono">QS-BR1-R1</td>
+<td class="mono">DELL</td>
+<td class="mono">S4048-ON</td>
+<td class="mono">8H3K2P2</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-09-08</td>
+</tr>
+<tr>
+<td class="mono">QS000402</td>
+<td class="mono">QS-BR1-R1</td>
+<td class="mono">WATCHGUARD</td>
+<td class="mono">M370</td>
+<td class="mono">80BA0F2B1C33</td>
+<td class="mono">FIREWALL</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-09-08</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000403</td>
+<td class="mono">QS-BR1-R1</td>
+<td class="mono">ARISTA</td>
+<td class="mono">7050SX-64</td>
+<td class="mono">JPE14210033</td>
+<td class="mono">SWITCH</td>
+<td class="mono">SPARE</td>
+<td class="mono">2023-05-02</td>
+</tr>
+</table><div class="small">12 rows returned (maximum 500). </div><div class="small">12 rows fetched of 12. <input type="submit" value="Fetch more" disabled> <input type="submit" value="Fetch all" disabled> &nbsp; <a href="run-sql.html">Copy row</a></div><h2>Messages</h2><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Statement</th>
+<th><a href="?sort=id">Message ID</a></th>
+<th>SQLSTATE</th>
+<th>SQLCODE</th>
+<th>Message text</th>
+<th>Rows</th>
+<th>Time</th>
+</tr>
+<tr>
+<td class="num">1</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">SQL7958</a></td>
+<td class="mono">00000</td>
+<td class="num">0</td>
+<td>12 rows fetched.</td>
+<td class="num">12</td>
+<td>0.041 s</td>
+</tr>
+<tr class="alt">
+<td class="num">2</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">SQL7958</a></td>
+<td class="mono">00000</td>
+<td class="num">0</td>
+<td>4 rows fetched.</td>
+<td class="num">4</td>
+<td>0.012 s</td>
+</tr>
+<tr>
+<td class="num">3</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">SQL7956</a></td>
+<td class="mono">00000</td>
+<td class="num">0</td>
+<td>1 row updated in ASSETS in HLINV. Changes are uncommitted (commit level Read committed).</td>
+<td class="num">1</td>
+<td>0.009 s</td>
+</tr>
+</table><p class="small grey">Uncommitted changes: the level, naming and schema cannot change until Commit or Rollback (QAD7021); closing the page asks the same. A lost connection marks the result incomplete (QAD7011 / QAD7010) and nothing is run again by itself.</p><h2>History (last 100 on this system)</h2><div class="small mono"><a href="run-sql.html">SELECT COUNT(*) FROM hlinv.assets GROUP BY location</a><br><a href="run-sql.html">SELECT * FROM qsys2.active_job_info WHERE job_status = 'MSGW'</a><br><a href="run-sql.html">UPDATE hlinv.assets SET status = 'RETIRED' WHERE asset_tag = 'QS000301'</a><br><a href="run-sql.html">SELECT * FROM qsys2.system_status_info</a></div>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

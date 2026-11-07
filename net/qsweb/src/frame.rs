@@ -18,6 +18,8 @@ use crate::session::{self, Sessions};
 pub const CSS_PATH: &str = "/qs400/shared/qs400.css";
 
 /// A navigation group and its items (label, route under the prefix).
+/// A group whose one item has the group's own label is a leaf: a plain
+/// link with no `[+]` glyph (Access for Web's `My home page`).
 #[derive(Clone, Copy, Debug)]
 pub struct NavGroup {
     /// `Manage`.
@@ -39,6 +41,16 @@ pub struct Product {
     pub nav: &'static [NavGroup],
     /// The header's label before the system name (`System`).
     pub system_label: &'static str,
+}
+
+impl NavGroup {
+    /// The route of a leaf entry, `None` for a group.
+    pub fn leaf(&self) -> Option<&'static str> {
+        match self.items {
+            [(label, route)] if *label == self.label => Some(route),
+            _ => None,
+        }
+    }
 }
 
 impl Product {
@@ -129,6 +141,7 @@ struct NavView {
     href: String,
     open: bool,
     items: Vec<NavLink>,
+    leaf: Option<NavLink>,
 }
 
 #[derive(Template)]
@@ -182,6 +195,19 @@ pub fn render(ctx: &Ctx, page: &Page) -> String {
         .nav
         .iter()
         .map(|g| {
+            if let Some(route) = g.leaf() {
+                return NavView {
+                    label: g.label,
+                    href: p.url(route),
+                    open: false,
+                    items: Vec::new(),
+                    leaf: Some(NavLink {
+                        label: g.label,
+                        href: p.url(route),
+                        current: page.nav.is_some_and(|(l, r)| l == g.label && r == Some(route)),
+                    }),
+                };
+            }
             let (open, href) = match &ctx.open {
                 Some(set) => {
                     let open = set.iter().any(|l| l == g.label);
@@ -208,6 +234,7 @@ pub fn render(ctx: &Ctx, page: &Page) -> String {
                             && page.nav.and_then(|n| n.1) == Some(*route),
                     })
                     .collect(),
+                leaf: None,
             }
         })
         .collect();

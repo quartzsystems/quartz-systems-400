@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Confirm Delete Instance - QS/400</title>
+<link rel="stylesheet" type="text/css" href="qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="../web/signon.html">Sign off</a> &nbsp;&nbsp; <a href="help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="../web/tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="../web/files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="../web/printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="../web/my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="../web/run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="../web/preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Manage &gt; Server instances &gt; Confirm Delete Instance</div>
+<h1>Confirm Delete Instance</h1>
+
+
+<p>Deleting an instance removes its configuration directory and all log files. Press OK to delete the instances listed below, or Cancel to return without deleting.</p><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Instance name</th>
+<th>Status</th>
+<th>Server root</th>
+<th>Job</th>
+<th>Log files</th>
+</tr>
+<tr>
+<td>WEBSTORE</td>
+<td><span class="err">Stopped</span></td>
+<td><span class="mono">/www/webstore</span></td>
+<td><span class="mono">(not active)</span></td>
+<td>14 files, 212 MB</td>
+</tr>
+</table><p class="small grey">The instance must be stopped before it can be deleted. Running instances are skipped and message HTP8103 is issued.</p><form method="post"><div class="buttons"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

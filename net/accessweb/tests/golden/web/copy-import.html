@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Copy data to table - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[-]</a> <b>Database</b></div>
+<div class="navitem"><a href="tables.html">Tables</a></div>
+<div class="navitem"><a href="run-sql.html">Run SQL</a></div>
+<div class="navitem"><a href="my-requests.html">My requests</a></div>
+<div class="navitem"><a href="copy-import.html" class="navcur">Copy data to table</a></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Database &gt; Copy data to table</div>
+<h1>Copy data to table</h1>
+<div class="desc">Data Transfer to the system, as QS/400 Access for Desktop does it; decimals are moved exactly.</div>
+
+<form method="post" enctype="multipart/form-data"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Source</td></tr>
+<tr><th>File</th><td><input type="file" name="f" size="40"> <span class="small grey">CSV, TSV, XLSX, ODS or fixed-width text</span></td></tr>
+<tr><th>Or file on this system</th><td><input type="text" name="p" value="/home/CWELLMAN/upload/assets_br1.csv" size="45" class="cmd"> <input type="submit" value="Browse..."></td></tr>
+<tr><th>Format</th><td><select name="fmt"><option>CSV</option><option>TSV</option><option>XLSX (first sheet)</option><option>ODS (first sheet)</option><option>Fixed width</option></select> &nbsp; <input type="checkbox" name="hdr" checked> First row is column names &nbsp; Code page: <select name="cp"><option>1208 (UTF-8)</option><option>1252</option><option>37</option></select></td></tr>
+<tr class="subrow"><td colspan="2">Target</td></tr>
+<tr><th>Schema</th><td><select name="s"><option>HLINV</option><option>QGPL</option><option>WEBSTORE</option></select></td></tr>
+<tr><th>Table</th><td><select name="t"><option>ASSETS</option><option>LOCATIONS</option><option>MANUFACTURERS</option><option>MOVEMENTS</option></select></td></tr>
+<tr><th>If rows exist</th><td><input type="radio" name="m" value="append" checked> Append <input type="radio" name="m" value="replace"> Replace all rows <input type="radio" name="m" value="update"> Update matching keys</td></tr>
+<tr><th>On error</th><td><input type="radio" name="e" value="stop" checked> Stop and report the row <input type="radio" name="e" value="skip"> Skip the row, list it in the summary</td></tr>
+<tr class="subrow"><td colspan="2">Request file</td></tr>
+<tr><th>Open a saved request</th><td><input type="file" name="qdx" size="30"> <span class="small grey">.qdx from QS/400 Access for Desktop (passwords are never in it); the same file runs here</span></td></tr>
+</table><h2>Field mapping</h2><p class="small grey">Read from the first 50 rows of assets_br1.csv. Choose the target column for each source column, or (skip).</p><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Source column</th>
+<th>Sample value</th>
+<th>Target column</th>
+<th>Type</th>
+</tr>
+<tr>
+<td class="mono">tag</td>
+<td><span class="mono">QS000404</span></td>
+<td><select name="map0"><option>(skip)</option><option selected>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>CHAR(10)</td>
+</tr>
+<tr class="alt">
+<td class="mono">site</td>
+<td><span class="mono">QS-BR1-R1</span></td>
+<td><select name="map1"><option>(skip)</option><option>ASSET_TAG</option><option selected>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>CHAR(10)</td>
+</tr>
+<tr>
+<td class="mono">vendor</td>
+<td><span class="mono">ARISTA</span></td>
+<td><select name="map2"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option selected>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>VARCHAR(40)</td>
+</tr>
+<tr class="alt">
+<td class="mono">model</td>
+<td><span class="mono">7050SX-64</span></td>
+<td><select name="map3"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option selected>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>VARCHAR(40)</td>
+</tr>
+<tr>
+<td class="mono">sn</td>
+<td><span class="mono">JPE14210034</span></td>
+<td><select name="map4"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option selected>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>VARCHAR(40)</td>
+</tr>
+<tr class="alt">
+<td class="mono">kind</td>
+<td><span class="mono">SWITCH</span></td>
+<td><select name="map5"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option selected>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>CHAR(12)</td>
+</tr>
+<tr>
+<td class="mono">state</td>
+<td><span class="mono">SPARE</span></td>
+<td><select name="map6"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option selected>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>CHAR(8)</td>
+</tr>
+<tr class="alt">
+<td class="mono">bought</td>
+<td><span class="mono">2023-05-02</span></td>
+<td><select name="map7"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option selected>ACQUIRED</option><option>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>DATE</td>
+</tr>
+<tr>
+<td class="mono">price</td>
+<td><span class="mono">1200.00</span></td>
+<td><select name="map8"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option selected>COST</option><option>RACK_U</option><option>NOTES</option></select></td>
+<td>DECIMAL(11,2)</td>
+</tr>
+<tr class="alt">
+<td class="mono">comment</td>
+<td><span class="mono">Branch spare</span></td>
+<td><select name="map9"><option>(skip)</option><option>ASSET_TAG</option><option>LOCATION</option><option>MANUFACTURER</option><option>MODEL</option><option>SERIAL</option><option>ASSET_TYPE</option><option>STATUS</option><option>ACQUIRED</option><option>COST</option><option>RACK_U</option><option selected>NOTES</option></select></td>
+<td>VARCHAR(256)</td>
+</tr>
+</table><div class="buttons"><input type="submit" value="Copy"><input type="submit" value="Preview 10 rows"><input type="submit" value="Save request (.qdx)"><input type="submit" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

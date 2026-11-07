@@ -33,6 +33,10 @@ pub const QZHBMSG: &str = include_str!("../msgs/qzhbmsg.toml");
 /// The source of `QSTXTMSG`, the displays' text.
 pub const QSTXTMSG: &str = include_str!("../msgs/qstxtmsg.toml");
 
+/// The source of `QZXWMSG`, Access for Web's messages (`QS00AFW`), made
+/// from `net/accessweb/src/msgs.rs`.
+pub const QZXWMSG: &str = include_str!("../msgs/qzxwmsg.toml");
+
 /// The source of `QRPGMSG`, the RPG/400 compiler's and converter's
 /// messages (`QS00RPG`).
 pub const QRPGMSG: &str = include_str!("../msgs/qrpgmsg.toml");
@@ -40,7 +44,11 @@ pub const QRPGMSG: &str = include_str!("../msgs/qrpgmsg.toml");
 /// Message files of product libraries: the library, its text, the
 /// file's source.
 pub const PRODUCT_FILES: &[(&str, &str, &str)] =
-    &[("QHTTPSVR", "HTTP server", QZHBMSG), ("QRPG", "RPG/400", QRPGMSG)];
+    &[
+    ("QHTTPSVR", "HTTP server", QZHBMSG),
+    ("QRPG", "RPG/400", QRPGMSG),
+    ("QUSRSYS", "User system library", QZXWMSG),
+];
 
 /// A message file: its name, text and descriptions.
 #[derive(Clone, Debug, PartialEq, Eq)]

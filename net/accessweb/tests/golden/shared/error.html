@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Error - QS/400</title>
+<link rel="stylesheet" type="text/css" href="qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="../web/signon.html">Sign off</a> &nbsp;&nbsp; <a href="help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="../web/tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="../web/files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="../web/printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="../web/my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="../web/run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="../web/preferences.html">[+]</a> <b>Customize</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="../web/download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Error</div>
+<h1>Error</h1>
+<div class="desc">The request could not be completed. The message below was returned by the system.</div>
+<table class="msg"><tr><td class="error"><a class="msgid" href="help.html" target="_blank">CPF2204</a> - User profile WEBUSER not found.</td></tr></table>
+
+<table class="props" cellspacing="0">
+<tr><th>Message ID</th><td class="mono">CPF2204</td></tr>
+<tr><th>Severity</th><td>40</td></tr>
+<tr><th>Message type</th><td>Escape</td></tr>
+<tr><th>Date sent</th><td>10/29/26 &nbsp; 14:02:17</td></tr>
+<tr><th>From job</th><td class="mono">123457/QTMHHTTP/ADMIN</td></tr>
+<tr><th>From program</th><td class="mono">QSYCUSRP</td></tr>
+</table>
+<h2>Message</h2>
+<pre class="out">User profile WEBUSER not found.</pre>
+<h2>Cause</h2>
+<p>The user profile WEBUSER specified for the server user profile does not exist on system QSHQ400, or it was deleted after the instance configuration was saved.</p>
+<h2>Recovery</h2>
+<p>Create the user profile with the CRTUSRPRF command, or change the instance to use an existing user profile (for example QTMHHTTP) on the General page of the instance, then try the request again.</p>
+<h2>Technical description</h2>
+<pre class="out">Request:  POST /qs400/httpadmin/instance/WEBSTORE/general
+Returned: HTP8201 severity 30 from QHTTPADM
+Job log:  123457/QTMHHTTP/ADMIN</pre>
+<form method="post"><div class="buttons"><input type="submit" value="&lt; Back"><input type="submit" value="Job log"><input type="submit" value="Close"></div></form>
+
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

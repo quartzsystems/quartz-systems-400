@@ -1,0 +1,111 @@
+# QZXWMSG: Access for Web's messages and the desktop's it shares,
+# installed in library QUSRSYS with QS00AFW. Made from
+# net/accessweb/src/msgs.rs by its test
+# (QS400_UPDATE_MSGF=1 cargo test -p accessweb --test msgf); do not edit.
+# The XWA texts are ours, the QAD texts the desktop's.
+name = "QZXWMSG"
+text = "Access for Web messages"
+
+[[msg]]
+id = "XWA0001"
+sev = 40
+text = "Function &1 is not allowed for user profile &2 by the Access for Web policies."
+help = "&N Cause . . . . . :   The Access for Web policy for &1 is set to Deny for &2, one of its groups or *PUBLIC. A Deny at any of these levels denies the function, whatever the object authority of the user profile. &N Recovery  . . . :   Ask your security administrator to change the policy on the Policies page of Access for Web, or use the function from a 5250 display."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0002"
+sev = 0
+text = "Access for Web policies for &1 changed."
+help = "&N Cause . . . . . :   The policies set for &1 were saved in the policy store. They apply from the next request of every user they affect. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0003"
+sev = 0
+text = "Access for Web preferences for user profile &1 changed."
+help = "&N Cause . . . . . :   The preferences of &1 were saved. They apply from the next page. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0004"
+sev = 30
+text = "Value &1 is not valid for &2."
+help = "&N Cause . . . . . :   The value &1 typed for &2 is not one this field accepts. Nothing was saved. &N Recovery  . . . :   Type a value the field accepts and try again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0005"
+sev = 0
+text = "Access for Web preferences for user profile &1 set to the defaults."
+help = "&N Cause . . . . . :   Every preference of &1 was set back to the value the product ships with. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0010"
+sev = 0
+text = "Session &1 saved."
+help = "&N Cause . . . . . :   The settings of 5250 session &1 were saved with your Access for Web sessions. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0020"
+sev = 0
+text = "Request &1 saved."
+help = "&N Cause . . . . . :   Request &1 was saved with your Access for Web requests. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0030"
+sev = 0
+text = "Copy completed: &1 rows copied, &2 errors."
+help = "&N Cause . . . . . :   The copy wrote &1 rows. &2 rows could not be written; the messages of the copy name them. &N Recovery  . . . :   None when there were no errors. Otherwise correct the rows named and copy them again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0040"
+sev = 0
+text = "File &1 uploaded."
+help = "&N Cause . . . . . :   The file &1 was written to the integrated file system as your user profile. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0050"
+sev = 0
+text = "Command submitted to job queue &1 as job &2."
+help = "&N Cause . . . . . :   The command runs in batch job &2 from job queue &1, as your user profile. &N Recovery  . . . :   Look at the job from My jobs; its job log holds the command's messages."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0099"
+sev = 40
+text = "Function &1 of Access for Web is not available on this system."
+help = "&N Cause . . . . . :   The pages of &1 are not part of this level of the product. &N Recovery  . . . :   Use the function from a 5250 display or from QS/400 Access for Desktop."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD4022"
+sev = 20
+text = "Password for &1 on &2 has expired."
+help = "&N Cause . . . . . :   The password of user &1 on system &2 is correct but has expired. The system requires a new one before it allows a sign-on. &N Recovery  . . . :   Change the password in the Change Password dialog. The new password must meet the system's password rules, which the system reports if it is refused."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD4023"
+sev = 0
+text = "Password changed for &1 on &2."
+help = "&N Cause . . . . . :   System &2 accepted the new password for user &1. &N Recovery  . . . :   None needed. Use the new password from now on, including at the 5250 sign-on display."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD4027"
+sev = 30
+text = "New password and confirmation are not the same."
+help = "&N Cause . . . . . :   The new password and the confirmation of it were typed differently. Nothing was sent to the system. &N Recovery  . . . :   Type the new password again in both fields."
+
+[[msg]]
+id = "QAD4031"
+sev = 10
+text = "Password for &1 on &2 expires in &3 days."
+help = "&N Cause . . . . . :   The password of user profile &1 on system &2 expires in &3 days, within the system's password expiration warning period (system value QPWDEXPWRN). It is counted on the system's clock from the password's last change and its expiration interval. This warning is shown once per session. &N Recovery  . . . :   Select Change Password... to change it now, or change it later with Actions > Change Password... before it expires. Once it has expired, sign-on asks for a new one."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]

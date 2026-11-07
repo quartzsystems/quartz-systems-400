@@ -1,0 +1,359 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Active jobs - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[-]</a> <b>Work management</b></div>
+<div class="navitem"><a href="active-jobs.html" class="navcur">Active jobs</a></div>
+<div class="navitem"><a href="job-queues.html">Job queues</a></div>
+<div class="navitem"><a href="subsystems.html">Subsystems</a></div>
+<div class="navitem"><a href="output-queues.html">Output queues</a></div>
+<div class="navitem"><a href="printers.html">Printers</a></div>
+<div class="navitem"><a href="scheduled-jobs.html">Scheduled jobs</a></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Work management &gt; Active jobs</div>
+<h1>Active jobs</h1>
+<div class="desc">Jobs currently active on the system (WRKACTJOB).</div>
+<table class="msg"><tr><td class="info"><a class="msgid" href="../shared/help.html" target="_blank">CPF1321</a> - Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 spooled file.</td></tr></table>
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Subsystem:</td><td><select name="sbs"><option>*ALL</option><option>QINTER</option><option>QBATCH</option><option>QHTTPSVR</option><option>QSYSWRK</option><option>QUSRWRK</option><option>QCTL</option><option>QSPL</option></select></td><td>User:</td><td><input type="text" name="user" value="*ALL" size="10"></td><td>Job name:</td><td><input type="text" name="job" value="*ALL" size="10"></td><td>Status:</td><td><select name="sts"><option>*ALL</option><option>RUN</option><option>DEQW</option><option>MSGW</option><option>LCKW</option><option>TIMW</option><option>PSRW</option><option>SELW</option><option>DSPW</option><option>EVTW</option></select></td><td><input type="submit" value="Go"> <input type="submit" name="refresh" value="Refresh"></td></tr></table></form><div class="small grey">Elapsed time: 00:01:00 &nbsp; CPU %: 23.4 &nbsp; Active jobs: 318 &nbsp; Jobs with MSGW: <span class="err">2</span></div><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=name">Job name</a></th>
+<th><a href="?sort=user">User</a></th>
+<th><a href="?sort=number">Number</a></th>
+<th><a href="?sort=type">Type</a></th>
+<th><a href="?sort=sbs">Subsystem</a></th>
+<th><a href="?sort=status">Status</a></th>
+<th><a href="?sort=cpu">CPU %</a></th>
+<th><a href="?sort=func">Function</a></th>
+<th><a href="?sort=curuser">Current user</a></th>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">ADMIN</a></td>
+<td class="mono">QTMHHTTP</td>
+<td class="mono">123456</td>
+<td class="mono">BCH</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="num">0.3</td>
+<td class="mono">PGM-QZHBMAIN</td>
+<td class="mono">QTMHHTTP</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">ADMIN</a></td>
+<td class="mono">QTMHHTTP</td>
+<td class="mono">123457</td>
+<td class="mono">BCI</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">TIMW</td>
+<td class="num">0.0</td>
+<td class="mono">PGM-QZSRHTTP</td>
+<td class="mono">QTMHHTTP</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">APACHEDFT</a></td>
+<td class="mono">QTMHHTTP</td>
+<td class="mono">123461</td>
+<td class="mono">BCH</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">DEQW</td>
+<td class="num">0.0</td>
+<td class="mono">PGM-QZHBMAIN</td>
+<td class="mono">QTMHHTTP</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QPADEV0001</a></td>
+<td class="mono">QSECOFR</td>
+<td class="mono">123460</td>
+<td class="mono">INT</td>
+<td class="mono">QINTER</td>
+<td class="mono"><span class="err">MSGW</span></td>
+<td class="num">0.0</td>
+<td class="mono">CMD-WRKACTJOB</td>
+<td class="mono">QSECOFR</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QPADEV0003</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">123488</td>
+<td class="mono">INT</td>
+<td class="mono">QINTER</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="num">1.2</td>
+<td class="mono">PGM-HLINV/INVMAIN</td>
+<td class="mono">CWELLMAN</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QPADEV0004</a></td>
+<td class="mono">OPERATOR</td>
+<td class="mono">123490</td>
+<td class="mono">INT</td>
+<td class="mono">QINTER</td>
+<td class="mono">DSPW</td>
+<td class="num">0.0</td>
+<td class="mono">MNU-MAIN</td>
+<td class="mono">OPERATOR</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">NIGHTLY</a></td>
+<td class="mono">QPGMR</td>
+<td class="mono">123501</td>
+<td class="mono">BCH</td>
+<td class="mono">QBATCH</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="num">14.8</td>
+<td class="mono">PGM-QGPL/NIGHTLY</td>
+<td class="mono">QPGMR</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">RGZPFM01</a></td>
+<td class="mono">QPGMR</td>
+<td class="mono">123502</td>
+<td class="mono">BCH</td>
+<td class="mono">QBATCH</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="num">6.1</td>
+<td class="mono">CMD-RGZPFM</td>
+<td class="mono">QPGMR</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">INVBATCH</a></td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">123503</td>
+<td class="mono">BCH</td>
+<td class="mono">QBATCH</td>
+<td class="mono"><span class="err">MSGW</span></td>
+<td class="num">0.0</td>
+<td class="mono">PGM-HLINV/INVLOAD</td>
+<td class="mono">CWELLMAN</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QZDASOINIT</a></td>
+<td class="mono">QUSER</td>
+<td class="mono">123411</td>
+<td class="mono">PJ</td>
+<td class="mono">QUSRWRK</td>
+<td class="mono"><span class="ok">RUN</span></td>
+<td class="num">2.2</td>
+<td class="mono">PGM-QZDASOINIT</td>
+<td class="mono">WEBUSER</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QZDASOINIT</a></td>
+<td class="mono">QUSER</td>
+<td class="mono">123412</td>
+<td class="mono">PJ</td>
+<td class="mono">QUSRWRK</td>
+<td class="mono">PSRW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QUSER</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QZDASOINIT</a></td>
+<td class="mono">QUSER</td>
+<td class="mono">123413</td>
+<td class="mono">PJ</td>
+<td class="mono">QUSRWRK</td>
+<td class="mono">PSRW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QUSER</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QZRCSRVS</a></td>
+<td class="mono">QUSER</td>
+<td class="mono">123420</td>
+<td class="mono">PJ</td>
+<td class="mono">QUSRWRK</td>
+<td class="mono">PSRW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QUSER</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QZSOSIGN</a></td>
+<td class="mono">QUSER</td>
+<td class="mono">123421</td>
+<td class="mono">PJ</td>
+<td class="mono">QUSRWRK</td>
+<td class="mono">PSRW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QUSER</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QTVDEVICE</a></td>
+<td class="mono">QTCP</td>
+<td class="mono">123380</td>
+<td class="mono">BCH</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">DEQW</td>
+<td class="num">0.0</td>
+<td class="mono">PGM-QTVDEVIC</td>
+<td class="mono">QTCP</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QTVTELNET</a></td>
+<td class="mono">QTCP</td>
+<td class="mono">123381</td>
+<td class="mono">BCH</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">SELW</td>
+<td class="num">0.1</td>
+<td class="mono">PGM-QTVTELNT</td>
+<td class="mono">QTCP</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QTFTP00412</a></td>
+<td class="mono">QTCP</td>
+<td class="mono">123382</td>
+<td class="mono">BCH</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">SELW</td>
+<td class="num">0.0</td>
+<td class="mono">PGM-QTMFTPS</td>
+<td class="mono">QTCP</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QTSSHD</a></td>
+<td class="mono">QSSHD</td>
+<td class="mono">123383</td>
+<td class="mono">BCH</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">SELW</td>
+<td class="num">0.0</td>
+<td class="mono">PGM-QP0ZSPWP</td>
+<td class="mono">QSSHD</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QNTPSRVR</a></td>
+<td class="mono">QTCP</td>
+<td class="mono">123385</td>
+<td class="mono">BCH</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">TIMW</td>
+<td class="num">0.0</td>
+<td class="mono">PGM-QTOTNTPS</td>
+<td class="mono">QTCP</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QDBSRV01</a></td>
+<td class="mono">QSYS</td>
+<td class="mono">123301</td>
+<td class="mono">SYS</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">DEQW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QSYS</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QSYSSCD</a></td>
+<td class="mono">QPGMR</td>
+<td class="mono">123302</td>
+<td class="mono">BCH</td>
+<td class="mono">QCTL</td>
+<td class="mono">EVTW</td>
+<td class="num">0.0</td>
+<td class="mono">PGM-QEZSCNEP</td>
+<td class="mono">QPGMR</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QINTER</a></td>
+<td class="mono">QSYS</td>
+<td class="mono">123200</td>
+<td class="mono">SBS</td>
+<td class="mono">QINTER</td>
+<td class="mono">DEQW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QSYS</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QBATCH</a></td>
+<td class="mono">QSYS</td>
+<td class="mono">123201</td>
+<td class="mono">SBS</td>
+<td class="mono">QBATCH</td>
+<td class="mono">DEQW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QSYS</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QHTTPSVR</a></td>
+<td class="mono">QSYS</td>
+<td class="mono">123202</td>
+<td class="mono">SBS</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">DEQW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QSYS</td>
+</tr>
+<tr>
+<td class="act"><a href="active-jobs.html">Hold</a> | <a href="active-jobs.html">Release</a> | <a href="end-job-confirm.html">End</a> | <a href="job-props-joblog.html">Job log</a> | <a href="job-props-general.html">Properties</a> | <a href="spooled-files.html">Spooled files</a></td>
+<td class="mono"><a href="job-props-general.html">QSPLMAINT</a></td>
+<td class="mono">QSYS</td>
+<td class="mono">123105</td>
+<td class="mono">SYS</td>
+<td class="mono">QSYSWRK</td>
+<td class="mono">DEQW</td>
+<td class="num">0.0</td>
+<td class="mono"></td>
+<td class="mono">QSYS</td>
+</tr>
+</table><form method="get" class="paging">Page 1 of 13 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <a href="?page=2">Next &gt;</a> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option selected>25</option><option>50</option><option>100</option></select> <input type="submit" value="Go"> &nbsp; 318 entries</form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

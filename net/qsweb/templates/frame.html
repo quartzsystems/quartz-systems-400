@@ -17,8 +17,9 @@
 </td></tr>
 <tr>
 <td class="nav" valign="top">
-{% for g in nav %}<div class="navgrp"><a class="glyph" href="{{ g.href }}">{% if g.open %}[-]{% else %}[+]{% endif %}</a> <b>{{ g.label }}</b></div>
-{% if g.open %}{% for i in g.items %}<div class="navitem"><a href="{{ i.href }}"{% if i.current %} class="navcur"{% endif %}>{{ i.label }}</a></div>
+{% for g in nav %}{% if let Some(l) = g.leaf %}<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="{{ l.href }}"{% if l.current %} class="navcur"{% endif %}>{{ l.label }}</a></div>
+{% else %}<div class="navgrp"><a class="glyph" href="{{ g.href }}">{% if g.open %}[-]{% else %}[+]{% endif %}</a> <b>{{ g.label }}</b></div>
+{% endif %}{% if g.open %}{% for i in g.items %}<div class="navitem"><a href="{{ i.href }}"{% if i.current %} class="navcur"{% endif %}>{{ i.label }}</a></div>
 {% endfor %}{% endif %}{% endfor %}</td>
 <td class="content" valign="top">
 <div class="crumb">{{ crumb }}</div>

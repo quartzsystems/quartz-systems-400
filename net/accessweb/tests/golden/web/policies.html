@@ -1,0 +1,321 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Policies - QS/400 Access for Web</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 Access for Web</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="home.html">My home page</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="5250-config.html">5250 session</a></div>
+<div class="navgrp"><a class="glyph" href="tables.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="files.html">[+]</a> <b>Files</b></div>
+<div class="navgrp"><a class="glyph" href="printer-output.html">[+]</a> <b>Print</b></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="messages.html">Messages</a></div>
+<div class="navgrp"><a class="glyph" href="my-jobs.html">[+]</a> <b>Jobs</b></div>
+<div class="navgrp"><a class="glyph" href="run-command.html">[+]</a> <b>Commands</b></div>
+<div class="navgrp"><a class="glyph" href="preferences.html">[-]</a> <b>Customize</b></div>
+<div class="navitem"><a href="preferences.html">Preferences</a></div>
+<div class="navitem"><a href="change-password.html">Change password</a></div>
+<div class="navitem"><a href="policies.html" class="navcur">Policies</a></div>
+<div class="navgrp"><span class="glyph">&nbsp;&nbsp;&nbsp;</span> <a href="download.html">Download</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Access for Web &gt; Customize &gt; Policies</div>
+<h1>Policies</h1>
+<div class="desc">Administrator: allow or deny each Access for Web function per profile or group.</div>
+
+<table class="msg"><tr><td class="info">Policies are checked in this order: user profile, group profiles, *PUBLIC. A Deny at any level denies. The user's object authority on the system still applies.</td></tr></table><form method="post"><table class="filter"><tr><td>Profile or group:</td><td><select name="p"><option>WEBUSER (user)</option><option>WEBUSERS (group)</option><option>WAREHOUSE (group)</option><option>ADMINS (group)</option><option>*PUBLIC</option></select></td><td><input type="submit" value="Go"></td><td class="small grey">&nbsp; Effective policies for WEBUSER, including group WEBUSERS.</td></tr></table><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Function</th>
+<th>Allow</th>
+<th>Deny</th>
+<th>Set by</th>
+</tr>
+<tr>
+<td><b>5250</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr class="alt">
+<td>Start 5250 sessions</td>
+<td class="radio"><input type="radio" name="p_5250_0" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_5250_0" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Save session settings</td>
+<td class="radio"><input type="radio" name="p_5250_1" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_5250_1" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Use auto sign-on</td>
+<td class="radio"><input type="radio" name="p_5250_2" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_5250_2" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Print screen</td>
+<td class="radio"><input type="radio" name="p_5250_3" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_5250_3" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td><b>Database</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr>
+<td>Browse tables</td>
+<td class="radio"><input type="radio" name="p_database_0" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_database_0" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Insert, update and delete records</td>
+<td class="radio"><input type="radio" name="p_database_1" value="A"> </td>
+<td class="radio"><input type="radio" name="p_database_1" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr>
+<td>Run SQL - SELECT</td>
+<td class="radio"><input type="radio" name="p_database_2" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_database_2" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Run SQL - any statement</td>
+<td class="radio"><input type="radio" name="p_database_3" value="A"> </td>
+<td class="radio"><input type="radio" name="p_database_3" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr>
+<td>Copy data to table</td>
+<td class="radio"><input type="radio" name="p_database_4" value="A"> </td>
+<td class="radio"><input type="radio" name="p_database_4" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr class="alt">
+<td>Copy data from table</td>
+<td class="radio"><input type="radio" name="p_database_5" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_database_5" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Save requests</td>
+<td class="radio"><input type="radio" name="p_database_6" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_database_6" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Share requests</td>
+<td class="radio"><input type="radio" name="p_database_7" value="A"> </td>
+<td class="radio"><input type="radio" name="p_database_7" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr>
+<td><b>Files</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr class="alt">
+<td>Browse files</td>
+<td class="radio"><input type="radio" name="p_files_0" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_files_0" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Upload files</td>
+<td class="radio"><input type="radio" name="p_files_1" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_files_1" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Download files</td>
+<td class="radio"><input type="radio" name="p_files_2" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_files_2" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Edit text files</td>
+<td class="radio"><input type="radio" name="p_files_3" value="A"> </td>
+<td class="radio"><input type="radio" name="p_files_3" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr class="alt">
+<td>Delete files</td>
+<td class="radio"><input type="radio" name="p_files_4" value="A"> </td>
+<td class="radio"><input type="radio" name="p_files_4" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr>
+<td>Browse outside home directory</td>
+<td class="radio"><input type="radio" name="p_files_5" value="A"> </td>
+<td class="radio"><input type="radio" name="p_files_5" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr class="alt">
+<td><b>Print</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr>
+<td>View printer output as text</td>
+<td class="radio"><input type="radio" name="p_print_0" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_print_0" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>View printer output as PDF</td>
+<td class="radio"><input type="radio" name="p_print_1" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_print_1" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Hold, release, delete own output</td>
+<td class="radio"><input type="radio" name="p_print_2" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_print_2" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Move output between queues</td>
+<td class="radio"><input type="radio" name="p_print_3" value="A"> </td>
+<td class="radio"><input type="radio" name="p_print_3" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr>
+<td>Work with other users' output</td>
+<td class="radio"><input type="radio" name="p_print_4" value="A"> </td>
+<td class="radio"><input type="radio" name="p_print_4" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr class="alt">
+<td><b>Messages</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr>
+<td>Display own messages</td>
+<td class="radio"><input type="radio" name="p_messages_0" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_messages_0" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Send messages</td>
+<td class="radio"><input type="radio" name="p_messages_1" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_messages_1" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Send inquiry messages</td>
+<td class="radio"><input type="radio" name="p_messages_2" value="A"> </td>
+<td class="radio"><input type="radio" name="p_messages_2" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr class="alt">
+<td>Reply to inquiry messages</td>
+<td class="radio"><input type="radio" name="p_messages_3" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_messages_3" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td><b>Jobs</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr class="alt">
+<td>Display own jobs</td>
+<td class="radio"><input type="radio" name="p_jobs_0" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_jobs_0" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>End own jobs</td>
+<td class="radio"><input type="radio" name="p_jobs_1" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_jobs_1" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Display server jobs</td>
+<td class="radio"><input type="radio" name="p_jobs_2" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_jobs_2" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>End server jobs</td>
+<td class="radio"><input type="radio" name="p_jobs_3" value="A"> </td>
+<td class="radio"><input type="radio" name="p_jobs_3" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr class="alt">
+<td><b>Commands</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr>
+<td>Run commands</td>
+<td class="radio"><input type="radio" name="p_commands_0" value="A"> </td>
+<td class="radio"><input type="radio" name="p_commands_0" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr class="alt">
+<td>Prompt commands</td>
+<td class="radio"><input type="radio" name="p_commands_1" value="A"> </td>
+<td class="radio"><input type="radio" name="p_commands_1" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr>
+<td>Run saved (shared) commands</td>
+<td class="radio"><input type="radio" name="p_commands_2" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_commands_2" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr class="alt">
+<td>Save commands</td>
+<td class="radio"><input type="radio" name="p_commands_3" value="A"> </td>
+<td class="radio"><input type="radio" name="p_commands_3" value="D" checked> </td>
+<td><span class="small grey">Group WEBUSERS</span></td>
+</tr>
+<tr>
+<td><b>Customize</b></td>
+<td class="radio"></td>
+<td class="radio"></td>
+<td></td>
+</tr>
+<tr class="alt">
+<td>Change own preferences</td>
+<td class="radio"><input type="radio" name="p_customize_0" value="A" checked> </td>
+<td class="radio"><input type="radio" name="p_customize_0" value="D"> </td>
+<td><span class="small grey">Default</span></td>
+</tr>
+<tr>
+<td>Change policies (administrator)</td>
+<td class="radio"><input type="radio" name="p_customize_1" value="A"> </td>
+<td class="radio"><input type="radio" name="p_customize_1" value="D" checked> </td>
+<td><span class="small grey">System</span></td>
+</tr>
+</table><div class="buttons"><input type="submit" value="Apply"><input type="submit" value="OK"><input type="submit" value="Cancel"><input type="submit" value="Copy policies from..."></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>
