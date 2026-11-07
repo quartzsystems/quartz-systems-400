@@ -172,7 +172,7 @@ fn saved_sessions_and_their_files() {
             ("col", "bw"),
             ("ac", "on"),
             ("h1", "on"),
-            ("km", "CWELLMAN-laptop (.qkm)"),
+            ("km", "TESTUSER-laptop (.qkm)"),
             ("save", "Save session"),
         ],
         &[],
@@ -346,7 +346,7 @@ fn properties_change_and_refuse() {
         .text();
     assert!(
         t.contains("Verify connection: QSBR1400")
-            && t.contains("Signed on as CWELLMAN and off again"),
+            && t.contains("Signed on as TESTUSER and off again"),
         "{t}"
     );
 }
@@ -464,7 +464,7 @@ fn macros_record_edit_play() {
     b.post(
         "/5250/1/macros?edit=1",
         &[
-            ("steps", "type  \"CWELLMAN\"\nkey   Enter\n"),
+            ("steps", "type  \"TESTUSER\"\nkey   Enter\n"),
             ("save", "Save"),
         ],
     );
@@ -492,7 +492,7 @@ fn macros_record_edit_play() {
     assert_eq!(r.status, 303);
     assert_eq!(
         &inputs(&b)[before..],
-        [Input::Text("CWELLMAN".into()), Input::Key("Enter".into())]
+        [Input::Text("TESTUSER".into()), Input::Key("Enter".into())]
     );
     // A wait that never comes stops the macro, naming the step.
     let short = "[qsaccess]\nkind = \"macro\"\nversion = 1\n[macro]\nname = \"WAITS\"\n[[step]]\naction = \"wait-text\"\nrow = 1\ncol = 36\ntext = \"Sign On\"\ntimeout_ms = 200\n";

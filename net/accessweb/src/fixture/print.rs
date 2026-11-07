@@ -25,7 +25,7 @@ pub type Sample = [&'static str; 10];
 pub const SPOOLED: &[Sample] = &[
     [
         "INVRPT",
-        "CWELLMAN",
+        "TESTUSER",
         "INVBATCH",
         "RDY",
         "12",
@@ -33,11 +33,11 @@ pub const SPOOLED: &[Sample] = &[
         "*STD",
         "QGPL/QPRINT",
         "10/29/26 06:14",
-        "123402/CWELLMAN/INVBATCH",
+        "123402/TESTUSER/INVBATCH",
     ],
     [
         "QPJOBLOG",
-        "CWELLMAN",
+        "TESTUSER",
         "INVLOAD",
         "RDY",
         "3",
@@ -45,11 +45,11 @@ pub const SPOOLED: &[Sample] = &[
         "*STD",
         "QUSRSYS/QEZJOBLOG",
         "10/29/26 06:15",
-        "123402/CWELLMAN/INVBATCH",
+        "123402/TESTUSER/INVBATCH",
     ],
     [
         "QPRINT",
-        "CWELLMAN",
+        "TESTUSER",
         "",
         "HLD",
         "1",
@@ -57,11 +57,11 @@ pub const SPOOLED: &[Sample] = &[
         "*STD",
         "QGPL/QPRINT",
         "10/28/26 18:00",
-        "123311/CWELLMAN/QPADEV0003",
+        "123311/TESTUSER/QPADEV0003",
     ],
     [
         "QSYSPRT",
-        "CWELLMAN",
+        "TESTUSER",
         "DSPJOB",
         "RDY",
         "7",
@@ -69,11 +69,11 @@ pub const SPOOLED: &[Sample] = &[
         "*STD",
         "QGPL/QPRINT",
         "10/28/26 17:02",
-        "123311/CWELLMAN/QPADEV0003",
+        "123311/TESTUSER/QPADEV0003",
     ],
     [
         "INVLABEL",
-        "CWELLMAN",
+        "TESTUSER",
         "LABELS",
         "RDY",
         "118",
@@ -81,11 +81,11 @@ pub const SPOOLED: &[Sample] = &[
         "*LABEL",
         "QGPL/PRT02",
         "10/27/26 09:40",
-        "123290/CWELLMAN/INVBATCH",
+        "123290/TESTUSER/INVBATCH",
     ],
     [
         "QPDSPJOB",
-        "CWELLMAN",
+        "TESTUSER",
         "",
         "SAV",
         "2",
@@ -93,11 +93,11 @@ pub const SPOOLED: &[Sample] = &[
         "*STD",
         "QGPL/QPRINT",
         "10/24/26 11:11",
-        "123101/CWELLMAN/QPADEV0003",
+        "123101/TESTUSER/QPADEV0003",
     ],
     [
         "QPJOBLOG",
-        "CWELLMAN",
+        "TESTUSER",
         "QPADEV0003",
         "MSGW",
         "1",
@@ -105,11 +105,11 @@ pub const SPOOLED: &[Sample] = &[
         "*STD",
         "QUSRSYS/QEZJOBLOG",
         "10/22/26 09:50",
-        "123050/CWELLMAN/QPADEV0003",
+        "123050/TESTUSER/QPADEV0003",
     ],
     [
         "ASSETEXP",
-        "CWELLMAN",
+        "TESTUSER",
         "EXPORT",
         "WTR",
         "44",
@@ -117,7 +117,7 @@ pub const SPOOLED: &[Sample] = &[
         "*STD",
         "HLINV/INVRPT",
         "10/20/26 15:00",
-        "122990/CWELLMAN/INVBATCH",
+        "122990/TESTUSER/INVBATCH",
     ],
 ];
 
@@ -140,7 +140,7 @@ pub const OTHER: Sample = [
 
 /// Page 1 of `INVRPT`.
 pub const INVRPT_PAGE1: &str = r"QPRINT    INVRPT      INVENTORY REPORT BY LOCATION                       QSHQ400   10/29/26  06:14:02   PAGE    1
-                                                                            HLINV/INVRPT      USER CWELLMAN
+                                                                            HLINV/INVRPT      USER TESTUSER
 
 LOCATION  ASSET TAG   MANUFACTURER      MODEL                 SERIAL              TYPE        STATUS   ACQUIRED    NOTES
 --------  ----------  ----------------  --------------------  ------------------  ----------  -------  ----------  ------------------------
@@ -290,7 +290,7 @@ impl Print for FixturePrint {
     }
 
     fn users(&self, _user: &str) -> Vec<String> {
-        vec!["CWELLMAN".into(), "QPGMR".into()]
+        vec!["TESTUSER".into(), "QPGMR".into()]
     }
 
     fn queues(&self, _user: &str) -> Vec<String> {

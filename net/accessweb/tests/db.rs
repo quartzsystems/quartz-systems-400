@@ -160,7 +160,7 @@ fn table_insert_golden() {
         .map
         .lock()
         .unwrap()
-        .get_mut("CWELLMAN")
+        .get_mut("TESTUSER")
         .unwrap()
         .push(("df".into(), "YYYY-MM-DD".into()));
     let r = b.get("/db/HLINV/ASSETS/insert");
@@ -210,7 +210,7 @@ fn run_sql_golden() {
         "{}",
         r.text()
     );
-    b.fx.db.sample_history("CWELLMAN");
+    b.fx.db.sample_history("TESTUSER");
     let r = b.get("/sql");
     assert_eq!(r.status, 200);
     assert_golden(
@@ -310,7 +310,7 @@ fn copy_import_golden() {
             HEADER_USER,
             // The file came from this computer: no path on the system.
             (
-                "value=\"/home/CWELLMAN/upload/assets_br1.csv\"",
+                "value=\"/home/TESTUSER/upload/assets_br1.csv\"",
                 "value=\"\"",
             ),
             (
@@ -478,7 +478,7 @@ fn insert_edit_delete() {
             .lock()
             .unwrap()
             .iter()
-            .all(|(u, _)| u == "CWELLMAN")
+            .all(|(u, _)| u == "TESTUSER")
     );
 }
 
@@ -707,7 +707,7 @@ fn run_sql_connection_commit_and_fetch() {
     assert_eq!(r.text(), "VALUES 1;\n");
     // History keeps what ran, newest first.
     assert_eq!(
-        b.fx.db.history("CWELLMAN")[..2],
+        b.fx.db.history("TESTUSER")[..2],
         ["SELECT * FROM hlinv.assets".to_string(), "SELEKT 1".into()]
     );
 }
@@ -716,12 +716,12 @@ fn run_sql_connection_commit_and_fetch() {
 fn sixteen_connections_at_most() {
     let b = Browser::signed_on();
     let db = &b.fx.db;
-    let conns: Vec<u32> = (0..16).map(|_| db.open("CWELLMAN").unwrap()).collect();
-    let m = db.open("CWELLMAN").unwrap_err();
+    let conns: Vec<u32> = (0..16).map(|_| db.open("TESTUSER").unwrap()).collect();
+    let m = db.open("TESTUSER").unwrap_err();
     assert_eq!(m.id, "QAD7003");
     assert!(m.text.contains("No more connections allowed to QSHQ400."));
     for c in conns {
-        db.close("CWELLMAN", c);
+        db.close("TESTUSER", c);
     }
 }
 
@@ -764,7 +764,7 @@ fn requests_save_share_download_import() {
     );
     assert!(!t.contains(">Share</a>") && !t.contains(">Delete</a>"));
     b.get("/signoff");
-    b.sign_on("CWELLMAN", accessweb::fixture::PASSWORD);
+    b.sign_on("TESTUSER", accessweb::fixture::PASSWORD);
     // Download gives the desktop's files.
     let r = b.get("/requests/6/download");
     assert_eq!(
@@ -907,7 +907,7 @@ fn copy_to_table_and_back() {
     let groups = vec!["ADMINS".to_string()];
     let saved =
         b.fx.db
-            .requests("CWELLMAN", &groups)
+            .requests("TESTUSER", &groups)
             .into_iter()
             .last()
             .unwrap();

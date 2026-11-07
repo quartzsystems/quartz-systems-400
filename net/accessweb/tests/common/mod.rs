@@ -43,7 +43,7 @@ impl Browser {
         }
     }
 
-    /// Signed on as `CWELLMAN`, the sign-on's message seen.
+    /// Signed on as `TESTUSER`, the sign-on's message seen.
     pub fn signed_on() -> Self {
         let mut b = Self::as_user(USER);
         b.get("/home");
@@ -261,8 +261,8 @@ pub fn relative(target: &str, from: &str) -> String {
 }
 
 /// The header's user: the golden pages show `QSECOFR`, the fixture
-/// signs on as `CWELLMAN` (data).
-pub const HEADER_USER: (&str, &str) = ("User: <b>QSECOFR</b>", "User: <b>CWELLMAN</b>");
+/// signs on as `TESTUSER` (data).
+pub const HEADER_USER: (&str, &str) = ("User: <b>QSECOFR</b>", "User: <b>TESTUSER</b>");
 
 /// Compare a served page with golden file `file` (`web/home.html`);
 /// `fix` edits the golden text first (documented golden corrections).

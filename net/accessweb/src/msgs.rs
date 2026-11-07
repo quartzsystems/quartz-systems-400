@@ -842,8 +842,8 @@ mod tests {
             assert!(m.text.ends_with('.'), "{}", m.id);
         }
         assert_eq!(
-            message(Kind::Info, PASSWORD_EXPIRES, &["CWELLMAN", "QSHQ400", "5"]).text,
-            "Password for CWELLMAN on QSHQ400 expires in 5 days."
+            message(Kind::Info, PASSWORD_EXPIRES, &["TESTUSER", "QSHQ400", "5"]).text,
+            "Password for TESTUSER on QSHQ400 expires in 5 days."
         );
         let h = help_text("c", "r");
         assert_eq!(split_help(&h), ("c".into(), "r".into()));

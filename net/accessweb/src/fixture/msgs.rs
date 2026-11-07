@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The prototype's messages: the three of `web/messages.html` on
-//! `QUSRSYS/CWELLMAN`, one an inquiry waiting for its reply; `SNDMSG`,
+//! `QUSRSYS/TESTUSER`, one an inquiry waiting for its reply; `SNDMSG`,
 //! `SNDRPYMSG` and `RMVMSG` change them as the system would.
 
 use std::sync::Mutex;
@@ -27,7 +27,7 @@ pub type Sample = (
     &'static str,
 );
 
-/// `CWELLMAN`'s messages, oldest first.
+/// `TESTUSER`'s messages, oldest first.
 pub const MESSAGES: &[Sample] = &[
     (
         "00000001",
@@ -45,9 +45,9 @@ pub const MESSAGES: &[Sample] = &[
         [10, 29, 17, 5, 10],
         0,
         "CPF1241",
-        "Job 123488/CWELLMAN/QPADEV0003 submitted to job queue QBATCH in QGPL.",
-        "123488/CWELLMAN/QPADEV0003",
-        "CWELLMAN",
+        "Job 123488/TESTUSER/QPADEV0003 submitted to job queue QBATCH in QGPL.",
+        "123488/TESTUSER/QPADEV0003",
+        "TESTUSER",
         false,
         "",
     ),
@@ -57,8 +57,8 @@ pub const MESSAGES: &[Sample] = &[
         99,
         "CPA0702",
         "CPF0001 received by procedure INVLOAD. (C D I R)",
-        "123503/CWELLMAN/INVBATCH",
-        "CWELLMAN",
+        "123503/TESTUSER/INVBATCH",
+        "TESTUSER",
         true,
         "C",
     ),
@@ -95,7 +95,7 @@ impl Default for FixtureMsgs {
             .collect();
         Self {
             queues: Mutex::new(vec![
-                ("QUSRSYS/CWELLMAN".into(), mine),
+                ("QUSRSYS/TESTUSER".into(), mine),
                 ("QSYS/QSYSOPR".into(), Vec::new()),
             ]),
             ran: Mutex::new(Vec::new()),

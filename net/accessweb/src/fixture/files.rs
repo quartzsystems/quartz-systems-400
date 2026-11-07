@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The prototype's integrated file system, in memory: `/home/CWELLMAN`
+//! The prototype's integrated file system, in memory: `/home/TESTUSER`
 //! with the entries of `web/files.html`, the shares of
 //! `web/my-files.html`, and the transfer queue the page shows. The
 //! owner has the owner's bits, everyone else the public bits, and
@@ -19,7 +19,7 @@ use crate::transfer::{Direction, Endings, Mode, Queue, State, Transfer};
 use crate::util::secs;
 
 /// The home directory.
-pub const HOME: &str = "/home/CWELLMAN";
+pub const HOME: &str = "/home/TESTUSER";
 
 /// `invload.clle`, as `web/file-edit.html` shows it.
 pub const INVLOAD: &str = r#"/* INVLOAD - load inventory from CSV uploaded by Access for Web            */
@@ -27,7 +27,7 @@ pub const INVLOAD: &str = r#"/* INVLOAD - load inventory from CSV uploaded by Ac
              PGM        PARM(&MODE)
              DCL        VAR(&MODE)   TYPE(*CHAR) LEN(10)
              DCL        VAR(&FILE)   TYPE(*CHAR) LEN(64) +
-                          VALUE('/home/CWELLMAN/upload/assets_br1.csv')
+                          VALUE('/home/TESTUSER/upload/assets_br1.csv')
              DCL        VAR(&MSG)    TYPE(*CHAR) LEN(80)
 
              CHKOBJ     OBJ(HLINV/ASSETS) OBJTYPE(*FILE)
@@ -59,7 +59,7 @@ pub const INVLOAD: &str = r#"/* INVLOAD - load inventory from CSV uploaded by Ac
                             s.notes, CURRENT TIMESTAMP)') COMMIT(*NONE)
 
              CHGVAR     VAR(&MSG) VALUE('INVLOAD completed, mode ' *CAT &MODE)
-             SNDMSG     MSG(&MSG) TOUSR(CWELLMAN)
+             SNDMSG     MSG(&MSG) TOUSR(TESTUSER)
  END:        ENDPGM
 "#;
 
@@ -125,7 +125,7 @@ fn binary_of(head: &[u8], n: usize) -> Vec<u8> {
 fn node(data: Data, mode: u32, ccsid: u16, at: u64) -> Node {
     Node {
         data,
-        owner: "CWELLMAN".into(),
+        owner: "TESTUSER".into(),
         mode,
         ccsid,
         times: (at, at, at),
@@ -166,17 +166,17 @@ pub fn tree() -> BTreeMap<String, Node> {
     put("/www/webstore", sys(dir(0o755, early)));
     put("/www/webstore/htdocs", sys(dir(0o755, early)));
     put(HOME, dir(0o700, early));
-    put("/home/CWELLMAN/certs", dir(0o700, local(10, 20, 11, 2, 0)));
+    put("/home/TESTUSER/certs", dir(0o700, local(10, 20, 11, 2, 0)));
     put(
-        "/home/CWELLMAN/scripts",
+        "/home/TESTUSER/scripts",
         dir(0o750, local(10, 28, 17, 40, 0)),
     );
     put(
-        "/home/CWELLMAN/upload",
+        "/home/TESTUSER/upload",
         dir(0o770, local(10, 29, 13, 30, 0)),
     );
     put(
-        "/home/CWELLMAN/.profile",
+        "/home/TESTUSER/.profile",
         node(
             Data::File(text_of(
                 "export PATH=/QOpenSys/usr/bin:/usr/bin:$PATH\n",
@@ -198,9 +198,9 @@ pub fn tree() -> BTreeMap<String, Node> {
     );
     csv.times.2 = local(10, 29, 13, 58, 10);
     csv.changes = 3;
-    put("/home/CWELLMAN/assets_br1.csv", csv);
+    put("/home/TESTUSER/assets_br1.csv", csv);
     put(
-        "/home/CWELLMAN/inventory_2026-10.pdf",
+        "/home/TESTUSER/inventory_2026-10.pdf",
         node(
             Data::File(binary_of(b"%PDF-1.4\n", 240_112)),
             0o644,
@@ -209,7 +209,7 @@ pub fn tree() -> BTreeMap<String, Node> {
         ),
     );
     put(
-        "/home/CWELLMAN/invload.clle",
+        "/home/TESTUSER/invload.clle",
         node(
             Data::File(INVLOAD.as_bytes().to_vec()),
             0o640,
@@ -218,7 +218,7 @@ pub fn tree() -> BTreeMap<String, Node> {
         ),
     );
     put(
-        "/home/CWELLMAN/notes.txt",
+        "/home/TESTUSER/notes.txt",
         node(
             Data::File(text_of(
                 "Rack QS-HQ-R3 gets the lab build box next week.\n",
@@ -230,7 +230,7 @@ pub fn tree() -> BTreeMap<String, Node> {
         ),
     );
     put(
-        "/home/CWELLMAN/reports",
+        "/home/TESTUSER/reports",
         node(
             Data::Link("/QS400/UserData/Shares/docs/reports".into()),
             0o777,
@@ -239,11 +239,11 @@ pub fn tree() -> BTreeMap<String, Node> {
         ),
     );
     put(
-        "/home/CWELLMAN/old-link",
-        node(Data::Link("/home/CWELLMAN/gone".into()), 0o777, 0, early),
+        "/home/TESTUSER/old-link",
+        node(Data::Link("/home/TESTUSER/gone".into()), 0o777, 0, early),
     );
     put(
-        "/home/CWELLMAN/webstore.p12",
+        "/home/TESTUSER/webstore.p12",
         node(
             Data::File(binary_of(&[0x30, 0x82, 0x0d, 0x46], 3402)),
             0o600,
@@ -253,7 +253,7 @@ pub fn tree() -> BTreeMap<String, Node> {
     );
     let up = local(10, 29, 13, 30, 0);
     put(
-        "/home/CWELLMAN/upload/assets_br2.csv",
+        "/home/TESTUSER/upload/assets_br2.csv",
         node(
             Data::File(text_of("QS000401,QS-BR1-R1,DELL,S4048-ON\n", 41_200)),
             0o640,
@@ -262,7 +262,7 @@ pub fn tree() -> BTreeMap<String, Node> {
         ),
     );
     put(
-        "/home/CWELLMAN/upload/old.csv",
+        "/home/TESTUSER/upload/old.csv",
         node(
             Data::File(text_of("QS000110,QS-HQ-R1\n", 640)),
             0o640,
@@ -271,7 +271,7 @@ pub fn tree() -> BTreeMap<String, Node> {
         ),
     );
     put(
-        "/home/CWELLMAN/upload/old2.csv",
+        "/home/TESTUSER/upload/old2.csv",
         node(
             Data::File(text_of("QS000111,QS-HQ-R1\n", 320)),
             0o640,
@@ -286,7 +286,7 @@ pub fn tree() -> BTreeMap<String, Node> {
 pub fn sample_queue() -> Queue {
     let q = Queue::default();
     let mut t = Transfer::new(
-        "/home/CWELLMAN/upload/assets_br2.csv",
+        "/home/TESTUSER/upload/assets_br2.csv",
         Direction::Upload,
         Mode::Text(1208, Endings::Lf),
         41_200,
@@ -295,7 +295,7 @@ pub fn sample_queue() -> Queue {
     t.state = State::Complete;
     q.add(super::USER, t);
     let mut t = Transfer::new(
-        "/home/CWELLMAN/inventory_2026-10.pdf",
+        "/home/TESTUSER/inventory_2026-10.pdf",
         Direction::Download,
         Mode::Binary,
         240_112,
@@ -304,7 +304,7 @@ pub fn sample_queue() -> Queue {
     t.state = State::Running(Some("inventory_2026-10.pdf.qsapart".into()));
     q.add(super::USER, t);
     let mut t = Transfer::new(
-        "/home/CWELLMAN/scripts/backup.sh",
+        "/home/TESTUSER/scripts/backup.sh",
         Direction::Upload,
         Mode::Binary,
         2048,

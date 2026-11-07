@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The sample system's jobs: `CWELLMAN`'s of `web/my-jobs.html` and the
+//! The sample system's jobs: `TESTUSER`'s of `web/my-jobs.html` and the
 //! server jobs of `web/server-jobs.html`.
 
 use std::sync::Mutex;
@@ -27,11 +27,11 @@ type Sample = (
     &'static str,
 );
 
-/// `CWELLMAN`'s jobs, as `WRKUSRJOB` lists them.
+/// `TESTUSER`'s jobs, as `WRKUSRJOB` lists them.
 const MINE: &[Sample] = &[
     (
         "QPADEV0003",
-        "CWELLMAN",
+        "TESTUSER",
         "123488",
         "Interactive",
         "RUN",
@@ -43,7 +43,7 @@ const MINE: &[Sample] = &[
     ),
     (
         "INVBATCH",
-        "CWELLMAN",
+        "TESTUSER",
         "123503",
         "Batch",
         "MSGW",
@@ -67,7 +67,7 @@ const MINE: &[Sample] = &[
     ),
     (
         "INVBATCH",
-        "CWELLMAN",
+        "TESTUSER",
         "123402",
         "Batch",
         "OUTQ",
@@ -79,7 +79,7 @@ const MINE: &[Sample] = &[
     ),
     (
         "QPADEV0003",
-        "CWELLMAN",
+        "TESTUSER",
         "123311",
         "Interactive",
         "OUTQ",

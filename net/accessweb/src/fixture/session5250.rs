@@ -4,7 +4,7 @@
 
 //! The prototype's 5250 sessions: the four saved sessions of
 //! `web/5250-config.html`, the macros of `web/5250-macros.html`, the
-//! keyboard map `CWELLMAN-laptop`, and live sessions showing the screens
+//! keyboard map `TESTUSER-laptop`, and live sessions showing the screens
 //! the prototype's pictures were drawn from (kept with the goldens,
 //! `tools/conformance/golden/accessweb/`).
 
@@ -150,7 +150,7 @@ pub fn macros() -> Vec<SavedMacro> {
         SavedMacro {
             file: macro_file(
                 "SIGNON-DEV",
-                "wait  screen \"Sign On\" at 1,35\ntype  \"CWELLMAN\"\nkey   Tab\nkey   Enter\nwait  screen \"Main Menu\" at 1,36\nkey   F:4   ; pick a screen position with the mouse in the editor\n",
+                "wait  screen \"Sign On\" at 1,35\ntype  \"TESTUSER\"\nkey   Tab\nkey   Enter\nwait  screen \"Main Menu\" at 1,36\nkey   F:4   ; pick a screen position with the mouse in the editor\n",
             ),
             recorded: local(10, 20, 9, 12),
             shared: String::new(),
@@ -297,7 +297,7 @@ impl Default for Fixture5250 {
             saved: Mutex::new(BTreeMap::from([(super::USER.to_string(), sessions())])),
             keymaps: Mutex::new(BTreeMap::from([(
                 super::USER.to_string(),
-                vec![("CWELLMAN-laptop".to_string(), laptop)],
+                vec![("TESTUSER-laptop".to_string(), laptop)],
             )])),
             live: Mutex::new(lives()),
             inputs: Mutex::new(Vec::new()),
@@ -307,7 +307,7 @@ impl Default for Fixture5250 {
 }
 
 impl Fixture5250 {
-    /// Change live session `id` of `CWELLMAN` (tests set the other
+    /// Change live session `id` of `TESTUSER` (tests set the other
     /// states the prototype shows).
     pub fn set_live(&self, id: u32, f: impl FnOnce(&mut Live)) {
         let mut m = self.live.lock().expect("live");

@@ -348,7 +348,7 @@ struct State {
 }
 
 /// The user the sample history is kept for.
-const USER_SAMPLE: &str = "CWELLMAN";
+const USER_SAMPLE: &str = "TESTUSER";
 
 /// The connections a session may have.
 pub const MAX_CONNECTIONS: usize = 16;
@@ -370,7 +370,7 @@ fn stamp(m: u32, d: u32, h: u32, mi: u32) -> u64 {
 pub fn sample_requests() -> Vec<Request> {
     let r = |id, name: &str, typ, body: &str, format: &str, at: u64, shared: &str| Request {
         id,
-        owner: "CWELLMAN".into(),
+        owner: "TESTUSER".into(),
         name: name.into(),
         typ,
         body: body.into(),
@@ -501,7 +501,7 @@ impl Default for FixtureDb {
             },
         );
         let history = BTreeMap::from([(
-            "CWELLMAN".to_string(),
+            "TESTUSER".to_string(),
             strs(&[
                 "SELECT COUNT(*) FROM hlinv.assets GROUP BY location",
                 "SELECT * FROM qsys2.active_job_info WHERE job_status = 'MSGW'",
@@ -1517,11 +1517,11 @@ mod tests {
     #[test]
     fn the_table_pages_sql_runs() {
         let db = FixtureDb::default();
-        let c = db.open("CWELLMAN").unwrap();
+        let c = db.open("TESTUSER").unwrap();
         let cols: Vec<String> = ASSETS_COLUMNS.iter().map(ToString::to_string).collect();
         let key = vec!["ASSET_TAG".to_string()];
         let o = db.run(
-            "CWELLMAN",
+            "TESTUSER",
             c,
             &crate::data::sqltext::page("HLINV", "ASSETS", &cols, Some("MANUFACTURER"), &key, 1, 2),
             &[vec![Val::Text("%DELL%".into())]],
@@ -1544,18 +1544,18 @@ mod tests {
             .map(|s| Val::Text((*s).into()))
             .collect::<Vec<_>>()
         };
-        assert_eq!(db.run("CWELLMAN", c, &ins, &[row("JPE1")], 500).changed, 1);
-        let dup = db.run("CWELLMAN", c, &ins, &[row("JPE2")], 500);
+        assert_eq!(db.run("TESTUSER", c, &ins, &[row("JPE1")], 500).changed, 1);
+        let dup = db.run("TESTUSER", c, &ins, &[row("JPE2")], 500);
         assert_eq!((dup.sqlcode, dup.row), (-803, Some(0)));
         let n = db.run(
-            "CWELLMAN",
+            "TESTUSER",
             c,
             &crate::data::sqltext::count("HLINV", "ASSETS", None),
             &[],
             500,
         );
         assert_eq!(n.rows[0][0], Val::Num("13".into()));
-        assert_eq!(db.run("CWELLMAN", c, "SELEKT 1", &[], 1).sqlcode, -104);
+        assert_eq!(db.run("TESTUSER", c, "SELEKT 1", &[], 1).sqlcode, -104);
         assert!(like("HL%", "HLINVTEST") && !like("HL_", "HLINV"));
     }
 }

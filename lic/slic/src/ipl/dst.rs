@@ -1189,7 +1189,12 @@ impl DstEnv for Env<'_> {
     }
 
     fn remove_resource(&mut self, name: &str) -> Result<(), String> {
-        let done = hwrsrc::client::remove(name).map_err(|e| e.to_string())?;
+        let done = hwrsrc::client::remove(name).map_err(|e| {
+            self.system
+                .out
+                .serial(&format!("slic: remove of hardware resource {name}: {e}\n"));
+            svctools::dst::failed("Remove of the hardware resource")
+        })?;
         done.result(name)?;
         self.system
             .out

@@ -14,7 +14,7 @@ use accessweb::policy;
 use common::{Browser, HEADER_USER, assert_golden, golden, proto, relative};
 use qsweb::golden::{Normalize, diff};
 
-const INVRPT: &str = "123402-CWELLMAN-INVBATCH-INVRPT-402";
+const INVRPT: &str = "123402-TESTUSER-INVBATCH-INVRPT-402";
 
 fn fix(g: &mut String, from: &str, to: &str) {
     assert!(g.contains(from), "golden fix not applicable: {from}");
@@ -46,13 +46,13 @@ fn printer_output_page() {
     // A checkbox says which file it selects.
     let ids = [
         INVRPT,
-        "123402-CWELLMAN-INVBATCH-QPJOBLOG-403",
-        "123311-CWELLMAN-QPADEV0003-QPRINT-1",
-        "123311-CWELLMAN-QPADEV0003-QSYSPRT-2",
-        "123290-CWELLMAN-INVBATCH-INVLABEL-1",
-        "123101-CWELLMAN-QPADEV0003-QPDSPJOB-1",
-        "123050-CWELLMAN-QPADEV0003-QPJOBLOG-1",
-        "122990-CWELLMAN-INVBATCH-ASSETEXP-1",
+        "123402-TESTUSER-INVBATCH-QPJOBLOG-403",
+        "123311-TESTUSER-QPADEV0003-QPRINT-1",
+        "123311-TESTUSER-QPADEV0003-QSYSPRT-2",
+        "123290-TESTUSER-INVBATCH-INVLABEL-1",
+        "123101-TESTUSER-QPADEV0003-QPDSPJOB-1",
+        "123050-TESTUSER-QPADEV0003-QPJOBLOG-1",
+        "122990-TESTUSER-INVBATCH-ASSETEXP-1",
     ];
     for (i, id) in ids.iter().enumerate() {
         fix(
@@ -190,7 +190,7 @@ fn hold_release_move_delete() {
             .ends_with("OPTION(*PAGEEND)")
     );
     // Release two, one of them ready: the summary and each file's result.
-    let qsys = "123311-CWELLMAN-QPADEV0003-QSYSPRT-2";
+    let qsys = "123311-TESTUSER-QPADEV0003-QSYSPRT-2";
     b.post(
         "/print",
         &[("s0", INVRPT), ("s3", qsys), ("release", "Release")],
@@ -231,13 +231,13 @@ fn hold_release_move_delete() {
     assert!(b.get(&to).text().contains("Confirm Delete"));
     let r = b.post(&to, &[("ok", "OK")]);
     assert_eq!(r.status, 303);
-    assert!(b.fx.print.find("CWELLMAN", INVRPT).is_err());
+    assert!(b.fx.print.find("TESTUSER", INVRPT).is_err());
     // Save as PDF needs one file.
     b.post(
         "/print",
         &[
             ("s0", qsys),
-            ("s1", "123290-CWELLMAN-INVBATCH-INVLABEL-1"),
+            ("s1", "123290-TESTUSER-INVBATCH-INVLABEL-1"),
             ("pdf", "Save as PDF"),
         ],
     );

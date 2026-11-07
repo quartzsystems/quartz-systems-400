@@ -63,6 +63,9 @@ fn no_credential_in_the_tree() {
         .iter()
         .filter(|(k, _)| k.ends_with("_USER") || k.ends_with("_PASS"))
         .filter(|(k, v)| !(k.ends_with("_USER") && v == "QSECOFR"))
+        // The default service tools user ID, which QS/400 ships and its
+        // DST documents name: not a secret.
+        .filter(|(k, _)| k != "QS_SST_USER")
         .collect();
     let mut hits = Vec::new();
     for f in tracked_files(&root) {
@@ -73,7 +76,11 @@ fn no_credential_in_the_tree() {
             continue;
         };
         // In any case: a probe once typed the account name in lower case.
-        let text = String::from_utf8_lossy(&bytes).to_lowercase();
+        // The kernel source offer's contact address is Cody's choice
+        // (tools/build/src/image/srcoffer.rs) and is published with it.
+        let text = String::from_utf8_lossy(&bytes)
+            .to_lowercase()
+            .replace("cwellman@quartz.systems", "");
         for (k, v) in &secrets {
             if text.contains(&v.to_lowercase()) {
                 hits.push(format!("{} holds the value of {k}", f.display()));

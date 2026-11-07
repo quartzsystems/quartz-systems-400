@@ -32,12 +32,12 @@
 <h1>Edit file: invload.clle</h1>
 
 
-<p class="small">Path: <span class="mono">/home/CWELLMAN/invload.clle</span> &nbsp; 1,844 bytes &nbsp; CCSID 1208 &nbsp; Line ends: LF &nbsp; <a href="files.html">Back to /home/CWELLMAN</a></p><form method="post"><textarea name="t" class="conf" rows="30" wrap="off">/* INVLOAD - load inventory from CSV uploaded by Access for Web            */
+<p class="small">Path: <span class="mono">/home/TESTUSER/invload.clle</span> &nbsp; 1,844 bytes &nbsp; CCSID 1208 &nbsp; Line ends: LF &nbsp; <a href="files.html">Back to /home/TESTUSER</a></p><form method="post"><textarea name="t" class="conf" rows="30" wrap="off">/* INVLOAD - load inventory from CSV uploaded by Access for Web            */
 /* Parameters: &amp;MODE  *ALL | *NEW                                            */
              PGM        PARM(&amp;MODE)
              DCL        VAR(&amp;MODE)   TYPE(*CHAR) LEN(10)
              DCL        VAR(&amp;FILE)   TYPE(*CHAR) LEN(64) +
-                          VALUE('/home/CWELLMAN/upload/assets_br1.csv')
+                          VALUE('/home/TESTUSER/upload/assets_br1.csv')
              DCL        VAR(&amp;MSG)    TYPE(*CHAR) LEN(80)
 
              CHKOBJ     OBJ(HLINV/ASSETS) OBJTYPE(*FILE)
@@ -69,7 +69,7 @@
                             s.notes, CURRENT TIMESTAMP)') COMMIT(*NONE)
 
              CHGVAR     VAR(&amp;MSG) VALUE('INVLOAD completed, mode ' *CAT &amp;MODE)
-             SNDMSG     MSG(&amp;MSG) TOUSR(CWELLMAN)
+             SNDMSG     MSG(&amp;MSG) TOUSR(TESTUSER)
  END:        ENDPGM
 </textarea><div class="buttons"><input type="submit" value="Save"><input type="submit" value="Save as..."><input type="submit" value="Reset"><input type="submit" value="Cancel"></div></form>
 </td>

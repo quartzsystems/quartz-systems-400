@@ -5,7 +5,7 @@
 //! The prototype's sample system, so served pages can be compared with
 //! the golden pages and the demo server has something to show: system
 //! `QSHQ400` in US Eastern time, a clock stopped at 10/29/26 14:03:40,
-//! user `CWELLMAN` (Cody Wellman, `*SECOFR`, group `ADMINS`), and each
+//! user `TESTUSER` (Cody Wellman, `*SECOFR`, group `ADMINS`), and each
 //! area's sample data in its own module.
 
 pub mod cmd;
@@ -31,7 +31,7 @@ use crate::util::secs;
 pub const PASSWORD: &str = "QS400";
 
 /// The user the golden pages show.
-pub const USER: &str = "CWELLMAN";
+pub const USER: &str = "TESTUSER";
 
 /// The fixture clock (14:03:40 EDT).
 pub fn now() -> u64 {
@@ -71,7 +71,7 @@ const ALL: &[&str] = &[
 /// The profiles, in the order the system lists them.
 pub const PROFILES: &[Sample] = &[
     Sample {
-        name: "CWELLMAN",
+        name: "TESTUSER",
         text: "Cody Wellman",
         class: "*SECOFR",
         special: ALL,
@@ -260,7 +260,7 @@ impl System for FixtureSystem {
     fn profiles(&self, _user: &str) -> Vec<Profile> {
         // The order the prototype's select shows.
         let order = [
-            "CWELLMAN",
+            "TESTUSER",
             "QSECOFR",
             "WEBUSER",
             "WEBUSERS",

@@ -185,7 +185,7 @@ option 2 shows the IPL history; `svc.liclog [MAJOR]` prints the entries.
 
 `Start a Service Tool` (DST option 7, SST option 1):
 
-1. Product activity log
+1. The product activity log (PAL)
 2. Trace Licensed Internal Code: Work with Traces, F6 start
 3. Work with communications trace (not here; `STRCMNTRC`)
 4. Display/Alter/Dump: 1 display/alter storage (a unit page or an object
