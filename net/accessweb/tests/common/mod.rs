@@ -113,7 +113,8 @@ impl Browser {
 /// A golden page's text (`web/home.html`).
 pub fn golden(file: &str) -> String {
     let p = format!("{}/tests/golden/{file}", env!("CARGO_MANIFEST_DIR"));
-    std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("{p}: {e}"))
+    // A checkout with CRLF line ends reads as the LF the fixes name.
+    std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("{p}: {e}")).replace("\r\n", "\n")
 }
 
 /// The prototype file a served URL stands for, as `dir/name.html`.
