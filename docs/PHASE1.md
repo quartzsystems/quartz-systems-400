@@ -196,7 +196,9 @@ names the resources first thing in the LIC phase, before the object
 store opens and long before TCP/IP varies a line on by its `CMNnn`.
 The service (`lic/slic/src/hwsvc/names.rs`) reads it before its first
 walk and writes it, rereading the record first, when a name is given, a
-resource stops reporting or one is removed. A media IPL with no LIC
+resource stops reporting or one is removed. Every other writer keeps the
+newest copy's `0x010A` (`licpart::SERVICE_TAGS`), so `slic`, which holds
+the record it read before the service started, never undoes it. A media IPL with no LIC
 partition names afresh in walk order, as does a record without the TLV
 (an upgrade from V1R0M0, whose names were already in walk order).
 

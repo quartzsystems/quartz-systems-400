@@ -14,6 +14,9 @@ use hwrsrc::names::TAG_HW_NAMES;
 use hwrsrc::nic::PermMacs;
 use hwrsrc::{NameMap, Table};
 
+// licpart keeps this TLV for us against the other writers.
+const _: () = assert!(licpart::SERVICE_TAGS[0] == TAG_HW_NAMES);
+
 /// What was last written, so an unchanged map is not written again.
 static LAST: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 
@@ -64,7 +67,7 @@ pub fn save(t: &Table) {
     if record.set_tlv(TAG_HW_NAMES, bytes.clone()).is_err() {
         return;
     }
-    match part.write(&mut record) {
+    match part.write_service(&mut record) {
         Ok(_) => *last = Some(bytes),
         Err(e) => println!("hwrsrc: resource names not saved: {e}"),
     }

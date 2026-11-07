@@ -18,6 +18,11 @@ pub const RESUME_MAX: usize = 4 * 1024 * 1024;
 const RESUME_MAGIC: [u8; 8] = *b"QS400RSJ";
 const RESUME_HEADER: usize = 16;
 
+/// TLVs the hardware resource service writes from its own process
+/// (`0x010A`, the resource names): every other writer keeps the newest
+/// copy's.
+pub const SERVICE_TAGS: &[u16] = &[0x010A];
+
 /// A block device or anything standing in for one.
 pub trait Device: Read + Write + Seek {
     /// Make earlier writes durable. Files call `sync_all`.
@@ -108,21 +113,43 @@ impl<D: Device> LicPart<D> {
 
     /// Write `rec` to the older (or invalid) copy with the next sequence
     /// number, then sync. Returns the copy written. The newest good copy is
-    /// never overwritten, so a torn write cannot lose it.
+    /// never overwritten, so a torn write cannot lose it. The TLVs another
+    /// process owns ([`SERVICE_TAGS`]) are taken from the newest copy, so
+    /// a writer holding an older record never undoes them.
     pub fn write(&mut self, rec: &mut Record) -> Result<Slot, LicError> {
+        self.write_keeping(rec, true)
+    }
+
+    /// [`LicPart::write`] by the owner of the [`SERVICE_TAGS`]: `rec`'s
+    /// own values are written.
+    pub fn write_service(&mut self, rec: &mut Record) -> Result<Slot, LicError> {
+        self.write_keeping(rec, false)
+    }
+
+    fn write_keeping(&mut self, rec: &mut Record, keep: bool) -> Result<Slot, LicError> {
         let [a, b] = self.read_slots();
         let (target, newest) = match (&a, &b) {
-            (None, _) => (Slot::A, b.as_ref().map_or(0, |r| r.sequence)),
-            (Some(_), None) => (Slot::B, a.as_ref().map_or(0, |r| r.sequence)),
-            (Some(a), Some(b)) => {
-                if a.sequence <= b.sequence {
-                    (Slot::A, b.sequence)
+            (None, _) => (Slot::A, b.as_ref()),
+            (Some(_), None) => (Slot::B, a.as_ref()),
+            (Some(x), Some(y)) => {
+                if x.sequence <= y.sequence {
+                    (Slot::A, Some(y))
                 } else {
-                    (Slot::B, a.sequence)
+                    (Slot::B, Some(x))
                 }
             }
         };
-        rec.sequence = newest + 1;
+        if keep && let Some(n) = newest {
+            for &tag in SERVICE_TAGS {
+                match n.tlv(tag) {
+                    Some(data) => rec.set_tlv(tag, data.to_vec())?,
+                    None => {
+                        rec.remove_tlv(tag);
+                    }
+                }
+            }
+        }
+        rec.sequence = newest.map_or(0, |r| r.sequence) + 1;
         let bytes = rec.encode()?;
         self.dev.seek(SeekFrom::Start(slot_offset(target)))?;
         self.dev.write_all(&bytes)?;
@@ -195,6 +222,29 @@ impl<D: Device> LicPart<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_stale_writer_keeps_the_service_tlvs() {
+        let dev = Cursor::new(vec![0u8; 2 * SLOT_BYTES]);
+        let (mut part, mut stale) = LicPart::init(dev, 7).unwrap();
+        let tag = SERVICE_TAGS[0];
+        let mut svc = part.read().unwrap();
+        svc.set_tlv(tag, b"names".to_vec()).unwrap();
+        part.write_service(&mut svc).unwrap();
+        // A writer still holding the record from before keeps them.
+        stale.header.ipl_count = 5;
+        part.write(&mut stale).unwrap();
+        let now = part.read().unwrap();
+        assert_eq!(now.header.ipl_count, 5);
+        assert_eq!(now.tlv(tag), Some(&b"names"[..]));
+        // Only the owner changes them.
+        let mut svc = part.read().unwrap();
+        svc.remove_tlv(tag);
+        part.write_service(&mut svc).unwrap();
+        stale.set_tlv(tag, b"old".to_vec()).unwrap();
+        part.write(&mut stale).unwrap();
+        assert_eq!(part.read().unwrap().tlv(tag), None);
+    }
 
     #[test]
     fn resume_area_round_trips_and_clears() {
