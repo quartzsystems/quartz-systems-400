@@ -24,12 +24,15 @@ pub(crate) fn push(s: &mut Session, name: &str, text: &str) -> Result<(), String
     s.send(&format!("svc.xfer put {name} {}", lines.len()))?;
     for l in &lines {
         s.send(l)?;
+        // The echo paces the lines. A console message (`qsjob: QTCPWRK:
+        // ... is now Active.`) can land inside it; the count below still
+        // checks that every line arrived.
         if !l.trim().is_empty() {
-            s.expect(l.trim_end(), CMD)?;
+            let _ = s.expect(l.trim_end(), Duration::from_secs(5));
         }
     }
     let out = s.expect(crate::PROMPT, CMD)?;
-    if !out.contains("lines stored") {
+    if !out.contains(&format!(": {} lines stored", lines.len())) {
         return Err(format!("svc.xfer put {name}: {out}"));
     }
     Ok(())
