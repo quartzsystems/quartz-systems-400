@@ -398,6 +398,70 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 - `ListHardwareResources` lists what `WRKHDWRSC TYPE()` lists, in its order, the guest agent's channel among the `*CMN` resources when the system runs under a hypervisor that offers one.
 - No event: a client that follows subsystems or IPL state asks again; message queue watches (version 6) carry the operator's messages.
 
+### Service 11 `Debug`: the source debugger (version 9, draft)
+
+**Draft until QS/400 ships it.** Version 9 is the debugger Code for QS/400 needs: the system's own source debugger (`STRDBG`), its stops reported over QAP instead of on a display. Nothing in versions 1 to 8 changes; a peer that negotiates 8 or less never sees `Debug`, its bodies or its events.
+
+A connection has one debug session at a time. The session debugs either the connection job itself (`Own`: the programs `Command.RunCommand` calls while the session is active) or another job (`Job`), attached as `STRSRVJOB` attaches it, or attached by a service entry point when it calls the program the entry names. Every operation runs concurrently on the connection's secondary threads, never in the lane, as the signed-on profile; the events are sent from the concurrent lane, as the watches' are.
+
+- `DebugTarget` enum: `Own` 0, `Job` 1 { `job` JobId }.
+- `View` enum: `Statement` 0, `Source` 1, `Listing` 2.
+- `DebugModule` = { `name` String, `views` list of View }.
+- `LineBreakpoint` = { `line` u32 (the `*SOURCE` view's, 1-based), `condition` Option of String (`variable op value`, `op` one of `=`, `<>`, `<`, `<=`, `>`, `>=`) }.
+- `BreakpointSet` = { `line` u32 (the line it landed on), `stmt` u32 }.
+- `ResumeHow` enum: `Go` 0, `StepOver` 1, `StepInto` 2, `StepOut` 3.
+- `Frame` = { `program` ObjectName, `module` String, `procedure` String, `stmt` u32, `line` u32 (0 when not known), `view` View (the view `line` is of) }.
+- `Variable` = { `name` String, `type` String, `value` String (as `EVAL` shows it; empty for a structure or array with parts), `expandable` flag }.
+- `StopReason` enum: `Breakpoint` 0, `Step` 1, `ServiceEntry` 2, `Exception` 3 { `message` ServerMessage }, `ProgramEnd` 4.
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| Debug | 1 `Start` | `target` DebugTarget | `session` u32 | no |
+| Debug | 2 `End` | — | — | no |
+| Debug | 3 `AddProgram` | `program` ObjectName, `type` String (`*PGM`, `*SRVPGM`) | `modules` list of `DebugModule` | no |
+| Debug | 4 `SetBreakpoints` | `program` ObjectName, `module` String (empty: the first), `lines` list of `LineBreakpoint` | `set` list of `BreakpointSet`, one per line asked, in order | no |
+| Debug | 5 `Resume` | `how` ResumeHow | — | no |
+| Debug | 6 `Stack` | — | `frames` list of `Frame`, the newest first | no |
+| Debug | 7 `Variables` | `frame` u32 (0 the newest), `parent` Option of String (a structure or array to expand) | `variables` list of `Variable` | no |
+| Debug | 8 `Eval` | `frame` u32, `expression` String (`NAME`, `NAME:x`, `NAME:c`) | `value` String | no |
+| Debug | 9 `SetServiceEntry` | `program` ObjectName, `user` String (`*CURRENT` or a profile) | — | no |
+| Debug | 10 `RemoveServiceEntry` | `program` ObjectName | — | no |
+
+| Op | Statuses |
+| --- | --- |
+| `Start` | `Ok`; `InUse` (a session is active on the connection, `TCP1A72`; the job is serviced already, `CPF3503`); `NotFound` (no such job, `CPF3520`); `NotAuthorized` (another user's job without `*SERVICE`, `CPF3502`); `Error` (the connection's own job named, `CPF3501`) |
+| `End` | `Ok`; `Error` (no session, `TCP1A71`) |
+| `AddProgram` | `Ok`; `NotFound` (`CPF9801`); `NotAuthorized`; `Error` (compiled `DBGVIEW(*NONE)`: `CPF9C15`, the message `STRDBG` gives on the primary oracle, `tools/conformance/oracle/debug/primary`) |
+| `SetBreakpoints` | `Ok`; `NotFound` (the program was not added, or no such module, `CPF9801`); `Error` (no statement starts on or after a line, `CPD9CCB`; a condition that does not read, `CPF9C59`); nothing changes when one line fails |
+| `Resume`, `Stack` | `Ok`; `Error` (no job is stopped, `CPD9CCC`) |
+| `Variables`, `Eval` | `Ok`; `Error` (no job is stopped, `CPD9CCC`; `Eval` of a name that is not a variable of the frame, `CPF7E12`); `InvalidRequest` (no such frame, `TCP1A77`) |
+| `SetServiceEntry` | `Ok`; `NotFound` (`CPF9801`); `NotAuthorized` (another user's jobs without `*SERVICE`, `TCP1A74`) |
+| `RemoveServiceEntry` | `Ok`; `NotFound` (not set by this session, `TCP1A73`) |
+
+Every operation but `Start` answers `Error` with `TCP1A71` when no session is active on the connection.
+
+**Events (`request_id` 0, status `Ok`).** `Debug` op 100 `Stopped` (body `job` JobId, `reason` StopReason, `frame` Frame: the newest frame, as `Stack` gives it), each time a debugged job stops; it waits for `Resume`. `Debug` op 101 `DebugEnded` (body `message` Option of ServerMessage), when the session ends other than by `End`: the debugged job ended (`TCP1A75`), or the connection signed off (`TCP1A76`).
+
+**Authority.**
+
+- `Start` with `Job` checks as `STRSRVJOB`: a job of the signed-on profile needs nothing; another user's needs `*SERVICE`.
+- `SetServiceEntry` for a `user` other than the signed-on profile needs `*SERVICE`.
+- `AddProgram` finds the program as `STRDBG` does, in the connection job's library list for `*LIBL`.
+
+**Rules.**
+
+- Line numbers are the `*SOURCE` view's. A breakpoint lands on the first statement that starts on or after its line; `BreakpointSet` says where. A module without a source view takes statement numbers as lines and answers `Statement` frames.
+- `SetBreakpoints` replaces the module's breakpoints; an empty `lines` removes them. Breakpoints may change while a job is stopped.
+- A breakpoint with a `condition` stops only when the condition holds at the statement, the variable's value read as `EVAL` shows it (compared as numbers when both sides are numbers).
+- `Own`: programs added go under debug in the connection job and the breakpoints reach it from its next call. A `RunCommand` whose program stops gets no reply while it is stopped; meanwhile `Stack`, `Variables`, `Eval` and `Resume` answer, and its reply comes when the command ends. A `Cancel` of the command while it is stopped ends it as any cancel does.
+- `Job`: the job takes the session's programs and breakpoints at its next program call or break poll, as a job serviced by `STRSRVJOB` takes them. A stop holds the job exactly as `STRDBG` from the console holds it: a display session waits at its keyboard-locked display until `Resume`.
+- `SetServiceEntry`: the next call of the program (from a command line, a menu, a program's call) by a job running as `user` attaches that job to this session, puts the program under debug there and stops it at the program's first statement with reason `ServiceEntry`. The entry fires while the session debugs no other job; while a job is attached, other jobs' calls run on. An attached job stays attached until the session ends, and the session's breakpoints apply to it.
+- `StepOver` stops at the next statement of the stopped procedure or its callers, `StepInto` at the next statement anywhere, `StepOut` at the next statement of a caller.
+- `Variables` without `parent` lists a frame's own variables; with it, the parts of a structure (`DS.SUB`) or array (`ARR(1)`) whose `expandable` was 1.
+- `End`, a sign-off and the connection's close end the session: a stopped job goes on, an attached job is let go, the service entry points are removed.
+
+`ServerMessage`s in bodies are in the job's language, as every message is.
+
 ### `SignOn` additions (version 2)
 
 | Service | Op | Request body | Reply body | Allowed before sign-on |
@@ -477,6 +541,10 @@ It introduces no status: every status these operations answer exists in an earli
 ### Version 7 (draft)
 
 Version 7 is `Manage` (service 8) operations 1 `ListSubsystems` to 10 `PowerDown`, with the types and rules above, and the exit point `QS400_QAP_MGMT`. It introduces no status and no event: every status these operations answer exists in an earlier version. A version 1 to 6 peer never receives the `Manage` service or any of its bodies, and its requests for them get `InvalidRequest`. The server accepts versions 1 to 7 and picks the highest both sides support. Until QS/400 ships version 7 its operations and bodies may still change; versions 1 to 6 may not.
+
+### Version 9 (draft)
+
+Version 9 is `Debug` (service 11) operations 1 `Start` to 10 `RemoveServiceEntry` and the events `Stopped` (100) and `DebugEnded` (101), with the types and rules above. It introduces no status: every status these operations answer exists in an earlier version. A version 1 to 8 peer never receives the `Debug` service, its events or any of its bodies, and its requests for them get `InvalidRequest`. The server accepts versions 1 to 9 and picks the highest both sides support. Until QS/400 ships version 9 its operations and bodies may still change.
 
 ## Open questions
 
@@ -1130,6 +1198,78 @@ Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody 
   in the connection job beside the lane, never in it.
 - QEMU step 123 runs the service end to end as a user without special
   authority and as `QSECOFR`.
+
+Version 9, as built on 2026-11-07 (draft; decisions made in the build, for Cody to review):
+
+- `qap-proto` speaks 1 to 9 (`VERSION` 9). `Debug` is service 11; its
+  operations are 1 to 10 (`Op::DebugStart`, `DebugEnd`, `AddProgram`,
+  `SetBreakpoints`, `DebugResume`, `Stack`, `Variables`, `Eval`,
+  `SetServiceEntry`, `RemoveServiceEntry`), none in the lane or allowed
+  before sign-on; its events 100 and 101 are defined from version 9
+  (`ops::event::since`), so `Shared::send` drops them for an older peer.
+  `tools/fmtcheck` holds `ops/debug.rs` as the draft format `qap-debug`.
+- One session per connection, not per signed-on session: an attached
+  connection has a job of its own, and `Own` debugs the job of the
+  connection that started it. `Start` on a connection with a session is
+  `InUse` (`TCP1A72`). Messages `TCP1A70` to `TCP1A77` are in `QTCPMSG`.
+- The rules live in `net/qapd/src/debug.rs` over the host's `DebugHost`
+  (`ThreadHost::debugger`; a host without one answers `Error` with
+  `TCP1A70`). The events are the host's news, taken by the watches'
+  thread at each look (`Config::watch_poll`); a session started makes
+  that thread as a watch does. `End` sends no event; a sign-off ends the
+  session with `DebugEnded` (`TCP1A76`) before its reply; a connection
+  closing ends it quietly.
+- The connection job (`work/qsjob/src/work/qap/debug/`) keeps the
+  session for the process. `Own`: the programs added are put under
+  debug (`Job::strdbg`) and the breakpoints given to the core
+  (`mi::debug`) by the job's own thread at its next `CALL` and break
+  poll; its stop hook (installed before the display's, so `STRDBG` at a
+  display is unchanged) tells the client and waits, answering the
+  secondary threads' `Stack`, `Variables` and `Eval` (`Job::dbg_frames`,
+  `dbg_variables`, `eval_in`, added to the core) until `Resume`, `End`,
+  a `Cancel` of the command (`CPF1907`, as any cancel) or the job's end.
+- `Job`: `Start` is `STRSRVJOB`'s request (`srvjob_start`: the profile's
+  own jobs, or `*SERVICE`, or `*ALLOBJ` as `STRSRVJOB` allows it in
+  QS/400), and every order goes through its mailboxes (requests 384 to
+  387), with four new orders for QAP (`Frames`, `Vars`, `EvalAt`,
+  `StepOut`) and their answers. The serviced job takes them as it takes
+  `STRSRVJOB`'s, at a program call, a break poll, and while stopped, so a
+  5250 job holds at its locked display exactly as under `STRSRVJOB`. The
+  servicer learns the job ended when `srvjob_serving` finds it gone
+  (`DebugEnded`, `TCP1A75`).
+- Service entry points (requests 388 to 391, `stgsvc/dbg.rs`): the
+  storage service keeps owner, program (`LIB/NAME`, found in the owner's
+  library list) and user. Every job's dynamic calls (`Job::call_program`,
+  so `CALL` at a command line, a menu option and a program's call)
+  check a list of the programs with entries for the job's user, read
+  again at most once a second (`devtools/dbg/entry.rs`); a name on it
+  asks the service, which attaches the job to the owner as `STRSRVJOB`
+  would when the owner is active and services no job and nobody
+  services the caller. The job then puts the program under debug and
+  stops at its first statement; the owner's next look sees the
+  attachment, puts the entry's programs on the session and sends the
+  breakpoints, and reports the stop as `ServiceEntry`.
+- Lines: `AddProgram` reads the modules as Display Module Source does
+  (`dbg_program`, which now also gives the statements each module's
+  debug code has); a breakpoint lands on the first line at or after the
+  one asked whose statement the code has. RPG numbers statements by
+  source line, so an RPG module's lines and statements are the same.
+  `DBGVIEW(*SOURCE)` and `*COPY` give `Statement` and `Source`, `*LIST`
+  `Statement` and `Listing`, `*ALL` all three, `*STMT` `Statement`.
+- Conditions are those of `ADDBKP`'s and Display Module Source's
+  breakpoints (`dbg::cond`), evaluated at the stop: in the job for `Own`,
+  with an `EvalAt` order for `Job`.
+- Not sent in this build: `StopReason::Exception` and `ProgramEnd`. An
+  exception the program does not handle goes to the job's own handling
+  (an inquiry, a function check), as under `STRDBG` in QS/400 today; a
+  step past a program's end runs on without a stop.
+- The test system (`qapd::testing::debug`): `HLINV/ASSETS` with its
+  source and variables, `HLINV/NODEBUG`, display sessions' jobs
+  (`System::interactive_job`, `call_in`, `end_job`); `SECOFR` now has
+  `*SERVICE` too.
+- QEMU steps 162 (`Own`, a version 8 connection's gate) and 163 (a
+  service entry point stopping a 5250 session's job) run it end to end
+  as `QAPTEST`.
 
 ## Frozen at V1R1M0
 

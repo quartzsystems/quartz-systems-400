@@ -1,0 +1,91 @@
+# STRDBG of programs with and without debug data
+# primary oracle (V7R1M0), 2026-11-07
+
+> CRTBNDCL PGM(QSTEST/QAPNODBG) SRCFILE(QSTEST/ZZSRC) SRCMBR(QAPNODBG) DBGVIEW(*NONE)
+  -> ok
+  CPF1336 Escape 40 QWTCHGJB->QWCJOBSR | Errors on CHGJOB command for job 009338/QUSER/QZDASOINIT.
+  CPF5813 Diagnostic 40 QDDCPF->QSQRUN4 | File ZZSRC in library QSTEST already exists.
+  CPF7302 Escape 40 QDDCPF->QSQRUN4 | File ZZSRC not created in library QSTEST.
+  CPI2119 Information 00 QLIINSRT->QBNINSOB | AUT and USRPRF parameter values were ignored.
+  CPI2119 Information 00 QLIINSRT->QBNINSOB | AUT and USRPRF parameter values were ignored.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member QAPNODBG added to file ZZSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member QAPNODBG file ZZSRC in QSTEST cleared.
+  CPC0815 Completion 00 QCLENTR->QSQRUN4 | Program QAPNODBG created in library QSTEST.
+
+> STRDBG PGM(QSTEST/QAPNODBG) UPDPROD(*YES)
+  -> ok
+  CPF9C58 Escape 20 QTESESSH->QTESGRPHSH | ILE debug not allowed from batch job.
+  CEE9901 Escape 30 QLEAWI->QTECNTDB | Application error.  CPF9C58 unmonitored by QTESGRPHSH at statement 0000000061, instruction X'0000'.
+  CPF9999 Escape 40 QMHUNMSG->QSYS | Function check. CEE9901 unmonitored by QTECNTDB at statement *N, instruction X'02C8'.
+  CPF9571 Diagnostic 30 QTECNTDB->*EXT | Error calling debug session handler.
+  MCH3601 Escape 40 QTESESSH->QTESGRPHSH | Pointer not set for location referenced.
+  CEE9901 Escape 30 QLEAWI->QTECNTDB | Application error.  MCH3601 unmonitored by QTESGRPHSH at statement 0000000061, instruction X'0000'.
+  CPF9999 Escape 40 QMHUNMSG->QSYS | Function check. CEE9901 unmonitored by QTECNTDB at statement *N, instruction X'031E'.
+  CPF9571 Diagnostic 30 QTECNTDB->*EXT | Error calling debug session handler.
+  SQL7967 Completion 00 QSQRUN1->QSQRUN1 | PREPARE of statement QZB02A4D2DE6A6C001 completed.
+
+> ENDDBG
+  -> ok
+  SQL7985 Completion 00 QSQRUN4->QSQRUN4 | CALL statement complete.
+  SQL7968 Completion 00 QSQRUN1->QSQRUN1 | DESCRIBE of prepared statement STMT0001 completed.
+  SQL7967 Completion 00 QSQRUN1->QSQRUN1 | PREPARE of statement STMT0001 completed.
+  CPI433A Information 00 QQQSRVI1->QQQSETUP | Unable to retrieve query options file.
+  CPI434A Information 00 QQQQUERY->QSQRUN3 | **** Starting optimizer debug message for query .
+  CPI4323 Information 00 QQQOOODBOP->QSQRUN3 | The query access plan has been rebuilt.
+  CPI434B Information 00 QQQQUERY->QSQRUN3 | **** Ending debug message for query .
+  SQL7912 Information 00 QSQRUN3->QSQROUTX | ODP created.
+  SQL7916 Information 00 QSQRUN3->QSQROUTX | Blocking used for query.
+  SQL7962 Completion 00 QSQRUN3->QSQRUN3 | Cursor CRSR0001 opened.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 1 rows fetched from cursor CRSR0001.
+  SQL7914 Information 00 QSQSBAS->QSQSBAS | ODP not deleted.
+  SQL7967 Completion 00 QSQRUN1->QSQRUN1 | PREPARE of statement QZB02A4D2E09C91001 completed.
+  SQL7985 Completion 00 QSQRUN4->QSQRUN4 | CALL statement complete.
+
+> CRTBNDCL PGM(QSTEST/QAPSRCDBG) SRCFILE(QSTEST/ZZSRC) SRCMBR(QAPNODBG) DBGVIEW(*SOURCE)
+  -> ok
+  CPC0815 Completion 00 QCLENTR->QSQRUN4 | Program QAPSRCDBG created in library QSTEST.
+
+> STRDBG PGM(QSTEST/QAPSRCDBG) UPDPROD(*YES)
+  -> ok
+  CPF9C58 Escape 20 QTESESSH->QTESGRPHSH | ILE debug not allowed from batch job.
+  CEE9901 Escape 30 QLEAWI->QTECNTDB | Application error.  CPF9C58 unmonitored by QTESGRPHSH at statement 0000000061, instruction X'0000'.
+  CPF9999 Escape 40 QMHUNMSG->QSYS | Function check. CEE9901 unmonitored by QTECNTDB at statement *N, instruction X'02C8'.
+  CPF9571 Diagnostic 30 QTECNTDB->*EXT | Error calling debug session handler.
+  MCH3601 Escape 40 QTESESSH->QTESGRPHSH | Pointer not set for location referenced.
+  CEE9901 Escape 30 QLEAWI->QTECNTDB | Application error.  MCH3601 unmonitored by QTESGRPHSH at statement 0000000061, instruction X'0000'.
+  CPF9999 Escape 40 QMHUNMSG->QSYS | Function check. CEE9901 unmonitored by QTECNTDB at statement *N, instruction X'031E'.
+  CPF9571 Diagnostic 30 QTECNTDB->*EXT | Error calling debug session handler.
+  SQL7967 Completion 00 QSQRUN1->QSQRUN1 | PREPARE of statement QZB02A4D2EA0328001 completed.
+
+> ENDDBG
+  -> ok
+  SQL7985 Completion 00 QSQRUN4->QSQRUN4 | CALL statement complete.
+  SQL7968 Completion 00 QSQRUN1->QSQRUN1 | DESCRIBE of prepared statement STMT0001 completed.
+  SQL7967 Completion 00 QSQRUN1->QSQRUN1 | PREPARE of statement STMT0001 completed.
+  CPI433A Information 00 QQQSRVI1->QQQSETUP | Unable to retrieve query options file.
+  CPI434A Information 00 QQQQUERY->QSQRUN3 | **** Starting optimizer debug message for query .
+  CPI4323 Information 00 QQQOOODBOP->QSQRUN3 | The query access plan has been rebuilt.
+  CPI434B Information 00 QQQQUERY->QSQRUN3 | **** Ending debug message for query .
+  SQL7912 Information 00 QSQRUN3->QSQROUTX | ODP created.
+  SQL7916 Information 00 QSQRUN3->QSQROUTX | Blocking used for query.
+  SQL7962 Completion 00 QSQRUN3->QSQRUN3 | Cursor CRSR0001 opened.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 32 rows fetched from cursor CRSR0001.
+  SQL7963 Completion 00 QSQRUN2->QSQRUN2 | 1 rows fetched from cursor CRSR0001.
+  SQL7914 Information 00 QSQSBAS->QSQSBAS | ODP not deleted.
+  SQL7967 Completion 00 QSQRUN1->QSQRUN1 | PREPARE of statement QZB02A4D2EBCC2B001 completed.
+  SQL7985 Completion 00 QSQRUN4->QSQRUN4 | CALL statement complete.
+
+> DLTPGM PGM(QSTEST/QAPNODBG)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object QAPNODBG in QSTEST type *PGM deleted.
+
+> DLTPGM PGM(QSTEST/QAPSRCDBG)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object QAPSRCDBG in QSTEST type *PGM deleted.

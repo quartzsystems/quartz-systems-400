@@ -1,0 +1,39 @@
+# STRDBG at a display on the primary: a program compiled DBGVIEW(*NONE),
+# then one with DBGVIEW(*SOURCE) (prep.s makes them, clean.s deletes them).
+timeout 20000
+wait "Sign On"
+signon
+settle 2000
+
+continue
+show
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type STRDBG PGM(QSTEST/QAPNODBG) UPDPROD(*YES)
+key enter
+settle 4000
+show
+cursor 24 2
+key help
+settle 2500
+show
+key f12
+settle 1500
+key f12
+settle 1500
+show
+type ENDDBG
+key enter
+settle 2000
+type STRDBG PGM(QSTEST/QAPSRCDBG) UPDPROD(*YES)
+key enter
+settle 4000
+show
+key f12
+settle 1500
+type ENDDBG
+key enter
+settle 2000
+show

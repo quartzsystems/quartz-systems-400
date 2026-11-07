@@ -869,6 +869,62 @@ help = "The system value takes only values of its type and, for some, only the v
 vars = ["*CHAR 10", "*CHAR *VARY 2"]
 
 [[msg]]
+id = "TCP1A70"
+sev = 40
+text = "The source debugger is not available through this QAP server."
+help = "The server does not offer the Debug service's operations. Debug from a display session with STRDBG instead."
+vars = []
+
+[[msg]]
+id = "TCP1A71"
+sev = 30
+text = "No debug session is active on this connection."
+help = "Start a debug session on the connection first. A session ends with End, with a sign-off and with the connection."
+vars = []
+
+[[msg]]
+id = "TCP1A72"
+sev = 30
+text = "A debug session is already active on this connection."
+help = "A connection has one debug session at a time. End it before starting another, or open another connection."
+vars = []
+
+[[msg]]
+id = "TCP1A73"
+sev = 30
+text = "No service entry point is set for program &1."
+help = "Only the service entry points this debug session set can be removed."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP1A74"
+sev = 40
+text = "Not authorized to debug the jobs of user &1."
+help = "Stopping the jobs of a user other than the one signed on needs *SERVICE special authority."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A75"
+sev = 30
+text = "The debug session ended because job &1 ended."
+help = "The job being debugged is no longer active. Start a new debug session to debug another job."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP1A76"
+sev = 10
+text = "The debug session ended with the sign-off."
+help = "A debug session belongs to the profile signed on. Sign on again and start a new session to go on debugging."
+vars = []
+
+[[msg]]
+id = "TCP1A77"
+sev = 30
+text = "Call stack entry &1 does not exist."
+help = "Entries are counted from 0, the newest. Ask for the stack to see how many entries the stopped job has."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "TCP101A"
 sev = 10
 text = "Host &1 was not found."

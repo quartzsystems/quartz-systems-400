@@ -1,0 +1,78 @@
+# strdbg.tn on the primary (V7R1M0), 2026-11-07, as QSECOFR at a display;
+# the system name masked. Blank rows left out.
+--- screen (cursor 20,7; unlocked) ---
+| MAIN                           IBM i Main Menu                                 |
+|                                                             System:   SYSNAME  |
+| Select one of the following:                                                   |
+|      1. User tasks                                                             |
+|      2. Office tasks                                                           |
+|      3. General system tasks                                                   |
+|      4. Files, libraries, and folders                                          |
+|      5. Programming                                                            |
+|      6. Communications                                                         |
+|      7. Define or change the system                                            |
+|      8. Problem handling                                                       |
+|      9. Display a menu                                                         |
+|     11. IBM i Access tasks                                                     |
+|     90. Sign off                                                               |
+| Selection or command                                                           |
+| ===>                                                                           |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F23=Set initial menu          |
+| (C) COPYRIGHT IBM CORP. 1980, 2009.                                            |
+--- screen (cursor 1,1; unlocked) ---
+|                             Display Module Source                              |
+|   (Source not available.)                                                      |
+|                                                                         Bottom |
+| F3=End program   F12=Resume   F14=Work with module list   F21=Command entry    |
+| F23=Display output                                                             |
+| Program QAPNODBG cannot be debugged.                                           |
+--- screen (cursor 1,1; unlocked) ---
+|                         Additional Message Information                         |
+| Message ID . . . . . . :   CPF9C15                                             |
+| Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   |
+| Message . . . . :   Program QAPNODBG cannot be debugged.                       |
+| Cause . . . . . :   The modules that are bound to program QAPNODBG of type     |
+|   *PGM in library QSTEST were not compiled with the proper debug option or     |
+|   debug information has been removed from this program.                        |
+| Recovery  . . . :   Compile the modules with the proper debug option specified |
+|   and bind program QAPNODBG again.                                             |
+|                                                                         Bottom |
+| Press Enter to continue.                                                       |
+| F1=Help   F3=Exit   F6=Print      F9=Display message details                   |
+| F10=Display messages in job log   F12=Cancel   F21=Select assistance level     |
+--- screen (cursor 18,7; unlocked) ---
+|                                 Command Entry                         SYSNAME  |
+|                                                           Request level:   4   |
+| Previous commands and messages:                                                |
+|    > STRDBG PGM(QSTEST/QAPNODBG) UPDPROD(*YES)                                 |
+|                                                                         Bottom |
+| Type command, press Enter.                                                     |
+| ===>                                                                           |
+| F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              |
+| F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  |
+--- screen (cursor 20,16; unlocked) ---
+|                             Display Module Source                              |
+| Program:   QAPSRCDBG      Library:   QSTEST         Module:   QAPSRCDBG        |
+|      1  PGM                                                                    |
+|      2  DCL VAR(&N) TYPE(*DEC) LEN(5 0) VALUE(1)                               |
+|      3  CHGVAR VAR(&N) VALUE(&N + 1)                                           |
+|      4  ENDPGM                                                                 |
+|                                                                         Bottom |
+| Debug . . .                                                                    |
+| F3=End program   F6=Add/Clear breakpoint   F10=Step   F11=Display variable     |
+| F12=Resume       F17=Watch variable   F18=Work with watch   F24=More keys      |
+| Source file has changed.                                                     + |
+--- screen (cursor 18,7; unlocked) ---
+|                                 Command Entry                         SYSNAME  |
+|                                                           Request level:   4   |
+| Previous commands and messages:                                                |
+|    > STRDBG PGM(QSTEST/QAPNODBG) UPDPROD(*YES)                                 |
+|    > ENDDBG                                                                    |
+|    > STRDBG PGM(QSTEST/QAPSRCDBG) UPDPROD(*YES)                                |
+|    > ENDDBG                                                                    |
+|                                                                         Bottom |
+| Type command, press Enter.                                                     |
+| ===>                                                                           |
+| F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              |
+| F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  |
+strdbg: ok

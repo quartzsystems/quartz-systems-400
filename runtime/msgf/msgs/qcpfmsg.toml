@@ -7109,6 +7109,13 @@ help = "Check the search string; FIND searches the source shown from the cursor.
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF9C15"
+sev = 30
+text = "Program &1 has no debug data."
+help = "Its modules were compiled with DBGVIEW(*NONE), or their debug data was removed. Compile them with a debug view and create the program again to debug it."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "CPF9C17"
 sev = 0
 text = "The breakpoint at line &1 was removed."
