@@ -49,7 +49,7 @@ fn frame() -> Frame {
 
 #[test]
 fn version_9_values() {
-    assert!(VERSION >= 9);
+    const { assert!(VERSION >= 9) };
     assert_eq!(encode(&Service::Debug), [11]);
     assert_eq!(Service::Debug.since(), 9);
     let ops = [
@@ -84,13 +84,12 @@ fn version_9_values() {
 
 #[test]
 fn a_version_8_peer_never_gets_a_debug_body() {
-    let stopped = Envelope::event(Service::Debug, event::STOPPED, Status::Ok, None).with_body(
-        &Stopped {
+    let stopped =
+        Envelope::event(Service::Debug, event::STOPPED, Status::Ok, None).with_body(&Stopped {
             job: job(),
             reason: StopReason::Breakpoint,
             frame: frame(),
-        },
-    );
+        });
     let ended = Envelope::event(Service::Debug, event::DEBUG_ENDED, Status::Ok, None)
         .with_body(&DebugEnded { message: None });
     for e in [&stopped, &ended] {

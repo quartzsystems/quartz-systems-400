@@ -9,7 +9,10 @@
 //! beside it. `STRSRVJOB` makes the debugger act on another job: the
 //! orders and stops go through the storage service (requests 380-387,
 //! `remote`). A job without a display keeps the Phase 4 text session.
+//! A service entry point (QAP `Debug`) attaches a job at its call of the
+//! program (requests 388-391, `entry`).
 
+mod entry;
 mod lists;
 mod remote;
 mod source;
@@ -31,6 +34,7 @@ use crate::console::host::Host;
 use crate::display::surface::Surface;
 use crate::panels::shows_panels;
 
+pub use entry::calling;
 pub use remote::served;
 
 /// Source rows and columns of Display Module Source.

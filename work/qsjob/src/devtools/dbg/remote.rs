@@ -178,6 +178,8 @@ pub fn take_stop(job: &mut Job, host: &Host, st: &mut State) -> Option<String> {
             }
             DbgEvent::Running => st.session.resumed(),
             DbgEvent::Answer { text } => return Some(text),
+            // Asked for by a QAP servicer only.
+            DbgEvent::Frames { .. } | DbgEvent::Vars { .. } | DbgEvent::Value { .. } => {}
         }
     }
 }
@@ -210,9 +212,24 @@ pub fn is_served() -> bool {
     SERVED.with(Cell::get)
 }
 
+/// A service entry point attached this job to the job that set it:
+/// `program` (`LIB/NAME`) goes under debug and stops at its first
+/// statement.
+pub fn attach_entry(job: &mut Job, program: &str) {
+    SERVED.with(|s| s.set(true));
+    let (lib, name) = program.split_once('/').unwrap_or(("*LIBL", program));
+    if job.strdbg(name, lib).is_ok()
+        && let Some(d) = job.debug.as_mut()
+    {
+        d.step = mi::debug::Step::Into;
+    }
+}
+
 /// The serviced side: take and do the orders waiting for this job.
 /// Called before a program is called and at each break poll.
 pub fn served(job: &mut Job, host: &Host) {
+    // A QAP connection's own debug session reaches the core here too.
+    crate::work::qap::debug::own::apply(job);
     let orders = host.link.borrow_mut().with(Client::srvjob_orders);
     for o in orders {
         let _ = apply(job, host, o);
@@ -275,6 +292,63 @@ fn apply(job: &mut Job, host: &Host, o: DbgOrder) -> Option<Resume> {
                 .with(|l| l.srvjob_event(DbgEvent::Answer { text }));
             None
         }
+        DbgOrder::StepOut => Some(Resume::StepOut),
+        o @ (DbgOrder::Frames | DbgOrder::Vars { .. } | DbgOrder::EvalAt { .. }) => {
+            let e = inspect(job, o);
+            let _ = host.link.borrow_mut().with(|l| l.srvjob_event(e));
+            None
+        }
+    }
+}
+
+/// The answer to an order a QAP servicer asks at a stop: the call
+/// stack, a stack entry's variables, `EVAL` in an entry.
+fn inspect(job: &Job, o: DbgOrder) -> DbgEvent {
+    match o {
+        DbgOrder::Vars { frame, parent } => {
+            let parent = (!parent.is_empty()).then_some(parent.as_str());
+            match job.dbg_variables(frame as usize, parent) {
+                Ok(v) => DbgEvent::Vars {
+                    list: v
+                        .into_iter()
+                        .map(|v| stg::proto::DbgVarRow {
+                            name: v.name,
+                            kind: v.kind,
+                            value: v.value,
+                            expandable: v.expandable,
+                        })
+                        .collect(),
+                    error: String::new(),
+                },
+                Err(error) => DbgEvent::Vars {
+                    list: Vec::new(),
+                    error,
+                },
+            }
+        }
+        DbgOrder::EvalAt { frame, expr } => match job.eval_in(frame as usize, &expr) {
+            Ok(text) => DbgEvent::Value {
+                text,
+                error: String::new(),
+            },
+            Err(error) => DbgEvent::Value {
+                text: String::new(),
+                error,
+            },
+        },
+        _ => DbgEvent::Frames {
+            list: job
+                .dbg_frames()
+                .into_iter()
+                .map(|f| stg::proto::DbgFrameRow {
+                    program: f.program,
+                    module: f.module,
+                    procedure: f.procedure,
+                    stmt: f.stmt,
+                    debug: f.debug,
+                })
+                .collect(),
+        },
     }
 }
 

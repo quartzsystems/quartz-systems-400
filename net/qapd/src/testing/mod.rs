@@ -269,9 +269,16 @@ impl System {
         s.edit("OPER", |u| u.special = vec!["*JOBCTL".into()]);
         s.user("SECOFR", "SECPW01");
         s.edit("SECOFR", |u| {
-            u.special = ["*ALLOBJ", "*SECADM", "*JOBCTL", "*AUDIT", "*IOSYSCFG", "*SERVICE"]
-                .map(String::from)
-                .to_vec();
+            u.special = [
+                "*ALLOBJ",
+                "*SECADM",
+                "*JOBCTL",
+                "*AUDIT",
+                "*IOSYSCFG",
+                "*SERVICE",
+            ]
+            .map(String::from)
+            .to_vec();
         });
         fixtures::install(&mut lock(&s.spool));
         messages::install(&mut lock(&s.messages));

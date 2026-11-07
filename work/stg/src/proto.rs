@@ -575,6 +575,20 @@ ipc::rpc! {
     386 => fn srvjob_event / SrvJobEvent (event: DbgEvent) -> Result<(), String>;
     /// The servicing job: the news waiting for it.
     387 => fn srvjob_events / SrvJobEvents () -> Vec<DbgEvent>;
+    /// A service entry point (QAP `Debug`): the next call of program
+    /// `lib/name` by a job of `user` (`*CURRENT` the job's) attaches
+    /// that job to this one as `STRSRVJOB` would; the program resolved.
+    388 => fn srvent_set / SrvEntSet (lib: String, name: String, user: String) -> Result<String, String>;
+    /// This job's service entry point for `lib/name` removed; `*ALL`
+    /// removes them all.
+    389 => fn srvent_remove / SrvEntRemove (lib: String, name: String) -> Result<(), String>;
+    /// The programs, `LIB/NAME`, with service entry points for this
+    /// job's user.
+    390 => fn srvent_list / SrvEntList () -> Vec<String>;
+    /// This job is about to call `lib/name`: an entry point for it and
+    /// the job's user attaches the job to the entry's owner; the
+    /// program, `LIB/NAME`, when it did, else empty.
+    391 => fn srvent_hit / SrvEntHit (lib: String, name: String) -> String;
     // --- STRSQL (400-419)
     /// STRSQL: the job's SQL session started with its naming (`*SYS`,
     /// `*SQL`) and commitment control (`*NONE`, `*CHG`, `*CS`,
@@ -1243,13 +1257,59 @@ pub struct DbgModule {
     pub stmts: Vec<(u32, u32)>,
     /// The view the module was compiled with (`DBGVIEW`).
     pub view: String,
+    /// The statements its debug code has, in order.
+    pub present: Vec<u32>,
 }
 
 wire_struct!(DbgModule {
     name,
     lines,
     stmts,
-    view
+    view,
+    present
+});
+
+/// A call stack entry of a serviced job.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DbgFrameRow {
+    /// `LIB/NAME`.
+    pub program: String,
+    /// The module.
+    pub module: String,
+    /// The procedure.
+    pub procedure: String,
+    /// The statement.
+    pub stmt: u32,
+    /// The program runs its debug variant.
+    pub debug: bool,
+}
+
+wire_struct!(DbgFrameRow {
+    program,
+    module,
+    procedure,
+    stmt,
+    debug
+});
+
+/// A variable of a serviced job's stop.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DbgVarRow {
+    /// Its name.
+    pub name: String,
+    /// Its type.
+    pub kind: String,
+    /// `EVAL`'s view.
+    pub value: String,
+    /// It has parts.
+    pub expandable: bool,
+}
+
+wire_struct!(DbgVarRow {
+    name,
+    kind,
+    value,
+    expandable
 });
 
 /// A program under debug.
@@ -1301,6 +1361,24 @@ pub enum DbgOrder {
         /// The expression with its format suffix.
         expr: String,
     },
+    /// The call stack at the stop: answered with `Frames`.
+    Frames,
+    /// A stack entry's variables: answered with `Vars`.
+    Vars {
+        /// The entry, 0 the newest.
+        frame: u32,
+        /// A structure or array to expand; empty for the entry's own.
+        parent: String,
+    },
+    /// `EVAL` in a stack entry: answered with `Value`.
+    EvalAt {
+        /// The entry, 0 the newest.
+        frame: u32,
+        /// The expression.
+        expr: String,
+    },
+    /// Go on from a stop to the next statement of a caller.
+    StepOut,
 }
 
 ipc::wire_enum!(DbgOrder {
@@ -1309,6 +1387,10 @@ ipc::wire_enum!(DbgOrder {
     2 => Breakpoints { list },
     3 => Resume { step, into },
     4 => Eval { expr },
+    5 => Frames,
+    6 => Vars { frame, parent },
+    7 => EvalAt { frame, expr },
+    8 => StepOut,
 });
 
 /// What a serviced job tells the job servicing it.
@@ -1330,10 +1412,32 @@ pub enum DbgEvent {
     },
     /// The program ended or the job went on running.
     Running,
+    /// The call stack, the newest entry first.
+    Frames {
+        /// The entries.
+        list: Vec<DbgFrameRow>,
+    },
+    /// A stack entry's variables.
+    Vars {
+        /// The variables.
+        list: Vec<DbgVarRow>,
+        /// Why there are none; empty when there are.
+        error: String,
+    },
+    /// `EvalAt`'s value.
+    Value {
+        /// As `EVAL` shows it.
+        text: String,
+        /// Why there is none; empty when there is.
+        error: String,
+    },
 }
 
 ipc::wire_enum!(DbgEvent {
     0 => Stopped { program, procedure, stmt },
     1 => Answer { text },
     2 => Running,
+    3 => Frames { list },
+    4 => Vars { list, error },
+    5 => Value { text, error },
 });

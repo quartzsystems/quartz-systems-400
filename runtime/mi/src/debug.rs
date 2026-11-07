@@ -67,6 +67,9 @@ pub struct DbgVar {
     pub desc: u64,
 }
 
+/// How an answer about a stack entry the stack has not got begins.
+pub const NO_FRAME: &str = "there is no call stack entry";
+
 /// A call stack entry as the debugger shows it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DbgFrame {
@@ -259,7 +262,11 @@ impl Job {
     /// The variables of entry `frame` (0 the newest) as `EVAL` shows
     /// them: its own, or the parts of `parent` (a structure's `DS.SUB`,
     /// an array's `ARR(1)`).
-    pub fn dbg_variables(&self, frame: usize, parent: Option<&str>) -> Result<Vec<DbgValue>, String> {
+    pub fn dbg_variables(
+        &self,
+        frame: usize,
+        parent: Option<&str>,
+    ) -> Result<Vec<DbgValue>, String> {
         let f = self.frame_at(frame)?;
         let vars: Vec<&DbgVar> = match parent {
             Some(p) => parts_of(&f.debug_vars, p),
@@ -273,7 +280,9 @@ impl Job {
             .into_iter()
             .map(|v| {
                 let t = TypeDesc::from_word(v.desc.cast_signed()).decode();
-                let aggregate = t.as_ref().is_some_and(|t| t.class() == TypeClass::Aggregate);
+                let aggregate = t
+                    .as_ref()
+                    .is_some_and(|t| t.class() == TypeClass::Aggregate);
                 let expandable = aggregate && !parts_of(&f.debug_vars, &v.name).is_empty();
                 let value = match &t {
                     Some(_) if expandable => String::new(),
@@ -301,7 +310,7 @@ impl Job {
         }
         n.checked_sub(frame + 1)
             .and_then(|i| self.act.frames.get(i))
-            .ok_or_else(|| format!("there is no call stack entry {frame}"))
+            .ok_or_else(|| format!("{NO_FRAME} {frame}"))
     }
 
     /// `EVAL` in entry `frame` of the stack, 0 the newest.

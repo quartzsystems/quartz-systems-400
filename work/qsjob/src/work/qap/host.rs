@@ -18,7 +18,9 @@
 //! `Messages` runs on a thread's link through the service's message
 //! queue functions, the message commands' (`messages.rs`). `Manage`
 //! runs on a thread's link through the commands it stands for, the
-//! analyzer first (`manage.rs`).
+//! analyzer first (`manage.rs`). `Debug` runs on a thread's link over
+//! the debugger's requests, the job's own thread stopping in its calls
+//! (`debug/`).
 
 use std::cell::{RefCell, RefMut};
 use std::path::Path;
@@ -335,6 +337,8 @@ pub struct JobThread {
     shared: Shared,
     /// The IFS over the thread's link, as the job's profile.
     ifs: RemoteIfs,
+    /// The debugger over the thread's link.
+    debug: super::debug::thread::Thread,
 }
 
 impl JobThread {
@@ -353,6 +357,7 @@ impl JobThread {
         let shared = Rc::new(RefCell::new(link));
         Self {
             ifs: RemoteIfs::new(Rc::clone(&shared)),
+            debug: super::debug::thread::Thread::new(Rc::clone(&shared)),
             shared,
         }
     }
@@ -693,6 +698,10 @@ impl ThreadHost for JobThread {
             st.ipl_time = i64::try_from(j.started).unwrap_or(0).saturating_mul(1000);
         }
         Ok(st)
+    }
+
+    fn debugger(&mut self) -> Option<&mut dyn qapd::debug::DebugHost> {
+        Some(&mut self.debug)
     }
 
     fn power_down(&mut self, req: &PowerDown) -> Result<(), Refusal> {

@@ -62,6 +62,10 @@ pub type CmdExecFn = Rc<dyn Fn(&mut Job, &str, u8) -> Result<String, (String, Ve
 /// A hook the job process installs and the runtime calls with the job.
 pub type JobHook = Rc<dyn Fn(&mut Job)>;
 
+/// Run before a dynamic call loads its program: the job, the program's
+/// name and library as the call names them.
+pub type CallHook = Rc<dyn Fn(&mut Job, &str, &str)>;
+
 /// An open file's owner: the activation (by its static area), the
 /// module and the file declaration.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -180,6 +184,9 @@ pub struct Job {
     /// Run when generated code finds the attention flag set: the job
     /// process takes the break messages waiting for the job.
     pub attn: Option<JobHook>,
+    /// Run before a dynamic call loads its program (a service entry
+    /// point may put it under debug first).
+    pub on_call: Option<CallHook>,
     /// Programs, activation groups and the call stack.
     pub act: Activator,
     /// Native programs by name, found before any object (`QSYS`).
@@ -289,6 +296,7 @@ impl Job {
             dsply: None,
             replies: VecDeque::new(),
             attn: None,
+            on_call: None,
             act: Activator::new(source),
             natives: HashMap::new(),
             table: crate::rtlib::table(),
@@ -382,6 +390,9 @@ impl Job {
             }
             f(self, args);
             return Ok(());
+        }
+        if let Some(h) = self.on_call.clone() {
+            h(self, name, lib);
         }
         let table = self.table.clone();
         let caller_user = self.act.user_state();

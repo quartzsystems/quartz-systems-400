@@ -35,6 +35,11 @@ pub fn end_from_outside() {
     OUTSIDE.store(true, std::sync::atomic::Ordering::SeqCst);
 }
 
+/// Whether an end was asked from outside, leaving it asked.
+pub fn outside_end_asked() -> bool {
+    OUTSIDE.load(std::sync::atomic::Ordering::SeqCst)
+}
+
 /// Whether an end was asked from outside; asking clears it.
 pub fn take_outside_end() -> bool {
     OUTSIDE.swap(false, std::sync::atomic::Ordering::SeqCst)

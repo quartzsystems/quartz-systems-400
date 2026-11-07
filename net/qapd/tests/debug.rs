@@ -8,6 +8,8 @@
 //! display session's job, another job by `Start`, the statuses and
 //! messages, the session's ends, and older versions without it.
 
+#![allow(clippy::many_single_char_names)] // c, d, s, v, e: the system, the client, what came
+
 mod common;
 
 use std::collections::VecDeque;
@@ -87,7 +89,11 @@ impl Dbg {
     fn refused<B: Wire>(&mut self, op: Op, body: &B, status: Status, id: &str) {
         let e = self.call(op, body);
         assert_eq!(e.status, status, "{op:?}: {:?}", e.message);
-        assert_eq!(e.message.as_ref().map(|m| m.id.as_str()), Some(id), "{op:?}");
+        assert_eq!(
+            e.message.as_ref().map(|m| m.id.as_str()),
+            Some(id),
+            "{op:?}"
+        );
     }
 
     fn event(&mut self) -> Envelope {
@@ -111,7 +117,11 @@ impl Dbg {
 
     fn ended(&mut self) -> DebugEnded {
         let e = self.event();
-        assert_eq!((e.service, e.op), (Service::Debug, event::DEBUG_ENDED), "{e:?}");
+        assert_eq!(
+            (e.service, e.op),
+            (Service::Debug, event::DEBUG_ENDED),
+            "{e:?}"
+        );
         e.body_as().unwrap()
     }
 
@@ -265,7 +275,12 @@ fn own_session_stops_the_connections_call() {
 fn breakpoints_and_programs_refused() {
     let c = Controls::new();
     let mut d = Dbg::new(&c, "BOB", "SECRET1");
-    d.refused(Op::AddProgram, &AddProgram::default(), Status::NotFound, "CPF9801");
+    d.refused(
+        Op::AddProgram,
+        &AddProgram::default(),
+        Status::NotFound,
+        "CPF9801",
+    );
     d.start(DebugTarget::Own);
     d.refused(
         Op::DebugStart,
@@ -279,12 +294,21 @@ fn breakpoints_and_programs_refused() {
     assert_eq!(e.status, Status::Error);
     assert_eq!(e.message.unwrap().id, qapd::testing::debug::NO_DEBUG_DATA);
     let e = add(&mut d, "NOSUCH");
-    assert_eq!((e.status, e.message.unwrap().id.as_str()), (Status::NotFound, "CPF9801"));
+    assert_eq!(
+        (e.status, e.message.unwrap().id.as_str()),
+        (Status::NotFound, "CPF9801")
+    );
     add(&mut d, "ASSETS");
     let e = d.breakpoints(&[(15, None)]);
-    assert_eq!((e.status, e.message.unwrap().id.as_str()), (Status::Error, "CPD9CCB"));
+    assert_eq!(
+        (e.status, e.message.unwrap().id.as_str()),
+        (Status::Error, "CPD9CCB")
+    );
     let e = d.breakpoints(&[(9, Some("COUNT ~ 1"))]);
-    assert_eq!((e.status, e.message.unwrap().id.as_str()), (Status::Error, "CPF9C59"));
+    assert_eq!(
+        (e.status, e.message.unwrap().id.as_str()),
+        (Status::Error, "CPF9C59")
+    );
     assert_eq!(d.breakpoints(&[(0, None)]).status, Status::InvalidRequest);
     // A condition that never holds: the program runs through.
     assert_eq!(d.breakpoints(&[(10, Some("COUNT = 9"))]).status, Status::Ok);

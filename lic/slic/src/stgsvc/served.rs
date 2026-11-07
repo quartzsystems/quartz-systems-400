@@ -2341,7 +2341,7 @@ impl Service for Served<'_> {
     }
 
     fn srvjob_serving(&mut self) -> String {
-        super::dbg::serving(self.ctx.job.number)
+        super::dbg::serving(self.system, self.ctx.job.number)
     }
 
     fn srvjob_order(&mut self, order: stg::proto::DbgOrder) -> Result<(), String> {
@@ -2358,6 +2358,46 @@ impl Service for Served<'_> {
 
     fn srvjob_events(&mut self) -> Vec<stg::proto::DbgEvent> {
         super::dbg::events(self.ctx.job.number)
+    }
+
+    fn srvent_set(&mut self, lib: String, name: String, user: String) -> Result<String, String> {
+        let (special, me_user) = {
+            let s = self.ctx.session.borrow();
+            (s.principal.special_adopted(), s.principal.user.clone())
+        };
+        self.own_libl();
+        let r = super::dbg::entry_set(
+            self.system,
+            self.ctx.job.number,
+            &me_user,
+            special,
+            &lib,
+            &name,
+            &user,
+        );
+        ile::set_libl(None);
+        r
+    }
+
+    fn srvent_remove(&mut self, lib: String, name: String) -> Result<(), String> {
+        self.own_libl();
+        let r = super::dbg::entry_remove(self.system, self.ctx.job.number, &lib, &name);
+        ile::set_libl(None);
+        r
+    }
+
+    fn srvent_list(&mut self) -> Vec<String> {
+        let user = self.ctx.session.borrow().principal.user.clone();
+        super::dbg::entry_list(self.ctx.job.number, &user)
+    }
+
+    fn srvent_hit(&mut self, lib: String, name: String) -> String {
+        let user = self.ctx.session.borrow().principal.user.clone();
+        self.own_libl();
+        let job = self.ctx.job.clone();
+        let r = super::dbg::entry_hit(self.system, &job, &user, &lib, &name);
+        ile::set_libl(None);
+        r
     }
 
     // --- STRSQL (400-419)

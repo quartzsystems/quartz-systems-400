@@ -9,6 +9,11 @@
 //! that the serviced job takes at its next check (a call, a break
 //! poll, while stopped); the serviced job posts its stops and answers
 //! back. The table lives as long as the service.
+//!
+//! Service entry points (QAP `Debug`, version 9): an owner job names a
+//! program and a user; the next job of that user to call the program
+//! is attached to the owner as `STRSRVJOB` attaches it, while the owner
+//! services no other job and is still active.
 
 use std::cell::RefCell;
 use std::collections::{BTreeMap, VecDeque};
@@ -34,6 +39,18 @@ struct Table {
     orders: BTreeMap<u32, VecDeque<DbgOrder>>,
     /// Events by servicing job number.
     events: BTreeMap<u32, VecDeque<DbgEvent>>,
+    /// Service entry points.
+    entries: Vec<Entry>,
+}
+
+/// A service entry point.
+struct Entry {
+    /// The job that set it.
+    owner: u32,
+    /// `LIB/NAME`.
+    program: String,
+    /// The user whose jobs it attaches.
+    user: String,
 }
 
 thread_local! {
@@ -128,15 +145,160 @@ pub fn end(me: u32) -> Result<String, String> {
     })
 }
 
-/// The job `me` services.
-pub fn serving(me: u32) -> String {
+/// The job `me` services; a job no longer active is let go.
+pub fn serving(system: &System, me: u32) -> String {
+    TABLE
+        .with(|t| {
+            let mut t = t.borrow_mut();
+            let j = t.serving.get(&me).cloned()?;
+            if system.jobs.get(j.number).is_none() {
+                t.serving.remove(&me);
+                t.orders.remove(&j.number);
+                return None;
+            }
+            Some(qualified(&j))
+        })
+        .unwrap_or_default()
+}
+
+/// `SetServiceEntry`: the next call of `lib/name` by a job of `user`
+/// (`*CURRENT`: `me_user`) attaches it to `me`. Another user's jobs need
+/// `*SERVICE`. The program, `LIB/NAME`.
+pub fn entry_set(
+    system: &mut System,
+    me: u32,
+    me_user: &str,
+    special: SpecialAuth,
+    lib: &str,
+    name: &str,
+    user: &str,
+) -> Result<String, String> {
+    let user = match user.trim().to_ascii_uppercase() {
+        u if u.is_empty() || u == "*CURRENT" => me_user.to_string(),
+        u => u,
+    };
+    if user != me_user && !special.has(SpecialAuth::SERVICE) {
+        // The QAP side words it from the message file.
+        return Err(format!("TCP1A74 {user}"));
+    }
+    let program = resolve(system, lib, name)?;
+    TABLE.with(|t| {
+        let mut t = t.borrow_mut();
+        t.entries
+            .retain(|e| !(e.owner == me && e.program == program));
+        t.entries.push(Entry {
+            owner: me,
+            program: program.clone(),
+            user,
+        });
+    });
+    Ok(program)
+}
+
+/// `RemoveServiceEntry`: `me`'s entry for `lib/name`; `*ALL` every one.
+pub fn entry_remove(system: &mut System, me: u32, lib: &str, name: &str) -> Result<(), String> {
+    if name.trim().eq_ignore_ascii_case("*ALL") {
+        TABLE.with(|t| t.borrow_mut().entries.retain(|e| e.owner != me));
+        return Ok(());
+    }
+    let program = resolve(system, lib, name)
+        .unwrap_or_else(|_| format!("{}/{}", lib.trim(), name.trim()).to_ascii_uppercase());
+    let gone = TABLE.with(|t| {
+        let mut t = t.borrow_mut();
+        let before = t.entries.len();
+        t.entries
+            .retain(|e| !(e.owner == me && e.program == program));
+        before != t.entries.len()
+    });
+    if gone {
+        Ok(())
+    } else {
+        Err(format!("TCP1A73 {program}"))
+    }
+}
+
+/// The programs with entry points for `user`'s jobs, other than `me`'s.
+pub fn entry_list(me: u32, user: &str) -> Vec<String> {
     TABLE.with(|t| {
         t.borrow()
-            .serving
-            .get(&me)
-            .map(qualified)
-            .unwrap_or_default()
+            .entries
+            .iter()
+            .filter(|e| e.user == user && e.owner != me)
+            .map(|e| e.program.clone())
+            .collect()
     })
+}
+
+/// Job `me` of `me_user` calls `lib/name`: an entry point for it
+/// attaches the job to its owner, when the owner is active and services
+/// no job, and nobody services `me`. The program when it did.
+pub fn entry_hit(
+    system: &mut System,
+    me: &JobInfo,
+    me_user: &str,
+    lib: &str,
+    name: &str,
+) -> String {
+    let short = name.trim().to_ascii_uppercase();
+    let candidates: Vec<(u32, String)> = TABLE.with(|t| {
+        t.borrow()
+            .entries
+            .iter()
+            .filter(|e| {
+                e.user == me_user
+                    && e.owner != me.number
+                    && e.program.rsplit('/').next() == Some(short.as_str())
+            })
+            .map(|e| (e.owner, e.program.clone()))
+            .collect()
+    });
+    if candidates.is_empty() {
+        return String::new();
+    }
+    let Ok(program) = resolve(system, lib, name) else {
+        return String::new();
+    };
+    let Some(owner) = candidates
+        .iter()
+        .find(|(_, p)| *p == program)
+        .map(|(o, _)| *o)
+    else {
+        return String::new();
+    };
+    if system.jobs.get(owner).is_none() {
+        // The owner is gone: its entries go with it.
+        TABLE.with(|t| t.borrow_mut().entries.retain(|e| e.owner != owner));
+        return String::new();
+    }
+    TABLE.with(|t| {
+        let mut t = t.borrow_mut();
+        if t.serving.contains_key(&owner) || t.serving.values().any(|j| j.number == me.number) {
+            return String::new();
+        }
+        t.serving.insert(owner, me.clone());
+        t.orders.entry(me.number).or_default();
+        program
+    })
+}
+
+/// A program's `LIB/NAME`, found as `STRDBG` finds it.
+fn resolve(system: &mut System, lib: &str, name: &str) -> Result<String, String> {
+    let lib = lib.trim().to_ascii_uppercase();
+    let name = name.trim().to_ascii_uppercase();
+    let found = in_store(system, |txn, qsys| {
+        locate(txn, qsys, &lib, &name).map(|(l, _)| l)
+    })?;
+    Ok(format!("{found}/{name}"))
+}
+
+/// `f` in a transaction of the object store, with `QSYS`.
+fn in_store<T>(
+    system: &mut System,
+    f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Result<T, String>,
+) -> Result<T, String> {
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    with_txn(&mut s.store, |txn| f(txn, qsys))
 }
 
 /// An order from `me` for the job it services.
@@ -235,21 +397,17 @@ fn locate(
 
 /// A program's modules for Display Module Source.
 pub fn program(system: &mut System, lib: &str, name: &str) -> Result<DbgProgram, String> {
-    let (lib, kind, mods) = {
-        let s = system.storage.as_mut().ok_or("object store not open")?;
-        let qsys = s.qsys.ok_or("object store not initialized")?;
-        with_txn(&mut s.store, |txn| {
-            let (lib, id) = locate(txn, qsys, lib, name)?;
-            let kind = if id.type_code == types::SRVPGM {
-                "*SRVPGM"
-            } else {
-                "*PGM"
-            };
-            let p = ile::store::load_program(txn, id).map_err(|e| e.to_string())?;
-            let mods: Vec<ModuleObject> = p.modules.into_iter().map(|b| b.module).collect();
-            Ok((lib, kind.to_string(), mods))
-        })?
-    };
+    let (lib, kind, mods) = in_store(system, |txn, qsys| {
+        let (lib, id) = locate(txn, qsys, lib, name)?;
+        let kind = if id.type_code == types::SRVPGM {
+            "*SRVPGM"
+        } else {
+            "*PGM"
+        };
+        let p = ile::store::load_program(txn, id).map_err(|e| e.to_string())?;
+        let mods: Vec<ModuleObject> = p.modules.into_iter().map(|b| b.module).collect();
+        Ok((lib, kind.to_string(), mods))
+    })?;
     let mut modules = Vec::new();
     for m in mods {
         let lines = match &m.source {
@@ -271,11 +429,24 @@ pub fn program(system: &mut System, lib: &str, name: &str) -> Result<DbgProgram,
         } else {
             m.ir.options.dbgview.name().to_string()
         };
+        let mut present: Vec<u32> = m
+            .debug_code
+            .as_ref()
+            .map(|c| {
+                c.procs
+                    .iter()
+                    .flat_map(|p| p.stmts.iter().map(|s| s.stmt))
+                    .collect()
+            })
+            .unwrap_or_default();
+        present.sort_unstable();
+        present.dedup();
         modules.push(DbgModule {
             name: m.name.clone(),
             lines,
             stmts,
             view,
+            present,
         });
     }
     Ok(DbgProgram {

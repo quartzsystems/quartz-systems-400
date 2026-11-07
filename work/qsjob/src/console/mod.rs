@@ -387,8 +387,15 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     let inbox = Rc::clone(&host.inbox);
     let dbg_host = host.clone();
     job.set_debug_hook(Box::new(move |job: &mut Job, stop| {
-        crate::devtools::dbg::stop(job, stop, &dbg_host)
+        // A QAP connection's own session first; then the display's.
+        crate::work::qap::debug::own::stop(job, stop, &dbg_host)
+            .or_else(|| crate::devtools::dbg::stop(job, stop, &dbg_host))
             .unwrap_or_else(|| debug::session(job, stop, &mut ctl.borrow_mut(), &inbox))
+    }));
+    // A service entry point may stop the program a call is to load.
+    let call_host = host.clone();
+    job.on_call = Some(Rc::new(move |job: &mut Job, name: &str, lib: &str| {
+        crate::devtools::dbg::calling(job, &call_host, name, lib);
     }));
     // Environment variables, spawn() and PASE.
     crate::qsh::child::install(host);

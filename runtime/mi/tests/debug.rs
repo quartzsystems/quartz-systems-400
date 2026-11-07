@@ -220,8 +220,8 @@ fn an_active_program_cannot_enter_debug() {
 
 #[test]
 fn frames_variables_and_step_out() {
-    let mut j = job();
     type Seen = (Vec<mi::debug::DbgFrame>, Vec<mi::debug::DbgValue>, String);
+    let mut j = job();
     let seen: Rc<RefCell<Vec<Seen>>> = Rc::new(RefCell::new(Vec::new()));
     let s = seen.clone();
     j.set_debug_hook(Box::new(move |job: &mut Job, stop: &Stop| {
@@ -241,7 +241,11 @@ fn frames_variables_and_step_out() {
     j.addbkp("DSUB", 1);
     j.call_program("DMAIN", "*LIBL", &[]).unwrap();
     let seen = seen.borrow();
-    assert_eq!(seen.len(), 2, "the breakpoint, then the caller after a step out");
+    assert_eq!(
+        seen.len(),
+        2,
+        "the breakpoint, then the caller after a step out"
+    );
     let (frames, vars, caller) = &seen[0];
     let top: Vec<(&str, &str, u32)> = frames
         .iter()

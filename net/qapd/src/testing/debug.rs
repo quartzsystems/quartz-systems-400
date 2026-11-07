@@ -41,9 +41,7 @@ use qap_proto::types::{JobId, ObjectName};
 
 use super::host::MemThread;
 use super::{System, lock};
-use crate::debug::{
-    DebugHost, JOB_ENDED, NO_ENTRY, NO_SESSION, News, OTHER_USER, SESSION_ACTIVE,
-};
+use crate::debug::{DebugHost, JOB_ENDED, NO_ENTRY, NO_SESSION, News, OTHER_USER, SESSION_ACTIVE};
 use crate::host::{Refusal, ThreadHost};
 
 /// `ASSETS`'s source.
@@ -69,7 +67,7 @@ pub const ASSETS_SOURCE: [&str; 14] = [
 pub const STATEMENTS: [u32; 5] = [9, 10, 12, 13, 14];
 
 /// What `AddProgram` of a program compiled `DBGVIEW(*NONE)` answers.
-pub const NO_DEBUG_DATA: &str = "CPF9C02";
+pub const NO_DEBUG_DATA: &str = "CPF9C15";
 
 /// `HLINV/ASSETS`.
 pub const ASSETS: &str = "HLINV/ASSETS";
@@ -291,7 +289,9 @@ impl System {
                 let by_target = g
                     .sessions
                     .iter()
-                    .find(|(_, s)| s.target.as_ref() == Some(&job) || s.attached.as_ref() == Some(&job))
+                    .find(|(_, s)| {
+                        s.target.as_ref() == Some(&job) || s.attached.as_ref() == Some(&job)
+                    })
                     .map(|(o, _)| *o);
                 if let Some(o) = by_target {
                     (Some(o), false)
@@ -363,12 +363,18 @@ impl MemThread {
     }
 
     fn special_service(&self) -> bool {
-        let me = lock(&self.sys.running_as).get(&self.job).cloned().unwrap_or_default();
+        let me = lock(&self.sys.running_as)
+            .get(&self.job)
+            .cloned()
+            .unwrap_or_default();
         self.sys.get(&me).special.iter().any(|s| s == "*SERVICE")
     }
 
     fn user(&self) -> String {
-        lock(&self.sys.running_as).get(&self.job).cloned().unwrap_or_default()
+        lock(&self.sys.running_as)
+            .get(&self.job)
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// The session, or `Error` with `TCP1A71`.
@@ -412,7 +418,8 @@ impl DebugHost for MemThread {
                 let found = g.jobs.iter().find(|o| {
                     !o.ended
                         && o.id.name.eq_ignore_ascii_case(job.name.trim())
-                        && (job.user.trim().is_empty() || o.id.user.eq_ignore_ascii_case(job.user.trim()))
+                        && (job.user.trim().is_empty()
+                            || o.id.user.eq_ignore_ascii_case(job.user.trim()))
                         && (job.number.trim().is_empty() || o.id.number == job.number.trim())
                 });
                 let Some(o) = found else {
@@ -425,8 +432,7 @@ impl DebugHost for MemThread {
                     drop(g);
                     return Err(self.refused(Status::NotAuthorized, "CPF3502", &[&name(&id)]));
                 }
-                if g
-                    .sessions
+                if g.sessions
                     .values()
                     .any(|s| s.target.as_ref() == Some(&id) || s.attached.as_ref() == Some(&id))
                 {
@@ -472,7 +478,7 @@ impl DebugHost for MemThread {
             return Err(self.refused(Status::InvalidRequest, "CPD0084", &[&ty]));
         }
         if k == "HLINV/NODEBUG" {
-            return Err(self.refused(Status::Error, NO_DEBUG_DATA, &[]));
+            return Err(self.refused(Status::Error, NO_DEBUG_DATA, &["NODEBUG"]));
         }
         if k != ASSETS {
             let (lib, name) = k.split_once('/').unwrap_or(("", &k));
@@ -509,9 +515,9 @@ impl DebugHost for MemThread {
                     return Err((Status::Error, "CPD9CCB", vec![l.line.to_string()]));
                 };
                 let cond = match &l.condition {
-                    Some(c) => Some(
-                        condition(c).ok_or((Status::Error, "CPF9C59", vec![c.clone()]))?,
-                    ),
+                    Some(c) => {
+                        Some(condition(c).ok_or((Status::Error, "CPF9C59", vec![c.clone()]))?)
+                    }
                     None => None,
                 };
                 list.push(Bkpt { stmt, cond });
@@ -547,13 +553,19 @@ impl DebugHost for MemThread {
                 return Err(not_stopped("Variables"));
             };
             if req.frame != 0 {
-                return Err((Status::InvalidRequest, "TCP1A77", vec![req.frame.to_string()]));
+                return Err((
+                    Status::InvalidRequest,
+                    "TCP1A77",
+                    vec![req.frame.to_string()],
+                ));
             }
             let parent = req.parent.as_ref().map(|p| p.trim().to_ascii_uppercase());
             let variables = values(at.index)
                 .into_iter()
                 .filter(|(n, ..)| match &parent {
-                    Some(p) => n.strip_prefix(p.as_str()).is_some_and(|r| r.starts_with('.')),
+                    Some(p) => n
+                        .strip_prefix(p.as_str())
+                        .is_some_and(|r| r.starts_with('.')),
                     None => !n.contains('.'),
                 })
                 .map(|(n, t, v, e)| Variable {
@@ -573,7 +585,11 @@ impl DebugHost for MemThread {
                 return Err(not_stopped("Eval"));
             };
             if req.frame != 0 {
-                return Err((Status::InvalidRequest, "TCP1A77", vec![req.frame.to_string()]));
+                return Err((
+                    Status::InvalidRequest,
+                    "TCP1A77",
+                    vec![req.frame.to_string()],
+                ));
             }
             let (name, mode) = req
                 .expression
@@ -640,7 +656,12 @@ impl DebugHost for MemThread {
 
     fn news(&mut self) -> Vec<News> {
         let mut g = lock(&self.sys.debug.state);
-        let ended: Vec<JobId> = g.jobs.iter().filter(|o| o.ended).map(|o| o.id.clone()).collect();
+        let ended: Vec<JobId> = g
+            .jobs
+            .iter()
+            .filter(|o| o.ended)
+            .map(|o| o.id.clone())
+            .collect();
         let Some(s) = g.sessions.get_mut(&self.job) else {
             return Vec::new();
         };

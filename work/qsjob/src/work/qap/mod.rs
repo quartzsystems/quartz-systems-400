@@ -8,6 +8,7 @@
 
 pub mod commands;
 pub mod conn;
+pub mod debug;
 pub mod host;
 pub mod listener;
 pub mod manage;
