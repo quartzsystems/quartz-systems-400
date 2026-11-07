@@ -72,6 +72,8 @@ fn pair(t: &toml::Table, k: &str) -> Option<(String, String)> {
     Some((a[0].as_str()?.to_string(), a[1].as_str()?.to_string()))
 }
 
+// One pass over the zone table and tzdata, in the order the table is written.
+#[allow(clippy::too_many_lines)]
 fn main() {
     println!("cargo:rerun-if-changed=zones.toml");
     println!("cargo:rerun-if-changed=tzdata");

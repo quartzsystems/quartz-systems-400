@@ -107,7 +107,7 @@ hash = "d9901f2a1469e8729744cd9eb42894447e67c7b638b606e11c5425f475776853"
 [format.update-protocol]
 frozen_at = "V1R1M0"
 version = "1"
-hash = "b95104d31ad7a8ad0b3053488565da57c3a9be83e2da94ca18a9c2d35cfdfe6c"
+hash = "f858e6d01b74b124402bdbdf9d593b1dfae6ade75ee894b35920b4ce1de05303"
 
 [format.usrprf]
 frozen_at = "V1R1M0"

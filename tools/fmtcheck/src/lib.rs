@@ -137,9 +137,13 @@ impl Row {
     }
 }
 
+/// A source as the repository holds it: a Windows checkout's CR LF line
+/// ends read as LF, so a string literal spanning lines hashes the same on
+/// every host.
 fn read(root: &Path, rel: &str) -> Result<String, Error> {
     let p = root.join(rel);
-    fs::read_to_string(&p).map_err(|e| Error::Io(p, e))
+    let text = fs::read_to_string(&p).map_err(|e| Error::Io(p, e))?;
+    Ok(text.replace("\r\n", "\n"))
 }
 
 /// Reads the manifest.
