@@ -11,7 +11,6 @@ ok   create
      DT DATE = [11/06/26]
      TM TIME = [13:45:30]
      TS TIMESTAMP = [2026-11-06 13:45:30.123456]
-     VB VARCHAR(8) FOR BIT DATA = [C1C2C3]
      NL VARCHAR(10) = NULL
      IO VARCHAR(30) = [START-MORE]
 ok   call

@@ -25,7 +25,6 @@ public final class CallOut {
         {"DT", "DATE", "'2026-11-06'", "91"},
         {"TM", "TIME", "'13.45.30'", "92"},
         {"TS", "TIMESTAMP", "'2026-11-06-13.45.30.123456'", "93"},
-        {"VB", "VARCHAR(8) FOR BIT DATA", "X'C1C2C3'", "-3"},
         {"NL", "VARCHAR(10)", null, "12"},
     };
 

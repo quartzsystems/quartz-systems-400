@@ -530,7 +530,7 @@ const PROCS: &[Spec] = &[
     ("PROCEDURE_NAME", 'v', 128, false),
     ("NUM_INPUT_PARAMS", 'i', 0, false),
     ("NUM_OUTPUT_PARAMS", 'i', 0, false),
-    ("NUM_RESULT_SETS", 'i', 0, false),
+    ("NUM_RESULT_SETS", 's', 0, false),
     ("REMARKS", 'g', 2000, true),
     ("PROCEDURE_TYPE", 's', 0, false),
     ("SPECIFIC_NAME", 'v', 128, false),
@@ -567,16 +567,49 @@ fn routines(functions: bool, schema: Option<&str>, name: Option<&str>, rdb: &str
     run(specs, &q, rdb, query)
 }
 
-/// The calls answered with no rows: their columns.
+/// The calls answered with no rows: their columns, as the primary
+/// describes them (`jtopen/expected/oracle/metadata.out`).
 // BLOCKED(rel): distinct types (SQLUDTS) and routine parameters
 // (SQLPROCEDURECOLS, SQLFUNCTIONCOLS) are kept (QSYS2.SYSTYPES,
 // SYSPARMS) but not yet listed to JDBC; these calls answer no rows.
 fn empty(name: &str) -> Rows {
-    let names: &[&str] = match name {
-        "SQLUDTS" => &["TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE", "REMARKS", "BASE_TYPE"],
-        _ => &["TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"],
+    const UDTS: &[Spec] = &[
+        ("TYPE_CAT", 'v', 128, true),
+        ("TYPE_SCHEM", 'v', 128, true),
+        ("TYPE_NAME", 'v', 128, false),
+        ("CLASS_NAME", 'v', 128, false),
+        ("DATA_TYPE", 'i', 0, false),
+        ("REMARKS", 'g', 2000, true),
+        ("BASE_TYPE", 's', 0, true),
+    ];
+    const PROC_COLS: &[Spec] = &[
+        ("PROCEDURE_CAT", 'v', 128, true),
+        ("PROCEDURE_SCHEM", 'v', 128, false),
+        ("PROCEDURE_NAME", 'v', 128, false),
+        ("COLUMN_NAME", 'v', 128, false),
+        ("COLUMN_TYPE", 's', 0, false),
+        ("DATA_TYPE", 'i', 0, false),
+        ("TYPE_NAME", 'v', 128, false),
+        ("PRECISION", 'i', 0, true),
+        ("LENGTH", 'i', 0, true),
+        ("SCALE", 's', 0, true),
+        ("RADIX", 's', 0, true),
+        ("NULLABLE", 's', 0, false),
+        ("REMARKS", 'g', 2000, true),
+        ("COLUMN_DEF", 'v', 128, true),
+        ("SQL_DATA_TYPE", 's', 0, true),
+        ("SQL_DATETIME_SUB", 's', 0, true),
+        ("CHAR_OCTET_LENGTH", 'i', 0, true),
+        ("ORDINAL_POSITION", 'i', 0, false),
+        ("IS_NULLABLE", 'v', 3, false),
+        ("SPECIFIC_NAME", 'v', 128, false),
+    ];
+    let specs: &[Spec] = match name {
+        "SQLUDTS" => UDTS,
+        "SQLPROCEDURECOLS" => PROC_COLS,
+        _ => &[("TABLE_CAT", 'v', 128, true), ("TABLE_SCHEM", 'v', 128, true), ("TABLE_NAME", 'v', 128, true)],
     };
-    Rows { cols: names.iter().map(|n| vc(n, 128, true)).collect(), rows: Vec::new() }
+    Rows { cols: specs.iter().map(col).collect(), rows: Vec::new() }
 }
 
 #[cfg(test)]
