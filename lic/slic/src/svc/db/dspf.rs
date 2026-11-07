@@ -9,7 +9,6 @@
 
 use std::fmt::Write as _;
 
-use osobjects::display::compile;
 use qsname::Name;
 use store::obj::{JobHandle, ObjectId, ops, types};
 use store::txn::Txn;
@@ -40,12 +39,29 @@ pub fn crtdspf(system: &mut System, p: &Params) -> Result<String, String> {
     let name = object_name(&qual)?;
     let text = p.kw("TEXT").map(str::to_string).unwrap_or_default();
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
+    let mut found = Vec::new();
+    let r = with_txn(store, |txn| {
         let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
         let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
         let (src, dds_text) = source(txn, ctx, p, fname)?;
         let (refs, _) = refs_for(txn, ctx, &dds_text);
-        let (payload, _, records) = compile(&src, &refs, &fname.to_string())?;
+        let comp = dspf::compile_dspf(
+            &src,
+            &refs,
+            &dspf::CompileOpts {
+                file: Some(fname.to_string()),
+                ..dspf::CompileOpts::default()
+            },
+        );
+        found.clone_from(&comp.diagnostics);
+        let Some(df) = comp.definition else {
+            return Err(format!(
+                "File {fname} not created.
+{}",
+                comp.listing
+            ));
+        };
+        let (payload, records) = (dspf::encode(&df), df.records.len());
         let text = if text.is_empty() {
             dspf::decode(&payload)
                 .ok()
@@ -81,7 +97,9 @@ pub fn crtdspf(system: &mut System, p: &Params) -> Result<String, String> {
         Ok(format!(
             "Display file {qual} created: {records} record format(s)."
         ))
-    })
+    });
+    super::files::put_dds(system, p, &name.name.to_string(), &found);
+    r
 }
 
 /// `DLTF` of a display file; `None` when `qual` is not one.

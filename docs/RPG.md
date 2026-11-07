@@ -17,6 +17,7 @@ deferred.
 | `rpgsqlpre` | `rpg/sqlpre` | The SQL precompiler of `CRTSQLRPGI`: embedded statements, host variables, the precompile listing |
 | `rpg-oracle` | `tools/rpg-oracle` | The differential oracle (`PHASE9.md`) |
 | `rpg3` | `rpg/rpg3` | RPG III: `CVTRPGSRC`'s conversion and `CRTRPGPGM` over this compiler (`RPG3.md`) |
+| `compdiag` | `rpg/compdiag` | What every compiler reports: `Diagnostic`, `Where`, severities, the `Sink` ("Compiler diagnostics" below) |
 
 The conformance kit is `tools/conformance/src/rpg/` with the test
 `tools/conformance/tests/rpg_kit.rs`.
@@ -759,6 +760,38 @@ the statement runs under the activation group's commit definition
 the job has one, so changes need a journaled table (`-7008`) and
 `COMMIT`/`ROLLBACK` end the cycle; under `*NONE` changes are not under
 commitment control even when the job has it.
+
+## Compiler diagnostics (`compdiag`)
+
+Every compiler command reports its listing's messages as
+`compdiag::Diagnostic` values (`rpg/compdiag`, no dependencies), the
+shape of QAP version 8's `Diagnostic`: where (a member, a stream file or
+nowhere), line and column as the listing marks them, severity, the
+identifier, the first-level text and the second-level text from the
+message file. A message in a `/COPY` or SQL `INCLUDE` member points at
+that member's own line. The storage service gathers them while the
+command runs (`lic/slic/src/cpp/compdiags.rs`), the reply carries them
+(`stg::proto::CmdReply::diagnostics`) and the job keeps them as its last
+compile's (`mi::Job::last_compile`), which QAP's `Develop.Compile` reads
+(`work/qsjob/src/work/qap/compile.rs`).
+
+| Command | Produced by | Read back by |
+|---|---|---|
+| `CRTBNDRPG`, `CRTRPGMOD`, `CRTSQLRPGI` | `rpgc::report` | `rpg_diagnostics_are_the_listings` |
+| `CRTBNDCL`, `CRTCLMOD` | `cl::diag::diagnostics` | `cl_diagnostics_are_the_listings` |
+| `CRTPF`, `CRTLF`, `CRTDSPF`, `CRTPRTF` | `dds::diag::diagnostics` | `dds_diagnostics_are_the_listings` |
+| `CRTCMD` | `cmd::source::diagnostics` | `cmd_diagnostics_are_the_report` |
+| `RUNSQLSTM` | `sql::listing::diagnostics` | `runsqlstm_diagnostics_are_the_listings` |
+| `CRTPGM`, `CRTSRVPGM` | `ile::binder::report` | `binder_diagnostics_are_the_report` |
+
+The tests (`tools/conformance/tests/compdiag.rs`) compile every fixture
+of the kits, and HLINV's source when it is there, and hold the set of
+(member, line, identifier) the compile reported against the set read
+back out of the listing it printed (`conformance::compdiag`). `CRTCMD`
+and the binder print no listing here: their printed report stands in
+for it. A binder source error carries no message identifier.
+`OPTION(*EVENTF)` is accepted and writes no event file: deferred, since
+`Develop.Compile` gives an editor the same diagnostics.
 
 ## Adding a feature
 
