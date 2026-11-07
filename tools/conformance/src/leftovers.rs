@@ -115,7 +115,21 @@ impl Suite {
         if !busy.contains("LEFTA") || empty.contains("created") {
             return Err(format!("IMPORT(*YES) was not checked:\n{busy}\n{empty}"));
         }
-        // The FTP client's display, signed on to the loopback server.
+        // The FTP client's display, signed on to the loopback server. Step
+        // 67 leaves the server ended with AUTOSTART(*NO): it starts here.
+        let started = s.command("STRTCPSVR SERVER(*FTP)", CMD)?;
+        if !started.contains("TCP1A07") && !started.contains("TCP1A08") {
+            return Err(format!("STRTCPSVR SERVER(*FTP): {started}"));
+        }
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        while !s.command("wrkactjob", CMD)?.contains("QTFTP00001") {
+            if std::time::Instant::now() > until {
+                return Err("QTFTP00001 did not start".into());
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+        // Its listener opens just after the job shows.
+        std::thread::sleep(std::time::Duration::from_secs(2));
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
         let mut d = connect(port, "QSECOFR", SECOFR_PASSWORD)?;
         let c = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
