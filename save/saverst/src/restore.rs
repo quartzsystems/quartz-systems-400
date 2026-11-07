@@ -635,14 +635,11 @@ fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>
     }
     let level = cx.opts.verify;
     let sig = o.signature.map(|s| {
-        // Signed at build time over the content digest; the stream's
-        // digest also covers the references' save-time flags.
-        let good = cx.hooks.verify(s.key_id, &s.digest, &s.signature) == Some(true)
-            || cx.hooks.verify(
-                s.key_id,
-                &crate::sign::saved_content_digest(d, &o.parts),
-                &s.signature,
-            ) == Some(true);
+        // Signed over the content digest; the stream's digest also covers
+        // the references' save-time flags, and is the same without them.
+        // One question per object: the hooks count the answers.
+        let digest = crate::sign::saved_content_digest(d, &o.parts);
+        let good = cx.hooks.verify(s.key_id, &digest, &s.signature) == Some(true);
         (s, good)
     });
     if level >= 2 && signable(d.type_code) {
