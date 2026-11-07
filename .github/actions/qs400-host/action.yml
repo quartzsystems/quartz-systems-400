@@ -51,6 +51,23 @@ runs:
       with:
         tool: cargo-deny
 
+    # The JDBC steps (132, 137) and the host-server steps drive QS/400
+    # with JTOpen, the same release the oracle captures used.
+    - name: JDK for the JTOpen steps
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: "25"
+
+    - name: JTOpen (jt400.jar, pinned)
+      shell: bash
+      run: |
+        mkdir -p "$RUNNER_TEMP/jtopen"
+        curl -fsSLo "$RUNNER_TEMP/jtopen/jt400.jar" \
+          https://repo1.maven.org/maven2/net/sf/jt400/jt400/20.0.7/jt400-20.0.7.jar
+        echo "QS_JT400_JAR=$RUNNER_TEMP/jtopen/jt400.jar" >> "$GITHUB_ENV"
+        echo "QS_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+
     - name: build doctor
       shell: bash
       run: cargo run -q -p build -- doctor
