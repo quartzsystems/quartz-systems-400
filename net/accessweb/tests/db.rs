@@ -515,3 +515,11 @@ fn copy_to_table_and_back() {
     assert!(r.text().contains("XWA0004"));
     assert_eq!(b.fx.db.rows("HLINV", "ASSETS").len(), 14);
 }
+
+#[test]
+fn the_first_query_is_shown() {
+    let mut b = Browser::signed_on();
+    multipart(&mut b, "/sql", &[("schema", "HLINV"), ("naming", "SQL"), ("commit", "None"), ("sql", "UPDATE hlinv.assets SET status = 'SPARE' WHERE asset_tag = 'QS000101'; SELECT * FROM hlinv.assets"), ("runall", "Run all")], &[]);
+    let t = b.get("/sql").text();
+    assert!(t.contains("1: UPDATE (1 row changed)") && t.contains("<b>2: SELECT * (12 rows)</b>") && t.contains(">QS000101<"), "{t}");
+}

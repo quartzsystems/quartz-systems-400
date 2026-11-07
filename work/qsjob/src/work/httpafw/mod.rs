@@ -15,6 +15,7 @@
 
 mod areas;
 mod s5250;
+mod db;
 mod store;
 mod system;
 
@@ -108,7 +109,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         policy: Arc::new(store::LivePolicy { link: l.clone() }),
         prefs: Arc::new(store::LivePrefs { link: l.clone() }),
         session5250: Arc::new(s5250::LiveS5250::new(l.clone())),
-        db: none.clone(),
+        db: Arc::new(db::LiveDb::new(l.clone(), start.number)),
         files: none.clone(),
         print: none.clone(),
         msgs: none.clone(),
@@ -130,6 +131,7 @@ mod tests {
     fn the_link_only_through_ask() {
         let sources = [
             ("areas.rs", include_str!("areas.rs")),
+            ("db.rs", include_str!("db.rs")),
             ("store.rs", include_str!("store.rs")),
             ("system.rs", include_str!("system.rs")),
         ];

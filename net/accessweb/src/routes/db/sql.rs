@@ -95,6 +95,8 @@ fn tab_count(r: &Res) -> String {
         "failed".into()
     } else if r.query() {
         plural(r.rows.len(), "row")
+    } else if !matches!(script::verb(&r.statement).as_str(), "INSERT" | "UPDATE" | "DELETE" | "MERGE") {
+        "done".into()
     } else {
         format!("{} changed", plural(usize::try_from(r.changed).unwrap_or(0), "row"))
     }
@@ -137,7 +139,7 @@ fn completion(rq: &Rq<'_>, stmt: &str, o: &Outcome, opts: &Options) -> Message {
         "DELETE" => rq.message(MsgKind::Done, "SQL7955", &[&t, &s, &n]),
         "COMMIT" => rq.message(MsgKind::Done, "SQL7960", &[]),
         "ROLLBACK" => rq.message(MsgKind::Done, "SQL7961", &[]),
-        _ => rq.message(MsgKind::Done, msgs::ROWS_CHANGED, &[&n]),
+        _ => rq.message(MsgKind::Done, "SQL7977", &[&verb]),
     };
     if opts.commit != Commit::None && o.changed > 0 {
         let _ = write!(m.text, " Changes are uncommitted (commit level {}).", opts.commit.label());
@@ -206,9 +208,14 @@ fn run(rq: &Rq<'_>, w: &mut SqlWork, statements: &[script::Statement], opts: &Op
     Vec::new()
 }
 
+/// The tab `/sql` shows first: the first query's, else the first.
+fn first_tab(w: &SqlWork) -> usize {
+    w.results.iter().position(Res::query).map_or(1, |i| i + 1)
+}
+
 /// The tab shown (`?tab=`, from 1).
 fn tab_of(rq: &Rq<'_>, w: &SqlWork) -> usize {
-    rq.query().get("tab").and_then(|t| t.parse().ok()).filter(|t| (1..=w.results.len()).contains(t)).unwrap_or(1)
+    rq.query().get("tab").and_then(|t| t.parse().ok()).filter(|t| (1..=w.results.len()).contains(t)).unwrap_or_else(|| first_tab(w))
 }
 
 /// Rows sorted by `?sort=` (a column's name, lower case).
@@ -231,6 +238,7 @@ fn sorted(rq: &Rq<'_>, r: &Res) -> Vec<Vec<crate::env::db::Val>> {
 
 /// The result tabs; `n` the one shown.
 fn result_tabs(w: &SqlWork, n: usize) -> String {
+    let first = first_tab(w);
     let list: Vec<(String, String)> = w
         .results
         .iter()
@@ -238,8 +246,8 @@ fn result_tabs(w: &SqlWork, n: usize) -> String {
         .map(|(i, r)| {
             let k = i + 1;
             let label = format!("{k}: {} ({})", tab_label(&r.statement), tab_count(r));
-            let href = if k == 1 || !r.query() {
-                PRODUCT.url(&if k == 1 { "/sql".to_string() } else { format!("/sql?tab={k}") })
+            let href = if k == first || !r.query() {
+                PRODUCT.url(&if k == first { "/sql".to_string() } else { format!("/sql?tab={k}") })
             } else {
                 PRODUCT.url(&format!("/sql/result/{k}"))
             };
@@ -262,7 +270,7 @@ fn result_table(rq: &Rq<'_>, r: &Res, keep: Vec<(String, String)>) -> String {
 }
 
 /// The fetch line: how many rows, Fetch more and Fetch all.
-fn fetch_line(rq: &Rq<'_>, r: &Res, n: usize, copy: bool) -> String {
+fn fetch_line(rq: &Rq<'_>, r: &Res, n: usize, first: usize, copy: bool) -> String {
     let more = r.cursor.is_some();
     let count = if more {
         format!("{} rows fetched; more rows remain.", r.rows.len())
@@ -278,7 +286,7 @@ fn fetch_line(rq: &Rq<'_>, r: &Res, n: usize, copy: bool) -> String {
     } else {
         String::new()
     };
-    let action = if n == 1 { String::new() } else { PRODUCT.url(&format!("/sql?tab={n}")) };
+    let action = if n == first { String::new() } else { PRODUCT.url(&format!("/sql?tab={n}")) };
     qsweb::partials::form(
         &rq.ctx,
         &action,
@@ -370,18 +378,19 @@ fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
         pick("fmt", &formats, "")
     );
     let tab = tab_of(rq, w);
-    let action = if tab == 1 { String::new() } else { PRODUCT.url(&format!("/sql?tab={tab}")) };
+    let first = first_tab(w);
+    let action = if tab == first { String::new() } else { PRODUCT.url(&format!("/sql?tab={tab}")) };
     let mut body = upload_form(&rq.ctx, &action, &inner);
     if !w.results.is_empty() {
         body.push_str("<h2>Results</h2>");
         body.push_str(&result_tabs(w, tab));
         let r = &w.results[tab - 1];
         if r.query() {
-            let keep = if tab == 1 { Vec::new() } else { vec![("tab".to_string(), tab.to_string())] };
+            let keep = if tab == first { Vec::new() } else { vec![("tab".to_string(), tab.to_string())] };
             body.push_str(&result_table(rq, r, keep));
             let max = rq.prefs().max_rows();
             let _ = write!(body, "<div class=\"small\">{} rows returned (maximum {max}). </div>", r.rows.len());
-            body.push_str(&fetch_line(rq, r, tab, true));
+            body.push_str(&fetch_line(rq, r, tab, first, true));
             if rq.query().has("copy") {
                 let text = crate::data::files::write(
                     Format::Tsv,
@@ -494,7 +503,7 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let f = rq.form();
     let back = |w: &SqlWork| {
         let tab = tab_of(rq, w);
-        if tab == 1 { "/sql".to_string() } else { format!("/sql?tab={tab}") }
+        if tab == first_tab(w) { "/sql".to_string() } else { format!("/sql?tab={tab}") }
     };
     // Every post keeps the fields typed.
     if f.has("sql") {
@@ -664,7 +673,7 @@ pub fn result(rq: &Rq<'_>, n: &str) -> Response {
     if r.query() {
         body.push_str(&result_table(rq, r, Vec::new()));
         if r.cursor.is_some() {
-            body.push_str(&fetch_line(rq, r, k, false));
+            body.push_str(&fetch_line(rq, r, k, first_tab(&w), false));
         }
         let _ = write!(
             body,

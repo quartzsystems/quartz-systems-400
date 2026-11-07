@@ -278,6 +278,9 @@ them back.
 | System | `web::system::Core` (name, special authorities, class, groups, audit `PW`/`AF`, message texts: `XWA`/`QAD` from `QUSRSYS/QZXWMSG`); sign-on with the 5250 rules (`sign_on`; an expired password signs on to Change password only, no handle), `QSYGETPH`; `QSYCHGPW` (`sec_api ChangePassword`); `QPWDMINLEN`, `QPWDMAXLEN`, `QPWDRQDDIF`, `QPWDLVL`; the zone from `QTIMZON` (`sysval::tz`); the profile's text and the profiles (`QSYRUSRI`, `QSYLAUTU`, a group as Navigator decides); the counts: `msgq_list QUSRSYS/<user>`, `splf_list <user>`, the user's active jobs |
 | Policy, Prefs | `web_store` (the profile's entries, replaced when given) on the two stores; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
 | The areas | not built: `httpafw/areas.rs` (`NotYet`); their routes answer `XWA0099` |
+| Policy, Prefs | `usridx_find` (range of the profile's keys) and `usridx_add` on the two stores, as the job; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
+| Database | `httpafw/db.rs` (`LiveDb`): every statement through QAP's `Sql` lane (`qapsql::Lane`) with the job swapped to the user's profile, a lane per connection whose embedded scopes and commitment definition (`*SQLAFWn`) are its own; the catalog from `QSYS2` (`SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST`, `SYSKEYCST`); Cancel asks the engine to end the running statement (`qap::sql::ask_cancel`); requests and the history in `QUSRSYS/QZXWPRF` as the job (keys `_q<id>.<n>`, `_h.<n>`); columns have no choices (check constraints are not read) |
+| The other areas | not built: `httpafw/areas.rs` (`NotYet`); their routes answer `XWA0099` |
 
 - `BLOCKED(rel)`: the password approval program (`QPWDVLDPGM`) is not
   called from the web job: Change password is refused with `CPF22D3`
@@ -292,6 +295,16 @@ new profile's sign-on with a policy (`XWA0001`) and clears it, refuses
 a POST without the form field, shows Database's `XWA0099`, signs off,
 signs on and loads My home page over TLS on 2006 (the cookie
 `Secure`), and ends the instance.
+
+QEMU step 155 (`tools/conformance/src/afwdbstep.rs`) starts the
+instance, signs on as `QSECOFR` over 2003, makes schema `AFW155` with
+table `ITEMS` and a row in Run SQL and reads it back (`SQL7956`), finds
+the table in Tables, views its rows, inserts one with Insert record,
+copies a CSV file of two rows in (`QAD7030`, `XWA0030`) and all four
+out again as CSV with exact decimals, then signs on as a profile
+without authority to the table and gets the database's `SQL0551` for
+the same query (statements run as the user, not `QTMHHTTP`), and ends
+the instance. Step 153 checks Not available on Files now.
 
 ## Area ownership
 

@@ -6,13 +6,12 @@
 //! available page (`XWA0099`), so their traits ask nothing of the
 //! system. Each area's agent replaces its part with a `Live*` of its own.
 
-use accessweb::env::{cmd, db, download, files, jobs, msgs, print};
+use accessweb::env::{cmd, download, files, jobs, msgs, print};
 
 /// No area's data yet.
-// BLOCKED(rel): database, files, print, messages, jobs, commands and download are other agents' steps.
+// BLOCKED(rel): files, print, messages, jobs, commands and download are other agents' steps.
 pub struct NotYet;
 
-impl db::Db for NotYet {}
 impl files::Files for NotYet {}
 impl print::Print for NotYet {}
 impl msgs::Msgs for NotYet {}

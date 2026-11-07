@@ -65,6 +65,7 @@ const MESSAGES: &[Desc] = &[
     ("SQL7956", 0, "&3 rows were inserted into &1 in &2.", "The INSERT statement ran.", "None."),
     ("SQL7957", 0, "&3 rows were updated in &1 in &2.", "The UPDATE statement ran.", "None."),
     ("SQL7958", 0, "&1 rows fetched in &2 seconds.", "The query ran and its rows were read.", "None."),
+    ("SQL7977", 0, "The &1 statement ran.", "The statement ran without an error.", "None."),
     ("SQL7960", 0, "The commit is done.", "The changes of the unit of work are kept.", "None."),
     ("SQL7961", 0, "The rollback is done.", "The changes of the unit of work are undone.", "None."),
 ];
