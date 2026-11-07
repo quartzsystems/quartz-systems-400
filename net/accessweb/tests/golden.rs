@@ -361,7 +361,7 @@ fn s5250_session_states() {
     // 27 x 132.
     let mut b = Browser::signed_on();
     b.fx.s5250.set_live(1, |l| {
-        l.view.screen = accessweb::fixture::session5250::wrkactjob(27, 132)
+        l.view.screen = accessweb::fixture::session5250::wrkactjob(27, 132);
     });
     let r = b.get("/5250/session/1");
     let mut fixes = session_fixes("1", "console");

@@ -393,10 +393,7 @@ impl Parser {
                         self.advance();
                         Register::Named("CURRENT IMPLICIT XMLPARSE OPTION")
                     }
-                    w => match crate::exec::registers::CURRENT
-                        .iter()
-                        .find(|(k, _)| *k == w)
-                    {
+                    w => match crate::words::CURRENT.iter().find(|(k, _)| *k == w) {
                         Some((_, n)) => Register::Named(n),
                         None => return Err(Self::unsupported(&format!("CURRENT {next}"))),
                     },
@@ -480,7 +477,7 @@ impl Parser {
             // A built-in global variable: QSYS2.JOB_NAME and the like.
             if !first.delimited
                 && !column.delimited
-                && let Some(n) = crate::exec::registers::global(Some(&first.value), &column.value)
+                && let Some(n) = crate::words::global(Some(&first.value), &column.value)
             {
                 return Ok(Expr::Register(Register::Named(n)));
             }

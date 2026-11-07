@@ -4,13 +4,13 @@
 
 //! The JSON functions' clauses and `IS JSON`. Each call becomes a
 //! function whose first argument is its clauses
-//! (`crate::exec::json::Opts`), whose second is the `RETURNING` type as a
+//! (`crate::words::Opts`), whose second is the `RETURNING` type as a
 //! `CAST` of `NULL`, and whose others are its operands.
 
 use super::Parser;
 use crate::ast::{Expr, Function, Ident, Literal, ObjectName, TableRef, TypeSpec};
 use crate::error::Result;
-use crate::exec::json::Opts;
+use crate::words::Opts;
 
 /// Calls whose result is JSON text: a value of one in a constructor is
 /// `FORMAT JSON` without saying so.

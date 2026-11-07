@@ -89,6 +89,94 @@ pub struct CmdMsg {
 
 wire_struct!(CmdMsg { msgid, kind, data });
 
+/// A compiler's diagnostic (`compdiag::Diagnostic`) on the wire. `kind`
+/// says where it points: 0 a member (`library`, `file`, `member`), 1 a
+/// stream file (`path`), 2 nowhere.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CompileDiag {
+    /// Where it points.
+    pub kind: u8,
+    /// The member's library.
+    pub library: String,
+    /// The member's source file.
+    pub file: String,
+    /// The member.
+    pub member: String,
+    /// The stream file.
+    pub path: String,
+    /// Line, column, end line, end column.
+    pub at: (u32, u16, u32, u16),
+    /// Severity.
+    pub severity: u8,
+    /// The message identifier.
+    pub id: String,
+    /// First- and second-level text.
+    pub text: (String, String),
+}
+
+wire_struct!(CompileDiag {
+    kind,
+    library,
+    file,
+    member,
+    path,
+    at,
+    severity,
+    id,
+    text
+});
+
+impl From<compdiag::Diagnostic> for CompileDiag {
+    fn from(d: compdiag::Diagnostic) -> Self {
+        let mut w = Self {
+            kind: 2,
+            at: (d.line, d.column, d.end_line, d.end_column),
+            severity: d.severity,
+            id: d.id,
+            text: (d.text, d.help),
+            ..Self::default()
+        };
+        match d.at {
+            compdiag::Where::Member(m) => {
+                w.kind = 0;
+                w.library = m.library;
+                w.file = m.file;
+                w.member = m.member;
+            }
+            compdiag::Where::Path(p) => {
+                w.kind = 1;
+                w.path = p;
+            }
+            compdiag::Where::None => {}
+        }
+        w
+    }
+}
+
+impl From<CompileDiag> for compdiag::Diagnostic {
+    fn from(w: CompileDiag) -> Self {
+        Self {
+            at: match w.kind {
+                0 => compdiag::Where::Member(compdiag::MemberName {
+                    library: w.library,
+                    file: w.file,
+                    member: w.member,
+                }),
+                1 => compdiag::Where::Path(w.path),
+                _ => compdiag::Where::None,
+            },
+            line: w.at.0,
+            column: w.at.1,
+            end_line: w.at.2,
+            end_column: w.at.3,
+            severity: w.severity,
+            id: w.id,
+            text: w.text.0,
+            help: w.text.1,
+        }
+    }
+}
+
 /// What running a system command in the service answered.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CmdReply {
@@ -115,6 +203,9 @@ pub struct CmdReply {
     /// Exit point notifications the job makes after the command, each
     /// `POINT FORMAT PROFILE` (`RSTUSRPRF`'s `QIBM_QSY_RST_PROFILE`).
     pub notify: Vec<String>,
+    /// A compiler command's diagnostics, in listing order
+    /// (`compdiag::COMMANDS`); the job keeps them as its last compile's.
+    pub diagnostics: Vec<CompileDiag>,
 }
 
 wire_struct!(CmdReply {
@@ -126,7 +217,8 @@ wire_struct!(CmdReply {
     srcs,
     sysvals,
     call,
-    notify
+    notify,
+    diagnostics
 });
 
 ipc::rpc! {
@@ -1350,3 +1442,35 @@ ipc::wire_enum!(DbgEvent {
     1 => Answer { text },
     2 => Running,
 });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_compile_diagnostic_crosses_the_wire_whole() {
+        let d = compdiag::Diagnostic {
+            at: compdiag::Where::Member(compdiag::MemberName {
+                library: "QGPL".into(),
+                file: "QRPGLESRC".into(),
+                member: "COPYME".into(),
+            }),
+            line: 42,
+            column: 9,
+            end_line: 0,
+            end_column: 12,
+            severity: 30,
+            id: "RNF7030".into(),
+            text: "X is not defined.".into(),
+            help: "Declare it.".into(),
+        };
+        let reply = CmdReply {
+            diagnostics: vec![d.clone().into(), compdiag::Diagnostic::default().into()],
+            ..CmdReply::default()
+        };
+        let back: CmdReply = ipc::decode(&ipc::encode(&reply)).expect("decodes");
+        let diags: Vec<compdiag::Diagnostic> =
+            back.diagnostics.into_iter().map(Into::into).collect();
+        assert_eq!(diags, vec![d, compdiag::Diagnostic::default()]);
+    }
+}

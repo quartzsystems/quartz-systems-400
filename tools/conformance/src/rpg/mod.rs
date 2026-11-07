@@ -662,6 +662,7 @@ pub fn set_job_setup(f: Option<JobSetup>) {
 
 /// Compile and run a case: its outcome, listing and notes.
 #[allow(clippy::many_single_char_names)]
+#[allow(clippy::too_many_lines)]
 pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     let db = if case.db.is_empty() && !is_sql(case) {
         None

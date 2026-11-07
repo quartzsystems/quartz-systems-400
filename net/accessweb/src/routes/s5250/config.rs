@@ -167,6 +167,7 @@ pub fn ccsid_options() -> Vec<String> {
     CCSIDS.iter().map(|(c, t)| format!("{c} - {t}")).collect()
 }
 
+#[allow(clippy::too_many_lines)]
 fn start_form(rq: &Rq<'_>, from: Option<&Saved>, sessions: &[Saved]) -> String {
     let me = rq.env().system.name();
     let f = from.map_or_else(|| SessionFile::new(&me), |s| s.file.clone());
@@ -336,6 +337,7 @@ pub fn from_form(rq: &Rq<'_>, mut file: SessionFile) -> Result<SessionFile, Mess
 
 /// `POST /5250/session/new`: open an uploaded `.qsd`, start the form's
 /// session, or save it.
+#[allow(clippy::too_many_lines)]
 pub fn start(rq: &Rq<'_>) -> Response {
     let crumb = ["5250 session"];
     if let Err(r) = start_policy(rq, &crumb) {

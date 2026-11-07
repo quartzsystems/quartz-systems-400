@@ -7,6 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0" }
 licpart = { path = "../../lic/licpart", version = "0.1.0" }
 sysval = { path = "../../lic/sysval", version = "0.1.0" }
 console = { path = "../../lic/console", version = "0.1.0" }
@@ -67,6 +68,7 @@ cmd = { path = "../../command/cmd", version = "0.1.0" }
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
 cl = { path = "../../command/cl", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }
+rpgextdesc = { path = "../../rpg/extdesc", version = "0.1.0" }
 rpgfront = { path = "../../rpg/front", version = "0.1.0" }
 rpg3 = { path = "../../rpg/rpg3", version = "0.1.0" }
 cmncfg = { path = "../../net/cmncfg", version = "0.1.0" }

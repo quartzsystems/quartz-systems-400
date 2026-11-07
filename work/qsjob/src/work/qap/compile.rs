@@ -2,36 +2,40 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! QAP's `Develop.Compile` (version 8, operation 15) in the connection
-//! job's lane: the command run as `RunCommand` runs it
-//! (`super::commands::run`), then the diagnostics the compiler left on
-//! the job for it (`rpg/compdiag`), as `qapd::Compiled`.
+//! `Develop.Compile` (QAP version 8) in the connection job: the command
+//! runs as `RunCommand` runs it, in the lane with the connection's
+//! library list, and the diagnostics are what the compiler left on the
+//! job as its last compile's (`mi::Job::last_compile`). A command that
+//! is no compiler leaves none.
 
-use qap_proto::Status;
-use qapd::{Compiled, Refusal};
-use stg::Shared;
+use compdiag::Diagnostic;
+use qapd::{Compiled, Ran};
 
 use crate::console::Console;
 
-/// Run the compile `command` in the job's runtime and take its
-/// diagnostics. `cancelled` as for `RunCommand`.
-///
-/// BLOCKED(rel): the compilers do not leave their diagnostics on the job
-/// yet (QAP handoff Part C); until they do, `Compile` is refused with
-/// `TCP1A60` rather than run without them.
-pub fn run(
-    link: &Shared,
-    _console: &mut Console,
-    _command: &str,
-    _cancelled: &dyn Fn() -> bool,
-) -> Result<Compiled, Refusal> {
-    let message = super::host::message(
-        &mut link.borrow_mut(),
-        qapd::develop::NOT_AVAILABLE,
-        &["Compile"],
-    );
-    Err(Refusal {
-        status: Status::Error,
-        message,
-    })
+/// Run compiler command `command`: what `RunCommand` gives (the job,
+/// its messages, the status: `Ok`, or `Error` when the compile failed)
+/// and the compile's diagnostics, in listing order. `cancelled` says
+/// whether the client cancelled this request.
+pub fn compile(
+    console: &mut Console,
+    command: &str,
+    cancelled: &dyn Fn() -> bool,
+) -> (Ran, Vec<Diagnostic>) {
+    // Nothing from an earlier compile answers for this one.
+    console.job().set_last_compile(Vec::new());
+    let ran = super::commands::run(console, command, cancelled);
+    let diags = console.job().last_compile().unwrap_or_default().to_vec();
+    (ran, diags)
+}
+
+/// `Compile` for the lane: the run and its diagnostics in the
+/// protocol's form. A failed compile is `Error` with the body still
+/// filled; the escape message is the reply's message.
+pub fn run(console: &mut Console, command: &str, cancelled: &dyn Fn() -> bool) -> Compiled {
+    let (ran, diags) = compile(console, command, cancelled);
+    Compiled {
+        ran,
+        diagnostics: diags.into_iter().map(Into::into).collect(),
+    }
 }

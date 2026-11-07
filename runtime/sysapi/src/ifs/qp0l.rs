@@ -277,9 +277,9 @@ fn process_subtree(
                 let q = ptr_at(all, 16 + 16 * i);
                 let s = qlg_path(j, q)?;
                 if kind == 0 {
-                    include.push(s)
+                    include.push(s);
                 } else {
-                    exclude.push(s)
+                    exclude.push(s);
                 }
             }
         }

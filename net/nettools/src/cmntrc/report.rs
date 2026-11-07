@@ -216,74 +216,8 @@ fn record(out: &mut Vec<String>, n: u64, r: &Record, sel: &Select, offset: i64) 
         .trim_end()
         .to_string(),
     );
-    let pad = " ".repeat(22);
     if let Some(f) = &f {
-        if let Some(v) = f.vlan {
-            out.push(format!("{pad}VLAN   Identifier: {v}"));
-        }
-        if let Some(a) = &f.arp {
-            out.push(format!(
-                "{pad}ARP    {}  Sender: {} {}  Target: {} {}",
-                if a.op == 1 { "Request" } else { "Reply" },
-                a.spa,
-                hexs(&a.sha),
-                a.tpa,
-                hexs(&a.tha)
-            ));
-        }
-        if let Some(ip) = &f.ip {
-            let (df, mf, off) = ip.frag;
-            let mut flags = Vec::new();
-            if df {
-                flags.push("DF");
-            }
-            if mf {
-                flags.push("MF");
-            }
-            out.push(format!(
-                "{pad}IP     ToS: {:02X}  Length: {}  Protocol: {}  ID: {:04X}  TTL: {}  Flags: {}  Offset: {off}",
-                ip.tos,
-                ip.len,
-                proto_name(ip.proto),
-                ip.id,
-                ip.ttl,
-                if flags.is_empty() { "NONE".into() } else { flags.join(",") }
-            ));
-            out.push(format!(
-                "{pad}       Source: {}  Destination: {}",
-                ip.src, ip.dst
-            ));
-            out.push(format!("{pad}       Header: {}", hexs(&ip.header)));
-        }
-        match &f.l4 {
-            Some(L4::Tcp {
-                src,
-                dst,
-                seq,
-                ack,
-                flags,
-                window,
-                header,
-            }) => {
-                out.push(format!(
-                    "{pad}TCP    Source port: {src}  Destination port: {dst}  Sequence: {seq}  Acknowledgment: {ack}  Window: {window}"
-                ));
-                out.push(format!(
-                    "{pad}       Flags: {}",
-                    frame::tcp_flags(*flags).join(" ")
-                ));
-                out.push(format!("{pad}       Header: {}", hexs(header)));
-            }
-            Some(L4::Udp { src, dst, len }) => {
-                out.push(format!(
-                    "{pad}UDP    Source port: {src}  Destination port: {dst}  Length: {len}"
-                ));
-            }
-            Some(L4::Icmp { kind, code }) => {
-                out.push(format!("{pad}ICMP   Type: {kind}  Code: {code}"));
-            }
-            None => {}
-        }
+        frame_lines(out, f);
     }
     let start = f.as_ref().map_or(0, |f| f.payload.min(r.data.len()));
     let data = &r.data[start..];
@@ -297,6 +231,77 @@ fn record(out: &mut Vec<String>, n: u64, r: &Record, sel: &Select, offset: i64) 
     }
 }
 
+/// The header lines of a parsed frame: VLAN, ARP, IP and the layer 4.
+fn frame_lines(out: &mut Vec<String>, f: &Frame) {
+    let pad = " ".repeat(22);
+    if let Some(v) = f.vlan {
+        out.push(format!("{pad}VLAN   Identifier: {v}"));
+    }
+    if let Some(a) = &f.arp {
+        out.push(format!(
+            "{pad}ARP    {}  Sender: {} {}  Target: {} {}",
+            if a.op == 1 { "Request" } else { "Reply" },
+            a.spa,
+            hexs(&a.sha),
+            a.tpa,
+            hexs(&a.tha)
+        ));
+    }
+    if let Some(ip) = &f.ip {
+        let (df, mf, off) = ip.frag;
+        let mut flags = Vec::new();
+        if df {
+            flags.push("DF");
+        }
+        if mf {
+            flags.push("MF");
+        }
+        out.push(format!(
+            "{pad}IP     ToS: {:02X}  Length: {}  Protocol: {}  ID: {:04X}  TTL: {}  Flags: {}  Offset: {off}",
+            ip.tos,
+            ip.len,
+            proto_name(ip.proto),
+            ip.id,
+            ip.ttl,
+            if flags.is_empty() { "NONE".into() } else { flags.join(",") }
+        ));
+        out.push(format!(
+            "{pad}       Source: {}  Destination: {}",
+            ip.src, ip.dst
+        ));
+        out.push(format!("{pad}       Header: {}", hexs(&ip.header)));
+    }
+    match &f.l4 {
+        Some(L4::Tcp {
+            src,
+            dst,
+            seq,
+            ack,
+            flags,
+            window,
+            header,
+        }) => {
+            out.push(format!(
+                "{pad}TCP    Source port: {src}  Destination port: {dst}  Sequence: {seq}  Acknowledgment: {ack}  Window: {window}"
+            ));
+            out.push(format!(
+                "{pad}       Flags: {}",
+                frame::tcp_flags(*flags).join(" ")
+            ));
+            out.push(format!("{pad}       Header: {}", hexs(header)));
+        }
+        Some(L4::Udp { src, dst, len }) => {
+            out.push(format!(
+                "{pad}UDP    Source port: {src}  Destination port: {dst}  Length: {len}"
+            ));
+        }
+        Some(L4::Icmp { kind, code }) => {
+            out.push(format!("{pad}ICMP   Type: {kind}  Code: {code}"));
+        }
+        None => {}
+    }
+}
+
 /// A heading row in the record lines' columns.
 fn heading(c: [&str; 7]) -> String {
     format!(
@@ -307,8 +312,9 @@ fn heading(c: [&str; 7]) -> String {
     .to_string()
 }
 
-/// The listing of trace `t`; `offset` shifts times to local time.
-pub fn listing(t: &Trace, sel: &Select, offset: i64) -> Vec<String> {
+/// The listing's first lines: the trace's attributes, the selection
+/// and the column headings.
+fn header_lines(t: &Trace, sel: &Select, offset: i64) -> Vec<String> {
     let h = &t.header;
     let (sd, st) = civil(h.started, offset);
     let end = h.ended.map_or_else(
@@ -319,7 +325,7 @@ pub fn listing(t: &Trace, sel: &Select, offset: i64) -> Vec<String> {
         },
     );
     let addr = |a: Option<IpAddr>| a.map_or_else(|| "*ALL".to_string(), |x| x.to_string());
-    let mut out = vec![
+    vec![
         format!(
             "Communications trace of {} type {}",
             h.cfgobj,
@@ -395,7 +401,12 @@ pub fn listing(t: &Trace, sel: &Select, offset: i64) -> Vec<String> {
             "------------",
             "------",
         ]),
-    ];
+    ]
+}
+
+/// The listing of trace `t`; `offset` shifts times to local time.
+pub fn listing(t: &Trace, sel: &Select, offset: i64) -> Vec<String> {
+    let mut out = header_lines(t, sel, offset);
     let mut printed = 0;
     let first = t.first_number();
     for (i, r) in t.records.iter().enumerate() {

@@ -489,6 +489,7 @@ fn the_big_file_reads_in_frames() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn write_modes() {
     let (c, mut r) = bob();
     let p = "/home/BOB/new.txt";

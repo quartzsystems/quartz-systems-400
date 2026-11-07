@@ -349,7 +349,7 @@ pub fn command(ctx: &mut Ctx<'_>, s: &mut Session) {
                 message = Some(crate::display::msgline::text_of(
                     ctx.host,
                     &crate::display::msgline::of_fail(ctx.host, &f),
-                ))
+                ));
             }
             None => return,
         }

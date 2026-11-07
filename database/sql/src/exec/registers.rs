@@ -97,50 +97,8 @@ impl Registers {
     }
 }
 
-/// The registers `CURRENT x` names beyond the parser's own, by the word
-/// after `CURRENT` (or the underscore spelling).
-pub const CURRENT: &[(&str, &str)] = &[
-    ("DEGREE", "CURRENT DEGREE"),
-    ("CLIENT_ACCTNG", "CURRENT CLIENT_ACCTNG"),
-    ("CLIENT_APPLNAME", "CURRENT CLIENT_APPLNAME"),
-    ("CLIENT_PROGRAMID", "CURRENT CLIENT_PROGRAMID"),
-    ("CLIENT_USERID", "CURRENT CLIENT_USERID"),
-    ("CLIENT_WRKSTNNAME", "CURRENT CLIENT_WRKSTNNAME"),
-];
-
-/// Built-in global variables by schema and name.
-pub const GLOBALS: &[(&str, &str, &str)] = &[
-    ("QSYS2", "JOB_NAME", "QSYS2.JOB_NAME"),
-    (
-        "QSYS2",
-        "SERVER_MODE_JOB_NAME",
-        "QSYS2.SERVER_MODE_JOB_NAME",
-    ),
-    ("QSYS2", "PROCESS_ID", "QSYS2.PROCESS_ID"),
-    ("QSYS2", "THREAD_ID", "QSYS2.THREAD_ID"),
-    ("SYSIBM", "CLIENT_HOST", "SYSIBM.CLIENT_HOST"),
-    ("SYSIBM", "CLIENT_IPADDR", "SYSIBM.CLIENT_IPADDR"),
-    ("SYSIBM", "CLIENT_PORT", "SYSIBM.CLIENT_PORT"),
-    ("SYSIBM", "PACKAGE_NAME", "SYSIBM.PACKAGE_NAME"),
-    ("SYSIBM", "PACKAGE_SCHEMA", "SYSIBM.PACKAGE_SCHEMA"),
-    ("SYSIBM", "PACKAGE_VERSION", "SYSIBM.PACKAGE_VERSION"),
-    ("SYSIBM", "ROUTINE_SCHEMA", "SYSIBM.ROUTINE_SCHEMA"),
-    (
-        "SYSIBM",
-        "ROUTINE_SPECIFIC_NAME",
-        "SYSIBM.ROUTINE_SPECIFIC_NAME",
-    ),
-    ("SYSIBM", "ROUTINE_TYPE", "SYSIBM.ROUTINE_TYPE"),
-];
-
-/// The canonical name of a built-in global variable.
-#[must_use]
-pub fn global(schema: Option<&str>, name: &str) -> Option<&'static str> {
-    GLOBALS
-        .iter()
-        .find(|(s, n, _)| *n == name && schema.is_none_or(|x| x == *s))
-        .map(|(_, _, c)| *c)
-}
+/// The registers and global variables the parser knows by name.
+pub use crate::words::{CURRENT, GLOBALS, global};
 
 /// Whether `SET` may change the register.
 #[must_use]

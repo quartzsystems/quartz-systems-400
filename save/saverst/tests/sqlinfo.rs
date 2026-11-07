@@ -71,6 +71,7 @@ fn row(cells: &[&str]) -> Vec<String> {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn a_schema_round_trips_with_its_sql_names() {
     let (mut s, qsys) = system();
     let mut ctx = SqlContext::new(qsys, JobHandle(1), NameContext::default());

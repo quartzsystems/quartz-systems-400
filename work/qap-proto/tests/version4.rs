@@ -69,7 +69,7 @@ fn values() -> Vec<SqlValue> {
 }
 
 #[test]
-#[allow(clippy::too_many_lines)] // one of each body
+#[allow(clippy::too_many_lines)]
 fn sql_bodies() {
     for c in [
         CommitLevel::None,
@@ -202,8 +202,7 @@ fn version_4_values() {
         assert!(!op.before_signon());
         assert_eq!(op.in_lane(), code <= 8, "{op:?}");
     }
-    // Version 8 adds 12 and 13.
-    assert_eq!(Op::of(Service::Sql, 12).map(Op::since), Some(8));
+    assert_eq!(Op::of(Service::Sql, 12), None);
     assert_eq!(Op::of(Service::SignOn, 7), Some(Op::Attach));
     assert_eq!(Op::Attach.since(), 4);
     assert!(Op::Attach.before_signon());

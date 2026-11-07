@@ -635,6 +635,11 @@ pub(crate) fn service(
     for m in &reply.messages {
         log(job, &m.msgid, &m.data, kind_of(m.kind), None);
     }
+    // A compiler's diagnostics are the job's last compile's.
+    if compdiag::is_compiler(&r.name) {
+        let diags = std::mem::take(&mut reply.diagnostics);
+        job.set_last_compile(diags.into_iter().map(Into::into).collect());
+    }
     out.prompt = Some(reply.prompt);
     out.srcs = reply.srcs;
     out.sysvals = reply.sysvals;

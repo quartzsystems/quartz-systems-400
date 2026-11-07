@@ -691,7 +691,7 @@ pub fn to(rq: &Rq<'_>) -> Response {
                     u.map.clear();
                 }
                 Err(e) => {
-                    messages.push(rq.message(MsgKind::Error, msgs::FILE_UNREADABLE, &[&name, &e]))
+                    messages.push(rq.message(MsgKind::Error, msgs::FILE_UNREADABLE, &[&name, &e]));
                 }
             }
         }

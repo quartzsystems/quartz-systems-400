@@ -70,6 +70,7 @@ fn failed(id: &str, text: &str, fields: &[(&str, usize)]) -> CmdReply {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn prtsqlinf(system: &mut System, parms: &Parms) -> CmdReply {
     let (obj, lib) = parms.qual("OBJ");
     let obj = obj.to_ascii_uppercase();

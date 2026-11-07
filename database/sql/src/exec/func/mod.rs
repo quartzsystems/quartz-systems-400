@@ -356,6 +356,9 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
                 Value::Str(s) => ccsid::to_ebcdic(s).unwrap_or_default(),
                 Value::Bin(b) => b.clone(),
                 Value::DecFloat(d) => d.encode(),
+                // IEEE big-endian, as the record holds it.
+                Value::Double(x) => x.to_be_bytes().to_vec(),
+                Value::Real(x) => x.to_be_bytes().to_vec(),
                 v => v.as_text().into_bytes(),
             };
             let mut s = String::with_capacity(bytes.len() * 2);

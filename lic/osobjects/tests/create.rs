@@ -17,6 +17,7 @@ use store::{FormatParams, Store, StoreConfig};
 const NOW: u64 = 1_767_225_600;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn every_piece_is_made_once() {
     let d = Arc::new(MemBlockDev::with_seed(131_072, 3));
     let fp = FormatParams {

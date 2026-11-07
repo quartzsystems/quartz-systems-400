@@ -14,6 +14,8 @@ name = "conformance"
 path = "src/main.rs"
 
 [dependencies]
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0" }
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 spool = { path = "../../work/spool", version = "0.1.0" }
 wm = { path = "../../work/wm", version = "0.1.0" }
 anyhow.workspace = true
@@ -56,6 +58,7 @@ drdar = { path = "../../net/drdar", version = "0.1.0" }
 rpg-oracle = { path = "../rpg-oracle", version = "0.1.0" }
 rpgfront = { path = "../../rpg/front", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }
+rpgextdesc = { path = "../../rpg/extdesc", version = "0.1.0" }
 rpg3 = { path = "../../rpg/rpg3", version = "0.1.0" }
 qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }

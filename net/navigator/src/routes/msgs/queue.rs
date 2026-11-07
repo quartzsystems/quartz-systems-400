@@ -82,6 +82,7 @@ fn sort(ms: &mut [QueuedMessage], key: &str) {
 
 /// `/msgq/<lib>/<name>` (the operator's view, `my` false) and
 /// `/mymsgs`.
+#[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>, lib: &str, name: &str, my: bool) -> Response {
     let lib = lib.to_ascii_uppercase();
     let name = name.to_ascii_uppercase();

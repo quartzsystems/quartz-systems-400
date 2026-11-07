@@ -117,7 +117,7 @@ fn route(
         None => shared.reply(&req, Answer::status(Status::InvalidRequest)),
         // An operation newer than the connection's version.
         Some(op) if op.since() > version => {
-            shared.reply(&req, Answer::status(Status::InvalidRequest))
+            shared.reply(&req, Answer::status(Status::InvalidRequest));
         }
         Some(Op::Hello) => {
             shared.reply(&req, Answer::status(Status::InvalidRequest));

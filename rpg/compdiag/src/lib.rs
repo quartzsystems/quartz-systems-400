@@ -12,6 +12,9 @@
 
 #![forbid(unsafe_code)]
 
+pub mod front;
+pub mod msgtext;
+
 /// A source member: a source physical file and one of its members.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct MemberName {
@@ -105,12 +108,45 @@ impl Sink for Vec<Diagnostic> {
     }
 }
 
+/// The second-level text of message `id` with its values, as the
+/// message file has it; the caller owns the message files.
+pub type Help<'a> = &'a mut dyn FnMut(&str, &[String]) -> String;
+
+/// No second-level text: for callers without message files.
+#[must_use]
+pub fn no_help(_: &str, _: &[String]) -> String {
+    String::new()
+}
+
 /// A sink that drops everything, for callers that only want the object.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Discard;
 
 impl Sink for Discard {
     fn report(&mut self, _: Diagnostic) {}
+}
+
+/// The compiler commands whose diagnostics the job keeps.
+pub const COMMANDS: &[&str] = &[
+    "CRTBNDRPG",
+    "CRTRPGMOD",
+    "CRTSQLRPGI",
+    "CRTBNDCL",
+    "CRTCLMOD",
+    "CRTPF",
+    "CRTLF",
+    "CRTDSPF",
+    "CRTPRTF",
+    "CRTCMD",
+    "RUNSQLSTM",
+    "CRTPGM",
+    "CRTSRVPGM",
+];
+
+/// Whether command `name` (upper case) is one of [`COMMANDS`].
+#[must_use]
+pub fn is_compiler(name: &str) -> bool {
+    COMMANDS.contains(&name)
 }
 
 #[cfg(test)]

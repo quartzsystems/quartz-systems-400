@@ -164,6 +164,7 @@ fn pool_text(kind: PoolKind, size_kb: u64) -> String {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn fill_sbsd(d: &mut UimDialog, s: &Sbsd) {
     d.set("MAXJOBS", &nomax(s.maxjobs));
     let (dspf, dspf_lib) = pair(&s.sgndspf);

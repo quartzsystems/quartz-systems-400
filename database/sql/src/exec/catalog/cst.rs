@@ -426,6 +426,7 @@ fn padded(cols: Vec<ColInfo>, mut rows: Vec<Row>) -> Table {
 
 /// `SYSSEQUENCES`: the sequences of every library.
 #[allow(clippy::many_single_char_names)]
+#[allow(clippy::too_many_lines)]
 fn sequences(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<Table> {
     let c = |n: &str, t: T, null: bool| col(alias, n, t, null);
     let mut rows = Vec::new();

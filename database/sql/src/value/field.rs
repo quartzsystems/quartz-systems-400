@@ -165,6 +165,7 @@ impl Value {
     /// field's format, decimals fitted to the field (truncated), floats
     /// and `DECFLOAT`s as they are. A LOB field takes its reference
     /// apart ([`Self::lob_bytes`]).
+    #[allow(clippy::too_many_lines)]
     pub fn to_field(&self, f: &FieldDef) -> Result<db::record::Value> {
         if self.is_null() {
             return Ok(db::record::Value::Null);

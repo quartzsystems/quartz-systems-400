@@ -189,6 +189,7 @@ fn a_qemu_guest_without_a_tpm() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn a_dell_with_a_perc_in_hba_mode() {
     let (dir, roots) = tree("dell");
     put(&roots.sys.join("class/dmi/id/sys_vendor"), "Dell Inc.\n");

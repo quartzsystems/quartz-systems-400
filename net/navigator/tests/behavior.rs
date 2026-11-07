@@ -202,8 +202,14 @@ fn no_ibm_wording() {
     ] {
         for f in walk(&root.join(dir)) {
             let t = std::fs::read_to_string(&f).unwrap_or_default();
+            // The list above names the words; skip it.
+            let mut in_list = false;
             for (n, line) in t.lines().enumerate() {
-                if line.contains("let words") || line.contains("\"IBM\", \"iSeries\"") {
+                if line.contains("let words = [") {
+                    in_list = true;
+                }
+                if in_list {
+                    in_list = line.trim() != "];";
                     continue;
                 }
                 for w in words {

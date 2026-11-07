@@ -63,7 +63,7 @@ pub fn capture(echo: Option<fn(&Line)>) {
     static INIT: Once = Once::new();
     *ECHO.lock().unwrap_or_else(PoisonError::into_inner) = echo;
     INIT.call_once(|| {
-        tracing::subscriber::set_global_default(Capture).expect("the only subscriber")
+        tracing::subscriber::set_global_default(Capture).expect("the only subscriber");
     });
 }
 

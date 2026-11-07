@@ -312,6 +312,7 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn spooled(&mut self, f: &Frame) -> Outcome {
         let who_ = who(&self.user(), func::NPS_SPLF);
         match Self::act(f) {

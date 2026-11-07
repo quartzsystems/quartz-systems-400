@@ -401,6 +401,7 @@ fn run(specs: &[Spec], q: &str, rdb: &str, query: &mut dyn FnMut(&str) -> Vec<Ve
 /// (`sql::exec::catalog::sysibm`), in the result shapes JDBC reads
 /// (`tools/conformance/jtopen/expected/oracle/metadata.out`). `query`
 /// runs a `SELECT` and gives its rows.
+#[allow(clippy::too_many_lines)]
 pub fn answer(
     c: &Call,
     args: &[Option<String>],

@@ -280,6 +280,7 @@ pub fn read_field(
 
 /// Write a value into its field, converting to the field's type: text
 /// is blank padded or cut, numbers are fitted (truncated).
+#[allow(clippy::too_many_lines)]
 pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()> {
     let off = usize::try_from(f.offset).expect("fits");
     let out = &mut record[off..off + usize::try_from(f.byte_len).expect("fits")];

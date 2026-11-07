@@ -112,6 +112,7 @@ fn config(host: &Host, r: &Resolved) -> Config {
     cfg
 }
 
+#[allow(clippy::too_many_lines)]
 fn session(
     job: &mut Job,
     host: &Host,

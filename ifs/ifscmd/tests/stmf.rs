@@ -435,7 +435,7 @@ fn refusals() {
         "CPDA082",
     );
     let r = to(&s, "/tmp/r.txt", |a| {
-        a.frommbr = "/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/NONE.MBR".into()
+        a.frommbr = "/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/NONE.MBR".into();
     });
     refused(&r, "CPFA097", "CPFA0A9");
     refused(

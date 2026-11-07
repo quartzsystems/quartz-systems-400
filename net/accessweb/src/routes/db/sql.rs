@@ -433,6 +433,7 @@ fn messages_table(rq: &Rq<'_>, w: &SqlWork) -> String {
 }
 
 /// The main page.
+#[allow(clippy::too_many_lines)]
 fn show(rq: &Rq<'_>, w: &SqlWork, messages: Vec<Message>) -> Response {
     let opts = &w.opts;
     let schema = if opts.schema.is_empty() {

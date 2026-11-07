@@ -6,29 +6,167 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[features]
+default = ["front", "lower"]
+# The parser as a library: the lexer, the tree, the parser and
+# analysis::analyze, with compdiag's diagnostics.
+front = ["dep:compdiag"]
+# The planner and executor over the database, the store and the job.
+lower = [
+    "front",
+    "dep:db",
+    "dep:jrn",
+    "dep:store",
+    "dep:dds",
+    "dep:qsname",
+    "dep:ccsid",
+    "dep:sec",
+    "dep:spool",
+    "dep:nettools",
+    "dep:regex",
+    "dep:sha1",
+    "dep:sha2",
+    "dep:qir",
+    "dep:ile",
+    "dep:wm",
+    "dep:msgf",
+    "dep:tracing",
+]
+
 [dependencies]
-db = { path = "../../database/db", version = "0.1.0" }
-jrn = { path = "../../database/jrn", version = "0.1.0" }
-store = { path = "../../storage/store", version = "0.1.0" }
-dds = { path = "../../database/dds", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0", optional = true }
+jrn = { path = "../../database/jrn", version = "0.1.0", optional = true }
+store = { path = "../../storage/store", version = "0.1.0", optional = true }
+dds = { path = "../../database/dds", version = "0.1.0", optional = true }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
-qsname = { path = "../../storage/qsname", version = "0.1.0" }
-ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
-sec = { path = "../../security/sec", version = "0.1.0" }
-spool = { path = "../../work/spool", version = "0.1.0" }
-nettools = { path = "../../net/nettools", version = "0.1.0" }
-regex = "1.11.0"
-sha1 = "0.11.0"
-sha2.workspace = true
-qir = { path = "../../runtime/qir", version = "0.1.0" }
-ile = { path = "../../runtime/ile", version = "0.1.0" }
-wm = { path = "../../work/wm", version = "0.1.0" }
-msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0", optional = true }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0", optional = true }
+sec = { path = "../../security/sec", version = "0.1.0", optional = true }
+spool = { path = "../../work/spool", version = "0.1.0", optional = true }
+nettools = { path = "../../net/nettools", version = "0.1.0", optional = true }
+regex = { version = "1.11.0", optional = true }
+sha1 = { version = "0.11.0", optional = true }
+sha2 = { workspace = true, optional = true }
+qir = { path = "../../runtime/qir", version = "0.1.0", optional = true }
+ile = { path = "../../runtime/ile", version = "0.1.0", optional = true }
+wm = { path = "../../work/wm", version = "0.1.0", optional = true }
+msgf = { path = "../../runtime/msgf", version = "0.1.0", optional = true }
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0", optional = true }
 thiserror.workspace = true
-tracing.workspace = true
+tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
 
 [lints]
 workspace = true
+
+# Every test but parse runs statements over a store.
+
+[[test]]
+name = "all_reads"
+required-features = ["lower"]
+
+[[test]]
+name = "auth"
+required-features = ["lower"]
+
+[[test]]
+name = "dbauth"
+required-features = ["lower"]
+
+[[test]]
+name = "dbmon"
+required-features = ["lower"]
+
+[[test]]
+name = "depth"
+required-features = ["lower"]
+
+[[test]]
+name = "embed"
+required-features = ["lower"]
+
+[[test]]
+name = "exec"
+required-features = ["lower"]
+
+[[test]]
+name = "functions"
+required-features = ["lower"]
+
+[[test]]
+name = "integrity"
+required-features = ["lower"]
+
+[[test]]
+name = "joins"
+required-features = ["lower"]
+
+[[test]]
+name = "json"
+required-features = ["lower"]
+
+[[test]]
+name = "messages"
+required-features = ["lower"]
+
+[[test]]
+name = "objects"
+required-features = ["lower"]
+
+[[test]]
+name = "objects2"
+required-features = ["lower"]
+
+[[test]]
+name = "olap"
+required-features = ["lower"]
+
+[[test]]
+name = "package"
+required-features = ["lower"]
+
+[[test]]
+name = "planner"
+required-features = ["lower"]
+
+[[test]]
+name = "qtemp"
+required-features = ["lower"]
+
+[[test]]
+name = "qtemp_job"
+required-features = ["lower"]
+
+[[test]]
+name = "savepoint"
+required-features = ["lower"]
+
+[[test]]
+name = "service_shapes"
+required-features = ["lower"]
+
+[[test]]
+name = "services"
+required-features = ["lower"]
+
+[[test]]
+name = "session"
+required-features = ["lower"]
+
+[[test]]
+name = "sqldsp"
+required-features = ["lower"]
+
+[[test]]
+name = "trigger"
+required-features = ["lower"]
+
+[[test]]
+name = "types"
+required-features = ["lower"]
+
+[[test]]
+name = "yields"
+required-features = ["lower"]

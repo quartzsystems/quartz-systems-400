@@ -114,6 +114,7 @@ fn open_url(r: &Request, run: bool) -> String {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn list(rq: &Rq<'_>) -> Response {
     if rq.post() {
         return import(rq);

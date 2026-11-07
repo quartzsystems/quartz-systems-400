@@ -68,6 +68,14 @@ pub fn byte_size(t: &SqlType) -> u32 {
     }
 }
 
+/// Whether a varying-length string.
+fn is_varying(t: &SqlType) -> bool {
+    matches!(
+        t.kind(),
+        Kind::Varchar | Kind::Vargraphic | Kind::Varbinary | Kind::Clob | Kind::Blob | Kind::Dbclob
+    )
+}
+
 /// The arguments with an unknown one as [`SqlType::unknown`].
 #[must_use]
 pub fn known(args: &[Option<SqlType>]) -> Vec<SqlType> {
@@ -196,7 +204,13 @@ pub fn builtin(name: &str, given: &[Option<SqlType>], exprs: &[Expr]) -> Option<
                 .min(32740),
             null,
         ),
-        "HEX" => SqlType::varchar(first.map_or(2, |t| byte_size(&t) * 2).min(32740), null),
+        // Fixed length for a fixed-length argument, as on the primary.
+        "HEX" => match first {
+            Some(t) if !is_varying(&t) && byte_size(&t) * 2 <= 32766 => {
+                SqlType::char(byte_size(&t) * 2, null)
+            }
+            t => SqlType::varchar(t.map_or(2, |t| byte_size(&t) * 2).min(32740), null),
+        },
         "ABS" | "ABSVAL" | "MOD" | "ROUND" | "TRUNCATE" | "TRUNC" | "CEILING" | "CEIL"
         | "FLOOR" => {
             let t = first.unwrap_or_else(|| SqlType::int(null));

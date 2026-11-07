@@ -310,22 +310,7 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
     options.entry_module = p.upper("ENTMOD");
     options.allow_unresolved = p.upper("OPTION").as_deref() == Some("*UNRSLVREF");
     if kind == PgmKind::SrvPgm && p.upper("EXPORT").as_deref() == Some("*SRCFILE") {
-        let src = p
-            .kw("SRCFILE")
-            .ok_or("SRCFILE(LIB/F) is needed with EXPORT(*SRCFILE)")?;
-        let (sl, sf) = qualified(src)?;
-        let member = Name::parse(&p.upper("SRCMBR").unwrap_or_else(|| name.to_string()))
-            .map_err(|e| e.to_string())?;
-        let text = in_store(system, &sl, |txn, _, library| {
-            let l = store::obj::library::Library::load(txn, library).map_err(|e| e.to_string())?;
-            let id = l
-                .lookup(txn, types::FILE, sf)
-                .map_err(|e| e.to_string())?
-                .ok_or_else(|| format!("{sl}/{sf} not found"))?;
-            db::source::srcget(txn, id, MemberSpec::Name(member)).map_err(|e| e.to_string())
-        })?;
-        let parsed = ile::parse_binder_source(&text).map_err(|e| e.to_string())?;
-        options.export = ExportSpec::Source(parsed, text);
+        options.export = export_source(system, p, &name)?;
     }
     let text = p.text("TEXT");
     let what = if kind == PgmKind::Pgm {
@@ -334,11 +319,22 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
         "Service program"
     };
     let adopts = options.attr.usrprf == ile::UserProfile::Owner;
+    let mut failed = None;
     let diags = in_store(system, &lib, |txn, c, library| {
         ile::store::crtpgm(txn, c, library, &modules, &bnddirs, options, &text)
             .map(|(_, d)| d)
-            .map_err(|e| e.to_string())
-    })?;
+            .map_err(|e| {
+                let s = e.to_string();
+                failed = Some(e);
+                s
+            })
+    });
+    match (&diags, &failed) {
+        (Ok(d), _) => put_bind(system, Ok(d), None),
+        (Err(_), Some(e)) => put_bind(system, Err(e), None),
+        (Err(_), None) => {}
+    }
+    let diags = diags?;
     if adopts {
         let owner = crate::stgsvc::security::actor().map_or_else(|| "QSYS".to_string(), |p| p.user);
         let ty = if kind == PgmKind::Pgm {
@@ -358,6 +354,45 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
         "{}{note}{what} {lib}/{name} created.\n",
         diag_text(&diags)
     ))
+}
+
+/// `EXPORT(*SRCFILE)`: the binder source `SRCFILE` and `SRCMBR` name
+/// (the object's name by default), parsed; one that does not parse is
+/// a diagnostic in its member.
+fn export_source(system: &mut System, p: &Params, name: &Name) -> Result<ExportSpec, String> {
+    let src = p
+        .kw("SRCFILE")
+        .ok_or("SRCFILE(LIB/F) is needed with EXPORT(*SRCFILE)")?;
+    let (sl, sf) = qualified(src)?;
+    let member = Name::parse(&p.upper("SRCMBR").unwrap_or_else(|| name.to_string()))
+        .map_err(|e| e.to_string())?;
+    let text = in_store(system, &sl, |txn, _, library| {
+        let l = store::obj::library::Library::load(txn, library).map_err(|e| e.to_string())?;
+        let id = l
+            .lookup(txn, types::FILE, sf)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("{sl}/{sf} not found"))?;
+        db::source::srcget(txn, id, MemberSpec::Name(member)).map_err(|e| e.to_string())
+    })?;
+    match ile::parse_binder_source(&text) {
+        Ok(parsed) => Ok(ExportSpec::Source(parsed, text)),
+        Err(e) => {
+            let at = crate::cpp::compdiags::member(&sl, &sf.to_string(), &member.to_string());
+            put_bind(system, Err(&e), Some(&at));
+            Err(e.to_string())
+        }
+    }
+}
+
+/// The binder's diagnostics, for the reply of the command running.
+fn put_bind(
+    system: &mut System,
+    outcome: Result<&[ile::Diag], &ile::IleError>,
+    source: Option<&compdiag::Where>,
+) {
+    let diags =
+        ile::binder::report::diagnostics(outcome, source, &mut crate::cpp::compdiags::help(system));
+    crate::cpp::compdiags::put(system, diags);
 }
 
 /// `QUSEADPAUT`: when it names an authorization list, only users with

@@ -37,7 +37,8 @@ pub fn crtprtf(system: &mut System, p: &Params) -> Result<String, String> {
     let mut f = Prtf::default();
     f.apply(p).map_err(|e| err(&e))?;
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
+    let mut found = Vec::new();
+    let r = with_txn(store, |txn| {
         let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
         let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
         let mut note = String::from("program-described");
@@ -52,6 +53,7 @@ pub fn crtprtf(system: &mut System, p: &Params) -> Result<String, String> {
                     ..CompileOpts::default()
                 },
             );
+            found.clone_from(&comp.diagnostics);
             let Some(def) = comp.definition else {
                 return Err(format!("File {qual} not created.\n{}", comp.listing));
             };
@@ -80,7 +82,9 @@ pub fn crtprtf(system: &mut System, p: &Params) -> Result<String, String> {
         )
         .map_err(|e| err(&e))?;
         Ok(format!("Printer file {qual} created: {note}."))
-    })
+    });
+    super::files::put_dds(system, p, &name.name.to_string(), &found);
+    r
 }
 
 /// A printer file's object, or why not.

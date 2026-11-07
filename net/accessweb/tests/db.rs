@@ -579,6 +579,7 @@ fn policies_gate_the_database() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn run_sql_connection_commit_and_fetch() {
     let mut b = Browser::signed_on();
     // A run under a commit level leaves changes pending: the options
@@ -818,6 +819,7 @@ fn requests_save_share_download_import() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn copy_to_table_and_back() {
     let mut b = Browser::signed_on();
     let fields = [

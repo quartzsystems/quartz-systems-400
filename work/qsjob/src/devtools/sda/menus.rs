@@ -164,7 +164,7 @@ fn define_commands(
             Key::PageDown if top + mscreen::PAGE < rows.len() => top += mscreen::PAGE,
             Key::PageUp => top = top.saturating_sub(mscreen::PAGE),
             Key::F(4) => {
-                message = Some(crate::display::msgline::say(surface.host(), "CPD9C8D", &[]))
+                message = Some(crate::display::msgline::say(surface.host(), "CPD9C8D", &[]));
             }
             _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }

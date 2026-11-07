@@ -14,6 +14,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+#[cfg(feature = "front")]
+pub mod analysis;
 pub mod compile;
 pub mod diag;
 pub mod lex;
@@ -25,6 +27,8 @@ pub mod prtf;
 pub mod refs;
 pub mod source;
 
+#[cfg(feature = "front")]
+pub use analysis::analyze;
 pub use compile::{Compilation, CompileOpts, FileKind};
 pub use diag::{Diagnostic, Severity};
 pub use lex::{Keyword, NameType, Parm, Spec};

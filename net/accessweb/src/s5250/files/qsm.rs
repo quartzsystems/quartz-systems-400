@@ -412,7 +412,7 @@ impl MacroFile {
         for s in &self.steps {
             match &s.action {
                 Action::WaitText { row, col, text, .. } if text.trim() == "===>" => {
-                    out.push(format!("Command line at {row}/{col}"))
+                    out.push(format!("Command line at {row}/{col}"));
                 }
                 Action::WaitText { row, col, text, .. } => {
                     texts += 1;

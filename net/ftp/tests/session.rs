@@ -281,7 +281,7 @@ fn the_request_exit_refuses() {
         }
         let allow = v.op != regfac::formats::tcp::op::SEND_FILE;
         Some(answer(req, |p| {
-            p[7] = i32::from(allow).to_be_bytes().to_vec()
+            p[7] = i32::from(allow).to_be_bytes().to_vec();
         }))
     }));
     let mut t = T::new(h, FtpAttrs::default());

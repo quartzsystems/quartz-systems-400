@@ -36,6 +36,7 @@ fn want(out: &str, what: &str, words: &[&str]) -> Result<(), String> {
 impl Suite {
     /// Step 105: the leftovers' commands over telnet and the service
     /// console.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn leftovers(&self, s: &mut Session) -> Result<String, String> {
         // PCML into INFOSTMF.
         let _ = s.command("CRTLIB LIB(LEFTOVER)", CMD);

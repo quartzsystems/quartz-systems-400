@@ -90,6 +90,7 @@ fn col(
 }
 
 /// ASSETS' columns.
+#[allow(clippy::too_many_lines)]
 fn asset_columns() -> Vec<Column> {
     vec![
         col(

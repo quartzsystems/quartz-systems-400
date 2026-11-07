@@ -229,6 +229,7 @@ fn invalid(cname: &str, why: &str) -> SqlError {
 }
 
 /// `cond` as the database's check program over `rf`'s fields.
+#[allow(clippy::too_many_lines)]
 pub fn compile_check(cond: &Expr, rf: &RecordFormat, cname: &str) -> Result<check::Expr> {
     let go = |e: &Expr| compile_check(e, rf, cname);
     let b = |e: &Expr| -> Result<Box<check::Expr>> { Ok(Box::new(go(e)?)) };

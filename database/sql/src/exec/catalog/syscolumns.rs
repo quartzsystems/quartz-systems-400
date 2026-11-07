@@ -204,6 +204,7 @@ fn dds_default(f: &FieldDef) -> Option<&'static str> {
 }
 
 /// The rows: every column of every file in `all`.
+#[allow(clippy::too_many_lines)]
 pub(super) fn rows(
     txn: &mut Txn<'_>,
     all: &[(Name, FileDesc)],

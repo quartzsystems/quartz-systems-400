@@ -221,7 +221,7 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
                         surface.host(),
                         "CPD6A7C",
                         &[&other],
-                    ))
+                    ));
                 }
             }
         }

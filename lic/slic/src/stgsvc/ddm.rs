@@ -136,7 +136,7 @@ pub fn put(
         let found = file_in(txn, l, n)?;
         match (create, found) {
             (true, Some((id, _))) if replace => {
-                ops::delete(txn, job, id).map_err(|e| format!("CPF7302 {e}"))?
+                ops::delete(txn, job, id).map_err(|e| format!("CPF7302 {e}"))?;
             }
             (true, Some(_)) => {
                 return Err(format!(

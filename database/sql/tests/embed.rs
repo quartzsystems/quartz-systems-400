@@ -565,7 +565,7 @@ fn a_sensitive_cursor_sees_later_changes() {
             run(s, "1:P", op(Op::Exec, "", t), vec![]).sqlca.sqlcode,
             0,
             "{t}"
-        )
+        );
     };
     x(&mut s, "INSERT INTO QSTEST.T (ID, NAME) VALUES (3, 'Cy')");
     let d = Desc {

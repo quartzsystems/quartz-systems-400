@@ -273,6 +273,7 @@ fn file_of(sys: &MemIfs, path: &str) -> Option<Vec<u8>> {
 /// Compile every module of the service program and the examples, and
 /// bind the service program: one line per member, then the binding.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn build_report(h: &Httpapi) -> String {
     let inc = || rpgfront::MemIncludes {
         members: h

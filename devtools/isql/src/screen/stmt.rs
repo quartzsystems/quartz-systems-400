@@ -1002,7 +1002,7 @@ pub fn names(p: &Panel, page: usize) -> Vec<String> {
     for item in p.items {
         match item {
             Item::Entry { lines, name, .. } => {
-                out.extend((0..*lines).map(|i| field_name(name, *lines, i)))
+                out.extend((0..*lines).map(|i| field_name(name, *lines, i)));
             }
             Item::Numbered {
                 count, total, name, ..

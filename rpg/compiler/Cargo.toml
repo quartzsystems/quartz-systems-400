@@ -7,6 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+compdiag = { path = "../compdiag", version = "0.1.0" }
 rpgfront = { path = "../front", version = "0.1.0" }
 rpgsqlpre = { path = "../sqlpre", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }

@@ -213,6 +213,31 @@ fn messages(report: &RunReport, text: &str, w: &Words<'_>) -> Vec<(String, u8, u
     out
 }
 
+/// The listing's messages as `compdiag` values, in its order: each at
+/// the record (line, from 1) of the source (`at`) its statement starts
+/// on. `w` gives the texts, as for [`listing`].
+#[must_use]
+pub fn diagnostics(
+    report: &RunReport,
+    text: &str,
+    at: &compdiag::Where,
+    w: &Words<'_>,
+    help: compdiag::Help<'_>,
+) -> Vec<compdiag::Diagnostic> {
+    messages(report, text, w)
+        .into_iter()
+        .map(|(id, severity, record, t)| compdiag::Diagnostic {
+            at: at.clone(),
+            line: u32::try_from(record).unwrap_or(u32::MAX),
+            severity,
+            help: help(&id, &[]),
+            id,
+            text: t,
+            ..compdiag::Diagnostic::default()
+        })
+        .collect()
+}
+
 /// The completion message of a statement that ran, as `RUNSQLSTM`
 /// lists it.
 fn done(e: &RunEntry, w: &Words<'_>) -> Option<(&'static str, String)> {

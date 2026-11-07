@@ -551,7 +551,7 @@ pub fn options(text: &str) -> Result<Options, String> {
                     .split('/')
                     .filter(|s| !s.is_empty())
                     .map(str::to_string)
-                    .collect()
+                    .collect();
             }
             "case" if matches!(lv.as_str(), "lower" | "upper" | "any") => o.case = lv,
             "allowmissing" if matches!(lv.as_str(), "yes" | "no") => o.allow_missing = lv == "yes",

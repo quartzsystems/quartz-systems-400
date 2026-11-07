@@ -64,7 +64,7 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
             out.extend(decfloat(&v));
         }
         Value::Num(d) if f.data_type == DataType::Float => {
-            out.extend(float(crate::record::decimal_f64(d)))
+            out.extend(float(crate::record::decimal_f64(d)));
         }
         Value::Float(x) if f.data_type == DataType::Float => out.extend(float(*x)),
         Value::Float(x) => {

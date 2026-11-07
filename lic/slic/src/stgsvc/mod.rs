@@ -133,6 +133,7 @@ pub fn run() -> ! {
 /// Open the units `slic` closed, a fresh temporary ASP, the system
 /// values as the IPL left them, and the LIC partition for the resume
 /// journal of a mirrored half.
+#[allow(clippy::too_many_lines)]
 fn open(system: &mut System, start: &Start) -> Result<String, String> {
     let mut devs: Vec<Box<dyn BlockDev>> = Vec::new();
     let mut paths = Vec::new();

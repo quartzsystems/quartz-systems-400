@@ -218,7 +218,7 @@ fn panel(
             Key::PageDown if page + 1 < stmt::pages(p) => page += 1,
             Key::PageUp if page > 0 => page -= 1,
             Key::PageDown => {
-                msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[]))
+                msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[]));
             }
             Key::PageUp => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A66", &[])),
             Key::Enter => match assemble::build(kind, &stmt::defaults(p, &values), sql) {
@@ -337,7 +337,7 @@ fn column_list(
             Key::PageDown if page + 1 < list.pages(cols.len()) => page += 1,
             Key::PageUp if page > 0 => page -= 1,
             Key::PageDown => {
-                msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[]))
+                msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[]));
             }
             Key::PageUp => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A66", &[])),
             Key::Enter => match check(&values) {

@@ -144,7 +144,7 @@ pub(super) fn decode_tcpip(recs: &[Rec]) -> (Attributes, Domain) {
                     d.dns = v
                         .split_whitespace()
                         .filter_map(|x| x.parse().ok())
-                        .collect()
+                        .collect();
                 }
                 "PORT" => d.port = v.parse().unwrap_or(53),
                 "PROTOCOL" => d.protocol = Proto::parse(&v).unwrap_or(Proto::Udp),

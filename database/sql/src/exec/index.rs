@@ -22,6 +22,7 @@ use crate::ast::CreateIndex;
 use crate::error::{Result, SqlError};
 
 /// `CREATE INDEX`.
+#[allow(clippy::too_many_lines)]
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Result<()> {
     let table = ctx.resolve_table(txn, &i.table)?;
     if table.desc.attr.kind == FileKind::Logical {

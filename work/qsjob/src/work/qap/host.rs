@@ -348,7 +348,7 @@ impl Host for JobHost {
         cancelled: &dyn Fn() -> bool,
     ) -> Result<Compiled, Refusal> {
         self.running.store(COMMAND, Ordering::SeqCst);
-        let r = super::compile::run(&self.link, &mut self.console, command, cancelled);
+        let r = Ok(super::compile::run(&mut self.console, command, cancelled));
         self.running.store(IDLE, Ordering::SeqCst);
         r
     }

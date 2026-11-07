@@ -62,6 +62,7 @@ fn certificates_need_allobj_and_secadm() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn create_store_and_change_its_password() {
     let mut b = Browser::signed_on();
     let mut pages = Vec::new();

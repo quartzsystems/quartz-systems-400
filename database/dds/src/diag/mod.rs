@@ -113,3 +113,28 @@ impl Diagnostics {
         self.items
     }
 }
+
+/// The diagnostics as `compdiag` values, in the listing's order: each
+/// at its line of the member compiled (`at`), from 1; one about no
+/// line (the file as a whole) is nowhere.
+#[must_use]
+pub fn diagnostics(
+    diags: &[Diagnostic],
+    at: &compdiag::Where,
+    help: compdiag::Help<'_>,
+) -> Vec<compdiag::Diagnostic> {
+    diags
+        .iter()
+        .map(|d| compdiag::Diagnostic {
+            at: d.line.map_or(compdiag::Where::None, |_| at.clone()),
+            line: d
+                .line
+                .map_or(0, |l| u32::try_from(l + 1).unwrap_or(u32::MAX)),
+            severity: d.severity.code(),
+            id: d.id.to_string(),
+            text: d.text.clone(),
+            help: help(d.id, &[]),
+            ..compdiag::Diagnostic::default()
+        })
+        .collect()
+}

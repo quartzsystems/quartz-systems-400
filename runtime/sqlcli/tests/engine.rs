@@ -216,6 +216,7 @@ fn diag(cli: &mut Cli, m: &mut Mem, t: i16, h: i32) -> (String, i32) {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn prepared_markers_bound_storage_and_diagnostics() {
     let (st, qsys, lib) = store();
     let mut m = Mem {

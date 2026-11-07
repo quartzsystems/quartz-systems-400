@@ -140,13 +140,35 @@ pub(super) fn source(
     Ok((source, text))
 }
 
+/// Where a DDS compile's diagnostics point: the member `SRCFILE` and
+/// `SRCMBR` name (the file's own name by default).
+pub(crate) fn dds_at(p: &Params, default_mbr: &str) -> compdiag::Where {
+    let srcfile = p.kw("SRCFILE").unwrap_or("").to_ascii_uppercase();
+    let (lib, file) = srcfile
+        .split_once('/')
+        .unwrap_or(("*LIBL", srcfile.as_str()));
+    let mbr = match p.upper("SRCMBR") {
+        Some(m) if m != "*FILE" => m,
+        _ => default_mbr.to_ascii_uppercase(),
+    };
+    crate::cpp::compdiags::member(lib, file, &mbr)
+}
+
+/// A DDS compile's diagnostics, for the reply of the command running.
+pub(crate) fn put_dds(system: &mut System, p: &Params, mbr: &str, found: &[dds::Diagnostic]) {
+    let at = dds_at(p, mbr);
+    let diags = dds::diag::diagnostics(found, &at, &mut crate::cpp::compdiags::help(system));
+    crate::cpp::compdiags::put(system, diags);
+}
+
 /// `crtpf LIB/FILE SRCFILE(...) | RCDLEN(n)`.
 pub fn crtpf(system: &mut System, p: &Params) -> Result<String, String> {
     let qual = p.pos_or(0, "FILE")?;
     let name = object_name(&qual)?;
     let opts = create_opts(p)?;
+    let mut found = Vec::new();
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
+    let r = with_txn(store, |txn| {
         let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
         let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
         if let Some(rcdlen) = p.num::<u32>("RCDLEN")? {
@@ -163,6 +185,7 @@ pub fn crtpf(system: &mut System, p: &Params) -> Result<String, String> {
                 ..CompileOpts::default()
             },
         );
+        found.clone_from(&comp.diagnostics);
         let Some(def) = comp.definition else {
             return Err(format!("File {qual} not created.\n{}", comp.listing));
         };
@@ -173,7 +196,9 @@ pub fn crtpf(system: &mut System, p: &Params) -> Result<String, String> {
             def.format.keys.len(),
             comp.diagnostics.len()
         ))
-    })
+    });
+    put_dds(system, p, &name.name.to_string(), &found);
+    r
 }
 
 /// `crtsrcpf LIB/FILE [RCDLEN(n)] [TEXT('..')]`: a source physical file
@@ -198,21 +223,40 @@ pub fn crtsrcpf(system: &mut System, p: &Params) -> Result<String, String> {
 
 /// `crtlf LIB/FILE SRCFILE(...) [SRCMBR(M)]`.
 pub fn crtlf(system: &mut System, p: &Params) -> Result<String, String> {
+    let mut found = Vec::new();
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
-        crtlf_in(txn, ctx, super::JOB, p, &mut db::no_pause)
-    })
+    let r = with_txn(store, |txn| {
+        crtlf_with(txn, ctx, super::JOB, p, &mut db::no_pause, &mut found)
+    });
+    let name = p.pos_or(0, "FILE").ok().and_then(|q| object_name(&q).ok());
+    if let Some(name) = name {
+        put_dds(system, p, &name.name.to_string(), &found);
+    }
+    r
 }
 
 /// `CRTLF` in a transaction: the file made, then its member's path
 /// built pausing (`pause`), the based-on files held against change
 /// and the new file `*EXCL`; a build that fails deletes the file.
+#[cfg(test)]
 pub fn crtlf_in(
     txn: &mut Txn<'_>,
     ctx: &SqlContext,
     job: JobHandle,
     p: &Params,
     pause: db::Pause<'_>,
+) -> Result<String, String> {
+    crtlf_with(txn, ctx, job, p, pause, &mut Vec::new())
+}
+
+/// [`crtlf_in`], the compile's diagnostics into `found`.
+pub fn crtlf_with(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    job: JobHandle,
+    p: &Params,
+    pause: db::Pause<'_>,
+    found: &mut Vec<dds::Diagnostic>,
 ) -> Result<String, String> {
     let qual = p.pos_or(0, "FILE")?;
     let name = object_name(&qual)?;
@@ -229,6 +273,7 @@ pub fn crtlf_in(
             ..CompileOpts::default()
         },
     );
+    found.clone_from(&comp.diagnostics);
     let Some(def) = comp.definition else {
         return Err(format!("File {qual} not created.\n{}", comp.listing));
     };

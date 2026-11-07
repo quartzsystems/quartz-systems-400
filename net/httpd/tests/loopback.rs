@@ -104,6 +104,7 @@ fn now() -> u64 {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn plain_and_tls_virtual_host_then_controlled_end() {
     let conf = "ServerRoot /www/shop\nListen 127.0.0.1:1\nListen 127.0.0.1:2\nDocumentRoot htdocs\nKeepAliveTimeout 5\n\
         <VirtualHost *:2>\n   ServerName shop.test\n   SSLEngine On\n   SSLProtocolDisable TLSv1.3\n   DocumentRoot /www/shop/secure\n</VirtualHost>\n";

@@ -171,6 +171,7 @@ impl Server {
     }
 
     /// Answer `req` on `site`.
+    #[allow(clippy::too_many_lines)]
     pub(super) fn route(
         &self,
         req: &Request,

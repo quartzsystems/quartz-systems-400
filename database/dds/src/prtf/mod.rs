@@ -10,6 +10,7 @@
 //! `REFFLD`. `CPI`, `FONT`, `LPI` and their kin are accepted and change
 //! nothing yet.
 
+#[cfg(feature = "lower")]
 pub mod codec;
 pub mod model;
 
@@ -433,6 +434,7 @@ mod tests {
         let t = d.format("TOTAL").unwrap();
         assert!(t.fields[0].underline && t.fields[1].highlight);
         assert_eq!(t.fields[1].edit, Edit::Code('1', Some('*')));
+        #[cfg(feature = "lower")]
         assert_eq!(codec::decode(&codec::encode(&d)), Some(d));
     }
 

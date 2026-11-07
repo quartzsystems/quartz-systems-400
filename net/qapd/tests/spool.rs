@@ -372,6 +372,7 @@ fn joblog_page_2_alone_starts_where_it_does_in_the_whole() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn hold_release_delete_move_statuses() {
     let (_, mut r) = bob();
     let f = file(&mut r, "RPT001");

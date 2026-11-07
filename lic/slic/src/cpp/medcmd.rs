@@ -1337,6 +1337,7 @@ fn dsptapctg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     Ok(plain(s.join("\n") + "\n"))
 }
 
+#[allow(clippy::too_many_lines)]
 fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, String> {
     let dev = parms.name("DEV");
     let d = devices::read(system, &dev)?;

@@ -90,6 +90,7 @@ pub fn rgzpfm_paused(
     result
 }
 
+#[allow(clippy::too_many_lines)]
 fn reorganize(
     txn: &mut Txn<'_>,
     m: &mut Member,

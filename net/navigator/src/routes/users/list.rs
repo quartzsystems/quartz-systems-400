@@ -51,6 +51,7 @@ fn sort(ps: &mut [Profile], key: &str) {
 }
 
 /// The list.
+#[allow(clippy::too_many_lines)]
 pub fn list(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     let pat = all_or(q.str("p"));

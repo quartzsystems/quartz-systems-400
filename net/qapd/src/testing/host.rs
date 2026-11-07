@@ -200,6 +200,7 @@ impl Host for MemHost {
         lock(&self.sys.running_as).remove(&self.job);
     }
 
+    #[allow(clippy::too_many_lines)]
     fn run_command(&mut self, command: &str, cancelled: &dyn Fn() -> bool) -> Ran {
         self.sys.crash_at(Crash::Command);
         let (name, parms) = parse(command);

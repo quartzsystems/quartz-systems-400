@@ -297,6 +297,7 @@ impl Lane {
     /// `Execute`: a query opens a cursor; anything else runs once per
     /// parameter row, stopping at the first that fails, and looks at the
     /// cancel before each.
+    #[allow(clippy::too_many_lines)]
     pub fn execute(
         &mut self,
         e: &mut dyn Engine,

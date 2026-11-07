@@ -254,6 +254,7 @@ fn text(sys: bool) -> Result<String, Fail> {
 /// `WRKENVVAR LEVEL()`: the panel at a display, the list as text
 /// otherwise.
 #[allow(clippy::many_single_char_names)] // the panels' names: r, d, l, c, v
+#[allow(clippy::too_many_lines)]
 pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     let sys = is_sys(r);
     if !crate::panels::shows_panels(host, r) {

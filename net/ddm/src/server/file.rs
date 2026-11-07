@@ -57,6 +57,7 @@ impl Session {
         .to_object()
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn file_command(&mut self, c: &Object, data: &[Object]) -> Out {
         let name = c
             .get(param::DCLNAM)
