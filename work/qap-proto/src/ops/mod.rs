@@ -7,6 +7,7 @@
 
 pub mod command;
 pub mod connection;
+pub mod debug;
 pub mod ifs;
 pub mod manage;
 pub mod messages;
@@ -139,11 +140,31 @@ pub enum Op {
     IplStatus,
     /// `Manage` 10: power down, or restart (version 7).
     PowerDown,
+    /// `Debug` 1: start a debug session (version 9).
+    DebugStart,
+    /// `Debug` 2: end it (version 9).
+    DebugEnd,
+    /// `Debug` 3: put a program under debug (version 9).
+    AddProgram,
+    /// `Debug` 4: a module's breakpoints (version 9).
+    SetBreakpoints,
+    /// `Debug` 5: go on from a stop (version 9).
+    DebugResume,
+    /// `Debug` 6: the stopped job's call stack (version 9).
+    Stack,
+    /// `Debug` 7: a frame's variables (version 9).
+    Variables,
+    /// `Debug` 8: evaluate at the stop (version 9).
+    Eval,
+    /// `Debug` 9: stop a user's jobs when they call a program (version 9).
+    SetServiceEntry,
+    /// `Debug` 10: remove a service entry point (version 9).
+    RemoveServiceEntry,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 59] = [
+    pub const ALL: [Op; 69] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -203,6 +224,16 @@ impl Op {
         Op::ListHardwareResources,
         Op::IplStatus,
         Op::PowerDown,
+        Op::DebugStart,
+        Op::DebugEnd,
+        Op::AddProgram,
+        Op::SetBreakpoints,
+        Op::DebugResume,
+        Op::Stack,
+        Op::Variables,
+        Op::Eval,
+        Op::SetServiceEntry,
+        Op::RemoveServiceEntry,
     ];
 
     /// Its service and code.
@@ -268,6 +299,16 @@ impl Op {
             Op::ListHardwareResources => (Service::Manage, 8),
             Op::IplStatus => (Service::Manage, 9),
             Op::PowerDown => (Service::Manage, 10),
+            Op::DebugStart => (Service::Debug, 1),
+            Op::DebugEnd => (Service::Debug, 2),
+            Op::AddProgram => (Service::Debug, 3),
+            Op::SetBreakpoints => (Service::Debug, 4),
+            Op::DebugResume => (Service::Debug, 5),
+            Op::Stack => (Service::Debug, 6),
+            Op::Variables => (Service::Debug, 7),
+            Op::Eval => (Service::Debug, 8),
+            Op::SetServiceEntry => (Service::Debug, 9),
+            Op::RemoveServiceEntry => (Service::Debug, 10),
         }
     }
 
@@ -334,6 +375,16 @@ impl Op {
             | Op::ListHardwareResources
             | Op::IplStatus
             | Op::PowerDown => 7,
+            Op::DebugStart
+            | Op::DebugEnd
+            | Op::AddProgram
+            | Op::SetBreakpoints
+            | Op::DebugResume
+            | Op::Stack
+            | Op::Variables
+            | Op::Eval
+            | Op::SetServiceEntry
+            | Op::RemoveServiceEntry => 9,
         }
     }
 
@@ -392,6 +443,10 @@ pub mod event {
     pub const MESSAGE_ARRIVED: u16 = 100;
     /// `Spool` 100: a watched target's file changed (version 6).
     pub const SPOOLED_FILE_CHANGED: u16 = 100;
+    /// `Debug` 100: a debugged job stopped (version 9).
+    pub const STOPPED: u16 = 100;
+    /// `Debug` 101: the debug session ended (version 9).
+    pub const DEBUG_ENDED: u16 = 101;
 
     /// The protocol version that defines event `op` of `service`;
     /// `None` when there is no such event.
@@ -402,6 +457,7 @@ pub mod event {
             (Service::Messages, MESSAGE_ARRIVED) | (Service::Spool, SPOOLED_FILE_CHANGED) => {
                 Some(6)
             }
+            (Service::Debug, STOPPED | DEBUG_ENDED) => Some(9),
             _ => None,
         }
     }

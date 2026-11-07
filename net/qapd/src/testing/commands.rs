@@ -25,6 +25,8 @@
 //!   ([`super::files`]) as the signed-on profile, with their messages;
 //!   `SUBTREE(*ALL)` goes on past what it may not change, a diagnostic
 //!   each, then the escape `CPFA0AB` (`Error`);
+//! - `CALL PGM(lib/name)`: `HLINV/ASSETS` runs under an `Own` debug
+//!   session ([`super::debug`]); any other program returns at once;
 //! - `CHGCURLIB CURLIB(name)`: the job's current library
 //!   ([`super::System::curlib`]); `CPF2110` for a library `CRTLIB` did
 //!   not make.
@@ -72,6 +74,13 @@ pub const COMMANDS: &[Cmd] = &[
         interactive_only: false,
         authorized: true,
         required: &["FILE"],
+    },
+    Cmd {
+        name: "CALL",
+        text: "Call Program",
+        interactive_only: false,
+        authorized: true,
+        required: &["PGM"],
     },
     Cmd {
         name: "STRSEU",

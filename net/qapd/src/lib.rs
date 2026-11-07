@@ -24,12 +24,14 @@
 //! - [`files`]: the `Ifs` service over an `IfsClient`.
 //! - [`sql`]: the `Sql` service's answers and cancel rules.
 //! - [`manage`]: the `Manage` service (version 7, draft) and its exit point.
+//! - [`debug`]: the `Debug` service (version 9, draft) and its events.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod debug;
 pub mod files;
 pub mod frames;
 pub mod host;

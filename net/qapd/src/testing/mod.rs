@@ -44,6 +44,10 @@
 //!   `*JOBCTL`) and `SECOFR` (`SECPW01`, every special authority) beside
 //!   `BOB`, who has none; an exit program tests set
 //!   ([`manage::Manage::exit_refuses`]);
+//! - a debugger ([`debug`], version 9, draft): `HLINV/ASSETS` with its
+//!   source and variables, stops in the connection job's `CALL` and in
+//!   display sessions' jobs ([`System::interactive_job`],
+//!   [`System::call_in`]);
 //! - the ends a client must meet: the server ending ([`System::end`]:
 //!   every connection gets `ServerEnding` and the [`Listener`] refuses
 //!   connects until [`System::restart`]), an operator ending one job, a
@@ -52,6 +56,7 @@
 //!   ([`System::crash`]).
 
 pub mod commands;
+pub mod debug;
 pub mod files;
 pub mod fixtures;
 mod host;
@@ -183,6 +188,8 @@ pub struct System {
     /// Subsystems, system values, PTFs, disks, hardware, the IPL
     /// ([`manage`]).
     pub manage: Mutex<manage::Manage>,
+    /// The debugger's sessions, service entry points and other jobs.
+    pub debug: debug::Debugs,
     /// The commands running, by job, while they run.
     running: Mutex<HashMap<u32, String>>,
     started: Condvar,
@@ -247,6 +254,7 @@ impl System {
             sql: Mutex::new(sql::Db::default()),
             files: files::Files::new(),
             manage: Mutex::new(manage::Manage::shipped()),
+            debug: debug::Debugs::default(),
             running: Mutex::new(HashMap::new()),
             started: Condvar::new(),
             sockets: Mutex::new(HashMap::new()),
@@ -261,7 +269,7 @@ impl System {
         s.edit("OPER", |u| u.special = vec!["*JOBCTL".into()]);
         s.user("SECOFR", "SECPW01");
         s.edit("SECOFR", |u| {
-            u.special = ["*ALLOBJ", "*SECADM", "*JOBCTL", "*AUDIT", "*IOSYSCFG"]
+            u.special = ["*ALLOBJ", "*SECADM", "*JOBCTL", "*AUDIT", "*IOSYSCFG", "*SERVICE"]
                 .map(String::from)
                 .to_vec();
         });

@@ -361,6 +361,12 @@ pub trait ThreadHost {
     fn power_down(&mut self, _req: &PowerDown) -> Result<(), Refusal> {
         Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
     }
+
+    /// The source debugger (version 9); `None` for a host without one,
+    /// whose `Debug` operations answer `Error` with [`crate::debug::NO_DEBUG`].
+    fn debugger(&mut self) -> Option<&mut dyn crate::debug::DebugHost> {
+        None
+    }
 }
 
 /// The message of a `Messages` operation a host without message queues

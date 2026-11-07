@@ -79,6 +79,7 @@ pub(crate) fn dispatch(
                 }
             }
             In::Closed(why) => {
+                crate::debug::closed(shared, &mut *own);
                 let _ = main.send(ToMain::Closed(why));
                 return;
             }
@@ -295,6 +296,7 @@ fn operation(shared: &Arc<Shared>, host: &mut dyn ThreadHost, op: Op, req: &Enve
         Op::ReplyMessage => body(req, |b: ReplyMessage| done(host.reply_message(&b))),
         Op::RemoveMessages => body(req, |b: RemoveMessages| done(host.remove_messages(&b))),
         Op::SendMessage => body(req, |b: SendMessage| ok(host.send_message(&b))),
+        op if op.code().0 == Service::Debug => crate::debug::serve(shared, host, op, req),
         Op::WatchQueue => watches::watch_queue(shared, host, req),
         Op::UnwatchQueue => watches::unwatch_queue(shared, host, req),
         Op::WatchSpool => watches::watch_spool(shared, host, req),
@@ -401,6 +403,7 @@ fn sign_off(shared: &Shared, host: &mut dyn ThreadHost) -> Answer {
     *lock(&shared.watch.profile) = None;
     // The watches were the profile's.
     watches::clear(shared);
+    crate::debug::signed_off(shared, host);
     if let Some((token, _)) = session {
         host.sign_off(&token);
         shared.swapped();

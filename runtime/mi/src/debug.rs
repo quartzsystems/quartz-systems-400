@@ -38,6 +38,8 @@ pub enum Resume {
     StepOver,
     /// Stop at the next statement anywhere.
     StepInto,
+    /// Stop at the next statement of a caller.
+    StepOut,
 }
 
 /// Where the next stop is.
@@ -63,6 +65,34 @@ pub struct DbgVar {
     pub addr: u64,
     /// Type descriptor.
     pub desc: u64,
+}
+
+/// A call stack entry as the debugger shows it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DbgFrame {
+    /// `LIB/NAME`; empty for an entry outside a program.
+    pub program: String,
+    /// The module.
+    pub module: String,
+    /// The procedure.
+    pub procedure: String,
+    /// The statement it is at.
+    pub stmt: u32,
+    /// Its program runs the debug variant.
+    pub debug: bool,
+}
+
+/// A variable's value at a stop.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DbgValue {
+    /// Its name.
+    pub name: String,
+    /// Its type.
+    pub kind: String,
+    /// `EVAL`'s view; empty for a structure or array with parts.
+    pub value: String,
+    /// It has parts.
+    pub expandable: bool,
 }
 
 /// The job's debug state.
@@ -192,17 +222,97 @@ impl Job {
     /// `EVAL`: a variable of the running entry, `NAME`, `NAME:x`
     /// (hexadecimal) or `NAME:c` (characters).
     pub fn eval(&self, expr: &str) -> Result<String, String> {
+        self.eval_in(0, expr)
+    }
+
+    /// The call stack, the newest entry first.
+    #[must_use]
+    pub fn dbg_frames(&self) -> Vec<DbgFrame> {
+        let top = self.act.frames.len();
+        self.act
+            .frames
+            .iter()
+            .enumerate()
+            .rev()
+            .map(|(i, f)| {
+                let p = f.program.as_ref();
+                let at = p.and_then(|p| p.proc_of(f.code));
+                DbgFrame {
+                    program: p.map(|p| p.key.clone()).unwrap_or_default(),
+                    module: p
+                        .zip(at)
+                        .and_then(|(p, (m, _))| p.object.modules.get(m as usize))
+                        .map(|b| b.module.name.clone())
+                        .unwrap_or_default(),
+                    procedure: p.and_then(|p| p.proc_name(f.code)).unwrap_or_default(),
+                    stmt: if i + 1 == top {
+                        self.abi.cur_stmt
+                    } else {
+                        f.stmt
+                    },
+                    debug: p.is_some_and(|p| p.debug),
+                }
+            })
+            .collect()
+    }
+
+    /// The variables of entry `frame` (0 the newest) as `EVAL` shows
+    /// them: its own, or the parts of `parent` (a structure's `DS.SUB`,
+    /// an array's `ARR(1)`).
+    pub fn dbg_variables(&self, frame: usize, parent: Option<&str>) -> Result<Vec<DbgValue>, String> {
+        let f = self.frame_at(frame)?;
+        let vars: Vec<&DbgVar> = match parent {
+            Some(p) => parts_of(&f.debug_vars, p),
+            None => f
+                .debug_vars
+                .iter()
+                .filter(|v| !v.name.contains('.') && !v.name.contains('('))
+                .collect(),
+        };
+        Ok(vars
+            .into_iter()
+            .map(|v| {
+                let t = TypeDesc::from_word(v.desc.cast_signed()).decode();
+                let aggregate = t.as_ref().is_some_and(|t| t.class() == TypeClass::Aggregate);
+                let expandable = aggregate && !parts_of(&f.debug_vars, &v.name).is_empty();
+                let value = match &t {
+                    Some(_) if expandable => String::new(),
+                    Some(t) => {
+                        let len = usize::try_from(t.size()).unwrap_or(0);
+                        format_value(v, t, crate::storage::view(v.addr, len))
+                    }
+                    None => String::new(),
+                };
+                DbgValue {
+                    name: v.name.clone(),
+                    kind: t.map_or_else(|| "?".to_string(), |t| t.to_string()),
+                    value,
+                    expandable,
+                }
+            })
+            .collect())
+    }
+
+    /// Entry `frame` of the stack, 0 the newest.
+    fn frame_at(&self, frame: usize) -> Result<&crate::act::Frame, String> {
+        let n = self.act.frames.len();
+        if n == 0 {
+            return Err("no program is running".into());
+        }
+        n.checked_sub(frame + 1)
+            .and_then(|i| self.act.frames.get(i))
+            .ok_or_else(|| format!("there is no call stack entry {frame}"))
+    }
+
+    /// `EVAL` in entry `frame` of the stack, 0 the newest.
+    pub fn eval_in(&self, frame: usize, expr: &str) -> Result<String, String> {
         let (name, mode) = match expr.split_once(':') {
             Some((n, m)) => (n.trim(), m.trim().to_ascii_lowercase()),
             None => (expr.trim(), String::new()),
         };
         // A CL variable is spelled `&NAME`; its place is `$NAME`.
         let name = name.strip_prefix('&').unwrap_or(name);
-        let f = self
-            .act
-            .frames
-            .last()
-            .ok_or_else(|| "no program is running".to_string())?;
+        let f = self.frame_at(frame)?;
         let v = f
             .debug_vars
             .iter()
@@ -215,19 +325,7 @@ impl Job {
         // A structure or array the compiler also named by part (`DS.SUB`,
         // `ARR(1)`) shows as its parts, one per line.
         if mode.is_empty() && t.class() == TypeClass::Aggregate {
-            let up = name.to_ascii_uppercase();
-            let parts: Vec<&DbgVar> = f
-                .debug_vars
-                .iter()
-                .filter(|p| {
-                    let n = p.name.to_ascii_uppercase();
-                    n.strip_prefix(&up).is_some_and(|rest| {
-                        rest.strip_prefix('.')
-                            .is_some_and(|r| !r.contains('.') && !r.contains('('))
-                            || rest.starts_with('(') && rest.ends_with(')') && !rest.contains('.')
-                    })
-                })
-                .collect();
+            let parts = parts_of(&f.debug_vars, name);
             if !parts.is_empty() {
                 let mut lines = Vec::new();
                 for p in parts {
@@ -248,6 +346,22 @@ impl Job {
             _ => format_value(v, &t, bytes),
         })
     }
+}
+
+/// The parts of `name` the compiler registered: `NAME.SUB` of a
+/// structure, `NAME(n)` of an array, one level down.
+fn parts_of<'a>(vars: &'a [DbgVar], name: &str) -> Vec<&'a DbgVar> {
+    let up = name.to_ascii_uppercase();
+    vars.iter()
+        .filter(|p| {
+            let n = p.name.to_ascii_uppercase();
+            n.strip_prefix(&up).is_some_and(|rest| {
+                rest.strip_prefix('.')
+                    .is_some_and(|r| !r.contains('.') && !r.contains('('))
+                    || rest.starts_with('(') && rest.ends_with(')') && !rest.contains('.')
+            })
+        })
+        .collect()
 }
 
 /// `EVAL`'s view of a value.

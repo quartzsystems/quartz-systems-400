@@ -59,6 +59,8 @@ pub extern "sysv64" fn dbg_stmt(env: *mut Env, n: i64) {
             Resume::Go => Step::None,
             Resume::StepOver => Step::Over(depth),
             Resume::StepInto => Step::Into,
+            // A caller's statements run at a smaller depth.
+            Resume::StepOut => Step::Over(depth.saturating_sub(1)),
         };
     }
 }

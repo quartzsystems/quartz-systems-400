@@ -30,8 +30,10 @@ fn the_highest_common_version() {
         (6, 6, 6),
         (1, 7, 7),
         (7, 7, 7),
-        (1, 9, 7),
-        (3, 9, 7),
+        (1, 8, 8),
+        (1, 9, 9),
+        (3, 9, 9),
+        (9, 9, 9),
     ] {
         let mut r = start(cfg());
         let h: HelloReply = r.client.hello_range(min, max).body_as().unwrap();
@@ -42,8 +44,8 @@ fn the_highest_common_version() {
     let refused = r.client.call(
         Op::Hello,
         &Hello {
-            min_version: 8,
-            max_version: 9,
+            min_version: 10,
+            max_version: 11,
             ..Hello::default()
         },
     );

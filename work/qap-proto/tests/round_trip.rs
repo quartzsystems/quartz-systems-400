@@ -70,7 +70,9 @@ fn enums() {
     }
     for (i, s) in Service::ALL.iter().enumerate() {
         same(s);
-        assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
+        // Debug is 11 whatever comes before it.
+        let n = if *s == Service::Debug { 11 } else { i };
+        assert_eq!(encode(s), [u8::try_from(n).unwrap()]);
     }
     // 0 to 15: Exists 13 came with version 5.
     for (s, n) in Status::ALL.iter().zip(0u16..) {
@@ -439,7 +441,7 @@ fn values_by_version() {
     assert_eq!(Service::of_version(4), Service::ALL[..6].to_vec());
     assert_eq!(Service::of_version(5), Service::ALL[..7].to_vec());
     assert_eq!(Service::of_version(6), Service::ALL[..8].to_vec());
-    assert_eq!(Service::of_version(7), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(7), Service::ALL[..9].to_vec());
     assert_eq!(encode(&Service::Command), [3]);
     assert_eq!(encode(&Service::Spool), [4]);
     for code in 1..=7 {

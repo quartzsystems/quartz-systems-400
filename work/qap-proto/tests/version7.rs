@@ -32,7 +32,7 @@ fn qbatch() -> ObjectName {
 
 #[test]
 fn version_7_values() {
-    assert_eq!(VERSION, 7);
+    assert!(VERSION >= 7);
     assert_eq!(encode(&Service::Manage), [8]);
     assert_eq!(Service::Manage.since(), 7);
     let ops = [
@@ -62,7 +62,7 @@ fn version_7_values() {
                 .all(|o| o.code().0 != Service::Manage)
         );
     }
-    assert_eq!(Service::of_version(7), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(7), Service::ALL[..9].to_vec());
     // Version 7 adds no status and no event.
     assert_eq!(Status::ALL.len(), 16);
     assert!(Status::ALL.iter().all(|s| s.since() <= 5));
@@ -88,8 +88,8 @@ fn versions_1_to_6_unchanged() {
     for max in 1..=7 {
         assert_eq!(choose_version(1, max, VERSION), Some(max));
     }
-    assert_eq!(choose_version(1, 9, VERSION), Some(7));
-    assert_eq!(choose_version(8, 9, VERSION), None);
+    assert_eq!(choose_version(1, 7, VERSION), Some(7));
+    assert_eq!(choose_version(VERSION + 1, VERSION + 2, VERSION), None);
 }
 
 #[test]

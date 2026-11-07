@@ -217,3 +217,48 @@ fn an_active_program_cannot_enter_debug() {
     assert_eq!(j.debug.as_ref().unwrap().stops.len(), 1);
     assert_eq!(j.rmvbkp("QGPL/DMAIN", Some(12)), 1);
 }
+
+#[test]
+fn frames_variables_and_step_out() {
+    let mut j = job();
+    type Seen = (Vec<mi::debug::DbgFrame>, Vec<mi::debug::DbgValue>, String);
+    let seen: Rc<RefCell<Vec<Seen>>> = Rc::new(RefCell::new(Vec::new()));
+    let s = seen.clone();
+    j.set_debug_hook(Box::new(move |job: &mut Job, stop: &Stop| {
+        let frames = job.dbg_frames();
+        let vars = job.dbg_variables(0, None).unwrap();
+        // The caller's COUNT from inside DSUB.
+        let caller = job.eval_in(1, "COUNT").unwrap_or_else(|e| e);
+        s.borrow_mut().push((frames, vars, caller));
+        if stop.program == "QGPL/DSUB" {
+            Resume::StepOut
+        } else {
+            Resume::Go
+        }
+    }));
+    j.strdbg("DMAIN", "QGPL").unwrap();
+    j.strdbg("DSUB", "QGPL").unwrap();
+    j.addbkp("DSUB", 1);
+    j.call_program("DMAIN", "*LIBL", &[]).unwrap();
+    let seen = seen.borrow();
+    assert_eq!(seen.len(), 2, "the breakpoint, then the caller after a step out");
+    let (frames, vars, caller) = &seen[0];
+    let top: Vec<(&str, &str, u32)> = frames
+        .iter()
+        .map(|f| (f.program.as_str(), f.procedure.as_str(), f.stmt))
+        .collect();
+    assert_eq!(top, [("QGPL/DSUB", "DSUB", 1), ("QGPL/DMAIN", "DMAIN", 11)]);
+    assert_eq!(frames[0].module, "DSUB");
+    assert!(frames[0].debug);
+    let names: Vec<(&str, &str)> = vars
+        .iter()
+        .map(|v| (v.name.as_str(), v.value.as_str()))
+        .collect();
+    assert_eq!(names, [("V", "1"), ("D", "7")]);
+    assert!(vars.iter().all(|v| !v.expandable && !v.kind.is_empty()));
+    assert_eq!(caller, "1");
+    // Out of DSUB: the next statement of DMAIN.
+    assert_eq!(seen[1].0[0].program, "QGPL/DMAIN");
+    assert_eq!(seen[1].0[0].stmt, 12);
+    assert!(j.dbg_variables(0, None).is_err(), "nothing runs now");
+}

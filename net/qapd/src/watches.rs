@@ -62,6 +62,8 @@ pub(crate) struct Watches {
     looker: Option<JoinHandle<()>>,
     /// The connection is closing.
     closing: bool,
+    /// A debug session is active: each look takes its news too.
+    pub(crate) debugging: bool,
 }
 
 impl Watches {
@@ -242,7 +244,7 @@ pub(crate) fn close(shared: &Shared) {
 }
 
 /// Make the looking thread, once.
-fn start(shared: &Arc<Shared>) {
+pub(crate) fn start(shared: &Arc<Shared>) {
     let mut w = lock(&shared.watches);
     if w.looker.is_some() || w.closing {
         return;
@@ -291,6 +293,7 @@ fn look(shared: &Shared, host: &mut dyn ThreadHost) {
     for t in targets {
         spool(shared, host, &t, era);
     }
+    crate::debug::look(shared, host);
 }
 
 /// The messages that arrived on `q` since the last look, sent oldest

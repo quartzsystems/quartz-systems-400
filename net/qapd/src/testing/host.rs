@@ -229,6 +229,14 @@ impl Host for MemHost {
             "DSPOBJD" if get("OBJ").is_some_and(|o| o.eq_ignore_ascii_case("QSYS/SECRET")) => {
                 self.ran(Status::NotAuthorized, &[("CPF9802", &["*FILE", "SECRET"])])
             }
+            "CALL" => {
+                let pgm = get("PGM").unwrap_or_default();
+                if self.sys.call_own(self.job, &pgm, cancelled) {
+                    self.ran(Status::Ok, &[])
+                } else {
+                    self.ran(Status::Cancelled, &[("CPF1907", &[])])
+                }
+            }
             "DLYJOB" => {
                 let secs = get("DLY")
                     .and_then(|d| d.trim().parse::<u64>().ok())
@@ -861,6 +869,10 @@ impl ThreadHost for MemThread {
             sys.end(Ending::Server);
         });
         Ok(())
+    }
+
+    fn debugger(&mut self) -> Option<&mut dyn crate::debug::DebugHost> {
+        Some(self)
     }
 }
 

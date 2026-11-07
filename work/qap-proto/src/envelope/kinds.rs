@@ -48,6 +48,8 @@ pub enum Service {
     Messages,
     /// Managing the system (version 7, draft).
     Manage,
+    /// The source debugger (version 9, draft).
+    Debug,
 }
 
 wire_enum!(Service {
@@ -60,11 +62,12 @@ wire_enum!(Service {
     6 => Ifs,
     7 => Messages,
     8 => Manage,
+    11 => Debug,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 9] = [
+    pub const ALL: [Service; 10] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
@@ -74,6 +77,7 @@ impl Service {
         Service::Ifs,
         Service::Messages,
         Service::Manage,
+        Service::Debug,
     ];
 
     /// The protocol version that defines it.
@@ -87,6 +91,7 @@ impl Service {
             Service::Ifs => 5,
             Service::Messages => 6,
             Service::Manage => 7,
+            Service::Debug => 9,
         }
     }
 
