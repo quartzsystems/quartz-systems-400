@@ -532,6 +532,7 @@ fn crtcmd(system: &mut System, parms: &Parms) -> CmdReply {
         },
         None => None,
     };
+    let mut found = Vec::new();
     let r = in_store(system, |txn, qsys, names| {
         let source = match &stmf {
             Some(t) => t.clone(),
@@ -539,9 +540,10 @@ fn crtcmd(system: &mut System, parms: &Parms) -> CmdReply {
         };
         let mut def = cmd::source::compile(&n, &source).map_err(|diags| {
             let mut s = String::from("CPF0276");
-            for d in diags {
-                let _ = write!(s, "\n{} {}", d.msgid, d.detail);
+            for l in cmd::source::report_lines(&diags) {
+                let _ = write!(s, "\n{l}");
             }
+            found = diags;
             s
         })?;
         def.cpp = Qual::new(&pgm, &pgmlib);
@@ -580,6 +582,16 @@ fn crtcmd(system: &mut System, parms: &Parms) -> CmdReply {
             .map_err(|e| e.to_string())?;
         Ok(())
     });
+    let at = match parms
+        .specified("SRCSTMF")
+        .then(|| parms.text("SRCSTMF"))
+        .filter(|s| !s.is_empty())
+    {
+        Some(path) => compdiag::Where::Path(path),
+        None => super::compdiags::member(&sfl, &sf, &mbr),
+    };
+    let diags = cmd::source::diagnostics(&found, &at, &mut super::compdiags::help(system));
+    super::compdiags::put(system, diags);
     match r {
         Ok(()) => done(
             format!("Command {n} created.\n"),

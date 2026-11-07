@@ -503,15 +503,11 @@ fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
         };
     if syntax_only(parms) {
         let report = syntax_report(&text, opts.naming);
-        print_listing(system, parms, &text, &report);
-        return runsqlstm_reply(Ok(report), opts.errlvl);
+        return runsqlstm_done(system, parms, &text, Ok(report), opts.errlvl);
     }
     let report = crate::svc::db::db(system)
         .and_then(|(store, ctx)| runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string()));
-    if let Ok(r) = &report {
-        print_listing(system, parms, &text, r);
-    }
-    runsqlstm_reply(report, opts.errlvl)
+    runsqlstm_done(system, parms, &text, report, opts.errlvl)
 }
 
 /// `OUTPUT(*PRINT)`: the listing spooled as a file named after the
@@ -601,6 +597,54 @@ fn print_listing(system: &mut System, parms: &Parms, text: &str, report: &RunRep
     }
 }
 
+/// `RUNSQLSTM`'s listing's messages as diagnostics, at the source member
+/// or stream file the statements came from.
+fn sql_diags(
+    system: &mut System,
+    parms: &Parms,
+    text: &str,
+    report: &RunReport,
+) -> Vec<stg::proto::CompileDiag> {
+    let stmf = parms
+        .specified("SRCSTMF")
+        .then(|| parms.text("SRCSTMF"))
+        .filter(|s| !s.is_empty());
+    let at = stmf.map_or_else(
+        || {
+            let (file, lib) = parms.qual("SRCFILE");
+            super::compdiags::member(&lib_or(&lib), &file, &parms.name("SRCMBR"))
+        },
+        compdiag::Where::Path,
+    );
+    let cell = std::cell::RefCell::new(&mut *system);
+    let words = |id: &str, v: &[&str]| crate::stgsvc::msgs::text(&mut cell.borrow_mut(), id, v);
+    let mut help = |id: &str, v: &[String]| super::compdiags::help(&mut cell.borrow_mut())(id, v);
+    super::compdiags::wire(sql::listing::diagnostics(
+        report, text, &at, &words, &mut help,
+    ))
+}
+
+/// `RUNSQLSTM` ended: its listing printed, its reply with the listing's
+/// messages as diagnostics.
+fn runsqlstm_done(
+    system: &mut System,
+    parms: &Parms,
+    text: &str,
+    report: Result<RunReport, String>,
+    errlvl: u8,
+) -> CmdReply {
+    let diagnostics = match &report {
+        Ok(r) => {
+            print_listing(system, parms, text, r);
+            sql_diags(system, parms, text, r)
+        }
+        Err(_) => Vec::new(),
+    };
+    let mut reply = runsqlstm_reply(report, errlvl);
+    reply.diagnostics = diagnostics;
+    reply
+}
+
 fn runsqlstm_reply(report: Result<RunReport, String>, errlvl: u8) -> CmdReply {
     let report = match report {
         Ok(r) => r,
@@ -647,8 +691,7 @@ pub(super) fn runsql_long(
         let report = syntax_report(&text, opts.naming);
         return Ok(Box::new(move |_: &super::longcmd::Work<'_>| {
             Box::new(move |system: &mut System| {
-                print_listing(system, &parms, &text, &report);
-                runsqlstm_reply(Ok(report), opts.errlvl)
+                runsqlstm_done(system, &parms, &text, Ok(report), opts.errlvl)
             })
         }));
     }
@@ -662,10 +705,7 @@ pub(super) fn runsql_long(
             if runsql {
                 return runsql_reply(report);
             }
-            if let Ok(r) = &report {
-                print_listing(system, &parms, &text, r);
-            }
-            runsqlstm_reply(report, opts.errlvl)
+            runsqlstm_done(system, &parms, &text, report, opts.errlvl)
         })
     }))
 }

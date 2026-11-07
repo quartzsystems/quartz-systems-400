@@ -17,6 +17,7 @@ pub(crate) mod certcmd;
 pub(crate) mod clpgm;
 mod cmncmd;
 mod cmntrc;
+pub(crate) mod compdiags;
 pub(crate) mod cstcmd;
 mod dbcmd;
 mod dbmoncmd;
@@ -75,7 +76,9 @@ pub(crate) use savcmd::trusted_keys;
 /// `typed` is the keyword form as the caller typed it, for the bridge;
 /// empty when the block is all there is.
 pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdReply {
-    let r = run_cpp(system, name, parms, typed);
+    system.compiled.clear();
+    let mut r = run_cpp(system, name, parms, typed);
+    r.diagnostics.extend(compdiags::take(system));
     // A restore or a reclaim can bring or drop time zone descriptions.
     if crate::stgsvc::timzon::touches(name) {
         crate::stgsvc::timzon::reload(system);
