@@ -322,7 +322,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `GENERATE_SQL`, `GENERATE_SQL_OBJECTS` | partial: tables, views, indexes, sequences, aliases with constraints, labels, grants and the drop, replace, unformatted, unqualified and system-name forms, laid out as pub400; other object types and options refused SQL0084; no member written in QTEMP | pub400 | `services/GENSQL` |
 | `OVERRIDE_QAQQINI` | partial: tuning options kept as no-ops; options that change results or messages refused SQL0084 unless `*DEFAULT` | none | `sql::services` |
 | `SET_SERVER_SBS_ROUTING`, `SET_PASE_SHELL_INFO` (SSH always starts QSH; no per-user shell is kept), `SYSTOOLS.LPRINTF`, `SYSTOOLS.GENERATE_SPREADSHEET` | refused SQL0084 | pub400 | |
-| `STRSQL`: saved sessions (SQL6102, SQL6335, SQL7971), F13 options 1 to 4 (session attributes reshaping as pub400's, printer file, remove entries, save to a source file), SELECT output to display, printer (`QPQUPRFIL` report) and file, display formats (edited numbers, every date and time format, `*COMMA`), F19/F20 at pub400's column widths, F4 then F12 | partial: output to a file supports options 1, 2, 4, 5; OUTMBR other than `*FILE`/`*FIRST` and OUTOPT(3) refused SQL0084; the driver has not yet run at a real console | pub400 | `isql --test services`, `isql::print`, `isql::format`, `isql::result`; `golden/sql/strsql/` |
+| `STRSQL`: saved sessions (SQL6102, SQL6335, SQL7971), F13 options 1 to 4 (session attributes reshaping as pub400's, printer file, remove entries, save to a source file), SELECT output to display, printer (`QPQUPRFIL` report) and file, display formats (edited numbers, every date and time format, `*COMMA`), F19/F20 at pub400's column widths, F4 then F12 | partial: output to a file supports options 1, 2, 4, 5; OUTMBR other than `*FILE`/`*FIRST` and OUTOPT(3) refused SQL0084; run at a real TN5250 session in QEMU steps 130 and 138 | pub400 | `isql --test services`, `isql::print`, `isql::format`, `isql::result`; `golden/sql/strsql/` |
 | `STRSQL` F4 prompts of `ALTER TABLE` through `SET TRANSACTION` (26 statements), the second `INSERT`, `UPDATE`, `CREATE INDEX` displays | supported as pub400 shows them; `ALTER TABLE`, `COMMENT ON`, `LABEL ON`, `RENAME`, `GRANT`/`REVOKE`, `CONNECT`, `RELEASE`/`DISCONNECT`, `CREATE PROCEDURE` build as far as their first display and leave the rest on the input lines; the column lists' other keys answer CPD6A60 | pub400 | `isql --test stmts` |
 | `CONNECT`, `SET CONNECTION`, `RELEASE`, `DISCONNECT` in STRSQL | supported through the DRDA client; other statements go to the current remote server; a query there refused SQL0084 (BLOCKED(sql): no column descriptions come back) | none | |
 | `DECPNT(*COMMA)` in STRSQL: a comma followed by a digit inside a number is the decimal point | supported; a second decimal point SQL0104 | pub400 | `sql::lex` |
@@ -338,7 +338,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | Other `SYSIBM` views (`_S` forms, `ROUTINES`, `PARAMETERS`, ...) | not present: SQL0204 | primary | `sysibm/SYSIBMLS` |
 | DRDA client | partial (§2) | primary | `conformance::drda_client` |
 | SQL CLI (`QSQCLI`): the 40 functions of the brief's list (handles, attributes, connect, prepare, execute, describe, bind, fetch, scroll, `SQLGetData`, diagnostics, transactions), `SQLTables`, `SQLColumns`, `SQLPrimaryKeys` | supported; bound storage checked at every use | pub400 | `rpg_kit` CLI001-CLI005, `sqlcli::engine` |
-| CLI server mode (`SQL_ATTR_SERVER_MODE`): statements in `QSQSRVR` prestart jobs in `QSYSWRK` | partial: matches pub400 in the kit, where a second session stands in for the job; the real prestart path not yet run on a system (NEEDS-CODY: QEMU) | pub400 | CLI001 |
+| CLI server mode (`SQL_ATTR_SERVER_MODE`): statements in `QSQSRVR` prestart jobs in `QSYSWRK` | supported: matches pub400 in the kit; a real `QSQSRVR` prestart job serves the connection in QEMU step 133 | pub400 | CLI001, step 133 |
 | The other 81 `QSQCLI` exports (`SQLGetInfo`, `SQLMoreResults`, the wide forms, descriptors, locators) | not present: a program that imports one fails to bind (CPD5D02) | pub400 (export list) | |
 | CLI divergences: `SQLGetData` of an integer as characters, the length of a cut column name, 01002 on disconnect | differ from pub400, listed in `docs/SYSAPI.md` §13 | pub400 | |
 | `*SQLPKG` packages: made by the host server's package requests (JTOpen extended dynamic) and by DRDA bind; statements run by name; saved and restored | supported | primary | `sql::package`, replay `database-sqlpkg`, `ddm`, `saverst::sqlpkg` |
@@ -489,7 +489,7 @@ Generated from the tables above; the rows are the authority.
 - `GENERATE_SQL`, `GENERATE_SQL_OBJECTS`: partial: tables, views, indexes, sequences, aliases with constraints, labels, grants and the drop, replace, unformatted, unqualified and system-name forms, laid out as pub400; other object types and options refused SQL0084; no member written in QTEMP
 - `OVERRIDE_QAQQINI`: partial: tuning options kept as no-ops; options that change results or messages refused SQL0084 unless `*DEFAULT`
 - `SET_SERVER_SBS_ROUTING`, `SET_PASE_SHELL_INFO` (SSH always starts QSH; no per-user shell is kept), `SYSTOOLS.LPRINTF`, `SYSTOOLS.GENERATE_SPREADSHEET`: refused SQL0084
-- `STRSQL`: saved sessions (SQL6102, SQL6335, SQL7971), F13 options 1 to 4 (session attributes reshaping as pub400's, printer file, remove entries, save to a source file), SELECT output to display, printer (`QPQUPRFIL` report) and file, display formats (edited numbers, every date and time format, `*COMMA`), F19/F20 at pub400's column widths, F4 then F12: partial: output to a file supports options 1, 2, 4, 5; OUTMBR other than `*FILE`/`*FIRST` and OUTOPT(3) refused SQL0084; the driver has not yet run at a real console
+- `STRSQL`: saved sessions (SQL6102, SQL6335, SQL7971), F13 options 1 to 4 (session attributes reshaping as pub400's, printer file, remove entries, save to a source file), SELECT output to display, printer (`QPQUPRFIL` report) and file, display formats (edited numbers, every date and time format, `*COMMA`), F19/F20 at pub400's column widths, F4 then F12: partial: output to a file supports options 1, 2, 4, 5; OUTMBR other than `*FILE`/`*FIRST` and OUTOPT(3) refused SQL0084; run at a real TN5250 session in QEMU steps 130 and 138
 - `CONNECT`, `SET CONNECTION`, `RELEASE`, `DISCONNECT` in STRSQL: supported through the DRDA client; other statements go to the current remote server; a query there refused SQL0084 (BLOCKED(sql): no column descriptions come back)
 - `RUNSQLSTM`, `RUNSQL`: partial: options checked (non-default `USRPRF`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD` and values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` without effect); a SELECT in RUNSQLSTM or RUNSQL refused SQL0084 (severity 30), as pub400; not yet run end to end
 - `CRTSQLRPGI` options: settings it does not apply refused SQL0084 (`RPGPPOPT`, `CONACC`, `DECFLTRND`, `SQLCURRULE`, `DECRESULT`, `SRTSEQ`, `DFTRDBCOL`, `DYNDFTCOL`, `SQLPATH`, `COMPILEOPT`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD`), accepted and ignored before
@@ -541,50 +541,53 @@ The SQL completion's acceptance list, as it stands at the end of the work
 | Every statement, clause, function and type in this document passes its case or is listed as refused with its SQLCODE | Met for the rows above: 160 kit cases (118 captured from the primary, 41 from pub400, 1 without an oracle), 106 agree with their capture, 54 differ, each listed in `tools/conformance/sql/known.txt` with whose the difference is; §10 lists every refusal |
 | No SQL0084 for anything marked supported | Met as far as the kit shows: no supported row's case answers SQL0084; refusals are SQL0084 or IBM's own code with a message saying what is not supported |
 | SQL PL: 50 procedures conformant | Met: 44 SQL PL cases create 139 routines on the oracles; 79 procedures are in cases that agree |
-| External RPGLE and CL procedures callable from SQL, JDBC and STRSQL with result sets | Met in the engine and the host server (`qrpgrt::sqlpl`, replay `database-callproc`); on a running system by the QEMU SQL steps (see the open items) |
+| External RPGLE and CL procedures callable from SQL, JDBC and STRSQL with result sets | Met: QEMU step 137 (an RPGLE procedure's result set and a CL `INOUT` parameter from STRSQL, embedded SQL and JDBC); reading result sets from embedded SQL is an open item |
 | Triggers fire identically from SQL and RPG writes | Met: one trigger machinery under both (`db::trg`, `qrpgrt::sqltrg`); QEMU step for RPG writes (see the open items) |
-| JTOpen `DatabaseMetaData` diff clean; ACS Run SQL Scripts checklist signed off | Primary capture kept (`jtopen/expected/oracle/metadata.out`); the QS/400 side runs in a QEMU step; ACS checklist: NEEDS-CODY |
+| JTOpen `DatabaseMetaData` diff clean; ACS Run SQL Scripts checklist signed off | `DatabaseMetaData`: met, QEMU step 132 agrees with the primary's `metadata.out` line for line; ACS checklist: NEEDS-CODY |
 | `QSYS2` services: every listed view and function present with oracle-exact columns | Met for about 80 services, every listed one except the procedures in §10; shapes held to pub400 by `sql::service_shapes`; columns QS/400 keeps no value for are null |
-| `QSQCLI` server-mode program runs a prepared statement with parameters | Met in the kit (CLI001-CLI005 agree with pub400, a second session standing in for `QSQSRVR`); on a running system by a QEMU SQL step |
-| DRDA client connects to a second QS/400 and to QSTEST read-only | QSTEST read-only on the primary: met (`conformance::drda_client`); loopback to the guest itself in a QEMU step; two guests: not run |
-| `STRSQL` panels diff clean against pub400 | Met for the 108 captured screens and the 26 statement prompts (`isql`); session save and resume at a real terminal in a QEMU SQL step |
+| `QSQCLI` server-mode program runs a prepared statement with parameters | Met: the kit (CLI001-CLI005 agree with pub400) and QEMU step 133 (a real `QSQSRVR` prestart job serves the connection) |
+| DRDA client connects to a second QS/400 and to QSTEST read-only | Met: QSTEST read-only on the primary (`conformance::drda_client`); loopback in QEMU step 134; a second QS/400 guest in QEMU step 139 |
+| `STRSQL` panels diff clean against pub400 | Met for the 108 captured screens and the 26 statement prompts (`isql`); session save and resume at a real terminal: QEMU steps 130 and 138 |
 | Benchmarks recorded; no Phase 3 regression | Met (§11); the database kit's outputs unchanged |
 | `fmtcheck`, slip-install, save/restore round trip | `fmtcheck`: met, `sql-info` and `sql-package` frozen at V1R1M0, store header at version 2 (V1R0M0's version 1 headers read); save/restore of `*SQLINF`, `*SQLPKG` and a schema with SQL objects: met in `saverst` tests and QEMU step 71; slip-install from V1R0M0: see `PHASE12.md` Release gate |
 | The SQL fuzz targets 30 minutes crash-free | Met: `sql` 10.4 million and `sqlrun` 6.9 million executions in 30 instrumented minutes each, no crash |
 
 ### QEMU
 
-Regression on the final code: steps 1, 13, 15, 16, 33, 46, 52, 54, 55, 56,
-57, 68, 71, 89, 90, 91, 92, 93 and 100 pass. The SQL steps:
+The SQL steps run in `build test`'s disk suite (`tools/conformance/src/steps.rs`): 130 to 135,
+137, 138 and 136 in the main session (136 ends with an IPL, so it runs last of them), 139 after
+it in two guests of its own. With `--only`, name 54 and 56 too. Results from GitHub runs of
+rel/rel-9 (2026-11-07): 42316635829, 42316642611 and 42316646039 at 4317fdd6; 42323304005 and
+42323333123 at 6417acbc.
 
 | Step | Result |
 |---|---|
-| 130 STRSQL | Pass: rows made, Display Data paged, F13 session options, F4 prompt, CONNECT to another server and back |
-| 131 RUNSQL and RUNSQLSTM | Pass: a source member's procedure and trigger made, the listing spooled, RUNSQL CALL and INSERT fire the trigger |
-| 132 JTOpen | Fails: `sqlpkg` agrees with the primary; `callproc` refuses its OUT VARCHAR call (open items); `metadata` differs in a few rows (open items) |
-| 133 CLI server mode | Pass |
-| 134 DRDA client | Pass: an embedded-SQL program connects to the loopback server, reads there and resets; the monitor records only local statements (open items) |
-| 135 RPG triggers | Pass: an RPG write fires both the SQL trigger and an RPG trigger program |
+| 130 STRSQL | Pass: 48 rows made, Display Data paged to its end with F20 and F19, F13 option 1 sets `*ISO`, F4 on INSERT, CONNECT TO LOOP and back, the session saved and resumed with SQL6102 |
+| 131 RUNSQL and RUNSQLSTM | Pass: a source member's procedure and trigger made, the listing spooled, RUNSQL CALL and INSERT fire the trigger, RUNSQL SELECT refused SQL0084 and SQL9010 |
+| 132 JTOpen | Pass: `jdbc`, `callproc` and `sqlpkg` agree with the primary's outcomes, `metadata` (every `DatabaseMetaData` result set) and `callout` (`OUT` parameters of 12 types and an `INOUT VARCHAR` from an SQL procedure in a server job) agree line for line |
+| 133 CLI server mode | Pass: CLI001 compiled and called, its 36 printed lines are pub400's; `QSQSRVR` prestart jobs wait in `QSYSWRK` (PJ, PSRW) and one serves a held connection (CNDW) |
+| 134 DRDA client | Pass: an embedded-SQL program connects to LOOP, reads 3 rows there, resets; the monitor file holds the CONNECTs and the query run at LOOP |
+| 135 RPG triggers | Pass: an RPG write fires the SQL before trigger and an RPG after-trigger program |
+| 137 External procedures | Pass: an RPGLE procedure with one result set and a CL procedure with an `INOUT` parameter, called from STRSQL, from embedded SQL (the CL value back) and from JDBC (the result set's rows and the CL value) |
+| 138 STRSQL session across sign-on | Pass: saved with option 1, signed off; the next sign-on's STRSQL shows the statements again with SQL6102 |
 | 136 QTEMP | Pass: QTEMP shared by CL, RUNSQL and STRSQL in one job, dropped at sign-off |
+| 139 DRDA between two guests | Pass: guest B (a copy of the disk, its own network) connects to guest A's DDM server through the host, inserts a row there and counts it; A holds the row |
 
 ### Open items
 
-- A host-server job calling an SQL procedure with an OUT VARCHAR parameter
-  ends with an addressing fault on a running system (the same call passes
-  in memory); the call is refused with SQL0084 until the cause is found
-  (BLOCKED(sql) in `work/qsjob/src/console/sqlcall.rs`). Other OUT types
-  through a server job are not yet exercised.
-- JTOpen `DatabaseMetaData` on a running system: index columns of national
-  types report NVARCHAR where the primary has NCLOB, and the version-column
-  and privilege rows differ.
-- A procedure's result-set column computed from a variable is described as
-  VARCHAR(32740); the primary has the expression's type.
-- Database monitor records for statements routed to a remote server
-  (CONNECT and what runs there) are not written.
-- CALL from the command line passes a literal to a CHAR parameter
-  unpadded where IBM pads it (`work/qsjob/src/command/jobsite.rs`).
+- Embedded SQL cannot read a procedure's result sets: `ASSOCIATE LOCATORS` and `ALLOCATE
+  CURSOR` are not supported yet (BLOCKED(rel) in `rpg/sqlpre/src/stmt.rs`); JDBC and the CLI read
+  them.
+- SQL routine parameters and variables `FOR BIT DATA` or with a CCSID other than 37 are refused
+  SQL0084 (the primary takes them; `callout` leaves that type out).
+- The database server keeps LOB locators only for its own catalog results (`SQLSTATISTICS`'
+  `COLUMN_NAME`); a LOB column of a table and `WRITE_LOB` are refused SQL0084 (BLOCKED(rel) in
+  `net/hostserver/src/database/mod.rs`).
+- JDBC `getUDTs`, `getProcedureColumns` and `getFunctionColumns` answer the primary's columns
+  but no rows (BLOCKED(rel) in `net/hostserver/src/database/catalog.rs`).
+- STRSQL's query at a remote server is refused SQL0084: the requester brings no column
+  descriptions back (BLOCKED(rel) in `work/qsjob/src/console/drda.rs`).
 - ACS Run SQL Scripts checklist (NEEDS-CODY).
-- CREATE and DROP SCHEMA have no oracle capture: neither oracle lets a
-  library be created (NEEDS-CODY).
-- The DRDA client against a second QS/400 under QEMU (two guests).
+- CREATE and DROP SCHEMA have no oracle capture: neither oracle lets a library be created
+  (NEEDS-CODY).
 - Query/400 (`WRKQRY`, `RUNQRY`, product QS00QU1) is a follow-on product.
