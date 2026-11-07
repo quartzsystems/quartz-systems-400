@@ -21,22 +21,37 @@
     clippy::struct_excessive_bools
 )]
 
-pub mod analyze;
-pub mod block;
+// The front end (`front`): the tokenizer, the definition model, the
+// definition source compiler and its rules, and `analysis`.
+#[cfg(feature = "front")]
+pub mod analysis;
 pub mod def;
 pub mod error;
-pub mod payload;
-pub mod prompt;
 pub mod rules;
 pub mod source;
-pub mod store;
 pub mod token;
 pub mod value;
 
+// The rest (`lower`): the analyzer, parameter blocks, the *CMD payload,
+// the prompter and the store.
+#[cfg(feature = "lower")]
+pub mod analyze;
+#[cfg(feature = "lower")]
+pub mod block;
+#[cfg(feature = "lower")]
+pub mod payload;
+#[cfg(feature = "lower")]
+pub mod prompt;
+#[cfg(feature = "lower")]
+pub mod store;
+
+#[cfg(feature = "lower")]
 pub use analyze::{Bound, CmdSource, Env, MemSource, Resolved, Setting, analyze};
+#[cfg(feature = "lower")]
 pub use block::{Built, Parms, Segment};
 pub use def::{CmdDef, Parm, ParmType, Qual};
 pub use error::{CmdError, Diag, Result};
+#[cfg(feature = "lower")]
 pub use payload::CmdObject;
 pub use token::{Sel, Tok};
 pub use value::Value;

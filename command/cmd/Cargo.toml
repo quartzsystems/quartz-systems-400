@@ -6,12 +6,22 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[features]
+default = ["front", "lower"]
+# The definition source compiler as a library: the tokenizer, the
+# model, the rules and analysis::analyze, with compdiag's diagnostics.
+front = ["dep:compdiag"]
+# The analyzer, parameter blocks, the *CMD payload, the prompter and
+# the store.
+lower = ["front", "dep:store", "dep:qsname"]
+
 [dependencies]
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
-qsname = { path = "../../storage/qsname", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0", optional = true }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
-store = { path = "../../storage/store", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0", optional = true }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0", optional = true }
 serde.workspace = true
 toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
 thiserror.workspace = true
@@ -21,3 +31,20 @@ blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
 
 [lints]
 workspace = true
+
+# The tests that need the store and the analyzer.
+[[test]]
+name = "analyze"
+required-features = ["lower"]
+
+[[test]]
+name = "prompt"
+required-features = ["lower"]
+
+[[test]]
+name = "spec"
+required-features = ["lower"]
+
+[[test]]
+name = "store"
+required-features = ["lower"]

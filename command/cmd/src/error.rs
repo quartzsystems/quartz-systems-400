@@ -161,13 +161,6 @@ impl fmt::Display for CmdError {
 
 impl std::error::Error for CmdError {}
 
-impl From<store::StoreError> for CmdError {
-    fn from(e: store::StoreError) -> Self {
-        let id = e.msgid().unwrap_or("CPF9999");
-        Self::detail(id, e.to_string())
-    }
-}
-
 impl From<ipc::WireError> for CmdError {
     fn from(e: ipc::WireError) -> Self {
         Self::detail("CPF0006", format!("command definition damaged: {e}"))
