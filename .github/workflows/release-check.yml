@@ -1,0 +1,37 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The reproducibility check (docs/TOOLS.md, "Reproducible releases"): a
+# release built from scratch with the development keys on a fresh
+# GitHub-hosted runner, its SHA256SUMS uploaded. Two runs of the same
+# commit must give the same sums for every file but the signatures.
+# On demand: `gh workflow run release-check.yml --ref main`.
+
+name: release-check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: build release (development keys)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
+      - run: cargo run -q -p build -- all --release
+      - run: cargo run -q -p build -- release
+      - name: Sums
+        run: |
+          out=$(ls -d target/release/V*)
+          cat "$out/SHA256SUMS"
+          cp "$out/SHA256SUMS" "SHA256SUMS-${{ github.run_id }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sha256sums-${{ github.run_id }}
+          path: SHA256SUMS-${{ github.run_id }}
