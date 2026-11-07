@@ -22,7 +22,6 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
-use std::fmt::Write as _;
 use std::os::unix::net::UnixListener;
 use std::rc::Rc;
 use std::time::Duration;
@@ -72,12 +71,30 @@ thread_local! {
     /// The service while a fiber runs.
     static PARKED: RefCell<Option<Box<Svc>>> = const { RefCell::new(None) };
     /// What [`load`] reports, as of the last pass of the loop.
-    static LOAD: RefCell<String> = const { RefCell::new(String::new()) };
+    static LOAD: RefCell<Load> = const {
+        RefCell::new(Load {
+            fibers: Vec::new(),
+            queued: 0,
+        })
+    };
 }
 
-/// The statements in progress (by job, `W` when waiting for its job)
-/// and those queued, as of the last pass (`txn stats`).
-pub fn load() -> String {
+/// The statements in progress and queued, as of the last pass of the
+/// loop (`txn stats`).
+#[derive(Clone, Debug, Default)]
+pub struct Load {
+    /// Each statement in progress: its job's number, and whether it
+    /// waits for its job.
+    pub fibers: Vec<(u32, bool)>,
+    /// Statements waiting for a fiber.
+    pub queued: usize,
+}
+
+/// The most statements in progress at once.
+pub const MOST: usize = MAX_FIBERS;
+
+/// The statements as of the last pass.
+pub fn load() -> Load {
     LOAD.with(|l| l.borrow().clone())
 }
 
@@ -87,16 +104,15 @@ fn note_load(svc: &Svc) {
             .and_then(|i| svc.conns[i].ctx.as_ref())
             .map_or(0, |c| c.job.number)
     };
-    let mut s = format!(
-        "statements in progress {} of {MAX_FIBERS}, queued {}:",
-        svc.fibers.len(),
-        svc.queued.len()
-    );
-    for (t, _) in &svc.fibers {
-        let w = if t.waiting.get() { "W" } else { "" };
-        let _ = write!(s, " {:06}{w}", job(t.id));
-    }
-    LOAD.with(|l| *l.borrow_mut() = s);
+    let l = Load {
+        fibers: svc
+            .fibers
+            .iter()
+            .map(|(t, _)| (job(t.id), t.waiting.get()))
+            .collect(),
+        queued: svc.queued.len(),
+    };
+    LOAD.with(|s| *s.borrow_mut() = l);
 }
 
 fn park(svc: Box<Svc>) {

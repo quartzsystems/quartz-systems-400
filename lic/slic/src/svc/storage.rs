@@ -356,8 +356,19 @@ pub fn txn_stats(system: &mut System) -> String {
         return "object store not open\n".to_string();
     };
     let st = s.store.stats();
+    // The statements in progress by job number, `W` when one waits for
+    // its job.
+    let load = crate::stgsvc::turns::load();
+    let mut jobs = String::new();
+    for (n, waits) in &load.fibers {
+        jobs.push(' ');
+        jobs.push_str(&n.to_string());
+        if *waits {
+            jobs.push('W');
+        }
+    }
     format!(
-        "commits {} aborts {} checkpoints {}\nWAL pages {} images {} patches {}\ncache hits {} misses {} evictions {} held {} of {} pages\n{}\n",
+        "commits {} aborts {} checkpoints {}\nWAL pages {} images {} patches {}\ncache hits {} misses {} evictions {} held {} of {} pages\nstatements {} of {} queued {}:{}\n",
         st.commits,
         st.aborts,
         st.checkpoints,
@@ -369,7 +380,10 @@ pub fn txn_stats(system: &mut System) -> String {
         st.cache.evictions,
         st.cache.held,
         st.cache.capacity,
-        crate::stgsvc::turns::load()
+        load.fibers.len(),
+        crate::stgsvc::turns::MOST,
+        load.queued,
+        jobs
     )
 }
 
