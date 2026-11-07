@@ -501,11 +501,13 @@ pub fn public_for(type_code: u16, name: &str) -> Authority {
 
 /// Whether an object the system itself makes in `QSYS` takes its
 /// shipped `*PUBLIC` rather than the library's creation authority: the
-/// data areas it keeps (`QJOBNBR`, `QSECLVL` ...) and the history log
-/// files (`QHST...`).
+/// data areas it keeps (`QJOBNBR`, `QSECLVL` ...), the history log
+/// files (`QHST...`) and the product definitions and loads `RSTLICPGM`
+/// registers.
 #[must_use]
 pub fn system_kept(type_code: u16, name: &str) -> bool {
-    type_code == types::DTAARA || (type_code == types::FILE && name.starts_with("QHST"))
+    matches!(type_code, types::DTAARA | types::PRDDFN | types::PRDLOD)
+        || (type_code == types::FILE && name.starts_with("QHST"))
 }
 
 /// The objects of [`system_kept`] in `QSYS`, owned by `QSYS`, with a
@@ -515,7 +517,10 @@ pub fn narrow_system_objects(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize>
     let lib = store::obj::library::Library::load(txn, qsys)?;
     let mut n = 0;
     for (_, id) in lib.list(txn, None)? {
-        if id.type_code != types::DTAARA && id.type_code != types::FILE {
+        if !matches!(
+            id.type_code,
+            types::DTAARA | types::FILE | types::PRDDFN | types::PRDLOD
+        ) {
             continue;
         }
         let (page, mut h) = read_header(txn, id)?;
