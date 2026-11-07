@@ -708,14 +708,26 @@ impl Provider for StoreProvider {
             let d = db::file::describe(txn, id).map_err(|e| e.to_string())?;
             Ok(d.members
                 .iter()
-                .map(|m| MemberInfo {
-                    name: m.name.to_string(),
-                    srctype: m.srctype.map(|n| n.to_string()).unwrap_or_default(),
-                    created: stamp(d.header.created),
-                    changed: stamp(d.header.changed),
-                    text: String::new(),
-                    records: 0,
-                    deleted: 0,
+                .map(|m| {
+                    // Each member's own header and counts, as DSPFD *MBRLIST shows.
+                    let h = ops::read_header(txn, m.object).ok().map(|(_, h)| h);
+                    let core = db::member::Core::load(txn, m.object).ok();
+                    let when = |f: fn(&store::obj::header::ObjectHeader) -> u64| {
+                        stamp(h.as_ref().map_or(d.header.created, f))
+                    };
+                    MemberInfo {
+                        name: m.name.to_string(),
+                        srctype: m.srctype.map(|n| n.to_string()).unwrap_or_default(),
+                        created: when(|h| h.created),
+                        changed: when(|h| h.changed),
+                        text: h.as_ref().map(|h| text_of(&h.text)).unwrap_or_default(),
+                        records: core.as_ref().map_or(0, |c| {
+                            u32::try_from(c.attr.record_count).unwrap_or(u32::MAX)
+                        }),
+                        deleted: core.as_ref().map_or(0, |c| {
+                            u32::try_from(c.attr.deleted_count).unwrap_or(u32::MAX)
+                        }),
+                    }
                 })
                 .collect())
         })
