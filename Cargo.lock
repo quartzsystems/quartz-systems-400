@@ -515,6 +515,7 @@ dependencies = [
  "cl",
  "clap",
  "cmd",
+ "compdiag",
  "console",
  "crc",
  "db",
@@ -535,6 +536,7 @@ dependencies = [
  "lpd",
  "mail",
  "mi",
+ "msgf",
  "ntp",
  "optical",
  "print",
@@ -1759,6 +1761,7 @@ dependencies = [
  "blockdev",
  "ccsid",
  "codegen",
+ "compdiag",
  "qir",
  "qsname",
  "release",
@@ -2887,6 +2890,7 @@ name = "rpgc"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "compdiag",
  "ile",
  "qdecimal",
  "qir",

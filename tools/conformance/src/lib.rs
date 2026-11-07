@@ -19,6 +19,7 @@ mod certstep;
 pub mod cl;
 pub mod cmdkit;
 mod cmn;
+pub mod compdiag;
 mod console;
 pub mod db;
 mod ddmstep;
@@ -33,6 +34,7 @@ pub mod ftp;
 mod ftpsrv;
 #[cfg(unix)]
 mod guest;
+pub mod hlinv;
 mod hostsvr;
 mod httpadm;
 mod httpsvr;
