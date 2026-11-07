@@ -53,6 +53,19 @@ pub(crate) fn start(system: &mut System) -> String {
 }
 
 /// `/QOPT` in line with the catalogs.
+/// The store closes: every optical volume written and let go, and the
+/// catalogs with them, so no image file in the IFS stays open.
+pub(crate) fn stop() {
+    let set = volume_set();
+    if let Err(e) = set.sync_all() {
+        eprintln!("qsstg: optical volumes: {e}");
+    }
+    for v in set.names() {
+        let _ = set.remove(&v);
+    }
+    *lock() = None;
+}
+
 fn sync() {
     if let Some(r) = lock().as_mut()
         && let Err(e) = r.sync_volumes(&volume_set())

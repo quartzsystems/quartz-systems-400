@@ -228,22 +228,50 @@ pub fn close() -> Option<String> {
     // started and left) would keep the filesystem alive under a stopped
     // device, and the stop would wait for it forever.
     end_holders();
+    // The service's own: optical image files in the IFS.
+    super::media::stop();
     if plat::mounted(QOPENSYS_EXEC).is_some() && plat::unmount_xfs(QOPENSYS_EXEC).is_err() {
         let _ = rustix::mount::unmount(QOPENSYS_EXEC, rustix::mount::UnmountFlags::DETACH);
     }
     super::ifs::shut();
     let line = match plat::unmount_xfs(MOUNT_POINT) {
-        Ok(()) => UNMOUNTED.to_string(),
+        Ok(()) => {
+            if let Err(e) = sv.device.stop() {
+                eprintln!("qsstg: IFS device: {e}");
+            }
+            UNMOUNTED.to_string()
+        }
         Err(e) => {
+            // Still in use: what this process holds there, then detached.
+            // The device is left to end with the process, as a stop would
+            // wait for the filesystem's last user.
+            for path in own_files() {
+                eprintln!("qsstg: IFS busy at the close: {path}");
+            }
             let _ = rustix::mount::unmount(MOUNT_POINT, rustix::mount::UnmountFlags::DETACH);
             format!("IFS detached: {e}")
         }
     };
-    if let Err(e) = sv.device.stop() {
-        eprintln!("qsstg: IFS device: {e}");
-    }
     let _ = sv.io.flush();
     Some(line)
+}
+
+/// The files this process has open in the IFS.
+fn own_files() -> Vec<String> {
+    use std::os::unix::fs::MetadataExt as _;
+    let Ok(dev) = std::fs::metadata(MOUNT_POINT).map(|m| m.dev()) else {
+        return Vec::new();
+    };
+    std::fs::read_dir("/proc/self/fd")
+        .map(|d| {
+            d.flatten()
+                .map(|f| f.path())
+                .filter(|p| std::fs::metadata(p).is_ok_and(|m| m.dev() == dev))
+                .filter_map(|p| std::fs::read_link(p).ok())
+                .map(|p| p.display().to_string())
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// `svc.ifs`'s lines about the volume.
