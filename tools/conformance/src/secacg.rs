@@ -169,6 +169,15 @@ impl Suite {
             }
             std::thread::sleep(Duration::from_secs(1));
         }
+        if !all.contains("ACGJOB1") || all.matches("ACGJOB2").count() < 2 {
+            let mut why = String::new();
+            for cmd in ["wrkjobq QGPL/QBATCH", "wrksbs", "wrkactjob"] {
+                why.push_str(&s.command(cmd, CMD).unwrap_or_default());
+            }
+            return Err(format!(
+                "the batch jobs left no JB entries in 60s:\n{all}\n{why}"
+            ));
+        }
         // Through the model files.
         let mk = s.command(
             "svc.sql CREATE TABLE QGPL.ACGJB AS (SELECT * FROM QSYS.QAJBACG) WITH NO DATA;",
