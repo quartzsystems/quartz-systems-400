@@ -141,3 +141,44 @@ fn private_authorities_survive_the_owner_too() {
     assert_eq!(s.get(&bx, REG), b"five");
     assert_eq!(d.dspaut(REG).unwrap().owner, "BOB");
 }
+
+#[test]
+fn public_authority_survives_the_owner() {
+    // Step 86: CHGAUT gave *PUBLIC *RWX; the owner's rewrite keeps it, so
+    // another profile still writes the file.
+    let s = setup();
+    let bob = user("BOB");
+    let bx = s.cx(&bob, 2);
+    let public = ChgAut {
+        who: vec![Who::Public],
+        data: Some(DataAuth::of(ifs::auth::data::RWX)),
+        ..ChgAut::default()
+    };
+    s.ifs.chgaut(&bx, REG, &public).unwrap();
+    s.ifs.chgaut(&bx, "/www", &public).unwrap();
+    let d = Direct {
+        ifs: &s.ifs,
+        cx: &bx,
+    };
+    replace(&d, REG, b"six", 0o644).unwrap();
+    let a = d.dspaut(REG).unwrap();
+    assert!(
+        a.entries
+            .iter()
+            .any(|e| e.role == Role::Public && e.data == "*RWX"),
+        "{a:?}"
+    );
+    let zed = user("ZED");
+    let zx = s.cx(&zed, 3);
+    replace(
+        &Direct {
+            ifs: &s.ifs,
+            cx: &zx,
+        },
+        REG,
+        b"seven",
+        0o644,
+    )
+    .unwrap();
+    assert_eq!(s.get(&bx, REG), b"seven");
+}
