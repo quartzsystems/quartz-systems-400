@@ -74,6 +74,11 @@ const MESSAGES: &[Desc] = &[
     ("CPFA0A9", 40, "&1 was not found.", "No object has the path name given.", "Check the name with WRKLNK."),
     ("CPFA0AC", 40, "Directory &1 is not empty.", "A directory must be empty before it is removed, unless the command removes its contents too.", "Remove what it holds first."),
     ("CPFA0DA", 40, "&1 is a directory.", "The operation needs an object that is not a directory.", "Name a file."),
+    ("CPF3303", 40, "&1 is not authorized to output queue &2.", "Working with another user's spooled files needs special authority *SPLCTL or *JOBCTL, or authority to the output queue.", "Ask your security officer for the authority."),
+    ("CPF3309", 40, "No spooled file &1.", "No spooled file has the name, job and number given.", "Refresh the list and try again."),
+    ("CPF3330", 40, "Spooled file &1 is being printed.", "A file being printed cannot be moved.", "Hold it first, or wait until it has printed."),
+    ("CPI9801", 0, "Search string &1 not found.", "No page of the spooled file holds the text.", "Search for other text."),
+    ("CPF3337", 40, "Spooled file not released: it is neither held nor saved.", "Only a held or saved spooled file can be released.", "None."),
 ];
 
 /// The text of `id` with `data` substituted.

@@ -195,6 +195,8 @@ pub fn proto(url: &str) -> Option<String> {
         ["print"] => "printer-output".into(),
         ["print", "props", _] => "splf-props".into(),
         ["print", "printers"] => "printers".into(),
+        ["print", "view", ..] => return Some("nav/spooled-view.html".into()),
+        ["print", "act"] => "printer-output".into(),
         // Messages.
         ["messages"] => "messages".into(),
         ["messages", "arrived"] => "message-arrived".into(),

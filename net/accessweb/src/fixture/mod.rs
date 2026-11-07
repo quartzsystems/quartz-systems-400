@@ -241,7 +241,7 @@ pub fn fixture() -> Fixture {
     let s5250 = Arc::new(session5250::Fixture5250::default());
     let db = Arc::new(db::FixtureDb::default());
     let fs = Arc::new(files::FixtureFiles::default());
-    let prt = Arc::new(print::FixturePrint);
+    let prt = Arc::new(print::FixturePrint::default());
     let env = Env {
         system: system.clone(),
         policy: pol.clone(),

@@ -148,6 +148,26 @@ pub const TOPICS: &[Topic] = &[
         title: "My files",
         body: "<p>Your home directory and the shares you are authorized to, each with the space used under it. <b>Browse</b> opens it in Browse files. A policy can limit you to your home directory.</p>",
     },
+    Topic {
+        key: "printer-output",
+        title: "Printer output",
+        body: "<p>Your spooled files, or with the authority and the policy other users' too. The filter chooses the user, the output queue (or type one), the status, the form type and the user data; <b>Refresh</b> reads the list again and <b>Auto-refresh</b> does so every 15, 30 or 60 seconds. A column heading sorts the page shown.</p>\n<p><b>Open</b> shows a file a page at a time; <b>PDF</b> and <b>Text</b> give all of it. Select files to <b>Hold</b> them (now, or once the page being printed is done), <b>Release</b>, <b>Delete</b> or <b>Move</b> them to another output queue, at its end or its top, or to save one as PDF or text. When an action on several files is refused for some, each file's result is listed.</p>",
+    },
+    Topic {
+        key: "splf-props",
+        title: "Spooled file properties",
+        body: "<p>Every attribute of the spooled file: its job and number, status, queue, pages and copies, form type and priority, when it was made, its device type and page layout, and the writer printing it.</p>",
+    },
+    Topic {
+        key: "splf-view",
+        title: "Spooled file",
+        body: "<p>One page of the spooled file as it prints, column for column. Go to a page by its number, step with Previous and Next, or Find the next page holding some text. <b>View as PDF</b> and <b>Download text</b> give the whole file.</p>",
+    },
+    Topic {
+        key: "printers",
+        title: "Printers",
+        body: "<p>The printers of the system, whether their writers are started, and their output queues. <b>Print to</b> opens Printer output ready to move files to the printer's queue; <b>Output</b> lists the files waiting on it.</p>",
+    },
 ];
 
 /// The topic of `key` (title, body HTML); the contents for any other.

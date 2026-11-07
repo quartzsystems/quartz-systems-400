@@ -225,7 +225,6 @@ fn areas_not_built_say_so() {
 
 /// Routes not built yet, by area: each area's agent removes its own.
 const PENDING: &[(&str, &[&str])] = &[
-    ("print", &["/print"]),
     ("msgs", &["/messages"]),
     ("jobs", &["/jobs"]),
     ("cmd", &["/cmd"]),
