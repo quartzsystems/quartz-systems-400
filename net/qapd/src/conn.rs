@@ -78,6 +78,8 @@ pub(crate) struct Shared {
     pub session: Mutex<Option<(Token, String)>>,
     /// Bumped each time the job runs as another profile.
     pub swaps: AtomicU64,
+    /// The `WriteMember`s in progress (version 8).
+    pub pieces: crate::develop::Pieces,
     /// Where `ReadFile`s of mixed files stopped, and in which state.
     pub files: crate::files::Memo,
     /// Sign-on, password changes, resume and sign-off, one at a time.
@@ -198,6 +200,10 @@ impl<H: Host> Main<'_, H> {
                 },
                 Err(_) => Answer::status(Status::InvalidRequest),
             },
+            op if op.code().0 == Service::Develop => {
+                let (cancels, id) = (&self.shared.cancels, req.request_id);
+                crate::develop::lane(self.host, op, req, &|| cancelled(cancels, id))
+            }
             op if op.code().0 == Service::Sql => {
                 let (cancels, id) = (&self.shared.cancels, req.request_id);
                 crate::sql::lane(self.host, op, req, &|| cancelled(cancels, id))
@@ -318,6 +324,7 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identi
         session: Mutex::new(None),
         swaps: AtomicU64::new(0),
         files: crate::files::Memo::default(),
+        pieces: crate::develop::Pieces::default(),
         signon: Mutex::new(()),
         watch: Arc::clone(&watch),
         watches: Mutex::new(Watches::default()),

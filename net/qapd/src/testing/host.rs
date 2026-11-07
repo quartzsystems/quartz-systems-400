@@ -10,6 +10,12 @@ use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::ops::develop::{
+    ChangeMember, CopyMember, CreateMember, DescribeObject, Library, LibraryList, ListLibraries,
+    ListMembers, ListObjects, MemberData, MemberEntry, ObjectDescription, ObjectEntry,
+    RenameMember, SetLibraryList,
+};
+use qap_proto::ops::jobs::{EndJob, JobEntry, JobLogEntry, ListJobs};
 use qap_proto::ops::manage::{
     DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType,
     SetSystemValue, Subsystem, SystemValue, SystemValues,
@@ -24,11 +30,11 @@ use qap_proto::ops::spool::{
     SpooledFiles,
 };
 use qap_proto::ops::sql::{
-    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared,
-    Schemas, SetOptions, Tables,
+    Columns, Execute, Executed, Fetch, Fetched, Indexes, ListColumns, ListIndexes, ListRoutines,
+    ListSchemas, ListTables, Prepared, Routine, Schemas, SetOptions, Tables,
 };
 use qap_proto::ops::system::{Product, SystemInfo};
-use qap_proto::types::{JobId, ObjectName};
+use qap_proto::types::{JobId, MemberName, ObjectName, SourceRecord};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
 use ifs::client::IfsClient;
@@ -253,7 +259,12 @@ impl Host for MemHost {
             }
             "CHGCURLIB" => {
                 let lib = get("CURLIB").unwrap_or_default().to_ascii_uppercase();
-                if lib != "*CRTDFT" && !lock(&self.sys.libraries).contains(&lib) {
+                let known = lock(&self.sys.libraries).contains(&lib)
+                    || lock(&self.sys.develop)
+                        .libs
+                        .iter()
+                        .any(|l| l.lib.name == lib);
+                if lib != "*CRTDFT" && !known {
                     return self.ran(Status::Error, &[("CPF2110", &[&lib])]);
                 }
                 lock(&self.sys.curlib).insert(self.job, lib);
@@ -387,6 +398,34 @@ impl Host for MemHost {
 
     fn sql_end(&mut self) {
         self.sql.end(&self.sys.sql);
+    }
+
+    fn library_list(&mut self) -> Result<LibraryList, Refusal> {
+        let mut l = lock(&self.sys.develop).libl(self.job);
+        // `CHGCURLIB` through `RunCommand` sets the same current library.
+        if let Some(c) = lock(&self.sys.curlib).get(&self.job) {
+            l.current = (c != "*CRTDFT").then(|| c.clone());
+        }
+        Ok(l)
+    }
+
+    fn set_library_list(&mut self, req: &SetLibraryList) -> Result<LibraryList, Refusal> {
+        let me = me(&self.sys, self.job).unwrap_or_default();
+        let r = lock(&self.sys.develop).set_libl(self.job, &me, req);
+        match r {
+            Ok(l) => {
+                let mut cur = lock(&self.sys.curlib);
+                match &l.current {
+                    Some(c) => cur.insert(self.job, c.clone()),
+                    None => cur.remove(&self.job),
+                };
+                Ok(l)
+            }
+            Err((status, id, data)) => {
+                let data: Vec<&str> = data.iter().map(String::as_str).collect();
+                Err(self.refuse(status, id, &data))
+            }
+        }
     }
 
     fn threads(&mut self) -> Threads {
@@ -862,9 +901,152 @@ impl ThreadHost for MemThread {
         });
         Ok(())
     }
+
+    // `Develop` (version 8): `super::develop`.
+
+    fn list_libraries(&mut self, req: &ListLibraries) -> Result<Vec<Library>, Refusal> {
+        let me = self.me().unwrap_or_default();
+        Ok(lock(&self.sys.develop).libraries(&me, &req.pattern))
+    }
+
+    fn list_objects(&mut self, req: &ListObjects) -> Result<Vec<ObjectEntry>, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.develop).objects(self.job, &me, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn describe_object(&mut self, req: &DescribeObject) -> Result<ObjectDescription, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.develop).describe(self.job, &me, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn list_members(&mut self, req: &ListMembers) -> Result<Vec<MemberEntry>, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.develop).members(self.job, &me, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn read_member(&mut self, member: &MemberName, lock_it: bool) -> Result<MemberData, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.develop).read(self.job, &me, member, lock_it);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn write_member(
+        &mut self,
+        member: &MemberName,
+        records: Vec<SourceRecord>,
+        renumber: bool,
+        srctype: Option<&str>,
+        text: Option<&str>,
+    ) -> Result<u32, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let now = self.sys.now();
+        let today = crate::develop::yymmdd(now);
+        let ms = i64::try_from(now).unwrap_or(0) * 1000;
+        let r = lock(&self.sys.develop).write(
+            self.job,
+            &me,
+            member,
+            records,
+            renumber,
+            (srctype, text),
+            (today, ms),
+        );
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn unlock_member(&mut self, member: &MemberName) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.develop).unlock(self.job, &me, member);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn create_member(&mut self, req: &CreateMember) -> Result<(), Refusal> {
+        let (me, ms) = (self.me().unwrap_or_default(), self.now_ms());
+        let r = lock(&self.sys.develop).create(self.job, &me, req, ms);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn copy_member(&mut self, req: &CopyMember) -> Result<(), Refusal> {
+        let (me, ms) = (self.me().unwrap_or_default(), self.now_ms());
+        let r = lock(&self.sys.develop).copy(self.job, &me, req, ms);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn rename_member(&mut self, req: &RenameMember) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.develop).rename(self.job, &me, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn delete_member(&mut self, member: &MemberName) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.develop).delete(self.job, &me, member);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn change_member(&mut self, req: &ChangeMember) -> Result<(), Refusal> {
+        let (me, ms) = (self.me().unwrap_or_default(), self.now_ms());
+        let r = lock(&self.sys.develop).change(self.job, &me, req, ms);
+        r.map_err(|n| self.no(&n))
+    }
+
+    // `Jobs` (version 8): `super::jobs`.
+
+    fn list_jobs(&mut self, req: &ListJobs) -> Result<Vec<JobEntry>, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let jobctl = self.has("*JOBCTL");
+        let users: Vec<String> = lock(&self.sys.users).keys().cloned().collect();
+        let known = |u: &str| users.iter().any(|k| k == u);
+        let r = lock(&self.sys.jobs).list(&me, jobctl, &known, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn job_log(&mut self, job: &JobId) -> Result<Vec<JobLogEntry>, Refusal> {
+        let (me, jobctl) = (self.me().unwrap_or_default(), self.has("*JOBCTL"));
+        let r = lock(&self.sys.jobs).log(&me, jobctl, job);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn hold_job(&mut self, job: &JobId) -> Result<(), Refusal> {
+        let (me, jobctl) = (self.me().unwrap_or_default(), self.has("*JOBCTL"));
+        let r = lock(&self.sys.jobs).hold(&me, jobctl, job, true);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn release_job(&mut self, job: &JobId) -> Result<(), Refusal> {
+        let (me, jobctl) = (self.me().unwrap_or_default(), self.has("*JOBCTL"));
+        let r = lock(&self.sys.jobs).hold(&me, jobctl, job, false);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn end_job(&mut self, req: &EndJob) -> Result<(), Refusal> {
+        let (me, jobctl) = (self.me().unwrap_or_default(), self.has("*JOBCTL"));
+        let r = lock(&self.sys.jobs).end(&me, jobctl, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    // `Sql` 12 and 13 (version 8).
+
+    fn list_routines(&mut self, req: &ListRoutines) -> Result<Vec<Routine>, Refusal> {
+        super::jobs::list_routines(req).map_err(|n| self.no(&n))
+    }
+
+    fn list_indexes(&mut self, req: &ListIndexes) -> Result<Indexes, Refusal> {
+        let me = self.me().unwrap_or_default();
+        super::jobs::list_indexes(&me, req).map_err(|n| self.no(&n))
+    }
 }
 
 impl MemThread {
+    /// Whether the signed-on profile has special authority `what`.
+    fn has(&self, what: &str) -> bool {
+        let me = self.me().unwrap_or_default();
+        self.sys.get(&me).special.iter().any(|s| s == what)
+    }
+
     /// The special authorities `needs` names, all of them; else
     /// `NotAuthorized` with `CPF222E` naming the first missing, and an
     /// `AF K` entry.

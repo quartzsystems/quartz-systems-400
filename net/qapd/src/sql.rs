@@ -12,8 +12,8 @@
 
 use ipc::Wire;
 use qap_proto::ops::sql::{
-    CursorRef, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepare,
-    SetOptions, SqlFailure, StatementRef,
+    CursorRef, Execute, Executed, Fetch, Fetched, ListColumns, ListIndexes, ListRoutines,
+    ListSchemas, ListTables, Prepare, Routines, SetOptions, SqlFailure, StatementRef,
 };
 use qap_proto::{Envelope, Op, ServerMessage, Status};
 
@@ -174,7 +174,8 @@ fn after_fetch<H: Host + ?Sized>(
     }
 }
 
-/// Answer a catalog list (`Sql` 9 to 11) on a secondary thread.
+/// Answer a catalog list (`Sql` 9 to 11, and 12 and 13 from version 8)
+/// on a secondary thread.
 pub(crate) fn catalog(host: &mut dyn ThreadHost, op: Op, req: &Envelope) -> Answer {
     let ok = |r: Result<_, Refusal>| -> Answer {
         match r {
@@ -189,6 +190,17 @@ pub(crate) fn catalog(host: &mut dyn ThreadHost, op: Op, req: &Envelope) -> Answ
         },
         Op::ListTables => match req.body_as::<ListTables>() {
             Ok(b) => ok(host.list_tables(&b).map(|r| Answer::ok(&r))),
+            Err(_) => Answer::status(Status::InvalidRequest),
+        },
+        Op::ListRoutines => match req.body_as::<ListRoutines>() {
+            Ok(b) => ok(host.list_routines(&b).map(|all| {
+                let (total, routines) = page(all, b.start, b.max);
+                Answer::ok(&Routines { total, routines })
+            })),
+            Err(_) => Answer::status(Status::InvalidRequest),
+        },
+        Op::ListIndexes => match req.body_as::<ListIndexes>() {
+            Ok(b) => ok(host.list_indexes(&b).map(|r| Answer::ok(&r))),
             Err(_) => Answer::status(Status::InvalidRequest),
         },
         Op::ListColumns => match req.body_as::<ListColumns>() {
