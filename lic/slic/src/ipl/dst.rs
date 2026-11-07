@@ -203,7 +203,7 @@ fn resource_for(_system: &System, device: &str) -> String {
         diskimg::locate::disk_of(std::path::Path::new(device)).unwrap_or_else(|| name.to_string());
     hw().resources
         .iter()
-        .find(|r| r.kind == Kind::Disk && r.location == disk)
+        .find(|r| r.kind == Kind::Disk && r.operational() && r.location == disk)
         .map_or_else(|| "-----".to_string(), |r| r.name.clone())
 }
 

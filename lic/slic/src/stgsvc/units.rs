@@ -144,7 +144,7 @@ fn identity(hw: &hwrsrc::Table, device: Option<&Path>) -> (String, String) {
     let type_code = hw
         .resources
         .iter()
-        .find(|r| r.kind == hwrsrc::Kind::Disk && r.location == disk)
+        .find(|r| r.kind == hwrsrc::Kind::Disk && r.operational() && r.location == disk)
         .map_or_else(
             || {
                 let dir = Path::new("/sys/class/block").join(&disk);

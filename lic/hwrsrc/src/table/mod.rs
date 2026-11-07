@@ -511,13 +511,13 @@ impl Table {
         let ctl_at = |t: &Table, addr: &str| {
             t.resources
                 .iter()
-                .find(|r| r.kind == Kind::Storage && r.location == addr)
+                .find(|r| r.kind == Kind::Storage && r.operational() && r.location == addr)
                 .map(|r| r.name.clone())
         };
         let lan_at = |t: &Table, addr: &str| {
             t.resources
                 .iter()
-                .find(|r| r.kind == Kind::Lan && r.location == addr)
+                .find(|r| r.kind == Kind::Lan && r.operational() && r.location == addr)
                 .map(|r| r.name.clone())
         };
         let mut links = Vec::new();
@@ -752,7 +752,7 @@ impl Table {
     fn controller_at(&self, address: &str) -> Option<&Resource> {
         self.resources
             .iter()
-            .find(|r| r.kind == Kind::Storage && r.location == address)
+            .find(|r| r.kind == Kind::Storage && r.operational() && r.location == address)
     }
 
     /// The storage controller a disk (`sda`) is attached through.
@@ -761,7 +761,9 @@ impl Table {
         let d = self
             .resources
             .iter()
-            .find(|r| matches!(r.kind, Kind::Disk | Kind::Optical) && r.location == disk)?;
+            .find(|r| {
+                matches!(r.kind, Kind::Disk | Kind::Optical) && r.operational() && r.location == disk
+            })?;
         self.controller_at(&pci::address_in(&d.devpath)?)
     }
 
