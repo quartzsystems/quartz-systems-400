@@ -175,11 +175,11 @@ pub const CMD_NOT_FOUND: &str = "QAD5013";
 /// A checked command has errors (the desktop's).
 pub const CMD_ERRORS: &str = "QAD5020";
 /// A reply sent (the desktop's).
-pub const REPLY_SENT: &str = "QAD9002";
+pub const MSG_REPLY_SENT: &str = "QAD9002";
 /// Messages removed (the desktop's).
-pub const REMOVED: &str = "QAD9003";
+pub const MSG_REMOVED: &str = "QAD9003";
 /// A message sent (the desktop's).
-pub const SENT: &str = "QAD9004";
+pub const MSG_SENT: &str = "QAD9004";
 
 /// Every message of `QZXWMSG`.
 pub const MESSAGES: &[Desc] = &[
@@ -752,21 +752,21 @@ pub const MESSAGES: &[Desc] = &[
         "Correct the parameters the messages name, then check or run the command again. Select a message's ID for its second-level text.",
     ),
     d(
-        REPLY_SENT,
+        MSG_REPLY_SENT,
         0,
         "Reply sent to &1.",
         "The reply was sent to the inquiry &1, and the system took it. The program that sent the inquiry receives it and goes on.",
         "None needed.",
     ),
     d(
-        REMOVED,
+        MSG_REMOVED,
         0,
         "&1 messages removed from &2.",
         "The system removed &1 messages from the message queue &2. An inquiry removed before it was answered gets no reply: its sender waits until it ends some other way.",
         "None needed.",
     ),
     d(
-        SENT,
+        MSG_SENT,
         0,
         "Message sent to &1.",
         "The system put the message on the message queue of &1. For an inquiry, the reply comes to your own message queue.",

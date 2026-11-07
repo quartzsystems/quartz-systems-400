@@ -405,13 +405,13 @@ fn reply(rq: &Rq<'_>, lib: &str, name: &str, key: &str, r: &str, back: &str) -> 
     let r = r.trim();
     let rpy = if r.is_empty() { "*DFT".to_string() } else { quote(r) };
     let what = if m.id.is_empty() { m.key.clone() } else { m.id.clone() };
-    let done = rq.message(Kind::Done, msgs::REPLY_SENT, &[&what]);
+    let done = rq.message(Kind::Done, msgs::MSG_REPLY_SENT, &[&what]);
     run(rq, &format!("SNDRPYMSG MSGKEY({}) MSGQ({lib}/{name}) RPY({rpy}) RMV(*NO)", m.key), done, back)
 }
 
 /// `RMVMSG` of one message.
 fn remove(rq: &Rq<'_>, lib: &str, name: &str, key: &str, back: &str) -> Response {
-    let done = rq.message(Kind::Done, msgs::REMOVED, &["1", &format!("{lib}/{name}")]);
+    let done = rq.message(Kind::Done, msgs::MSG_REMOVED, &["1", &format!("{lib}/{name}")]);
     run(rq, &format!("RMVMSG MSGQ({lib}/{name}) MSGKEY({key})"), done, back)
 }
 
@@ -442,7 +442,7 @@ fn send(rq: &Rq<'_>, to: &str, queue: bool, text: &str, inquiry: bool, back: &st
         let (ol, on) = rq.env().msgs.own_queue(rq.user());
         let _ = write!(c, " MSGTYPE(*INQ) RPYMSGQ({ol}/{on})");
     }
-    let done = rq.message(Kind::Done, msgs::SENT, &[&to]);
+    let done = rq.message(Kind::Done, msgs::MSG_SENT, &[&to]);
     run(rq, &c, done, back)
 }
 

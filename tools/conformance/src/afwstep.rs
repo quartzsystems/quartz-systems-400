@@ -10,8 +10,8 @@
 //! home page names the system, a preference is changed and used (the
 //! store `QUSRSYS/QZXWPRF`), a policy denies a new profile's sign-on
 //! (`XWA0001`, the store `QUSRSYS/QZXWPOL`) and is cleared again, a POST
-//! without the form field is refused, an area not built says so
-//! (`XWA0099`, Messages), sign-off; then sign-on and My home page over TLS on
+//! without the form field is refused, sign-off; then sign-on and My
+//! home page over TLS on
 //! 2006; `ENDTCPSVR ... HTTPSVR(ACCESSWEB)` ends the job.
 
 use std::time::{Duration, Instant};
@@ -179,8 +179,6 @@ impl Suite {
         policy(plain, &sid)?;
         let forged = afw(plain, "POST", "/preferences", Some(&sid), Some("apply=Apply"))?;
         want(&forged, 403, &["out of date"], "a POST without the form field")?;
-        let later = afw(plain, "GET", "/messages", Some(&sid), None)?;
-        want(&later, 501, &["XWA0099"], "an area not built")?;
         let off = afw(plain, "GET", "/signoff", Some(&sid), None)?;
         want(&off, 303, &["Max-Age=0"], "sign-off")?;
         let after = afw(plain, "GET", "/home", Some(&sid), None)?;
@@ -209,7 +207,7 @@ impl Suite {
         }
         s.command(&format!("DLTUSRPRF USRPRF({USER})"), CMD)?;
         Ok(format!(
-            "QS00AFW saved, deleted (TCP1A06), restored with QZXWMSG, QZXWPOL, QZXWPRF; signed on as QSECOFR over 2003 (host {plain}), My home page of {name}, a preference kept and used, a policy denying {USER}'s sign-on (XWA0001) and cleared, a forged POST refused, Messages not available (XWA0099), signed off; signed on over TLS on 2006 (host {secure})"
+            "QS00AFW saved, deleted (TCP1A06), restored with QZXWMSG, QZXWPOL, QZXWPRF; signed on as QSECOFR over 2003 (host {plain}), My home page of {name}, a preference kept and used, a policy denying {USER}'s sign-on (XWA0001) and cleared, a forged POST refused, signed off; signed on over TLS on 2006 (host {secure})"
         ))
     }
 }

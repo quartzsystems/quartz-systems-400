@@ -105,7 +105,9 @@ fn inquiry(port: u16, sid: &str) -> Result<(), String> {
     )?;
     want(&r, 303, &[], "Send message")?;
     let sent = afw(port, "GET", "/messages", Some(sid), None)?;
-    want(&sent, 200, &["QAD9004</a> - Message sent to QSECOFR.", "<b>From QSECOFR: Step 157 question (Y N)</b>"], "the inquiry sent")?;
+    if !sent.body.contains("QAD9004</a> - Message sent to QSECOFR.") || !sent.body.contains("Step 157 question (Y N)</b>") {
+        return Err(format!("the inquiry sent: {}", around(&sent.body, "Step 157 question")));
+    }
     // Seen on Messages already: another inquiry opens Message Arrived.
     let r = post(
         port,
@@ -129,7 +131,7 @@ fn inquiry(port: u16, sid: &str) -> Result<(), String> {
     let back = afw(port, "GET", "/home", Some(sid), None)?;
     want(&back, 200, &["QAD9002</a> - Reply sent to"], "the reply sent")?;
     let m = afw(port, "GET", "/messages", Some(sid), None)?;
-    if m.body.contains("<b>From QSECOFR: Step 157 arrives (Y N)</b>") {
+    if m.body.contains("Step 157 arrives (Y N)</b>") {
         return Err(format!("the inquiry still waits:\n{}", around(&m.body, "Step 157 arrives")));
     }
     Ok(())

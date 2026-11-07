@@ -37,6 +37,8 @@ fn queued(m: QMsg) -> QueuedMessage {
         sent: m.time / 1_000_000,
         text: m.text,
         job: format!("{:06}/{}/{}", m.job.2, m.job.1, m.job.0),
+        // BLOCKED(rel): the sender is the qualified job; a message a user typed here names
+        // the job's user (QTMHHTTP), as QMsg keeps no current user (a frozen layout).
         user: m.job.1,
         default: m.dft,
         reply: (inquiry && m.status == Status::Answered).then_some(m.reply),

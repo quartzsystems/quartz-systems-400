@@ -476,7 +476,7 @@ answers `TCP1A06`), restores it (`RSTLICPGM`, the three objects back),
 starts `HTTPSVR(ACCESSWEB)`, signs on as `QSECOFR` over 2003, checks My
 home page against `DSPNETA`, changes and uses a preference, denies a
 new profile's sign-on with a policy (`XWA0001`) and clears it, refuses
-a POST without the form field, shows Database's `XWA0099`, signs off,
+a POST without the form field, signs off,
 signs on and loads My home page over TLS on 2006 (the cookie
 `Secure`), and ends the instance.
 
