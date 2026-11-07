@@ -123,6 +123,23 @@ pub fn operate(
     .map_err(|e| tcpcfg::Error::new("CPF9898", e))?
 }
 
+/// The last subsystem ended: TCP/IP ends with the restricted state, as
+/// on IBM i (its servers ended with their subsystems). The startup
+/// program's `STRTCP` starts it again.
+pub fn restricted(system: &mut System) {
+    match operate(system, apply::end_tcp) {
+        Ok(notes) => {
+            netstat::ended(system);
+            for n in notes {
+                eprintln!("qsstg: {}", n.line());
+            }
+        }
+        // Not active: nothing to end.
+        Err(e) if e.msgid == msg::NOT_ACTIVE => {}
+        Err(e) => eprintln!("qsstg: TCP/IP at the restricted state: {}", e.text),
+    }
+}
+
 /// A configuration change: `f` changes a copy; the table is written
 /// back, the copy becomes the configuration and, when TCP/IP is
 /// active, the change is applied. `f`'s text and the notes come back.

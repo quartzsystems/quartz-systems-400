@@ -270,6 +270,9 @@ pub fn monitor_ended(system: &mut System, monitor: u32) {
                 "04",
                 ("QSYS".into(), "QSYS".into(), monitor),
             );
+            if system.sbs.is_empty() {
+                super::tcp::restricted(system);
+            }
         }
     }
 }
