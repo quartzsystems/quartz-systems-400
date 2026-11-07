@@ -26,6 +26,7 @@ pub const SYSTEM_LIBRARIES: &[&str] = &[
     "QHTTPSVR",
     "QRCL",
     "QRECOVERY",
+    "QRPG",
     "QSPL",
     "QSYS",
     "QSYS2",
