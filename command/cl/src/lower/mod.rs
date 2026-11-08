@@ -228,29 +228,7 @@ impl Gen<'_, '_> {
         self.init_vars();
         let mut i = 0;
         while i < p.stmts.len() {
-            let s = &p.stmts[i];
-            if self.consumed.contains(&s.n) {
-                i += 1;
-                continue;
-            }
-            // The monitors right after a statement are its own.
-            let mut monitors = Vec::new();
-            let mut j = i + 1;
-            while let Some(m) = p.stmts.get(j) {
-                match &m.kind {
-                    Kind::MonMsg(ids, cmp, exec) if s.n >= first => {
-                        monitors.push((ids.clone(), cmp.clone(), exec.clone()));
-                        j += 1;
-                    }
-                    _ => break,
-                }
-            }
-            let next_else = p
-                .stmts
-                .get(j)
-                .filter(|e| matches!(e.kind, Kind::Else(_)) && !self.consumed.contains(&e.n));
-            self.statement(s, &monitors, next_else);
-            i = j;
+            i = self.step(p, i);
         }
         if self.in_block {
             self.term("ret");
@@ -267,6 +245,44 @@ impl Gen<'_, '_> {
         if self.has_subr {
             self.subr_dispatch();
         }
+    }
+
+    /// Statement `i` with the monitors after it; the index after them.
+    /// A monitor's `EXEC(DO)` group, up to its `ENDDO`, is its handler's:
+    /// it runs only when the message comes, and more monitors may follow
+    /// its `ENDDO`.
+    fn step(&mut self, p: &Program, i: usize) -> usize {
+        let first = self.t.first_exec.unwrap_or(usize::MAX);
+        let s = &p.stmts[i];
+        if self.consumed.contains(&s.n) {
+            return i + 1;
+        }
+        let mut monitors = Vec::new();
+        let mut bodies = Vec::new();
+        let mut j = i + 1;
+        while let Some(m) = p.stmts.get(j) {
+            match &m.kind {
+                Kind::MonMsg(ids, cmp, exec) if s.n >= first => {
+                    monitors.push((ids.clone(), cmp.clone(), exec.clone()));
+                    j += 1;
+                    let group = exec
+                        .as_ref()
+                        .filter(|e| matches!(e.kind, Kind::Do))
+                        .and_then(|_| group_end(&p.stmts, j));
+                    bodies.push(group.map(|end| (j, end)));
+                    if let Some(end) = group {
+                        j = end + 1;
+                    }
+                }
+                _ => break,
+            }
+        }
+        let next_else = p
+            .stmts
+            .get(j)
+            .filter(|e| matches!(e.kind, Kind::Else(_)) && !self.consumed.contains(&e.n));
+        self.statement(p, s, &monitors, &bodies, next_else);
+        j
     }
 
     /// Declarations: parameters are the entry procedure's, the rest
@@ -430,7 +446,14 @@ impl Gen<'_, '_> {
 
     /// One statement with its monitors; `next_else` is the `ELSE` that
     /// follows an `IF`.
-    fn statement(&mut self, s: &Stmt, monitors: &[Monitor], next_else: Option<&Stmt>) {
+    fn statement(
+        &mut self,
+        p: &Program,
+        s: &Stmt,
+        monitors: &[Monitor],
+        bodies: &[Option<(usize, usize)>],
+        next_else: Option<&Stmt>,
+    ) {
         let l = Self::stmt_label(s.n);
         self.label(&l);
         if self.opts.dbgview != "*NONE" {
@@ -504,8 +527,21 @@ impl Gen<'_, '_> {
                     .collect();
                 self.cmpdta(c, &later);
             }
-            if let Some(e) = exec {
-                self.nested(e);
+            match (exec, bodies.get(i).copied().flatten()) {
+                // The group runs here and leaves for the statement after
+                // the command's monitors.
+                (Some(_), Some((from, to))) => {
+                    self.frames.push(Frame::Do {
+                        exit: Some(next.clone()),
+                        else_label: None,
+                    });
+                    let mut k = from;
+                    while k <= to {
+                        k = self.step(p, k);
+                    }
+                }
+                (Some(e), None) => self.nested(e),
+                (None, _) => {}
             }
             if self.in_block {
                 self.term(&format!("br {next}"));
@@ -991,6 +1027,26 @@ impl Gen<'_, '_> {
 
 /// A `MONMSG`: its identifiers, `CMPDTA` and `EXEC`.
 type Monitor = (Vec<String>, Option<String>, Option<Box<Stmt>>);
+
+/// The index of the `ENDDO` that closes a DO group whose body starts at
+/// `from`; `None` when the group is not ended.
+fn group_end(stmts: &[Stmt], from: usize) -> Option<usize> {
+    let opens_do = |t: &Option<Box<Stmt>>| t.as_ref().is_some_and(|t| matches!(t.kind, Kind::Do));
+    let mut depth = 0usize;
+    for (k, s) in stmts.iter().enumerate().skip(from) {
+        match &s.kind {
+            Kind::Do | Kind::DoWhile(_) | Kind::DoUntil(_) | Kind::DoFor(..) | Kind::Select => {
+                depth += 1;
+            }
+            Kind::If(_, t) | Kind::When(_, t) | Kind::MonMsg(_, _, t) if opens_do(t) => depth += 1,
+            Kind::Else(t) | Kind::Otherwise(t) if opens_do(t) => depth += 1,
+            Kind::EndDo if depth == 0 => return Some(k),
+            Kind::EndDo | Kind::EndSelect => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    None
+}
 
 /// A `MONMSG` identifier as a monitor selector: `CPF0000` is every
 /// `CPF` message, `CPF2200` every `CPF22nn`.

@@ -1,0 +1,51 @@
+QS/400 ILE CL compiler                  V1R1M0
+
+Program  . . . . . . . . . . . . :   MONDO
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   MONDO
+Text . . . . . . . . . . . . . . :   corpus MONDO
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; fail: CRTLIB CPF2111 */
+                    /* MONMSG EXEC(DO): a group runs only when its message comes; more */
+                    /* monitors may follow a group's ENDDO; groups nest. */
+        1        0               PGM
+        2        0               DCL        VAR(&N) TYPE(*DEC) LEN(1 0) VALUE(1)
+        3        0               CHKOBJ     OBJ(INVMGR/INVMGRTYPE) OBJTYPE(*FILE)
+        4        0               MONMSG     MSGID(CPF9801) EXEC(DO)
+        5        0                 SNDPGMMSG  MSG('not found') TOPGMQ(*EXT)
+        6        0                 RUNSQLSTM  SRCFILE(INVMGR/QSQLSRC) SRCMBR(INVMGRTYPE) +
+                                                COMMIT(*NONE)
+        7        0               ENDDO
+        8        0               MONMSG     MSGID(CPF9810) EXEC(DO)
+        9        0                 SNDPGMMSG  MSG('no library') TOPGMQ(*EXT)
+       10        0               ENDDO
+       11        0               SNDPGMMSG  MSG('after the groups') TOPGMQ(*EXT)
+       12        0               CRTLIB     LIB(MYLIB)
+       13        0               MONMSG     MSGID(CPF9999) EXEC(DO)
+       14        0                 SNDPGMMSG  MSG('wrong group') TOPGMQ(*EXT)
+       15        0               ENDDO
+       16        0               MONMSG     MSGID(CPF2111) EXEC(DO)
+       17        0                 SNDPGMMSG  MSG('second group') TOPGMQ(*EXT)
+       18        0                 IF         COND(&N *EQ 1) THEN(DO)
+       19        1                   SNDPGMMSG  MSG('nested') TOPGMQ(*EXT)
+       20        0                 ENDDO
+       21        0               ENDDO
+       22        0               SNDPGMMSG  MSG('end') TOPGMQ(*EXT)
+       23        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&N          *DEC    1 0            8  18
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program MONDO created.
+End of compilation.

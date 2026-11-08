@@ -1,0 +1,30 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/*; fail: CRTLIB CPF2111 */
+/* MONMSG EXEC(DO): a group runs only when its message comes; more */
+/* monitors may follow a group's ENDDO; groups nest. */
+             PGM
+             DCL        VAR(&N) TYPE(*DEC) LEN(1 0) VALUE(1)
+             CHKOBJ     OBJ(INVMGR/INVMGRTYPE) OBJTYPE(*FILE)
+             MONMSG     MSGID(CPF9801) EXEC(DO)
+               SNDPGMMSG  MSG('not found') TOPGMQ(*EXT)
+               RUNSQLSTM  SRCFILE(INVMGR/QSQLSRC) SRCMBR(INVMGRTYPE) +
+                            COMMIT(*NONE)
+             ENDDO
+             MONMSG     MSGID(CPF9810) EXEC(DO)
+               SNDPGMMSG  MSG('no library') TOPGMQ(*EXT)
+             ENDDO
+             SNDPGMMSG  MSG('after the groups') TOPGMQ(*EXT)
+             CRTLIB     LIB(MYLIB)
+             MONMSG     MSGID(CPF9999) EXEC(DO)
+               SNDPGMMSG  MSG('wrong group') TOPGMQ(*EXT)
+             ENDDO
+             MONMSG     MSGID(CPF2111) EXEC(DO)
+               SNDPGMMSG  MSG('second group') TOPGMQ(*EXT)
+               IF         COND(&N *EQ 1) THEN(DO)
+                 SNDPGMMSG  MSG('nested') TOPGMQ(*EXT)
+               ENDDO
+             ENDDO
+             SNDPGMMSG  MSG('end') TOPGMQ(*EXT)
+             ENDPGM

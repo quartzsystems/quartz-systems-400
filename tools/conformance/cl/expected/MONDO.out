@@ -1,0 +1,13 @@
+console:
+  > CHKOBJ OBJ(INVMGR/INVMGRTYPE) OBJTYPE(*FILE)
+  > CRTLIB LIB(MYLIB)
+raised: CPF2111
+handled: CPF2111
+pending: none
+replies: 
+dump: no
+ext:
+   after the groups
+   second group
+   nested
+   end
