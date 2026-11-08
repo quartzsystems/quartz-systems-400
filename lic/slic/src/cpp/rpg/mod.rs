@@ -152,13 +152,10 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
         );
     }
     let sev = format!("{:02}", compiled.max_severity);
+    let (id, first) = not_created(req.sql, compiled.sql_failed, shape);
     let refused = Refused {
-        // A precompile that failed ends the command before the compile.
-        id: if compiled.sql_failed {
-            "SQL9001"
-        } else {
-            shape.not_created()
-        },
+        id,
+        compiler: first,
         shape,
         name: &name,
         lib: lib_name,
@@ -268,9 +265,28 @@ fn compile(
     c
 }
 
+/// The escape of an object not made, and the compiler's own message
+/// before it when there is one: CRTSQLRPGI ends with `SQL9001`
+/// whichever step failed, a failed compile's `RNS9309`/`RNS9310` left
+/// as a diagnostic.
+fn not_created(
+    sql: bool,
+    precompile_failed: bool,
+    shape: Shape,
+) -> (&'static str, Option<&'static str>) {
+    match (sql, precompile_failed) {
+        (true, true) => ("SQL9001", None),
+        (true, false) => ("SQL9001", Some(shape.not_created())),
+        (false, _) => (shape.not_created(), None),
+    }
+}
+
 /// An object not made: the escape `id` and what it names.
 struct Refused<'a> {
     id: &'a str,
+    /// The compiler's own "not created" message, a diagnostic before
+    /// `id` (CRTSQLRPGI's compile step).
+    compiler: Option<&'a str>,
     shape: Shape,
     name: &'a str,
     lib: &'a str,
@@ -282,7 +298,7 @@ impl Refused<'_> {
     /// The reply: the compile's output, the diagnostic that gives the
     /// highest severity, the escape.
     fn reply(&self, out: &str) -> CmdReply {
-        let messages = self
+        let mut messages: Vec<CmdMsg> = self
             .sev
             .map(|s| CmdMsg {
                 msgid: "RNS9311".into(),
@@ -291,6 +307,13 @@ impl Refused<'_> {
             })
             .into_iter()
             .collect();
+        if let Some(id) = self.compiler {
+            messages.push(CmdMsg {
+                msgid: id.into(),
+                kind: 5,
+                data: cmd::error::data(&[(self.name, 10), (self.lib, 10)]),
+            });
+        }
         CmdReply {
             text: format!(
                 "{out}{} {} {} was not created in library {}.\n",

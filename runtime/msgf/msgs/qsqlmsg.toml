@@ -291,8 +291,8 @@ vars = ["*CHAR 30"]
 [[msg]]
 id = "SQL9001"
 sev = 30
-text = "The SQL precompile of &1 failed; the object was not created."
-help = "The precompile listing shows the statements in error. Correct them and run CRTSQLRPGI again."
+text = "&1 was not created: its SQL precompile or its compile failed."
+help = "The listing shows the SQL statements or the source lines in error, and the messages before this one say which step failed. Correct them and run CRTSQLRPGI again."
 vars = ["*CHAR 10"]
 
 [[msg]]

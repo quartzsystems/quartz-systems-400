@@ -867,3 +867,26 @@ fn keyed_files_describe_their_keys_nulls_and_level_ids() {
     );
     assert!(c.created, "{:?}", c.diags);
 }
+
+#[test]
+fn crtsqlrpgi_ends_with_sql9001() {
+    use super::object::Shape;
+    // CRTSQLRPGI: the precompile failed, then the compile failed.
+    assert_eq!(
+        super::not_created(true, true, Shape::Program),
+        ("SQL9001", None)
+    );
+    assert_eq!(
+        super::not_created(true, false, Shape::Program),
+        ("SQL9001", Some("RNS9310"))
+    );
+    assert_eq!(
+        super::not_created(true, false, Shape::Module),
+        ("SQL9001", Some("RNS9309"))
+    );
+    // CRTBNDRPG and CRTRPGMOD end with the compiler's own.
+    assert_eq!(
+        super::not_created(false, false, Shape::Program),
+        ("RNS9310", None)
+    );
+}

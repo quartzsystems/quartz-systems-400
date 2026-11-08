@@ -36,7 +36,7 @@ const TEXTS: &[(&str, &str)] = &[
     ("SQL5066", "Precompile option &1 is set by SET OPTION."),
     (
         "SQL9001",
-        "The SQL precompile of &1 failed; the object was not created.",
+        "&1 was not created: its SQL precompile or its compile failed.",
     ),
 ];
 
