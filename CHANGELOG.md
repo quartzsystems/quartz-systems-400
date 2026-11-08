@@ -32,6 +32,14 @@ on-disk and on-wire formats frozen. The full notes are
 - Hot spare disks, storage thresholds and the lower-limit actions, UPS power,
   time zones from tzdata, more CCSIDs, function usage, the `QIBM_QSY_*` and
   work-management exit points.
+- QAP versions 8 and 9 (drafts) for Code for QS/400: the `Develop` service
+  (library lists, objects, source members with sequence numbers and dates,
+  `Compile` with the compiler's diagnostics), `Jobs`, the SQL routine and
+  index lists, and `Debug` (breakpoints, stepping, variables, service entry
+  points). The RPG, CL, DDS, SQL and command front-ends build as libraries
+  (`front` feature, `analyze()`).
+- Hardware resource names (`CMNnn` and the rest) keep their names across
+  IPLs and hardware changes; a missing card stays listed as not detected.
 - The UKIs are Secure Boot signed with the QS/400 key; enrol
   `QS400/EFI/keys/qs400-db.cer` or turn Secure Boot off (`INSTALL.md` §6).
 - `NOTICES.txt` lists every third-party component and its license; the

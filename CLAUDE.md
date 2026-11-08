@@ -20,7 +20,7 @@ kernel is the only inherited component; every process above it is ours.
 | 9 | ILE RPG: front end, compiler, runtime (`qrpgrt`), the SQL precompiler, listings and debug views, the corpus against pub400, HLINV | `PHASE9.md`, `RPG.md` |
 | 10 | the IFS on xfs with `/QSYS.LIB`, TCP/IP and communications objects, sockets, TLS and certificates, telnet, FTP, SSH, NTP, LPD, DDM/DRDA, the host servers, network printers, QSH and PASE | `PHASE10.md` |
 | 11 | save and restore, tape and optical (virtual, physical code ready), image catalogs, licensed programs and `GO LICPGM`, PTFs and the update service, the problem log and service tools, install media and recovery, cleanup and backup | `PHASE11.md` |
-| after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6; the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
+| after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6 (7 to 9, `Manage`, `Develop`/`Jobs` and `Debug`, drafts in V1R1M0); the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
 | 12 | release engineering for V1R1M0: the carried gaps, the format freeze, Collection Services, help everywhere, the text audit and NLS, hardware qualification, the guest agent, RPG III, hardening, the Knowledge Center (complete) | `PHASE12.md` |
 | SQL | the SQL engine to the Db2 for i SQL dialect, 7.5 level: DDL, queries, SQL PL and triggers, types, dynamic and embedded SQL, `QSQCLI`, DRDA, the `QSYS2` services, the plan cache, `STRSQL` | `SQL.md` |
 | pre-release | V1R1M0 made releasable: QS00 product IDs, every accepted-and-ignored clause implemented or refused, hot spares and the DST options, storage thresholds, power and system values, time zones, CCSIDs, function usage, the `QIBM_QSY_*` exit points, CI and releases from a tag, Secure Boot signing, `NOTICES.txt`, the kernel source offer, reproducible media; QS/400 Access for Web (`net/accessweb`, QS00AFW) | `PHASE12.md` Release gate, `RELEASE_NOTES_V1R1M0.md`, `releasing.md`, `ACCESSWEB.md` |
@@ -390,8 +390,8 @@ work/         work management: jobs, spooling, process messages
                 frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
   stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
                 src/remote/ the runtime's source traits answered by the service
-  qap-proto/    QAP, the Quartz Access Protocol (docs/QAP.md), versions 1 to 6 frozen, 7 (Manage)
-                a draft: the
+  qap-proto/    QAP, the Quartz Access Protocol (docs/QAP.md), versions 1 to 6 frozen, 7 (Manage),
+                8 (Develop, Jobs, Sql lists) and 9 (Debug) drafts: the
                 envelope, services and operations, types, the sign-on secret
 security/     users, authorities, auditing
   sec/          security: src/profile/ the *USRPRF payload, special authorities, the profile
@@ -436,6 +436,10 @@ devtools/     developer tools, pure logic (drivers in work/qsjob/src/devtools/):
               DSPF), qshterm/ (the QSH terminal session)
 rpg/          ILE RPG (docs/RPG.md, PHASE9.md)
   specs/        the specification column layouts as data (specs/rpgle.toml), shared with SEU
+  compdiag/     the diagnostics every compiler reports (Diagnostic, Where, Sink), kept on the
+                job for QAP Develop.Compile; front.rs and msgtext.rs for the front-ends' analyze()
+  extdesc/      externally described files for the RPG compiler, from db::file::describe
+                (keys, null capability, aliases, level IDs), shared by slic and the kit
   front/        the front end: reader (/COPY, conditional compilation), lexer, parser, tree,
                 RNF diagnostics
   compiler/     CRTRPGMOD, CRTBNDRPG, CRTSQLRPGI: declarations with IBM's layouts, files,
@@ -586,7 +590,7 @@ cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media (carries images/kc and images/ptf-baseline when built)
 cargo run -p build -- kc          # the Knowledge Center (tools/kcbuild) into images/kc
 cargo run -p build -- release     # release build, KC and PTF baseline on the media, target/release/VRM/ with SHA256SUMS(.sig)
-cargo run -p build -- test        # the QEMU disk suite: 110 numbered steps (83 hardware resources in a guest of its own)
+cargo run -p build -- test        # the QEMU disk suite: 133 steps, about an hour on GitHub (83 hardware resources in a guest of its own)
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall

@@ -117,7 +117,13 @@ substitutes, `QRMTSIGN`); spooled-file data from the print host server;
 SMTP relay credentials (`ADDSMTPLE TYPE(*HOSTAUTH)`); the DDM/DRDA server
 on 446, DDM files and record-level access to a remote file, server
 authentication entries; `*WSCST` objects with IBM's tag language and the
-shipped objects; QAP protocol version 7 (draft), the `Manage` service.
+shipped objects; QAP protocol versions 7 to 9 (drafts): `Manage`; `Develop`
+(the library list, objects, source members with sequence numbers and dates,
+`Compile` with diagnostics) and `Jobs`; `Debug` with breakpoints, stepping,
+variables and service entry points (`QAP.md`). Hardware resource names are
+kept across IPLs and hardware changes: a new card takes the next free name,
+a missing one stays listed as not detected, so a line description never
+moves to another card.
 
 **Work management and performance.** `ENDSBS *ALL` ends every job but
 the console's and reaches the restricted state; `SAVSYS` needs it.
@@ -485,10 +491,10 @@ Every marker left in the tree, generated from it.
 | `NEEDS-CODY` | `docs/PHASE12.md:173` | needs a test user profile on the primary |
 | `NEEDS-CODY` | `docs/PHASE12.md:175` | physical tape acceptance |
 | `NEEDS-CODY` | `docs/PHASE12.md:180` | `UI_OPEN_QUESTIONS.md` 4, 6, 8, 12 \| start-up response record; keys that carry data; the printer data stream; SST's audit code \| §1: the primary's telnet \| 4 closed; 6 open (a display-file probe); 8 a |
-| `NEEDS-CODY` | `docs/PHASE12.md:250` |  |
-| `NEEDS-CODY` | `docs/PHASE12.md:259` | ": Proxmox, ESXi, Workstation, VirtualBox, Hyper-V Gen2 and the Dell checklists; also try booting the ISO as a CD on real firmware \| open |
-| `NEEDS-CODY` | `docs/PHASE12.md:359` |  |
-| `NEEDS-CODY` | `docs/PHASE12.md:368` | 11 above) |
+| `NEEDS-CODY` | `docs/PHASE12.md:252` |  |
+| `NEEDS-CODY` | `docs/PHASE12.md:261` | ": Proxmox, ESXi, Workstation, VirtualBox, Hyper-V Gen2 and the Dell checklists; also try booting the ISO as a CD on real firmware \| open |
+| `NEEDS-CODY` | `docs/PHASE12.md:365` |  |
+| `NEEDS-CODY` | `docs/PHASE12.md:374` | 11 above) |
 | `BLOCKED(rel)` | `docs/PHASE3.md:147` | `RCVJRNE`'s |
 | `BLOCKED(rel)` | `docs/PHASE9.md:217` | the ABI items below |
 | `BLOCKED(rel)` | `docs/PHASE9.md:218` | no ILE binding of `QSOSSLSR` (`gsk_*`) exists; `net/tls` has the semantics only (`docs/CERTS.md`), so `CONFIG_H` is built without `HAVE_SSLAPI` |
