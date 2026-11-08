@@ -9732,3 +9732,31 @@ sev = 0
 text = "Australian western daylight time"
 help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
 vars = []
+
+[[msg]]
+id = "CPF3156"
+sev = 40
+text = "File &1 in library &2 is in use."
+help = "Another job holds the file, so the request could not have it. Wait until that job is done with the file, or find it with WRKOBJLCK, and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3203"
+sev = 40
+text = "File &1 in library &2 could not be allocated."
+help = "The file, or a member of it, is locked by another job. Wait until that job lets it go, or find it with WRKOBJLCK, and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3207"
+sev = 40
+text = "Member &3 not added: file &1 in library &2 already has it."
+help = "A member of that name is in the file already. Choose another name, or remove or rename the member that is there, and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF7310"
+sev = 40
+text = "Member &1 not added to file &2 in library &3."
+help = "The file already has a member of that name. Choose another name, or remove or rename the existing member, and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
