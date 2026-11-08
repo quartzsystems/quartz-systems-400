@@ -1356,7 +1356,7 @@ Version 8, as built on 2026-11-07 (draft; decisions made in the build, for Cody 
   `CPYSRCF`, `RNMM`, `RMVM` and `CHGPFM` analyzed as typed lines and run
   in the service; `HoldJob`, `ReleaseJob` and `EndJob` likewise
   `HLDJOB`, `RLSJOB` and `ENDJOB`. `CPYSRCF` now keeps each record's
-  sequence number and date (`SRCOPT(*SAME)`, as IBM's does; `*SEQNBR`
+  sequence number and date (`SRCOPT(*SAME)`, as the original command does; `*SEQNBR`
   renumbers from `SRCSEQ`, `*DATE` clears the dates) and takes
   `MBROPT(*ADD)`; it used to renumber and redate every record.
 - `ReadMember`, `WriteMember` and `UnlockMember` are the service's
