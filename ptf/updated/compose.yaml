@@ -1,0 +1,37 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The update service. From this folder:
+#
+#   QS400_TRUST=<release public key, 64 hex> docker compose up -d --build
+#
+# It serves plain HTTP on port 8080 (QS400_PORT to change it): terminate
+# TLS in front of it for ptfs.quartzsystems.net, and for
+# updates.quartz.systems while systems on V1R1M0 use it (their client
+# follows no redirects), passing paths through as they are (/qs400/v1/...).
+
+services:
+  updated:
+    build:
+      context: ../..
+      dockerfile: ptf/updated/Dockerfile
+    image: qs400-updated
+    restart: unless-stopped
+    command:
+      - --listen=0.0.0.0:8080
+      - --dir=/srv/qs400
+      - --trust=${QS400_TRUST:?the release public key, 64 hexadecimal digits}
+    volumes:
+      - ptfs:/srv/qs400
+    ports:
+      - "${QS400_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "/qs400-updated", "--probe"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  ptfs:

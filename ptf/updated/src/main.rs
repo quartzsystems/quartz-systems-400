@@ -10,7 +10,7 @@
 //! ```text
 //! qs400-updated [--listen 0.0.0.0:8080] [--dir /srv/qs400] [--prefix /qs400]
 //!               [--source URL] [--trust HEX]... [--every 900]
-//!               [--tls-cert chain.pem --tls-key key.pem] [--no-sync]
+//!               [--tls-cert chain.pem --tls-key key.pem] [--no-sync] [--probe]
 //! ```
 
 mod serve;
@@ -62,6 +62,25 @@ struct Args {
     /// Connections served at once.
     #[arg(long, default_value_t = 64)]
     limit: usize,
+    /// Ask the server on `--listen`'s port for `/healthz` and exit 0 when
+    /// it answers (a container's health check; the image has no shell).
+    #[arg(long)]
+    probe: bool,
+}
+
+/// `--probe`: whether the plain-HTTP server on `listen`'s port answers.
+fn probe(listen: &str) -> Result<()> {
+    let port = listen.rsplit(':').next().unwrap_or("8080");
+    let r = httpc::send(&httpc::Request {
+        method: "GET".into(),
+        url: format!("http://127.0.0.1:{port}/healthz"),
+        timeout: 5,
+        ..httpc::Request::default()
+    })?;
+    if r.status != 200 {
+        bail!("/healthz: HTTP {}", r.status);
+    }
+    Ok(())
 }
 
 fn key(text: &str) -> Result<[u8; 32]> {
@@ -79,6 +98,9 @@ fn main() -> Result<()> {
         )
         .init();
     let args = Args::parse();
+    if args.probe {
+        return probe(&args.listen);
+    }
     let trusted = args
         .trust
         .iter()
