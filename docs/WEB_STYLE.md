@@ -1,6 +1,6 @@
 # QS/400 web interfaces — style sheet in one page
 
-Applies to QS/400 HTTP Server Administration (port 2001), Navigator for QS/400 (2002 / 2005), QS/400 Access for Web, and the QS/MC Management Console. One stylesheet, `shared/qs400.css` (177 lines). The reference page `shared/components.html` shows every pattern once. The test for any new page: would it look at home in a 2006 browser on a 1024×768 CRT, with CSS turned off, with no script? If not, it is wrong.
+Applies to QS/400 HTTP Server Administration (port 2001), Navigator for QS/400 (2002 / 2005), QS/400 Access for Web, and the QS/MC Management Console. One stylesheet, `shared/qs400.css` (177 lines and one addition: `@view-transition { navigation: auto; }`, so moving between pages fades instead of blanking where the browser supports it). The reference page `shared/components.html` shows every pattern once. The test for any new page: would it look at home in a 2006 browser on a 1024×768 CRT, with CSS turned off, with no script? If not, it is wrong.
 
 ## Colour
 
@@ -86,7 +86,7 @@ QS/MC reuses the frame and all four patterns unchanged and adds **no lines to `s
 ## What not to do
 
 - No modals, no pop-up layers, no inline editing, no spinners, no toasts. Confirmation is a page; feedback is a message row after a reload.
-- No JavaScript anywhere except the 5250 session / terminal window page (WebSocket terminal). Auto-refresh is `<meta http-equiv="refresh">`. Sorting, paging and filtering are links and `GET` forms.
+- JavaScript only where it smooths what already works without it: the 5250 session / terminal window page (WebSocket terminal; its menu bar and Scale switch in place so the session stays drawn), and `shared/qsnav.js` for a product that sets `Product::nav_script` (Access for Web): links, `GET` and `POST` forms inside the product fetch the next page and swap the body in, Back and Forward included, downloads saved where they are; a page with a script of its own, or one loaded with a refresh, navigates as usual. Every page still works with script off. Auto-refresh is `<meta http-equiv="refresh">`. Sorting, paging and filtering are links and `GET` forms.
 - No icons beyond text glyphs or a 16×16 GIF (page, folder, status dot, plus/minus). The Access for Web home page may use one 32×32 glyph per section link. No emoji, no SVG illustrations, no hero images, no logos.
 - No cards, panels, shadows, rounded corners, gradients, flexbox, grid, CSS variables or media queries (one print rule only).
 - No restyled buttons, no coloured buttons, no accent fills. `#00d992` appears once, as a rule.

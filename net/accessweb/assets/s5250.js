@@ -2,9 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-// The 5250 display page's script, the one script of the QS/400 web
-// products. It opens the session's WebSocket, draws each screen into a
-// canvas of the picture's exact size with the console's font and rules
+// The 5250 display page's script. It opens the session's WebSocket,
+// draws each screen into a canvas of the picture's exact size with the console's font and rules
 // (the server's render() in net/accessweb/src/s5250/look/render.rs),
 // maps keys through the session's keyboard map, and handles the mouse:
 // hotspots, cursor placing, rectangle selection, Copy and Paste.
@@ -14,7 +13,8 @@
   var me = document.currentScript;
   var id = me.getAttribute("data-session");
   var scale = parseInt(me.getAttribute("data-scale") || "1", 10);
-  var base = me.src.replace(/\/5250\/script\.js.*$/, "");
+  // The product's path: me.src is absolute, the socket's URL wants a path.
+  var base = new URL(me.src, location.href).pathname.replace(/\/5250\/script\.js.*$/, "");
   var PAL = { bg: "#000000", green: "#33cc33", white: "#e6e6e6", red: "#e03030", blue: "#5080ff", turq: "#20c8c8", pink: "#e060c0" };
   var W = 9, H = 16;
   var screen = null, keymap = {}, sock = null, img = null, canvas = null, ctx = null;
@@ -93,6 +93,43 @@
     screen.cursor = m.cursor; screen.state = m.state; screen.system = m.system; screen.tls = m.tls;
     screen.kb = m.kb; screen.ins = m.ins; screen.mw = m.mw;
     draw();
+    status();
+  }
+  // The status bar's cursor indicator, as the server would write it.
+  function status() {
+    var lists = document.querySelectorAll("td.content table.list"), bar = lists[lists.length - 1];
+    var num = bar && bar.querySelector("td.num");
+    if (!num || screen.state === "disconnected") { return; }
+    var rc = ("0" + screen.cursor[0]).slice(-2) + "/" + ("00" + screen.cursor[1]).slice(-3);
+    num.textContent = (screen.tls ? "TLS   " : "") + rc;
+  }
+  // Menu names and Scale fetch their page and swap only what changed,
+  // so the screen and its socket stay; anything else navigates.
+  function inPlace(a) {
+    var u = new URL(a.href, location.href);
+    if (u.pathname !== location.pathname) { return false; }
+    var menu = u.searchParams.get("menu"), sc = u.searchParams.get("scale");
+    if (!menu && !sc) { return false; }
+    var x = new XMLHttpRequest();
+    x.open("GET", u.href);
+    x.onload = function () {
+      if (x.status !== 200) { location.href = u.href; return; }
+      var doc = new DOMParser().parseFromString(x.responseText, "text/html");
+      if (menu) {
+        var mine = document.querySelector("td.content table.list"), theirs = doc.querySelector("td.content table.list");
+        if (mine && theirs) { mine.innerHTML = theirs.innerHTML; }
+      }
+      if (sc) {
+        var tb = document.querySelector("div.toolbar"), ntb = doc.querySelector("div.toolbar");
+        if (tb && ntb) { tb.innerHTML = ntb.innerHTML; }
+        scale = parseInt(sc, 10) || 1;
+        if (screen) { size(screen.rows, screen.cols); draw(); }
+      }
+      canvas.focus();
+    };
+    x.onerror = function () { location.href = u.href; };
+    x.send();
+    return true;
   }
   function size(rows, cols) {
     canvas.width = cols * W * scale; canvas.height = (rows + 1) * H * scale;
@@ -163,9 +200,12 @@
     x.open("GET", base + "/5250/" + id + "/keymap/json");
     x.onload = function () { try { keymap = JSON.parse(x.responseText); } catch (err) { keymap = {}; } };
     x.send();
-    // The keypad and Copy and Paste go over the socket while it is open.
+    // The keypad and Copy and Paste go over the socket while it is open;
+    // the menu bar and Scale switch in place.
     document.addEventListener("click", function (e) {
       var t = e.target;
+      var a = t && t.closest ? t.closest("a[href]") : null;
+      if (a && sock && sock.readyState === 1 && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.button === 0 && inPlace(a)) { e.preventDefault(); return; }
       if (!t || t.tagName !== "INPUT" || t.type !== "submit") { return; }
       if (t.name === "k" && send({ t: "key", k: KEYPAD[t.value] || t.value })) { e.preventDefault(); canvas.focus(); }
       if (t.name === "tb" && t.value === "Copy" && navigator.clipboard && sel) { e.preventDefault(); navigator.clipboard.writeText(selectedText()); }

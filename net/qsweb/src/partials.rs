@@ -684,6 +684,7 @@ mod tests {
         prefix: "/t",
         nav: &[],
         system_label: "System",
+        nav_script: false,
     };
 
     #[test]

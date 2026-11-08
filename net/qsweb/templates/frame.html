@@ -4,7 +4,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>{{ title }} - {{ suffix }}</title>
 <link rel="stylesheet" type="text/css" href="{{ css }}" />
-{% if let Some(r) = refresh %}<meta http-equiv="refresh" content="{{ r }}" />
+{% if let Some(js) = nav_script %}<script type="text/javascript" src="{{ js }}" defer="defer"></script>
+{% endif %}{% if let Some(r) = refresh %}<meta http-equiv="refresh" content="{{ r }}" />
 {% endif %}</head>
 <body>
 <table class="frame" cellspacing="0" cellpadding="0">

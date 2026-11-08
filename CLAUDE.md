@@ -501,7 +501,8 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 lpd.rs (QTLPD00001)
   qsweb/        the web products' shared layer (docs/WEB_STYLE.md): src/http/ HTTP/1.1, forms,
                 multipart, responses; session.rs sessions and CSRF; frame.rs the frame, sign-on
-                and help (templates/); partials.rs; pages.rs; golden.rs; assets/qs400.css
+                and help (templates/); partials.rs; pages.rs; golden.rs; assets/qs400.css,
+                assets/qsnav.js (in-place navigation, Access for Web)
   httpd/        the HTTP server's instances: src/conf/ httpd.conf (parse, rules, edit, print),
                 files.rs Files by IFS path, registry.rs /www/instances.json, instance.rs
   httpadmin/    HTTP Server Administration on 2001 (docs/HTTPADMIN.md): env.rs the traits it

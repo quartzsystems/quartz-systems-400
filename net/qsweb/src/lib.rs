@@ -28,6 +28,15 @@ pub mod ws;
 /// `shared/qs400.css`, byte for byte.
 pub const CSS: &[u8] = include_bytes!("../assets/qs400.css");
 
+/// `shared/qsnav.js`: in-place navigation for a product that turns it on.
+pub const NAV_JS: &[u8] = include_bytes!("../assets/qsnav.js");
+
+/// The navigation script as a response.
+pub fn nav_response() -> http::Response {
+    http::Response::new(200, "text/javascript; charset=utf-8", NAV_JS.to_vec())
+        .with("Cache-Control", "max-age=3600")
+}
+
 /// The stylesheet as a response.
 pub fn css_response() -> http::Response {
     http::Response::new(200, "text/css", CSS.to_vec()).with("Cache-Control", "max-age=3600")

@@ -282,10 +282,12 @@ are real defects of the golden page, or data:
   Macros record (keys, typing, a `wait unlock` after each key that goes to
   the system; typing into a nondisplay field is kept as a prompt) and play
   on the server; a prompt step needs the script.
-- With script (`assets/s5250.js`, the one script of the web products):
+- With script (`assets/s5250.js`):
   the picture becomes a canvas of its size drawn with the same font and
   rules; keys go through the session's keyboard map; hotspots, selection,
-  Copy and Paste. The WebSocket (`qsweb::ws`) carries the whole screen,
+  Copy and Paste; the menu bar and Scale switch in place, and the status
+  bar's cursor follows the screen. Every other page of the product moves
+  in place through `qsweb`'s `qsnav.js` (`Product::nav_script`; WEB_STYLE.md). The WebSocket (`qsweb::ws`) carries the whole screen,
   then the rows that changed, one style letter a cell; a nondisplay
   field's characters never go out; no password crosses it.
 - Policies: `5250.start` for the area, `5250.save` for every change,

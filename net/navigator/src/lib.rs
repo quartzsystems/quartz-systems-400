@@ -111,6 +111,7 @@ pub static PRODUCT: Product = Product {
     prefix: "/qs400/navigator",
     nav: NAV,
     system_label: "System",
+    nav_script: false,
 };
 
 /// The instance's own name, also its job's.

@@ -61,6 +61,7 @@ fn components() {
         prefix: "/qs400/navigator",
         nav: navigator::NAV,
         system_label: "System",
+        nav_script: false,
     };
     let _: &[NavGroup] = P.nav;
     let ctx = Ctx {

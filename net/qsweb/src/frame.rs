@@ -16,6 +16,8 @@ use crate::session::{self, Sessions};
 
 /// The stylesheet's path, the same for every product.
 pub const CSS_PATH: &str = "/qs400/shared/qs400.css";
+/// The navigation script's path ([`Product::nav_script`]).
+pub const NAV_PATH: &str = "/qs400/shared/qsnav.js";
 
 /// A navigation group and its items (label, route under the prefix).
 /// A group whose one item has the group's own label is a leaf: a plain
@@ -41,6 +43,9 @@ pub struct Product {
     pub nav: &'static [NavGroup],
     /// The header's label before the system name (`System`).
     pub system_label: &'static str,
+    /// Whether pages carry the navigation script ([`NAV_PATH`]), which
+    /// swaps pages in place instead of loading them.
+    pub nav_script: bool,
 }
 
 impl NavGroup {
@@ -165,6 +170,7 @@ struct FrameT<'a> {
     footer: String,
     refresh: Option<u32>,
     note: Option<&'a str>,
+    nav_script: Option<&'a str>,
 }
 
 /// The URL of `req` (path and query), as [`Ctx::here`].
@@ -281,6 +287,7 @@ pub fn render_with(ctx: &Ctx, page: &Page, note: Option<&str>) -> String {
         footer: footer(),
         refresh: page.refresh,
         note,
+        nav_script: p.nav_script.then_some(NAV_PATH),
     }
     .render()
     .expect("frame renders")

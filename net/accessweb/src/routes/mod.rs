@@ -272,6 +272,9 @@ pub fn dispatch(app: &AccessWeb, req: &Request, peer: &Peer) -> Response {
     if req.path == qsweb::frame::CSS_PATH {
         return qsweb::css_response();
     }
+    if req.path == qsweb::frame::NAV_PATH {
+        return qsweb::nav_response();
+    }
     if req.path == "/" || req.path.is_empty() {
         return Response::redirect(&PRODUCT.url("/signon"));
     }

@@ -52,6 +52,7 @@ fn components() {
         prefix: "/qs400/httpadmin",
         nav: httpadmin::NAV,
         system_label: "System",
+        nav_script: false,
     };
     let _: &[NavGroup] = P.nav;
     let ctx = Ctx {

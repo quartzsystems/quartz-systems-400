@@ -175,3 +175,7 @@ tr.cat td { background: #e8e8e8; font-weight: bold; }
 
 /* ---- Print ------------------------------------------------------- */
 @media print { td.nav, td.hdr, td.footer, .toolbar, .buttons { display: none; } }
+
+/* addition: moving between pages of a product fades instead of
+   blanking (browsers that know the rule; others ignore it). */
+@view-transition { navigation: auto; }

@@ -230,8 +230,17 @@ pub struct Normalize<'a> {
 
 fn normalize(toks: Vec<Tok>, n: Option<&Normalize<'_>>) -> Vec<Tok> {
     let mut out = Vec::with_capacity(toks.len());
+    // The navigation script's tag is the server's, not the prototype's.
+    let mut nav_close = false;
     for t in toks {
         match t {
+            Tok::Open(name, attrs)
+                if name == "script"
+                    && attrs.get("src").map(String::as_str) == Some(crate::frame::NAV_PATH) =>
+            {
+                nav_close = true;
+            }
+            Tok::Close(name) if nav_close && name == "script" => nav_close = false,
             Tok::Open(name, attrs)
                 if name == "input"
                     && attrs.get("name").map(String::as_str)
