@@ -56,9 +56,9 @@ pub fn netrc(text: &str, host: &str) -> (Option<String>, Option<String>) {
                     if is_login { login = v } else { pass = v }
                 } else if in_default {
                     if is_login {
-                        default.0 = v
+                        default.0 = v;
                     } else {
-                        default.1 = v
+                        default.1 = v;
                     }
                 }
                 i += 2;

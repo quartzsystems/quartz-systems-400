@@ -396,6 +396,7 @@ fn pad32(b: &mut Vec<u8>) {
 /// `CALL PGM(LIB/NAME) PARM(values)`: character values as typed (at
 /// least 32 bytes, blank-padded), numbers as `packed(15,5)`, hex as
 /// bytes.
+#[allow(clippy::too_many_lines)]
 fn call(
     job: &mut Job,
     _host: &Host,

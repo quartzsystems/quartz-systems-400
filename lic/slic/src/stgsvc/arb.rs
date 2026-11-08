@@ -227,7 +227,7 @@ fn storage(system: &mut System, w: &mut Watch, cmds: &mut Vec<String>) {
         "*REGFAC" if !restricted(system) => cmds.extend(regfac_jobs(system)),
         "*ENDSYS" if !restricted(system) => cmds.push("ENDSBS SBS(*ALL) OPTION(*IMMED)".into()),
         "*PWRDWNSYS" if !restricted(system) => {
-            cmds.push("PWRDWNSYS OPTION(*IMMED) RESTART(*YES)".into())
+            cmds.push("PWRDWNSYS OPTION(*IMMED) RESTART(*YES)".into());
         }
         _ => {}
     }

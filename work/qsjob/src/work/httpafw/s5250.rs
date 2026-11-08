@@ -493,6 +493,7 @@ struct Conn {
 }
 
 impl Conn {
+    #[allow(clippy::too_many_lines)]
     fn start(
         user: &str,
         s: &Saved,

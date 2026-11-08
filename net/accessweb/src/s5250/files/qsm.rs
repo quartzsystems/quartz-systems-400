@@ -412,7 +412,7 @@ impl MacroFile {
         for s in &self.steps {
             match &s.action {
                 Action::WaitText { row, col, text, .. } if text.trim() == "===>" => {
-                    out.push(format!("Command line at {row}/{col}"))
+                    out.push(format!("Command line at {row}/{col}"));
                 }
                 Action::WaitText { row, col, text, .. } => {
                     texts += 1;
@@ -638,7 +638,7 @@ mod tests {
 
     #[test]
     fn editor_lines() {
-        let text = "wait  screen \"Sign On\" at 1,35\ntype  \"CWELLMAN\"\nkey   Tab\nkey   Enter\nwait  screen \"Main Menu\" at 1,36\nkey   F:4   ; pick a screen position with the mouse in the editor\n";
+        let text = "wait  screen \"Sign On\" at 1,35\ntype  \"TESTUSER\"\nkey   Tab\nkey   Enter\nwait  screen \"Main Menu\" at 1,36\nkey   F:4   ; pick a screen position with the mouse in the editor\n";
         let steps = MacroFile::from_lines(text, ScreenSize::S24x80).unwrap();
         let mut m = MacroFile::new("SIGNON-DEV", ScreenSize::S24x80);
         m.steps = steps;

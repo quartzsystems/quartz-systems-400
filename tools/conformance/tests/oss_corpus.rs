@@ -116,6 +116,7 @@ impl Includes for ByStem {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn open_source_members_compile_without_compiler_failures() {
     let root = std::env::var("QS400_OSS_DIR").map_or_else(
         |_| Path::new(env!("CARGO_MANIFEST_DIR")).join("oss/src"),

@@ -212,7 +212,7 @@ fn record(link: &Shared, p: &Polled, may_adjust: bool) {
             applied,
         } => match (decision, applied) {
             _ if !may_adjust => {
-                bag.push(("LASTFAIL".into(), "QTIMADJ names another adjuster".into()))
+                bag.push(("LASTFAIL".into(), "QTIMADJ names another adjuster".into()));
             }
             (Decision::TooFar(_), _) => bag.push((
                 "LASTFAIL".into(),

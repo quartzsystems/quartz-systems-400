@@ -252,13 +252,13 @@ pub fn natives() -> Vec<(&'static str, mi::job::NativeFn)> {
         (
             "QRNGJSON",
             Rc::new(|j: &mut mi::Job, args: &[u64]| {
-                crate::datagen::shipped_generator(j, args, crate::datagen::Style::Json)
+                crate::datagen::shipped_generator(j, args, crate::datagen::Style::Json);
             }),
         ),
         (
             "QRNGXML",
             Rc::new(|j: &mut mi::Job, args: &[u64]| {
-                crate::datagen::shipped_generator(j, args, crate::datagen::Style::Xml)
+                crate::datagen::shipped_generator(j, args, crate::datagen::Style::Xml);
             }),
         ),
     ]

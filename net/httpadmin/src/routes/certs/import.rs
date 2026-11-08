@@ -21,6 +21,7 @@ use crate::env::{Import, ImportFormat, ImportSource};
 use crate::msgs;
 
 /// `/certs/import[?store=]`.
+#[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>) -> Response {
     let q = rq.query();
     if rq.post() {

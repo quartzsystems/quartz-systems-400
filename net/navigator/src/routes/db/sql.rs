@@ -25,6 +25,7 @@ const NAMINGS: [&str; 2] = ["*SQL", "*SYS"];
 const ISOLATIONS: [&str; 4] = ["*NONE", "*CHG", "*CS", "*ALL"];
 
 /// `/sql`.
+#[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>) -> Response {
     if rq.post() {
         return post(rq);

@@ -57,6 +57,7 @@ pub struct Col {
 /// # Panics
 /// On a type the test database does not have (a fixture's mistake).
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn col(name: &str, label: &str, sql_type: &str, nullable: bool) -> Col {
     let (base, args) = match sql_type.split_once('(') {
         Some((b, rest)) => {

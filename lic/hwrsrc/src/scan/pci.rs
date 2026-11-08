@@ -80,7 +80,9 @@ pub fn address_in(devpath: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-fn is_pci_address(s: &str) -> bool {
+/// Whether `s` is a PCI address, `dddd:bb:dd.f`.
+#[must_use]
+pub fn is_pci_address(s: &str) -> bool {
     let b = s.as_bytes();
     b.len() == 12
         && b[4] == b':'

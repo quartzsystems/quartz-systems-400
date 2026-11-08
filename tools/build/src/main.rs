@@ -195,7 +195,7 @@ fn main() -> Result<()> {
             notices::notices(&ctx, check)?;
         }
         Command::Fuzz { target, secs, jobs } => {
-            host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?
+            host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?;
         }
         Command::Kc => {
             image::release::kc(&ctx)?;

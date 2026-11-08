@@ -197,7 +197,7 @@ Messages this product owns (message file `QUSRSYS/QZXWMSG`): `XWA0001` policy de
 
 ## Fixture data
 
-Load the prototype's sample data as fixtures: user `CWELLMAN` (Cody Wellman, `*SECOFR`, group `ADMINS`), schema `HLINV` with `ASSETS` (12 sample rows in `table-view`), home directory `/home/CWELLMAN` with the files listed in `web/files.html`, eight spooled files, three messages with one inquiry, saved sessions "QSHQ400 operator" / "QSHQ400 default" / "QSBR1400 branch", the policy matrix for `WEBUSER` / `WEBUSERS` from `web/policies.html`.
+Load the prototype's sample data as fixtures: user `TESTUSER` (Cody Wellman, `*SECOFR`, group `ADMINS`), schema `HLINV` with `ASSETS` (12 sample rows in `table-view`), home directory `/home/TESTUSER` with the files listed in `web/files.html`, eight spooled files, three messages with one inquiry, saved sessions "QSHQ400 operator" / "QSHQ400 default" / "QSBR1400 branch", the policy matrix for `WEBUSER` / `WEBUSERS` from `web/policies.html`.
 
 ## Product-specific acceptance
 

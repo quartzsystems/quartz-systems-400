@@ -1,0 +1,23 @@
+[package]
+name = "rpgextdesc"
+description = "QS/400 external descriptions for the ILE RPG compiler: database, display and printer files as it reads them"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rpgc = { path = "../compiler", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+dds = { path = "../../database/dds", version = "0.1.0" }
+dspf = { path = "../../ui/dspf", version = "0.1.0" }
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+rpgfront = { path = "../front", version = "0.1.0" }
+
+[lints]
+workspace = true

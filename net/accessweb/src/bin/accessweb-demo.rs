@@ -5,7 +5,7 @@
 //! The product over the sample system on a local port, to click
 //! through in a browser: `cargo run -p accessweb --bin accessweb-demo
 //! [PORT]`, then <http://127.0.0.1:2003/qs400/accessweb/>, user
-//! `CWELLMAN`, password `QS400`.
+//! `TESTUSER`, password `QS400`.
 
 use std::net::TcpListener;
 use std::sync::Arc;
@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
     let nav = Arc::new(AccessWeb::new(fixture().env));
     let l = TcpListener::bind(("127.0.0.1", port))?;
     println!(
-        "http://127.0.0.1:{port}/qs400/accessweb/  (CWELLMAN / {})",
+        "http://127.0.0.1:{port}/qs400/accessweb/  (TESTUSER / {})",
         accessweb::fixture::PASSWORD
     );
     for s in l.incoming() {

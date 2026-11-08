@@ -44,6 +44,7 @@ pub mod names;
 pub mod pcml;
 pub mod qoar;
 pub mod reader_class;
+pub mod report;
 pub mod sql;
 pub mod syms;
 pub mod types;

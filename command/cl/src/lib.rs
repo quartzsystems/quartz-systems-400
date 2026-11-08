@@ -20,14 +20,24 @@
     clippy::struct_excessive_bools
 )]
 
+// The front end (`front`).
+#[cfg(feature = "front")]
+pub mod analysis;
 pub mod ast;
-pub mod compile;
 pub mod diag;
 pub mod lex;
-pub mod lower;
 pub mod parse;
 pub mod sem;
 
+// The driver and the code generator (`lower`).
+#[cfg(feature = "lower")]
+pub mod compile;
+#[cfg(feature = "lower")]
+pub mod lower;
+
+#[cfg(feature = "front")]
+pub use analysis::analyze;
+#[cfg(feature = "lower")]
 pub use compile::{Compiled, Options, compile};
 pub use diag::{Diag, Severity};
 pub use sem::{FieldDef, Files, Format, NoFiles};

@@ -152,6 +152,7 @@ fn flip(d: &mut UimDialog, chars: bool) -> bool {
 
 /// `DSPPGM` and `DSPSRVPGM`: each detail asked for, one display at a
 /// time.
+#[allow(clippy::too_many_lines)]
 pub fn dsppgm(
     job: &mut Job,
     host: &Host,

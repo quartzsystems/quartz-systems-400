@@ -413,7 +413,7 @@ fn write_one(rq: &Rq<'_>, id: u32, path: &str, data: &[u8], ccsid: u16) -> Resul
         Err(m) => {
             let why = format!("{} {}", m.id, m.text);
             q.update(rq.user(), id, |t| {
-                t.state = State::Failed(msgs::FILE_TRANSFER_FAILED.into(), why.clone())
+                t.state = State::Failed(msgs::FILE_TRANSFER_FAILED.into(), why.clone());
             });
             Err(m)
         }

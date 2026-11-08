@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Version negotiation (docs/QAP.md, "Compatibility of new values"):
-//! the server speaks 1 to 7 and picks the highest both sides do; a
+//! the server speaks 1 to 8 and picks the highest both sides do; a
 //! version-1 client sees exactly the version-1 protocol.
 
 mod common;
@@ -31,9 +31,10 @@ fn the_highest_common_version() {
         (1, 7, 7),
         (7, 7, 7),
         (1, 8, 8),
-        (1, 9, 9),
-        (3, 9, 9),
+        (8, 8, 8),
         (9, 9, 9),
+        (1, 20, qap_proto::VERSION),
+        (3, 20, qap_proto::VERSION),
     ] {
         let mut r = start(cfg());
         let h: HelloReply = r.client.hello_range(min, max).body_as().unwrap();
@@ -44,8 +45,8 @@ fn the_highest_common_version() {
     let refused = r.client.call(
         Op::Hello,
         &Hello {
-            min_version: 10,
-            max_version: 11,
+            min_version: qap_proto::VERSION + 1,
+            max_version: qap_proto::VERSION + 2,
             ..Hello::default()
         },
     );

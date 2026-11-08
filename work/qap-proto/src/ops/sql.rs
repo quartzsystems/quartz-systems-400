@@ -419,3 +419,115 @@ pub struct Columns {
 }
 
 wire_struct!(Columns { columns });
+
+/// What a routine is (version 8).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum RoutineKind {
+    /// A procedure.
+    #[default]
+    Procedure,
+    /// A function.
+    Function,
+}
+
+wire_enum!(RoutineKind {
+    0 => Procedure,
+    1 => Function,
+});
+
+/// `ListRoutines`'s request (version 8).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ListRoutines {
+    /// The schema.
+    pub schema: String,
+    /// An SQL `LIKE` pattern.
+    pub pattern: String,
+    /// The kinds wanted; empty for both.
+    pub kinds: Vec<RoutineKind>,
+    /// The first entry, 0-based.
+    pub start: u32,
+    /// At most this many; 0 for no limit.
+    pub max: u32,
+}
+
+wire_struct!(ListRoutines {
+    schema,
+    pattern,
+    kinds,
+    start,
+    max
+});
+
+/// A procedure or function (version 8).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Routine {
+    /// Its schema.
+    pub schema: String,
+    /// Its name.
+    pub name: String,
+    /// Its specific name.
+    pub specific: String,
+    /// What it is.
+    pub kind: RoutineKind,
+    /// Its description.
+    pub text: String,
+}
+
+wire_struct!(Routine {
+    schema,
+    name,
+    specific,
+    kind,
+    text
+});
+
+/// `ListRoutines`'s reply (version 8).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Routines {
+    /// Routines matching.
+    pub total: u32,
+    /// Those returned, by name, then specific name.
+    pub routines: Vec<Routine>,
+}
+
+wire_struct!(Routines { total, routines });
+
+/// `ListIndexes`'s request (version 8).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ListIndexes {
+    /// The table's schema.
+    pub schema: String,
+    /// The table.
+    pub table: String,
+}
+
+wire_struct!(ListIndexes { schema, table });
+
+/// An index over a table (version 8).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Index {
+    /// Its schema.
+    pub schema: String,
+    /// Its name.
+    pub name: String,
+    /// Whether its keys are unique.
+    pub unique: bool,
+    /// The key columns, in key order.
+    pub columns: Vec<String>,
+}
+
+wire_struct!(Index {
+    schema,
+    name,
+    unique,
+    columns
+});
+
+/// `ListIndexes`'s reply (version 8).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Indexes {
+    /// The indexes, by name.
+    pub indexes: Vec<Index>,
+}
+
+wire_struct!(Indexes { indexes });

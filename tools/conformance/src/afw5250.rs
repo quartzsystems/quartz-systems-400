@@ -134,6 +134,7 @@ fn websocket(port: u16, sid: &str, id: u32) -> Result<String, String> {
 
 impl Suite {
     /// Step 154: the web 5250 session against the system's Telnet server.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn access_web_5250(&self, s: &mut Session) -> Result<String, String> {
         secofr_password(s)?;
         let _ = s.command(&format!("DLTUSRPRF USRPRF({USER})"), CMD);

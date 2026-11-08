@@ -115,6 +115,7 @@ fn pcml(
 }
 
 /// Compile the source, spool the listing, make the object.
+#[allow(clippy::too_many_lines)]
 fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> CmdReply {
     let mut options = req.options(&req.object_name(src), lib_name, src);
     let shape = req.shape;
@@ -237,27 +238,34 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
 
 /// The compile, with `/COPY` members and file descriptions from the
 /// store; `*CTLSPEC` takes the control specification's name, compiling
-/// again under it.
+/// again under it; its diagnostics go with the reply.
 fn compile(
     system: &mut System,
     req: &Request,
     src: &Source,
     options: &mut rpgc::Options,
 ) -> rpgc::Compiled {
-    let cell = RefCell::new(system);
+    let cell = RefCell::new(&mut *system);
     let mut includes = source::StoreIncludes {
         system: &cell,
         incdir: req.incdir.clone(),
     };
     let mut files = source::StoreFiles { system: &cell };
     let c = rpgc::compile(src.member.clone(), &mut includes, &mut files, options);
-    match req.ctlspec_name(&c) {
+    let c = match req.ctlspec_name(&c) {
         Some(n) if n != options.name => {
             options.name = n;
             rpgc::compile(src.member.clone(), &mut includes, &mut files, options)
         }
         _ => c,
-    }
+    };
+    let diags = rpgc::report::diagnostics(
+        &c,
+        req.srcstmf.as_deref(),
+        &mut super::compdiags::help(system),
+    );
+    super::compdiags::put(system, diags);
+    c
 }
 
 /// An object not made: the escape `id` and what it names.

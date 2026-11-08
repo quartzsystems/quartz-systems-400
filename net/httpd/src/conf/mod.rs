@@ -298,7 +298,7 @@ fn print_nodes(items: &[Node], depth: usize, out: &mut String) {
             },
             Node::Section(s) => {
                 if let Some(r) = &s.raw {
-                    out.push_str(r)
+                    out.push_str(r);
                 } else {
                     let mut l = line_of(&s.name, &s.args, depth * 3);
                     l.insert(depth * 3, '<');

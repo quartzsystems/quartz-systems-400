@@ -231,12 +231,17 @@ impl Conn {
 
     /// `Hello` for versions 1 to the newest, request ID 1.
     pub fn hello(&mut self) -> Result<HelloReply, String> {
+        self.hello_max(qap_proto::VERSION)
+    }
+
+    /// `Hello` for versions 1 to `max`, request ID 1.
+    pub fn hello_max(&mut self, max: u16) -> Result<HelloReply, String> {
         self.next_id = 0;
         self.ok(
             Op::Hello,
             &Hello {
                 min_version: 1,
-                max_version: qap_proto::VERSION,
+                max_version: max,
                 client_name: "conformance".into(),
                 client_version: "89".into(),
                 capabilities: Vec::new(),

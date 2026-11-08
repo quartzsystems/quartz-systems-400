@@ -198,6 +198,9 @@ pub fn as_user(req: &Request) -> bool {
             | R::QapMgmtDisks { .. }
             | R::QapMgmtIpl { .. }
             | R::QapMgmtPower { .. }
+            | R::QapDevRead { .. }
+            | R::QapDevWrite { .. }
+            | R::QapDevUnlock { .. }
     )
 }
 

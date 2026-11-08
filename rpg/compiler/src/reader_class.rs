@@ -22,7 +22,7 @@ pub fn counts(r: &Read) -> (usize, usize) {
         match l.class {
             Class::Comment => comments += 1,
             Class::Spec(_) | Class::Free | Class::Sql | Class::Directive(_) | Class::FreeMarker => {
-                specs += 1
+                specs += 1;
             }
             _ => {}
         }

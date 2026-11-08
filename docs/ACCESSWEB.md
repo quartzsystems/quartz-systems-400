@@ -17,7 +17,7 @@ and the golden pages under `net/accessweb/tests/golden/`.
 | `prefs.rs` | Every preference's key and default, `Prefs` (the stored values over the defaults, the date and time formats). |
 | `msgs.rs` | `QUSRSYS/QZXWMSG`: the `XWA` messages and the desktop's `QAD` messages the product shows. `runtime/msgf/msgs/qzxwmsg.toml` is made from it (`QS400_UPDATE_MSGF=1 cargo test -p accessweb --test msgf`). |
 | `routes/` | `dispatch` (session, CSRF, the expired-password gate, the `/nav` tree toggle), `Rq` (with `Rq::policy` and `Rq::allowed`), sign-on, home, the generic pages, `customize/` (Preferences, Change password, Policies), then one folder per area. |
-| `fixture/` | The prototype's sample system: `QSHQ400`, US Eastern time, clock 10/29/26 14:03:40, user `CWELLMAN` (Cody Wellman, `*SECOFR`, group `ADMINS`), `WEBUSER` in group `WEBUSERS`, groups `WAREHOUSE` and `ADMINS`; one module per area with its data (`HLINV.ASSETS`' 12 rows, `/home/CWELLMAN`, 8 spooled files, 3 messages with one inquiry, 4 saved sessions), `text.rs` the system message texts. |
+| `fixture/` | The prototype's sample system: `QSHQ400`, US Eastern time, clock 10/29/26 14:03:40, user `TESTUSER` (Cody Wellman, `*SECOFR`, group `ADMINS`), `WEBUSER` in group `WEBUSERS`, groups `WAREHOUSE` and `ADMINS`; one module per area with its data (`HLINV.ASSETS`' 12 rows, `/home/TESTUSER`, 8 spooled files, 3 messages with one inquiry, 4 saved sessions), `text.rs` the system message texts. |
 | `help.rs` | Help topics. |
 | `transfer.rs` | The transfer queue of Browse files, per user (steps 13-14). |
 
@@ -236,10 +236,10 @@ are real defects of the golden page, or data:
 
 | Page | Fix | Why |
 |---|---|---|
-| every signed-on page | header `User: QSECOFR` → `User: CWELLMAN` | data: the handoff's fixture user is `CWELLMAN`, whose name the home page shows |
+| every signed-on page | header `User: QSECOFR` → `User: TESTUSER` | data: the handoff's fixture user is `TESTUSER`, whose name the home page shows |
 | `web/signon.html` | form `action` `home.html` → `signon.html` | the form posts to the sign-on route; home follows by redirect |
 | `web/change-password.html` | the current item is Change password, not Preferences | the tree marked another page |
-| `web/change-password.html` | `CPF1107 - Password for user profile CWELLMAN expires in 5 days.` → `QAD4031 - Password for CWELLMAN on QSHQ400 expires in 5 days.` | `CPF1107` is a sign-on error (no user given); the warning is the desktop's `QAD4031`, in its words |
+| `web/change-password.html` | `CPF1107 - Password for user profile TESTUSER expires in 5 days.` → `QAD4031 - Password for TESTUSER on QSHQ400 expires in 5 days.` | `CPF1107` is a sign-on error (no user given); the warning is the desktop's `QAD4031`, in its words |
 | `web/change-password.html` | one `<form>`, not two nested | a form inside a form is not valid HTML |
 | `web/policies.html` | a `Sign on` section with "Sign on to Access for Web" ahead of 5250 (two rows: the stripes stay) | the handoff's step 1 names the policy; the page had no row for it |
 | `web/policies.html` | Apply, OK, Cancel, Copy policies from... get names `apply`, `ok`, `cancel`, `copy` | four nameless buttons in one form cannot be told apart |
@@ -253,6 +253,7 @@ are real defects of the golden page, or data:
 | `web/5250-keymap.html` | the grouped rows (F1 ... F12, Shift+F1 ... Shift+F12, the arrows) have no select; the form is multipart; Add, Load, Export get names | a select with nothing selected posts its first choice (Enter) and would remap twelve keys at once; an upload needs multipart; nameless buttons |
 | `web/5250-macros.html` | SIGNON-DEV `4` steps → `6`; one `<form>`, not two nested; Record gets name `record` | data: the editor shows six steps; not valid HTML; nameless button |
 | `shared/img/*.png` | none: byte for byte | the encoder is a zlib-ng-compatible greedy deflate (good 4, insert 6, nice 32, chain 32, memory level 9; `s5250/look/deflate.rs`) with the usual PNG filter heuristic, found by comparing the prototype's streams with zlib-rs at every setting |
+| `shared/img/5250-24x80*.png`, `5250-27x132.png` | redrawn by the server with the fixture user `TESTUSER` in the `WRKACTJOB` screen (`tools/conformance/golden/accessweb/wrkactjob.txt`) | data: the prototype's user is a real account name, which no tracked file may hold (`phase8_hygiene`); the other pictures stay the prototype's bytes, so the renderer is unchanged |
 
 ## 5250 session (steps 5-6b)
 

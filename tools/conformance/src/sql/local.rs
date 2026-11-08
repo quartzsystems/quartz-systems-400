@@ -35,6 +35,7 @@ fn s(e: impl std::fmt::Display) -> String {
 }
 
 /// Run `c` on a fresh store; the outcome text.
+#[allow(clippy::too_many_lines)]
 pub fn run(c: &Case) -> Result<String, String> {
     let dev = Arc::new(MemBlockDev::with_seed(65536, 7));
     let params = FormatParams {

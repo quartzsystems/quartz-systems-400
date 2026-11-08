@@ -13,7 +13,7 @@ use qsweb::msg::Message;
 /// A spooled file, as Printer Output and its properties show it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Splf {
-    /// The job that made it, `123402/CWELLMAN/INVBATCH`.
+    /// The job that made it, `123402/TESTUSER/INVBATCH`.
     pub job: String,
     /// The file name.
     pub file: String,
@@ -66,7 +66,7 @@ pub struct Splf {
 }
 
 impl Splf {
-    /// Its key in URLs and forms: `123402-CWELLMAN-INVBATCH-INVRPT-402`
+    /// Its key in URLs and forms: `123402-TESTUSER-INVBATCH-INVRPT-402`
     /// (system names hold no `-`).
     pub fn id(&self) -> String {
         let mut j = self.job.split('/');

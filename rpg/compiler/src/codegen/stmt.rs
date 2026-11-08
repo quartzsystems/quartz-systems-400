@@ -68,7 +68,7 @@ impl Gen<'_> {
                 if let Some(f) = &src.fig {
                     match f {
                         Fig::Zeros | Fig::Hival | Fig::Loval => {
-                            self.b.ins(format!("mov {}, {}", dst.op, src.op))
+                            self.b.ins(format!("mov {}, {}", dst.op, src.op));
                         }
                         Fig::All(s) if s.chars().all(|c| c.is_ascii_digit()) => {
                             self.b.ins(format!("mov {}, *ZEROS", dst.op));

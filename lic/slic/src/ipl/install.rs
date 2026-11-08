@@ -660,6 +660,7 @@ impl Env<'_> {
     /// boot entries stay. The release rule decides: the same release
     /// again or a newer one goes into the slot the system did not boot,
     /// which becomes the default; the operating system install follows.
+    #[allow(clippy::too_many_lines)]
     fn write_lic_over(
         &mut self,
         device: &str,

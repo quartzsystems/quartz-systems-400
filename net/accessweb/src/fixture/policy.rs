@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The prototype's policies and preferences: group `WEBUSERS` denied
-//! what `web/policies.html` shows as "Group WEBUSERS"; `CWELLMAN`
+//! what `web/policies.html` shows as "Group WEBUSERS"; `TESTUSER`
 //! prefers 27 x 132 screens and last signed on from 10.0.10.55.
 
 use std::collections::BTreeMap;
@@ -82,7 +82,7 @@ impl Default for FixturePrefs {
     fn default() -> Self {
         let mut m = BTreeMap::new();
         m.insert(
-            "CWELLMAN".to_string(),
+            "TESTUSER".to_string(),
             vec![
                 (crate::prefs::SCREEN.to_string(), "27".to_string()),
                 (

@@ -251,6 +251,7 @@ fn insert(t: &Tag, n: u32) -> Vec<u8> {
 const DENSITIES: [u8; 6] = [3, 4, 6, 8, 9, 12];
 
 /// Compile tag-language `source`.
+#[allow(clippy::too_many_lines)]
 pub fn compile(source: &str) -> Result<Wscst, WscstError> {
     let all = tags(source)?;
     let first = all.first().ok_or(WscstError::Syntax {

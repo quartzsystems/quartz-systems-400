@@ -127,6 +127,7 @@ fn from_hex(s: &str) -> Result<Vec<u8>> {
 }
 
 /// Calls `name` when this family has it.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Result<Value>> {
     if NOT_FUNCTIONS.contains(&name) {
         return Some(Err(SqlError::ObjectNotFound {

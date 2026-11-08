@@ -11,17 +11,20 @@
 //! (`/init qshwr`, `lic/slic/src/hwsvc/`). Everything else asks it over
 //! [`proto`]; [`client`] connects to its socket. [`dmi`] reads the
 //! machine's identity (vendor, product, serial) from the firmware.
+//! [`names`] keeps the names from one IPL to the next.
 
 #![forbid(unsafe_code)]
 
 pub mod client;
 pub mod dmi;
+pub mod names;
 pub mod proto;
 pub mod scan;
 pub mod table;
 pub mod uevent;
 pub mod view;
 
+pub use names::NameMap;
 pub use scan::{nic, pci, storage};
 pub use table::tree::TreeRow;
-pub use table::{Kind, ParityCapable, ParityController, Resource, Status, Table};
+pub use table::{Kind, ParityCapable, ParityController, Removal, Resource, Status, Table};

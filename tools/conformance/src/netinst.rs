@@ -31,6 +31,7 @@ impl Suite {
     /// DHCP again and fetches `INSTALL.RSP` beside the boot file; the
     /// install takes its payload from the CD and its answers from the
     /// network, and the installed system gets its address from DHCP.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn network_install(&self) -> Result<StepReport, HarnessError> {
         let name = "15 network install";
         let start = Instant::now();

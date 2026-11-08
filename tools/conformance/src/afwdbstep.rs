@@ -174,6 +174,7 @@ fn run_sql(port: u16, sid: &str, script: &str) -> Result<Reply, String> {
 
 impl Suite {
     /// Step 155: Access for Web's database pages, live.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn access_web_db(&self, s: &mut Session) -> Result<String, String> {
         secofr_password(s)?;
         let _ = s.command("DLTLIB LIB(AFW155)", CMD)?;

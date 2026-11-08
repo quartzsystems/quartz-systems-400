@@ -44,52 +44,9 @@ pub const CLAUSED: &[&str] = &[
 ];
 
 /// The clauses of a call: `name=value` pairs.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Opts(Vec<(String, String)>);
+pub use crate::words::Opts;
 
 impl Opts {
-    /// A clause's value.
-    #[must_use]
-    pub fn get(&self, k: &str) -> Option<&str> {
-        self.0.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str())
-    }
-
-    /// A clause's value, or `default`.
-    #[must_use]
-    pub fn or<'a>(&'a self, k: &str, default: &'a str) -> &'a str {
-        self.get(k).unwrap_or(default)
-    }
-
-    /// Set a clause.
-    pub fn set(&mut self, k: &str, v: impl Into<String>) {
-        self.0.retain(|(n, _)| n != k);
-        self.0.push((k.into(), v.into()));
-    }
-
-    /// The text kept in the call.
-    #[must_use]
-    pub fn text(&self) -> String {
-        let mut s = String::new();
-        for (k, v) in &self.0 {
-            s.push_str(k);
-            s.push('=');
-            s.push_str(v);
-            s.push(';');
-        }
-        s
-    }
-
-    /// From that text.
-    #[must_use]
-    pub fn parse(text: &str) -> Self {
-        Self(
-            text.split(';')
-                .filter_map(|p| p.split_once('='))
-                .map(|(k, v)| (k.to_string(), v.to_string()))
-                .collect(),
-        )
-    }
-
     /// The options of a call the parser wrote.
     fn of(f: &Function) -> Self {
         match f.args.first() {

@@ -251,6 +251,12 @@ pub fn resources(system: &mut System, job: u32) -> Result<(Vec<ResourceRow>, u32
     Ok((rows, cpus))
 }
 
+/// Remove a hardware resource that does not report.
+pub fn remove_resource(system: &mut System, job: u32, name: &str) -> Result<(), String> {
+    need(system, job, Privilege::HARDWARE)?;
+    env(system).remove_resource(name)
+}
+
 /// A page of a unit, or an object header.
 pub fn storage(
     system: &mut System,

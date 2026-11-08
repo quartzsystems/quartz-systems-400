@@ -10,13 +10,14 @@
 use ipc::wire_struct;
 use mi::io::{DataAreaValue, FileInfo as IoFileInfo, IoFail, IoResult, OpenSpec, OwnedRequest};
 use msgf::MsgDesc;
+use qap_proto::ops::develop::MemberData;
 use qap_proto::ops::manage::{DiskUnits, IplStatus, PowerDown, Ptf};
 use qap_proto::ops::messages::{Queue, Recipient};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId,
     SpooledFiles,
 };
-use qap_proto::types::ObjectName;
+use qap_proto::types::{MemberName, ObjectName, SourceRecord};
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
@@ -88,6 +89,94 @@ pub struct CmdMsg {
 
 wire_struct!(CmdMsg { msgid, kind, data });
 
+/// A compiler's diagnostic (`compdiag::Diagnostic`) on the wire. `kind`
+/// says where it points: 0 a member (`library`, `file`, `member`), 1 a
+/// stream file (`path`), 2 nowhere.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CompileDiag {
+    /// Where it points.
+    pub kind: u8,
+    /// The member's library.
+    pub library: String,
+    /// The member's source file.
+    pub file: String,
+    /// The member.
+    pub member: String,
+    /// The stream file.
+    pub path: String,
+    /// Line, column, end line, end column.
+    pub at: (u32, u16, u32, u16),
+    /// Severity.
+    pub severity: u8,
+    /// The message identifier.
+    pub id: String,
+    /// First- and second-level text.
+    pub text: (String, String),
+}
+
+wire_struct!(CompileDiag {
+    kind,
+    library,
+    file,
+    member,
+    path,
+    at,
+    severity,
+    id,
+    text
+});
+
+impl From<compdiag::Diagnostic> for CompileDiag {
+    fn from(d: compdiag::Diagnostic) -> Self {
+        let mut w = Self {
+            kind: 2,
+            at: (d.line, d.column, d.end_line, d.end_column),
+            severity: d.severity,
+            id: d.id,
+            text: (d.text, d.help),
+            ..Self::default()
+        };
+        match d.at {
+            compdiag::Where::Member(m) => {
+                w.kind = 0;
+                w.library = m.library;
+                w.file = m.file;
+                w.member = m.member;
+            }
+            compdiag::Where::Path(p) => {
+                w.kind = 1;
+                w.path = p;
+            }
+            compdiag::Where::None => {}
+        }
+        w
+    }
+}
+
+impl From<CompileDiag> for compdiag::Diagnostic {
+    fn from(w: CompileDiag) -> Self {
+        Self {
+            at: match w.kind {
+                0 => compdiag::Where::Member(compdiag::MemberName {
+                    library: w.library,
+                    file: w.file,
+                    member: w.member,
+                }),
+                1 => compdiag::Where::Path(w.path),
+                _ => compdiag::Where::None,
+            },
+            line: w.at.0,
+            column: w.at.1,
+            end_line: w.at.2,
+            end_column: w.at.3,
+            severity: w.severity,
+            id: w.id,
+            text: w.text.0,
+            help: w.text.1,
+        }
+    }
+}
+
 /// What running a system command in the service answered.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CmdReply {
@@ -114,6 +203,9 @@ pub struct CmdReply {
     /// Exit point notifications the job makes after the command, each
     /// `POINT FORMAT PROFILE` (`RSTUSRPRF`'s `QIBM_QSY_RST_PROFILE`).
     pub notify: Vec<String>,
+    /// A compiler command's diagnostics, in listing order
+    /// (`compdiag::COMMANDS`); the job keeps them as its last compile's.
+    pub diagnostics: Vec<CompileDiag>,
 }
 
 wire_struct!(CmdReply {
@@ -125,7 +217,8 @@ wire_struct!(CmdReply {
     srcs,
     sysvals,
     call,
-    notify
+    notify,
+    diagnostics
 });
 
 ipc::rpc! {
@@ -643,6 +736,8 @@ ipc::rpc! {
     /// or 6 over `units`), `stop` (`set`), `include` (`units[0]` in
     /// `set`), `exclude` (`units[0]`); the line the message line shows.
     434 => fn sst_parity_change / SstParityChange (op: String, level: u8, set: u8, units: Vec<u16>) -> Result<String, String>;
+    /// SST: remove a hardware resource that does not report.
+    435 => fn sst_remove_resource / SstRemoveResource (name: String) -> Result<(), String>;
     // --- the integrated file system (440-459)
     /// One IFS operation for the job (`crate::ifs`): descriptors,
     /// directory streams and locks are the connection's and end with it.
@@ -759,6 +854,18 @@ ipc::rpc! {
     772 => fn qap_mgmt_ipl / QapMgmtIpl () -> Result<IplStatus, QapRefused>;
     /// `PowerDown`, checked as `PWRDWNSYS` (`*JOBCTL`), then handed to `slic`.
     773 => fn qap_mgmt_power / QapMgmtPower (req: PowerDown) -> Result<(), QapRefused>;
+    // --- QAP development (780-789; docs/QAP.md version 8,
+    // stgsvc/qap/develop.rs). Only a QAP connection job asks, as its
+    // user; the member's locks are the job's.
+    /// `ReadMember`, as `STRSEU` reads: the records in UTF-8; with
+    /// `lock`, the member held `*SHRNUP` by the job.
+    780 => fn qap_dev_read / QapDevRead (member: MemberName, lock: bool) -> Result<MemberData, QapRefused>;
+    /// `WriteMember`: the records dated (`qapd::develop::dated`),
+    /// converted to the file's CCSID and written whole; the job's lock
+    /// on the member ends. The member's records.
+    781 => fn qap_dev_write / QapDevWrite (member: MemberName, records: Vec<SourceRecord>, renumber: bool, srctype: Option<String>, text: Option<String>) -> Result<u32, QapRefused>;
+    /// `UnlockMember`: the job's `*SHRNUP` lock on the member ends.
+    782 => fn qap_dev_unlock / QapDevUnlock (member: MemberName) -> Result<(), QapRefused>;
 
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the
@@ -1441,3 +1548,35 @@ ipc::wire_enum!(DbgEvent {
     4 => Vars { list, error },
     5 => Value { text, error },
 });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_compile_diagnostic_crosses_the_wire_whole() {
+        let d = compdiag::Diagnostic {
+            at: compdiag::Where::Member(compdiag::MemberName {
+                library: "QGPL".into(),
+                file: "QRPGLESRC".into(),
+                member: "COPYME".into(),
+            }),
+            line: 42,
+            column: 9,
+            end_line: 0,
+            end_column: 12,
+            severity: 30,
+            id: "RNF7030".into(),
+            text: "X is not defined.".into(),
+            help: "Declare it.".into(),
+        };
+        let reply = CmdReply {
+            diagnostics: vec![d.clone().into(), compdiag::Diagnostic::default().into()],
+            ..CmdReply::default()
+        };
+        let back: CmdReply = ipc::decode(&ipc::encode(&reply)).expect("decodes");
+        let diags: Vec<compdiag::Diagnostic> =
+            back.diagnostics.into_iter().map(Into::into).collect();
+        assert_eq!(diags, vec![d, compdiag::Diagnostic::default()]);
+    }
+}

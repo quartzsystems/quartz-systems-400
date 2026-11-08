@@ -363,7 +363,7 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             }
             "FIXNBR" => {
                 c.fixnbr_zoned =
-                    (0..k.args.len()).any(|i| word_arg(k, i).as_deref() == Some("*ZONED"))
+                    (0..k.args.len()).any(|i| word_arg(k, i).as_deref() == Some("*ZONED"));
             }
             "EXTBININT" => c.extbinint = word_arg(k, 0).as_deref() != Some("*NO"),
             "ALTSEQ" => c.altseq_src = word_arg(k, 0).as_deref() == Some("*SRC"),
@@ -409,7 +409,7 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             "DECPREC" => {
                 c.decprec = int_arg(k, 0)
                     .and_then(|v| u8::try_from(v).ok())
-                    .unwrap_or(31)
+                    .unwrap_or(31);
             }
             "TEXT" => c.text = str_arg(k, 0).unwrap_or_default(),
             "ALWNULL" => c.alwnull = word_arg(k, 0).unwrap_or_else(|| "*NO".into()),
@@ -445,7 +445,7 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             "GENLVL" => {
                 c.genlvl = int_arg(k, 0)
                     .and_then(|v| u8::try_from(v).ok())
-                    .unwrap_or(10)
+                    .unwrap_or(10);
             }
             _ => {}
         }

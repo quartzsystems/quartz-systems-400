@@ -141,7 +141,7 @@ fn seu_edit_messages() {
     key(&mut s, Key::F(16), (2, 9), none);
     compare_rows("seu-edit-f16", &draw(&mut s), 1..=23);
     key(&mut s, Key::Enter, (2, 9), |i| {
-        i.cmdline = "find IID".into()
+        i.cmdline = "find IID".into();
     });
     compare_rows("seu-edit-find", &draw(&mut s), 1..=3);
     key(&mut s, Key::Enter, (2, 9), |i| i.cmdline = "XYZ".into());
@@ -215,7 +215,7 @@ fn seu_prompt_rpg() {
         s.set_srctype("RPGLE");
         let _ = s.view();
         key(&mut s, Key::Enter, (2, 9), |i| {
-            seq_on(i, 7, &format!("ip{fmt}"))
+            seq_on(i, 7, &format!("ip{fmt}"));
         });
         let top = s.view().prompt.expect("a prompt").top;
         compare_rows(golden, &draw(&mut s), top..=23);

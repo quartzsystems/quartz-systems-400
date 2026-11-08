@@ -1,0 +1,24 @@
+                      Confirm Remove of Hardware Resources                      
+                                                                 System:  QS400 
+                                                                                
+ Press F10 to remove these resources; their names are then                      
+ free of them. Press F12 to keep them.                                          
+                                                                                
+   LIN01                                                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

@@ -128,11 +128,11 @@ fn files_page() {
     let mut b = Browser::signed_on();
     // Two entries cut in upload/ wait to be pasted.
     let r = b.post(
-        "/files?path=/home/CWELLMAN/upload",
+        "/files?path=/home/TESTUSER/upload",
         &[("s", "old.csv"), ("s", "old2.csv"), ("cut", "Cut")],
     );
     assert_eq!(r.status, 303, "{}", r.text());
-    let r = b.get("/files?path=/home/CWELLMAN");
+    let r = b.get("/files?path=/home/TESTUSER");
     assert_eq!(r.status, 200);
     assert_text(&r.text(), &files_golden(), "web/files.html");
 }
@@ -140,7 +140,7 @@ fn files_page() {
 #[test]
 fn file_props_page() {
     let mut b = Browser::signed_on();
-    let r = b.get("/files/props?path=/home/CWELLMAN/assets_br1.csv");
+    let r = b.get("/files/props?path=/home/TESTUSER/assets_br1.csv");
     assert_eq!(r.status, 200);
     assert_golden(&r.text(), "web/file-props.html", &[HEADER_USER]);
 }
@@ -156,7 +156,7 @@ fn my_files_page() {
 #[test]
 fn file_edit_page() {
     let mut b = Browser::signed_on();
-    let r = b.get("/files/edit?path=/home/CWELLMAN/invload.clle");
+    let r = b.get("/files/edit?path=/home/TESTUSER/invload.clle");
     assert_eq!(r.status, 200);
     assert_golden(
         &r.text(),
@@ -192,83 +192,83 @@ fn folders_rename_copy_paste_delete() {
     let mut b = Browser::signed_on();
     // New folder.
     let r = b.post(
-        "/files/mkdir?path=/home/CWELLMAN",
+        "/files/mkdir?path=/home/TESTUSER",
         &[("name", "archive"), ("ok", "OK")],
     );
     assert_eq!(
         r.header("Location"),
-        Some("/qs400/accessweb/files?path=/home/CWELLMAN"),
+        Some("/qs400/accessweb/files?path=/home/TESTUSER"),
         "{}",
         r.text()
     );
     assert!(
         b.get("/files")
             .text()
-            .contains("QAD8002</a> - Folder /home/CWELLMAN/archive created.")
+            .contains("QAD8002</a> - Folder /home/TESTUSER/archive created.")
     );
     let t = b
         .post(
-            "/files/mkdir?path=/home/CWELLMAN",
+            "/files/mkdir?path=/home/TESTUSER",
             &[("name", "a/b"), ("ok", "OK")],
         )
         .text();
     assert!(t.contains("XWA0004"), "{t}");
     // Rename.
     b.post(
-        "/files/rename?path=/home/CWELLMAN/notes.txt",
+        "/files/rename?path=/home/TESTUSER/notes.txt",
         &[("name", "notes-old.txt"), ("ok", "OK")],
     );
     assert!(b.get("/files").text().contains(
-        "QAD8003</a> - /home/CWELLMAN/notes.txt renamed to /home/CWELLMAN/notes-old.txt."
+        "QAD8003</a> - /home/TESTUSER/notes.txt renamed to /home/TESTUSER/notes-old.txt."
     ));
     // Copy two into archive, paste twice is refused the second time.
     b.post(
         "/files",
         &[("s", "notes-old.txt"), ("s", ".profile"), ("copy", "Copy")],
     );
-    let r = b.post("/files?path=/home/CWELLMAN/archive", &[("paste", "Paste")]);
+    let r = b.post("/files?path=/home/TESTUSER/archive", &[("paste", "Paste")]);
     assert_eq!(r.status, 303);
     assert!(
-        b.get("/files?path=/home/CWELLMAN/archive")
+        b.get("/files?path=/home/TESTUSER/archive")
             .text()
-            .contains("QAD8005</a> - 2 entries copied to /home/CWELLMAN/archive.")
+            .contains("QAD8005</a> - 2 entries copied to /home/TESTUSER/archive.")
     );
     assert_eq!(
-        text_of(&b, "/home/CWELLMAN/archive/.profile"),
-        text_of(&b, "/home/CWELLMAN/.profile")
+        text_of(&b, "/home/TESTUSER/archive/.profile"),
+        text_of(&b, "/home/TESTUSER/.profile")
     );
-    b.post("/files?path=/home/CWELLMAN/archive", &[("paste", "Paste")]);
+    b.post("/files?path=/home/TESTUSER/archive", &[("paste", "Paste")]);
     assert!(
-        b.get("/files?path=/home/CWELLMAN/archive")
+        b.get("/files?path=/home/TESTUSER/archive")
             .text()
             .contains("CPFA0A0")
     );
     // Cut moves, the link's token checked.
     let csrf = b.csrf.clone();
     assert_eq!(
-        b.get("/files/cut?path=/home/CWELLMAN/archive/.profile&t=bad")
+        b.get("/files/cut?path=/home/TESTUSER/archive/.profile&t=bad")
             .status,
         403
     );
     b.get(&format!(
-        "/files/cut?path=/home/CWELLMAN/archive/.profile&t={csrf}"
+        "/files/cut?path=/home/TESTUSER/archive/.profile&t={csrf}"
     ));
-    b.post("/files?path=/home/CWELLMAN/upload", &[("paste", "Paste")]);
+    b.post("/files?path=/home/TESTUSER/upload", &[("paste", "Paste")]);
     assert!(
         b.fx.files
             .tree
             .lock()
             .unwrap()
-            .contains_key("/home/CWELLMAN/upload/.profile")
+            .contains_key("/home/TESTUSER/upload/.profile")
     );
     // Delete: the confirmation counts, OK deletes.
-    let t = b.get("/files/confirm?path=/home/CWELLMAN&s=archive").text();
+    let t = b.get("/files/confirm?path=/home/TESTUSER&s=archive").text();
     assert!(
         t.contains("1 object in all") || t.contains("2 objects in all"),
         "{t}"
     );
     let r = b.post(
-        "/files/confirm?path=/home/CWELLMAN&s=archive",
+        "/files/confirm?path=/home/TESTUSER&s=archive",
         &[("ok", "OK")],
     );
     assert_eq!(r.status, 303);
@@ -279,13 +279,13 @@ fn folders_rename_copy_paste_delete() {
             .lock()
             .unwrap()
             .keys()
-            .any(|k| k.starts_with("/home/CWELLMAN/archive"))
+            .any(|k| k.starts_with("/home/TESTUSER/archive"))
     );
     // The list's Delete... asks first.
     let r = b.post("/files", &[("s", "notes-old.txt"), ("delete", "Delete...")]);
     assert_eq!(
         r.header("Location"),
-        Some("/qs400/accessweb/files/confirm?path=/home/CWELLMAN&s=notes-old.txt")
+        Some("/qs400/accessweb/files/confirm?path=/home/TESTUSER&s=notes-old.txt")
     );
     // Nothing selected.
     assert_eq!(b.post("/files", &[("cut", "Cut")]).status, 303);
@@ -334,7 +334,7 @@ fn upload_several_text_and_existing() {
     let mut b = Browser::signed_on();
     let csrf = b.csrf.clone();
     let req = multipart(
-        "/files?path=/home/CWELLMAN/upload",
+        "/files?path=/home/TESTUSER/upload",
         &[("mode", "bin"), ("ex", "Ask"), ("dm", "bin"), ("dle", "LF")],
         &[("a.bin", b"\x00\x01\x02"), ("b.txt", b"one\r\ntwo\r\n")],
         &csrf,
@@ -342,27 +342,27 @@ fn upload_several_text_and_existing() {
     let r = b.send(req);
     assert_eq!(r.status, 303);
     assert!(
-        b.get("/files?path=/home/CWELLMAN/upload")
+        b.get("/files?path=/home/TESTUSER/upload")
             .text()
             .contains("XWA0040</a> - File a.bin, b.txt uploaded.")
     );
     assert_eq!(
         b.fx.files
-            .entry("CWELLMAN", "/home/CWELLMAN/upload/a.bin")
+            .entry("TESTUSER", "/home/TESTUSER/upload/a.bin")
             .unwrap()
             .ccsid,
         65535
     );
     assert_eq!(
         b.fx.files
-            .entry("CWELLMAN", "/home/CWELLMAN/upload/b.txt")
+            .entry("TESTUSER", "/home/TESTUSER/upload/b.txt")
             .unwrap()
             .ccsid,
         1208
     );
     // Text in CCSID 37 with LF on the system.
     let req = multipart(
-        "/files?path=/home/CWELLMAN/upload",
+        "/files?path=/home/TESTUSER/upload",
         &[("mode", "text"), ("ccsid", "37"), ("ex", "Replace")],
         &[("e.txt", b"AB\r\n")],
         &csrf,
@@ -370,36 +370,36 @@ fn upload_several_text_and_existing() {
     b.send(req);
     let t = b.fx.files.tree.lock().unwrap();
     assert_eq!(
-        t["/home/CWELLMAN/upload/e.txt"].data,
+        t["/home/TESTUSER/upload/e.txt"].data,
         Data::File(vec![0xC1, 0xC2, 0x25])
     );
     drop(t);
     // Exists: Ask waits in the queue; Replace writes it.
     let req = multipart(
-        "/files?path=/home/CWELLMAN/upload",
+        "/files?path=/home/TESTUSER/upload",
         &[("mode", "bin"), ("ex", "Ask")],
         &[("b.txt", b"new")],
         &csrf,
     );
     b.send(req);
-    let page = b.get("/files?path=/home/CWELLMAN/upload").text();
+    let page = b.get("/files?path=/home/TESTUSER/upload").text();
     assert!(
-        page.contains("QAD8010</a> - b.txt already exists in /home/CWELLMAN/upload."),
+        page.contains("QAD8010</a> - b.txt already exists in /home/TESTUSER/upload."),
         "{page}"
     );
-    let id = b.fx.files.queue.list("CWELLMAN").last().unwrap().id;
+    let id = b.fx.files.queue.list("TESTUSER").last().unwrap().id;
     b.get(&format!("/files/queue?n={id}&op=replace&t={csrf}"));
-    assert_eq!(text_of(&b, "/home/CWELLMAN/upload/b.txt"), "new");
+    assert_eq!(text_of(&b, "/home/TESTUSER/upload/b.txt"), "new");
     // A CCSID the system lacks: nothing written.
     let req = multipart(
-        "/files?path=/home/CWELLMAN/upload",
+        "/files?path=/home/TESTUSER/upload",
         &[("mode", "text"), ("ccsid", "9999")],
         &[("z.txt", b"x")],
         &csrf,
     );
     b.send(req);
     assert!(
-        b.get("/files?path=/home/CWELLMAN/upload")
+        b.get("/files?path=/home/TESTUSER/upload")
             .text()
             .contains("XWA0004")
     );
@@ -407,17 +407,17 @@ fn upload_several_text_and_existing() {
     let id =
         b.fx.files
             .queue
-            .list("CWELLMAN")
+            .list("TESTUSER")
             .iter()
             .find(|t| t.path.ends_with("backup.sh"))
             .unwrap()
             .id;
     b.get(&format!("/files/queue?n={id}&op=retry&t={csrf}"));
-    assert!(text_of(&b, "/home/CWELLMAN/scripts/backup.sh").starts_with("#!/bin/sh"));
+    assert!(text_of(&b, "/home/TESTUSER/scripts/backup.sh").starts_with("#!/bin/sh"));
     assert!(b.get("/files").text().contains("XWA0040"));
     // Another user is refused in a directory it may not change.
     let mut w = Browser::as_user("WEBUSER");
-    w.fx.files.mkdir("CWELLMAN", "/home/WEBUSER").unwrap();
+    w.fx.files.mkdir("TESTUSER", "/home/WEBUSER").unwrap();
     w.fx.files
         .tree
         .lock()
@@ -440,7 +440,7 @@ fn upload_several_text_and_existing() {
 fn download_ranges_and_queue() {
     let mut b = Browser::signed_on();
     // Binary: all of it, then the rest from 100,000 on.
-    let r = b.get("/files/download?path=/home/CWELLMAN/inventory_2026-10.pdf");
+    let r = b.get("/files/download?path=/home/TESTUSER/inventory_2026-10.pdf");
     assert_eq!(r.status, 200);
     assert_eq!(r.header("Accept-Ranges"), Some("bytes"));
     let etag = r.header("ETag").unwrap().to_string();
@@ -448,7 +448,7 @@ fn download_ranges_and_queue() {
     assert_eq!(all.len(), 240_112);
     let mut req = Request::new(
         "GET",
-        &accessweb::PRODUCT.url("/files/download?path=/home/CWELLMAN/inventory_2026-10.pdf"),
+        &accessweb::PRODUCT.url("/files/download?path=/home/TESTUSER/inventory_2026-10.pdf"),
     );
     req.headers.push(("range".into(), "bytes=100000-".into()));
     req.headers.push(("if-range".into(), etag));
@@ -458,7 +458,7 @@ fn download_ranges_and_queue() {
         (206, Some("bytes 100000-240111/240112"))
     );
     assert_eq!(body(r), all[100_000..]);
-    let q = b.fx.files.queue.list("CWELLMAN");
+    let q = b.fx.files.queue.list("TESTUSER");
     let last = q
         .iter()
         .rev()
@@ -466,17 +466,17 @@ fn download_ranges_and_queue() {
         .unwrap();
     assert_eq!(last.state, accessweb::transfer::State::Complete);
     // A download left part way says so and offers Retry.
-    let r = b.get("/files/download?path=/home/CWELLMAN/webstore.p12");
+    let r = b.get("/files/download?path=/home/TESTUSER/webstore.p12");
     drop(r);
     let page = b.get("/files").text();
     assert!(page.contains("the connection ended"), "{page}");
     assert!(page.contains("op=retry"));
     // Text: converted to UTF-8 with CR LF (the preference).
-    let r = b.get("/files/download?path=/home/CWELLMAN/invload.clle");
+    let r = b.get("/files/download?path=/home/TESTUSER/invload.clle");
     let t = String::from_utf8(body(r)).unwrap();
     assert!(t.starts_with("/* INVLOAD") && t.contains("\r\n"));
     // Open: inline, sandboxed.
-    let r = b.get("/files/open?path=/home/CWELLMAN/notes.txt");
+    let r = b.get("/files/open?path=/home/TESTUSER/notes.txt");
     assert_eq!(r.header("Content-Security-Policy"), Some("sandbox"));
     assert!(
         r.header("Content-Disposition")
@@ -501,33 +501,33 @@ fn editor_saves_in_the_file_ccsid_and_asks_when_changed() {
     // A CCSID 37 file with CR LF.
     b.fx.files
         .write(
-            "CWELLMAN",
-            "/home/CWELLMAN/e37.txt",
+            "TESTUSER",
+            "/home/TESTUSER/e37.txt",
             &[0xC1, 0x0D, 0x25, 0xC2],
             37,
         )
         .unwrap();
-    let t = b.get("/files/edit?path=/home/CWELLMAN/e37.txt").text();
+    let t = b.get("/files/edit?path=/home/TESTUSER/e37.txt").text();
     assert!(t.contains("CCSID 37 &nbsp; Line ends: CR LF"), "{t}");
     let r = b.post(
-        "/files/edit?path=/home/CWELLMAN/e37.txt",
+        "/files/edit?path=/home/TESTUSER/e37.txt",
         &[("t", "X\r\nY"), ("save", "Save")],
     );
     assert_eq!(r.status, 303, "{}", r.text());
     assert_eq!(
         b.fx.files
-            .read("CWELLMAN", "/home/CWELLMAN/e37.txt", 0, 99)
+            .read("TESTUSER", "/home/TESTUSER/e37.txt", 0, 99)
             .unwrap(),
         vec![0xE7, 0x0D, 0x25, 0xE8]
     );
     // Changed by someone else since it was opened.
-    b.get("/files/edit?path=/home/CWELLMAN/notes.txt");
+    b.get("/files/edit?path=/home/TESTUSER/notes.txt");
     b.fx.files
-        .write("CWELLMAN", "/home/CWELLMAN/notes.txt", b"theirs", 1208)
+        .write("TESTUSER", "/home/TESTUSER/notes.txt", b"theirs", 1208)
         .unwrap();
     let t = b
         .post(
-            "/files/edit?path=/home/CWELLMAN/notes.txt",
+            "/files/edit?path=/home/TESTUSER/notes.txt",
             &[("t", "mine"), ("save", "Save")],
         )
         .text();
@@ -536,27 +536,27 @@ fn editor_saves_in_the_file_ccsid_and_asks_when_changed() {
         "{t}"
     );
     b.post(
-        "/files/edit?path=/home/CWELLMAN/notes.txt",
+        "/files/edit?path=/home/TESTUSER/notes.txt",
         &[("t", "mine"), ("overwrite", "Overwrite")],
     );
-    assert_eq!(text_of(&b, "/home/CWELLMAN/notes.txt"), "mine");
+    assert_eq!(text_of(&b, "/home/TESTUSER/notes.txt"), "mine");
     // Save as another name.
     b.post(
-        "/files/edit?path=/home/CWELLMAN/notes.txt",
+        "/files/edit?path=/home/TESTUSER/notes.txt",
         &[("t", "copy"), ("to", "notes2.txt"), ("saveas_ok", "OK")],
     );
-    assert_eq!(text_of(&b, "/home/CWELLMAN/notes2.txt"), "copy");
+    assert_eq!(text_of(&b, "/home/TESTUSER/notes2.txt"), "copy");
     // Binary opens read-only.
-    let t = b.get("/files/edit?path=/home/CWELLMAN/webstore.p12").text();
+    let t = b.get("/files/edit?path=/home/TESTUSER/webstore.p12").text();
     assert!(t.contains("QAD8013") && t.contains("readonly"), "{t}");
     let r = b.post(
-        "/files/edit?path=/home/CWELLMAN/webstore.p12",
+        "/files/edit?path=/home/TESTUSER/webstore.p12",
         &[("t", "x"), ("save", "Save")],
     );
     assert_eq!(r.status, 303);
     assert_eq!(
         b.fx.files
-            .entry("CWELLMAN", "/home/CWELLMAN/webstore.p12")
+            .entry("TESTUSER", "/home/TESTUSER/webstore.p12")
             .unwrap()
             .size,
         3402
@@ -567,7 +567,7 @@ fn editor_saves_in_the_file_ccsid_and_asks_when_changed() {
 fn properties_change_authority() {
     let mut b = Browser::signed_on();
     let r = b.post(
-        "/files/props?path=/home/CWELLMAN/notes.txt",
+        "/files/props?path=/home/TESTUSER/notes.txt",
         &[
             ("auth", "rw-r-----"),
             ("pub", "*R"),
@@ -578,14 +578,14 @@ fn properties_change_authority() {
     assert_eq!(r.status, 303);
     assert_eq!(
         b.fx.files
-            .entry("CWELLMAN", "/home/CWELLMAN/notes.txt")
+            .entry("TESTUSER", "/home/TESTUSER/notes.txt")
             .unwrap()
             .mode,
         0o644
     );
     let t = b
         .post(
-            "/files/props?path=/home/CWELLMAN/notes.txt",
+            "/files/props?path=/home/TESTUSER/notes.txt",
             &[
                 ("auth", "rwz"),
                 ("pub", "*R"),
@@ -615,14 +615,14 @@ fn policies_gate_files() {
         "{t}"
     );
     let r = b.post(
-        "/files/confirm?path=/home/CWELLMAN&s=notes.txt",
+        "/files/confirm?path=/home/TESTUSER&s=notes.txt",
         &[("ok", "OK")],
     );
     assert_eq!(r.status, 403);
     assert!(r.text().contains("XWA0001"));
     assert!(
         b.fx.files
-            .entry("CWELLMAN", "/home/CWELLMAN/notes.txt")
+            .entry("TESTUSER", "/home/TESTUSER/notes.txt")
             .is_ok()
     );
     assert!(
@@ -635,7 +635,7 @@ fn policies_gate_files() {
     );
     // Outside the home directory.
     b.fx.policy
-        .put("CWELLMAN", &[(policy::FILES_OUTSIDE.into(), Setting::Deny)])
+        .put("TESTUSER", &[(policy::FILES_OUTSIDE.into(), Setting::Deny)])
         .unwrap();
     assert_eq!(b.get("/files?path=/www").status, 403);
     assert!(!b.get("/files/shares").text().contains("/www/webstore"));

@@ -189,6 +189,7 @@ fn job_arg(args: &Args, n: &str) -> Option<(u32, String, String)> {
 }
 
 /// `QSYS2.DISPLAY_JOURNAL`.
+#[allow(clippy::too_many_lines)]
 pub fn display(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     if !args.get("GENERATE_SYSLOG").is_null() {
         return Err(refused("GENERATE_SYSLOG"));

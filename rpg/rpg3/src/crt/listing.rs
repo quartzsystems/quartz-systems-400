@@ -24,6 +24,7 @@ fn heading(o: &Options, page: u32) -> String {
 }
 
 /// The listing.
+#[allow(clippy::too_many_lines)]
 pub(super) fn listing(main: &Member, c: &Compiled, o: &Options) -> Vec<String> {
     let mut out = Vec::new();
     let mut page = 1;

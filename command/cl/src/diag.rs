@@ -115,3 +115,30 @@ pub mod ids {
     /// A subroutine used but not defined, or defined twice.
     pub const SUBR: &str = "CPD0795";
 }
+
+/// The diagnostics as `compdiag` values, in the listing's order: each
+/// at its line of the member compiled (`at`); one about the whole
+/// program (line 0) is nowhere.
+#[must_use]
+pub fn diagnostics(
+    diags: &[Diag],
+    at: &compdiag::Where,
+    help: compdiag::Help<'_>,
+) -> Vec<compdiag::Diagnostic> {
+    diags
+        .iter()
+        .map(|d| compdiag::Diagnostic {
+            at: if d.line == 0 {
+                compdiag::Where::None
+            } else {
+                at.clone()
+            },
+            line: u32::try_from(d.line).unwrap_or(u32::MAX),
+            severity: d.severity.number(),
+            id: d.msgid.clone(),
+            text: d.text.clone(),
+            help: help(&d.msgid, &[]),
+            ..compdiag::Diagnostic::default()
+        })
+        .collect()
+}

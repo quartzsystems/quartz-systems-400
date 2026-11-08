@@ -42,14 +42,14 @@ const ROUTES: &[(&str, &str)] = &[
     ("/db/copy/to", "web/copy-import.html"),
     ("/db/copy/from", "web/copy-export.html"),
     // Group 4.
-    ("/files?path=/home/CWELLMAN", "web/files.html"),
+    ("/files?path=/home/TESTUSER", "web/files.html"),
     (
-        "/files/props?path=/home/CWELLMAN/assets_br1.csv",
+        "/files/props?path=/home/TESTUSER/assets_br1.csv",
         "web/file-props.html",
     ),
     ("/files/shares", "web/my-files.html"),
     (
-        "/files/edit?path=/home/CWELLMAN/invload.clle",
+        "/files/edit?path=/home/TESTUSER/invload.clle",
         "web/file-edit.html",
     ),
     // Group 5.
@@ -72,23 +72,23 @@ const ROUTES: &[(&str, &str)] = &[
     // Pages of the other products it links to.
     ("/qs400/navigator/jobs", "nav/active-jobs.html"),
     (
-        "/qs400/navigator/job/123402/CWELLMAN/INVBATCH/end",
+        "/qs400/navigator/job/123402/TESTUSER/INVBATCH/end",
         "nav/end-job-confirm.html",
     ),
     (
-        "/qs400/navigator/job/123402/CWELLMAN/INVBATCH/general",
+        "/qs400/navigator/job/123402/TESTUSER/INVBATCH/general",
         "nav/job-props-general.html",
     ),
     (
-        "/qs400/navigator/job/123402/CWELLMAN/INVBATCH/joblog",
+        "/qs400/navigator/job/123402/TESTUSER/INVBATCH/joblog",
         "nav/job-props-joblog.html",
     ),
     (
-        "/qs400/navigator/msgq/QUSRSYS/CWELLMAN/1",
+        "/qs400/navigator/msgq/QUSRSYS/TESTUSER/1",
         "nav/message-detail.html",
     ),
     (
-        "/qs400/navigator/splf/123402/CWELLMAN/INVBATCH/INVRPT/1",
+        "/qs400/navigator/splf/123402/TESTUSER/INVBATCH/INVRPT/1",
         "nav/spooled-view.html",
     ),
     (
@@ -191,8 +191,8 @@ fn change_password() {
             ),
             // The desktop's warning, not a sign-on error's ID.
             (
-                "CPF1107</a> - Password for user profile CWELLMAN expires in 5 days.",
-                "QAD4031</a> - Password for CWELLMAN on QSHQ400 expires in 5 days.",
+                "CPF1107</a> - Password for user profile TESTUSER expires in 5 days.",
+                "QAD4031</a> - Password for TESTUSER on QSHQ400 expires in 5 days.",
             ),
             // One form, not two nested.
             (
@@ -361,7 +361,7 @@ fn s5250_session_states() {
     // 27 x 132.
     let mut b = Browser::signed_on();
     b.fx.s5250.set_live(1, |l| {
-        l.view.screen = accessweb::fixture::session5250::wrkactjob(27, 132)
+        l.view.screen = accessweb::fixture::session5250::wrkactjob(27, 132);
     });
     let r = b.get("/5250/session/1");
     let mut fixes = session_fixes("1", "console");
@@ -521,7 +521,7 @@ fn message_arrived() {
             // The form names the message it answers.
             (
                 "<form method=\"post\"><table class=\"props\"",
-                "<form method=\"post\"><input type=\"hidden\" name=\"key\" value=\"00000003\"><input type=\"hidden\" name=\"queue\" value=\"QUSRSYS/CWELLMAN\"><table class=\"props\"",
+                "<form method=\"post\"><input type=\"hidden\" name=\"key\" value=\"00000003\"><input type=\"hidden\" name=\"queue\" value=\"QUSRSYS/TESTUSER\"><table class=\"props\"",
             ),
         ],
     );

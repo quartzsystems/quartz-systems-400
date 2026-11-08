@@ -247,6 +247,7 @@ fn open_new() -> (Store, ObjectId, ObjectId) {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn a_compiled_member_becomes_a_module_and_a_program() {
     let src = source(&[
         "**FREE",
@@ -519,6 +520,7 @@ fn srcstmf_incdir_and_infostmf_are_parameters() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn an_rpg_program_from_a_stream_file_with_copy_and_incdir() {
     use ifs::client::IfsClient as _;
     let sys = sysapi::ifs::memory::MemIfs::new();
@@ -743,4 +745,125 @@ fn an_rpg3_member_becomes_a_program() {
             .unwrap()
             .is_some()
     );
+}
+
+/// The compile commands' descriptions of database files, through the
+/// provider over the lent store.
+struct LentFiles(crate::svc::ile::Shared);
+
+impl rpgc::ExtFiles for LentFiles {
+    fn describe(&mut self, name: &str, lib: &str) -> Option<rpgc::files::ExtFile> {
+        let p = crate::svc::ile::StoreProvider::new(self.0.clone());
+        p.file_desc(lib, name)
+            .map(|(found, d)| rpgc::files::ExtFile {
+                lib: found,
+                ..rpgextdesc::database_desc(&d)
+            })
+    }
+}
+
+#[test]
+fn keyed_files_describe_their_keys_nulls_and_level_ids() {
+    let (mut store, qsys, lib) = open_new();
+    let dds_src = [
+        "     A          R CUSTR",
+        "     A            CUSTNO         5P 0",
+        "     A            CNAME         20A         ALIAS(CUSTOMER_NAME)",
+        "     A            NOTE          10A         ALWNULL",
+        "     A          K CUSTNO",
+    ]
+    .join("\n");
+    let (src, _) = dds::Source::from_text(&dds_src);
+    let opts = dds::CompileOpts {
+        file: Some("CUSTPF".into()),
+        ..dds::CompileOpts::default()
+    };
+    let pf = dds::compile_pf(&src, &dds::NoRefs, &opts)
+        .definition
+        .expect("PF DDS");
+    let mut txn = store.begin().unwrap();
+    let fopts = db::file::CreateFileOpts {
+        now: NOW,
+        ..db::file::CreateFileOpts::default()
+    };
+    db::file::create_pf(&mut txn, lib, Name::parse("CUSTPF").unwrap(), &pf, &fopts).unwrap();
+    txn.commit().unwrap();
+    let mut ctx = sql::SqlContext::new(
+        qsys,
+        store::obj::JobHandle(1),
+        NameContext {
+            curlib: Some(lib),
+            libl: vec![lib],
+        },
+    );
+    ctx.now = Some(NOW);
+    let run = sql::RunOpts {
+        naming: sql::Naming::Sql,
+        ..sql::RunOpts::default()
+    };
+    let r = sql::runsqlstm(
+        &mut store,
+        &mut ctx,
+        "CREATE TABLE QGPL.ORDERS (ORDER_ID INTEGER NOT NULL PRIMARY KEY, MEMO VARCHAR(20))",
+        &run,
+    )
+    .unwrap();
+    assert_eq!(r.errors, 0, "{}", r.listing);
+
+    let shared: crate::svc::ile::Shared =
+        std::rc::Rc::new(std::cell::RefCell::new(Some(crate::svc::ile::Lent {
+            storage: crate::ipl::storage::Storage {
+                store,
+                qsys: Some(qsys),
+                fresh: false,
+                recovery: store::Recovery::default(),
+                devices: Vec::new(),
+                resume: None,
+            },
+            temp: None,
+            sysvals: None,
+        })));
+    let mut files = LentFiles(shared);
+    let cust = rpgc::ExtFiles::describe(&mut files, "CUSTPF", "QGPL").expect("CUSTPF");
+    let f = &cust.formats[0];
+    assert_eq!(
+        (cust.lib.as_str(), f.keys.as_slice()),
+        ("QGPL", ["CUSTNO".to_string()].as_slice())
+    );
+    assert_eq!(f.level_id.len(), 13);
+    let by = |n: &str| f.fields.iter().find(|x| x.name == n).unwrap();
+    assert_eq!(by("CNAME").alias, "CUSTOMER_NAME");
+    assert!(by("NOTE").nullable && !by("CUSTNO").nullable);
+    let orders = rpgc::ExtFiles::describe(&mut files, "ORDERS", "QGPL").expect("ORDERS");
+    assert_eq!(orders.formats[0].keys, ["ORDER_ID"]);
+    assert!(
+        orders.formats[0]
+            .fields
+            .iter()
+            .any(|x| x.name == "MEMO" && x.nullable)
+    );
+
+    // CHAIN by key against both compiles.
+    let rpg = source(&[
+        "**FREE",
+        "ctl-opt alwnull(*usrctl);",
+        "dcl-f CUSTPF keyed;",
+        "dcl-f ORDERS keyed rename(ORDERS:ORDERR);",
+        "dcl-s cust packed(5) inz(1);",
+        "chain cust CUSTPF;",
+        "if %found(CUSTPF) and not %nullind(NOTE);",
+        "  dsply CNAME;",
+        "endif;",
+        "chain (7) ORDERS;",
+        "*inlr = *on;",
+    ]);
+    let req = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(QGPL/HELLO)")).unwrap();
+    let opts = req.options("HELLO", "QGPL", &rpg);
+    let c = rpgc::compile(
+        rpg.member.clone(),
+        &mut rpgfront::NoIncludes,
+        &mut files,
+        &opts,
+    );
+    assert!(c.created, "{:?}", c.diags);
 }

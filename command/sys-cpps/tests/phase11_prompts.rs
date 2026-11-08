@@ -416,7 +416,7 @@ fn differences(c: &Case) -> Vec<String> {
         };
         match (field, gf) {
             (Some(a), Some(b)) if !same_field(a, b) => {
-                diffs.push(format!("{kwd}: want {a:?} got {b:?}"))
+                diffs.push(format!("{kwd}: want {a:?} got {b:?}"));
             }
             (Some(a), None) => diffs.push(format!("{kwd}: want {a:?} got a heading")),
             (None, Some(b)) => diffs.push(format!("{kwd}: want a heading got {b:?}")),

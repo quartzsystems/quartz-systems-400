@@ -1093,6 +1093,48 @@ impl Service for Served<'_> {
         super::qap::manage::power(self.system, self.ctx, &req)
     }
 
+    fn qap_dev_read(
+        &mut self,
+        member: qap_proto::types::MemberName,
+        lock: bool,
+    ) -> Result<qap_proto::ops::develop::MemberData, stg::QapRefused> {
+        self.own_libl();
+        let r = super::qap::develop::read(self.system, self.ctx, &member, lock);
+        ile::set_libl(None);
+        r
+    }
+
+    fn qap_dev_write(
+        &mut self,
+        member: qap_proto::types::MemberName,
+        records: Vec<qap_proto::types::SourceRecord>,
+        renumber: bool,
+        srctype: Option<String>,
+        text: Option<String>,
+    ) -> Result<u32, stg::QapRefused> {
+        self.own_libl();
+        let r = super::qap::develop::write(
+            self.system,
+            self.ctx,
+            &member,
+            records,
+            renumber,
+            (srctype.as_deref(), text.as_deref()),
+        );
+        ile::set_libl(None);
+        r
+    }
+
+    fn qap_dev_unlock(
+        &mut self,
+        member: qap_proto::types::MemberName,
+    ) -> Result<(), stg::QapRefused> {
+        self.own_libl();
+        let r = super::qap::develop::unlock(self.system, self.ctx, &member);
+        ile::set_libl(None);
+        r
+    }
+
     fn telnet_ticket(
         &mut self,
         user: String,
@@ -2515,6 +2557,10 @@ impl Service for Served<'_> {
 
     fn sst_resources(&mut self) -> Result<(Vec<svctools::env::ResourceRow>, u32), String> {
         super::sst::resources(self.system, self.ctx.job.number)
+    }
+
+    fn sst_remove_resource(&mut self, name: String) -> Result<(), String> {
+        super::sst::remove_resource(self.system, self.ctx.job.number, &name)
     }
 
     fn sst_storage(&mut self, unit: u16, page: u64, id: String) -> Result<Vec<u8>, String> {

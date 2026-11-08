@@ -149,7 +149,7 @@ fn parses_routes() {
 fn parses_an_error_reply() {
     let mut errs = Vec::new();
     each(include_str!("fixtures/error_eexist.hex"), |m| {
-        errs.push(m.error())
+        errs.push(m.error());
     });
     assert_eq!(errs, vec![Some(17)]);
 }
@@ -191,7 +191,7 @@ fn parses_inet_diag_with_tcp_info() {
 fn parses_nft_rules() {
     let mut rules = Vec::new();
     each(include_str!("fixtures/nft_rules.hex"), |m| {
-        rules.extend(nft::parse_rule(m.payload))
+        rules.extend(nft::parse_rule(m.payload));
     });
     assert_eq!(rules.len(), 1);
     assert_eq!(rules[0].comment.as_deref(), Some("qs400 tcp 8470-8476"));

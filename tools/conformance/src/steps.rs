@@ -187,6 +187,8 @@ impl Suite {
                 tpm: None,
                 usb_stick: None,
                 sata_disks: Vec::new(),
+                nic_slot: None,
+                nics: Vec::new(),
             },
             media,
             install: false,
@@ -632,6 +634,11 @@ impl Suite {
         reports.push(self.step(&mut s, "56 RPG program", Self::rpg_program)?);
         reports.push(self.step(&mut s, "57 RPG embedded SQL", Self::rpg_sql)?);
         reports.push(self.step(&mut s, "58 RPG service program", Self::rpg_service_program)?);
+        reports.push(self.step(
+            &mut s,
+            "158 RPG keyed external files",
+            Self::rpg_keyed_files,
+        )?);
         reports.push(self.step(&mut s, "59 IFS mount", Self::ifs_mount)?);
         reports.push(self.step(&mut s, "60 communications lines", Self::cmn_lines)?);
         reports.push(self.step(&mut s, "62 ENDTCP and STRTCP", Self::tcp_restart)?);
@@ -677,6 +684,8 @@ impl Suite {
         reports.push(self.step(&mut s, "92 QAP IFS", Self::qap_ifs)?);
         reports.push(self.step(&mut s, "93 QAP messages", Self::qap_messages)?);
         reports.push(self.step(&mut s, "123 QAP manage", Self::qap_manage)?);
+        reports.push(self.step(&mut s, "160 QAP develop", Self::qap_develop)?);
+        reports.push(self.step(&mut s, "161 QAP compile", Self::qap_compile)?);
         reports.push(self.step(&mut s, "162 QAP debug", Self::qap_debug)?);
         reports.push(self.step(&mut s, "163 QAP service entry point", Self::qap_debug_entry)?);
         reports.push(self.step(&mut s, "96 DHCP client", Self::dhcp_client)?);
@@ -742,6 +751,8 @@ impl Suite {
         reports.extend(self.display_steps()?);
         #[cfg(unix)]
         reports.extend(self.hw_steps()?);
+        #[cfg(unix)]
+        reports.extend(self.hw_name_steps()?);
         #[cfg(unix)]
         reports.extend(self.guest_steps()?);
         #[cfg(unix)]

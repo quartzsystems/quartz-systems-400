@@ -9,6 +9,8 @@
 
 use ipc::{wire_enum, wire_struct};
 
+/// `EndHow` is a common type from version 8.
+pub use crate::types::EndHow;
 use crate::types::{JobId, ObjectName};
 
 /// A subsystem's state.
@@ -101,21 +103,6 @@ pub struct SubsystemRef {
 }
 
 wire_struct!(SubsystemRef { sbsd });
-
-/// How work ends.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum EndHow {
-    /// `*CNTRLD`: jobs are told and given the delay.
-    #[default]
-    Controlled,
-    /// `*IMMED`.
-    Immediate,
-}
-
-wire_enum!(EndHow {
-    0 => Controlled,
-    1 => Immediate,
-});
 
 /// `EndSubsystem`'s request.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

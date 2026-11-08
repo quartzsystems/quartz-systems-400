@@ -74,7 +74,108 @@ dsply msg;
 *inlr = *on;
 ";
 
+/// Step 158's keyed DDS file: an alias and a null-capable field.
+const CUSTPF: &str = "     A          R CUSTR
+     A            CUSTNO         5P 0
+     A            CNAME         20A         ALIAS(CUSTOMER_NAME)
+     A            NOTE          10A         ALWNULL
+     A          K CUSTNO
+";
+
+/// Step 158's setup at the service console, after the DDS member.
+const KEYED_SETUP: &[&str] = &[
+    "crtpf FILE(RPGKEY/CUSTPF) SRCFILE(RPGKEY/QDDSSRC)",
+    "runsql SQL('INSERT INTO RPGKEY.CUSTPF VALUES(1, ''Alpha'', NULL), (2, ''Beta'', ''vip'')') COMMIT(*NONE)",
+    "runsql SQL('CREATE TABLE RPGKEY.ORDERS (ORDER_ID INTEGER NOT NULL PRIMARY KEY, AMOUNT DECIMAL(7, 2) NOT NULL, MEMO VARCHAR(20))') COMMIT(*NONE)",
+    "runsql SQL('INSERT INTO RPGKEY.ORDERS VALUES(7, 12.50, NULL), (8, 3.25, ''rush'')') COMMIT(*NONE)",
+];
+
+/// CHAIN by key into both files, a field by its alias, null indicators.
+const RPGKEYED: &str = "**FREE
+ctl-opt dftactgrp(*no) alwnull(*usrctl);
+dcl-f CUSTPF keyed alias;
+dcl-f ORDERS keyed rename(ORDERS:ORDERR);
+dcl-s i int(10);
+dcl-s cust packed(5);
+dcl-s oid int(10);
+dcl-s msg char(52);
+for i = 1 to 2;
+  cust = i;
+  chain cust CUSTPF;
+  if not %found(CUSTPF);
+    msg = 'KEYC' + %char(cust) + ' not found';
+  elseif %nullind(NOTE);
+    msg = 'KEYC' + %char(cust) + ' ' + %trim(CUSTOMER_NAME) + ' note null';
+  else;
+    msg = 'KEYC' + %char(cust) + ' ' + %trim(CUSTOMER_NAME) + ' note ' + %trim(NOTE);
+  endif;
+  dsply msg;
+endfor;
+for oid = 7 to 9;
+  chain (oid) ORDERS;
+  if not %found(ORDERS);
+    msg = 'KEYO' + %char(oid) + ' not found';
+  elseif %nullind(MEMO);
+    msg = 'KEYO' + %char(oid) + ' ' + %char(AMOUNT) + ' memo null';
+  else;
+    msg = 'KEYO' + %char(oid) + ' ' + %char(AMOUNT) + ' memo ' + %trim(MEMO);
+  endif;
+  dsply msg;
+endfor;
+*inlr = *on;
+";
+
 impl Suite {
+    /// Step 158: RPG compiled on the system against externally described
+    /// keyed files: a DDS PF with an alias and a null-capable field and
+    /// an SQL table keyed on its primary key. The program CHAINs both by
+    /// key, reads the alias and the null indicators, and its level
+    /// checks pass at open.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn rpg_keyed_files(&self, s: &mut Session) -> Result<String, String> {
+        let lib = s.command("crtlib LIB(RPGKEY) TEXT('Step 158')", CMD)?;
+        if !lib.contains("RPGKEY") {
+            return Err(format!("crtlib RPGKEY: {lib}"));
+        }
+        for (file, len) in [("QRPGLESRC", 112), ("QDDSSRC", 92)] {
+            let made = s.command(&format!("crtsrcpf FILE(RPGKEY/{file}) RCDLEN({len})"), CMD)?;
+            if !made.contains("created") {
+                return Err(format!("crtsrcpf {file}: {made}"));
+            }
+        }
+        put_in(s, "RPGKEY/QDDSSRC", "CUSTPF", "PF", CUSTPF)?;
+        for line in KEYED_SETUP {
+            let out = s.command(line, CMD)?;
+            if out
+                .lines()
+                .any(|l| l.trim_start().starts_with("CPF") || l.contains("SQL0"))
+            {
+                return Err(format!("{line}:\n{out}"));
+            }
+        }
+        put_in(s, "RPGKEY/QRPGLESRC", "RPGKEYED", "RPGLE", RPGKEYED)?;
+        secofr_command_entry(s)?;
+        entry_wait(s, "addlible RPGKEY", has(&["RPGKEY"]))?;
+        entry_wait(
+            s,
+            "crtbndrpg PGM(RPGKEY/RPGKEYED) SRCFILE(RPGKEY/QRPGLESRC)",
+            has(&["Program RPGKEYED created"]),
+        )?;
+        let called = entry_wait(s, "call RPGKEY/RPGKEYED", has(&["KEYO9 not found"]))?;
+        for want in [
+            "KEYC1 Alpha note null",
+            "KEYC2 Beta note vip",
+            "KEYO7 12.50 memo null",
+            "KEYO8 3.25 memo rush",
+        ] {
+            if !called.contains(want) {
+                return Err(format!("{want} is missing:\n{called}"));
+            }
+        }
+        sign_off(s)?;
+        Ok("CRTBNDRPG compiled CHAINs into a keyed DDS PF and an SQL table keyed on its primary key; the call found each key, read CUSTOMER_NAME by its alias and the null indicators of NOTE and MEMO, and opened both files past their level checks".into())
+    }
+
     /// Step 56: RPG from a source member: `CRTBNDRPG` compiles it, the
     /// listing is spooled, `CALL` runs it and its DSPLY lines show; a
     /// member in error is not created .
@@ -169,10 +270,15 @@ impl Suite {
 
 /// A source member into `RPGTEST/QRPGLESRC` over the service console.
 fn put(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
+    put_in(s, "RPGTEST/QRPGLESRC", name, "RPGLE", text)
+}
+
+/// A source member of type `ty` into `file` over the service console.
+fn put_in(s: &mut Session, file: &str, name: &str, ty: &str, text: &str) -> Result<(), String> {
     let buf = format!("{name}SRC");
     crate::qir::qemu::push(s, &buf, text)?;
     let r = s.command(
-        &format!("svc.srcput RPGTEST/QRPGLESRC {name} SRCTYPE(RPGLE) FROMSTMF({buf})"),
+        &format!("svc.srcput {file} {name} SRCTYPE({ty}) FROMSTMF({buf})"),
         CMD,
     )?;
     if !r.contains("written") {

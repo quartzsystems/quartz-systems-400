@@ -133,7 +133,17 @@ fn environment_screens_match_their_golden_files() {
     walk(&mut e, &["7", "7", "2"], "hsm-logical-menu");
     walk(&mut e, &["7", "7", "2", "2"], "hsm-cmn");
     walk(&mut e, &["7", "7", "3"], "hsm-locate");
-    walk(&mut e, &["7", "7", "4"], "hsm-failed");
+    // Option 4 removes the resource that does not report, on F10.
+    let mut r = walk(&mut e, &["7", "7", "4"], "hsm-failed");
+    r.enter(&f(&["4"]), &mut e);
+    check("hsm-remove", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    let menu = r.screen(&mut e).dump();
+    assert!(menu.contains("Hardware Service Manager"), "{menu}");
+    assert!(menu.contains("1 resource(s) removed"), "{menu}");
+    assert!(e.hardware.iter().all(|h| h.name != "LIN01"));
+    walk(&mut e, &["7", "7", "4"], "hsm-failed-none");
+    let mut e = env();
     walk(&mut e, &["7", "2"], "trace");
     walk(&mut e, &["7", "6"], "msd");
     walk(&mut e, &["7", "6", "1"], "msd-take");

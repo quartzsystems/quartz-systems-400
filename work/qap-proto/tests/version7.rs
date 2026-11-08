@@ -32,7 +32,7 @@ fn qbatch() -> ObjectName {
 
 #[test]
 fn version_7_values() {
-    assert!(VERSION >= 7);
+    const { assert!(VERSION >= 7) };
     assert_eq!(encode(&Service::Manage), [8]);
     assert_eq!(Service::Manage.since(), 7);
     let ops = [

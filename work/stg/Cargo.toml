@@ -7,6 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 hwrsrc = { path = "../../lic/hwrsrc", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }

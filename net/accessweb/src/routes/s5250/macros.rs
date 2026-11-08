@@ -23,6 +23,7 @@ use crate::policy;
 use crate::s5250::files::qsm::MacroFile;
 
 /// `GET/POST /5250/<id>/macros` (`?edit=N` edits macro N).
+#[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>, mut s: Saved) -> Response {
     let title = s.file.display_title();
     let crumb = ["5250 session", title.as_str(), "Macros"];

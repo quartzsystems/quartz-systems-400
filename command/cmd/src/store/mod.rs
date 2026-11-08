@@ -19,6 +19,13 @@ use crate::error::{CmdError, Diag, Result};
 use crate::payload::{CmdObject, Override};
 use crate::token::{self, Options, Tok};
 
+impl From<store::StoreError> for CmdError {
+    fn from(e: store::StoreError) -> Self {
+        let id = e.msgid().unwrap_or("CPF9999");
+        Self::detail(id, e.to_string())
+    }
+}
+
 /// Who creates and when.
 #[derive(Clone, Debug)]
 pub struct Ctx {

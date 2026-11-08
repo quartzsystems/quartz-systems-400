@@ -271,6 +271,10 @@ pub struct Job {
     pub errno: crate::fd::ErrnoCell,
     /// `h_errno`, what `__h_errno()` points at.
     pub h_errno: crate::fd::ErrnoCell,
+    /// The last compile's diagnostics: what the last compiler command
+    /// (`compdiag::COMMANDS`) the job ran reported, in listing order;
+    /// none before the first. QAP's `Develop.Compile` reads it.
+    last_compile: Option<Vec<compdiag::Diagnostic>>,
     next_key: u32,
     env: Box<Env>,
 }
@@ -334,6 +338,7 @@ impl Job {
             fds: crate::fd::FdTable::new(),
             errno: crate::fd::ErrnoCell::default(),
             h_errno: crate::fd::ErrnoCell::default(),
+            last_compile: None,
             next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),
@@ -1085,4 +1090,19 @@ fn now_us() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_micros()).unwrap_or(u64::MAX))
+}
+
+impl Job {
+    /// A compiler command ended: what it reported becomes the last
+    /// compile's diagnostics.
+    pub fn set_last_compile(&mut self, diags: Vec<compdiag::Diagnostic>) {
+        self.last_compile = Some(diags);
+    }
+
+    /// The last compile's diagnostics; none before the job ran a
+    /// compiler command.
+    #[must_use]
+    pub fn last_compile(&self) -> Option<&[compdiag::Diagnostic]> {
+        self.last_compile.as_deref()
+    }
 }

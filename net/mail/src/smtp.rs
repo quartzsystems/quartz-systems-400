@@ -437,7 +437,7 @@ pub fn send(
         match sess.step(&format!("RCPT TO:<{r}>"), "RCPT TO", 2) {
             Ok(_) => receipt.accepted.push(r.clone()),
             Err(SmtpError::Reply { code, text, .. }) => {
-                receipt.refused.push((r.clone(), code, text))
+                receipt.refused.push((r.clone(), code, text));
             }
             Err(e) => return Err(e),
         }

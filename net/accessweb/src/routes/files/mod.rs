@@ -234,14 +234,14 @@ mod tests {
 
     #[test]
     fn paths_and_patterns() {
-        assert_eq!(clean("/home//CWELLMAN/./x/../y/"), "/home/CWELLMAN/y");
+        assert_eq!(clean("/home//TESTUSER/./x/../y/"), "/home/TESTUSER/y");
         assert_eq!(clean("/.."), "/");
         assert_eq!(parent("/home"), "/");
-        assert_eq!(parent("/home/CWELLMAN"), "/home");
+        assert_eq!(parent("/home/TESTUSER"), "/home");
         assert_eq!(join("/", "home"), "/home");
         assert!(
-            within("/home/CWELLMAN/x", "/home/CWELLMAN")
-                && !within("/home/CWELLMANX", "/home/CWELLMAN")
+            within("/home/TESTUSER/x", "/home/TESTUSER")
+                && !within("/home/TESTUSERX", "/home/TESTUSER")
         );
         assert!(matches("*.CSV", "assets_br1.csv") && matches("a?sets*", "assets_br1.csv"));
         assert!(!matches("*.txt", "notes.txt.bak") && matches("*", ".profile"));

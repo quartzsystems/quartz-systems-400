@@ -93,6 +93,7 @@ fn code(r: &Routed) -> i32 {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn duw_connections_switch_release_and_commit() {
     let log = Log::default();
     let mut net = Net { log: log.clone() };

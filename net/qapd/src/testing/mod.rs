@@ -44,6 +44,11 @@
 //!   `*JOBCTL`) and `SECOFR` (`SECPW01`, every special authority) beside
 //!   `BOB`, who has none; an exit program tests set
 //!   ([`manage::Manage::exit_refuses`]);
+//! - development ([`develop`], version 8, draft): each job's library
+//!   list, libraries, objects and source members with dates, a member
+//!   another job holds, one over 1 MiB, a binary source file;
+//! - jobs ([`jobs`], version 8): `BOB`'s active, queued and ended jobs
+//!   with their logs, `ANN`'s; the catalog's routines and indexes;
 //! - a debugger ([`debug`], version 9, draft): `HLINV/ASSETS` with its
 //!   source and variables, stops in the connection job's `CALL` and in
 //!   display sessions' jobs ([`System::interactive_job`],
@@ -57,9 +62,11 @@
 
 pub mod commands;
 pub mod debug;
+pub mod develop;
 pub mod files;
 pub mod fixtures;
 mod host;
+pub mod jobs;
 mod listen;
 pub mod manage;
 pub mod messages;
@@ -188,6 +195,10 @@ pub struct System {
     /// Subsystems, system values, PTFs, disks, hardware, the IPL
     /// ([`manage`]).
     pub manage: Mutex<manage::Manage>,
+    /// Libraries, objects, source members, library lists ([`develop`]).
+    pub develop: Mutex<develop::Develop>,
+    /// Jobs and their logs ([`jobs`]).
+    pub jobs: Mutex<jobs::Jobs>,
     /// The debugger's sessions, service entry points and other jobs.
     pub debug: debug::Debugs,
     /// The commands running, by job, while they run.
@@ -254,6 +265,8 @@ impl System {
             sql: Mutex::new(sql::Db::default()),
             files: files::Files::new(),
             manage: Mutex::new(manage::Manage::shipped()),
+            develop: Mutex::new(develop::Develop::shipped()),
+            jobs: Mutex::new(jobs::Jobs::shipped()),
             debug: debug::Debugs::default(),
             running: Mutex::new(HashMap::new()),
             started: Condvar::new(),
@@ -619,5 +632,7 @@ fn serve_socket(
     let why = crate::serve(s, &mut host, cfg, identity(job, Some(peer)));
     lock(&sys.sockets).remove(&job);
     lock(&sys.opened_at).remove(&job);
+    // The job ends: its locks and library list go.
+    lock(&sys.develop).release(job);
     why
 }

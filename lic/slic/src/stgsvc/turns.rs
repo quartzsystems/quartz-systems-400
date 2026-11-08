@@ -481,6 +481,7 @@ fn first_turn(mut svc: Box<Svc>, turn: Rc<Turn>, mut f: Fiber) -> Box<Svc> {
 /// Start `run_cmd` of a command that takes turns: what it reads from
 /// the job prepared as `served::handle` would run the command, then its
 /// work on a fiber.
+#[allow(clippy::too_many_lines)]
 fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
     let user = super::security::as_user(&req);
     let number = svc.conns[i].ctx.as_ref().map_or(0, |c| c.job.number);
@@ -519,7 +520,7 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
             system,
             ctx,
             (&name, segments.clone(), &specified, &typed),
-        ))
+        ));
     });
     let (work, segments) = match prepared.expect("ran") {
         Ok(v) => v,
@@ -552,7 +553,7 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
                     ctx,
                     finish.take().expect("ran"),
                     segments.clone(),
-                ))
+                ));
             });
             super::security::flush(system, Some(served::charged(ctx)));
             let _ = conns[i].chan.send_raw(&ipc::encode(&reply.expect("ran")));

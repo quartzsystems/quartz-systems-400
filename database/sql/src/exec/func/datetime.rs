@@ -25,6 +25,7 @@ use crate::value::{PICOS, Timestamp, Value};
 pub(super) use super::format::{parse_timestamp, timestamp_text};
 
 /// Calls `name` when this family has it.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Result<Value>> {
     // The 14-character timestamp and 7-character date strings.
     match (name, args) {
@@ -373,6 +374,7 @@ fn months_between(a: &Value, b: &Value) -> Result<Value> {
 }
 
 /// `ROUND_TIMESTAMP` and `TRUNC_TIMESTAMP` to the unit a format names.
+#[allow(clippy::too_many_lines)]
 fn round_trunc(t: &Timestamp, fmt: &str, round: bool) -> Result<Timestamp> {
     let d = t.date;
     let midnight = |d: Date| Timestamp::midnight(d);

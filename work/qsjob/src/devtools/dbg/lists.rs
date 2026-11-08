@@ -93,7 +93,7 @@ pub fn wrkmodbkp(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Sta
                             }
                         }
                         (other, _) => {
-                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]));
                         }
                     }
                 }
@@ -197,7 +197,7 @@ pub fn wrkmodlst(
                             wrkmodbkp(job, host, surface, st)?;
                         }
                         (other, _) => {
-                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]));
                         }
                     }
                 }
@@ -307,7 +307,7 @@ pub fn wrkwatch(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Stat
                             });
                         }
                         other => {
-                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                            msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]));
                         }
                     }
                 }

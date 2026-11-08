@@ -147,6 +147,7 @@ fn zones(rq: &Rq<'_>) -> Vec<String> {
     ]
 }
 
+#[allow(clippy::too_many_lines)]
 fn group(rq: &Rq<'_>, g: Grp, v: &Prefs) -> PropGroup {
     let rows = match g {
         Grp::General => {

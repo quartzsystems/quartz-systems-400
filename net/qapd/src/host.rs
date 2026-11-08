@@ -13,6 +13,12 @@ use std::sync::Arc;
 
 use ifs::client::IfsClient;
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::ops::develop::{
+    ChangeMember, CopyMember, CreateMember, DescribeObject, Library, LibraryList, ListLibraries,
+    ListMembers, ListObjects, MemberData, MemberEntry, ObjectDescription, ObjectEntry,
+    RenameMember, SetLibraryList,
+};
+use qap_proto::ops::jobs::{EndJob, JobEntry, JobLogEntry, ListJobs};
 use qap_proto::ops::manage::{
     DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType,
     SetSystemValue, Subsystem, SystemValue, SystemValues,
@@ -26,13 +32,14 @@ use qap_proto::ops::spool::{
     SpooledFiles,
 };
 use qap_proto::ops::sql::{
-    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared,
-    Schemas, SetOptions, Tables,
+    Columns, Execute, Executed, Fetch, Fetched, Indexes, ListColumns, ListIndexes, ListRoutines,
+    ListSchemas, ListTables, Prepared, Routine, Schemas, SetOptions, Tables,
 };
 use qap_proto::ops::system::SystemInfo;
-use qap_proto::types::ObjectName;
+use qap_proto::types::{JobId, MemberName, ObjectName, SourceRecord};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
+use crate::develop::{Compiled, NOT_AVAILABLE};
 use crate::manage::ExitRequest;
 use crate::sessions::EndedBy;
 use crate::sql::{SqlResult, SqlStop};
@@ -188,6 +195,31 @@ pub trait Host {
     /// The connection ends or runs as another profile: changes not
     /// committed are rolled back, its statements and cursors go.
     fn sql_end(&mut self) {}
+
+    /// `GetLibraryList` (version 8): the job's library list, as
+    /// `DSPLIBL` shows it. Every `Develop` method answers `Error` with
+    /// [`NOT_AVAILABLE`] unless the host has it.
+    fn library_list(&mut self) -> Result<LibraryList, Refusal> {
+        Err(no_database(
+            self.message(NOT_AVAILABLE, &["GetLibraryList"]),
+        ))
+    }
+    /// `SetLibraryList`: `CHGLIBL LIBL(user) CURLIB(current)` (`*NONE`
+    /// and `*CRTDFT` when empty); the list as it now is.
+    fn set_library_list(&mut self, _req: &SetLibraryList) -> Result<LibraryList, Refusal> {
+        Err(no_database(
+            self.message(NOT_AVAILABLE, &["SetLibraryList"]),
+        ))
+    }
+    /// `Compile`: run `command` as [`Host::run_command`] does and take
+    /// the diagnostics the compiler left on the job for it.
+    fn compile(
+        &mut self,
+        _command: &str,
+        _cancelled: &dyn Fn() -> bool,
+    ) -> Result<Compiled, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["Compile"])))
+    }
 }
 
 /// A secondary thread of the connection job: every operation but
@@ -360,6 +392,109 @@ pub trait ThreadHost {
     /// with the server.
     fn power_down(&mut self, _req: &PowerDown) -> Result<(), Refusal> {
         Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+
+    // `Develop` 3 to 14 (version 8): each as its command, as the job's
+    // profile; `Error` with `NOT_AVAILABLE` unless the host has them.
+    // Lists come whole, filtered and in order; the server pages them.
+
+    /// Libraries matching `req.pattern`, as `WRKLIB` lists them.
+    fn list_libraries(&mut self, _req: &ListLibraries) -> Result<Vec<Library>, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["ListLibraries"])))
+    }
+    /// Objects, as `WRKOBJ` lists them.
+    fn list_objects(&mut self, _req: &ListObjects) -> Result<Vec<ObjectEntry>, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["ListObjects"])))
+    }
+    /// An object's description, as `DSPOBJD DETAIL(*FULL)`.
+    fn describe_object(&mut self, _req: &DescribeObject) -> Result<ObjectDescription, Refusal> {
+        Err(no_database(
+            self.message(NOT_AVAILABLE, &["DescribeObject"]),
+        ))
+    }
+    /// A file's members matching `req.pattern`, by name.
+    fn list_members(&mut self, _req: &ListMembers) -> Result<Vec<MemberEntry>, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["ListMembers"])))
+    }
+    /// A source member's records; with `lock`, held `*SHRNUP` for the
+    /// connection until [`ThreadHost::unlock_member`], a write of it or
+    /// the connection's end.
+    fn read_member(&mut self, _member: &MemberName, _lock: bool) -> Result<MemberData, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["ReadMember"])))
+    }
+    /// Replace a member's records with `records` (every piece, their
+    /// sequence numbers checked), dated by [`crate::develop::dated`]
+    /// and converted to the file's CCSID; `srctype` and `text` when
+    /// given. The member's records written; the connection's lock ends.
+    fn write_member(
+        &mut self,
+        _member: &MemberName,
+        _records: Vec<SourceRecord>,
+        _renumber: bool,
+        _srctype: Option<&str>,
+        _text: Option<&str>,
+    ) -> Result<u32, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["WriteMember"])))
+    }
+    /// End the connection's lock on a member; `NotFound` with
+    /// [`crate::develop::NOT_LOCKED`] when it holds none.
+    fn unlock_member(&mut self, _member: &MemberName) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["UnlockMember"])))
+    }
+    /// `ADDPFM`.
+    fn create_member(&mut self, _req: &CreateMember) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["CreateMember"])))
+    }
+    /// `CPYSRCF` of one member.
+    fn copy_member(&mut self, _req: &CopyMember) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["CopyMember"])))
+    }
+    /// `RNMM`.
+    fn rename_member(&mut self, _req: &RenameMember) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["RenameMember"])))
+    }
+    /// `RMVM`.
+    fn delete_member(&mut self, _member: &MemberName) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["DeleteMember"])))
+    }
+    /// `CHGPFM SRCTYPE() TEXT()`.
+    fn change_member(&mut self, _req: &ChangeMember) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["ChangeMember"])))
+    }
+
+    // `Jobs` (version 8).
+
+    /// Jobs, as `WRKUSRJOB` lists them: active, on job queues, on
+    /// output queues, each by when it entered.
+    fn list_jobs(&mut self, _req: &ListJobs) -> Result<Vec<JobEntry>, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["ListJobs"])))
+    }
+    /// A job's log, oldest first, as `DSPJOBLOG`; an ended job's from
+    /// its spooled job log.
+    fn job_log(&mut self, _job: &JobId) -> Result<Vec<JobLogEntry>, Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["JobLog"])))
+    }
+    /// `HLDJOB`.
+    fn hold_job(&mut self, _job: &JobId) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["HoldJob"])))
+    }
+    /// `RLSJOB`.
+    fn release_job(&mut self, _job: &JobId) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["ReleaseJob"])))
+    }
+    /// `ENDJOB`.
+    fn end_job(&mut self, _req: &EndJob) -> Result<(), Refusal> {
+        Err(no_database(self.message(NOT_AVAILABLE, &["EndJob"])))
+    }
+
+    /// `Sql` 12 (version 8): a schema's procedures and functions from
+    /// the catalog, filtered, by name then specific name.
+    fn list_routines(&mut self, _req: &ListRoutines) -> Result<Vec<Routine>, Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["ListRoutines"])))
+    }
+    /// `Sql` 13: a table's indexes and their keys, by name.
+    fn list_indexes(&mut self, _req: &ListIndexes) -> Result<Indexes, Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["ListIndexes"])))
     }
 
     /// The source debugger (version 9); `None` for a host without one,

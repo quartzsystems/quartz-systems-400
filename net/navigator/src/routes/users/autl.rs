@@ -136,6 +136,7 @@ fn aut(level: &str, mgt: bool) -> String {
 }
 
 /// `/autl/<name>`: the entries, Add and Change.
+#[allow(clippy::too_many_lines)]
 fn entries(rq: &Rq<'_>, l: &AuthList) -> Response {
     let here = format!("/autl/{}", l.name);
     if rq.post() {

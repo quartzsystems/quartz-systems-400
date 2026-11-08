@@ -9,6 +9,7 @@
 //! which the caller passes as the last directory.
 
 pub mod lang;
+pub mod report;
 pub mod signature;
 pub mod sysproc;
 

@@ -41,6 +41,56 @@ disks come up in the same order on every boot.
   page `device/vpd_pg80`, else `device/wwid`), type and model, size, the
   controller under `Ctl`, and the device.
 
+## Names that last
+
+A resource keeps its name from one IPL to the next and across hardware
+changes, as on IBM i: adding a card does not renumber the others, so a
+line description's `RSRCNAME(CMN04)` still names the same port. The
+order above gives the names only once, on a system's first IPL (an
+upgrade from V1R0M0 keeps the names it had, which were in that order).
+After that:
+
+- Each resource is saved with what identifies its device (the key,
+  `lic/hwrsrc/src/names/key.rs`) in the LIC partition (TLV `0x010A`,
+  docs/PHASE1.md "Hardware resource names"), which the hardware resource
+  service reads before its first walk, long before TCP/IP starts.
+- At each IPL a device whose key was saved gets its saved name, wherever
+  it now sits. A new device takes the next free name of its kind: one
+  past the highest in use, a missing device's included, so a removed
+  name is not handed to another card a line description might still
+  name.
+- A saved device not found stays in the table under its saved name and
+  parents, `Not detected` in `WRKHDWRSC`, `DSPHDWRSC` and the APIs (IBM's
+  status for it), `Unknown` in the hardware service manager. Its port is
+  gone, so a line on it fails to vary on (`CPD26D4`) rather than moving
+  to another card.
+- The hardware service manager (DST or SST: `Start a service tool`, 7,
+  then 4, `Failed and Non-Reporting Logical Hardware Resources`) removes
+  one with option 4 and F10, as IBM's does; its name is then free of it
+  (though not reused, as above). `WRKHDWRSC` has no remove, as on the
+  primary.
+
+The key per kind:
+
+| Kind | Key | Moved to another slot |
+|---|---|---|
+| Ethernet port (`CMNnn`) | the permanent MAC (netlink `IFLA_PERM_ADDRESS`, else sysfs `address` while `addr_assign_type` is 0); a port with a random address only, its PCI address and port number | keeps its name |
+| network function (`LINnn`) | its first port's permanent MAC, else its serial, else its PCI address | keeps its name |
+| storage controller (`DCnn`) | its serial, else its PCI address | keeps it when it reports a serial; else a new name |
+| disk, optical, tape, media changer | the serial (or WWID), else the device path | keeps it with a serial |
+| bridge (`CMBnn`), other PCI function | the PCI address | is another slot's |
+| serial port, keyboard, other input | the device path (an input's `inputN` left out) | new name |
+| processor, main storage | the CPU number; `MS01` | n/a |
+| virtual channel | the virtio-serial port's name, `vsock` | keeps its name |
+
+A MAC set by software (`ADPTADR`, a bond) does not change a port's key:
+the permanent one comes from netlink, and within an IPL a port keeps the
+key it was named by. A card replaced by another in the same slot is a
+new device: it takes a new name and the old one shows as not detected
+until removed. Within one IPL hotplug follows the same rules: a card
+pulled is not detected, one plugged back (anywhere) is detected again
+under its name.
+
 ## Tested hardware
 
 | Machine | Storage | Disks | Display | Controller PCI ID | Resources | Scale | Result |

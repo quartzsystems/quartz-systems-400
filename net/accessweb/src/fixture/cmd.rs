@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The sample system's commands: the two results, the recent commands
-//! and `CWELLMAN`'s saved commands of `web/run-command.html` and
+//! and `TESTUSER`'s saved commands of `web/run-command.html` and
 //! `web/my-commands.html`, and `WRKACTJOB`'s definition as
 //! `web/command-prompt.html` prompts it.
 
@@ -50,7 +50,7 @@ fn results() -> Vec<Ran> {
                 log(
                     0,
                     "CPI2101",
-                    "Job 123488/CWELLMAN/QPADEV0003 submitted to job queue QBATCH in library QGPL.",
+                    "Job 123488/TESTUSER/QPADEV0003 submitted to job queue QBATCH in library QGPL.",
                     "QWTPCRJA",
                     at(18, 5, 13, 4),
                 ),
@@ -82,9 +82,9 @@ fn results() -> Vec<Ran> {
 
 const RECENT: &[&str] = &[
     "CHGDEVDSP DEVD(QPADEV0003) TEXT('Cody - web 5250')",
-    "DSPJOB JOB(123503/CWELLMAN/INVBATCH) OPTION(*STSA)",
+    "DSPJOB JOB(123503/TESTUSER/INVBATCH) OPTION(*STSA)",
     "SBMJOB CMD(CALL PGM(HLINV/INVLOAD) PARM('*ALL')) JOB(INVBATCH)",
-    "WRKSPLF SELECT(CWELLMAN)",
+    "WRKSPLF SELECT(TESTUSER)",
     "DSPMSG QSYSOPR",
 ];
 
@@ -290,7 +290,7 @@ impl Cmd for FixtureCmd {
                 vec![log(
                     0,
                     "CPC1221",
-                    "Job 123540/CWELLMAN/QDFTJOBD submitted to job queue QBATCH in QGPL.",
+                    "Job 123540/TESTUSER/QDFTJOBD submitted to job queue QBATCH in QGPL.",
                     "QWTCCSBJ",
                     now,
                 )],

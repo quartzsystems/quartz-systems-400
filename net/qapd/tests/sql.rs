@@ -438,6 +438,7 @@ fn uncommitted_changes_roll_back_when_the_connection_closes() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn every_type_round_trips() {
     let (_c, mut r) = bob();
     let p = prepared(&mut r, "SELECT * FROM HLTEST.ALLTYPES");

@@ -12,12 +12,17 @@ hash = "0abc09b652cbbb508272787c77f8bdbfe7c7e7e45645b80a8676ce066509a009"
 [format.database]
 frozen_at = "V1R1M0"
 version = "1/1/1"
-hash = "15cbd197154a3983210b5090f49919c032722b35b7ea551018950c968967318f"
+hash = "a3bfceda47a2609e023bf600973abcdfb6dabdefafe211368a722934928f0e01"
 
 [format.host-servers]
 frozen_at = "V1R1M0"
 version = "1"
 hash = "3685beafce649fc1aeb58344e2b988046e22e5fd2c2f1301b944e9c6efe5c078"
+
+[format.hw-names]
+frozen_at = "V1R1M0"
+version = "1"
+hash = "74aa65606e35756f59d952f408147ecf6803a12edccf726377e709f59467b5ab"
 
 [format.ifs-meta]
 frozen_at = "V1R1M0"
@@ -72,12 +77,17 @@ hash = "65af092686cc24c9ee04d6353b5604430d501058cf5cd9618c81876071f759f4"
 [format.qap]
 frozen_at = "V1R1M0"
 version = "9"
-hash = "81d5fa857761c5d1d5eb654b699d00e1388f4f04846df10f67cb98b975f089d0"
+hash = "00bd677e52d614c4b92f981777f819ba79b0b70ac040f7dd24dbc12ab0c02181"
 
 [format.qap-debug]
 frozen_at = "V1R1M0"
 version = "9"
 hash = "24633796b2257e2e58f5bdb045b2381c43681f776c9320c92f2a66b84fb632de"
+
+[format.qap-v8]
+frozen_at = "V1R1M0"
+version = "9"
+hash = "f43da966d7b34802f1ef778b7e4278244c380b590fcbe543b0c260c6f4c97bea"
 
 [format.save]
 frozen_at = "V1R1M0"

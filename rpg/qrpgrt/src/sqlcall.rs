@@ -51,6 +51,7 @@ pub fn answer(job: &mut mi::Job, plan: &CallPlan) -> Option<Outcome> {
 /// arguments, the result, their indicators, the SQLSTATE, the names, the
 /// message, then the scratchpad and the call type when it has them; the
 /// answer for the database (`extfunc::answer`).
+#[allow(clippy::too_many_lines)]
 pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
     use sql::exec::routine::extfunc;
     let fail = |code: i32, state: &str, text: String| {

@@ -141,7 +141,7 @@ mod tests {
         let sum = Rc::new(Cell::new(0u32));
         let out = Rc::clone(&sum);
         let mut f = Fiber::on(stack().unwrap(), move || {
-            out.set(big.iter().map(|&b| u32::from(b)).sum())
+            out.set(big.iter().map(|&b| u32::from(b)).sum());
         });
         assert!(f.resume());
         assert_eq!(sum.get(), 7 * 4096);

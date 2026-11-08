@@ -66,3 +66,10 @@ pub fn rescan() -> Result<Vec<String>, WireError> {
     use proto::Client as _;
     Conn::connect()?.rescan()
 }
+
+/// Remove a resource that is not detected.
+#[cfg(unix)]
+pub fn remove(name: &str) -> Result<crate::table::Removal, WireError> {
+    use proto::Client as _;
+    Conn::connect()?.remove(name.to_string())
+}

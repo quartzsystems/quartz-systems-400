@@ -24,6 +24,8 @@
 //! - [`files`]: the `Ifs` service over an `IfsClient`.
 //! - [`sql`]: the `Sql` service's answers and cancel rules.
 //! - [`manage`]: the `Manage` service (version 7, draft) and its exit point.
+//! - [`develop`], [`jobs`]: the `Develop` and `Jobs` services (version 8,
+//!   draft).
 //! - [`debug`]: the `Debug` service (version 9, draft) and its events.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
@@ -32,9 +34,11 @@
 #![deny(missing_docs)]
 
 pub mod debug;
+pub mod develop;
 pub mod files;
 pub mod frames;
 pub mod host;
+pub mod jobs;
 pub mod manage;
 pub mod sessions;
 pub mod spool;
@@ -55,6 +59,7 @@ use std::net::{Shutdown, TcpStream};
 use std::time::Duration;
 
 pub use conn::serve;
+pub use develop::Compiled;
 pub use host::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 pub use polled::Polled;
 pub use watch::{Identity, exiting};

@@ -75,6 +75,56 @@ fn at(mut d: Diag, line: usize) -> Diag {
     d
 }
 
+/// The source line a diagnostic notes (`Line N:`), and the rest of its
+/// detail; 0 for one about the definition as a whole.
+fn line_of(d: &Diag) -> (u32, &str) {
+    d.detail
+        .strip_prefix("Line ")
+        .and_then(|r| r.split_once(": "))
+        .and_then(|(n, rest)| Some((n.parse().ok()?, rest)))
+        .unwrap_or((0, d.detail.as_str()))
+}
+
+/// `CRTCMD`'s report of a source that did not compile: one line per
+/// diagnostic, its identifier and detail, as the command prints them.
+#[must_use]
+pub fn report_lines(diags: &[Diag]) -> Vec<String> {
+    diags
+        .iter()
+        .map(|d| format!("{} {}", d.msgid, d.detail))
+        .collect()
+}
+
+/// The diagnostics as `compdiag` values, in order: each at its line of
+/// the definition source (`at`); one about the definition as a whole
+/// (a rule over its parameters) is nowhere.
+#[must_use]
+pub fn diagnostics(
+    diags: &[Diag],
+    at: &compdiag::Where,
+    help: compdiag::Help<'_>,
+) -> Vec<compdiag::Diagnostic> {
+    diags
+        .iter()
+        .map(|d| {
+            let (line, text) = line_of(d);
+            compdiag::Diagnostic {
+                at: if line == 0 {
+                    compdiag::Where::None
+                } else {
+                    at.clone()
+                },
+                line,
+                severity: compdiag::severity::SEVERE,
+                id: d.msgid.clone(),
+                text: text.to_string(),
+                help: help(&d.msgid, &[]),
+                ..compdiag::Diagnostic::default()
+            }
+        })
+        .collect()
+}
+
 /// Compile a definition source: the statements, the structures, the
 /// rules. The command name comes from the caller (`CRTCMD`).
 pub fn compile(name: &str, text: &str) -> Result<CmdDef, Vec<Diag>> {

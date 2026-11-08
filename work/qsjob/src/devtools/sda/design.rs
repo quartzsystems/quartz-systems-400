@@ -794,6 +794,7 @@ enum Saved {
 }
 
 /// Save DDS - Create Display File.
+#[allow(clippy::too_many_lines)]
 fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Saved {
     let mut vals: BTreeMap<String, String> = [
         ("SAVE", "Y"),

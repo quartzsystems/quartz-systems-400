@@ -18,7 +18,7 @@ use crate::error::{Result, SqlError};
 use crate::value::Value;
 
 /// The largest cardinality of an array type declared `ARRAY[]`.
-pub const UNBOUNDED: u64 = 2_147_483_647;
+pub use crate::words::UNBOUNDED;
 
 /// `SQ20441`: an array where none may be.
 #[must_use]

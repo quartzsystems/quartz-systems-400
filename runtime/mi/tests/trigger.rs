@@ -119,7 +119,7 @@ fn native(job: &mut Job, log: &Rc<RefCell<Vec<Vec<u8>>>>) {
             match buf[off] {
                 0xE7 => j.exception = Some(Exception::message("CPF9898", "QCPFMSG", Vec::new(), 0)),
                 0xE8 if after => {
-                    j.exception = Some(Exception::message("CPF9898", "QCPFMSG", Vec::new(), 0))
+                    j.exception = Some(Exception::message("CPF9898", "QCPFMSG", Vec::new(), 0));
                 }
                 0xD9 => buf[off] = 0xE9,
                 _ => {}

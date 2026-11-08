@@ -48,6 +48,11 @@ pub enum Service {
     Messages,
     /// Managing the system (version 7, draft).
     Manage,
+    /// Libraries, objects, source members and compiles (version 8,
+    /// draft).
+    Develop,
+    /// Jobs and job logs (version 8, draft).
+    Jobs,
     /// The source debugger (version 9, draft).
     Debug,
 }
@@ -62,12 +67,14 @@ wire_enum!(Service {
     6 => Ifs,
     7 => Messages,
     8 => Manage,
+    9 => Develop,
+    10 => Jobs,
     11 => Debug,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 10] = [
+    pub const ALL: [Service; 12] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
@@ -77,6 +84,8 @@ impl Service {
         Service::Ifs,
         Service::Messages,
         Service::Manage,
+        Service::Develop,
+        Service::Jobs,
         Service::Debug,
     ];
 
@@ -91,6 +100,7 @@ impl Service {
             Service::Ifs => 5,
             Service::Messages => 6,
             Service::Manage => 7,
+            Service::Develop | Service::Jobs => 8,
             Service::Debug => 9,
         }
     }

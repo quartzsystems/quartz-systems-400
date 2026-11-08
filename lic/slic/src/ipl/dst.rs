@@ -203,7 +203,7 @@ fn resource_for(_system: &System, device: &str) -> String {
         diskimg::locate::disk_of(std::path::Path::new(device)).unwrap_or_else(|| name.to_string());
     hw().resources
         .iter()
-        .find(|r| r.kind == Kind::Disk && r.location == disk)
+        .find(|r| r.kind == Kind::Disk && r.operational() && r.location == disk)
         .map_or_else(|| "-----".to_string(), |r| r.name.clone())
 }
 
@@ -1186,6 +1186,20 @@ impl DstEnv for Env<'_> {
                 description: r.description.clone(),
             })
             .collect()
+    }
+
+    fn remove_resource(&mut self, name: &str) -> Result<(), String> {
+        let done = hwrsrc::client::remove(name).map_err(|e| {
+            self.system
+                .out
+                .serial(&format!("slic: remove of hardware resource {name}: {e}\n"));
+            svctools::dst::failed("Remove of the hardware resource")
+        })?;
+        done.result(name)?;
+        self.system
+            .out
+            .serial(&format!("slic: hardware resource {name} removed\n"));
+        Ok(())
     }
 }
 

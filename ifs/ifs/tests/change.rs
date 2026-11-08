@@ -89,7 +89,7 @@ fn attribute_changes_raise_it() {
     let f = "/home/f";
     rises(&s, &cx, f, || s.ifs.chgown(&cx, f, "BOB", false).unwrap());
     rises(&s, &cx, f, || {
-        s.ifs.chgpgp(&cx, f, Some("DEV"), false).unwrap()
+        s.ifs.chgpgp(&cx, f, Some("DEV"), false).unwrap();
     });
     rises(&s, &cx, f, || s.ifs.chown(&cx, f, 101, u32::MAX).unwrap());
     rises(&s, &cx, f, || s.ifs.chmod(&cx, f, 0o600).unwrap());
@@ -141,22 +141,22 @@ fn names_raise_the_object_and_its_directories() {
             .unwrap();
     });
     rises(&s, &cx, "/home/b", || {
-        s.ifs.link(&cx, "/home/b/h", "/home/b/i").unwrap()
+        s.ifs.link(&cx, "/home/b/h", "/home/b/i").unwrap();
     });
     rises(&s, &cx, "/home/b", || {
-        s.ifs.unlink(&cx, "/home/b/i").unwrap()
+        s.ifs.unlink(&cx, "/home/b/i").unwrap();
     });
     rises(&s, &cx, "/home/b", || {
-        s.ifs.symlink(&cx, "h", "/home/b/l").unwrap()
+        s.ifs.symlink(&cx, "h", "/home/b/l").unwrap();
     });
     rises(&s, &cx, "/home/b", || {
-        s.ifs.mkdir(&cx, "/home/b/d", 0o755).unwrap()
+        s.ifs.mkdir(&cx, "/home/b/d", 0o755).unwrap();
     });
     rises(&s, &cx, "/home/b", || {
-        s.ifs.rmdir(&cx, "/home/b/d").unwrap()
+        s.ifs.rmdir(&cx, "/home/b/d").unwrap();
     });
     rises(&s, &cx, "/home", || {
-        s.ifs.mkdir(&cx, "/home/c", 0o755).unwrap()
+        s.ifs.mkdir(&cx, "/home/c", 0o755).unwrap();
     });
     // A move moves the counter up too.
     let l = chg(&s, &cx, "/home/b/l");
@@ -320,7 +320,7 @@ fn qsys_lib_counts_every_change() {
     assert!(m1 > m0);
     // A library gains an entry.
     rises(&s, &cx, "/QSYS.LIB", || {
-        s.ifs.mkdir(&cx, "/QSYS.LIB/NEW.LIB", 0o755).unwrap()
+        s.ifs.mkdir(&cx, "/QSYS.LIB/NEW.LIB", 0o755).unwrap();
     });
     // Created with O_CREAT on a new name: a new file with a value.
     let fd = s

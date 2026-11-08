@@ -50,6 +50,8 @@ struct Xref<'a> {
     entries: Vec<Entry>,
     record_of: &'a dyn Fn(u32) -> u32,
     described: Vec<String>,
+    /// A host date's length (`DATFMT`).
+    date_len: u32,
 }
 
 /// SQL words that are not names.
@@ -111,6 +113,9 @@ const KEYWORDS: &[&str] = &[
     "DYNAMIC",
     "NO",
     "WITHOUT",
+    "BOTH",
+    "SYSTEM",
+    "TABLE",
     "OPEN",
     "CLOSE",
     "PREPARE",
@@ -185,8 +190,9 @@ fn keyword(w: &str) -> bool {
     KEYWORDS.contains(&w)
 }
 
-/// A host variable's SQL type, as the precompiler describes it.
-fn host_type(ty: &Ty) -> String {
+/// A host variable's SQL type, as the precompiler describes it; a
+/// date is as long as the precompile's `DATFMT` makes it.
+fn host_type(ty: &Ty, date_len: u32) -> String {
     match ty {
         Ty::Int(3 | 5) => "SMALL INTEGER PRECISION(4,0)".into(),
         Ty::Int(20) => "BIGINT PRECISION(18,0)".into(),
@@ -199,10 +205,22 @@ fn host_type(ty: &Ty) -> String {
         Ty::Float(_) => "FLOAT(53)".into(),
         Ty::Char(n) => format!("CHARACTER({n})"),
         Ty::VarChar(n, _) => format!("VARCHAR({n})"),
-        Ty::Date(..) => "DATE(8)".into(),
+        Ty::Date(..) => format!("DATE({date_len})"),
         Ty::Time(..) => "TIME(8)".into(),
         Ty::Timestamp(_) => "TIMESTAMP(26)".into(),
         _ => String::new(),
+    }
+}
+
+/// A date's length under a `DATFMT`: 10 for the four-digit-year formats.
+fn date_len(datfmt: &str) -> u32 {
+    if matches!(
+        datfmt.trim().to_ascii_uppercase().as_str(),
+        "*ISO" | "*EUR" | "*USA" | "*JIS"
+    ) {
+        10
+    } else {
+        8
     }
 }
 
@@ -336,21 +354,52 @@ impl Xref<'_> {
                         let ty = di
                             .and_then(|di| self.c.table.subfield(di, &sname))
                             .map(|id| self.c.table.syms[id].clone());
-                        let attr = ty
-                            .as_ref()
-                            .map_or_else(String::new, |t| array(t.dim, &host_type(&t.ty)));
+                        let attr = ty.as_ref().map_or_else(String::new, |t| {
+                            array(t.dim, &host_type(&t.ty, self.date_len))
+                        });
                         self.add(
                             &sname,
                             Some(self.rec(s.at.line)),
-                            format!("{attr} IN {name}"),
+                            format!("{attr} IN {name}{where_}"),
                             What::Rpg(scope),
                             &name,
                         );
                     }
                 }
+                // An SQLTYPE lists as its type: `BLOB(50)`, `ROWID`.
+                DefKind::Standalone if d.kw("SQLTYPE").is_some() => {
+                    let k = d.kw("SQLTYPE").expect("checked");
+                    let arg = |i: usize| {
+                        k.arg(i).map(|a| {
+                            a.toks
+                                .iter()
+                                .map(rpgfront::lex::Tok::text)
+                                .collect::<String>()
+                                .trim()
+                                .to_ascii_uppercase()
+                        })
+                    };
+                    let ty = arg(0).unwrap_or_default();
+                    let attr = match arg(1) {
+                        Some(n) if !n.is_empty() => format!("{ty}({n})"),
+                        _ => ty,
+                    };
+                    self.add(
+                        &name,
+                        Some(line),
+                        format!("{attr}{where_}"),
+                        What::Rpg(scope),
+                        "",
+                    );
+                }
                 DefKind::Standalone | DefKind::Parm => {
                     let Some(s) = sym else { continue };
-                    let ty = host_type(&s.ty);
+                    let ty = host_type(&s.ty, self.date_len);
+                    // A pointer lists with no attributes at all.
+                    if matches!(s.ty, Ty::Ptr) {
+                        self.add(&name, Some(line), String::new(), What::Rpg(scope), "");
+                        continue;
+                    }
                     if ty.is_empty() {
                         continue;
                     }
@@ -388,7 +437,7 @@ impl Xref<'_> {
                     // A binary field of a file lists as DECIMAL.
                     let attr = match x.ty {
                         Ty::Bin(d, s) => format!("DECIMAL({d},{s})"),
-                        _ => host_type(&x.ty),
+                        _ => host_type(&x.ty, self.date_len),
                     };
                     self.add(&name, Some(line), attr, scope, "");
                 }
@@ -518,6 +567,8 @@ impl Xref<'_> {
         match verb.as_str() {
             "SET" if word(1) == "OPTION" => return,
             "INCLUDE" | "COMMIT" | "ROLLBACK" => return,
+            // A table declaration is documentation: no entries.
+            "DECLARE" if word(2) == "TABLE" => return,
             "WHENEVER" => {
                 if let Some(i) = toks.iter().position(|t| t.is("TO") || t.is("GOTO")) {
                     let label = word(i + 1).to_string();
@@ -557,7 +608,22 @@ impl Xref<'_> {
         while i < toks.len() {
             let w = word(i);
             let prev = if i > 0 { word(i - 1) } else { "" };
-            if verb == "DECLARE" && i == 1 {
+            if verb == "DECLARE" && i == 1 && word(2) == "STATEMENT" {
+                let name = w.to_ascii_uppercase();
+                let at = Some(self.rec(src.line));
+                match self
+                    .entries
+                    .iter()
+                    .position(|e| e.name == name && e.what == What::Statement)
+                {
+                    Some(k) => self.entries[k].define = at,
+                    None => {
+                        self.add(&name, at, "STATEMENT".into(), What::Statement, "");
+                    }
+                }
+                skip[i] = true;
+                skip[2] = true;
+            } else if verb == "DECLARE" && i == 1 {
                 let name = w.to_string();
                 let for_at = toks.iter().position(|t| t.is("FOR"));
                 let target = for_at.map(|f| word(f + 1).to_string()).unwrap_or_default();
@@ -697,6 +763,9 @@ fn cursor_pos(toks: &[Tok]) -> Option<usize> {
 fn stmt_name_at(toks: &[Tok]) -> usize {
     if toks.get(1).is_some_and(|t| t.is("INPUT")) {
         2
+    } else if toks.get(1).is_some_and(|t| t.is("TABLE")) {
+        // DESCRIBE TABLE names a host variable, no statement.
+        usize::MAX
     } else {
         1
     }
@@ -782,6 +851,7 @@ pub(crate) fn entries(
         entries: Vec::new(),
         record_of,
         described: Vec::new(),
+        date_len: date_len(&p.options.datfmt),
     };
     let m = &c.module;
     x.defs(&m.defs, 0, "", false);

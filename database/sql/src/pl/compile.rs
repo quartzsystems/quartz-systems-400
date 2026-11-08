@@ -1516,6 +1516,7 @@ impl Gen<'_> {
     }
 
     /// `BEGIN ... END`.
+    #[allow(clippy::too_many_lines)]
     fn compound(&mut self, c: &Compound, label: Option<String>) -> Result<()> {
         let end = self.label();
         let mut frame = Frame {

@@ -44,6 +44,7 @@ fn conf_value(v: &View, name: &str) -> String {
 
 /// `GET` shows the properties; `POST` applies them or goes to a
 /// confirmation.
+#[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     if rq.post() {
         return post(rq, v);

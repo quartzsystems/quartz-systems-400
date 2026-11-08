@@ -51,6 +51,7 @@ fn select(s: &mut Session, sql: &str) -> Result<Vec<f64>, String> {
 
 impl Suite {
     /// Step 106: a short collection, its files and their figures.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn collection_services(&self, s: &mut Session) -> Result<String, String> {
         let _ = s.command("ENDPFRCOL FRCCOLEND(*YES)", CMD);
         let cfg = s.command(

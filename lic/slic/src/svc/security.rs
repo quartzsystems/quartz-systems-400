@@ -207,6 +207,7 @@ pub fn object(txn: &mut store::Txn<'_>, qsys: ObjectId, p: &Params) -> sec::Resu
 }
 
 /// The audit commands; `None` when `cmd` is not one.
+#[allow(clippy::too_many_lines)]
 pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
     let p = Params::parse(line);
     let k = keywords(&p);

@@ -2,160 +2,232 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The `qap` corpus holds a framed seed for every `Debug` body (QAP
-//! version 9): each request and both events. `QS400_UPDATE_SEEDS=1`
-//! writes the missing ones.
+//! The `qap` target's corpus holds a seed for every request body QAP
+//! version 8 adds: one framed request each, named as the fuzzer names
+//! corpus entries. `QS400_UPDATE_SEEDS=1` writes the missing ones.
 
 use std::path::Path;
 
-use fuzz::engine::run_one;
-use fuzz::targets::TARGETS;
 use ipc::Wire;
-use qap_proto::ops::debug::{
-    AddProgram, DebugEnded, DebugTarget, Eval, Frame, LineBreakpoint, RemoveServiceEntry, Resume,
-    ResumeHow, SetBreakpoints, SetServiceEntry, Start, StopReason, Stopped, Variables,
+use qap_proto::ops::command::CommandText;
+use qap_proto::ops::develop::{
+    ChangeMember, CopyMember, CreateMember, DescribeObject, ListLibraries, ListMembers,
+    ListObjects, MemberRef, ReadMember, RenameMember, SetLibraryList, WriteMember,
 };
-use qap_proto::ops::event;
-use qap_proto::types::{JobId, ObjectName};
-use qap_proto::{Envelope, Op, Service, Status};
+use qap_proto::ops::jobs::{EndJob, JobLog, JobRef, JobState, ListJobs};
+use qap_proto::ops::sql::{ListIndexes, ListRoutines, RoutineKind};
+use qap_proto::types::{EndHow, JobId, MemberName, ObjectName, SourceRecord};
+use qap_proto::{Envelope, Op};
 use sha2::{Digest, Sha256};
 
-fn assets() -> ObjectName {
-    ObjectName {
-        library: "HLINV".into(),
-        name: "ASSETS".into(),
+fn frame<B: Wire>(op: Op, body: &B) -> Vec<u8> {
+    let mut b = Vec::new();
+    Envelope::request(7, op, body).write_to(&mut b).unwrap();
+    b
+}
+
+fn member() -> MemberName {
+    MemberName {
+        file: ObjectName {
+            library: "HLINV".into(),
+            name: "QRPGLESRC".into(),
+        },
+        member: "ASSETS".into(),
     }
 }
 
-fn request<B: Wire>(id: u32, op: Op, body: &B) -> Envelope {
-    Envelope::request(id, op, body)
+fn job() -> JobId {
+    JobId {
+        name: "BUILD".into(),
+        user: "BOB".into(),
+        number: "000150".into(),
+    }
 }
 
-fn seeds() -> Vec<Envelope> {
-    let job = JobId {
-        name: "QPADEV0001".into(),
-        user: "BOB".into(),
-        number: "004711".into(),
+/// One framed request per version 8 body.
+#[allow(clippy::too_many_lines)] // one of each
+fn seeds() -> Vec<Vec<u8>> {
+    let rec = SourceRecord {
+        seq: 100,
+        date: 261_107,
+        data: "**FREE".into(),
     };
     vec![
-        request(
-            2,
-            Op::DebugStart,
-            &Start {
-                target: DebugTarget::Own,
+        frame(Op::GetLibraryList, &()),
+        frame(
+            Op::SetLibraryList,
+            &SetLibraryList {
+                current: Some("HLINV".into()),
+                user: vec!["QGPL".into(), "QTEMP".into()],
             },
         ),
-        request(
-            3,
-            Op::DebugStart,
-            &Start {
-                target: DebugTarget::Job { job: job.clone() },
+        frame(
+            Op::ListLibraries,
+            &ListLibraries {
+                pattern: "HL*".into(),
+                start: 0,
+                max: 50,
             },
         ),
-        request(4, Op::DebugEnd, &()),
-        request(
-            5,
-            Op::AddProgram,
-            &AddProgram {
-                program: assets(),
-                r#type: "*PGM".into(),
+        frame(
+            Op::ListObjects,
+            &ListObjects {
+                library: "*LIBL".into(),
+                pattern: "ASSET*".into(),
+                types: vec!["*FILE".into(), "*PGM".into()],
+                attribute: Some("RPGLE".into()),
+                start: 0,
+                max: 0,
             },
         ),
-        request(
-            6,
-            Op::SetBreakpoints,
-            &SetBreakpoints {
-                program: assets(),
-                module: "ASSETS".into(),
-                lines: vec![
-                    LineBreakpoint {
-                        line: 11,
-                        condition: None,
-                    },
-                    LineBreakpoint {
-                        line: 13,
-                        condition: Some("COUNT = 1".into()),
-                    },
-                ],
+        frame(
+            Op::DescribeObject,
+            &DescribeObject {
+                object: member().file,
+                r#type: "*FILE".into(),
             },
         ),
-        request(
-            7,
-            Op::DebugResume,
-            &Resume {
-                how: ResumeHow::StepOut,
+        frame(
+            Op::ListMembers,
+            &ListMembers {
+                file: member().file,
+                pattern: String::new(),
+                start: 0,
+                max: 0,
             },
         ),
-        request(8, Op::Stack, &()),
-        request(
-            9,
-            Op::Variables,
-            &Variables {
-                frame: 0,
-                parent: Some("ASSET".into()),
+        frame(
+            Op::ReadMember,
+            &ReadMember {
+                member: member(),
+                lock: true,
             },
         ),
-        request(
-            10,
-            Op::Eval,
-            &Eval {
-                frame: 0,
-                expression: "NAME:x".into(),
+        frame(
+            Op::WriteMember,
+            &WriteMember {
+                member: member(),
+                records: vec![rec.clone(), rec],
+                renumber: true,
+                srctype: Some("RPGLE".into()),
+                text: None,
+                first: true,
+                last: true,
             },
         ),
-        request(
-            11,
-            Op::SetServiceEntry,
-            &SetServiceEntry {
-                program: assets(),
+        frame(Op::UnlockMember, &MemberRef { member: member() }),
+        frame(
+            Op::CreateMember,
+            &CreateMember {
+                member: member(),
+                srctype: "RPGLE".into(),
+                text: "new".into(),
+            },
+        ),
+        frame(
+            Op::CopyMember,
+            &CopyMember {
+                from: member(),
+                to: member(),
+                replace: false,
+            },
+        ),
+        frame(
+            Op::RenameMember,
+            &RenameMember {
+                member: member(),
+                new_name: "ASSETS2".into(),
+            },
+        ),
+        frame(Op::DeleteMember, &MemberRef { member: member() }),
+        frame(
+            Op::ChangeMember,
+            &ChangeMember {
+                member: member(),
+                srctype: None,
+                text: Some("text".into()),
+            },
+        ),
+        frame(
+            Op::Compile,
+            &CommandText {
+                command: "CRTBNDRPG PGM(HLINV/ASSETS)".into(),
+            },
+        ),
+        frame(
+            Op::ListJobs,
+            &ListJobs {
                 user: "*CURRENT".into(),
+                status: Some(JobState::OnOutputQueue),
+                start: 0,
+                max: 0,
             },
         ),
-        request(
-            12,
-            Op::RemoveServiceEntry,
-            &RemoveServiceEntry { program: assets() },
-        ),
-        Envelope::event(Service::Debug, event::STOPPED, Status::Ok, None).with_body(&Stopped {
-            job,
-            reason: StopReason::ServiceEntry,
-            frame: Frame {
-                program: assets(),
-                module: "ASSETS".into(),
-                procedure: "ASSETS".into(),
-                stmt: 9,
-                line: 9,
-                view: qap_proto::ops::debug::View::Source,
+        frame(
+            Op::JobLog,
+            &JobLog {
+                job: job(),
+                start: 0,
+                max: 100,
             },
-        }),
-        Envelope::event(Service::Debug, event::DEBUG_ENDED, Status::Ok, None)
-            .with_body(&DebugEnded { message: None }),
+        ),
+        frame(Op::HoldJob, &JobRef { job: job() }),
+        frame(Op::ReleaseJob, &JobRef { job: job() }),
+        frame(
+            Op::EndJob,
+            &EndJob {
+                job: job(),
+                how: EndHow::Immediate,
+                delay: Some(30),
+            },
+        ),
+        frame(
+            Op::ListRoutines,
+            &ListRoutines {
+                schema: "HLINV".into(),
+                pattern: "%".into(),
+                kinds: vec![RoutineKind::Procedure, RoutineKind::Function],
+                start: 0,
+                max: 0,
+            },
+        ),
+        frame(
+            Op::ListIndexes,
+            &ListIndexes {
+                schema: "HLINV".into(),
+                table: "ASSETS".into(),
+            },
+        ),
     ]
 }
 
 #[test]
-fn every_debug_body_has_a_seed() {
+fn version_8_bodies_are_seeded() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("corpus/qap");
-    let target = TARGETS
-        .iter()
-        .find(|t| t.name == "qap")
-        .expect("the qap target");
     let update = std::env::var_os("QS400_UPDATE_SEEDS").is_some();
     let mut missing = Vec::new();
-    for e in seeds() {
-        let mut framed = Vec::new();
-        e.write_to(&mut framed).unwrap();
-        assert!(run_one(target, &framed).is_none(), "{e:?}");
-        let name = hex::encode(&Sha256::digest(&framed)[..8]);
+    for s in seeds() {
+        let name = hex::encode(&Sha256::digest(&s)[..8]);
         let path = dir.join(&name);
-        if path.exists() {
+        if path.is_file() {
             continue;
         }
         if update {
-            std::fs::write(&path, &framed).unwrap();
+            std::fs::write(&path, &s).unwrap();
         } else {
-            missing.push(format!("{:?} {} ({name})", e.service, e.op));
+            missing.push(name);
         }
+        // The target takes every seed without a panic.
+        assert!(
+            fuzz::engine::run_one(
+                fuzz::targets::TARGETS
+                    .iter()
+                    .find(|t| t.name == "qap")
+                    .unwrap(),
+                &s
+            )
+            .is_none()
+        );
     }
     assert!(
         missing.is_empty(),

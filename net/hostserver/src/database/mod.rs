@@ -1011,6 +1011,7 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn request(&mut self, f: &Frame) -> Outcome {
         let r = Req::of(f);
         let params = expanded(&f.params).unwrap_or_else(|_| f.params.clone());

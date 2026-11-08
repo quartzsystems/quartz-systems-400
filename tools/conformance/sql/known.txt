@@ -2,7 +2,6 @@
 # A new difference fails the kit; remove a line when the case agrees.
 ddl/GRANT   # engine: GRANT USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
 types/CASTSTR   # engine: no 01004 truncation warning; CAST(TIMESTAMP AS TIME) style casts SQL0171 on the primary; CAST(... FOR BIT DATA) result described as character; an extra SQL0420 warning; a predicate as a value (SQL0104 on 7.1); a hex constant into VARBINARY (SQL0301); an extra row
-types/DECFLT1   # engine: CHAR of DECFLOAT columns VARCHAR here, CHAR at IBM
 types/DECFLT2   # engine: CAST('abc' AS INTEGER) in WHERE SQL0420 here, SQL0802 22023 there; no 01004; HEX of CCSID-tagged strings; CHAR of a float's length
 types/FLOATFMT  # engine: the primary makes CHAR(4.9E-324) a CHAR(42)
 types/JSON1     # engine: a predicate as a JSON_ARRAY value (SQL0104 on 7.5); FORMAT in JSON_UPDATE (SQL0199 there, SQL0204 here); a JSON_TABLE ordinality column NOT NULL here

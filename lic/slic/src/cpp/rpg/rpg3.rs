@@ -38,6 +38,7 @@ fn installed(system: &mut System, cmdname: &str) -> Option<CmdReply> {
 }
 
 /// `CRTRPGPGM`.
+#[allow(clippy::too_many_lines)]
 pub fn crtrpgpgm(system: &mut System, parms: &Parms) -> CmdReply {
     if let Some(r) = installed(system, "CRTRPGPGM") {
         return r;
@@ -200,6 +201,7 @@ fn job_handle(system: &System) -> JobHandle {
 }
 
 /// `CVTRPGSRC`: one member, or every member (`FROMMBR(*ALL)`).
+#[allow(clippy::too_many_lines)]
 pub fn cvtrpgsrc(system: &mut System, parms: &Parms) -> CmdReply {
     if let Some(r) = installed(system, "CVTRPGSRC") {
         return r;

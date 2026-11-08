@@ -828,6 +828,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn getaddrinfo_rules() {
         let mut r = Resolver::default();
         let h = Hints {

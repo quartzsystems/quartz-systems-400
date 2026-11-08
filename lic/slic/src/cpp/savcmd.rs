@@ -1895,6 +1895,7 @@ fn device_path(dev: &str) -> Option<String> {
 const IFS_LABEL: &str = "QSAVIFS";
 
 /// `SAV` to a save file or a device.
+#[allow(clippy::too_many_lines)]
 fn sav(system: &mut System, parms: &Parms) -> CmdReply {
     const NAME: &str = "SAV";
     let dev = values(parms, "DEV");

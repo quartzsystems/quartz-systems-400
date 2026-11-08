@@ -79,6 +79,7 @@ members = [
     "rpg/compiler",
     "rpg/qrpgrt",
     "rpg/sqlpre",
+    "rpg/extdesc",
     # RPG III (RPG/400): CRTRPGPGM and CVTRPGSRC.
     "rpg/rpg3",
     # Integrated file system: the namespace, metadata, authority, locks;

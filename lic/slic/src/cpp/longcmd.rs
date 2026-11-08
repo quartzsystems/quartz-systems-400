@@ -230,9 +230,24 @@ fn bridged(
         "rgzpfm" => Box::new(move |w: &Work<'_>| {
             reply(w.txn(|t, pause| files::rgzpfm_in(t, &ctx, job, &p, pause)))
         }),
-        "crtlf" => Box::new(move |w: &Work<'_>| {
-            reply(w.txn(|t, pause| files::crtlf_in(t, &ctx, job, &p, pause)))
-        }),
+        "crtlf" => {
+            let owned = parms.clone();
+            Box::new(move |w: &Work<'_>| {
+                let mut found = Vec::new();
+                let r = w.txn(|t, pause| files::crtlf_with(t, &ctx, job, &p, pause, &mut found));
+                // The compile's diagnostics go with the reply.
+                Box::new(move |system: &mut System| {
+                    let mbr = p.pos_or(0, "FILE").unwrap_or_default();
+                    let mbr = mbr.rsplit('/').next().unwrap_or("");
+                    let at = files::dds_at(&p, mbr);
+                    let help = &mut super::compdiags::help(system);
+                    let diags = dds::diag::diagnostics(&found, &at, help);
+                    let mut reply = bridged_reply(e, &owned, r);
+                    reply.diagnostics = super::compdiags::wire(diags);
+                    reply
+                })
+            })
+        }
         "cpyfrmimpf" => {
             let text = match files::cpyfrmimpf_text(system, &p) {
                 Ok(t) => t,

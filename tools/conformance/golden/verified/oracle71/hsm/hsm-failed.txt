@@ -1,0 +1,24 @@
+             Failed and Non-Reporting Logical Hardware Resources                
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change detail    4=Remove    5=Display detail    6=I/O debug               
+   7=Verify           8=Associated packaging resource(s)                        
+                                                                                
+                                                                Resource        
+ Opt Description                    Type-Model  Status          Name            
+     Virtual IOP                         -      Failed          CMB09           
+     Virtual IOP               ?         -      Unknown         CMB08           
+     Display Station           ?     3477-0FC   Unknown         DSP001          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit      F5=Refresh      F6=Print      F12=Cancel                          
+                                                                                

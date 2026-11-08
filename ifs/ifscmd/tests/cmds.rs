@@ -425,6 +425,7 @@ fn owner_and_group_subtrees_go_on_past_failures() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn attributes_checkout_and_journaling() {
     let s = Sys::new();
     let c = s.as_user("QSECOFR", 1);

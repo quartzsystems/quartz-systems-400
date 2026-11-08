@@ -179,6 +179,7 @@ pub fn check_section(
 }
 
 /// Check a directive and its arguments.
+#[allow(clippy::too_many_lines)]
 pub fn check_directive(
     name: &str,
     args: &[String],

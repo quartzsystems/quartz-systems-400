@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 spool = { path = "../../work/spool", version = "0.1.0" }
 print = { path = "../../work/print", version = "0.1.0" }
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 stg = { path = "../../work/stg", version = "0.1.0" }
 hwrsrc = { path = "../../lic/hwrsrc", version = "0.1.0" }

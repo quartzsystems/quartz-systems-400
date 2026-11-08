@@ -101,6 +101,14 @@ Not in QAP: display and printer sessions (Telnet), the printer session's message
 
 - `JobId` = { `name` String, `user` String, `number` String (six digits) }.
 - `ObjectName` = { `library` String, `name` String }. `library` may be `*LIBL` or `*CURLIB` where a library list search applies.
+- `EndHow` enum: `Controlled` 0 (`*CNTRLD`), `Immediate` 1 (`*IMMED`). Defined by version 7 for `Manage`; a common type from version 8, which `Jobs` uses too. Its values and their numbers are version 7's.
+
+**Common types (version 8).**
+
+- `MemberName` = { `file` ObjectName (a source physical file; `library` may be `*LIBL` or `*CURLIB`), `member` String }.
+- `SourceRecord` = { `seq` u32 (the sequence number in hundredths: `100` is `0001.00`, at most `999999`), `date` u32 (`yymmdd`, 0 for none), `data` String (UTF-8, trailing blanks removed) }.
+- `Where` enum: `Member` 0 { `member` MemberName }, `Path` 1 { `path` String }, `None` 2.
+- `Diagnostic` = { `where` Where (the source the message points into: the member compiled, a `/COPY` member, a stream file, or nowhere), `line` u32 (from 1; 0 unknown), `column` u16 (from 1; 0 unknown), `end_line` u32 (0: `line`), `end_column` u16 (0 unknown), `severity` u8, `id` String (`RNF7030`), `text` String (first level), `help` String (second level) }. The Rust field of `where` is `r#where`; `rpg/compdiag` has the same type, its field `at`.
 
 ### Service 3 `Command`: run CL commands (version 2)
 
@@ -337,7 +345,7 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 
 - `SubsystemStatus` enum: `Active` 0, `Inactive` 1, `Ending` 2, `Starting` 3.
 - `Subsystem` = { `sbsd` ObjectName, `status` SubsystemStatus, `jobs` u32 (active jobs), `monitor` Option of JobId (while it runs), `text` String }.
-- `EndHow` enum: `Controlled` 0 (`*CNTRLD`), `Immediate` 1 (`*IMMED`).
+- `EndHow`: see Common types (from version 8 a common type; unchanged).
 - `ValueKind` enum: `Character` 0, `Decimal` 1, `Integer` 2, `List` 3.
 - `SystemValue` = { `name` String, `kind` ValueKind, `value` String (as `CHGSYSVAL VALUE()` takes it, without apostrophes; a list's entries separated by one blank), `text` String, `category` String (the catalog group: `SEC`, `DATTIM`, `SYSCTL`, `LIBL`...) }.
 - `PtfStatus` enum: `NotApplied` 0, `TemporarilyApplied` 1, `PermanentlyApplied` 2, `TemporarilyRemoved` 3, `PermanentlyRemoved` 4, `Superseded` 5, `Damaged` 6, `SaveFileOnly` 7 (only its save file or cover letter is here).
@@ -397,6 +405,108 @@ Every operation runs as the signed-on profile, concurrently on the connection's 
 - `SetSystemValue`'s reply is the value as the system keeps it; a value that takes effect at the next IPL is the new value, as `DSPSYSVAL` shows it.
 - `ListHardwareResources` lists what `WRKHDWRSC TYPE()` lists, in its order, the guest agent's channel among the `*CMN` resources when the system runs under a hypervisor that offers one.
 - No event: a client that follows subsystems or IPL state asks again; message queue watches (version 6) carry the operator's messages.
+
+### Service 9 `Develop`: libraries, objects, source members and compiles (version 8, draft)
+
+**Draft until QS/400 ships it.** Version 8 is what Code for QS/400, a VS Code extension, needs beside versions 1 to 7: the library list, objects, source members with their sequence numbers and dates, and compiles that return their diagnostics. Nothing in versions 1 to 7 changes; a peer that negotiates 7 or less never sees `Develop`, and its requests for it get `InvalidRequest`.
+
+Every operation runs as the signed-on profile and does what the command named beside it does, with that command's authority checks and messages. Names are system names; the server folds them to upper case, as the command line folds a name not in quotes. A generic `pattern` is a name, a name ending in `*` (`ASSET*`), or `*ALL`; empty is `*ALL`.
+
+- `LibraryKind` enum: `Production` 0 (`TYPE(*PROD)`), `Test` 1 (`TYPE(*TEST)`).
+- `LibraryList` = { `current` Option of String (none: no current library), `system` list of String (the system part and then the product libraries, in search order), `user` list of String (in search order) }.
+- `Library` = { `name` String, `kind` LibraryKind, `text` String }.
+- `ObjectEntry` = { `library` String, `name` String, `type` String (`*FILE`), `attribute` String (`PF`, `RPGLE`; empty when none), `text` String, `size` u64 (bytes), `changed` i64, `owner` String }.
+- `Attribute` = { `name` String, `value` String }.
+- `MemberEntry` = { `name` String, `srctype` String, `text` String, `records` u32, `created` i64, `changed` i64 }.
+
+| Service | Op | Request body | Reply body | Lane | Stands for |
+| --- | --- | --- | --- | --- | --- |
+| Develop | 1 `GetLibraryList` | — | `LibraryList` | lane | `DSPLIBL` |
+| Develop | 2 `SetLibraryList` | `current` Option of String, `user` list of String | `LibraryList` (as it now is) | lane | `CHGLIBL` |
+| Develop | 3 `ListLibraries` | `pattern` String, `start` u32, `max` u32 | `total` u32, `libraries` list of `Library` (by name) | concurrent | `WRKLIB` |
+| Develop | 4 `ListObjects` | `library` String (`*LIBL`, `*CURLIB`, `*USRLIBL`, `*ALL` or a library), `pattern` String, `types` list of String (empty: every type), `attribute` Option of String, `start` u32, `max` u32 | `total` u32, `objects` list of `ObjectEntry` (by library in search order, then name, then type) | concurrent | `WRKOBJ` |
+| Develop | 5 `DescribeObject` | `object` ObjectName, `type` String | `attributes` list of `Attribute` (in `DSPOBJD DETAIL(*FULL)` order) | concurrent | `DSPOBJD` |
+| Develop | 6 `ListMembers` | `file` ObjectName, `pattern` String, `start` u32, `max` u32 | `total` u32, `members` list of `MemberEntry` (by name) | concurrent | `WRKMBRPDM`, `DSPFD TYPE(*MBRLIST)` |
+| Develop | 7 `ReadMember` | `member` MemberName, `lock` flag | `srctype` String, `text` String, `width` u16 (the record's data length), `ccsid` u16 (the file's), `records` list of `SourceRecord` (split with `More` when large) | concurrent | `STRSEU` |
+| Develop | 8 `WriteMember` | `member` MemberName, `records` list of `SourceRecord`, `renumber` flag, `srctype` Option of String, `text` Option of String, `first` flag, `last` flag | `records` u32 | concurrent | `STRSEU`'s save |
+| Develop | 9 `UnlockMember` | `member` MemberName | — | concurrent | `DLCOBJ` |
+| Develop | 10 `CreateMember` | `member` MemberName, `srctype` String, `text` String | — | concurrent | `ADDPFM` |
+| Develop | 11 `CopyMember` | `from` MemberName, `to` MemberName, `replace` flag | — | concurrent | `CPYSRCF` |
+| Develop | 12 `RenameMember` | `member` MemberName, `new_name` String | — | concurrent | `RNMM` |
+| Develop | 13 `DeleteMember` | `member` MemberName | — | concurrent | `RMVM` |
+| Develop | 14 `ChangeMember` | `member` MemberName, `srctype` Option of String, `text` Option of String | — | concurrent | `CHGPFM` |
+| Develop | 15 `Compile` | `command` String | `job` JobId, `messages` list of `ServerMessage`, `diagnostics` list of `Diagnostic` | lane | the command |
+
+| Op | Statuses |
+| --- | --- |
+| `GetLibraryList` | `Ok` |
+| `SetLibraryList` | `Ok`; `NotFound` (a library, `CPF2110`); `NotAuthorized` (`CPF2182`); `Error` (`CHGLIBL`'s escape message, for example a library named twice) |
+| `ListLibraries`, `ListObjects`, `ListMembers` | `Ok`; `NotFound` (the library or file); `NotAuthorized` |
+| `DescribeObject` | `Ok`; `NotFound`; `NotAuthorized` |
+| `ReadMember` | `Ok`; `NotFound` (the file or member); `NotAuthorized`; `InUse` (`lock` 1 and another job holds the member; `lock` 0 and another job holds it `*EXCL`); `Error` (not a source file, or data the server cannot convert) |
+| `WriteMember` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` (another job holds the member); `Error` (data that does not convert to the file's CCSID); `InvalidRequest` (pieces out of order, sequence numbers not ascending or out of range, a record longer than the file's data length) |
+| `UnlockMember` | `Ok`; `NotFound` (the member is not locked by this connection) |
+| `CreateMember` | `Ok`; `NotFound` (the file); `NotAuthorized`; `Exists` |
+| `CopyMember`, `RenameMember` | `Ok`; `NotFound`; `NotAuthorized`; `Exists` (`to` or `new_name` taken; for `CopyMember` only without `replace`); `InUse` |
+| `DeleteMember`, `ChangeMember` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` |
+| `Compile` | as `RunCommand`; `Error` when the compile failed (the message is the command's escape message, and the body is still filled) |
+
+**Rules.**
+
+- Lanes: `GetLibraryList`, `SetLibraryList` and `Compile` run in the connection's lane, in arrival order with `Command` requests and `Sql` 1 to 8, since they use the job's library list. Every other `Develop` operation runs concurrently, as the signed-on profile.
+- The library list is the connection job's. `SetLibraryList` changes it as `CHGLIBL LIBL(..) CURLIB(..)` does: `user` empty is `LIBL(*NONE)`, `current` none is `CURLIB(*CRTDFT)` (no current library), so a list `GetLibraryList` answered can be set again as it is. `Command.RunCommand`, `Compile` and the `*LIBL` and `*CURLIB` searches of every other operation see it.
+- Lists show what the commands show the profile: libraries and objects it has some authority to, as `WRKLIB` and `WRKOBJ` list them. `ListObjects` `*ALL` is every library the profile can see; `*USRLIBL` the user part of the library list; `types` and `attribute` filter (`attribute` none: any).
+- `DescribeObject`'s `name`s are the server's labels (`Library`, `Object`, `Type`, `Attribute`, `Owner`, `Text`, `Created`, `Changed`, `Size`, ...), its `value`s the text `DSPOBJD` shows; a client shows them as they come.
+- `ReadMember`:
+  - `data` is the record's data converted from the file's CCSID to UTF-8, trailing blanks removed; `width` is the data length in the file's bytes. A file whose CCSID cannot be converted (65535) is `Error` with `TCP1A5A`.
+  - With `lock` 1 the member is held `*SHRNUP` for the connection, as `STRSEU` holds a member it edits, until `UnlockMember`, a `WriteMember` of it by the same connection, or the connection's end. Other jobs read it meanwhile; none changes it. A member another job holds (any lock but `*SHRRD`) is `InUse` with `CPF1002`.
+- `WriteMember` replaces the member's records:
+  - A member over 1 MiB is sent in pieces: `first` 1 on the first piece, `last` 1 on the last (one request is both). Each piece is sent after the reply to the one before. The server keeps the pieces for the connection and writes the member, whole and at once, when the last arrives, so no other job ever reads a member half written, and the comparison below is with the member as it was. `renumber`, `srctype` and `text` are the last piece's. A piece with `first` 0 when no write of that member is in progress on the connection is `InvalidRequest`; a `first` 1 discards a write of the same member in progress. Pieces not written are discarded when the connection ends. The reply's `records` is the records received so far on a piece that is not the last, and the member's records on the last.
+  - Without `renumber`, `seq` must be ascending, each from 1 to 999999; with `renumber` 1 the records are numbered from `0001.00` in steps of `0001.00` (at most 9999 records).
+  - Dates: a record whose data equals the data of the member's record with the same `seq` (its `seq` before renumbering) keeps the `date` sent; every other record, changed or new, is dated today (the job's date). A client that reads a member and writes the same records back leaves it as it was.
+  - `data` is converted to the file's CCSID; a character with no encoding there is `Error` with `TCP1A5A`, and nothing is written. Data longer than the record's data length once converted is `InvalidRequest`.
+  - The member must exist (`CreateMember` adds one). Another job's lock on it (any but `*SHRRD`) is `InUse` with `CPF1002`. A lock this connection holds ends with the write.
+  - `srctype` and `text` none leave the member's as they are.
+- `UnlockMember` ends this connection's lock; a member it does not hold is `NotFound` with `TCP1A61`.
+- `CreateMember` is `ADDPFM`; `CopyMember` is `CPYSRCF` of one member, sequence numbers and dates kept, `MBROPT(*REPLACE)` with `replace` 1; `RenameMember` is `RNMM`; `DeleteMember` is `RMVM`; `ChangeMember` is `CHGPFM`, `srctype` and `text` none leaving each as it is. Each answers with its command's messages; a name taken is `Exists`.
+- `Compile` runs `command` as `RunCommand` does, in the connection job, and answers its `CommandReply` with the diagnostics the compiler left on the job for that command (`rpg/compdiag`): `CRTBNDRPG`, `CRTRPGMOD`, `CRTSQLRPGI`, `CRTBNDCL`, `CRTCLMOD`, `CRTPF`, `CRTLF`, `CRTDSPF`, `CRTPRTF`, `CRTCMD`, `RUNSQLSTM`, `CRTPGM`, `CRTSRVPGM`. A command that is not a compile answers its messages and no diagnostics. `Error` when the compile failed, the body still filled; `Cancelled` as `RunCommand`.
+
+### Service 10 `Jobs`: jobs and job logs (version 8, draft)
+
+**Draft until QS/400 ships it**, with `Develop`. A peer of version 7 or less never sees `Jobs`.
+
+- `JobState` enum: `Active` 0, `OnJobQueue` 1, `OnOutputQueue` 2 (ended, its spooled files kept).
+- `JobEntry` = { `id` JobId, `state` JobState, `status` String (as `WRKUSRJOB` shows it: `*ACTIVE`, `*JOBQ`, `*OUTQ`), `type` String (`BATCH`, `INTER`, `AUTO`, `PJ`, `SBS`, `SYS`, `RDR`, `WTR`), `subsystem` String (empty when not active), `function` String (as `WRKACTJOB` shows it, `PGM-QCMD`; empty when none), `entered` i64 (when the job entered the system) }.
+- `JobLogEntry` = { `message` ServerMessage, `kind` MessageType (service 7's), `sent` i64, `from_program` String, `to_program` String }.
+
+| Service | Op | Request body | Reply body | Stands for |
+| --- | --- | --- | --- | --- |
+| Jobs | 1 `ListJobs` | `user` String (`*CURRENT`, `*ALL`, a profile), `status` Option of JobState, `start` u32, `max` u32 | `total` u32, `jobs` list of `JobEntry` (active first, then on job queues, then on output queues; each by when it entered) | `WRKUSRJOB` |
+| Jobs | 2 `JobLog` | `job` JobId, `start` u32, `max` u32 | `total` u32, `entries` list of `JobLogEntry` (oldest first) | `DSPJOBLOG` |
+| Jobs | 3 `HoldJob` | `job` JobId | — | `HLDJOB` |
+| Jobs | 4 `ReleaseJob` | `job` JobId | — | `RLSJOB` |
+| Jobs | 5 `EndJob` | `job` JobId, `how` EndHow, `delay` Option of u32 (seconds; none: the job's default) | — | `ENDJOB` |
+
+| Op | Statuses |
+| --- | --- |
+| `ListJobs` | `Ok`; `NotFound` (an unknown profile, `CPF2204`); `NotAuthorized` (another profile's jobs, or `*ALL`, without `*JOBCTL`) |
+| `JobLog` | `Ok`; `NotFound` (no such job, or an ended job without a spooled job log); `NotAuthorized` |
+| `HoldJob`, `ReleaseJob`, `EndJob` | `Ok`; `NotFound` (`CPF1321`); `NotAuthorized`; `Error` (the command's escape message, for example a job already held) |
+
+**Rules.** Every operation runs concurrently as the signed-on profile, with its command's checks: the profile's own jobs need nothing, another user's need `*JOBCTL`, as the commands require. `JobLog` of an active job is its job log now; of an ended job, its spooled job log (`QPJOBLOG`) if one exists, else `NotFound`. `EndJob` of the connection's own job is `InvalidRequest`: a client signs off instead.
+
+### `Sql` additions (version 8, draft)
+
+- `RoutineKind` enum: `Procedure` 0, `Function` 1.
+- `Routine` = { `schema` String, `name` String, `specific` String (the specific name), `kind` RoutineKind, `text` String }.
+- `Index` = { `schema` String, `name` String, `unique` flag, `columns` list of String (the key columns, in key order) }.
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| Sql | 12 `ListRoutines` | `schema` String, `pattern` String (SQL `LIKE`), `kinds` list of RoutineKind (empty for both), `start` u32, `max` u32 | `total` u32, `routines` list of `Routine` (by name, then specific name) | no |
+| Sql | 13 `ListIndexes` | `schema` String, `table` String | `indexes` list of `Index` (by name) | no |
+
+Statuses as `ListSchemas` to `ListColumns`: `Ok`; `NotFound`; `NotAuthorized`. Both read the catalog (`QSYS2.SYSROUTINES`, `SYSINDEXES`, `SYSKEYS`) with the user's authority, keep no state and run concurrently, as operations 9 to 11 do.
 
 ### Service 11 `Debug`: the source debugger (version 9, draft)
 
@@ -541,6 +651,19 @@ It introduces no status: every status these operations answer exists in an earli
 ### Version 7 (draft)
 
 Version 7 is `Manage` (service 8) operations 1 `ListSubsystems` to 10 `PowerDown`, with the types and rules above, and the exit point `QS400_QAP_MGMT`. It introduces no status and no event: every status these operations answer exists in an earlier version. A version 1 to 6 peer never receives the `Manage` service or any of its bodies, and its requests for them get `InvalidRequest`. The server accepts versions 1 to 7 and picks the highest both sides support. Until QS/400 ships version 7 its operations and bodies may still change; versions 1 to 6 may not.
+
+### Version 8 (draft)
+
+Version 8 is:
+
+- `Develop` (service 9) operations 1 `GetLibraryList` to 15 `Compile`, with the types and rules above;
+- `Jobs` (service 10) operations 1 `ListJobs` to 5 `EndJob`;
+- `Sql` operations 12 `ListRoutines` and 13 `ListIndexes`;
+- the common types `MemberName`, `SourceRecord`, `Where` and `Diagnostic`, and `EndHow` as a common type (its values unchanged).
+
+It introduces no status and no event: every status these operations answer exists in an earlier version. A version 1 to 7 peer never receives `Develop`, `Jobs`, `Sql` 12 or 13 or any of their bodies, and its requests for them get `InvalidRequest`; `Hello` lists services 9 and 10 only at version 8 and above. The server accepts versions 1 to 8 and picks the highest both sides support. Until QS/400 ships version 8 its operations and bodies may still change; versions 1 to 6 may not.
+
+**Why `WriteMember` pieces carry `first` and `last` rather than an offset.** A member is records, not bytes, and it is written whole: the server compares each record with the member's to keep or set its date, renumbers the whole list, and replaces the records in one step, so a reader never sees half of a write. With an offset, each piece would be a write of its own and the member would stand half old and half new between pieces (and after a client that stops); with the pair, the server holds the pieces and writes once, at `last`. A client that stops before `last` changes nothing.
 
 ### Version 9 (draft)
 
@@ -1198,6 +1321,73 @@ Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody 
   in the connection job beside the lane, never in it.
 - QEMU step 123 runs the service end to end as a user without special
   authority and as `QSECOFR`.
+
+Version 8, as built on 2026-11-07 (draft; decisions made in the build, for Cody to review):
+
+- `qap-proto` speaks 1 to 8 (`VERSION` 8; `tools/fmtcheck`'s `qap` lock
+  bumped with it, `develop.rs` and `jobs.rs` registered as the draft
+  format `qap-v8`). The server accepts 1 to 8. Version 9 (`Debug`)
+  appends `Service::Debug` = 11 with `since` 9, its operations in `Op`
+  with `since` 9, and raises `VERSION` to 9; nothing else changes, and
+  `Hello` then lists service 11 only at 9. `EndHow` is
+  `qap_proto::types::EndHow`, re-exported from `ops::manage`.
+- `qap_proto::types::{MemberName, Where, Diagnostic}` convert to and from
+  `rpg/compdiag`'s (`From`), `MemberName`'s library and file becoming
+  the `ObjectName`. The Rust fields `where` and `type` are `r#where` and
+  `r#type`.
+- The rules shared by every host live in `net/qapd/src/develop.rs` and
+  `jobs.rs`: decoding, paging, `WriteMember`'s pieces (kept per
+  connection in `Shared`, by member, until `last`), the sequence-number
+  checks, the date rule (`develop::dated`) and `EndJob` of the
+  connection's own job (`InvalidRequest`). A host without `Develop` or
+  `Jobs` answers `Error` with `TCP1A60`; `TCP1A61` (`UnlockMember` of a
+  member not held) and `TCP1A62` (a record too long) are in `QTCPMSG`
+  beside it; a CCSID that cannot hold the data is version 5's `TCP1A5A`,
+  a member another job holds `CPF1002`.
+- The connection job (`work/qsjob/src/work/qap/develop.rs`, `jobs.rs`):
+  `GetLibraryList` reads the job's attributes, `SetLibraryList` runs
+  `CHGLIBL LIBL() CURLIB()` in the job's runtime, so the next
+  `RunCommand` and `Compile` see it. `ListLibraries` lists the `*LIB`
+  objects of `QSYS` with their `TYPE`; `ListObjects` the library's
+  objects with their sizes (`obj_sizes`); `DescribeObject` the object
+  and `DSPOBJD DETAIL(*FULL)`'s fields under readable labels;
+  `ListMembers` the file's members. `CreateMember`, `CopyMember`,
+  `RenameMember`, `DeleteMember` and `ChangeMember` are `ADDPFM`,
+  `CPYSRCF`, `RNMM`, `RMVM` and `CHGPFM` analyzed as typed lines and run
+  in the service; `HoldJob`, `ReleaseJob` and `EndJob` likewise
+  `HLDJOB`, `RLSJOB` and `ENDJOB`. `CPYSRCF` now keeps each record's
+  sequence number and date (`SRCOPT(*SAME)`, as IBM's does; `*SEQNBR`
+  renumbers from `SRCSEQ`, `*DATE` clears the dates) and takes
+  `MBROPT(*ADD)`; it used to renumber and redate every record.
+- `ReadMember`, `WriteMember` and `UnlockMember` are the service's
+  requests 780 to 782 (`stgsvc/qap/develop.rs`), as the job's user under
+  the store's guard, over `db::source` (`records`, `read_member` and the
+  new `write_records`). The lock is the store's `*SHRNUP`, held by the
+  connection job, so the job's end releases it. A write takes the member
+  `*EXCL` for the moment it writes, as SEU's save does, and ends the
+  connection's `*SHRNUP`. Today's date is the UTC date, as SEU's.
+- `ListJobs` reads what `WRKUSRJOB` reads (the active job table, the job
+  queues, the jobs with spooled files); its `type` is `INTER`, `BATCH`,
+  `AUTO` or the `WRKACTJOB` code. `JobLog` of an active job is the
+  service's copy (`joblog_of`); of an ended one its last spooled
+  `QPJOBLOG`, read back with `wm::joblog::parse_printed`. A request is
+  `Informational` (service 7 has no request type).
+- `ListRoutines` and `ListIndexes` read `QSYS2.SYSROUTINES`,
+  `SYSINDEXES` and `SYSKEYS` on the thread's link as 9 to 11 do; an
+  index is `unique` when `IS_UNIQUE` is `U` or `V`, its keys in
+  `ORDINAL_POSITION` order. `ListIndexes` checks the table as
+  `ListColumns` does.
+- `Compile` runs `work/qsjob/src/work/qap/compile.rs`'s `compile`: the job's last
+  compile cleared, the command run as `RunCommand` runs it, then the
+  diagnostics the compiler left on the job (`mi::Job::last_compile`),
+  converted from `compdiag`'s. A failed compile is `Error` with its
+  escape message and the body filled. The test system compiles
+  `CRTBNDRPG`, `CRTRPGMOD` and `CRTSQLRPGI` of its members, knowing one
+  error (`n = 'x';`, `RNF7416`; member `HLINV/QRPGLESRC BAD42` has it on
+  line 42). QEMU step 161 compiles `tools/conformance/qap/COMPILE42.rpgle`.
+- The test system (`qapd::testing::develop` and `jobs`): its fixtures
+  are in the modules' documentation. QS/400 ships no `CMPPFM`, so QEMU
+  step 160 compares the members record by record.
 
 Version 9, as built on 2026-11-07 (draft; decisions made in the build, for Cody to review):
 

@@ -115,9 +115,34 @@ fn qap(data: &[u8]) {
         let _ = ipc::decode::<qap_proto::ops::ifs::PathRef>(b);
         let _ = ipc::decode::<qap_proto::ops::ifs::ReadFile>(b);
         let _ = ipc::decode::<qap_proto::ops::ifs::FromTo>(b);
+        qap_v8(b);
         debug_bodies(b);
     }
     let _ = ipc::decode::<qap_proto::Envelope>(data);
+}
+
+/// QAP version 8's request bodies (`Develop`, `Jobs`, `Sql` 12 and 13).
+fn qap_v8(b: &[u8]) {
+    use qap_proto::ops::{develop as d, jobs as j, sql as s};
+    let _ = ipc::decode::<d::SetLibraryList>(b);
+    let _ = ipc::decode::<d::ListLibraries>(b);
+    let _ = ipc::decode::<d::ListObjects>(b);
+    let _ = ipc::decode::<d::DescribeObject>(b);
+    let _ = ipc::decode::<d::ListMembers>(b);
+    let _ = ipc::decode::<d::ReadMember>(b);
+    let _ = ipc::decode::<d::WriteMember>(b);
+    let _ = ipc::decode::<d::MemberRef>(b);
+    let _ = ipc::decode::<d::CreateMember>(b);
+    let _ = ipc::decode::<d::CopyMember>(b);
+    let _ = ipc::decode::<d::RenameMember>(b);
+    let _ = ipc::decode::<d::ChangeMember>(b);
+    let _ = ipc::decode::<d::CompileReply>(b);
+    let _ = ipc::decode::<j::ListJobs>(b);
+    let _ = ipc::decode::<j::JobLog>(b);
+    let _ = ipc::decode::<j::JobRef>(b);
+    let _ = ipc::decode::<j::EndJob>(b);
+    let _ = ipc::decode::<s::ListRoutines>(b);
+    let _ = ipc::decode::<s::ListIndexes>(b);
 }
 
 /// The `Debug` service's bodies (QAP version 9).

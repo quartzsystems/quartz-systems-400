@@ -275,7 +275,7 @@ impl FtpAttrs {
             "ALWSSL" => self.alwssl = one_of(&u, "ALWSSL", &["*YES", "*NO", "*ONLY"])?,
             "PORT" => self.port = u16::try_from(number(&u, "PORT", 1, 65535)?).unwrap_or(PORT),
             "TLSPORT" => {
-                self.tls_port = u16::try_from(number(&u, "TLSPORT", 1, 65535)?).unwrap_or(TLS_PORT)
+                self.tls_port = u16::try_from(number(&u, "TLSPORT", 1, 65535)?).unwrap_or(TLS_PORT);
             }
             "DTACNNPORT" => self.dtacnnport = ports(&u)?,
             other => return Err(format!("{other} is not an FTP attribute")),

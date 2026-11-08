@@ -243,6 +243,12 @@ fn create(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
         let mut files = StoreFiles { system };
         cl::compile(&source, &opts, &mut env, &mut files)
     };
+    let at = match &srcstmf {
+        Some(path) => compdiag::Where::Path(path.clone()),
+        None => super::compdiags::member(&sfl, &sf, &mbr),
+    };
+    let diags = cl::diag::diagnostics(&compiled.diags, &at, &mut super::compdiags::help(system));
+    super::compdiags::put(system, diags);
     let mut out = String::new();
     for d in &compiled.diags {
         let _ = writeln!(out, "{d}");

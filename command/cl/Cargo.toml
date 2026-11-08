@@ -6,13 +6,22 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[features]
+default = ["front", "lower"]
+# The front end as a library: statements, the parser, the tables and
+# analysis::analyze, with compdiag's diagnostics.
+front = ["dep:compdiag", "cmd/front"]
+# The code generator, the listing and the command analyzer behind it.
+lower = ["front", "cmd/lower", "dep:sys-cpps", "dep:qir", "dep:ccsid", "dep:release"]
+
 [dependencies]
-cmd = { path = "../cmd", version = "0.1.0" }
-sys-cpps = { path = "../sys-cpps", version = "0.1.0" }
-qir = { path = "../../runtime/qir", version = "0.1.0" }
+cmd = { path = "../cmd", version = "0.1.0", default-features = false }
+sys-cpps = { path = "../sys-cpps", version = "0.1.0", optional = true }
+qir = { path = "../../runtime/qir", version = "0.1.0", optional = true }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
-ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
-release = { path = "../../lic/release", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0", optional = true }
+release = { path = "../../lic/release", version = "0.1.0", optional = true }
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0", optional = true }
 thiserror.workspace = true
 
 [lints]

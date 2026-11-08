@@ -337,6 +337,96 @@ pub fn print(h: &Header, entries: &[&Entry], seclvl: bool) -> Vec<String> {
     out
 }
 
+/// The entries of a job log [`print`] made, read back from its lines
+/// (a spooled `QPJOBLOG`'s text): identifier, type, severity, time,
+/// sender, receiver and the two texts as printed (a wrapped text joined
+/// with single blanks). Lines that are not the layout's are passed over.
+#[must_use]
+pub fn parse_printed(lines: &[&str]) -> Vec<Entry> {
+    const KINDS: &[&str] = &[
+        "Escape",
+        "Diagnostic",
+        "Information",
+        "Completion",
+        "Inquiry",
+        "Reply",
+        "Request",
+        "Notify",
+        "Status",
+    ];
+    let col = |l: &str, a: usize, b: usize| -> String {
+        l.get(a..b.min(l.len())).unwrap_or("").trim().to_string()
+    };
+    let mut out: Vec<Entry> = Vec::new();
+    // Which text a continuation line adds to: 1 the message, 2 the cause.
+    let mut into = 0u8;
+    for raw in lines {
+        let l = raw.trim_end();
+        let kind = col(l, 11, 24);
+        if KINDS.contains(&kind.as_str()) && l.len() >= 56 {
+            let time = micros_of(&col(l, 29, 37), &col(l, 39, 54));
+            out.push(Entry {
+                msgid: col(l, 0, 10),
+                kind,
+                severity: col(l, 25, 27).parse().unwrap_or(0),
+                time,
+                from: (col(l, 56, 66), col(l, 68, 78)),
+                from_inst: col(l, 80, 86),
+                to: (col(l, 88, 98), col(l, 100, 110)),
+                to_inst: l.get(112..).unwrap_or("").trim().to_string(),
+                ..Entry::default()
+            });
+            into = 0;
+            continue;
+        }
+        let Some(e) = out.last_mut() else {
+            continue;
+        };
+        let t = l.trim_start();
+        let add = |s: &mut String, more: &str| {
+            if !s.is_empty() {
+                s.push(' ');
+            }
+            s.push_str(more.trim());
+        };
+        if let Some(rest) = t.strip_prefix("Message . . . . :") {
+            into = 1;
+            add(&mut e.text, rest);
+        } else if let Some(rest) = t.strip_prefix("Cause . . . . . :") {
+            into = 2;
+            add(&mut e.help, rest);
+        } else if l.starts_with(&" ".repeat(38)) && into == 1 {
+            add(&mut e.text, t);
+        } else if l.starts_with(&" ".repeat(38)) && into == 2 {
+            add(&mut e.help, t);
+        } else {
+            into = 0;
+        }
+    }
+    out
+}
+
+/// `MM/DD/YY` and `HH:MM:SS.uuuuuu` (UTC) as microseconds since 1970.
+fn micros_of(date: &str, time: &str) -> u64 {
+    let n = |s: &str, a: usize, b: usize| s.get(a..b).and_then(|x| x.parse::<i64>().ok());
+    let (Some(m), Some(d), Some(y)) = (n(date, 0, 2), n(date, 3, 5), n(date, 6, 8)) else {
+        return 0;
+    };
+    let y = if y >= 70 { 1900 + y } else { 2000 + y };
+    // Days from civil (Howard Hinnant's algorithm).
+    let yy = if m <= 2 { y - 1 } else { y };
+    let era = yy.div_euclid(400);
+    let yoe = yy - era * 400;
+    let doy = (153 * ((m + 9) % 12) + 2) / 5 + d - 1;
+    let days = era * 146_097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719_468;
+    let secs = days * 86_400
+        + n(time, 0, 2).unwrap_or(0) * 3600
+        + n(time, 3, 5).unwrap_or(0) * 60
+        + n(time, 6, 8).unwrap_or(0);
+    let frac = n(time, 9, 15).unwrap_or(0);
+    u64::try_from(secs * 1_000_000 + frac).unwrap_or(0)
+}
+
 /// A labeled text block, wrapped to 132 columns.
 fn wrap_into(out: &mut Vec<String>, label: &str, text: &str) {
     const INDENT: usize = 38;
@@ -538,5 +628,38 @@ mod tests {
         assert!(lines[6].contains("Cause . . . . . :   Second level."));
         assert!(lines.iter().all(|l| l.len() <= 132));
         assert_eq!(stamp_of(0), ("01/01/70".into(), "00:00:00.000000".into()));
+    }
+
+    #[test]
+    fn printed_logs_read_back() {
+        let mut long = msg("CPF9898", 40, false);
+        long.kind = "Escape".into();
+        long.text = "word ".repeat(60).trim().to_string();
+        long.to = ("QCMD".into(), "QSYS".into());
+        long.to_inst = "0042".into();
+        let mut req = msg("", 0, false);
+        req.kind = "Request".into();
+        req.text = "CRTBNDRPG PGM(HLINV/ASSETS)".into();
+        req.help = String::new();
+        let h = Header {
+            job: ("BUILD".into(), "BOB".into(), 150),
+            jobd: ("QDFTJOBD".into(), "QGPL".into()),
+            system: "QS400".into(),
+            stamp: ("10/21/26".into(), "12:00:00".into()),
+        };
+        let all = [msg("CPF1124", 0, true), long, req];
+        let refs: Vec<&Entry> = all.iter().collect();
+        let lines = print(&h, &refs, true);
+        let lines: Vec<&str> = lines.iter().map(String::as_str).collect();
+        let back = parse_printed(&lines);
+        assert_eq!(back.len(), 3);
+        for (a, b) in all.iter().zip(&back) {
+            assert_eq!(
+                (&a.msgid, &a.kind, a.severity, a.time, &a.from, &a.to),
+                (&b.msgid, &b.kind, b.severity, b.time, &b.from, &b.to)
+            );
+            assert_eq!((&a.text, &a.help), (&b.text, &b.help));
+        }
+        assert_eq!(back[1].to_inst, "0042");
     }
 }

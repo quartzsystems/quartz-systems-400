@@ -81,7 +81,8 @@ fn enums() {
     }
     assert!(decode::<Status>(&16u16.to_le_bytes()).is_err());
     assert!(decode::<Kind>(&[4]).is_err());
-    assert!(decode::<Service>(&[9]).is_err());
+    let next = u8::try_from(Service::ALL.len()).unwrap();
+    assert!(decode::<Service>(&[next]).is_err());
     for (i, s) in SpoolStatus::ALL.iter().enumerate() {
         same(s);
         assert_eq!(encode(s), [u8::try_from(i).unwrap()]);

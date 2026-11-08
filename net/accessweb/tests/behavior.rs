@@ -27,10 +27,10 @@ fn sign_on_rules() {
         (303, Some("/qs400/accessweb/signon"))
     );
     // A wrong password stays on the page with the message and a PW entry.
-    let r = b.sign_on("cwellman", "nope");
+    let r = b.sign_on("testuser", "nope");
     assert_eq!(r.status, 200);
     assert!(r.text().contains("CPF22E2"), "{}", r.text());
-    assert!(r.text().contains("value=\"CWELLMAN\""));
+    assert!(r.text().contains("value=\"TESTUSER\""));
     assert!(
         b.fx.system
             .audit
@@ -76,7 +76,7 @@ fn sign_on_policy() {
     assert!(r.text().contains("XWA0001"), "{}", r.text());
     assert!(b.cookie.is_none());
     // Others still sign on.
-    assert_eq!(b.sign_on("CWELLMAN", PASSWORD).status, 303);
+    assert_eq!(b.sign_on("TESTUSER", PASSWORD).status, 303);
 }
 
 #[test]
@@ -153,7 +153,7 @@ fn change_password() {
     assert_eq!(r.header("Location"), Some("/qs400/accessweb/home"));
     let t = b.get("/home").text();
     assert!(
-        t.contains("QAD4023</a> - Password changed for CWELLMAN on QSHQ400."),
+        t.contains("QAD4023</a> - Password changed for TESTUSER on QSHQ400."),
         "{t}"
     );
     assert!(!b.get("/password").text().contains("QAD4031"));
@@ -220,15 +220,15 @@ fn policies_effective_and_changed() {
     let t = b.get("/policies?p=WEBUSER").text();
     assert!(t.contains("XWA0002"), "{t}");
     assert!(t.contains("User WEBUSER"), "{t}");
-    // Deny wins: *PUBLIC's Deny reaches CWELLMAN too.
+    // Deny wins: *PUBLIC's Deny reaches TESTUSER too.
     b.fx.policy
         .put("*PUBLIC", &[(policy::DB_SQL.into(), Setting::Deny)])
         .unwrap();
-    assert!(!policy::allowed(&b.fx.env, "CWELLMAN", policy::DB_SQL));
+    assert!(!policy::allowed(&b.fx.env, "TESTUSER", policy::DB_SQL));
     b.fx.policy
-        .put("CWELLMAN", &[(policy::DB_SQL.into(), Setting::Allow)])
+        .put("TESTUSER", &[(policy::DB_SQL.into(), Setting::Allow)])
         .unwrap();
-    assert!(!policy::allowed(&b.fx.env, "CWELLMAN", policy::DB_SQL));
+    assert!(!policy::allowed(&b.fx.env, "TESTUSER", policy::DB_SQL));
     // Copy policies from WEBUSER to group WAREHOUSE.
     let r = b.post(
         "/policies/copy?p=WAREHOUSE",
@@ -328,7 +328,7 @@ fn preferences_saved_and_used() {
             .map
             .lock()
             .unwrap()
-            .get("CWELLMAN")
+            .get("TESTUSER")
             .cloned()
             .unwrap();
     assert!(stored.contains(&("ss".into(), "27".into())), "{stored:?}");
@@ -385,7 +385,7 @@ fn preferences_saved_and_used() {
             .map
             .lock()
             .unwrap()
-            .get("CWELLMAN")
+            .get("TESTUSER")
             .cloned()
             .unwrap();
     assert_eq!(stored, [("_from".to_string(), "10.0.10.55".to_string())]);
@@ -539,8 +539,14 @@ fn no_ibm_wording() {
     ] {
         for f in walk(&root.join(dir)) {
             let t = std::fs::read_to_string(&f).unwrap_or_default();
+            // The list above names the words; skip it.
+            let mut in_list = false;
             for (n, line) in t.lines().enumerate() {
-                if line.contains("let words") || line.contains("\"IBM\", \"iSeries\"") {
+                if line.contains("let words = [") {
+                    in_list = true;
+                }
+                if in_list {
+                    in_list = line.trim() != "];";
                     continue;
                 }
                 for w in words {
@@ -589,7 +595,7 @@ fn messages_reply_send_remove() {
     assert_eq!(r.header("Location"), Some("/qs400/accessweb/messages"));
     assert_eq!(
         ran(&b.fx.msgs.ran),
-        ["CWELLMAN: SNDRPYMSG MSGKEY(00000003) MSGQ(QUSRSYS/CWELLMAN) RPY(*DFT) RMV(*NO)"]
+        ["TESTUSER: SNDRPYMSG MSGKEY(00000003) MSGQ(QUSRSYS/TESTUSER) RPY(*DFT) RMV(*NO)"]
     );
     let t = b.get("/messages").text();
     assert!(t.contains("QAD9002</a> - Reply sent to CPA0702."), "{t}");
@@ -602,7 +608,7 @@ fn messages_reply_send_remove() {
         "/messages",
         &[
             ("to", "user"),
-            ("tou", "cwellman"),
+            ("tou", "testuser"),
             ("m", "It's done"),
             ("i", "yes"),
             ("send", "Send"),
@@ -610,12 +616,12 @@ fn messages_reply_send_remove() {
     );
     assert_eq!(
         ran(&b.fx.msgs.ran)[1],
-        "CWELLMAN: SNDMSG MSG('It''s done') TOUSR(CWELLMAN) MSGTYPE(*INQ) RPYMSGQ(QUSRSYS/CWELLMAN)"
+        "TESTUSER: SNDMSG MSG('It''s done') TOUSR(TESTUSER) MSGTYPE(*INQ) RPYMSGQ(QUSRSYS/TESTUSER)"
     );
     assert!(
         b.get("/messages")
             .text()
-            .contains("QAD9004</a> - Message sent to CWELLMAN.")
+            .contains("QAD9004</a> - Message sent to TESTUSER.")
     );
     // Remove of an informational message asks once, on the page.
     let t = b.get("/messages?remove=00000002").text();
@@ -623,12 +629,12 @@ fn messages_reply_send_remove() {
     b.post("/messages", &[("remove", "00000002"), ("ok", "Remove")]);
     assert_eq!(
         ran(&b.fx.msgs.ran)[2],
-        "CWELLMAN: RMVMSG MSGQ(QUSRSYS/CWELLMAN) MSGKEY(00000002)"
+        "TESTUSER: RMVMSG MSGQ(QUSRSYS/TESTUSER) MSGKEY(00000002)"
     );
     assert!(
         b.get("/messages")
             .text()
-            .contains("QAD9003</a> - 1 messages removed from QUSRSYS/CWELLMAN.")
+            .contains("QAD9003</a> - 1 messages removed from QUSRSYS/TESTUSER.")
     );
 }
 
@@ -665,7 +671,7 @@ fn removing_an_unanswered_inquiry_asks_twice() {
     assert_eq!(r.header("Location"), Some("/qs400/accessweb/messages"));
     assert_eq!(
         ran(&b.fx.msgs.ran),
-        ["CWELLMAN: RMVMSG MSGQ(QUSRSYS/CWELLMAN) MSGKEY(00000003)"]
+        ["TESTUSER: RMVMSG MSGQ(QUSRSYS/TESTUSER) MSGKEY(00000003)"]
     );
 }
 
@@ -700,17 +706,17 @@ fn messages_follow_policies() {
 fn a_message_arriving_is_watched() {
     let mut b = Browser::signed_on();
     assert!(!b.get("/home").text().contains("Messages waiting:"));
-    // Another job sends an inquiry to CWELLMAN.
+    // Another job sends an inquiry to TESTUSER.
     let key = b.fx.msgs.arrive(
-        "QUSRSYS/CWELLMAN",
+        "QUSRSYS/TESTUSER",
         accessweb::env::msgs::QueuedMessage {
             id: "CPA5305".into(),
             severity: 99,
             inquiry: true,
             sent: accessweb::fixture::now(),
             text: "Record 12 of member ASSETS is in use. (C I)".into(),
-            job: "123540/CWELLMAN/INVLOAD2".into(),
-            user: "CWELLMAN".into(),
+            job: "123540/TESTUSER/INVLOAD2".into(),
+            user: "TESTUSER".into(),
             default: "C".into(),
             ..Default::default()
         },
@@ -726,7 +732,7 @@ fn a_message_arriving_is_watched() {
         .text();
     assert!(
         t.contains(
-            "CPA5305</a> - Inquiry message from job 123540/CWELLMAN/INVLOAD2 arrived at 14:03:40."
+            "CPA5305</a> - Inquiry message from job 123540/TESTUSER/INVLOAD2 arrived at 14:03:40."
         ),
         "{t}"
     );
@@ -736,7 +742,7 @@ fn a_message_arriving_is_watched() {
         "/messages/arrived?back=%2Fqs400%2Faccessweb%2Fhome",
         &[
             ("key", &key),
-            ("queue", "QUSRSYS/CWELLMAN"),
+            ("queue", "QUSRSYS/TESTUSER"),
             ("later", "Later"),
         ],
     );
@@ -754,7 +760,7 @@ fn a_message_arriving_is_watched() {
     // Watch Off: nothing more is watched.
     b.get("/messages?w=Off");
     b.fx.msgs.arrive(
-        "QUSRSYS/CWELLMAN",
+        "QUSRSYS/TESTUSER",
         accessweb::env::msgs::QueuedMessage {
             inquiry: true,
             text: "x".into(),
@@ -767,13 +773,13 @@ fn a_message_arriving_is_watched() {
 #[test]
 fn jobs_hold_release_end() {
     let mut b = Browser::signed_on();
-    let t = b.get("/jobs?hold=123488/CWELLMAN/QPADEV0003").text();
-    assert!(t.contains("HLDJOB JOB(123488/CWELLMAN/QPADEV0003)"), "{t}");
+    let t = b.get("/jobs?hold=123488/TESTUSER/QPADEV0003").text();
+    assert!(t.contains("HLDJOB JOB(123488/TESTUSER/QPADEV0003)"), "{t}");
     assert!(ran(&b.fx.jobs.ran).is_empty());
     let r = b.post(
         "/jobs",
         &[
-            ("job", "123488/CWELLMAN/QPADEV0003"),
+            ("job", "123488/TESTUSER/QPADEV0003"),
             ("op", "hold"),
             ("ok", "Hold"),
         ],
@@ -782,7 +788,7 @@ fn jobs_hold_release_end() {
     b.post(
         "/jobs",
         &[
-            ("job", "123402/CWELLMAN/INVBATCH"),
+            ("job", "123402/TESTUSER/INVBATCH"),
             ("op", "release"),
             ("ok", "Release"),
         ],
@@ -790,8 +796,8 @@ fn jobs_hold_release_end() {
     assert_eq!(
         ran(&b.fx.jobs.ran),
         [
-            "CWELLMAN: HLDJOB JOB(123488/CWELLMAN/QPADEV0003)",
-            "CWELLMAN: RLSJOB JOB(123402/CWELLMAN/INVBATCH)"
+            "TESTUSER: HLDJOB JOB(123488/TESTUSER/QPADEV0003)",
+            "TESTUSER: RLSJOB JOB(123402/TESTUSER/INVBATCH)"
         ]
     );
     assert!(
@@ -841,7 +847,7 @@ fn navigator_links_follow_the_host() {
     let t = b.send(req).text();
     assert!(
         t.contains(
-            "http://qshq400.example:2002/qs400/navigator/job/123488/CWELLMAN/QPADEV0003/joblog"
+            "http://qshq400.example:2002/qs400/navigator/job/123488/TESTUSER/QPADEV0003/joblog"
         ),
         "{t}"
     );
@@ -862,7 +868,7 @@ fn commands_run_check_submit() {
         r.header("Location"),
         Some("/qs400/accessweb/cmd?c=WRKACTJOB%20SBS%28QINTER%29&how=int")
     );
-    assert_eq!(ran(&b.fx.cmd.ran), ["CWELLMAN: WRKACTJOB SBS(QINTER)"]);
+    assert_eq!(ran(&b.fx.cmd.ran), ["TESTUSER: WRKACTJOB SBS(QINTER)"]);
     let t = b.get("/cmd?c=WRKACTJOB+SBS%28QINTER%29&how=int").text();
     assert!(
         t.contains("QAD5010</a> - Command WRKACTJOB completed.")
@@ -870,7 +876,7 @@ fn commands_run_check_submit() {
         "{t}"
     );
     // Newest first in the recent commands.
-    assert_eq!(b.fx.cmd.recent("CWELLMAN")[0], "WRKACTJOB SBS(QINTER)");
+    assert_eq!(b.fx.cmd.recent("TESTUSER")[0], "WRKACTJOB SBS(QINTER)");
     // Batch: SBMJOB to the queue chosen; the job it made.
     b.post(
         "/cmd",
@@ -883,10 +889,10 @@ fn commands_run_check_submit() {
     );
     assert_eq!(
         ran(&b.fx.cmd.ran)[1],
-        "CWELLMAN: SBMJOB CMD(DSPMSG QSYSOPR) JOBQ(QGPL/QPGMR)"
+        "TESTUSER: SBMJOB CMD(DSPMSG QSYSOPR) JOBQ(QGPL/QPGMR)"
     );
     let t = b.get("/cmd").text();
-    assert!(t.contains("XWA0050</a> - Command submitted to job queue QGPL/QPGMR as job 123540/CWELLMAN/QDFTJOBD."), "{t}");
+    assert!(t.contains("XWA0050</a> - Command submitted to job queue QGPL/QPGMR as job 123540/TESTUSER/QDFTJOBD."), "{t}");
     // Check, and a command that is not there.
     b.post("/cmd", &[("cmd", "DSPMSG"), ("check", "Check")]);
     b.post("/cmd", &[("cmd", "NOSUCH X"), ("run", "Run")]);
@@ -969,7 +975,7 @@ fn prompt_builds_and_runs() {
     assert_eq!(
         ran(&b.fx.cmd.ran),
         [
-            "CWELLMAN: WRKACTJOB OUTPUT(*PRINT) RESET(*NO) SBS(QINTER) CPUPCTLMT(*NONE) SEQ(*JOB) JOB(QPADEV*)"
+            "TESTUSER: WRKACTJOB OUTPUT(*PRINT) RESET(*NO) SBS(QINTER) CPUPCTLMT(*NONE) SEQ(*JOB) JOB(QPADEV*)"
         ]
     );
     // A command that is not there.
@@ -1011,7 +1017,7 @@ fn my_commands_save_share_delete() {
         ],
     );
     assert_eq!(
-        b.fx.cmd.saved("CWELLMAN")[0].command,
+        b.fx.cmd.saved("TESTUSER")[0].command,
         "WRKACTJOB SBS(QINTER)"
     );
     // Share with one of the user's groups only.
@@ -1040,7 +1046,7 @@ fn my_commands_save_share_delete() {
             ("ok", "Share"),
         ],
     );
-    let kept = b.fx.cmd.saved("CWELLMAN")[5].clone();
+    let kept = b.fx.cmd.saved("TESTUSER")[5].clone();
     assert_eq!(
         (kept.name.as_str(), kept.share.as_str()),
         ("Job log", "ADMINS")
@@ -1048,7 +1054,7 @@ fn my_commands_save_share_delete() {
     // Another user sees what is shared with *PUBLIC.
     let mut w = Browser::as_user("WEBUSER");
     w.fx.cmd
-        .put_saved("CWELLMAN", &b.fx.cmd.saved("CWELLMAN"))
+        .put_saved("TESTUSER", &b.fx.cmd.saved("TESTUSER"))
         .unwrap();
     let t = w.get("/cmd/saved").text();
     assert!(
@@ -1064,7 +1070,7 @@ fn my_commands_save_share_delete() {
             .contains("Press OK to delete the saved command")
     );
     b.post("/cmd/saved/5/confirm", &[("ok", "OK")]);
-    assert_eq!(b.fx.cmd.saved("CWELLMAN").len(), 5);
+    assert_eq!(b.fx.cmd.saved("TESTUSER").len(), 5);
 }
 
 #[test]

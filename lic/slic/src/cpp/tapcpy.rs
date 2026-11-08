@@ -386,6 +386,7 @@ fn device(parms: &Parms, kwd: &str, d: &TapeFileDef) -> Result<String, String> {
         .ok_or_else(|| format!("CPF6708 no device: give {kwd} or set DEV on the tape file"))
 }
 
+#[allow(clippy::too_many_lines)]
 fn cpytotap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let def = load(system, &qual(parms, "TOFILE"))?;
     let from = qual(parms, "FROMFILE");

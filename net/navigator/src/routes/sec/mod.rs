@@ -80,6 +80,7 @@ fn offset(rq: &Rq<'_>) -> i64 {
     local - i64::try_from(now).unwrap_or(0)
 }
 
+#[allow(clippy::too_many_lines)]
 fn audit(rq: &Rq<'_>) -> Response {
     let journal = Target::obj("QSYS", "QAUDJRN", "*JRN");
     if let Err(r) = rq.require(

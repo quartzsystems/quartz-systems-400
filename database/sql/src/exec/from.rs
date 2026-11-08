@@ -22,7 +22,7 @@ use crate::error::{Result, SqlError};
 use crate::value::Value;
 
 /// The hidden column of a derived table: each row's place in its order.
-pub const ORDER_COLUMN: &str = "*ORD";
+pub use crate::words::ORDER_COLUMN;
 
 /// [`ORDER_COLUMN`] of correlation `alias`.
 pub(crate) fn order_column(alias: &str) -> ColInfo {

@@ -118,7 +118,7 @@ fn route(
         None => shared.reply(&req, Answer::status(Status::InvalidRequest)),
         // An operation newer than the connection's version.
         Some(op) if op.since() > version => {
-            shared.reply(&req, Answer::status(Status::InvalidRequest))
+            shared.reply(&req, Answer::status(Status::InvalidRequest));
         }
         Some(Op::Hello) => {
             shared.reply(&req, Answer::status(Status::InvalidRequest));
@@ -283,7 +283,13 @@ fn operation(shared: &Arc<Shared>, host: &mut dyn ThreadHost, op: Op, req: &Enve
             done(host.move_spooled_file(&b.id, &b.outq, b.first))
         }),
         Op::ListOutputQueues => body(req, |b: ListOutputQueues| ok(host.list_output_queues(&b))),
-        Op::ListSchemas | Op::ListTables | Op::ListColumns => crate::sql::catalog(host, op, req),
+        Op::ListSchemas | Op::ListTables | Op::ListColumns | Op::ListRoutines | Op::ListIndexes => {
+            crate::sql::catalog(host, op, req)
+        }
+        op if op.code().0 == Service::Develop => {
+            crate::develop::serve(host, &shared.pieces, op, req)
+        }
+        op if op.code().0 == Service::Jobs => crate::jobs::serve(host, shared.watch.job(), op, req),
         op if op.code().0 == Service::Ifs => crate::files::serve(host, &shared.files, op, req),
         op if op.code().0 == Service::Manage => {
             let user = lock(&shared.session)

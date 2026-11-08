@@ -58,6 +58,7 @@ fn opts(system: &str, page: usize) -> Options {
 }
 
 /// The capture's first page of zones.
+#[allow(clippy::too_many_lines)]
 fn zones() -> ListState {
     let rows: [[&str; 9]; 11] = [
         [

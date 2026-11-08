@@ -8,7 +8,9 @@
 pub mod command;
 pub mod connection;
 pub mod debug;
+pub mod develop;
 pub mod ifs;
+pub mod jobs;
 pub mod manage;
 pub mod messages;
 pub mod signon;
@@ -140,6 +142,50 @@ pub enum Op {
     IplStatus,
     /// `Manage` 10: power down, or restart (version 7).
     PowerDown,
+    /// `Develop` 1: the connection job's library list (version 8).
+    GetLibraryList,
+    /// `Develop` 2: change it, as `CHGLIBL` (version 8).
+    SetLibraryList,
+    /// `Develop` 3: libraries (version 8).
+    ListLibraries,
+    /// `Develop` 4: objects (version 8).
+    ListObjects,
+    /// `Develop` 5: an object's description, as `DSPOBJD` (version 8).
+    DescribeObject,
+    /// `Develop` 6: a file's members (version 8).
+    ListMembers,
+    /// `Develop` 7: a source member's records (version 8).
+    ReadMember,
+    /// `Develop` 8: replace a source member's records (version 8).
+    WriteMember,
+    /// `Develop` 9: end the connection's lock on a member (version 8).
+    UnlockMember,
+    /// `Develop` 10: add a member, as `ADDPFM` (version 8).
+    CreateMember,
+    /// `Develop` 11: copy a member, as `CPYSRCF` (version 8).
+    CopyMember,
+    /// `Develop` 12: rename a member, as `RNMM` (version 8).
+    RenameMember,
+    /// `Develop` 13: remove a member, as `RMVM` (version 8).
+    DeleteMember,
+    /// `Develop` 14: a member's type and text, as `CHGPFM` (version 8).
+    ChangeMember,
+    /// `Develop` 15: run a compile and take its diagnostics (version 8).
+    Compile,
+    /// `Jobs` 1: a user's jobs, as `WRKUSRJOB` (version 8).
+    ListJobs,
+    /// `Jobs` 2: a job's log, as `DSPJOBLOG` (version 8).
+    JobLog,
+    /// `Jobs` 3: hold a job (version 8).
+    HoldJob,
+    /// `Jobs` 4: release a job (version 8).
+    ReleaseJob,
+    /// `Jobs` 5: end a job (version 8).
+    EndJob,
+    /// `Sql` 12: procedures and functions (version 8).
+    ListRoutines,
+    /// `Sql` 13: a table's indexes (version 8).
+    ListIndexes,
     /// `Debug` 1: start a debug session (version 9).
     DebugStart,
     /// `Debug` 2: end it (version 9).
@@ -164,7 +210,7 @@ pub enum Op {
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 69] = [
+    pub const ALL: [Op; 91] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -224,6 +270,28 @@ impl Op {
         Op::ListHardwareResources,
         Op::IplStatus,
         Op::PowerDown,
+        Op::GetLibraryList,
+        Op::SetLibraryList,
+        Op::ListLibraries,
+        Op::ListObjects,
+        Op::DescribeObject,
+        Op::ListMembers,
+        Op::ReadMember,
+        Op::WriteMember,
+        Op::UnlockMember,
+        Op::CreateMember,
+        Op::CopyMember,
+        Op::RenameMember,
+        Op::DeleteMember,
+        Op::ChangeMember,
+        Op::Compile,
+        Op::ListJobs,
+        Op::JobLog,
+        Op::HoldJob,
+        Op::ReleaseJob,
+        Op::EndJob,
+        Op::ListRoutines,
+        Op::ListIndexes,
         Op::DebugStart,
         Op::DebugEnd,
         Op::AddProgram,
@@ -299,6 +367,28 @@ impl Op {
             Op::ListHardwareResources => (Service::Manage, 8),
             Op::IplStatus => (Service::Manage, 9),
             Op::PowerDown => (Service::Manage, 10),
+            Op::GetLibraryList => (Service::Develop, 1),
+            Op::SetLibraryList => (Service::Develop, 2),
+            Op::ListLibraries => (Service::Develop, 3),
+            Op::ListObjects => (Service::Develop, 4),
+            Op::DescribeObject => (Service::Develop, 5),
+            Op::ListMembers => (Service::Develop, 6),
+            Op::ReadMember => (Service::Develop, 7),
+            Op::WriteMember => (Service::Develop, 8),
+            Op::UnlockMember => (Service::Develop, 9),
+            Op::CreateMember => (Service::Develop, 10),
+            Op::CopyMember => (Service::Develop, 11),
+            Op::RenameMember => (Service::Develop, 12),
+            Op::DeleteMember => (Service::Develop, 13),
+            Op::ChangeMember => (Service::Develop, 14),
+            Op::Compile => (Service::Develop, 15),
+            Op::ListJobs => (Service::Jobs, 1),
+            Op::JobLog => (Service::Jobs, 2),
+            Op::HoldJob => (Service::Jobs, 3),
+            Op::ReleaseJob => (Service::Jobs, 4),
+            Op::EndJob => (Service::Jobs, 5),
+            Op::ListRoutines => (Service::Sql, 12),
+            Op::ListIndexes => (Service::Sql, 13),
             Op::DebugStart => (Service::Debug, 1),
             Op::DebugEnd => (Service::Debug, 2),
             Op::AddProgram => (Service::Debug, 3),
@@ -375,6 +465,28 @@ impl Op {
             | Op::ListHardwareResources
             | Op::IplStatus
             | Op::PowerDown => 7,
+            Op::GetLibraryList
+            | Op::SetLibraryList
+            | Op::ListLibraries
+            | Op::ListObjects
+            | Op::DescribeObject
+            | Op::ListMembers
+            | Op::ReadMember
+            | Op::WriteMember
+            | Op::UnlockMember
+            | Op::CreateMember
+            | Op::CopyMember
+            | Op::RenameMember
+            | Op::DeleteMember
+            | Op::ChangeMember
+            | Op::Compile
+            | Op::ListJobs
+            | Op::JobLog
+            | Op::HoldJob
+            | Op::ReleaseJob
+            | Op::EndJob
+            | Op::ListRoutines
+            | Op::ListIndexes => 8,
             Op::DebugStart
             | Op::DebugEnd
             | Op::AddProgram
@@ -389,8 +501,9 @@ impl Op {
     }
 
     /// Whether it runs in the connection's lane, one at a time in
-    /// arrival order with the job's state: `Command` operations and
-    /// `Sql` 1 to 8 (docs/QAP.md, Multiplexing).
+    /// arrival order with the job's state: `Command` operations, `Sql`
+    /// 1 to 8 (docs/QAP.md, Multiplexing) and, from version 8, the
+    /// library list and `Compile` of `Develop`.
     #[must_use]
     pub const fn in_lane(self) -> bool {
         matches!(
@@ -398,6 +511,9 @@ impl Op {
             Op::RunCommand
                 | Op::CheckCommand
                 | Op::DescribeCommand
+                | Op::GetLibraryList
+                | Op::SetLibraryList
+                | Op::Compile
                 | Op::SetOptions
                 | Op::Prepare
                 | Op::Execute

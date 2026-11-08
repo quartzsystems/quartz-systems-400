@@ -499,6 +499,7 @@ impl Session {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn single(&mut self, p: &Placed) {
         let c = &p.cmd;
         let n = c.count;

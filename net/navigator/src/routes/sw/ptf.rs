@@ -530,6 +530,7 @@ fn size(bytes: u64) -> String {
 }
 
 /// `/fixes`.
+#[allow(clippy::too_many_lines)]
 pub fn fixes(rq: &Rq<'_>) -> Response {
     let sw = &rq.env().sw;
     let user = rq.user();

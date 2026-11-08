@@ -118,6 +118,7 @@ fn release_ok(r: &str) -> bool {
 ///
 /// A message identifier and text for a parameter this system cannot
 /// honour.
+#[allow(clippy::too_many_lines)]
 pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
     let (shape, command, kw, sql) = match cmdname {
         "CRTRPGMOD" => (Shape::Module, Command::CrtRpgMod, "MODULE", false),

@@ -99,6 +99,7 @@ fn replacement(r: &str) -> String {
     out
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn call(name: &str, args: &[Value]) -> Result<Value> {
     let src = args.first().map(Value::as_text).unwrap_or_default();
     let src = src.as_str();
