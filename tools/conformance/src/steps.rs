@@ -709,6 +709,7 @@ impl Suite {
         // An IPL at its end.
         reports.push(self.step(&mut s, "136 SQL QTEMP", Self::sql_qtemp)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
+        reports.push(self.step(&mut s, "165 GO menus", Self::go_menus)?);
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         reports.push(self.step(&mut s, "105 phase 12 leftovers", Self::leftovers)?);
         reports.push(self.step(&mut s, "106 Collection Services", Self::collection_services)?);

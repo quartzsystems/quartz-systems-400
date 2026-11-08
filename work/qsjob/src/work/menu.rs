@@ -103,12 +103,49 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
     let mut message: Option<LineMsg> = None;
     loop {
         let cur = stack.current().clone();
-        let loaded = load(s, &cur);
-        let (attrs, group) = match loaded {
-            Ok(x) => x,
-            Err(e) => {
-                let m = not_found(&cur);
-                let _ = e;
+        // Only a missing *MENU is CPF9801; anything else says why.
+        let opened = open(s, &cur);
+        let left = match &opened {
+            Ok((attrs, real)) => match attrs.kind {
+                MenuKind::Uim => None,
+                MenuKind::Pgm => Some(pgm_menu(s, &cur, real, attrs)),
+                MenuKind::Dspf => Some(dspf_menu(s, &cur, real, attrs, message.take())),
+            },
+            Err(m) => Some(Left::Failed(m.clone())),
+        };
+        if let Some(left) = left {
+            match left {
+                Left::Exit => {
+                    if stack.exit().is_none() {
+                        return if initial { Flow::SignOff } else { Flow::Back };
+                    }
+                }
+                Left::Cancel => {
+                    if stack.cancel().is_none() {
+                        return if initial { Flow::SignOff } else { Flow::Back };
+                    }
+                }
+                Left::Home => {
+                    let _ = stack.exit();
+                }
+                Left::Flow(f) => return f,
+                Left::Failed(m) => {
+                    if stack.depth() <= 1 {
+                        s.say(m);
+                        return Flow::Back;
+                    }
+                    stack.cancel();
+                    message = Some(m);
+                }
+            }
+            continue;
+        }
+        let Ok((attrs, real)) = opened else {
+            continue;
+        };
+        let group = match load_pnlgrp(s, &cur, &real, &attrs) {
+            Ok(g) => g,
+            Err(m) => {
                 if stack.depth() <= 1 {
                     s.say(m);
                     return Flow::Back;
@@ -118,13 +155,6 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
                 continue;
             }
         };
-        if attrs.kind != MenuKind::Uim {
-            s.say(LineMsg::error("CPD9BB6", &[&cur.name, attrs.kind.text()]));
-            if stack.cancel().is_none() {
-                return Flow::Back;
-            }
-            continue;
-        }
         let mut dialog = UimDialog::new(Rc::clone(&group), &s.system);
         dialog.copyright = true;
         if let Some(m) = message.take() {
@@ -211,11 +241,144 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
     }
 }
 
-/// Run a command typed on a menu; a menu's own words first.
+/// A `*DSPF` menu (pub400): the display file's record named like the
+/// file, `===>` at row 22 and the command line from 22,7 (153 positions
+/// for `CMDLIN(*LONG)`, 73 for `*SHORT`, 4 for `*NONE`); a number runs
+/// the text of message `USRnnnn` of the menu's message file, anything
+/// else runs as a command; `F3` leaves, `F12` goes back, `F9` retrieves.
+#[allow(clippy::too_many_lines)] // one arm per key
+fn dspf_menu(
+    s: &mut Session<'_>,
+    menu: &Qualified,
+    real: &str,
+    attrs: &MenuAttrs,
+    mut message: Option<LineMsg>,
+) -> Left {
+    use tn5250::ds::{aid, attr, field::Ffw};
+    let file = part(attrs.dspf.as_ref(), menu, real);
+    let msgf = part(attrs.msgf.as_ref(), menu, real);
+    let opened = s
+        .link
+        .borrow_mut()
+        .with(|l| l.dsp_open(file.name.clone(), file.lib.clone(), "*JOB".into()));
+    let df = match opened.map(|(b, _)| dspf::decode(&b)) {
+        Ok(Ok(df)) => df,
+        Ok(Err(e)) => return Left::Failed(crate::panels::line(&format!("CPF4101 {e}"))),
+        Err(e) => return Left::Failed(crate::panels::line(&e)),
+    };
+    let Some(rec) = df.record(&file.name).cloned() else {
+        return Left::Failed(LineMsg::error("CPF9801", &[&file.name, &file.lib]));
+    };
+    let len = match attrs.cmdlin {
+        menus::CmdLin::Long => 153,
+        menus::CmdLin::Short => 73,
+        menus::CmdLin::None => 4,
+    };
+    let host = s.c.host.clone();
+    let mut surface = Surface::new(host.clone());
+    let wide = surface.wide();
+    let mut rt = dspf::rt::Runtime::new(df, wide);
+    let sysname = crate::display::dds::system_name(&host);
+    let env = crate::display::dds::env_of(&host, &sysname);
+    let mut line = String::new();
+    inter::status_of(s, Status::Dspw, &format!("MNU-{}", menu.name));
+    loop {
+        let out = crate::display::dds::out_buffer(&rec, &[]);
+        let shown = surface.with_model(|m| {
+            m.clear();
+            let r = rt.write(m, &env, &rec.name, &out, &[]);
+            m.put(22, 2, "===>", attr::GREEN);
+            m.field(22, 7, len, attr::GREEN_UL, &line, Ffw::default(), &[]);
+            m.set_cursor(22, 7);
+            if let Some(msg) = message.take() {
+                m.error_line(&crate::display::msgline::text_of(&host, &msg), attr::WHITE);
+                m.alarm();
+            }
+            r
+        });
+        if shown.is_err() {
+            return Left::Failed(LineMsg::error("CPF4101", &[&file.name, &file.lib]));
+        }
+        surface.flush(tn5250::screen::Read::MdtFields);
+        let Some((a, _)) = surface.wait() else {
+            return Left::Flow(Flow::End);
+        };
+        let typed = surface.with_model(|m| {
+            m.fields()
+                .iter()
+                .find(|f| f.row == 22 && f.col == 7)
+                .map(tn5250::screen::Field::text)
+                .unwrap_or_default()
+        });
+        line.clear();
+        match aid::function_of(a) {
+            Some(3) => return Left::Exit,
+            Some(12) => return Left::Cancel,
+            Some(9) => {
+                line = inter::retrieve(s);
+                continue;
+            }
+            Some(_) => {
+                message = Some(LineMsg::error("CPD6A60", &[]));
+                continue;
+            }
+            None if a != aid::ENTER => {
+                message = Some(LineMsg::error("CPD6A60", &[]));
+                continue;
+            }
+            None => {}
+        }
+        let typed = typed.trim().to_string();
+        let command = if !typed.is_empty() && typed.chars().all(|c| c.is_ascii_digit()) {
+            let id = typed
+                .parse::<u16>()
+                .ok()
+                .map(|n| format!("USR{n:04}"))
+                .unwrap_or_default();
+            let found = s
+                .link
+                .borrow_mut()
+                .with(|l| l.describe(id, msgf.name.clone(), msgf.lib.clone()));
+            let Some(d) = found else {
+                message = Some(LineMsg::error("CPD9BAB", &[&typed]));
+                line = typed;
+                continue;
+            };
+            d.format(&d.data_of::<&str>(&[]))
+        } else {
+            typed
+        };
+        let (flow, said, keep) = run_line(s, &command);
+        if flow != Flow::Back {
+            return Left::Flow(flow);
+        }
+        if keep {
+            line = command;
+        }
+        message = said;
+    }
+}
+
+/// Run a command typed on a `*UIM` menu.
 fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
+    let (flow, said, keep) = run_line(s, text);
+    if let Some(m) = said {
+        dialog.send(m);
+    }
+    if keep {
+        // The command stays on the line to be corrected.
+        dialog.set(crate::display::uim::CMDLINE_VAR, text.trim());
+    }
+    flow
+}
+
+/// Run a command typed on a menu, a menu's own words first: where the
+/// session goes, the message to show and whether the line keeps the
+/// command (a `GO` that failed).
+fn run_line(s: &mut Session<'_>, text: &str) -> (Flow, Option<LineMsg>, bool) {
     let typed = text.trim();
     if typed.is_empty() {
-        return Flow::Back;
+        return (Flow::Back, None, false);
     }
     let word = typed
         .split_whitespace()
@@ -227,7 +390,7 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
         "signoff" => {
             inter::remember(s, typed);
             inter::signoff(s, typed);
-            Flow::SignOff
+            (Flow::SignOff, None, false)
         }
         "go" => {
             inter::remember(s, typed);
@@ -235,12 +398,9 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
             let _request = crate::sysdsp::keys::Request::enter();
             let flow = go(s, rest, false);
             // What GO had to say (a menu not found) shows on this menu.
-            if let Some(m) = s.take_message() {
-                dialog.send(m);
-                // The command stays on the line to be corrected.
-                dialog.set(crate::display::uim::CMDLINE_VAR, typed);
-            }
-            flow
+            let said = s.take_message();
+            let keep = said.is_some();
+            (flow, said, keep)
         }
         _ => {
             let prompt = typed.starts_with('?');
@@ -252,16 +412,14 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
             let cmd = typed.trim_start_matches('?');
             inter::remember(s, cmd);
             if word == "call" && cmd.to_ascii_uppercase().trim_end().ends_with("QCMD") {
-                return if inter::command_entry(s) {
+                let flow = if inter::command_entry(s) {
                     Flow::SignOff
                 } else {
                     Flow::Back
                 };
+                return (flow, None, false);
             }
-            if let Some(m) = inter::command_msg(s, cmd, mode) {
-                dialog.send(m);
-            }
-            Flow::Back
+            (Flow::Back, inter::command_msg(s, cmd, mode), false)
         }
     }
 }
@@ -293,28 +451,104 @@ fn not_found(q: &Qualified) -> LineMsg {
     LineMsg::error("CPF9801", &[&q.name, &q.lib])
 }
 
-/// A menu's attributes and panel group through the storage service.
-fn load(s: &mut Session<'_>, q: &Qualified) -> Result<(MenuAttrs, Rc<uim::PanelGroup>), String> {
+/// How a `*PGM` or `*DSPF` menu was left.
+enum Left {
+    /// `F3`, or a program's return code -1.
+    Exit,
+    /// `F12`, or -2: the menu before.
+    Cancel,
+    /// -4: the first menu.
+    Home,
+    /// The session goes elsewhere.
+    Flow(Flow),
+    /// It could not be shown.
+    Failed(LineMsg),
+}
+
+/// A menu's attributes and the library it was found in; `CPF9801` only
+/// when the `*MENU` itself is missing.
+fn open(s: &mut Session<'_>, q: &Qualified) -> Result<(MenuAttrs, String), LineMsg> {
     let (bytes, real) = s
         .link
         .borrow_mut()
-        .with(|l| l.menu_open(q.name.clone(), q.lib.clone()))?;
-    let attrs = MenuAttrs::decode(&bytes).map_err(|e| e.to_string())?;
+        .with(|l| l.menu_open(q.name.clone(), q.lib.clone()))
+        .map_err(|e| {
+            if e.starts_with("CPF9801") {
+                not_found(q)
+            } else {
+                crate::panels::line(&e)
+            }
+        })?;
+    let attrs = MenuAttrs::decode(&bytes).map_err(|e| crate::panels::line(&e.to_string()))?;
+    Ok((attrs, real))
+}
+
+/// A part a menu names (`*MENU` its own name or library, `real` the
+/// library it was found in).
+fn part(q: Option<&Qualified>, menu: &Qualified, real: &str) -> Qualified {
+    let q = q
+        .cloned()
+        .unwrap_or_else(|| Qualified::new("*LIBL", "*MENU"));
+    let name = if q.name == "*MENU" {
+        menu.name.clone()
+    } else {
+        q.name
+    };
+    let lib = if q.lib == "*MENU" {
+        real.to_string()
+    } else {
+        q.lib
+    };
+    Qualified { name, lib }
+}
+
+/// A `*UIM` menu's panel group through the storage service.
+fn load_pnlgrp(
+    s: &mut Session<'_>,
+    q: &Qualified,
+    real: &str,
+    attrs: &MenuAttrs,
+) -> Result<Rc<uim::PanelGroup>, LineMsg> {
     let pnlgrp = attrs
         .pnlgrp
         .clone()
-        .unwrap_or_else(|| Qualified::new(&real, &q.name));
-    let lib = if pnlgrp.lib == "*MENU" {
-        real.clone()
-    } else {
-        pnlgrp.lib.clone()
-    };
+        .unwrap_or_else(|| Qualified::new(real, &q.name));
+    let pnlgrp = part(Some(&pnlgrp), q, real);
     let (payload, _) = s
         .link
         .borrow_mut()
-        .with(|l| l.pnlgrp_open(pnlgrp.name.clone(), lib))?;
-    let p = uim::payload::decode(&payload).map_err(|e| e.to_string())?;
-    Ok((attrs, Rc::new(p.group)))
+        .with(|l| l.pnlgrp_open(pnlgrp.name.clone(), pnlgrp.lib.clone()))
+        .map_err(|e| crate::panels::line(&e))?;
+    let p = uim::payload::decode(&payload).map_err(|e| crate::panels::line(&e.to_string()))?;
+    Ok(Rc::new(p.group))
+}
+
+/// Text in CP037, blank padded to `n`.
+fn padded(text: &str, n: usize) -> Vec<u8> {
+    let mut b = ccsid::to_ebcdic(text).unwrap_or_default();
+    b.resize(n, 0x40);
+    b
+}
+
+/// A `*PGM` menu: its program called with the menu's name, the library
+/// it was found in and a 2-byte return code, again while it returns 0
+/// (pub400: the library is the real one even when GO named `*LIBL`).
+fn pgm_menu(s: &mut Session<'_>, menu: &Qualified, real: &str, attrs: &MenuAttrs) -> Left {
+    let pgm = part(attrs.pgm.as_ref(), menu, real);
+    let lib = if pgm.lib == "*LIBL" { "" } else { &pgm.lib };
+    inter::status_of(s, Status::Run, &format!("MNU-{}", menu.name));
+    loop {
+        let mut parms = vec![padded(&menu.name, 10), padded(real, 10), vec![0, 0]];
+        if let Err(e) = regfac::ProgramCaller::call(s.c.job(), &pgm.name, lib, &mut parms) {
+            return Left::Failed(crate::panels::line(&e));
+        }
+        match i16::from_be_bytes([parms[2][0], parms[2][1]]) {
+            0 => {}
+            -2 => return Left::Cancel,
+            -4 => return Left::Home,
+            _ => return Left::Exit,
+        }
+    }
 }
 
 #[cfg(test)]

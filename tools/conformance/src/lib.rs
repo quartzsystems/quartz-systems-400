@@ -32,6 +32,7 @@ mod error;
 mod fourdisk;
 pub mod ftp;
 mod ftpsrv;
+mod gomenu;
 #[cfg(unix)]
 mod guest;
 pub mod hlinv;
