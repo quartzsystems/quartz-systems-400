@@ -10,13 +10,14 @@
 use ipc::wire_struct;
 use mi::io::{DataAreaValue, FileInfo as IoFileInfo, IoFail, IoResult, OpenSpec, OwnedRequest};
 use msgf::MsgDesc;
+use qap_proto::ops::develop::MemberData;
 use qap_proto::ops::manage::{DiskUnits, IplStatus, PowerDown, Ptf};
 use qap_proto::ops::messages::{Queue, Recipient};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId,
     SpooledFiles,
 };
-use qap_proto::types::ObjectName;
+use qap_proto::types::{MemberName, ObjectName, SourceRecord};
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
@@ -839,6 +840,18 @@ ipc::rpc! {
     772 => fn qap_mgmt_ipl / QapMgmtIpl () -> Result<IplStatus, QapRefused>;
     /// `PowerDown`, checked as `PWRDWNSYS` (`*JOBCTL`), then handed to `slic`.
     773 => fn qap_mgmt_power / QapMgmtPower (req: PowerDown) -> Result<(), QapRefused>;
+    // --- QAP development (780-789; docs/QAP.md version 8,
+    // stgsvc/qap/develop.rs). Only a QAP connection job asks, as its
+    // user; the member's locks are the job's.
+    /// `ReadMember`, as `STRSEU` reads: the records in UTF-8; with
+    /// `lock`, the member held `*SHRNUP` by the job.
+    780 => fn qap_dev_read / QapDevRead (member: MemberName, lock: bool) -> Result<MemberData, QapRefused>;
+    /// `WriteMember`: the records dated (`qapd::develop::dated`),
+    /// converted to the file's CCSID and written whole; the job's lock
+    /// on the member ends. The member's records.
+    781 => fn qap_dev_write / QapDevWrite (member: MemberName, records: Vec<SourceRecord>, renumber: bool, srctype: Option<String>, text: Option<String>) -> Result<u32, QapRefused>;
+    /// `UnlockMember`: the job's `*SHRNUP` lock on the member ends.
+    782 => fn qap_dev_unlock / QapDevUnlock (member: MemberName) -> Result<(), QapRefused>;
 
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the

@@ -97,7 +97,7 @@ fn status_of(id: &str) -> Status {
 
 /// Analyze `line` as a command typed in the job: the `*CMD` found
 /// through the library list, its authority checked.
-fn analyze(cx: &Ctx<'_>, line: &str) -> Result<Resolved, Refusal> {
+pub(super) fn analyze(cx: &Ctx<'_>, line: &str) -> Result<Resolved, Refusal> {
     let mut cmds = RemoteCmds::new(cx.shared.clone());
     let r = {
         let mut env = Env::new(&mut cmds);
@@ -128,7 +128,7 @@ pub(super) fn may_use(cx: &Ctx<'_>, command: &str) -> Result<(), Refusal> {
 }
 
 /// Run a service-site command as `crate::command::service` does.
-fn service(cx: &Ctx<'_>, r: &Resolved) -> Result<CmdReply, Refusal> {
+pub(super) fn service(cx: &Ctx<'_>, r: &Resolved) -> Result<CmdReply, Refusal> {
     let built = cmd::block::build(&r.def, &r.parms)
         .map_err(|e| cx.refuse_text(&format!("{} {e}", e.msgid())))?;
     let specified: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();

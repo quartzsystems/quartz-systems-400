@@ -869,6 +869,27 @@ help = "The system value takes only values of its type and, for some, only the v
 vars = ["*CHAR 10", "*CHAR *VARY 2"]
 
 [[msg]]
+id = "TCP1A60"
+sev = 40
+text = "&1 is not available through this QAP server."
+help = "The server does not offer this development or job operation yet. Use the matching command from a display session or through Run Command instead."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP1A61"
+sev = 40
+text = "Member &1 is not locked by this connection."
+help = "Only a member this connection read with a lock can be unlocked here. The lock also ends when the connection writes the member or closes."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP1A62"
+sev = 40
+text = "Record &1 holds more than the &2 bytes of data a record of the file takes."
+help = "Each record's data, once converted to the file's CCSID, must fit the file's record. Shorten the record, or copy the member to a source file with longer records."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
 id = "TCP101A"
 sev = 10
 text = "Host &1 was not found."

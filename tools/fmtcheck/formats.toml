@@ -239,6 +239,21 @@ files = [
     "work/qap-proto/src/ops/system.rs",
 ]
 
+# QAP version 8 (Develop, Jobs; docs/QAP.md "Version 8 (draft)"): hashed
+# and reported, never failed, until it ships. Its additions to the files
+# above (the common types, Sql 12 and 13, the values) moved the frozen
+# hash with VERSION 8, as version 7's did.
+[[format]]
+name = "qap-v8"
+frozen_at = "V1R1M0"
+doc = "docs/QAP.md"
+draft = true
+version = ["work/qap-proto/src/lib.rs::VERSION"]
+files = [
+    "work/qap-proto/src/ops/develop.rs",
+    "work/qap-proto/src/ops/jobs.rs",
+]
+
 [[format]]
 name = "host-servers"
 frozen_at = "V1R1M0"

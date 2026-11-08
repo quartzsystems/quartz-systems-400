@@ -9,7 +9,7 @@
 //! is no compiler leaves none.
 
 use compdiag::Diagnostic;
-use qapd::Ran;
+use qapd::{Compiled, Ran};
 
 use crate::console::Console;
 
@@ -17,7 +17,6 @@ use crate::console::Console;
 /// its messages, the status: `Ok`, or `Error` when the compile failed)
 /// and the compile's diagnostics, in listing order. `cancelled` says
 /// whether the client cancelled this request.
-#[expect(dead_code, reason = "Develop.Compile calls it once version 8 is in")]
 pub fn compile(
     console: &mut Console,
     command: &str,
@@ -28,4 +27,15 @@ pub fn compile(
     let ran = super::commands::run(console, command, cancelled);
     let diags = console.job().last_compile().unwrap_or_default().to_vec();
     (ran, diags)
+}
+
+/// `Compile` for the lane: the run and its diagnostics in the
+/// protocol's form. A failed compile is `Error` with the body still
+/// filled; the escape message is the reply's message.
+pub fn run(console: &mut Console, command: &str, cancelled: &dyn Fn() -> bool) -> Compiled {
+    let (ran, diags) = compile(console, command, cancelled);
+    Compiled {
+        ran,
+        diagnostics: diags.into_iter().map(Into::into).collect(),
+    }
 }

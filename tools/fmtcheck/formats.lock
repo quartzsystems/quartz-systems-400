@@ -76,8 +76,13 @@ hash = "65af092686cc24c9ee04d6353b5604430d501058cf5cd9618c81876071f759f4"
 
 [format.qap]
 frozen_at = "V1R1M0"
-version = "7"
-hash = "217f61ac63500ee59b2c0820b0200e7b71be06855af34b6daba41e090e0fe00f"
+version = "8"
+hash = "a49ac5899d70ef8d7ccfe399f9f1360cc59ea99181deb0070196e90f7afd80e7"
+
+[format.qap-v8]
+frozen_at = "V1R1M0"
+version = "8"
+hash = "f43da966d7b34802f1ef778b7e4278244c380b590fcbe543b0c260c6f4c97bea"
 
 [format.save]
 frozen_at = "V1R1M0"

@@ -272,6 +272,60 @@ pub fn write_member(
     Ok(n)
 }
 
+/// Replace an existing member's records with `lines`: each its sequence
+/// number in hundredths, its date `yymmdd` and its data bytes, already
+/// in the file's CCSID and no longer than the data length (padded with
+/// blanks). The caller holds the member; the file is taken shared for
+/// update. `srctype` and `text` change only when given. QAP's
+/// `WriteMember` writes through this. Returns the record count.
+#[allow(clippy::too_many_arguments)] // the member, its records and attributes
+pub fn write_records(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    file: ObjectId,
+    member: Name,
+    lines: &[(u32, u32, Vec<u8>)],
+    srctype: Option<Option<Name>>,
+    text: Option<&str>,
+    now: u64,
+) -> Result<u64> {
+    crate::auth::check(txn, "file.open-output", file)?;
+    let desc = source_file(txn, file)?;
+    let entry = member_of(&desc, MemberSpec::Name(member))?;
+    let hold = Hold::take(
+        txn,
+        job,
+        &[(file, LockState::SharedUpdate)],
+        &desc.name().to_string(),
+    )?;
+    let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
+        m.jrn.job = job;
+        m.clear(txn)?;
+        let fmt = m.format().clone();
+        let f = &fmt.format.fields;
+        let width = f[2].length as usize;
+        let mut record = vec![0u8; usize::try_from(fmt.format.record_len).expect("fits")];
+        let mut n = 0u64;
+        for (seq, date, data) in lines {
+            n += 1;
+            let s = Decimal::new(i128::from(*seq), 2).expect("small");
+            record::write_field(&f[0], &mut record, &Value::Num(s))?;
+            let d = Decimal::new(i128::from(*date), 0).expect("six digits");
+            record::write_field(&f[1], &mut record, &Value::Num(d))?;
+            let mut bytes = data.clone();
+            bytes.resize(width.max(bytes.len()), ccsid::SPACE);
+            bytes.truncate(width);
+            record::write_field(&f[2], &mut record, &Value::Char(bytes))?;
+            m.write_new(txn, &record, &[])?;
+        }
+        Ok(n)
+    });
+    hold.release(txn);
+    let n = result?;
+    file::chgpfm(txn, file, entry.name, text, srctype, now)?;
+    Ok(n)
+}
+
 /// The member as UTF-8 text, one line per record, trailing blanks gone.
 pub fn srcget(txn: &mut Txn<'_>, file: ObjectId, member: MemberSpec) -> Result<String> {
     crate::auth::check(txn, "file.open-input", file)?;

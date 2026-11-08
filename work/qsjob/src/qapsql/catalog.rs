@@ -11,7 +11,8 @@
 
 use qap_proto::Status;
 use qap_proto::ops::sql::{
-    Columns, ListColumns, ListSchemas, ListTables, Schema, Schemas, Table, TableKind, Tables,
+    Columns, Index, Indexes, ListColumns, ListIndexes, ListRoutines, ListSchemas, ListTables,
+    Routine, RoutineKind, Schema, Schemas, Table, TableKind, Tables,
 };
 use qapd::Refusal;
 use qapd::sql::{like, page};
@@ -183,4 +184,86 @@ pub fn list_columns(e: &mut dyn Engine, req: &ListColumns) -> Result<Columns, Re
         .map(|row| values::described(row).column)
         .collect();
     Ok(Columns { columns })
+}
+
+/// `ListRoutines` (version 8): `SYSROUTINES`, by name then specific
+/// name; `NotFound` for a schema that is not there.
+pub fn list_routines(e: &mut dyn Engine, req: &ListRoutines) -> Result<Vec<Routine>, Refusal> {
+    let schema = req.schema.trim();
+    let q = quote(schema);
+    if rows(
+        e,
+        &format!("SELECT SCHEMA_NAME FROM QSYS2.SYSSCHEMAS WHERE SCHEMA_NAME = {q}"),
+    )?
+    .is_empty()
+    {
+        return Err(not_found(e, schema, "*LIB"));
+    }
+    let found = rows(
+        e,
+        &format!(
+            "SELECT ROUTINE_NAME, SPECIFIC_NAME, ROUTINE_TYPE, ROUTINE_TEXT FROM QSYS2.SYSROUTINES WHERE ROUTINE_SCHEMA = {q}"
+        ),
+    )?;
+    let mut all: Vec<Routine> = found
+        .iter()
+        .map(|r| Routine {
+            schema: schema.to_string(),
+            name: text(r, 0),
+            specific: text(r, 1),
+            kind: if text(r, 2) == "FUNCTION" {
+                RoutineKind::Function
+            } else {
+                RoutineKind::Procedure
+            },
+            text: text(r, 3),
+        })
+        .filter(|r| {
+            like(&r.name, &req.pattern) && (req.kinds.is_empty() || req.kinds.contains(&r.kind))
+        })
+        .collect();
+    all.sort_by(|a, b| (&a.name, &a.specific).cmp(&(&b.name, &b.specific)));
+    Ok(all)
+}
+
+/// `ListIndexes` (version 8): the table's indexes from `SYSINDEXES`,
+/// their keys from `SYSKEYS` in key order. The table is checked as
+/// `ListColumns` checks it: `NotFound`, or `NotAuthorized` as a
+/// `SELECT` of it would be.
+pub fn list_indexes(e: &mut dyn Engine, req: &ListIndexes) -> Result<Indexes, Refusal> {
+    let (schema, table) = (req.schema.trim(), req.table.trim());
+    list_columns(
+        e,
+        &ListColumns {
+            schema: schema.to_string(),
+            table: table.to_string(),
+        },
+    )?;
+    let (qs, qt) = (quote(schema), quote(table));
+    let found = rows(
+        e,
+        &format!(
+            "SELECT INDEX_SCHEMA, INDEX_NAME, IS_UNIQUE FROM QSYS2.SYSINDEXES WHERE TABLE_SCHEMA = {qs} AND TABLE_NAME = {qt}"
+        ),
+    )?;
+    let mut indexes = Vec::new();
+    for r in &found {
+        let (s, n) = (text(r, 0), text(r, 1));
+        let keys = rows(
+            e,
+            &format!(
+                "SELECT COLUMN_NAME, ORDINAL_POSITION FROM QSYS2.SYSKEYS WHERE INDEX_SCHEMA = {} AND INDEX_NAME = {} ORDER BY ORDINAL_POSITION",
+                quote(&s),
+                quote(&n)
+            ),
+        )?;
+        indexes.push(Index {
+            schema: s,
+            name: n,
+            unique: matches!(text(r, 2).as_str(), "U" | "V"),
+            columns: keys.iter().map(|k| text(k, 0)).collect(),
+        });
+    }
+    indexes.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(Indexes { indexes })
 }

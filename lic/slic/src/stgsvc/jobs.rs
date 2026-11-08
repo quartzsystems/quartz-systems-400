@@ -98,6 +98,12 @@ pub fn take_next_iplsts(system: &mut System) -> u8 {
 /// that still own spooled files; the last one
 /// handed out is kept in `QSYS/QJOBNBR`.
 pub fn next(system: &mut System) -> Result<u32, String> {
+    // The system's own counter: no user's authority to it is asked,
+    // whoever submits the job (SBMJOB from any profile).
+    sec::guard::as_system(|| next_number_kept(system))
+}
+
+fn next_number_kept(system: &mut System) -> Result<u32, String> {
     let s = system.storage.as_mut().ok_or("object store not open")?;
     let qsys = s.qsys.ok_or("object store not initialized")?;
     let jobs = &system.jobs;

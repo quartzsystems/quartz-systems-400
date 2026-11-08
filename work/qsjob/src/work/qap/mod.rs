@@ -9,7 +9,9 @@
 pub mod commands;
 pub mod compile;
 pub mod conn;
+pub mod develop;
 pub mod host;
+pub mod jobs;
 pub mod listener;
 pub mod manage;
 pub mod messages;
