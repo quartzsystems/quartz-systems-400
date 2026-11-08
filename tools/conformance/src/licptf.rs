@@ -213,7 +213,7 @@ impl Suite {
             "DSPPTF on slot B",
             &[
                 "IPL source ##MACH#B",
-                &format!("{PTF}"),
+                PTF,
                 "Temporarily applied",
             ],
         )?;
