@@ -146,7 +146,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
                 running.push(r);
             }
             Err(e) if !implicit => crate::start::end(&mut ctl, &format!("port {p}: {e}")),
-            Err(e) => eprintln!("qsjob: {} port {p}: {e}", start.name),
+            Err(e) => super::netsvc::tls_not_started(link, &start.name, "FTP", p, &e.to_string()),
         }
     }
     // Only an explicit End from the parent counts; ENDJOB and ENDSBS

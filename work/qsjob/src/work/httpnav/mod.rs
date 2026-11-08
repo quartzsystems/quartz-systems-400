@@ -95,7 +95,14 @@ fn start_listeners(
     if a.tls_port == 0 {
         return Ok(running);
     }
-    match super::web::listen_tls(bridge, navigator::APP_ID, system, a.tls_port, nav) {
+    match super::web::listen_tls(
+        bridge,
+        "NAVIGATOR",
+        navigator::APP_ID,
+        system,
+        a.tls_port,
+        nav,
+    ) {
         Ok(r) => {
             eprintln!("qsjob: NAVIGATOR listening on port {} (TLS)", a.tls_port);
             running.push(r);

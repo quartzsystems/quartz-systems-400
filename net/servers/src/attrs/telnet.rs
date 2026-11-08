@@ -296,6 +296,20 @@ mod tests {
     }
 
     #[test]
+    fn alwssl_chooses_the_ports() {
+        // Port 23 (plain), port 992 (TLS).
+        for (v, plain, secure) in [
+            ("*YES", true, true),
+            ("*NO", true, false),
+            ("*ONLY", false, true),
+        ] {
+            let mut a = TelnetAttrs::default();
+            a.set("ALWSSL", v).unwrap();
+            assert_eq!((a.plain(), a.secure()), (plain, secure), "{v}");
+        }
+    }
+
+    #[test]
     fn set_and_round_trip() {
         let mut a = TelnetAttrs::default();
         assert_eq!(a.set("NBRSVR", "4"), Ok(true));

@@ -890,6 +890,13 @@ help = "Each record's data, once converted to the file's CCSID, must fit the fil
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
+id = "TCP1A63"
+sev = 40
+text = "&1 server TLS port &2 not started: &3."
+help = "The server goes on without its TLS port; connections that need TLS are refused. Correct the reason shown, such as the certificate the server's application identifier is assigned in the certificate store or another program using the port, then end and start the server again."
+vars = ["*CHAR 10", "*CHAR 5", "*CHAR 128"]
+
+[[msg]]
 id = "TCP1A70"
 sev = 40
 text = "The source debugger is not available through this QAP server."

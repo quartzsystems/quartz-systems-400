@@ -69,9 +69,11 @@ pub fn run_text_as(
 }
 
 /// Serve `handler` on `port` with TLS: the certificate `*SYSTEM`
-/// assigns `app_id`, else the system's own.
+/// assigns `app_id`, else the system's own. A port that does not start
+/// is reported to `QSYSOPR` and the job log as server `name`'s.
 pub fn listen_tls(
     bridge: &Bridge,
+    name: &'static str,
     app_id: &'static str,
     system: String,
     port: u16,
@@ -80,11 +82,16 @@ pub fn listen_tls(
     let cfg = bridge
         .call(move |m| super::tls::app_server_config(&mut m.link.borrow_mut(), app_id, &system))
         .unwrap_or_else(|| Err("the job is ending".into()));
-    cfg.and_then(|c| {
+    let r = cfg.and_then(|c| {
         listen::bind(port)
             .and_then(|l| listen::serve(l, Some(c), Web::new(handler)))
             .map_err(|e| e.to_string())
-    })
+    });
+    if let Err(e) = &r {
+        let why = e.clone();
+        bridge.call(move |m| super::netsvc::tls_not_started(&m.link, name, name, port, &why));
+    }
+    r
 }
 
 /// Whether the job is to end: `End` from the parent, its subsystem

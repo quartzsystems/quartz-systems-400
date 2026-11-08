@@ -81,8 +81,19 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         std::thread::spawn(move || mapper(&plain));
     } else {
         std::thread::spawn(move || hand_over(&plain, d, false, me));
-        if let Some(l) = d.tls_port.and_then(bind) {
-            std::thread::spawn(move || hand_over(&l, d, true, me));
+        if let Some(port) = d.tls_port {
+            match TcpListener::bind(("0.0.0.0", port)) {
+                Ok(l) => {
+                    std::thread::spawn(move || hand_over(&l, d, true, me));
+                }
+                Err(e) => crate::work::netsvc::tls_not_started(
+                    link,
+                    &start.name,
+                    d.keyword.trim_start_matches('*'),
+                    port,
+                    &e.to_string(),
+                ),
+            }
         }
     }
     stg::remote::status(link, Status::Selw, "");

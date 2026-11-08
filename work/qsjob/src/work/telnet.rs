@@ -305,30 +305,6 @@ impl ExitJob {
     }
 }
 
-/// A second link to the service for the TLS material, as the server
-/// job itself.
-fn own_link(start: &Start) -> Option<Link> {
-    let chan = Chan::connect(Path::new(stg::SOCKET)).ok()?;
-    let mut l = Link::over(chan);
-    l.hello(JobInfo {
-        name: "QTVTELNET".into(),
-        user: "QTCP".into(),
-        number: start.number,
-        kind: 'B',
-        subtype: ' ',
-        subsystem: "QSYSWRK".into(),
-        pid: std::process::id(),
-        handle: start.handle,
-        jobd: start.jobd.clone(),
-        class: start.class.clone(),
-        pool: start.pool.clone(),
-        ..JobInfo::default()
-    })
-    .ok()?
-    .ok()?;
-    Some(l)
-}
-
 /// A message's text for the sign-on display, from its message file
 /// over the link (there is no job yet).
 fn say(link: &mut Link, m: &uim::engine::LineMsg) -> String {
@@ -366,18 +342,17 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         }
     }
     if a.secure() {
-        let tls = own_link(start).and_then(|mut l| {
-            super::tls::app_server_config(&mut l, TELNET_APP_ID, &host)
-                .map_err(|e| eprintln!("qsjob: QTVTELNET TLS: {e}"))
-                .ok()
-        });
-        if let Some(cfg) = tls {
-            match bind(TLS_PORT) {
-                Ok(l) => {
-                    eprintln!("qsjob: QTVTELNET listening on port {TLS_PORT} (TLS)");
-                    accept_loop(l, Some(cfg), &ask_tx, &host);
-                }
-                Err(e) => eprintln!("qsjob: QTVTELNET port {TLS_PORT}: {e}"),
+        // Over the job's own link: a second link saying hello with the
+        // job's number is refused.
+        let tls = super::tls::app_server_config(&mut link.borrow_mut(), TELNET_APP_ID, &host)
+            .and_then(|cfg| bind(TLS_PORT).map(|l| (l, cfg)).map_err(|e| e.to_string()));
+        match tls {
+            Ok((l, cfg)) => {
+                eprintln!("qsjob: QTVTELNET listening on port {TLS_PORT} (TLS)");
+                accept_loop(l, Some(cfg), &ask_tx, &host);
+            }
+            Err(e) => {
+                super::netsvc::tls_not_started(link, "QTVTELNET", "TELNET", TLS_PORT, &e);
             }
         }
     }

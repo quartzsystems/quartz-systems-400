@@ -53,8 +53,13 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     if let Some(l) = bind(447) {
         std::thread::spawn(move || hand_over(&l, false, me));
     }
-    if let Some(l) = bind(448) {
-        std::thread::spawn(move || hand_over(&l, true, me));
+    match TcpListener::bind(("0.0.0.0", 448)) {
+        Ok(l) => {
+            std::thread::spawn(move || hand_over(&l, true, me));
+        }
+        Err(e) => {
+            crate::work::netsvc::tls_not_started(link, &start.name, "DDM", 448, &e.to_string());
+        }
     }
     stg::remote::status(link, Status::Selw, "");
     let mut reader = ctl.try_clone().ok();

@@ -141,6 +141,49 @@ fn page_gone(port: u16) -> Result<(), String> {
     }
 }
 
+/// Whether telnet on host port `port` begins negotiating (`IAC`), over
+/// TLS when `tls`; one try. Slirp takes the connection even when the
+/// guest refuses it, so only an answer counts.
+fn answers(port: u16, tls: bool) -> bool {
+    let Ok(c) = TcpStream::connect(("127.0.0.1", port)) else {
+        return false;
+    };
+    let _ = c.set_read_timeout(Some(Duration::from_secs(5)));
+    let mut b = [0u8; 1];
+    if !tls {
+        let mut c = c;
+        return matches!(c.read(&mut b), Ok(1)) && b[0] == 0xff;
+    }
+    let policy = tls::policy::TlsPolicy::opsys();
+    let Ok(cfg) = tls::config::client_config(
+        &policy,
+        tls::rustls::RootCertStore::empty(),
+        None,
+        tls::config::ServerAuthMode::Passthru,
+    ) else {
+        return false;
+    };
+    let Ok(name) = tls::config::server_name("qs400") else {
+        return false;
+    };
+    match tls::stream::TlsStream::connect(cfg, name, c) {
+        Ok(mut t) => matches!(t.read(&mut b), Ok(1)) && b[0] == 0xff,
+        Err(_) => false,
+    }
+}
+
+/// Wait up to 30 seconds for `f` to give `want`.
+fn wait_for(f: impl Fn() -> bool, want: bool, what: &str) -> Result<(), String> {
+    let end = Instant::now() + Duration::from_secs(30);
+    while Instant::now() < end {
+        if f() == want {
+            return Ok(());
+        }
+        std::thread::sleep(Duration::from_millis(500));
+    }
+    Err(format!("{what}: no answer in 30 seconds"))
+}
+
 #[allow(clippy::unused_self)] // the steps share one signature
 impl Suite {
     /// Step 64: `STRTCPSVR` and `ENDTCPSVR` of `*HTTP` and `*TELNET`.
@@ -184,9 +227,43 @@ impl Suite {
         if let Some(port) = self.telnet_port() {
             telnet_answers(port)?;
         }
+        // ALWSSL: *YES listens on 23 and 992, *NO on 23, *ONLY on 992.
+        let tn_tls = forward_port(self, GUEST, 992)?;
+        wait_for(|| answers(tn_tls, true), true, "TLS telnet on 992")?;
+        for (alwssl, on23, on992) in [("*NO", true, false), ("*ONLY", false, true)] {
+            expect(s, "ENDTCPSVR SERVER(*TELNET)", "TCP1A0A")?;
+            job_shown(s, "QTVTELNET", false)?;
+            expect(s, &format!("CHGTELNA ALWSSL({alwssl})"), "TCP1A10")?;
+            expect(s, "STRTCPSVR SERVER(*TELNET)", "TCP1A07")?;
+            job_shown(s, "QTVTELNET", true)?;
+            let plain_port = self.telnet_port();
+            // The port that listens first, then the one that must not.
+            let (up, down) = if on992 {
+                ((tn_tls, true), plain_port.map(|p| (p, false)))
+            } else {
+                ((plain_port.unwrap_or(0), false), Some((tn_tls, true)))
+            };
+            if up.0 != 0 {
+                wait_for(|| answers(up.0, up.1), true, &format!("ALWSSL({alwssl})"))?;
+            }
+            if let Some((p, tls)) = down
+                && answers(p, tls)
+            {
+                return Err(format!(
+                    "ALWSSL({alwssl}): port {} answers (23 {on23}, 992 {on992})",
+                    if tls { 992 } else { 23 }
+                ));
+            }
+        }
+        expect(s, "ENDTCPSVR SERVER(*TELNET)", "TCP1A0A")?;
+        job_shown(s, "QTVTELNET", false)?;
+        expect(s, "CHGTELNA ALWSSL(*YES)", "TCP1A10")?;
+        expect(s, "STRTCPSVR SERVER(*TELNET)", "TCP1A07")?;
+        job_shown(s, "QTVTELNET", true)?;
+        wait_for(|| answers(tn_tls, true), true, "TLS telnet on 992 again")?;
         expect(s, "STRTCPSVR SERVER(*SNMP)", "TCP1A04")?;
         Ok(format!(
-            "ADMIN in QHTTPSVR served the sign-on page on 2001 (host {plain}) and 2010 (host {secure}) and ended; QTVTELNET ended, took CHGTELNA and started again"
+            "ADMIN in QHTTPSVR served the sign-on page on 2001 (host {plain}) and 2010 (host {secure}) and ended; QTVTELNET ended, took CHGTELNA and started again; TLS telnet answered on 992 with ALWSSL(*YES) and *ONLY, not with *NO"
         ))
     }
 }

@@ -90,6 +90,15 @@ pub fn sysopr(link: &Shared, msgid: &str, severity: u8, text: &str) {
     }
 }
 
+/// A server's TLS port that did not start: why, to `QSYSOPR` and the
+/// job log (the server goes on without it).
+pub fn tls_not_started(link: &Shared, program: &str, server: &str, port: u16, why: &str) {
+    let text = format!("{server} server TLS port {port} not started: {why}.");
+    eprintln!("qsjob: {program}: {text}");
+    sysopr(link, servers::msg::TLS_NOT_STARTED, 40, &text);
+    joblog(link, program, servers::msg::TLS_NOT_STARTED, &text);
+}
+
 /// Notices the end of a server job: its parent's `End`, `ENDJOB`, or
 /// its subsystem ending.
 pub struct Ender {

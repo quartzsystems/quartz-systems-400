@@ -71,6 +71,8 @@ pub const QAP_SPLF_IN_USE: &str = "TCP1A57";
 pub const QAP_SIGNED_OFF_ELSEWHERE: &str = "TCP1A58";
 /// `QAP session of &1 has as many connections as it may have.`
 pub const QAP_SESSION_FULL: &str = "TCP1A59";
+/// `&1 server TLS port &2 not started: &3.`
+pub const TLS_NOT_STARTED: &str = "TCP1A63";
 
 /// Every identifier above.
 pub const ALL: &[&str] = &[
@@ -106,4 +108,5 @@ pub const ALL: &[&str] = &[
     QAP_SPLF_IN_USE,
     QAP_SIGNED_OFF_ELSEWHERE,
     QAP_SESSION_FULL,
+    TLS_NOT_STARTED,
 ];
