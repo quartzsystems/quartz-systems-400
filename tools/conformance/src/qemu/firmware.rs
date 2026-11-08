@@ -22,6 +22,21 @@ const DEFAULTS: &[&str] = &[
     "/usr/share/qemu/OVMF.fd",
 ];
 
+/// Environment override for OVMF's variable store template.
+pub const VARS_ENV: &str = "QS400_OVMF_VARS";
+
+/// The variable store template that goes with `code`: `QS400_OVMF_VARS`,
+/// else the file beside it with `VARS` for `CODE` in its name.
+pub fn locate_vars(code: &std::path::Path) -> Option<PathBuf> {
+    if let Some(p) = env::var_os(VARS_ENV) {
+        let p = PathBuf::from(p);
+        return p.is_file().then_some(p);
+    }
+    let name = code.file_name()?.to_str()?;
+    let vars = code.with_file_name(name.replace("CODE", "VARS"));
+    (vars != code && vars.is_file()).then_some(vars)
+}
+
 /// The OVMF file: the environment variable, else the distribution defaults.
 pub fn locate() -> Result<PathBuf, HarnessError> {
     let mut tried = Vec::new();

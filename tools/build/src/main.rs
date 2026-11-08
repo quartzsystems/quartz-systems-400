@@ -61,6 +61,22 @@ enum Command {
     /// Package each product of `licpgm/products/` into a signed product
     /// load save file under `target/images/lp/`.
     Lp,
+    /// Package a PTF from its manifest (`ptf/fixes/QSnnnnn.toml`) into
+    /// `target/images/ptf/QSnnnnn.savf`; `lic = "*BUILD"` takes this
+    /// build's UKIs (`docs/PTF.md` section 8).
+    Ptf {
+        /// The manifest.
+        manifest: std::path::PathBuf,
+    },
+    /// Publish the PTFs under `DIR/ptf/` as the update service's
+    /// directory: the signed catalog and a cumulative package.
+    PtfCatalog {
+        /// The directory.
+        dir: std::path::PathBuf,
+        /// PTFs marked high impact or pervasive.
+        #[arg(long)]
+        hiper: Vec<String>,
+    },
     /// Run the whole pipeline.
     All {
         /// Omit the serial service console (`qs400.svc=1`).
@@ -148,6 +164,7 @@ fn main() -> Result<()> {
                 | Command::Notices { .. }
                 | Command::Fuzz { .. }
                 | Command::Kc
+                | Command::PtfCatalog { .. }
                 | Command::Bench { .. }
         )
     {
@@ -179,6 +196,12 @@ fn main() -> Result<()> {
         }
         Command::Lp => {
             image::lp::lp(&ctx)?;
+        }
+        Command::Ptf { manifest } => {
+            image::ptf::ptf(&ctx, &manifest)?;
+        }
+        Command::PtfCatalog { dir, hiper } => {
+            image::ptf::catalog(&ctx, &dir, &hiper)?;
         }
         Command::All { release } => all(&ctx, release)?,
         Command::Test {

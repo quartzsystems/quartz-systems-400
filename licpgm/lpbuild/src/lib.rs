@@ -69,8 +69,9 @@ pub struct Built {
     pub signed: usize,
 }
 
-/// An empty system in memory: `QSYS` and the system libraries.
-fn empty(now: u64) -> Result<(Store, ObjectId), BuildError> {
+/// An empty system in memory: `QSYS` and the system libraries (`build
+/// ptf` packages objects from one too).
+pub fn empty(now: u64) -> Result<(Store, ObjectId), BuildError> {
     let d = Arc::new(MemBlockDev::with_seed(262_144, 11));
     let fp = FormatParams {
         asp_number: 1,

@@ -281,7 +281,9 @@ dependencies = [
  "lpbuild",
  "optical",
  "pesign",
+ "ptf",
  "ptf-update",
+ "ptfbuild",
  "release",
  "reqwest",
  "rustls-graviola",
@@ -540,6 +542,9 @@ dependencies = [
  "ntp",
  "optical",
  "print",
+ "ptf",
+ "ptf-update",
+ "ptfbuild",
  "qap-proto",
  "qapd",
  "qdecimal",
@@ -2469,6 +2474,19 @@ dependencies = [
  "thiserror",
  "tls",
  "toml",
+]
+
+[[package]]
+name = "ptfbuild"
+version = "0.1.0"
+dependencies = [
+ "ed25519-dalek",
+ "lpbuild",
+ "lpstore",
+ "osobjects",
+ "ptf",
+ "release",
+ "thiserror",
 ]
 
 [[package]]

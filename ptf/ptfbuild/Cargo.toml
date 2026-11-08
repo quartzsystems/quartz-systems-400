@@ -1,0 +1,19 @@
+[package]
+name = "ptfbuild"
+description = "QS/400 PTFs built at build time: a manifest, the shipped objects in a store in memory, the UKIs, signed as a PTF save stream"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ptf = { path = "../ptf", version = "0.1.0" }
+lpbuild = { path = "../../licpgm/lpbuild", version = "0.1.0" }
+lpstore = { path = "../../licpgm/lpstore", version = "0.1.0" }
+osobjects = { path = "../../lic/osobjects", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+ed25519-dalek = "3.0.0"
+thiserror.workspace = true
+
+[lints]
+workspace = true

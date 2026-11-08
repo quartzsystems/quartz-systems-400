@@ -43,7 +43,7 @@ pub fn kc(ctx: &Ctx) -> Result<PathBuf> {
 }
 
 /// Year (two digits) and day of the year of Unix time `t`.
-fn year_day(t: u64) -> (u8, u16) {
+pub fn year_day(t: u64) -> (u8, u16) {
     let mut days = t / 86_400;
     let mut year = 1970u64;
     loop {

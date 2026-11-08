@@ -32,6 +32,10 @@ pub struct Launch {
     pub qemu: PathBuf,
     /// OVMF code image.
     pub firmware: PathBuf,
+    /// A writable copy of OVMF's variable store: `BootNext`, `BootOrder`
+    /// and `Boot####` persist across resets (the LIC PTF step). The
+    /// firmware keeps no variables when `None`.
+    pub vars: Option<PathBuf>,
     /// Use KVM.
     pub kvm: bool,
     /// Disk image (a working copy; boots write to it), if attached.
@@ -141,6 +145,10 @@ pub fn args(l: &Launch) -> Vec<OsString> {
         OsString::from("-drive"),
     ]);
     a.push(join("if=pflash,format=raw,readonly=on,file=", &l.firmware));
+    if let Some(vars) = &l.vars {
+        a.push(OsString::from("-drive"));
+        a.push(join("if=pflash,format=raw,file=", vars));
+    }
     let (disk_index, cd_index) = if l.cdrom_first { (1, 0) } else { (0, 1) };
     // A network boot goes before both.
     let (disk_index, cd_index) = if l.tftp.is_some() {

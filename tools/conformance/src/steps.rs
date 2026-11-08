@@ -170,6 +170,7 @@ impl Suite {
             launch: Launch {
                 qemu: qemu::locate()?,
                 firmware: qemu::firmware::locate()?,
+                vars: None,
                 kvm: qemu::kvm_available(),
                 image: work,
                 cdrom: None,
@@ -757,6 +758,8 @@ impl Suite {
         reports.extend(self.guest_steps()?);
         #[cfg(unix)]
         reports.extend(self.two_guest_steps()?);
+        #[cfg(unix)]
+        reports.extend(self.lic_ptf_steps()?);
         if self.only.is_some() {
             return Ok(reports);
         }

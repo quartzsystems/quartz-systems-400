@@ -1,0 +1,36 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# QS00001: the web products after V1R1M0. A LIC PTF: the job program is
+# in the UKI, so the PTF carries this build's slot A and B images.
+# `cargo run -p build -- ptf ptf/fixes/QS00001.toml`; the tag
+# `ptf-QS00001` builds and signs it in CI (docs/releasing.md).
+
+ptf = "QS00001"
+product = "QS00SS1"
+kind = "delayed"
+lic = "*BUILD"
+cover = """
+Access for Web 5250 sessions accept keys and clicks; web pages change without reloading.
+
+Problem corrected:
+- The Access for Web 5250 display opened its WebSocket at a malformed
+  address, so the screen stayed a picture: keys, clicks and typing did
+  nothing.
+- Every link and form in HTTP Server Administration, Navigator and
+  Access for Web loaded a whole new page.
+
+What the PTF changes:
+- The 5250 display connects, takes keys and mouse clicks, keeps the
+  status bar's cursor position current, and switches its menu bar and
+  scale without leaving the page.
+- Links, forms, Back and Forward move between pages in place in the
+  three web products; downloads are saved without leaving the page.
+  Pages still work with script turned off.
+
+Special instructions:
+- This PTF replaces the Licensed Internal Code. APYPTF writes the new
+  image into the slot not in use; the next IPL starts from it.
+  RMVPTF and an IPL return to the previous image.
+"""

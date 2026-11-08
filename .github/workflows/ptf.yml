@@ -1,0 +1,163 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# A tag ptf-QSnnnnn publishes PTF QSnnnnn (docs/PTF.md section 8,
+# docs/releasing.md "PTFs"): the manifest ptf/fixes/QSnnnnn.toml must
+# exist at the tagged commit and name the PTF, the commit's VERSION must
+# be a published release, every check in ci.yml runs, and the PTF is
+# built and signed on a GitHub-hosted runner with the keys in the
+# `release` environment (its deployment rule must admit ptf-* tags as
+# well as v*). The PTF goes on a GitHub release of its own, and the
+# update service's directory (the signed catalog, every PTF, the
+# cumulative package) is republished on the rolling `ptf-catalog`
+# release, from which updates.quartz.systems is synced.
+
+name: ptf
+
+on:
+  push:
+    tags: ["ptf-QS*"]
+
+permissions:
+  contents: read
+
+# One at a time: each publish takes the catalog one sequence further.
+concurrency:
+  group: ptf
+  cancel-in-progress: false
+
+jobs:
+  manifest:
+    name: manifest, release and tag agree
+    runs-on: ubuntu-24.04
+    outputs:
+      ptf: ${{ steps.m.outputs.ptf }}
+      release: ${{ steps.m.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: m
+        run: |
+          ptf="${GITHUB_REF_NAME#ptf-}"
+          [[ "$ptf" =~ ^QS[0-9]{5}$ ]] || { echo "tag $GITHUB_REF_NAME: want ptf-QSnnnnn" >&2; exit 1; }
+          m="ptf/fixes/$ptf.toml"
+          [ -f "$m" ] || { echo "no manifest $m at this commit" >&2; exit 1; }
+          grep -q "^ptf = \"$ptf\"" "$m" || { echo "$m does not name $ptf" >&2; exit 1; }
+          version=$(ci/version.sh)
+          git rev-parse -q --verify "refs/tags/v$version" >/dev/null \
+            || { echo "VERSION $version has no release tag v$version: a PTF is for a published release" >&2; exit 1; }
+          echo "ptf=$ptf" >> "$GITHUB_OUTPUT"
+          echo "release=$(ci/version.sh release)" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: manifest
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: build and sign ${{ needs.manifest.outputs.ptf }}
+    needs: [manifest, ci]
+    runs-on: ubuntu-24.04
+    # Holds the release keys; its deployment rule admits v* and ptf-* tags.
+    environment: release
+    timeout-minutes: 240
+    env:
+      QS400_TARGET_DIR: ${{ github.workspace }}/target
+      PTF: ${{ needs.manifest.outputs.ptf }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
+      # As release.yml: the keys only for the signing steps, removed
+      # whatever happens; without all three the job stops.
+      - name: Release keys from the release environment
+        env:
+          SIGNING_KEY: ${{ secrets.QS400_SIGNING_KEY }}
+          SB_KEY: ${{ secrets.QS400_SB_KEY }}
+          SB_CERT_B64: ${{ secrets.QS400_SB_CERT_B64 }}
+        run: |
+          for k in SIGNING_KEY SB_KEY SB_CERT_B64; do
+            [ -n "${!k}" ] || { echo "secret for $k is missing in the release environment (docs/releasing.md)" >&2; exit 1; }
+          done
+          umask 077
+          dir=$(mktemp -d)
+          printf '%s' "$SIGNING_KEY" > "$dir/release.ed25519"
+          printf '%s\n' "$SB_KEY" > "$dir/qs400-db.key"
+          printf '%s' "$SB_CERT_B64" | base64 -d > "$dir/qs400-db.cer"
+          echo "KEYDIR=$dir" >> "$GITHUB_ENV"
+      # The UKIs without the service console, as a release ships them; the
+      # initramfs trusts the release key.
+      - name: build all --release
+        run: |
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+            cargo run -q -p build -- all --release
+      - name: build ptf (signed)
+        run: |
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+          QS400_SB_KEY="$KEYDIR/qs400-db.key" \
+          QS400_SB_CERT="$KEYDIR/qs400-db.cer" \
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
+            cargo run -q -p build -- ptf "ptf/fixes/$PTF.toml"
+      # The update service's directory as last published, this PTF added.
+      - name: The catalog so far
+        run: |
+          mkdir -p pub/ptf pub/group prev
+          if gh release view ptf-catalog >/dev/null 2>&1; then
+            gh release download ptf-catalog -D prev
+            mv prev/*.savf pub/ptf/ 2>/dev/null || true
+            mv prev/C*.toml pub/group/ 2>/dev/null || true
+            [ ! -f prev/catalog.toml ] || mv prev/catalog.toml pub/
+          fi
+          [ ! -f "pub/ptf/$PTF.savf" ] || { echo "$PTF is published already" >&2; exit 1; }
+          cp "$QS400_TARGET_DIR/images/ptf/$PTF.savf" pub/ptf/
+      - name: build ptf-catalog (signed)
+        run: |
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+            cargo run -q -p build -- ptf-catalog pub
+      - name: Remove the keys
+        if: always()
+        run: '[ -z "${KEYDIR:-}" ] || rm -rf "$KEYDIR"'
+      - name: PTF files
+        run: |
+          mkdir -p dist/ptf dist/catalog
+          cp "$QS400_TARGET_DIR/images/ptf/$PTF.savf" "$QS400_TARGET_DIR/images/ptf/$PTF.txt" dist/ptf/
+          ( cd dist/ptf && sha256sum "$PTF.savf" > "$PTF.savf.sha256" )
+          cp pub/catalog.toml pub/ptf/*.savf pub/group/*.toml dist/catalog/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ptf
+          path: dist/
+
+  publish:
+    name: publish ${{ needs.manifest.outputs.ptf }}
+    needs: [manifest, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      PTF: ${{ needs.manifest.outputs.ptf }}
+      RELEASE: ${{ needs.manifest.outputs.release }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ptf
+          path: dist
+      - name: The PTF's release
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/ptf/* \
+            --verify-tag --latest=false \
+            --title "PTF $PTF for QS/400 $RELEASE" \
+            --notes-file "dist/ptf/$PTF.txt"
+      # Every file of the update service's directory, flat: catalog.toml,
+      # QSnnnnn.savf, Cyyddd110.toml (docs/UPDATE_PROTOCOL.md section 7).
+      - name: The update service's directory
+        run: |
+          if ! gh release view ptf-catalog >/dev/null 2>&1; then
+            gh release create ptf-catalog --latest=false \
+              --title "QS/400 update service catalog" \
+              --notes "The update service's directory: the signed catalog.toml, every PTF save file and the cumulative package manifests. updates.quartz.systems serves these files."
+          fi
+          gh release upload ptf-catalog dist/catalog/* --clobber
