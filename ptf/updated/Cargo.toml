@@ -1,0 +1,32 @@
+[package]
+name = "ptf-updated"
+description = "QS/400 update server: the update service's directory mirrored from the ptf-catalog release and served over HTTP or TLS"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "qs400-updated"
+path = "src/main.rs"
+
+[dependencies]
+ptf-update = { path = "../update", version = "0.1.0" }
+httpc = { path = "../../net/httpc", version = "0.1.0" }
+tls = { path = "../../net/tls", version = "0.1.0" }
+certs = { path = "../../net/certs", version = "0.1.0" }
+anyhow.workspace = true
+clap.workspace = true
+hex.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+ptf = { path = "../ptf", version = "0.1.0" }
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+ed25519-dalek = "3.0.0"

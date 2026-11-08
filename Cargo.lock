@@ -2477,6 +2477,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ptf-updated"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "blockdev",
+ "certs",
+ "clap",
+ "ed25519-dalek",
+ "hex",
+ "httpc",
+ "ptf",
+ "ptf-update",
+ "qsname",
+ "store",
+ "tls",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "ptfbuild"
 version = "0.1.0"
 dependencies = [

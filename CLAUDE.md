@@ -267,6 +267,8 @@ ptf/          PTFs (docs/PTF.md)
                 lic/slic/src/cpp/ptfcmd.rs (the database in QSYS/QSPTFDB, delayed PTFs at IPL)
   update/       the update service (docs/UPDATE_PROTOCOL.md): the signed catalog, orders,
                 the HTTP client SNDPTFORD and QSCHKUPD use, a reference server over a directory
+  updated/      qs400-updated, the update service on ptfs.quartzsystems.net: sync.rs mirrors the
+                ptf-catalog release, serve.rs answers systems; Dockerfile (a static image)
   ptfbuild/     PTFs made at build time (`build ptf`): the manifest, the shipped objects in a
                 store in memory (lpbuild's), the UKIs; the build tool's side tools/build/src/image/ptf.rs
   fixes/        the PTFs' manifests, QSnnnnn.toml (`lic = "*BUILD"` for a LIC PTF); a tag

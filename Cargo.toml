@@ -123,6 +123,7 @@ members = [
     # PTFs: the format, load, apply and remove, groups; the update service.
     "ptf/ptf",
     "ptf/update",
+    "ptf/updated",
     "ptf/ptfbuild",
     # Service: the problem log.
     "service/prb",
