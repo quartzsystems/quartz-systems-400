@@ -23,7 +23,7 @@ use super::Link;
 use crate::work::web::bridge::Main;
 
 /// The service a system talks to when `QSCHGUPDA` named none.
-const DEFAULT_URL: &str = "https://updates.quartz.systems/qs400";
+const DEFAULT_URL: &str = "https://ptfs.quartzsystems.net/qs400";
 
 /// Software.
 pub struct LiveSoftware {

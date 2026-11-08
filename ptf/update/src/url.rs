@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn urls_parse() {
-        let u = Url::parse("https://updates.quartz.systems/qs400/").unwrap();
+        let u = Url::parse("https://ptfs.quartzsystems.net/qs400/").unwrap();
         assert!(u.tls);
         assert_eq!(u.port, 443);
         assert_eq!(u.path_of("/v1/catalog"), "/qs400/v1/catalog");

@@ -145,7 +145,7 @@ Pushing the tag runs `.github/workflows/ptf.yml`:
    the save file, its SHA-256 and the cover letter as its notes, and the
    update service's whole directory uploaded again to the rolling
    `ptf-catalog` release: `catalog.toml`, every `QSnnnnn.savf`, the
-   cumulative package manifests. `updates.quartz.systems/qs400/v1/` serves
+   cumulative package manifests. `ptfs.quartzsystems.net/qs400/v1/` serves
    those files (`docs/UPDATE_PROTOCOL.md` §7).
 
 The `release` environment's deployment rule must admit `ptf-*` tags as

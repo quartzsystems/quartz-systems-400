@@ -41,7 +41,10 @@ sized by `Content-Length`. Every request carries:
 | `X-QS400-Release` | `VxRyMz` |
 
 Paths are under the service URL `QSCHGUPDA` keeps (`URL`, default
-`https://updates.quartz.systems/qs400`):
+`https://ptfs.quartzsystems.net/qs400`). V1R1M0 as shipped defaults to
+`https://updates.quartz.systems/qs400`, and the client follows no
+redirects: that name serves the same files until no system needs it.
+The paths:
 
 | Method and path | Answer |
 |---|---|
@@ -211,8 +214,17 @@ group/NAME.toml     each group's signed manifest
 definitions with a signing key (the build does this for a release). The
 server speaks plain HTTP or TLS (a `rustls::ServerConfig` from
 `net/tls`), keeps an order counter, and answers service requests with a
-ticket. It is a library, not a product: the tests and the harness run
-it on loopback.
+ticket. The tests and the harness run it on loopback.
+
+`qs400-updated` (`ptf/updated`) is the service as it runs on
+`ptfs.quartzsystems.net`: every 15 minutes it mirrors the `ptf-catalog`
+release (flat: `catalog.toml`, every `QSnnnnn.savf`, the group
+manifests) into its directory, checking the catalog against `--trust`
+keys and each PTF against the catalog's size and SHA-256, writing the
+catalog last and never one older than it serves; and it serves that
+directory under `/qs400`, a thread a connection, TLS when given a PEM
+chain and key, `GET /healthz` for a probe. `ptf/updated/Dockerfile`
+builds it as a static image (`docker build -f ptf/updated/Dockerfile .`).
 
 ## 8. Limits of this release
 

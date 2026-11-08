@@ -41,7 +41,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 /// The update attributes' data area in `QSYS`.
 const ATTRS: &str = "QSUPDATTR";
 /// The service a new system talks to.
-pub const DEFAULT_URL: &str = "https://updates.quartz.systems/qs400";
+pub const DEFAULT_URL: &str = "https://ptfs.quartzsystems.net/qs400";
 /// An order delivered.
 const ORDERED: &str = "CPZ8C38";
 /// Updates are available (to `QSYSOPR`).

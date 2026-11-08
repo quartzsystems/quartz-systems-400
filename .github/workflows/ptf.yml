@@ -11,7 +11,7 @@
 # well as v*). The PTF goes on a GitHub release of its own, and the
 # update service's directory (the signed catalog, every PTF, the
 # cumulative package) is republished on the rolling `ptf-catalog`
-# release, from which updates.quartz.systems is synced.
+# release, from which ptfs.quartzsystems.net is synced.
 
 name: ptf
 
@@ -158,6 +158,6 @@ jobs:
           if ! gh release view ptf-catalog >/dev/null 2>&1; then
             gh release create ptf-catalog --latest=false \
               --title "QS/400 update service catalog" \
-              --notes "The update service's directory: the signed catalog.toml, every PTF save file and the cumulative package manifests. updates.quartz.systems serves these files."
+              --notes "The update service's directory: the signed catalog.toml, every PTF save file and the cumulative package manifests. ptfs.quartzsystems.net serves these files."
           fi
           gh release upload ptf-catalog dist/catalog/* --clobber
