@@ -284,6 +284,13 @@ pub fn write(txn: &mut Txn<'_>, id: ObjectId, value: &DataAreaValue) -> Result<(
     let bytes = match (kind, value) {
         (DataAreaType::Char { len }, DataAreaValue::Char(s)) => {
             let mut out = vec![0x40u8; usize::from(len)];
+            // Blanks past the area's length are its padding (a CL
+            // program's work area is longer than the area): dropped.
+            let s = if s.chars().count() > usize::from(len) {
+                s.trim_end_matches(' ')
+            } else {
+                s.as_str()
+            };
             ccsid::encode_fixed(s, &mut out).map_err(|e| StoreError::BadValue {
                 what: e.to_string(),
             })?;

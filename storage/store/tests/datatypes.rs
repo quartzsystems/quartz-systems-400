@@ -142,6 +142,18 @@ fn data_areas() {
     assert!(
         matches!(&v, DataAreaValue::Char(s) if s.starts_with("edge") && s.ends_with("last") && s.len() == 1008)
     );
+    // A whole write longer than the area: blanks past it are padding (a
+    // CL work area), anything else does not fit.
+    let padded = format!("edge{}", " ".repeat(1996));
+    dtaara::write(&mut t, small, &DataAreaValue::Char(padded)).unwrap();
+    assert!(
+        matches!(dtaara::read(&mut t, small).unwrap(), DataAreaValue::Char(s) if s.trim_end() == "edge")
+    );
+    assert!(matches!(
+        dtaara::write(&mut t, small, &DataAreaValue::Char("x".repeat(1009))),
+        Err(StoreError::BadValue { .. })
+    ));
+    dtaara::write_substring(&mut t, small, 1005, 4, "last").unwrap();
     // Substring, whole write, type mismatch, overflow.
     dtaara::write_substring(&mut t, c, 7, 5, "world").unwrap();
     assert_eq!(
