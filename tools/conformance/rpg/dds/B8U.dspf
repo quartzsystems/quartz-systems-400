@@ -1,0 +1,11 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R CLR
+     A                                  1  2'B8U clear a format'
+     A            INP            5A  I  3  2
+     A            OUTF           5A  O  4  2
+     A            BTH            5A  B  5  2
+     A            HID            5A  H
+     A            NUM            3Y 0B  6  2
+     A            SUM           60A  O  8  2
+     A            SUM2          60A  O  9  2

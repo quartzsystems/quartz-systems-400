@@ -124,6 +124,8 @@ pub mod ids {
     pub const EXCEPT_UNUSED: &str = "RNF7602";
     /// A record format no operation names.
     pub const FORMAT_UNUSED: &str = "RNF7066";
+    /// `CLEAR` or `RESET` of a record format that changes no field.
+    pub const FORMAT_NO_OUTPUT: &str = "RNF7114";
     /// A search argument unlike the first key field.
     pub const KEY_MISMATCH: &str = "RNF7078";
     /// RPG blocks the file's records.

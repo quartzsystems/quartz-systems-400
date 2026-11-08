@@ -1,0 +1,9 @@
+# DSP023 V7R5M0 pub400.com
+# captured 2026-11-08 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8U clear a format
+   6| 000
+   8| [aaaaa][     ][     ][     ][0]
+   9| [     ][     ][     ][     ][0]

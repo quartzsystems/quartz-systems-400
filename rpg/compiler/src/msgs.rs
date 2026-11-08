@@ -356,6 +356,10 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF7018", "&1 is not a subroutine of this procedure."),
     ("RNF7150", "Record format &1 has fields that can be null."),
     (
+        "RNF7114",
+        "CLEAR or RESET of record format &1 changes no field; the program does not write the format.",
+    ),
+    (
         "RNF3803",
         "Field &1 is not in the external description; the subfield is ignored.",
     ),

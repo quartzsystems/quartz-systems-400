@@ -548,7 +548,60 @@ impl Gen<'_> {
             self.b.ins("mov $in.all_, *ZEROS");
             return;
         }
-        let Some(t) = self.target(&e) else { return };
+        // A record format: each of its fields.
+        let format = e
+            .name()
+            .and_then(|n| self.t.find(self.scope, n))
+            .and_then(|i| match self.t.syms[i].kind {
+                Some(Kind::Format(f)) => Some(f),
+                _ => None,
+            });
+        if let Some(f) = format {
+            // Naming the format here counts as using it.
+            self.used_formats.insert(f);
+            let fields = self.format_fields(f, all);
+            if fields.is_empty() {
+                let name = self.t.recfmts[f].name.clone();
+                self.err(ids::FORMAT_NO_OUTPUT, 0, name);
+            }
+            for name in fields {
+                let field = Expr::Ref {
+                    name,
+                    steps: Vec::new(),
+                    at: e.pos(),
+                };
+                self.clear_reset_one(reset, all, &field);
+            }
+            return;
+        }
+        self.clear_reset_one(reset, all, &e);
+    }
+
+    /// The fields `CLEAR` or `RESET` of record format `format` affects
+    /// (pub400, `DSP023`, `IO038`, `IO039`): of a display file's, those
+    /// the program sends (every usage but input only); of another file's,
+    /// all of them when the program adds records (an update file's are
+    /// left); with `*ALL`, every field.
+    fn format_fields(&self, format: usize, all: bool) -> Vec<String> {
+        let r = &self.t.recfmts[format];
+        let writes = self.files.get(r.file).is_some_and(|f| f.output);
+        r.fmt
+            .fields
+            .iter()
+            .zip(&r.names)
+            .filter(|(f, _)| {
+                all || match r.fmt.dsp {
+                    Some(_) => f.usage != 'I',
+                    None => writes,
+                }
+            })
+            .map(|(_, n)| n.clone())
+            .collect()
+    }
+
+    /// `CLEAR` or `RESET` of one variable, structure or field.
+    fn clear_reset_one(&mut self, reset: bool, all: bool, e: &Expr) {
+        let Some(t) = self.target(e) else { return };
         let id = t.sym;
         let whole = id.is_some_and(|i| place_of(self.t, i) == t.op);
         let global = id.is_some_and(|i| {
