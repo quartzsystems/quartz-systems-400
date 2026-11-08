@@ -491,10 +491,10 @@ Every marker left in the tree, generated from it.
 | `NEEDS-CODY` | `docs/PHASE12.md:173` | needs a test user profile on the primary |
 | `NEEDS-CODY` | `docs/PHASE12.md:175` | physical tape acceptance |
 | `NEEDS-CODY` | `docs/PHASE12.md:180` | `UI_OPEN_QUESTIONS.md` 4, 6, 8, 12 \| start-up response record; keys that carry data; the printer data stream; SST's audit code \| §1: the primary's telnet \| 4 closed; 6 open (a display-file probe); 8 a |
-| `NEEDS-CODY` | `docs/PHASE12.md:252` |  |
-| `NEEDS-CODY` | `docs/PHASE12.md:261` | ": Proxmox, ESXi, Workstation, VirtualBox, Hyper-V Gen2 and the Dell checklists; also try booting the ISO as a CD on real firmware \| open |
-| `NEEDS-CODY` | `docs/PHASE12.md:365` |  |
-| `NEEDS-CODY` | `docs/PHASE12.md:374` | 11 above) |
+| `NEEDS-CODY` | `docs/PHASE12.md:253` |  |
+| `NEEDS-CODY` | `docs/PHASE12.md:262` | ": Proxmox, ESXi, Workstation, VirtualBox, Hyper-V Gen2 and the Dell checklists; also try booting the ISO as a CD on real firmware \| open |
+| `NEEDS-CODY` | `docs/PHASE12.md:366` |  |
+| `NEEDS-CODY` | `docs/PHASE12.md:375` | 11 above) |
 | `BLOCKED(rel)` | `docs/PHASE3.md:147` | `RCVJRNE`'s |
 | `BLOCKED(rel)` | `docs/PHASE9.md:217` | the ABI items below |
 | `BLOCKED(rel)` | `docs/PHASE9.md:218` | no ILE binding of `QSOSSLSR` (`gsk_*`) exists; `net/tls` has the semantics only (`docs/CERTS.md`), so `CONFIG_H` is built without `HAVE_SSLAPI` |
