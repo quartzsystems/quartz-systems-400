@@ -681,10 +681,21 @@ impl Gen<'_> {
                     let subs = self.t.ds[*di].subfields.clone();
                     for s in subs {
                         let sym = self.t.syms[s].clone();
-                        if sym.name.is_empty() || matches!(sym.ty, Ty::Unknown) {
+                        // An unnamed (`*N`) subfield has no field in the
+                        // structure's type: its bytes at its offset.
+                        let unnamed = sym.name.is_empty() || sym.name == "*N";
+                        if matches!(sym.ty, Ty::Unknown)
+                            || (unnamed && (sym.dim > 0 || matches!(sym.ty, Ty::Ds(_))))
+                        {
                             continue;
                         }
-                        let sp = format!("{p}.{}", mangle(&sym.name));
+                        let sp = if unnamed {
+                            let a = self.b.reg();
+                            self.b.ins(format!("{a} = addr {p}"));
+                            format!("[{a} +{}]:{}", sym.offset, self.t.ir_storage(&sym))
+                        } else {
+                            format!("{p}.{}", mangle(&sym.name))
+                        };
                         self.clear_place(&V {
                             dim: sym.dim,
                             ..V::place(sym.ty.clone(), sp)

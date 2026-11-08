@@ -1,0 +1,265 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DCL201
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DCL201
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 ctl-opt dftactgrp(*no) main(MAIN);                                                                        000000     000200
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     3 dcl-f QSYSPRT printer(132);                                                                               000000     000300
+      4 // Unnamed INZ subfields under an array laid over them with POS(1), in                                    000000     000400
+      5 // a procedure's automatic storage; CLEAR and RESET of the structure.                                     000000     000500
+ *RNF2318 00      3 000300  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-     6 dcl-proc MAIN;                                                                                            000000     000600
+-     7   dcl-ds line len(132) end-ds;                                                                            000000     000700
+ ======>         aaaa
+ *RNF3530 00 a      000700  Data structure LINE has no valid subfields.
+      8   dcl-ds sortTable;                                                                                       000000     000800
+      9     *n char(12) inz('Name');                                                                              000000     000900
+     10     *n char(12) inz('Type');                                                                              000000     001000
+     11     *n char(12) inz('Status');                                                                            000000     001100
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     12     *n char(12) inz('Manufacturer');                                                                      000000     001200
+     13     *n char(12) inz('Model');                                                                             000000     001300
+     14     *n char(12) inz('Quantity');                                                                          000000     001400
+     15     sortNames char(12) dim(6) pos(1);                                                                     000000     001500
+     16   end-ds;                                                                                                 000000     001600
+     17   dcl-s sortKey int(10);                                                                                  000000     001700
+-    18   line = %char(%elem(sortNames));                                                                         000000     001800
+     19   write QSYSPRT line;                                                                                     000000     001900
+     20   for sortKey = 1 to %elem(sortNames);                                                               B01  000000     002000
+     21     line = %char(sortKey) + ' ' + %trim(sortNames(sortKey));                                          01  000000     002100
+     22     write QSYSPRT line;                                                                               01  000000     002200
+     23   endfor;                                                                                            E01  000000     002300
+     24   clear sortTable;                                                                                        000000     002400
+     25   line = '[' + sortTable + ']';                                                                           000000     002500
+     26   write QSYSPRT line;                                                                                     000000     002600
+     27   sortNames(2) = 'Changed';                                                                               000000     002700
+     28   reset sortTable;                                                                                        000000     002800
+     29   line = sortTable;                                                                                       000000     002900
+     30   write QSYSPRT line;                                                                                     000000     003000
+     31 end-proc;                                                                                                 000000     003100
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7534 10      3 000300  File QSYSPRT should be closed explicitly in a non-cycle
+                            module.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 3D     19      22      26
+                                                   30
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          MAIN              PROTOTYPE               2       6
+       Field References for subprocedure MAIN
+0         Field             Attributes         References (D=Defined M=Modified)
+          LINE              DS(132)                 7D     18M     19      21M
+                                                   22      25M     26      29M
+                                                   30
+          SORTKEY           I(10,0)                17D     20      21      21
+          SORTNAMES(6)      A(12)                  15D     18      20      21
+                                                   27M
+          SORTTABLE         DS(72)                  8D     24M     25      28M
+                                                   29
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7534 10      1 Files should be closed explicitly in a non-cycle module.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        1
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       31
+     Specifications  . . . . . . . . :       26
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        2
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DCL201 placed in library {lib}. 10 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
