@@ -179,31 +179,11 @@ pub fn parse(
     cond
 }
 
-/// Positions 8-16 as three slots of `N`/blank and two digits.
+/// Positions 8-16 as three slots of `N`/blank and two digits, through
+/// the check the printer file and the front end make.
 fn slots(text: &str, line: usize, group: &mut Vec<Ind>, diags: &mut Diagnostics) {
-    let chars: Vec<char> = text.chars().collect();
-    for slot in chars.chunks(3) {
-        let s: String = slot.iter().collect();
-        if s.trim().is_empty() {
-            continue;
-        }
-        let neg = match slot.first() {
-            Some('N') => true,
-            Some(' ') => false,
-            _ => {
-                diags.push(ids::bad_conditioning(line, text));
-                return;
-            }
-        };
-        let digits: String = slot.iter().skip(1).collect();
-        match digits.parse::<u8>() {
-            Ok(n) if (1..=99).contains(&n) => group.push(Ind {
-                number: n,
-                on: !neg,
-            }),
-            Ok(n) => diags.push(ids::indicator_range(line, n)),
-            Err(_) => diags.push(ids::bad_conditioning(line, text)),
-        }
+    for (number, on) in dds::cond::indicators(text, line, diags) {
+        group.push(Ind { number, on });
     }
 }
 

@@ -20,7 +20,7 @@ use crate::lex::{self, Keyword, NameType, Spec, keyword::CONSTANT};
 use crate::listing;
 use crate::model::{DataType, FileRef};
 use crate::refs::RefResolver;
-use crate::source::Source;
+use crate::source::{Source, SourceLine};
 
 pub use model::{Edit, PrtField, PrtFormat, PrtKind, PrtfDefinition, Spacing};
 
@@ -92,29 +92,13 @@ fn text_of(k: &Keyword) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Positions 8-16: up to three indicators, each `N` or blank then two
-/// digits.
-fn conditions(raw: &str, line: usize, diags: &mut Diagnostics) -> Vec<(u8, bool)> {
-    let chars: Vec<char> = raw.chars().collect();
-    let mut out = Vec::new();
-    for slot in chars.chunks(3) {
-        let s: String = slot.iter().collect();
-        if s.trim().is_empty() {
-            continue;
-        }
-        let neg = slot.first() == Some(&'N');
-        let digits: String = slot.iter().skip(1).collect();
-        match digits.trim().parse::<u8>() {
-            Ok(n) if (1..=99).contains(&n) && matches!(slot.first(), Some('N' | ' ')) => {
-                out.push((n, !neg));
-            }
-            _ => {
-                diags.push(ids::prtf_cond(line, raw));
-                return Vec::new();
-            }
-        }
+/// Positions 7-16: the joiner, then up to three indicators (the check
+/// `CRTDSPF` makes too).
+fn conditions(raw: &SourceLine, line: usize, diags: &mut Diagnostics) -> Vec<(u8, bool)> {
+    if !crate::cond::joiner_ok(raw.ch(7)) {
+        diags.push(ids::bad_conditioning(line, &raw.ch(7).to_string()));
     }
-    out
+    crate::cond::indicators(&raw.cols(8, 16), line, diags)
 }
 
 /// Positions 39-44: the line (0 for none) and the position, relative or
@@ -257,7 +241,7 @@ fn build(
 #[allow(clippy::too_many_lines)] // one arm per field keyword
 fn field(cx: &Ctx<'_>, spec: &Spec, diags: &mut Diagnostics) -> Option<PrtField> {
     let raw = &cx.source.lines()[spec.line];
-    let cond = conditions(&raw.cols(8, 16), spec.line, diags);
+    let cond = conditions(raw, spec.line, diags);
     let Some((line, pos, relative)) =
         location(&raw.cols(39, 41), &raw.cols(42, 44), spec.line, diags)
     else {

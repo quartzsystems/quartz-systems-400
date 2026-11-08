@@ -918,7 +918,8 @@ after the previous field), option indicators in 8-16, and `SKIPB`,
 `SKIPA`, `SPACEB`, `SPACEA`, `PAGNBR`, `DATE`, `TIME`, `EDTCDE`,
 `EDTWRD`, `UNDERLINE`, `HIGHLIGHT`, `INDARA`, `TEXT`, `REF`, `REFFLD`.
 `CPI`, `FONT`, `LPI` and their kin are accepted and change nothing
-(`DDS5005`). Messages `DDS5001`-`DDS5009` are the printer file's own.
+(`DDS5005`). Messages `DDS5001`-`DDS5008` are the printer file's own; malformed option
+indicators are `DDS6101` and `DDS6102`, the check display files make.
 
 A record of a format: option indicators first, one byte each (`1` on)
 for every indicator the format uses in ascending order, unless the

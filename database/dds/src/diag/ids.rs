@@ -833,13 +833,24 @@ pub fn prtf_ref(line: usize, field: &str) -> Diagnostic {
     )
 }
 
-/// Conditioning indicators are malformed.
-pub fn prtf_cond(line: usize, text: &str) -> Diagnostic {
+// Option indicators, shared by display and printer files (`cond`).
+
+/// Positions 7-16 are malformed.
+pub fn bad_conditioning(line: usize, text: &str) -> Diagnostic {
     err(
-        "DDS5009",
+        "DDS6101",
         line,
         format!(
-            "Positions 8-16 ({text:?}) must hold up to three indicators, each N or blank and 01-99"
+            "Conditioning {text:?} is not valid; position 7 takes A, O or blank and positions 8-16 up to three indicators, each N or blank and 01-99"
         ),
+    )
+}
+
+/// An indicator outside 01-99.
+pub fn indicator_range(line: usize, n: u8) -> Diagnostic {
+    err(
+        "DDS6102",
+        line,
+        format!("Indicator {n:02} is not valid; indicators are 01 to 99"),
     )
 }

@@ -16,6 +16,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod analysis;
 pub mod compile;
 pub mod cond;
 pub mod diag;

@@ -19,27 +19,10 @@ pub mod ids {
         Diagnostic::new(id, Severity::Warning, Some(line), text)
     }
 
-    // Columns and conditioning.
+    // Columns and conditioning. `DDS6101` and `DDS6102` are the `dds`
+    // crate's, shared with printer files and the front end.
 
-    /// Positions 7-16 are malformed.
-    pub fn bad_conditioning(line: usize, text: &str) -> Diagnostic {
-        err(
-            "DDS6101",
-            line,
-            format!(
-                "Conditioning {text:?} is not valid; position 7 takes A, O or blank and positions 8-16 up to three indicators, each N or blank and 01-99"
-            ),
-        )
-    }
-
-    /// An indicator outside 01-99.
-    pub fn indicator_range(line: usize, n: u8) -> Diagnostic {
-        err(
-            "DDS6102",
-            line,
-            format!("Indicator {n:02} is not valid; indicators are 01 to 99"),
-        )
-    }
+    pub use dds::diag::ids::{bad_conditioning, indicator_range};
 
     /// A `*DSn` that `DSPSIZ` does not define.
     pub fn unknown_size_condition(line: usize, name: &str) -> Diagnostic {

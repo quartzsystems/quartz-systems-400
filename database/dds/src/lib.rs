@@ -17,6 +17,7 @@
 #[cfg(feature = "front")]
 pub mod analysis;
 pub mod compile;
+pub mod cond;
 pub mod diag;
 pub mod lex;
 pub mod lf;

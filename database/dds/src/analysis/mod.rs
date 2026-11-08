@@ -35,6 +35,10 @@ pub enum Kind {
     Logical,
     /// `CRTPRTF` (`PRTF`).
     Printer,
+    /// `CRTDSPF` (`DSPF`): only the checks this crate shares with the
+    /// display-file compiler (option indicators, [`crate::cond`]);
+    /// `dspf::analysis::analyze` runs the compiler itself.
+    Display,
 }
 
 impl Kind {
@@ -45,6 +49,7 @@ impl Kind {
             "PF" => Some(Self::Physical),
             "LF" => Some(Self::Logical),
             "PRTF" => Some(Self::Printer),
+            "DSPF" => Some(Self::Display),
             _ => None,
         }
     }
@@ -91,23 +96,39 @@ const FILE_KWS: &[&str] = &["REF", "PFILE", "JFILE", "FORMAT", "REFACCPTH"];
 /// Analyze a DDS source.
 #[must_use]
 pub fn analyze(source: &Source, options: &Options<'_>) -> Analysis {
-    let (src, mut first) = crate::Source::from_text(&source.text);
     let resolver: &dyn RefResolver = options.refs.unwrap_or(&NoRefs);
     let opts = CompileOpts::default();
-    let (definition, diags) = match options.kind {
+    analyze_with(source, |src| match options.kind {
         Kind::Physical => {
-            let c = compile_pf(&src, resolver, &opts);
+            let c = compile_pf(src, resolver, &opts);
             (c.definition.map(Definition::Physical), c.diagnostics)
         }
         Kind::Logical => {
-            let c = compile_lf(&src, resolver, &opts);
+            let c = compile_lf(src, resolver, &opts);
             (c.definition.map(Definition::Logical), c.diagnostics)
         }
         Kind::Printer => {
-            let c = compile_prtf(&src, resolver, &opts);
+            let c = compile_prtf(src, resolver, &opts);
             (c.definition.map(Definition::Printer), c.diagnostics)
         }
-    };
+        Kind::Display => {
+            let mut d = Diagnostics::default();
+            lex::lex(src, &mut d);
+            crate::cond::check_lines(src, &mut d);
+            (None, d.into_vec())
+        }
+    })
+}
+
+/// Analyze a DDS source whose diagnostics and definition come from
+/// `compile` (another crate's compiler: `dspf` passes `CRTDSPF`'s).
+#[must_use]
+pub fn analyze_with(
+    source: &Source,
+    compile: impl FnOnce(&crate::Source) -> (Option<Definition>, Vec<crate::Diagnostic>),
+) -> Analysis {
+    let (src, mut first) = crate::Source::from_text(&source.text);
+    let (definition, diags) = compile(&src);
     first.extend(diags);
     let specs = lex::lex(&src, &mut Diagnostics::default());
     let lines = Lines::new(&source.text);
