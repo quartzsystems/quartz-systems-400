@@ -9,6 +9,8 @@ section (see `docs/releasing.md`). The full notes of a release are
 
 ## Unreleased
 
+## 1.1.0 (2026-11-08)
+
 ### QS/400 V1R1M0
 
 The first release of QS/400 meant for use outside development: the system
