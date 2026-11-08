@@ -553,14 +553,14 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `docs/STORAGE_SERVICE.md:459` | refuse the program's own change of the same record ( |
 | `BLOCKED(rel)` | `docs/SYSAPI.md:568` | the DRDA requester), and a CLI call made by a procedure |
 | `BLOCKED(rel)` | `docs/TCPIP.md:1166` | VT and 3270 sessions and |
-| `BLOCKED(rel)` | `docs/WORKMGMT.md:1249` | a program running |
+| `BLOCKED(rel)` | `docs/WORKMGMT.md:1250` | a program running |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/compdiags.rs:11` | `OPTION(*EVENTF)` is accepted by every compiler command |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/dbmoncmd.rs:85` | a monitor watches one job or every job. |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/dbmoncmd.rs:307` | the planner makes no time or storage estimate a |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/dbmoncmd.rs:321` | query options come from OVERRIDE_QAQQINI, not a |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/jrncmd.rs:58` | CMPJRNIMG's entry selection (sequence numbers, |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/jrncmd.rs:64` | a receiver range other than *CURRENT is not taken. |
-| `BLOCKED(rel)` | `lic/slic/src/cpp/rpg/mod.rs:329` | CRTPGM does not carry a module's statements. |
+| `BLOCKED(rel)` | `lic/slic/src/cpp/rpg/mod.rs:352` | CRTPGM does not carry a module's statements. |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/savcmd.rs:1450` | SAVSAVFDTA's OUTPUT(*PRINT\|*OUTFILE) listing and |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:87` | the plan cache (`sql::exec::plan::cache`) keeps |
 | `BLOCKED(rel)` | `lic/slic/src/cpp/sqlinfcmd.rs:98` | a package's statements are kept (`db::sqlpkg`) |
