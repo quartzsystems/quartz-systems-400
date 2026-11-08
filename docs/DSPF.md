@@ -242,7 +242,7 @@ allowed on every keyword.
 | `SFLNXTCHG` | record | supported |  |
 | `SFLPAG` | record | supported | per display size with *DSn; at most SFLSIZ; the page must fit the display |
 | `SFLPGMQ` | field | supported | shapes the field: character 10 or 276 |
-| `SFLRCDNBR` | field | supported | CURSOR, *TOP; the field is zoned 4,0 with usage O or H |
+| `SFLRCDNBR` | field | supported | CURSOR, *TOP; the field is zoned 4,0 with usage O or H; no option indicators (`DDS6207`; pub400's `CPD7488`) |
 | `SFLRNA` | record | supported |  |
 | `SFLROLVAL` | field | supported | the field is zoned 4,0 input-capable |
 | `SFLRTNSEL` | record | accepted and stored |  |
@@ -353,7 +353,8 @@ record.
 `SFLEND` needs an option indicator (`DDS6519`; pub400's `CPD7490`). A
 subfile control record with fields both above and below its subfile's
 page overlaps the page, since a record holds the lines from its first
-field to its last (`DDS6520`; `CPD7812`). Fields conditioned by option
+field to its last (`DDS6520`; `CPD7812`), in a window as on the full display
+(pub400, 2026-11-08). Fields conditioned by option
 indicators may share positions (`N40` and `40` on one spot). An
 input-capable numeric-only (`Y`) field without an edit code takes its
 length on the display, no sign position (`S` fields keep one).
