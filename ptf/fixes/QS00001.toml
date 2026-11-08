@@ -2,8 +2,9 @@
 # licensed under the terms of the MIT license which can be found in the
 # root directory of this project.
 #
-# QS00001: the web products after V1R1M0. A LIC PTF: the job program is
-# in the UKI, so the PTF carries this build's slot A and B images.
+# QS00001: every fix after V1R1M0. A LIC PTF: the job program is in the
+# UKI, so the PTF carries this build's slot A and B images, and the two
+# message files whose messages changed.
 # `cargo run -p build -- ptf ptf/fixes/QS00001.toml`; the tag
 # `ptf-QS00001` builds and signs it in CI (docs/releasing.md).
 
@@ -12,25 +13,47 @@ product = "QS00SS1"
 kind = "delayed"
 lic = "*BUILD"
 cover = """
-Access for Web 5250 sessions accept keys and clicks; web pages change without reloading.
+Fixes after V1R1M0: CL, RPG, display files, menus, TLS servers and the web products.
 
 Problem corrected:
-- The Access for Web 5250 display opened its WebSocket at a malformed
-  address, so the screen stayed a picture: keys, clicks and typing did
-  nothing.
-- Every link and form in HTTP Server Administration, Navigator and
-  Access for Web loaded a whole new page.
+- CL: a variable in a qualified name (&LIB/NAME, LIB/&NAME) was not
+  declared; a MONMSG EXEC(DO) group ran when no message came; CHGDTAARA
+  of a *CHAR data area shorter than 2000 failed.
+- CRTSQLRPGI whose compile failed ended with RNS9310 instead of SQL9001.
+- RPG: CLEAR and RESET of a record format were refused (RNF7419); CLEAR
+  of a structure with unnamed subfields failed to compile (RNF0001).
+- CRTDSPF, CRTPRTF, CRTPGM and CRTSRVPGM ignored REPLACE; CRTDDMF with
+  REPLACE(*YES) deleted a file that was not a DDM file.
+- RTNCSRLOC returned nothing; a display file's INFDS lacked the cursor
+  location on one path; RTNCSRLOC's four-field form was refused.
+- A printer file reported conditioning errors as DDS5009; they are now
+  DDS6101 and DDS6102, as for display files.
+- GO could not show TYPE(*PGM) or TYPE(*DSPF) menus and reported every
+  failure as CPF9801.
+- Telnet never listened on port 992; a TLS port that could not start
+  said so only on the console.
+- The Access for Web 5250 display did not take keys or clicks; links and
+  forms in the three web products loaded whole pages.
 
 What the PTF changes:
-- The 5250 display connects, takes keys and mouse clicks, keeps the
-  status bar's cursor position current, and switches its menu bar and
-  scale without leaving the page.
-- Links, forms, Back and Forward move between pages in place in the
-  three web products; downloads are saved without leaving the page.
-  Pages still work with script turned off.
+- Replaces the Licensed Internal Code, and message files QSYS/QTCPMSG
+  (TCP1A63, a TLS port not started, sent to QSYSOPR and the job log) and
+  QSYS/QSQLMSG (SQL9001 covers a failed precompile or compile).
+- A replaced object that a job holds goes to QRPLOBJ.
 
 Special instructions:
 - This PTF replaces the Licensed Internal Code. APYPTF writes the new
   image into the slot not in use; the next IPL starts from it.
   RMVPTF and an IPL return to the previous image.
+- Recompile CL programs that failed with CPD0727 on a qualified name.
 """
+
+[[object]]
+library = "QSYS"
+name = "QTCPMSG"
+type = "*MSGF"
+
+[[object]]
+library = "QSYS"
+name = "QSQLMSG"
+type = "*MSGF"
