@@ -267,6 +267,10 @@ ptf/          PTFs (docs/PTF.md)
                 lic/slic/src/cpp/ptfcmd.rs (the database in QSYS/QSPTFDB, delayed PTFs at IPL)
   update/       the update service (docs/UPDATE_PROTOCOL.md): the signed catalog, orders,
                 the HTTP client SNDPTFORD and QSCHKUPD use, a reference server over a directory
+  ptfbuild/     PTFs made at build time (`build ptf`): the manifest, the shipped objects in a
+                store in memory (lpbuild's), the UKIs; the build tool's side tools/build/src/image/ptf.rs
+  fixes/        the PTFs' manifests, QSnnnnn.toml (`lic = "*BUILD"` for a LIC PTF); a tag
+                ptf-QSnnnnn publishes one (.github/workflows/ptf.yml, docs/releasing.md)
 service/      service: the problem log (docs/SERVICE.md)
   prb/          problem entries and statuses, the log (create, list, delete, report) and
                 analyze.rs (QSYSOPR messages, hardware, dumps, ANZPRB), contact information.
@@ -581,6 +585,9 @@ cargo run -p build -- uki
 cargo run -p build -- disk
 cargo run -p build -- manifest
 cargo run -p build -- lp          # signed product loads from licpgm/products/ into target/images/lp/
+cargo run -p build -- ptf ptf/fixes/QS00001.toml   # a signed PTF into target/images/ptf/ (docs/PTF.md section 8)
+cargo run -p build -- ptf-catalog DIR [--hiper QSnnnnn]   # the update service's directory over DIR/ptf/*.savf
+cargo run -p conformance -- --only 164   # a LIC PTF end to end: update service, slot B, back to A (own guest)
 cargo test -p savfmt -p saverst   # the save stream and the save/restore engine
 cargo test -p tape -p optical -p imgclg   # tape, optical, image catalogs
 cargo test -p ptf -p prb          # PTFs, the problem log

@@ -9,6 +9,14 @@ section (see `docs/releasing.md`). The full notes of a release are
 
 ## Unreleased
 
+- Access for Web: the 5250 display connects its WebSocket and takes keys,
+  clicks and typing; its menu bar and scale switch without leaving the page.
+- HTTP Server Administration, Navigator and Access for Web move between
+  pages in place (`qsweb`'s `qsnav.js`); pages still work without script.
+- PTFs are built on the host (`build ptf`, `build ptf-catalog`) and
+  published from a `ptf-QSnnnnn` tag; QEMU step 164 takes a LIC PTF from
+  the update service through slot B and back.
+
 ## 1.1.0 (2026-11-08)
 
 ### QS/400 V1R1M0

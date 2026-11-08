@@ -246,6 +246,39 @@ Unknown keys are refused, so a misspelt field does not build a PTF that
 silently lacks it. The objects are signed where they are (their headers
 carry the signature they are saved with) and saved in library order.
 
+## 8. Building and publishing
+
+A PTF Quartz ships is built on the build host, not on a system, from a
+manifest in the tree, `ptf/fixes/QSnnnnn.toml`: the `QSCRTPTF` manifest
+(§7) with its paths relative to the manifest, and `lic = "*BUILD"` for
+this build's slot A and B UKIs. Code that runs in the UKI (`slic`, every
+job's program, the web products compiled into it) can only reach an
+installed system as a LIC PTF.
+
+- `cargo run -p build -- ptf ptf/fixes/QSnnnnn.toml` builds it
+  (`ptf/ptfbuild`): replacement objects come from a store in memory
+  holding what the product ships (as `build lp` makes it), the UKIs are
+  signed for Secure Boot with the db key, and the whole PTF with the
+  build's ed25519 key (`QS400_SIGNING_KEY`, else the development key).
+  The result, `target/images/ptf/QSnnnnn.savf`, is checked to open
+  against that key; its cover letter is beside it as `QSnnnnn.txt`.
+- `cargo run -p build -- ptf-catalog DIR` publishes every PTF under
+  `DIR/ptf/` as the update service's directory
+  (`docs/UPDATE_PROTOCOL.md` §7): the signed catalog one sequence past
+  the one already in `DIR` (the release's baseline is 1), the HIPER marks
+  it had plus `--hiper`, and a cumulative package `Cyyddd110` of the day
+  listing every PTF, a level higher when republished the same day.
+- A tag `ptf-QSnnnnn` runs `.github/workflows/ptf.yml`: the manifest must
+  name the PTF, `VERSION` must be a published release, `ci.yml` runs, then
+  the PTF and the catalog are built with the `release` environment's keys
+  and published (`docs/releasing.md`, "PTFs").
+
+QEMU step 164 takes a LIC PTF through the whole path in a guest of its
+own with a writable OVMF variable store: built as `build ptf` builds it,
+served by the reference server on the host, ordered with `SNDPTFORD`,
+loaded, applied (slot B written), the IPL from slot B (`C6004503`,
+Temporarily applied, `##MACH#B`), removed, and the IPLs back on slot A.
+
 ## Frozen at V1R1M0
 
 Frozen: the PTF header (now with an explicit `VERSION` constant, the value the header always carried), the signed package, the manifest of `QSCRTPTF` and PTF groups.

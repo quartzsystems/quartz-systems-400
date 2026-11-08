@@ -113,3 +113,46 @@ QS400_SIGNING_KEY=/media/keys/qs400-release.ed25519 \
 QS400_SB_KEY=/media/keys/qs400-db.key QS400_SB_CERT=/media/keys/qs400-db.cer \
   cargo run -p build -- release
 ```
+
+## PTFs
+
+A fix for a published release goes out as a PTF (`docs/PTF.md` §8), not
+a new release. Code in the UKI needs a LIC PTF (`lic = "*BUILD"`).
+
+1. Write `ptf/fixes/QSnnnnn.toml` on main: the next free number, the
+   product, `kind`, the objects or `lic = "*BUILD"`, the cover letter
+   (its first line is the catalog's text). Build it once by hand to see
+   it package: `cargo run -p build -- ptf ptf/fixes/QSnnnnn.toml`.
+2. Commit, tag and push:
+
+   ```sh
+   git commit -am "PTF QSnnnnn"
+   git tag ptf-QSnnnnn
+   git push origin main ptf-QSnnnnn
+   ```
+
+Pushing the tag runs `.github/workflows/ptf.yml`:
+
+1. **manifest**: the tag is `ptf-` and a PTF identifier, the manifest
+   names it, and `VERSION` has its release tag (a PTF is for a published
+   release; `VERSION` stays at that release until the next one).
+2. **ci**: every job of `ci.yml`.
+3. **build**: `build all --release` with the release key (the UKIs trust
+   it), `build ptf` signed with the release and Secure Boot keys, then
+   `build ptf-catalog` over every PTF the `ptf-catalog` release holds
+   plus this one.
+4. **publish**: a GitHub release `ptf-QSnnnnn` (not marked latest) with
+   the save file, its SHA-256 and the cover letter as its notes, and the
+   update service's whole directory uploaded again to the rolling
+   `ptf-catalog` release: `catalog.toml`, every `QSnnnnn.savf`, the
+   cumulative package manifests. `updates.quartz.systems/qs400/v1/` serves
+   those files (`docs/UPDATE_PROTOCOL.md` §7).
+
+The `release` environment's deployment rule must admit `ptf-*` tags as
+well as `v*` (repository settings, Environments, `release`, Deployment
+branches and tags); until it does, GitHub refuses the build job the
+environment and the run fails before anything is signed. Runs are one at a time, since each takes the catalog one sequence
+further.
+
+On a system the PTF arrives with `SNDPTFORD PTFID((QSnnnnn))` (or the
+save file by hand), then `LODPTF`, `APYPTF` and, for a LIC PTF, an IPL.
