@@ -211,11 +211,7 @@ impl Suite {
         want(
             &on_b,
             "DSPPTF on slot B",
-            &[
-                "IPL source ##MACH#B",
-                PTF,
-                "Temporarily applied",
-            ],
+            &["IPL source ##MACH#B", PTF, "Temporarily applied"],
         )?;
 
         // Removed: the next IPL goes back to slot A, once and for good.
