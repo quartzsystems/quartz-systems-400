@@ -286,8 +286,8 @@ are real defects of the golden page, or data:
   the picture becomes a canvas of its size drawn with the same font and
   rules; keys go through the session's keyboard map; hotspots, selection,
   Copy and Paste; the menu bar and Scale switch in place, and the status
-  bar's cursor follows the screen. Every other page of the product moves
-  in place through `qsweb`'s `qsnav.js` (`Product::nav_script`; WEB_STYLE.md). The WebSocket (`qsweb::ws`) carries the whole screen,
+  bar's cursor follows the screen. Every other page of the product (and of HTTP Server Administration
+  and Navigator) moves in place through `qsweb`'s `qsnav.js` (`Product::nav_script`; WEB_STYLE.md). The WebSocket (`qsweb::ws`) carries the whole screen,
   then the rows that changed, one style letter a cell; a nondisplay
   field's characters never go out; no password crosses it.
 - Policies: `5250.start` for the area, `5250.save` for every change,

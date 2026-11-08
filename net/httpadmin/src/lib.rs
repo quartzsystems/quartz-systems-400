@@ -63,7 +63,7 @@ pub static PRODUCT: Product = Product {
     prefix: "/qs400/httpadmin",
     nav: NAV,
     system_label: "System",
-    nav_script: false,
+    nav_script: true,
 };
 
 /// The administration instance's own name.

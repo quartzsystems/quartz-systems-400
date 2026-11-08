@@ -52,6 +52,8 @@
   function swap(doc, url, how, hash) {
     document.title = doc.title;
     document.body.innerHTML = doc.body.innerHTML;
+    // Landing on the same page (a tree toggle, a posted form) adds no entry.
+    if (how === "push" && url === location.href) { how = "replace"; }
     if (how === "push") { history.pushState({ qsnav: 1 }, "", url); }
     else if (how === "replace") { history.replaceState({ qsnav: 1 }, "", url); }
     var at = hash && document.getElementById(hash.slice(1));
