@@ -59,6 +59,10 @@ pub enum Tok {
     Hex(Vec<u8>),
     /// `&NAME`, upper case, without the `&`.
     Var(String),
+    /// `&LIB/NAME`, `LIB/&NAME`, `&A/&B`: parts joined by `/` with no
+    /// blanks, at least one a variable, in the order typed. A
+    /// qualified name where a parameter takes one, else a division.
+    Qual(Vec<Tok>),
     /// An operator: `+ - * /`, or `||`, `|<`, `|>` as `*CAT`, `*BCAT`,
     /// `*TCAT`.
     Op(&'static str),
@@ -108,6 +112,7 @@ impl Tok {
                 s
             }
             Self::Var(v) => format!("&{v}"),
+            Self::Qual(parts) => parts.iter().map(Tok::text).collect::<Vec<_>>().join("/"),
             Self::Op(o) => (*o).to_string(),
             Self::Kw { name, pfx, args } => {
                 format!("{}{name}({})", pfx.map_or("", Sel::text), Self::join(args))
@@ -121,6 +126,27 @@ impl Tok {
     #[must_use]
     pub fn join(toks: &[Tok]) -> String {
         toks.iter().map(Tok::text).collect::<Vec<_>>().join(" ")
+    }
+
+    /// Tokens for an expression: each `Qual` at this level becomes its
+    /// parts with `/` between them, a division.
+    #[must_use]
+    pub fn divisions(toks: &[Tok]) -> Vec<Tok> {
+        let mut out = Vec::with_capacity(toks.len());
+        for t in toks {
+            match t {
+                Self::Qual(parts) => {
+                    for (i, p) in parts.iter().enumerate() {
+                        if i > 0 {
+                            out.push(Self::Op("/"));
+                        }
+                        out.push(p.clone());
+                    }
+                }
+                other => out.push(other.clone()),
+            }
+        }
+        out
     }
 }
 
@@ -282,9 +308,11 @@ impl Lexer {
                 }
                 '\'' => out.push(Tok::Str(self.quoted()?)),
                 '&' if self.peek2().is_some_and(is_name_char) => {
-                    self.at += 1;
                     let w = self.bare();
-                    out.push(Tok::Var(w.to_ascii_uppercase()));
+                    out.push(
+                        self.qualified(&w)
+                            .unwrap_or_else(|| Tok::Var(w[1..].to_ascii_uppercase())),
+                    );
                 }
                 '%' if self.peek2().is_some_and(is_name_char) => {
                     self.at += 1;
@@ -385,6 +413,8 @@ impl Lexer {
                             pfx,
                             args,
                         });
+                    } else if let Some(q) = self.qualified(&w) {
+                        out.push(q);
                     } else {
                         out.push(self.number_or_word(w));
                     }
@@ -412,6 +442,28 @@ impl Lexer {
             self.at += 1;
         }
         self.chars[start..self.at].iter().collect()
+    }
+
+    /// A bare chunk split on `/` when a part is a variable: every part
+    /// a `&NAME` or a word without `&`, none empty.
+    fn qualified(&self, w: &str) -> Option<Tok> {
+        if !w.contains('/') || !w.contains('&') {
+            return None;
+        }
+        let mut parts = Vec::new();
+        for p in w.split('/') {
+            if let Some(name) = p.strip_prefix('&') {
+                if name.is_empty() || !name.chars().all(is_name_char) {
+                    return None;
+                }
+                parts.push(Tok::Var(name.to_ascii_uppercase()));
+            } else if p.is_empty() || p.contains('&') {
+                return None;
+            } else {
+                parts.push(self.number_or_word(p.to_string()));
+            }
+        }
+        Some(Tok::Qual(parts))
     }
 
     fn number_or_word(&self, w: String) -> Tok {
@@ -612,6 +664,52 @@ mod tests {
             Tok::join(&c.toks),
             "FROMFILE(A/B) TOFILE(*PRINT) INCREL((*IF F1 *EQ 'x''y') (*AND F2 *GT 5))"
         );
+    }
+
+    #[test]
+    fn variables_in_qualified_names() {
+        let v = |n: &str| Tok::Var(n.into());
+        let w = |n: &str| Tok::Word(n.into());
+        let c = t(
+            "CRTDSPF FILE(&lib/&Mbr) SRCFILE(&LIB/QDDSSRC) SRCMBR(INVMGR/&MBR) \
+                   X(*LIBL/&N) Y(*CURLIB/&N) Z(QGPL/F) &A/2",
+        );
+        let args: Vec<&Tok> = c
+            .toks
+            .iter()
+            .map(|t| match t {
+                Tok::Kw { args, .. } => &args[0],
+                other => other,
+            })
+            .collect();
+        assert_eq!(*args[0], Tok::Qual(vec![v("LIB"), v("MBR")]));
+        assert_eq!(*args[1], Tok::Qual(vec![v("LIB"), w("QDDSSRC")]));
+        assert_eq!(*args[2], Tok::Qual(vec![w("INVMGR"), v("MBR")]));
+        assert_eq!(*args[3], Tok::Qual(vec![w("*LIBL"), v("N")]));
+        assert_eq!(*args[4], Tok::Qual(vec![w("*CURLIB"), v("N")]));
+        assert_eq!(*args[5], w("QGPL/F"));
+        assert_eq!(*args[6], Tok::Qual(vec![v("A"), Tok::Num("2".into())]));
+        assert_eq!(
+            Tok::join(&c.toks[..2]),
+            "FILE(&LIB/&MBR) SRCFILE(&LIB/QDDSSRC)"
+        );
+        // Not a qualified name: an empty part, a stray `&`, a path.
+        assert_eq!(t("X &A/").toks[0], v("A/"));
+        assert_eq!(t("X A/B&C").toks[0], w("A/B&C"));
+        assert_eq!(t("X /HOME/&X").toks[0], w("/HOME/&X"));
+    }
+
+    #[test]
+    fn division_with_and_without_blanks() {
+        let v = |n: &str| Tok::Var(n.into());
+        let c = t("CHGVAR &X (&A / &B)");
+        assert_eq!(c.toks[1], Tok::Paren(vec![v("A"), Tok::Op("/"), v("B")]));
+        let c = t("CHGVAR &X (&A/&B)");
+        let Tok::Paren(items) = &c.toks[1] else {
+            panic!()
+        };
+        assert_eq!(items, &vec![Tok::Qual(vec![v("A"), v("B")])]);
+        assert_eq!(Tok::divisions(items), vec![v("A"), Tok::Op("/"), v("B")]);
     }
 
     #[test]

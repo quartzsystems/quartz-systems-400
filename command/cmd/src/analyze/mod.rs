@@ -352,6 +352,16 @@ pub(crate) fn is_qual(parm: &Parm) -> bool {
     matches!(parm.ty, ParmType::Qual { .. })
 }
 
+/// Whether a parameter takes a number: there `&A/&B` is a division,
+/// not a qualified name.
+#[must_use]
+pub fn is_numeric(parm: &Parm) -> bool {
+    matches!(
+        parm.ty,
+        ParmType::Dec | ParmType::Int2 | ParmType::Int4 | ParmType::Uint2 | ParmType::Uint4
+    )
+}
+
 /// The tokens of a default's source text.
 pub(crate) fn default_tokens(text: &str, opts: Options) -> Vec<Tok> {
     token::tokenize_list(text, opts).unwrap_or_default()

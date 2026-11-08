@@ -262,6 +262,16 @@ pub fn statement(t: &Tokens, n: usize, line: usize, text: &str) -> Result<Stmt, 
             let pgm = arg(toks, "PGM", 0).ok_or("CALL needs PGM")?;
             let target = match pgm.as_slice() {
                 [Tok::Var(v)] => CallTarget::Var(v.clone()),
+                [Tok::Qual(parts)] => match parts.as_slice() {
+                    [
+                        lib @ (Tok::Var(_) | Tok::Word(_)),
+                        name @ (Tok::Var(_) | Tok::Word(_)),
+                    ] => CallTarget::Parts {
+                        name: name.clone(),
+                        lib: lib.clone(),
+                    },
+                    _ => return Err(format!("{} is not a program name", pgm[0].text())),
+                },
                 other => {
                     let (name, lib) = qualified(other)?;
                     CallTarget::Name(name, lib)

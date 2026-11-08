@@ -301,6 +301,14 @@ pub enum CallTarget {
     Name(String, String),
     /// `&VAR` holding the name (10) or the name and library (20).
     Var(String),
+    /// `&LIB/NAME`, `LIB/&NAME`, `&LIB/&NAME`: each part a `Var` or a
+    /// `Word`.
+    Parts {
+        /// The program.
+        name: Tok,
+        /// The library.
+        lib: Tok,
+    },
 }
 
 /// A data area and the substring of it.

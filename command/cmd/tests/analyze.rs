@@ -415,3 +415,66 @@ fn variables_in_a_program() {
         matches!(rel, Value::List(items) if matches!(&items[0], Value::Elems(e) if matches!(e[3], Some(Value::Expr(_)))))
     );
 }
+
+#[test]
+fn variables_in_qualified_names() {
+    use cmd::analyze::{VarInfo, VarType};
+    let mut src = source();
+    let vars = |name: &str| -> Option<VarInfo> {
+        let (ty, len) = match name {
+            "LIB" | "MBR" => (VarType::Char, 10),
+            "N" => (VarType::Dec, 5),
+            _ => return None,
+        };
+        Some(VarInfo { ty, len, dec: 0 })
+    };
+    let mut env = Env::new(&mut src);
+    env.vars = Some(&vars);
+    env.setting.program = true;
+    let var = |n: &str| Value::Var(n.into());
+    let chr = |n: &str| Value::Char(n.into());
+    let from = |env: &mut Env<'_>, text: &str| {
+        analyze(env, text)
+            .unwrap()
+            .get("FROMFILE")
+            .unwrap()
+            .value
+            .clone()
+            .unwrap()
+    };
+    // Parts in definition order: the object, then the library.
+    let cases = [
+        ("CPYF &LIB/F", vec![chr("F"), var("LIB")]),
+        ("CPYF INVMGR/&MBR", vec![var("MBR"), chr("INVMGR")]),
+        ("CPYF FROMFILE(&LIB/&MBR)", vec![var("MBR"), var("LIB")]),
+        ("CPYF FROMFILE((&LIB/&MBR))", vec![var("MBR"), var("LIB")]),
+        ("CPYF *LIBL/&MBR", vec![var("MBR"), chr("*LIBL")]),
+        ("CPYF *CURLIB/&MBR", vec![var("MBR"), chr("*CURLIB")]),
+    ];
+    for (text, want) in cases {
+        assert_eq!(from(&mut env, text), Value::Qual(want), "{text}");
+    }
+    // Each part is checked as a lone variable would be.
+    for (text, id) in [
+        ("CPYF &N/F", "CPD0084"),
+        ("CPYF QGPL/&N", "CPD0084"),
+        ("CPYF &NOPE/F", "CPD0727"),
+        ("CPYF QGPL/&NOPE", "CPD0727"),
+        ("CPYF A/B/&MBR", "CPD0045"),
+    ] {
+        assert_eq!(analyze(&mut env, text).unwrap_err().msgid(), id, "{text}");
+    }
+    // Where a number goes, `&A/&B` divides.
+    let r = analyze(&mut env, "CPYF A ERRLVL(&N/&N)").unwrap();
+    assert!(matches!(
+        r.get("ERRLVL").unwrap().value,
+        Some(Value::Expr(_))
+    ));
+    // A qualified name without the declarations is for CL programs.
+    let mut src = source();
+    let mut env = Env::new(&mut src);
+    assert_eq!(
+        analyze(&mut env, "CPYF &LIB/F").unwrap_err().msgid(),
+        "CPD0103"
+    );
+}

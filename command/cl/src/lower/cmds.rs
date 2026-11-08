@@ -10,7 +10,7 @@
 
 use cmd::analyze::{Env, Resolved};
 use cmd::block::{self, Patch};
-use cmd::def::ParmType;
+use cmd::def::{CmdDef, Parm, ParmType};
 use cmd::token::{Tok, Tokens};
 use cmd::value::Value;
 
@@ -84,6 +84,27 @@ impl Gen<'_, '_> {
                 self.ins(&format!("call {name}({list})"));
             }
             CallTarget::Name(name, lib) => self.ins(&format!("call {lib}/{name}({list})")),
+            CallTarget::Parts { name, lib } => {
+                let mut parts = Vec::new();
+                for t in [name, lib] {
+                    parts.push(match t {
+                        Tok::Var(v) => match self.t.var(v) {
+                            Some(var) if var.ty == VarType::Char => Value::Var(v.clone()),
+                            Some(_) => {
+                                let why = format!("&{v} is not *CHAR");
+                                return self.err(s.line, ids::EXPRESSION, why);
+                            }
+                            None => {
+                                let why = format!("&{v} is not declared");
+                                return self.err(s.line, ids::UNDECLARED, why);
+                            }
+                        },
+                        other => Value::Char(other.text()),
+                    });
+                }
+                let q = self.qual20(&Value::Qual(parts));
+                self.ins(&format!("call {q}({list})"));
+            }
             CallTarget::Var(v) => match self.t.var(v) {
                 Some(var) => self.ins(&format!("call {}({list})", var.place())),
                 None => self.err(s.line, ids::UNDECLARED, format!("&{v} is not declared")),
@@ -579,7 +600,7 @@ impl Gen<'_, '_> {
         if direct {
             self.direct(s, &r);
         } else {
-            self.runtime(s, toks);
+            self.runtime(s, &divide(&r.def, toks));
         }
     }
 
@@ -1235,6 +1256,38 @@ fn simple(v: Option<&Value>) -> bool {
     }
 }
 
+/// The command's tokens with `&A/&B` in a numeric parameter made a
+/// division in parentheses, as the analyzer bound it; elsewhere it
+/// stays a qualified name.
+fn divide(def: &CmdDef, toks: &Tokens) -> Tokens {
+    fn div(t: &Tok) -> Tok {
+        match t {
+            Tok::Qual(_) => Tok::Paren(Tok::divisions(std::slice::from_ref(t))),
+            Tok::Paren(items) => Tok::Paren(items.iter().map(div).collect()),
+            other => other.clone(),
+        }
+    }
+    let numeric = |p: Option<&Parm>| p.is_some_and(cmd::analyze::is_numeric);
+    let mut out = toks.clone();
+    let mut pos = 0;
+    for t in &mut out.toks {
+        match t {
+            Tok::Kw { name, args, .. } => {
+                if numeric(def.index(name).map(|i| &def.parms[i])) {
+                    *args = args.iter().map(div).collect();
+                }
+            }
+            other => {
+                if numeric(def.parms.get(pos)) {
+                    *other = div(other);
+                }
+                pos += 1;
+            }
+        }
+    }
+    out
+}
+
 /// A token as command text with variables and expressions replaced by
 /// `&n` placeholders, the expressions collected.
 fn template(t: &Tok, pieces: &mut Vec<Expr>) -> String {
@@ -1242,6 +1295,15 @@ fn template(t: &Tok, pieces: &mut Vec<Expr>) -> String {
         Tok::Var(v) => {
             pieces.push(Expr::Var(v.clone()));
             format!("&{}", pieces.len())
+        }
+        // A qualified name: each part its own placeholder or word.
+        Tok::Qual(parts) => parts
+            .iter()
+            .map(|p| template(p, pieces))
+            .collect::<Vec<_>>()
+            .join("/"),
+        Tok::Paren(items) if matches!(items.as_slice(), [Tok::Qual(_)]) => {
+            format!("({})", template(&items[0], pieces))
         }
         Tok::Builtin { .. } => match crate::parse::expr::parse(std::slice::from_ref(t)) {
             Ok(e) => {

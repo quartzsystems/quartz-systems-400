@@ -1,0 +1,32 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Variables in qualified names; a slash between numbers still divides. */
+             PGM
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10) VALUE('INVMGR')
+             DCL        VAR(&MBR) TYPE(*CHAR) LEN(10) VALUE('INVMGR01D')
+             DCL        VAR(&PGM) TYPE(*CHAR) LEN(10) VALUE('INVMGR01R')
+             DCL        VAR(&A) TYPE(*DEC) LEN(5 0) VALUE(84)
+             DCL        VAR(&B) TYPE(*DEC) LEN(5 0) VALUE(2)
+             DCL        VAR(&X) TYPE(*DEC) LEN(5 0)
+             CHKOBJ     OBJ(&LIB/INVMGRTYPE) OBJTYPE(*FILE)
+             RUNSQLSTM  SRCFILE(&LIB/QSQLSRC) SRCMBR(INVMGRTYPE) COMMIT(*NONE)
+             CRTDSPF    FILE(&LIB/&MBR) SRCFILE(&LIB/QDDSSRC) SRCMBR(&MBR)
+             CRTMNU     MENU(&LIB/INVMGR) TYPE(*PGM) PGM(&LIB/INVMGR01R)
+             CHKOBJ     OBJ(*LIBL/&MBR) OBJTYPE(*FILE)
+             CHKOBJ     OBJ(*CURLIB/&MBR) OBJTYPE(*FILE)
+             CHKOBJ     OBJ(INVMGR/&MBR) OBJTYPE(*FILE)
+/* The run-time path: an expression in another parameter. */
+             CRTDSPF    FILE(&LIB/&MBR) SRCFILE(&LIB/QDDSSRC) +
+                          TEXT('menu ' *CAT &MBR)
+             DLYJOB     DLY(&A/&B/&B)
+             CHGVAR     VAR(&X) VALUE(&A / &B)
+             SNDPGMMSG  MSG('blanks ' *CAT %CHAR(&X)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&X) VALUE(&A/&B)
+             SNDPGMMSG  MSG('no blanks ' *CAT %CHAR(&X)) TOPGMQ(*EXT)
+             CHGVAR     &X (&B * &A/&B)
+             SNDPGMMSG  MSG('precedence ' *CAT %CHAR(&X)) TOPGMQ(*EXT)
+             CALL       PGM(&LIB/&PGM)
+             MONMSG     MSGID(CPF0001) EXEC(SNDPGMMSG MSG('call failed') +
+                          TOPGMQ(*EXT))
+             ENDPGM

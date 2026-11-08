@@ -208,7 +208,8 @@ fn clexec(job: &mut Job, host: &Host, args: &[u64]) {
         .unwrap_or(0);
     let count = usize::try_from(count).unwrap_or(0);
     let mut text = template;
-    for k in 0..count {
+    // The highest first: `&10` before `&1`.
+    for k in (0..count).rev() {
         let desc = ccsid::from_ebcdic(&read(3 + 2 * k, 16));
         let code = desc.chars().next().unwrap_or('C');
         let width: usize = desc
@@ -223,7 +224,8 @@ fn clexec(job: &mut Job, host: &Host, args: &[u64]) {
             'D' => {
                 let digits = u8::try_from(width).unwrap_or(15);
                 let bytes = read(4 + 2 * k, usize::from(digits) / 2 + 1);
-                packed(&bytes, digits, scale).map_or_else(|| "0".into(), |d| d.to_string())
+                packed(&bytes, digits, scale)
+                    .map_or_else(|| "0".into(), |d| cmd::value::number_text(&d.to_string()))
             }
             'L' => {
                 let b = read(4 + 2 * k, 1);

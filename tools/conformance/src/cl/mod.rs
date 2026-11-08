@@ -395,7 +395,8 @@ fn clexec(job: &mut Job, d: &Doubles, args: &[u64]) {
     let len = number(&read(0, 6));
     let mut text = ccsid::from_ebcdic(&read(1, len));
     let count = number(&read(2, 6));
-    for k in 0..count {
+    // The highest first: `&10` before `&1`.
+    for k in (0..count).rev() {
         let desc = ccsid::from_ebcdic(&read(3 + 2 * k, 16));
         let code = desc.chars().next().unwrap_or('C');
         let width: usize = desc
@@ -410,7 +411,8 @@ fn clexec(job: &mut Job, d: &Doubles, args: &[u64]) {
             'D' => {
                 let digits = u8::try_from(width).unwrap_or(15);
                 let bytes = read(4 + 2 * k, usize::from(digits) / 2 + 1);
-                packed(&bytes, digits, scale).map_or_else(|| "0".into(), |x| x.to_string())
+                packed(&bytes, digits, scale)
+                    .map_or_else(|| "0".into(), |x| cmd::value::number_text(&x.to_string()))
             }
             'L' => {
                 if read(4 + 2 * k, 1).first() == Some(&0xF1) {

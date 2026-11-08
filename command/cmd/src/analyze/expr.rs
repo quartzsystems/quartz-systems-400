@@ -47,7 +47,7 @@ pub fn eval(toks: &[Tok], env: &Env<'_>) -> Result<Tok, Unevaluated> {
 pub fn has_vars(toks: &[Tok]) -> bool {
     toks.iter().any(|t| match t {
         Tok::Var(_) | Tok::Builtin { .. } => true,
-        Tok::Paren(items) | Tok::Kw { args: items, .. } => has_vars(items),
+        Tok::Paren(items) | Tok::Kw { args: items, .. } | Tok::Qual(items) => has_vars(items),
         _ => false,
     })
 }

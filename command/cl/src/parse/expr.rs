@@ -11,8 +11,9 @@ use cmd::token::Tok;
 
 use crate::ast::{Expr, Lit, Op};
 
-/// Parse `toks` as one expression.
+/// Parse `toks` as one expression; `&A/&B` is a division there.
 pub fn parse(toks: &[Tok]) -> Result<Expr, String> {
+    let toks = &Tok::divisions(toks);
     let mut p = Parser { toks, at: 0 };
     let e = p.or()?;
     if p.at != toks.len() {
@@ -167,6 +168,7 @@ impl Parser<'_> {
             Tok::Hex(b) => Expr::Lit(Lit::Hex(b.clone())),
             Tok::Word(w) => Expr::Word(w.clone()),
             Tok::Paren(items) => parse(items)?,
+            Tok::Qual(_) => parse(std::slice::from_ref(t))?,
             Tok::Builtin { name, args } => Expr::Builtin(name.clone(), builtin_args(name, args)?),
             Tok::Kw { name, .. } => {
                 // `NAME(args)` inside an expression is a word followed by

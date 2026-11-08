@@ -1,0 +1,58 @@
+QS/400 ILE CL compiler                  V1R1M0
+
+Program  . . . . . . . . . . . . :   QUALVAR
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   QUALVAR
+Text . . . . . . . . . . . . . . :   corpus QUALVAR
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Variables in qualified names; a slash between numbers still divides. */
+        1        0               PGM
+        2        0               DCL        VAR(&LIB) TYPE(*CHAR) LEN(10) VALUE('INVMGR')
+        3        0               DCL        VAR(&MBR) TYPE(*CHAR) LEN(10) VALUE('INVMGR01D')
+        4        0               DCL        VAR(&PGM) TYPE(*CHAR) LEN(10) VALUE('INVMGR01R')
+        5        0               DCL        VAR(&A) TYPE(*DEC) LEN(5 0) VALUE(84)
+        6        0               DCL        VAR(&B) TYPE(*DEC) LEN(5 0) VALUE(2)
+        7        0               DCL        VAR(&X) TYPE(*DEC) LEN(5 0)
+        8        0               CHKOBJ     OBJ(&LIB/INVMGRTYPE) OBJTYPE(*FILE)
+        9        0               RUNSQLSTM  SRCFILE(&LIB/QSQLSRC) SRCMBR(INVMGRTYPE) COMMIT(*NONE)
+       10        0               CRTDSPF    FILE(&LIB/&MBR) SRCFILE(&LIB/QDDSSRC) SRCMBR(&MBR)
+       11        0               CRTMNU     MENU(&LIB/INVMGR) TYPE(*PGM) PGM(&LIB/INVMGR01R)
+       12        0               CHKOBJ     OBJ(*LIBL/&MBR) OBJTYPE(*FILE)
+       13        0               CHKOBJ     OBJ(*CURLIB/&MBR) OBJTYPE(*FILE)
+       14        0               CHKOBJ     OBJ(INVMGR/&MBR) OBJTYPE(*FILE)
+                    /* The run-time path: an expression in another parameter. */
+       15        0               CRTDSPF    FILE(&LIB/&MBR) SRCFILE(&LIB/QDDSSRC) +
+                                              TEXT('menu ' *CAT &MBR)
+       16        0               DLYJOB     DLY(&A/&B/&B)
+       17        0               CHGVAR     VAR(&X) VALUE(&A / &B)
+       18        0               SNDPGMMSG  MSG('blanks ' *CAT %CHAR(&X)) TOPGMQ(*EXT)
+       19        0               CHGVAR     VAR(&X) VALUE(&A/&B)
+       20        0               SNDPGMMSG  MSG('no blanks ' *CAT %CHAR(&X)) TOPGMQ(*EXT)
+       21        0               CHGVAR     &X (&B * &A/&B)
+       22        0               SNDPGMMSG  MSG('precedence ' *CAT %CHAR(&X)) TOPGMQ(*EXT)
+       23        0               CALL       PGM(&LIB/&PGM)
+       24        0               MONMSG     MSGID(CPF0001) EXEC(SNDPGMMSG MSG('call failed') +
+                                              TOPGMQ(*EXT))
+       25        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&A          *DEC    5 0            9  16 17 19 21
+&B          *DEC    5 0           10  16 17 19 21
+&LIB        *CHAR   10             6  8 9 10 11 15 23
+&MBR        *CHAR   10             7  10 12 13 14 15
+&PGM        *CHAR   10             8  23
+&X          *DEC    5 0           11  17 18 19 20 21 22
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program QUALVAR created.
+End of compilation.

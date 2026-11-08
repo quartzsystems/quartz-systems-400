@@ -184,7 +184,10 @@ fn vars(args: &[Tok], c: &mut Cursor<'_>, refs: &mut Vec<Reference>) {
                     refs.push(reference(v, SymbolKind::Keyword, span));
                 }
             }
-            Tok::Kw { args, .. } | Tok::Builtin { args, .. } | Tok::Paren(args) => {
+            Tok::Kw { args, .. }
+            | Tok::Builtin { args, .. }
+            | Tok::Paren(args)
+            | Tok::Qual(args) => {
                 vars(args, c, refs);
             }
             _ => {}

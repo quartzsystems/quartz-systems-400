@@ -6,7 +6,7 @@
 //! groups to their elements, special and single values to their
 //! replacements, defaults where nothing was given.
 
-use super::{Bound, Env, conv, default_tokens, expr, is_elem, is_qual, positional_ok};
+use super::{Bound, Env, conv, default_tokens, expr, is_elem, is_numeric, is_qual, positional_ok};
 use crate::def::{CmdDef, Parm, ParmType, Special};
 use crate::error::Diag;
 use crate::token::{Sel, Tok};
@@ -258,6 +258,11 @@ impl Ctx<'_, '_> {
                 many => self.bind_expr(parm, kwd, many, trusted),
             };
         }
+        // `&A/&B` where a number goes is a division.
+        if matches!(tok, Tok::Qual(_)) && is_numeric(parm) {
+            let toks = Tok::divisions(std::slice::from_ref(tok));
+            return self.bind_expr(parm, kwd, &toks, trusted);
+        }
         self.scalar_of(parm, kwd, tok, trusted)
     }
 
@@ -490,8 +495,9 @@ impl Ctx<'_, '_> {
         ok.then_some(Value::Elems(out))
     }
 
-    /// A qualified name: `LIB/NAME`, `(NAME LIB)` or `NAME`; parts in
-    /// definition order, the object first.
+    /// A qualified name: `LIB/NAME`, `(NAME LIB)` or `NAME`, any part
+    /// a variable (`&LIB/NAME`, `*LIBL/&NAME`); parts in definition
+    /// order, the object first.
     fn bind_qual(&mut self, parm: &Parm, kwd: &str, toks: &[Tok], trusted: bool) -> Option<Value> {
         let parts: Vec<Tok> = match toks {
             [Tok::Word(w)] if w.contains('/') => {
@@ -499,7 +505,11 @@ impl Ctx<'_, '_> {
                 v.reverse();
                 v
             }
-            [Tok::Paren(items)] => items.clone(),
+            [Tok::Qual(typed)] => typed.iter().rev().cloned().collect(),
+            [Tok::Paren(items)] => match items.as_slice() {
+                [Tok::Qual(typed)] => typed.iter().rev().cloned().collect(),
+                _ => items.clone(),
+            },
             other => other.to_vec(),
         };
         if parts.len() > parm.items.len() {

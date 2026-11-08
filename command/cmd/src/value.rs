@@ -125,6 +125,16 @@ pub fn needs_quotes(s: &str) -> bool {
         })
 }
 
+/// A number as a command string spells it: a fraction of zeros
+/// dropped, so `21.000` fits an integer parameter.
+#[must_use]
+pub fn number_text(s: &str) -> String {
+    match s.split_once('.') {
+        Some((whole, frac)) if frac.chars().all(|c| c == '0') => whole.to_string(),
+        _ => s.to_string(),
+    }
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.source())
