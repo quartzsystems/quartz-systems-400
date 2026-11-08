@@ -36,6 +36,10 @@ pub fn crtprtf(system: &mut System, p: &Params) -> Result<String, String> {
     let name = object_name(&qual)?;
     let mut f = Prtf::default();
     f.apply(p).map_err(|e| err(&e))?;
+    // REPLACE(*YES) is the default.
+    let replace = !p
+        .kw("REPLACE")
+        .is_some_and(|v| v.eq_ignore_ascii_case("*NO"));
     let (store, ctx) = db(system)?;
     let mut found = Vec::new();
     let r = with_txn(store, |txn| {
@@ -72,6 +76,20 @@ pub fn crtprtf(system: &mut System, p: &Params) -> Result<String, String> {
             system: "QS400".into(),
             now: now(),
         };
+        let lib_name = ops::describe(txn, lib).map_err(|e| e.to_string())?.name;
+        crate::svc::replace::make_room(
+            txn,
+            ctx.qsys,
+            (lib, fname, types::FILE),
+            replace,
+            &is_prtf,
+            || {
+                format!(
+                    "CPF7302 File {fname} in library {lib_name} not created: an object of its name and type exists."
+                )
+            },
+            stamp.now,
+        )?;
         wm::obj::create_attr(
             txn,
             lib,

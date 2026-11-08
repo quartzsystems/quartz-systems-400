@@ -230,13 +230,15 @@ pub fn crtwscst(system: &mut System, me: u32, p: &Params) -> Result<String, Stri
     with_store(system, |txn, qsys| {
         let l = wm::obj::library(txn, qsys, &lib).map_err(|e| err(&e))?;
         let n = qsname::Name::parse(&name).map_err(|e| format!("CPD0078 {name}: {e}"))?;
-        let lo = Library::load(txn, l).map_err(|e| e.to_string())?;
-        if let Some(old) = lo.lookup(txn, types::WSCST, n).map_err(|e| e.to_string())? {
-            if !replace {
-                return Err(format!("CPF5813 {lib}/{name} type *WSCST already exists"));
-            }
-            ops::delete(txn, JobHandle(u64::from(me)), old).map_err(|e| e.to_string())?;
-        }
+        crate::svc::replace::make_room(
+            txn,
+            qsys,
+            (l, n, types::WSCST),
+            replace,
+            &|_, _| true,
+            || format!("CPF5813 {lib}/{name} type *WSCST already exists"),
+            crate::ipl::system::now_unix(),
+        )?;
         let class = if source.contains("DEVCLASS=CTXFORM") {
             "CTXFORM"
         } else {

@@ -388,13 +388,16 @@ fn store_object(
     };
     crate::svc::ile::commands::in_store(system, lib_name, |txn, c, lib_id| {
         let ty = if is_module { types::MODULE } else { types::PGM };
+        crate::svc::replace::make_room(
+            txn,
+            c.qsys,
+            (lib_id, n, ty),
+            replace,
+            &|_, _| true,
+            || format!("CPF5D0D {name} already exists in {lib_name}"),
+            c.now,
+        )?;
         let l = Library::load(txn, lib_id).map_err(|e| e.to_string())?;
-        if let Some(old) = l.lookup(txn, ty, n).map_err(|e| e.to_string())? {
-            if !replace {
-                return Err(format!("CPF5D0D {name} already exists in {lib_name}"));
-            }
-            ops::delete(txn, JobHandle(0), old).map_err(|e| e.to_string())?;
-        }
         if !is_module
             && let Some(old) = l.lookup(txn, types::MODULE, n).map_err(|e| e.to_string())?
         {

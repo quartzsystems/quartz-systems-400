@@ -14,6 +14,7 @@ mod jobq;
 mod msgq;
 pub mod neta;
 pub(crate) mod objects;
+pub(crate) mod replace;
 mod procstat;
 mod sbs;
 pub(crate) mod security;

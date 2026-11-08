@@ -94,16 +94,16 @@ pub fn make(
         Shape::Program => types::PGM,
         Shape::SrvPgm => types::SRVPGM,
     };
+    crate::svc::replace::make_room(
+        txn,
+        c.qsys,
+        (lib_id, n, ty),
+        made.replace,
+        &|_, _| true,
+        || format!("CPF5D0D {} already exists in {lib_name}", made.name),
+        c.now,
+    )?;
     let l = Library::load(txn, lib_id).map_err(|e| e.to_string())?;
-    if let Some(old) = l.lookup(txn, ty, n).map_err(|e| e.to_string())? {
-        if !made.replace {
-            return Err(format!(
-                "CPF5D0D {} already exists in {lib_name}",
-                made.name
-            ));
-        }
-        ops::delete(txn, JobHandle(0), old).map_err(|e| e.to_string())?;
-    }
     if made.shape != Shape::Module
         && let Some(old) = l.lookup(txn, types::MODULE, n).map_err(|e| e.to_string())?
     {

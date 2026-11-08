@@ -264,6 +264,31 @@ fn bndsrvpgm(p: &Params) -> Result<Vec<ile::object::BndDirEntry>, String> {
 }
 
 /// `crtpgm` and `crtsrvpgm`.
+/// `REPLACE` of `CRTPGM` and `CRTSRVPGM` (`*YES` by default).
+fn pgm_room(
+    txn: &mut Txn<'_>,
+    c: &Ctx,
+    (library, name, kind): (ObjectId, Name, PgmKind),
+    replace: bool,
+    lib: &str,
+) -> Result<(), String> {
+    let (ty, what) = if kind == PgmKind::Pgm {
+        (types::PGM, "Program")
+    } else {
+        (types::SRVPGM, "Service program")
+    };
+    crate::svc::replace::make_room(
+        txn,
+        c.qsys,
+        (library, name, ty),
+        replace,
+        &|_, _| true,
+        || format!("CPF5D0D {what} {name} already exists in library {lib}."),
+        c.now,
+    )
+    .map(|_| ())
+}
+
 fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, String> {
     let kw = if kind == PgmKind::SrvPgm {
         "SRVPGM"
@@ -319,8 +344,10 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
         "Service program"
     };
     let adopts = options.attr.usrprf == ile::UserProfile::Owner;
+    let replace = p.upper("REPLACE").is_none_or(|v| v != "*NO");
     let mut failed = None;
     let diags = in_store(system, &lib, |txn, c, library| {
+        pgm_room(txn, c, (library, name, kind), replace, &lib)?;
         ile::store::crtpgm(txn, c, library, &modules, &bnddirs, options, &text)
             .map(|(_, d)| d)
             .map_err(|e| {

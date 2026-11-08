@@ -38,8 +38,13 @@ pub fn crtdspf(system: &mut System, p: &Params) -> Result<String, String> {
     let qual = p.pos_or(0, "FILE")?;
     let name = object_name(&qual)?;
     let text = p.kw("TEXT").map(str::to_string).unwrap_or_default();
+    // REPLACE(*YES) is the default.
+    let replace = !p
+        .kw("REPLACE")
+        .is_some_and(|v| v.eq_ignore_ascii_case("*NO"));
     let (store, ctx) = db(system)?;
     let mut found = Vec::new();
+    let mut moved: Option<String> = None;
     let r = with_txn(store, |txn| {
         let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
         let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
@@ -85,6 +90,23 @@ pub fn crtdspf(system: &mut System, p: &Params) -> Result<String, String> {
             system: "QS400".into(),
             now: now(),
         };
+        let lib_name = ops::describe(txn, lib).map_err(|e| e.to_string())?.name;
+        let room = crate::svc::replace::make_room(
+            txn,
+            ctx.qsys,
+            (lib, fname, types::FILE),
+            replace,
+            &is_dspf,
+            || {
+                format!(
+                    "CPF7302 File {fname} in library {lib_name} not created: an object of its name and type exists."
+                )
+            },
+            stamp.now,
+        )?;
+        if let crate::svc::replace::Room::Moved(to) = &room {
+            moved = Some(to.clone());
+        }
         wm::obj::create_attr(
             txn,
             lib,
@@ -94,8 +116,12 @@ pub fn crtdspf(system: &mut System, p: &Params) -> Result<String, String> {
             &payload,
         )
         .map_err(|e| err(&e))?;
+        let note = moved
+            .as_ref()
+            .map(|m| format!(" The file it replaced was in use and is now QRPLOBJ/{m}."))
+            .unwrap_or_default();
         Ok(format!(
-            "Display file {qual} created: {records} record format(s)."
+            "Display file {qual} created: {records} record format(s).{note}"
         ))
     });
     super::files::put_dds(system, p, &name.name.to_string(), &found);

@@ -15,7 +15,7 @@ use qsname::Name;
 use stg::{HostRefused, HostSignedOn};
 use store::obj::library::Library;
 use store::obj::ops;
-use store::obj::{JobHandle, ObjectId, types};
+use store::obj::{ObjectId, types};
 use store::txn::Txn;
 
 use super::served::JobCtx;
@@ -122,7 +122,6 @@ pub fn put(
         .get(me)
         .map_or_else(|| "QSYS".into(), |j| j.user.clone());
     let n = name(file)?;
-    let job = JobHandle(u64::from(me));
     with_store(system, |txn, qsys| {
         let l = if lib == "*LIBL" {
             let names = crate::svc::ile::name_context(txn, qsys);
@@ -135,13 +134,17 @@ pub fn put(
         };
         let found = file_in(txn, l, n)?;
         match (create, found) {
-            (true, Some((id, _))) if replace => {
-                ops::delete(txn, job, id).map_err(|e| format!("CPF7302 {e}"))?;
-            }
-            (true, Some(_)) => {
-                return Err(format!(
-                    "CPF7302 File {file} in library {lib} exists already."
-                ));
+            // Only a DDM file is replaced.
+            (true, Some((_, attr))) => {
+                crate::svc::replace::make_room(
+                    txn,
+                    qsys,
+                    (l, n, types::FILE),
+                    replace && attr == DDMF,
+                    &|_, _| true,
+                    || format!("CPF7302 File {file} in library {lib} exists already."),
+                    crate::ipl::system::now_unix(),
+                )?;
             }
             (false, None) => {
                 return Err(format!("CPF9812 File {file} in library {lib} not found."));
