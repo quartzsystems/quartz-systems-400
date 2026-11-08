@@ -862,6 +862,7 @@ fn display_io(
     match r {
         Ok(input) => {
             let mut fb = IoResult::default();
+            let shown = input.clone();
             if let Some(input) = input {
                 if rec != 0 {
                     let dst = bytes(rec, rec_len);
@@ -877,6 +878,11 @@ fn display_io(
                 ];
             }
             write_infds(infds, infds_len, &info, &fb, false, "DSPIO", j.abi.cur_stmt);
+            // The display's feedback too: the AID at 369, the cursor at
+            // 370-371, as `dsp_io` writes it.
+            if let Some(i) = &shown {
+                write_dsp_infds(infds, infds_len, i);
+            }
             0
         }
         Err(f) if f.status == IoFail::REQUEST_ENDED => {

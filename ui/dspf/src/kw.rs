@@ -258,7 +258,7 @@ pub const TABLE: &[KwInfo] = &[
     kw("ROLLDOWN", F | R, Supported, (0, 2), Any, true),
     kw("ROLLUP", F | R, Supported, (0, 2), Any, true),
     kw("RSTDSP", F | R, Supported, (0, 0), Any, true),
-    kw("RTNCSRLOC", R, Supported, (2, 3), Any, false),
+    kw("RTNCSRLOC", R, Supported, (2, 5), Any, false),
     kw("RTNDTA", R, Supported, (0, 0), Any, false),
     kw("SETOF", R | D, Supported, (1, 2), Any, true),
     kw("SETOFF", R | D, Supported, (1, 2), Any, true),

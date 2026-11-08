@@ -1,0 +1,22 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A                                      CF04(04 'Prompt')
+     A          R DETAIL
+     A                                      RTNCSRLOC(*RECNAME &CSRRCD &CSRFLD
+     A                                      &CSRPOS)
+     A            CSRRCD        10A  H
+     A            CSRFLD        10A  H
+     A            CSRPOS         4S 0H
+     A                                  1  2'B8X cursor location'
+     A                                  3  2'Status:'
+     A            DSTS          10A  B  3 10
+     A                                  4  2'Name:'
+     A            DNAM          20A  B  4 10
+     A            SEEN          60A  O  6  2
+     A          R WIN                       WINDOW(8 10 8 40)
+     A                                      RTNCSRLOC(*WINDOW &WROW &WCOL)
+     A            WROW           3S 0H
+     A            WCOL           3S 0H
+     A                                  1  2'Window'
+     A            WFLD          10A  B  3  2
+     A            WSEEN         30A  O  5  2

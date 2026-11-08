@@ -1,0 +1,325 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DSP024
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DSP024
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: B8X                                                                                              000000     000200
+      3 //; keys: @3,13 enter                                                                                     000000     000300
+      4 //; keys: @4,12 f4                                                                                        000000     000400
+      5 //; keys: @10,40 enter                                                                                    000000     000500
+      6 //; keys: f3                                                                                              000000     000600
+      7 //; keys: @11,15 enter                                                                                    000000     000700
+      8 //; keys: enter                                                                                           000000     000800
+      9 ctl-opt dftactgrp(*no);                                                                                   000000     000900
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-    10 dcl-f B8X workstn;                                                                                        000000     001000
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  B8X              {lib}/B8X                               *
+         * Record format(s) . . . . . :  DETAIL           DETAIL                                      *
+         *                               WIN              WIN                                         *
+         *--------------------------------------------------------------------------------------------*
+     11 // RTNCSRLOC: the record, field and position under the cursor, after                                      000000     001100
+     12 // Enter and a function key, blanks on no field; *WINDOW the row and                                      000000     001200
+     13 // column in the window.                                                                                  000000     001300
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     14=IDETAIL                                                                                                             1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  DETAIL                                                       *                     1
+         * External format  . . . . . :  DETAIL : {lib}/B8X                                       *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     15=I                             N    1    1  *IN03                           Exit                                     1000002
+     16=I                             N    2    2  *IN04                           Prompt                                   1000003
+     17=I                             A    3   12  CSRRCD                                                                   1000004
+     18=I                             A   13   22  CSRFLD                                                                   1000005
+     19=I                             S   23   26 0CSRPOS                                                                   1000006
+     20=I                             A   27   36  DSTS                                                                     1000007
+     21=I                             A   37   56  DNAM                                                                     1000008
+     22=IWIN                                                                                                                2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  WIN                                                          *                     2
+         * External format  . . . . . :  WIN : {lib}/B8X                                          *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     23=I                             N    1    1  *IN03                           Exit                                     2000002
+     24=I                             N    2    2  *IN04                           Prompt                                   2000003
+     25=I                             S    3    5 0WROW                                                                     2000004
+     26=I                             S    6    8 0WCOL                                                                     2000005
+     27=I                             A    9   18  WFLD                                                                     2000006
+-    28 exfmt DETAIL;                                                                                             000000     001400
+     29 SEEN = 'enter ' + CSRRCD + ' ' + CSRFLD + ' ' + %char(CSRPOS);                                            000000     001500
+     30 exfmt DETAIL;                                                                                             000000     001600
+     31 SEEN = 'f4 ' + CSRRCD + ' ' + CSRFLD + ' ' + %char(CSRPOS);                                               000000     001700
+     32 exfmt DETAIL;                                                                                             000000     001800
+     33 SEEN = 'none [' + CSRRCD + '][' + CSRFLD + '] ' + %char(CSRPOS);                                          000000     001900
+     34 exfmt DETAIL;                                                                                             000000     002000
+     35 exfmt WIN;                                                                                                000000     002100
+     36 WSEEN = 'window ' + %char(WROW) + ',' + %char(WCOL);                                                      000000     002200
+     37 exfmt WIN;                                                                                                000000     002300
+     38 *inlr = *on;                                                                                              000000     002400
+     39=ODETAIL                                                                                                             3000001
+         *--------------------------------------------------------------------------------------------*                     3
+         * RPG record format  . . . . :  DETAIL                                                       *                     3
+         * External format  . . . . . :  DETAIL : {lib}/B8X                                       *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+     40=O                       CSRRCD              10A CHAR       10                                                       3000002
+     41=O                       CSRFLD              20A CHAR       10                                                       3000003
+     42=O                       CSRPOS              24S ZONE      4,0                                                       3000004
+     43=O                       DSTS                34A CHAR       10                                                       3000005
+     44=O                       DNAM                54A CHAR       20                                                       3000006
+     45=O                       SEEN               114A CHAR       60                                                       3000007
+     46=OWIN                                                                                                                4000001
+         *--------------------------------------------------------------------------------------------*                     4
+         * RPG record format  . . . . :  WIN                                                          *                     4
+         * External format  . . . . . :  WIN : {lib}/B8X                                          *                     4
+         *--------------------------------------------------------------------------------------------*                     4
+     47=O                       WROW                 3S ZONE      3,0                                                       4000002
+     48=O                       WCOL                 6S ZONE      3,0                                                       4000003
+     49=O                       WFLD                16A CHAR       10                                                       4000004
+     50=O                       WSEEN               46A CHAR       30                                                       4000005
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     40     1    10 CSRRCD
+     41    11    20 CSRFLD
+     42    21    24 CSRPOS
+     43    25    34 DSTS
+     44    35    54 DNAM
+     45    55   114 SEEN
+     47     1     3 WROW
+     48     4     6 WCOL
+     49     7    16 WFLD
+     50    17    46 WSEEN
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          B8X               WORKSTN                10D
+            DETAIL                                 10D     14      28      30
+                                                   32      34      39
+            WIN                                    10D     22      35      37
+                                                   46
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   38M
+ *RNF7031 *IN03             N(1)                   15D     23M
+ *RNF7031 *IN04             N(1)                   16D     24M
+          CSRFLD            A(10)                  18M     29      31      33
+                                                   41
+          CSRPOS            P(4,0)                 19M     29      31      33
+                                                   42
+          CSRRCD            A(10)                  17M     29      31      33
+                                                   40
+          DNAM              A(20)                  21M     44
+          DSTS              A(10)                  20M     43
+          SEEN              A(60)                  29M     31M     33M     45
+          WCOL              P(3,0)                 26M     36      48
+          WFLD              A(10)                  27M     49
+          WROW              P(3,0)                 25M     36      47
+          WSEEN             A(30)                  36M     50
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+ *RNF7031 03                                       15M     23M
+ *RNF7031 04                                       16M     24M
+          LR                                       38M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF7031 00      2 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       50
+     Specifications  . . . . . . . . :       39
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :       10
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DSP024 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

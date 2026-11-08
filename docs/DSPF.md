@@ -213,7 +213,7 @@ allowed on every keyword.
 | `ROLLDOWN` | file, record | supported |  |
 | `ROLLUP` | file, record | supported |  |
 | `RSTDSP` | file, record | supported |  |
-| `RTNCSRLOC` | record | supported | the named fields must exist with the shape IBM documents |
+| `RTNCSRLOC` | record | supported | on input: `*RECNAME` (or no special value) the record, field and 1-based position under the cursor, blanks and 0 on no field (a subfile line names the subfile record); `*WINDOW` and `*MOUSE` the cursor's row and column on the display, then in the window (pub400, `DSP024`) |
 | `RTNDTA` | record | supported |  |
 | `SETOF` | record, field | supported | response indicator and text |
 | `SETOFF` | record, field | supported | as SETOF |

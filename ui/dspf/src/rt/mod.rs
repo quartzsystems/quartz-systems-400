@@ -147,6 +147,139 @@ impl Runtime {
         })
     }
 
+    /// The record and field under the cursor (1-based) among the records
+    /// on the display, the last written first, and the position in the
+    /// field (1-based). On a subfile's page, the subfile record.
+    fn field_under(&self, row: u8, col: u8) -> Option<(String, String, u32)> {
+        let size = self.size;
+        let at = |rec: &Record, r: i32, c: i32| {
+            rec.fields
+                .iter()
+                .filter(|f| !f.is_constant())
+                .find_map(|f| {
+                    let name = f.name.as_ref()?;
+                    let p = f.position(size)?;
+                    let (fr, fc) = (i32::from(p.row), i32::from(p.col));
+                    let w = i32::try_from(f.screen_len.max(1)).unwrap_or(1);
+                    (r == fr && c >= fc && c < fc + w).then(|| {
+                        let pos = u32::try_from(c - fc + 1).unwrap_or(0);
+                        (rec.name.clone(), name.clone(), pos)
+                    })
+                })
+        };
+        self.shown.iter().rev().find_map(|s| {
+            let rec = self.df.record(&s.name)?;
+            let r = i32::from(row) - s.row_shift;
+            let c = i32::from(col) - s.col_shift;
+            if let Some(hit) = at(rec, r, c) {
+                return Some(hit);
+            }
+            let sfl = rec.subfile.as_ref()?;
+            if !self
+                .subfiles
+                .get(&sfl.record)
+                .is_some_and(|st| st.displayed)
+            {
+                return None;
+            }
+            let srec = self.df.record(&sfl.record)?;
+            let first = i32::from(
+                sfl.first_line
+                    .get(size)
+                    .or(sfl.first_line.first())
+                    .copied()
+                    .unwrap_or(0),
+            );
+            let lines = i32::from(sfl.record_lines.max(1));
+            let page = i32::from(sfl.size(size).page.max(1));
+            if first == 0 || r < first || r >= first + page * lines {
+                return None;
+            }
+            // A subfile record's fields sit on the page's first record.
+            at(srec, r - (r - first) / lines * lines, c)
+        })
+    }
+
+    /// `RTNCSRLOC` (pub400, `DSP024`): with `*RECNAME` (or no special
+    /// value) the record and field under the cursor and the position in
+    /// it, blanks and 0 on no field; with `*WINDOW` or `*MOUSE` the
+    /// cursor's row and column on the display, then in the record's
+    /// window. The named fields' input bytes are replaced.
+    fn cursor_location(
+        &self,
+        rec: &Record,
+        inds: &Inds,
+        cursor: (u8, u8),
+        parts: &mut [(u32, Vec<u8>)],
+    ) {
+        enum Val {
+            Text(String),
+            Num(i64),
+        }
+        let size = self.size_name();
+        let Some(kw) = rec
+            .keywords
+            .iter()
+            .find(|k| k.name == "RTNCSRLOC" && cond_on(&k.cond, inds, &size))
+        else {
+            return;
+        };
+        let words: Vec<&str> = kw.parms.iter().filter_map(|p| p.as_word()).collect();
+        let (form, names) = match words.split_first() {
+            Some((w, rest)) if w.starts_with('*') => (*w, rest),
+            _ => ("*RECNAME", words.as_slice()),
+        };
+        let values: Vec<Val> = if form == "*RECNAME" {
+            let (rcd, fld, pos) =
+                self.field_under(cursor.0, cursor.1)
+                    .unwrap_or((String::new(), String::new(), 0));
+            vec![Val::Text(rcd), Val::Text(fld), Val::Num(i64::from(pos))]
+        } else {
+            let (row_shift, col_shift) = self
+                .shown
+                .iter()
+                .find(|s| s.name == rec.name)
+                .map_or((0, 0), |s| (s.row_shift, s.col_shift));
+            vec![
+                Val::Num(i64::from(cursor.0)),
+                Val::Num(i64::from(cursor.1)),
+                Val::Num(i64::from(cursor.0) - i64::from(row_shift)),
+                Val::Num(i64::from(cursor.1) - i64::from(col_shift)),
+            ]
+        };
+        for (name, value) in names.iter().zip(values) {
+            let name = name.trim_start_matches('&');
+            let Some((index, field)) = rec
+                .fields
+                .iter()
+                .enumerate()
+                .find(|(_, f)| f.name.as_deref() == Some(name))
+            else {
+                continue;
+            };
+            let Some(bf) = rec.layout.input.field(index) else {
+                continue;
+            };
+            let bytes = match value {
+                Val::Text(t) => {
+                    let mut b = ccsid::to_ebcdic(&t).unwrap_or_default();
+                    b.resize(bf.len as usize, ccsid::SPACE);
+                    b
+                }
+                Val::Num(n) => match qdecimal::Decimal::new(i128::from(n), 0)
+                    .ok()
+                    .and_then(|d| edit::encode_number(field, &d).ok())
+                {
+                    Some(b) => b,
+                    None => continue,
+                },
+            };
+            if let Some(part) = parts.iter_mut().find(|(o, _)| *o == bf.offset) {
+                part.1 = bytes;
+            }
+        }
+    }
+
     /// Help with help specifications and no `HELP` keyword: the system
     /// shows the module; the program does not see the key.
     fn system_help(
@@ -1248,6 +1381,7 @@ impl Runtime {
             let bytes = self.input_field(m, &rec, *bf, &out, taken, &mut resp)?;
             parts.push((bf.offset, bytes));
         }
+        self.cursor_location(&rec, &inds, cursor, &mut parts);
         m.reset_mdt();
         for i in self.reset_inds.drain(..) {
             resp[usize::from(i)] = false;
