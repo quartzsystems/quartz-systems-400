@@ -118,3 +118,4 @@ SQL062 listing: the order of the SET OPTION diagnostics in the message section
 SQL063 listing: the blocked INSERT's generated data structure is written in fixed form; IBM's is free form
 SQL064 listing: IBM leaves the SELECT INTO with an indicator array element out of the cross-reference; ours lists its table and columns
 SQL065 listing: the cross-reference gives a LOB column its buffer's type (CHARACTER(32)), not its SQL type (BLOB(2048)): the external description carries no SQL type yet
+DSP024 *IN03 is set only by the display file's CA03 and never used: IBM's cross-reference marks it RNF7031, ours does not tell an indicator a display file sets from one a calculation sets

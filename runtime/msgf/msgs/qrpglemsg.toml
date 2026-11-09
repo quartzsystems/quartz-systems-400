@@ -477,6 +477,13 @@ help = "Some fields of the record format are null-capable; the program sees thei
 vars = ["*CHAR 50"]
 
 [[msg]]
+id = "RNF7114"
+sev = 0
+text = "CLEAR or RESET of record format &1 changes no field; the program does not write the format."
+help = "CLEAR and RESET of a record format affect the fields the program writes: a display file's fields other than input-only ones, a database file's fields when the program adds records. Specify *ALL to affect every field of the format."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "RNF3803"
 sev = 30
 text = "Field &1 is not in the external description; the subfield is ignored."

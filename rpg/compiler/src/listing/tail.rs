@@ -45,7 +45,9 @@ pub(crate) fn additional(out: &mut Out, c: &Compiled) {
     // the operand checks of expressions come last.
     let group = |id: &str| match id {
         "RNF7150" => 0,
-        "RNF7066" => 1,
+        // A CLEAR of a format that changes nothing comes before
+        // blocking (pub400, IO038).
+        "RNF7066" | "RNF7114" => 1,
         "RNF7086" => 2,
         "RNF7503" => 4,
         _ => 3,
