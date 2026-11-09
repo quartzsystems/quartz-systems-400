@@ -32,7 +32,8 @@ Problem corrected:
   longer shows its message twice.
 - Navigator: Apply PTF with "Schedule IPL now" applied the PTFs but did
   not IPL. The system now ends its jobs and restarts one minute after
-  the PTFs are applied.
+  the PTFs are applied. The confirmation's sentence and equivalent
+  command now follow the options chosen, on Remove PTF too.
 - Navigator: the cover letter of a fix still on the update server was
   "not found". Its letter is now ordered from the update server (only
   the letter; nothing is loaded) and shown. A cumulative package shows
