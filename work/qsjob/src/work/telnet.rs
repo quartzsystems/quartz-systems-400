@@ -1259,10 +1259,10 @@ fn exit_signon(
 }
 
 /// RFC 4777: the user's substitute checked against the password
-/// store; the signed-on user when it matched. An empty seed with a
-/// 64-hex-character password variable is a QAP ticket, redeemed by the
-/// storage service (only over TLS; used up either way). A password in
-/// plain text is never accepted.
+/// store; the signed-on user when it matched. An empty seed carries
+/// Access for Web's ticket (64 hex characters, used up either way) or
+/// the password itself, either accepted only over TLS. A refusal goes
+/// to `QSYSOPR` with its reason; the client gets the sign-on display.
 fn auto_signon(
     neg: &Negotiated,
     seed: [u8; 8],
@@ -1271,42 +1271,74 @@ fn auto_signon(
     tls: bool,
 ) -> Option<sec::signon::SignedOn> {
     let user = neg.var("USER")?.to_ascii_uppercase();
-    let client_seed = neg.var_bytes("IBMRSEED")?;
-    let sub = neg.var_bytes("IBMSUBSPW")?;
+    match try_auto_signon(neg, seed, link, device, tls, &user) {
+        Ok(s) => Some(s),
+        Err(why) => {
+            let text = format!("Automatic sign-on of {user} at device {device} refused: {why}.");
+            eprintln!("qsjob: QTVTELNET: {text}");
+            let m = wm::obj::msgq::QMsg {
+                kind: wm::obj::msgq::MsgKind::Info,
+                severity: 20,
+                msgid: servers::msg::AUTO_SIGNON_REFUSED.into(),
+                msgf: ("QTCPMSG".into(), "QSYS".into()),
+                text,
+                ..wm::obj::msgq::QMsg::default()
+            };
+            if let Err(e) = link.msgq_send("*SYSOPR".into(), m) {
+                eprintln!("qsjob: QSYSOPR: {e}");
+            }
+            None
+        }
+    }
+}
+
+fn try_auto_signon(
+    neg: &Negotiated,
+    seed: [u8; 8],
+    link: &mut Link,
+    device: &str,
+    tls: bool,
+    user: &str,
+) -> Result<sec::signon::SignedOn, String> {
+    let refused = |r: sec::signon::Refused| format!("{} {}", r.msgid, r.text.trim());
+    let client_seed = neg.var_bytes("IBMRSEED").ok_or("no IBMRSEED")?;
+    let sub = neg.var_bytes("IBMSUBSPW").ok_or("no IBMSUBSPW")?;
     if client_seed.is_empty() {
-        let ticket = qapd::tickets::parse_hex(sub)?;
-        return match link.telnet_ticket(user, ticket.0.to_vec(), device.to_string(), tls) {
-            Ok(Ok(s)) => Some(s),
-            _ => None,
-        };
+        if let Some(ticket) = qapd::tickets::parse_hex(sub)
+            && let Ok(Ok(s)) =
+                link.telnet_ticket(user.to_string(), ticket.0.to_vec(), device.to_string(), tls)
+        {
+            return Ok(s);
+        }
+        if !tls {
+            return Err("a password without a seed is accepted only over TLS".into());
+        }
+        let password = clear_password(sub);
+        return link
+            .sign_on(user.to_string(), password, device.to_string(), false)
+            .map_err(|e| e.to_string())?
+            .map_err(refused);
     }
-    if client_seed.len() != 8 {
-        eprintln!(
-            "qsjob: QTVTELNET: automatic sign-on of {user}: a client seed of {} bytes",
-            client_seed.len()
-        );
-        return None;
-    }
-    let mut cs = [0u8; 8];
-    cs.copy_from_slice(client_seed);
+    let cs: [u8; 8] = client_seed
+        .try_into()
+        .map_err(|_| format!("a client seed of {} bytes", client_seed.len()))?;
     let proof = sec::signon::Substitute {
         server_seed: seed,
         client_seed: cs,
         substitute: sub.to_vec(),
     };
-    match link.sign_on_substitute(user.clone(), device.to_string(), proof) {
-        Ok(Ok(s)) => Some(s),
-        Ok(Err(r)) => {
-            eprintln!(
-                "qsjob: QTVTELNET: automatic sign-on of {user} refused: {} {}",
-                r.msgid, r.text
-            );
-            None
-        }
-        Err(e) => {
-            eprintln!("qsjob: QTVTELNET: automatic sign-on of {user}: {e}");
-            None
-        }
+    link.sign_on_substitute(user.to_string(), device.to_string(), proof)
+        .map_err(|e| e.to_string())?
+        .map_err(refused)
+}
+
+/// A password sent without a seed: ASCII as the other environment
+/// values are, or EBCDIC from a client that encodes it so.
+fn clear_password(b: &[u8]) -> String {
+    if b.iter().all(|c| (0x20..0x7F).contains(c)) {
+        String::from_utf8_lossy(b).into_owned()
+    } else {
+        ccsid::from_ebcdic(b)
     }
 }
 

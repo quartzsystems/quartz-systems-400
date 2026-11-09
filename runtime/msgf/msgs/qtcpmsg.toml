@@ -897,6 +897,13 @@ help = "The server goes on without its TLS port; connections that need TLS are r
 vars = ["*CHAR 10", "*CHAR 5", "*CHAR 128"]
 
 [[msg]]
+id = "TCP1A64"
+sev = 20
+text = "Automatic sign-on of &1 at device &2 refused: &3."
+help = "The TELNET client sent a user and its password for automatic sign-on (QRMTSIGN *VERIFY or *SAMEPRF), and the system did not accept them; the sign-on display was shown instead. Correct the reason shown, such as the password, the profile's status or its authority to the device, then connect again."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 128"]
+
+[[msg]]
 id = "TCP1A70"
 sev = 40
 text = "The source debugger is not available through this QAP server."
