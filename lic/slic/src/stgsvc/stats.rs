@@ -36,6 +36,7 @@ pub struct Sample {
     txns: BTreeMap<u32, Txns>,
     lines: Vec<(String, NetStat)>,
     main_kb: u64,
+    avail_kb: u64,
 }
 
 /// A job's storage requests by kind, since it started.
@@ -100,6 +101,9 @@ pub struct Stats {
     pub inflight: BTreeMap<u32, Instant>,
     /// The last look, shared by whoever looks within half a second.
     latest: Option<Sample>,
+    /// The first look, at start: a display's first interval runs from
+    /// it rather than measuring nothing.
+    first: Option<Sample>,
     /// Collection Services.
     pub perf: super::perfcol::Collector,
     /// Job accounting.
@@ -243,7 +247,15 @@ pub fn sample_after(system: &mut System, base: Option<&Sample>) -> Sample {
     }
     let s = look(system);
     system.stats.latest = Some(s.clone());
+    if system.stats.first.is_none() {
+        system.stats.first = Some(s.clone());
+    }
     s
+}
+
+/// The first look, taken when the service starts.
+pub fn prime(system: &mut System) {
+    let _ = sample_after(system, None);
 }
 
 /// The Ethernet lines varied on, with their interfaces' counters.
@@ -293,6 +305,7 @@ fn look(system: &System) -> Sample {
         pools.insert(p.name.clone(), f);
         counters.insert(p.name.clone(), (p.act_wait, p.wait_inel, p.act_inel));
     }
+    let meminfo = read("/proc/meminfo");
     Sample {
         at: Instant::now(),
         cpu: read("/proc/stat")
@@ -313,10 +326,57 @@ fn look(system: &System) -> Sample {
         io: system.stats.io.clone(),
         txns: system.stats.txns.clone(),
         lines: net_lines(),
-        main_kb: read("/proc/meminfo")
-            .and_then(|t| stats::mem_total_kb(&t))
+        main_kb: meminfo
+            .as_deref()
+            .and_then(stats::mem_total_kb)
+            .unwrap_or(0),
+        avail_kb: meminfo
+            .as_deref()
+            .and_then(stats::mem_available_kb)
             .unwrap_or(0),
     }
+}
+
+/// `MEMUSE`: main storage in use, the storage service's share, and the
+/// jobs holding the most of it. Sizes in KB.
+pub fn memuse_panel(system: &mut System) -> stg::proto::PanelData {
+    let s = sample_after(system, None);
+    let page_kb = 4u64;
+    let service_kb = read("/proc/self/statm")
+        .and_then(|t| t.split_whitespace().nth(1)?.parse::<u64>().ok())
+        .map_or(0, |p| p * page_kb);
+    let mut jobs: Vec<(u64, JobInfo)> = system
+        .jobs
+        .all()
+        .into_iter()
+        .map(|j| {
+            let kb = s.procs.get(&j.number).map_or(0, |p| p.rss_pages * page_kb);
+            (kb, j)
+        })
+        .filter(|(kb, _)| *kb > 0)
+        .collect();
+    jobs.sort_by_key(|(kb, _)| std::cmp::Reverse(*kb));
+    let jobs_kb: u64 = jobs.iter().map(|(kb, _)| kb).sum();
+    let vars = vec![
+        pair("TOTALKB", s.main_kb),
+        pair("USEDKB", s.main_kb.saturating_sub(s.avail_kb)),
+        pair("SVCKB", service_kb),
+        pair("JOBSKB", jobs_kb),
+        pair("NJOBS", jobs.len()),
+    ];
+    let rows = jobs
+        .iter()
+        .take(10)
+        .map(|(kb, j)| {
+            vec![
+                pair("JOB", &j.name),
+                pair("USER", &j.user),
+                pair("NUMBER", format!("{:06}", j.number)),
+                pair("MEMKB", kb),
+            ]
+        })
+        .collect();
+    (vars, rows)
 }
 
 /// The interval between two samples.
@@ -430,8 +490,13 @@ fn interval(
 ) -> (Sample, Sample) {
     let base = which(&mut system.stats).clone();
     let now = sample_after(system, base.as_ref());
+    let first = system
+        .stats
+        .first
+        .clone()
+        .filter(|f| now.at.duration_since(f.at) >= Duration::from_secs(1));
     let slot = which(&mut system.stats);
-    let base = slot.clone().unwrap_or_else(|| now.clone());
+    let base = slot.clone().or(first).unwrap_or_else(|| now.clone());
     if advance || slot.is_none() {
         *slot = Some(now.clone());
     }

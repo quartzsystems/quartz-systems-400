@@ -85,8 +85,18 @@ pub fn cpu_times(text: &str) -> Option<CpuTimes> {
 /// `MemTotal` in kilobytes, from `/proc/meminfo`.
 #[must_use]
 pub fn mem_total_kb(text: &str) -> Option<u64> {
+    meminfo(text, "MemTotal:")
+}
+
+/// What `/proc/meminfo` says is available without swapping, KB.
+#[must_use]
+pub fn mem_available_kb(text: &str) -> Option<u64> {
+    meminfo(text, "MemAvailable:")
+}
+
+fn meminfo(text: &str, key: &str) -> Option<u64> {
     text.lines()
-        .find(|l| l.starts_with("MemTotal:"))?
+        .find(|l| l.starts_with(key))?
         .split_whitespace()
         .nth(1)?
         .parse()

@@ -163,6 +163,22 @@ impl System for FixtureSystem {
             ptf_level: "QS400-CUM-26290".into(),
             processors: "8 (shared, uncapped)".into(),
             main_storage: 65_536 * MB,
+            memory_used: 21_904 * MB,
+            memory_service: 6_210 * MB,
+            memory_jobs: 9_377 * MB,
+            memory_top: [
+                ("123411/QUSER/QZDASOINIT", 1_844),
+                ("123301/QSYS/QDBSRV01", 912),
+                ("123456/QTMHHTTP/ADMIN", 604),
+                ("123105/QSYS/QSPLMAINT", 233),
+                ("123488/TESTUSER/QPADEV0003", 118),
+            ]
+            .into_iter()
+            .map(|(job, mb)| crate::env::MemJob {
+                job: job.into(),
+                bytes: mb * MB,
+            })
+            .collect(),
             ipl: secs(2026, 10, 27, 5, 58, 12),
             ipl_kind: "Normal, B side".into(),
             zone: "EDT".into(),

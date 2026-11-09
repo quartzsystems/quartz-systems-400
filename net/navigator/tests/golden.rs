@@ -7,6 +7,8 @@
 
 mod common;
 
+use std::fmt::Write as _;
+
 use common::{Browser, assert_golden};
 use navigator::PRODUCT;
 use qsweb::frame::{Ctx, NavGroup, Page, Product, render};
@@ -35,7 +37,39 @@ fn home() {
     let r = b.get("/home?auto=60");
     assert_eq!(r.status, 200);
     // The hardware's model in place of the system's codes; main storage
-    // is Memory.
+    // is Memory, with what is in use and what holds it.
+    let bar = "<table class=\"bar\" cellspacing=\"0\" cellpadding=\"0\"><tr><td class=\"fill\" width=\"33%\"></td><td width=\"67%\"></td></tr></table>";
+    let memory =
+        format!("Memory</td><td>21,904 MB in use of 65,536 MB &nbsp; 33.4% &nbsp; {bar}</td>");
+    let mut used = String::from(
+        "all active</a></td></tr></table>\n<h3>Memory use</h3><table class=\"status\" cellspacing=\"0\">",
+    );
+    for (l, v) in [
+        ("Jobs", "9,377 MB &nbsp; <span class=\"grey\">14.3%</span>"),
+        (
+            "Storage service",
+            "6,210 MB &nbsp; <span class=\"grey\">9.4%</span>",
+        ),
+        (
+            "Kernel and file cache",
+            "6,317 MB &nbsp; <span class=\"grey\">9.6%</span>",
+        ),
+    ] {
+        let _ = write!(used, "<tr><td class=\"lbl\">{l}</td><td>{v}</td></tr>");
+    }
+    for (j, m) in [
+        ("123411/QUSER/QZDASOINIT", "1,844"),
+        ("123301/QSYS/QDBSRV01", "912"),
+        ("123456/QTMHHTTP/ADMIN", "604"),
+        ("123105/QSYS/QSPLMAINT", "233"),
+        ("123488/TESTUSER/QPADEV0003", "118"),
+    ] {
+        let _ = write!(
+            used,
+            "<tr><td class=\"lbl\"><a href=\"job-props-general.html\">{j}</a></td><td>{m} MB</td></tr>"
+        );
+    }
+    used.push_str("</table>");
     assert_golden(
         &r.text(),
         "nav/home.html",
@@ -44,7 +78,8 @@ fn home() {
                 "Model / type</td><td><span class=\"mono\">Q400-M2 / 9Q04</span>",
                 "Model</td><td>Dell Inc. PowerEdge R650",
             ),
-            ("Main storage</td><td>65,536", "Memory</td><td>65,536"),
+            ("Main storage</td><td>65,536 MB</td>", memory.as_str()),
+            ("all active</a></td></tr></table>", used.as_str()),
         ],
     );
     // Off: no reload.

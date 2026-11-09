@@ -73,6 +73,7 @@ fn status(m: &mut Main, reset: bool) -> Status {
             .and_then(|p| p.iter().find(|(k, _)| k == "SIZE"))
             .map_or(0, |(_, x)| parse::size(&format!("{x} M")));
     }
+    memory(m, &mut s);
     if let Ok((_, units)) = m.ask(|l| l.panel2_data("DSKSTS".into(), vec!["*NO".into()])) {
         s.units = u32::try_from(units.len()).unwrap_or(0);
     }
@@ -238,6 +239,34 @@ impl System for LiveSystem {
     fn status(&self, user: &str, reset: bool) -> Status {
         self.link.read(user, move |m| status(m, reset))
     }
+}
+
+/// Main storage in use and the jobs holding the most (`MEMUSE`).
+fn memory(m: &Main, s: &mut Status) {
+    let Ok((vars, rows)) = m.ask(|l| l.panel2_data("MEMUSE".into(), Vec::new())) else {
+        return;
+    };
+    let kb = |row: &[(String, String)], k: &str| {
+        row.iter()
+            .find(|(n, _)| n == k)
+            .and_then(|(_, x)| x.trim().parse::<u64>().ok())
+            .unwrap_or(0)
+            * 1024
+    };
+    s.memory_used = kb(&vars, "USEDKB");
+    s.memory_service = kb(&vars, "SVCKB");
+    s.memory_jobs = kb(&vars, "JOBSKB");
+    s.memory_top = rows
+        .iter()
+        .take(5)
+        .map(|r| {
+            let v = |k: &str| r.iter().find(|(n, _)| n == k).map_or("", |(_, x)| x.trim());
+            navigator::env::MemJob {
+                job: format!("{}/{}/{}", v("NUMBER"), v("USER"), v("JOB")),
+                bytes: kb(r, "MEMKB"),
+            }
+        })
+        .collect();
 }
 
 #[cfg(test)]

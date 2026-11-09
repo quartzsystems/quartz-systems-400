@@ -118,6 +118,7 @@ pub fn run() -> ! {
         timzon::after_install(&mut system);
         // Virtual displays in use at power-down are free again.
         devices::after_ipl(&mut system);
+        stats::prime(&mut system);
         let l = listen(Path::new(stg::SOCKET))?;
         Ok((text, l))
     });

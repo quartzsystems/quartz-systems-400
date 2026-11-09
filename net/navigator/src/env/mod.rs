@@ -116,6 +116,15 @@ impl Target {
     }
 }
 
+/// A job and the main storage it holds.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MemJob {
+    /// `number/user/name`.
+    pub job: String,
+    /// Bytes resident.
+    pub bytes: u64,
+}
+
 /// What System status shows (`WRKSYSSTS`, `DSPSYSVAL`, the counts of
 /// the other pages). Sizes in bytes, percentages in tenths.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -137,6 +146,14 @@ pub struct Status {
     pub processors: String,
     /// Main storage (shown as Memory).
     pub main_storage: u64,
+    /// Main storage in use; 0 when not known.
+    pub memory_used: u64,
+    /// The storage service's own main storage.
+    pub memory_service: u64,
+    /// All jobs' main storage.
+    pub memory_jobs: u64,
+    /// The jobs holding the most main storage, most first.
+    pub memory_top: Vec<MemJob>,
     /// When the last IPL started, seconds since 1970.
     pub ipl: u64,
     /// `Normal, B side`.

@@ -89,7 +89,7 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
         ("Model", model(s)),
         ("Release", format!("{}{ptf}", mono(&s.release))),
         ("Processors", esc(&s.processors)),
-        ("Memory", mb(s.main_storage)),
+        ("Memory", memory(s)),
         (
             "IPL date/time",
             format!(
@@ -107,6 +107,55 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
             ),
         ),
     ]
+}
+
+/// Main storage, and how much of it is in use when known.
+fn memory(s: &Status) -> String {
+    if s.memory_used == 0 || s.main_storage == 0 {
+        return mb(s.main_storage);
+    }
+    let pct = tenths_of(s.memory_used, s.main_storage);
+    format!(
+        "{} in use of {} &nbsp; {}% &nbsp; {}",
+        mb(s.memory_used),
+        mb(s.main_storage),
+        tenths(pct),
+        bar(pct / 10)
+    )
+}
+
+/// `part` of `whole` in tenths of a percent.
+fn tenths_of(part: u64, whole: u64) -> u32 {
+    u32::try_from(part.saturating_mul(1000) / whole.max(1)).unwrap_or(1000)
+}
+
+/// What holds main storage: the jobs, the storage service, the rest
+/// (the kernel and its file cache), and the jobs holding the most.
+fn memory_rows(rq: &Rq<'_>, s: &Status) -> Vec<(String, String)> {
+    let share = |b: u64| {
+        format!(
+            "{} &nbsp; <span class=\"grey\">{}%</span>",
+            mb(b),
+            tenths(tenths_of(b, s.main_storage))
+        )
+    };
+    let other = s
+        .memory_used
+        .saturating_sub(s.memory_jobs)
+        .saturating_sub(s.memory_service);
+    let mut rows = vec![
+        ("Jobs".to_string(), share(s.memory_jobs)),
+        ("Storage service".to_string(), share(s.memory_service)),
+        ("Kernel and file cache".to_string(), share(other)),
+    ];
+    for j in &s.memory_top {
+        let url = rq.ctx.url(&format!("/job/{}/general", j.job));
+        rows.push((
+            format!("<a href=\"{}\">{}</a>", esc(&url), esc(&j.job)),
+            mb(j.bytes),
+        ));
+    }
+    rows
 }
 
 /// The hardware's vendor and product as the firmware names them.
@@ -241,8 +290,19 @@ pub fn page(rq: &Rq<'_>) -> Response {
         1,
     );
     let (_, t) = rq.stamp(now);
+    // The labels of the memory rows are HTML (the jobs link).
+    let memory_html = if s.memory_used == 0 {
+        String::new()
+    } else {
+        let mut m = String::from("\n<h3>Memory use</h3><table class=\"status\" cellspacing=\"0\">");
+        for (l, v) in memory_rows(rq, &s) {
+            let _ = write!(m, "<tr><td class=\"lbl\">{l}</td><td>{v}</td></tr>");
+        }
+        m.push_str("</table>");
+        m
+    };
     let body = format!(
-        "{}\n<table class=\"home\" width=\"100%\"><tr>\n<td width=\"50%\">\n<h3>System</h3>{}\n<h3>Storage</h3>{}\n</td>\n<td width=\"50%\">\n<h3>Activity</h3>{activity_html}\n<h3>Attention</h3>{}\n</td></tr></table>\n<p class=\"small grey\">Values are as of {t}. Elapsed-interval values are measured since the last Refresh.</p>",
+        "{}\n<table class=\"home\" width=\"100%\"><tr>\n<td width=\"50%\">\n<h3>System</h3>{}\n<h3>Storage</h3>{}{memory_html}\n</td>\n<td width=\"50%\">\n<h3>Activity</h3>{activity_html}\n<h3>Attention</h3>{}\n</td></tr></table>\n<p class=\"small grey\">Values are as of {t}. Elapsed-interval values are measured since the last Refresh.</p>",
         toolbar(&chosen),
         status_table(&system_rows(rq, &s, now)),
         status_table(&storage_rows(rq, &s)),

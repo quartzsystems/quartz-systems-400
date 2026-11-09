@@ -108,6 +108,7 @@ pub fn data(
             Ok((desc, rows.into_iter().map(row).collect()))
         }
         "SHRPOOL" => Ok(shrpools(system)),
+        "MEMUSE" => Ok(super::stats::memuse_panel(system)),
         "IMGCLG" => Ok(crate::cpp::medcmd::imgclg_panel(system, arg(0), arg(1))),
         "IMGCLGE" => crate::cpp::medcmd::imgclge_panel(arg(0)),
         "TAPCTG" => crate::cpp::medcmd::tapctg_panel(system, arg(0), &[], arg(1)),
