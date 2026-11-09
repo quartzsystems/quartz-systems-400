@@ -3192,6 +3192,11 @@ lic/slic/src/stgsvc/tcp/store.rs	message files: {e}
 lic/slic/src/stgsvc/tcp/store.rs	object store not initialized
 lic/slic/src/stgsvc/tcp/store.rs	object store not open
 lic/slic/src/stgsvc/tcp/store.rs	{}: record length {} is not {}
+lic/slic/src/stgsvc/tlsid.rs	CPF2189 {} may not have the system\'s TLS key
+lic/slic/src/stgsvc/tlsid.rs	The system\'s TLS certificate
+lic/slic/src/stgsvc/tlsid.rs	object store not initialized
+lic/slic/src/stgsvc/tlsid.rs	object store not open
+lic/slic/src/stgsvc/tlsid.rs	{LIB}/{name}: the PEM is longer than the data area
 lic/slic/src/stgsvc/trace.rs	Activ
 lic/slic/src/stgsvc/trace.rs	Analyze
 lic/slic/src/stgsvc/trace.rs	CPF39D0 Trace {} is already active.
