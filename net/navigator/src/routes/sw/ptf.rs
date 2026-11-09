@@ -220,7 +220,7 @@ pub fn list(rq: &Rq<'_>) -> Response {
             Button::new("level", "Display PTF level"),
         ]),
     );
-    let level = rq.env().system.status(user, false).ptf_level;
+    let level = cum_level(&rq.env().system.status(user, false).ptf_level);
     let desc = format!("Program temporary fixes (DSPPTF / WRKPTF). Cumulative level {level}.");
     // The update server's note sits under the filter, part of the list.
     let note: String = messages
@@ -286,7 +286,7 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
             return rq.not_found("fix");
         }
         what = "Order Fixes";
-        sentence = "Press OK to order the fixes listed below from the Quartz update server. Each PTF arrives as a save file in library QGPL, ready to load.".into();
+        sentence = "Press OK to order the fixes listed below from the Quartz Systems update server. Each PTF arrives as a save file in library QGPL, ready to load.".into();
         cols = vec!["Fix", "Type", "Product", "Description"];
         rows = fixes
             .iter()
@@ -444,7 +444,7 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
 /// `/ptf/level`: the cumulative level and the PTF groups.
 pub fn level(rq: &Rq<'_>) -> Response {
     let groups = rq.env().sw.ptf_groups(rq.user());
-    let level = rq.env().system.status(rq.user(), false).ptf_level;
+    let level = cum_level(&rq.env().system.status(rq.user(), false).ptf_level);
     let head = props_table(
         &PRODUCT,
         &[PropGroup {
@@ -488,6 +488,16 @@ pub fn level(rq: &Rq<'_>) -> Response {
         "ptf",
         None,
     )
+}
+
+/// The cumulative level, `None` when no package is installed.
+fn cum_level(level: &str) -> String {
+    let l = level.trim();
+    if l.is_empty() {
+        "None".into()
+    } else {
+        l.into()
+    }
 }
 
 /// A cover letter in the help window.
@@ -641,7 +651,7 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
     let settings = props(
         &rq.ctx,
         &[PropGroup {
-            title: Some("Quartz update server".into()),
+            title: Some("Quartz Systems update server".into()),
             rows: vec![
                 Prop::new("Server", input("s", &host(&attrs.url), 30)),
                 Prop::new("Check automatically", pick("a", &labels, &chosen)),
@@ -660,7 +670,9 @@ pub fn fixes(rq: &Rq<'_>) -> Response {
         rq,
         &["Fixes"],
         "Fixes",
-        Some("Fixes available from the Quartz update server that are not yet on this system."),
+        Some(
+            "Fixes available from the Quartz Systems update server that are not yet on this system.",
+        ),
         Vec::new(),
         body,
         "fixes",

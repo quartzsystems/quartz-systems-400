@@ -1406,5 +1406,5 @@ name = "QSYSNAME"
 type = "char"
 len = 8
 default = "QS400"
-text = "System name shown on the sign-on screen (Quartz; CHGNETA comes later)"
+text = "System name shown on the sign-on screen"
 group = "NET"

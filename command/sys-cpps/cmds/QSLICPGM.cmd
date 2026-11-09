@@ -2,7 +2,7 @@
 /* licensed under the terms of the MIT license which can be found in the  */
 /* root directory of this project.                                       */
 
-/* QSLICPGM: one GO LICPGM panel (Quartz's; the menu's options). */
+/* QSLICPGM: one GO LICPGM panel (Quartz Systems'; the menu's options). */
              CMD        PROMPT('Licensed Program Panel') MAXPOS(1) +
                           ALLOW(*INTERACT *IPGM *IREXX *EXEC) +
                           HLPPNLGRP(QHSZCMD) HLPID(QSLICPGM)

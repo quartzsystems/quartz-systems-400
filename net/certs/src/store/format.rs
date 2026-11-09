@@ -128,7 +128,9 @@ pub fn encode(header: &Header, body: &Body, key: &[u8; 32]) -> Result<Vec<u8>> {
 /// Split a file into its header and sealed body.
 pub fn split(bytes: &[u8]) -> Result<(Header, &[u8], &[u8])> {
     if bytes.len() < PREFIX || bytes[..8] != MAGIC {
-        return Err(CertError::Corrupt("not a Quartz certificate store".into()));
+        return Err(CertError::Corrupt(
+            "not a Quartz Systems certificate store".into(),
+        ));
     }
     let version = u32::from_le_bytes(bytes[8..12].try_into().expect("4"));
     if version != FORMAT_VERSION {

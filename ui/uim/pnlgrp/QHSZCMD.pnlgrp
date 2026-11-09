@@ -122,7 +122,7 @@ exists.
 :EHELP.
 :HELP NAME=QSLICPGM.Licensed Program Panel (QSLICPGM)
 :P.Use the Licensed Program Panel (QSLICPGM) command to one GO LICPGM
-panel (Quartz's; the menu's options).
+panel (Quartz Systems'; the menu's options).
 :EHELP.
 :HELP NAME='QSLICPGM/OPTION'.GO LICPGM option (OPTION)
 :P.The GO LICPGM option for this command.
@@ -131,7 +131,7 @@ panel (Quartz's; the menu's options).
 :EHELP.
 :HELP NAME=QSPKGPRD.Package Product from Manifest (QSPKGPRD)
 :P.Use the Package Product from Manifest (QSPKGPRD) command to build a
-product from a manifest stream file (Quartz's).
+product from a manifest stream file (Quartz Systems').
 :EHELP.
 :HELP NAME='QSPKGPRD/MANIFEST'.Manifest stream file (MANIFEST)
 :P.The manifest stream file for this command.

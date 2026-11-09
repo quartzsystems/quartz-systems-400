@@ -2,7 +2,7 @@
 /* licensed under the terms of the MIT license which can be found in the  */
 /* root directory of this project.                                       */
 
-/* QSPKGPRD: build a product from a manifest stream file (Quartz's). */
+/* QSPKGPRD: build a product from a manifest stream file (Quartz Systems'). */
              CMD        PROMPT('Package Product from Manifest') +
                           MAXPOS(2) ALLOW(*ALL) HLPPNLGRP(QHSZCMD) +
                           HLPID(QSPKGPRD)

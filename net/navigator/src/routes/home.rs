@@ -270,7 +270,7 @@ fn attention_rows(rq: &Rq<'_>, s: &Status) -> Vec<(&'static str, String)> {
             "Failed sign-on attempts (24 h)",
             link(rq, "/audit?t=PW", &s.failed_signons.to_string()),
         ),
-        ("Fixes available from Quartz", fixes),
+        ("Fixes available from Quartz Systems", fixes),
         ("TCP servers not started", down),
     ]
 }

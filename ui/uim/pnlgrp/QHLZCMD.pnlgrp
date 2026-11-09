@@ -8,7 +8,7 @@
 :COPYR.(C) Copyright Quartz Systems 2026.
 :HELP NAME=ADDLICKEY.Add License Key Information (ADDLICKEY)
 :P.Use the Add License Key Information (ADDLICKEY) command to add a
-license key; a Quartz key is 18 groups of 6.
+license key; a Quartz Systems key is 18 groups of 6.
 :EHELP.
 :HELP NAME='ADDLICKEY/LICKEYINP'.License key input (LICKEYINP)
 :P.The license key input for this command.

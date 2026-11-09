@@ -112,12 +112,12 @@ pub const TOPICS: &[Topic] = &[
     Topic {
         key: "ptf",
         title: "PTFs",
-        body: "<p>The program temporary fixes on the system and their status. <b>Load</b>, <b>Apply</b> and <b>Remove</b> run the PTF commands after a page that shows them; a PTF whose IPL action is delayed takes effect at the next IPL. <b>Cover letter</b> shows what a fix changes.</p>\n<h2>Check for fixes</h2>\n<p>Asks the Quartz update server which fixes this system lacks. The answer is on the <b>Fixes</b> page.</p>",
+        body: "<p>The program temporary fixes on the system and their status. <b>Load</b>, <b>Apply</b> and <b>Remove</b> run the PTF commands after a page that shows them; a PTF whose IPL action is delayed takes effect at the next IPL. <b>Cover letter</b> shows what a fix changes.</p>\n<h2>Check for fixes</h2>\n<p>Asks the Quartz Systems update server which fixes this system lacks. The answer is on the <b>Fixes</b> page.</p>",
     },
     Topic {
         key: "fixes",
         title: "Fixes",
-        body: "<p>The fixes the Quartz update server offers that this system does not have, from the last check. <b>Download</b> orders a fix; it is loaded from the save file the order leaves. The server, the automatic check and a proxy are set below; <b>Apply</b> keeps the page, <b>OK</b> returns to the PTFs.</p>",
+        body: "<p>The fixes the Quartz Systems update server offers that this system does not have, from the last check. <b>Download</b> orders a fix; it is loaded from the save file the order leaves. The server, the automatic check and a proxy are set below; <b>Apply</b> keeps the page, <b>OK</b> returns to the PTFs.</p>",
     },
     // Database.
     Topic {

@@ -168,15 +168,11 @@ pub fn compare(
     trusted: &[[u8; 32]],
 ) -> Findings {
     let mut f = Findings::default();
-    let mut known_cum: Vec<release::Cumulative> = Vec::new();
     let names: Vec<String> = groups.groups.keys().cloned().collect();
     for name in names {
         let level = groups.groups[&name]
             .group(trusted)
             .map_or(0, |(g, _)| g.level);
-        if let Ok(c) = name.parse::<release::Cumulative>() {
-            known_cum.push(c);
-        }
         if let Some(g) = cat.group(&name) {
             groups.offer(&name, g.level);
             if g.level > level {
@@ -184,12 +180,15 @@ pub fn compare(
             }
         }
     }
+    // On the system: loaded at least. A save file or a cover letter
+    // alone is not the fix.
     let has = |p: &str| {
         db.get(p).is_some_and(|r| {
-            !matches!(
-                r.status,
-                Status::NotLoaded | Status::OnOrder | Status::PermRemoved
-            )
+            r.status.applied()
+                || matches!(
+                    r.status,
+                    Status::Loaded | Status::TempRemoved | Status::Superseded
+                )
         })
     };
     let mut hiper: Vec<String> = cat
@@ -207,13 +206,9 @@ pub fn compare(
     hiper.sort();
     hiper.dedup();
     f.hiper = hiper;
-    // A package whose PTFs the system already has (applied one by one)
-    // is not news.
+    // The newest package, while a PTF of it is not on the system: its
+    // manifest arriving (an order, a cover letter) does not count.
     if let Some(c) = cat.cumulative(release)
-        && let Ok(cc) = c.name.parse::<release::Cumulative>()
-        && known_cum
-            .iter()
-            .all(|k| (k.year, k.day) < (cc.year, cc.day))
         && !c.ptfs.iter().all(|p| has(p))
     {
         f.cumulative = Some(c.name.clone());

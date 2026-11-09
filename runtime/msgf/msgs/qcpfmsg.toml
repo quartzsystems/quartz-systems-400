@@ -3099,7 +3099,7 @@ vars = ["*CHAR 7", "*CHAR 7"]
 id = "CPF3586"
 sev = 40
 text = "The PTF is not signed by a signer this system trusts: &1."
-help = "PTFs come signed from the build or from Quartz. A PTF whose signature does not verify is not loaded."
+help = "PTFs come signed from the build or from Quartz Systems. A PTF whose signature does not verify is not loaded."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -3170,7 +3170,7 @@ vars = ["*CHAR 10", "*CHAR 5"]
 [[msg]]
 id = "CPI3599"
 sev = 0
-text = "&1 fixes are available from the Quartz update server (&2) that are not on this system. Last checked &3."
+text = "Fixes on the Quartz Systems update server (&2) that are not on this system: &1. Last checked &3."
 help = "The last check of the update server found fixes this system does not have. Navigator's Fixes page lists them; SNDPTFORD orders them."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 

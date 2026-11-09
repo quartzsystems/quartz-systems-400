@@ -27,7 +27,7 @@ pub fn strerror(rc: Rc) -> &'static str {
         GSK_INVALID_PARAMETER => "A parameter is not valid.",
         GSK_OPEN_CIPHER_ERROR => "No cipher could be opened for the environment.",
         GSK_KEYFILE_IO_ERROR => "The certificate store could not be read or written.",
-        GSK_KEYFILE_INVALID_FORMAT => "The file is not a Quartz certificate store.",
+        GSK_KEYFILE_INVALID_FORMAT => "The file is not a Quartz Systems certificate store.",
         GSK_KEYFILE_DUPLICATE_KEY => "The certificate store holds the same key twice.",
         GSK_KEYFILE_DUPLICATE_LABEL => "The certificate store holds the same label twice.",
         GSK_BAD_FORMAT_OR_INVALID_PASSWORD => {

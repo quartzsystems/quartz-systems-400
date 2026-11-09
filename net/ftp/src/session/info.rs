@@ -284,7 +284,10 @@ impl<H: Host> Session<H> {
         };
         let user = self.user().unwrap_or("not signed on").to_string();
         let lines = vec![
-            format!("Quartz FTP server at {}, session state:", self.cfg.system),
+            format!(
+                "Quartz Systems FTP server at {}, session state:",
+                self.cfg.system
+            ),
             format!("Naming format (NAMEFMT) {}.", self.namefmt),
             format!("Listing format (LISTFMT) {}.", self.listfmt),
             format!(

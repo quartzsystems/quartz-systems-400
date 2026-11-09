@@ -655,7 +655,7 @@ const MESSAGES: &[Desc] = &[
     (
         "CPI3599",
         0,
-        "&1 fixes are available from the Quartz update server (&2) that are not on this system. Last checked &3.",
+        "Fixes on the Quartz Systems update server (&2) that are not on this system: &1. Last checked &3.",
         "The last check of the update server found fixes this system does not have.",
         "See the Fixes page; Download orders a fix.",
     ),

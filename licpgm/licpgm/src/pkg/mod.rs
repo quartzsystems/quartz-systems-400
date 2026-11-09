@@ -171,7 +171,7 @@ pub fn build_manifest(m: &schema::Manifest, opts: Options) -> Result<Package, Ve
     if product.is_quartz() && !opts.allow_quartz {
         c.err(
             "product.id",
-            "IDs starting QS are reserved for Quartz products",
+            "IDs starting QS are reserved for Quartz Systems products",
         );
     }
     let rel = match &p.release {

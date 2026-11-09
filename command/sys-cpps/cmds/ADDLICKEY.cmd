@@ -2,7 +2,7 @@
 /* licensed under the terms of the MIT license which can be found in the  */
 /* root directory of this project.                                       */
 
-/* ADDLICKEY: add a license key; a Quartz key is 18 groups of 6. */
+/* ADDLICKEY: add a license key; a Quartz Systems key is 18 groups of 6. */
              CMD        PROMPT('Add License Key Information') +
                           MAXPOS(4) ALLOW(*ALL) HLPPNLGRP(QHLZCMD) +
                           HLPID(ADDLICKEY)

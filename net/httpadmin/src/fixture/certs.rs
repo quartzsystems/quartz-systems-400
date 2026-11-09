@@ -302,7 +302,7 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
         (
             "QS400_UPDATE_CLIENT",
             AppKind::Client,
-            "Fix download from Quartz update server",
+            "Fix download from Quartz Systems update server",
         ),
     ] {
         appids::add(&c, id, kind, text)?;

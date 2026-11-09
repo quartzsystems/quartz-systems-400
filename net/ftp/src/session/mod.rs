@@ -177,7 +177,7 @@ impl<H: Host> Session<H> {
         let r = Reply::lines(
             220,
             vec![
-                format!("Quartz FTP server at {}.", self.cfg.system),
+                format!("Quartz Systems FTP server at {}.", self.cfg.system),
                 if self.cfg.attrs.inacttimo == 0 {
                     "Idle connections stay open.".to_string()
                 } else {
