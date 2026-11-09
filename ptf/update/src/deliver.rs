@@ -207,11 +207,14 @@ pub fn compare(
     hiper.sort();
     hiper.dedup();
     f.hiper = hiper;
+    // A package whose PTFs the system already has (applied one by one)
+    // is not news.
     if let Some(c) = cat.cumulative(release)
         && let Ok(cc) = c.name.parse::<release::Cumulative>()
         && known_cum
             .iter()
             .all(|k| (k.year, k.day) < (cc.year, cc.day))
+        && !c.ptfs.iter().all(|p| has(p))
     {
         f.cumulative = Some(c.name.clone());
     }

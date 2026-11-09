@@ -319,17 +319,25 @@ fn update_attrs(m: &Main) -> UpdateAttrs {
 /// What `QSCHKUPD` said, as fixes: newer group levels, HIPER PTFs
 /// missing and a cumulative package.
 fn fixes_of(text: &str, now: u64) -> Vec<Fix> {
-    let fix = |id: &str, kind: &str, text: String| Fix {
-        id: id.to_string(),
-        kind: kind.to_string(),
-        product: release::PRODUCT_ID.to_string(),
-        released: now,
-        size: 0,
-        text,
-        on_system: String::new(),
-    };
     let mut out = Vec::new();
     for l in text.lines().map(str::trim) {
+        // "(N bytes)" at the end of the line, from the catalog.
+        let size = l
+            .rsplit_once('(')
+            .and_then(|(_, r)| r.strip_suffix(" bytes)"))
+            .and_then(|n| n.trim().parse().ok())
+            .unwrap_or(0);
+        let fix = |id: &str, kind: &str, text: String| Fix {
+            id: id.to_string(),
+            kind: kind.to_string(),
+            product: release::PRODUCT_ID.to_string(),
+            released: id
+                .parse::<release::Cumulative>()
+                .map_or(now, cumulative_date),
+            size,
+            text,
+            on_system: String::new(),
+        };
         if let Some(r) = l.strip_prefix("PTF group ") {
             let (name, rest) = r.split_once(':').unwrap_or((r, ""));
             out.push(fix(name.trim(), "PTF group", format!("PTF group:{rest}")));
@@ -346,6 +354,15 @@ fn fixes_of(text: &str, now: u64) -> Vec<Fix> {
         }
     }
     out
+}
+
+/// The day a cumulative package's name says (`CYYDDD...`), seconds
+/// since 1970 at midnight UTC.
+fn cumulative_date(c: release::Cumulative) -> u64 {
+    let year = 2000 + u64::from(c.year);
+    let leap = |y: u64| (y.is_multiple_of(4) && !y.is_multiple_of(100)) || y.is_multiple_of(400);
+    let days: u64 = (1970..year).map(|y| if leap(y) { 366 } else { 365 }).sum();
+    (days + u64::from(c.day.max(1)) - 1) * 86_400
 }
 
 /// The command's name, upper case.
@@ -463,5 +480,13 @@ mod tests {
         assert_eq!(f[1].id, "QS10500");
         assert_eq!(f[2].kind, "Cumulative package");
         assert_eq!(f[2].released, now);
+        let f = fixes_of(
+            "HIPER PTF QS10500 is not on this system (2048 bytes)\n\
+             Cumulative package C26313110 is available (4404019 bytes)",
+            now,
+        );
+        assert_eq!((f[0].id.as_str(), f[0].size), ("QS10500", 2048));
+        assert_eq!((f[1].id.as_str(), f[1].size), ("C26313110", 4_404_019));
+        assert_eq!(f[1].released, utc_secs(2026, 11, 9, 0, 0, 0));
     }
 }

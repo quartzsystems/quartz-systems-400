@@ -395,11 +395,21 @@ pub fn chkupd(system: &mut System) -> Result<(CmdReply, bool), String> {
             "PTF group {g}: level {new} available, {have} installed"
         );
     }
+    // The download's size, from the catalog's PTFs.
+    let bytes = |ids: &[String]| -> u64 {
+        cat.ptfs
+            .iter()
+            .filter(|p| ids.contains(&p.id))
+            .map(|p| p.size)
+            .sum()
+    };
     for p in &found.hiper {
-        let _ = writeln!(text, "HIPER PTF {p} is not on this system");
+        let n = bytes(std::slice::from_ref(p));
+        let _ = writeln!(text, "HIPER PTF {p} is not on this system ({n} bytes)");
     }
     if let Some(c) = &found.cumulative {
-        let _ = writeln!(text, "Cumulative package {c} is available");
+        let n = cat.group(c).map_or(0, |g| bytes(&g.ptfs));
+        let _ = writeln!(text, "Cumulative package {c} is available ({n} bytes)");
     }
     if !found.any() {
         return Ok((
