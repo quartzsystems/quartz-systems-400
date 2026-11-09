@@ -38,24 +38,42 @@
     for (var s = 0; s <= 16; s += 8) { o |= ((((v >> s) & 255) + ((b >> s) & 255)) >> 1) << s; }
     return "#" + ("000000" + o.toString(16)).slice(-6);
   }
+  // Each glyph in its colours is drawn once into a small canvas and
+  // copied after; each cell is repainted only when what it shows changed.
+  var glyphs = {}, drawn = [];
+  function glyph(ch, st, f, b, cur, cursor) {
+    var k = ch + "|" + f + "|" + b + "|" + (st.nd ? 1 : 0) + (st.underline ? 1 : 0) + (st.sep ? 1 : 0) + "|" + (cursor ? cur : "");
+    var g = glyphs[k];
+    if (g) { return g; }
+    g = document.createElement("canvas");
+    g.width = W * scale; g.height = H * scale;
+    var x = g.getContext("2d");
+    x.fillStyle = b; x.fillRect(0, 0, g.width, g.height);
+    var rows = st.nd ? null : (QS_FONT[ch.charCodeAt(0)] || QS_FONT.box);
+    x.fillStyle = f;
+    for (var gy = 0; gy < H; gy++) {
+      if (cursor && gy === H - 1) { x.fillStyle = cur; x.fillRect(0, gy * scale, W * scale, scale); x.fillStyle = f; continue; }
+      if (st.underline && gy === H - 2) { x.fillRect(0, gy * scale, W * scale, scale); continue; }
+      var bits = rows ? rows[gy] : 0;
+      if (st.sep && gy % 4 === 0) { bits |= 0x101; }
+      for (var gx = 0; gx < W; gx++) {
+        if (bits & (1 << (W - 1 - gx))) { x.fillRect(gx * scale, gy * scale, scale, scale); }
+      }
+    }
+    glyphs[k] = g;
+    return g;
+  }
   function cell(r, c, ch, st, cursor, selected, off) {
     var f = fg(st.color), b = back();
     if (st.reverse) { var t = f; f = b; b = t; }
     if (selected) { var u = f; f = b; b = u; }
     var cur = bw ? PAL.bg : PAL.white;
     if (off) { f = grey(f); if (b !== back()) { b = grey(b); } cur = grey(cur); }
-    var x0 = c * W * scale, y0 = r * H * scale;
-    var rows = st.nd ? null : (QS_FONT[ch.charCodeAt(0)] || QS_FONT.box);
-    for (var gy = 0; gy < H; gy++) {
-      if (cursor && gy === H - 1) { ctx.fillStyle = cur; ctx.fillRect(x0, y0 + gy * scale, W * scale, scale); continue; }
-      if (st.underline && gy === H - 2) { ctx.fillStyle = f; ctx.fillRect(x0, y0 + gy * scale, W * scale, scale); continue; }
-      var bits = rows ? rows[gy] : 0;
-      if (st.sep && gy % 4 === 0) { bits |= 0x101; }
-      for (var gx = 0; gx < W; gx++) {
-        ctx.fillStyle = (bits & (1 << (W - 1 - gx))) ? f : b;
-        ctx.fillRect(x0 + gx * scale, y0 + gy * scale, scale, scale);
-      }
-    }
+    var g = glyph(ch, st, f, b, cur, cursor);
+    var i = r * 1000 + c;
+    if (drawn[i] === g) { return; }
+    drawn[i] = g;
+    ctx.drawImage(g, c * W * scale, r * H * scale);
   }
   function oia(s) {
     var cols = s.cols, line = [];
@@ -134,6 +152,7 @@
   function size(rows, cols) {
     canvas.width = cols * W * scale; canvas.height = (rows + 1) * H * scale;
     canvas.style.width = canvas.width + "px"; canvas.style.height = canvas.height + "px";
+    glyphs = {}; drawn = [];
   }
   function send(o) { if (sock && sock.readyState === 1) { sock.send(JSON.stringify(o)); return true; } return false; }
   function keyName(e) {

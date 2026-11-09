@@ -264,9 +264,11 @@ pub fn allocate(
     r
 }
 
-/// At IPL, every virtual display that is online is free again: no
-/// session and no kept job outlives an IPL. Without this a display in
-/// use at power-down refuses its own name for good.
+/// At IPL, every online device on the virtual controller is free again:
+/// no session and no kept job outlives an IPL. That is the displays
+/// `QAUTOVRT` named, the ones a client named (`DEVNAME`) and printer
+/// sessions' devices; otherwise a device in use at power-down refuses
+/// its own name for good.
 pub fn after_ipl(system: &mut System) {
     let r = in_store(system, |txn, qsys| {
         let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
@@ -283,7 +285,7 @@ pub fn after_ipl(system: &mut System) {
                 d.status,
                 DevStatus::SignonDisplay | DevStatus::Active | DevStatus::RecoveryPending
             );
-            if d.virtual_ && d.is_display() && d.online && in_use {
+            if d.devcls == "*VRT" && d.online && in_use {
                 d.status = DevStatus::VariedOn;
                 wm::obj::write(txn, id, &d.encode()).map_err(|e| e.to_string())?;
                 freed += 1;
@@ -293,8 +295,8 @@ pub fn after_ipl(system: &mut System) {
     });
     match r {
         Ok(0) => {}
-        Ok(n) => eprintln!("qsstg: {n} virtual display(s) varied on again after the IPL"),
-        Err(e) => eprintln!("qsstg: virtual displays after the IPL: {e}"),
+        Ok(n) => eprintln!("qsstg: {n} virtual device(s) varied on again after the IPL"),
+        Err(e) => eprintln!("qsstg: virtual devices after the IPL: {e}"),
     }
 }
 

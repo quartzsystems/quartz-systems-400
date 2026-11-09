@@ -308,12 +308,15 @@ impl Session5250 for LiveS5250 {
         if let Some(old) = self.conn(user, saved.id) {
             old.end();
         }
-        let local = saved
-            .file
-            .system
-            .name
-            .eq_ignore_ascii_case(&system_name(&self.link));
-        if !local {
+        // The job's thread did not answer: not a refusal by the system.
+        let Some(me) = self.link.job(|m| crate::work::web::system::system_name(m)) else {
+            return Err(msg(
+                "CPF9897",
+                "The Access for Web job did not answer in time; the session was not started. Try again.",
+                &[],
+            ));
+        };
+        if !saved.file.system.name.eq_ignore_ascii_case(&me) {
             // BLOCKED(rel): a session to another system goes through that system's own Access for Web; refused with QAD1002.
             let sys = saved.file.system.name.as_str();
             return Err(msg(
@@ -530,6 +533,7 @@ impl Conn {
         let port = if secure { 992 } else { 23 };
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
         let tcp = TcpStream::connect_timeout(&addr, CONNECT).map_err(|e| {
+            eprintln!("qsjob: Access for Web 5250: {addr}: {e}");
             if e.kind() == std::io::ErrorKind::TimedOut {
                 msg(
                     "QAD1004",

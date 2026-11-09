@@ -135,21 +135,24 @@ fn live(rq: &Rq<'_>, s: &Saved, connect: bool) -> Result<Live, Message> {
         connect_now(rq, s)?;
         return env.live(rq.user(), s.id).ok_or_else(|| gone(s));
     }
-    Ok(have.unwrap_or_else(|| {
-        let (rows, cols) = s.file.session.screen_size.rows_cols();
-        Live {
-            view: View {
-                screen: Screen::blank(rows, cols),
-                system: s.file.system.name.clone(),
-                connected: false,
-                tls: s.file.system.tls,
-                scheme: Scheme::Console,
-            },
-            state: State::Disconnected,
-            message: None,
-            version: 0,
-        }
-    }))
+    Ok(have.unwrap_or_else(|| idle(s)))
+}
+
+/// A session that is not connected: a blank screen.
+fn idle(s: &Saved) -> Live {
+    let (rows, cols) = s.file.session.screen_size.rows_cols();
+    Live {
+        view: View {
+            screen: Screen::blank(rows, cols),
+            system: s.file.system.name.clone(),
+            connected: false,
+            tls: s.file.system.tls,
+            scheme: Scheme::Console,
+        },
+        state: State::Disconnected,
+        message: None,
+        version: 0,
+    }
 }
 
 fn gone(s: &Saved) -> Message {
@@ -207,12 +210,14 @@ pub fn page(rq: &Rq<'_>, id: u32) -> Response {
     let mut messages = Vec::new();
     let l = match live(rq, &s, q.has("connect")) {
         Ok(l) => l,
+        // The connection failed: the page shows why over the screen as
+        // it is, without trying again.
         Err(m) => {
             messages.push(m);
-            match live(rq, &s, false) {
-                Ok(l) => l,
-                Err(m) => return rq.not_found(&m.text),
-            }
+            rq.env()
+                .session5250
+                .live(rq.user(), s.id)
+                .unwrap_or_else(|| idle(&s))
         }
     };
     if let Some(m) = &l.message
