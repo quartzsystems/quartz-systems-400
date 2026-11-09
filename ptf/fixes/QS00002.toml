@@ -13,7 +13,7 @@ kind = "delayed"
 lic = "*BUILD"
 prereqs = ["QS00001"]
 cover = """
-Fixes after QS00001: TLS sessions, automatic sign-on, devices and Navigator.
+Fixes after QS00001: TLS sessions, sign-on, name servers, devices and Navigator.
 
 Problem corrected:
 - A display device in use when the system ended stayed in recovery
@@ -26,6 +26,9 @@ Problem corrected:
   certificate is now kept for every server.
 - Automatic sign-on with a password over TLS was refused without a
   reason; refusals now go to QSYSOPR as TCP1A64.
+- The name servers of CHGTCPDMN did not reach the system's own clients:
+  checking for fixes ended with CPF8C24 (failed to look up the address),
+  as did SNDSMTPEMM, the FTP client and QSYS2.HTTP functions by name.
 - Navigator: the PTF list showed no load date; System activity showed
   0.0 CPU on its first display; utilization bars in shaded rows were
   empty; the ASP's protection did not name the RAID level. System
