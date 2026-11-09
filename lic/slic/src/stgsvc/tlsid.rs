@@ -34,15 +34,10 @@ pub fn identity(
     made: Option<Pair>,
 ) -> Result<Option<Pair>, String> {
     if !super::certs::may_have_key(principal) {
-        return Err(format!(
-            "CPF2189 {} may not have the system's TLS key",
-            principal.user
-        ));
+        return Err(super::certs::refuse_key(principal, "*SYSTEM"));
     }
     sec::guard::as_system(|| {
-        let s = system.storage.as_mut().ok_or("object store not open")?;
-        let qsys = s.qsys.ok_or("object store not initialized")?;
-        crate::svc::db::with_txn(&mut s.store, |txn| {
+        super::devices::in_store(system, |txn, qsys| {
             let lib = wm::obj::library(txn, qsys, LIB).map_err(|e| e.to_string())?;
             let l = Library::load(txn, lib).map_err(|e| e.to_string())?;
             let stored = read(txn, &l, CERT).zip(read(txn, &l, KEY));
@@ -84,11 +79,7 @@ fn put(
     pem: &str,
     public: Auth,
 ) -> Result<(), String> {
-    if pem.len() > usize::from(LEN) {
-        return Err(format!(
-            "{LIB}/{name}: the PEM is longer than the data area"
-        ));
-    }
+    // A P-256 PEM is far shorter than LEN; the store refuses a longer one.
     let id = if let Some(id) = find(txn, l, name) {
         id
     } else {
@@ -97,7 +88,7 @@ fn put(
             name: qsname::Name::parse(name).map_err(|e| e.to_string())?,
             type_code: types::DTAARA,
             attribute: String::new(),
-            text: "The system's TLS certificate".into(),
+            text: String::new(),
             owner: "QSYS".into(),
             system: "QS400".into(),
             now: now_unix(),

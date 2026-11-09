@@ -2505,8 +2505,8 @@ lic/slic/src/cpp/updcmd.rs	CPF3598 {id}: release {release}; this system is {rel}
 lic/slic/src/cpp/updcmd.rs	CPF39D3 problem {id} was not sent: {why}
 lic/slic/src/cpp/updcmd.rs	CPF8C24 remote control point {rmt}: orders go to the update service (*IBMSRV)
 lic/slic/src/cpp/updcmd.rs	CPF9814 DLVRYFMT(*IMAGE): image catalogs are not available yet; use *SAVF
-lic/slic/src/cpp/updcmd.rs	Cumulative package {c} is available
-lic/slic/src/cpp/updcmd.rs	HIPER PTF {p} is not on this system
+lic/slic/src/cpp/updcmd.rs	Cumulative package {c} is available ({n} bytes)
+lic/slic/src/cpp/updcmd.rs	HIPER PTF {p} is not on this system ({n} bytes)
 lic/slic/src/cpp/updcmd.rs	Nothing to deliver: this system has what was ordered
 lic/slic/src/cpp/updcmd.rs	PTF group {g} level {l} received
 lic/slic/src/cpp/updcmd.rs	PTF group {g}: level {new} available, {have} installed

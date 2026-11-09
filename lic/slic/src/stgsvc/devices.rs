@@ -26,7 +26,8 @@ pub mod code {
     pub const CREATE_FAILED: &str = "8925";
 }
 
-fn in_store<T>(
+/// `f` in a transaction over the store, with `QSYS`.
+pub(crate) fn in_store<T>(
     system: &mut System,
     f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Result<T, String>,
 ) -> Result<T, String> {

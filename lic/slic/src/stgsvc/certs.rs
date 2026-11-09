@@ -261,6 +261,17 @@ pub(crate) fn may_have_key(p: &Principal) -> bool {
         || (p.has(SpecialAuth::ALLOBJ) && p.has(SpecialAuth::IOSYSCFG))
 }
 
+/// Refuse `principal` the key of `id` (an application, or `*SYSTEM`),
+/// audited.
+pub(crate) fn refuse_key(principal: &Principal, id: &str) -> String {
+    refused_audit(&principal.user, "certificate key");
+    format!(
+        "{} {} may not have the certificate of {id}",
+        admin::msgs::NOT_AUTHORIZED,
+        principal.user
+    )
+}
+
 /// Answers by application: the files' fingerprint, when, the answer.
 type Cache = Mutex<HashMap<String, (u64, u64, CertTrust)>>;
 
@@ -288,12 +299,7 @@ pub fn cert_app(
 ) -> Result<CertTrust, String> {
     let id = app_id.trim();
     if !id.is_empty() && !may_have_key(principal) {
-        refused_audit(&principal.user, "certificate key");
-        return Err(format!(
-            "{} {} may not have the certificate of {id}",
-            admin::msgs::NOT_AUTHORIZED,
-            principal.user
-        ));
+        return Err(refuse_key(principal, id));
     }
     let staged = stage(system, &[])?;
     let print = fingerprint(&staged.files);
