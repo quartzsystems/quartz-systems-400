@@ -270,6 +270,10 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
     };
     let t = pick_of("t", &["*TEMP", "*PERM"]);
     let d = pick_of("d", &["*NO", "*IPL"]);
+    // Choice-dependent pages: the radio buttons' names and, by their
+    // values (`*TEMP|*IPL`), the command and the sentence.
+    let mut by = "";
+    let mut variants: Vec<(String, String, String)> = Vec::new();
     let (what, sentence, cols, rows, commands, options): (
         &str,
         String,
@@ -384,30 +388,39 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
             }
             "apply" => {
                 what = "Apply PTF";
-                let now = d == "*IPL";
-                sentence = if now {
-                    "Press OK to apply the PTFs listed below and IPL the system: it ends its jobs and restarts in one minute, applying PTFs with a delayed IPL action."
-                } else {
-                    "Press OK to apply the PTFs listed below. PTFs with a delayed IPL action are applied at the next IPL."
+                let of = |t: &str, d: &str| -> (Vec<String>, String) {
+                    let now = d == "*IPL";
+                    let mut cmds: Vec<String> = products
+                        .iter()
+                        .map(|p| {
+                            format!(
+                                "APYPTF LICPGM({p}) SELECT({}) APY({t}) DELAYED(*YES)",
+                                select(p)
+                            )
+                        })
+                        .collect();
+                    // APYPTF's IPLAPY only marks the next IPL; the IPL
+                    // itself is a controlled restart.
+                    if now {
+                        cmds.push(
+                            "PWRDWNSYS OPTION(*CNTRLD) DELAY(60) RESTART(*YES) CONFIRM(*NO)".into(),
+                        );
+                    }
+                    let sentence = if now {
+                        "Press OK to apply the PTFs listed below and IPL the system: it ends its jobs and restarts in one minute, applying PTFs with a delayed IPL action."
+                    } else {
+                        "Press OK to apply the PTFs listed below. PTFs with a delayed IPL action are applied at the next IPL."
+                    };
+                    (cmds, sentence.into())
+                };
+                (commands, sentence) = of(&t, &d);
+                by = "t,d";
+                for vt in ["*TEMP", "*PERM"] {
+                    for vd in ["*NO", "*IPL"] {
+                        let (c, s) = of(vt, vd);
+                        variants.push((format!("{vt}|{vd}"), c.join("; "), s));
+                    }
                 }
-                .into();
-                let mut cmds: Vec<String> = products
-                    .iter()
-                    .map(|p| {
-                        format!(
-                            "APYPTF LICPGM({p}) SELECT({}) APY({t}) DELAYED(*YES)",
-                            select(p)
-                        )
-                    })
-                    .collect();
-                // APYPTF's IPLAPY only marks the next IPL; the IPL itself
-                // is a controlled restart.
-                if now {
-                    cmds.push(
-                        "PWRDWNSYS OPTION(*CNTRLD) DELAY(60) RESTART(*YES) CONFIRM(*NO)".into(),
-                    );
-                }
-                commands = cmds;
                 options = format!(
                     "Apply type: {} Temporarily (*TEMP) {} Permanently (*PERM) &nbsp; Delayed PTFs: {} Apply at next IPL {} Schedule IPL now<br>",
                     radio("t", "*TEMP", t == "*TEMP"),
@@ -419,10 +432,17 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
             _ => {
                 what = "Remove PTF";
                 sentence = "Press OK to remove the PTFs listed below. PTFs with a delayed IPL action are removed at the next IPL.".into();
-                commands = products
-                    .iter()
-                    .map(|p| format!("RMVPTF LICPGM({p}) SELECT({}) RMV({t})", select(p)))
-                    .collect();
+                let of = |t: &str| -> Vec<String> {
+                    products
+                        .iter()
+                        .map(|p| format!("RMVPTF LICPGM({p}) SELECT({}) RMV({t})", select(p)))
+                        .collect()
+                };
+                commands = of(&t);
+                by = "t";
+                for vt in ["*TEMP", "*PERM"] {
+                    variants.push((vt.to_string(), of(vt).join("; "), sentence.clone()));
+                }
                 options = format!(
                     "Remove type: {} Temporarily (*TEMP) {} Permanently (*PERM)<br>",
                     radio("t", "*TEMP", t == "*TEMP"),
@@ -452,11 +472,34 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
         empty: String::new(),
         keep: Vec::new(),
     });
+    // The command and sentence of each choice, for the page's script to
+    // follow the radio buttons (qsnav.js, `data-by`); without script the
+    // current choice's.
+    let follow = |pick: usize| -> String {
+        if variants.is_empty() {
+            return String::new();
+        }
+        let map: Vec<(String, String)> = variants
+            .iter()
+            .map(|v| {
+                (
+                    v.0.clone(),
+                    if pick == 1 { v.1.clone() } else { v.2.clone() },
+                )
+            })
+            .collect();
+        format!(" data-by=\"{by}\" data-v=\"{}\"", esc(&json_map(&map)))
+    };
     let opts = format!(
-        "<p class=\"small grey\">{options}Equivalent command: <span class=\"mono\">{}</span></p>",
+        "<p class=\"small grey\">{options}Equivalent command: <span class=\"mono\"{}>{}</span></p>",
+        follow(1),
         esc(&commands.join("; "))
     );
-    let body = confirm_body(&rq.ctx, &sentence, &table, &opts);
+    let body = confirm_body(&rq.ctx, &sentence, &table, &opts).replacen(
+        &format!("<p>{}</p>", esc(&sentence)),
+        &format!("<p{}>{}</p>", follow(2), esc(&sentence)),
+        1,
+    );
     let title = format!("Confirm {what}");
     let back = if fixes_op { "Fixes" } else { "PTFs" };
     page(
@@ -518,6 +561,28 @@ pub fn level(rq: &Rq<'_>) -> Response {
         "ptf",
         None,
     )
+}
+
+/// `{"key":"value",...}` with JSON string escapes.
+fn json_map(pairs: &[(String, String)]) -> String {
+    let q = |s: &str| {
+        let mut o = String::from("\"");
+        for c in s.chars() {
+            match c {
+                '"' => o.push_str("\\\""),
+                '\\' => o.push_str("\\\\"),
+                c if (c as u32) < 0x20 => o.push(' '),
+                c => o.push(c),
+            }
+        }
+        o.push('"');
+        o
+    };
+    let body: Vec<String> = pairs
+        .iter()
+        .map(|(k, v)| format!("{}:{}", q(k), q(v)))
+        .collect();
+    format!("{{{}}}", body.join(","))
 }
 
 /// The cumulative level, `None` when no package is installed.

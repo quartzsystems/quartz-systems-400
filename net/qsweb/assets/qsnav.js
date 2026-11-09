@@ -190,6 +190,27 @@
     body.insertBefore(fr, head.nextSibling);
   }
 
+  // Text that follows a form's choices: an element with data-by (the
+  // fields' names, "t,d") and data-v (JSON, the values joined by "|"
+  // to the text) shows the text of the choices made, e.g. a
+  // confirmation's sentence and equivalent command.
+  function follow(f) {
+    var els = document.querySelectorAll("[data-by][data-v]");
+    for (var i = 0; i < els.length; i++) {
+      var map;
+      try { map = JSON.parse(els[i].getAttribute("data-v")); } catch (err) { continue; }
+      var key = els[i].getAttribute("data-by").split(",").map(function (n) {
+        var x = f.elements[n.trim()];
+        return x ? x.value : "";
+      }).join("|");
+      if (Object.prototype.hasOwnProperty.call(map, key)) { els[i].textContent = map[key]; }
+    }
+  }
+  window.addEventListener("change", function (e) {
+    var f = e.target && e.target.form;
+    if (f) { follow(f); }
+  });
+
   function plain(e) { return e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey; }
 
   window.addEventListener("click", function (e) {

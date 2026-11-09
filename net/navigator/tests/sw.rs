@@ -132,11 +132,43 @@ fn ptfs() {
 fn ptf_confirm() {
     let mut b = Browser::signed_on();
     let url = "/ptf/confirm?op=apply&id=QS10432&id=QS10447";
+    // The sentence and the equivalent command carry every choice's text
+    // for the script to follow the radio buttons.
+    let later = "Press OK to apply the PTFs listed below. PTFs with a delayed IPL action are applied at the next IPL.";
+    let now = "Press OK to apply the PTFs listed below and IPL the system: it ends its jobs and restarts in one minute, applying PTFs with a delayed IPL action.";
+    let cmd = |t: &str, ipl: bool| {
+        format!(
+            "APYPTF LICPGM(QS00SS1) SELECT(QS10432 QS10447) APY({t}) DELAYED(*YES){}",
+            if ipl {
+                "; PWRDWNSYS OPTION(*CNTRLD) DELAY(60) RESTART(*YES) CONFIRM(*NO)"
+            } else {
+                ""
+            }
+        )
+    };
+    let attr = |v: [String; 4]| {
+        format!(
+            " data-by=\"t,d\" data-v=\"{{&quot;*TEMP|*NO&quot;:&quot;{}&quot;,&quot;*TEMP|*IPL&quot;:&quot;{}&quot;,&quot;*PERM|*NO&quot;:&quot;{}&quot;,&quot;*PERM|*IPL&quot;:&quot;{}&quot;}}\"",
+            v[0], v[1], v[2], v[3]
+        )
+    };
+    let sentences = attr([later.into(), now.into(), later.into(), now.into()]);
+    let commands = attr([
+        cmd("*TEMP", false),
+        cmd("*TEMP", true),
+        cmd("*PERM", false),
+        cmd("*PERM", true),
+    ]);
+    let p_from = format!("<p>{later}</p>");
+    let p_to = format!("<p{sentences}>{later}</p>");
+    let span_to = format!("Equivalent command: <span class=\"mono\"{commands}>");
     assert_golden(
         &ok(&mut b, url),
         "nav/ptf-confirm.html",
         &[
             IDS,
+            (&p_from, &p_to),
+            ("Equivalent command: <span class=\"mono\">", &span_to),
             // The second PTF's description is the list's.
             (
                 "<td>Security fix for TLS handshake</td>",
