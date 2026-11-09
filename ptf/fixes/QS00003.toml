@@ -1,0 +1,55 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# QS00003: the fixes after QS00002. A LIC PTF (this build's slot A and B
+# images); no message file changed.
+# `cargo run -p build -- ptf ptf/fixes/QS00003.toml`; the tag
+# `ptf-QS00003` builds and signs it in CI (docs/releasing.md).
+
+ptf = "QS00003"
+product = "QS00SS1"
+kind = "delayed"
+lic = "*BUILD"
+prereqs = ["QS00002"]
+cover = """
+Fixes after QS00002: devices, Access for Web 5250, fixes and the web
+consoles.
+
+Problem corrected:
+- A display a client named (DEVNAME), or a printer session's device,
+  in use when the system ended stayed in use after the IPL and refused
+  sessions that named it. QS00002 freed only the displays the system
+  named; every virtual device is now freed.
+- Access for Web 5250: keys, clicks and cursor moves took effect
+  slowly: the browser redrew the whole screen for each one. It now
+  redraws only what changed.
+- Access for Web 5250: a session that could not connect showed "Not
+  found" with a garbled message. It now shows the disconnected screen
+  with the reason, and a session the Access for Web job did not answer
+  in time is no longer reported as refused.
+- Checking for fixes offered a cumulative package whose PTFs were all
+  on the system already. Navigator's Fixes showed every fix as 0.0 MB
+  released today; it now shows the size and the package's date.
+- Navigator, HTTP Server Administration and Access for Web: Close window
+  on a help page did nothing; it now returns to the previous page, or
+  closes a help window of its own.
+
+New function:
+- In Navigator, HTTP Server Administration and Access for Web, every
+  list sorts by a click on a column's heading (A to Z, then Z to A,
+  then the original order) and has a filter under each heading that
+  keeps the rows containing its text. Both work on the rows the page
+  shows.
+
+What the PTF changes:
+- Replaces the Licensed Internal Code.
+
+Special instructions:
+- QS00002 is a prerequisite.
+- This PTF replaces the Licensed Internal Code. APYPTF writes the new
+  image into the slot not in use; the next IPL starts from it.
+  RMVPTF and an IPL return to the previous image.
+- Devices held in use since before this PTF are freed by the IPL that
+  starts the new image.
+"""
