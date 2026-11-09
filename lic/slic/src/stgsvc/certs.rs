@@ -256,7 +256,7 @@ fn refused_audit(user: &str, what: &str) {
 
 /// A job may have an application's certificate: a system server
 /// profile, or a user with `*ALLOBJ` and `*IOSYSCFG`.
-fn may_have_key(p: &Principal) -> bool {
+pub(crate) fn may_have_key(p: &Principal) -> bool {
     SERVER_PROFILES.contains(&p.user.as_str())
         || (p.has(SpecialAuth::ALLOBJ) && p.has(SpecialAuth::IOSYSCFG))
 }

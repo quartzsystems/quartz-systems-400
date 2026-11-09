@@ -7,26 +7,18 @@
 //! ([`app_server_config`]; `QSASNCRT` assigns one). When nothing is
 //! assigned, the store does not exist, or the service refuses, the
 //! server keeps the system's own self-signed certificate: a P-256 key,
-//! made on first use and kept as PEM in the data areas
-//! `QUSRSYS/QTVTLSCRT` and `QUSRSYS/QTVTLSKEY` (the key's area is
-//! `AUT(*EXCLUDE)`). The protocol versions and suites follow `QSSLPCL`,
+//! made on first use and kept by the storage service as PEM in the data
+//! areas `QUSRSYS/QTVTLSCRT` and `QUSRSYS/QTVTLSKEY` (the key's area is
+//! public `*EXCLUDE`), so every server profile presents the same one. The protocol versions and suites follow `QSSLPCL`,
 //! `QSSLCSL` and `QSSLCSLCTL`. Clients (`ipps` printers, `FTP`,
 //! `SNDSMTPEMM`) check a server against the shipped roots and the
 //! `*SYSTEM` store's trusted CAs ([`client_config`]).
 
 use std::sync::Arc;
 
-use mi::io::DataAreaValue;
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use stg::{Client, Link};
-
-/// The certificate's data area.
-pub const CERT_AREA: &str = "QTVTLSCRT";
-/// The private key's data area.
-pub const KEY_AREA: &str = "QTVTLSKEY";
-const LIB: &str = "QUSRSYS";
-const AREA_LEN: u32 = 2000;
 
 fn random_bytes(n: usize) -> Result<Vec<u8>, String> {
     use std::io::Read;
@@ -82,40 +74,6 @@ pub fn make_certificate(host: &str) -> Result<(String, String), String> {
     Ok((cert_pem, key_pem))
 }
 
-fn read_area(link: &mut Link, name: &str) -> Option<String> {
-    let v = link.da_read(name.into(), LIB.into()).ok()?.ok()?;
-    let text = ccsid::from_ebcdic(&v.value);
-    let t = text.trim_end().to_string();
-    if t.contains("-----BEGIN") {
-        Some(t)
-    } else {
-        None
-    }
-}
-
-fn write_area(link: &mut Link, name: &str, text: &str, exclude: bool) -> Result<(), String> {
-    let aut = if exclude { "*EXCLUDE" } else { "*USE" };
-    let made = link
-        .exec(format!(
-            "CRTDTAARA DTAARA({LIB}/{name}) TYPE(*CHAR) LEN({AREA_LEN}) AUT({aut}) TEXT('TELNET server TLS material')"
-        ))
-        .map_err(|e| e.to_string())?;
-    let first = made.text.lines().next().unwrap_or("");
-    if first.starts_with("CPF") && !first.starts_with("CPF1023") {
-        return Err(format!("{LIB}/{name}: {first}"));
-    }
-    let mut v = DataAreaValue::chars(AREA_LEN);
-    let bytes = ccsid::to_ebcdic(text).map_err(|e| e.to_string())?;
-    if bytes.len() > AREA_LEN as usize {
-        return Err(format!("{name}: the PEM is longer than the data area"));
-    }
-    v.value.clone_from(&bytes);
-    v.value.resize(AREA_LEN as usize, 0x40);
-    link.da_write(name.into(), LIB.into(), v)
-        .map_err(|e| e.to_string())?
-        .map_err(|e| format!("{LIB}/{name}: {}", e.msgid))
-}
-
 /// The protocol versions `QSSLPCL` allows; TLS 1.3 and 1.2 for `*OPSYS`.
 fn versions(link: &mut Link) -> Vec<&'static rustls::SupportedProtocolVersion> {
     let text = link
@@ -137,17 +95,19 @@ fn versions(link: &mut Link) -> Vec<&'static rustls::SupportedProtocolVersion> {
     out
 }
 
-/// The server configuration: the stored certificate and key, made on
-/// first use.
+/// The server configuration: the system's certificate and key from the
+/// storage service, made here on first use and kept there.
 pub fn server_config(link: &mut Link, host: &str) -> Result<Arc<rustls::ServerConfig>, String> {
-    let stored = read_area(link, CERT_AREA).zip(read_area(link, KEY_AREA));
-    let (cert_pem, key_pem) = if let Some(pair) = stored {
+    let ask = |link: &mut Link, made| {
+        link.system_identity(made)
+            .map_err(|e| e.to_string())
+            .and_then(|r| r)
+    };
+    let (cert_pem, key_pem) = if let Some(pair) = ask(link, None)? {
         pair
     } else {
-        let (c, k) = make_certificate(host)?;
-        write_area(link, CERT_AREA, &c, false)?;
-        write_area(link, KEY_AREA, &k, true)?;
-        (c, k)
+        let made = make_certificate(host)?;
+        ask(link, Some(made))?.ok_or("the system's certificate was not kept")?
     };
     config_of(link, &cert_pem, &key_pem)
 }

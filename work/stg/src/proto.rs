@@ -900,6 +900,11 @@ ipc::rpc! {
     1241 => fn cert_panel / CertPanel (what: String, args: Vec<String>) -> Result<Sys2Data, String>;
     /// The expiry scan: warnings go to `QSYSOPR`; the lines for the log.
     1242 => fn cert_expiry / CertExpiry () -> Vec<String>;
+    /// The system's own TLS certificate and key (PEM), which a server
+    /// presents when none is assigned to it; `made` is stored when there
+    /// is none yet. Only the system's server profiles, or a user with
+    /// `*ALLOBJ` and `*IOSYSCFG`.
+    1243 => fn system_identity / SystemIdentity (made: Option<(String, String)>) -> Result<Option<(String, String)>, String>;
     // --- the update service (1250; lic/slic/src/cpp/updcmd.rs)
     /// The hourly look at the update check schedule (`QSCHGUPDA`): the
     /// check runs when it is due; the lines for the log.

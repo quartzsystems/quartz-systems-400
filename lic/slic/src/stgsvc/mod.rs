@@ -56,6 +56,7 @@ pub(crate) mod stats;
 mod svcop;
 pub(crate) mod tcp;
 pub(crate) mod timzon;
+mod tlsid;
 pub(crate) mod trace;
 mod uiapi;
 mod units;

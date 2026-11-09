@@ -368,6 +368,17 @@ impl Suite {
             &["XWA0011", "You have no saved sessions."],
             "the list after Delete",
         )?;
+        // Telnet's TLS port kept the system's certificate (the storage
+        // service stores it for every server profile), not one per run.
+        for area in ["QTVTLSCRT", "QTVTLSKEY"] {
+            let d = s.command(
+                &format!("DSPOBJD OBJ(QUSRSYS/{area}) OBJTYPE(*DTAARA)"),
+                CMD,
+            )?;
+            if !d.contains(area) || d.contains("CPF") {
+                return Err(format!("the system's TLS certificate is not kept:\n{d}"));
+            }
+        }
         let ended = s.command("ENDTCPSVR SERVER(*HTTP) HTTPSVR(ACCESSWEB)", CMD)?;
         if !ended.contains("TCP1A0A") {
             return Err(format!("ENDTCPSVR ACCESSWEB:\n{ended}"));

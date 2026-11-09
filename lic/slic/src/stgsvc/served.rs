@@ -2758,6 +2758,14 @@ impl Service for Served<'_> {
         super::certs::expiry_scan(self.system)
     }
 
+    fn system_identity(
+        &mut self,
+        made: Option<(String, String)>,
+    ) -> Result<Option<(String, String)>, String> {
+        let principal = self.ctx.session.borrow().principal.clone();
+        super::tlsid::identity(self.system, &principal, made)
+    }
+
     fn upd_tick(&mut self) -> Vec<String> {
         crate::cpp::updcmd::tick(self.system, crate::ipl::system::now_unix())
     }
