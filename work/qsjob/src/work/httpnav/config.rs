@@ -194,16 +194,29 @@ fn disks(m: &Main, reset: bool) -> Disks {
 }
 
 /// An ASP's protection from its units': `Mirrored`, `Device parity`,
-/// both, or `None`.
+/// both, or `None`. Parity names its level, `Device parity (RAID 5)`,
+/// when every parity unit has the same one.
 fn asp_protection(units: &[DiskUnit]) -> String {
     let has = |p: &str| units.iter().any(|u| u.protection.starts_with(p));
+    let mut parity: Vec<&str> = units
+        .iter()
+        .filter(|u| u.protection.starts_with("Device parity"))
+        .map(|u| u.protection.as_str())
+        .collect();
+    parity.dedup();
+    let parity = match parity.as_slice() {
+        [one] => (*one).to_string(),
+        _ => "Device parity".into(),
+    };
     match (has("Mirrored"), has("Device parity")) {
-        (true, true) => "Mirrored, device parity",
-        (true, false) => "Mirrored",
-        (false, true) => "Device parity",
-        (false, false) => "None",
+        (true, true) => format!(
+            "Mirrored, device parity{}",
+            parity.strip_prefix("Device parity").unwrap_or("")
+        ),
+        (true, false) => "Mirrored".into(),
+        (false, true) => parity,
+        (false, false) => "None".into(),
     }
-    .into()
 }
 
 /// Where a kind of resource is listed.

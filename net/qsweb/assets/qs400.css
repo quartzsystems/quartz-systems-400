@@ -97,8 +97,9 @@ table.list td.mono, table.list th.mono { font-family: "Courier New", Courier, mo
 /* A one-row HTML bar for utilisation: coloured cell of proportional width */
 table.bar { border-collapse: collapse; width: 120px; border: 1px solid #999999; }
 table.bar td { padding: 0; height: 9px; font-size: 1px; line-height: 1px; }
-table.bar td.fill { background: #6688aa; }
-table.bar td.hot { background: #cc0000; }
+/* The list's striped rows must not paint over a bar inside them */
+table.bar td.fill, table.list tr.alt table.bar td.fill { background: #6688aa; }
+table.bar td.hot, table.list tr.alt table.bar td.hot { background: #cc0000; }
 
 /* ---- Properties / detail ----------------------------------------- */
 table.props { border-collapse: collapse; margin: 2px 0 6px 0; }
