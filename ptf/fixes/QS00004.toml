@@ -14,9 +14,22 @@ kind = "delayed"
 lic = "*BUILD"
 prereqs = ["QS00003"]
 cover = """
-Fixes after QS00003: Navigator fixes and PTFs, IPL after apply, wording.
+Fixes after QS00003: automatic sign-on, web 5250, Navigator fixes, wording.
 
 Problem corrected:
+- Automatic sign-on with a one-time ticket (Access for Web, QS/400
+  Access for Desktop) was always refused: the system accepted a ticket
+  only from the Telnet server's own job, not from the session's job.
+  The refused ticket was then tried as a password, so each attempt
+  counted as a wrong password and could disable the profile
+  (QMAXSIGN, QMAXSGNACN). A ticket is now never tried as a password.
+- Message TCP1A64 showed no user, device or reason.
+- Access for Web 5250: a session whose system name was not this
+  system's current name was refused ("Connection to ... refused")
+  without connecting, even when its host was this system. A session to
+  any of this system's names, localhost or one of its own addresses now
+  connects; a refusal names the system to choose. A failed Connect no
+  longer shows its message twice.
 - Navigator: Apply PTF with "Schedule IPL now" applied the PTFs but did
   not IPL. The system now ends its jobs and restarts one minute after
   the PTFs are applied.

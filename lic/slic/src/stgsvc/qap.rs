@@ -492,7 +492,8 @@ pub fn telnet_ticket(
         text: "Password or user profile is not correct.".into(),
         vary_off: false,
     };
-    if ctx.job.name != TELNET {
+    // Each session is a QTVDEVICE job of its own: it asks, not the server.
+    if !telnet_job(ctx) {
         return Err(not());
     }
     let user = user.trim().to_ascii_uppercase();
@@ -514,7 +515,8 @@ pub fn telnet_ticket(
             .set("NUSR", user.as_str())
             .set("RSLT", if r.is_ok() { "A" } else { "R" }),
     );
-    if r.is_err() {
+    if let Err(why) = r {
+        eprintln!("qsstg: telnet ticket of {user} at {device} refused: {why:?}");
         return Err(not());
     }
     sign_on_ticket(system, &user, device)
@@ -554,7 +556,7 @@ pub fn telnet_verify(
 
 /// `telnet_exit_signon`: an `INIT0100` exit program allowed automatic
 /// sign-on as `user`; every sign-on check but the password, as IBM's
-/// "anonymous" Telnet does. Only `QTVTELNET` may ask.
+/// "anonymous" Telnet does. Only the Telnet jobs may ask.
 pub fn telnet_exit_signon(
     system: &mut System,
     ctx: &JobCtx,

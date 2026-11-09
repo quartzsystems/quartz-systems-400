@@ -1281,6 +1281,8 @@ fn auto_signon(
                 severity: 20,
                 msgid: servers::msg::AUTO_SIGNON_REFUSED.into(),
                 msgf: ("QTCPMSG".into(), "QSYS".into()),
+                // &1 the user, &2 the device, &3 the reason.
+                data: cmd::error::data(&[(&user, 10), (device, 10), (&why, 128)]),
                 text,
                 ..wm::obj::msgq::QMsg::default()
             };
@@ -1304,11 +1306,13 @@ fn try_auto_signon(
     let client_seed = neg.var_bytes("IBMRSEED").ok_or("no IBMRSEED")?;
     let sub = neg.var_bytes("IBMSUBSPW").ok_or("no IBMSUBSPW")?;
     if client_seed.is_empty() {
-        if let Some(ticket) = qapd::tickets::parse_hex(sub)
-            && let Ok(Ok(s)) =
-                link.telnet_ticket(user.to_string(), ticket.0.to_vec(), device.to_string(), tls)
-        {
-            return Ok(s);
+        // A ticket is never tried as a password: a refused one would
+        // count as a wrong password and in the end disable the profile.
+        if let Some(ticket) = qapd::tickets::parse_hex(sub) {
+            return link
+                .telnet_ticket(user.to_string(), ticket.0.to_vec(), device.to_string(), tls)
+                .map_err(|e| e.to_string())?
+                .map_err(|r| format!("the ticket: {}", refused(r)));
         }
         if !tls {
             return Err("a password without a seed is accepted only over TLS".into());

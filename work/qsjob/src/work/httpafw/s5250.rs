@@ -309,19 +309,23 @@ impl Session5250 for LiveS5250 {
             old.end();
         }
         // The job's thread did not answer: not a refusal by the system.
-        let Some(me) = self.link.job(|m| crate::work::web::system::system_name(m)) else {
+        let Some(me) = self.link.job(|m| own_names(m)) else {
             return Err(msg(
                 "CPF9897",
                 "The Access for Web job did not answer in time; the session was not started. Try again.",
                 &[],
             ));
         };
-        if !saved.file.system.name.eq_ignore_ascii_case(&me) {
+        let target = &saved.file.system;
+        if !is_this_system(&me, &target.name, &target.host) {
             // BLOCKED(rel): a session to another system goes through that system's own Access for Web; refused with QAD1002.
-            let sys = saved.file.system.name.as_str();
+            let sys = target.name.as_str();
+            let here = me.first().map_or("", String::as_str);
             return Err(msg(
                 "QAD1002",
-                &format!("Connection to {sys} refused."),
+                &format!(
+                    "Connection to {sys} refused: this server's sessions go to {here}, this system. Choose {here} in the session's Properties."
+                ),
                 &[sys],
             ));
         }
@@ -381,9 +385,32 @@ impl Session5250 for LiveS5250 {
     }
 }
 
-fn system_name(link: &Link) -> String {
-    link.job(|m| crate::work::web::system::system_name(m))
-        .unwrap_or_default()
+/// This system's names: the network attribute's first, then `QSYSNAME`.
+fn own_names(m: &crate::work::web::bridge::Main) -> Vec<String> {
+    let mut v = vec![crate::work::web::system::system_name(m)];
+    if let Some(s) = m.link.borrow_mut().with(|l| l.sysval("QSYSNAME".into())) {
+        let n = ccsid::from_ebcdic(&s.data).trim().to_string();
+        if !n.is_empty() && !v.iter().any(|x| x.eq_ignore_ascii_case(&n)) {
+            v.push(n);
+        }
+    }
+    v
+}
+
+/// Whether a session to `name` at `host` is one to this system: one of
+/// its names, `localhost`, or one of its own addresses.
+fn is_this_system(me: &[String], name: &str, host: &str) -> bool {
+    let (name, host) = (name.trim(), host.trim());
+    if me.iter().any(|m| m.eq_ignore_ascii_case(name))
+        || name.eq_ignore_ascii_case("localhost")
+        || host.eq_ignore_ascii_case("localhost")
+    {
+        return true;
+    }
+    // An address this system can bind to is its own.
+    host.parse::<std::net::IpAddr>().is_ok_and(|ip| {
+        ip.is_loopback() || std::net::UdpSocket::bind(SocketAddr::new(ip, 0)).is_ok()
+    })
 }
 
 /// A one-time ticket for `user`, 64 hex characters.
@@ -434,9 +461,9 @@ fn verify(link: &Link, user: &str, system: &str, sign_on: bool) -> Vec<Check> {
         ok,
         message,
     };
-    let me = system_name(link);
+    let me = link.job(|m| own_names(m)).unwrap_or_default();
     let mut out = Vec::new();
-    let local = system.eq_ignore_ascii_case(&me);
+    let local = is_this_system(&me, system, "");
     out.push(check(
         "Name lookup",
         Some(local),
@@ -862,6 +889,17 @@ mod tests {
         let text = text_of(&s);
         assert!(text.contains("[accessweb]"), "{text}");
         assert_eq!(saved_of(3, &text), Some(s));
+    }
+
+    #[test]
+    fn this_system_by_name_or_address() {
+        let me = vec!["SOYUZ".to_string(), "QS400".to_string()];
+        assert!(is_this_system(&me, "soyuz", ""));
+        assert!(is_this_system(&me, "QS400", "10.42.70.150"));
+        assert!(is_this_system(&me, "OTHER", "127.0.0.1"));
+        assert!(is_this_system(&me, "OTHER", "localhost"));
+        assert!(!is_this_system(&me, "OTHER", ""));
+        assert!(!is_this_system(&me, "OTHER", "192.0.2.1"));
     }
 
     #[test]

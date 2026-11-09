@@ -255,6 +255,9 @@ pub fn page(rq: &Rq<'_>, id: u32) -> Response {
     if let Some(m) = rq.app.sessions.take_flash(&rq.session.id) {
         page.messages.insert(0, m);
     }
+    // A failed Connect, then the page connecting again, says it once.
+    page.messages
+        .dedup_by(|a, b| a.id == b.id && a.text == b.text);
     Response::html(200, wide_frame(&render(&rq.ctx, &page), rq, id, &p))
 }
 

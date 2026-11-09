@@ -296,7 +296,8 @@ impl Suite {
             "the display after Disconnect",
         )?;
         // A TLS session to the system's own Telnet server (992) with a
-        // fixed device name; then TLS off and the same device again.
+        // fixed device name, signed on automatically (a QAP ticket); then
+        // TLS off and the same device again.
         let fields = |tls: bool| {
             let mut v = vec![
                 ("n", "Step 154 TLS"),
@@ -309,6 +310,7 @@ impl Suite {
             ];
             if tls {
                 v.push(("tls", "on"));
+                v.push(("aso", "on"));
             }
             v
         };
@@ -319,8 +321,10 @@ impl Suite {
         let saved = post(port, "/5250", "/5250/session/new", &sid, &f)?;
         want(&saved, 303, &[], "Save the TLS session")?;
         let _ = afw(port, "GET", "/5250/session/2", Some(&sid), None)?;
-        screen_until(port, &sid, 2, 30, |t| t.contains("Sign On"))
-            .map_err(|e| format!("the TLS session: {e}"))?;
+        screen_until(port, &sid, 2, 30, |t| {
+            t.contains("Main Menu") || t.contains("Sign-on Information")
+        })
+        .map_err(|e| format!("the TLS session's automatic sign-on: {e}"))?;
         let off = post(
             port,
             "/5250/session/2",
