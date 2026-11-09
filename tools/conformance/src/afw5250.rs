@@ -295,6 +295,64 @@ impl Suite {
             &[&format!("{system}: Not connected"), "QAD1006"],
             "the display after Disconnect",
         )?;
+        // A TLS session to the system's own Telnet server (992) with a
+        // fixed device name; then TLS off and the same device again.
+        let fields = |tls: bool| {
+            let mut v = vec![
+                ("n", "Step 154 TLS"),
+                ("sz", "24x80"),
+                ("cp", "37 - USA, Canada"),
+                ("dev", "WEBTLS154"),
+                ("col", "console"),
+                ("ac", "on"),
+                ("km", "Default"),
+            ];
+            if tls {
+                v.push(("tls", "on"));
+            }
+            v
+        };
+        let mut f = fields(true);
+        let sys = format!("{system} (this system)");
+        f.push(("sys", &sys));
+        f.push(("save", "Save session"));
+        let saved = post(port, "/5250", "/5250/session/new", &sid, &f)?;
+        want(&saved, 303, &[], "Save the TLS session")?;
+        let _ = afw(port, "GET", "/5250/session/2", Some(&sid), None)?;
+        screen_until(port, &sid, 2, 30, |t| t.contains("Sign On"))
+            .map_err(|e| format!("the TLS session: {e}"))?;
+        let off = post(
+            port,
+            "/5250/session/2",
+            "/5250/session/2",
+            &sid,
+            &[("tb", "Disconnect")],
+        )?;
+        want(&off, 303, &[], "Disconnect the TLS session")?;
+        let mut f = fields(false);
+        f.push(("sys", &sys));
+        f.push(("ok", "OK"));
+        let changed = post(port, "/5250/2/properties", "/5250/2/properties", &sid, &f)?;
+        want(&changed, 303, &[], "TLS off in Properties")?;
+        let _ = afw(port, "GET", "/5250/session/2", Some(&sid), None)?;
+        screen_until(port, &sid, 2, 30, |t| t.contains("Sign On"))
+            .map_err(|e| format!("the session after TLS off, same device: {e}"))?;
+        let off = post(
+            port,
+            "/5250/session/2",
+            "/5250/session/2",
+            &sid,
+            &[("tb", "Disconnect")],
+        )?;
+        want(&off, 303, &[], "Disconnect again")?;
+        let del2 = post(
+            port,
+            "/5250/2/delete/confirm",
+            "/5250/2/delete/confirm",
+            &sid,
+            &[("ok", "OK")],
+        )?;
+        want(&del2, 303, &[], "Delete the TLS session")?;
         let del = post(
             port,
             "/5250/1/delete/confirm",
