@@ -95,6 +95,7 @@ pub fn load(db: &mut PtfDb, pkg: &Package, savf: &str, release: &str, now: u64) 
             coreqs: ours(&h.coreqs),
             replaced: Vec::new(),
             changed: now,
+            loaded: now,
         },
     );
     Ok(())

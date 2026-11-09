@@ -135,6 +135,7 @@ pub fn record(db: &mut PtfDb, e: &CatalogPtf, savf: &str, cover_only: bool, now:
             coreqs: refs(&e.coreqs),
             replaced: Vec::new(),
             changed: now,
+            loaded: 0,
         },
     );
 }

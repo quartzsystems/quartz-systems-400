@@ -188,7 +188,11 @@ pub fn list(rq: &Rq<'_>) -> Response {
                 Cell::html(status(x.status)),
                 Cell::mono(&x.ipl_action),
                 Cell::text(&x.text),
-                Cell::text(&rq.stamp(x.loaded).0),
+                Cell::text(&if x.loaded == 0 {
+                    String::new()
+                } else {
+                    rq.stamp(x.loaded).0
+                }),
             ]
         })
         .collect();

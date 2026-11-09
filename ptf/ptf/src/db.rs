@@ -57,6 +57,8 @@ pub struct PtfRecord {
     pub replaced: Vec<Replaced>,
     /// Unix seconds of the last status change.
     pub changed: u64,
+    /// Unix seconds of the load; 0 when it was never loaded.
+    pub loaded: u64,
 }
 
 /// Every PTF, by ID.
@@ -111,7 +113,7 @@ impl PtfDb {
             };
             let _ = writeln!(
                 out,
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 r.ptf,
                 r.product,
                 r.option,
@@ -125,7 +127,8 @@ impl PtfDb {
                 refs(&r.prereqs),
                 refs(&r.coreqs),
                 replaced,
-                r.changed
+                r.changed,
+                r.loaded
             );
         }
         out
@@ -139,7 +142,10 @@ impl PtfDb {
         let mut db = Self::default();
         for line in text.lines().skip(1) {
             let f: Vec<&str> = line.split('\t').collect();
-            if f.len() != 14 {
+            // Fifteen fields since the load time; fourteen before it.
+            // Fifteen fields since the load time; a record from before
+            // it has fourteen and reads its last change as the load.
+            if f.len() != 14 && f.len() != 15 {
                 continue;
             }
             let Some(status) = Status::from_code(f[4]) else {
@@ -177,6 +183,7 @@ impl PtfDb {
                 coreqs: parse_refs(f[11]),
                 replaced,
                 changed: f[13].parse().unwrap_or(0),
+                loaded: f.get(14).unwrap_or(&f[13]).parse().unwrap_or(0),
             };
             db.ptfs.insert(r.ptf.clone(), r);
         }
@@ -220,6 +227,7 @@ mod tests {
             coreqs: Vec::new(),
             replaced: Vec::new(),
             changed: 7,
+            loaded: 5,
         };
         let mut old = PtfDb::default();
         old.ptfs.insert(r.ptf.clone(), r);
@@ -228,5 +236,14 @@ mod tests {
         assert_eq!(r.product, "QS00SS1");
         assert_eq!(r.prereqs[0].product, "QS00SS1");
         assert_eq!(db.of_product("QS00SS1").count(), 1);
+        assert_eq!((r.changed, r.loaded), (7, 5));
+        // A record written before the load time was kept.
+        let mut short = String::new();
+        for l in old.encode().lines() {
+            short.push_str(l.rsplit_once('\t').map_or(l, |x| x.0));
+            short.push('\n');
+        }
+        let r = PtfDb::decode(&short).ptfs.remove("QS00001").unwrap();
+        assert_eq!(r.loaded, 7);
     }
 }

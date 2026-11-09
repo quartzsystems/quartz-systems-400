@@ -265,7 +265,7 @@ fn ptfs(m: &Main) -> Vec<Ptf> {
                 release: release.clone(),
                 status,
                 text,
-                loaded: 0,
+                loaded: get(&r, "LOADED").parse().unwrap_or(0),
             });
         }
     }

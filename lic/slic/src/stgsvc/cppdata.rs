@@ -74,6 +74,7 @@ fn ptfs(system: &mut System, product: &str, select: &str) -> Result<Sys2Data, St
                 ("PTFID", r.ptf.clone()),
                 ("PSTS", r.status.display().to_string()),
                 ("PACT", ipl_action(r.action)),
+                ("LOADED", r.loaded.to_string()),
             ])
         })
         .collect();

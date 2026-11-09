@@ -80,6 +80,7 @@ fn db() -> PtfDb {
             coreqs: Vec::new(),
             replaced: Vec::new(),
             changed: 0,
+            loaded: 0,
         },
     );
     db

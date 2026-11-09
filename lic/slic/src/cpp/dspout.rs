@@ -569,6 +569,7 @@ mod tests {
             coreqs: Vec::new(),
             replaced: Vec::new(),
             changed,
+            loaded: changed,
         }
     }
 
