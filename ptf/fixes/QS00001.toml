@@ -37,7 +37,7 @@ Problem corrected:
 
 What the PTF changes:
 - Replaces the Licensed Internal Code, and message files QSYS/QTCPMSG
-  (TCP1A63, a TLS port not started, sent to QSYSOPR and the job log) and
+  (TCP1A63, a TLS port not started, sent to QSYSOPR and the job log),
   QSYS/QSQLMSG (SQL9001 covers a failed precompile or compile) and
   QSYS/QRPGLEMSG (RNF7114, a CLEAR or RESET of a format that changes
   nothing).
