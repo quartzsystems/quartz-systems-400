@@ -435,3 +435,37 @@ fn dhcp_needs_a_line() {
     apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
     assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Failed);
 }
+
+#[test]
+fn name_servers_reach_the_c_library_resolver() {
+    let mut w = World::new();
+    w.cfg.domain.domain_name = "AD.QUARTZ.SYSTEMS".into();
+    w.cfg.domain.dns = vec![
+        "10.42.20.20".parse().unwrap(),
+        "10.42.20.21".parse().unwrap(),
+    ];
+    apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
+    assert_eq!(
+        w.net.resolver,
+        "# Written by QS/400 from CHGTCPDMN; changes here are replaced.\n\
+         nameserver 10.42.20.20\nnameserver 10.42.20.21\n\
+         search ad.quartz.systems\noptions timeout:2 attempts:2\n"
+    );
+    // CHGTCPDMN while active rewrites it; a lease's servers follow
+    // the configured ones, three in all.
+    w.cfg.domain.search_list = vec!["A.EXAMPLE".into(), "B.EXAMPLE".into()];
+    apply::on_change(&mut w.ctx(), Table::TcpIp);
+    assert!(w.net.resolver.contains("search a.example b.example\n"));
+    let mut l = lease("10.0.4.15");
+    l.dns = vec![
+        Ipv4Addr::new(10, 42, 20, 21),
+        Ipv4Addr::new(1, 1, 1, 1),
+        Ipv4Addr::new(8, 8, 8, 8),
+    ];
+    w.st.ifcs.get_mut("10.0.2.16").unwrap().lease = Some(l);
+    let text = apply::resolv_conf(&w.cfg, &w.st);
+    assert!(
+        text.contains("nameserver 10.42.20.21\nnameserver 1.1.1.1\nsearch"),
+        "{text}"
+    );
+}

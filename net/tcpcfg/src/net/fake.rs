@@ -26,6 +26,8 @@ pub struct FakeNet {
     pub rules: Vec<(Proto, u16, u16)>,
     /// The host name.
     pub hostname: String,
+    /// The resolver's configuration.
+    pub resolver: String,
     /// Every operation, as `op args`.
     pub log: Vec<String>,
     /// Operations that fail (`add_address`, `add_route`, ...).
@@ -64,6 +66,7 @@ impl Default for FakeNet {
             sysctls,
             rules: Vec::new(),
             hostname: String::new(),
+            resolver: String::new(),
             log: Vec::new(),
             failing: BTreeSet::new(),
             dhcp: BTreeMap::new(),
@@ -320,6 +323,11 @@ impl NetOps for FakeNet {
     fn set_hostname(&mut self, name: &str) -> NetResult<()> {
         self.op("hostname", name)?;
         self.hostname = name.into();
+        Ok(())
+    }
+
+    fn set_resolver(&mut self, text: &str) -> NetResult<()> {
+        self.resolver = text.into();
         Ok(())
     }
 

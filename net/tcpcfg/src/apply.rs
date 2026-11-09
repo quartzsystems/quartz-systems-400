@@ -95,6 +95,7 @@ pub fn start_tcp(c: &mut Ctx<'_>, o: StartOpts) -> Result<Vec<Note>> {
     c.st.tcp = TcpStatus::Active;
     notes.extend(apply_ports(c));
     notes.extend(sync_routes(c));
+    notes.extend(apply_resolver(c));
     notes.push(Note::info(msg::STARTED, "TCP/IP started."));
     Ok(notes)
 }
@@ -605,6 +606,63 @@ pub fn apply_hostname(c: &mut Ctx<'_>) -> Vec<Note> {
     }
 }
 
+/// `/etc/resolv.conf` from the domain attributes: the `INTNETADR`
+/// servers, then those DHCP leases name (three in all, as the C library
+/// reads); the search list, else the domain name; `DMNSVRRTY`.
+#[must_use]
+pub fn resolv_conf(cfg: &Config, st: &State) -> String {
+    use std::fmt::Write as _;
+    let d = &cfg.domain;
+    let mut servers: Vec<IpAddr> = d.dns.clone();
+    for run in st.ifcs.values() {
+        if let Some(l) = &run.lease {
+            servers.extend(l.dns.iter().map(|a| IpAddr::V4(*a)));
+        }
+    }
+    let mut seen = Vec::new();
+    servers.retain(|a| {
+        let new = !seen.contains(a);
+        seen.push(*a);
+        new
+    });
+    let mut out = String::from("# Written by QS/400 from CHGTCPDMN; changes here are replaced.\n");
+    for a in servers.iter().take(3) {
+        let _ = writeln!(out, "nameserver {a}");
+    }
+    let search: Vec<String> = if d.search_list.is_empty() {
+        vec![d.domain_name.clone()]
+    } else {
+        d.search_list.clone()
+    };
+    let search: Vec<String> = search
+        .iter()
+        .map(|s| s.trim().to_ascii_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if !search.is_empty() {
+        let _ = writeln!(out, "search {}", search.join(" "));
+    }
+    let _ = writeln!(
+        out,
+        "options timeout:{} attempts:{}",
+        d.retry_interval.clamp(1, 30),
+        d.retry_attempts.clamp(1, 5)
+    );
+    out
+}
+
+/// The resolver's configuration from the domain attributes and leases.
+pub fn apply_resolver(c: &mut Ctx<'_>) -> Vec<Note> {
+    let text = resolv_conf(c.cfg, c.st);
+    match c.net.set_resolver(&text) {
+        Ok(()) => Vec::new(),
+        Err(e) => vec![Note::diag(
+            msg::ATTR_FAILED,
+            format!("Name servers not set: {e}."),
+        )],
+    }
+}
+
 /// The port restrictions into the backstop.
 pub fn apply_ports(c: &mut Ctx<'_>) -> Vec<Note> {
     let want = c.cfg.ports.ranges();
@@ -633,6 +691,7 @@ pub fn on_change(c: &mut Ctx<'_>, t: Table) -> Vec<Note> {
         Table::TcpIp => {
             let mut n = apply_attrs(c);
             n.extend(apply_hostname(c));
+            n.extend(apply_resolver(c));
             n
         }
         Table::Port => apply_ports(c),
@@ -760,6 +819,9 @@ pub fn refresh_dhcp(c: &mut Ctx<'_>) -> Vec<Note> {
     }
     if changed && c.st.tcp == TcpStatus::Active {
         notes.extend(sync_routes(c));
+    }
+    if changed {
+        notes.extend(apply_resolver(c));
     }
     notes
 }

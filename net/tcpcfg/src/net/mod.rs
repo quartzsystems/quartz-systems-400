@@ -121,6 +121,10 @@ pub trait NetOps {
     /// Set the kernel's host name.
     fn set_hostname(&mut self, name: &str) -> NetResult<()>;
 
+    /// The C library resolver's configuration (`/etc/resolv.conf`), for
+    /// the system's own clients that look names up through it.
+    fn set_resolver(&mut self, text: &str) -> NetResult<()>;
+
     /// Start keeping a DHCP lease on link `link` (`*IP4DHCP`).
     fn dhcp_start(&mut self, link: &str, cfg: dhcp::Config) -> NetResult<()> {
         let _ = (link, cfg);

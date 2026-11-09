@@ -263,6 +263,19 @@ impl NetOps for Kernel {
             .map_err(|e| NetError::new(format!("host name: {e}")))
     }
 
+    fn set_resolver(&mut self, text: &str) -> NetResult<()> {
+        const PATH: &str = "/etc/resolv.conf";
+        if std::fs::read_to_string(PATH).is_ok_and(|t| t == text) {
+            return Ok(());
+        }
+        // Whole or not at all: a lookup never reads half a file.
+        let tmp = "/etc/resolv.conf.new";
+        std::fs::create_dir_all("/etc")
+            .and_then(|()| std::fs::write(tmp, text))
+            .and_then(|()| std::fs::rename(tmp, PATH))
+            .map_err(|e| NetError::new(format!("{PATH}: {e}")))
+    }
+
     fn dhcp_start(&mut self, link: &str, cfg: dhcp::Config) -> NetResult<()> {
         if let Some(old) = self.agents.remove(link) {
             old.stop(false);
