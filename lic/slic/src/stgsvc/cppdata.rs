@@ -188,10 +188,23 @@ fn split(s: &str) -> Vec<String> {
 /// letter, its text in `LETTER`, one line per `|`-free line.
 fn covers(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
     let arg = |i: usize| args.get(i).cloned().unwrap_or_default();
+    // A group named in the selection (a cumulative package) is its PTFs.
+    let groups = ptfcmd::load_groups(system)?;
+    let keys = crate::cpp::trusted_keys();
+    let select: Vec<String> = split(&arg(1))
+        .into_iter()
+        .flat_map(|s| {
+            groups
+                .groups
+                .get(&s)
+                .and_then(|k| k.group(&keys))
+                .map_or_else(|| vec![s.clone()], |(g, _)| g.ptfs)
+        })
+        .collect();
     let all = ptfcmd::cover_letters(
         system,
         &arg(0),
-        &split(&arg(1)),
+        &select,
         &split(&arg(2)),
         &arg(3).trim().to_ascii_uppercase(),
     )?;

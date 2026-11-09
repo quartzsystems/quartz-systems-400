@@ -226,6 +226,48 @@ fn letters(m: &Main, select: &str) -> HashMap<String, String> {
         .unwrap_or_default()
 }
 
+/// The cover letters `select` names (a group: its PTFs): PTF, status,
+/// letter.
+fn covers(m: &Main, select: &str) -> Vec<(String, String, String)> {
+    sys2(m, "PTFCVR", &["*ALL", select, "", ""], "CVRS")
+        .map(|(_, rows)| {
+            rows.iter()
+                .map(|r| {
+                    (
+                        get(r, "PTFID"),
+                        get(r, "PTFSTS"),
+                        r.get("LETTER").cloned().unwrap_or_default(),
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The letter of `id`: a PTF's own, else (a cumulative package) the
+/// letters of its PTFs this system has not applied, newest first.
+fn group_letter(id: &str, mut all: Vec<(String, String, String)>) -> Option<String> {
+    if let Some(i) = all.iter().position(|c| c.0 == id) {
+        return Some(all.swap_remove(i).2);
+    }
+    all.retain(|c| {
+        !matches!(
+            c.1.as_str(),
+            "Temporarily applied" | "Permanently applied" | "Superseded"
+        )
+    });
+    if all.is_empty() {
+        return None;
+    }
+    all.sort_by(|a, b| b.0.cmp(&a.0));
+    Some(
+        all.iter()
+            .map(|c| format!("{}\n\n{}", c.0, c.2.trim_end()))
+            .collect::<Vec<_>>()
+            .join("\n\n\n"),
+    )
+}
+
 fn ptfs(m: &Main) -> Vec<Ptf> {
     let mut ids: Vec<String> = products(m).into_iter().map(|p| p.id).collect();
     ids.sort();
@@ -410,7 +452,8 @@ impl Software for LiveSoftware {
 
     fn cover_letter(&self, user: &str, id: &str) -> Option<String> {
         let id = id.trim().to_ascii_uppercase();
-        self.link.read(user, move |m| letters(m, &id).remove(&id))
+        self.link
+            .read(user, move |m| group_letter(&id, covers(m, &id)))
     }
 
     fn fixes(&self, _user: &str) -> Vec<Fix> {
@@ -462,6 +505,28 @@ mod tests {
         assert_eq!(ptf_status("Loaded"), Some(PtfStatus::NotApplied));
         assert_eq!(ptf_status("Not loaded"), None);
         assert_eq!(verb("qschkupd"), "QSCHKUPD");
+    }
+
+    #[test]
+    fn package_letters() {
+        let c = |p: &str, s: &str| (p.to_string(), s.to_string(), format!("{p} letter\n"));
+        let all = vec![
+            c("QS00001", "Permanently applied"),
+            c("QS00002", "Cover letter only"),
+            c("QS00003", "Cover letter only"),
+        ];
+        assert_eq!(
+            group_letter("QS00001", all.clone()).as_deref(),
+            Some("QS00001 letter\n")
+        );
+        assert_eq!(
+            group_letter("C26313110", all).as_deref(),
+            Some("QS00003\n\nQS00003 letter\n\n\nQS00002\n\nQS00002 letter")
+        );
+        assert_eq!(
+            group_letter("C26313110", vec![c("QS00001", "Superseded")]),
+            None
+        );
     }
 
     #[test]

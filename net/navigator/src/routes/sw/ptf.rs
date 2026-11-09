@@ -254,8 +254,10 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
     let ids: Vec<String> = q.all("id").into_iter().map(ToString::to_string).collect();
     let post = rq.post();
     let f = rq.form();
+    // Ordering a fix, or only its cover letter, starts from Fixes.
+    let fixes_op = op == "order" || op == "cover";
     if post && f.has("cancel") {
-        return rq.redirect(if op == "order" { "/fixes" } else { "/ptf" });
+        return rq.redirect(if fixes_op { "/fixes" } else { "/ptf" });
     }
     // The radio buttons: posted, else the link's, else the defaults.
     let pick_of = |name: &str, opts: &[&str]| {
@@ -276,7 +278,7 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
         Vec<String>,
         String,
     );
-    if op == "order" {
+    if fixes_op {
         let fixes: Vec<Fix> = sw
             .fixes(user)
             .into_iter()
@@ -285,8 +287,14 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
         if fixes.is_empty() {
             return rq.not_found("fix");
         }
-        what = "Order Fixes";
-        sentence = "Press OK to order the fixes listed below from the Quartz Systems update server. Each PTF arrives as a save file in library QGPL, ready to load.".into();
+        let cover = op == "cover";
+        if cover {
+            what = "Order Cover Letters";
+            sentence = "Press OK to get the cover letters of the fixes listed below from the Quartz Systems update server. Only the letters arrive; nothing is loaded or applied.".into();
+        } else {
+            what = "Order Fixes";
+            sentence = "Press OK to order the fixes listed below from the Quartz Systems update server. Each PTF arrives as a save file in library QGPL, ready to load.".into();
+        }
         cols = vec!["Fix", "Type", "Product", "Description"];
         rows = fixes
             .iter()
@@ -302,7 +310,11 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
                 }
             })
             .collect();
-        commands = vec![format!("SNDPTFORD PTFID({})", items.join(" "))];
+        commands = vec![format!(
+            "SNDPTFORD PTFID({}){}",
+            items.join(" "),
+            if cover { " PTFPART(*CVRLTR)" } else { "" }
+        )];
         options = String::new();
     } else if op == "load" && ids.is_empty() {
         let cats = sw.catalogs(user);
@@ -372,17 +384,30 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
             }
             "apply" => {
                 what = "Apply PTF";
-                sentence = "Press OK to apply the PTFs listed below. PTFs with a delayed IPL action are applied at the next IPL.".into();
-                let ipl = if d == "*IPL" { " IPLAPY(*YES)" } else { "" };
-                commands = products
+                let now = d == "*IPL";
+                sentence = if now {
+                    "Press OK to apply the PTFs listed below and IPL the system: it ends its jobs and restarts in one minute, applying PTFs with a delayed IPL action."
+                } else {
+                    "Press OK to apply the PTFs listed below. PTFs with a delayed IPL action are applied at the next IPL."
+                }
+                .into();
+                let mut cmds: Vec<String> = products
                     .iter()
                     .map(|p| {
                         format!(
-                            "APYPTF LICPGM({p}) SELECT({}) APY({t}) DELAYED(*YES){ipl}",
+                            "APYPTF LICPGM({p}) SELECT({}) APY({t}) DELAYED(*YES)",
                             select(p)
                         )
                     })
                     .collect();
+                // APYPTF's IPLAPY only marks the next IPL; the IPL itself
+                // is a controlled restart.
+                if now {
+                    cmds.push(
+                        "PWRDWNSYS OPTION(*CNTRLD) DELAY(60) RESTART(*YES) CONFIRM(*NO)".into(),
+                    );
+                }
+                commands = cmds;
                 options = format!(
                     "Apply type: {} Temporarily (*TEMP) {} Permanently (*PERM) &nbsp; Delayed PTFs: {} Apply at next IPL {} Schedule IPL now<br>",
                     radio("t", "*TEMP", t == "*TEMP"),
@@ -411,7 +436,12 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
         if let Err(r) = need(rq, what, &target, &[GROUP, "PTFs"]) {
             return r;
         }
-        return run_all(rq, &commands, if op == "order" { "/fixes" } else { "/ptf" });
+        let back = match (op.as_str(), ids.first()) {
+            ("cover", Some(id)) => format!("/fixes/{id}/cover?ordered=1"),
+            _ if fixes_op => "/fixes".into(),
+            _ => "/ptf".into(),
+        };
+        return run_all(rq, &commands, &back);
     }
     let table = list_table(&List {
         cols: cols.iter().map(|c| Col::plain(c)).collect(),
@@ -428,7 +458,7 @@ pub fn confirm(rq: &Rq<'_>) -> Response {
     );
     let body = confirm_body(&rq.ctx, &sentence, &table, &opts);
     let title = format!("Confirm {what}");
-    let back = if op == "order" { "Fixes" } else { "PTFs" };
+    let back = if fixes_op { "Fixes" } else { "PTFs" };
     page(
         rq,
         &[back, &title],
@@ -515,6 +545,21 @@ pub fn cover(rq: &Rq<'_>, id: &str) -> Response {
                 &format!("<pre class=\"out\">{}</pre>", esc(&text)),
             ),
         ),
+        // A fix still on the update server: its letter is ordered first,
+        // once.
+        None if !rq.query().has("ordered")
+            && rq
+                .env()
+                .sw
+                .fixes(rq.user())
+                .iter()
+                .any(|x| x.id.eq_ignore_ascii_case(id)) =>
+        {
+            rq.redirect(&format!(
+                "/ptf/confirm{}",
+                query(&[("op", "cover"), ("id", &id.to_ascii_uppercase())])
+            ))
+        }
         None => rq.not_found(&format!("cover letter for {id}")),
     }
 }
