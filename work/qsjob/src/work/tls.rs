@@ -194,6 +194,14 @@ pub fn policy(link: &mut Link) -> tls::policy::TlsPolicy {
     tls::policy::TlsPolicy::from_sysvals(&pcl, &csl, &ctl)
 }
 
+/// A client configuration for a connection to this system's own
+/// server on a privileged port over the loopback (Access for Web to
+/// Telnet on 992): the certificate it presents is accepted, since it
+/// may be one made for the run that nothing else knows.
+pub fn loopback_client_config(link: &mut Link) -> Result<Arc<rustls::ClientConfig>, String> {
+    tls::config::loopback_client_config(&policy(link)).map_err(|e| e.to_string())
+}
+
 /// The server configuration of `app_id`'s certificate in `*SYSTEM`;
 /// `None` when nothing is assigned (nor a store default).
 pub fn from_store(

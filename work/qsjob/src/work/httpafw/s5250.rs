@@ -50,6 +50,9 @@ const ROOT: &str = "/www/accessweb/sessions";
 const OWN: &str = "accessweb";
 /// How long a connection may take.
 const CONNECT: Duration = Duration::from_secs(15);
+/// How long the connection waits for the system before it takes the
+/// page's input: short, so a key or click shows at once.
+const POLL: Duration = Duration::from_millis(10);
 
 fn msg(id: &str, text: &str, data: &[&str]) -> Message {
     Message::new(Kind::Error, id, text).with_data(data)
@@ -394,15 +397,31 @@ fn ticket(link: &Link, user: &str) -> Option<String> {
     }))
 }
 
-/// The client configuration for the loopback: the system's own
-/// certificate chains to `*SYSTEM`'s trusted CAs; the name is the
-/// loopback's, so only the chain is checked.
+/// The client configuration for the loopback: the Telnet server is this
+/// system's own, so the certificates it presents (the one assigned to
+/// it, else the system's self-signed one) are trusted as they are.
 fn tls_config(link: &Link) -> Option<Arc<rustls::ClientConfig>> {
     link.job(|m| {
         let mut l = m.link.borrow_mut();
-        crate::work::tls::client_config_with(&mut l, tls::config::ServerAuthMode::ChainOnly).ok()
+        crate::work::tls::loopback_client_config(&mut l)
+            .map_err(|e| eprintln!("qsjob: Access for Web 5250 TLS: {e}"))
+            .ok()
     })
     .flatten()
+}
+
+/// A TLS handshake with the local Telnet server, as a session makes it.
+fn handshake(link: &Link) -> Result<(), String> {
+    let cfg = tls_config(link).ok_or("no TLS configuration")?;
+    let name = rustls::pki_types::ServerName::try_from("localhost").map_err(|e| e.to_string())?;
+    let mut c = rustls::ClientConnection::new(cfg, name).map_err(|e| e.to_string())?;
+    let mut tcp = TcpStream::connect_timeout(&SocketAddr::from(([127, 0, 0, 1], 992)), CONNECT)
+        .map_err(|e| e.to_string())?;
+    let _ = tcp.set_read_timeout(Some(CONNECT));
+    while c.is_handshaking() {
+        c.complete_io(&mut tcp).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Verify Connection's checks against the local servers.
@@ -436,15 +455,15 @@ fn verify(link: &Link, user: &str, system: &str, sign_on: bool) -> Vec<Check> {
         Some(local && port(23)),
         String::new(),
     ));
-    let tls = local && port(992);
+    let tls = if !local || !port(992) {
+        Err("Not listening".to_string())
+    } else {
+        handshake(link)
+    };
     out.push(check(
         "Telnet TLS port 992: handshake and certificate",
-        Some(tls),
-        if tls {
-            String::new()
-        } else {
-            "Not listening".into()
-        },
+        Some(tls.is_ok()),
+        tls.err().unwrap_or_default(),
     ));
     let qap = local && port(2320);
     out.push(check("QAP port 2320", Some(qap), String::new()));
@@ -525,7 +544,7 @@ impl Conn {
                 )
             }
         })?;
-        let _ = tcp.set_read_timeout(Some(Duration::from_millis(50)));
+        let _ = tcp.set_read_timeout(Some(POLL));
         let stream: Box<dyn Stream> = match (secure, tls) {
             (false, _) => Box::new(tcp),
             (true, Some(cfg)) => {
@@ -543,7 +562,21 @@ impl Conn {
                         &[&system, &e.to_string()],
                     )
                 })?;
-                Box::new(rustls::StreamOwned::new(c, tcp))
+                // The handshake now, so a refused certificate says so
+                // rather than looking like the session ending.
+                let mut s = rustls::StreamOwned::new(c, tcp);
+                let _ = s.sock.set_read_timeout(Some(CONNECT));
+                while s.conn.is_handshaking() {
+                    if let Err(e) = s.conn.complete_io(&mut s.sock) {
+                        return Err(msg(
+                            "QAD1010",
+                            &format!("TLS handshake with {system} failed: {e}."),
+                            &[&system, &e.to_string()],
+                        ));
+                    }
+                }
+                let _ = s.sock.set_read_timeout(Some(POLL));
+                Box::new(s)
             }
             (true, None) => {
                 return Err(msg(

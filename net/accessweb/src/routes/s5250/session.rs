@@ -988,12 +988,15 @@ pub fn ws(rq: &Rq<'_>, id: u32) -> Response {
     let env = rq.app.env.session5250.clone();
     let user = rq.user().to_string();
     let recording = recording(rq, id).is_some();
+    // Short waits, and every message waiting taken in one pass: a key
+    // or a click shows as soon as the session has it.
+    let poll = Duration::from_millis(10);
     ws::upgrade(rq.req, move |sock: &mut Socket<'_>| {
         let mut last: Option<Live> = None;
         loop {
             let now = match &last {
                 None => env.live(&user, id),
-                Some(l) => env.wait(&user, id, l.version, Duration::from_millis(50)),
+                Some(l) => env.wait(&user, id, l.version, poll),
             };
             if let Some(l) = now
                 && last.as_ref().is_none_or(|p| p.version != l.version)
@@ -1003,26 +1006,31 @@ pub fn ws(rq: &Rq<'_>, id: u32) -> Response {
                 }
                 last = Some(l);
             }
-            match sock.recv(Duration::from_millis(50)) {
-                Ok(Some(ws::Message::Text(t))) => {
-                    // Recording needs the page's own posts; the socket
-                    // only types and presses keys.
-                    let _ = recording;
-                    if let Some(input) = parse_input(&t)
-                        && let Err(m) = env.input(&user, id, input)
-                    {
-                        let _ = sock.send(&format!(
-                            "{{\"t\":\"message\",\"id\":{},\"text\":{}}}",
-                            json(&m.id),
-                            json(&m.text)
-                        ));
+            let mut got = sock.recv(poll);
+            loop {
+                match got {
+                    Ok(Some(ws::Message::Text(t))) => {
+                        // Recording needs the page's own posts; the
+                        // socket only types and presses keys.
+                        let _ = recording;
+                        if let Some(input) = parse_input(&t)
+                            && let Err(m) = env.input(&user, id, input)
+                        {
+                            let _ = sock.send(&format!(
+                                "{{\"t\":\"message\",\"id\":{},\"text\":{}}}",
+                                json(&m.id),
+                                json(&m.text)
+                            ));
+                        }
+                    }
+                    Ok(Some(_)) => {}
+                    Ok(None) => break,
+                    Err(_) => {
+                        sock.close();
+                        return;
                     }
                 }
-                Ok(_) => {}
-                Err(_) => {
-                    sock.close();
-                    return;
-                }
+                got = sock.recv(Duration::from_millis(1));
             }
         }
     })

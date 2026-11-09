@@ -179,6 +179,74 @@ pub fn client_config(
     Ok(Arc::new(config))
 }
 
+/// A client configuration for a connection over the loopback to a
+/// privileged port of this system, which only the system's own server
+/// can hold: whatever certificate it presents is accepted (it may be
+/// one made for the run, which no CA vouches for and nothing records);
+/// the handshake's signatures are still checked.
+pub fn loopback_client_config(policy: &TlsPolicy) -> Result<Arc<ClientConfig>> {
+    let provider = policy.provider()?;
+    let config = ClientConfig::builder_with_provider(provider.clone())
+        .with_protocol_versions(&policy.versions()?)?
+        .dangerous()
+        .with_custom_certificate_verifier(Arc::new(Loopback { provider }))
+        .with_no_client_auth();
+    Ok(Arc::new(config))
+}
+
+/// Any certificate from the loopback's own server.
+#[derive(Debug)]
+struct Loopback {
+    provider: Arc<CryptoProvider>,
+}
+
+impl ServerCertVerifier for Loopback {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _server_name: &ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: UnixTime,
+    ) -> std::result::Result<ServerCertVerified, rustls::Error> {
+        Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> std::result::Result<HandshakeSignatureValid, rustls::Error> {
+        rustls::crypto::verify_tls12_signature(
+            message,
+            cert,
+            dss,
+            &self.provider.signature_verification_algorithms,
+        )
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> std::result::Result<HandshakeSignatureValid, rustls::Error> {
+        rustls::crypto::verify_tls13_signature(
+            message,
+            cert,
+            dss,
+            &self.provider.signature_verification_algorithms,
+        )
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        self.provider
+            .signature_verification_algorithms
+            .supported_schemes()
+    }
+}
+
 /// A server name for the client side.
 pub fn server_name(host: &str) -> Result<ServerName<'static>> {
     ServerName::try_from(host.to_string()).map_err(|_| TlsError::ServerName(host.to_string()))
