@@ -59,6 +59,7 @@
     var at = hash && document.getElementById(hash.slice(1));
     if (at) { at.scrollIntoView(); } else if (how !== "replace") { window.scrollTo(0, 0); }
     refresh(doc);
+    lists();
     var f = document.querySelector("[autofocus]");
     if (f) { f.focus(); }
   }
@@ -100,6 +101,95 @@
     });
   }
 
+  // Every list on the page: a column's header sorts the rows shown A-Z,
+  // again Z-A, a third time back to the server's order; the row under
+  // the headers filters them, a row staying when each of its cells holds
+  // that column's text. The page's own sort links work without script.
+  var collate = window.Intl && Intl.Collator
+    ? new Intl.Collator(undefined, { numeric: true, sensitivity: "base" }).compare
+    : function (a, b) { return a < b ? -1 : (a > b ? 1 : 0); };
+  function text(c) {
+    var i = c.querySelector("input[type=text], select");
+    return (i ? i.value : c.textContent).replace(/\s+/g, " ").trim();
+  }
+  function lists() {
+    var ts = document.querySelectorAll("table.list");
+    for (var i = 0; i < ts.length; i++) { list(ts[i]); }
+  }
+  function list(t) {
+    if (t.getAttribute("data-qslist")) { return; }
+    var rows = t.rows, head = null, i, c;
+    for (i = 0; i < rows.length && !head; i++) { if (rows[i].querySelector("th")) { head = rows[i]; } }
+    if (!head) { return; }
+    var n = head.cells.length, data = [];
+    for (i = 0; i < n; i++) { if (head.cells[i].colSpan > 1) { return; } }
+    for (i = head.rowIndex + 1; i < rows.length; i++) {
+      if (rows[i].cells.length === n && !rows[i].querySelector("th") && rows[i].parentNode === head.parentNode) { data.push(rows[i]); }
+    }
+    if (data.length < 2) { return; }
+    t.setAttribute("data-qslist", "1");
+    var body = head.parentNode, tail = data[data.length - 1].nextSibling;
+    var by = -1, dir = 0, cols = [], filters = [], marks = [];
+    function shown() {
+      var order = data.slice();
+      if (dir) {
+        order.sort(function (a, b) {
+          return dir * collate(text(a.cells[by]), text(b.cells[by])) || data.indexOf(a) - data.indexOf(b);
+        });
+      }
+      var k = 0;
+      for (var r = 0; r < order.length; r++) {
+        var row = order[r], keep = true;
+        for (var f = 0; f < n && keep; f++) {
+          var v = filters[f] && filters[f].value.trim().toLowerCase();
+          if (v && text(row.cells[f]).toLowerCase().indexOf(v) < 0) { keep = false; }
+        }
+        row.style.display = keep ? "" : "none";
+        if (keep) { row.classList.toggle("alt", k % 2 === 1); k++; }
+        body.insertBefore(row, tail);
+      }
+      for (var m = 0; m < marks.length; m++) {
+        if (marks[m]) { marks[m].textContent = m === by && dir ? (dir > 0 ? " ▲" : " ▼") : ""; }
+      }
+    }
+    var fr = document.createElement("tr");
+    fr.className = "qsfilter";
+    for (c = 0; c < n; c++) {
+      var h = head.cells[c], label = h.textContent.trim();
+      cols.push(!!label && !/^(actions|select|opt)$/i.test(label));
+      var td = document.createElement("td");
+      if (cols[c]) {
+        var inp = document.createElement("input");
+        inp.type = "search";
+        inp.placeholder = "Filter";
+        inp.setAttribute("aria-label", "Filter " + label);
+        inp.addEventListener("input", shown);
+        inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); } });
+        td.appendChild(inp);
+        filters.push(inp);
+        var mark = document.createElement("span");
+        h.appendChild(mark);
+        marks.push(mark);
+        h.classList.add("qssort");
+        h.title = "Sort A-Z, then Z-A";
+        h.addEventListener("click", (function (col) {
+          return function (e) {
+            if (e.button !== 0 || e.ctrlKey || e.shiftKey || e.metaKey) { return; }
+            e.preventDefault();
+            e.stopPropagation();
+            if (by === col) { dir = dir === 1 ? -1 : (dir === -1 ? 0 : 1); } else { by = col; dir = 1; }
+            shown();
+          };
+        })(c));
+      } else {
+        filters.push(null);
+        marks.push(null);
+      }
+      fr.appendChild(td);
+    }
+    body.insertBefore(fr, head.nextSibling);
+  }
+
   function plain(e) { return e.button === 0 && !e.ctrlKey && !e.shiftKey && !e.metaKey && !e.altKey; }
 
   window.addEventListener("click", function (e) {
@@ -139,4 +229,5 @@
   });
 
   history.replaceState({ qsnav: 1 }, "", location.href);
+  lists();
 })();

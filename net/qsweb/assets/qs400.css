@@ -83,6 +83,9 @@ table.list th {
 table.list th a, table.list th a:visited { color: #000000; }
 table.list td { padding: 2px 4px; border: 1px solid #d8d8d8; font-size: 8pt; vertical-align: top; }
 table.list tr.alt td { background: #f0f4f8; }
+table.list th.qssort { cursor: pointer; }
+table.list tr.qsfilter td { padding: 1px 2px; background: #f8f8f8; }
+table.list tr.qsfilter input { width: 100%; box-sizing: border-box; font-size: 8pt; padding: 0 2px; }
 table.list td.num { text-align: right; }
 table.list td.act { white-space: nowrap; }
 table.list td.empty { padding: 10px; color: #555555; font-style: italic; }

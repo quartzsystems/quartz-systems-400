@@ -15,7 +15,7 @@
 <h1>{{ topic }}</h1>
 {{ body|safe }}
 <hr>
-<div class="small grey">{{ footer }} &middot; <a href="{{ close }}">Close window</a></div>
+<div class="small grey">{{ footer }} &middot; <a href="{{ close }}" onclick="if (history.length > 1) { history.back(); } else { window.close(); } return false;">Close window</a></div>
 </div>
 
 </body>

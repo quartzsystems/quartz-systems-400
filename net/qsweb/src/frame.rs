@@ -346,6 +346,8 @@ struct HelpT<'a> {
     print: &'a str,
     body: &'a str,
     footer: String,
+    /// Close window's link; its script goes back, or closes a window
+    /// of its own.
     close: &'a str,
 }
 
