@@ -116,6 +116,8 @@ pub fn run() -> ! {
     let opened = open(&mut system, &start).and_then(|text| {
         // The descriptions in QSYS, QTIMZON moved from a V1R0M0 name.
         timzon::after_install(&mut system);
+        // Virtual displays in use at power-down are free again.
+        devices::after_ipl(&mut system);
         let l = listen(Path::new(stg::SOCKET))?;
         Ok((text, l))
     });

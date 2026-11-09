@@ -183,7 +183,11 @@ pub fn allocate(
                     if !d.is_display() {
                         return Err(code::NOT_VALID.into());
                     }
-                    if !d.online || d.status != DevStatus::VariedOn {
+                    // A display whose connection dropped waits for its
+                    // client: reconnecting under its name signs on again
+                    // and takes the kept jobs back.
+                    let free = matches!(d.status, DevStatus::VariedOn | DevStatus::RecoveryPending);
+                    if !d.online || !free {
                         return Err(code::BUSY.into());
                     }
                     d.status = DevStatus::SignonDisplay;
@@ -258,6 +262,40 @@ pub fn allocate(
         to_qsysopr(system, "CPF8940", &text);
     }
     r
+}
+
+/// At IPL, every virtual display that is online is free again: no
+/// session and no kept job outlives an IPL. Without this a display in
+/// use at power-down refuses its own name for good.
+pub fn after_ipl(system: &mut System) {
+    let r = in_store(system, |txn, qsys| {
+        let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
+        let mut freed = 0;
+        for (_, id) in lib
+            .list(txn, Some(types::DEVD))
+            .map_err(|e| e.to_string())?
+        {
+            let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
+            let Ok(mut d) = Devd::decode(&b) else {
+                continue;
+            };
+            let in_use = matches!(
+                d.status,
+                DevStatus::SignonDisplay | DevStatus::Active | DevStatus::RecoveryPending
+            );
+            if d.virtual_ && d.is_display() && d.online && in_use {
+                d.status = DevStatus::VariedOn;
+                wm::obj::write(txn, id, &d.encode()).map_err(|e| e.to_string())?;
+                freed += 1;
+            }
+        }
+        Ok(freed)
+    });
+    match r {
+        Ok(0) => {}
+        Ok(n) => eprintln!("qsstg: {n} virtual display(s) varied on again after the IPL"),
+        Err(e) => eprintln!("qsstg: virtual displays after the IPL: {e}"),
+    }
 }
 
 /// Set a display's status by its byte (`DevStatus`).
