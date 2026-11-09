@@ -609,8 +609,8 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/cmd.rs:337` | the bridge waits 120 seconds for the job's thread; a longer command |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/msgs.rs:40` | the sender is the qualified job; a message a user typed here names |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/print.rs:192` | no command or service request a web job may use puts a spooled file at the top of a queue (QAP's move does, on its own connection job only); refused with XWA0099. |
-| `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:314` | a session to another system goes through that system's own Access for Web; refused with QAD1002. |
-| `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:670` | the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:317` | a session to another system goes through that system's own Access for Web; refused with QAD1002. |
+| `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/s5250.rs:703` | the display shows and types CCSID 37; the session's CCSID goes to the server as CODEPAGE only. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpafw/system.rs:186` | the password approval program (QPWDVLDPGM) is not called from a web job; refused with CPF22D3 while one is set. |
 | `BLOCKED(rel)` | `work/qsjob/src/work/httpsvr.rs:67` | validation lists (*VLDL) do not exist; a PasswdFile |
 | `BLOCKED(rel)` | `work/qsjob/src/work/qap/debug/own.rs:79` | stops are breakpoints, steps and entry points only; the |
