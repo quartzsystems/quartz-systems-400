@@ -286,7 +286,7 @@ pub fn dispatch(nav: &Navigator, req: &Request, peer: &Peer) -> Response {
         ] => work::route(&rq, &segs),
         ["msgq" | "mymsgs" | "qhst", ..] => msgs::route(&rq, &segs),
         ["users" | "user" | "groups" | "group" | "autl", ..] => users::route(&rq, &segs),
-        ["sysval" | "disk" | "hdwrsc" | "time", ..] => config::route(&rq, &segs),
+        ["sysval" | "disk" | "hdwrsc" | "time" | "power", ..] => config::route(&rq, &segs),
         ["tcp", ..] => net::route(&rq, &segs),
         ["db" | "sql", ..] => db::route(&rq, &segs),
         ["audit", ..] => sec::route(&rq, &segs),

@@ -208,6 +208,11 @@ pub const TOPICS: &[Topic] = &[
         title: "Time management",
         body: "<p>The time zone, the date and time formats and how the clock is kept right. <b>Apply</b> runs <span class=\"mono\">CHGSYSVAL</span> for each value you changed and <span class=\"mono\">CHGNTPA</span> for the time servers (special authority <span class=\"mono\">*IOSYSCFG</span>).</p>",
     },
+    Topic {
+        key: "power",
+        title: "Power down / IPL",
+        body: "<p>Ends every job and powers the system down, then IPLs it again or leaves it off, as <span class=\"mono\">PWRDWNSYS</span> does (special authority <span class=\"mono\">*JOBCTL</span>). <b>Controlled</b> gives jobs the delay to end on their own; <b>Immediately</b> ends them at once. The <b>IPL source</b> <span class=\"mono\">*PANEL</span> starts the image the system would start next, which after applying a Licensed Internal Code PTF is the new one; A and B name a slot. A confirmation shows what will happen before anything runs.</p>",
+    },
     // Network.
     Topic {
         key: "tcp",

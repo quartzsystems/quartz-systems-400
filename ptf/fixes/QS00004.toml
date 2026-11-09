@@ -48,6 +48,12 @@ Problem corrected:
   update server in Navigator, the FTP server's greeting and status, the
   certificate store errors, product packaging and command help.
 
+New function:
+- Navigator: System > Power down / IPL ends every job and IPLs the
+  system or powers it off (PWRDWNSYS): controlled with a delay or
+  immediately, from the next image or slot A or B, after a
+  confirmation. It needs special authority *JOBCTL.
+
 What the PTF changes:
 - Replaces the Licensed Internal Code, and message file QSYS/QCPFMSG
   (CPI3599, CPF3586).

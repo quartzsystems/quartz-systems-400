@@ -212,6 +212,9 @@ pub fn proto(url: &str) -> Option<String> {
         }
         ["hdwrsc", ..] => "hardware-resources".into(),
         ["time"] => "time-management".into(),
+        // Power down / IPL has no prototype of its own: a form, then a
+        // confirmation.
+        ["power"] => return Some("shared/confirm.html".into()),
         // Network.
         ["tcp", ..] if segs.last() == Some(&"confirm") => {
             return Some("shared/confirm.html".into());

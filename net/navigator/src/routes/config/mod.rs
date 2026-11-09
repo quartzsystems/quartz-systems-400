@@ -3,12 +3,13 @@
 // root directory of this project.
 
 //! System: `/sysval[/<name>]`, `/disk[/<unit>]`, `/hdwrsc[/<name>/...]`,
-//! `/time`. Reads are what `WRKSYSVAL`, `WRKDSKSTS` and `WRKHDWRSC`
+//! `/time`, `/power`. Reads are what `WRKSYSVAL`, `WRKDSKSTS` and `WRKHDWRSC`
 //! show; every change is the command itself run as the user
 //! ([`crate::env::config::Config::run`]).
 
 mod disk;
 mod hdwrsc;
+mod power;
 mod sysval;
 mod time;
 
@@ -29,6 +30,7 @@ pub fn route(rq: &Rq<'_>, segs: &[&str]) -> Response {
         ["hdwrsc"] => hdwrsc::list(rq),
         ["hdwrsc", name, rest @ ..] => hdwrsc::route(rq, name, rest),
         ["time"] => time::page(rq),
+        ["power"] => power::page(rq),
         _ => rq.not_found(&segs.join("/")),
     }
 }

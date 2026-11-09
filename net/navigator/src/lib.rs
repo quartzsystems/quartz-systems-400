@@ -38,6 +38,7 @@ pub const NAV: &[NavGroup] = &[
             ("Disk status", "/disk"),
             ("Hardware resources", "/hdwrsc"),
             ("Time management", "/time"),
+            ("Power down / IPL", "/power"),
         ],
     },
     NavGroup {
