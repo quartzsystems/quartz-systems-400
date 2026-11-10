@@ -212,6 +212,28 @@ pub struct NetServer {
     poller: Mutex<Option<thread::JoinHandle<()>>>,
 }
 
+/// The IFS backend of the file share `s`, made on the server's runtime.
+fn file_backend(handle: &Handle, io: &Arc<IfsWorker>, leases: &Arc<LeaseLink>, s: &FileShare) -> Result<IfsShare, BuildError> {
+    let (tx, rx) = mpsc::channel();
+    let (io2, path, ro, conv) = (io.clone(), s.path.clone(), s.read_only, s.conversion.clone());
+    // Watches too go through the link; a share without leases asks for
+    // none (the library's `Share::leases`).
+    let link = leases.clone();
+    handle.spawn(async move {
+        let share = IfsShare::new(io2, &path, ro).await;
+        let _ = tx.send(share.map(|sh| {
+            let sh = sh.with_leases(link);
+            match conv {
+                Some(t) => sh.with_conversion(t),
+                None => sh,
+            }
+        }));
+    });
+    rx.recv()
+        .map_err(|_| io::Error::other("server thread gone"))?
+        .map_err(|error| BuildError::Share { name: s.name.clone(), error })
+}
+
 impl NetServer {
     /// Builds the server: the IFS thread over `ifs`, the shares, sign-on
     /// through `signon` (the library's own logon throttle is off: the
@@ -266,25 +288,7 @@ impl NetServer {
             b = b.tree_admission(Admit(a));
         }
         for s in &cfg.file_shares {
-            let (tx, rx) = mpsc::channel();
-            let (io2, path, ro, conv) = (io.clone(), s.path.clone(), s.read_only, s.conversion.clone());
-            // Watches too go through the link; a share without leases asks
-            // for none (the library's `Share::leases`).
-            let link = leases.clone();
-            handle.spawn(async move {
-                let share = IfsShare::new(io2, &path, ro).await;
-                let _ = tx.send(share.map(|sh| {
-                    let sh = sh.with_leases(link);
-                    match conv {
-                        Some(t) => sh.with_conversion(t),
-                        None => sh,
-                    }
-                }));
-            });
-            let backend = rx
-                .recv()
-                .map_err(|_| io::Error::other("server thread gone"))?
-                .map_err(|error| BuildError::Share { name: s.name.clone(), error })?;
+            let backend = file_backend(&handle, &io, &leases, s)?;
             let access = if s.read_only { Access::Read } else { Access::ReadWrite };
             let mut share = Share::new(s.name.clone(), backend)
                 .any_user(access)
