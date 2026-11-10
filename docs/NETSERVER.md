@@ -545,8 +545,9 @@ the IFS authorities (section 6).
   library has none). The library keeps each job's leases and breaks them
   for opens in the same job; every other job's change reaches them
   through the storage service ("Leases across jobs" below).
-- Change notify: the IFS has no change events, so clients hear only of
-  changes made through their own job's connections (section 10).
+- Change notify: clients hear of every change in a watched directory,
+  and below it for a tree watch, whoever makes it: their own job, other
+  jobs, the service ("Change notify across jobs" below).
 - Security descriptors: queries answer the library's default (no owner or
   DACL from the IFS); setting one is refused (section 10). Authority is the
   IFS's: every call runs as the job's profile and the share's read-only
@@ -622,6 +623,38 @@ the same moment resolve at the 35-second timeout. `/QSYS.LIB` members
 changed through the database (record I/O, SQL) and not the IFS break no
 lease; nor does a rename of a directory above a leased file (the
 handle finds its file by file ID).
+
+### Change notify across jobs (built: `ifs/ifs/src/lease/notify.rs`, `net/netserver/src/ifs/watch.rs`)
+
+The first CHANGE_NOTIFY on a directory makes the library ask the backend
+for a watch (`Handle::watch`); `IfsHandle` registers one in the IFS
+(`IfsClient::watch_add`, as the job: the job must be able to list the
+directory), always over the tree. From then on every operation of every
+owner in the IFS, the service's own included, queues its change for the
+watch: a create (`open` with `O_CREAT`, `mkdir`, `symlink`, `link`,
+`mkfifo`), a removal (`unlink`, `rmdir`), a rename (renamed within one
+directory, else removed and added; a watch of a renamed directory hears
+it moved and follows it), a truncation, the close of a descriptor that
+wrote, and attribute, time and authority changes (`Qp0lSetAttr`,
+`chmod`, `utime`, `CHGAUT`, `CHGOWN`, `CHGPGP`). Changes go out with the
+job's break orders on its lease poll, and become the library's
+`DirChange`s:
+
+- the directory's own entries: every change, the job's own too (the
+  library matches those with what it reported itself and drops them, as
+  it does with the kernel's inotify);
+- below it, as `sub\name` (a library patch): other owners' changes only,
+  heard by tree watches only (the library reports the job's own);
+- the watched directory removed: the watch ends (`STATUS_DELETE_PENDING`
+  to its requests).
+
+Each watch holds at most 256 changes in the IFS and 64 batches in the
+job; past either, the changes are dropped and the next answer is
+`STATUS_NOTIFY_ENUM_DIR`, and the client lists the directory again. A
+watch ends with the library's last watch of the directory
+(`IfsClient::watch_end`), and every watch of a job goes when its
+connection to the service closes. `/QSYS.LIB` members changed through
+the database are not heard (no IFS call).
 
 ### Backend
 
@@ -869,7 +902,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | Leases | R, RH, RW, RWH on files (2.1+); no directory leases and no oplocks; broken by opens in the same job and by every other job's opens, writes, truncations, locks, renames and deletes (section 6, "Leases across jobs") |
 | Durable handles | v1 and v2 with a handle-caching lease; reconnects routed back to the job (section 3) |
 | Resilient and persistent handles, multichannel, RDMA, DFS, compression | refused (section 10) |
-| Change notify | yes, for changes through the job's own connections |
+| Change notify | yes, for every change in the directory (and below it with `SMB2_WATCH_TREE`) through any job or the service (section 6, "Change notify across jobs") |
 | Server-side copy | COPYCHUNK and COPYCHUNK_WRITE, done by reads and writes in the job; no block cloning |
 | Sign-on | NTLMv2 in SPNEGO through `signon::SignOn` (a library patch: the NT hash stays in the storage service); the guest profile gets an `IS_GUEST` session with no key (unsigned, unencrypted; a client that requires signing gets no guest session); the library's logon throttle off |
 | Limits and timeouts | the library's: 64 sessions per connection, 128 trees per session, 16 384 opens per connection, 1024 locks per open; handshake 30 s, idle as the attribute (15 minutes by default), I/O 60 s, TCP keepalive 60 s |
@@ -908,8 +941,7 @@ anything only if IBM checks the length first), and IBM's checks of
 | Per-share maximum users, CCSID and text conversion | not built in V1R2M0: one job per client cannot count other jobs' users, and the backend serves data as the IFS stores it | `QZLSADFS`/`QZLSCHFS` refuse a value other than the default |
 | A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
 | The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
-| Change notify for other jobs' changes | the IFS has no change events; the lease orders' channel could carry them to a backend `DirWatch` (not built in V1R2M0) | clients hear of changes made through their own job's connections only, and see others' when they list the directory again |
-| Leases broken by `/QSYS.LIB` member changes through the database | record I/O and SQL do not go through the IFS | a client caching a member's data sees the change when its lease next breaks or it opens the member again |
+| Leases broken, and change notify, for `/QSYS.LIB` member changes through the database | record I/O and SQL do not go through the IFS | a client caching a member's data sees the change when its lease next breaks or it opens the member again; a watch hears nothing |
 | WINS servers, scope, WINS proxy | no WINS client | `QZLSCHSI` `CPFB686` reason 6 or 7, return code 3440 |
 | Kerberos authentication method (`1`, `2`) | no Kerberos | `QZLSCHSI` `CPFB686` reason 15 |
 | Logon server role, domain logon | no domain logons | `QZLSCHSI` `CPFB686` reason 13 |
@@ -935,14 +967,21 @@ anything only if IBM checks the length first), and IBM's checks of
   writer, each waiting for the write-back, no write caching while
   another job has the file open, a durable handle taken back on a new
   connection broken there by a plain write and reading it, an ended
-  job's leases leaving nothing waiting.
+  job's leases leaving nothing waiting; change notify of a plain IFS
+  caller's, another job's and the job's own creates (the last heard
+  once), and a tree watch hearing a change below its directory.
+- `cargo test -p ifs --test watches`: which operations a watch hears and
+  as what, a tree watch and the watcher's own changes below, a watched
+  directory moved and removed, the queue's overflow, the poll's wait,
+  the authority to watch.
 - `cargo test -p ifs --test leases --lib`: the lease table (grants capped
   by other owners, the break table, orders, reports, deferral, expiry,
   an owner's end) and which operations break, defer and leave a lease.
 - `cargo test -p stg --test ifs_link`: the lease calls over the wire.
 - `cd net/smb-server; cargo test --test qs400_hooks --test
-  qs400_patches --test qs400_leases`: the library patches (the lease
-  observer, the backend's cap, breaks from outside).
+  qs400_patches --test qs400_leases --test qs400_notify`: the library
+  patches (the lease observer, the backend's cap, breaks from outside,
+  tree changes from a backend watch).
 
 - `cargo test -p netserver`: codecs against [MS-SMB2] examples, crypto
   against the published vectors ([MS-SMB2] 3.1.4, RFC 4493, RFC 3610,
