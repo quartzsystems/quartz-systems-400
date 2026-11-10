@@ -2643,6 +2643,26 @@ impl Service for Served<'_> {
         super::ddm::signon(self.system, self.ctx, &user, &password, swap)
     }
 
+    fn netsvr_signon(
+        &mut self,
+        logon: sec::netsvr::Logon,
+        swap: bool,
+    ) -> Result<sec::netsvr::LoggedOn, sec::netsvr::Refusal> {
+        super::nslogon::signon(self.system, self.ctx, &logon, swap)
+    }
+
+    fn netsvr_started(&mut self) {
+        super::nslogon::started(self.system, self.ctx);
+    }
+
+    fn netsvr_enable_user(&mut self, user: String) -> Result<bool, String> {
+        super::nslogon::enable_user(&user)
+    }
+
+    fn netsvr_disabled_users(&mut self) -> Vec<(String, u64)> {
+        super::nslogon::disabled_users()
+    }
+
     fn ddmf_put(
         &mut self,
         lib: String,

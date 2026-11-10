@@ -1010,6 +1010,21 @@ ipc::rpc! {
     /// `QSTGLOWLMT`, the power supply, the batch restricted state's
     /// time; the commands the job is to run as `QSYS`.
     1496 => fn arb_tick / ArbTick () -> Vec<String>;
+    // --- NetServer security (1500-1504; sec::netsvr, stgsvc/nslogon.rs)
+    /// A `QZLSFILE` job signs a client on: its `NTLMv2` response checked
+    /// against the profile's NT hash, which stays in the service. An
+    /// unknown user is `logon.guest` when that profile is usable. The
+    /// profile and the session base key; with `swap` the job then runs
+    /// as it. A failure counts toward `QMAXSIGN` for `NetServer` only.
+    1500 => fn netsvr_signon / NetsvrSignon (logon: sec::netsvr::Logon, swap: bool) -> Result<sec::netsvr::LoggedOn, sec::netsvr::Refusal>;
+    /// `QZLSSERVER` started: every user enabled for `NetServer` again,
+    /// `QMAXSIGN` taken now.
+    1501 => fn netsvr_started / NetsvrStarted () -> ();
+    /// Enable `user` for `NetServer` again (`QZLSCHSI`): `*IOSYSCFG`.
+    /// Whether it was disabled.
+    1502 => fn netsvr_enable_user / NetsvrEnableUser (user: String) -> Result<bool, String>;
+    /// The users disabled for `NetServer`, by name, with when.
+    1503 => fn netsvr_disabled_users / NetsvrDisabledUsers () -> Vec<(String, u64)>;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

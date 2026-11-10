@@ -179,14 +179,16 @@ pub fn sign_on(
     let Some(id) = found else {
         // An unknown user is the guest when there is one; no entry is
         // written (IBM writes none for a user that does not exist).
-        return Ok(match l.guest.as_deref().and_then(|g| guest(txn, qsys, g, now)) {
-            Some(g) => Ok(LoggedOn {
-                user: g,
-                guest: true,
-                session_base_key: None,
-            }),
-            None => Err(Refusal::NoSuchUser),
-        });
+        return Ok(
+            match l.guest.as_deref().and_then(|g| guest(txn, qsys, g, now)) {
+                Some(g) => Ok(LoggedOn {
+                    user: g,
+                    guest: true,
+                    session_base_key: None,
+                }),
+                None => Err(Refusal::NoSuchUser),
+            },
+        );
     };
     let p = objects::read_id(txn, id)?;
     if p.disabled || limits::user_expired(&p, now) {
@@ -234,9 +236,6 @@ mod tests {
     fn dates() {
         assert_eq!(date_time(0), ("010170".into(), "000000".into()));
         // 2026-11-09 13:45:07 UTC.
-        assert_eq!(
-            date_time(1_794_231_907),
-            ("110926".into(), "134507".into())
-        );
+        assert_eq!(date_time(1_794_231_907), ("110926".into(), "134507".into()));
     }
 }

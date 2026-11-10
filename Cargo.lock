@@ -3966,6 +3966,7 @@ dependencies = [
  "jrn",
  "mi",
  "msgf",
+ "ntlm",
  "qap-proto",
  "qsname",
  "qsyslib",

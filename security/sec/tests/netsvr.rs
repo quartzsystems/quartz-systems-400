@@ -27,17 +27,15 @@ use store::txn::Txn;
 const CHALLENGE: [u8; 8] = *b"chalnge1";
 
 fn sysval(level: u8) -> impl Fn(&str) -> String {
-    move |n: &str| {
-        match n {
-            "QSECURITY" => "40".to_string(),
-            "QPWDLVL" => level.to_string(),
-            "QPWDMINLEN" => "1".into(),
-            "QPWDMAXLEN" => "128".into(),
-            "QPWDRULES" => "*PWDSYSVAL".into(),
-            "QPWDEXPITV" => "*NOMAX".into(),
-            "QMAXSIGN" => "3".into(),
-            _ => String::new(),
-        }
+    move |n: &str| match n {
+        "QSECURITY" => "40".to_string(),
+        "QPWDLVL" => level.to_string(),
+        "QPWDMINLEN" => "1".into(),
+        "QPWDMAXLEN" => "128".into(),
+        "QPWDRULES" => "*PWDSYSVAL".into(),
+        "QPWDEXPITV" => "*NOMAX".into(),
+        "QMAXSIGN" => "3".into(),
+        _ => String::new(),
     }
 }
 
@@ -135,7 +133,10 @@ fn unknown_forms_are_kept_and_never_match() {
     assert_eq!(back.hashes.last().unwrap().form, PwdForm::Unknown(9));
     // Taken as the long form before; now it is matched by nothing.
     assert_eq!(
-        back.hashes.iter().filter(|h| h.form == PwdForm::Long).count(),
+        back.hashes
+            .iter()
+            .filter(|h| h.form == PwdForm::Long)
+            .count(),
         1
     );
 }
@@ -234,7 +235,9 @@ fn sign_on_every_path() {
 
     // The right password: the profile and the session base key.
     let l = logon("bob", "Right Pass 1");
-    let ok = sign_on(&mut t, qsys, &l, &v, &users, s, NOW).unwrap().unwrap();
+    let ok = sign_on(&mut t, qsys, &l, &v, &users, s, NOW)
+        .unwrap()
+        .unwrap();
     assert_eq!(ok.user, "BOB");
     assert!(!ok.guest);
     assert_eq!(
@@ -258,7 +261,10 @@ fn sign_on_every_path() {
         sign_on(&mut t, qsys, &logon("NOBODY", "x"), &v, &users, s, NOW).unwrap(),
         Err(Refusal::NoSuchUser)
     );
-    assert!(sec::audit::take().is_empty(), "no entry for an unknown user");
+    assert!(
+        sec::audit::take().is_empty(),
+        "no entry for an unknown user"
+    );
 
     // NTLMv1 is refused and not counted.
     let mut v1 = logon("BOB", "Right Pass 1");
@@ -303,12 +309,20 @@ fn sign_on_every_path() {
     assert_eq!(Refusal::NetServerDisabled.msgid(), Some("CPIB68E"));
     // QZLSCHSI enables it again.
     assert!(users.enable("BOB"));
-    assert!(sign_on(&mut t, qsys, &l, &v, &users, s, NOW).unwrap().is_ok());
+    assert!(
+        sign_on(&mut t, qsys, &l, &v, &users, s, NOW)
+            .unwrap()
+            .is_ok()
+    );
 
     // A good sign-on resets the count.
     let _ = sign_on(&mut t, qsys, &bad, &v, &users, s, NOW).unwrap();
     let _ = sign_on(&mut t, qsys, &bad, &v, &users, s, NOW).unwrap();
-    assert!(sign_on(&mut t, qsys, &l, &v, &users, s, NOW).unwrap().is_ok());
+    assert!(
+        sign_on(&mut t, qsys, &l, &v, &users, s, NOW)
+            .unwrap()
+            .is_ok()
+    );
     assert_eq!(users.failures("BOB"), 0);
 
     // An expired password, the right one: refused after the check.
@@ -390,7 +404,9 @@ fn guest_for_an_unknown_user_only() {
     let s: Option<&dyn nthash::NtSealer> = Some(&TestSealer);
     let mut l = logon("STRANGER", "anything");
     l.guest = Some("nsguest".into());
-    let g = sign_on(&mut t, qsys, &l, &v, &users, s, NOW).unwrap().unwrap();
+    let g = sign_on(&mut t, qsys, &l, &v, &users, s, NOW)
+        .unwrap()
+        .unwrap();
     assert_eq!(g.user, "NSGUEST");
     assert!(g.guest);
     assert_eq!(g.session_base_key, None);

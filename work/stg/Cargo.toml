@@ -27,6 +27,7 @@ tracing.workspace = true
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+ntlm = { path = "../../security/ntlm", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 db = { path = "../../database/db", version = "0.1.0" }
 jrn = { path = "../../database/jrn", version = "0.1.0" }

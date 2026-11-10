@@ -125,52 +125,199 @@ count, then records of a 2-byte tag, a 4-byte length and the value,
 UTF-8 text; unknown tags are kept and written back. The agent building
 `netsvrcfg` fills in the tag table here.
 
-## 5. Security (design)
+## 5. Security
+
+Built: `security/sec` (`password::nthash`, `netsvr`), the storage
+service's `lic/slic/src/stgsvc/nslogon.rs` and the job's requests
+`netsvr_*` (`work/stg`, 1500-1503). Where IBM's documentation disagreed
+with the first design it is followed, and each change is marked
+**Changed**.
 
 ### Authentication
 
 NTLMv2 inside SPNEGO (`SESSION_SETUP`), against user profiles. NTLMv1 and
-LM responses are refused (`STATUS_LOGON_FAILURE`, logged). Kerberos is
-refused: SPNEGO's `NegTokenInit` lists only NTLMSSP, and a Kerberos
-token gets a reject. Anonymous sessions reach `IPC$` only (share
-enumeration), as IBM allows; the guest profile (when set) is used for
-an unknown user name, never for a known user with a wrong password.
+LM responses are refused (`STATUS_LOGON_FAILURE`); the service answers
+them `NotNtlmV2` and does not count them against `QMAXSIGN` (a client
+configured for NTLMv1 would otherwise disable every user it tries).
+Kerberos is refused: SPNEGO's `NegTokenInit` lists only NTLMSSP, and a
+Kerberos token gets a reject. Anonymous sessions reach `IPC$` only
+(share enumeration), as IBM allows; `netserver` handles them without
+the service. The guest profile (when set) is used for an unknown user
+name, never for a known user with a wrong password ([guest]: "used when
+the requested ID ... is not found"). A guest must exist, be enabled and
+have no special authority ([guest]: it "must not have any special
+authorities"), else the unknown user is refused; a guest session has no
+session base key, so it cannot sign (`SMB2_SESSION_FLAG_IS_GUEST`).
+
+The sign-on is one request of the `QZLSFILE` job over its link (only a
+job of that name may ask; any other gets `NoSuchUser`):
+
+```rust
+// work/stg/src/proto.rs
+1500 => fn netsvr_signon / NetsvrSignon (logon: sec::netsvr::Logon, swap: bool)
+    -> Result<sec::netsvr::LoggedOn, sec::netsvr::Refusal>;
+1501 => fn netsvr_started / NetsvrStarted () -> ();
+1502 => fn netsvr_enable_user / NetsvrEnableUser (user: String) -> Result<bool, String>;
+1503 => fn netsvr_disabled_users / NetsvrDisabledUsers () -> Vec<(String, u64)>;
+```
+
+`Logon` carries the user and domain as the client sent them, the
+server challenge, the NT response, the guest profile name (`None` for
+none) and the client's name or address (for `CPIB682`). The guest name
+is a parameter of the request until `net/netsvrcfg` holds the
+attribute: then the job reads it from the configuration and passes it;
+the service does not read the configuration itself. `LoggedOn` is the
+profile, whether it is the guest, and the NTLMv2 session base key
+(`None` for the guest); with `swap` the job then runs as the profile
+(the host servers' swap, `PS` entries). The NT hash never leaves the
+service: it is unsealed and checked inside the request
+(`ntlm::verify_ntlmv2`, the domain tried as sent, upper case and empty).
+`netserver` derives the signing and encryption keys from the session
+base key (`ntlm::key_exchange_key`, `exported_session_key`).
+
+| `Refusal` | When | Message (section 8) |
+|---|---|---|
+| `NoSuchUser` | no profile by the name (or longer than 10), and no usable guest | `CPIB68A` |
+| `Disabled` | `STATUS(*DISABLED)` or past `USREXPDATE` | `CPIB68B` |
+| `NetServerDisabled` | disabled for NetServer (below) | `CPIB68E` |
+| `NoPassword` | `PASSWORD(*NONE)` | `CPIB68D` |
+| `NoNtHash` | a password but no NT hash (set before V1R2M0, restored from another system, set through `QSYSUPWD`) | `CPIB68D` |
+| `NotNtlmV2` | the response is shorter than an NTLMv2 response | none |
+| `WrongPassword { disabled_now }` | the response does not prove the password; `disabled_now` when this one reached `QMAXSIGN` | none; `CPIB682` when disabled |
+| `Expired` | the right password, but expired (`PWDEXP(*YES)` or the interval) | `CPIB68C` |
+
+The order is the table's: the profile's own state is checked before the
+response, so a disabled profile is never counted; the expiry after it,
+so only someone who knows the password learns it has expired. Nothing
+in the profile changes (no last sign-on date, no `SignOnInvalid`: that
+counter is the 5250 sign-on's).
 
 ### The NT hash
 
 NTLMv2 needs the NT one-way function of the password (MD4 of its
-UTF-16LE form), which is password-equivalent. It is kept as a new
-password form `NtHash` in the profile's password tail (the `*USRPRF`
-payload goes to version 2; version 1 payloads read unchanged, with no
-NT hash), sealed with the LIC partition's stash key (AES-GCM, the
-profile name bound in) like the `*SMTP` relay credentials. It is set
-whenever a password is set (`CRTUSRPRF`, `CHGUSRPRF PASSWORD()`,
-`CHGPWD`, `QSYCHGPW`) at the levels where IBM keeps a NetServer
-password, and dropped where IBM drops it. A profile with no NT hash
-cannot sign on to NetServer (`CPIB68D`); after an upgrade from V1R1M0,
-or a `QPWDLVL` change, each user changes the password once.
+UTF-16LE form), which is password-equivalent. It is a new password form
+`NtHash` (form byte 4) in the profile's password tail: the `*USRPRF`
+payload is version 2; version 1 payloads read unchanged, with no NT
+hash (`security/sec/tests/netsvr.rs` reads a payload V1R1M0 wrote). It
+is sealed with the LIC partition's stash key (AES-256-GCM, the profile
+name the additional data, the key's generation stored beside it) like
+the `*SMTP` relay credentials; `docs/SECURITY.md` section 1 has the
+bytes. A form byte the reader does not know is now kept and matches
+nothing (version 1 read any unknown byte as the long form).
 
-`QPWDLVL` table (from IBM's documentation of `QPWDLVL`; the security
-agent fills the exact rows and cites them):
+`sec::password::set_hashes` makes it wherever a password is set:
+`CRTUSRPRF`, `CHGUSRPRF PASSWORD()`, `CHGPWD`, `QSYCHGPW` and the host
+servers' change (all through `password::policy::set`), the installer's
+`QSECOFR` and the shipped `QSECOFR`. It is dropped by `PASSWORD(*NONE)`,
+never kept for a previous password, never returned by `QSYRUPWD` and
+never taken from `QSYSUPWD` data. `RSTUSRPRF` restores the payload as
+saved: on the system that sealed it the hash opens; on another (another
+stash key) it does not, which reads as `NoNtHash`. A profile with no NT
+hash cannot sign on to NetServer (`CPIB68D`); after an upgrade from
+V1R1M0 each user changes the password once.
 
-| `QPWDLVL` | Passwords | NetServer hash kept |
-|---|---|---|
-| 0 | 1-10, upper case | (fill) |
-| 1 | 1-10, upper case | (fill) |
-| 2 | 1-128, case sensitive | (fill) |
-| 3 | 1-128, case sensitive | (fill) |
+`QPWDLVL` and the NetServer password, from IBM's documentation:
+
+| `QPWDLVL` | Passwords | NT hash kept (QS/400) | IBM |
+|---|---|---|---|
+| 0 | 1-10, upper case | of the password in upper case and in lower case | NetServer at 0 takes a one-case password only ([auth] table: "mono-case only"; [win7]: entered "in single case (all uppercase or all lowercase)"); the LAN Manager password is kept too |
+| 1 | 1-10, upper case | as 0 | as 0; the LAN Manager password (Windows 95/98/ME) is removed ([chg1]: "to eliminate the IBM i NetServer LAN manager passwords") |
+| 2 | 1-128, case sensitive | of the password as typed | "mixed-case with NTLM/NTLMv2" ([auth]); the LAN Manager password is kept, cleared for a password over 14 characters ([chg2]) |
+| 3 | 1-128, case sensitive | as 2 | as 2; "all IBM i NetServer LAN manager passwords are cleared" ([chg3]) |
+| 4 | 1-128, case sensitive | as 2 (`NEEDS-CODY`) | 7.5 only: "all password level 0 and 1 passwords and all password level 2 and 3 passwords are cleared" ([chg4]); the page names "IBM i NetServer Print support" among the clients that work at 4 and says nothing of the NT password |
+
+QS/400 never keeps a LAN Manager hash (LM is refused). The rest follows
+from IBM's pages:
+
+- A change of `QPWDLVL` takes effect at the next IPL ([qpwdlvl], [chg1]
+  to [chg4]: "A change to the QPWDLVL system value takes effect at the
+  next IPL"; `QPWDLVL` is `restart_required` in `lic/sysval`). IBM
+  removes only the LAN Manager passwords at a change, never the NT
+  password, so QS/400's change of level does nothing to the NT hash.
+- After a change, the NT hash is the one made at the old level until the
+  password is changed: [win7] says a mixed-case Windows password "will
+  only work if the IBM i QPWDLVL system value is changed to 2 and the
+  NetServer users' passwords are changed to set the new hash value".
+  `CHGUSRPRF PASSWORD()` (or `CHGPWD`) at the new level makes the hashes
+  of the table's row for it and replaces the old ones.
+- `QPWDLVL` 4: whether IBM keeps the NT password at 4 is not in its
+  documentation. QS/400 keeps it (as 2 and 3). `NEEDS-CODY`: on a 7.5
+  system at `QPWDLVL` 4 (pub400 is at 3), `DSPAUTUSR` or `QSYS2.USER_INFO`
+  for a test profile, then map a drive to NetServer with its password:
+  if that fails with the right password, IBM drops the NT password at 4
+  and so must `variants` in `password::nthash`.
 
 ### Failed sign-ons and disabled users
 
-A failed NetServer sign-on counts against `QMAXSIGN` in a NetServer
-counter of its own. At the limit the user is **disabled for NetServer**
-(`CPIB682` to `QSYSOPR`), not the profile itself: that is IBM's
-behaviour, and `QSYS2.USER_INFO.NETSERVER_DISABLED` shows it. A
-successful sign-on resets the counter; the user is enabled again by
-`QZLSCHSI` (the enable-user request), by a password change, or by
-Navigator. A `*DISABLED` profile is refused (`CPIB68B`), an expired
-password too (`CPIB68C`). Every failure writes a `QAUDJRN` `PW` entry
-when `QAUDLVL` has `*AUTFAIL`.
+A password not valid counts against `QMAXSIGN` in a NetServer counter of
+its own. At the limit the user is **disabled for NetServer**, not the
+profile ([disabled]: the profile is disabled "for NetServer use"):
+`CPIB682` goes to `QSYSOPR` ([disabled]: "The IBM i QSYSOPR job log
+records CPIB682"), and `QSYS2.USER_INFO.NETSERVER_DISABLED` shows
+`YES`. **Changed** after IBM's documentation ([disabled], [disabled74]):
+
+- The counter and the state are NetServer's own and are not persisted:
+  they live in the storage service (`sec::netsvr::users()`), outside any
+  frozen format. Restarting NetServer or an IPL enables every user
+  ([disabled]: the counter is reset by "restarting NetServer, or an
+  IPL"); the server job sends `netsvr_started` when it starts.
+- The limit is `QMAXSIGN` as it was when NetServer started ([disabled]:
+  NetServer "uses the QMAXSIGN value it had when it started");
+  `netsvr_started` takes it. Before the first start the current value
+  is used. `*NOMAX` never disables.
+- A successful sign-on resets the counter ([disabled]: "A successful
+  connection is made").
+- The user is enabled again by `QZLSCHSI` (its reset of a disabled
+  user), by Navigator's Disabled User IDs, by a NetServer restart or an
+  IPL. **Not** by a password change: IBM lists the ways and a password
+  change is not one of them; QS/400 does the same.
+- `CPIB682`'s data, as sent: the profile name `CHAR(10)` and the client
+  `CHAR(46)` (CP037); severity 0, as `messages.txt`. The message
+  description in `QCPFMSG` is section 8's (`net/netsvrcfg` agent).
+
+The functions `QZLSCHSI`, Navigator and QAP call, in the storage service:
+
+```rust
+sec::netsvr::enable_netserver_user(user: &str) -> bool   // whether it was disabled
+sec::netsvr::netserver_disabled(user: &str) -> bool
+sec::netsvr::users().disabled() -> Vec<(String, u64)>    // by name, with when
+sec::netsvr::users().started(qmaxsign: Option<u32>)      // NetServer started
+```
+
+From a job they are `netsvr_enable_user` (which needs `*IOSYSCFG`, as
+`QZLSCHSI` does), `netsvr_disabled_users` and `netsvr_started` (only the
+`QZLSSERVER` job).
+
+**Changed:** the audit entry. IBM writes no `PW` entry for NetServer; a
+password not valid is a `VP` entry, "Network password error", selected
+by `*AUTFAIL` (IBM's security auditing table, [audit]: "VP ... *AUTFAIL";
+the layout [vp]: error type `P` password error, `D` NetServer user
+disabled; server name `*NETSERVER`). QS/400 writes `VP` `P` for every
+password not valid and `VP` `D` when that one disabled the user, in
+IBM's `QASYVPJ5` layout of the primary
+(`tools/conformance/oracle/netserver/audit-vp.txt`; `AuditVP` in
+`docs/SECURITY.md` section 7; the audit layouts went to version 2). An
+unknown user writes nothing (as on IBM i: no entry is written for a user
+that does not exist). A refusal for the profile's state (`*DISABLED`,
+expired, no password, disabled for NetServer) writes no entry either:
+IBM's `VP` types are only `P` and `D`. `NEEDS-CODY`: on the primary,
+`DSPAUDJRNE ENTTYP(VP)` after a wrong password from a test client, to
+confirm the date format of `VPSDAT` (QS/400 writes `MMDDYY`, UTC) and
+whether `D` is written once or for each attempt while disabled (QS/400:
+once).
+
+[qpwdlvl]: https://www.ibm.com/docs/en/i/7.5?topic=passwords-password-level-qpwdlvl
+[chg1]: https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzarl/rzarlconsdchg1.htm
+[chg2]: https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzarl/rzarlconsdchg2.htm
+[chg3]: https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzarl/rzarlconsdchg3.htm
+[chg4]: https://www.ibm.com/docs/en/i/7.5.0?topic=changes-considerations-changing-qpwdlvl-from-2-3-4
+[auth]: https://www.ibm.com/support/pages/netserver-authentication-and-security-considerations
+[win7]: https://www.ibm.com/support/pages/windows-7-and-ibm-i-netserver
+[disabled]: https://www.ibm.com/support/pages/user-profiles-disabled-use-ibm-i-netserver
+[disabled74]: https://www.ibm.com/support/pages/node/684947
+[guest]: https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_71/rzahl/rzahltipguest.htm
+[audit]: https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzarl/rzarlsecaudje.htm
+[vp]: https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzarl/rzarlf68.htm
 
 ### Authority
 
@@ -271,6 +418,12 @@ Severities as `messages.txt`.
 - `cargo test -p netserver`: codecs against [MS-SMB2] examples, crypto
   against the published vectors ([MS-SMB2] 3.1.4, RFC 4493, RFC 3610,
   SP 800-38C/D, [MS-NLMP] 4.2), state machines over a backend in memory.
+- `cargo test -p sec --test netsvr`: the V1R1M0 payload read under
+  version 2, unknown password forms, the NT hash at each `QPWDLVL` and
+  where it is set and dropped, every sign-on refusal, levels 0 and 1 in
+  either case, the guest, disabling at `QMAXSIGN` with its `VP` entries;
+  `cargo test -p stg --test netsvr_link`: `netsvr_signon` over a link;
+  `cargo test -p sql --test services user_info`: `NETSERVER_DISABLED`.
 - `cargo test -p netsvrcfg`: attributes, shares, file round trips,
   `ZLSL*` formats against the `QSYSINC` layouts.
 - `cargo test -p smbtest`: the client against the server over loopback.

@@ -399,6 +399,7 @@ fn apply_network(system: &mut System, rsp: &instmedia::Response) {
 /// QSECOFR's password, not expired: the shipped profiles made first.
 fn set_qsecofr(system: &mut System, pw: &str) -> Result<(), String> {
     crate::stgsvc::security::install(system)?;
+    crate::stgsvc::nslogon::install_sealer(system);
     let pwdlvl = crate::stgsvc::security::sysval_num(system, "QPWDLVL", 3);
     let s = system.storage.as_mut().ok_or("the store is not open")?;
     let qsys = s.qsys.ok_or("no QSYS")?;
@@ -410,7 +411,7 @@ fn set_qsecofr(system: &mut System, pw: &str) -> Result<(), String> {
             .map_err(fail("Setting the QSECOFR password"))?;
         let (id, mut p) = sec::profile::objects::read(&mut t, qsys, "QSECOFR")
             .map_err(fail("Setting the QSECOFR password"))?;
-        p.hashes = sec::password::hashes_for(pw, pwdlvl);
+        sec::password::set_hashes(&mut p, pw, pwdlvl);
         p.pwd_none = false;
         p.pwdexp = false;
         p.pwd_changed = now;

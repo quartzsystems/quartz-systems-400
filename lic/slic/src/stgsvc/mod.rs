@@ -39,6 +39,7 @@ pub(crate) mod liclog;
 pub(crate) mod licpgm;
 pub(crate) mod media;
 pub(crate) mod msgs;
+pub(crate) mod nslogon;
 mod pdm;
 pub(crate) mod perfcol;
 pub(crate) mod prblog;
@@ -214,6 +215,8 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     {
         s.store.resize_cache(kb * 1024 / store::page::PAGE_SIZE);
     }
+    // Passwords set from here on get their NT hash (docs/NETSERVER.md).
+    nslogon::install_sealer(system);
     let text = match security::install(system) {
         Ok(d) if d.profiles > 0 => format!(
             "{text}; {} user profile(s) created, {} object(s) re-owned",
