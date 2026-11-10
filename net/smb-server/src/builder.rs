@@ -97,6 +97,13 @@ impl Share {
         self
     }
 
+    /// QS/400: grant `access` to every signed-on user not granted otherwise
+    /// (see `QS400-PATCHES.md`).
+    pub fn any_user(mut self, access: Access) -> Self {
+        self.users.insert(crate::verifier::ANY_USER.to_owned(), access);
+        self
+    }
+
     /// Grant `access` to the given (already-registered) user. Multiple calls
     /// accumulate.
     pub fn user(mut self, name: impl Into<String>, access: Access) -> Self {
@@ -360,6 +367,7 @@ pub struct SmbServerBuilder {
     apple_extensions: bool,
     apple_model: String,
     apple_copyfile: bool,
+    verifier: Option<crate::verifier::VerifierRef>,
     #[cfg(feature = "discovery")]
     discovery: Option<crate::discovery::Discovery>,
 }
@@ -389,6 +397,7 @@ impl SmbServerBuilder {
             apple_extensions: true,
             apple_model: DEFAULT_APPLE_MODEL.to_string(),
             apple_copyfile: true,
+            verifier: None,
             #[cfg(feature = "discovery")]
             discovery: None,
         }
@@ -405,6 +414,13 @@ impl SmbServerBuilder {
             self.user_order.push(n.clone());
         }
         self.users.insert(n, password.into());
+        self
+    }
+
+    /// QS/400: checks every logon with `verifier` instead of the users
+    /// given with [`Self::user`] (see `QS400-PATCHES.md`).
+    pub fn logon_verifier(mut self, verifier: impl crate::verifier::LogonVerifier) -> Self {
+        self.verifier = Some(crate::verifier::VerifierRef(Arc::new(verifier)));
         self
     }
 
@@ -714,7 +730,7 @@ impl SmbServerBuilder {
             }
             // Each per-share user must exist in the global user table.
             for u in share.users.keys() {
-                if !self.users.contains_key(u) {
+                if u != crate::verifier::ANY_USER && !self.users.contains_key(u) {
                     return Err(BuildError::UnknownUser {
                         share: share.name.clone(),
                         user: u.clone(),
@@ -764,6 +780,7 @@ impl SmbServerBuilder {
             share_listing: self.share_listing,
             apple_model: self.apple_extensions.then_some(self.apple_model),
             apple_copyfile: self.apple_copyfile,
+            verifier: self.verifier,
             #[cfg(feature = "discovery")]
             discovery,
         };

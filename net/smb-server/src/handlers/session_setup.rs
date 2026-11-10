@@ -351,8 +351,25 @@ async fn continue_exchange(
             Some((_, creds)) => Some(creds.clone()),
             None => (public && is_guest(&users, u)).then(|| UserCreds::from_password("")),
         };
-        acceptor
-            .authenticate(&ntlm, lookup)
+        // QS/400: a configured verifier checks the response and names the user.
+        let verified = std::cell::RefCell::new(None::<String>);
+        let checked = match server.config.verifier.as_ref() {
+            Some(v) => acceptor.authenticate_with(&ntlm, |u, d, c, r| {
+                let logon = v.verify(u, d, c, r)?;
+                *verified.borrow_mut() = Some(logon.user);
+                Some(logon.session_base_key)
+            }),
+            None => acceptor.authenticate(&ntlm, lookup),
+        };
+        checked
+            .map(|mut outcome| {
+                if let (Some(name), Identity::User { user, .. }) =
+                    (verified.borrow_mut().take(), &mut outcome.identity)
+                {
+                    *user = name;
+                }
+                outcome
+            })
             .map_err(|e| {
                 info!(error = %e, "NTLM authenticate failed");
                 ntstatus::STATUS_LOGON_FAILURE

@@ -54,7 +54,11 @@ impl ShareAcl {
             ShareMode::PublicReadOnly => Some(Access::Read),
             ShareMode::AuthenticatedOnly => match identity {
                 Identity::Anonymous => None,
-                Identity::User { user, .. } => self.users.get(user).copied(),
+                Identity::User { user, .. } => self
+                    .users
+                    .get(user)
+                    .or_else(|| self.users.get(crate::verifier::ANY_USER))
+                    .copied(),
             },
         }
     }
@@ -205,6 +209,8 @@ pub struct ServerConfig {
     pub(crate) apple_model: Option<String>,
     /// `AAPL` replies offer OSX_COPYFILE.
     pub(crate) apple_copyfile: bool,
+    /// QS/400: logons go to this verifier instead of the user table.
+    pub(crate) verifier: Option<crate::verifier::VerifierRef>,
     /// The server is announced on the local network while it serves.
     #[cfg(feature = "discovery")]
     pub(crate) discovery: Option<crate::discovery::Settings>,
@@ -506,7 +512,7 @@ impl ConfigHandle {
         }
         let users = self.state.users.table.read().await;
         for user in share.users.keys() {
-            if !users.contains_key(user) {
+            if user != crate::verifier::ANY_USER && !users.contains_key(user) {
                 return Err(ConfigError::UnknownUser(user.clone()));
             }
         }
@@ -886,6 +892,21 @@ impl SmbServer {
         }
         .instrument(span)
         .await
+    }
+
+    /// QS/400: serves one connection accepted elsewhere (a descriptor
+    /// handed to this process) until it closes, then closes the files it
+    /// kept for a reconnect (see `QS400-PATCHES.md`).
+    pub async fn serve_connection(
+        &self,
+        stream: tokio::net::TcpStream,
+        peer: SocketAddr,
+    ) -> io::Result<()> {
+        configure_socket(&stream, self.state.config.limits.tcp_keepalive);
+        let result = connection_loop(stream, peer, self.state.clone()).await;
+        close_opens(self.state.durable.take_for(None, None)).await;
+        self.state.durable.closed().await;
+        result
     }
 
     #[cfg(any(test, fuzzing))]

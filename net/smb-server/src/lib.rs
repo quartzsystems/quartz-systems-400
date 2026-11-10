@@ -450,6 +450,7 @@ mod tests {
     mod streams;
 }
 mod utils;
+mod verifier;
 mod wildcard;
 
 pub use backend::{
@@ -472,6 +473,7 @@ pub use path::SmbPath;
 pub use proto::auth::ntlm::Identity;
 pub use server::{ConfigError, ConfigHandle, ShareMode, ShutdownHandle, SmbServer};
 pub use stream::{StreamInfo, StreamName};
+pub use verifier::{Logon, LogonVerifier};
 
 pub mod wire {
     pub use crate::proto::header;

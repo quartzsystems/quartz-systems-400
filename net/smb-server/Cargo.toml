@@ -54,6 +54,10 @@ name = "smb_server"
 path = "src/lib.rs"
 
 [[test]]
+name = "qs400_hooks"
+path = "tests/qs400_hooks.rs"
+
+[[test]]
 name = "auth_commands"
 path = "tests/auth_commands.rs"
 

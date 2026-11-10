@@ -636,6 +636,40 @@ impl UserCreds {
     }
 }
 
+/// The session base key for an NTLMv2 response checked against local
+/// credentials, or `None`. An unknown user is checked against a fixed hash
+/// so that it takes as long as a wrong password.
+fn local_session_base_key(
+    creds: Option<UserCreds>,
+    user: &str,
+    domain: &str,
+    server_challenge: &[u8; 8],
+    nt_response: &[u8],
+) -> Option<[u8; 16]> {
+    let known_user = creds.is_some();
+    let nt_hash = creds.map_or([0u8; 16], |c| c.nt_hash);
+    // NTOWFv2 = HMAC_MD5(NT_hash, UTF-16LE(UPPER(user) || domain))
+    let response_key_nt = ntowf_v2(&nt_hash, user, domain);
+    if nt_response.len() < 16 {
+        return None;
+    }
+    let (nt_proof_supplied, client_challenge) = nt_response.split_at(16);
+    // NTProofStr = HMAC_MD5(response_key_nt, ServerChallenge || ClientChallenge)
+    let mut mac = HmacMd5::new_from_slice(&response_key_nt).expect("hmac key");
+    mac.update(server_challenge);
+    mac.update(client_challenge);
+    let nt_proof_computed = mac.finalize().into_bytes();
+    if !(ct_eq_16(nt_proof_supplied, &nt_proof_computed) && known_user) {
+        return None;
+    }
+    // SessionBaseKey = HMAC_MD5(response_key_nt, NTProofStr)
+    let mut mac = HmacMd5::new_from_slice(&response_key_nt).expect("hmac key");
+    mac.update(&nt_proof_computed);
+    let mut key = [0u8; 16];
+    key.copy_from_slice(&mac.finalize().into_bytes());
+    Some(key)
+}
+
 #[derive(Debug, Clone)]
 pub struct NtlmTargetInfo {
     pub target_name: String,
@@ -779,6 +813,19 @@ impl NtlmServer {
     where
         F: Fn(&str, &str) -> Option<UserCreds>,
     {
+        self.authenticate_with(blob, |user, domain, challenge, nt_response| {
+            local_session_base_key(lookup(user, domain), user, domain, challenge, nt_response)
+        })
+    }
+
+    /// QS/400: like [`Self::authenticate`], but `verify` checks the NTLMv2
+    /// response itself (user, domain, server challenge, NT response) and
+    /// returns the session base key, so the NT hash can stay with whoever
+    /// holds it.
+    pub fn authenticate_with<V>(&self, blob: &[u8], verify: V) -> ProtoResult<AuthOutcome>
+    where
+        V: FnOnce(&str, &str, &[u8; 8], &[u8]) -> Option<[u8; 16]>,
+    {
         let auth = NtlmAuthenticate::parse(blob)?;
 
         // ---- Anonymous (MS-NLMP 3.2.5.1.2 NullSession).
@@ -794,40 +841,19 @@ impl NtlmServer {
             });
         }
 
-        // ---- Locate creds. An unknown user is checked against a fixed hash
-        // so that it takes as long as a wrong password.
-        let creds = lookup(&auth.user, &auth.domain);
-        let known_user = creds.is_some();
-        let nt_hash = creds.map_or([0u8; 16], |c| c.nt_hash);
-
-        // ---- NTOWFv2 = HMAC_MD5(NT_hash, UTF-16LE(UPPER(user) || domain))
-        let response_key_nt = ntowf_v2(&nt_hash, &auth.user, &auth.domain);
-
         // ---- NTLMv2 response layout (MS-NLMP §2.2.2.8):
         //   16 bytes NTProofStr || NTLMv2_CLIENT_CHALLENGE blob
         if auth.nt_response.len() < 16 {
             return Err(ProtoError::Auth("NT response too short"));
         }
-        let (nt_proof_supplied, client_challenge) = auth.nt_response.split_at(16);
 
-        // ---- NTProofStr = HMAC_MD5(response_key_nt, ServerChallenge || ClientChallenge)
-        let mut mac = HmacMd5::new_from_slice(&response_key_nt).expect("hmac key");
-        mac.update(&self.server_challenge);
-        mac.update(client_challenge);
-        let nt_proof_computed = mac.finalize().into_bytes();
-
-        let proof_ok = ct_eq_16(nt_proof_supplied, &nt_proof_computed);
-        if !(proof_ok && known_user) {
+        // ---- SessionBaseKey from the verifier (MS-NLMP §3.4 - for
+        // NTLMv2, KeyExchangeKey = SessionBaseKey).
+        let Some(key_exchange_key) =
+            verify(&auth.user, &auth.domain, &self.server_challenge, &auth.nt_response)
+        else {
             return Err(ProtoError::Auth("NT proof mismatch"));
-        }
-
-        // ---- SessionBaseKey = HMAC_MD5(response_key_nt, NTProofStr)
-        // (MS-NLMP §3.4 - for NTLMv2, KeyExchangeKey = SessionBaseKey.)
-        let mut mac = HmacMd5::new_from_slice(&response_key_nt).expect("hmac key");
-        mac.update(&nt_proof_computed);
-        let session_base_key_bytes = mac.finalize().into_bytes();
-        let mut key_exchange_key = [0u8; 16];
-        key_exchange_key.copy_from_slice(&session_base_key_bytes);
+        };
 
         // ---- ExportedSessionKey. KEY_EXCH requires a 16-byte
         // EncryptedRandomSessionKey; it is RC4-unwrapped only when signing
