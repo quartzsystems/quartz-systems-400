@@ -3759,6 +3759,7 @@ dependencies = [
  "mi",
  "msgf",
  "netlink",
+ "netsvrcfg",
  "nettools",
  "optical",
  "osobjects",
