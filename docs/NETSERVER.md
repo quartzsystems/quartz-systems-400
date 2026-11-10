@@ -370,6 +370,58 @@ Administration calls are refused: print shares are configured with
 hardening, Windows lets only administrators install a downloaded driver
 unless the client's policy allows it.
 
+### Point and print (built: `net/smb-server/src/rpc/spoolss/`)
+
+`\pipe\spoolss` exists on IPC$ when the server has a print service
+(`SmbServerBuilder::print_service`, the library's `print::PrintService`
+trait: the printers a session sees, a job's start, writes and end, the
+user's jobs). It binds winspool 1.0 over NDR 2.0 only, takes request
+stubs up to 1 MiB + 4 KiB (a `RpcWritePrinter` of 1 MiB), and answers
+output buffers (`cbBuf`) up to 512 KiB. INFO structures are
+custom-marshaled ([MS-RPRN] 2.2.2): fixed portions, then variable data
+after them, offsets from each fixed portion, strings aligned to 2,
+DEVMODE and security descriptor to 4.
+
+| Call (opnum) | What is served |
+|---|---|
+| `RpcOpenPrinter` (1), `RpcOpenPrinterEx` (69) | `\\NAME` or none is the server, `\\NAME\SHARE` or `SHARE` a printer (the server part is not checked); `,Job n`, `,XcvPort` and other suffixes `ERROR_INVALID_PRINTER_NAME`; a data type other than `RAW` `ERROR_INVALID_DATATYPE`. Granted: `SERVER_ACCESS_ENUMERATE` or `PRINTER_ACCESS_USE`, with `READ_CONTROL`; generic read, write and execute and `MAXIMUM_ALLOWED` map to that; anything more (administer, `DELETE`, `WRITE_DAC`, `GENERIC_ALL`) `ERROR_ACCESS_DENIED`. 64 handles a pipe |
+| `RpcClosePrinter` (29) | ends a document still open, as Windows does; a handle the pipe did not open faults `nca_s_fault_context_mismatch` (every call) |
+| `RpcEnumPrinters` (0) | levels 1, 2, 4, 5; name none or `\\NAME` with `PRINTER_ENUM_LOCAL`, `_NAME` or `_SHARED`; other flags list none; a printer's name `ERROR_INVALID_NAME` |
+| `RpcGetPrinter` (8) | levels 0 (`PRINTER_INFO_STRESS`), 1, 2, 3, 4, 5, 7, 8; a server handle `ERROR_INVALID_HANDLE`; a share gone since the open `ERROR_PRINTER_DELETED` |
+| `RpcGetPrinterDriver` (11), `RpcGetPrinterDriver2` (53) | levels 1, 2, 3, 4, 6, 8 for `Windows x64`, `Windows NT x86`, `Windows ARM64`, `Windows IA64` (none means x64); other environments `ERROR_INVALID_ENVIRONMENT`; server version 3.0 (or the files' version) |
+| `RpcGetPrinterData` (26), `RpcGetPrinterDataEx` (78), `RpcEnumPrinterData` (72) | server: `MajorVersion` 3, `MinorVersion` 0, `Architecture`, `DsPresent` 0, `W3SvcInstalled` 0, `DNSMachineName`, `OSVersion`, `OSVersionEx` (10.0, a server, as srvsvc says); printer: `ChangeID`; keys none or `PrinterDriverData`; anything else `ERROR_FILE_NOT_FOUND` |
+| `RpcEnumPrinterDataEx` (79), `RpcEnumPrinterKey` (80) | a printer's `PrinterDriverData` key, empty; other keys `ERROR_FILE_NOT_FOUND` |
+| `RpcEnumForms` (34), `RpcGetForm` (32) | levels 1 and 2 of Letter, Legal, Tabloid, Executive, A3, A4, A5, B5 (JIS), Envelope #10, Envelope DL (built-in, whole sheet imageable); other names `ERROR_INVALID_FORM_NAME` |
+| `RpcStartDocPrinter` (17) | level 1, `RAW` or no data type, no output file; one document a handle (`ERROR_INVALID_PRINTER_STATE` for a second); answers the job id the print service gives |
+| `RpcStartPagePrinter` (18), `RpcEndPagePrinter` (20), `RpcWritePrinter` (19), `RpcEndDocPrinter` (23), `RpcAbortPrinter` (21) | pages are counted and given to the job's end; without a document `ERROR_SPL_NO_STARTDOC`; a pipe that goes with a document open abandons it |
+| `RpcGetJob` (3), `RpcEnumJobs` (4) | levels 1 and 2 of the user's own jobs on the printer; an unknown job `ERROR_INVALID_PARAMETER` |
+| `RpcRemoteFindFirstPrinterChangeNotification` (62), `...Ex` (65) | `ERROR_NOT_SUPPORTED`: the server never opens the reply channel to the client's spooler, and the client falls back to polling the printer (`NEEDS-CODY`: confirm a Windows 11 client's queue window keeps working) |
+| `RpcFindClosePrinterChangeNotification` (56) | `ERROR_INVALID_HANDLE`: no notification is ever open |
+
+Driver names: the print share's printer driver (`ZLSL0101`'s field) is
+what `GetPrinter` and `GetPrinterDriver2` report. For a driver every
+client has in its driver store (the in-box "Microsoft PCL6 Class
+Driver", "Microsoft PS Class Driver"), the share names no files and
+every environment is answered with empty file names: Windows finds the
+driver locally and connects with no download. A share whose driver has
+files names them per environment (`PrinterInfo::driver_files`, paths
+inside `print$`, e.g. `x64\3\unidrv.dll`), and the DRIVER_INFO levels
+point the client to `\\NAME\print$\...`; an environment with no files
+is then `ERROR_UNKNOWN_PRINTER_DRIVER`. The read-only `print$` disk
+share and the IFS directory it serves (the `W32X86` and `x64` layout,
+filled by an administrator with an IFS copy) are not built yet: they
+come with the netserver crate's print shares. Since Microsoft's 2021 point-and-print
+hardening (KB5005652, `RestrictDriverInstallationToAdministrators`),
+Windows lets only administrators install a driver downloaded from a
+server unless the client's policy allows it; that is client policy, and
+the class drivers avoid it.
+
+Data: printers are `RAW`-only (`PRINTER_ATTRIBUTE_RAW_ONLY`), so the
+client renders and sends the printer's language; the print processor
+named is `winprint`. The DEVMODE given (levels 2 and 8) is the public
+part only: the printer's name, portrait, one copy, the share's default
+form.
+
 ## 8. Messages
 
 NetServer's IDs in `QCPFMSG`, with QS/400's own text in
@@ -411,7 +463,14 @@ Severities as `messages.txt`.
 | Quotas | the IFS has none | `STATUS_NOT_SUPPORTED` |
 | Alternate data streams | the IFS has none | no `FILE_NAMED_STREAMS`; `name:stream` is `STATUS_OBJECT_NAME_INVALID` |
 | Setting security descriptors | authority is `CHGAUT`'s | `STATUS_ACCESS_DENIED` |
-| `spoolss` administration (add, set or delete printers, drivers, ports, monitors) | print shares are configured with `QZLSADPS` and Navigator | `ERROR_ACCESS_DENIED` |
+| `spoolss` administration: `RpcAddPrinter`(Ex), `RpcSetPrinter`, `RpcDeletePrinter`, `RpcAddPrinterDriver`(Ex), `RpcDeletePrinterDriver`(Ex), print processors, forms, ports, monitors, printer data and keys, per-machine connections, `RpcXcvData` (opnums 5, 6, 7, 9, 13, 14, 27, 30, 31, 33, 39, 46, 47, 48, 61, 70, 71, 73, 77, 81, 82, 84, 85, 86, 88, 89) | print shares are configured with `QZLSADPS` and Navigator | a fault with status 5, `ERROR_ACCESS_DENIED` |
+| Opening a printer for administration (`PRINTER_ACCESS_ADMINISTER`, `DELETE`, `WRITE_DAC`, `WRITE_OWNER`, `GENERIC_ALL`, `SERVER_ACCESS_ADMINISTER`) | as above | `ERROR_ACCESS_DENIED` |
+| `spoolss` change notifications (opnums 62, 65) | the server would have to call back into the client's spooler | `ERROR_NOT_SUPPORTED`; the client polls |
+| `RpcSetJob`, `RpcScheduleJob`, `RpcResetPrinter` (2, 25, 52) | jobs are held, released and ended on the output queue (`WRKSPLF`, Navigator) | `ERROR_NOT_SUPPORTED` |
+| Every other `spoolss` operation (`RpcAddJob`, `RpcReadPrinter`, `RpcEnumPrinterDrivers`, `RpcGetPrinterDriverDirectory`, ports and monitors lists, ICs, `RpcFlushPrinter`, bidi, `RpcGetCorePrinterDrivers`, `RpcGetPrinterDriverPackagePath`, named job properties, IPP, branch office) | not needed to connect a printer and print | a fault `nca_op_rng_error` (`RPC_S_PROCNUM_OUT_OF_RANGE`); Windows falls back from the package-aware calls |
+| Data types other than `RAW` (EMF, XPS, TEXT) | the output queue takes the printer's own data | `ERROR_INVALID_DATATYPE`; printers are `PRINTER_ATTRIBUTE_RAW_ONLY` |
+| A document's output file | the job goes to the output queue | `ERROR_INVALID_PARAMETER` |
+| `,Job n`, `,XcvPort`, `,XcvMonitor` printer names | jobs are not opened by handle; ports and monitors are administration | `ERROR_INVALID_PRINTER_NAME` |
 
 ## 11. Tests
 
@@ -429,6 +488,22 @@ Severities as `messages.txt`.
 - `tools/smbtest` (the test client and its scenarios, below).
 - QEMU steps from 166: the server started, every `smbtest` scenario
   against the guest, the APIs, the SQL view, a 1 GB copy (MB/s here).
+- `cd net/smb-server; cargo test --lib spoolss` and `cargo test --test
+  qs400_spoolss`: the spoolss calls, their NDR and INFO structures, forms,
+  refusals; OpenPrinterEx, GetPrinter 2, GetPrinterDriver2, StartDoc, a
+  20 000-byte WritePrinter in fragments, EndDoc and ClosePrinter over a
+  connection, the bytes arriving at a test print service.
+- Fuzz targets: the SMB2 header and commands, NTLMSSP, SPNEGO, the
+  NetBIOS session service and name service, DCE/RPC, the spoolss request
+  decoder (`smb_server::fuzzing::spoolss_request`).
+- `NEEDS-CODY`: Windows 11, macOS and a Linux kernel client map a share,
+  open and save with Notepad, Word and Excel, print to a print share; a
+  wrong password `QMAXSIGN` times disables the user for NetServer.
+- `NEEDS-CODY`: point and print from Windows 11: Add Printer by
+  `\SERVER\SHARE` on a share with the "Microsoft PCL6 Class Driver"
+  connects with no download, prints a test page and an Office document
+  into the share's output queue, and the printer's queue window shows the
+  user's jobs.
 
 ### The test client (`tools/smbtest`)
 
@@ -523,11 +598,6 @@ and every scenario through a forward to the guest's 445 (16 MiB copy);
 detail. They run the `smbtest` binary from `QS400_SMBTEST`, or build it
 (`cargo build --release --locked --manifest-path tools/smbtest/Cargo.toml`
 into `$QS400_TARGET_DIR/smbtest`).
-- Fuzz targets: the SMB2 header and commands, NTLMSSP, SPNEGO, the
-  NetBIOS session service and name service, DCE/RPC.
-- `NEEDS-CODY`: Windows 11, macOS and a Linux kernel client map a share,
-  open and save with Notepad, Word and Excel, print to a print share; a
-  wrong password `QMAXSIGN` times disables the user for NetServer.
 
 ## Acceptance
 
