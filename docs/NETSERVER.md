@@ -210,9 +210,18 @@ the IFS authorities (section 6).
 `CREATE` on a print share opens a spooled file in the share's output
 queue as the signed-on user; `WRITE`s add its data; `CLOSE` ends it. The
 type follows the share: `*USERASCII` as written, or through the host
-print transform with the share's `*WSCST` (`work/print`). Windows adds
-the printer with a locally installed driver; the `spoolss` RPC (point
-and print) is refused (section 10).
+print transform with the share's `*WSCST` (`work/print`).
+
+Point and print: `\pipe\spoolss` serves the [MS-RPRN] subset Windows
+uses to connect a printer and print through it (open, get printer and
+driver, forms, start/write/end document, the user's own jobs). The share's
+printer driver name is what the client is told; when the client has that
+driver (the in-box class drivers), Windows connects with no download, and
+otherwise takes the driver files from the read-only `print$` share.
+Administration calls are refused: print shares are configured with
+`QZLSADPS` and Navigator. Since Microsoft's 2021 point-and-print
+hardening, Windows lets only administrators install a downloaded driver
+unless the client's policy allows it.
 
 ## 8. Messages
 
@@ -237,7 +246,7 @@ Severities as `messages.txt`.
 | Encryption | AES-128-CCM, AES-128-GCM, AES-256-CCM, AES-256-GCM |
 | Credits, compounding, large MTU | yes |
 | Leases and oplocks | yes (section 6) |
-| Durable handles | v1 and v2 (reconnect after a dropped connection within the timeout) |
+| Durable handles | v1 and v2: a reconnect within the timeout is routed back to the `QZLSFILE` job holding the opens (ClientGuid of the first `NEGOTIATE`, else the client address; section 3) |
 | Resilient handles | `FSCTL_LMR_REQUEST_RESILIENCY` |
 | Persistent handles, multichannel, RDMA, DFS, compression | refused |
 | RPC | `srvsvc` (`NetShareEnumAll`, `NetShareGetInfo`, `NetServerGetInfo`), `wkssvc` (`NetWkstaGetInfo`); everything else `nca_s_op_rng_error` |
@@ -255,7 +264,7 @@ Severities as `messages.txt`.
 | Quotas | the IFS has none | `STATUS_NOT_SUPPORTED` |
 | Alternate data streams | the IFS has none | no `FILE_NAMED_STREAMS`; `name:stream` is `STATUS_OBJECT_NAME_INVALID` |
 | Setting security descriptors | authority is `CHGAUT`'s | `STATUS_ACCESS_DENIED` |
-| `spoolss` (point and print) | not built | `nca_s_op_rng_error`; add the printer with a local driver |
+| `spoolss` administration (add, set or delete printers, drivers, ports, monitors) | print shares are configured with `QZLSADPS` and Navigator | `ERROR_ACCESS_DENIED` |
 
 ## 11. Tests
 
