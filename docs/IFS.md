@@ -238,7 +238,7 @@ the current time, and clear the log.
 ### The block device
 
 `lic/ublk` is the ublk server: one device (`/dev/ublkbN`, the number
-the kernel picks), one hardware queue of depth 64, I/O of at most
+the kernel picks), one hardware queue of depth 32, I/O of at most
 512 KiB, 4096-byte logical and physical blocks, a volatile write cache
 with FUA (`UBLK_ATTR_VOLATILE_CACHE`, `UBLK_ATTR_FUA`), no discard. Its
 features are `UBLK_F_CMD_IOCTL_ENCODE` and `UBLK_F_UPDATE_SIZE`; the
@@ -256,6 +256,18 @@ handle (`store::asp::io::SharedIo`), which takes no lock the request
 thread holds across an IFS call. It is marked an I/O flusher
 (`PR_SET_IO_FLUSHER`), so the kernel's memory reclaim does not wait on
 the device it serves.
+
+Flushes (and the flush after a write with FUA) go to a third thread,
+the flusher (also an I/O flusher), and the queue goes on with reads and
+writes meanwhile; the flusher answers each batch of waiting requests
+with one flush begun after they all came, and wakes the queue through
+an event descriptor read on its ring, which then commits their tags. A
+flush can take long: under QEMU a guest flush is the host's `fdatasync`
+of the disk image, which after a large copy waited 10 to 27 seconds in
+the NetServer copy (step 168); with flushes served in turn with
+everything else, every read queued behind one, so the storage service's
+IFS read waited as long and every job's request with it
+(`docs/NETSERVER.md` section 11).
 
 | Request | What the server does |
 |---|---|

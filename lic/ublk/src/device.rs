@@ -7,6 +7,7 @@
 //! deleted.
 
 use std::fs::{File, OpenOptions};
+use std::os::fd::OwnedFd;
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex, PoisonError};
@@ -22,7 +23,7 @@ use crate::abi::{
     IO_COMMIT_AND_FETCH_REQ, IO_FETCH_REQ, IoDesc,
 };
 use crate::sys::{Descs, Ring};
-use crate::target::{BLOCK, Target, serve};
+use crate::target::{BLOCK, Served, Target, start};
 
 /// Tags of the queue.
 pub const DEPTH: u16 = 32;
@@ -116,7 +117,7 @@ impl Device {
         let (tx, rx) = mpsc::channel();
         let handle = std::thread::Builder::new()
             .name(format!("ublk{}", self.id))
-            .spawn(move || queue(&cdev, target.as_ref(), &tx))
+            .spawn(move || queue(&cdev, &target, &tx))
             .map_err(|e| fail("queue thread", e))?;
         self.queue = Some(handle);
         match rx.recv_timeout(Duration::from_secs(10)) {
@@ -186,19 +187,110 @@ fn open_char(id: u32) -> Result<File, Error> {
     }
 }
 
+/// `user_data` of the read on the flusher's event descriptor.
+const FLUSHED: u64 = u64::MAX;
+
+/// A request waiting for a flush: its tag and what it answers then.
+struct Waiting {
+    tag: u16,
+    ok: i32,
+}
+
+/// Flushes run on a thread of their own: a flush can take long (a host
+/// writing back a large cache), and reads and writes must not queue
+/// behind it. Each batch of waiting requests is answered by one flush
+/// begun after they all came, then the queue is woken through an event
+/// descriptor.
+struct Flusher {
+    tx: Option<mpsc::Sender<Waiting>>,
+    done: Arc<Mutex<Vec<(u16, i32)>>>,
+    event: Arc<OwnedFd>,
+    thread: Option<JoinHandle<()>>,
+}
+
+impl Flusher {
+    fn start(target: Arc<dyn Target>) -> Result<Self, Error> {
+        let event = Arc::new(
+            rustix::event::eventfd(0, rustix::event::EventfdFlags::CLOEXEC)
+                .map_err(|e| fail("flush event", e))?,
+        );
+        let done: Arc<Mutex<Vec<(u16, i32)>>> = Arc::default();
+        let (tx, rx) = mpsc::channel::<Waiting>();
+        let (d, ev) = (Arc::clone(&done), Arc::clone(&event));
+        let thread = std::thread::Builder::new()
+            .name("ublk-flush".into())
+            .spawn(move || {
+                // Its memory reclaim must not wait on the device either.
+                let _ = rustix::process::configure_io_flusher_behavior(true);
+                while let Ok(first) = rx.recv() {
+                    let mut batch = vec![first];
+                    batch.extend(rx.try_iter());
+                    let r = target.flush();
+                    d.lock().unwrap_or_else(PoisonError::into_inner).extend(
+                        batch
+                            .iter()
+                            .map(|w| (w.tag, r.map_or_else(|e| -e, |()| w.ok))),
+                    );
+                    let _ = rustix::io::write(&*ev, &1u64.to_ne_bytes());
+                }
+            })
+            .map_err(|e| fail("flush thread", e))?;
+        Ok(Self {
+            tx: Some(tx),
+            done,
+            event,
+            thread: Some(thread),
+        })
+    }
+
+    fn send(&self, w: Waiting) -> Result<(), Waiting> {
+        match &self.tx {
+            Some(tx) => tx.send(w).map_err(|e| e.0),
+            None => Err(w),
+        }
+    }
+
+    fn take_done(&self) -> Vec<(u16, i32)> {
+        std::mem::take(&mut *self.done.lock().unwrap_or_else(PoisonError::into_inner))
+    }
+
+    /// Let the thread end once its batches are flushed.
+    fn stop(&mut self) {
+        self.tx = None;
+        if let Some(t) = self.thread.take() {
+            let _ = t.join();
+        }
+    }
+}
+
+/// Commit tag `tag`'s answer and fetch its next request.
+fn commit(ring: &mut Ring, fd: i32, buf: &mut blockdev::AlignedBuf, tag: u16, result: i32) {
+    let addr = buf.as_mut_ptr() as u64;
+    let sqe = abi::uring_cmd(
+        fd,
+        IO_COMMIT_AND_FETCH_REQ,
+        u64::from(tag),
+        &abi::io_cmd(0, tag, result, addr),
+    );
+    ring.push(&sqe);
+}
+
 /// The queue: every tag fetched, then each request served and committed
-/// with the next fetch, until the kernel aborts the fetches.
-fn queue(cdev: &File, target: &dyn Target, ready: &mpsc::Sender<Result<(), Error>>) {
+/// with the next fetch, until the kernel aborts the fetches. Flushes,
+/// and the flush after a write with FUA, are the flusher's; their tags
+/// are committed when it is done.
+fn queue(cdev: &File, target: &Arc<dyn Target>, ready: &mpsc::Sender<Result<(), Error>>) {
     // Memory reclaim must not wait on the device this thread serves.
     if let Err(e) = rustix::process::configure_io_flusher_behavior(true) {
         warn!("ublk: not an I/O flusher: {e}");
     }
-    let setup = || -> Result<(Ring, Descs), Error> {
-        let ring = Ring::new(u32::from(DEPTH)).map_err(|e| fail("queue ring", e))?;
+    let setup = || -> Result<(Ring, Descs, Flusher), Error> {
+        // Room for every tag's commit and the event's read in one round.
+        let ring = Ring::new(u32::from(DEPTH) * 2).map_err(|e| fail("queue ring", e))?;
         let descs = Descs::new(cdev, usize::from(DEPTH)).map_err(|e| fail("descriptors", e))?;
-        Ok((ring, descs))
+        Ok((ring, descs, Flusher::start(Arc::clone(target))?))
     };
-    let (mut ring, descs) = match setup() {
+    let (mut ring, descs, mut flusher) = match setup() {
         Ok(r) => r,
         Err(e) => {
             let _ = ready.send(Err(e));
@@ -209,9 +301,14 @@ fn queue(cdev: &File, target: &dyn Target, ready: &mpsc::Sender<Result<(), Error
     let mut bufs: Vec<blockdev::AlignedBuf> = (0..DEPTH)
         .map(|_| blockdev::AlignedBuf::new(blocks))
         .collect();
-    let fd = {
+    let (fd, efd) = {
         use std::os::fd::AsRawFd;
-        cdev.as_raw_fd()
+        (cdev.as_raw_fd(), flusher.event.as_raw_fd())
+    };
+    // The event's count lands here; it lives until the read completes.
+    let mut count = Box::new([0u8; 8]);
+    let arm = |ring: &mut Ring, count: &mut [u8; 8]| {
+        ring.push(&abi::read_sqe(efd, count.as_mut_ptr() as u64, 8, FLUSHED))
     };
     for tag in 0..DEPTH {
         let addr = bufs[usize::from(tag)].as_mut_ptr() as u64;
@@ -223,6 +320,7 @@ fn queue(cdev: &File, target: &dyn Target, ready: &mpsc::Sender<Result<(), Error
         );
         ring.push(&sqe);
     }
+    let mut armed = arm(&mut ring, &mut count);
     if let Err(e) = ring.submit_and_wait(0) {
         let _ = ready.send(Err(fail("fetch", e)));
         return;
@@ -236,6 +334,16 @@ fn queue(cdev: &File, target: &dyn Target, ready: &mpsc::Sender<Result<(), Error
         }
         while let Some(c) = ring.pop() {
             let (user, res) = abi::cqe(&c);
+            if user == FLUSHED {
+                for (tag, result) in flusher.take_done() {
+                    if result < 0 {
+                        warn!("ublk: flush for tag {tag} failed: errno {}", -result);
+                    }
+                    commit(&mut ring, fd, &mut bufs[usize::from(tag)], tag, result);
+                }
+                armed = arm(&mut ring, &mut count);
+                continue;
+            }
             let tag = u16::try_from(user).unwrap_or(0);
             if res != 0 {
                 if res != ABORT {
@@ -245,19 +353,35 @@ fn queue(cdev: &File, target: &dyn Target, ready: &mpsc::Sender<Result<(), Error
                 continue;
             }
             let d = IoDesc::decode(&descs.get(usize::from(tag)));
-            let buf = &mut bufs[usize::from(tag)];
-            let result = serve(target, &d, buf);
+            let result = match start(target.as_ref(), &d, &mut bufs[usize::from(tag)]) {
+                Served::Done(r) => r,
+                Served::Flush(ok) => match flusher.send(Waiting { tag, ok }) {
+                    Ok(()) => continue,
+                    // No flusher: flushed here.
+                    Err(w) => target.flush().map_or_else(|e| -e, |()| w.ok),
+                },
+            };
             if result < 0 {
                 warn!("ublk: request {d:?} failed: errno {}", -result);
             }
-            let addr = buf.as_mut_ptr() as u64;
-            let sqe = abi::uring_cmd(
-                fd,
-                IO_COMMIT_AND_FETCH_REQ,
-                user,
-                &abi::io_cmd(0, tag, result, addr),
-            );
-            ring.push(&sqe);
+            commit(&mut ring, fd, &mut bufs[usize::from(tag)], tag, result);
         }
     }
+    flusher.stop();
+    // The event's read completes before its count goes.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    if armed {
+        let _ = rustix::io::write(&*flusher.event, &1u64.to_ne_bytes());
+    }
+    while armed && Instant::now() < deadline {
+        if ring.submit_and_wait(1).is_err() {
+            break;
+        }
+        while let Some(c) = ring.pop() {
+            if abi::cqe(&c).0 == FLUSHED {
+                armed = false;
+            }
+        }
+    }
+    drop(count);
 }

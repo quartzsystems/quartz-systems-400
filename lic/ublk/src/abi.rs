@@ -93,6 +93,21 @@ pub fn uring_cmd(fd: i32, cmd_op: u32, user_data: u64, cmd: &[u8]) -> [u8; SQE_L
     sqe
 }
 
+/// `IORING_OP_READ`.
+pub const IORING_OP_READ: u8 = 22;
+
+/// A read of `len` bytes from `fd` into `addr`, tagged `user_data`.
+#[must_use]
+pub fn read_sqe(fd: i32, addr: u64, len: u32, user_data: u64) -> [u8; SQE_LEN] {
+    let mut sqe = [0u8; SQE_LEN];
+    sqe[0] = IORING_OP_READ;
+    sqe[4..8].copy_from_slice(&fd.to_le_bytes());
+    sqe[16..24].copy_from_slice(&addr.to_le_bytes());
+    sqe[24..28].copy_from_slice(&len.to_le_bytes());
+    sqe[32..40].copy_from_slice(&user_data.to_le_bytes());
+    sqe
+}
+
 /// A completion: its tag and result.
 #[must_use]
 pub fn cqe(bytes: &[u8; CQE_LEN]) -> (u64, i32) {

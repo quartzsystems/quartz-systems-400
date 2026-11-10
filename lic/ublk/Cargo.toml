@@ -12,7 +12,7 @@ thiserror.workspace = true
 tracing.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "1.1.5", features = ["io_uring", "mm", "fs", "process"] }
+rustix = { version = "1.1.5", features = ["io_uring", "mm", "fs", "process", "event"] }
 
 [lints]
 workspace = true

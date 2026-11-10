@@ -34,12 +34,34 @@ pub trait Target: Send + Sync {
 /// Serve one request with `buf` as its data (the tag's buffer): the
 /// bytes moved, or a negative `errno`.
 pub fn serve(target: &dyn Target, d: &IoDesc, buf: &mut [u8]) -> i32 {
-    let r = match d.op {
-        OP_FLUSH => target.flush().map(|()| 0),
-        OP_READ | OP_WRITE => transfer(target, d, buf),
-        _ => Err(EOPNOTSUPP),
-    };
-    r.unwrap_or_else(|e| -e)
+    match start(target, d, buf) {
+        Served::Done(r) => r,
+        Served::Flush(ok) => target.flush().map_or_else(|e| -e, |()| ok),
+    }
+}
+
+/// What a request has done before any flush it needs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Served {
+    /// Answered: the bytes moved, or a negative `errno`.
+    Done(i32),
+    /// Answered with this once a flush has made the writes so far
+    /// durable: a flush (0), or a write with FUA (its bytes).
+    Flush(i32),
+}
+
+/// Serve a request up to the flush it needs, so a flush can wait on
+/// another thread while reads and writes go on (`device`).
+pub fn start(target: &dyn Target, d: &IoDesc, buf: &mut [u8]) -> Served {
+    match d.op {
+        OP_FLUSH => Served::Flush(0),
+        OP_READ | OP_WRITE => match transfer(target, d, buf) {
+            Ok(n) if d.op == OP_WRITE && d.flags & IO_F_FUA != 0 => Served::Flush(n),
+            Ok(n) => Served::Done(n),
+            Err(e) => Served::Done(-e),
+        },
+        _ => Served::Done(-EOPNOTSUPP),
+    }
 }
 
 fn transfer(target: &dyn Target, d: &IoDesc, buf: &mut [u8]) -> Result<i32, i32> {
@@ -63,9 +85,6 @@ fn transfer(target: &dyn Target, d: &IoDesc, buf: &mut [u8]) -> Result<i32, i32>
         target.read(block, data)?;
     } else {
         target.write(block, data)?;
-        if d.flags & IO_F_FUA != 0 {
-            target.flush()?;
-        }
     }
     i32::try_from(bytes).map_err(|_| EINVAL)
 }
@@ -131,5 +150,19 @@ mod tests {
         assert_eq!(serve(&m, &desc(OP_READ, 0, 15 * 8, 16), &mut back), -EINVAL);
         assert_eq!(serve(&m, &desc(OP_READ, 0, 3, 8), &mut back), -EINVAL);
         assert_eq!(serve(&m, &desc(3, 0, 0, 8), &mut back), -EOPNOTSUPP);
+        // Started without their flush: a flush, a write with FUA.
+        assert_eq!(
+            start(&m, &desc(OP_FLUSH, 0, 0, 0), &mut back),
+            Served::Flush(0)
+        );
+        assert_eq!(
+            start(&m, &desc(OP_WRITE, IO_F_FUA, 32, 8), &mut buf),
+            Served::Flush(4096)
+        );
+        assert_eq!(
+            start(&m, &desc(OP_WRITE, 0, 32, 8), &mut buf),
+            Served::Done(4096)
+        );
+        assert_eq!(*m.flushes.lock().unwrap(), 2);
     }
 }
