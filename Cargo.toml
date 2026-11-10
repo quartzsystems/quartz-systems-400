@@ -1,5 +1,7 @@
 [workspace]
 resolver = "3"
+# Third-party sources carried with QS/400 patches (net/smb-server/QS400-PATCHES.md).
+exclude = ["net/smb-server"]
 members = [
     # Host tools: the build orchestrator and the conformance harness.
     "tools/build",

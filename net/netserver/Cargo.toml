@@ -9,6 +9,8 @@ publish.workspace = true
 [dependencies]
 thiserror.workspace = true
 tracing.workspace = true
+# The SMB2/3 protocol: rust-smb-server 0.10.0 (MIT), vendored with QS/400's hooks.
+smb-server = { path = "../smb-server", version = "=0.10.0", default-features = false }
 
 [lints]
 workspace = true
