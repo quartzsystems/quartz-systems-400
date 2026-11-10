@@ -136,84 +136,94 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
         });
     }
     let ns = Arc::new(ns);
-    let released = Arc::new(AtomicBool::new(false));
-    {
-        let (ns, released) = (ns.clone(), released.clone());
-        std::thread::spawn(move || {
-            let _ = stream.set_nodelay(true);
-            if let Err(e) = ns.serve_one(stream) {
-                eprintln!("qsjob: QZLSFILE: connection: {e}");
-            }
-            ns.idle_until_released();
-            released.store(true, Ordering::Release);
-        });
-    }
-    // Reconnects QZLSSERVER routes here.
-    let rerouted = {
-        let (ns, released, table) = (ns.clone(), released.clone(), table.clone());
-        std::thread::spawn(move || {
-            while !released.load(Ordering::Acquire) {
-                match relay::take(relay::SOCKET, &me, None, 500) {
-                    Ok(Some(t)) => {
-                        if let Some(ws) = workstation(&t.note) {
-                            table.set_workstation(&ws);
-                        }
-                        spawn_serve(&ns, TcpStream::from(t.fd.into_owned()));
-                    }
-                    Ok(None) => {}
-                    Err(_) => std::thread::sleep(Duration::from_millis(500)),
-                }
-            }
-        })
-    };
     let peers: Mutex<Vec<IpAddr>> = Mutex::default();
     let mut shut = false;
-    while !released.load(Ordering::Acquire) {
-        std::thread::sleep(Duration::from_secs(1));
-        let now = ns.sessions();
+    let mut next = Some(stream);
+    // A connection routed here while the job was being released waits on
+    // its relay identifier: it is served by the same server, and the
+    // client stays here.
+    while let Some(stream) = next.take() {
+        let released = Arc::new(AtomicBool::new(false));
         {
-            let mut p = peers.lock().unwrap_or_else(PoisonError::into_inner);
-            for s in &now {
-                if let Some(a) = s.peer.map(|a| a.ip())
-                    && !p.contains(&a)
-                {
-                    p.push(a);
+            let (ns, released) = (ns.clone(), released.clone());
+            std::thread::spawn(move || {
+                let _ = stream.set_nodelay(true);
+                if let Err(e) = ns.serve_one(stream) {
+                    eprintln!("qsjob: QZLSFILE: connection: {e}");
+                }
+                ns.idle_until_released();
+                released.store(true, Ordering::Release);
+            });
+        }
+        // Reconnects QZLSSERVER routes here.
+        let rerouted = {
+            let (ns, released, table) = (ns.clone(), released.clone(), table.clone());
+            std::thread::spawn(move || {
+                while !released.load(Ordering::Acquire) {
+                    match relay::take(relay::SOCKET, &me, None, 500) {
+                        Ok(Some(t)) => {
+                            if let Some(ws) = workstation(&t.note) {
+                                table.set_workstation(&ws);
+                            }
+                            spawn_serve(&ns, TcpStream::from(t.fd.into_owned()));
+                        }
+                        Ok(None) => {}
+                        Err(_) => std::thread::sleep(Duration::from_millis(500)),
+                    }
+                }
+            })
+        };
+        while !released.load(Ordering::Acquire) {
+            std::thread::sleep(Duration::from_secs(1));
+            let now = ns.sessions();
+            {
+                let mut p = peers.lock().unwrap_or_else(PoisonError::into_inner);
+                for s in &now {
+                    if let Some(a) = s.peer.map(|a| a.ip())
+                        && !p.contains(&a)
+                    {
+                        p.push(a);
+                    }
                 }
             }
+            for sid in table.sync(&now) {
+                let _ = ns.end_session(sid);
+                table.ended(sid);
+            }
+            if !shut && ending(link) {
+                // ENDTCPSVR, QZLSENDS: every connection closes after the
+                // request it is answering; no durable open is kept for later.
+                ns.shutdown();
+                shut = true;
+            }
+            let guids: Vec<Vec<u8>> = ns.client_guids().into_iter().map(|g| g.to_vec()).collect();
+            let peers: Vec<String> = if ns.disconnected_opens() > 0 {
+                peers.lock().unwrap_or_else(PoisonError::into_inner).iter().map(ToString::to_string).collect()
+            } else {
+                Vec::new()
+            };
+            link.borrow_mut().with(|l| {
+                l.netsvr(NsOp::Route {
+                    relay: me.to_vec(),
+                    guids,
+                    peers,
+                })
+            });
         }
-        for sid in table.sync(&now) {
-            let _ = ns.end_session(sid);
-            table.ended(sid);
-        }
-        if !shut && ending(link) {
-            // ENDTCPSVR, QZLSENDS: every connection closes after the
-            // request it is answering; no durable open is kept for later.
-            ns.shutdown();
-            shut = true;
-        }
-        let guids: Vec<Vec<u8>> = ns.client_guids().into_iter().map(|g| g.to_vec()).collect();
-        let peers: Vec<String> = if ns.disconnected_opens() > 0 {
-            peers.lock().unwrap_or_else(PoisonError::into_inner).iter().map(ToString::to_string).collect()
-        } else {
-            Vec::new()
-        };
+        // Withdrawn first, so nothing more is routed here.
         link.borrow_mut().with(|l| {
             l.netsvr(NsOp::Route {
                 relay: me.to_vec(),
-                guids,
-                peers,
+                guids: Vec::new(),
+                peers: Vec::new(),
             })
         });
+        let _ = rerouted.join();
+        next = match relay::take(relay::SOCKET, &me, None, 300) {
+            Ok(Some(t)) => Some(TcpStream::from(t.fd.into_owned())),
+            _ => None,
+        };
     }
-    // Withdrawn first, so nothing more is routed here.
-    link.borrow_mut().with(|l| {
-        l.netsvr(NsOp::Route {
-            relay: me.to_vec(),
-            guids: Vec::new(),
-            peers: Vec::new(),
-        })
-    });
-    let _ = rerouted.join();
     table.clear();
     drop(ns);
 }
