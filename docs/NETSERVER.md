@@ -1264,9 +1264,33 @@ into `$QS400_TARGET_DIR/smbtest`).
 
 ## Acceptance
 
+Status at the end of the handoff (2026-11-10). "Built" means built and
+proven by the tests named; `NEEDS-CODY` items need a real client or an
+oracle change the rules forbid.
+
 | Item | Proof | Status |
 |---|---|---|
-| (filled as each part lands) | | |
+| Oracle facts: APIs, jobs, subsystem entries, configuration files, messages, SQL view; the primary speaks SMB1 only | `tools/conformance/oracle/netserver/` | done |
+| SMB 2.0.2-3.1.1, signing, encryption, credits, compounding, leases, durable handles, SMB1 upgrade and refusal | the vendored library's suite (`cd net/smb-server; cargo test`: 1168 pass, one upstream Windows-host test fails with or without the patches) | built |
+| QS/400 library patches (verifier, any-user, one connection, guest, share modes, locks, minimum dialect, print shares, tree admission, spoolss, leases and watches from outside) | `tests/qs400_hooks.rs`, `qs400_patches.rs`, `qs400_spoolss.rs`, `qs400_leases.rs`, `qs400_notify.rs` | built |
+| NTLM: NT hash, NTLMv2 verification, MIC | `cargo test -p ntlm` (RFC and [MS-NLMP] 4.2 vectors) | built |
+| NT hash password form, `*USRPRF` v2, V1R1M0 payload reads, `QPWDLVL` 0-3 | `cargo test -p sec --test netsvr`, fmtcheck | built; level 4 `NEEDS-CODY` |
+| Sign-on in the service, guest, refusals, disabled for NetServer at `QMAXSIGN`, `CPIB682`, `VP` audit | `cargo test -p sec --test netsvr`, `-p stg --test netsvr_link`, `-p sql --test services` | built; `VP` date format `NEEDS-CODY` |
+| Configuration files (frozen at V1R2M0), ZLSL/ZLSS formats byte-exact against the primary, 13 APIs with reason codes and authority | `cargo test -p netsvrcfg` (`tests/captures.rs`), `-p sysapi --test netsvr` | built; five API details `NEEDS-CODY` (section "APIs") |
+| Messages, help, text audit | `cargo test -p msgf -p helpaudit`; `cargo run -p textaudit` new 0 | done |
+| `QSYS2.SERVER_SHARE_INFO`, `USER_INFO.NETSERVER_DISABLED` | `cargo test -p sql --test services`; QEMU 169 | built |
+| IFS share backend, case rules, attributes, file IDs, share modes, locks, `/QSYS.LIB`, text conversion | `cargo test -p netserver --test shares` | built |
+| Leases and change notify across jobs and non-SMB writers | `cargo test -p netserver`, `-p ifs --test leases --test watches`; QEMU 167 (`change-notify-two-machines`) | built |
+| Jobs `QZLSSERVER`/`QZLSFILE`, `*NETSVR`, `QSERVER` entries, `WRKACTJOB` | QEMU 166 | built |
+| Reconnect routing and durable handles across a dropped connection | netserver routed-reconnect tests; QEMU 167 | built |
+| Every `smbtest` scenario against the guest (one ClientGuid per run, as Windows) | QEMU 167: 23 scenarios | built |
+| Start, end, end session, maximum users, `NETSTAT_INFO` | QEMU 169 | built |
+| 1 GB copy | QEMU 168: 146.7-212.8 MB/s in, 88.7-114.6 MB/s out | built |
+| Print shares, spoolss point and print, `print$` | `cargo test -p netserver --test shares`; library `qs400_spoolss` | built; Windows 11 `NEEDS-CODY` |
+| Navigator NetServer pages, QAP v10 NetServer service | `cargo test -p navigator --test netsvr`, `-p qapd --test netserver`, `-p qap-proto --test version10` | built |
+| Fuzz targets: NetBIOS session service, the library's parsers, spoolss | `tools/fuzz` targets `nbss`, `smb`; `smb_server::fuzzing::spoolss_request` | built |
+| Windows 11, macOS, Linux kernel clients; Office documents; `QMAXSIGN` disabling from a real client | section 11 | `NEEDS-CODY` |
+| Samba `smbclient` and kernel CIFS interop | `cargo test --manifest-path tools/smbtest/Cargo.toml --test interop -- --ignored` | written; `NEEDS-CODY` (packages) |
 
 [MS-SMB2]: https://learn.microsoft.com/openspecs/windows_protocols/ms-smb2
 [MS-NLMP]: https://learn.microsoft.com/openspecs/windows_protocols/ms-nlmp
