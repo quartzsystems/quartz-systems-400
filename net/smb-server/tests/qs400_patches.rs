@@ -33,7 +33,11 @@ struct Guests;
 
 impl LogonVerifier for Guests {
     fn verify(&self, _: &str, _: &str, _: &[u8; 8], _: &[u8]) -> Option<Logon> {
-        Some(Logon { user: "GUESTP".into(), session_base_key: [0x55; 16], guest: true })
+        Some(Logon {
+            user: "GUESTP".into(),
+            session_base_key: [0x55; 16],
+            guest: true,
+        })
     }
 }
 
@@ -59,7 +63,15 @@ async fn a_verifier_guest_gets_a_guest_session_on_its_shares() {
         assert_eq!(login.status, STATUS_SUCCESS, "dialect {dialect:#x}");
         let flags = u16::from_le_bytes([login.frame[66], login.frame[67]]);
         assert_eq!(flags & 0x1, 0x1, "IS_GUEST");
-        let tree = request(&mut s, Command::TreeConnect, 3, login.session_id, 0, &tree_connect_body(r"\\srv\data")).await;
+        let tree = request(
+            &mut s,
+            Command::TreeConnect,
+            3,
+            login.session_id,
+            0,
+            &tree_connect_body(r"\\srv\data"),
+        )
+        .await;
         assert_eq!(status(&tree), STATUS_SUCCESS);
         let (h, _) = common::parse_response_header(&tree);
         assert_eq!(h.flags & 0x8, 0, "guest responses are not signed");
@@ -92,7 +104,11 @@ struct RecHandle {
 
 #[async_trait]
 impl ShareBackend for Recording {
-    async fn open(&self, path: &SmbPath, opts: OpenOptions) -> SmbResult<(Box<dyn Handle>, OpenAction)> {
+    async fn open(
+        &self,
+        path: &SmbPath,
+        opts: OpenOptions,
+    ) -> SmbResult<(Box<dyn Handle>, OpenAction)> {
         let mut seen = self.0.lock().unwrap();
         let name = path.to_string();
         if !name.is_empty() && !opts.directory {
@@ -100,8 +116,19 @@ impl ShareBackend for Recording {
         }
         seen.opened.push(name.clone());
         let index = seen.opened.len() as u64 + 1;
-        let action = if name.is_empty() { OpenAction::Opened } else { OpenAction::Created };
-        Ok((Box::new(RecHandle { seen: self.0.clone(), name, index }), action))
+        let action = if name.is_empty() {
+            OpenAction::Opened
+        } else {
+            OpenAction::Created
+        };
+        Ok((
+            Box::new(RecHandle {
+                seen: self.0.clone(),
+                name,
+                index,
+            }),
+            action,
+        ))
     }
     async fn unlink(&self, _: &SmbPath) -> SmbResult<()> {
         Ok(())
@@ -163,44 +190,86 @@ impl Handle for RecHandle {
 
 async fn alice_on(builder: smb_server::SmbServerBuilder, share: &str) -> Client {
     let (addr, _h) = common::start_server(builder.user("alice", "password")).await;
-    common::durable::user_client(addr, SignIn { share, ..SignIn::default() }).await
+    common::durable::user_client(
+        addr,
+        SignIn {
+            share,
+            ..SignIn::default()
+        },
+    )
+    .await
 }
 
 #[tokio::test]
 async fn opens_with_data_access_hand_their_share_mode_to_the_backend() {
     let seen = Arc::new(Mutex::new(Seen::default()));
-    let builder = SmbServer::builder().share(Share::new("share", Recording(seen.clone())).user("alice", Access::ReadWrite));
+    let builder = SmbServer::builder()
+        .share(Share::new("share", Recording(seen.clone())).user("alice", Access::ReadWrite));
     let mut c = alice_on(builder, "share").await;
-    let mk = |name, access, share| Create { name, access, share, disposition: FILE_OPEN_IF, ..Create::default() };
-    c.create(mk("a", FILE_GENERIC_READ, SHARE_READ)).await.unwrap();
+    let mk = |name, access, share| Create {
+        name,
+        access,
+        share,
+        disposition: FILE_OPEN_IF,
+        ..Create::default()
+    };
+    c.create(mk("a", FILE_GENERIC_READ, SHARE_READ))
+        .await
+        .unwrap();
     c.create(mk("b", FILE_READ_ATTRIBUTES, 0)).await.unwrap();
     let shares = seen.lock().unwrap().shares.clone();
     assert!(shares.contains(&Some(SHARE_READ)), "{shares:?}");
-    assert!(!shares.contains(&Some(0)), "an attribute-only open denies nothing: {shares:?}");
+    assert!(
+        !shares.contains(&Some(0)),
+        "an attribute-only open denies nothing: {shares:?}"
+    );
 }
 
 #[tokio::test]
 async fn byte_range_locks_reach_the_backend_and_a_refusal_undoes_them() {
     let seen = Arc::new(Mutex::new(Seen::default()));
-    let builder = SmbServer::builder().share(Share::new("share", Recording(seen.clone())).user("alice", Access::ReadWrite));
+    let builder = SmbServer::builder()
+        .share(Share::new("share", Recording(seen.clone())).user("alice", Access::ReadWrite));
     let mut c = alice_on(builder, "share").await;
-    let id = c.create(Create { name: "f", disposition: FILE_OPEN_IF, ..Create::default() }).await.unwrap().file_id;
-    assert_eq!(c.lock(id, &[(0, 10, LOCK_EXCLUSIVE | LOCK_FAIL_IMMEDIATELY)]).await, STATUS_SUCCESS);
+    let id = c
+        .create(Create {
+            name: "f",
+            disposition: FILE_OPEN_IF,
+            ..Create::default()
+        })
+        .await
+        .unwrap()
+        .file_id;
+    assert_eq!(
+        c.lock(id, &[(0, 10, LOCK_EXCLUSIVE | LOCK_FAIL_IMMEDIATELY)])
+            .await,
+        STATUS_SUCCESS
+    );
     assert_eq!(seen.lock().unwrap().locks, vec![(0, 10, true)]);
     assert_eq!(c.lock(id, &[(0, 10, LOCK_UNLOCK)]).await, STATUS_SUCCESS);
     assert_eq!(seen.lock().unwrap().unlocks, vec![(0, 10)]);
     seen.lock().unwrap().refuse_locks_at = Some(100);
-    assert_eq!(c.lock(id, &[(100, 1, LOCK_SHARED | LOCK_FAIL_IMMEDIATELY)]).await, STATUS_LOCK_NOT_GRANTED);
+    assert_eq!(
+        c.lock(id, &[(100, 1, LOCK_SHARED | LOCK_FAIL_IMMEDIATELY)])
+            .await,
+        STATUS_LOCK_NOT_GRANTED
+    );
     // The server's own table let it go again: the range can be taken.
     seen.lock().unwrap().refuse_locks_at = None;
-    assert_eq!(c.lock(id, &[(100, 1, LOCK_EXCLUSIVE | LOCK_FAIL_IMMEDIATELY)]).await, STATUS_SUCCESS);
+    assert_eq!(
+        c.lock(id, &[(100, 1, LOCK_EXCLUSIVE | LOCK_FAIL_IMMEDIATELY)])
+            .await,
+        STATUS_SUCCESS
+    );
 }
 
 #[tokio::test]
 async fn the_minimum_dialect_refuses_lower_ones() {
     let td = tempfile::tempdir().unwrap();
     let (addr, _h) = common::start_server(
-        SmbServer::builder().min_dialect(0x0300).share(Share::new("data", local(td.path())).public()),
+        SmbServer::builder()
+            .min_dialect(0x0300)
+            .share(Share::new("data", local(td.path())).public()),
     )
     .await;
     let mut s = TcpStream::connect(addr).await.unwrap();
@@ -208,15 +277,28 @@ async fn the_minimum_dialect_refuses_lower_ones() {
     let f = request(&mut s, Command::Negotiate, 0, 0, 0, &body).await;
     assert_eq!(status(&f), STATUS_NOT_SUPPORTED);
     let mut s = TcpStream::connect(addr).await.unwrap();
-    assert_eq!(negotiate_dialects(&mut s, &[0x0210, 0x0302]).await.dialect_revision, 0x0302);
-    assert!(SmbServer::builder().min_dialect(0x0201).listen(addr).build().is_err());
+    assert_eq!(
+        negotiate_dialects(&mut s, &[0x0210, 0x0302])
+            .await
+            .dialect_revision,
+        0x0302
+    );
+    assert!(
+        SmbServer::builder()
+            .min_dialect(0x0201)
+            .listen(addr)
+            .build()
+            .is_err()
+    );
 }
 
 #[tokio::test]
 async fn an_smb1_negotiate_for_2_002_alone_is_refused_above_it() {
     let td = tempfile::tempdir().unwrap();
     let (addr, _h) = common::start_server(
-        SmbServer::builder().min_dialect(0x0210).share(Share::new("data", local(td.path())).public()),
+        SmbServer::builder()
+            .min_dialect(0x0210)
+            .share(Share::new("data", local(td.path())).public()),
     )
     .await;
     let mut s = TcpStream::connect(addr).await.unwrap();
@@ -227,28 +309,50 @@ async fn an_smb1_negotiate_for_2_002_alone_is_refused_above_it() {
     smb1.extend_from_slice(&(dialects.len() as u16).to_le_bytes());
     smb1.extend_from_slice(dialects);
     s.write_all(&framed(&smb1)).await.unwrap();
-    assert!(read_or_closed(&mut s).await.is_none(), "closed without a reply");
+    assert!(
+        read_or_closed(&mut s).await.is_none(),
+        "closed without a reply"
+    );
 }
 
 #[tokio::test]
 async fn a_print_share_makes_a_print_file_of_every_create() {
     let seen = Arc::new(Mutex::new(Seen::default()));
     let (addr, _h) = common::start_server(
-        SmbServer::builder()
-            .user("alice", "password")
-            .share(Share::new("PRT01", Recording(seen.clone())).print().any_user(Access::ReadWrite).remark("Printer")),
+        SmbServer::builder().user("alice", "password").share(
+            Share::new("PRT01", Recording(seen.clone()))
+                .print()
+                .any_user(Access::ReadWrite)
+                .remark("Printer"),
+        ),
     )
     .await;
     let mut s = negotiated(addr, 0x0210, [0xA1; 16]).await;
     let login = login_with(&mut s, 1, 0, "alice", "password", LoginOptions::default()).await;
-    let tree = request(&mut s, Command::TreeConnect, 3, login.session_id, 0, &tree_connect_body(r"\\srv\PRT01")).await;
+    let tree = request(
+        &mut s,
+        Command::TreeConnect,
+        3,
+        login.session_id,
+        0,
+        &tree_connect_body(r"\\srv\PRT01"),
+    )
+    .await;
     assert_eq!(status(&tree), STATUS_SUCCESS);
     let (h, body) = common::parse_response_header(&tree);
-    assert_eq!(TreeConnectResponse::parse(body).unwrap().share_type, TreeConnectResponse::SHARE_TYPE_PRINT);
+    assert_eq!(
+        TreeConnectResponse::parse(body).unwrap().share_type,
+        TreeConnectResponse::SHARE_TYPE_PRINT
+    );
     let mut c = Client::from_parts(s, login.session_id, h.tree_id().unwrap());
     for _ in 0..2 {
         let id = c
-            .create(Create { name: "doc", access: FILE_GENERIC_WRITE, disposition: FILE_OVERWRITE_IF, ..Create::default() })
+            .create(Create {
+                name: "doc",
+                access: FILE_GENERIC_WRITE,
+                disposition: FILE_OVERWRITE_IF,
+                ..Create::default()
+            })
             .await
             .unwrap()
             .file_id;
@@ -256,12 +360,27 @@ async fn a_print_share_makes_a_print_file_of_every_create() {
         c.close(id).await;
     }
     let seen = seen.lock().unwrap();
-    let print: Vec<&String> = seen.opened.iter().filter(|n| n.starts_with("PRINT")).collect();
-    assert!(print.contains(&&"PRINT00000001".to_string()) && print.contains(&&"PRINT00000002".to_string()), "{:?}", seen.opened);
+    let print: Vec<&String> = seen
+        .opened
+        .iter()
+        .filter(|n| n.starts_with("PRINT"))
+        .collect();
+    assert!(
+        print.contains(&&"PRINT00000001".to_string())
+            && print.contains(&&"PRINT00000002".to_string()),
+        "{:?}",
+        seen.opened
+    );
     assert_eq!(seen.written, b"\x1bE\x1bE");
     drop(seen);
     let dir = c
-        .create(Create { name: "x", access: FILE_GENERIC_READ, options: FILE_DIRECTORY_FILE, disposition: FILE_OPEN_IF, ..Create::default() })
+        .create(Create {
+            name: "x",
+            access: FILE_GENERIC_READ,
+            options: FILE_DIRECTORY_FILE,
+            disposition: FILE_OPEN_IF,
+            ..Create::default()
+        })
         .await;
     assert_eq!(dir.err(), Some(STATUS_INVALID_PARAMETER));
 
@@ -330,14 +449,19 @@ async fn durable_opens_outlive_one_handed_over_connection() {
     reset(c);
     assert!(eventually(|| server.disconnected_opens() == 1).await);
     // Then it expires; finish returns once it is closed.
-    tokio::time::timeout(Duration::from_secs(10), server.finish()).await.unwrap();
+    tokio::time::timeout(Duration::from_secs(10), server.finish())
+        .await
+        .unwrap();
     assert_eq!(server.disconnected_opens(), 0);
 }
 
 #[tokio::test]
 async fn a_netbios_keepalive_between_messages_is_skipped() {
     let td = tempfile::tempdir().unwrap();
-    let (addr, _h) = common::start_server(SmbServer::builder().share(Share::new("data", local(td.path())).public())).await;
+    let (addr, _h) = common::start_server(
+        SmbServer::builder().share(Share::new("data", local(td.path())).public()),
+    )
+    .await;
     let mut s = TcpStream::connect(addr).await.unwrap();
     s.write_all(&[0x85, 0, 0, 0]).await.unwrap();
     negotiate_dialects(&mut s, &[0x0210]).await;
@@ -359,7 +483,10 @@ async fn the_server_comment_is_reported() {
     .await;
     let mut ipc = ipc_client_as(addr, 0x0210, Some(("alice", "password"))).await;
     let pipe = ipc.srvsvc().await;
-    let stub = ipc.call(pipe, 9, OPNUM_SERVER_GET_INFO, &server_info_request(101)).await.unwrap();
+    let stub = ipc
+        .call(pipe, 9, OPNUM_SERVER_GET_INFO, &server_info_request(101))
+        .await
+        .unwrap();
     let (_, info, _) = decode_server_info(&stub);
     assert_eq!(info.unwrap().details.unwrap().3, "QS/400 test system");
 }

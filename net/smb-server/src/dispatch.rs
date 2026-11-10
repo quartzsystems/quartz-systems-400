@@ -1097,9 +1097,8 @@ async fn verify_request_signature(
         }
     } else if hdr.command != Command::SessionSetup {
         let sess = sess_arc.read().await;
-        let need = sess.signing_required
-            && !matches!(sess.identity, Identity::Anonymous)
-            && !sess.keyless;
+        let need =
+            sess.signing_required && !matches!(sess.identity, Identity::Anonymous) && !sess.keyless;
         drop(sess);
         if need {
             warn!(?hdr.command, "missing required signature on request");

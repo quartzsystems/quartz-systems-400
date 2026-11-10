@@ -22,7 +22,11 @@ const STYPE_PRINTQ: u32 = 1;
 
 /// QS/400: the share type a listing gives a share.
 fn share_kind(share: &crate::server::ShareBindings) -> u32 {
-    if share.is_print { STYPE_PRINTQ } else { STYPE_DISKTREE }
+    if share.is_print {
+        STYPE_PRINTQ
+    } else {
+        STYPE_DISKTREE
+    }
 }
 
 // NET_API_STATUS values (MS-SRVS 3.1.4.8, 3.1.4.10, MS-ERREF 2.2).

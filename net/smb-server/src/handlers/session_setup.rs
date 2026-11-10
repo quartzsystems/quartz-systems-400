@@ -193,7 +193,11 @@ async fn begin_exchange(
     }
     let netbios = server.config.netbios_name.clone();
     // QS/400: the configured domain.
-    let domain = server.config.domain.clone().unwrap_or_else(|| netbios.clone());
+    let domain = server
+        .config
+        .domain
+        .clone()
+        .unwrap_or_else(|| netbios.clone());
     let mut acceptor = NtlmServer::new(
         server_challenge,
         NtlmTargetInfo::new(netbios.clone(), domain, netbios, "", ""),
@@ -510,7 +514,11 @@ async fn continue_exchange(
         return response;
     }
 
-    let signing_key = if guest { [0; 16] } else { signing_key(dialect, &session_base_key) };
+    let signing_key = if guest {
+        [0; 16]
+    } else {
+        signing_key(dialect, &session_base_key)
+    };
     let signing_required = !guest && signing_required(server, conn, req, &outcome.identity);
     let mut session = Session::new(
         outcome.identity.clone(),
