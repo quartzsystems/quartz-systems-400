@@ -392,6 +392,53 @@ impl NetServer {
         rx.recv().unwrap_or_else(|_| Err(io::Error::other("server stopped")))
     }
 
+    /// Serves `stream` without waiting for it to close. It counts as served
+    /// before this returns, so a [`NetServer::release_if_idle`] on the same
+    /// thread afterwards cannot release the job under it.
+    ///
+    /// # Errors
+    ///
+    /// The socket's.
+    pub fn serve_detached(&self, stream: TcpStream) -> io::Result<()> {
+        let peer = stream.peer_addr()?;
+        stream.set_nonblocking(true)?;
+        let (smb, live, changed) = (self.smb.clone(), self.live.clone(), self.changed.clone());
+        live.fetch_add(1, Ordering::SeqCst);
+        self.handle.spawn(async move {
+            let r = match tokio::net::TcpStream::from_std(stream) {
+                Ok(s) => smb.serve_connection(s, peer).await,
+                Err(e) => Err(e),
+            };
+            if let Err(e) = r {
+                tracing::debug!(error = %e, "connection ended in error");
+            }
+            live.fetch_sub(1, Ordering::SeqCst);
+            changed.notify_waiters();
+        });
+        Ok(())
+    }
+
+    /// When no connection is served and no durable open waits for a
+    /// reconnect, closes what is left and answers true: the job may end
+    /// (as [`NetServer::idle_until_released`], without waiting).
+    #[must_use]
+    pub fn release_if_idle(&self) -> bool {
+        let (smb, live) = (self.smb.clone(), self.live.clone());
+        let (tx, rx) = mpsc::channel();
+        self.handle.spawn(async move {
+            let idle = live.load(Ordering::SeqCst) == 0 && smb.disconnected_opens() == 0;
+            if idle {
+                smb.finish().await;
+            }
+            let _ = tx.send(idle);
+        });
+        let idle = rx.recv().unwrap_or(true);
+        if idle {
+            info!("NetServer job released");
+        }
+        idle
+    }
+
     /// Blocks until no connection is served and no durable open waits for
     /// a reconnect, then closes what is left: the job may end. A
     /// [`NetServer::serve_one`] after this returns serves without durable

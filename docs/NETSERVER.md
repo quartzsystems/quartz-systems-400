@@ -1181,6 +1181,7 @@ any scenario failed. Every writing scenario works under a run directory
 | `encrypt-3.0`, `encrypt-3.0.2`, `encrypt-3.1.1` | encryption required by the client: a sealed round trip; the cipher (AES-128-CCM implied on 3.0 and 3.0.2, the server's choice on 3.1.1) |
 | `file-round-trip`, `dir-list`, `rename`, `delete` | text and every byte value through a new open; a listing of mixed-case names and a directory; rename on an open handle (old name `STATUS_OBJECT_NAME_NOT_FOUND`); delete on close |
 | `change-notify` | a watch from one connection sees `Added` for a file another connection creates |
+| `change-notify-two-machines` | the same, the writer another machine (another ClientGuid: on QS/400 another `QZLSFILE` job, so the change reaches the watch through the IFS) |
 | `large-io` | several requests at the negotiated maximum read and write sizes, checked |
 | `copy` | `--copy-bytes` (64 MiB by default) written and read with 8 requests of up to 1 MiB in flight; `in:` and `out:` in MB/s (10^6 bytes) |
 
@@ -1249,8 +1250,9 @@ their host reaches the system only while a statement takes turns on a
 fiber, and only jobs' embedded statements did); STRSQL's and the
 console's statements now take turns too
 (`lic/slic/src/stgsvc/turns/conssql.rs`).
-`smbtest`'s connections each send a ClientGuid of their own, so each is
-its own `QZLSFILE` job (independent clients). They run the `smbtest` binary from `QS400_SMBTEST`, or build it
+`smbtest`'s connections all send one ClientGuid per run, as Windows sends
+one per machine, so `QZLSSERVER` routes them into one `QZLSFILE` job;
+`change-notify-two-machines` adds a second ClientGuid (another job). They run the `smbtest` binary from `QS400_SMBTEST`, or build it
 (`cargo build --release --locked --manifest-path tools/smbtest/Cargo.toml`
 into `$QS400_TARGET_DIR/smbtest`).
 

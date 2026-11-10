@@ -12,9 +12,10 @@
 
 use std::cell::RefCell;
 use std::net::{IpAddr, TcpStream};
+use std::collections::VecDeque;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::time::Duration;
 
 use ipc::chan::Chan;
@@ -50,15 +51,12 @@ fn workstation(note: &[u8]) -> Option<String> {
     note.strip_prefix(b"N").map(|n| String::from_utf8_lossy(n).trim().to_string())
 }
 
-/// Serve `stream` on a thread of its own.
-fn spawn_serve(ns: &Arc<NetServer>, stream: TcpStream) {
-    let ns = ns.clone();
-    std::thread::spawn(move || {
-        let _ = stream.set_nodelay(true);
-        if let Err(e) = ns.serve_one(stream) {
-            eprintln!("qsjob: QZLSFILE: connection: {e}");
-        }
-    });
+/// Serve `stream`, counted as served at once.
+fn serve(ns: &NetServer, stream: TcpStream) {
+    let _ = stream.set_nodelay(true);
+    if let Err(e) = ns.serve_detached(stream) {
+        eprintln!("qsjob: QZLSFILE: connection: {e}");
+    }
 }
 
 /// One client, from its first connection until the job is released.
@@ -138,34 +136,30 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
     let ns = Arc::new(ns);
     let peers: Mutex<Vec<IpAddr>> = Mutex::default();
     let mut shut = false;
-    let mut next = Some(stream);
-    // A connection routed here while the job was being released waits on
-    // its relay identifier: it is served by the same server, and the
-    // client stays here.
-    while let Some(stream) = next.take() {
-        let released = Arc::new(AtomicBool::new(false));
-        {
-            let (ns, released) = (ns.clone(), released.clone());
-            std::thread::spawn(move || {
-                let _ = stream.set_nodelay(true);
-                if let Err(e) = ns.serve_one(stream) {
-                    eprintln!("qsjob: QZLSFILE: connection: {e}");
-                }
-                ns.idle_until_released();
-                released.store(true, Ordering::Release);
-            });
+    let mut next = VecDeque::from([stream]);
+    // This loop alone hands connections to the server and decides the job
+    // is released, so a connection routed here is never served after the
+    // release (when the job runs as `QUSER` again). One routed here while
+    // the job was being released starts the next round: it is served by the
+    // same server, and the client stays here.
+    while let Some(stream) = next.pop_front() {
+        serve(&ns, stream);
+        while let Some(stream) = next.pop_front() {
+            serve(&ns, stream);
         }
-        // Reconnects QZLSSERVER routes here.
+        // Reconnects QZLSSERVER routes here, handed to this loop.
+        let stop = Arc::new(AtomicBool::new(false));
+        let (tx, rx) = mpsc::channel::<TcpStream>();
         let rerouted = {
-            let (ns, released, table) = (ns.clone(), released.clone(), table.clone());
+            let (stop, table) = (stop.clone(), table.clone());
             std::thread::spawn(move || {
-                while !released.load(Ordering::Acquire) {
+                while !stop.load(Ordering::Acquire) {
                     match relay::take(relay::SOCKET, &me, None, 500) {
                         Ok(Some(t)) => {
                             if let Some(ws) = workstation(&t.note) {
                                 table.set_workstation(&ws);
                             }
-                            spawn_serve(&ns, TcpStream::from(t.fd.into_owned()));
+                            let _ = tx.send(TcpStream::from(t.fd.into_owned()));
                         }
                         Ok(None) => {}
                         Err(_) => std::thread::sleep(Duration::from_millis(500)),
@@ -174,10 +168,16 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
             })
         };
         let mut last = std::time::Instant::now();
-        while !released.load(Ordering::Acquire) {
-            // Released is seen within a tenth of a second, so the routes go
+        loop {
+            // A release is seen within a tenth of a second, so the routes go
             // at once; the report runs once a second.
             std::thread::sleep(Duration::from_millis(100));
+            while let Ok(stream) = rx.try_recv() {
+                serve(&ns, stream);
+            }
+            if ns.release_if_idle() {
+                break;
+            }
             if last.elapsed() < Duration::from_secs(1) {
                 continue;
             }
@@ -225,11 +225,14 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
                 peers: Vec::new(),
             })
         });
+        stop.store(true, Ordering::Release);
         let _ = rerouted.join();
-        next = match relay::take(relay::SOCKET, &me, None, 300) {
-            Ok(Some(t)) => Some(TcpStream::from(t.fd.into_owned())),
-            _ => None,
-        };
+        next.extend(rx.try_iter());
+        if next.is_empty()
+            && let Ok(Some(t)) = relay::take(relay::SOCKET, &me, None, 300)
+        {
+            next.push_back(TcpStream::from(t.fd.into_owned()));
+        }
     }
     table.clear();
     drop(ns);

@@ -1004,3 +1004,30 @@ async fn members_convert_from_their_ccsid_to_the_server_s() {
     assert_eq!(raw.len(), text.len());
     assert!(!raw.windows(6).any(|w| w == b"ENDPGM"));
 }
+
+/// A connection handed over with `serve_detached` counts at once: the job
+/// is not released under it, and is once it closes.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_detached_connection_holds_the_job_until_it_closes() {
+    let fs = Fs::new();
+    let j = job_as(&fs, "ALICE", false);
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = l.local_addr().unwrap();
+    let accept = std::thread::spawn(move || l.accept().unwrap().0);
+    let c = tokio::spawn(alice(addr, "PUB"));
+    let s = tokio::task::spawn_blocking(move || accept.join().unwrap()).await.unwrap();
+    j.server.serve_detached(s).unwrap();
+    assert!(!j.server.release_if_idle());
+    let c = c.await.unwrap();
+    assert!(!j.server.release_if_idle());
+    drop(c);
+    let mut released = false;
+    for _ in 0..100 {
+        if j.server.release_if_idle() {
+            released = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    assert!(released);
+}
