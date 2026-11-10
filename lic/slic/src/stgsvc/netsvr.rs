@@ -194,13 +194,31 @@ impl Host for SvcHost<'_> {
         .unwrap_or(GuestCheck::NotFound)
     }
 
-    // BLOCKED(rel): NS-2 adds sec's enable_netserver_user and the disabled state; the lead wires this call to it.
     fn enable_user(&mut self, name: &str) -> Enabled {
-        Enabled::Failed(format!("{name}: the NetServer disabled state is not built yet"))
+        let name = name.to_ascii_uppercase();
+        let n = name.clone();
+        // *OBJMGT (the bits `obj.rename` asks) and *USE to the profile.
+        let ok = self.store(|txn, qsys| {
+            let Ok((id, _)) = sec::profile::objects::read(txn, qsys, &n) else {
+                return Ok(None);
+            };
+            Ok(Some(
+                sec::guard::allowed(txn, qsys, "usrprf.use", id)
+                    && sec::guard::allowed(txn, qsys, "obj.rename", id),
+            ))
+        });
+        match ok.flatten() {
+            None => Enabled::Failed(format!("no profile {name}")),
+            Some(false) => Enabled::NotAuthorized,
+            Some(true) => {
+                sec::netsvr::enable_netserver_user(&name);
+                Enabled::Done
+            }
+        }
     }
 
     fn disabled_users(&mut self) -> Vec<String> {
-        Vec::new()
+        sec::netsvr::users().disabled().into_iter().map(|(u, _)| u).collect()
     }
 
     fn sessions(&mut self) -> &mut SessionTable {

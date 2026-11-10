@@ -2650,8 +2650,8 @@ vars = ["*CHAR 15"]
 id = "CPIB682"
 sev = 0
 text = "User &1 is disabled for NetServer after too many failed sign-ons."
-help = "The user reached QMAXSIGN failed NetServer sign-ons, the last from workstation &4 at address &5. The profile itself stays enabled. Enable the user with QZLSCHSI format ZLSS0200 or Navigator; a password change enables it too."
-vars = ["*CHAR 10", "*CHAR 16", "*CHAR 16", "*CHAR 128", "*CHAR 128"]
+help = "The user reached QMAXSIGN failed NetServer sign-ons, the last from client address &2. The profile itself stays enabled. Enable the user with QZLSCHSI format ZLSS0200 or Navigator; starting NetServer again or an IPL enables every user."
+vars = ["*CHAR 10", "*CHAR 46"]
 
 [[msg]]
 id = "CPIB683"
