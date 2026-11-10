@@ -130,6 +130,8 @@ async fn open_if_opens_an_existing_file_with_the_access_asked_for() {
         directory: false,
         non_directory: false,
         delete_on_close: false,
+
+        share_access: None,
     };
     let (h, action) = backend.open(&path, opts).await.unwrap();
     assert_eq!(action, OpenAction::Opened);

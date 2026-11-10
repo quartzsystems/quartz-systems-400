@@ -229,7 +229,7 @@ async fn validate_negotiate_info(
     if request.dialects != client.dialects {
         return terminate("dialects differ");
     }
-    if select_dialect(&request.dialects) != Some(dialect) {
+    if select_dialect(&request.dialects, server.config.min_dialect) != Some(dialect) {
         return terminate("dialect differs");
     }
     if request.guid != client.guid {

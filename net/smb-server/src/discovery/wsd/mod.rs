@@ -18,7 +18,7 @@ async fn until_stopped(stop: &mut tokio::sync::watch::Receiver<bool>) {
 }
 
 /// What `fuzzing::wsd_datagram` runs; its documentation describes `data`.
-#[cfg(fuzzing)]
+#[cfg(any(fuzzing, feature = "fuzzing"))]
 pub(crate) fn fuzz_datagram(data: &[u8]) {
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
@@ -68,13 +68,13 @@ pub(crate) fn fuzz_datagram(data: &[u8]) {
 }
 
 /// Answers `data` as a whole request to the metadata endpoint.
-#[cfg(fuzzing)]
+#[cfg(any(fuzzing, feature = "fuzzing"))]
 pub(crate) fn fuzz_http(data: &[u8]) {
     let response = http::respond(data, &fuzz_device());
     assert!(response.starts_with(b"HTTP/1.1 "));
 }
 
-#[cfg(fuzzing)]
+#[cfg(any(fuzzing, feature = "fuzzing"))]
 fn fuzz_device() -> crate::discovery::Device {
     crate::discovery::Device {
         endpoint: uuid::Uuid::from_u128(0x6ba7_b810_9dad_81d1_80b4_00c0_4fd4_30c8),

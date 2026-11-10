@@ -483,7 +483,7 @@ pub mod wire {
 
 /// Entry points for the cargo-fuzz targets in `fuzz/`. Built only with
 /// `--cfg fuzzing`, which `cargo fuzz` sets.
-#[cfg(fuzzing)]
+#[cfg(any(fuzzing, feature = "fuzzing"))]
 #[doc(hidden)]
 pub mod fuzzing {
     use std::sync::Arc;

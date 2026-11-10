@@ -38,6 +38,7 @@ mail = { path = "../../net/mail", version = "0.1.0" }
 ftp = { path = "../../net/ftp", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
 sshd = { path = "../../net/sshd", version = "0.1.0" }
+netserver = { path = "../../net/netserver", version = "0.1.0", features = ["fuzzing"] }
 tls = { path = "../../net/tls", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }

@@ -31,6 +31,8 @@ all-features = true
 
 [features]
 default = ["localfs"]
+# QS/400: `smb_server::fuzzing` without `--cfg fuzzing`, for tools/fuzz.
+fuzzing = []
 discovery = [
     "dep:mdns-sd",
     "dep:zbus",
@@ -56,6 +58,10 @@ path = "src/lib.rs"
 [[test]]
 name = "qs400_hooks"
 path = "tests/qs400_hooks.rs"
+
+[[test]]
+name = "qs400_patches"
+path = "tests/qs400_patches.rs"
 
 [[test]]
 name = "qs400_spoolss"

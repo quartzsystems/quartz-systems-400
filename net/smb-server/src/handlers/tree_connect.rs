@@ -17,6 +17,7 @@ use crate::utils::utf16le_to_units;
 
 const SHARE_TYPE_DISK: u8 = 0x01;
 const SHARE_TYPE_PIPE: u8 = 0x02;
+const SHARE_TYPE_PRINT: u8 = 0x03;
 const SHAREFLAG_ENCRYPT_DATA: u32 = 0x0000_8000;
 
 pub async fn handle(
@@ -32,7 +33,8 @@ pub async fn handle(
     };
     let sess = sess_arc.read().await;
     let caller = Caller::of(&sess);
-    let anonymous = sess.is_anonymous();
+    // QS/400: a verifier's guest has no key to sign with.
+    let anonymous = sess.is_anonymous() || sess.keyless;
     drop(sess);
 
     // MS-SMB2 3.3.5.7: on 3.1.1 an authenticated session's TREE_CONNECT
@@ -119,6 +121,9 @@ pub async fn handle(
         structure_size: 16,
         share_type: if share.is_ipc {
             SHARE_TYPE_PIPE
+        } else if share.is_print {
+            // QS/400: print shares.
+            SHARE_TYPE_PRINT
         } else {
             SHARE_TYPE_DISK
         },

@@ -53,6 +53,14 @@ pub struct OpenOptions {
     pub non_directory: bool,
     /// `FILE_DELETE_ON_CLOSE` was set on CREATE.
     pub delete_on_close: bool,
+    /// QS/400: the ShareAccess of a client's CREATE (`FILE_SHARE_READ`
+    /// 0x1, `FILE_SHARE_WRITE` 0x2, `FILE_SHARE_DELETE` 0x4) when it was
+    /// granted access to the data (read, write, append or execute), for a
+    /// backend whose storage is shared with other processes to enforce
+    /// there too. `None` for an attribute-only open and for the server's
+    /// own opens, which deny nothing. The protocol layer has already
+    /// checked it against the opens it knows.
+    pub share_access: Option<u32>,
 }
 
 impl Default for OpenOptions {
@@ -65,6 +73,7 @@ impl Default for OpenOptions {
             directory: false,
             non_directory: false,
             delete_on_close: false,
+            share_access: None,
         }
     }
 }
@@ -565,6 +574,22 @@ pub trait Handle: Send + Sync {
     /// `READONLY` on a directory: [`FileInfo::file_attributes`] stays 0
     /// there.
     async fn set_attributes(&self, attributes: u32) -> SmbResult<()>;
+
+    /// QS/400: a byte-range lock the protocol layer has just granted on
+    /// this open, exclusive or shared, for a backend whose storage is
+    /// shared with other processes to take there too. An error refuses
+    /// the lock (STATUS_LOCK_NOT_GRANTED for [`SmbError::Sharing`]) and
+    /// the protocol layer undoes it. The default grants it.
+    async fn lock_range(&self, _offset: u64, _len: u64, _exclusive: bool) -> SmbResult<()> {
+        Ok(())
+    }
+
+    /// QS/400: a byte-range lock of this open released by UNLOCK (or undone
+    /// after a failed request). Locks still held when the handle closes
+    /// go with [`Handle::close`]. The default does nothing.
+    async fn unlock_range(&self, _offset: u64, _len: u64) -> SmbResult<()> {
+        Ok(())
+    }
 
     /// Truncate (or extend) to `len` bytes; bytes added by extending read as
     /// zeros. For directories: the protocol layer rejects this before

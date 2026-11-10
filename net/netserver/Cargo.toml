@@ -1,16 +1,35 @@
 [package]
 name = "netserver"
-description = "QS/400 NetServer: an SMB 2.0.2 to 3.1.1 server with NTLMv2 over SPNEGO, signing, encryption, leases and durable handles, and srvsvc/wkssvc RPC, over backend traits"
+description = "QS/400 NetServer: the vendored SMB2/3 server (net/smb-server) over the IFS, profile sign-on and spooling traits, print shares, the NetBIOS session service and reconnect routing"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[features]
+# The library's message parsers for tools/fuzz.
+fuzzing = ["smb-server/fuzzing"]
+
 [dependencies]
 thiserror.workspace = true
 tracing.workspace = true
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 # The SMB2/3 protocol: rust-smb-server 0.10.0 (MIT), vendored with QS/400's hooks.
 smb-server = { path = "../smb-server", version = "=0.10.0", default-features = false }
+async-trait = "=0.1.92"
+bytes = "=1.12.1"
+tokio = { version = "=1.53.2", features = ["rt", "net", "io-util", "sync", "time", "macros"] }
+
+[dev-dependencies]
+sec = { path = "../../security/sec", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+hmac = "=0.12.1"
+md4 = "=0.10.2"
+md-5 = "=0.10.6"
+rc4 = "=0.2.0"
+sha2 = "=0.10.9"
+socket2 = "=0.6.5"
+tokio = { version = "=1.53.2", features = ["rt", "rt-multi-thread", "net", "io-util", "sync", "time", "macros"] }
 
 [lints]
 workspace = true

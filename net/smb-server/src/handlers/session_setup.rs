@@ -192,9 +192,11 @@ async fn begin_exchange(
         return HandlerResponse::err(ntstatus::STATUS_INTERNAL_ERROR);
     }
     let netbios = server.config.netbios_name.clone();
+    // QS/400: the configured domain.
+    let domain = server.config.domain.clone().unwrap_or_else(|| netbios.clone());
     let mut acceptor = NtlmServer::new(
         server_challenge,
-        NtlmTargetInfo::new(netbios.clone(), netbios.clone(), netbios, "", ""),
+        NtlmTargetInfo::new(netbios.clone(), domain, netbios, "", ""),
         now_filetime(),
     );
 
@@ -353,11 +355,14 @@ async fn continue_exchange(
         };
         // QS/400: a configured verifier checks the response and names the user.
         let verified = std::cell::RefCell::new(None::<String>);
+        // QS/400: the verifier's guest logons (`Logon::guest`).
+        let verified_guest = std::cell::Cell::new(false);
         let checked = match server.config.verifier.as_ref() {
             Some(v) => acceptor.authenticate_with(&ntlm, |u, d, c, r| {
-                let logon = v.verify(u, d, c, r)?;
+                let logon = v.verify_from(conn.peer_addr, u, d, c, r)?;
                 *verified.borrow_mut() = Some(logon.user);
-                Some(logon.session_base_key)
+                verified_guest.set(logon.guest);
+                Some((!logon.guest).then_some(logon.session_base_key))
             }),
             None => acceptor.authenticate(&ntlm, lookup),
         };
@@ -379,6 +384,14 @@ async fn continue_exchange(
                 // which share access is granted to.
                 let mut nt_hash = None;
                 let mut guest = false;
+                // QS/400: a verifier's guest keeps its profile name, has no
+                // key, and its MIC (made with a key no one knows) is not
+                // checked.
+                let verifier_guest = verified_guest.get();
+                if verifier_guest {
+                    outcome.session_key = [0; 16];
+                    return Ok((outcome, raw_form, None, None, true));
+                }
                 if let Identity::User { user, .. } = &mut outcome.identity {
                     match configured_user(&users, user) {
                         Some((name, creds)) => {
@@ -447,7 +460,9 @@ async fn continue_exchange(
     // cipher get encryption keys, and are encrypted when the server
     // encrypts every session.
     let anonymous = matches!(outcome.identity, Identity::Anonymous);
-    let cipher = (*conn.cipher.read().await).filter(|_| !anonymous);
+    // QS/400: a verifier's guest has no key either.
+    let keyless = anonymous || guest;
+    let cipher = (*conn.cipher.read().await).filter(|_| !keyless);
     let encrypt_data = server.auth.settings.encrypt_data && cipher.is_some();
     let session_flags = if guest {
         SessionSetupResponse::FLAG_IS_GUEST
@@ -472,7 +487,7 @@ async fn continue_exchange(
         override_session_id: Some(sid),
         // Anonymous and guest sessions have no key; the dispatcher signs
         // the rest.
-        skip_signing: anonymous,
+        skip_signing: keyless,
         take_preauth_snapshot_for_session: None,
         after_send: Vec::new(),
     };
@@ -495,8 +510,8 @@ async fn continue_exchange(
         return response;
     }
 
-    let signing_key = signing_key(dialect, &session_base_key);
-    let signing_required = signing_required(server, conn, req, &outcome.identity);
+    let signing_key = if guest { [0; 16] } else { signing_key(dialect, &session_base_key) };
+    let signing_required = !guest && signing_required(server, conn, req, &outcome.identity);
     let mut session = Session::new(
         outcome.identity.clone(),
         session_base_key,
@@ -505,6 +520,7 @@ async fn continue_exchange(
         None,
     );
     session.encrypt_data = encrypt_data;
+    session.keyless = guest;
     // SMB 3.1.1 keys come from the preauth hash, once it is known.
     if dialect != Dialect::Smb311
         && let Some(cipher) = cipher

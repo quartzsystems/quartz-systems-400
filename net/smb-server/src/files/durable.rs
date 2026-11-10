@@ -604,6 +604,26 @@ impl DurableTable {
         }))
     }
 
+    /// QS/400: entries kept after their session ended, or being taken back.
+    pub(crate) fn disconnected(&self) -> usize {
+        self.inner()
+            .entries
+            .values()
+            .filter(|e| matches!(e.state, State::Detached { .. } | State::Reattaching { .. }))
+            .count()
+    }
+
+    /// QS/400: the clients of the entries [`DurableTable::disconnected`]
+    /// counts.
+    pub(crate) fn disconnected_clients(&self) -> Vec<Uuid> {
+        self.inner()
+            .entries
+            .values()
+            .filter(|e| matches!(e.state, State::Detached { .. } | State::Reattaching { .. }))
+            .map(|e| e.lease.client)
+            .collect()
+    }
+
     /// How many durable opens the table holds.
     #[cfg(test)]
     pub(crate) fn registered(&self) -> usize {

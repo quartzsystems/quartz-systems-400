@@ -290,6 +290,7 @@ async fn parent_info(backend: &dyn ShareBackend, open: &Open) -> Option<FileInfo
         directory: true,
         non_directory: false,
         delete_on_close: false,
+        share_access: None,
     };
     let (handle, _) = backend.open(&parent, opts).await.ok()?;
     let info = handle.stat().await.ok();

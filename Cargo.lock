@@ -1412,6 +1412,7 @@ dependencies = [
  "ipc",
  "jrn",
  "mail",
+ "netserver",
  "optical",
  "ptf",
  "qap-proto",
@@ -2376,8 +2377,20 @@ dependencies = [
 name = "netserver"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "bytes",
+ "ccsid",
+ "hmac 0.12.1",
+ "ifs",
+ "md-5",
+ "md4",
+ "rc4",
+ "sec",
+ "sha2 0.10.9",
  "smb-server",
+ "socket2",
  "thiserror 2.0.21",
+ "tokio",
  "tracing",
 ]
 

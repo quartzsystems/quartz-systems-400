@@ -40,6 +40,7 @@ fn opts(intent: OpenIntent, write: bool) -> OpenOptions {
         directory: false,
         non_directory: false,
         delete_on_close: false,
+        share_access: None,
     }
 }
 

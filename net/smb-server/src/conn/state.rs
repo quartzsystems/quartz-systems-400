@@ -359,6 +359,9 @@ pub struct Session {
     /// 3.1.1: snapshot taken at SESSION_SETUP completion (after the request
     /// hash but before the response is hashed). Used as KDF context.
     pub preauth_snapshot: Option<[u8; 64]>,
+    /// QS/400: a verifier's guest session, which has no key: nothing of it
+    /// is signed or encrypted.
+    pub keyless: bool,
 
     next_tree_id: AtomicU32,
 }
@@ -380,6 +383,7 @@ impl Session {
             cipher: None,
             trees: RwLock::new(HashMap::new()),
             preauth_snapshot,
+            keyless: false,
             next_tree_id: AtomicU32::new(1),
         }
     }

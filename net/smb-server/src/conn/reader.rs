@@ -18,14 +18,20 @@ use crate::server::ServerState;
 /// Reads the rest of a frame whose first `filled` prefix bytes are already
 /// in `prefix`, and returns its payload (without the 4-byte length prefix).
 /// A frame longer than the connection accepts fails before its payload is
-/// read; the payload buffer grows with the bytes that arrive.
+/// read; the payload buffer grows with the bytes that arrive. `None` for a
+/// NetBIOS session keepalive (QS/400).
 async fn read_frame_rest(
     reader: &mut ReadHalf<TcpStream>,
     conn: &Connection,
     prefix: &mut [u8; FRAME_HEADER_LEN],
     filled: usize,
-) -> io::Result<Vec<u8>> {
+) -> io::Result<Option<Vec<u8>>> {
     reader.read_exact(&mut prefix[filled..]).await?;
+    // QS/400: a SESSION KEEP ALIVE (RFC 1002 4.3.8), which clients send on
+    // NetBIOS sessions (port 139), is skipped.
+    if *prefix == NBSS_KEEPALIVE {
+        return Ok(None);
+    }
     let len = match decode_frame_header(prefix) {
         Ok(n) => n as usize,
         Err(e) => {
@@ -48,8 +54,11 @@ async fn read_frame_rest(
     if payload.len() < len {
         return Err(io::ErrorKind::UnexpectedEof.into());
     }
-    Ok(payload)
+    Ok(Some(payload))
 }
+
+/// QS/400: a NetBIOS SESSION KEEP ALIVE packet.
+const NBSS_KEEPALIVE: [u8; FRAME_HEADER_LEN] = [0x85, 0, 0, 0];
 
 /// Initial payload buffer; larger frames grow it as their bytes arrive.
 const INITIAL_FRAME_BUFFER: usize = 64 * 1024;
@@ -139,7 +148,8 @@ pub async fn reader_task(
             Err(e) => Err(e),
         };
         let frame = match frame {
-            Ok(frame) => frame,
+            Ok(Some(frame)) => frame,
+            Ok(None) => continue,
             Err(e) => {
                 error!(error = %e, "frame read error");
                 return Err(e);

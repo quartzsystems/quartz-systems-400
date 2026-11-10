@@ -429,7 +429,7 @@ impl CreateArgs {
 
         // Decode path.
         let units = utf16le_to_units(&req.name).ok_or(ntstatus::STATUS_INVALID_PARAMETER)?;
-        let (path, stream) =
+        let (mut path, stream) =
             parse_create_name(&units).map_err(|_| ntstatus::STATUS_OBJECT_NAME_INVALID)?;
         if let StreamPart::Named(name) | StreamPart::NamedDirectory(name) = &stream
             && !share.named_streams
@@ -493,6 +493,19 @@ impl CreateArgs {
             StreamPart::Named(name) => Some(name.clone()),
             _ => None,
         };
+        // QS/400: a CREATE on a print share opens a new print file
+        // (MS-SMB2 3.3.5.9), under a name of the server's.
+        if share.is_print {
+            if directory || named.is_some() {
+                return Err(ntstatus::STATUS_INVALID_PARAMETER);
+            }
+            let n = share.print_files.fetch_add(1, Ordering::Relaxed) + 1;
+            path = format!("PRINT{n:08}")
+                .parse()
+                .map_err(|_| ntstatus::STATUS_INVALID_PARAMETER)?;
+            intent = OpenIntent::Create;
+            non_directory = true;
+        }
 
         if queries.timewarp {
             // There are no snapshots, so none matches the token.
@@ -574,6 +587,8 @@ impl CreateArgs {
         }
 
         let write = open_access & (FILE_WRITE_DATA | FILE_APPEND_DATA) != 0;
+        // QS/400: opens with data access carry their share mode.
+        let data_access = FILE_READ_DATA | FILE_EXECUTE | FILE_WRITE_DATA | FILE_APPEND_DATA;
         let opts = OpenOptions {
             read: open_access & FILE_READ_DATA != 0 || !write,
             write,
@@ -582,6 +597,7 @@ impl CreateArgs {
             directory,
             non_directory,
             delete_on_close,
+            share_access: (open_access & data_access != 0).then_some(req.share_access),
         };
         Ok(Request::Open(Self {
             path,
@@ -636,6 +652,7 @@ impl CreateArgs {
                 directory: false,
                 non_directory: false,
                 delete_on_close: false,
+                share_access: None,
             },
             sharing: Sharing {
                 access: open_access,
@@ -1598,6 +1615,7 @@ async fn backend_open(
         directory: false,
         non_directory: false,
         delete_on_close: false,
+        share_access: None,
     };
     let (file, action) = match backend.open(path, file_opts).await {
         Ok(opened) => opened,

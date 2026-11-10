@@ -79,13 +79,13 @@ impl Session {
     }
 
     /// Handles open now.
-    #[cfg(any(test, fuzzing))]
+    #[cfg(any(test, fuzzing, feature = "fuzzing"))]
     pub(crate) fn open_handles(&self) -> usize {
         self.handles.len()
     }
 
     /// Opens `target` as the handle `id`, granted what an open may hold.
-    #[cfg(any(test, fuzzing))]
+    #[cfg(any(test, fuzzing, feature = "fuzzing"))]
     pub(crate) fn insert(&mut self, id: [u8; 20], target: Target) {
         let granted = grant(&target, MAXIMUM_ALLOWED).expect("a grant");
         self.handles.insert(

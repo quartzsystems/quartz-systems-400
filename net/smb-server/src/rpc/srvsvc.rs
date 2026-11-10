@@ -17,6 +17,13 @@ const BAD_STUB_DATA: u32 = 0x0000_06F7;
 // Share types (MS-SRVS 2.2.2.4).
 const STYPE_DISKTREE: u32 = 0;
 const STYPE_IPC_SPECIAL: u32 = 0x8000_0003;
+/// QS/400: a print queue.
+const STYPE_PRINTQ: u32 = 1;
+
+/// QS/400: the share type a listing gives a share.
+fn share_kind(share: &crate::server::ShareBindings) -> u32 {
+    if share.is_print { STYPE_PRINTQ } else { STYPE_DISKTREE }
+}
 
 // NET_API_STATUS values (MS-SRVS 3.1.4.8, 3.1.4.10, MS-ERREF 2.2).
 const NERR_SUCCESS: u32 = 0;
@@ -118,7 +125,9 @@ pub(crate) async fn serve(
             };
             request.answer(share.as_ref())
         }
-        Request::ServerGetInfo(request) => request.answer(&server.config.netbios_name),
+        Request::ServerGetInfo(request) => {
+            request.answer(&server.config.netbios_name, &server.config.comment)
+        }
     })
 }
 
@@ -135,7 +144,7 @@ pub(crate) async fn listed_shares(server: &ServerState, caller: &Caller) -> Vec<
         {
             shares.push(ListedShare {
                 name: share.name.clone(),
-                kind: STYPE_DISKTREE,
+                kind: share_kind(&share),
                 remark: share.remark.clone(),
             });
         }
@@ -159,13 +168,13 @@ pub(crate) async fn find_share(
     server.admits(&share, &*share.acl.read().await, caller)?;
     Some(ListedShare {
         name: share.name.clone(),
-        kind: STYPE_DISKTREE,
+        kind: share_kind(&share),
         remark: share.remark.clone(),
     })
 }
 
 /// A fixed server and share list, for answering without a server.
-#[cfg(any(test, fuzzing))]
+#[cfg(any(test, fuzzing, feature = "fuzzing"))]
 pub(crate) struct ShareView {
     pub server_name: String,
     pub shares: Vec<ListedShare>,
@@ -173,7 +182,7 @@ pub(crate) struct ShareView {
 
 /// [`serve`] against `view`: the caller sees its shares, and GetInfo finds
 /// them by name.
-#[cfg(any(test, fuzzing))]
+#[cfg(any(test, fuzzing, feature = "fuzzing"))]
 pub(crate) fn call(opnum: u16, stub: &[u8], view: &ShareView) -> Result<Vec<u8>, Fault> {
     Ok(match decode(opnum, stub)? {
         Request::ShareEnum(request) => request.answer(&view.shares),
@@ -185,7 +194,7 @@ pub(crate) fn call(opnum: u16, stub: &[u8], view: &ShareView) -> Result<Vec<u8>,
             });
             request.answer(share)
         }
-        Request::ServerGetInfo(request) => request.answer(&view.server_name),
+        Request::ServerGetInfo(request) => request.answer(&view.server_name, ""),
     })
 }
 
@@ -415,9 +424,9 @@ impl ServerGetInfo {
         Some(Self { level: r.u32()? })
     }
 
-    /// MS-SRVS 3.1.4.17: SERVER_INFO_100 or _101 with `server_name` and an
-    /// empty comment.
-    fn answer(&self, server_name: &str) -> Vec<u8> {
+    /// MS-SRVS 3.1.4.17: SERVER_INFO_100 or _101 with `server_name` and
+    /// `comment` (QS/400; upstream sent an empty one).
+    fn answer(&self, server_name: &str, comment: &str) -> Vec<u8> {
         let mut w = NdrWriter::new();
         w.u32(self.level);
         let status = match self.level {
@@ -433,7 +442,7 @@ impl ServerGetInfo {
                 }
                 w.string(server_name);
                 if self.level == 101 {
-                    w.string("");
+                    w.string(comment);
                 }
                 w.u32(NERR_SUCCESS);
                 return w.finish();

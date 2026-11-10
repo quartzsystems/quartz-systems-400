@@ -6,8 +6,12 @@
 pub struct Logon {
     /// The user name the session carries (share grants match it).
     pub user: String,
-    /// The NTLMv2 session base key.
+    /// The NTLMv2 session base key; ignored for a guest.
     pub session_base_key: [u8; 16],
+    /// The logon is the guest profile's, for a user name the system does
+    /// not know: a guest session (`IS_GUEST`), unsigned and unencrypted,
+    /// named `user`.
+    pub guest: bool,
 }
 
 /// Checks NTLMv2 responses for the server.
@@ -25,6 +29,20 @@ pub trait LogonVerifier: Send + Sync + 'static {
         server_challenge: &[u8; 8],
         nt_response: &[u8],
     ) -> Option<Logon>;
+
+    /// [`LogonVerifier::verify`] for a client at `peer`, the address of
+    /// the connection the logon came on. The default ignores it.
+    fn verify_from(
+        &self,
+        peer: Option<std::net::SocketAddr>,
+        user: &str,
+        domain: &str,
+        server_challenge: &[u8; 8],
+        nt_response: &[u8],
+    ) -> Option<Logon> {
+        let _ = peer;
+        self.verify(user, domain, server_challenge, nt_response)
+    }
 }
 
 /// A shared verifier, as the server's configuration holds it.

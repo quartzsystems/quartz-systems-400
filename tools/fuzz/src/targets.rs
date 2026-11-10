@@ -265,6 +265,33 @@ fn ssh(data: &[u8]) {
     let _ = sshd::transport::algo::KexInit::decode(data);
 }
 
+fn nbss(data: &[u8]) {
+    let mut buf = data.to_vec();
+    while let Ok(Some(_)) = netserver::nbss::take_frame(&mut buf, 1 << 17) {}
+    let _ = netserver::nbss::NbName::decode(data);
+    let _ = netserver::route::guid_in(data);
+}
+
+fn smb(data: &[u8]) {
+    use netserver::fuzzing as f;
+    f::frame(data);
+    f::header(data);
+    f::spnego(data);
+    f::ntlm(data);
+    f::lease_context(data);
+    f::create_name(data);
+    f::aapl_context(data);
+    f::copychunk(data);
+    f::ea_list(data);
+    f::lease_ack(data);
+    f::durable_context(data);
+    f::durable_ask(data);
+    f::rpc_pdu(data);
+    f::rpc_association(data);
+    f::srvsvc_request(data);
+    f::spoolss_request(data);
+}
+
 fn tls_client() -> &'static std::sync::Arc<tls::rustls::ClientConfig> {
     static CFG: OnceLock<std::sync::Arc<tls::rustls::ClientConfig>> = OnceLock::new();
     CFG.get_or_init(|| {
@@ -442,6 +469,22 @@ pub const TARGETS: &[Target] = &[
         run: ssh,
         seeds: &[b"SSH-2.0-OpenSSH_9.6\r\n"],
         dict: &[b"SSH-2.0-", b"\r\n", b"\x14", b"curve25519-sha256", b"ssh-ed25519"],
+        max_len: 8192,
+    },
+    Target {
+        name: "nbss",
+        what: "NetBIOS session frames and names, the NEGOTIATE ClientGuid routing reads",
+        run: nbss,
+        seeds: &[b"\x81\x00\x00\x44\x20CACACACACACACACACACACACACACACAAA\x00\x20EEEFEFEFEFEFEFEFEFEFEFEFEFEFEFAA\x00", b"\x85\x00\x00\x00"],
+        dict: &[b"\x81", b"\x85", b"\x20", b"\xfeSMB", b"\x24\x00"],
+        max_len: 4096,
+    },
+    Target {
+        name: "smb",
+        what: "the vendored SMB2/3 server's parsers: header, NTLMSSP, SPNEGO, create contexts, DCE/RPC, srvsvc, spoolss",
+        run: smb,
+        seeds: &[b"\xfeSMB\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", b"NTLMSSP\x00\x03\x00\x00\x00"],
+        dict: &[b"\xfeSMB", b"NTLMSSP\x00", b"RqLs", b"DHnQ", b"DH2Q", b"\x05\x00\x0b\x03"],
         max_len: 8192,
     },
     Target {

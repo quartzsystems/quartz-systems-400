@@ -116,6 +116,10 @@ pub struct ShareBindings {
     pub(crate) block_cloning: bool,
     /// The directories clients watch for changes, on any connection.
     pub(crate) watches: crate::files::WatchTable,
+    /// QS/400: a print share ([`crate::Share::print`]).
+    pub(crate) is_print: bool,
+    /// QS/400: print files opened on a print share, for their names.
+    pub(crate) print_files: AtomicU64,
 }
 
 impl ShareBindings {
@@ -147,6 +151,8 @@ impl ShareBindings {
             server_side_copy: !is_ipc,
             block_cloning: !is_ipc && capabilities.block_cloning,
             watches,
+            is_print: false,
+            print_files: AtomicU64::new(0),
         })
     }
 
@@ -173,6 +179,8 @@ impl ShareBindings {
             server_side_copy: share.server_side_copy,
             block_cloning: share.server_side_copy && capabilities.block_cloning,
             watches,
+            is_print: share.print,
+            print_files: AtomicU64::new(0),
         })
     }
 
@@ -211,6 +219,13 @@ pub struct ServerConfig {
     pub(crate) apple_copyfile: bool,
     /// QS/400: logons go to this verifier instead of the user table.
     pub(crate) verifier: Option<crate::verifier::VerifierRef>,
+    /// QS/400: the lowest dialect NEGOTIATE accepts.
+    pub(crate) min_dialect: u16,
+    /// QS/400: the NetBIOS domain (workgroup) NTLM names; the NetBIOS
+    /// name when `None`.
+    pub(crate) domain: Option<String>,
+    /// QS/400: the server comment srvsvc reports.
+    pub(crate) comment: String,
     /// QS/400: the printers `\pipe\spoolss` serves; no pipe without.
     pub(crate) print_service: Option<crate::print::PrintServiceRef>,
     /// The server is announced on the local network while it serves.
@@ -897,21 +912,56 @@ impl SmbServer {
     }
 
     /// QS/400: serves one connection accepted elsewhere (a descriptor
-    /// handed to this process) until it closes, then closes the files it
-    /// kept for a reconnect (see `QS400-PATCHES.md`).
+    /// handed to this process) until it closes. Several may be served at
+    /// once or one after another; durable opens a connection leaves behind
+    /// stay kept for a reconnect on a later one, until they expire or
+    /// [`SmbServer::finish`] (see `QS400-PATCHES.md`).
     pub async fn serve_connection(
         &self,
         stream: tokio::net::TcpStream,
         peer: SocketAddr,
     ) -> io::Result<()> {
         configure_socket(&stream, self.state.config.limits.tcp_keepalive);
-        let result = connection_loop(stream, peer, self.state.clone()).await;
-        close_opens(self.state.durable.take_for(None, None)).await;
-        self.state.durable.closed().await;
-        result
+        connection_loop(stream, peer, self.state.clone()).await
     }
 
-    #[cfg(any(test, fuzzing))]
+    /// QS/400: durable opens kept after their connection or session ended,
+    /// waiting for a reconnect (including one being taken back now).
+    pub fn disconnected_opens(&self) -> usize {
+        self.state.durable.disconnected()
+    }
+
+    /// QS/400: the ClientGuids (MS-SMB2 2.2.3) of the connections being
+    /// served that have negotiated one, and of the clients whose durable
+    /// opens are kept; sorted, without repeats, never the nil GUID.
+    pub async fn client_guids(&self) -> Vec<[u8; 16]> {
+        let mut guids = self.state.durable.disconnected_clients();
+        for conn in self.state.active_connections.live().await {
+            guids.push(*conn.client_guid.read().await);
+        }
+        let mut guids: Vec<[u8; 16]> = guids
+            .into_iter()
+            .filter(|g| !g.is_nil())
+            .map(|g| *g.as_bytes())
+            .collect();
+        guids.sort_unstable();
+        guids.dedup();
+        guids
+    }
+
+    /// QS/400: waits until no durable open is kept any more (each expires
+    /// or is taken back and closed), then closes what is left and returns
+    /// once every close has finished: what `serve` does when it stops.
+    /// Connections still served keep running; call it once none is.
+    pub async fn finish(&self) {
+        while self.state.durable.disconnected() > 0 {
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+        close_opens(self.state.durable.take_for(None, None)).await;
+        self.state.durable.closed().await;
+    }
+
+    #[cfg(any(test, fuzzing, feature = "fuzzing"))]
     pub(crate) fn state(&self) -> Arc<ServerState> {
         self.state.clone()
     }

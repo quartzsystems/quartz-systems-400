@@ -870,7 +870,7 @@ async fn dispatch_one(
                 sess.preauth_snapshot = Some(snap);
                 // For 3.1.1, derive the session keys from the snapshot.
                 let dialect = *conn.dialect.read().await;
-                if dialect == Some(crate::proto::messages::Dialect::Smb311) {
+                if dialect == Some(crate::proto::messages::Dialect::Smb311) && !sess.keyless {
                     sess.signing_key =
                         crate::proto::crypto::signing_key_311(&sess.session_base_key, &snap);
                     if let Some(cipher) = *conn.cipher.read().await
@@ -1085,7 +1085,7 @@ async fn verify_request_signature(
 
     if hdr.flags & SMB2_FLAGS_SIGNED != 0 {
         let sess = sess_arc.read().await;
-        if matches!(sess.identity, Identity::Anonymous) {
+        if matches!(sess.identity, Identity::Anonymous) || sess.keyless {
             return Ok(());
         }
         let key = sess.signing_key;
@@ -1097,7 +1097,9 @@ async fn verify_request_signature(
         }
     } else if hdr.command != Command::SessionSetup {
         let sess = sess_arc.read().await;
-        let need = sess.signing_required && !matches!(sess.identity, Identity::Anonymous);
+        let need = sess.signing_required
+            && !matches!(sess.identity, Identity::Anonymous)
+            && !sess.keyless;
         drop(sess);
         if need {
             warn!(?hdr.command, "missing required signature on request");
@@ -1163,7 +1165,7 @@ async fn build_response_bytes(
         });
         if let Some(sess_arc) = session {
             let sess = sess_arc.read().await;
-            let is_anon = matches!(sess.identity, Identity::Anonymous);
+            let is_anon = matches!(sess.identity, Identity::Anonymous) || sess.keyless;
             if !is_anon && sess.signing_key != [0u8; 16] {
                 key = sess.signing_key;
                 should_sign = true;
@@ -1238,7 +1240,8 @@ async fn handle_smb1_multi_protocol(
 
     let dialect = if wants_wildcard {
         Dialect::Smb2Wildcard
-    } else if wants_smb202 {
+    } else if wants_smb202 && server.config.min_dialect <= 0x0202 {
+        // QS/400: not below the minimum dialect.
         Dialect::Smb202
     } else {
         return None;

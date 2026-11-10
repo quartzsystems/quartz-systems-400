@@ -149,7 +149,7 @@ async fn answer<S: AsyncRead + AsyncWrite + Unpin>(
 /// The response to `request`, read as a whole HTTP request: what the
 /// endpoint sends back when the request arrives at once, and 400 for a
 /// request that ends early, where the endpoint sends nothing.
-#[cfg_attr(not(any(test, fuzzing)), allow(dead_code))]
+#[cfg_attr(not(any(test, fuzzing, feature = "fuzzing")), allow(dead_code))]
 pub(super) fn respond(request: &[u8], device: &Device) -> Vec<u8> {
     process(request, device).unwrap_or_else(|| error(Status::BadRequest))
 }
@@ -157,7 +157,7 @@ pub(super) fn respond(request: &[u8], device: &Device) -> Vec<u8> {
 /// The response to the request at the start of `buf`, or `None` while
 /// more of it is needed. Like [`answer`], it reads at most
 /// [`MAX_REQUEST`] bytes.
-#[cfg_attr(not(any(test, fuzzing)), allow(dead_code))]
+#[cfg_attr(not(any(test, fuzzing, feature = "fuzzing")), allow(dead_code))]
 fn process(buf: &[u8], device: &Device) -> Option<Vec<u8>> {
     Reader::default().feed(&buf[..buf.len().min(MAX_REQUEST)], device)
 }

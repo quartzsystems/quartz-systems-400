@@ -57,6 +57,7 @@ pub struct Share {
     pub(crate) server_side_copy: bool,
     pub(crate) listed: bool,
     pub(crate) remark: String,
+    pub(crate) print: bool,
 }
 
 impl Share {
@@ -76,6 +77,7 @@ impl Share {
             server_side_copy: true,
             listed: true,
             remark: String::new(),
+            print: false,
         }
     }
 
@@ -109,6 +111,25 @@ impl Share {
     /// accumulate.
     pub fn user(mut self, name: impl Into<String>, access: Access) -> Self {
         self.users.insert(name.into(), access);
+        self
+    }
+
+    /// QS/400: a print share (see `QS400-PATCHES.md`). TREE_CONNECT
+    /// answers share type PRINT, share listings show it as a print queue,
+    /// and every CREATE on it, whatever the name it gives, opens a new
+    /// print file: the backend's `open` is called with
+    /// [`crate::OpenIntent::Create`], `non_directory` set and a name of
+    /// the server's (`PRINTnnnnnnnn`) no other open has. Leases, durable
+    /// handles, change notifications, named streams, extended attributes
+    /// and server-side copy are off on it.
+    pub fn print(mut self) -> Self {
+        self.print = true;
+        self.leases = false;
+        self.durable_handles = false;
+        self.change_notify = false;
+        self.named_streams = false;
+        self.extended_attributes = false;
+        self.server_side_copy = false;
         self
     }
 
@@ -369,6 +390,9 @@ pub struct SmbServerBuilder {
     apple_model: String,
     apple_copyfile: bool,
     verifier: Option<crate::verifier::VerifierRef>,
+    min_dialect: u16,
+    domain: Option<String>,
+    comment: String,
     print_service: Option<crate::print::PrintServiceRef>,
     #[cfg(feature = "discovery")]
     discovery: Option<crate::discovery::Discovery>,
@@ -400,6 +424,9 @@ impl SmbServerBuilder {
             apple_model: DEFAULT_APPLE_MODEL.to_string(),
             apple_copyfile: true,
             verifier: None,
+            min_dialect: 0x0202,
+            domain: None,
+            comment: String::new(),
             print_service: None,
             #[cfg(feature = "discovery")]
             discovery: None,
@@ -424,6 +451,30 @@ impl SmbServerBuilder {
     /// given with [`Self::user`] (see `QS400-PATCHES.md`).
     pub fn logon_verifier(mut self, verifier: impl crate::verifier::LogonVerifier) -> Self {
         self.verifier = Some(crate::verifier::VerifierRef(Arc::new(verifier)));
+        self
+    }
+
+    /// QS/400: the lowest dialect the server accepts (0x0202, 0x0210,
+    /// 0x0300, 0x0302 or 0x0311; 0x0202 by default). A NEGOTIATE offering
+    /// only lower dialects fails with STATUS_NOT_SUPPORTED, and an SMB1
+    /// multi-protocol NEGOTIATE offering only "SMB 2.002" above 0x0202
+    /// closes the connection (see `QS400-PATCHES.md`).
+    pub fn min_dialect(mut self, dialect: u16) -> Self {
+        self.min_dialect = dialect;
+        self
+    }
+
+    /// QS/400: the domain (workgroup) the NTLM CHALLENGE names as the
+    /// NetBIOS domain; the NetBIOS name by default.
+    pub fn domain(mut self, domain: impl Into<String>) -> Self {
+        self.domain = Some(domain.into());
+        self
+    }
+
+    /// QS/400: the server comment of srvsvc's NetrServerGetInfo level 101;
+    /// empty by default.
+    pub fn comment(mut self, comment: impl Into<String>) -> Self {
+        self.comment = comment.into();
         self
     }
 
@@ -757,6 +808,12 @@ impl SmbServerBuilder {
             return Err(BuildError::AppleModel(self.apple_model));
         }
 
+        if !matches!(self.min_dialect, 0x0202 | 0x0210 | 0x0300 | 0x0302 | 0x0311) {
+            return Err(BuildError::OutOfRange {
+                setting: "min_dialect",
+                expected: "0x0202, 0x0210, 0x0300, 0x0302 or 0x0311",
+            });
+        }
         let listen = self.listen_addr.ok_or(BuildError::MissingListenAddr)?;
 
         let netbios = self.netbios_name.unwrap_or_else(default_netbios_name);
@@ -792,6 +849,9 @@ impl SmbServerBuilder {
             apple_model: self.apple_extensions.then_some(self.apple_model),
             apple_copyfile: self.apple_copyfile,
             verifier: self.verifier,
+            min_dialect: self.min_dialect,
+            domain: self.domain,
+            comment: self.comment,
             print_service: self.print_service,
             #[cfg(feature = "discovery")]
             discovery,

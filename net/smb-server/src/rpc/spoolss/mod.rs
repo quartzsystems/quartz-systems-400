@@ -9,7 +9,7 @@ pub(crate) mod forms;
 pub(crate) mod info;
 pub(crate) mod job;
 pub(crate) mod marshal;
-#[cfg(any(test, fuzzing))]
+#[cfg(any(test, fuzzing, feature = "fuzzing"))]
 pub(crate) mod mem;
 pub(crate) mod printer;
 pub(crate) mod session;
@@ -355,7 +355,7 @@ pub(crate) fn dword(len: usize) -> u32 {
 }
 
 /// The handles [`fuzz_request`] has open: the server and printer PRT01.
-#[cfg(any(test, fuzzing))]
+#[cfg(any(test, fuzzing, feature = "fuzzing"))]
 pub(crate) const FUZZ_HANDLES: [[u8; 20]; 2] = [[1; 20], [2; 20]];
 
 /// Runs `data` as a spoolss request stub against a print service in
@@ -363,7 +363,7 @@ pub(crate) const FUZZ_HANDLES: [[u8; 20]; 2] = [[1; 20], [2; 20]];
 /// operation, one of those served or, with the second byte, any opnum.
 /// A call never opens more than the handle limit, and every response
 /// that is not a fault ends with a status.
-#[cfg(any(test, fuzzing))]
+#[cfg(any(test, fuzzing, feature = "fuzzing"))]
 pub(crate) fn fuzz_request(data: &[u8]) {
     use std::sync::OnceLock;
 

@@ -32,7 +32,8 @@ built and proven.
 
 | Piece | Where | Holds |
 |---|---|---|
-| SMB2/3 protocol | `net/netserver` | NetBIOS session framing, the SMB2 header and every command, negotiate contexts, signing, encryption, credits, compounding, sessions, trees, opens, leases and oplocks, durable and resilient handles, change notify; NTLMSSP and SPNEGO; DCE/RPC over named pipes for `srvsvc` and `wkssvc`; the NetBIOS name service. **No job, store or IFS code**: everything outside goes through the traits of `netserver::backend` |
+| SMB2/3 protocol | `net/smb-server` | rust-smb-server 0.10.0 (MIT, Palta.io), vendored with QS/400 patches (`net/smb-server/QS400-PATCHES.md`, each marked `QS/400:`): framing, every SMB2 command, negotiate contexts, signing, encryption, credits, compounding, sessions, trees, opens, leases, durable handles, change notify, NTLMv2 in SPNEGO, `srvsvc` and `spoolss` over named pipes. QS/400 does not write SMB codecs, NTLM or crypto |
+| NetServer glue | `net/netserver` | the IFS backend (`ifs/`), sign-on (`signon.rs`), print shares (`print.rs`), one job's server (`server.rs`), the NetBIOS session request on 139 (`nbss/`), reconnect routing (`route.rs`). **No job, store or service code**: the job implements `signon::SignOn`, `print::Printer` and hands an `ifs::client::IfsClient` maker |
 | Configuration | `net/netsvrcfg` | the server attributes (current and pending), file and print shares, validation, the `QAZLSCFG` and `QAZLSSHR` codecs, the `ZLSL*` and `ZLSS*` formats of the APIs, the reason codes |
 | Test client | `tools/smbtest` | an SMB2/3 client written separately from the server (it does not depend on `net/netserver`, so one codec bug cannot hide in both) and its scenarios |
 | Profiles | `security/sec` | the NT hash password form, the `QPWDLVL` rules for it, the NetServer-disabled state, the guest profile check |
@@ -68,6 +69,40 @@ As on the oracle (`dspsbsd-qserver.txt`, `prestart-jobs.txt`):
   `QZLSSTRS` with reset `*YES` applies pending attributes first.
 - `WRKACTJOB` shows them as IBM does: `QZLSSERVER` type `BCH`,
   `QZLSFILE` type `PJ`.
+
+### Reconnects and durable handles
+
+A client whose connection drops keeps its durable opens (version 1 and
+2, with a lease that caches handles) for the durable timeout (the
+library's default, 2 minutes, or what a version 2 request asks, up to 5
+minutes) and takes them back on a new connection. The opens live in the
+`QZLSFILE` job that served it, so the new connection must reach the same
+job:
+
+1. The job registers with `QZLSSERVER` the ClientGuids it serves or holds
+   opens for (`NetServer::client_guids`) and the peer addresses of its
+   connections, and updates them as they change.
+2. `QZLSSERVER`, after accepting (and on 139 after answering the session
+   request, `nbss::answer`), reads the ClientGuid of the first NEGOTIATE
+   without consuming it (`route::client_guid`: `MSG_PEEK`, at most 2
+   seconds and 64 KiB). An SMB2 NEGOTIATE offering 2.1 or later carries
+   one; an SMB1 multi-protocol NEGOTIATE or a 2.0.2-only one gives none,
+   and the peer address is used instead.
+3. A ClientGuid (else a peer address) a job has registered sends the
+   socket to that job, which serves it with `NetServer::serve_one` beside
+   any connection it already serves; anything else goes to a new
+   prestart job.
+4. The library's own reconnect then runs within that job: same user, same
+   client, same share, the lease key and, for version 2, the CreateGuid.
+5. The job ends (back to the prestart pool) when
+   `NetServer::idle_until_released` returns: no connection served and no
+   durable open kept. It then withdraws its registration.
+
+One job serves one profile: a sign-on as another profile in a job that
+already has one is refused (`signon::Refusal::OtherProfile`, logged), so
+a routed connection never runs under another user's authority. The
+routing table and the job wiring are `QZLSSERVER`'s and `QZLSFILE`'s
+(`work/qsjob/src/work/netsvr/`).
 
 ## 4. Configuration (design)
 
@@ -326,36 +361,108 @@ After sign-on the `QZLSFILE` job runs as the user; share permission
 attributes and security descriptors clients see are an approximation of
 the IFS authorities (section 6).
 
-## 6. File semantics (design)
+## 6. File semantics (built: `net/netserver/src/ifs/`)
 
-- Names: case-insensitive lookup with case-preserved storage on `/`
-  and `/QSYS.LIB`, case-sensitive under `/QOpenSys`, as the IFS already
-  rules (`ifs::path`). 8.3 short names are generated when a client asks
-  (`FileAlternateNameInformation`, `FileIdBothDirectoryInformation`).
-- File IDs: the IFS file ID, stable across the mount.
-- DOS attributes: read only from the IFS's read-only attribute, hidden
-  and system from the IFS's, archive from its archive flag; directory.
-- Security descriptors: owner and group SIDs made from UID/GID
-  (`S-1-22-1-uid`, `S-1-22-2-gid`, as Samba does), a DACL approximating
-  `*R`, `*W`, `*X` of owner, group and `*PUBLIC`; `SET_INFO` of a
-  security descriptor is refused (`STATUS_ACCESS_DENIED`), as changing
-  authority goes through `CHGAUT`.
-- Locks: byte-range locks through the IFS lock layer; share modes
-  through its share modes.
-- Leases (R, RH, RW, RWH on 2.1+) and oplocks (level II, exclusive,
-  batch); break to the holder when another opener conflicts.
-- Change notify on directories, from the IFS's change events.
-- Alternate data streams, quotas, reparse points, extended attributes
-  and object IDs are refused (section 10).
-- `/QSYS.LIB`: libraries as `X.LIB`, files as `Y.FILE`, members as
-  `Z.MBR`; a source member reads and writes as text converted by the
-  member's CCSID when the share has text conversion (the `.MBR` extension
-  among its extensions), else as records.
+- Names: looked up and stored by the IFS's own rules (`ifs::path`):
+  case-insensitive with case preserved on `/` and `/QSYS.LIB`,
+  case-sensitive under `/QOpenSys`; a share reports the case sensitivity
+  of its root's file system. The library rejects `..`, empty components,
+  `<>:"|?*` and control characters before the backend sees a name. No 8.3
+  short names: listings carry an empty ShortName (clients use the long
+  name).
+- File IDs: the IFS file ID (file number and generation, `Qp0lGetAttr`'s
+  `*FILEID`), the same in listings, `FileInternalInformation` and the
+  library's tables; an open finds its object by it after a rename
+  (`path_from_file_id`).
+- DOS attributes: `FILE_ATTRIBUTE_READONLY`, `HIDDEN`, `SYSTEM` and
+  `ARCHIVE` are the IFS's `*READONLY`, `*HIDDEN`, `*SYSTEM` and
+  `*PCARCHIVE`, read and set (`SET_INFO` FileBasicInformation, the
+  attributes of a CREATE); `TEMPORARY`, `OFFLINE` and
+  `NOT_CONTENT_INDEXED` are not stored (dropped, and reported clear).
+  A directory is never read-only to clients.
+- Times: last access and last write are the IFS's and can be set; the
+  creation time is the IFS's and cannot be set (a set of it alone
+  succeeds and changes nothing); the change time is the IFS's.
+- Share modes: the library checks them among the opens of the job; an
+  open with data access also opens its IFS descriptor with
+  `O_SHARE_RDONLY`, `O_SHARE_WRONLY`, `O_SHARE_RDWR` or `O_SHARE_NONE`
+  from FILE_SHARE_READ and FILE_SHARE_WRITE, so other jobs (NetServer or
+  not) are refused as the IFS refuses them (`STATUS_SHARING_VIOLATION`).
+  FILE_SHARE_DELETE has no IFS counterpart. Attribute-only opens take
+  no descriptor and deny nothing.
+- Byte-range locks: the library keeps them and also takes each in the
+  IFS (`F_SETLK` on the open's descriptor), so another job's conflicting
+  lock gets `STATUS_LOCK_NOT_GRANTED`. IFS locks are advisory: another
+  job's plain reads and writes are not refused. An exclusive lock through
+  an open without write access is taken shared in the IFS.
+- Leases: on by default (`FileShare::leases`); they let a client cache
+  and are needed for durable handles. The library breaks them for opens
+  in the same job only: a change made by another job (another client, a
+  program, FTP) breaks no lease, and the caching client keeps stale data
+  until it next opens the file. Shares where several clients change the
+  same files should turn leases off (which also turns off durable
+  handles there). Oplocks are not offered (the library has none).
+- Change notify: the IFS has no change events, so clients hear only of
+  changes made through their own job's connections.
+- Security descriptors: queries answer the library's default (no owner or
+  DACL from the IFS); setting one is refused (section 10). Authority is the
+  IFS's: every call runs as the job's profile and the share's read-only
+  permission narrows it.
+- Named streams and extended attributes are off on every share
+  (`Share::named_streams(false)`, `extended_attributes(false)`).
+- `/QSYS.LIB`: libraries are `X.LIB`, files `Y.FILE`, members `Z.MBR`
+  directories and files as the IFS's `/QSYS.LIB` view shows them; a
+  member's data is what that view reads and writes (no per-share text
+  conversion in V1R2M0: the share's CCSID and text-conversion fields are
+  refused by `QZLSADFS`, section 10).
+
+### Backend
+
+`ifs::IfsShare` implements the library's `ShareBackend` over the job's
+`ifs::client::IfsClient`. An `IfsClient` is not `Send` (the job's link
+belongs to one thread), so `ifs::IfsWorker` makes it on a thread of its
+own and runs every call there; the async side sends closures and awaits
+their answers. Each `Handle` holds the object's file ID and path, and an
+IFS descriptor: opened at CREATE for an open with data access or a
+truncate (with its share mode), else on first read. CREATE dispositions
+map to `open()` flags: `FILE_OPEN` an existing object,
+`FILE_CREATE` `O_CREAT|O_EXCL`, `FILE_OPEN_IF` `O_CREAT`,
+`FILE_OVERWRITE(_IF)` `O_TRUNC`; directories are `mkdir()` (mode 777
+under the umask), files `O_INHERITMODE` (data authorities from the
+directory, as IBM NetServer does). Reads and writes move at most 1 MiB
+per IFS call. Listings are `read_dir` filtered by the search pattern
+([MS-FSA] 2.1.4.4: `*`, `?`, `<`, `>`, `"`, without regard to case) and a
+stat of each entry. Volume information is `statvfs()` of the share root.
+Errors map as: `ENOENT` not found (path not found when the directory is
+missing too), `EACCES`/`EPERM`/`EROFS`/`EROOBJ` access denied, `EEXIST`
+collision, `ENOTEMPTY` not empty, `EBUSY`/`EAGAIN` sharing violation,
+`ENOSPC` disk full.
+
+`print::PrintShare` is the backend of a print share over the job's
+`print::Printer` (section 7). `NetServer::build` makes one job's
+`SmbServer`: the shares as the configuration gives them, every share
+granted to any signed-on profile (`Share::any_user`, read or read/write
+by the share permission), remarks from the share text, encryption per
+share or for all, signing required or not, the idle timeout, read and
+write sizes, the minimum dialect, the domain and server text, and the
+library's own logon throttle **off** (`logon_throttle(0, ..)`): failed
+sign-ons count against `QMAXSIGN` in the storage service (section 5),
+and the library's per-name and per-address lockouts would lock users out
+on rules IBM does not have. The server runs on a current-thread tokio
+runtime on a thread of its own; `serve_one` hands it one socket.
 
 ## 7. Print shares (design)
 
 `CREATE` on a print share opens a spooled file in the share's output
-queue as the signed-on user; `WRITE`s add its data; `CLOSE` ends it. The
+queue as the signed-on user; `WRITE`s add its data; `CLOSE` ends it.
+Built as a library patch (`Share::print`: TREE_CONNECT share type PRINT
+0x03, listings `STYPE_PRINTQ`, every CREATE a new print file named
+`PRINTnnnnnnnn` whatever the name the client gave, no leases, durable
+handles, change notify, streams or server-side copy) and
+`net/netserver/src/print.rs` (`Printer::open(user, queue, document)`, then
+`PrintJob::write` and `PrintJob::close`, which the job implements over its
+spooler). Reads of a print file are refused; a directory or named-stream
+CREATE on a print share is `STATUS_INVALID_PARAMETER`. The
 type follows the share: `*USERASCII` as written, or through the host
 print transform with the share's `*WSCST` (`work/print`).
 
@@ -434,27 +541,30 @@ enabled, `CPIB690` password expires soon, `CPIB691` connected,
 `CPIB692` Kerberos error; `CPFB680`-`CPFB695` the API errors, `CPDB680`.
 Severities as `messages.txt`.
 
-## 9. Protocol coverage (design)
+## 9. Protocol coverage (built: the library's)
 
 | Feature | QS/400 |
 |---|---|
-| Dialects | 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1 on TCP 445 (direct TCP); 139 with NetBIOS session service when allowed |
-| SMB1 | an SMB1 `NEGOTIATE` that offers `SMB 2.002` or `SMB 2.???` is answered with an SMB2 `NEGOTIATE` response (the multi-protocol upgrade); a pure SMB1 negotiate is refused (the connection is closed after a `STATUS_NOT_SUPPORTED`) |
-| 3.1.1 | preauthentication integrity (SHA-512), encryption and signing capabilities, `SMB2_NETNAME_NEGOTIATE_CONTEXT_ID` accepted, compression refused (not offered) |
-| Signing | HMAC-SHA256 (2.x), AES-128-CMAC (3.0, 3.0.2), AES-128-GMAC refused unless negotiated (3.1.1) |
-| Encryption | AES-128-CCM, AES-128-GCM, AES-256-CCM, AES-256-GCM |
-| Credits, compounding, large MTU | yes |
-| Leases and oplocks | yes (section 6) |
-| Durable handles | v1 and v2: a reconnect within the timeout is routed back to the `QZLSFILE` job holding the opens (ClientGuid of the first `NEGOTIATE`, else the client address; section 3) |
-| Resilient handles | `FSCTL_LMR_REQUEST_RESILIENCY` |
-| Persistent handles, multichannel, RDMA, DFS, compression | refused |
-| RPC | `srvsvc` (`NetShareEnumAll`, `NetShareGetInfo`, `NetServerGetInfo`), `wkssvc` (`NetWkstaGetInfo`); everything else `nca_s_op_rng_error` |
+| Dialects | 2.0.2, 2.1, 3.0, 3.0.2, 3.1.1, at least the minimum dialect attribute (a library patch; a NEGOTIATE with only lower ones gets `STATUS_NOT_SUPPORTED`); TCP 445 direct; 139 after the NetBIOS session request (`nbss`), keepalives skipped (a library patch) |
+| SMB1 | an SMB1 `NEGOTIATE` that offers `SMB 2.???` or `SMB 2.002` (the latter only when the minimum is 2.0.2) is answered with an SMB2 `NEGOTIATE` response (the multi-protocol upgrade); any other SMB1 negotiate closes the connection without a reply |
+| 3.1.1 | preauthentication integrity (SHA-512), encryption and signing capabilities; `CipherCount` 0 is `STATUS_INVALID_PARAMETER`, as Windows answers; compression and RDMA transform contexts ignored (not offered) |
+| Signing | HMAC-SHA256 (2.x), AES-128-CMAC (3.x; the 3.1.1 answer whatever the client lists; AES-GMAC not offered); required for every session when the signing attribute says so |
+| Encryption | 3.1.1: AES-128-CCM, AES-128-GCM, AES-256-CCM, AES-256-GCM; 3.0 and 3.0.2: AES-128-CCM; per share or for every session; clients that cannot encrypt are refused a tree on an encrypted share |
+| Credits, compounding, large MTU | yes; READ and WRITE up to the configured size (64 KiB to 8 MiB, 1 MiB by default) |
+| Leases | R, RH, RW, RWH on files (2.1+); no directory leases and no oplocks; broken only by opens in the same job (section 6) |
+| Durable handles | v1 and v2 with a handle-caching lease; reconnects routed back to the job (section 3) |
+| Resilient and persistent handles, multichannel, RDMA, DFS, compression | refused (section 10) |
+| Change notify | yes, for changes through the job's own connections |
+| Server-side copy | COPYCHUNK and COPYCHUNK_WRITE, done by reads and writes in the job; no block cloning |
+| Sign-on | NTLMv2 in SPNEGO through `signon::SignOn` (a library patch: the NT hash stays in the storage service); the guest profile gets an `IS_GUEST` session with no key (unsigned, unencrypted; a client that requires signing gets no guest session); the library's logon throttle off |
+| Limits and timeouts | the library's: 64 sessions per connection, 128 trees per session, 16 384 opens per connection, 1024 locks per open; handshake 30 s, idle as the attribute (15 minutes by default), I/O 60 s, TCP keepalive 60 s |
+| RPC | `srvsvc`: NetrShareEnum, NetrShareGetInfo, NetrServerGetInfo (100, 101 with the server text); `spoolss` (section 7); everything else `nca_s_op_rng_error`; no `wkssvc` |
 
 ## 10. Refused, with reasons
 
 | Refused | Why | What the client sees |
 |---|---|---|
-| SMB1/CIFS | removed by IBM too; insecure | connection closed after `STATUS_NOT_SUPPORTED` |
+| SMB1/CIFS | removed by IBM too; insecure | the connection is closed without a reply (an SMB1 negotiate offering SMB2 dialects is upgraded) |
 | Kerberos, EIM | QS/400 has no Kerberos (`RELEASE_NOTES_V1R1M0.md`) | SPNEGO offers NTLMSSP only |
 | NTLMv1, LM | weak | `STATUS_LOGON_FAILURE` |
 | Multichannel | not built | no `MULTI_CHANNEL` capability; a binding `SESSION_SETUP` gets `STATUS_REQUEST_NOT_ACCEPTED` |
@@ -471,8 +581,33 @@ Severities as `messages.txt`.
 | Data types other than `RAW` (EMF, XPS, TEXT) | the output queue takes the printer's own data | `ERROR_INVALID_DATATYPE`; printers are `PRINTER_ATTRIBUTE_RAW_ONLY` |
 | A document's output file | the job goes to the output queue | `ERROR_INVALID_PARAMETER` |
 | `,Job n`, `,XcvPort`, `,XcvMonitor` printer names | jobs are not opened by handle; ports and monitors are administration | `ERROR_INVALID_PRINTER_NAME` |
+| Resilient handles (`FSCTL_LMR_REQUEST_RESILIENCY`), persistent handles | the library has none | `STATUS_NOT_SUPPORTED`; the PERSISTENT flag of a DH2Q is ignored and the open is durable only |
+| Compression, RDMA | the library has none | not offered in NEGOTIATE |
+| Oplocks, directory leases | the library has none | an oplock request gets no oplock |
+| Extended attributes | off on every share | no `FILE_SUPPORTS_EXTENDED_ATTRIBUTES`; `ExtA` contexts `STATUS_EAS_NOT_SUPPORTED` |
+| Reparse points, object IDs, 8.3 short names, snapshots | the IFS has none | `STATUS_NOT_SUPPORTED`; no short names in listings; no previous versions |
+| `wkssvc` and other named pipes | not built | `STATUS_OBJECT_NAME_NOT_FOUND` on the pipe |
+| `srvsvc` over NDR64 | the library binds NDR 2.0 only (Windows binds NDR 2.0) | the NDR64 context is rejected in the bind ack |
+| The NetBIOS name service (UDP 137) and datagram service (138), browsing | not built | no answer on 137/138; clients connect by DNS name or address, or `*SMBSERVER` on 139 |
+| Per-share maximum users, CCSID and text conversion | not built in V1R2M0: one job per client cannot count other jobs' users, and the backend serves data as the IFS stores it | `QZLSADFS`/`QZLSCHFS` refuse a value other than the default |
+| A second profile in one job | every IFS call runs as the job's profile | `STATUS_LOGON_FAILURE` (`OtherProfile` logged) |
+| The library's logon throttle | `QMAXSIGN` is counted in the storage service | off |
+| Leases broken by other jobs | the IFS has no change events and the lease table is per job | none; turn leases off on shares several clients change |
 
 ## 11. Tests
+
+- `cargo test -p netserver`: the backend, sign-on, print shares, the
+  NetBIOS session request and routing end to end: SMB clients (the
+  library's own test helpers, `net/netserver/tests/smbc/`) against
+  `NetServer` jobs over one IFS in memory through handed-over loopback
+  sockets: files round trip, case-insensitive lookup, rename and delete,
+  DOS attributes and file IDs, share modes and byte-range locks between
+  two jobs, a read-only share and the IFS authority, sign-on refusals and
+  one profile per job, a print share spooling as the profile,
+  `/QSYS.LIB` listings and member reads, a durable reconnect into the
+  same job and the job's release, port 139.
+- `cd net/smb-server; cargo test --test qs400_hooks --test
+  qs400_patches`: the library patches.
 
 - `cargo test -p netserver`: codecs against [MS-SMB2] examples, crypto
   against the published vectors ([MS-SMB2] 3.1.4, RFC 4493, RFC 3610,

@@ -186,7 +186,7 @@ pub async fn handle(
         return HandlerResponse::err(ntstatus::STATUS_INVALID_PARAMETER);
     }
 
-    let Some(dialect) = select_dialect(&req.dialects) else {
+    let Some(dialect) = select_dialect(&req.dialects, server.config.min_dialect) else {
         return HandlerResponse::err(ntstatus::STATUS_NOT_SUPPORTED);
     };
     let chosen = dialect.as_u16();
@@ -341,13 +341,14 @@ pub async fn handle(
     hr
 }
 
-/// The greatest dialect in `offered` that the server implements.
-pub(crate) fn select_dialect(offered: &[u16]) -> Option<Dialect> {
+/// The greatest dialect in `offered` that the server implements, at least
+/// `min` (QS/400).
+pub(crate) fn select_dialect(offered: &[u16], min: u16) -> Option<Dialect> {
     const SUPPORTED: &[u16] = &[0x0202, 0x0210, 0x0300, 0x0302, 0x0311];
     offered
         .iter()
         .copied()
-        .filter(|d| SUPPORTED.contains(d))
+        .filter(|d| SUPPORTED.contains(d) && *d >= min)
         .max()
         .and_then(Dialect::from_u16)
 }

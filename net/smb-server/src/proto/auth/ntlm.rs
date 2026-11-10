@@ -815,16 +815,18 @@ impl NtlmServer {
     {
         self.authenticate_with(blob, |user, domain, challenge, nt_response| {
             local_session_base_key(lookup(user, domain), user, domain, challenge, nt_response)
+                .map(Some)
         })
     }
 
     /// QS/400: like [`Self::authenticate`], but `verify` checks the NTLMv2
     /// response itself (user, domain, server challenge, NT response) and
     /// returns the session base key, so the NT hash can stay with whoever
-    /// holds it.
+    /// holds it; `Some(None)` accepts the logon without a key (a guest),
+    /// whose MIC is then not checked.
     pub fn authenticate_with<V>(&self, blob: &[u8], verify: V) -> ProtoResult<AuthOutcome>
     where
-        V: FnOnce(&str, &str, &[u8; 8], &[u8]) -> Option<[u8; 16]>,
+        V: FnOnce(&str, &str, &[u8; 8], &[u8]) -> Option<Option<[u8; 16]>>,
     {
         let auth = NtlmAuthenticate::parse(blob)?;
 
@@ -853,6 +855,18 @@ impl NtlmServer {
             verify(&auth.user, &auth.domain, &self.server_challenge, &auth.nt_response)
         else {
             return Err(ProtoError::Auth("NT proof mismatch"));
+        };
+        // QS/400: a keyless (guest) logon.
+        let Some(key_exchange_key) = key_exchange_key else {
+            return Ok(AuthOutcome {
+                identity: Identity::User {
+                    user: auth.user.clone(),
+                    domain: auth.domain.clone(),
+                },
+                session_key: [0u8; 16],
+                flags: auth.flags,
+                mic_present: false,
+            });
         };
 
         // ---- ExportedSessionKey. KEY_EXCH requires a 16-byte

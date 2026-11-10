@@ -55,12 +55,22 @@ pub async fn handle(
 
     let result = if first.flags & UNLOCK != 0 {
         // MS-SMB2 3.3.5.14.1: unlocks done before a failure stay done.
-        req.locks.iter().try_for_each(|l| {
+        let mut result = Ok(());
+        for l in &req.locks {
             if l.flags & !FAIL_IMMEDIATELY != UNLOCK {
-                return Err(ntstatus::STATUS_INVALID_PARAMETER);
+                result = Err(ntstatus::STATUS_INVALID_PARAMETER);
+                break;
             }
-            file.unlock_range(l.offset, l.length)
-        })
+            if let Err(status) = file.unlock_range(l.offset, l.length) {
+                result = Err(status);
+                break;
+            }
+            // QS/400: the backend releases it too.
+            if let Some(handle) = open.handle.as_ref() {
+                let _ = handle.unlock_range(l.offset, l.length).await;
+            }
+        }
+        result
     } else {
         let valid = |flags: u32| {
             matches!(flags & !FAIL_IMMEDIATELY, SHARED | EXCLUSIVE)
@@ -75,11 +85,27 @@ pub async fn handle(
         let mut taken = Vec::new();
         let mut result = Ok(());
         for l in &req.locks {
-            match file.lock_range(l.offset, l.length, l.flags & EXCLUSIVE != 0, limit) {
+            let exclusive = l.flags & EXCLUSIVE != 0;
+            let mut granted = file.lock_range(l.offset, l.length, exclusive, limit);
+            // QS/400: the backend takes it too, for other processes to see.
+            if granted.is_ok()
+                && let Some(handle) = open.handle.as_ref()
+                && let Err(e) = handle.lock_range(l.offset, l.length, exclusive).await
+            {
+                file.undo_lock(l.offset, l.length, exclusive);
+                granted = Err(match e {
+                    crate::error::SmbError::Sharing => ntstatus::STATUS_LOCK_NOT_GRANTED,
+                    other => other.to_nt_status(),
+                });
+            }
+            match granted {
                 Ok(()) => taken.push(l),
                 Err(status) => {
                     for t in &taken {
                         file.undo_lock(t.offset, t.length, t.flags & EXCLUSIVE != 0);
+                        if let Some(handle) = open.handle.as_ref() {
+                            let _ = handle.unlock_range(t.offset, t.length).await;
+                        }
                     }
                     result = Err(status);
                     break;

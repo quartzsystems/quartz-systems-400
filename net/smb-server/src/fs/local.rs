@@ -2798,6 +2798,7 @@ pub(super) mod tests {
             directory: false,
             non_directory: false,
             delete_on_close: false,
+            share_access: None,
         }
     }
 
@@ -2810,6 +2811,7 @@ pub(super) mod tests {
             directory: false,
             non_directory: false,
             delete_on_close: false,
+            share_access: None,
         }
     }
 
@@ -2822,6 +2824,7 @@ pub(super) mod tests {
             directory: false,
             non_directory: false,
             delete_on_close: false,
+            share_access: None,
         }
     }
 
@@ -2834,6 +2837,7 @@ pub(super) mod tests {
             directory: true,
             non_directory: false,
             delete_on_close: false,
+            share_access: None,
         }
     }
 
