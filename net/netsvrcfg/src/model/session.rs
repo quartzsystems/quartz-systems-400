@@ -218,7 +218,8 @@ impl SessionTable {
     }
 
     /// [`SessionTable::connect`] unless `share` already has `max` users
-    /// connected (`max` below 1: no maximum), counted across every job.
+    /// (sessions with a connection to it) other than session `id` (`max`
+    /// below 1: no maximum), counted across every job.
     ///
     /// # Errors
     ///
@@ -231,15 +232,15 @@ impl SessionTable {
         max: i32,
         now: u64,
     ) -> Result<u32, TableError> {
+        // Users are sessions: a session's second tree to the share is no
+        // new user.
+        let has = |s: &Session| s.connections.iter().any(|c| c.share.eq_ignore_ascii_case(share));
+        let mine = self.sessions.get(&id).is_some_and(has);
         if let Ok(max) = usize::try_from(max)
             && max > 0
+            && !mine
         {
-            let users = self
-                .sessions
-                .values()
-                .flat_map(|s| s.connections.iter())
-                .filter(|c| c.share.eq_ignore_ascii_case(share))
-                .count();
+            let users = self.sessions.values().filter(|s| has(s)).count();
             if users >= max {
                 return Err(TableError::MaxUsers(share.to_ascii_uppercase()));
             }
@@ -459,5 +460,7 @@ mod tests {
         assert_eq!(t.connect_within(b, "DATA", 0, 1, 5), Err(TableError::MaxUsers("DATA".into())));
         assert!(t.connect_within(b, "DATA", 0, -1, 5).is_ok());
         assert!(t.connect_within(b, "other", 0, 1, 5).is_ok());
+        // A second tree of a session that has the share is no new user.
+        assert!(t.connect_within(a, "DATA", 0, 1, 5).is_ok());
     }
 }

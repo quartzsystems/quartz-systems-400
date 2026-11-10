@@ -150,10 +150,14 @@ minutes) and takes them back on a new connection. The opens live in the
 job. The routing table is the storage service's (`netsvr` `Route` and
 `Lookup`), so the jobs need no channel between them:
 
-1. Once a second each `QZLSFILE` registers its relay identifier with the
-   ClientGuids it serves or holds opens for (`NetServer::client_guids`)
+1. A `QZLSFILE` registers its relay identifier with its first
+   connection's ClientGuid as soon as it takes it (before serving it), so
+   the client's next connections follow at once; then once a second with
+   the ClientGuids it serves or holds opens for (`NetServer::client_guids`)
    and, while it keeps durable opens, the addresses of the clients it
-   served. A released job withdraws them; `JobEnded` drops them too.
+   served. A released job withdraws them within a tenth of a second;
+   `JobEnded` drops them too. When two jobs hold one ClientGuid (one being
+   released), `Lookup` answers the newer.
 2. `QZLSSERVER`, after accepting (and on 139 after answering the session
    request), reads the ClientGuid of the first NEGOTIATE without
    consuming it (`route::client_guid`: `MSG_PEEK`, at most 2 seconds and
@@ -168,7 +172,10 @@ job. The routing table is the storage service's (`netsvr` `Route` and
 4. The library's own reconnect then runs within that job: same user, same
    client, same share, the lease key and, for version 2, the CreateGuid.
 5. The job ends its client (back to the prestart pool) when
-   `NetServer::idle_until_released` returns.
+   `NetServer::idle_until_released` returns. A connection routed to it
+   while it was being released waits on its relay identifier; after
+   withdrawing its routes the job looks there once more (300 ms) and
+   serves what came with the same server.
 
 One job serves one profile: a sign-on as another profile in a job that
 already has one is refused (`signon::Refusal::OtherProfile`, logged), so
@@ -1075,7 +1082,9 @@ anything only if IBM checks the length first), and IBM's checks of
   `ZLSL*` formats against the `QSYSINC` layouts.
 - `tools/smbtest` (the test client and its scenarios, below).
 - QEMU steps from 166: the server started, every `smbtest` scenario
-  against the guest, the APIs, the SQL view, a 1 GB copy (MB/s here).
+  against the guest, the APIs, the SQL view, a 1 GB copy: 223.7 MB/s in
+  (4.80 s) and 103.6 MB/s out (10.36 s) under QEMU with KVM on the build
+  PC (WSL2, 4 jobs), through a port forward (step 168, 2026-11-10).
 - `cd net/smb-server; cargo test --lib spoolss` and `cargo test --test
   qs400_spoolss`: the spoolss calls, their NDR and INFO structures, forms,
   refusals; OpenPrinterEx, GetPrinter 2, GetPrinterDriver2, StartDoc, a
@@ -1185,8 +1194,19 @@ QEMU steps 166-169 (`tools/conformance/src/netsvrstep.rs`): 166 `STRTCPSVR SERVE
 `WRKACTJOB` (`BCH`, `PJ`); 167 a user `NSUSER`, a read/write share
 `SMBTEST` over `/home/NSUSER` added with `QZLSADFS` from the console,
 and every scenario through a forward to the guest's 445 (16 MiB copy);
-168 `--only copy,cleanup --copy-bytes 1G`, MB/s in and out in the step's
-detail. They run the `smbtest` binary from `QS400_SMBTEST`, or build it
+168 `QSGROWIFS SIZE(1536)` (the guest's IFS volume starts at 1 GiB and
+grows a step at a time as it fills: without room first a 1 GiB write meets
+`STATUS_DISK_FULL`), then `--only copy,cleanup --copy-bytes 1G`
+(`QS400_NETSVR_COPY` sizes it otherwise), MB/s in and out in the step's
+detail; 169 port 445 in `NETSTAT *CNN`, a maximum of one user through
+`QZLSCHFS` with a scenario run under it, then `ENDTCPSVR`, `QZLSSTRS`,
+`QZLSENDS` and `STRTCPSVR`, each seen in `WRKACTJOB`. `NEEDS-CODY`:
+`QSYS2.NETSTAT_INFO` and `QSYS2.SERVER_SHARE_INFO` answer `SQL0443`
+(38501, the system's state cannot be read where the statement runs) in
+the guest at `STRSQL` and at the console's `svc.sql` alike, so 169 does not
+read them; they are proven only in memory (`cargo test -p sql`).
+`smbtest`'s connections each send a ClientGuid of their own, so each is
+its own `QZLSFILE` job (independent clients). They run the `smbtest` binary from `QS400_SMBTEST`, or build it
 (`cargo build --release --locked --manifest-path tools/smbtest/Cargo.toml`
 into `$QS400_TARGET_DIR/smbtest`).
 
