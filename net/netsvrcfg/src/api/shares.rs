@@ -355,6 +355,9 @@ pub fn add_print(h: &mut dyn Host, p: &Parms<'_>) -> Result<Vec<u8>, ApiError> {
     let base = Share::print(&name, Qualified::default(), "");
     let (s, publish) = print_share(API, h, p, &name, &base)?;
     let owner = s.as_print().and_then(|ps| h.outq_owner(&ps.outq));
+    if owner.is_none() {
+        return Err(share_err(API, &name, reason::NO_OUTQ));
+    }
     may_share(API, h, owner)?;
     c.shares.insert(name.clone(), s);
     save(h, &c)?;
@@ -378,6 +381,9 @@ pub fn change_print(h: &mut dyn Host, p: &Parms<'_>) -> Result<Vec<u8>, ApiError
         return Err(share_err(API, &name, reason::WRONG_TYPE));
     }
     let (s, publish) = print_share(API, h, p, &name, &old)?;
+    if s.as_print().is_some_and(|ps| h.outq_owner(&ps.outq).is_none()) {
+        return Err(share_err(API, &name, reason::NO_OUTQ));
+    }
     for q in [old.as_print(), s.as_print()]
         .into_iter()
         .flatten()

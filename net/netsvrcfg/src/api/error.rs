@@ -137,6 +137,9 @@ pub mod share {
     pub const MAX_USERS: i32 = 4;
     /// Spooled file type not valid.
     pub const SPOOL_TYPE: i32 = 5;
+    /// The output queue does not exist (`NEEDS-CODY`: IBM's number for it,
+    /// the one the primary's reason list leaves out).
+    pub const NO_OUTQ: i32 = 6;
     /// The path does not begin with `/`.
     pub const PATH: i32 = 7;
     /// A file share named for a print API, or the other way.

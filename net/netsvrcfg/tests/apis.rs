@@ -9,7 +9,7 @@
 
 use netsvrcfg::api::{self, ApiError, MemHost, ServerControl};
 use netsvrcfg::fmt::text::{Rec, bin4, bin8, fixed, text_at};
-use netsvrcfg::{Kind, Permission, Session, SpoolType};
+use netsvrcfg::{Kind, Permission, Qualified, Session, SpoolType};
 
 fn b4(v: i32) -> Vec<u8> {
     v.to_be_bytes().to_vec()
@@ -123,6 +123,10 @@ fn print_shares_and_publishing() {
         b4(1),
         fixed("HP LaserJet 4", 50),
     ];
+    // A queue that does not exist is refused, *IOSYSCFG or not.
+    let e = api::call(&mut h, "QZLSADPS", &p).expect_err("no queue");
+    assert_eq!((e.id, reason(&e, 22)), ("CPFB68A", 6));
+    h.outqs.push((Qualified::new("PRT01", "QUSRSYS"), "QSYS".into()));
     api::call(&mut h, "QZLSADPS", &p).expect("adds");
     let c = h.config.clone().expect("saved");
     let ps = c

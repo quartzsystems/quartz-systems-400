@@ -2552,7 +2552,7 @@ vars = ["*CHAR 10", "*BIN 4"]
 id = "CPFB68A"
 sev = 40
 text = "API &1 failed for share &2 (reason code &3)."
-help = "Reason codes: 1, a share of that name exists; 2, the share does not exist; 3, the permission is not 1 or 2; 4, the maximum users is not -1 or above 0; 5, the spooled file type is not 1 to 4; 7, the path does not begin with /; 8, the share is of the other kind (file or print); 9, its extension list is damaged; 10, the text conversion value or CCSID is not valid; 11, the publish value is not 0 or 1; 12, the change could not take effect at once."
+help = "Reason codes: 1, a share of that name exists; 2, the share does not exist; 3, the permission is not 1 or 2; 4, the maximum users is not -1 or above 0; 5, the spooled file type is not 1 to 4; 6, the output queue does not exist; 7, the path does not begin with /; 8, the share is of the other kind (file or print); 9, its extension list is damaged; 10, the text conversion value or CCSID is not valid; 11, the publish value is not 0 or 1; 12, the change could not take effect at once."
 vars = ["*CHAR 10", "*CHAR 12", "*BIN 4"]
 
 [[msg]]
