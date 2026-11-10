@@ -658,8 +658,7 @@ pub trait Handle: Send + Sync {
     /// the changes made through it.
     ///
     /// QS/400: a backend that also sees changes below the directory may
-    /// report them by their path there (`sub
-ame`); only the directory's
+    /// report them by their path there (`sub\name`); only the directory's
     /// tree watches hear those, and the server does not match them with
     /// its own changes, so the backend leaves out the ones made through
     /// this server.
