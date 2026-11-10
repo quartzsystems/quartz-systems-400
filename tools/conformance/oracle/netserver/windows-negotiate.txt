@@ -1,0 +1,39 @@
+# smbtest probe 127.0.0.1 445 (Windows 11 IoT LTSC 2024 10.0.26100, its own SMB server), 2026-11-09: NEGOTIATE only, no SESSION_SETUP
+ok probe-2.0.2
+  dialect: 2.0.2
+  signing: HmacSha256
+  max read/write/transact: 65536/65536/65536
+ok probe-2.0.2-noenc
+  dialect: 2.0.2
+  signing: HmacSha256
+  max read/write/transact: 65536/65536/65536
+ok probe-2.1
+  dialect: 2.1
+  signing: HmacSha256
+  max read/write/transact: 8388608/8388608/8388608
+ok probe-2.1-noenc
+  dialect: 2.1
+  signing: HmacSha256
+  max read/write/transact: 8388608/8388608/8388608
+ok probe-3.0
+  dialect: 3.0
+  signing: AesCmac
+  max read/write/transact: 8388608/8388608/8388608
+ok probe-3.0-noenc
+  dialect: 3.0
+  signing: AesCmac
+  max read/write/transact: 8388608/8388608/8388608
+ok probe-3.0.2
+  dialect: 3.0.2
+  signing: AesCmac
+  max read/write/transact: 8388608/8388608/8388608
+ok probe-3.0.2-noenc
+  dialect: 3.0.2
+  signing: AesCmac
+  max read/write/transact: 8388608/8388608/8388608
+ok probe-3.1.1
+  dialect: 3.1.1
+  signing: HmacSha256
+  max read/write/transact: 8388608/8388608/8388608
+  cipher: Aes128Ccm
+fail probe-3.1.1-noenc: status 0xC000000D (Server returned an error message with status: Invalid Parameter (0xc000000d).)

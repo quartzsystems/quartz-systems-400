@@ -29,6 +29,7 @@ or SMB3 on the wire, so that part of QS/400 is built from [MS-SMB2],
 | `server-share-info.txt` | `QSYS2.SYSCOLUMNS` | the 20 columns of `QSYS2.SERVER_SHARE_INFO` (no rows visible to the pub400 account) |
 | `../qsysinc/H/QZLS*.txt` | `QSYSINC/H` on pub400 | the headers of the 13 APIs and `QZLS` (common definitions), formats `ZLSL0100`-`ZLSL0900`, `ZLSS0100`, `ZLSS0200` |
 | `../net/primary/dspsbsd-qserver.txt`, `../net/pub400/prestart-jobs.txt` | Phase 10 captures | routing entry 800 (`QZLSSERVER`, compare value `QZLSSTART`), prestart entries `QZLSFILE` (`QZLSPJ`, 1/1/5, `MAXUSE` 200) and `QZLSFILET` |
+| `windows-negotiate.txt` | `smbtest probe 127.0.0.1 445` against this PC's own Windows SMB server (NEGOTIATE only) | each dialect alone with encryption allowed and with no ciphers offered: Windows answers 3.1.1 with an empty `SMB2_ENCRYPTION_CAPABILITIES` (CipherCount 0, which the smb 0.12.1 client sends when its encryption is disabled) with `STATUS_INVALID_PARAMETER`, as the vendored server does; 2.0.2 gets 64 KiB maximum sizes, later dialects 8 MiB |
 
 ## Findings
 

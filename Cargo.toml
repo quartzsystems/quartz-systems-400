@@ -1,7 +1,9 @@
 [workspace]
 resolver = "3"
 # Third-party sources carried with QS/400 patches (net/smb-server/QS400-PATCHES.md).
-exclude = ["net/smb-server"]
+# tools/smbtest has its own lockfile: its client crate (smb, through sspi) pins
+# curve25519-dalek 5.0.0-rc.1, which cannot share one with tools/build.
+exclude = ["net/smb-server", "tools/smbtest"]
 members = [
     # Host tools: the build orchestrator and the conformance harness.
     "tools/build",
@@ -151,7 +153,6 @@ members = [
     "tools/pesign",
     "tools/helpaudit",
     "tools/textaudit",
-    "tools/smbtest",
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",

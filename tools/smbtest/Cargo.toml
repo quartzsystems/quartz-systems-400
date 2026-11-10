@@ -1,14 +1,43 @@
+# Outside the workspace (the root Cargo.toml's `exclude`), with its own
+# Cargo.lock: sspi, under the smb client crate, pins curve25519-dalek
+# 5.0.0-rc.1 for macOS, which cannot share a lockfile with tools/build's
+# ed25519-dalek 3.0.0. `cargo run -p build -- deny` checks this graph too.
 [package]
 name = "smbtest"
 description = "An SMB2/3 test client for QS/400 NetServer, written apart from the server, and its scenarios"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-publish.workspace = true
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.98"
+publish = false
+
+[[bin]]
+name = "smbtest"
+path = "src/main.rs"
 
 [dependencies]
-thiserror.workspace = true
-tracing.workspace = true
+anyhow = "=1.0.104"
+thiserror = "=2.0.21"
+# The client: afiffon/smb-rs (MIT), other authors than the server library.
+smb = { version = "=0.12.1", default-features = false, features = ["async", "sign", "encrypt"] }
+futures-util = "=0.3.34"
+tokio = { version = "=1.53.3", features = ["rt-multi-thread", "macros", "net", "time", "sync", "process"] }
 
-[lints]
-workspace = true
+[dev-dependencies]
+# The vendored server, with its local-directory backend, for the loopback test.
+smb-server = { path = "../../net/smb-server", version = "=0.10.0", features = ["localfs"] }
+hmac = "=0.12.1"
+md4 = "=0.10.2"
+md-5 = "=0.10.6"
+
+# The workspace's lints, repeated (an excluded crate cannot inherit them).
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
