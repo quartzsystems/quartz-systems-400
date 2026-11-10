@@ -144,6 +144,13 @@ impl Provider for RemoteProvider {
             .map_err(|(msgid, data)| ApiFail { msgid, data })
     }
 
+    fn netsvr(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
+        self.link
+            .borrow_mut()
+            .with(|l| l.netsvr_api(api.into(), parms))
+            .map_err(|(msgid, data)| ApiFail { msgid, data })
+    }
+
     fn hardware(&mut self) -> Result<hwrsrc::Table, ApiFail> {
         self.link
             .borrow_mut()

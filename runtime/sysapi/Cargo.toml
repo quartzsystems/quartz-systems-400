@@ -28,6 +28,7 @@ thiserror.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+netsvrcfg = { path = "../../net/netsvrcfg", version = "0.1.0" }
 spool = { path = "../../work/spool", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }
 

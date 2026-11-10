@@ -391,6 +391,12 @@ pub trait Provider {
     fn licpgm(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
         crate::lp::catalog_answer(api, &parms)
     }
+    /// A `QZLS*` API (`QZLSADFS` ... `QZLSSTRS`) over its parameters'
+    /// bytes (`netsvrcfg::api`); the storage service answers. Here, by
+    /// default, the required `QZLSSERVER` job has ended.
+    fn netsvr(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
+        Err(ApiFail::id("CPFB680"))
+    }
     /// The hardware resource table (`QGYRHRL`, `QGYRHRI`); none here
     /// by default.
     fn hardware(&mut self) -> Result<hwrsrc::Table, ApiFail> {
@@ -638,11 +644,16 @@ pub struct MemProvider {
     pub msgqs: HashMap<(String, String), Vec<QueueMsg>>,
     /// Users signed on at a display (`TOUSR(*ALLACT)`).
     pub signed_on: Vec<String>,
+    /// Answers the `QZLS*` APIs; `CPFB680` without it.
+    pub netsvr: Option<NetsvrAnswers>,
     catalog: sysval::Catalog,
 }
 
 /// A test's answers to the security APIs.
 pub type SecAnswers = Box<dyn FnMut(&sec::api::Query) -> Result<sec::api::Answer, ApiFail>>;
+
+/// A test's answers to the `QZLS*` APIs: the API and its parameters.
+pub type NetsvrAnswers = Box<dyn FnMut(&str, &[Vec<u8>]) -> Result<Vec<u8>, ApiFail>>;
 
 impl Default for MemProvider {
     fn default() -> Self {
@@ -687,6 +698,7 @@ impl Default for MemProvider {
             regfac: regfac::Registry::shipped(),
             msgqs: HashMap::new(),
             signed_on: Vec::new(),
+            netsvr: None,
             catalog: sysval::Catalog::builtin().expect("the catalog parses"),
         }
     }
@@ -1237,6 +1249,13 @@ impl Provider for MemProvider {
 
     fn user_info(&mut self, name: &str) -> Option<UserInfo> {
         self.users.iter().find(|u| u.name == name).cloned()
+    }
+
+    fn netsvr(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
+        match &mut self.netsvr {
+            Some(f) => f(api, &parms),
+            None => Err(ApiFail::id("CPFB680")),
+        }
     }
 
     fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, ApiFail> {

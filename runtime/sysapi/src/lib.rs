@@ -48,6 +48,7 @@ pub mod mail;
 mod misc;
 mod msg;
 pub mod net;
+mod netsvr;
 mod obj;
 pub mod param;
 pub mod picture;
@@ -62,7 +63,8 @@ pub use job::{Civil, to_dts};
 pub use provider::{
     ApiFail, ApiResult, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo,
     FieldInfo, FileInfo, FormatInfo, IdxAttr, LocalNow, MemDtaq, MemFile, MemIndex, MemProvider,
-    MemberInfo, ObjInfo, Provider, QueueMsg, SecAnswers, SysVal, SysValKind, UserInfo,
+    MemberInfo, NetsvrAnswers, ObjInfo, Provider, QueueMsg, SecAnswers, SysVal, SysValKind,
+    UserInfo,
 };
 
 /// A program API: the job, the parameter addresses, the provider.
@@ -88,6 +90,7 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v.extend(regapi::APIS);
     v.extend(ifs::APIS);
     v.extend(hw::APIS);
+    v.extend(netsvr::APIS);
     v
 }
 

@@ -1025,6 +1025,14 @@ ipc::rpc! {
     1502 => fn netsvr_enable_user / NetsvrEnableUser (user: String) -> Result<bool, String>;
     /// The users disabled for `NetServer`, by name, with when.
     1503 => fn netsvr_disabled_users / NetsvrDisabledUsers () -> Vec<(String, u64)>;
+    // --- NetServer (1510-1519; crate::netsvr, stgsvc/netsvr.rs)
+    /// A `QZLS*` API over its parameters' bytes (`netsvrcfg::api`): the
+    /// answer's bytes, or the message ID and its data for the error
+    /// code parameter.
+    1510 => fn netsvr_api / NetsvrApi (api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)>;
+    /// The session table and the configuration files for the
+    /// `QZLSSERVER` and `QZLSFILE` jobs.
+    1511 => fn netsvr / Netsvr (op: crate::netsvr::NsOp) -> crate::netsvr::NsReply;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

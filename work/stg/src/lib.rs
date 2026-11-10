@@ -18,6 +18,7 @@
 
 pub mod ifs;
 mod link;
+pub mod netsvr;
 pub mod proto;
 pub mod qsh;
 pub mod remote;
