@@ -9,6 +9,8 @@
 //! APIs over them (`netsvrcfg::api`), and the session table the
 //! `QZLSSERVER` and `QZLSFILE` jobs report into.
 
+#![allow(clippy::doc_markdown)] // NetServer
+
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{LazyLock, Mutex, MutexGuard, PoisonError};
 
@@ -39,7 +41,12 @@ const SERVER_JOBS: &[&str] = &["QZLSSERVER", "QZLSFILE"];
 
 /// The configuration the files hold, and whether they must be written
 /// (one is missing, or this IPL makes the pending values current).
-fn merge(cfg: Option<Vec<u8>>, shr: Option<Vec<u8>>, name: &str, apply: bool) -> Result<(Config, bool), String> {
+fn merge(
+    cfg: Option<Vec<u8>>,
+    shr: Option<Vec<u8>>,
+    name: &str,
+    apply: bool,
+) -> Result<(Config, bool), String> {
     let mut save = cfg.is_none() || shr.is_none();
     let shipped = Config::shipped(name);
     let (a, s) = file::write(&shipped).map_err(|e| e.to_string())?;
@@ -56,7 +63,9 @@ fn merge(cfg: Option<Vec<u8>>, shr: Option<Vec<u8>>, name: &str, apply: bool) ->
 /// read of an IPL makes the pending attributes current.
 pub fn load(system: &mut System) -> Result<Config, String> {
     let name = system.system_name();
-    let (cfg, shr) = as_system(system, |c| Ok::<_, String>((read_file(c, CFG_PATH)?, read_file(c, SHR_PATH)?)))?;
+    let (cfg, shr) = as_system(system, |c| {
+        Ok::<_, String>((read_file(c, CFG_PATH)?, read_file(c, SHR_PATH)?))
+    })?;
     let apply = !APPLIED.load(Ordering::Acquire);
     let (config, save_it) = merge(cfg, shr, &name, apply)?;
     if save_it {
@@ -122,7 +131,10 @@ struct SvcHost<'a> {
 }
 
 impl SvcHost<'_> {
-    fn store<T>(&mut self, f: impl FnOnce(&mut store::txn::Txn<'_>, store::obj::ObjectId) -> Result<T, String>) -> Option<T> {
+    fn store<T>(
+        &mut self,
+        f: impl FnOnce(&mut store::txn::Txn<'_>, store::obj::ObjectId) -> Result<T, String>,
+    ) -> Option<T> {
         in_store(self.system, f).ok()
     }
 }
@@ -157,7 +169,8 @@ impl Host for SvcHost<'_> {
         let (lib, name) = (q.library.clone(), q.name.clone());
         self.store(|txn, qsys| {
             let ctx = store::obj::ops::NameContext::default();
-            let id = wm::obj::find(txn, qsys, &ctx, &lib, &name, types::OUTQ).map_err(|e| e.to_string())?;
+            let id = wm::obj::find(txn, qsys, &ctx, &lib, &name, types::OUTQ)
+                .map_err(|e| e.to_string())?;
             let h = store::obj::ops::describe(txn, id).map_err(|e| e.to_string())?;
             Ok(ccsid::decode_trimmed(&h.owner))
         })
@@ -218,7 +231,11 @@ impl Host for SvcHost<'_> {
     }
 
     fn disabled_users(&mut self) -> Vec<String> {
-        sec::netsvr::users().disabled().into_iter().map(|(u, _)| u).collect()
+        sec::netsvr::users()
+            .disabled()
+            .into_iter()
+            .map(|(u, _)| u)
+            .collect()
     }
 
     fn sessions(&mut self) -> &mut SessionTable {
@@ -245,7 +262,13 @@ impl Host for SvcHost<'_> {
 }
 
 /// A `QZLS*` API for the caller `me`.
-pub fn call(system: &mut System, me: &Principal, ccsid: u16, name: &str, parms: &[Vec<u8>]) -> Result<Vec<u8>, (String, Vec<u8>)> {
+pub fn call(
+    system: &mut System,
+    me: &Principal,
+    ccsid: u16,
+    name: &str,
+    parms: &[Vec<u8>],
+) -> Result<Vec<u8>, (String, Vec<u8>)> {
     let jobs = Jobs::of(system);
     let mut h = SvcHost {
         system,
@@ -301,7 +324,9 @@ fn counter(n: u8) -> Option<Counter> {
 /// A session table operation on `t` for job `job` (`number/user/name`,
 /// its name `name`) at `now`.
 fn table_op(t: &mut SessionTable, job: &str, name: &str, now: u64, op: NsOp) -> NsReply {
-    let err = |e: &dyn std::fmt::Display| NsReply::Error { text: e.to_string() };
+    let err = |e: &dyn std::fmt::Display| NsReply::Error {
+        text: e.to_string(),
+    };
     let changes = !matches!(op, NsOp::List | NsOp::Ending { .. } | NsOp::Config);
     if changes && !SERVER_JOBS.contains(&name) {
         return NsReply::Error {
@@ -328,15 +353,21 @@ fn table_op(t: &mut SessionTable, job: &str, name: &str, now: u64, op: NsOp) -> 
             };
             NsReply::Session { id: t.register(s) }
         }
-        NsOp::Unregister { id, idle } => t.unregister(id, idle).map_or_else(|e| err(&e), |_| NsReply::Done),
+        NsOp::Unregister { id, idle } => t
+            .unregister(id, idle)
+            .map_or_else(|e| err(&e), |_| NsReply::Done),
         NsOp::Connect { id, share, kind } => t
             .connect(id, &share, kind, now)
             .map_or_else(|e| err(&e), |c| NsReply::Conn { id: c }),
-        NsOp::Disconnect { id, conn } => t.disconnect(id, conn).map_or_else(|e| err(&e), |()| NsReply::Done),
+        NsOp::Disconnect { id, conn } => t
+            .disconnect(id, conn)
+            .map_or_else(|e| err(&e), |()| NsReply::Done),
         NsOp::Opens { id, conn, opens } => t
             .set_opens(id, conn, opens, now)
             .map_or_else(|e| err(&e), |()| NsReply::Done),
-        NsOp::Touch { id } => t.touch(id, now).map_or_else(|e| err(&e), |()| NsReply::Done),
+        NsOp::Touch { id } => t
+            .touch(id, now)
+            .map_or_else(|e| err(&e), |()| NsReply::Done),
         NsOp::Count { counter: c, n } => match counter(c) {
             Some(k) => {
                 t.count(k, n);
@@ -347,7 +378,9 @@ fn table_op(t: &mut SessionTable, job: &str, name: &str, now: u64, op: NsOp) -> 
         NsOp::List => NsReply::Sessions {
             list: t.sessions().map(to_wire).collect(),
         },
-        NsOp::Ending { id } => NsReply::Flag { yes: t.is_ending(id) },
+        NsOp::Ending { id } => NsReply::Flag {
+            yes: t.is_ending(id),
+        },
         NsOp::JobEnded => {
             t.job_ended(job);
             NsReply::Done
@@ -406,8 +439,13 @@ mod tests {
                 ..NsSession::default()
             },
         };
-        assert!(matches!(table_op(&mut t, "000001/QPGMR/QPADEV0001", "QPADEV0001", 5, reg()), NsReply::Error { .. }));
-        let NsReply::Session { id } = table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 5, reg()) else {
+        assert!(matches!(
+            table_op(&mut t, "000001/QPGMR/QPADEV0001", "QPADEV0001", 5, reg()),
+            NsReply::Error { .. }
+        ));
+        let NsReply::Session { id } =
+            table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 5, reg())
+        else {
             panic!("registers")
         };
         let NsReply::Conn { id: c } = table_op(
@@ -415,12 +453,26 @@ mod tests {
             "000002/QUSER/QZLSFILE",
             "QZLSFILE",
             6,
-            NsOp::Connect { id, share: "qibm".into(), kind: 0 },
+            NsOp::Connect {
+                id,
+                share: "qibm".into(),
+                kind: 0,
+            },
         ) else {
             panic!("connects")
         };
         assert_eq!(
-            table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 7, NsOp::Opens { id, conn: c, opens: 1 }),
+            table_op(
+                &mut t,
+                "000002/QUSER/QZLSFILE",
+                "QZLSFILE",
+                7,
+                NsOp::Opens {
+                    id,
+                    conn: c,
+                    opens: 1
+                }
+            ),
             NsReply::Done
         );
         let NsReply::Sessions { list } = table_op(&mut t, "x", "QPADEV0001", 8, NsOp::List) else {
@@ -428,12 +480,30 @@ mod tests {
         };
         assert_eq!(list[0].job, "000002/QUSER/QZLSFILE");
         assert_eq!(list[0].connections[0].share, "QIBM");
-        assert_eq!(table_op(&mut t, "x", "QPADEV0001", 8, NsOp::Ending { id }), NsReply::Flag { yes: false });
+        assert_eq!(
+            table_op(&mut t, "x", "QPADEV0001", 8, NsOp::Ending { id }),
+            NsReply::Flag { yes: false }
+        );
         assert!(matches!(
-            table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 9, NsOp::Count { counter: 99, n: 1 }),
+            table_op(
+                &mut t,
+                "000002/QUSER/QZLSFILE",
+                "QZLSFILE",
+                9,
+                NsOp::Count { counter: 99, n: 1 }
+            ),
             NsReply::Error { .. }
         ));
-        assert_eq!(table_op(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 9, NsOp::JobEnded), NsReply::Done);
+        assert_eq!(
+            table_op(
+                &mut t,
+                "000002/QUSER/QZLSFILE",
+                "QZLSFILE",
+                9,
+                NsOp::JobEnded
+            ),
+            NsReply::Done
+        );
         assert_eq!(t.sessions().count(), 0);
     }
 }
