@@ -353,3 +353,56 @@ pub(crate) fn fitted(fits: bool) -> u32 {
 pub(crate) fn dword(len: usize) -> u32 {
     u32::try_from(len).unwrap_or(u32::MAX)
 }
+
+/// The handles [`fuzz_request`] has open: the server and printer PRT01.
+#[cfg(any(test, fuzzing))]
+pub(crate) const FUZZ_HANDLES: [[u8; 20]; 2] = [[1; 20], [2; 20]];
+
+/// Runs `data` as a spoolss request stub against a print service in
+/// memory, with [`FUZZ_HANDLES`] open: the first byte picks the
+/// operation, one of those served or, with the second byte, any opnum.
+/// A call never opens more than the handle limit, and every response
+/// that is not a fault ends with a status.
+#[cfg(any(test, fuzzing))]
+pub(crate) fn fuzz_request(data: &[u8]) {
+    use std::sync::OnceLock;
+
+    const SERVED: [u16; 28] = [
+        0, 1, 3, 4, 8, 11, 17, 18, 19, 20, 21, 23, 26, 29, 32, 34, 53, 56, 62, 65, 69, 72, 78, 79,
+        80, 2, 25, 52,
+    ];
+    static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
+    let Some((&pick, stub)) = data.split_first() else {
+        return;
+    };
+    let (opnum, stub) = match SERVED.get(usize::from(pick)) {
+        Some(&opnum) => (opnum, stub),
+        None => match stub.split_first() {
+            Some((&opnum, stub)) => (u16::from(opnum), stub),
+            None => return,
+        },
+    };
+    let runtime = RUNTIME.get_or_init(|| {
+        tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("a runtime")
+    });
+    let print = mem::MemPrint::default();
+    let who = Identity::User {
+        user: "FUZZ".into(),
+        domain: String::new(),
+    };
+    let mut session = Session::default();
+    session.insert(FUZZ_HANDLES[0], session::Target::Server);
+    session.insert(FUZZ_HANDLES[1], session::Target::Printer("PRT01".into()));
+    let ctx = Ctx {
+        service: &print,
+        server: "FUZZ",
+        who: &who,
+    };
+    let result = runtime.block_on(call(&ctx, &mut session, opnum, stub));
+    assert!(session.open_handles() <= session::MAX_HANDLES);
+    if let Ok(out) = result {
+        assert!(out.len() >= 4, "opnum {opnum}: a status");
+    }
+}

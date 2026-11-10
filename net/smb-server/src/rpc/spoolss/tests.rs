@@ -133,8 +133,10 @@ fn u32_at(buf: &[u8], at: usize) -> u32 {
 fn string_at(buf: &[u8], start: usize, at: usize) -> String {
     let from = start + u32_at(buf, start + at) as usize;
     let units: Vec<u16> = buf[from..]
-        .chunks_exact(2)
-        .map(|c| u16::from_le_bytes([c[0], c[1]]))
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| u16::from_le_bytes(*c))
         .take_while(|&u| u != 0)
         .collect();
     String::from_utf16(&units).unwrap()
@@ -427,8 +429,10 @@ fn write_request(handle: &[u8; 20], data: &[u8]) -> Vec<u8> {
 
 /// The DWORDs of a response stub.
 fn dwords(out: &[u8]) -> Vec<u32> {
-    out.chunks_exact(4)
-        .map(|c| u32::from_le_bytes(c.try_into().unwrap()))
+    out.as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| u32::from_le_bytes(*c))
         .collect()
 }
 
@@ -877,4 +881,60 @@ async fn bad_stubs_and_unknown_handles_fault() {
             .status,
         BAD_STUB_DATA
     );
+}
+
+/// The fuzz target's seeds: a request of each kind on the fuzz handles.
+fn fuzz_seeds() -> Vec<Vec<u8>> {
+    let printer = FUZZ_HANDLES[1];
+    let pick = |op: u8, stub: Vec<u8>| [vec![op], stub].concat();
+    let info = |level: u32| {
+        with_handle(&printer, |w| {
+            w.u32(level);
+            buffer(w, Some(64));
+        })
+    };
+    vec![
+        pick(0, enum_request(0x2, None, 2, Some(64))),
+        pick(20, open_request(Some("PRT01"), None, 0x8)),
+        pick(4, info(2)),
+        pick(
+            16,
+            driver_request(&printer, Some("Windows x64"), 8, Some(64)),
+        ),
+        pick(15, info(1)),
+        pick(6, start_doc_request(&printer, "doc", None)),
+        pick(8, write_request(&printer, b"data")),
+        pick(12, data_request(&FUZZ_HANDLES[0], None, "OSVersion", 300)),
+        pick(
+            22,
+            data_request(&printer, Some("PrinterDriverData"), "x", 8),
+        ),
+        pick(255, vec![89]),
+    ]
+}
+
+#[test]
+fn the_fuzz_target_takes_mutated_requests() {
+    let mut state: u64 = 0x9E37_79B9_7F4A_7C15;
+    let mut next = move || {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        state
+    };
+    for seed in fuzz_seeds() {
+        fuzz_request(&seed);
+        for _ in 0..300 {
+            let mut input = seed.clone();
+            for _ in 0..1 + next() % 4 {
+                let at = (next() as usize) % input.len();
+                match next() % 3 {
+                    0 => input[at] = next() as u8,
+                    1 => input.truncate(at.max(1)),
+                    _ => input.splice(at..at, [0xFF; 4]).for_each(drop),
+                }
+            }
+            fuzz_request(&input);
+        }
+    }
 }

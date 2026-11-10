@@ -412,8 +412,10 @@ mod tests {
     fn string_at(buf: &[u8], start: usize, at: usize) -> String {
         let from = start + u32_at(buf, start + at) as usize;
         let units: Vec<u16> = buf[from..]
-            .chunks_exact(2)
-            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes(*c))
             .take_while(|&u| u != 0)
             .collect();
         String::from_utf16(&units).unwrap()
@@ -506,8 +508,10 @@ mod tests {
         let at = UNIX_EPOCH + Duration::from_millis(1_794_259_625_250);
         let st = system_time(at);
         let f: Vec<u16> = st
-            .chunks_exact(2)
-            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes(*c))
             .collect();
         assert_eq!(f, [2026, 11, 1, 9, 21, 27, 5, 250]);
         let leap = system_time(UNIX_EPOCH + Duration::from_secs(951_782_400));

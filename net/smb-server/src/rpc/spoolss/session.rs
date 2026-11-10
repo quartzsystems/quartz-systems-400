@@ -79,9 +79,24 @@ impl Session {
     }
 
     /// Handles open now.
-    #[cfg(test)]
+    #[cfg(any(test, fuzzing))]
     pub(crate) fn open_handles(&self) -> usize {
         self.handles.len()
+    }
+
+    /// Opens `target` as the handle `id`, granted what an open may hold.
+    #[cfg(any(test, fuzzing))]
+    pub(crate) fn insert(&mut self, id: [u8; 20], target: Target) {
+        let granted = grant(&target, MAXIMUM_ALLOWED).expect("a grant");
+        self.handles.insert(
+            id,
+            Handle {
+                target,
+                granted,
+                machine: String::new(),
+                doc: None,
+            },
+        );
     }
 
     /// RpcOpenPrinter and RpcOpenPrinterEx (`ex`, with client info).

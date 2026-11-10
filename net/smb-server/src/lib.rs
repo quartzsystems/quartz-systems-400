@@ -845,6 +845,13 @@ pub mod fuzzing {
         let _ = srvsvc::call(opnum, stub, &view);
     }
 
+    /// QS/400: runs `data` as a spoolss request stub against two printers
+    /// in memory, with a server and a printer handle open (`[1; 20]` and
+    /// `[2; 20]`). The first byte picks the operation.
+    pub fn spoolss_request(data: &[u8]) {
+        crate::rpc::spoolss::fuzz_request(data);
+    }
+
     /// Runs `data` through the WS-Discovery target service: the first byte
     /// picks the family of the sender, the next 4 or 16 bytes its address
     /// and 2 its port, and the rest is the datagram. A reply goes only to a
