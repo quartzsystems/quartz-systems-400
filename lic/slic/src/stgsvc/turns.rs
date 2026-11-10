@@ -65,6 +65,9 @@ pub struct Svc {
     doomed: Vec<u64>,
     /// The number of the next turn.
     next_turn: u64,
+    /// IFS requests waiting for another job's lease break, or polls for
+    /// break orders (`super::ifs::parking`): their connections are busy.
+    parked: Vec<(u64, Request, ifs::lease::defer::Deferral)>,
 }
 
 thread_local! {
@@ -192,6 +195,7 @@ impl Svc {
             closing: false,
             doomed: Vec::new(),
             next_turn: 0,
+            parked: Vec::new(),
         })
     }
 
@@ -226,6 +230,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
     } else {
         Duration::ZERO
     };
+    let wait = parked_wait(&svc, wait);
     let (accept, ready) = wait_ready(&svc, wait);
     if top {
         // Background disk work (device parity, a mirror resume) runs in
@@ -303,6 +308,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
     if grouped {
         served::group(&mut svc.system, false);
     }
+    wake_parked(&mut svc);
     super::census::refresh(&svc.conns);
     end_doomed(&mut svc);
     while svc.fibers.len() < MAX_FIBERS
@@ -347,13 +353,65 @@ fn end_doomed(svc: &mut Svc) {
     }
 }
 
-/// Answer one request in the ordinary way.
+/// Answer one request in the ordinary way: an IFS operation that has to
+/// wait for another job's lease break is parked instead.
 fn answer(svc: &mut Svc, i: usize, req: Request) {
+    answer_as(svc, i, req, true);
+}
+
+/// Answer a request, parking it when `park` and it defers.
+fn answer_as(svc: &mut Svc, i: usize, req: Request, park: bool) {
     let close = matches!(req, Request::Close {});
-    let reply = served::handle(&mut svc.system, &mut svc.conns, i, req);
+    let keep = match &req {
+        Request::IfsReq { op } if park && super::ifs::may_park(op) => Some(req.clone()),
+        _ => None,
+    };
+    let (reply, deferral) = super::ifs::parking(keep.is_some(), || {
+        served::handle(&mut svc.system, &mut svc.conns, i, req)
+    });
+    if let (Some(d), Some(req)) = (deferral, keep) {
+        let id = svc.conns[i].id;
+        svc.busy.push(id);
+        svc.parked.push((id, req, d));
+        return;
+    }
     let _ = svc.conns[i].chan.send_raw(&reply);
     if close {
         std::process::exit(0);
+    }
+}
+
+/// `wait`, or less when a parked request's time runs out sooner.
+fn parked_wait(svc: &Svc, wait: Duration) -> Duration {
+    let now = std::time::Instant::now();
+    svc.parked
+        .iter()
+        .map(|(_, _, d)| d.until().saturating_duration_since(now))
+        .fold(wait, Duration::min)
+}
+
+/// Answer the parked requests whose wait is over: the breaks they waited
+/// for were acknowledged (or timed out and are forced), or the orders a
+/// poll waited for came. One out of time runs without parking again.
+fn wake_parked(svc: &mut Svc) {
+    if svc.parked.is_empty() {
+        return;
+    }
+    let now = std::time::Instant::now();
+    let Some(leases) = super::ifs::leases() else {
+        return;
+    };
+    leases.expire(now);
+    for (id, req, d) in std::mem::take(&mut svc.parked) {
+        let late = now >= d.until();
+        if !late && !leases.ready(&d) {
+            svc.parked.push((id, req, d));
+            continue;
+        }
+        svc.busy.retain(|b| *b != id);
+        if let Some(i) = svc.index(id) {
+            answer_as(svc, i, req, !late);
+        }
     }
 }
 

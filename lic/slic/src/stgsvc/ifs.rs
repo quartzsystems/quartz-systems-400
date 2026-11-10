@@ -12,9 +12,12 @@
 //! mounted every request answers `ENOTSUP`. A job's descriptors, streams
 //! and locks are its connection's and go when it ends ([`release`]).
 //! `/QOPT` shows the optical volumes of the loaded image catalogs
-//! (`super::media`).
+//! (`super::media`). Leases `QZLSFILE` jobs hold are the `Ifs`'s
+//! (`ifs::lease`): a request that has to wait for another job's break,
+//! and a `QZLSFILE` job's poll for break orders, are parked by the loop
+//! (`super::turns`) and answered again once ready or out of time.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::OnceLock;
 
@@ -22,6 +25,7 @@ use httpadmin::seed::{REGISTRY, WWW, WWW_OWNER, WWW_PUBLIC};
 use ifs::Errno;
 use ifs::backend::linux::LinuxBackend;
 use ifs::client::{Direct, IfsClient, Unavailable};
+use ifs::lease::defer::Deferral;
 use ifs::ops::{Config, Ctx, Ifs, Owner};
 use qsyslib::access::store_errno;
 use qsyslib::{JournalAudit, StoreAccess, StoreEnv, StoreQsys};
@@ -36,6 +40,9 @@ use crate::svc::ile::{self, Shared};
 /// Where `slic` mounts the IFS root's xfs.
 pub const ROOT: &str = "/run/qs400/ifs";
 
+/// The jobs that hold leases (`QZLSFILE`, `docs/NETSERVER.md` section 6).
+const LEASE_JOBS: &[&str] = &["QZLSFILE"];
+
 /// The file system, or why there is none.
 static IFS: OnceLock<Result<Ifs<LinuxBackend>, String>> = OnceLock::new();
 
@@ -43,6 +50,10 @@ thread_local! {
     /// The store lent for the call in progress, and the job it is for.
     /// The service answers one request at a time.
     static LENT: RefCell<Option<(Shared, JobHandle)>> = const { RefCell::new(None) };
+    /// The request being answered may be parked ([`parking`]).
+    static PARKING: Cell<bool> = const { Cell::new(false) };
+    /// What the last job request deferred on.
+    static DEFERRED: Cell<Option<Deferral>> = const { Cell::new(None) };
 }
 
 /// The store as the IFS reaches it: whatever is lent for the call in
@@ -342,6 +353,48 @@ pub fn job_ccsid(system: &System, number: u32) -> u16 {
         })
 }
 
+/// Run `f`, a job's request, letting an IFS operation in it defer for a
+/// lease break or a poll for break orders when `allow`
+/// ([`ifs::lease::defer`]); the deferral, when it did (its reply is then
+/// not sent: the loop parks the request, `super::turns`).
+pub fn parking<T>(allow: bool, f: impl FnOnce() -> T) -> (T, Option<Deferral>) {
+    let before = PARKING.with(|p| p.replace(allow));
+    DEFERRED.with(|d| d.set(None));
+    let r = f();
+    PARKING.with(|p| p.set(before));
+    (r, DEFERRED.with(Cell::take))
+}
+
+/// Whether a request may be parked: an IFS operation while some job
+/// holds a lease, or a `QZLSFILE` job's poll for break orders.
+#[must_use]
+pub fn may_park(op: &IfsOp) -> bool {
+    matches!(op, IfsOp::LeaseOrders { .. }) || get().is_some_and(|i| !i.leases().is_empty())
+}
+
+/// The leases: what the loop checks parked requests against.
+#[must_use]
+pub fn leases() -> Option<&'static ifs::lease::Leases> {
+    get().map(Ifs::leases)
+}
+
+/// A lease call from a job that is not a `QZLSFILE` job: `EPERM`, in the
+/// reply its operation has.
+fn refused(op: &IfsOp) -> Option<IfsReply> {
+    match op {
+        IfsOp::LeaseGrant { .. } => Some(IfsReply::Mask {
+            r: Err(Errno::EPERM),
+        }),
+        IfsOp::LeaseReport { .. } => Some(IfsReply::Unit {
+            r: Err(Errno::EPERM),
+        }),
+        IfsOp::LeaseOrders { .. } => Some(IfsReply::Orders {
+            r: Err(Errno::EPERM),
+        }),
+        _ => None,
+    }
+}
+
 /// Answer one `ifs` request for a job.
 pub fn serve(
     system: &mut System,
@@ -350,11 +403,21 @@ pub fn serve(
     principal: &Principal,
     op: IfsOp,
 ) -> IfsReply {
+    if !LEASE_JOBS.contains(&system.jobs.get(number).map_or("", |j| j.name.as_str()))
+        && let Some(r) = refused(&op)
+    {
+        return r;
+    }
+    let allow = PARKING.with(Cell::get);
     let ccsid = job_ccsid(system, number);
     let owner = owner_of(handle);
-    with_client(system, handle, owner, principal, ccsid, |c| {
-        stg::ifs::serve(c, op)
-    })
+    let (reply, d) = ifs::lease::defer::deferring(allow, || {
+        with_client(system, handle, owner, principal, ccsid, |c| {
+            stg::ifs::serve(c, op)
+        })
+    });
+    DEFERRED.with(|c| c.set(d));
+    reply
 }
 
 /// A job's connection ended: its descriptors (members written back),
