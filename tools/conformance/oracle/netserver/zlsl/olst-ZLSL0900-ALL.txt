@@ -1,0 +1,2 @@
+# QZLSOLST receiver=65535 format=ZLSL0900 qualifier='*ALL' on the primary (V7R1M0), 2026-11-09
+result=true error=CPFB688 available=38 data=D8E9D3E2D6D3E2E3404000000002E9D3E2D3F0F9F0F0

@@ -1,0 +1,48 @@
+# QZLSLSTI user space QTEMP/ZLSSPC format=ZLSL0400 qualifier='*ALL' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+generic header: size=576 level='0300' format='ZLSL0400' api='QZLSLSTI  ' created='1261109083950' status='C' used=715 inputOffset=576 inputSize=43 headerOffset=0 headerSize=0 listOffset=619 listSize=96 entries=1 entrySize=96 ccsid=37
+user space hex (715 bytes):
+000000 00000000 00000000 00000000 00000000  |................|
+*
+000040 00000240 F0F3F0F0 E9D3E2D3 F0F4F0F0  |... 0300ZLSL0400|
+000050 D8E9D3E2 D3E2E3C9 4040F1F2 F6F1F1F0  |QZLSLSTI  126110|
+000060 F9F0F8F3 F9F5F0C3 000002CB 00000240  |9083950C....... |
+000070 0000002B 00000000 00000000 0000026B  |...............,|
+000080 00000060 00000001 00000060 00000025  |...-.......-....|
+000090 E4E2C5D5 E4F00000 00000000 00000000  |USENU0..........|
+0000A0 00000000 00000000 00000000 00000000  |................|
+*
+0000C0 D8E9D3E2 D3E2E3C9 40400040 40404040  |QZLSLSTI  .     |
+0000D0 40404040 40404040 40404040 40404040  |                |
+*
+0001C0 00000000 00000000 00000000 00000000  |................|
+*
+000240 E9D3E2E2 D7C34040 4040D8E3 C5D4D740  |ZLSSPC    QTEMP |
+000250 40404040 E9D3E2D3 F0F4F0F0 5CC1D3D3  |    ZLSL0400*ALL|
+000260 40404040 40404040 40404000 00000000  |           .....|
+000270 00000000 00000000 00000000 00000000  |................|
+*
+000290 00000000 00005900 00000000 00018100  |..............a.|
+0002A0 00000000 00000CF1 F2F6F1F0 F3F0F0F6  |.......126103006|
+0002B0 F5F5F1F3 F1F2F6F1 F0F3F0F0 F6F5F5F1  |5513126103006551|
+0002C0 F3F2C2F1 F7F54040 404040             |32B175     |
+decoded:
+ entry 0 at 619 size 96
+  +0    opens            0
+  +4    printJobs        0
+  +8    sessionStarts    0
+  +12   autoDisc         0
+  +16   regDisc          0
+  +20   dupSessions      0
+  +24   sessionErrors    0
+  +28   pwdViolations    0
+  +32   guestSupport     0
+  +36   unknownUser      0
+  +40   sentLow          89
+  +44   sentHigh         0
+  +48   rcvLow           385
+  +52   rcvHigh          0
+  +56   avgResp          12
+  +60   startTime        '1261030065513'
+  +73   resetTime        '1261030065513'
+  +86   reserved         x'F2C2F1F7F54040404040'

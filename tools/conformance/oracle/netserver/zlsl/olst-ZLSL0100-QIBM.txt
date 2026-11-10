@@ -1,0 +1,36 @@
+# QZLSOLST receiver=65535 format=ZLSL0100 qualifier='QIBM' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+list info: total=1 returned=1 recordLength=1188 lengthOfInfo=1188 complete='C' created='1261109083949'
+list info hex:
+000000 00000001 00000001 000004A4 000004A4  |...........u...u|
+000010 C3F1F2F6 F1F1F0F9 F0F8F3F9 F4F90000  |C1261109083949..|
+000020 00000000 00000000 00000000 00000000  |................|
+*
+receiver hex (1188 bytes):
+000000 000004A4 D8C9C2D4 40404040 40404040  |...uQIBM        |
+000010 00000000 00000002 FFFFFFFF 00000000  |................|
+000020 00000000 000000A4 00000005 40404040  |.......u....    |
+000030 40404040 40404040 40404040 40404040  |                |
+*
+000070 4040C9C2 D440D799 9684A483 A340C489  |  IBM Product Di|
+000080 998583A3 96998985 A2404040 40404040  |rectories       |
+000090 40404040 40404040 40404040 40404040  |                |
+0000A0 40404040 61D8C9C2 D4000000 00000000  |    /QIBM.......|
+0000B0 00000000 00000000 00000000 00000000  |................|
+*
+0004A0 00000000                             |....|
+decoded:
+ entry 0 at 0 size 1188
+  +0    size             1188
+  +4    shareName        'QIBM        '
+  +16   deviceType       0
+  +20   permissions      2
+  +24   maxUsers         -1
+  +28   currentUsers     0
+  +32   spoolFileType    0
+  +36   pathOffset       164
+  +40   pathLength       5
+  +44   outq             '                    '
+  +64   printDriver      '                                                  '
+  +114  text             'IBM Product Directories                           '
+  path (job CCSID at 164, 5 bytes): '/QIBM'

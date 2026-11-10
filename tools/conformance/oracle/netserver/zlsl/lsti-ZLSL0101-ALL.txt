@@ -1,0 +1,92 @@
+# QZLSLSTI user space QTEMP/ZLSSPC format=ZLSL0101 qualifier='*ALL' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+generic header: size=576 level='0300' format='ZLSL0101' api='QZLSLSTI  ' created='1261109083950' status='C' used=1047 inputOffset=576 inputSize=43 headerOffset=0 headerSize=0 listOffset=619 listSize=0 entries=2 entrySize=0 ccsid=37
+user space hex (1047 bytes):
+000000 00000000 00000000 00000000 00000000  |................|
+*
+000040 00000240 F0F3F0F0 E9D3E2D3 F0F1F0F1  |... 0300ZLSL0101|
+000050 D8E9D3E2 D3E2E3C9 4040F1F2 F6F1F1F0  |QZLSLSTI  126110|
+000060 F9F0F8F3 F9F5F0C3 00000417 00000240  |9083950C....... |
+000070 0000002B 00000000 00000000 0000026B  |...............,|
+000080 00000000 00000002 00000000 00000025  |................|
+000090 E4E2C5D5 E4F00000 00000000 00000000  |USENU0..........|
+0000A0 00000000 00000000 00000000 00000000  |................|
+*
+0000C0 D8E9D3E2 D3E2E3C9 40400040 40404040  |QZLSLSTI  .     |
+0000D0 40404040 40404040 40404040 40404040  |                |
+*
+0001C0 00000000 00000000 00000000 00000000  |................|
+*
+000240 E9D3E2E2 D7C34040 4040D8E3 C5D4D740  |ZLSSPC    QTEMP |
+000250 40404040 E9D3E2D3 F0F1F0F1 5CC1D3D3  |    ZLSL0101*ALL|
+000260 40404040 40404040 40404000 0000E1D8  |           ....Q|
+000270 C4C9D9E2 D9E54040 40404000 00000000  |DIRSRV     .....|
+000280 0000027F FFFFFF00 00000000 00000000  |..."............|
+000290 00033100 00001B40 40404040 40404040  |.......         |
+0002A0 40404040 40404040 40404040 40404040  |                |
+*
+0002D0 40404040 40404040 40404040 40D6E261  |             OS/|
+0002E0 F4F0F040 606040C4 89998583 A39699A8  |400 -- Directory|
+0002F0 40E28599 A5898385 A2404040 40404040  | Services       |
+000300 40404040 40404040 40404040 40404040  |                |
+*
+000320 40404000 00000000 00000000 000000F0  |   ............0|
+000330 F061D8C9 C2D461D7 999684C4 81A38161  |0/QIBM/ProdData/|
+000340 D6E2F4F0 F061C489 99E299A5 000000CB  |OS400/DirSrv....|
+000350 D8C9C2D4 40404040 40404040 00000000  |QIBM        ....|
+000360 00000002 FFFFFFFF 00000000 00000000  |................|
+000370 00000412 00000005 40404040 40404040  |........        |
+000380 40404040 40404040 40404040 40404040  |                |
+*
+0003B0 40404040 40404040 40404040 4040C9C2  |              IB|
+0003C0 D440D799 9684A483 A340C489 998583A3  |M Product Direct|
+0003D0 96998985 A2404040 40404040 40404040  |ories           |
+0003E0 40404040 40404040 40404040 40404040  |                |
+*
+000400 40404040 00000000 00000000 00000000  |    ............|
+000410 F0F061D8 C9C2D4                      |00/QIBM|
+decoded:
+ entry 0 at 619 size 225
+  +0    size             225
+  +4    shareName        'QDIRSRV     '
+  +16   deviceType       0
+  +20   permissions      2
+  +24   maxUsers         2147483647
+  +28   currentUsers     0
+  +32   spoolFileType    0
+  +36   pathOffset       817
+  +40   pathLength       27
+  +44   outq             '                    '
+  +64   printDriver      '                                                  '
+  +114  text             'OS/400 -- Directory Services                      '
+  +164  printerFile      '                    '
+  +184  textCcsid        0
+  +188  extOffset        0
+  +192  extCount         0
+  +196  textConv         x'F0'
+  +197  publish          x'F0'
+  +198  encrypt          x'61'
+  +199  autl             'QIBM/ProdD'
+  path (job CCSID at 817, 27 bytes): '/QIBM/ProdData/OS400/DirSrv'
+ entry 1 at 844 size 203
+  +0    size             203
+  +4    shareName        'QIBM        '
+  +16   deviceType       0
+  +20   permissions      2
+  +24   maxUsers         -1
+  +28   currentUsers     0
+  +32   spoolFileType    0
+  +36   pathOffset       1042
+  +40   pathLength       5
+  +44   outq             '                    '
+  +64   printDriver      '                                                  '
+  +114  text             'IBM Product Directories                           '
+  +164  printerFile      '                    '
+  +184  textCcsid        0
+  +188  extOffset        0
+  +192  extCount         0
+  +196  textConv         x'F0'
+  +197  publish          x'F0'
+  +198  encrypt          x'61'
+  +199  autl             ?
+  path (job CCSID at 1042, 5 bytes): '/QIBM'

@@ -1,0 +1,70 @@
+# QZLSOLST receiver=65535 format=ZLSL0201 qualifier='' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+list info: total=1 returned=1 recordLength=772 lengthOfInfo=772 complete='C' created='1261109083949'
+list info hex:
+000000 00000001 00000001 00000304 00000304  |................|
+000010 C3F1F2F6 F1F1F0F9 F0F8F3F9 F4F90000  |C1261109083949..|
+000020 00000000 00000000 00000000 00000000  |................|
+*
+receiver hex (772 bytes):
+000000 00000000 00000000 00001770 00001770  |................|
+000010 0000001E 0000001E 000AFC80 000AFC80  |................|
+000020 00000000 00000000 00000000 00000000  |................|
+000030 40404040 40404040 40404040 40404040  |                |
+000040 40404040 E2F0F6F2 C2F1F7F5 40404040  |    S062B175    |
+000050 404040E2 F0F6F2C2 F1F7F540 40404040  |   S062B175     |
+000060 4040E2C5 C1E6D6D3 C6404040 40404040  |  SEAWOLF       |
+000070 40E2C5C1 E6D6D3C6 40404040 40404040  | SEAWOLF        |
+000080 D6E261F4 F0F04040 40404040 40404040  |OS/400          |
+000090 40404040 40404040 40404040 40404040  |                |
+*
+0000B0 4040D6E2 61F4F0F0 40404040 40404040  |  OS/400        |
+0000C0 40404040 40404040 40404040 40404040  |                |
+*
+0002E0 F0F0F0F0 00000000 00000000 00000000  |0000............|
+0002F0 00000000 FFFFFFFF FFFFFFFF 00000000  |................|
+000300 00000000                             |....|
+decoded:
+ entry 0 at 0 size 772
+  +0    codePage         0
+  +4    pCodePage        0
+  +8    idle             6000
+  +12   pIdle            6000
+  +16   oplock           30
+  +20   pOplock          30
+  +24   browse           720000
+  +28   pBrowse          720000
+  +32   winsProxy        0
+  +36   pWinsProxy       0
+  +40   guestSupport     0
+  +44   pGuestSupport    0
+  +48   guest            '          '
+  +58   pGuest           '          '
+  +68   server           'S062B175       '
+  +83   pServer          'S062B175       '
+  +98   domain           'SEAWOLF        '
+  +113  pDomain          'SEAWOLF        '
+  +128  text             'OS/400                                            '
+  +178  pText            'OS/400                                            '
+  +228  winsPri          '               '
+  +243  pWinsPri         '               '
+  +258  winsSec          '               '
+  +273  pWinsSec         '               '
+  +288  scope            '                                                                                                                                                                                                                                '
+  +512  pScope           '                                                                                                                                                                                                                                '
+  +736  sysNameAccess    x'F0'
+  +737  pSysNameAccess   x'F0'
+  +738  authMethod       x'F0'
+  +739  pAuthMethod      x'F0'
+  +740  role             0
+  +744  pRole            0
+  +748  msgAuth          0
+  +752  pMsgAuth         0
+  +756  minSev           -1
+  +760  pMinSev          -1
+  +764  lanman           0
+  +768  pLanman          0
+  +772  encrypt          ?
+  +776  pEncrypt         ?
+  +780  autl             ?
+  +790  pAutl            ?

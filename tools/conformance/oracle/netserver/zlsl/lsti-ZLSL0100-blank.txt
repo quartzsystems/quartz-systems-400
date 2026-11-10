@@ -1,0 +1,76 @@
+# QZLSLSTI user space QTEMP/ZLSSPC format=ZLSL0100 qualifier='' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+generic header: size=576 level='0300' format='ZLSL0100' api='QZLSLSTI  ' created='1261109083950' status='C' used=2995 inputOffset=576 inputSize=43 headerOffset=0 headerSize=0 listOffset=619 listSize=2376 entries=2 entrySize=1188 ccsid=37
+user space hex (2995 bytes):
+000000 00000000 00000000 00000000 00000000  |................|
+*
+000040 00000240 F0F3F0F0 E9D3E2D3 F0F1F0F0  |... 0300ZLSL0100|
+000050 D8E9D3E2 D3E2E3C9 4040F1F2 F6F1F1F0  |QZLSLSTI  126110|
+000060 F9F0F8F3 F9F5F0C3 00000BB3 00000240  |9083950C....... |
+000070 0000002B 00000000 00000000 0000026B  |...............,|
+000080 00000948 00000002 000004A4 00000025  |...........u....|
+000090 E4E2C5D5 E4F00000 00000000 00000000  |USENU0..........|
+0000A0 00000000 00000000 00000000 00000000  |................|
+*
+0000C0 D8E9D3E2 D3E2E3C9 40400040 40404040  |QZLSLSTI  .     |
+0000D0 40404040 40404040 40404040 40404040  |                |
+*
+0001C0 00000000 00000000 00000000 00000000  |................|
+*
+000240 E9D3E2E2 D7C34040 4040D8E3 C5D4D740  |ZLSSPC    QTEMP |
+000250 40404040 E9D3E2D3 F0F1F0F0 40404040  |    ZLSL0100    |
+000260 40404040 40404040 40404000 0004A4D8  |           ...uQ|
+000270 C4C9D9E2 D9E54040 40404000 00000000  |DIRSRV     .....|
+000280 0000027F FFFFFF00 00000000 00000000  |..."............|
+000290 00030F00 00001B40 40404040 40404040  |.......         |
+0002A0 40404040 40404040 40404040 40404040  |                |
+*
+0002D0 40404040 40404040 40404040 40D6E261  |             OS/|
+0002E0 F4F0F040 606040C4 89998583 A39699A8  |400 -- Directory|
+0002F0 40E28599 A5898385 A2404040 40404040  | Services       |
+000300 40404040 40404040 40404040 40404061  |               /|
+000310 D8C9C2D4 61D79996 84C481A3 8161D6E2  |QIBM/ProdData/OS|
+000320 F4F0F061 C48999E2 99A50000 00000000  |400/DirSrv......|
+000330 00000000 00000000 00000000 00000000  |................|
+*
+000710 0004A4D8 C9C2D440 40404040 40404000  |..uQIBM        .|
+000720 00000000 000002FF FFFFFF00 00000000  |................|
+000730 00000000 0007B300 00000540 40404040  |...........     |
+000740 40404040 40404040 40404040 40404040  |                |
+*
+000780 40C9C2D4 40D79996 84A483A3 40C48999  | IBM Product Dir|
+000790 8583A396 998985A2 40404040 40404040  |ectories        |
+0007A0 40404040 40404040 40404040 40404040  |                |
+0007B0 40404061 D8C9C2D4 00000000 00000000  |   /QIBM........|
+0007C0 00000000 00000000 00000000 00000000  |................|
+*
+000BB0 000000                               |...|
+decoded:
+ entry 0 at 619 size 1188
+  +0    size             1188
+  +4    shareName        'QDIRSRV     '
+  +16   deviceType       0
+  +20   permissions      2
+  +24   maxUsers         2147483647
+  +28   currentUsers     0
+  +32   spoolFileType    0
+  +36   pathOffset       783
+  +40   pathLength       27
+  +44   outq             '                    '
+  +64   printDriver      '                                                  '
+  +114  text             'OS/400 -- Directory Services                      '
+  path (job CCSID at 783, 27 bytes): '/QIBM/ProdData/OS400/DirSrv'
+ entry 1 at 1807 size 1188
+  +0    size             1188
+  +4    shareName        'QIBM        '
+  +16   deviceType       0
+  +20   permissions      2
+  +24   maxUsers         -1
+  +28   currentUsers     0
+  +32   spoolFileType    0
+  +36   pathOffset       1971
+  +40   pathLength       5
+  +44   outq             '                    '
+  +64   printDriver      '                                                  '
+  +114  text             'IBM Product Directories                           '
+  path (job CCSID at 1971, 5 bytes): '/QIBM'

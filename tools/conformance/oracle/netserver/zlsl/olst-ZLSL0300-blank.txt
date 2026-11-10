@@ -1,0 +1,10 @@
+# QZLSOLST receiver=65535 format=ZLSL0300 qualifier='' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+list info: total=0 returned=0 recordLength=192 lengthOfInfo=0 complete='C' created='1261109083949'
+list info hex:
+000000 00000000 00000000 000000C0 00000000  |...........{....|
+000010 C3F1F2F6 F1F1F0F9 F0F8F3F9 F4F90000  |C1261109083949..|
+000020 00000000 00000000 00000000 00000000  |................|
+*
+receiver hex (0 bytes):
+decoded:

@@ -1,0 +1,18 @@
+# QZLSOLST receiver=65535 format=ZLSL0800 qualifier='*ALL' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+list info: total=2 returned=2 recordLength=16 lengthOfInfo=32 complete='C' created='1261109083949'
+list info hex:
+000000 00000002 00000002 00000010 00000020  |................|
+000010 C3F1F2F6 F1F1F0F9 F0F8F3F9 F4F90000  |C1261109083949..|
+000020 00000000 00000000 00000000 00000000  |................|
+*
+receiver hex (32 bytes):
+000000 D8C4C9D9 E2D9E540 40404040 00000000  |QDIRSRV     ....|
+000010 D8C9C2D4 40404040 40404040 00000000  |QIBM        ....|
+decoded:
+ entry 0 at 0 size 16
+  +0    shareName        'QDIRSRV     '
+  +12   deviceType       0
+ entry 1 at 16 size 16
+  +0    shareName        'QIBM        '
+  +12   deviceType       0

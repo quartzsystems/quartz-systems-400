@@ -1,0 +1,62 @@
+# QZLSOLST receiver=65535 format=ZLSL0100 qualifier='' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+list info: total=2 returned=2 recordLength=1188 lengthOfInfo=2376 complete='C' created='1261109083949'
+list info hex:
+000000 00000002 00000002 000004A4 00000948  |...........u....|
+000010 C3F1F2F6 F1F1F0F9 F0F8F3F9 F4F90000  |C1261109083949..|
+000020 00000000 00000000 00000000 00000000  |................|
+*
+receiver hex (2376 bytes):
+000000 000004A4 D8C4C9D9 E2D9E540 40404040  |...uQDIRSRV     |
+000010 00000000 00000002 7FFFFFFF 00000000  |........".......|
+000020 00000000 000000A4 0000001B 40404040  |.......u....    |
+000030 40404040 40404040 40404040 40404040  |                |
+*
+000070 4040D6E2 61F4F0F0 40606040 C4899985  |  OS/400 -- Dire|
+000080 83A39699 A840E285 99A58983 85A24040  |ctory Services  |
+000090 40404040 40404040 40404040 40404040  |                |
+0000A0 40404040 61D8C9C2 D461D799 9684C481  |    /QIBM/ProdDa|
+0000B0 A38161D6 E2F4F0F0 61C48999 E299A500  |ta/OS400/DirSrv.|
+0000C0 00000000 00000000 00000000 00000000  |................|
+*
+0004A0 00000000 000004A4 D8C9C2D4 40404040  |.......uQIBM    |
+0004B0 40404040 00000000 00000002 FFFFFFFF  |    ............|
+0004C0 00000000 00000000 000000A4 00000005  |...........u....|
+0004D0 40404040 40404040 40404040 40404040  |                |
+*
+000510 40404040 4040C9C2 D440D799 9684A483  |      IBM Produc|
+000520 A340C489 998583A3 96998985 A2404040  |t Directories   |
+000530 40404040 40404040 40404040 40404040  |                |
+000540 40404040 40404040 61D8C9C2 D4000000  |        /QIBM...|
+000550 00000000 00000000 00000000 00000000  |................|
+*
+000940 00000000 00000000                    |........|
+decoded:
+ entry 0 at 0 size 1188
+  +0    size             1188
+  +4    shareName        'QDIRSRV     '
+  +16   deviceType       0
+  +20   permissions      2
+  +24   maxUsers         2147483647
+  +28   currentUsers     0
+  +32   spoolFileType    0
+  +36   pathOffset       164
+  +40   pathLength       27
+  +44   outq             '                    '
+  +64   printDriver      '                                                  '
+  +114  text             'OS/400 -- Directory Services                      '
+  path (job CCSID at 164, 27 bytes): '/QIBM/ProdData/OS400/DirSrv'
+ entry 1 at 1188 size 1188
+  +0    size             1188
+  +4    shareName        'QIBM        '
+  +16   deviceType       0
+  +20   permissions      2
+  +24   maxUsers         -1
+  +28   currentUsers     0
+  +32   spoolFileType    0
+  +36   pathOffset       164
+  +40   pathLength       5
+  +44   outq             '                    '
+  +64   printDriver      '                                                  '
+  +114  text             'IBM Product Directories                           '
+  path (job CCSID at +164, 5 bytes): '/QIBM'

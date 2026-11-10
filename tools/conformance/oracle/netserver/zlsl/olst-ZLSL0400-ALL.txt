@@ -1,0 +1,35 @@
+# QZLSOLST receiver=65535 format=ZLSL0400 qualifier='*ALL' on the primary (V7R1M0), 2026-11-09
+result=true error=none
+list info: total=1 returned=1 recordLength=96 lengthOfInfo=96 complete='C' created='1261109083949'
+list info hex:
+000000 00000001 00000001 00000060 00000060  |...........-...-|
+000010 C3F1F2F6 F1F1F0F9 F0F8F3F9 F4F90000  |C1261109083949..|
+000020 00000000 00000000 00000000 00000000  |................|
+*
+receiver hex (96 bytes):
+000000 00000000 00000000 00000000 00000000  |................|
+*
+000020 00000000 00000000 00000059 00000000  |................|
+000030 00000181 00000000 0000000C F1F2F6F1  |...a........1261|
+000040 F0F3F0F0 F6F5F5F1 F3F1F2F6 F1F0F3F0  |0300655131261030|
+000050 F0F6F5F5 F1F30000 00000000 00000000  |065513..........|
+decoded:
+ entry 0 at 0 size 96
+  +0    opens            0
+  +4    printJobs        0
+  +8    sessionStarts    0
+  +12   autoDisc         0
+  +16   regDisc          0
+  +20   dupSessions      0
+  +24   sessionErrors    0
+  +28   pwdViolations    0
+  +32   guestSupport     0
+  +36   unknownUser      0
+  +40   sentLow          89
+  +44   sentHigh         0
+  +48   rcvLow           385
+  +52   rcvHigh          0
+  +56   avgResp          12
+  +60   startTime        '1261030065513'
+  +73   resetTime        '1261030065513'
+  +86   reserved         x'00000000000000000000'
