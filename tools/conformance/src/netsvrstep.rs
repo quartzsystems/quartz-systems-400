@@ -190,12 +190,21 @@ QSYSOPR:
     }
 
     /// Step 168: 1 GiB copied in and out through the share, MB/s.
-    pub(crate) fn netsvr_copy(&self, _s: &mut Session) -> Result<String, String> {
+    pub(crate) fn netsvr_copy(&self, s: &mut Session) -> Result<String, String> {
+        // The guest's IFS volume starts at 1 GiB and grows a step at a time
+        // as it fills; room for the file first, or a write meets a full disk
+        // (STATUS_DISK_FULL) before the volume grows.
+        let grow = s.command("QSGROWIFS SIZE(1536)", Duration::from_mins(2))?;
+        if !grow.contains("CPC3E20") {
+            return Err(format!("QSGROWIFS:\n{grow}"));
+        }
         let port = forward_port(self, GUEST, 445)?;
-        let out = smbtest(port, &["--only", "copy,cleanup", "--copy-bytes", "1G"])?;
+        // QS400_NETSVR_COPY sizes it otherwise (`512M`), to find a limit.
+        let size = std::env::var("QS400_NETSVR_COPY").unwrap_or_else(|_| "1G".into());
+        let out = smbtest(port, &["--only", "copy,cleanup", "--copy-bytes", &size])?;
         let rin = detail(&out, "copy", "in: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
         let rout = detail(&out, "copy", "out: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
-        Ok(format!("1 GiB in {rin}, out {rout}"))
+        Ok(format!("{size} in {rin}, out {rout}"))
     }
 }
 
