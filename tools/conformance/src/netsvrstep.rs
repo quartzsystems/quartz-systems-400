@@ -147,6 +147,28 @@ fn smbtest(port: u16, extra: &[&str]) -> Result<String, String> {
     Ok(text)
 }
 
+/// The user, its home and scratch directories and the read/write share
+/// over them; what exists already is left as it is, so 168 also runs
+/// without 167.
+fn share_setup(s: &mut Session) -> Result<(), String> {
+    s.command(
+        &format!("crtusrprf USRPRF({USER}) PASSWORD('{PASSWORD}') HOMEDIR('/home/{USER}')"),
+        CMD,
+    )?;
+    s.command(&format!("MKDIR DIR('/home/{USER}')"), CMD)?;
+    s.command(&format!("MKDIR DIR('/home/{USER}/{SCRATCH}')"), CMD)?;
+    s.command(&format!("CHGOWN OBJ('/home/{USER}') NEWOWN({USER})"), CMD)?;
+    s.command(
+        &format!("CHGOWN OBJ('/home/{USER}/{SCRATCH}') NEWOWN({USER})"),
+        CMD,
+    )?;
+    // QZLSADFS: share name CHAR(12), path, path length, path CCSID (0, the
+    // job's), text CHAR(50), permissions (2 read/write), maximum users
+    // (-1 none), error code (bytes provided 0: escape messages).
+    s.command(&share_call("QZLSADFS", -1), CMD)?;
+    Ok(())
+}
+
 /// The value after `prefix` on an indented line of scenario `name`.
 fn detail<'a>(out: &'a str, name: &str, prefix: &str) -> Option<&'a str> {
     let head = format!("ok {name}");
@@ -185,23 +207,15 @@ impl Suite {
     /// Step 167: a user, a read/write share over its home directory, and
     /// every `smbtest` scenario against the guest.
     pub(crate) fn netsvr_files(&self, s: &mut Session) -> Result<String, String> {
-        s.command(
-            &format!("crtusrprf USRPRF({USER}) PASSWORD('{PASSWORD}') HOMEDIR('/home/{USER}')"),
-            CMD,
-        )?;
-        s.command(&format!("MKDIR DIR('/home/{USER}')"), CMD)?;
-        s.command(&format!("MKDIR DIR('/home/{USER}/{SCRATCH}')"), CMD)?;
-        s.command(&format!("CHGOWN OBJ('/home/{USER}') NEWOWN({USER})"), CMD)?;
-        s.command(
-            &format!("CHGOWN OBJ('/home/{USER}/{SCRATCH}') NEWOWN({USER})"),
-            CMD,
-        )?;
-        // QZLSADFS: share name CHAR(12), path, path length, path CCSID (0, the
-        // job's), text CHAR(50), permissions (2 read/write), maximum users
-        // (-1 none), error code (bytes provided 0: escape messages).
-        s.command(&share_call("QZLSADFS", -1), CMD)?;
+        share_setup(s)?;
         let port = forward_port(self, GUEST, 445)?;
-        let out = smbtest(port, &["--copy-bytes", "16M"])?;
+        // QS400_NETSVR_ONLY runs only those scenarios (`copy,cleanup`).
+        let only = std::env::var("QS400_NETSVR_ONLY").ok();
+        let mut args = vec!["--copy-bytes", "16M"];
+        if let Some(o) = &only {
+            args.extend(["--only", o.as_str()]);
+        }
+        let out = smbtest(port, &args)?;
         let oks = out.lines().filter(|l| l.starts_with("ok ")).count();
         let skips: Vec<&str> = out
             .lines()
@@ -224,6 +238,7 @@ impl Suite {
         // The guest's IFS volume starts at 1 GiB and grows a step at a time
         // as it fills; room for the file first, or a write meets a full disk
         // (STATUS_DISK_FULL) before the volume grows.
+        share_setup(s)?;
         let grow = s.command("QSGROWIFS SIZE(1536)", Duration::from_mins(2))?;
         if !grow.contains("CPC3E20") {
             return Err(format!("QSGROWIFS:\n{grow}"));
@@ -231,11 +246,35 @@ impl Suite {
         let port = forward_port(self, GUEST, 445)?;
         // QS400_NETSVR_COPY sizes it otherwise (`512M`), to find a limit.
         let size = std::env::var("QS400_NETSVR_COPY").unwrap_or_else(|_| "1G".into());
-        let out = smbtest(port, &["--only", "copy,cleanup", "--copy-bytes", &size])?;
+        let mark = s.log.len();
+        let out = smbtest(port, &["--only", "copy,cleanup", "--copy-bytes", &size]);
+        // The service's stall lines (`stgsvc/stall.rs`) from the copy, read
+        // in with a command and shown with the result.
+        let ifs = s.command("svc.ifs", CMD).unwrap_or_default();
+        let stalls: Vec<&str> = s.log[mark..]
+            .lines()
+            .filter(|l| {
+                [
+                    "qsstg: slow request",
+                    "qsstg: request ",
+                    "qsstg: IFS",
+                    "qsstg:   ",
+                ]
+                .iter()
+                .any(|k| l.contains(k))
+            })
+            .collect();
+        for l in &stalls {
+            eprintln!("168: {l}");
+        }
+        let out = out.map_err(|e| format!("{e}\n{}\n{ifs}", stalls.join("\n")))?;
         let rin = detail(&out, "copy", "in: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
         let rout =
             detail(&out, "copy", "out: ").ok_or_else(|| format!("no copy rate in:\n{out}"))?;
-        Ok(format!("{size} in {rin}, out {rout}"))
+        let slow = stalls.iter().filter(|l| l.contains("slow request")).count();
+        Ok(format!(
+            "{size} in {rin}, out {rout}; {slow} slow service request(s)"
+        ))
     }
 }
 
