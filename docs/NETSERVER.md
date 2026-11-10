@@ -1104,9 +1104,26 @@ anything only if IBM checks the length first), and IBM's checks of
   `ZLSL*` formats against the `QSYSINC` layouts.
 - `tools/smbtest` (the test client and its scenarios, below).
 - QEMU steps from 166: the server started, every `smbtest` scenario
-  against the guest, the APIs, the SQL view, a 1 GB copy: 223.7 MB/s in
-  (4.80 s) and 103.6 MB/s out (10.36 s) under QEMU with KVM on the build
-  PC (WSL2, 4 jobs), through a port forward (step 168, 2026-11-10).
+  against the guest, the APIs, the SQL views, a 1 GB copy: 146.7 to
+  212.8 MB/s in (5.05 to 7.32 s; 100.5 MB/s once under memory pressure)
+  and 88.7 to 114.2 MB/s out (9.40 to 12.11 s) over eight runs of step
+  168 under QEMU with KVM on the build PC (WSL2, 4 jobs, a 1 GiB guest),
+  through a port forward (2026-11-10).
+- The 1 GB copy's stall (a request waiting 30 s or more in 2 of 3 runs
+  before): the storage service's IFS read waited on a page the ublk
+  queue had to read, and the queue was waiting on a flush. Under QEMU a
+  guest flush is the host's `fdatasync` of the disk image, which after
+  the copy took 10.5 and 26.7 seconds in 2 of 5 runs (`qsstg: IFS device
+  flush took ...`, the loop's thread in `filemap_read`, the queue's in
+  `blkdev_issue_flush`). The queue served flushes in turn with reads and
+  writes, so every read waited behind one, and with it every job's
+  request. Flushes now run on a thread of their own (`docs/IFS.md`, the
+  block device); 8 runs since, none stalled (the longest request 4.5 s,
+  a write waiting for page cache writeback with 12 MB free). The service
+  logs a request taking over 2 seconds when it ends, and one running
+  over 5 seconds with where each of its threads waits in the kernel
+  (`lic/slic/src/stgsvc/stall.rs`); a device transfer over a second is
+  logged too, and step 168 shows what the service logged during the copy.
 - `cd net/smb-server; cargo test --lib spoolss` and `cargo test --test
   qs400_spoolss`: the spoolss calls, their NDR and INFO structures, forms,
   refusals; OpenPrinterEx, GetPrinter 2, GetPrinterDriver2, StartDoc, a
@@ -1219,14 +1236,19 @@ and every scenario through a forward to the guest's 445 (16 MiB copy);
 168 `QSGROWIFS SIZE(1536)` (the guest's IFS volume starts at 1 GiB and
 grows a step at a time as it fills: without room first a 1 GiB write meets
 `STATUS_DISK_FULL`), then `--only copy,cleanup --copy-bytes 1G`
-(`QS400_NETSVR_COPY` sizes it otherwise), MB/s in and out in the step's
-detail; 169 port 445 in `NETSTAT *CNN`, a maximum of one user through
-`QZLSCHFS` with a scenario run under it, then `ENDTCPSVR`, `QZLSSTRS`,
-`QZLSENDS` and `STRTCPSVR`, each seen in `WRKACTJOB`. `NEEDS-CODY`:
-`QSYS2.NETSTAT_INFO` and `QSYS2.SERVER_SHARE_INFO` answer `SQL0443`
-(38501, the system's state cannot be read where the statement runs) in
-the guest at `STRSQL` and at the console's `svc.sql` alike, so 169 does not
-read them; they are proven only in memory (`cargo test -p sql`).
+(`QS400_NETSVR_COPY` sizes it otherwise), MB/s in and out and the
+service's slow requests in the step's detail (168 makes the user and
+share itself when 167 has not, so `--only 166,168` runs); 169 port 445 in
+`NETSTAT *CNN` and in `QSYS2.NETSTAT_INFO`, a maximum of one user through
+`QZLSCHFS` seen in `QSYS2.SERVER_SHARE_INFO` and with a scenario run
+under it, then `ENDTCPSVR`, `QZLSSTRS`, `QZLSENDS` and `STRTCPSVR`, each
+seen in `WRKACTJOB`. `QS400_NETSVR_ONLY` limits 167 to the scenarios it
+names. The `QSYS2` services that read the system answered `SQL0443` at
+`STRSQL` and at the console's `svc.sql` since V1R1M0 (not a regression:
+their host reaches the system only while a statement takes turns on a
+fiber, and only jobs' embedded statements did); STRSQL's and the
+console's statements now take turns too
+(`lic/slic/src/stgsvc/turns/conssql.rs`).
 `smbtest`'s connections each send a ClientGuid of their own, so each is
 its own `QZLSFILE` job (independent clients). They run the `smbtest` binary from `QS400_SMBTEST`, or build it
 (`cargo build --release --locked --manifest-path tools/smbtest/Cargo.toml`

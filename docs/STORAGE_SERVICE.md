@@ -167,7 +167,11 @@ every other request, and with the other statements in progress.
   `SET`, `DECLARE`, `FETCH`, `CLOSE`), `COMMIT` (its cycle's entries
   and its locks released), and `DROP` (see "Definitions" below). `CREATE
   TABLE ... AS` is refused by the engine. `DESCRIBE` and the console's
-  `sql` and `sqlrun` words run to their end too.
+  `sqlrun` word run to their end too. STRSQL's statements (`isql_run`)
+  and the console's `sql` statements take turns (`turns::conssql`) on
+  the job's console SQL context over the lent store, so the `QSYS2`
+  services that read the system (`sqlhost`) answer there too; only a
+  syntax check, or a statement with no stack to be had, runs to its end.
 - Commands (`run_cmd`) that can run long take turns the same way
   (`cpp::longcmd`): `RUNSQL`, `RUNSQLSTM`, `CPYF`, `CPYFRMIMPF`,
   `CPYTOIMPF`, `CRTLF` and `RGZPFM`. What a command reads from its job
