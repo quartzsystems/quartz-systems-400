@@ -400,7 +400,8 @@ impl<B: Backend> Ifs<B> {
             return Err(Errno::EINVAL);
         }
         if !moving_dir {
-            self.leases.gate(cx.owner, src.node.key(), Trigger::Handle)?;
+            self.leases
+                .gate(cx.owner, src.node.key(), Trigger::Handle)?;
         }
         let new_rel = backend::join(ndrel, &nname);
         let mut replace = false;

@@ -21,9 +21,15 @@ fn held(l: &Leases) -> Vec<(Owner, u8)> {
 
 #[test]
 fn break_table_matches_ms_fsa() {
-    assert_eq!(break_to(Trigger::Open { overwrite: false }, RWH), Some((R | H, true)));
+    assert_eq!(
+        break_to(Trigger::Open { overwrite: false }, RWH),
+        Some((R | H, true))
+    );
     assert_eq!(break_to(Trigger::Open { overwrite: false }, R | H), None);
-    assert_eq!(break_to(Trigger::Open { overwrite: true }, R | H), Some((0, false)));
+    assert_eq!(
+        break_to(Trigger::Open { overwrite: true }, R | H),
+        Some((0, false))
+    );
     assert_eq!(break_to(Trigger::Write, RWH), Some((0, true)));
     assert_eq!(break_to(Trigger::Write, R), Some((0, false)));
     assert_eq!(break_to(Trigger::Handle, R | H), Some((R, true)));
@@ -39,9 +45,15 @@ fn grants_are_capped_by_other_owners() {
     // Another owner's lease leaves B neither W nor, while A writes, R.
     assert_eq!(l.grant(B, F, 6, [1; 32], RWH, Others::default()), 0);
     let l = Leases::default();
-    let open = Others { open: true, locked: false };
+    let open = Others {
+        open: true,
+        locked: false,
+    };
     assert_eq!(l.grant(A, F, 5, K, RWH, open), R | H);
-    let locked = Others { open: true, locked: true };
+    let locked = Others {
+        open: true,
+        locked: true,
+    };
     assert_eq!(l.grant(B, F, 6, [1; 32], RWH, locked), 0);
     // A wants no lease without R.
     assert_eq!(l.grant(B, F, 6, [2; 32], H, Others::default()), 0);
@@ -57,18 +69,27 @@ fn a_write_waits_for_the_write_back_and_the_report_ends_it() {
     assert!(!l.ready(&d));
     assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, 0)]);
     // The holder's own operations break nothing.
-    assert_eq!(deferring(true, || l.gate(A, F, Trigger::Write)), (Ok(()), None));
+    assert_eq!(
+        deferring(true, || l.gate(A, F, Trigger::Write)),
+        (Ok(()), None)
+    );
     l.report(A, 5, &[(K, 0)]);
     assert!(l.ready(&d));
     assert!(held(&l).is_empty());
-    assert_eq!(deferring(true, || l.gate(B, F, Trigger::Write)), (Ok(()), None));
+    assert_eq!(
+        deferring(true, || l.gate(B, F, Trigger::Write)),
+        (Ok(()), None)
+    );
 }
 
 #[test]
 fn a_read_lease_breaks_at_once_and_nothing_waits() {
     let l = Leases::default();
     l.grant(A, F, 5, K, R, Others::default());
-    assert_eq!(deferring(true, || l.gate(B, F, Trigger::Write)), (Ok(()), None));
+    assert_eq!(
+        deferring(true, || l.gate(B, F, Trigger::Write)),
+        (Ok(()), None)
+    );
     assert_eq!(held(&l), [(A, 0)]);
     assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, 0)]);
 }
@@ -91,7 +112,10 @@ fn an_open_keeps_read_and_handle_caching() {
 fn without_permission_the_operation_goes_on() {
     let l = Leases::default();
     l.grant(A, F, 5, K, RWH, Others::default());
-    assert_eq!(deferring(false, || l.gate(B, F, Trigger::Handle)), (Ok(()), None));
+    assert_eq!(
+        deferring(false, || l.gate(B, F, Trigger::Handle)),
+        (Ok(()), None)
+    );
     assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, R | W)]);
 }
 
@@ -145,4 +169,13 @@ fn reports_replace_what_the_holder_had_and_ignore_unknown_files() {
     l.report(A, 99, &[(K, RWH)]);
     l.report(B, 5, &[(K, RWH)]);
     assert_eq!(held(&l), [(A, R)]);
+}
+
+#[test]
+fn a_lease_being_granted_survives_a_report_that_keeps_it() {
+    let l = Leases::default();
+    l.grant(A, F, 5, K, RWH, Others::default());
+    l.grant(A, F, 5, [4; 32], R, Others::default());
+    l.report(A, 5, &[(K, super::state::KEEP)]);
+    assert_eq!(l.on(F), [(A, K, RWH)]);
 }

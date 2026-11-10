@@ -73,3 +73,7 @@ pub fn candidates(want: u8) -> impl Iterator<Item = u8> {
     }
     v.into_iter().filter(|s| *s != 0)
 }
+
+/// In a holder's report: the lease is being granted and keeps the state
+/// it was reserved with.
+pub const KEEP: u8 = 0x80;

@@ -148,12 +148,13 @@ impl Leases {
             self.changed.notify_all();
         }
         match until {
-            Some(until) if defer::defer(Deferral::Breaks {
-                key,
-                owner,
-                trigger,
-                until: until + SLACK,
-            }) =>
+            Some(until)
+                if defer::defer(Deferral::Breaks {
+                    key,
+                    owner,
+                    trigger,
+                    until: until + SLACK,
+                }) =>
             {
                 Err(Errno::EAGAIN)
             }
@@ -210,7 +211,8 @@ impl Leases {
 
     /// `owner` holds `leases` (and no other) on the file it calls `tag`.
     /// A break completes once the lease is within what it was ordered to
-    /// keep. A file `owner` never reserved a lease on is ignored.
+    /// keep. A lease reported as [`state::KEEP`] stays as it is (one being
+    /// granted). A file `owner` never reserved a lease on is ignored.
     pub fn report(&self, owner: Owner, tag: u64, leases: &[(LeaseKey, u8)]) {
         let mut g = self.lock();
         let Inner { files, tags, .. } = &mut *g;
@@ -224,7 +226,8 @@ impl Leases {
                 .filter(|(lk, _)| lk == k)
                 .fold(0, |s, (_, b)| s | (b & state::RWH))
         };
-        list.retain(|h| h.owner != owner || h.tag != tag || state_of(&h.key) != 0);
+        let keeps = |k: &LeaseKey| leases.iter().any(|(lk, b)| lk == k && b & state::KEEP != 0);
+        list.retain(|h| h.owner != owner || h.tag != tag || state_of(&h.key) != 0 || keeps(&h.key));
         for (k, _) in leases {
             let s = state_of(k);
             if s == 0 {

@@ -373,7 +373,16 @@ fn leases_over_the_link() {
     assert_eq!(b.pwrite(w, b"x", 0).unwrap(), 1);
     assert_eq!(a.lease_orders(0).unwrap(), [(9, 0)]);
     a.lease_report(9, &[(key, 3)]).unwrap();
-    assert_eq!(far.ifs.leases().on(ifs::lock::ObjKey { fs: id.fs, ino: id.ino }).len(), 1);
+    assert_eq!(
+        far.ifs
+            .leases()
+            .on(ifs::lock::ObjKey {
+                fs: id.fs,
+                ino: id.ino
+            })
+            .len(),
+        1
+    );
     a.lease_report(9, &[]).unwrap();
     assert!(far.ifs.leases().is_empty());
     a.close(fd).unwrap();

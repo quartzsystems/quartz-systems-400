@@ -52,10 +52,26 @@ fn every_changing_operation_of_another_owner_breaks_and_defers() {
     let b = s.cx(&p, 2);
     type Op = fn(&common::Sys, &Ctx<'_>) -> ifs::Result<()>;
     let ops: [(&str, Op, u8); 4] = [
-        ("read open", |s, b| s.ifs.open(b, "/tmp/f", OpenArgs::new(O_RDONLY)).map(drop), R | H),
-        ("truncating open", |s, b| s.ifs.open(b, "/tmp/f", OpenArgs::new(O_RDWR | O_TRUNC)).map(drop), 0),
+        (
+            "read open",
+            |s, b| s.ifs.open(b, "/tmp/f", OpenArgs::new(O_RDONLY)).map(drop),
+            R | H,
+        ),
+        (
+            "truncating open",
+            |s, b| {
+                s.ifs
+                    .open(b, "/tmp/f", OpenArgs::new(O_RDWR | O_TRUNC))
+                    .map(drop)
+            },
+            0,
+        ),
         ("unlink", |s, b| s.ifs.unlink(b, "/tmp/f"), R | W),
-        ("rename", |s, b| s.ifs.rename(b, "/tmp/f", "/tmp/h", RenameMode::Keep), R | W),
+        (
+            "rename",
+            |s, b| s.ifs.rename(b, "/tmp/f", "/tmp/h", RenameMode::Keep),
+            R | W,
+        ),
     ];
     for (what, op, keep) in ops {
         s.put(&a, "/tmp/f", b"data");
@@ -63,7 +79,11 @@ fn every_changing_operation_of_another_owner_breaks_and_defers() {
         let (r, d) = deferring(true, || op(&s, &b));
         assert_eq!(r, Err(Errno::EAGAIN), "{what}");
         let d = d.unwrap_or_else(|| panic!("{what}: no deferral"));
-        assert_eq!(s.ifs.lease_orders(&a, Duration::ZERO).unwrap(), [(5, keep)], "{what}");
+        assert_eq!(
+            s.ifs.lease_orders(&a, Duration::ZERO).unwrap(),
+            [(5, keep)],
+            "{what}"
+        );
         // Nothing happened yet.
         assert_eq!(s.get(&a, "/tmp/f"), b"data", "{what}");
         s.ifs.lease_report(&a, 5, &[(KEY, keep)]);
@@ -88,17 +108,32 @@ fn writes_truncations_and_locks_break_to_none() {
     let ops: [(&str, Op); 3] = [
         ("write", |s, b, fd| s.ifs.write(b, fd, b"x").map(drop)),
         ("truncate", |s, b, fd| s.ifs.ftruncate(b, fd, 1)),
-        ("lock", |s, b, fd| s.ifs.lock_range(b, fd, F_SETLK, RangeKind::Write, SEEK_SET, 0, 1).map(drop)),
+        ("lock", |s, b, fd| {
+            s.ifs
+                .lock_range(b, fd, F_SETLK, RangeKind::Write, SEEK_SET, 0, 1)
+                .map(drop)
+        }),
     ];
     for (what, op) in ops {
         s.put(&a, "/tmp/f", b"data");
         assert_eq!(leased(&s, &a, RWH), RWH, "{what}");
-        let (fd, _) = deferring(false, || s.ifs.open(&b, "/tmp/f", OpenArgs::new(O_RDWR | O_SHARE_RDWR)));
+        let (fd, _) = deferring(false, || {
+            s.ifs
+                .open(&b, "/tmp/f", OpenArgs::new(O_RDWR | O_SHARE_RDWR))
+        });
         let fd = fd.unwrap();
-        assert_eq!(s.ifs.lease_orders(&a, Duration::ZERO).unwrap(), [(5, R | H)], "{what}");
+        assert_eq!(
+            s.ifs.lease_orders(&a, Duration::ZERO).unwrap(),
+            [(5, R | H)],
+            "{what}"
+        );
         s.ifs.lease_report(&a, 5, &[(KEY, R | H)]);
         assert_eq!(deferring(true, || op(&s, &b, fd)), (Ok(()), None), "{what}");
-        assert_eq!(s.ifs.lease_orders(&a, Duration::ZERO).unwrap(), [(5, 0)], "{what}");
+        assert_eq!(
+            s.ifs.lease_orders(&a, Duration::ZERO).unwrap(),
+            [(5, 0)],
+            "{what}"
+        );
         s.ifs.lease_report(&a, 5, &[]);
         s.ifs.release_owner(Owner(2));
     }
@@ -131,7 +166,12 @@ fn grants_see_other_owners_opens_and_the_file_they_name() {
     s.ifs.close(&b, fd).unwrap();
     // A name that now holds another file gets nothing.
     let id = file_id(&s, &a, "/tmp/other");
-    assert_eq!(s.ifs.lease_grant(&a, "/tmp/f", id, 6, [1; 32], RWH).unwrap(), 0);
+    assert_eq!(
+        s.ifs
+            .lease_grant(&a, "/tmp/f", id, 6, [1; 32], RWH)
+            .unwrap(),
+        0
+    );
 }
 
 #[test]
@@ -142,15 +182,25 @@ fn a_share_mode_conflict_breaks_handle_caching_first() {
     let b = s.cx(&p, 2);
     s.put(&a, "/tmp/f", b"data");
     leased(&s, &a, R | H);
-    let fd = s.ifs.open(&a, "/tmp/f", OpenArgs::new(O_RDONLY | O_SHARE_NONE)).unwrap();
-    let (r, d) = deferring(true, || s.ifs.open(&b, "/tmp/f", OpenArgs::new(O_RDONLY | O_SHARE_RDWR)));
+    let fd = s
+        .ifs
+        .open(&a, "/tmp/f", OpenArgs::new(O_RDONLY | O_SHARE_NONE))
+        .unwrap();
+    let (r, d) = deferring(true, || {
+        s.ifs
+            .open(&b, "/tmp/f", OpenArgs::new(O_RDONLY | O_SHARE_RDWR))
+    });
     assert_eq!(r, Err(Errno::EAGAIN));
     assert_eq!(s.ifs.lease_orders(&a, Duration::ZERO).unwrap(), [(5, R)]);
     // The client closes what it cached.
     s.ifs.close(&a, fd).unwrap();
     s.ifs.lease_report(&a, 5, &[(KEY, R)]);
     assert!(s.ifs.leases().ready(&d.unwrap()));
-    assert!(s.ifs.open(&b, "/tmp/f", OpenArgs::new(O_RDONLY | O_SHARE_RDWR)).is_ok());
+    assert!(
+        s.ifs
+            .open(&b, "/tmp/f", OpenArgs::new(O_RDONLY | O_SHARE_RDWR))
+            .is_ok()
+    );
 }
 
 #[test]
@@ -162,8 +212,14 @@ fn a_copy_breaks_without_waiting() {
     s.put(&a, "/tmp/f", b"data");
     s.put(&a, "/tmp/src", b"new");
     leased(&s, &a, RWH);
-    let opts = ifs::ops::CopyOpts { replace: true, ..Default::default() };
-    assert_eq!(deferring(true, || s.ifs.copy(&b, "/tmp/src", "/tmp/f", opts)), (Ok(()), None));
+    let opts = ifs::ops::CopyOpts {
+        replace: true,
+        ..Default::default()
+    };
+    assert_eq!(
+        deferring(true, || s.ifs.copy(&b, "/tmp/src", "/tmp/f", opts)),
+        (Ok(()), None)
+    );
     assert!(!s.ifs.lease_orders(&a, Duration::ZERO).unwrap().is_empty());
 }
 
@@ -184,7 +240,12 @@ fn a_local_caller_waits_for_the_holders_report() {
         job_ccsid: 37,
     };
     let holder = client(1);
-    let fd = holder.open("/tmp/f", OpenArgs::new(O_RDWR | ifs::ops::flags::O_CREAT).mode(0o644)).unwrap();
+    let fd = holder
+        .open(
+            "/tmp/f",
+            OpenArgs::new(O_RDWR | ifs::ops::flags::O_CREAT).mode(0o644),
+        )
+        .unwrap();
     let id = holder
         .get_attrs("/tmp/f", &[AttrId::FileId], true)
         .unwrap()
