@@ -849,12 +849,9 @@ impl NtlmServer {
 
         // ---- SessionBaseKey from the verifier (MS-NLMP §3.4 - for
         // NTLMv2, KeyExchangeKey = SessionBaseKey).
-        let Some(key_exchange_key) = verify(
-            &auth.user,
-            &auth.domain,
-            &self.server_challenge,
-            &auth.nt_response,
-        ) else {
+        let Some(key_exchange_key) =
+            verify(&auth.user, &auth.domain, &self.server_challenge, &auth.nt_response)
+        else {
             return Err(ProtoError::Auth("NT proof mismatch"));
         };
 
