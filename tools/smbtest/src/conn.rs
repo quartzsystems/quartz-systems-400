@@ -5,9 +5,11 @@
 //! Clients, sessions and opens against the target.
 //!
 //! The client crate keeps one connection per server address in each
-//! [`Client`], so every independent connection is its own `Client`.
+//! [`Client`], so every independent connection is its own `Client`. They
+//! all send one `ClientGuid`, as Windows' redirector does for a machine;
+//! [`other_machine`] is a second machine's.
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use smb::connection::EncryptionMode;
@@ -18,6 +20,18 @@ use smb::{
 use smb::connection::connection_info::ConnectionInfo;
 
 use crate::{Error, Target};
+
+/// This run's `ClientGuid`, one for every connection.
+pub fn client_guid() -> smb::Guid {
+    static GUID: OnceLock<smb::Guid> = OnceLock::new();
+    *GUID.get_or_init(smb::Guid::generate)
+}
+
+/// A second machine's `ClientGuid`, for scenarios across two clients.
+pub fn other_machine() -> smb::Guid {
+    static GUID: OnceLock<smb::Guid> = OnceLock::new();
+    *GUID.get_or_init(smb::Guid::generate)
+}
 
 /// How long any one request may take.
 pub const TIMEOUT: Duration = Duration::from_secs(30);
@@ -64,7 +78,24 @@ impl Share {
         password: &str,
         share: &str,
     ) -> Result<Share, Error> {
-        let client = Client::new(ClientConfig { dfs: false, connection: config, ..ClientConfig::default() });
+        Share::connect_from(t, config, user, password, share, client_guid()).await
+    }
+
+    /// Connects to the target's file share as the machine `guid`.
+    pub async fn connect_machine(t: &Target, config: ConnectionConfig, guid: smb::Guid) -> Result<Share, Error> {
+        Share::connect_from(t, config, &t.user, &t.password, &t.share, guid).await
+    }
+
+    async fn connect_from(
+        t: &Target,
+        config: ConnectionConfig,
+        user: &str,
+        password: &str,
+        share: &str,
+        guid: smb::Guid,
+    ) -> Result<Share, Error> {
+        let client =
+            Client::new(ClientConfig { dfs: false, connection: config, client_guid: guid, ..ClientConfig::default() });
         let unc = UncPath::new(&t.host)?.with_share(share)?;
         client.share_connect(&unc, user, password.to_string()).await?;
         Ok(Share { client, unc })

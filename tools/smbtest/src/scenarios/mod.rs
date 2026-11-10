@@ -47,6 +47,7 @@ pub fn names() -> Vec<String> {
             "rename",
             "delete",
             "change-notify",
+            "change-notify-two-machines",
             "large-io",
             "copy",
             "cleanup",
@@ -107,6 +108,7 @@ pub async fn run_all(t: &Target) -> Report {
         run(&mut r, t, "rename", SHORT, Box::pin(files::rename(t, &scratch))).await;
         run(&mut r, t, "delete", SHORT, Box::pin(files::delete(t, &scratch))).await;
         run(&mut r, t, "change-notify", SHORT, Box::pin(files::change_notify(t, &scratch))).await;
+        run(&mut r, t, "change-notify-two-machines", SHORT, Box::pin(files::change_notify_two_machines(t, &scratch))).await;
         run(&mut r, t, "large-io", Duration::from_secs(600), Box::pin(perf::large_io(t, &scratch))).await;
         run(&mut r, t, "copy", Duration::from_secs(3600), Box::pin(perf::copy(t, &scratch))).await;
     }

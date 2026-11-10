@@ -41,7 +41,7 @@ impl LogonVerifier for OneProfile {
         let key = hmac(&nt, &[&utf16(&format!("{}{domain}", user.to_uppercase()))]);
         let (proof, blob) = resp.split_at(16);
         let computed = hmac(&key, &[challenge, blob]);
-        (proof == computed).then(|| Logon { user: USER.into(), session_base_key: hmac(&key, &[&computed]) })
+        (proof == computed).then(|| Logon { user: USER.into(), session_base_key: hmac(&key, &[&computed]), guest: false })
     }
 }
 

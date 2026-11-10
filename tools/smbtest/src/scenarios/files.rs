@@ -135,11 +135,21 @@ pub async fn delete(t: &Target, sc: &Scratch) -> Lines {
 /// A watch on the run directory from one connection sees a file another
 /// connection creates.
 pub async fn change_notify(t: &Target, sc: &Scratch) -> Lines {
-    let dir_name = sc.file("notify");
+    notify_between(t, sc, "notify", Share::connect(t, base_config(t)).await?).await
+}
+
+/// As [`change_notify`], the writer being another machine (another
+/// `ClientGuid`, so another `QZLSFILE` job on QS/400).
+pub async fn change_notify_two_machines(t: &Target, sc: &Scratch) -> Lines {
+    let writer = Share::connect_machine(t, base_config(t), crate::conn::other_machine()).await?;
+    notify_between(t, sc, "notify2", writer).await
+}
+
+async fn notify_between(t: &Target, sc: &Scratch, name: &str, writer: Share) -> Lines {
+    let dir_name = sc.file(name);
     let watcher = Share::connect(t, base_config(t)).await?;
     watcher.create_dir(&dir_name).await?;
     let dir = watcher.open_dir(&dir_name).await?;
-    let writer = Share::connect(t, base_config(t)).await?;
     let filter = NotifyFilter::new().with_file_name(true).with_dir_name(true);
     let watch = dir.watch_timeout(filter, false, Duration::from_secs(20));
     let make = async {
