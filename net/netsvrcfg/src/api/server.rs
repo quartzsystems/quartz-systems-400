@@ -11,8 +11,9 @@
 use super::error::{ApiError, NOT_SUPPORTED_RC, authority, configure, end_session, msg, start};
 use super::host::{Enabled, GuestCheck, Host};
 use super::parms::Parms;
+use crate::fmt::qsl;
 use crate::fmt::zlss::{self, S0100_MIN, S0100_SIZE};
-use crate::model::attrs::Settings;
+use crate::model::attrs::{Dialect, Settings};
 use crate::model::valid;
 
 fn need_iosyscfg(api: &str, h: &mut dyn Host) -> Result<(), ApiError> {
@@ -213,6 +214,27 @@ pub fn change_info(h: &mut dyn Host, p: &Parms<'_>) -> Result<Vec<u8>, ApiError>
             if failed > 0 {
                 return Err(ApiError::new(msg::NOT_ENABLED).bin4(failed));
             }
+            Ok(Vec::new())
+        }
+        "QSLS0100" => {
+            need_iosyscfg(API, h)?;
+            if n != qsl::S0100_SIZE {
+                return Err(length_err(qsl::S0100_SIZE, qsl::S0100_SIZE));
+            }
+            let (netbios, dialect, log) = qsl::read_s0100(&p.raw(0, n));
+            let flag = |c: char| match c {
+                '0' => Ok(false),
+                '1' => Ok(true),
+                c => Err(bad_char(API, 1, &c.to_string())),
+            };
+            let own = qsl::Own {
+                allow_netbios: flag(netbios)?,
+                min_dialect: Dialect::parse(&dialect).ok_or_else(|| bad_char(API, 1, &dialect))?,
+                log_signon: flag(log)?,
+            };
+            let mut c = h.load()?;
+            own.apply(&mut c.attrs.pending);
+            h.save(&c)?;
             Ok(Vec::new())
         }
         _ => Err(ApiError::of(msg::CHANGE, API).bin4(1).text(&format, 8)),

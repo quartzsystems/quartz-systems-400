@@ -24,7 +24,7 @@ use crate::model::session::Session;
 /// The formats both APIs take.
 pub const FORMATS: &[&str] = &[
     "ZLSL0100", "ZLSL0101", "ZLSL0200", "ZLSL0201", "ZLSL0300", "ZLSL0400", "ZLSL0600", "ZLSL0700",
-    "ZLSL0800", "ZLSL0900",
+    "ZLSL0800", "ZLSL0900", "QSLL0100",
 ];
 
 /// Where the records' offsets count from.
@@ -86,6 +86,17 @@ fn sessions<'a>(
         })
         .filter(|s| user.is_none_or(|u| s.user.eq_ignore_ascii_case(u)))
         .collect())
+}
+
+/// QS/400's `QSLL0100`: its own attributes, current and pending.
+fn own(cfg: &crate::model::config::Config) -> List {
+    List {
+        records: vec![crate::fmt::qsl::l0100(
+            &cfg.attrs.current,
+            &cfg.attrs.pending,
+        )],
+        record_len: crate::fmt::qsl::L0100_SIZE,
+    }
 }
 
 /// The list a request asks for, or a `CPFB68F` reason. `target` says
@@ -174,6 +185,7 @@ pub fn build(h: &mut dyn Host, r: &Request, target: Target) -> Result<List, i32>
             let share = (!all(q) && q != "*SESSID").then_some(q);
             l.records = zlsl::l0700(&picked, share, now);
         }
+        "QSLL0100" => l = own(&cfg),
         "ZLSL0800" => {
             l.record_len = zlsl::L0800_SIZE;
             l.records = shares().into_iter().map(zlsl::l0800).collect();

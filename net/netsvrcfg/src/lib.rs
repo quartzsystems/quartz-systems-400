@@ -18,6 +18,7 @@
 )]
 
 pub mod api;
+pub mod client;
 pub mod file;
 pub mod fmt;
 pub mod model;

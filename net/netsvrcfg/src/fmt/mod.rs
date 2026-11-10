@@ -5,6 +5,7 @@
 //! The `QZLS*` API formats, byte for byte.
 
 pub mod list;
+pub mod qsl;
 pub mod text;
 pub mod zlsl;
 pub mod zlss;
