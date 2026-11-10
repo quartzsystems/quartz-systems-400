@@ -235,9 +235,16 @@ impl Env for JobEnv<'_> {
         };
         match self.host.link.borrow_mut().with(|l| l.netsvr(op)) {
             stg::netsvr::NsReply::Done => Ok(()),
-            stg::netsvr::NsReply::Refused { msgid, text } => Err(servers::Refusal::new(&msgid, text)),
-            stg::netsvr::NsReply::Error { text } => Err(servers::Refusal::new(servers::msg::NOT_STARTED, text)),
-            other => Err(servers::Refusal::new(servers::msg::NOT_STARTED, format!("{other:?}"))),
+            stg::netsvr::NsReply::Refused { msgid, text } => {
+                Err(servers::Refusal::new(&msgid, text))
+            }
+            stg::netsvr::NsReply::Error { text } => {
+                Err(servers::Refusal::new(servers::msg::NOT_STARTED, text))
+            }
+            other => Err(servers::Refusal::new(
+                servers::msg::NOT_STARTED,
+                format!("{other:?}"),
+            )),
         }
     }
 }

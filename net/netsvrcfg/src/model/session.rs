@@ -234,7 +234,11 @@ impl SessionTable {
     ) -> Result<u32, TableError> {
         // Users are sessions: a session's second tree to the share is no
         // new user.
-        let has = |s: &Session| s.connections.iter().any(|c| c.share.eq_ignore_ascii_case(share));
+        let has = |s: &Session| {
+            s.connections
+                .iter()
+                .any(|c| c.share.eq_ignore_ascii_case(share))
+        };
         let mine = self.sessions.get(&id).is_some_and(has);
         if let Ok(max) = usize::try_from(max)
             && max > 0
@@ -457,7 +461,10 @@ mod tests {
         other.job = "000124/QUSER/QZLSFILE".into();
         let b = t.register(other);
         assert!(t.connect_within(a, "data", 0, 1, 5).is_ok());
-        assert_eq!(t.connect_within(b, "DATA", 0, 1, 5), Err(TableError::MaxUsers("DATA".into())));
+        assert_eq!(
+            t.connect_within(b, "DATA", 0, 1, 5),
+            Err(TableError::MaxUsers("DATA".into()))
+        );
         assert!(t.connect_within(b, "DATA", 0, -1, 5).is_ok());
         assert!(t.connect_within(b, "other", 0, 1, 5).is_ok());
         // A second tree of a session that has the share is no new user.

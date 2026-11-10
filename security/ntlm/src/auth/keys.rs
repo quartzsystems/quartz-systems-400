@@ -16,7 +16,10 @@ pub fn key_exchange_key(session_base_key: &[u8; 16]) -> [u8; 16] {
 /// The exported session key: with `NTLMSSP_NEGOTIATE_KEY_EXCH`, the client's
 /// random key RC4-decrypted under the key exchange key; else the key
 /// exchange key.
-pub fn exported_session_key(kxkey: &[u8; 16], encrypted_random_key: Option<&[u8]>) -> Option<[u8; 16]> {
+pub fn exported_session_key(
+    kxkey: &[u8; 16],
+    encrypted_random_key: Option<&[u8]>,
+) -> Option<[u8; 16]> {
     match encrypted_random_key {
         None => Some(*kxkey),
         Some(k) if k.len() == 16 => rc4(kxkey, k).try_into().ok(),
@@ -31,7 +34,12 @@ pub fn encrypt_random_session_key(kxkey: &[u8; 16], random: &[u8; 16]) -> [u8; 1
 
 /// The MIC: HMAC-MD5 under the exported session key of the three messages,
 /// the AUTHENTICATE one with its MIC field zeroed.
-pub fn mic(exported_session_key: &[u8; 16], negotiate: &[u8], challenge: &[u8], authenticate: &[u8]) -> [u8; 16] {
+pub fn mic(
+    exported_session_key: &[u8; 16],
+    negotiate: &[u8],
+    challenge: &[u8],
+    authenticate: &[u8],
+) -> [u8; 16] {
     hmac_md5(exported_session_key, &[negotiate, challenge, authenticate])
 }
 
@@ -43,5 +51,13 @@ pub fn verify_mic(
     authenticate_zeroed: &[u8],
     got: &[u8],
 ) -> bool {
-    ct_eq(&mic(exported_session_key, negotiate, challenge, authenticate_zeroed), got)
+    ct_eq(
+        &mic(
+            exported_session_key,
+            negotiate,
+            challenge,
+            authenticate_zeroed,
+        ),
+        got,
+    )
 }

@@ -61,7 +61,12 @@ impl Table {
 
     /// The client's NetBIOS name (port 139), for the next sessions.
     pub fn set_workstation(&self, name: &str) {
-        name.clone_into(&mut self.workstation.lock().unwrap_or_else(PoisonError::into_inner));
+        name.clone_into(
+            &mut self
+                .workstation
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner),
+        );
     }
 
     fn ask(&self, op: NsOp) -> Option<NsReply> {
@@ -70,12 +75,23 @@ impl Table {
     }
 
     /// The table's identifier of session `sid`, registering it first.
-    fn register(&self, map: &mut HashMap<u64, Reported>, sid: u64, user: &str, guest: bool, peer: Option<SocketAddr>) -> Option<u64> {
+    fn register(
+        &self,
+        map: &mut HashMap<u64, Reported>,
+        sid: u64,
+        user: &str,
+        guest: bool,
+        peer: Option<SocketAddr>,
+    ) -> Option<u64> {
         if let Some(r) = map.get(&sid) {
             return Some(r.id);
         }
         let addr = ip(peer);
-        let ws = self.workstation.lock().unwrap_or_else(PoisonError::into_inner).clone();
+        let ws = self
+            .workstation
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
         let session = NsSession {
             workstation: if ws.is_empty() { addr.clone() } else { ws },
             expanded: addr,
@@ -85,7 +101,13 @@ impl Table {
         };
         match self.ask(NsOp::Register { session }) {
             Some(NsReply::Session { id }) => {
-                map.insert(sid, Reported { id, trees: HashMap::new() });
+                map.insert(
+                    sid,
+                    Reported {
+                        id,
+                        trees: HashMap::new(),
+                    },
+                );
                 Some(id)
             }
             other => {
@@ -99,10 +121,17 @@ impl Table {
     /// identifiers of sessions `QZLSENSS` marked to end, by the library's.
     pub fn sync(&self, now: &[SessionView]) -> Vec<u64> {
         let mut map = self.sessions.lock().unwrap_or_else(PoisonError::into_inner);
-        let gone: Vec<u64> = map.keys().filter(|k| !now.iter().any(|s| s.session_id == **k)).copied().collect();
+        let gone: Vec<u64> = map
+            .keys()
+            .filter(|k| !now.iter().any(|s| s.session_id == **k))
+            .copied()
+            .collect();
         for sid in gone {
             if let Some(r) = map.remove(&sid) {
-                self.ask(NsOp::Unregister { id: r.id, idle: false });
+                self.ask(NsOp::Unregister {
+                    id: r.id,
+                    idle: false,
+                });
             }
         }
         let mut ending = Vec::new();
@@ -111,7 +140,12 @@ impl Table {
                 continue;
             };
             let r = map.get_mut(&s.session_id).expect("registered");
-            let old: Vec<u32> = r.trees.keys().filter(|t| !s.trees.iter().any(|v| v.tree_id == **t)).copied().collect();
+            let old: Vec<u32> = r
+                .trees
+                .keys()
+                .filter(|t| !s.trees.iter().any(|v| v.tree_id == **t))
+                .copied()
+                .collect();
             for t in old {
                 if let Some((conn, _)) = r.trees.remove(&t) {
                     self.ask(NsOp::Disconnect { id, conn });
@@ -121,20 +155,29 @@ impl Table {
                 match r.trees.get_mut(&t.tree_id) {
                     Some((conn, opens)) if *opens != t.opens => {
                         *opens = t.opens;
-                        self.ask(NsOp::Opens { id, conn: *conn, opens: t.opens });
+                        self.ask(NsOp::Opens {
+                            id,
+                            conn: *conn,
+                            opens: t.opens,
+                        });
                     }
                     Some(_) => {}
                     // A tree admitted before its session was seen here.
                     None => {
-                        if let Some(NsReply::Conn { id: conn }) =
-                            self.ask(NsOp::Connect { id, share: t.share.clone(), kind: kind(t.kind) })
-                        {
+                        if let Some(NsReply::Conn { id: conn }) = self.ask(NsOp::Connect {
+                            id,
+                            share: t.share.clone(),
+                            kind: kind(t.kind),
+                        }) {
                             r.trees.insert(t.tree_id, (conn, 0));
                         }
                     }
                 }
             }
-            if matches!(self.ask(NsOp::Ending { id }), Some(NsReply::Flag { yes: true })) {
+            if matches!(
+                self.ask(NsOp::Ending { id }),
+                Some(NsReply::Flag { yes: true })
+            ) {
                 ending.push(s.session_id);
             }
         }
@@ -143,17 +186,33 @@ impl Table {
 
     /// Session `sid` was ended (`QZLSENSS`): out of the table.
     pub fn ended(&self, sid: u64) {
-        let r = self.sessions.lock().unwrap_or_else(PoisonError::into_inner).remove(&sid);
+        let r = self
+            .sessions
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .remove(&sid);
         if let Some(r) = r {
-            self.ask(NsOp::Unregister { id: r.id, idle: false });
+            self.ask(NsOp::Unregister {
+                id: r.id,
+                idle: false,
+            });
         }
     }
 
     /// Every session out of the table (the job's client is gone).
     pub fn clear(&self) {
-        let all: Vec<Reported> = self.sessions.lock().unwrap_or_else(PoisonError::into_inner).drain().map(|(_, r)| r).collect();
+        let all: Vec<Reported> = self
+            .sessions
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .drain()
+            .map(|(_, r)| r)
+            .collect();
         for r in all {
-            self.ask(NsOp::Unregister { id: r.id, idle: false });
+            self.ask(NsOp::Unregister {
+                id: r.id,
+                idle: false,
+            });
         }
     }
 }

@@ -12,9 +12,9 @@ use smb::connection::EncryptionMode;
 
 use super::files::write_read_remove;
 use super::{Lines, Scratch};
+use crate::Target;
 use crate::conn::{DIALECTS, Share, dialect_config, dialect_name};
 use crate::error::check;
-use crate::Target;
 
 /// A signed round trip on each dialect; the algorithm each used.
 pub async fn signing(t: &Target, sc: &Scratch) -> Lines {
@@ -22,7 +22,10 @@ pub async fn signing(t: &Target, sc: &Scratch) -> Lines {
     for d in DIALECTS {
         let s = Share::connect(t, dialect_config(t, d, EncryptionMode::Allowed)).await?;
         let info = s.info().await?;
-        let algo = info.negotiation.signing_algo.unwrap_or_else(|| info.dialect.default_signing_algo());
+        let algo = info
+            .negotiation
+            .signing_algo
+            .unwrap_or_else(|| info.dialect.default_signing_algo());
         let path = sc.file(&format!("signed-{}.bin", dialect_name(d)));
         write_read_remove(&s, &path, b"signed both ways").await?;
         s.close().await?;
@@ -37,13 +40,21 @@ pub async fn encrypt(t: &Target, sc: &Scratch, d: Dialect) -> Lines {
     let info = s.info().await?;
     let cipher = info.negotiation.encryption_cipher;
     // 3.0 and 3.0.2 have no cipher context: AES-128-CCM is implied.
-    check(cipher.is_some() || d < Dialect::Smb0311, || "no cipher negotiated on 3.1.1".into())?;
+    check(cipher.is_some() || d < Dialect::Smb0311, || {
+        "no cipher negotiated on 3.1.1".into()
+    })?;
     let path = sc.file(&format!("sealed-{}.bin", dialect_name(d)));
     write_read_remove(&s, &path, b"sealed both ways").await?;
     s.close().await?;
-    let offered: Vec<String> = smb::crypto::ENCRYPTING_ALGOS.iter().map(|c| format!("{c:?}")).collect();
+    let offered: Vec<String> = smb::crypto::ENCRYPTING_ALGOS
+        .iter()
+        .map(|c| format!("{c:?}"))
+        .collect();
     Ok(vec![
         format!("offered: {}", offered.join(" ")),
-        format!("cipher: {}", cipher.map_or_else(|| "Aes128Ccm (implied)".into(), |c| format!("{c:?}"))),
+        format!(
+            "cipher: {}",
+            cipher.map_or_else(|| "Aes128Ccm (implied)".into(), |c| format!("{c:?}"))
+        ),
     ])
 }

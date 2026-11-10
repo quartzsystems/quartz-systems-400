@@ -67,7 +67,11 @@ pub fn parse_blob(nt_response: &[u8]) -> Option<Blob<'_>> {
     }
     let time = u64::from_le_bytes(b[8..16].try_into().ok()?);
     let client_challenge = b[16..24].try_into().ok()?;
-    Some(Blob { time, client_challenge, av_pairs: &b[28..] })
+    Some(Blob {
+        time,
+        client_challenge,
+        av_pairs: &b[28..],
+    })
 }
 
 /// Verifies an NTLMv2 NT response against the NT hash. Returns the session

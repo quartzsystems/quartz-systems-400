@@ -62,7 +62,10 @@ impl IfsWorker {
 
     /// Runs `f` with the client from a thread outside the runtime and waits
     /// for its answer; `None` when the thread is gone.
-    pub fn call_blocking<T: Send + 'static>(&self, f: impl FnOnce(&dyn IfsClient) -> T + Send + 'static) -> Option<T> {
+    pub fn call_blocking<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&dyn IfsClient) -> T + Send + 'static,
+    ) -> Option<T> {
         let (tx, rx) = mpsc::channel();
         let job: Job = Box::new(move |c| {
             let _ = tx.send(f(c));

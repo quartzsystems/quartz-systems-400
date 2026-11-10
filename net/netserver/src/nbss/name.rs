@@ -28,7 +28,11 @@ impl NbName {
     pub fn new(name: &str, suffix: u8) -> Self {
         let mut n: String = name.to_ascii_uppercase();
         n.truncate(15);
-        Self { name: n, suffix, scope: String::new() }
+        Self {
+            name: n,
+            suffix,
+            scope: String::new(),
+        }
     }
 
     /// Whether this is `name` (case-insensitive) with `suffix`.
@@ -87,7 +91,16 @@ impl NbName {
             labels.push(String::from_utf8_lossy(l).into_owned());
             pos += n;
         }
-        let name = String::from_utf8_lossy(&raw[..15]).trim_end_matches(' ').to_string();
-        Ok((Self { name, suffix: raw[15], scope: labels.join(".") }, pos))
+        let name = String::from_utf8_lossy(&raw[..15])
+            .trim_end_matches(' ')
+            .to_string();
+        Ok((
+            Self {
+                name,
+                suffix: raw[15],
+                scope: labels.join("."),
+            },
+            pos,
+        ))
     }
 }

@@ -92,7 +92,10 @@ impl Refusal {
             Self::NoPassword | Self::NoNtHash => "CPIB68D",
             Self::NetServerDisabled => "CPIB68E",
             Self::WrongPassword { disabled_now: true } => "CPIB682",
-            Self::WrongPassword { .. } | Self::NotNtlmV2 | Self::OtherProfile | Self::Unavailable => {
+            Self::WrongPassword { .. }
+            | Self::NotNtlmV2
+            | Self::OtherProfile
+            | Self::Unavailable => {
                 return None;
             }
         })
@@ -122,8 +125,16 @@ pub struct Verifier {
 impl Verifier {
     /// A verifier over `signon`, using `guest` for unknown users; `bound`
     /// holds the job's profile once one has signed on.
-    pub fn new(signon: Arc<dyn SignOn>, guest: Option<String>, bound: Arc<Mutex<Option<String>>>) -> Self {
-        Self { signon, guest, bound }
+    pub fn new(
+        signon: Arc<dyn SignOn>,
+        guest: Option<String>,
+        bound: Arc<Mutex<Option<String>>>,
+    ) -> Self {
+        Self {
+            signon,
+            guest,
+            bound,
+        }
     }
 
     /// Runs one sign-on: the service's answer, then the job binding.
@@ -206,11 +217,22 @@ mod tests {
 
     #[test]
     fn a_refusal_is_no_logon() {
-        for r in [Refusal::NoSuchUser, Refusal::WrongPassword { disabled_now: true }, Refusal::NotNtlmV2] {
-            assert!(verifier(Err(r)).verify("u", "d", &[0; 8], &[0; 24]).is_none());
+        for r in [
+            Refusal::NoSuchUser,
+            Refusal::WrongPassword { disabled_now: true },
+            Refusal::NotNtlmV2,
+        ] {
+            assert!(
+                verifier(Err(r))
+                    .verify("u", "d", &[0; 8], &[0; 24])
+                    .is_none()
+            );
         }
         assert_eq!(Refusal::NoNtHash.msgid(), Some("CPIB68D"));
-        assert_eq!(Refusal::WrongPassword { disabled_now: true }.msgid(), Some("CPIB682"));
+        assert_eq!(
+            Refusal::WrongPassword { disabled_now: true }.msgid(),
+            Some("CPIB682")
+        );
     }
 
     #[test]
@@ -220,19 +242,37 @@ mod tests {
             fn sign_on(&self, req: &SignOnRequest) -> Result<SignedOn, Refusal> {
                 assert_eq!(req.guest.as_deref(), Some("QGUEST"));
                 assert_eq!(req.client, "10.1.2.3");
-                Ok(SignedOn { profile: "QGUEST".into(), guest: true, session_base_key: None })
+                Ok(SignedOn {
+                    profile: "QGUEST".into(),
+                    guest: true,
+                    session_base_key: None,
+                })
             }
         }
         let v = Verifier::new(Arc::new(Check), Some("QGUEST".into()), Arc::default());
-        let l = v.verify_from(Some("10.1.2.3:5000".parse().unwrap()), "x", "", &[0; 8], &[0; 24]).unwrap();
+        let l = v
+            .verify_from(
+                Some("10.1.2.3:5000".parse().unwrap()),
+                "x",
+                "",
+                &[0; 8],
+                &[0; 24],
+            )
+            .unwrap();
         assert!(l.guest);
         assert_eq!(l.user, "QGUEST");
     }
 
     #[test]
     fn the_job_serves_one_profile() {
-        let v = verifier(Ok(SignedOn { session_base_key: Some([1; 16]), ..SignedOn::default() }));
-        assert_eq!(v.verify("alice", "", &[0; 8], &[0; 24]).unwrap().user, "ALICE");
+        let v = verifier(Ok(SignedOn {
+            session_base_key: Some([1; 16]),
+            ..SignedOn::default()
+        }));
+        assert_eq!(
+            v.verify("alice", "", &[0; 8], &[0; 24]).unwrap().user,
+            "ALICE"
+        );
         assert!(v.verify("Alice", "", &[0; 8], &[0; 24]).is_some());
         assert!(v.verify("bob", "", &[0; 8], &[0; 24]).is_none());
     }

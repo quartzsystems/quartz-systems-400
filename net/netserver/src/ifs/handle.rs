@@ -13,15 +13,15 @@ use bytes::Bytes;
 use ifs::Errno;
 use ifs::client::{CHUNK, IfsClient};
 use ifs::lock::range::RangeKind;
+use ifs::ops::OpenArgs;
 use ifs::ops::audit::FileId;
 use ifs::ops::flags::{F_SETLK, O_RDONLY, O_SHARE_RDWR, SEEK_SET};
-use ifs::ops::OpenArgs;
 use smb_server::{DirEntry, DirWatch, FileInfo, FileTimes, Handle, LeaseKey, SmbError, SmbResult};
 
-use super::lease::LeaseLink;
-use super::text::Xlate;
 use super::info::{attr_changes, file_info, nanos, smb_error, stat_path};
+use super::lease::LeaseLink;
 use super::pattern::matches;
+use super::text::Xlate;
 use super::worker::IfsWorker;
 
 /// A descriptor and what it may do.
@@ -67,7 +67,11 @@ pub(super) fn locate(c: &dyn IfsClient, id: Option<FileId>, path: &str) -> Strin
 
 /// The last component of `path`, or empty for the share root.
 fn leaf<'a>(path: &'a str, root: &str) -> &'a str {
-    if path == root { "" } else { path.rsplit('/').next().unwrap_or("") }
+    if path == root {
+        ""
+    } else {
+        path.rsplit('/').next().unwrap_or("")
+    }
 }
 
 fn err<T>(r: ifs::Result<T>) -> SmbResult<T> {
@@ -76,7 +80,10 @@ fn err<T>(r: ifs::Result<T>) -> SmbResult<T> {
 
 impl IfsHandle {
     fn path(&self) -> String {
-        self.path.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.path
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     /// The descriptor, opened for reading now if there is none.
@@ -88,7 +95,15 @@ impl IfsHandle {
             return Ok(fd);
         }
         let (id, path) = (self.id, self.path());
-        let fd = err(self.io.call(move |c| c.open(&locate(c, id, &path), OpenArgs::new(O_RDONLY | O_SHARE_RDWR))).await)?;
+        let fd = err(self
+            .io
+            .call(move |c| {
+                c.open(
+                    &locate(c, id, &path),
+                    OpenArgs::new(O_RDONLY | O_SHARE_RDWR),
+                )
+            })
+            .await)?;
         let mut slot = self.fd.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(have) = *slot {
             self.io.post(move |c| {
@@ -106,22 +121,22 @@ impl IfsHandle {
 impl Handle for IfsHandle {
     async fn read(&self, offset: u64, len: u32) -> SmbResult<Bytes> {
         let Fd { fd, .. } = self.fd().await?;
-        let data = err(
-            self.io
-                .call(move |c| {
-                    let want = usize::try_from(len).unwrap_or(usize::MAX);
-                    let mut out = Vec::new();
-                    while out.len() < want {
-                        let chunk = c.pread(fd, (want - out.len()).min(CHUNK), offset + out.len() as u64)?;
-                        if chunk.is_empty() {
-                            break;
-                        }
-                        out.extend_from_slice(&chunk);
+        let data = err(self
+            .io
+            .call(move |c| {
+                let want = usize::try_from(len).unwrap_or(usize::MAX);
+                let mut out = Vec::new();
+                while out.len() < want {
+                    let chunk =
+                        c.pread(fd, (want - out.len()).min(CHUNK), offset + out.len() as u64)?;
+                    if chunk.is_empty() {
+                        break;
                     }
-                    Ok(out)
-                })
-                .await,
-        )?;
+                    out.extend_from_slice(&chunk);
+                }
+                Ok(out)
+            })
+            .await)?;
         let mut data = data;
         if let Some(x) = &self.xlate {
             x.to_client(&mut data);
@@ -141,22 +156,21 @@ impl Handle for IfsHandle {
         if let Some(x) = &self.xlate {
             x.to_file(&mut data);
         }
-        err(
-            self.io
-                .call(move |c| {
-                    let mut done = 0;
-                    while done < data.len() {
-                        let end = (done + CHUNK).min(data.len());
-                        let n = c.pwrite(fd, &data[done..end], offset + done as u64)?;
-                        if n == 0 {
-                            return Err(Errno::ENOSPC);
-                        }
-                        done += n;
+        err(self
+            .io
+            .call(move |c| {
+                let mut done = 0;
+                while done < data.len() {
+                    let end = (done + CHUNK).min(data.len());
+                    let n = c.pwrite(fd, &data[done..end], offset + done as u64)?;
+                    if n == 0 {
+                        return Err(Errno::ENOSPC);
                     }
-                    Ok(u32::try_from(done).unwrap_or(u32::MAX))
-                })
-                .await,
-        )
+                    done += n;
+                }
+                Ok(u32::try_from(done).unwrap_or(u32::MAX))
+            })
+            .await)
     }
 
     async fn flush(&self) -> SmbResult<()> {
@@ -237,10 +251,16 @@ impl Handle for IfsHandle {
                     if pattern.as_deref().is_some_and(|pat| !matches(pat, &e.name)) {
                         continue;
                     }
-                    let full = if p.ends_with('/') { format!("{p}{}", e.name) } else { format!("{p}/{}", e.name) };
+                    let full = if p.ends_with('/') {
+                        format!("{p}{}", e.name)
+                    } else {
+                        format!("{p}/{}", e.name)
+                    };
                     // An entry gone or unreadable since the listing is left out.
                     if let Ok((st, attrs)) = stat_path(c, &full) {
-                        out.push(DirEntry { info: file_info(&e.name, &st, &attrs) });
+                        out.push(DirEntry {
+                            info: file_info(&e.name, &st, &attrs),
+                        });
                     }
                 }
                 Ok(out)
@@ -249,7 +269,11 @@ impl Handle for IfsHandle {
     }
 
     async fn close(self: Box<Self>) -> SmbResult<()> {
-        let fd = self.fd.lock().unwrap_or_else(PoisonError::into_inner).take();
+        let fd = self
+            .fd
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
         match fd {
             Some(Fd { fd, .. }) => err(self.io.call(move |c| c.close(fd)).await),
             None => Ok(()),
@@ -258,14 +282,21 @@ impl Handle for IfsHandle {
 
     async fn link_count(&self) -> SmbResult<u32> {
         let (id, path) = (self.id, self.path());
-        err(self.io.call(move |c| Ok(c.stat(&locate(c, id, &path), true)?.nlink)).await)
+        err(self
+            .io
+            .call(move |c| Ok(c.stat(&locate(c, id, &path), true)?.nlink))
+            .await)
     }
 
     async fn dir_is_empty(&self) -> SmbResult<bool> {
         let (id, path) = (self.id, self.path());
         err(self
             .io
-            .call(move |c| Ok(c.read_dir(&locate(c, id, &path))?.iter().all(|e| e.name == "." || e.name == "..")))
+            .call(move |c| {
+                Ok(c.read_dir(&locate(c, id, &path))?
+                    .iter()
+                    .all(|e| e.name == "." || e.name == ".."))
+            })
             .await)
     }
 
@@ -279,17 +310,30 @@ impl Handle for IfsHandle {
         }
         let Fd { fd, write } = self.fd().await?;
         // An exclusive lock through a read-only open is taken shared.
-        let kind = if exclusive && write { RangeKind::Write } else { RangeKind::Read };
+        let kind = if exclusive && write {
+            RangeKind::Write
+        } else {
+            RangeKind::Read
+        };
         self.io
             .call(move |c| c.lock_range(fd, F_SETLK, kind, SEEK_SET, start, len))
             .await
             .map(|_| ())
-            .map_err(|e| if e == Errno::EAGAIN { SmbError::Sharing } else { smb_error(e) })
+            .map_err(|e| {
+                if e == Errno::EAGAIN {
+                    SmbError::Sharing
+                } else {
+                    smb_error(e)
+                }
+            })
     }
 
     async fn lease_limit(&self, lease: LeaseKey, want: u32) -> u32 {
         match &self.leases {
-            Some(link) => link.limit(self.id, self.path(), lease, want, &self.reserved).await,
+            Some(link) => {
+                link.limit(self.id, self.path(), lease, want, &self.reserved)
+                    .await
+            }
             None => want,
         }
     }
@@ -300,10 +344,16 @@ impl Handle for IfsHandle {
         };
         // A tree watch: the library gives tree watches what lies below.
         let (id, path) = (self.id, self.path());
-        let Ok(watch) = self.io.call(move |c| c.watch_add(&locate(c, id, &path), true)).await else {
+        let Ok(watch) = self
+            .io
+            .call(move |c| c.watch_add(&locate(c, id, &path), true))
+            .await
+        else {
             return Ok(None);
         };
-        Ok(Some(Box::new(link.watches().watcher(watch, self.io.clone()))))
+        Ok(Some(Box::new(
+            link.watches().watcher(watch, self.io.clone()),
+        )))
     }
 
     async fn unlock_range(&self, offset: u64, len: u64) -> SmbResult<()> {
@@ -311,23 +361,37 @@ impl Handle for IfsHandle {
             return Ok(());
         };
         let fd = *self.fd.lock().unwrap_or_else(PoisonError::into_inner);
-        let Some(Fd { fd, .. }) = fd else { return Ok(()) };
+        let Some(Fd { fd, .. }) = fd else {
+            return Ok(());
+        };
         if len == 0 {
             return Ok(());
         }
-        err(self.io.call(move |c| c.lock_range(fd, F_SETLK, RangeKind::Unlock, SEEK_SET, start, len).map(|_| ())).await)
+        err(self
+            .io
+            .call(move |c| {
+                c.lock_range(fd, F_SETLK, RangeKind::Unlock, SEEK_SET, start, len)
+                    .map(|_| ())
+            })
+            .await)
     }
 }
 
 impl Drop for IfsHandle {
     fn drop(&mut self) {
         if let Some(link) = &self.leases {
-            let keys = std::mem::take(&mut *self.reserved.lock().unwrap_or_else(PoisonError::into_inner));
+            let keys =
+                std::mem::take(&mut *self.reserved.lock().unwrap_or_else(PoisonError::into_inner));
             if !keys.is_empty() {
                 link.closed(self.id, &keys);
             }
         }
-        if let Some(Fd { fd, .. }) = self.fd.lock().unwrap_or_else(PoisonError::into_inner).take() {
+        if let Some(Fd { fd, .. }) = self
+            .fd
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()
+        {
             self.io.post(move |c| {
                 let _ = c.close(fd);
             });

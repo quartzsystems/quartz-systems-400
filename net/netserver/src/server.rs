@@ -51,7 +51,15 @@ impl FileShare {
     /// A read/write share of `path` with leases.
     #[must_use]
     pub fn new(name: &str, path: &str) -> Self {
-        Self { name: name.into(), path: path.into(), text: String::new(), read_only: false, encrypt: false, leases: true, conversion: None }
+        Self {
+            name: name.into(),
+            path: path.into(),
+            text: String::new(),
+            read_only: false,
+            encrypt: false,
+            leases: true,
+            conversion: None,
+        }
     }
 }
 
@@ -145,9 +153,14 @@ pub enum BuildError {
 
 /// The driver store at `root` and the read-only share of it, or `None`
 /// when `root` is not a directory.
-fn driver_store(handle: &Handle, io: &Arc<IfsWorker>, root: &str) -> Result<Option<(String, IfsShare)>, BuildError> {
+fn driver_store(
+    handle: &Handle,
+    io: &Arc<IfsWorker>,
+    root: &str,
+) -> Result<Option<(String, IfsShare)>, BuildError> {
     let is_dir = on_ifs(handle, io, root.to_owned(), (), |c, root, ()| {
-        Ok(c.stat(&root, true).is_ok_and(|st| st.mode & ::ifs::ops::flags::S_IFMT == ::ifs::ops::flags::S_IFDIR))
+        Ok(c.stat(&root, true)
+            .is_ok_and(|st| st.mode & ::ifs::ops::flags::S_IFMT == ::ifs::ops::flags::S_IFDIR))
     })?
     .unwrap_or(false);
     if !is_dir {
@@ -161,7 +174,10 @@ fn driver_store(handle: &Handle, io: &Arc<IfsWorker>, root: &str) -> Result<Opti
     let share = rx
         .recv()
         .map_err(|_| io::Error::other("server thread gone"))?
-        .map_err(|error| BuildError::Share { name: PRINT_DOLLAR.into(), error })?;
+        .map_err(|error| BuildError::Share {
+            name: PRINT_DOLLAR.into(),
+            error,
+        })?;
     Ok(Some((root.to_owned(), share)))
 }
 
@@ -184,7 +200,10 @@ where
     handle.spawn(async move {
         let _ = tx.send(io2.call(move |c| f(c, a, b)).await);
     });
-    Ok(rx.recv().map_err(|_| io::Error::other("server thread gone"))?.ok())
+    Ok(rx
+        .recv()
+        .map_err(|_| io::Error::other("server thread gone"))?
+        .ok())
 }
 
 /// The library's admission over a shared one.
@@ -213,9 +232,19 @@ pub struct NetServer {
 }
 
 /// The IFS backend of the file share `s`, made on the server's runtime.
-fn file_backend(handle: &Handle, io: &Arc<IfsWorker>, leases: &Arc<LeaseLink>, s: &FileShare) -> Result<IfsShare, BuildError> {
+fn file_backend(
+    handle: &Handle,
+    io: &Arc<IfsWorker>,
+    leases: &Arc<LeaseLink>,
+    s: &FileShare,
+) -> Result<IfsShare, BuildError> {
     let (tx, rx) = mpsc::channel();
-    let (io2, path, ro, conv) = (io.clone(), s.path.clone(), s.read_only, s.conversion.clone());
+    let (io2, path, ro, conv) = (
+        io.clone(),
+        s.path.clone(),
+        s.read_only,
+        s.conversion.clone(),
+    );
     // Watches too go through the link; a share without leases asks for
     // none (the library's `Share::leases`).
     let link = leases.clone();
@@ -231,7 +260,10 @@ fn file_backend(handle: &Handle, io: &Arc<IfsWorker>, leases: &Arc<LeaseLink>, s
     });
     rx.recv()
         .map_err(|_| io::Error::other("server thread gone"))?
-        .map_err(|error| BuildError::Share { name: s.name.clone(), error })
+        .map_err(|error| BuildError::Share {
+            name: s.name.clone(),
+            error,
+        })
 }
 
 impl NetServer {
@@ -243,7 +275,12 @@ impl NetServer {
     ///
     /// A share root that is not a directory, a configuration the library
     /// refuses, or no runtime.
-    pub fn build(cfg: &NetServerConfig, ifs: MakeClient, signon: Arc<dyn SignOn>, printer: &Arc<dyn Printer>) -> Result<Self, BuildError> {
+    pub fn build(
+        cfg: &NetServerConfig,
+        ifs: MakeClient,
+        signon: Arc<dyn SignOn>,
+        printer: &Arc<dyn Printer>,
+    ) -> Result<Self, BuildError> {
         Self::build_admitted(cfg, ifs, signon, printer, None)
     }
 
@@ -263,9 +300,11 @@ impl NetServer {
         let rt = Builder::new_current_thread().enable_all().build()?;
         let handle = rt.handle().clone();
         let (stop, stopped) = oneshot::channel::<()>();
-        let driver = thread::Builder::new().name("netserver".into()).spawn(move || {
-            let _ = rt.block_on(stopped);
-        })?;
+        let driver = thread::Builder::new()
+            .name("netserver".into())
+            .spawn(move || {
+                let _ = rt.block_on(stopped);
+            })?;
         let io = Arc::new(IfsWorker::start(ifs));
         let leases = LeaseLink::new(io.clone());
         let profile: Arc<Mutex<Option<String>>> = Arc::default();
@@ -289,7 +328,11 @@ impl NetServer {
         }
         for s in &cfg.file_shares {
             let backend = file_backend(&handle, &io, &leases, s)?;
-            let access = if s.read_only { Access::Read } else { Access::ReadWrite };
+            let access = if s.read_only {
+                Access::Read
+            } else {
+                Access::ReadWrite
+            };
             let mut share = Share::new(s.name.clone(), backend)
                 .any_user(access)
                 .remark(s.text.clone())
@@ -303,7 +346,12 @@ impl NetServer {
         }
         for p in &cfg.print_shares {
             let backend = PrintShare::new(printer.clone(), p.queue.clone(), profile.clone());
-            b = b.share(Share::new(p.name.clone(), backend).print().any_user(Access::ReadWrite).remark(p.text.clone()));
+            b = b.share(
+                Share::new(p.name.clone(), backend)
+                    .print()
+                    .any_user(Access::ReadWrite)
+                    .remark(p.text.clone()),
+            );
         }
         if !cfg.print_shares.is_empty() {
             let store = match &cfg.driver_store {
@@ -313,9 +361,13 @@ impl NetServer {
             let mut printers = Vec::new();
             for p in &cfg.print_shares {
                 let driver_files = match &store {
-                    Some((root, _)) => on_ifs(&handle, &io, root.clone(), p.driver.clone(), |c, root, driver| {
-                        Ok(drivers::find(c, &root, &driver))
-                    })?
+                    Some((root, _)) => on_ifs(
+                        &handle,
+                        &io,
+                        root.clone(),
+                        p.driver.clone(),
+                        |c, root, driver| Ok(drivers::find(c, &root, &driver)),
+                    )?
                     .unwrap_or_default(),
                     None => Vec::new(),
                 };
@@ -328,7 +380,12 @@ impl NetServer {
                 });
             }
             if let Some((_, backend)) = store {
-                b = b.share(Share::new(PRINT_DOLLAR, backend).any_user(Access::Read).named_streams(false).extended_attributes(false));
+                b = b.share(
+                    Share::new(PRINT_DOLLAR, backend)
+                        .any_user(Access::Read)
+                        .named_streams(false)
+                        .extended_attributes(false),
+                );
             }
             b = b.print_service(Spoolss::new(printer.clone(), printers));
         }
@@ -358,19 +415,26 @@ impl NetServer {
     ///
     /// The thread could not be started.
     pub fn start_leases(&self, orders: MakeClient) -> io::Result<()> {
-        let (smb, handle, link, stop) = (self.smb.clone(), self.handle.clone(), self.leases.clone(), self.stopping.clone());
+        let (smb, handle, link, stop) = (
+            self.smb.clone(),
+            self.handle.clone(),
+            self.leases.clone(),
+            self.stopping.clone(),
+        );
         link.start();
-        let poller = thread::Builder::new().name("netserver-leases".into()).spawn(move || {
-            let client = orders();
-            link.serve_orders(&*client, &stop, |tag, keep, link| {
-                let smb = smb.clone();
-                handle.spawn(async move {
-                    if !smb.break_leases(tag, keep).await {
-                        link.none_open(tag);
-                    }
+        let poller = thread::Builder::new()
+            .name("netserver-leases".into())
+            .spawn(move || {
+                let client = orders();
+                link.serve_orders(&*client, &stop, |tag, keep, link| {
+                    let smb = smb.clone();
+                    handle.spawn(async move {
+                        if !smb.break_leases(tag, keep).await {
+                            link.none_open(tag);
+                        }
+                    });
                 });
-            });
-        })?;
+            })?;
         *self.poller.lock().unwrap_or_else(PoisonError::into_inner) = Some(poller);
         Ok(())
     }
@@ -397,7 +461,8 @@ impl NetServer {
             changed.notify_waiters();
             let _ = tx.send(r);
         });
-        rx.recv().unwrap_or_else(|_| Err(io::Error::other("server stopped")))
+        rx.recv()
+            .unwrap_or_else(|_| Err(io::Error::other("server stopped")))
     }
 
     /// Serves `stream` without waiting for it to close. It counts as served
@@ -519,7 +584,10 @@ impl NetServer {
     /// The profile signed on in this job, once one has.
     #[must_use]
     pub fn profile(&self) -> Option<String> {
-        self.profile.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.profile
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     /// Stops serving: every connection closes once its current request is
@@ -535,7 +603,12 @@ impl Drop for NetServer {
         // The job's leases and watches in the IFS go with this server, and
         // its poll returns, before a later server of the job polls: news
         // for that one never reaches this one.
-        if let Some(poller) = self.poller.lock().unwrap_or_else(PoisonError::into_inner).take() {
+        if let Some(poller) = self
+            .poller
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()
+        {
             self.leases.reset();
             let _ = poller.join();
         }

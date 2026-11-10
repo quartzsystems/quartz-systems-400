@@ -109,7 +109,13 @@ fn guid(m: &[u8]) -> Option<[u8; 16]> {
     }
     let count = usize::from(u16::from_le_bytes([body[2], body[3]]));
     let dialects = body.get(36..36 + 2 * count)?;
-    let best = dialects.as_chunks::<2>().0.iter().map(|d| u16::from_le_bytes(*d)).filter(|d| *d != 0x02FF).max()?;
+    let best = dialects
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|d| u16::from_le_bytes(*d))
+        .filter(|d| *d != 0x02FF)
+        .max()?;
     let g: [u8; 16] = body[12..28].try_into().ok()?;
     (best >= 0x0210 && g != [0; 16]).then_some(g)
 }
@@ -187,6 +193,9 @@ mod tests {
     fn a_frame_too_long_is_not_waited_for() {
         assert_eq!(parse(&[0, 0x10, 0, 0]), Parse::Done(None));
         assert_eq!(parse(&[0, 0, 1, 0, 0xfe, b'S', b'M', b'B']), Parse::More);
-        assert_eq!(parse(&[0, 0, 1, 0, 0xff, b'S', b'M', b'B']), Parse::Done(None));
+        assert_eq!(
+            parse(&[0, 0, 1, 0, 0xff, b'S', b'M', b'B']),
+            Parse::Done(None)
+        );
     }
 }

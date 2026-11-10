@@ -64,7 +64,12 @@ impl LeaseLink {
     /// A link over the job's IFS thread, off.
     #[must_use]
     pub fn new(io: Arc<IfsWorker>) -> Arc<Self> {
-        Arc::new(Self { io, state: AtomicU8::new(OFF), inner: Mutex::default(), watches: Arc::default() })
+        Arc::new(Self {
+            io,
+            state: AtomicU8::new(OFF),
+            inner: Mutex::default(),
+            watches: Arc::default(),
+        })
     }
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
@@ -113,9 +118,23 @@ impl LeaseLink {
         let tag = file_index(id.fs, id.ino, id.generation);
         let key = lease.to_bytes();
         self.lock().pending.entry(tag).or_default().push(key);
-        reserved.lock().unwrap_or_else(PoisonError::into_inner).push(key);
+        reserved
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push(key);
         let want = u8::try_from(want & u32::from(RWH)).unwrap_or(0);
-        let granted = self.io.call(move |c| c.lease_grant(&super::handle::locate(c, Some(id), &path), id, tag, key, want)).await;
+        let granted = self
+            .io
+            .call(move |c| {
+                c.lease_grant(
+                    &super::handle::locate(c, Some(id), &path),
+                    id,
+                    tag,
+                    key,
+                    want,
+                )
+            })
+            .await;
         u32::from(granted.unwrap_or(0))
     }
 
@@ -128,7 +147,9 @@ impl LeaseLink {
         let Some(id) = id else { return };
         let tag = file_index(id.fs, id.ino, id.generation);
         let mut g = self.lock();
-        let Some(p) = g.pending.get_mut(&tag) else { return };
+        let Some(p) = g.pending.get_mut(&tag) else {
+            return;
+        };
         let before = p.len();
         p.retain(|k| !keys.contains(k));
         let dropped = p.len() != before;
@@ -146,8 +167,10 @@ impl LeaseLink {
             return;
         }
         let mut g = self.lock();
-        let now: Vec<(Key, u8)> =
-            leases.iter().map(|(k, s)| (k.to_bytes(), u8::try_from(s & u32::from(RWH)).unwrap_or(0))).collect();
+        let now: Vec<(Key, u8)> = leases
+            .iter()
+            .map(|(k, s)| (k.to_bytes(), u8::try_from(s & u32::from(RWH)).unwrap_or(0)))
+            .collect();
         if let Some(p) = g.pending.get_mut(&tag) {
             p.retain(|k| !now.iter().any(|(n, _)| n == k));
             if p.is_empty() {
@@ -169,7 +192,11 @@ impl LeaseLink {
     /// Report what the job holds on `tag`: every share's leases and the
     /// ones being granted, queued behind the job's other IFS calls.
     fn send(&self, g: &Inner, tag: u64) {
-        let mut all: Vec<(Key, u8)> = g.reported.get(&tag).map(|m| m.values().flatten().copied().collect()).unwrap_or_default();
+        let mut all: Vec<(Key, u8)> = g
+            .reported
+            .get(&tag)
+            .map(|m| m.values().flatten().copied().collect())
+            .unwrap_or_default();
         for k in g.pending.get(&tag).into_iter().flatten() {
             all.push((*k, KEEP));
         }
@@ -180,7 +207,12 @@ impl LeaseLink {
 
     /// Serve break orders until the client fails or `stop` is set: `spawn`
     /// has the library break a file's leases to the caching it may keep.
-    pub fn serve_orders(self: &Arc<Self>, client: &dyn IfsClient, stop: &AtomicBool, mut spawn: impl FnMut(u64, u32, Arc<Self>)) {
+    pub fn serve_orders(
+        self: &Arc<Self>,
+        client: &dyn IfsClient,
+        stop: &AtomicBool,
+        mut spawn: impl FnMut(u64, u32, Arc<Self>),
+    ) {
         while !stop.load(Ordering::SeqCst) {
             match client.lease_orders(POLL_MS) {
                 Ok(news) => {

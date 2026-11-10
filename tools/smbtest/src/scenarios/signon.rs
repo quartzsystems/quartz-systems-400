@@ -39,7 +39,9 @@ fn refused(r: Result<Share, Error>) -> Lines {
         Ok(_) => Err(Error::Check("signed on".into())),
         Err(e) => {
             let status = e.status();
-            check(status == Some(LOGON_FAILURE), || format!("expected 0x{LOGON_FAILURE:08X}, got {e}"))?;
+            check(status == Some(LOGON_FAILURE), || {
+                format!("expected 0x{LOGON_FAILURE:08X}, got {e}")
+            })?;
             Ok(vec![format!("status: 0x{LOGON_FAILURE:08X}")])
         }
     }
@@ -49,12 +51,17 @@ fn refused(r: Result<Share, Error>) -> Lines {
 /// given) must be listed.
 pub async fn share_enum(t: &Target) -> Lines {
     let s = Share::connect(t, base_config(t)).await?;
-    s.client.ipc_connect(&t.host, &t.user, t.password.clone()).await?;
+    s.client
+        .ipc_connect(&t.host, &t.user, t.password.clone())
+        .await?;
     let shares = match s.client.list_shares(&t.host).await {
         Ok(v) => v,
         // smb 0.12.1 binds srvsvc with NDR64 only; a server that speaks only
         // NDR 2.0 (the vendored one) refuses the syntax.
-        Err(e) if e.to_string().contains("ProposedTransferSyntaxesNotSupported") => {
+        Err(e)
+            if e.to_string()
+                .contains("ProposedTransferSyntaxesNotSupported") =>
+        {
             s.close().await?;
             return Err(Error::Inexpressible(NDR64_ONLY));
         }
@@ -63,7 +70,11 @@ pub async fn share_enum(t: &Target) -> Lines {
     let mut names = Vec::new();
     let mut lines = Vec::new();
     for sh in &shares {
-        let name = sh.netname.as_ref().map(|n| n.to_string()).unwrap_or_default();
+        let name = sh
+            .netname
+            .as_ref()
+            .map(|n| n.to_string())
+            .unwrap_or_default();
         lines.push(format!("{name} {:?}", sh.share_type.kind()));
         names.push(name);
     }

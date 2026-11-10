@@ -33,7 +33,9 @@ impl Rc4 {
             self.i = self.i.wrapping_add(1);
             self.j = self.j.wrapping_add(self.s[usize::from(self.i)]);
             self.s.swap(usize::from(self.i), usize::from(self.j));
-            let k = self.s[usize::from(self.s[usize::from(self.i)].wrapping_add(self.s[usize::from(self.j)]))];
+            let k = self.s[usize::from(
+                self.s[usize::from(self.i)].wrapping_add(self.s[usize::from(self.j)]),
+            )];
             *b ^= k;
         }
     }

@@ -56,8 +56,20 @@ impl Watches {
         if let Some(early) = g.early.remove(&id) {
             let _ = tx.try_send(early);
         }
-        g.feeds.insert(id, Feed { tx, lost: lost.clone() });
-        Watcher { id, rx, lost, watches: self.clone(), io }
+        g.feeds.insert(
+            id,
+            Feed {
+                tx,
+                lost: lost.clone(),
+            },
+        );
+        Watcher {
+            id,
+            rx,
+            lost,
+            watches: self.clone(),
+            io,
+        }
     }
 
     /// The poll brought `events` for the watch `id`.
@@ -90,7 +102,9 @@ fn change(e: DirEvent) -> DirChange {
     let kind = match e.kind {
         ChangeKind::Added => DirChangeKind::Added,
         ChangeKind::Removed => DirChangeKind::Removed,
-        ChangeKind::Renamed { from } => DirChangeKind::Renamed { from: from.replace('/', "\\") },
+        ChangeKind::Renamed { from } => DirChangeKind::Renamed {
+            from: from.replace('/', "\\"),
+        },
         ChangeKind::Modified => DirChangeKind::Modified,
         ChangeKind::Attributes => DirChangeKind::AttributesChanged,
         ChangeKind::Lost => DirChangeKind::Lost,

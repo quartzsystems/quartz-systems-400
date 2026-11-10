@@ -19,7 +19,10 @@ async fn main() {
             eprintln!("bad port {port}");
             std::process::exit(2);
         };
-        print!("{}", scenarios::probe::run(&Target::new(host, port, "", "", "", "")).await);
+        print!(
+            "{}",
+            scenarios::probe::run(&Target::new(host, port, "", "", "", "")).await
+        );
         return;
     }
     let target = match Target::from_args(&args) {

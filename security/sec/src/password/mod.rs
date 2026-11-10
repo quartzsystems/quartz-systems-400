@@ -49,9 +49,7 @@ pub fn short_ok(p: &str) -> bool {
 pub fn canonical(p: &str, form: PwdForm) -> String {
     match form {
         PwdForm::Short | PwdForm::DesToken => p.to_ascii_uppercase(),
-        PwdForm::Long | PwdForm::ShaToken | PwdForm::NtHash | PwdForm::Unknown(_) => {
-            p.to_string()
-        }
+        PwdForm::Long | PwdForm::ShaToken | PwdForm::NtHash | PwdForm::Unknown(_) => p.to_string(),
     }
 }
 

@@ -25,9 +25,8 @@ use smb_server::wire::messages::{
     SetInfoRequest, TreeDisconnectRequest, WriteRequest, WriteResponse,
 };
 use smb_server::{
-    BackendCapabilities, Bytes, ConfigHandle, DirEntry, FileInfo, FileTimes, Handle,
-    OpenAction, OpenOptions, Share, ShareBackend, SmbPath, SmbResult, SmbServer,
-    SmbServerBuilder,
+    BackendCapabilities, Bytes, ConfigHandle, DirEntry, FileInfo, FileTimes, Handle, OpenAction,
+    OpenOptions, Share, ShareBackend, SmbPath, SmbResult, SmbServer, SmbServerBuilder,
 };
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
@@ -809,4 +808,3 @@ pub async fn eventually(mut done: impl FnMut() -> bool) -> bool {
     }
     done()
 }
-

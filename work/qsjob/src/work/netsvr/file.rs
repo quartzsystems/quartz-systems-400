@@ -11,8 +11,8 @@
 //! the next client, until `MAXUSE` clients were served.
 
 use std::cell::RefCell;
-use std::net::{IpAddr, TcpStream};
 use std::collections::VecDeque;
+use std::net::{IpAddr, TcpStream};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError, mpsc};
@@ -48,7 +48,8 @@ fn maxuse(rqsdta: &str) -> u32 {
 /// The relay note `QZLSSERVER` gives: `N` and the client's NetBIOS
 /// name after a session request on 139.
 fn workstation(note: &[u8]) -> Option<String> {
-    note.strip_prefix(b"N").map(|n| String::from_utf8_lossy(n).trim().to_string())
+    note.strip_prefix(b"N")
+        .map(|n| String::from_utf8_lossy(n).trim().to_string())
 }
 
 /// Serve `stream`, counted as served at once.
@@ -93,7 +94,13 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
             }
         });
         let so: Arc<dyn SignOn> = signon.clone();
-        match NetServer::build_admitted(&cfg, make, so, &printer, Some(Arc::new(Admit(table.clone())))) {
+        match NetServer::build_admitted(
+            &cfg,
+            make,
+            so,
+            &printer,
+            Some(Arc::new(Admit(table.clone()))),
+        ) {
             Ok(ns) => break Some(ns),
             // A share that cannot be served is left out, the rest served.
             Err(netserver::BuildError::Share { name, error }) => {
@@ -205,7 +212,12 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
             }
             let guids: Vec<Vec<u8>> = ns.client_guids().into_iter().map(|g| g.to_vec()).collect();
             let peers: Vec<String> = if ns.disconnected_opens() > 0 {
-                peers.lock().unwrap_or_else(PoisonError::into_inner).iter().map(ToString::to_string).collect()
+                peers
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect()
             } else {
                 Vec::new()
             };

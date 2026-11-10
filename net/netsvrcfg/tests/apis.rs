@@ -134,7 +134,8 @@ fn print_shares_and_publishing() {
     // A queue that does not exist is refused, *IOSYSCFG or not.
     let e = api::call(&mut h, "QZLSADPS", &p).expect_err("no queue");
     assert_eq!((e.id, reason(&e, 22)), ("CPFB68A", 6));
-    h.outqs.push((Qualified::new("PRT01", "QUSRSYS"), "QSYS".into()));
+    h.outqs
+        .push((Qualified::new("PRT01", "QUSRSYS"), "QSYS".into()));
     api::call(&mut h, "QZLSADPS", &p).expect("adds");
     let c = h.config.clone().expect("saved");
     let ps = c

@@ -590,7 +590,11 @@ pub const PWD_MAGIC: &[u8; 8] = b"QS400PWD";
 pub fn password_blob(p: &crate::profile::UsrPrf) -> Vec<u8> {
     let mut b = PWD_MAGIC.to_vec();
     // The NT hash stays in the service: it is sealed to this system.
-    for h in p.hashes.iter().filter(|h| h.form.in_history() || h.form.is_token()) {
+    for h in p
+        .hashes
+        .iter()
+        .filter(|h| h.form.in_history() || h.form.is_token())
+    {
         b.push(h.form.code());
         b.extend_from_slice(&u16::try_from(h.phc.len()).unwrap_or(0).to_le_bytes());
         b.extend_from_slice(h.phc.as_bytes());

@@ -16,8 +16,15 @@ use crate::{Outcome, Report, Target};
 pub async fn run(t: &Target) -> Report {
     let mut r = Report::default();
     for d in DIALECTS {
-        for (enc, tag) in [(EncryptionMode::Allowed, ""), (EncryptionMode::Disabled, "-noenc")] {
-            let client = Client::new(ClientConfig { dfs: false, connection: dialect_config(t, d, enc), ..ClientConfig::default() });
+        for (enc, tag) in [
+            (EncryptionMode::Allowed, ""),
+            (EncryptionMode::Disabled, "-noenc"),
+        ] {
+            let client = Client::new(ClientConfig {
+                dfs: false,
+                connection: dialect_config(t, d, enc),
+                ..ClientConfig::default()
+            });
             let outcome = match client.connect(&t.host).await {
                 Ok(c) => match c.conn_info() {
                     Some(info) => Outcome::Ok(describe(info)),

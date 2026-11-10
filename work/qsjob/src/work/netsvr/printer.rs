@@ -129,7 +129,12 @@ impl PrintJob for Job {
             .call(move |l| {
                 let r = l.borrow_mut().with(|c| c.splf_close(id, false));
                 if r.is_ok() {
-                    l.borrow_mut().with(|c| c.netsvr(NsOp::Count { counter: PRINT_JOBS, n: 1 }));
+                    l.borrow_mut().with(|c| {
+                        c.netsvr(NsOp::Count {
+                            counter: PRINT_JOBS,
+                            n: 1,
+                        })
+                    });
                 }
                 r
             })
@@ -168,7 +173,12 @@ impl PrintJob for Job {
 }
 
 impl Printer for JobPrinter {
-    fn open(&self, user: &str, queue: &OutQueue, document: &str) -> Result<Box<dyn PrintJob>, PrintError> {
+    fn open(
+        &self,
+        user: &str,
+        queue: &OutQueue,
+        document: &str,
+    ) -> Result<Box<dyn PrintJob>, PrintError> {
         let share = self
             .shares
             .iter()
@@ -186,7 +196,11 @@ impl Printer for JobPrinter {
             .filter(|n| !n.is_empty())
             .unwrap_or("QPRINT")
             .to_string();
-        let lib = if share.queue.library.is_empty() { "*LIBL" } else { share.queue.library.as_str() };
+        let lib = if share.queue.library.is_empty() {
+            "*LIBL"
+        } else {
+            share.queue.library.as_str()
+        };
         let attrs = SplfAttrs {
             name,
             usrdta: document.chars().take(10).collect(),

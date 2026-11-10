@@ -24,10 +24,19 @@ pub struct Scratch {
 impl Scratch {
     /// A new run directory name (nothing is made yet).
     pub fn new(t: &Target) -> Scratch {
-        let millis = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis());
+        let millis = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |d| d.as_millis());
         let leaf = format!("smbtest-{}-{millis}", std::process::id());
-        let dir = if t.scratch.is_empty() { leaf } else { format!("{}\\{leaf}", t.scratch) };
-        Scratch { target: t.clone(), dir }
+        let dir = if t.scratch.is_empty() {
+            leaf
+        } else {
+            format!("{}\\{leaf}", t.scratch)
+        };
+        Scratch {
+            target: t.clone(),
+            dir,
+        }
     }
 
     /// `name` inside the run directory.
@@ -52,7 +61,14 @@ impl Scratch {
         }
         remove(&s, &self.dir).await?;
         s.close().await?;
-        Ok(vec![format!("left over: {}", if left.is_empty() { "none".into() } else { left.join(", ") })])
+        Ok(vec![format!(
+            "left over: {}",
+            if left.is_empty() {
+                "none".into()
+            } else {
+                left.join(", ")
+            }
+        )])
     }
 }
 
@@ -75,14 +91,21 @@ pub async fn list(s: &Share, dir: &str) -> Result<Vec<String>, Error> {
 
 /// Deletes a file or an empty directory: delete on close, then close.
 pub async fn remove(s: &Share, path: &str) -> Result<(), Error> {
-    let access = FileAccessMask::new().with_delete(true).with_file_read_attributes(true);
-    let r = s.open(path, &FileCreateArgs::make_open_existing(access)).await?;
+    let access = FileAccessMask::new()
+        .with_delete(true)
+        .with_file_read_attributes(true);
+    let r = s
+        .open(path, &FileCreateArgs::make_open_existing(access))
+        .await?;
     let h = match &r {
         smb::Resource::File(f) => f.handle(),
         smb::Resource::Directory(d) => d.handle(),
         smb::Resource::Pipe(_) => return Err(Error::Check(format!("{path} is a pipe"))),
     };
-    h.set_info(FileDispositionInformation { delete_pending: true.into() }).await?;
+    h.set_info(FileDispositionInformation {
+        delete_pending: true.into(),
+    })
+    .await?;
     h.close().await?;
     Ok(())
 }

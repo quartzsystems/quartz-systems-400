@@ -85,7 +85,8 @@ impl SignOn for JobSignOn {
                             SecRefusal::NoSuchUser => UNKNOWN_USERS,
                             _ => PASSWORD_VIOLATIONS,
                         };
-                        link.borrow_mut().with(|l| l.netsvr(NsOp::Count { counter, n: 1 }));
+                        link.borrow_mut()
+                            .with(|l| l.netsvr(NsOp::Count { counter, n: 1 }));
                     }
                 }
                 r

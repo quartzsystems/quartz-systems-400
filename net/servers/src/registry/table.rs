@@ -292,7 +292,13 @@ pub static SPECS: &[ServerSpec] = &[
         special: "*NETSVR",
         name: "NETSVR",
         jobs: &[
-            job("QZLSSERVER", "QPGMR", "QSERVER", JobKind::Listener, "NETSVR"),
+            job(
+                "QZLSSERVER",
+                "QPGMR",
+                "QSERVER",
+                JobKind::Listener,
+                "NETSVR",
+            ),
             job("QZLSFILE", "QUSER", "QSERVER", JobKind::Prestart, ""),
         ],
         ports: &[tcp(445, false), tcp(139, false)],

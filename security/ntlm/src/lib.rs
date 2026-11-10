@@ -15,9 +15,13 @@ pub mod auth;
 pub mod cipher;
 pub mod digest;
 
-pub use auth::keys::{encrypt_random_session_key, exported_session_key, key_exchange_key, mic, verify_mic};
+pub use auth::keys::{
+    encrypt_random_session_key, exported_session_key, key_exchange_key, mic, verify_mic,
+};
 pub use auth::owf::{nt_hash, ntowf_v2, utf16le};
-pub use auth::v2::{Blob, MIN_NTLMV2_RESPONSE, lmv2_response, ntlmv2_response, parse_blob, verify_ntlmv2};
+pub use auth::v2::{
+    Blob, MIN_NTLMV2_RESPONSE, lmv2_response, ntlmv2_response, parse_blob, verify_ntlmv2,
+};
 
 /// Constant-time equality of two byte strings (length is not secret).
 pub fn ct_eq(a: &[u8], b: &[u8]) -> bool {

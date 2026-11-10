@@ -33,7 +33,10 @@ impl TextConversion {
     /// From the share's attributes: `ccsid` 0 is [`SERVER_CCSID`].
     #[must_use]
     pub fn new(ccsid: i32, extensions: Vec<String>) -> Self {
-        let ccsid = u16::try_from(ccsid).ok().filter(|c| *c != 0).unwrap_or(SERVER_CCSID);
+        let ccsid = u16::try_from(ccsid)
+            .ok()
+            .filter(|c| *c != 0)
+            .unwrap_or(SERVER_CCSID);
         Self { ccsid, extensions }
     }
 
@@ -43,14 +46,22 @@ impl TextConversion {
     #[must_use]
     pub fn applies(&self, name: &str) -> bool {
         let ext = name.rsplit_once('.').map(|(_, e)| e);
-        self.extensions.iter().any(|e| e == "*" || ext.is_some_and(|x| !x.is_empty() && x.eq_ignore_ascii_case(e)))
+        self.extensions
+            .iter()
+            .any(|e| e == "*" || ext.is_some_and(|x| !x.is_empty() && x.eq_ignore_ascii_case(e)))
     }
 }
 
 /// Whether `ccsid` holds one character per byte.
 #[must_use]
 pub fn single_byte(ccsid: u16) -> bool {
-    matches!(Codec::of(ccsid), Ok(Some(Codec { form: Form::Sbcs { .. }, .. })))
+    matches!(
+        Codec::of(ccsid),
+        Ok(Some(Codec {
+            form: Form::Sbcs { .. },
+            ..
+        }))
+    )
 }
 
 /// Byte tables between a file's CCSID and its share's.
@@ -79,7 +90,10 @@ impl Xlate {
         if file == share || !single_byte(file) || !single_byte(share) {
             return None;
         }
-        Some(Self { to_client: table(file, share)?, to_file: table(share, file)? })
+        Some(Self {
+            to_client: table(file, share)?,
+            to_file: table(share, file)?,
+        })
     }
 
     /// File data as the client reads it.

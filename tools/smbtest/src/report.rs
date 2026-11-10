@@ -82,7 +82,10 @@ mod tests {
         r.push("a", Outcome::Ok(vec!["dialect: 3.1.1".into()]));
         r.push("b", Outcome::Fail("no".into()));
         r.push("c", Outcome::Skip("cannot"));
-        assert_eq!(r.to_string(), "ok a\n  dialect: 3.1.1\nfail b: no\nskip c: cannot\n");
+        assert_eq!(
+            r.to_string(),
+            "ok a\n  dialect: 3.1.1\nfail b: no\nskip c: cannot\n"
+        );
         assert_eq!(r.failures(), ["b"]);
         assert_eq!(r.detail("a", "dialect: "), Some("3.1.1"));
     }

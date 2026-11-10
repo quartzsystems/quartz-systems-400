@@ -456,14 +456,17 @@ fn run_api(
 fn refused(system: &mut System, e: &ApiError) -> NsReply {
     let id = e.id.to_string();
     let file = (sysapi::param::file_of(&id).to_string(), "*LIBL".to_string());
-    let text = super::msgs::description(system, &id, &file).map_or_else(String::new, |d| d.format(&e.data));
+    let text = super::msgs::description(system, &id, &file)
+        .map_or_else(String::new, |d| d.format(&e.data));
     NsReply::Refused { msgid: id, text }
 }
 
 /// Whether `*NETSVR` starts with TCP/IP (the server table).
 fn autostarts(system: &mut System) -> bool {
-    super::tcp::with(system, |_, rt| rt.cfg.servers.get("*NETSVR").is_some_and(|a| a.autostart))
-        .unwrap_or(false)
+    super::tcp::with(system, |_, rt| {
+        rt.cfg.servers.get("*NETSVR").is_some_and(|a| a.autostart)
+    })
+    .unwrap_or(false)
 }
 
 fn to_wire(s: &Session) -> NsSession {
@@ -530,7 +533,10 @@ fn table_op(
     let err = |e: &dyn std::fmt::Display| NsReply::Error {
         text: e.to_string(),
     };
-    let changes = !matches!(op, NsOp::List | NsOp::Ending { .. } | NsOp::Config | NsOp::State);
+    let changes = !matches!(
+        op,
+        NsOp::List | NsOp::Ending { .. } | NsOp::Config | NsOp::State
+    );
     if changes && !SERVER_JOBS.contains(&name) {
         return NsReply::Error {
             text: say("TXT0E2D", &[job]),
@@ -647,12 +653,7 @@ fn table_op(
 }
 
 /// The `netsvr` request from job `job`, whose current profile is `me`.
-pub fn request(
-    system: &mut System,
-    job: &wm::table::JobInfo,
-    me: &Principal,
-    op: NsOp,
-) -> NsReply {
+pub fn request(system: &mut System, job: &wm::table::JobInfo, me: &Principal, op: NsOp) -> NsReply {
     let q = format!("{:06}/{}/{}", job.number, job.user, job.name);
     match op {
         NsOp::Config => {
@@ -694,7 +695,10 @@ pub fn request(
     let max = match &op {
         NsOp::Admit { share, .. } => load(system)
             .ok()
-            .and_then(|c| c.share(share).and_then(|s| s.as_file().map(|f| f.max_users)))
+            .and_then(|c| {
+                c.share(share)
+                    .and_then(|s| s.as_file().map(|f| f.max_users))
+            })
             .unwrap_or(-1),
         _ => -1,
     };
@@ -741,8 +745,7 @@ mod tests {
             run(&mut t, "000001/QPGMR/QPADEV0001", "QPADEV0001", 5, reg()),
             NsReply::Error { .. }
         ));
-        let NsReply::Session { id } =
-            run(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 5, reg())
+        let NsReply::Session { id } = run(&mut t, "000002/QUSER/QZLSFILE", "QZLSFILE", 5, reg())
         else {
             panic!("registers")
         };

@@ -41,11 +41,19 @@ fn body(len: usize) -> Vec<u8> {
 
 /// Writes `total` bytes in `size` requests, `window` at a time; then reads
 /// them back the same way and checks each chunk. Returns the seconds each took.
-async fn transfer(s: &Share, path: &str, total: u64, wsize: usize, rsize: usize, window: usize) -> Result<(f64, f64), Error> {
+async fn transfer(
+    s: &Share,
+    path: &str,
+    total: u64,
+    wsize: usize,
+    rsize: usize,
+    window: usize,
+) -> Result<(f64, f64), Error> {
     let size = wsize.min(rsize).max(1);
     let base = body(size);
     let chunks = total.div_ceil(size as u64);
-    let len_of = |i: u64| usize::try_from((total - i * size as u64).min(size as u64)).unwrap_or(size);
+    let len_of =
+        |i: u64| usize::try_from((total - i * size as u64).min(size as u64)).unwrap_or(size);
 
     let f = s.create_file(path).await?;
     let start = Instant::now();
@@ -80,11 +88,15 @@ async fn transfer(s: &Share, path: &str, total: u64, wsize: usize, rsize: usize,
                 let mut buf = vec![0u8; len];
                 let mut at = 0;
                 while at < len {
-                    let n = f.read_at(&mut buf[at..], i * size as u64 + at as u64).await?;
+                    let n = f
+                        .read_at(&mut buf[at..], i * size as u64 + at as u64)
+                        .await?;
                     check(n > 0, || format!("chunk {i}: short read at {at}"))?;
                     at += n;
                 }
-                check(buf == chunk(base, i)[..len], || format!("chunk {i}: data differs"))
+                check(buf == chunk(base, i)[..len], || {
+                    format!("chunk {i}: data differs")
+                })
             }
         })
         .buffer_unordered(window);
@@ -106,13 +118,19 @@ fn mbps(bytes: u64, secs: f64) -> String {
 pub async fn large_io(t: &Target, sc: &Scratch) -> Lines {
     let s = Share::connect(t, base_config(t)).await?;
     let info = s.info().await?;
-    let (w, r) = (info.negotiation.max_write_size as usize, info.negotiation.max_read_size as usize);
+    let (w, r) = (
+        info.negotiation.max_write_size as usize,
+        info.negotiation.max_read_size as usize,
+    );
     let total = t.large_bytes.max(3 * w.max(r) as u64 + 17);
     let path = sc.file("large.bin");
     transfer(&s, &path, total, w, r, 1).await?;
     remove(&s, &path).await?;
     s.close().await?;
-    Ok(vec![format!("bytes: {total}"), format!("max write/read: {w}/{r}")])
+    Ok(vec![
+        format!("bytes: {total}"),
+        format!("max write/read: {w}/{r}"),
+    ])
 }
 
 /// `copy_bytes` in and out with requests in flight, timed.

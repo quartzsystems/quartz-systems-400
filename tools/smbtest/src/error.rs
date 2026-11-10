@@ -55,5 +55,9 @@ fn describe(e: &smb::Error) -> String {
 
 /// A check that failed: `Err(Error::Check(..))`.
 pub fn check(ok: bool, what: impl FnOnce() -> String) -> Result<(), Error> {
-    if ok { Ok(()) } else { Err(Error::Check(what())) }
+    if ok {
+        Ok(())
+    } else {
+        Err(Error::Check(what()))
+    }
 }

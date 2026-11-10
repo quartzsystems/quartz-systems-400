@@ -39,9 +39,17 @@ const NO_SHARES: &str = "7";
 
 /// Where one connection goes.
 fn route_to(link: &Shared, s: &TcpStream) -> sockets::JobId {
-    let guid = route::client_guid(s, PEEK).map(|g| g.to_vec()).unwrap_or_default();
-    let peer = s.peer_addr().map(|a| a.ip().to_string()).unwrap_or_default();
-    match link.borrow_mut().with(|l| l.netsvr(NsOp::Lookup { guid, peer })) {
+    let guid = route::client_guid(s, PEEK)
+        .map(|g| g.to_vec())
+        .unwrap_or_default();
+    let peer = s
+        .peer_addr()
+        .map(|a| a.ip().to_string())
+        .unwrap_or_default();
+    match link
+        .borrow_mut()
+        .with(|l| l.netsvr(NsOp::Lookup { guid, peer }))
+    {
         NsReply::Target { relay } if relay.len() == 16 => {
             let mut id = [0u8; 16];
             id.copy_from_slice(&relay);
@@ -53,7 +61,13 @@ fn route_to(link: &Shared, s: &TcpStream) -> sockets::JobId {
 
 /// Accept on `l` until `stop`; `netbios` names the server a session
 /// request on 139 must call.
-fn accept(l: &TcpListener, me: sockets::JobId, netbios: Option<&str>, stop: &AtomicBool, link: &Shared) {
+fn accept(
+    l: &TcpListener,
+    me: sockets::JobId,
+    netbios: Option<&str>,
+    stop: &AtomicBool,
+    link: &Shared,
+) {
     let _ = l.set_nonblocking(true);
     while !stop.load(Ordering::Acquire) {
         let mut s = match l.accept() {

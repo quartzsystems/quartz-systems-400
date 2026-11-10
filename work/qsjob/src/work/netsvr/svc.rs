@@ -67,12 +67,19 @@ impl Svc {
 
     /// Runs `f` with the thread's link and waits for its answer; `None`
     /// when the thread is gone.
-    pub fn call<T: Send + 'static>(&self, f: impl FnOnce(&Shared) -> T + Send + 'static) -> Option<T> {
+    pub fn call<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&Shared) -> T + Send + 'static,
+    ) -> Option<T> {
         let (tx, rx) = mpsc::channel();
         let call: Call = Box::new(move |l| {
             let _ = tx.send(f(l));
         });
-        self.tx.lock().unwrap_or_else(PoisonError::into_inner).send(call).ok()?;
+        self.tx
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .send(call)
+            .ok()?;
         rx.recv().ok()
     }
 }

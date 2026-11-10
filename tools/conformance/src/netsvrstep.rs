@@ -84,8 +84,10 @@ fn no_client_job(s: &mut Session) -> Result<(), String> {
             return Ok(());
         }
         if Instant::now() > end {
-            return Err(format!("a QZLSFILE job still serves a client:
-{out}"));
+            return Err(format!(
+                "a QZLSFILE job still serves a client:
+{out}"
+            ));
         }
         std::thread::sleep(Duration::from_secs(2));
     }

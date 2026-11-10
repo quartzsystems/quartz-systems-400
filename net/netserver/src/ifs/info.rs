@@ -56,7 +56,13 @@ pub fn nanos(ft: u64) -> Nanos {
 }
 
 /// The IFS attributes a [`FileInfo`] needs.
-pub const WANTED: &[AttrId] = &[AttrId::PcReadOnly, AttrId::PcHidden, AttrId::PcSystem, AttrId::PcArchive, AttrId::FileId];
+pub const WANTED: &[AttrId] = &[
+    AttrId::PcReadOnly,
+    AttrId::PcHidden,
+    AttrId::PcSystem,
+    AttrId::PcArchive,
+    AttrId::FileId,
+];
 
 /// The file ID the library reports: the IFS file ID's file number and
 /// generation (never 0; the root's number is kept).

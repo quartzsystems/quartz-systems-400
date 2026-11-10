@@ -20,8 +20,8 @@ use std::sync::{Arc, Mutex, PoisonError};
 use async_trait::async_trait;
 use bytes::Bytes;
 use smb_server::{
-    BackendCapabilities, DirEntry, FileInfo, FileTimes, Handle, OpenAction, OpenIntent, OpenOptions,
-    ShareBackend, SmbError, SmbPath, SmbResult,
+    BackendCapabilities, DirEntry, FileInfo, FileTimes, Handle, OpenAction, OpenIntent,
+    OpenOptions, ShareBackend, SmbError, SmbPath, SmbResult,
 };
 use tracing::warn;
 
@@ -83,7 +83,12 @@ pub trait Printer: Send + Sync + 'static {
     /// # Errors
     ///
     /// Why it cannot be opened.
-    fn open(&self, user: &str, queue: &OutQueue, document: &str) -> Result<Box<dyn PrintJob>, PrintError>;
+    fn open(
+        &self,
+        user: &str,
+        queue: &OutQueue,
+        document: &str,
+    ) -> Result<Box<dyn PrintJob>, PrintError>;
 }
 
 /// The backend of one print share.
@@ -97,8 +102,17 @@ pub struct PrintShare {
 
 impl PrintShare {
     /// A print share on `queue`, printing as the profile `user` holds.
-    pub fn new(printer: Arc<dyn Printer>, queue: OutQueue, user: Arc<Mutex<Option<String>>>) -> Self {
-        Self { printer, queue, user, next: AtomicU64::new(2) }
+    pub fn new(
+        printer: Arc<dyn Printer>,
+        queue: OutQueue,
+        user: Arc<Mutex<Option<String>>>,
+    ) -> Self {
+        Self {
+            printer,
+            queue,
+            user,
+            next: AtomicU64::new(2),
+        }
     }
 }
 
@@ -120,16 +134,30 @@ struct PrintHandle {
 
 #[async_trait]
 impl ShareBackend for PrintShare {
-    async fn open(&self, path: &SmbPath, opts: OpenOptions) -> SmbResult<(Box<dyn Handle>, OpenAction)> {
+    async fn open(
+        &self,
+        path: &SmbPath,
+        opts: OpenOptions,
+    ) -> SmbResult<(Box<dyn Handle>, OpenAction)> {
         if path.is_root() {
-            let h = PrintHandle { name: String::new(), index: 1, job: Mutex::new(None), written: AtomicU64::new(0) };
+            let h = PrintHandle {
+                name: String::new(),
+                index: 1,
+                job: Mutex::new(None),
+                written: AtomicU64::new(0),
+            };
             return Ok((Box::new(h), OpenAction::Opened));
         }
         // The library names every new print file; nothing else exists.
         if opts.intent != OpenIntent::Create {
             return Err(SmbError::NotFound);
         }
-        let user = self.user.lock().unwrap_or_else(PoisonError::into_inner).clone().ok_or(SmbError::AccessDenied)?;
+        let user = self
+            .user
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
+            .ok_or(SmbError::AccessDenied)?;
         let name = path.file_name().unwrap_or("PRINT").to_owned();
         let job = self.printer.open(&user, &self.queue, &name).map_err(|e| {
             warn!(user, queue = %self.queue.name, error = %e, "print file not opened");
@@ -195,7 +223,11 @@ impl Handle for PrintHandle {
 
     async fn truncate(&self, len: u64) -> SmbResult<()> {
         // A new print file is empty; nothing else can be cut.
-        if len == self.written.load(Ordering::Relaxed) { Ok(()) } else { Err(SmbError::AccessDenied) }
+        if len == self.written.load(Ordering::Relaxed) {
+            Ok(())
+        } else {
+            Err(SmbError::AccessDenied)
+        }
     }
 
     async fn list_dir(&self, _: Option<&str>) -> SmbResult<Vec<DirEntry>> {
@@ -203,7 +235,11 @@ impl Handle for PrintHandle {
     }
 
     async fn close(self: Box<Self>) -> SmbResult<()> {
-        let job = self.job.lock().unwrap_or_else(PoisonError::into_inner).take();
+        let job = self
+            .job
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
         match job {
             Some(job) => job.close().map_err(|e| smb(&e)),
             None => Ok(()),
@@ -214,7 +250,12 @@ impl Handle for PrintHandle {
 impl Drop for PrintHandle {
     fn drop(&mut self) {
         // A print file the library never closed still ends.
-        if let Some(job) = self.job.lock().unwrap_or_else(PoisonError::into_inner).take() {
+        if let Some(job) = self
+            .job
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()
+        {
             let _ = job.close();
         }
     }

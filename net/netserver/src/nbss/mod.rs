@@ -138,7 +138,8 @@ pub fn session_request(called: &NbName, calling: &NbName) -> Vec<u8> {
 /// its name or `*SMBSERVER`, with the server suffix.
 #[must_use]
 pub fn is_for(called: &NbName, server: &str) -> bool {
-    called.suffix == SUFFIX_SERVER && (called.is(server, SUFFIX_SERVER) || called.is("*SMBSERVER", SUFFIX_SERVER))
+    called.suffix == SUFFIX_SERVER
+        && (called.is(server, SUFFIX_SERVER) || called.is("*SMBSERVER", SUFFIX_SERVER))
 }
 
 /// Reads the session request on a socket accepted on 139 and answers it:
@@ -150,7 +151,11 @@ pub fn is_for(called: &NbName, server: &str) -> bool {
 /// # Errors
 ///
 /// A refused, malformed or missing request, or a socket error.
-pub fn answer(stream: &mut TcpStream, server: &str, timeout: Duration) -> Result<NbName, NbssError> {
+pub fn answer(
+    stream: &mut TcpStream,
+    server: &str,
+    timeout: Duration,
+) -> Result<NbName, NbssError> {
     let deadline = Instant::now() + timeout;
     let old = stream.read_timeout()?;
     let r = answer_until(stream, server, deadline);
@@ -158,7 +163,11 @@ pub fn answer(stream: &mut TcpStream, server: &str, timeout: Duration) -> Result
     r
 }
 
-fn read_exact_by(stream: &mut TcpStream, buf: &mut [u8], deadline: Instant) -> Result<(), NbssError> {
+fn read_exact_by(
+    stream: &mut TcpStream,
+    buf: &mut [u8],
+    deadline: Instant,
+) -> Result<(), NbssError> {
     let mut got = 0;
     while got < buf.len() {
         let left = deadline.saturating_duration_since(Instant::now());
@@ -169,7 +178,12 @@ fn read_exact_by(stream: &mut TcpStream, buf: &mut [u8], deadline: Instant) -> R
         match stream.read(&mut buf[got..]) {
             Ok(0) => return Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof).into()),
             Ok(n) => got += n,
-            Err(e) if matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut) => {
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
                 return Err(NbssError::Timeout);
             }
             Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
@@ -179,7 +193,11 @@ fn read_exact_by(stream: &mut TcpStream, buf: &mut [u8], deadline: Instant) -> R
     Ok(())
 }
 
-fn answer_until(stream: &mut TcpStream, server: &str, deadline: Instant) -> Result<NbName, NbssError> {
+fn answer_until(
+    stream: &mut TcpStream,
+    server: &str,
+    deadline: Instant,
+) -> Result<NbName, NbssError> {
     loop {
         let mut head = [0u8; 4];
         read_exact_by(stream, &mut head, deadline)?;
@@ -190,7 +208,9 @@ fn answer_until(stream: &mut TcpStream, server: &str, deadline: Instant) -> Resu
                 let mut buf = head.to_vec();
                 buf.resize(4 + len, 0);
                 read_exact_by(stream, &mut buf[4..], deadline)?;
-                let Some(Frame::SessionRequest { called, calling }) = take_frame(&mut buf, MAX_REQUEST)? else {
+                let Some(Frame::SessionRequest { called, calling }) =
+                    take_frame(&mut buf, MAX_REQUEST)?
+                else {
                     return Err(NbssError::BadFrame);
                 };
                 if is_for(&called, server) {
@@ -233,8 +253,14 @@ mod tests {
         let req = session_request(&NbName::new("SRV", SUFFIX_SERVER), &NbName::new("PC", 0));
         let mut buf = vec![KEEP_ALIVE, 0, 0, 0];
         buf.extend_from_slice(&req);
-        assert_eq!(take_frame(&mut buf, MAX_REQUEST).unwrap(), Some(Frame::KeepAlive));
-        let Some(Frame::SessionRequest { called, .. }) = take_frame(&mut buf, MAX_REQUEST).unwrap() else { panic!() };
+        assert_eq!(
+            take_frame(&mut buf, MAX_REQUEST).unwrap(),
+            Some(Frame::KeepAlive)
+        );
+        let Some(Frame::SessionRequest { called, .. }) = take_frame(&mut buf, MAX_REQUEST).unwrap()
+        else {
+            panic!()
+        };
         assert!(is_for(&called, "srv"));
         assert!(buf.is_empty());
         assert!(take_frame(&mut vec![0x99, 0, 0, 0], 10).is_err());
@@ -252,7 +278,10 @@ mod tests {
     fn answers_a_request_and_leaves_what_follows() {
         let (mut s, mut c) = pair();
         let mut out = vec![KEEP_ALIVE, 0, 0, 0];
-        out.extend_from_slice(&session_request(&NbName::new("*SMBSERVER", SUFFIX_SERVER), &NbName::new("PC1", 0)));
+        out.extend_from_slice(&session_request(
+            &NbName::new("*SMBSERVER", SUFFIX_SERVER),
+            &NbName::new("PC1", 0),
+        ));
         out.extend_from_slice(&[0, 0, 0, 1, 0xAB]);
         c.write_all(&out).unwrap();
         let calling = answer(&mut s, "QS400", Duration::from_secs(2)).unwrap();
@@ -268,12 +297,22 @@ mod tests {
     #[test]
     fn refuses_another_name_and_times_out() {
         let (mut s, mut c) = pair();
-        c.write_all(&session_request(&NbName::new("OTHER", SUFFIX_SERVER), &NbName::new("PC1", 0))).unwrap();
-        assert!(matches!(answer(&mut s, "QS400", Duration::from_secs(2)), Err(NbssError::NotCalled(_))));
+        c.write_all(&session_request(
+            &NbName::new("OTHER", SUFFIX_SERVER),
+            &NbName::new("PC1", 0),
+        ))
+        .unwrap();
+        assert!(matches!(
+            answer(&mut s, "QS400", Duration::from_secs(2)),
+            Err(NbssError::NotCalled(_))
+        ));
         let mut resp = [0u8; 5];
         c.read_exact(&mut resp).unwrap();
         assert_eq!(resp, negative_response(NEG_CALLED_NOT_PRESENT));
         let (mut s, _c) = pair();
-        assert!(matches!(answer(&mut s, "QS400", Duration::from_millis(100)), Err(NbssError::Timeout)));
+        assert!(matches!(
+            answer(&mut s, "QS400", Duration::from_millis(100)),
+            Err(NbssError::Timeout)
+        ));
     }
 }

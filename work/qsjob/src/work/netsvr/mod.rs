@@ -20,8 +20,8 @@ use std::time::Duration;
 use netserver::print::OutQueue;
 use netserver::{FileShare, NetServerConfig, PrintShareCfg};
 use netsvrcfg::{Config, Kind, Permission};
-use stg::{Client, Shared};
 use stg::netsvr::{NsOp, NsReply};
+use stg::{Client, Shared};
 use wm::obj::msgq::{MsgKind, QMsg};
 
 /// The role of `QZLSSERVER` started as a server job (the registry's).
@@ -47,7 +47,10 @@ pub fn config(link: &Shared) -> Result<Config, String> {
 /// share.
 pub fn server_config(c: &Config) -> NetServerConfig {
     let a = &c.attrs.current;
-    let idle = u64::try_from(a.idle_timeout).map_or(Duration::from_secs(u64::from(u32::MAX)), Duration::from_secs);
+    let idle = u64::try_from(a.idle_timeout).map_or(
+        Duration::from_secs(u64::from(u32::MAX)),
+        Duration::from_secs,
+    );
     let mut n = NetServerConfig {
         server_name: a.server_name.clone(),
         domain: a.domain.clone(),

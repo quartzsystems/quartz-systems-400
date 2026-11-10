@@ -1043,7 +1043,12 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                     ),
                     Pje {
                         adljobs: 5,
-                        ..host_pje("QZLSFILE", q("QZLSPJ", "QSYS"), q("QPWFSERVER", "QSYS"), 200)
+                        ..host_pje(
+                            "QZLSFILE",
+                            q("QZLSPJ", "QSYS"),
+                            q("QPWFSERVER", "QSYS"),
+                            200,
+                        )
                     },
                     Pje {
                         strjobs: false,

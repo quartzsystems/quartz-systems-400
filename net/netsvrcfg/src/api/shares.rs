@@ -125,7 +125,13 @@ fn text_ccsid_ok(c: i32) -> bool {
     use ccsid::conv::{Codec, Form};
     c == 0
         || u16::try_from(c).is_ok_and(|c| {
-            matches!(Codec::of(c), Ok(Some(Codec { form: Form::Sbcs { .. }, .. })))
+            matches!(
+                Codec::of(c),
+                Ok(Some(Codec {
+                    form: Form::Sbcs { .. },
+                    ..
+                }))
+            )
         })
 }
 
@@ -388,7 +394,9 @@ pub fn change_print(h: &mut dyn Host, p: &Parms<'_>) -> Result<Vec<u8>, ApiError
         return Err(share_err(API, &name, reason::WRONG_TYPE));
     }
     let (s, publish) = print_share(API, h, p, &name, &old)?;
-    if s.as_print().is_some_and(|ps| h.outq_owner(&ps.outq).is_none()) {
+    if s.as_print()
+        .is_some_and(|ps| h.outq_owner(&ps.outq).is_none())
+    {
         return Err(share_err(API, &name, reason::NO_OUTQ));
     }
     for q in [old.as_print(), s.as_print()]

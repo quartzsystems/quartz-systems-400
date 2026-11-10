@@ -11,7 +11,9 @@ use std::path::PathBuf;
 
 use hmac::{Hmac, Mac};
 use md4::{Digest, Md4};
-use smb_server::{Access, LocalFsBackend, Logon, LogonVerifier, Share, SmbServer, SmbServerBuilder};
+use smb_server::{
+    Access, LocalFsBackend, Logon, LogonVerifier, Share, SmbServer, SmbServerBuilder,
+};
 use smbtest::{Outcome, Report, Target, scenarios};
 
 const USER: &str = "QSUSER";
@@ -41,7 +43,11 @@ impl LogonVerifier for OneProfile {
         let key = hmac(&nt, &[&utf16(&format!("{}{domain}", user.to_uppercase()))]);
         let (proof, blob) = resp.split_at(16);
         let computed = hmac(&key, &[challenge, blob]);
-        (proof == computed).then(|| Logon { user: USER.into(), session_base_key: hmac(&key, &[&computed]), guest: false })
+        (proof == computed).then(|| Logon {
+            user: USER.into(),
+            session_base_key: hmac(&key, &[&computed]),
+            guest: false,
+        })
     }
 }
 
@@ -67,11 +73,16 @@ fn server(root: &TempRoot) -> SmbServerBuilder {
     SmbServer::builder()
         .logon_verifier(OneProfile)
         .require_signing(true)
-        .share(Share::new("DATA", LocalFsBackend::new(&root.0).unwrap()).any_user(Access::ReadWrite))
+        .share(
+            Share::new("DATA", LocalFsBackend::new(&root.0).unwrap()).any_user(Access::ReadWrite),
+        )
 }
 
 async fn start(builder: SmbServerBuilder) -> SocketAddr {
-    let server = builder.listen("127.0.0.1:0".parse().unwrap()).build().expect("build");
+    let server = builder
+        .listen("127.0.0.1:0".parse().unwrap())
+        .build()
+        .expect("build");
     let addr = server.bind().await.expect("bind");
     tokio::spawn(async move {
         let _ = server.serve().await;
@@ -80,14 +91,25 @@ async fn start(builder: SmbServerBuilder) -> SocketAddr {
 }
 
 fn target(addr: SocketAddr) -> Target {
-    let mut t = Target::new("127.0.0.1", addr.port(), "qsuser", PASSWORD, "DATA", "scratch");
+    let mut t = Target::new(
+        "127.0.0.1",
+        addr.port(),
+        "qsuser",
+        PASSWORD,
+        "DATA",
+        "scratch",
+    );
     t.copy_bytes = 16 << 20;
     t.large_bytes = 4 << 20;
     t
 }
 
 fn ok(r: &Report, name: &str) {
-    assert!(matches!(r.get(name), Some(Outcome::Ok(_))), "{name}: {:?}\n{r}", r.get(name));
+    assert!(
+        matches!(r.get(name), Some(Outcome::Ok(_))),
+        "{name}: {:?}\n{r}",
+        r.get(name)
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -110,7 +132,10 @@ async fn every_scenario_passes_against_the_vendored_server() {
     assert_eq!(r.detail("negotiate-3.0", "signing: "), Some("AesCmac"));
     assert!(r.detail("copy", "in: ").is_some_and(|s| s.contains("MB/s")));
     // The run directory is gone; the scratch directory is empty again.
-    assert_eq!(std::fs::read_dir(root.0.join("scratch")).unwrap().count(), 0);
+    assert_eq!(
+        std::fs::read_dir(root.0.join("scratch")).unwrap().count(),
+        0
+    );
 }
 
 /// Matches Windows' own server (`oracle/netserver/windows-negotiate.txt`):
@@ -121,7 +146,10 @@ async fn negotiate_only_probe_answers_as_windows_does() {
     let addr = start(server(&root)).await;
     let r = scenarios::probe::run(&target(addr)).await;
     assert_eq!(r.failures(), ["probe-3.1.1-noenc"], "{r}");
-    assert!(matches!(r.get("probe-3.1.1-noenc"), Some(Outcome::Fail(m)) if m.contains("0xC000000D")), "{r}");
+    assert!(
+        matches!(r.get("probe-3.1.1-noenc"), Some(Outcome::Fail(m)) if m.contains("0xC000000D")),
+        "{r}"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -129,13 +157,29 @@ async fn encryption_required_by_the_server_refuses_smb2() {
     let root = TempRoot::new("enc");
     let addr = start(server(&root).encrypt_data(true)).await;
     let mut t = target(addr);
-    t.only = ["negotiate-2.1", "negotiate-3.1.1", "scratch-dir", "encrypt-3.0", "encrypt-3.1.1", "cleanup"]
-        .map(str::to_string)
-        .to_vec();
+    t.only = [
+        "negotiate-2.1",
+        "negotiate-3.1.1",
+        "scratch-dir",
+        "encrypt-3.0",
+        "encrypt-3.1.1",
+        "cleanup",
+    ]
+    .map(str::to_string)
+    .to_vec();
     let r = scenarios::run_all(&t).await;
     println!("{r}");
-    assert!(matches!(r.get("negotiate-2.1"), Some(Outcome::Fail(_))), "{r}");
-    for name in ["negotiate-3.1.1", "scratch-dir", "encrypt-3.0", "encrypt-3.1.1", "cleanup"] {
+    assert!(
+        matches!(r.get("negotiate-2.1"), Some(Outcome::Fail(_))),
+        "{r}"
+    );
+    for name in [
+        "negotiate-3.1.1",
+        "scratch-dir",
+        "encrypt-3.0",
+        "encrypt-3.1.1",
+        "cleanup",
+    ] {
         ok(&r, name);
     }
 }
@@ -145,7 +189,13 @@ async fn bad_signons_are_logon_failures() {
     let root = TempRoot::new("bad");
     let addr = start(server(&root)).await;
     let mut t = target(addr);
-    t.only = ["signon-good", "signon-wrong-password", "signon-unknown-user"].map(str::to_string).to_vec();
+    t.only = [
+        "signon-good",
+        "signon-wrong-password",
+        "signon-unknown-user",
+    ]
+    .map(str::to_string)
+    .to_vec();
     let r = scenarios::run_all(&t).await;
     for name in &t.only {
         ok(&r, name);
@@ -153,5 +203,8 @@ async fn bad_signons_are_logon_failures() {
     t.password = "nope".into();
     t.only = vec!["signon-good".into()];
     let r = scenarios::run_all(&t).await;
-    assert!(matches!(r.get("signon-good"), Some(Outcome::Fail(m)) if m.contains("C000006D")), "{r}");
+    assert!(
+        matches!(r.get("signon-good"), Some(Outcome::Fail(m)) if m.contains("C000006D")),
+        "{r}"
+    );
 }

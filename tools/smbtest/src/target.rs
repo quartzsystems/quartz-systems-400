@@ -42,7 +42,14 @@ PASSWORD `-` reads SMBTEST_PASSWORD from the environment.";
 
 impl Target {
     /// One with the defaults for everything but the six positional values.
-    pub fn new(host: &str, port: u16, user: &str, password: &str, share: &str, scratch: &str) -> Target {
+    pub fn new(
+        host: &str,
+        port: u16,
+        user: &str,
+        password: &str,
+        share: &str,
+        scratch: &str,
+    ) -> Target {
         Target {
             host: host.to_string(),
             port,
@@ -65,7 +72,9 @@ impl Target {
         let mut it = args.iter();
         while let Some(a) = it.next() {
             let mut value = |name: &str| {
-                it.next().cloned().ok_or_else(|| Error::Usage(format!("{name} needs a value")))
+                it.next()
+                    .cloned()
+                    .ok_or_else(|| Error::Usage(format!("{name} needs a value")))
             };
             match a.as_str() {
                 "--list" => return Ok(None),
@@ -76,14 +85,18 @@ impl Target {
                 "--large-bytes" => opts.large_bytes = bytes(&value("--large-bytes")?)?,
                 "--print-share" => opts.print_share = Some(value("--print-share")?),
                 "--no-bad-signon" => opts.no_bad_signon = true,
-                s if s.starts_with("--") => return Err(Error::Usage(format!("unknown option {s}"))),
+                s if s.starts_with("--") => {
+                    return Err(Error::Usage(format!("unknown option {s}")));
+                }
                 s => pos.push(s.to_string()),
             }
         }
         let [host, port, user, password, share, scratch] = pos.as_slice() else {
             return Err(Error::Usage(USAGE.to_string()));
         };
-        let port = port.parse().map_err(|_| Error::Usage(format!("bad port {port}")))?;
+        let port = port
+            .parse()
+            .map_err(|_| Error::Usage(format!("bad port {port}")))?;
         let password = if password == "-" {
             std::env::var("SMBTEST_PASSWORD")
                 .map_err(|_| Error::Usage("SMBTEST_PASSWORD is not set".into()))?
@@ -91,7 +104,14 @@ impl Target {
             password.clone()
         };
         let base = Target::new(host, port, user, &password, share, scratch);
-        Ok(Some(Target { only: opts.only, print_share: opts.print_share, no_bad_signon: opts.no_bad_signon, copy_bytes: opts.copy_bytes, large_bytes: opts.large_bytes, ..base }))
+        Ok(Some(Target {
+            only: opts.only,
+            print_share: opts.print_share,
+            no_bad_signon: opts.no_bad_signon,
+            copy_bytes: opts.copy_bytes,
+            large_bytes: opts.large_bytes,
+            ..base
+        }))
     }
 
     /// Whether `name` is selected.
@@ -123,10 +143,15 @@ mod tests {
 
     #[test]
     fn parses_positionals_and_options() {
-        let t = Target::from_args(&args("h 4445 u p s /a/b/ --only x,y --copy-bytes 1G --no-bad-signon"))
-            .unwrap()
-            .unwrap();
-        assert_eq!((t.host.as_str(), t.port, t.scratch.as_str()), ("h", 4445, "a\\b"));
+        let t = Target::from_args(&args(
+            "h 4445 u p s /a/b/ --only x,y --copy-bytes 1G --no-bad-signon",
+        ))
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            (t.host.as_str(), t.port, t.scratch.as_str()),
+            ("h", 4445, "a\\b")
+        );
         assert_eq!(t.only, ["x", "y"]);
         assert_eq!(t.copy_bytes, 1 << 30);
         assert!(t.no_bad_signon && t.wants("x") && !t.wants("z"));

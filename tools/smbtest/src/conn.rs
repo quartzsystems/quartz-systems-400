@@ -13,11 +13,11 @@ use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use smb::connection::EncryptionMode;
+use smb::connection::connection_info::ConnectionInfo;
 use smb::{
     Client, ClientConfig, ConnectionConfig, CreateOptions, Dialect, FileAccessMask, FileAttributes,
     FileCreateArgs, Resource, UncPath,
 };
-use smb::connection::connection_info::ConnectionInfo;
 
 use crate::{Error, Target};
 
@@ -53,7 +53,12 @@ pub fn base_config(t: &Target) -> ConnectionConfig {
 
 /// A connection limited to one dialect, encryption as given.
 pub fn dialect_config(t: &Target, d: Dialect, enc: EncryptionMode) -> ConnectionConfig {
-    ConnectionConfig { min_dialect: Some(d), max_dialect: Some(d), encryption_mode: enc, ..base_config(t) }
+    ConnectionConfig {
+        min_dialect: Some(d),
+        max_dialect: Some(d),
+        encryption_mode: enc,
+        ..base_config(t)
+    }
 }
 
 /// A connected share.
@@ -82,7 +87,11 @@ impl Share {
     }
 
     /// Connects to the target's file share as the machine `guid`.
-    pub async fn connect_machine(t: &Target, config: ConnectionConfig, guid: smb::Guid) -> Result<Share, Error> {
+    pub async fn connect_machine(
+        t: &Target,
+        config: ConnectionConfig,
+        guid: smb::Guid,
+    ) -> Result<Share, Error> {
         Share::connect_from(t, config, &t.user, &t.password, &t.share, guid).await
     }
 
@@ -94,17 +103,25 @@ impl Share {
         share: &str,
         guid: smb::Guid,
     ) -> Result<Share, Error> {
-        let client =
-            Client::new(ClientConfig { dfs: false, connection: config, client_guid: guid, ..ClientConfig::default() });
+        let client = Client::new(ClientConfig {
+            dfs: false,
+            connection: config,
+            client_guid: guid,
+            ..ClientConfig::default()
+        });
         let unc = UncPath::new(&t.host)?.with_share(share)?;
-        client.share_connect(&unc, user, password.to_string()).await?;
+        client
+            .share_connect(&unc, user, password.to_string())
+            .await?;
         Ok(Share { client, unc })
     }
 
     /// What was negotiated.
     pub async fn info(&self) -> Result<Arc<ConnectionInfo>, Error> {
         let conn = self.client.get_connection(self.unc.server()).await?;
-        conn.conn_info().cloned().ok_or(Error::Check("connection has no negotiated state".into()))
+        conn.conn_info()
+            .cloned()
+            .ok_or(Error::Check("connection has no negotiated state".into()))
     }
 
     /// `\\host\share\path`.
@@ -119,7 +136,10 @@ impl Share {
 
     /// Creates a new file, failing if it exists.
     pub async fn create_file(&self, path: &str) -> Result<smb::File, Error> {
-        let args = FileCreateArgs::make_create_new(FileAttributes::new().with_archive(true), CreateOptions::new());
+        let args = FileCreateArgs::make_create_new(
+            FileAttributes::new().with_archive(true),
+            CreateOptions::new(),
+        );
         file(self.open(path, &args).await?)
     }
 
@@ -129,7 +149,10 @@ impl Share {
             .with_generic_read(true)
             .with_generic_write(write)
             .with_delete(true);
-        file(self.open(path, &FileCreateArgs::make_open_existing(access)).await?)
+        file(
+            self.open(path, &FileCreateArgs::make_open_existing(access))
+                .await?,
+        )
     }
 
     /// Creates a new directory.
@@ -138,16 +161,28 @@ impl Share {
             FileAttributes::new().with_directory(true),
             CreateOptions::new().with_directory_file(true),
         );
-        self.open(path, &args).await?.as_dir().ok_or(Error::Check(format!("{path} is not a directory")))?.close().await?;
+        self.open(path, &args)
+            .await?
+            .as_dir()
+            .ok_or(Error::Check(format!("{path} is not a directory")))?
+            .close()
+            .await?;
         Ok(())
     }
 
     /// Opens a directory to list or watch.
     pub async fn open_dir(&self, path: &str) -> Result<smb::Directory, Error> {
-        let access = FileAccessMask::new().with_generic_read(true).with_delete(true);
-        match self.open(path, &FileCreateArgs::make_open_existing(access)).await? {
+        let access = FileAccessMask::new()
+            .with_generic_read(true)
+            .with_delete(true);
+        match self
+            .open(path, &FileCreateArgs::make_open_existing(access))
+            .await?
+        {
             Resource::Directory(d) => Ok(d),
-            _ => Err(Error::Check(format!("{path} opened, but not as a directory"))),
+            _ => Err(Error::Check(format!(
+                "{path} opened, but not as a directory"
+            ))),
         }
     }
 
@@ -176,5 +211,10 @@ pub fn dialect_name(d: Dialect) -> &'static str {
 }
 
 /// Every dialect the scenarios negotiate, oldest first.
-pub const DIALECTS: [Dialect; 5] =
-    [Dialect::Smb0202, Dialect::Smb021, Dialect::Smb030, Dialect::Smb0302, Dialect::Smb0311];
+pub const DIALECTS: [Dialect; 5] = [
+    Dialect::Smb0202,
+    Dialect::Smb021,
+    Dialect::Smb030,
+    Dialect::Smb0302,
+    Dialect::Smb0311,
+];

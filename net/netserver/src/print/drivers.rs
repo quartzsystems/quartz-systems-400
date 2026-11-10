@@ -58,7 +58,12 @@ pub enum ManifestError {
 /// # Errors
 ///
 /// What [`ManifestError`] lists.
-pub fn parse(text: &str, env_dir: &str, environment: &str, version: u32) -> Result<DriverFiles, ManifestError> {
+pub fn parse(
+    text: &str,
+    env_dir: &str,
+    environment: &str,
+    version: u32,
+) -> Result<DriverFiles, ManifestError> {
     let (mut driver, mut data, mut config, mut help) = (None, None, None, None);
     let mut dependent = Vec::new();
     let path = |name: &str| format!("{env_dir}\\{version}\\{name}");
@@ -160,17 +165,38 @@ mod tests {
         assert_eq!(files.driver_path, "x64\\3\\unidrv.dll");
         assert_eq!(files.data_file, "x64\\3\\hpcu.gpd");
         assert_eq!(files.help_file, "");
-        assert_eq!(files.dependent_files, ["x64\\3\\stdnames.gpd", "x64\\3\\unires.dll"]);
+        assert_eq!(
+            files.dependent_files,
+            ["x64\\3\\stdnames.gpd", "x64\\3\\unires.dll"]
+        );
     }
 
     #[test]
     fn manifests_outside_the_rules_are_refused() {
         let base = "driver=a.dll\ndata=b.gpd\nconfig=c.dll\n";
-        assert_eq!(parse("driver=a.dll\ndata=b\n", "x64", "e", 3), Err(ManifestError::Incomplete));
-        assert_eq!(parse(&format!("{base}driver=d.dll\n"), "x64", "e", 3), Err(ManifestError::Incomplete));
-        assert_eq!(parse(&format!("{base}colour=1\n"), "x64", "e", 3), Err(ManifestError::Line(4)));
-        assert_eq!(parse(&format!("{base}just text\n"), "x64", "e", 3), Err(ManifestError::Line(4)));
-        assert_eq!(parse(&format!("{base}file=..\\x.dll\n"), "x64", "e", 3), Err(ManifestError::Path(4)));
-        assert_eq!(parse(&format!("{base}file=/etc/x\n"), "x64", "e", 3), Err(ManifestError::Path(4)));
+        assert_eq!(
+            parse("driver=a.dll\ndata=b\n", "x64", "e", 3),
+            Err(ManifestError::Incomplete)
+        );
+        assert_eq!(
+            parse(&format!("{base}driver=d.dll\n"), "x64", "e", 3),
+            Err(ManifestError::Incomplete)
+        );
+        assert_eq!(
+            parse(&format!("{base}colour=1\n"), "x64", "e", 3),
+            Err(ManifestError::Line(4))
+        );
+        assert_eq!(
+            parse(&format!("{base}just text\n"), "x64", "e", 3),
+            Err(ManifestError::Line(4))
+        );
+        assert_eq!(
+            parse(&format!("{base}file=..\\x.dll\n"), "x64", "e", 3),
+            Err(ManifestError::Path(4))
+        );
+        assert_eq!(
+            parse(&format!("{base}file=/etc/x\n"), "x64", "e", 3),
+            Err(ManifestError::Path(4))
+        );
     }
 }

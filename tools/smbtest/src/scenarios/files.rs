@@ -21,7 +21,13 @@ pub const NAME_NOT_FOUND: u32 = 0xC000_0034;
 pub async fn write_read_remove(s: &Share, path: &str, data: &[u8]) -> Result<(), Error> {
     put(s, path, data).await?;
     let got = get(s, path).await?;
-    check(got == data, || format!("{path}: read {} bytes back, not the {} written", got.len(), data.len()))?;
+    check(got == data, || {
+        format!(
+            "{path}: read {} bytes back, not the {} written",
+            got.len(),
+            data.len()
+        )
+    })?;
     remove(s, path).await
 }
 
@@ -29,7 +35,9 @@ pub async fn write_read_remove(s: &Share, path: &str, data: &[u8]) -> Result<(),
 pub async fn put(s: &Share, path: &str, data: &[u8]) -> Result<(), Error> {
     let f = s.create_file(path).await?;
     let n = f.write_at(data, 0).await?;
-    check(n == data.len(), || format!("wrote {n} of {} bytes", data.len()))?;
+    check(n == data.len(), || {
+        format!("wrote {n} of {} bytes", data.len())
+    })?;
     f.close().await?;
     Ok(())
 }
@@ -37,7 +45,8 @@ pub async fn put(s: &Share, path: &str, data: &[u8]) -> Result<(), Error> {
 /// The whole of `path`.
 pub async fn get(s: &Share, path: &str) -> Result<Vec<u8>, Error> {
     let f = s.open_file(path, false).await?;
-    let len = usize::try_from(smb::GetLen::get_len(&f).await?).map_err(|_| Error::Check("file too large".into()))?;
+    let len = usize::try_from(smb::GetLen::get_len(&f).await?)
+        .map_err(|_| Error::Check("file too large".into()))?;
     let mut buf = vec![0u8; len];
     let mut at = 0;
     while at < len {
@@ -59,7 +68,9 @@ async fn absent(s: &Share, path: &str) -> Result<(), Error> {
             f.close().await?;
             Err(Error::Check(format!("{path} still opens")))
         }
-        Err(e) => check(e.status() == Some(NAME_NOT_FOUND), || format!("{path}: expected 0x{NAME_NOT_FOUND:08X}, got {e}")),
+        Err(e) => check(e.status() == Some(NAME_NOT_FOUND), || {
+            format!("{path}: expected 0x{NAME_NOT_FOUND:08X}, got {e}")
+        }),
     }
 }
 
@@ -71,7 +82,13 @@ pub async fn round_trip(t: &Target, sc: &Scratch) -> Lines {
     let path = sc.file("round-trip.bin");
     put(&s, &path, &data).await?;
     let got = get(&s, &path).await?;
-    check(got == data, || format!("read back {} bytes, differing from the {} written", got.len(), data.len()))?;
+    check(got == data, || {
+        format!(
+            "read back {} bytes, differing from the {} written",
+            got.len(),
+            data.len()
+        )
+    })?;
     remove(&s, &path).await?;
     s.close().await?;
     Ok(vec![format!("bytes: {}", data.len())])
@@ -92,7 +109,9 @@ pub async fn dir_list(t: &Target, sc: &Scratch) -> Lines {
     let mut expect: Vec<String> = want.iter().map(|n| (*n).to_string()).collect();
     expect.push("sub".into());
     expect.sort();
-    check(got == expect, || format!("listed {got:?}, expected {expect:?}"))?;
+    check(got == expect, || {
+        format!("listed {got:?}, expected {expect:?}")
+    })?;
     for name in &got {
         remove(&s, &format!("{dir}\\{name}")).await?;
     }
@@ -115,7 +134,9 @@ pub async fn rename(t: &Target, sc: &Scratch) -> Lines {
     .await?;
     f.close().await?;
     absent(&s, &from).await?;
-    check(get(&s, &to).await? == b"renamed", || "renamed file lost its data".into())?;
+    check(get(&s, &to).await? == b"renamed", || {
+        "renamed file lost its data".into()
+    })?;
     remove(&s, &to).await?;
     s.close().await?;
     Ok(vec![format!("{from} -> {to}")])
@@ -159,9 +180,13 @@ async fn notify_between(t: &Target, sc: &Scratch, name: &str, writer: Share) -> 
     let (events, created) = tokio::join!(watch, make);
     created?;
     let seen = events?;
-    let lines: Vec<String> = seen.iter().map(|n| format!("{:?} {}", n.action, n.file_name)).collect();
+    let lines: Vec<String> = seen
+        .iter()
+        .map(|n| format!("{:?} {}", n.action, n.file_name))
+        .collect();
     check(
-        seen.iter().any(|n| matches!(n.action, NotifyAction::Added) && n.file_name == "added.txt"),
+        seen.iter()
+            .any(|n| matches!(n.action, NotifyAction::Added) && n.file_name == "added.txt"),
         || format!("no Added added.txt in {lines:?}"),
     )?;
     dir.close().await?;

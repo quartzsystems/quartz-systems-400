@@ -16,7 +16,8 @@ use std::time::SystemTime;
 use async_trait::async_trait;
 use smb_server::Identity;
 use smb_server::print::{
-    DocInfo, DriverFiles, JobInfo, PrintError as SpoolError, PrintJob as SpoolJob, PrintService, PrinterInfo,
+    DocInfo, DriverFiles, JobInfo, PrintError as SpoolError, PrintJob as SpoolJob, PrintService,
+    PrinterInfo,
 };
 use tracing::warn;
 
@@ -66,11 +67,18 @@ pub struct Spoolss {
 impl Spoolss {
     /// The `printers` (the job's print shares) over `printer`.
     pub fn new(printer: Arc<dyn Printer>, printers: Vec<SpoolPrinter>) -> Self {
-        Self { printer, printers, writing: Arc::default(), next: AtomicU32::new(1) }
+        Self {
+            printer,
+            printers,
+            writing: Arc::default(),
+            next: AtomicU32::new(1),
+        }
     }
 
     fn find(&self, share: &str) -> Option<&SpoolPrinter> {
-        self.printers.iter().find(|p| p.name.eq_ignore_ascii_case(share))
+        self.printers
+            .iter()
+            .find(|p| p.name.eq_ignore_ascii_case(share))
     }
 }
 
@@ -106,29 +114,45 @@ impl PrintService for Spoolss {
                 location: String::new(),
                 port: format!("{}/{}", p.queue.library, p.queue.name),
                 default_form: DEFAULT_FORM.into(),
-                jobs: u32::try_from(writing.iter().filter(|w| w.share == p.name).count()).unwrap_or(u32::MAX),
+                jobs: u32::try_from(writing.iter().filter(|w| w.share == p.name).count())
+                    .unwrap_or(u32::MAX),
                 driver_files: p.driver_files.clone(),
             })
             .collect()
     }
 
-    async fn start_job(&self, who: &Identity, share: &str, doc: &DocInfo) -> Result<Box<dyn SpoolJob>, SpoolError> {
+    async fn start_job(
+        &self,
+        who: &Identity,
+        share: &str,
+        doc: &DocInfo,
+    ) -> Result<Box<dyn SpoolJob>, SpoolError> {
         let user = profile(who).ok_or(SpoolError::AccessDenied)?;
         let p = self.find(share).ok_or(SpoolError::NotReady)?;
-        let job = self.printer.open(user, &p.queue, &doc.document).map_err(|e| {
-            warn!(user, queue = %p.queue.name, error = %e, "spoolss document not opened");
-            spool_error(&e)
-        })?;
+        let job = self
+            .printer
+            .open(user, &p.queue, &doc.document)
+            .map_err(|e| {
+                warn!(user, queue = %p.queue.name, error = %e, "spoolss document not opened");
+                spool_error(&e)
+            })?;
         let id = self.next.fetch_add(1, Ordering::Relaxed);
-        self.writing.lock().unwrap_or_else(PoisonError::into_inner).push(Writing {
+        self.writing
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push(Writing {
+                id,
+                share: p.name.clone(),
+                user: user.into(),
+                document: doc.document.clone(),
+                size: 0,
+                submitted: SystemTime::now(),
+            });
+        Ok(Box::new(Document {
             id,
-            share: p.name.clone(),
-            user: user.into(),
-            document: doc.document.clone(),
-            size: 0,
-            submitted: SystemTime::now(),
-        });
-        Ok(Box::new(Document { id, job: Mutex::new(Some(job)), writing: self.writing.clone() }))
+            job: Mutex::new(Some(job)),
+            writing: self.writing.clone(),
+        }))
     }
 
     async fn jobs(&self, who: &Identity, share: &str) -> Vec<JobInfo> {
@@ -164,7 +188,10 @@ struct Document {
 impl Document {
     /// Takes the document out of the list of those being written.
     fn done(&self) {
-        self.writing.lock().unwrap_or_else(PoisonError::into_inner).retain(|w| w.id != self.id);
+        self.writing
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .retain(|w| w.id != self.id);
     }
 }
 
@@ -179,7 +206,13 @@ impl SpoolJob for Document {
         let job = job.as_mut().ok_or(SpoolError::NotReady)?;
         job.write(data).map_err(|e| spool_error(&e))?;
         let added = u32::try_from(data.len()).unwrap_or(u32::MAX);
-        if let Some(w) = self.writing.lock().unwrap_or_else(PoisonError::into_inner).iter_mut().find(|w| w.id == self.id) {
+        if let Some(w) = self
+            .writing
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .iter_mut()
+            .find(|w| w.id == self.id)
+        {
             w.size = w.size.saturating_add(added);
         }
         Ok(())
@@ -187,7 +220,11 @@ impl SpoolJob for Document {
 
     async fn end(self: Box<Self>, _pages: u32) -> Result<(), SpoolError> {
         self.done();
-        let job = self.job.lock().unwrap_or_else(PoisonError::into_inner).take();
+        let job = self
+            .job
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
         match job {
             Some(job) => job.close().map_err(|e| spool_error(&e)),
             None => Ok(()),
@@ -198,7 +235,11 @@ impl SpoolJob for Document {
 impl Drop for Document {
     fn drop(&mut self) {
         // Not ended: abandoned, nothing prints.
-        let job = self.job.lock().unwrap_or_else(PoisonError::into_inner).take();
+        let job = self
+            .job
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
         if let Some(job) = job {
             self.done();
             if let Err(e) = job.abort() {

@@ -138,7 +138,11 @@ fn check_graph(ctx: &Ctx, cargo: &OsString, standalone: Option<&Standalone>) -> 
         let tree = Cmd::new(cargo, "cargo-tree")
             .cwd(&ctx.paths.repo)
             .arg("tree")
-            .args(if manifest.is_some() { &scope[..] } else { &["--workspace"][..] })
+            .args(if manifest.is_some() {
+                &scope[..]
+            } else {
+                &["--workspace"][..]
+            })
             .args(["--locked", "-e", "normal,build", "--prefix", "none"])
             .args(["--format", "{p}", "--target", platform])
             .capture()?;

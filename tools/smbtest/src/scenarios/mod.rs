@@ -59,7 +59,13 @@ pub fn names() -> Vec<String> {
 }
 
 /// Runs one scenario under a time limit into the report.
-async fn run<F: Future<Output = Lines>>(r: &mut Report, t: &Target, name: &str, limit: Duration, f: F) {
+async fn run<F: Future<Output = Lines>>(
+    r: &mut Report,
+    t: &Target,
+    name: &str,
+    limit: Duration,
+    f: F,
+) {
     if !t.wants(name) {
         return;
     }
@@ -81,13 +87,41 @@ pub async fn run_all(t: &Target) -> Report {
         let name = format!("negotiate-{}", crate::conn::dialect_name(d));
         run(&mut r, t, &name, SHORT, Box::pin(negotiate::dialect(t, d))).await;
     }
-    run(&mut r, t, "negotiate-multiprotocol", SHORT, Box::pin(negotiate::multiprotocol(t))).await;
+    run(
+        &mut r,
+        t,
+        "negotiate-multiprotocol",
+        SHORT,
+        Box::pin(negotiate::multiprotocol(t)),
+    )
+    .await;
     run(&mut r, t, "signon-good", SHORT, Box::pin(signon::good(t))).await;
     if !t.no_bad_signon {
-        run(&mut r, t, "signon-wrong-password", SHORT, Box::pin(signon::wrong_password(t))).await;
-        run(&mut r, t, "signon-unknown-user", SHORT, Box::pin(signon::unknown_user(t))).await;
+        run(
+            &mut r,
+            t,
+            "signon-wrong-password",
+            SHORT,
+            Box::pin(signon::wrong_password(t)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "signon-unknown-user",
+            SHORT,
+            Box::pin(signon::unknown_user(t)),
+        )
+        .await;
     }
-    run(&mut r, t, "share-enum", SHORT, Box::pin(signon::share_enum(t))).await;
+    run(
+        &mut r,
+        t,
+        "share-enum",
+        SHORT,
+        Box::pin(signon::share_enum(t)),
+    )
+    .await;
 
     // Everything below writes under one run directory in the scratch directory.
     let scratch = Scratch::new(t);
@@ -98,19 +132,93 @@ pub async fn run_all(t: &Target) -> Report {
         scratch.create().await.is_ok()
     };
     if made {
-        run(&mut r, t, "signing", SHORT, Box::pin(security::signing(t, &scratch))).await;
-        for d in [smb::Dialect::Smb030, smb::Dialect::Smb0302, smb::Dialect::Smb0311] {
+        run(
+            &mut r,
+            t,
+            "signing",
+            SHORT,
+            Box::pin(security::signing(t, &scratch)),
+        )
+        .await;
+        for d in [
+            smb::Dialect::Smb030,
+            smb::Dialect::Smb0302,
+            smb::Dialect::Smb0311,
+        ] {
             let name = format!("encrypt-{}", crate::conn::dialect_name(d));
-            run(&mut r, t, &name, SHORT, Box::pin(security::encrypt(t, &scratch, d))).await;
+            run(
+                &mut r,
+                t,
+                &name,
+                SHORT,
+                Box::pin(security::encrypt(t, &scratch, d)),
+            )
+            .await;
         }
-        run(&mut r, t, "file-round-trip", SHORT, Box::pin(files::round_trip(t, &scratch))).await;
-        run(&mut r, t, "dir-list", SHORT, Box::pin(files::dir_list(t, &scratch))).await;
-        run(&mut r, t, "rename", SHORT, Box::pin(files::rename(t, &scratch))).await;
-        run(&mut r, t, "delete", SHORT, Box::pin(files::delete(t, &scratch))).await;
-        run(&mut r, t, "change-notify", SHORT, Box::pin(files::change_notify(t, &scratch))).await;
-        run(&mut r, t, "change-notify-two-machines", SHORT, Box::pin(files::change_notify_two_machines(t, &scratch))).await;
-        run(&mut r, t, "large-io", Duration::from_secs(600), Box::pin(perf::large_io(t, &scratch))).await;
-        run(&mut r, t, "copy", Duration::from_secs(3600), Box::pin(perf::copy(t, &scratch))).await;
+        run(
+            &mut r,
+            t,
+            "file-round-trip",
+            SHORT,
+            Box::pin(files::round_trip(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "dir-list",
+            SHORT,
+            Box::pin(files::dir_list(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "rename",
+            SHORT,
+            Box::pin(files::rename(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "delete",
+            SHORT,
+            Box::pin(files::delete(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "change-notify",
+            SHORT,
+            Box::pin(files::change_notify(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "change-notify-two-machines",
+            SHORT,
+            Box::pin(files::change_notify_two_machines(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "large-io",
+            Duration::from_secs(600),
+            Box::pin(perf::large_io(t, &scratch)),
+        )
+        .await;
+        run(
+            &mut r,
+            t,
+            "copy",
+            Duration::from_secs(3600),
+            Box::pin(perf::copy(t, &scratch)),
+        )
+        .await;
     }
     run(&mut r, t, "cleanup", SHORT, Box::pin(scratch.remove())).await;
     for (name, why) in MISSING {
