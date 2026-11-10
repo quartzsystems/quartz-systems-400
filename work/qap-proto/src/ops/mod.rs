@@ -13,6 +13,7 @@ pub mod ifs;
 pub mod jobs;
 pub mod manage;
 pub mod messages;
+pub mod netserver;
 pub mod signon;
 pub mod spool;
 pub mod sql;
@@ -206,11 +207,37 @@ pub enum Op {
     SetServiceEntry,
     /// `Debug` 10: remove a service entry point (version 9).
     RemoveServiceEntry,
+    /// `NetServer` 1: shares, filtered (version 9).
+    ListShares,
+    /// `NetServer` 2: one share (version 9).
+    GetShare,
+    /// `NetServer` 3: add a share (version 9).
+    AddShare,
+    /// `NetServer` 4: change a share (version 9).
+    ChangeShare,
+    /// `NetServer` 5: remove a share (version 9).
+    RemoveShare,
+    /// `NetServer` 6: sessions and their connections (version 9).
+    ListSessions,
+    /// `NetServer` 7: end a session (version 9).
+    EndSession,
+    /// `NetServer` 8: the attributes, current and pending (version 9).
+    GetServerAttributes,
+    /// `NetServer` 9: make attributes pending (version 9).
+    ChangeServerAttributes,
+    /// `NetServer` 10: users disabled for `NetServer` (version 9).
+    ListDisabledUsers,
+    /// `NetServer` 11: enable a user for `NetServer` again (version 9).
+    EnableUser,
+    /// `NetServer` 12: start `NetServer` (version 9).
+    StartServer,
+    /// `NetServer` 13: end `NetServer` (version 9).
+    EndServer,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 91] = [
+    pub const ALL: [Op; 104] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -302,10 +329,24 @@ impl Op {
         Op::Eval,
         Op::SetServiceEntry,
         Op::RemoveServiceEntry,
+        Op::ListShares,
+        Op::GetShare,
+        Op::AddShare,
+        Op::ChangeShare,
+        Op::RemoveShare,
+        Op::ListSessions,
+        Op::EndSession,
+        Op::GetServerAttributes,
+        Op::ChangeServerAttributes,
+        Op::ListDisabledUsers,
+        Op::EnableUser,
+        Op::StartServer,
+        Op::EndServer,
     ];
 
     /// Its service and code.
     #[must_use]
+    #[allow(clippy::too_many_lines)] // one arm per operation
     pub const fn code(self) -> (Service, u16) {
         match self {
             Op::Hello => (Service::Connection, 1),
@@ -399,11 +440,25 @@ impl Op {
             Op::Eval => (Service::Debug, 8),
             Op::SetServiceEntry => (Service::Debug, 9),
             Op::RemoveServiceEntry => (Service::Debug, 10),
+            Op::ListShares => (Service::NetServer, 1),
+            Op::GetShare => (Service::NetServer, 2),
+            Op::AddShare => (Service::NetServer, 3),
+            Op::ChangeShare => (Service::NetServer, 4),
+            Op::RemoveShare => (Service::NetServer, 5),
+            Op::ListSessions => (Service::NetServer, 6),
+            Op::EndSession => (Service::NetServer, 7),
+            Op::GetServerAttributes => (Service::NetServer, 8),
+            Op::ChangeServerAttributes => (Service::NetServer, 9),
+            Op::ListDisabledUsers => (Service::NetServer, 10),
+            Op::EnableUser => (Service::NetServer, 11),
+            Op::StartServer => (Service::NetServer, 12),
+            Op::EndServer => (Service::NetServer, 13),
         }
     }
 
     /// The protocol version that defines it.
     #[must_use]
+    #[allow(clippy::too_many_lines)] // one arm per operation
     pub const fn since(self) -> u16 {
         match self {
             Op::Hello
@@ -496,7 +551,20 @@ impl Op {
             | Op::Variables
             | Op::Eval
             | Op::SetServiceEntry
-            | Op::RemoveServiceEntry => 9,
+            | Op::RemoveServiceEntry
+            | Op::ListShares
+            | Op::GetShare
+            | Op::AddShare
+            | Op::ChangeShare
+            | Op::RemoveShare
+            | Op::ListSessions
+            | Op::EndSession
+            | Op::GetServerAttributes
+            | Op::ChangeServerAttributes
+            | Op::ListDisabledUsers
+            | Op::EnableUser
+            | Op::StartServer
+            | Op::EndServer => 9,
         }
     }
 
