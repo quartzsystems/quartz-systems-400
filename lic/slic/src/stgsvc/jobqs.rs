@@ -360,36 +360,38 @@ pub fn hold(system: &mut System, me: u32, job: &str, hold: bool) -> Result<Strin
         })?;
         return Ok(format!("Job {n:06} on job queue {q} {verb}.\n"));
     }
-    // Off its queue, not started yet: held as it starts.
-    if let Some((n, user, qualified)) = find_pending(system, job) {
+    let n = if let Some((n, user, qualified)) = find_pending(system, job) {
+        // Off its queue, not started yet: held as it starts.
         super::security::may_control(&user, &qualified)?;
         if hold {
             system.hold_on_start.insert(n);
         } else {
             system.hold_on_start.remove(&n);
         }
-        return Ok(format!("Job {n:06} {verb}.\n"));
-    }
-    let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
-    control_active(system, n)?;
-    if system_job(system, n, me) {
-        return Err(format!("CPF1342 job {n:06} cannot be held"));
-    }
-    if hold {
-        signal(system, n, rustix::process::Signal::STOP)?;
-        if let Some(j) = system.jobs.get_mut(n) {
-            j.status = wm::job::Status::Hld.byte();
-        }
+        n
     } else {
-        signal(system, n, rustix::process::Signal::CONT)?;
-        if let Some(j) = system.jobs.get_mut(n) {
-            j.status = wm::job::Status::Run.byte();
+        let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
+        control_active(system, n)?;
+        if system_job(system, n, me) {
+            return Err(format!("CPF1342 job {n:06} cannot be held"));
         }
-    }
-    if let Some(j) = system.jobs.get(n) {
-        let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
-        super::security::js(if hold { "H" } else { "R" }, (&name, &user, n), kind, &jobd);
-    }
+        if hold {
+            signal(system, n, rustix::process::Signal::STOP)?;
+            if let Some(j) = system.jobs.get_mut(n) {
+                j.status = wm::job::Status::Hld.byte();
+            }
+        } else {
+            signal(system, n, rustix::process::Signal::CONT)?;
+            if let Some(j) = system.jobs.get_mut(n) {
+                j.status = wm::job::Status::Run.byte();
+            }
+        }
+        if let Some(j) = system.jobs.get(n) {
+            let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
+            super::security::js(if hold { "H" } else { "R" }, (&name, &user, n), kind, &jobd);
+        }
+        n
+    };
     Ok(format!("Job {n:06} {verb}.\n"))
 }
 
@@ -417,39 +419,41 @@ pub fn endjob(system: &mut System, me: u32, job: &str, immediate: bool) -> Resul
             j.qualified()
         ));
     }
-    // Off its queue, not started yet: its monitor ends it once it says
-    // hello (take_end_requests waits for it in the job table).
-    if let Some((n, user, qualified)) = find_pending(system, job) {
+    let n = if let Some((n, user, qualified)) = find_pending(system, job) {
+        // Off its queue, not started yet: its monitor ends it once it says
+        // hello (take_end_requests waits for it in the job table).
         super::security::may_control(&user, &qualified)?;
         system.hold_on_start.remove(&n);
         system.end_requests.insert(n, immediate);
-        return Ok(format!("Job {n:06} is ending.\n"));
-    }
-    let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
-    control_active(system, n)?;
-    if system_job(system, n, me) {
-        return Err(format!("CPF1362 job {n:06} cannot be ended this way"));
-    }
-    let sbs = system
-        .jobs
-        .get(n)
-        .map(|j| j.subsystem.clone())
-        .unwrap_or_default();
-    if !system.sbs.contains_key(&sbs) {
-        return Err(format!("CPF1362 job {n:06} has no subsystem to end it"));
-    }
-    if system
-        .jobs
-        .get(n)
-        .is_some_and(|j| j.job_status() == wm::job::Status::Hld)
-    {
-        let _ = signal(system, n, rustix::process::Signal::CONT);
-    }
-    system.end_requests.insert(n, immediate);
-    if let Some(j) = system.jobs.get(n) {
-        let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
-        super::security::js("N", (&name, &user, n), kind, &jobd);
-    }
+        n
+    } else {
+        let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
+        control_active(system, n)?;
+        if system_job(system, n, me) {
+            return Err(format!("CPF1362 job {n:06} cannot be ended this way"));
+        }
+        let sbs = system
+            .jobs
+            .get(n)
+            .map(|j| j.subsystem.clone())
+            .unwrap_or_default();
+        if !system.sbs.contains_key(&sbs) {
+            return Err(format!("CPF1362 job {n:06} has no subsystem to end it"));
+        }
+        if system
+            .jobs
+            .get(n)
+            .is_some_and(|j| j.job_status() == wm::job::Status::Hld)
+        {
+            let _ = signal(system, n, rustix::process::Signal::CONT);
+        }
+        system.end_requests.insert(n, immediate);
+        if let Some(j) = system.jobs.get(n) {
+            let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
+            super::security::js("N", (&name, &user, n), kind, &jobd);
+        }
+        n
+    };
     Ok(format!("Job {n:06} is ending.\n"))
 }
 
