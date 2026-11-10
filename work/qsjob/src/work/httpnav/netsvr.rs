@@ -13,6 +13,7 @@
 use navigator::env::netsvr::{Attributes, Disabled, NetServer, Session, Settings, Share, Status};
 use netsvrcfg::client::{self, Api, Failure};
 use qsweb::msg::{Kind, Message};
+use stg::Client;
 
 use super::{Link, gone};
 use crate::work::nsadmin;
