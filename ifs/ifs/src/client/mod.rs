@@ -20,7 +20,7 @@ use sec::auth::principal::Principal;
 use crate::auth::AuthEnv;
 use crate::backend::{Backend, Nanos};
 use crate::errno::Result;
-use crate::lease::{LeaseKey, Order};
+use crate::lease::{LeaseKey, News};
 use crate::lock::range::{RangeKind, RangeLock};
 use crate::lock::{LockInfo, ObjKey, Owner};
 use crate::meta::reclaim::Report;
@@ -205,8 +205,14 @@ pub trait IfsClient {
     fn lease_grant(&self, path: &str, id: FileId, tag: u64, key: LeaseKey, want: u8) -> Result<u8>;
     /// The leases the caller holds on the file it calls `tag`, and no others.
     fn lease_report(&self, tag: u64, leases: &[(LeaseKey, u8)]) -> Result<()>;
-    /// The caller's break orders, waiting up to `wait_ms` for one.
-    fn lease_orders(&self, wait_ms: u32) -> Result<Vec<Order>>;
+    /// The caller's break orders and its watches' changes, waiting up to
+    /// `wait_ms` for some.
+    fn lease_orders(&self, wait_ms: u32) -> Result<News>;
+    /// Watch the directory `path` (and below it when `tree`) for changes
+    /// by anyone ([`crate::lease::notify`]): the watch's number.
+    fn watch_add(&self, path: &str, tree: bool) -> Result<u64>;
+    /// End the watch `id`.
+    fn watch_end(&self, id: u64) -> Result<()>;
 }
 
 /// An [`Ifs`] with a caller's context: what the service and
@@ -477,9 +483,16 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
         self.ifs.lease_report(self.cx, tag, leases);
         Ok(())
     }
-    fn lease_orders(&self, wait_ms: u32) -> Result<Vec<Order>> {
+    fn lease_orders(&self, wait_ms: u32) -> Result<News> {
         let wait = std::time::Duration::from_millis(u64::from(wait_ms));
         self.ifs.lease_orders(self.cx, wait)
+    }
+    fn watch_add(&self, path: &str, tree: bool) -> Result<u64> {
+        self.ifs.watch_add(self.cx, path, tree)
+    }
+    fn watch_end(&self, id: u64) -> Result<()> {
+        self.ifs.watch_end(self.cx, id);
+        Ok(())
     }
 }
 
@@ -619,7 +632,9 @@ macro_rules! every_method {
         fn job_locks(job: u32, user: &str) -> Result<Vec<(ObjKey, LockInfo)>>;
         fn lease_grant(path: &str, id: FileId, tag: u64, key: LeaseKey, want: u8) -> Result<u8>;
         fn lease_report(tag: u64, leases: &[(LeaseKey, u8)]) -> Result<()>;
-        fn lease_orders(wait_ms: u32) -> Result<Vec<Order>>;
+        fn lease_orders(wait_ms: u32) -> Result<News>;
+        fn watch_add(path: &str, tree: bool) -> Result<u64>;
+        fn watch_end(id: u64) -> Result<()>;
     } };
 }
 

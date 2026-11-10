@@ -10,9 +10,10 @@ use std::time::Duration;
 
 use super::audit::FileId;
 use super::{Ctx, Ifs};
+use crate::auth::need::Op;
 use crate::backend::Backend;
-use crate::errno::Result;
-use crate::lease::{LeaseKey, Order, Others};
+use crate::errno::{Errno, Result};
+use crate::lease::{LeaseKey, News, Others};
 use crate::lock::Held;
 
 impl<B: Backend> Ifs<B> {
@@ -68,13 +69,38 @@ impl<B: Backend> Ifs<B> {
         self.leases.report(cx.owner, tag, leases);
     }
 
-    /// The caller's break orders, waiting up to `wait` for one when its
-    /// caller allows a deferral.
+    /// The caller's break orders and its watches' changes, waiting up to
+    /// `wait` for some when its caller allows a deferral.
     ///
     /// # Errors
     ///
     /// `EAGAIN` with the deferral.
-    pub fn lease_orders(&self, cx: &Ctx<'_>, wait: Duration) -> Result<Vec<Order>> {
+    pub fn lease_orders(&self, cx: &Ctx<'_>, wait: Duration) -> Result<News> {
         self.leases.orders(cx.owner, wait)
+    }
+
+    /// Watch the directory at `path` (and below it when `tree`) for the
+    /// caller ([`crate::lease::notify`]): the watch's number. The caller
+    /// needs to be able to list it.
+    ///
+    /// # Errors
+    ///
+    /// The path's resolution, `ENOTDIR`, the authority to list it.
+    pub fn watch_add(&self, cx: &Ctx<'_>, path: &str, tree: bool) -> Result<u64> {
+        let mut st = self.lock();
+        let cwd = Self::cwd_of(&mut st, cx.owner);
+        let (mut sys, _) = self.split(&mut st);
+        let r = sys.resolve(&cwd, path, true, Some(cx))?;
+        if !r.node.is_dir() {
+            return Err(Errno::ENOTDIR);
+        }
+        let (m, _) = sys.meta(&r.node, Some(cx))?;
+        cx.require(&m, &r.node, &r.path(), Op::Readdir)?;
+        Ok(self.leases.watch_add(cx.owner, r.path(), tree))
+    }
+
+    /// End the caller's watch `id`.
+    pub fn watch_end(&self, cx: &Ctx<'_>, id: u64) {
+        self.leases.watch_end(cx.owner, id);
     }
 }

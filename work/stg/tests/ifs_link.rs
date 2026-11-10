@@ -367,11 +367,11 @@ fn leases_over_the_link() {
     };
     let key = [3; 32];
     assert_eq!(a.lease_grant("/home/bob/l", id, 9, key, 7).unwrap(), 7);
-    assert!(a.lease_orders(0).unwrap().is_empty());
+    assert!(a.lease_orders(0).unwrap().breaks.is_empty());
     // Without a deferral the service's far end breaks and goes on.
     let w = b.open("/home/bob/l", OpenArgs::new(O_RDWR)).unwrap();
     assert_eq!(b.pwrite(w, b"x", 0).unwrap(), 1);
-    assert_eq!(a.lease_orders(0).unwrap(), [(9, 0)]);
+    assert_eq!(a.lease_orders(0).unwrap().breaks, [(9, 0)]);
     a.lease_report(9, &[(key, 3)]).unwrap();
     assert_eq!(
         far.ifs

@@ -260,6 +260,8 @@ pub(crate) struct Open<F> {
     access: Access,
     pos: u64,
     text: Option<TextState>,
+    /// Written through: its close is a modification to watchers.
+    wrote: bool,
 }
 
 /// A descriptor.
@@ -518,7 +520,7 @@ impl<B: Backend> Ifs<B> {
                 o.refs = o.refs.saturating_sub(1);
                 if o.refs == 0
                     && let Some(o) = st.rest.opens.remove(&fd.open)
-                    && let Err(e) = self.finish(o)
+                    && let Err(e) = self.finish_noting(owner, o)
                 {
                     tracing::warn!(error = %e, "IFS write-back failed releasing an owner");
                 }

@@ -80,7 +80,7 @@ fn every_changing_operation_of_another_owner_breaks_and_defers() {
         assert_eq!(r, Err(Errno::EAGAIN), "{what}");
         let d = d.unwrap_or_else(|| panic!("{what}: no deferral"));
         assert_eq!(
-            s.ifs.lease_orders(&a, Duration::ZERO).unwrap(),
+            s.ifs.lease_orders(&a, Duration::ZERO).unwrap().breaks,
             [(5, keep)],
             "{what}"
         );
@@ -123,14 +123,14 @@ fn writes_truncations_and_locks_break_to_none() {
         });
         let fd = fd.unwrap();
         assert_eq!(
-            s.ifs.lease_orders(&a, Duration::ZERO).unwrap(),
+            s.ifs.lease_orders(&a, Duration::ZERO).unwrap().breaks,
             [(5, R | H)],
             "{what}"
         );
         s.ifs.lease_report(&a, 5, &[(KEY, R | H)]);
         assert_eq!(deferring(true, || op(&s, &b, fd)), (Ok(()), None), "{what}");
         assert_eq!(
-            s.ifs.lease_orders(&a, Duration::ZERO).unwrap(),
+            s.ifs.lease_orders(&a, Duration::ZERO).unwrap().breaks,
             [(5, 0)],
             "{what}"
         );
@@ -150,7 +150,13 @@ fn the_holders_own_calls_and_reads_break_nothing() {
     let fd = s.ifs.open(&a, "/tmp/f", OpenArgs::new(O_RDWR)).unwrap();
     assert_eq!(deferring(true, || s.ifs.write(&a, fd, b"x")).1, None);
     assert_eq!(deferring(true, || s.ifs.stat(&b, "/tmp/f")).1, None);
-    assert!(s.ifs.lease_orders(&a, Duration::ZERO).unwrap().is_empty());
+    assert!(
+        s.ifs
+            .lease_orders(&a, Duration::ZERO)
+            .unwrap()
+            .breaks
+            .is_empty()
+    );
 }
 
 #[test]
@@ -191,7 +197,10 @@ fn a_share_mode_conflict_breaks_handle_caching_first() {
             .open(&b, "/tmp/f", OpenArgs::new(O_RDONLY | O_SHARE_RDWR))
     });
     assert_eq!(r, Err(Errno::EAGAIN));
-    assert_eq!(s.ifs.lease_orders(&a, Duration::ZERO).unwrap(), [(5, R)]);
+    assert_eq!(
+        s.ifs.lease_orders(&a, Duration::ZERO).unwrap().breaks,
+        [(5, R)]
+    );
     // The client closes what it cached.
     s.ifs.close(&a, fd).unwrap();
     s.ifs.lease_report(&a, 5, &[(KEY, R)]);
@@ -220,7 +229,13 @@ fn a_copy_breaks_without_waiting() {
         deferring(true, || s.ifs.copy(&b, "/tmp/src", "/tmp/f", opts)),
         (Ok(()), None)
     );
-    assert!(!s.ifs.lease_orders(&a, Duration::ZERO).unwrap().is_empty());
+    assert!(
+        !s.ifs
+            .lease_orders(&a, Duration::ZERO)
+            .unwrap()
+            .breaks
+            .is_empty()
+    );
 }
 
 /// Two callers over one IFS on threads: the writer's call waits until the
@@ -259,7 +274,7 @@ fn a_local_caller_waits_for_the_holders_report() {
     let polling = client.clone();
     let poller = std::thread::spawn(move || {
         let poll = polling(1);
-        let orders = poll.lease_orders(5_000).unwrap();
+        let orders = poll.lease_orders(5_000).unwrap().breaks;
         assert_eq!(orders, [(5, R | H)]);
         // Write back what the client cached, then give the lease up.
         poll.pwrite(fd, b"cached", 0).unwrap();

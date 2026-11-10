@@ -9,6 +9,7 @@ use super::flags as f;
 use super::{Ctx, Ifs, Open, OpenKind, Rest};
 use crate::backend::{BFile, Backend};
 use crate::errno::{Errno, Result};
+use crate::lease::notify::ChangeKind;
 use crate::lease::state::Trigger;
 
 /// Largest offset a file may reach.
@@ -155,6 +156,7 @@ impl<B: Backend> Ifs<B> {
             return Err(Errno::EBADF);
         }
         self.leases.gate(cx.owner, o.key, Trigger::Write)?;
+        o.wrote = true;
         if o.oflag & f::O_APPEND != 0 {
             o.pos = Self::size_of(o)?;
         }
@@ -206,6 +208,7 @@ impl<B: Backend> Ifs<B> {
             return Err(Errno::ESPIPE);
         }
         self.leases.gate(cx.owner, o.key, Trigger::Write)?;
+        o.wrote = true;
         let raw = match &o.text {
             Some(t) => t.convert_once_out(data),
             None => data.to_vec(),
@@ -260,6 +263,8 @@ impl<B: Backend> Ifs<B> {
             return Err(Errno::EFBIG);
         }
         self.leases.gate(cx.owner, o.key, Trigger::Write)?;
+        self.leases
+            .note(cx.owner, &o.path, &ChangeKind::Modified, false);
         match &mut o.kind {
             OpenKind::File(file) => {
                 file.set_len(len)?;

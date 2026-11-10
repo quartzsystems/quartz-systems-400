@@ -12,6 +12,7 @@ use super::{Ctx, Ifs, Rest};
 use crate::auth::need::Op;
 use crate::backend::{self, Backend, Kind};
 use crate::errno::{Errno, Result};
+use crate::lease::notify::ChangeKind;
 use crate::lease::state::Trigger;
 use crate::meta::{self, Flags, Meta};
 use crate::resolve::{Node, Res, Sys};
@@ -84,6 +85,8 @@ impl<B: Backend> Ifs<B> {
         sys.index.added(sys.b, rel, name);
         self.touch(cx.env, rel);
         let r = sys.child(dir, name)?;
+        self.leases
+            .note(cx.owner, &r.path(), &ChangeKind::Added, kind == Kind::Dir);
         cx.audit_always(
             AuditKind::Create,
             &m,
@@ -255,6 +258,8 @@ impl<B: Backend> Ifs<B> {
             }
             _ => return Err(Errno::ENOTSUP),
         }
+        self.leases
+            .note(cx.owner, &r.path(), &ChangeKind::Removed, false);
         cx.audit_always(
             AuditKind::Delete,
             &m,
@@ -292,6 +297,7 @@ impl<B: Backend> Ifs<B> {
             }
             _ => return Err(Errno::ENOTSUP),
         }
+        self.leases.note_rmdir(cx.owner, &r.path());
         cx.audit_always(
             AuditKind::Delete,
             &m,
@@ -345,6 +351,14 @@ impl<B: Backend> Ifs<B> {
         self.b.link(rel, &backend::join(drel, &name))?;
         sys.index.added(sys.b, drel, &name);
         self.touch(cx.env, drel);
+        let mut comps = dir.comps.clone();
+        comps.push(name.clone());
+        self.leases.note(
+            cx.owner,
+            &crate::path::to_text(&comps),
+            &ChangeKind::Added,
+            false,
+        );
         cx.audit_access(&m, &src.node, &src.path(), Op::Link);
         Ok(())
     }
@@ -476,6 +490,8 @@ impl<B: Backend> Ifs<B> {
                 o.path = format!("{new_text}/{t}");
             }
         }
+        self.leases
+            .note_rename(cx.owner, &old_text, &new_text, moving_dir);
         cx.audit_always(
             AuditKind::Move,
             &m,

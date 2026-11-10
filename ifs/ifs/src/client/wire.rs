@@ -10,6 +10,8 @@ use ipc::{Dec, Wire, WireError, wire_enum, wire_struct};
 
 use crate::auth::data::DataAuth;
 use crate::errno::Errno;
+use crate::lease::News;
+use crate::lease::notify::{ChangeKind, DirEvent};
 use crate::lock::range::{RangeKind, RangeLock};
 use crate::lock::share::{Access, Share};
 use crate::lock::{Held, LockInfo, ObjKey, Owner};
@@ -140,6 +142,18 @@ wire_struct!(RangeLock {
     end
 });
 wire_struct!(ObjKey { fs, ino });
+wire_enum!(ChangeKind {
+    0 => Added,
+    1 => Removed,
+    2 => Renamed { from },
+    3 => Modified,
+    4 => Attributes,
+    5 => Lost,
+    6 => Moved,
+    7 => Deleted,
+});
+wire_struct!(DirEvent { name, kind, dir });
+wire_struct!(News { breaks, changes });
 wire_struct!(Access { read, write });
 wire_struct!(LockInfo { path, owner, what });
 wire_struct!(FileId {

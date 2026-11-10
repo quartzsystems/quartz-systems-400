@@ -14,6 +14,7 @@ use crate::auth::data::{self, DataAuth};
 use crate::auth::need::Op;
 use crate::backend::Backend;
 use crate::errno::{Errno, Result};
+use crate::lease::notify::ChangeKind;
 use crate::meta::Meta;
 
 /// Whose authority `CHGAUT` changes.
@@ -173,6 +174,12 @@ impl<B: Backend> Ifs<B> {
         let detail = f(&mut m, cx)?;
         if m != before {
             self.put_meta(cx, &r.node, &m)?;
+            self.leases.note(
+                cx.owner,
+                &r.path(),
+                &ChangeKind::Attributes,
+                r.node.is_dir(),
+            );
         }
         cx.audit_always(kind, &m, &r.node, &r.path(), oper, detail);
         Ok(())

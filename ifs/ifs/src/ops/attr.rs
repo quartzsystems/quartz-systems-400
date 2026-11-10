@@ -11,6 +11,7 @@ use super::{Ctx, Ifs, now};
 use crate::auth::need::Op;
 use crate::backend::{Backend, Nanos};
 use crate::errno::{Errno, Result};
+use crate::lease::notify::ChangeKind;
 use crate::meta::{CheckOut, CrtObjAud, Flags, Journal, Meta, ObjAudit, Scan, StgOpt};
 use crate::resolve::Node;
 
@@ -315,6 +316,12 @@ impl<B: Backend> Ifs<B> {
         f(&mut m)?;
         if m != before {
             self.put_meta(cx, &r.node, &m)?;
+            self.leases.note(
+                cx.owner,
+                &r.path(),
+                &ChangeKind::Attributes,
+                r.node.is_dir(),
+            );
             cx.audit_access(&m, &r.node, &r.path(), op);
             if m.audit != before.audit || m.crtobjaud != before.crtobjaud {
                 cx.audit_always(
@@ -428,6 +435,12 @@ impl<B: Backend> Ifs<B> {
         };
         let (a, mt) = times.unwrap_or_else(|| (now(), now()));
         self.b.set_times(rel, Some(a), Some(mt))?;
+        self.leases.note(
+            cx.owner,
+            &r.path(),
+            &ChangeKind::Attributes,
+            r.node.is_dir(),
+        );
         cx.audit_access(&m, &r.node, &r.path(), op);
         Ok(())
     }

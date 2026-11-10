@@ -11,7 +11,7 @@
 use ifs::Result;
 use ifs::backend::Nanos;
 use ifs::client::{CHUNK, IfsClient, WalkEntry};
-use ifs::lease::{LeaseKey, Order};
+use ifs::lease::{LeaseKey, News};
 use ifs::lock::range::{RangeKind, RangeLock};
 use ifs::lock::{LockInfo, ObjKey};
 use ifs::meta::reclaim::Report;
@@ -491,7 +491,19 @@ impl IfsClient for RemoteIfs {
             Unit
         )
     }
-    fn lease_orders(&self, wait_ms: u32) -> Result<Vec<Order>> {
+    fn lease_orders(&self, wait_ms: u32) -> Result<News> {
         reply_as!(self.call(IfsOp::LeaseOrders { wait_ms }), Orders)
+    }
+    fn watch_add(&self, path: &str, tree: bool) -> Result<u64> {
+        reply_as!(
+            self.call(IfsOp::WatchAdd {
+                path: path.into(),
+                tree
+            }),
+            Handle
+        )
+    }
+    fn watch_end(&self, id: u64) -> Result<()> {
+        reply_as!(self.call(IfsOp::WatchEnd { id }), Unit)
     }
 }

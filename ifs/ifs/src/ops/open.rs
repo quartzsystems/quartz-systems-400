@@ -13,6 +13,7 @@ use crate::auth::data::DataAuth;
 use crate::auth::need::Op;
 use crate::backend::{self, BFile, Backend, Kind};
 use crate::errno::{Errno, Result};
+use crate::lease::notify::ChangeKind;
 use crate::lease::state::Trigger;
 use crate::lock::OpenRef;
 use crate::lock::range::{RangeKind, RangeLock};
@@ -277,6 +278,8 @@ impl<B: Backend> Ifs<B> {
                         self.touch(cx.env, rel);
                         created = Some(file);
                         let r = sys.child(&dir, &name)?;
+                        self.leases
+                            .note(cx.owner, &r.path(), &ChangeKind::Added, false);
                         cx.audit_always(
                             AuditKind::Create,
                             &m,
@@ -393,6 +396,7 @@ impl<B: Backend> Ifs<B> {
             }
             return Err(e);
         }
+        let was_created = created.is_some();
         let text_mode = a.oflag & f::O_TEXTDATA != 0;
         let kind = match self.open_kind(&r, created, writes, truncate, text_mode) {
             Ok(k) => k,
@@ -413,6 +417,7 @@ impl<B: Backend> Ifs<B> {
                 access,
                 pos: 0,
                 text,
+                wrote: false,
             },
         );
         let fd = match self.alloc_fd(rest, cx, id, 0) {
@@ -425,6 +430,10 @@ impl<B: Backend> Ifs<B> {
         };
         if truncate && let Node::Back { .. } = r.node {
             self.mark_changed(cx, &r.node, &m);
+            if !was_created {
+                self.leases
+                    .note(cx.owner, &path_s, &ChangeKind::Modified, false);
+            }
         }
         cx.audit_access(&m, &r.node, &path_s, op);
         Ok(fd)
@@ -526,6 +535,16 @@ impl<B: Backend> Ifs<B> {
         })
     }
 
+    /// [`Self::finish`], and a modification to watchers when the open was
+    /// written through.
+    pub(crate) fn finish_noting(&self, owner: super::Owner, o: Open<B::File>) -> Result<()> {
+        if o.wrote {
+            self.leases
+                .note(owner, &o.path, &ChangeKind::Modified, false);
+        }
+        self.finish(o)
+    }
+
     /// Write an open's buffered data back and flush a partial character.
     pub(crate) fn finish(&self, mut o: Open<B::File>) -> Result<()> {
         if let Some(t) = &mut o.text {
@@ -601,6 +620,10 @@ impl<B: Backend> Ifs<B> {
         if last {
             let o = rest.opens.remove(&e.open).expect("present");
             rest.locks.close(key, e.open, cx.owner, true);
+            if o.wrote {
+                self.leases
+                    .note(cx.owner, &o.path, &ChangeKind::Modified, false);
+            }
             self.finish(o)?;
         }
         Ok(())

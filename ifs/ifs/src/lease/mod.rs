@@ -13,21 +13,25 @@
 //! another owner ([`Leases::gate`]) orders the conflicting holders to
 //! break and, where SMB has it wait, defers until they report the lower
 //! state or [`BREAK_TIMEOUT`] passes ([`defer`]). An owner's leases end
-//! with it ([`Leases::release_owner`]).
+//! with it ([`Leases::release_owner`]). Directory watches ride on the same
+//! poll ([`notify`]).
 
 pub mod defer;
+pub mod notify;
 pub mod state;
 
 #[cfg(test)]
 mod tests;
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use crate::errno::{Errno, Result};
 use crate::lock::{ObjKey, Owner};
 use defer::Deferral;
+use notify::{ChangeKind, DirEvent, Watches};
 use state::{Trigger, W, break_to, candidates, needs_ack, requested};
 
 /// How long a holder has to acknowledge a break (the SMB library's,
@@ -67,6 +71,7 @@ struct Inner {
     files: HashMap<ObjKey, Vec<Held>>,
     tags: HashMap<(Owner, u64), ObjKey>,
     orders: HashMap<Owner, Vec<Order>>,
+    watches: Watches,
 }
 
 /// Every owner's leases on the file system's objects.
@@ -74,6 +79,25 @@ struct Inner {
 pub struct Leases {
     inner: Mutex<Inner>,
     changed: Condvar,
+    /// Some owner watches a directory.
+    watching: AtomicBool,
+}
+
+/// What a poll answers: break orders and directory changes, by watch.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct News {
+    /// Break orders.
+    pub breaks: Vec<Order>,
+    /// Each watch's changes, in order.
+    pub changes: Vec<(u64, Vec<DirEvent>)>,
+}
+
+impl News {
+    /// Nothing to do.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.breaks.is_empty() && self.changes.is_empty()
+    }
 }
 
 /// What other owners have on an object, as a grant sees it.
@@ -259,17 +283,21 @@ impl Leases {
         self.changed.notify_all();
     }
 
-    /// `owner`'s break orders. With none waiting and `wait` not zero,
-    /// `EAGAIN` with a deferral when the caller allows one, so the poll
-    /// waits for orders up to `wait`.
+    /// `owner`'s break orders and its watches' changes. With none waiting
+    /// and `wait` not zero, `EAGAIN` with a deferral when the caller allows
+    /// one, so the poll waits for news up to `wait`.
     ///
     /// # Errors
     ///
     /// `EAGAIN` as above.
-    pub fn orders(&self, owner: Owner, wait: Duration) -> Result<Vec<Order>> {
+    pub fn orders(&self, owner: Owner, wait: Duration) -> Result<News> {
         let mut g = self.lock();
-        if let Some(v) = g.orders.remove(&owner) {
-            return Ok(v);
+        let news = News {
+            breaks: g.orders.remove(&owner).unwrap_or_default(),
+            changes: g.watches.take(owner),
+        };
+        if !news.is_empty() {
+            return Ok(news);
         }
         drop(g);
         if !wait.is_zero()
@@ -280,7 +308,60 @@ impl Leases {
         {
             return Err(Errno::EAGAIN);
         }
-        Ok(Vec::new())
+        Ok(News::default())
+    }
+
+    /// Whether some owner watches a directory: changes are worth noting.
+    #[must_use]
+    pub fn watching(&self) -> bool {
+        self.watching.load(Ordering::Acquire)
+    }
+
+    /// `owner` watches the directory at the canonical `dir` (and below it
+    /// when `tree`): the watch's number.
+    pub fn watch_add(&self, owner: Owner, dir: String, tree: bool) -> u64 {
+        let mut g = self.lock();
+        let id = g.watches.add(owner, dir, tree);
+        self.watching.store(true, Ordering::Release);
+        id
+    }
+
+    /// `owner`'s watch `id` ends.
+    pub fn watch_end(&self, owner: Owner, id: u64) {
+        let mut g = self.lock();
+        g.watches.end(owner, id);
+        self.watching
+            .store(!g.watches.is_empty(), Ordering::Release);
+    }
+
+    /// `by` did `kind` to the entry at the canonical `path`.
+    pub fn note(&self, by: Owner, path: &str, kind: &ChangeKind, dir: bool) {
+        if !self.watching() {
+            return;
+        }
+        self.lock().watches.changed(by, path, kind, dir);
+        self.changed.notify_all();
+    }
+
+    /// `by` renamed `from` to `to`.
+    pub fn note_rename(&self, by: Owner, from: &str, to: &str, dir: bool) {
+        if !self.watching() {
+            return;
+        }
+        self.lock().watches.renamed(by, from, to, dir);
+        self.changed.notify_all();
+    }
+
+    /// `by` removed the directory at `path`: its own watches end.
+    pub fn note_rmdir(&self, by: Owner, path: &str) {
+        if !self.watching() {
+            return;
+        }
+        let mut g = self.lock();
+        g.watches.changed(by, path, &ChangeKind::Removed, true);
+        g.watches.removed_dir(path);
+        drop(g);
+        self.changed.notify_all();
     }
 
     /// `owner` ended: its leases and orders go, and what waited on them
@@ -293,6 +374,9 @@ impl Leases {
         });
         g.tags.retain(|(o, _), _| *o != owner);
         g.orders.remove(&owner);
+        g.watches.release_owner(owner);
+        self.watching
+            .store(!g.watches.is_empty(), Ordering::Release);
         drop(g);
         self.changed.notify_all();
     }
@@ -368,7 +452,9 @@ fn order(orders: &mut HashMap<Owner, Vec<Order>>, owner: Owner, tag: u64, keep: 
 
 fn ready(g: &Inner, d: &Deferral) -> bool {
     match *d {
-        Deferral::Orders { owner, .. } => g.orders.get(&owner).is_some_and(|v| !v.is_empty()),
+        Deferral::Orders { owner, .. } => {
+            g.orders.get(&owner).is_some_and(|v| !v.is_empty()) || g.watches.has_news(owner)
+        }
         Deferral::Breaks {
             key,
             owner,

@@ -67,7 +67,7 @@ fn a_write_waits_for_the_write_back_and_the_report_ends_it() {
     assert_eq!(r, Err(Errno::EAGAIN));
     let d = d.expect("deferred");
     assert!(!l.ready(&d));
-    assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, 0)]);
+    assert_eq!(l.orders(A, Duration::ZERO).unwrap().breaks, [(5, 0)]);
     // The holder's own operations break nothing.
     assert_eq!(
         deferring(true, || l.gate(A, F, Trigger::Write)),
@@ -91,7 +91,7 @@ fn a_read_lease_breaks_at_once_and_nothing_waits() {
         (Ok(()), None)
     );
     assert_eq!(held(&l), [(A, 0)]);
-    assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, 0)]);
+    assert_eq!(l.orders(A, Duration::ZERO).unwrap().breaks, [(5, 0)]);
 }
 
 #[test]
@@ -102,7 +102,7 @@ fn an_open_keeps_read_and_handle_caching() {
     let d = d.expect("deferred");
     // A second trigger while the break runs lowers the order.
     let _ = deferring(true, || l.gate(B, F, Trigger::Write));
-    assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, 0)]);
+    assert_eq!(l.orders(A, Duration::ZERO).unwrap().breaks, [(5, 0)]);
     l.report(A, 5, &[(K, R | H)]);
     assert!(l.ready(&d));
     assert_eq!(held(&l), [(A, R | H)]);
@@ -116,7 +116,7 @@ fn without_permission_the_operation_goes_on() {
         deferring(false, || l.gate(B, F, Trigger::Handle)),
         (Ok(()), None)
     );
-    assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, R | W)]);
+    assert_eq!(l.orders(A, Duration::ZERO).unwrap().breaks, [(5, R | W)]);
 }
 
 #[test]
@@ -138,7 +138,7 @@ fn an_ended_owner_frees_its_waiters() {
     l.release_owner(A);
     assert!(l.ready(&d.expect("deferred")));
     assert!(l.is_empty());
-    assert!(l.orders(A, Duration::ZERO).unwrap().is_empty());
+    assert!(l.orders(A, Duration::ZERO).unwrap().breaks.is_empty());
 }
 
 #[test]
@@ -156,7 +156,7 @@ fn a_poll_defers_until_an_order_comes() {
     });
     assert!(l.wait(&d));
     t.join().unwrap();
-    assert_eq!(l.orders(A, Duration::ZERO).unwrap(), [(5, 0)]);
+    assert_eq!(l.orders(A, Duration::ZERO).unwrap().breaks, [(5, 0)]);
 }
 
 #[test]

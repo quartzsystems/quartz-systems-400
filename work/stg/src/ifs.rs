@@ -296,6 +296,13 @@ pub enum IfsOp {
     LeaseOrders {
         wait_ms: u32,
     },
+    WatchAdd {
+        path: String,
+        tree: bool,
+    },
+    WatchEnd {
+        id: u64,
+    },
 }
 
 wire_enum!(IfsOp {
@@ -368,6 +375,8 @@ wire_enum!(IfsOp {
     66 => LeaseGrant { path, id, tag, key, want },
     67 => LeaseReport { tag, leases },
     68 => LeaseOrders { wait_ms },
+    69 => WatchAdd { path, tree },
+    70 => WatchEnd { id },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -396,7 +405,7 @@ pub enum IfsReply {
     Report { r: Result<Report> },
     Locks { r: Result<Vec<LockInfo>> },
     OwnerLocks { r: Result<Vec<(ObjKey, LockInfo)>> },
-    Orders { r: Result<Vec<(u64, u8)>> },
+    Orders { r: Result<ifs::lease::News> },
 }
 
 wire_enum!(IfsReply {
@@ -648,6 +657,10 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         IfsOp::LeaseOrders { wait_ms } => R::Orders {
             r: c.lease_orders(wait_ms),
         },
+        IfsOp::WatchAdd { path, tree } => R::Handle {
+            r: c.watch_add(&path, tree),
+        },
+        IfsOp::WatchEnd { id } => R::Unit { r: c.watch_end(id) },
     }
 }
 
