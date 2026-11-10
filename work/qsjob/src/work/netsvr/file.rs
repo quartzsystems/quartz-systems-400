@@ -111,6 +111,18 @@ fn serve_client(link: &Shared, start: &Start, me: sockets::JobId, stream: TcpStr
     let Some(ns) = built else {
         return;
     };
+    // Leases broken by other jobs' opens: the IFS lease table's orders on
+    // a link of their own.
+    let orders: netserver::ifs::MakeClient = Box::new(move || match thread_link(number, pid) {
+        Ok(l) => Box::new(stg::remote::RemoteIfs::new(l)),
+        Err(e) => {
+            eprintln!("qsjob: QZLSFILE: the lease thread's link: {e}");
+            Box::new(ifs::client::Unavailable(ifs::Errno::EIO))
+        }
+    });
+    if let Err(e) = ns.start_leases(orders) {
+        eprintln!("qsjob: QZLSFILE: leases across jobs not started: {e}");
+    }
     let ns = Arc::new(ns);
     let released = Arc::new(AtomicBool::new(false));
     {
