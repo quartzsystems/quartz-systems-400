@@ -48,6 +48,9 @@ Problem corrected:
 - Text named the company "Quartz" instead of "Quartz Systems": the
   update server in Navigator, the FTP server's greeting and status, the
   certificate store errors, product packaging and command help.
+- ENDJOB, HLDJOB and RLSJOB of a batch job that a subsystem had just
+  taken off its job queue, and that had not started yet, failed with
+  CPF1321 (job not found). The job is now ended or held as it starts.
 
 New function:
 - Navigator: System > Power down / IPL ends every job and IPLs the
