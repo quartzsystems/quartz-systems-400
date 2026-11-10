@@ -424,6 +424,8 @@ mod fs;
 mod handlers;
 pub(crate) mod info_class;
 pub mod ntstatus;
+// QS/400: leases shared with other processes.
+mod outside;
 mod path;
 mod proto;
 mod rpc;
@@ -475,6 +477,8 @@ pub use proto::auth::ntlm::Identity;
 pub use server::{ConfigError, ConfigHandle, ShareMode, ShutdownHandle, SmbServer};
 pub use stream::{StreamInfo, StreamName};
 pub use verifier::{Logon, LogonVerifier};
+// QS/400: leases shared with other processes.
+pub use outside::{LeaseKey, LeaseObserver};
 
 pub mod wire {
     pub use crate::proto::header;

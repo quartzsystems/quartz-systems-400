@@ -35,6 +35,7 @@ use super::lease::{
 };
 use super::leases::{AckWait, BreakWait, GrantGuard, LeaseRef, Notices, break_notification};
 use super::watch::Change;
+use crate::outside::{LeaseKey, ObserverRef};
 
 // ShareAccess (MS-SMB2 2.2.13)
 pub(crate) const FILE_SHARE_READ: u32 = 0x0000_0001;
@@ -148,6 +149,11 @@ struct FileState {
     changed: tokio::sync::watch::Sender<u64>,
     /// Counts sets of the file's extended attributes while it is open.
     ea_changes: u64,
+    /// QS/400: the observer of the share's leases, and the share's name.
+    observer: Option<(ObserverRef, String)>,
+    /// QS/400: the leases go to the observer when the state is unlocked,
+    /// changed or not.
+    report_now: bool,
 }
 
 struct OpenEntry {
@@ -248,6 +254,47 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
+/// QS/400: a file's state locked; unlocking it tells the share's lease
+/// observer when the leases changed (or a report was asked for).
+struct StateGuard<'a> {
+    state: MutexGuard<'a, FileState>,
+    before: Option<Vec<(LeaseId, LeaseState)>>,
+}
+
+impl std::ops::Deref for StateGuard<'_> {
+    type Target = FileState;
+    fn deref(&self) -> &FileState {
+        &self.state
+    }
+}
+
+impl std::ops::DerefMut for StateGuard<'_> {
+    fn deref_mut(&mut self) -> &mut FileState {
+        &mut self.state
+    }
+}
+
+impl Drop for StateGuard<'_> {
+    fn drop(&mut self) {
+        let Some(before) = self.before.take() else {
+            return;
+        };
+        let now = self.state.lease_states();
+        let forced = std::mem::take(&mut self.state.report_now);
+        let index = self.state.key.file_index();
+        if (now == before && !forced) || index == 0 {
+            return;
+        }
+        if let Some((observer, share)) = &self.state.observer {
+            let leases: Vec<(LeaseKey, u32)> = now
+                .iter()
+                .map(|(id, s)| (LeaseKey::from(*id), s.bits()))
+                .collect();
+            observer.0.leases(share, index, &leases);
+        }
+    }
+}
+
 /// The leases of a file an operation breaks.
 #[derive(Debug, Clone, Copy)]
 enum On<'a> {
@@ -293,8 +340,10 @@ impl OpenEntry {
 }
 
 impl FileNode {
-    fn state(&self) -> MutexGuard<'_, FileState> {
-        lock(&self.state)
+    fn state(&self) -> StateGuard<'_> {
+        let state = lock(&self.state);
+        let before = state.observer.is_some().then(|| state.lease_states());
+        StateGuard { state, before }
     }
 
     /// Whether the lease `id` is held on this file.
@@ -553,6 +602,29 @@ impl FileState {
             }
         }
         (notices, wait)
+    }
+
+    /// QS/400: breaks every lease of the file to at most `keep`, as
+    /// [`Self::break_for`] does for a trigger: a lease already breaking
+    /// gets no second notification, what the server needs is lowered.
+    fn break_outside(&mut self, keep: LeaseState) -> Notices {
+        let mut notices = Notices::default();
+        for at in 0..self.leases.len() {
+            let lease = &mut self.leases[at];
+            let to = lease.state.and(keep);
+            match &mut lease.breaking {
+                Some(breaking) => breaking.required = breaking.required.and(to),
+                None if to != lease.state => self.start_break(at, to, &mut notices),
+                None => {}
+            }
+        }
+        self.bump();
+        notices
+    }
+
+    /// QS/400: each lease and its state, as the observer hears them.
+    fn lease_states(&self) -> Vec<(LeaseId, LeaseState)> {
+        self.leases.iter().map(|l| (l.id, l.state)).collect()
     }
 
     /// Breaks the lease at `at` to `to`. A read lease drops at once; one
@@ -938,6 +1010,22 @@ impl FileTable {
         }
     }
 
+    /// QS/400: breaks the leases on the file `file_index` to at most `keep`,
+    /// for a change made outside the server. Whether the share has the
+    /// file open; its leases go to the observer either way.
+    pub(crate) fn break_outside(&self, file_index: u64, keep: LeaseState) -> bool {
+        let Some(node) = self.files().get(&FileKey::Index(file_index)).cloned() else {
+            return false;
+        };
+        let notices = {
+            let mut state = node.state();
+            state.report_now = true;
+            state.break_outside(keep)
+        };
+        drop(notices);
+        true
+    }
+
     /// Moves every open whose name is `from`, or lies below it, to the
     /// matching name under `to`.
     pub(crate) fn rename_paths(&self, from: &SmbPath, to: &SmbPath, case_sensitive: bool) {
@@ -1028,6 +1116,11 @@ impl FileRef {
                         leases: Vec::new(),
                         changed: tokio::sync::watch::Sender::new(0),
                         ea_changes: 0,
+                        observer: share
+                            .observer
+                            .get()
+                            .map(|o| (o.clone(), share.name.clone())),
+                        report_now: false,
                     }),
                     eas: tokio::sync::Mutex::new(()),
                 })
@@ -1203,6 +1296,8 @@ impl FileRef {
             version: lease.version,
             parent: lease.parent,
         };
+        // QS/400: the holder's process reports the grant, changed or not.
+        state.report_now = true;
         drop(state);
         let guard = GrantGuard::new(Arc::clone(&self.node), req.id, serial, sender);
         (snapshot, guard)

@@ -1290,10 +1290,12 @@ async fn attempt(
     if let (Some(lease), Some(lease_ref)) = (args.lease, lease_ref)
         && (stream.is_some() || !info.is_directory)
     {
-        match server
-            .leases
-            .grant(lease_ref, &mut file, &lease, GRANTABLE_LEASE)
-        {
+        // QS/400: what other processes allow.
+        let limit = handle
+            .lease_limit(lease.id.into(), lease.state.bits())
+            .await;
+        let grantable = GRANTABLE_LEASE.and(LeaseState::from_bits(limit));
+        match server.leases.grant(lease_ref, &mut file, &lease, grantable) {
             Ok((lease, guard)) => {
                 granted = Some(lease);
                 after_send = Some(guard);

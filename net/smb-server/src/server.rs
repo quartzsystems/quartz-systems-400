@@ -120,6 +120,8 @@ pub struct ShareBindings {
     pub(crate) is_print: bool,
     /// QS/400: print files opened on a print share, for their names.
     pub(crate) print_files: AtomicU64,
+    /// QS/400: hears of every change to the leases on the share's files.
+    pub(crate) observer: std::sync::OnceLock<crate::outside::ObserverRef>,
 }
 
 impl ShareBindings {
@@ -153,6 +155,7 @@ impl ShareBindings {
             watches,
             is_print: false,
             print_files: AtomicU64::new(0),
+            observer: std::sync::OnceLock::new(),
         })
     }
 
@@ -181,6 +184,7 @@ impl ShareBindings {
             watches,
             is_print: share.print,
             print_files: AtomicU64::new(0),
+            observer: std::sync::OnceLock::new(),
         })
     }
 
@@ -228,6 +232,8 @@ pub struct ServerConfig {
     pub(crate) comment: String,
     /// QS/400: the printers `\pipe\spoolss` serves; no pipe without.
     pub(crate) print_service: Option<crate::print::PrintServiceRef>,
+    /// QS/400: hears of every change to the leases on a file.
+    pub(crate) lease_observer: Option<crate::outside::ObserverRef>,
     /// The server is announced on the local network while it serves.
     #[cfg(feature = "discovery")]
     pub(crate) discovery: Option<crate::discovery::Settings>,
@@ -535,6 +541,10 @@ impl ConfigHandle {
         }
 
         let binding = ShareBindings::from_share(share);
+        // QS/400: leases shared with other processes.
+        if let Some(o) = &self.state.config.lease_observer {
+            let _ = binding.observer.set(o.clone());
+        }
         self.state.shares.insert(binding).await
     }
 
@@ -704,6 +714,21 @@ pub struct SmbServer {
 impl SmbServer {
     pub fn builder() -> SmbServerBuilder {
         SmbServerBuilder::default()
+    }
+
+    /// QS/400: breaks the leases on the file `file_index`, on every share,
+    /// to at most the caching `keep` (`SMB2_LEASE_*_CACHING` bits), for a
+    /// change made outside the server; the breaks run as a change through
+    /// another open would make them, and the observer hears the file's
+    /// leases afterwards. Whether any share has the file open. Call it on
+    /// the server's runtime.
+    pub async fn break_leases(&self, file_index: u64, keep: u32) -> bool {
+        let keep = crate::files::LeaseState::from_bits(keep);
+        let mut found = false;
+        for share in self.state.shares.all().await {
+            found |= share.files.break_outside(file_index, keep);
+        }
+        found
     }
 
     pub(crate) fn from_state(state: ServerState) -> Self {

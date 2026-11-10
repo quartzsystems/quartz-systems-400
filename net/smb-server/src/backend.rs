@@ -641,6 +641,15 @@ pub trait Handle: Send + Sync {
         Ok(self.list_dir(None).await?.is_empty())
     }
 
+    /// QS/400: the most caching (`SMB2_LEASE_*_CACHING` bits) the lease
+    /// `lease` may have on this open, asked just before the server grants
+    /// the state `want` a CREATE requested: what other processes holding or
+    /// using the file allow. The server grants no more than this and what
+    /// its own rules allow. The default allows `want`.
+    async fn lease_limit(&self, _lease: crate::LeaseKey, want: u32) -> u32 {
+        want
+    }
+
     /// Watch this directory for changes to its entries made by anyone,
     /// including outside the server. The server asks one open of a watched
     /// directory and shares the watch among every watch of that directory;

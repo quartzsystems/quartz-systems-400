@@ -394,6 +394,7 @@ pub struct SmbServerBuilder {
     domain: Option<String>,
     comment: String,
     print_service: Option<crate::print::PrintServiceRef>,
+    lease_observer: Option<crate::outside::ObserverRef>,
     #[cfg(feature = "discovery")]
     discovery: Option<crate::discovery::Discovery>,
 }
@@ -428,6 +429,7 @@ impl SmbServerBuilder {
             domain: None,
             comment: String::new(),
             print_service: None,
+            lease_observer: None,
             #[cfg(feature = "discovery")]
             discovery: None,
         }
@@ -444,6 +446,13 @@ impl SmbServerBuilder {
             self.user_order.push(n.clone());
         }
         self.users.insert(n, password.into());
+        self
+    }
+
+    /// QS/400: reports every change to the leases on a file to `observer`
+    /// (see `QS400-PATCHES.md`).
+    pub fn lease_observer(mut self, observer: impl crate::LeaseObserver) -> Self {
+        self.lease_observer = Some(crate::outside::ObserverRef(Arc::new(observer)));
         self
     }
 
@@ -825,7 +834,12 @@ impl SmbServerBuilder {
 
         let mut share_bindings: Vec<Arc<ShareBindings>> = Vec::with_capacity(self.shares.len());
         for s in self.shares {
-            share_bindings.push(ShareBindings::from_share(s));
+            let binding = ShareBindings::from_share(s);
+            // QS/400: leases shared with other processes.
+            if let Some(o) = &self.lease_observer {
+                let _ = binding.observer.set(o.clone());
+            }
+            share_bindings.push(binding);
         }
 
         // Store NT hashes only; plaintext passwords are dropped.
@@ -853,6 +867,7 @@ impl SmbServerBuilder {
             domain: self.domain,
             comment: self.comment,
             print_service: self.print_service,
+            lease_observer: self.lease_observer,
             #[cfg(feature = "discovery")]
             discovery,
         };
