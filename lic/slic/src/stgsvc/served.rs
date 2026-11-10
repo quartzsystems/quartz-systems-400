@@ -321,6 +321,10 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
         },
     );
     system.jobs.add(job.clone());
+    // HLDJOB came while the job was between its queue and here.
+    if system.hold_on_start.remove(&job.number) {
+        super::jobqs::hold_started(system, job.number);
+    }
     let entered = queued.as_ref().map_or(0, |q| q.submitted / 1_000_000);
     super::acg::job_started(system, &job, entered);
     let jobq = system.queued.get(&job.number).cloned().unwrap_or_default();

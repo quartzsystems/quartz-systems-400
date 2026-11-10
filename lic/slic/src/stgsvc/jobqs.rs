@@ -279,6 +279,28 @@ fn find_queued(system: &System, job: &str) -> Option<(u32, String)> {
     system.queued.get(&number).map(|q| (number, q.clone()))
 }
 
+/// A job a monitor took off its queue that has not said hello yet: its
+/// number, user and qualified name.
+fn find_pending(system: &System, job: &str) -> Option<(u32, String, String)> {
+    let number = wm::job::JobId::parse(job)
+        .map(|id| id.number)
+        .or_else(|| job.trim().parse().ok())?;
+    system
+        .pending
+        .get(&number)
+        .map(|j| (number, j.user.clone(), j.qualified()))
+}
+
+/// Holds job `number`, which just said hello (`HLDJOB` came while it was
+/// starting).
+pub fn hold_started(system: &mut System, number: u32) {
+    if signal(system, number, rustix::process::Signal::STOP).is_ok()
+        && let Some(j) = system.jobs.get_mut(number)
+    {
+        j.status = wm::job::Status::Hld.byte();
+    }
+}
+
 /// The number of an active job by `number/user/name` or number.
 fn find_active(system: &System, job: &str) -> Option<u32> {
     let number = wm::job::JobId::parse(job)
@@ -338,6 +360,16 @@ pub fn hold(system: &mut System, me: u32, job: &str, hold: bool) -> Result<Strin
         })?;
         return Ok(format!("Job {n:06} on job queue {q} {verb}.\n"));
     }
+    // Off its queue, not started yet: held as it starts.
+    if let Some((n, user, qualified)) = find_pending(system, job) {
+        super::security::may_control(&user, &qualified)?;
+        if hold {
+            system.hold_on_start.insert(n);
+        } else {
+            system.hold_on_start.remove(&n);
+        }
+        return Ok(format!("Job {n:06} {verb}.\n"));
+    }
     let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
     control_active(system, n)?;
     if system_job(system, n, me) {
@@ -384,6 +416,14 @@ pub fn endjob(system: &mut System, me: u32, job: &str, immediate: bool) -> Resul
             "Job {} ended while on job queue {q}.\n",
             j.qualified()
         ));
+    }
+    // Off its queue, not started yet: its monitor ends it once it says
+    // hello (take_end_requests waits for it in the job table).
+    if let Some((n, user, qualified)) = find_pending(system, job) {
+        super::security::may_control(&user, &qualified)?;
+        system.hold_on_start.remove(&n);
+        system.end_requests.insert(n, immediate);
+        return Ok(format!("Job {n:06} is ending.\n"));
     }
     let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
     control_active(system, n)?;

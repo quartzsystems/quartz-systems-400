@@ -111,6 +111,8 @@ pub struct System {
     pub pending: std::collections::BTreeMap<u32, wm::obj::jobq::QJob>,
     /// Which subsystem holds each job queue.
     pub jobq_attach: std::collections::BTreeMap<String, String>,
+    /// Jobs `HLDJOB` held between their queue and their hello.
+    pub hold_on_start: std::collections::BTreeSet<u32>,
     /// Jobs `ENDJOB` asked to end, and whether `*IMMED`.
     pub end_requests: std::collections::BTreeMap<u32, bool>,
     /// Jobs that read their own end requests (server jobs no monitor
@@ -205,6 +207,7 @@ impl System {
             queued: std::collections::BTreeMap::new(),
             pending: std::collections::BTreeMap::new(),
             jobq_attach: std::collections::BTreeMap::new(),
+            hold_on_start: std::collections::BTreeSet::new(),
             end_requests: std::collections::BTreeMap::new(),
             self_ending: std::collections::BTreeSet::new(),
             ended_sbs: std::collections::BTreeSet::new(),
